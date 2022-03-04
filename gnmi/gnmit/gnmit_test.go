@@ -30,6 +30,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 	"github.com/openconfig/gnmi/value"
+	"github.com/openconfig/ondatra/telemetry"
 	"github.com/openconfig/ygot/ygot"
 )
 
@@ -236,104 +237,106 @@ func TestONCE(t *testing.T) {
 	}
 }
 
-// TODO(wenbli): Uncomment this once we have some generated GoStructs to test on.
-//// TestONCESet tests the subscribe mode of gnmit.
-//func TestONCESet(t *testing.T) {
-//	schema, err := ocrt.Schema()
-//	if err != nil {
-//		t.Fatal(err)
-//	}
-//	ctx := context.Background()
-//	c, addr, err := NewSettable(ctx, "localhost:0", "local", false, schema, nil)
-//	if err != nil {
-//		t.Fatalf("cannot start server, got err: %v", err)
-//	}
-//
-//	pathStr := "/interfaces/interface[name=foo]/state/description"
-//	path := mustPath(pathStr)
-//
-//	got := []*upd{}
-//	clientCtx, cancel := context.WithCancel(context.Background())
-//	var sendErr, recvErr error
-//	go func(ctx context.Context) {
-//		defer cancel()
-//		conn, err := grpc.Dial(addr, grpc.WithInsecure())
-//		if err != nil {
-//			sendErr = fmt.Errorf("cannot dial gNMI server, %v", err)
-//			return
-//		}
-//
-//		client := gpb.NewGNMIClient(conn)
-//
-//		if _, err := client.Set(ctx, &gpb.SetRequest{
-//			Prefix: mustTargetPath("local", ""),
-//			Replace: []*gpb.Update{{
-//				Path: path,
-//				Val:  mustTypedValue("world"),
-//			}},
-//		}); err != nil {
-//			sendErr = fmt.Errorf("set request failed: %v", err)
-//			return
-//		}
-//
-//		subc, err := client.Subscribe(ctx)
-//		if err != nil {
-//			sendErr = err
-//			return
-//		}
-//		sr := &gpb.SubscribeRequest{
-//			Request: &gpb.SubscribeRequest_Subscribe{
-//				Subscribe: &gpb.SubscriptionList{
-//					Prefix: mustTargetPath("local", ""),
-//					Mode:   gpb.SubscriptionList_ONCE,
-//					Subscription: []*gpb.Subscription{{
-//						Path: path,
-//					}},
-//				},
-//			},
-//		}
-//
-//		if err := subc.Send(sr); err != nil {
-//			sendErr = fmt.Errorf("cannot send subscribe request %s, %v", prototext.Format(sr), err)
-//			return
-//		}
-//
-//		for {
-//			in, err := subc.Recv()
-//			if err == io.EOF {
-//				return
-//			}
-//			if err != nil {
-//				recvErr = err
-//				return
-//			}
-//			got = append(got, toUpd(in)...)
-//		}
-//	}(clientCtx)
-//
-//	<-clientCtx.Done()
-//
-//	c.Stop()
-//
-//	if sendErr != nil {
-//		t.Errorf("got unexpected send error, %v", sendErr)
-//	}
-//
-//	if recvErr != nil {
-//		t.Errorf("got unexpected recv error, %v", recvErr)
-//	}
-//
-//	if diff := cmp.Diff(got, []*upd{{
-//		T:    VAL,
-//		TS:   42,
-//		Path: pathStr,
-//		Val:  "world",
-//	}, {
-//		T: SYNC,
-//	}}, cmpopts.IgnoreFields(upd{}, "TS")); diff != "" {
-//		t.Fatalf("did not get expected updates, diff(-got,+want)\n:%s", diff)
-//	}
-//}
+// TestONCESet tests the subscribe mode of gnmit.
+func TestONCESet(t *testing.T) {
+	schema, err := telemetry.Schema()
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := context.Background()
+	c, addr, err := NewSettable(ctx, "localhost:0", "local", false, schema, nil)
+	if err != nil {
+		t.Fatalf("cannot start server, got err: %v", err)
+	}
+
+	configPathStr := "/interfaces/interface[name=foo]/config/description"
+	configPath := mustPath(configPathStr)
+
+	pathStr := "/interfaces/interface[name=foo]/state/description"
+	path := mustPath(pathStr)
+
+	got := []*upd{}
+	clientCtx, cancel := context.WithCancel(context.Background())
+	var sendErr, recvErr error
+	go func(ctx context.Context) {
+		defer cancel()
+		conn, err := grpc.Dial(addr, grpc.WithInsecure())
+		if err != nil {
+			sendErr = fmt.Errorf("cannot dial gNMI server, %v", err)
+			return
+		}
+
+		client := gpb.NewGNMIClient(conn)
+
+		if _, err := client.Set(ctx, &gpb.SetRequest{
+			Prefix: mustTargetPath("local", ""),
+			Replace: []*gpb.Update{{
+				Path: configPath,
+				Val:  mustTypedValue("world"),
+			}},
+		}); err != nil {
+			sendErr = fmt.Errorf("set request failed: %v", err)
+			return
+		}
+
+		subc, err := client.Subscribe(ctx)
+		if err != nil {
+			sendErr = err
+			return
+		}
+		sr := &gpb.SubscribeRequest{
+			Request: &gpb.SubscribeRequest_Subscribe{
+				Subscribe: &gpb.SubscriptionList{
+					Prefix: mustTargetPath("local", ""),
+					Mode:   gpb.SubscriptionList_ONCE,
+					Subscription: []*gpb.Subscription{{
+						Path: path,
+					}},
+				},
+			},
+		}
+
+		if err := subc.Send(sr); err != nil {
+			sendErr = fmt.Errorf("cannot send subscribe request %s, %v", prototext.Format(sr), err)
+			return
+		}
+
+		for {
+			in, err := subc.Recv()
+			if err == io.EOF {
+				return
+			}
+			if err != nil {
+				recvErr = err
+				return
+			}
+			got = append(got, toUpd(in)...)
+		}
+	}(clientCtx)
+
+	<-clientCtx.Done()
+
+	c.Stop()
+
+	if sendErr != nil {
+		t.Errorf("got unexpected send error, %v", sendErr)
+	}
+
+	if recvErr != nil {
+		t.Errorf("got unexpected recv error, %v", recvErr)
+	}
+
+	if diff := cmp.Diff(got, []*upd{{
+		T:    VAL,
+		TS:   42,
+		Path: pathStr,
+		Val:  "world",
+	}, {
+		T: SYNC,
+	}}, cmpopts.IgnoreFields(upd{}, "TS")); diff != "" {
+		t.Fatalf("did not get expected updates, diff(-got,+want)\n:%s", diff)
+	}
+}
 
 // TestSTREAM tests the STREAM mode of gnmit.
 func TestSTREAM(t *testing.T) {
