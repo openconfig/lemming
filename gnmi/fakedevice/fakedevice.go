@@ -192,6 +192,8 @@ func tasks(target string) []gnmit.Task {
 		panic(fmt.Sprintf("currentDateTimeTask failed to initialize due to error: %v", err))
 	}
 
+	// TODO(wenbli): We should decentralize how we add tasks by adding a
+	// register function that's called by various init() functions.
 	return []gnmit.Task{{
 		Run: currentDateTimeTask,
 		// No paths means the task should periodically wake up itself.
@@ -221,6 +223,11 @@ func tasks(target string) []gnmit.Task {
 	}}
 }
 
+// NewTarget creates a new gNMI fake device object.
+// This fake gNMI server simply mirrors whatever is set for its config leafs in
+// its state leafs. It also has a mechanism for adding new "tasks", or go
+// thread agents that can subscribe to particular values in ONDATRA's
+// OpenConfig tree and write back values to it.
 func NewTarget(ctx context.Context, addr, targetName string) (*gnmit.Collector, string, error) {
 	schema, err := telemetry.Schema()
 	if err != nil {

@@ -38,10 +38,10 @@ import (
 var (
 	// metadataUpdatePeriod is the period of time after which the metadata for the collector
 	// is updated to the client.
-	metadataUpdatePeriod = time.Duration(30 * time.Second)
+	metadataUpdatePeriod = 30 * time.Second
 	// sizeUpdatePeriod is the period of time after which the storage size information for
 	// the collector is updated to the client.
-	sizeUpdatePeriod = time.Duration(30 * time.Second)
+	sizeUpdatePeriod = 30 * time.Second
 )
 
 // periodic runs the function fn every period.
@@ -56,16 +56,24 @@ func periodic(period time.Duration, fn func()) {
 	}
 }
 
+// Queue is an interface that represents a possibly coalescing queue of updates.
 type Queue interface {
 	Next(ctx context.Context) (interface{}, uint32, error)
 	Len() int
 	Close()
 }
 
+// UpdateFn is a function that takes in a gNMI Notification object and updates
+// a gNMI datastore with it.
 type UpdateFn func(*gpb.Notification) error
 
+// TaskRoutine is a reactor function that listens for updates from a queue,
+// emits updates via an update function. It does this on a target (string
+// parameter), and also has a final clean-up function to call when it finishes
+// processing.
 type TaskRoutine func(Queue, UpdateFn, string, func()) error
 
+// Task defines a particular task that runs on the gNMI datastore.
 type Task struct {
 	Run    TaskRoutine
 	Paths  []*gpb.Path
@@ -79,6 +87,7 @@ type GNMIServer struct {
 	c *Collector
 }
 
+// RegisterTask starts up a task on the gNMI datastore.
 func (s *GNMIServer) RegisterTask(task Task) error {
 	queue, remove, err := s.Server.SubscribeLocal(s.c.name, task.Paths, task.Prefix)
 	if err != nil {
@@ -197,7 +206,7 @@ func (c *Collector) handleUpdate(resp *gpb.SubscribeResponse) error {
 	t := c.cache.GetTarget(c.name)
 	switch v := resp.Response.(type) {
 	case *gpb.SubscribeResponse_Update:
-		t.GnmiUpdate(v.Update)
+		return t.GnmiUpdate(v.Update)
 	case *gpb.SubscribeResponse_SyncResponse:
 		t.Sync()
 	case *gpb.SubscribeResponse_Error:
@@ -228,6 +237,9 @@ func (c *Collector) TargetUpdate(m *gpb.SubscribeResponse) {
 	c.inCh <- m
 }
 
+// Set is a prototype for a gNMI Set operation.
+// TODO(wenbli): This function is too complex to stand on its own. We should
+// split this into stages, each encapsulated within its own function.
 func (s *GNMIServer) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResponse, error) {
 	if s.c.schema == nil {
 		return s.UnimplementedGNMIServer.Set(ctx, req)

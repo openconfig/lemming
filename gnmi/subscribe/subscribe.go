@@ -229,7 +229,9 @@ func (s *Server) Subscribe(stream pb.GNMI_SubscribeServer) error {
 	return <-errC
 }
 
-// SubscribeLocal registers a set of paths to listen to. It returns a queue
+////////////////////////// START -- Added Code from Fork of github.com/openconfig/gnmi ///////////////////////////////////
+
+// SubscribeLocal registers a set of paths to listen to. It returns a coalescing queue
 // object into which the updates will be sent, and a remove function that stops
 // the queue from being updated.
 func (s *Server) SubscribeLocal(target string, paths []*pb.Path, prefix *pb.Path) (*coalesce.Queue, func(), error) {
@@ -275,6 +277,9 @@ func addLocalSubscription(m *match.Match, paths []*pb.Path, prefix *pb.Path, c *
 	}
 }
 
+// localSubscription contains the attributes defining a particular local
+// subscription request. "local" means that no messages are sent back -- only
+// the coalescing queue is populated with the update messages.
 type localSubscription struct {
 	target string
 	paths  []*pb.Path
@@ -316,6 +321,8 @@ func (s *Server) processLocalSubscription(c *localSubscription) (err error) {
 	}
 	return
 }
+
+////////////////////////// END -- Added Code from Fork of github.com/openconfig/gnmi ///////////////////////////////////
 
 type resp struct {
 	stream pb.GNMI_SubscribeServer
