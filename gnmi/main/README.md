@@ -2,7 +2,7 @@
 
 ## Purpose 
 
-To provide a reference implementation of a device which provides the collection of customers API's used for Openconfig. This includes:
+To provide a reference implementation of a device which provides the collection of customers APIs used for Openconfig. This includes:
 
 * gNMI
 * gNOI
