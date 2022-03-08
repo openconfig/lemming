@@ -30,7 +30,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 	"github.com/openconfig/gnmi/value"
-	"github.com/openconfig/ondatra/telemetry"
+	"github.com/openconfig/lemming/gnmi/internal/config"
 	"github.com/openconfig/ygot/ygot"
 )
 
@@ -42,9 +42,12 @@ func mustPath(s string) *gpb.Path {
 	return p
 }
 
-func mustTargetPath(t, s string) *gpb.Path {
+func mustTargetPath(t, s string, addOpenConfigOrigin bool) *gpb.Path {
 	p := mustPath(s)
 	p.Target = t
+	if addOpenConfigOrigin {
+		p.Origin = "openconfig"
+	}
 	return p
 }
 
@@ -151,7 +154,7 @@ func TestONCE(t *testing.T) {
 	c.TargetUpdate(&gpb.SubscribeResponse{
 		Response: &gpb.SubscribeResponse_Update{
 			Update: &gpb.Notification{
-				Prefix:    mustTargetPath("local", ""),
+				Prefix:    mustTargetPath("local", "", false),
 				Timestamp: 42,
 				Update: []*gpb.Update{{
 					Path: mustPath("/hello"),
@@ -186,7 +189,7 @@ func TestONCE(t *testing.T) {
 		sr := &gpb.SubscribeRequest{
 			Request: &gpb.SubscribeRequest_Subscribe{
 				Subscribe: &gpb.SubscriptionList{
-					Prefix: mustTargetPath("local", "/"),
+					Prefix: mustTargetPath("local", "/", false),
 					Mode:   gpb.SubscriptionList_ONCE,
 					Subscription: []*gpb.Subscription{{
 						Path: mustPath("/hello"),
@@ -239,7 +242,7 @@ func TestONCE(t *testing.T) {
 
 // TestONCESet tests the subscribe mode of gnmit.
 func TestONCESet(t *testing.T) {
-	schema, err := telemetry.Schema()
+	schema, err := config.Schema()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -249,10 +252,7 @@ func TestONCESet(t *testing.T) {
 		t.Fatalf("cannot start server, got err: %v", err)
 	}
 
-	configPathStr := "/interfaces/interface[name=foo]/config/description"
-	configPath := mustPath(configPathStr)
-
-	pathStr := "/interfaces/interface[name=foo]/state/description"
+	pathStr := "/interfaces/interface[name=foo]/config/description"
 	path := mustPath(pathStr)
 
 	got := []*upd{}
@@ -269,9 +269,9 @@ func TestONCESet(t *testing.T) {
 		client := gpb.NewGNMIClient(conn)
 
 		if _, err := client.Set(ctx, &gpb.SetRequest{
-			Prefix: mustTargetPath("local", ""),
+			Prefix: mustTargetPath("local", "", true),
 			Replace: []*gpb.Update{{
-				Path: configPath,
+				Path: path,
 				Val:  mustTypedValue("world"),
 			}},
 		}); err != nil {
@@ -287,7 +287,109 @@ func TestONCESet(t *testing.T) {
 		sr := &gpb.SubscribeRequest{
 			Request: &gpb.SubscribeRequest_Subscribe{
 				Subscribe: &gpb.SubscriptionList{
-					Prefix: mustTargetPath("local", ""),
+					Prefix: mustTargetPath("local", "", true),
+					Mode:   gpb.SubscriptionList_ONCE,
+					Subscription: []*gpb.Subscription{{
+						Path: path,
+					}},
+				},
+			},
+		}
+
+		if err := subc.Send(sr); err != nil {
+			sendErr = fmt.Errorf("cannot send subscribe request %s, %v", prototext.Format(sr), err)
+			return
+		}
+
+		for {
+			in, err := subc.Recv()
+			if err == io.EOF {
+				return
+			}
+			if err != nil {
+				recvErr = err
+				return
+			}
+			got = append(got, toUpd(in)...)
+		}
+	}(clientCtx)
+
+	<-clientCtx.Done()
+
+	c.Stop()
+
+	if sendErr != nil {
+		t.Errorf("got unexpected send error, %v", sendErr)
+	}
+
+	if recvErr != nil {
+		t.Errorf("got unexpected recv error, %v", recvErr)
+	}
+
+	if diff := cmp.Diff(got, []*upd{{
+		T:    VAL,
+		TS:   42,
+		Path: pathStr,
+		Val:  "world",
+	}, {
+		T: SYNC,
+	}}, cmpopts.IgnoreFields(upd{}, "TS")); diff != "" {
+		t.Fatalf("did not get expected updates, diff(-got,+want)\n:%s", diff)
+	}
+}
+
+// TestONCESet tests the subscribe mode of gnmit.
+func TestONCESetJSON(t *testing.T) {
+	schema, err := config.Schema()
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := context.Background()
+	c, addr, err := NewSettable(ctx, "localhost:0", "local", false, schema, nil)
+	if err != nil {
+		t.Fatalf("cannot start server, got err: %v", err)
+	}
+
+	pathStr := "/interfaces/interface[name=foo]/config/description"
+	path := mustPath(pathStr)
+
+	got := []*upd{}
+	clientCtx, cancel := context.WithCancel(context.Background())
+	var sendErr, recvErr error
+	go func(ctx context.Context) {
+		defer cancel()
+		conn, err := grpc.Dial(addr, grpc.WithInsecure())
+		if err != nil {
+			sendErr = fmt.Errorf("cannot dial gNMI server, %v", err)
+			return
+		}
+
+		client := gpb.NewGNMIClient(conn)
+
+		if _, err := client.Set(ctx, &gpb.SetRequest{
+			Prefix: mustTargetPath("local", "", true),
+			Replace: []*gpb.Update{{
+				Path: path,
+				Val: &gpb.TypedValue{
+					Value: &gpb.TypedValue_JsonIetfVal{
+						JsonIetfVal: []byte{0x22, 0x77, 0x6f, 0x72, 0x6c, 0x64, 0x22},
+					},
+				},
+			}},
+		}); err != nil {
+			sendErr = fmt.Errorf("set request failed: %v", err)
+			return
+		}
+
+		subc, err := client.Subscribe(ctx)
+		if err != nil {
+			sendErr = err
+			return
+		}
+		sr := &gpb.SubscribeRequest{
+			Request: &gpb.SubscribeRequest_Subscribe{
+				Subscribe: &gpb.SubscriptionList{
+					Prefix: mustTargetPath("local", "", true),
 					Mode:   gpb.SubscriptionList_ONCE,
 					Subscription: []*gpb.Subscription{{
 						Path: path,
@@ -349,7 +451,7 @@ func TestSTREAM(t *testing.T) {
 	c.TargetUpdate(&gpb.SubscribeResponse{
 		Response: &gpb.SubscribeResponse_Update{
 			Update: &gpb.Notification{
-				Prefix:    mustTargetPath("local", ""),
+				Prefix:    mustTargetPath("local", "", false),
 				Timestamp: 42,
 				Update: []*gpb.Update{{
 					Path: mustPath("/hello"),
@@ -396,7 +498,7 @@ func TestSTREAM(t *testing.T) {
 		sr := &gpb.SubscribeRequest{
 			Request: &gpb.SubscribeRequest_Subscribe{
 				Subscribe: &gpb.SubscriptionList{
-					Prefix: mustTargetPath("local", ""),
+					Prefix: mustTargetPath("local", "", false),
 					Mode:   gpb.SubscriptionList_STREAM,
 					Subscription: []*gpb.Subscription{{
 						Path: mustPath("/"),
@@ -440,7 +542,7 @@ func TestSTREAM(t *testing.T) {
 			c.TargetUpdate(&gpb.SubscribeResponse{
 				Response: &gpb.SubscribeResponse_Update{
 					Update: &gpb.Notification{
-						Prefix:    mustTargetPath("local", ""),
+						Prefix:    mustTargetPath("local", "", false),
 						Timestamp: int64(42 + 1 + i),
 						Update: []*gpb.Update{{
 							Path: mustPath("/hello"),

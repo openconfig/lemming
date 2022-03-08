@@ -19,6 +19,7 @@ package gnmit
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net"
 	"reflect"
@@ -30,6 +31,7 @@ import (
 	"github.com/openconfig/ygot/ygot"
 	"github.com/openconfig/ygot/ytypes"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
 
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
@@ -76,7 +78,7 @@ type TaskRoutine func(Queue, UpdateFn, string, func()) error
 // Task defines a particular task that runs on the gNMI datastore.
 type Task struct {
 	Run    TaskRoutine
-	Paths  []*gpb.Path
+	Paths  []ygot.PathStruct
 	Prefix *gpb.Path
 }
 
@@ -89,7 +91,15 @@ type GNMIServer struct {
 
 // RegisterTask starts up a task on the gNMI datastore.
 func (s *GNMIServer) RegisterTask(task Task) error {
-	queue, remove, err := s.Server.SubscribeLocal(s.c.name, task.Paths, task.Prefix)
+	var paths []*gpb.Path
+	for _, p := range task.Paths {
+		path, _, err := ygot.ResolvePath(p)
+		if err != nil {
+			return fmt.Errorf("gnmit: cannot register task: %v", err)
+		}
+		paths = append(paths, path)
+	}
+	queue, remove, err := s.Server.SubscribeLocal(s.c.name, paths, task.Prefix)
 	if err != nil {
 		return err
 	}
@@ -237,6 +247,45 @@ func (c *Collector) TargetUpdate(m *gpb.SubscribeResponse) {
 	c.inCh <- m
 }
 
+// setNode is a function that is able to unmarshal either a JSON-encoded value or a gNMI-encoded value.
+// TODO(wenbli): This functionality should be upstreamed to ygot somehow.
+func setNode(schema *ytypes.Schema, goStruct ygot.GoStruct, update *gpb.Update) error {
+	nodeName := reflect.TypeOf(goStruct).Elem().Name()
+	nodeI, targetSchema, err := ytypes.GetOrCreateNode(schema.SchemaTree[nodeName], goStruct, update.Path)
+	if err != nil {
+		return fmt.Errorf("gnmit: failed to GetOrCreate a node: %v", err)
+	}
+
+	// TODO(wenbli): Populate default values using PopulateDefaults.
+	jsonUpdate := update.Val.GetJsonIetfVal()
+	if jsonUpdate == nil {
+		if err := ytypes.SetNode(schema.SchemaTree[nodeName], goStruct, update.Path, update.Val); err != nil {
+			return fmt.Errorf("gnmit: SetNode failed on leaf node: %v", err)
+		}
+		return nil
+	}
+
+	node, ok := nodeI.(ygot.GoStruct)
+	path := proto.Clone(update.Path).(*gpb.Path)
+	for i := len(path.Elem) - 1; i >= 0 && !ok; i-- {
+		path.Elem = path.Elem[:i]
+		nodeI, _, err := ytypes.GetOrCreateNode(schema.SchemaTree[nodeName], goStruct, path)
+		if err != nil {
+			continue
+		}
+		node, ok = nodeI.(ygot.GoStruct)
+	}
+	if ok {
+		var jsonTree interface{}
+		if err := json.Unmarshal(jsonUpdate, &jsonTree); err != nil {
+			return err
+		}
+		return ytypes.Unmarshal(targetSchema, node, jsonTree)
+	}
+
+	return fmt.Errorf("gnmit: cannot find GoStruct parent into which to ummarshal update message: %s", prototext.Format(update))
+}
+
 // Set is a prototype for a gNMI Set operation.
 // TODO(wenbli): This function is too complex to stand on its own. We should
 // split this into stages, each encapsulated within its own function.
@@ -254,7 +303,7 @@ func (s *GNMIServer) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResp
 		return nil, fmt.Errorf("gnmit: cannot convert root object to ValidatedGoStruct")
 	}
 	// Operate at the prefix level.
-	nodeI, _, err := ytypes.GetOrCreateNode(s.c.schema.RootSchema(), dirtyRoot, req.Prefix, &ytypes.PreferShadowPath{})
+	nodeI, _, err := ytypes.GetOrCreateNode(s.c.schema.RootSchema(), dirtyRoot, req.Prefix)
 	if err != nil {
 		return nil, fmt.Errorf("gnmit: failed to GetOrCreate the prefix node: %v", err)
 	}
@@ -267,32 +316,23 @@ func (s *GNMIServer) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResp
 	// TODO(wenbli): Reject paths that try to modify read-only values.
 	// TODO(wenbli): Question: what to do if there are operational-state values in a container that is specified to be replaced or deleted?
 
-	// Process deletes first.
+	// Process deletes, then replace, then updates.
 	for _, path := range req.Delete {
-		if err := ytypes.DeleteNode(s.c.schema.SchemaTree[nodeName], node, path, &ytypes.PreferShadowPath{}); err != nil {
+		if err := ytypes.DeleteNode(s.c.schema.SchemaTree[nodeName], node, path); err != nil {
 			return nil, fmt.Errorf("gnmit: DeleteNode error: %v", err)
 		}
 	}
 	for _, update := range req.Replace {
-		if err := ytypes.DeleteNode(s.c.schema.SchemaTree[nodeName], node, update.Path, &ytypes.PreferShadowPath{}); err != nil {
+		if err := ytypes.DeleteNode(s.c.schema.SchemaTree[nodeName], node, update.Path); err != nil {
 			return nil, fmt.Errorf("gnmit: DeleteNode error: %v", err)
 		}
-		_, _, err := ytypes.GetOrCreateNode(s.c.schema.SchemaTree[nodeName], node, update.Path, &ytypes.PreferShadowPath{})
-		if err != nil {
-			return nil, fmt.Errorf("gnmit: failed to GetOrCreate a replace node: %v", err)
-		}
-		// TODO(wenbli): Populate default values using PopulateDefaults.
-		if err := ytypes.SetNode(s.c.schema.SchemaTree[nodeName], node, update.Path, update.Val, &ytypes.PreferShadowPath{}); err != nil {
-			return nil, fmt.Errorf("gnmit: SetNode failed on leaf node: %v", err)
+		if err := setNode(s.c.schema, node, update); err != nil {
+			return nil, err
 		}
 	}
 	for _, update := range req.Update {
-		_, _, err := ytypes.GetOrCreateNode(s.c.schema.SchemaTree[nodeName], node, update.Path, &ytypes.PreferShadowPath{})
-		if err != nil {
-			return nil, fmt.Errorf("gnmit: failed to GetOrCreate a replace node: %v", err)
-		}
-		if err := ytypes.SetNode(s.c.schema.SchemaTree[nodeName], node, update.Path, update.Val, &ytypes.PreferShadowPath{}); err != nil {
-			return nil, fmt.Errorf("gnmit: SetNode failed on leaf node: %v", err)
+		if err := setNode(s.c.schema, node, update); err != nil {
+			return nil, err
 		}
 	}
 
@@ -306,37 +346,9 @@ func (s *GNMIServer) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResp
 	}
 	n.Timestamp = time.Now().UnixNano()
 	n.Prefix = &gpb.Path{Origin: req.Prefix.Origin, Target: s.c.name}
-	// XXX(wenbli): The following delineated code is to enable compatibility with Ondatra, whose generated GoStructs prefer operational state,
-	// causing ygot.Diff to emit messages that are "state" leafs.
-	// ---------------------------------
-	var deletes []*gpb.Path
-	for _, path := range n.Delete {
-		configPath := proto.Clone(path).(*gpb.Path)
-		// Duplicate any "state" paths to the "config". This does two things:
-		// - Correct "state" paths to "config" due to ONDATRA's generated GoStruct.
-		// - Keep "state" paths in order to reflect the operational state transitioning immediately. We probably don't want this in the future.
-		switch path.Elem[len(path.Elem)-2].Name {
-		case "state":
-			configPath.Elem[len(configPath.Elem)-2].Name = "config"
-		default:
-			continue
-		}
-		deletes = append(deletes, configPath)
+	if n.Prefix.Origin == "" {
+		n.Prefix.Origin = "openconfig"
 	}
-	n.Delete = append(deletes, n.Delete...)
-	var updates []*gpb.Update
-	for _, update := range n.Update {
-		configPath := proto.Clone(update.Path).(*gpb.Path)
-		switch update.Path.Elem[len(update.Path.Elem)-2].Name {
-		case "state":
-			configPath.Elem[len(configPath.Elem)-2].Name = "config"
-		default:
-			continue
-		}
-		updates = append(updates, &gpb.Update{Path: configPath, Val: update.Val})
-	}
-	n.Update = append(updates, n.Update...)
-	// ---------------------------------
 
 	// Update cache
 	t := s.c.cache.GetTarget(s.c.name)
