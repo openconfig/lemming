@@ -330,3 +330,5 @@ func (n *DevicePath) System() *system.SystemPath {
 		),
 	}
 }
+
+//@generated

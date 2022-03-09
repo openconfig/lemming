@@ -55479,3 +55479,5 @@ func (n *NetworkInstance_VlanPathAny) VlanId() *NetworkInstance_Vlan_VlanIdPathA
 		),
 	}
 }
+
+//@generated

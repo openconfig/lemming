@@ -420,3 +420,5 @@ func (n *Lacp_InterfacePathAny) SystemPriority() *Lacp_Interface_SystemPriorityP
 		),
 	}
 }
+
+//@generated

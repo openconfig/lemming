@@ -1880,3 +1880,5 @@ func (n *Component_Transceiver_ChannelPathAny) TxLaser() *Component_Transceiver_
 		),
 	}
 }
+
+//@generated

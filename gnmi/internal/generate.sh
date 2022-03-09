@@ -24,7 +24,7 @@ git clone https://github.com/openconfig/public.git
 EXCLUDE_MODULES=ietf-interfaces,openconfig-bfd,openconfig-messages
 
 COMMON_ARGS=(
-  -path="public/release/models,public/third_party/ietf"
+  -path=public/release/models,public/third_party/ietf
   -compress_paths
   -exclude_modules="${EXCLUDE_MODULES}"
   -generate_fakeroot
@@ -152,5 +152,3 @@ generator \
 find config telemetry -name "*.go" -exec goimports -w {} +
 find config telemetry -name "*.go" -exec gofmt -w -s {} +
 rm -rf public
-
-printf "\n//@generated" | tee -a **/*.go

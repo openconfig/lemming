@@ -704,3 +704,5 @@ func (n *Keychain_Key_SendLifetimePathAny) StartTime() *Keychain_Key_SendLifetim
 		),
 	}
 }
+
+//@generated

@@ -2723,3 +2723,5 @@ func (n *Lldp_Interface_Neighbor_TlvPathAny) Value() *Lldp_Interface_Neighbor_Tl
 		),
 	}
 }
+
+//@generated

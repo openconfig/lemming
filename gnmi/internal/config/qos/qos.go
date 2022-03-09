@@ -8457,3 +8457,5 @@ func (n *Qos_SchedulerPolicy_Scheduler_TwoRateThreeColor_ViolateActionPathAny) S
 		),
 	}
 }
+
+//@generated

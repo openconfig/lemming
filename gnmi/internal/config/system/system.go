@@ -5359,3 +5359,5 @@ func (n *System_TelnetServerPathAny) Timeout() *System_TelnetServer_TimeoutPathA
 		),
 	}
 }
+
+//@generated
