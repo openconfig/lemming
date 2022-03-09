@@ -10531,3 +10531,5 @@ func (t *NetworkInstance_Protocol_Bgp_PeerGroup_ApplyPolicy) Validate(opts ...yg
 func (t *NetworkInstance_Protocol_Bgp_PeerGroup_ApplyPolicy) ΛEnumTypeMap() map[string][]reflect.Type {
 	return ΛEnumTypes
 }
+
+//@generated

@@ -3064,3 +3064,5 @@ var ΛEnumTypes = map[string][]reflect.Type{
 		reflect.TypeOf((E_SshServer_ProtocolVersion)(0)),
 	},
 }
+
+//@generated

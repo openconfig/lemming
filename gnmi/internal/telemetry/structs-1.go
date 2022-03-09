@@ -17296,3 +17296,5 @@ func (t *NetworkInstance_Mpls_Lsps_ConstrainedPath_Tunnel_P2PTunnelAttributes_P2
 func (t *NetworkInstance_Mpls_Lsps_ConstrainedPath_Tunnel_P2PTunnelAttributes_P2PPrimaryPath) ΛEnumTypeMap() map[string][]reflect.Type {
 	return ΛEnumTypes
 }
+
+//@generated

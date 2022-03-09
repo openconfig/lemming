@@ -10036,3 +10036,5 @@ func (n *Interface_Subinterface_Vlan_Match_SingleTaggedRangePathAny) LowVlanId()
 		),
 	}
 }
+
+//@generated

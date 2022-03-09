@@ -1068,3 +1068,5 @@ func (n *LocalRoutes_Static_NextHop_InterfaceRefPathAny) Subinterface() *LocalRo
 		),
 	}
 }
+
+//@generated

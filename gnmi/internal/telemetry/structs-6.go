@@ -12303,3 +12303,5 @@ func (t *NetworkInstance_Protocol_Isis_Level_Lsp_Tlv_MtIsisNeighborAttribute_Nei
 func (t *NetworkInstance_Protocol_Isis_Level_Lsp_Tlv_MtIsisNeighborAttribute_Neighbor_Instance_Subtlv_AdjacencySid) ΛEnumTypeMap() map[string][]reflect.Type {
 	return ΛEnumTypes
 }
+
+//@generated

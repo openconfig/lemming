@@ -11016,3 +11016,5 @@ func (t *NetworkInstance_Protocol_Ospfv2_Area_Lsdb_LsaType_Lsa_OpaqueLsa_GraceLs
 func (t *NetworkInstance_Protocol_Ospfv2_Area_Lsdb_LsaType_Lsa_OpaqueLsa_GraceLsa) ΛEnumTypeMap() map[string][]reflect.Type {
 	return ΛEnumTypes
 }
+
+//@generated

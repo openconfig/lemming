@@ -11792,3 +11792,5 @@ func (n *Component_Transceiver_SupplyVoltagePathAny) MinTime() *Component_Transc
 		),
 	}
 }
+
+//@generated

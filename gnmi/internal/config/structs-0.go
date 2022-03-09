@@ -17940,3 +17940,5 @@ func (t *Interface_Subinterface_Ipv6_Autoconf) Validate(opts ...ygot.ValidationO
 func (t *Interface_Subinterface_Ipv6_Autoconf) ΛEnumTypeMap() map[string][]reflect.Type {
 	return ΛEnumTypes
 }
+
+//@generated

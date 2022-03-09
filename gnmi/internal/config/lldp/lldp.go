@@ -560,3 +560,5 @@ func (n *Lldp_InterfacePathAny) Name() *Lldp_Interface_NamePathAny {
 		),
 	}
 }
+
+//@generated
