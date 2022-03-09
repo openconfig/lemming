@@ -19316,3 +19316,5 @@ func (t *NetworkInstance_Protocol_Igmp_Interface_Counters) Validate(opts ...ygot
 func (t *NetworkInstance_Protocol_Igmp_Interface_Counters) ΛEnumTypeMap() map[string][]reflect.Type {
 	return ΛEnumTypes
 }
+
+//@generated

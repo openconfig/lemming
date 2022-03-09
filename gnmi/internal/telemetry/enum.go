@@ -8105,3 +8105,5 @@ const (
 	// Vlan_Status_SUSPENDED corresponds to the value SUSPENDED of Vlan_Status
 	Vlan_Status_SUSPENDED E_Vlan_Status = 2
 )
+
+//@generated

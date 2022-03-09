@@ -14561,3 +14561,5 @@ func (t *NetworkInstance_Protocol_Isis_Level_Lsp_Tlv_ExtendedIsReachability_Neig
 func (t *NetworkInstance_Protocol_Isis_Level_Lsp_Tlv_ExtendedIsReachability_Neighbor_Instance_Subtlv_MaxReservableLinkBandwidth) ΛEnumTypeMap() map[string][]reflect.Type {
 	return ΛEnumTypes
 }
+
+//@generated

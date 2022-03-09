@@ -3198,3 +3198,5 @@ func (t *System_License_License) To_System_License_License_LicenseData_Union(i i
 	}
 	return nil, fmt.Errorf("cannot convert %v to System_License_License_LicenseData_Union, unknown union type, got: %T, want any of [Binary, string]", i, i)
 }
+
+//@generated

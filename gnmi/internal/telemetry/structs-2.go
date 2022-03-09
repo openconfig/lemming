@@ -14930,3 +14930,5 @@ func (t *NetworkInstance_Protocol_Bgp_Global_AfiSafi_L3VpnIpv6Multicast) Validat
 func (t *NetworkInstance_Protocol_Bgp_Global_AfiSafi_L3VpnIpv6Multicast) ΛEnumTypeMap() map[string][]reflect.Type {
 	return ΛEnumTypes
 }
+
+//@generated

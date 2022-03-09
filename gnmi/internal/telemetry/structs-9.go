@@ -14282,3 +14282,5 @@ func (t *System_TelnetServer) Validate(opts ...ygot.ValidationOption) error {
 // ΛEnumTypeMap returns a map, keyed by YANG schema path, of the enumerated types
 // that are included in the generated code.
 func (t *System_TelnetServer) ΛEnumTypeMap() map[string][]reflect.Type { return ΛEnumTypes }
+
+//@generated

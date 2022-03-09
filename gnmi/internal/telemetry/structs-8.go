@@ -14543,3 +14543,5 @@ func (t *Qos_Interface_Output_InterfaceRef) Validate(opts ...ygot.ValidationOpti
 func (t *Qos_Interface_Output_InterfaceRef) ΛEnumTypeMap() map[string][]reflect.Type {
 	return ΛEnumTypes
 }
+
+//@generated
