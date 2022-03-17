@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/openconfig/gnmi/cache"
+	config "github.com/openconfig/lemming/gnmi/internal/config"
 	"github.com/openconfig/lemming/gnmi/subscribe"
 	"github.com/openconfig/ygot/ygot"
 	"github.com/openconfig/ygot/ytypes"
@@ -73,7 +74,7 @@ type UpdateFn func(*gpb.Notification) error
 // emits updates via an update function. It does this on a target (string
 // parameter), and also has a final clean-up function to call when it finishes
 // processing.
-type TaskRoutine func(Queue, UpdateFn, string, func()) error
+type TaskRoutine func(func() *config.Device, Queue, UpdateFn, string, func()) error
 
 // Task defines a particular task that runs on the gNMI datastore.
 type Task struct {
@@ -84,6 +85,13 @@ type Task struct {
 
 // GNMIServer implements the gNMI server interface.
 type GNMIServer struct {
+	// intendedConfigMu protects the global view of intendedConfig, which
+	// can be read by tasks. It protects the storage of the intendedConfig
+	// pointer, which gets copied and sent to tasks for reading. Since
+	// Set's implementation never alters this view once created, and
+	// instead creates a new copy of the root Device struct, tasks can
+	// freely read without a race condition.
+	intendedConfigMu sync.RWMutex
 	// The subscribe Server implements only Subscribe for gNMI.
 	*subscribe.Server
 	c *Collector
@@ -103,7 +111,17 @@ func (s *GNMIServer) RegisterTask(task Task) error {
 	if err != nil {
 		return err
 	}
-	return task.Run(queue, s.c.cache.GnmiUpdate, s.c.name, remove)
+	return task.Run(s.getIntendedConfig, queue, s.c.cache.GnmiUpdate, s.c.name, remove)
+}
+
+// RegisterTask starts up a task on the gNMI datastore.
+func (s *GNMIServer) getIntendedConfig() *config.Device {
+	s.intendedConfigMu.RLock()
+	defer s.intendedConfigMu.RUnlock()
+	if s.c != nil && s.c.schema != nil {
+		return s.c.schema.Root.(*config.Device)
+	}
+	return nil
 }
 
 // New returns a new collector that listens on the specified addr (in the form host:port),
@@ -355,8 +373,11 @@ func (s *GNMIServer) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResp
 	if err := t.GnmiUpdate(n); err != nil {
 		return nil, err
 	}
-	// TODO(wenbli): Should handle updates one at a time to avoid partial updates being reflected in the cache when an error occurs. AKA we should support transactional semantics.
+	s.intendedConfigMu.Lock()
+	defer s.intendedConfigMu.Unlock()
 	s.c.schema.Root = dirtyRoot
 	// TODO(wenbli): Currently the SetResponse is not filled.
-	return &gpb.SetResponse{}, nil
+	return &gpb.SetResponse{
+		Timestamp: time.Now().UnixNano(),
+	}, nil
 }

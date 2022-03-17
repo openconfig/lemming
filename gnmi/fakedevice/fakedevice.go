@@ -52,7 +52,7 @@ func init() {
 
 // bootTimeTask is a task that updates the boot-time leaf with the current
 // time. It does not spawn any long-running threads.
-func bootTimeTask(_ gnmit.Queue, update gnmit.UpdateFn, target string, remove func()) error {
+func bootTimeTask(_ func() *config.Device, _ gnmit.Queue, update gnmit.UpdateFn, target string, remove func()) error {
 	defer remove()
 	p0, _, errs := ygot.ResolvePath(telemetrypath.DeviceRoot("").System().BootTime())
 	if errs != nil {
@@ -83,7 +83,7 @@ func bootTimeTask(_ gnmit.Queue, update gnmit.UpdateFn, target string, remove fu
 
 // currentDateTimeTask updates the current-datetime leaf with the current time,
 // and spawns a thread that wakes up every second to update the leaf.
-func currentDateTimeTask(_ gnmit.Queue, update gnmit.UpdateFn, target string, remove func()) error {
+func currentDateTimeTask(_ func() *config.Device, _ gnmit.Queue, update gnmit.UpdateFn, target string, remove func()) error {
 	p0, _, err := ygot.ResolvePath(telemetrypath.DeviceRoot("").System().CurrentDatetime())
 	if err != nil {
 		return fmt.Errorf("currentDateTimeTask failed to initialize due to error: %v", err)
@@ -155,8 +155,20 @@ func toStatePath(configPath *gpb.Path) *gpb.Path {
 	return path
 }
 
+// convertToStatePath converts the given config path to a state path by replacing the
+// last instance (if any) of "config" in the path to "state".
+// Unlike toStatePath, it re-writes the element in-place.
+func convertToStatePath(path *gpb.Path) {
+	for i := len(path.Elem) - 1; i >= 0; i-- {
+		if path.Elem[i].Name == "config" {
+			path.Elem[i].Name = "state"
+			return
+		}
+	}
+}
+
 // systemBaseTask handles most of the logic for the base systems feature profile.
-func systemBaseTask(q gnmit.Queue, update gnmit.UpdateFn, target string, remove func()) error {
+func systemBaseTask(_ func() *config.Device, q gnmit.Queue, update gnmit.UpdateFn, target string, remove func()) error {
 	hostnamePath, _, err := ygot.ResolvePath(configpath.DeviceRoot("").System().Hostname())
 	if err != nil {
 		log.Errorf("systemBaseTask failed to initialize due to error: %v", err)
@@ -256,7 +268,7 @@ func systemBaseTask(q gnmit.Queue, update gnmit.UpdateFn, target string, remove 
 // syslogTask is a meaningless test task that monitors updates to the
 // current-datetime leaf and writes updates to the syslog message leaf whenever
 // the current-datetime leaf is updated.
-func syslogTask(q gnmit.Queue, update gnmit.UpdateFn, target string, remove func()) error {
+func syslogTask(_ func() *config.Device, q gnmit.Queue, update gnmit.UpdateFn, target string, remove func()) error {
 	p0, _, err := ygot.ResolvePath(telemetrypath.DeviceRoot("").System().Messages().Message().Msg())
 	if err != nil {
 		log.Errorf("syslogTask failed to initialize due to error: %v", err)
@@ -359,6 +371,15 @@ func tasks(target string) []gnmit.Task {
 			configpath.DeviceRoot("").System().DomainName(),
 			configpath.DeviceRoot("").System().MotdBanner(),
 			configpath.DeviceRoot("").System().LoginBanner(),
+		},
+		Prefix: &gpb.Path{
+			Origin: "openconfig",
+			Target: target,
+		},
+	}, {
+		Run: goBgpTask,
+		Paths: []ygot.PathStruct{
+			configpath.DeviceRoot("").NetworkInstance("default").Protocol(config.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").Bgp(),
 		},
 		Prefix: &gpb.Path{
 			Origin: "openconfig",
