@@ -74,7 +74,9 @@ func (s *Server) Subscribe(stream gnmipb.GNMI_SubscribeServer) error {
 	srErr := s.Errs[s.subscription]
 	s.subscription++
 	for _, sr := range srs {
-		stream.Send(sr)
+		if err := stream.Send(sr); err != nil {
+			return err
+		}
 	}
 	time.Sleep(5 * time.Second)
 	return srErr

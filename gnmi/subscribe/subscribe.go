@@ -212,7 +212,9 @@ func (s *Server) Subscribe(stream pb.GNMI_SubscribeServer) error {
 		go s.processPollingSubscription(&c)
 	case pb.SubscriptionList_STREAM:
 		if c.sr.GetSubscribe().GetUpdatesOnly() {
-			c.queue.Insert(syncMarker{})
+			if _, err := c.queue.Insert(syncMarker{}); err != nil {
+				return err
+			}
 		}
 		remove := addSubscription(s.m, c.sr.GetSubscribe(),
 			&matchClient{acl: c.acl, q: c.queue})
@@ -307,7 +309,7 @@ func (s *Server) processLocalSubscription(c *localSubscription) (err error) {
 			return
 		}
 		// Note that fullPath doesn't contain target name as the first element.
-		s.c.Query(c.target, fullPath, func(_ []string, l *ctree.Leaf, _ interface{}) error {
+		err = s.c.Query(c.target, fullPath, func(_ []string, l *ctree.Leaf, _ interface{}) error {
 			// Stop processing query results on error.
 			if err != nil {
 				return err
@@ -362,7 +364,7 @@ func (s *Server) sendSubscribeResponse(r *resp, c *streamClient) error {
 // subscribeSync is a response indicating that a Subscribe RPC has successfully
 // returned all matching nodes once for ONCE and POLLING queries and at least
 // once for STREAMING queries.
-var subscribeSync = &pb.SubscribeResponse{Response: &pb.SubscribeResponse_SyncResponse{true}}
+var subscribeSync = &pb.SubscribeResponse{Response: &pb.SubscribeResponse_SyncResponse{SyncResponse: true}}
 
 type syncMarker struct{}
 
@@ -430,7 +432,7 @@ func (s *Server) processSubscription(c *streamClient) {
 				return
 			}
 			// Note that fullPath doesn't contain target name as the first element.
-			s.c.Query(c.target, fullPath, func(_ []string, l *ctree.Leaf, _ interface{}) error {
+			err = s.c.Query(c.target, fullPath, func(_ []string, l *ctree.Leaf, _ interface{}) error {
 				// Stop processing query results on error.
 				if err != nil {
 					return err

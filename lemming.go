@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"net"
 
+	log "github.com/golang/glog"
 	fgnmi "github.com/openconfig/lemming/gnmi"
 	fgnoi "github.com/openconfig/lemming/gnoi"
 	fgnsi "github.com/openconfig/lemming/gnsi"
@@ -78,7 +79,11 @@ func (d *Device) startServer() error {
 		return fmt.Errorf("error creating TCP listener: %v", err)
 	}
 	d.addr = lis.Addr().String()
-	go d.s.Serve(lis)
+	go func() {
+		if err := d.s.Serve(lis); err != nil {
+			log.Errorf("Error while serving server: %v", err)
+		}
+	}()
 
 	d.stop = func() {
 		d.s.Stop()

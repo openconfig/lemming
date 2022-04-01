@@ -26,6 +26,7 @@ import (
 	"sync"
 	"time"
 
+	log "github.com/golang/glog"
 	"github.com/openconfig/gnmi/cache"
 	"github.com/openconfig/lemming/gnmi/subscribe"
 	"github.com/openconfig/ygot/ygot"
@@ -167,7 +168,11 @@ func New(ctx context.Context, addr string, hostname string, sendMeta bool, tasks
 		return nil, "", fmt.Errorf("failed to listen: %v", err)
 	}
 
-	go srv.Serve(lis)
+	go func() {
+		if err := srv.Serve(lis); err != nil {
+			log.Errorf("Error while serving gnmi target: %v", err)
+		}
+	}()
 	c.stopFn = srv.GracefulStop
 	return c, lis.Addr().String(), nil
 }
