@@ -29,7 +29,6 @@ linters:
     - govet
     - revive
     - staticcheck
-      #- typecheck
     - unconvert
     - unparam
     - unused
@@ -39,6 +38,8 @@ linters:
     - whitespace
     - wrapcheck
     - wsl
+  disable:
+    - typecheck
 linters-settings:
   errcheck:
     # report about assignment of errors to blank identifier: `num, _ := strconv.Atoi(numStr)`;
