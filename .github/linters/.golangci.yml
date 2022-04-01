@@ -7,6 +7,10 @@
 
 # configure golangci-lint
 # see https://github.com/golangci/golangci-lint/blob/master/.golangci.example.yml
+run:
+  skip-dirs:
+    - gnmi/internal/config
+    - gnmi/internal/telemetry
 issues:
   exclude-rules:
     - path: _test\.go
@@ -14,7 +18,6 @@ issues:
         - dupl
         - gosec
         - goconst
-    - path:  gnmi/internal/[config|telemetry]
 linters:
   enable:
     - gosec
