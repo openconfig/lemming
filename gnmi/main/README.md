@@ -5,12 +5,12 @@
 To provide a reference implementation of a device which provides the collection
 of customers APIs used for Openconfig. This includes:
 
-*   gNMI
-*   gNOI
-*   gRIBI
-*   P4RT
-*   BGP
-*   ISIS
+* gNMI
+* gNOI
+* gRIBI
+* P4RT
+* BGP
+* ISIS
 
 To clearly and authoritatively specify the expected behavior of Google’s needs
 for a device, and to aid in its test development and debugging. Anyone can use
