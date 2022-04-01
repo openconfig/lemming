@@ -1,4 +1,4 @@
-# Lemming the Openconfig reference device implementation.
+# Lemming the Openconfig reference device implementation
 
 ## Purpose
 
