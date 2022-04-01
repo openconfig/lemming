@@ -14,6 +14,7 @@ issues:
         - dupl
         - gosec
         - goconst
+    - path:  gnmi/internal/[config|telemetry]
 linters:
   enable:
     - gosec
