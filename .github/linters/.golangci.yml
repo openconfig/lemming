@@ -24,6 +24,7 @@ linters:
     - gocritic
     - govet
     - revive
+    - staticcheck
     - typecheck
     - unconvert
     - unparam
