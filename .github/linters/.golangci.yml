@@ -37,7 +37,6 @@ linters:
     - varcheck
     - wastedassign
     - whitespace
-    - wrapcheck
 linters-settings:
   errcheck:
     # report about assignment of errors to blank identifier: `num, _ := strconv.Atoi(numStr)`;
