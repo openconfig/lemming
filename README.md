@@ -23,7 +23,7 @@ vendor-operator relationship.
 ## Running the Fake gNMI Server
 
 ```bash
-go run main.go
+go run gnmi/main/main.go
 ```
 
 ```bash
