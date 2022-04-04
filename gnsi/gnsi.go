@@ -16,11 +16,11 @@ package gnsi
 
 import (
 	"google.golang.org/grpc"
-	//authzpb "github.com/openconfig/gnsi/authz"
-	//certpb "github.com/openconfig/gnsi/cert"
-	//consolepb "github.com/openconfig/gnsi/console"
-	//pathzpb "github.com/openconfig/gnsi/pathz"
-	//sshpb "github.com/openconfig/gnsi/ssh"
+	// authzpb "github.com/openconfig/gnsi/authz"
+	// certpb "github.com/openconfig/gnsi/cert"
+	// consolepb "github.com/openconfig/gnsi/console"
+	// pathzpb "github.com/openconfig/gnsi/pathz"
+	// sshpb "github.com/openconfig/gnsi/ssh"
 )
 
 /*

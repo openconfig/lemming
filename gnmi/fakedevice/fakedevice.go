@@ -311,7 +311,7 @@ func syslogTask(q gnmit.Queue, update gnmit.UpdateFn, target string, remove func
 					return
 				}
 			}
-			for _, _ = range no.Delete {
+			for range no.Delete {
 			}
 		}
 	}()

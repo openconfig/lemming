@@ -8,6 +8,7 @@
 # configure golangci-lint
 # see https://github.com/golangci/golangci-lint/blob/master/.golangci.example.yml
 run:
+  timeout: 5m
   skip-dirs:
     - gnmi/internal/config
     - gnmi/internal/telemetry
@@ -34,7 +35,6 @@ linters:
     - unparam
     - unused
     - varcheck
-    - varnamelen
     - wastedassign
     - whitespace
     - wrapcheck
@@ -49,7 +49,7 @@ linters-settings:
   maligned:
     # print struct with more effective memory layout or not, false by default
     suggest-new: true
-  rules:
-    - linters:
-        - typecheck
-      severity: info
+  gocritic:
+    disabled-checks:
+      - singleCaseSwitch
+      - appendAssign
