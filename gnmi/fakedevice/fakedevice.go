@@ -52,9 +52,9 @@ func init() {
 
 // bootTimeTask is a task that updates the boot-time leaf with the current
 // time. It does not spawn any long-running threads.
-func bootTimeTask(_ gnmit.Queue, update gnmit.UpdateFn, target string, remove func()) error {
+func bootTimeTask(_ gnmit.Queue, updateFn gnmit.UpdateFn, target string, remove func()) error {
 	defer remove()
-	p0, _, errs := ygot.ResolvePath(telemetrypath.DeviceRoot("").System().BootTime())
+	pathBootTime, _, errs := ygot.ResolvePath(telemetrypath.DeviceRoot("").System().BootTime())
 	if errs != nil {
 		return fmt.Errorf("bootTimeTask failed to initialize due to error: %v", errs)
 	}
@@ -63,15 +63,15 @@ func bootTimeTask(_ gnmit.Queue, update gnmit.UpdateFn, target string, remove fu
 	if err != nil {
 		return fmt.Errorf("bootTimeTask: %v", err)
 	}
-	log.V(2).Infof("bootTimeTask: %v, %v", p0, now)
-	if err := update(&gpb.Notification{
+	log.V(2).Infof("bootTimeTask: %v, %v", pathBootTime, now)
+	if err := updateFn(&gpb.Notification{
 		Timestamp: time.Now().UnixNano(),
 		Prefix: &gpb.Path{
 			Origin: "openconfig",
 			Target: target,
 		},
 		Update: []*gpb.Update{{
-			Path: p0,
+			Path: pathBootTime,
 			Val:  now,
 		}},
 	}); err != nil {
@@ -83,8 +83,8 @@ func bootTimeTask(_ gnmit.Queue, update gnmit.UpdateFn, target string, remove fu
 
 // currentDateTimeTask updates the current-datetime leaf with the current time,
 // and spawns a thread that wakes up every second to update the leaf.
-func currentDateTimeTask(_ gnmit.Queue, update gnmit.UpdateFn, target string, remove func()) error {
-	p0, _, err := ygot.ResolvePath(telemetrypath.DeviceRoot("").System().CurrentDatetime())
+func currentDateTimeTask(_ gnmit.Queue, updateFn gnmit.UpdateFn, target string, remove func()) error {
+	pathDatetime, _, err := ygot.ResolvePath(telemetrypath.DeviceRoot("").System().CurrentDatetime())
 	if err != nil {
 		return fmt.Errorf("currentDateTimeTask failed to initialize due to error: %v", err)
 	}
@@ -99,15 +99,15 @@ func currentDateTimeTask(_ gnmit.Queue, update gnmit.UpdateFn, target string, re
 		if err != nil {
 			return fmt.Errorf("currentDateTimeTask: %v", err)
 		}
-		log.V(2).Infof("currentDateTimeTask: %v, %v", p0, currentDatetime)
-		if err := update(&gpb.Notification{
+		log.V(2).Infof("currentDateTimeTask: %v, %v", pathDatetime, currentDatetime)
+		if err := updateFn(&gpb.Notification{
 			Timestamp: time.Now().UnixNano(),
 			Prefix: &gpb.Path{
 				Origin: "openconfig",
 				Target: target,
 			},
 			Update: []*gpb.Update{{
-				Path: p0,
+				Path: pathDatetime,
 				Val:  currentDatetime,
 			}},
 		}); err != nil {
@@ -156,7 +156,7 @@ func toStatePath(configPath *gpb.Path) *gpb.Path {
 }
 
 // systemBaseTask handles most of the logic for the base systems feature profile.
-func systemBaseTask(q gnmit.Queue, update gnmit.UpdateFn, target string, remove func()) error {
+func systemBaseTask(queue gnmit.Queue, updateFn gnmit.UpdateFn, target string, remove func()) error {
 	hostnamePath, _, err := ygot.ResolvePath(configpath.DeviceRoot("").System().Hostname())
 	if err != nil {
 		log.Errorf("systemBaseTask failed to initialize due to error: %v", err)
@@ -177,7 +177,7 @@ func systemBaseTask(q gnmit.Queue, update gnmit.UpdateFn, target string, remove 
 	go func() {
 		defer remove()
 		for {
-			item, _, err := q.Next(context.Background())
+			item, _, err := queue.Next(context.Background())
 			if coalesce.IsClosedQueue(err) {
 				return
 			}
@@ -187,16 +187,16 @@ func systemBaseTask(q gnmit.Queue, update gnmit.UpdateFn, target string, remove 
 				return
 			}
 			v := n.Value()
-			no, ok := v.(*gpb.Notification)
-			if !ok || no == nil {
+			noti, ok := v.(*gpb.Notification)
+			if !ok || noti == nil {
 				log.Errorf("systemBaseTask invalid cache node, expected non-nil *gpb.Notification type, got: %#v", v)
 				return
 			}
-			for _, u := range no.Update {
+			for _, update := range noti.Update {
 				switch {
-				case matchingPath(u.Path, hostnamePath), matchingPath(u.Path, domainNamePath), matchingPath(u.Path, motdBannerPath), matchingPath(u.Path, loginBannerPath):
-					statePath := toStatePath(u.Path)
-					if err := update(&gpb.Notification{
+				case matchingPath(update.Path, hostnamePath), matchingPath(update.Path, domainNamePath), matchingPath(update.Path, motdBannerPath), matchingPath(update.Path, loginBannerPath):
+					statePath := toStatePath(update.Path)
+					if err := updateFn(&gpb.Notification{
 						Timestamp: time.Now().UnixNano(),
 						Prefix: &gpb.Path{
 							Origin: "openconfig",
@@ -204,33 +204,33 @@ func systemBaseTask(q gnmit.Queue, update gnmit.UpdateFn, target string, remove 
 						},
 						Update: []*gpb.Update{{
 							Path: statePath,
-							Val:  u.Val,
+							Val:  update.Val,
 						}},
 					}); err != nil {
 						log.Errorf("systemBaseTask: %v", err)
 						return
 					}
 				default:
-					log.Errorf("systemBaseTask: update path received isn't matched by any handlers: %s", prototext.Format(u.Path))
+					log.Errorf("systemBaseTask: update path received isn't matched by any handlers: %s", prototext.Format(update.Path))
 				}
 			}
-			for _, u := range no.Delete {
+			for _, path := range noti.Delete {
 				// Since gNMI still sends delete paths using the deprecated Element field, we need to translate it into path-elems first.
 				// We also need to strip the first element for origin.
-				if len(u.Element) == 0 {
-					log.Errorf("Unexpected: Element field for delete path is empty: %s", prototext.Format(u))
+				if len(path.Element) == 0 {
+					log.Errorf("Unexpected: Element field for delete path is empty: %s", prototext.Format(path))
 					return
 				}
-				elems, err := pathTranslator.PathElem(u.Element[1:])
+				elems, err := pathTranslator.PathElem(path.Element[1:])
 				if err != nil {
-					log.Errorf("systemBaseTask: failed to translate delete path: %s", prototext.Format(u))
+					log.Errorf("systemBaseTask: failed to translate delete path: %s", prototext.Format(path))
 					return
 				}
-				u.Elem = elems
+				path.Elem = elems
 				switch {
-				case matchingPath(u, hostnamePath), matchingPath(u, domainNamePath), matchingPath(u, motdBannerPath), matchingPath(u, loginBannerPath):
-					statePath := toStatePath(u)
-					if err := update(&gpb.Notification{
+				case matchingPath(path, hostnamePath), matchingPath(path, domainNamePath), matchingPath(path, motdBannerPath), matchingPath(path, loginBannerPath):
+					statePath := toStatePath(path)
+					if err := updateFn(&gpb.Notification{
 						Timestamp: time.Now().UnixNano(),
 						Prefix: &gpb.Path{
 							Origin: "openconfig",
@@ -244,7 +244,7 @@ func systemBaseTask(q gnmit.Queue, update gnmit.UpdateFn, target string, remove 
 						return
 					}
 				default:
-					log.Errorf("systemBaseTask: delete path received isn't matched by any handlers: %s", prototext.Format(u))
+					log.Errorf("systemBaseTask: delete path received isn't matched by any handlers: %s", prototext.Format(path))
 				}
 			}
 		}
@@ -256,8 +256,8 @@ func systemBaseTask(q gnmit.Queue, update gnmit.UpdateFn, target string, remove 
 // syslogTask is a meaningless test task that monitors updates to the
 // current-datetime leaf and writes updates to the syslog message leaf whenever
 // the current-datetime leaf is updated.
-func syslogTask(q gnmit.Queue, update gnmit.UpdateFn, target string, remove func()) error {
-	p0, _, err := ygot.ResolvePath(telemetrypath.DeviceRoot("").System().Messages().Message().Msg())
+func syslogTask(queue gnmit.Queue, updateFn gnmit.UpdateFn, target string, remove func()) error {
+	pathSystemMsg, _, err := ygot.ResolvePath(telemetrypath.DeviceRoot("").System().Messages().Message().Msg())
 	if err != nil {
 		log.Errorf("syslogTask failed to initialize due to error: %v", err)
 	}
@@ -265,7 +265,7 @@ func syslogTask(q gnmit.Queue, update gnmit.UpdateFn, target string, remove func
 	go func() {
 		defer remove()
 		for {
-			item, _, err := q.Next(context.Background())
+			item, _, err := queue.Next(context.Background())
 			if coalesce.IsClosedQueue(err) {
 				return
 			}
@@ -275,20 +275,20 @@ func syslogTask(q gnmit.Queue, update gnmit.UpdateFn, target string, remove func
 				return
 			}
 			v := n.Value()
-			no, ok := v.(*gpb.Notification)
-			if !ok || no == nil {
+			noti, ok := v.(*gpb.Notification)
+			if !ok || noti == nil {
 				log.Errorf("syslogTask invalid cache node, expected non-nil *gpb.Notification type, got: %#v", v)
 				return
 			}
-			for _, u := range no.Update {
-				sv, err := value.ToScalar(u.Val)
+			for _, u := range noti.Update {
+				scalarValue, err := value.ToScalar(u.Val)
 				if err != nil {
 					log.Errorf("syslogTask: %v", err)
 					return
 				}
-				strv, ok := sv.(string)
+				strv, ok := scalarValue.(string)
 				if !ok {
-					log.Errorf("syslogTask: cannot convert to string, got (%T, %v)", sv, sv)
+					log.Errorf("syslogTask: cannot convert to string, got (%T, %v)", scalarValue, scalarValue)
 					return
 				}
 				syslog, err := value.FromScalar("current date-time updated to " + strv)
@@ -296,14 +296,14 @@ func syslogTask(q gnmit.Queue, update gnmit.UpdateFn, target string, remove func
 					log.Errorf("syslogTask: %v", err)
 					return
 				}
-				if err := update(&gpb.Notification{
+				if err := updateFn(&gpb.Notification{
 					Timestamp: time.Now().UnixNano(),
 					Prefix: &gpb.Path{
 						Origin: "openconfig",
 						Target: target,
 					},
 					Update: []*gpb.Update{{
-						Path: p0,
+						Path: pathSystemMsg,
 						Val:  syslog,
 					}},
 				}); err != nil {
@@ -311,7 +311,7 @@ func syslogTask(q gnmit.Queue, update gnmit.UpdateFn, target string, remove func
 					return
 				}
 			}
-			for range no.Delete {
+			for range noti.Delete {
 			}
 		}
 	}()
@@ -375,7 +375,7 @@ func tasks(target string) []gnmit.Task {
 func NewTarget(ctx context.Context, addr, targetName string) (*gnmit.Collector, string, error) {
 	configSchema, err := config.Schema()
 	if err != nil {
-		return nil, "", err
+		return nil, "", fmt.Errorf("cannot create ygot schema object for gNMI target: %v", err)
 	}
 	c, addr, err := gnmit.NewSettable(ctx, addr, targetName, false, configSchema, tasks(targetName))
 	if err != nil {
