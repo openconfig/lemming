@@ -19,6 +19,7 @@ issues:
         - gosec
         - goconst
 linters:
+  disable-all: true
   enable:
     - gosec
     - unconvert
@@ -37,9 +38,6 @@ linters:
     - wastedassign
     - whitespace
     - wrapcheck
-    - wsl
-  disable:
-    - typecheck
 linters-settings:
   errcheck:
     # report about assignment of errors to blank identifier: `num, _ := strconv.Atoi(numStr)`;
@@ -51,3 +49,7 @@ linters-settings:
   maligned:
     # print struct with more effective memory layout or not, false by default
     suggest-new: true
+  rules:
+    - linters:
+        - typecheck
+      severity: info
