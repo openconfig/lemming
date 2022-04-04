@@ -83,7 +83,6 @@ func TestFakeGNMI(t *testing.T) {
 	if !proto.Equal(resp, want) {
 		t.Fatalf("gnmi.Get failed got %v, want %v", resp, want)
 	}
-
 }
 
 func TestFakeGNOI(t *testing.T) {

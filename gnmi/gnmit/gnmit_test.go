@@ -119,7 +119,6 @@ func toUpd(r *gpb.SubscribeResponse) []*upd {
 	case *gpb.SubscribeResponse_Update:
 		ret := []*upd{}
 		for _, u := range v.Update.GetUpdate() {
-
 			switch mustPathToString(u.Path) {
 			case "/meta/connected":
 				ret = append(ret, &upd{
