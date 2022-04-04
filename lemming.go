@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"net"
 
-	log "github.com/golang/glog"
 	fgnmi "github.com/openconfig/lemming/gnmi"
 	fgnoi "github.com/openconfig/lemming/gnoi"
 	fgnsi "github.com/openconfig/lemming/gnsi"
@@ -33,6 +32,7 @@ import (
 type Device struct {
 	s           *grpc.Server
 	addr        string
+	lis         net.Listener
 	stop        func()
 	gnmiServer  *fgnmi.Server
 	gnoiServer  *fgnoi.Server
@@ -42,10 +42,11 @@ type Device struct {
 }
 
 // New returns a new initialized device.
-func New(addr string, opts ...grpc.ServerOption) (*Device, error) {
+func New(lis net.Listener, opts ...grpc.ServerOption) (*Device, error) {
 	s := grpc.NewServer(opts...)
 	d := &Device{
-		addr:        addr,
+		addr:        lis.Addr().String(),
+		lis:         lis,
 		s:           s,
 		gnmiServer:  fgnmi.New(s),
 		gnoiServer:  fgnoi.New(s),
@@ -73,21 +74,17 @@ func (d *Device) Stop() {
 	d.stop()
 }
 
+// GNMI returns the gnmi server implementation.
+func (d *Device) GNMI() *fgnmi.Server {
+	return d.gnmiServer
+}
+
 func (d *Device) startServer() error {
-	lis, err := net.Listen("tcp", d.addr)
-	if err != nil {
-		return fmt.Errorf("error creating TCP listener: %v", err)
-	}
-	d.addr = lis.Addr().String()
-	go func() {
-		if err := d.s.Serve(lis); err != nil {
-			log.Errorf("Error while serving server: %v", err)
-		}
-	}()
+	go d.s.Serve(d.lis)
 
 	d.stop = func() {
 		d.s.Stop()
-		lis.Close()
+		d.lis.Close()
 	}
 	return nil
 }

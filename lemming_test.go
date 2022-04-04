@@ -16,6 +16,7 @@ package lemming
 
 import (
 	"context"
+	"net"
 	"testing"
 
 	"google.golang.org/grpc"
@@ -47,7 +48,11 @@ import (
 )
 
 func TestFakeGNMI(t *testing.T) {
-	f, err := New("localhost:0")
+	lis, err := net.Listen("tcp", ":0")
+	if err != nil {
+		t.Fatalf("failed to start listener: %v", err)
+	}
+	f, err := New(lis)
 	if err != nil {
 		t.Fatalf("failed to start fake: %v", err)
 	}
@@ -86,10 +91,11 @@ func TestFakeGNMI(t *testing.T) {
 }
 
 func TestFakeGNOI(t *testing.T) {
-	f, err := New("localhost:0")
+	lis, err := net.Listen("tcp", ":0")
 	if err != nil {
-		t.Fatalf("failed to start fake: %v", err)
+		t.Fatalf("failed to start listener: %v", err)
 	}
+	f, err := New(lis)
 	defer f.stop()
 	conn, err := grpc.Dial(f.addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
@@ -190,7 +196,11 @@ func TestFakeGNOI(t *testing.T) {
 func TestGNSI(t *testing.T) {
 	desc := "gnsi.Authz.Rotate"
 	t.Run(desc, func(t *testing.T) {
-		f, err := New()
+		lis, err := net.Listen("tcp", ":0")
+		if err != nil {
+			t.Fatalf("failed to start listener: %v", err)
+		}
+		f, err := New(lis)
 		if err != nil {
 			t.Fatalf("failed to start fake: %v", err)
 		}
@@ -212,7 +222,11 @@ func TestGNSI(t *testing.T) {
 
 	desc = "gnsi.Cert.Install"
 	t.Run(desc, func(t *testing.T) {
-		f, err := New()
+		lis, err := net.Listen("tcp", ":0")
+		if err != nil {
+			t.Fatalf("failed to start listener: %v", err)
+		}
+		f, err := New(lis)
 		if err != nil {
 			t.Fatalf("failed to start fake: %v", err)
 		}
@@ -234,7 +248,11 @@ func TestGNSI(t *testing.T) {
 
 	desc = "gnsi.Console.MutateAccountPassword"
 	t.Run(desc, func(t *testing.T) {
-		f, err := New()
+		lis, err := net.Listen("tcp", ":0")
+		if err != nil {
+			t.Fatalf("failed to start listener: %v", err)
+		}
+		f, err := New(lis)
 		if err != nil {
 			t.Fatalf("failed to start fake: %v", err)
 		}
@@ -256,7 +274,11 @@ func TestGNSI(t *testing.T) {
 
 	desc = "gnsi.Pathz.Install"
 	t.Run(desc, func(t *testing.T) {
-		f, err := New()
+		lis, err := net.Listen("tcp", ":0")
+		if err != nil {
+			t.Fatalf("failed to start listener: %v", err)
+		}
+		f, err := New(lis)
 		if err != nil {
 			t.Fatalf("failed to start fake: %v", err)
 		}
@@ -278,7 +300,11 @@ func TestGNSI(t *testing.T) {
 
 	desc = "gnsi.SSH.MutateAccountCredentials"
 	t.Run(desc, func(t *testing.T) {
-		f, err := New()
+		lis, err := net.Listen("tcp", ":0")
+		if err != nil {
+			t.Fatalf("failed to start listener: %v", err)
+		}
+		f, err := New(lis)
 		if err != nil {
 			t.Fatalf("failed to start fake: %v", err)
 		}

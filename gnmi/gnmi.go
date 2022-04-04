@@ -68,15 +68,16 @@ func (s *Server) Set(ctx context.Context, req *gnmipb.SetRequest) (*gnmipb.SetRe
 func (s *Server) Subscribe(stream gnmipb.GNMI_SubscribeServer) error {
 	_, err := stream.Recv()
 	if err != nil {
-		return grpc.Errorf(codes.Internal, "Subscribe Recv failed: %v", err)
+		return err
 	}
 	srs := s.Responses[s.subscription]
+	if len(s.Errs) != s.subscription+1 {
+		s.Errs = append(s.Errs, nil)
+	}
 	srErr := s.Errs[s.subscription]
 	s.subscription++
 	for _, sr := range srs {
-		if err := stream.Send(sr); err != nil {
-			return grpc.Errorf(codes.Internal, "Subscribe Send failed: %v", err)
-		}
+		stream.Send(sr)
 	}
 	time.Sleep(5 * time.Second)
 	return srErr
