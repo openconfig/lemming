@@ -1,12 +1,26 @@
+// Copyright 2022 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package gnsi
 
 import (
 	"google.golang.org/grpc"
-	//authzpb "github.com/openconfig/gnsi/authz"
-	//certpb "github.com/openconfig/gnsi/cert"
-	//consolepb "github.com/openconfig/gnsi/console"
-	//pathzpb "github.com/openconfig/gnsi/pathz"
-	//sshpb "github.com/openconfig/gnsi/ssh"
+	// authzpb "github.com/openconfig/gnsi/authz"
+	// certpb "github.com/openconfig/gnsi/cert"
+	// consolepb "github.com/openconfig/gnsi/console"
+	// pathzpb "github.com/openconfig/gnsi/pathz"
+	// sshpb "github.com/openconfig/gnsi/ssh"
 )
 
 /*

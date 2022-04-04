@@ -12,26 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package p4rt
+package main
 
 import (
-	"google.golang.org/grpc"
+	"context"
+	"flag"
+	"fmt"
 
-	p4rtpb "github.com/p4lang/p4runtime/go/p4/v1"
+	log "github.com/golang/glog"
+	"github.com/openconfig/lemming/gnmi/fakedevice"
 )
 
-// Server is a fake p4rt implementation.
-type Server struct {
-	*p4rtpb.UnimplementedP4RuntimeServer
-	s *grpc.Server
+var (
+	port   = flag.Int("port", 1234, "localhost port to listen to.")
+	target = flag.String("target", "fakedut", "name of the fake target")
+)
+
+func init() {
+	flag.Parse()
 }
 
-// New returns a new fake p4rt server.
-func New(s *grpc.Server) *Server {
-	srv := &Server{
-		s: s,
+func main() {
+	_, _, err := fakedevice.NewTarget(context.Background(), fmt.Sprintf(":%d", *port), *target)
+	if err != nil {
+		log.Fatal(err)
 	}
-	p4rtpb.RegisterP4RuntimeServer(s, srv)
 
-	return srv
+	select {}
 }

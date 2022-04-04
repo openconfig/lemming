@@ -7,6 +7,11 @@
 
 # configure golangci-lint
 # see https://github.com/golangci/golangci-lint/blob/master/.golangci.example.yml
+run:
+  timeout: 5m
+  skip-dirs:
+    - gnmi/internal/config
+    - gnmi/internal/telemetry
 issues:
   exclude-rules:
     - path: _test\.go
@@ -15,6 +20,7 @@ issues:
         - gosec
         - goconst
 linters:
+  disable-all: true
   enable:
     - gosec
     - unconvert
@@ -25,16 +31,12 @@ linters:
     - govet
     - revive
     - staticcheck
-    - typecheck
     - unconvert
     - unparam
     - unused
     - varcheck
-    - varnamelen
     - wastedassign
     - whitespace
-    - wrapcheck
-    - wsl
 linters-settings:
   errcheck:
     # report about assignment of errors to blank identifier: `num, _ := strconv.Atoi(numStr)`;
@@ -42,7 +44,11 @@ linters-settings:
     check-blank: true
   govet:
     # report about shadowed variables
-    check-shadowing: true
+    check-shadowing: false
   maligned:
     # print struct with more effective memory layout or not, false by default
     suggest-new: true
+  gocritic:
+    disabled-checks:
+      - singleCaseSwitch
+      - appendAssign
