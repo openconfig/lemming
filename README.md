@@ -12,13 +12,13 @@ of customers APIs used for Openconfig. This includes:
 * BGP
 * ISIS
 
-To clearly and authoritatively specify the expected behavior of Google’s needs
-for a device, and to aid in its test development and debugging. Anyone can use
-this reference implementation to quickly write device tests independent of the
-availability of a real and compliant implementation. The reference can also be
-used to augment the consumer contract when a fake-derived test suite is
-delivered to network device vendors, serving as a tool for consensus in the
-vendor-operator relationship.
+to clearly and authoritatively specify the expected behavior of an
+OpenConfig-compliant device, and to aid in its test development and
+debugging. Anyone can use this reference implementation to quickly write device
+tests independent of the availability of a real and compliant implementation.
+The reference can also be used to augment the consumer contract when a
+fake-derived test suite is delivered to network device vendors, serving as a
+tool for consensus in the device-implementor <-> device-consumer relationship.
 
 ## Running the Fake gNMI Server
 
