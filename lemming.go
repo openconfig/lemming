@@ -17,6 +17,7 @@ package lemming
 
 import (
 	"net"
+        "log"
 
 	fgnmi "github.com/openconfig/lemming/gnmi"
 	fgnoi "github.com/openconfig/lemming/gnoi"
