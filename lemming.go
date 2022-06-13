@@ -17,7 +17,6 @@ package lemming
 
 import (
 	"net"
-        "log"
 
 	fgnmi "github.com/openconfig/lemming/gnmi"
 	fgnoi "github.com/openconfig/lemming/gnoi"
@@ -26,6 +25,7 @@ import (
 	fp4rt "github.com/openconfig/lemming/p4rt"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
+	"k8s.io/klog"
 )
 
 // Device is the reference device implementation.
@@ -82,7 +82,7 @@ func (d *Device) startServer() {
 	d.stop = func() {
 		d.s.Stop()
 		if err := d.lis.Close(); err != nil {
-			log.Info(err)
+			klog.Info(err)
 		}
 	}
 }
