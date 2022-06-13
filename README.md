@@ -32,3 +32,19 @@ gnmic -a localhost:1234 --insecure subscribe --mode stream --path openconfig:/sy
 
 For running on KNE (also experimental), see
 [here](https://github.com/wenovus/ondatra/tree/fake-prototype-0/fakebind)
+
+## Cloning this repo
+
+In order to get the vendored versions of OpenConfig dependencies, this repo should be
+cloned using either:
+
+```bash
+git clone https://github.com/openconfig/lemming --recursive
+```
+
+or
+
+```bash
+git clone https://github.com/openconfig/lemming
+git submodule update --init --recurse
+```
