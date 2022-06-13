@@ -19,12 +19,13 @@
 set -e
 
 go install github.com/openconfig/ygot/generator@latest
-git clone https://github.com/openconfig/public.git
 
 EXCLUDE_MODULES=ietf-interfaces,openconfig-bfd,openconfig-messages
 
+THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
 COMMON_ARGS=(
-  -path="public/release/models,public/third_party/ietf"
+  -path="${THIS_DIR}/../../third_party/openconfig/public/release/models,${THIS_DIR}/../../third_party/openconfig/public/third_party/ietf"
   -compress_paths
   -exclude_modules="${EXCLUDE_MODULES}"
   -generate_fakeroot
@@ -91,6 +92,11 @@ YANG_FILES=(
   public/third_party/ietf/ietf-yang-types.yang
 )
 
+ABS_YANG_FILES=()
+for i in ${YANG_FILES[@]}; do
+  ABS_YANG_FILES+=("${THIS_DIR}/../../third_party/openconfig/$i")
+done
+
 # Generate Config Structs and Path API
 mkdir -p config/device
 generator \
@@ -101,7 +107,7 @@ generator \
   -package_name=config \
   -path_structs_split_files_count=10 \
   "${COMMON_ARGS[@]}" \
-  "${YANG_FILES[@]}"
+  "${ABS_YANG_FILES[@]}"
 
 generator \
   -generate_structs=false \
@@ -114,10 +120,10 @@ generator \
   -split_pathstructs_by_module=true \
   -path_structs_output_file=config/device/device.go \
   -base_import_path=github.com/openconfig/lemming/gnmi/internal/config \
-  -trim_path_package_oc_prefix=true \
+  -trim_path_package_prefix="openconfig" \
   -path_struct_package_suffix="" \
   "${COMMON_ARGS[@]}" \
-  "${YANG_FILES[@]}"
+  "${ABS_YANG_FILES[@]}"
 
 # Generate State Structs and Path API
 mkdir -p telemetry/device
@@ -130,7 +136,7 @@ generator \
   -package_name=telemetry \
   -path_structs_split_files_count=10 \
   "${COMMON_ARGS[@]}" \
-  "${YANG_FILES[@]}"
+  "${ABS_YANG_FILES[@]}"
 
 generator \
   -generate_structs=false \
@@ -142,13 +148,12 @@ generator \
   -path_structs_output_file=telemetry/device/device.go \
   -split_pathstructs_by_module=true \
   -schema_struct_path=github.com/openconfig/lemming/gnmi/internal/telemetry \
-  -trim_path_package_oc_prefix=true \
+  -trim_path_package_prefix="openconfig" \
   -path_struct_package_suffix="" \
   -base_import_path=github.com/openconfig/lemming/gnmi/internal/telemetry \
   -path_structs_split_files_count=10 \
   "${COMMON_ARGS[@]}" \
-  "${YANG_FILES[@]}"
+  "${ABS_YANG_FILES[@]}"
 
 find config telemetry -name "*.go" -exec goimports -w {} +
 find config telemetry -name "*.go" -exec gofmt -w -s {} +
-rm -rf public
