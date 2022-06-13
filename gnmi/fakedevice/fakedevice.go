@@ -89,10 +89,7 @@ func currentDateTimeTask(_ gnmit.Queue, updateFn gnmit.UpdateFn, target string, 
 		return fmt.Errorf("currentDateTimeTask failed to initialize due to error: %v", err)
 	}
 
-	tick := time.Tick(time.Second)
-	if tick == nil {
-		return fmt.Errorf("currentDateTimeTask: tick is nil")
-	}
+	tick := time.NewTicker(time.Second)
 
 	periodic := func() error {
 		currentDatetime, err := value.FromScalar(time.Now().Format(time.RFC3339))
@@ -122,7 +119,7 @@ func currentDateTimeTask(_ gnmit.Queue, updateFn gnmit.UpdateFn, target string, 
 
 	go func() {
 		defer remove()
-		for range tick {
+		for range tick.C {
 			if err := periodic(); err != nil {
 				log.Errorf("currentDateTimeTask error: %v", err)
 				return
@@ -217,11 +214,11 @@ func systemBaseTask(queue gnmit.Queue, updateFn gnmit.UpdateFn, target string, r
 			for _, path := range noti.Delete {
 				// Since gNMI still sends delete paths using the deprecated Element field, we need to translate it into path-elems first.
 				// We also need to strip the first element for origin.
-				if len(path.Element) == 0 {
+				if len(path.Element) == 0 { // nolint:staticcheck
 					log.Errorf("Unexpected: Element field for delete path is empty: %s", prototext.Format(path))
 					return
 				}
-				elems, err := pathTranslator.PathElem(path.Element[1:])
+				elems, err := pathTranslator.PathElem(path.Element[1:]) // nolint:staticcheck
 				if err != nil {
 					log.Errorf("systemBaseTask: failed to translate delete path: %s", prototext.Format(path))
 					return

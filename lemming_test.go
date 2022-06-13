@@ -81,7 +81,6 @@ func TestFakeGNMI(t *testing.T) {
 	if !proto.Equal(resp, want) {
 		t.Fatalf("gnmi.Get failed got %v, want %v", resp, want)
 	}
-
 }
 
 func TestFakeGNOI(t *testing.T) {
@@ -172,13 +171,13 @@ func TestFakeGNOI(t *testing.T) {
 	}
 
 	cWaveLengthRouter := wrpb.NewWavelengthRouterClient(conn)
-	scWaveLengthRouter, err := cWaveLengthRouter.AdjustPSD(context.Background(), &wrpb.AdjustPSDRequest{})
+	scWaveLengthRouter, err := cWaveLengthRouter.AdjustSpectrum(context.Background(), &wrpb.AdjustSpectrumRequest{})
 	if err != nil {
-		t.Errorf("gnoi.WaveLengthRouter.AdjustPSD failed to get stream client: %v", err)
+		t.Errorf("gnoi.WaveLengthRouter.AdjustSpectrum failed to get stream client: %v", err)
 	}
 	_, err = scWaveLengthRouter.Recv()
 	if err == nil {
-		t.Errorf("gnoi.WaveLengthRouter.AdjustPSD failed to return error")
+		t.Errorf("gnoi.WaveLengthRouter.AdjustSpectrum failed to return error")
 	}
 }
 
