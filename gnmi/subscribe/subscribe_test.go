@@ -28,7 +28,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/openconfig/gnmi/cache"
@@ -40,6 +39,7 @@ import (
 	"github.com/openconfig/gnmi/value"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/peer"
+	"google.golang.org/protobuf/proto"
 
 	pb "github.com/openconfig/gnmi/proto/gnmi"
 )
