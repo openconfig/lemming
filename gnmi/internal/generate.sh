@@ -93,7 +93,7 @@ YANG_FILES=(
 )
 
 ABS_YANG_FILES=()
-for i in ${YANG_FILES[@]}; do
+for i in "${YANG_FILES[@]}"; do
   ABS_YANG_FILES+=("${THIS_DIR}/../../third_party/openconfig/$i")
 done
 

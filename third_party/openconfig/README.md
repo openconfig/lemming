@@ -6,9 +6,9 @@ evolve at a pace that need not match HEAD of `openconfig/public`.
 To update the submodule (and hence model version):
 
 ```bash
-$ cd third_party/openconfig/public
-$ git pull
-$ git checkout <SHA or tag>`
+cd third_party/openconfig/public
+git pull
+git checkout <SHA or tag>`
 ```
 
 
