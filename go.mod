@@ -4,9 +4,8 @@ go 1.18
 
 require (
 	github.com/golang/glog v1.0.0
-	github.com/golang/protobuf v1.5.2
-	github.com/google/go-cmp v0.5.6
-	github.com/openconfig/gnmi v0.0.0-20220131173555-39aa74195f0d
+	github.com/google/go-cmp v0.5.7
+	github.com/openconfig/gnmi v0.0.0-20220615002139-37df7c66011f
 	github.com/openconfig/gnoi v0.0.0-20220131192435-7dd3a95a4f1e
 	github.com/openconfig/goyang v1.0.0
 	github.com/openconfig/gribi v0.1.1-0.20220126144445-1634932f9fd8
@@ -14,11 +13,13 @@ require (
 	github.com/p4lang/p4runtime v1.3.0
 	google.golang.org/grpc v1.42.0
 	google.golang.org/protobuf v1.27.1
-	k8s.io/klog v1.0.0
+	k8s.io/klog/v2 v2.60.1
 )
 
 require (
 	github.com/cenkalti/backoff/v4 v4.1.0 // indirect
+	github.com/go-logr/logr v1.2.0 // indirect
+	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/openconfig/grpctunnel v0.0.0-20210610163803-fde4a9dc048d // indirect
 	golang.org/x/net v0.0.0-20211205041911-012df41ee64c // indirect

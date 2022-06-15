@@ -25,7 +25,7 @@ import (
 	fp4rt "github.com/openconfig/lemming/p4rt"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 // Device is the reference device implementation.
@@ -38,7 +38,8 @@ type Device struct {
 	gribiServer *fgribi.Server
 	gnsiServer  *fgnsi.Server
 	p4rtServer  *fp4rt.Server
-	err         error
+	// Stores the error if the server fails will be returned on call to stop.
+	err error
 }
 
 // New returns a new initialized device.
@@ -64,6 +65,7 @@ func (d *Device) Addr() string {
 }
 
 // Stop stops the listening services.
+// If error is not nil, it will contain why the server failed.
 func (d *Device) Stop() error {
 	d.stop()
 	return d.err
