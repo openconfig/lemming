@@ -235,15 +235,23 @@ func (c *Collector) handleUpdate(resp *gpb.SubscribeResponse) error {
 // Collector is a basic gNMI target that supports only the Subscribe
 // RPC, and acts as a cache for exactly one target.
 type Collector struct {
-	cache  *cache.Cache
+	cache *cache.Cache
+
 	smu    sync.Mutex
 	schema *ytypes.Schema
+
 	// name is the hostname of the client.
 	name string
 	// inCh is a channel use to write new SubscribeResponses to the client.
 	inCh chan *gpb.SubscribeResponse
 	// stopFn is the function used to stop the server.
 	stopFn func()
+}
+
+func (c *Collector) Schema() *ytypes.Schema {
+	c.smu.Lock()
+	defer c.smu.Unlock()
+	return c.schema
 }
 
 // TargetUpdate provides an input gNMI SubscribeResponse to update the
@@ -299,7 +307,7 @@ func (s *GNMIServer) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResp
 		return s.UnimplementedGNMIServer.Set(ctx, req)
 	}
 	// Create a copy so that we can rollback the transaction when validation fails.
-	dirtyRootG, err := ygot.DeepCopy(s.c.schema.Root)
+	dirtyRootG, err := ygot.DeepCopy(s.c.Schema().Root)
 	if err != nil {
 		return nil, fmt.Errorf("gnmit: failed to ygot.DeepCopy the cached root object: %v", err)
 	}
@@ -308,7 +316,7 @@ func (s *GNMIServer) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResp
 		return nil, fmt.Errorf("gnmit: cannot convert root object to ValidatedGoStruct")
 	}
 	// Operate at the prefix level.
-	nodeI, _, err := ytypes.GetOrCreateNode(s.c.schema.RootSchema(), dirtyRoot, req.Prefix)
+	nodeI, _, err := ytypes.GetOrCreateNode(s.c.Schema().RootSchema(), dirtyRoot, req.Prefix)
 	if err != nil {
 		return nil, fmt.Errorf("gnmit: failed to GetOrCreate the prefix node: %v", err)
 	}
@@ -323,12 +331,12 @@ func (s *GNMIServer) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResp
 
 	// Process deletes, then replace, then updates.
 	for _, path := range req.Delete {
-		if err := ytypes.DeleteNode(s.c.schema.SchemaTree[nodeName], node, path); err != nil {
+		if err := ytypes.DeleteNode(s.c.Schema().SchemaTree[nodeName], node, path); err != nil {
 			return nil, fmt.Errorf("gnmit: DeleteNode error: %v", err)
 		}
 	}
 	for _, update := range req.Replace {
-		if err := ytypes.DeleteNode(s.c.schema.SchemaTree[nodeName], node, update.Path); err != nil {
+		if err := ytypes.DeleteNode(s.c.Schema().SchemaTree[nodeName], node, update.Path); err != nil {
 			return nil, fmt.Errorf("gnmit: DeleteNode error: %v", err)
 		}
 		if err := setNode(s.c.schema, node, update); err != nil {
@@ -345,7 +353,7 @@ func (s *GNMIServer) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResp
 		return nil, fmt.Errorf("gnmit: invalid SetRequest: %v", err)
 	}
 
-	n, err := ygot.Diff(s.c.schema.Root, dirtyRoot)
+	n, err := ygot.Diff(s.c.Schema().Root, dirtyRoot)
 	if err != nil {
 		return nil, fmt.Errorf("gnmit: error while creating update notification for Set: %v", err)
 	}
@@ -361,7 +369,7 @@ func (s *GNMIServer) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResp
 		return nil, err
 	}
 	// TODO(wenbli): Should handle updates one at a time to avoid partial updates being reflected in the cache when an error occurs. AKA we should support transactional semantics.
-	s.c.schema.Root = dirtyRoot
+	s.c.Schema().Root = dirtyRoot
 	// TODO(wenbli): Currently the SetResponse is not filled.
 	return &gpb.SetResponse{}, nil
 }

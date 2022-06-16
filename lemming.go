@@ -16,7 +16,6 @@
 package lemming
 
 import (
-	"fmt"
 	"net"
 
 	fgnmi "github.com/openconfig/lemming/gnmi"
@@ -26,12 +25,12 @@ import (
 	fp4rt "github.com/openconfig/lemming/p4rt"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
+	"k8s.io/klog/v2"
 )
 
 // Device is the reference device implementation.
 type Device struct {
 	s           *grpc.Server
-	addr        string
 	lis         net.Listener
 	stop        func()
 	gnmiServer  *fgnmi.Server
@@ -39,13 +38,14 @@ type Device struct {
 	gribiServer *fgribi.Server
 	gnsiServer  *fgnsi.Server
 	p4rtServer  *fp4rt.Server
+	// Stores the error if the server fails will be returned on call to stop.
+	err error
 }
 
 // New returns a new initialized device.
 func New(lis net.Listener, opts ...grpc.ServerOption) (*Device, error) {
 	s := grpc.NewServer(opts...)
 	d := &Device{
-		addr:        lis.Addr().String(),
 		lis:         lis,
 		s:           s,
 		gnmiServer:  fgnmi.New(s),
@@ -55,23 +55,20 @@ func New(lis net.Listener, opts ...grpc.ServerOption) (*Device, error) {
 		p4rtServer:  fp4rt.New(s),
 	}
 	reflection.Register(s)
-	if err := d.startServer(); err != nil {
-		return nil, fmt.Errorf("failed to start device: %v", err)
-	}
+	d.startServer()
 	return d, nil
 }
 
 // Addr returns the currently configured ip:port for the listening services.
 func (d *Device) Addr() string {
-	return d.addr
+	return d.lis.Addr().String()
 }
 
 // Stop stops the listening services.
-func (d *Device) Stop() {
-	if d.stop == nil {
-		return
-	}
+// If error is not nil, it will contain why the server failed.
+func (d *Device) Stop() error {
 	d.stop()
+	return d.err
 }
 
 // GNMI returns the gnmi server implementation.
@@ -79,12 +76,15 @@ func (d *Device) GNMI() *fgnmi.Server {
 	return d.gnmiServer
 }
 
-func (d *Device) startServer() error {
-	go d.s.Serve(d.lis)
+func (d *Device) startServer() {
+	go func() {
+		d.err = d.s.Serve(d.lis)
+	}()
 
 	d.stop = func() {
 		d.s.Stop()
-		d.lis.Close()
+		if err := d.lis.Close(); err != nil {
+			klog.Info(err)
+		}
 	}
-	return nil
 }
