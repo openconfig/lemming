@@ -26,7 +26,6 @@ import (
 	"time"
 
 	log "github.com/golang/glog"
-	"github.com/golang/protobuf/proto"
 	"github.com/openconfig/gnmi/cache"
 	"github.com/openconfig/gnmi/coalesce"
 	"github.com/openconfig/gnmi/ctree"
@@ -35,6 +34,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 
 	pb "github.com/openconfig/gnmi/proto/gnmi"
 )
@@ -376,7 +376,7 @@ type matchClient struct {
 }
 
 // Update implements the match.Client Update interface for coalesce.Queue.
-func (c matchClient) Update(n interface{}) {
+func (c *matchClient) Update(n interface{}) {
 	// Stop processing updates on error.
 	if c.err != nil {
 		return
