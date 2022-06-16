@@ -40,4 +40,5 @@ jobs:
           IGNORE_GENERATED_FILES: true
           DEFAULT_BRANCH: main
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FILTER_REGEX_EXCLUDE: third\_party\/.*
 
