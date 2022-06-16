@@ -12,6 +12,7 @@ run:
   skip-dirs:
     - gnmi/internal/config
     - gnmi/internal/telemetry
+    - third_party
 issues:
   exclude-rules:
     - path: _test\.go
