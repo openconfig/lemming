@@ -19,6 +19,7 @@ import (
 	"net"
 	"testing"
 
+	"github.com/h-fam/errdiff"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/proto"
@@ -80,6 +81,44 @@ func TestFakeGNMI(t *testing.T) {
 	}
 	if !proto.Equal(resp, want) {
 		t.Fatalf("gnmi.Get failed got %v, want %v", resp, want)
+	}
+}
+
+func TestStop(t *testing.T) {
+	f := startLemming(t)
+	conn, err := grpc.Dial(f.Addr(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		t.Fatalf("failed to Dial fake: %v", err)
+	}
+	want := &gnmipb.GetResponse{
+		Notification: []*gnmipb.Notification{{
+			Update: []*gnmipb.Update{{
+				Path: &gnmipb.Path{
+					Elem: []*gnmipb.PathElem{
+						{Name: "intefaces"},
+						{Name: "inteface", Key: map[string]string{"name": "eth0"}},
+						{Name: "mtu"},
+					},
+				},
+				Val: &gnmipb.TypedValue{
+					Value: &gnmipb.TypedValue_IntVal{
+						IntVal: 1500,
+					},
+				},
+			}},
+		}},
+	}
+	f.gnmiServer.GetResponses = []interface{}{want}
+	cGNMI := gnmipb.NewGNMIClient(conn)
+	// Close the listener so the get must fail.
+	f.lis.Close()
+	_, err = cGNMI.Get(context.Background(), &gnmipb.GetRequest{})
+	if err == nil {
+		t.Fatalf("gnmi.Get unexpected success")
+	}
+	err = f.Stop()
+	if s := errdiff.Check(err, "use of closed network connection"); s != "" {
+		t.Fatalf("failed to get error on close: %s", s)
 	}
 }
 
