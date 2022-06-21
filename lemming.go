@@ -17,6 +17,7 @@ package lemming
 
 import (
 	"net"
+	"sync"
 
 	fgnmi "github.com/openconfig/lemming/gnmi"
 	fgnoi "github.com/openconfig/lemming/gnoi"
@@ -39,7 +40,9 @@ type Device struct {
 	gnsiServer  *fgnsi.Server
 	p4rtServer  *fp4rt.Server
 	// Stores the error if the server fails will be returned on call to stop.
-	err error
+	mu      sync.Mutex
+	err     error
+	stopped chan struct{}
 }
 
 // New returns a new initialized device.
@@ -67,7 +70,15 @@ func (d *Device) Addr() string {
 // Stop stops the listening services.
 // If error is not nil, it will contain why the server failed.
 func (d *Device) Stop() error {
-	d.stop()
+	klog.Info("Stopping server")
+	select {
+	case <-d.stopped:
+		klog.Info("Server already stopped: ", d.err)
+	default:
+		d.stop()
+	}
+	d.mu.Lock()
+	defer d.mu.Unlock()
 	return d.err
 }
 
@@ -77,14 +88,17 @@ func (d *Device) GNMI() *fgnmi.Server {
 }
 
 func (d *Device) startServer() {
+	d.stopped = make(chan struct{})
 	go func() {
-		d.err = d.s.Serve(d.lis)
+		err := d.s.Serve(d.lis)
+		d.mu.Lock()
+		defer d.mu.Unlock()
+		d.err = err
+		klog.Infof("Server stopped: %v", err)
+		close(d.stopped)
 	}()
-
 	d.stop = func() {
 		d.s.Stop()
-		if err := d.lis.Close(); err != nil {
-			klog.Info(err)
-		}
+		<-d.stopped
 	}
 }

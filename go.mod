@@ -5,6 +5,7 @@ go 1.18
 require (
 	github.com/golang/glog v1.0.0
 	github.com/google/go-cmp v0.5.7
+	github.com/h-fam/errdiff v1.0.2
 	github.com/openconfig/gnmi v0.0.0-20220615002139-37df7c66011f
 	github.com/openconfig/gnoi v0.0.0-20220131192435-7dd3a95a4f1e
 	github.com/openconfig/goyang v1.0.0
