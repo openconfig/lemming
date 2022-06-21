@@ -70,7 +70,7 @@ func (d *Device) Addr() string {
 // Stop stops the listening services.
 // If error is not nil, it will contain why the server failed.
 func (d *Device) Stop() error {
-	klog.Info("Stoping server")
+	klog.Info("Stopping server")
 	select {
 	case <-d.stopped:
 		klog.Info("Server already stopped: ", d.err)
