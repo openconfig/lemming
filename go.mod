@@ -3,7 +3,6 @@ module github.com/openconfig/lemming
 go 1.18
 
 require (
-	github.com/golang/glog v1.0.0
 	github.com/google/go-cmp v0.5.7
 	github.com/h-fam/errdiff v1.0.2
 	github.com/openconfig/gnmi v0.0.0-20220617175856-41246b1b3507
@@ -20,6 +19,7 @@ require (
 require (
 	github.com/cenkalti/backoff/v4 v4.1.1 // indirect
 	github.com/go-logr/logr v1.2.0 // indirect
+	github.com/golang/glog v1.0.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/openconfig/grpctunnel v0.0.0-20220524190229-125331eabdde // indirect
@@ -29,4 +29,3 @@ require (
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/genproto v0.0.0-20211203200212-54befc351ae9 // indirect
 )
-

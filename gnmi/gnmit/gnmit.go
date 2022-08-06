@@ -26,7 +26,6 @@ import (
 	"sync"
 	"time"
 
-	log "github.com/golang/glog"
 	"github.com/openconfig/gnmi/cache"
 	"github.com/openconfig/lemming/gnmi/subscribe"
 	"github.com/openconfig/ygot/ygot"
@@ -34,6 +33,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
+	"k8s.io/klog/v2"
 
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 )
@@ -182,7 +182,7 @@ func New(ctx context.Context, addr, hostname string, sendMeta bool, tasks []Task
 
 	go func() {
 		if err := srv.Serve(lis); err != nil {
-			log.Errorf("Error while serving gnmi target: %v", err)
+			klog.Errorf("Error while serving gnmi target: %v", err)
 		}
 	}()
 	c.stopFn = srv.GracefulStop

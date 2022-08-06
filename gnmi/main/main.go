@@ -19,8 +19,8 @@ import (
 	"flag"
 	"fmt"
 
-	log "github.com/golang/glog"
 	"github.com/openconfig/lemming/gnmi/fakedevice"
+	log "k8s.io/klog/v2"
 )
 
 var (

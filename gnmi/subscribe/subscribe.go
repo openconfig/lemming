@@ -25,7 +25,8 @@ import (
 	"io"
 	"time"
 
-	log "github.com/golang/glog"
+	log "k8s.io/klog/v2"
+
 	"github.com/openconfig/gnmi/cache"
 	"github.com/openconfig/gnmi/coalesce"
 	"github.com/openconfig/gnmi/ctree"
@@ -186,6 +187,7 @@ func (s *Server) Subscribe(stream pb.GNMI_SubscribeServer) error {
 	peer, _ := peer.FromContext(stream.Context())
 	mode := c.sr.GetSubscribe().Mode
 
+	fmt.Printf("peer: %v target: %q subscription: %s", peer.Addr, c.target, c.sr)
 	log.Infof("peer: %v target: %q subscription: %s", peer.Addr, c.target, c.sr)
 	defer log.Infof("peer: %v target %q subscription: end: %q", peer.Addr, c.target, c.sr)
 

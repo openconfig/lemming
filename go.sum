@@ -84,8 +84,6 @@ github.com/openconfig/grpctunnel v0.0.0-20220524190229-125331eabdde/go.mod h1:Om
 github.com/openconfig/ygot v0.6.0/go.mod h1:o30svNf7O0xK+R35tlx95odkDmZWS9JyWWQSmIhqwAs=
 github.com/openconfig/ygot v0.10.4/go.mod h1:oCQNdXnv7dWc8scTDgoFkauv1wwplJn5HspHcjlxSAQ=
 github.com/openconfig/ygot v0.13.2/go.mod h1:kJN0yCXIH07dOXvNBEFm3XxXdnDD5NI6K99tnD5x49c=
-github.com/openconfig/ygot v0.24.1 h1:LOz6c++/zoJBJgqSGiV13Jk6rzlF3NiWkzBKi2zHtcA=
-github.com/openconfig/ygot v0.24.1/go.mod h1:6Ddz8kyEjK/c1e+rbShOTYLZdQmuk5ZJj6SJuwZp8u4=
 github.com/openconfig/ygot v0.24.2 h1:ML4Lw2pVwR1QpoYRaLkq9oU6X6LYCmca7iDB0X3pvdY=
 github.com/openconfig/ygot v0.24.2/go.mod h1:6Ddz8kyEjK/c1e+rbShOTYLZdQmuk5ZJj6SJuwZp8u4=
 github.com/p4lang/p4runtime v1.3.0 h1:3fUhHj0JtsGcL2Bh0uxpACdBJBDqpZyLgj93tqKzoJY=

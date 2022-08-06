@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"time"
 
-	log "github.com/golang/glog"
 	"github.com/openconfig/gnmi/coalesce"
 	"github.com/openconfig/gnmi/ctree"
 	"github.com/openconfig/gnmi/value"
@@ -33,6 +32,7 @@ import (
 	"github.com/openconfig/ygot/ygot/pathtranslate"
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
+	log "k8s.io/klog/v2"
 
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 )
