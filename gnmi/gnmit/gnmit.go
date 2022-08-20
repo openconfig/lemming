@@ -212,6 +212,7 @@ func NewSettable(ctx context.Context, addr string, hostname string, sendMeta boo
 	if !ok {
 		return nil, "", fmt.Errorf("invalid schema root, %v", schema.Root)
 	}
+
 	// Initialize the root with default values.
 	schema.Root.(populateDefaultser).PopulateDefaults()
 	if err := vr.Validate(); err != nil {

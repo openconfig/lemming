@@ -91,6 +91,8 @@ YANG_FILES=(
   public/third_party/ietf/ietf-yang-types.yang
 )
 
+rm -r config telemetry
+
 # Generate Config Structs and Path API
 mkdir -p config/device
 echo "generating structs for config"
@@ -100,6 +102,7 @@ generator \
   -list_builder_key_threshold=4 \
   -output_dir=config \
   -package_name=config \
+  -path_structs_split_files_count=4 \
   "${COMMON_ARGS[@]}" \
   "${YANG_FILES[@]}"
 
@@ -111,6 +114,7 @@ generator \
   -schema_struct_path=github.com/openconfig/lemming/gnmi/internal/config \
   -output_dir=config \
   -package_name=device \
+  -path_structs_split_files_count=2 \
   -split_pathstructs_by_module=true \
   -path_structs_output_file=config/device/device.go \
   -base_import_path=github.com/openconfig/lemming/gnmi/internal/config \
@@ -129,6 +133,7 @@ generator \
   -list_builder_key_threshold=4 \
   -output_dir=telemetry \
   -package_name=telemetry \
+  -path_structs_split_files_count=4 \
   "${COMMON_ARGS[@]}" \
   "${YANG_FILES[@]}"
 
@@ -146,6 +151,7 @@ generator \
   -trim_path_package_prefix="openconfig" \
   -path_struct_package_suffix="" \
   -base_import_path=github.com/openconfig/lemming/gnmi/internal/telemetry \
+  -path_structs_split_files_count=4 \
   "${COMMON_ARGS[@]}" \
   "${YANG_FILES[@]}"
 
