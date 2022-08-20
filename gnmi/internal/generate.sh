@@ -95,6 +95,7 @@ rm -r config telemetry
 
 # Generate Config Structs and Path API
 mkdir -p config/device
+echo "generating structs for config"
 generator \
   -generate_structs \
   -generate_path_structs=false \
@@ -105,6 +106,7 @@ generator \
   "${COMMON_ARGS[@]}" \
   "${YANG_FILES[@]}"
 
+echo "generating path structs for config"
 generator \
   -generate_structs=false \
   -generate_path_structs=true \
@@ -123,6 +125,7 @@ generator \
 
 # Generate State Structs and Path API
 mkdir -p telemetry/device
+echo "generating structs for telemetry"
 generator \
   -generate_structs \
   -generate_path_structs=false \
@@ -134,6 +137,7 @@ generator \
   "${COMMON_ARGS[@]}" \
   "${YANG_FILES[@]}"
 
+echo "generating path structs for telemetry"
 generator \
   -generate_structs=false \
   -generate_path_structs=true \
