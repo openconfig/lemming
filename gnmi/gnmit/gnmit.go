@@ -107,19 +107,16 @@ func (s *GNMIServer) RegisterTask(task Task) error {
 	return task.Run(queue, s.c.cache.GnmiUpdate, s.c.name, remove)
 }
 
-// New returns a new collector that listens on the specified addr (in the form host:port),
-// supporting a single downstream target named hostname. sendMeta controls whether the
-// metadata *other* than meta/sync and meta/connected is sent by the collector.
-//
-// New returns the new collector, the address it is listening on in the form hostname:port
-// or any errors encounted whilst setting it up.
-func New(ctx context.Context, addr string, hostname string, sendMeta bool, tasks []Task, opts ...grpc.ServerOption) (*Collector, string, error) {
+// New returns a new collector server implementation that can be registered on
+// an existing gRPC server. It takes a string indicating the hostname of the
+// target, a boolean indicating whether metadata should be sent, and a slice of
+// tasks that are to be launched to run on the server.
+func NewServer(ctx context.Context, hostname string, sendMeta bool, tasks []Task) (*Collector, *GNMIServer, error) {
 	c := &Collector{
 		inCh: make(chan *gpb.SubscribeResponse),
 		name: hostname,
 	}
 
-	srv := grpc.NewServer(opts...)
 	c.cache = cache.New([]string{hostname})
 	t := c.cache.GetTarget(hostname)
 
@@ -145,7 +142,7 @@ func New(ctx context.Context, addr string, hostname string, sendMeta bool, tasks
 
 	subscribeSrv, err := subscribe.NewServer(c.cache)
 	if err != nil {
-		return nil, "", fmt.Errorf("could not instantiate gNMI server: %v", err)
+		return nil, nil, fmt.Errorf("could not instantiate gNMI server: %v", err)
 	}
 
 	gnmiserver := &GNMIServer{
@@ -155,13 +152,28 @@ func New(ctx context.Context, addr string, hostname string, sendMeta bool, tasks
 
 	for _, t := range tasks {
 		if err := gnmiserver.RegisterTask(t); err != nil {
-			return nil, "", err
+			return nil, nil, err
 		}
 	}
+	c.cache.SetClient(subscribeSrv.Update)
 
+	return c, gnmiserver, nil
+}
+
+// New returns a new collector that listens on the specified addr (in the form host:port),
+// supporting a single downstream target named hostname. sendMeta controls whether the
+// metadata *other* than meta/sync and meta/connected is sent by the collector.
+//
+// New returns the new collector, the address it is listening on in the form hostname:port
+// or any errors encounted whilst setting it up.
+func New(ctx context.Context, addr, hostname string, sendMeta bool, tasks []Task, opts ...grpc.ServerOption) (*Collector, string, error) {
+	c, gnmiserver, err := NewServer(ctx, hostname, sendMeta, tasks)
+	if err != nil {
+		return nil, "", err
+	}
+	srv := grpc.NewServer(opts...)
 	gpb.RegisterGNMIServer(srv, gnmiserver)
 	// Forward streaming updates to clients.
-	c.cache.SetClient(subscribeSrv.Update)
 	// Register listening port and start serving.
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
@@ -195,9 +207,14 @@ func NewSettable(ctx context.Context, addr string, hostname string, sendMeta boo
 	if !schema.IsValid() {
 		return nil, "", fmt.Errorf("cannot obtain valid schema for GoStructs: %v", schema)
 	}
+
+	vr, ok := schema.Root.(ygot.ValidatedGoStruct)
+	if !ok {
+		return nil, "", fmt.Errorf("invalid schema root, %v", schema.Root)
+	}
 	// Initialize the root with default values.
 	schema.Root.(populateDefaultser).PopulateDefaults()
-	if err := schema.Root.Validate(); err != nil {
+	if err := vr.Validate(); err != nil {
 		return nil, "", fmt.Errorf("default root of input schema fails validation: %v", err)
 	}
 
