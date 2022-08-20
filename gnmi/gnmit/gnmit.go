@@ -195,9 +195,15 @@ func NewSettable(ctx context.Context, addr string, hostname string, sendMeta boo
 	if !schema.IsValid() {
 		return nil, "", fmt.Errorf("cannot obtain valid schema for GoStructs: %v", schema)
 	}
+
+	vr, ok := schema.Root.(ygot.ValidatedGoStruct)
+	if !ok {
+		return nil, "", fmt.Errorf("invalid schema root, %v", schema.Root)
+	}
+
 	// Initialize the root with default values.
 	schema.Root.(populateDefaultser).PopulateDefaults()
-	if err := schema.Root.Validate(); err != nil {
+	if err := vr.Validate(); err != nil {
 		return nil, "", fmt.Errorf("default root of input schema fails validation: %v", err)
 	}
 
