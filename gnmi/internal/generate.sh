@@ -93,16 +93,17 @@ YANG_FILES=(
 
 # Generate Config Structs and Path API
 mkdir -p config/device
+echo "generating structs for config"
 generator \
   -generate_structs \
   -generate_path_structs=false \
   -list_builder_key_threshold=4 \
   -output_dir=config \
   -package_name=config \
-  -path_structs_split_files_count=10 \
   "${COMMON_ARGS[@]}" \
   "${YANG_FILES[@]}"
 
+echo "generating path structs for config"
 generator \
   -generate_structs=false \
   -generate_path_structs=true \
@@ -110,17 +111,17 @@ generator \
   -schema_struct_path=github.com/openconfig/lemming/gnmi/internal/config \
   -output_dir=config \
   -package_name=device \
-  -path_structs_split_files_count=5 \
   -split_pathstructs_by_module=true \
   -path_structs_output_file=config/device/device.go \
   -base_import_path=github.com/openconfig/lemming/gnmi/internal/config \
-  -trim_path_package_oc_prefix=true \
+  -trim_path_package_prefix="openconfig" \
   -path_struct_package_suffix="" \
   "${COMMON_ARGS[@]}" \
   "${YANG_FILES[@]}"
 
 # Generate State Structs and Path API
 mkdir -p telemetry/device
+echo "generating structs for telemetry"
 generator \
   -generate_structs \
   -generate_path_structs=false \
@@ -128,10 +129,10 @@ generator \
   -list_builder_key_threshold=4 \
   -output_dir=telemetry \
   -package_name=telemetry \
-  -path_structs_split_files_count=10 \
   "${COMMON_ARGS[@]}" \
   "${YANG_FILES[@]}"
 
+echo "generating path structs for telemetry"
 generator \
   -generate_structs=false \
   -generate_path_structs=true \
@@ -142,10 +143,9 @@ generator \
   -path_structs_output_file=telemetry/device/device.go \
   -split_pathstructs_by_module=true \
   -schema_struct_path=github.com/openconfig/lemming/gnmi/internal/telemetry \
-  -trim_path_package_oc_prefix=true \
+  -trim_path_package_prefix="openconfig" \
   -path_struct_package_suffix="" \
   -base_import_path=github.com/openconfig/lemming/gnmi/internal/telemetry \
-  -path_structs_split_files_count=10 \
   "${COMMON_ARGS[@]}" \
   "${YANG_FILES[@]}"
 
