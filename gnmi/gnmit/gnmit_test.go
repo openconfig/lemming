@@ -42,6 +42,9 @@ func mustPath(s string) *gpb.Path {
 	return p
 }
 
+// Disable linter for this helper function.
+//
+//nolint:unparam
 func mustTargetPath(t, s string, addOpenConfigOrigin bool) *gpb.Path {
 	p := mustPath(s)
 	p.Target = t
