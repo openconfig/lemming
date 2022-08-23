@@ -93,12 +93,12 @@ type ResolvedNexthop struct {
 	Port Interface
 }
 
-func vrfIDToNiName(vrfId uint32) string {
-	switch vrfId {
+func vrfIDToNiName(vrfID uint32) string {
+	switch vrfID {
 	case 0:
 		return "DEFAULT"
 	default:
-		return strconv.Itoa(int(vrfId))
+		return strconv.Itoa(int(vrfID))
 	}
 }
 
@@ -221,7 +221,7 @@ func (s *Server) addInterface(name string, ifindex int32, enabled bool, prefix s
 		Name:  name,
 		Index: ifindex,
 	}
-	s.interfaces[intf] = enabled
+	s.setInterface(name, ifindex, enabled)
 
 	_, pfx, err := net.ParseCIDR(prefix)
 	if err != nil {
