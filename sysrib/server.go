@@ -47,9 +47,6 @@ type Server struct {
 	// indicated by the forwarding plane.
 	interfaces map[Interface]bool
 
-	// resolvedRibs contains resolvable routes for each network instance.
-	//resolvedRibs map[string]*string_tree.TreeV4
-
 	// resolvedRoutes contain a map of resolved routes with which to do
 	// diff for sending to the dataplane for programming.
 	resolvedRoutes map[RouteKey]*ResolvedRoute
@@ -96,7 +93,7 @@ type ResolvedNexthop struct {
 	Port Interface
 }
 
-func vrfIdToNiName(vrfId uint32) string {
+func vrfIDToNiName(vrfId uint32) string {
 	switch vrfId {
 	case 0:
 		return "DEFAULT"
@@ -180,13 +177,13 @@ func (s *Server) SetRoute(_ context.Context, req *pb.SetRouteRequest) (*pb.SetRo
 		nexthops = append(nexthops, &afthelper.NextHopSummary{
 			Weight:          nh.GetWeight(),
 			Address:         nh.GetAddress(),
-			NetworkInstance: vrfIdToNiName(nh.GetVrfId()),
+			NetworkInstance: vrfIDToNiName(nh.GetVrfId()),
 		})
 	}
 
 	// TODO(wenbli): Check if recursive resolution is an infinite recursion. This happens if there is a cycle.
 
-	niName := vrfIdToNiName(req.GetVrfId())
+	niName := vrfIDToNiName(req.GetVrfId())
 	if err := s.rib.AddRoute(niName, &Route{
 		Prefix:   pfx,
 		NextHops: nexthops,
@@ -247,7 +244,7 @@ func (s *Server) addInterface(name string, ifindex int32, enabled bool, prefix s
 	for i, route := range routes {
 		if route.Prefix == prefix && route.Connected != nil {
 			// Update the connected route in the tree.
-			// FIXME(wenbli): synchronization required?
+			// FIXME(wenbli): synchronization is required if concurrent calls are possible.
 			routes[i] = connectedRoute
 			return s.ResolveAndProgramDiff()
 		}
@@ -260,7 +257,7 @@ func (s *Server) addInterface(name string, ifindex int32, enabled bool, prefix s
 // TODO(wenbli): Do we need to handle interface deletion?
 
 // setInterface responds to INTERFACE_UP/INTERFACE_DOWN messages from the dataplane.
-func (s *Server) setInterface(name string, ifindex int32, enabled bool, prefix string, niName string) error {
+func (s *Server) setInterface(name string, ifindex int32, enabled bool) error {
 	s.interfaces[Interface{
 		Name:  name,
 		Index: ifindex,

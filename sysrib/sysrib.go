@@ -17,7 +17,6 @@
 package sysrib
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
@@ -66,15 +65,6 @@ type Route struct {
 	// it is not a connected route.
 	NextHops  []*afthelper.NextHopSummary `json:"nexthops"`
 	RoutePref RoutePreference
-}
-
-// toString marshals the route to a string for storage in the tree.
-func (r *Route) toString() (string, error) {
-	j, err := json.Marshal(r)
-	if err != nil {
-		return "", err
-	}
-	return string(j), nil
 }
 
 // NewSysRIB returns a SysRIB from an input parsed OpenConfig configuration.
@@ -157,10 +147,10 @@ type Interface struct {
 // the specified network instance. It returns a bool indicating whether the
 // entry was found, a slice of strings which contains its tags, and an optional
 // error.
-func (r *SysRIB) entryForCIDR(ni string, ip *net.IPNet) (bool, []*Route, error) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-	rib, ok := r.NI[ni]
+func (sr *SysRIB) entryForCIDR(ni string, ip *net.IPNet) (bool, []*Route, error) {
+	sr.mu.RLock()
+	defer sr.mu.RUnlock()
+	rib, ok := sr.NI[ni]
 	if !ok {
 		return false, nil, fmt.Errorf("cannot find a RIB for network instance %s", ni)
 	}
@@ -177,18 +167,18 @@ func (r *SysRIB) entryForCIDR(ni string, ip *net.IPNet) (bool, []*Route, error) 
 // via.
 //
 // TODO(robjs): support determining the NI based solely on the input interface.
-// TODO(robjs): support a better description of a packet using the formats that ONDATRA
-// 				uses.
+// TODO(robjs): support a better description of a packet using the formats that ONDATRA uses.
+//
 // TODO(robjs): support WCMP
 //
 // This is really a POC that we can emulate our FIB for basic IPv4 routes.
-func (r *SysRIB) EgressInterface(inputNI string, ip *net.IPNet) ([]*Interface, error) {
+func (sr *SysRIB) EgressInterface(inputNI string, ip *net.IPNet) ([]*Interface, error) {
 	// no RIB recursion currently
 	if inputNI == "" {
-		inputNI = r.defaultNI
+		inputNI = sr.defaultNI
 	}
 
-	found, routes, err := r.entryForCIDR(inputNI, ip)
+	found, routes, err := sr.entryForCIDR(inputNI, ip)
 	if err != nil {
 		return nil, fmt.Errorf("cannot lookup IP %s", ip)
 	}
@@ -210,7 +200,7 @@ func (r *SysRIB) EgressInterface(inputNI string, ip *net.IPNet) ([]*Interface, e
 			if err != nil {
 				return nil, fmt.Errorf("can't parse %s/32 into CIDR, %v", nh.Address, err)
 			}
-			recursiveNHIfs, err := r.EgressInterface(nh.NetworkInstance, nhop)
+			recursiveNHIfs, err := sr.EgressInterface(nh.NetworkInstance, nhop)
 			if err != nil {
 				return nil, fmt.Errorf("for nexthop %s, can't resolve: %v", nh.Address, err)
 			}
@@ -222,13 +212,13 @@ func (r *SysRIB) EgressInterface(inputNI string, ip *net.IPNet) ([]*Interface, e
 
 // EgressNexthops returns the resolved nexthops for the input IP prefix for
 // network instance inputNI based on the device's interface state.
-func (r *SysRIB) EgressNexthops(inputNI string, ip *net.IPNet, interfaces map[Interface]bool) (map[ResolvedNexthop]bool, error) {
+func (sr *SysRIB) EgressNexthops(inputNI string, ip *net.IPNet, interfaces map[Interface]bool) (map[ResolvedNexthop]bool, error) {
 	// no RIB recursion currently
 	if inputNI == "" {
-		inputNI = r.defaultNI
+		inputNI = sr.defaultNI
 	}
 
-	found, routes, err := r.entryForCIDR(inputNI, ip)
+	found, routes, err := sr.entryForCIDR(inputNI, ip)
 	if err != nil {
 		return nil, fmt.Errorf("cannot lookup IP %s", ip)
 	}
@@ -274,7 +264,7 @@ func (r *SysRIB) EgressNexthops(inputNI string, ip *net.IPNet, interfaces map[In
 			if err != nil {
 				return nil, fmt.Errorf("can't parse %s/32 into CIDR, %v", nh.Address, err)
 			}
-			recursiveNHs, err := r.EgressNexthops(nh.NetworkInstance, nhop, interfaces)
+			recursiveNHs, err := sr.EgressNexthops(nh.NetworkInstance, nhop, interfaces)
 			if err != nil {
 				return nil, fmt.Errorf("for nexthop %s, can't resolve: %v", nh.Address, err)
 			}
