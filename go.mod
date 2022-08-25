@@ -6,10 +6,12 @@ require (
 	github.com/golang/glog v1.0.0
 	github.com/google/go-cmp v0.5.7
 	github.com/h-fam/errdiff v1.0.2
+	github.com/kentik/patricia v1.2.0
 	github.com/openconfig/gnmi v0.0.0-20220617175856-41246b1b3507
 	github.com/openconfig/gnoi v0.0.0-20220131192435-7dd3a95a4f1e
 	github.com/openconfig/goyang v1.1.0
-	github.com/openconfig/gribi v0.1.1-0.20220126144445-1634932f9fd8
+	github.com/openconfig/gribi v0.1.1-0.20220622162620-08d53dffce45
+	github.com/openconfig/gribigo v0.0.0-20220802181317-805e943d8714
 	github.com/openconfig/ygot v0.24.2
 	github.com/p4lang/p4runtime v1.3.0
 	google.golang.org/grpc v1.42.0
