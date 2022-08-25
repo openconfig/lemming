@@ -23,6 +23,8 @@ import (
 
 	log "github.com/golang/glog"
 	"github.com/openconfig/gribigo/afthelper"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	pb "github.com/openconfig/lemming/proto/sysrib"
 )
@@ -161,7 +163,7 @@ func (s *Server) ResolveAndProgramDiff() error {
 func (s *Server) SetRoute(_ context.Context, req *pb.SetRouteRequest) (*pb.SetRouteResponse, error) {
 	// TODO(wenbli): Handle route deletion.
 	if req.Delete {
-		return nil, fmt.Errorf("route delete not yet supported")
+		return nil, status.Errorf(codes.Unimplemented, "route delete not yet supported")
 	}
 
 	pfx, err := prefixString(req.Prefix)
@@ -172,7 +174,7 @@ func (s *Server) SetRoute(_ context.Context, req *pb.SetRouteRequest) (*pb.SetRo
 	nexthops := []*afthelper.NextHopSummary{}
 	for _, nh := range req.GetNexthops() {
 		if nh.GetType() != pb.Nexthop_IPV4 {
-			return nil, fmt.Errorf("non-IPv4 nexthop not supported")
+			return nil, status.Errorf(codes.Unimplemented, "non-IPv4 nexthop not supported")
 		}
 		nexthops = append(nexthops, &afthelper.NextHopSummary{
 			Weight:          nh.GetWeight(),
@@ -192,11 +194,11 @@ func (s *Server) SetRoute(_ context.Context, req *pb.SetRouteRequest) (*pb.SetRo
 			Metric:        req.GetMetric(),
 		},
 	}); err != nil {
-		return nil, err
+		return nil, status.Errorf(codes.Aborted, "error while adding route to sysrib: %v", err)
 	}
 
 	if err := s.ResolveAndProgramDiff(); err != nil {
-		return nil, err
+		return nil, status.Errorf(codes.Aborted, "error while resolving sysrib: %v", err)
 	}
 
 	// There could be operations carried out by ResolveAndProgramDiff() other than the input route, so we look up our particular prefix.
@@ -255,6 +257,7 @@ func (s *Server) addInterface(name string, ifindex int32, enabled bool, prefix s
 }
 
 // TODO(wenbli): Do we need to handle interface deletion?
+// This is not required in the MVP since basic tests will just need to enable/disable interfaces.
 
 // setInterface responds to INTERFACE_UP/INTERFACE_DOWN messages from the dataplane.
 func (s *Server) setInterface(name string, ifindex int32, enabled bool) error {

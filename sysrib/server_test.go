@@ -77,6 +77,7 @@ func checkResolvedRoutesEqual(got, want []*ResolvedRoute) error {
 }
 
 func TestServer(t *testing.T) {
+	// TODO(wenbli): This test should be refactored such that the wantResolvedRoutes is inlined with the inSetRouteRequests for easier reading.
 	tests := []struct {
 		desc                       string
 		inInterfaces               []AddIntfAction

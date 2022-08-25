@@ -42,6 +42,7 @@ message SetRouteRequest {
   repeated Nexthop backup_nexthops = 9;
 }
 
+// TODO(wenbli): This probably goes in some common proto file.
 message Prefix {
   enum Family {
     IPv4 = 0;
