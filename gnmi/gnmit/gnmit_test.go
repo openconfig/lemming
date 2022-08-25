@@ -42,6 +42,9 @@ func mustPath(s string) *gpb.Path {
 	return p
 }
 
+// Disable linter for this helper function.
+//
+//nolint:unparam
 func mustTargetPath(t, s string, addOpenConfigOrigin bool) *gpb.Path {
 	p := mustPath(s)
 	p.Target = t
@@ -119,7 +122,6 @@ func toUpd(r *gpb.SubscribeResponse) []*upd {
 	case *gpb.SubscribeResponse_Update:
 		ret := []*upd{}
 		for _, u := range v.Update.GetUpdate() {
-
 			switch mustPathToString(u.Path) {
 			case "/meta/connected":
 				ret = append(ret, &upd{

@@ -26,6 +26,7 @@ import (
 	"sync"
 	"time"
 
+	log "github.com/golang/glog"
 	"github.com/openconfig/gnmi/cache"
 	config "github.com/openconfig/lemming/gnmi/internal/config"
 	"github.com/openconfig/lemming/gnmi/subscribe"
@@ -124,19 +125,16 @@ func (s *GNMIServer) getIntendedConfig() *config.Device {
 	return nil
 }
 
-// New returns a new collector that listens on the specified addr (in the form host:port),
-// supporting a single downstream target named hostname. sendMeta controls whether the
-// metadata *other* than meta/sync and meta/connected is sent by the collector.
-//
-// New returns the new collector, the address it is listening on in the form hostname:port
-// or any errors encounted whilst setting it up.
-func New(ctx context.Context, addr string, hostname string, sendMeta bool, tasks []Task, opts ...grpc.ServerOption) (*Collector, string, error) {
+// New returns a new collector server implementation that can be registered on
+// an existing gRPC server. It takes a string indicating the hostname of the
+// target, a boolean indicating whether metadata should be sent, and a slice of
+// tasks that are to be launched to run on the server.
+func NewServer(ctx context.Context, hostname string, sendMeta bool, tasks []Task) (*Collector, *GNMIServer, error) {
 	c := &Collector{
 		inCh: make(chan *gpb.SubscribeResponse),
 		name: hostname,
 	}
 
-	srv := grpc.NewServer(opts...)
 	c.cache = cache.New([]string{hostname})
 	t := c.cache.GetTarget(hostname)
 
@@ -162,7 +160,7 @@ func New(ctx context.Context, addr string, hostname string, sendMeta bool, tasks
 
 	subscribeSrv, err := subscribe.NewServer(c.cache)
 	if err != nil {
-		return nil, "", fmt.Errorf("could not instantiate gNMI server: %v", err)
+		return nil, nil, fmt.Errorf("could not instantiate gNMI server: %v", err)
 	}
 
 	gnmiserver := &GNMIServer{
@@ -172,20 +170,39 @@ func New(ctx context.Context, addr string, hostname string, sendMeta bool, tasks
 
 	for _, t := range tasks {
 		if err := gnmiserver.RegisterTask(t); err != nil {
-			return nil, "", err
+			return nil, nil, err
 		}
 	}
+	c.cache.SetClient(subscribeSrv.Update)
 
+	return c, gnmiserver, nil
+}
+
+// New returns a new collector that listens on the specified addr (in the form host:port),
+// supporting a single downstream target named hostname. sendMeta controls whether the
+// metadata *other* than meta/sync and meta/connected is sent by the collector.
+//
+// New returns the new collector, the address it is listening on in the form hostname:port
+// or any errors encounted whilst setting it up.
+func New(ctx context.Context, addr, hostname string, sendMeta bool, tasks []Task, opts ...grpc.ServerOption) (*Collector, string, error) {
+	c, gnmiserver, err := NewServer(ctx, hostname, sendMeta, tasks)
+	if err != nil {
+		return nil, "", err
+	}
+	srv := grpc.NewServer(opts...)
 	gpb.RegisterGNMIServer(srv, gnmiserver)
 	// Forward streaming updates to clients.
-	c.cache.SetClient(subscribeSrv.Update)
 	// Register listening port and start serving.
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to listen: %v", err)
 	}
 
-	go srv.Serve(lis)
+	go func() {
+		if err := srv.Serve(lis); err != nil {
+			log.Errorf("Error while serving gnmi target: %v", err)
+		}
+	}()
 	c.stopFn = srv.GracefulStop
 	return c, lis.Addr().String(), nil
 }
@@ -208,9 +225,15 @@ func NewSettable(ctx context.Context, addr string, hostname string, sendMeta boo
 	if !schema.IsValid() {
 		return nil, "", fmt.Errorf("cannot obtain valid schema for GoStructs: %v", schema)
 	}
+
+	vr, ok := schema.Root.(ygot.ValidatedGoStruct)
+	if !ok {
+		return nil, "", fmt.Errorf("invalid schema root, %v", schema.Root)
+	}
+
 	// Initialize the root with default values.
 	schema.Root.(populateDefaultser).PopulateDefaults()
-	if err := schema.Root.Validate(); err != nil {
+	if err := vr.Validate(); err != nil {
 		return nil, "", fmt.Errorf("default root of input schema fails validation: %v", err)
 	}
 
@@ -248,15 +271,23 @@ func (c *Collector) handleUpdate(resp *gpb.SubscribeResponse) error {
 // Collector is a basic gNMI target that supports only the Subscribe
 // RPC, and acts as a cache for exactly one target.
 type Collector struct {
-	cache  *cache.Cache
+	cache *cache.Cache
+
 	smu    sync.Mutex
 	schema *ytypes.Schema
+
 	// name is the hostname of the client.
 	name string
 	// inCh is a channel use to write new SubscribeResponses to the client.
 	inCh chan *gpb.SubscribeResponse
 	// stopFn is the function used to stop the server.
 	stopFn func()
+}
+
+func (c *Collector) Schema() *ytypes.Schema {
+	c.smu.Lock()
+	defer c.smu.Unlock()
+	return c.schema
 }
 
 // TargetUpdate provides an input gNMI SubscribeResponse to update the
@@ -312,7 +343,7 @@ func (s *GNMIServer) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResp
 		return s.UnimplementedGNMIServer.Set(ctx, req)
 	}
 	// Create a copy so that we can rollback the transaction when validation fails.
-	dirtyRootG, err := ygot.DeepCopy(s.c.schema.Root)
+	dirtyRootG, err := ygot.DeepCopy(s.c.Schema().Root)
 	if err != nil {
 		return nil, fmt.Errorf("gnmit: failed to ygot.DeepCopy the cached root object: %v", err)
 	}
@@ -321,7 +352,7 @@ func (s *GNMIServer) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResp
 		return nil, fmt.Errorf("gnmit: cannot convert root object to ValidatedGoStruct")
 	}
 	// Operate at the prefix level.
-	nodeI, _, err := ytypes.GetOrCreateNode(s.c.schema.RootSchema(), dirtyRoot, req.Prefix)
+	nodeI, _, err := ytypes.GetOrCreateNode(s.c.Schema().RootSchema(), dirtyRoot, req.Prefix)
 	if err != nil {
 		return nil, fmt.Errorf("gnmit: failed to GetOrCreate the prefix node: %v", err)
 	}
@@ -336,12 +367,12 @@ func (s *GNMIServer) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResp
 
 	// Process deletes, then replace, then updates.
 	for _, path := range req.Delete {
-		if err := ytypes.DeleteNode(s.c.schema.SchemaTree[nodeName], node, path); err != nil {
+		if err := ytypes.DeleteNode(s.c.Schema().SchemaTree[nodeName], node, path); err != nil {
 			return nil, fmt.Errorf("gnmit: DeleteNode error: %v", err)
 		}
 	}
 	for _, update := range req.Replace {
-		if err := ytypes.DeleteNode(s.c.schema.SchemaTree[nodeName], node, update.Path); err != nil {
+		if err := ytypes.DeleteNode(s.c.Schema().SchemaTree[nodeName], node, update.Path); err != nil {
 			return nil, fmt.Errorf("gnmit: DeleteNode error: %v", err)
 		}
 		if err := setNode(s.c.schema, node, update); err != nil {
@@ -358,7 +389,7 @@ func (s *GNMIServer) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResp
 		return nil, fmt.Errorf("gnmit: invalid SetRequest: %v", err)
 	}
 
-	n, err := ygot.Diff(s.c.schema.Root, dirtyRoot)
+	n, err := ygot.Diff(s.c.Schema().Root, dirtyRoot)
 	if err != nil {
 		return nil, fmt.Errorf("gnmit: error while creating update notification for Set: %v", err)
 	}
@@ -375,7 +406,7 @@ func (s *GNMIServer) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResp
 	}
 	s.intendedConfigMu.Lock()
 	defer s.intendedConfigMu.Unlock()
-	s.c.schema.Root = dirtyRoot
+	s.c.Schema().Root = dirtyRoot
 	// TODO(wenbli): Currently the SetResponse is not filled.
 	return &gpb.SetResponse{
 		Timestamp: time.Now().UnixNano(),

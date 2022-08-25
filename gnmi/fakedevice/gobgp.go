@@ -94,7 +94,7 @@ func goBgpTask(getIntendedConfig func() *config.Device, q gnmit.Queue, update gn
 					}
 				}
 				if !found {
-					log.Warning("Unknown neighbor session-state value received: %v", ps.SessionState)
+					log.Warningf("Unknown neighbor session-state value received: %v", ps.SessionState)
 				}
 			} else {
 				log.Warning("Received peer update from an unknown peer:", ps.NeighborAddress)

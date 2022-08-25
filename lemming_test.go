@@ -16,8 +16,10 @@ package lemming
 
 import (
 	"context"
+	"net"
 	"testing"
 
+	"github.com/h-fam/errdiff"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/proto"
@@ -47,12 +49,9 @@ import (
 )
 
 func TestFakeGNMI(t *testing.T) {
-	f, err := New("localhost:0")
-	if err != nil {
-		t.Fatalf("failed to start fake: %v", err)
-	}
+	f := startLemming(t)
 	defer f.Stop()
-	conn, err := grpc.Dial(f.addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.Dial(f.Addr(), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		t.Fatalf("failed to Dial fake: %v", err)
 	}
@@ -83,16 +82,50 @@ func TestFakeGNMI(t *testing.T) {
 	if !proto.Equal(resp, want) {
 		t.Fatalf("gnmi.Get failed got %v, want %v", resp, want)
 	}
+}
 
+func TestStop(t *testing.T) {
+	f := startLemming(t)
+	conn, err := grpc.Dial(f.Addr(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		t.Fatalf("failed to Dial fake: %v", err)
+	}
+	want := &gnmipb.GetResponse{
+		Notification: []*gnmipb.Notification{{
+			Update: []*gnmipb.Update{{
+				Path: &gnmipb.Path{
+					Elem: []*gnmipb.PathElem{
+						{Name: "intefaces"},
+						{Name: "inteface", Key: map[string]string{"name": "eth0"}},
+						{Name: "mtu"},
+					},
+				},
+				Val: &gnmipb.TypedValue{
+					Value: &gnmipb.TypedValue_IntVal{
+						IntVal: 1500,
+					},
+				},
+			}},
+		}},
+	}
+	f.gnmiServer.GetResponses = []interface{}{want}
+	cGNMI := gnmipb.NewGNMIClient(conn)
+	// Close the listener so the get must fail.
+	f.lis.Close()
+	_, err = cGNMI.Get(context.Background(), &gnmipb.GetRequest{})
+	if err == nil {
+		t.Fatalf("gnmi.Get unexpected success")
+	}
+	err = f.Stop()
+	if s := errdiff.Check(err, "use of closed network connection"); s != "" {
+		t.Fatalf("failed to get error on close: %s", s)
+	}
 }
 
 func TestFakeGNOI(t *testing.T) {
-	f, err := New("localhost:0")
-	if err != nil {
-		t.Fatalf("failed to start fake: %v", err)
-	}
+	f := startLemming(t)
 	defer f.stop()
-	conn, err := grpc.Dial(f.addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.Dial(f.Addr(), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		t.Fatalf("failed to Dial fake: %v", err)
 	}
@@ -177,13 +210,13 @@ func TestFakeGNOI(t *testing.T) {
 	}
 
 	cWaveLengthRouter := wrpb.NewWavelengthRouterClient(conn)
-	scWaveLengthRouter, err := cWaveLengthRouter.AdjustPSD(context.Background(), &wrpb.AdjustPSDRequest{})
+	scWaveLengthRouter, err := cWaveLengthRouter.AdjustSpectrum(context.Background(), &wrpb.AdjustSpectrumRequest{})
 	if err != nil {
-		t.Errorf("gnoi.WaveLengthRouter.AdjustPSD failed to get stream client: %v", err)
+		t.Errorf("gnoi.WaveLengthRouter.AdjustSpectrum failed to get stream client: %v", err)
 	}
 	_, err = scWaveLengthRouter.Recv()
 	if err == nil {
-		t.Errorf("gnoi.WaveLengthRouter.AdjustPSD failed to return error")
+		t.Errorf("gnoi.WaveLengthRouter.AdjustSpectrum failed to return error")
 	}
 }
 
@@ -191,12 +224,9 @@ func TestFakeGNOI(t *testing.T) {
 func TestGNSI(t *testing.T) {
 	desc := "gnsi.Authz.Rotate"
 	t.Run(desc, func(t *testing.T) {
-		f, err := New()
-		if err != nil {
-			t.Fatalf("failed to start fake: %v", err)
-		}
+		f := startLemming(t)
 		defer f.stop()
-		conn, err := grpc.Dial(f.addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		conn, err := grpc.Dial(f.Addr(), grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
 			t.Fatalf("failed to Dial fake: %v", err)
 		}
@@ -213,12 +243,9 @@ func TestGNSI(t *testing.T) {
 
 	desc = "gnsi.Cert.Install"
 	t.Run(desc, func(t *testing.T) {
-		f, err := New()
-		if err != nil {
-			t.Fatalf("failed to start fake: %v", err)
-		}
+		f := startLemming(t)
 		defer f.stop()
-		conn, err := grpc.Dial(f.addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		conn, err := grpc.Dial(f.Addr(), grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
 			t.Fatalf("failed to Dial fake: %v", err)
 		}
@@ -235,12 +262,9 @@ func TestGNSI(t *testing.T) {
 
 	desc = "gnsi.Console.MutateAccountPassword"
 	t.Run(desc, func(t *testing.T) {
-		f, err := New()
-		if err != nil {
-			t.Fatalf("failed to start fake: %v", err)
-		}
+		f := startLemming(t)
 		defer f.stop()
-		conn, err := grpc.Dial(f.addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		conn, err := grpc.Dial(f.Addr(), grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
 			t.Fatalf("failed to Dial fake: %v", err)
 		}
@@ -257,12 +281,9 @@ func TestGNSI(t *testing.T) {
 
 	desc = "gnsi.Pathz.Install"
 	t.Run(desc, func(t *testing.T) {
-		f, err := New()
-		if err != nil {
-			t.Fatalf("failed to start fake: %v", err)
-		}
+		f := startLemming(t)
 		defer f.stop()
-		conn, err := grpc.Dial(f.addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		conn, err := grpc.Dial(f.Addr(), grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
 			t.Fatalf("failed to Dial fake: %v", err)
 		}
@@ -279,12 +300,9 @@ func TestGNSI(t *testing.T) {
 
 	desc = "gnsi.SSH.MutateAccountCredentials"
 	t.Run(desc, func(t *testing.T) {
-		f, err := New()
-		if err != nil {
-			t.Fatalf("failed to start fake: %v", err)
-		}
+		f := startLemming(t)
 		defer f.stop()
-		conn, err := grpc.Dial(f.addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		conn, err := grpc.Dial(f.Addr(), grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
 			t.Fatalf("failed to Dial fake: %v", err)
 		}
@@ -301,3 +319,15 @@ func TestGNSI(t *testing.T) {
 	})
 }
 */
+
+func startLemming(t *testing.T) *Device {
+	lis, err := net.Listen("tcp", ":0")
+	if err != nil {
+		t.Fatalf("Failed to start listener: %v", err)
+	}
+	f, err := New(lis)
+	if err != nil {
+		t.Fatalf("Failed to start lemming: %v", err)
+	}
+	return f
+}
