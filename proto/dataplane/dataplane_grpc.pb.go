@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             v3.12.4
-// source: dataplane/dataplane.proto
+// source: dataplane.proto
 
 package dataplane
 
@@ -29,7 +29,8 @@ type HALClient interface {
 	// SubsribePortState starts a stream of port status responses.
 	// sending the initial then any changes.
 	SubscribePortState(ctx context.Context, in *SubscribePortStateRequest, opts ...grpc.CallOption) (HAL_SubscribePortStateClient, error)
-	// AddRoute inserts an entry into the FIB.
+	// InsertRoute inserts an entry into the FIB. An inserted route
+	// overrides an existing route with the vrf and prefix.
 	InsertRoute(ctx context.Context, in *InsertRouteRequest, opts ...grpc.CallOption) (*InsertRouteResponse, error)
 	// DeleteRoute removes an entry from the FIB.
 	DeleteRoute(ctx context.Context, in *DeleteRouteRequest, opts ...grpc.CallOption) (*DeleteRouteResponse, error)
@@ -166,7 +167,8 @@ type HALServer interface {
 	// SubsribePortState starts a stream of port status responses.
 	// sending the initial then any changes.
 	SubscribePortState(*SubscribePortStateRequest, HAL_SubscribePortStateServer) error
-	// AddRoute inserts an entry into the FIB.
+	// InsertRoute inserts an entry into the FIB. An inserted route
+	// overrides an existing route with the vrf and prefix.
 	InsertRoute(context.Context, *InsertRouteRequest) (*InsertRouteResponse, error)
 	// DeleteRoute removes an entry from the FIB.
 	DeleteRoute(context.Context, *DeleteRouteRequest) (*DeleteRouteResponse, error)
@@ -437,5 +439,5 @@ var HAL_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 	},
-	Metadata: "dataplane/dataplane.proto",
+	Metadata: "dataplane.proto",
 }

@@ -28,9 +28,9 @@ message UpdatePortRequest {
 message UpdatePortResponse {}
 
 enum PortState {
-  PORTSTATE_INVALID = 0;
-  PORTSTATE_DOWN = 1;
-  PORTSTATE_UP = 2;
+  PORT_STATE_UNSET = 0;
+  PORT_STATE_DOWN = 1;
+  PORT_STATE_UP = 2;
 }
 
 message SetPortStateRequest {
@@ -88,9 +88,9 @@ message DeleteNeighborRequest {
 message DeleteNeighborResponse {}
 
 enum PuntProtocol {
-  PUNTPROTOCOL_INVALID = 0;
-  PUNTPROTOCOL_BGP = 1;
-  PUNTPROTOCOL_ISO = 2;
+  PUNT_PROTOCOL_INVALID = 0;
+  PUNT_PROTOCOL_BGP = 1;
+  PUNT_PROTOCOL_ISO = 2;
 }
 
 message AddPuntRuleRequest {
