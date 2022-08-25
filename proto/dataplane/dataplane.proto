@@ -117,7 +117,8 @@ service HAL {
   rpc SubscribePortState(SubscribePortStateRequest)
       returns (stream SubscribePortStateResponse) {}
 
-  // AddRoute inserts an entry into the FIB.
+  // InsertRoute inserts an entry into the FIB. An inserted route
+  // overrides an existing route with the vrf and prefix.
   rpc InsertRoute(InsertRouteRequest) returns (InsertRouteResponse) {}
   // DeleteRoute removes an entry from the FIB.
   rpc DeleteRoute(DeleteRouteRequest) returns (DeleteRouteResponse) {}
