@@ -53,7 +53,7 @@ message SubscribePortStateResponse {
   repeated IPNetwork network = 3;
 }
 
-message RouteDst {
+message NextHop {
   string port = 1;
   string ip = 2;
   uint64 weight = 3;
@@ -62,7 +62,7 @@ message RouteDst {
 message InsertRouteRequest {
   uint64 vrf = 1;
   string prefix = 2;
-  repeated RouteDst dst = 3;
+  repeated NextHop next_hop = 3;
 }
 
 message InsertRouteResponse {}
@@ -77,7 +77,6 @@ message DeleteRouteResponse {}
 message AddNeighborRequest {
   string ip = 1;
   string hwaddr = 2;
-  bool transient = 3;
 }
 
 message AddNeighborResponse {}
@@ -102,11 +101,11 @@ message AddPuntRuleRequest {
 message AddPuntRuleResponse {}
 
 message DeletePuntRuleRequest {
-	string port = 1;
-	PuntProtocol punt_protocol = 2;
-  }
-  
-  message DeletePuntRuleResponse {}
+  string port = 1;
+  PuntProtocol punt_protocol = 2;
+}
+
+message DeletePuntRuleResponse {}
 
 service HAL {
   // UpdatePort updates port information.
