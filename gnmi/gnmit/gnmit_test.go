@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/encoding/prototext"
 
 	"github.com/google/go-cmp/cmp"
@@ -176,7 +177,7 @@ func TestONCE(t *testing.T) {
 	var sendErr, recvErr error
 	go func(ctx context.Context) {
 		defer cancel()
-		conn, err := grpc.Dial(addr, grpc.WithInsecure())
+		conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
 			sendErr = fmt.Errorf("cannot dial gNMI server, %v", err)
 			return
@@ -262,7 +263,7 @@ func TestONCESet(t *testing.T) {
 	var sendErr, recvErr error
 	go func(ctx context.Context) {
 		defer cancel()
-		conn, err := grpc.Dial(addr, grpc.WithInsecure())
+		conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
 			sendErr = fmt.Errorf("cannot dial gNMI server, %v", err)
 			return
@@ -360,7 +361,7 @@ func TestONCESetJSON(t *testing.T) {
 	var sendErr, recvErr error
 	go func(ctx context.Context) {
 		defer cancel()
-		conn, err := grpc.Dial(addr, grpc.WithInsecure())
+		conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
 			sendErr = fmt.Errorf("cannot dial gNMI server, %v", err)
 			return
@@ -485,7 +486,7 @@ func TestSTREAM(t *testing.T) {
 	wg.Add(1)
 	go func(ctx context.Context, cfn func()) {
 		defer cfn()
-		conn, err := grpc.Dial(addr, grpc.WithInsecure())
+		conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
 			sendErr = fmt.Errorf("cannot dial gNMI server, %v", err)
 			return
