@@ -27,7 +27,7 @@ const (
 
 // goBgpTask tries to establish a simple BGP session using GoBGP.
 //
-// # How to achieve idemopotency and a declarative configuration for GoBGP
+// # How to achieve declarative configuration for GoBGP
 //
 // Goal:
 //   - Declarative configuration: Get the system into the correct state regardless of what the diff of the intended config against the current applied config is.
