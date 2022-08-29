@@ -1,0 +1,132 @@
+// Copyright 2022 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Interface for provisioning forwarding. Note that in all messages, only one
+// extension may be set. This is to maintain compatibility with the sandcastle
+// RPC compiler that does not support oneof. The behavior on setting multiple
+// extensions in a message is undefined.
+syntax = "proto2";
+
+package forwarding;
+
+import "proto/forwarding/forwarding_attribute.proto";
+import "proto/forwarding/forwarding_common.proto";
+import "proto/forwarding/forwarding_info.proto";
+import "proto/forwarding/forwarding_notification.proto";
+import "proto/forwarding/forwarding_operation.proto";
+import "proto/forwarding/forwarding_packetsink.proto";
+import "proto/forwarding/forwarding_port.proto";
+import "proto/forwarding/forwarding_table.proto";
+
+option go_package = "github.com/openconfig/lemming/dataplane/proto/forwarding";
+
+// Service provisions the forwarding service.
+service Service {
+  // Operations on the service.
+
+  // ContextCreate creates a forwarding context.
+  rpc ContextCreate(ContextCreateRequest) returns (ContextCreateReply) {}
+
+  // ContextUpdate updates a forwarding context.
+  rpc ContextUpdate(ContextUpdateRequest) returns (ContextUpdateReply) {}
+
+  // ContextDelete deletes a forwarding context.
+  rpc ContextDelete(ContextDeleteRequest) returns (ContextDeleteReply) {}
+
+  // ContextList lists all the forwarding contexts.
+  rpc ContextList(ContextListRequest) returns (ContextListReply) {}
+
+  // SetCreate creates a set.
+  // SetCreate creates a set.
+  rpc SetCreate(SetCreateRequest) returns (SetCreateReply) {}
+
+  // SetUpdate updates a set.
+  rpc SetUpdate(SetUpdateRequest) returns (SetUpdateReply) {}
+
+  // AttributeList lists all supported attributes.
+  rpc AttributeList(AttributeListRequest) returns (AttributeListReply) {}
+
+  // AttributeUpdate updates an attribute.
+  rpc AttributeUpdate(AttributeUpdateRequest) returns (AttributeUpdateReply) {}
+
+  // Operations on objects.
+  // ObjectDelete deletes an object.
+  rpc ObjectDelete(ObjectDeleteRequest) returns (ObjectDeleteReply) {}
+
+  // ObjectList lists all the objects in the system.
+  rpc ObjectList(ObjectListRequest) returns (ObjectListReply) {}
+
+  // ObjectCounters retrieves all the counters associated on the object.
+  rpc ObjectCounters(ObjectCountersRequest) returns (ObjectCountersReply) {}
+
+  // Operations on tables.
+
+  // TableCreate creates an empty table.
+  rpc TableCreate(TableCreateRequest) returns (TableCreateReply) {}
+
+  // TableEntryAdd add an entry to a table.
+  rpc TableEntryAdd(TableEntryAddRequest) returns (TableEntryAddReply) {}
+
+  // TableEntryRemove removes an entry from a table.
+  rpc TableEntryRemove(TableEntryRemoveRequest)
+      returns (TableEntryRemoveReply) {}
+
+  // TableList lists all entries of a table.
+  rpc TableList(TableListRequest) returns (TableListReply) {}
+
+  // Operations on ports.
+
+  // PortCreate creates a port.
+  rpc PortCreate(PortCreateRequest) returns (PortCreateReply) {}
+
+  // PortUpdate updates a port.
+  rpc PortUpdate(PortUpdateRequest) returns (PortUpdateReply) {}
+
+  // PortState queries the port state.
+  rpc PortState(PortStateRequest) returns (PortStateReply) {}
+
+  // Operations on Flow Counters
+
+  // FlowCounterCreate creates a flow counter
+  rpc FlowCounterCreate(FlowCounterCreateRequest)
+      returns (FlowCounterCreateReply) {}
+
+  // FlowCounterQuery requests the values of a bunch of flow counters.
+  rpc FlowCounterQuery(FlowCounterQueryRequest)
+      returns (FlowCounterQueryReply) {}
+
+  // Operation performs a stream of operations.
+  rpc Operation(stream OperationRequest) returns (stream OperationReply) {}
+}
+
+// Notification is a service that processes various events.
+service Notification {
+  // Notify notifies an event.
+  rpc Notify(EventDesc) returns (Empty) {}
+}
+
+// PacketSink is a service that processes packets on the specified port.
+service PacketSink {
+  // PacketInject injects a packet into the specified port.
+  rpc PacketInject(PacketInjectRequest) returns (PacketInjectReply) {}
+}
+
+// Info provides access to various information elements.
+service Info {
+  // InfoList retrieves a list of all information elements.
+  rpc InfoList(InfoListRequest) returns (InfoListReply) {}
+
+  // InfoElement retrieves the contents of the specified information element.
+  rpc InfoElement(InfoElementRequest) returns (InfoElementReply) {}
+}

@@ -1,0 +1,41 @@
+// Copyright 2022 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Interface for consuming packets.
+syntax = "proto2";
+
+package forwarding;
+
+import "proto/forwarding/forwarding_action.proto";
+import "proto/forwarding/forwarding_common.proto";
+
+option go_package = "github.com/openconfig/lemming/dataplane/proto/forwarding";
+
+// PacketInjectRequest is a request to inject frames into the port.
+message PacketInjectRequest {
+  optional PortId port_id = 1;         // Port used to process the packet
+  optional ContextId context_id = 2;   // Context containing the port
+  optional bytes bytes = 3;            // Bytes in the L2 frame
+  optional PortAction action = 4;      // Select a set of actions on the port
+  repeated ActionDesc preprocess = 7;  // Actions used to preprocess the packet
+  optional PortId ingress = 8;         // Identifies the ingress of the packet
+  optional PortId egress = 9;          // Identifies the egress of the packet
+  optional PacketHeaderId start_header = 10
+      [default = ETHERNET];  // Start header of the frame
+  repeated PacketFieldBytes parsed_fields =
+      11;  // List of fields describing the L2 frame
+  optional bool debug = 12
+      [default = false];  // Whether to turn on debug messages.
+}
+message PacketInjectReply {}

@@ -1,0 +1,209 @@
+// Copyright 2022 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Protocol buffers to used manage forwarding ports.
+syntax = "proto2";
+
+package forwarding;
+
+import "proto/forwarding/forwarding_action.proto";
+import "proto/forwarding/forwarding_common.proto";
+
+option go_package = "github.com/openconfig/lemming/dataplane/proto/forwarding";
+
+// PortType indicates the types of forwarding ports.
+enum PortType {
+  CPU_PORT = 2;        // Port associated with provisioning
+  AGGREGATE_PORT = 3;  // Port that is an aggregate of ports
+}
+
+// A PortDesc describes a forwarding port.
+// It is assumed that the descriptor  will contain the appropriate extension
+// describing the port's specific type. Each type of port is an
+// extension with a unique extension number (1 greater than
+// the previous extension).
+message PortDesc {
+  optional PortType port_type = 2;
+  optional PortId port_id = 4;
+  extensions 100 to max;  // Extensions representing various types of ports.
+}
+
+// A CPUPortDesc describes CPU_PORT. The descriptor identifies the cpu-queue-id.
+// Note that the CPU port is connected to the packet sink service, and hence it
+// does not define a specific start header for its frames. The CPU port can also
+// export the specified list of packet fields when writing the packet.
+message CPUPortDesc {
+  extend PortDesc {
+    optional CPUPortDesc extension = 102;
+  }
+  optional string queue_id = 1;  // CPU queue-id.
+  optional int32 queue_length =
+      2;  // Length of the CPU queue, unbounded by default
+  repeated PacketFieldId export_field_ids = 3;  // Packet fields to export
+}
+
+// A PortCreateRequest is a request to create a port.
+message PortCreateRequest {
+  optional PortDesc port = 1;
+  optional ContextId context_id = 2;
+}
+message PortCreateReply {
+  optional ObjectIndex object_index = 2;
+}
+
+// A PortUpdateDesc updates a forwarding port.
+message PortUpdateDesc {
+  extensions 100 to max;  // Extensions representing various types of ports.
+}
+
+// A PortUpdateRequest is a request to update the port.
+message PortUpdateRequest {
+  optional PortId port_id = 1;
+  optional ContextId context_id = 2;
+  optional PortUpdateDesc update = 3;
+}
+message PortUpdateReply {}
+
+// A CPUPortUpdateDesc updates the CPU port's input and output actions.
+message CPUPortUpdateDesc {
+  extend PortUpdateDesc {
+    optional CPUPortUpdateDesc extension = 102;
+  }
+  repeated ActionDesc input = 1;
+  repeated ActionDesc output = 2;
+}
+
+// AggregateHashAlgorithm enumerates algorithms used to select from a set
+// of ports.
+enum AggregateHashAlgorithm {
+  CRC16 = 2;  // x16+x15+x2+1
+  CRC32 = 3;  // x32+x26+x23+x22+x16+x12+x11+x10+x8+x7+x5+x4+x2+x+1
+  FLOOD = 5;  // floods the packet.
+}
+
+// An AggregateSelectAction describes actions to be applied when the
+// aggregate port selects the specified port.
+message AggregateSelectAction {
+  optional PortId port_id = 1;  // Port Id.
+  repeated ActionDesc actions =
+      2;  // Actions applied when the port is selected.
+}
+
+// An AggregatePortUpdateDesc updates all attributes of an aggregate port
+// such as the algorithm to select a member and the packet fields used by the
+// hash algorithm.
+message AggregatePortUpdateDesc {
+  extend PortUpdateDesc {
+    optional AggregatePortUpdateDesc extension = 103;
+  }
+  repeated PortId port_ids = 1;              // List of ports.
+  optional AggregateHashAlgorithm hash = 2;  // Type of hashing to use.
+  repeated PacketFieldId field_ids = 3;  // List of fields to use for hashing.
+  repeated AggregateSelectAction select_actions = 4;  // List of select actions.
+}
+
+// An AggregatePortAddMemberUpdateDesc adds a member to an aggregate port with
+// the specified number of instances.
+message AggregatePortAddMemberUpdateDesc {
+  extend PortUpdateDesc {
+    optional AggregatePortAddMemberUpdateDesc extension = 105;
+  }
+  optional PortId port_id = 1;
+  repeated ActionDesc select_actions =
+      2;  // Actions applied when the port is selected.
+  optional uint32 instance_count = 3;
+}
+
+// An AggregatePortRemoveMemberUpdateDesc removes a member from an aggregate
+// port. Note that all instances are removed.
+message AggregatePortRemoveMemberUpdateDesc {
+  extend PortUpdateDesc {
+    optional AggregatePortRemoveMemberUpdateDesc extension = 106;
+  }
+  optional PortId port_id = 1;
+}
+
+// An AggregatePortAlgorithmUpdateDesc updates how the aggregate port selects
+// constituents for processing packets.
+message AggregatePortAlgorithmUpdateDesc {
+  extend PortUpdateDesc {
+    optional AggregatePortAlgorithmUpdateDesc extension = 107;
+  }
+  optional AggregateHashAlgorithm hash = 1;  // Type of hashing to use.
+  repeated PacketFieldId field_ids = 2;  // List of fields to use for hashing.
+}
+
+// PortLaserState describes the laser state of a port. It can be used either as
+// a passive status or as an indicator of the desired state. For the link to be
+// up, neither port laser can be disabled.
+enum PortLaserState {
+  PORT_LASER_NOT_EMULATED = 1;  // Port is state-agnostic.
+  PORT_LASER_ENABLED = 2;       // Port laser is on.
+  PORT_LASER_DISABLED = 3;      // Port laser is off.
+}
+
+// PortSpeedBehavior defines how the speed of a port affects its ability to
+// connect with other ports. A link can only go up if its ports have matching
+// speeds, or if at least one uses MATCH_ANY_SPEED behavior.
+enum PortSpeedBehavior {
+  // Matches any peer speed, regardless of peer behavior.
+  PORT_MATCH_ANY_SPEED = 1;
+  // Matches if peer speed is equal, or if peer uses MATCH_ANY_SPEED.
+  PORT_MATCH_SAME_SPEED = 2;
+}
+
+// PortSpeed indicates the speed and speed-matching behavior used by a port.
+message PortSpeed {
+  optional uint64 kbps = 1;
+  optional PortSpeedBehavior behavior = 2 [default = PORT_MATCH_ANY_SPEED];
+}
+
+// PortInfo carries state information for a port.
+message PortInfo {
+  optional PortLaserState laser = 1;
+  optional PortSpeed speed = 2;
+}
+
+// LinkState enumerates the state of a link between two ports. This can be the
+// objective state of the link, or the state as seen by one of the ports.
+//
+// LinkState is determined by the following rules:
+// 1) If either port laser is DISABLED, the link is DOWN; else
+// 2) if either port speed behavior is MATCH_ANY, the link is UP; else
+// 3) if the speed of both ports is equal, the link is UP; else
+// 4) the link is DOWN.
+enum LinkState {
+  LINK_UP = 1;
+  LINK_DOWN = 2;
+}
+
+// LinkStateDesc specifies whether a port's link is up, as well as more granular
+// laser and speed information for the remote port (if one is connected).
+message LinkStateDesc {
+  optional LinkState state = 1 [default = LINK_DOWN];
+  optional PortInfo remote_port = 2;
+}
+
+// A PortStateRequest can change a port's state and returns the resulting state.
+message PortStateRequest {
+  reserved 3;
+  optional PortId port_id = 1;
+  optional ContextId context_id = 2;
+  optional PortInfo operation = 4;
+}
+message PortStateReply {
+  reserved 1;
+  optional PortInfo local_port = 2;
+  optional LinkStateDesc link = 3;
+}

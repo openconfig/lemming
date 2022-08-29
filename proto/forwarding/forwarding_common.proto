@@ -1,0 +1,383 @@
+// Copyright 2022 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Protocol buffers common to various parts of the forwarding api.
+syntax = "proto2";
+
+package forwarding;
+
+option go_package = "github.com/openconfig/lemming/dataplane/proto/forwarding";
+
+// A ContextId identifies a forwarding context.
+message ContextId {
+  optional string id = 1;
+}
+
+// A Counter is a counter-id and its value.
+message Counter {
+  optional CounterId id = 1;
+  optional uint64 value = 2;
+}
+
+// An ObjectId is a human readable identifier that is assigned by the client.
+// It identifies a forwarding object within a forwarding context, and is used
+// for all operations on the object.
+message ObjectId {
+  optional string id = 2;
+}
+
+// An ObjectIndex is a numeric identifier that is assigned by lucius.
+// It identifies a forwarding object within a forwarding context, and is used
+// for identifying objects during packet processing.
+message ObjectIndex {
+  optional uint64 index = 1;
+}
+
+// A SetId identifies a set.
+message SetId {
+  optional ObjectId object_id = 1;
+}
+
+// PortAction enumerates the types of action sets associated with a port.
+// INPUT is a set of actions applied to packets on ingress.
+// OUTPUT is a set of actions applied to packets on egress.
+// WRITE writes the packet out without applying any actions.
+enum PortAction {
+  PORT_ACTION_INPUT = 1;
+  PORT_ACTION_OUTPUT = 2;
+  PORT_ACTION_WRITE = 3;
+}
+
+// A PortId identifies a forwarding port.
+message PortId {
+  optional ObjectId object_id = 1;
+}
+
+// A TableId identifies a forwarding table.
+message TableId {
+  optional ObjectId object_id = 1;
+}
+
+// PacketHeaderGroup enumerates the groups of packet headers recognized by
+// forwarding.
+enum PacketHeaderGroup {
+  PACKET_HEADER_GROUP_NONE = 1;
+  PACKET = 2;   // Start of packet.
+  L2 = 3;       // L2 header.
+  L3 = 4;       // L3 header.
+  L4 = 5;       // L4 header.
+  PAYLOAD = 6;  // Payload.
+  PACKET_HEADER_GROUP_COUNT = 20;
+}
+
+// PacketHeaderId enumerates the packet headers recognized by forwarding.
+// METADATA      - Contains packet attributes that are not encoded in the frame
+// ETHERNET      - Ethernet frame
+// ETHERNET_VLAN - Single tag in an ethernet frame
+// ETHERNET_1Q   - Pair of tags in an ethernet frame
+// IP4           - IP4 header as the packet or tunnel header
+// IP6           - IP6 header as the packet or tunnel header
+// IP            - IP header which may be IP4 or IP6
+// GRE           - GRE header in the GRE tunnel
+// TCP           - TCP header in the payload
+// UDP           - UDP header in the payload
+// ARP           - ARP message in the ethernet frame
+// ICMP4         - ICMP message in a IP4 header
+// OPAQUE        - Represents opaque data
+// ICMP6         - ICMP message in a IP6 header
+// TUNNEL_6TO4_AUTO - IP4 header carrying IP6 where
+//    pkt_inner_dip[127:112]=16’h2002 &
+//    pkt_outer_dip[31:0]=pkt_inner_dip[111:80]
+//    This used only for encap/decap and is defined by RFC 3056.
+// TUNNEL_6TO4_SECURE - IP4 header carrying IP6 where
+//    pkt_inner_sip[127:112]=16’h2002 &
+//    pkt_outer_sip[31:0]=pkt_inner_sip[111:80]
+//    pkt_inner_dip[127:112]=16’h2002 &
+//    pkt_outer_dip[31:0]=pkt_inner_dip[111:80]
+//    This used only for encap/decap and is defined by RFC 3056.
+enum PacketHeaderId {
+  PACKET_HEADER_ID_NONE = 1;
+  METADATA = 2;
+  ETHERNET = 3;
+  ETHERNET_VLAN = 4;
+  ETHERNET_1Q = 5;
+  IP4 = 6;
+  IP6 = 7;
+  GRE = 8;
+  TCP = 9;
+  UDP = 10;
+  ARP = 11;
+  ICMP4 = 12;
+  OPAQUE = 13;
+  ICMP6 = 14;
+  TUNNEL_6TO4_AUTO = 15;
+  TUNNEL_6TO4_SECURE = 16;
+  IP = 19;
+  PACKET_HEADER_ID_COUNT = 1000;
+}
+
+// PacketFieldNum enumerates the packet fields recognized by forwarding.
+enum PacketFieldNum {
+  PACKET_FIELD_NUM_NONE = 1;
+  ETHER_MAC_SRC = 2;         // ethernet source mac address.
+  ETHER_MAC_DST = 3;         // ethernet destination mac address.
+  ETHER_TYPE = 4;            // ethernet type.
+  VLAN_TAG = 5;              // vlan tag.
+  VLAN_PRIORITY = 6;         // vlan priority.
+  IP_VERSION = 7;            // IP version of the packet.
+  IP_ADDR_SRC = 8;           // 16B IP source address (v4 or v6)
+  IP_ADDR_DST = 9;           // 16B IP destination address (v4 or v6).
+  IP_HOP = 10;               // IP hop limit (v6) or ttl (v4).
+  IP_PROTO = 11;             // IP protocol.
+  IP_QOS = 12;               // IP qos bits.
+  IP6_FLOW = 13;             // IPv6 flow label.
+  PACKET_PORT_INPUT = 14;    // Packet input port.
+  PACKET_PORT_OUTPUT = 15;   // Packet output port.
+  PACKET_LENGTH = 16;        // Packet length.
+  ICMP_TYPE = 17;            // ICMP type.
+  ICMP_CODE = 18;            // ICMP code.
+  L4_PORT_SRC = 19;          // L4 source port (UDP or TCP).
+  L4_PORT_DST = 20;          // L4 destination port (UDP or TCP).
+  TCP_FLAGS = 21;            // TCP flags.
+  ARP_TPA = 22;              // ARP target protocol address.
+  GRE_KEY = 23;              // GRE key.
+  GRE_SEQUENCE = 24;         // GRE sequence.
+  PACKET_VRF = 25;           // VRF ID.
+  ICMP6_ND_TARGET = 26;      // ICMPv6 ND target address.
+  ICMP6_ND_SLL = 27;         // ICMPv6 ND source link-layer address.
+  ICMP6_ND_TLL = 28;         // ICMPv6 ND target link-layer address.
+  PACKET_ATTRIBUTE_32 = 34;  // 32-bit packet attributes.
+  PACKET_ATTRIBUTE_16 = 46;  // 16-bit packet attributes.
+  PACKET_ATTRIBUTE_8 = 49;   // 8-bit packet attributes.
+  PACKET_ATTRIBUTE_24 = 50;  // 24-bit packet attributes.
+  ARP_TMAC = 52;             // ARP target mac address.
+  ARP_SMAC = 53;             // ARP source mac address.
+  ARP_SPA = 54;              // ARP source protocol address.
+  PACKET_FIELD_NUM_COUNT = 1000;
+}
+
+// PacketBytes identifies a set of bytes within the packet.
+message PacketBytes {
+  optional PacketHeaderGroup header_group = 1;
+  optional uint32 instance = 2;  // Instance of the header.
+  optional uint32 offset = 3;    // Offset in bytes within the header.
+  optional uint32 size = 4;      // Size in bytes.
+}
+
+// PacketField identfies a field within the packet.
+message PacketField {
+  optional PacketFieldNum field_num = 1;
+  optional uint32 instance = 2;  // Instance of the field.
+}
+
+// PacketFieldId identifies a packet field. The field is either identified
+// using an enumeration (PacketField) or a set of bytes (PacketByte)
+message PacketFieldId {
+  optional PacketField field = 1;
+  optional PacketBytes bytes = 2;
+}
+
+// A PacketFieldBytes describes the value of a field as a series of bytes.
+message PacketFieldBytes {
+  optional PacketFieldId field_id = 1;
+  optional bytes bytes = 2;
+}
+
+// A PacketFieldMaskedBytes describes bits within a packet field as a series of
+// bytes and masks.
+message PacketFieldMaskedBytes {
+  optional PacketFieldId field_id = 1;
+  optional bytes bytes = 2;
+  optional bytes masks = 3;
+}
+
+// A PacketFieldSet describes the value of a field as one of a set of bytes.
+// The set must reference to a precreated forwarding set with the appropriate
+// values.
+message PacketFieldSet {
+  optional PacketFieldId field_id = 1;
+  optional SetId set_id = 2;
+}
+
+// CounterId enumerates the various counters that may be maintained.
+enum CounterId {
+  COUNTER_NONE = 0;       // Represents a non existing counter.
+  RX_PACKETS = 1;         // Number of received packets.
+  RX_OCTETS = 2;          // Number of received octets.
+  RX_DROP_PACKETS = 3;    // Number of packets dropped after receiving.
+  RX_DROP_OCTETS = 4;     // Number of octets dropped after receiving.
+  RX_ERROR_PACKETS = 5;   // Number of packets with errors after receiving.
+  RX_ERROR_OCTETS = 6;    // Number of octets with error after receiving.
+  TX_PACKETS = 7;         // Number of packets that were enqueued for TX.
+  TX_OCTETS = 8;          // Number of octets that were enqueued for TX .
+  TX_DROP_PACKETS = 9;    // Number of packets dropped after TX enqueue.
+  TX_DROP_OCTETS = 10;    // Number of octets dropped after TX enqueue.
+  TX_ERROR_PACKETS = 11;  // Number of packets with errors after TX enqueue.
+  TX_ERROR_OCTETS = 12;   // Number of octets with error after after TX enqueue.
+  RATELIMIT_PACKETS = 13;  // Number of ratelimit packets.
+  RATELIMIT_OCTETS = 14;   // Number of ratelimit octets.
+  DROP_PACKETS = 15;       // Number of dropped packets.
+  DROP_OCTETS = 16;        // Number of dropped octets.
+  ERROR_PACKETS = 17;      // Number of error packets.
+  ERROR_OCTETS = 18;       // Number of error octets.
+  RX_BAD_PACKETS = 19;     // Number of bad packets.
+  RX_BAD_OCTETS = 20;      // Number of bad octets.
+  RX_ADMIN_DROP_PACKETS =
+      21;  // Number of packets dropped due to an administrative reason.
+  RX_ADMIN_DROP_OCTETS =
+      22;  // Number of octets dropped due to an administrative reason.
+  TX_ADMIN_DROP_PACKETS =
+      23;  // Number of packets dropped due to an administrative reason.
+  TX_ADMIN_DROP_OCTETS =
+      24;  // Number of octets dropped due to an administrative reason.
+  MIRROR_PACKETS = 25;        // Number of mirror packets.
+  MIRROR_OCTETS = 26;         // Number of mirror octets.
+  MIRROR_ERROR_PACKETS = 27;  // Number of mirror error packets.
+  MIRROR_ERROR_OCTETS = 28;   // Number of mirror error octets.
+  ENCAP_ERROR_PACKETS = 29;   // Number of encap error packets.
+  ENCAP_ERROR_OCTETS = 30;    // Number of encap error octets.
+  DECAP_ERROR_PACKETS = 31;   // Number of decap error packets.
+  DECAP_ERROR_OCTETS = 32;    // Number of decap error octets.
+  FLOW_COUNTER_OCTETS = 33;   // The byte_count value of flow counters.
+  FLOW_COUNTER_PACKETS = 34;  // The packet_count value of flow counters.
+  RX_DEBUG_PACKETS = 35;      // Number of packet debugged after receiving.
+  RX_DEBUG_OCTETS = 36;       // Number of octets debugged after receiving.
+  COUNTER_ID_MAX = 255;       // Maximum counter id.
+}
+
+// An ObjectCountesRequest is a request for counters of an object
+// associated with the specified id.
+message ObjectCountersRequest {
+  optional ObjectId object_id = 1;
+  optional ContextId context_id = 2;
+}
+message ObjectCountersReply {
+  repeated Counter counters = 1;
+}
+
+// An ObjectDeleteRequest is a request to delete an existing object
+// associated with the specified id.
+message ObjectDeleteRequest {
+  optional ObjectId object_id = 1;
+  optional ContextId context_id = 2;
+}
+message ObjectDeleteReply {}
+
+// A ObjectListRequest is a request of all objects within forwarding.
+message ObjectListRequest {
+  optional ContextId context_id = 2;
+}
+message ObjectListReply {
+  repeated ObjectId objects = 1;
+}
+
+// A ContextCreateRequest is a request to create a context with the specified
+// ID.
+message ContextCreateRequest {
+  optional ContextId context_id = 1;
+  optional string packet_address =
+      2;  // Address of the context's packet service.
+  optional string notification_address =
+      3;  // Address of the context's notification service.
+}
+message ContextCreateReply {}
+
+// A ContextUpdateRequest is a request to update a context with the specified
+// ID. For a given attribute, specifying an operation without specifying a
+// value, effectively unsets the attribute. Note that only the specified
+// operations are performed by the update. If an operation is not specified,
+// the corresponding attribute value is ignored.
+message ContextUpdateRequest {
+  enum Operation {
+    UPDATE_PACKET_ADDRESS = 0;  // Update the packet sink service address.
+    UPDATE_NOTIFICATION_ADDRESS =
+        1;  // Update the notification service address.
+  }
+  optional ContextId context_id = 1;
+  optional string packet_address =
+      2;  // Address of the context's packet service.
+  optional string notification_address =
+      3;  // Address of the context's notification service.
+  repeated Operation operations = 4;  // List of update operations.
+}
+message ContextUpdateReply {}
+
+// A ContextDeleteRequest is a request to delete a context with the specified
+// ID. Note that all objects in the context are implicitly deleted.
+message ContextDeleteRequest {
+  optional ContextId context_id = 1;
+}
+message ContextDeleteReply {}
+
+// A ContextAttr contains the attributes of a forwarding context.
+message ContextAttr {
+  optional ContextId context_id = 1;
+  optional string packet_address = 2;  // Address of the packet service
+  optional string notification_address =
+      3;  // Address of the notification service
+}
+
+// A ContextListRequest is a request to list all the contexts.
+message ContextListRequest {}
+message ContextListReply {
+  repeated ContextAttr contexts = 1;
+}
+
+// A SetCreateRequest is a request to create an empty set
+// identified by set_id in the specified forwarding context.
+message SetCreateRequest {
+  optional ContextId context_id = 1;
+  optional SetId set_id = 3;
+}
+message SetCreateReply {
+  optional ObjectIndex object_index = 2;
+}
+
+// A SetUpdateRequest is a request to update the set of strings in a
+// set.
+message SetUpdateRequest {
+  optional ContextId context_id = 1;
+  optional SetId set_id = 2;
+  repeated bytes bytes = 3;
+}
+message SetUpdateReply {}
+
+// An Id uniquely identifies a flow counter, within the specified forwarding
+// context.
+message FlowCounterId {
+  optional ObjectId object_id = 1;
+}
+
+// The value contained in the flow counter, along with an identifier for it.
+message FlowCounter {
+  optional FlowCounterId id = 1;
+  optional uint64 octets = 2;
+  optional uint64 packets = 3;
+}
+
+// A FlowCounterCreateRequest is a request to create a per flow counter.
+message FlowCounterCreateRequest {
+  optional ContextId context_id = 1;
+  optional FlowCounterId id = 2;
+}
+message FlowCounterCreateReply {}
+
+// A FlowCounterQueryRequest is a request to read a bunch of flow counters.
+message FlowCounterQueryRequest {
+  optional ContextId context_id = 1;
+  repeated FlowCounterId ids = 2;
+}
+message FlowCounterQueryReply {
+  repeated FlowCounter counters = 1;
+}

@@ -1,0 +1,51 @@
+// Copyright 2022 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Protocol buffers common to managing attributes in forwarding api.
+// An attribute is a named property identified by a human readable name and a
+// string value. The name and value of an attribute is opaque to the forwarding
+// api. An attribute may be associated with a forwarding object, forwarding
+// context or the global context.
+syntax = "proto2";
+
+package forwarding;
+
+import "proto/forwarding/forwarding_common.proto";
+
+option go_package = "github.com/openconfig/lemming/dataplane/proto/forwarding";
+
+// An AttributeDesc describes an attribute.
+message AttributeDesc {
+  optional string name = 1;
+  optional string help = 2;
+}
+
+// An AttributeListRequest is a request to list all supported attributes.
+message AttributeListRequest {}
+message AttributeListReply {
+  repeated AttributeDesc attrs = 1;
+}
+
+// An AttributeUpdateRequest is a request to update an attribute. The attribute
+// id is a mandatory field. If the context_id is not specified, the attribute is
+// applied to all forwarding contexts. If the object id is not specified the
+// attribute is applied to all fields. If the value is not specified the
+// attribute is deleted.
+message AttributeUpdateRequest {
+  optional ContextId context_id = 1;
+  optional ObjectId object_id = 2;
+  optional string attr_id = 3;
+  optional string attr_value = 4;
+}
+message AttributeUpdateReply {}
