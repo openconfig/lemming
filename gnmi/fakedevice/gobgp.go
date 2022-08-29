@@ -198,10 +198,10 @@ func goBgpTask(getIntendedConfig func() *config.Device, q gnmit.Queue, update gn
 				log.V(1).Infof("Received delete path: %s", prototext.Format(u))
 				switch {
 				case len(u.Elem) > 0:
-				case len(u.Element) > 0: //lint:ignore SA1019 Specifically handling deprecated gNMI Element fields.
+				case len(u.Element) > 0: //nolint:staticcheck //lint:ignore SA1019 Specifically handling deprecated gNMI Element fields.
 					// Since gNMI still sends delete paths using the deprecated Element field, we need to translate it into path-elems first.
 					// We also need to strip the first element for origin.
-					//lint:ignore SA1019 Specifically handling deprecated gNMI Element fields.
+					//nolint:staticcheck //lint:ignore SA1019 Specifically handling deprecated gNMI Element fields.
 					elems, err := pathTranslator.PathElem(u.Element[1:])
 					if err != nil {
 						log.Errorf("goBgpTask: failed to translate delete path: %s", prototext.Format(u))
