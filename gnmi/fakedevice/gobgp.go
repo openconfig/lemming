@@ -33,28 +33,28 @@ const (
 //   - Declarative configuration: Get the system into the correct state regardless of what the diff of the intended config against the current applied config is.
 //
 // Requirements:
-//   1. When there is a change in intended config, the system must arrive at an eventually-consistent state.
-//   2. Make sure that all applied config and derived state are updated correctly whether there is a passive state change (i.e. through the event watcher), or active state change (i.e. when there is a change in intended config)
+//  1. When there is a change in intended config, the system must arrive at an eventually-consistent state.
+//  2. Make sure that all applied config and derived state are updated correctly whether there is a passive state change (i.e. through the event watcher), or active state change (i.e. when there is a change in intended config)
 //
 // Assumptions:
 //   - All possible actions to take within this task (BGP in this case) can be put in DAG order.
 //   - The number of possible actions is low such that maintaining the DAG
-//   order of these actions is not burdensome. This is a poor assumption -- we
-//   may very well have to use an alternative method such as an event loop for
-//   managing the scheduling of actions such that we don't have to manually
-//   maintain their order.
+//     order of these actions is not burdensome. This is a poor assumption -- we
+//     may very well have to use an alternative method such as an event loop for
+//     managing the scheduling of actions such that we don't have to manually
+//     maintain their order.
 //
 // Algorithm:
 // Process all possible actions in DAG order so that if a previous one happens that unblocks later ones, those later ones will actually execute.
 //
-//   0. Maintain a view of the current intended and applied configs in memory.
-//   For each new intended config update:
-//   1. Identify the DAG order of library actions and the paths associated with each of them.
-//   2. Process the actions in DAG order. The action to take depends on the current view of the config. The results of the action determines how we will update the current view of the applied config (which we then forward to the central DB).
-//   	e.g. for Global if the intended config matches the applied config we will simply skip this step. If not we will actually do the action (either start, stop, or stop-start (aka. update)), and if it succeeds, update the applied config both in the DB as well as the current view of the applied config.
-//   When there is a dependency, the later actions will NOT directly depend on the results of the previous actions, but will just look at the current config view to determine the appropriate action.
-//   	e.g. for peers, if the global setting has been set up, then we can create the peers and update the applied config if it succeeds, but if not then we don't do anything.
-//   		; however, if the global setting hasn't been set up, we actually need to erase the entirety of the applied config. This is because the watcher doesn't tell us this information.
+//  0. Maintain a view of the current intended and applied configs in memory.
+//     For each new intended config update:
+//  1. Identify the DAG order of library actions and the paths associated with each of them.
+//  2. Process the actions in DAG order. The action to take depends on the current view of the config. The results of the action determines how we will update the current view of the applied config (which we then forward to the central DB).
+//     e.g. for Global if the intended config matches the applied config we will simply skip this step. If not we will actually do the action (either start, stop, or stop-start (aka. update)), and if it succeeds, update the applied config both in the DB as well as the current view of the applied config.
+//     When there is a dependency, the later actions will NOT directly depend on the results of the previous actions, but will just look at the current config view to determine the appropriate action.
+//     e.g. for peers, if the global setting has been set up, then we can create the peers and update the applied config if it succeeds, but if not then we don't do anything.
+//     ; however, if the global setting hasn't been set up, we actually need to erase the entirety of the applied config. This is because the watcher doesn't tell us this information.
 func goBgpTask(getIntendedConfig func() *config.Device, q gnmit.Queue, update gnmit.UpdateFn, target string, remove func()) error {
 	bgpStatePath, _, err := ygot.ResolvePath(telemetrypath.DeviceRoot("").NetworkInstance("default").Protocol(telemetry.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").Bgp())
 	if err != nil {
