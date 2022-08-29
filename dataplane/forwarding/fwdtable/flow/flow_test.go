@@ -20,7 +20,6 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"google.golang.org/protobuf/proto"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdtable"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdtable/mock_fwdpacket"
@@ -62,7 +61,7 @@ func TestFlowMapManagement(t *testing.T) {
 	// Create a flow table and perform multiple add, remove and lookups
 	id := &fwdpb.PacketFieldId{
 		Field: &fwdpb.PacketField{
-			FieldNum: fwdpb.PacketFieldNum_IP_PROTO.Enum(),
+			FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO,
 		},
 	}
 	fid := fwdpacket.NewFieldID(id)
@@ -141,7 +140,7 @@ func TestFlowMapManagement(t *testing.T) {
 					FieldId: id,
 					SetId: &fwdpb.SetId{
 						ObjectId: &fwdpb.ObjectId{
-							Id: proto.String("1"),
+							Id: "1",
 						},
 					},
 				},
@@ -160,7 +159,7 @@ func TestFlowMapManagement(t *testing.T) {
 					FieldId: id,
 					SetId: &fwdpb.SetId{
 						ObjectId: &fwdpb.ObjectId{
-							Id: proto.String("1"),
+							Id: "1",
 						},
 					},
 				},
@@ -172,7 +171,7 @@ func TestFlowMapManagement(t *testing.T) {
 	for pos, ts := range testSets {
 		set, err := fwdset.New(ctx, &fwdpb.SetId{
 			ObjectId: &fwdpb.ObjectId{
-				Id: proto.String(ts.id),
+				Id: ts.id,
 			}})
 		if err != nil {
 			t.Errorf("%v: Unable to create test set, err %v", pos, err)
@@ -242,7 +241,7 @@ func TestFlowMapMatch(t *testing.T) {
 	// mask is the flow key.
 	id1 := &fwdpb.PacketFieldId{
 		Field: &fwdpb.PacketField{
-			FieldNum: fwdpb.PacketFieldNum_IP_PROTO.Enum(),
+			FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO,
 		},
 	}
 	fid1 := fwdpacket.NewFieldID(id1)
@@ -251,7 +250,7 @@ func TestFlowMapMatch(t *testing.T) {
 	})
 	id2 := &fwdpb.PacketFieldId{
 		Field: &fwdpb.PacketField{
-			FieldNum: fwdpb.PacketFieldNum_IP_HOP.Enum(),
+			FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP,
 		},
 	}
 	fid2 := fwdpacket.NewFieldID(id2)
@@ -365,7 +364,7 @@ func TestFlowMapMatch(t *testing.T) {
 					FieldId: id2,
 					SetId: &fwdpb.SetId{
 						ObjectId: &fwdpb.ObjectId{
-							Id: proto.String("1"),
+							Id: "1",
 						},
 					},
 				},
@@ -385,7 +384,7 @@ func TestFlowMapMatch(t *testing.T) {
 					FieldId: id2,
 					SetId: &fwdpb.SetId{
 						ObjectId: &fwdpb.ObjectId{
-							Id: proto.String("1"),
+							Id: "1",
 						},
 					},
 				},
@@ -398,7 +397,7 @@ func TestFlowMapMatch(t *testing.T) {
 					FieldId: id2,
 					SetId: &fwdpb.SetId{
 						ObjectId: &fwdpb.ObjectId{
-							Id: proto.String("1"),
+							Id: "1",
 						},
 					},
 				},
@@ -468,7 +467,7 @@ func TestFlowMapMatch(t *testing.T) {
 	for pos, ts := range testSets {
 		set, err := fwdset.New(ctx, &fwdpb.SetId{
 			ObjectId: &fwdpb.ObjectId{
-				Id: proto.String(ts.id),
+				Id: ts.id,
 			}})
 		if err != nil {
 			t.Errorf("%v: Unable to create test set, err %v", pos, err)
@@ -586,20 +585,20 @@ func newBuilder() *testBuilder {
 	tb := testBuilder{
 		flows: make(map[int]*FlowDesc),
 	}
-	fwdaction.Register(fwdpb.ActionType_TEST_ACTION, &tb)
+	fwdaction.Register(fwdpb.ActionType_ACTION_TYPE_TEST, &tb)
 	return &tb
 }
 
 // Build creates a new test action.
 func (t *testBuilder) Build(desc *fwdpb.ActionDesc, ctx *fwdcontext.Context) (fwdaction.Action, error) {
-	if !proto.HasExtension(desc, fwdpb.E_TestActionDesc_Extension) {
-		return nil, fmt.Errorf("flow: Build for test action failed, missing extension %s", fwdpb.E_TestActionDesc_Extension.Name)
+	ta, ok := desc.Action.(*fwdpb.ActionDesc_Test)
+	if !ok {
+		return nil, fmt.Errorf("flow: Build for test action failed, missing desc")
 	}
-	testExt := proto.GetExtension(desc, fwdpb.E_TestActionDesc_Extension).(*fwdpb.TestActionDesc)
-	fd, _ := t.flows[int(testExt.GetInt1())]
+	fd, _ := t.flows[int(ta.Test.GetInt1())]
 	return &testAction{
 		flow:     fd,
-		priority: testExt.GetInt1(),
+		priority: ta.Test.GetInt1(),
 	}, nil
 }
 
@@ -612,12 +611,14 @@ func genActionDesc(keys []testKey, priority uint32) []*fwdpb.ActionDesc {
 		b = append(b, t...)
 	}
 	desc := &fwdpb.ActionDesc{
-		ActionType: fwdpb.ActionType_TEST_ACTION.Enum(),
+		ActionType: fwdpb.ActionType_ACTION_TYPE_TEST,
 	}
-	proto.SetExtension(desc, fwdpb.E_TestActionDesc_Extension, &fwdpb.TestActionDesc{
-		Int1:   proto.Uint32(priority),
-		Bytes1: b,
-	})
+	desc.Action = &fwdpb.ActionDesc_Test{
+		Test: &fwdpb.TestActionDesc{
+			Int1:   priority,
+			Bytes1: b,
+		},
+	}
 	return []*fwdpb.ActionDesc{desc}
 }
 
@@ -628,7 +629,7 @@ func genFlowDesc(t *testing.T, tb *testBuilder, bank, priority uint32, keys []te
 	for _, k := range keys {
 		f = append(f, &fwdpb.PacketFieldMaskedBytes{
 			FieldId: &fwdpb.PacketFieldId{
-				Field: &fwdpb.PacketField{FieldNum: &k.id},
+				Field: &fwdpb.PacketField{FieldNum: k.id},
 			},
 			Bytes: k.bytes(),
 			Masks: k.mask(),
@@ -638,19 +639,19 @@ func genFlowDesc(t *testing.T, tb *testBuilder, bank, priority uint32, keys []te
 	for _, k := range qualifiers {
 		q = append(q, &fwdpb.PacketFieldSet{
 			FieldId: &fwdpb.PacketFieldId{
-				Field: &fwdpb.PacketField{FieldNum: &k.id},
+				Field: &fwdpb.PacketField{FieldNum: k.id},
 			},
 			SetId: &fwdpb.SetId{
 				ObjectId: &fwdpb.ObjectId{
-					Id: proto.String(k.set),
+					Id: k.set,
 				},
 			},
 		})
 	}
 	desc := &fwdpb.EntryDesc{}
 	flow := &fwdpb.FlowEntryDesc{
-		Priority:   proto.Uint32(uint32(priority)),
-		Bank:       proto.Uint32(uint32(bank)),
+		Priority:   uint32(priority),
+		Bank:       uint32(bank),
 		Fields:     f,
 		Qualifiers: q,
 	}
@@ -660,20 +661,24 @@ func genFlowDesc(t *testing.T, tb *testBuilder, bank, priority uint32, keys []te
 		return nil
 	}
 	tb.flows[int(priority)] = fd
-	proto.SetExtension(desc, fwdpb.E_FlowEntryDesc_Extension, flow)
+	desc.Entry = &fwdpb.EntryDesc_Flow{
+		Flow: flow,
+	}
 	return desc
 }
 
 // flowTable creates a flow table with the specified number of banks.
 func flowTable(ctx *fwdcontext.Context, bank uint32, index int) (fwdtable.Table, error) {
 	desc := &fwdpb.TableDesc{
-		TableType: fwdpb.TableType_FLOW_TABLE.Enum(),
+		TableType: fwdpb.TableType_TABLE_TYPE_FLOW,
 		TableId:   fwdtable.MakeID(fwdobject.NewID(fmt.Sprintf("TABLE=%v", index))),
 	}
 	flow := &fwdpb.FlowTableDesc{
-		BankCount: proto.Uint32(bank),
+		BankCount: bank,
 	}
-	proto.SetExtension(desc, fwdpb.E_FlowTableDesc_Extension, flow)
+	desc.Table = &fwdpb.TableDesc_Flow{
+		Flow: flow,
+	}
 	return fwdtable.New(ctx, desc)
 }
 
@@ -725,7 +730,7 @@ func TestFlowTable(t *testing.T) {
 	for pos, ts := range testSets {
 		set, err := fwdset.New(ctx, &fwdpb.SetId{
 			ObjectId: &fwdpb.ObjectId{
-				Id: proto.String(ts.id),
+				Id: ts.id,
 			}})
 		if err != nil {
 			t.Errorf("%v: Unable to create test set, err %v", pos, err)
@@ -749,12 +754,12 @@ func TestFlowTable(t *testing.T) {
 
 	// Canned keys used to describe tests.
 	field1 := testKey{
-		id:    fwdpb.PacketFieldNum_PACKET_VRF,
+		id:    fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF,
 		value: 10,
 		size:  fieldSize,
 	}
 	field2 := testKey{
-		id:    fwdpb.PacketFieldNum_PACKET_LENGTH,
+		id:    fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_LENGTH,
 		value: 20,
 		size:  fieldSize,
 	}
@@ -762,13 +767,13 @@ func TestFlowTable(t *testing.T) {
 	// Canned qualfiers used to describe tests. Note that the value must
 	// match the forwarding sets created for the test.
 	qual1 := testQualifier{
-		id:    fwdpb.PacketFieldNum_IP_ADDR_SRC,
+		id:    fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC,
 		set:   "1",
 		value: 10,
 		size:  fieldSize,
 	}
 	qual2 := testQualifier{
-		id:    fwdpb.PacketFieldNum_IP_ADDR_DST,
+		id:    fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST,
 		set:   "2",
 		value: 12,
 		size:  fieldSize,

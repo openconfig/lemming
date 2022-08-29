@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // Interface for viewing forwarding state.
-syntax = "proto2";
+syntax = "proto3";
 
 package forwarding;
 
@@ -22,7 +22,9 @@ import "proto/forwarding/forwarding_common.proto";
 option go_package = "github.com/openconfig/lemming/dataplane/proto/forwarding";
 
 // An InfoListRequest is a request to list all information elements.
-message InfoListRequest {}
+message InfoListRequest {
+  
+}
 
 // An InfoListReply is a list of all information elements.
 message InfoListReply {
@@ -40,7 +42,7 @@ message InfoListReply {
 // INFO_TYPE_PORT_OUTPUT - Information about the output processing of the given
 //                         frame by the specified port.
 enum InfoType {
-  INFO_TYPE_NONE = 0;
+  INFO_TYPE_UNSPECIFIED = 0;
   INFO_TYPE_ALL = 1;
   INFO_TYPE_LOOKUP = 2;
   INFO_TYPE_PORT_INPUT = 3;
@@ -51,11 +53,11 @@ enum InfoType {
 // information element. The request specifies the type of information and
 // arguments if needed by the type of information.
 message InfoElementRequest {
-  optional string name = 1;
-  optional InfoType type = 2 [default = INFO_TYPE_NONE];
-  optional bytes frame = 3;  // packet frame if applicable (INFO_TYPE_LOOKUP,
-                             // INFO_PORT_INPUT, INFO_PORT_OUTPUT)
-  optional PacketHeaderId start_header =
+  string name = 1;
+  InfoType type = 2;
+  bytes frame = 3;  // packet frame if applicable
+
+  PacketHeaderId start_header =
       4;  // Start header of the frame if applicable. (INFO_TYPE_LOOKUP,
           // INFO_PORT_INPUT, INFO_PORT_OUTPUT)
 }
@@ -63,5 +65,5 @@ message InfoElementRequest {
 // An InfoElementReply is the formatted contents of the specified information
 // element.
 message InfoElementReply {
-  optional string content = 1;
+  string content = 1;
 }

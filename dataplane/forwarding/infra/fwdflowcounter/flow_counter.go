@@ -21,15 +21,14 @@ import (
 	"errors"
 	"fmt"
 
-	"google.golang.org/protobuf/proto"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdobject"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
 var counterList = []fwdpb.CounterId{
-	fwdpb.CounterId_FLOW_COUNTER_OCTETS,
-	fwdpb.CounterId_FLOW_COUNTER_PACKETS,
+	fwdpb.CounterId_COUNTER_ID_FLOW_COUNTER_OCTETS,
+	fwdpb.CounterId_COUNTER_ID_FLOW_COUNTER_PACKETS,
 }
 
 // FlowCounter implements the per flow counter.
@@ -70,16 +69,16 @@ func Release(fc *FlowCounter) error {
 
 // Process is used to process a packet and increment the octet and packet counts.
 func (fc *FlowCounter) Process(octetCount, packetCount uint32) error {
-	fc.Increment(fwdpb.CounterId_FLOW_COUNTER_OCTETS, octetCount)
-	fc.Increment(fwdpb.CounterId_FLOW_COUNTER_PACKETS, packetCount)
+	fc.Increment(fwdpb.CounterId_COUNTER_ID_FLOW_COUNTER_OCTETS, octetCount)
+	fc.Increment(fwdpb.CounterId_COUNTER_ID_FLOW_COUNTER_PACKETS, packetCount)
 	return nil
 }
 
 // Query is used to read out the packet and octet counts stored in flow counters.
 func (fc *FlowCounter) Query() (*fwdpb.FlowCounter, error) {
 	ctrs := fc.Counters()
-	octets, berr := ctrs[fwdpb.CounterId_FLOW_COUNTER_OCTETS]
-	packets, perr := ctrs[fwdpb.CounterId_FLOW_COUNTER_PACKETS]
+	octets, berr := ctrs[fwdpb.CounterId_COUNTER_ID_FLOW_COUNTER_OCTETS]
+	packets, perr := ctrs[fwdpb.CounterId_COUNTER_ID_FLOW_COUNTER_PACKETS]
 
 	if berr == false || perr == false {
 		return nil, errors.New("fwdflowcounter: FlowCounterQuery failed, counter not available")
@@ -88,11 +87,11 @@ func (fc *FlowCounter) Query() (*fwdpb.FlowCounter, error) {
 	retfc := &fwdpb.FlowCounter{
 		Id: &fwdpb.FlowCounterId{
 			ObjectId: &fwdpb.ObjectId{
-				Id: proto.String(string(fc.ID())),
+				Id: string(fc.ID()),
 			},
 		},
-		Octets:  &octets.Value,
-		Packets: &packets.Value,
+		Octets:  octets.Value,
+		Packets: packets.Value,
 	}
 	return retfc, nil
 }

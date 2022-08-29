@@ -17,15 +17,14 @@ package fwdflowcounter
 import (
 	"testing"
 
-	"google.golang.org/protobuf/proto"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
 func createFlowCounterCreateRequest(fc, ctx string) *fwdpb.FlowCounterCreateRequest {
 	return &fwdpb.FlowCounterCreateRequest{
-		ContextId: &fwdpb.ContextId{Id: proto.String(ctx)},
-		Id:        &fwdpb.FlowCounterId{ObjectId: &fwdpb.ObjectId{Id: proto.String(fc)}},
+		ContextId: &fwdpb.ContextId{Id: ctx},
+		Id:        &fwdpb.FlowCounterId{ObjectId: &fwdpb.ObjectId{Id: fc}},
 	}
 }
 
@@ -102,13 +101,13 @@ func TestFlowCountersQuery(t *testing.T) {
 	}
 	for _, expect := range expects {
 		fwfc, err := expect.name.Query()
-		if *(fwfc.Octets) != expect.octets {
+		if (fwfc.Octets) != expect.octets {
 			t.Errorf("Query(%v) Fail: Octets found (%v), Expected (%v)",
-				fwfc.Id, *(fwfc.Octets), expect.octets)
+				fwfc.Id, (fwfc.Octets), expect.octets)
 		}
-		if *(fwfc.Packets) != expect.packets {
+		if (fwfc.Packets) != expect.packets {
 			t.Errorf("Query(%v) Fail: Packets found (%v), Expected (%v)",
-				fwfc.Id, *(fwfc.Packets), expect.packets)
+				fwfc.Id, (fwfc.Packets), expect.packets)
 		}
 		if err != nil {
 			t.Errorf("Query(%v) Fail: Unexpected err (%v)", fwfc.Id, err)

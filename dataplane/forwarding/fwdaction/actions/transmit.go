@@ -18,7 +18,6 @@ import (
 	"fmt"
 
 	log "github.com/golang/glog"
-	"google.golang.org/protobuf/proto"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdport"
@@ -37,9 +36,9 @@ type transmit struct {
 // String formats the state of the action as a string.
 func (t *transmit) String() string {
 	if t.port == nil {
-		return fmt.Sprintf("Type=%s;Immediate=%v;<Port=nil>;", fwdpb.ActionType_TRANSMIT_ACTION, t.immediate)
+		return fmt.Sprintf("Type=%s;Immediate=%v;<Port=nil>;", fwdpb.ActionType_ACTION_TYPE_TRANSMIT, t.immediate)
 	}
-	return fmt.Sprintf("Type=%s;Immediate=%v;<Port=%v>;", fwdpb.ActionType_TRANSMIT_ACTION, t.immediate, t.port.ID())
+	return fmt.Sprintf("Type=%s;Immediate=%v;<Port=%v>;", fwdpb.ActionType_ACTION_TYPE_TRANSMIT, t.immediate, t.port.ID())
 }
 
 // Cleanup releases the port.
@@ -54,8 +53,8 @@ func (t *transmit) Cleanup() {
 // If transmit does not have a port, the packet is dropped.
 func (t *transmit) Process(packet fwdpacket.Packet, counters fwdobject.Counters) (fwdaction.Actions, fwdaction.State) {
 	if t.port == nil {
-		counters.Increment(fwdpb.CounterId_TX_ERROR_PACKETS, 1)
-		counters.Increment(fwdpb.CounterId_TX_ERROR_OCTETS, uint32(packet.Length()))
+		counters.Increment(fwdpb.CounterId_COUNTER_ID_TX_ERROR_PACKETS, 1)
+		counters.Increment(fwdpb.CounterId_COUNTER_ID_TX_ERROR_OCTETS, uint32(packet.Length()))
 		return nil, fwdaction.DROP
 	}
 	fwdport.SetOutputPort(packet, t.port)
@@ -70,18 +69,18 @@ type transmitBuilder struct{}
 
 // init registers a builder for the transmit action type.
 func init() {
-	fwdaction.Register(fwdpb.ActionType_TRANSMIT_ACTION, &transmitBuilder{})
+	fwdaction.Register(fwdpb.ActionType_ACTION_TYPE_TRANSMIT, &transmitBuilder{})
 }
 
 // Build creates a new transmit action.
 func (*transmitBuilder) Build(desc *fwdpb.ActionDesc, ctx *fwdcontext.Context) (fwdaction.Action, error) {
-	if !proto.HasExtension(desc, fwdpb.E_TransmitActionDesc_Extension) {
-		return nil, fmt.Errorf("actions: Build for lookup action failed, missing extension %s", fwdpb.E_TransmitActionDesc_Extension.Name)
+	tr, ok := desc.Action.(*fwdpb.ActionDesc_Transmit)
+	if !ok {
+		return nil, fmt.Errorf("actions: Build for lookup action failed, missing extension")
 	}
-	transmitExt := proto.GetExtension(desc, fwdpb.E_TransmitActionDesc_Extension).(*fwdpb.TransmitActionDesc)
-	port, err := fwdport.Acquire(transmitExt.GetPortId(), ctx)
+	port, err := fwdport.Acquire(tr.Transmit.GetPortId(), ctx)
 	if err != nil {
 		return nil, fmt.Errorf("actions: Build for transmit action failed, err %v", err)
 	}
-	return &transmit{port: port, immediate: transmitExt.GetImmediate()}, nil
+	return &transmit{port: port, immediate: tr.Transmit.GetImmediate()}, nil
 }

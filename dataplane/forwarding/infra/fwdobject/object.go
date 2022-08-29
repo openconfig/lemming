@@ -54,7 +54,6 @@ import (
 	"strings"
 
 	log "github.com/golang/glog"
-	"google.golang.org/protobuf/proto"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdattribute"
 	"github.com/openconfig/lemming/dataplane/forwarding/util/stats"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
@@ -104,7 +103,7 @@ func NewID(s string) ID {
 // MakeID makes an ObjectID to the specified ID.
 func MakeID(id ID) *fwdpb.ObjectId {
 	return &fwdpb.ObjectId{
-		Id: proto.String(string(id)),
+		Id: string(id),
 	}
 }
 
@@ -218,7 +217,7 @@ func (b *Base) InitCounters(prefix, desc string, ids ...fwdpb.CounterId) error {
 	var entries []stats.EntryDesc
 	for _, id := range ids {
 		// We use CounterId as id of the stat and id.String(), which
-		// returns CounterId_name, as the name of the stat.
+		// returns CounterId_COUNTER_ID_name, as the name of the stat.
 		entries = append(entries, stats.EntryDesc{int(id), id.String()})
 	}
 	ss, err := stats.New(prefix, desc, entries...)

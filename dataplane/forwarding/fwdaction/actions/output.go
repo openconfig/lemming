@@ -33,7 +33,7 @@ type output struct {
 
 // String formats the state of the action as a string.
 func (output) String() string {
-	return fmt.Sprintf("Type=%v;", fwdpb.ActionType_OUTPUT_ACTION)
+	return fmt.Sprintf("Type=%v;", fwdpb.ActionType_ACTION_TYPE_OUTPUT)
 }
 
 // Process evaluates if the packet has an output port and transmits it.
@@ -49,7 +49,7 @@ type outputBuilder struct{}
 
 // init registers a builder for the output action type.
 func init() {
-	fwdaction.Register(fwdpb.ActionType_OUTPUT_ACTION, &outputBuilder{})
+	fwdaction.Register(fwdpb.ActionType_ACTION_TYPE_OUTPUT, &outputBuilder{})
 }
 
 // Build creates a new output action.

@@ -21,7 +21,6 @@ import (
 	"sync"
 
 	log "github.com/golang/glog"
-	"google.golang.org/protobuf/proto"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/deadlock"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdattribute"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdobject"
@@ -150,7 +149,7 @@ func (ctx *Context) Notify(event *fwdpb.EventDesc) error {
 
 	// Update the event id.
 	ctx.eventMu.Lock()
-	event.SequenceNumber = proto.Uint64(ctx.nextEventID)
+	event.SequenceNumber = ctx.nextEventID
 	ctx.nextEventID++
 	ctx.eventMu.Unlock()
 
@@ -183,7 +182,7 @@ func (ctx *Context) Cleanup(ch chan bool, isPort func(*fwdpb.ObjectId) bool) {
 	// First remove the ports.
 	for _, id := range ids {
 		obj := &fwdpb.ObjectId{
-			Id: proto.String(string(id)),
+			Id: string(id),
 		}
 		if isPort(obj) {
 			log.Infof("Clean up port %v.", id)
@@ -197,7 +196,7 @@ func (ctx *Context) Cleanup(ch chan bool, isPort func(*fwdpb.ObjectId) bool) {
 	// And finally remove the other objects.
 	for _, id := range ids {
 		obj := &fwdpb.ObjectId{
-			Id: proto.String(string(id)),
+			Id: string(id),
 		}
 		if !isPort(obj) {
 			ctx.Objects.Remove(obj, true /*forceCleanup*/)

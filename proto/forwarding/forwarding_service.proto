@@ -16,7 +16,7 @@
 // extension may be set. This is to maintain compatibility with the sandcastle
 // RPC compiler that does not support oneof. The behavior on setting multiple
 // extensions in a message is undefined.
-syntax = "proto2";
+syntax = "proto3";
 
 package forwarding;
 

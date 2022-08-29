@@ -18,7 +18,6 @@ import (
 	"fmt"
 
 	log "github.com/golang/glog"
-	"google.golang.org/protobuf/proto"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdport"
@@ -43,7 +42,7 @@ func (m *mirror) String() string {
 	if m.port != nil {
 		pid = string(m.port.ID())
 	}
-	return fmt.Sprintf("Type=%s;Dir=%v;<Port=%v>;<Actions=%v>;<Fields=%v>;", fwdpb.ActionType_MIRROR_ACTION, m.dir, pid, m.actions, m.fields)
+	return fmt.Sprintf("Type=%s;Dir=%v;<Port=%v>;<Actions=%v>;<Fields=%v>;", fwdpb.ActionType_ACTION_TYPE_MIRROR, m.dir, pid, m.actions, m.fields)
 }
 
 // Cleanup releases the port.
@@ -116,8 +115,8 @@ func (m *mirror) Process(packet fwdpacket.Packet, counters fwdobject.Counters) (
 	// However the packet processing is continued for the original packet.
 	if err != nil {
 		packet.Logf(fwdpacket.LogErrorFrame, "mirrored packet failed, %v", err)
-		counters.Increment(fwdpb.CounterId_MIRROR_PACKETS, 1)
-		counters.Increment(fwdpb.CounterId_MIRROR_OCTETS, uint32(packet.Length()))
+		counters.Increment(fwdpb.CounterId_COUNTER_ID_MIRROR_PACKETS, 1)
+		counters.Increment(fwdpb.CounterId_COUNTER_ID_MIRROR_OCTETS, uint32(packet.Length()))
 	}
 	return nil, fwdaction.CONTINUE
 }
@@ -127,34 +126,34 @@ type mirrorBuilder struct{}
 
 // init registers a builder for the mirror action type.
 func init() {
-	fwdaction.Register(fwdpb.ActionType_MIRROR_ACTION, &mirrorBuilder{})
+	fwdaction.Register(fwdpb.ActionType_ACTION_TYPE_MIRROR, &mirrorBuilder{})
 }
 
 // Build creates a new mirror action.
 func (*mirrorBuilder) Build(desc *fwdpb.ActionDesc, ctx *fwdcontext.Context) (fwdaction.Action, error) {
-	if !proto.HasExtension(desc, fwdpb.E_MirrorActionDesc_Extension) {
-		return nil, fmt.Errorf("actions: Build for mirror action failed, missing extension %s", fwdpb.E_MirrorActionDesc_Extension.Name)
+	m, ok := desc.Action.(*fwdpb.ActionDesc_Mirror)
+	if !ok {
+		return nil, fmt.Errorf("actions: Build for mirror action failed, missing extension")
 	}
-	mirrorExt := proto.GetExtension(desc, fwdpb.E_MirrorActionDesc_Extension).(*fwdpb.MirrorActionDesc)
-	actions, err := fwdaction.NewActions(mirrorExt.GetActions(), ctx)
+	actions, err := fwdaction.NewActions(m.Mirror.GetActions(), ctx)
 	if err != nil {
-		return nil, fmt.Errorf("actions: Unable to create actions %v, err %v", mirrorExt.GetActions(), err)
+		return nil, fmt.Errorf("actions: Unable to create actions %v, err %v", m.Mirror.GetActions(), err)
 	}
 	var port fwdport.Port
-	if pid := mirrorExt.GetPortId(); pid != nil {
+	if pid := m.Mirror.GetPortId(); pid != nil {
 		if port, err = fwdport.Acquire(pid, ctx); err != nil {
 			actions.Cleanup()
 			return nil, fmt.Errorf("actions: Build for mirror action failed, err %v", err)
 		}
 	}
 	var fields []fwdpacket.FieldID
-	for _, f := range mirrorExt.GetFieldIds() {
+	for _, f := range m.Mirror.GetFieldIds() {
 		fields = append(fields, fwdpacket.NewFieldID(f))
 	}
 
 	// Append the attibute for the INPUT and OUTPUT port.
-	fields = append(fields, fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_PORT_INPUT, 0))
-	fields = append(fields, fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_PORT_OUTPUT, 0))
+	fields = append(fields, fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT, 0))
+	fields = append(fields, fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT, 0))
 
-	return &mirror{port: port, dir: mirrorExt.GetPortAction(), ctx: ctx, actions: actions, fields: fields}, nil
+	return &mirror{port: port, dir: m.Mirror.GetPortAction(), ctx: ctx, actions: actions, fields: fields}, nil
 }

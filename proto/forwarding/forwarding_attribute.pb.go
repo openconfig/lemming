@@ -46,8 +46,8 @@ type AttributeDesc struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Name *string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	Help *string `protobuf:"bytes,2,opt,name=help" json:"help,omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Help string `protobuf:"bytes,2,opt,name=help,proto3" json:"help,omitempty"`
 }
 
 func (x *AttributeDesc) Reset() {
@@ -83,15 +83,15 @@ func (*AttributeDesc) Descriptor() ([]byte, []int) {
 }
 
 func (x *AttributeDesc) GetName() string {
-	if x != nil && x.Name != nil {
-		return *x.Name
+	if x != nil {
+		return x.Name
 	}
 	return ""
 }
 
 func (x *AttributeDesc) GetHelp() string {
-	if x != nil && x.Help != nil {
-		return *x.Help
+	if x != nil {
+		return x.Help
 	}
 	return ""
 }
@@ -140,7 +140,7 @@ type AttributeListReply struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Attrs []*AttributeDesc `protobuf:"bytes,1,rep,name=attrs" json:"attrs,omitempty"`
+	Attrs []*AttributeDesc `protobuf:"bytes,1,rep,name=attrs,proto3" json:"attrs,omitempty"`
 }
 
 func (x *AttributeListReply) Reset() {
@@ -192,10 +192,10 @@ type AttributeUpdateRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	ContextId *ContextId `protobuf:"bytes,1,opt,name=context_id,json=contextId" json:"context_id,omitempty"`
-	ObjectId  *ObjectId  `protobuf:"bytes,2,opt,name=object_id,json=objectId" json:"object_id,omitempty"`
-	AttrId    *string    `protobuf:"bytes,3,opt,name=attr_id,json=attrId" json:"attr_id,omitempty"`
-	AttrValue *string    `protobuf:"bytes,4,opt,name=attr_value,json=attrValue" json:"attr_value,omitempty"`
+	ContextId *ContextId `protobuf:"bytes,1,opt,name=context_id,json=contextId,proto3" json:"context_id,omitempty"`
+	ObjectId  *ObjectId  `protobuf:"bytes,2,opt,name=object_id,json=objectId,proto3" json:"object_id,omitempty"`
+	AttrId    string     `protobuf:"bytes,3,opt,name=attr_id,json=attrId,proto3" json:"attr_id,omitempty"`
+	AttrValue string     `protobuf:"bytes,4,opt,name=attr_value,json=attrValue,proto3" json:"attr_value,omitempty"`
 }
 
 func (x *AttributeUpdateRequest) Reset() {
@@ -245,15 +245,15 @@ func (x *AttributeUpdateRequest) GetObjectId() *ObjectId {
 }
 
 func (x *AttributeUpdateRequest) GetAttrId() string {
-	if x != nil && x.AttrId != nil {
-		return *x.AttrId
+	if x != nil {
+		return x.AttrId
 	}
 	return ""
 }
 
 func (x *AttributeUpdateRequest) GetAttrValue() string {
-	if x != nil && x.AttrValue != nil {
-		return *x.AttrValue
+	if x != nil {
+		return x.AttrValue
 	}
 	return ""
 }
@@ -331,7 +331,8 @@ var file_proto_forwarding_forwarding_attribute_proto_rawDesc = []byte{
 	0x3a, 0x5a, 0x38, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6f, 0x70,
 	0x65, 0x6e, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2f, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67,
 	0x2f, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x2f, 0x66, 0x6f, 0x72, 0x77, 0x61, 0x72, 0x64, 0x69, 0x6e, 0x67,
+	0x2f, 0x66, 0x6f, 0x72, 0x77, 0x61, 0x72, 0x64, 0x69, 0x6e, 0x67, 0x62, 0x06, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x33,
 }
 
 var (

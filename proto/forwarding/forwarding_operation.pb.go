@@ -109,11 +109,11 @@ type isOperationRequest_Request interface {
 }
 
 type OperationRequest_TableEntryAdd struct {
-	TableEntryAdd *TableEntryAddRequest `protobuf:"bytes,1,opt,name=table_entry_add,json=tableEntryAdd,oneof"`
+	TableEntryAdd *TableEntryAddRequest `protobuf:"bytes,1,opt,name=table_entry_add,json=tableEntryAdd,proto3,oneof"`
 }
 
 type OperationRequest_TableEntryRemove struct {
-	TableEntryRemove *TableEntryRemoveRequest `protobuf:"bytes,2,opt,name=table_entry_remove,json=tableEntryRemove,oneof"`
+	TableEntryRemove *TableEntryRemoveRequest `protobuf:"bytes,2,opt,name=table_entry_remove,json=tableEntryRemove,proto3,oneof"`
 }
 
 func (*OperationRequest_TableEntryAdd) isOperationRequest_Request() {}
@@ -191,11 +191,11 @@ type isOperationReply_Reply interface {
 }
 
 type OperationReply_TableEntryAdd struct {
-	TableEntryAdd *TableEntryAddReply `protobuf:"bytes,1,opt,name=table_entry_add,json=tableEntryAdd,oneof"`
+	TableEntryAdd *TableEntryAddReply `protobuf:"bytes,1,opt,name=table_entry_add,json=tableEntryAdd,proto3,oneof"`
 }
 
 type OperationReply_TableEntryRemove struct {
-	TableEntryRemove *TableEntryRemoveReply `protobuf:"bytes,2,opt,name=table_entry_remove,json=tableEntryRemove,oneof"`
+	TableEntryRemove *TableEntryRemoveReply `protobuf:"bytes,2,opt,name=table_entry_remove,json=tableEntryRemove,proto3,oneof"`
 }
 
 func (*OperationReply_TableEntryAdd) isOperationReply_Reply() {}
@@ -238,7 +238,7 @@ var file_proto_forwarding_forwarding_operation_proto_rawDesc = []byte{
 	0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6f, 0x70, 0x65, 0x6e, 0x63,
 	0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2f, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2f, 0x64, 0x61,
 	0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x66, 0x6f,
-	0x72, 0x77, 0x61, 0x72, 0x64, 0x69, 0x6e, 0x67,
+	0x72, 0x77, 0x61, 0x72, 0x64, 0x69, 0x6e, 0x67, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (

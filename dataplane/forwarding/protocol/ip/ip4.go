@@ -66,7 +66,7 @@ func (ip *IP4) Header() []byte {
 
 // ID returns the protocol header ID.
 func (IP4) ID() fwdpb.PacketHeaderId {
-	return fwdpb.PacketHeaderId_IP4
+	return fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4
 }
 
 // field returns the bytes as specified by id.
@@ -75,22 +75,22 @@ func (ip *IP4) field(id fwdpacket.FieldID) frame.Field {
 		return protocol.UDF(ip.header, id)
 	}
 	switch id.Num {
-	case fwdpb.PacketFieldNum_IP_ADDR_SRC:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC:
 		return ip.header.Field(ip4SrcPos, ip4SrcBytes)
 
-	case fwdpb.PacketFieldNum_IP_ADDR_DST:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST:
 		return ip.header.Field(ip4DstPos, ip4DstBytes)
 
-	case fwdpb.PacketFieldNum_IP_HOP:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP:
 		return ip.header.Field(ttlPos, ttlBytes)
 
-	case fwdpb.PacketFieldNum_IP_PROTO:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO:
 		return ip.header.Field(ip4ProtoPos, ip4ProtoBytes)
 
-	case fwdpb.PacketFieldNum_IP_QOS:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_QOS:
 		return ip.header.Field(ip4TosPos, ip4TosBytes)
 
-	case fwdpb.PacketFieldNum_IP_VERSION:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION:
 		return ipVersion(ip.header)
 
 	default:
@@ -116,7 +116,7 @@ func (ip *IP4) Update(id fwdpacket.FieldID, op int, arg []byte) (bool, error) {
 	case fwdpacket.OpDec:
 		// When decrementing the TTL, adjust the checksum and report
 		// the header as clean.
-		if !id.IsUDF && id.Num == fwdpb.PacketFieldNum_IP_HOP {
+		if !id.IsUDF && id.Num == fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP {
 			pttl := uint16(field.Value())
 			nttl := pttl - 1
 			field.SetValue(uint(nttl))
@@ -165,10 +165,10 @@ func newIP4() header {
 // check6to4Tunnel checks the inner and outer IP headers to detect if it
 // represents a valid 6to4 tunne.
 func check6to4Tunnel(id fwdpb.PacketHeaderId, inner, outer header) error {
-	if pid := inner.ID(); pid != fwdpb.PacketHeaderId_IP6 {
+	if pid := inner.ID(); pid != fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP6 {
 		return fmt.Errorf("ip4: Incorrect 6to4 tunnel, inner header %v is not IP6", pid)
 	}
-	if pid := outer.ID(); pid != fwdpb.PacketHeaderId_IP4 {
+	if pid := outer.ID(); pid != fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4 {
 		return fmt.Errorf("ip4: Incorrect 6to4 tunnel, outer header %v is not IP4", pid)
 	}
 
@@ -197,16 +197,16 @@ func check6to4Tunnel(id fwdpb.PacketHeaderId, inner, outer header) error {
 	}
 
 	switch id {
-	case fwdpb.PacketHeaderId_TUNNEL_6TO4_AUTO:
-		if e := check(inner, outer, fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP_ADDR_DST, fwdpacket.FirstField)); e != nil {
+	case fwdpb.PacketHeaderId_PACKET_HEADER_ID_TUNNEL_6TO4_AUTO:
+		if e := check(inner, outer, fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST, fwdpacket.FirstField)); e != nil {
 			return fmt.Errorf("ip4: Incorrect 6to4 tunnel, bad dst address, err %v", e)
 		}
 
-	case fwdpb.PacketHeaderId_TUNNEL_6TO4_SECURE:
-		if e := check(inner, outer, fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP_ADDR_DST, fwdpacket.FirstField)); e != nil {
+	case fwdpb.PacketHeaderId_PACKET_HEADER_ID_TUNNEL_6TO4_SECURE:
+		if e := check(inner, outer, fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST, fwdpacket.FirstField)); e != nil {
 			return fmt.Errorf("ip4: Incorrect 6to4 tunnel, bad dst address, err %v", e)
 		}
-		if e := check(inner, outer, fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP_ADDR_SRC, fwdpacket.FirstField)); e != nil {
+		if e := check(inner, outer, fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC, fwdpacket.FirstField)); e != nil {
 			return fmt.Errorf("ip4: Incorrect 6to4 tunnel, bad src address, err %v", e)
 		}
 	}
@@ -215,7 +215,7 @@ func check6to4Tunnel(id fwdpb.PacketHeaderId, inner, outer header) error {
 
 // new6to4 creates a new IP4 header to carry IPv6 packets.
 func new6to4Tunnel(id fwdpb.PacketHeaderId, inner header) (header, error) {
-	if pid := inner.ID(); pid != fwdpb.PacketHeaderId_IP6 {
+	if pid := inner.ID(); pid != fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP6 {
 		return nil, fmt.Errorf("ip4: Unable to add 6to4 tunnel for %v as payload", pid)
 	}
 	outer := newIP4()
@@ -235,16 +235,16 @@ func new6to4Tunnel(id fwdpb.PacketHeaderId, inner header) (header, error) {
 	}
 
 	switch id {
-	case fwdpb.PacketHeaderId_TUNNEL_6TO4_AUTO:
-		if e := update(inner, outer, fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP_ADDR_DST, fwdpacket.FirstField)); e != nil {
+	case fwdpb.PacketHeaderId_PACKET_HEADER_ID_TUNNEL_6TO4_AUTO:
+		if e := update(inner, outer, fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST, fwdpacket.FirstField)); e != nil {
 			return nil, fmt.Errorf("ip4: Unable to add 6to4 tunnel %v, %v", id, e)
 		}
 
-	case fwdpb.PacketHeaderId_TUNNEL_6TO4_SECURE:
-		if e := update(inner, outer, fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP_ADDR_DST, fwdpacket.FirstField)); e != nil {
+	case fwdpb.PacketHeaderId_PACKET_HEADER_ID_TUNNEL_6TO4_SECURE:
+		if e := update(inner, outer, fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST, fwdpacket.FirstField)); e != nil {
 			return nil, fmt.Errorf("ip4: Unable to add 6to4 tunnel %v, %v", id, e)
 		}
-		if e := update(inner, outer, fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP_ADDR_SRC, fwdpacket.FirstField)); e != nil {
+		if e := update(inner, outer, fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC, fwdpacket.FirstField)); e != nil {
 			return nil, fmt.Errorf("ip4: Unable to add 6to4 tunnel %v, %v", id, e)
 		}
 
@@ -272,5 +272,5 @@ func makeIP4(frame *frame.Frame) (header, fwdpb.PacketHeaderId, error) {
 	if next, ok := protoHeader[uint8(header.Field(ip4ProtoPos, ip4ProtoBytes).Value())]; ok {
 		return ip, next, nil
 	}
-	return ip, fwdpb.PacketHeaderId_OPAQUE, nil
+	return ip, fwdpb.PacketHeaderId_PACKET_HEADER_ID_OPAQUE, nil
 }

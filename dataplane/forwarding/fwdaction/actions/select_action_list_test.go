@@ -19,7 +19,6 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"google.golang.org/protobuf/proto"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction/mock_fwdpacket"
@@ -68,18 +67,18 @@ func newBuilder() *testBuilder {
 	tb := testBuilder{
 		countMap: make(map[int]int),
 	}
-	fwdaction.Register(fwdpb.ActionType_TEST_ACTION, &tb)
+	fwdaction.Register(fwdpb.ActionType_ACTION_TYPE_TEST, &tb)
 	return &tb
 }
 
 // Build creates a new test action.
 func (t *testBuilder) Build(desc *fwdpb.ActionDesc, ctx *fwdcontext.Context) (fwdaction.Action, error) {
-	if !proto.HasExtension(desc, fwdpb.E_TestActionDesc_Extension) {
-		return nil, fmt.Errorf("actions: Build for test action failed, missing extension %s", fwdpb.E_TestActionDesc_Extension.Name)
+	ta, ok := desc.Action.(*fwdpb.ActionDesc_Test)
+	if ok {
+		return nil, fmt.Errorf("actions: Build for test action failed, missing extension")
 	}
-	testExt := proto.GetExtension(desc, fwdpb.E_TestActionDesc_Extension).(*fwdpb.TestActionDesc)
 	return &testAction{
-		id:       int(testExt.GetInt1()),
+		id:       int(ta.Test.GetInt1()),
 		countMap: t.countMap,
 	}, nil
 }
@@ -87,11 +86,13 @@ func (t *testBuilder) Build(desc *fwdpb.ActionDesc, ctx *fwdcontext.Context) (fw
 // genActionDesc creates a desc for a test action with the specified id.
 func genActionDesc(id int) *fwdpb.ActionDesc {
 	desc := &fwdpb.ActionDesc{
-		ActionType: fwdpb.ActionType_TEST_ACTION.Enum(),
+		ActionType: fwdpb.ActionType_ACTION_TYPE_TEST,
 	}
-	proto.SetExtension(desc, fwdpb.E_TestActionDesc_Extension, &fwdpb.TestActionDesc{
-		Int1: proto.Uint32(uint32(id)),
-	})
+	desc.Action = &fwdpb.ActionDesc_Test{
+		Test: &fwdpb.TestActionDesc{
+			Int1: uint32(id),
+		},
+	}
 	return desc
 }
 
@@ -128,35 +129,37 @@ func TestSelectActionList(t *testing.T) {
 	fields := []*fwdpb.PacketFieldId{
 		&fwdpb.PacketFieldId{
 			Field: &fwdpb.PacketField{
-				FieldNum: fwdpb.PacketFieldNum_IP_PROTO.Enum(),
+				FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO,
 			},
 		},
 		&fwdpb.PacketFieldId{
 			Field: &fwdpb.PacketField{
-				FieldNum: fwdpb.PacketFieldNum_IP_HOP.Enum(),
+				FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP,
 			},
 		},
 	}
 
 	// List of each type of select function.
 	hashFn := []fwdpb.SelectActionListActionDesc_SelectAlgorithm{
-		fwdpb.SelectActionListActionDesc_CRC16,
-		fwdpb.SelectActionListActionDesc_CRC32,
-		fwdpb.SelectActionListActionDesc_RANDOM,
+		fwdpb.SelectActionListActionDesc_SELECT_ALGORITHM_CRC16,
+		fwdpb.SelectActionListActionDesc_SELECT_ALGORITHM_CRC32,
+		fwdpb.SelectActionListActionDesc_SELECT_ALGORITHM_RANDOM,
 	}
 
 	// For each type of select function, create a select action with the
 	// specified actions lists.
 	for _, hash := range hashFn {
 		desc := fwdpb.ActionDesc{
-			ActionType: fwdpb.ActionType_SELECT_ACTION_LIST_ACTION.Enum(),
+			ActionType: fwdpb.ActionType_ACTION_TYPE_SELECT_ACTION_LIST,
 		}
 		ext := fwdpb.SelectActionListActionDesc{
-			SelectAlgorithm: hash.Enum(),
+			SelectAlgorithm: hash,
 			FieldIds:        fields,
 			ActionLists:     actionListDesc,
 		}
-		proto.SetExtension(&desc, fwdpb.E_SelectActionListActionDesc_Extension, &ext)
+		desc.Action = &fwdpb.ActionDesc_Select{
+			Select: &ext,
+		}
 
 		b := newBuilder()
 		actions, err := fwdaction.NewActions([]*fwdpb.ActionDesc{&desc}, ctx)

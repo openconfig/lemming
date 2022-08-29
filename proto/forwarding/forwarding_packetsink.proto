@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // Interface for consuming packets.
-syntax = "proto2";
+syntax = "proto3";
 
 package forwarding;
 
@@ -24,18 +24,20 @@ option go_package = "github.com/openconfig/lemming/dataplane/proto/forwarding";
 
 // PacketInjectRequest is a request to inject frames into the port.
 message PacketInjectRequest {
-  optional PortId port_id = 1;         // Port used to process the packet
-  optional ContextId context_id = 2;   // Context containing the port
-  optional bytes bytes = 3;            // Bytes in the L2 frame
-  optional PortAction action = 4;      // Select a set of actions on the port
-  repeated ActionDesc preprocess = 7;  // Actions used to preprocess the packet
-  optional PortId ingress = 8;         // Identifies the ingress of the packet
-  optional PortId egress = 9;          // Identifies the egress of the packet
-  optional PacketHeaderId start_header = 10
-      [default = ETHERNET];  // Start header of the frame
+  PortId port_id = 1;        // Port used to process the packet
+  ContextId context_id = 2;  // Context containing the port
+  bytes bytes = 3;           // Bytes in the L2 frame
+  PortAction action = 4;     // Select a set of actions on the port
+  repeated ActionDesc preprocesses =
+      7;               // Actions used to preprocess the packet
+  PortId ingress = 8;  // Identifies the ingress of the packet
+  PortId egress = 9;   // Identifies the egress of the packet
+  PacketHeaderId start_header = 10;
   repeated PacketFieldBytes parsed_fields =
-      11;  // List of fields describing the L2 frame
-  optional bool debug = 12
-      [default = false];  // Whether to turn on debug messages.
+      11;           // List of fields describing the L2 frame
+  bool debug = 12;  // Whether to turn on debug messages.
 }
-message PacketInjectReply {}
+
+message PacketInjectReply {
+  
+}

@@ -18,7 +18,6 @@ import (
 	"fmt"
 
 	log "github.com/golang/glog"
-	"google.golang.org/protobuf/proto"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
@@ -67,7 +66,7 @@ type update struct {
 
 // String formats the state of the action as a string.
 func (u *update) String() string {
-	return fmt.Sprintf("Type=%v;Field=%v;Op=%v;ByteArg=%x;FieldArg=%v;BitCount=%v;BitOffset=%v", fwdpb.ActionType_UPDATE_ACTION, u.fieldID, u.op, u.bytesArg, u.fieldArg, u.bitCount, u.bitOffset)
+	return fmt.Sprintf("Type=%v;Field=%v;Op=%v;ByteArg=%x;FieldArg=%v;BitCount=%v;BitOffset=%v", fwdpb.ActionType_ACTION_TYPE_UPDATE, u.fieldID, u.op, u.bytesArg, u.fieldArg, u.bitCount, u.bitOffset)
 }
 
 // Process updates packet by applying an operation on a field.
@@ -90,16 +89,16 @@ func (u *update) Process(packet fwdpacket.Packet, counters fwdobject.Counters) (
 		}
 	}()
 	switch u.op {
-	case fwdpb.UpdateType_INC_UPDATE:
+	case fwdpb.UpdateType_UPDATE_TYPE_INC:
 		e = packet.Update(u.fieldID, fwdpacket.OpInc, u.bytesArg)
 
-	case fwdpb.UpdateType_DEC_UPDATE:
+	case fwdpb.UpdateType_UPDATE_TYPE_DEC:
 		e = packet.Update(u.fieldID, fwdpacket.OpDec, u.bytesArg)
 
-	case fwdpb.UpdateType_SET_UPDATE:
+	case fwdpb.UpdateType_UPDATE_TYPE_SET:
 		e = packet.Update(u.fieldID, fwdpacket.OpSet, u.bytesArg)
 
-	case fwdpb.UpdateType_COPY_UPDATE:
+	case fwdpb.UpdateType_UPDATE_TYPE_COPY:
 		arg, err := packet.Field(u.fieldArg)
 		if err != nil {
 			e = err
@@ -107,7 +106,7 @@ func (u *update) Process(packet fwdpacket.Packet, counters fwdobject.Counters) (
 		}
 		e = packet.Update(u.fieldID, fwdpacket.OpSet, fwdpacket.Pad(u.fieldID, arg))
 
-	case fwdpb.UpdateType_BIT_WRITE_UPDATE:
+	case fwdpb.UpdateType_UPDATE_TYPE_BIT_WRITE:
 		arg, err := packet.Field(u.fieldID)
 		if err != nil {
 			e = err
@@ -122,7 +121,7 @@ func (u *update) Process(packet fwdpacket.Packet, counters fwdobject.Counters) (
 		}
 		e = packet.Update(u.fieldID, fwdpacket.OpSet, arg)
 
-	case fwdpb.UpdateType_BIT_AND_UPDATE:
+	case fwdpb.UpdateType_UPDATE_TYPE_BIT_AND:
 		arg, err := packet.Field(u.fieldID)
 		if err != nil {
 			e = err
@@ -137,7 +136,7 @@ func (u *update) Process(packet fwdpacket.Packet, counters fwdobject.Counters) (
 		}
 		e = packet.Update(u.fieldID, fwdpacket.OpSet, arg)
 
-	case fwdpb.UpdateType_BIT_OR_UPDATE:
+	case fwdpb.UpdateType_UPDATE_TYPE_BIT_OR:
 		arg, err := packet.Field(u.fieldID)
 		if err != nil {
 			e = err
@@ -164,39 +163,39 @@ type updateBuilder struct{}
 
 func init() {
 	// Register a builder for the update action type.
-	fwdaction.Register(fwdpb.ActionType_UPDATE_ACTION, &updateBuilder{})
+	fwdaction.Register(fwdpb.ActionType_ACTION_TYPE_UPDATE, &updateBuilder{})
 }
 
 // Build creates a new update action.
 func (*updateBuilder) Build(desc *fwdpb.ActionDesc, ctx *fwdcontext.Context) (fwdaction.Action, error) {
-	if !proto.HasExtension(desc, fwdpb.E_UpdateActionDesc_Extension) {
-		return nil, fmt.Errorf("actions: Build for update action failed, missing extension %s", fwdpb.E_UpdateActionDesc_Extension.Name)
+	upd, ok := desc.Action.(*fwdpb.ActionDesc_Update)
+	if !ok {
+		return nil, fmt.Errorf("actions: Build for update action failed, missing extension")
 	}
-	updateExt := proto.GetExtension(desc, fwdpb.E_UpdateActionDesc_Extension).(*fwdpb.UpdateActionDesc)
 	// validate that the specified arguments have enough bits.
-	switch updateExt.GetType() {
-	case fwdpb.UpdateType_INC_UPDATE, fwdpb.UpdateType_DEC_UPDATE, fwdpb.UpdateType_SET_UPDATE, fwdpb.UpdateType_BIT_OR_UPDATE, fwdpb.UpdateType_BIT_AND_UPDATE:
-		if len(updateExt.GetValue()) == 0 {
-			return nil, fmt.Errorf("actions: Build for update action failed, update %+v is missing the bytes argument", updateExt)
+	switch upd.Update.GetType() {
+	case fwdpb.UpdateType_UPDATE_TYPE_INC, fwdpb.UpdateType_UPDATE_TYPE_DEC, fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.UpdateType_UPDATE_TYPE_BIT_OR, fwdpb.UpdateType_UPDATE_TYPE_BIT_AND:
+		if len(upd.Update.GetValue()) == 0 {
+			return nil, fmt.Errorf("actions: Build for update action failed, update %+v is missing the bytes argument", upd.Update)
 		}
-	case fwdpb.UpdateType_BIT_WRITE_UPDATE:
-		if len(updateExt.GetValue()) == 0 {
-			return nil, fmt.Errorf("actions: Build for update action failed, update %+v is missing the bytes argument", updateExt)
+	case fwdpb.UpdateType_UPDATE_TYPE_BIT_WRITE:
+		if len(upd.Update.GetValue()) == 0 {
+			return nil, fmt.Errorf("actions: Build for update action failed, update %+v is missing the bytes argument", upd.Update)
 		}
-		if uint(updateExt.GetBitCount()) > byteBitCount*uint(len(updateExt.GetValue())) {
-			return nil, fmt.Errorf("actions: Build for update action failed, bit update value %v has fewer bytes than the bit count %v", updateExt.GetValue(), updateExt.GetBitCount())
+		if uint(upd.Update.GetBitCount()) > byteBitCount*uint(len(upd.Update.GetValue())) {
+			return nil, fmt.Errorf("actions: Build for update action failed, bit update value %v has fewer bytes than the bit count %v", upd.Update.GetValue(), upd.Update.GetBitCount())
 		}
-	case fwdpb.UpdateType_COPY_UPDATE:
-		if updateExt.Field == nil {
-			return nil, fmt.Errorf("actions: Build for update action failed, update %+v is missing the field argument", updateExt)
+	case fwdpb.UpdateType_UPDATE_TYPE_COPY:
+		if upd.Update.Field == nil {
+			return nil, fmt.Errorf("actions: Build for update action failed, update %+v is missing the field argument", upd.Update)
 		}
 	}
 	return &update{
-		fieldID:   fwdpacket.NewFieldID(updateExt.GetFieldId()),
-		op:        updateExt.GetType(),
-		bytesArg:  updateExt.GetValue(),
-		fieldArg:  fwdpacket.NewFieldID(updateExt.GetField()),
-		bitCount:  uint(updateExt.GetBitCount()),
-		bitOffset: uint(updateExt.GetBitOffset()),
+		fieldID:   fwdpacket.NewFieldID(upd.Update.GetFieldId()),
+		op:        upd.Update.GetType(),
+		bytesArg:  upd.Update.GetValue(),
+		fieldArg:  fwdpacket.NewFieldID(upd.Update.GetField()),
+		bitCount:  uint(upd.Update.GetBitCount()),
+		bitOffset: uint(upd.Update.GetBitOffset()),
 	}, nil
 }

@@ -35,7 +35,7 @@ type ICMP4 struct {
 
 // ID returns the ICMP protocol header ID.
 func (ICMP4) ID(int) fwdpb.PacketHeaderId {
-	return fwdpb.PacketHeaderId_ICMP4
+	return fwdpb.PacketHeaderId_PACKET_HEADER_ID_ICMP4
 }
 
 // Field returns a copy of the bytes for the specfied field in the ICMP header.
@@ -85,5 +85,5 @@ func parseICMP4(frame *frame.Frame, desc *protocol.Desc) (protocol.Handler, fwdp
 
 func init() {
 	// ICMP header cannot be added to a packet.
-	protocol.Register(fwdpb.PacketHeaderId_ICMP4, parseICMP4, nil)
+	protocol.Register(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ICMP4, parseICMP4, nil)
 }

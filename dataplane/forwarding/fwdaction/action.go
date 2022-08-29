@@ -52,20 +52,20 @@ const (
 
 // CounterList is a set of counters incremented by various actions.
 var CounterList = []fwdpb.CounterId{
-	fwdpb.CounterId_ERROR_PACKETS,
-	fwdpb.CounterId_ERROR_OCTETS,
-	fwdpb.CounterId_DROP_PACKETS,
-	fwdpb.CounterId_DROP_OCTETS,
-	fwdpb.CounterId_RATELIMIT_PACKETS,
-	fwdpb.CounterId_RATELIMIT_OCTETS,
-	fwdpb.CounterId_MIRROR_PACKETS,
-	fwdpb.CounterId_MIRROR_OCTETS,
-	fwdpb.CounterId_MIRROR_ERROR_PACKETS,
-	fwdpb.CounterId_MIRROR_ERROR_OCTETS,
-	fwdpb.CounterId_ENCAP_ERROR_PACKETS,
-	fwdpb.CounterId_ENCAP_ERROR_OCTETS,
-	fwdpb.CounterId_DECAP_ERROR_PACKETS,
-	fwdpb.CounterId_DECAP_ERROR_OCTETS,
+	fwdpb.CounterId_COUNTER_ID_ERROR_PACKETS,
+	fwdpb.CounterId_COUNTER_ID_ERROR_OCTETS,
+	fwdpb.CounterId_COUNTER_ID_DROP_PACKETS,
+	fwdpb.CounterId_COUNTER_ID_DROP_OCTETS,
+	fwdpb.CounterId_COUNTER_ID_RATELIMIT_PACKETS,
+	fwdpb.CounterId_COUNTER_ID_RATELIMIT_OCTETS,
+	fwdpb.CounterId_COUNTER_ID_MIRROR_PACKETS,
+	fwdpb.CounterId_COUNTER_ID_MIRROR_OCTETS,
+	fwdpb.CounterId_COUNTER_ID_MIRROR_ERROR_PACKETS,
+	fwdpb.CounterId_COUNTER_ID_MIRROR_ERROR_OCTETS,
+	fwdpb.CounterId_COUNTER_ID_ENCAP_ERROR_PACKETS,
+	fwdpb.CounterId_COUNTER_ID_ENCAP_ERROR_OCTETS,
+	fwdpb.CounterId_COUNTER_ID_DECAP_ERROR_PACKETS,
+	fwdpb.CounterId_COUNTER_ID_DECAP_ERROR_OCTETS,
 }
 
 // An Action is an operation that can be performed on a packet.

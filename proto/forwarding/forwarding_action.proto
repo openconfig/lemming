@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // Protocol buffers to manage forwarding actions.
-syntax = "proto2";
+syntax = "proto3";
 
 package forwarding;
 
@@ -23,24 +23,27 @@ option go_package = "github.com/openconfig/lemming/dataplane/proto/forwarding";
 
 // An ActionType enumerates all supported forwarding actions.
 enum ActionType {
-  DROP_ACTION = 1;           // Drop packets.
-  TRANSMIT_ACTION = 2;       // Transmit packets on a specific port
-  LOOKUP_ACTION = 3;         // Lookup a table to decide next action
-  RATE_ACTION = 4;           // Ratelimit the packet and continue
-  ENCAP_ACTION = 5;          // Add a packet header and continue
-  DECAP_ACTION = 6;          // Remove a packet header and continue
-  UPDATE_ACTION = 8;         // Update a packet field
-  TEST_ACTION = 9;           // Action used to write tests
-  CONTINUE_ACTION = 10;      // Action used to continue processing the packet
-  OUTPUT_ACTION = 11;        // Action used to evaluate packet processing
-  MIRROR_ACTION = 12;        // Action used to mirror a packet
-  EVALUATE_ACTION = 13;      // Action used to evaluate all pending actions
-  BRIDGE_LEARN_ACTION = 14;  // Action used to learn on the specified bridge
-  FLOW_COUNTER_ACTION = 15;  // Action used to increment the per-flow counter
-  REPARSE_ACTION = 16;       // Reparses the packet as a specific type of header
-  SELECT_ACTION_LIST_ACTION =
+  ACTION_TYPE_UNSPECIFIED = 0;  // Unspecified action
+  ACTION_TYPE_DROP = 1;         // Drop packets.
+  ACTION_TYPE_TRANSMIT = 2;     // Transmit packets on a specific port
+  ACTION_TYPE_LOOKUP = 3;       // Lookup a table to decide next action
+  ACTION_TYPE_RATE = 4;         // Ratelimit the packet and continue
+  ACTION_TYPE_ENCAP = 5;        // Add a packet header and continue
+  ACTION_TYPE_DECAP = 6;        // Remove a packet header and continue
+  ACTION_TYPE_UPDATE = 8;       // Update a packet field
+  ACTION_TYPE_TEST = 9;         // Action used to write tests
+  ACTION_TYPE_CONTINUE = 10;    // Action used to continue processing the packet
+  ACTION_TYPE_OUTPUT = 11;      // Action used to evaluate packet processing
+  ACTION_TYPE_MIRROR = 12;      // Action used to mirror a packet
+  ACTION_TYPE_EVALUATE = 13;    // Action used to evaluate all pending actions
+  ACTION_TYPE_BRIDGE_LEARN =
+      14;  // Action used to learn on the specified bridge
+  ACTION_TYPE_FLOW_COUNTER =
+      15;                    // Action used to increment the per-flow counter
+  ACTION_TYPE_REPARSE = 16;  // Reparses the packet as a specific type of header
+  ACTION_TYPE_SELECT_ACTION_LIST =
       17;  // Action used select a action list from a set of action lists
-  DEBUG_ACTION = 18;  // Action used to set the debug flag on a packet
+  ACTION_TYPE_DEBUG = 18;  // Action used to set the debug flag on a packet
 }
 
 // An ActionDesc describes an operation that can be performed on a packet.
@@ -53,16 +56,22 @@ enum ActionType {
 // Note that each type of action is an extension with a unique extension
 // number (1 greater than the previous extension).
 message ActionDesc {
-  optional ActionType action_type = 2;
-  optional bool on_evaluate = 4 [default = false];
-  extensions 100 to max;  // Extensions representing various types of actions.
-}
-
-// A DropActionDesc describes a DROP_ACTION.
-message DropActionDesc {
-  extend ActionDesc {
-    optional DropActionDesc extension = 101;
-  }
+  ActionType action_type = 1;
+  bool on_evaluate = 2;
+  oneof action {
+    TransmitActionDesc transmit = 3;
+    LookupActionDesc lookup = 4;
+    RateActionDesc rate = 5;
+    EncapActionDesc encap = 6;
+    DecapActionDesc decap = 7;
+    UpdateActionDesc update = 8;
+    TestActionDesc test = 9;
+    MirrorActionDesc mirror = 10;
+    BridgeLearnActionDesc bridge = 11;
+    FlowCounterActionDesc flow = 12;
+    ReparseActionDesc reparse = 13;
+    SelectActionListActionDesc select = 14;
+  };
 }
 
 // A TransmitActionDesc describes TRANSMIT_ACTION. The descriptor contains a
@@ -70,41 +79,29 @@ message DropActionDesc {
 // action can be marked to be effective immediately in which case it cannot
 // be overriden.
 message TransmitActionDesc {
-  extend ActionDesc {
-    optional TransmitActionDesc extension = 102;
-  }
-  optional PortId port_id = 1;  // Port used for transmitting.
-  optional bool immediate = 2;  // True if it is effective immediately..
+  PortId port_id = 1;  // Port used for transmitting.
+  bool immediate = 2;  // True if it is effective immediately..
 }
 
 // A LookupActionDesc describes LOOKUP_ACTION. The descriptor contains a
 // table-id that identifies a table that is used to look up the packet to
 // determine the next set of actions.
 message LookupActionDesc {
-  extend ActionDesc {
-    optional LookupActionDesc extension = 103;
-  }
-  optional TableId table_id = 1;  // Table used for lookup.
+  TableId table_id = 1;  // Table used for lookup.
 }
 
 // A RateActionDesc describes RATELIMIT_ACTION. The descriptor contains a burst
 // size and a rate that is applied to check if the packet should continue to the
 // next action.
 message RateActionDesc {
-  extend ActionDesc {
-    optional RateActionDesc extension = 104;
-  }
-  optional int32 burst_bytes = 1;  // Size of bursts in bytes.
-  optional int32 rate_bps = 2;     // Rate in bytes per second.
+  int32 burst_bytes = 1;  // Size of bursts in bytes.
+  int32 rate_bps = 2;     // Rate in bytes per second.
 }
 
 // An EncapActionDesc describes ENCAP_ACTION. The descriptor contains a
 // header-id and a series of bytes that are added to the packet.
 message EncapActionDesc {
-  extend ActionDesc {
-    optional EncapActionDesc extension = 105;
-  }
-  optional PacketHeaderId header_id = 1;  // Header to add.
+  PacketHeaderId header_id = 1;  // Header to add.
 }
 
 // A DecapActionDesc describes DECAP_ACTION. The descriptor identifies the
@@ -112,67 +109,51 @@ message EncapActionDesc {
 // multiple instance of the specified header, the outermost instance is always
 // removed.
 message DecapActionDesc {
-  extend ActionDesc {
-    optional DecapActionDesc extension = 106;
-  }
-  optional PacketHeaderId header_id = 1;  // Header to remove.
+  PacketHeaderId header_id = 1;  // Header to remove.
 }
 
 // A BridgeLearnAction describes BRIDGE_LEARN_ACTION. The descriptor contains a
 // table-id that identifies a table that is used to learn the packet.
 message BridgeLearnActionDesc {
-  extend ActionDesc {
-    optional BridgeLearnActionDesc extension = 107;
-  }
-  optional TableId table_id = 1;  // Table used for learning.
+  TableId table_id = 1;  // Table used for learning.
 }
 
 // An UpdateType enumerates all supported forwarding updates.
 enum UpdateType {
-  SET_UPDATE = 1;        // Set a packet field.
-  INC_UPDATE = 2;        // Increment a packet field.
-  DEC_UPDATE = 3;        // Decrement a packet field.
-  COPY_UPDATE = 4;       // Copy a field.
-  BIT_WRITE_UPDATE = 5;  // Writes a set of bits in a packet field.
-  BIT_AND_UPDATE = 6;    // Performs a bitwise 'and' operation on a field.
-  BIT_OR_UPDATE = 7;     // Performs a bitwise 'or' operation on a field.
+  UPDATE_TYPE_UNSPECIFIED = 0;
+  UPDATE_TYPE_SET = 1;        // Set a packet field.
+  UPDATE_TYPE_INC = 2;        // Increment a packet field.
+  UPDATE_TYPE_DEC = 3;        // Decrement a packet field.
+  UPDATE_TYPE_COPY = 4;       // Copy a field.
+  UPDATE_TYPE_BIT_WRITE = 5;  // Writes a set of bits in a packet field.
+  UPDATE_TYPE_BIT_AND = 6;    // Performs a bitwise 'and' operation on a field.
+  UPDATE_TYPE_BIT_OR = 7;     // Performs a bitwise 'or' operation on a field.
 }
 
 // A UpdateActionDesc describes UPDATE_ACTION. The descriptor identifies a
 // change to a packet field.
 message UpdateActionDesc {
-  extend ActionDesc {
-    optional UpdateActionDesc extension = 108;
-  }
-  optional PacketFieldId field_id = 1;  // Packet field.
-  optional UpdateType type = 2;         // Update type.
-  optional bytes value = 3;  // Values used for set, dec, and, or and inc.
-  optional PacketFieldId field = 4;  // Value used for copy.
-  optional uint32 bit_offset =
-      5;  // Offset in bits to update (used for bit update).
-  optional uint32 bit_count =
-      6;  // Number of bits to update (used for bit update).
+  PacketFieldId field_id = 1;  // Packet field.
+  UpdateType type = 2;         // Update type.
+  bytes value = 3;             // Values used for set, dec, and, or and inc.
+  PacketFieldId field = 4;     // Value used for copy.
+  uint32 bit_offset = 5;  // Offset in bits to update (used for bit update).
+  uint32 bit_count = 6;   // Number of bits to update (used for bit update).
 }
 
 // A TestActionDesc describes a TEST_ACTION.
 message TestActionDesc {
-  extend ActionDesc {
-    optional TestActionDesc extension = 109;
-  }
-  optional uint32 int1 = 1;
-  optional bytes bytes1 = 2;
+  uint32 int1 = 1;
+  bytes bytes1 = 2;
 }
 
 // A MirrorActionDesc describes a MIRROR_ACTION. It mirrors the packet and
 // applies the specified actions to the mirrored packet. If specified, the
 // packet is then transmitted using the specified port and port action.
 message MirrorActionDesc {
-  extend ActionDesc {
-    optional MirrorActionDesc extension = 110;
-  }
   repeated ActionDesc actions = 3;  // Actions applied to the mirrored packet
-  optional PortId port_id = 1;      // Port used for mirroring
-  optional PortAction port_action = 2;   // Indicates how the packet is injected
+  PortId port_id = 1;               // Port used for mirroring
+  PortAction port_action = 2;       // Indicates how the packet is injected
   repeated PacketFieldId field_ids = 4;  // Packet fields to restore
 }
 
@@ -180,10 +161,7 @@ message MirrorActionDesc {
 // per flow counter associated with this row; the id of the counter is
 // specified.
 message FlowCounterActionDesc {
-  extend ActionDesc {
-    optional FlowCounterActionDesc extension = 111;
-  }
-  optional FlowCounterId counter_id = 1;
+  FlowCounterId counter_id = 1;
 }
 
 // A ReparseActionDesc describes a REPARSE_ACTION. It reparses the current
@@ -191,12 +169,9 @@ message FlowCounterActionDesc {
 // also propagate some packet fields from the old packet to the newly formed
 // packet, and prepend bytes to the start of the packet before prepending.
 message ReparseActionDesc {
-  extend ActionDesc {
-    optional ReparseActionDesc extension = 112;
-  }
-  optional PacketHeaderId header_id = 1;  // Header to reparse
-  repeated PacketFieldId field_ids = 2;   // Packet fields to restore
-  optional bytes prepend = 3;  // Bytes to be prepended before reparsing
+  PacketHeaderId header_id = 1;          // Header to reparse
+  repeated PacketFieldId field_ids = 2;  // Packet fields to restore
+  bytes prepend = 3;  // Bytes to be prepended before reparsing
 }
 
 // An ActionList describes a sequence of actions.
@@ -209,27 +184,18 @@ message ActionList {
 // of action lists. The selection is done by using a hash on the
 // specified packet fields.
 message SelectActionListActionDesc {
-  extend ActionDesc {
-    optional SelectActionListActionDesc extension = 113;
-  }
-
   // SelectAlgorithm enumerates algorithms used to compute the hash.
   enum SelectAlgorithm {
-    CRC16 = 2;   // x16+x15+x2+1
-    CRC32 = 3;   // x32+x26+x23+x22+x16+x12+x11+x10+x8+x7+x5+x4+x2+x+1
-    RANDOM = 5;  // Selects a random action list
+    SELECT_ALGORITHM_UNSPECIFIED = 0;
+    SELECT_ALGORITHM_CRC16 = 2;  // x16+x15+x2+1
+    SELECT_ALGORITHM_CRC32 =
+        3;  // x32+x26+x23+x22+x16+x12+x11+x10+x8+x7+x5+x4+x2+x+1
+    SELECT_ALGORITHM_RANDOM = 5;  // Selects a random action list
   }
 
-  optional SelectAlgorithm select_algorithm =
+  SelectAlgorithm select_algorithm =
       1;  // Algorithm used to select an action list
   repeated PacketFieldId field_ids = 2;  // List of fields to use for hashing
   repeated ActionList action_lists =
       3;  // A set of action lists from an an action list is selected
-}
-
-// A DebugActionDesc describes a DEBUG_ACTION.
-message DebugActionDesc {
-  extend ActionDesc {
-    optional DebugActionDesc extension = 114;
-  }
 }

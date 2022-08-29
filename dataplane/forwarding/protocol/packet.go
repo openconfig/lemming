@@ -143,7 +143,7 @@ func (p *Packet) Attributes() fwdattribute.Set {
 
 // Length returns the number of bytes in the packet.
 func (p *Packet) Length() int {
-	length, err := p.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_LENGTH, 0))
+	length, err := p.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_LENGTH, 0))
 	if err != nil {
 		log.Errorf("Unable to get length for packet %v, err %v.", p, err)
 		return 0
@@ -240,7 +240,7 @@ func NewPacket(start fwdpb.PacketHeaderId, frame *frame.Frame) (*Packet, error) 
 	// lucius only special header. It is always followed by the specified
 	// first header in the frame.
 	var prev *Desc
-	currID := fwdpb.PacketHeaderId_METADATA
+	currID := fwdpb.PacketHeaderId_PACKET_HEADER_ID_METADATA
 	for currID != fwdpb.PacketHeaderId_PACKET_HEADER_ID_NONE {
 		// Parse the current frame .
 		attr, ok := HeaderAttr[currID]
@@ -258,7 +258,7 @@ func NewPacket(start fwdpb.PacketHeaderId, frame *frame.Frame) (*Packet, error) 
 		}
 
 		// Adjust the returned next header if the current header is METADATA.
-		if currID == fwdpb.PacketHeaderId_METADATA {
+		if currID == fwdpb.PacketHeaderId_PACKET_HEADER_ID_METADATA {
 			nextID = p.start
 		}
 

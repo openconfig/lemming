@@ -39,8 +39,8 @@ import (
 
 // CounterList is a set of counters incremented by tables.
 var CounterList = []fwdpb.CounterId{
-	fwdpb.CounterId_ERROR_PACKETS,
-	fwdpb.CounterId_ERROR_OCTETS,
+	fwdpb.CounterId_COUNTER_ID_ERROR_PACKETS,
+	fwdpb.CounterId_COUNTER_ID_ERROR_OCTETS,
 }
 
 // A Table is a mapping of entries to a set of actions. It is used to match

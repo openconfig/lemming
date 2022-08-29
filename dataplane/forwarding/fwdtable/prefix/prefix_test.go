@@ -19,7 +19,6 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"google.golang.org/protobuf/proto"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdtable"
@@ -579,7 +578,7 @@ func prefixDesc(versionBytes, versionMask, vrfBytes, vrfMask []byte) *fwdpb.Entr
 			{
 				FieldId: &fwdpb.PacketFieldId{
 					Field: &fwdpb.PacketField{
-						FieldNum: fwdpb.PacketFieldNum_IP_VERSION.Enum(),
+						FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION,
 					},
 				},
 				Bytes: versionBytes,
@@ -588,7 +587,7 @@ func prefixDesc(versionBytes, versionMask, vrfBytes, vrfMask []byte) *fwdpb.Entr
 			{
 				FieldId: &fwdpb.PacketFieldId{
 					Field: &fwdpb.PacketField{
-						FieldNum: fwdpb.PacketFieldNum_PACKET_VRF.Enum(),
+						FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF,
 					},
 				},
 				Bytes: vrfBytes,
@@ -596,7 +595,9 @@ func prefixDesc(versionBytes, versionMask, vrfBytes, vrfMask []byte) *fwdpb.Entr
 			},
 		},
 	}
-	proto.SetExtension(desc, fwdpb.E_PrefixEntryDesc_Extension, prefix)
+	desc.Entry = &fwdpb.EntryDesc_Prefix{
+		Prefix: prefix,
+	}
 	return desc
 }
 
@@ -604,7 +605,7 @@ func prefixDesc(versionBytes, versionMask, vrfBytes, vrfMask []byte) *fwdpb.Entr
 func prefixMatchTable(ctx *fwdcontext.Context) (fwdtable.Table, error) {
 	// Prefix match table descriptor.
 	desc := &fwdpb.TableDesc{
-		TableType: fwdpb.TableType_PREFIX_TABLE.Enum(),
+		TableType: fwdpb.TableType_TABLE_TYPE_PREFIX,
 		Actions:   tabletestutil.ActionDesc(),
 		TableId:   fwdtable.MakeID(fwdobject.NewID("prefixtable")),
 	}
@@ -614,17 +615,19 @@ func prefixMatchTable(ctx *fwdcontext.Context) (fwdtable.Table, error) {
 		FieldIds: []*fwdpb.PacketFieldId{
 			{
 				Field: &fwdpb.PacketField{
-					FieldNum: fwdpb.PacketFieldNum_IP_VERSION.Enum(),
+					FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION,
 				},
 			},
 			{
 				Field: &fwdpb.PacketField{
-					FieldNum: fwdpb.PacketFieldNum_PACKET_VRF.Enum(),
+					FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF,
 				},
 			},
 		},
 	}
-	proto.SetExtension(desc, fwdpb.E_PrefixTableDesc_Extension, prefix)
+	desc.Table = &fwdpb.TableDesc_Prefix{
+		Prefix: prefix,
+	}
 	return fwdtable.New(ctx, desc)
 }
 

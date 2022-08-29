@@ -56,10 +56,10 @@ func (i *ICMP) commonField(id fwdpacket.FieldID) frame.Field {
 	case id.IsUDF:
 		return protocol.UDF(i.header, id)
 
-	case id.Num == fwdpb.PacketFieldNum_ICMP_TYPE:
+	case id.Num == fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP_TYPE:
 		return i.header.Field(typeOffset, typeBytes)
 
-	case id.Num == fwdpb.PacketFieldNum_ICMP_CODE:
+	case id.Num == fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP_CODE:
 		return i.header.Field(codeOffset, codeBytes)
 
 	default:

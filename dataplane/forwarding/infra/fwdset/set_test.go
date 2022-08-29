@@ -126,7 +126,7 @@ func TestSetContains(t *testing.T) {
 	for id, test := range tests {
 		name := fmt.Sprintf("Set %v", id)
 
-		c, err := New(ctx, &fwdpb.SetId{ObjectId: &fwdpb.ObjectId{Id: &name}})
+		c, err := New(ctx, &fwdpb.SetId{ObjectId: &fwdpb.ObjectId{Id: name}})
 		if err != nil {
 			t.Errorf("%d: Failed to create set %v, err %v.", id, name, err)
 			continue
@@ -185,7 +185,7 @@ func TestSetOperations(t *testing.T) {
 
 	// Create all sets.
 	for _, create := range creates {
-		_, err := New(ctx, &fwdpb.SetId{ObjectId: &fwdpb.ObjectId{Id: &create.name}})
+		_, err := New(ctx, &fwdpb.SetId{ObjectId: &fwdpb.ObjectId{Id: create.name}})
 		switch {
 		case err == nil && create.success == false:
 			t.Errorf("Create(%v) succeeded. Want error", create.name)
@@ -199,7 +199,7 @@ func TestSetOperations(t *testing.T) {
 	for _, search := range searchs {
 		cid := &fwdpb.SetId{
 			ObjectId: &fwdpb.ObjectId{
-				Id: &search.name,
+				Id: search.name,
 			},
 		}
 		_, err := Find(ctx, cid)
