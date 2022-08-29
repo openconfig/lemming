@@ -106,7 +106,7 @@ func vrfIDToNiName(vrfID uint32) string {
 
 func prefixString(prefix *pb.Prefix) (string, error) {
 	switch fam := prefix.GetFamily(); fam {
-	case pb.Prefix_FAMILY_IPv4:
+	case pb.Prefix_FAMILY_IPV4:
 		// TODO(wenbli): Handle invalid input values.
 		return fmt.Sprintf("%s/%d", prefix.GetAddress(), prefix.GetMaskLength()), nil
 	default:
@@ -125,7 +125,7 @@ func (s *Server) programRoute(r *ResolvedRoute) error {
 func (s *Server) ResolveAndProgramDiff() error {
 	log.Info("Recalculating resolved RIB")
 	for niName, ni := range s.rib.NI {
-		for it := ni.IPv4.Iterate(); it.Next(); {
+		for it := ni.IPV4.Iterate(); it.Next(); {
 			_, prefix, err := net.ParseCIDR(it.Address().String())
 			if err != nil {
 				return fmt.Errorf("sysrib: %v", err)
@@ -173,8 +173,8 @@ func (s *Server) SetRoute(_ context.Context, req *pb.SetRouteRequest) (*pb.SetRo
 
 	nexthops := []*afthelper.NextHopSummary{}
 	for _, nh := range req.GetNexthops() {
-		if nh.GetType() != pb.Nexthop_TYPE_IPv4 {
-			return nil, status.Errorf(codes.Unimplemented, "non-IPv4 nexthop not supported")
+		if nh.GetType() != pb.Nexthop_TYPE_IPV4 {
+			return nil, status.Errorf(codes.Unimplemented, "non-IPV4 nexthop not supported")
 		}
 		nexthops = append(nexthops, &afthelper.NextHopSummary{
 			Weight:          nh.GetWeight(),

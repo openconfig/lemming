@@ -31,7 +31,7 @@ import (
 )
 
 // SysRIB is a RIB data structure that can be used to resolve routing entries to their egress interfaces.
-// Currently it supports only IPv4 entries.
+// Currently it supports only IPV4 entries.
 type SysRIB struct {
 	// mu protects the map of network instance RIBs.
 	mu sync.RWMutex
@@ -42,8 +42,8 @@ type SysRIB struct {
 
 // NIRIB is the RIB for a single network instance.
 type NIRIB struct {
-	// IPv4 is the IPv4 RIB
-	IPv4 *generics_tree.TreeV4[*Route]
+	// IPV4 is the IPv4 RIB
+	IPV4 *generics_tree.TreeV4[*Route]
 }
 
 type RoutePreference struct {
@@ -81,7 +81,7 @@ func NewSysRIB(cfg *oc.Device) (*SysRIB, error) {
 
 		for ni, niR := range cr {
 			sr.NI[ni] = &NIRIB{
-				IPv4: generics_tree.NewTreeV4[*Route](),
+				IPV4: generics_tree.NewTreeV4[*Route](),
 			}
 			if niR.T == oc.NetworkInstanceTypes_NETWORK_INSTANCE_TYPE_DEFAULT_INSTANCE {
 				sr.defaultNI = ni
@@ -95,7 +95,7 @@ func NewSysRIB(cfg *oc.Device) (*SysRIB, error) {
 	} else {
 		sr.defaultNI = "DEFAULT"
 		sr.NI[sr.defaultNI] = &NIRIB{
-			IPv4: generics_tree.NewTreeV4[*Route](),
+			IPV4: generics_tree.NewTreeV4[*Route](),
 		}
 	}
 
@@ -114,7 +114,7 @@ func (sr *SysRIB) AddRoute(ni string, r *Route) error {
 	if err != nil {
 		return fmt.Errorf("cannot create prefix for %s, %v", r.Prefix, err)
 	}
-	if added, _ := sr.NI[ni].IPv4.Add(*addr, r, nil); !added {
+	if added, _ := sr.NI[ni].IPV4.Add(*addr, r, nil); !added {
 		return fmt.Errorf("cannot insert route in network instance %s %s", ni, r.Prefix)
 	}
 	return nil
@@ -158,7 +158,7 @@ func (sr *SysRIB) entryForCIDR(ni string, ip *net.IPNet) (bool, []*Route, error)
 	if err != nil {
 		return false, nil, fmt.Errorf("cannot parse IP to lookup, %s: %v", ip, err)
 	}
-	found, tags := rib.IPv4.FindDeepestTags(*addr)
+	found, tags := rib.IPV4.FindDeepestTags(*addr)
 	return found, tags, nil
 }
 
@@ -171,7 +171,7 @@ func (sr *SysRIB) entryForCIDR(ni string, ip *net.IPNet) (bool, []*Route, error)
 //
 // TODO(robjs): support WCMP
 //
-// This is really a POC that we can emulate our FIB for basic IPv4 routes.
+// This is really a POC that we can emulate our FIB for basic IPV4 routes.
 func (sr *SysRIB) EgressInterface(inputNI string, ip *net.IPNet) ([]*Interface, error) {
 	// no RIB recursion currently
 	if inputNI == "" {
@@ -307,7 +307,7 @@ type niConnected struct {
 // Connected routes are defined to be those that are directly configured as a subnet to which the
 // system is attached.
 //
-// This function only returns connected IPv4 routes.
+// This function only returns connected IPV4 routes.
 func connectedRoutesFromConfig(cfg *oc.Device) (map[string]*niConnected, error) {
 	// TODO(robjs): figure out where the reference that is referencing policy
 	// definitions is that has not yet been removed, improve ygot error message.
@@ -330,7 +330,7 @@ func connectedRoutesFromConfig(cfg *oc.Device) (map[string]*niConnected, error) 
 				for _, a := range subintf.GetIpv4().Address {
 					_, cidr, err := net.ParseCIDR(fmt.Sprintf("%s/%d", a.GetIp(), a.GetPrefixLength()))
 					if err != nil {
-						return nil, fmt.Errorf("invalid IPv4 prefix on interface %s, subinterface %d, %s/%d", intf.GetName(), subintf.GetIndex(), a.GetIp(), a.GetPrefixLength())
+						return nil, fmt.Errorf("invalid IPV4 prefix on interface %s, subinterface %d, %s/%d", intf.GetName(), subintf.GetIndex(), a.GetIp(), a.GetPrefixLength())
 					}
 					rt := &Route{
 						Prefix: cidr.String(),

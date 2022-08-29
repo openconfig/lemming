@@ -47,7 +47,7 @@ message SetRouteRequest {
 message Prefix {
   enum Family {
     FAMILY_UNSPECIFIED = 0;
-    FAMILY_IPv4 = 1;
+    FAMILY_IPV4 = 1;
     //IPv6 = 1;
   }
   Family family = 1;
@@ -59,7 +59,7 @@ message Nexthop {
   uint32 vrf_id = 1;
   enum Type {
     TYPE_UNSPECIFIED = 0;
-    TYPE_IPv4 = 1;
+    TYPE_IPV4 = 1;
     //IPV6 = 3;
     //IPV4IFINDEX = 2;
     //IPV6IFINDEX = 4;
