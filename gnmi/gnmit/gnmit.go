@@ -401,6 +401,9 @@ func (s *GNMIServer) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResp
 
 	// Update cache
 	t := s.c.cache.GetTarget(s.c.name)
+	// TODO(wenbli): There seems to be an issue with sending deletes this
+	// way, need to check this and fix it. This may have to do with the
+	// deprecated gNMI Element field.
 	if err := t.GnmiUpdate(n); err != nil {
 		return nil, err
 	}
