@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/openconfig/lemming/dataplane/server/server"
+	"github.com/openconfig/lemming/dataplane/server"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/local"
 	"google.golang.org/grpc/reflection"
