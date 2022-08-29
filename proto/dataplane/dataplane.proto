@@ -21,8 +21,8 @@ option go_package = "github.com/openconfig/lemming/proto/dataplane";
 message UpdatePortRequest {
   string name = 1;
   string hwaddr = 2;
-  repeated IPNetwork ipv4 = 3;
-  repeated IPNetwork ipv6 = 4;
+  repeated IPNetwork ipv4s = 3;
+  repeated IPNetwork ipv6s = 4;
 }
 
 message UpdatePortResponse {}
@@ -50,7 +50,7 @@ message IPNetwork {
 message SubscribePortStateResponse {
   string name = 1;
   PortState admin_state = 2;
-  repeated IPNetwork network = 3;
+  repeated IPNetwork networks = 3;
 }
 
 message NextHop {
@@ -62,7 +62,7 @@ message NextHop {
 message InsertRouteRequest {
   uint64 vrf = 1;
   string prefix = 2;
-  repeated NextHop next_hop = 3;
+  repeated NextHop next_hops = 3;
 }
 
 message InsertRouteResponse {}
