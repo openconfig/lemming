@@ -204,12 +204,12 @@ func TestServer(t *testing.T) {
 				AdminDistance: 10,
 				Metric:        10,
 				Prefix: &pb.Prefix{
-					Family:     pb.Prefix_IPv4,
+					Family:     pb.Prefix_FAMILY_IPV4,
 					Address:    "10.0.0.0",
 					MaskLength: 8,
 				},
 				Nexthops: []*pb.Nexthop{{
-					Type:    pb.Nexthop_IPV4,
+					Type:    pb.Nexthop_TYPE_IPV4,
 					Address: "192.168.1.42",
 					// TODO(wenbli): Implement WCMP, for all route requests in this test.
 					Weight: 1,
@@ -221,12 +221,12 @@ func TestServer(t *testing.T) {
 				AdminDistance: 10,
 				Metric:        10,
 				Prefix: &pb.Prefix{
-					Family:     pb.Prefix_IPv4,
+					Family:     pb.Prefix_FAMILY_IPV4,
 					Address:    "20.0.0.0",
 					MaskLength: 8,
 				},
 				Nexthops: []*pb.Nexthop{{
-					Type:    pb.Nexthop_IPV4,
+					Type:    pb.Nexthop_TYPE_IPV4,
 					Address: "10.10.10.10",
 				}},
 			},
@@ -236,12 +236,12 @@ func TestServer(t *testing.T) {
 				AdminDistance: 10,
 				Metric:        10,
 				Prefix: &pb.Prefix{
-					Family:     pb.Prefix_IPv4,
+					Family:     pb.Prefix_FAMILY_IPV4,
 					Address:    "30.0.0.0",
 					MaskLength: 8,
 				},
 				Nexthops: []*pb.Nexthop{{
-					Type:    pb.Nexthop_IPV4,
+					Type:    pb.Nexthop_TYPE_IPV4,
 					Address: "20.10.10.10",
 				}},
 			},
@@ -251,12 +251,12 @@ func TestServer(t *testing.T) {
 				AdminDistance: 20,
 				Metric:        10,
 				Prefix: &pb.Prefix{
-					Family:     pb.Prefix_IPv4,
+					Family:     pb.Prefix_FAMILY_IPV4,
 					Address:    "10.0.0.0",
 					MaskLength: 8,
 				},
 				Nexthops: []*pb.Nexthop{{
-					Type:    pb.Nexthop_IPV4,
+					Type:    pb.Nexthop_TYPE_IPV4,
 					Address: "192.168.2.42",
 				}},
 			},
@@ -266,12 +266,12 @@ func TestServer(t *testing.T) {
 				AdminDistance: 5,
 				Metric:        10,
 				Prefix: &pb.Prefix{
-					Family:     pb.Prefix_IPv4,
+					Family:     pb.Prefix_FAMILY_IPV4,
 					Address:    "10.0.0.0",
 					MaskLength: 8,
 				},
 				Nexthops: []*pb.Nexthop{{
-					Type:    pb.Nexthop_IPV4,
+					Type:    pb.Nexthop_TYPE_IPV4,
 					Address: "192.168.3.42",
 				}},
 			},
@@ -281,12 +281,12 @@ func TestServer(t *testing.T) {
 				AdminDistance: 5,
 				Metric:        999,
 				Prefix: &pb.Prefix{
-					Family:     pb.Prefix_IPv4,
+					Family:     pb.Prefix_FAMILY_IPV4,
 					Address:    "10.0.0.0",
 					MaskLength: 8,
 				},
 				Nexthops: []*pb.Nexthop{{
-					Type:    pb.Nexthop_IPV4,
+					Type:    pb.Nexthop_TYPE_IPV4,
 					Address: "192.168.4.42",
 				}},
 			},
@@ -296,12 +296,12 @@ func TestServer(t *testing.T) {
 				AdminDistance: 5,
 				Metric:        5,
 				Prefix: &pb.Prefix{
-					Family:     pb.Prefix_IPv4,
+					Family:     pb.Prefix_FAMILY_IPV4,
 					Address:    "10.0.0.0",
 					MaskLength: 8,
 				},
 				Nexthops: []*pb.Nexthop{{
-					Type:    pb.Nexthop_IPV4,
+					Type:    pb.Nexthop_TYPE_IPV4,
 					Address: "192.168.5.42",
 				}},
 			},
@@ -520,12 +520,12 @@ func TestServer(t *testing.T) {
 				AdminDistance: 10,
 				Metric:        10,
 				Prefix: &pb.Prefix{
-					Family:     pb.Prefix_IPv4,
+					Family:     pb.Prefix_FAMILY_IPV4,
 					Address:    "15.0.0.0",
 					MaskLength: 8,
 				},
 				Nexthops: []*pb.Nexthop{{
-					Type:    pb.Nexthop_IPV4,
+					Type:    pb.Nexthop_TYPE_IPV4,
 					Address: "11.10.10.10",
 				}},
 			},
@@ -535,12 +535,12 @@ func TestServer(t *testing.T) {
 				AdminDistance: 10,
 				Metric:        10,
 				Prefix: &pb.Prefix{
-					Family:     pb.Prefix_IPv4,
+					Family:     pb.Prefix_FAMILY_IPV4,
 					Address:    "10.0.0.0",
 					MaskLength: 8,
 				},
 				Nexthops: []*pb.Nexthop{{
-					Type:    pb.Nexthop_IPV4,
+					Type:    pb.Nexthop_TYPE_IPV4,
 					Address: "192.168.1.42",
 				}},
 			},
@@ -550,12 +550,12 @@ func TestServer(t *testing.T) {
 				AdminDistance: 20,
 				Metric:        10,
 				Prefix: &pb.Prefix{
-					Family:     pb.Prefix_IPv4,
+					Family:     pb.Prefix_FAMILY_IPV4,
 					Address:    "10.0.0.0",
 					MaskLength: 8,
 				},
 				Nexthops: []*pb.Nexthop{{
-					Type:    pb.Nexthop_IPV4,
+					Type:    pb.Nexthop_TYPE_IPV4,
 					Address: "192.168.2.42",
 				}},
 			},
@@ -565,12 +565,12 @@ func TestServer(t *testing.T) {
 				AdminDistance: 20,
 				Metric:        10,
 				Prefix: &pb.Prefix{
-					Family:     pb.Prefix_IPv4,
+					Family:     pb.Prefix_FAMILY_IPV4,
 					Address:    "10.0.0.0",
 					MaskLength: 8,
 				},
 				Nexthops: []*pb.Nexthop{{
-					Type:    pb.Nexthop_IPV4,
+					Type:    pb.Nexthop_TYPE_IPV4,
 					Address: "192.168.3.42",
 				}},
 			},

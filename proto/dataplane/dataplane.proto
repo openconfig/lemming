@@ -21,11 +21,12 @@ option go_package = "github.com/openconfig/lemming/proto/dataplane";
 message UpdatePortRequest {
   string name = 1;
   string hwaddr = 2;
-  repeated IPNetwork ipv4 = 3;
-  repeated IPNetwork ipv6 = 4;
+  repeated IPNetwork ipv4s = 3;
+  repeated IPNetwork ipv6s = 4;
 }
 
-message UpdatePortResponse {}
+message UpdatePortResponse {
+}
 
 enum PortState {
   PORT_STATE_UNSPECIFIED = 0;
@@ -38,9 +39,11 @@ message SetPortStateRequest {
   PortState admin_state = 2;
 }
 
-message SetPortStateResponse {}
+message SetPortStateResponse {
+}
 
-message SubscribePortStateRequest {}
+message SubscribePortStateRequest {
+}
 
 message IPNetwork {
   string ip = 1;
@@ -50,7 +53,7 @@ message IPNetwork {
 message SubscribePortStateResponse {
   string name = 1;
   PortState admin_state = 2;
-  repeated IPNetwork network = 3;
+  repeated IPNetwork networks = 3;
 }
 
 message NextHop {
@@ -62,30 +65,34 @@ message NextHop {
 message InsertRouteRequest {
   uint64 vrf = 1;
   string prefix = 2;
-  repeated NextHop next_hop = 3;
+  repeated NextHop next_hops = 3;
 }
 
-message InsertRouteResponse {}
+message InsertRouteResponse {
+}
 
 message DeleteRouteRequest {
   string prefix = 1;
   uint64 vrf = 2;
 }
 
-message DeleteRouteResponse {}
+message DeleteRouteResponse {
+}
 
 message AddNeighborRequest {
   string ip = 1;
   string hwaddr = 2;
 }
 
-message AddNeighborResponse {}
+message AddNeighborResponse {
+}
 
 message DeleteNeighborRequest {
   string ip = 1;
 }
 
-message DeleteNeighborResponse {}
+message DeleteNeighborResponse {
+}
 
 enum PuntProtocol {
   PUNT_PROTOCOL_UNSPECIFIED = 0;
@@ -98,14 +105,16 @@ message AddPuntRuleRequest {
   PuntProtocol punt_protocol = 2;
 }
 
-message AddPuntRuleResponse {}
+message AddPuntRuleResponse {
+}
 
 message DeletePuntRuleRequest {
   string port = 1;
   PuntProtocol punt_protocol = 2;
 }
 
-message DeletePuntRuleResponse {}
+message DeletePuntRuleResponse {
+}
 
 service HAL {
   // UpdatePort updates port information.
