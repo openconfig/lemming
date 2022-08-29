@@ -35,7 +35,7 @@ func NewSysribClient(cc grpc.ClientConnInterface) SysribClient {
 
 func (c *sysribClient) SetRoute(ctx context.Context, in *SetRouteRequest, opts ...grpc.CallOption) (*SetRouteResponse, error) {
 	out := new(SetRouteResponse)
-	err := c.cc.Invoke(ctx, "/sysrib.sysrib/SetRoute", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/sysrib.Sysrib/SetRoute", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +80,7 @@ func _Sysrib_SetRoute_Handler(srv interface{}, ctx context.Context, dec func(int
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/sysrib.sysrib/SetRoute",
+		FullMethod: "/sysrib.Sysrib/SetRoute",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SysribServer).SetRoute(ctx, req.(*SetRouteRequest))
@@ -92,7 +92,7 @@ func _Sysrib_SetRoute_Handler(srv interface{}, ctx context.Context, dec func(int
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Sysrib_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "sysrib.sysrib",
+	ServiceName: "sysrib.Sysrib",
 	HandlerType: (*SysribServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

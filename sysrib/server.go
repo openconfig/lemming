@@ -106,7 +106,7 @@ func vrfIDToNiName(vrfID uint32) string {
 
 func prefixString(prefix *pb.Prefix) (string, error) {
 	switch fam := prefix.GetFamily(); fam {
-	case pb.Prefix_IPv4:
+	case pb.Prefix_FAMILY_IPv4:
 		// TODO(wenbli): Handle invalid input values.
 		return fmt.Sprintf("%s/%d", prefix.GetAddress(), prefix.GetMaskLength()), nil
 	default:
@@ -173,7 +173,7 @@ func (s *Server) SetRoute(_ context.Context, req *pb.SetRouteRequest) (*pb.SetRo
 
 	nexthops := []*afthelper.NextHopSummary{}
 	for _, nh := range req.GetNexthops() {
-		if nh.GetType() != pb.Nexthop_IPV4 {
+		if nh.GetType() != pb.Nexthop_TYPE_IPv4 {
 			return nil, status.Errorf(codes.Unimplemented, "non-IPv4 nexthop not supported")
 		}
 		nexthops = append(nexthops, &afthelper.NextHopSummary{
@@ -202,9 +202,9 @@ func (s *Server) SetRoute(_ context.Context, req *pb.SetRouteRequest) (*pb.SetRo
 	}
 
 	// There could be operations carried out by ResolveAndProgramDiff() other than the input route, so we look up our particular prefix.
-	status := pb.SetRouteResponse_FAIL
+	status := pb.SetRouteResponse_STATUS_FAIL
 	if _, ok := s.resolvedRoutes[RouteKey{Prefix: pfx, NIName: niName}]; ok {
-		status = pb.SetRouteResponse_SUCCESS
+		status = pb.SetRouteResponse_STATUS_SUCCESS
 	}
 	return &pb.SetRouteResponse{
 		Status: status,
