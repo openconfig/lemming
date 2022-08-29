@@ -25,7 +25,36 @@ const (
 	listenPort = 179
 )
 
-// goBgpTask runs GoBGP.
+// goBgpTask tries to establish a simple BGP session using GoBGP.
+//
+// # How to achieve idemopotency and a declarative configuration for GoBGP
+//
+// Goal:
+//   - Declarative configuration: Get the system into the correct state regardless of what the diff of the intended config against the current applied config is.
+//
+// Requirements:
+//   1. When there is a change in intended config, the system must arrive at an eventually-consistent state.
+//   2. Make sure that all applied config and derived state are updated correctly whether there is a passive state change (i.e. through the event watcher), or active state change (i.e. when there is a change in intended config)
+//
+// Assumptions:
+//   - All possible actions to take within this task (BGP in this case) can be put in DAG order.
+//   - The number of possible actions is low such that maintaining the DAG
+//   order of these actions is not burdensome. This is a poor assumption -- we
+//   may very well have to use an alternative method such as an event loop for
+//   managing the scheduling of actions such that we don't have to manually
+//   maintain their order.
+//
+// Algorithm:
+// Process all possible actions in DAG order so that if a previous one happens that unblocks later ones, those later ones will actually execute.
+//
+//   0. Maintain a view of the current intended and applied configs in memory.
+//   For each new intended config update:
+//   1. Identify the DAG order of library actions and the paths associated with each of them.
+//   2. Process the actions in DAG order. The action to take depends on the current view of the config. The results of the action determines how we will update the current view of the applied config (which we then forward to the central DB).
+//   	e.g. for Global if the intended config matches the applied config we will simply skip this step. If not we will actually do the action (either start, stop, or stop-start (aka. update)), and if it succeeds, update the applied config both in the DB as well as the current view of the applied config.
+//   When there is a dependency, the later actions will NOT directly depend on the results of the previous actions, but will just look at the current config view to determine the appropriate action.
+//   	e.g. for peers, if the global setting has been set up, then we can create the peers and update the applied config if it succeeds, but if not then we don't do anything.
+//   		; however, if the global setting hasn't been set up, we actually need to erase the entirety of the applied config. This is because the watcher doesn't tell us this information.
 func goBgpTask(getIntendedConfig func() *config.Device, q gnmit.Queue, update gnmit.UpdateFn, target string, remove func()) error {
 	bgpStatePath, _, err := ygot.ResolvePath(telemetrypath.DeviceRoot("").NetworkInstance("default").Protocol(telemetry.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").Bgp())
 	if err != nil {
@@ -35,11 +64,17 @@ func goBgpTask(getIntendedConfig func() *config.Device, q gnmit.Queue, update gn
 	s := server.NewBgpServer()
 	go s.Serve()
 
+	// The code below implements declarative configuration for setting up a basic BGP session.
+
 	appliedRoot := &telemetry.Device{}
+	// appliedBgp is the SoT for BGP applied configuration. It is maintained locally by the task.
 	appliedBgp := appliedRoot.GetOrCreateNetworkInstance("default").GetOrCreateProtocol(telemetry.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").GetOrCreateBgp()
 	appliedBgp.PopulateDefaults()
 	var appliedBgpMu sync.Mutex
 
+	// updateAppliedConfig computes the diff between a previous applied
+	// configuration and the current SoT, and sends the updates to the
+	// central DB.
 	updateAppliedConfig := func(prevApplied *telemetry.NetworkInstance_Protocol_Bgp, grabLock bool) bool {
 		if grabLock {
 			appliedBgpMu.Lock()
@@ -146,25 +181,6 @@ func goBgpTask(getIntendedConfig func() *config.Device, q gnmit.Queue, update gn
 				log.Errorf("goBgpTask invalid cache node, expected non-nil *gpb.Notification type, got: %#v", v)
 				return
 			}
-			/* How to achieve idemopotency and a declarative configuration for GoBGP:
-
-			Requirements:
-			1. When there is a change in intended config, process all possible actions in DAG order so that if a previous one happens that unblocks later ones, those later ones will actually execute.
-			2. Make sure that all applied config and derived state are able to be updated correctly either when it's passive (i.e. through the event watcher), or active (i.e. when there is a change in intended config)
-
-			Benefits:
-			- By doing this, we can get the system into the correct state regardless of what the diff of the config, or the (applied config vs. current intended config) input is -- achieving declarative configuration.
-
-			0. Maintain a view of the current intended and applied configs in memory.
-			For each new intended config update:
-			1. Identify the DAG order of library actions and the paths associated with each of them.
-			2. Processes the actions in DAG order. The action to take depends on the current view of the config. The results of the action determines whether and how we will update the current view of the config as well as the DB.
-				e.g. for Global if the intended config matches the applied config we will simply skip this step. If not we will actually do the action (either start, stop, or stop-start (aka. update)), and if it succeeds, update the applied config both in the DB as well as the current view of the config.
-			When there is a dependency, the later actions will NOT directly depend on the results of the previous actions, but will just look at the current config view to determine the appropriate action.
-				e.g. for peers, if the global setting has been set up, then we can create the peers and update the applied config if it succeeds, but if not then we don't do anything.
-					; however, if the global setting hasn't been set up, we actually need to erase the entirety of the applied config. This is because the watcher doesn't tell us this information.
-			3. Make sure that all the applied configs will be updated accordingly due to any actions that might be undertaken. This is necessary for GoBGP because the event watcher doesn't report peer down when StopBgp() is called.
-			*/
 
 			// Update the view of the intended config.
 			// Note: We're guaranteed that whatever update came from the collector is valid since we validate before storing.
@@ -220,7 +236,7 @@ func goBgpTask(getIntendedConfig func() *config.Device, q gnmit.Queue, update gn
 				//   1. The GoBGP action to take.
 				//   2. The paths to update.
 
-				// - StartBGP / StopBGP / no-op
+				// Action 1: StartBGP / StopBGP / no-op
 				//   - as-path, route-id
 				intendedGlobal, appliedGlobal := intended.GetGlobal(), appliedBgp.GetOrCreateGlobal()
 				if !reflect.DeepEqual(intendedGlobal.As, appliedGlobal.As) || !reflect.DeepEqual(intendedGlobal.RouterId, appliedGlobal.RouterId) {
@@ -275,8 +291,10 @@ func goBgpTask(getIntendedConfig func() *config.Device, q gnmit.Queue, update gn
 				// States used by later actions.
 				hasGlobal := appliedGlobal.As != nil && appliedGlobal.RouterId != nil
 
-				// - AddPeer / UpdatePeer / DeletePeer
+				// Action 2: AddPeer / UpdatePeer / DeletePeer
 				//   - peer-as, neighbor-addr
+
+				// Delete non-existent neighbours.
 				for neighAddr := range appliedBgp.Neighbor {
 					if neigh, ok := intended.Neighbor[neighAddr]; !ok || !hasGlobal || ok && (neigh.PeerAs == nil) {
 						log.V(1).Info("Deleting BGP peer: ", neighAddr)
@@ -289,6 +307,7 @@ func goBgpTask(getIntendedConfig func() *config.Device, q gnmit.Queue, update gn
 						}
 					}
 				}
+				// Add/update neighbours.
 				if hasGlobal {
 					for neighAddr, neigh := range intended.Neighbor {
 						if curNeigh, ok := appliedBgp.Neighbor[neighAddr]; ok {
