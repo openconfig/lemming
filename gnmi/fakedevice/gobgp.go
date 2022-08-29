@@ -180,18 +180,21 @@ func goBgpTask(getIntendedConfig func() *config.Device, q gnmit.Queue, update gn
 			}
 			for _, u := range no.Delete {
 				log.V(1).Infof("Received delete path: %s", prototext.Format(u))
-				// Since gNMI still sends delete paths using the deprecated Element field, we need to translate it into path-elems first.
-				// We also need to strip the first element for origin.
-				if len(u.Element) == 0 {
-					log.Errorf("Unexpected: Element field for delete path is empty: %s", prototext.Format(u))
+				switch {
+				case len(u.Elem) > 0:
+				case len(u.Element) > 0:
+					// Since gNMI still sends delete paths using the deprecated Element field, we need to translate it into path-elems first.
+					// We also need to strip the first element for origin.
+					elems, err := pathTranslator.PathElem(u.Element[1:])
+					if err != nil {
+						log.Errorf("goBgpTask: failed to translate delete path: %s", prototext.Format(u))
+						return
+					}
+					u.Elem = elems
+				default:
+					log.Errorf("Unhandled: delete at root: %s", prototext.Format(u))
 					return
 				}
-				elems, err := pathTranslator.PathElem(u.Element[1:])
-				if err != nil {
-					log.Errorf("goBgpTask: failed to translate delete path: %s", prototext.Format(u))
-					return
-				}
-				u.Elem = elems
 				switch {
 				case matchingPath(u, asPaths), matchingPath(u, routeIDPaths), matchingPath(u, neighAddrPaths), matchingPath(u, peerAsPaths):
 					shouldProcess = true
