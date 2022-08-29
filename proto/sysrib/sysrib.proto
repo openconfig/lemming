@@ -1,0 +1,83 @@
+// Copyright 2022 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package sysrib;
+
+option go_package = "github.com/openconfig/lemming/proto/sysrib";
+
+service Sysrib {
+  rpc SetRoute(SetRouteRequest) returns (SetRouteResponse);
+  // TODO(wenbli): Define nexthop tracking service.
+  //rpc TrackNexthop(TrackNexthopRequest) returns (stream TrackNexthopResponse);
+}
+
+// SetRouteRequest and its dependent messages are derived from
+// ZEBRA_ROUTE_ADD/ZEBRA_ROUTE_DELETE.
+message SetRouteRequest {
+  bool delete = 1;
+  uint32 vrf_id = 2;
+  uint32 admin_distance = 3;
+  string protocol_name = 4;
+  enum Safi {
+    SAFI_UNSPECIFIED = 0;
+    SAFI_UNICAST = 1;
+    //MULTICAST = 1;
+  }
+  Safi safi = 5;
+  Prefix prefix = 6;
+  uint32 metric = 7;
+  repeated Nexthop nexthops = 8;
+  repeated Nexthop backup_nexthops = 9;
+}
+
+// TODO(wenbli): This probably goes in some common proto file.
+message Prefix {
+  enum Family {
+    FAMILY_UNSPECIFIED = 0;
+    FAMILY_IPV4 = 1;
+    //IPv6 = 1;
+  }
+  Family family = 1;
+  string address = 2;
+  uint32 mask_length = 3;
+}
+
+message Nexthop {
+  uint32 vrf_id = 1;
+  enum Type {
+    TYPE_UNSPECIFIED = 0;
+    TYPE_IPV4 = 1;
+    //IPV6 = 3;
+    //IPV4IFINDEX = 2;
+    //IPV6IFINDEX = 4;
+    //IFINDEX = 0;
+    //BLACKHOLE = 5;
+  }
+  Type type = 2;
+  //int32 ifindex = 3;
+  string address = 3;
+  uint64 weight = 4;
+}
+
+message SetRouteResponse {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_SUCCESS = 1;
+    STATUS_FAIL = 2;
+  }
+  Status status = 1;
+  // tableid
+}

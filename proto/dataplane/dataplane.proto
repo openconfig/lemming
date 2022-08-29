@@ -1,0 +1,142 @@
+// Copyright 2022 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package lemming.dataplane;
+
+option go_package = "github.com/openconfig/lemming/proto/dataplane";
+
+message UpdatePortRequest {
+  string name = 1;
+  string hwaddr = 2;
+  repeated IPNetwork ipv4s = 3;
+  repeated IPNetwork ipv6s = 4;
+}
+
+message UpdatePortResponse {
+}
+
+enum PortState {
+  PORT_STATE_UNSPECIFIED = 0;
+  PORT_STATE_DOWN = 1;
+  PORT_STATE_UP = 2;
+}
+
+message SetPortStateRequest {
+  string name = 1;
+  PortState admin_state = 2;
+}
+
+message SetPortStateResponse {
+}
+
+message SubscribePortStateRequest {
+}
+
+message IPNetwork {
+  string ip = 1;
+  uint64 prefix_len = 3;
+}
+
+message SubscribePortStateResponse {
+  string name = 1;
+  PortState admin_state = 2;
+  repeated IPNetwork networks = 3;
+}
+
+message NextHop {
+  string port = 1;
+  string ip = 2;
+  uint64 weight = 3;
+}
+
+message InsertRouteRequest {
+  uint64 vrf = 1;
+  string prefix = 2;
+  repeated NextHop next_hops = 3;
+}
+
+message InsertRouteResponse {
+}
+
+message DeleteRouteRequest {
+  string prefix = 1;
+  uint64 vrf = 2;
+}
+
+message DeleteRouteResponse {
+}
+
+message AddNeighborRequest {
+  string ip = 1;
+  string hwaddr = 2;
+}
+
+message AddNeighborResponse {
+}
+
+message DeleteNeighborRequest {
+  string ip = 1;
+}
+
+message DeleteNeighborResponse {
+}
+
+enum PuntProtocol {
+  PUNT_PROTOCOL_UNSPECIFIED = 0;
+  PUNT_PROTOCOL_BGP = 1;
+  PUNT_PROTOCOL_ISO = 2;
+}
+
+message AddPuntRuleRequest {
+  string port = 1;
+  PuntProtocol punt_protocol = 2;
+}
+
+message AddPuntRuleResponse {
+}
+
+message DeletePuntRuleRequest {
+  string port = 1;
+  PuntProtocol punt_protocol = 2;
+}
+
+message DeletePuntRuleResponse {
+}
+
+service HAL {
+  // UpdatePort updates port information.
+  rpc UpdatePort(UpdatePortRequest) returns (UpdatePortResponse) {}
+  // SetPortState sets the port state.
+  rpc SetPortState(SetPortStateRequest) returns (SetPortStateResponse) {}
+  // SubsribePortState starts a stream of port status responses.
+  // sending the initial then any changes.
+  rpc SubscribePortState(SubscribePortStateRequest)
+      returns (stream SubscribePortStateResponse) {}
+
+  // InsertRoute inserts an entry into the FIB. An inserted route
+  // overrides an existing route with the vrf and prefix.
+  rpc InsertRoute(InsertRouteRequest) returns (InsertRouteResponse) {}
+  // DeleteRoute removes an entry from the FIB.
+  rpc DeleteRoute(DeleteRouteRequest) returns (DeleteRouteResponse) {}
+  // AddNeighbor inserts a neighbor in the neighbor table.
+  rpc AddNeighbor(AddNeighborRequest) returns (AddNeighborResponse) {}
+  // DeleteNeighbor deletes a neighbor from the neighbor table.
+  rpc DeleteNeighbor(DeleteNeighborRequest) returns (DeleteNeighborResponse) {}
+  // AddPuntRule adds a punt rule to a port.
+  rpc AddPuntRule(AddPuntRuleRequest) returns (AddPuntRuleResponse) {}
+  // DeletePuntRule adds a punt rule to a port.
+  rpc DeletePuntRule(DeletePuntRuleRequest) returns (DeletePuntRuleRequest) {}
+}
