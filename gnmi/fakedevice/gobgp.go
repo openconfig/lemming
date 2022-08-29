@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	listenPort = 1799
+	listenPort = 179
 )
 
 // goBgpTask runs GoBGP.
