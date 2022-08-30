@@ -12,11 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package server
+package dataplane
 
 import dpb "github.com/openconfig/lemming/proto/dataplane"
 
-// Dataplane is an implementation of Dataplane HAL API.
-type Dataplane struct {
+const (
+	Port = 6443
+)
+
+// Server is an implementation of Dataplane HAL API.
+type Server struct {
 	dpb.UnimplementedHALServer
 }
