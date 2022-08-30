@@ -171,6 +171,7 @@ func NewServer(ctx context.Context, hostname string, sendMeta bool, tasks []Task
 	}
 
 	for _, t := range tasks {
+		// TODO(wenbli): We don't current support task re-starts.
 		if err := gnmiserver.RegisterTask(t); err != nil {
 			return nil, nil, err
 		}
