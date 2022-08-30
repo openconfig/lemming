@@ -61,8 +61,7 @@ const (
 func goBgpTask(getIntendedConfig func() *config.Device, q gnmit.Queue, update gnmit.UpdateFn, target string, remove func()) error {
 	bgpStatePath, _, err := ygot.ResolvePath(telemetrypath.DeviceRoot("").NetworkInstance("default").Protocol(telemetry.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").Bgp())
 	if err != nil {
-		log.Fatalf("goBgpTask failed to initialize due to error: %v", err)
-		return fmt.Errorf("%v", err)
+		return fmt.Errorf("goBgpTask failed to initialize due to error: %v", err)
 	}
 
 	s := server.NewBgpServer()
@@ -143,30 +142,25 @@ func goBgpTask(getIntendedConfig func() *config.Device, q gnmit.Queue, update gn
 			}
 		}
 	}); err != nil {
-		log.Fatal(err)
-		return err
+		return fmt.Errorf("goBgpTask failed to initialize due to error: %v", err)
 	}
 
 	bgpPath := configpath.DeviceRoot("").NetworkInstance("default").Protocol(config.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").Bgp()
 	asPaths, _, err := ygot.ResolvePath(bgpPath.Global().As())
 	if err != nil {
-		log.Errorf("goBgpTask failed to initialize due to error: %v", err)
-		return fmt.Errorf("%v", err)
+		return fmt.Errorf("goBgpTask failed to initialize due to error: %v", err)
 	}
 	routeIDPaths, _, err := ygot.ResolvePath(bgpPath.Global().RouterId())
 	if err != nil {
-		log.Errorf("goBgpTask failed to initialize due to error: %v", err)
-		return fmt.Errorf("%v", err)
+		return fmt.Errorf("goBgpTask failed to initialize due to error: %v", err)
 	}
 	peerAsPaths, _, err := ygot.ResolvePath(bgpPath.NeighborAny().PeerAs())
 	if err != nil {
-		log.Errorf("goBgpTask failed to initialize due to error: %v", err)
-		return fmt.Errorf("%v", err)
+		return fmt.Errorf("goBgpTask failed to initialize due to error: %v", err)
 	}
 	neighAddrPaths, _, err := ygot.ResolvePath(bgpPath.NeighborAny().NeighborAddress())
 	if err != nil {
-		log.Errorf("goBgpTask failed to initialize due to error: %v", err)
-		return fmt.Errorf("%v", err)
+		return fmt.Errorf("goBgpTask failed to initialize due to error: %v", err)
 	}
 
 	var global api.Global
