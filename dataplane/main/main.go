@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/openconfig/lemming/dataplane/server"
+	"github.com/openconfig/lemming/dataplane"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/local"
 	"google.golang.org/grpc/reflection"
@@ -29,7 +29,7 @@ import (
 )
 
 var (
-	port = flag.Int("port", 6443, "Port to listen on")
+	port = flag.Int("port", dataplane.Port, "Port to listen on")
 )
 
 func main() {
@@ -41,7 +41,7 @@ func main() {
 	}
 	srv := grpc.NewServer(grpc.Creds(local.NewCredentials()))
 
-	data := &server.Dataplane{}
+	data := &dataplane.Server{}
 	dpb.RegisterHALServer(srv, data)
 	reflection.Register(srv)
 
