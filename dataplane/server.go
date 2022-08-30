@@ -14,13 +14,27 @@
 
 package dataplane
 
-import dpb "github.com/openconfig/lemming/proto/dataplane"
+import (
+	"context"
+
+	dpb "github.com/openconfig/lemming/proto/dataplane"
+)
 
 const (
 	Port = 6443
 )
 
+func New() *Server {
+	srv := &Server{}
+
+	return srv
+}
+
 // Server is an implementation of Dataplane HAL API.
 type Server struct {
 	dpb.UnimplementedHALServer
+}
+
+func (s *Server) UpdatePort(context.Context, *dpb.UpdatePortRequest) (*dpb.UpdatePortResponse, error) {
+
 }
