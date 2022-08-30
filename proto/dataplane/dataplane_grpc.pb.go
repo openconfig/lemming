@@ -24,8 +24,6 @@ const _ = grpc.SupportPackageIsVersion7
 type HALClient interface {
 	// UpdatePort updates port information.
 	UpdatePort(ctx context.Context, in *UpdatePortRequest, opts ...grpc.CallOption) (*UpdatePortResponse, error)
-	// SetPortState sets the port state.
-	SetPortState(ctx context.Context, in *SetPortStateRequest, opts ...grpc.CallOption) (*SetPortStateResponse, error)
 	// SubsribePortState starts a stream of port status responses.
 	// sending the initial then any changes.
 	SubscribePortState(ctx context.Context, in *SubscribePortStateRequest, opts ...grpc.CallOption) (HAL_SubscribePortStateClient, error)
@@ -55,15 +53,6 @@ func NewHALClient(cc grpc.ClientConnInterface) HALClient {
 func (c *hALClient) UpdatePort(ctx context.Context, in *UpdatePortRequest, opts ...grpc.CallOption) (*UpdatePortResponse, error) {
 	out := new(UpdatePortResponse)
 	err := c.cc.Invoke(ctx, "/lemming.dataplane.HAL/UpdatePort", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *hALClient) SetPortState(ctx context.Context, in *SetPortStateRequest, opts ...grpc.CallOption) (*SetPortStateResponse, error) {
-	out := new(SetPortStateResponse)
-	err := c.cc.Invoke(ctx, "/lemming.dataplane.HAL/SetPortState", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -162,8 +151,6 @@ func (c *hALClient) DeletePuntRule(ctx context.Context, in *DeletePuntRuleReques
 type HALServer interface {
 	// UpdatePort updates port information.
 	UpdatePort(context.Context, *UpdatePortRequest) (*UpdatePortResponse, error)
-	// SetPortState sets the port state.
-	SetPortState(context.Context, *SetPortStateRequest) (*SetPortStateResponse, error)
 	// SubsribePortState starts a stream of port status responses.
 	// sending the initial then any changes.
 	SubscribePortState(*SubscribePortStateRequest, HAL_SubscribePortStateServer) error
@@ -189,9 +176,6 @@ type UnimplementedHALServer struct {
 
 func (UnimplementedHALServer) UpdatePort(context.Context, *UpdatePortRequest) (*UpdatePortResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdatePort not implemented")
-}
-func (UnimplementedHALServer) SetPortState(context.Context, *SetPortStateRequest) (*SetPortStateResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SetPortState not implemented")
 }
 func (UnimplementedHALServer) SubscribePortState(*SubscribePortStateRequest, HAL_SubscribePortStateServer) error {
 	return status.Errorf(codes.Unimplemented, "method SubscribePortState not implemented")
@@ -241,24 +225,6 @@ func _HAL_UpdatePort_Handler(srv interface{}, ctx context.Context, dec func(inte
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(HALServer).UpdatePort(ctx, req.(*UpdatePortRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _HAL_SetPortState_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SetPortStateRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(HALServer).SetPortState(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/lemming.dataplane.HAL/SetPortState",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(HALServer).SetPortState(ctx, req.(*SetPortStateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -402,10 +368,6 @@ var HAL_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdatePort",
 			Handler:    _HAL_UpdatePort_Handler,
-		},
-		{
-			MethodName: "SetPortState",
-			Handler:    _HAL_SetPortState_Handler,
 		},
 		{
 			MethodName: "InsertRoute",

@@ -23,6 +23,7 @@ message UpdatePortRequest {
   string hwaddr = 2;
   repeated IPNetwork ipv4s = 3;
   repeated IPNetwork ipv6s = 4;
+  PortState admin_state = 5;
 }
 
 message UpdatePortResponse {
@@ -32,14 +33,6 @@ enum PortState {
   PORT_STATE_UNSPECIFIED = 0;
   PORT_STATE_DOWN = 1;
   PORT_STATE_UP = 2;
-}
-
-message SetPortStateRequest {
-  string name = 1;
-  PortState admin_state = 2;
-}
-
-message SetPortStateResponse {
 }
 
 message SubscribePortStateRequest {
@@ -119,8 +112,6 @@ message DeletePuntRuleResponse {
 service HAL {
   // UpdatePort updates port information.
   rpc UpdatePort(UpdatePortRequest) returns (UpdatePortResponse) {}
-  // SetPortState sets the port state.
-  rpc SetPortState(SetPortStateRequest) returns (SetPortStateResponse) {}
   // SubsribePortState starts a stream of port status responses.
   // sending the initial then any changes.
   rpc SubscribePortState(SubscribePortStateRequest)
