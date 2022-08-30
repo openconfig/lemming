@@ -482,11 +482,10 @@ func (f *Engine) PortState(request *fwdpb.PortStateRequest, reply *fwdpb.PortSta
 	if err != nil {
 		return fmt.Errorf("fwd: PortState failed, err %v", err)
 	}
-	r, err := port.State(request.Operation)
+	reply, err = port.State(request.Operation)
 	if err != nil {
 		return fmt.Errorf("fwd: PortState failed, err %v", err)
 	}
-	*reply = r
 	return nil
 }
 

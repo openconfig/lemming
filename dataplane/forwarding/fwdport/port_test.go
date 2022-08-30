@@ -62,8 +62,8 @@ func (testPort) Actions(fwdpb.PortAction) fwdaction.Actions {
 }
 
 // State manages the state of the port.
-func (testPort) State(*fwdpb.PortInfo) (fwdpb.PortStateReply, error) {
-	return fwdpb.PortStateReply{}, nil
+func (testPort) State(*fwdpb.PortInfo) (*fwdpb.PortStateReply, error) {
+	return &fwdpb.PortStateReply{}, nil
 }
 
 // testBuilder builds test ports using a prebuilt port.

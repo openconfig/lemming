@@ -82,7 +82,7 @@ type Port interface {
 	Actions(dir fwdpb.PortAction) fwdaction.Actions
 
 	// State manages the state of the port.
-	State(op *fwdpb.PortInfo) (fwdpb.PortStateReply, error)
+	State(op *fwdpb.PortInfo) (*fwdpb.PortStateReply, error)
 }
 
 // A Builder can build Ports of the specified type.

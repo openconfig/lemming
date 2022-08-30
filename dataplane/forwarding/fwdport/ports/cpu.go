@@ -158,8 +158,8 @@ func (p *cpuPort) Actions(dir fwdpb.PortAction) fwdaction.Actions {
 // State implements the port interface. The CPU port state cannot be controlled
 // (it is always enabled). It is considered to be connected if a packet sink
 // is present in the port's context.
-func (cpuPort) State(req *fwdpb.PortInfo) (fwdpb.PortStateReply, error) {
-	ready := fwdpb.PortStateReply{
+func (cpuPort) State(req *fwdpb.PortInfo) (*fwdpb.PortStateReply, error) {
+	ready := &fwdpb.PortStateReply{
 		LocalPort: &fwdpb.PortInfo{
 			Laser: fwdpb.PortLaserState_PORT_LASER_STATE_ENABLED,
 		},

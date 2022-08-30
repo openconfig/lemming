@@ -27,6 +27,7 @@ enum PortType {
   PORT_TYPE_UNSPECIFIED = 0;
   PORT_TYPE_CPU_PORT = 1;        // Port associated with provisioning
   PORT_TYPE_AGGREGATE_PORT = 2;  // Port that is an aggregate of ports
+  PORT_TYPE_KERNEL = 3;          // Port that is kernel network interface.
 }
 
 // A PortDesc describes a forwarding port. It is assumed that the descriptor
@@ -37,6 +38,7 @@ message PortDesc {
   PortId port_id = 2;
   oneof port {
     CPUPortDesc cpu = 3;
+    KernelPortDesc kernel = 4;
   }
 }
 
@@ -48,6 +50,10 @@ message CPUPortDesc {
   string queue_id = 1;     // CPU queue-id.
   int32 queue_length = 2;  // Length of the CPU queue, unbounded by default
   repeated PacketFieldId export_field_ids = 3;  // Packet fields to export
+}
+
+message KernelPortDesc {
+  string device_name = 1;
 }
 
 // A PortCreateRequest is a request to create a port.
@@ -67,6 +73,7 @@ message PortUpdateDesc {
     AggregatePortAddMemberUpdateDesc aggregate_add = 3;
     AggregatePortRemoveMemberUpdateDesc aggregate_del = 4;
     AggregatePortAlgorithmUpdateDesc aggregate_algo = 5;
+    KernelPortUpdateDesc kernel = 6;
   }
 }
 
@@ -85,6 +92,12 @@ message PortUpdateReply {
 message CPUPortUpdateDesc {
   repeated ActionDesc inputs = 1;
   repeated ActionDesc outputs = 2;
+}
+
+// A KernelPortUpdateDesc updates the kernel port's input and output actions.
+message KernelPortUpdateDesc {
+  repeated ActionDesc input = 1;
+  repeated ActionDesc output = 2;
 }
 
 // AggregateHashAlgorithm enumerates algorithms used to select from a set
