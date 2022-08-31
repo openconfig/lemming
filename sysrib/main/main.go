@@ -26,7 +26,7 @@ func main() {
 
 	var opts []grpc.ServerOption
 	grpcServer := grpc.NewServer(opts...)
-	s, err := sysrib.NewServer()
+	s, err := sysrib.NewServer(nil)
 	if err != nil {
 		log.Fatalf("error while creating sysrib server: %v", err)
 	}
