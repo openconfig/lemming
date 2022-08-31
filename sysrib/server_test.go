@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/openconfig/gribigo/afthelper"
+	dpb "github.com/openconfig/lemming/proto/dataplane"
 	pb "github.com/openconfig/lemming/proto/sysrib"
 )
 
@@ -24,6 +25,8 @@ type SetRouteRequestAction struct {
 }
 
 type FakeDataplane struct {
+	dpb.HALClient
+
 	incomingRoutes []*ResolvedRoute
 }
 

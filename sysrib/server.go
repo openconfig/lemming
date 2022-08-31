@@ -23,9 +23,12 @@ import (
 
 	log "github.com/golang/glog"
 	"github.com/openconfig/gribigo/afthelper"
+	"github.com/openconfig/lemming/dataplane"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	dpb "github.com/openconfig/lemming/proto/dataplane"
 	pb "github.com/openconfig/lemming/proto/sysrib"
 )
 
@@ -53,25 +56,57 @@ type Server struct {
 	// diff for sending to the dataplane for programming.
 	resolvedRoutes map[RouteKey]*ResolvedRoute
 
-	dataplane Dataplane
+	dataplane dataplaneAPI
 }
 
-type Dataplane interface {
+type dataplaneAPI interface {
 	ProgramRoute(*ResolvedRoute) error
 }
 
+// Dataplane is a wrapper around dpb.HALClient to enable testing before
+// resolved route translation.
+//
+// TODO(wenbli): This is a temporary workaround due to the instability of the
+// API. Once the dataplane API is stable, then we'll want to test at the API
+// layer instead.
+type Dataplane struct {
+	dpb.HALClient
+}
+
+// programRoute programs the route in the dataplane, returning an error on failure.
+func (d *Dataplane) ProgramRoute(r *ResolvedRoute) error {
+	log.V(1).Infof("sysrib: programming resolved route: %+v", r)
+	rr, err := resolvedRouteToRouteRequest(r)
+	if err != nil {
+		return err
+	}
+	_, err = d.InsertRoute(context.Background(), rr)
+	return err
+}
+
 // NewServer instantiates server to handle client queries.
-func NewServer(dataplane Dataplane) (*Server, error) {
+//
+// If dp is nil, then a connection attempt is made.
+func NewServer(dp dataplaneAPI) (*Server, error) {
 	rib, err := NewSysRIB(nil)
 	if err != nil {
 		return nil, err
+	}
+
+	if dp == nil {
+		opts := []grpc.DialOption{grpc.WithInsecure()}
+		dpconn, err := grpc.Dial(fmt.Sprintf("localhost:%d", dataplane.Port), opts...)
+		if err != nil {
+			return nil, fmt.Errorf("cannot dial to HAL service, %v", err)
+		}
+		dp = &Dataplane{dpb.NewHALClient(dpconn)}
 	}
 
 	return &Server{
 		rib:            rib,
 		interfaces:     map[Interface]bool{},
 		resolvedRoutes: map[RouteKey]*ResolvedRoute{},
-		dataplane:      dataplane,
+		dataplane:      dp,
 	}, nil
 }
 
@@ -104,6 +139,16 @@ func vrfIDToNiName(vrfID uint32) string {
 	}
 }
 
+func niNameToVrfID(niName string) (uint32, error) {
+	switch niName {
+	case "DEFAULT":
+		return 0, nil
+	default:
+		// TODO(wenbli): This mapping should probably be stored in a map.
+		return 0, fmt.Errorf("sysrib: only DEFAULT VRF is recognized")
+	}
+}
+
 func prefixString(prefix *pb.Prefix) (string, error) {
 	switch fam := prefix.GetFamily(); fam {
 	case pb.Prefix_FAMILY_IPV4:
@@ -112,6 +157,28 @@ func prefixString(prefix *pb.Prefix) (string, error) {
 	default:
 		return "", fmt.Errorf("unrecognized prefix family: %v", fam)
 	}
+}
+
+func resolvedRouteToRouteRequest(r *ResolvedRoute) (*dpb.InsertRouteRequest, error) {
+	vrfID, err := niNameToVrfID(r.NIName)
+	if err != nil {
+		return nil, err
+	}
+
+	var nexthops []*dpb.NextHop
+	for nh := range r.Nexthops {
+		nexthops = append(nexthops, &dpb.NextHop{
+			Port:   nh.Port.Name,
+			Ip:     nh.Address,
+			Weight: nh.Weight,
+		})
+	}
+
+	return &dpb.InsertRouteRequest{
+		Vrf:      uint64(vrfID),
+		Prefix:   r.Prefix,
+		NextHops: nexthops,
+	}, nil
 }
 
 // programRoute programs the route in the dataplane, returning an error on failure.
