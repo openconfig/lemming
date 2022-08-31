@@ -82,10 +82,17 @@ func (s *Server) UpdatePort(_ context.Context, req *dpb.UpdatePortRequest) (*dpb
 	if err := setInterfaceIPs(tapName, ips); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to set IPs: %v", err)
 	}
-	if req.AdminState != dpb.PortState_PORT_STATE_UNSPECIFIED {
-		if err := setInterfaceState(tapName, req.AdminState == dpb.PortState_PORT_STATE_UP); err != nil {
-			return nil, status.Errorf(codes.Internal, "failed to set interface set: %v", err)
-		}
+
+	var err error
+	switch req.AdminState {
+	case dpb.PortState_PORT_STATE_UP:
+		err = setInterfaceState(tapName, req.AdminState == dpb.PortState_PORT_STATE_UP)
+	case dpb.PortState_PORT_STATE_DOWN:
+		err = setInterfaceState(tapName, req.AdminState == dpb.PortState_PORT_STATE_UP)
 	}
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to set interface set: %v", err)
+	}
+
 	return &dpb.UpdatePortResponse{}, nil
 }
