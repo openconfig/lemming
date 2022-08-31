@@ -12,13 +12,6 @@ import (
 	"github.com/openconfig/lemming/sysrib"
 )
 
-type DummyDataplane struct{}
-
-func (*DummyDataplane) ProgramRoute(r *sysrib.ResolvedRoute) error {
-	log.Infof("Dummy dataplane got resolved route to program: %+v", r)
-	return nil
-}
-
 func main() {
 	flag.Parse()
 
@@ -33,7 +26,7 @@ func main() {
 
 	var opts []grpc.ServerOption
 	grpcServer := grpc.NewServer(opts...)
-	s, err := sysrib.NewServer(&DummyDataplane{})
+	s, err := sysrib.NewServer(nil)
 	if err != nil {
 		log.Fatalf("error while creating sysrib server: %v", err)
 	}
