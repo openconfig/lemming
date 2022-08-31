@@ -26,13 +26,17 @@ import (
 	"github.com/openconfig/lemming/dataplane"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 
 	dpb "github.com/openconfig/lemming/proto/dataplane"
 	pb "github.com/openconfig/lemming/proto/sysrib"
 )
 
-const SockAddr = "/tmp/sysrib.api"
+const (
+	SockAddr  = "/tmp/sysrib.api"
+	defaultNI = "DEFAULT"
+)
 
 // Server is the implementation of the Sysrib API.
 //
@@ -94,7 +98,7 @@ func NewServer(dp dataplaneAPI) (*Server, error) {
 	}
 
 	if dp == nil {
-		opts := []grpc.DialOption{grpc.WithInsecure()}
+		opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 		dpconn, err := grpc.Dial(fmt.Sprintf("localhost:%d", dataplane.Port), opts...)
 		if err != nil {
 			return nil, fmt.Errorf("cannot dial to HAL service, %v", err)
@@ -133,7 +137,7 @@ type ResolvedNexthop struct {
 func vrfIDToNiName(vrfID uint32) string {
 	switch vrfID {
 	case 0:
-		return "DEFAULT"
+		return defaultNI
 	default:
 		return strconv.Itoa(int(vrfID))
 	}
@@ -141,11 +145,11 @@ func vrfIDToNiName(vrfID uint32) string {
 
 func niNameToVrfID(niName string) (uint32, error) {
 	switch niName {
-	case "DEFAULT":
+	case defaultNI:
 		return 0, nil
 	default:
 		// TODO(wenbli): This mapping should probably be stored in a map.
-		return 0, fmt.Errorf("sysrib: only DEFAULT VRF is recognized")
+		return 1, fmt.Errorf("sysrib: only %s VRF is recognized", defaultNI)
 	}
 }
 
