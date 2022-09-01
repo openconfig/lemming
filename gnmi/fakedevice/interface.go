@@ -244,12 +244,16 @@ var (
 					curAddr.PrefixLength = addr.PrefixLength
 				}
 			}
-			updateInterface(curIntf)
+			if err := updateInterfaceFn(curIntf); err != nil {
+				return err
+			}
 		}
 
 		for intfName := range interfaceAppliedRoot.Interface {
 			if _, ok := intendedRoot.Interface[intfName]; !ok {
-				deleteInterface(intfName)
+				if err := deleteInterfaceFn(intfName); err != nil {
+					return err
+				}
 			}
 		}
 
