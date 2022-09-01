@@ -15,6 +15,8 @@ require (
 	github.com/openconfig/ygot v0.24.2
 	github.com/osrg/gobgp/v3 v3.5.0
 	github.com/p4lang/p4runtime v1.3.0
+	github.com/vishvananda/netlink v1.1.1-0.20210330154013-f5de75959ad5
+	golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e
 	google.golang.org/grpc v1.45.0
 	google.golang.org/protobuf v1.28.0
 	k8s.io/klog/v2 v2.60.1
@@ -43,10 +45,8 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.10.1 // indirect
 	github.com/subosito/gotenv v1.2.0 // indirect
-	github.com/vishvananda/netlink v1.1.1-0.20210330154013-f5de75959ad5 // indirect
 	github.com/vishvananda/netns v0.0.0-20200728191858-db3c7e526aae // indirect
 	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect
-	golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/genproto v0.0.0-20211208223120-3a66f561d7aa // indirect
