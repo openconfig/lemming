@@ -11,9 +11,8 @@ import (
 	"github.com/openconfig/gnmi/ctree"
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 	"github.com/openconfig/lemming/gnmi/gnmit"
-	"github.com/openconfig/lemming/gnmi/internal/config"
-	configpath "github.com/openconfig/lemming/gnmi/internal/config/device"
-	"github.com/openconfig/lemming/gnmi/internal/telemetry"
+	"github.com/openconfig/lemming/gnmi/internal/oc"
+	"github.com/openconfig/lemming/gnmi/internal/oc/ocpath"
 	"github.com/openconfig/ygot/ygot"
 	"google.golang.org/protobuf/encoding/prototext"
 )
@@ -25,7 +24,7 @@ var (
 	deleteInterfaceFn = deleteInterface
 )
 
-func updateInterface(*telemetry.Interface) error {
+func updateInterface(*oc.Interface) error {
 	// TODO: This needs to call into the dataplane to configure the interface.
 	return nil
 }
@@ -39,21 +38,21 @@ func deleteInterface(name string) error {
 // need to be factored out to enable this.
 var (
 	enabledPaths, descriptionPaths, namePaths, ipv4AddressPaths, prefixLengthPaths *gpb.Path
-	interfacePendingEvents                                                         map[*func(*config.Device) error]bool
+	interfacePendingEvents                                                         map[*func(*oc.Root) error]bool
 	// appliedRoot is the SoT for BGP applied configuration. It is maintained locally by the task.
-	interfaceAppliedRoot *telemetry.Device
+	interfaceAppliedRoot *oc.Root
 	interfaceAppliedMu   sync.Mutex
 )
 
 func initInterfaceTaskVars() error {
-	interfaceAppliedRoot = &telemetry.Device{}
+	interfaceAppliedRoot = &oc.Root{}
 
-	interfacePendingEvents = map[*func(*config.Device) error]bool{}
+	interfacePendingEvents = map[*func(*oc.Root) error]bool{}
 	return initInterfacePaths()
 }
 
 func initInterfacePaths() error {
-	interfacePath := configpath.DeviceRoot("").InterfaceAny()
+	interfacePath := ocpath.Root().InterfaceAny()
 	var err []error
 	enabledPaths, _, err = ygot.ResolvePath(interfacePath.Enabled())
 	if err != nil {
@@ -79,7 +78,7 @@ func initInterfacePaths() error {
 	return nil
 }
 
-func interfaceTask(getIntendedConfig func() *config.Device, q gnmit.Queue, update gnmit.UpdateFn, target string, remove func()) error {
+func interfaceTask(getIntendedConfig func() *oc.Root, q gnmit.Queue, update gnmit.UpdateFn, target string, remove func()) error {
 	if err := initInterfaceTaskVars(); err != nil {
 		return err
 	}
@@ -87,10 +86,10 @@ func interfaceTask(getIntendedConfig func() *config.Device, q gnmit.Queue, updat
 	// updateAppliedConfig computes the diff between a previous applied
 	// configuration and the current SoT, and sends the updates to the
 	// central DB.
-	updateAppliedConfig := func(prevApplied *telemetry.Device) bool {
+	updateAppliedConfig := func(prevApplied *oc.Root) bool {
 		interfaceAppliedMu.Lock()
 		defer interfaceAppliedMu.Unlock()
-		no, err := ygot.Diff(prevApplied, interfaceAppliedRoot)
+		no, err := ygot.Diff(prevApplied, interfaceAppliedRoot, &ygot.DiffPathOpt{PreferShadowPath: true})
 		if err != nil {
 			log.Errorf("interfaceTask: error while creating update notification for updating applied configuration: %v", err)
 			return false
@@ -136,14 +135,14 @@ func interfaceTask(getIntendedConfig func() *config.Device, q gnmit.Queue, updat
 				}
 			}
 
-			var prevApplied *telemetry.Device
+			var prevApplied *oc.Root
 			if updateAppliedRoot {
 				interfaceAppliedMu.Lock()
 				prevAppliedGS, err := ygot.DeepCopy(interfaceAppliedRoot)
 				if err != nil {
 					log.Fatalf("interfaceTask: Could not copy applied configuration: %v", err)
 				}
-				prevApplied = prevAppliedGS.(*telemetry.Device)
+				prevApplied = prevAppliedGS.(*oc.Root)
 				interfaceAppliedMu.Unlock()
 			}
 
@@ -203,7 +202,7 @@ func interfacePathHandler(path *gpb.Path) {
 }
 
 var (
-	intfDescriptionReactor = func(intendedRoot *config.Device) error {
+	intfDescriptionReactor = func(intendedRoot *oc.Root) error {
 		for intfName, intf := range intendedRoot.Interface {
 			curIntf, ok := interfaceAppliedRoot.Interface[intfName]
 			if !ok {
@@ -224,7 +223,7 @@ var (
 		return nil
 	}
 
-	interfaceReactor = func(intendedRoot *config.Device) error {
+	interfaceReactor = func(intendedRoot *oc.Root) error {
 		for intfName, intf := range intendedRoot.Interface {
 			curIntf, ok := interfaceAppliedRoot.Interface[intfName]
 			if !ok {

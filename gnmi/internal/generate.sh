@@ -18,7 +18,6 @@
 
 set -e
 
-go install github.com/openconfig/ygot/generator@latest
 git clone https://github.com/openconfig/public.git
 
 EXCLUDE_MODULES=ietf-interfaces,openconfig-bfd,openconfig-messages

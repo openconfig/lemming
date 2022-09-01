@@ -372,7 +372,7 @@ func tasks(target string) []gnmit.Task {
 	}, {
 		Run: interfaceTask,
 		Paths: []ygot.PathStruct{
-			configpath.DeviceRoot("").InterfaceAny(),
+			ocpath.Root().InterfaceAny(),
 		},
 		Prefix: &gpb.Path{
 			Origin: "openconfig",

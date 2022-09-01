@@ -81,7 +81,7 @@ func goBgpTask(getIntendedConfig func() *oc.Root, q gnmit.Queue, update gnmit.Up
 			appliedBgpMu.Lock()
 			defer appliedBgpMu.Unlock()
 		}
-		no, err := ygot.Diff(prevApplied, appliedBgp)
+		no, err := ygot.Diff(prevApplied, appliedBgp, &ygot.DiffPathOpt{PreferShadowPath: true})
 		if err != nil {
 			log.Errorf("goBgpTask: error while creating update notification for updating applied configuration: %v", err)
 			return false
