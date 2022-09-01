@@ -14,6 +14,7 @@ import (
 	"github.com/openconfig/lemming/gnmi/gnmit"
 	"github.com/openconfig/lemming/gnmi/internal/oc"
 	"github.com/openconfig/lemming/gnmi/internal/oc/ocpath"
+	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot"
 	api "github.com/osrg/gobgp/v3/api"
 	"github.com/osrg/gobgp/v3/pkg/server"
@@ -57,7 +58,7 @@ const (
 //     e.g. for peers, if the global setting has been set up, then we can create the peers and update the applied config if it succeeds, but if not then we don't do anything.
 //     ; however, if the global setting hasn't been set up, we actually need to erase the entirety of the applied config. This is because the watcher doesn't tell us this information.
 func goBgpTask(getIntendedConfig func() *oc.Root, q gnmit.Queue, update gnmit.UpdateFn, target string, remove func()) error {
-	bgpStatePath, _, err := ygot.ResolvePath(ocpath.Root().NetworkInstance("default").Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").Bgp())
+	bgpStatePath, _, err := ygnmi.ResolvePath(ocpath.Root().NetworkInstance("default").Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").Bgp())
 	if err != nil {
 		return fmt.Errorf("goBgpTask failed to initialize due to error: %v", err)
 	}
@@ -144,19 +145,19 @@ func goBgpTask(getIntendedConfig func() *oc.Root, q gnmit.Queue, update gnmit.Up
 	}
 
 	bgpPath := ocpath.Root().NetworkInstance("default").Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").Bgp()
-	asPaths, _, err := ygot.ResolvePath(bgpPath.Global().As())
+	asPaths, _, err := ygnmi.ResolvePath(bgpPath.Global().As())
 	if err != nil {
 		return fmt.Errorf("goBgpTask failed to initialize due to error: %v", err)
 	}
-	routeIDPaths, _, err := ygot.ResolvePath(bgpPath.Global().RouterId())
+	routeIDPaths, _, err := ygnmi.ResolvePath(bgpPath.Global().RouterId())
 	if err != nil {
 		return fmt.Errorf("goBgpTask failed to initialize due to error: %v", err)
 	}
-	peerAsPaths, _, err := ygot.ResolvePath(bgpPath.NeighborAny().PeerAs())
+	peerAsPaths, _, err := ygnmi.ResolvePath(bgpPath.NeighborAny().PeerAs())
 	if err != nil {
 		return fmt.Errorf("goBgpTask failed to initialize due to error: %v", err)
 	}
-	neighAddrPaths, _, err := ygot.ResolvePath(bgpPath.NeighborAny().NeighborAddress())
+	neighAddrPaths, _, err := ygnmi.ResolvePath(bgpPath.NeighborAny().NeighborAddress())
 	if err != nil {
 		return fmt.Errorf("goBgpTask failed to initialize due to error: %v", err)
 	}

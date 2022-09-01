@@ -22,27 +22,6 @@ git clone https://github.com/openconfig/public.git
 
 EXCLUDE_MODULES=ietf-interfaces,openconfig-bfd,openconfig-messages
 
-COMMON_ARGS=(
-  -path="public/release/models,public/third_party/ietf"
-  -compress_paths
-  -exclude_modules="${EXCLUDE_MODULES}"
-  -generate_fakeroot
-  -fakeroot_name=device
-  -generate_simple_unions
-  -shorten_enum_leaf_names
-  -typedef_enum_with_defmod
-  -enum_suffix_for_simple_union_enums
-  -trim_enum_openconfig_prefix
-  -include_schema
-  -generate_append
-  -generate_getters
-  -generate_rename
-  -generate_delete
-  -generate_leaf_getters
-  -structs_split_files_count=10
-  -generate_populate_defaults
-)
-
 YANG_FILES=(
   public/release/models/acl/openconfig-acl.yang
   public/release/models/acl/openconfig-packet-match.yang

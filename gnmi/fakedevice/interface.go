@@ -13,6 +13,7 @@ import (
 	"github.com/openconfig/lemming/gnmi/gnmit"
 	"github.com/openconfig/lemming/gnmi/internal/oc"
 	"github.com/openconfig/lemming/gnmi/internal/oc/ocpath"
+	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot"
 	"google.golang.org/protobuf/encoding/prototext"
 )
@@ -53,24 +54,24 @@ func initInterfaceTaskVars() error {
 
 func initInterfacePaths() error {
 	interfacePath := ocpath.Root().InterfaceAny()
-	var err []error
-	enabledPaths, _, err = ygot.ResolvePath(interfacePath.Enabled())
+	var err error
+	enabledPaths, _, err = ygnmi.ResolvePath(interfacePath.Enabled())
 	if err != nil {
 		return fmt.Errorf("interfaceTask failed to initialize due to error: %v", err)
 	}
-	descriptionPaths, _, err = ygot.ResolvePath(interfacePath.Description())
+	descriptionPaths, _, err = ygnmi.ResolvePath(interfacePath.Description())
 	if err != nil {
 		return fmt.Errorf("interfaceTask failed to initialize due to error: %v", err)
 	}
-	namePaths, _, err = ygot.ResolvePath(interfacePath.Name())
+	namePaths, _, err = ygnmi.ResolvePath(interfacePath.Name())
 	if err != nil {
 		return fmt.Errorf("interfaceTask failed to initialize due to error: %v", err)
 	}
-	ipv4AddressPaths, _, err = ygot.ResolvePath(interfacePath.SubinterfaceAny().Ipv4().AddressAny().Ip())
+	ipv4AddressPaths, _, err = ygnmi.ResolvePath(interfacePath.SubinterfaceAny().Ipv4().AddressAny().Ip())
 	if err != nil {
 		return fmt.Errorf("interfaceTask failed to initialize due to error: %v", err)
 	}
-	prefixLengthPaths, _, err = ygot.ResolvePath(interfacePath.SubinterfaceAny().Ipv4().AddressAny().PrefixLength())
+	prefixLengthPaths, _, err = ygnmi.ResolvePath(interfacePath.SubinterfaceAny().Ipv4().AddressAny().PrefixLength())
 	if err != nil {
 		return fmt.Errorf("interfaceTask failed to initialize due to error: %v", err)
 	}

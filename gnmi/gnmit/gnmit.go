@@ -30,6 +30,7 @@ import (
 	"github.com/openconfig/gnmi/cache"
 	"github.com/openconfig/lemming/gnmi/internal/oc"
 	"github.com/openconfig/lemming/gnmi/subscribe"
+	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot"
 	"github.com/openconfig/ygot/ytypes"
 	"google.golang.org/grpc"
@@ -82,7 +83,7 @@ type TaskRoutine func(func() *oc.Root, Queue, UpdateFn, string, func()) error
 // Task defines a particular task that runs on the gNMI datastore.
 type Task struct {
 	Run    TaskRoutine
-	Paths  []ygot.PathStruct
+	Paths  []ygnmi.PathStruct
 	Prefix *gpb.Path
 }
 
@@ -104,7 +105,7 @@ type GNMIServer struct {
 func (s *GNMIServer) RegisterTask(task Task) error {
 	var paths []*gpb.Path
 	for _, p := range task.Paths {
-		path, _, err := ygot.ResolvePath(p)
+		path, _, err := ygnmi.ResolvePath(p)
 		if err != nil {
 			return fmt.Errorf("gnmit: cannot register task: %v", err)
 		}

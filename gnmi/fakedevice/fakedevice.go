@@ -27,8 +27,8 @@ import (
 	"github.com/openconfig/lemming/gnmi/gnmit"
 	"github.com/openconfig/lemming/gnmi/internal/oc"
 	"github.com/openconfig/lemming/gnmi/internal/oc/ocpath"
+	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/util"
-	"github.com/openconfig/ygot/ygot"
 	"github.com/openconfig/ygot/ygot/pathtranslate"
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
@@ -53,7 +53,7 @@ func init() {
 // time. It does not spawn any long-running threads.
 func bootTimeTask(_ func() *oc.Root, _ gnmit.Queue, updateFn gnmit.UpdateFn, target string, remove func()) error {
 	defer remove()
-	pathBootTime, _, errs := ygot.ResolvePath(ocpath.Root().System().BootTime())
+	pathBootTime, _, errs := ygnmi.ResolvePath(ocpath.Root().System().BootTime())
 	if errs != nil {
 		return fmt.Errorf("bootTimeTask failed to initialize due to error: %v", errs)
 	}
@@ -83,7 +83,7 @@ func bootTimeTask(_ func() *oc.Root, _ gnmit.Queue, updateFn gnmit.UpdateFn, tar
 // currentDateTimeTask updates the current-datetime leaf with the current time,
 // and spawns a thread that wakes up every second to update the leaf.
 func currentDateTimeTask(_ func() *oc.Root, _ gnmit.Queue, updateFn gnmit.UpdateFn, target string, remove func()) error {
-	pathDatetime, _, err := ygot.ResolvePath(ocpath.Root().System().CurrentDatetime())
+	pathDatetime, _, err := ygnmi.ResolvePath(ocpath.Root().System().CurrentDatetime())
 	if err != nil {
 		return fmt.Errorf("currentDateTimeTask failed to initialize due to error: %v", err)
 	}
@@ -153,19 +153,19 @@ func toStatePath(configPath *gpb.Path) *gpb.Path {
 
 // systemBaseTask handles most of the logic for the base systems feature profile.
 func systemBaseTask(_ func() *oc.Root, queue gnmit.Queue, updateFn gnmit.UpdateFn, target string, remove func()) error {
-	hostnamePath, _, err := ygot.ResolvePath(ocpath.Root().System().Hostname())
+	hostnamePath, _, err := ygnmi.ResolvePath(ocpath.Root().System().Hostname())
 	if err != nil {
 		log.Errorf("systemBaseTask failed to initialize due to error: %v", err)
 	}
-	domainNamePath, _, err := ygot.ResolvePath(ocpath.Root().System().DomainName())
+	domainNamePath, _, err := ygnmi.ResolvePath(ocpath.Root().System().DomainName())
 	if err != nil {
 		log.Errorf("systemBaseTask failed to initialize due to error: %v", err)
 	}
-	motdBannerPath, _, err := ygot.ResolvePath(ocpath.Root().System().MotdBanner())
+	motdBannerPath, _, err := ygnmi.ResolvePath(ocpath.Root().System().MotdBanner())
 	if err != nil {
 		log.Errorf("systemBaseTask failed to initialize due to error: %v", err)
 	}
-	loginBannerPath, _, err := ygot.ResolvePath(ocpath.Root().System().LoginBanner())
+	loginBannerPath, _, err := ygnmi.ResolvePath(ocpath.Root().System().LoginBanner())
 	if err != nil {
 		log.Errorf("systemBaseTask failed to initialize due to error: %v", err)
 	}
@@ -253,7 +253,7 @@ func systemBaseTask(_ func() *oc.Root, queue gnmit.Queue, updateFn gnmit.UpdateF
 // current-datetime leaf and writes updates to the syslog message leaf whenever
 // the current-datetime leaf is updated.
 func syslogTask(_ func() *oc.Root, queue gnmit.Queue, updateFn gnmit.UpdateFn, target string, remove func()) error {
-	pathSystemMsg, _, err := ygot.ResolvePath(ocpath.Root().System().Messages().Message().Msg())
+	pathSystemMsg, _, err := ygnmi.ResolvePath(ocpath.Root().System().Messages().Message().Msg())
 	if err != nil {
 		log.Errorf("syslogTask failed to initialize due to error: %v", err)
 	}
@@ -327,21 +327,21 @@ func tasks(target string) []gnmit.Task {
 	return []gnmit.Task{{
 		Run: currentDateTimeTask,
 		// No paths means the task should periodically wake up itself if it needs to be run at a later time.
-		Paths: []ygot.PathStruct{},
+		Paths: []ygnmi.PathStruct{},
 		Prefix: &gpb.Path{
 			Origin: "openconfig",
 			Target: target,
 		},
 	}, {
 		Run:   bootTimeTask,
-		Paths: []ygot.PathStruct{},
+		Paths: []ygnmi.PathStruct{},
 		Prefix: &gpb.Path{
 			Origin: "openconfig",
 			Target: target,
 		},
 	}, {
 		Run: syslogTask,
-		Paths: []ygot.PathStruct{
+		Paths: []ygnmi.PathStruct{
 			ocpath.Root().System().CurrentDatetime(),
 		},
 		Prefix: &gpb.Path{
@@ -350,7 +350,7 @@ func tasks(target string) []gnmit.Task {
 		},
 	}, {
 		Run: systemBaseTask,
-		Paths: []ygot.PathStruct{
+		Paths: []ygnmi.PathStruct{
 			ocpath.Root().System().Hostname(),
 			ocpath.Root().System().DomainName(),
 			ocpath.Root().System().MotdBanner(),
@@ -362,7 +362,7 @@ func tasks(target string) []gnmit.Task {
 		},
 	}, {
 		Run: goBgpTask,
-		Paths: []ygot.PathStruct{
+		Paths: []ygnmi.PathStruct{
 			ocpath.Root().NetworkInstance("default").Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").Bgp(),
 		},
 		Prefix: &gpb.Path{
@@ -371,7 +371,7 @@ func tasks(target string) []gnmit.Task {
 		},
 	}, {
 		Run: interfaceTask,
-		Paths: []ygot.PathStruct{
+		Paths: []ygnmi.PathStruct{
 			ocpath.Root().InterfaceAny(),
 		},
 		Prefix: &gpb.Path{
