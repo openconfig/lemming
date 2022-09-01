@@ -26,7 +26,7 @@ import (
 	"github.com/openconfig/lemming/dataplane"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/credentials/local"
 	"google.golang.org/grpc/status"
 
 	dpb "github.com/openconfig/lemming/proto/dataplane"
@@ -98,7 +98,7 @@ func NewServer(dp dataplaneAPI) (*Server, error) {
 	}
 
 	if dp == nil {
-		opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
+		opts := []grpc.DialOption{grpc.WithTransportCredentials(local.NewCredentials())}
 		dpconn, err := grpc.Dial(fmt.Sprintf("localhost:%d", dataplane.Port), opts...)
 		if err != nil {
 			return nil, fmt.Errorf("cannot dial to HAL service, %v", err)
