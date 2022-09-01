@@ -25,9 +25,8 @@ import (
 	"github.com/openconfig/gnmi/value"
 	"github.com/openconfig/goyang/pkg/yang"
 	"github.com/openconfig/lemming/gnmi/gnmit"
-	"github.com/openconfig/lemming/gnmi/internal/config"
-	configpath "github.com/openconfig/lemming/gnmi/internal/config/device"
-	telemetrypath "github.com/openconfig/lemming/gnmi/internal/telemetry/device"
+	"github.com/openconfig/lemming/gnmi/internal/oc"
+	"github.com/openconfig/lemming/gnmi/internal/oc/ocpath"
 	"github.com/openconfig/ygot/util"
 	"github.com/openconfig/ygot/ygot"
 	"github.com/openconfig/ygot/ygot/pathtranslate"
@@ -41,7 +40,7 @@ var pathTranslator *pathtranslate.PathTranslator
 
 func init() {
 	var schemas []*yang.Entry
-	for _, s := range config.SchemaTree {
+	for _, s := range oc.SchemaTree {
 		schemas = append(schemas, s)
 	}
 	var err error
@@ -52,9 +51,9 @@ func init() {
 
 // bootTimeTask is a task that updates the boot-time leaf with the current
 // time. It does not spawn any long-running threads.
-func bootTimeTask(_ func() *config.Device, _ gnmit.Queue, updateFn gnmit.UpdateFn, target string, remove func()) error {
+func bootTimeTask(_ func() *oc.Root, _ gnmit.Queue, updateFn gnmit.UpdateFn, target string, remove func()) error {
 	defer remove()
-	pathBootTime, _, errs := ygot.ResolvePath(telemetrypath.DeviceRoot("").System().BootTime())
+	pathBootTime, _, errs := ygot.ResolvePath(ocpath.Root().System().BootTime())
 	if errs != nil {
 		return fmt.Errorf("bootTimeTask failed to initialize due to error: %v", errs)
 	}
@@ -83,8 +82,8 @@ func bootTimeTask(_ func() *config.Device, _ gnmit.Queue, updateFn gnmit.UpdateF
 
 // currentDateTimeTask updates the current-datetime leaf with the current time,
 // and spawns a thread that wakes up every second to update the leaf.
-func currentDateTimeTask(_ func() *config.Device, _ gnmit.Queue, updateFn gnmit.UpdateFn, target string, remove func()) error {
-	pathDatetime, _, err := ygot.ResolvePath(telemetrypath.DeviceRoot("").System().CurrentDatetime())
+func currentDateTimeTask(_ func() *oc.Root, _ gnmit.Queue, updateFn gnmit.UpdateFn, target string, remove func()) error {
+	pathDatetime, _, err := ygot.ResolvePath(ocpath.Root().System().CurrentDatetime())
 	if err != nil {
 		return fmt.Errorf("currentDateTimeTask failed to initialize due to error: %v", err)
 	}
@@ -153,20 +152,20 @@ func toStatePath(configPath *gpb.Path) *gpb.Path {
 }
 
 // systemBaseTask handles most of the logic for the base systems feature profile.
-func systemBaseTask(_ func() *config.Device, queue gnmit.Queue, updateFn gnmit.UpdateFn, target string, remove func()) error {
-	hostnamePath, _, err := ygot.ResolvePath(configpath.DeviceRoot("").System().Hostname())
+func systemBaseTask(_ func() *oc.Root, queue gnmit.Queue, updateFn gnmit.UpdateFn, target string, remove func()) error {
+	hostnamePath, _, err := ygot.ResolvePath(ocpath.Root().System().Hostname())
 	if err != nil {
 		log.Errorf("systemBaseTask failed to initialize due to error: %v", err)
 	}
-	domainNamePath, _, err := ygot.ResolvePath(configpath.DeviceRoot("").System().DomainName())
+	domainNamePath, _, err := ygot.ResolvePath(ocpath.Root().System().DomainName())
 	if err != nil {
 		log.Errorf("systemBaseTask failed to initialize due to error: %v", err)
 	}
-	motdBannerPath, _, err := ygot.ResolvePath(configpath.DeviceRoot("").System().MotdBanner())
+	motdBannerPath, _, err := ygot.ResolvePath(ocpath.Root().System().MotdBanner())
 	if err != nil {
 		log.Errorf("systemBaseTask failed to initialize due to error: %v", err)
 	}
-	loginBannerPath, _, err := ygot.ResolvePath(configpath.DeviceRoot("").System().LoginBanner())
+	loginBannerPath, _, err := ygot.ResolvePath(ocpath.Root().System().LoginBanner())
 	if err != nil {
 		log.Errorf("systemBaseTask failed to initialize due to error: %v", err)
 	}
@@ -253,8 +252,8 @@ func systemBaseTask(_ func() *config.Device, queue gnmit.Queue, updateFn gnmit.U
 // syslogTask is a meaningless test task that monitors updates to the
 // current-datetime leaf and writes updates to the syslog message leaf whenever
 // the current-datetime leaf is updated.
-func syslogTask(_ func() *config.Device, queue gnmit.Queue, updateFn gnmit.UpdateFn, target string, remove func()) error {
-	pathSystemMsg, _, err := ygot.ResolvePath(telemetrypath.DeviceRoot("").System().Messages().Message().Msg())
+func syslogTask(_ func() *oc.Root, queue gnmit.Queue, updateFn gnmit.UpdateFn, target string, remove func()) error {
+	pathSystemMsg, _, err := ygot.ResolvePath(ocpath.Root().System().Messages().Message().Msg())
 	if err != nil {
 		log.Errorf("syslogTask failed to initialize due to error: %v", err)
 	}
@@ -343,7 +342,7 @@ func tasks(target string) []gnmit.Task {
 	}, {
 		Run: syslogTask,
 		Paths: []ygot.PathStruct{
-			telemetrypath.DeviceRoot("").System().CurrentDatetime(),
+			ocpath.Root().System().CurrentDatetime(),
 		},
 		Prefix: &gpb.Path{
 			Origin: "openconfig",
@@ -352,10 +351,10 @@ func tasks(target string) []gnmit.Task {
 	}, {
 		Run: systemBaseTask,
 		Paths: []ygot.PathStruct{
-			configpath.DeviceRoot("").System().Hostname(),
-			configpath.DeviceRoot("").System().DomainName(),
-			configpath.DeviceRoot("").System().MotdBanner(),
-			configpath.DeviceRoot("").System().LoginBanner(),
+			ocpath.Root().System().Hostname(),
+			ocpath.Root().System().DomainName(),
+			ocpath.Root().System().MotdBanner(),
+			ocpath.Root().System().LoginBanner(),
 		},
 		Prefix: &gpb.Path{
 			Origin: "openconfig",
@@ -364,7 +363,7 @@ func tasks(target string) []gnmit.Task {
 	}, {
 		Run: goBgpTask,
 		Paths: []ygot.PathStruct{
-			configpath.DeviceRoot("").NetworkInstance("default").Protocol(config.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").Bgp(),
+			ocpath.Root().NetworkInstance("default").Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").Bgp(),
 		},
 		Prefix: &gpb.Path{
 			Origin: "openconfig",
@@ -388,7 +387,7 @@ func tasks(target string) []gnmit.Task {
 // thread agents that can subscribe to particular values in ONDATRA's
 // OpenConfig tree and write back values to it.
 func NewTarget(ctx context.Context, addr, targetName string) (*gnmit.Collector, string, error) {
-	configSchema, err := config.Schema()
+	configSchema, err := oc.Schema()
 	if err != nil {
 		return nil, "", fmt.Errorf("cannot create ygot schema object for gNMI target: %v", err)
 	}

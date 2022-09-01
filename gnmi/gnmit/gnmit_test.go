@@ -31,7 +31,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 	"github.com/openconfig/gnmi/value"
-	"github.com/openconfig/lemming/gnmi/internal/config"
+	"github.com/openconfig/lemming/gnmi/internal/oc"
 	"github.com/openconfig/ygot/ygot"
 )
 
@@ -245,7 +245,7 @@ func TestONCE(t *testing.T) {
 
 // TestONCESet tests the subscribe mode of gnmit.
 func TestONCESet(t *testing.T) {
-	schema, err := config.Schema()
+	schema, err := oc.Schema()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -343,7 +343,7 @@ func TestONCESet(t *testing.T) {
 
 // TestONCESet tests the subscribe mode of gnmit.
 func TestONCESetJSON(t *testing.T) {
-	schema, err := config.Schema()
+	schema, err := oc.Schema()
 	if err != nil {
 		t.Fatal(err)
 	}

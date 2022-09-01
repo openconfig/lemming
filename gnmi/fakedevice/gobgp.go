@@ -12,10 +12,8 @@ import (
 	"github.com/openconfig/gnmi/ctree"
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 	"github.com/openconfig/lemming/gnmi/gnmit"
-	"github.com/openconfig/lemming/gnmi/internal/config"
-	configpath "github.com/openconfig/lemming/gnmi/internal/config/device"
-	"github.com/openconfig/lemming/gnmi/internal/telemetry"
-	telemetrypath "github.com/openconfig/lemming/gnmi/internal/telemetry/device"
+	"github.com/openconfig/lemming/gnmi/internal/oc"
+	"github.com/openconfig/lemming/gnmi/internal/oc/ocpath"
 	"github.com/openconfig/ygot/ygot"
 	api "github.com/osrg/gobgp/v3/api"
 	"github.com/osrg/gobgp/v3/pkg/server"
@@ -58,8 +56,8 @@ const (
 //     When there is a dependency, the later actions will NOT directly depend on the results of the previous actions, but will just look at the current config view to determine the appropriate action.
 //     e.g. for peers, if the global setting has been set up, then we can create the peers and update the applied config if it succeeds, but if not then we don't do anything.
 //     ; however, if the global setting hasn't been set up, we actually need to erase the entirety of the applied config. This is because the watcher doesn't tell us this information.
-func goBgpTask(getIntendedConfig func() *config.Device, q gnmit.Queue, update gnmit.UpdateFn, target string, remove func()) error {
-	bgpStatePath, _, err := ygot.ResolvePath(telemetrypath.DeviceRoot("").NetworkInstance("default").Protocol(telemetry.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").Bgp())
+func goBgpTask(getIntendedConfig func() *oc.Root, q gnmit.Queue, update gnmit.UpdateFn, target string, remove func()) error {
+	bgpStatePath, _, err := ygot.ResolvePath(ocpath.Root().NetworkInstance("default").Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").Bgp())
 	if err != nil {
 		return fmt.Errorf("goBgpTask failed to initialize due to error: %v", err)
 	}
@@ -69,16 +67,16 @@ func goBgpTask(getIntendedConfig func() *config.Device, q gnmit.Queue, update gn
 
 	// The code below implements declarative configuration for setting up a basic BGP session.
 
-	appliedRoot := &telemetry.Device{}
+	appliedRoot := &oc.Root{}
 	// appliedBgp is the SoT for BGP applied configuration. It is maintained locally by the task.
-	appliedBgp := appliedRoot.GetOrCreateNetworkInstance("default").GetOrCreateProtocol(telemetry.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").GetOrCreateBgp()
+	appliedBgp := appliedRoot.GetOrCreateNetworkInstance("default").GetOrCreateProtocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").GetOrCreateBgp()
 	appliedBgp.PopulateDefaults()
 	var appliedBgpMu sync.Mutex
 
 	// updateAppliedConfig computes the diff between a previous applied
 	// configuration and the current SoT, and sends the updates to the
 	// central DB.
-	updateAppliedConfig := func(prevApplied *telemetry.NetworkInstance_Protocol_Bgp, grabLock bool) bool {
+	updateAppliedConfig := func(prevApplied *oc.NetworkInstance_Protocol_Bgp, grabLock bool) bool {
 		if grabLock {
 			appliedBgpMu.Lock()
 			defer appliedBgpMu.Unlock()
@@ -112,16 +110,16 @@ func goBgpTask(getIntendedConfig func() *config.Device, q gnmit.Queue, update gn
 			if err != nil {
 				log.Fatalf("goBgpTask: Could not copy applied configuration: %v", err)
 			}
-			prevApplied := prevAppliedIntf.(*telemetry.NetworkInstance_Protocol_Bgp)
+			prevApplied := prevAppliedIntf.(*oc.NetworkInstance_Protocol_Bgp)
 			if neigh, ok := appliedBgp.Neighbor[ps.NeighborAddress]; ok {
 				found := false
 				if ps.SessionState.String() == "UNKNOWN" {
-					neigh.SessionState = telemetry.Bgp_Neighbor_SessionState_UNSET
+					neigh.SessionState = oc.Bgp_Neighbor_SessionState_UNSET
 					found = true
 				} else {
 					for enumCode, v := range neigh.SessionState.ΛMap()[reflect.TypeOf(neigh.SessionState).Name()] {
 						if v.Name == ps.SessionState.String() {
-							newSessionState := telemetry.E_Bgp_Neighbor_SessionState(enumCode)
+							newSessionState := oc.E_Bgp_Neighbor_SessionState(enumCode)
 							if neigh.SessionState != newSessionState {
 								log.V(1).Infof("Peer %s transitioned to session state %s", ps.NeighborAddress, v.Name)
 								neigh.SessionState = newSessionState
@@ -145,7 +143,7 @@ func goBgpTask(getIntendedConfig func() *config.Device, q gnmit.Queue, update gn
 		return fmt.Errorf("goBgpTask failed to initialize due to error: %v", err)
 	}
 
-	bgpPath := configpath.DeviceRoot("").NetworkInstance("default").Protocol(config.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").Bgp()
+	bgpPath := ocpath.Root().NetworkInstance("default").Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").Bgp()
 	asPaths, _, err := ygot.ResolvePath(bgpPath.Global().As())
 	if err != nil {
 		return fmt.Errorf("goBgpTask failed to initialize due to error: %v", err)
@@ -228,9 +226,9 @@ func goBgpTask(getIntendedConfig func() *config.Device, q gnmit.Queue, update gn
 			}
 
 			intendedRoot := getIntendedConfig()
-			intended := intendedRoot.GetNetworkInstance("default").GetProtocol(config.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").GetBgp()
+			intended := intendedRoot.GetNetworkInstance("default").GetProtocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").GetBgp()
 			if intended == nil {
-				intended = &config.NetworkInstance_Protocol_Bgp{}
+				intended = &oc.NetworkInstance_Protocol_Bgp{}
 				intended.PopulateDefaults()
 			}
 
@@ -373,7 +371,7 @@ func goBgpTask(getIntendedConfig func() *config.Device, q gnmit.Queue, update gn
 			if err != nil {
 				log.Fatalf("goBgpTask: Could not copy applied configuration: %v", err)
 			}
-			prevApplied := prevAppliedIntf.(*telemetry.NetworkInstance_Protocol_Bgp)
+			prevApplied := prevAppliedIntf.(*oc.NetworkInstance_Protocol_Bgp)
 			processBgp()
 			if success := updateAppliedConfig(prevApplied, false); !success {
 				log.Errorf("goBgpTask: updating applied configuration failed")
