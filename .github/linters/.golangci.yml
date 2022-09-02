@@ -8,10 +8,9 @@
 # configure golangci-lint
 # see https://github.com/golangci/golangci-lint/blob/master/.golangci.example.yml
 run:
-  timeout: 5m
+  timeout: 15m
   skip-dirs:
-    - gnmi/internal/config
-    - gnmi/internal/telemetry
+    - gnmi/internal/oc
 issues:
   exclude-rules:
     - path: _test\.go

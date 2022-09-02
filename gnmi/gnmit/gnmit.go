@@ -28,8 +28,9 @@ import (
 
 	log "github.com/golang/glog"
 	"github.com/openconfig/gnmi/cache"
-	config "github.com/openconfig/lemming/gnmi/internal/config"
+	"github.com/openconfig/lemming/gnmi/internal/oc"
 	"github.com/openconfig/lemming/gnmi/subscribe"
+	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot"
 	"github.com/openconfig/ygot/ytypes"
 	"google.golang.org/grpc"
@@ -77,12 +78,12 @@ type UpdateFn func(*gpb.Notification) error
 // emits updates via an update function. It does this on a target (string
 // parameter), and also has a final clean-up function to call when it finishes
 // processing.
-type TaskRoutine func(func() *config.Device, Queue, UpdateFn, string, func()) error
+type TaskRoutine func(func() *oc.Root, Queue, UpdateFn, string, func()) error
 
 // Task defines a particular task that runs on the gNMI datastore.
 type Task struct {
 	Run    TaskRoutine
-	Paths  []ygot.PathStruct
+	Paths  []ygnmi.PathStruct
 	Prefix *gpb.Path
 }
 
@@ -104,7 +105,7 @@ type GNMIServer struct {
 func (s *GNMIServer) RegisterTask(task Task) error {
 	var paths []*gpb.Path
 	for _, p := range task.Paths {
-		path, _, err := ygot.ResolvePath(p)
+		path, _, err := ygnmi.ResolvePath(p)
 		if err != nil {
 			return fmt.Errorf("gnmit: cannot register task: %v", err)
 		}
@@ -118,11 +119,11 @@ func (s *GNMIServer) RegisterTask(task Task) error {
 }
 
 // RegisterTask starts up a task on the gNMI datastore.
-func (s *GNMIServer) getIntendedConfig() *config.Device {
+func (s *GNMIServer) getIntendedConfig() *oc.Root {
 	s.intendedConfigMu.RLock()
 	defer s.intendedConfigMu.RUnlock()
 	if s.c != nil && s.c.schema != nil {
-		return s.c.schema.Root.(*config.Device)
+		return s.c.schema.Root.(*oc.Root)
 	}
 	return nil
 }
@@ -303,7 +304,7 @@ func (c *Collector) TargetUpdate(m *gpb.SubscribeResponse) {
 // TODO(wenbli): This functionality should be upstreamed to ygot somehow.
 func setNode(schema *ytypes.Schema, goStruct ygot.GoStruct, update *gpb.Update) error {
 	nodeName := reflect.TypeOf(goStruct).Elem().Name()
-	nodeI, targetSchema, err := ytypes.GetOrCreateNode(schema.SchemaTree[nodeName], goStruct, update.Path)
+	nodeI, targetSchema, err := ytypes.GetOrCreateNode(schema.SchemaTree[nodeName], goStruct, update.Path, &ytypes.PreferShadowPath{})
 	if err != nil {
 		return fmt.Errorf("gnmit: failed to GetOrCreate a node: %v", err)
 	}
@@ -311,7 +312,7 @@ func setNode(schema *ytypes.Schema, goStruct ygot.GoStruct, update *gpb.Update) 
 	// TODO(wenbli): Populate default values using PopulateDefaults.
 	jsonUpdate := update.Val.GetJsonIetfVal()
 	if jsonUpdate == nil {
-		if err := ytypes.SetNode(schema.SchemaTree[nodeName], goStruct, update.Path, update.Val); err != nil {
+		if err := ytypes.SetNode(schema.SchemaTree[nodeName], goStruct, update.Path, update.Val, &ytypes.PreferShadowPath{}); err != nil {
 			return fmt.Errorf("gnmit: SetNode failed on leaf node: %v", err)
 		}
 		return nil
@@ -321,7 +322,7 @@ func setNode(schema *ytypes.Schema, goStruct ygot.GoStruct, update *gpb.Update) 
 	path := proto.Clone(update.Path).(*gpb.Path)
 	for i := len(path.Elem) - 1; i >= 0 && !ok; i-- {
 		path.Elem = path.Elem[:i]
-		nodeI, _, err := ytypes.GetOrCreateNode(schema.SchemaTree[nodeName], goStruct, path)
+		nodeI, _, err := ytypes.GetOrCreateNode(schema.SchemaTree[nodeName], goStruct, path, &ytypes.PreferShadowPath{})
 		if err != nil {
 			continue
 		}
@@ -332,7 +333,7 @@ func setNode(schema *ytypes.Schema, goStruct ygot.GoStruct, update *gpb.Update) 
 		if err := json.Unmarshal(jsonUpdate, &jsonTree); err != nil {
 			return err
 		}
-		return ytypes.Unmarshal(targetSchema, node, jsonTree)
+		return ytypes.Unmarshal(targetSchema, node, jsonTree, &ytypes.PreferShadowPath{})
 	}
 
 	return fmt.Errorf("gnmit: cannot find GoStruct parent into which to ummarshal update message: %s", prototext.Format(update))
@@ -355,7 +356,7 @@ func (s *GNMIServer) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResp
 		return nil, fmt.Errorf("gnmit: cannot convert root object to ValidatedGoStruct")
 	}
 	// Operate at the prefix level.
-	nodeI, _, err := ytypes.GetOrCreateNode(s.c.Schema().RootSchema(), dirtyRoot, req.Prefix)
+	nodeI, _, err := ytypes.GetOrCreateNode(s.c.Schema().RootSchema(), dirtyRoot, req.Prefix, &ytypes.PreferShadowPath{})
 	if err != nil {
 		return nil, fmt.Errorf("gnmit: failed to GetOrCreate the prefix node: %v", err)
 	}
@@ -370,12 +371,12 @@ func (s *GNMIServer) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResp
 
 	// Process deletes, then replace, then updates.
 	for _, path := range req.Delete {
-		if err := ytypes.DeleteNode(s.c.Schema().SchemaTree[nodeName], node, path); err != nil {
+		if err := ytypes.DeleteNode(s.c.Schema().SchemaTree[nodeName], node, path, &ytypes.PreferShadowPath{}); err != nil {
 			return nil, fmt.Errorf("gnmit: DeleteNode error: %v", err)
 		}
 	}
 	for _, update := range req.Replace {
-		if err := ytypes.DeleteNode(s.c.Schema().SchemaTree[nodeName], node, update.Path); err != nil {
+		if err := ytypes.DeleteNode(s.c.Schema().SchemaTree[nodeName], node, update.Path, &ytypes.PreferShadowPath{}); err != nil {
 			return nil, fmt.Errorf("gnmit: DeleteNode error: %v", err)
 		}
 		if err := setNode(s.c.schema, node, update); err != nil {
@@ -392,7 +393,7 @@ func (s *GNMIServer) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResp
 		return nil, fmt.Errorf("gnmit: invalid SetRequest: %v", err)
 	}
 
-	n, err := ygot.Diff(s.c.Schema().Root, dirtyRoot)
+	n, err := ygot.Diff(s.c.Schema().Root, dirtyRoot, &ygot.DiffPathOpt{PreferShadowPath: true})
 	if err != nil {
 		return nil, fmt.Errorf("gnmit: error while creating update notification for Set: %v", err)
 	}
