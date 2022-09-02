@@ -18,13 +18,13 @@ import (
 	"testing"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdpacket"
-	"github.com/openconfig/lemming/dataplane/forwarding/protocol/testutil"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 
 	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/ethernet"
 	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/ip"
 	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/metadata"
 	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/opaque"
+	"github.com/openconfig/lemming/dataplane/forwarding/protocol/packettestutil"
 )
 
 // IP tunnels are formed via various combinations of IP4, IP6, GRE tunnels.
@@ -577,8 +577,8 @@ func TestTunnelParsing(t *testing.T) {
 	}
 
 	for _, desc := range descs {
-		var queries []testutil.FieldQuery
-		var updates []testutil.FieldUpdate
+		var queries []packettestutil.FieldQuery
+		var updates []packettestutil.FieldUpdate
 		frame := [][]byte{desc.ethernet}
 		start := fwdpb.PacketHeaderId_ETHERNET
 		if len(desc.ethernet) == 0 {
@@ -591,12 +591,12 @@ func TestTunnelParsing(t *testing.T) {
 			frame = append(frame, h.orig)
 			for _, field := range h.fields {
 				attr := fields[field.id.Num]
-				queries = append(queries, testutil.FieldQuery{
+				queries = append(queries, packettestutil.FieldQuery{
 					ID:     field.id,
 					Result: field.value,
 				})
 				if attr.update {
-					updates = append(updates, testutil.FieldUpdate{
+					updates = append(updates, packettestutil.FieldUpdate{
 						ID:  field.id,
 						Op:  fwdpacket.OpSet,
 						Arg: newValue(t, attr.arg, field.value),
@@ -604,13 +604,13 @@ func TestTunnelParsing(t *testing.T) {
 				}
 			}
 		}
-		test := testutil.PacketFieldTest{
+		test := packettestutil.PacketFieldTest{
 			StartHeader: start,
 			Orig:        frame,
 			Updates:     updates,
 			Queries:     queries,
 		}
-		testutil.TestPacketFields(desc.text, t, []testutil.PacketFieldTest{test})
+		packettestutil.TestPacketFields(desc.text, t, []packettestutil.PacketFieldTest{test})
 	}
 }
 
@@ -696,20 +696,20 @@ func TestTunnelDecap(t *testing.T) {
 			}
 		}
 
-		var updates []testutil.HeaderUpdate
+		var updates []packettestutil.HeaderUpdate
 		for _, id := range ids {
-			updates = append(updates, testutil.HeaderUpdate{
+			updates = append(updates, packettestutil.HeaderUpdate{
 				ID:    id,
 				Encap: false,
 			})
 		}
 		updates[len(updates)-1].Result = final
-		test := testutil.PacketHeaderTest{
+		test := packettestutil.PacketHeaderTest{
 			StartHeader: fwdpb.PacketHeaderId_ETHERNET,
 			Orig:        orig,
 			Updates:     updates,
 		}
-		testutil.TestPacketHeaders(desc.text, t, []testutil.PacketHeaderTest{test})
+		packettestutil.TestPacketHeaders(desc.text, t, []packettestutil.PacketHeaderTest{test})
 	}
 }
 
@@ -782,7 +782,7 @@ func TestTunnelEncap(t *testing.T) {
 	}
 
 	for _, desc := range descs {
-		var fupd []testutil.FieldUpdate       // Field updates for the new headers.
+		var fupd []packettestutil.FieldUpdate // Field updates for the new headers.
 		var ids []fwdpb.PacketHeaderId        // List of headers to add (reverse order).
 		orig := [][]byte{desc.origEthernet}   // Original frame.
 		final := [][]byte{desc.finalEthernet} // Final frame.
@@ -795,7 +795,7 @@ func TestTunnelEncap(t *testing.T) {
 			} else {
 				ids = append([]fwdpb.PacketHeaderId{h.id}, ids...)
 				for _, f := range h.fields {
-					fupd = append(fupd, testutil.FieldUpdate{
+					fupd = append(fupd, packettestutil.FieldUpdate{
 						ID:  f.id,
 						Op:  fwdpacket.OpSet,
 						Arg: f.value,
@@ -804,27 +804,27 @@ func TestTunnelEncap(t *testing.T) {
 			}
 		}
 
-		var updates []testutil.HeaderUpdate
+		var updates []packettestutil.HeaderUpdate
 		for _, id := range ids {
-			updates = append(updates, testutil.HeaderUpdate{
+			updates = append(updates, packettestutil.HeaderUpdate{
 				ID:    id,
 				Encap: true,
 			})
 		}
 		updates[len(updates)-1].Result = final
 		updates[len(updates)-1].Updates = fupd
-		test := testutil.PacketHeaderTest{
+		test := packettestutil.PacketHeaderTest{
 			StartHeader: fwdpb.PacketHeaderId_ETHERNET,
 			Orig:        orig,
 			Updates:     updates,
 		}
-		testutil.TestPacketHeaders(desc.text, t, []testutil.PacketHeaderTest{test})
+		packettestutil.TestPacketHeaders(desc.text, t, []packettestutil.PacketHeaderTest{test})
 	}
 }
 
 // TestTunnelDecapErrors tests tunnel decap
 func TestTunnelDecapErrors(t *testing.T) {
-	tests := []testutil.PacketHeaderTest{
+	tests := []packettestutil.PacketHeaderTest{
 		// Decap IP4 frame.
 		{
 			StartHeader: fwdpb.PacketHeaderId_ETHERNET,
@@ -832,7 +832,7 @@ func TestTunnelDecapErrors(t *testing.T) {
 				ethernetIP4,
 				headers[innerIP4].orig,
 			},
-			Updates: []testutil.HeaderUpdate{
+			Updates: []packettestutil.HeaderUpdate{
 				{
 					Encap: false,
 					ID:    fwdpb.PacketHeaderId_IP6,
@@ -864,7 +864,7 @@ func TestTunnelDecapErrors(t *testing.T) {
 				headers[midIP4IP4].orig,
 				headers[innerIP4].orig,
 			},
-			Updates: []testutil.HeaderUpdate{
+			Updates: []packettestutil.HeaderUpdate{
 				{
 					Encap: false,
 					ID:    fwdpb.PacketHeaderId_IP6,
@@ -905,7 +905,7 @@ func TestTunnelDecapErrors(t *testing.T) {
 				headers[midIP6IP6].orig,
 				headers[innerIP6].orig,
 			},
-			Updates: []testutil.HeaderUpdate{
+			Updates: []packettestutil.HeaderUpdate{
 				{
 					Encap: false,
 					ID:    fwdpb.PacketHeaderId_IP6,
@@ -946,7 +946,7 @@ func TestTunnelDecapErrors(t *testing.T) {
 				headers[GRE4].orig,
 				headers[innerIP4].orig,
 			},
-			Updates: []testutil.HeaderUpdate{
+			Updates: []packettestutil.HeaderUpdate{
 				{
 					Encap: false,
 					ID:    fwdpb.PacketHeaderId_IP6,
@@ -989,7 +989,7 @@ func TestTunnelDecapErrors(t *testing.T) {
 				headers[GRE4KeySeq].orig,
 				headers[innerIP4].orig,
 			},
-			Updates: []testutil.HeaderUpdate{
+			Updates: []packettestutil.HeaderUpdate{
 				{
 					Encap: false,
 					ID:    fwdpb.PacketHeaderId_IP6,
@@ -1031,7 +1031,7 @@ func TestTunnelDecapErrors(t *testing.T) {
 				headers[AutoIP4].orig,
 				headers[AutoIP6].orig,
 			},
-			Updates: []testutil.HeaderUpdate{
+			Updates: []packettestutil.HeaderUpdate{
 				{
 					Encap: false,
 					ID:    fwdpb.PacketHeaderId_IP6,
@@ -1065,7 +1065,7 @@ func TestTunnelDecapErrors(t *testing.T) {
 				headers[AutoIP4].orig,
 				headers[AutoIP6].orig,
 			},
-			Updates: []testutil.HeaderUpdate{
+			Updates: []packettestutil.HeaderUpdate{
 				{
 					Encap: false,
 					ID:    fwdpb.PacketHeaderId_IP4,
@@ -1084,7 +1084,7 @@ func TestTunnelDecapErrors(t *testing.T) {
 				headers[SecureIP4].orig,
 				headers[SecureIP6].orig,
 			},
-			Updates: []testutil.HeaderUpdate{
+			Updates: []packettestutil.HeaderUpdate{
 				{
 					Encap: false,
 					ID:    fwdpb.PacketHeaderId_IP6,
@@ -1113,7 +1113,7 @@ func TestTunnelDecapErrors(t *testing.T) {
 				headers[SecureIP4].orig,
 				headers[SecureIP6].orig,
 			},
-			Updates: []testutil.HeaderUpdate{
+			Updates: []packettestutil.HeaderUpdate{
 				{
 					Encap: false,
 					ID:    fwdpb.PacketHeaderId_TUNNEL_6TO4_AUTO,
@@ -1132,7 +1132,7 @@ func TestTunnelDecapErrors(t *testing.T) {
 				headers[SecureIP4].orig,
 				headers[SecureIP6].orig,
 			},
-			Updates: []testutil.HeaderUpdate{
+			Updates: []packettestutil.HeaderUpdate{
 				{
 					Encap: false,
 					ID:    fwdpb.PacketHeaderId_IP4,
@@ -1144,20 +1144,20 @@ func TestTunnelDecapErrors(t *testing.T) {
 			},
 		},
 	}
-	testutil.TestPacketHeaders("tunnel-decap-errors", t, tests)
+	packettestutil.TestPacketHeaders("tunnel-decap-errors", t, tests)
 
 }
 
 // TestTunnelEncapErrors tests errors during tunnel encap
 func TestTunnelEncapErrors(t *testing.T) {
-	tests := []testutil.PacketHeaderTest{
+	tests := []packettestutil.PacketHeaderTest{
 		// Encap tunnel headers on an arp frame.
 		{
 			StartHeader: fwdpb.PacketHeaderId_ETHERNET,
 			Orig: [][]byte{
 				arp,
 			},
-			Updates: []testutil.HeaderUpdate{
+			Updates: []packettestutil.HeaderUpdate{
 				{
 					Encap: true,
 					ID:    fwdpb.PacketHeaderId_GRE,
@@ -1182,7 +1182,7 @@ func TestTunnelEncapErrors(t *testing.T) {
 				ethernetIP4,
 				headers[innerIP4].orig,
 			},
-			Updates: []testutil.HeaderUpdate{
+			Updates: []packettestutil.HeaderUpdate{
 				{
 					Encap: true,
 					ID:    fwdpb.PacketHeaderId_TUNNEL_6TO4_AUTO,
@@ -1196,6 +1196,6 @@ func TestTunnelEncapErrors(t *testing.T) {
 			},
 		},
 	}
-	testutil.TestPacketHeaders("tunnel-encap-errors", t, tests)
+	packettestutil.TestPacketHeaders("tunnel-encap-errors", t, tests)
 
 }

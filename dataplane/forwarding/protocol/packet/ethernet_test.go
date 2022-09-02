@@ -18,13 +18,13 @@ import (
 	"testing"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdpacket"
-	"github.com/openconfig/lemming/dataplane/forwarding/protocol/testutil"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 
 	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/arp"
 	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/ethernet"
 	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/metadata"
 	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/opaque"
+	"github.com/openconfig/lemming/dataplane/forwarding/protocol/packettestutil"
 )
 
 // Ethernet headers carrying IPv4 packets.
@@ -60,14 +60,14 @@ var payloadISIS = []byte{0x00,
 // TestEthernetFields parses various type of ethernet frames, and
 // performs queries and updates on various ethernet header fields.
 func TestEthernetFields(t *testing.T) {
-	tests := []testutil.PacketFieldTest{
+	tests := []packettestutil.PacketFieldTest{
 		// Parse an ethernet frame with no payload.
 		{
 			StartHeader: fwdpb.PacketHeaderId_ETHERNET,
 			Orig: [][]byte{
 				[]byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x08, 0x23},
 			},
-			Queries: []testutil.FieldQuery{
+			Queries: []packettestutil.FieldQuery{
 				{
 					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP_VERSION, 0),
 					Err: "failed",
@@ -93,7 +93,7 @@ func TestEthernetFields(t *testing.T) {
 					Err: "failed",
 				},
 			},
-			Updates: []testutil.FieldUpdate{
+			Updates: []packettestutil.FieldUpdate{
 				{
 					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP_VERSION, 0),
 					Op:  fwdpacket.OpSet,
@@ -130,7 +130,7 @@ func TestEthernetFields(t *testing.T) {
 			Orig: [][]byte{
 				[]byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x81, 0x00, 0x71, 0x23, 0x08, 0x23},
 			},
-			Queries: []testutil.FieldQuery{
+			Queries: []packettestutil.FieldQuery{
 				{
 					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP_VERSION, 0),
 					Err: "failed",
@@ -160,7 +160,7 @@ func TestEthernetFields(t *testing.T) {
 					Result: []byte{0x23},
 				},
 			},
-			Updates: []testutil.FieldUpdate{
+			Updates: []packettestutil.FieldUpdate{
 				{
 					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP_VERSION, 0),
 					Err: "failed",
@@ -202,7 +202,7 @@ func TestEthernetFields(t *testing.T) {
 			Orig: [][]byte{
 				[]byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x91, 0x00, 0x24, 0x56, 0x81, 0x00, 0x71, 0x23, 0x08, 0x23},
 			},
-			Queries: []testutil.FieldQuery{
+			Queries: []packettestutil.FieldQuery{
 				{
 					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP_VERSION, 0),
 					Err: "failed",
@@ -236,7 +236,7 @@ func TestEthernetFields(t *testing.T) {
 					Result: []byte{0x00, 0x07},
 				},
 			},
-			Updates: []testutil.FieldUpdate{
+			Updates: []packettestutil.FieldUpdate{
 				{
 					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP_VERSION, 0),
 					Err: "failed",
@@ -289,7 +289,7 @@ func TestEthernetFields(t *testing.T) {
 				[]byte{0x01, 0x80, 0xc2, 0x00, 0x00, 0x15, 0xc2, 0x03, 0x29, 0xa9, 0x00, 0x00},
 				payloadISIS,
 			},
-			Queries: []testutil.FieldQuery{
+			Queries: []packettestutil.FieldQuery{
 				{
 					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP_VERSION, 0),
 					Err: "failed",
@@ -307,7 +307,7 @@ func TestEthernetFields(t *testing.T) {
 					Result: []byte{0x00, 0x67},
 				},
 			},
-			Updates: []testutil.FieldUpdate{
+			Updates: []packettestutil.FieldUpdate{
 				{
 					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ETHER_MAC_DST, 0),
 					Arg: []byte{0x10, 0x11, 0x12, 0x13, 0x14, 0x15},
@@ -326,13 +326,13 @@ func TestEthernetFields(t *testing.T) {
 		},
 	}
 
-	testutil.TestPacketFields("ethernet", t, tests)
+	packettestutil.TestPacketFields("ethernet", t, tests)
 }
 
 // TestEthernetHeaderDecap performs decap operations using various
 // combinations of ethernet headers and frames.
 func TestEthernetHeaderDecap(t *testing.T) {
-	tests := []testutil.PacketHeaderTest{
+	tests := []packettestutil.PacketHeaderTest{
 		// Strip out tags from a 1q ethernet frame.
 		{
 			StartHeader: fwdpb.PacketHeaderId_ETHERNET,
@@ -340,7 +340,7 @@ func TestEthernetHeaderDecap(t *testing.T) {
 				ethernet1QARP,
 				arp,
 			},
-			Updates: []testutil.HeaderUpdate{
+			Updates: []packettestutil.HeaderUpdate{
 				{
 					Encap: false,
 					ID:    fwdpb.PacketHeaderId_ETHERNET_VLAN,
@@ -385,7 +385,7 @@ func TestEthernetHeaderDecap(t *testing.T) {
 				ethernetVLANARP,
 				arp,
 			},
-			Updates: []testutil.HeaderUpdate{
+			Updates: []packettestutil.HeaderUpdate{
 				{
 					Encap: false,
 					ID:    fwdpb.PacketHeaderId_ETHERNET_1Q,
@@ -428,7 +428,7 @@ func TestEthernetHeaderDecap(t *testing.T) {
 				ethernetARP,
 				arp,
 			},
-			Updates: []testutil.HeaderUpdate{
+			Updates: []packettestutil.HeaderUpdate{
 				{
 					Encap: false,
 					ID:    fwdpb.PacketHeaderId_ETHERNET_1Q,
@@ -455,7 +455,7 @@ func TestEthernetHeaderDecap(t *testing.T) {
 		{
 			StartHeader: fwdpb.PacketHeaderId_ETHERNET,
 			Orig:        [][]byte{ethernet1QARP, arp},
-			Updates: []testutil.HeaderUpdate{
+			Updates: []packettestutil.HeaderUpdate{
 				{
 					Encap:  false,
 					ID:     fwdpb.PacketHeaderId_ETHERNET,
@@ -467,7 +467,7 @@ func TestEthernetHeaderDecap(t *testing.T) {
 		{
 			StartHeader: fwdpb.PacketHeaderId_ETHERNET,
 			Orig:        [][]byte{ethernetVLANARP, arp},
-			Updates: []testutil.HeaderUpdate{
+			Updates: []packettestutil.HeaderUpdate{
 				{
 					Encap:  false,
 					ID:     fwdpb.PacketHeaderId_ETHERNET,
@@ -477,18 +477,18 @@ func TestEthernetHeaderDecap(t *testing.T) {
 		},
 	}
 
-	testutil.TestPacketHeaders("ethernet", t, tests)
+	packettestutil.TestPacketHeaders("ethernet", t, tests)
 }
 
 // TestEthernetHeaderEncap performs encap operations using various
 // combinations of ethernet headers and frames.
 func TestEthernetHeaderEncap(t *testing.T) {
-	tests := []testutil.PacketHeaderTest{
+	tests := []packettestutil.PacketHeaderTest{
 		// Remove and add a 1q ethernet header.
 		{
 			StartHeader: fwdpb.PacketHeaderId_ETHERNET,
 			Orig:        [][]byte{ethernetVLANARP, arp},
-			Updates: []testutil.HeaderUpdate{
+			Updates: []packettestutil.HeaderUpdate{
 				{
 					Encap:  false,
 					ID:     fwdpb.PacketHeaderId_ETHERNET,
@@ -498,7 +498,7 @@ func TestEthernetHeaderEncap(t *testing.T) {
 					Encap:  true,
 					ID:     fwdpb.PacketHeaderId_ETHERNET_1Q,
 					Result: [][]byte{ethernet1QARP, arp},
-					Updates: []testutil.FieldUpdate{
+					Updates: []packettestutil.FieldUpdate{
 						{
 							ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ETHER_MAC_DST, 0),
 							Arg: []byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05},
@@ -537,7 +537,7 @@ func TestEthernetHeaderEncap(t *testing.T) {
 		{
 			StartHeader: fwdpb.PacketHeaderId_ETHERNET,
 			Orig:        [][]byte{ethernetVLANARP, arp},
-			Updates: []testutil.HeaderUpdate{
+			Updates: []packettestutil.HeaderUpdate{
 				{
 					Encap:  false,
 					ID:     fwdpb.PacketHeaderId_ETHERNET,
@@ -547,7 +547,7 @@ func TestEthernetHeaderEncap(t *testing.T) {
 					Encap:  true,
 					ID:     fwdpb.PacketHeaderId_ETHERNET_VLAN,
 					Result: [][]byte{ethernetVLANARP, arp},
-					Updates: []testutil.FieldUpdate{
+					Updates: []packettestutil.FieldUpdate{
 						{
 							ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ETHER_MAC_DST, 0),
 							Arg: []byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05},
@@ -591,12 +591,12 @@ func TestEthernetHeaderEncap(t *testing.T) {
 		{
 			StartHeader: fwdpb.PacketHeaderId_ETHERNET,
 			Orig:        [][]byte{ethernetIP6, ip6},
-			Updates: []testutil.HeaderUpdate{
+			Updates: []packettestutil.HeaderUpdate{
 				{
 					Encap:  true,
 					ID:     fwdpb.PacketHeaderId_ETHERNET_VLAN,
 					Result: [][]byte{ethernetVLANIP6, ip6},
-					Updates: []testutil.FieldUpdate{
+					Updates: []packettestutil.FieldUpdate{
 						{
 							ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ETHER_MAC_DST, 0),
 							Arg: []byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05},
@@ -633,5 +633,5 @@ func TestEthernetHeaderEncap(t *testing.T) {
 		},
 	}
 
-	testutil.TestPacketHeaders("ethernet", t, tests)
+	packettestutil.TestPacketHeaders("ethernet", t, tests)
 }

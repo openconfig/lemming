@@ -119,9 +119,9 @@ func updateNumeric(field, arg frame.Field, length, op int) frame.Field {
 	n := field.Value()
 	switch op {
 	case fwdpacket.OpDec:
-		n -= -a
+		n -= a
 	case fwdpacket.OpInc:
-		n += +a
+		n += a
 	}
 	field.SetValue(n)
 	return field

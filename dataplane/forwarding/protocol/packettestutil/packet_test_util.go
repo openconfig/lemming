@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package testutil contains a set of routines used to test the processing
+// Package packettestutil contains a set of routines used to test the processing
 // of packet headers and fields.
-package testutil
+package packettestutil
 
 import (
 	"bytes"

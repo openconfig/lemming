@@ -18,7 +18,6 @@ import (
 	"testing"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdpacket"
-	"github.com/openconfig/lemming/dataplane/forwarding/protocol/testutil"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 
 	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/ethernet"
@@ -26,6 +25,7 @@ import (
 	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/ip"
 	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/metadata"
 	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/opaque"
+	"github.com/openconfig/lemming/dataplane/forwarding/protocol/packettestutil"
 )
 
 // IP4 header carrying ICMP4 echo request message.
@@ -114,7 +114,7 @@ var icmp6RS = []byte{
 	0x00, 0x00, 0x00, 0x02, 0x85, 0x00, 0x7b, 0xb8, 0x00, 0x00, 0x00, 0x00}
 
 func TestICMPv4(t *testing.T) {
-	queries := []testutil.FieldQuery{
+	queries := []packettestutil.FieldQuery{
 		{
 			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP_TYPE, 0),
 			Result: []byte{0x01},
@@ -124,7 +124,7 @@ func TestICMPv4(t *testing.T) {
 			Result: []byte{0x02},
 		},
 	}
-	updates := []testutil.FieldUpdate{
+	updates := []packettestutil.FieldUpdate{
 		{
 			ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP_TYPE, 0),
 			Arg: []byte{0x10},
@@ -136,7 +136,7 @@ func TestICMPv4(t *testing.T) {
 			Op:  fwdpacket.OpSet,
 		},
 	}
-	tests := []testutil.PacketFieldTest{
+	tests := []packettestutil.PacketFieldTest{
 		// ICMPv4 echo request message. The checksum is initially set to
 		// zero. The ICMP message changes with updates.
 		{
@@ -156,11 +156,11 @@ func TestICMPv4(t *testing.T) {
 		},
 	}
 
-	testutil.TestPacketFields("icmp", t, tests)
+	packettestutil.TestPacketFields("icmp", t, tests)
 }
 
 func TestICMPv6(t *testing.T) {
-	tests := []testutil.PacketFieldTest{
+	tests := []packettestutil.PacketFieldTest{
 		// ICMPv6 echo request message. The checksum is initially set to
 		// zero. The ICMP message changes with updates.
 		{
@@ -170,7 +170,7 @@ func TestICMPv6(t *testing.T) {
 				ip6icmp,
 				icmp6,
 			},
-			Queries: []testutil.FieldQuery{
+			Queries: []packettestutil.FieldQuery{
 				{
 					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP_TYPE, 0),
 					Result: []byte{0x01},
@@ -180,7 +180,7 @@ func TestICMPv6(t *testing.T) {
 					Result: []byte{0x02},
 				},
 			},
-			Updates: []testutil.FieldUpdate{
+			Updates: []packettestutil.FieldUpdate{
 				{
 					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP_TYPE, 0),
 					Arg: []byte{0x10},
@@ -205,7 +205,7 @@ func TestICMPv6(t *testing.T) {
 				ethernetIP6,
 				icmp6NATLL,
 			},
-			Queries: []testutil.FieldQuery{
+			Queries: []packettestutil.FieldQuery{
 				{
 					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP_TYPE, 0),
 					Result: []byte{136},
@@ -239,7 +239,7 @@ func TestICMPv6(t *testing.T) {
 				ethernetIP6,
 				icmp6NA,
 			},
-			Queries: []testutil.FieldQuery{
+			Queries: []packettestutil.FieldQuery{
 				{
 					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP_TYPE, 0),
 					Result: []byte{136},
@@ -273,7 +273,7 @@ func TestICMPv6(t *testing.T) {
 				ethernetIP6,
 				icmp6NSSLL,
 			},
-			Queries: []testutil.FieldQuery{
+			Queries: []packettestutil.FieldQuery{
 				{
 					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP_TYPE, 0),
 					Result: []byte{135},
@@ -307,7 +307,7 @@ func TestICMPv6(t *testing.T) {
 				ethernetIP6,
 				icmp6NS,
 			},
-			Queries: []testutil.FieldQuery{
+			Queries: []packettestutil.FieldQuery{
 				{
 					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP_TYPE, 0),
 					Result: []byte{135},
@@ -341,7 +341,7 @@ func TestICMPv6(t *testing.T) {
 				ethernetIP6,
 				icmp6RASLL,
 			},
-			Queries: []testutil.FieldQuery{
+			Queries: []packettestutil.FieldQuery{
 				{
 					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP_TYPE, 0),
 					Result: []byte{134},
@@ -375,7 +375,7 @@ func TestICMPv6(t *testing.T) {
 				ethernetIP6,
 				icmp6RA,
 			},
-			Queries: []testutil.FieldQuery{
+			Queries: []packettestutil.FieldQuery{
 				{
 					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP_TYPE, 0),
 					Result: []byte{134},
@@ -409,7 +409,7 @@ func TestICMPv6(t *testing.T) {
 				ethernetIP6,
 				icmp6RS,
 			},
-			Queries: []testutil.FieldQuery{
+			Queries: []packettestutil.FieldQuery{
 				{
 					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP_TYPE, 0),
 					Result: []byte{133},
@@ -443,7 +443,7 @@ func TestICMPv6(t *testing.T) {
 				ethernetIP6,
 				icmp6RSSLL,
 			},
-			Queries: []testutil.FieldQuery{
+			Queries: []packettestutil.FieldQuery{
 				{
 					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP_TYPE, 0),
 					Result: []byte{133},
@@ -472,5 +472,5 @@ func TestICMPv6(t *testing.T) {
 		},
 	}
 
-	testutil.TestPacketFields("icmp", t, tests)
+	packettestutil.TestPacketFields("icmp", t, tests)
 }

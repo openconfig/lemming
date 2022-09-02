@@ -18,19 +18,19 @@ import (
 	"testing"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdpacket"
-	"github.com/openconfig/lemming/dataplane/forwarding/protocol/testutil"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 
 	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/arp"
 	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/ethernet"
 	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/metadata"
 	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/opaque"
+	"github.com/openconfig/lemming/dataplane/forwarding/protocol/packettestutil"
 )
 
 var arp = []byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c}
 
 func TestARP(t *testing.T) {
-	tests := []testutil.PacketFieldTest{
+	tests := []packettestutil.PacketFieldTest{
 		// Parse an ethernet frame with an ARP message.
 		{
 			StartHeader: fwdpb.PacketHeaderId_ETHERNET,
@@ -38,7 +38,7 @@ func TestARP(t *testing.T) {
 				ethernetARP,
 				arp,
 			},
-			Queries: []testutil.FieldQuery{
+			Queries: []packettestutil.FieldQuery{
 				{
 					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP_VERSION, 0),
 					Err: "failed",
@@ -68,7 +68,7 @@ func TestARP(t *testing.T) {
 					Result: []byte{0x19, 0x1a, 0x1b, 0x1c},
 				},
 			},
-			Updates: []testutil.FieldUpdate{
+			Updates: []packettestutil.FieldUpdate{
 				{
 					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ARP_TPA, 0),
 					Arg: []byte{0x29, 0x2a, 0x2b, 0x2c},
@@ -102,7 +102,7 @@ func TestARP(t *testing.T) {
 				ethernetVLANARP,
 				arp,
 			},
-			Queries: []testutil.FieldQuery{
+			Queries: []packettestutil.FieldQuery{
 				{
 					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP_VERSION, 0),
 					Err: "failed",
@@ -124,7 +124,7 @@ func TestARP(t *testing.T) {
 					Result: []byte{0x19, 0x1a, 0x1b, 0x1c},
 				},
 			},
-			Updates: []testutil.FieldUpdate{
+			Updates: []packettestutil.FieldUpdate{
 				{
 					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ARP_TPA, 0),
 					Arg: []byte{0x29, 0x2a, 0x2b, 0x2c},
@@ -143,7 +143,7 @@ func TestARP(t *testing.T) {
 				ethernet1QARP,
 				arp,
 			},
-			Queries: []testutil.FieldQuery{
+			Queries: []packettestutil.FieldQuery{
 				{
 					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP_VERSION, 0),
 					Err: "failed",
@@ -173,7 +173,7 @@ func TestARP(t *testing.T) {
 					Err: "failed",
 				},
 			},
-			Updates: []testutil.FieldUpdate{
+			Updates: []packettestutil.FieldUpdate{
 				{
 					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ARP_TPA, 0),
 					Arg: []byte{0x29, 0x2a, 0x2b, 0x2c},
@@ -187,5 +187,5 @@ func TestARP(t *testing.T) {
 		},
 	}
 
-	testutil.TestPacketFields("arp", t, tests)
+	packettestutil.TestPacketFields("arp", t, tests)
 }

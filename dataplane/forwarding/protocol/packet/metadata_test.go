@@ -18,23 +18,23 @@ import (
 	"testing"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdpacket"
-	"github.com/openconfig/lemming/dataplane/forwarding/protocol/testutil"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 
 	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/metadata"
 	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/opaque"
+	"github.com/openconfig/lemming/dataplane/forwarding/protocol/packettestutil"
 )
 
 var data = []byte{0x01, 0x02, 0x03, 0x04}
 
 func TestMetadata(t *testing.T) {
-	tests := []testutil.PacketFieldTest{
+	tests := []packettestutil.PacketFieldTest{
 		{
 			StartHeader: fwdpb.PacketHeaderId_OPAQUE,
 			Orig: [][]byte{
 				data,
 			},
-			Queries: []testutil.FieldQuery{
+			Queries: []packettestutil.FieldQuery{
 				{
 					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP_VERSION, 0),
 					Err: "failed",
@@ -72,7 +72,7 @@ func TestMetadata(t *testing.T) {
 					Result: []byte{0x00},
 				},
 			},
-			Updates: []testutil.FieldUpdate{
+			Updates: []packettestutil.FieldUpdate{
 				{
 					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_VRF, 0),
 					Arg: []byte{0xab, 0xcd},
@@ -140,5 +140,5 @@ func TestMetadata(t *testing.T) {
 		},
 	}
 
-	testutil.TestPacketFields("metadata", t, tests)
+	packettestutil.TestPacketFields("metadata", t, tests)
 }

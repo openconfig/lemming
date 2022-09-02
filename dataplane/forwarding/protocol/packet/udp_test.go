@@ -18,13 +18,13 @@ import (
 	"testing"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdpacket"
-	"github.com/openconfig/lemming/dataplane/forwarding/protocol/testutil"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 
 	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/ethernet"
 	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/ip"
 	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/metadata"
 	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/opaque"
+	"github.com/openconfig/lemming/dataplane/forwarding/protocol/packettestutil"
 	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/udp"
 )
 
@@ -38,7 +38,7 @@ var ip6udp = []byte{0x61, 0x00, 0x02, 0x00, 0x00, 0x0c, 0x11, 0x04, 0x01, 0x02, 
 var udp = []byte{0x01, 0x02, 0x03, 0x04, 0x00, 0x00, 0x00, 0x00, 0x0a, 0x0b, 0x0c, 0x0d}
 
 func TestUDP(t *testing.T) {
-	queries := []testutil.FieldQuery{
+	queries := []packettestutil.FieldQuery{
 		{
 			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_L4_PORT_SRC, 0),
 			Result: []byte{0x01, 0x02},
@@ -48,7 +48,7 @@ func TestUDP(t *testing.T) {
 			Result: []byte{0x03, 0x04},
 		},
 	}
-	updates := []testutil.FieldUpdate{
+	updates := []packettestutil.FieldUpdate{
 		{
 			ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_L4_PORT_SRC, 0),
 			Arg: []byte{0x11, 0x12},
@@ -60,7 +60,7 @@ func TestUDP(t *testing.T) {
 			Op:  fwdpacket.OpSet,
 		},
 	}
-	tests := []testutil.PacketFieldTest{
+	tests := []packettestutil.PacketFieldTest{
 		// UDP over IP4.
 		{
 			StartHeader: fwdpb.PacketHeaderId_ETHERNET,
@@ -95,5 +95,5 @@ func TestUDP(t *testing.T) {
 		},
 	}
 
-	testutil.TestPacketFields("udp", t, tests)
+	packettestutil.TestPacketFields("udp", t, tests)
 }

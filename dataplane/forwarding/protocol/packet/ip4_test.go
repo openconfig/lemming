@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdpacket"
-	"github.com/openconfig/lemming/dataplane/forwarding/protocol/testutil"
+	"github.com/openconfig/lemming/dataplane/forwarding/protocol/packettestutil"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 
 	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/ethernet"
@@ -31,7 +31,7 @@ import (
 var ip4 = []byte{0x45, 0x01, 0x00, 0x16, 0x00, 0x00, 0x00, 0x00, 0x08, 0xff, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04, 0x0a, 0x0b, 0x0c, 0x0d, 0x00, 0x00}
 
 func TestIP4(t *testing.T) {
-	queries := []testutil.FieldQuery{
+	queries := []packettestutil.FieldQuery{
 		{
 			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP_VERSION, 0),
 			Result: []byte{0x04},
@@ -58,7 +58,7 @@ func TestIP4(t *testing.T) {
 		},
 	}
 
-	updates := []testutil.FieldUpdate{
+	updates := []packettestutil.FieldUpdate{
 		{
 			ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP_ADDR_SRC, 0),
 			Arg: []byte{0x11, 0x12, 0x13, 0x14},
@@ -83,7 +83,7 @@ func TestIP4(t *testing.T) {
 
 	ipFinal := []byte{0x45, 0x0d, 0x00, 0x16, 0x00, 0x00, 0x00, 0x00, 0x07, 0xff, 0x58, 0x7f, 0x11, 0x12, 0x13, 0x14, 0x1a, 0x1b, 0x1c, 0x1d, 0x00, 0x00}
 
-	tests := []testutil.PacketFieldTest{
+	tests := []packettestutil.PacketFieldTest{
 		// IP packet.
 		{
 			StartHeader: fwdpb.PacketHeaderId_IP,
@@ -151,7 +151,7 @@ func TestIP4(t *testing.T) {
 			},
 		},
 	}
-	testutil.TestPacketFields("ipv4", t, tests)
+	packettestutil.TestPacketFields("ipv4", t, tests)
 }
 
 func TestIP4TTL(t *testing.T) {
@@ -161,7 +161,7 @@ func TestIP4TTL(t *testing.T) {
 	// TCP header.
 	tcpSegment := []byte{0x01, 0x02, 0x03, 0x04, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x51, 0x34, 0x00, 0x20, 0x00, 0x00, 0x00, 0x00, 0x0a, 0x0b, 0x0c, 0x0d}
 
-	updates := []testutil.FieldUpdate{
+	updates := []packettestutil.FieldUpdate{
 		{
 			ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP_HOP, 0),
 			Arg: []byte{0x01},
@@ -172,7 +172,7 @@ func TestIP4TTL(t *testing.T) {
 	// Final IP4 header carrying TCP data.
 	ip4tcpFinal := []byte{0x45, 0x01, 0x00, 0x2c, 0x00, 0x00, 0x00, 0x00, 0xfe, 0x06, 0xa2, 0xad, 0x01, 0x02, 0x03, 0x04, 0x0a, 0x0b, 0x0c, 0x0d}
 
-	tests := []testutil.PacketFieldTest{
+	tests := []packettestutil.PacketFieldTest{
 		// IP4 over Ethernet frame.
 		{
 			StartHeader: fwdpb.PacketHeaderId_ETHERNET,
@@ -189,7 +189,7 @@ func TestIP4TTL(t *testing.T) {
 			},
 		},
 	}
-	testutil.TestPacketFields("ipv4", t, tests)
+	packettestutil.TestPacketFields("ipv4", t, tests)
 }
 
 // TestReparse adds an opaque ethernet header to an ethernet/IP header and reparses it.
@@ -204,17 +204,17 @@ func TestReparse(t *testing.T) {
 
 	// Set the VRF of the packet.
 	vrf := []byte{0xff, 0x07}
-	updates := []testutil.FieldUpdate{
+	updates := []packettestutil.FieldUpdate{
 		{
 			ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_VRF, 0),
 			Arg: vrf,
 			Op:  fwdpacket.OpSet,
 		},
 	}
-	testutil.FieldUpdates(t, "reparse/current ethernet", 0, p, updates)
+	packettestutil.FieldUpdates(t, "reparse/current ethernet", 0, p, updates)
 
 	// Query some fields of the ethernet header and the VRF.
-	queries1 := []testutil.FieldQuery{
+	queries1 := []packettestutil.FieldQuery{
 		{
 			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ETHER_TYPE, 0),
 			Result: []byte{0x08, 0x00},
@@ -232,7 +232,7 @@ func TestReparse(t *testing.T) {
 			Result: []byte{0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b},
 		},
 	}
-	testutil.FieldQueries(t, "reparse/current ethernet", 0, p, queries1)
+	packettestutil.FieldQueries(t, "reparse/current ethernet", 0, p, queries1)
 
 	// Reparse the packet as an ethernet header after prepending a new
 	// ethernet header as an opaque set of bytes.
@@ -246,7 +246,7 @@ func TestReparse(t *testing.T) {
 
 	// Query fields of the ethernet header and the VRF. This effectively
 	// encapsulates the ether/IP packet within another ethernet/vlan header.
-	queries2 := []testutil.FieldQuery{
+	queries2 := []packettestutil.FieldQuery{
 		{
 			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ETHER_TYPE, 0),
 			Result: []byte{0x08, 0xCC},
@@ -268,5 +268,5 @@ func TestReparse(t *testing.T) {
 			Result: []byte{0x00, 0x01},
 		},
 	}
-	testutil.FieldQueries(t, "reparse/new ethernet", 0, p, queries2)
+	packettestutil.FieldQueries(t, "reparse/new ethernet", 0, p, queries2)
 }
