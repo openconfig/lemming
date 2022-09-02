@@ -10,6 +10,7 @@
 run:
   timeout: 15m
   skip-dirs:
+    - dataplane/forwarding # TODO: remove this
     - gnmi/internal/oc
 issues:
   exclude-rules:
