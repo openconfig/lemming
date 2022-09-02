@@ -1,0 +1,276 @@
+// Copyright 2022 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Protocol buffers used for managing forwarding tables.
+syntax = "proto2";
+
+package forwarding;
+
+import "proto/forwarding/forwarding_action.proto";
+import "proto/forwarding/forwarding_common.proto";
+
+option go_package = "github.com/openconfig/lemming/dataplane/proto/forwarding";
+
+// A TableType enumerates the different types of forwarding tables.
+// EXACT_TABLE
+//    - These tables perform an exact match on all key fields.
+//    - Table is described by KeyTableDesc.
+//    - Entries are identified by KeyEntryDesc.
+//    - Entries in the table can be marked as static or transient.
+//    - A transient entry cannot update an existing static entry.
+//    - The table may be configured to remove transient entries that are not
+//      used for a configured amount of time.
+// PREFIX_TABLE
+//    - These tables perform a longest prefix match using all key fields.
+//    - Table is described by KeyTableDesc.
+//    - Entries are identified by KeyEntryDesc.
+// FLOW_TABLE
+//    - These tables perform a first match.
+//    - Table is described by FlowTableDesc.
+//    - Entries are identified by FlowEntryDesc.
+// BRIDGE_TABLE
+//    - This is a specialized table built using EXACT_TABLE.
+//    - This table processes packets using an exact match lookup on the packet's
+//      destination mac.
+//    - The table contains entries added as ExactEntryDesc.
+//    - It adds transient entries using the source mac of processed packets.
+//    - The table may be configured to remove transient entries that are not
+//      used for a configured amount of time.
+enum TableType {
+  EXACT_TABLE = 1;
+  PREFIX_TABLE = 2;
+  FLOW_TABLE = 3;
+  BRIDGE_TABLE = 4;
+}
+
+// A TableDesc descibes a table type and its default actions.
+// Note that an extension must be always used. Each type of table is an
+// extension with a unique extension number (1 greater than
+// the previous extension).
+message TableDesc {
+  // Required type of the table.
+  optional TableType table_type = 1;
+
+  // Optional set of default actions. If no actions are specified, the table
+  // marks the packet to continue packet processing.
+  repeated ActionDesc actions = 2;
+
+  // Required id of the table.
+  optional TableId table_id = 4;
+
+  // Required extension to the table.
+  extensions 100 to max;
+}
+
+// An EntryDesc describes how a table entry is identified.
+// Note that an extension must be always used. Each type of entry is an
+// extension with a unique extension number (1 greater than
+// the previous extension).
+message EntryDesc {
+  extensions 100 to max;
+}
+
+// An ExactTableDesc describes a EXACT_TABLE. All entries within the table are
+// idenfied by unique keys formed by the specified packet fields. The table
+// monitors and removes transient entries that are not used for a configured
+// amount of time.
+message ExactTableDesc {
+  extend TableDesc {
+    optional ExactTableDesc extension = 101;
+  }
+
+  // Required packet fields used to match entries in the table.
+  repeated PacketFieldId field_ids = 1;
+
+  // Optional timeout value for entries. If no timeout is specified, entries are
+  // never timed out.
+  optional uint32 transient_timeout = 2 [default = 0];
+}
+
+// A ExactEntryDesc describes an entry in an EXACT_TABLE. An entry in the table
+// is idenfied by the values of the specified packet fields.
+// Note that the ordering of the packet fields is determined by the table desc.
+message ExactEntryDesc {
+  extend EntryDesc {
+    optional ExactEntryDesc extension = 101;
+  }
+  // Required packet fields used to match entries in the table.
+  repeated PacketFieldBytes fields = 1;
+
+  // True if the entry should be timed out (based on the table's
+  // transient_timeout) value.
+  optional bool transient = 2 [default = false];
+}
+
+// A PrefixTableDesc describes a PREFIX_TABLE. All entries within the table are
+// idenfied by unique keys formed by the specified packet fields.
+message PrefixTableDesc {
+  extend TableDesc {
+    optional PrefixTableDesc extension = 102;
+  }
+
+  // Required packet fields used to match entries in the table.
+  repeated PacketFieldId field_ids = 1;
+}
+
+// A PrefixEntryDesc describes an entry in a PREFIX_TABLE. An entry in the table
+// is identified by the values of the specified packet fields and their
+// masks. Other than the last field as defined by the table, all fields should
+// either have no mask or have a mask with all bits set. Note that the ordering
+// of the packet fields is determined by the table desc.
+message PrefixEntryDesc {
+  extend EntryDesc {
+    optional PrefixEntryDesc extension = 102;
+  }
+
+  // Required packet fields and their values used to match packets to this
+  // entry.
+  repeated PacketFieldMaskedBytes fields = 1;
+}
+
+// A FlowTableDesc describes a FLOW_TABLE. The table consists of multiple
+// banks that are looked up in parallel. Each bank contains flows in
+// priority order. The priority order is numerically reversed i.e. higher
+// priorities have lower numeric values. Note that ther priority between banks
+// is such that Bank0 gets the highest priority. There is a caveat with actions
+// that consume the packet. When such an action is encountered and it is set to
+// immediate, it will be carried out when looked up regardless of the priority
+// between banks. For instance, if Bank1 says to transmit the packet and Bank0
+// says to drop the packet, then the packet will be transmitted because Bank1
+// gets looked up first. This is done so that Bank0 will get looked up last and
+// thus get the highest priority.
+message FlowTableDesc {
+  extend TableDesc {
+    optional FlowTableDesc extension = 103;
+  }
+
+  // Optional number of banks in the flow table.
+  optional uint32 bank_count = 2 [default = 1];
+}
+
+// A FlowEntryDesc describes an entry in a FLOW_TABLE. Each entry is described
+// by a priority, bank, id, a set of bits in various packet fields and set of
+// qualifiers describing possible values of various packet fields.
+message FlowEntryDesc {
+  extend EntryDesc {
+    optional FlowEntryDesc extension = 103;
+  }
+
+  // Optional priority of the flow.
+  optional uint32 priority = 1 [default = 0];
+
+  // Optional packet fields and their masked values used to match packets to
+  // this entry. If no fields are specified, the entry matches all packets.
+  repeated PacketFieldMaskedBytes fields = 2;
+
+  // Optional bank where this entry should be added.
+  optional uint32 bank = 3 [default = 0];
+
+  // Optional id of the entry.
+  optional uint32 id = 4;
+
+  // Optional set of qualifiers used to match packets to this entry. A qualifier
+  // matches a packet field to one of a set of possible values.
+  repeated PacketFieldSet qualifiers = 5;
+}
+
+// A BridgeTableDesc describes a BRIDGE_TABLE. The table monitors and removes
+// transient entries that are not used for a configured amount of time.
+message BridgeTableDesc {
+  extend TableDesc {
+    optional BridgeTableDesc extension = 104;
+  }
+  // Optional timeout value for entries. If no timeout is specified, entries are
+  // never timed out.
+  optional uint32 transient_timeout = 2 [default = 0];
+}
+
+// A TableCreateRequest is a request to create a table.
+//
+// Note that all fields are mandatory.
+message TableCreateRequest {
+  optional TableDesc desc = 1;
+  optional ContextId context_id = 2;
+}
+message TableCreateReply {
+  optional ObjectIndex object_index = 2;
+}
+
+// A TableEntryAddRequest is a request to add entries to the table. The entry
+// may be singleton or a list of entries. Note that if the same request contains
+// a singleton entry and an list of entries, all entries are added.
+message TableEntryAddRequest {
+  // Required id of the table to which the entry is added.
+  optional TableId table_id = 1;
+
+  // Required id of the forwarding context containing the table.
+  optional ContextId context_id = 4;
+
+  // Optional actions associated with the singleton entry in this request.
+  // If nothing is specified, the entry marks the packet to continue packet
+  // processing.
+  repeated ActionDesc actions = 2;
+
+  // Optional descriptor of the singleton entry.
+  optional EntryDesc entry_desc = 3;
+
+  message Entry {
+    // Optional actions associated with the entry. If nothing is specified, the
+    // entry marks the packet to continue packet processing.
+    repeated ActionDesc actions = 1;
+
+    // Optional description of an entry in the table.
+    optional EntryDesc entry_desc = 2;
+  }
+
+  // Optional list of entries to add.
+  repeated Entry entries = 5;
+
+  // Optional request to clear the table *before* processing the add entry
+  // requests. This is useful for clearing the table with a single small gRPC
+  // call or replacing all entries in a table with the specified entry (or batch
+  // of entries).
+  optional bool clear_before_add = 6 [default = false];
+}
+message TableEntryAddReply {}
+
+// A TableEntryRemoveRequest is a request to remove entries from the table.
+// The entry may be a singleton or a list of entries. Note that if the same
+// request specified a singleton and a list of entries, all entries are removed.
+message TableEntryRemoveRequest {
+  // Required id of the table from which the entry is removed.
+  optional TableId table_id = 1;
+
+  // Required id of the forwarding context containing the table.
+  optional ContextId context_id = 3;
+
+  // Optional description of an entry in the table.
+  optional EntryDesc entry_desc = 2;
+
+  // Optional list of entries to add.
+  repeated EntryDesc entries = 4;
+}
+message TableEntryRemoveReply {}
+
+// A TableListRequest is a request to list all entries of a table.
+message TableListRequest {
+  // Required id of the table.
+  optional TableId table_id = 1;
+
+  // Required id of the forwarding context containing the table.
+  optional ContextId context_id = 2;
+}
+message TableListReply {
+  repeated string entries = 1;
+}

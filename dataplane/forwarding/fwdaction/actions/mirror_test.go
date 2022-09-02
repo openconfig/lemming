@@ -1,0 +1,235 @@
+// Copyright 2022 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package actions
+
+import (
+	"bytes"
+	"fmt"
+	"testing"
+
+	"github.com/golang/mock/gomock"
+	"google.golang.org/protobuf/proto"
+
+	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
+	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction/mock_fwdpacket"
+	"github.com/openconfig/lemming/dataplane/forwarding/fwdport"
+	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
+	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdobject"
+	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdpacket"
+	"github.com/openconfig/lemming/dataplane/forwarding/protocol"
+	fwdpb "github.com/openconfig/lemming/proto/forwarding"
+
+	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/arp"
+	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/ethernet"
+	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/metadata"
+	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/opaque"
+)
+
+// A recordPort records the last packet written to it.
+type recordPort struct {
+	fwdobject.Base
+	last fwdpacket.Packet
+}
+
+// Update is ignored.
+func (recordPort) Update(*fwdpb.PortUpdateDesc) error { return nil }
+
+// Write records the last packet written out of the port.
+func (r *recordPort) Write(packet fwdpacket.Packet) (fwdaction.State, error) {
+	r.last = packet
+	return fwdaction.CONSUME, nil
+}
+
+// String returns an empty string.
+func (recordPort) String() string { return "" }
+
+// Actions returns the port actions as nil.
+func (recordPort) Actions(fwdpb.PortAction) fwdaction.Actions { return nil }
+
+// State is ignored.
+func (recordPort) State(op *fwdpb.PortInfo) (fwdpb.PortStateReply, error) {
+	return fwdpb.PortStateReply{}, nil
+}
+
+// makeUpdateDstMacAction returns an action desc to update the mac address.
+func makeUpdateDstMacAction(mac []byte) (*fwdpb.ActionDesc, error) {
+	desc := fwdpb.ActionDesc{
+		ActionType: fwdpb.ActionType_UPDATE_ACTION.Enum(),
+	}
+	update := fwdpb.UpdateActionDesc{
+		Type: fwdpb.UpdateType_SET_UPDATE.Enum(),
+		FieldId: &fwdpb.PacketFieldId{
+			Field: &fwdpb.PacketField{
+				FieldNum: fwdpb.PacketFieldNum_ETHER_MAC_DST.Enum(),
+			},
+		},
+		Value: mac,
+	}
+	proto.SetExtension(&desc, fwdpb.E_UpdateActionDesc_Extension, &update)
+	return &desc, nil
+}
+
+// TestMirror tests the mirror action and builder.
+func TestMirror(t *testing.T) {
+	// Packet data used for generating the test.
+	// The original packet.
+	orgFrame := []byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c}
+
+	// The packet with the updated destination mac address.
+	updFrame := []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xfe, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c}
+
+	// The mac address used for the update.
+	dmac := []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xfe}
+
+	// Create a controller and forwarding context
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	ctx := fwdcontext.New("test", "fwd")
+
+	tests := []struct {
+		hasActions bool // actions applied to the mirrored packet
+		hasPort    bool // true if the mirror action has a port
+	}{
+		// Mirror action never returns a DROP for the orignal packet.
+		{
+			hasActions: false,
+			hasPort:    false,
+		},
+		// Mirror action with only a port.
+		{
+			hasActions: false,
+			hasPort:    true,
+		},
+		// Mirror action with only actions and no port.
+		{
+			hasActions: true,
+			hasPort:    false,
+		},
+		// Mirror action with actions and a port.
+		{
+			hasActions: true,
+			hasPort:    true,
+		},
+	}
+
+	for idx, test := range tests {
+		t.Logf("%d: Running test %+v", idx, test)
+
+		// Create a port that can be used by the test. If the test uses
+		// a port, setup the expectations for the various operations and
+		// insert it in the object table.
+		id := fwdobject.NewID(fmt.Sprintf("Port-%v", idx))
+		pid := fwdport.MakeID(id)
+		port := &recordPort{}
+		if test.hasPort {
+			if err := ctx.Objects.Insert(port, pid.ObjectId); err != nil {
+				t.Fatalf("%d: Port insert failed, err %v.", idx, err)
+			}
+		}
+
+		// Create a mirror action using its builder.
+		desc := fwdpb.ActionDesc{
+			ActionType: fwdpb.ActionType_MIRROR_ACTION.Enum(),
+		}
+		mirror := fwdpb.MirrorActionDesc{}
+
+		if test.hasActions {
+			ad, err := makeUpdateDstMacAction(dmac)
+			if err != nil {
+				t.Fatalf("%d: Unable to create update action, err %v", idx, err)
+			}
+			mirror.Actions = []*fwdpb.ActionDesc{ad}
+		}
+		if test.hasPort {
+			mirror.PortId = pid
+			mirror.PortAction = fwdpb.PortAction_PORT_ACTION_OUTPUT.Enum()
+		}
+
+		proto.SetExtension(&desc, fwdpb.E_MirrorActionDesc_Extension, &mirror)
+		action, err := fwdaction.New(&desc, ctx)
+		if err != nil {
+			t.Fatalf("%v: NewAction failed, desc %v failed, err %v.", idx, desc, err)
+		}
+
+		// Verify the action by processing a packet and verifying the counters
+		// and results.
+		var base fwdobject.Base
+		if err := base.InitCounters("prefix", "desc", fwdpb.CounterId_MIRROR_ERROR_PACKETS, fwdpb.CounterId_MIRROR_ERROR_OCTETS, fwdpb.CounterId_MIRROR_PACKETS, fwdpb.CounterId_MIRROR_OCTETS); err != nil {
+			t.Fatalf("%v: InitCounters failed, %v", idx, err)
+		}
+
+		// List of fields that are implicitly mirrored
+		opFID := fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_PORT_OUTPUT, 0)
+		inFID := fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_PORT_INPUT, 0)
+
+		fields := []fwdpacket.FieldID{
+			inFID, opFID,
+		}
+
+		// The mock mirrored packet. Note that the expectations on
+		// the mirrored packet verifies that the specified updates
+		// are performed. Note that the mirrored packet always has
+		// an input and output port setup because the original packet
+		// always returns an input and output port.
+		mirrored := mock_fwdpacket.NewMockPacket(ctrl)
+		mirrored.EXPECT().Length().Return(len(orgFrame)).AnyTimes()
+		if test.hasActions {
+			mirrored.EXPECT().Frame().Return(updFrame).AnyTimes()
+		} else {
+			mirrored.EXPECT().Frame().Return(orgFrame).AnyTimes()
+		}
+		mirrored.EXPECT().Attributes().Return(nil).AnyTimes()
+		mirrored.EXPECT().Logf(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+		mirrored.EXPECT().Logf(gomock.Any(), gomock.Any()).AnyTimes()
+		mirrored.EXPECT().Logf(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+		mirrored.EXPECT().Log().Return(nil).AnyTimes()
+		mirrored.EXPECT().Update(opFID, fwdpacket.OpSet, gomock.Any()).Return(nil).AnyTimes()
+		mirrored.EXPECT().Update(inFID, fwdpacket.OpSet, gomock.Any()).Return(nil).AnyTimes()
+		mirrored.EXPECT().Update(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ETHER_MAC_DST, 0),
+			gomock.Any(), gomock.Any()).AnyTimes()
+
+		// The mock original packet. Note that there are no expectations on the
+		// original packet that update its fields.
+		original := mock_fwdpacket.NewMockPacket(ctrl)
+		original.EXPECT().Length().Return(len(orgFrame)).AnyTimes()
+		original.EXPECT().Frame().Return(orgFrame).AnyTimes()
+		original.EXPECT().Mirror(fields).Return(mirrored, nil).AnyTimes()
+		original.EXPECT().Attributes().Return(nil).AnyTimes()
+		original.EXPECT().Logf(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+		original.EXPECT().Field(opFID).Return(make([]byte, protocol.SizeUint64), nil).AnyTimes()
+		original.EXPECT().Field(inFID).Return(make([]byte, protocol.SizeUint64), nil).AnyTimes()
+
+		// Verify that the action always continues packet processing.
+		next, state := action.Process(original, &base)
+		switch {
+		case next != nil:
+			t.Errorf("%v: %v processing returned bad actions. Got %v want nil.", idx, action, next)
+		case state != fwdaction.CONTINUE:
+			t.Errorf("%v: %v processing returned bad result. Got %v want %v.", idx, action, state, fwdaction.CONTINUE)
+		}
+
+		// Verify the packet processed by the port is the mirrored packet.
+		if test.hasPort {
+			got := port.last.Frame()
+			want := orgFrame
+			if test.hasActions {
+				want = updFrame
+			}
+			if !bytes.Equal(got, want) {
+				t.Errorf("%v: port processed unexpected frame. Got %x, want %x", idx, got, want)
+			}
+		}
+	}
+}

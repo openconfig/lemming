@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/golang/glog v1.0.0
+	github.com/golang/mock v1.6.0
 	github.com/google/go-cmp v0.5.7
 	github.com/h-fam/errdiff v1.0.2
 	github.com/kentik/patricia v1.2.0
