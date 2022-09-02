@@ -96,8 +96,8 @@ message CPUPortUpdateDesc {
 
 // A KernelPortUpdateDesc updates the kernel port's input and output actions.
 message KernelPortUpdateDesc {
-  repeated ActionDesc input = 1;
-  repeated ActionDesc output = 2;
+  repeated ActionDesc inputs = 1;
+  repeated ActionDesc outputs = 2;
 }
 
 // AggregateHashAlgorithm enumerates algorithms used to select from a set

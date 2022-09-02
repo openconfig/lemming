@@ -106,10 +106,10 @@ func (p *kernelPort) Update(upd *fwdpb.PortUpdateDesc) error {
 	}
 
 	// Acquire new actions before releasing the old ones.
-	if p.input, err = fwdaction.NewActions(kernelUpd.Kernel.GetInput(), p.ctx); err != nil {
+	if p.input, err = fwdaction.NewActions(kernelUpd.Kernel.GetInputs(), p.ctx); err != nil {
 		return fmt.Errorf("ports: input actions for port %v failed, err %v", p, err)
 	}
-	if p.output, err = fwdaction.NewActions(kernelUpd.Kernel.GetOutput(), p.ctx); err != nil {
+	if p.output, err = fwdaction.NewActions(kernelUpd.Kernel.GetOutputs(), p.ctx); err != nil {
 		return fmt.Errorf("ports: output actions for port %v failed, err %v", p, err)
 	}
 	return nil
