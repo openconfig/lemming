@@ -129,7 +129,7 @@ type ratelimitBuilder struct{}
 
 // init registers a builder for the ratelimit action type.
 func init() {
-	fwdaction.Register(fwdpb.ActionType_ACTION_TYPE_OUTPUT, ratelimitBuilder{})
+	fwdaction.Register(fwdpb.ActionType_ACTION_TYPE_RATE, ratelimitBuilder{})
 }
 
 // Build creates a new ratelimit action.

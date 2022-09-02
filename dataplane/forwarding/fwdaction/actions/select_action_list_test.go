@@ -74,7 +74,7 @@ func newBuilder() *testBuilder {
 // Build creates a new test action.
 func (t *testBuilder) Build(desc *fwdpb.ActionDesc, ctx *fwdcontext.Context) (fwdaction.Action, error) {
 	ta, ok := desc.Action.(*fwdpb.ActionDesc_Test)
-	if ok {
+	if !ok {
 		return nil, fmt.Errorf("actions: Build for test action failed, missing extension")
 	}
 	return &testAction{
