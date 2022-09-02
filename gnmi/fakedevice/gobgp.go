@@ -58,7 +58,8 @@ const (
 //     e.g. for peers, if the global setting has been set up, then we can create the peers and update the applied config if it succeeds, but if not then we don't do anything.
 //     ; however, if the global setting hasn't been set up, we actually need to erase the entirety of the applied config. This is because the watcher doesn't tell us this information.
 func goBgpTask(getIntendedConfig func() *oc.Root, q gnmit.Queue, update gnmit.UpdateFn, target string, remove func()) error {
-	bgpStatePath, _, err := ygnmi.ResolvePath(ocpath.Root().NetworkInstance("default").Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").Bgp())
+	bgpPath := ocpath.Root().NetworkInstance("default").Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").Bgp()
+	bgpPathStr, _, err := ygnmi.ResolvePath(bgpPath)
 	if err != nil {
 		return fmt.Errorf("goBgpTask failed to initialize due to error: %v", err)
 	}
@@ -82,7 +83,7 @@ func goBgpTask(getIntendedConfig func() *oc.Root, q gnmit.Queue, update gnmit.Up
 			appliedBgpMu.Lock()
 			defer appliedBgpMu.Unlock()
 		}
-		no, err := ygot.Diff(prevApplied, appliedBgp, &ygot.DiffPathOpt{PreferShadowPath: true})
+		no, err := ygot.Diff(prevApplied, appliedBgp)
 		if err != nil {
 			log.Errorf("goBgpTask: error while creating update notification for updating applied configuration: %v", err)
 			return false
@@ -90,7 +91,7 @@ func goBgpTask(getIntendedConfig func() *oc.Root, q gnmit.Queue, update gnmit.Up
 		if len(no.GetUpdate())+len(no.GetDelete()) > 0 {
 			log.V(1).Info("Updating BGP applied configuration: ", prototext.Format(no))
 			no.Timestamp = time.Now().UnixNano()
-			no.Prefix = &gpb.Path{Origin: "openconfig", Target: target, Elem: bgpStatePath.Elem}
+			no.Prefix = &gpb.Path{Origin: "openconfig", Target: target, Elem: bgpPathStr.Elem}
 
 			if err := update(no); err != nil {
 				log.Errorf("goBgpTask: error while writing update to applied configuration: %v", err)
@@ -144,20 +145,19 @@ func goBgpTask(getIntendedConfig func() *oc.Root, q gnmit.Queue, update gnmit.Up
 		return fmt.Errorf("goBgpTask failed to initialize due to error: %v", err)
 	}
 
-	bgpPath := ocpath.Root().NetworkInstance("default").Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").Bgp()
-	asPaths, _, err := ygnmi.ResolvePath(bgpPath.Global().As())
+	asPaths, _, err := ygnmi.ResolvePath(bgpPath.Global().As().Config().PathStruct())
 	if err != nil {
 		return fmt.Errorf("goBgpTask failed to initialize due to error: %v", err)
 	}
-	routeIDPaths, _, err := ygnmi.ResolvePath(bgpPath.Global().RouterId())
+	routeIDPaths, _, err := ygnmi.ResolvePath(bgpPath.Global().RouterId().Config().PathStruct())
 	if err != nil {
 		return fmt.Errorf("goBgpTask failed to initialize due to error: %v", err)
 	}
-	peerAsPaths, _, err := ygnmi.ResolvePath(bgpPath.NeighborAny().PeerAs())
+	peerAsPaths, _, err := ygnmi.ResolvePath(bgpPath.NeighborAny().PeerAs().Config().PathStruct())
 	if err != nil {
 		return fmt.Errorf("goBgpTask failed to initialize due to error: %v", err)
 	}
-	neighAddrPaths, _, err := ygnmi.ResolvePath(bgpPath.NeighborAny().NeighborAddress())
+	neighAddrPaths, _, err := ygnmi.ResolvePath(bgpPath.NeighborAny().NeighborAddress().Config().PathStruct())
 	if err != nil {
 		return fmt.Errorf("goBgpTask failed to initialize due to error: %v", err)
 	}

@@ -55,23 +55,23 @@ func initInterfaceTaskVars() error {
 func initInterfacePaths() error {
 	interfacePath := ocpath.Root().InterfaceAny()
 	var err error
-	enabledPaths, _, err = ygnmi.ResolvePath(interfacePath.Enabled())
+	enabledPaths, _, err = ygnmi.ResolvePath(interfacePath.Enabled().Config().PathStruct())
 	if err != nil {
 		return fmt.Errorf("interfaceTask failed to initialize due to error: %v", err)
 	}
-	descriptionPaths, _, err = ygnmi.ResolvePath(interfacePath.Description())
+	descriptionPaths, _, err = ygnmi.ResolvePath(interfacePath.Description().Config().PathStruct())
 	if err != nil {
 		return fmt.Errorf("interfaceTask failed to initialize due to error: %v", err)
 	}
-	namePaths, _, err = ygnmi.ResolvePath(interfacePath.Name())
+	namePaths, _, err = ygnmi.ResolvePath(interfacePath.Name().Config().PathStruct())
 	if err != nil {
 		return fmt.Errorf("interfaceTask failed to initialize due to error: %v", err)
 	}
-	ipv4AddressPaths, _, err = ygnmi.ResolvePath(interfacePath.SubinterfaceAny().Ipv4().AddressAny().Ip())
+	ipv4AddressPaths, _, err = ygnmi.ResolvePath(interfacePath.SubinterfaceAny().Ipv4().AddressAny().Ip().Config().PathStruct())
 	if err != nil {
 		return fmt.Errorf("interfaceTask failed to initialize due to error: %v", err)
 	}
-	prefixLengthPaths, _, err = ygnmi.ResolvePath(interfacePath.SubinterfaceAny().Ipv4().AddressAny().PrefixLength())
+	prefixLengthPaths, _, err = ygnmi.ResolvePath(interfacePath.SubinterfaceAny().Ipv4().AddressAny().PrefixLength().Config().PathStruct())
 	if err != nil {
 		return fmt.Errorf("interfaceTask failed to initialize due to error: %v", err)
 	}
@@ -90,7 +90,7 @@ func interfaceTask(getIntendedConfig func() *oc.Root, q gnmit.Queue, update gnmi
 	updateAppliedConfig := func(prevApplied *oc.Root) bool {
 		interfaceAppliedMu.Lock()
 		defer interfaceAppliedMu.Unlock()
-		no, err := ygot.Diff(prevApplied, interfaceAppliedRoot, &ygot.DiffPathOpt{PreferShadowPath: true})
+		no, err := ygot.Diff(prevApplied, interfaceAppliedRoot)
 		if err != nil {
 			log.Errorf("interfaceTask: error while creating update notification for updating applied configuration: %v", err)
 			return false

@@ -53,7 +53,7 @@ func init() {
 // time. It does not spawn any long-running threads.
 func bootTimeTask(_ func() *oc.Root, _ gnmit.Queue, updateFn gnmit.UpdateFn, target string, remove func()) error {
 	defer remove()
-	pathBootTime, _, errs := ygnmi.ResolvePath(ocpath.Root().System().BootTime())
+	pathBootTime, _, errs := ygnmi.ResolvePath(ocpath.Root().System().BootTime().State().PathStruct())
 	if errs != nil {
 		return fmt.Errorf("bootTimeTask failed to initialize due to error: %v", errs)
 	}
@@ -83,7 +83,7 @@ func bootTimeTask(_ func() *oc.Root, _ gnmit.Queue, updateFn gnmit.UpdateFn, tar
 // currentDateTimeTask updates the current-datetime leaf with the current time,
 // and spawns a thread that wakes up every second to update the leaf.
 func currentDateTimeTask(_ func() *oc.Root, _ gnmit.Queue, updateFn gnmit.UpdateFn, target string, remove func()) error {
-	pathDatetime, _, err := ygnmi.ResolvePath(ocpath.Root().System().CurrentDatetime())
+	pathDatetime, _, err := ygnmi.ResolvePath(ocpath.Root().System().CurrentDatetime().State().PathStruct())
 	if err != nil {
 		return fmt.Errorf("currentDateTimeTask failed to initialize due to error: %v", err)
 	}
@@ -153,19 +153,19 @@ func toStatePath(configPath *gpb.Path) *gpb.Path {
 
 // systemBaseTask handles most of the logic for the base systems feature profile.
 func systemBaseTask(_ func() *oc.Root, queue gnmit.Queue, updateFn gnmit.UpdateFn, target string, remove func()) error {
-	hostnamePath, _, err := ygnmi.ResolvePath(ocpath.Root().System().Hostname())
+	hostnamePath, _, err := ygnmi.ResolvePath(ocpath.Root().System().Hostname().Config().PathStruct())
 	if err != nil {
 		log.Errorf("systemBaseTask failed to initialize due to error: %v", err)
 	}
-	domainNamePath, _, err := ygnmi.ResolvePath(ocpath.Root().System().DomainName())
+	domainNamePath, _, err := ygnmi.ResolvePath(ocpath.Root().System().DomainName().Config().PathStruct())
 	if err != nil {
 		log.Errorf("systemBaseTask failed to initialize due to error: %v", err)
 	}
-	motdBannerPath, _, err := ygnmi.ResolvePath(ocpath.Root().System().MotdBanner())
+	motdBannerPath, _, err := ygnmi.ResolvePath(ocpath.Root().System().MotdBanner().Config().PathStruct())
 	if err != nil {
 		log.Errorf("systemBaseTask failed to initialize due to error: %v", err)
 	}
-	loginBannerPath, _, err := ygnmi.ResolvePath(ocpath.Root().System().LoginBanner())
+	loginBannerPath, _, err := ygnmi.ResolvePath(ocpath.Root().System().LoginBanner().Config().PathStruct())
 	if err != nil {
 		log.Errorf("systemBaseTask failed to initialize due to error: %v", err)
 	}
@@ -253,7 +253,7 @@ func systemBaseTask(_ func() *oc.Root, queue gnmit.Queue, updateFn gnmit.UpdateF
 // current-datetime leaf and writes updates to the syslog message leaf whenever
 // the current-datetime leaf is updated.
 func syslogTask(_ func() *oc.Root, queue gnmit.Queue, updateFn gnmit.UpdateFn, target string, remove func()) error {
-	pathSystemMsg, _, err := ygnmi.ResolvePath(ocpath.Root().System().Messages().Message().Msg())
+	pathSystemMsg, _, err := ygnmi.ResolvePath(ocpath.Root().System().Messages().Message().Msg().State().PathStruct())
 	if err != nil {
 		log.Errorf("syslogTask failed to initialize due to error: %v", err)
 	}
@@ -342,7 +342,7 @@ func tasks(target string) []gnmit.Task {
 	}, {
 		Run: syslogTask,
 		Paths: []ygnmi.PathStruct{
-			ocpath.Root().System().CurrentDatetime(),
+			ocpath.Root().System().CurrentDatetime().State().PathStruct(),
 		},
 		Prefix: &gpb.Path{
 			Origin: "openconfig",
@@ -351,10 +351,10 @@ func tasks(target string) []gnmit.Task {
 	}, {
 		Run: systemBaseTask,
 		Paths: []ygnmi.PathStruct{
-			ocpath.Root().System().Hostname(),
-			ocpath.Root().System().DomainName(),
-			ocpath.Root().System().MotdBanner(),
-			ocpath.Root().System().LoginBanner(),
+			ocpath.Root().System().Hostname().Config().PathStruct(),
+			ocpath.Root().System().DomainName().Config().PathStruct(),
+			ocpath.Root().System().MotdBanner().Config().PathStruct(),
+			ocpath.Root().System().LoginBanner().Config().PathStruct(),
 		},
 		Prefix: &gpb.Path{
 			Origin: "openconfig",
