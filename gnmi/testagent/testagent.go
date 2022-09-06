@@ -30,6 +30,9 @@ func main() {
 	flag.Parse()
 
 	datastoreConn, err := grpc.DialContext(context.Background(), fmt.Sprintf("unix:%s", gnmit.DatastoreAddress), grpc.WithBlock(), grpc.WithTransportCredentials(local.NewCredentials()))
+	if err != nil {
+		log.Fatalf("fail to dial %s: %v", gnmit.DatastoreAddress, err)
+	}
 	datastoreClient := dspb.NewDatastoreClient(datastoreConn)
 
 	var opts []grpc.DialOption
@@ -37,10 +40,10 @@ func main() {
 
 	serverAddr := fmt.Sprintf("%s:%d", *host, *port)
 	conn, err := grpc.Dial(serverAddr, opts...)
+	defer conn.Close()
 	if err != nil {
 		log.Fatalf("fail to dial %s: %v", serverAddr, err)
 	}
-	defer conn.Close()
 	client := gpb.NewGNMIClient(conn)
 
 	yclient, err := ygnmi.NewClient(client, ygnmi.WithTarget(*target))
@@ -69,22 +72,22 @@ func main() {
 		}
 	}()
 
-	//rootWatcher := ygnmi.Watch(
-	//	context.Background(),
-	//	yclient,
-	//	ocpath.Root().State(),
-	//	func(root *ygnmi.Value[*oc.Root]) error {
-	//		log.Infof("%+v\n", root)
-	//		return ygnmi.Continue
-	//	},
-	//)
+	// rootWatcher := ygnmi.Watch(
+	// 	context.Background(),
+	// 	yclient,
+	// 	ocpath.Root().State(),
+	// 	func(root *ygnmi.Value[*oc.Root]) error {
+	// 		log.Infof("%+v\n", root)
+	// 		return ygnmi.Continue
+	// 	},
+	// )
 	interfaceWatcher := ygnmi.Watch(
 		context.Background(),
 		yclient,
 		ocpath.Root().Interface("test-eth0").State(),
 		func(root *ygnmi.Value[*oc.Interface]) error {
 			intf, ok := root.Val()
-			var desc string = ""
+			var desc string
 			if ok && intf.Description != nil {
 				desc = *intf.Description
 			}
