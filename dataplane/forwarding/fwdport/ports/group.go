@@ -323,7 +323,7 @@ func (portGroup) Actions(fwdpb.PortAction) fwdaction.Actions {
 // State implements the port interface. The port group state cannot be
 // externally controlled. The group is considered ready to transmit
 // at-least one constituent is ready to transmit.
-func (p *portGroup) State(op *fwdpb.PortInfo) (fwdpb.PortStateReply, error) {
+func (p *portGroup) State(op *fwdpb.PortInfo) (*fwdpb.PortStateReply, error) {
 	for _, m := range p.members {
 		if m.Ready() {
 			ready := fwdpb.PortStateReply{
@@ -337,14 +337,14 @@ func (p *portGroup) State(op *fwdpb.PortInfo) (fwdpb.PortStateReply, error) {
 					},
 				},
 			}
-			return ready, nil
+			return &ready, nil
 		}
 	}
 	down := fwdpb.PortStateReply{
 		LocalPort: &fwdpb.PortInfo{Laser: fwdpb.PortLaserState_PORT_LASER_STATE_DISABLED},
 		Link:      &fwdpb.LinkStateDesc{State: fwdpb.LinkState_LINK_STATE_DOWN},
 	}
-	return down, nil
+	return &down, nil
 }
 
 // selectLink selects a port after applying a hash on the packet and writes the packet out on the cable.

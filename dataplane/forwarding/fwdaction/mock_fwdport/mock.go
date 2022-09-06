@@ -161,10 +161,10 @@ func (mr *MockPortMockRecorder) Release(arg0 interface{}) *gomock.Call {
 }
 
 // State mocks base method.
-func (m *MockPort) State(arg0 *forwarding.PortInfo) (forwarding.PortStateReply, error) {
+func (m *MockPort) State(arg0 *forwarding.PortInfo) (*forwarding.PortStateReply, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "State", arg0)
-	ret0, _ := ret[0].(forwarding.PortStateReply)
+	ret0, _ := ret[0].(*forwarding.PortStateReply)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
