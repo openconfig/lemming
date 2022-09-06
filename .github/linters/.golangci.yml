@@ -52,3 +52,5 @@ linters-settings:
     disabled-checks:
       - singleCaseSwitch
       - appendAssign
+output:
+  format: colored-line-number
