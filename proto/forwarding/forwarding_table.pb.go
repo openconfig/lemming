@@ -120,9 +120,7 @@ func (TableType) EnumDescriptor() ([]byte, []int) {
 }
 
 // A TableDesc descibes a table type and its default actions.
-// Note that an extension must be always used. Each type of table is an
-// extension with a unique extension number (1 greater than
-// the previous extension).
+// Note that an oneof field must always be set.
 type TableDesc struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -262,9 +260,6 @@ func (*TableDesc_Flow) isTableDesc_Table() {}
 func (*TableDesc_Bridge) isTableDesc_Table() {}
 
 // An EntryDesc describes how a table entry is identified.
-// Note that an extension must be always used. Each type of entry is an
-// extension with a unique extension number (1 greater than
-// the previous extension).
 type EntryDesc struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

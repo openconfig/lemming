@@ -57,9 +57,10 @@ message InfoElementRequest {
   InfoType type = 2;
   bytes frame = 3;  // packet frame if applicable
 
+  // Start header of the frame if applicable. (INFO_TYPE_LOOKUP,
+  // INFO_PORT_INPUT, INFO_PORT_OUTPUT)
   PacketHeaderId start_header =
-      4;  // Start header of the frame if applicable. (INFO_TYPE_LOOKUP,
-          // INFO_PORT_INPUT, INFO_PORT_OUTPUT)
+      4;  
 }
 
 // An InfoElementReply is the formatted contents of the specified information

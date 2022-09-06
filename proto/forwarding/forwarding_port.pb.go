@@ -306,11 +306,9 @@ func (LinkState) EnumDescriptor() ([]byte, []int) {
 	return file_proto_forwarding_forwarding_port_proto_rawDescGZIP(), []int{4}
 }
 
-// A PortDesc describes a forwarding port.
-// It is assumed that the descriptor  will contain the appropriate extension
-// describing the port's specific type. Each type of port is an
-// extension with a unique extension number (1 greater than
-// the previous extension).
+// A PortDesc describes a forwarding port. It is assumed that the descriptor
+// will contain the appropriate message in the oneof describing the port's
+// specific type.
 type PortDesc struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

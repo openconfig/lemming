@@ -12,10 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Interface for provisioning forwarding. Note that in all messages, only one
-// extension may be set. This is to maintain compatibility with the sandcastle
-// RPC compiler that does not support oneof. The behavior on setting multiple
-// extensions in a message is undefined.
+// Interface for provisioning forwarding. Note that in all messages, one field 
+// of the oneof may be set.
 syntax = "proto3";
 
 package forwarding;

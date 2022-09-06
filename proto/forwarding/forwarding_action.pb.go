@@ -250,14 +250,10 @@ func (SelectActionListActionDesc_SelectAlgorithm) EnumDescriptor() ([]byte, []in
 }
 
 // An ActionDesc describes an operation that can be performed on a packet.
-// It is assumed that the desc will contain the appropriate extension to
-// describe the action fully.
+// It is assumed that the desc will contain the appropriate values in the oneof.
 //
 // Actions that are marked on evaluate are executed only when the evaluate
 // action is processed.
-//
-// Note that each type of action is an extension with a unique extension
-// number (1 greater than the previous extension).
 type ActionDesc struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

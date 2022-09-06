@@ -203,10 +203,12 @@ type InfoElementRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Name        string         `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Type        InfoType       `protobuf:"varint,2,opt,name=type,proto3,enum=forwarding.InfoType" json:"type,omitempty"`
-	Frame       []byte         `protobuf:"bytes,3,opt,name=frame,proto3" json:"frame,omitempty"`                                                                // packet frame if applicable
-	StartHeader PacketHeaderId `protobuf:"varint,4,opt,name=start_header,json=startHeader,proto3,enum=forwarding.PacketHeaderId" json:"start_header,omitempty"` // Start header of the frame if applicable. (INFO_TYPE_LOOKUP,
+	Name  string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Type  InfoType `protobuf:"varint,2,opt,name=type,proto3,enum=forwarding.InfoType" json:"type,omitempty"`
+	Frame []byte   `protobuf:"bytes,3,opt,name=frame,proto3" json:"frame,omitempty"` // packet frame if applicable
+	// Start header of the frame if applicable. (INFO_TYPE_LOOKUP,
+	// INFO_PORT_INPUT, INFO_PORT_OUTPUT)
+	StartHeader PacketHeaderId `protobuf:"varint,4,opt,name=start_header,json=startHeader,proto3,enum=forwarding.PacketHeaderId" json:"start_header,omitempty"`
 }
 
 func (x *InfoElementRequest) Reset() {

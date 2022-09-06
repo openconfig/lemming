@@ -56,9 +56,7 @@ enum TableType {
 }
 
 // A TableDesc descibes a table type and its default actions.
-// Note that an extension must be always used. Each type of table is an
-// extension with a unique extension number (1 greater than
-// the previous extension).
+// Note that an oneof field must always be set.
 message TableDesc {
   // Required type of the table.
   TableType table_type = 1;
@@ -79,9 +77,6 @@ message TableDesc {
 }
 
 // An EntryDesc describes how a table entry is identified.
-// Note that an extension must be always used. Each type of entry is an
-// extension with a unique extension number (1 greater than
-// the previous extension).
 message EntryDesc {
   oneof entry {
     ExactEntryDesc exact = 1;

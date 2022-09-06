@@ -29,11 +29,9 @@ enum PortType {
   PORT_TYPE_AGGREGATE_PORT = 2;  // Port that is an aggregate of ports
 }
 
-// A PortDesc describes a forwarding port.
-// It is assumed that the descriptor  will contain the appropriate extension
-// describing the port's specific type. Each type of port is an
-// extension with a unique extension number (1 greater than
-// the previous extension).
+// A PortDesc describes a forwarding port. It is assumed that the descriptor
+// will contain the appropriate message in the oneof describing the port's
+// specific type.
 message PortDesc {
   PortType port_type = 1;
   PortId port_id = 2;
@@ -80,7 +78,7 @@ message PortUpdateRequest {
 }
 
 message PortUpdateReply {
-
+  
 }
 
 // A CPUPortUpdateDesc updates the CPU port's input and output actions.
