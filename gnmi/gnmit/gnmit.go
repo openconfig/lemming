@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"os"
 	"reflect"
 	"sync"
 	"time"
@@ -40,6 +41,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
+	dspb "github.com/openconfig/lemming/proto/datastore"
 )
 
 var (
@@ -193,6 +195,24 @@ func New(ctx context.Context, addr, hostname string, sendMeta bool, tasks []Task
 	if err != nil {
 		return nil, "", err
 	}
+
+	// Start datastore server.
+	if err := os.RemoveAll(DatastoreAddress); err != nil {
+		log.Fatal(err)
+	}
+	srvDS := grpc.NewServer(opts...)
+	dspb.RegisterDatastoreServer(srvDS, NewDatastoreServer(gnmiserver.set))
+	lisDS, err := net.Listen("unix", DatastoreAddress)
+	if err != nil {
+		log.Fatalf("listen error: %v", err)
+	}
+	go func() {
+		if err := srvDS.Serve(lisDS); err != nil {
+			log.Errorf("Error while serving datastore target: %v", err)
+		}
+	}()
+
+	// Start gNMI server.
 	srv := grpc.NewServer(opts...)
 	gpb.RegisterGNMIServer(srv, gnmiserver)
 	// Forward streaming updates to clients.
@@ -207,7 +227,10 @@ func New(ctx context.Context, addr, hostname string, sendMeta bool, tasks []Task
 			log.Errorf("Error while serving gnmi target: %v", err)
 		}
 	}()
-	c.stopFn = srv.GracefulStop
+	c.stopFn = func() {
+		srvDS.GracefulStop()
+		srv.GracefulStop()
+	}
 	return c, lis.Addr().String(), nil
 }
 
@@ -301,7 +324,6 @@ func (c *Collector) TargetUpdate(m *gpb.SubscribeResponse) {
 }
 
 // setNode is a function that is able to unmarshal either a JSON-encoded value or a gNMI-encoded value.
-// TODO(wenbli): This functionality should be upstreamed to ygot somehow.
 func setNode(schema *ytypes.Schema, goStruct ygot.GoStruct, update *gpb.Update) error {
 	nodeName := reflect.TypeOf(goStruct).Elem().Name()
 	nodeI, targetSchema, err := ytypes.GetOrCreateNode(schema.SchemaTree[nodeName], goStruct, update.Path, &ytypes.PreferShadowPath{})
@@ -318,6 +340,7 @@ func setNode(schema *ytypes.Schema, goStruct ygot.GoStruct, update *gpb.Update) 
 		return nil
 	}
 
+	// TODO(wenbli): Use SetNode natively instead of this. SetNode now is supposed to support setting JSON.
 	node, ok := nodeI.(ygot.GoStruct)
 	path := proto.Clone(update.Path).(*gpb.Path)
 	for i := len(path.Elem) - 1; i >= 0 && !ok; i-- {
@@ -339,32 +362,97 @@ func setNode(schema *ytypes.Schema, goStruct ygot.GoStruct, update *gpb.Update) 
 	return fmt.Errorf("gnmit: cannot find GoStruct parent into which to ummarshal update message: %s", prototext.Format(update))
 }
 
-// Set is a prototype for a gNMI Set operation.
-// TODO(wenbli): This function is too complex to stand on its own. We should
-// split this into stages, each encapsulated within its own function.
-func (s *GNMIServer) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResponse, error) {
-	if s.c.schema == nil {
-		return s.UnimplementedGNMIServer.Set(ctx, req)
-	}
+func (s *GNMIServer) getOrCreateNode(path *gpb.Path) (ygot.ValidatedGoStruct, ygot.GoStruct, string, error) {
 	// Create a copy so that we can rollback the transaction when validation fails.
 	dirtyRootG, err := ygot.DeepCopy(s.c.Schema().Root)
 	if err != nil {
-		return nil, fmt.Errorf("gnmit: failed to ygot.DeepCopy the cached root object: %v", err)
+		return nil, nil, "", fmt.Errorf("gnmit: failed to ygot.DeepCopy the cached root object: %v", err)
 	}
 	dirtyRoot, ok := dirtyRootG.(ygot.ValidatedGoStruct)
 	if !ok {
-		return nil, fmt.Errorf("gnmit: cannot convert root object to ValidatedGoStruct")
+		return nil, nil, "", fmt.Errorf("gnmit: cannot convert root object to ValidatedGoStruct")
 	}
 	// Operate at the prefix level.
-	nodeI, _, err := ytypes.GetOrCreateNode(s.c.Schema().RootSchema(), dirtyRoot, req.Prefix, &ytypes.PreferShadowPath{})
+	nodeI, _, err := ytypes.GetOrCreateNode(s.c.Schema().RootSchema(), dirtyRoot, path, &ytypes.PreferShadowPath{})
 	if err != nil {
-		return nil, fmt.Errorf("gnmit: failed to GetOrCreate the prefix node: %v", err)
+		return nil, nil, "", fmt.Errorf("gnmit: failed to GetOrCreate the prefix node: %v", err)
 	}
 	node, ok := nodeI.(ygot.GoStruct)
 	if !ok {
-		return nil, fmt.Errorf("gnmit: prefix path points to a non-GoStruct, this is not allowed: %T, %v", nodeI, nodeI)
+		return nil, nil, "", fmt.Errorf("gnmit: prefix path points to a non-GoStruct, this is not allowed: %T, %v", nodeI, nodeI)
 	}
 	nodeName := reflect.TypeOf(nodeI).Elem().Name()
+	return dirtyRoot, node, nodeName, nil
+}
+
+func (s *GNMIServer) update(dirtyRoot ygot.ValidatedGoStruct, origin string) error {
+	if err := dirtyRoot.Validate(); err != nil {
+		return fmt.Errorf("gnmit: invalid SetRequest: %v", err)
+	}
+
+	n, err := ygot.Diff(s.c.Schema().Root, dirtyRoot, &ygot.DiffPathOpt{PreferShadowPath: true})
+	if err != nil {
+		return fmt.Errorf("gnmit: error while creating update notification for Set: %v", err)
+	}
+	n.Timestamp = time.Now().UnixNano()
+	n.Prefix = &gpb.Path{Origin: origin, Target: s.c.name}
+	if n.Prefix.Origin == "" {
+		n.Prefix.Origin = "openconfig"
+	}
+
+	// Update cache
+	t := s.c.cache.GetTarget(s.c.name)
+	var pathsForDelete []string
+	for _, path := range n.Delete {
+		p, err := ygot.PathToString(path)
+		if err != nil {
+			return fmt.Errorf("cannot convert deleted path to string: %v", err)
+		}
+		pathsForDelete = append(pathsForDelete, p)
+	}
+	log.V(1).Infof("gnmi.Set: deleting the following paths: %+v", pathsForDelete)
+	if err := t.GnmiUpdate(n); err != nil {
+		return err
+	}
+	s.c.Schema().Root = dirtyRoot
+	return nil
+}
+
+// set updates the datastore and intended configuration with the values from the input notification.
+func (s *GNMIServer) set(notif *gpb.Notification) error {
+	s.intendedConfigMu.Lock()
+	defer s.intendedConfigMu.Unlock()
+	dirtyRoot, node, nodeName, err := s.getOrCreateNode(notif.Prefix)
+	if err != nil {
+		return err
+	}
+
+	// Process deletes, then replace, then updates.
+	for _, path := range notif.Delete {
+		if err := ytypes.DeleteNode(s.c.Schema().SchemaTree[nodeName], node, path, &ytypes.PreferShadowPath{}); err != nil {
+			return fmt.Errorf("gnmit: DeleteNode error: %v", err)
+		}
+	}
+	for _, update := range notif.Update {
+		if err := setNode(s.c.schema, node, update); err != nil {
+			return err
+		}
+	}
+
+	return s.update(dirtyRoot, notif.Prefix.Origin)
+}
+
+// Set is a prototype for a gNMI Set operation.
+func (s *GNMIServer) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResponse, error) {
+	s.intendedConfigMu.Lock()
+	defer s.intendedConfigMu.Unlock()
+	if s.c.schema == nil {
+		return s.UnimplementedGNMIServer.Set(ctx, req)
+	}
+	dirtyRoot, node, nodeName, err := s.getOrCreateNode(req.Prefix)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "%v", err)
+	}
 
 	// TODO(wenbli): Reject paths that try to modify read-only values.
 	// TODO(wenbli): Question: what to do if there are operational-state values in a container that is specified to be replaced or deleted?
@@ -389,39 +477,9 @@ func (s *GNMIServer) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResp
 		}
 	}
 
-	if err := dirtyRoot.Validate(); err != nil {
-		return nil, fmt.Errorf("gnmit: invalid SetRequest: %v", err)
-	}
-
-	n, err := ygot.Diff(s.c.Schema().Root, dirtyRoot, &ygot.DiffPathOpt{PreferShadowPath: true})
-	if err != nil {
-		return nil, fmt.Errorf("gnmit: error while creating update notification for Set: %v", err)
-	}
-	n.Timestamp = time.Now().UnixNano()
-	n.Prefix = &gpb.Path{Origin: req.Prefix.Origin, Target: s.c.name}
-	if n.Prefix.Origin == "" {
-		n.Prefix.Origin = "openconfig"
-	}
-
-	// Update cache
-	t := s.c.cache.GetTarget(s.c.name)
-	var pathsForDelete []string
-	for _, path := range n.Delete {
-		p, err := ygot.PathToString(path)
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "cannot convert deleted path to string: %v", err)
-		}
-		pathsForDelete = append(pathsForDelete, p)
-	}
-	log.V(1).Infof("gnmi.Set: deleting the following paths: %+v", pathsForDelete)
-	if err := t.GnmiUpdate(n); err != nil {
-		return nil, err
-	}
-	s.intendedConfigMu.Lock()
-	defer s.intendedConfigMu.Unlock()
-	s.c.Schema().Root = dirtyRoot
+	err = s.update(dirtyRoot, req.Prefix.Origin)
 	// TODO(wenbli): Currently the SetResponse is not filled.
 	return &gpb.SetResponse{
 		Timestamp: time.Now().UnixNano(),
-	}, nil
+	}, err
 }
