@@ -85,33 +85,33 @@ func New(name string) *Engine {
 
 // client returns a gRPC client connected to the specified address.
 // It is assumed that clients are looked up while the service is locked.
-func (s *Engine) client(addr string) (*grpc.ClientConn, error) {
-	if c, ok := s.conn[addr]; ok {
+func (e *Engine) client(addr string) (*grpc.ClientConn, error) {
+	if c, ok := e.conn[addr]; ok {
 		return c, nil
 	}
 	c, err := grpc.Dial(addr)
 	if err != nil {
 		return nil, fmt.Errorf("service: dial to %v failed, err %v", addr, err)
 	}
-	s.conn[addr] = c
+	e.conn[addr] = c
 	return c, nil
 }
 
 // GetNotificationCallback returns a callback that posts notifications to the
-// specifed address.  If the address is "", the returned callback ignores all
+// specified address.  If the address is "", the returned callback ignores all
 // events.
-func (s *Engine) GetNotificationCallback(address string) (fwdcontext.NotificationCallback, error) {
+func (e *Engine) GetNotificationCallback(address string) (fwdcontext.NotificationCallback, error) {
 	if address == "" {
 		return nil, nil
 	}
 
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	e.mu.Lock()
+	defer e.mu.Unlock()
 
-	if h, ok := s.notification[address]; ok {
+	if h, ok := e.notification[address]; ok {
 		return h, nil
 	}
-	c, err := s.client(address)
+	c, err := e.client(address)
 	if err != nil {
 		return nil, fmt.Errorf("service: connection to notification service failed, err %v", err)
 	}
@@ -119,25 +119,25 @@ func (s *Engine) GetNotificationCallback(address string) (fwdcontext.Notificatio
 	h := func(ed *fwdpb.EventDesc) {
 		client.Notify(context.TODO(), ed)
 	}
-	s.notification[address] = h
+	e.notification[address] = h
 	return h, nil
 }
 
 // GetPacketSinkCallback returns a callback that posts packets to a packet sink
 // service at the specified address. If the address is "", the packet sink
 // service is disabled for the context.
-func (s *Engine) GetPacketSinkCallback(address string) (fwdcontext.PacketCallback, error) {
+func (e *Engine) GetPacketSinkCallback(address string) (fwdcontext.PacketCallback, error) {
 	if address == "" {
 		return nil, nil
 	}
 
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	e.mu.Lock()
+	defer e.mu.Unlock()
 
-	if h, ok := s.packet[address]; ok {
+	if h, ok := e.packet[address]; ok {
 		return h, nil
 	}
-	c, err := s.client(address)
+	c, err := e.client(address)
 	if err != nil {
 		return nil, fmt.Errorf("service: connection to packet service failed, err %v", err)
 	}
@@ -148,7 +148,7 @@ func (s *Engine) GetPacketSinkCallback(address string) (fwdcontext.PacketCallbac
 		defer cancel()
 		return client.PacketInject(ctx, p)
 	}
-	s.packet[address] = h
+	e.packet[address] = h
 	return h, nil
 }
 
@@ -156,12 +156,12 @@ func (s *Engine) GetPacketSinkCallback(address string) (fwdcontext.PacketCallbac
 // notification is set to nil, no notifications are generated for the context.
 // The address is the address of the notification service (used in queries)
 // in the host:port format.
-func (f *Engine) UpdateNotification(contextID *fwdpb.ContextId, notification fwdcontext.NotificationCallback, address string) error {
+func (e *Engine) UpdateNotification(contextID *fwdpb.ContextId, notification fwdcontext.NotificationCallback, address string) error {
 	if contextID == nil {
 		return errors.New("fwd: UpdateNotification failed, No context ID")
 	}
 
-	ctx, err := f.FindContext(contextID)
+	ctx, err := e.FindContext(contextID)
 	if err != nil {
 		return fmt.Errorf("fwd: UpdateNotification failed, err %v", err)
 	}
@@ -176,12 +176,12 @@ func (f *Engine) UpdateNotification(contextID *fwdpb.ContextId, notification fwd
 // service is set to nil, no packets are delivered externally for the context.
 // The address is the address of the packet service (used in queries)
 // in the host:port format.
-func (f *Engine) UpdatePacketSink(contextID *fwdpb.ContextId, packet fwdcontext.PacketCallback, address string) error {
+func (e *Engine) UpdatePacketSink(contextID *fwdpb.ContextId, packet fwdcontext.PacketCallback, address string) error {
 	if contextID == nil {
 		return errors.New("fwd: UpdatePacketSink failed, No context ID")
 	}
 
-	ctx, err := f.FindContext(contextID)
+	ctx, err := e.FindContext(contextID)
 	if err != nil {
 		return fmt.Errorf("fwd: UpdatePacketSink failed, err %v", err)
 	}
@@ -195,34 +195,34 @@ func (f *Engine) UpdatePacketSink(contextID *fwdpb.ContextId, packet fwdcontext.
 // ContextCreate creates a new context. Note that if the packet sink and/or
 // notification services are specified but not reachable, the context creation
 // fails.
-func (s *Engine) ContextCreate(_ context.Context, request *fwdpb.ContextCreateRequest) (*fwdpb.ContextCreateReply, error) {
+func (e *Engine) ContextCreate(_ context.Context, request *fwdpb.ContextCreateRequest) (*fwdpb.ContextCreateReply, error) {
 	paddr := request.GetPacketAddress()
 	naddr := request.GetNotificationAddress()
-	ns, err := s.GetNotificationCallback(naddr)
+	ns, err := e.GetNotificationCallback(naddr)
 	if err != nil {
 		return nil, err
 	}
 
-	ps, err := s.GetPacketSinkCallback(paddr)
+	ps, err := e.GetPacketSinkCallback(paddr)
 	if err != nil {
 		return nil, err
 	}
 
 	cid := request.GetContextId()
-	if err := s.contextCreateByID(cid); err != nil {
+	if err := e.contextCreateByID(cid); err != nil {
 		return nil, err
 	}
 
-	if err := s.UpdateNotification(cid, ns, naddr); err != nil {
+	if err := e.UpdateNotification(cid, ns, naddr); err != nil {
 		return nil, err
 	}
-	return &fwdpb.ContextCreateReply{}, s.UpdatePacketSink(cid, ps, paddr)
+	return &fwdpb.ContextCreateReply{}, e.UpdatePacketSink(cid, ps, paddr)
 }
 
 // ContextUpdate updates a forwarding context. Note that if the packet sink and/or
 // notification services are specified but not reachable, the context update
 // fails.
-func (s *Engine) ContextUpdate(_ context.Context, request *fwdpb.ContextUpdateRequest) (*fwdpb.ContextUpdateReply, error) {
+func (e *Engine) ContextUpdate(_ context.Context, request *fwdpb.ContextUpdateRequest) (*fwdpb.ContextUpdateReply, error) {
 	var err error
 	var ps fwdcontext.PacketCallback
 	var ns fwdcontext.NotificationCallback
@@ -232,12 +232,12 @@ func (s *Engine) ContextUpdate(_ context.Context, request *fwdpb.ContextUpdateRe
 	for _, op := range request.GetOperations() {
 		switch op {
 		case fwdpb.ContextUpdateRequest_OPERATION_UPDATE_PACKET_ADDRESS:
-			if ps, err = s.GetPacketSinkCallback(paddr); err != nil {
+			if ps, err = e.GetPacketSinkCallback(paddr); err != nil {
 				return nil, err
 			}
 
 		case fwdpb.ContextUpdateRequest_OPERATION_UPDATE_NOTIFICATION_ADDRESS:
-			if ns, err = s.GetNotificationCallback(naddr); err != nil {
+			if ns, err = e.GetNotificationCallback(naddr); err != nil {
 				return nil, err
 			}
 
@@ -248,12 +248,12 @@ func (s *Engine) ContextUpdate(_ context.Context, request *fwdpb.ContextUpdateRe
 	for _, op := range request.GetOperations() {
 		switch op {
 		case fwdpb.ContextUpdateRequest_OPERATION_UPDATE_PACKET_ADDRESS:
-			if err = s.UpdatePacketSink(cid, ps, paddr); err != nil {
+			if err = e.UpdatePacketSink(cid, ps, paddr); err != nil {
 				return nil, err
 			}
 
 		case fwdpb.ContextUpdateRequest_OPERATION_UPDATE_NOTIFICATION_ADDRESS:
-			if err = s.UpdateNotification(cid, ns, naddr); err != nil {
+			if err = e.UpdateNotification(cid, ns, naddr); err != nil {
 				return nil, err
 			}
 		}
@@ -262,47 +262,41 @@ func (s *Engine) ContextUpdate(_ context.Context, request *fwdpb.ContextUpdateRe
 }
 
 // contextCreateByID creates a new context with the given ID, erroring if it already exists.
-func (f *Engine) contextCreateByID(contextID *fwdpb.ContextId) (err error) {
-	defer func() {
-		if err != nil {
-			log.Errorf("%v: %v, ContextCreate failed", f.name, err)
-		}
-	}()
-
+func (e *Engine) contextCreateByID(contextID *fwdpb.ContextId) error {
 	if contextID == nil {
 		return errors.New("No context ID")
 	}
 
-	if _, err := f.FindContext(contextID); err == nil {
+	if _, err := e.FindContext(contextID); err == nil {
 		return fmt.Errorf("fwd: ContextCreate failed, %v already exists", contextID)
 	}
 
-	f.mu.Lock()
-	defer f.mu.Unlock()
+	e.mu.Lock()
+	defer e.mu.Unlock()
 
 	id := contextID.GetId()
-	ctx := fwdcontext.New(id, f.name)
-	f.ctx[id] = ctx
-	f.info.AddContext(ctx)
+	ctx := fwdcontext.New(id, e.name)
+	e.ctx[id] = ctx
+	e.info.AddContext(ctx)
 	return nil
 }
 
 // ContextDelete deletes a context if it exists.
-func (f *Engine) ContextDelete(_ context.Context, request *fwdpb.ContextDeleteRequest) (*fwdpb.ContextDeleteReply, error) {
+func (e *Engine) ContextDelete(_ context.Context, request *fwdpb.ContextDeleteRequest) (*fwdpb.ContextDeleteReply, error) {
 	if request.GetContextId() == nil {
 		return nil, errors.New("No context ID")
 	}
 
-	ctx, err := f.FindContext(request.GetContextId())
+	ctx, err := e.FindContext(request.GetContextId())
 	if err != nil {
 		return nil, err
 	}
 
 	id := request.GetContextId().GetId()
-	f.mu.Lock()
-	delete(f.ctx, id)
-	f.info.RemoveContext(ctx)
-	f.mu.Unlock()
+	e.mu.Lock()
+	delete(e.ctx, id)
+	e.info.RemoveContext(ctx)
+	e.mu.Unlock()
 
 	ch := make(chan bool)
 	go func() {
@@ -326,15 +320,15 @@ func (f *Engine) ContextDelete(_ context.Context, request *fwdpb.ContextDeleteRe
 }
 
 // ContextList lists all the contexts in the system.
-func (f *Engine) ContextList(_ context.Context, request *fwdpb.ContextListRequest) (*fwdpb.ContextListReply, error) {
+func (e *Engine) ContextList(_ context.Context, request *fwdpb.ContextListRequest) (*fwdpb.ContextListReply, error) {
 	timer := deadlock.NewTimer(deadlock.Timeout, fmt.Sprintf("Processing %+v", request))
 	defer timer.Stop()
 
-	f.mu.Lock()
-	defer f.mu.Unlock()
+	e.mu.Lock()
+	defer e.mu.Unlock()
 
 	reply := &fwdpb.ContextListReply{}
-	for _, ctx := range f.ctx {
+	for _, ctx := range e.ctx {
 		reply.Contexts = append(reply.Contexts, &fwdpb.ContextAttr{
 			ContextId: &fwdpb.ContextId{
 				Id: string(ctx.ID),
@@ -347,16 +341,16 @@ func (f *Engine) ContextList(_ context.Context, request *fwdpb.ContextListReques
 }
 
 // FindContext finds the specified context.
-func (f *Engine) FindContext(contextID *fwdpb.ContextId) (*fwdcontext.Context, error) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
+func (e *Engine) FindContext(contextID *fwdpb.ContextId) (*fwdcontext.Context, error) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
 
 	if contextID == nil {
 		return nil, errors.New("No context ID")
 	}
 
 	id := contextID.GetId()
-	ctx, ok := f.ctx[id]
+	ctx, ok := e.ctx[id]
 	if !ok {
 		return nil, fmt.Errorf("Unknown context %v", id)
 	}
@@ -364,11 +358,11 @@ func (f *Engine) FindContext(contextID *fwdpb.ContextId) (*fwdcontext.Context, e
 }
 
 // ObjectDelete deletes an object.
-func (f *Engine) ObjectDelete(_ context.Context, request *fwdpb.ObjectDeleteRequest) (*fwdpb.ObjectDeleteReply, error) {
+func (e *Engine) ObjectDelete(_ context.Context, request *fwdpb.ObjectDeleteRequest) (*fwdpb.ObjectDeleteReply, error) {
 	timer := deadlock.NewTimer(deadlock.Timeout, fmt.Sprintf("Processing %+v", request))
 	defer timer.Stop()
 
-	ctx, err := f.FindContext(request.GetContextId())
+	ctx, err := e.FindContext(request.GetContextId())
 	if err != nil {
 		return nil, fmt.Errorf("fwd: ObjectDelete failed, err %v", err)
 	}
@@ -376,7 +370,7 @@ func (f *Engine) ObjectDelete(_ context.Context, request *fwdpb.ObjectDeleteRequ
 	ctx.Lock()
 	defer ctx.Unlock()
 
-	f.info.RemoveObject(ctx, request.GetObjectId())
+	e.info.RemoveObject(ctx, request.GetObjectId())
 	if err := ctx.Objects.Remove(request.GetObjectId(), false /*forceCleanup*/); err != nil {
 		return nil, fmt.Errorf("fwd: ObjectDelete failed, err %v", err)
 	}
@@ -384,11 +378,11 @@ func (f *Engine) ObjectDelete(_ context.Context, request *fwdpb.ObjectDeleteRequ
 }
 
 // ObjectList lists all the objects in the system.
-func (f *Engine) ObjectList(_ context.Context, request *fwdpb.ObjectListRequest) (*fwdpb.ObjectListReply, error) {
+func (e *Engine) ObjectList(_ context.Context, request *fwdpb.ObjectListRequest) (*fwdpb.ObjectListReply, error) {
 	timer := deadlock.NewTimer(deadlock.Timeout, fmt.Sprintf("Processing %+v", request))
 	defer timer.Stop()
 
-	ctx, err := f.FindContext(request.GetContextId())
+	ctx, err := e.FindContext(request.GetContextId())
 	if err != nil {
 		return nil, fmt.Errorf("fwd: ObjectList failed, err %v", err)
 	}
@@ -406,11 +400,11 @@ func (f *Engine) ObjectList(_ context.Context, request *fwdpb.ObjectListRequest)
 }
 
 // ObjectCounters retrieves all the counters associated on the object.
-func (f *Engine) ObjectCounters(_ context.Context, request *fwdpb.ObjectCountersRequest) (*fwdpb.ObjectCountersReply, error) {
+func (e *Engine) ObjectCounters(_ context.Context, request *fwdpb.ObjectCountersRequest) (*fwdpb.ObjectCountersReply, error) {
 	timer := deadlock.NewTimer(deadlock.Timeout, fmt.Sprintf("Processing %+v", request))
 	defer timer.Stop()
 
-	ctx, err := f.FindContext(request.GetContextId())
+	ctx, err := e.FindContext(request.GetContextId())
 	if err != nil {
 		return nil, fmt.Errorf("fwd: ObjectCounters failed, err %v", err)
 	}
@@ -446,7 +440,7 @@ func (*Engine) AttributeList(_ context.Context, request *fwdpb.AttributeListRequ
 }
 
 // AttributeUpdate updates attributes in a forwarding context.
-func (f *Engine) AttributeUpdate(_ context.Context, request *fwdpb.AttributeUpdateRequest) (*fwdpb.AttributeUpdateReply, error) {
+func (e *Engine) AttributeUpdate(_ context.Context, request *fwdpb.AttributeUpdateRequest) (*fwdpb.AttributeUpdateReply, error) {
 	timer := deadlock.NewTimer(deadlock.Timeout, fmt.Sprintf("Processing %+v", request))
 	defer timer.Stop()
 
@@ -457,7 +451,7 @@ func (f *Engine) AttributeUpdate(_ context.Context, request *fwdpb.AttributeUpda
 			return fwdattribute.Global, nil
 		}
 
-		ctx, err := f.FindContext(request.GetContextId())
+		ctx, err := e.FindContext(request.GetContextId())
 		if err != nil {
 			return nil, fmt.Errorf("fwd: AttributeUpdate failed, err %v", err)
 		}
@@ -495,11 +489,11 @@ func (f *Engine) AttributeUpdate(_ context.Context, request *fwdpb.AttributeUpda
 }
 
 // PortCreate creates a port.
-func (f *Engine) PortCreate(_ context.Context, request *fwdpb.PortCreateRequest) (*fwdpb.PortCreateReply, error) {
+func (e *Engine) PortCreate(_ context.Context, request *fwdpb.PortCreateRequest) (*fwdpb.PortCreateReply, error) {
 	timer := deadlock.NewTimer(deadlock.Timeout, fmt.Sprintf("Processing %+v", request))
 	defer timer.Stop()
 
-	ctx, err := f.FindContext(request.GetContextId())
+	ctx, err := e.FindContext(request.GetContextId())
 	if err != nil {
 		return nil, fmt.Errorf("fwd: PortCreate failed, err %v", err)
 	}
@@ -511,7 +505,7 @@ func (f *Engine) PortCreate(_ context.Context, request *fwdpb.PortCreateRequest)
 	if err != nil {
 		return nil, fmt.Errorf("fwd: PortCreate failed, err %v", err)
 	}
-	f.info.AddObject(ctx, object)
+	e.info.AddObject(ctx, object)
 	reply := &fwdpb.PortCreateReply{
 		ObjectIndex: &fwdpb.ObjectIndex{
 			Index: uint64(object.NID()),
@@ -521,11 +515,11 @@ func (f *Engine) PortCreate(_ context.Context, request *fwdpb.PortCreateRequest)
 }
 
 // PortUpdate updates a port.
-func (f *Engine) PortUpdate(_ context.Context, request *fwdpb.PortUpdateRequest) (*fwdpb.PortUpdateReply, error) {
+func (e *Engine) PortUpdate(_ context.Context, request *fwdpb.PortUpdateRequest) (*fwdpb.PortUpdateReply, error) {
 	timer := deadlock.NewTimer(deadlock.Timeout, fmt.Sprintf("Processing %+v", request))
 	defer timer.Stop()
 
-	ctx, err := f.FindContext(request.GetContextId())
+	ctx, err := e.FindContext(request.GetContextId())
 	if err != nil {
 		return nil, fmt.Errorf("fwd: PortUpdate failed, err %v", err)
 	}
@@ -548,11 +542,11 @@ func (f *Engine) PortUpdate(_ context.Context, request *fwdpb.PortUpdateRequest)
 }
 
 // PortState controls and queries the port state.
-func (f *Engine) PortState(_ context.Context, request *fwdpb.PortStateRequest) (*fwdpb.PortStateReply, error) {
+func (e *Engine) PortState(_ context.Context, request *fwdpb.PortStateRequest) (*fwdpb.PortStateReply, error) {
 	timer := deadlock.NewTimer(deadlock.Timeout, fmt.Sprintf("Processing %+v", request))
 	defer timer.Stop()
 
-	ctx, err := f.FindContext(request.GetContextId())
+	ctx, err := e.FindContext(request.GetContextId())
 	if err != nil {
 		return nil, fmt.Errorf("fwd: PortState failed, err %v", err)
 	}
@@ -579,11 +573,11 @@ func (f *Engine) PortState(_ context.Context, request *fwdpb.PortStateRequest) (
 }
 
 // TableCreate creates an empty table.
-func (f *Engine) TableCreate(_ context.Context, request *fwdpb.TableCreateRequest) (*fwdpb.TableCreateReply, error) {
+func (e *Engine) TableCreate(_ context.Context, request *fwdpb.TableCreateRequest) (*fwdpb.TableCreateReply, error) {
 	timer := deadlock.NewTimer(deadlock.Timeout, fmt.Sprintf("Processing %+v", request))
 	defer timer.Stop()
 
-	ctx, err := f.FindContext(request.GetContextId())
+	ctx, err := e.FindContext(request.GetContextId())
 	if err != nil {
 		return nil, fmt.Errorf("fwd: TableCreate failed, err %v", err)
 	}
@@ -595,7 +589,7 @@ func (f *Engine) TableCreate(_ context.Context, request *fwdpb.TableCreateReques
 	if err != nil {
 		return nil, fmt.Errorf("fwd: TableCreate failed, err %v", err)
 	}
-	f.info.AddObject(ctx, object)
+	e.info.AddObject(ctx, object)
 	reply := &fwdpb.TableCreateReply{
 		ObjectIndex: &fwdpb.ObjectIndex{
 			Index: uint64(object.NID()),
@@ -605,11 +599,11 @@ func (f *Engine) TableCreate(_ context.Context, request *fwdpb.TableCreateReques
 }
 
 // TableEntryAdd adds (or updates) an entry in a table.
-func (f *Engine) TableEntryAdd(_ context.Context, request *fwdpb.TableEntryAddRequest) (*fwdpb.TableEntryAddReply, error) {
+func (e *Engine) TableEntryAdd(_ context.Context, request *fwdpb.TableEntryAddRequest) (*fwdpb.TableEntryAddReply, error) {
 	timer := deadlock.NewTimer(deadlock.Timeout, fmt.Sprintf("Processing %+v", request))
 	defer timer.Stop()
 
-	ctx, err := f.FindContext(request.GetContextId())
+	ctx, err := e.FindContext(request.GetContextId())
 	if err != nil {
 		return nil, fmt.Errorf("fwd: TableEntryAdd failed, err %v", err)
 	}
@@ -651,11 +645,11 @@ func (f *Engine) TableEntryAdd(_ context.Context, request *fwdpb.TableEntryAddRe
 }
 
 // TableEntryRemove removes an entry from the table.
-func (f *Engine) TableEntryRemove(_ context.Context, request *fwdpb.TableEntryRemoveRequest) (*fwdpb.TableEntryRemoveReply, error) {
+func (e *Engine) TableEntryRemove(_ context.Context, request *fwdpb.TableEntryRemoveRequest) (*fwdpb.TableEntryRemoveReply, error) {
 	timer := deadlock.NewTimer(deadlock.Timeout, fmt.Sprintf("Processing %+v", request))
 	defer timer.Stop()
 
-	ctx, err := f.FindContext(request.GetContextId())
+	ctx, err := e.FindContext(request.GetContextId())
 	if err != nil {
 		return nil, fmt.Errorf("fwd: TableEntryRemove failed, err %v", err)
 	}
@@ -681,12 +675,12 @@ func (f *Engine) TableEntryRemove(_ context.Context, request *fwdpb.TableEntryRe
 	return &fwdpb.TableEntryRemoveReply{}, nil
 }
 
-// TableList lists all the entries in the specifed table.
-func (f *Engine) TableList(_ context.Context, request *fwdpb.TableListRequest) (*fwdpb.TableListReply, error) {
+// TableList lists all the entries in the specified table.
+func (e *Engine) TableList(_ context.Context, request *fwdpb.TableListRequest) (*fwdpb.TableListReply, error) {
 	timer := deadlock.NewTimer(deadlock.Timeout, fmt.Sprintf("Processing %+v", request))
 	defer timer.Stop()
 
-	ctx, err := f.FindContext(request.GetContextId())
+	ctx, err := e.FindContext(request.GetContextId())
 	if err != nil {
 		return nil, fmt.Errorf("fwd: TableEntryList failed, err %v", err)
 	}
@@ -705,11 +699,11 @@ func (f *Engine) TableList(_ context.Context, request *fwdpb.TableListRequest) (
 }
 
 // SetCreate creates a new set.
-func (f *Engine) SetCreate(_ context.Context, request *fwdpb.SetCreateRequest) (*fwdpb.SetCreateReply, error) {
+func (e *Engine) SetCreate(_ context.Context, request *fwdpb.SetCreateRequest) (*fwdpb.SetCreateReply, error) {
 	timer := deadlock.NewTimer(deadlock.Timeout, fmt.Sprintf("Processing %+v", request))
 	defer timer.Stop()
 
-	ctx, err := f.FindContext(request.GetContextId())
+	ctx, err := e.FindContext(request.GetContextId())
 	if err != nil {
 		return nil, fmt.Errorf("fwd: SetCreate failed, err %v", err)
 	}
@@ -721,7 +715,7 @@ func (f *Engine) SetCreate(_ context.Context, request *fwdpb.SetCreateRequest) (
 	if err != nil {
 		return nil, fmt.Errorf("fwd: SetCreate failed, err %v", err)
 	}
-	f.info.AddObject(ctx, c)
+	e.info.AddObject(ctx, c)
 	reply := &fwdpb.SetCreateReply{
 		ObjectIndex: &fwdpb.ObjectIndex{
 			Index: uint64(c.NID()),
@@ -732,11 +726,11 @@ func (f *Engine) SetCreate(_ context.Context, request *fwdpb.SetCreateRequest) (
 }
 
 // SetUpdate updates a set.
-func (f *Engine) SetUpdate(_ context.Context, request *fwdpb.SetUpdateRequest) (*fwdpb.SetUpdateReply, error) {
+func (e *Engine) SetUpdate(_ context.Context, request *fwdpb.SetUpdateRequest) (*fwdpb.SetUpdateReply, error) {
 	timer := deadlock.NewTimer(deadlock.Timeout, fmt.Sprintf("Processing %+v", request))
 	defer timer.Stop()
 
-	ctx, err := f.FindContext(request.GetContextId())
+	ctx, err := e.FindContext(request.GetContextId())
 	if err != nil {
 		return nil, fmt.Errorf("fwd: SetUpdate failed, err %v", err)
 	}
@@ -753,11 +747,11 @@ func (f *Engine) SetUpdate(_ context.Context, request *fwdpb.SetUpdateRequest) (
 }
 
 // FlowCounterCreate creates a flow counter with specified ObjectId in the specified context.
-func (f *Engine) FlowCounterCreate(_ context.Context, request *fwdpb.FlowCounterCreateRequest) (*fwdpb.FlowCounterCreateReply, error) {
+func (e *Engine) FlowCounterCreate(_ context.Context, request *fwdpb.FlowCounterCreateRequest) (*fwdpb.FlowCounterCreateReply, error) {
 	timer := deadlock.NewTimer(deadlock.Timeout, fmt.Sprintf("Processing %+v", request))
 	defer timer.Stop()
 
-	ctx, err := f.FindContext(request.GetContextId())
+	ctx, err := e.FindContext(request.GetContextId())
 	if err != nil {
 		return nil, fmt.Errorf("fwd: FlowCounterCreate failed, err %v", err)
 	}
@@ -774,17 +768,17 @@ func (f *Engine) FlowCounterCreate(_ context.Context, request *fwdpb.FlowCounter
 	if err != nil {
 		return nil, fmt.Errorf("fwd: FlowCounterCreate failed, err %v", err)
 	}
-	f.info.AddObject(ctx, fc)
+	e.info.AddObject(ctx, fc)
 
 	return &fwdpb.FlowCounterCreateReply{}, nil
 }
 
 // FlowCounterQuery queries for the values of specified counters.
-func (f *Engine) FlowCounterQuery(_ context.Context, request *fwdpb.FlowCounterQueryRequest) (*fwdpb.FlowCounterQueryReply, error) {
+func (e *Engine) FlowCounterQuery(_ context.Context, request *fwdpb.FlowCounterQueryRequest) (*fwdpb.FlowCounterQueryReply, error) {
 	timer := deadlock.NewTimer(deadlock.Timeout, fmt.Sprintf("Processing %+v", request))
 	defer timer.Stop()
 
-	ctx, err := f.FindContext(request.GetContextId())
+	ctx, err := e.FindContext(request.GetContextId())
 	if err != nil {
 		return nil, fmt.Errorf("fwd: FlowCounterQuery failed, err %v", err)
 	}
@@ -813,11 +807,11 @@ func (f *Engine) FlowCounterQuery(_ context.Context, request *fwdpb.FlowCounterQ
 }
 
 // PacketInject injects a packet in the specified forwarding context and port.
-func (f *Engine) PacketInject(_ context.Context, request *fwdpb.PacketInjectRequest) (*fwdpb.PacketInjectReply, error) {
+func (e *Engine) PacketInject(_ context.Context, request *fwdpb.PacketInjectRequest) (*fwdpb.PacketInjectReply, error) {
 	timer := deadlock.NewTimer(deadlock.Timeout, fmt.Sprintf("Processing %+v", request))
 	defer timer.Stop()
 
-	ctx, err := f.FindContext(request.GetContextId())
+	ctx, err := e.FindContext(request.GetContextId())
 	if err != nil {
 		return nil, fmt.Errorf("fwd: PacketInject failed, err %v", err)
 	}
@@ -884,15 +878,15 @@ func (f *Engine) PacketInject(_ context.Context, request *fwdpb.PacketInjectRequ
 }
 
 // InfoList retrieves a list of all information elements.
-func (f *Engine) InfoList(context.Context, *fwdpb.InfoListRequest) (*fwdpb.InfoListReply, error) {
+func (e *Engine) InfoList(context.Context, *fwdpb.InfoListRequest) (*fwdpb.InfoListReply, error) {
 	return &fwdpb.InfoListReply{
-		Names: f.info.List(),
+		Names: e.info.List(),
 	}, nil
 }
 
 // InfoElement retrieves the contents of a specific information element.
-func (f *Engine) InfoElement(_ context.Context, request *fwdpb.InfoElementRequest) (*fwdpb.InfoElementReply, error) {
-	content, err := f.info.Element(request.GetName(), request.GetType(), request.GetFrame(), request.GetStartHeader())
+func (e *Engine) InfoElement(_ context.Context, request *fwdpb.InfoElementRequest) (*fwdpb.InfoElementReply, error) {
+	content, err := e.info.Element(request.GetName(), request.GetType(), request.GetFrame(), request.GetStartHeader())
 	if err != nil {
 		return nil, err
 	}
@@ -900,7 +894,7 @@ func (f *Engine) InfoElement(_ context.Context, request *fwdpb.InfoElementReques
 }
 
 // Operation processes incoming OperationRequests and extracts the contained Request.
-func (s *Engine) Operation(stream fwdpb.Service_OperationServer) error {
+func (e *Engine) Operation(stream fwdpb.Service_OperationServer) error {
 	for {
 		operationRequest, err := stream.Recv()
 
@@ -917,13 +911,13 @@ func (s *Engine) Operation(stream fwdpb.Service_OperationServer) error {
 		var operationReply fwdpb.OperationReply
 		switch request := operationRequest.Request.(type) {
 		case *fwdpb.OperationRequest_TableEntryAdd:
-			reply, err := s.TableEntryAdd(stream.Context(), request.TableEntryAdd)
+			reply, err := e.TableEntryAdd(stream.Context(), request.TableEntryAdd)
 			if err != nil {
 				return err
 			}
 			operationReply.Reply = &fwdpb.OperationReply_TableEntryAdd{TableEntryAdd: reply}
 		case *fwdpb.OperationRequest_TableEntryRemove:
-			reply, err := s.TableEntryRemove(stream.Context(), request.TableEntryRemove)
+			reply, err := e.TableEntryRemove(stream.Context(), request.TableEntryRemove)
 			if err != nil {
 				return err
 			}
