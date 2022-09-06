@@ -40,7 +40,6 @@ func main() {
 
 	serverAddr := fmt.Sprintf("%s:%d", *host, *port)
 	conn, err := grpc.Dial(serverAddr, opts...)
-	defer conn.Close()
 	if err != nil {
 		log.Fatalf("fail to dial %s: %v", serverAddr, err)
 	}
