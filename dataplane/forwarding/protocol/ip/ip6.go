@@ -63,7 +63,7 @@ func (ip *IP6) Header() []byte {
 
 // ID returns the protocol header ID.
 func (IP6) ID() fwdpb.PacketHeaderId {
-	return fwdpb.PacketHeaderId_IP6
+	return fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP6
 }
 
 // field returns the bytes as specified by id.
@@ -72,22 +72,22 @@ func (ip *IP6) field(id fwdpacket.FieldID) frame.Field {
 		return protocol.UDF(ip.header, id)
 	}
 	switch id.Num {
-	case fwdpb.PacketFieldNum_IP_ADDR_SRC:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC:
 		return ip.header.Field(ip6SrcPos, ip6SrcBytes)
 
-	case fwdpb.PacketFieldNum_IP_ADDR_DST:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST:
 		return ip.header.Field(ip6DstPos, ip6DstBytes)
 
-	case fwdpb.PacketFieldNum_IP_HOP:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP:
 		return ip.header.Field(hopPos, hopBytes)
 
-	case fwdpb.PacketFieldNum_IP_PROTO:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO:
 		return ip.header.Field(ip6ProtoPos, ip6ProtoBytes)
 
-	case fwdpb.PacketFieldNum_IP_QOS, fwdpb.PacketFieldNum_IP6_FLOW:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_QOS, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP6_FLOW:
 		return ip.header.Field(ip6DescPos, ip6DescBytes)
 
-	case fwdpb.PacketFieldNum_IP_VERSION:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION:
 		return ipVersion(ip.header)
 
 	default:
@@ -106,10 +106,10 @@ func (ip *IP6) Find(id fwdpacket.FieldID) ([]byte, error) {
 		return field.Copy(), nil
 	}
 	switch id.Num {
-	case fwdpb.PacketFieldNum_IP_QOS:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_QOS:
 		return field.BitField(ip6TosPos, ip6TosBits), nil
 
-	case fwdpb.PacketFieldNum_IP6_FLOW:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP6_FLOW:
 		return field.BitField(ip6FlowPos, ip6FlowBits), nil
 
 	default:
@@ -126,7 +126,7 @@ func (ip *IP6) Update(id fwdpacket.FieldID, op int, arg []byte) (bool, error) {
 
 	switch op {
 	case fwdpacket.OpDec:
-		if id.IsUDF || id.Num != fwdpb.PacketFieldNum_IP_HOP {
+		if id.IsUDF || id.Num != fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP {
 			return false, fmt.Errorf("ip6: update failed, unsupported op %v for field %v", op, id)
 		}
 		ttl := field.Value()
@@ -135,11 +135,11 @@ func (ip *IP6) Update(id fwdpacket.FieldID, op int, arg []byte) (bool, error) {
 
 	case fwdpacket.OpSet:
 		switch id.Num {
-		case fwdpb.PacketFieldNum_IP_QOS:
+		case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_QOS:
 			field.SetBits(ip6TosPos, ip6TosBits, uint64(binary.BigEndian.Uint32(arg)))
 			return true, nil
 
-		case fwdpb.PacketFieldNum_IP6_FLOW:
+		case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP6_FLOW:
 			field.SetBits(ip6FlowPos, ip6FlowBits, uint64(binary.BigEndian.Uint32(arg)))
 			return true, nil
 
@@ -189,5 +189,5 @@ func makeIP6(frame *frame.Frame) (header, fwdpb.PacketHeaderId, error) {
 	if next, ok := protoHeader[uint8(header.Field(ip6ProtoPos, ip6ProtoBytes).Value())]; ok {
 		return ip, next, nil
 	}
-	return ip, fwdpb.PacketHeaderId_OPAQUE, nil
+	return ip, fwdpb.PacketHeaderId_PACKET_HEADER_ID_OPAQUE, nil
 }

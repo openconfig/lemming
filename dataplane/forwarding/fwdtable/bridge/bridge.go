@@ -22,11 +22,10 @@ import (
 	"fmt"
 
 	log "github.com/golang/glog"
-	"google.golang.org/protobuf/proto"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdport"
-	"github.com/openconfig/lemming/dataplane/forwarding/fwdtable/exact"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdtable"
+	"github.com/openconfig/lemming/dataplane/forwarding/fwdtable/exact"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdobject"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdpacket"
@@ -121,29 +120,33 @@ func (t *Table) processLearn(v interface{}) {
 		return
 	}
 	ad := fwdpb.ActionDesc{
-		ActionType: fwdpb.ActionType_TRANSMIT_ACTION.Enum(),
+		ActionType: fwdpb.ActionType_ACTION_TYPE_TRANSMIT,
 	}
 	tac := fwdpb.TransmitActionDesc{
-		Immediate: proto.Bool(true),
+		Immediate: true,
 		PortId:    fwdport.GetID(port),
 	}
-	proto.SetExtension(&ad, fwdpb.E_TransmitActionDesc_Extension, &tac)
+	ad.Action = &fwdpb.ActionDesc_Transmit{
+		Transmit: &tac,
+	}
 
 	desc := &fwdpb.EntryDesc{}
 	exact := &fwdpb.ExactEntryDesc{
-		Transient: proto.Bool(true),
+		Transient: true,
 		Fields: []*fwdpb.PacketFieldBytes{
 			{
 				FieldId: &fwdpb.PacketFieldId{
 					Field: &fwdpb.PacketField{
-						FieldNum: fwdpb.PacketFieldNum_ETHER_MAC_DST.Enum(),
+						FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST,
 					},
 				},
 				Bytes: req.mac,
 			},
 		},
 	}
-	proto.SetExtension(desc, fwdpb.E_ExactEntryDesc_Extension, exact)
+	desc.Entry = &fwdpb.EntryDesc_Exact{
+		Exact: exact,
+	}
 
 	// It is not an error if an entry cannot be added. This may happen if
 	// we try to learn a mac address that has a static entry.
@@ -167,7 +170,7 @@ func (t *Table) Learn(packet fwdpacket.Packet) error {
 	var err error
 	var lr learnRequest
 
-	macField := fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ETHER_MAC_SRC, 0)
+	macField := fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC, 0)
 	if lr.mac, err = packet.Field(macField); err != nil {
 		return fmt.Errorf("bridge: Unable to find source mac, %v", err)
 	}
@@ -175,7 +178,7 @@ func (t *Table) Learn(packet fwdpacket.Packet) error {
 		return nil
 	}
 
-	portField := fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_PORT_INPUT, 0)
+	portField := fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT, 0)
 	if lr.portNID, err = packet.Field(portField); err != nil {
 		return fmt.Errorf("bridge: Unable to find input port, %v", err)
 	}
@@ -187,7 +190,7 @@ type builder struct{}
 
 // init registers a builder for bridge tables.
 func init() {
-	fwdtable.Register(fwdpb.TableType_BRIDGE_TABLE, builder{})
+	fwdtable.Register(fwdpb.TableType_TABLE_TYPE_BRIDGE, builder{})
 }
 
 // Build creates a new bridge table that consists of an exact match table that
@@ -196,27 +199,29 @@ func init() {
 // can safely acquire a write lock on the table's context before learning the
 // entry.
 func (builder) Build(ctx *fwdcontext.Context, td *fwdpb.TableDesc) (fwdtable.Table, error) {
-	if !proto.HasExtension(td, fwdpb.E_BridgeTableDesc_Extension) {
-		return nil, fmt.Errorf("bridge: Build for bridge table failed, missing extension %s", fwdpb.E_BridgeTableDesc_Extension.Name)
+	br, ok := td.Table.(*fwdpb.TableDesc_Bridge)
+	if !ok {
+		return nil, fmt.Errorf("bridge: Build for bridge table failed, missing extension")
 	}
-	md := proto.GetExtension(td, fwdpb.E_BridgeTableDesc_Extension).(*fwdpb.BridgeTableDesc)
 
 	desc := &fwdpb.TableDesc{
-		TableType: fwdpb.TableType_EXACT_TABLE.Enum(),
+		TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
 		Actions:   td.GetActions(),
 	}
 
 	ed := &fwdpb.ExactTableDesc{
-		TransientTimeout: proto.Uint32(md.GetTransientTimeout()),
+		TransientTimeout: br.Bridge.GetTransientTimeout(),
 		FieldIds: []*fwdpb.PacketFieldId{
 			{
 				Field: &fwdpb.PacketField{
-					FieldNum: fwdpb.PacketFieldNum_ETHER_MAC_DST.Enum(),
+					FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST,
 				},
 			},
 		},
 	}
-	proto.SetExtension(desc, fwdpb.E_ExactTableDesc_Extension, ed)
+	desc.Table = &fwdpb.TableDesc_Exact{
+		Exact: ed,
+	}
 	table, err := exact.New(ctx, desc)
 	if err != nil {
 		return nil, fmt.Errorf("bridge: Build for bridge table failed: %v", err)

@@ -40,31 +40,31 @@ var tcpSegment = []byte{0x01, 0x02, 0x03, 0x04, 0x00, 0x00, 0x00, 0x01, 0x00, 0x
 func TestTCP(t *testing.T) {
 	queries := []packettestutil.FieldQuery{
 		{
-			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_L4_PORT_SRC, 0),
+			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_SRC, 0),
 			Result: []byte{0x01, 0x02},
 		},
 		{
-			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_L4_PORT_DST, 0),
+			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST, 0),
 			Result: []byte{0x03, 0x04},
 		},
 		{
-			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_TCP_FLAGS, 0),
+			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TCP_FLAGS, 0),
 			Result: []byte{0x01, 0x34},
 		},
 	}
 	updates := []packettestutil.FieldUpdate{
 		{
-			ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_L4_PORT_SRC, 0),
+			ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_SRC, 0),
 			Arg: []byte{0x11, 0x12},
 			Op:  fwdpacket.OpSet,
 		},
 		{
-			ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_L4_PORT_DST, 0),
+			ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST, 0),
 			Arg: []byte{0x13, 0x14},
 			Op:  fwdpacket.OpSet,
 		},
 		{
-			ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_TCP_FLAGS, 0),
+			ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TCP_FLAGS, 0),
 			Arg: []byte{0x01, 0x21},
 			Op:  fwdpacket.OpSet,
 		},
@@ -72,7 +72,7 @@ func TestTCP(t *testing.T) {
 	tests := []packettestutil.PacketFieldTest{
 		// TCP over IP4.
 		{
-			StartHeader: fwdpb.PacketHeaderId_ETHERNET,
+			StartHeader: fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET,
 			Orig: [][]byte{
 				ethernetIP4,
 				ip4tcp,
@@ -88,7 +88,7 @@ func TestTCP(t *testing.T) {
 		},
 		// TCP over IP6.
 		{
-			StartHeader: fwdpb.PacketHeaderId_ETHERNET,
+			StartHeader: fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET,
 			Orig: [][]byte{
 				ethernetIP6,
 				ip6tcp,

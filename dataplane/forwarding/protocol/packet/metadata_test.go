@@ -30,106 +30,106 @@ var data = []byte{0x01, 0x02, 0x03, 0x04}
 func TestMetadata(t *testing.T) {
 	tests := []packettestutil.PacketFieldTest{
 		{
-			StartHeader: fwdpb.PacketHeaderId_OPAQUE,
+			StartHeader: fwdpb.PacketHeaderId_PACKET_HEADER_ID_OPAQUE,
 			Orig: [][]byte{
 				data,
 			},
 			Queries: []packettestutil.FieldQuery{
 				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP_VERSION, 0),
+					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION, 0),
 					Err: "failed",
 				},
 				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_VRF, 0),
+					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF, 0),
 					Result: []byte{0x00, 0x00},
 				},
 				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_LENGTH, 0),
+					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_LENGTH, 0),
 					Result: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04},
 				},
 				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_ATTRIBUTE_32, 3),
+					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_32, 3),
 					Result: []byte{0x00, 0x00, 0x00, 0x00},
 				},
 				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_ATTRIBUTE_32, 2),
+					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_32, 2),
 					Result: []byte{0x00, 0x00, 0x00, 0x00},
 				},
 				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_ATTRIBUTE_32, 0),
+					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_32, 0),
 					Result: []byte{0x00, 0x00, 0x00, 0x00},
 				},
 				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_ATTRIBUTE_24, 0),
+					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_24, 0),
 					Result: []byte{0x00, 0x00, 0x00},
 				},
 				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_ATTRIBUTE_16, 0),
+					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_16, 0),
 					Result: []byte{0x00, 0x00},
 				},
 				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_ATTRIBUTE_8, 0),
+					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_8, 0),
 					Result: []byte{0x00},
 				},
 			},
 			Updates: []packettestutil.FieldUpdate{
 				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_VRF, 0),
+					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF, 0),
 					Arg: []byte{0xab, 0xcd},
 					Op:  fwdpacket.OpSet,
 				},
 				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_ATTRIBUTE_32, 3),
+					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_32, 3),
 					Arg: []byte{0xab, 0xcd, 0x00, 0x00},
 					Op:  fwdpacket.OpSet,
 				},
 				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_ATTRIBUTE_32, 0),
+					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_32, 0),
 					Arg: []byte{0xab, 0xcd, 0x12, 0x34},
 					Op:  fwdpacket.OpSet,
 				},
 				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_ATTRIBUTE_32, 0),
+					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_32, 0),
 					Arg: []byte{0x01},
 					Op:  fwdpacket.OpDec,
 				},
 				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_ATTRIBUTE_32, 0),
+					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_32, 0),
 					Arg: []byte{0x01},
 					Op:  fwdpacket.OpInc,
 				},
 				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_ATTRIBUTE_24, 0),
+					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_24, 0),
 					Arg: []byte{0xab, 0xcd, 0x12},
 					Op:  fwdpacket.OpSet,
 				},
 				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_ATTRIBUTE_16, 0),
+					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_16, 0),
 					Arg: []byte{0xab, 0xcd},
 					Op:  fwdpacket.OpSet,
 				},
 				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_ATTRIBUTE_16, 0),
+					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_16, 0),
 					Arg: []byte{0x01},
 					Op:  fwdpacket.OpDec,
 				},
 				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_ATTRIBUTE_16, 0),
+					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_16, 0),
 					Arg: []byte{0x01},
 					Op:  fwdpacket.OpInc,
 				},
 				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_ATTRIBUTE_8, 0),
+					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_8, 0),
 					Arg: []byte{0xab},
 					Op:  fwdpacket.OpSet,
 				},
 				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_ATTRIBUTE_8, 0),
+					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_8, 0),
 					Arg: []byte{0x01},
 					Op:  fwdpacket.OpDec,
 				},
 				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_ATTRIBUTE_8, 0),
+					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_8, 0),
 					Arg: []byte{0x01},
 					Op:  fwdpacket.OpInc,
 				},

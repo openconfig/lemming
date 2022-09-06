@@ -97,13 +97,13 @@ func newTestBuilder(id int, portType fwdpb.PortType) *testBuilder {
 
 // TestPort tests various port operations.
 func TestPort(t *testing.T) {
-	portType := fwdpb.PortType_CPU_PORT
+	portType := fwdpb.PortType_PORT_TYPE_CPU_PORT
 	unregister(portType)
 
 	ctx := fwdcontext.New("test", "fwd")
 
 	pd := &fwdpb.PortDesc{
-		PortType: &portType,
+		PortType: portType,
 		PortId:   MakeID(fwdobject.NewID("TestPort")),
 	}
 

@@ -19,7 +19,6 @@ import (
 	"sync"
 	"time"
 
-	"google.golang.org/protobuf/proto"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdattribute"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
@@ -63,7 +62,7 @@ type ratelimit struct {
 
 // String formats the state of the action as a string.
 func (r *ratelimit) String() string {
-	return fmt.Sprintf("Type=%v;Rate=%v;Burst=%v;Tokens=%v;Last=%v;Update.Tokens=%v;Update.Interval=%v;Running=%v", fwdpb.ActionType_RATE_ACTION, r.rate, r.burst, r.tokens, r.last, r.update.tokens, r.update.interval, r.running)
+	return fmt.Sprintf("Type=%v;Rate=%v;Burst=%v;Tokens=%v;Last=%v;Update.Tokens=%v;Update.Interval=%v;Running=%v", fwdpb.ActionType_ACTION_TYPE_RATE, r.rate, r.burst, r.tokens, r.last, r.update.tokens, r.update.interval, r.running)
 }
 
 // Allowed evaluates the token bucket and returns true if a packet of the
@@ -111,8 +110,8 @@ func (r *ratelimit) Allowed(length uint64) bool {
 func (r *ratelimit) Process(packet fwdpacket.Packet, counters fwdobject.Counters) (fwdaction.Actions, fwdaction.State) {
 	length := uint64(packet.Length())
 	if !r.Allowed(length) {
-		counters.Increment(fwdpb.CounterId_RATELIMIT_PACKETS, 1)
-		counters.Increment(fwdpb.CounterId_RATELIMIT_OCTETS, uint32(length))
+		counters.Increment(fwdpb.CounterId_COUNTER_ID_RATELIMIT_PACKETS, 1)
+		counters.Increment(fwdpb.CounterId_COUNTER_ID_RATELIMIT_OCTETS, uint32(length))
 
 		a := packet.Attributes()
 		if a != nil {
@@ -130,23 +129,23 @@ type ratelimitBuilder struct{}
 
 // init registers a builder for the ratelimit action type.
 func init() {
-	fwdaction.Register(fwdpb.ActionType_RATE_ACTION, ratelimitBuilder{})
+	fwdaction.Register(fwdpb.ActionType_ACTION_TYPE_RATE, ratelimitBuilder{})
 }
 
 // Build creates a new ratelimit action.
 func (ratelimitBuilder) Build(desc *fwdpb.ActionDesc, ctx *fwdcontext.Context) (fwdaction.Action, error) {
-	if !proto.HasExtension(desc, fwdpb.E_RateActionDesc_Extension) {
-		return nil, fmt.Errorf("actions: Build for ratelimit action failed, missing extension %s", fwdpb.E_RateActionDesc_Extension.Name)
+	r, ok := desc.Action.(*fwdpb.ActionDesc_Rate)
+	if !ok {
+		return nil, fmt.Errorf("actions: Build for ratelimit action failed, missing desc")
 	}
-	rateExt := proto.GetExtension(desc, fwdpb.E_RateActionDesc_Extension).(*fwdpb.RateActionDesc)
-	r := &ratelimit{
+
+	return &ratelimit{
 		last:  time.Now(),
-		burst: uint64(rateExt.GetBurstBytes()),
-		rate:  uint64(rateExt.GetRateBps()),
+		burst: uint64(r.Rate.GetBurstBytes()),
+		rate:  uint64(r.Rate.GetRateBps()),
 		clock: func() time.Time {
 			return time.Now()
 		},
 		running: false,
-	}
-	return r, nil
+	}, nil
 }

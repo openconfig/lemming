@@ -18,7 +18,6 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"google.golang.org/protobuf/proto"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction/mock_fwdpacket"
@@ -39,9 +38,8 @@ func TestDrop(t *testing.T) {
 
 	// Create a drop action using its builder.
 	desc := fwdpb.ActionDesc{
-		ActionType: fwdpb.ActionType_DROP_ACTION.Enum(),
+		ActionType: fwdpb.ActionType_ACTION_TYPE_DROP,
 	}
-	proto.SetExtension(&desc, fwdpb.E_DropActionDesc_Extension, &fwdpb.DropActionDesc{})
 	action, err := fwdaction.New(&desc, nil)
 	if err != nil {
 		t.Errorf("NewAction failed for desc %v, err %v.", desc, err)
@@ -50,7 +48,7 @@ func TestDrop(t *testing.T) {
 	// Verify the action by processing a packet and verifying the counters
 	// and results.
 	var counters fwdobject.Base
-	if err := counters.InitCounters("prefix", "desc", fwdpb.CounterId_DROP_PACKETS, fwdpb.CounterId_DROP_OCTETS); err != nil {
+	if err := counters.InitCounters("prefix", "desc", fwdpb.CounterId_COUNTER_ID_DROP_PACKETS, fwdpb.CounterId_COUNTER_ID_DROP_OCTETS); err != nil {
 		t.Fatalf("InitCounter failed, %v", err)
 	}
 
@@ -67,11 +65,11 @@ func TestDrop(t *testing.T) {
 	}
 	for _, counter := range counters.Counters() {
 		switch counter.ID {
-		case fwdpb.CounterId_DROP_PACKETS:
+		case fwdpb.CounterId_COUNTER_ID_DROP_PACKETS:
 			if counter.Value != 1 {
 				t.Errorf("Invalid counter %v. Got %v, want 1.", counter, counter.Value)
 			}
-		case fwdpb.CounterId_DROP_OCTETS:
+		case fwdpb.CounterId_COUNTER_ID_DROP_OCTETS:
 			if counter.Value != length {
 				t.Errorf("Invalid counter %v. Got %v, want %v.", counter, counter.Value, length)
 			}

@@ -17,8 +17,6 @@ package actions
 import (
 	"fmt"
 
-	"google.golang.org/protobuf/proto"
-
 	log "github.com/golang/glog"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
@@ -37,14 +35,14 @@ type reparse struct {
 
 // String formats the state of the action as a string.
 func (r *reparse) String() string {
-	return fmt.Sprintf("Type=%v;HeaderId=%v;Fields=%+v;Prepend=%x", fwdpb.ActionType_REPARSE_ACTION, r.id, r.fields, r.prepend)
+	return fmt.Sprintf("Type=%v;HeaderId=%v;Fields=%+v;Prepend=%x", fwdpb.ActionType_ACTION_TYPE_REPARSE, r.id, r.fields, r.prepend)
 }
 
 // Process reparses the packet.
 func (r *reparse) Process(packet fwdpacket.Packet, counters fwdobject.Counters) (fwdaction.Actions, fwdaction.State) {
 	if err := packet.Reparse(r.id, r.fields, r.prepend); err != nil {
-		counters.Increment(fwdpb.CounterId_ERROR_PACKETS, 1)
-		counters.Increment(fwdpb.CounterId_ERROR_OCTETS, uint32(packet.Length()))
+		counters.Increment(fwdpb.CounterId_COUNTER_ID_ERROR_PACKETS, 1)
+		counters.Increment(fwdpb.CounterId_COUNTER_ID_ERROR_OCTETS, uint32(packet.Length()))
 		log.Errorf("actions: Failed to reparse packet, err %v", err)
 		return nil, fwdaction.DROP
 	}
@@ -56,18 +54,18 @@ type reparseBuilder struct{}
 
 func init() {
 	// Register a builder for the reparse action type.
-	fwdaction.Register(fwdpb.ActionType_REPARSE_ACTION, &reparseBuilder{})
+	fwdaction.Register(fwdpb.ActionType_ACTION_TYPE_REPARSE, &reparseBuilder{})
 }
 
 // Build creates a new reparse action.
 func (*reparseBuilder) Build(desc *fwdpb.ActionDesc, ctx *fwdcontext.Context) (fwdaction.Action, error) {
-	if !proto.HasExtension(desc, fwdpb.E_ReparseActionDesc_Extension) {
-		return nil, fmt.Errorf("actions: Build for reparse action failed, missing extension %s", fwdpb.E_ReparseActionDesc_Extension.Name)
+	r, ok := desc.Action.(*fwdpb.ActionDesc_Reparse)
+	if !ok {
+		return nil, fmt.Errorf("actions: Build for reparse action failed, missing desc")
 	}
-	rExt := proto.GetExtension(desc, fwdpb.E_ReparseActionDesc_Extension).(*fwdpb.ReparseActionDesc)
 	var fields []fwdpacket.FieldID
-	for _, f := range rExt.GetFieldIds() {
+	for _, f := range r.Reparse.GetFieldIds() {
 		fields = append(fields, fwdpacket.NewFieldID(f))
 	}
-	return &reparse{id: rExt.GetHeaderId(), fields: fields, prepend: rExt.GetPrepend()}, nil
+	return &reparse{id: r.Reparse.GetHeaderId(), fields: fields, prepend: r.Reparse.GetPrepend()}, nil
 }

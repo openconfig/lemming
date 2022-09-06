@@ -17,8 +17,6 @@ package actions
 import (
 	"fmt"
 
-	"google.golang.org/protobuf/proto"
-
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdobject"
@@ -33,14 +31,14 @@ type encap struct {
 
 // String formats the state of the action as a string.
 func (e *encap) String() string {
-	return fmt.Sprintf("Type=%v;HeaderId=%v;", fwdpb.ActionType_ENCAP_ACTION, e.id)
+	return fmt.Sprintf("Type=%v;HeaderId=%v;", fwdpb.ActionType_ACTION_TYPE_ENCAP, e.id)
 }
 
 // Process adds a header to the packet.
 func (e *encap) Process(packet fwdpacket.Packet, counters fwdobject.Counters) (fwdaction.Actions, fwdaction.State) {
 	if err := packet.Encap(e.id); err != nil {
-		counters.Increment(fwdpb.CounterId_ENCAP_ERROR_PACKETS, 1)
-		counters.Increment(fwdpb.CounterId_ENCAP_ERROR_OCTETS, uint32(packet.Length()))
+		counters.Increment(fwdpb.CounterId_COUNTER_ID_ENCAP_ERROR_PACKETS, 1)
+		counters.Increment(fwdpb.CounterId_COUNTER_ID_ENCAP_ERROR_OCTETS, uint32(packet.Length()))
 		return nil, fwdaction.DROP
 	}
 	return nil, fwdaction.CONTINUE
@@ -51,14 +49,14 @@ type encapBuilder struct{}
 
 func init() {
 	// Register a builder for the encap action type.
-	fwdaction.Register(fwdpb.ActionType_ENCAP_ACTION, &encapBuilder{})
+	fwdaction.Register(fwdpb.ActionType_ACTION_TYPE_ENCAP, &encapBuilder{})
 }
 
 // Build creates a new encap action.
 func (*encapBuilder) Build(desc *fwdpb.ActionDesc, ctx *fwdcontext.Context) (fwdaction.Action, error) {
-	if !proto.HasExtension(desc, fwdpb.E_EncapActionDesc_Extension) {
-		return nil, fmt.Errorf("actions: Build for encap action failed, missing extension %s", fwdpb.E_EncapActionDesc_Extension.Name)
+	e, ok := desc.Action.(*fwdpb.ActionDesc_Encap)
+	if !ok {
+		return nil, fmt.Errorf("actions: Build for encap action failed, missing desc")
 	}
-	encapExt := proto.GetExtension(desc, fwdpb.E_EncapActionDesc_Extension).(*fwdpb.EncapActionDesc)
-	return &encap{id: encapExt.GetHeaderId()}, nil
+	return &encap{id: e.Encap.GetHeaderId()}, nil
 }

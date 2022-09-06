@@ -40,22 +40,22 @@ var udp = []byte{0x01, 0x02, 0x03, 0x04, 0x00, 0x00, 0x00, 0x00, 0x0a, 0x0b, 0x0
 func TestUDP(t *testing.T) {
 	queries := []packettestutil.FieldQuery{
 		{
-			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_L4_PORT_SRC, 0),
+			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_SRC, 0),
 			Result: []byte{0x01, 0x02},
 		},
 		{
-			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_L4_PORT_DST, 0),
+			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST, 0),
 			Result: []byte{0x03, 0x04},
 		},
 	}
 	updates := []packettestutil.FieldUpdate{
 		{
-			ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_L4_PORT_SRC, 0),
+			ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_SRC, 0),
 			Arg: []byte{0x11, 0x12},
 			Op:  fwdpacket.OpSet,
 		},
 		{
-			ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_L4_PORT_DST, 0),
+			ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST, 0),
 			Arg: []byte{0x13, 0x14},
 			Op:  fwdpacket.OpSet,
 		},
@@ -63,7 +63,7 @@ func TestUDP(t *testing.T) {
 	tests := []packettestutil.PacketFieldTest{
 		// UDP over IP4.
 		{
-			StartHeader: fwdpb.PacketHeaderId_ETHERNET,
+			StartHeader: fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET,
 			Orig: [][]byte{
 				ethernetIP4,
 				ip4udp,
@@ -79,7 +79,7 @@ func TestUDP(t *testing.T) {
 		},
 		// UDP over IP6.
 		{
-			StartHeader: fwdpb.PacketHeaderId_ETHERNET,
+			StartHeader: fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET,
 			Orig: [][]byte{
 				ethernetIP6,
 				ip6udp,

@@ -20,7 +20,6 @@ package prefix
 import (
 	"fmt"
 
-	"google.golang.org/protobuf/proto"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdtable"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdtable/tableutil"
@@ -284,11 +283,11 @@ func (t *Table) Cleanup() {
 
 // AddEntry adds or updates the actions associated with the specified key.
 func (t *Table) AddEntry(ed *fwdpb.EntryDesc, ad []*fwdpb.ActionDesc) error {
-	if !proto.HasExtension(ed, fwdpb.E_PrefixEntryDesc_Extension) {
-		return fmt.Errorf("prefix: AddEntry failed, missing extension %s", fwdpb.E_PrefixEntryDesc_Extension.Name)
+	prefix, ok := ed.Entry.(*fwdpb.EntryDesc_Prefix)
+	if !ok {
+		return fmt.Errorf("prefix: AddEntry failed, missing desc")
 	}
-	desc := proto.GetExtension(ed, fwdpb.E_PrefixEntryDesc_Extension).(*fwdpb.PrefixEntryDesc)
-	key, err := newPrefixKey(t.desc, desc.GetFields())
+	key, err := newPrefixKey(t.desc, prefix.Prefix.GetFields())
 	if err != nil {
 		return fmt.Errorf("prefix: AddEntry failed, err %v", err)
 	}
@@ -302,11 +301,11 @@ func (t *Table) AddEntry(ed *fwdpb.EntryDesc, ad []*fwdpb.ActionDesc) error {
 
 // RemoveEntry removes an entry.
 func (t *Table) RemoveEntry(ed *fwdpb.EntryDesc) error {
-	if !proto.HasExtension(ed, fwdpb.E_PrefixEntryDesc_Extension) {
-		return fmt.Errorf("prefix: RemoveEntry failed, missing extension %s", fwdpb.E_PrefixEntryDesc_Extension.Name)
+	prefix, ok := ed.Entry.(*fwdpb.EntryDesc_Prefix)
+	if !ok {
+		return fmt.Errorf("prefix: RemoveEntry failed, missing desc")
 	}
-	desc := proto.GetExtension(ed, fwdpb.E_PrefixEntryDesc_Extension).(*fwdpb.PrefixEntryDesc)
-	key, err := newPrefixKey(t.desc, desc.GetFields())
+	key, err := newPrefixKey(t.desc, prefix.Prefix.GetFields())
 	if err != nil {
 		return fmt.Errorf("prefix: RemoveEntry failed, err %v", err)
 	}
@@ -336,17 +335,17 @@ type builder struct{}
 
 // init registers a builder for prefix tables
 func init() {
-	fwdtable.Register(fwdpb.TableType_PREFIX_TABLE, &builder{})
+	fwdtable.Register(fwdpb.TableType_TABLE_TYPE_PREFIX, &builder{})
 }
 
 // Build creates a new prefix table.
 func (builder) Build(ctx *fwdcontext.Context, td *fwdpb.TableDesc) (fwdtable.Table, error) {
-	if !proto.HasExtension(td, fwdpb.E_PrefixTableDesc_Extension) {
-		return nil, fmt.Errorf("prefix: Build for table failed, missing extension %s", fwdpb.E_PrefixTableDesc_Extension.Name)
+	prefix, ok := td.Table.(*fwdpb.TableDesc_Prefix)
+	if !ok {
+		return nil, fmt.Errorf("prefix: Build for table failed, missing desc")
 	}
-	ed := proto.GetExtension(td, fwdpb.E_PrefixTableDesc_Extension).(*fwdpb.PrefixTableDesc)
 	table := &Table{
-		desc: tableutil.MakeKeyDesc(ed.GetFieldIds()),
+		desc: tableutil.MakeKeyDesc(prefix.Prefix.GetFieldIds()),
 		ctx:  ctx,
 		root: newLevel(newKey([]byte{}, 0), nil),
 	}

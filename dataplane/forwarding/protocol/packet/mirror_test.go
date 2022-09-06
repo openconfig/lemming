@@ -59,25 +59,25 @@ func TestMirror(t *testing.T) {
 	}
 
 	fields := []fwdpacket.FieldID{
-		fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_PORT_INPUT, 0),
-		fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_PORT_OUTPUT, 0),
+		fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT, 0),
+		fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT, 0),
 	}
 	for idx, test := range tests {
 		t.Logf("%v: Running test %+v", idx, test)
 
 		// Create the packet and set its input and output port as specified.
-		original, err := protocol.NewPacket(fwdpb.PacketHeaderId_OPAQUE,
+		original, err := protocol.NewPacket(fwdpb.PacketHeaderId_PACKET_HEADER_ID_OPAQUE,
 			frame.NewFrame(bytes))
 		if err != nil {
 			t.Fatalf("Unable to create original packet from %x, err %v", bytes, err)
 		}
 		if test.inputPort != fwdobject.InvalidNID {
-			if err := fwdpacket.SetNID(original, test.inputPort, fwdpb.PacketFieldNum_PACKET_PORT_INPUT); err != nil {
+			if err := fwdpacket.SetNID(original, test.inputPort, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT); err != nil {
 				t.Fatalf("Unable to set input port on original, err %v", err)
 			}
 		}
 		if test.outputPort != fwdobject.InvalidNID {
-			if err := fwdpacket.SetNID(original, test.outputPort, fwdpb.PacketFieldNum_PACKET_PORT_OUTPUT); err != nil {
+			if err := fwdpacket.SetNID(original, test.outputPort, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT); err != nil {
 				t.Fatalf("Unable to set output port on original, err %v", err)
 			}
 		}
@@ -91,7 +91,7 @@ func TestMirror(t *testing.T) {
 		// Query the mirror and ensure that the input and outputs ports are
 		// copied from the original packet.
 		if test.inputPort != fwdobject.InvalidNID {
-			nb, err := mirror.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_PORT_INPUT, 0))
+			nb, err := mirror.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT, 0))
 			if err != nil {
 				t.Fatalf("Unable to query input port for mirror, err %v", err)
 			}
@@ -101,7 +101,7 @@ func TestMirror(t *testing.T) {
 		}
 
 		if test.outputPort != fwdobject.InvalidNID {
-			nb, err := mirror.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_PORT_OUTPUT, 0))
+			nb, err := mirror.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT, 0))
 			if err != nil {
 				t.Fatalf("Unable to query output port for mirror, err %v", err)
 			}
@@ -112,17 +112,17 @@ func TestMirror(t *testing.T) {
 
 		// Change the mirror and ensure that the original is not changed.
 		sampleNID := fwdobject.NID(40)
-		if err := fwdpacket.SetNID(mirror, sampleNID, fwdpb.PacketFieldNum_PACKET_PORT_OUTPUT); err != nil {
+		if err := fwdpacket.SetNID(mirror, sampleNID, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT); err != nil {
 			t.Fatalf("Unable to update output port on mirror, err %v", err)
 		}
-		nb, err := mirror.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_PORT_OUTPUT, 0))
+		nb, err := mirror.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT, 0))
 		if err != nil {
 			t.Fatalf("Unable to query updated output port from mirror, err %v", err)
 		}
 		if nid := fwdobject.NID(frame.Field(nb).Value()); nid != sampleNID {
 			t.Fatalf("Unexpected output port from mirror, got %v, want %v", nid, sampleNID)
 		}
-		if nb, err = original.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_PORT_OUTPUT, 0)); err != nil {
+		if nb, err = original.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT, 0)); err != nil {
 			t.Fatalf("Unable to query output port from original, err %v", err)
 		}
 		if nid := fwdobject.NID(frame.Field(nb).Value()); nid == sampleNID {

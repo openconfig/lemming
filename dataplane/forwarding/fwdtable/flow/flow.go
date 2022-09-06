@@ -19,7 +19,6 @@ package flow
 import (
 	"fmt"
 
-	"google.golang.org/protobuf/proto"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdtable"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
@@ -183,16 +182,16 @@ func (t *Table) String() string {
 // AddEntry adds or updates the actions associated with the specified flow
 // entry.
 func (t *Table) AddEntry(ed *fwdpb.EntryDesc, ad []*fwdpb.ActionDesc) error {
-	if !proto.HasExtension(ed, fwdpb.E_FlowEntryDesc_Extension) {
-		return fmt.Errorf("flow: AddEntry failed, missing extension %s", fwdpb.E_FlowEntryDesc_Extension.Name)
+	fl, ok := ed.Entry.(*fwdpb.EntryDesc_Flow)
+	if !ok {
+		return fmt.Errorf("flow: AddEntry failed, missing desc")
 	}
-	fd := proto.GetExtension(ed, fwdpb.E_FlowEntryDesc_Extension).(*fwdpb.FlowEntryDesc)
-	bankID := fd.GetBank()
+	bankID := fl.Flow.GetBank()
 	if int(bankID) >= len(t.banks) {
 		return fmt.Errorf("flow: AddEntry failed, invalid bankID %v", bankID)
 	}
 	bank := t.banks[bankID]
-	desc, err := NewFlowDesc(t.ctx, fd.GetFields(), fd.GetQualifiers())
+	desc, err := NewFlowDesc(t.ctx, fl.Flow.GetFields(), fl.Flow.GetQualifiers())
 	if err != nil {
 		return err
 	}
@@ -213,7 +212,7 @@ func (t *Table) AddEntry(ed *fwdpb.EntryDesc, ad []*fwdpb.ActionDesc) error {
 	t.qualifierDesc.Update(qualifiers)
 
 	// Add the flow to the flow map.
-	priority := fd.GetPriority()
+	priority := fl.Flow.GetPriority()
 	actions, err := fwdaction.NewActions(ad, t.ctx)
 	if err != nil {
 		return fmt.Errorf("flow: AddEntry failed, err %v", err)
@@ -230,21 +229,21 @@ func (t *Table) AddEntry(ed *fwdpb.EntryDesc, ad []*fwdpb.ActionDesc) error {
 
 // RemoveEntry removes the specified flow entry.
 func (t *Table) RemoveEntry(ed *fwdpb.EntryDesc) error {
-	if !proto.HasExtension(ed, fwdpb.E_FlowEntryDesc_Extension) {
-		return fmt.Errorf("flow: RemoveEntry failed, missing extension %s", fwdpb.E_FlowEntryDesc_Extension.Name)
+	fl, ok := ed.Entry.(*fwdpb.EntryDesc_Flow)
+	if !ok {
+		return fmt.Errorf("flow: RemoveEntry failed, missing extension")
 	}
-	fd := proto.GetExtension(ed, fwdpb.E_FlowEntryDesc_Extension).(*fwdpb.FlowEntryDesc)
-	bankID := int(fd.GetBank())
+	bankID := int(fl.Flow.GetBank())
 	if bankID >= len(t.banks) {
-		return fmt.Errorf("flow: RemoveEntry failed, invalid bankID %v", fd.GetBank())
+		return fmt.Errorf("flow: RemoveEntry failed, invalid bankID %v", fl.Flow.GetBank())
 	}
-	bank := t.banks[fd.GetBank()]
-	priority := fd.GetPriority()
+	bank := t.banks[fl.Flow.GetBank()]
+	priority := fl.Flow.GetPriority()
 	level, ok := bank.levels[priority]
 	if !ok {
 		return fmt.Errorf("flow: RemoveEntry failed, invalid priority %v", priority)
 	}
-	desc, err := NewFlowDesc(t.ctx, fd.GetFields(), fd.GetQualifiers())
+	desc, err := NewFlowDesc(t.ctx, fl.Flow.GetFields(), fl.Flow.GetQualifiers())
 	if err != nil {
 		return err
 	}
@@ -304,18 +303,18 @@ type flowBuilder struct{}
 
 // init registers a builder for flow-match flow
 func init() {
-	fwdtable.Register(fwdpb.TableType_FLOW_TABLE, &flowBuilder{})
+	fwdtable.Register(fwdpb.TableType_TABLE_TYPE_FLOW, &flowBuilder{})
 }
 
 // Build creates a new flow-match table.
 func (flowBuilder) Build(ctx *fwdcontext.Context, td *fwdpb.TableDesc) (fwdtable.Table, error) {
-	if !proto.HasExtension(td, fwdpb.E_FlowTableDesc_Extension) {
-		return nil, fmt.Errorf("flow: Build for flow table failed, missing extension %s", fwdpb.E_FlowTableDesc_Extension.Name)
+	fl, ok := td.Table.(*fwdpb.TableDesc_Flow)
+	if !ok {
+		return nil, fmt.Errorf("flow: Build for flow table failed, missing desc")
 	}
-	fd := proto.GetExtension(td, fwdpb.E_FlowTableDesc_Extension).(*fwdpb.FlowTableDesc)
 
-	banks := make([]*flowBank, fd.GetBankCount())
-	for bid := int(fd.GetBankCount()) - 1; bid >= 0; bid-- {
+	banks := make([]*flowBank, fl.Flow.GetBankCount())
+	for bid := int(fl.Flow.GetBankCount()) - 1; bid >= 0; bid-- {
 		banks[bid] = &flowBank{
 			levels: make(map[uint32]*level),
 		}

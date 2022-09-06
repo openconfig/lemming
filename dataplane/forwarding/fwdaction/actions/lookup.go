@@ -18,7 +18,6 @@ import (
 	"fmt"
 
 	log "github.com/golang/glog"
-	"google.golang.org/protobuf/proto"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdtable"
@@ -36,9 +35,9 @@ type lookup struct {
 // String formats the state of the action as a string.
 func (l *lookup) String() string {
 	if l.table == nil {
-		return fmt.Sprintf("Type=%v;<Table=nil>", fwdpb.ActionType_LOOKUP_ACTION)
+		return fmt.Sprintf("Type=%v;<Table=nil>", fwdpb.ActionType_ACTION_TYPE_LOOKUP)
 	}
-	return fmt.Sprintf("Type=%v;<Table=%v>", fwdpb.ActionType_LOOKUP_ACTION, l.table.ID())
+	return fmt.Sprintf("Type=%v;<Table=%v>", fwdpb.ActionType_ACTION_TYPE_LOOKUP, l.table.ID())
 }
 
 // Cleanup releases the table.
@@ -54,8 +53,8 @@ func (l *lookup) Cleanup() {
 // If the lookup is not associated with a table, the packet is dropped.
 func (l *lookup) Process(packet fwdpacket.Packet, counters fwdobject.Counters) (fwdaction.Actions, fwdaction.State) {
 	if l.table == nil {
-		counters.Increment(fwdpb.CounterId_ERROR_PACKETS, 1)
-		counters.Increment(fwdpb.CounterId_ERROR_OCTETS, uint32(packet.Length()))
+		counters.Increment(fwdpb.CounterId_COUNTER_ID_ERROR_PACKETS, 1)
+		counters.Increment(fwdpb.CounterId_COUNTER_ID_ERROR_OCTETS, uint32(packet.Length()))
 		return nil, fwdaction.DROP
 	}
 	return l.table.Process(packet, counters)
@@ -66,16 +65,16 @@ type lookupBuilder struct{}
 
 // init registers a builder for the lookup action type.
 func init() {
-	fwdaction.Register(fwdpb.ActionType_LOOKUP_ACTION, &lookupBuilder{})
+	fwdaction.Register(fwdpb.ActionType_ACTION_TYPE_LOOKUP, &lookupBuilder{})
 }
 
 // Build creates a new lookup action.
 func (*lookupBuilder) Build(desc *fwdpb.ActionDesc, ctx *fwdcontext.Context) (fwdaction.Action, error) {
-	if !proto.HasExtension(desc, fwdpb.E_LookupActionDesc_Extension) {
-		return nil, fmt.Errorf("actions: Build for lookup action failed, missing extension %s", fwdpb.E_LookupActionDesc_Extension.Name)
+	look, ok := desc.Action.(*fwdpb.ActionDesc_Lookup)
+	if !ok {
+		return nil, fmt.Errorf("actions: Build for lookup action failed, missing desc")
 	}
-	lookupExt := proto.GetExtension(desc, fwdpb.E_LookupActionDesc_Extension).(*fwdpb.LookupActionDesc)
-	table, err := fwdtable.Acquire(ctx, lookupExt.GetTableId())
+	table, err := fwdtable.Acquire(ctx, look.Lookup.GetTableId())
 	if err != nil {
 		return nil, fmt.Errorf("actions: Build for lookup action failed, err %v", err)
 	}

@@ -17,8 +17,6 @@ package actions
 import (
 	"fmt"
 
-	"google.golang.org/protobuf/proto"
-
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdobject"
@@ -31,14 +29,14 @@ type debug struct{}
 
 // String formats the state of the action as a string.
 func (debug) String() string {
-	return fmt.Sprintf("Type=%v;", fwdpb.ActionType_DEBUG_ACTION)
+	return fmt.Sprintf("Type=%v;", fwdpb.ActionType_ACTION_TYPE_DEBUG)
 }
 
 // Process processes the packet by setting it's debug flag.
 func (*debug) Process(packet fwdpacket.Packet, counters fwdobject.Counters) (fwdaction.Actions, fwdaction.State) {
 	if counters != nil {
-		counters.Increment(fwdpb.CounterId_RX_DEBUG_PACKETS, 1)
-		counters.Increment(fwdpb.CounterId_RX_DEBUG_OCTETS, uint32(packet.Length()))
+		counters.Increment(fwdpb.CounterId_COUNTER_ID_RX_DEBUG_PACKETS, 1)
+		counters.Increment(fwdpb.CounterId_COUNTER_ID_RX_DEBUG_OCTETS, uint32(packet.Length()))
 	}
 	packet.Debug(true)
 	return nil, fwdaction.CONTINUE
@@ -49,13 +47,10 @@ type debugBuilder struct{}
 
 // init registers a builder for the debug action type.
 func init() {
-	fwdaction.Register(fwdpb.ActionType_DEBUG_ACTION, &debugBuilder{})
+	fwdaction.Register(fwdpb.ActionType_ACTION_TYPE_DEBUG, &debugBuilder{})
 }
 
 // Build creates a new debug action.
 func (*debugBuilder) Build(desc *fwdpb.ActionDesc, _ *fwdcontext.Context) (fwdaction.Action, error) {
-	if !proto.HasExtension(desc, fwdpb.E_DebugActionDesc_Extension) {
-		return nil, fmt.Errorf("actions: Build for debug action failed, missing extension %s", fwdpb.E_DebugActionDesc_Extension.Name)
-	}
 	return &debug{}, nil
 }

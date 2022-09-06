@@ -18,7 +18,6 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"google.golang.org/protobuf/proto"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction/mock_fwdpacket"
@@ -43,19 +42,16 @@ func TestReparse(t *testing.T) {
 
 	// List of packet field ids (protobuf and Lucius type) used to save
 	// across the reparse and the header for the reparse.
-	header := fwdpb.PacketHeaderId_OPAQUE
-	field1 := []*fwdpb.PacketFieldId{
-		{
-			Field: &fwdpb.PacketField{
-				FieldNum: fwdpb.PacketFieldNum_IP_ADDR_DST.Enum(),
-			},
+	header := fwdpb.PacketHeaderId_PACKET_HEADER_ID_OPAQUE
+	field1 := []*fwdpb.PacketFieldId{{
+		Field: &fwdpb.PacketField{
+			FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST,
 		},
-		{
-			Field: &fwdpb.PacketField{
-				FieldNum: fwdpb.PacketFieldNum_IP_ADDR_SRC.Enum(),
-			},
+	}, {
+		Field: &fwdpb.PacketField{
+			FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC,
 		},
-	}
+	}}
 	var field2 []fwdpacket.FieldID
 	for _, f := range field1 {
 		field2 = append(field2, fwdpacket.NewFieldID(f))
@@ -64,15 +60,17 @@ func TestReparse(t *testing.T) {
 	// Create a reparse action using its builder. Prepend an ethernet header
 	// as an opaque set of bytes before the reparse.
 	desc := fwdpb.ActionDesc{
-		ActionType: fwdpb.ActionType_REPARSE_ACTION.Enum(),
+		ActionType: fwdpb.ActionType_ACTION_TYPE_REPARSE,
 	}
 	prepend := []byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x08, 0x00}
 	reparseDesc := fwdpb.ReparseActionDesc{
-		HeaderId: &header,
+		HeaderId: header,
 		FieldIds: field1,
 		Prepend:  prepend,
 	}
-	proto.SetExtension(&desc, fwdpb.E_ReparseActionDesc_Extension, &reparseDesc)
+	desc.Action = &fwdpb.ActionDesc_Reparse{
+		Reparse: &reparseDesc,
+	}
 	action, err := fwdaction.New(&desc, ctx)
 	if err != nil {
 		t.Errorf("NewAction failed for desc %v, err %v.", desc, err)

@@ -20,7 +20,6 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	"google.golang.org/protobuf/proto"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdport"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdport/mock_fwdpacket"
@@ -41,7 +40,7 @@ import (
 // packet field to select a port.
 func createPortGroup(t *testing.T, ctx *fwdcontext.Context, ports []fwdport.Port, hashFn fwdpb.AggregateHashAlgorithm, index int) fwdport.Port {
 	desc := &fwdpb.PortDesc{
-		PortType: fwdpb.PortType_AGGREGATE_PORT.Enum(),
+		PortType: fwdpb.PortType_PORT_TYPE_AGGREGATE_PORT,
 		PortId:   fwdport.MakeID(fwdobject.NewID(fmt.Sprintf("GROUP_PORT=%v", index))),
 	}
 	port, err := fwdport.New(desc, ctx)
@@ -55,15 +54,17 @@ func createPortGroup(t *testing.T, ctx *fwdcontext.Context, ports []fwdport.Port
 	}
 	group := &fwdpb.AggregatePortUpdateDesc{
 		PortIds: portList,
-		Hash:    hashFn.Enum(),
+		Hash:    hashFn,
 		FieldIds: []*fwdpb.PacketFieldId{&fwdpb.PacketFieldId{
 			Field: &fwdpb.PacketField{
-				FieldNum: fwdpb.PacketFieldNum_IP_PROTO.Enum(),
-				Instance: proto.Uint32(10),
+				FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO,
+				Instance: 10,
 			},
 		}},
 	}
-	proto.SetExtension(&update, fwdpb.E_AggregatePortUpdateDesc_Extension, group)
+	update.Port = &fwdpb.PortUpdateDesc_Aggregate{
+		Aggregate: group,
+	}
 	if err := port.Update(&update); err != nil {
 		t.Fatalf("Port update failed: %v.", err)
 	}
@@ -84,7 +85,7 @@ func TestPortGroupWrite(t *testing.T) {
 		ports = append(ports, porttestutil.CreateTestPort(t, ctx, name))
 	}
 
-	pg := createPortGroup(t, ctx, ports, fwdpb.AggregateHashAlgorithm_CRC32, 0)
+	pg := createPortGroup(t, ctx, ports, fwdpb.AggregateHashAlgorithm_AGGREGATE_HASH_ALGORITHM_CRC32, 0)
 	packet := mock_fwdpacket.NewMockPacket(ctrl)
 	packet.EXPECT().Length().Return(10).AnyTimes()
 	packet.EXPECT().Field(gomock.Any()).Return(make([]byte, 8), nil).AnyTimes()
@@ -127,8 +128,8 @@ func TestPortGroupHash(t *testing.T) {
 	ctx := fwdcontext.New("test", "fwd")
 
 	hashFn := []fwdpb.AggregateHashAlgorithm{
-		fwdpb.AggregateHashAlgorithm_CRC16,
-		fwdpb.AggregateHashAlgorithm_CRC32,
+		fwdpb.AggregateHashAlgorithm_AGGREGATE_HASH_ALGORITHM_CRC16,
+		fwdpb.AggregateHashAlgorithm_AGGREGATE_HASH_ALGORITHM_CRC32,
 	}
 
 	for id, fn := range hashFn {
@@ -192,11 +193,11 @@ func TestFloodWrite(t *testing.T) {
 		ports = append(ports, porttestutil.CreateTestPort(t, ctx, name))
 	}
 
-	pg := createPortGroup(t, ctx, ports, fwdpb.AggregateHashAlgorithm_FLOOD, 0)
+	pg := createPortGroup(t, ctx, ports, fwdpb.AggregateHashAlgorithm_AGGREGATE_HASH_ALGORITHM_FLOOD, 0)
 
 	// Create an ARP packet and set its input port.
 	arp := []byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x08, 0x06, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c}
-	packet, err := fwdpacket.NewNID(fwdpb.PacketHeaderId_ETHERNET, arp, ports[0].NID())
+	packet, err := fwdpacket.NewNID(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET, arp, ports[0].NID())
 	if err != nil {
 		t.Fatalf("Flood failed, err %v.", err)
 	}
@@ -223,12 +224,14 @@ func addMember(t *testing.T, ctx *fwdcontext.Context, pg fwdport.Port, name stri
 	add := &fwdpb.AggregatePortAddMemberUpdateDesc{
 		PortId: &fwdpb.PortId{
 			ObjectId: &fwdpb.ObjectId{
-				Id: &name,
+				Id: name,
 			},
 		},
-		InstanceCount: proto.Uint32(uint32(count)),
+		InstanceCount: uint32(count),
 	}
-	proto.SetExtension(&update, fwdpb.E_AggregatePortAddMemberUpdateDesc_Extension, add)
+	update.Port = &fwdpb.PortUpdateDesc_AggregateAdd{
+		AggregateAdd: add,
+	}
 	if err := pg.Update(&update); err != nil {
 		t.Fatalf("Port update failed: %v.", err)
 	}
@@ -240,11 +243,13 @@ func removeMember(t *testing.T, ctx *fwdcontext.Context, pg fwdport.Port, name s
 	remove := &fwdpb.AggregatePortRemoveMemberUpdateDesc{
 		PortId: &fwdpb.PortId{
 			ObjectId: &fwdpb.ObjectId{
-				Id: &name,
+				Id: name,
 			},
 		},
 	}
-	proto.SetExtension(&update, fwdpb.E_AggregatePortRemoveMemberUpdateDesc_Extension, remove)
+	update.Port = &fwdpb.PortUpdateDesc_AggregateDel{
+		AggregateDel: remove,
+	}
 	if err := pg.Update(&update); err != nil {
 		t.Fatalf("Port update failed: %v.", err)
 	}
@@ -255,7 +260,7 @@ func removeMember(t *testing.T, ctx *fwdcontext.Context, pg fwdport.Port, name s
 // group.
 func createFloodGroup(t *testing.T, ctx *fwdcontext.Context, index int) fwdport.Port {
 	desc := &fwdpb.PortDesc{
-		PortType: fwdpb.PortType_AGGREGATE_PORT.Enum(),
+		PortType: fwdpb.PortType_PORT_TYPE_AGGREGATE_PORT,
 		PortId:   fwdport.MakeID(fwdobject.NewID(fmt.Sprintf("GROUP_PORT=%v", index))),
 	}
 	port, err := fwdport.New(desc, ctx)
@@ -264,9 +269,11 @@ func createFloodGroup(t *testing.T, ctx *fwdcontext.Context, index int) fwdport.
 	}
 	var update fwdpb.PortUpdateDesc
 	group := &fwdpb.AggregatePortAlgorithmUpdateDesc{
-		Hash: fwdpb.AggregateHashAlgorithm_FLOOD.Enum(),
+		Hash: fwdpb.AggregateHashAlgorithm_AGGREGATE_HASH_ALGORITHM_FLOOD,
 	}
-	proto.SetExtension(&update, fwdpb.E_AggregatePortAlgorithmUpdateDesc_Extension, group)
+	update.Port = &fwdpb.PortUpdateDesc_AggregateAlgo{
+		AggregateAlgo: group,
+	}
 	if err := port.Update(&update); err != nil {
 		t.Fatalf("Port update failed: %v.", err)
 	}
@@ -387,7 +394,7 @@ func TestIncremental(t *testing.T) {
 	for index, test := range tests {
 		// Create an ARP packet and set its input port.
 		arp := []byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x08, 0x06, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c}
-		packet, err := fwdpacket.NewNID(fwdpb.PacketHeaderId_ETHERNET, arp, ports[0].NID())
+		packet, err := fwdpacket.NewNID(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET, arp, ports[0].NID())
 		if err != nil {
 			t.Fatalf("Flood failed, err %v.", err)
 		}

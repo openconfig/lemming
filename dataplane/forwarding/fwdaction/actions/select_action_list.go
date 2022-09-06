@@ -19,7 +19,6 @@ import (
 	"hash/crc32"
 	"math/rand"
 
-	"google.golang.org/protobuf/proto"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdobject"
@@ -40,7 +39,7 @@ type selectActionList struct {
 
 // String returns the action as a formatted string.
 func (s *selectActionList) String() string {
-	desc := fmt.Sprintf("Type=%v;<Fields=%v>;<Hash=%v>;%v;", fwdpb.ActionType_SELECT_ACTION_LIST_ACTION, s.fields, s.hash, s.BaseInfo())
+	desc := fmt.Sprintf("Type=%v;<Fields=%v>;<Hash=%v>;%v;", fwdpb.ActionType_ACTION_TYPE_SELECT_ACTION_LIST, s.fields, s.hash, s.BaseInfo())
 	for _, a := range s.set {
 		desc += fmt.Sprintf("<%v>;", a.String())
 	}
@@ -58,8 +57,8 @@ func (s *selectActionList) Cleanup() {
 // Process processes the packet by selecting an action from a list of actions.
 func (s *selectActionList) Process(packet fwdpacket.Packet, counters fwdobject.Counters) (fwdaction.Actions, fwdaction.State) {
 	if s.hashFn == nil {
-		counters.Increment(fwdpb.CounterId_ERROR_PACKETS, 1)
-		counters.Increment(fwdpb.CounterId_ERROR_OCTETS, 1)
+		counters.Increment(fwdpb.CounterId_COUNTER_ID_ERROR_PACKETS, 1)
+		counters.Increment(fwdpb.CounterId_COUNTER_ID_ERROR_OCTETS, 1)
 		return nil, fwdaction.DROP
 	}
 
@@ -98,39 +97,39 @@ type selectActionListBuilder struct{}
 
 // init registers a builder for the selectActionList action type.
 func init() {
-	fwdaction.Register(fwdpb.ActionType_SELECT_ACTION_LIST_ACTION, &selectActionListBuilder{})
+	fwdaction.Register(fwdpb.ActionType_ACTION_TYPE_SELECT_ACTION_LIST, &selectActionListBuilder{})
 }
 
 // Build creates a new selectActionList action.
 func (*selectActionListBuilder) Build(desc *fwdpb.ActionDesc, ctx *fwdcontext.Context) (fwdaction.Action, error) {
-	if !proto.HasExtension(desc, fwdpb.E_SelectActionListActionDesc_Extension) {
-		return nil, fmt.Errorf("actions: Build for selectActionList action failed, missing extension %s", fwdpb.E_SelectActionListActionDesc_Extension.Name)
+	sal, ok := desc.Action.(*fwdpb.ActionDesc_Select)
+	if !ok {
+		return nil, fmt.Errorf("actions: Build for selectActionList action failed, missing desc")
 	}
-	saExt := proto.GetExtension(desc, fwdpb.E_SelectActionListActionDesc_Extension).(*fwdpb.SelectActionListActionDesc)
 
 	s := &selectActionList{
-		hash: saExt.GetSelectAlgorithm(),
+		hash: sal.Select.GetSelectAlgorithm(),
 	}
 
 	// Setup the fields for the packet hash.
-	s.fields = make([]fwdpacket.FieldID, 0, len(saExt.GetFieldIds()))
-	for _, field := range saExt.GetFieldIds() {
+	s.fields = make([]fwdpacket.FieldID, 0, len(sal.Select.GetFieldIds()))
+	for _, field := range sal.Select.GetFieldIds() {
 		s.fields = append(s.fields, fwdpacket.NewFieldID(field))
 	}
 
 	// Setup the packet hash function.
 	switch s.hash {
-	case fwdpb.SelectActionListActionDesc_CRC32:
+	case fwdpb.SelectActionListActionDesc_SELECT_ALGORITHM_CRC32:
 		s.hashFn = hashCRC32
-	case fwdpb.SelectActionListActionDesc_CRC16:
+	case fwdpb.SelectActionListActionDesc_SELECT_ALGORITHM_CRC16:
 		s.hashFn = hashCRC16
-	case fwdpb.SelectActionListActionDesc_RANDOM:
+	case fwdpb.SelectActionListActionDesc_SELECT_ALGORITHM_RANDOM:
 		s.hashFn = random
 	default:
 		return nil, fmt.Errorf("actions: Unable to find select function %v", s.hash)
 	}
 
-	for _, l := range saExt.GetActionLists() {
+	for _, l := range sal.Select.GetActionLists() {
 		a, err := fwdaction.NewActions(l.GetActions(), ctx)
 		if err != nil {
 			return nil, fmt.Errorf("actions: Unable to create actions %v, err %v", l, err)

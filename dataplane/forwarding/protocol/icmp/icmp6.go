@@ -109,10 +109,10 @@ func parseOptions(id uint8, header frame.Header) (map[fwdpb.PacketFieldNum]frame
 
 		switch uint8(id) {
 		case ICMP6SLL:
-			options[fwdpb.PacketFieldNum_ICMP6_ND_SLL] = header.Field(lengthOffset+offset+lengthBytes, valueLen)
+			options[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP6_ND_SLL] = header.Field(lengthOffset+offset+lengthBytes, valueLen)
 
 		case ICMP6TLL:
-			options[fwdpb.PacketFieldNum_ICMP6_ND_TLL] = header.Field(lengthOffset+offset+lengthBytes, valueLen)
+			options[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP6_ND_TLL] = header.Field(lengthOffset+offset+lengthBytes, valueLen)
 		}
 		offset += length
 	}
@@ -121,7 +121,7 @@ func parseOptions(id uint8, header frame.Header) (map[fwdpb.PacketFieldNum]frame
 
 // ID returns the ICMP protocol header ID.
 func (ICMP6) ID(int) fwdpb.PacketHeaderId {
-	return fwdpb.PacketHeaderId_ICMP6
+	return fwdpb.PacketHeaderId_PACKET_HEADER_ID_ICMP6
 }
 
 // field returns bytes within the ICMP header as identified by id.
@@ -131,7 +131,7 @@ func (i *ICMP6) field(id fwdpacket.FieldID) frame.Field {
 	}
 
 	switch id.Num {
-	case fwdpb.PacketFieldNum_ICMP6_ND_TARGET:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP6_ND_TARGET:
 		switch i.id {
 		case ICMP6NeighborSolicitation, ICMP6NeighborAdvertisement, ICMP6NeighborRedirect:
 			return i.header.Field(ndTargetOffset, ndTargetBytes)
@@ -139,7 +139,7 @@ func (i *ICMP6) field(id fwdpacket.FieldID) frame.Field {
 			return nil
 		}
 
-	case fwdpb.PacketFieldNum_ICMP6_ND_SLL, fwdpb.PacketFieldNum_ICMP6_ND_TLL:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP6_ND_SLL, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP6_ND_TLL:
 		if option, ok := i.options[id.Num]; ok {
 			return option
 		}
@@ -177,11 +177,11 @@ func (i *ICMP6) Rebuild() error {
 
 	var err error
 	var f []byte
-	if f, err = i.desc.Packet.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP_ADDR_SRC, fwdpacket.LastField)); err != nil {
+	if f, err = i.desc.Packet.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC, fwdpacket.LastField)); err != nil {
 		return fmt.Errorf("icmp6: Rebuild failed: %v", err)
 	}
 	sum.Write(f)
-	if f, err = i.desc.Packet.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP_ADDR_DST, fwdpacket.LastField)); err != nil {
+	if f, err = i.desc.Packet.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST, fwdpacket.LastField)); err != nil {
 		return fmt.Errorf("icmp6: Rebuild failed: %v", err)
 	}
 	sum.Write(f)
@@ -225,5 +225,5 @@ func parseICMP6(frame *frame.Frame, desc *protocol.Desc) (protocol.Handler, fwdp
 
 func init() {
 	// ICMP header cannot be added to a packet.
-	protocol.Register(fwdpb.PacketHeaderId_ICMP6, parseICMP6, nil)
+	protocol.Register(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ICMP6, parseICMP6, nil)
 }

@@ -15,7 +15,7 @@
 // Protocol buffers to wrap all streaming compatible programmings
 // so that they can be serialized within a single stream to provide
 // the necessary FIFO guarantees.
-syntax = "proto2";
+syntax = "proto3";
 
 package forwarding;
 

@@ -116,22 +116,22 @@ var icmp6RS = []byte{
 func TestICMPv4(t *testing.T) {
 	queries := []packettestutil.FieldQuery{
 		{
-			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP_TYPE, 0),
+			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP_TYPE, 0),
 			Result: []byte{0x01},
 		},
 		{
-			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP_CODE, 0),
+			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP_CODE, 0),
 			Result: []byte{0x02},
 		},
 	}
 	updates := []packettestutil.FieldUpdate{
 		{
-			ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP_TYPE, 0),
+			ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP_TYPE, 0),
 			Arg: []byte{0x10},
 			Op:  fwdpacket.OpSet,
 		},
 		{
-			ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP_CODE, 0),
+			ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP_CODE, 0),
 			Arg: []byte{0x11},
 			Op:  fwdpacket.OpSet,
 		},
@@ -140,7 +140,7 @@ func TestICMPv4(t *testing.T) {
 		// ICMPv4 echo request message. The checksum is initially set to
 		// zero. The ICMP message changes with updates.
 		{
-			StartHeader: fwdpb.PacketHeaderId_ETHERNET,
+			StartHeader: fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET,
 			Orig: [][]byte{
 				ethernetIP4,
 				ip4icmp,
@@ -164,7 +164,7 @@ func TestICMPv6(t *testing.T) {
 		// ICMPv6 echo request message. The checksum is initially set to
 		// zero. The ICMP message changes with updates.
 		{
-			StartHeader: fwdpb.PacketHeaderId_ETHERNET,
+			StartHeader: fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET,
 			Orig: [][]byte{
 				ethernetIP6,
 				ip6icmp,
@@ -172,22 +172,22 @@ func TestICMPv6(t *testing.T) {
 			},
 			Queries: []packettestutil.FieldQuery{
 				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP_TYPE, 0),
+					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP_TYPE, 0),
 					Result: []byte{0x01},
 				},
 				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP_CODE, 0),
+					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP_CODE, 0),
 					Result: []byte{0x02},
 				},
 			},
 			Updates: []packettestutil.FieldUpdate{
 				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP_TYPE, 0),
+					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP_TYPE, 0),
 					Arg: []byte{0x10},
 					Op:  fwdpacket.OpSet,
 				},
 				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP_CODE, 0),
+					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP_CODE, 0),
 					Arg: []byte{0x11},
 					Op:  fwdpacket.OpSet,
 				},
@@ -200,30 +200,30 @@ func TestICMPv6(t *testing.T) {
 		},
 		// ICMP6 neighbour advertisement with a target link-layer address option.
 		{
-			StartHeader: fwdpb.PacketHeaderId_ETHERNET,
+			StartHeader: fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET,
 			Orig: [][]byte{
 				ethernetIP6,
 				icmp6NATLL,
 			},
 			Queries: []packettestutil.FieldQuery{
 				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP_TYPE, 0),
+					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP_TYPE, 0),
 					Result: []byte{136},
 				},
 				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP_CODE, 0),
+					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP_CODE, 0),
 					Result: []byte{0},
 				},
 				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP6_ND_TARGET, 0),
+					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP6_ND_TARGET, 0),
 					Result: []byte{0xfe, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xc0, 0x00, 0x54, 0xff, 0xfe, 0xf5, 0x00, 0x00},
 				},
 				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP6_ND_SLL, 0),
+					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP6_ND_SLL, 0),
 					Err: "does not exist",
 				},
 				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP6_ND_TLL, 0),
+					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP6_ND_TLL, 0),
 					Result: []byte{0xc2, 0x00, 0x54, 0xf5, 0x00, 0x00},
 				},
 			},
@@ -234,30 +234,30 @@ func TestICMPv6(t *testing.T) {
 		},
 		// ICMP6 neighbour advertisement with no options.
 		{
-			StartHeader: fwdpb.PacketHeaderId_ETHERNET,
+			StartHeader: fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET,
 			Orig: [][]byte{
 				ethernetIP6,
 				icmp6NA,
 			},
 			Queries: []packettestutil.FieldQuery{
 				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP_TYPE, 0),
+					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP_TYPE, 0),
 					Result: []byte{136},
 				},
 				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP_CODE, 0),
+					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP_CODE, 0),
 					Result: []byte{0},
 				},
 				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP6_ND_TARGET, 0),
+					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP6_ND_TARGET, 0),
 					Result: []byte{0xfe, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xc0, 0x00, 0x54, 0xff, 0xfe, 0xf5, 0x00, 0x00},
 				},
 				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP6_ND_SLL, 0),
+					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP6_ND_SLL, 0),
 					Err: "does not exist",
 				},
 				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP6_ND_TLL, 0),
+					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP6_ND_TLL, 0),
 					Err: "does not exist",
 				},
 			},
@@ -268,30 +268,30 @@ func TestICMPv6(t *testing.T) {
 		},
 		// ICMP6 neighbour solicitation with a source link-layer address option.
 		{
-			StartHeader: fwdpb.PacketHeaderId_ETHERNET,
+			StartHeader: fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET,
 			Orig: [][]byte{
 				ethernetIP6,
 				icmp6NSSLL,
 			},
 			Queries: []packettestutil.FieldQuery{
 				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP_TYPE, 0),
+					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP_TYPE, 0),
 					Result: []byte{135},
 				},
 				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP_CODE, 0),
+					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP_CODE, 0),
 					Result: []byte{0},
 				},
 				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP6_ND_TARGET, 0),
+					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP6_ND_TARGET, 0),
 					Result: []byte{0xfe, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xc0, 0x00, 0x54, 0xff, 0xfe, 0xf5, 0x00, 0x00},
 				},
 				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP6_ND_SLL, 0),
+					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP6_ND_SLL, 0),
 					Result: []byte{0xc2, 0x00, 0x54, 0xf5, 0x00, 0x00},
 				},
 				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP6_ND_TLL, 0),
+					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP6_ND_TLL, 0),
 					Err: "does not exist",
 				},
 			},
@@ -302,30 +302,30 @@ func TestICMPv6(t *testing.T) {
 		},
 		// ICMP6 neighbour solicitation with no options.
 		{
-			StartHeader: fwdpb.PacketHeaderId_ETHERNET,
+			StartHeader: fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET,
 			Orig: [][]byte{
 				ethernetIP6,
 				icmp6NS,
 			},
 			Queries: []packettestutil.FieldQuery{
 				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP_TYPE, 0),
+					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP_TYPE, 0),
 					Result: []byte{135},
 				},
 				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP_CODE, 0),
+					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP_CODE, 0),
 					Result: []byte{0},
 				},
 				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP6_ND_TARGET, 0),
+					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP6_ND_TARGET, 0),
 					Result: []byte{0xfe, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xc0, 0x00, 0x54, 0xff, 0xfe, 0xf5, 0x00, 0x00},
 				},
 				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP6_ND_SLL, 0),
+					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP6_ND_SLL, 0),
 					Err: "does not exist",
 				},
 				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP6_ND_TLL, 0),
+					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP6_ND_TLL, 0),
 					Err: "does not exist",
 				},
 			},
@@ -336,30 +336,30 @@ func TestICMPv6(t *testing.T) {
 		},
 		// ICMP6 router advertisement with a source link-layer address option.
 		{
-			StartHeader: fwdpb.PacketHeaderId_ETHERNET,
+			StartHeader: fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET,
 			Orig: [][]byte{
 				ethernetIP6,
 				icmp6RASLL,
 			},
 			Queries: []packettestutil.FieldQuery{
 				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP_TYPE, 0),
+					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP_TYPE, 0),
 					Result: []byte{134},
 				},
 				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP_CODE, 0),
+					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP_CODE, 0),
 					Result: []byte{0},
 				},
 				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP6_ND_TARGET, 0),
+					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP6_ND_TARGET, 0),
 					Err: "does not exist",
 				},
 				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP6_ND_SLL, 0),
+					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP6_ND_SLL, 0),
 					Result: []byte{0xc2, 0x00, 0x54, 0xf5, 0x00, 0x00},
 				},
 				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP6_ND_TLL, 0),
+					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP6_ND_TLL, 0),
 					Err: "does not exist",
 				},
 			},
@@ -370,30 +370,30 @@ func TestICMPv6(t *testing.T) {
 		},
 		// ICMP6 router advertisement with no options.
 		{
-			StartHeader: fwdpb.PacketHeaderId_ETHERNET,
+			StartHeader: fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET,
 			Orig: [][]byte{
 				ethernetIP6,
 				icmp6RA,
 			},
 			Queries: []packettestutil.FieldQuery{
 				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP_TYPE, 0),
+					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP_TYPE, 0),
 					Result: []byte{134},
 				},
 				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP_CODE, 0),
+					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP_CODE, 0),
 					Result: []byte{0},
 				},
 				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP6_ND_TARGET, 0),
+					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP6_ND_TARGET, 0),
 					Err: "does not exist",
 				},
 				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP6_ND_SLL, 0),
+					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP6_ND_SLL, 0),
 					Err: "does not exist",
 				},
 				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP6_ND_TLL, 0),
+					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP6_ND_TLL, 0),
 					Err: "does not exist",
 				},
 			},
@@ -404,30 +404,30 @@ func TestICMPv6(t *testing.T) {
 		},
 		// ICMP6 router solicitation with no options.
 		{
-			StartHeader: fwdpb.PacketHeaderId_ETHERNET,
+			StartHeader: fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET,
 			Orig: [][]byte{
 				ethernetIP6,
 				icmp6RS,
 			},
 			Queries: []packettestutil.FieldQuery{
 				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP_TYPE, 0),
+					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP_TYPE, 0),
 					Result: []byte{133},
 				},
 				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP_CODE, 0),
+					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP_CODE, 0),
 					Result: []byte{0},
 				},
 				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP6_ND_TARGET, 0),
+					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP6_ND_TARGET, 0),
 					Err: "does not exist",
 				},
 				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP6_ND_SLL, 0),
+					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP6_ND_SLL, 0),
 					Err: "does not exist",
 				},
 				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP6_ND_TLL, 0),
+					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP6_ND_TLL, 0),
 					Err: "does not exist",
 				},
 			},
@@ -438,30 +438,30 @@ func TestICMPv6(t *testing.T) {
 		},
 		// ICMP6 router solicitation with a source link-layer address option.
 		{
-			StartHeader: fwdpb.PacketHeaderId_ETHERNET,
+			StartHeader: fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET,
 			Orig: [][]byte{
 				ethernetIP6,
 				icmp6RSSLL,
 			},
 			Queries: []packettestutil.FieldQuery{
 				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP_TYPE, 0),
+					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP_TYPE, 0),
 					Result: []byte{133},
 				},
 				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP_CODE, 0),
+					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP_CODE, 0),
 					Result: []byte{0},
 				},
 				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP6_ND_TARGET, 0),
+					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP6_ND_TARGET, 0),
 					Err: "does not exist",
 				},
 				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP6_ND_SLL, 0),
+					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP6_ND_SLL, 0),
 					Result: []byte{0xc2, 0x00, 0x54, 0xf5, 0x00, 0x00},
 				},
 				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ICMP6_ND_TLL, 0),
+					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP6_ND_TLL, 0),
 					Err: "does not exist",
 				},
 			},

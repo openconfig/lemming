@@ -17,7 +17,7 @@
 // string value. The name and value of an attribute is opaque to the forwarding
 // api. An attribute may be associated with a forwarding object, forwarding
 // context or the global context.
-syntax = "proto2";
+syntax = "proto3";
 
 package forwarding;
 
@@ -27,12 +27,15 @@ option go_package = "github.com/openconfig/lemming/dataplane/proto/forwarding";
 
 // An AttributeDesc describes an attribute.
 message AttributeDesc {
-  optional string name = 1;
-  optional string help = 2;
+  string name = 1;
+  string help = 2;
 }
 
 // An AttributeListRequest is a request to list all supported attributes.
-message AttributeListRequest {}
+message AttributeListRequest {
+
+}
+
 message AttributeListReply {
   repeated AttributeDesc attrs = 1;
 }
@@ -43,9 +46,12 @@ message AttributeListReply {
 // attribute is applied to all fields. If the value is not specified the
 // attribute is deleted.
 message AttributeUpdateRequest {
-  optional ContextId context_id = 1;
-  optional ObjectId object_id = 2;
-  optional string attr_id = 3;
-  optional string attr_value = 4;
+  ContextId context_id = 1;
+  ObjectId object_id = 2;
+  string attr_id = 3;
+  string attr_value = 4;
 }
-message AttributeUpdateReply {}
+
+message AttributeUpdateReply {
+  
+}

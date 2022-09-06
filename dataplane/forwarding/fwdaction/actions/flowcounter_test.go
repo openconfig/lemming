@@ -18,7 +18,6 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"google.golang.org/protobuf/proto"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction/mock_fwdpacket"
@@ -43,8 +42,8 @@ func TestFlowCounter(t *testing.T) {
 
 	// Create a flow-counter.
 	createReq := &fwdpb.FlowCounterCreateRequest{
-		ContextId: &fwdpb.ContextId{Id: proto.String("test")},
-		Id:        &fwdpb.FlowCounterId{ObjectId: &fwdpb.ObjectId{Id: proto.String("fc1")}},
+		ContextId: &fwdpb.ContextId{Id: "test"},
+		Id:        &fwdpb.FlowCounterId{ObjectId: &fwdpb.ObjectId{Id: "fc1"}},
 	}
 	fcobj, err := fwdflowcounter.New(ctx, createReq)
 	if err != nil {
@@ -53,12 +52,14 @@ func TestFlowCounter(t *testing.T) {
 
 	// Create a flowcounter action using its builder.
 	desc := fwdpb.ActionDesc{
-		ActionType: fwdpb.ActionType_FLOW_COUNTER_ACTION.Enum(),
+		ActionType: fwdpb.ActionType_ACTION_TYPE_FLOW_COUNTER,
 	}
 	flowcounterdesc := fwdpb.FlowCounterActionDesc{
-		CounterId: &fwdpb.FlowCounterId{ObjectId: &fwdpb.ObjectId{Id: proto.String("fc1")}},
+		CounterId: &fwdpb.FlowCounterId{ObjectId: &fwdpb.ObjectId{Id: "fc1"}},
 	}
-	proto.SetExtension(&desc, fwdpb.E_FlowCounterActionDesc_Extension, &flowcounterdesc)
+	desc.Action = &fwdpb.ActionDesc_Flow{
+		Flow: &flowcounterdesc,
+	}
 	action, err := fwdaction.New(&desc, ctx)
 	if err != nil {
 		t.Errorf("NewAction failed for desc %v, err %v.", desc, err)
@@ -88,10 +89,10 @@ func TestFlowCounter(t *testing.T) {
 	}
 
 	// Check the counts against expected values.
-	if *fcval.Octets != octets {
+	if fcval.Octets != octets {
 		t.Errorf("FlowCounter octets mismatch: Expected %v, Got %v", octets, fcval.Octets)
 	}
-	if *fcval.Packets != packets {
+	if fcval.Packets != packets {
 		t.Errorf("FlowCounter packetss mismatch: Expected %v, Got %v", packets, fcval.Packets)
 	}
 }

@@ -21,7 +21,6 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	"google.golang.org/protobuf/proto"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdport"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdport/porttestutil"
@@ -42,12 +41,14 @@ import (
 // transmits on the specified port.
 func addEntry(table fwdtable.Table, mac []byte, portID fwdobject.ID) error {
 	ad := fwdpb.ActionDesc{
-		ActionType: fwdpb.ActionType_TRANSMIT_ACTION.Enum(),
+		ActionType: fwdpb.ActionType_ACTION_TYPE_TRANSMIT,
 	}
 	tac := fwdpb.TransmitActionDesc{
 		PortId: fwdport.MakeID(portID),
 	}
-	proto.SetExtension(&ad, fwdpb.E_TransmitActionDesc_Extension, &tac)
+	ad.Action = &fwdpb.ActionDesc_Transmit{
+		Transmit: &tac,
+	}
 
 	desc := &fwdpb.EntryDesc{}
 	exact := &fwdpb.ExactEntryDesc{
@@ -55,14 +56,16 @@ func addEntry(table fwdtable.Table, mac []byte, portID fwdobject.ID) error {
 			{
 				FieldId: &fwdpb.PacketFieldId{
 					Field: &fwdpb.PacketField{
-						FieldNum: fwdpb.PacketFieldNum_ETHER_MAC_DST.Enum(),
+						FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST,
 					},
 				},
 				Bytes: mac,
 			},
 		},
 	}
-	proto.SetExtension(desc, fwdpb.E_ExactEntryDesc_Extension, exact)
+	desc.Entry = &fwdpb.EntryDesc_Exact{
+		Exact: exact,
+	}
 	return table.AddEntry(desc, []*fwdpb.ActionDesc{&ad})
 }
 
@@ -70,22 +73,26 @@ func addEntry(table fwdtable.Table, mac []byte, portID fwdobject.ID) error {
 // does not age its entries.
 func createBridge(ctx *fwdcontext.Context, id *fwdpb.TableId) (fwdtable.Table, error) {
 	desc := &fwdpb.TableDesc{
-		TableType: fwdpb.TableType_BRIDGE_TABLE.Enum(),
+		TableType: fwdpb.TableType_TABLE_TYPE_BRIDGE,
 		TableId:   id,
 	}
-	proto.SetExtension(desc, fwdpb.E_BridgeTableDesc_Extension, &fwdpb.BridgeTableDesc{})
+	desc.Table = &fwdpb.TableDesc_Bridge{
+		Bridge: &fwdpb.BridgeTableDesc{},
+	}
 	return fwdtable.New(ctx, desc)
 }
 
 // createLearn creates a learning action for the specified bridge table.
 func createLearn(ctx *fwdcontext.Context, id *fwdpb.TableId) (fwdaction.Action, error) {
 	desc := &fwdpb.ActionDesc{
-		ActionType: fwdpb.ActionType_BRIDGE_LEARN_ACTION.Enum(),
+		ActionType: fwdpb.ActionType_ACTION_TYPE_BRIDGE_LEARN,
 	}
 	ext := &fwdpb.BridgeLearnActionDesc{
 		TableId: id,
 	}
-	proto.SetExtension(desc, fwdpb.E_BridgeLearnActionDesc_Extension, ext)
+	desc.Action = &fwdpb.ActionDesc_Bridge{
+		Bridge: ext,
+	}
 	return fwdaction.New(desc, ctx)
 }
 
@@ -151,7 +158,9 @@ func (packet) Log() []string { return nil }
 func (packet) Attributes() fwdattribute.Set { return nil }
 
 // StartHeader returns the first header of the packet.
-func (packet) StartHeader() fwdpb.PacketHeaderId { return fwdpb.PacketHeaderId_ETHERNET }
+func (packet) StartHeader() fwdpb.PacketHeaderId {
+	return fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET
+}
 
 // sendPacket sends a packet from the source network to the destination network
 // through the bridge and returns the port used for transmission.
@@ -160,8 +169,8 @@ func sendPacket(ctrl *gomock.Controller, table fwdtable.Table, action fwdaction.
 		fields: make(map[fwdpacket.FieldID][]byte),
 	}
 	fwdport.SetInputPort(p, networks[src].port)
-	p.Update(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ETHER_MAC_SRC, 0), fwdpacket.OpSet, networks[src].mac)
-	p.Update(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ETHER_MAC_DST, 0), fwdpacket.OpSet, networks[dst].mac)
+	p.Update(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC, 0), fwdpacket.OpSet, networks[src].mac)
+	p.Update(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST, 0), fwdpacket.OpSet, networks[dst].mac)
 
 	if _, state := action.Process(p, nil); state != fwdaction.CONTINUE {
 		return "", errors.New("bridge: learn failed")
@@ -209,16 +218,16 @@ func TestBridge(t *testing.T) {
 	parser := mock_fwdpacket.NewMockParser(ctrl)
 	parser.EXPECT().Validate(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
-	fid := fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ETHER_MAC_SRC, 0)
+	fid := fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC, 0)
 	parser.EXPECT().MaxSize(fid).Return(6).AnyTimes()
 
-	fid = fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ETHER_MAC_DST, 0)
+	fid = fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST, 0)
 	parser.EXPECT().MaxSize(fid).Return(6).AnyTimes()
 
-	fid = fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_PORT_INPUT, 0)
+	fid = fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT, 0)
 	parser.EXPECT().MaxSize(fid).Return(protocol.SizeUint64).AnyTimes()
 
-	fid = fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_PORT_OUTPUT, 0)
+	fid = fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT, 0)
 	parser.EXPECT().MaxSize(fid).Return(protocol.SizeUint64).AnyTimes()
 	fwdpacket.Register(parser)
 

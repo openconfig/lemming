@@ -56,7 +56,7 @@ func (ARP) Trailer() []byte {
 
 // ID returns the ARP protocol header ID.
 func (ARP) ID(int) fwdpb.PacketHeaderId {
-	return fwdpb.PacketHeaderId_ARP
+	return fwdpb.PacketHeaderId_PACKET_HEADER_ID_ARP
 }
 
 // field returns the bytes within the ARP header as specified by id.
@@ -65,16 +65,16 @@ func (a *ARP) field(id fwdpacket.FieldID) frame.Field {
 	case id.IsUDF:
 		return protocol.UDF(a.header, id)
 
-	case id.Num == fwdpb.PacketFieldNum_ARP_TPA:
+	case id.Num == fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ARP_TPA:
 		return a.header.Field(tpaOffset, tpaBytes)
 
-	case id.Num == fwdpb.PacketFieldNum_ARP_SPA:
+	case id.Num == fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ARP_SPA:
 		return a.header.Field(spaOffset, spaBytes)
 
-	case id.Num == fwdpb.PacketFieldNum_ARP_TMAC:
+	case id.Num == fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ARP_TMAC:
 		return a.header.Field(tmacOffset, tmacBytes)
 
-	case id.Num == fwdpb.PacketFieldNum_ARP_SMAC:
+	case id.Num == fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ARP_SMAC:
 		return a.header.Field(smacOffset, smacBytes)
 
 	default:
@@ -130,5 +130,5 @@ func parse(frame *frame.Frame, desc *protocol.Desc) (protocol.Handler, fwdpb.Pac
 
 func init() {
 	// ARP header cannot be added to a packet.
-	protocol.Register(fwdpb.PacketHeaderId_ARP, parse, nil)
+	protocol.Register(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ARP, parse, nil)
 }

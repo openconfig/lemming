@@ -23,8 +23,6 @@ import (
 	"sync"
 	"time"
 
-	"google.golang.org/protobuf/proto"
-
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdtable"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdtable/tableutil"
@@ -233,11 +231,11 @@ func (t *Table) remove(entry *Entry) {
 
 // AddEntry adds or updates the actions associated with the specified key.
 func (t *Table) AddEntry(ed *fwdpb.EntryDesc, ad []*fwdpb.ActionDesc) error {
-	if !proto.HasExtension(ed, fwdpb.E_ExactEntryDesc_Extension) {
-		return fmt.Errorf("exact: AddEntry failed, missing extension %s", fwdpb.E_ExactEntryDesc_Extension.Name)
+	ex, ok := ed.Entry.(*fwdpb.EntryDesc_Exact)
+	if !ok {
+		return fmt.Errorf("exact: AddEntry failed, missing desc")
 	}
-	desc := proto.GetExtension(ed, fwdpb.E_ExactEntryDesc_Extension).(*fwdpb.ExactEntryDesc)
-	key, err := newExactKey(t.desc, desc.GetFields())
+	key, err := newExactKey(t.desc, ex.Exact.GetFields())
 	if err != nil {
 		return fmt.Errorf("exact: AddEntry failed, err %v", err)
 	}
@@ -245,7 +243,7 @@ func (t *Table) AddEntry(ed *fwdpb.EntryDesc, ad []*fwdpb.ActionDesc) error {
 	if err != nil {
 		return fmt.Errorf("exact: AddEntry failed, err %v", err)
 	}
-	transient := desc.GetTransient()
+	transient := ex.Exact.GetTransient()
 	entry := t.Find(key)
 	if entry != nil {
 		if transient && !entry.transient {
@@ -279,11 +277,11 @@ func (t *Table) AddEntry(ed *fwdpb.EntryDesc, ad []*fwdpb.ActionDesc) error {
 
 // RemoveEntry removes an entry.
 func (t *Table) RemoveEntry(ed *fwdpb.EntryDesc) error {
-	if !proto.HasExtension(ed, fwdpb.E_ExactEntryDesc_Extension) {
-		return fmt.Errorf("exact: RemoveEntry failed, missing extension %s", fwdpb.E_ExactEntryDesc_Extension.Name)
+	ex, ok := ed.Entry.(*fwdpb.EntryDesc_Exact)
+	if !ok {
+		return fmt.Errorf("exact: RemoveEntry failed, missing desc")
 	}
-	desc := proto.GetExtension(ed, fwdpb.E_ExactEntryDesc_Extension).(*fwdpb.ExactEntryDesc)
-	key, err := newExactKey(t.desc, desc.GetFields())
+	key, err := newExactKey(t.desc, ex.Exact.GetFields())
 	if err != nil {
 		return fmt.Errorf("exact: RemoveEntry failed, err %v", err)
 	}
@@ -356,23 +354,23 @@ type builder struct{}
 
 // init registers a builder for exact-match tables
 func init() {
-	fwdtable.Register(fwdpb.TableType_EXACT_TABLE, builder{})
+	fwdtable.Register(fwdpb.TableType_TABLE_TYPE_EXACT, builder{})
 }
 
 // New creates a new exact-match table. The table also has a stale list if a
 // timeout is specified for transient entries.
 func New(ctx *fwdcontext.Context, td *fwdpb.TableDesc) (*Table, error) {
-	if !proto.HasExtension(td, fwdpb.E_ExactTableDesc_Extension) {
-		return nil, fmt.Errorf("exact: Build for exact table failed, missing extension %s", fwdpb.E_ExactTableDesc_Extension.Name)
+	ex, ok := td.Table.(*fwdpb.TableDesc_Exact)
+	if !ok {
+		return nil, fmt.Errorf("exact: Build for exact table failed, missing desc")
 	}
-	ed := proto.GetExtension(td, fwdpb.E_ExactTableDesc_Extension).(*fwdpb.ExactTableDesc)
 	t := &Table{
-		desc:    tableutil.MakeKeyDesc(ed.GetFieldIds()),
+		desc:    tableutil.MakeKeyDesc(ex.Exact.GetFieldIds()),
 		entries: make(map[uint32]*Entry),
 		ctx:     ctx,
 	}
-	if ed.GetTransientTimeout() != 0 {
-		t.stale = newStaleList(time.Duration(ed.GetTransientTimeout())*time.Second, time.Now)
+	if ex.Exact.GetTransientTimeout() != 0 {
+		t.stale = newStaleList(time.Duration(ex.Exact.GetTransientTimeout())*time.Second, time.Now)
 		t.staleMonitor()
 	}
 	var err error

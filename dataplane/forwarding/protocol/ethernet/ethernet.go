@@ -72,9 +72,9 @@ var NextHeader = map[uint16]fwdpb.PacketHeaderId{}
 
 // HeaderNext maps packet headers to ether-types.
 var HeaderNext = map[fwdpb.PacketHeaderId]uint16{
-	fwdpb.PacketHeaderId_IP4: nextIP4,
-	fwdpb.PacketHeaderId_IP6: nextIP6,
-	fwdpb.PacketHeaderId_ARP: nextARP,
+	fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4: nextIP4,
+	fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP6: nextIP6,
+	fwdpb.PacketHeaderId_PACKET_HEADER_ID_ARP: nextARP,
 }
 
 // An Ethernet presents a ethernet header. It can parse, query, add, remove
@@ -114,19 +114,19 @@ func (eth *Ethernet) field(id fwdpacket.FieldID) frame.Field {
 	}
 
 	switch id.Num {
-	case fwdpb.PacketFieldNum_ETHER_MAC_SRC:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC:
 		return eth.header.Field(srcMACOffset, macBytes)
 
-	case fwdpb.PacketFieldNum_ETHER_MAC_DST:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST:
 		return eth.header.Field(dstMACOffset, macBytes)
 
-	case fwdpb.PacketFieldNum_ETHER_TYPE:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_TYPE:
 		return eth.header.Field(eth.next, nextBytes)
 
-	case fwdpb.PacketFieldNum_VLAN_TAG, fwdpb.PacketFieldNum_VLAN_PRIORITY:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_PRIORITY:
 		if int(id.Instance) >= len(eth.vlans) {
 			// TOOD(neeleshb): We currently ignore the vlan priority due to b/31199367.
-			if id.Num == fwdpb.PacketFieldNum_VLAN_PRIORITY {
+			if id.Num == fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_PRIORITY {
 				return make([]byte, vlanBytes)
 			}
 			return nil
@@ -150,10 +150,10 @@ func (eth *Ethernet) Field(id fwdpacket.FieldID) ([]byte, error) {
 	}
 
 	switch id.Num {
-	case fwdpb.PacketFieldNum_VLAN_TAG:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG:
 		return field.BitField(tagBitPos, tagBitSize), nil
 
-	case fwdpb.PacketFieldNum_VLAN_PRIORITY:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_PRIORITY:
 		return field.BitField(qosBitPos, qosBitSize), nil
 
 	default:
@@ -177,11 +177,11 @@ func (eth *Ethernet) UpdateField(id fwdpacket.FieldID, op int, arg []byte) (bool
 	}
 	switch id.Num {
 
-	case fwdpb.PacketFieldNum_VLAN_TAG:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG:
 		field.SetBits(tagBitPos, tagBitSize, uint64(binary.BigEndian.Uint16(arg)))
 		return true, nil
 
-	case fwdpb.PacketFieldNum_VLAN_PRIORITY:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_PRIORITY:
 		field.SetBits(qosBitPos, qosBitSize, uint64(binary.BigEndian.Uint16(arg)))
 		return true, nil
 
@@ -202,7 +202,7 @@ func (eth *Ethernet) Rebuild() error {
 // just the vlan tags or it can remove the entire header.
 func (eth *Ethernet) Remove(id fwdpb.PacketHeaderId) error {
 	switch id {
-	case fwdpb.PacketHeaderId_ETHERNET_VLAN, fwdpb.PacketHeaderId_ETHERNET_1Q:
+	case fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET_VLAN, fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET_1Q:
 		if eth.id != id {
 			return fmt.Errorf("ethernet: Remove failed, cannot remove header %v from header %v", id, eth.id)
 		}
@@ -213,7 +213,7 @@ func (eth *Ethernet) Remove(id fwdpb.PacketHeaderId) error {
 		*eth = *t
 		return nil
 
-	case fwdpb.PacketHeaderId_ETHERNET:
+	case fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET:
 		if eth.header == nil {
 			return fmt.Errorf("ethernet: Remove failed, cannot remove %v from non-ethernet frame", id)
 		}
@@ -229,7 +229,7 @@ func (eth *Ethernet) Remove(id fwdpb.PacketHeaderId) error {
 
 // Modify modifies an existing ethernet header by adding vlan tags.
 func (eth *Ethernet) Modify(id fwdpb.PacketHeaderId) error {
-	if eth.id != fwdpb.PacketHeaderId_ETHERNET {
+	if eth.id != fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET {
 		return fmt.Errorf("ethernet: Modify failed, cannot add header %v to header %v", id, eth.id)
 	}
 
@@ -239,14 +239,14 @@ func (eth *Ethernet) Modify(id fwdpb.PacketHeaderId) error {
 
 	var length int
 	switch id {
-	case fwdpb.PacketHeaderId_ETHERNET_VLAN:
+	case fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET_VLAN:
 		var t *Ethernet
 		t, length = newEthernet(nextSingle, eth.desc)
 		*eth = *t
 		eth.header = make(frame.Header, length)
 		eth.header.Field(nextOffsets[0], nextBytes).SetValue(nextSingle)
 
-	case fwdpb.PacketHeaderId_ETHERNET_1Q:
+	case fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET_1Q:
 		var t *Ethernet
 		t, length = newEthernet(nextDouble, eth.desc)
 		*eth = *t
@@ -272,7 +272,7 @@ func newEthernet(next uint16, desc *protocol.Desc) (*Ethernet, int) {
 			next:  nextOffsets[1],
 			vlans: []int{tagOffsets[0]},
 			desc:  desc,
-			id:    fwdpb.PacketHeaderId_ETHERNET_VLAN,
+			id:    fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET_VLAN,
 		}, ethernetBytes + 1*headerBytes
 
 	case nextDouble:
@@ -281,7 +281,7 @@ func newEthernet(next uint16, desc *protocol.Desc) (*Ethernet, int) {
 			next:  nextOffsets[2],
 			vlans: []int{tagOffsets[0], tagOffsets[1]},
 			desc:  desc,
-			id:    fwdpb.PacketHeaderId_ETHERNET_1Q,
+			id:    fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET_1Q,
 		}, ethernetBytes + 2*headerBytes
 
 	default:
@@ -289,7 +289,7 @@ func newEthernet(next uint16, desc *protocol.Desc) (*Ethernet, int) {
 		return &Ethernet{
 			next: nextOffsets[0],
 			desc: desc,
-			id:   fwdpb.PacketHeaderId_ETHERNET,
+			id:   fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET,
 		}, ethernetBytes
 	}
 }
@@ -297,12 +297,12 @@ func newEthernet(next uint16, desc *protocol.Desc) (*Ethernet, int) {
 // add adds an empty ethernet header.
 func add(id fwdpb.PacketHeaderId, desc *protocol.Desc) (protocol.Handler, error) {
 	switch id {
-	case fwdpb.PacketHeaderId_ETHERNET:
+	case fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET:
 		eth, length := newEthernet(nextReserved, desc)
 		eth.header = make(frame.Header, length)
 		return eth, nil
 
-	case fwdpb.PacketHeaderId_ETHERNET_VLAN:
+	case fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET_VLAN:
 		// An ethernet frame with one vlan tag, sets the first "next" field
 		// to indicate the presence of another tag.
 		eth, length := newEthernet(nextSingle, desc)
@@ -310,7 +310,7 @@ func add(id fwdpb.PacketHeaderId, desc *protocol.Desc) (protocol.Handler, error)
 		eth.header.Field(nextOffsets[0], nextBytes).SetValue(nextSingle)
 		return eth, nil
 
-	case fwdpb.PacketHeaderId_ETHERNET_1Q:
+	case fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET_1Q:
 		// An ethernet frame with two vlan tags, sets the first "next" field
 		// to indicate the presence of a pair of tags, and sets the second
 		// "next" field to indicate the presence of another tag.
@@ -339,7 +339,7 @@ func parse(frame *frame.Frame, desc *protocol.Desc) (protocol.Handler, fwdpb.Pac
 	if id, ok := NextHeader[uint16(eth.header.Field(eth.next, nextBytes).Value())]; ok {
 		return eth, id, nil
 	}
-	return eth, fwdpb.PacketHeaderId_OPAQUE, nil
+	return eth, fwdpb.PacketHeaderId_PACKET_HEADER_ID_OPAQUE, nil
 }
 
 func init() {
@@ -349,7 +349,7 @@ func init() {
 	}
 
 	// Register the parse and add functions for the ETHERNET header and its variants.
-	protocol.Register(fwdpb.PacketHeaderId_ETHERNET, parse, add)
-	protocol.Register(fwdpb.PacketHeaderId_ETHERNET_VLAN, parse, add)
-	protocol.Register(fwdpb.PacketHeaderId_ETHERNET_1Q, parse, add)
+	protocol.Register(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET, parse, add)
+	protocol.Register(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET_VLAN, parse, add)
+	protocol.Register(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET_1Q, parse, add)
 }

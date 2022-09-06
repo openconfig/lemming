@@ -18,7 +18,6 @@ import (
 	"fmt"
 
 	log "github.com/golang/glog"
-	"google.golang.org/protobuf/proto"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdtable"
@@ -36,9 +35,9 @@ type learn struct {
 // String formats the state of the action as a string.
 func (l *learn) String() string {
 	if l.table == nil {
-		return fmt.Sprintf("Type=%v;<Table=nil>", fwdpb.ActionType_BRIDGE_LEARN_ACTION)
+		return fmt.Sprintf("Type=%v;<Table=nil>", fwdpb.ActionType_ACTION_TYPE_BRIDGE_LEARN)
 	}
-	return fmt.Sprintf("Type=%v;<Table=%v>", fwdpb.ActionType_BRIDGE_LEARN_ACTION, l.table.ID())
+	return fmt.Sprintf("Type=%v;<Table=%v>", fwdpb.ActionType_ACTION_TYPE_BRIDGE_LEARN, l.table.ID())
 }
 
 // Cleanup releases the table.
@@ -53,8 +52,8 @@ func (l *learn) Cleanup() {
 // error. The errors are logged and the packet processing continues.
 func (l *learn) Process(packet fwdpacket.Packet, counters fwdobject.Counters) (fwdaction.Actions, fwdaction.State) {
 	if l.table == nil {
-		counters.Increment(fwdpb.CounterId_ERROR_PACKETS, 1)
-		counters.Increment(fwdpb.CounterId_ERROR_OCTETS, uint32(packet.Length()))
+		counters.Increment(fwdpb.CounterId_COUNTER_ID_ERROR_PACKETS, 1)
+		counters.Increment(fwdpb.CounterId_COUNTER_ID_ERROR_OCTETS, uint32(packet.Length()))
 		return nil, fwdaction.DROP
 	}
 	if err := l.table.Learn(packet); err != nil {
@@ -68,23 +67,23 @@ type learnBuilder struct{}
 
 // init registers a builder for the learn action type.
 func init() {
-	fwdaction.Register(fwdpb.ActionType_BRIDGE_LEARN_ACTION, &learnBuilder{})
+	fwdaction.Register(fwdpb.ActionType_ACTION_TYPE_BRIDGE_LEARN, &learnBuilder{})
 }
 
 // Build creates a new learn action.
 func (*learnBuilder) Build(desc *fwdpb.ActionDesc, ctx *fwdcontext.Context) (fwdaction.Action, error) {
-	if !proto.HasExtension(desc, fwdpb.E_BridgeLearnActionDesc_Extension) {
-		return nil, fmt.Errorf("actions: Build for learn action failed, missing extension %s %+v", fwdpb.E_BridgeLearnActionDesc_Extension.Name, desc)
+	bl, ok := desc.Action.(*fwdpb.ActionDesc_Bridge)
+	if !ok {
+		return nil, fmt.Errorf("actions: Build for learn action failed, missing extension")
 	}
-	learnExt := proto.GetExtension(desc, fwdpb.E_BridgeLearnActionDesc_Extension).(*fwdpb.BridgeLearnActionDesc)
-	table, err := fwdtable.Acquire(ctx, learnExt.GetTableId())
+	table, err := fwdtable.Acquire(ctx, bl.Bridge.GetTableId())
 	if err != nil {
 		return nil, fmt.Errorf("actions: Build for learn action failed, err %v", err)
 	}
 	b, ok := table.(*Table)
 	if !ok {
 		fwdtable.Release(table)
-		return nil, fmt.Errorf("actions: Build for learn action failed, table %v is not a bridge", learnExt.GetTableId())
+		return nil, fmt.Errorf("actions: Build for learn action failed, table %v is not a bridge", bl.Bridge.GetTableId())
 	}
 	return &learn{table: b}, nil
 }

@@ -32,7 +32,7 @@ type evaluate struct {
 
 // String formats the state of the action as a string.
 func (evaluate) String() string {
-	return fmt.Sprintf("Type=%v;", fwdpb.ActionType_EVALUATE_ACTION)
+	return fmt.Sprintf("Type=%v;", fwdpb.ActionType_ACTION_TYPE_EVALUATE)
 }
 
 // Process evaluates if the packet has an evaluate port and transmits it.
@@ -45,7 +45,7 @@ type evaluateBuilder struct{}
 
 // init registers a builder for the evaluate action type.
 func init() {
-	fwdaction.Register(fwdpb.ActionType_EVALUATE_ACTION, &evaluateBuilder{})
+	fwdaction.Register(fwdpb.ActionType_ACTION_TYPE_EVALUATE, &evaluateBuilder{})
 }
 
 // Build creates a new evaluate action.

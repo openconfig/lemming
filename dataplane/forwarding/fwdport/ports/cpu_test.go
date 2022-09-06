@@ -17,12 +17,12 @@ package ports
 import (
 	"testing"
 
-	"google.golang.org/protobuf/proto"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdport"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdobject"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdpacket"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
+	"google.golang.org/protobuf/proto"
 
 	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/arp"
 	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/ethernet"
@@ -55,26 +55,28 @@ func TestCpuWrite(t *testing.T) {
 
 	// Create a CPU port that exports the ETHER_TYPE and IP_ADDR_DST
 	desc := &fwdpb.PortDesc{
-		PortType: fwdpb.PortType_CPU_PORT.Enum(),
+		PortType: fwdpb.PortType_PORT_TYPE_CPU_PORT,
 		PortId:   fwdport.MakeID(fwdobject.NewID(name)),
 	}
 	ethertype := &fwdpb.PacketFieldId{
 		Field: &fwdpb.PacketField{
-			FieldNum: fwdpb.PacketFieldNum_ETHER_TYPE.Enum(),
-			Instance: proto.Uint32(0),
+			FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_TYPE,
+			Instance: 0,
 		},
 	}
 	ipaddress := &fwdpb.PacketFieldId{
 		Field: &fwdpb.PacketField{
-			FieldNum: fwdpb.PacketFieldNum_IP_ADDR_DST.Enum(),
-			Instance: proto.Uint32(0),
+			FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST,
+			Instance: 0,
 		},
 	}
 	cpu := &fwdpb.CPUPortDesc{
-		QueueId:        proto.String(name),
+		QueueId:        name,
 		ExportFieldIds: []*fwdpb.PacketFieldId{ethertype, ipaddress},
 	}
-	proto.SetExtension(desc, fwdpb.E_CPUPortDesc_Extension, cpu)
+	desc.Port = &fwdpb.PortDesc_Cpu{
+		Cpu: cpu,
+	}
 	port, err := fwdport.New(desc, ctx)
 	if err != nil {
 		t.Fatalf("Port creation failed, err %v.", err)
@@ -86,7 +88,7 @@ func TestCpuWrite(t *testing.T) {
 		0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D,
 		0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16,
 		0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c}
-	packet, err := fwdpacket.New(fwdpb.PacketHeaderId_ETHERNET, arp)
+	packet, err := fwdpacket.New(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET, arp)
 	if err != nil {
 		t.Fatalf("Unable to create ARP packet, err %v.", err)
 	}

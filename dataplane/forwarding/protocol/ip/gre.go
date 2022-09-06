@@ -57,7 +57,7 @@ func (gre *GRE) Header() []byte {
 
 // ID returns the protocol header ID.
 func (GRE) ID() fwdpb.PacketHeaderId {
-	return fwdpb.PacketHeaderId_GRE
+	return fwdpb.PacketHeaderId_PACKET_HEADER_ID_GRE
 }
 
 // Payload gets the payload information.
@@ -81,12 +81,12 @@ func (gre *GRE) Find(id fwdpacket.FieldID) ([]byte, error) {
 		return nil, fmt.Errorf("gre: Find failed, field %v does not exist", id)
 	}
 	switch id.Num {
-	case fwdpb.PacketFieldNum_GRE_KEY:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_GRE_KEY:
 		if gre.key != nil {
 			return gre.key.Copy(), nil
 		}
 
-	case fwdpb.PacketFieldNum_GRE_SEQUENCE:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_GRE_SEQUENCE:
 		if gre.seq != nil {
 			return gre.seq.Copy(), nil
 		}
@@ -104,7 +104,7 @@ func (gre *GRE) Update(id fwdpacket.FieldID, oper int, arg []byte) (bool, error)
 	}
 
 	switch id.Num {
-	case fwdpb.PacketFieldNum_GRE_KEY:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_GRE_KEY:
 		if gre.key == nil {
 			gre.key = make(frame.Field, greKeyBytes)
 			gre.header.Field(greDescPos, greDescBytes).SetBits(greKeyPos, greKeyBits, 0x1)
@@ -112,7 +112,7 @@ func (gre *GRE) Update(id fwdpacket.FieldID, oper int, arg []byte) (bool, error)
 		gre.key.Set(arg)
 		return true, nil
 
-	case fwdpb.PacketFieldNum_GRE_SEQUENCE:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_GRE_SEQUENCE:
 		if gre.seq == nil {
 			gre.seq = make(frame.Field, greSeqBytes)
 			gre.header.Field(greDescPos, greDescBytes).SetBits(greSeqPos, greSeqBits, 0x1)
@@ -184,5 +184,5 @@ func makeGRE(f *frame.Frame) (header, fwdpb.PacketHeaderId, error) {
 	if next, ok := ethernet.NextHeader[uint16(header.Field(greProtoPos, greProtoBytes).Value())]; ok {
 		return gre, next, nil
 	}
-	return gre, fwdpb.PacketHeaderId_OPAQUE, nil
+	return gre, fwdpb.PacketHeaderId_PACKET_HEADER_ID_OPAQUE, nil
 }

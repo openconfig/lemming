@@ -59,7 +59,7 @@ func (UDP) Trailer() []byte {
 
 // ID returns the UDP protocol header ID.
 func (UDP) ID(int) fwdpb.PacketHeaderId {
-	return fwdpb.PacketHeaderId_UDP
+	return fwdpb.PacketHeaderId_PACKET_HEADER_ID_UDP
 }
 
 // field returns bytes within the TCP header as identified by id.
@@ -68,10 +68,10 @@ func (udp *UDP) field(id fwdpacket.FieldID) frame.Field {
 		return protocol.UDF(udp.header, id)
 	}
 	switch id.Num {
-	case fwdpb.PacketFieldNum_L4_PORT_SRC:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_SRC:
 		return udp.header.Field(srcOffset, portBytes)
 
-	case fwdpb.PacketFieldNum_L4_PORT_DST:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST:
 		return udp.header.Field(dstOffset, portBytes)
 
 	default:
@@ -97,8 +97,8 @@ func (udp *UDP) UpdateField(id fwdpacket.FieldID, op int, arg []byte) (bool, err
 
 // Remove removes the UDP header.
 func (udp *UDP) Remove(id fwdpb.PacketHeaderId) error {
-	if id != fwdpb.PacketHeaderId_UDP {
-		return fmt.Errorf("udp: Remove header %v failed, outermost header is %v", id, fwdpb.PacketHeaderId_UDP)
+	if id != fwdpb.PacketHeaderId_PACKET_HEADER_ID_UDP {
+		return fmt.Errorf("udp: Remove header %v failed, outermost header is %v", id, fwdpb.PacketHeaderId_PACKET_HEADER_ID_UDP)
 	}
 	udp.header = nil
 	return nil
@@ -124,7 +124,7 @@ func (udp *UDP) Rebuild() error {
 	udp.header.Field(csumOffset, csumBytes).SetValue(0)
 
 	// If UDP is over IP4, we keep the checksum as zero.
-	if udp.desc.EnvelopeID() != fwdpb.PacketHeaderId_IP6 {
+	if udp.desc.EnvelopeID() != fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP6 {
 		return nil
 	}
 
@@ -134,11 +134,11 @@ func (udp *UDP) Rebuild() error {
 	var f []byte
 	var sum csum16.Sum
 	sum.Write(udp.header)
-	if f, err = udp.desc.Packet.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP_ADDR_SRC, fwdpacket.LastField)); err != nil {
+	if f, err = udp.desc.Packet.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC, fwdpacket.LastField)); err != nil {
 		return fmt.Errorf("udp: Rebuild failed: %v", err)
 	}
 	sum.Write(f)
-	if f, err = udp.desc.Packet.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP_ADDR_DST, fwdpacket.LastField)); err != nil {
+	if f, err = udp.desc.Packet.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST, fwdpacket.LastField)); err != nil {
 		return fmt.Errorf("udp: Rebuild failed: %v", err)
 	}
 	sum.Write(f)
@@ -172,9 +172,9 @@ func parse(frame *frame.Frame, desc *protocol.Desc) (protocol.Handler, fwdpb.Pac
 	return &UDP{
 		header: header,
 		desc:   desc,
-	}, fwdpb.PacketHeaderId_OPAQUE, nil
+	}, fwdpb.PacketHeaderId_PACKET_HEADER_ID_OPAQUE, nil
 }
 
 func init() {
-	protocol.Register(fwdpb.PacketHeaderId_UDP, parse, add)
+	protocol.Register(fwdpb.PacketHeaderId_PACKET_HEADER_ID_UDP, parse, add)
 }

@@ -100,13 +100,13 @@ func newTestBuilder(id int, tableType fwdpb.TableType) *testBuilder {
 
 // TestTable tests various table operations.
 func TestTable(t *testing.T) {
-	tableType := fwdpb.TableType_EXACT_TABLE
+	tableType := fwdpb.TableType_TABLE_TYPE_EXACT
 	unregister(tableType)
 
 	ctx := fwdcontext.New("test", "fwd")
 
 	// Create a table, no builder registered.
-	table, err := New(ctx, &fwdpb.TableDesc{TableType: &tableType})
+	table, err := New(ctx, &fwdpb.TableDesc{TableType: tableType})
 	if err != nil {
 		t.Logf("Got expected error %s.", err)
 	} else {
@@ -116,7 +116,7 @@ func TestTable(t *testing.T) {
 	// Create a table, builder registered.
 	builder := newTestBuilder(10, tableType)
 	table, err = New(ctx, &fwdpb.TableDesc{
-		TableType: &tableType,
+		TableType: tableType,
 		TableId:   MakeID(fwdobject.NewID("TestTable")),
 	})
 	if err != nil {
@@ -129,14 +129,14 @@ func TestTable(t *testing.T) {
 
 	// Find the table using an invalid object id.
 	invalid := id + "1"
-	if table, err = Find(ctx, &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: &invalid}}); err != nil {
+	if table, err = Find(ctx, &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: invalid}}); err != nil {
 		t.Logf("Got expected error %v.", err)
 	} else {
 		t.Errorf("Found unexpected table %v.", table)
 	}
 
 	// Find the table using a valid object id.
-	if _, err = Find(ctx, &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: &id}}); err != nil {
+	if _, err = Find(ctx, &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: id}}); err != nil {
 		t.Errorf("Table find failed, err %v.", err)
 	}
 }

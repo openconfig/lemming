@@ -20,7 +20,6 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	"google.golang.org/protobuf/proto"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdtable"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdtable/mock_fwdpacket"
@@ -37,19 +36,21 @@ import (
 func exactDesc(value int, transient bool) *fwdpb.EntryDesc {
 	desc := &fwdpb.EntryDesc{}
 	exact := &fwdpb.ExactEntryDesc{
-		Transient: proto.Bool(transient),
+		Transient: transient,
 		Fields: []*fwdpb.PacketFieldBytes{
 			{
 				FieldId: &fwdpb.PacketFieldId{
 					Field: &fwdpb.PacketField{
-						FieldNum: fwdpb.PacketFieldNum_IP_VERSION.Enum(),
+						FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION,
 					},
 				},
 				Bytes: []byte{uint8(value)},
 			},
 		},
 	}
-	proto.SetExtension(desc, fwdpb.E_ExactEntryDesc_Extension, exact)
+	desc.Entry = &fwdpb.EntryDesc_Exact{
+		Exact: exact,
+	}
 	return desc
 }
 
@@ -58,7 +59,7 @@ func exactDesc(value int, transient bool) *fwdpb.EntryDesc {
 func exactMatchTable(ctx *fwdcontext.Context, index int) (fwdtable.Table, error) {
 	// Exact match table descriptor.
 	desc := &fwdpb.TableDesc{
-		TableType: fwdpb.TableType_EXACT_TABLE.Enum(),
+		TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
 		Actions:   tabletestutil.ActionDesc(),
 		TableId:   fwdtable.MakeID(fwdobject.NewID(fmt.Sprintf("TABLE=%v", index))),
 	}
@@ -68,12 +69,14 @@ func exactMatchTable(ctx *fwdcontext.Context, index int) (fwdtable.Table, error)
 		FieldIds: []*fwdpb.PacketFieldId{
 			{
 				Field: &fwdpb.PacketField{
-					FieldNum: fwdpb.PacketFieldNum_IP_VERSION.Enum(),
+					FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION,
 				},
 			},
 		},
 	}
-	proto.SetExtension(desc, fwdpb.E_ExactTableDesc_Extension, exact)
+	desc.Table = &fwdpb.TableDesc_Exact{
+		Exact: exact,
+	}
 	return fwdtable.New(ctx, desc)
 }
 

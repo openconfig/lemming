@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	"google.golang.org/protobuf/proto"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction/mock_fwdpacket"
@@ -108,13 +107,15 @@ func TestRate(t *testing.T) {
 	}
 	for pos, test := range tests {
 		desc := fwdpb.ActionDesc{
-			ActionType: fwdpb.ActionType_RATE_ACTION.Enum(),
+			ActionType: fwdpb.ActionType_ACTION_TYPE_RATE,
 		}
 		rateDesc := fwdpb.RateActionDesc{
-			RateBps:    proto.Int32(test.rate),
-			BurstBytes: proto.Int32(test.burst),
+			RateBps:    test.rate,
+			BurstBytes: test.burst,
 		}
-		proto.SetExtension(&desc, fwdpb.E_RateActionDesc_Extension, &rateDesc)
+		desc.Action = &fwdpb.ActionDesc_Rate{
+			Rate: &rateDesc,
+		}
 		action, err := fwdaction.New(&desc, ctx)
 		if err != nil {
 			t.Errorf("%d: NewAction failed, desc %v failed, err %v.", pos, desc, err)
@@ -130,7 +131,7 @@ func TestRate(t *testing.T) {
 				return now.Add(p.duration)
 			}
 			var base fwdobject.Base
-			if err := base.InitCounters("prefix", "desc", fwdpb.CounterId_RATELIMIT_PACKETS, fwdpb.CounterId_RATELIMIT_OCTETS); err != nil {
+			if err := base.InitCounters("prefix", "desc", fwdpb.CounterId_COUNTER_ID_RATELIMIT_PACKETS, fwdpb.CounterId_COUNTER_ID_RATELIMIT_OCTETS); err != nil {
 				t.Fatalf("InitCounters failed, %v", err)
 			}
 
@@ -155,10 +156,10 @@ func TestRate(t *testing.T) {
 				t.Errorf("%d: %v processing returned bad state. Got %v, want %v.", pos, action, state, wantState)
 			}
 			counters := base.Counters()
-			if counter, ok := counters[fwdpb.CounterId_RATELIMIT_PACKETS]; !ok || counter.Value != wantPkts {
+			if counter, ok := counters[fwdpb.CounterId_COUNTER_ID_RATELIMIT_PACKETS]; !ok || counter.Value != wantPkts {
 				t.Errorf("%d: %v processing returned invalid counter %v. Got %v, want %v.", pos, action, counter, counter.Value, wantPkts)
 			}
-			if counter, ok := counters[fwdpb.CounterId_RATELIMIT_OCTETS]; !ok || counter.Value != wantBytes {
+			if counter, ok := counters[fwdpb.CounterId_COUNTER_ID_RATELIMIT_OCTETS]; !ok || counter.Value != wantBytes {
 				t.Errorf("%d: %v processing returned invalid counter %v.  Got %v, want %v.", pos, action, counter, counter.Value, wantBytes)
 			}
 		}

@@ -33,58 +33,58 @@ var ip6 = []byte{0x61, 0x00, 0x02, 0x00, 0x00, 0x02, 0xff, 0x04, 0x01, 0x02, 0x0
 func TestIP6(t *testing.T) {
 	queries := []packettestutil.FieldQuery{
 		{
-			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP_VERSION, 0),
+			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION, 0),
 			Result: []byte{0x06},
 		},
 		{
-			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP_ADDR_SRC, 0),
+			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC, 0),
 			Result: []byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01},
 		},
 		{
-			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP_ADDR_DST, 0),
+			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST, 0),
 			Result: []byte{0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08},
 		},
 		{
-			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP_QOS, 0),
+			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_QOS, 0),
 			Result: []byte{0x00, 0x00, 0x00, 0x10},
 		},
 		{
-			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP_HOP, 0),
+			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP, 0),
 			Result: []byte{0x04},
 		},
 		{
-			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP_PROTO, 0),
+			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO, 0),
 			Result: []byte{0xff},
 		},
 		{
-			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP6_FLOW, 0),
+			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP6_FLOW, 0),
 			Result: []byte{0x00, 0x00, 0x02, 0x00},
 		},
 	}
 
 	updates := []packettestutil.FieldUpdate{
 		{
-			ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP_ADDR_SRC, 0),
+			ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC, 0),
 			Arg: []byte{0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x18, 0x17, 0x16, 0x15, 0x14, 0x13, 0x12, 0x11},
 			Op:  fwdpacket.OpSet,
 		},
 		{
-			ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP_ADDR_DST, 0),
+			ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST, 0),
 			Arg: []byte{0x18, 0x17, 0x16, 0x15, 0x14, 0x13, 0x12, 0x11, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18},
 			Op:  fwdpacket.OpSet,
 		},
 		{
-			ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP_QOS, 0),
+			ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_QOS, 0),
 			Arg: []byte{0x00, 0x00, 0x00, 0x20},
 			Op:  fwdpacket.OpSet,
 		},
 		{
-			ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP_HOP, 0),
+			ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP, 0),
 			Arg: []byte{0x01},
 			Op:  fwdpacket.OpDec,
 		},
 		{
-			ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP6_FLOW, 0),
+			ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP6_FLOW, 0),
 			Arg: []byte{0x00, 0x00, 0x00, 0x04},
 			Op:  fwdpacket.OpSet,
 		},
@@ -95,7 +95,7 @@ func TestIP6(t *testing.T) {
 	tests := []packettestutil.PacketFieldTest{
 		// IP.
 		{
-			StartHeader: fwdpb.PacketHeaderId_IP,
+			StartHeader: fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP,
 			Orig: [][]byte{
 				ip6,
 			},
@@ -107,7 +107,7 @@ func TestIP6(t *testing.T) {
 		},
 		// IP6.
 		{
-			StartHeader: fwdpb.PacketHeaderId_IP6,
+			StartHeader: fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP6,
 			Orig: [][]byte{
 				ip6,
 			},
@@ -119,7 +119,7 @@ func TestIP6(t *testing.T) {
 		},
 		// IP6 over Ethernet frame.
 		{
-			StartHeader: fwdpb.PacketHeaderId_ETHERNET,
+			StartHeader: fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET,
 			Orig: [][]byte{
 				ethernetIP6,
 				ip6,
@@ -133,7 +133,7 @@ func TestIP6(t *testing.T) {
 		},
 		// IP6 over VLAN frame.
 		{
-			StartHeader: fwdpb.PacketHeaderId_ETHERNET,
+			StartHeader: fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET,
 			Orig: [][]byte{
 				ethernetVLANIP6,
 				ip6,
@@ -147,7 +147,7 @@ func TestIP6(t *testing.T) {
 		},
 		// IP6 over 1Q frame.
 		{
-			StartHeader: fwdpb.PacketHeaderId_ETHERNET,
+			StartHeader: fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET,
 			Orig: [][]byte{
 				ethernet1QIP6,
 				ip6,
@@ -175,7 +175,7 @@ func TestIP6TTL(t *testing.T) {
 
 	updates := []packettestutil.FieldUpdate{
 		{
-			ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP_HOP, 0),
+			ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP, 0),
 			Arg: []byte{0x01},
 			Op:  fwdpacket.OpDec,
 		},
@@ -187,7 +187,7 @@ func TestIP6TTL(t *testing.T) {
 	tests := []packettestutil.PacketFieldTest{
 		// IP6 over Ethernet frame.
 		{
-			StartHeader: fwdpb.PacketHeaderId_ETHERNET,
+			StartHeader: fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET,
 			Orig: [][]byte{
 				ethernetIP6,
 				ip6tcpInitial,

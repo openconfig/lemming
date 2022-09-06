@@ -25,7 +25,7 @@ type noOPBuilder struct{}
 
 func init() {
 	// Register a builder for the continue action type.
-	fwdaction.Register(fwdpb.ActionType_CONTINUE_ACTION, &noOPBuilder{})
+	fwdaction.Register(fwdpb.ActionType_ACTION_TYPE_CONTINUE, &noOPBuilder{})
 }
 
 // Build creates a new noOP action. The builder just returns nil, which is then

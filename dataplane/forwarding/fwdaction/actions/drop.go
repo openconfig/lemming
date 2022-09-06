@@ -29,14 +29,14 @@ type drop struct{}
 
 // String formats the state of the action as a string.
 func (drop) String() string {
-	return fmt.Sprintf("Type=%v;", fwdpb.ActionType_DROP_ACTION)
+	return fmt.Sprintf("Type=%v;", fwdpb.ActionType_ACTION_TYPE_DROP)
 }
 
 // Process processes the packet by dropping it.
 func (*drop) Process(packet fwdpacket.Packet, counters fwdobject.Counters) (fwdaction.Actions, fwdaction.State) {
 	if counters != nil {
-		counters.Increment(fwdpb.CounterId_DROP_PACKETS, 1)
-		counters.Increment(fwdpb.CounterId_DROP_OCTETS, uint32(packet.Length()))
+		counters.Increment(fwdpb.CounterId_COUNTER_ID_DROP_PACKETS, 1)
+		counters.Increment(fwdpb.CounterId_COUNTER_ID_DROP_OCTETS, uint32(packet.Length()))
 	}
 	return nil, fwdaction.DROP
 }
@@ -46,7 +46,7 @@ type dropBuilder struct{}
 
 // init registers a builder for the drop action type.
 func init() {
-	fwdaction.Register(fwdpb.ActionType_DROP_ACTION, &dropBuilder{})
+	fwdaction.Register(fwdpb.ActionType_ACTION_TYPE_DROP, &dropBuilder{})
 }
 
 // Build creates a new drop action.
