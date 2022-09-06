@@ -34,39 +34,7 @@ func init() {
 	fwdport.Register(fwdpb.PortType_PORT_TYPE_KERNEL, kernelBuilder{})
 }
 
-type kernelBuilder struct {
-}
-
-func (kernelBuilder) Build(portDesc *fwdpb.PortDesc, ctx *fwdcontext.Context) (fwdport.Port, error) {
-	kp, ok := portDesc.Port.(*fwdpb.PortDesc_Kernel)
-	if !ok {
-		return nil, fmt.Errorf("invalid port type in proto")
-	}
-
-	// TODO: configure MTU
-	handle, err := pcap.OpenLive(kp.Kernel.DeviceName, 1500, true, pcap.BlockForever)
-	if err != nil {
-		return nil, err
-	}
-	p := &kernelPort{
-		ctx:     ctx,
-		handle:  handle,
-		devName: kp.Kernel.DeviceName,
-	}
-	list := append(fwdport.CounterList, fwdaction.CounterList...)
-	if err := p.InitCounters("", "", list...); err != nil {
-		return nil, err
-	}
-	p.read()
-	return p, nil
-}
-
-type packetHandle interface {
-	gopacket.PacketDataSource
-	WritePacketData([]byte) error
-	Close()
-}
-
+// kernelPort is a ports that receives from and writes a linux network device.
 type kernelPort struct {
 	fwdobject.Base
 	devName string
@@ -74,6 +42,12 @@ type kernelPort struct {
 	output  fwdaction.Actions
 	ctx     *fwdcontext.Context // Forwarding context containing the port
 	handle  packetHandle
+}
+
+type packetHandle interface {
+	gopacket.PacketDataSource
+	WritePacketData([]byte) error
+	Close()
 }
 
 func (p *kernelPort) String() string {
@@ -92,7 +66,7 @@ func (p *kernelPort) Cleanup() {
 	p.output = nil
 }
 
-// Update updates a port.
+// Update updates the actions of the port.
 func (p *kernelPort) Update(upd *fwdpb.PortUpdateDesc) error {
 	var err error
 	defer func() {
@@ -115,7 +89,7 @@ func (p *kernelPort) Update(upd *fwdpb.PortUpdateDesc) error {
 	return nil
 }
 
-func (p *kernelPort) read() {
+func (p *kernelPort) process() {
 	src := gopacket.NewPacketSource(p.handle, layers.LinkTypeEthernet)
 	go func() {
 		for {
@@ -157,7 +131,8 @@ func (p *kernelPort) Actions(dir fwdpb.PortAction) fwdaction.Actions {
 	return nil
 }
 
-// State manages the state of the port.
+// State return the state of the port (UP).
+// TODO: handle port state correct.
 func (p *kernelPort) State(op *fwdpb.PortInfo) (*fwdpb.PortStateReply, error) {
 	ready := fwdpb.PortStateReply{
 		LocalPort: &fwdpb.PortInfo{
@@ -171,4 +146,32 @@ func (p *kernelPort) State(op *fwdpb.PortInfo) (*fwdpb.PortStateReply, error) {
 		},
 	}
 	return &ready, nil
+}
+
+type kernelBuilder struct {
+}
+
+// Build creates a new port.
+func (kernelBuilder) Build(portDesc *fwdpb.PortDesc, ctx *fwdcontext.Context) (fwdport.Port, error) {
+	kp, ok := portDesc.Port.(*fwdpb.PortDesc_Kernel)
+	if !ok {
+		return nil, fmt.Errorf("invalid port type in proto")
+	}
+
+	// TODO: configure MTU
+	handle, err := pcap.OpenLive(kp.Kernel.DeviceName, 1500, true, pcap.BlockForever)
+	if err != nil {
+		return nil, err
+	}
+	p := &kernelPort{
+		ctx:     ctx,
+		handle:  handle,
+		devName: kp.Kernel.DeviceName,
+	}
+	list := append(fwdport.CounterList, fwdaction.CounterList...)
+	if err := p.InitCounters("", "", list...); err != nil {
+		return nil, err
+	}
+	p.process()
+	return p, nil
 }
