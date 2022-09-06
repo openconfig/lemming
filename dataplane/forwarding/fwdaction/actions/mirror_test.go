@@ -58,9 +58,12 @@ func (recordPort) String() string { return "" }
 func (recordPort) Actions(fwdpb.PortAction) fwdaction.Actions { return nil }
 
 // State is ignored.
-func (recordPort) State(op *fwdpb.PortInfo) (fwdpb.PortStateReply, error) {
-	return fwdpb.PortStateReply{}, nil
+func (recordPort) State(op *fwdpb.PortInfo) (*fwdpb.PortStateReply, error) {
+	return &fwdpb.PortStateReply{}, nil
 }
+
+// Ensures recordPort implements fwdport.Port interface.
+var _ fwdport.Port = &recordPort{}
 
 // makeUpdateDstMacAction returns an action desc to update the mac address.
 func makeUpdateDstMacAction(mac []byte) (*fwdpb.ActionDesc, error) {
