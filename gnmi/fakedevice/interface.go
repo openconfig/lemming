@@ -104,6 +104,8 @@ func interfaceTask(getIntendedConfig func() *oc.Root, q gnmit.Queue, update gnmi
 				log.Errorf("interfaceTask: error while writing update to applied configuration: %v", err)
 				return false
 			}
+		} else {
+			log.V(1).Info("No applied config updates for interfaceTask")
 		}
 		return true
 	}
@@ -193,7 +195,7 @@ func interfaceNotificationHandler(no *gpb.Notification) error {
 func interfacePathHandler(path *gpb.Path) {
 	switch {
 	case matchingPath(path, descriptionPaths):
-		log.V(1).Infof("Received update path: %s", prototext.Format(path))
+		log.V(1).Infof("interfaceTask: Received update path: %s", prototext.Format(path))
 		interfacePendingEvents[&intfDescriptionReactor] = true
 	case matchingPath(path, enabledPaths), matchingPath(path, namePaths), matchingPath(path, ipv4AddressPaths), matchingPath(path, prefixLengthPaths):
 		interfacePendingEvents[&interfaceReactor] = true
@@ -205,6 +207,7 @@ func interfacePathHandler(path *gpb.Path) {
 var (
 	intfDescriptionReactor = func(intendedRoot *oc.Root) error {
 		for intfName, intf := range intendedRoot.Interface {
+			log.V(1).Infof("interfaceTask: adding new interface %q", intfName)
 			curIntf, ok := interfaceAppliedRoot.Interface[intfName]
 			if !ok {
 				var err error
@@ -216,6 +219,7 @@ var (
 		}
 
 		for intfName := range interfaceAppliedRoot.Interface {
+			log.V(1).Infof("interfaceTask: deleting interface %q", intfName)
 			if _, ok := intendedRoot.Interface[intfName]; !ok {
 				delete(interfaceAppliedRoot.Interface, intfName)
 			}
