@@ -205,7 +205,7 @@ func New(ctx context.Context, addr, hostname string, sendMeta bool, tasks []Task
 	}
 	go func() {
 		if err := srvDS.Serve(lisDS); err != nil {
-			log.Errorf("Error while serving datastore target: %v", err)
+			log.Fatalf("Error while serving datastore target: %v", err)
 		}
 	}()
 
@@ -221,7 +221,7 @@ func New(ctx context.Context, addr, hostname string, sendMeta bool, tasks []Task
 
 	go func() {
 		if err := srv.Serve(lis); err != nil {
-			log.Errorf("Error while serving gnmi target: %v", err)
+			log.Fatalf("Error while serving gnmi target: %v", err)
 		}
 	}()
 	c.stopFn = func() {
