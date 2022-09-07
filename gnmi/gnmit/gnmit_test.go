@@ -50,7 +50,7 @@ func mustTargetPath(t, s string, addOpenConfigOrigin bool) *gpb.Path {
 	p := mustPath(s)
 	p.Target = t
 	if addOpenConfigOrigin {
-		p.Origin = "openconfig"
+		p.Origin = OpenconfigOrigin
 	}
 	return p
 }

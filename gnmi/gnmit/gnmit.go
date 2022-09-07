@@ -41,6 +41,10 @@ import (
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 )
 
+const (
+	OpenconfigOrigin = "openconfig"
+)
+
 var (
 	// metadataUpdatePeriod is the period of time after which the metadata for the collector
 	// is updated to the client.
@@ -156,7 +160,7 @@ func NewServer(ctx context.Context, schema *ytypes.Schema, hostname string, send
 			if notif.Prefix == nil {
 				notif.Prefix = &gpb.Path{}
 			}
-			notif.Prefix.Origin = "openconfig"
+			notif.Prefix.Origin = OpenconfigOrigin
 			notif.Prefix.Target = hostname
 			c.cache.GnmiUpdate(notif)
 		}
@@ -437,7 +441,7 @@ func (s *GNMIServer) update(dirtyRoot ygot.ValidatedGoStruct, origin string) err
 	n.Timestamp = time.Now().UnixNano()
 	n.Prefix = &gpb.Path{Origin: origin, Target: s.c.name}
 	if n.Prefix.Origin == "" {
-		n.Prefix.Origin = "openconfig"
+		n.Prefix.Origin = OpenconfigOrigin
 	}
 
 	// Update cache
