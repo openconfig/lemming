@@ -46,12 +46,16 @@ type Device struct {
 }
 
 // New returns a new initialized device.
-func New(lis net.Listener, opts ...grpc.ServerOption) (*Device, error) {
+func New(lis net.Listener, targetName string, opts ...grpc.ServerOption) (*Device, error) {
 	s := grpc.NewServer(opts...)
+	gnmiServer, err := fgnmi.New(s, targetName)
+	if err != nil {
+		return nil, err
+	}
 	d := &Device{
 		lis:         lis,
 		s:           s,
-		gnmiServer:  fgnmi.New(s),
+		gnmiServer:  gnmiServer,
 		gnoiServer:  fgnoi.New(s),
 		gribiServer: fgribi.New(s),
 		gnsiServer:  fgnsi.New(s),

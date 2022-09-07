@@ -127,14 +127,15 @@ func (s *GNMIServer) getIntendedConfig() *oc.Root {
 	return nil
 }
 
-// New returns a new collector server implementation that can be registered on
+// NewServer returns a new collector server implementation that can be registered on
 // an existing gRPC server. It takes a string indicating the hostname of the
 // target, a boolean indicating whether metadata should be sent, and a slice of
 // tasks that are to be launched to run on the server.
-func NewServer(ctx context.Context, hostname string, sendMeta bool, tasks []Task) (*Collector, *GNMIServer, error) {
+func NewServer(ctx context.Context, schema *ytypes.Schema, hostname string, sendMeta bool, tasks []Task) (*Collector, *GNMIServer, error) {
 	c := &Collector{
-		inCh: make(chan *gpb.SubscribeResponse),
-		name: hostname,
+		inCh:   make(chan *gpb.SubscribeResponse),
+		name:   hostname,
+		schema: schema,
 	}
 
 	c.cache = cache.New([]string{hostname})
@@ -181,6 +182,12 @@ func NewServer(ctx context.Context, hostname string, sendMeta bool, tasks []Task
 	return c, gnmiserver, nil
 }
 
+// StartDatastoreServer starts a separate gNMI service on a unix domain socket
+// that allows operational state to be written.
+//
+// - gnmiServer is the primary gNMI service with a backdoor for setting
+// read-only values.
+// - func() is a graceful stop function for the gRPC server.
 func StartDatastoreServer(gnmiServer *GNMIServer) (func(), error) {
 	if err := os.RemoveAll(DatastoreAddress); err != nil {
 		return nil, err
@@ -208,8 +215,8 @@ func StartDatastoreServer(gnmiServer *GNMIServer) (func(), error) {
 //
 // New returns the new collector, the address it is listening on in the form hostname:port
 // or any errors encounted whilst setting it up.
-func New(ctx context.Context, addr, hostname string, sendMeta bool, tasks []Task, opts ...grpc.ServerOption) (*Collector, string, error) {
-	c, gnmiserver, err := NewServer(ctx, hostname, sendMeta, tasks)
+func New(ctx context.Context, schema *ytypes.Schema, addr, hostname string, sendMeta bool, tasks []Task, opts ...grpc.ServerOption) (*Collector, string, error) {
+	c, gnmiserver, err := NewServer(ctx, schema, hostname, sendMeta, tasks)
 	if err != nil {
 		return nil, "", err
 	}
@@ -272,11 +279,10 @@ func NewSettable(ctx context.Context, addr string, hostname string, sendMeta boo
 	}
 
 	// FIXME(wenbli): initialize the collector with default values.
-	collector, addr, err := New(ctx, addr, hostname, sendMeta, tasks, opts...)
+	collector, addr, err := New(ctx, schema, addr, hostname, sendMeta, tasks, opts...)
 	if err != nil {
 		return nil, "", err
 	}
-	collector.schema = schema
 	return collector, addr, nil
 }
 
