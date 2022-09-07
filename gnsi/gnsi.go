@@ -15,89 +15,88 @@
 package gnsi
 
 import (
+	"context"
+
 	"google.golang.org/grpc"
-	// authzpb "github.com/openconfig/gnsi/authz"
-	// certpb "github.com/openconfig/gnsi/cert"
-	// consolepb "github.com/openconfig/gnsi/console"
-	// pathzpb "github.com/openconfig/gnsi/pathz"
-	// sshpb "github.com/openconfig/gnsi/ssh"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
+	authzpb "github.com/openconfig/gnsi/authz"
+	certpb "github.com/openconfig/gnsi/cert"
+	credentialzpb "github.com/openconfig/gnsi/credentialz"
+	pathzpb "github.com/openconfig/gnsi/pathz"
 )
 
-/*
 type authz struct {
+	authzpb.UnimplementedAuthzServer
 }
 
-func (a *authz) Rotate(authzpb.AuthzManagement_RotateServer) error {
-	return grpc.Errorf(codes.Unimplemented, "Fake UnImplemented")
+func (a *authz) Rotate(authzpb.Authz_RotateServer) error {
+	return status.Errorf(codes.Unimplemented, "Fake UnImplemented")
+}
+
+func (a *authz) Get(context.Context, *authzpb.GetRequest) (*authzpb.GetResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "Fake UnImplemented")
 }
 
 type cert struct {
+	certpb.UnimplementedCertificateManagementServer
 }
 
 func (c *cert) Install(certpb.CertificateManagement_InstallServer) error {
-	return grpc.Errorf(codes.Unimplemented, "Fake UnImplemented")
+	return status.Errorf(codes.Unimplemented, "Fake UnImplemented")
 }
 
 func (c *cert) Rotate(certpb.CertificateManagement_RotateServer) error {
-	return grpc.Errorf(codes.Unimplemented, "Fake UnImplemented")
-}
-
-type console struct {
-}
-
-func (c *console) MutateAccountPassword(consolepb.Console_MutateAccountPasswordServer) error {
-	return grpc.Errorf(codes.Unimplemented, "Fake UnImplemented")
+	return status.Errorf(codes.Unimplemented, "Fake UnImplemented")
 }
 
 type pathz struct {
+	pathzpb.UnimplementedPathzServer
 }
 
-func (p *pathz) Install(pathzpb.PathzManagement_InstallServer) error {
-	return grpc.Errorf(codes.Unimplemented, "Fake UnImplemented")
+func (p *pathz) Rotate(pathzpb.Pathz_RotateServer) error {
+	return status.Errorf(codes.Unimplemented, "Fake UnImplemented")
 }
 
-func (p *pathz) Rotate(pathzpb.PathzManagement_RotateServer) error {
-	return grpc.Errorf(codes.Unimplemented, "Fake UnImplemented")
+func (p *pathz) Probe(context.Context, *pathzpb.ProbeRequest) (*pathzpb.ProbeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "Fake UnImplemented")
 }
 
-type ssh struct {
+type credentialz struct {
+	credentialzpb.UnimplementedCredentialzServer
 }
 
-func (s *ssh) MutateAccountCredentials(sshpb.Ssh_MutateAccountCredentialsServer) error {
-	return grpc.Errorf(codes.Unimplemented, "Fake UnImplemented")
+func (c *credentialz) MutateAccountCredentials(credentialzpb.Credentialz_RotateAccountCredentialsServer) error {
+	return status.Errorf(codes.Unimplemented, "Fake UnImplemented")
 }
 
-func (s *ssh) MutateHostCredentials(sshpb.Ssh_MutateHostCredentialsServer) error {
-	return grpc.Errorf(codes.Unimplemented, "Fake UnImplemented")
+func (c *credentialz) MutateHostCredentials(credentialzpb.Credentialz_RotateHostCredentialsServer) error {
+	return status.Errorf(codes.Unimplemented, "Fake UnImplemented")
 }
-
-*/
 
 // Server is a fake gNSI implementation.
 type Server struct {
-	s *grpc.Server
-	//	authz   *authz
-	//	cert    *cert
-	//	console *console
-	//	pathz   *pathz
-	//	ssh     *ssh
+	s     *grpc.Server
+	authz *authz
+	cert  *cert
+	pathz *pathz
+	credz *credentialz
 }
 
 // New returns a new fake gNMI server.
 func New(s *grpc.Server) *Server {
 	srv := &Server{
-		s: s,
-		//		authz:   &authz{},
-		//		cert:    &cert{},
-		//		console: &console{},
-		//		pathz:   &pathz{},
-		//		ssh:     &ssh{},
+		s:     s,
+		authz: &authz{},
+		cert:  &cert{},
+		pathz: &pathz{},
+		credz: &credentialz{},
 	}
-	//	authzpb.RegisterAuthzManagementServer(s, srv.authz)
-	//	certpb.RegisterCertificateManagementServer(s, srv.cert)
-	//	consolepb.RegisterConsoleServer(s, srv.console)
-	//	pathzpb.RegisterPathzManagementServer(s, srv.pathz)
-	//	sshpb.RegisterSshServer(s, srv.ssh)
+	authzpb.RegisterAuthzServer(s, srv.authz)
+	certpb.RegisterCertificateManagementServer(s, srv.cert)
+	credentialzpb.RegisterCredentialzServer(s, srv.credz)
+	pathzpb.RegisterPathzServer(s, srv.pathz)
 
 	return srv
 }

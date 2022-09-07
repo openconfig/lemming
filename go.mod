@@ -9,7 +9,8 @@ require (
 	github.com/h-fam/errdiff v1.0.2
 	github.com/kentik/patricia v1.2.0
 	github.com/openconfig/gnmi v0.0.0-20220617175856-41246b1b3507
-	github.com/openconfig/gnoi v0.0.0-20220131192435-7dd3a95a4f1e
+	github.com/openconfig/gnoi v0.0.0-20220809151450-6bddacd72ef8
+	github.com/openconfig/gnsi v0.0.0-20220906172358-1eda48d90de6
 	github.com/openconfig/goyang v1.1.0
 	github.com/openconfig/gribi v0.1.1-0.20220622162620-08d53dffce45
 	github.com/openconfig/gribigo v0.0.0-20220802181317-805e943d8714
@@ -19,8 +20,8 @@ require (
 	github.com/p4lang/p4runtime v1.3.0
 	github.com/vishvananda/netlink v1.1.1-0.20210330154013-f5de75959ad5
 	golang.org/x/sys v0.0.0-20220412211240-33da011f77ad
-	google.golang.org/grpc v1.45.0
-	google.golang.org/protobuf v1.28.0
+	google.golang.org/grpc v1.49.0
+	google.golang.org/protobuf v1.28.1
 	k8s.io/klog/v2 v2.60.1
 )
 
@@ -56,7 +57,7 @@ require (
 	golang.org/x/net v0.0.0-20220412020605-290c469a71a5 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/xerrors v0.0.0-20220411194840-2f41105eb62f // indirect
-	google.golang.org/genproto v0.0.0-20220407144326-9054f6ed7bac // indirect
+	google.golang.org/genproto v0.0.0-20220608133413-ed9918b62aac // indirect
 	gopkg.in/ini.v1 v1.66.4 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
