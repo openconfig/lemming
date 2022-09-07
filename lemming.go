@@ -82,9 +82,14 @@ func (d *Device) Stop() error {
 	return d.err
 }
 
-// GNMI returns the gnmi server implementation.
+// GNMI returns the gNMI server implementation.
 func (d *Device) GNMI() *fgnmi.Server {
 	return d.gnmiServer
+}
+
+// GNSI returns the gNSI server implementation.
+func (d *Device) GNSI() *fgnsi.Server {
+	return d.gnsiServer
 }
 
 func (d *Device) startServer() {
