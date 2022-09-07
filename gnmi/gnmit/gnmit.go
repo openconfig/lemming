@@ -450,8 +450,6 @@ func (s *GNMIServer) set(req *gpb.SetRequest) error {
 
 // Set is a prototype for a gNMI Set operation.
 func (s *GNMIServer) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResponse, error) {
-	s.intendedConfigMu.Lock()
-	defer s.intendedConfigMu.Unlock()
 	if s.c.schema == nil {
 		return s.UnimplementedGNMIServer.Set(ctx, req)
 	}
