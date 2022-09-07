@@ -223,36 +223,25 @@ func (e *Engine) ContextCreate(_ context.Context, request *fwdpb.ContextCreateRe
 // notification services are specified but not reachable, the context update
 // fails.
 func (e *Engine) ContextUpdate(_ context.Context, request *fwdpb.ContextUpdateRequest) (*fwdpb.ContextUpdateReply, error) {
-	var err error
-	var ps fwdcontext.PacketCallback
-	var ns fwdcontext.NotificationCallback
-
 	paddr := request.GetPacketAddress()
 	naddr := request.GetNotificationAddress()
-	for _, op := range request.GetOperations() {
-		switch op {
-		case fwdpb.ContextUpdateRequest_OPERATION_UPDATE_PACKET_ADDRESS:
-			if ps, err = e.GetPacketSinkCallback(paddr); err != nil {
-				return nil, err
-			}
-
-		case fwdpb.ContextUpdateRequest_OPERATION_UPDATE_NOTIFICATION_ADDRESS:
-			if ns, err = e.GetNotificationCallback(naddr); err != nil {
-				return nil, err
-			}
-
-		}
-	}
-
 	cid := request.GetContextId()
+
 	for _, op := range request.GetOperations() {
 		switch op {
 		case fwdpb.ContextUpdateRequest_OPERATION_UPDATE_PACKET_ADDRESS:
+			ps, err := e.GetPacketSinkCallback(paddr)
+			if err != nil {
+				return nil, err
+			}
 			if err = e.UpdatePacketSink(cid, ps, paddr); err != nil {
 				return nil, err
 			}
-
 		case fwdpb.ContextUpdateRequest_OPERATION_UPDATE_NOTIFICATION_ADDRESS:
+			ns, err := e.GetNotificationCallback(naddr)
+			if err != nil {
+				return nil, err
+			}
 			if err = e.UpdateNotification(cid, ns, naddr); err != nil {
 				return nil, err
 			}
