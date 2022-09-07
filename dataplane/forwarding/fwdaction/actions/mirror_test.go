@@ -20,7 +20,6 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"google.golang.org/protobuf/proto"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction/mock_fwdpacket"
@@ -59,25 +58,30 @@ func (recordPort) String() string { return "" }
 func (recordPort) Actions(fwdpb.PortAction) fwdaction.Actions { return nil }
 
 // State is ignored.
-func (recordPort) State(op *fwdpb.PortInfo) (fwdpb.PortStateReply, error) {
-	return fwdpb.PortStateReply{}, nil
+func (recordPort) State(op *fwdpb.PortInfo) (*fwdpb.PortStateReply, error) {
+	return &fwdpb.PortStateReply{}, nil
 }
+
+// Ensures recordPort implements fwdport.Port interface.
+var _ fwdport.Port = &recordPort{}
 
 // makeUpdateDstMacAction returns an action desc to update the mac address.
 func makeUpdateDstMacAction(mac []byte) (*fwdpb.ActionDesc, error) {
 	desc := fwdpb.ActionDesc{
-		ActionType: fwdpb.ActionType_UPDATE_ACTION.Enum(),
+		ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
 	}
 	update := fwdpb.UpdateActionDesc{
-		Type: fwdpb.UpdateType_SET_UPDATE.Enum(),
+		Type: fwdpb.UpdateType_UPDATE_TYPE_SET,
 		FieldId: &fwdpb.PacketFieldId{
 			Field: &fwdpb.PacketField{
-				FieldNum: fwdpb.PacketFieldNum_ETHER_MAC_DST.Enum(),
+				FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST,
 			},
 		},
 		Value: mac,
 	}
-	proto.SetExtension(&desc, fwdpb.E_UpdateActionDesc_Extension, &update)
+	desc.Action = &fwdpb.ActionDesc_Update{
+		Update: &update,
+	}
 	return &desc, nil
 }
 
@@ -141,7 +145,7 @@ func TestMirror(t *testing.T) {
 
 		// Create a mirror action using its builder.
 		desc := fwdpb.ActionDesc{
-			ActionType: fwdpb.ActionType_MIRROR_ACTION.Enum(),
+			ActionType: fwdpb.ActionType_ACTION_TYPE_MIRROR,
 		}
 		mirror := fwdpb.MirrorActionDesc{}
 
@@ -154,10 +158,11 @@ func TestMirror(t *testing.T) {
 		}
 		if test.hasPort {
 			mirror.PortId = pid
-			mirror.PortAction = fwdpb.PortAction_PORT_ACTION_OUTPUT.Enum()
+			mirror.PortAction = fwdpb.PortAction_PORT_ACTION_OUTPUT
 		}
-
-		proto.SetExtension(&desc, fwdpb.E_MirrorActionDesc_Extension, &mirror)
+		desc.Action = &fwdpb.ActionDesc_Mirror{
+			Mirror: &mirror,
+		}
 		action, err := fwdaction.New(&desc, ctx)
 		if err != nil {
 			t.Fatalf("%v: NewAction failed, desc %v failed, err %v.", idx, desc, err)
@@ -166,13 +171,13 @@ func TestMirror(t *testing.T) {
 		// Verify the action by processing a packet and verifying the counters
 		// and results.
 		var base fwdobject.Base
-		if err := base.InitCounters("prefix", "desc", fwdpb.CounterId_MIRROR_ERROR_PACKETS, fwdpb.CounterId_MIRROR_ERROR_OCTETS, fwdpb.CounterId_MIRROR_PACKETS, fwdpb.CounterId_MIRROR_OCTETS); err != nil {
+		if err := base.InitCounters("prefix", "desc", fwdpb.CounterId_COUNTER_ID_MIRROR_ERROR_PACKETS, fwdpb.CounterId_COUNTER_ID_MIRROR_ERROR_OCTETS, fwdpb.CounterId_COUNTER_ID_MIRROR_PACKETS, fwdpb.CounterId_COUNTER_ID_MIRROR_OCTETS); err != nil {
 			t.Fatalf("%v: InitCounters failed, %v", idx, err)
 		}
 
 		// List of fields that are implicitly mirrored
-		opFID := fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_PORT_OUTPUT, 0)
-		inFID := fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_PORT_INPUT, 0)
+		opFID := fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT, 0)
+		inFID := fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT, 0)
 
 		fields := []fwdpacket.FieldID{
 			inFID, opFID,
@@ -197,7 +202,7 @@ func TestMirror(t *testing.T) {
 		mirrored.EXPECT().Log().Return(nil).AnyTimes()
 		mirrored.EXPECT().Update(opFID, fwdpacket.OpSet, gomock.Any()).Return(nil).AnyTimes()
 		mirrored.EXPECT().Update(inFID, fwdpacket.OpSet, gomock.Any()).Return(nil).AnyTimes()
-		mirrored.EXPECT().Update(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ETHER_MAC_DST, 0),
+		mirrored.EXPECT().Update(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST, 0),
 			gomock.Any(), gomock.Any()).AnyTimes()
 
 		// The mock original packet. Note that there are no expectations on the

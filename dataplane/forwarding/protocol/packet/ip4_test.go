@@ -33,49 +33,49 @@ var ip4 = []byte{0x45, 0x01, 0x00, 0x16, 0x00, 0x00, 0x00, 0x00, 0x08, 0xff, 0x0
 func TestIP4(t *testing.T) {
 	queries := []packettestutil.FieldQuery{
 		{
-			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP_VERSION, 0),
+			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION, 0),
 			Result: []byte{0x04},
 		},
 		{
-			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP_ADDR_SRC, 0),
+			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC, 0),
 			Result: []byte{0x01, 0x02, 0x03, 0x04},
 		},
 		{
-			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP_ADDR_DST, 0),
+			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST, 0),
 			Result: []byte{0x0a, 0x0b, 0x0c, 0x0d},
 		},
 		{
-			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP_QOS, 0),
+			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_QOS, 0),
 			Result: []byte{0x01},
 		},
 		{
-			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP_HOP, 0),
+			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP, 0),
 			Result: []byte{0x08},
 		},
 		{
-			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP_PROTO, 0),
+			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO, 0),
 			Result: []byte{0xff},
 		},
 	}
 
 	updates := []packettestutil.FieldUpdate{
 		{
-			ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP_ADDR_SRC, 0),
+			ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC, 0),
 			Arg: []byte{0x11, 0x12, 0x13, 0x14},
 			Op:  fwdpacket.OpSet,
 		},
 		{
-			ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP_ADDR_DST, 0),
+			ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST, 0),
 			Arg: []byte{0x1a, 0x1b, 0x1c, 0x1d},
 			Op:  fwdpacket.OpSet,
 		},
 		{
-			ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP_QOS, 0),
+			ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_QOS, 0),
 			Arg: []byte{0x0d},
 			Op:  fwdpacket.OpSet,
 		},
 		{
-			ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP_HOP, 0),
+			ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP, 0),
 			Arg: []byte{0x01},
 			Op:  fwdpacket.OpDec,
 		},
@@ -86,7 +86,7 @@ func TestIP4(t *testing.T) {
 	tests := []packettestutil.PacketFieldTest{
 		// IP packet.
 		{
-			StartHeader: fwdpb.PacketHeaderId_IP,
+			StartHeader: fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP,
 			Orig: [][]byte{
 				ip4,
 			},
@@ -98,7 +98,7 @@ func TestIP4(t *testing.T) {
 		},
 		// IP4 packet.
 		{
-			StartHeader: fwdpb.PacketHeaderId_IP4,
+			StartHeader: fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4,
 			Orig: [][]byte{
 				ip4,
 			},
@@ -110,7 +110,7 @@ func TestIP4(t *testing.T) {
 		},
 		// IP4 over Ethernet frame.
 		{
-			StartHeader: fwdpb.PacketHeaderId_ETHERNET,
+			StartHeader: fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET,
 			Orig: [][]byte{
 				ethernetIP4,
 				ip4,
@@ -124,7 +124,7 @@ func TestIP4(t *testing.T) {
 		},
 		// IP4 over VLAN frame.
 		{
-			StartHeader: fwdpb.PacketHeaderId_ETHERNET,
+			StartHeader: fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET,
 			Orig: [][]byte{
 				ethernetVLANIP4,
 				ip4,
@@ -138,7 +138,7 @@ func TestIP4(t *testing.T) {
 		},
 		// IP4 over 1Q frame.
 		{
-			StartHeader: fwdpb.PacketHeaderId_ETHERNET,
+			StartHeader: fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET,
 			Orig: [][]byte{
 				ethernet1QIP4,
 				ip4,
@@ -163,7 +163,7 @@ func TestIP4TTL(t *testing.T) {
 
 	updates := []packettestutil.FieldUpdate{
 		{
-			ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP_HOP, 0),
+			ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP, 0),
 			Arg: []byte{0x01},
 			Op:  fwdpacket.OpDec,
 		},
@@ -175,7 +175,7 @@ func TestIP4TTL(t *testing.T) {
 	tests := []packettestutil.PacketFieldTest{
 		// IP4 over Ethernet frame.
 		{
-			StartHeader: fwdpb.PacketHeaderId_ETHERNET,
+			StartHeader: fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET,
 			Orig: [][]byte{
 				ethernetIP4,
 				ip4tcpInitial,
@@ -197,7 +197,7 @@ func TestReparse(t *testing.T) {
 
 	// Create the original ethernet packet
 	originalBytes := append(ethernetIP4, ip4...)
-	p, err := fwdpacket.New(fwdpb.PacketHeaderId_ETHERNET, originalBytes)
+	p, err := fwdpacket.New(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET, originalBytes)
 	if err != nil {
 		t.Fatalf("Unable to create ethernet packet from %x", originalBytes)
 	}
@@ -206,7 +206,7 @@ func TestReparse(t *testing.T) {
 	vrf := []byte{0xff, 0x07}
 	updates := []packettestutil.FieldUpdate{
 		{
-			ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_VRF, 0),
+			ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF, 0),
 			Arg: vrf,
 			Op:  fwdpacket.OpSet,
 		},
@@ -216,19 +216,19 @@ func TestReparse(t *testing.T) {
 	// Query some fields of the ethernet header and the VRF.
 	queries1 := []packettestutil.FieldQuery{
 		{
-			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ETHER_TYPE, 0),
+			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_TYPE, 0),
 			Result: []byte{0x08, 0x00},
 		},
 		{
-			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_VRF, 0),
+			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF, 0),
 			Result: vrf,
 		},
 		{
-			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ETHER_MAC_DST, 0),
+			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST, 0),
 			Result: []byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05},
 		},
 		{
-			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ETHER_MAC_SRC, 0),
+			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC, 0),
 			Result: []byte{0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b},
 		},
 	}
@@ -237,8 +237,8 @@ func TestReparse(t *testing.T) {
 	// Reparse the packet as an ethernet header after prepending a new
 	// ethernet header as an opaque set of bytes.
 	prepend := []byte{0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x81, 0x00, 0x10, 0x01, 0x08, 0xCC}
-	if err := p.Reparse(fwdpb.PacketHeaderId_ETHERNET, []fwdpacket.FieldID{
-		fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_VRF, 0),
+	if err := p.Reparse(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET, []fwdpacket.FieldID{
+		fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF, 0),
 	}, prepend); err != nil {
 		t.Fatalf("reparse: Reparse failed with err %v", err)
 	}
@@ -248,23 +248,23 @@ func TestReparse(t *testing.T) {
 	// encapsulates the ether/IP packet within another ethernet/vlan header.
 	queries2 := []packettestutil.FieldQuery{
 		{
-			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ETHER_TYPE, 0),
+			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_TYPE, 0),
 			Result: []byte{0x08, 0xCC},
 		},
 		{
-			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_VRF, 0),
+			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF, 0),
 			Result: vrf,
 		},
 		{
-			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ETHER_MAC_DST, 0),
+			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST, 0),
 			Result: []byte{0x10, 0x11, 0x12, 0x13, 0x14, 0x15},
 		},
 		{
-			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_ETHER_MAC_SRC, 0),
+			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC, 0),
 			Result: []byte{0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b},
 		},
 		{
-			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_VLAN_TAG, 0),
+			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG, 0),
 			Result: []byte{0x00, 0x01},
 		},
 	}

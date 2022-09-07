@@ -61,110 +61,110 @@ var FieldAttr = map[fwdpb.PacketFieldNum]struct {
 	DefaultSize int                     // default size computed from Sizes in init
 	Group       fwdpb.PacketHeaderGroup // header group containing this field computed in init
 }{
-	fwdpb.PacketFieldNum_PACKET_LENGTH: {
+	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_LENGTH: {
 		Sizes: []int{SizeUint64},
 	},
-	fwdpb.PacketFieldNum_PACKET_PORT_INPUT: {
+	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT: {
 		Sizes: []int{SizeUint64},
 	},
-	fwdpb.PacketFieldNum_PACKET_PORT_OUTPUT: {
+	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT: {
 		Sizes: []int{SizeUint64},
 	},
-	fwdpb.PacketFieldNum_PACKET_VRF: {
+	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF: {
 		Sizes: []int{SizeUint16},
 	},
-	fwdpb.PacketFieldNum_PACKET_ATTRIBUTE_32: {
+	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_32: {
 		Sizes: []int{SizeUint32},
 	},
-	fwdpb.PacketFieldNum_PACKET_ATTRIBUTE_24: {
+	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_24: {
 		Sizes: []int{SizeUint24},
 	},
-	fwdpb.PacketFieldNum_PACKET_ATTRIBUTE_16: {
+	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_16: {
 		Sizes: []int{SizeUint16},
 	},
-	fwdpb.PacketFieldNum_PACKET_ATTRIBUTE_8: {
+	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_8: {
 		Sizes: []int{SizeUint8},
 	},
-	fwdpb.PacketFieldNum_ETHER_MAC_SRC: {
+	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC: {
 		Sizes: []int{SizeMAC},
 	},
-	fwdpb.PacketFieldNum_ETHER_MAC_DST: {
+	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST: {
 		Sizes: []int{SizeMAC},
 	},
-	fwdpb.PacketFieldNum_VLAN_TAG: {
+	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG: {
 		Sizes: []int{SizeUint16},
 	},
-	fwdpb.PacketFieldNum_VLAN_PRIORITY: {
+	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_PRIORITY: {
 		Sizes: []int{SizeUint16},
 	},
-	fwdpb.PacketFieldNum_ETHER_TYPE: {
+	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_TYPE: {
 		Sizes: []int{SizeUint16},
 	},
-	fwdpb.PacketFieldNum_IP_VERSION: {
+	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION: {
 		Sizes: []int{SizeUint8},
 	},
-	fwdpb.PacketFieldNum_IP_ADDR_SRC: {
+	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC: {
 		Sizes: []int{SizeIP4, SizeIP6},
 	},
-	fwdpb.PacketFieldNum_IP_ADDR_DST: {
+	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST: {
 		Sizes: []int{SizeIP4, SizeIP6},
 	},
-	fwdpb.PacketFieldNum_IP_PROTO: {
+	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO: {
 		Sizes: []int{SizeUint8},
 	},
-	fwdpb.PacketFieldNum_IP_HOP: {
+	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP: {
 		Sizes: []int{SizeUint8},
 	},
-	fwdpb.PacketFieldNum_IP_QOS: {
+	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_QOS: {
 		// Trigger all IP QOS fields to be padded to 4B.
 		// IPv6 traffic class is 1B in a 4B field.
 		Sizes: []int{SizeUint32},
 	},
-	fwdpb.PacketFieldNum_IP6_FLOW: {
+	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP6_FLOW: {
 		// Trigger all IP FLOW fields to be padded to 4B.
 		// IPv6 flow label is 20 bits in a 4B field.
 		Sizes: []int{SizeUint32},
 	},
-	fwdpb.PacketFieldNum_ICMP_TYPE: {
+	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP_TYPE: {
 		Sizes: []int{SizeUint8},
 	},
-	fwdpb.PacketFieldNum_ICMP_CODE: {
+	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP_CODE: {
 		Sizes: []int{SizeUint8},
 	},
-	fwdpb.PacketFieldNum_ICMP6_ND_SLL: {
+	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP6_ND_SLL: {
 		Sizes: []int{SizeMAC},
 	},
-	fwdpb.PacketFieldNum_ICMP6_ND_TLL: {
+	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP6_ND_TLL: {
 		Sizes: []int{SizeMAC},
 	},
-	fwdpb.PacketFieldNum_ICMP6_ND_TARGET: {
+	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP6_ND_TARGET: {
 		Sizes: []int{SizeIP6},
 	},
-	fwdpb.PacketFieldNum_L4_PORT_SRC: {
+	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_SRC: {
 		Sizes: []int{SizeUint16},
 	},
-	fwdpb.PacketFieldNum_L4_PORT_DST: {
+	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST: {
 		Sizes: []int{SizeUint16},
 	},
-	fwdpb.PacketFieldNum_TCP_FLAGS: {
+	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TCP_FLAGS: {
 		Sizes: []int{SizeUint16},
 	},
-	fwdpb.PacketFieldNum_ARP_TPA: {
+	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ARP_TPA: {
 		Sizes: []int{SizeUint32},
 	},
-	fwdpb.PacketFieldNum_ARP_SPA: {
+	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ARP_SPA: {
 		Sizes: []int{SizeUint32},
 	},
-	fwdpb.PacketFieldNum_GRE_KEY: {
+	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_GRE_KEY: {
 		Sizes: []int{SizeUint32},
 	},
-	fwdpb.PacketFieldNum_ARP_TMAC: {
+	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ARP_TMAC: {
 		Sizes: []int{SizeMAC},
 	},
-	fwdpb.PacketFieldNum_ARP_SMAC: {
+	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ARP_SMAC: {
 		Sizes: []int{SizeMAC},
 	},
-	fwdpb.PacketFieldNum_GRE_SEQUENCE: {
+	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_GRE_SEQUENCE: {
 		Sizes: []int{SizeUint32},
 	},
 }
@@ -183,89 +183,89 @@ var GroupAttr = map[fwdpb.PacketHeaderGroup]struct {
 	headers  []fwdpb.PacketHeaderId // headers in the group
 	fields   []fwdpb.PacketFieldNum // packet fields that can be queried in this group
 }{
-	fwdpb.PacketHeaderGroup_PACKET: {
+	fwdpb.PacketHeaderGroup_PACKET_HEADER_GROUP_PACKET: {
 		Position: 0,
 		headers: []fwdpb.PacketHeaderId{
-			fwdpb.PacketHeaderId_METADATA,
+			fwdpb.PacketHeaderId_PACKET_HEADER_ID_METADATA,
 		},
 		fields: []fwdpb.PacketFieldNum{
-			fwdpb.PacketFieldNum_PACKET_PORT_INPUT,
-			fwdpb.PacketFieldNum_PACKET_PORT_OUTPUT,
-			fwdpb.PacketFieldNum_PACKET_LENGTH,
-			fwdpb.PacketFieldNum_PACKET_VRF,
-			fwdpb.PacketFieldNum_PACKET_ATTRIBUTE_32,
-			fwdpb.PacketFieldNum_PACKET_ATTRIBUTE_24,
-			fwdpb.PacketFieldNum_PACKET_ATTRIBUTE_16,
-			fwdpb.PacketFieldNum_PACKET_ATTRIBUTE_8,
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT,
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT,
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_LENGTH,
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF,
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_32,
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_24,
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_16,
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_8,
 		},
 	},
-	fwdpb.PacketHeaderGroup_L2: {
+	fwdpb.PacketHeaderGroup_PACKET_HEADER_GROUP_L2: {
 		Position: 1,
 		headers: []fwdpb.PacketHeaderId{
-			fwdpb.PacketHeaderId_ETHERNET,
-			fwdpb.PacketHeaderId_ETHERNET_VLAN,
-			fwdpb.PacketHeaderId_ETHERNET_1Q,
+			fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET,
+			fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET_VLAN,
+			fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET_1Q,
 		},
 		fields: []fwdpb.PacketFieldNum{
-			fwdpb.PacketFieldNum_ETHER_MAC_SRC,
-			fwdpb.PacketFieldNum_ETHER_MAC_DST,
-			fwdpb.PacketFieldNum_ETHER_TYPE,
-			fwdpb.PacketFieldNum_VLAN_TAG,
-			fwdpb.PacketFieldNum_VLAN_PRIORITY,
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC,
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST,
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_TYPE,
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG,
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_PRIORITY,
 		},
 	},
-	fwdpb.PacketHeaderGroup_L3: {
+	fwdpb.PacketHeaderGroup_PACKET_HEADER_GROUP_L3: {
 		Position: 2,
 		headers: []fwdpb.PacketHeaderId{
-			fwdpb.PacketHeaderId_IP4,
-			fwdpb.PacketHeaderId_IP,
-			fwdpb.PacketHeaderId_TUNNEL_6TO4_AUTO,
-			fwdpb.PacketHeaderId_TUNNEL_6TO4_SECURE,
-			fwdpb.PacketHeaderId_IP6,
-			fwdpb.PacketHeaderId_GRE,
+			fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4,
+			fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP,
+			fwdpb.PacketHeaderId_PACKET_HEADER_ID_TUNNEL_6TO4_AUTO,
+			fwdpb.PacketHeaderId_PACKET_HEADER_ID_TUNNEL_6TO4_SECURE,
+			fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP6,
+			fwdpb.PacketHeaderId_PACKET_HEADER_ID_GRE,
 		},
 		fields: []fwdpb.PacketFieldNum{
-			fwdpb.PacketFieldNum_IP_VERSION,
-			fwdpb.PacketFieldNum_IP_ADDR_SRC,
-			fwdpb.PacketFieldNum_IP_ADDR_DST,
-			fwdpb.PacketFieldNum_IP_HOP,
-			fwdpb.PacketFieldNum_IP_PROTO,
-			fwdpb.PacketFieldNum_IP_QOS,
-			fwdpb.PacketFieldNum_IP6_FLOW,
-			fwdpb.PacketFieldNum_GRE_KEY,
-			fwdpb.PacketFieldNum_GRE_SEQUENCE,
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION,
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC,
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST,
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP,
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO,
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_QOS,
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP6_FLOW,
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_GRE_KEY,
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_GRE_SEQUENCE,
 		},
 	},
-	fwdpb.PacketHeaderGroup_L4: {
+	fwdpb.PacketHeaderGroup_PACKET_HEADER_GROUP_L4: {
 		Position: 3,
 		headers: []fwdpb.PacketHeaderId{
-			fwdpb.PacketHeaderId_TCP,
-			fwdpb.PacketHeaderId_UDP,
+			fwdpb.PacketHeaderId_PACKET_HEADER_ID_TCP,
+			fwdpb.PacketHeaderId_PACKET_HEADER_ID_UDP,
 		},
 		fields: []fwdpb.PacketFieldNum{
-			fwdpb.PacketFieldNum_L4_PORT_SRC,
-			fwdpb.PacketFieldNum_L4_PORT_DST,
-			fwdpb.PacketFieldNum_TCP_FLAGS,
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_SRC,
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST,
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TCP_FLAGS,
 		},
 	},
-	fwdpb.PacketHeaderGroup_PAYLOAD: {
+	fwdpb.PacketHeaderGroup_PACKET_HEADER_GROUP_PAYLOAD: {
 		Position: 4,
 		headers: []fwdpb.PacketHeaderId{
-			fwdpb.PacketHeaderId_ICMP4,
-			fwdpb.PacketHeaderId_ICMP6,
-			fwdpb.PacketHeaderId_ARP,
-			fwdpb.PacketHeaderId_OPAQUE,
+			fwdpb.PacketHeaderId_PACKET_HEADER_ID_ICMP4,
+			fwdpb.PacketHeaderId_PACKET_HEADER_ID_ICMP6,
+			fwdpb.PacketHeaderId_PACKET_HEADER_ID_ARP,
+			fwdpb.PacketHeaderId_PACKET_HEADER_ID_OPAQUE,
 		},
 		fields: []fwdpb.PacketFieldNum{
-			fwdpb.PacketFieldNum_ICMP_TYPE,
-			fwdpb.PacketFieldNum_ICMP_CODE,
-			fwdpb.PacketFieldNum_ICMP6_ND_TARGET,
-			fwdpb.PacketFieldNum_ICMP6_ND_TLL,
-			fwdpb.PacketFieldNum_ICMP6_ND_SLL,
-			fwdpb.PacketFieldNum_ARP_TPA,
-			fwdpb.PacketFieldNum_ARP_SPA,
-			fwdpb.PacketFieldNum_ARP_TMAC,
-			fwdpb.PacketFieldNum_ARP_SMAC,
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP_TYPE,
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP_CODE,
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP6_ND_TARGET,
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP6_ND_TLL,
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP6_ND_SLL,
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ARP_TPA,
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ARP_SPA,
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ARP_TMAC,
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ARP_SMAC,
 		},
 	},
 }

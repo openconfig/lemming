@@ -17,8 +17,6 @@
 package tabletestutil
 
 import (
-	"google.golang.org/protobuf/proto"
-
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdtable/tableutil"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
@@ -30,7 +28,7 @@ func KeyDescFields(fields []fwdpb.PacketFieldNum) tableutil.KeyDesc {
 		field := field
 		desc = append(desc, &fwdpb.PacketFieldId{
 			Field: &fwdpb.PacketField{
-				FieldNum: &field,
+				FieldNum: field,
 			}})
 	}
 	return tableutil.MakeKeyDesc(desc)
@@ -51,8 +49,7 @@ func KeyDescBytes(fields []fwdpb.PacketBytes) tableutil.KeyDesc {
 // ActionDesc creates a desc for a set of actions.
 func ActionDesc() []*fwdpb.ActionDesc {
 	desc := &fwdpb.ActionDesc{
-		ActionType: fwdpb.ActionType_DROP_ACTION.Enum(),
+		ActionType: fwdpb.ActionType_ACTION_TYPE_DROP,
 	}
-	proto.SetExtension(desc, fwdpb.E_DropActionDesc_Extension, &fwdpb.DropActionDesc{})
 	return []*fwdpb.ActionDesc{desc}
 }

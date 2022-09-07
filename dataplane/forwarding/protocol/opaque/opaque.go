@@ -43,7 +43,7 @@ func (Opaque) Trailer() []byte {
 
 // ID returns the protocol header ID.
 func (Opaque) ID(int) fwdpb.PacketHeaderId {
-	return fwdpb.PacketHeaderId_OPAQUE
+	return fwdpb.PacketHeaderId_PACKET_HEADER_ID_OPAQUE
 }
 
 // Field returns a slice of bytes as identified by id.
@@ -95,5 +95,5 @@ func parse(frame *frame.Frame, _ *protocol.Desc) (protocol.Handler, fwdpb.Packet
 func init() {
 	// Register the parse function for the OPAQUE headers.
 	// Note that opaque cannot be added explicitly.
-	protocol.Register(fwdpb.PacketHeaderId_OPAQUE, parse, nil)
+	protocol.Register(fwdpb.PacketHeaderId_PACKET_HEADER_ID_OPAQUE, parse, nil)
 }

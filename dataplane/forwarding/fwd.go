@@ -21,7 +21,6 @@ import (
 	"sync"
 
 	log "github.com/golang/glog"
-	"google.golang.org/protobuf/proto"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdport"
@@ -212,10 +211,10 @@ func (f *Engine) ContextList(request *fwdpb.ContextListRequest, reply *fwdpb.Con
 	for _, ctx := range f.ctx {
 		reply.Contexts = append(reply.Contexts, &fwdpb.ContextAttr{
 			ContextId: &fwdpb.ContextId{
-				Id: proto.String(string(ctx.ID)),
+				Id: string(ctx.ID),
 			},
-			PacketAddress:       proto.String(ctx.PacketAddress),
-			NotificationAddress: proto.String(ctx.NotificationAddress),
+			PacketAddress:       ctx.PacketAddress,
+			NotificationAddress: ctx.NotificationAddress,
 		})
 	}
 	return nil
@@ -285,7 +284,7 @@ func (f *Engine) ObjectList(request *fwdpb.ObjectListRequest, reply *fwdpb.Objec
 
 	for _, id := range ctx.Objects.IDs() {
 		reply.Objects = append(reply.Objects, &fwdpb.ObjectId{
-			Id: proto.String(string(id)),
+			Id: string(id),
 		})
 	}
 	return nil
@@ -317,8 +316,8 @@ func (f *Engine) ObjectCounters(request *fwdpb.ObjectCountersRequest, reply *fwd
 	for _, counter := range object.Counters() {
 		counter := counter
 		reply.Counters = append(reply.Counters, &fwdpb.Counter{
-			Id:    &counter.ID,
-			Value: &counter.Value,
+			Id:    counter.ID,
+			Value: counter.Value,
 		})
 	}
 	return nil
@@ -328,8 +327,8 @@ func (f *Engine) ObjectCounters(request *fwdpb.ObjectCountersRequest, reply *fwd
 func (*Engine) AttributeList(request *fwdpb.AttributeListRequest, reply *fwdpb.AttributeListReply) error {
 	for id, help := range fwdattribute.List {
 		reply.Attrs = append(reply.Attrs, &fwdpb.AttributeDesc{
-			Name: proto.String(string(id)),
-			Help: proto.String(help),
+			Name: string(id),
+			Help: help,
 		})
 	}
 	return nil
@@ -379,13 +378,13 @@ func (f *Engine) AttributeUpdate(request *fwdpb.AttributeUpdateRequest, _ *fwdpb
 	}
 
 	// Set a value if it is specified, else unset it.
-	if request.AttrId == nil {
+	if request.AttrId == "" {
 		return errors.New("fwd: AttributeUpdate failed, no attribute specified")
 	}
-	if request.AttrValue != nil {
-		attributes.Add(fwdattribute.ID(*request.AttrId), *request.AttrValue)
+	if request.AttrValue != "" {
+		attributes.Add(fwdattribute.ID(request.AttrId), request.AttrValue)
 	} else {
-		attributes.Delete(fwdattribute.ID(*request.AttrId))
+		attributes.Delete(fwdattribute.ID(request.AttrId))
 	}
 	return nil
 }
@@ -415,7 +414,7 @@ func (f *Engine) PortCreate(request *fwdpb.PortCreateRequest, reply *fwdpb.PortC
 	}
 	f.info.AddObject(ctx, object)
 	reply.ObjectIndex = &fwdpb.ObjectIndex{
-		Index: proto.Uint64(uint64(object.NID())),
+		Index: uint64(object.NID()),
 	}
 	return nil
 }
@@ -483,11 +482,10 @@ func (f *Engine) PortState(request *fwdpb.PortStateRequest, reply *fwdpb.PortSta
 	if err != nil {
 		return fmt.Errorf("fwd: PortState failed, err %v", err)
 	}
-	r, err := port.State(request.Operation)
+	reply, err = port.State(request.Operation)
 	if err != nil {
 		return fmt.Errorf("fwd: PortState failed, err %v", err)
 	}
-	*reply = r
 	return nil
 }
 
@@ -516,7 +514,7 @@ func (f *Engine) TableCreate(request *fwdpb.TableCreateRequest, reply *fwdpb.Tab
 	}
 	f.info.AddObject(ctx, object)
 	reply.ObjectIndex = &fwdpb.ObjectIndex{
-		Index: proto.Uint64(uint64(object.NID())),
+		Index: uint64(object.NID()),
 	}
 	return nil
 }
@@ -662,7 +660,7 @@ func (f *Engine) SetCreate(request *fwdpb.SetCreateRequest, reply *fwdpb.SetCrea
 	}
 	f.info.AddObject(ctx, c)
 	reply.ObjectIndex = &fwdpb.ObjectIndex{
-		Index: proto.Uint64(uint64(c.NID())),
+		Index: uint64(c.NID()),
 	}
 	return nil
 }
@@ -798,9 +796,9 @@ func (f *Engine) PacketInject(request *fwdpb.PacketInjectRequest) (err error) {
 			return
 		}
 
-		pre, err := fwdaction.NewActions(request.GetPreprocess(), ctx)
+		pre, err := fwdaction.NewActions(request.GetPreprocesses(), ctx)
 		if err != nil {
-			status <- fmt.Errorf("fwd: PortInject failed to create preprocessing actions %v, err %v", request.GetPreprocess(), err)
+			status <- fmt.Errorf("fwd: PortInject failed to create preprocessing actions %v, err %v", request.GetPreprocesses(), err)
 			return
 		}
 
@@ -850,6 +848,6 @@ func (f *Engine) InfoElement(request *fwdpb.InfoElementRequest, reply *fwdpb.Inf
 	if err != nil {
 		return err
 	}
-	reply.Content = &content
+	reply.Content = content
 	return nil
 }

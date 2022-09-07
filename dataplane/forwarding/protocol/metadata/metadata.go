@@ -53,7 +53,7 @@ func (Metadata) Trailer() []byte {
 
 // ID returns the protocol header ID.
 func (Metadata) ID(int) fwdpb.PacketHeaderId {
-	return fwdpb.PacketHeaderId_METADATA
+	return fwdpb.PacketHeaderId_PACKET_HEADER_ID_METADATA
 }
 
 // Field returns the values of the queried packet fields.
@@ -63,41 +63,41 @@ func (m *Metadata) Field(id fwdpacket.FieldID) ([]byte, error) {
 	}
 
 	switch id.Num {
-	case fwdpb.PacketFieldNum_PACKET_PORT_INPUT:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT:
 		return m.inputPort, nil
 
-	case fwdpb.PacketFieldNum_PACKET_PORT_OUTPUT:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT:
 		return m.outputPort, nil
 
-	case fwdpb.PacketFieldNum_PACKET_VRF:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF:
 		vrf := make([]byte, protocol.FieldAttr[id.Num].DefaultSize)
 		copy(vrf, m.vrf)
 		return vrf, nil
 
-	case fwdpb.PacketFieldNum_PACKET_LENGTH:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_LENGTH:
 		length := make([]byte, protocol.FieldAttr[id.Num].DefaultSize)
 		binary.BigEndian.PutUint64(length, m.length)
 		return length, nil
 
-	case fwdpb.PacketFieldNum_PACKET_ATTRIBUTE_32:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_32:
 		if a, ok := m.attribute32[id.Instance]; ok {
 			return a, nil
 		}
 		return make([]byte, 4), nil
 
-	case fwdpb.PacketFieldNum_PACKET_ATTRIBUTE_24:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_24:
 		if a, ok := m.attribute24[id.Instance]; ok {
 			return a, nil
 		}
 		return make([]byte, 3), nil
 
-	case fwdpb.PacketFieldNum_PACKET_ATTRIBUTE_16:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_16:
 		if a, ok := m.attribute16[id.Instance]; ok {
 			return a, nil
 		}
 		return make([]byte, 2), nil
 
-	case fwdpb.PacketFieldNum_PACKET_ATTRIBUTE_8:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_8:
 		if a, ok := m.attribute8[id.Instance]; ok {
 			return a, nil
 		}
@@ -130,15 +130,15 @@ func updateNumeric(field, arg frame.Field, length, op int) frame.Field {
 // updateIncDec performs an Inc or Dec on a numeric field.
 func (m *Metadata) updateIncDec(id fwdpacket.FieldID, arg frame.Field, op int) (bool, error) {
 	switch id.Num {
-	case fwdpb.PacketFieldNum_PACKET_ATTRIBUTE_32:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_32:
 		m.attribute32[id.Instance] = updateNumeric(m.attribute32[id.Instance], arg, 4, op)
 		return true, nil
 
-	case fwdpb.PacketFieldNum_PACKET_ATTRIBUTE_16:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_16:
 		m.attribute16[id.Instance] = updateNumeric(m.attribute16[id.Instance], arg, 2, op)
 		return true, nil
 
-	case fwdpb.PacketFieldNum_PACKET_ATTRIBUTE_8:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_8:
 		m.attribute8[id.Instance] = updateNumeric(m.attribute8[id.Instance], arg, 1, op)
 		return true, nil
 	default:
@@ -149,37 +149,37 @@ func (m *Metadata) updateIncDec(id fwdpacket.FieldID, arg frame.Field, op int) (
 // updateSet sets a metadata field to the specified value.
 func (m *Metadata) updateSet(id fwdpacket.FieldID, arg []byte) (bool, error) {
 	switch id.Num {
-	case fwdpb.PacketFieldNum_PACKET_PORT_INPUT:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT:
 		m.inputPort = arg
 		return true, nil
 
-	case fwdpb.PacketFieldNum_PACKET_PORT_OUTPUT:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT:
 		m.outputPort = arg
 		return true, nil
 
-	case fwdpb.PacketFieldNum_PACKET_VRF:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF:
 		copy(m.vrf, arg)
 		return true, nil
 
-	case fwdpb.PacketFieldNum_PACKET_ATTRIBUTE_32:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_32:
 		a := make([]byte, 4)
 		copy(a, arg)
 		m.attribute32[id.Instance] = a
 		return true, nil
 
-	case fwdpb.PacketFieldNum_PACKET_ATTRIBUTE_24:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_24:
 		a := make([]byte, 3)
 		copy(a, arg)
 		m.attribute24[id.Instance] = a
 		return true, nil
 
-	case fwdpb.PacketFieldNum_PACKET_ATTRIBUTE_16:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_16:
 		a := make([]byte, 2)
 		copy(a, arg)
 		m.attribute16[id.Instance] = a
 		return true, nil
 
-	case fwdpb.PacketFieldNum_PACKET_ATTRIBUTE_8:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_8:
 		a := make([]byte, 1)
 		copy(a, arg)
 		m.attribute8[id.Instance] = a
@@ -232,9 +232,9 @@ func parse(frame *frame.Frame, desc *protocol.Desc) (protocol.Handler, fwdpb.Pac
 	return &Metadata{
 		desc:        desc,
 		length:      uint64(frame.Len()),
-		vrf:         make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_VRF].DefaultSize),
-		inputPort:   make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_PORT_INPUT].DefaultSize),
-		outputPort:  make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_PORT_OUTPUT].DefaultSize),
+		vrf:         make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF].DefaultSize),
+		inputPort:   make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT].DefaultSize),
+		outputPort:  make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT].DefaultSize),
 		attribute32: make(map[uint8][]byte),
 		attribute24: make(map[uint8][]byte),
 		attribute16: make(map[uint8][]byte),
@@ -245,5 +245,5 @@ func parse(frame *frame.Frame, desc *protocol.Desc) (protocol.Handler, fwdpb.Pac
 func init() {
 	// Register the parse function for the METADATA headers.
 	// Note that metadata cannot be added explicitly.
-	protocol.Register(fwdpb.PacketHeaderId_METADATA, parse, nil)
+	protocol.Register(fwdpb.PacketHeaderId_PACKET_HEADER_ID_METADATA, parse, nil)
 }

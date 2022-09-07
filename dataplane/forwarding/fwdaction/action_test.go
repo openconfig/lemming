@@ -97,9 +97,9 @@ func TestActions(t *testing.T) {
 		count   int
 		actions []fwdpb.ActionType
 	}{
-		{0, []fwdpb.ActionType{fwdpb.ActionType_DROP_ACTION, fwdpb.ActionType_TRANSMIT_ACTION}},
-		{1, []fwdpb.ActionType{fwdpb.ActionType_DROP_ACTION, fwdpb.ActionType_TRANSMIT_ACTION}},
-		{2, []fwdpb.ActionType{fwdpb.ActionType_DROP_ACTION, fwdpb.ActionType_TRANSMIT_ACTION}},
+		{0, []fwdpb.ActionType{fwdpb.ActionType_ACTION_TYPE_DROP, fwdpb.ActionType_ACTION_TYPE_TRANSMIT}},
+		{1, []fwdpb.ActionType{fwdpb.ActionType_ACTION_TYPE_DROP, fwdpb.ActionType_ACTION_TYPE_TRANSMIT}},
+		{2, []fwdpb.ActionType{fwdpb.ActionType_ACTION_TYPE_DROP, fwdpb.ActionType_ACTION_TYPE_TRANSMIT}},
 	}
 
 	for id, test := range tests {
@@ -114,7 +114,7 @@ func TestActions(t *testing.T) {
 		for _, actionType := range test.actions {
 			unregister(actionType)
 			current := actionType
-			descs = append(descs, &fwdpb.ActionDesc{ActionType: &current})
+			descs = append(descs, &fwdpb.ActionDesc{ActionType: current})
 			if index < test.count {
 				builders = append(builders, newTestBuilder(index, actionType))
 				index++
@@ -546,8 +546,8 @@ func TestPacketProcessing(t *testing.T) {
 func TestActionsEquality(t *testing.T) {
 	// Register a builder for the various types of actions used in the test
 	// with different ids.
-	newTestBuilder(0, fwdpb.ActionType_DROP_ACTION)
-	newTestBuilder(1, fwdpb.ActionType_OUTPUT_ACTION)
+	newTestBuilder(0, fwdpb.ActionType_ACTION_TYPE_DROP)
+	newTestBuilder(1, fwdpb.ActionType_ACTION_TYPE_OUTPUT)
 
 	// Run tests of various inputs.
 	var tests = []struct {
@@ -563,10 +563,10 @@ func TestActionsEquality(t *testing.T) {
 		{
 			first: []*fwdpb.ActionDesc{
 				&fwdpb.ActionDesc{
-					ActionType: fwdpb.ActionType_DROP_ACTION.Enum(),
+					ActionType: fwdpb.ActionType_ACTION_TYPE_DROP,
 				},
 				&fwdpb.ActionDesc{
-					ActionType: fwdpb.ActionType_OUTPUT_ACTION.Enum(),
+					ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
 				},
 			},
 			wantEqual: false,
@@ -575,10 +575,10 @@ func TestActionsEquality(t *testing.T) {
 		{
 			second: []*fwdpb.ActionDesc{
 				&fwdpb.ActionDesc{
-					ActionType: fwdpb.ActionType_DROP_ACTION.Enum(),
+					ActionType: fwdpb.ActionType_ACTION_TYPE_DROP,
 				},
 				&fwdpb.ActionDesc{
-					ActionType: fwdpb.ActionType_OUTPUT_ACTION.Enum(),
+					ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
 				},
 			},
 			wantEqual: false,
@@ -587,18 +587,18 @@ func TestActionsEquality(t *testing.T) {
 		{
 			first: []*fwdpb.ActionDesc{
 				&fwdpb.ActionDesc{
-					ActionType: fwdpb.ActionType_OUTPUT_ACTION.Enum(),
+					ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
 				},
 				&fwdpb.ActionDesc{
-					ActionType: fwdpb.ActionType_DROP_ACTION.Enum(),
+					ActionType: fwdpb.ActionType_ACTION_TYPE_DROP,
 				},
 			},
 			second: []*fwdpb.ActionDesc{
 				&fwdpb.ActionDesc{
-					ActionType: fwdpb.ActionType_DROP_ACTION.Enum(),
+					ActionType: fwdpb.ActionType_ACTION_TYPE_DROP,
 				},
 				&fwdpb.ActionDesc{
-					ActionType: fwdpb.ActionType_OUTPUT_ACTION.Enum(),
+					ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
 				},
 			},
 			wantEqual: false,
@@ -607,15 +607,15 @@ func TestActionsEquality(t *testing.T) {
 		{
 			first: []*fwdpb.ActionDesc{
 				&fwdpb.ActionDesc{
-					ActionType: fwdpb.ActionType_OUTPUT_ACTION.Enum(),
+					ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
 				},
 				&fwdpb.ActionDesc{
-					ActionType: fwdpb.ActionType_DROP_ACTION.Enum(),
+					ActionType: fwdpb.ActionType_ACTION_TYPE_DROP,
 				},
 			},
 			second: []*fwdpb.ActionDesc{
 				&fwdpb.ActionDesc{
-					ActionType: fwdpb.ActionType_DROP_ACTION.Enum(),
+					ActionType: fwdpb.ActionType_ACTION_TYPE_DROP,
 				},
 			},
 			wantEqual: false,
@@ -624,15 +624,15 @@ func TestActionsEquality(t *testing.T) {
 		{
 			first: []*fwdpb.ActionDesc{
 				&fwdpb.ActionDesc{
-					ActionType: fwdpb.ActionType_DROP_ACTION.Enum(),
+					ActionType: fwdpb.ActionType_ACTION_TYPE_DROP,
 				},
 			},
 			second: []*fwdpb.ActionDesc{
 				&fwdpb.ActionDesc{
-					ActionType: fwdpb.ActionType_DROP_ACTION.Enum(),
+					ActionType: fwdpb.ActionType_ACTION_TYPE_DROP,
 				},
 				&fwdpb.ActionDesc{
-					ActionType: fwdpb.ActionType_OUTPUT_ACTION.Enum(),
+					ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
 				},
 			},
 			wantEqual: false,
@@ -641,18 +641,18 @@ func TestActionsEquality(t *testing.T) {
 		{
 			first: []*fwdpb.ActionDesc{
 				&fwdpb.ActionDesc{
-					ActionType: fwdpb.ActionType_DROP_ACTION.Enum(),
+					ActionType: fwdpb.ActionType_ACTION_TYPE_DROP,
 				},
 				&fwdpb.ActionDesc{
-					ActionType: fwdpb.ActionType_OUTPUT_ACTION.Enum(),
+					ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
 				},
 			},
 			second: []*fwdpb.ActionDesc{
 				&fwdpb.ActionDesc{
-					ActionType: fwdpb.ActionType_DROP_ACTION.Enum(),
+					ActionType: fwdpb.ActionType_ACTION_TYPE_DROP,
 				},
 				&fwdpb.ActionDesc{
-					ActionType: fwdpb.ActionType_OUTPUT_ACTION.Enum(),
+					ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
 				},
 			},
 			wantEqual: true,

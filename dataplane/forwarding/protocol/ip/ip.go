@@ -54,14 +54,14 @@ var protoHeader = map[uint8]fwdpb.PacketHeaderId{}
 
 // headerProto maps packet headers to protocols.
 var headerProto = map[fwdpb.PacketHeaderId]uint8{
-	fwdpb.PacketHeaderId_IP4:    protoIP4IP4,
-	fwdpb.PacketHeaderId_IP6:    protoIP6IP4,
-	fwdpb.PacketHeaderId_GRE:    protoGRE,
-	fwdpb.PacketHeaderId_TCP:    protoTCP,
-	fwdpb.PacketHeaderId_UDP:    protoUDP,
-	fwdpb.PacketHeaderId_ICMP4:  protoICMP4,
-	fwdpb.PacketHeaderId_ICMP6:  protoICMP6,
-	fwdpb.PacketHeaderId_OPAQUE: protoReserved,
+	fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4:    protoIP4IP4,
+	fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP6:    protoIP6IP4,
+	fwdpb.PacketHeaderId_PACKET_HEADER_ID_GRE:    protoGRE,
+	fwdpb.PacketHeaderId_PACKET_HEADER_ID_TCP:    protoTCP,
+	fwdpb.PacketHeaderId_PACKET_HEADER_ID_UDP:    protoUDP,
+	fwdpb.PacketHeaderId_PACKET_HEADER_ID_ICMP4:  protoICMP4,
+	fwdpb.PacketHeaderId_PACKET_HEADER_ID_ICMP6:  protoICMP6,
+	fwdpb.PacketHeaderId_PACKET_HEADER_ID_OPAQUE: protoReserved,
 }
 
 // ipVersion extracts the IP version from a byte.
@@ -137,14 +137,14 @@ func (ip *IP) ID(instance int) fwdpb.PacketHeaderId {
 // IPv4 and IPv6 contain the same fields (for most part).
 func (ip *IP) lookup(id fwdpacket.FieldID) (header, error) {
 	greField := false // Indicates if we need to find a GRE header.
-	if id.Num == fwdpb.PacketFieldNum_GRE_KEY || id.Num == fwdpb.PacketFieldNum_GRE_SEQUENCE {
+	if id.Num == fwdpb.PacketFieldNum_PACKET_FIELD_NUM_GRE_KEY || id.Num == fwdpb.PacketFieldNum_PACKET_FIELD_NUM_GRE_SEQUENCE {
 		greField = true
 	}
 
 	var found header
 	instance := uint8(0)
 	for _, header := range ip.headers {
-		if hid := header.ID(); greField == (hid == fwdpb.PacketHeaderId_GRE) {
+		if hid := header.ID(); greField == (hid == fwdpb.PacketHeaderId_PACKET_HEADER_ID_GRE) {
 			found = header
 			if instance == id.Instance {
 				break
@@ -179,7 +179,7 @@ func (ip *IP) UpdateField(id fwdpacket.FieldID, op int, arg []byte) (bool, error
 // Remove removes the outermost IP header from the packet after verifying its type.
 func (ip *IP) Remove(id fwdpb.PacketHeaderId) error {
 	switch id {
-	case fwdpb.PacketHeaderId_TUNNEL_6TO4_AUTO, fwdpb.PacketHeaderId_TUNNEL_6TO4_SECURE:
+	case fwdpb.PacketHeaderId_PACKET_HEADER_ID_TUNNEL_6TO4_AUTO, fwdpb.PacketHeaderId_PACKET_HEADER_ID_TUNNEL_6TO4_SECURE:
 		// There must be at-least two IP headers for an IP tunnel.
 		if len(ip.headers) < 2 {
 			return fmt.Errorf("ip: Remove header %v failed, insufficient header length %v", id, len(ip.headers))
@@ -201,19 +201,19 @@ func (ip *IP) Remove(id fwdpb.PacketHeaderId) error {
 func (ip *IP) Modify(id fwdpb.PacketHeaderId) error {
 	var h header
 	switch id {
-	case fwdpb.PacketHeaderId_GRE:
-		if hid := ip.headers[0].ID(); hid == fwdpb.PacketHeaderId_GRE {
+	case fwdpb.PacketHeaderId_PACKET_HEADER_ID_GRE:
+		if hid := ip.headers[0].ID(); hid == fwdpb.PacketHeaderId_PACKET_HEADER_ID_GRE {
 			return errors.New("ip: Modify header failed, GRE cannot encapsulate a GRE header")
 		}
 		h = newGRE()
 
-	case fwdpb.PacketHeaderId_IP4:
+	case fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4:
 		h = newIP4()
 
-	case fwdpb.PacketHeaderId_IP6:
+	case fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP6:
 		h = newIP6()
 
-	case fwdpb.PacketHeaderId_TUNNEL_6TO4_AUTO, fwdpb.PacketHeaderId_TUNNEL_6TO4_SECURE:
+	case fwdpb.PacketHeaderId_PACKET_HEADER_ID_TUNNEL_6TO4_AUTO, fwdpb.PacketHeaderId_PACKET_HEADER_ID_TUNNEL_6TO4_SECURE:
 		if len(ip.headers) == 0 {
 			return fmt.Errorf("ip: Modify header failed for header %v, no ip headers", id)
 		}
@@ -248,10 +248,10 @@ func (ip *IP) Rebuild() error {
 func add(id fwdpb.PacketHeaderId, desc *protocol.Desc) (protocol.Handler, error) {
 	var h header
 	switch id {
-	case fwdpb.PacketHeaderId_IP4:
+	case fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4:
 		h = newIP4()
 
-	case fwdpb.PacketHeaderId_IP6:
+	case fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP6:
 		h = newIP6()
 
 	default:
@@ -269,13 +269,13 @@ func (ip *IP) parseTunnel(frame *frame.Frame, next fwdpb.PacketHeaderId) (fwdpb.
 
 	for frame.Len() != 0 {
 		switch next {
-		case fwdpb.PacketHeaderId_GRE:
+		case fwdpb.PacketHeaderId_PACKET_HEADER_ID_GRE:
 			header, next, err = makeGRE(frame)
 
-		case fwdpb.PacketHeaderId_IP4:
+		case fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4:
 			header, next, err = makeIP4(frame)
 
-		case fwdpb.PacketHeaderId_IP6:
+		case fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP6:
 			header, next, err = makeIP6(frame)
 
 		default:
@@ -347,11 +347,11 @@ func init() {
 	}
 
 	// Register the parse and add functions for the IP4 and IP6 header and its variants.
-	protocol.Register(fwdpb.PacketHeaderId_IP4, parseIP4, add)
-	protocol.Register(fwdpb.PacketHeaderId_IP6, parseIP6, add)
+	protocol.Register(fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4, parseIP4, add)
+	protocol.Register(fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP6, parseIP6, add)
 
 	// Register the parse function for the generic IP header. The generic IP
 	// header can be used to parse the frame. However one cannot add a generic
 	// IP header.
-	protocol.Register(fwdpb.PacketHeaderId_IP, parseIP, nil)
+	protocol.Register(fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP, parseIP, nil)
 }

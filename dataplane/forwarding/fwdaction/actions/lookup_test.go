@@ -18,7 +18,6 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"google.golang.org/protobuf/proto"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction/mock_fwdpacket"
@@ -66,12 +65,14 @@ func TestLookup(t *testing.T) {
 
 	// Create a lookup action using its builder.
 	desc := fwdpb.ActionDesc{
-		ActionType: fwdpb.ActionType_LOOKUP_ACTION.Enum(),
+		ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
 	}
 	lookup := fwdpb.LookupActionDesc{
 		TableId: tid,
 	}
-	proto.SetExtension(&desc, fwdpb.E_LookupActionDesc_Extension, &lookup)
+	desc.Action = &fwdpb.ActionDesc_Lookup{
+		Lookup: &lookup,
+	}
 	action, err := fwdaction.New(&desc, ctx)
 	if err != nil {
 		t.Errorf("NewAction failed, desc %v failed, err %v.", desc, err)
@@ -82,7 +83,7 @@ func TestLookup(t *testing.T) {
 	const length = 10
 	verify := func(errorPackets, errorBytes uint64, n fwdaction.Actions, s fwdaction.State) {
 		var base fwdobject.Base
-		if err := base.InitCounters("prefix", "desc", fwdpb.CounterId_ERROR_PACKETS, fwdpb.CounterId_ERROR_OCTETS); err != nil {
+		if err := base.InitCounters("prefix", "desc", fwdpb.CounterId_COUNTER_ID_ERROR_PACKETS, fwdpb.CounterId_COUNTER_ID_ERROR_OCTETS); err != nil {
 			t.Fatalf("InitCounters failed, %v", err)
 		}
 
@@ -100,10 +101,10 @@ func TestLookup(t *testing.T) {
 			t.Errorf("%v processing returned bad result. Got %v want %v.", action, state, s)
 		}
 		counters := base.Counters()
-		if counter, ok := counters[fwdpb.CounterId_ERROR_PACKETS]; !ok || counter.Value != errorPackets {
+		if counter, ok := counters[fwdpb.CounterId_COUNTER_ID_ERROR_PACKETS]; !ok || counter.Value != errorPackets {
 			t.Errorf("Invalid counter %v on drop. Got %v, want %v.", counter, counter.Value, errorPackets)
 		}
-		if counter, ok := counters[fwdpb.CounterId_ERROR_OCTETS]; !ok || counter.Value != errorBytes {
+		if counter, ok := counters[fwdpb.CounterId_COUNTER_ID_ERROR_OCTETS]; !ok || counter.Value != errorBytes {
 			t.Errorf("Invalid counter %v on drop.  Got %v, want %v.", counter, counter.Value, errorBytes)
 		}
 	}

@@ -19,7 +19,6 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"google.golang.org/protobuf/proto"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction/mock_fwdpacket"
@@ -65,12 +64,14 @@ func TestTransmit(t *testing.T) {
 
 	// Create a transmit action using its builder.
 	desc := fwdpb.ActionDesc{
-		ActionType: fwdpb.ActionType_TRANSMIT_ACTION.Enum(),
+		ActionType: fwdpb.ActionType_ACTION_TYPE_TRANSMIT,
 	}
 	transmit := fwdpb.TransmitActionDesc{
 		PortId: pid,
 	}
-	proto.SetExtension(&desc, fwdpb.E_TransmitActionDesc_Extension, &transmit)
+	desc.Action = &fwdpb.ActionDesc_Transmit{
+		Transmit: &transmit,
+	}
 	action, err := fwdaction.New(&desc, ctx)
 	if err != nil {
 		t.Errorf("NewAction failed, desc %v failed, err %v.", desc, err)
@@ -82,7 +83,7 @@ func TestTransmit(t *testing.T) {
 	const length = 10
 	verify := func(want fwdaction.State) {
 		var base fwdobject.Base
-		if err := base.InitCounters("prefix", "desc", fwdpb.CounterId_TX_ERROR_PACKETS, fwdpb.CounterId_TX_ERROR_OCTETS); err != nil {
+		if err := base.InitCounters("prefix", "desc", fwdpb.CounterId_COUNTER_ID_TX_ERROR_PACKETS, fwdpb.CounterId_COUNTER_ID_TX_ERROR_OCTETS); err != nil {
 			t.Fatalf("InitCounters failed, %v", err)
 		}
 
@@ -90,7 +91,7 @@ func TestTransmit(t *testing.T) {
 		packet.EXPECT().Length().Return(length).AnyTimes()
 
 		if want == fwdaction.CONTINUE {
-			fid := fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_PORT_OUTPUT, 0)
+			fid := fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT, 0)
 			pid := make([]byte, protocol.SizeUint64)
 			binary.BigEndian.PutUint64(pid, uint64(port.NID()))
 			packet.EXPECT().Update(fid, fwdpacket.OpSet, pid).Times(1)

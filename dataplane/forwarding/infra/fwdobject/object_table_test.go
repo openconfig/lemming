@@ -47,7 +47,7 @@ func TestEmpty(t *testing.T) {
 	}
 
 	id := "10"
-	oid := &fwdpb.ObjectId{Id: &id}
+	oid := &fwdpb.ObjectId{Id: id}
 	if object, err := table.FindID(oid); err == nil {
 		t.Errorf("Found unexpected object %s at id %v.", object, id)
 	} else {
@@ -89,7 +89,7 @@ func TestObjects(t *testing.T) {
 		var object testObject
 		testobjects = append(testobjects, &object)
 		objects = append(objects, &object)
-		if err := table.Insert(&object, &fwdpb.ObjectId{Id: &id}); err != nil {
+		if err := table.Insert(&object, &fwdpb.ObjectId{Id: id}); err != nil {
 			t.Fatalf("Insert failed, err %s.", err)
 		}
 	}
@@ -101,7 +101,7 @@ func TestObjects(t *testing.T) {
 	}
 	for _, object := range objects {
 		id := string(object.ID())
-		if _, err := table.FindID(&fwdpb.ObjectId{Id: &id}); err != nil {
+		if _, err := table.FindID(&fwdpb.ObjectId{Id: id}); err != nil {
 			t.Errorf("Find failed, err %s.", err)
 		}
 	}
@@ -109,9 +109,9 @@ func TestObjects(t *testing.T) {
 	// Re-insert an object and expect it to fail.
 	object := objects[testIndex]
 	id := string(object.ID())
-	oid := &fwdpb.ObjectId{Id: &id}
+	oid := &fwdpb.ObjectId{Id: id}
 
-	if err := table.Insert(object, &fwdpb.ObjectId{Id: &id}); err == nil {
+	if err := table.Insert(object, &fwdpb.ObjectId{Id: id}); err == nil {
 		t.Errorf("Inserted unexpected object %v.", object)
 	} else {
 		t.Logf("Expected error %s.", err)
@@ -149,7 +149,7 @@ func TestObjects(t *testing.T) {
 	// Remove a different object and force it to be cleaned up.
 	object = objects[testForceIndex]
 	id = string(object.ID())
-	oid = &fwdpb.ObjectId{Id: &id}
+	oid = &fwdpb.ObjectId{Id: id}
 
 	if err := table.Remove(oid, true /*forceCleanup*/); err != nil {
 		t.Errorf("Remove failed, err %s.", err)
@@ -194,7 +194,7 @@ func TestCounters(t *testing.T) {
 
 	// Add 4 counters to the counter set.
 	testLength := 4
-	if err := base.InitCounters("prefix", "desc", fwdpb.CounterId_RX_DROP_PACKETS, fwdpb.CounterId_RX_DROP_OCTETS, fwdpb.CounterId_RX_PACKETS, fwdpb.CounterId_RX_OCTETS); err != nil {
+	if err := base.InitCounters("prefix", "desc", fwdpb.CounterId_COUNTER_ID_RX_DROP_PACKETS, fwdpb.CounterId_COUNTER_ID_RX_DROP_OCTETS, fwdpb.CounterId_COUNTER_ID_RX_PACKETS, fwdpb.CounterId_COUNTER_ID_RX_OCTETS); err != nil {
 		t.Fatalf("InitCounters failed, %v", err)
 	}
 	list = base.Counters()
@@ -211,7 +211,7 @@ func TestCounters(t *testing.T) {
 	}
 
 	// Increment a non existing counter.
-	base.Increment(fwdpb.CounterId_TX_OCTETS, 10)
+	base.Increment(fwdpb.CounterId_COUNTER_ID_TX_OCTETS, 10)
 	if err := validate(&base, testLength); err != nil {
 		t.Error(err)
 	}

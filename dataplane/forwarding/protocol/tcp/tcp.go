@@ -65,7 +65,7 @@ func (TCP) Trailer() []byte {
 
 // ID returns the TCP protocol header ID.
 func (TCP) ID(int) fwdpb.PacketHeaderId {
-	return fwdpb.PacketHeaderId_TCP
+	return fwdpb.PacketHeaderId_PACKET_HEADER_ID_TCP
 }
 
 // field returns bytes within the TCP header as identified by id.
@@ -74,13 +74,13 @@ func (tcp *TCP) field(id fwdpacket.FieldID) frame.Field {
 		return protocol.UDF(tcp.header, id)
 	}
 	switch id.Num {
-	case fwdpb.PacketFieldNum_L4_PORT_SRC:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_SRC:
 		return tcp.header.Field(srcOffset, portBytes)
 
-	case fwdpb.PacketFieldNum_L4_PORT_DST:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST:
 		return tcp.header.Field(dstOffset, portBytes)
 
-	case fwdpb.PacketFieldNum_TCP_FLAGS:
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TCP_FLAGS:
 		return tcp.header.Field(attrOffset, attrBytes)
 
 	default:
@@ -95,7 +95,7 @@ func (tcp *TCP) Field(id fwdpacket.FieldID) ([]byte, error) {
 		return nil, fmt.Errorf("tcp: Field failed, field %v does not exist", id)
 	}
 
-	if !id.IsUDF && id.Num == fwdpb.PacketFieldNum_TCP_FLAGS {
+	if !id.IsUDF && id.Num == fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TCP_FLAGS {
 		return field.BitField(flagPos, flagBits), nil
 	}
 	return field.Copy(), nil
@@ -112,7 +112,7 @@ func (tcp *TCP) UpdateField(id fwdpacket.FieldID, op int, arg []byte) (bool, err
 		return false, fmt.Errorf("tcp: UpdateField failed, field %v does not exist", id)
 	}
 
-	if !id.IsUDF && id.Num == fwdpb.PacketFieldNum_TCP_FLAGS {
+	if !id.IsUDF && id.Num == fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TCP_FLAGS {
 		field.SetBits(flagPos, flagBits, uint64(binary.BigEndian.Uint16(arg)))
 		return true, nil
 	}
@@ -121,8 +121,8 @@ func (tcp *TCP) UpdateField(id fwdpacket.FieldID, op int, arg []byte) (bool, err
 
 // Remove removes the TCP header.
 func (tcp *TCP) Remove(id fwdpb.PacketHeaderId) error {
-	if id != fwdpb.PacketHeaderId_TCP {
-		return fmt.Errorf("tcp: Remove header %v failed, outermost header is %v", id, fwdpb.PacketHeaderId_TCP)
+	if id != fwdpb.PacketHeaderId_PACKET_HEADER_ID_TCP {
+		return fmt.Errorf("tcp: Remove header %v failed, outermost header is %v", id, fwdpb.PacketHeaderId_PACKET_HEADER_ID_TCP)
 	}
 	tcp.header = nil
 	return nil
@@ -177,7 +177,7 @@ func (tcp *TCP) Rebuild() error {
 
 	// Update the checksum only if the TCP is over a valid IP header
 	switch envelopeID {
-	case fwdpb.PacketHeaderId_IP4, fwdpb.PacketHeaderId_IP6:
+	case fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4, fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP6:
 		break
 	default:
 		return nil
@@ -192,22 +192,22 @@ func (tcp *TCP) Rebuild() error {
 
 	// Reset the checksum in the TCP header.
 	tcp.header.Field(csumOffset, csumBytes).SetValue(0)
-	ipSrc, err := tcp.desc.Packet.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP_ADDR_SRC, fwdpacket.LastField))
+	ipSrc, err := tcp.desc.Packet.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC, fwdpacket.LastField))
 	if err != nil {
 		return fmt.Errorf("tcp: Rebuild failed, err %v", err)
 	}
 
-	ipDst, err := tcp.desc.Packet.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_IP_ADDR_DST, fwdpacket.LastField))
+	ipDst, err := tcp.desc.Packet.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST, fwdpacket.LastField))
 	if err != nil {
 		return fmt.Errorf("tcp: Rebuild failed, err %v", err)
 	}
 
 	var sum uint
 	switch envelopeID {
-	case fwdpb.PacketHeaderId_IP4:
+	case fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4:
 		sum = ChecksumIPv4(tcp.header, tcp.desc.Payload(), ipSrc, ipDst)
 
-	case fwdpb.PacketHeaderId_IP6:
+	case fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP6:
 		sum = ChecksumIPv6(tcp.header, tcp.desc.Payload(), ipSrc, ipDst)
 	}
 	tcp.header.Field(csumOffset, csumBytes).SetValue(sum)
@@ -233,10 +233,10 @@ func parse(frame *frame.Frame, desc *protocol.Desc) (protocol.Handler, fwdpb.Pac
 	return &TCP{
 		header: header,
 		desc:   desc,
-	}, fwdpb.PacketHeaderId_OPAQUE, nil
+	}, fwdpb.PacketHeaderId_PACKET_HEADER_ID_OPAQUE, nil
 }
 
 func init() {
 	// TCP header cannot be added to a packet.
-	protocol.Register(fwdpb.PacketHeaderId_TCP, parse, nil)
+	protocol.Register(fwdpb.PacketHeaderId_PACKET_HEADER_ID_TCP, parse, nil)
 }

@@ -18,7 +18,6 @@ import (
 	"fmt"
 
 	log "github.com/golang/glog"
-	"google.golang.org/protobuf/proto"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
@@ -36,9 +35,9 @@ type flowcounter struct {
 // String formats the type of the action as a string.
 func (f *flowcounter) String() string {
 	if f.counter == nil {
-		return fmt.Sprintf("Type=%v;<FlowCounter=nil>", fwdpb.ActionType_FLOW_COUNTER_ACTION)
+		return fmt.Sprintf("Type=%v;<FlowCounter=nil>", fwdpb.ActionType_ACTION_TYPE_FLOW_COUNTER)
 	}
-	return fmt.Sprintf("Type=%v;<FlowCounter=%v>", fwdpb.ActionType_FLOW_COUNTER_ACTION, f.counter.ID())
+	return fmt.Sprintf("Type=%v;<FlowCounter=%v>", fwdpb.ActionType_ACTION_TYPE_FLOW_COUNTER, f.counter.ID())
 }
 
 // Cleanup releases the flowCounter.
@@ -64,16 +63,16 @@ type flowcounterBuilder struct{}
 
 // init registers a builder for the flowcounter action type.
 func init() {
-	fwdaction.Register(fwdpb.ActionType_FLOW_COUNTER_ACTION, &flowcounterBuilder{})
+	fwdaction.Register(fwdpb.ActionType_ACTION_TYPE_FLOW_COUNTER, &flowcounterBuilder{})
 }
 
 // Build creates a new flowcounter action.
 func (*flowcounterBuilder) Build(desc *fwdpb.ActionDesc, ctx *fwdcontext.Context) (fwdaction.Action, error) {
-	if !proto.HasExtension(desc, fwdpb.E_FlowCounterActionDesc_Extension) {
-		return nil, fmt.Errorf("actions: Build for flowcounter action failed, missing extension %s", fwdpb.E_FlowCounterActionDesc_Extension.Name)
+	fc, ok := desc.Action.(*fwdpb.ActionDesc_Flow)
+	if !ok {
+		return nil, fmt.Errorf("actions: Build for flowcounter action failed, missing desc")
 	}
-	fcExt := proto.GetExtension(desc, fwdpb.E_FlowCounterActionDesc_Extension).(*fwdpb.FlowCounterActionDesc)
-	fctr, err := fwdflowcounter.Acquire(ctx, fcExt.GetCounterId())
+	fctr, err := fwdflowcounter.Acquire(ctx, fc.Flow.GetCounterId())
 	if err != nil {
 		return nil, fmt.Errorf("actions: Build for flowcounter action failed, err %v", err)
 	}

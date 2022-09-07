@@ -18,7 +18,6 @@ import (
 	"fmt"
 
 	log "github.com/golang/glog"
-	"google.golang.org/protobuf/proto"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdport"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/deadlock"
@@ -42,7 +41,7 @@ type cpuPort struct {
 
 // String returns the port as a formatted string.
 func (p *cpuPort) String() string {
-	desc := fmt.Sprintf("Type=%v;CPU=%v;%v;<Queue=%v><Input=%v>;<Output=%v>;<Export=%v>", fwdpb.PortType_CPU_PORT, p.queueID, p.BaseInfo(), p.queue, p.input, p.output, p.export)
+	desc := fmt.Sprintf("Type=%v;CPU=%v;%v;<Queue=%v><Input=%v>;<Output=%v>;<Export=%v>", fwdpb.PortType_PORT_TYPE_CPU_PORT, p.queueID, p.BaseInfo(), p.queue, p.input, p.output, p.export)
 	if state, err := p.State(nil); err == nil {
 		desc += fmt.Sprintf("<State=%v>;", state)
 	}
@@ -67,17 +66,16 @@ func (p *cpuPort) Update(upd *fwdpb.PortUpdateDesc) error {
 			p.Cleanup()
 		}
 	}()
-
-	if proto.HasExtension(upd, fwdpb.E_CPUPortUpdateDesc_Extension) {
-		return fmt.Errorf("ports: missing %s", fwdpb.E_CPUPortDesc_Extension.Name)
+	cpu, ok := upd.Port.(*fwdpb.PortUpdateDesc_Cpu)
+	if !ok {
+		return fmt.Errorf("ports: missing desc")
 	}
-	u := proto.GetExtension(upd, fwdpb.E_CPUPortUpdateDesc_Extension).(*fwdpb.CPUPortUpdateDesc)
 
 	// Acquire new actions before releasing the old ones.
-	if p.input, err = fwdaction.NewActions(u.GetInput(), p.ctx); err != nil {
+	if p.input, err = fwdaction.NewActions(cpu.Cpu.GetInputs(), p.ctx); err != nil {
 		return fmt.Errorf("ports: input actions for port %v failed, err %v", p, err)
 	}
-	if p.output, err = fwdaction.NewActions(u.GetOutput(), p.ctx); err != nil {
+	if p.output, err = fwdaction.NewActions(cpu.Cpu.GetOutputs(), p.ctx); err != nil {
 		return fmt.Errorf("ports: output actions for port %v failed, err %v", p, err)
 	}
 	return nil
@@ -98,7 +96,7 @@ func (p *cpuPort) Write(packet fwdpacket.Packet) (fwdaction.State, error) {
 func (p *cpuPort) punt(v interface{}) {
 	packet, ok := v.(fwdpacket.Packet)
 	if !ok {
-		fwdport.Increment(p, 1, fwdpb.CounterId_TX_ERROR_PACKETS, fwdpb.CounterId_TX_ERROR_OCTETS)
+		fwdport.Increment(p, 1, fwdpb.CounterId_COUNTER_ID_TX_ERROR_PACKETS, fwdpb.CounterId_COUNTER_ID_TX_ERROR_OCTETS)
 		return
 	}
 
@@ -123,12 +121,12 @@ func (p *cpuPort) punt(v interface{}) {
 		})
 	}
 	request := &fwdpb.PacketInjectRequest{
-		ContextId:    &fwdpb.ContextId{Id: proto.String(p.ctx.ID)},
+		ContextId:    &fwdpb.ContextId{Id: p.ctx.ID},
 		PortId:       fwdport.GetID(p),
 		Egress:       egressPID,
 		Ingress:      ingressPID,
 		Bytes:        packet.Frame(),
-		Action:       fwdpb.PortAction_PORT_ACTION_OUTPUT.Enum(),
+		Action:       fwdpb.PortAction_PORT_ACTION_OUTPUT,
 		ParsedFields: parsed,
 	}
 
@@ -143,7 +141,7 @@ func (p *cpuPort) punt(v interface{}) {
 		}
 		log.Errorf("ports: Unable to punt packet, request %+v, err %v.", request, err)
 	}
-	fwdport.Increment(p, packet.Length(), fwdpb.CounterId_TX_ERROR_PACKETS, fwdpb.CounterId_TX_ERROR_OCTETS)
+	fwdport.Increment(p, packet.Length(), fwdpb.CounterId_COUNTER_ID_TX_ERROR_PACKETS, fwdpb.CounterId_COUNTER_ID_TX_ERROR_OCTETS)
 }
 
 // Actions returns the port actions of the specified type.
@@ -160,15 +158,15 @@ func (p *cpuPort) Actions(dir fwdpb.PortAction) fwdaction.Actions {
 // State implements the port interface. The CPU port state cannot be controlled
 // (it is always enabled). It is considered to be connected if a packet sink
 // is present in the port's context.
-func (cpuPort) State(req *fwdpb.PortInfo) (fwdpb.PortStateReply, error) {
-	ready := fwdpb.PortStateReply{
+func (cpuPort) State(req *fwdpb.PortInfo) (*fwdpb.PortStateReply, error) {
+	ready := &fwdpb.PortStateReply{
 		LocalPort: &fwdpb.PortInfo{
-			Laser: fwdpb.PortLaserState_PORT_LASER_ENABLED.Enum(),
+			Laser: fwdpb.PortLaserState_PORT_LASER_STATE_ENABLED,
 		},
 		Link: &fwdpb.LinkStateDesc{
-			State: fwdpb.LinkState_LINK_UP.Enum(),
+			State: fwdpb.LinkState_LINK_STATE_UP,
 			RemotePort: &fwdpb.PortInfo{
-				Laser: fwdpb.PortLaserState_PORT_LASER_ENABLED.Enum(),
+				Laser: fwdpb.PortLaserState_PORT_LASER_STATE_DISABLED,
 			},
 		},
 	}
@@ -180,29 +178,29 @@ type cpuBuilder struct{}
 
 // init registers a builder for cpu ports.
 func init() {
-	fwdport.Register(fwdpb.PortType_CPU_PORT, &cpuBuilder{})
+	fwdport.Register(fwdpb.PortType_PORT_TYPE_CPU_PORT, &cpuBuilder{})
 }
 
 // Build creates a new CPU port.
 func (*cpuBuilder) Build(pd *fwdpb.PortDesc, ctx *fwdcontext.Context) (fwdport.Port, error) {
-	if !proto.HasExtension(pd, fwdpb.E_CPUPortDesc_Extension) {
-		return nil, fmt.Errorf("ports: Unable to create cpu port. Missing %s", fwdpb.E_CPUPortDesc_Extension.Name)
+	cpu, ok := pd.Port.(*fwdpb.PortDesc_Cpu)
+	if !ok {
+		return nil, fmt.Errorf("ports: Unable to create cpu port")
 	}
-	cpu := proto.GetExtension(pd, fwdpb.E_CPUPortDesc_Extension).(*fwdpb.CPUPortDesc)
 
 	p := cpuPort{
 		ctx:     ctx,
-		queueID: cpu.GetQueueId(),
-		export:  cpu.GetExportFieldIds(),
+		queueID: cpu.Cpu.GetQueueId(),
+		export:  cpu.Cpu.GetExportFieldIds(),
 	}
 	var err error
-	if l := cpu.GetQueueLength(); l != 0 {
+	if l := cpu.Cpu.GetQueueLength(); l != 0 {
 		p.queue, err = queue.NewBounded("punt", int(l))
 	} else {
 		p.queue, err = queue.NewUnbounded("punt")
 	}
 	if err != nil {
-		return nil, fmt.Errorf("ports: Unable to create cpu port %v with length %v, err %v", p.queueID, cpu.GetQueueLength(), err)
+		return nil, fmt.Errorf("ports: Unable to create cpu port %v with length %v, err %v", p.queueID, cpu.Cpu.GetQueueLength(), err)
 	}
 	p.queue.Run()
 	ch := make(chan bool)

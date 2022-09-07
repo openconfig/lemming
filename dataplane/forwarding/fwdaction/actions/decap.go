@@ -17,8 +17,6 @@ package actions
 import (
 	"fmt"
 
-	"google.golang.org/protobuf/proto"
-
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdobject"
@@ -33,7 +31,7 @@ type decap struct {
 
 // String formats the state of the action as a string.
 func (d *decap) String() string {
-	return fmt.Sprintf("Type=%s;HeaderId=%v;", fwdpb.ActionType_DECAP_ACTION, d.id)
+	return fmt.Sprintf("Type=%s;HeaderId=%v;", fwdpb.ActionType_ACTION_TYPE_DECAP, d.id)
 }
 
 // Process removes a header from the packet. Decap errors are explicitly ignored.
@@ -47,14 +45,14 @@ type decapBuilder struct{}
 
 func init() {
 	// Register a builder for the decap action type.
-	fwdaction.Register(fwdpb.ActionType_DECAP_ACTION, &decapBuilder{})
+	fwdaction.Register(fwdpb.ActionType_ACTION_TYPE_DECAP, &decapBuilder{})
 }
 
 // Build creates a new decap action.
 func (*decapBuilder) Build(desc *fwdpb.ActionDesc, ctx *fwdcontext.Context) (fwdaction.Action, error) {
-	if !proto.HasExtension(desc, fwdpb.E_DecapActionDesc_Extension) {
-		return nil, fmt.Errorf("actions: Build for decap action failed, missing extension %s", fwdpb.E_DecapActionDesc_Extension.Name)
+	d, ok := desc.Action.(*fwdpb.ActionDesc_Decap)
+	if !ok {
+		return nil, fmt.Errorf("actions: Build for decap action failed, missing description")
 	}
-	decapExt := proto.GetExtension(desc, fwdpb.E_DecapActionDesc_Extension).(*fwdpb.DecapActionDesc)
-	return &decap{id: decapExt.GetHeaderId()}, nil
+	return &decap{id: d.Decap.GetHeaderId()}, nil
 }

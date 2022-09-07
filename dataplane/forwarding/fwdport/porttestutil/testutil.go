@@ -19,7 +19,6 @@ package porttestutil
 import (
 	"testing"
 
-	"google.golang.org/protobuf/proto"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdport"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdobject"
@@ -30,13 +29,15 @@ import (
 // unique name. Test ports are created using CPU ports.
 func DescTestPort(t *testing.T, name string) *fwdpb.PortDesc {
 	desc := &fwdpb.PortDesc{
-		PortType: fwdpb.PortType_CPU_PORT.Enum(),
+		PortType: fwdpb.PortType_PORT_TYPE_CPU_PORT,
 		PortId:   fwdport.MakeID(fwdobject.NewID(name)),
 	}
 	cpu := &fwdpb.CPUPortDesc{
-		QueueId: proto.String(name),
+		QueueId: name,
 	}
-	proto.SetExtension(desc, fwdpb.E_CPUPortDesc_Extension, cpu)
+	desc.Port = &fwdpb.PortDesc_Cpu{
+		Cpu: cpu,
+	}
 	return desc
 }
 
@@ -50,7 +51,7 @@ func CreateTestPort(t *testing.T, ctx *fwdcontext.Context, name string) fwdport.
 	if err != nil {
 		t.Fatalf("Port create failed: %v.", err)
 	}
-	port.State(&fwdpb.PortInfo{Laser: fwdpb.PortLaserState_PORT_LASER_ENABLED.Enum()})
+	port.State(&fwdpb.PortInfo{Laser: fwdpb.PortLaserState_PORT_LASER_STATE_ENABLED})
 	return port
 }
 
@@ -60,7 +61,7 @@ func PortMap(ports []fwdport.Port) map[fwdobject.ID]bool {
 	pm := make(map[fwdobject.ID]bool)
 	for _, p := range ports {
 		counters := p.Counters()
-		if counter, ok := counters[fwdpb.CounterId_TX_PACKETS]; ok && counter.Value != 0 {
+		if counter, ok := counters[fwdpb.CounterId_COUNTER_ID_TX_PACKETS]; ok && counter.Value != 0 {
 			pm[p.ID()] = true
 		}
 	}

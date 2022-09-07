@@ -17,7 +17,6 @@ package fwdpacket
 import (
 	"testing"
 
-	"google.golang.org/protobuf/proto"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
@@ -31,27 +30,27 @@ func TestFieldID(t *testing.T) {
 		{
 			fieldID: &fwdpb.PacketFieldId{
 				Field: &fwdpb.PacketField{
-					FieldNum: fwdpb.PacketFieldNum_IP_PROTO.Enum(),
-					Instance: proto.Uint32(10),
+					FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO,
+					Instance: 10,
 				}},
 			want: FieldID{
 				Instance: 10,
-				Num:      fwdpb.PacketFieldNum_IP_PROTO,
+				Num:      fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO,
 			},
 		},
 		// FieldID using a UDF with a non-zero offset.
 		{
 			fieldID: &fwdpb.PacketFieldId{
 				Bytes: &fwdpb.PacketBytes{
-					HeaderGroup: fwdpb.PacketHeaderGroup_L2.Enum(),
-					Instance:    proto.Uint32(10),
-					Offset:      proto.Uint32(5),
-					Size:        proto.Uint32(1),
+					HeaderGroup: fwdpb.PacketHeaderGroup_PACKET_HEADER_GROUP_L2,
+					Instance:    10,
+					Offset:      5,
+					Size:        1,
 				}},
 			want: FieldID{
 				IsUDF:    true,
 				Instance: 10,
-				Header:   fwdpb.PacketHeaderGroup_L2,
+				Header:   fwdpb.PacketHeaderGroup_PACKET_HEADER_GROUP_L2,
 				Size:     1,
 				Offset:   5,
 			},
@@ -60,15 +59,15 @@ func TestFieldID(t *testing.T) {
 		{
 			fieldID: &fwdpb.PacketFieldId{
 				Bytes: &fwdpb.PacketBytes{
-					HeaderGroup: fwdpb.PacketHeaderGroup_L2.Enum(),
-					Instance:    proto.Uint32(10),
-					Offset:      proto.Uint32(0),
-					Size:        proto.Uint32(1),
+					HeaderGroup: fwdpb.PacketHeaderGroup_PACKET_HEADER_GROUP_L2,
+					Instance:    10,
+					Offset:      0,
+					Size:        1,
 				}},
 			want: FieldID{
 				IsUDF:    true,
 				Instance: 10,
-				Header:   fwdpb.PacketHeaderGroup_L2,
+				Header:   fwdpb.PacketHeaderGroup_PACKET_HEADER_GROUP_L2,
 				Size:     1,
 			},
 		},

@@ -144,7 +144,7 @@ func NewNID(hid fwdpb.PacketHeaderId, frame []byte, nid fwdobject.NID) (Packet, 
 		return nil, err
 	}
 	if nid != fwdobject.InvalidNID {
-		if err := SetNID(pkt, nid, fwdpb.PacketFieldNum_PACKET_PORT_INPUT); err != nil {
+		if err := SetNID(pkt, nid, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT); err != nil {
 			return nil, err
 		}
 	}

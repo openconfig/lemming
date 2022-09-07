@@ -21,7 +21,6 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"google.golang.org/protobuf/proto"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdtable/mock_fwdpacket"
 	tables "github.com/openconfig/lemming/dataplane/forwarding/fwdtable/tabletestutil"
@@ -72,9 +71,9 @@ func TestPacketFields(t *testing.T) {
 	}{
 		{
 			fields: []fwdpb.PacketFieldNum{
-				fwdpb.PacketFieldNum_ETHER_MAC_SRC,
-				fwdpb.PacketFieldNum_ETHER_TYPE,
-				fwdpb.PacketFieldNum_IP_VERSION,
+				fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC,
+				fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_TYPE,
+				fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION,
 			},
 			countFudge: -1,
 			err:        "missing field",
@@ -82,9 +81,9 @@ func TestPacketFields(t *testing.T) {
 		},
 		{
 			fields: []fwdpb.PacketFieldNum{
-				fwdpb.PacketFieldNum_ETHER_MAC_SRC,
-				fwdpb.PacketFieldNum_ETHER_TYPE,
-				fwdpb.PacketFieldNum_IP_VERSION,
+				fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC,
+				fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_TYPE,
+				fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION,
 			},
 			countFudge: +1,
 			err:        "duplicate field",
@@ -92,18 +91,18 @@ func TestPacketFields(t *testing.T) {
 		},
 		{
 			fields: []fwdpb.PacketFieldNum{
-				fwdpb.PacketFieldNum_ETHER_MAC_SRC,
-				fwdpb.PacketFieldNum_ETHER_TYPE,
-				fwdpb.PacketFieldNum_IP_VERSION,
+				fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC,
+				fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_TYPE,
+				fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION,
 			},
 			err:  "validation error",
 			size: invalidSize,
 		},
 		{
 			fields: []fwdpb.PacketFieldNum{
-				fwdpb.PacketFieldNum_ETHER_MAC_SRC,
-				fwdpb.PacketFieldNum_ETHER_TYPE,
-				fwdpb.PacketFieldNum_IP_VERSION,
+				fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC,
+				fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_TYPE,
+				fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION,
 			},
 			size: validSize,
 		},
@@ -166,7 +165,7 @@ func EntryDescFields(fields []fwdpb.PacketFieldNum, count int, size int) EntryDe
 		ed = append(ed, &fwdpb.PacketFieldBytes{
 			FieldId: &fwdpb.PacketFieldId{
 				Field: &fwdpb.PacketField{
-					FieldNum: &id,
+					FieldNum: id,
 				}},
 			Bytes: make([]byte, size),
 		})
@@ -179,7 +178,7 @@ func EntryDescFields(fields []fwdpb.PacketFieldNum, count int, size int) EntryDe
 		ed = append(ed, &fwdpb.PacketFieldBytes{
 			FieldId: &fwdpb.PacketFieldId{
 				Field: &fwdpb.PacketField{
-					FieldNum: &id,
+					FieldNum: id,
 				}},
 			Bytes: make([]byte, size),
 		})
@@ -212,14 +211,14 @@ func TestPacketBytes(t *testing.T) {
 		{
 			fields: []fwdpb.PacketBytes{
 				{
-					HeaderGroup: fwdpb.PacketHeaderGroup_L2.Enum(),
-					Offset:      proto.Uint32(20),
-					Size:        proto.Uint32(4),
+					HeaderGroup: fwdpb.PacketHeaderGroup_PACKET_HEADER_GROUP_L2,
+					Offset:      20,
+					Size:        4,
 				},
 				{
-					HeaderGroup: fwdpb.PacketHeaderGroup_L3.Enum(),
-					Offset:      proto.Uint32(20),
-					Size:        proto.Uint32(4),
+					HeaderGroup: fwdpb.PacketHeaderGroup_PACKET_HEADER_GROUP_L3,
+					Offset:      20,
+					Size:        4,
 				},
 			},
 			countFudge: -1,
@@ -229,14 +228,14 @@ func TestPacketBytes(t *testing.T) {
 		{
 			fields: []fwdpb.PacketBytes{
 				{
-					HeaderGroup: fwdpb.PacketHeaderGroup_L2.Enum(),
-					Offset:      proto.Uint32(20),
-					Size:        proto.Uint32(4),
+					HeaderGroup: fwdpb.PacketHeaderGroup_PACKET_HEADER_GROUP_L2,
+					Offset:      20,
+					Size:        4,
 				},
 				{
-					HeaderGroup: fwdpb.PacketHeaderGroup_L3.Enum(),
-					Offset:      proto.Uint32(20),
-					Size:        proto.Uint32(4),
+					HeaderGroup: fwdpb.PacketHeaderGroup_PACKET_HEADER_GROUP_L3,
+					Offset:      20,
+					Size:        4,
 				},
 			},
 			countFudge: 1,
@@ -246,14 +245,14 @@ func TestPacketBytes(t *testing.T) {
 		{
 			fields: []fwdpb.PacketBytes{
 				{
-					HeaderGroup: fwdpb.PacketHeaderGroup_L2.Enum(),
-					Offset:      proto.Uint32(20),
-					Size:        proto.Uint32(4),
+					HeaderGroup: fwdpb.PacketHeaderGroup_PACKET_HEADER_GROUP_L2,
+					Offset:      20,
+					Size:        4,
 				},
 				{
-					HeaderGroup: fwdpb.PacketHeaderGroup_L3.Enum(),
-					Offset:      proto.Uint32(20),
-					Size:        proto.Uint32(4),
+					HeaderGroup: fwdpb.PacketHeaderGroup_PACKET_HEADER_GROUP_L3,
+					Offset:      20,
+					Size:        4,
 				},
 			},
 			err:  "validation error",
@@ -262,14 +261,14 @@ func TestPacketBytes(t *testing.T) {
 		{
 			fields: []fwdpb.PacketBytes{
 				{
-					HeaderGroup: fwdpb.PacketHeaderGroup_L2.Enum(),
-					Offset:      proto.Uint32(20),
-					Size:        proto.Uint32(4),
+					HeaderGroup: fwdpb.PacketHeaderGroup_PACKET_HEADER_GROUP_L2,
+					Offset:      20,
+					Size:        4,
 				},
 				{
-					HeaderGroup: fwdpb.PacketHeaderGroup_L3.Enum(),
-					Offset:      proto.Uint32(20),
-					Size:        proto.Uint32(4),
+					HeaderGroup: fwdpb.PacketHeaderGroup_PACKET_HEADER_GROUP_L3,
+					Offset:      20,
+					Size:        4,
 				},
 			},
 			size: validSize,

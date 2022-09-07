@@ -19,7 +19,6 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"google.golang.org/protobuf/proto"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction/mock_fwdpacket"
@@ -50,28 +49,30 @@ func TestCopy(t *testing.T) {
 	// Source and destination fields.
 	srcField := &fwdpb.PacketFieldId{
 		Field: &fwdpb.PacketField{
-			FieldNum: fwdpb.PacketFieldNum_IP_ADDR_SRC.Enum(),
+			FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC,
 		},
 	}
 
 	dstField :=
 		&fwdpb.PacketFieldId{
 			Field: &fwdpb.PacketField{
-				FieldNum: fwdpb.PacketFieldNum_IP_ADDR_DST.Enum(),
+				FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST,
 			},
 		}
 
 	// Create a copy update action for a packet field of the same size.
 	// This is expected to succeed.
 	desc := fwdpb.ActionDesc{
-		ActionType: fwdpb.ActionType_UPDATE_ACTION.Enum(),
+		ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
 	}
 	update := fwdpb.UpdateActionDesc{
 		FieldId: dstField,
-		Type:    fwdpb.UpdateType_COPY_UPDATE.Enum(),
+		Type:    fwdpb.UpdateType_UPDATE_TYPE_COPY,
 		Field:   srcField,
 	}
-	proto.SetExtension(&desc, fwdpb.E_UpdateActionDesc_Extension, &update)
+	desc.Action = &fwdpb.ActionDesc_Update{
+		Update: &update,
+	}
 	action, err := fwdaction.New(&desc, ctx)
 	if err != nil {
 		t.Errorf("NewAction failed, desc %v failed, err %v.", desc, err)
@@ -114,7 +115,7 @@ func TestBitWrite(t *testing.T) {
 	// Packet field
 	field := &fwdpb.PacketFieldId{
 		Field: &fwdpb.PacketField{
-			FieldNum: fwdpb.PacketFieldNum_IP_ADDR_SRC.Enum(),
+			FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC,
 		},
 	}
 
@@ -188,16 +189,18 @@ func TestBitWrite(t *testing.T) {
 
 		// Create an update action and check for build errors.
 		desc := fwdpb.ActionDesc{
-			ActionType: fwdpb.ActionType_UPDATE_ACTION.Enum(),
+			ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
 		}
 		update := fwdpb.UpdateActionDesc{
 			FieldId:   field,
-			Type:      fwdpb.UpdateType_BIT_WRITE_UPDATE.Enum(),
-			BitCount:  proto.Uint32(test.bitCount),
-			BitOffset: proto.Uint32(test.bitOffset),
+			Type:      fwdpb.UpdateType_UPDATE_TYPE_BIT_WRITE,
+			BitCount:  test.bitCount,
+			BitOffset: test.bitOffset,
 			Value:     test.value,
 		}
-		proto.SetExtension(&desc, fwdpb.E_UpdateActionDesc_Extension, &update)
+		desc.Action = &fwdpb.ActionDesc_Update{
+			Update: &update,
+		}
 		action, err := fwdaction.New(&desc, ctx)
 		switch {
 		case !test.buildErr && err != nil:
@@ -246,7 +249,7 @@ func TestBitAndOr(t *testing.T) {
 	// Packet field
 	field := &fwdpb.PacketFieldId{
 		Field: &fwdpb.PacketField{
-			FieldNum: fwdpb.PacketFieldNum_IP_ADDR_SRC.Enum(),
+			FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC,
 		},
 	}
 
@@ -261,28 +264,28 @@ func TestBitAndOr(t *testing.T) {
 		{
 			original:   []byte{0x10, 0x01},
 			value:      []byte{0xF1, 0x11, 0xFF},
-			op:         fwdpb.UpdateType_BIT_AND_UPDATE.Enum(),
+			op:         fwdpb.UpdateType_UPDATE_TYPE_BIT_AND.Enum(),
 			processErr: true,
 		},
 		// Test a processing failure as bit-mask is longer than the original packet field size.
 		{
 			original:   []byte{0x10, 0x01},
 			value:      []byte{0xF1, 0x11, 0xFF},
-			op:         fwdpb.UpdateType_BIT_OR_UPDATE.Enum(),
+			op:         fwdpb.UpdateType_UPDATE_TYPE_BIT_OR.Enum(),
 			processErr: true,
 		},
 		// Test a successful AND case.
 		{
 			original: []byte{0x10, 0x01},
 			value:    []byte{0xF1, 0x10},
-			op:       fwdpb.UpdateType_BIT_AND_UPDATE.Enum(),
+			op:       fwdpb.UpdateType_UPDATE_TYPE_BIT_AND.Enum(),
 			final:    []byte{0x10, 0x00},
 		},
 		// Test a successful OR case.
 		{
 			original: []byte{0x10, 0x01},
 			value:    []byte{0xF1, 0x10},
-			op:       fwdpb.UpdateType_BIT_OR_UPDATE.Enum(),
+			op:       fwdpb.UpdateType_UPDATE_TYPE_BIT_OR.Enum(),
 			final:    []byte{0xF1, 0x11},
 		},
 	}
@@ -292,14 +295,16 @@ func TestBitAndOr(t *testing.T) {
 
 		// Create an update action and check for build errors.
 		desc := fwdpb.ActionDesc{
-			ActionType: fwdpb.ActionType_UPDATE_ACTION.Enum(),
+			ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
 		}
 		update := fwdpb.UpdateActionDesc{
 			FieldId: field,
-			Type:    test.op,
+			Type:    *test.op,
 			Value:   test.value,
 		}
-		proto.SetExtension(&desc, fwdpb.E_UpdateActionDesc_Extension, &update)
+		desc.Action = &fwdpb.ActionDesc_Update{
+			Update: &update,
+		}
 		action, err := fwdaction.New(&desc, ctx)
 		if err != nil {
 			t.Fatalf("%d: NewAction failed, desc %v failed, err %v.", tid, desc, err)

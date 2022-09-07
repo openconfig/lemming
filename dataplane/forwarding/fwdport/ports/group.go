@@ -21,7 +21,6 @@ import (
 	"hash/crc32"
 
 	log "github.com/golang/glog"
-	"google.golang.org/protobuf/proto"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdport"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
@@ -87,7 +86,7 @@ func (m *member) Ready() bool {
 		log.Warningf("ports: error querying port state (%v)", err)
 		return false
 	}
-	return ps.GetLink().GetState() == fwdpb.LinkState_LINK_UP
+	return ps.GetLink().GetState() == fwdpb.LinkState_LINK_STATE_UP
 }
 
 // A portGroup is a port that writes packets to a group of ports. A port can
@@ -110,7 +109,7 @@ type portGroup struct {
 
 // String returns the port as a formatted string.
 func (p *portGroup) String() string {
-	desc := fmt.Sprintf("Type=%v;<Members=%v>;<Fields=%v>;<Hash=%v>;%v", fwdpb.PortType_AGGREGATE_PORT, p.members, p.fields, p.hash, p.BaseInfo())
+	desc := fmt.Sprintf("Type=%v;<Members=%v>;<Fields=%v>;<Hash=%v>;%v", fwdpb.PortType_PORT_TYPE_AGGREGATE_PORT, p.members, p.fields, p.hash, p.BaseInfo())
 	if state, err := p.State(nil); err == nil {
 		desc += fmt.Sprintf("<State=%v>;", state)
 	}
@@ -223,13 +222,13 @@ func (p *portGroup) updateAlgorithm(fields []*fwdpb.PacketFieldId, hash fwdpb.Ag
 	// Setup the packet hash function.
 	p.hash = hash
 	switch p.hash {
-	case fwdpb.AggregateHashAlgorithm_CRC32:
+	case fwdpb.AggregateHashAlgorithm_AGGREGATE_HASH_ALGORITHM_CRC32:
 		p.hashFn = hashCRC32
 		p.packetFn = p.selectLink
-	case fwdpb.AggregateHashAlgorithm_CRC16:
+	case fwdpb.AggregateHashAlgorithm_AGGREGATE_HASH_ALGORITHM_CRC16:
 		p.hashFn = hashCRC16
 		p.packetFn = p.selectLink
-	case fwdpb.AggregateHashAlgorithm_FLOOD:
+	case fwdpb.AggregateHashAlgorithm_AGGREGATE_HASH_ALGORITHM_FLOOD:
 		p.packetFn = p.floodLink
 	default:
 		return fmt.Errorf("ports: Unable to find hash function %v", hash)
@@ -303,22 +302,15 @@ func (p *portGroup) updateGroup(u *fwdpb.AggregatePortUpdateDesc) error {
 // Update updates the port group as defined by the update extension.
 // Note that only one extension can be valid at a time.
 func (p *portGroup) Update(upd *fwdpb.PortUpdateDesc) error {
-	if proto.HasExtension(upd, fwdpb.E_AggregatePortUpdateDesc_Extension) {
-		ext := proto.GetExtension(upd, fwdpb.E_AggregatePortUpdateDesc_Extension)
-		return p.updateGroup(ext.(*fwdpb.AggregatePortUpdateDesc))
-	}
-	if proto.HasExtension(upd, fwdpb.E_AggregatePortAddMemberUpdateDesc_Extension) {
-		ext := proto.GetExtension(upd, fwdpb.E_AggregatePortAddMemberUpdateDesc_Extension)
-		return p.addGroupMember(ext.(*fwdpb.AggregatePortAddMemberUpdateDesc))
-	}
-	if proto.HasExtension(upd, fwdpb.E_AggregatePortRemoveMemberUpdateDesc_Extension) {
-		ext := proto.GetExtension(upd, fwdpb.E_AggregatePortRemoveMemberUpdateDesc_Extension)
-		return p.removeGroupMember(ext.(*fwdpb.AggregatePortRemoveMemberUpdateDesc))
-	}
-	if proto.HasExtension(upd, fwdpb.E_AggregatePortAlgorithmUpdateDesc_Extension) {
-		ext := proto.GetExtension(upd, fwdpb.E_AggregatePortAlgorithmUpdateDesc_Extension)
-		u := ext.(*fwdpb.AggregatePortAlgorithmUpdateDesc)
-		return p.updateAlgorithm(u.GetFieldIds(), u.GetHash())
+	switch agg := upd.Port.(type) {
+	case *fwdpb.PortUpdateDesc_Aggregate:
+		return p.updateGroup(agg.Aggregate)
+	case *fwdpb.PortUpdateDesc_AggregateAdd:
+		return p.addGroupMember(agg.AggregateAdd)
+	case *fwdpb.PortUpdateDesc_AggregateDel:
+		return p.removeGroupMember(agg.AggregateDel)
+	case *fwdpb.PortUpdateDesc_AggregateAlgo:
+		return p.updateAlgorithm(agg.AggregateAlgo.GetFieldIds(), agg.AggregateAlgo.GetHash())
 	}
 	return errors.New("ports: no extension specified")
 }
@@ -331,28 +323,28 @@ func (portGroup) Actions(fwdpb.PortAction) fwdaction.Actions {
 // State implements the port interface. The port group state cannot be
 // externally controlled. The group is considered ready to transmit
 // at-least one constituent is ready to transmit.
-func (p *portGroup) State(op *fwdpb.PortInfo) (fwdpb.PortStateReply, error) {
+func (p *portGroup) State(op *fwdpb.PortInfo) (*fwdpb.PortStateReply, error) {
 	for _, m := range p.members {
 		if m.Ready() {
 			ready := fwdpb.PortStateReply{
 				LocalPort: &fwdpb.PortInfo{
-					Laser: fwdpb.PortLaserState_PORT_LASER_ENABLED.Enum(),
+					Laser: fwdpb.PortLaserState_PORT_LASER_STATE_ENABLED,
 				},
 				Link: &fwdpb.LinkStateDesc{
-					State: fwdpb.LinkState_LINK_UP.Enum(),
+					State: fwdpb.LinkState_LINK_STATE_UP,
 					RemotePort: &fwdpb.PortInfo{
-						Laser: fwdpb.PortLaserState_PORT_LASER_ENABLED.Enum(),
+						Laser: fwdpb.PortLaserState_PORT_LASER_STATE_ENABLED,
 					},
 				},
 			}
-			return ready, nil
+			return &ready, nil
 		}
 	}
 	down := fwdpb.PortStateReply{
-		LocalPort: &fwdpb.PortInfo{Laser: fwdpb.PortLaserState_PORT_LASER_DISABLED.Enum()},
-		Link:      &fwdpb.LinkStateDesc{State: fwdpb.LinkState_LINK_DOWN.Enum()},
+		LocalPort: &fwdpb.PortInfo{Laser: fwdpb.PortLaserState_PORT_LASER_STATE_DISABLED},
+		Link:      &fwdpb.LinkStateDesc{State: fwdpb.LinkState_LINK_STATE_DOWN},
 	}
-	return down, nil
+	return &down, nil
 }
 
 // selectLink selects a port after applying a hash on the packet and writes the packet out on the cable.
@@ -382,7 +374,7 @@ func (p *portGroup) selectLink(packet fwdpacket.Packet) (fwdaction.State, error)
 // to all other constituents.
 func (p *portGroup) floodLink(packet fwdpacket.Packet) (fwdaction.State, error) {
 	pid := fwdobject.InvalidNID
-	if field, err := packet.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_PORT_INPUT, 0)); err == nil {
+	if field, err := packet.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT, 0)); err == nil {
 		pid = fwdobject.NID(binary.BigEndian.Uint64(field))
 	}
 
@@ -439,7 +431,7 @@ type groupBuilder struct{}
 
 // init registers a builder for port groups.
 func init() {
-	fwdport.Register(fwdpb.PortType_AGGREGATE_PORT, groupBuilder{})
+	fwdport.Register(fwdpb.PortType_PORT_TYPE_AGGREGATE_PORT, groupBuilder{})
 }
 
 // Build creates a new port group.

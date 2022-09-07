@@ -42,26 +42,26 @@ import (
 
 // CounterList is a set of counters incremented by ports.
 var CounterList = []fwdpb.CounterId{
-	fwdpb.CounterId_RX_PACKETS,
-	fwdpb.CounterId_RX_OCTETS,
-	fwdpb.CounterId_RX_BAD_PACKETS,
-	fwdpb.CounterId_RX_BAD_OCTETS,
-	fwdpb.CounterId_RX_ADMIN_DROP_PACKETS,
-	fwdpb.CounterId_RX_ADMIN_DROP_OCTETS,
-	fwdpb.CounterId_RX_ERROR_PACKETS,
-	fwdpb.CounterId_RX_ERROR_OCTETS,
-	fwdpb.CounterId_RX_DROP_PACKETS,
-	fwdpb.CounterId_RX_DROP_OCTETS,
-	fwdpb.CounterId_RX_DEBUG_PACKETS,
-	fwdpb.CounterId_RX_DEBUG_OCTETS,
-	fwdpb.CounterId_TX_PACKETS,
-	fwdpb.CounterId_TX_OCTETS,
-	fwdpb.CounterId_TX_ERROR_PACKETS,
-	fwdpb.CounterId_TX_ERROR_OCTETS,
-	fwdpb.CounterId_TX_DROP_PACKETS,
-	fwdpb.CounterId_TX_DROP_OCTETS,
-	fwdpb.CounterId_TX_ADMIN_DROP_PACKETS,
-	fwdpb.CounterId_TX_ADMIN_DROP_OCTETS,
+	fwdpb.CounterId_COUNTER_ID_RX_PACKETS,
+	fwdpb.CounterId_COUNTER_ID_RX_OCTETS,
+	fwdpb.CounterId_COUNTER_ID_RX_BAD_PACKETS,
+	fwdpb.CounterId_COUNTER_ID_RX_BAD_OCTETS,
+	fwdpb.CounterId_COUNTER_ID_RX_ADMIN_DROP_PACKETS,
+	fwdpb.CounterId_COUNTER_ID_RX_ADMIN_DROP_OCTETS,
+	fwdpb.CounterId_COUNTER_ID_RX_ERROR_PACKETS,
+	fwdpb.CounterId_COUNTER_ID_RX_ERROR_OCTETS,
+	fwdpb.CounterId_COUNTER_ID_RX_DROP_PACKETS,
+	fwdpb.CounterId_COUNTER_ID_RX_DROP_OCTETS,
+	fwdpb.CounterId_COUNTER_ID_RX_DEBUG_PACKETS,
+	fwdpb.CounterId_COUNTER_ID_RX_DEBUG_OCTETS,
+	fwdpb.CounterId_COUNTER_ID_TX_PACKETS,
+	fwdpb.CounterId_COUNTER_ID_TX_OCTETS,
+	fwdpb.CounterId_COUNTER_ID_TX_ERROR_PACKETS,
+	fwdpb.CounterId_COUNTER_ID_TX_ERROR_OCTETS,
+	fwdpb.CounterId_COUNTER_ID_TX_DROP_PACKETS,
+	fwdpb.CounterId_COUNTER_ID_TX_DROP_OCTETS,
+	fwdpb.CounterId_COUNTER_ID_TX_ADMIN_DROP_PACKETS,
+	fwdpb.CounterId_COUNTER_ID_TX_ADMIN_DROP_OCTETS,
 }
 
 // A Port is an entry or exit point within the forwarding plane. Each port
@@ -82,7 +82,7 @@ type Port interface {
 	Actions(dir fwdpb.PortAction) fwdaction.Actions
 
 	// State manages the state of the port.
-	State(op *fwdpb.PortInfo) (fwdpb.PortStateReply, error)
+	State(op *fwdpb.PortInfo) (*fwdpb.PortStateReply, error)
 }
 
 // A Builder can build Ports of the specified type.
@@ -199,22 +199,22 @@ func findPort(packet fwdpacket.Packet, ctx *fwdcontext.Context, num fwdpb.Packet
 
 // InputPort returns the input port of the packet.
 func InputPort(packet fwdpacket.Packet, ctx *fwdcontext.Context) (Port, error) {
-	return findPort(packet, ctx, fwdpb.PacketFieldNum_PACKET_PORT_INPUT)
+	return findPort(packet, ctx, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT)
 }
 
 // OutputPort returns the output port of the packet.
 func OutputPort(packet fwdpacket.Packet, ctx *fwdcontext.Context) (Port, error) {
-	return findPort(packet, ctx, fwdpb.PacketFieldNum_PACKET_PORT_OUTPUT)
+	return findPort(packet, ctx, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT)
 }
 
 // SetInputPort initializes the input port of the packet.
 func SetInputPort(packet fwdpacket.Packet, port Port) {
-	fwdpacket.SetNID(packet, port.NID(), fwdpb.PacketFieldNum_PACKET_PORT_INPUT)
+	fwdpacket.SetNID(packet, port.NID(), fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT)
 }
 
 // SetOutputPort initializes the output port of the packet.
 func SetOutputPort(packet fwdpacket.Packet, port Port) {
-	fwdpacket.SetNID(packet, port.NID(), fwdpb.PacketFieldNum_PACKET_PORT_OUTPUT)
+	fwdpacket.SetNID(packet, port.NID(), fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT)
 }
 
 // Increment increments a packet and octet counters on the port.
@@ -233,19 +233,19 @@ func Input(port Port, packet fwdpacket.Packet, dir fwdpb.PortAction, ctx *fwdcon
 		}
 	}()
 
-	Increment(port, packet.Length(), fwdpb.CounterId_RX_PACKETS, fwdpb.CounterId_RX_OCTETS)
+	Increment(port, packet.Length(), fwdpb.CounterId_COUNTER_ID_RX_PACKETS, fwdpb.CounterId_COUNTER_ID_RX_OCTETS)
 	SetInputPort(packet, port)
 
 	packet.Logf(fwdpacket.LogDebugFrame, "input packet")
 	state, err := fwdaction.ProcessPacket(packet, port.Actions(dir), port)
 	if err != nil {
-		Increment(port, packet.Length(), fwdpb.CounterId_RX_ERROR_PACKETS, fwdpb.CounterId_RX_ERROR_OCTETS)
+		Increment(port, packet.Length(), fwdpb.CounterId_COUNTER_ID_RX_ERROR_PACKETS, fwdpb.CounterId_COUNTER_ID_RX_ERROR_OCTETS)
 		return err
 	}
 
 	switch state {
 	case fwdaction.DROP:
-		Increment(port, packet.Length(), fwdpb.CounterId_RX_DROP_PACKETS, fwdpb.CounterId_RX_DROP_OCTETS)
+		Increment(port, packet.Length(), fwdpb.CounterId_COUNTER_ID_RX_DROP_PACKETS, fwdpb.CounterId_COUNTER_ID_RX_DROP_OCTETS)
 		return nil
 
 	case fwdaction.CONSUME:
@@ -255,7 +255,7 @@ func Input(port Port, packet fwdpacket.Packet, dir fwdpb.PortAction, ctx *fwdcon
 		// If we don't have an output port, count it as a drop.
 		out, err := OutputPort(packet, ctx)
 		if err != nil {
-			Increment(port, packet.Length(), fwdpb.CounterId_RX_DROP_PACKETS, fwdpb.CounterId_RX_DROP_OCTETS)
+			Increment(port, packet.Length(), fwdpb.CounterId_COUNTER_ID_RX_DROP_PACKETS, fwdpb.CounterId_COUNTER_ID_RX_DROP_OCTETS)
 			return nil
 		}
 		packet.Logf(fwdpacket.LogDebugMessage, "transmitting packet to %q", out.ID())
@@ -275,7 +275,7 @@ func Output(port Port, packet fwdpacket.Packet, dir fwdpb.PortAction, _ *fwdcont
 			packet.Logf(fwdpacket.LogErrorFrame, "output processing failed, err %v", err)
 		}
 	}()
-	Increment(port, packet.Length(), fwdpb.CounterId_TX_PACKETS, fwdpb.CounterId_TX_OCTETS)
+	Increment(port, packet.Length(), fwdpb.CounterId_COUNTER_ID_TX_PACKETS, fwdpb.CounterId_COUNTER_ID_TX_OCTETS)
 	SetOutputPort(packet, port)
 
 	packet.Logf(fwdpacket.LogDebugFrame, "output packet")
@@ -284,18 +284,18 @@ func Output(port Port, packet fwdpacket.Packet, dir fwdpb.PortAction, _ *fwdcont
 		state, err = port.Write(packet)
 	}
 	if err != nil {
-		Increment(port, packet.Length(), fwdpb.CounterId_TX_ERROR_PACKETS, fwdpb.CounterId_TX_ERROR_OCTETS)
+		Increment(port, packet.Length(), fwdpb.CounterId_COUNTER_ID_TX_ERROR_PACKETS, fwdpb.CounterId_COUNTER_ID_TX_ERROR_OCTETS)
 		return err
 	}
 	switch state {
 	case fwdaction.DROP:
-		Increment(port, packet.Length(), fwdpb.CounterId_TX_DROP_PACKETS, fwdpb.CounterId_TX_DROP_OCTETS)
+		Increment(port, packet.Length(), fwdpb.CounterId_COUNTER_ID_TX_DROP_PACKETS, fwdpb.CounterId_COUNTER_ID_TX_DROP_OCTETS)
 		return nil
 	case fwdaction.CONSUME:
 		packet.Logf(fwdpacket.LogDebugFrame, "consumed frame")
 		return nil
 	case fwdaction.CONTINUE:
-		Increment(port, packet.Length(), fwdpb.CounterId_TX_ERROR_PACKETS, fwdpb.CounterId_TX_ERROR_OCTETS)
+		Increment(port, packet.Length(), fwdpb.CounterId_COUNTER_ID_TX_ERROR_PACKETS, fwdpb.CounterId_COUNTER_ID_TX_ERROR_OCTETS)
 		return errors.New("fwdport: output processing results in continued processing")
 	}
 	return fmt.Errorf("fwdport: unknown state %v", state)
@@ -304,10 +304,10 @@ func Output(port Port, packet fwdpacket.Packet, dir fwdpb.PortAction, _ *fwdcont
 // Write writes out a packet through a port without changing it. No actions are applied.
 func Write(port Port, packet fwdpacket.Packet) {
 	packet.Logf(fwdpacket.LogDebugFrame, "write packet")
-	Increment(port, packet.Length(), fwdpb.CounterId_TX_PACKETS, fwdpb.CounterId_TX_OCTETS)
+	Increment(port, packet.Length(), fwdpb.CounterId_COUNTER_ID_TX_PACKETS, fwdpb.CounterId_COUNTER_ID_TX_OCTETS)
 	if _, err := port.Write(packet); err != nil {
 		packet.Logf(fwdpacket.LogErrorFrame, "write failed, err %v", err)
-		Increment(port, packet.Length(), fwdpb.CounterId_TX_ERROR_PACKETS, fwdpb.CounterId_TX_ERROR_OCTETS)
+		Increment(port, packet.Length(), fwdpb.CounterId_COUNTER_ID_TX_ERROR_PACKETS, fwdpb.CounterId_COUNTER_ID_TX_ERROR_OCTETS)
 	}
 }
 
