@@ -190,7 +190,7 @@ func NewServer(ctx context.Context, schema *ytypes.Schema, hostname string, send
 // - func() is a graceful stop function for the gRPC server.
 func StartDatastoreServer(gnmiServer *GNMIServer) (func(), error) {
 	if err := os.RemoveAll(DatastoreAddress); err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	// Use a separate service to avoid service duplication error during
