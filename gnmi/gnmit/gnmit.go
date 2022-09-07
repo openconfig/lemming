@@ -183,7 +183,7 @@ func NewServer(ctx context.Context, hostname string, sendMeta bool, tasks []Task
 
 func StartDatastoreServer(gnmiServer *GNMIServer) (func(), error) {
 	if err := os.RemoveAll(DatastoreAddress); err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	// Use a separate service to avoid service duplication error during
