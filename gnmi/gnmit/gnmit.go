@@ -277,6 +277,9 @@ type populateDefaultser interface {
 	PopulateDefaults()
 }
 
+// SetupSchema takes in a ygot schema object which it assumes to be
+// uninitialized. It initializes and validates it, returning any errors
+// encountered.
 func SetupSchema(schema *ytypes.Schema) error {
 	if !schema.IsValid() {
 		return fmt.Errorf("cannot obtain valid schema for GoStructs: %v", schema)
