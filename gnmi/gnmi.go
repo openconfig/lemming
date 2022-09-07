@@ -16,7 +16,11 @@ package gnmi
 
 import (
 	"context"
-	"time"
+	"fmt"
+
+	"github.com/openconfig/lemming/gnmi/fakedevice"
+	"github.com/openconfig/lemming/gnmi/gnmit"
+	"github.com/openconfig/lemming/gnmi/internal/oc"
 
 	gnmipb "github.com/openconfig/gnmi/proto/gnmi"
 	"google.golang.org/grpc"
@@ -26,6 +30,7 @@ import (
 
 // Server is a fake gNMI implementation.
 type Server struct {
+	*gnmit.GNMIServer
 	s            *grpc.Server
 	subscription int
 	Responses    [][]*gnmipb.SubscribeResponse
@@ -34,12 +39,29 @@ type Server struct {
 }
 
 // New returns a new fake gNMI server.
-func New(s *grpc.Server) *Server {
+func New(s *grpc.Server, targetName string) (*Server, error) {
+	schema, err := oc.Schema()
+	if err != nil {
+		return nil, fmt.Errorf("cannot create ygot schema object: %v", err)
+	}
+	vr := schema.Root.(*oc.Root)
+	vr.PopulateDefaults()
+	if err := vr.Validate(); err != nil {
+		return nil, fmt.Errorf("default root of input schema fails validation: %v", err)
+	}
+	_, gnmiServer, err := gnmit.NewServer(context.Background(), schema, targetName, false, fakedevice.Tasks(targetName))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create gNMI server: %v", err)
+	}
+	if _, err := gnmit.StartDatastoreServer(gnmiServer); err != nil {
+		return nil, fmt.Errorf("failed to start datastore server: %v", err)
+	}
 	srv := &Server{
-		s: s,
+		GNMIServer: gnmiServer,
+		s:          s,
 	}
 	gnmipb.RegisterGNMIServer(s, srv)
-	return srv
+	return srv, nil
 }
 
 func (s *Server) Capabilities(ctx context.Context, req *gnmipb.CapabilityRequest) (*gnmipb.CapabilityResponse, error) {
@@ -60,26 +82,4 @@ func (s *Server) Get(ctx context.Context, req *gnmipb.GetRequest) (*gnmipb.GetRe
 	default:
 		return nil, status.Errorf(codes.DataLoss, "Unknown message type: %T", resp)
 	}
-}
-
-func (s *Server) Set(ctx context.Context, req *gnmipb.SetRequest) (*gnmipb.SetResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "Fake Unimplemented")
-}
-
-func (s *Server) Subscribe(stream gnmipb.GNMI_SubscribeServer) error {
-	_, err := stream.Recv()
-	if err != nil {
-		return err
-	}
-	srs := s.Responses[s.subscription]
-	if len(s.Errs) != s.subscription+1 {
-		s.Errs = append(s.Errs, nil)
-	}
-	srErr := s.Errs[s.subscription]
-	s.subscription++
-	for _, sr := range srs {
-		stream.Send(sr)
-	}
-	time.Sleep(5 * time.Second)
-	return srErr
 }

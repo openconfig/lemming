@@ -315,13 +315,13 @@ func syslogTask(_ func() *oc.Root, queue gnmit.Queue, updateFn gnmit.UpdateFn, t
 	return nil
 }
 
-// tasks returns the set of functions that should be called that may read
+// Tasks returns the set of functions that should be called that may read
 // and/or modify internal state.
 //
 // These tasks are invoked during the creation of each device's Subscribe
 // server and may spawn long-running or future-running thread(s) that make
 // modifications to a device's cache.
-func tasks(target string) []gnmit.Task {
+func Tasks(target string) []gnmit.Task {
 	// TODO(wenbli): We should decentralize how we add tasks by adding a
 	// register function that's called by various init() functions.
 	return []gnmit.Task{{
@@ -391,7 +391,7 @@ func NewTarget(ctx context.Context, addr, targetName string) (*gnmit.Collector, 
 	if err != nil {
 		return nil, "", fmt.Errorf("cannot create ygot schema object for gNMI target: %v", err)
 	}
-	c, addr, err := gnmit.NewSettable(ctx, addr, targetName, false, configSchema, tasks(targetName))
+	c, addr, err := gnmit.NewSettable(ctx, addr, targetName, false, configSchema, Tasks(targetName))
 	if err != nil {
 		return nil, "", fmt.Errorf("cannot start server, got err: %v", err)
 	}
