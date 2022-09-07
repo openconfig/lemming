@@ -32,7 +32,6 @@ import (
 type Server struct {
 	*gnmit.GNMIServer
 	s            *grpc.Server
-	subscription int
 	Responses    [][]*gnmipb.SubscribeResponse
 	GetResponses []interface{}
 	Errs         []error
