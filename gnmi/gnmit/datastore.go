@@ -2,7 +2,6 @@ package gnmit
 
 import (
 	"context"
-	"time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -26,17 +25,7 @@ func NewDatastoreServer(gnmiServer *GNMIServer) *DatastoreServer {
 }
 
 func (d *DatastoreServer) Set(_ context.Context, req *gpb.SetRequest) (*gpb.SetResponse, error) {
-	notif := &gpb.Notification{
-		Prefix:    req.Prefix,
-		Delete:    req.Delete,
-		Timestamp: time.Now().UnixNano(),
-	}
-	for _, upd := range req.Replace {
-		notif.Delete = append(notif.Delete, upd.Path)
-		notif.Update = append(notif.Update, upd)
-	}
-	notif.Update = append(notif.Update, req.Update...)
-	if err := d.gnmiServer.set(notif); err != nil {
+	if err := d.gnmiServer.set(req); err != nil {
 		return &gpb.SetResponse{}, status.Errorf(codes.Aborted, "%v", err)
 	}
 	return &gpb.SetResponse{}, nil

@@ -35,8 +35,6 @@ import (
 	"github.com/openconfig/ygot/ygot"
 	"github.com/openconfig/ygot/ytypes"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
 
@@ -418,7 +416,7 @@ func (s *GNMIServer) update(dirtyRoot ygot.ValidatedGoStruct, origin string) err
 }
 
 // set updates the datastore and intended configuration with the values from the input notification.
-func (s *GNMIServer) set(notif *gpb.Notification) error {
+func (s *GNMIServer) setNotif(notif *gpb.Notification) error {
 	s.intendedConfigMu.Lock()
 	defer s.intendedConfigMu.Unlock()
 	dirtyRoot, node, nodeName, err := s.getOrCreateNode(notif.Prefix)
@@ -441,6 +439,39 @@ func (s *GNMIServer) set(notif *gpb.Notification) error {
 	return s.update(dirtyRoot, notif.Prefix.Origin)
 }
 
+// set updates the datastore and intended configuration with the SetRequest,
+// allowing read-only values to be updated.
+func (s *GNMIServer) set(req *gpb.SetRequest) error {
+	s.intendedConfigMu.Lock()
+	defer s.intendedConfigMu.Unlock()
+	dirtyRoot, node, nodeName, err := s.getOrCreateNode(req.Prefix)
+	if err != nil {
+		return err
+	}
+
+	// Process deletes, then replace, then updates.
+	for _, path := range req.Delete {
+		if err := ytypes.DeleteNode(s.c.Schema().SchemaTree[nodeName], node, path, &ytypes.PreferShadowPath{}); err != nil {
+			return fmt.Errorf("gnmit: DeleteNode error: %v", err)
+		}
+	}
+	for _, update := range req.Replace {
+		if err := ytypes.DeleteNode(s.c.Schema().SchemaTree[nodeName], node, update.Path, &ytypes.PreferShadowPath{}); err != nil {
+			return fmt.Errorf("gnmit: DeleteNode error: %v", err)
+		}
+		if err := setNode(s.c.schema, node, update); err != nil {
+			return err
+		}
+	}
+	for _, update := range req.Update {
+		if err := setNode(s.c.schema, node, update); err != nil {
+			return err
+		}
+	}
+
+	return s.update(dirtyRoot, req.Prefix.Origin)
+}
+
 // Set is a prototype for a gNMI Set operation.
 func (s *GNMIServer) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResponse, error) {
 	s.intendedConfigMu.Lock()
@@ -448,35 +479,11 @@ func (s *GNMIServer) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResp
 	if s.c.schema == nil {
 		return s.UnimplementedGNMIServer.Set(ctx, req)
 	}
-	dirtyRoot, node, nodeName, err := s.getOrCreateNode(req.Prefix)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "%v", err)
-	}
 
 	// TODO(wenbli): Reject paths that try to modify read-only values.
 	// TODO(wenbli): Question: what to do if there are operational-state values in a container that is specified to be replaced or deleted?
+	err := s.set(req)
 
-	// Process deletes, then replace, then updates.
-	for _, path := range req.Delete {
-		if err := ytypes.DeleteNode(s.c.Schema().SchemaTree[nodeName], node, path, &ytypes.PreferShadowPath{}); err != nil {
-			return nil, fmt.Errorf("gnmit: DeleteNode error: %v", err)
-		}
-	}
-	for _, update := range req.Replace {
-		if err := ytypes.DeleteNode(s.c.Schema().SchemaTree[nodeName], node, update.Path, &ytypes.PreferShadowPath{}); err != nil {
-			return nil, fmt.Errorf("gnmit: DeleteNode error: %v", err)
-		}
-		if err := setNode(s.c.schema, node, update); err != nil {
-			return nil, err
-		}
-	}
-	for _, update := range req.Update {
-		if err := setNode(s.c.schema, node, update); err != nil {
-			return nil, err
-		}
-	}
-
-	err = s.update(dirtyRoot, req.Prefix.Origin)
 	// TODO(wenbli): Currently the SetResponse is not filled.
 	return &gpb.SetResponse{
 		Timestamp: time.Now().UnixNano(),
