@@ -17,7 +17,6 @@ import (
 	"google.golang.org/grpc/credentials/local"
 
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
-	dspb "github.com/openconfig/lemming/proto/datastore"
 )
 
 var (
@@ -33,7 +32,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("fail to dial %s: %v", gnmit.DatastoreAddress, err)
 	}
-	datastoreClient := dspb.NewDatastoreClient(datastoreConn)
+	datastoreClient := gpb.NewGNMIClient(datastoreConn)
 
 	var opts []grpc.DialOption
 	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -58,9 +57,8 @@ func main() {
 			if err != nil {
 				log.Fatal(err)
 			}
-			if _, err = datastoreClient.Update(context.Background(), &gpb.Notification{
-				Prefix:    &gpb.Path{Origin: "openconfig", Target: *target},
-				Timestamp: time.Now().UnixNano(),
+			if _, err = datastoreClient.Set(context.Background(), &gpb.SetRequest{
+				Prefix: &gpb.Path{Origin: "openconfig", Target: *target},
 				Update: []*gpb.Update{{
 					Path: p,
 					Val:  &gpb.TypedValue{Value: &gpb.TypedValue_StringVal{StringVal: "testagent" + strconv.Itoa(count)}},

@@ -2,13 +2,12 @@ package gnmit
 
 import (
 	"context"
+	"time"
 
-	log "github.com/golang/glog"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
-	dspb "github.com/openconfig/lemming/proto/datastore"
 )
 
 const (
@@ -17,20 +16,28 @@ const (
 )
 
 type DatastoreServer struct {
-	dspb.UnimplementedDatastoreServer // For forward-compatibility
+	gpb.UnimplementedGNMIServer // For forward-compatibility
 
-	update UpdateFn
+	gnmiServer *GNMIServer
 }
 
-func NewDatastoreServer(updateFn UpdateFn) *DatastoreServer {
-	return &DatastoreServer{update: updateFn}
+func NewDatastoreServer(gnmiServer *GNMIServer) *DatastoreServer {
+	return &DatastoreServer{gnmiServer: gnmiServer}
 }
 
-func (d *DatastoreServer) Update(_ context.Context, n *gpb.Notification) (*dspb.UpdateResponse, error) {
-	log.Info(n)
-	err := d.update(n)
-	if err != nil {
-		return &dspb.UpdateResponse{}, status.Errorf(codes.Aborted, "%v", err)
+func (d *DatastoreServer) Set(_ context.Context, req *gpb.SetRequest) (*gpb.SetResponse, error) {
+	notif := &gpb.Notification{
+		Prefix:    req.Prefix,
+		Delete:    req.Delete,
+		Timestamp: time.Now().UnixNano(),
 	}
-	return &dspb.UpdateResponse{}, nil
+	for _, upd := range req.Replace {
+		notif.Delete = append(notif.Delete, upd.Path)
+		notif.Update = append(notif.Update, upd)
+	}
+	notif.Update = append(notif.Update, req.Update...)
+	if err := d.gnmiServer.set(notif); err != nil {
+		return &gpb.SetResponse{}, status.Errorf(codes.Aborted, "%v", err)
+	}
+	return &gpb.SetResponse{}, nil
 }

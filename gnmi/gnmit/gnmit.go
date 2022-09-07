@@ -41,7 +41,6 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
-	dspb "github.com/openconfig/lemming/proto/datastore"
 )
 
 var (
@@ -201,7 +200,7 @@ func New(ctx context.Context, addr, hostname string, sendMeta bool, tasks []Task
 		log.Fatal(err)
 	}
 	srvDS := grpc.NewServer(opts...)
-	dspb.RegisterDatastoreServer(srvDS, NewDatastoreServer(gnmiserver.set))
+	gpb.RegisterGNMIServer(srvDS, NewDatastoreServer(gnmiserver))
 	lisDS, err := net.Listen("unix", DatastoreAddress)
 	if err != nil {
 		log.Fatalf("listen error: %v", err)
