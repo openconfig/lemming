@@ -415,30 +415,6 @@ func (s *GNMIServer) update(dirtyRoot ygot.ValidatedGoStruct, origin string) err
 	return nil
 }
 
-// set updates the datastore and intended configuration with the values from the input notification.
-func (s *GNMIServer) setNotif(notif *gpb.Notification) error {
-	s.intendedConfigMu.Lock()
-	defer s.intendedConfigMu.Unlock()
-	dirtyRoot, node, nodeName, err := s.getOrCreateNode(notif.Prefix)
-	if err != nil {
-		return err
-	}
-
-	// Process deletes, then replace, then updates.
-	for _, path := range notif.Delete {
-		if err := ytypes.DeleteNode(s.c.Schema().SchemaTree[nodeName], node, path, &ytypes.PreferShadowPath{}); err != nil {
-			return fmt.Errorf("gnmit: DeleteNode error: %v", err)
-		}
-	}
-	for _, update := range notif.Update {
-		if err := setNode(s.c.schema, node, update); err != nil {
-			return err
-		}
-	}
-
-	return s.update(dirtyRoot, notif.Prefix.Origin)
-}
-
 // set updates the datastore and intended configuration with the SetRequest,
 // allowing read-only values to be updated.
 func (s *GNMIServer) set(req *gpb.SetRequest) error {
