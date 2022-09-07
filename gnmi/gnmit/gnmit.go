@@ -181,6 +181,27 @@ func NewServer(ctx context.Context, hostname string, sendMeta bool, tasks []Task
 	return c, gnmiserver, nil
 }
 
+func StartDatastoreServer(gnmiServer *GNMIServer) (func(), error) {
+	if err := os.RemoveAll(DatastoreAddress); err != nil {
+		return nil, err
+	}
+
+	// Use a separate service to avoid service duplication error during
+	// registration.
+	srv := grpc.NewServer()
+	gpb.RegisterGNMIServer(srv, NewDatastoreServer(gnmiServer))
+	lisDS, err := net.Listen("unix", DatastoreAddress)
+	if err != nil {
+		return nil, fmt.Errorf("listen error: %v", err)
+	}
+	go func() {
+		if err := srv.Serve(lisDS); err != nil {
+			log.Fatalf("Error while serving datastore target: %v", err)
+		}
+	}()
+	return srv.GracefulStop, nil
+}
+
 // New returns a new collector that listens on the specified addr (in the form host:port),
 // supporting a single downstream target named hostname. sendMeta controls whether the
 // metadata *other* than meta/sync and meta/connected is sent by the collector.
@@ -193,21 +214,10 @@ func New(ctx context.Context, addr, hostname string, sendMeta bool, tasks []Task
 		return nil, "", err
 	}
 
-	// Start datastore server.
-	if err := os.RemoveAll(DatastoreAddress); err != nil {
-		log.Fatal(err)
-	}
-	srvDS := grpc.NewServer(opts...)
-	gpb.RegisterGNMIServer(srvDS, NewDatastoreServer(gnmiserver))
-	lisDS, err := net.Listen("unix", DatastoreAddress)
+	stopFnDS, err := StartDatastoreServer(gnmiserver)
 	if err != nil {
-		log.Fatalf("listen error: %v", err)
+		log.Fatalf("Error while starting datastore server: %v", err)
 	}
-	go func() {
-		if err := srvDS.Serve(lisDS); err != nil {
-			log.Fatalf("Error while serving datastore target: %v", err)
-		}
-	}()
 
 	// Start gNMI server.
 	srv := grpc.NewServer(opts...)
@@ -225,7 +235,7 @@ func New(ctx context.Context, addr, hostname string, sendMeta bool, tasks []Task
 		}
 	}()
 	c.stopFn = func() {
-		srvDS.GracefulStop()
+		stopFnDS()
 		srv.GracefulStop()
 	}
 	return c, lis.Addr().String(), nil
