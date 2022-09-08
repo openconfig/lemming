@@ -168,6 +168,7 @@ enum PacketFieldNum {
   PACKET_FIELD_NUM_ARP_TMAC = 52;             // ARP target mac address.
   PACKET_FIELD_NUM_ARP_SMAC = 53;             // ARP source mac address.
   PACKET_FIELD_NUM_ARP_SPA = 54;              // ARP source protocol address.
+  PACKET_FIELD_NUM_NEXT_HOP_IP = 56; // Next hop ip (packet metadata).
   PACKET_FIELD_NUM_COUNT = 1000;
 }
 

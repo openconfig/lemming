@@ -38,7 +38,8 @@ type Metadata struct {
 	attribute24 map[uint8][]byte // Map of 24-bit attributes indexed by instance.
 	attribute16 map[uint8][]byte // Map of 16-bit attributes indexed by instance.
 	attribute8  map[uint8][]byte // Map of 8-bit attributes indexed by instance.
-	desc        *protocol.Desc   // Protocol descriptor.
+	nextHopIP   []byte
+	desc        *protocol.Desc // Protocol descriptor.
 }
 
 // Header returns nil as it does not contribute to the packet's frame.
@@ -102,7 +103,8 @@ func (m *Metadata) Field(id fwdpacket.FieldID) ([]byte, error) {
 			return a, nil
 		}
 		return make([]byte, 1), nil
-
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP:
+		return m.nextHopIP, nil
 	default:
 		return nil, fmt.Errorf("metadata: Field %v failed, unsupported field", id)
 	}
@@ -184,7 +186,9 @@ func (m *Metadata) updateSet(id fwdpacket.FieldID, arg []byte) (bool, error) {
 		copy(a, arg)
 		m.attribute8[id.Instance] = a
 		return true, nil
-
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP:
+		m.nextHopIP = arg
+		return true, nil
 	default:
 		return false, fmt.Errorf("metadata: UpdateField failed, set unsupported for field %v", id)
 	}

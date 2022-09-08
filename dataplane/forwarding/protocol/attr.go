@@ -167,6 +167,9 @@ var FieldAttr = map[fwdpb.PacketFieldNum]struct {
 	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_GRE_SEQUENCE: {
 		Sizes: []int{SizeUint32},
 	},
+	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP: {
+		Sizes: []int{SizeIP4, SizeIP6},
+	},
 }
 
 // GroupAttr contains attributes for each packet header group.
@@ -197,6 +200,7 @@ var GroupAttr = map[fwdpb.PacketHeaderGroup]struct {
 			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_24,
 			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_16,
 			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_8,
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP,
 		},
 	},
 	fwdpb.PacketHeaderGroup_PACKET_HEADER_GROUP_L2: {
