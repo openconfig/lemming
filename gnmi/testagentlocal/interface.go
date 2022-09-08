@@ -1,4 +1,20 @@
-package fakedevice
+// Copyright 2022 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// testagentlocal is a demo agent that uses ygnmi to receive data from the
+// central datastore.
+package testagentlocal
 
 import (
 	"context"
@@ -10,45 +26,48 @@ import (
 	"github.com/openconfig/gnmi/coalesce"
 	"github.com/openconfig/gnmi/ctree"
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
+	"github.com/openconfig/lemming/gnmi/fakedevice"
 	"github.com/openconfig/lemming/gnmi/gnmit"
 	"github.com/openconfig/lemming/gnmi/internal/oc"
 	"github.com/openconfig/lemming/gnmi/internal/oc/ocpath"
 	"github.com/openconfig/ygnmi/ygnmi"
+	"github.com/openconfig/ygot/util"
 	"github.com/openconfig/ygot/ygot"
 	"google.golang.org/protobuf/encoding/prototext"
 )
 
-// TODO(wenbli): IF we somehow end up using this instead of splitting out the tasks into a separate binary, then we should move this to a different package and add simple testing.
-var (
-	// Stubs for testing.
-	updateInterfaceFn = updateInterface
-	deleteInterfaceFn = deleteInterface
-)
+func InterfaceTask(target string) gnmit.Task {
+	return gnmit.Task{
+		Run: interfaceTask,
+		Paths: []ygnmi.PathStruct{
+			ocpath.Root().InterfaceAny(),
+		},
+		Prefix: &gpb.Path{
+			Origin: "openconfig",
+			Target: target,
+		},
+	}
+}
 
 func updateInterface(*oc.Interface) error {
-	// TODO: This needs to call into the dataplane to configure the interface.
 	return nil
 }
 
 func deleteInterface(name string) error {
-	// TODO: This needs to call into the dataplane to configure the interface.
 	return nil
 }
 
-// TODO(wenbli): This file needs to be put in its own package. Common utilities
-// need to be factored out to enable this.
 var (
 	enabledPaths, descriptionPaths, namePaths, ipv4AddressPaths, prefixLengthPaths *gpb.Path
-	interfacePendingEvents                                                         map[*func(*oc.Root) error]bool
+
+	appliedMu sync.Mutex
 	// appliedRoot is the SoT for BGP applied configuration. It is maintained locally by the task.
-	interfaceAppliedRoot *oc.Root
-	interfaceAppliedMu   sync.Mutex
+	appliedRoot *oc.Root
 )
 
-func initInterfaceTaskVars() error {
-	interfaceAppliedRoot = &oc.Root{}
+func initGlobalVars() error {
+	appliedRoot = &oc.Root{}
 
-	interfacePendingEvents = map[*func(*oc.Root) error]bool{}
 	return initInterfacePaths()
 }
 
@@ -80,7 +99,7 @@ func initInterfacePaths() error {
 }
 
 func interfaceTask(getIntendedConfig func() *oc.Root, q gnmit.Queue, update gnmit.UpdateFn, target string, remove func()) error {
-	if err := initInterfaceTaskVars(); err != nil {
+	if err := initGlobalVars(); err != nil {
 		return err
 	}
 
@@ -88,9 +107,9 @@ func interfaceTask(getIntendedConfig func() *oc.Root, q gnmit.Queue, update gnmi
 	// configuration and the current SoT, and sends the updates to the
 	// central DB.
 	updateAppliedConfig := func(prevApplied *oc.Root) bool {
-		interfaceAppliedMu.Lock()
-		defer interfaceAppliedMu.Unlock()
-		no, err := ygot.Diff(prevApplied, interfaceAppliedRoot)
+		appliedMu.Lock()
+		defer appliedMu.Unlock()
+		no, err := ygot.Diff(prevApplied, appliedRoot)
 		if err != nil {
 			log.Errorf("interfaceTask: error while creating update notification for updating applied configuration: %v", err)
 			return false
@@ -129,10 +148,13 @@ func interfaceTask(getIntendedConfig func() *oc.Root, q gnmit.Queue, update gnmi
 				return
 			}
 
-			interfaceNotificationHandler(no)
+			pendingEvents, err := interfaceNotificationHandler(no)
+			if err != nil {
+				log.Fatalf("interfaceTask: error at notification handler: %v", err)
+			}
 
 			var updateAppliedRoot bool
-			for _, triggered := range interfacePendingEvents {
+			for _, triggered := range pendingEvents {
 				if triggered {
 					updateAppliedRoot = true
 				}
@@ -140,21 +162,21 @@ func interfaceTask(getIntendedConfig func() *oc.Root, q gnmit.Queue, update gnmi
 
 			var prevApplied *oc.Root
 			if updateAppliedRoot {
-				interfaceAppliedMu.Lock()
-				prevAppliedGS, err := ygot.DeepCopy(interfaceAppliedRoot)
+				appliedMu.Lock()
+				prevAppliedGS, err := ygot.DeepCopy(appliedRoot)
 				if err != nil {
 					log.Fatalf("interfaceTask: Could not copy applied configuration: %v", err)
 				}
 				prevApplied = prevAppliedGS.(*oc.Root)
-				interfaceAppliedMu.Unlock()
+				appliedMu.Unlock()
 			}
 
-			for reactor, triggered := range interfacePendingEvents {
+			for reactor, triggered := range pendingEvents {
 				if triggered {
 					if err := (*reactor)(getIntendedConfig()); err != nil {
 						log.Errorf("interfaceTask reactor: %v", err)
 					}
-					interfacePendingEvents[reactor] = false
+					pendingEvents[reactor] = false
 				}
 			}
 
@@ -167,9 +189,11 @@ func interfaceTask(getIntendedConfig func() *oc.Root, q gnmit.Queue, update gnmi
 	return nil
 }
 
-func interfaceNotificationHandler(no *gpb.Notification) error {
+func interfaceNotificationHandler(no *gpb.Notification) (map[*func(*oc.Root) error]bool, error) {
+	pendingEvents := map[*func(*oc.Root) error]bool{}
+
 	for _, u := range no.Update {
-		interfacePathHandler(u.Path)
+		interfacePathHandler(pendingEvents, u.Path)
 	}
 	for _, u := range no.Delete {
 		log.V(1).Infof("Received delete path: %s", prototext.Format(u))
@@ -179,26 +203,33 @@ func interfaceNotificationHandler(no *gpb.Notification) error {
 			// Since gNMI still sends delete paths using the deprecated Element field, we need to translate it into path-elems first.
 			// We also need to strip the first element for origin.
 			//nolint:staticcheck //lint:ignore SA1019 gnmi cache currently doesn't support PathElem for deletions.
-			elems, err := pathTranslator.PathElem(u.Element[1:])
+			elems, err := fakedevice.PathTranslator.PathElem(u.Element[1:])
 			if err != nil {
-				return fmt.Errorf("interfaceTask: failed to translate delete path: %s", prototext.Format(u))
+				return nil, fmt.Errorf("interfaceTask: failed to translate delete path: %s", prototext.Format(u))
 			}
 			u.Elem = elems
 		default:
-			return fmt.Errorf("Unhandled: delete at root: %s", prototext.Format(u))
+			return nil, fmt.Errorf("Unhandled: delete at root: %s", prototext.Format(u))
 		}
-		interfacePathHandler(u)
+		interfacePathHandler(pendingEvents, u)
 	}
-	return nil
+	return pendingEvents, nil
 }
 
-func interfacePathHandler(path *gpb.Path) {
+// matchingPath returns true iff the path matches the given matcher path in
+// length and in values; wildcards are allowed in the matcher path.
+func matchingPath(path, matcher *gpb.Path) bool {
+	return len(path.Elem) == len(matcher.Elem) && util.PathMatchesQuery(path, matcher)
+}
+
+// interfacePathHandler sets the pending events that should be triggered based on the input path.
+func interfacePathHandler(pendingEvents map[*func(*oc.Root) error]bool, path *gpb.Path) {
 	switch {
 	case matchingPath(path, descriptionPaths):
 		log.V(1).Infof("interfaceTask: Received update path: %s", prototext.Format(path))
-		interfacePendingEvents[&intfDescriptionReactor] = true
+		pendingEvents[&intfDescriptionReactor] = true
 	case matchingPath(path, enabledPaths), matchingPath(path, namePaths), matchingPath(path, ipv4AddressPaths), matchingPath(path, prefixLengthPaths):
-		interfacePendingEvents[&interfaceReactor] = true
+		pendingEvents[&interfaceReactor] = true
 	default:
 		log.V(1).Infof("interfaceTask: update path received isn't matched by any handlers: %s", prototext.Format(path))
 	}
@@ -208,20 +239,20 @@ var (
 	intfDescriptionReactor = func(intendedRoot *oc.Root) error {
 		for intfName, intf := range intendedRoot.Interface {
 			log.V(1).Infof("interfaceTask: adding new interface %q", intfName)
-			curIntf, ok := interfaceAppliedRoot.Interface[intfName]
+			curIntf, ok := appliedRoot.Interface[intfName]
 			if !ok {
 				var err error
-				if curIntf, err = interfaceAppliedRoot.NewInterface(intfName); err != nil {
+				if curIntf, err = appliedRoot.NewInterface(intfName); err != nil {
 					return fmt.Errorf("interfaceTask: %v", err)
 				}
 			}
 			curIntf.Description = intf.Description
 		}
 
-		for intfName := range interfaceAppliedRoot.Interface {
+		for intfName := range appliedRoot.Interface {
 			log.V(1).Infof("interfaceTask: deleting interface %q", intfName)
 			if _, ok := intendedRoot.Interface[intfName]; !ok {
-				delete(interfaceAppliedRoot.Interface, intfName)
+				delete(appliedRoot.Interface, intfName)
 			}
 		}
 
@@ -230,10 +261,10 @@ var (
 
 	interfaceReactor = func(intendedRoot *oc.Root) error {
 		for intfName, intf := range intendedRoot.Interface {
-			curIntf, ok := interfaceAppliedRoot.Interface[intfName]
+			curIntf, ok := appliedRoot.Interface[intfName]
 			if !ok {
 				var err error
-				if curIntf, err = interfaceAppliedRoot.NewInterface(intfName); err != nil {
+				if curIntf, err = appliedRoot.NewInterface(intfName); err != nil {
 					return fmt.Errorf("interfaceTask: %v", err)
 				}
 			}
@@ -248,14 +279,14 @@ var (
 					curAddr.PrefixLength = addr.PrefixLength
 				}
 			}
-			if err := updateInterfaceFn(curIntf); err != nil {
+			if err := updateInterface(curIntf); err != nil {
 				return err
 			}
 		}
 
-		for intfName := range interfaceAppliedRoot.Interface {
+		for intfName := range appliedRoot.Interface {
 			if _, ok := intendedRoot.Interface[intfName]; !ok {
-				if err := deleteInterfaceFn(intfName); err != nil {
+				if err := deleteInterface(intfName); err != nil {
 					return err
 				}
 			}

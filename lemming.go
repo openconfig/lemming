@@ -20,6 +20,8 @@ import (
 	"sync"
 
 	fgnmi "github.com/openconfig/lemming/gnmi"
+	"github.com/openconfig/lemming/gnmi/gnmit"
+	"github.com/openconfig/lemming/gnmi/testagentlocal"
 	fgnoi "github.com/openconfig/lemming/gnoi"
 	fgnsi "github.com/openconfig/lemming/gnsi"
 	fgribi "github.com/openconfig/lemming/gribi"
@@ -45,6 +47,15 @@ type Device struct {
 	stopped chan struct{}
 }
 
+// registerTestTask registers a test gothread that reads from the central
+// datastore.
+//
+// Note: This should only be used for testing lemming, since interface paths
+// should be owned by the dataplane module.
+func registerTestTask(gnmiServer *gnmit.GNMIServer, targetName string) error {
+	return gnmiServer.RegisterTask(testagentlocal.InterfaceTask(targetName))
+}
+
 // New returns a new initialized device.
 func New(lis net.Listener, targetName string, opts ...grpc.ServerOption) (*Device, error) {
 	s := grpc.NewServer(opts...)
@@ -52,6 +63,10 @@ func New(lis net.Listener, targetName string, opts ...grpc.ServerOption) (*Devic
 	if err != nil {
 		return nil, err
 	}
+	if err := registerTestTask(gnmiServer.GNMIServer, targetName); err != nil {
+		return nil, err
+	}
+
 	d := &Device{
 		lis:         lis,
 		s:           s,

@@ -36,7 +36,7 @@ import (
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 )
 
-var pathTranslator *pathtranslate.PathTranslator
+var PathTranslator *pathtranslate.PathTranslator
 
 func init() {
 	var schemas []*yang.Entry
@@ -44,7 +44,7 @@ func init() {
 		schemas = append(schemas, s)
 	}
 	var err error
-	if pathTranslator, err = pathtranslate.NewPathTranslator(schemas); err != nil {
+	if PathTranslator, err = pathtranslate.NewPathTranslator(schemas); err != nil {
 		panic(err)
 	}
 }
@@ -217,7 +217,7 @@ func systemBaseTask(_ func() *oc.Root, queue gnmit.Queue, updateFn gnmit.UpdateF
 					log.Errorf("Unexpected: Element field for delete path is empty: %s", prototext.Format(path))
 					return
 				}
-				elems, err := pathTranslator.PathElem(path.Element[1:]) // nolint:staticcheck
+				elems, err := PathTranslator.PathElem(path.Element[1:]) // nolint:staticcheck
 				if err != nil {
 					log.Errorf("systemBaseTask: failed to translate delete path: %s", prototext.Format(path))
 					return
@@ -364,15 +364,6 @@ func Tasks(target string) []gnmit.Task {
 		Run: goBgpTask,
 		Paths: []ygnmi.PathStruct{
 			ocpath.Root().NetworkInstance("default").Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").Bgp(),
-		},
-		Prefix: &gpb.Path{
-			Origin: "openconfig",
-			Target: target,
-		},
-	}, {
-		Run: interfaceTask,
-		Paths: []ygnmi.PathStruct{
-			ocpath.Root().InterfaceAny(),
 		},
 		Prefix: &gpb.Path{
 			Origin: "openconfig",
