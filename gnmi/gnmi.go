@@ -20,7 +20,7 @@ import (
 
 	"github.com/openconfig/lemming/gnmi/fakedevice"
 	"github.com/openconfig/lemming/gnmi/gnmit"
-	"github.com/openconfig/lemming/gnmi/internal/oc"
+	"github.com/openconfig/lemming/gnmi/oc"
 
 	gnmipb "github.com/openconfig/gnmi/proto/gnmi"
 	"google.golang.org/grpc"

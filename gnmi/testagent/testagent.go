@@ -9,8 +9,8 @@ import (
 
 	log "github.com/golang/glog"
 	"github.com/openconfig/lemming/gnmi/gnmit"
-	"github.com/openconfig/lemming/gnmi/internal/oc"
-	"github.com/openconfig/lemming/gnmi/internal/oc/ocpath"
+	"github.com/openconfig/lemming/gnmi/oc"
+	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"

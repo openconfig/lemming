@@ -29,7 +29,7 @@ import (
 
 	log "github.com/golang/glog"
 	"github.com/openconfig/gnmi/cache"
-	"github.com/openconfig/lemming/gnmi/internal/oc"
+	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/subscribe"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot"
