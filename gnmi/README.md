@@ -10,8 +10,9 @@ There are two ways to subscribe to the central datastore:
 To use this method, define a function that satisfies the `gnmit.TaskRoutine`
 function signature, and register the task in [lemming.go](../lemming.go).
 
-See [lemming.go](../lemming.go) to see how `testagentlocal.InterfaceTask` is
-registered.
+See [lemming.go](../lemming.go) to see how
+[testagentlocal](testagentlocal/interface.go), an example task implementation,
+is registered.
 
 ## 2 Subscribing using ygnmi
 
