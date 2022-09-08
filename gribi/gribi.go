@@ -25,6 +25,7 @@ import (
 	"github.com/openconfig/gribigo/constants"
 	"github.com/openconfig/gribigo/server"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	gribipb "github.com/openconfig/gribi/v1/proto/service"
 	zpb "github.com/openconfig/lemming/proto/sysrib"
@@ -56,7 +57,7 @@ func New(s *grpc.Server) (*Server, error) {
 // createGRIBIServer creates and returns a gRIBI server that is ready be
 // registered by a gRPC server.
 func createGRIBIServer() (*server.Server, error) {
-	gzebraConn, err := grpc.DialContext(context.Background(), fmt.Sprintf("unix:%s", sysrib.SockAddr), grpc.WithBlock(), grpc.WithInsecure())
+	gzebraConn, err := grpc.DialContext(context.Background(), fmt.Sprintf("unix:%s", sysrib.SockAddr), grpc.WithBlock(), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, fmt.Errorf("cannot dial to sysrib, %v", err)
 	}
@@ -112,7 +113,7 @@ func createSetRouteRequest(prefix string, nexthops []*afthelper.NextHopSummary) 
 		zNexthops = append(zNexthops, &zpb.Nexthop{
 			Type:    zpb.Nexthop_TYPE_IPV4,
 			Address: nhs.Address,
-			Weight:  uint64(nhs.Weight),
+			Weight:  nhs.Weight,
 		})
 	}
 
