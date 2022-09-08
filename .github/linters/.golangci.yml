@@ -11,7 +11,7 @@ run:
   timeout: 15m
   skip-dirs:
     - dataplane/forwarding # TODO: remove this
-    - gnmi/internal/oc
+    - gnmi/oc
 issues:
   exclude-rules:
     - path: _test\.go
