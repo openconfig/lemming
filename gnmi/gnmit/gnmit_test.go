@@ -31,7 +31,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 	"github.com/openconfig/gnmi/value"
-	"github.com/openconfig/lemming/gnmi/internal/oc"
+	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/ygot/ygot"
 )
 
