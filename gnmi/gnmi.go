@@ -37,16 +37,13 @@ type Server struct {
 	Errs         []error
 }
 
-// New returns a new fake gNMI server.
-func New(s *grpc.Server, targetName string) (*Server, error) {
+func createGNMIServer(targetName string) (*gnmit.GNMIServer, error) {
 	schema, err := oc.Schema()
 	if err != nil {
 		return nil, fmt.Errorf("cannot create ygot schema object: %v", err)
 	}
-	vr := schema.Root.(*oc.Root)
-	vr.PopulateDefaults()
-	if err := vr.Validate(); err != nil {
-		return nil, fmt.Errorf("default root of input schema fails validation: %v", err)
+	if err := gnmit.SetupSchema(schema); err != nil {
+		return nil, fmt.Errorf("gnmi: cannot setup ygot schema object: %v", err)
 	}
 	_, gnmiServer, err := gnmit.NewServer(context.Background(), schema, targetName, false, fakedevice.Tasks(targetName))
 	if err != nil {
@@ -55,6 +52,16 @@ func New(s *grpc.Server, targetName string) (*Server, error) {
 	if _, err := gnmit.StartDatastoreServer(gnmiServer); err != nil {
 		return nil, fmt.Errorf("failed to start datastore server: %v", err)
 	}
+	return gnmiServer, nil
+}
+
+// New returns a new fake gNMI server.
+func New(s *grpc.Server, targetName string) (*Server, error) {
+	gnmiServer, err := createGNMIServer(targetName)
+	if err != nil {
+		return nil, fmt.Errorf("gnmi: cannot create gNMI server: %v", err)
+	}
+
 	srv := &Server{
 		GNMIServer: gnmiServer,
 		s:          s,

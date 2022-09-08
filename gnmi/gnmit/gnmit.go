@@ -41,6 +41,10 @@ import (
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 )
 
+const (
+	OpenconfigOrigin = "openconfig"
+)
+
 var (
 	// metadataUpdatePeriod is the period of time after which the metadata for the collector
 	// is updated to the client.
@@ -128,9 +132,12 @@ func (s *GNMIServer) getIntendedConfig() *oc.Root {
 }
 
 // NewServer returns a new collector server implementation that can be registered on
-// an existing gRPC server. It takes a string indicating the hostname of the
-// target, a boolean indicating whether metadata should be sent, and a slice of
-// tasks that are to be launched to run on the server.
+// an existing gRPC server.
+//
+// - schema is the specification of the schema if gnmi.Set is used.
+// - hostname is the name of the target.
+// - sendMeta indicates whether metadata should be sent
+// - tasks is a slice of Tasks that are to be launched on the server.
 func NewServer(ctx context.Context, schema *ytypes.Schema, hostname string, sendMeta bool, tasks []Task) (*Collector, *GNMIServer, error) {
 	c := &Collector{
 		inCh:   make(chan *gpb.SubscribeResponse),
@@ -140,6 +147,24 @@ func NewServer(ctx context.Context, schema *ytypes.Schema, hostname string, send
 
 	c.cache = cache.New([]string{hostname})
 	t := c.cache.GetTarget(hostname)
+
+	// Initialize the cache with the input schema root.
+	if schema != nil {
+		notifs, err := ygot.TogNMINotifications(schema.Root, time.Now().UnixNano(), ygot.GNMINotificationsConfig{
+			UsePathElem: true,
+		})
+		if err != nil {
+			return nil, nil, fmt.Errorf("gnmit: %v", err)
+		}
+		for _, notif := range notifs {
+			if notif.Prefix == nil {
+				notif.Prefix = &gpb.Path{}
+			}
+			notif.Prefix.Origin = OpenconfigOrigin
+			notif.Prefix.Target = hostname
+			c.cache.GnmiUpdate(notif)
+		}
+	}
 
 	if sendMeta {
 		go periodic(metadataUpdatePeriod, c.cache.UpdateMetadata)
@@ -252,7 +277,29 @@ type populateDefaultser interface {
 	PopulateDefaults()
 }
 
-// New returns a new collector that listens on the specified addr (in the form host:port),
+// SetupSchema takes in a ygot schema object which it assumes to be
+// uninitialized. It initializes and validates it, returning any errors
+// encountered.
+func SetupSchema(schema *ytypes.Schema) error {
+	if !schema.IsValid() {
+		return fmt.Errorf("cannot obtain valid schema for GoStructs: %v", schema)
+	}
+
+	vr, ok := schema.Root.(ygot.ValidatedGoStruct)
+	if !ok {
+		return fmt.Errorf("invalid schema root, %v", schema.Root)
+	}
+
+	// Initialize the root with default values.
+	schema.Root.(populateDefaultser).PopulateDefaults()
+	if err := vr.Validate(); err != nil {
+		return fmt.Errorf("default root of input schema fails validation: %v", err)
+	}
+
+	return nil
+}
+
+// NewSettable returns a new collector that listens on the specified addr (in the form host:port),
 // supporting a single downstream target named hostname. sendMeta controls whether the
 // metadata *other* than meta/sync and meta/connected is sent by the collector.
 //
@@ -263,22 +310,9 @@ type populateDefaultser interface {
 // schema-aware and supports gNMI Set. Currently it is not possible to change
 // the schema of a Collector after it is created.
 func NewSettable(ctx context.Context, addr string, hostname string, sendMeta bool, schema *ytypes.Schema, tasks []Task, opts ...grpc.ServerOption) (*Collector, string, error) {
-	if !schema.IsValid() {
-		return nil, "", fmt.Errorf("cannot obtain valid schema for GoStructs: %v", schema)
+	if err := SetupSchema(schema); err != nil {
+		return nil, "", err
 	}
-
-	vr, ok := schema.Root.(ygot.ValidatedGoStruct)
-	if !ok {
-		return nil, "", fmt.Errorf("invalid schema root, %v", schema.Root)
-	}
-
-	// Initialize the root with default values.
-	schema.Root.(populateDefaultser).PopulateDefaults()
-	if err := vr.Validate(); err != nil {
-		return nil, "", fmt.Errorf("default root of input schema fails validation: %v", err)
-	}
-
-	// FIXME(wenbli): initialize the collector with default values.
 	collector, addr, err := New(ctx, schema, addr, hostname, sendMeta, tasks, opts...)
 	if err != nil {
 		return nil, "", err
@@ -410,7 +444,7 @@ func (s *GNMIServer) update(dirtyRoot ygot.ValidatedGoStruct, origin string) err
 	n.Timestamp = time.Now().UnixNano()
 	n.Prefix = &gpb.Path{Origin: origin, Target: s.c.name}
 	if n.Prefix.Origin == "" {
-		n.Prefix.Origin = "openconfig"
+		n.Prefix.Origin = OpenconfigOrigin
 	}
 
 	// Update cache
