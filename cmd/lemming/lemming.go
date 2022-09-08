@@ -27,5 +27,6 @@ func main() {
 	}
 	defer f.Stop()
 
+	log.Info("lemming initialization complete")
 	select {}
 }
