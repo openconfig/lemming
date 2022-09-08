@@ -204,7 +204,7 @@ func goBgpTask(getIntendedConfig func() *oc.Root, q gnmit.Queue, update gnmit.Up
 					// Since gNMI still sends delete paths using the deprecated Element field, we need to translate it into path-elems first.
 					// We also need to strip the first element for origin.
 					//nolint:staticcheck //lint:ignore SA1019 gnmi cache currently doesn't support PathElem for deletions.
-					elems, err := pathTranslator.PathElem(u.Element[1:])
+					elems, err := PathTranslator.PathElem(u.Element[1:])
 					if err != nil {
 						log.Errorf("goBgpTask: failed to translate delete path: %s", prototext.Format(u))
 						return

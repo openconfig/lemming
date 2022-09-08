@@ -23,11 +23,11 @@ tool for consensus in the device-implementor <-> device-consumer relationship.
 ## Running the Fake gNMI Server
 
 ```bash
-go run gnmi/main/main.go
+go run cmd/lemming/lemming.go
 ```
 
 ```bash
-gnmic -a localhost:1234 --insecure subscribe --mode stream --path openconfig:/system/state/current-datetime -u foo -p bar --target fakedut
+gnmic -a localhost:6030 --insecure subscribe --mode stream --path openconfig:/system/state/current-datetime -u foo -p bar --target fakedut
 ```
 
 For running on KNE (also experimental), see
