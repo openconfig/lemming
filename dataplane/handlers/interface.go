@@ -146,7 +146,7 @@ func (ni *Interface) reconcile(config *oc.Interface) {
 		}
 	}
 	if config.GetOrCreateSubinterface(0).Enabled != nil {
-		if config.GetSubinterface(0).GetEnabled() != state.GetSubinterface(0).GetEnabled() {
+		if state.GetSubinterface(0).Enabled == nil || config.GetSubinterface(0).GetEnabled() != state.GetSubinterface(0).GetEnabled() {
 			log.Infof("setting interface %s enabled %t", engine.IntfNameToTapName(config.GetName()), config.GetSubinterface(0).GetEnabled())
 			if err := kernel.SetInterfaceState(engine.IntfNameToTapName(config.GetName()), config.GetSubinterface(0).GetEnabled()); err != nil {
 				log.Warningf("Failed to set state address of port: %v", err)
