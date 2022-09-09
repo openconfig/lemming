@@ -66,7 +66,7 @@ func registerTestTask(gnmiServer *gnmit.GNMIServer, targetName string) error {
 // startSysrib starts the sysrib gRPC service at a unix domain socket. This
 // should be started prior to routing services to allow them to connect to
 // sysrib during their initialization.
-func startSysrib() {
+func startSysrib(dataplane *sysrib.Dataplane) {
 	if err := os.RemoveAll(sysrib.SockAddr); err != nil {
 		log.Fatal(err)
 	}
@@ -77,7 +77,7 @@ func startSysrib() {
 	}
 
 	grpcServer := grpc.NewServer()
-	s, err := sysrib.NewServer(nil)
+	s, err := sysrib.NewServer(dataplane)
 	if err != nil {
 		log.Fatalf("error while creating sysrib server: %v", err)
 	}
@@ -90,8 +90,6 @@ func startSysrib() {
 
 // New returns a new initialized device.
 func New(lis net.Listener, targetName string, opts ...grpc.ServerOption) (*Device, error) {
-	startSysrib()
-
 	s := grpc.NewServer(opts...)
 
 	gnmiServer, err := fgnmi.New(s, targetName)
@@ -123,6 +121,12 @@ func New(lis net.Listener, targetName string, opts ...grpc.ServerOption) (*Devic
 	if err := dplane.Start(context.Background()); err != nil {
 		return nil, err
 	}
+	hal, err := dplane.HALClient()
+	if err != nil {
+		return nil, err
+	}
+
+	startSysrib(&sysrib.Dataplane{HALClient: hal})
 
 	return d, nil
 }
