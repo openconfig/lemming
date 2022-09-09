@@ -16,7 +16,9 @@
 package lemming
 
 import (
+	"log"
 	"net"
+	"os"
 	"sync"
 
 	fgnmi "github.com/openconfig/lemming/gnmi"
@@ -26,9 +28,12 @@ import (
 	fgnsi "github.com/openconfig/lemming/gnsi"
 	fgribi "github.com/openconfig/lemming/gribi"
 	fp4rt "github.com/openconfig/lemming/p4rt"
+	"github.com/openconfig/lemming/sysrib"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"k8s.io/klog/v2"
+
+	zpb "github.com/openconfig/lemming/proto/sysrib"
 )
 
 // Device is the reference device implementation.
@@ -56,9 +61,37 @@ func registerTestTask(gnmiServer *gnmit.GNMIServer, targetName string) error {
 	return gnmiServer.RegisterTask(testagentlocal.InterfaceTask(targetName))
 }
 
+// startSysrib starts the sysrib gRPC service at a unix domain socket. This
+// should be started prior to routing services to allow them to connect to
+// sysrib during their initialization.
+func startSysrib() {
+	if err := os.RemoveAll(sysrib.SockAddr); err != nil {
+		log.Fatal(err)
+	}
+
+	lis, err := net.Listen("unix", sysrib.SockAddr)
+	if err != nil {
+		log.Fatalf("listen error: %v", err)
+	}
+
+	grpcServer := grpc.NewServer()
+	s, err := sysrib.NewServer(nil)
+	if err != nil {
+		log.Fatalf("error while creating sysrib server: %v", err)
+	}
+	zpb.RegisterSysribServer(grpcServer, s)
+
+	go func() {
+		grpcServer.Serve(lis)
+	}()
+}
+
 // New returns a new initialized device.
 func New(lis net.Listener, targetName string, opts ...grpc.ServerOption) (*Device, error) {
+	startSysrib()
+
 	s := grpc.NewServer(opts...)
+
 	gnmiServer, err := fgnmi.New(s, targetName)
 	if err != nil {
 		return nil, err
@@ -67,12 +100,17 @@ func New(lis net.Listener, targetName string, opts ...grpc.ServerOption) (*Devic
 		return nil, err
 	}
 
+	gribiServer, err := fgribi.New(s)
+	if err != nil {
+		return nil, err
+	}
+
 	d := &Device{
 		lis:         lis,
 		s:           s,
 		gnmiServer:  gnmiServer,
 		gnoiServer:  fgnoi.New(s),
-		gribiServer: fgribi.New(s),
+		gribiServer: gribiServer,
 		gnsiServer:  fgnsi.New(s),
 		p4rtServer:  fp4rt.New(s),
 	}
