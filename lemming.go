@@ -16,11 +16,13 @@
 package lemming
 
 import (
+	"context"
 	"log"
 	"net"
 	"os"
 	"sync"
 
+	"github.com/openconfig/lemming/dataplane"
 	fgnmi "github.com/openconfig/lemming/gnmi"
 	"github.com/openconfig/lemming/gnmi/gnmit"
 	"github.com/openconfig/lemming/gnmi/testagentlocal"
@@ -116,6 +118,12 @@ func New(lis net.Listener, targetName string, opts ...grpc.ServerOption) (*Devic
 	}
 	reflection.Register(s)
 	d.startServer()
+
+	dplane := dataplane.New()
+	if err := dplane.Start(context.Background()); err != nil {
+		return nil, err
+	}
+
 	return d, nil
 }
 

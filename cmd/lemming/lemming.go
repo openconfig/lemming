@@ -7,15 +7,19 @@ import (
 
 	log "github.com/golang/glog"
 	"github.com/openconfig/lemming"
+	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
 )
 
 var (
-	port   = flag.Int("port", 6030, "localhost port to listen to.")
-	target = flag.String("target", "fakedut", "name of the fake target")
+	port   = pflag.Int("port", 6030, "localhost port to listen to.")
+	target = pflag.String("target", "fakedut", "name of the fake target")
 )
 
 func main() {
-	flag.Parse()
+	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
+	pflag.Parse()
+	viper.BindPFlags(pflag.CommandLine)
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
 	if err != nil {

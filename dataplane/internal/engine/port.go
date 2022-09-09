@@ -28,6 +28,9 @@ func CreateExternalPort(ctx context.Context, c fwdpb.ServiceClient, name string)
 		ContextId: &fwdpb.ContextId{Id: contextID},
 		Port: &fwdpb.PortDesc{
 			PortType: fwdpb.PortType_PORT_TYPE_KERNEL,
+			PortId: &fwdpb.PortId{
+				ObjectId: &fwdpb.ObjectId{Id: name},
+			},
 			Port: &fwdpb.PortDesc_Kernel{
 				Kernel: &fwdpb.KernelPortDesc{
 					DeviceName: name,
@@ -95,6 +98,9 @@ func CreateLocalPort(ctx context.Context, c fwdpb.ServiceClient, name string) er
 		ContextId: &fwdpb.ContextId{Id: contextID},
 		Port: &fwdpb.PortDesc{
 			PortType: fwdpb.PortType_PORT_TYPE_KERNEL,
+			PortId: &fwdpb.PortId{
+				ObjectId: &fwdpb.ObjectId{Id: name},
+			},
 			Port: &fwdpb.PortDesc_Kernel{
 				Kernel: &fwdpb.KernelPortDesc{
 					DeviceName: name,

@@ -24,37 +24,50 @@ import (
 )
 
 // SetInterfaceHWAddr sets the MAC address of a network interface.
-func SetInterfaceHWAddr(name string, addr net.HardwareAddr) error {
+func SetInterfaceHWAddr(name string, addr string) error {
 	link, err := netlink.LinkByName(name)
 	if err != nil {
 		return fmt.Errorf("failed to get interface: %w", err)
 	}
-	if err := netlink.LinkSetHardwareAddr(link, addr); err != nil {
+	addrBytes, err := net.ParseMAC(addr)
+	if err != nil {
+		return fmt.Errorf("failed to set parse addres: %v", err)
+	}
+	if err := netlink.LinkSetHardwareAddr(link, addrBytes); err != nil {
 		return fmt.Errorf("failed to get hwaddr of link: %w", err)
 	}
 	return nil
 }
 
-// SetInterfaceIPs sets the IP addresses of a network interface.
-// Any existing IPs on the interface are deleted.
-func SetInterfaceIPs(name string, ips []*net.IPNet) error {
+// SetInterfaceIP sets the IP addresses of a network interface.
+func SetInterfaceIP(name string, ip string, prefixLen int) error {
 	link, err := netlink.LinkByName(name)
 	if err != nil {
 		return fmt.Errorf("failed to get interface: %w", err)
 	}
-	currIPs, err := netlink.AddrList(link, unix.AF_UNSPEC)
+	ipNet := &net.IPNet{}
+	ipNet.IP = net.ParseIP(ip)
+	if ipNet.IP == nil {
+		return fmt.Errorf("failed to parse ip")
+	}
+	ipNet.Mask = net.CIDRMask(prefixLen, 128)
+	if ipNet.IP.To16().To4() != nil {
+		ipNet.Mask = net.CIDRMask(prefixLen, 32)
+	}
+	if err := netlink.AddrReplace(link, &netlink.Addr{IPNet: ipNet}); err != nil {
+		return fmt.Errorf("failed to add ip to link: %w", err)
+	}
+	return nil
+}
+
+// SetInterfaceIP sets the IP addresses of a network interface.
+func DeleteInterfaceIP(name string, ip *net.IPNet) error {
+	link, err := netlink.LinkByName(name)
 	if err != nil {
-		return fmt.Errorf("failed to get existing ips: %w", err)
+		return fmt.Errorf("failed to get interface: %w", err)
 	}
-	for i := range currIPs {
-		if err := netlink.AddrDel(link, &currIPs[i]); err != nil {
-			return fmt.Errorf("failed to add delete existing IP: %w", err)
-		}
-	}
-	for _, ip := range ips {
-		if err := netlink.AddrReplace(link, &netlink.Addr{IPNet: ip}); err != nil {
-			return fmt.Errorf("failed to add ip to link: %w", err)
-		}
+	if err := netlink.AddrDel(link, &netlink.Addr{IPNet: ip}); err != nil {
+		return fmt.Errorf("failed to add ip to link: %w", err)
 	}
 	return nil
 }
