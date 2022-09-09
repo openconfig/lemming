@@ -79,7 +79,6 @@ func startSysrib() {
 	if err != nil {
 		log.Fatalf("error while creating sysrib server: %v", err)
 	}
-	s.AddInterface("eth0", 0, true, "192.0.0.0/8", "DEFAULT")
 	zpb.RegisterSysribServer(grpcServer, s)
 
 	go func() {
