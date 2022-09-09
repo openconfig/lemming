@@ -46,8 +46,8 @@ func mustParseHex(hexStr string) []byte {
 	return b
 }
 
-// SetupTables creates the forwarding tables.
-func SetupTables(ctx context.Context, c fwdpb.ServiceClient) error {
+// SetupForwardingTables creates the forwarding tables.
+func SetupForwardingTables(ctx context.Context, c fwdpb.ServiceClient) error {
 	_, err := c.ContextCreate(context.Background(), &fwdpb.ContextCreateRequest{
 		ContextId: &fwdpb.ContextId{Id: contextID},
 	})
