@@ -31,11 +31,11 @@ const (
 )
 
 var (
-	etherTypeIPV4 = mustParseHex("0x0800")
-	etherTypeIPV6 = mustParseHex("0x86DD")
-	etherTypeARP  = mustParseHex("0x0806")
-	ipProtoICMP   = mustParseHex("0x01")
-	ipProtoICMPV6 = mustParseHex("0x3A")
+	etherTypeIPV4 = mustParseHex("0800")
+	etherTypeIPV6 = mustParseHex("86DD")
+	etherTypeARP  = mustParseHex("0806")
+	ipProtoICMP   = mustParseHex("01")
+	ipProtoICMPV6 = mustParseHex("3A")
 )
 
 func mustParseHex(hexStr string) []byte {
