@@ -48,6 +48,7 @@ func NewLocal() (gpb.GNMIClient, error) {
 	}
 	opt := grpc.WithTransportCredentials(local.NewCredentials())
 	if viper.GetBool("enable_tls") {
+		//nolint:gosec // TODO: figure out long cert handling
 		opt = grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{InsecureSkipVerify: true}))
 	}
 	cacheConn, err := grpc.Dial(fmt.Sprintf("localhost:%d", viper.GetInt("port")), opt)
