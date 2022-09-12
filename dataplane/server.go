@@ -25,7 +25,9 @@ import (
 	"github.com/openconfig/lemming/dataplane/internal/engine"
 	"github.com/openconfig/lemming/gnmi/client"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/local"
+	"google.golang.org/grpc/status"
 
 	dpb "github.com/openconfig/lemming/proto/dataplane"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
@@ -38,6 +40,7 @@ type Dataplane struct {
 	engine       *forwarding.Engine
 	srv          *grpc.Server
 	lis          net.Listener
+	fwd          fwdpb.ServiceClient
 }
 
 // New create a new dataplane instance.
@@ -74,6 +77,7 @@ func (d *Dataplane) Start(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	d.fwd = fc
 	if err := engine.SetupForwardingTables(ctx, fc); err != nil {
 		return fmt.Errorf("failed to setup forwarding tables: %v", err)
 	}
@@ -108,4 +112,53 @@ func (d *Dataplane) FwdClient() (fwdpb.ServiceClient, error) {
 func (d *Dataplane) Stop() {
 	d.srv.GracefulStop()
 	d.ifaceHandler.Stop()
+}
+
+// InsertRoute inserts a route into the dataplane.
+func (d *Dataplane) InsertRoute(ctx context.Context, route *dpb.InsertRouteRequest) (*dpb.InsertRouteResponse, error) {
+	// TODO: support multiple next hops.
+	if len(route.GetNextHops()) > 1 {
+		return nil, status.Errorf(codes.InvalidArgument, "multiple next hops not supported")
+	}
+	// TODO: support non-default VRF.
+	if route.GetVrf() != 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "VRF other than DEFAULT (vrfid 0) not supported")
+	}
+
+	_, ipNet, err := net.ParseCIDR(route.GetPrefix())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "failed to parse prefix: %v", err)
+	}
+
+	isIPv4 := ipNet.IP.To4() != nil
+	var nextHopIP []byte
+	if nh := route.GetNextHops()[0].GetIp(); nh != "" {
+		nextHopIP = net.ParseIP(nh)
+	}
+
+	if err := engine.AddIPRoute(ctx, d.fwd, isIPv4, ipNet.IP, ipNet.Mask, nextHopIP, route.GetNextHops()[0].Port); err != nil {
+		return nil, fmt.Errorf("failed to add route")
+	}
+
+	return &dpb.InsertRouteResponse{}, nil
+}
+
+// DeleteRoute deletes a route from the dataplane.
+func (d *Dataplane) DeleteRoute(ctx context.Context, route *dpb.DeleteRouteRequest) (*dpb.DeleteRouteResponse, error) {
+	// TODO: support non-default VRF.
+	if route.GetVrf() != 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "VRF other than DEFAULT (vrfid 0) not supported")
+	}
+
+	_, ipNet, err := net.ParseCIDR(route.GetPrefix())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "failed to parse prefix: %v", err)
+	}
+	isIPv4 := ipNet.IP.To4() != nil
+
+	if err := engine.DeleteIPRoute(ctx, d.fwd, isIPv4, ipNet.IP, ipNet.Mask); err != nil {
+		return nil, fmt.Errorf("failed to delete route")
+	}
+
+	return &dpb.DeleteRouteResponse{}, nil
 }
