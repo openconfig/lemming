@@ -23,6 +23,7 @@ import (
 
 	"github.com/openconfig/lemming/dataplane/internal/engine"
 	"github.com/openconfig/lemming/dataplane/internal/kernel"
+	"github.com/openconfig/lemming/gnmi/client"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 	"github.com/openconfig/ygnmi/ygnmi"
@@ -104,9 +105,9 @@ func (ni *Interface) Start(ctx context.Context) error {
 		for {
 			select {
 			case up := <-linkUpdateCh:
-				ni.handleLinkUpdate(&up)
+				ni.handleLinkUpdate(ctx, &up)
 			case up := <-addrUpdateCh:
-				ni.handleAddrUpdate(&up)
+				ni.handleAddrUpdate(ctx, &up)
 			}
 		}
 	}()
@@ -212,7 +213,7 @@ func (ni *Interface) getOrCreateInterface(iface string) *oc.Interface {
 }
 
 // handleLinkUpdate modifies the state based on changes to link state.
-func (ni *Interface) handleLinkUpdate(lu *netlink.LinkUpdate) {
+func (ni *Interface) handleLinkUpdate(ctx context.Context, lu *netlink.LinkUpdate) {
 	ni.stateMu.Lock()
 	defer ni.stateMu.Unlock()
 	if !engine.IsTap(lu.Attrs().Name) {
@@ -233,10 +234,18 @@ func (ni *Interface) handleLinkUpdate(lu *netlink.LinkUpdate) {
 		operStatus = oc.Interface_OperStatus_UP
 	}
 	iface.OperStatus = operStatus
+
+	sb := &ygnmi.SetBatch{}
+	client.BatchUpdate(sb, ocpath.Root().Interface(modelName).Ifindex().State(), *iface.Ifindex)
+	client.BatchUpdate(sb, ocpath.Root().Interface(modelName).Enabled().State(), *iface.Enabled)
+	client.BatchUpdate(sb, ocpath.Root().Interface(modelName).OperStatus().State(), iface.OperStatus)
+	if _, err := sb.Set(ctx, ni.c); err != nil {
+		log.Warningf("failed to set link status: %v", err)
+	}
 }
 
 // handleLinkUpdate modifies the state based on changes to addresses.
-func (ni *Interface) handleAddrUpdate(au *netlink.AddrUpdate) {
+func (ni *Interface) handleAddrUpdate(ctx context.Context, au *netlink.AddrUpdate) {
 	ni.stateMu.Lock()
 	defer ni.stateMu.Unlock()
 	name := ni.idxToName[au.LinkIndex]
@@ -244,6 +253,7 @@ func (ni *Interface) handleAddrUpdate(au *netlink.AddrUpdate) {
 		return
 	}
 
+	sb := &ygnmi.SetBatch{}
 	modelName := engine.TapNameToIntfName(name)
 	sub := ni.getOrCreateInterface(modelName).GetOrCreateSubinterface(0)
 
@@ -254,15 +264,26 @@ func (ni *Interface) handleAddrUpdate(au *netlink.AddrUpdate) {
 	if au.NewAddr {
 		if isV4 {
 			sub.GetOrCreateIpv4().GetOrCreateAddress(ip).PrefixLength = ygot.Uint8(uint8(pl))
+			client.BatchUpdate(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv4().Address(ip).Ip().State(), au.LinkAddress.IP.String())
+			client.BatchUpdate(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv4().Address(ip).PrefixLength().State(), uint8(pl))
 		} else {
 			sub.GetOrCreateIpv6().GetOrCreateAddress(ip).PrefixLength = ygot.Uint8(uint8(pl))
+			client.BatchUpdate(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv6().Address(ip).Ip().State(), au.LinkAddress.IP.String())
+			client.BatchUpdate(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv6().Address(ip).PrefixLength().State(), uint8(pl))
 		}
 	} else {
 		if isV4 {
 			sub.GetOrCreateIpv4().DeleteAddress(ip)
+			client.BatchDelete(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv4().Address(ip).Ip().State())
+			client.BatchDelete(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv4().Address(ip).PrefixLength().State())
 		} else {
 			sub.GetOrCreateIpv6().DeleteAddress(ip)
+			client.BatchDelete(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv6().Address(ip).Ip().State())
+			client.BatchDelete(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv6().Address(ip).PrefixLength().State())
 		}
+	}
+	if _, err := sb.Set(ctx, ni.c); err != nil {
+		log.Warningf("failed to set link status: %v", err)
 	}
 }
 
