@@ -277,6 +277,34 @@ func AddIPRoute(ctx context.Context, c fwdpb.ServiceClient, v4 bool, ip, mask, n
 	return nil
 }
 
+// DeleteIPRoute adds a route to the FIB.
+func DeleteIPRoute(ctx context.Context, c fwdpb.ServiceClient, v4 bool, ip, mask []byte) error {
+	fib := fibV6Table
+	if v4 {
+		fib = fibV4Table
+	}
+	entry := &fwdpb.TableEntryRemoveRequest{
+		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: fib}},
+		ContextId: &fwdpb.ContextId{Id: contextID},
+		EntryDesc: &fwdpb.EntryDesc{
+			Entry: &fwdpb.EntryDesc_Prefix{
+				Prefix: &fwdpb.PrefixEntryDesc{
+					Fields: []*fwdpb.PacketFieldMaskedBytes{{
+						FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST}},
+						Bytes:   ip,
+						Masks:   mask,
+					}},
+				},
+			},
+		},
+	}
+	if _, err := c.TableEntryRemove(ctx, entry); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // AddNeighbor adds a neighbor to the neighbor table.
 func AddNeighbor(ctx context.Context, c fwdpb.ServiceClient, ip, mac []byte) error {
 	entry := &fwdpb.TableEntryAddRequest{
