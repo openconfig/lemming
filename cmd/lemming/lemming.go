@@ -14,6 +14,8 @@ import (
 var (
 	port   = pflag.Int("port", 6030, "localhost port to listen to.")
 	target = pflag.String("target", "fakedut", "name of the fake target")
+	// nolint:unused,varcheck
+	enableDataplane = pflag.Bool("enable_dataplane", false, "Controls whether to enable dataplane")
 )
 
 func main() {

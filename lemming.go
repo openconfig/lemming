@@ -17,7 +17,6 @@ package lemming
 
 import (
 	"context"
-	"log"
 	"net"
 	"os"
 	"sync"
@@ -31,10 +30,12 @@ import (
 	fgribi "github.com/openconfig/lemming/gribi"
 	fp4rt "github.com/openconfig/lemming/p4rt"
 	"github.com/openconfig/lemming/sysrib"
+	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"k8s.io/klog/v2"
 
+	log "github.com/golang/glog"
 	zpb "github.com/openconfig/lemming/proto/sysrib"
 )
 
@@ -90,6 +91,25 @@ func startSysrib(dataplane *sysrib.Dataplane) {
 
 // New returns a new initialized device.
 func New(lis net.Listener, targetName string, opts ...grpc.ServerOption) (*Device, error) {
+	var sysDataplane *sysrib.Dataplane
+	var dplane *dataplane.Dataplane
+	if viper.GetBool("enable_dataplane") {
+		log.Info("enabling dataplane")
+		var err error
+		dplane, err = dataplane.New()
+		if err != nil {
+			return nil, err
+		}
+		hal, err := dplane.HALClient()
+		if err != nil {
+			return nil, err
+		}
+		sysDataplane = &sysrib.Dataplane{HALClient: hal}
+	}
+
+	log.Info("starting sysrib")
+	startSysrib(sysDataplane)
+
 	s := grpc.NewServer(opts...)
 
 	gnmiServer, err := fgnmi.New(s, targetName)
@@ -100,6 +120,7 @@ func New(lis net.Listener, targetName string, opts ...grpc.ServerOption) (*Devic
 		return nil, err
 	}
 
+	log.Info("starting gRIBI")
 	gribiServer, err := fgribi.New(s)
 	if err != nil {
 		return nil, err
@@ -116,18 +137,13 @@ func New(lis net.Listener, targetName string, opts ...grpc.ServerOption) (*Devic
 	}
 	reflection.Register(s)
 	d.startServer()
-
-	dplane := dataplane.New()
-	if err := dplane.Start(context.Background()); err != nil {
-		return nil, err
-	}
-	hal, err := dplane.HALClient()
-	if err != nil {
-		return nil, err
+	if dplane != nil {
+		if err := dplane.Start(context.Background()); err != nil {
+			return nil, err
+		}
 	}
 
-	startSysrib(&sysrib.Dataplane{HALClient: hal})
-
+	log.Info("lemming created")
 	return d, nil
 }
 

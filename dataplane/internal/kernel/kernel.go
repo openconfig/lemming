@@ -51,7 +51,7 @@ func SetInterfaceIP(name string, ip string, prefixLen int) error {
 		return fmt.Errorf("failed to parse ip")
 	}
 	ipNet.Mask = net.CIDRMask(prefixLen, 128)
-	if ipNet.IP.To16().To4() != nil {
+	if ipNet.IP.To16().To4() != nil { // If ip is IPv4.
 		ipNet.Mask = net.CIDRMask(prefixLen, 32)
 	}
 	if err := netlink.AddrReplace(link, &netlink.Addr{IPNet: ipNet}); err != nil {
@@ -60,7 +60,7 @@ func SetInterfaceIP(name string, ip string, prefixLen int) error {
 	return nil
 }
 
-// SetInterfaceIP sets the IP addresses of a network interface.
+// DeleteInterfaceIP delete an IP addresses from a network interface.
 func DeleteInterfaceIP(name string, ip *net.IPNet) error {
 	link, err := netlink.LinkByName(name)
 	if err != nil {

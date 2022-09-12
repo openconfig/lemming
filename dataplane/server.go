@@ -37,16 +37,27 @@ type Dataplane struct {
 	ifaceHandler *handlers.Interface
 	engine       *forwarding.Engine
 	srv          *grpc.Server
-	list         net.Listener
+	lis          net.Listener
 }
 
 // New create a new dataplane instance.
-func New() *Dataplane {
+func New() (*Dataplane, error) {
 	data := &Dataplane{
 		engine: forwarding.New("engine"),
 	}
 
-	return data
+	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		return nil, fmt.Errorf("failed to listen: %w", err)
+	}
+
+	data.lis = lis
+	srv := grpc.NewServer(grpc.Creds(local.NewCredentials()))
+	dpb.RegisterHALServer(srv, data)
+	fwdpb.RegisterServiceServer(srv, data.engine)
+	go srv.Serve(data.lis)
+
+	return data, nil
 }
 
 // Start starts the HAL gRPC server and packet forwarding engine.
@@ -54,18 +65,6 @@ func (d *Dataplane) Start(ctx context.Context) error {
 	if d.srv != nil {
 		return fmt.Errorf("dataplane already started")
 	}
-
-	list, err := net.Listen("tcp", "127.0.0.1:0")
-	if err != nil {
-		return fmt.Errorf("failed to listen: %w", err)
-	}
-
-	d.list = list
-
-	srv := grpc.NewServer(grpc.Creds(local.NewCredentials()))
-	dpb.RegisterHALServer(srv, d)
-	fwdpb.RegisterServiceServer(srv, d.engine)
-	go srv.Serve(d.list)
 
 	yc, err := client.NewYGNMIClient()
 	if err != nil {
@@ -89,7 +88,7 @@ func (d *Dataplane) Start(ctx context.Context) error {
 
 // HALClient gets a gRPC client to the dataplane.
 func (d *Dataplane) HALClient() (dpb.HALClient, error) {
-	conn, err := grpc.Dial(d.list.Addr().String(), grpc.WithTransportCredentials(local.NewCredentials()))
+	conn, err := grpc.Dial(d.lis.Addr().String(), grpc.WithTransportCredentials(local.NewCredentials()))
 	if err != nil {
 		return nil, fmt.Errorf("failed to dial server: %w", err)
 	}
@@ -98,7 +97,7 @@ func (d *Dataplane) HALClient() (dpb.HALClient, error) {
 
 // FwdClient gets a gRPC client to the packet forwarding engine.
 func (d *Dataplane) FwdClient() (fwdpb.ServiceClient, error) {
-	conn, err := grpc.Dial(d.list.Addr().String(), grpc.WithTransportCredentials(local.NewCredentials()))
+	conn, err := grpc.Dial(d.lis.Addr().String(), grpc.WithTransportCredentials(local.NewCredentials()))
 	if err != nil {
 		return nil, fmt.Errorf("failed to dial server: %w", err)
 	}

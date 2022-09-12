@@ -40,7 +40,7 @@ type Interface struct {
 	linkDoneCh    chan struct{}
 	addrDoneCh    chan struct{}
 	fwd           fwdpb.ServiceClient
-	mu            sync.RWMutex
+	stateMu       sync.RWMutex
 	state         map[string]*oc.Interface
 	idxToName     map[int]string
 }
@@ -123,6 +123,7 @@ func (ni *Interface) Start(ctx context.Context) error {
 
 // Stop stops all watchers.
 func (ni *Interface) Stop() {
+	// TODO: prevent stopping more than once.
 	ni.watchCancelFn()
 	close(ni.linkDoneCh)
 	close(ni.addrDoneCh)
@@ -130,15 +131,16 @@ func (ni *Interface) Stop() {
 
 // reconcile compares the interface config with state and modifies state to match config.
 func (ni *Interface) reconcile(config *oc.Interface) {
-	ni.mu.RLock()
-	defer ni.mu.RUnlock()
+	ni.stateMu.RLock()
+	defer ni.stateMu.RUnlock()
 
 	tapName := engine.IntfNameToTapName(config.GetName())
 	state := ni.state[config.GetName()]
 
+	// TODO: handle deleting interface.
 	if config.GetOrCreateEthernet().MacAddress != nil {
 		if config.GetEthernet().GetMacAddress() != state.GetEthernet().GetMacAddress() {
-			log.Infof("setting interface %s hw-addr %q", engine.IntfNameToTapName(config.GetName()), config.GetEthernet().GetMacAddress())
+			log.V(1).Infof("setting interface %s hw-addr %q", engine.IntfNameToTapName(config.GetName()), config.GetEthernet().GetMacAddress())
 			if err := kernel.SetInterfaceHWAddr(engine.IntfNameToTapName(config.GetName()), config.GetEthernet().GetMacAddress()); err != nil {
 				log.Warningf("Failed to set mac address of port: %v", err)
 				return
@@ -147,7 +149,7 @@ func (ni *Interface) reconcile(config *oc.Interface) {
 	}
 	if config.GetOrCreateSubinterface(0).Enabled != nil {
 		if state.GetSubinterface(0).Enabled == nil || config.GetSubinterface(0).GetEnabled() != state.GetSubinterface(0).GetEnabled() {
-			log.Infof("setting interface %s enabled %t", engine.IntfNameToTapName(config.GetName()), config.GetSubinterface(0).GetEnabled())
+			log.V(1).Infof("setting interface %s enabled %t", engine.IntfNameToTapName(config.GetName()), config.GetSubinterface(0).GetEnabled())
 			if err := kernel.SetInterfaceState(engine.IntfNameToTapName(config.GetName()), config.GetSubinterface(0).GetEnabled()); err != nil {
 				log.Warningf("Failed to set state address of port: %v", err)
 				return
@@ -167,8 +169,8 @@ func (ni *Interface) reconcile(config *oc.Interface) {
 		}
 
 		if configIP != nil && configPL != nil && (stateIP == nil || *statePL != *configPL) {
-			log.Infof("Config IP: %v, Config PL: %v. State IP: %v, State PL: %v", addr.GetIp(), addr.GetPrefixLength(), stateAddr.GetIp(), stateAddr.GetPrefixLength())
-			log.Infof("setting interface %s ip %s/%d", tapName, *configIP, *configPL)
+			log.V(1).Infof("Config IP: %v, Config PL: %v. State IP: %v, State PL: %v", addr.GetIp(), addr.GetPrefixLength(), stateAddr.GetIp(), stateAddr.GetPrefixLength())
+			log.V(2).Infof("setting interface %s ip %s/%d", tapName, *configIP, *configPL)
 			if err := kernel.SetInterfaceIP(engine.IntfNameToTapName(config.GetName()), *configIP, int(*configPL)); err != nil {
 				log.Warningf("Failed to set ip address of port: %v", err)
 				return
@@ -187,8 +189,8 @@ func (ni *Interface) reconcile(config *oc.Interface) {
 		}
 
 		if configIP != nil && configPL != nil && (stateIP == nil || *statePL != *configPL) {
-			log.Infof("Config IP: %v, Config PL: %v. State IP: %v, State PL: %v", addr.GetIp(), addr.GetPrefixLength(), stateAddr.GetIp(), stateAddr.GetPrefixLength())
-			log.Infof("setting interface %s ip %s/%d", tapName, *configIP, *configPL)
+			log.V(1).Infof("Config IP: %v, Config PL: %v. State IP: %v, State PL: %v", addr.GetIp(), addr.GetPrefixLength(), stateAddr.GetIp(), stateAddr.GetPrefixLength())
+			log.V(2).Infof("setting interface %s ip %s/%d", tapName, *configIP, *configPL)
 			if err := kernel.SetInterfaceIP(engine.IntfNameToTapName(config.GetName()), *configIP, int(*configPL)); err != nil {
 				log.Warningf("Failed to set ip address of port: %v", err)
 				return
@@ -196,6 +198,7 @@ func (ni *Interface) reconcile(config *oc.Interface) {
 		}
 	}
 	// TODO: delete IPs
+	// TODO: update state
 }
 
 // getOrCreateInterface returns the state interface from the cache.
@@ -210,12 +213,12 @@ func (ni *Interface) getOrCreateInterface(iface string) *oc.Interface {
 
 // handleLinkUpdate modifies the state based on changes to link state.
 func (ni *Interface) handleLinkUpdate(lu *netlink.LinkUpdate) {
-	ni.mu.Lock()
-	defer ni.mu.Unlock()
+	ni.stateMu.Lock()
+	defer ni.stateMu.Unlock()
 	if !engine.IsTap(lu.Attrs().Name) {
 		return
 	}
-	log.Infof("handling link update for %s", lu.Attrs().Name)
+	log.V(1).Infof("handling link update for %s", lu.Attrs().Name)
 
 	modelName := engine.TapNameToIntfName(lu.Attrs().Name)
 	iface := ni.getOrCreateInterface(modelName)
@@ -223,7 +226,7 @@ func (ni *Interface) handleLinkUpdate(lu *netlink.LinkUpdate) {
 	iface.Ifindex = ygot.Uint32(uint32(lu.Attrs().Index))
 	iface.Enabled = ygot.Bool(lu.Attrs().Flags == net.FlagUp)
 	var operStatus oc.E_Interface_OperStatus
-	switch lu.Attrs().OperState {
+	switch lu.Attrs().OperState { // TODO: handle other states.
 	case netlink.OperDown:
 		operStatus = oc.Interface_OperStatus_DOWN
 	case netlink.OperUp:
@@ -234,8 +237,8 @@ func (ni *Interface) handleLinkUpdate(lu *netlink.LinkUpdate) {
 
 // handleLinkUpdate modifies the state based on changes to addresses.
 func (ni *Interface) handleAddrUpdate(au *netlink.AddrUpdate) {
-	ni.mu.Lock()
-	defer ni.mu.Unlock()
+	ni.stateMu.Lock()
+	defer ni.stateMu.Unlock()
 	name := ni.idxToName[au.LinkIndex]
 	if !engine.IsTap(name) {
 		return
@@ -247,7 +250,7 @@ func (ni *Interface) handleAddrUpdate(au *netlink.AddrUpdate) {
 	ip := au.LinkAddress.IP.String()
 	pl, _ := au.LinkAddress.Mask.Size()
 	isV4 := au.LinkAddress.IP.To4() != nil
-	log.Infof("handling addr update for %s ip %v pl %v", name, ip, pl)
+	log.V(1).Infof("handling addr update for %s ip %v pl %v", name, ip, pl)
 	if au.NewAddr {
 		if isV4 {
 			sub.GetOrCreateIpv4().GetOrCreateAddress(ip).PrefixLength = ygot.Uint8(uint8(pl))
