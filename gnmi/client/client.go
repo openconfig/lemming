@@ -17,6 +17,7 @@ package client
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
@@ -24,6 +25,7 @@ import (
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/local"
 )
 
@@ -44,7 +46,11 @@ func NewLocal() (gpb.GNMIClient, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to dial unix socket: %v", err)
 	}
-	cacheConn, err := grpc.Dial(fmt.Sprintf("localhost:%d", viper.GetInt("port")), grpc.WithTransportCredentials(local.NewCredentials()))
+	opt := grpc.WithTransportCredentials(local.NewCredentials())
+	if viper.GetBool("enable_tls") {
+		opt = grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{InsecureSkipVerify: true}))
+	}
+	cacheConn, err := grpc.Dial(fmt.Sprintf("localhost:%d", viper.GetInt("port")), opt)
 	if err != nil {
 		return nil, fmt.Errorf("failed to dial cache socket: %v", err)
 	}
