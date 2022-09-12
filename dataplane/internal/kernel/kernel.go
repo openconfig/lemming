@@ -51,7 +51,7 @@ func SetInterfaceIP(name string, ip string, prefixLen int) error {
 		return fmt.Errorf("failed to parse ip")
 	}
 	ipNet.Mask = net.CIDRMask(prefixLen, 128)
-	if ipNet.IP.To16().To4() != nil { // If ip is IPv4.
+	if ipNet.IP.To4() != nil { // If ip is IPv4.
 		ipNet.Mask = net.CIDRMask(prefixLen, 32)
 	}
 	if err := netlink.AddrReplace(link, &netlink.Addr{IPNet: ipNet}); err != nil {
