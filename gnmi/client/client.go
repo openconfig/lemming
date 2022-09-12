@@ -69,3 +69,39 @@ func NewYGNMIClient() (*ygnmi.Client, error) {
 	}
 	return ygnmi.NewClient(gClient, ygnmi.WithTarget(viper.GetString("target")))
 }
+
+// Update updates the configuration at the given query path with the val.
+func Update[T any](ctx context.Context, c *ygnmi.Client, q ygnmi.SingletonQuery[T], val T) (*ygnmi.Result, error) {
+	return ygnmi.Update[T](ctx, c, &singletonAsConfig[T]{SingletonQuery: q}, val)
+}
+
+// Replace replaces the configuration at the given query path with the val.
+func Replace[T any](ctx context.Context, c *ygnmi.Client, q ygnmi.SingletonQuery[T], val T) (*ygnmi.Result, error) {
+	return ygnmi.Replace[T](ctx, c, &singletonAsConfig[T]{SingletonQuery: q}, val)
+}
+
+// Delete deletes the configuration at the given query path.
+func Delete[T any](ctx context.Context, c *ygnmi.Client, q ygnmi.SingletonQuery[T], val T) (*ygnmi.Result, error) {
+	return ygnmi.Delete[T](ctx, c, &singletonAsConfig[T]{SingletonQuery: q})
+}
+
+// BatchUpdate stores an update operation in the SetBatch.
+func BatchUpdate[T any](sb *ygnmi.SetBatch, q ygnmi.SingletonQuery[T], val T) {
+	ygnmi.BatchUpdate[T](sb, &singletonAsConfig[T]{SingletonQuery: q}, val)
+}
+
+// BatchReplace stores an replace operation in the SetBatch.
+func BatchReplace[T any](sb *ygnmi.SetBatch, q ygnmi.SingletonQuery[T], val T) {
+	ygnmi.BatchReplace[T](sb, &singletonAsConfig[T]{SingletonQuery: q}, val)
+}
+
+// BatchDelete stores an delete operation in the SetBatch.
+func BatchDelete[T any](sb *ygnmi.SetBatch, q ygnmi.SingletonQuery[T]) {
+	ygnmi.BatchDelete[T](sb, &singletonAsConfig[T]{SingletonQuery: q})
+}
+
+type singletonAsConfig[T any] struct {
+	ygnmi.SingletonQuery[T]
+}
+
+func (*singletonAsConfig[T]) IsConfig() {}
