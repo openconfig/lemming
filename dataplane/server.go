@@ -122,7 +122,7 @@ func (d *Dataplane) InsertRoute(ctx context.Context, route *dpb.InsertRouteReque
 	}
 	// TODO: support non-default VRF.
 	if route.GetVrf() != 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "VRF other than not supported")
+		return nil, status.Errorf(codes.InvalidArgument, "VRF other than DEFAULT (vrfid 0) not supported")
 	}
 
 	_, ipNet, err := net.ParseCIDR(route.GetPrefix())
@@ -130,7 +130,7 @@ func (d *Dataplane) InsertRoute(ctx context.Context, route *dpb.InsertRouteReque
 		return nil, status.Errorf(codes.InvalidArgument, "failed to parse prefix: %v", err)
 	}
 
-	isIPv4 := ipNet.IP.To16().To4() != nil
+	isIPv4 := ipNet.IP.To4() != nil
 	var nextHopIP []byte
 	if nh := route.GetNextHops()[0].GetIp(); nh != "" {
 		nextHopIP = net.ParseIP(nh)
@@ -143,21 +143,21 @@ func (d *Dataplane) InsertRoute(ctx context.Context, route *dpb.InsertRouteReque
 	return &dpb.InsertRouteResponse{}, nil
 }
 
-// InsertRoute deletes a route from the dataplane.
+// DeleteRoute deletes a route from the dataplane.
 func (d *Dataplane) DeleteRoute(ctx context.Context, route *dpb.DeleteRouteRequest) (*dpb.DeleteRouteResponse, error) {
 	// TODO: support non-default VRF.
 	if route.GetVrf() != 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "VRF other than not supported")
+		return nil, status.Errorf(codes.InvalidArgument, "VRF other than DEFAULT (vrfid 0) not supported")
 	}
 
 	_, ipNet, err := net.ParseCIDR(route.GetPrefix())
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "failed to parse prefix: %v", err)
 	}
-	isIPv4 := ipNet.IP.To16().To4() != nil
+	isIPv4 := ipNet.IP.To4() != nil
 
 	if err := engine.DeleteIPRoute(ctx, d.fwd, isIPv4, ipNet.IP, ipNet.Mask); err != nil {
-		return nil, fmt.Errorf("failed to add route")
+		return nil, fmt.Errorf("failed to delete route")
 	}
 
 	return &dpb.DeleteRouteResponse{}, nil

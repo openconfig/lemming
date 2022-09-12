@@ -277,7 +277,7 @@ func AddIPRoute(ctx context.Context, c fwdpb.ServiceClient, v4 bool, ip, mask, n
 	return nil
 }
 
-// DeleteIPRoute adds a route to the FIB.
+// DeleteIPRoute deletes a route from the FIB.
 func DeleteIPRoute(ctx context.Context, c fwdpb.ServiceClient, v4 bool, ip, mask []byte) error {
 	fib := fibV6Table
 	if v4 {
