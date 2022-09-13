@@ -497,11 +497,12 @@ func (s *GNMIServer) set(req *gpb.SetRequest, updateCache bool) error {
 		return fmt.Errorf("gnmit: invalid SetRequest: %v", err)
 	}
 
-	s.c.Schema().Root = dirtyRoot
-
 	if updateCache {
-		return s.update(dirtyRoot, req.Prefix.Origin)
+		if err := s.update(dirtyRoot, req.Prefix.Origin); err != nil {
+			return err
+		}
 	}
+	s.c.Schema().Root = dirtyRoot
 	return nil
 }
 
