@@ -159,17 +159,18 @@ func interfaceTask(getIntendedConfig func() *oc.Root, q gnmit.Queue, update gnmi
 					updateAppliedRoot = true
 				}
 			}
+			if !updateAppliedRoot {
+				continue
+			}
 
 			var prevApplied *oc.Root
-			if updateAppliedRoot {
-				appliedMu.Lock()
-				prevAppliedGS, err := ygot.DeepCopy(appliedRoot)
-				if err != nil {
-					log.Fatalf("interfaceTask: Could not copy applied configuration: %v", err)
-				}
-				prevApplied = prevAppliedGS.(*oc.Root)
-				appliedMu.Unlock()
+			appliedMu.Lock()
+			prevAppliedGS, err := ygot.DeepCopy(appliedRoot)
+			if err != nil {
+				log.Fatalf("interfaceTask: Could not copy applied configuration: %v", err)
 			}
+			prevApplied = prevAppliedGS.(*oc.Root)
+			appliedMu.Unlock()
 
 			for reactor, triggered := range pendingEvents {
 				if triggered {
@@ -229,6 +230,7 @@ func interfacePathHandler(pendingEvents map[*func(*oc.Root) error]bool, path *gp
 		log.V(1).Infof("interfaceTask: Received update path: %s", prototext.Format(path))
 		pendingEvents[&intfDescriptionReactor] = true
 	case matchingPath(path, enabledPaths), matchingPath(path, namePaths), matchingPath(path, ipv4AddressPaths), matchingPath(path, prefixLengthPaths):
+		log.V(1).Infof("interfaceTask: Received name or address/prefix path: %s", prototext.Format(path))
 		pendingEvents[&interfaceReactor] = true
 	default:
 		log.V(1).Infof("interfaceTask: update path received isn't matched by any handlers: %s", prototext.Format(path))
