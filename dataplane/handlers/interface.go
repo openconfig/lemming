@@ -78,7 +78,7 @@ func (ni *Interface) Start(ctx context.Context) error {
 	ni.watchCancelFn = cancelFn
 
 	watcher := ygnmi.Watch(cancelCtx, ni.c, b.Config(), func(val *ygnmi.Value[*oc.Root]) error {
-		log.Info("reconciling interfaces")
+		log.V(2).Info("reconciling interfaces")
 		root, ok := val.Val()
 		if !ok || root.Interface == nil {
 			return ygnmi.Continue
@@ -224,12 +224,17 @@ func (ni *Interface) handleLinkUpdate(ctx context.Context, lu *netlink.LinkUpdat
 	iface := ni.getOrCreateInterface(modelName)
 	iface.GetOrCreateEthernet().MacAddress = ygot.String(lu.Attrs().HardwareAddr.String())
 	iface.Ifindex = ygot.Uint32(uint32(lu.Attrs().Index))
-	iface.Enabled = ygot.Bool(lu.Attrs().Flags == net.FlagUp)
+	iface.Enabled = ygot.Bool(lu.Attrs().Flags&net.FlagUp != 0)
+	iface.AdminStatus = oc.Interface_AdminStatus_DOWN
+	if *iface.Enabled {
+		iface.AdminStatus = oc.Interface_AdminStatus_UP
+	}
+	// TODO: handle other states.
 	var operStatus oc.E_Interface_OperStatus
-	switch lu.Attrs().OperState { // TODO: handle other states.
+	switch lu.Attrs().OperState {
 	case netlink.OperDown:
 		operStatus = oc.Interface_OperStatus_DOWN
-	case netlink.OperUp:
+	case netlink.OperUp, netlink.OperUnknown: // TAP interfaces are in unknown state until there is socket bound to them.
 		operStatus = oc.Interface_OperStatus_UP
 	}
 	iface.OperStatus = operStatus
