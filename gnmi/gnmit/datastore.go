@@ -2,7 +2,9 @@ package gnmit
 
 import (
 	"context"
+	"time"
 
+	log "github.com/golang/glog"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -35,10 +37,16 @@ func (d *DatastoreServer) Set(_ context.Context, req *gpb.SetRequest) (*gpb.SetR
 		deletes = append(deletes, update.Path)
 	}
 	t := d.gnmiServer.c.cache.GetTarget(d.gnmiServer.c.name)
-	t.GnmiUpdate(&gpb.Notification{
-		Prefix: req.Prefix,
-		Delete: deletes,
-		Update: req.Update,
-	})
+	notif := &gpb.Notification{
+		Timestamp: time.Now().UnixNano(),
+		Prefix:    req.Prefix,
+		Delete:    deletes,
+		Update:    req.Update,
+	}
+	if notif.Prefix.Origin == "" {
+		notif.Prefix.Origin = OpenconfigOrigin
+	}
+	log.V(1).Infof("datastore updates central cache: %v", notif)
+	t.GnmiUpdate(notif)
 	return &gpb.SetResponse{}, nil
 }

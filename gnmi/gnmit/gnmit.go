@@ -457,7 +457,6 @@ func (s *GNMIServer) update(dirtyRoot ygot.ValidatedGoStruct, origin string) err
 	if err := t.GnmiUpdate(n); err != nil {
 		return err
 	}
-	s.c.Schema().Root = dirtyRoot
 	return nil
 }
 
@@ -466,7 +465,7 @@ func (s *GNMIServer) update(dirtyRoot ygot.ValidatedGoStruct, origin string) err
 //
 // update indicates whether to update the cache with the values from the set
 // request.
-func (s *GNMIServer) set(req *gpb.SetRequest, update bool) error {
+func (s *GNMIServer) set(req *gpb.SetRequest, updateCache bool) error {
 	s.intendedConfigMu.Lock()
 	defer s.intendedConfigMu.Unlock()
 	dirtyRoot, node, nodeName, err := s.getOrCreateNode(req.Prefix)
@@ -498,7 +497,9 @@ func (s *GNMIServer) set(req *gpb.SetRequest, update bool) error {
 		return fmt.Errorf("gnmit: invalid SetRequest: %v", err)
 	}
 
-	if update {
+	s.c.Schema().Root = dirtyRoot
+
+	if updateCache {
 		return s.update(dirtyRoot, req.Prefix.Origin)
 	}
 	return nil
