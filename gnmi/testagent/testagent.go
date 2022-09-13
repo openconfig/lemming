@@ -53,7 +53,7 @@ func main() {
 	go func() {
 		for count := 0; ; count++ {
 			time.Sleep(1 * time.Second)
-			p, _, err := ygnmi.ResolvePath(ocpath.Root().Interface("test-eth0").Description().Config().PathStruct())
+			p, _, err := ygnmi.ResolvePath(ocpath.Root().Interface("test-eth0").Description().State().PathStruct())
 			if err != nil {
 				log.Fatal(err)
 			}

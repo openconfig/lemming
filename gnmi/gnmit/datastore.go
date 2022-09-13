@@ -25,8 +25,20 @@ func NewDatastoreServer(gnmiServer *GNMIServer) *DatastoreServer {
 }
 
 func (d *DatastoreServer) Set(_ context.Context, req *gpb.SetRequest) (*gpb.SetResponse, error) {
-	if err := d.gnmiServer.set(req); err != nil {
+	if err := d.gnmiServer.set(req, false); err != nil {
 		return &gpb.SetResponse{}, status.Errorf(codes.Aborted, "%v", err)
 	}
+
+	// SetRequest has been validated, so we update the cache.
+	deletes := append([]*gpb.Path{}, req.Delete...)
+	for _, update := range req.Replace {
+		deletes = append(deletes, update.Path)
+	}
+	t := d.gnmiServer.c.cache.GetTarget(d.gnmiServer.c.name)
+	t.GnmiUpdate(&gpb.Notification{
+		Prefix: req.Prefix,
+		Delete: deletes,
+		Update: req.Update,
+	})
 	return &gpb.SetResponse{}, nil
 }
