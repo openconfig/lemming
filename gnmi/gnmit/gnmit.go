@@ -401,9 +401,12 @@ func setNode(schema *ytypes.Schema, goStruct ygot.GoStruct, update *gpb.Update) 
 	if ok {
 		var jsonTree interface{}
 		if err := json.Unmarshal(jsonUpdate, &jsonTree); err != nil {
-			return err
+			return fmt.Errorf("failed to unmarshal json: %v", err)
 		}
-		return ytypes.Unmarshal(targetSchema, node, jsonTree, &ytypes.PreferShadowPath{})
+		if err := ytypes.Unmarshal(targetSchema, node, jsonTree, &ytypes.PreferShadowPath{}); err != nil {
+			return fmt.Errorf("failed to unmarshal set request: %v", err)
+		}
+		return nil
 	}
 
 	return fmt.Errorf("gnmit: cannot find GoStruct parent into which to ummarshal update message: %s", prototext.Format(update))
@@ -470,7 +473,7 @@ func (s *GNMIServer) set(req *gpb.SetRequest, updateCache bool) error {
 	defer s.intendedConfigMu.Unlock()
 	dirtyRoot, node, nodeName, err := s.getOrCreateNode(req.Prefix)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get prefix")
 	}
 
 	// Process deletes, then replace, then updates.
@@ -484,12 +487,12 @@ func (s *GNMIServer) set(req *gpb.SetRequest, updateCache bool) error {
 			return fmt.Errorf("gnmit: DeleteNode error: %v", err)
 		}
 		if err := setNode(s.c.schema, node, update); err != nil {
-			return err
+			return fmt.Errorf("failed to set node: %v", err)
 		}
 	}
 	for _, update := range req.Update {
 		if err := setNode(s.c.schema, node, update); err != nil {
-			return err
+			return fmt.Errorf("failed to set node: %v", err)
 		}
 	}
 

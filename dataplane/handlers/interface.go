@@ -199,7 +199,6 @@ func (ni *Interface) reconcile(config *oc.Interface) {
 		}
 	}
 	// TODO: delete IPs
-	// TODO: update state
 }
 
 // getOrCreateInterface returns the state interface from the cache.
