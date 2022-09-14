@@ -27,6 +27,10 @@ func NewDatastoreServer(gnmiServer *GNMIServer) *DatastoreServer {
 }
 
 func (d *DatastoreServer) Set(_ context.Context, req *gpb.SetRequest) (*gpb.SetResponse, error) {
+	// TODO(wenbli): Reject values that modify config values. We only allow modifying state through this server.
+	// TODO(wenbli): Unmarshal to a struct without PreferShadowPath in
+	// order to validate that state paths are valid according to the
+	// schema.
 	if err := d.gnmiServer.set(req, false); err != nil {
 		return &gpb.SetResponse{}, status.Errorf(codes.Aborted, "%v", err)
 	}
