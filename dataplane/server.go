@@ -23,7 +23,7 @@ import (
 	"github.com/openconfig/lemming/dataplane/forwarding"
 	"github.com/openconfig/lemming/dataplane/handlers"
 	"github.com/openconfig/lemming/dataplane/internal/engine"
-	"github.com/openconfig/lemming/gnmi/client"
+	"github.com/openconfig/lemming/gnmi/gnmiclient"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/local"
@@ -69,7 +69,7 @@ func (d *Dataplane) Start(ctx context.Context) error {
 		return fmt.Errorf("dataplane already started")
 	}
 
-	yc, err := client.NewYGNMIClient()
+	yc, err := gnmiclient.NewYGNMIClient()
 	if err != nil {
 		return err
 	}

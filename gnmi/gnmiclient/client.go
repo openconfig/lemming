@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package client
-package client
+// Package gnmiclient contains a funcs to create gNMI for the local cache.
+package gnmiclient
 
 import (
 	"context"
@@ -100,6 +100,7 @@ func BatchDelete[T any](sb *ygnmi.SetBatch, q ygnmi.SingletonQuery[T]) {
 	ygnmi.BatchDelete[T](sb, &singletonAsConfig[T]{SingletonQuery: q})
 }
 
+// singletonAsConfig turns a SingletonQuery into ConfigQuery.
 type singletonAsConfig[T any] struct {
 	ygnmi.SingletonQuery[T]
 }
