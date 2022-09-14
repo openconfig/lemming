@@ -433,10 +433,6 @@ func (s *GNMIServer) getOrCreateNode(path *gpb.Path) (ygot.ValidatedGoStruct, yg
 }
 
 func (s *GNMIServer) update(dirtyRoot ygot.ValidatedGoStruct, origin string) error {
-	if err := dirtyRoot.Validate(); err != nil {
-		return fmt.Errorf("gnmit: invalid SetRequest: %v", err)
-	}
-
 	n, err := ygot.Diff(s.c.Schema().Root, dirtyRoot, &ygot.DiffPathOpt{PreferShadowPath: true})
 	if err != nil {
 		return fmt.Errorf("gnmit: error while creating update notification for Set: %v", err)
@@ -461,13 +457,15 @@ func (s *GNMIServer) update(dirtyRoot ygot.ValidatedGoStruct, origin string) err
 	if err := t.GnmiUpdate(n); err != nil {
 		return err
 	}
-	s.c.Schema().Root = dirtyRoot
 	return nil
 }
 
 // set updates the datastore and intended configuration with the SetRequest,
 // allowing read-only values to be updated.
-func (s *GNMIServer) set(req *gpb.SetRequest) error {
+//
+// update indicates whether to update the cache with the values from the set
+// request.
+func (s *GNMIServer) set(req *gpb.SetRequest, updateCache bool) error {
 	s.intendedConfigMu.Lock()
 	defer s.intendedConfigMu.Unlock()
 	dirtyRoot, node, nodeName, err := s.getOrCreateNode(req.Prefix)
@@ -495,7 +493,17 @@ func (s *GNMIServer) set(req *gpb.SetRequest) error {
 		}
 	}
 
-	return s.update(dirtyRoot, req.Prefix.Origin)
+	if err := dirtyRoot.Validate(); err != nil {
+		return fmt.Errorf("gnmit: invalid SetRequest: %v", err)
+	}
+
+	if updateCache {
+		if err := s.update(dirtyRoot, req.Prefix.Origin); err != nil {
+			return err
+		}
+	}
+	s.c.Schema().Root = dirtyRoot
+	return nil
 }
 
 // Set is a prototype for a gNMI Set operation.
@@ -506,7 +514,7 @@ func (s *GNMIServer) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResp
 
 	// TODO(wenbli): Reject paths that try to modify read-only values.
 	// TODO(wenbli): Question: what to do if there are operational-state values in a container that is specified to be replaced or deleted?
-	err := s.set(req)
+	err := s.set(req, true)
 
 	// TODO(wenbli): Currently the SetResponse is not filled.
 	return &gpb.SetResponse{
