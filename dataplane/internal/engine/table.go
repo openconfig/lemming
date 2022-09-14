@@ -16,6 +16,7 @@ package engine
 
 import (
 	"context"
+	"encoding/binary"
 	"encoding/hex"
 
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
@@ -28,18 +29,12 @@ const (
 	srcMACTable      = "port-mac"
 	fibSelectorTable = "fib-selector"
 	neighborTable    = "neighbor"
-	multicastTable   = "multicast"
+	layer2PuntTable  = "multicast"
 )
 
 var (
-	etherTypeIPV4  = mustParseHex("0800")
-	etherTypeIPV6  = mustParseHex("86DD")
-	etherTypeARP   = mustParseHex("0806")
-	ipProtoICMP    = mustParseHex("01")
-	ipProtoICMPV6  = mustParseHex("3A")
-	etherBroadcast = mustParseHex("FFFFFFFFFFFF")
-	etherMulticast = mustParseHex("010000000000")
-	etherIPV6Multi = mustParseHex("333300000000")
+	etherTypeIPV4 = mustParseHex("0800")
+	etherTypeIPV6 = mustParseHex("86DD")
 )
 
 func mustParseHex(hexStr string) []byte {
@@ -142,7 +137,7 @@ func SetupForwardingTables(ctx context.Context, c fwdpb.ServiceClient) error {
 	if err := createFIBSelector(ctx, c); err != nil {
 		return err
 	}
-	if err := createMulticastTable(ctx, c); err != nil {
+	if err := createLayer2PuntTable(ctx, c); err != nil {
 		return err
 	}
 	return nil
@@ -225,16 +220,21 @@ func createFIBSelector(ctx context.Context, c fwdpb.ServiceClient) error {
 	return nil
 }
 
-func createMulticastTable(ctx context.Context, c fwdpb.ServiceClient) error {
+// createLayer2PuntTable creates a table to packets to punt at layer 2 (input output and mac dst).
+func createLayer2PuntTable(ctx context.Context, c fwdpb.ServiceClient) error {
 	multicast := &fwdpb.TableCreateRequest{
 		ContextId: &fwdpb.ContextId{Id: contextID},
 		Desc: &fwdpb.TableDesc{
 			TableType: fwdpb.TableType_TABLE_TYPE_PREFIX,
-			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: multicastTable}},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: layer2PuntTable}},
 			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_CONTINUE}},
 			Table: &fwdpb.TableDesc_Prefix{
 				Prefix: &fwdpb.PrefixTableDesc{
 					FieldIds: []*fwdpb.PacketFieldId{{
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT,
+						},
+					}, {
 						Field: &fwdpb.PacketField{
 							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST,
 						},
@@ -246,13 +246,34 @@ func createMulticastTable(ctx context.Context, c fwdpb.ServiceClient) error {
 	if _, err := c.TableCreate(ctx, multicast); err != nil {
 		return err
 	}
-	makeEntry := func(bytes, mask []byte) *fwdpb.TableEntryAddRequest_Entry {
-		return &fwdpb.TableEntryAddRequest_Entry{
+	return nil
+}
+
+// AddLayer2PuntRule adds rule to output packets to a corresponding port based on the destination MAC and input port.
+func AddLayer2PuntRule(ctx context.Context, c fwdpb.ServiceClient, nid uint64, mac, mask []byte) error {
+	nidBytes := make([]byte, binary.Size(nid))
+	binary.BigEndian.PutUint64(nidBytes, nid)
+
+	entries := &fwdpb.TableEntryAddRequest{
+		ContextId: &fwdpb.ContextId{Id: contextID},
+		TableId: &fwdpb.TableId{
+			ObjectId: &fwdpb.ObjectId{
+				Id: layer2PuntTable,
+			},
+		},
+		Entries: []*fwdpb.TableEntryAddRequest_Entry{{
 			EntryDesc: &fwdpb.EntryDesc{
 				Entry: &fwdpb.EntryDesc_Prefix{
 					Prefix: &fwdpb.PrefixEntryDesc{
 						Fields: []*fwdpb.PacketFieldMaskedBytes{{
-							Bytes: bytes,
+							Bytes: nidBytes,
+							FieldId: &fwdpb.PacketFieldId{
+								Field: &fwdpb.PacketField{
+									FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT,
+								},
+							},
+						}, {
+							Bytes: mac,
 							Masks: mask,
 							FieldId: &fwdpb.PacketFieldId{
 								Field: &fwdpb.PacketField{
@@ -268,20 +289,7 @@ func createMulticastTable(ctx context.Context, c fwdpb.ServiceClient) error {
 			}, {
 				ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
 			}},
-		}
-	}
-	entries := &fwdpb.TableEntryAddRequest{
-		ContextId: &fwdpb.ContextId{Id: contextID},
-		TableId: &fwdpb.TableId{
-			ObjectId: &fwdpb.ObjectId{
-				Id: multicastTable,
-			},
-		},
-		Entries: []*fwdpb.TableEntryAddRequest_Entry{
-			makeEntry(etherBroadcast, mustParseHex("FFFFFFFFFFFF")),
-			makeEntry(etherMulticast, mustParseHex("FF0000000000")),
-			makeEntry(etherIPV6Multi, mustParseHex("FFFF00000000")),
-		},
+		}},
 	}
 	if _, err := c.TableEntryAdd(ctx, entries); err != nil {
 		return err
