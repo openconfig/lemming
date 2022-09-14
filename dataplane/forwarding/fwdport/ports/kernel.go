@@ -102,6 +102,7 @@ func (p *kernelPort) process() {
 				fwdPkt, err := fwdpacket.New(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET, pkt.Data())
 				if err != nil {
 					log.Warningf("failed to create new packet: %v", err)
+					log.V(1).Info(pkt.Dump())
 					fwdport.Increment(p, len(pkt.Data()), fwdpb.CounterId_COUNTER_ID_RX_BAD_PACKETS, fwdpb.CounterId_COUNTER_ID_RX_BAD_OCTETS)
 					continue
 				}

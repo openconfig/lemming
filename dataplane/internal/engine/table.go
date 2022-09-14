@@ -28,14 +28,18 @@ const (
 	srcMACTable      = "port-mac"
 	fibSelectorTable = "fib-selector"
 	neighborTable    = "neighbor"
+	multicastTable   = "multicast"
 )
 
 var (
-	etherTypeIPV4 = mustParseHex("0800")
-	etherTypeIPV6 = mustParseHex("86DD")
-	etherTypeARP  = mustParseHex("0806")
-	ipProtoICMP   = mustParseHex("01")
-	ipProtoICMPV6 = mustParseHex("3A")
+	etherTypeIPV4  = mustParseHex("0800")
+	etherTypeIPV6  = mustParseHex("86DD")
+	etherTypeARP   = mustParseHex("0806")
+	ipProtoICMP    = mustParseHex("01")
+	ipProtoICMPV6  = mustParseHex("3A")
+	etherBroadcast = mustParseHex("FFFFFFFFFFFF")
+	etherMulticast = mustParseHex("010000000000")
+	etherIPV6Multi = mustParseHex("333300000000")
 )
 
 func mustParseHex(hexStr string) []byte {
@@ -138,6 +142,9 @@ func SetupForwardingTables(ctx context.Context, c fwdpb.ServiceClient) error {
 	if err := createFIBSelector(ctx, c); err != nil {
 		return err
 	}
+	if err := createMulticastTable(ctx, c); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -211,6 +218,70 @@ func createFIBSelector(ctx context.Context, c fwdpb.ServiceClient) error {
 				},
 			}},
 		}},
+	}
+	if _, err := c.TableEntryAdd(ctx, entries); err != nil {
+		return err
+	}
+	return nil
+}
+
+func createMulticastTable(ctx context.Context, c fwdpb.ServiceClient) error {
+	multicast := &fwdpb.TableCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: contextID},
+		Desc: &fwdpb.TableDesc{
+			TableType: fwdpb.TableType_TABLE_TYPE_PREFIX,
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: multicastTable}},
+			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_CONTINUE}},
+			Table: &fwdpb.TableDesc_Prefix{
+				Prefix: &fwdpb.PrefixTableDesc{
+					FieldIds: []*fwdpb.PacketFieldId{{
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST,
+						},
+					}},
+				},
+			},
+		},
+	}
+	if _, err := c.TableCreate(ctx, multicast); err != nil {
+		return err
+	}
+	makeEntry := func(bytes, mask []byte) *fwdpb.TableEntryAddRequest_Entry {
+		return &fwdpb.TableEntryAddRequest_Entry{
+			EntryDesc: &fwdpb.EntryDesc{
+				Entry: &fwdpb.EntryDesc_Prefix{
+					Prefix: &fwdpb.PrefixEntryDesc{
+						Fields: []*fwdpb.PacketFieldMaskedBytes{{
+							Bytes: bytes,
+							Masks: mask,
+							FieldId: &fwdpb.PacketFieldId{
+								Field: &fwdpb.PacketField{
+									FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST,
+								},
+							},
+						}},
+					},
+				},
+			},
+			Actions: []*fwdpb.ActionDesc{{
+				ActionType: fwdpb.ActionType_ACTION_TYPE_SWAP_OUTPUT,
+			}, {
+				ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
+			}},
+		}
+	}
+	entries := &fwdpb.TableEntryAddRequest{
+		ContextId: &fwdpb.ContextId{Id: contextID},
+		TableId: &fwdpb.TableId{
+			ObjectId: &fwdpb.ObjectId{
+				Id: multicastTable,
+			},
+		},
+		Entries: []*fwdpb.TableEntryAddRequest_Entry{
+			makeEntry(etherBroadcast, mustParseHex("FFFFFFFFFFFF")),
+			makeEntry(etherMulticast, mustParseHex("FF0000000000")),
+			makeEntry(etherIPV6Multi, mustParseHex("FFFF00000000")),
+		},
 	}
 	if _, err := c.TableEntryAdd(ctx, entries); err != nil {
 		return err
@@ -336,6 +407,29 @@ func AddNeighbor(ctx context.Context, c fwdpb.ServiceClient, ip, mac []byte) err
 		}},
 	}
 	if _, err := c.TableEntryAdd(ctx, entry); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// RemoveNeighbor removes a neighbor from the neighbor table.
+func RemoveNeighbor(ctx context.Context, c fwdpb.ServiceClient, ip []byte) error {
+	entry := &fwdpb.TableEntryRemoveRequest{
+		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: neighborTable}},
+		ContextId: &fwdpb.ContextId{Id: contextID},
+		EntryDesc: &fwdpb.EntryDesc{
+			Entry: &fwdpb.EntryDesc_Exact{
+				Exact: &fwdpb.ExactEntryDesc{
+					Fields: []*fwdpb.PacketFieldBytes{{
+						FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP}},
+						Bytes:   ip,
+					}},
+				},
+			},
+		},
+	}
+	if _, err := c.TableEntryRemove(ctx, entry); err != nil {
 		return err
 	}
 

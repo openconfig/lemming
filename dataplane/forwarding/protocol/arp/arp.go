@@ -115,8 +115,8 @@ func (ARP) Modify(fwdpb.PacketHeaderId) error {
 
 // parse parses an ARP header.
 func parse(frame *frame.Frame, desc *protocol.Desc) (protocol.Handler, fwdpb.PacketHeaderId, error) {
-	if frame.Len() != arpBytes {
-		return nil, fwdpb.PacketHeaderId_PACKET_HEADER_ID_NONE, fmt.Errorf("arp: parse failed, invalid frame length %v, expected %v bytes", frame.Len(), arpBytes)
+	if frame.Len() < arpBytes {
+		return nil, fwdpb.PacketHeaderId_PACKET_HEADER_ID_NONE, fmt.Errorf("arp: parse failed, invalid frame length %v, expected < %v bytes", frame.Len(), arpBytes)
 	}
 	header, err := frame.ReadHeader(arpBytes)
 	if err != nil {

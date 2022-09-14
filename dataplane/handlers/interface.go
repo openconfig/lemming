@@ -29,6 +29,7 @@ import (
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot"
 	"github.com/vishvananda/netlink"
+	"golang.org/x/sys/unix"
 
 	log "github.com/golang/glog"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
@@ -36,14 +37,12 @@ import (
 
 // Interface handles config updates to the /interfaces/... paths.
 type Interface struct {
-	c             *ygnmi.Client
-	watchCancelFn context.CancelFunc
-	linkDoneCh    chan struct{}
-	addrDoneCh    chan struct{}
-	fwd           fwdpb.ServiceClient
-	stateMu       sync.RWMutex
-	state         map[string]*oc.Interface
-	idxToName     map[int]string
+	c         *ygnmi.Client
+	closers   []func()
+	fwd       fwdpb.ServiceClient
+	stateMu   sync.RWMutex
+	state     map[string]*oc.Interface
+	idxToName map[int]string
 }
 
 // NewInterface creates a new interface handler.
@@ -75,7 +74,6 @@ func (ni *Interface) Start(ctx context.Context) error {
 		ocpath.Root().InterfaceAny().Subinterface(0).Ipv6().AddressAny().PrefixLength().Config().PathStruct(),
 	)
 	cancelCtx, cancelFn := context.WithCancel(ctx)
-	ni.watchCancelFn = cancelFn
 
 	watcher := ygnmi.Watch(cancelCtx, ni.c, b.Config(), func(val *ygnmi.Value[*oc.Root]) error {
 		log.V(2).Info("reconciling interfaces")
@@ -89,16 +87,26 @@ func (ni *Interface) Start(ctx context.Context) error {
 		return ygnmi.Continue
 	})
 
-	ni.linkDoneCh = make(chan struct{})
+	linkDoneCh := make(chan struct{})
 	linkUpdateCh := make(chan netlink.LinkUpdate)
-	ni.addrDoneCh = make(chan struct{})
+	addrDoneCh := make(chan struct{})
 	addrUpdateCh := make(chan netlink.AddrUpdate)
+	neighDoneCh := make(chan struct{})
+	neighUpdateCh := make(chan netlink.NeighUpdate)
+	ni.closers = append(ni.closers, func() {
+		close(linkDoneCh)
+		close(addrDoneCh)
+		close(neighDoneCh)
+	}, cancelFn)
 
-	if err := netlink.LinkSubscribe(linkUpdateCh, ni.linkDoneCh); err != nil {
+	if err := netlink.LinkSubscribe(linkUpdateCh, linkDoneCh); err != nil {
 		return fmt.Errorf("failed to sub to link: %v", err)
 	}
-	if err := netlink.AddrSubscribe(addrUpdateCh, ni.addrDoneCh); err != nil {
+	if err := netlink.AddrSubscribe(addrUpdateCh, addrDoneCh); err != nil {
 		return fmt.Errorf("failed to sub to addr: %v", err)
+	}
+	if err := netlink.NeighSubscribe(neighUpdateCh, addrDoneCh); err != nil {
+		return fmt.Errorf("failed to sub to neighbor: %v", err)
 	}
 
 	go func() {
@@ -108,6 +116,8 @@ func (ni *Interface) Start(ctx context.Context) error {
 				ni.handleLinkUpdate(ctx, &up)
 			case up := <-addrUpdateCh:
 				ni.handleAddrUpdate(ctx, &up)
+			case up := <-neighUpdateCh:
+				ni.handleNeighborUpdate(ctx, &up)
 			}
 		}
 	}()
@@ -125,9 +135,9 @@ func (ni *Interface) Start(ctx context.Context) error {
 // Stop stops all watchers.
 func (ni *Interface) Stop() {
 	// TODO: prevent stopping more than once.
-	ni.watchCancelFn()
-	close(ni.linkDoneCh)
-	close(ni.addrDoneCh)
+	for _, closeFn := range ni.closers {
+		closeFn()
+	}
 }
 
 // reconcile compares the interface config with state and modifies state to match config.
@@ -136,7 +146,7 @@ func (ni *Interface) reconcile(config *oc.Interface) {
 	defer ni.stateMu.RUnlock()
 
 	tapName := engine.IntfNameToTapName(config.GetName())
-	state := ni.state[config.GetName()]
+	state := ni.getOrCreateInterface(config.GetName())
 
 	// TODO: handle deleting interface.
 	if config.GetOrCreateEthernet().MacAddress != nil {
@@ -149,7 +159,7 @@ func (ni *Interface) reconcile(config *oc.Interface) {
 		}
 	}
 	if config.GetOrCreateSubinterface(0).Enabled != nil {
-		if state.GetSubinterface(0).Enabled == nil || config.GetSubinterface(0).GetEnabled() != state.GetSubinterface(0).GetEnabled() {
+		if state.GetOrCreateSubinterface(0).Enabled == nil || config.GetSubinterface(0).GetEnabled() != state.GetSubinterface(0).GetEnabled() {
 			log.V(1).Infof("setting interface %s enabled %t", engine.IntfNameToTapName(config.GetName()), config.GetSubinterface(0).GetEnabled())
 			if err := kernel.SetInterfaceState(engine.IntfNameToTapName(config.GetName()), config.GetSubinterface(0).GetEnabled()); err != nil {
 				log.Warningf("Failed to set state address of port: %v", err)
@@ -284,6 +294,66 @@ func (ni *Interface) handleAddrUpdate(ctx context.Context, au *netlink.AddrUpdat
 			gnmiclient.BatchDelete(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv6().Address(ip).State())
 		}
 	}
+	if _, err := sb.Set(ctx, ni.c); err != nil {
+		log.Warningf("failed to set link status: %v", err)
+	}
+}
+
+// handleNeighborUpdate modifies the state based on changes to the neighbor.
+func (ni *Interface) handleNeighborUpdate(ctx context.Context, nu *netlink.NeighUpdate) {
+	ni.stateMu.Lock()
+	defer ni.stateMu.Unlock()
+	name := ni.idxToName[nu.LinkIndex]
+	if !engine.IsTap(name) {
+		return
+	}
+	log.V(1).Infof("handling neighbor update for %s", nu.IP.String())
+
+	sb := &ygnmi.SetBatch{}
+	modelName := engine.TapNameToIntfName(name)
+	sub := ni.getOrCreateInterface(modelName).GetOrCreateSubinterface(0)
+	if nu.Type == unix.RTM_DELNEIGH {
+		if err := engine.RemoveNeighbor(ctx, ni.fwd, nu.IP); err != nil {
+			log.Warningf("failed to add neighbor to dataplane: %v", err)
+			return
+		}
+		if nu.Family == unix.AF_INET6 {
+			sub.GetOrCreateIpv6().DeleteNeighbor(nu.IP.String())
+			client.BatchDelete(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv6().Neighbor(nu.IP.String()).State())
+		} else {
+			sub.GetOrCreateIpv4().DeleteNeighbor(nu.IP.String())
+			client.BatchDelete(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv4().Neighbor(nu.IP.String()).State())
+		}
+	} else {
+		if err := engine.AddNeighbor(ctx, ni.fwd, nu.IP, nu.HardwareAddr); err != nil {
+			log.Warningf("failed to add neighbor to dataplane: %v", err)
+			return
+		}
+		if nu.Family == unix.AF_INET6 {
+			neigh := sub.GetOrCreateIpv6().GetOrCreateNeighbor(nu.IP.String())
+			neigh.LinkLayerAddress = ygot.String(nu.HardwareAddr.String())
+			if nu.Flags&unix.NUD_PERMANENT != 0 {
+				neigh.Origin = oc.IfIp_NeighborOrigin_STATIC
+			} else {
+				neigh.Origin = oc.IfIp_NeighborOrigin_DYNAMIC
+			}
+			client.BatchReplace(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv6().Neighbor(nu.IP.String()).Ip().State(), neigh.GetIp())
+			client.BatchReplace(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv6().Neighbor(nu.IP.String()).LinkLayerAddress().State(), neigh.GetLinkLayerAddress())
+			client.BatchReplace(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv6().Neighbor(nu.IP.String()).Origin().State(), neigh.GetOrigin())
+		} else {
+			neigh := sub.GetOrCreateIpv4().GetOrCreateNeighbor(nu.IP.String())
+			neigh.LinkLayerAddress = ygot.String(nu.HardwareAddr.String())
+			if nu.Flags&unix.NUD_PERMANENT != 0 {
+				neigh.Origin = oc.IfIp_NeighborOrigin_STATIC
+			} else {
+				neigh.Origin = oc.IfIp_NeighborOrigin_DYNAMIC
+			}
+			client.BatchReplace(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv4().Neighbor(nu.IP.String()).Ip().State(), neigh.GetIp())
+			client.BatchReplace(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv4().Neighbor(nu.IP.String()).LinkLayerAddress().State(), neigh.GetLinkLayerAddress())
+			client.BatchReplace(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv4().Neighbor(nu.IP.String()).Origin().State(), neigh.GetOrigin())
+		}
+	}
+
 	if _, err := sb.Set(ctx, ni.c); err != nil {
 		log.Warningf("failed to set link status: %v", err)
 	}
