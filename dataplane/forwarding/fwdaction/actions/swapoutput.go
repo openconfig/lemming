@@ -28,7 +28,7 @@ import (
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
-// swapOutput is a action used to set a packet's output port to the input port related port.
+// swapOutput is an action used to set a packet's output port to the input port's linked port.
 // If the a packet's input port is an external port, than its the output the corresponding TAP port or vice versa.
 type swapOutput struct {
 	ctx *fwdcontext.Context

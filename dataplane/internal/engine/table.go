@@ -220,7 +220,7 @@ func createFIBSelector(ctx context.Context, c fwdpb.ServiceClient) error {
 	return nil
 }
 
-// createLayer2PuntTable creates a table to packets to punt at layer 2 (input output and mac dst).
+// createLayer2PuntTable creates a table to packets to punt at layer 2 (input port and mac dst).
 func createLayer2PuntTable(ctx context.Context, c fwdpb.ServiceClient) error {
 	multicast := &fwdpb.TableCreateRequest{
 		ContextId: &fwdpb.ContextId{Id: contextID},

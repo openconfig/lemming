@@ -44,8 +44,8 @@ enum ActionType {
   ACTION_TYPE_SELECT_ACTION_LIST =
       17;  // Action used select a action list from a set of action lists
   ACTION_TYPE_DEBUG = 18;  // Action used to set the debug flag on a packet
-  ACTION_TYPE_SWAP_OUTPUT = 19;  // Action used to set the output port to input
-                                 // port's local or external interface.
+  ACTION_TYPE_SWAP_OUTPUT = 19;  // Ation used to set a packet's output port
+                                 // to the input port's linked port.
 }
 
 // An ActionDesc describes an operation that can be performed on a packet.

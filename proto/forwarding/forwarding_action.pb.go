@@ -58,7 +58,7 @@ const (
 	ActionType_ACTION_TYPE_REPARSE            ActionType = 16 // Reparses the packet as a specific type of header
 	ActionType_ACTION_TYPE_SELECT_ACTION_LIST ActionType = 17 // Action used select a action list from a set of action lists
 	ActionType_ACTION_TYPE_DEBUG              ActionType = 18 // Action used to set the debug flag on a packet
-	ActionType_ACTION_TYPE_SWAP_OUTPUT        ActionType = 19 // Action used to set the output port to input
+	ActionType_ACTION_TYPE_SWAP_OUTPUT        ActionType = 19 // Ation used to set a packet's output port
 )
 
 // Enum value maps for ActionType.
