@@ -38,7 +38,7 @@ jobs:
         with:
           go-version: 1.18.x
       - run: |
-        # shellcheck disable=SC2046
+        # shellcheck disable=SC2046 we want word splitting in $()
         go test -v -coverprofile=profile.cov $(go list ./... | grep -v integration_test)
       - name: Send coverage
         uses: shogo82148/actions-goveralls@v1
