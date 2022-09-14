@@ -19,7 +19,6 @@ package gnmit
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net"
 	"os"
@@ -35,8 +34,6 @@ import (
 	"github.com/openconfig/ygot/ygot"
 	"github.com/openconfig/ygot/ytypes"
 	"google.golang.org/grpc"
-	"google.golang.org/protobuf/encoding/prototext"
-	"google.golang.org/protobuf/proto"
 
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 )
@@ -370,45 +367,6 @@ func (c *Collector) TargetUpdate(m *gpb.SubscribeResponse) {
 	c.inCh <- m
 }
 
-// setNode is a function that is able to unmarshal either a JSON-encoded value or a gNMI-encoded value.
-func setNode(schema *ytypes.Schema, goStruct ygot.GoStruct, update *gpb.Update) error {
-	nodeName := reflect.TypeOf(goStruct).Elem().Name()
-	nodeI, targetSchema, err := ytypes.GetOrCreateNode(schema.SchemaTree[nodeName], goStruct, update.Path, &ytypes.PreferShadowPath{})
-	if err != nil {
-		return fmt.Errorf("gnmit: failed to GetOrCreate a node: %v", err)
-	}
-
-	// TODO(wenbli): Populate default values using PopulateDefaults.
-	jsonUpdate := update.Val.GetJsonIetfVal()
-	if jsonUpdate == nil {
-		if err := ytypes.SetNode(schema.SchemaTree[nodeName], goStruct, update.Path, update.Val, &ytypes.PreferShadowPath{}); err != nil {
-			return fmt.Errorf("gnmit: SetNode failed on leaf node: %v", err)
-		}
-		return nil
-	}
-
-	// TODO(wenbli): Use SetNode natively instead of this. SetNode now is supposed to support setting JSON.
-	node, ok := nodeI.(ygot.GoStruct)
-	path := proto.Clone(update.Path).(*gpb.Path)
-	for i := len(path.Elem) - 1; i >= 0 && !ok; i-- {
-		path.Elem = path.Elem[:i]
-		nodeI, _, err := ytypes.GetOrCreateNode(schema.SchemaTree[nodeName], goStruct, path, &ytypes.PreferShadowPath{})
-		if err != nil {
-			continue
-		}
-		node, ok = nodeI.(ygot.GoStruct)
-	}
-	if ok {
-		var jsonTree interface{}
-		if err := json.Unmarshal(jsonUpdate, &jsonTree); err != nil {
-			return err
-		}
-		return ytypes.Unmarshal(targetSchema, node, jsonTree, &ytypes.PreferShadowPath{})
-	}
-
-	return fmt.Errorf("gnmit: cannot find GoStruct parent into which to ummarshal update message: %s", prototext.Format(update))
-}
-
 func (s *GNMIServer) getOrCreateNode(path *gpb.Path) (ygot.ValidatedGoStruct, ygot.GoStruct, string, error) {
 	// Create a copy so that we can rollback the transaction when validation fails.
 	dirtyRootG, err := ygot.DeepCopy(s.c.Schema().Root)
@@ -470,7 +428,7 @@ func (s *GNMIServer) set(req *gpb.SetRequest, updateCache bool) error {
 	defer s.intendedConfigMu.Unlock()
 	dirtyRoot, node, nodeName, err := s.getOrCreateNode(req.Prefix)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get prefix")
 	}
 
 	// Process deletes, then replace, then updates.
@@ -483,13 +441,13 @@ func (s *GNMIServer) set(req *gpb.SetRequest, updateCache bool) error {
 		if err := ytypes.DeleteNode(s.c.Schema().SchemaTree[nodeName], node, update.Path, &ytypes.PreferShadowPath{}); err != nil {
 			return fmt.Errorf("gnmit: DeleteNode error: %v", err)
 		}
-		if err := setNode(s.c.schema, node, update); err != nil {
-			return err
+		if err := ytypes.SetNode(s.c.Schema().SchemaTree[nodeName], node, update.Path, update.Val, &ytypes.PreferShadowPath{}, &ytypes.InitMissingElements{}); err != nil {
+			return fmt.Errorf("failed to set node: %v", err)
 		}
 	}
 	for _, update := range req.Update {
-		if err := setNode(s.c.schema, node, update); err != nil {
-			return err
+		if err := ytypes.SetNode(s.c.Schema().SchemaTree[nodeName], node, update.Path, update.Val, &ytypes.PreferShadowPath{}, &ytypes.InitMissingElements{}); err != nil {
+			return fmt.Errorf("failed to set node: %v", err)
 		}
 	}
 
