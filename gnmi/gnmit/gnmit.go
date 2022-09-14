@@ -441,12 +441,12 @@ func (s *GNMIServer) set(req *gpb.SetRequest, updateCache bool) error {
 		if err := ytypes.DeleteNode(s.c.Schema().SchemaTree[nodeName], node, update.Path, &ytypes.PreferShadowPath{}); err != nil {
 			return fmt.Errorf("gnmit: DeleteNode error: %v", err)
 		}
-		if err := ytypes.SetNode(s.c.Schema().SchemaTree[nodeName], node, update.Path, update.Val, &ytypes.PreferShadowPath{}); err != nil {
+		if err := ytypes.SetNode(s.c.Schema().SchemaTree[nodeName], node, update.Path, update.Val, &ytypes.PreferShadowPath{}, &ytypes.InitMissingElements{}); err != nil {
 			return fmt.Errorf("failed to set node: %v", err)
 		}
 	}
 	for _, update := range req.Update {
-		if err := ytypes.SetNode(s.c.Schema().SchemaTree[nodeName], node, update.Path, update.Val, &ytypes.PreferShadowPath{}); err != nil {
+		if err := ytypes.SetNode(s.c.Schema().SchemaTree[nodeName], node, update.Path, update.Val, &ytypes.PreferShadowPath{}, &ytypes.InitMissingElements{}); err != nil {
 			return fmt.Errorf("failed to set node: %v", err)
 		}
 	}

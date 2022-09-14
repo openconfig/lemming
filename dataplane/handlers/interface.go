@@ -66,9 +66,9 @@ func (ni *Interface) Start(ctx context.Context) error {
 	}
 
 	b.AddPaths(
-		ocpath.Root().InterfaceAny().Enabled().Config().PathStruct(),
 		ocpath.Root().InterfaceAny().Name().Config().PathStruct(),
 		ocpath.Root().InterfaceAny().Ethernet().MacAddress().Config().PathStruct(),
+		ocpath.Root().InterfaceAny().Subinterface(0).Enabled().Config().PathStruct(),
 		ocpath.Root().InterfaceAny().Subinterface(0).Ipv4().AddressAny().Ip().Config().PathStruct(),
 		ocpath.Root().InterfaceAny().Subinterface(0).Ipv4().AddressAny().PrefixLength().Config().PathStruct(),
 		ocpath.Root().InterfaceAny().Subinterface(0).Ipv6().AddressAny().Ip().Config().PathStruct(),
