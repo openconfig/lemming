@@ -172,7 +172,7 @@ func (s *Server) monitorConnectedIntfs(gnmiServerAddr, target string) error {
 		)
 
 		if _, err := interfaceWatcher.Await(); err != nil {
-			log.Fatal(err)
+			log.Warningf("Sysrib interface watcher has stopped: %v", err)
 		}
 	}()
 	return nil

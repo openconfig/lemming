@@ -107,7 +107,7 @@ func New(lis net.Listener, targetName string, opts ...grpc.ServerOption) (*Devic
 		sysDataplane = &sysrib.Dataplane{HALClient: hal}
 	}
 
-	log.Info("starting sysrib: gNMI server(%s, %s)", lis.Addr().String(), targetName)
+	log.Infof("starting sysrib: gNMI server(%s, %s)", lis.Addr().String(), targetName)
 	startSysrib(sysDataplane, lis.Addr().String(), targetName)
 
 	s := grpc.NewServer(opts...)
