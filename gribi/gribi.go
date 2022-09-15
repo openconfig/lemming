@@ -57,7 +57,7 @@ func New(s *grpc.Server) (*Server, error) {
 // createGRIBIServer creates and returns a gRIBI server that is ready be
 // registered by a gRPC server.
 func createGRIBIServer() (*server.Server, error) {
-	gzebraConn, err := grpc.DialContext(context.Background(), fmt.Sprintf("unix:%s", sysrib.SockAddr), grpc.WithBlock(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	gzebraConn, err := grpc.DialContext(context.Background(), fmt.Sprintf("unix:%s", sysrib.SockAddr), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, fmt.Errorf("cannot dial to sysrib, %v", err)
 	}
