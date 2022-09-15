@@ -23,6 +23,7 @@ import (
 
 	"github.com/openconfig/lemming/dataplane/internal/engine"
 	"github.com/openconfig/lemming/dataplane/internal/kernel"
+	"github.com/openconfig/lemming/gnmi/gnmiclient"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 	"github.com/openconfig/ygnmi/ygnmi"
@@ -65,9 +66,9 @@ func (ni *Interface) Start(ctx context.Context) error {
 	}
 
 	b.AddPaths(
-		ocpath.Root().InterfaceAny().Enabled().Config().PathStruct(),
 		ocpath.Root().InterfaceAny().Name().Config().PathStruct(),
 		ocpath.Root().InterfaceAny().Ethernet().MacAddress().Config().PathStruct(),
+		ocpath.Root().InterfaceAny().Subinterface(0).Enabled().Config().PathStruct(),
 		ocpath.Root().InterfaceAny().Subinterface(0).Ipv4().AddressAny().Ip().Config().PathStruct(),
 		ocpath.Root().InterfaceAny().Subinterface(0).Ipv4().AddressAny().PrefixLength().Config().PathStruct(),
 		ocpath.Root().InterfaceAny().Subinterface(0).Ipv6().AddressAny().Ip().Config().PathStruct(),
@@ -77,7 +78,7 @@ func (ni *Interface) Start(ctx context.Context) error {
 	ni.watchCancelFn = cancelFn
 
 	watcher := ygnmi.Watch(cancelCtx, ni.c, b.Config(), func(val *ygnmi.Value[*oc.Root]) error {
-		log.Info("reconciling interfaces")
+		log.V(2).Info("reconciling interfaces")
 		root, ok := val.Val()
 		if !ok || root.Interface == nil {
 			return ygnmi.Continue
@@ -104,9 +105,9 @@ func (ni *Interface) Start(ctx context.Context) error {
 		for {
 			select {
 			case up := <-linkUpdateCh:
-				ni.handleLinkUpdate(&up)
+				ni.handleLinkUpdate(ctx, &up)
 			case up := <-addrUpdateCh:
-				ni.handleAddrUpdate(&up)
+				ni.handleAddrUpdate(ctx, &up)
 			}
 		}
 	}()
@@ -198,7 +199,6 @@ func (ni *Interface) reconcile(config *oc.Interface) {
 		}
 	}
 	// TODO: delete IPs
-	// TODO: update state
 }
 
 // getOrCreateInterface returns the state interface from the cache.
@@ -212,7 +212,7 @@ func (ni *Interface) getOrCreateInterface(iface string) *oc.Interface {
 }
 
 // handleLinkUpdate modifies the state based on changes to link state.
-func (ni *Interface) handleLinkUpdate(lu *netlink.LinkUpdate) {
+func (ni *Interface) handleLinkUpdate(ctx context.Context, lu *netlink.LinkUpdate) {
 	ni.stateMu.Lock()
 	defer ni.stateMu.Unlock()
 	if !engine.IsTap(lu.Attrs().Name) {
@@ -224,19 +224,32 @@ func (ni *Interface) handleLinkUpdate(lu *netlink.LinkUpdate) {
 	iface := ni.getOrCreateInterface(modelName)
 	iface.GetOrCreateEthernet().MacAddress = ygot.String(lu.Attrs().HardwareAddr.String())
 	iface.Ifindex = ygot.Uint32(uint32(lu.Attrs().Index))
-	iface.Enabled = ygot.Bool(lu.Attrs().Flags == net.FlagUp)
+	iface.Enabled = ygot.Bool(lu.Attrs().Flags&net.FlagUp != 0)
+	iface.AdminStatus = oc.Interface_AdminStatus_DOWN
+	if *iface.Enabled {
+		iface.AdminStatus = oc.Interface_AdminStatus_UP
+	}
+	// TODO: handle other states.
 	var operStatus oc.E_Interface_OperStatus
-	switch lu.Attrs().OperState { // TODO: handle other states.
+	switch lu.Attrs().OperState {
 	case netlink.OperDown:
 		operStatus = oc.Interface_OperStatus_DOWN
-	case netlink.OperUp:
+	case netlink.OperUp, netlink.OperUnknown: // TAP interface may be unknown state because the dataplane doesn't bind to its fd, so treat unknown as up.
 		operStatus = oc.Interface_OperStatus_UP
 	}
 	iface.OperStatus = operStatus
+
+	sb := &ygnmi.SetBatch{}
+	gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(modelName).Ifindex().State(), *iface.Ifindex)
+	gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(modelName).Enabled().State(), *iface.Enabled)
+	gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(modelName).OperStatus().State(), iface.OperStatus)
+	if _, err := sb.Set(ctx, ni.c); err != nil {
+		log.Warningf("failed to set link status: %v", err)
+	}
 }
 
 // handleLinkUpdate modifies the state based on changes to addresses.
-func (ni *Interface) handleAddrUpdate(au *netlink.AddrUpdate) {
+func (ni *Interface) handleAddrUpdate(ctx context.Context, au *netlink.AddrUpdate) {
 	ni.stateMu.Lock()
 	defer ni.stateMu.Unlock()
 	name := ni.idxToName[au.LinkIndex]
@@ -244,6 +257,7 @@ func (ni *Interface) handleAddrUpdate(au *netlink.AddrUpdate) {
 		return
 	}
 
+	sb := &ygnmi.SetBatch{}
 	modelName := engine.TapNameToIntfName(name)
 	sub := ni.getOrCreateInterface(modelName).GetOrCreateSubinterface(0)
 
@@ -254,15 +268,24 @@ func (ni *Interface) handleAddrUpdate(au *netlink.AddrUpdate) {
 	if au.NewAddr {
 		if isV4 {
 			sub.GetOrCreateIpv4().GetOrCreateAddress(ip).PrefixLength = ygot.Uint8(uint8(pl))
+			gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv4().Address(ip).Ip().State(), au.LinkAddress.IP.String())
+			gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv4().Address(ip).PrefixLength().State(), uint8(pl))
 		} else {
 			sub.GetOrCreateIpv6().GetOrCreateAddress(ip).PrefixLength = ygot.Uint8(uint8(pl))
+			gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv6().Address(ip).Ip().State(), au.LinkAddress.IP.String())
+			gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv6().Address(ip).PrefixLength().State(), uint8(pl))
 		}
 	} else {
 		if isV4 {
 			sub.GetOrCreateIpv4().DeleteAddress(ip)
+			gnmiclient.BatchDelete(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv4().Address(ip).State())
 		} else {
 			sub.GetOrCreateIpv6().DeleteAddress(ip)
+			gnmiclient.BatchDelete(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv6().Address(ip).State())
 		}
+	}
+	if _, err := sb.Set(ctx, ni.c); err != nil {
+		log.Warningf("failed to set link status: %v", err)
 	}
 }
 
