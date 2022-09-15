@@ -270,7 +270,7 @@ func (s *Server) SetRoute(_ context.Context, req *pb.SetRouteRequest) (*pb.SetRo
 	}, nil
 }
 
-// addInterfacePrefix responds to INTERFACE_ADD messages from the dataplane.
+// addInterfacePrefix adds a prefix to the sysrib as a connected route.
 func (s *Server) addInterfacePrefix(name string, ifindex int32, prefix string, niName string) error {
 	_, pfx, err := net.ParseCIDR(prefix)
 	if err != nil {
