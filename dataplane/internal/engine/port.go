@@ -16,54 +16,38 @@ package engine
 
 import (
 	"context"
-	"fmt"
 
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
+var (
+	etherBroadcast     = mustParseHex("FFFFFFFFFFFF")
+	etherBroadcastMask = mustParseHex("FFFFFFFFFFFF")
+	etherMulticast     = mustParseHex("010000000000")
+	etherMulticastMask = mustParseHex("010000000000")
+	etherIPV6Multi     = mustParseHex("333300000000")
+	etherIPV6MultiMask = mustParseHex("FFFF00000000")
+)
+
 // CreateExternalPort creates an external port (connected to other devices).
-// An external port will write some packets to the corresponding local ports (ARP, ICMP, etc).
+// TODO: layer3 punt behavior.
 func CreateExternalPort(ctx context.Context, c fwdpb.ServiceClient, name string) error {
-	port := &fwdpb.PortCreateRequest{
-		ContextId: &fwdpb.ContextId{Id: contextID},
-		Port: &fwdpb.PortDesc{
-			PortType: fwdpb.PortType_PORT_TYPE_KERNEL,
-			PortId: &fwdpb.PortId{
-				ObjectId: &fwdpb.ObjectId{Id: name},
-			},
-			Port: &fwdpb.PortDesc_Kernel{
-				Kernel: &fwdpb.KernelPortDesc{
-					DeviceName: name,
-				},
-			},
-		},
-	}
-	if _, err := c.PortCreate(ctx, port); err != nil {
+	if err := createKernelPort(ctx, c, name); err != nil {
 		return err
 	}
-
-	if err := setupPuntRules(ctx, c, name); err != nil {
-		return err
-	}
-
 	update := &fwdpb.PortUpdateRequest{
 		ContextId: &fwdpb.ContextId{Id: contextID},
 		PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: name}},
 		Update: &fwdpb.PortUpdateDesc{
 			Port: &fwdpb.PortUpdateDesc_Kernel{
 				Kernel: &fwdpb.KernelPortUpdateDesc{
-					Inputs: []*fwdpb.ActionDesc{{ // Check EtherType punt rules.
+					Inputs: []*fwdpb.ActionDesc{{ // Turn on packet tracing. TODO: put this behind a flag.
+						ActionType: fwdpb.ActionType_ACTION_TYPE_DEBUG,
+					}, { // Lookup in layer 2 table.
 						ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
 						Action: &fwdpb.ActionDesc_Lookup{
 							Lookup: &fwdpb.LookupActionDesc{
-								TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: etherTypePuntTable(name)}},
-							},
-						},
-					}, { // Check IP Proto punt rules.
-						ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
-						Action: &fwdpb.ActionDesc_Lookup{
-							Lookup: &fwdpb.LookupActionDesc{
-								TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: IPProtocolNumPuntTable(name)}},
+								TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: layer2PuntTable}},
 							},
 						},
 					}, { // Lookup in FIB.
@@ -74,7 +58,7 @@ func CreateExternalPort(ctx context.Context, c fwdpb.ServiceClient, name string)
 							},
 						},
 					}},
-					Outputs: []*fwdpb.ActionDesc{{ // Lookup in the to port to src MAC table.
+					Outputs: []*fwdpb.ActionDesc{{ // update the src mac address with the configured port's mac address.
 						ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
 						Action: &fwdpb.ActionDesc_Lookup{
 							Lookup: &fwdpb.LookupActionDesc{
@@ -94,31 +78,25 @@ func CreateExternalPort(ctx context.Context, c fwdpb.ServiceClient, name string)
 
 // CreateLocalPort creates an local (ie TAP) port for the given linux device name.
 func CreateLocalPort(ctx context.Context, c fwdpb.ServiceClient, name string) error {
-	port := &fwdpb.PortCreateRequest{
-		ContextId: &fwdpb.ContextId{Id: contextID},
-		Port: &fwdpb.PortDesc{
-			PortType: fwdpb.PortType_PORT_TYPE_KERNEL,
-			PortId: &fwdpb.PortId{
-				ObjectId: &fwdpb.ObjectId{Id: name},
-			},
-			Port: &fwdpb.PortDesc_Kernel{
-				Kernel: &fwdpb.KernelPortDesc{
-					DeviceName: name,
-				},
-			},
-		},
-	}
-	if _, err := c.PortCreate(ctx, port); err != nil {
+	if err := createKernelPort(ctx, c, name); err != nil {
 		return err
 	}
-
 	update := &fwdpb.PortUpdateRequest{
 		ContextId: &fwdpb.ContextId{Id: contextID},
 		PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: name}},
 		Update: &fwdpb.PortUpdateDesc{
 			Port: &fwdpb.PortUpdateDesc_Kernel{
 				Kernel: &fwdpb.KernelPortUpdateDesc{
-					Inputs: []*fwdpb.ActionDesc{{ // Lookup in FIB.
+					Inputs: []*fwdpb.ActionDesc{{ // Turn on packet tracing. TODO: put this behind a flag.
+						ActionType: fwdpb.ActionType_ACTION_TYPE_DEBUG,
+					}, { // Lookup in layer 2 table.
+						ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
+						Action: &fwdpb.ActionDesc_Lookup{
+							Lookup: &fwdpb.LookupActionDesc{
+								TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: layer2PuntTable}},
+							},
+						},
+					}, { // Lookup in FIB.
 						ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
 						Action: &fwdpb.ActionDesc_Lookup{
 							Lookup: &fwdpb.LookupActionDesc{
@@ -136,151 +114,32 @@ func CreateLocalPort(ctx context.Context, c fwdpb.ServiceClient, name string) er
 	return nil
 }
 
-// etherTypePuntTable returns the name of the table containing the punt rules based on the EtherType packet header field.
-func etherTypePuntTable(port string) string {
-	return fmt.Sprintf("%s-punt-etherType", port)
-}
-
-// puntEtherTypeTable returns the name of the table containing the punt rules based on the IP protocol packet header field.
-func IPProtocolNumPuntTable(port string) string {
-	return fmt.Sprintf("%s-punt-ipproto", port)
-}
-
-func setupPuntRules(ctx context.Context, c fwdpb.ServiceClient, portName string) error {
-	// Add rule to write ARP packets to tap interface.
-	etherTypePunt := &fwdpb.TableCreateRequest{
+func createKernelPort(ctx context.Context, c fwdpb.ServiceClient, name string) error {
+	port := &fwdpb.PortCreateRequest{
 		ContextId: &fwdpb.ContextId{Id: contextID},
-		Desc: &fwdpb.TableDesc{
-			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
-			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: etherTypePuntTable(portName)}},
-			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_CONTINUE}},
-			Table: &fwdpb.TableDesc_Exact{
-				Exact: &fwdpb.ExactTableDesc{
-					FieldIds: []*fwdpb.PacketFieldId{{
-						Field: &fwdpb.PacketField{
-							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_TYPE,
-						},
-					}},
+		Port: &fwdpb.PortDesc{
+			PortType: fwdpb.PortType_PORT_TYPE_KERNEL,
+			PortId: &fwdpb.PortId{
+				ObjectId: &fwdpb.ObjectId{Id: name},
+			},
+			Port: &fwdpb.PortDesc_Kernel{
+				Kernel: &fwdpb.KernelPortDesc{
+					DeviceName: name,
 				},
 			},
 		},
 	}
-	if _, err := c.TableCreate(ctx, etherTypePunt); err != nil {
+	portID, err := c.PortCreate(ctx, port)
+	if err != nil {
 		return err
 	}
-	arp := &fwdpb.TableEntryAddRequest{
-		ContextId: &fwdpb.ContextId{Id: contextID},
-		TableId: &fwdpb.TableId{
-			ObjectId: &fwdpb.ObjectId{
-				Id: etherTypePuntTable(portName),
-			},
-		},
-		Entries: []*fwdpb.TableEntryAddRequest_Entry{{
-			EntryDesc: &fwdpb.EntryDesc{
-				Entry: &fwdpb.EntryDesc_Exact{
-					Exact: &fwdpb.ExactEntryDesc{
-						Fields: []*fwdpb.PacketFieldBytes{{
-							Bytes: etherTypeARP,
-							FieldId: &fwdpb.PacketFieldId{
-								Field: &fwdpb.PacketField{
-									FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_TYPE,
-								},
-							},
-						}},
-					},
-				},
-			},
-			Actions: []*fwdpb.ActionDesc{{
-				ActionType: fwdpb.ActionType_ACTION_TYPE_TRANSMIT,
-				Action: &fwdpb.ActionDesc_Transmit{
-					Transmit: &fwdpb.TransmitActionDesc{
-						PortId: &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: IntfNameToTapName(portName)}},
-					},
-				},
-			}},
-		}},
-	}
-	if _, err := c.TableEntryAdd(ctx, arp); err != nil {
+	if err := AddLayer2PuntRule(ctx, c, portID.GetObjectIndex().GetIndex(), etherBroadcast, etherBroadcastMask); err != nil {
 		return err
 	}
-	// Add rule to write ICMP and ICMPv6 packets to tap interface.
-	ipProtoPunt := &fwdpb.TableCreateRequest{
-		ContextId: &fwdpb.ContextId{Id: contextID},
-		Desc: &fwdpb.TableDesc{
-			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
-			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: IPProtocolNumPuntTable(portName)}},
-			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_CONTINUE}},
-			Table: &fwdpb.TableDesc_Exact{
-				Exact: &fwdpb.ExactTableDesc{
-					FieldIds: []*fwdpb.PacketFieldId{{
-						Field: &fwdpb.PacketField{
-							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO,
-						},
-					}},
-				},
-			},
-		},
-	}
-	if _, err := c.TableCreate(ctx, ipProtoPunt); err != nil {
+	if err := AddLayer2PuntRule(ctx, c, portID.GetObjectIndex().GetIndex(), etherMulticast, etherMulticastMask); err != nil {
 		return err
 	}
-
-	icmp := &fwdpb.TableEntryAddRequest{
-		ContextId: &fwdpb.ContextId{Id: contextID},
-		TableId: &fwdpb.TableId{
-			ObjectId: &fwdpb.ObjectId{
-				Id: IPProtocolNumPuntTable(portName),
-			},
-		},
-		Entries: []*fwdpb.TableEntryAddRequest_Entry{{
-			EntryDesc: &fwdpb.EntryDesc{
-				Entry: &fwdpb.EntryDesc_Exact{
-					Exact: &fwdpb.ExactEntryDesc{
-						Fields: []*fwdpb.PacketFieldBytes{{
-							Bytes: ipProtoICMP,
-							FieldId: &fwdpb.PacketFieldId{
-								Field: &fwdpb.PacketField{
-									FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO,
-								},
-							},
-						}},
-					},
-				},
-			},
-			Actions: []*fwdpb.ActionDesc{{
-				ActionType: fwdpb.ActionType_ACTION_TYPE_TRANSMIT,
-				Action: &fwdpb.ActionDesc_Transmit{
-					Transmit: &fwdpb.TransmitActionDesc{
-						PortId: &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: IntfNameToTapName(portName)}},
-					},
-				},
-			}},
-		}, {
-			EntryDesc: &fwdpb.EntryDesc{
-				Entry: &fwdpb.EntryDesc_Exact{
-					Exact: &fwdpb.ExactEntryDesc{
-						Fields: []*fwdpb.PacketFieldBytes{{
-							Bytes: ipProtoICMPV6,
-							FieldId: &fwdpb.PacketFieldId{
-								Field: &fwdpb.PacketField{
-									FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO,
-								},
-							},
-						}},
-					},
-				},
-			},
-			Actions: []*fwdpb.ActionDesc{{
-				ActionType: fwdpb.ActionType_ACTION_TYPE_TRANSMIT,
-				Action: &fwdpb.ActionDesc_Transmit{
-					Transmit: &fwdpb.TransmitActionDesc{
-						PortId: &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: IntfNameToTapName(portName)}},
-					},
-				},
-			}},
-		}},
-	}
-	if _, err := c.TableEntryAdd(ctx, icmp); err != nil {
+	if err := AddLayer2PuntRule(ctx, c, portID.GetObjectIndex().GetIndex(), etherIPV6Multi, etherIPV6MultiMask); err != nil {
 		return err
 	}
 

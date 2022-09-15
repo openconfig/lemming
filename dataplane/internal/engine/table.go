@@ -16,6 +16,7 @@ package engine
 
 import (
 	"context"
+	"encoding/binary"
 	"encoding/hex"
 
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
@@ -28,14 +29,12 @@ const (
 	srcMACTable      = "port-mac"
 	fibSelectorTable = "fib-selector"
 	neighborTable    = "neighbor"
+	layer2PuntTable  = "multicast"
 )
 
 var (
 	etherTypeIPV4 = mustParseHex("0800")
 	etherTypeIPV6 = mustParseHex("86DD")
-	etherTypeARP  = mustParseHex("0806")
-	ipProtoICMP   = mustParseHex("01")
-	ipProtoICMPV6 = mustParseHex("3A")
 )
 
 func mustParseHex(hexStr string) []byte {
@@ -138,6 +137,9 @@ func SetupForwardingTables(ctx context.Context, c fwdpb.ServiceClient) error {
 	if err := createFIBSelector(ctx, c); err != nil {
 		return err
 	}
+	if err := createLayer2PuntTable(ctx, c); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -209,6 +211,83 @@ func createFIBSelector(ctx context.Context, c fwdpb.ServiceClient) error {
 						TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: fibV6Table}},
 					},
 				},
+			}},
+		}},
+	}
+	if _, err := c.TableEntryAdd(ctx, entries); err != nil {
+		return err
+	}
+	return nil
+}
+
+// createLayer2PuntTable creates a table to packets to punt at layer 2 (input port and mac dst).
+func createLayer2PuntTable(ctx context.Context, c fwdpb.ServiceClient) error {
+	multicast := &fwdpb.TableCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: contextID},
+		Desc: &fwdpb.TableDesc{
+			TableType: fwdpb.TableType_TABLE_TYPE_PREFIX,
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: layer2PuntTable}},
+			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_CONTINUE}},
+			Table: &fwdpb.TableDesc_Prefix{
+				Prefix: &fwdpb.PrefixTableDesc{
+					FieldIds: []*fwdpb.PacketFieldId{{
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT,
+						},
+					}, {
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST,
+						},
+					}},
+				},
+			},
+		},
+	}
+	if _, err := c.TableCreate(ctx, multicast); err != nil {
+		return err
+	}
+	return nil
+}
+
+// AddLayer2PuntRule adds rule to output packets to a corresponding port based on the destination MAC and input port.
+func AddLayer2PuntRule(ctx context.Context, c fwdpb.ServiceClient, portID uint64, mac, macMask []byte) error {
+	nidBytes := make([]byte, binary.Size(portID))
+	binary.BigEndian.PutUint64(nidBytes, portID)
+
+	entries := &fwdpb.TableEntryAddRequest{
+		ContextId: &fwdpb.ContextId{Id: contextID},
+		TableId: &fwdpb.TableId{
+			ObjectId: &fwdpb.ObjectId{
+				Id: layer2PuntTable,
+			},
+		},
+		Entries: []*fwdpb.TableEntryAddRequest_Entry{{
+			EntryDesc: &fwdpb.EntryDesc{
+				Entry: &fwdpb.EntryDesc_Prefix{
+					Prefix: &fwdpb.PrefixEntryDesc{
+						Fields: []*fwdpb.PacketFieldMaskedBytes{{
+							Bytes: nidBytes,
+							FieldId: &fwdpb.PacketFieldId{
+								Field: &fwdpb.PacketField{
+									FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT,
+								},
+							},
+						}, {
+							Bytes: mac,
+							Masks: macMask,
+							FieldId: &fwdpb.PacketFieldId{
+								Field: &fwdpb.PacketField{
+									FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST,
+								},
+							},
+						}},
+					},
+				},
+			},
+			Actions: []*fwdpb.ActionDesc{{
+				ActionType: fwdpb.ActionType_ACTION_TYPE_SWAP_OUTPUT_TAP_EXTERNAL,
+			}, {
+				ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
 			}},
 		}},
 	}
@@ -336,6 +415,29 @@ func AddNeighbor(ctx context.Context, c fwdpb.ServiceClient, ip, mac []byte) err
 		}},
 	}
 	if _, err := c.TableEntryAdd(ctx, entry); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// RemoveNeighbor removes a neighbor from the neighbor table.
+func RemoveNeighbor(ctx context.Context, c fwdpb.ServiceClient, ip []byte) error {
+	entry := &fwdpb.TableEntryRemoveRequest{
+		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: neighborTable}},
+		ContextId: &fwdpb.ContextId{Id: contextID},
+		EntryDesc: &fwdpb.EntryDesc{
+			Entry: &fwdpb.EntryDesc_Exact{
+				Exact: &fwdpb.ExactEntryDesc{
+					Fields: []*fwdpb.PacketFieldBytes{{
+						FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP}},
+						Bytes:   ip,
+					}},
+				},
+			},
+		},
+	}
+	if _, err := c.TableEntryRemove(ctx, entry); err != nil {
 		return err
 	}
 
