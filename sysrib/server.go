@@ -23,9 +23,16 @@ import (
 
 	log "github.com/golang/glog"
 	"github.com/openconfig/gribigo/afthelper"
+	"github.com/openconfig/ygnmi/ygnmi"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 
+	"github.com/openconfig/lemming/gnmi/oc"
+	"github.com/openconfig/lemming/gnmi/oc/ocpath"
+
+	gpb "github.com/openconfig/gnmi/proto/gnmi"
 	dpb "github.com/openconfig/lemming/proto/dataplane"
 	pb "github.com/openconfig/lemming/proto/sysrib"
 )
@@ -88,18 +95,87 @@ func (d *Dataplane) ProgramRoute(r *ResolvedRoute) error {
 // NewServer instantiates server to handle client queries.
 //
 // If dp is nil, then a connection attempt is made.
-func NewServer(dp dataplaneAPI) (*Server, error) {
+func NewServer(dp dataplaneAPI, gnmiServerAddr, target string) (*Server, error) {
 	rib, err := NewSysRIB(nil)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Server{
+	s := &Server{
 		rib:            rib,
 		interfaces:     map[Interface]bool{},
 		resolvedRoutes: map[RouteKey]*ResolvedRoute{},
 		dataplane:      dp,
-	}, nil
+	}
+	if err := s.monitorConnectedIntfs(gnmiServerAddr, target); err != nil {
+		return nil, err
+	}
+	return s, nil
+}
+
+// monitorConnectedIntfs starts a gothread to check for connected prefixes from
+// connected interfaces and adds them to the sysrib. It returns an error if
+// there is an error before monitoring can begin.
+//
+// - gnmiServerAddr is the address of the central gNMI datastore.
+// - target is the name of the gNMI target.
+func (s *Server) monitorConnectedIntfs(gnmiServerAddr, target string) error {
+	var opts []grpc.DialOption
+	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+
+	conn, err := grpc.Dial(gnmiServerAddr, opts...)
+	if err != nil {
+		return fmt.Errorf("fail to dial %s: %v", gnmiServerAddr, err)
+	}
+	client := gpb.NewGNMIClient(conn)
+
+	yclient, err := ygnmi.NewClient(client, ygnmi.WithTarget(target))
+	if err != nil {
+		return fmt.Errorf("Error while creating ygnmi client: %v", err)
+	}
+
+	b := &ocpath.Batch{}
+	b.AddPaths(
+		ocpath.Root().InterfaceAny().State().PathStruct(),
+	)
+
+	// TODO(wenbli): Ideally, this is implemented by watching more fine-grained paths.
+	// TODO(wenbli): Support interface removal.
+	go func() {
+		interfaceWatcher := ygnmi.Watch(
+			context.Background(),
+			yclient,
+			b.State(),
+			func(root *ygnmi.Value[*oc.Root]) error {
+				rootVal, ok := root.Val()
+				if !ok {
+					return ygnmi.Continue
+				}
+				for name, intf := range rootVal.Interface {
+					if intf.Enabled != nil {
+						if intf.Ifindex != nil {
+							ifindex := intf.GetIfindex()
+							s.setInterface(name, int32(ifindex), intf.GetEnabled())
+							// TODO(wenbli): Support other VRFs.
+							if subintf := intf.GetSubinterface(0); subintf != nil {
+								for _, addr := range subintf.GetIpv4().Address {
+									if addr.Ip != nil && addr.PrefixLength != nil {
+										s.addInterfacePrefix(name, int32(ifindex), fmt.Sprintf("%s/%d", addr.GetIp(), addr.GetPrefixLength()), defaultNI)
+									}
+								}
+							}
+						}
+					}
+				}
+				return ygnmi.Continue
+			},
+		)
+
+		if _, err := interfaceWatcher.Await(); err != nil {
+			log.Fatal(err)
+		}
+	}()
+	return nil
 }
 
 type RouteKey struct {
@@ -175,7 +251,6 @@ func resolvedRouteToRouteRequest(r *ResolvedRoute) (*dpb.InsertRouteRequest, err
 
 // programRoute programs the route in the dataplane, returning an error on failure.
 func (s *Server) programRoute(r *ResolvedRoute) error {
-	// TODO(wenbli): Interface with Daniel's dataplane.
 	return s.dataplane.ProgramRoute(r)
 }
 
@@ -272,15 +347,6 @@ func (s *Server) SetRoute(_ context.Context, req *pb.SetRouteRequest) (*pb.SetRo
 
 // addInterfacePrefix adds a prefix to the sysrib as a connected route.
 func (s *Server) addInterfacePrefix(name string, ifindex int32, prefix string, niName string) error {
-	_, pfx, err := net.ParseCIDR(prefix)
-	if err != nil {
-		return fmt.Errorf("cannot parse connected interface's prefix: %v", err)
-	}
-	_, routes, err := s.rib.entryForCIDR(niName, pfx)
-	if err != nil {
-		return err
-	}
-
 	connectedRoute := &Route{
 		Prefix: prefix,
 		Connected: &Interface{
@@ -291,15 +357,6 @@ func (s *Server) addInterfacePrefix(name string, ifindex int32, prefix string, n
 			// Connected routes have admin-distance of 0.
 			AdminDistance: 0,
 		},
-	}
-
-	for i, route := range routes {
-		if route.Prefix == prefix && route.Connected != nil {
-			// Update the connected route in the tree.
-			// FIXME(wenbli): synchronization is required if concurrent calls are possible.
-			routes[i] = connectedRoute
-			return s.ResolveAndProgramDiff()
-		}
 	}
 
 	s.rib.AddRoute(niName, connectedRoute)

@@ -3,12 +3,32 @@ package sysrib
 import (
 	"context"
 	"fmt"
+	"net"
+	"strconv"
+	"strings"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/openconfig/gribigo/afthelper"
+	"github.com/openconfig/lemming/gnmi"
+	"github.com/openconfig/lemming/gnmi/gnmit"
+	"github.com/openconfig/lemming/gnmi/oc"
+	"github.com/openconfig/lemming/gnmi/oc/ocpath"
+	"github.com/openconfig/ygnmi/ygnmi"
+	"github.com/openconfig/ygot/ygot"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+
+	gpb "github.com/openconfig/gnmi/proto/gnmi"
 	dpb "github.com/openconfig/lemming/proto/dataplane"
 	pb "github.com/openconfig/lemming/proto/sysrib"
+)
+
+const (
+	// Each quantum is 100 ms
+	maxGNMIWaitQuanta = 50
 )
 
 type AddIntfAction struct {
@@ -27,19 +47,28 @@ type SetRouteRequestAction struct {
 type FakeDataplane struct {
 	dpb.HALClient
 
+	mu             sync.Mutex
 	incomingRoutes []*ResolvedRoute
 }
 
 func (dp *FakeDataplane) ProgramRoute(r *ResolvedRoute) error {
-	dp.incomingRoutes = append(dp.incomingRoutes, r)
+	dp.mu.Lock()
+	defer dp.mu.Unlock()
 	// Assume all routes are programmed successfully.
+	dp.incomingRoutes = append(dp.incomingRoutes, r)
 	return nil
 }
 
-func (dp *FakeDataplane) GetRoutesAndClearQueue() []*ResolvedRoute {
-	rs := dp.incomingRoutes
+func (dp *FakeDataplane) GetRoutes() []*ResolvedRoute {
+	dp.mu.Lock()
+	defer dp.mu.Unlock()
+	return dp.incomingRoutes
+}
+
+func (dp *FakeDataplane) ClearQueue() {
+	dp.mu.Lock()
+	defer dp.mu.Unlock()
 	dp.incomingRoutes = []*ResolvedRoute{}
-	return rs
 }
 
 func NewFakeDataplane() *FakeDataplane {
@@ -77,6 +106,31 @@ func checkResolvedRoutesEqual(got, want []*ResolvedRoute) error {
 		return fmt.Errorf("Resolved routes are not equal: (-got, +want):\n%s", diff)
 	}
 	return nil
+}
+
+func mustPath(s string) *gpb.Path {
+	p, err := ygot.StringToStructuredPath(s)
+	if err != nil {
+		panic(fmt.Sprintf("cannot parse subscription path %s, %v", s, err))
+	}
+	return p
+}
+
+// Disable linter for this helper function.
+//
+//nolint:unparam
+func mustTargetPath(t, s string) *gpb.Path {
+	p := mustPath(s)
+	p.Target = t
+	return p
+}
+
+func mustPSPath(ps ygnmi.PathStruct) *gpb.Path {
+	p, _, err := ygnmi.ResolvePath(ps)
+	if err != nil {
+		panic(err)
+	}
+	return p
 }
 
 func TestServer(t *testing.T) {
@@ -627,33 +681,102 @@ func TestServer(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
+			grpcServer := grpc.NewServer()
+			_, err := gnmi.New(grpcServer, "local")
+			if err != nil {
+				t.Fatal(err)
+			}
+			lis, err := net.Listen("tcp", "localhost:0")
+			if err != nil {
+				t.Fatalf("Failed to start listener: %v", err)
+			}
+			go func() {
+				grpcServer.Serve(lis)
+			}()
+
 			dp := NewFakeDataplane()
-			s, err := NewServer(dp)
+			s, err := NewServer(dp, lis.Addr().String(), "local")
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			for _, intf := range tt.inInterfaces {
-				if err := s.addInterfacePrefix(intf.name, intf.ifindex, intf.prefix, intf.niName); err != nil {
-					t.Fatal(err)
+			clientCtx, cancel := context.WithCancel(context.Background())
+			var sendErr, recvErr error
+			go func(ctx context.Context) {
+				defer cancel()
+				conn, err := grpc.Dial(fmt.Sprintf("unix:///%s", gnmit.DatastoreAddress), grpc.WithTransportCredentials(insecure.NewCredentials()))
+				if err != nil {
+					sendErr = fmt.Errorf("cannot dial gNMI server, %v", err)
+					return
 				}
-				if err := s.setInterface(intf.name, intf.ifindex, intf.enabled); err != nil {
-					t.Fatal(err)
+
+				client := gpb.NewGNMIClient(conn)
+
+				for _, intf := range tt.inInterfaces {
+					ocintf := &oc.Interface{}
+					ocintf.Name = ygot.String(intf.name)
+					ocintf.Enabled = ygot.Bool(intf.enabled)
+					ocintf.Ifindex = ygot.Uint32(uint32(intf.ifindex))
+					ss := strings.Split(intf.prefix, "/")
+					if len(ss) != 2 {
+						sendErr = fmt.Errorf("Invalid prefix: %q", intf.prefix)
+						return
+					}
+					ocaddr := ocintf.GetOrCreateSubinterface(0).GetOrCreateIpv4().GetOrCreateAddress(ss[0])
+					plen, err := strconv.Atoi(ss[1])
+					if err != nil {
+						sendErr = fmt.Errorf("Invalid prefix: %v", err)
+						return
+					}
+					ocaddr.PrefixLength = ygot.Uint8(uint8(plen))
+					js, err := ygot.Marshal7951(ocintf)
+					if err != nil {
+						sendErr = err
+						return
+					}
+					if _, err := client.Set(ctx, &gpb.SetRequest{
+						Prefix: mustTargetPath("local", ""),
+						Replace: []*gpb.Update{{
+							Path: mustPSPath(ocpath.Root().Interface(intf.name)),
+							Val:  &gpb.TypedValue{Value: &gpb.TypedValue_JsonIetfVal{JsonIetfVal: js}},
+						}},
+					}); err != nil {
+						sendErr = fmt.Errorf("set request failed: %v", err)
+						return
+					}
 				}
+			}(clientCtx)
+
+			<-clientCtx.Done()
+
+			if sendErr != nil {
+				t.Errorf("got unexpected send error, %v", sendErr)
 			}
 
-			if err := checkResolvedRoutesEqual(dp.GetRoutesAndClearQueue(), tt.wantInitialConnectedRoutes); err != nil {
+			if recvErr != nil {
+				t.Errorf("got unexpected recv error, %v", recvErr)
+			}
+
+			for i := 0; i != maxGNMIWaitQuanta; i++ {
+				if err = checkResolvedRoutesEqual(dp.GetRoutes(), tt.wantInitialConnectedRoutes); err == nil {
+					break
+				}
+				time.Sleep(100 * time.Millisecond)
+			}
+			if err != nil {
 				t.Fatalf("After initial interface operations: %v", err)
 			}
+			dp.ClearQueue()
 
 			for i, routeReq := range tt.inSetRouteRequests {
 				// TODO(wenbli): Test SetRouteResponse
 				if _, err := s.SetRoute(context.Background(), routeReq.RouteReq); err != nil {
 					t.Fatalf("%s: Got unexpected error during call to SetRoute: %v", routeReq.Desc, err)
 				}
-				if err := checkResolvedRoutesEqual(dp.GetRoutesAndClearQueue(), tt.wantResolvedRoutes[i]); err != nil {
+				if err := checkResolvedRoutesEqual(dp.GetRoutes(), tt.wantResolvedRoutes[i]); err != nil {
 					t.Fatalf("%s: %v", routeReq.Desc, err)
 				}
+				dp.ClearQueue()
 			}
 		})
 	}

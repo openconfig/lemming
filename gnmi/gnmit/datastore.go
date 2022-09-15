@@ -40,12 +40,13 @@ func (d *DatastoreServer) Set(_ context.Context, req *gpb.SetRequest) (*gpb.SetR
 	for _, update := range req.Replace {
 		deletes = append(deletes, update.Path)
 	}
+	updates := append([]*gpb.Update{}, req.Replace...)
 	t := d.gnmiServer.c.cache.GetTarget(d.gnmiServer.c.name)
 	notif := &gpb.Notification{
 		Timestamp: time.Now().UnixNano(),
 		Prefix:    req.Prefix,
 		Delete:    deletes,
-		Update:    req.Update,
+		Update:    append(updates, req.Update...),
 	}
 	if notif.Prefix.Origin == "" {
 		notif.Prefix.Origin = OpenconfigOrigin

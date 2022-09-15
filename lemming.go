@@ -67,7 +67,7 @@ func registerTestTask(gnmiServer *gnmit.GNMIServer, targetName string) error {
 // startSysrib starts the sysrib gRPC service at a unix domain socket. This
 // should be started prior to routing services to allow them to connect to
 // sysrib during their initialization.
-func startSysrib(dataplane *sysrib.Dataplane) {
+func startSysrib(dataplane *sysrib.Dataplane, gnmiServerAddr, target string) {
 	if err := os.RemoveAll(sysrib.SockAddr); err != nil {
 		log.Fatal(err)
 	}
@@ -78,7 +78,7 @@ func startSysrib(dataplane *sysrib.Dataplane) {
 	}
 
 	grpcServer := grpc.NewServer()
-	s, err := sysrib.NewServer(dataplane)
+	s, err := sysrib.NewServer(dataplane, gnmiServerAddr, target)
 	if err != nil {
 		log.Fatalf("error while creating sysrib server: %v", err)
 	}
@@ -107,8 +107,8 @@ func New(lis net.Listener, targetName string, opts ...grpc.ServerOption) (*Devic
 		sysDataplane = &sysrib.Dataplane{HALClient: hal}
 	}
 
-	log.Info("starting sysrib")
-	startSysrib(sysDataplane)
+	log.Info("starting sysrib: gNMI server(%s, %s)", lis.Addr().String(), targetName)
+	startSysrib(sysDataplane, lis.Addr().String(), targetName)
 
 	s := grpc.NewServer(opts...)
 
