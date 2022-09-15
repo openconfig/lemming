@@ -23,7 +23,6 @@ import (
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 	"github.com/openconfig/lemming/gnmi/gnmit"
 	"github.com/openconfig/ygnmi/ygnmi"
-	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/local"
@@ -41,33 +40,48 @@ func (m *localClient) Set(ctx context.Context, in *gpb.SetRequest, opts ...grpc.
 }
 
 // NewLocal returns a gNMI client connected to the local gNMI cache and datastore for Set.
-func NewLocal() (gpb.GNMIClient, error) {
+func NewLocal(port int, enableTLS bool) (gpb.GNMIClient, error) {
+	client, err := newLocalReadOnly(port, enableTLS)
+	if err != nil {
+		return nil, err
+	}
+
 	setConn, err := grpc.Dial(fmt.Sprintf("unix:///%s", gnmit.DatastoreAddress), grpc.WithTransportCredentials(local.NewCredentials()))
 	if err != nil {
 		return nil, fmt.Errorf("failed to dial unix socket: %v", err)
 	}
+	client.setClient = gpb.NewGNMIClient(setConn)
+	return client, nil
+}
+
+// NewLocalReadOnly returns a gNMI client connected only to the local gNMI cache.
+func NewLocalReadOnly(port int, enableTLS bool) (gpb.GNMIClient, error) {
+	return newLocalReadOnly(port, enableTLS)
+}
+
+// newLocalReadOnly returns a gNMI client connected only to the local gNMI cache.
+func newLocalReadOnly(port int, enableTLS bool) (*localClient, error) {
 	opt := grpc.WithTransportCredentials(local.NewCredentials())
-	if viper.GetBool("enable_tls") {
+	if enableTLS {
 		//nolint:gosec // TODO: figure out long cert handling
 		opt = grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{InsecureSkipVerify: true}))
 	}
-	cacheConn, err := grpc.Dial(fmt.Sprintf("localhost:%d", viper.GetInt("port")), opt)
+	cacheConn, err := grpc.Dial(fmt.Sprintf("localhost:%d", port), opt)
 	if err != nil {
 		return nil, fmt.Errorf("failed to dial cache socket: %v", err)
 	}
 	return &localClient{
 		GNMIClient: gpb.NewGNMIClient(cacheConn),
-		setClient:  gpb.NewGNMIClient(setConn),
 	}, nil
 }
 
 // NewYGNMIClient returns ygnmi client connected to the local gNMI cache.
-func NewYGNMIClient() (*ygnmi.Client, error) {
-	gClient, err := NewLocal()
+func NewYGNMIClient(port int, target string, enableTLS bool) (*ygnmi.Client, error) {
+	gClient, err := NewLocal(port, enableTLS)
 	if err != nil {
 		return nil, err
 	}
-	return ygnmi.NewClient(gClient, ygnmi.WithTarget(viper.GetString("target")))
+	return ygnmi.NewClient(gClient, ygnmi.WithTarget(target))
 }
 
 // Update updates the configuration at the given query path with the val.

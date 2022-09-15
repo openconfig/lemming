@@ -24,15 +24,13 @@ import (
 	log "github.com/golang/glog"
 	"github.com/openconfig/gribigo/afthelper"
 	"github.com/openconfig/ygnmi/ygnmi"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 
+	"github.com/openconfig/lemming/gnmi/gnmiclient"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 
-	gpb "github.com/openconfig/gnmi/proto/gnmi"
 	dpb "github.com/openconfig/lemming/proto/dataplane"
 	pb "github.com/openconfig/lemming/proto/sysrib"
 )
@@ -95,7 +93,7 @@ func (d *Dataplane) ProgramRoute(r *ResolvedRoute) error {
 // NewServer instantiates server to handle client queries.
 //
 // If dp is nil, then a connection attempt is made.
-func NewServer(dp dataplaneAPI, gnmiServerAddr, target string) (*Server, error) {
+func NewServer(dp dataplaneAPI, port int, target string, enableTLS bool) (*Server, error) {
 	rib, err := NewSysRIB(nil)
 	if err != nil {
 		return nil, err
@@ -107,7 +105,7 @@ func NewServer(dp dataplaneAPI, gnmiServerAddr, target string) (*Server, error) 
 		resolvedRoutes: map[RouteKey]*ResolvedRoute{},
 		dataplane:      dp,
 	}
-	if err := s.monitorConnectedIntfs(gnmiServerAddr, target); err != nil {
+	if err := s.monitorConnectedIntfs(port, target, enableTLS); err != nil {
 		return nil, err
 	}
 	return s, nil
@@ -119,20 +117,10 @@ func NewServer(dp dataplaneAPI, gnmiServerAddr, target string) (*Server, error) 
 //
 // - gnmiServerAddr is the address of the central gNMI datastore.
 // - target is the name of the gNMI target.
-func (s *Server) monitorConnectedIntfs(gnmiServerAddr, target string) error {
-	// TODO(wenbli): refactor to use gnmiclient package.
-	var opts []grpc.DialOption
-	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
-
-	conn, err := grpc.Dial(gnmiServerAddr, opts...)
+func (s *Server) monitorConnectedIntfs(port int, target string, enableTLS bool) error {
+	yclient, err := gnmiclient.NewYGNMIClient(port, target, enableTLS)
 	if err != nil {
-		return fmt.Errorf("fail to dial %s: %v", gnmiServerAddr, err)
-	}
-	client := gpb.NewGNMIClient(conn)
-
-	yclient, err := ygnmi.NewClient(client, ygnmi.WithTarget(target))
-	if err != nil {
-		return fmt.Errorf("Error while creating ygnmi client: %v", err)
+		return err
 	}
 
 	b := &ocpath.Batch{}

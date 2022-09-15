@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"net/netip"
 	"strconv"
 	"strings"
 	"sync"
@@ -696,7 +697,11 @@ func TestServer(t *testing.T) {
 			}()
 
 			dp := NewFakeDataplane()
-			s, err := NewServer(dp, lis.Addr().String(), "local")
+			addrport, err := netip.ParseAddrPort(lis.Addr().String())
+			if err != nil {
+				t.Fatal(err)
+			}
+			s, err := NewServer(dp, int(addrport.Port()), "local", false)
 			if err != nil {
 				t.Fatal(err)
 			}

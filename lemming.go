@@ -18,6 +18,7 @@ package lemming
 import (
 	"context"
 	"net"
+	"net/netip"
 	"os"
 	"sync"
 
@@ -67,7 +68,7 @@ func registerTestTask(gnmiServer *gnmit.GNMIServer, targetName string) error {
 // startSysrib starts the sysrib gRPC service at a unix domain socket. This
 // should be started prior to routing services to allow them to connect to
 // sysrib during their initialization.
-func startSysrib(dataplane *sysrib.Dataplane, gnmiServerAddr, target string) {
+func startSysrib(dataplane *sysrib.Dataplane, port int, target string, enableTLS bool) {
 	if err := os.RemoveAll(sysrib.SockAddr); err != nil {
 		log.Fatal(err)
 	}
@@ -78,7 +79,7 @@ func startSysrib(dataplane *sysrib.Dataplane, gnmiServerAddr, target string) {
 	}
 
 	grpcServer := grpc.NewServer()
-	s, err := sysrib.NewServer(dataplane, gnmiServerAddr, target)
+	s, err := sysrib.NewServer(dataplane, port, target, enableTLS)
 	if err != nil {
 		log.Fatalf("error while creating sysrib server: %v", err)
 	}
@@ -134,14 +135,23 @@ func New(lis net.Listener, targetName string, opts ...grpc.ServerOption) (*Devic
 	}
 	reflection.Register(s)
 	d.startServer()
+	port, enableTLS := viper.GetInt("port"), viper.GetBool("enable_tls")
+	if port == 0 {
+		addrport, err := netip.ParseAddrPort(lis.Addr().String())
+		if err != nil {
+			return nil, err
+		}
+		port = int(addrport.Port())
+	}
+
 	if dplane != nil {
-		if err := dplane.Start(context.Background()); err != nil {
+		if err := dplane.Start(context.Background(), port, targetName, enableTLS); err != nil {
 			return nil, err
 		}
 	}
 
-	log.Infof("starting sysrib: gNMI server(%s, %s)", lis.Addr().String(), targetName)
-	startSysrib(sysDataplane, lis.Addr().String(), targetName)
+	log.Infof("starting sysrib")
+	startSysrib(sysDataplane, port, targetName, enableTLS)
 
 	log.Info("lemming created")
 	return d, nil
