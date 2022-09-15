@@ -37,10 +37,12 @@ import (
 
 // Interface handles config updates to the /interfaces/... paths.
 type Interface struct {
-	c         *ygnmi.Client
-	closers   []func()
-	fwd       fwdpb.ServiceClient
-	stateMu   sync.RWMutex
+	c *ygnmi.Client
+	// closers functions should all be invoked when the interface handler stops running.
+	closers []func()
+	fwd     fwdpb.ServiceClient
+	stateMu sync.RWMutex
+	// state keeps track of the applied state of the device's interfaces so that we do not issue duplicate configuration commands to the device's interfaces.
 	state     map[string]*oc.Interface
 	idxToName map[int]string
 }
@@ -67,7 +69,7 @@ func (ni *Interface) Start(ctx context.Context) error {
 	b.AddPaths(
 		ocpath.Root().InterfaceAny().Name().Config().PathStruct(),
 		ocpath.Root().InterfaceAny().Ethernet().MacAddress().Config().PathStruct(),
-		ocpath.Root().InterfaceAny().Subinterface(0).Enabled().Config().PathStruct(),
+		ocpath.Root().InterfaceAny().Subinterface(0).Enabled().Config().PathStruct(), // TODO: Do we need enable at root interface level?
 		ocpath.Root().InterfaceAny().Subinterface(0).Ipv4().AddressAny().Ip().Config().PathStruct(),
 		ocpath.Root().InterfaceAny().Subinterface(0).Ipv4().AddressAny().PrefixLength().Config().PathStruct(),
 		ocpath.Root().InterfaceAny().Subinterface(0).Ipv6().AddressAny().Ip().Config().PathStruct(),
@@ -258,7 +260,7 @@ func (ni *Interface) handleLinkUpdate(ctx context.Context, lu *netlink.LinkUpdat
 	}
 }
 
-// handleLinkUpdate modifies the state based on changes to addresses.
+// handleAddrUpdate modifies the state based on changes to addresses.
 func (ni *Interface) handleAddrUpdate(ctx context.Context, au *netlink.AddrUpdate) {
 	ni.stateMu.Lock()
 	defer ni.stateMu.Unlock()

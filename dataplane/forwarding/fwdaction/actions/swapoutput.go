@@ -36,7 +36,7 @@ type swapOutput struct {
 
 // String formats the state of the action as a string.
 func (swapOutput) String() string {
-	return fmt.Sprintf("Type=%v;", fwdpb.ActionType_ACTION_TYPE_SWAP_OUTPUT)
+	return fmt.Sprintf("Type=%v;", fwdpb.ActionType_ACTION_TYPE_SWAP_OUTPUT_TAP_EXTERNAL)
 }
 
 // Process processes the packet by updating the output port.
@@ -67,7 +67,7 @@ type swapOutputBuilder struct{}
 
 // init registers a builder for the swap output action type.
 func init() {
-	fwdaction.Register(fwdpb.ActionType_ACTION_TYPE_SWAP_OUTPUT, &swapOutputBuilder{})
+	fwdaction.Register(fwdpb.ActionType_ACTION_TYPE_SWAP_OUTPUT_TAP_EXTERNAL, &swapOutputBuilder{})
 }
 
 // Build creates a new swap output action.

@@ -250,9 +250,9 @@ func createLayer2PuntTable(ctx context.Context, c fwdpb.ServiceClient) error {
 }
 
 // AddLayer2PuntRule adds rule to output packets to a corresponding port based on the destination MAC and input port.
-func AddLayer2PuntRule(ctx context.Context, c fwdpb.ServiceClient, nid uint64, mac, mask []byte) error {
-	nidBytes := make([]byte, binary.Size(nid))
-	binary.BigEndian.PutUint64(nidBytes, nid)
+func AddLayer2PuntRule(ctx context.Context, c fwdpb.ServiceClient, portID uint64, mac, macMask []byte) error {
+	nidBytes := make([]byte, binary.Size(portID))
+	binary.BigEndian.PutUint64(nidBytes, portID)
 
 	entries := &fwdpb.TableEntryAddRequest{
 		ContextId: &fwdpb.ContextId{Id: contextID},
@@ -274,7 +274,7 @@ func AddLayer2PuntRule(ctx context.Context, c fwdpb.ServiceClient, nid uint64, m
 							},
 						}, {
 							Bytes: mac,
-							Masks: mask,
+							Masks: macMask,
 							FieldId: &fwdpb.PacketFieldId{
 								Field: &fwdpb.PacketField{
 									FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST,
@@ -285,7 +285,7 @@ func AddLayer2PuntRule(ctx context.Context, c fwdpb.ServiceClient, nid uint64, m
 				},
 			},
 			Actions: []*fwdpb.ActionDesc{{
-				ActionType: fwdpb.ActionType_ACTION_TYPE_SWAP_OUTPUT,
+				ActionType: fwdpb.ActionType_ACTION_TYPE_SWAP_OUTPUT_TAP_EXTERNAL,
 			}, {
 				ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
 			}},
