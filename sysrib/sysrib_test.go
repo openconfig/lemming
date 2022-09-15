@@ -358,7 +358,7 @@ func TestEgressInterface(t *testing.T) {
 			}
 			for ni, routes := range tt.inAddRoutes {
 				for _, rt := range routes {
-					if err := r.AddRoute(ni, rt); err != nil {
+					if _, err := r.AddRoute(ni, rt); err != nil {
 						t.Fatalf("cannot add route %s to NI %s, err: %v", rt.Prefix, ni, err)
 					}
 				}
@@ -431,9 +431,63 @@ func TestAddRoute(t *testing.T) {
 				t.Fatalf("cannot create new system RIB, got err: %v", err)
 			}
 
-			if err := s.AddRoute(tt.inNetworkInstance, tt.inRoute); (err != nil) != tt.wantErr {
+			if _, err := s.AddRoute(tt.inNetworkInstance, tt.inRoute); (err != nil) != tt.wantErr {
 				t.Fatalf("did not get expected error status, got: %v, wantErr? %v", err, tt.wantErr)
 			}
 		})
+	}
+}
+
+func TestAddAndDeleteRoute(t *testing.T) {
+	s, err := NewSysRIB(baseCfg())
+	if err != nil {
+		t.Fatalf("cannot create new system RIB, got err: %v", err)
+	}
+
+	// Add a new route
+	if added, err := s.AddRoute(defaultNIName, &Route{
+		Prefix: "8.8.8.8/32",
+		Connected: &Interface{
+			Name:         "eth0",
+			Subinterface: 0,
+		},
+	}); err != nil {
+		t.Fatal(err)
+	} else if !added {
+		t.Fatalf("Route was not added")
+	}
+
+	// Add a duplicate route
+	if added, err := s.AddRoute(defaultNIName, &Route{
+		Prefix: "8.8.8.8/32",
+		Connected: &Interface{
+			Name:         "eth0",
+			Subinterface: 0,
+		},
+	}); err != nil {
+		t.Fatal(err)
+	} else if added {
+		t.Fatalf("Route was added, but should already be there")
+	}
+
+	if got, want := s.NI[defaultNIName].IPV4.CountTags(), 1; got != want {
+		t.Errorf("got %d tags, want %d", got, want)
+	}
+
+	// Add a new route
+	if added, err := s.AddRoute(defaultNIName, &Route{
+		Prefix: "8.8.8.9/32",
+		Connected: &Interface{
+			Name:         "eth0",
+			Subinterface: 0,
+		},
+	}); err != nil {
+		t.Fatal(err)
+	} else if !added {
+		t.Fatalf("Route was not added")
+	}
+
+	if got, want := s.NI[defaultNIName].IPV4.CountTags(), 2; got != want {
+		t.Errorf("got %d tags, want %d", got, want)
 	}
 }

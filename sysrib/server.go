@@ -39,7 +39,7 @@ const (
 //
 // API:
 // - SetRoute
-// - addInterface
+// - addInterfacePrefix
 // - setInterface
 type Server struct {
 	pb.UnimplementedSysribServer // For forward-compatibility
@@ -245,7 +245,7 @@ func (s *Server) SetRoute(_ context.Context, req *pb.SetRouteRequest) (*pb.SetRo
 	// TODO(wenbli): Check if recursive resolution is an infinite recursion. This happens if there is a cycle.
 
 	niName := vrfIDToNiName(req.GetVrfId())
-	if err := s.rib.AddRoute(niName, &Route{
+	if _, err := s.rib.AddRoute(niName, &Route{
 		Prefix:   pfx,
 		NextHops: nexthops,
 		RoutePref: RoutePreference{
@@ -270,20 +270,8 @@ func (s *Server) SetRoute(_ context.Context, req *pb.SetRouteRequest) (*pb.SetRo
 	}, nil
 }
 
-// AddInterface responds to INTERFACE_ADD messages from the dataplane.
-// TODO(wenbli): This is only provided for convenience. It should not be public.
-func (s *Server) AddInterface(name string, ifindex int32, enabled bool, prefix string, niName string) error {
-	return s.addInterface(name, ifindex, enabled, prefix, niName)
-}
-
-// addInterface responds to INTERFACE_ADD messages from the dataplane.
-func (s *Server) addInterface(name string, ifindex int32, enabled bool, prefix string, niName string) error {
-	intf := Interface{
-		Name:  name,
-		Index: ifindex,
-	}
-	s.setInterface(name, ifindex, enabled)
-
+// addInterfacePrefix responds to INTERFACE_ADD messages from the dataplane.
+func (s *Server) addInterfacePrefix(name string, ifindex int32, prefix string, niName string) error {
 	_, pfx, err := net.ParseCIDR(prefix)
 	if err != nil {
 		return fmt.Errorf("cannot parse connected interface's prefix: %v", err)
@@ -294,8 +282,11 @@ func (s *Server) addInterface(name string, ifindex int32, enabled bool, prefix s
 	}
 
 	connectedRoute := &Route{
-		Prefix:    prefix,
-		Connected: &intf,
+		Prefix: prefix,
+		Connected: &Interface{
+			Name:  name,
+			Index: ifindex,
+		},
 		RoutePref: RoutePreference{
 			// Connected routes have admin-distance of 0.
 			AdminDistance: 0,
@@ -315,9 +306,6 @@ func (s *Server) addInterface(name string, ifindex int32, enabled bool, prefix s
 	return s.ResolveAndProgramDiff()
 }
 
-// TODO(wenbli): Do we need to handle interface deletion?
-// This is not required in the MVP since basic tests will just need to enable/disable interfaces.
-
 // setInterface responds to INTERFACE_UP/INTERFACE_DOWN messages from the dataplane.
 func (s *Server) setInterface(name string, ifindex int32, enabled bool) error {
 	s.interfaces[Interface{
@@ -327,3 +315,6 @@ func (s *Server) setInterface(name string, ifindex int32, enabled bool) error {
 
 	return s.ResolveAndProgramDiff()
 }
+
+// TODO(wenbli): Do we need to handle interface deletion?
+// This is not required in the MVP since basic tests will just need to enable/disable interfaces.

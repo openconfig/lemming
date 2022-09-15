@@ -634,7 +634,10 @@ func TestServer(t *testing.T) {
 			}
 
 			for _, intf := range tt.inInterfaces {
-				if err := s.addInterface(intf.name, intf.ifindex, intf.enabled, intf.prefix, intf.niName); err != nil {
+				if err := s.addInterfacePrefix(intf.name, intf.ifindex, intf.prefix, intf.niName); err != nil {
+					t.Fatal(err)
+				}
+				if err := s.setInterface(intf.name, intf.ifindex, intf.enabled); err != nil {
 					t.Fatal(err)
 				}
 			}
