@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"reflect"
 	"sort"
 	"sync"
 
@@ -87,7 +88,7 @@ func NewSysRIB(cfg *oc.Device) (*SysRIB, error) {
 				sr.defaultNI = ni
 			}
 			for _, r := range niR.Rts {
-				if err := sr.AddRoute(ni, r); err != nil {
+				if _, err := sr.AddRoute(ni, r); err != nil {
 					return nil, err
 				}
 			}
@@ -102,22 +103,32 @@ func NewSysRIB(cfg *oc.Device) (*SysRIB, error) {
 	return sr, nil
 }
 
+// routeMatches return if two routes are equal.
+func routeMatches(a *Route, b *Route) bool {
+	if a == b {
+		return true
+	}
+	if a == nil || b == nil {
+		return false
+	}
+	return reflect.DeepEqual(*a, *b)
+}
+
 // AddRoute adds a route, r, to the network instance, ni, in the sysRIB.
-// It returns an error if it cannot be added.
-func (sr *SysRIB) AddRoute(ni string, r *Route) error {
+// It returns true if the route was added, and false if not. If the route
+// already exists, it returns (false, nil)
+func (sr *SysRIB) AddRoute(ni string, r *Route) (bool, error) {
 	sr.mu.Lock()
 	defer sr.mu.Unlock()
 	if _, ok := sr.NI[ni]; !ok {
-		return fmt.Errorf("cannot find network instance %s", ni)
+		return false, fmt.Errorf("cannot find network instance %s", ni)
 	}
 	addr, _, err := patricia.ParseIPFromString(r.Prefix)
 	if err != nil {
-		return fmt.Errorf("cannot create prefix for %s, %v", r.Prefix, err)
+		return false, fmt.Errorf("cannot create prefix for %s, %v", r.Prefix, err)
 	}
-	if added, _ := sr.NI[ni].IPV4.Add(*addr, r, nil); !added {
-		return fmt.Errorf("cannot insert route in network instance %s %s", ni, r.Prefix)
-	}
-	return nil
+	added, _ := sr.NI[ni].IPV4.Add(*addr, r, routeMatches)
+	return added, nil
 }
 
 // NewRoute returns a new route for the specified prefix.
