@@ -120,6 +120,7 @@ func NewServer(dp dataplaneAPI, gnmiServerAddr, target string) (*Server, error) 
 // - gnmiServerAddr is the address of the central gNMI datastore.
 // - target is the name of the gNMI target.
 func (s *Server) monitorConnectedIntfs(gnmiServerAddr, target string) error {
+	// TODO(wenbli): refactor to use gnmiclient package.
 	var opts []grpc.DialOption
 	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
@@ -139,38 +140,38 @@ func (s *Server) monitorConnectedIntfs(gnmiServerAddr, target string) error {
 		ocpath.Root().InterfaceAny().State().PathStruct(),
 	)
 
-	// TODO(wenbli): Ideally, this is implemented by watching more fine-grained paths.
-	// TODO(wenbli): Support interface removal.
-	go func() {
-		interfaceWatcher := ygnmi.Watch(
-			context.Background(),
-			yclient,
-			b.State(),
-			func(root *ygnmi.Value[*oc.Root]) error {
-				rootVal, ok := root.Val()
-				if !ok {
-					return ygnmi.Continue
-				}
-				for name, intf := range rootVal.Interface {
-					if intf.Enabled != nil {
-						if intf.Ifindex != nil {
-							ifindex := intf.GetIfindex()
-							s.setInterface(name, int32(ifindex), intf.GetEnabled())
-							// TODO(wenbli): Support other VRFs.
-							if subintf := intf.GetSubinterface(0); subintf != nil {
-								for _, addr := range subintf.GetIpv4().Address {
-									if addr.Ip != nil && addr.PrefixLength != nil {
-										s.addInterfacePrefix(name, int32(ifindex), fmt.Sprintf("%s/%d", addr.GetIp(), addr.GetPrefixLength()), defaultNI)
-									}
+	interfaceWatcher := ygnmi.Watch(
+		context.Background(),
+		yclient,
+		b.State(),
+		func(root *ygnmi.Value[*oc.Root]) error {
+			rootVal, ok := root.Val()
+			if !ok {
+				return ygnmi.Continue
+			}
+			for name, intf := range rootVal.Interface {
+				if intf.Enabled != nil {
+					if intf.Ifindex != nil {
+						ifindex := intf.GetIfindex()
+						s.setInterface(name, int32(ifindex), intf.GetEnabled())
+						// TODO(wenbli): Support other VRFs.
+						if subintf := intf.GetSubinterface(0); subintf != nil {
+							for _, addr := range subintf.GetIpv4().Address {
+								if addr.Ip != nil && addr.PrefixLength != nil {
+									s.addInterfacePrefix(name, int32(ifindex), fmt.Sprintf("%s/%d", addr.GetIp(), addr.GetPrefixLength()), defaultNI)
 								}
 							}
 						}
 					}
 				}
-				return ygnmi.Continue
-			},
-		)
+			}
+			return ygnmi.Continue
+		},
+	)
 
+	// TODO(wenbli): Ideally, this is implemented by watching more fine-grained paths.
+	// TODO(wenbli): Support interface removal.
+	go func() {
 		if _, err := interfaceWatcher.Await(); err != nil {
 			log.Warningf("Sysrib interface watcher has stopped: %v", err)
 		}

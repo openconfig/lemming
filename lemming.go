@@ -107,9 +107,6 @@ func New(lis net.Listener, targetName string, opts ...grpc.ServerOption) (*Devic
 		sysDataplane = &sysrib.Dataplane{HALClient: hal}
 	}
 
-	log.Infof("starting sysrib: gNMI server(%s, %s)", lis.Addr().String(), targetName)
-	startSysrib(sysDataplane, lis.Addr().String(), targetName)
-
 	s := grpc.NewServer(opts...)
 
 	gnmiServer, err := fgnmi.New(s, targetName)
@@ -142,6 +139,9 @@ func New(lis net.Listener, targetName string, opts ...grpc.ServerOption) (*Devic
 			return nil, err
 		}
 	}
+
+	log.Infof("starting sysrib: gNMI server(%s, %s)", lis.Addr().String(), targetName)
+	startSysrib(sysDataplane, lis.Addr().String(), targetName)
 
 	log.Info("lemming created")
 	return d, nil

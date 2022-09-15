@@ -681,6 +681,7 @@ func TestServer(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
+			// TODO(wenbli): Implement deleting interfaces, and do this instead of re-creating server every test case.
 			grpcServer := grpc.NewServer()
 			_, err := gnmi.New(grpcServer, "local")
 			if err != nil {
@@ -700,63 +701,45 @@ func TestServer(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			clientCtx, cancel := context.WithCancel(context.Background())
-			var sendErr, recvErr error
-			go func(ctx context.Context) {
-				defer cancel()
-				conn, err := grpc.Dial(fmt.Sprintf("unix:///%s", gnmit.DatastoreAddress), grpc.WithTransportCredentials(insecure.NewCredentials()))
+			// Update the interface configuration on the gNMI server.
+			conn, err := grpc.Dial(fmt.Sprintf("unix:///%s", gnmit.DatastoreAddress), grpc.WithTransportCredentials(insecure.NewCredentials()))
+			if err != nil {
+				t.Fatalf("cannot dial gNMI datastore server, %v", err)
+			}
+
+			client := gpb.NewGNMIClient(conn)
+
+			for _, intf := range tt.inInterfaces {
+				ocintf := &oc.Interface{}
+				ocintf.Name = ygot.String(intf.name)
+				ocintf.Enabled = ygot.Bool(intf.enabled)
+				ocintf.Ifindex = ygot.Uint32(uint32(intf.ifindex))
+				ss := strings.Split(intf.prefix, "/")
+				if len(ss) != 2 {
+					t.Fatalf("Invalid prefix: %q", intf.prefix)
+				}
+				ocaddr := ocintf.GetOrCreateSubinterface(0).GetOrCreateIpv4().GetOrCreateAddress(ss[0])
+				plen, err := strconv.Atoi(ss[1])
 				if err != nil {
-					sendErr = fmt.Errorf("cannot dial gNMI server, %v", err)
-					return
+					t.Fatalf("Invalid prefix: %v", err)
 				}
-
-				client := gpb.NewGNMIClient(conn)
-
-				for _, intf := range tt.inInterfaces {
-					ocintf := &oc.Interface{}
-					ocintf.Name = ygot.String(intf.name)
-					ocintf.Enabled = ygot.Bool(intf.enabled)
-					ocintf.Ifindex = ygot.Uint32(uint32(intf.ifindex))
-					ss := strings.Split(intf.prefix, "/")
-					if len(ss) != 2 {
-						sendErr = fmt.Errorf("Invalid prefix: %q", intf.prefix)
-						return
-					}
-					ocaddr := ocintf.GetOrCreateSubinterface(0).GetOrCreateIpv4().GetOrCreateAddress(ss[0])
-					plen, err := strconv.Atoi(ss[1])
-					if err != nil {
-						sendErr = fmt.Errorf("Invalid prefix: %v", err)
-						return
-					}
-					ocaddr.PrefixLength = ygot.Uint8(uint8(plen))
-					js, err := ygot.Marshal7951(ocintf)
-					if err != nil {
-						sendErr = err
-						return
-					}
-					if _, err := client.Set(ctx, &gpb.SetRequest{
-						Prefix: mustTargetPath("local", ""),
-						Replace: []*gpb.Update{{
-							Path: mustPSPath(ocpath.Root().Interface(intf.name)),
-							Val:  &gpb.TypedValue{Value: &gpb.TypedValue_JsonIetfVal{JsonIetfVal: js}},
-						}},
-					}); err != nil {
-						sendErr = fmt.Errorf("set request failed: %v", err)
-						return
-					}
+				ocaddr.PrefixLength = ygot.Uint8(uint8(plen))
+				js, err := ygot.Marshal7951(ocintf)
+				if err != nil {
+					t.Fatalf("Cannot marshal configuration GoStruct: %v", err)
 				}
-			}(clientCtx)
-
-			<-clientCtx.Done()
-
-			if sendErr != nil {
-				t.Errorf("got unexpected send error, %v", sendErr)
+				if _, err := client.Set(context.Background(), &gpb.SetRequest{
+					Prefix: mustTargetPath("local", ""),
+					Replace: []*gpb.Update{{
+						Path: mustPSPath(ocpath.Root().Interface(intf.name)),
+						Val:  &gpb.TypedValue{Value: &gpb.TypedValue_JsonIetfVal{JsonIetfVal: js}},
+					}},
+				}); err != nil {
+					t.Fatalf("set request failed: %v", err)
+				}
 			}
 
-			if recvErr != nil {
-				t.Errorf("got unexpected recv error, %v", recvErr)
-			}
-
+			// Wait for Sysrib to pick up the connected prefixes.
 			for i := 0; i != maxGNMIWaitQuanta; i++ {
 				if err = checkResolvedRoutesEqual(dp.GetRoutes(), tt.wantInitialConnectedRoutes); err == nil {
 					break
