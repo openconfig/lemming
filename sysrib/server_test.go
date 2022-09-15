@@ -681,7 +681,7 @@ func TestServer(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			// TODO(wenbli): Implement deleting interfaces, and do this instead of re-creating server every test case.
+			// TODO(wenbli): Don't re-create gNMI server, simply erase it and then reconnect to it afterwards.
 			grpcServer := grpc.NewServer()
 			_, err := gnmi.New(grpcServer, "local")
 			if err != nil {
