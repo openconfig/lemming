@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"net/netip"
+	"reflect"
 	"strconv"
 	"strings"
 	"sync"
@@ -50,14 +51,26 @@ type FakeDataplane struct {
 
 	mu             sync.Mutex
 	incomingRoutes []*ResolvedRoute
+
+	// failRoutes are routes that will fail to program.
+	failRoutes []*ResolvedRoute
 }
 
 func (dp *FakeDataplane) ProgramRoute(r *ResolvedRoute) error {
 	dp.mu.Lock()
 	defer dp.mu.Unlock()
-	// Assume all routes are programmed successfully.
+	for _, failroute := range dp.failRoutes {
+		if reflect.DeepEqual(r, failroute) {
+			return fmt.Errorf("route failed to program: %v", r)
+		}
+	}
 	dp.incomingRoutes = append(dp.incomingRoutes, r)
 	return nil
+}
+
+// SetupFailRoutes sets routes that will fail to program.
+func (dp *FakeDataplane) SetupFailRoutes(failRoutes []*ResolvedRoute) {
+	dp.failRoutes = failRoutes
 }
 
 func (dp *FakeDataplane) GetRoutes() []*ResolvedRoute {
@@ -141,6 +154,7 @@ func TestServer(t *testing.T) {
 		inInterfaces               []AddIntfAction
 		wantInitialConnectedRoutes []*ResolvedRoute
 		inSetRouteRequests         []SetRouteRequestAction
+		inFailRoutes               []*ResolvedRoute
 		wantResolvedRoutes         [][]*ResolvedRoute
 	}{{
 		desc: "Route Additions", // TODO(wenbli): test route deletion in this test case once it's implemented.
@@ -678,6 +692,77 @@ func TestServer(t *testing.T) {
 				}: true,
 			},
 		}}},
+	}, {
+		desc: "test route program failures",
+		inInterfaces: []AddIntfAction{{
+			name:    "eth1",
+			ifindex: 3,
+			enabled: true,
+			prefix:  "192.0.2.1/30",
+			niName:  "DEFAULT",
+		}, {
+			name:    "eth2",
+			ifindex: 4,
+			enabled: true,
+			prefix:  "192.0.2.5/30",
+			niName:  "DEFAULT",
+		}, {
+			name:    "eth3",
+			ifindex: 5,
+			enabled: true,
+			prefix:  "192.0.2.9/30",
+			niName:  "DEFAULT",
+		}},
+		inFailRoutes: []*ResolvedRoute{{
+			RouteKey: RouteKey{
+				Prefix: "192.0.2.0/30",
+				NIName: "DEFAULT",
+			},
+			Nexthops: map[ResolvedNexthop]bool{
+				{
+					NextHopSummary: afthelper.NextHopSummary{
+						NetworkInstance: "DEFAULT",
+					},
+					Port: Interface{
+						Name:  "eth1",
+						Index: 3,
+					},
+				}: true,
+			},
+		}},
+		wantInitialConnectedRoutes: []*ResolvedRoute{{
+			RouteKey: RouteKey{
+				Prefix: "192.0.2.4/30",
+				NIName: "DEFAULT",
+			},
+			Nexthops: map[ResolvedNexthop]bool{
+				{
+					NextHopSummary: afthelper.NextHopSummary{
+						NetworkInstance: "DEFAULT",
+					},
+					Port: Interface{
+						Name:  "eth2",
+						Index: 4,
+					},
+				}: true,
+			},
+		}, {
+			RouteKey: RouteKey{
+				Prefix: "192.0.2.8/30",
+				NIName: "DEFAULT",
+			},
+			Nexthops: map[ResolvedNexthop]bool{
+				{
+					NextHopSummary: afthelper.NextHopSummary{
+						NetworkInstance: "DEFAULT",
+					},
+					Port: Interface{
+						Name:  "eth3",
+						Index: 5,
+					},
+				}: true,
+			},
+		}},
 	}}
 
 	for _, tt := range tests {
@@ -697,6 +782,7 @@ func TestServer(t *testing.T) {
 			}()
 
 			dp := NewFakeDataplane()
+			dp.SetupFailRoutes(tt.inFailRoutes)
 			addrport, err := netip.ParseAddrPort(lis.Addr().String())
 			if err != nil {
 				t.Fatal(err)
