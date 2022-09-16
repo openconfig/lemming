@@ -16,6 +16,7 @@ package engine
 
 import (
 	"context"
+	"sync"
 
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
@@ -27,6 +28,12 @@ var (
 	etherMulticastMask = mustParseHex("010000000000")
 	etherIPV6Multi     = mustParseHex("333300000000")
 	etherIPV6MultiMask = mustParseHex("FFFF00000000")
+)
+
+var (
+	// TODO: Implement a better way to cache port ids.
+	nameToIDMu sync.RWMutex
+	nameToID   = map[string]uint64{}
 )
 
 // CreateExternalPort creates an external port (connected to other devices).
@@ -142,6 +149,8 @@ func createKernelPort(ctx context.Context, c fwdpb.ServiceClient, name string) e
 	if err := AddLayer2PuntRule(ctx, c, portID.GetObjectIndex().GetIndex(), etherIPV6Multi, etherIPV6MultiMask); err != nil {
 		return err
 	}
-
+	nameToIDMu.Lock()
+	nameToID[name] = portID.GetObjectIndex().GetIndex()
+	nameToIDMu.Unlock()
 	return nil
 }

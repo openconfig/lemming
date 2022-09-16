@@ -443,3 +443,45 @@ func RemoveNeighbor(ctx context.Context, c fwdpb.ServiceClient, ip []byte) error
 
 	return nil
 }
+
+// UpdatePortSrcMAC updates a port's source mac address.
+func UpdatePortSrcMAC(ctx context.Context, c fwdpb.ServiceClient, portName string, mac []byte) error {
+	nameToIDMu.RLock()
+	defer nameToIDMu.RUnlock()
+	idBytes := make([]byte, binary.Size(nameToID[portName]))
+	binary.BigEndian.PutUint64(idBytes, nameToID[portName])
+
+	entry := &fwdpb.TableEntryAddRequest{
+		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: srcMACTable}},
+		ContextId: &fwdpb.ContextId{Id: contextID},
+		EntryDesc: &fwdpb.EntryDesc{
+			Entry: &fwdpb.EntryDesc_Exact{
+				Exact: &fwdpb.ExactEntryDesc{
+					Fields: []*fwdpb.PacketFieldBytes{{
+						FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT}},
+						Bytes:   idBytes,
+					}},
+				},
+			},
+		},
+		Actions: []*fwdpb.ActionDesc{{
+			ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
+			Action: &fwdpb.ActionDesc_Update{
+				Update: &fwdpb.UpdateActionDesc{
+					FieldId: &fwdpb.PacketFieldId{
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC,
+						},
+					},
+					Type:  fwdpb.UpdateType_UPDATE_TYPE_SET,
+					Value: mac,
+				},
+			},
+		}},
+	}
+	if _, err := c.TableEntryAdd(ctx, entry); err != nil {
+		return err
+	}
+
+	return nil
+}

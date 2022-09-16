@@ -231,8 +231,12 @@ func (ni *Interface) handleLinkUpdate(ctx context.Context, lu *netlink.LinkUpdat
 		return
 	}
 	log.V(1).Infof("handling link update for %s", lu.Attrs().Name)
-
 	modelName := engine.TapNameToIntfName(lu.Attrs().Name)
+
+	if err := engine.UpdatePortSrcMAC(ctx, ni.fwd, modelName, lu.Attrs().HardwareAddr); err != nil {
+		log.Warningf("failed to update src mac: %v", err)
+	}
+
 	iface := ni.getOrCreateInterface(modelName)
 	iface.GetOrCreateEthernet().MacAddress = ygot.String(lu.Attrs().HardwareAddr.String())
 	iface.Ifindex = ygot.Uint32(uint32(lu.Attrs().Index))
@@ -241,6 +245,7 @@ func (ni *Interface) handleLinkUpdate(ctx context.Context, lu *netlink.LinkUpdat
 	if *iface.Enabled {
 		iface.AdminStatus = oc.Interface_AdminStatus_UP
 	}
+
 	// TODO: handle other states.
 	var operStatus oc.E_Interface_OperStatus
 	switch lu.Attrs().OperState {
