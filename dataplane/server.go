@@ -64,12 +64,12 @@ func New() (*Dataplane, error) {
 }
 
 // Start starts the HAL gRPC server and packet forwarding engine.
-func (d *Dataplane) Start(ctx context.Context) error {
+func (d *Dataplane) Start(ctx context.Context, port int, target string, enableTLS bool) error {
 	if d.srv != nil {
 		return fmt.Errorf("dataplane already started")
 	}
 
-	yc, err := gnmiclient.NewYGNMIClient()
+	yc, err := gnmiclient.NewYGNMIClient(port, target, enableTLS)
 	if err != nil {
 		return err
 	}
