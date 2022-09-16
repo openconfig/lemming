@@ -256,13 +256,13 @@ func (s *Server) ResolveAndProgramDiff() error {
 			log.V(1).Infof("Iterating at prefix %v out of %d tags", it.Address().String(), ni.IPV4.CountTags())
 			_, prefix, err := net.ParseCIDR(it.Address().String())
 			if err != nil {
-				s.rib.mu.RUnlock() // Need explicit call since Fatalf aborts
-				log.Fatalf("sysrib: %v", err)
+				log.Errorf("sysrib: %v", err)
+				continue
 			}
 			nhs, err := s.rib.EgressNexthops(niName, prefix, s.interfaces)
 			if err != nil {
-				s.rib.mu.RUnlock() // Need explicit call since Fatalf aborts
-				log.Fatalf("sysrib: %v", err)
+				log.Errorf("sysrib: %v", err)
+				continue
 			}
 
 			rr := &ResolvedRoute{
