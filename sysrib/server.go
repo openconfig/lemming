@@ -146,7 +146,9 @@ func (s *Server) monitorConnectedIntfs(port int, target string, enableTLS bool) 
 						if subintf := intf.GetSubinterface(0); subintf != nil {
 							for _, addr := range subintf.GetIpv4().Address {
 								if addr.Ip != nil && addr.PrefixLength != nil {
-									s.addInterfacePrefix(name, int32(ifindex), fmt.Sprintf("%s/%d", addr.GetIp(), addr.GetPrefixLength()), defaultNI)
+									if err := s.addInterfacePrefix(name, int32(ifindex), fmt.Sprintf("%s/%d", addr.GetIp(), addr.GetPrefixLength()), defaultNI); err != nil {
+										log.Warningf("adding interface prefix failed: %v", err)
+									}
 								}
 							}
 						}
@@ -344,6 +346,7 @@ func (s *Server) SetRoute(_ context.Context, req *pb.SetRouteRequest) (*pb.SetRo
 
 // addInterfacePrefix adds a prefix to the sysrib as a connected route.
 func (s *Server) addInterfacePrefix(name string, ifindex int32, prefix string, niName string) error {
+	log.V(1).Infof("Adding interface prefix: intf %s, idx %d, prefix %s, ni %s", name, ifindex, prefix, niName)
 	connectedRoute := &Route{
 		Prefix: prefix,
 		Connected: &Interface{

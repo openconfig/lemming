@@ -524,8 +524,8 @@ github.com/onsi/gomega v1.10.2/go.mod h1:iN09h71vgCQne3DLsj+A5owkum+a2tYe+TOCB1y
 github.com/onsi/gomega v1.19.0 h1:4ieX6qQjPP/BfC3mpsAtIGGlxTWPeA3Inl/7DtXw1tw=
 github.com/open-traffic-generator/ixia-c-operator v0.1.89 h1:3Czf75iI5Nu6cBL5gx/pMoXUo9Jyeln9oGy1KknPuHM=
 github.com/open-traffic-generator/ixia-c-operator v0.1.89/go.mod h1:qHIu+7E0sxr7tAa42qJPyrYvhYAKSMerS8NrDo2OZb8=
-github.com/open-traffic-generator/snappi/gosnappi v0.9.5 h1:KHe9KDXnibkFYUq2LKhAERlfmmTjiN9s4mi6pSkNT5M=
-github.com/open-traffic-generator/snappi/gosnappi v0.9.5/go.mod h1:elsB41LK8QapLrlfZJucYrQhxEw3ylGo3JgKo8kerZI=
+github.com/open-traffic-generator/snappi/gosnappi v0.8.5 h1:UIA4EpMwvDJYZ4htsnwUU+JB83GRZXrexSv9+S9KZh8=
+github.com/open-traffic-generator/snappi/gosnappi v0.8.5/go.mod h1:8teR2eonSEJTr/Y1B125KN23RTmGh6ybgURTt28IlI0=
 github.com/openconfig/gnmi v0.0.0-20200414194230-1597cc0f2600/go.mod h1:M/EcuapNQgvzxo1DDXHK4tx3QpYM/uG4l591v33jG2A=
 github.com/openconfig/gnmi v0.0.0-20200508230933-d19cebf5e7be/go.mod h1:M/EcuapNQgvzxo1DDXHK4tx3QpYM/uG4l591v33jG2A=
 github.com/openconfig/gnmi v0.0.0-20210527163611-d3a3e30199da/go.mod h1:H/20NXlnWbCPFC593nxpiKJ+OU//7mW7s7Qk7uVdg3Q=
@@ -553,6 +553,8 @@ github.com/openconfig/grpctunnel v0.0.0-20220524190229-125331eabdde h1:tSMKTQlWc
 github.com/openconfig/grpctunnel v0.0.0-20220524190229-125331eabdde/go.mod h1:OmTWe7RyZj2CIzIgy4ovEBzCLBJzRvWSZmn7u02U9gU=
 github.com/openconfig/kne v0.1.6 h1:NcuRPSuvcbKHB+mWxztlQ8nuZRScMRsOX5T7s//jLXM=
 github.com/openconfig/kne v0.1.6/go.mod h1:Ua3W+2CbNsf8zk3v8KiFk7XUUN2ISYhvwjFXNqOpE2Y=
+github.com/openconfig/ondatra v0.0.0-20220916181150-cf83474b5941 h1:QNXDQvLPMCQkxBIT+QPFTGtu1DWNvoofxAAty7E9+Sc=
+github.com/openconfig/ondatra v0.0.0-20220916181150-cf83474b5941/go.mod h1:/SUVxpkF/DwEx2+KBcW6Gy88IRxE8bVyx4K2nmi/PE4=
 github.com/openconfig/testt v0.0.0-20220311054427-efbb1a32ec07 h1:X631iD/B0ximGFb5P9LY5wHju4SiedxUhc5UZEo7VSw=
 github.com/openconfig/testt v0.0.0-20220311054427-efbb1a32ec07/go.mod h1:bmpU0kIsCiXuncozViVuQx1HqolC3C94H7lD9KKmoTo=
 github.com/openconfig/ygnmi v0.2.3 h1:htROaQLjRPJ6gH3YIMUlVWAzlvRvEnUXHM/pnGVnHXc=
@@ -1202,6 +1204,7 @@ google.golang.org/grpc v1.38.0/go.mod h1:NREThFqKR1f3iQ6oBuvc5LadQuXVGo9rkm5ZGrQ
 google.golang.org/grpc v1.39.1/go.mod h1:PImNr+rS9TWYb2O4/emRugxiyHZ5JyHW5F+RPnDzfrE=
 google.golang.org/grpc v1.40.0/go.mod h1:ogyxbiOoUXAkP+4+xa6PZSE9DZgIHtSpzjDTB9KAK34=
 google.golang.org/grpc v1.47.0/go.mod h1:vN9eftEi1UMyUsIF80+uQXhHjbXYbm0uXoFCACuMGWk=
+google.golang.org/grpc v1.48.0/go.mod h1:vN9eftEi1UMyUsIF80+uQXhHjbXYbm0uXoFCACuMGWk=
 google.golang.org/grpc v1.49.0 h1:WTLtQzmQori5FUH25Pq4WT22oCsv8USpQ+F6rqtsmxw=
 google.golang.org/grpc v1.49.0/go.mod h1:ZgQEeidpAuNRZ8iRrlBKXZQP1ghovWIVhdJRyCDK+GI=
 google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.0.1/go.mod h1:6Kw0yEErY5E/yWrBtf03jp27GLLJujG4z/JK95pnjjw=
