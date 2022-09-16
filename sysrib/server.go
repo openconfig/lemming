@@ -58,9 +58,9 @@ type Server struct {
 	// indicated by the forwarding plane.
 	interfaces map[Interface]bool
 
-	// resolvedRoutes contain a map of resolved routes with which to do
+	// programmedRoutes contain a map of resolved routes with which to do
 	// diff for sending to the dataplane for programming.
-	resolvedRoutes map[RouteKey]*ResolvedRoute
+	programmedRoutes map[RouteKey]*ResolvedRoute
 
 	dataplane dataplaneAPI
 }
@@ -100,10 +100,10 @@ func NewServer(dp dataplaneAPI, port int, target string, enableTLS bool) (*Serve
 	}
 
 	s := &Server{
-		rib:            rib,
-		interfaces:     map[Interface]bool{},
-		resolvedRoutes: map[RouteKey]*ResolvedRoute{},
-		dataplane:      dp,
+		rib:              rib,
+		interfaces:       map[Interface]bool{},
+		programmedRoutes: map[RouteKey]*ResolvedRoute{},
+		dataplane:        dp,
 	}
 	if err := s.monitorConnectedIntfs(port, target, enableTLS); err != nil {
 		return nil, err
@@ -243,19 +243,24 @@ func (s *Server) programRoute(r *ResolvedRoute) error {
 	return s.dataplane.ProgramRoute(r)
 }
 
-// ResolveAndProgramDiff walks through the resolved RIBs, updates the forwarding plane.
+// ResolveAndProgramDiff walks through each prefix in the RIB, resolving it and
+// programs the forwarding plane.
+//
 // TODO(wenbli): handle route deletion.
 func (s *Server) ResolveAndProgramDiff() error {
 	log.Info("Recalculating resolved RIB")
+	s.rib.mu.RLock()
+	defer s.rib.mu.RUnlock()
 	for niName, ni := range s.rib.NI {
 		for it := ni.IPV4.Iterate(); it.Next(); {
+			log.V(1).Infof("Iterating at prefix %v out of %d tags", it.Address().String(), ni.IPV4.CountTags())
 			_, prefix, err := net.ParseCIDR(it.Address().String())
 			if err != nil {
-				return fmt.Errorf("sysrib: %v", err)
+				log.Fatalf("sysrib: %v", err)
 			}
 			nhs, err := s.rib.EgressNexthops(niName, prefix, s.interfaces)
 			if err != nil {
-				return err
+				log.Fatalf("sysrib: %v", err)
 			}
 
 			rr := &ResolvedRoute{
@@ -267,13 +272,14 @@ func (s *Server) ResolveAndProgramDiff() error {
 				Nexthops: nhs,
 			}
 
-			currentRoute, ok := s.resolvedRoutes[rr.RouteKey]
+			currentRoute, ok := s.programmedRoutes[rr.RouteKey]
 			switch {
 			case !ok && len(nhs) > 0, ok && !reflect.DeepEqual(currentRoute, rr):
 				if err := s.programRoute(rr); err != nil {
-					return fmt.Errorf("failed to program route %+v", rr)
+					log.Warningf("failed to program route %+v: %v", rr, err)
+					continue
 				}
-				s.resolvedRoutes[rr.RouteKey] = rr
+				s.programmedRoutes[rr.RouteKey] = rr
 			default:
 				// No diff, so don't do anything.
 			}
@@ -326,7 +332,7 @@ func (s *Server) SetRoute(_ context.Context, req *pb.SetRouteRequest) (*pb.SetRo
 
 	// There could be operations carried out by ResolveAndProgramDiff() other than the input route, so we look up our particular prefix.
 	status := pb.SetRouteResponse_STATUS_FAIL
-	if _, ok := s.resolvedRoutes[RouteKey{Prefix: pfx, NIName: niName}]; ok {
+	if _, ok := s.programmedRoutes[RouteKey{Prefix: pfx, NIName: niName}]; ok {
 		status = pb.SetRouteResponse_STATUS_SUCCESS
 	}
 	return &pb.SetRouteResponse{
@@ -348,12 +354,15 @@ func (s *Server) addInterfacePrefix(name string, ifindex int32, prefix string, n
 		},
 	}
 
-	s.rib.AddRoute(niName, connectedRoute)
+	if _, err := s.rib.AddRoute(niName, connectedRoute); err != nil {
+		return fmt.Errorf("failed to add route to Sysrib: %v", err)
+	}
 	return s.ResolveAndProgramDiff()
 }
 
 // setInterface responds to INTERFACE_UP/INTERFACE_DOWN messages from the dataplane.
 func (s *Server) setInterface(name string, ifindex int32, enabled bool) error {
+	log.V(1).Infof("Setting interface %q(%d) to enabled=%v", name, ifindex, enabled)
 	s.interfaces[Interface{
 		Name:  name,
 		Index: ifindex,

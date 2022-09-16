@@ -24,6 +24,7 @@ import (
 	"sort"
 	"sync"
 
+	log "github.com/golang/glog"
 	"github.com/kentik/patricia"
 	"github.com/kentik/patricia/generics_tree"
 	"github.com/openconfig/gribigo/afthelper"
@@ -128,6 +129,7 @@ func (sr *SysRIB) AddRoute(ni string, r *Route) (bool, error) {
 		return false, fmt.Errorf("cannot create prefix for %s, %v", r.Prefix, err)
 	}
 	added, _ := sr.NI[ni].IPV4.Add(*addr, r, routeMatches)
+	log.V(1).Infof("AddRoute attempt: %v, %v, result: %v", *addr, r, added)
 	return added, nil
 }
 
