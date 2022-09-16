@@ -29,6 +29,7 @@ import (
 	"google.golang.org/grpc/credentials/local"
 	"google.golang.org/grpc/status"
 
+	log "github.com/golang/glog"
 	dpb "github.com/openconfig/lemming/proto/dataplane"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
@@ -124,6 +125,7 @@ func (d *Dataplane) InsertRoute(ctx context.Context, route *dpb.InsertRouteReque
 	if route.GetVrf() != 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "VRF other than DEFAULT (vrfid 0) not supported")
 	}
+	log.V(1).Infof("inserting route: prefix %s, nexthop %s, port %s,", route.GetPrefix(), route.GetNextHops()[0].GetIp(), route.GetNextHops()[0].GetPort())
 
 	_, ipNet, err := net.ParseCIDR(route.GetPrefix())
 	if err != nil {

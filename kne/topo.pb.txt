@@ -25,7 +25,7 @@ nodes: {
         args: "--enable_dataplane"
         args: "--enable_tls"
         args: "--alsologtostderr"
-        args: "--v=2"
+        args: "--v=1"
     }
 }
 links: {

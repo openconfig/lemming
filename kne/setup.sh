@@ -1,5 +1,13 @@
 #!/bin/bash
+set -e
 cd "$(dirname "$0")"
+
+if [[ ! -f $HOME/go/bin/kne ]]
+then
+    go install github.com/openconfig/kne/kne_cli
+    mv $HOME/go/bin/kne_cli $HOME/go/bin/kne
+fi
+
 
 DIR=$(pwd)
 cat > config.yaml << EOF
