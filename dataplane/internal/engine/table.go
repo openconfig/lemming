@@ -19,6 +19,8 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 
+	log "github.com/golang/glog"
+
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
@@ -303,6 +305,11 @@ func AddIPRoute(ctx context.Context, c fwdpb.ServiceClient, v4 bool, ip, mask, n
 	if v4 {
 		fib = fibV4Table
 	}
+
+	if nextHopIP == nil {
+		nextHopIP = ip
+	}
+	log.V(1).Infof("adding ip route: isv4 %t, ip %v, mask %v, nextHop %v, port %s", v4, ip, mask, nextHopIP, port)
 
 	entry := &fwdpb.TableEntryAddRequest{
 		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: fib}},

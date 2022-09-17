@@ -310,15 +310,13 @@ func (ni *Interface) handleAddrUpdate(ctx context.Context, au *netlink.AddrUpdat
 func (ni *Interface) handleNeighborUpdate(ctx context.Context, nu *netlink.NeighUpdate) {
 	ni.stateMu.Lock()
 	defer ni.stateMu.Unlock()
-	name := ni.idxToName[nu.LinkIndex]
-	if !engine.IsTap(name) {
-		return
-	}
-	log.V(1).Infof("handling neighbor update for %s", nu.IP.String())
+	log.V(1).Infof("handling neighbor update for %s on %d", nu.IP.String(), nu.LinkIndex)
 
+	name := ni.idxToName[nu.LinkIndex]
 	sb := &ygnmi.SetBatch{}
 	modelName := engine.TapNameToIntfName(name)
 	sub := ni.getOrCreateInterface(modelName).GetOrCreateSubinterface(0)
+
 	if nu.Type == unix.RTM_DELNEIGH {
 		if err := engine.RemoveNeighbor(ctx, ni.fwd, nu.IP); err != nil {
 			log.Warningf("failed to add neighbor to dataplane: %v", err)

@@ -48,23 +48,23 @@ func CreateExternalPort(ctx context.Context, c fwdpb.ServiceClient, name string)
 		Update: &fwdpb.PortUpdateDesc{
 			Port: &fwdpb.PortUpdateDesc_Kernel{
 				Kernel: &fwdpb.KernelPortUpdateDesc{
-					Inputs: []*fwdpb.ActionDesc{ /*{ // Turn on packet tracing. TODO: put this behind a flag.
-							ActionType: fwdpb.ActionType_ACTION_TYPE_DEBUG,
-						},*/{ // Lookup in layer 2 table.
-							ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
-							Action: &fwdpb.ActionDesc_Lookup{
-								Lookup: &fwdpb.LookupActionDesc{
-									TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: layer2PuntTable}},
-								},
+					Inputs: []*fwdpb.ActionDesc{{ // Turn on packet tracing. TODO: put this behind a flag.
+						ActionType: fwdpb.ActionType_ACTION_TYPE_DEBUG,
+					}, { // Lookup in layer 2 table.
+						ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
+						Action: &fwdpb.ActionDesc_Lookup{
+							Lookup: &fwdpb.LookupActionDesc{
+								TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: layer2PuntTable}},
 							},
-						}, { // Lookup in FIB.
-							ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
-							Action: &fwdpb.ActionDesc_Lookup{
-								Lookup: &fwdpb.LookupActionDesc{
-									TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: fibSelectorTable}},
-								},
+						},
+					}, { // Lookup in FIB.
+						ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
+						Action: &fwdpb.ActionDesc_Lookup{
+							Lookup: &fwdpb.LookupActionDesc{
+								TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: fibSelectorTable}},
 							},
-						}},
+						},
+					}},
 					Outputs: []*fwdpb.ActionDesc{{ // update the src mac address with the configured port's mac address.
 						ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
 						Action: &fwdpb.ActionDesc_Lookup{
@@ -94,23 +94,23 @@ func CreateLocalPort(ctx context.Context, c fwdpb.ServiceClient, name string) er
 		Update: &fwdpb.PortUpdateDesc{
 			Port: &fwdpb.PortUpdateDesc_Kernel{
 				Kernel: &fwdpb.KernelPortUpdateDesc{
-					Inputs: []*fwdpb.ActionDesc{ /*{ // Turn on packet tracing. TODO: put this behind a flag.
-							ActionType: fwdpb.ActionType_ACTION_TYPE_DEBUG,
-						},*/{ // Lookup in layer 2 table.
-							ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
-							Action: &fwdpb.ActionDesc_Lookup{
-								Lookup: &fwdpb.LookupActionDesc{
-									TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: layer2PuntTable}},
-								},
+					Inputs: []*fwdpb.ActionDesc{{ // Turn on packet tracing. TODO: put this behind a flag.
+						ActionType: fwdpb.ActionType_ACTION_TYPE_DEBUG,
+					}, { // Lookup in layer 2 table.
+						ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
+						Action: &fwdpb.ActionDesc_Lookup{
+							Lookup: &fwdpb.LookupActionDesc{
+								TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: layer2PuntTable}},
 							},
-						}, { // Lookup in FIB.
-							ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
-							Action: &fwdpb.ActionDesc_Lookup{
-								Lookup: &fwdpb.LookupActionDesc{
-									TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: fibSelectorTable}},
-								},
+						},
+					}, { // Lookup in FIB.
+						ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
+						Action: &fwdpb.ActionDesc_Lookup{
+							Lookup: &fwdpb.LookupActionDesc{
+								TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: fibSelectorTable}},
 							},
-						}},
+						},
+					}},
 				},
 			},
 		},

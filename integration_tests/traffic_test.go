@@ -277,10 +277,10 @@ func TestIPv4Entry(t *testing.T) {
 				chk.HasResult(t, c.Results(t), wantResult, chk.IgnoreOperationID())
 			}
 
-			// loss := testTraffic(t, ate, ateTop, atePort1, atePort2)
-			// if loss > 10 {
-			// 	t.Errorf("Loss: got %g, want <= 10", loss)
-			// }
+			loss := testTraffic(t, ate, ateTop, atePort1, atePort2)
+			if loss > 10 {
+				t.Errorf("Loss: got %g, want <= 10", loss)
+			}
 		})
 	}
 }

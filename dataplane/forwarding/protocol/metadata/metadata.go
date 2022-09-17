@@ -239,6 +239,7 @@ func parse(frame *frame.Frame, desc *protocol.Desc) (protocol.Handler, fwdpb.Pac
 		vrf:         make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF].DefaultSize),
 		inputPort:   make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT].DefaultSize),
 		outputPort:  make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT].DefaultSize),
+		nextHopIP:   make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP].DefaultSize),
 		attribute32: make(map[uint8][]byte),
 		attribute24: make(map[uint8][]byte),
 		attribute16: make(map[uint8][]byte),
