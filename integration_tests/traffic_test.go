@@ -154,9 +154,14 @@ func waitOTGARPEntry(t *testing.T) {
 	ate := ondatra.ATE(t, "ate")
 
 	ate.OTG().Telemetry().InterfaceAny().Ipv4NeighborAny().LinkLayerAddress()
-	gnmi.WatchAll(t, ate.OTG(), otgpath.Root().InterfaceAny().Ipv4NeighborAny().LinkLayerAddress().State(), time.Minute, func(v *ygnmi.Value[string]) bool {
+	val, ok := gnmi.WatchAll(t, ate.OTG(), otgpath.Root().InterfaceAny().Ipv4NeighborAny().LinkLayerAddress().State(), time.Minute, func(v *ygnmi.Value[string]) bool {
 		return v.IsPresent()
 	}).Await(t)
+	if !ok {
+		t.Fatal("failed to get neighbor")
+	}
+	lla, _ := val.Val()
+	t.Logf("Neighbor %v", lla)
 }
 
 // testTraffic generates traffic flow from source network to
