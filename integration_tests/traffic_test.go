@@ -148,6 +148,9 @@ func configureDUT(t *testing.T, dut *ondatra.DUTDevice) {
 	p2 := dut.Port(t, "port2")
 	i2 := &oc.Interface{Name: ygot.String(p2.Name())}
 	gnmi.Replace(t, dut, ocpath.Root().Interface(p2.Name()).Config(), configInterfaceDUT(i2, &dutPort2))
+
+	gnmi.Await(t, dut, ocpath.Root().Interface(dut.Port(t, "port1").Name()).Subinterface(0).Ipv4().Address(dutPort1.IPv4).Ip().State(), time.Minute, dutPort1.IPv4)
+	gnmi.Await(t, dut, ocpath.Root().Interface(dut.Port(t, "port2").Name()).Subinterface(0).Ipv4().Address(dutPort2.IPv4).Ip().State(), time.Minute, dutPort2.IPv4)
 }
 
 func waitOTGARPEntry(t *testing.T) {
@@ -282,7 +285,6 @@ func TestIPv4Entry(t *testing.T) {
 				chk.HasResult(t, c.Results(t), wantResult, chk.IgnoreOperationID())
 			}
 
-			// TODO: this is flaky due to the large latency of neighbor updates.
 			loss := testTraffic(t, ate, ateTop, atePort1, atePort2)
 			if loss > 1 {
 				t.Errorf("Loss: got %g, want <= 1", loss)

@@ -278,7 +278,7 @@ func (ni *Interface) handleAddrUpdate(ctx context.Context, au *netlink.AddrUpdat
 	ni.stateMu.Lock()
 	defer ni.stateMu.Unlock()
 	name := ni.idxToName[au.LinkIndex]
-	if !engine.IsTap(name) {
+	if !engine.IsTap(name) || name == "" {
 		return
 	}
 
@@ -321,6 +321,9 @@ func (ni *Interface) handleNeighborUpdate(ctx context.Context, nu *netlink.Neigh
 	log.V(1).Infof("handling neighbor update for %s on %d", nu.IP.String(), nu.LinkIndex)
 
 	name := ni.idxToName[nu.LinkIndex]
+	if name == "" {
+		return
+	}
 	sb := &ygnmi.SetBatch{}
 	modelName := engine.TapNameToIntfName(name)
 	sub := ni.getOrCreateInterface(modelName).GetOrCreateSubinterface(0)
@@ -390,6 +393,7 @@ func (ni *Interface) setupPorts(ctx context.Context) error {
 		if err != nil {
 			return fmt.Errorf("failed to find tap interface %q: %w", engine.IntfNameToTapName(i.Name), err)
 		}
+		ni.idxToName[i.Index] = i.Name
 		ni.idxToName[tap.Index] = tap.Name
 		if err := engine.CreateLocalPort(ctx, ni.fwd, tap.Name); err != nil {
 			return fmt.Errorf("failed to create internal port %q: %w", tap.Name, err)
