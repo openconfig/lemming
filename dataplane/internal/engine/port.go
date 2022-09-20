@@ -16,6 +16,7 @@ package engine
 
 import (
 	"context"
+	"sync"
 
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
@@ -23,10 +24,16 @@ import (
 var (
 	etherBroadcast     = mustParseHex("FFFFFFFFFFFF")
 	etherBroadcastMask = mustParseHex("FFFFFFFFFFFF")
-	etherMulticast     = mustParseHex("010000000000")
-	etherMulticastMask = mustParseHex("010000000000")
+	etherMulticast     = mustParseHex("0180C2000000")
+	etherMulticastMask = mustParseHex("FFFFFF000000")
 	etherIPV6Multi     = mustParseHex("333300000000")
 	etherIPV6MultiMask = mustParseHex("FFFF00000000")
+)
+
+var (
+	// TODO: Implement a better way to cache port ids.
+	nameToIDMu sync.RWMutex
+	nameToID   = map[string]uint64{}
 )
 
 // CreateExternalPort creates an external port (connected to other devices).
@@ -41,9 +48,7 @@ func CreateExternalPort(ctx context.Context, c fwdpb.ServiceClient, name string)
 		Update: &fwdpb.PortUpdateDesc{
 			Port: &fwdpb.PortUpdateDesc_Kernel{
 				Kernel: &fwdpb.KernelPortUpdateDesc{
-					Inputs: []*fwdpb.ActionDesc{{ // Turn on packet tracing. TODO: put this behind a flag.
-						ActionType: fwdpb.ActionType_ACTION_TYPE_DEBUG,
-					}, { // Lookup in layer 2 table.
+					Inputs: []*fwdpb.ActionDesc{{ // Lookup in layer 2 table.
 						ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
 						Action: &fwdpb.ActionDesc_Lookup{
 							Lookup: &fwdpb.LookupActionDesc{
@@ -87,9 +92,7 @@ func CreateLocalPort(ctx context.Context, c fwdpb.ServiceClient, name string) er
 		Update: &fwdpb.PortUpdateDesc{
 			Port: &fwdpb.PortUpdateDesc_Kernel{
 				Kernel: &fwdpb.KernelPortUpdateDesc{
-					Inputs: []*fwdpb.ActionDesc{{ // Turn on packet tracing. TODO: put this behind a flag.
-						ActionType: fwdpb.ActionType_ACTION_TYPE_DEBUG,
-					}, { // Lookup in layer 2 table.
+					Inputs: []*fwdpb.ActionDesc{{ // Lookup in layer 2 table.
 						ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
 						Action: &fwdpb.ActionDesc_Lookup{
 							Lookup: &fwdpb.LookupActionDesc{
@@ -142,6 +145,8 @@ func createKernelPort(ctx context.Context, c fwdpb.ServiceClient, name string) e
 	if err := AddLayer2PuntRule(ctx, c, portID.GetObjectIndex().GetIndex(), etherIPV6Multi, etherIPV6MultiMask); err != nil {
 		return err
 	}
-
+	nameToIDMu.Lock()
+	nameToID[name] = portID.GetObjectIndex().GetIndex()
+	nameToIDMu.Unlock()
 	return nil
 }

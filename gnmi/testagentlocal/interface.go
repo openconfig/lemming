@@ -197,7 +197,7 @@ func interfaceNotificationHandler(no *gpb.Notification) (map[*func(*oc.Root) err
 		interfacePathHandler(pendingEvents, u.Path)
 	}
 	for _, u := range no.Delete {
-		log.V(1).Infof("Received delete path: %s", prototext.Format(u))
+		log.V(2).Infof("Received delete path: %s", prototext.Format(u))
 		switch {
 		case len(u.Elem) > 0:
 		case len(u.Element) > 0: //nolint:staticcheck //lint:ignore SA1019 gnmi cache currently doesn't support PathElem for deletions.
@@ -227,13 +227,13 @@ func matchingPath(path, matcher *gpb.Path) bool {
 func interfacePathHandler(pendingEvents map[*func(*oc.Root) error]bool, path *gpb.Path) {
 	switch {
 	case matchingPath(path, descriptionPaths):
-		log.V(1).Infof("interfaceTask: Received update path: %s", prototext.Format(path))
+		log.V(2).Infof("interfaceTask: Received update path: %s", prototext.Format(path))
 		pendingEvents[&intfDescriptionReactor] = true
 	case matchingPath(path, enabledPaths), matchingPath(path, namePaths), matchingPath(path, ipv4AddressPaths), matchingPath(path, prefixLengthPaths):
-		log.V(1).Infof("interfaceTask: Received name or address/prefix path: %s", prototext.Format(path))
+		log.V(2).Infof("interfaceTask: Received name or address/prefix path: %s", prototext.Format(path))
 		pendingEvents[&interfaceReactor] = true
 	default:
-		log.V(1).Infof("interfaceTask: update path received isn't matched by any handlers: %s", prototext.Format(path))
+		log.V(2).Infof("interfaceTask: update path received isn't matched by any handlers: %s", prototext.Format(path))
 	}
 }
 

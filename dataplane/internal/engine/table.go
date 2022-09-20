@@ -19,6 +19,8 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 
+	log "github.com/golang/glog"
+
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
@@ -304,6 +306,11 @@ func AddIPRoute(ctx context.Context, c fwdpb.ServiceClient, v4 bool, ip, mask, n
 		fib = fibV4Table
 	}
 
+	if nextHopIP == nil {
+		nextHopIP = ip
+	}
+	log.V(1).Infof("adding ip route: isv4 %t, ip %v, mask %v, nextHop %v, port %s", v4, ip, mask, nextHopIP, port)
+
 	entry := &fwdpb.TableEntryAddRequest{
 		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: fib}},
 		ContextId: &fwdpb.ContextId{Id: contextID},
@@ -438,6 +445,48 @@ func RemoveNeighbor(ctx context.Context, c fwdpb.ServiceClient, ip []byte) error
 		},
 	}
 	if _, err := c.TableEntryRemove(ctx, entry); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// UpdatePortSrcMAC updates a port's source mac address.
+func UpdatePortSrcMAC(ctx context.Context, c fwdpb.ServiceClient, portName string, mac []byte) error {
+	nameToIDMu.RLock()
+	defer nameToIDMu.RUnlock()
+	idBytes := make([]byte, binary.Size(nameToID[portName]))
+	binary.BigEndian.PutUint64(idBytes, nameToID[portName])
+
+	entry := &fwdpb.TableEntryAddRequest{
+		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: srcMACTable}},
+		ContextId: &fwdpb.ContextId{Id: contextID},
+		EntryDesc: &fwdpb.EntryDesc{
+			Entry: &fwdpb.EntryDesc_Exact{
+				Exact: &fwdpb.ExactEntryDesc{
+					Fields: []*fwdpb.PacketFieldBytes{{
+						FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT}},
+						Bytes:   idBytes,
+					}},
+				},
+			},
+		},
+		Actions: []*fwdpb.ActionDesc{{
+			ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
+			Action: &fwdpb.ActionDesc_Update{
+				Update: &fwdpb.UpdateActionDesc{
+					FieldId: &fwdpb.PacketFieldId{
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC,
+						},
+					},
+					Type:  fwdpb.UpdateType_UPDATE_TYPE_SET,
+					Value: mac,
+				},
+			},
+		}},
+	}
+	if _, err := c.TableEntryAdd(ctx, entry); err != nil {
 		return err
 	}
 

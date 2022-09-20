@@ -25,6 +25,7 @@ import (
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdobject"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdpacket"
+	"github.com/vishvananda/netlink"
 
 	log "github.com/golang/glog"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
@@ -106,6 +107,7 @@ func (p *kernelPort) process() {
 					fwdport.Increment(p, len(pkt.Data()), fwdpb.CounterId_COUNTER_ID_RX_BAD_PACKETS, fwdpb.CounterId_COUNTER_ID_RX_BAD_OCTETS)
 					continue
 				}
+				fwdPkt.Debug(true) // TODO: put this behind a flag
 				fwdport.Process(p, fwdPkt, fwdpb.PortAction_PORT_ACTION_INPUT, p.ctx, "Kernel")
 			}
 		}
@@ -158,11 +160,22 @@ func (kernelBuilder) Build(portDesc *fwdpb.PortDesc, ctx *fwdcontext.Context) (f
 	if !ok {
 		return nil, fmt.Errorf("invalid port type in proto")
 	}
+	l, err := netlink.LinkByName(kp.Kernel.GetDeviceName())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get interface: %v", err)
+	}
+	// Since the TAP port and external ports have different MACs and thus DST_MAC may be not correct,
+	// read all packets for processing.
+	if l.Attrs().Promisc == 0 {
+		if err := netlink.SetPromiscOn(l); err != nil {
+			return nil, fmt.Errorf("failed to set sec promisc on: %v", err)
+		}
+	}
 
 	// TODO: configure MTU
 	handle, err := afpacket.NewTPacket(afpacket.OptInterface(kp.Kernel.GetDeviceName()), afpacket.OptPollTimeout(-1))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create afpacket: %v", err)
 	}
 	p := &kernelPort{
 		ctx:     ctx,
