@@ -153,7 +153,7 @@ func (ni *Interface) reconcile(config *oc.Interface) {
 	// TODO: handle deleting interface.
 	if config.GetOrCreateEthernet().MacAddress != nil {
 		if config.GetEthernet().GetMacAddress() != state.GetEthernet().GetMacAddress() {
-			log.V(1).Infof("setting interface %s hw-addr %q", engine.IntfNameToTapName(config.GetName()), config.GetEthernet().GetMacAddress())
+			log.V(1).Infof("setting interface %s hw-addr %q", tapName, config.GetEthernet().GetMacAddress())
 			if err := kernel.SetInterfaceHWAddr(config.GetName(), config.GetEthernet().GetMacAddress()); err != nil {
 				log.Warningf("Failed to set mac address of port: %v", err)
 				return
@@ -162,8 +162,8 @@ func (ni *Interface) reconcile(config *oc.Interface) {
 	}
 	if config.GetOrCreateSubinterface(0).Enabled != nil {
 		if state.GetOrCreateSubinterface(0).Enabled == nil || config.GetSubinterface(0).GetEnabled() != state.GetSubinterface(0).GetEnabled() {
-			log.V(1).Infof("setting interface %s enabled %t", engine.IntfNameToTapName(config.GetName()), config.GetSubinterface(0).GetEnabled())
-			if err := kernel.SetInterfaceState(engine.IntfNameToTapName(config.GetName()), config.GetSubinterface(0).GetEnabled()); err != nil {
+			log.V(1).Infof("setting interface %s enabled %t", tapName, config.GetSubinterface(0).GetEnabled())
+			if err := kernel.SetInterfaceState(tapName, config.GetSubinterface(0).GetEnabled()); err != nil {
 				log.Warningf("Failed to set state address of port: %v", err)
 				return
 			}
@@ -184,7 +184,7 @@ func (ni *Interface) reconcile(config *oc.Interface) {
 		if configIP != nil && configPL != nil && (stateIP == nil || *statePL != *configPL) {
 			log.V(1).Infof("Config IP: %v, Config PL: %v. State IP: %v, State PL: %v", addr.GetIp(), addr.GetPrefixLength(), stateAddr.GetIp(), stateAddr.GetPrefixLength())
 			log.V(2).Infof("setting interface %s ip %s/%d", tapName, *configIP, *configPL)
-			if err := kernel.SetInterfaceIP(engine.IntfNameToTapName(config.GetName()), *configIP, int(*configPL)); err != nil {
+			if err := kernel.SetInterfaceIP(tapName, *configIP, int(*configPL)); err != nil {
 				log.Warningf("Failed to set ip address of port: %v", err)
 				return
 			}
@@ -204,7 +204,7 @@ func (ni *Interface) reconcile(config *oc.Interface) {
 		if configIP != nil && configPL != nil && (stateIP == nil || *statePL != *configPL) {
 			log.V(1).Infof("Config IP: %v, Config PL: %v. State IP: %v, State PL: %v", addr.GetIp(), addr.GetPrefixLength(), stateAddr.GetIp(), stateAddr.GetPrefixLength())
 			log.V(2).Infof("setting interface %s ip %s/%d", tapName, *configIP, *configPL)
-			if err := kernel.SetInterfaceIP(engine.IntfNameToTapName(config.GetName()), *configIP, int(*configPL)); err != nil {
+			if err := kernel.SetInterfaceIP(tapName, *configIP, int(*configPL)); err != nil {
 				log.Warningf("Failed to set ip address of port: %v", err)
 				return
 			}

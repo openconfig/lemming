@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package main takes a packet hex string and prints the decoded packet.
 package main
 
 import (

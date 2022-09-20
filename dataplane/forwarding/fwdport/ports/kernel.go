@@ -164,6 +164,8 @@ func (kernelBuilder) Build(portDesc *fwdpb.PortDesc, ctx *fwdcontext.Context) (f
 	if err != nil {
 		return nil, fmt.Errorf("failed to get interface: %v", err)
 	}
+	// Since the TAP port and external ports have different MACs and thus DST_MAC may be not correct,
+	// read all packets for processing.
 	if l.Attrs().Promisc == 0 {
 		if err := netlink.SetPromiscOn(l); err != nil {
 			return nil, fmt.Errorf("failed to set sec promisc on: %v", err)

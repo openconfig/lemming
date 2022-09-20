@@ -282,9 +282,10 @@ func TestIPv4Entry(t *testing.T) {
 				chk.HasResult(t, c.Results(t), wantResult, chk.IgnoreOperationID())
 			}
 
+			// TODO: this is flaky due to the large latency of neighbor updates.
 			loss := testTraffic(t, ate, ateTop, atePort1, atePort2)
-			if loss > 10 {
-				t.Errorf("Loss: got %g, want <= 10", loss)
+			if loss > 1 {
+				t.Errorf("Loss: got %g, want <= 1", loss)
 			}
 		})
 	}

@@ -121,6 +121,9 @@ func (d *Dataplane) InsertRoute(ctx context.Context, route *dpb.InsertRouteReque
 	if len(route.GetNextHops()) > 1 {
 		return nil, status.Errorf(codes.InvalidArgument, "multiple next hops not supported")
 	}
+	if len(route.NextHops) == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "no next hops provided")
+	}
 	// TODO: support non-default VRF.
 	if route.GetVrf() != 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "VRF other than DEFAULT (vrfid 0) not supported")
@@ -133,6 +136,10 @@ func (d *Dataplane) InsertRoute(ctx context.Context, route *dpb.InsertRouteReque
 
 	ip := ipNet.IP.To4()
 	isIPv4 := true
+	if ip == nil {
+		ip = ipNet.IP.To16()
+		isIPv4 = false
+	}
 
 	var nextHopIP []byte
 	if nh := route.GetNextHops()[0].GetIp(); nh != "" {
@@ -141,10 +148,6 @@ func (d *Dataplane) InsertRoute(ctx context.Context, route *dpb.InsertRouteReque
 		if nextHopIP == nil {
 			nextHopIP = nextHop.To16()
 		}
-	}
-	if ip == nil {
-		ip = ipNet.IP.To16()
-		isIPv4 = false
 	}
 	log.V(1).Infof("inserting route: prefix %s, nexthop %s, port %s,", route.GetPrefix(), route.GetNextHops()[0].GetIp(), route.GetNextHops()[0].GetPort())
 
