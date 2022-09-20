@@ -24,11 +24,13 @@ import (
 	"github.com/openconfig/gnmi/ctree"
 	"github.com/openconfig/gnmi/value"
 	"github.com/openconfig/goyang/pkg/yang"
+	"github.com/openconfig/lemming/gnmi/gnmiclient"
 	"github.com/openconfig/lemming/gnmi/gnmit"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/util"
+	"github.com/openconfig/ygot/ygot"
 	"github.com/openconfig/ygot/ygot/pathtranslate"
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
@@ -191,6 +193,7 @@ func systemBaseTask(_ func() *oc.Root, queue gnmit.Queue, updateFn gnmit.UpdateF
 			for _, update := range noti.Update {
 				switch {
 				case matchingPath(update.Path, hostnamePath), matchingPath(update.Path, domainNamePath), matchingPath(update.Path, motdBannerPath), matchingPath(update.Path, loginBannerPath):
+					log.Infof("systemBaseTask got recognized path: %s", update.Path)
 					statePath := toStatePath(update.Path)
 					if err := updateFn(&gpb.Notification{
 						Timestamp: time.Now().UnixNano(),
@@ -246,6 +249,87 @@ func systemBaseTask(_ func() *oc.Root, queue gnmit.Queue, updateFn gnmit.UpdateF
 		}
 	}()
 
+	return nil
+}
+
+// StartSystemBaseTask2 handles most of the logic for the base systems feature profile but uses ygnmi as the client.
+func StartSystemBaseTask2(ctx context.Context, port int, target string, enableTLS bool) error {
+	yclient, err := gnmiclient.NewYGNMIClient(port, target, enableTLS)
+	if err != nil {
+		return err
+	}
+
+	b := &ocpath.Batch{}
+	b.AddPaths(
+		ocpath.Root().System().Hostname().Config().PathStruct(),
+		ocpath.Root().System().DomainName().Config().PathStruct(),
+		ocpath.Root().System().MotdBanner().Config().PathStruct(),
+		ocpath.Root().System().LoginBanner().Config().PathStruct(),
+	)
+
+	var hostname, domainName, motdBanner, loginBanner string
+
+	systemWatcher := ygnmi.Watch(
+		context.Background(),
+		yclient,
+		b.Config(),
+		func(root *ygnmi.Value[*oc.Root]) error {
+			rootVal, ok := root.Val()
+			if !ok {
+				return ygnmi.Continue
+			}
+			// DEBUG print out root.
+			js, err := ygot.Marshal7951(rootVal, ygot.JSONIndent("  "))
+			if err != nil {
+				log.Infof("systembase watch: %s", string(js))
+			}
+			system := rootVal.GetSystem()
+			if system == nil {
+				return ygnmi.Continue
+			}
+			if system.Hostname != nil && system.GetHostname() != hostname {
+				if _, err := gnmiclient.Replace(ctx, yclient, ocpath.Root().System().Hostname().State(), system.GetHostname()); err != nil {
+					log.Warningf("unable to update hostname: %v", err)
+				} else {
+					hostname = system.GetHostname()
+					log.Infof("Successfully updated hostname to %q", hostname)
+				}
+			}
+			if system.DomainName != nil && system.GetDomainName() != domainName {
+				if _, err := gnmiclient.Replace(ctx, yclient, ocpath.Root().System().DomainName().State(), system.GetDomainName()); err != nil {
+					log.Warningf("unable to update domainName: %v", err)
+				} else {
+					domainName = system.GetDomainName()
+					log.Infof("Successfully updated domainName to %q", domainName)
+				}
+			}
+			if system.MotdBanner != nil && system.GetMotdBanner() != motdBanner {
+				if _, err := gnmiclient.Replace(ctx, yclient, ocpath.Root().System().MotdBanner().State(), system.GetMotdBanner()); err != nil {
+					log.Warningf("unable to update motdBanner: %v", err)
+				} else {
+					motdBanner = system.GetMotdBanner()
+					log.Infof("Successfully updated motdBanner to %q", motdBanner)
+				}
+			}
+			if system.LoginBanner != nil && system.GetLoginBanner() != loginBanner {
+				if _, err := gnmiclient.Replace(ctx, yclient, ocpath.Root().System().LoginBanner().State(), system.GetLoginBanner()); err != nil {
+					log.Warningf("unable to update loginBanner: %v", err)
+				} else {
+					loginBanner = system.GetLoginBanner()
+					log.Infof("Successfully updated loginBanner to %q", loginBanner)
+				}
+			}
+			return ygnmi.Continue
+		},
+	)
+
+	// TODO(wenbli): Ideally, this is implemented by watching more fine-grained paths.
+	// TODO(wenbli): Support interface removal.
+	go func() {
+		if _, err := systemWatcher.Await(); err != nil {
+			log.Warningf("Sysrib interface watcher has stopped: %v", err)
+		}
+	}()
 	return nil
 }
 
@@ -348,18 +432,18 @@ func Tasks(target string) []gnmit.Task {
 			Origin: "openconfig",
 			Target: target,
 		},
-	}, {
-		Run: systemBaseTask,
-		Paths: []ygnmi.PathStruct{
-			ocpath.Root().System().Hostname().Config().PathStruct(),
-			ocpath.Root().System().DomainName().Config().PathStruct(),
-			ocpath.Root().System().MotdBanner().Config().PathStruct(),
-			ocpath.Root().System().LoginBanner().Config().PathStruct(),
-		},
-		Prefix: &gpb.Path{
-			Origin: "openconfig",
-			Target: target,
-		},
+		//}, {
+		//	Run: systemBaseTask,
+		//	Paths: []ygnmi.PathStruct{
+		//		ocpath.Root().System().Hostname().Config().PathStruct(),
+		//		ocpath.Root().System().DomainName().Config().PathStruct(),
+		//		ocpath.Root().System().MotdBanner().Config().PathStruct(),
+		//		ocpath.Root().System().LoginBanner().Config().PathStruct(),
+		//	},
+		//	Prefix: &gpb.Path{
+		//		Origin: "openconfig",
+		//		Target: target,
+		//	},
 	}, {
 		Run: goBgpTask,
 		Paths: []ygnmi.PathStruct{

@@ -22,7 +22,7 @@ import (
 
 var (
 	port   = pflag.Int("port", 6030, "localhost port to listen to.")
-	target = pflag.String("target", "fakedut", "name of the fake target")
+	target = pflag.String("target", "lemming", "name of the fake target")
 	// nolint:unused,varcheck
 	enableDataplane = pflag.Bool("enable_dataplane", false, "Controls whether to enable dataplane")
 	enableTLS       = pflag.Bool("enable_tls", false, "Controls whether to enable TLS for gNXI services. If enabled and TLS key/cert path unspecified, a generated cert is used.")

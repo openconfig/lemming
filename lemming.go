@@ -24,6 +24,7 @@ import (
 
 	"github.com/openconfig/lemming/dataplane"
 	fgnmi "github.com/openconfig/lemming/gnmi"
+	"github.com/openconfig/lemming/gnmi/fakedevice"
 	"github.com/openconfig/lemming/gnmi/gnmit"
 	"github.com/openconfig/lemming/gnmi/testagentlocal"
 	fgnoi "github.com/openconfig/lemming/gnoi"
@@ -152,6 +153,8 @@ func New(lis net.Listener, targetName string, opts ...grpc.ServerOption) (*Devic
 
 	log.Infof("starting sysrib")
 	startSysrib(sysDataplane, port, targetName, enableTLS)
+
+	fakedevice.StartSystemBaseTask2(context.Background(), port, targetName, enableTLS)
 
 	log.Info("lemming created")
 	return d, nil

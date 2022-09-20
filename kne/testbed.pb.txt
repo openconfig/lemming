@@ -6,7 +6,7 @@
 # pairwise.
 
 duts {
-  id: "dut"
+  id: "lemming"
   ports {
     id: "port1"
   }
@@ -16,7 +16,7 @@ duts {
 }
 
 ates {
-  id: "ate"
+  id: "otg"
   ports {
     id: "port1"
   }
@@ -26,11 +26,11 @@ ates {
 }
 
 links {
-  a: "dut:port1"
-  b: "ate:port1"
+  a: "lemming:port1"
+  b: "otg:port1"
 }
 
 links {
-  a: "dut:port2"
-  b: "ate:port2"
+  a: "lemming:port2"
+  b: "otg:port2"
 }
