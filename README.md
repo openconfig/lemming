@@ -30,5 +30,17 @@ go run cmd/lemming/lemming.go
 gnmic -a localhost:6030 --insecure subscribe --mode stream --path openconfig:/system/state/current-datetime -u foo -p bar --target fakedut
 ```
 
-For running on KNE (also experimental), see
-[here](https://github.com/wenovus/ondatra/tree/fake-prototype-0/fakebind)
+## Running integration tests
+
+Prerequisites:
+
+* [KNE](https://github.com/openconfig/kne) setup and cluster deployed
+
+Setup:
+
+* Run setup script to install kne cli and create Ondatra config: `kne/setup.sh`
+
+Deploy and Test:
+
+* Run deploy script to build image and load into k8s: `kne/deploy.sh`
+* Run integration tests: `go test -v ./integration_tests -args -config $(pwd)/kne/config.yaml -testbed $(pwd)/kne/testbed.pb.txt`
