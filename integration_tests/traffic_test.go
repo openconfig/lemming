@@ -215,10 +215,10 @@ func awaitTimeout(ctx context.Context, c *fluent.GRIBIClient, t testing.TB, time
 func TestIPv4Entry(t *testing.T) {
 	ctx := context.Background()
 
-	dut := ondatra.DUT(t, "dut")
+	dut := ondatra.DUT(t, "lemming")
 	configureDUT(t, dut)
 
-	ate := ondatra.ATE(t, "ate")
+	ate := ondatra.ATE(t, "otg")
 	ateTop := configureATE(t, ate)
 	ate.OTG().PushConfig(t, ateTop)
 

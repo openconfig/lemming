@@ -91,7 +91,7 @@ func TestDomainName(t *testing.T) {
 		{"63 Characters", "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"},
 	}
 
-	dut := ondatra.DUT(t, "dut")
+	dut := ondatra.DUT(t, "lemming")
 
 	for _, testCase := range testCases {
 		t.Run(testCase.description, func(t *testing.T) {
