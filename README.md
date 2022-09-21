@@ -38,7 +38,7 @@ Prerequisites:
 
 Setup:
 
-* Run setup script to install kne cli and create Ondatra config: `kne/setup.sh`
+* Run setup script to install KNE CLI and create Ondatra config: `kne/setup.sh`
 
 Deploy and Test:
 
