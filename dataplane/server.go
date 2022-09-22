@@ -140,11 +140,6 @@ func (d *Dataplane) InsertRoute(ctx context.Context, route *dpb.InsertRouteReque
 		ip = ipNet.IP.To16()
 		isIPv4 = false
 	}
-	if ip == nil {
-		ip = ipNet.IP.To16()
-		isIPv4 = false
-	}
-	log.V(1).Infof("inserting route: prefix %s, nexthop %s, port %s,", route.GetPrefix(), route.GetNextHops()[0].GetIp(), route.GetNextHops()[0].GetPort())
 
 	var nextHopIP []byte
 	if nh := route.GetNextHops()[0].GetIp(); nh != "" {

@@ -154,7 +154,7 @@ func configureDUT(t *testing.T, dut *ondatra.DUTDevice) {
 }
 
 func waitOTGARPEntry(t *testing.T) {
-	ate := ondatra.ATE(t, "ate")
+	ate := ondatra.ATE(t, "otg")
 
 	ate.OTG().Telemetry().InterfaceAny().Ipv4NeighborAny().LinkLayerAddress()
 	val, ok := gnmi.WatchAll(t, ate.OTG(), otgpath.Root().InterfaceAny().Ipv4NeighborAny().LinkLayerAddress().State(), time.Minute, func(v *ygnmi.Value[string]) bool {

@@ -22,6 +22,7 @@ nodes: {
     name: "lemming"
     type: LEMMING
     config: {
+        args: "--target=lemming"
         args: "--enable_dataplane"
         args: "--enable_tls"
         args: "--alsologtostderr"
