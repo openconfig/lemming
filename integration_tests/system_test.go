@@ -97,28 +97,28 @@ func TestDomainName(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.description, func(t *testing.T) {
-			config := dut.Config().System().DomainName()
-			state := dut.Telemetry().System().DomainName()
+			config := ocpath.Root().System().DomainName().Config()
+			state := ocpath.Root().System().DomainName().State()
 
-			config.Replace(t, testCase.domainname)
+			gnmi.Replace(t, dut, config, testCase.domainname)
 
 			t.Run("Get Domainname Config", func(t *testing.T) {
-				configGot := config.Get(t)
+				configGot := gnmi.Get[string](t, dut, config)
 				if configGot != testCase.domainname {
 					t.Errorf("Config domainname: got %s, want %s", configGot, testCase.domainname)
 				}
 			})
 
 			t.Run("Get Domainname Telemetry", func(t *testing.T) {
-				stateGot := state.Await(t, 5*time.Second, testCase.domainname)
-				if stateGot.Val(t) != testCase.domainname {
+				stateGot := gnmi.Await(t, dut, state, 5*time.Second, testCase.domainname)
+				if got, ok := stateGot.Val(); !ok || (ok && got != testCase.domainname) {
 					t.Errorf("Telemetry domainname: got %v, want %s", stateGot, testCase.domainname)
 				}
 			})
 
 			t.Run("Delete Domainname", func(t *testing.T) {
-				config.Delete(t)
-				if qs := config.Lookup(t); qs.IsPresent() == true {
+				gnmi.Delete(t, dut, config)
+				if qs := gnmi.Lookup[string](t, dut, config); qs.IsPresent() == true {
 					t.Errorf("Delete domainname fail: got %v", qs)
 				}
 			})
