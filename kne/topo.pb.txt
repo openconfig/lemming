@@ -19,10 +19,10 @@ nodes: {
     }
 }
 nodes: {
-    name: "lemming"
+    name: "dut"
     type: LEMMING
     config: {
-        args: "--target=lemming"
+        args: "--target=dut"
         args: "--enable_dataplane"
         args: "--enable_tls"
         args: "--alsologtostderr"
@@ -32,11 +32,11 @@ nodes: {
 links: {
     a_node: "otg"
     a_int: "eth1"
-    z_node: "lemming"
+    z_node: "dut"
     z_int: "eth1"
 }
 links: {
-    a_node: "lemming"
+    a_node: "dut"
     a_int: "eth2"
     z_node: "otg"
     z_int: "eth2"

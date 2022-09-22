@@ -154,7 +154,7 @@ func configureDUT(t *testing.T, dut *ondatra.DUTDevice) {
 }
 
 func waitOTGARPEntry(t *testing.T) {
-	ate := ondatra.ATE(t, "otg")
+	ate := ondatra.ATE(t, "ate")
 
 	ate.OTG().Telemetry().InterfaceAny().Ipv4NeighborAny().LinkLayerAddress()
 	val, ok := gnmi.WatchAll(t, ate.OTG(), otgpath.Root().InterfaceAny().Ipv4NeighborAny().LinkLayerAddress().State(), time.Minute, func(v *ygnmi.Value[string]) bool {
@@ -215,10 +215,10 @@ func awaitTimeout(ctx context.Context, c *fluent.GRIBIClient, t testing.TB, time
 func TestIPv4Entry(t *testing.T) {
 	ctx := context.Background()
 
-	dut := ondatra.DUT(t, "lemming")
+	dut := ondatra.DUT(t, "dut")
 	configureDUT(t, dut)
 
-	ate := ondatra.ATE(t, "otg")
+	ate := ondatra.ATE(t, "ate")
 	ateTop := configureATE(t, ate)
 	ate.OTG().PushConfig(t, ateTop)
 
