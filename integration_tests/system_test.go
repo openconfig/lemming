@@ -20,7 +20,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 	"github.com/openconfig/ondatra"
+	"github.com/openconfig/ondatra/gnmi"
 )
 
 // TestHostname verifies that the hostname configuration paths can be read,
@@ -44,28 +46,28 @@ func TestHostname(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.description, func(t *testing.T) {
-			config := dut.Config().System().Hostname()
-			state := dut.Telemetry().System().Hostname()
+			config := ocpath.Root().System().Hostname().Config()
+			state := ocpath.Root().System().Hostname().State()
 
-			config.Replace(t, testCase.hostname)
+			gnmi.Replace(t, dut, config, testCase.hostname)
 
 			t.Run("Get Hostname Config", func(t *testing.T) {
-				configGot := config.Get(t)
+				configGot := gnmi.Get[string](t, dut, config)
 				if configGot != testCase.hostname {
 					t.Errorf("Config hostname: got %s, want %s", configGot, testCase.hostname)
 				}
 			})
 
 			t.Run("Get Hostname Telemetry", func(t *testing.T) {
-				stateGot := state.Await(t, 5*time.Second, testCase.hostname)
-				if stateGot.Val(t) != testCase.hostname {
+				stateGot := gnmi.Await(t, dut, state, 5*time.Second, testCase.hostname)
+				if got, ok := stateGot.Val(); !ok || (ok && got != testCase.hostname) {
 					t.Errorf("Telemetry hostname: got %v, want %s", stateGot, testCase.hostname)
 				}
 			})
 
 			t.Run("Delete Hostname", func(t *testing.T) {
-				config.Delete(t)
-				if qs := config.Lookup(t); qs.IsPresent() == true {
+				gnmi.Delete(t, dut, config)
+				if qs := gnmi.Lookup[string](t, dut, config); qs.IsPresent() == true {
 					t.Errorf("Delete hostname fail: got %v", qs)
 				}
 			})
