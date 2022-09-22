@@ -30,9 +30,7 @@ import (
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/util"
-	"github.com/openconfig/ygot/ygot"
 	"github.com/openconfig/ygot/ygot/pathtranslate"
-	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
 
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
@@ -153,107 +151,9 @@ func toStatePath(configPath *gpb.Path) *gpb.Path {
 	return path
 }
 
-// systemBaseTask handles most of the logic for the base systems feature profile.
-func systemBaseTask(_ func() *oc.Root, queue gnmit.Queue, updateFn gnmit.UpdateFn, target string, remove func()) error {
-	hostnamePath, _, err := ygnmi.ResolvePath(ocpath.Root().System().Hostname().Config().PathStruct())
-	if err != nil {
-		log.Errorf("systemBaseTask failed to initialize due to error: %v", err)
-	}
-	domainNamePath, _, err := ygnmi.ResolvePath(ocpath.Root().System().DomainName().Config().PathStruct())
-	if err != nil {
-		log.Errorf("systemBaseTask failed to initialize due to error: %v", err)
-	}
-	motdBannerPath, _, err := ygnmi.ResolvePath(ocpath.Root().System().MotdBanner().Config().PathStruct())
-	if err != nil {
-		log.Errorf("systemBaseTask failed to initialize due to error: %v", err)
-	}
-	loginBannerPath, _, err := ygnmi.ResolvePath(ocpath.Root().System().LoginBanner().Config().PathStruct())
-	if err != nil {
-		log.Errorf("systemBaseTask failed to initialize due to error: %v", err)
-	}
-
-	go func() {
-		defer remove()
-		for {
-			item, _, err := queue.Next(context.Background())
-			if coalesce.IsClosedQueue(err) {
-				return
-			}
-			n, ok := item.(*ctree.Leaf)
-			if !ok || n == nil {
-				log.Errorf("systemBaseTask invalid cache node: %#v", item)
-				return
-			}
-			v := n.Value()
-			noti, ok := v.(*gpb.Notification)
-			if !ok || noti == nil {
-				log.Errorf("systemBaseTask invalid cache node, expected non-nil *gpb.Notification type, got: %#v", v)
-				return
-			}
-			for _, update := range noti.Update {
-				switch {
-				case matchingPath(update.Path, hostnamePath), matchingPath(update.Path, domainNamePath), matchingPath(update.Path, motdBannerPath), matchingPath(update.Path, loginBannerPath):
-					log.Infof("systemBaseTask got recognized path: %s", update.Path)
-					statePath := toStatePath(update.Path)
-					if err := updateFn(&gpb.Notification{
-						Timestamp: time.Now().UnixNano(),
-						Prefix: &gpb.Path{
-							Origin: "openconfig",
-							Target: target,
-						},
-						Update: []*gpb.Update{{
-							Path: statePath,
-							Val:  update.Val,
-						}},
-					}); err != nil {
-						log.Errorf("systemBaseTask: %v", err)
-						return
-					}
-				default:
-					log.Errorf("systemBaseTask: update path received isn't matched by any handlers: %s", prototext.Format(update.Path))
-				}
-			}
-			for _, path := range noti.Delete {
-				// Since gNMI still sends delete paths using the deprecated Element field, we need to translate it into path-elems first.
-				// We also need to strip the first element for origin.
-				if len(path.Element) == 0 { // nolint:staticcheck
-					log.Errorf("Unexpected: Element field for delete path is empty: %s", prototext.Format(path))
-					return
-				}
-				elems, err := PathTranslator.PathElem(path.Element[1:]) // nolint:staticcheck
-				if err != nil {
-					log.Errorf("systemBaseTask: failed to translate delete path: %s", prototext.Format(path))
-					return
-				}
-				path.Elem = elems
-				switch {
-				case matchingPath(path, hostnamePath), matchingPath(path, domainNamePath), matchingPath(path, motdBannerPath), matchingPath(path, loginBannerPath):
-					statePath := toStatePath(path)
-					if err := updateFn(&gpb.Notification{
-						Timestamp: time.Now().UnixNano(),
-						Prefix: &gpb.Path{
-							Origin: "openconfig",
-							Target: target,
-						},
-						Delete: []*gpb.Path{
-							statePath,
-						},
-					}); err != nil {
-						log.Errorf("systemBaseTask: %v", err)
-						return
-					}
-				default:
-					log.Errorf("systemBaseTask: delete path received isn't matched by any handlers: %s", prototext.Format(path))
-				}
-			}
-		}
-	}()
-
-	return nil
-}
-
-// StartSystemBaseTask2 handles most of the logic for the base systems feature profile but uses ygnmi as the client.
-func StartSystemBaseTask2(ctx context.Context, port int, target string, enableTLS bool) error {
+// StartSystemBaseTask handles some of the logic for the base systems feature
+// profile using ygnmi as the client.
+func StartSystemBaseTask(ctx context.Context, port int, target string, enableTLS bool) error {
 	yclient, err := gnmiclient.NewYGNMIClient(port, target, enableTLS)
 	if err != nil {
 		return err
@@ -277,11 +177,6 @@ func StartSystemBaseTask2(ctx context.Context, port int, target string, enableTL
 			rootVal, ok := root.Val()
 			if !ok {
 				return ygnmi.Continue
-			}
-			// DEBUG print out root.
-			js, err := ygot.Marshal7951(rootVal, ygot.JSONIndent("  "))
-			if err != nil {
-				log.Infof("systembase watch: %s", string(js))
 			}
 			system := rootVal.GetSystem()
 			if system == nil {
@@ -323,8 +218,6 @@ func StartSystemBaseTask2(ctx context.Context, port int, target string, enableTL
 		},
 	)
 
-	// TODO(wenbli): Ideally, this is implemented by watching more fine-grained paths.
-	// TODO(wenbli): Support interface removal.
 	go func() {
 		if _, err := systemWatcher.Await(); err != nil {
 			log.Warningf("Sysrib interface watcher has stopped: %v", err)
@@ -432,18 +325,6 @@ func Tasks(target string) []gnmit.Task {
 			Origin: "openconfig",
 			Target: target,
 		},
-		//}, {
-		//	Run: systemBaseTask,
-		//	Paths: []ygnmi.PathStruct{
-		//		ocpath.Root().System().Hostname().Config().PathStruct(),
-		//		ocpath.Root().System().DomainName().Config().PathStruct(),
-		//		ocpath.Root().System().MotdBanner().Config().PathStruct(),
-		//		ocpath.Root().System().LoginBanner().Config().PathStruct(),
-		//	},
-		//	Prefix: &gpb.Path{
-		//		Origin: "openconfig",
-		//		Target: target,
-		//	},
 	}, {
 		Run: goBgpTask,
 		Paths: []ygnmi.PathStruct{

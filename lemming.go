@@ -154,7 +154,7 @@ func New(lis net.Listener, targetName string, opts ...grpc.ServerOption) (*Devic
 	log.Infof("starting sysrib")
 	startSysrib(sysDataplane, port, targetName, enableTLS)
 
-	fakedevice.StartSystemBaseTask2(context.Background(), port, targetName, enableTLS)
+	fakedevice.StartSystemBaseTask(context.Background(), port, targetName, enableTLS)
 
 	log.Info("lemming created")
 	return d, nil
