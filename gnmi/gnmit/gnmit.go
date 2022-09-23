@@ -411,7 +411,8 @@ func (s *GNMIServer) update(dirtyRoot ygot.ValidatedGoStruct, origin string) err
 		}
 		pathsForDelete = append(pathsForDelete, p)
 	}
-	log.V(1).Infof("gnmi.Set: deleting the following paths: %+v", pathsForDelete)
+	log.V(1).Infof("config datastore: updating the following values: %+v", n.Update)
+	log.V(1).Infof("config datastore: deleting the following paths: %+v", pathsForDelete)
 	if err := t.GnmiUpdate(n); err != nil {
 		return err
 	}
@@ -466,6 +467,7 @@ func (s *GNMIServer) set(req *gpb.SetRequest, updateCache bool) error {
 
 // Set is a prototype for a gNMI Set operation.
 func (s *GNMIServer) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResponse, error) {
+	log.V(1).Infof("config datastore service received SetRequest: %v", req)
 	if s.c.schema == nil {
 		return s.UnimplementedGNMIServer.Set(ctx, req)
 	}

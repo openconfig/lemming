@@ -9,7 +9,7 @@ require (
 	github.com/google/gopacket v1.1.19
 	github.com/h-fam/errdiff v1.0.2
 	github.com/kentik/patricia v1.2.0
-	github.com/open-traffic-generator/snappi/gosnappi v0.8.5
+	github.com/open-traffic-generator/snappi/gosnappi v0.9.4
 	github.com/openconfig/gnmi v0.0.0-20220617175856-41246b1b3507
 	github.com/openconfig/gnoi v0.0.0-20220912141010-93cdd9ae9f35
 	github.com/openconfig/gnsi v0.0.0-20220906172358-1eda48d90de6
