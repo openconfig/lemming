@@ -31,7 +31,6 @@ import (
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/util"
 	"github.com/openconfig/ygot/ygot/pathtranslate"
-	"google.golang.org/protobuf/proto"
 
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 )
@@ -133,22 +132,6 @@ func currentDateTimeTask(_ func() *oc.Root, _ gnmit.Queue, updateFn gnmit.Update
 // length and in values; wildcards are allowed in the matcher path.
 func matchingPath(path, matcher *gpb.Path) bool {
 	return len(path.Elem) == len(matcher.Elem) && util.PathMatchesQuery(path, matcher)
-}
-
-// toStatePath converts the given config path to a state path by replacing the
-// last instance (if any) of "config" in the path to "state".
-// OpenConfig specifies that any leaf other than list keys must reside in a
-// config/state container, and that there shall only be one such container in
-// the path.
-func toStatePath(configPath *gpb.Path) *gpb.Path {
-	path := proto.Clone(configPath).(*gpb.Path)
-	for i := len(path.Elem) - 1; i >= 0; i-- {
-		if path.Elem[i].Name == "config" {
-			path.Elem[i].Name = "state"
-			break
-		}
-	}
-	return path
 }
 
 // StartSystemBaseTask handles some of the logic for the base systems feature
