@@ -58,10 +58,10 @@ func TestHostname(t *testing.T) {
 				}
 			})
 
-			t.Run("Get Hostname Telemetry", func(t *testing.T) {
+			t.Run("Get Hostname State", func(t *testing.T) {
 				stateGot := gnmi.Await(t, dut, state, 5*time.Second, testCase.hostname)
 				if got, ok := stateGot.Val(); !ok || (ok && got != testCase.hostname) {
-					t.Errorf("Telemetry hostname: got %v, want %s", stateGot, testCase.hostname)
+					t.Errorf("State hostname: got %v, want %s", stateGot, testCase.hostname)
 				}
 			})
 
@@ -109,10 +109,10 @@ func TestDomainName(t *testing.T) {
 				}
 			})
 
-			t.Run("Get Domainname Telemetry", func(t *testing.T) {
+			t.Run("Get Domainname State", func(t *testing.T) {
 				stateGot := gnmi.Await(t, dut, state, 5*time.Second, testCase.domainname)
 				if got, ok := stateGot.Val(); !ok || (ok && got != testCase.domainname) {
-					t.Errorf("Telemetry domainname: got %v, want %s", stateGot, testCase.domainname)
+					t.Errorf("State domainname: got %v, want %s", stateGot, testCase.domainname)
 				}
 			})
 
