@@ -346,7 +346,11 @@ func (ni *Interface) handleNeighborUpdate(ctx context.Context, nu *netlink.Neigh
 			sub.GetOrCreateIpv4().DeleteNeighbor(nu.IP.String())
 			gnmiclient.BatchDelete(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv4().Neighbor(nu.IP.String()).State())
 		}
-	} else {
+	} else if nu.Type == unix.RTM_NEWNEIGH {
+		if len(nu.HardwareAddr) == 0 {
+			log.Info("skipping neighbor update with no hwaddr")
+			return
+		}
 		if err := engine.AddNeighbor(ctx, ni.fwd, nu.IP, nu.HardwareAddr); err != nil {
 			log.Warningf("failed to add neighbor to dataplane: %v", err)
 			return
