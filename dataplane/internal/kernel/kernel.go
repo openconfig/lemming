@@ -18,6 +18,7 @@ package kernel
 import (
 	"fmt"
 	"net"
+	"os"
 
 	"github.com/vishvananda/netlink"
 	"golang.org/x/sys/unix"
@@ -97,6 +98,10 @@ func CreateTAP(name string) error {
 	req.SetUint16(unix.IFF_TAP | unix.IFF_NO_PI)
 	if err := unix.IoctlIfreq(fd, unix.TUNSETIFF, req); err != nil {
 		return fmt.Errorf("failed to do ioctl: %v", err)
+	}
+	// Accept gratuitous and unsolicited arp requests.
+	if err := os.WriteFile(fmt.Sprintf("/proc/sys/net/ipv4/conf/%s/arp_accept", name), []byte("1"), 0600); err != nil {
+		return fmt.Errorf("failed to set arp_accept to true: %v", err)
 	}
 	return nil
 }

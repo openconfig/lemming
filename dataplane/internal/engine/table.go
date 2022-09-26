@@ -33,6 +33,7 @@ const (
 	neighborTable    = "neighbor"
 	layer2PuntTable  = "layer2-punt"
 	layer3PuntTable  = "layer3-punt"
+	arpPuntTable     = "arp-punt"
 )
 
 var (
@@ -228,12 +229,71 @@ func createFIBSelector(ctx context.Context, c fwdpb.ServiceClient) error {
 
 // createLayer2PuntTable creates a table to packets to punt at layer 2 (input port and mac dst).
 func createLayer2PuntTable(ctx context.Context, c fwdpb.ServiceClient) error {
-	multicast := &fwdpb.TableCreateRequest{
+	arp := &fwdpb.TableCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: contextID},
+		Desc: &fwdpb.TableDesc{
+			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: arpPuntTable}},
+			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_CONTINUE}},
+			Table: &fwdpb.TableDesc_Exact{
+				Exact: &fwdpb.ExactTableDesc{
+					FieldIds: []*fwdpb.PacketFieldId{{
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_TYPE,
+						},
+					}},
+				},
+			},
+		},
+	}
+	if _, err := c.TableCreate(ctx, arp); err != nil {
+		return err
+	}
+	entries := &fwdpb.TableEntryAddRequest{
+		ContextId: &fwdpb.ContextId{Id: contextID},
+		TableId: &fwdpb.TableId{
+			ObjectId: &fwdpb.ObjectId{
+				Id: arpPuntTable,
+			},
+		},
+		Entries: []*fwdpb.TableEntryAddRequest_Entry{{
+			EntryDesc: &fwdpb.EntryDesc{
+				Entry: &fwdpb.EntryDesc_Exact{
+					Exact: &fwdpb.ExactEntryDesc{
+						Fields: []*fwdpb.PacketFieldBytes{{
+							Bytes: mustParseHex("0806"),
+							FieldId: &fwdpb.PacketFieldId{
+								Field: &fwdpb.PacketField{
+									FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_TYPE,
+								},
+							},
+						}},
+					},
+				},
+			},
+			Actions: []*fwdpb.ActionDesc{{
+				ActionType: fwdpb.ActionType_ACTION_TYPE_SWAP_OUTPUT_TAP_EXTERNAL,
+			}, {
+				ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
+			}},
+		}},
+	}
+	if _, err := c.TableEntryAdd(ctx, entries); err != nil {
+		return err
+	}
+	layer2 := &fwdpb.TableCreateRequest{
 		ContextId: &fwdpb.ContextId{Id: contextID},
 		Desc: &fwdpb.TableDesc{
 			TableType: fwdpb.TableType_TABLE_TYPE_PREFIX,
 			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: layer2PuntTable}},
-			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_CONTINUE}},
+			Actions: []*fwdpb.ActionDesc{{
+				ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
+				Action: &fwdpb.ActionDesc_Lookup{
+					Lookup: &fwdpb.LookupActionDesc{
+						TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: arpPuntTable}},
+					},
+				},
+			}},
 			Table: &fwdpb.TableDesc_Prefix{
 				Prefix: &fwdpb.PrefixTableDesc{
 					FieldIds: []*fwdpb.PacketFieldId{{
@@ -249,7 +309,7 @@ func createLayer2PuntTable(ctx context.Context, c fwdpb.ServiceClient) error {
 			},
 		},
 	}
-	if _, err := c.TableCreate(ctx, multicast); err != nil {
+	if _, err := c.TableCreate(ctx, layer2); err != nil {
 		return err
 	}
 	return nil
