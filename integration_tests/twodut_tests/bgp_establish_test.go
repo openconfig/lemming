@@ -94,12 +94,12 @@ func configInterfaceDUT(i *oc.Interface, a *Attributes) *oc.Interface {
 }
 
 // configureDUT configures port1 on the DUT.
-func configureDUT(t *testing.T, dut *ondatra.DUTDevice) {
+func configureDUT(t *testing.T, dut *ondatra.DUTDevice, attr Attributes) {
 	p1 := dut.Port(t, "port1")
 	i1 := &oc.Interface{Name: ygot.String(p1.Name())}
-	gnmi.Replace(t, dut, ocpath.Root().Interface(p1.Name()).Config(), configInterfaceDUT(i1, &dutPort1))
+	gnmi.Replace(t, dut, ocpath.Root().Interface(p1.Name()).Config(), configInterfaceDUT(i1, &attr))
 
-	gnmi.Await(t, dut, ocpath.Root().Interface(dut.Port(t, "port1").Name()).Subinterface(0).Ipv4().Address(dutPort1.IPv4).Ip().State(), time.Minute, dutPort1.IPv4)
+	gnmi.Await(t, dut, ocpath.Root().Interface(dut.Port(t, "port1").Name()).Subinterface(0).Ipv4().Address(attr.IPv4).Ip().State(), time.Minute, attr.IPv4)
 }
 
 func bgpWithNbr(as uint32, routerID string, nbr *oc.NetworkInstance_Protocol_Bgp_Neighbor) *oc.NetworkInstance_Protocol_Bgp {
@@ -114,9 +114,9 @@ func bgpWithNbr(as uint32, routerID string, nbr *oc.NetworkInstance_Protocol_Bgp
 
 func TestEstablish(t *testing.T) {
 	dut := ondatra.DUT(t, "dut")
-	configureDUT(t, dut)
+	configureDUT(t, dut,dutPort1)
 	dut2 := ondatra.DUT(t, "dut2")
-	configureDUT(t, dut2)
+	configureDUT(t, dut2,dutPort2)
 
 	bgpPath := ocpath.Root().NetworkInstance("default").Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").Bgp()
 
