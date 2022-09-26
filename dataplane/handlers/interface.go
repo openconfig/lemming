@@ -291,14 +291,20 @@ func (ni *Interface) handleAddrUpdate(ctx context.Context, au *netlink.AddrUpdat
 	isV4 := au.LinkAddress.IP.To4() != nil
 	log.V(1).Infof("handling addr update for %s ip %v pl %v", name, ip, pl)
 	if au.NewAddr {
+		var ipBytes []byte
 		if isV4 {
+			ipBytes = au.LinkAddress.IP.To4()
 			sub.GetOrCreateIpv4().GetOrCreateAddress(ip).PrefixLength = ygot.Uint8(uint8(pl))
 			gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv4().Address(ip).Ip().State(), au.LinkAddress.IP.String())
 			gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv4().Address(ip).PrefixLength().State(), uint8(pl))
 		} else {
+			ipBytes = au.LinkAddress.IP.To16()
 			sub.GetOrCreateIpv6().GetOrCreateAddress(ip).PrefixLength = ygot.Uint8(uint8(pl))
 			gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv6().Address(ip).Ip().State(), au.LinkAddress.IP.String())
 			gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv6().Address(ip).PrefixLength().State(), uint8(pl))
+		}
+		if err := engine.AddLayer3PuntRule(ctx, ni.fwd, name, ipBytes); err != nil {
+			log.Warningf("failed to add layer3 punt rule: %v", err)
 		}
 	} else {
 		if isV4 {

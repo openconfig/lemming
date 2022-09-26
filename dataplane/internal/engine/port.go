@@ -55,6 +55,13 @@ func CreateExternalPort(ctx context.Context, c fwdpb.ServiceClient, name string)
 								TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: layer2PuntTable}},
 							},
 						},
+					}, { // Lookup in layer 3 table.
+						ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
+						Action: &fwdpb.ActionDesc_Lookup{
+							Lookup: &fwdpb.LookupActionDesc{
+								TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: layer3PuntTable}},
+							},
+						},
 					}, { // Lookup in FIB.
 						ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
 						Action: &fwdpb.ActionDesc_Lookup{
@@ -136,13 +143,13 @@ func createKernelPort(ctx context.Context, c fwdpb.ServiceClient, name string) e
 	if err != nil {
 		return err
 	}
-	if err := AddLayer2PuntRule(ctx, c, portID.GetObjectIndex().GetIndex(), etherBroadcast, etherBroadcastMask); err != nil {
+	if err := addLayer2PuntRule(ctx, c, portID.GetObjectIndex().GetIndex(), etherBroadcast, etherBroadcastMask); err != nil {
 		return err
 	}
-	if err := AddLayer2PuntRule(ctx, c, portID.GetObjectIndex().GetIndex(), etherMulticast, etherMulticastMask); err != nil {
+	if err := addLayer2PuntRule(ctx, c, portID.GetObjectIndex().GetIndex(), etherMulticast, etherMulticastMask); err != nil {
 		return err
 	}
-	if err := AddLayer2PuntRule(ctx, c, portID.GetObjectIndex().GetIndex(), etherIPV6Multi, etherIPV6MultiMask); err != nil {
+	if err := addLayer2PuntRule(ctx, c, portID.GetObjectIndex().GetIndex(), etherIPV6Multi, etherIPV6MultiMask); err != nil {
 		return err
 	}
 	nameToIDMu.Lock()

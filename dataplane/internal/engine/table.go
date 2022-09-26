@@ -31,7 +31,8 @@ const (
 	srcMACTable      = "port-mac"
 	fibSelectorTable = "fib-selector"
 	neighborTable    = "neighbor"
-	layer2PuntTable  = "multicast"
+	layer2PuntTable  = "layer2-punt"
+	layer3PuntTable  = "layer3-punt"
 )
 
 var (
@@ -140,6 +141,9 @@ func SetupForwardingTables(ctx context.Context, c fwdpb.ServiceClient) error {
 		return err
 	}
 	if err := createLayer2PuntTable(ctx, c); err != nil {
+		return err
+	}
+	if err := createLayer3PuntTable(ctx, c); err != nil {
 		return err
 	}
 	return nil
@@ -251,8 +255,8 @@ func createLayer2PuntTable(ctx context.Context, c fwdpb.ServiceClient) error {
 	return nil
 }
 
-// AddLayer2PuntRule adds rule to output packets to a corresponding port based on the destination MAC and input port.
-func AddLayer2PuntRule(ctx context.Context, c fwdpb.ServiceClient, portID uint64, mac, macMask []byte) error {
+// addLayer2PuntRule adds rule to output packets to a corresponding port based on the destination MAC and input port.
+func addLayer2PuntRule(ctx context.Context, c fwdpb.ServiceClient, portID uint64, mac, macMask []byte) error {
 	nidBytes := make([]byte, binary.Size(portID))
 	binary.BigEndian.PutUint64(nidBytes, portID)
 
@@ -280,6 +284,86 @@ func AddLayer2PuntRule(ctx context.Context, c fwdpb.ServiceClient, portID uint64
 							FieldId: &fwdpb.PacketFieldId{
 								Field: &fwdpb.PacketField{
 									FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST,
+								},
+							},
+						}},
+					},
+				},
+			},
+			Actions: []*fwdpb.ActionDesc{{
+				ActionType: fwdpb.ActionType_ACTION_TYPE_SWAP_OUTPUT_TAP_EXTERNAL,
+			}, {
+				ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
+			}},
+		}},
+	}
+	if _, err := c.TableEntryAdd(ctx, entries); err != nil {
+		return err
+	}
+	return nil
+}
+
+// createLayer3PuntTable creates a table controlling whether packets to punt at layer 3 (input port and IP dst).
+func createLayer3PuntTable(ctx context.Context, c fwdpb.ServiceClient) error {
+	multicast := &fwdpb.TableCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: contextID},
+		Desc: &fwdpb.TableDesc{
+			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: layer3PuntTable}},
+			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_CONTINUE}},
+			Table: &fwdpb.TableDesc_Exact{
+				Exact: &fwdpb.ExactTableDesc{
+					FieldIds: []*fwdpb.PacketFieldId{{
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT,
+						},
+					}, {
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST,
+						},
+					}},
+				},
+			},
+		},
+	}
+	if _, err := c.TableCreate(ctx, multicast); err != nil {
+		return err
+	}
+	return nil
+}
+
+// AddLayer3PuntRule adds rule to output packets to a corresponding port based on the destination IP and input port.
+func AddLayer3PuntRule(ctx context.Context, c fwdpb.ServiceClient, portName string, ip []byte) error {
+	nameToIDMu.Lock()
+	defer nameToIDMu.Unlock()
+	portID := nameToID[portName]
+
+	nidBytes := make([]byte, binary.Size(portID))
+	binary.BigEndian.PutUint64(nidBytes, portID)
+
+	entries := &fwdpb.TableEntryAddRequest{
+		ContextId: &fwdpb.ContextId{Id: contextID},
+		TableId: &fwdpb.TableId{
+			ObjectId: &fwdpb.ObjectId{
+				Id: layer3PuntTable,
+			},
+		},
+		Entries: []*fwdpb.TableEntryAddRequest_Entry{{
+			EntryDesc: &fwdpb.EntryDesc{
+				Entry: &fwdpb.EntryDesc_Exact{
+					Exact: &fwdpb.ExactEntryDesc{
+						Fields: []*fwdpb.PacketFieldBytes{{
+							Bytes: nidBytes,
+							FieldId: &fwdpb.PacketFieldId{
+								Field: &fwdpb.PacketField{
+									FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT,
+								},
+							},
+						}, {
+							Bytes: ip,
+							FieldId: &fwdpb.PacketFieldId{
+								Field: &fwdpb.PacketField{
+									FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST,
 								},
 							},
 						}},
