@@ -1,5 +1,0 @@
-topology: /usr/local/google/home/wenbli/gocode/src/github.com/openconfig/lemming/kne/twodut_topo.pb.txt
-kubecfg: /usr/local/google/home/wenbli/.kube/config
-cli: /usr/local/google/home/wenbli/gocode/bin/kne
-username: foo
-password: fake
