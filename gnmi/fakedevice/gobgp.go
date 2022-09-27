@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	listenPort = 179
+	listenPort = 1234
 )
 
 // goBgpTask tries to establish a simple BGP session using GoBGP. It returns an error if initialization failed.
@@ -324,6 +324,9 @@ func goBgpTask(getIntendedConfig func() *oc.Root, q gnmit.Queue, update gnmit.Up
 										NeighborAddress: neighAddr,
 										PeerAsn:         *neigh.PeerAs,
 									},
+									Transport: &api.Transport{
+										RemotePort: listenPort,
+									},
 								},
 							}); err != nil {
 								log.Errorf("goBgpTask: %v", err)
@@ -335,6 +338,9 @@ func goBgpTask(getIntendedConfig func() *oc.Root, q gnmit.Queue, update gnmit.Up
 										Conf: &api.PeerConf{
 											NeighborAddress: neighAddr,
 											PeerAsn:         *neigh.PeerAs,
+										},
+										Transport: &api.Transport{
+											RemotePort: listenPort,
 										},
 									},
 									DoSoftResetIn: true,
@@ -354,6 +360,9 @@ func goBgpTask(getIntendedConfig func() *oc.Root, q gnmit.Queue, update gnmit.Up
 									Conf: &api.PeerConf{
 										NeighborAddress: neighAddr,
 										PeerAsn:         *neigh.PeerAs,
+									},
+									Transport: &api.Transport{
+										RemotePort: listenPort,
 									},
 								},
 							}); err != nil {
