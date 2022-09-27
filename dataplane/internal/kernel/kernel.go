@@ -85,18 +85,18 @@ func SetInterfaceState(name string, up bool) error {
 }
 
 // CreateTAP creates kernel TAP interface.
-func CreateTAP(name string) error {
+func CreateTAP(name string) (int, error) {
 	fd, err := unix.Open("/dev/net/tun", unix.O_RDWR, 0)
 	if err != nil {
-		return fmt.Errorf("failed to open tun file: %w", err)
+		return 0, fmt.Errorf("failed to open tun file: %w", err)
 	}
 	req, err := unix.NewIfreq(name)
 	if err != nil {
-		return fmt.Errorf("failed to create interface req: %w", err)
+		return 0, fmt.Errorf("failed to create interface req: %w", err)
 	}
 	req.SetUint16(unix.IFF_TAP | unix.IFF_NO_PI)
 	if err := unix.IoctlIfreq(fd, unix.TUNSETIFF, req); err != nil {
-		return fmt.Errorf("failed to do ioctl: %v", err)
+		return 0, fmt.Errorf("failed to do ioctl: %v", err)
 	}
-	return nil
+	return fd, nil
 }

@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"os"
 	"sync"
 
 	"github.com/openconfig/lemming/dataplane/internal/engine"
@@ -230,21 +231,16 @@ func (ni *Interface) handleLinkUpdate(ctx context.Context, lu *netlink.LinkUpdat
 
 	log.V(1).Infof("handling link update for %s", lu.Attrs().Name)
 
-	modelName := engine.TapNameToIntfName(lu.Attrs().Name)
-	iface := ni.getOrCreateInterface(modelName)
-
-	// TODO: The kernel sends ARP replies from the external ports, and I can't figure out make send them from the TAP ports.
-	// For now, get and set HW addr from/to external port. See more https://en.wikipedia.org/wiki/Host_model.
 	if !engine.IsTap(lu.Attrs().Name) {
-		if err := engine.UpdatePortSrcMAC(ctx, ni.fwd, lu.Attrs().Name, lu.Attrs().HardwareAddr); err != nil {
-			log.Warningf("failed to update src mac: %v", err)
-		}
-		iface.GetOrCreateEthernet().MacAddress = ygot.String(lu.Attrs().HardwareAddr.String())
-		if _, err := gnmiclient.Update(ctx, ni.c, ocpath.Root().Interface(modelName).Ethernet().MacAddress().State(), *iface.Ethernet.MacAddress); err != nil {
-			log.Warningf("failed to set link status: %v", err)
-		}
 		return
 	}
+
+	modelName := engine.TapNameToIntfName(lu.Attrs().Name)
+	iface := ni.getOrCreateInterface(modelName)
+	if err := engine.UpdatePortSrcMAC(ctx, ni.fwd, modelName, lu.Attrs().HardwareAddr); err != nil {
+		log.Warningf("failed to update src mac: %v", err)
+	}
+	iface.GetOrCreateEthernet().MacAddress = ygot.String(lu.Attrs().HardwareAddr.String())
 
 	iface.Ifindex = ygot.Uint32(uint32(lu.Attrs().Index))
 	iface.Enabled = ygot.Bool(lu.Attrs().Flags&net.FlagUp != 0)
@@ -265,6 +261,7 @@ func (ni *Interface) handleLinkUpdate(ctx context.Context, lu *netlink.LinkUpdat
 
 	sb := &ygnmi.SetBatch{}
 
+	gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(modelName).Ethernet().MacAddress().State(), *iface.Ethernet.MacAddress)
 	gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(modelName).Ifindex().State(), *iface.Ifindex)
 	gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(modelName).Enabled().State(), *iface.Enabled)
 	gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(modelName).OperStatus().State(), iface.OperStatus)
@@ -291,14 +288,21 @@ func (ni *Interface) handleAddrUpdate(ctx context.Context, au *netlink.AddrUpdat
 	isV4 := au.LinkAddress.IP.To4() != nil
 	log.V(1).Infof("handling addr update for %s ip %v pl %v", name, ip, pl)
 	if au.NewAddr {
+		var ipBytes []byte
 		if isV4 {
+			ipBytes = au.LinkAddress.IP.To4()
 			sub.GetOrCreateIpv4().GetOrCreateAddress(ip).PrefixLength = ygot.Uint8(uint8(pl))
 			gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv4().Address(ip).Ip().State(), au.LinkAddress.IP.String())
 			gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv4().Address(ip).PrefixLength().State(), uint8(pl))
 		} else {
+			ipBytes = au.LinkAddress.IP.To16()
 			sub.GetOrCreateIpv6().GetOrCreateAddress(ip).PrefixLength = ygot.Uint8(uint8(pl))
 			gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv6().Address(ip).Ip().State(), au.LinkAddress.IP.String())
 			gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv6().Address(ip).PrefixLength().State(), uint8(pl))
+		}
+		// Forward all packets destined to this interface to the corresponding TAP interface.
+		if err := engine.AddLayer3PuntRule(ctx, ni.fwd, modelName, ipBytes); err != nil {
+			log.Warningf("failed to add layer3 punt rule: %v", err)
 		}
 	} else {
 		if isV4 {
@@ -328,8 +332,9 @@ func (ni *Interface) handleNeighborUpdate(ctx context.Context, nu *netlink.Neigh
 	modelName := engine.TapNameToIntfName(name)
 	sub := ni.getOrCreateInterface(modelName).GetOrCreateSubinterface(0)
 
-	if nu.Type == unix.RTM_DELNEIGH {
-		if err := engine.RemoveNeighbor(ctx, ni.fwd, nu.IP); err != nil {
+	switch nu.Type {
+	case unix.RTM_DELNEIGH:
+		if err := engine.RemoveNeighbor(ctx, ni.fwd, ipToBytes(nu.IP)); err != nil {
 			log.Warningf("failed to add neighbor to dataplane: %v", err)
 			return
 		}
@@ -340,8 +345,12 @@ func (ni *Interface) handleNeighborUpdate(ctx context.Context, nu *netlink.Neigh
 			sub.GetOrCreateIpv4().DeleteNeighbor(nu.IP.String())
 			gnmiclient.BatchDelete(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv4().Neighbor(nu.IP.String()).State())
 		}
-	} else {
-		if err := engine.AddNeighbor(ctx, ni.fwd, nu.IP, nu.HardwareAddr); err != nil {
+	case unix.RTM_NEWNEIGH:
+		if len(nu.HardwareAddr) == 0 {
+			log.Info("skipping neighbor update with no hwaddr")
+			return
+		}
+		if err := engine.AddNeighbor(ctx, ni.fwd, ipToBytes(nu.IP), nu.HardwareAddr); err != nil {
 			log.Warningf("failed to add neighbor to dataplane: %v", err)
 			return
 		}
@@ -368,6 +377,8 @@ func (ni *Interface) handleNeighborUpdate(ctx context.Context, nu *netlink.Neigh
 			gnmiclient.BatchReplace(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv4().Neighbor(nu.IP.String()).LinkLayerAddress().State(), neigh.GetLinkLayerAddress())
 			gnmiclient.BatchReplace(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv4().Neighbor(nu.IP.String()).Origin().State(), neigh.GetOrigin())
 		}
+	default:
+		log.Warningf("unknown neigh update type: %v", nu.Type)
 	}
 
 	if _, err := sb.Set(ctx, ni.c); err != nil {
@@ -386,7 +397,8 @@ func (ni *Interface) setupPorts(ctx context.Context) error {
 		if i.Name == "lo" || i.Name == "eth0" || engine.IsTap(i.Name) {
 			continue
 		}
-		if err := kernel.CreateTAP(engine.IntfNameToTapName(i.Name)); err != nil {
+		fd, err := kernel.CreateTAP(engine.IntfNameToTapName(i.Name))
+		if err != nil {
 			return fmt.Errorf("failed to create tap port %q: %w", engine.IntfNameToTapName(i.Name), err)
 		}
 		tap, err := net.InterfaceByName(engine.IntfNameToTapName(i.Name))
@@ -395,15 +407,27 @@ func (ni *Interface) setupPorts(ctx context.Context) error {
 		}
 		ni.idxToName[i.Index] = i.Name
 		ni.idxToName[tap.Index] = tap.Name
-		if err := engine.CreateLocalPort(ctx, ni.fwd, tap.Name); err != nil {
+		if err := engine.CreateLocalPort(ctx, ni.fwd, tap.Name, fd); err != nil {
 			return fmt.Errorf("failed to create internal port %q: %w", tap.Name, err)
 		}
 		if err := engine.CreateExternalPort(ctx, ni.fwd, i.Name); err != nil {
 			return fmt.Errorf("failed to create external port %q: %w", i.Name, err)
 		}
-		if err := engine.UpdatePortSrcMAC(ctx, ni.fwd, i.Name, i.HardwareAddr); err != nil {
+		// Make port only reply to IPs it have
+		if err := os.WriteFile(fmt.Sprintf("/proc/sys/net/ipv4/conf/%s/arp_ignore", i.Name), []byte("2"), 0600); err != nil {
+			return fmt.Errorf("failed to set arp_ignore to 2: %v", err)
+		}
+		if err := engine.UpdatePortSrcMAC(ctx, ni.fwd, i.Name, tap.HardwareAddr); err != nil {
 			return fmt.Errorf("failed to update MAC address for port %q: %w", i.Name, err)
 		}
 	}
 	return nil
+}
+
+// ipToBytes converts a net.IP to a slice of bytes of the correct length (4 for IPv4, 16 for IPv6).
+func ipToBytes(ip net.IP) []byte {
+	if ip.To4() != nil {
+		return ip.To4()
+	}
+	return ip.To16()
 }

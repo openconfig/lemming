@@ -31,7 +31,9 @@ const (
 	srcMACTable      = "port-mac"
 	fibSelectorTable = "fib-selector"
 	neighborTable    = "neighbor"
-	layer2PuntTable  = "multicast"
+	layer2PuntTable  = "layer2-punt"
+	layer3PuntTable  = "layer3-punt"
+	arpPuntTable     = "arp-punt"
 )
 
 var (
@@ -142,6 +144,9 @@ func SetupForwardingTables(ctx context.Context, c fwdpb.ServiceClient) error {
 	if err := createLayer2PuntTable(ctx, c); err != nil {
 		return err
 	}
+	if err := createLayer3PuntTable(ctx, c); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -224,12 +229,71 @@ func createFIBSelector(ctx context.Context, c fwdpb.ServiceClient) error {
 
 // createLayer2PuntTable creates a table to packets to punt at layer 2 (input port and mac dst).
 func createLayer2PuntTable(ctx context.Context, c fwdpb.ServiceClient) error {
-	multicast := &fwdpb.TableCreateRequest{
+	arp := &fwdpb.TableCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: contextID},
+		Desc: &fwdpb.TableDesc{
+			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: arpPuntTable}},
+			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_CONTINUE}},
+			Table: &fwdpb.TableDesc_Exact{
+				Exact: &fwdpb.ExactTableDesc{
+					FieldIds: []*fwdpb.PacketFieldId{{
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_TYPE,
+						},
+					}},
+				},
+			},
+		},
+	}
+	if _, err := c.TableCreate(ctx, arp); err != nil {
+		return err
+	}
+	entries := &fwdpb.TableEntryAddRequest{
+		ContextId: &fwdpb.ContextId{Id: contextID},
+		TableId: &fwdpb.TableId{
+			ObjectId: &fwdpb.ObjectId{
+				Id: arpPuntTable,
+			},
+		},
+		Entries: []*fwdpb.TableEntryAddRequest_Entry{{
+			EntryDesc: &fwdpb.EntryDesc{
+				Entry: &fwdpb.EntryDesc_Exact{
+					Exact: &fwdpb.ExactEntryDesc{
+						Fields: []*fwdpb.PacketFieldBytes{{
+							Bytes: mustParseHex("0806"),
+							FieldId: &fwdpb.PacketFieldId{
+								Field: &fwdpb.PacketField{
+									FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_TYPE,
+								},
+							},
+						}},
+					},
+				},
+			},
+			Actions: []*fwdpb.ActionDesc{{
+				ActionType: fwdpb.ActionType_ACTION_TYPE_SWAP_OUTPUT_TAP_EXTERNAL,
+			}, {
+				ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
+			}},
+		}},
+	}
+	if _, err := c.TableEntryAdd(ctx, entries); err != nil {
+		return err
+	}
+	layer2 := &fwdpb.TableCreateRequest{
 		ContextId: &fwdpb.ContextId{Id: contextID},
 		Desc: &fwdpb.TableDesc{
 			TableType: fwdpb.TableType_TABLE_TYPE_PREFIX,
 			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: layer2PuntTable}},
-			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_CONTINUE}},
+			Actions: []*fwdpb.ActionDesc{{
+				ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
+				Action: &fwdpb.ActionDesc_Lookup{
+					Lookup: &fwdpb.LookupActionDesc{
+						TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: arpPuntTable}},
+					},
+				},
+			}},
 			Table: &fwdpb.TableDesc_Prefix{
 				Prefix: &fwdpb.PrefixTableDesc{
 					FieldIds: []*fwdpb.PacketFieldId{{
@@ -245,14 +309,14 @@ func createLayer2PuntTable(ctx context.Context, c fwdpb.ServiceClient) error {
 			},
 		},
 	}
-	if _, err := c.TableCreate(ctx, multicast); err != nil {
+	if _, err := c.TableCreate(ctx, layer2); err != nil {
 		return err
 	}
 	return nil
 }
 
-// AddLayer2PuntRule adds rule to output packets to a corresponding port based on the destination MAC and input port.
-func AddLayer2PuntRule(ctx context.Context, c fwdpb.ServiceClient, portID uint64, mac, macMask []byte) error {
+// addLayer2PuntRule adds rule to output packets to a corresponding port based on the destination MAC and input port.
+func addLayer2PuntRule(ctx context.Context, c fwdpb.ServiceClient, portID uint64, mac, macMask []byte) error {
 	nidBytes := make([]byte, binary.Size(portID))
 	binary.BigEndian.PutUint64(nidBytes, portID)
 
@@ -299,6 +363,88 @@ func AddLayer2PuntRule(ctx context.Context, c fwdpb.ServiceClient, portID uint64
 	return nil
 }
 
+// createLayer3PuntTable creates a table controlling whether packets to punt at layer 3 (input port and IP dst).
+func createLayer3PuntTable(ctx context.Context, c fwdpb.ServiceClient) error {
+	multicast := &fwdpb.TableCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: contextID},
+		Desc: &fwdpb.TableDesc{
+			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: layer3PuntTable}},
+			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_CONTINUE}},
+			Table: &fwdpb.TableDesc_Exact{
+				Exact: &fwdpb.ExactTableDesc{
+					FieldIds: []*fwdpb.PacketFieldId{{
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT,
+						},
+					}, {
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST,
+						},
+					}},
+				},
+			},
+		},
+	}
+	if _, err := c.TableCreate(ctx, multicast); err != nil {
+		return err
+	}
+	return nil
+}
+
+// AddLayer3PuntRule adds rule to output packets to a corresponding port based on the destination IP and input port.
+func AddLayer3PuntRule(ctx context.Context, c fwdpb.ServiceClient, portName string, ip []byte) error {
+	nameToIDMu.Lock()
+	defer nameToIDMu.Unlock()
+	portID := nameToID[portName]
+
+	nidBytes := make([]byte, binary.Size(portID))
+	binary.BigEndian.PutUint64(nidBytes, portID)
+
+	log.Infof("adding layer3 punt rule: portName %s, id %d, ip %v", portName, portID, ip)
+
+	entries := &fwdpb.TableEntryAddRequest{
+		ContextId: &fwdpb.ContextId{Id: contextID},
+		TableId: &fwdpb.TableId{
+			ObjectId: &fwdpb.ObjectId{
+				Id: layer3PuntTable,
+			},
+		},
+		Entries: []*fwdpb.TableEntryAddRequest_Entry{{
+			EntryDesc: &fwdpb.EntryDesc{
+				Entry: &fwdpb.EntryDesc_Exact{
+					Exact: &fwdpb.ExactEntryDesc{
+						Fields: []*fwdpb.PacketFieldBytes{{
+							Bytes: nidBytes,
+							FieldId: &fwdpb.PacketFieldId{
+								Field: &fwdpb.PacketField{
+									FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT,
+								},
+							},
+						}, {
+							Bytes: ip,
+							FieldId: &fwdpb.PacketFieldId{
+								Field: &fwdpb.PacketField{
+									FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST,
+								},
+							},
+						}},
+					},
+				},
+			},
+			Actions: []*fwdpb.ActionDesc{{
+				ActionType: fwdpb.ActionType_ACTION_TYPE_SWAP_OUTPUT_TAP_EXTERNAL,
+			}, {
+				ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
+			}},
+		}},
+	}
+	if _, err := c.TableEntryAdd(ctx, entries); err != nil {
+		return err
+	}
+	return nil
+}
+
 // AddIPRoute adds a route to the FIB.
 func AddIPRoute(ctx context.Context, c fwdpb.ServiceClient, v4 bool, ip, mask, nextHopIP []byte, port string) error {
 	fib := fibV6Table
@@ -306,8 +452,39 @@ func AddIPRoute(ctx context.Context, c fwdpb.ServiceClient, v4 bool, ip, mask, n
 		fib = fibV4Table
 	}
 
+	nextHopAct := &fwdpb.ActionDesc{ // Set the next hop IP in the packet's metadata.
+		ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
+		Action: &fwdpb.ActionDesc_Update{
+			Update: &fwdpb.UpdateActionDesc{
+				FieldId: &fwdpb.PacketFieldId{
+					Field: &fwdpb.PacketField{
+						FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP,
+					},
+				},
+				Type:  fwdpb.UpdateType_UPDATE_TYPE_SET,
+				Value: nextHopIP,
+			},
+		},
+	}
 	if nextHopIP == nil {
-		nextHopIP = ip
+		nextHopAct = &fwdpb.ActionDesc{ // Set the next hop IP in the packet's metadata.
+			ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
+			Action: &fwdpb.ActionDesc_Update{
+				Update: &fwdpb.UpdateActionDesc{
+					FieldId: &fwdpb.PacketFieldId{
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP,
+						},
+					},
+					Type: fwdpb.UpdateType_UPDATE_TYPE_COPY,
+					Field: &fwdpb.PacketFieldId{
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST,
+						},
+					},
+				},
+			},
+		}
 	}
 	log.V(1).Infof("adding ip route: isv4 %t, ip %v, mask %v, nextHop %v, port %s", v4, ip, mask, nextHopIP, port)
 
@@ -332,20 +509,7 @@ func AddIPRoute(ctx context.Context, c fwdpb.ServiceClient, v4 bool, ip, mask, n
 					PortId: &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: port}},
 				},
 			},
-		}, { // Set the next hop IP in the packet's metadata.
-			ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
-			Action: &fwdpb.ActionDesc_Update{
-				Update: &fwdpb.UpdateActionDesc{
-					FieldId: &fwdpb.PacketFieldId{
-						Field: &fwdpb.PacketField{
-							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP,
-						},
-					},
-					Type:  fwdpb.UpdateType_UPDATE_TYPE_SET,
-					Value: nextHopIP,
-				},
-			},
-		}, { // Lookup in the neighbor table.
+		}, nextHopAct, { // Lookup in the neighbor table.
 			ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
 			Action: &fwdpb.ActionDesc_Lookup{
 				Lookup: &fwdpb.LookupActionDesc{

@@ -55,6 +55,13 @@ func CreateExternalPort(ctx context.Context, c fwdpb.ServiceClient, name string)
 								TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: layer2PuntTable}},
 							},
 						},
+					}, { // Lookup in layer 3 table.
+						ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
+						Action: &fwdpb.ActionDesc_Lookup{
+							Lookup: &fwdpb.LookupActionDesc{
+								TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: layer3PuntTable}},
+							},
+						},
 					}, { // Lookup in FIB.
 						ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
 						Action: &fwdpb.ActionDesc_Lookup{
@@ -82,8 +89,8 @@ func CreateExternalPort(ctx context.Context, c fwdpb.ServiceClient, name string)
 }
 
 // CreateLocalPort creates an local (ie TAP) port for the given linux device name.
-func CreateLocalPort(ctx context.Context, c fwdpb.ServiceClient, name string) error {
-	if err := createKernelPort(ctx, c, name); err != nil {
+func CreateLocalPort(ctx context.Context, c fwdpb.ServiceClient, name string, fd int) error {
+	if err := createTapPort(ctx, c, name, fd); err != nil {
 		return err
 	}
 	update := &fwdpb.PortUpdateRequest{
@@ -117,6 +124,7 @@ func CreateLocalPort(ctx context.Context, c fwdpb.ServiceClient, name string) er
 	return nil
 }
 
+// createKernelPort creates a port using the "Kernel" dataplane type (socket API).
 func createKernelPort(ctx context.Context, c fwdpb.ServiceClient, name string) error {
 	port := &fwdpb.PortCreateRequest{
 		ContextId: &fwdpb.ContextId{Id: contextID},
@@ -136,13 +144,48 @@ func createKernelPort(ctx context.Context, c fwdpb.ServiceClient, name string) e
 	if err != nil {
 		return err
 	}
-	if err := AddLayer2PuntRule(ctx, c, portID.GetObjectIndex().GetIndex(), etherBroadcast, etherBroadcastMask); err != nil {
+	if err := addLayer2PuntRule(ctx, c, portID.GetObjectIndex().GetIndex(), etherBroadcast, etherBroadcastMask); err != nil {
 		return err
 	}
-	if err := AddLayer2PuntRule(ctx, c, portID.GetObjectIndex().GetIndex(), etherMulticast, etherMulticastMask); err != nil {
+	if err := addLayer2PuntRule(ctx, c, portID.GetObjectIndex().GetIndex(), etherMulticast, etherMulticastMask); err != nil {
 		return err
 	}
-	if err := AddLayer2PuntRule(ctx, c, portID.GetObjectIndex().GetIndex(), etherIPV6Multi, etherIPV6MultiMask); err != nil {
+	if err := addLayer2PuntRule(ctx, c, portID.GetObjectIndex().GetIndex(), etherIPV6Multi, etherIPV6MultiMask); err != nil {
+		return err
+	}
+	nameToIDMu.Lock()
+	nameToID[name] = portID.GetObjectIndex().GetIndex()
+	nameToIDMu.Unlock()
+	return nil
+}
+
+// createKernelPort creates a port using the "TAP" dataplane type (tap file API) and returns the fd to read/write from.
+func createTapPort(ctx context.Context, c fwdpb.ServiceClient, name string, fd int) error {
+	port := &fwdpb.PortCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: contextID},
+		Port: &fwdpb.PortDesc{
+			PortType: fwdpb.PortType_PORT_TYPE_TAP,
+			PortId: &fwdpb.PortId{
+				ObjectId: &fwdpb.ObjectId{Id: name},
+			},
+			Port: &fwdpb.PortDesc_Tap{
+				Tap: &fwdpb.TAPPortDesc{
+					Fd: int64(fd),
+				},
+			},
+		},
+	}
+	portID, err := c.PortCreate(ctx, port)
+	if err != nil {
+		return err
+	}
+	if err := addLayer2PuntRule(ctx, c, portID.GetObjectIndex().GetIndex(), etherBroadcast, etherBroadcastMask); err != nil {
+		return err
+	}
+	if err := addLayer2PuntRule(ctx, c, portID.GetObjectIndex().GetIndex(), etherMulticast, etherMulticastMask); err != nil {
+		return err
+	}
+	if err := addLayer2PuntRule(ctx, c, portID.GetObjectIndex().GetIndex(), etherIPV6Multi, etherIPV6MultiMask); err != nil {
 		return err
 	}
 	nameToIDMu.Lock()
