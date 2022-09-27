@@ -485,7 +485,6 @@ func AddIPRoute(ctx context.Context, c fwdpb.ServiceClient, v4 bool, ip, mask, n
 				},
 			},
 		}
-
 	}
 	log.V(1).Infof("adding ip route: isv4 %t, ip %v, mask %v, nextHop %v, port %s", v4, ip, mask, nextHopIP, port)
 

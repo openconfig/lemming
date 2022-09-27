@@ -300,6 +300,7 @@ func (ni *Interface) handleAddrUpdate(ctx context.Context, au *netlink.AddrUpdat
 			gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv6().Address(ip).Ip().State(), au.LinkAddress.IP.String())
 			gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv6().Address(ip).PrefixLength().State(), uint8(pl))
 		}
+		// Forward all packets destined to this interface to the corresponding TAP interface.
 		if err := engine.AddLayer3PuntRule(ctx, ni.fwd, modelName, ipBytes); err != nil {
 			log.Warningf("failed to add layer3 punt rule: %v", err)
 		}
@@ -331,7 +332,8 @@ func (ni *Interface) handleNeighborUpdate(ctx context.Context, nu *netlink.Neigh
 	modelName := engine.TapNameToIntfName(name)
 	sub := ni.getOrCreateInterface(modelName).GetOrCreateSubinterface(0)
 
-	if nu.Type == unix.RTM_DELNEIGH {
+	switch nu.Type {
+	case unix.RTM_DELNEIGH:
 		if err := engine.RemoveNeighbor(ctx, ni.fwd, ipToBytes(nu.IP)); err != nil {
 			log.Warningf("failed to add neighbor to dataplane: %v", err)
 			return
@@ -343,7 +345,7 @@ func (ni *Interface) handleNeighborUpdate(ctx context.Context, nu *netlink.Neigh
 			sub.GetOrCreateIpv4().DeleteNeighbor(nu.IP.String())
 			gnmiclient.BatchDelete(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv4().Neighbor(nu.IP.String()).State())
 		}
-	} else if nu.Type == unix.RTM_NEWNEIGH {
+	case unix.RTM_NEWNEIGH:
 		if len(nu.HardwareAddr) == 0 {
 			log.Info("skipping neighbor update with no hwaddr")
 			return
@@ -375,6 +377,8 @@ func (ni *Interface) handleNeighborUpdate(ctx context.Context, nu *netlink.Neigh
 			gnmiclient.BatchReplace(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv4().Neighbor(nu.IP.String()).LinkLayerAddress().State(), neigh.GetLinkLayerAddress())
 			gnmiclient.BatchReplace(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv4().Neighbor(nu.IP.String()).Origin().State(), neigh.GetOrigin())
 		}
+	default:
+		log.Warningf("unknown neigh update type: %v", nu.Type)
 	}
 
 	if _, err := sb.Set(ctx, ni.c); err != nil {
@@ -411,7 +415,7 @@ func (ni *Interface) setupPorts(ctx context.Context) error {
 		}
 		// Make port only reply to IPs it have
 		if err := os.WriteFile(fmt.Sprintf("/proc/sys/net/ipv4/conf/%s/arp_ignore", i.Name), []byte("2"), 0600); err != nil {
-			return fmt.Errorf("failed to set arp_accept to true: %v", err)
+			return fmt.Errorf("failed to set arp_ignore to 2: %v", err)
 		}
 		if err := engine.UpdatePortSrcMAC(ctx, ni.fwd, i.Name, tap.HardwareAddr); err != nil {
 			return fmt.Errorf("failed to update MAC address for port %q: %w", i.Name, err)
@@ -420,11 +424,7 @@ func (ni *Interface) setupPorts(ctx context.Context) error {
 	return nil
 }
 
-func ipStrToBytes(ip string) []byte {
-	ipBytes := net.ParseIP(ip)
-	return ipToBytes(ipBytes)
-}
-
+// ipToBytes converts a net.IP to a slice of bytes of the correct length (4 for IPv4, 16 for IPv6).
 func ipToBytes(ip net.IP) []byte {
 	if ip.To4() != nil {
 		return ip.To4()

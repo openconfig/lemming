@@ -34,6 +34,8 @@ func init() {
 }
 
 // tapPort is a ports that receives from and writes a linux network device.
+// A TAP interface reads and writes from a fd instead of raw socket,
+// this ensures kernel correctly responds to lower level protocols such as ARP, ICMP, etc.
 type tapPort struct {
 	fwdobject.Base
 	input  fwdaction.Actions
@@ -67,6 +69,7 @@ func (p *tapPort) Update(upd *fwdpb.PortUpdateDesc) error {
 			p.Cleanup()
 		}
 	}()
+	// TODO: Should we have a common update type for input/output actions or an update type per port type?
 	kernelUpd, ok := upd.Port.(*fwdpb.PortUpdateDesc_Kernel)
 	if !ok {
 		return fmt.Errorf("invalid type for port update")

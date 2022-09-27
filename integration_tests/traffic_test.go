@@ -32,6 +32,8 @@ import (
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot"
 
+	gribipb "github.com/openconfig/gribi/v1/proto/service"
+
 	kinit "github.com/openconfig/ondatra/knebind/init"
 )
 
@@ -48,10 +50,17 @@ func TestMain(m *testing.M) {
 //   - ate:port1 -> dut:port1 subnet 192.0.2.0/30
 //   - ate:port2 -> dut:port2 subnet 192.0.2.4/30
 const (
-	ipv4PrefixLen = 30
-	ateDstNetCIDR = "198.51.100.0/24"
-	nhIndex       = 1
-	nhgIndex      = 42
+	ipv4PrefixLen          = 30
+	ateDstNetCIDR          = "198.51.100.0/24"
+	ateIndirectNH          = "203.0.113.1"
+	ateIndirectNHCIDR      = ateIndirectNH + "/32"
+	nhIndex                = 1
+	nhgIndex               = 42
+	nhIndex2               = 2
+	nhgIndex2              = 52
+	nhIndex3               = 3
+	nhgIndex3              = 62
+	defaultNetworkInstance = "DEFAULT"
 )
 
 // Attributes bundles some common attributes for devices and/or interfaces.
@@ -229,11 +238,11 @@ func TestIPv4Entry(t *testing.T) {
 	}{{
 		desc: "Single next-hop",
 		entries: []fluent.GRIBIEntry{
-			fluent.NextHopEntry().WithNetworkInstance("DEFAULT").
+			fluent.NextHopEntry().WithNetworkInstance(defaultNetworkInstance).
 				WithIndex(nhIndex).WithIPAddress(atePort2.IPv4),
-			fluent.NextHopGroupEntry().WithNetworkInstance("DEFAULT").
+			fluent.NextHopGroupEntry().WithNetworkInstance(defaultNetworkInstance).
 				WithID(nhgIndex).AddNextHop(nhIndex, 1),
-			fluent.IPv4Entry().WithNetworkInstance("DEFAULT").
+			fluent.IPv4Entry().WithNetworkInstance(defaultNetworkInstance).
 				WithPrefix(ateDstNetCIDR).WithNextHopGroup(nhgIndex),
 		},
 		wantOperationResults: []*client.OpResult{
@@ -249,6 +258,56 @@ func TestIPv4Entry(t *testing.T) {
 				AsResult(),
 			fluent.OperationResult().
 				WithIPv4Operation(ateDstNetCIDR).
+				WithProgrammingResult(fluent.InstalledInFIB).
+				WithOperationType(constants.Add).
+				AsResult(),
+		},
+	}, {
+		desc: "Recursive next-hop",
+		entries: []fluent.GRIBIEntry{
+			// Add an IPv4Entry for 198.51.100.0/24 pointing to 203.0.113.1/32.
+			fluent.NextHopEntry().WithNetworkInstance(defaultNetworkInstance).
+				WithIndex(nhIndex3).WithIPAddress(ateIndirectNH),
+			fluent.NextHopGroupEntry().WithNetworkInstance(defaultNetworkInstance).
+				WithID(nhgIndex3).AddNextHop(nhIndex3, 1),
+			fluent.IPv4Entry().WithNetworkInstance(defaultNetworkInstance).
+				WithPrefix(ateDstNetCIDR).WithNextHopGroup(nhgIndex3),
+			// Add an IPv4Entry for 203.0.113.1/32 pointing to 192.0.2.6.
+			fluent.NextHopEntry().WithNetworkInstance(defaultNetworkInstance).
+				WithIndex(nhIndex2).WithIPAddress(atePort2.IPv4),
+			fluent.NextHopGroupEntry().WithNetworkInstance(defaultNetworkInstance).
+				WithID(nhgIndex2).AddNextHop(nhIndex2, 1),
+			fluent.IPv4Entry().WithNetworkInstance(defaultNetworkInstance).
+				WithPrefix(ateIndirectNHCIDR).WithNextHopGroup(nhgIndex2),
+		},
+		wantOperationResults: []*client.OpResult{
+			fluent.OperationResult().
+				WithNextHopOperation(nhIndex3).
+				WithProgrammingResult(fluent.InstalledInFIB).
+				WithOperationType(constants.Add).
+				AsResult(),
+			fluent.OperationResult().
+				WithNextHopGroupOperation(nhgIndex3).
+				WithProgrammingResult(fluent.InstalledInFIB).
+				WithOperationType(constants.Add).
+				AsResult(),
+			fluent.OperationResult().
+				WithIPv4Operation(ateDstNetCIDR).
+				WithProgrammingResult(fluent.InstalledInFIB).
+				WithOperationType(constants.Add).
+				AsResult(),
+			fluent.OperationResult().
+				WithNextHopOperation(nhIndex2).
+				WithProgrammingResult(fluent.InstalledInFIB).
+				WithOperationType(constants.Add).
+				AsResult(),
+			fluent.OperationResult().
+				WithNextHopGroupOperation(nhgIndex2).
+				WithProgrammingResult(fluent.InstalledInFIB).
+				WithOperationType(constants.Add).
+				AsResult(),
+			fluent.OperationResult().
+				WithIPv4Operation(ateIndirectNHCIDR).
 				WithProgrammingResult(fluent.InstalledInFIB).
 				WithOperationType(constants.Add).
 				AsResult(),
@@ -289,6 +348,10 @@ func TestIPv4Entry(t *testing.T) {
 			if loss > 1 {
 				t.Errorf("Loss: got %g, want <= 1", loss)
 			}
+			gribic.Flush(context.Background(), &gribipb.FlushRequest{
+				NetworkInstance: &gribipb.FlushRequest_All{All: &gribipb.Empty{}},
+			})
+			// TODO: Test that entries are deleted and that there is no more traffic.
 		})
 	}
 }
