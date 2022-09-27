@@ -302,6 +302,8 @@ func (ni *Interface) handleAddrUpdate(ctx context.Context, au *netlink.AddrUpdat
 		}
 		if err := engine.AddLayer3PuntRule(ctx, ni.fwd, modelName, ipBytes); err != nil {
 			log.Warningf("failed to add layer3 punt rule: %v", err)
+		} else {
+			log.V(1).Infof("Added layer3 punt rule on interface %q for IP %v", name, au.LinkAddress.IP.String())
 		}
 	} else {
 		if isV4 {

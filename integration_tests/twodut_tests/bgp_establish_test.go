@@ -44,8 +44,8 @@ const (
 )
 
 const (
-	dutAS = 64500
-	ateAS = 64501
+	dutAS  = 64500
+	dut2AS = 64501
 )
 
 // Attributes bundles some common attributes for devices and/or interfaces.
@@ -65,16 +65,14 @@ type Attributes struct {
 
 var (
 	dutPort1 = Attributes{
-		Desc: "dutPort1",
-		IPv4: "192.0.2.1",
-		//IPv4:    "10.244.0.33",
+		Desc:    "dutPort1",
+		IPv4:    "192.0.2.1",
 		IPv4Len: ipv4PrefixLen,
 	}
 
 	dut2Port1 = Attributes{
-		Desc: "dut2Port1",
-		IPv4: "192.0.2.2",
-		//IPv4:    "10.244.0.32",
+		Desc:    "dut2Port1",
+		IPv4:    "192.0.2.2",
 		IPv4Len: ipv4PrefixLen,
 	}
 )
@@ -114,9 +112,9 @@ func bgpWithNbr(as uint32, routerID string, nbr *oc.NetworkInstance_Protocol_Bgp
 
 func TestEstablish(t *testing.T) {
 	dut := ondatra.DUT(t, "dut")
-	configureDUT(t, dut,dutPort1)
+	configureDUT(t, dut, dutPort1)
 	dut2 := ondatra.DUT(t, "dut2")
-	configureDUT(t, dut2,dutPort2)
+	configureDUT(t, dut2, dut2Port1)
 
 	bgpPath := ocpath.Root().NetworkInstance("default").Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").Bgp()
 
@@ -126,10 +124,10 @@ func TestEstablish(t *testing.T) {
 
 	// Start a new session
 	dutConf := bgpWithNbr(dutAS, dutPort1.IPv4, &oc.NetworkInstance_Protocol_Bgp_Neighbor{
-		PeerAs:          ygot.Uint32(ateAS),
+		PeerAs:          ygot.Uint32(dut2AS),
 		NeighborAddress: ygot.String(dut2Port1.IPv4),
 	})
-	dut2Conf := bgpWithNbr(ateAS, dut2Port1.IPv4, &oc.NetworkInstance_Protocol_Bgp_Neighbor{
+	dut2Conf := bgpWithNbr(dut2AS, dut2Port1.IPv4, &oc.NetworkInstance_Protocol_Bgp_Neighbor{
 		PeerAs:          ygot.Uint32(dutAS),
 		NeighborAddress: ygot.String(dutPort1.IPv4),
 	})
@@ -137,5 +135,5 @@ func TestEstablish(t *testing.T) {
 	gnmi.Replace(t, dut2, bgpPath.Config(), dut2Conf)
 
 	nbrPath := bgpPath.Neighbor(dut2Port1.IPv4)
-	gnmi.Await(t, dut, nbrPath.SessionState().State(), 5*time.Second, oc.Bgp_Neighbor_SessionState_ESTABLISHED)
+	gnmi.Await(t, dut, nbrPath.SessionState().State(), 60*time.Second, oc.Bgp_Neighbor_SessionState_ESTABLISHED)
 }
