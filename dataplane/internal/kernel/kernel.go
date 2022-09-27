@@ -18,7 +18,6 @@ package kernel
 import (
 	"fmt"
 	"net"
-	"os"
 
 	"github.com/vishvananda/netlink"
 	"golang.org/x/sys/unix"
@@ -86,22 +85,18 @@ func SetInterfaceState(name string, up bool) error {
 }
 
 // CreateTAP creates kernel TAP interface.
-func CreateTAP(name string) error {
+func CreateTAP(name string) (int, error) {
 	fd, err := unix.Open("/dev/net/tun", unix.O_RDWR, 0)
 	if err != nil {
-		return fmt.Errorf("failed to open tun file: %w", err)
+		return 0, fmt.Errorf("failed to open tun file: %w", err)
 	}
 	req, err := unix.NewIfreq(name)
 	if err != nil {
-		return fmt.Errorf("failed to create interface req: %w", err)
+		return 0, fmt.Errorf("failed to create interface req: %w", err)
 	}
 	req.SetUint16(unix.IFF_TAP | unix.IFF_NO_PI)
 	if err := unix.IoctlIfreq(fd, unix.TUNSETIFF, req); err != nil {
-		return fmt.Errorf("failed to do ioctl: %v", err)
+		return 0, fmt.Errorf("failed to do ioctl: %v", err)
 	}
-	// Accept gratuitous and unsolicited arp requests.
-	if err := os.WriteFile(fmt.Sprintf("/proc/sys/net/ipv4/conf/%s/arp_accept", name), []byte("1"), 0600); err != nil {
-		return fmt.Errorf("failed to set arp_accept to true: %v", err)
-	}
-	return nil
+	return fd, nil
 }

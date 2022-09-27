@@ -379,7 +379,7 @@ func createLayer3PuntTable(ctx context.Context, c fwdpb.ServiceClient) error {
 						},
 					}, {
 						Field: &fwdpb.PacketField{
-							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST,
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST,
 						},
 					}},
 				},
@@ -400,6 +400,8 @@ func AddLayer3PuntRule(ctx context.Context, c fwdpb.ServiceClient, portName stri
 
 	nidBytes := make([]byte, binary.Size(portID))
 	binary.BigEndian.PutUint64(nidBytes, portID)
+
+	log.Infof("adding layer3 punt rule: portName %s, id %d, ip %v", portName, portID, ip)
 
 	entries := &fwdpb.TableEntryAddRequest{
 		ContextId: &fwdpb.ContextId{Id: contextID},
@@ -450,8 +452,40 @@ func AddIPRoute(ctx context.Context, c fwdpb.ServiceClient, v4 bool, ip, mask, n
 		fib = fibV4Table
 	}
 
+	nextHopAct := &fwdpb.ActionDesc{ // Set the next hop IP in the packet's metadata.
+		ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
+		Action: &fwdpb.ActionDesc_Update{
+			Update: &fwdpb.UpdateActionDesc{
+				FieldId: &fwdpb.PacketFieldId{
+					Field: &fwdpb.PacketField{
+						FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP,
+					},
+				},
+				Type:  fwdpb.UpdateType_UPDATE_TYPE_SET,
+				Value: nextHopIP,
+			},
+		},
+	}
 	if nextHopIP == nil {
-		nextHopIP = ip
+		nextHopAct = &fwdpb.ActionDesc{ // Set the next hop IP in the packet's metadata.
+			ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
+			Action: &fwdpb.ActionDesc_Update{
+				Update: &fwdpb.UpdateActionDesc{
+					FieldId: &fwdpb.PacketFieldId{
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP,
+						},
+					},
+					Type: fwdpb.UpdateType_UPDATE_TYPE_COPY,
+					Field: &fwdpb.PacketFieldId{
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST,
+						},
+					},
+				},
+			},
+		}
+
 	}
 	log.V(1).Infof("adding ip route: isv4 %t, ip %v, mask %v, nextHop %v, port %s", v4, ip, mask, nextHopIP, port)
 
@@ -476,20 +510,7 @@ func AddIPRoute(ctx context.Context, c fwdpb.ServiceClient, v4 bool, ip, mask, n
 					PortId: &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: port}},
 				},
 			},
-		}, { // Set the next hop IP in the packet's metadata.
-			ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
-			Action: &fwdpb.ActionDesc_Update{
-				Update: &fwdpb.UpdateActionDesc{
-					FieldId: &fwdpb.PacketFieldId{
-						Field: &fwdpb.PacketField{
-							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP,
-						},
-					},
-					Type:  fwdpb.UpdateType_UPDATE_TYPE_SET,
-					Value: nextHopIP,
-				},
-			},
-		}, { // Lookup in the neighbor table.
+		}, nextHopAct, { // Lookup in the neighbor table.
 			ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
 			Action: &fwdpb.ActionDesc_Lookup{
 				Lookup: &fwdpb.LookupActionDesc{

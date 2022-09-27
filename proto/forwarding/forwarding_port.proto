@@ -28,6 +28,7 @@ enum PortType {
   PORT_TYPE_CPU_PORT = 1;        // Port associated with provisioning
   PORT_TYPE_AGGREGATE_PORT = 2;  // Port that is an aggregate of ports
   PORT_TYPE_KERNEL = 3;          // Port that is kernel network interface.
+  PORT_TYPE_TAP = 4; // Port that is kernel TAP interface.
 }
 
 // A PortDesc describes a forwarding port. It is assumed that the descriptor
@@ -39,6 +40,7 @@ message PortDesc {
   oneof port {
     CPUPortDesc cpu = 3;
     KernelPortDesc kernel = 4;
+    TAPPortDesc tap = 5;
   }
 }
 
@@ -54,6 +56,10 @@ message CPUPortDesc {
 
 message KernelPortDesc {
   string device_name = 1;
+}
+
+message TAPPortDesc {
+  int64 fd = 1;
 }
 
 // A PortCreateRequest is a request to create a port.
