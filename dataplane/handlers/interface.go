@@ -420,11 +420,7 @@ func (ni *Interface) setupPorts(ctx context.Context) error {
 	return nil
 }
 
-func ipStrToBytes(ip string) []byte {
-	ipBytes := net.ParseIP(ip)
-	return ipToBytes(ipBytes)
-}
-
+// ipToBytes converts a net.IP to a slice of bytes of the correct length (4 for IPv4, 16 for IPv6).
 func ipToBytes(ip net.IP) []byte {
 	if ip.To4() != nil {
 		return ip.To4()
