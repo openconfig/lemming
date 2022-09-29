@@ -20,6 +20,7 @@ import (
 
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 	"github.com/openconfig/lemming/gnmi/oc"
+	"github.com/openconfig/ygnmi/ygnmi"
 )
 
 // Reconciler is a common interface for gNMI reconciler.
@@ -34,9 +35,9 @@ type Reconciler interface {
 	// Stop stops the reconciliation loop.
 	Stop(context.Context) error
 	// Validate is called after a SetRequest is checked for schema compliance, but before data is written to the cache.
-	// Reconcilers can validate a SetRequest for semantic correctness, config that can never be reconciled.
+	// Reconcilers can validate the intended config for semantic correctness (reject config that can never be reconciled).
 	// The Validate func is only called if the SetRequest contains paths which match the ValidationPaths.
 	Validate(intendedConfig *oc.Root) error
 	// ValidationPaths returns the set of path prefixes that the reconciler can validate.
-	ValidationPaths() []*gpb.Path
+	ValidationPaths() []ygnmi.PathStruct
 }
