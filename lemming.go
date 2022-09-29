@@ -17,6 +17,7 @@ package lemming
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"net/netip"
 	"os"
@@ -25,6 +26,7 @@ import (
 	"github.com/openconfig/lemming/dataplane"
 	fgnmi "github.com/openconfig/lemming/gnmi"
 	"github.com/openconfig/lemming/gnmi/fakedevice"
+	"github.com/openconfig/lemming/gnmi/gnmiclient"
 	"github.com/openconfig/lemming/gnmi/gnmit"
 	"github.com/openconfig/lemming/gnmi/testagentlocal"
 	fgnoi "github.com/openconfig/lemming/gnoi"
@@ -34,10 +36,12 @@ import (
 	"github.com/openconfig/lemming/sysrib"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/local"
 	"google.golang.org/grpc/reflection"
 	"k8s.io/klog/v2"
 
 	log "github.com/golang/glog"
+	gpb "github.com/openconfig/gnmi/proto/gnmi"
 	zpb "github.com/openconfig/lemming/proto/sysrib"
 )
 
@@ -146,7 +150,11 @@ func New(lis net.Listener, targetName string, opts ...grpc.ServerOption) (*Devic
 	}
 
 	if dplane != nil {
-		if err := dplane.Start(context.Background(), port, targetName, enableTLS); err != nil {
+		setConn, err := grpc.Dial(fmt.Sprintf("unix:///%s", gnmit.DatastoreAddress), grpc.WithTransportCredentials(local.NewCredentials()))
+		if err != nil {
+			return nil, fmt.Errorf("failed to dial unix socket: %v", err)
+		}
+		if err := dplane.Start(context.Background(), gnmiclient.NewCacheClient(gnmiServer, gpb.NewGNMIClient(setConn)), targetName); err != nil {
 			return nil, err
 		}
 	}
