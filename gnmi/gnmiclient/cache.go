@@ -25,7 +25,8 @@ import (
 )
 
 // NewCacheClient creates a gNMI client for the gNMI cache.
-// The client calls the server gRPC implementation directly to reduce overhead.
+// The client calls the server gRPC implementation with a custom streaming gRPC implementation
+// in order to bypass the regular gRPC wire marshalling/unmarshalling handling.
 // TODO: refactor gNMI so that a single server can be used here.
 func NewCacheClient(srv gpb.GNMIServer, setClient gpb.GNMIClient) gpb.GNMIClient {
 	return &cacheClient{
@@ -55,7 +56,7 @@ func (cc *cacheClient) Subscribe(ctx context.Context, opts ...grpc.CallOption) (
 	sub := &subServer{
 		respCh: respCh,
 		reqCh:  reqCh,
-		ctx:    peer.NewContext(ctx, &peer.Peer{}),
+		ctx:    peer.NewContext(ctx, &peer.Peer{}), // Add empty Peer, since the cache expects to be set.
 	}
 	client := &subClient{
 		errCh:  errCh,
