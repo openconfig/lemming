@@ -23,13 +23,14 @@ import (
 	"github.com/openconfig/lemming/dataplane/forwarding"
 	"github.com/openconfig/lemming/dataplane/handlers"
 	"github.com/openconfig/lemming/dataplane/internal/engine"
-	"github.com/openconfig/lemming/gnmi/gnmiclient"
+	"github.com/openconfig/ygnmi/ygnmi"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/local"
 	"google.golang.org/grpc/status"
 
 	log "github.com/golang/glog"
+	gpb "github.com/openconfig/gnmi/proto/gnmi"
 	dpb "github.com/openconfig/lemming/proto/dataplane"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
@@ -65,12 +66,12 @@ func New() (*Dataplane, error) {
 }
 
 // Start starts the HAL gRPC server and packet forwarding engine.
-func (d *Dataplane) Start(ctx context.Context, port int, target string, enableTLS bool) error {
+func (d *Dataplane) Start(ctx context.Context, c gpb.GNMIClient, target string) error {
 	if d.srv != nil {
 		return fmt.Errorf("dataplane already started")
 	}
 
-	yc, err := gnmiclient.NewYGNMIClient(port, target, enableTLS)
+	yc, err := ygnmi.NewClient(c, ygnmi.WithTarget(target))
 	if err != nil {
 		return err
 	}
