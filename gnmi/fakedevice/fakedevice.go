@@ -20,9 +20,6 @@ import (
 	"time"
 
 	log "github.com/golang/glog"
-	"github.com/openconfig/gnmi/coalesce"
-	"github.com/openconfig/gnmi/ctree"
-	"github.com/openconfig/gnmi/value"
 	"github.com/openconfig/goyang/pkg/yang"
 	"github.com/openconfig/lemming/gnmi/gnmiclient"
 	"github.com/openconfig/lemming/gnmi/gnmit"
@@ -48,67 +45,28 @@ func init() {
 	}
 }
 
-// bootTimeTask is a task that updates the boot-time leaf with the current
-// time. It does not spawn any long-running threads.
-func bootTimeTask(_ func() *oc.Root, _ gnmit.Queue, updateFn gnmit.UpdateFn, target string, remove func()) error {
-	defer remove()
-	pathBootTime, _, errs := ygnmi.ResolvePath(ocpath.Root().System().BootTime().State().PathStruct())
-	if errs != nil {
-		return fmt.Errorf("bootTimeTask failed to initialize due to error: %v", errs)
-	}
-
-	now, err := value.FromScalar(time.Now().UnixNano())
+func StartBootTimeTask(ctx context.Context, port int, target string, enableTLS bool) error {
+	yclient, err := gnmiclient.NewYGNMIClient(port, target, enableTLS)
 	if err != nil {
-		return fmt.Errorf("bootTimeTask: %v", err)
-	}
-	log.V(2).Infof("bootTimeTask: %v, %v", pathBootTime, now)
-	if err := updateFn(&gpb.Notification{
-		Timestamp: time.Now().UnixNano(),
-		Prefix: &gpb.Path{
-			Origin: "openconfig",
-			Target: target,
-		},
-		Update: []*gpb.Update{{
-			Path: pathBootTime,
-			Val:  now,
-		}},
-	}); err != nil {
 		return err
 	}
+
+	gnmiclient.Replace(ctx, yclient, ocpath.Root().System().BootTime().State(), uint64(time.Now().UnixNano()))
 
 	return nil
 }
 
-// currentDateTimeTask updates the current-datetime leaf with the current time,
-// and spawns a thread that wakes up every second to update the leaf.
-func currentDateTimeTask(_ func() *oc.Root, _ gnmit.Queue, updateFn gnmit.UpdateFn, target string, remove func()) error {
-	pathDatetime, _, err := ygnmi.ResolvePath(ocpath.Root().System().CurrentDatetime().State().PathStruct())
+func StartCurrentDateTimeTask(ctx context.Context, port int, target string, enableTLS bool) error {
+	yclient, err := gnmiclient.NewYGNMIClient(port, target, enableTLS)
 	if err != nil {
-		return fmt.Errorf("currentDateTimeTask failed to initialize due to error: %v", err)
+		return err
 	}
 
 	tick := time.NewTicker(time.Second)
 
 	periodic := func() error {
-		currentDatetime, err := value.FromScalar(time.Now().Format(time.RFC3339))
-		if err != nil {
-			return fmt.Errorf("currentDateTimeTask: %v", err)
-		}
-		log.V(2).Infof("currentDateTimeTask: %v, %v", pathDatetime, currentDatetime)
-		if err := updateFn(&gpb.Notification{
-			Timestamp: time.Now().UnixNano(),
-			Prefix: &gpb.Path{
-				Origin: "openconfig",
-				Target: target,
-			},
-			Update: []*gpb.Update{{
-				Path: pathDatetime,
-				Val:  currentDatetime,
-			}},
-		}); err != nil {
-			return err
-		}
-		return nil
+		_, err := gnmiclient.Replace(ctx, yclient, ocpath.Root().System().CurrentDatetime().State(), time.Now().Format(time.RFC3339))
+		return err
 	}
 
 	if err := periodic(); err != nil {
@@ -116,7 +74,6 @@ func currentDateTimeTask(_ func() *oc.Root, _ gnmit.Queue, updateFn gnmit.Update
 	}
 
 	go func() {
-		defer remove()
 		for range tick.C {
 			if err := periodic(); err != nil {
 				log.Errorf("currentDateTimeTask error: %v", err)
@@ -209,72 +166,6 @@ func StartSystemBaseTask(ctx context.Context, port int, target string, enableTLS
 	return nil
 }
 
-// syslogTask is a meaningless test task that monitors updates to the
-// current-datetime leaf and writes updates to the syslog message leaf whenever
-// the current-datetime leaf is updated.
-func syslogTask(_ func() *oc.Root, queue gnmit.Queue, updateFn gnmit.UpdateFn, target string, remove func()) error {
-	pathSystemMsg, _, err := ygnmi.ResolvePath(ocpath.Root().System().Messages().Message().Msg().State().PathStruct())
-	if err != nil {
-		log.Errorf("syslogTask failed to initialize due to error: %v", err)
-	}
-
-	go func() {
-		defer remove()
-		for {
-			item, _, err := queue.Next(context.Background())
-			if coalesce.IsClosedQueue(err) {
-				return
-			}
-			n, ok := item.(*ctree.Leaf)
-			if !ok || n == nil {
-				log.Errorf("syslogTask invalid cache node: %#v", item)
-				return
-			}
-			v := n.Value()
-			noti, ok := v.(*gpb.Notification)
-			if !ok || noti == nil {
-				log.Errorf("syslogTask invalid cache node, expected non-nil *gpb.Notification type, got: %#v", v)
-				return
-			}
-			for _, u := range noti.Update {
-				scalarValue, err := value.ToScalar(u.Val)
-				if err != nil {
-					log.Errorf("syslogTask: %v", err)
-					return
-				}
-				strv, ok := scalarValue.(string)
-				if !ok {
-					log.Errorf("syslogTask: cannot convert to string, got (%T, %v)", scalarValue, scalarValue)
-					return
-				}
-				syslog, err := value.FromScalar("current date-time updated to " + strv)
-				if err != nil {
-					log.Errorf("syslogTask: %v", err)
-					return
-				}
-				if err := updateFn(&gpb.Notification{
-					Timestamp: time.Now().UnixNano(),
-					Prefix: &gpb.Path{
-						Origin: "openconfig",
-						Target: target,
-					},
-					Update: []*gpb.Update{{
-						Path: pathSystemMsg,
-						Val:  syslog,
-					}},
-				}); err != nil {
-					log.Errorf("syslogTask: %v", err)
-					return
-				}
-			}
-			for range noti.Delete {
-			}
-		}
-	}()
-
-	return nil
-}
-
 // Tasks returns the set of functions that should be called that may read
 // and/or modify internal state.
 //
@@ -285,30 +176,6 @@ func Tasks(target string) []gnmit.Task {
 	// TODO(wenbli): We should decentralize how we add tasks by adding a
 	// register function that's called by various init() functions.
 	return []gnmit.Task{{
-		Run: currentDateTimeTask,
-		// No paths means the task should periodically wake up itself if it needs to be run at a later time.
-		Paths: []ygnmi.PathStruct{},
-		Prefix: &gpb.Path{
-			Origin: "openconfig",
-			Target: target,
-		},
-	}, {
-		Run:   bootTimeTask,
-		Paths: []ygnmi.PathStruct{},
-		Prefix: &gpb.Path{
-			Origin: "openconfig",
-			Target: target,
-		},
-	}, {
-		Run: syslogTask,
-		Paths: []ygnmi.PathStruct{
-			ocpath.Root().System().CurrentDatetime().State().PathStruct(),
-		},
-		Prefix: &gpb.Path{
-			Origin: "openconfig",
-			Target: target,
-		},
-	}, {
 		Run: goBgpTask,
 		Paths: []ygnmi.PathStruct{
 			ocpath.Root().NetworkInstance("default").Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").Bgp(),
