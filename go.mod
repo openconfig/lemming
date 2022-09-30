@@ -19,7 +19,7 @@ require (
 	github.com/openconfig/kne v0.1.6
 	github.com/openconfig/ondatra v0.0.0-20220916181150-cf83474b5941
 	github.com/openconfig/ygnmi v0.2.3
-	github.com/openconfig/ygot v0.25.0
+	github.com/openconfig/ygot v0.25.2
 	github.com/osrg/gobgp/v3 v3.5.0
 	github.com/p4lang/p4runtime v1.3.0
 	github.com/spf13/pflag v1.0.5

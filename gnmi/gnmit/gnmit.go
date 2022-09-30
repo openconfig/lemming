@@ -219,14 +219,9 @@ func SetupSchema(schema *ytypes.Schema) error {
 		return fmt.Errorf("cannot obtain valid schema for GoStructs: %v", schema)
 	}
 
-	vr, ok := schema.Root.(ygot.ValidatedGoStruct)
-	if !ok {
-		return fmt.Errorf("invalid schema root, %v", schema.Root)
-	}
-
 	// Initialize the root with default values.
 	schema.Root.(populateDefaultser).PopulateDefaults()
-	if err := vr.Validate(); err != nil {
+	if err := schema.Validate(); err != nil {
 		return fmt.Errorf("default root of input schema fails validation: %v", err)
 	}
 
@@ -298,7 +293,7 @@ func (c *Collector) TargetUpdate(m *gpb.SubscribeResponse) {
 	c.inCh <- m
 }
 
-func updateCache(cache *cache.Cache, root ygot.GoStruct, target string, dirtyRoot ygot.ValidatedGoStruct, origin string, preferShadowPath bool) error {
+func updateCache(cache *cache.Cache, root ygot.GoStruct, target string, dirtyRoot ygot.GoStruct, origin string, preferShadowPath bool) error {
 	n, err := ygot.Diff(root, dirtyRoot, &ygot.DiffPathOpt{PreferShadowPath: preferShadowPath})
 	if err != nil {
 		return fmt.Errorf("gnmit: error while creating update notification for Set: %v", err)
@@ -356,17 +351,13 @@ func set(schema *ytypes.Schema, cache *cache.Cache, target string, req *gpb.SetR
 		return fmt.Errorf("gnmit: %v", err)
 	}
 
-	dirtyRoot, ok := schema.Root.(ygot.ValidatedGoStruct)
-	if !ok {
-		return fmt.Errorf("gnmit: cannot convert root object to ValidatedGoStruct")
-	}
-	if err := dirtyRoot.Validate(); err != nil {
+	if err := schema.Validate(); err != nil {
 		return fmt.Errorf("gnmit: invalid SetRequest: %v", err)
 	}
 
 	success = true
 
-	if err := updateCache(cache, prevRoot, target, dirtyRoot, req.Prefix.Origin, preferShadowPath); err != nil {
+	if err := updateCache(cache, prevRoot, target, schema.Root, req.Prefix.Origin, preferShadowPath); err != nil {
 		return err
 	}
 	return nil

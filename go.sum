@@ -563,8 +563,8 @@ github.com/openconfig/ygot v0.6.0/go.mod h1:o30svNf7O0xK+R35tlx95odkDmZWS9JyWWQS
 github.com/openconfig/ygot v0.10.4/go.mod h1:oCQNdXnv7dWc8scTDgoFkauv1wwplJn5HspHcjlxSAQ=
 github.com/openconfig/ygot v0.13.2/go.mod h1:kJN0yCXIH07dOXvNBEFm3XxXdnDD5NI6K99tnD5x49c=
 github.com/openconfig/ygot v0.20.0/go.mod h1:7ZiBFNc4n/1Hkv2v2dAEpxisqDznp0JVpLR13Toe4AY=
-github.com/openconfig/ygot v0.25.0 h1:HOCeRj6YKNpMli9slPTnNxMkRogVdzVFWkhtWWZURuE=
-github.com/openconfig/ygot v0.25.0/go.mod h1:4RS8uxpdF7C+065KYhMwGOxNpu1jBIObglFljRQq50E=
+github.com/openconfig/ygot v0.25.2 h1:0AXBbCqANsY87yV2RaRTYtMVfjsprZx5EOF1jVNkum4=
+github.com/openconfig/ygot v0.25.2/go.mod h1:4RS8uxpdF7C+065KYhMwGOxNpu1jBIObglFljRQq50E=
 github.com/opencontainers/go-digest v1.0.0 h1:apOUWs51W5PlhuyGyz9FCeeBIOUDA/6nW8Oi/yOhh5U=
 github.com/opencontainers/go-digest v1.0.0/go.mod h1:0JzlMkj0TRzQZfJkVvzbP0HBR3IKzErnv2BNG4W4MAM=
 github.com/opencontainers/image-spec v1.0.2 h1:9yCKha/T5XdGtO0q9Q9a6T5NUCsTn/DrBg0D7ufOcFM=
