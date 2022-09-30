@@ -10,7 +10,7 @@ require (
 	github.com/h-fam/errdiff v1.0.2
 	github.com/kentik/patricia v1.2.0
 	github.com/open-traffic-generator/snappi/gosnappi v0.9.4
-	github.com/openconfig/gnmi v0.0.0-20220617175856-41246b1b3507
+	github.com/openconfig/gnmi v0.0.0-20220920173703-480bf53a74d2
 	github.com/openconfig/gnoi v0.0.0-20220912141010-93cdd9ae9f35
 	github.com/openconfig/gnsi v0.0.0-20220906172358-1eda48d90de6
 	github.com/openconfig/goyang v1.1.0
@@ -19,7 +19,7 @@ require (
 	github.com/openconfig/kne v0.1.6
 	github.com/openconfig/ondatra v0.0.0-20220916181150-cf83474b5941
 	github.com/openconfig/ygnmi v0.2.3
-	github.com/openconfig/ygot v0.24.4
+	github.com/openconfig/ygot v0.25.0
 	github.com/osrg/gobgp/v3 v3.5.0
 	github.com/p4lang/p4runtime v1.3.0
 	github.com/spf13/pflag v1.0.5
@@ -97,7 +97,7 @@ require (
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/open-traffic-generator/ixia-c-operator v0.1.89 // indirect
 	github.com/openconfig/gocloser v0.0.0-20220310182203-c6c950ed3b0b // indirect
-	github.com/openconfig/grpctunnel v0.0.0-20220524190229-125331eabdde // indirect
+	github.com/openconfig/grpctunnel v0.0.0-20220819142823-6f5422b8ca70 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.2 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect

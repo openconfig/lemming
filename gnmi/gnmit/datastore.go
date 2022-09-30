@@ -2,13 +2,15 @@ package gnmit
 
 import (
 	"context"
-	"time"
+	"sync"
 
 	log "github.com/golang/glog"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
+	"github.com/openconfig/lemming/gnmi/oc"
+	"github.com/openconfig/ygot/ytypes"
 )
 
 const (
@@ -19,39 +21,38 @@ const (
 type DatastoreServer struct {
 	gpb.UnimplementedGNMIServer // For forward-compatibility
 
+	smu    sync.Mutex
+	schema *ytypes.Schema
+
 	gnmiServer *GNMIServer
 }
 
-func NewDatastoreServer(gnmiServer *GNMIServer) *DatastoreServer {
-	return &DatastoreServer{gnmiServer: gnmiServer}
+func NewDatastoreServer(gnmiServer *GNMIServer) (*DatastoreServer, error) {
+	schema, err := oc.Schema()
+	if err != nil {
+		return nil, err
+	}
+	if err := SetupSchema(schema); err != nil {
+		return nil, err
+	}
+	return &DatastoreServer{
+		gnmiServer: gnmiServer,
+		schema:     schema,
+	}, nil
 }
 
-func (d *DatastoreServer) Set(_ context.Context, req *gpb.SetRequest) (*gpb.SetResponse, error) {
+func (d *DatastoreServer) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResponse, error) {
+	d.smu.Lock()
+	defer d.smu.Unlock()
+
+	log.V(1).Infof("operational state datastore service received SetRequest: %v", req)
+	if d.schema == nil {
+		return d.gnmiServer.UnimplementedGNMIServer.Set(ctx, req)
+	}
 	// TODO(wenbli): Reject values that modify config values. We only allow modifying state through this server.
-	// TODO(wenbli): Unmarshal to a struct without PreferShadowPath in
-	// order to validate that state paths are valid according to the
-	// schema.
-	if err := d.gnmiServer.set(req, false); err != nil {
+	if err := set(d.schema, d.gnmiServer.c.cache, d.gnmiServer.c.name, req, false); err != nil {
 		return &gpb.SetResponse{}, status.Errorf(codes.Aborted, "%v", err)
 	}
 
-	// SetRequest has been validated, so we update the cache.
-	deletes := append([]*gpb.Path{}, req.Delete...)
-	for _, update := range req.Replace {
-		deletes = append(deletes, update.Path)
-	}
-	updates := append([]*gpb.Update{}, req.Replace...)
-	t := d.gnmiServer.c.cache.GetTarget(d.gnmiServer.c.name)
-	notif := &gpb.Notification{
-		Timestamp: time.Now().UnixNano(),
-		Prefix:    req.Prefix,
-		Delete:    deletes,
-		Update:    append(updates, req.Update...),
-	}
-	if notif.Prefix.Origin == "" {
-		notif.Prefix.Origin = OpenconfigOrigin
-	}
-	log.V(1).Infof("datastore updates central cache: %v", notif)
-	t.GnmiUpdate(notif)
 	return &gpb.SetResponse{}, nil
 }

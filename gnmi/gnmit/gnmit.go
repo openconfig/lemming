@@ -22,15 +22,12 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"reflect"
 	"sync"
 	"time"
 
 	log "github.com/golang/glog"
 	"github.com/openconfig/gnmi/cache"
-	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/subscribe"
-	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot"
 	"github.com/openconfig/ygot/ytypes"
 	"google.golang.org/grpc"
@@ -63,69 +60,11 @@ func periodic(period time.Duration, fn func()) {
 	}
 }
 
-// Queue is an interface that represents a possibly coalescing queue of updates.
-type Queue interface {
-	Next(ctx context.Context) (interface{}, uint32, error)
-	Len() int
-	Close()
-}
-
-// UpdateFn is a function that takes in a gNMI Notification object and updates
-// a gNMI datastore with it.
-type UpdateFn func(*gpb.Notification) error
-
-// TaskRoutine is a reactor function that listens for updates from a queue,
-// emits updates via an update function. It does this on a target (string
-// parameter), and also has a final clean-up function to call when it finishes
-// processing.
-type TaskRoutine func(func() *oc.Root, Queue, UpdateFn, string, func()) error
-
-// Task defines a particular task that runs on the gNMI datastore.
-type Task struct {
-	Run    TaskRoutine
-	Paths  []ygnmi.PathStruct
-	Prefix *gpb.Path
-}
-
 // GNMIServer implements the gNMI server interface.
 type GNMIServer struct {
-	// intendedConfigMu protects the global view of intendedConfig, which
-	// can be read by tasks. It protects the storage of the intendedConfig
-	// pointer, which gets copied and sent to tasks for reading. Since
-	// Set's implementation never alters this view once created, and
-	// instead creates a new copy of the root Device struct, tasks can
-	// freely read without a race condition.
-	intendedConfigMu sync.RWMutex
 	// The subscribe Server implements only Subscribe for gNMI.
 	*subscribe.Server
 	c *Collector
-}
-
-// RegisterTask starts up a task on the gNMI datastore.
-func (s *GNMIServer) RegisterTask(task Task) error {
-	var paths []*gpb.Path
-	for _, p := range task.Paths {
-		path, _, err := ygnmi.ResolvePath(p)
-		if err != nil {
-			return fmt.Errorf("gnmit: cannot register task: %v", err)
-		}
-		paths = append(paths, path)
-	}
-	queue, remove, err := s.Server.SubscribeLocal(s.c.name, paths, task.Prefix)
-	if err != nil {
-		return err
-	}
-	return task.Run(s.getIntendedConfig, queue, s.c.cache.GnmiUpdate, s.c.name, remove)
-}
-
-// RegisterTask starts up a task on the gNMI datastore.
-func (s *GNMIServer) getIntendedConfig() *oc.Root {
-	s.intendedConfigMu.RLock()
-	defer s.intendedConfigMu.RUnlock()
-	if s.c != nil && s.c.schema != nil {
-		return s.c.schema.Root.(*oc.Root)
-	}
-	return nil
 }
 
 // NewServer returns a new collector server implementation that can be registered on
@@ -134,14 +73,14 @@ func (s *GNMIServer) getIntendedConfig() *oc.Root {
 // - schema is the specification of the schema if gnmi.Set is used.
 // - hostname is the name of the target.
 // - sendMeta indicates whether metadata should be sent
-// - tasks is a slice of Tasks that are to be launched on the server.
-func NewServer(ctx context.Context, schema *ytypes.Schema, hostname string, sendMeta bool, tasks []Task) (*Collector, *GNMIServer, error) {
+func NewServer(ctx context.Context, schema *ytypes.Schema, hostname string, sendMeta bool) (*Collector, *GNMIServer, error) {
 	c := &Collector{
 		inCh:   make(chan *gpb.SubscribeResponse),
 		name:   hostname,
 		schema: schema,
 	}
 
+	log.V(1).Infof("Starting cache target: %v", hostname)
 	c.cache = cache.New([]string{hostname})
 	t := c.cache.GetTarget(hostname)
 
@@ -193,12 +132,6 @@ func NewServer(ctx context.Context, schema *ytypes.Schema, hostname string, send
 		c:      c,
 	}
 
-	for _, t := range tasks {
-		// TODO(wenbli): We don't current support task re-starts.
-		if err := gnmiserver.RegisterTask(t); err != nil {
-			return nil, nil, err
-		}
-	}
 	c.cache.SetClient(subscribeSrv.Update)
 
 	return c, gnmiserver, nil
@@ -218,7 +151,11 @@ func StartDatastoreServer(gnmiServer *GNMIServer) (func(), error) {
 	// Use a separate service to avoid service duplication error during
 	// registration.
 	srv := grpc.NewServer()
-	gpb.RegisterGNMIServer(srv, NewDatastoreServer(gnmiServer))
+	dss, err := NewDatastoreServer(gnmiServer)
+	if err != nil {
+		return nil, err
+	}
+	gpb.RegisterGNMIServer(srv, dss)
 	lisDS, err := net.Listen("unix", DatastoreAddress)
 	if err != nil {
 		return nil, fmt.Errorf("listen error: %v", err)
@@ -237,8 +174,8 @@ func StartDatastoreServer(gnmiServer *GNMIServer) (func(), error) {
 //
 // New returns the new collector, the address it is listening on in the form hostname:port
 // or any errors encounted whilst setting it up.
-func New(ctx context.Context, schema *ytypes.Schema, addr, hostname string, sendMeta bool, tasks []Task, opts ...grpc.ServerOption) (*Collector, string, error) {
-	c, gnmiserver, err := NewServer(ctx, schema, hostname, sendMeta, tasks)
+func New(ctx context.Context, schema *ytypes.Schema, addr, hostname string, sendMeta bool, opts ...grpc.ServerOption) (*Collector, string, error) {
+	c, gnmiserver, err := NewServer(ctx, schema, hostname, sendMeta)
 	if err != nil {
 		return nil, "", err
 	}
@@ -306,11 +243,11 @@ func SetupSchema(schema *ytypes.Schema) error {
 // NewSettable is different from New in that the returned collector is
 // schema-aware and supports gNMI Set. Currently it is not possible to change
 // the schema of a Collector after it is created.
-func NewSettable(ctx context.Context, addr string, hostname string, sendMeta bool, schema *ytypes.Schema, tasks []Task, opts ...grpc.ServerOption) (*Collector, string, error) {
+func NewSettable(ctx context.Context, addr string, hostname string, sendMeta bool, schema *ytypes.Schema, opts ...grpc.ServerOption) (*Collector, string, error) {
 	if err := SetupSchema(schema); err != nil {
 		return nil, "", err
 	}
-	collector, addr, err := New(ctx, schema, addr, hostname, sendMeta, tasks, opts...)
+	collector, addr, err := New(ctx, schema, addr, hostname, sendMeta, opts...)
 	if err != nil {
 		return nil, "", err
 	}
@@ -355,54 +292,25 @@ type Collector struct {
 	stopFn func()
 }
 
-func (c *Collector) Schema() *ytypes.Schema {
-	c.smu.Lock()
-	defer c.smu.Unlock()
-	return c.schema
-}
-
 // TargetUpdate provides an input gNMI SubscribeResponse to update the
 // cache and clients with.
 func (c *Collector) TargetUpdate(m *gpb.SubscribeResponse) {
 	c.inCh <- m
 }
 
-func (s *GNMIServer) getOrCreateNode(path *gpb.Path) (ygot.ValidatedGoStruct, ygot.GoStruct, string, error) {
-	// Create a copy so that we can rollback the transaction when validation fails.
-	dirtyRootG, err := ygot.DeepCopy(s.c.Schema().Root)
-	if err != nil {
-		return nil, nil, "", fmt.Errorf("gnmit: failed to ygot.DeepCopy the cached root object: %v", err)
-	}
-	dirtyRoot, ok := dirtyRootG.(ygot.ValidatedGoStruct)
-	if !ok {
-		return nil, nil, "", fmt.Errorf("gnmit: cannot convert root object to ValidatedGoStruct")
-	}
-	// Operate at the prefix level.
-	nodeI, _, err := ytypes.GetOrCreateNode(s.c.Schema().RootSchema(), dirtyRoot, path, &ytypes.PreferShadowPath{})
-	if err != nil {
-		return nil, nil, "", fmt.Errorf("gnmit: failed to GetOrCreate the prefix node: %v", err)
-	}
-	node, ok := nodeI.(ygot.GoStruct)
-	if !ok {
-		return nil, nil, "", fmt.Errorf("gnmit: prefix path points to a non-GoStruct, this is not allowed: %T, %v", nodeI, nodeI)
-	}
-	nodeName := reflect.TypeOf(nodeI).Elem().Name()
-	return dirtyRoot, node, nodeName, nil
-}
-
-func (s *GNMIServer) update(dirtyRoot ygot.ValidatedGoStruct, origin string) error {
-	n, err := ygot.Diff(s.c.Schema().Root, dirtyRoot, &ygot.DiffPathOpt{PreferShadowPath: true})
+func updateCache(cache *cache.Cache, root ygot.GoStruct, target string, dirtyRoot ygot.ValidatedGoStruct, origin string, preferShadowPath bool) error {
+	n, err := ygot.Diff(root, dirtyRoot, &ygot.DiffPathOpt{PreferShadowPath: preferShadowPath})
 	if err != nil {
 		return fmt.Errorf("gnmit: error while creating update notification for Set: %v", err)
 	}
 	n.Timestamp = time.Now().UnixNano()
-	n.Prefix = &gpb.Path{Origin: origin, Target: s.c.name}
+	n.Prefix = &gpb.Path{Origin: origin, Target: target}
 	if n.Prefix.Origin == "" {
 		n.Prefix.Origin = OpenconfigOrigin
 	}
 
 	// Update cache
-	t := s.c.cache.GetTarget(s.c.name)
+	t := cache.GetTarget(target)
 	var pathsForDelete []string
 	for _, path := range n.Delete {
 		p, err := ygot.PathToString(path)
@@ -411,8 +319,8 @@ func (s *GNMIServer) update(dirtyRoot ygot.ValidatedGoStruct, origin string) err
 		}
 		pathsForDelete = append(pathsForDelete, p)
 	}
-	log.V(1).Infof("config datastore: updating the following values: %+v", n.Update)
-	log.V(1).Infof("config datastore: deleting the following paths: %+v", pathsForDelete)
+	log.V(1).Infof("datastore: updating the following values: %+v", n.Update)
+	log.V(1).Infof("datastore: deleting the following paths: %+v", pathsForDelete)
 	if err := t.GnmiUpdate(n); err != nil {
 		return err
 	}
@@ -424,49 +332,52 @@ func (s *GNMIServer) update(dirtyRoot ygot.ValidatedGoStruct, origin string) err
 //
 // update indicates whether to update the cache with the values from the set
 // request.
-func (s *GNMIServer) set(req *gpb.SetRequest, updateCache bool) error {
-	s.intendedConfigMu.Lock()
-	defer s.intendedConfigMu.Unlock()
-	dirtyRoot, node, nodeName, err := s.getOrCreateNode(req.Prefix)
+func set(schema *ytypes.Schema, cache *cache.Cache, target string, req *gpb.SetRequest, preferShadowPath bool) error {
+	prevRoot, err := ygot.DeepCopy(schema.Root)
 	if err != nil {
-		return fmt.Errorf("failed to get prefix")
+		return fmt.Errorf("gnmit: failed to ygot.DeepCopy the cached root object: %v", err)
 	}
 
-	// Process deletes, then replace, then updates.
-	for _, path := range req.Delete {
-		if err := ytypes.DeleteNode(s.c.Schema().SchemaTree[nodeName], node, path, &ytypes.PreferShadowPath{}); err != nil {
-			return fmt.Errorf("gnmit: DeleteNode error: %v", err)
+	success := false
+
+	// Rollback function
+	defer func() {
+		if !success {
+			log.V(1).Infof("Rolling back set request: %v", req)
+			schema.Root = prevRoot
 		}
+	}()
+
+	var unmarshalOpts []ytypes.UnmarshalOpt
+	if preferShadowPath {
+		unmarshalOpts = append(unmarshalOpts, &ytypes.PreferShadowPath{})
 	}
-	for _, update := range req.Replace {
-		if err := ytypes.DeleteNode(s.c.Schema().SchemaTree[nodeName], node, update.Path, &ytypes.PreferShadowPath{}); err != nil {
-			return fmt.Errorf("gnmit: DeleteNode error: %v", err)
-		}
-		if err := ytypes.SetNode(s.c.Schema().SchemaTree[nodeName], node, update.Path, update.Val, &ytypes.PreferShadowPath{}, &ytypes.InitMissingElements{}); err != nil {
-			return fmt.Errorf("failed to set node: %v", err)
-		}
-	}
-	for _, update := range req.Update {
-		if err := ytypes.SetNode(s.c.Schema().SchemaTree[nodeName], node, update.Path, update.Val, &ytypes.PreferShadowPath{}, &ytypes.InitMissingElements{}); err != nil {
-			return fmt.Errorf("failed to set node: %v", err)
-		}
+	if err := ytypes.UnmarshalSetRequest(schema, req, unmarshalOpts...); err != nil {
+		return fmt.Errorf("gnmit: %v", err)
 	}
 
+	dirtyRoot, ok := schema.Root.(ygot.ValidatedGoStruct)
+	if !ok {
+		return fmt.Errorf("gnmit: cannot convert root object to ValidatedGoStruct")
+	}
 	if err := dirtyRoot.Validate(); err != nil {
 		return fmt.Errorf("gnmit: invalid SetRequest: %v", err)
 	}
 
-	if updateCache {
-		if err := s.update(dirtyRoot, req.Prefix.Origin); err != nil {
-			return err
-		}
+	success = true
+
+	if err := updateCache(cache, prevRoot, target, dirtyRoot, req.Prefix.Origin, preferShadowPath); err != nil {
+		return err
 	}
-	s.c.Schema().Root = dirtyRoot
 	return nil
 }
 
 // Set is a prototype for a gNMI Set operation.
+// TODO(wenbli): Add unit test.
 func (s *GNMIServer) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResponse, error) {
+	s.c.smu.Lock()
+	defer s.c.smu.Unlock()
+
 	log.V(1).Infof("config datastore service received SetRequest: %v", req)
 	if s.c.schema == nil {
 		return s.UnimplementedGNMIServer.Set(ctx, req)
@@ -474,7 +385,7 @@ func (s *GNMIServer) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResp
 
 	// TODO(wenbli): Reject paths that try to modify read-only values.
 	// TODO(wenbli): Question: what to do if there are operational-state values in a container that is specified to be replaced or deleted?
-	err := s.set(req, true)
+	err := set(s.c.schema, s.c.cache, s.c.name, req, true)
 
 	// TODO(wenbli): Currently the SetResponse is not filled.
 	return &gpb.SetResponse{

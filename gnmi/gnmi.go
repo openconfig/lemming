@@ -44,7 +44,7 @@ func createGNMIServer(targetName string) (*gnmit.GNMIServer, error) {
 	if err := gnmit.SetupSchema(schema); err != nil {
 		return nil, fmt.Errorf("gnmi: cannot setup ygot schema object: %v", err)
 	}
-	_, gnmiServer, err := gnmit.NewServer(context.Background(), schema, targetName, false, nil)
+	_, gnmiServer, err := gnmit.NewServer(context.Background(), schema, targetName, false)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create gNMI server: %v", err)
 	}

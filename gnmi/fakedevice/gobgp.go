@@ -92,7 +92,7 @@ func StartGoBGPTask(ctx context.Context, port int, target string, enableTLS bool
 			return false
 		}
 		if len(no.GetUpdate())+len(no.GetDelete()) > 0 {
-			_, err := gnmiclient.Update(ctx, yclient, bgpPath.State(), appliedBgp)
+			_, err := gnmiclient.Replace(ctx, yclient, bgpPath.State(), appliedBgp)
 			if err != nil {
 				log.Errorf("goBgpTask: error while writing update to applied configuration: %v", err)
 				return false
