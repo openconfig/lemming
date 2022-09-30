@@ -26,10 +26,7 @@ import (
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 	"github.com/openconfig/ygnmi/ygnmi"
-	"github.com/openconfig/ygot/util"
 	"github.com/openconfig/ygot/ygot/pathtranslate"
-
-	gpb "github.com/openconfig/gnmi/proto/gnmi"
 )
 
 const (
@@ -87,12 +84,6 @@ func StartCurrentDateTimeTask(ctx context.Context, port int, target string, enab
 	}()
 
 	return nil
-}
-
-// matchingPath returns true iff the path matches the given matcher path in
-// length and in values; wildcards are allowed in the matcher path.
-func matchingPath(path, matcher *gpb.Path) bool {
-	return len(path.Elem) == len(matcher.Elem) && util.PathMatchesQuery(path, matcher)
 }
 
 // StartSystemBaseTask handles some of the logic for the base systems feature
