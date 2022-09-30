@@ -28,7 +28,6 @@ import (
 	"github.com/openconfig/lemming/gnmi/fakedevice"
 	"github.com/openconfig/lemming/gnmi/gnmiclient"
 	"github.com/openconfig/lemming/gnmi/gnmit"
-	"github.com/openconfig/lemming/gnmi/testagentlocal"
 	fgnoi "github.com/openconfig/lemming/gnoi"
 	fgnsi "github.com/openconfig/lemming/gnsi"
 	fgribi "github.com/openconfig/lemming/gribi"
@@ -59,15 +58,6 @@ type Device struct {
 	mu      sync.Mutex
 	err     error
 	stopped chan struct{}
-}
-
-// registerTestTask registers a test gothread that reads from the central
-// datastore.
-//
-// Note: This should only be used for testing lemming, since interface paths
-// should be owned by the dataplane module.
-func registerTestTask(gnmiServer *gnmit.GNMIServer, targetName string) error {
-	return gnmiServer.RegisterTask(testagentlocal.InterfaceTask(targetName))
 }
 
 // startSysrib starts the sysrib gRPC service at a unix domain socket. This
@@ -117,9 +107,6 @@ func New(lis net.Listener, targetName string, opts ...grpc.ServerOption) (*Devic
 
 	gnmiServer, err := fgnmi.New(s, targetName)
 	if err != nil {
-		return nil, err
-	}
-	if err := registerTestTask(gnmiServer.GNMIServer, targetName); err != nil {
 		return nil, err
 	}
 
