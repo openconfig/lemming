@@ -5,27 +5,22 @@ import (
 	"fmt"
 	"reflect"
 	"sync"
-	"time"
 
 	log "github.com/golang/glog"
-	"github.com/openconfig/gnmi/coalesce"
-	"github.com/openconfig/gnmi/ctree"
-	gpb "github.com/openconfig/gnmi/proto/gnmi"
-	"github.com/openconfig/lemming/gnmi/gnmit"
+	"github.com/openconfig/lemming/gnmi/gnmiclient"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot"
 	api "github.com/osrg/gobgp/v3/api"
 	"github.com/osrg/gobgp/v3/pkg/server"
-	"google.golang.org/protobuf/encoding/prototext"
 )
 
 const (
 	listenPort = 1234
 )
 
-// goBgpTask tries to establish a simple BGP session using GoBGP. It returns an error if initialization failed.
+// StartGoBGPTask tries to establish a simple BGP session using GoBGP. It returns an error if initialization failed.
 //
 // TODO(wenbli): Break this function up.
 //
@@ -57,12 +52,20 @@ const (
 //     When there is a dependency, the later actions will NOT directly depend on the results of the previous actions, but will just look at the current config view to determine the appropriate action.
 //     e.g. for peers, if the global setting has been set up, then we can create the peers and update the applied config if it succeeds, but if not then we don't do anything.
 //     ; however, if the global setting hasn't been set up, we actually need to erase the entirety of the applied config. This is because the watcher doesn't tell us this information.
-func goBgpTask(getIntendedConfig func() *oc.Root, q gnmit.Queue, update gnmit.UpdateFn, target string, remove func()) error {
-	bgpPath := ocpath.Root().NetworkInstance("default").Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").Bgp()
-	bgpPathStr, _, err := ygnmi.ResolvePath(bgpPath)
+func StartGoBGPTask(ctx context.Context, port int, target string, enableTLS bool) error {
+	yclient, err := gnmiclient.NewYGNMIClient(port, target, enableTLS)
 	if err != nil {
-		return fmt.Errorf("goBgpTask failed to initialize due to error: %v", err)
+		return err
 	}
+
+	b := &ocpath.Batch{}
+	bgpPath := ocpath.Root().NetworkInstance(DefaultNetworkInstance).Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").Bgp()
+	b.AddPaths(
+		bgpPath.Global().As().Config().PathStruct(),
+		bgpPath.Global().RouterId().Config().PathStruct(),
+		bgpPath.NeighborAny().PeerAs().Config().PathStruct(),
+		bgpPath.NeighborAny().NeighborAddress().Config().PathStruct(),
+	)
 
 	s := server.NewBgpServer()
 	go s.Serve()
@@ -71,7 +74,7 @@ func goBgpTask(getIntendedConfig func() *oc.Root, q gnmit.Queue, update gnmit.Up
 
 	appliedRoot := &oc.Root{}
 	// appliedBgp is the SoT for BGP applied configuration. It is maintained locally by the task.
-	appliedBgp := appliedRoot.GetOrCreateNetworkInstance("default").GetOrCreateProtocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").GetOrCreateBgp()
+	appliedBgp := appliedRoot.GetOrCreateNetworkInstance(DefaultNetworkInstance).GetOrCreateProtocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").GetOrCreateBgp()
 	appliedBgp.PopulateDefaults()
 	var appliedBgpMu sync.Mutex
 
@@ -89,11 +92,8 @@ func goBgpTask(getIntendedConfig func() *oc.Root, q gnmit.Queue, update gnmit.Up
 			return false
 		}
 		if len(no.GetUpdate())+len(no.GetDelete()) > 0 {
-			log.V(1).Info("Updating BGP applied configuration: ", prototext.Format(no))
-			no.Timestamp = time.Now().UnixNano()
-			no.Prefix = &gpb.Path{Origin: "openconfig", Target: target, Elem: bgpPathStr.Elem}
-
-			if err := update(no); err != nil {
+			_, err := gnmiclient.Replace(ctx, yclient, bgpPath.State(), appliedBgp)
+			if err != nil {
 				log.Errorf("goBgpTask: error while writing update to applied configuration: %v", err)
 				return false
 			}
@@ -145,95 +145,22 @@ func goBgpTask(getIntendedConfig func() *oc.Root, q gnmit.Queue, update gnmit.Up
 		return fmt.Errorf("goBgpTask failed to initialize due to error: %v", err)
 	}
 
-	asPaths, _, err := ygnmi.ResolvePath(bgpPath.Global().As().Config().PathStruct())
-	if err != nil {
-		return fmt.Errorf("goBgpTask failed to initialize due to error: %v", err)
-	}
-	routeIDPaths, _, err := ygnmi.ResolvePath(bgpPath.Global().RouterId().Config().PathStruct())
-	if err != nil {
-		return fmt.Errorf("goBgpTask failed to initialize due to error: %v", err)
-	}
-	peerAsPaths, _, err := ygnmi.ResolvePath(bgpPath.NeighborAny().PeerAs().Config().PathStruct())
-	if err != nil {
-		return fmt.Errorf("goBgpTask failed to initialize due to error: %v", err)
-	}
-	neighAddrPaths, _, err := ygnmi.ResolvePath(bgpPath.NeighborAny().NeighborAddress().Config().PathStruct())
-	if err != nil {
-		return fmt.Errorf("goBgpTask failed to initialize due to error: %v", err)
-	}
-
 	var global api.Global
 	global.ListenPort = listenPort
 
-	go func() {
-		defer remove()
-		for {
-			item, _, err := q.Next(context.Background())
-			if coalesce.IsClosedQueue(err) {
-				return
+	bgpWatcher := ygnmi.Watch(
+		context.Background(),
+		yclient,
+		b.Config(),
+		func(root *ygnmi.Value[*oc.Root]) error {
+			rootVal, ok := root.Val()
+			if !ok {
+				return ygnmi.Continue
 			}
-			n, ok := item.(*ctree.Leaf)
-			if !ok || n == nil {
-				log.Errorf("goBgpTask invalid cache node: %#v", item)
-				return
-			}
-			v := n.Value()
-			no, ok := v.(*gpb.Notification)
-			if !ok || no == nil {
-				log.Errorf("goBgpTask invalid cache node, expected non-nil *gpb.Notification type, got: %#v", v)
-				return
-			}
-
-			// Update the view of the intended config.
-			// Note: We're guaranteed that whatever update came from the collector is valid since we validate before storing.
-			shouldProcess := false
-			for _, u := range no.Update {
-				switch {
-				case matchingPath(u.Path, asPaths), matchingPath(u.Path, routeIDPaths), matchingPath(u.Path, neighAddrPaths), matchingPath(u.Path, peerAsPaths):
-					log.V(1).Infof("Received update path: %s", prototext.Format(u))
-					shouldProcess = true
-				default:
-					log.V(1).Infof("goBgpTask: update path received isn't matched by any handlers: %s", prototext.Format(u.Path))
-				}
-			}
-			for _, u := range no.Delete {
-				log.V(1).Infof("Received delete path: %s", prototext.Format(u))
-				switch {
-				case len(u.Elem) > 0:
-				case len(u.Element) > 0: //nolint:staticcheck //lint:ignore SA1019 gnmi cache currently doesn't support PathElem for deletions.
-					// Since gNMI still sends delete paths using the deprecated Element field, we need to translate it into path-elems first.
-					// We also need to strip the first element for origin.
-					//nolint:staticcheck //lint:ignore SA1019 gnmi cache currently doesn't support PathElem for deletions.
-					elems, err := PathTranslator.PathElem(u.Element[1:])
-					if err != nil {
-						log.Errorf("goBgpTask: failed to translate delete path: %s", prototext.Format(u))
-						return
-					}
-					u.Elem = elems
-				default:
-					log.Errorf("Unhandled: delete at root: %s", prototext.Format(u))
-					return
-				}
-				switch {
-				case matchingPath(u, asPaths), matchingPath(u, routeIDPaths), matchingPath(u, neighAddrPaths), matchingPath(u, peerAsPaths):
-					shouldProcess = true
-				default:
-					log.V(1).Infof("goBgpTask: delete path received isn't matched by any handlers: %s", prototext.Format(u))
-				}
-			}
-
-			if !shouldProcess {
-				continue
-			}
-
-			intendedRoot := getIntendedConfig()
-			intended := intendedRoot.GetNetworkInstance("default").GetProtocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").GetBgp()
-			if intended == nil {
-				intended = &oc.NetworkInstance_Protocol_Bgp{}
-				intended.PopulateDefaults()
-			}
+			intended := rootVal.GetOrCreateNetworkInstance(DefaultNetworkInstance).GetOrCreateProtocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").GetOrCreateBgp()
 
 			processBgp := func() {
+				log.V(1).Info("Processing BGP update")
 				// Visit paths in action DAG order.
 				// - The output at each stage are
 				//   1. The GoBGP action to take.
@@ -241,7 +168,7 @@ func goBgpTask(getIntendedConfig func() *oc.Root, q gnmit.Queue, update gnmit.Up
 
 				// Action 1: StartBGP / StopBGP / no-op
 				//   - as-path, route-id
-				intendedGlobal, appliedGlobal := intended.GetGlobal(), appliedBgp.GetOrCreateGlobal()
+				intendedGlobal, appliedGlobal := intended.GetOrCreateGlobal(), appliedBgp.GetOrCreateGlobal()
 				if !reflect.DeepEqual(intendedGlobal.As, appliedGlobal.As) || !reflect.DeepEqual(intendedGlobal.RouterId, appliedGlobal.RouterId) {
 					switch {
 					case intendedGlobal.As == nil || intendedGlobal.RouterId == nil:
@@ -387,8 +314,15 @@ func goBgpTask(getIntendedConfig func() *oc.Root, q gnmit.Queue, update gnmit.Up
 				log.Errorf("goBgpTask: updating applied configuration failed")
 			}
 			appliedBgpMu.Unlock()
+
+			return ygnmi.Continue
+		},
+	)
+
+	go func() {
+		if _, err := bgpWatcher.Await(); err != nil {
+			log.Warningf("GoBGP Task's watcher has stopped: %v", err)
 		}
 	}()
-
 	return nil
 }

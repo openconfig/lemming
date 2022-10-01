@@ -144,7 +144,7 @@ func (s *Server) monitorConnectedIntfs(port int, target string, enableTLS bool) 
 						s.setInterface(name, int32(ifindex), intf.GetEnabled())
 						// TODO(wenbli): Support other VRFs.
 						if subintf := intf.GetSubinterface(0); subintf != nil {
-							for _, addr := range subintf.GetIpv4().Address {
+							for _, addr := range subintf.GetOrCreateIpv4().Address {
 								if addr.Ip != nil && addr.PrefixLength != nil {
 									if err := s.addInterfacePrefix(name, int32(ifindex), fmt.Sprintf("%s/%d", addr.GetIp(), addr.GetPrefixLength()), defaultNI); err != nil {
 										log.Warningf("adding interface prefix failed: %v", err)

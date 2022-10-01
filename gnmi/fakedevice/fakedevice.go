@@ -26,10 +26,11 @@ import (
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 	"github.com/openconfig/ygnmi/ygnmi"
-	"github.com/openconfig/ygot/util"
 	"github.com/openconfig/ygot/ygot/pathtranslate"
+)
 
-	gpb "github.com/openconfig/gnmi/proto/gnmi"
+const (
+	DefaultNetworkInstance = "DEFAULT"
 )
 
 var PathTranslator *pathtranslate.PathTranslator
@@ -83,12 +84,6 @@ func StartCurrentDateTimeTask(ctx context.Context, port int, target string, enab
 	}()
 
 	return nil
-}
-
-// matchingPath returns true iff the path matches the given matcher path in
-// length and in values; wildcards are allowed in the matcher path.
-func matchingPath(path, matcher *gpb.Path) bool {
-	return len(path.Elem) == len(matcher.Elem) && util.PathMatchesQuery(path, matcher)
 }
 
 // StartSystemBaseTask handles some of the logic for the base systems feature
@@ -166,27 +161,6 @@ func StartSystemBaseTask(ctx context.Context, port int, target string, enableTLS
 	return nil
 }
 
-// Tasks returns the set of functions that should be called that may read
-// and/or modify internal state.
-//
-// These tasks are invoked during the creation of each device's Subscribe
-// server and may spawn long-running or future-running thread(s) that make
-// modifications to a device's cache.
-func Tasks(target string) []gnmit.Task {
-	// TODO(wenbli): We should decentralize how we add tasks by adding a
-	// register function that's called by various init() functions.
-	return []gnmit.Task{{
-		Run: goBgpTask,
-		Paths: []ygnmi.PathStruct{
-			ocpath.Root().NetworkInstance("default").Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").Bgp(),
-		},
-		Prefix: &gpb.Path{
-			Origin: "openconfig",
-			Target: target,
-		},
-	}}
-}
-
 // NewTarget creates a new gNMI fake device object.
 // This fake gNMI server simply mirrors whatever is set for its config leafs in
 // its state leafs. It also has a mechanism for adding new "tasks", or go
@@ -197,7 +171,7 @@ func NewTarget(ctx context.Context, addr, targetName string) (*gnmit.Collector, 
 	if err != nil {
 		return nil, "", fmt.Errorf("cannot create ygot schema object for gNMI target: %v", err)
 	}
-	c, addr, err := gnmit.NewSettable(ctx, addr, targetName, false, configSchema, Tasks(targetName))
+	c, addr, err := gnmit.NewSettable(ctx, addr, targetName, false, configSchema, nil)
 	if err != nil {
 		return nil, "", fmt.Errorf("cannot start server, got err: %v", err)
 	}
