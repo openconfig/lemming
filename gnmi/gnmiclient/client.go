@@ -95,7 +95,7 @@ func Replace[T any](ctx context.Context, c *ygnmi.Client, q ygnmi.SingletonQuery
 }
 
 // Delete deletes the configuration at the given query path.
-func Delete[T any](ctx context.Context, c *ygnmi.Client, q ygnmi.SingletonQuery[T], val T) (*ygnmi.Result, error) {
+func Delete[T any](ctx context.Context, c *ygnmi.Client, q ygnmi.SingletonQuery[T]) (*ygnmi.Result, error) {
 	return ygnmi.Delete[T](ctx, c, &singletonAsConfig[T]{SingletonQuery: q})
 }
 
