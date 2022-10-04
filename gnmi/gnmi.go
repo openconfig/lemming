@@ -48,9 +48,6 @@ func createGNMIServer(targetName string) (*gnmit.GNMIServer, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create gNMI server: %v", err)
 	}
-	if _, err := gnmit.StartDatastoreServer(gnmiServer); err != nil {
-		return nil, fmt.Errorf("failed to start datastore server: %v", err)
-	}
 	return gnmiServer, nil
 }
 

@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/netip"
 	"sync"
 	"testing"
 	"time"
@@ -31,6 +32,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 	"github.com/openconfig/gnmi/value"
+	"github.com/openconfig/lemming/gnmi/gnmiclient"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/ygot/ygot"
 )
@@ -254,6 +256,10 @@ func TestONCESet(t *testing.T) {
 	if err != nil {
 		t.Fatalf("cannot start server, got err: %v", err)
 	}
+	addrport, err := netip.ParseAddrPort(addr)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	pathStr := "/interfaces/interface[name=foo]/config/description"
 	path := mustPath(pathStr)
@@ -263,13 +269,11 @@ func TestONCESet(t *testing.T) {
 	var sendErr, recvErr error
 	go func(ctx context.Context) {
 		defer cancel()
-		conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		client, err := gnmiclient.NewLocalReadOnly(int(addrport.Port()), false)
 		if err != nil {
 			sendErr = fmt.Errorf("cannot dial gNMI server, %v", err)
 			return
 		}
-
-		client := gpb.NewGNMIClient(conn)
 
 		if _, err := client.Set(ctx, &gpb.SetRequest{
 			Prefix: mustTargetPath("local", "", true),
@@ -352,6 +356,10 @@ func TestONCESetJSON(t *testing.T) {
 	if err != nil {
 		t.Fatalf("cannot start server, got err: %v", err)
 	}
+	addrport, err := netip.ParseAddrPort(addr)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	pathStr := "/interfaces/interface[name=foo]/config/description"
 	path := mustPath(pathStr)
@@ -361,13 +369,11 @@ func TestONCESetJSON(t *testing.T) {
 	var sendErr, recvErr error
 	go func(ctx context.Context) {
 		defer cancel()
-		conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		client, err := gnmiclient.NewLocalReadOnly(int(addrport.Port()), false)
 		if err != nil {
 			sendErr = fmt.Errorf("cannot dial gNMI server, %v", err)
 			return
 		}
-
-		client := gpb.NewGNMIClient(conn)
 
 		if _, err := client.Set(ctx, &gpb.SetRequest{
 			Prefix: mustTargetPath("local", "", true),

@@ -15,13 +15,12 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/openconfig/gribigo/afthelper"
 	"github.com/openconfig/lemming/gnmi"
-	"github.com/openconfig/lemming/gnmi/gnmit"
+	"github.com/openconfig/lemming/gnmi/gnmiclient"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 	dpb "github.com/openconfig/lemming/proto/dataplane"
@@ -793,12 +792,10 @@ func TestServer(t *testing.T) {
 			}
 
 			// Update the interface configuration on the gNMI server.
-			conn, err := grpc.Dial(fmt.Sprintf("unix:///%s", gnmit.DatastoreAddress), grpc.WithTransportCredentials(insecure.NewCredentials()))
+			client, err := gnmiclient.NewLocal(int(addrport.Port()), false)
 			if err != nil {
 				t.Fatalf("cannot dial gNMI datastore server, %v", err)
 			}
-
-			client := gpb.NewGNMIClient(conn)
 
 			for _, intf := range tt.inInterfaces {
 				ocintf := &oc.Interface{}
@@ -815,6 +812,7 @@ func TestServer(t *testing.T) {
 					t.Fatalf("Invalid prefix: %v", err)
 				}
 				ocaddr.PrefixLength = ygot.Uint8(uint8(plen))
+
 				js, err := ygot.Marshal7951(ocintf)
 				if err != nil {
 					t.Fatalf("Cannot marshal configuration GoStruct: %v", err)

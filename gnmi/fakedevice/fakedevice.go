@@ -16,13 +16,11 @@ package fakedevice
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	log "github.com/golang/glog"
 	"github.com/openconfig/goyang/pkg/yang"
 	"github.com/openconfig/lemming/gnmi/gnmiclient"
-	"github.com/openconfig/lemming/gnmi/gnmit"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 	"github.com/openconfig/ygnmi/ygnmi"
@@ -159,21 +157,4 @@ func StartSystemBaseTask(ctx context.Context, port int, target string, enableTLS
 		}
 	}()
 	return nil
-}
-
-// NewTarget creates a new gNMI fake device object.
-// This fake gNMI server simply mirrors whatever is set for its config leafs in
-// its state leafs. It also has a mechanism for adding new "tasks", or go
-// thread agents that can subscribe to particular values in ONDATRA's
-// OpenConfig tree and write back values to it.
-func NewTarget(ctx context.Context, addr, targetName string) (*gnmit.Collector, string, error) {
-	configSchema, err := oc.Schema()
-	if err != nil {
-		return nil, "", fmt.Errorf("cannot create ygot schema object for gNMI target: %v", err)
-	}
-	c, addr, err := gnmit.NewSettable(ctx, addr, targetName, false, configSchema, nil)
-	if err != nil {
-		return nil, "", fmt.Errorf("cannot start server, got err: %v", err)
-	}
-	return c, addr, nil
 }
