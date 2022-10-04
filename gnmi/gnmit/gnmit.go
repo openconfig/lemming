@@ -346,18 +346,16 @@ func set(schema *ytypes.Schema, cache *cache.Cache, target string, req *gpb.SetR
 // Set is a prototype for a gNMI Set operation.
 // TODO(wenbli): Add unit test.
 func (s *GNMIServer) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResponse, error) {
-	md, ok := metadata.FromIncomingContext(ctx)
-	if !ok {
-		return nil, status.Errorf(codes.Internal, "incoming gNMI SetRequest must specify GNMIMode via the user agent string.")
-	}
-
 	// Use ConfigMode by default so that external users don't need to set metadata.
 	gnmiMode := gnmistore.ConfigMode
-	switch {
-	case slices.Contains(md.Get(gnmistore.GNMIModeMetadataKey), string(gnmistore.ConfigMode)):
-		gnmiMode = gnmistore.ConfigMode
-	case slices.Contains(md.Get(gnmistore.GNMIModeMetadataKey), string(gnmistore.StateMode)):
-		gnmiMode = gnmistore.StateMode
+	md, ok := metadata.FromIncomingContext(ctx)
+	if ok {
+		switch {
+		case slices.Contains(md.Get(gnmistore.GNMIModeMetadataKey), string(gnmistore.ConfigMode)):
+			gnmiMode = gnmistore.ConfigMode
+		case slices.Contains(md.Get(gnmistore.GNMIModeMetadataKey), string(gnmistore.StateMode)):
+			gnmiMode = gnmistore.StateMode
+		}
 	}
 
 	switch gnmiMode {
