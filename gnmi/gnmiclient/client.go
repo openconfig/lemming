@@ -21,56 +21,51 @@ import (
 	"fmt"
 
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
-	"github.com/openconfig/lemming/gnmi/gnmit"
+	"github.com/openconfig/lemming/gnmi/gnmistore"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/local"
+	"google.golang.org/grpc/metadata"
 )
 
 // localClient is a client that connects to local gNMI cache.
 type localClient struct {
+	gnmiMode gnmistore.GNMIMode
 	gpb.GNMIClient
-	setClient gpb.GNMIClient
 }
 
 // Set uses the datastore client for Set, instead of the public cache endpoint.
 func (m *localClient) Set(ctx context.Context, in *gpb.SetRequest, opts ...grpc.CallOption) (*gpb.SetResponse, error) {
-	return m.setClient.Set(ctx, in, opts...)
+	ctx = metadata.AppendToOutgoingContext(ctx, gnmistore.GNMIModeMetadataKey, string(m.gnmiMode))
+	return m.GNMIClient.Set(ctx, in, opts...)
 }
 
 // NewLocal returns a gNMI client connected to the local gNMI cache and datastore for Set.
 func NewLocal(port int, enableTLS bool) (gpb.GNMIClient, error) {
-	client, err := newLocalReadOnly(port, enableTLS)
-	if err != nil {
-		return nil, err
-	}
-
-	setConn, err := grpc.Dial(fmt.Sprintf("unix:///%s", gnmit.DatastoreAddress), grpc.WithTransportCredentials(local.NewCredentials()))
-	if err != nil {
-		return nil, fmt.Errorf("failed to dial unix socket: %v", err)
-	}
-	client.setClient = gpb.NewGNMIClient(setConn)
-	return client, nil
+	return newLocal(port, enableTLS, gnmistore.StateMode)
 }
 
 // NewLocalReadOnly returns a gNMI client connected only to the local gNMI cache.
 func NewLocalReadOnly(port int, enableTLS bool) (gpb.GNMIClient, error) {
-	return newLocalReadOnly(port, enableTLS)
+	return newLocal(port, enableTLS, gnmistore.ConfigMode)
 }
 
-// newLocalReadOnly returns a gNMI client connected only to the local gNMI cache.
-func newLocalReadOnly(port int, enableTLS bool) (*localClient, error) {
-	opt := grpc.WithTransportCredentials(local.NewCredentials())
+// newLocal returns a gNMI client according to the given mode.
+func newLocal(port int, enableTLS bool, mode gnmistore.GNMIMode) (gpb.GNMIClient, error) {
+	var opts []grpc.DialOption
 	if enableTLS {
 		//nolint:gosec // TODO: figure out long cert handling
-		opt = grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{InsecureSkipVerify: true}))
+		opts = append(opts, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{InsecureSkipVerify: true})))
+	} else {
+		opts = append(opts, grpc.WithTransportCredentials(local.NewCredentials()))
 	}
-	cacheConn, err := grpc.Dial(fmt.Sprintf("localhost:%d", port), opt)
+	cacheConn, err := grpc.Dial(fmt.Sprintf("localhost:%d", port), opts...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to dial cache socket: %v", err)
 	}
 	return &localClient{
+		gnmiMode:   mode,
 		GNMIClient: gpb.NewGNMIClient(cacheConn),
 	}, nil
 }

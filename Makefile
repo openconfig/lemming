@@ -19,3 +19,7 @@ itest:
 .PHONY: itest2
 itest2:
 	go test -v ./integration_tests/twodut_tests -args -config $(shell pwd)/kne/twodut_config.yaml -testbed $(shell pwd)/kne/twodut_testbed.pb.txt
+
+.PHONY: test
+test:
+	go test $(shell go list ./... | grep -v integration_test)

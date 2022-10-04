@@ -21,16 +21,21 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"os"
 	"sync"
 	"time"
 
 	log "github.com/golang/glog"
 	"github.com/openconfig/gnmi/cache"
 	"github.com/openconfig/gnmi/subscribe"
+	"github.com/openconfig/lemming/gnmi/gnmistore"
+	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/ygot/ygot"
 	"github.com/openconfig/ygot/ytypes"
+	"golang.org/x/exp/slices"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 )
@@ -65,6 +70,9 @@ type GNMIServer struct {
 	// The subscribe Server implements only Subscribe for gNMI.
 	*subscribe.Server
 	c *Collector
+
+	stateMu     sync.Mutex
+	stateSchema *ytypes.Schema
 }
 
 // NewServer returns a new collector server implementation that can be registered on
@@ -127,45 +135,23 @@ func NewServer(ctx context.Context, schema *ytypes.Schema, hostname string, send
 		return nil, nil, fmt.Errorf("could not instantiate gNMI server: %v", err)
 	}
 
+	stateSchema, err := oc.Schema()
+	if err != nil {
+		return nil, nil, err
+	}
+	if err := SetupSchema(stateSchema); err != nil {
+		return nil, nil, err
+	}
+
 	gnmiserver := &GNMIServer{
-		Server: subscribeSrv, // use the 'subscribe' implementation.
-		c:      c,
+		Server:      subscribeSrv, // use the 'subscribe' implementation.
+		c:           c,
+		stateSchema: stateSchema,
 	}
 
 	c.cache.SetClient(subscribeSrv.Update)
 
 	return c, gnmiserver, nil
-}
-
-// StartDatastoreServer starts a separate gNMI service on a unix domain socket
-// that allows operational state to be written.
-//
-// - gnmiServer is the primary gNMI service with a backdoor for setting
-// read-only values.
-// - func() is a graceful stop function for the gRPC server.
-func StartDatastoreServer(gnmiServer *GNMIServer) (func(), error) {
-	if err := os.RemoveAll(DatastoreAddress); err != nil {
-		return nil, err
-	}
-
-	// Use a separate service to avoid service duplication error during
-	// registration.
-	srv := grpc.NewServer()
-	dss, err := NewDatastoreServer(gnmiServer)
-	if err != nil {
-		return nil, err
-	}
-	gpb.RegisterGNMIServer(srv, dss)
-	lisDS, err := net.Listen("unix", DatastoreAddress)
-	if err != nil {
-		return nil, fmt.Errorf("listen error: %v", err)
-	}
-	go func() {
-		if err := srv.Serve(lisDS); err != nil {
-			log.Fatalf("Error while serving datastore target: %v", err)
-		}
-	}()
-	return srv.GracefulStop, nil
 }
 
 // New returns a new collector that listens on the specified addr (in the form host:port),
@@ -178,11 +164,6 @@ func New(ctx context.Context, schema *ytypes.Schema, addr, hostname string, send
 	c, gnmiserver, err := NewServer(ctx, schema, hostname, sendMeta)
 	if err != nil {
 		return nil, "", err
-	}
-
-	stopFnDS, err := StartDatastoreServer(gnmiserver)
-	if err != nil {
-		log.Fatalf("Error while starting datastore server: %v", err)
 	}
 
 	// Start gNMI server.
@@ -201,7 +182,6 @@ func New(ctx context.Context, schema *ytypes.Schema, addr, hostname string, send
 		}
 	}()
 	c.stopFn = func() {
-		stopFnDS()
 		srv.GracefulStop()
 	}
 	return c, lis.Addr().String(), nil
@@ -366,20 +346,53 @@ func set(schema *ytypes.Schema, cache *cache.Cache, target string, req *gpb.SetR
 // Set is a prototype for a gNMI Set operation.
 // TODO(wenbli): Add unit test.
 func (s *GNMIServer) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResponse, error) {
-	s.c.smu.Lock()
-	defer s.c.smu.Unlock()
-
-	log.V(1).Infof("config datastore service received SetRequest: %v", req)
-	if s.c.schema == nil {
-		return s.UnimplementedGNMIServer.Set(ctx, req)
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return nil, status.Errorf(codes.Internal, "incoming gNMI SetRequest must specify GNMIMode via the user agent string.")
 	}
 
-	// TODO(wenbli): Reject paths that try to modify read-only values.
-	// TODO(wenbli): Question: what to do if there are operational-state values in a container that is specified to be replaced or deleted?
-	err := set(s.c.schema, s.c.cache, s.c.name, req, true)
+	gnmiMode := gnmistore.ConfigMode
+	switch {
+	case slices.Contains(md.Get(gnmistore.GNMIModeMetadataKey), string(gnmistore.ConfigMode)):
+		gnmiMode = gnmistore.ConfigMode
+	case slices.Contains(md.Get(gnmistore.GNMIModeMetadataKey), string(gnmistore.StateMode)):
+		gnmiMode = gnmistore.StateMode
+	}
 
-	// TODO(wenbli): Currently the SetResponse is not filled.
-	return &gpb.SetResponse{
-		Timestamp: time.Now().UnixNano(),
-	}, err
+	switch gnmiMode {
+	case gnmistore.ConfigMode:
+		s.c.smu.Lock()
+		defer s.c.smu.Unlock()
+
+		log.V(1).Infof("config datastore service received SetRequest: %v", req)
+		if s.c.schema == nil {
+			return s.UnimplementedGNMIServer.Set(ctx, req)
+		}
+
+		// TODO(wenbli): Reject paths that try to modify read-only values.
+		// TODO(wenbli): Question: what to do if there are operational-state values in a container that is specified to be replaced or deleted?
+		err := set(s.c.schema, s.c.cache, s.c.name, req, true)
+
+		// TODO(wenbli): Currently the SetResponse is not filled.
+		return &gpb.SetResponse{
+			Timestamp: time.Now().UnixNano(),
+		}, err
+	case gnmistore.StateMode:
+		s.stateMu.Lock()
+		defer s.stateMu.Unlock()
+
+		log.V(1).Infof("operational state datastore service received SetRequest: %v", req)
+		if s.stateSchema == nil {
+			return s.UnimplementedGNMIServer.Set(ctx, req)
+		}
+		// TODO(wenbli): Reject values that modify config values. We only allow modifying state in this mode.
+		if err := set(s.stateSchema, s.c.cache, s.c.name, req, false); err != nil {
+			return &gpb.SetResponse{}, status.Errorf(codes.Aborted, "%v", err)
+		}
+
+		// This mode is intended to be used internally, and the SetResponse doesn't matter.
+		return &gpb.SetResponse{}, nil
+	default:
+		return nil, status.Errorf(codes.Internal, "incoming gNMI SetRequest must specify a valid GNMIMode via context metadata: %v", md)
+	}
 }
