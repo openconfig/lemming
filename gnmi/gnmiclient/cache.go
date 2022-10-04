@@ -54,12 +54,12 @@ type cacheClient struct {
 }
 
 // Set uses the datastore client for Set, instead of the public cache endpoint.
-func (m *cacheClient) Set(ctx context.Context, in *gpb.SetRequest, _ ...grpc.CallOption) (*gpb.SetResponse, error) {
-	return m.srv.Set(metadata.NewIncomingContext(ctx, metadata.Pairs(gnmistore.GNMIModeMetadataKey, string(m.gnmiMode))), in)
+func (c *cacheClient) Set(ctx context.Context, in *gpb.SetRequest, _ ...grpc.CallOption) (*gpb.SetResponse, error) {
+	return c.srv.Set(metadata.NewIncomingContext(ctx, metadata.Pairs(gnmistore.GNMIModeMetadataKey, string(c.gnmiMode))), in)
 }
 
 // Subscribe implements gNMI Subscribe, by calling a gNMI server directly.
-func (cc *cacheClient) Subscribe(ctx context.Context, _ ...grpc.CallOption) (gpb.GNMI_SubscribeClient, error) {
+func (c *cacheClient) Subscribe(ctx context.Context, _ ...grpc.CallOption) (gpb.GNMI_SubscribeClient, error) {
 	errCh := make(chan error)
 	respCh := make(chan *gpb.SubscribeResponse, 10)
 	reqCh := make(chan *gpb.SubscribeRequest)
@@ -76,7 +76,7 @@ func (cc *cacheClient) Subscribe(ctx context.Context, _ ...grpc.CallOption) (gpb
 	}
 
 	go func() {
-		err := cc.srv.Subscribe(sub)
+		err := c.srv.Subscribe(sub)
 		errCh <- err
 	}()
 	return client, nil
