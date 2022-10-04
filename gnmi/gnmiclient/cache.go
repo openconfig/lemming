@@ -36,16 +36,6 @@ func New(srv gpb.GNMIServer) (gpb.GNMIClient, error) {
 	}, nil
 }
 
-// NewReadOnly creates a config-based gNMI client for the gNMI cache.
-// The client calls the server gRPC implementation with a custom streaming gRPC implementation
-// in order to bypass the regular gRPC wire marshalling/unmarshalling handling.
-func NewReadOnly(srv gpb.GNMIServer) (gpb.GNMIClient, error) {
-	return &cacheClient{
-		gnmiMode: gnmistore.ConfigMode,
-		srv:      srv,
-	}, nil
-}
-
 // cacheClient is a gNMI client talks directly to a server, without sending messages over the wire.
 type cacheClient struct {
 	gpb.GNMIClient
