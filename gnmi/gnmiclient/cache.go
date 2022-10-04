@@ -16,13 +16,9 @@ package gnmiclient
 
 import (
 	"context"
-	"crypto/tls"
-	"fmt"
 	"io"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/credentials/local"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
 
@@ -33,44 +29,20 @@ import (
 // New creates a state-based gNMI client for the gNMI cache.
 // The client calls the server gRPC implementation with a custom streaming gRPC implementation
 // in order to bypass the regular gRPC wire marshalling/unmarshalling handling.
-func New(srv gpb.GNMIServer, port int, enableTLS bool) (gpb.GNMIClient, error) {
-	cc, err := newLocal(port, enableTLS, gnmistore.StateMode)
-	if err != nil {
-		return nil, err
-	}
-	cc.srv = srv
-	return cc, nil
+func New(srv gpb.GNMIServer) (gpb.GNMIClient, error) {
+	return &cacheClient{
+		gnmiMode: gnmistore.StateMode,
+		srv:      srv,
+	}, nil
 }
 
 // NewReadOnly creates a config-based gNMI client for the gNMI cache.
 // The client calls the server gRPC implementation with a custom streaming gRPC implementation
 // in order to bypass the regular gRPC wire marshalling/unmarshalling handling.
-func NewReadOnly(srv gpb.GNMIServer, port int, enableTLS bool) (gpb.GNMIClient, error) {
-	cc, err := newLocal(port, enableTLS, gnmistore.ConfigMode)
-	if err != nil {
-		return nil, err
-	}
-	cc.srv = srv
-	return cc, nil
-}
-
-// newLocal returns a gNMI client according to the given mode.
-func newLocal(port int, enableTLS bool, mode gnmistore.GNMIMode) (*cacheClient, error) {
-	var opts []grpc.DialOption
-	if enableTLS {
-		//nolint:gosec // TODO: figure out long cert handling
-		opts = append(opts, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{InsecureSkipVerify: true})))
-	} else {
-		opts = append(opts, grpc.WithTransportCredentials(local.NewCredentials()))
-	}
-	cacheConn, err := grpc.Dial(fmt.Sprintf("localhost:%d", port), opts...)
-	if err != nil {
-		return nil, fmt.Errorf("failed to dial cache socket: %v", err)
-	}
+func NewReadOnly(srv gpb.GNMIServer) (gpb.GNMIClient, error) {
 	return &cacheClient{
-		// TODO: Support skipping gRPC marshalling/unmarshalling for Set.
-		GNMIClient: gpb.NewGNMIClient(cacheConn),
-		gnmiMode:   mode,
+		gnmiMode: gnmistore.ConfigMode,
+		srv:      srv,
 	}, nil
 }
 
@@ -82,13 +54,12 @@ type cacheClient struct {
 }
 
 // Set uses the datastore client for Set, instead of the public cache endpoint.
-func (m *cacheClient) Set(ctx context.Context, in *gpb.SetRequest, opts ...grpc.CallOption) (*gpb.SetResponse, error) {
-	ctx = metadata.AppendToOutgoingContext(ctx, gnmistore.GNMIModeMetadataKey, string(m.gnmiMode))
-	return m.GNMIClient.Set(ctx, in, opts...)
+func (m *cacheClient) Set(ctx context.Context, in *gpb.SetRequest, _ ...grpc.CallOption) (*gpb.SetResponse, error) {
+	return m.srv.Set(metadata.NewIncomingContext(ctx, metadata.Pairs(gnmistore.GNMIModeMetadataKey, string(m.gnmiMode))), in)
 }
 
 // Subscribe implements gNMI Subscribe, by calling a gNMI server directly.
-func (cc *cacheClient) Subscribe(ctx context.Context, opts ...grpc.CallOption) (gpb.GNMI_SubscribeClient, error) {
+func (cc *cacheClient) Subscribe(ctx context.Context, _ ...grpc.CallOption) (gpb.GNMI_SubscribeClient, error) {
 	errCh := make(chan error)
 	respCh := make(chan *gpb.SubscribeResponse, 10)
 	reqCh := make(chan *gpb.SubscribeRequest)

@@ -19,7 +19,6 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"net/netip"
 	"sync"
 
 	"github.com/openconfig/lemming/dataplane"
@@ -97,16 +96,8 @@ func New(lis net.Listener, targetName string, opts ...grpc.ServerOption) (*Devic
 	}
 	reflection.Register(s)
 	d.startServer()
-	port, enableTLS := viper.GetInt("port"), viper.GetBool("enable_tls")
-	if port == 0 {
-		addrport, err := netip.ParseAddrPort(lis.Addr().String())
-		if err != nil {
-			return nil, err
-		}
-		port = int(addrport.Port())
-	}
 
-	cacheClient, err := gnmiclient.New(gnmiServer, port, enableTLS)
+	cacheClient, err := gnmiclient.New(gnmiServer)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create local gNMI client: %v", err)
 	}

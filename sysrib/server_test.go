@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"net/netip"
 	"reflect"
 	"strconv"
 	"strings"
@@ -782,17 +781,13 @@ func TestServer(t *testing.T) {
 
 			dp := NewFakeDataplane()
 			dp.SetupFailRoutes(tt.inFailRoutes)
-			addrport, err := netip.ParseAddrPort(lis.Addr().String())
-			if err != nil {
-				t.Fatal(err)
-			}
 			s, err := New(dp)
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			// Update the interface configuration on the gNMI server.
-			client, err := gnmiclient.New(gnmiServer, int(addrport.Port()), false)
+			client, err := gnmiclient.New(gnmiServer)
 			if err != nil {
 				t.Fatalf("cannot dial gNMI datastore server, %v", err)
 			}
@@ -817,16 +812,34 @@ func TestServer(t *testing.T) {
 				}
 				ocaddr.PrefixLength = ygot.Uint8(uint8(plen))
 
-				js, err := ygot.Marshal7951(ocintf)
+				notifs, err := ygot.TogNMINotifications(ocintf, 0, ygot.GNMINotificationsConfig{UsePathElem: true})
 				if err != nil {
-					t.Fatalf("Cannot marshal configuration GoStruct: %v", err)
+					t.Fatalf("Cannot marshal GoStruct: %v", err)
 				}
+				var updates []*gpb.Update
+				for _, notif := range notifs {
+					updates = append(updates, notif.Update...)
+				}
+				// TODO(wenbli): Use this when https://github.com/openconfig/lemming/issues/67 is fixed.
+				// js, err := ygot.Marshal7951(ocintf)
+				// if err != nil {
+				// 	t.Fatalf("Cannot marshal GoStruct: %v", err)
+				// }
+				intfPath := mustPSPath(ocpath.Root().Interface(intf.name))
+				intfPath.Target = "local"
+				//fmt.Println(updates)
 				if _, err := client.Set(context.Background(), &gpb.SetRequest{
-					Prefix: mustTargetPath("local", ""),
-					Replace: []*gpb.Update{{
-						Path: mustPSPath(ocpath.Root().Interface(intf.name)),
-						Val:  &gpb.TypedValue{Value: &gpb.TypedValue_JsonIetfVal{JsonIetfVal: js}},
-					}},
+					Prefix: intfPath,
+					//Delete: []*gpb.Path{
+					//	mustPSPath(ocpath.Root()),
+					//},
+					Update: updates,
+					// TODO(wenbli): Use this when https://github.com/openconfig/lemming/issues/67 is fixed.
+					// Prefix: mustTargetPath("local", "")
+					// Replace: []*gpb.Update{{
+					// 	Path: mustPSPath(ocpath.Root().Interface(intf.name)),
+					// 	Val:  &gpb.TypedValue{Value: &gpb.TypedValue_JsonIetfVal{JsonIetfVal: js}},
+					// }},
 				}); err != nil {
 					t.Fatalf("set request failed: %v", err)
 				}
