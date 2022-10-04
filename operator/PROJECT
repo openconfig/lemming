@@ -1,0 +1,16 @@
+domain: openconfig.net
+layout:
+- go.kubebuilder.io/v3
+projectName: operator
+repo: github.com/openconfig/lemming/operator
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: openconfig.net
+  group: lemming
+  kind: Lemming
+  path: github.com/openconfig/lemming/operator/api/v1alpha1
+  version: v1alpha1
+version: "3"

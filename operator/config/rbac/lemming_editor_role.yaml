@@ -1,0 +1,24 @@
+# permissions for end users to edit lemmings.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: lemming-editor-role
+rules:
+- apiGroups:
+  - lemming.openconfig.net
+  resources:
+  - lemmings
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - lemming.openconfig.net
+  resources:
+  - lemmings/status
+  verbs:
+  - get
