@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	log "github.com/golang/glog"
+	gpb "github.com/openconfig/gnmi/proto/gnmi"
 	"github.com/openconfig/lemming/gnmi/gnmiclient"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
@@ -52,8 +53,8 @@ const (
 //     When there is a dependency, the later actions will NOT directly depend on the results of the previous actions, but will just look at the current config view to determine the appropriate action.
 //     e.g. for peers, if the global setting has been set up, then we can create the peers and update the applied config if it succeeds, but if not then we don't do anything.
 //     ; however, if the global setting hasn't been set up, we actually need to erase the entirety of the applied config. This is because the watcher doesn't tell us this information.
-func StartGoBGPTask(ctx context.Context, port int, target string, enableTLS bool) error {
-	yclient, err := gnmiclient.NewYGNMIClient(port, target, enableTLS)
+func StartGoBGPTask(ctx context.Context, gClient gpb.GNMIClient, target string) error {
+	yclient, err := ygnmi.NewClient(gClient, ygnmi.WithTarget(target))
 	if err != nil {
 		return err
 	}

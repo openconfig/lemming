@@ -768,7 +768,7 @@ func TestServer(t *testing.T) {
 		t.Run(tt.desc, func(t *testing.T) {
 			// TODO(wenbli): Don't re-create gNMI server, simply erase it and then reconnect to it afterwards.
 			grpcServer := grpc.NewServer()
-			_, err := gnmi.New(grpcServer, "local")
+			gnmiServer, err := gnmi.New(grpcServer, "local")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -786,15 +786,19 @@ func TestServer(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			s, err := NewServer(dp, int(addrport.Port()), "local", false)
+			s, err := New(dp)
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			// Update the interface configuration on the gNMI server.
-			client, err := gnmiclient.NewLocal(int(addrport.Port()), false)
+			client, err := gnmiclient.New(gnmiServer, int(addrport.Port()), false)
 			if err != nil {
 				t.Fatalf("cannot dial gNMI datastore server, %v", err)
+			}
+
+			if err := s.Start(client, "local"); err != nil {
+				t.Fatalf("cannot start sysrib server, %v", err)
 			}
 
 			for _, intf := range tt.inInterfaces {
