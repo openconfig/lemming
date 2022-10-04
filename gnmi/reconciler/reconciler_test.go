@@ -29,29 +29,6 @@ import (
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 )
 
-func TestWithID(t *testing.T) {
-	tests := []struct {
-		desc string
-		rec  Reconciler
-		want string
-	}{{
-		desc: "single call",
-		rec:  (&Builder{}).WithID("foo").Build(),
-		want: "foo",
-	}, {
-		desc: "multiple calls",
-		rec:  (&Builder{}).WithID("test").WithID("foo").Build(),
-		want: "foo",
-	}}
-	for _, tt := range tests {
-		t.Run(tt.desc, func(t *testing.T) {
-			if got := tt.rec.ID(); got != tt.want {
-				t.Fatalf("WithID failed: got %q want %q", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestWithStart(t *testing.T) {
 	tests := []struct {
 		desc string

@@ -51,20 +51,20 @@ type Builder struct {
 	br *BuiltReconciler
 }
 
+// NewBuilder creates a new reconciler builder.
+func NewBuilder(id string) *Builder {
+	return &Builder{
+		br: &BuiltReconciler{
+			id: id,
+		},
+	}
+}
+
 // Build returns the reconciler as configuration and resets the builder.
-func (b *Builder) Build() Reconciler {
+func (b *Builder) Build() *BuiltReconciler {
 	reconciler := b.br
 	b.br = &BuiltReconciler{}
 	return reconciler
-}
-
-// WithID sets the id of the reconciler.
-func (b *Builder) WithID(id string) *Builder {
-	if b.br == nil {
-		b.br = &BuiltReconciler{}
-	}
-	b.br.id = id
-	return b
 }
 
 // WithStart appends a new start func to the reconciler.
@@ -83,6 +83,7 @@ func (b *Builder) WithStart(startFn func(context.Context, *ygnmi.Client) error) 
 }
 
 // WithValidator appends a validator and validations paths to the reconciler.
+// The Validate func is only called if the SetRequest contains paths which match the paths.
 func (b *Builder) WithValidator(paths []ygnmi.PathStruct, validator func(*oc.Root) error) *Builder {
 	if b.br == nil {
 		b.br = &BuiltReconciler{}
@@ -95,6 +96,17 @@ func (b *Builder) WithValidator(paths []ygnmi.PathStruct, validator func(*oc.Roo
 // TypedBuilder is similar to builder except with a type parameter for use with ygnmi Queries.
 type TypedBuilder[T any] struct {
 	Builder
+}
+
+// NewTypedBuider creates a new reconciler builder.
+func NewTypedBuider[T any](id string) *TypedBuilder[T] {
+	return &TypedBuilder[T]{
+		Builder: Builder{
+			br: &BuiltReconciler{
+				id: id,
+			},
+		},
+	}
 }
 
 // WithWatch adds starting a watch to the reconciler's start funcs.
