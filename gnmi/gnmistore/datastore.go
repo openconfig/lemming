@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package datastore contains a gNMI cache implementation that can be used as
+// Package gnmistore contains a gNMI cache implementation that can be used as
 // an on-device/fake device implementation.
 package gnmistore
 
