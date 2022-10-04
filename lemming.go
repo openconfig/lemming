@@ -19,8 +19,6 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"net/netip"
-	"os"
 	"sync"
 
 	"github.com/openconfig/lemming/dataplane"
@@ -38,7 +36,6 @@ import (
 	"k8s.io/klog/v2"
 
 	log "github.com/golang/glog"
-	zpb "github.com/openconfig/lemming/proto/sysrib"
 )
 
 // Device is the reference device implementation.
@@ -55,31 +52,6 @@ type Device struct {
 	mu      sync.Mutex
 	err     error
 	stopped chan struct{}
-}
-
-// startSysrib starts the sysrib gRPC service at a unix domain socket. This
-// should be started prior to routing services to allow them to connect to
-// sysrib during their initialization.
-func startSysrib(dataplane *sysrib.Dataplane, port int, target string, enableTLS bool) {
-	if err := os.RemoveAll(sysrib.SockAddr); err != nil {
-		log.Fatal(err)
-	}
-
-	lis, err := net.Listen("unix", sysrib.SockAddr)
-	if err != nil {
-		log.Fatalf("listen error: %v", err)
-	}
-
-	grpcServer := grpc.NewServer()
-	s, err := sysrib.NewServer(dataplane, port, target, enableTLS)
-	if err != nil {
-		log.Fatalf("error while creating sysrib server: %v", err)
-	}
-	zpb.RegisterSysribServer(grpcServer, s)
-
-	go func() {
-		grpcServer.Serve(lis)
-	}()
 }
 
 // New returns a new initialized device.
@@ -124,31 +96,30 @@ func New(lis net.Listener, targetName string, opts ...grpc.ServerOption) (*Devic
 	}
 	reflection.Register(s)
 	d.startServer()
-	port, enableTLS := viper.GetInt("port"), viper.GetBool("enable_tls")
-	if port == 0 {
-		addrport, err := netip.ParseAddrPort(lis.Addr().String())
-		if err != nil {
-			return nil, err
-		}
-		port = int(addrport.Port())
+
+	cacheClient, err := gnmiclient.New(gnmiServer)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create local gNMI client: %v", err)
 	}
 
 	if dplane != nil {
-		gnmiClient, err := gnmiclient.NewLocal(port, enableTLS)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create local client: %v", err)
-		}
-		if err := dplane.Start(context.Background(), gnmiclient.NewCacheClient(gnmiServer, gnmiClient), targetName); err != nil {
+		if err := dplane.Start(context.Background(), cacheClient, targetName); err != nil {
 			return nil, err
 		}
 	}
 
 	log.Infof("starting sysrib")
-	startSysrib(sysDataplane, port, targetName, enableTLS)
+	sysribServer, err := sysrib.New(sysDataplane)
+	if err != nil {
+		return nil, err
+	}
+	if err := sysribServer.Start(cacheClient, targetName); err != nil {
+		return nil, err
+	}
 
-	fakedevice.StartSystemBaseTask(context.Background(), port, targetName, enableTLS)
-	fakedevice.StartBootTimeTask(context.Background(), port, targetName, enableTLS)
-	fakedevice.StartGoBGPTask(context.Background(), port, targetName, enableTLS)
+	fakedevice.StartSystemBaseTask(context.Background(), cacheClient, targetName)
+	fakedevice.StartBootTimeTask(context.Background(), cacheClient, targetName)
+	fakedevice.StartGoBGPTask(context.Background(), cacheClient, targetName)
 
 	log.Info("lemming created")
 	return d, nil

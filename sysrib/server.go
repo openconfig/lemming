@@ -16,21 +16,24 @@ package sysrib
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
+	"os"
 	"reflect"
 	"strconv"
 
 	log "github.com/golang/glog"
 	"github.com/openconfig/gribigo/afthelper"
 	"github.com/openconfig/ygnmi/ygnmi"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/openconfig/lemming/gnmi/gnmiclient"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 
+	gpb "github.com/openconfig/gnmi/proto/gnmi"
 	dpb "github.com/openconfig/lemming/proto/dataplane"
 	pb "github.com/openconfig/lemming/proto/sysrib"
 )
@@ -90,10 +93,10 @@ func (d *Dataplane) ProgramRoute(r *ResolvedRoute) error {
 	return err
 }
 
-// NewServer instantiates server to handle client queries.
+// New instantiates server to handle client queries.
 //
 // If dp is nil, then a connection attempt is made.
-func NewServer(dp dataplaneAPI, port int, target string, enableTLS bool) (*Server, error) {
+func New(dp dataplaneAPI) (*Server, error) {
 	rib, err := NewSysRIB(nil)
 	if err != nil {
 		return nil, err
@@ -105,10 +108,39 @@ func NewServer(dp dataplaneAPI, port int, target string, enableTLS bool) (*Serve
 		programmedRoutes: map[RouteKey]*ResolvedRoute{},
 		dataplane:        dp,
 	}
-	if err := s.monitorConnectedIntfs(port, target, enableTLS); err != nil {
-		return nil, err
-	}
 	return s, nil
+}
+
+// Start starts the sysrib gRPC service at a unix domain socket. This
+// should be started prior to routing services to allow them to connect to
+// sysrib during their initialization.
+func (s *Server) Start(gClient gpb.GNMIClient, target string) error {
+	if s == nil {
+		return errors.New("cannot start nil sysrib server")
+	}
+
+	yclient, err := ygnmi.NewClient(gClient, ygnmi.WithTarget(target))
+	if err != nil {
+		return err
+	}
+	if err := s.monitorConnectedIntfs(yclient); err != nil {
+		return err
+	}
+
+	if err := os.RemoveAll(SockAddr); err != nil {
+		return err
+	}
+	lis, err := net.Listen("unix", SockAddr)
+	if err != nil {
+		log.Fatalf("listen error: %v", err)
+	}
+
+	grpcServer := grpc.NewServer()
+	pb.RegisterSysribServer(grpcServer, s)
+
+	go grpcServer.Serve(lis)
+
+	return nil
 }
 
 // monitorConnectedIntfs starts a gothread to check for connected prefixes from
@@ -117,12 +149,7 @@ func NewServer(dp dataplaneAPI, port int, target string, enableTLS bool) (*Serve
 //
 // - gnmiServerAddr is the address of the central gNMI datastore.
 // - target is the name of the gNMI target.
-func (s *Server) monitorConnectedIntfs(port int, target string, enableTLS bool) error {
-	yclient, err := gnmiclient.NewYGNMIClient(port, target, enableTLS)
-	if err != nil {
-		return err
-	}
-
+func (s *Server) monitorConnectedIntfs(yclient *ygnmi.Client) error {
 	b := &ocpath.Batch{}
 	b.AddPaths(
 		ocpath.Root().InterfaceAny().State().PathStruct(),

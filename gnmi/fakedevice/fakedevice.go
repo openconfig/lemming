@@ -25,6 +25,8 @@ import (
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot/pathtranslate"
+
+	gpb "github.com/openconfig/gnmi/proto/gnmi"
 )
 
 const (
@@ -44,8 +46,8 @@ func init() {
 	}
 }
 
-func StartBootTimeTask(ctx context.Context, port int, target string, enableTLS bool) error {
-	yclient, err := gnmiclient.NewYGNMIClient(port, target, enableTLS)
+func StartBootTimeTask(ctx context.Context, gClient gpb.GNMIClient, target string) error {
+	yclient, err := ygnmi.NewClient(gClient, ygnmi.WithTarget(target))
 	if err != nil {
 		return err
 	}
@@ -55,8 +57,8 @@ func StartBootTimeTask(ctx context.Context, port int, target string, enableTLS b
 	return nil
 }
 
-func StartCurrentDateTimeTask(ctx context.Context, port int, target string, enableTLS bool) error {
-	yclient, err := gnmiclient.NewYGNMIClient(port, target, enableTLS)
+func StartCurrentDateTimeTask(ctx context.Context, gClient gpb.GNMIClient, target string) error {
+	yclient, err := ygnmi.NewClient(gClient, ygnmi.WithTarget(target))
 	if err != nil {
 		return err
 	}
@@ -86,8 +88,8 @@ func StartCurrentDateTimeTask(ctx context.Context, port int, target string, enab
 
 // StartSystemBaseTask handles some of the logic for the base systems feature
 // profile using ygnmi as the client.
-func StartSystemBaseTask(ctx context.Context, port int, target string, enableTLS bool) error {
-	yclient, err := gnmiclient.NewYGNMIClient(port, target, enableTLS)
+func StartSystemBaseTask(ctx context.Context, gClient gpb.GNMIClient, target string) error {
+	yclient, err := ygnmi.NewClient(gClient, ygnmi.WithTarget(target))
 	if err != nil {
 		return err
 	}

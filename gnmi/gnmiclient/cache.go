@@ -19,36 +19,37 @@ import (
 	"io"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
 
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
+	"github.com/openconfig/lemming/gnmi/gnmistore"
 )
 
-// NewCacheClient creates a gNMI client for the gNMI cache.
+// New creates a state-based gNMI client for the gNMI cache.
 // The client calls the server gRPC implementation with a custom streaming gRPC implementation
 // in order to bypass the regular gRPC wire marshalling/unmarshalling handling.
-// TODO: refactor gNMI so that a single server can be used here.
-func NewCacheClient(srv gpb.GNMIServer, setClient gpb.GNMIClient) gpb.GNMIClient {
+func New(srv gpb.GNMIServer) (gpb.GNMIClient, error) {
 	return &cacheClient{
-		srv:       srv,
-		setClient: setClient,
-	}
+		gnmiMode: gnmistore.StateMode,
+		srv:      srv,
+	}, nil
 }
 
 // cacheClient is a gNMI client talks directly to a server, without sending messages over the wire.
 type cacheClient struct {
 	gpb.GNMIClient
-	srv       gpb.GNMIServer
-	setClient gpb.GNMIClient
+	gnmiMode gnmistore.GNMIMode
+	srv      gpb.GNMIServer
 }
 
 // Set uses the datastore client for Set, instead of the public cache endpoint.
-func (cc *cacheClient) Set(ctx context.Context, in *gpb.SetRequest, opts ...grpc.CallOption) (*gpb.SetResponse, error) {
-	return cc.setClient.Set(ctx, in, opts...)
+func (c *cacheClient) Set(ctx context.Context, in *gpb.SetRequest, _ ...grpc.CallOption) (*gpb.SetResponse, error) {
+	return c.srv.Set(metadata.NewIncomingContext(ctx, metadata.Pairs(gnmistore.GNMIModeMetadataKey, string(c.gnmiMode))), in)
 }
 
 // Subscribe implements gNMI Subscribe, by calling a gNMI server directly.
-func (cc *cacheClient) Subscribe(ctx context.Context, opts ...grpc.CallOption) (gpb.GNMI_SubscribeClient, error) {
+func (c *cacheClient) Subscribe(ctx context.Context, _ ...grpc.CallOption) (gpb.GNMI_SubscribeClient, error) {
 	errCh := make(chan error)
 	respCh := make(chan *gpb.SubscribeResponse, 10)
 	reqCh := make(chan *gpb.SubscribeRequest)
@@ -65,7 +66,7 @@ func (cc *cacheClient) Subscribe(ctx context.Context, opts ...grpc.CallOption) (
 	}
 
 	go func() {
-		err := cc.srv.Subscribe(sub)
+		err := c.srv.Subscribe(sub)
 		errCh <- err
 	}()
 	return client, nil
