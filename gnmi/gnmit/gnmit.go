@@ -351,6 +351,7 @@ func (s *GNMIServer) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResp
 		return nil, status.Errorf(codes.Internal, "incoming gNMI SetRequest must specify GNMIMode via the user agent string.")
 	}
 
+	// Use ConfigMode by default so that external users don't need to set metadata.
 	gnmiMode := gnmistore.ConfigMode
 	switch {
 	case slices.Contains(md.Get(gnmistore.GNMIModeMetadataKey), string(gnmistore.ConfigMode)):
