@@ -120,22 +120,23 @@ func checkResolvedRoutesEqual(got, want []*ResolvedRoute) error {
 	return nil
 }
 
-func mustPath(s string) *gpb.Path {
-	p, err := ygot.StringToStructuredPath(s)
-	if err != nil {
-		panic(fmt.Sprintf("cannot parse subscription path %s, %v", s, err))
-	}
-	return p
-}
-
+// TODO(wenbli): Use this when https://github.com/openconfig/lemming/issues/67 is fixed.
+// func mustPath(s string) *gpb.Path {
+// 	p, err := ygot.StringToStructuredPath(s)
+// 	if err != nil {
+// 		panic(fmt.Sprintf("cannot parse subscription path %s, %v", s, err))
+// 	}
+// 	return p
+// }
+//
 // Disable linter for this helper function.
 //
 //nolint:unparam
-func mustTargetPath(t, s string) *gpb.Path {
-	p := mustPath(s)
-	p.Target = t
-	return p
-}
+// func mustTargetPath(t, s string) *gpb.Path {
+// 	p := mustPath(s)
+// 	p.Target = t
+// 	return p
+// }
 
 func mustPSPath(ps ygnmi.PathStruct) *gpb.Path {
 	p, _, err := ygnmi.ResolvePath(ps)
@@ -827,12 +828,11 @@ func TestServer(t *testing.T) {
 				// }
 				intfPath := mustPSPath(ocpath.Root().Interface(intf.name))
 				intfPath.Target = "local"
-				//fmt.Println(updates)
 				if _, err := client.Set(context.Background(), &gpb.SetRequest{
 					Prefix: intfPath,
-					//Delete: []*gpb.Path{
-					//	mustPSPath(ocpath.Root()),
-					//},
+					Delete: []*gpb.Path{
+						mustPSPath(ocpath.Root()),
+					},
 					Update: updates,
 					// TODO(wenbli): Use this when https://github.com/openconfig/lemming/issues/67 is fixed.
 					// Prefix: mustTargetPath("local", "")
