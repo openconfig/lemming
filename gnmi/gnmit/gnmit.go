@@ -28,7 +28,6 @@ import (
 	"github.com/openconfig/gnmi/cache"
 	"github.com/openconfig/gnmi/subscribe"
 	"github.com/openconfig/lemming/gnmi/gnmistore"
-	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/ygot/ygot"
 	"github.com/openconfig/ygot/ytypes"
 	"golang.org/x/exp/slices"
@@ -44,136 +43,75 @@ const (
 	OpenconfigOrigin = "openconfig"
 )
 
-var (
-	// metadataUpdatePeriod is the period of time after which the metadata for the collector
-	// is updated to the client.
-	metadataUpdatePeriod = 30 * time.Second
-	// sizeUpdatePeriod is the period of time after which the storage size information for
-	// the collector is updated to the client.
-	sizeUpdatePeriod = 30 * time.Second
-)
-
-// periodic runs the function fn every period.
-func periodic(period time.Duration, fn func()) {
-	if period == 0 {
-		return
-	}
-	t := time.NewTicker(period)
-	defer t.Stop()
-	for range t.C {
-		fn()
-	}
-}
-
 // GNMIServer implements the gNMI server interface.
 type GNMIServer struct {
 	// The subscribe Server implements only Subscribe for gNMI.
 	*subscribe.Server
 	c *Collector
 
+	configMu     sync.Mutex
+	configSchema *ytypes.Schema
+
 	stateMu     sync.Mutex
 	stateSchema *ytypes.Schema
 }
 
-// NewServer returns a new collector server implementation that can be registered on
+// New returns a new collector server implementation that can be registered on
 // an existing gRPC server.
 //
-// - schema is the specification of the schema if gnmi.Set is used.
+// - configSchema is the specification of the schema if gnmi.Set on config paths is used.
+// - stateSchema is the specification of the schema if gnmi.Set on state paths is used.
 // - hostname is the name of the target.
 // - sendMeta indicates whether metadata should be sent
-func NewServer(ctx context.Context, schema *ytypes.Schema, hostname string, sendMeta bool) (*Collector, *GNMIServer, error) {
-	c := &Collector{
-		inCh:   make(chan *gpb.SubscribeResponse),
-		name:   hostname,
-		schema: schema,
+func New(ctx context.Context, configSchema *ytypes.Schema, stateSchema *ytypes.Schema, hostname string, sendMeta bool) (*Collector, *GNMIServer, error) {
+	c := NewCollector(hostname)
+	subscribeSrv, err := c.Start(ctx, sendMeta)
+	if err != nil {
+		return nil, nil, err
 	}
-
-	log.V(1).Infof("Starting cache target: %v", hostname)
-	c.cache = cache.New([]string{hostname})
-	t := c.cache.GetTarget(hostname)
 
 	// Initialize the cache with the input schema root.
-	if schema != nil {
-		notifs, err := ygot.TogNMINotifications(schema.Root, time.Now().UnixNano(), ygot.GNMINotificationsConfig{
-			UsePathElem: true,
-		})
-		if err != nil {
+	if configSchema != nil {
+		if err := SetupSchema(configSchema); err != nil {
+			return nil, nil, err
+		}
+		if err := ygot.PruneConfigFalse(configSchema.RootSchema(), configSchema.Root); err != nil {
 			return nil, nil, fmt.Errorf("gnmit: %v", err)
 		}
-		for _, notif := range notifs {
-			if notif.Prefix == nil {
-				notif.Prefix = &gpb.Path{}
-			}
-			notif.Prefix.Origin = OpenconfigOrigin
-			notif.Prefix.Target = hostname
-			c.cache.GnmiUpdate(notif)
+		updateCache(c.cache, configSchema.Root, nil, hostname, OpenconfigOrigin, true)
+	}
+
+	if stateSchema != nil {
+		if err := SetupSchema(stateSchema); err != nil {
+			return nil, nil, err
 		}
-	}
-
-	if sendMeta {
-		go periodic(metadataUpdatePeriod, c.cache.UpdateMetadata)
-		go periodic(sizeUpdatePeriod, c.cache.UpdateSize)
-	}
-	t.Connect()
-
-	// start our single collector from the input channel.
-	go func() {
-		for {
-			select {
-			case msg := <-c.inCh:
-				if err := c.handleUpdate(msg); err != nil {
-					return
-				}
-			case <-ctx.Done():
-				return
-			}
-		}
-	}()
-
-	subscribeSrv, err := subscribe.NewServer(c.cache)
-	if err != nil {
-		return nil, nil, fmt.Errorf("could not instantiate gNMI server: %v", err)
-	}
-
-	stateSchema, err := oc.Schema()
-	if err != nil {
-		return nil, nil, err
-	}
-	if err := SetupSchema(stateSchema); err != nil {
-		return nil, nil, err
+		updateCache(c.cache, stateSchema.Root, nil, hostname, OpenconfigOrigin, true)
 	}
 
 	gnmiserver := &GNMIServer{
-		Server:      subscribeSrv, // use the 'subscribe' implementation.
-		c:           c,
-		stateSchema: stateSchema,
+		Server:       subscribeSrv, // use the 'subscribe' implementation.
+		c:            c,
+		configSchema: configSchema,
+		stateSchema:  stateSchema,
 	}
-
-	c.cache.SetClient(subscribeSrv.Update)
 
 	return c, gnmiserver, nil
 }
 
-// New returns a new collector that listens on the specified addr (in the form host:port),
-// supporting a single downstream target named hostname. sendMeta controls whether the
-// metadata *other* than meta/sync and meta/connected is sent by the collector.
+// Start starts the collector-backed gNMI server that listens on the specified
+// addr (in the form host:port).
 //
-// New returns the new collector, the address it is listening on in the form hostname:port
-// or any errors encounted whilst setting it up.
-func New(ctx context.Context, schema *ytypes.Schema, addr, hostname string, sendMeta bool, opts ...grpc.ServerOption) (*Collector, string, error) {
-	c, gnmiserver, err := NewServer(ctx, schema, hostname, sendMeta)
-	if err != nil {
-		return nil, "", err
-	}
-
+// It returns the address it is listening on in the form hostname:port or any
+// errors encounted whilst setting it up.
+func (s *GNMIServer) Start(ctx context.Context, addr string, opts ...grpc.ServerOption) (string, error) {
 	// Start gNMI server.
 	srv := grpc.NewServer(opts...)
-	gpb.RegisterGNMIServer(srv, gnmiserver)
+	gpb.RegisterGNMIServer(srv, s)
 	// Forward streaming updates to clients.
 	// Register listening port and start serving.
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to listen: %v", err)
+		return "", fmt.Errorf("failed to listen: %v", err)
 	}
 
 	go func() {
@@ -181,10 +119,10 @@ func New(ctx context.Context, schema *ytypes.Schema, addr, hostname string, send
 			log.Fatalf("Error while serving gnmi target: %v", err)
 		}
 	}()
-	c.stopFn = func() {
+	s.c.stopFn = func() {
 		srv.GracefulStop()
 	}
-	return c, lis.Addr().String(), nil
+	return lis.Addr().String(), nil
 }
 
 type populateDefaultser interface {
@@ -208,96 +146,55 @@ func SetupSchema(schema *ytypes.Schema) error {
 	return nil
 }
 
-// NewSettable returns a new collector that listens on the specified addr (in the form host:port),
-// supporting a single downstream target named hostname. sendMeta controls whether the
-// metadata *other* than meta/sync and meta/connected is sent by the collector.
+// updateCache updates the cache with the difference between the root ->
+// dirtyRoot such that if the root represents the cache, then the dirtyRoot
+// will represent the cache afterwards.
 //
-// New returns the new collector, the address it is listening on in the form hostname:port
-// or any errors encounted whilst setting it up.
-//
-// NewSettable is different from New in that the returned collector is
-// schema-aware and supports gNMI Set. Currently it is not possible to change
-// the schema of a Collector after it is created.
-func NewSettable(ctx context.Context, addr string, hostname string, sendMeta bool, schema *ytypes.Schema, opts ...grpc.ServerOption) (*Collector, string, error) {
-	if err := SetupSchema(schema); err != nil {
-		return nil, "", err
-	}
-	collector, addr, err := New(ctx, schema, addr, hostname, sendMeta, opts...)
-	if err != nil {
-		return nil, "", err
-	}
-	return collector, addr, nil
-}
-
-// Stop halts the running collector.
-func (c *Collector) Stop() {
-	c.stopFn()
-}
-
-// handleUpdate handles an input gNMI SubscribeResponse that is received by
-// the target.
-func (c *Collector) handleUpdate(resp *gpb.SubscribeResponse) error {
-	t := c.cache.GetTarget(c.name)
-	switch v := resp.Response.(type) {
-	case *gpb.SubscribeResponse_Update:
-		return t.GnmiUpdate(v.Update)
-	case *gpb.SubscribeResponse_SyncResponse:
-		t.Sync()
-	case *gpb.SubscribeResponse_Error:
-		return fmt.Errorf("error in response: %s", v)
-	default:
-		return fmt.Errorf("unknown response %T: %s", v, v)
-	}
-	return nil
-}
-
-// Collector is a basic gNMI target that supports only the Subscribe
-// RPC, and acts as a cache for exactly one target.
-type Collector struct {
-	cache *cache.Cache
-
-	smu    sync.Mutex
-	schema *ytypes.Schema
-
-	// name is the hostname of the client.
-	name string
-	// inCh is a channel use to write new SubscribeResponses to the client.
-	inCh chan *gpb.SubscribeResponse
-	// stopFn is the function used to stop the server.
-	stopFn func()
-}
-
-// TargetUpdate provides an input gNMI SubscribeResponse to update the
-// cache and clients with.
-func (c *Collector) TargetUpdate(m *gpb.SubscribeResponse) {
-	c.inCh <- m
-}
-
-func updateCache(cache *cache.Cache, root ygot.GoStruct, target string, dirtyRoot ygot.GoStruct, origin string, preferShadowPath bool) error {
-	n, err := ygot.Diff(root, dirtyRoot, &ygot.DiffPathOpt{PreferShadowPath: preferShadowPath})
-	if err != nil {
-		return fmt.Errorf("gnmit: error while creating update notification for Set: %v", err)
-	}
-	n.Timestamp = time.Now().UnixNano()
-	n.Prefix = &gpb.Path{Origin: origin, Target: target}
-	if n.Prefix.Origin == "" {
-		n.Prefix.Origin = OpenconfigOrigin
-	}
-
-	// Update cache
-	t := cache.GetTarget(target)
-	var pathsForDelete []string
-	for _, path := range n.Delete {
-		p, err := ygot.PathToString(path)
-		if err != nil {
-			return fmt.Errorf("cannot convert deleted path to string: %v", err)
+// If root is nil, then it is assumed the cache is empty, and the entirety of
+// the dirtyRoot is put into the cache.
+func updateCache(cache *cache.Cache, dirtyRoot, root ygot.GoStruct, target, origin string, preferShadowPath bool) error {
+	var nos []*gpb.Notification
+	if root == nil {
+		var err error
+		if nos, err = ygot.TogNMINotifications(dirtyRoot, time.Now().UnixNano(), ygot.GNMINotificationsConfig{
+			UsePathElem: true,
+		}); err != nil {
+			return fmt.Errorf("gnmit: %v", err)
 		}
-		pathsForDelete = append(pathsForDelete, p)
+	} else {
+		n, err := ygot.Diff(root, dirtyRoot, &ygot.DiffPathOpt{PreferShadowPath: preferShadowPath})
+		if err != nil {
+			return fmt.Errorf("gnmit: error while creating update notification for Set: %v", err)
+		}
+		n.Timestamp = time.Now().UnixNano()
+		nos = append(nos, n)
 	}
-	log.V(1).Infof("datastore: updating the following values: %+v", n.Update)
-	log.V(1).Infof("datastore: deleting the following paths: %+v", pathsForDelete)
-	if err := t.GnmiUpdate(n); err != nil {
-		return err
+
+	return updateCacheNotifs(cache, nos, target, origin)
+}
+
+// updateCacheNotifs updates the target cache with the given notifications.
+func updateCacheNotifs(cache *cache.Cache, nos []*gpb.Notification, target, origin string) error {
+	cacheTarget := cache.GetTarget(target)
+	for _, n := range nos {
+		n.Prefix = &gpb.Path{Origin: origin, Target: target}
+		if n.Prefix.Origin == "" {
+			n.Prefix.Origin = OpenconfigOrigin
+		}
+
+		var pathsForDelete []string
+		for _, path := range n.Delete {
+			p, err := ygot.PathToString(path)
+			if err != nil {
+				return fmt.Errorf("cannot convert deleted path to string: %v", err)
+			}
+			pathsForDelete = append(pathsForDelete, p)
+		}
+		log.V(1).Infof("datastore: updating the following values: %+v", n.Update)
+		log.V(1).Infof("datastore: deleting the following paths: %+v", pathsForDelete)
+		if err := cacheTarget.GnmiUpdate(n); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -337,7 +234,7 @@ func set(schema *ytypes.Schema, cache *cache.Cache, target string, req *gpb.SetR
 
 	success = true
 
-	if err := updateCache(cache, prevRoot, target, schema.Root, req.Prefix.Origin, preferShadowPath); err != nil {
+	if err := updateCache(cache, schema.Root, prevRoot, target, req.Prefix.Origin, preferShadowPath); err != nil {
 		return err
 	}
 	return nil
@@ -360,17 +257,17 @@ func (s *GNMIServer) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResp
 
 	switch gnmiMode {
 	case gnmistore.ConfigMode:
-		s.c.smu.Lock()
-		defer s.c.smu.Unlock()
+		s.configMu.Lock()
+		defer s.configMu.Unlock()
 
 		log.V(1).Infof("config datastore service received SetRequest: %v", req)
-		if s.c.schema == nil {
+		if s.configSchema == nil {
 			return s.UnimplementedGNMIServer.Set(ctx, req)
 		}
 
 		// TODO(wenbli): Reject paths that try to modify read-only values.
 		// TODO(wenbli): Question: what to do if there are operational-state values in a container that is specified to be replaced or deleted?
-		err := set(s.c.schema, s.c.cache, s.c.name, req, true)
+		err := set(s.configSchema, s.c.cache, s.c.name, req, true)
 
 		// TODO(wenbli): Currently the SetResponse is not filled.
 		return &gpb.SetResponse{
