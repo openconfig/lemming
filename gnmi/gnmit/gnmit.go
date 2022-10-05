@@ -61,10 +61,10 @@ type GNMIServer struct {
 //
 // - configSchema is the specification of the schema if gnmi.Set on config paths is used.
 // - stateSchema is the specification of the schema if gnmi.Set on state paths is used.
-// - hostname is the name of the target.
+// - targetName is the name of the target.
 // - sendMeta indicates whether metadata should be sent
-func New(ctx context.Context, configSchema *ytypes.Schema, stateSchema *ytypes.Schema, hostname string, sendMeta bool) (*Collector, *GNMIServer, error) {
-	c := NewCollector(hostname)
+func New(ctx context.Context, configSchema *ytypes.Schema, stateSchema *ytypes.Schema, targetName string, sendMeta bool) (*Collector, *GNMIServer, error) {
+	c := NewCollector(targetName)
 	subscribeSrv, err := c.Start(ctx, sendMeta)
 	if err != nil {
 		return nil, nil, err
@@ -78,14 +78,14 @@ func New(ctx context.Context, configSchema *ytypes.Schema, stateSchema *ytypes.S
 		if err := ygot.PruneConfigFalse(configSchema.RootSchema(), configSchema.Root); err != nil {
 			return nil, nil, fmt.Errorf("gnmit: %v", err)
 		}
-		updateCache(c.cache, configSchema.Root, nil, hostname, OpenconfigOrigin, true)
+		updateCache(c.cache, configSchema.Root, nil, targetName, OpenconfigOrigin, true)
 	}
 
 	if stateSchema != nil {
 		if err := SetupSchema(stateSchema); err != nil {
 			return nil, nil, err
 		}
-		updateCache(c.cache, stateSchema.Root, nil, hostname, OpenconfigOrigin, true)
+		updateCache(c.cache, stateSchema.Root, nil, targetName, OpenconfigOrigin, true)
 	}
 
 	gnmiserver := &GNMIServer{

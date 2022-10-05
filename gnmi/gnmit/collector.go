@@ -1,3 +1,17 @@
+// Copyright 2022 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package gnmit
 
 import (
@@ -23,7 +37,7 @@ var (
 // RPC, and acts as a cache for exactly one target.
 type Collector struct {
 	cache *cache.Cache
-	// name is the hostname of the client.
+	// name is the cache target name.
 	name string
 	// inCh is a channel use to write new SubscribeResponses to the client.
 	inCh chan *gpb.SubscribeResponse
@@ -31,16 +45,19 @@ type Collector struct {
 	stopFn func()
 }
 
-// NewCollector returns an initialized Collector.
-func NewCollector(hostname string) *Collector {
+// NewCollector returns an initialized gNMI Collector implementation.
+//
+// To create a gNMI server that supports gnmi.Set as well, use New() instead.
+func NewCollector(targetName string) *Collector {
 	return &Collector{
-		cache: cache.New([]string{hostname}),
-		name:  hostname,
+		cache: cache.New([]string{targetName}),
+		name:  targetName,
 		inCh:  make(chan *gpb.SubscribeResponse),
 	}
 }
 
-// Start starts the collector and returns a linked subscribe server.
+// Start starts the collector and returns a linked gNMI server that supports
+// gnmi.Subscribe.
 func (c *Collector) Start(ctx context.Context, sendMeta bool) (*subscribe.Server, error) {
 	t := c.cache.GetTarget(c.name)
 
