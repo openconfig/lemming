@@ -46,6 +46,8 @@ const (
 type GNMIMode string
 
 const (
+	// GNMIModeMetadataKey is the context metadata key used to specify the
+	// mode in which the gnmit gNMI server should operate.
 	GNMIModeMetadataKey = "gnmi-mode"
 	// ConfigMode indicates that the gNMI service will allow updates to
 	// intended configuration, but not operational state values.
