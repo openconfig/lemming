@@ -19,20 +19,22 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
+	"net"
 	"sync"
 	"testing"
 	"time"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/local"
-	"google.golang.org/protobuf/encoding/prototext"
-
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	gpb "github.com/openconfig/gnmi/proto/gnmi"
 	"github.com/openconfig/gnmi/value"
-	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/ygot/ygot"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/local"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/encoding/prototext"
+
+	gpb "github.com/openconfig/gnmi/proto/gnmi"
 )
 
 func mustPath(s string) *gpb.Path {
@@ -146,19 +148,46 @@ func toUpd(r *gpb.SubscribeResponse) []*upd {
 	return nil
 }
 
+// startServer starts the collector-backed gNMI server that listens on the specified
+// addr (in the form host:port).
+//
+// It returns the address it is listening on in the form hostname:port or any
+// errors encounted whilst setting it up.
+func startServer(ctx context.Context, s *Server, addr string, opts ...grpc.ServerOption) (string, error) {
+	// Start gNMI server.
+	srv := grpc.NewServer(opts...)
+	gpb.RegisterGNMIServer(srv, s)
+	// Forward streaming updates to clients.
+	// Register listening port and start serving.
+	lis, err := net.Listen("tcp", addr)
+	if err != nil {
+		return "", fmt.Errorf("failed to listen: %v", err)
+	}
+
+	go func() {
+		if err := srv.Serve(lis); err != nil {
+			log.Fatalf("Error while serving gnmi target: %v", err)
+		}
+	}()
+	s.c.stopFn = func() {
+		srv.GracefulStop()
+	}
+	return lis.Addr().String(), nil
+}
+
 // TestONCE tests the subscribe mode of gnmit.
 func TestONCE(t *testing.T) {
 	ctx := context.Background()
-	c, gnmiServer, err := NewServer(ctx, nil, nil, "local", false)
+	gnmiServer, err := newServer(ctx, "local", false, false)
 	if err != nil {
 		t.Fatalf("cannot create server, got err: %v", err)
 	}
-	addr, err := gnmiServer.Start(ctx, "localhost:0")
+	addr, err := startServer(ctx, gnmiServer, "localhost:0")
 	if err != nil {
 		t.Fatalf("cannot start server, got err: %v", err)
 	}
 
-	c.TargetUpdate(&gpb.SubscribeResponse{
+	gnmiServer.c.TargetUpdate(&gpb.SubscribeResponse{
 		Response: &gpb.SubscribeResponse_Update{
 			Update: &gpb.Notification{
 				Prefix:    mustTargetPath("local", "", false),
@@ -170,7 +199,7 @@ func TestONCE(t *testing.T) {
 			},
 		},
 	})
-	c.TargetUpdate(&gpb.SubscribeResponse{
+	gnmiServer.c.TargetUpdate(&gpb.SubscribeResponse{
 		Response: &gpb.SubscribeResponse_SyncResponse{
 			SyncResponse: true,
 		},
@@ -225,7 +254,7 @@ func TestONCE(t *testing.T) {
 
 	<-clientCtx.Done()
 
-	c.Stop()
+	gnmiServer.c.Stop()
 
 	if sendErr != nil {
 		t.Errorf("got unexpected send error, %v", sendErr)
@@ -247,18 +276,14 @@ func TestONCE(t *testing.T) {
 	}
 }
 
-// TestONCESet tests the subscribe mode of gnmit.
-func TestONCESet(t *testing.T) {
-	schema, err := oc.Schema()
-	if err != nil {
-		t.Fatal(err)
-	}
+// TestSet tests gnmi.Set on a config value.
+func TestSet(t *testing.T) {
 	ctx := context.Background()
-	c, gnmiServer, err := NewServer(ctx, schema, nil, "local", false)
+	gnmiServer, err := newServer(ctx, "local", true, false)
 	if err != nil {
 		t.Fatalf("cannot create server, got err: %v", err)
 	}
-	addr, err := gnmiServer.Start(ctx, "localhost:0")
+	addr, err := startServer(ctx, gnmiServer, "localhost:0")
 	if err != nil {
 		t.Fatalf("cannot start server, got err: %v", err)
 	}
@@ -327,7 +352,7 @@ func TestONCESet(t *testing.T) {
 
 	<-clientCtx.Done()
 
-	c.Stop()
+	gnmiServer.c.Stop()
 
 	if sendErr != nil {
 		t.Errorf("got unexpected send error, %v", sendErr)
@@ -349,18 +374,14 @@ func TestONCESet(t *testing.T) {
 	}
 }
 
-// TestONCESet tests the subscribe mode of gnmit.
-func TestONCESetJSON(t *testing.T) {
-	schema, err := oc.Schema()
-	if err != nil {
-		t.Fatal(err)
-	}
+// TestSetJSON tests gnmi.Set on a JSON value.
+func TestSetJSON(t *testing.T) {
 	ctx := context.Background()
-	c, gnmiServer, err := NewServer(ctx, schema, nil, "local", false)
+	gnmiServer, err := newServer(ctx, "local", true, false)
 	if err != nil {
 		t.Fatalf("cannot create server, got err: %v", err)
 	}
-	addr, err := gnmiServer.Start(ctx, "localhost:0")
+	addr, err := startServer(ctx, gnmiServer, "localhost:0")
 	if err != nil {
 		t.Fatalf("cannot start server, got err: %v", err)
 	}
@@ -433,7 +454,106 @@ func TestONCESetJSON(t *testing.T) {
 
 	<-clientCtx.Done()
 
-	c.Stop()
+	gnmiServer.c.Stop()
+
+	if sendErr != nil {
+		t.Errorf("got unexpected send error, %v", sendErr)
+	}
+
+	if recvErr != nil {
+		t.Errorf("got unexpected recv error, %v", recvErr)
+	}
+
+	if diff := cmp.Diff(got, []*upd{{
+		T:    VAL,
+		TS:   42,
+		Path: pathStr,
+		Val:  "world",
+	}, {
+		T: SYNC,
+	}}, cmpopts.IgnoreFields(upd{}, "TS")); diff != "" {
+		t.Fatalf("did not get expected updates, diff(-got,+want)\n:%s", diff)
+	}
+}
+
+// TestSetState tests gnmi.Set on a state value.
+func TestSetState(t *testing.T) {
+	ctx := context.Background()
+	gnmiServer, err := newServer(ctx, "local", true, false)
+	if err != nil {
+		t.Fatalf("cannot create server, got err: %v", err)
+	}
+	addr, err := startServer(ctx, gnmiServer, "localhost:0")
+	if err != nil {
+		t.Fatalf("cannot start server, got err: %v", err)
+	}
+
+	pathStr := "/interfaces/interface[name=foo]/state/description"
+	path := mustPath(pathStr)
+
+	got := []*upd{}
+	clientCtx, cancel := context.WithCancel(context.Background())
+	var sendErr, recvErr error
+	go func(ctx context.Context) {
+		defer cancel()
+		conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(local.NewCredentials()))
+		if err != nil {
+			sendErr = fmt.Errorf("cannot dial gNMI server, %v", err)
+			return
+		}
+
+		client := gpb.NewGNMIClient(conn)
+
+		ctx = metadata.AppendToOutgoingContext(ctx, GNMIModeMetadataKey, string(StateMode))
+		if _, err := client.Set(ctx, &gpb.SetRequest{
+			Prefix: mustTargetPath("local", "", true),
+			Replace: []*gpb.Update{{
+				Path: path,
+				Val:  mustTypedValue("world"),
+			}},
+		}); err != nil {
+			sendErr = fmt.Errorf("set request failed: %v", err)
+			return
+		}
+
+		subc, err := client.Subscribe(ctx)
+		if err != nil {
+			sendErr = err
+			return
+		}
+		sr := &gpb.SubscribeRequest{
+			Request: &gpb.SubscribeRequest_Subscribe{
+				Subscribe: &gpb.SubscriptionList{
+					Prefix: mustTargetPath("local", "", true),
+					Mode:   gpb.SubscriptionList_ONCE,
+					Subscription: []*gpb.Subscription{{
+						Path: path,
+					}},
+				},
+			},
+		}
+
+		if err := subc.Send(sr); err != nil {
+			sendErr = fmt.Errorf("cannot send subscribe request %s, %v", prototext.Format(sr), err)
+			return
+		}
+
+		for {
+			in, err := subc.Recv()
+			if err == io.EOF {
+				return
+			}
+			if err != nil {
+				recvErr = err
+				return
+			}
+			got = append(got, toUpd(in)...)
+		}
+	}(clientCtx)
+
+	<-clientCtx.Done()
+
+	gnmiServer.c.Stop()
 
 	if sendErr != nil {
 		t.Errorf("got unexpected send error, %v", sendErr)
@@ -458,16 +578,16 @@ func TestONCESetJSON(t *testing.T) {
 // TestSTREAM tests the STREAM mode of gnmit.
 func TestSTREAM(t *testing.T) {
 	ctx := context.Background()
-	c, gnmiServer, err := NewServer(ctx, nil, nil, "local", false)
+	gnmiServer, err := newServer(ctx, "local", false, false)
 	if err != nil {
 		t.Fatalf("cannot create server, got err: %v", err)
 	}
-	addr, err := gnmiServer.Start(ctx, "localhost:0")
+	addr, err := startServer(ctx, gnmiServer, "localhost:0")
 	if err != nil {
 		t.Fatalf("cannot start server, got err: %v", err)
 	}
 
-	c.TargetUpdate(&gpb.SubscribeResponse{
+	gnmiServer.c.TargetUpdate(&gpb.SubscribeResponse{
 		Response: &gpb.SubscribeResponse_Update{
 			Update: &gpb.Notification{
 				Prefix:    mustTargetPath("local", "", false),
@@ -479,7 +599,7 @@ func TestSTREAM(t *testing.T) {
 			},
 		},
 	})
-	c.TargetUpdate(&gpb.SubscribeResponse{
+	gnmiServer.c.TargetUpdate(&gpb.SubscribeResponse{
 		Response: &gpb.SubscribeResponse_SyncResponse{
 			SyncResponse: true,
 		},
@@ -558,7 +678,7 @@ func TestSTREAM(t *testing.T) {
 		for i, p := range planets {
 			// sleep enough to prevent the cache coalescing
 			time.Sleep(1 * time.Second)
-			c.TargetUpdate(&gpb.SubscribeResponse{
+			gnmiServer.c.TargetUpdate(&gpb.SubscribeResponse{
 				Response: &gpb.SubscribeResponse_Update{
 					Update: &gpb.Notification{
 						Prefix:    mustTargetPath("local", "", false),
@@ -574,7 +694,7 @@ func TestSTREAM(t *testing.T) {
 	}()
 
 	<-clientCtx.Done()
-	c.Stop()
+	gnmiServer.c.Stop()
 
 	if sendErr != nil {
 		t.Errorf("got unexpected send error, %v", sendErr)

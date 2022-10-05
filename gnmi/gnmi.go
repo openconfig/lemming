@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package gnmi contains a reference on-device gNMI implementation.
 package gnmi
 
 import (
 	"context"
 	"fmt"
-	"net"
 	"sync"
 	"time"
 
@@ -55,12 +55,11 @@ const (
 	StateMode GNMIMode = "state"
 )
 
-// Server is a fake gNMI implementation.
+// Server is a reference gNMI implementation.
 type Server struct {
 	// The subscribe Server implements only Subscribe for gNMI.
 	*subscribe.Server
 	c *Collector
-	s *grpc.Server
 
 	// TODO(wenbli): Implement gnmi.Get and remove this.
 	GetResponses []interface{}
@@ -72,56 +71,60 @@ type Server struct {
 	stateSchema *ytypes.Schema
 }
 
-// New creates and registers a fake gNMI server on the given gRPC server.
+// New creates and registers a reference gNMI server on the given gRPC server.
 //
 // - targetName is the gNMI target name of the datastore.
 func New(srv *grpc.Server, targetName string) (*Server, error) {
-	configSchema, err := oc.Schema()
-	if err != nil {
-		return nil, fmt.Errorf("cannot create ygot schema object: %v", err)
-	}
-	stateSchema, err := oc.Schema()
-	if err != nil {
-		return nil, fmt.Errorf("cannot create ygot schema object: %v", err)
-	}
-	_, gnmiServer, err := NewServer(context.Background(), configSchema, stateSchema, targetName, false)
+	gnmiServer, err := newServer(context.Background(), targetName, true, false)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create gNMI server: %v", err)
 	}
-	gnmiServer.RegisterGRPCServer(srv)
+	gpb.RegisterGNMIServer(srv, gnmiServer)
 	return gnmiServer, nil
 }
 
-// NewServer returns a new fake gNMI server implementation that can be registered on
-// an existing gRPC server.
+// newServer returns a new reference gNMI server implementation that can be
+// registered on an existing gRPC server.
 //
 // - configSchema is the specification of the schema if gnmi.Set on config paths is used.
 // - stateSchema is the specification of the schema if gnmi.Set on state paths is used.
 // - targetName is the name of the target.
 // - sendMeta indicates whether metadata should be sent
-func NewServer(ctx context.Context, configSchema *ytypes.Schema, stateSchema *ytypes.Schema, targetName string, sendMeta bool) (*Collector, *Server, error) {
+func newServer(ctx context.Context, targetName string, enableSet, sendMeta bool) (*Server, error) {
 	c := NewCollector(targetName)
 	subscribeSrv, err := c.Start(ctx, sendMeta)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	// Initialize the cache with the input schema root.
-	if configSchema != nil {
-		if err := setupSchema(configSchema); err != nil {
-			return nil, nil, err
+	var configSchema, stateSchema *ytypes.Schema
+	if enableSet {
+		var err error
+		configSchema, err = oc.Schema()
+		if err != nil {
+			return nil, fmt.Errorf("cannot create ygot schema object: %v", err)
 		}
-		if err := ygot.PruneConfigFalse(configSchema.RootSchema(), configSchema.Root); err != nil {
-			return nil, nil, fmt.Errorf("gnmi: %v", err)
+		// Initialize the cache with the input schema root.
+		if configSchema != nil {
+			if err := setupSchema(configSchema); err != nil {
+				return nil, err
+			}
+			if err := ygot.PruneConfigFalse(configSchema.RootSchema(), configSchema.Root); err != nil {
+				return nil, fmt.Errorf("gnmi: %v", err)
+			}
+			updateCache(c.cache, configSchema.Root, nil, targetName, OpenConfigOrigin, true)
 		}
-		updateCache(c.cache, configSchema.Root, nil, targetName, OpenConfigOrigin, true)
-	}
 
-	if stateSchema != nil {
-		if err := setupSchema(stateSchema); err != nil {
-			return nil, nil, err
+		stateSchema, err = oc.Schema()
+		if err != nil {
+			return nil, fmt.Errorf("cannot create ygot schema object: %v", err)
 		}
-		updateCache(c.cache, stateSchema.Root, nil, targetName, OpenConfigOrigin, true)
+		if stateSchema != nil {
+			if err := setupSchema(stateSchema); err != nil {
+				return nil, err
+			}
+			updateCache(c.cache, stateSchema.Root, nil, targetName, OpenConfigOrigin, true)
+		}
 	}
 
 	gnmiserver := &Server{
@@ -131,40 +134,7 @@ func NewServer(ctx context.Context, configSchema *ytypes.Schema, stateSchema *yt
 		stateSchema:  stateSchema,
 	}
 
-	return c, gnmiserver, nil
-}
-
-// RegisterGRPCServer registers the Server on the provided gRPC Server.
-func (s *Server) RegisterGRPCServer(srv *grpc.Server) {
-	s.s = srv
-	gpb.RegisterGNMIServer(srv, s)
-}
-
-// Start starts the collector-backed gNMI server that listens on the specified
-// addr (in the form host:port).
-//
-// It returns the address it is listening on in the form hostname:port or any
-// errors encounted whilst setting it up.
-func (s *Server) Start(ctx context.Context, addr string, opts ...grpc.ServerOption) (string, error) {
-	// Start gNMI server.
-	srv := grpc.NewServer(opts...)
-	s.RegisterGRPCServer(srv)
-	// Forward streaming updates to clients.
-	// Register listening port and start serving.
-	lis, err := net.Listen("tcp", addr)
-	if err != nil {
-		return "", fmt.Errorf("failed to listen: %v", err)
-	}
-
-	go func() {
-		if err := srv.Serve(lis); err != nil {
-			log.Fatalf("Error while serving gnmi target: %v", err)
-		}
-	}()
-	s.c.stopFn = func() {
-		srv.GracefulStop()
-	}
-	return lis.Addr().String(), nil
+	return gnmiserver, nil
 }
 
 type populateDefaultser interface {
@@ -283,7 +253,6 @@ func set(schema *ytypes.Schema, cache *cache.Cache, target string, req *gpb.SetR
 }
 
 // Set is a prototype for a gNMI Set operation.
-// TODO(wenbli): Add unit test.
 func (s *Server) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResponse, error) {
 	// Use ConfigMode by default so that external users don't need to set metadata.
 	gnmiMode := ConfigMode
@@ -336,12 +305,12 @@ func (s *Server) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResponse
 }
 
 func (s *Server) Capabilities(ctx context.Context, req *gpb.CapabilityRequest) (*gpb.CapabilityResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "Fake Unimplemented")
+	return nil, status.Errorf(codes.Unimplemented, "Reference Implementation Unimplemented")
 }
 
 func (s *Server) Get(ctx context.Context, req *gpb.GetRequest) (*gpb.GetResponse, error) {
 	if len(s.GetResponses) == 0 {
-		return nil, status.Errorf(codes.Unimplemented, "Fake Unimplemented")
+		return nil, status.Errorf(codes.Unimplemented, "Reference Implementation Unimplemented")
 	}
 	resp := s.GetResponses[0]
 	s.GetResponses = s.GetResponses[1:]
