@@ -20,23 +20,15 @@ import (
 
 	"github.com/openconfig/lemming/gnmi/gnmit"
 	"github.com/openconfig/lemming/gnmi/oc"
-
-	gnmipb "github.com/openconfig/gnmi/proto/gnmi"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 // Server is a fake gNMI implementation.
 type Server struct {
-	*gnmit.GNMIServer
-	s            *grpc.Server
-	Responses    [][]*gnmipb.SubscribeResponse
-	GetResponses []interface{}
-	Errs         []error
+	*gnmit.GNMIServer[*oc.Root]
 }
 
-func createGNMIServer(targetName string) (*gnmit.GNMIServer, error) {
+func New(srv *grpc.Server, targetName string) (*Server, error) {
 	configSchema, err := oc.Schema()
 	if err != nil {
 		return nil, fmt.Errorf("cannot create ygot schema object: %v", err)
@@ -45,44 +37,10 @@ func createGNMIServer(targetName string) (*gnmit.GNMIServer, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot create ygot schema object: %v", err)
 	}
-	_, gnmiServer, err := gnmit.New(context.Background(), configSchema, stateSchema, targetName, false)
+	_, gnmiServer, err := gnmit.New[*oc.Root](context.Background(), configSchema, stateSchema, targetName, false)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create gNMI server: %v", err)
 	}
-	return gnmiServer, nil
-}
-
-// New returns a new fake gNMI server.
-func New(s *grpc.Server, targetName string) (*Server, error) {
-	gnmiServer, err := createGNMIServer(targetName)
-	if err != nil {
-		return nil, fmt.Errorf("gnmi: cannot create gNMI server: %v", err)
-	}
-
-	srv := &Server{
-		GNMIServer: gnmiServer,
-		s:          s,
-	}
-	gnmipb.RegisterGNMIServer(s, srv)
-	return srv, nil
-}
-
-func (s *Server) Capabilities(ctx context.Context, req *gnmipb.CapabilityRequest) (*gnmipb.CapabilityResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "Fake Unimplemented")
-}
-
-func (s *Server) Get(ctx context.Context, req *gnmipb.GetRequest) (*gnmipb.GetResponse, error) {
-	if len(s.GetResponses) == 0 {
-		return nil, status.Errorf(codes.Unimplemented, "Fake Unimplemented")
-	}
-	resp := s.GetResponses[0]
-	s.GetResponses = s.GetResponses[1:]
-	switch v := resp.(type) {
-	case error:
-		return nil, v
-	case *gnmipb.GetResponse:
-		return v, nil
-	default:
-		return nil, status.Errorf(codes.DataLoss, "Unknown message type: %T", resp)
-	}
+	gnmiServer.RegisterGRPCServer(srv)
+	return &Server{gnmiServer}, nil
 }

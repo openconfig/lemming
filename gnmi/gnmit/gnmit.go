@@ -58,10 +58,14 @@ const (
 )
 
 // GNMIServer implements the gNMI server interface.
-type GNMIServer struct {
+type GNMIServer[T ygot.GoStruct] struct {
 	// The subscribe Server implements only Subscribe for gNMI.
 	*subscribe.Server
 	c *Collector
+	s *grpc.Server
+
+	// TODO(wenbli): Implement gnmi.Get and remove this.
+	GetResponses []interface{}
 
 	configMu     sync.Mutex
 	configSchema *ytypes.Schema
@@ -77,7 +81,7 @@ type GNMIServer struct {
 // - stateSchema is the specification of the schema if gnmi.Set on state paths is used.
 // - targetName is the name of the target.
 // - sendMeta indicates whether metadata should be sent
-func New(ctx context.Context, configSchema *ytypes.Schema, stateSchema *ytypes.Schema, targetName string, sendMeta bool) (*Collector, *GNMIServer, error) {
+func New[T ygot.GoStruct](ctx context.Context, configSchema *ytypes.Schema, stateSchema *ytypes.Schema, targetName string, sendMeta bool) (*Collector, *GNMIServer[T], error) {
 	c := NewCollector(targetName)
 	subscribeSrv, err := c.Start(ctx, sendMeta)
 	if err != nil {
@@ -86,7 +90,7 @@ func New(ctx context.Context, configSchema *ytypes.Schema, stateSchema *ytypes.S
 
 	// Initialize the cache with the input schema root.
 	if configSchema != nil {
-		if err := SetupSchema(configSchema); err != nil {
+		if err := setupSchema[T](configSchema); err != nil {
 			return nil, nil, err
 		}
 		if err := ygot.PruneConfigFalse(configSchema.RootSchema(), configSchema.Root); err != nil {
@@ -96,13 +100,13 @@ func New(ctx context.Context, configSchema *ytypes.Schema, stateSchema *ytypes.S
 	}
 
 	if stateSchema != nil {
-		if err := SetupSchema(stateSchema); err != nil {
+		if err := setupSchema[T](stateSchema); err != nil {
 			return nil, nil, err
 		}
 		updateCache(c.cache, stateSchema.Root, nil, targetName, OpenconfigOrigin, true)
 	}
 
-	gnmiserver := &GNMIServer{
+	gnmiserver := &GNMIServer[T]{
 		Server:       subscribeSrv, // use the 'subscribe' implementation.
 		c:            c,
 		configSchema: configSchema,
@@ -112,15 +116,21 @@ func New(ctx context.Context, configSchema *ytypes.Schema, stateSchema *ytypes.S
 	return c, gnmiserver, nil
 }
 
+// RegisterGRPCServer registers the GNMIServer on the provided gRPC Server.
+func (s *GNMIServer[T]) RegisterGRPCServer(srv *grpc.Server) {
+	s.s = srv
+	gpb.RegisterGNMIServer(srv, s)
+}
+
 // Start starts the collector-backed gNMI server that listens on the specified
 // addr (in the form host:port).
 //
 // It returns the address it is listening on in the form hostname:port or any
 // errors encounted whilst setting it up.
-func (s *GNMIServer) Start(ctx context.Context, addr string, opts ...grpc.ServerOption) (string, error) {
+func (s *GNMIServer[T]) Start(ctx context.Context, addr string, opts ...grpc.ServerOption) (string, error) {
 	// Start gNMI server.
 	srv := grpc.NewServer(opts...)
-	gpb.RegisterGNMIServer(srv, s)
+	s.RegisterGRPCServer(srv)
 	// Forward streaming updates to clients.
 	// Register listening port and start serving.
 	lis, err := net.Listen("tcp", addr)
@@ -143,10 +153,10 @@ type populateDefaultser interface {
 	PopulateDefaults()
 }
 
-// SetupSchema takes in a ygot schema object which it assumes to be
+// setupSchema takes in a ygot schema object which it assumes to be
 // uninitialized. It initializes and validates it, returning any errors
 // encountered.
-func SetupSchema(schema *ytypes.Schema) error {
+func setupSchema[T ygot.GoStruct](schema *ytypes.Schema) error {
 	if !schema.IsValid() {
 		return fmt.Errorf("cannot obtain valid schema for GoStructs: %v", schema)
 	}
@@ -155,6 +165,10 @@ func SetupSchema(schema *ytypes.Schema) error {
 	schema.Root.(populateDefaultser).PopulateDefaults()
 	if err := schema.Validate(); err != nil {
 		return fmt.Errorf("default root of input schema fails validation: %v", err)
+	}
+
+	if _, ok := schema.Root.(T); !ok {
+		return fmt.Errorf("schema type %T doesn't match generic type %T", schema.Root, new(T))
 	}
 
 	return nil
@@ -256,7 +270,7 @@ func set(schema *ytypes.Schema, cache *cache.Cache, target string, req *gpb.SetR
 
 // Set is a prototype for a gNMI Set operation.
 // TODO(wenbli): Add unit test.
-func (s *GNMIServer) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResponse, error) {
+func (s *GNMIServer[T]) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResponse, error) {
 	// Use ConfigMode by default so that external users don't need to set metadata.
 	gnmiMode := ConfigMode
 	md, ok := metadata.FromIncomingContext(ctx)
@@ -304,5 +318,25 @@ func (s *GNMIServer) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResp
 		return &gpb.SetResponse{}, nil
 	default:
 		return nil, status.Errorf(codes.Internal, "incoming gNMI SetRequest must specify a valid GNMIMode via context metadata: %v", md)
+	}
+}
+
+func (s *GNMIServer[T]) Capabilities(ctx context.Context, req *gpb.CapabilityRequest) (*gpb.CapabilityResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "Fake Unimplemented")
+}
+
+func (s *GNMIServer[T]) Get(ctx context.Context, req *gpb.GetRequest) (*gpb.GetResponse, error) {
+	if len(s.GetResponses) == 0 {
+		return nil, status.Errorf(codes.Unimplemented, "Fake Unimplemented")
+	}
+	resp := s.GetResponses[0]
+	s.GetResponses = s.GetResponses[1:]
+	switch v := resp.(type) {
+	case error:
+		return nil, v
+	case *gpb.GetResponse:
+		return v, nil
+	default:
+		return nil, status.Errorf(codes.DataLoss, "Unknown message type: %T", resp)
 	}
 }

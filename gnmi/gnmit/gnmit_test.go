@@ -149,7 +149,7 @@ func toUpd(r *gpb.SubscribeResponse) []*upd {
 // TestONCE tests the subscribe mode of gnmit.
 func TestONCE(t *testing.T) {
 	ctx := context.Background()
-	c, gnmiServer, err := New(ctx, nil, nil, "local", false)
+	c, gnmiServer, err := New[*oc.Root](ctx, nil, nil, "local", false)
 	if err != nil {
 		t.Fatalf("cannot create server, got err: %v", err)
 	}
@@ -254,7 +254,7 @@ func TestONCESet(t *testing.T) {
 		t.Fatal(err)
 	}
 	ctx := context.Background()
-	c, gnmiServer, err := New(ctx, schema, nil, "local", false)
+	c, gnmiServer, err := New[*oc.Root](ctx, schema, nil, "local", false)
 	if err != nil {
 		t.Fatalf("cannot create server, got err: %v", err)
 	}
@@ -356,7 +356,7 @@ func TestONCESetJSON(t *testing.T) {
 		t.Fatal(err)
 	}
 	ctx := context.Background()
-	c, gnmiServer, err := New(ctx, schema, nil, "local", false)
+	c, gnmiServer, err := New[*oc.Root](ctx, schema, nil, "local", false)
 	if err != nil {
 		t.Fatalf("cannot create server, got err: %v", err)
 	}
@@ -458,7 +458,7 @@ func TestONCESetJSON(t *testing.T) {
 // TestSTREAM tests the STREAM mode of gnmit.
 func TestSTREAM(t *testing.T) {
 	ctx := context.Background()
-	c, gnmiServer, err := New(ctx, nil, nil, "local", false)
+	c, gnmiServer, err := New[*oc.Root](ctx, nil, nil, "local", false)
 	if err != nil {
 		t.Fatalf("cannot create server, got err: %v", err)
 	}
