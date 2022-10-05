@@ -37,14 +37,15 @@ type Server struct {
 }
 
 func createGNMIServer(targetName string) (*gnmit.GNMIServer, error) {
-	schema, err := oc.Schema()
+	configSchema, err := oc.Schema()
 	if err != nil {
 		return nil, fmt.Errorf("cannot create ygot schema object: %v", err)
 	}
-	if err := gnmit.SetupSchema(schema); err != nil {
-		return nil, fmt.Errorf("gnmi: cannot setup ygot schema object: %v", err)
+	stateSchema, err := oc.Schema()
+	if err != nil {
+		return nil, fmt.Errorf("cannot create ygot schema object: %v", err)
 	}
-	_, gnmiServer, err := gnmit.NewServer(context.Background(), schema, targetName, false)
+	_, gnmiServer, err := gnmit.New(context.Background(), configSchema, stateSchema, targetName, false)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create gNMI server: %v", err)
 	}
