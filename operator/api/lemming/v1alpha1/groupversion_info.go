@@ -1,5 +1,5 @@
 /*
-Copyright 2022.
+Copyright 2022 Google LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -15,8 +15,8 @@ limitations under the License.
 */
 
 // Package v1alpha1 contains API Schema definitions for the lemming v1alpha1 API group
-//+kubebuilder:object:generate=true
-//+groupName=lemming.openconfig.net
+// +kubebuilder:object:generate=true
+// +groupName=lemming.openconfig.net
 package v1alpha1
 
 import (
@@ -27,6 +27,9 @@ import (
 var (
 	// GroupVersion is group version used to register these objects
 	GroupVersion = schema.GroupVersion{Group: "lemming.openconfig.net", Version: "v1alpha1"}
+
+	// SchemeGroupVersion is needed for client-gen
+	SchemeGroupVersion = GroupVersion
 
 	// SchemeBuilder is used to add go types to the GroupVersionKind scheme
 	SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion}

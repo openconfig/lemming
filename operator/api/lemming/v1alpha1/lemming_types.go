@@ -1,5 +1,5 @@
 /*
-Copyright 2022.
+Copyright 2022 Google LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -28,8 +28,20 @@ type LemmingSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of Lemming. Edit lemming_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// Image is the container image to run.
+	Image string `json:"image,omitempty"`
+	// Command is the name of the executable to run.
+	Command string `json:"command,omitempty"`
+	// Args are the args to pass to the command.
+	Args []string `json:"args,omitempty"`
+	// Env are the environment variables to set for the container.
+	Env map[string]string `json:"env,omitempty"`
+	// ConfigPath is the mount point for configuration inside the pod.
+	ConfigPath string `json:"configPath,omitempty"`
+	// ConfigFile is the default configuration file name for the pod.
+	ConfigFile string `json:"configFile,omitempty"`
+	// InitImage is the docker image to use as an init container for the pod.
+	InitImage string `json:"initImage,omitempty"`
 }
 
 // LemmingStatus defines the observed state of Lemming
@@ -40,6 +52,7 @@ type LemmingStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+// +genclient
 
 // Lemming is the Schema for the lemmings API
 type Lemming struct {

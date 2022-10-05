@@ -31,7 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	lemmingv1alpha1 "github.com/openconfig/lemming/operator/api/v1alpha1"
+	lemmingv1alpha1 "github.com/openconfig/lemming/operator/api/lemming/v1alpha1"
 	"github.com/openconfig/lemming/operator/controllers"
 	//+kubebuilder:scaffold:imports
 )

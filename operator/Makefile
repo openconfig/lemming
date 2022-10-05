@@ -44,8 +44,11 @@ manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and Cust
 	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
 .PHONY: generate
-generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
+generate: client-gen controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
+	$(CLIENTGEN) --input="lemming/v1alpha1" --clientset-api-path=api --input-base=github.com/openconfig/lemming/operator/api -p github.com/openconfig/lemming/operator/api --clientset-name=clientset -h hack/boilerplate.go.txt
+	cp -r github.com/openconfig/lemming/operator/api/clientset api
+	rm -rf github.com/
 
 .PHONY: fmt
 fmt: ## Run go fmt against code.
@@ -111,6 +114,7 @@ $(LOCALBIN):
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 ENVTEST ?= $(LOCALBIN)/setup-envtest
+CLIENTGEN ?= $(LOCALBIN)/client-gen
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v3.8.7
@@ -131,3 +135,8 @@ $(CONTROLLER_GEN): $(LOCALBIN)
 envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
 $(ENVTEST): $(LOCALBIN)
 	GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+
+.PHONY: client-gen
+client-gen: $(CLIENTGEN) ## Download client-gen locally if necessary.
+$(CLIENTGEN): $(LOCALBIN)
+	GOBIN=$(LOCALBIN) go install k8s.io/code-generator/cmd/client-gen@latest
