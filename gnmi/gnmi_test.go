@@ -153,13 +153,13 @@ func toUpd(r *gpb.SubscribeResponse) []*upd {
 //
 // It returns the address it is listening on in the form hostname:port or any
 // errors encounted whilst setting it up.
-func startServer(s *Server, addr string, opts ...grpc.ServerOption) (string, error) {
+func startServer(s *Server, opts ...grpc.ServerOption) (string, error) {
 	// Start gNMI server.
 	srv := grpc.NewServer(opts...)
 	gpb.RegisterGNMIServer(srv, s)
 	// Forward streaming updates to clients.
 	// Register listening port and start serving.
-	lis, err := net.Listen("tcp", addr)
+	lis, err := net.Listen("tcp", "localhost:0")
 	if err != nil {
 		return "", fmt.Errorf("failed to listen: %v", err)
 	}
@@ -182,7 +182,7 @@ func TestONCE(t *testing.T) {
 	if err != nil {
 		t.Fatalf("cannot create server, got err: %v", err)
 	}
-	addr, err := startServer(gnmiServer, "localhost:0")
+	addr, err := startServer(gnmiServer)
 	if err != nil {
 		t.Fatalf("cannot start server, got err: %v", err)
 	}
@@ -283,7 +283,7 @@ func TestSet(t *testing.T) {
 	if err != nil {
 		t.Fatalf("cannot create server, got err: %v", err)
 	}
-	addr, err := startServer(gnmiServer, "localhost:0")
+	addr, err := startServer(gnmiServer)
 	if err != nil {
 		t.Fatalf("cannot start server, got err: %v", err)
 	}
@@ -381,7 +381,7 @@ func TestSetJSON(t *testing.T) {
 	if err != nil {
 		t.Fatalf("cannot create server, got err: %v", err)
 	}
-	addr, err := startServer(gnmiServer, "localhost:0")
+	addr, err := startServer(gnmiServer)
 	if err != nil {
 		t.Fatalf("cannot start server, got err: %v", err)
 	}
@@ -483,7 +483,7 @@ func TestSetState(t *testing.T) {
 	if err != nil {
 		t.Fatalf("cannot create server, got err: %v", err)
 	}
-	addr, err := startServer(gnmiServer, "localhost:0")
+	addr, err := startServer(gnmiServer)
 	if err != nil {
 		t.Fatalf("cannot start server, got err: %v", err)
 	}
@@ -582,7 +582,7 @@ func TestSTREAM(t *testing.T) {
 	if err != nil {
 		t.Fatalf("cannot create server, got err: %v", err)
 	}
-	addr, err := startServer(gnmiServer, "localhost:0")
+	addr, err := startServer(gnmiServer)
 	if err != nil {
 		t.Fatalf("cannot start server, got err: %v", err)
 	}
