@@ -7,10 +7,10 @@ import (
 	"sync"
 
 	log "github.com/golang/glog"
-	gpb "github.com/openconfig/gnmi/proto/gnmi"
 	"github.com/openconfig/lemming/gnmi/gnmiclient"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
+	"github.com/openconfig/lemming/gnmi/reconciler"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot"
 	api "github.com/osrg/gobgp/v3/api"
@@ -21,7 +21,12 @@ const (
 	listenPort = 1234
 )
 
-// StartGoBGPTask tries to establish a simple BGP session using GoBGP. It returns an error if initialization failed.
+// NewGoBGPTask creates a new GoBGP task.
+func NewGoBGPTask() *reconciler.BuiltReconciler {
+	return reconciler.NewBuilder("gobgp").WithStart(startGoBGPFunc).Build()
+}
+
+// startGoBGPTask tries to establish a simple BGP session using GoBGP. It returns an error if initialization failed.
 //
 // TODO(wenbli): Break this function up.
 //
@@ -53,12 +58,7 @@ const (
 //     When there is a dependency, the later actions will NOT directly depend on the results of the previous actions, but will just look at the current config view to determine the appropriate action.
 //     e.g. for peers, if the global setting has been set up, then we can create the peers and update the applied config if it succeeds, but if not then we don't do anything.
 //     ; however, if the global setting hasn't been set up, we actually need to erase the entirety of the applied config. This is because the watcher doesn't tell us this information.
-func StartGoBGPTask(ctx context.Context, gClient gpb.GNMIClient, target string) error {
-	yclient, err := ygnmi.NewClient(gClient, ygnmi.WithTarget(target))
-	if err != nil {
-		return err
-	}
-
+func startGoBGPFunc(ctx context.Context, yclient *ygnmi.Client) error {
 	b := &ocpath.Batch{}
 	bgpPath := ocpath.Root().NetworkInstance(DefaultNetworkInstance).Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").Bgp()
 	b.AddPaths(

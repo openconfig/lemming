@@ -98,8 +98,8 @@ type TypedBuilder[T any] struct {
 	Builder
 }
 
-// NewTypedBuider creates a new reconciler builder.
-func NewTypedBuider[T any](id string) *TypedBuilder[T] {
+// NewTypedBuilder creates a new reconciler builder.
+func NewTypedBuilder[T any](id string) *TypedBuilder[T] {
 	return &TypedBuilder[T]{
 		Builder: Builder{
 			br: &BuiltReconciler{
