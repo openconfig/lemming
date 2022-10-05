@@ -27,7 +27,6 @@ import (
 	log "github.com/golang/glog"
 	"github.com/openconfig/gnmi/cache"
 	"github.com/openconfig/gnmi/subscribe"
-	"github.com/openconfig/lemming/gnmi/gnmistore"
 	"github.com/openconfig/ygot/ygot"
 	"github.com/openconfig/ygot/ytypes"
 	"golang.org/x/exp/slices"
@@ -41,6 +40,21 @@ import (
 
 const (
 	OpenconfigOrigin = "openconfig"
+)
+
+// GNMIMode indicates the mode in which the gNMI service operates.
+type GNMIMode string
+
+const (
+	// GNMIModeMetadataKey is the context metadata key used to specify the
+	// mode in which the gnmit gNMI server should operate.
+	GNMIModeMetadataKey = "gnmi-mode"
+	// ConfigMode indicates that the gNMI service will allow updates to
+	// intended configuration, but not operational state values.
+	ConfigMode GNMIMode = "config"
+	// StateMode indicates that the gNMI service will allow updates to
+	// operational state, but not intended configuration values.
+	StateMode GNMIMode = "state"
 )
 
 // GNMIServer implements the gNMI server interface.
@@ -244,19 +258,19 @@ func set(schema *ytypes.Schema, cache *cache.Cache, target string, req *gpb.SetR
 // TODO(wenbli): Add unit test.
 func (s *GNMIServer) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResponse, error) {
 	// Use ConfigMode by default so that external users don't need to set metadata.
-	gnmiMode := gnmistore.ConfigMode
+	gnmiMode := ConfigMode
 	md, ok := metadata.FromIncomingContext(ctx)
 	if ok {
 		switch {
-		case slices.Contains(md.Get(gnmistore.GNMIModeMetadataKey), string(gnmistore.ConfigMode)):
-			gnmiMode = gnmistore.ConfigMode
-		case slices.Contains(md.Get(gnmistore.GNMIModeMetadataKey), string(gnmistore.StateMode)):
-			gnmiMode = gnmistore.StateMode
+		case slices.Contains(md.Get(GNMIModeMetadataKey), string(ConfigMode)):
+			gnmiMode = ConfigMode
+		case slices.Contains(md.Get(GNMIModeMetadataKey), string(StateMode)):
+			gnmiMode = StateMode
 		}
 	}
 
 	switch gnmiMode {
-	case gnmistore.ConfigMode:
+	case ConfigMode:
 		s.configMu.Lock()
 		defer s.configMu.Unlock()
 
@@ -273,7 +287,7 @@ func (s *GNMIServer) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResp
 		return &gpb.SetResponse{
 			Timestamp: time.Now().UnixNano(),
 		}, err
-	case gnmistore.StateMode:
+	case StateMode:
 		s.stateMu.Lock()
 		defer s.stateMu.Unlock()
 
