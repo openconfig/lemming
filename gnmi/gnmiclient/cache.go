@@ -39,7 +39,7 @@ func New(srv gpb.GNMIServer) (gpb.GNMIClient, error) {
 // cacheClient is a gNMI client talks directly to a server, without sending messages over the wire.
 type cacheClient struct {
 	gpb.GNMIClient
-	gnmiMode gnmi.GNMIMode
+	gnmiMode gnmi.Mode
 	srv      gpb.GNMIServer
 }
 

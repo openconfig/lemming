@@ -153,7 +153,7 @@ func toUpd(r *gpb.SubscribeResponse) []*upd {
 //
 // It returns the address it is listening on in the form hostname:port or any
 // errors encounted whilst setting it up.
-func startServer(ctx context.Context, s *Server, addr string, opts ...grpc.ServerOption) (string, error) {
+func startServer(s *Server, addr string, opts ...grpc.ServerOption) (string, error) {
 	// Start gNMI server.
 	srv := grpc.NewServer(opts...)
 	gpb.RegisterGNMIServer(srv, s)
@@ -178,11 +178,11 @@ func startServer(ctx context.Context, s *Server, addr string, opts ...grpc.Serve
 // TestONCE tests the subscribe mode of gnmit.
 func TestONCE(t *testing.T) {
 	ctx := context.Background()
-	gnmiServer, err := newServer(ctx, "local", false, false)
+	gnmiServer, err := newServer(ctx, "local", false)
 	if err != nil {
 		t.Fatalf("cannot create server, got err: %v", err)
 	}
-	addr, err := startServer(ctx, gnmiServer, "localhost:0")
+	addr, err := startServer(gnmiServer, "localhost:0")
 	if err != nil {
 		t.Fatalf("cannot start server, got err: %v", err)
 	}
@@ -279,11 +279,11 @@ func TestONCE(t *testing.T) {
 // TestSet tests gnmi.Set on a config value.
 func TestSet(t *testing.T) {
 	ctx := context.Background()
-	gnmiServer, err := newServer(ctx, "local", true, false)
+	gnmiServer, err := newServer(ctx, "local", true)
 	if err != nil {
 		t.Fatalf("cannot create server, got err: %v", err)
 	}
-	addr, err := startServer(ctx, gnmiServer, "localhost:0")
+	addr, err := startServer(gnmiServer, "localhost:0")
 	if err != nil {
 		t.Fatalf("cannot start server, got err: %v", err)
 	}
@@ -377,11 +377,11 @@ func TestSet(t *testing.T) {
 // TestSetJSON tests gnmi.Set on a JSON value.
 func TestSetJSON(t *testing.T) {
 	ctx := context.Background()
-	gnmiServer, err := newServer(ctx, "local", true, false)
+	gnmiServer, err := newServer(ctx, "local", true)
 	if err != nil {
 		t.Fatalf("cannot create server, got err: %v", err)
 	}
-	addr, err := startServer(ctx, gnmiServer, "localhost:0")
+	addr, err := startServer(gnmiServer, "localhost:0")
 	if err != nil {
 		t.Fatalf("cannot start server, got err: %v", err)
 	}
@@ -479,11 +479,11 @@ func TestSetJSON(t *testing.T) {
 // TestSetState tests gnmi.Set on a state value.
 func TestSetState(t *testing.T) {
 	ctx := context.Background()
-	gnmiServer, err := newServer(ctx, "local", true, false)
+	gnmiServer, err := newServer(ctx, "local", true)
 	if err != nil {
 		t.Fatalf("cannot create server, got err: %v", err)
 	}
-	addr, err := startServer(ctx, gnmiServer, "localhost:0")
+	addr, err := startServer(gnmiServer, "localhost:0")
 	if err != nil {
 		t.Fatalf("cannot start server, got err: %v", err)
 	}
@@ -578,11 +578,11 @@ func TestSetState(t *testing.T) {
 // TestSTREAM tests the STREAM mode of gnmit.
 func TestSTREAM(t *testing.T) {
 	ctx := context.Background()
-	gnmiServer, err := newServer(ctx, "local", false, false)
+	gnmiServer, err := newServer(ctx, "local", false)
 	if err != nil {
 		t.Fatalf("cannot create server, got err: %v", err)
 	}
-	addr, err := startServer(ctx, gnmiServer, "localhost:0")
+	addr, err := startServer(gnmiServer, "localhost:0")
 	if err != nil {
 		t.Fatalf("cannot start server, got err: %v", err)
 	}

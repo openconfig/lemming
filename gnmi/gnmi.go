@@ -40,8 +40,8 @@ const (
 	OpenConfigOrigin = "openconfig"
 )
 
-// GNMIMode indicates the mode in which the gNMI service operates.
-type GNMIMode string
+// Mode indicates the mode in which the gNMI service operates.
+type Mode string
 
 const (
 	// GNMIModeMetadataKey is the context metadata key used to specify the
@@ -49,10 +49,10 @@ const (
 	GNMIModeMetadataKey = "gnmi-mode"
 	// ConfigMode indicates that the gNMI service will allow updates to
 	// intended configuration, but not operational state values.
-	ConfigMode GNMIMode = "config"
+	ConfigMode Mode = "config"
 	// StateMode indicates that the gNMI service will allow updates to
 	// operational state, but not intended configuration values.
-	StateMode GNMIMode = "state"
+	StateMode Mode = "state"
 )
 
 // Server is a reference gNMI implementation.
@@ -75,7 +75,7 @@ type Server struct {
 //
 // - targetName is the gNMI target name of the datastore.
 func New(srv *grpc.Server, targetName string) (*Server, error) {
-	gnmiServer, err := newServer(context.Background(), targetName, true, false)
+	gnmiServer, err := newServer(context.Background(), targetName, true)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create gNMI server: %v", err)
 	}
@@ -89,10 +89,9 @@ func New(srv *grpc.Server, targetName string) (*Server, error) {
 // - configSchema is the specification of the schema if gnmi.Set on config paths is used.
 // - stateSchema is the specification of the schema if gnmi.Set on state paths is used.
 // - targetName is the name of the target.
-// - sendMeta indicates whether metadata should be sent
-func newServer(ctx context.Context, targetName string, enableSet, sendMeta bool) (*Server, error) {
+func newServer(ctx context.Context, targetName string, enableSet bool) (*Server, error) {
 	c := NewCollector(targetName)
-	subscribeSrv, err := c.Start(ctx, sendMeta)
+	subscribeSrv, err := c.Start(ctx, false)
 	if err != nil {
 		return nil, err
 	}
@@ -300,7 +299,7 @@ func (s *Server) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResponse
 		// This mode is intended to be used internally, and the SetResponse doesn't matter.
 		return &gpb.SetResponse{}, nil
 	default:
-		return nil, status.Errorf(codes.Internal, "incoming gNMI SetRequest must specify a valid GNMIMode via context metadata: %v", md)
+		return nil, status.Errorf(codes.Internal, "incoming gNMI SetRequest must specify a valid gnmi.Mode via context metadata: %v", md)
 	}
 }
 
