@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package gnmit
+package gnmi
 
 import (
 	"bytes"
@@ -50,7 +50,7 @@ func mustTargetPath(t, s string, addOpenConfigOrigin bool) *gpb.Path {
 	p := mustPath(s)
 	p.Target = t
 	if addOpenConfigOrigin {
-		p.Origin = OpenconfigOrigin
+		p.Origin = OpenConfigOrigin
 	}
 	return p
 }
@@ -149,7 +149,7 @@ func toUpd(r *gpb.SubscribeResponse) []*upd {
 // TestONCE tests the subscribe mode of gnmit.
 func TestONCE(t *testing.T) {
 	ctx := context.Background()
-	c, gnmiServer, err := New[*oc.Root](ctx, nil, nil, "local", false)
+	c, gnmiServer, err := NewServer(ctx, nil, nil, "local", false)
 	if err != nil {
 		t.Fatalf("cannot create server, got err: %v", err)
 	}
@@ -254,7 +254,7 @@ func TestONCESet(t *testing.T) {
 		t.Fatal(err)
 	}
 	ctx := context.Background()
-	c, gnmiServer, err := New[*oc.Root](ctx, schema, nil, "local", false)
+	c, gnmiServer, err := NewServer(ctx, schema, nil, "local", false)
 	if err != nil {
 		t.Fatalf("cannot create server, got err: %v", err)
 	}
@@ -356,7 +356,7 @@ func TestONCESetJSON(t *testing.T) {
 		t.Fatal(err)
 	}
 	ctx := context.Background()
-	c, gnmiServer, err := New[*oc.Root](ctx, schema, nil, "local", false)
+	c, gnmiServer, err := NewServer(ctx, schema, nil, "local", false)
 	if err != nil {
 		t.Fatalf("cannot create server, got err: %v", err)
 	}
@@ -458,7 +458,7 @@ func TestONCESetJSON(t *testing.T) {
 // TestSTREAM tests the STREAM mode of gnmit.
 func TestSTREAM(t *testing.T) {
 	ctx := context.Background()
-	c, gnmiServer, err := New[*oc.Root](ctx, nil, nil, "local", false)
+	c, gnmiServer, err := NewServer(ctx, nil, nil, "local", false)
 	if err != nil {
 		t.Fatalf("cannot create server, got err: %v", err)
 	}
