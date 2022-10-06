@@ -43,7 +43,7 @@ The reconciler package provides a builder API for creating reconcilers with comm
 
 ```go
 rec := reconciler.NewTypedBuilder[string]("hostname").
-	WithWatch(hostnamePath.Config(), func(ctx context.Context, c *ygnmi.Client, v *ygnmi.Value[string]) error { // Watch hostname config: set hostname, and update state.
+    WithWatch(hostnamePath.Config(), func(ctx context.Context, c *ygnmi.Client, v *ygnmi.Value[string]) error { // Watch hostname config: set hostname, and update state.
         hostname, ok := v.Val()
         if !ok {
             resetHostName()
