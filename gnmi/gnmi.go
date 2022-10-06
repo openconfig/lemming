@@ -78,7 +78,7 @@ type Server struct {
 //
 // - targetName is the gNMI target name of the datastore.
 func New(srv *grpc.Server, targetName string, recs ...reconciler.Reconciler) (*Server, error) {
-	gnmiServer, err := newServer(context.Background(), targetName, true)
+	gnmiServer, err := newServer(context.Background(), targetName, true, recs...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create gNMI server: %v", err)
 	}
