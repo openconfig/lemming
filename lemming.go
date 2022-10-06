@@ -23,7 +23,6 @@ import (
 	"github.com/openconfig/lemming/dataplane"
 	fgnmi "github.com/openconfig/lemming/gnmi"
 	"github.com/openconfig/lemming/gnmi/fakedevice"
-	"github.com/openconfig/lemming/gnmi/gnmiclient"
 	"github.com/openconfig/lemming/gnmi/reconciler"
 	fgnoi "github.com/openconfig/lemming/gnoi"
 	fgnsi "github.com/openconfig/lemming/gnsi"
@@ -107,7 +106,7 @@ func New(lis net.Listener, targetName string, opts ...grpc.ServerOption) (*Devic
 		return nil, err
 	}
 
-	cacheClient := gnmiclient.New(gnmiServer)
+	cacheClient := gnmiServer.LocalClient()
 	if dplane != nil {
 		if err := dplane.Start(context.Background(), cacheClient, targetName); err != nil {
 			return nil, err
