@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package gnmiclient
+package gnmi
 
 import (
 	"context"
@@ -40,30 +40,30 @@ const (
 	StateMode Mode = "state"
 )
 
-// New creates a state-based gNMI client for the gNMI cache.
+// new creates a state-based gNMI client for the gNMI cache.
 // The client calls the server gRPC implementation with a custom streaming gRPC implementation
 // in order to bypass the regular gRPC wire marshalling/unmarshalling handling.
-func New(srv gpb.GNMIServer) gpb.GNMIClient {
-	return &cacheClient{
+func newLocalClient(srv gpb.GNMIServer) gpb.GNMIClient {
+	return &localClient{
 		gnmiMode: StateMode,
 		srv:      srv,
 	}
 }
 
-// cacheClient is a gNMI client talks directly to a server, without sending messages over the wire.
-type cacheClient struct {
+// localClient is a gNMI client talks directly to a server, without sending messages over the wire.
+type localClient struct {
 	gpb.GNMIClient
 	gnmiMode Mode
 	srv      gpb.GNMIServer
 }
 
 // Set uses the datastore client for Set, instead of the public cache endpoint.
-func (c *cacheClient) Set(ctx context.Context, in *gpb.SetRequest, _ ...grpc.CallOption) (*gpb.SetResponse, error) {
+func (c *localClient) Set(ctx context.Context, in *gpb.SetRequest, _ ...grpc.CallOption) (*gpb.SetResponse, error) {
 	return c.srv.Set(metadata.NewIncomingContext(ctx, metadata.Pairs(GNMIModeMetadataKey, string(c.gnmiMode))), in)
 }
 
 // Subscribe implements gNMI Subscribe, by calling a gNMI server directly.
-func (c *cacheClient) Subscribe(ctx context.Context, _ ...grpc.CallOption) (gpb.GNMI_SubscribeClient, error) {
+func (c *localClient) Subscribe(ctx context.Context, _ ...grpc.CallOption) (gpb.GNMI_SubscribeClient, error) {
 	errCh := make(chan error)
 	respCh := make(chan *gpb.SubscribeResponse, 10)
 	reqCh := make(chan *gpb.SubscribeRequest)

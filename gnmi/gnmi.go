@@ -24,7 +24,6 @@ import (
 	log "github.com/golang/glog"
 	"github.com/openconfig/gnmi/cache"
 	"github.com/openconfig/gnmi/subscribe"
-	"github.com/openconfig/lemming/gnmi/gnmiclient"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/reconciler"
 	"github.com/openconfig/ygot/ygot"
@@ -258,19 +257,19 @@ func set(schema *ytypes.Schema, cache *cache.Cache, target string, req *gpb.SetR
 // Set is a prototype for a gNMI Set operation.
 func (s *Server) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResponse, error) {
 	// Use ConfigMode by default so that external users don't need to set metadata.
-	gnmiMode := gnmiclient.ConfigMode
+	gnmiMode := ConfigMode
 	md, ok := metadata.FromIncomingContext(ctx)
 	if ok {
 		switch {
-		case slices.Contains(md.Get(gnmiclient.GNMIModeMetadataKey), string(gnmiclient.ConfigMode)):
-			gnmiMode = gnmiclient.ConfigMode
-		case slices.Contains(md.Get(gnmiclient.GNMIModeMetadataKey), string(gnmiclient.StateMode)):
-			gnmiMode = gnmiclient.StateMode
+		case slices.Contains(md.Get(GNMIModeMetadataKey), string(ConfigMode)):
+			gnmiMode = ConfigMode
+		case slices.Contains(md.Get(GNMIModeMetadataKey), string(StateMode)):
+			gnmiMode = StateMode
 		}
 	}
 
 	switch gnmiMode {
-	case gnmiclient.ConfigMode:
+	case ConfigMode:
 		s.configMu.Lock()
 		defer s.configMu.Unlock()
 
@@ -287,7 +286,7 @@ func (s *Server) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResponse
 		return &gpb.SetResponse{
 			Timestamp: time.Now().UnixNano(),
 		}, err
-	case gnmiclient.StateMode:
+	case StateMode:
 		s.stateMu.Lock()
 		defer s.stateMu.Unlock()
 
@@ -327,9 +326,14 @@ func (s *Server) Get(ctx context.Context, req *gpb.GetRequest) (*gpb.GetResponse
 	}
 }
 
+// LocalClient returns a gNMI client for the server.
+func (s *Server) LocalClient() gpb.GNMIClient {
+	return newLocalClient(s)
+}
+
 // StartReconcilers starts all the reconcilers.
 func (s *Server) StartReconcilers(ctx context.Context) error {
-	c := gnmiclient.New(s)
+	c := s.LocalClient()
 	for _, rec := range s.reconcilers {
 		if err := rec.Start(ctx, c, s.c.name); err != nil {
 			return err
