@@ -18,9 +18,12 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"sort"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -42,13 +45,11 @@ type LemmingReconciler struct {
 //+kubebuilder:rbac:groups=lemming.openconfig.net,resources=lemmings,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=lemming.openconfig.net,resources=lemmings/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=lemming.openconfig.net,resources=lemmings/finalizers,verbs=update
+//+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the Lemming object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.1/pkg/reconcile
@@ -60,18 +61,30 @@ func (r *LemmingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		log.Error(err, "unable to get lemming")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
+
+	if err := r.reconcileDeployment(ctx, lemming); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	if err := r.reconcileServices(ctx, lemming); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	return ctrl.Result{}, nil
+}
+
+func (r *LemmingReconciler) reconcileDeployment(ctx context.Context, lemming *lemmingv1alpha1.Lemming) error {
 	deploy := &appsv1.Deployment{}
-	err := r.Get(ctx, req.NamespacedName, deploy)
+	err := r.Get(ctx, types.NamespacedName{Name: lemming.Name, Namespace: lemming.Namespace}, deploy)
 	var newDeployment bool
 
 	if apierrors.IsNotFound(err) {
-		if r.setupInitialDeployment(deploy, lemming); err != nil {
-			return ctrl.Result{}, err
+		if err := r.setupInitialDeployment(deploy, lemming); err != nil {
+			return fmt.Errorf("failed to setup initial deployment: %v", err)
 		}
 		newDeployment = true
 	} else if err != nil {
-		log.Error(err, "unable to get deployment")
-		return ctrl.Result{}, err
+		return err
 	}
 	deploy.Spec.Template.Spec.Containers[0].Image = lemming.Spec.Image
 	deploy.Spec.Template.Spec.Containers[0].Command = []string{lemming.Spec.Command}
@@ -89,15 +102,10 @@ func (r *LemmingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	deploy.Spec.Template.Spec.Containers[0].Env = envs
 
 	if newDeployment {
-		err = r.Create(ctx, deploy)
-	} else {
-		err = r.Update(ctx, deploy)
-	}
-	if err != nil {
-		return ctrl.Result{}, err
+		return r.Create(ctx, deploy)
 	}
 
-	return ctrl.Result{}, nil
+	return r.Update(ctx, deploy)
 }
 
 func (r *LemmingReconciler) setupInitialDeployment(deploy *appsv1.Deployment, lemming *lemmingv1alpha1.Lemming) error {
@@ -126,14 +134,67 @@ func (r *LemmingReconciler) setupInitialDeployment(deploy *appsv1.Deployment, le
 					"type": "lemming",
 				},
 			},
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{{
+					Name: "lemming",
+				}},
+			},
 		},
 	}
 	return nil
+}
+
+func (r *LemmingReconciler) reconcileServices(ctx context.Context, lemming *lemmingv1alpha1.Lemming) error {
+	var service corev1.Service
+	err := r.Get(ctx, types.NamespacedName{Name: lemming.Name, Namespace: lemming.Namespace}, &service)
+	var newService bool
+	if apierrors.IsNotFound(err) {
+		service.ObjectMeta = metav1.ObjectMeta{
+			Name:      fmt.Sprintf("service-%s", lemming.Name),
+			Namespace: lemming.Namespace,
+			Labels: map[string]string{
+				"name": lemming.Name,
+			},
+		}
+		service.Spec = corev1.ServiceSpec{
+			Selector: map[string]string{
+				"name": lemming.Name,
+				"type": "lemming",
+			},
+		}
+		if err := ctrl.SetControllerReference(lemming, &service, r.Scheme); err != nil {
+			return err
+		}
+		newService = true
+	} else if err != nil {
+		return nil
+	}
+	service.Spec.Ports = []corev1.ServicePort{}
+	for _, p := range lemming.Spec.Ports {
+		service.Spec.Ports = append(service.Spec.Ports, corev1.ServicePort{
+			Name:       p.Name,
+			Port:       int32(p.OuterPort),
+			TargetPort: intstr.FromInt(p.InnerPort),
+		})
+	}
+	if len(lemming.Spec.Ports) == 0 && newService {
+		return nil
+	}
+	if len(lemming.Spec.Ports) == 0 {
+		return r.Delete(ctx, &service)
+	}
+	if newService {
+		return r.Create(ctx, &service)
+	}
+
+	return r.Update(ctx, &service)
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *LemmingReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&lemmingv1alpha1.Lemming{}).
+		Owns(&appsv1.Deployment{}).
+		Owns(&corev1.Service{}).
 		Complete(r)
 }

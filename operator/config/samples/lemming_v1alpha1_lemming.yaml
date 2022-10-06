@@ -3,4 +3,4 @@ kind: Lemming
 metadata:
   name: lemming-sample
 spec:
-  # TODO(user): Add fields here
+  image: lemming:latest

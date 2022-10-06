@@ -33,7 +33,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: LemmingSpec defines the desired state of Lemming
+            description: LemmingSpec defines the desired state of Lemming.
             properties:
               args:
                 description: Args are the args to pass to the command.
@@ -63,6 +63,25 @@ spec:
                 description: InitImage is the docker image to use as an init container
                   for the pod.
                 type: string
+              ports:
+                description: Ports are ports to create on the service.
+                items:
+                  properties:
+                    innerPort:
+                      description: InnerPort is port on the container to expose.
+                      type: integer
+                    name:
+                      description: Name of the service port.
+                      type: string
+                    outerPort:
+                      description: OuterPort is port on the container to expose.
+                      type: integer
+                  required:
+                  - innerPort
+                  - name
+                  - outerPort
+                  type: object
+                type: array
             type: object
           status:
             description: LemmingStatus defines the observed state of Lemming
