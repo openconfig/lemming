@@ -153,9 +153,9 @@ func toUpd(r *gpb.SubscribeResponse) []*upd {
 //
 // It returns the address it is listening on in the form hostname:port or any
 // errors encounted whilst setting it up.
-func startServer(s *Server, opts ...grpc.ServerOption) (string, error) {
+func startServer(s *Server) (string, error) {
 	// Start gNMI server.
-	srv := grpc.NewServer(opts...)
+	srv := grpc.NewServer()
 	gpb.RegisterGNMIServer(srv, s)
 	// Forward streaming updates to clients.
 	// Register listening port and start serving.
