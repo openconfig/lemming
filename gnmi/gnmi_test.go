@@ -28,6 +28,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/openconfig/gnmi/value"
+	"github.com/openconfig/lemming/gnmi/gnmiclient"
 	"github.com/openconfig/ygot/ygot"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/local"
@@ -504,7 +505,7 @@ func TestSetState(t *testing.T) {
 
 		client := gpb.NewGNMIClient(conn)
 
-		ctx = metadata.AppendToOutgoingContext(ctx, GNMIModeMetadataKey, string(StateMode))
+		ctx = metadata.AppendToOutgoingContext(ctx, gnmiclient.GNMIModeMetadataKey, string(gnmiclient.StateMode))
 		if _, err := client.Set(ctx, &gpb.SetRequest{
 			Prefix: mustTargetPath("local", "", true),
 			Replace: []*gpb.Update{{

@@ -24,6 +24,7 @@ import (
 	log "github.com/golang/glog"
 	"github.com/openconfig/gnmi/cache"
 	"github.com/openconfig/gnmi/subscribe"
+	"github.com/openconfig/lemming/gnmi/gnmiclient"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/reconciler"
 	"github.com/openconfig/ygot/ygot"
@@ -41,21 +42,6 @@ const (
 	OpenConfigOrigin = "openconfig"
 )
 
-// Mode indicates the mode in which the gNMI service operates.
-type Mode string
-
-const (
-	// GNMIModeMetadataKey is the context metadata key used to specify the
-	// mode in which the gNMI server should operate.
-	GNMIModeMetadataKey = "gnmi-mode"
-	// ConfigMode indicates that the gNMI service will allow updates to
-	// intended configuration, but not operational state values.
-	ConfigMode Mode = "config"
-	// StateMode indicates that the gNMI service will allow updates to
-	// operational state, but not intended configuration values.
-	StateMode Mode = "state"
-)
-
 // Server is a reference gNMI implementation.
 type Server struct {
 	// The subscribe Server implements only Subscribe for gNMI.
@@ -71,7 +57,8 @@ type Server struct {
 	stateMu     sync.Mutex
 	stateSchema *ytypes.Schema
 
-	validators []func(*oc.Root) error
+	validators  []func(*oc.Root) error
+	reconcilers []reconciler.Reconciler
 }
 
 // New creates and registers a reference gNMI server on the given gRPC server.
@@ -100,8 +87,9 @@ func newServer(ctx context.Context, targetName string, enableSet bool, recs ...r
 	}
 
 	gnmiServer := &Server{
-		Server: subscribeSrv, // use the 'subscribe' implementation.
-		c:      c,
+		Server:      subscribeSrv, // use the 'subscribe' implementation.
+		c:           c,
+		reconcilers: recs,
 	}
 
 	if !enableSet {
@@ -270,19 +258,19 @@ func set(schema *ytypes.Schema, cache *cache.Cache, target string, req *gpb.SetR
 // Set is a prototype for a gNMI Set operation.
 func (s *Server) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResponse, error) {
 	// Use ConfigMode by default so that external users don't need to set metadata.
-	gnmiMode := ConfigMode
+	gnmiMode := gnmiclient.ConfigMode
 	md, ok := metadata.FromIncomingContext(ctx)
 	if ok {
 		switch {
-		case slices.Contains(md.Get(GNMIModeMetadataKey), string(ConfigMode)):
-			gnmiMode = ConfigMode
-		case slices.Contains(md.Get(GNMIModeMetadataKey), string(StateMode)):
-			gnmiMode = StateMode
+		case slices.Contains(md.Get(gnmiclient.GNMIModeMetadataKey), string(gnmiclient.ConfigMode)):
+			gnmiMode = gnmiclient.ConfigMode
+		case slices.Contains(md.Get(gnmiclient.GNMIModeMetadataKey), string(gnmiclient.StateMode)):
+			gnmiMode = gnmiclient.StateMode
 		}
 	}
 
 	switch gnmiMode {
-	case ConfigMode:
+	case gnmiclient.ConfigMode:
 		s.configMu.Lock()
 		defer s.configMu.Unlock()
 
@@ -299,7 +287,7 @@ func (s *Server) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResponse
 		return &gpb.SetResponse{
 			Timestamp: time.Now().UnixNano(),
 		}, err
-	case StateMode:
+	case gnmiclient.StateMode:
 		s.stateMu.Lock()
 		defer s.stateMu.Unlock()
 
@@ -337,4 +325,25 @@ func (s *Server) Get(ctx context.Context, req *gpb.GetRequest) (*gpb.GetResponse
 	default:
 		return nil, status.Errorf(codes.DataLoss, "Unknown message type: %T", resp)
 	}
+}
+
+// StartReconcilers starts all the reconcilers.
+func (s *Server) StartReconcilers(ctx context.Context) error {
+	c := gnmiclient.New(s)
+	for _, rec := range s.reconcilers {
+		if err := rec.Start(ctx, c, s.c.name); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// StopReconcilers stops all the reconcilers.
+func (s *Server) StopReconcilers(ctx context.Context) error {
+	for _, rec := range s.reconcilers {
+		if err := rec.Stop(ctx); err != nil {
+			return err
+		}
+	}
+	return nil
 }

@@ -103,14 +103,11 @@ func New(lis net.Listener, targetName string, opts ...grpc.ServerOption) (*Devic
 	reflection.Register(s)
 	d.startServer()
 
-	cacheClient := gnmiclient.New(gnmiServer)
-
-	for _, rec := range recs {
-		if err := rec.Start(context.Background(), cacheClient, targetName); err != nil {
-			return nil, err
-		}
+	if err := gnmiServer.StartReconcilers(context.Background()); err != nil {
+		return nil, err
 	}
 
+	cacheClient := gnmiclient.New(gnmiServer)
 	if dplane != nil {
 		if err := dplane.Start(context.Background(), cacheClient, targetName); err != nil {
 			return nil, err
@@ -147,6 +144,10 @@ func (d *Device) Stop() error {
 	}
 	d.mu.Lock()
 	defer d.mu.Unlock()
+	if err := d.gnmiServer.StopReconcilers(context.Background()); err != nil {
+		return err
+	}
+
 	return d.err
 }
 
