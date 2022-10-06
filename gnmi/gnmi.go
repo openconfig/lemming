@@ -225,6 +225,7 @@ func updateCacheNotifs(cache *cache.Cache, nos []*gpb.Notification, target, orig
 //
 // update indicates whether to update the cache with the values from the set
 // request.
+// set returns a gRPC error with the correct code and shouldn't be wrapped again.
 func set(schema *ytypes.Schema, cache *cache.Cache, target string, req *gpb.SetRequest, preferShadowPath bool, validators []func(*oc.Root) error) error {
 	prevRoot, err := ygot.DeepCopy(schema.Root)
 	if err != nil {
@@ -308,7 +309,7 @@ func (s *Server) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResponse
 		}
 		// TODO(wenbli): Reject values that modify config values. We only allow modifying state in this mode.
 		if err := set(s.stateSchema, s.c.cache, s.c.name, req, false, nil); err != nil {
-			return &gpb.SetResponse{}, status.Errorf(codes.Aborted, "%v", err)
+			return &gpb.SetResponse{}, err
 		}
 
 		// This mode is intended to be used internally, and the SetResponse doesn't matter.
