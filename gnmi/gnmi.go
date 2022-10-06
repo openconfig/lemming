@@ -25,6 +25,7 @@ import (
 	"github.com/openconfig/gnmi/cache"
 	"github.com/openconfig/gnmi/subscribe"
 	"github.com/openconfig/lemming/gnmi/oc"
+	"github.com/openconfig/lemming/gnmi/reconciler"
 	"github.com/openconfig/ygot/ygot"
 	"github.com/openconfig/ygot/ytypes"
 	"golang.org/x/exp/slices"
@@ -38,21 +39,6 @@ import (
 
 const (
 	OpenConfigOrigin = "openconfig"
-)
-
-// Mode indicates the mode in which the gNMI service operates.
-type Mode string
-
-const (
-	// GNMIModeMetadataKey is the context metadata key used to specify the
-	// mode in which the gNMI server should operate.
-	GNMIModeMetadataKey = "gnmi-mode"
-	// ConfigMode indicates that the gNMI service will allow updates to
-	// intended configuration, but not operational state values.
-	ConfigMode Mode = "config"
-	// StateMode indicates that the gNMI service will allow updates to
-	// operational state, but not intended configuration values.
-	StateMode Mode = "state"
 )
 
 // Server is a reference gNMI implementation.
@@ -69,13 +55,16 @@ type Server struct {
 
 	stateMu     sync.Mutex
 	stateSchema *ytypes.Schema
+
+	validators  []func(*oc.Root) error
+	reconcilers []reconciler.Reconciler
 }
 
 // New creates and registers a reference gNMI server on the given gRPC server.
 //
 // - targetName is the gNMI target name of the datastore.
-func New(srv *grpc.Server, targetName string) (*Server, error) {
-	gnmiServer, err := newServer(context.Background(), targetName, true)
+func New(srv *grpc.Server, targetName string, recs ...reconciler.Reconciler) (*Server, error) {
+	gnmiServer, err := newServer(context.Background(), targetName, true, recs...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create gNMI server: %v", err)
 	}
@@ -89,51 +78,59 @@ func New(srv *grpc.Server, targetName string) (*Server, error) {
 // - configSchema is the specification of the schema if gnmi.Set on config paths is used.
 // - stateSchema is the specification of the schema if gnmi.Set on state paths is used.
 // - targetName is the name of the target.
-func newServer(ctx context.Context, targetName string, enableSet bool) (*Server, error) {
+func newServer(ctx context.Context, targetName string, enableSet bool, recs ...reconciler.Reconciler) (*Server, error) {
 	c := NewCollector(targetName)
 	subscribeSrv, err := c.Start(ctx, false)
 	if err != nil {
 		return nil, err
 	}
 
-	var configSchema, stateSchema *ytypes.Schema
-	if enableSet {
-		var err error
-		configSchema, err = oc.Schema()
-		if err != nil {
-			return nil, fmt.Errorf("cannot create ygot schema object: %v", err)
-		}
-		// Initialize the cache with the input schema root.
-		if configSchema != nil {
-			if err := setupSchema(configSchema); err != nil {
-				return nil, err
-			}
-			if err := ygot.PruneConfigFalse(configSchema.RootSchema(), configSchema.Root); err != nil {
-				return nil, fmt.Errorf("gnmi: %v", err)
-			}
-			updateCache(c.cache, configSchema.Root, nil, targetName, OpenConfigOrigin, true)
-		}
+	gnmiServer := &Server{
+		Server:      subscribeSrv, // use the 'subscribe' implementation.
+		c:           c,
+		reconcilers: recs,
+	}
 
-		stateSchema, err = oc.Schema()
-		if err != nil {
-			return nil, fmt.Errorf("cannot create ygot schema object: %v", err)
+	if !enableSet {
+		return gnmiServer, nil
+	}
+
+	configSchema, err := oc.Schema()
+	if err != nil {
+		return nil, fmt.Errorf("cannot create ygot schema object: %v", err)
+	}
+	// Initialize the cache with the input schema root.
+	if configSchema != nil {
+		if err := setupSchema(configSchema); err != nil {
+			return nil, err
 		}
-		if stateSchema != nil {
-			if err := setupSchema(stateSchema); err != nil {
-				return nil, err
-			}
-			updateCache(c.cache, stateSchema.Root, nil, targetName, OpenConfigOrigin, true)
+		if err := ygot.PruneConfigFalse(configSchema.RootSchema(), configSchema.Root); err != nil {
+			return nil, fmt.Errorf("gnmi: %v", err)
+		}
+		updateCache(c.cache, configSchema.Root, nil, targetName, OpenConfigOrigin, true)
+	}
+
+	stateSchema, err := oc.Schema()
+	if err != nil {
+		return nil, fmt.Errorf("cannot create ygot schema object: %v", err)
+	}
+	if stateSchema != nil {
+		if err := setupSchema(stateSchema); err != nil {
+			return nil, err
+		}
+		updateCache(c.cache, stateSchema.Root, nil, targetName, OpenConfigOrigin, true)
+	}
+
+	for _, rec := range recs {
+		if len(rec.ValidationPaths()) > 0 {
+			gnmiServer.validators = append(gnmiServer.validators, rec.Validate)
 		}
 	}
 
-	gnmiserver := &Server{
-		Server:       subscribeSrv, // use the 'subscribe' implementation.
-		c:            c,
-		configSchema: configSchema,
-		stateSchema:  stateSchema,
-	}
+	gnmiServer.configSchema = configSchema
+	gnmiServer.stateSchema = stateSchema
 
-	return gnmiserver, nil
+	return gnmiServer, nil
 }
 
 type populateDefaultser interface {
@@ -215,10 +212,11 @@ func updateCacheNotifs(cache *cache.Cache, nos []*gpb.Notification, target, orig
 //
 // update indicates whether to update the cache with the values from the set
 // request.
-func set(schema *ytypes.Schema, cache *cache.Cache, target string, req *gpb.SetRequest, preferShadowPath bool) error {
+// set returns a gRPC error with the correct code and shouldn't be wrapped again.
+func set(schema *ytypes.Schema, cache *cache.Cache, target string, req *gpb.SetRequest, preferShadowPath bool, validators []func(*oc.Root) error) error {
 	prevRoot, err := ygot.DeepCopy(schema.Root)
 	if err != nil {
-		return fmt.Errorf("gnmi: failed to ygot.DeepCopy the cached root object: %v", err)
+		return status.Errorf(codes.Internal, "failed to ygot.DeepCopy the cached root object: %v", err)
 	}
 
 	success := false
@@ -236,17 +234,22 @@ func set(schema *ytypes.Schema, cache *cache.Cache, target string, req *gpb.SetR
 		unmarshalOpts = append(unmarshalOpts, &ytypes.PreferShadowPath{})
 	}
 	if err := ytypes.UnmarshalSetRequest(schema, req, unmarshalOpts...); err != nil {
-		return fmt.Errorf("gnmi: %v", err)
+		return status.Errorf(codes.InvalidArgument, "failed to unmarshal set request %v", err)
 	}
 
 	if err := schema.Validate(); err != nil {
-		return fmt.Errorf("gnmi: invalid SetRequest: %v", err)
+		return status.Errorf(codes.InvalidArgument, "invalid SetRequest: %v", err)
+	}
+	for _, validator := range validators {
+		if err := validator(schema.Root.(*oc.Root)); err != nil {
+			return status.Errorf(codes.InvalidArgument, "validation error: %v", err)
+		}
 	}
 
 	success = true
 
 	if err := updateCache(cache, schema.Root, prevRoot, target, req.Prefix.Origin, preferShadowPath); err != nil {
-		return err
+		return status.Error(codes.Internal, err.Error())
 	}
 	return nil
 }
@@ -277,7 +280,7 @@ func (s *Server) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResponse
 
 		// TODO(wenbli): Reject paths that try to modify read-only values.
 		// TODO(wenbli): Question: what to do if there are operational-state values in a container that is specified to be replaced or deleted?
-		err := set(s.configSchema, s.c.cache, s.c.name, req, true)
+		err := set(s.configSchema, s.c.cache, s.c.name, req, true, s.validators)
 
 		// TODO(wenbli): Currently the SetResponse is not filled.
 		return &gpb.SetResponse{
@@ -292,8 +295,8 @@ func (s *Server) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResponse
 			return s.UnimplementedGNMIServer.Set(ctx, req)
 		}
 		// TODO(wenbli): Reject values that modify config values. We only allow modifying state in this mode.
-		if err := set(s.stateSchema, s.c.cache, s.c.name, req, false); err != nil {
-			return &gpb.SetResponse{}, status.Errorf(codes.Aborted, "%v", err)
+		if err := set(s.stateSchema, s.c.cache, s.c.name, req, false, nil); err != nil {
+			return &gpb.SetResponse{}, err
 		}
 
 		// This mode is intended to be used internally, and the SetResponse doesn't matter.
@@ -321,4 +324,30 @@ func (s *Server) Get(ctx context.Context, req *gpb.GetRequest) (*gpb.GetResponse
 	default:
 		return nil, status.Errorf(codes.DataLoss, "Unknown message type: %T", resp)
 	}
+}
+
+// LocalClient returns a gNMI client for the server.
+func (s *Server) LocalClient() gpb.GNMIClient {
+	return newLocalClient(s)
+}
+
+// StartReconcilers starts all the reconcilers.
+func (s *Server) StartReconcilers(ctx context.Context) error {
+	c := s.LocalClient()
+	for _, rec := range s.reconcilers {
+		if err := rec.Start(ctx, c, s.c.name); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// StopReconcilers stops all the reconcilers.
+func (s *Server) StopReconcilers(ctx context.Context) error {
+	for _, rec := range s.reconcilers {
+		if err := rec.Stop(ctx); err != nil {
+			return err
+		}
+	}
+	return nil
 }

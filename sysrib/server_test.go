@@ -14,7 +14,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/openconfig/gribigo/afthelper"
 	"github.com/openconfig/lemming/gnmi"
-	"github.com/openconfig/lemming/gnmi/gnmiclient"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 	"github.com/openconfig/ygnmi/ygnmi"
@@ -788,11 +787,7 @@ func TestServer(t *testing.T) {
 			}
 
 			// Update the interface configuration on the gNMI server.
-			client, err := gnmiclient.New(gnmiServer)
-			if err != nil {
-				t.Fatalf("cannot dial gNMI datastore server, %v", err)
-			}
-
+			client := gnmiServer.LocalClient()
 			if err := s.Start(client, "local"); err != nil {
 				t.Fatalf("cannot start sysrib server, %v", err)
 			}

@@ -17,14 +17,13 @@ package lemming
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"sync"
 
 	"github.com/openconfig/lemming/dataplane"
 	fgnmi "github.com/openconfig/lemming/gnmi"
 	"github.com/openconfig/lemming/gnmi/fakedevice"
-	"github.com/openconfig/lemming/gnmi/gnmiclient"
+	"github.com/openconfig/lemming/gnmi/reconciler"
 	fgnoi "github.com/openconfig/lemming/gnoi"
 	fgnsi "github.com/openconfig/lemming/gnsi"
 	fgribi "github.com/openconfig/lemming/gribi"
@@ -74,7 +73,13 @@ func New(lis net.Listener, targetName string, opts ...grpc.ServerOption) (*Devic
 
 	s := grpc.NewServer(opts...)
 
-	gnmiServer, err := fgnmi.New(s, targetName)
+	recs := []reconciler.Reconciler{
+		fakedevice.NewSystemBaseTask(),
+		fakedevice.NewBootTimeTask(),
+		fakedevice.NewGoBGPTask(),
+	}
+
+	gnmiServer, err := fgnmi.New(s, targetName, recs...)
 	if err != nil {
 		return nil, err
 	}
@@ -97,11 +102,11 @@ func New(lis net.Listener, targetName string, opts ...grpc.ServerOption) (*Devic
 	reflection.Register(s)
 	d.startServer()
 
-	cacheClient, err := gnmiclient.New(gnmiServer)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create local gNMI client: %v", err)
+	if err := gnmiServer.StartReconcilers(context.Background()); err != nil {
+		return nil, err
 	}
 
+	cacheClient := gnmiServer.LocalClient()
 	if dplane != nil {
 		if err := dplane.Start(context.Background(), cacheClient, targetName); err != nil {
 			return nil, err
@@ -116,10 +121,6 @@ func New(lis net.Listener, targetName string, opts ...grpc.ServerOption) (*Devic
 	if err := sysribServer.Start(cacheClient, targetName); err != nil {
 		return nil, err
 	}
-
-	fakedevice.StartSystemBaseTask(context.Background(), cacheClient, targetName)
-	fakedevice.StartBootTimeTask(context.Background(), cacheClient, targetName)
-	fakedevice.StartGoBGPTask(context.Background(), cacheClient, targetName)
 
 	log.Info("lemming created")
 	return d, nil
@@ -142,6 +143,10 @@ func (d *Device) Stop() error {
 	}
 	d.mu.Lock()
 	defer d.mu.Unlock()
+	if err := d.gnmiServer.StopReconcilers(context.Background()); err != nil {
+		return err
+	}
+
 	return d.err
 }
 
