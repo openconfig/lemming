@@ -788,11 +788,7 @@ func TestServer(t *testing.T) {
 			}
 
 			// Update the interface configuration on the gNMI server.
-			client, err := gnmiclient.New(gnmiServer)
-			if err != nil {
-				t.Fatalf("cannot dial gNMI datastore server, %v", err)
-			}
-
+			client := gnmiclient.New(gnmiServer)
 			if err := s.Start(client, "local"); err != nil {
 				t.Fatalf("cannot start sysrib server, %v", err)
 			}

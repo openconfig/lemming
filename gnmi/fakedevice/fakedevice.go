@@ -24,8 +24,6 @@ import (
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 	"github.com/openconfig/lemming/gnmi/reconciler"
 	"github.com/openconfig/ygnmi/ygnmi"
-
-	gpb "github.com/openconfig/gnmi/proto/gnmi"
 )
 
 const (
@@ -70,7 +68,7 @@ func NewCurrentTimeTask() *reconciler.BuiltReconciler {
 
 // NewSystemBaseTask handles some of the logic for the base systems feature
 // profile using ygnmi as the client.
-func NewSystemBaseTask(ctx context.Context, gClient gpb.GNMIClient, target string) *reconciler.BuiltReconciler {
+func NewSystemBaseTask() *reconciler.BuiltReconciler {
 	b := &ocpath.Batch{}
 	b.AddPaths(
 		ocpath.Root().System().Hostname().Config().PathStruct(),
