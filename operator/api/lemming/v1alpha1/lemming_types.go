@@ -43,16 +43,14 @@ type LemmingSpec struct {
 	// InitImage is the docker image to use as an init container for the pod.
 	InitImage string `json:"initImage,omitempty"`
 	// Ports are ports to create on the service.
-	Ports []ServicePort `json:"ports,omitempty"`
+	Ports map[string]ServicePort `json:"ports,omitempty"`
 }
 
 type ServicePort struct {
-	// Name of the service port.
-	Name string `json:"name"`
 	// InnerPort is port on the container to expose.
-	InnerPort int `json:"innerPort"`
+	InnerPort int32 `json:"innerPort"`
 	// OuterPort is port on the container to expose.
-	OuterPort int `json:"outerPort"`
+	OuterPort int32 `json:"outerPort"`
 }
 
 // LemmingStatus defines the observed state of Lemming

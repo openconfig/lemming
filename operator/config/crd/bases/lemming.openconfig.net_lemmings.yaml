@@ -64,24 +64,22 @@ spec:
                   for the pod.
                 type: string
               ports:
-                description: Ports are ports to create on the service.
-                items:
+                additionalProperties:
                   properties:
                     innerPort:
                       description: InnerPort is port on the container to expose.
+                      format: int32
                       type: integer
-                    name:
-                      description: Name of the service port.
-                      type: string
                     outerPort:
                       description: OuterPort is port on the container to expose.
+                      format: int32
                       type: integer
                   required:
                   - innerPort
-                  - name
                   - outerPort
                   type: object
-                type: array
+                description: Ports are ports to create on the service.
+                type: object
             type: object
           status:
             description: LemmingStatus defines the observed state of Lemming
