@@ -9,8 +9,6 @@ require (
 	github.com/google/gopacket v1.1.19
 	github.com/h-fam/errdiff v1.0.2
 	github.com/kentik/patricia v1.2.0
-	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/gomega v1.19.0
 	github.com/open-traffic-generator/snappi/gosnappi v0.9.4
 	github.com/openconfig/gnmi v0.0.0-20220920173703-480bf53a74d2
 	github.com/openconfig/gnoi v0.0.0-20220912141010-93cdd9ae9f35
@@ -109,7 +107,6 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/monochromegane/go-gitignore v0.0.0-20200626010858-205db1a8cc00 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/nxadm/tail v1.4.8 // indirect
 	github.com/open-traffic-generator/ixia-c-operator v0.1.89 // indirect
 	github.com/openconfig/gocloser v0.0.0-20220310182203-c6c950ed3b0b // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
@@ -157,7 +154,6 @@ require (
 	google.golang.org/genproto v0.0.0-20220916172020-2692e8806bfa // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
-	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/apiextensions-apiserver v0.24.2 // indirect
