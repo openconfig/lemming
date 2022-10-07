@@ -5,13 +5,16 @@
 ## External Clients
 
 External clients use gNMI to configure and read state of the reference device.
-## Internal Reconcilers
+## Internal Clients
 
-Lemming is designed as an eventually consistent system where the gNMI cache is used as the central datastore. A reconciler is a set of initialization methods and long-running methods (either of which are optional) that monitor the intended configuration
-(or other internal state) and modify the operational state of the device to reach the intended state. Reconcilers are attached to the gNMI cache and  are responsible reading the intended config and reconciling state.
+Lemming is designed as an eventually consistent system where the gNMI cache is used as the central datastore. Commonly, features are implemented using reconcilers: a set of initialization and long-running methods (either of which are optional) that monitor the intended configuration (or other internal state) and modify the operational state of the device to reach the intended state. 
+
+However, this pattern is not a requirement, certain features may not need modify state or may react to the operational state (instead of config) of the device. Such features should still implement the reconciler interface, because it provides a common lifecycle API.
+Reconcilers registered when the gNMI cache is created and started once the server is started.
+
 Reconcilers can optionally validate incoming SetRequest to prevent semantically incorrect values from being applied. For example, the interface reconciler can validate that MTU > 64 for Ethernet interfaces.
 
-Reconcilers are created by implementing the [Reconciler interface](https://pkg.go.dev/github.com/openconfig/lemming/gnmi/reconciler#Reconciler), and optionally using the a reconciler Builder to simplify the creation.
+Reconcilers are created by implementing the [Reconciler interface](https://pkg.go.dev/github.com/openconfig/lemming/gnmi/reconciler#Reconciler), and optionally using the reconciler Builder to simplify the creation.
 
 See the [fakedevice package](fakedevice/fakedevice.go) for examples of reconcilers.
 
