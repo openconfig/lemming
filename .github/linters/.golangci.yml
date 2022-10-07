@@ -8,7 +8,7 @@
 # configure golangci-lint
 # see https://github.com/golangci/golangci-lint/blob/master/.golangci.example.yml
 run:
-  timeout: 15m
+  timeout: 25m
   skip-dirs:
     - dataplane/forwarding # TODO: remove this
     - gnmi/oc
