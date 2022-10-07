@@ -7,9 +7,9 @@
 External clients use gNMI to configure and read state of the reference device.
 ## Internal Clients
 
-Lemming is designed as an eventually consistent system where the gNMI cache is used as the central datastore. Commonly, features are implemented using reconcilers: a set of initialization and long-running methods (either of which are optional) that monitor the intended configuration (or other internal state) and modify the operational state of the device to reach the intended state. 
+Lemming is designed as an eventually consistent system where the gNMI cache is used as the central datastore. Commonly, features are implemented using reconcilers: a set of initialization and long-running methods (either of which are optional) that monitor the intended configuration (or other internal state) and modify the operational state of the device to reach the intended state.
 
-However, this pattern is not a requirement, certain features may not need modify state or may react to the operational state (instead of config) of the device. Such features should still implement the reconciler interface, because it provides a common lifecycle API.
+However, this pattern is not a requirement, certain features may not need modify state or may react to the operational state (instead of config) of the device. Such features must implement the reconciler interface, because it provides a common lifecycle API.
 Reconcilers registered when the gNMI cache is created and started once the server is started.
 
 Reconcilers can optionally validate incoming SetRequest to prevent semantically incorrect values from being applied. For example, the interface reconciler can validate that MTU > 64 for Ethernet interfaces.
