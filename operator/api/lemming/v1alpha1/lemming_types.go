@@ -25,9 +25,6 @@ import (
 
 // LemmingSpec defines the desired state of Lemming.
 type LemmingSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
 	// Image is the container image to run.
 	Image string `json:"image,omitempty"`
 	// Command is the name of the executable to run.
@@ -53,10 +50,24 @@ type ServicePort struct {
 	OuterPort int32 `json:"outerPort"`
 }
 
+// LemmingPhase is the overall status of the Lemming.
+type LemmingPhase string
+
+const (
+	// Running indicates a successfully running lemming.
+	Running LemmingPhase = "Running"
+	// Failed indicates an error state.
+	Failed LemmingPhase = "Failed"
+	// Unknown indicates an unknown state.
+	Unknown LemmingPhase = "Unknown"
+)
+
 // LemmingStatus defines the observed state of Lemming
 type LemmingStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// Phase is the overall status of the Lemming.
+	Phase LemmingPhase `json:"phase"`
+	// Message describes why the lemming is in the current phase.
+	Message string `json:"message"`
 }
 
 //+kubebuilder:object:root=true

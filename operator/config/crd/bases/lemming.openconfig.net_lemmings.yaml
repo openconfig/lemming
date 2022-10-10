@@ -83,6 +83,16 @@ spec:
             type: object
           status:
             description: LemmingStatus defines the observed state of Lemming
+            properties:
+              message:
+                description: Message describes why the lemming is in the current phase.
+                type: string
+              phase:
+                description: Phase is the overall status of the Lemming.
+                type: string
+            required:
+            - message
+            - phase
             type: object
         type: object
     served: true
