@@ -133,8 +133,24 @@ func (ni *Interface) Start(ctx context.Context) error {
 		}
 	}()
 
-	// Gothread for updating counters.
+	ni.startCounterUpdates(ctx)
+
+	return nil
+}
+
+// Stop stops all watchers.
+func (ni *Interface) Stop() {
+	// TODO: prevent stopping more than once.
+	for _, closeFn := range ni.closers {
+		closeFn()
+	}
+}
+
+// startCounterUpdates starts a goroutine for updating counters for configured
+// interfaces.
+func (ni *Interface) startCounterUpdates(ctx context.Context) {
 	tick := time.NewTicker(time.Second)
+	ni.closers = append(ni.closers, tick.Stop)
 	go func() {
 		// Design comment:
 		// This polling can be eliminated if either the forwarding
@@ -178,16 +194,6 @@ func (ni *Interface) Start(ctx context.Context) error {
 			}
 		}
 	}()
-
-	return nil
-}
-
-// Stop stops all watchers.
-func (ni *Interface) Stop() {
-	// TODO: prevent stopping more than once.
-	for _, closeFn := range ni.closers {
-		closeFn()
-	}
 }
 
 // reconcile compares the interface config with state and modifies state to match config.

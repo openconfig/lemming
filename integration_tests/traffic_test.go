@@ -221,7 +221,7 @@ func awaitTimeout(ctx context.Context, c *fluent.GRIBIClient, t testing.TB, time
 }
 
 // testCounters test packet counters and should be called after testTraffic
-func testCounters(t *testing.T, ate *ondatra.ATEDevice, dut *ondatra.DUTDevice, wantTxPkts, wantRxPkts uint64) {
+func testCounters(t *testing.T, dut *ondatra.DUTDevice, wantTxPkts, wantRxPkts uint64) {
 	got := gnmi.Get(t, dut, ocpath.Root().Interface(dut.Port(t, "port1").Name()).Counters().InPkts().State())
 	t.Logf("DUT port 1 in-pkts: %d", got)
 	if got < wantTxPkts {
@@ -369,7 +369,7 @@ func TestIPv4Entry(t *testing.T) {
 			// counters are not erased, so have to accumulate the packets from previous subtests.
 			txPkts += otg.Telemetry().Flow("Flow").Counters().OutPkts().Get(t)
 			rxPkts += otg.Telemetry().Flow("Flow").Counters().InPkts().Get(t)
-			testCounters(t, ate, dut, txPkts, rxPkts)
+			testCounters(t, dut, txPkts, rxPkts)
 
 			gribic.Flush(context.Background(), &gribipb.FlushRequest{
 				NetworkInstance: &gribipb.FlushRequest_All{All: &gribipb.Empty{}},
