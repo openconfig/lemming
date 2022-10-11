@@ -211,9 +211,10 @@ func updateCacheNotifs(cache *cache.Cache, nos []*gpb.Notification, target, orig
 // set updates the datastore and intended configuration with the SetRequest,
 // allowing read-only values to be updated.
 //
-// update indicates whether to update the cache with the values from the set
-// request.
 // set returns a gRPC error with the correct code and shouldn't be wrapped again.
+//
+// - timestamp specifies the timestamp of the values that are to be updated in
+// the gNMI cache.
 func set(schema *ytypes.Schema, cache *cache.Cache, target string, req *gpb.SetRequest, preferShadowPath bool, validators []func(*oc.Root) error, timestamp int64) error {
 	prevRoot, err := ygot.DeepCopy(schema.Root)
 	if err != nil {
@@ -255,7 +256,20 @@ func set(schema *ytypes.Schema, cache *cache.Cache, target string, req *gpb.SetR
 	return nil
 }
 
-// Set is a prototype for a gNMI Set operation.
+// Set implements lemming's gNMI Set operation.
+//
+// If the given SetRequest is schema compliant AND passes higher-level
+// validators, then the gNMI datastore is updated. Otherwise, the gNMI
+// datastore is untouched and an error is returned.
+//
+// Context metadata modifies the behaviour of this API.
+// - GNMIModeMetadataKey specifies whether config or state leaves are expected
+// in the SetRequest. This is an exclusive expectation: either the update
+// consists solely of config values (a user request), or state values (an
+// internal goroutine update).
+// - TimestampMetadataKey specifies the timestamp for state leaf updates. This
+// is to support cases where the data comes from an externally-timestamped
+// source.
 func (s *Server) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResponse, error) {
 	timestamp := time.Now().UnixNano()
 	// Use ConfigMode by default so that external users don't need to set metadata.
