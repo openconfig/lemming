@@ -3,7 +3,7 @@ nodes: {
     name: "lemming"
     type: LEMMING
     config: {
-        args: "--target=dut"
+        args: "--target=lemming"
         args: "--enable_dataplane"
         args: "--enable_tls"
         args: "--alsologtostderr"
@@ -14,7 +14,7 @@ nodes: {
     name: "lemming2"
     type: LEMMING
     config: {
-        args: "--target=dut2"
+        args: "--target=lemming2"
         args: "--enable_dataplane"
         args: "--enable_tls"
         args: "--alsologtostderr"

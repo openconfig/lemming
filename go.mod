@@ -9,15 +9,15 @@ require (
 	github.com/google/gopacket v1.1.19
 	github.com/h-fam/errdiff v1.0.2
 	github.com/kentik/patricia v1.2.0
-	github.com/open-traffic-generator/snappi/gosnappi v0.9.4
+	github.com/open-traffic-generator/snappi/gosnappi v0.9.5
 	github.com/openconfig/gnmi v0.0.0-20220920173703-480bf53a74d2
-	github.com/openconfig/gnoi v0.0.0-20220912141010-93cdd9ae9f35
+	github.com/openconfig/gnoi v0.0.0-20221010125524-c3391aacaa1b
 	github.com/openconfig/gnsi v0.0.0-20220906172358-1eda48d90de6
 	github.com/openconfig/goyang v1.1.0
 	github.com/openconfig/gribi v0.1.1-0.20220622162620-08d53dffce45
 	github.com/openconfig/gribigo v0.0.0-20220802181317-805e943d8714
 	github.com/openconfig/kne v0.1.6
-	github.com/openconfig/ondatra v0.0.0-20220916181150-cf83474b5941
+	github.com/openconfig/ondatra v0.0.0-20221010171617-7685d009fb88
 	github.com/openconfig/ygnmi v0.3.1
 	github.com/openconfig/ygot v0.25.2
 	github.com/osrg/gobgp/v3 v3.5.0
@@ -26,8 +26,8 @@ require (
 	github.com/spf13/viper v1.13.0
 	github.com/vishvananda/netlink v1.1.1-0.20210330154013-f5de75959ad5
 	golang.org/x/exp v0.0.0-20221002003631-540bb7301a08
-	golang.org/x/sys v0.0.0-20220915200043-7b5979e65e41
-	google.golang.org/grpc v1.49.0
+	golang.org/x/sys v0.0.0-20221010170243-090e33056c14
+	google.golang.org/grpc v1.50.0
 	google.golang.org/protobuf v1.28.1
 	k8s.io/api v0.24.3
 	k8s.io/apimachinery v0.24.3
@@ -131,7 +131,7 @@ require (
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/spf13/afero v1.9.2 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
-	github.com/spf13/cobra v1.5.0 // indirect
+	github.com/spf13/cobra v1.6.0 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/srl-labs/srl-controller v0.4.2 // indirect
 	github.com/srl-labs/srlinux-scrapli v0.5.0 // indirect
@@ -145,14 +145,14 @@ require (
 	go.uber.org/zap v1.19.1 // indirect
 	go.universe.tf/metallb v0.13.5 // indirect
 	golang.org/x/crypto v0.0.0-20220518034528-6f7dac969898 // indirect
-	golang.org/x/net v0.0.0-20220909164309-bea034e7d591 // indirect
+	golang.org/x/net v0.0.0-20221004154528-8021a29435af // indirect
 	golang.org/x/oauth2 v0.0.0-20220411215720-9780585627b5 // indirect
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
-	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/text v0.3.8 // indirect
 	golang.org/x/time v0.0.0-20220210224613-90d013bbcef8 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.2.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/genproto v0.0.0-20220916172020-2692e8806bfa // indirect
+	google.golang.org/genproto v0.0.0-20221010155953-15ba04fc1c0e // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

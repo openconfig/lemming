@@ -11,7 +11,7 @@ fi
 
 DIR=$(pwd)
 cat > config.yaml << EOF
-topology: $DIR/topo.pb.txt
+topology: $DIR/$1
 kubecfg: $HOME/.kube/config
 cli: $HOME/go/bin/kne
 username: foo
