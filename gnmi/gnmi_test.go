@@ -21,6 +21,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -304,7 +305,7 @@ func TestSet(t *testing.T) {
 
 		client := gpb.NewGNMIClient(conn)
 
-		if _, err := client.Set(ctx, &gpb.SetRequest{
+		if _, err := client.Set(metadata.AppendToOutgoingContext(ctx, TimestampMetadataKey, strconv.FormatInt(42, 10)), &gpb.SetRequest{
 			Prefix: mustTargetPath("local", "", true),
 			Replace: []*gpb.Update{{
 				Path: path,
@@ -371,6 +372,18 @@ func TestSet(t *testing.T) {
 		T: SYNC,
 	}}, cmpopts.IgnoreFields(upd{}, "TS")); diff != "" {
 		t.Fatalf("did not get expected updates, diff(-got,+want)\n:%s", diff)
+	}
+
+	// Test that timestamp is not 42: we don't want the timestamp metadata to affect config values.
+	if cmp.Equal(got, []*upd{{
+		T:    VAL,
+		TS:   42,
+		Path: pathStr,
+		Val:  "world",
+	}, {
+		T: SYNC,
+	}}) {
+		t.Fatalf("Expected error -- timestamp metadata should be ignored but it is not ignored.")
 	}
 }
 
@@ -505,7 +518,7 @@ func TestSetState(t *testing.T) {
 		client := gpb.NewGNMIClient(conn)
 
 		ctx = metadata.AppendToOutgoingContext(ctx, GNMIModeMetadataKey, string(StateMode))
-		if _, err := client.Set(ctx, &gpb.SetRequest{
+		if _, err := client.Set(metadata.AppendToOutgoingContext(ctx, TimestampMetadataKey, strconv.FormatInt(42, 10)), &gpb.SetRequest{
 			Prefix: mustTargetPath("local", "", true),
 			Replace: []*gpb.Update{{
 				Path: path,
@@ -570,7 +583,7 @@ func TestSetState(t *testing.T) {
 		Val:  "world",
 	}, {
 		T: SYNC,
-	}}, cmpopts.IgnoreFields(upd{}, "TS")); diff != "" {
+	}}); diff != "" {
 		t.Fatalf("did not get expected updates, diff(-got,+want)\n:%s", diff)
 	}
 }

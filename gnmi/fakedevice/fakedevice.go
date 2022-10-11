@@ -19,6 +19,7 @@ import (
 	"time"
 
 	log "github.com/golang/glog"
+	"github.com/openconfig/lemming/gnmi"
 	"github.com/openconfig/lemming/gnmi/gnmiclient"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
@@ -33,7 +34,7 @@ const (
 func NewBootTimeTask() *reconciler.BuiltReconciler {
 	rec := reconciler.NewBuilder("boot time").
 		WithStart(func(ctx context.Context, c *ygnmi.Client) error {
-			_, err := gnmiclient.Replace(ctx, c, ocpath.Root().System().BootTime().State(), uint64(time.Now().UnixNano()))
+			_, err := gnmiclient.Replace(gnmi.AddTimestampMetadata(ctx, time.Now().UnixNano()), c, ocpath.Root().System().BootTime().State(), uint64(time.Now().UnixNano()))
 			return err
 		}).Build()
 
