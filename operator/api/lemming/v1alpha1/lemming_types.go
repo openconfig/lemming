@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -32,7 +33,9 @@ type LemmingSpec struct {
 	// Args are the args to pass to the command.
 	Args []string `json:"args,omitempty"`
 	// Env are the environment variables to set for the container.
-	Env map[string]string `json:"env,omitempty"`
+	// +listType=map
+	// +listMapKey=name
+	Env []corev1.EnvVar `json:"env,omitempty"`
 	// ConfigPath is the mount point for configuration inside the pod.
 	ConfigPath string `json:"configPath,omitempty"`
 	// ConfigFile is the default configuration file name for the pod.
@@ -41,6 +44,15 @@ type LemmingSpec struct {
 	InitImage string `json:"initImage,omitempty"`
 	// Ports are ports to create on the service.
 	Ports map[string]ServicePort `json:"ports,omitempty"`
+	// InterfaceCount is number of interfaces to be attached to the pod.
+	// +optional
+	InterfaceCount int `json:"interfaceCount"`
+	// InitSleep is the time sleep in the init container
+	// +optional
+	InitSleep int `json:"initSleep"`
+	// Resources are the K8s resources to allocate to lemming container.
+	// +optional
+	Resources corev1.ResourceRequirements `json:"resources"`
 }
 
 type ServicePort struct {
