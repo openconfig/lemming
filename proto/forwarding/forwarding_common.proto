@@ -270,7 +270,7 @@ enum CounterId {
   COUNTER_ID_MAX = 255;  // Maximum counter id.
 }
 
-// An ObjectCountesRequest is a request for counters of an object
+// An ObjectCountersRequest is a request for counters of an object
 // associated with the specified id.
 message ObjectCountersRequest {
   ObjectId object_id = 1;

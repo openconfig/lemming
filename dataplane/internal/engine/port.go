@@ -43,7 +43,7 @@ func CreateExternalPort(ctx context.Context, c fwdpb.ServiceClient, name string)
 		return err
 	}
 	update := &fwdpb.PortUpdateRequest{
-		ContextId: &fwdpb.ContextId{Id: contextID},
+		ContextId: &fwdpb.ContextId{Id: DefaultContextID},
 		PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: name}},
 		Update: &fwdpb.PortUpdateDesc{
 			Port: &fwdpb.PortUpdateDesc_Kernel{
@@ -94,7 +94,7 @@ func CreateLocalPort(ctx context.Context, c fwdpb.ServiceClient, name string, fd
 		return err
 	}
 	update := &fwdpb.PortUpdateRequest{
-		ContextId: &fwdpb.ContextId{Id: contextID},
+		ContextId: &fwdpb.ContextId{Id: DefaultContextID},
 		PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: name}},
 		Update: &fwdpb.PortUpdateDesc{
 			Port: &fwdpb.PortUpdateDesc_Kernel{
@@ -127,7 +127,7 @@ func CreateLocalPort(ctx context.Context, c fwdpb.ServiceClient, name string, fd
 // createKernelPort creates a port using the "Kernel" dataplane type (socket API).
 func createKernelPort(ctx context.Context, c fwdpb.ServiceClient, name string) error {
 	port := &fwdpb.PortCreateRequest{
-		ContextId: &fwdpb.ContextId{Id: contextID},
+		ContextId: &fwdpb.ContextId{Id: DefaultContextID},
 		Port: &fwdpb.PortDesc{
 			PortType: fwdpb.PortType_PORT_TYPE_KERNEL,
 			PortId: &fwdpb.PortId{
@@ -162,7 +162,7 @@ func createKernelPort(ctx context.Context, c fwdpb.ServiceClient, name string) e
 // createKernelPort creates a port using the "TAP" dataplane type (tap file API) and returns the fd to read/write from.
 func createTapPort(ctx context.Context, c fwdpb.ServiceClient, name string, fd int) error {
 	port := &fwdpb.PortCreateRequest{
-		ContextId: &fwdpb.ContextId{Id: contextID},
+		ContextId: &fwdpb.ContextId{Id: DefaultContextID},
 		Port: &fwdpb.PortDesc{
 			PortType: fwdpb.PortType_PORT_TYPE_TAP,
 			PortId: &fwdpb.PortId{

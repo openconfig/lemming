@@ -220,6 +220,21 @@ func awaitTimeout(ctx context.Context, c *fluent.GRIBIClient, t testing.TB, time
 	return c.Await(subctx, t)
 }
 
+// testCounters test packet counters and should be called after testTraffic
+func testCounters(t *testing.T, dut *ondatra.DUTDevice, wantTxPkts, wantRxPkts uint64) {
+	got := gnmi.Get(t, dut, ocpath.Root().Interface(dut.Port(t, "port1").Name()).Counters().InPkts().State())
+	t.Logf("DUT port 1 in-pkts: %d", got)
+	if got < wantTxPkts {
+		t.Errorf("DUT got less packets (%d) than OTG sent (%d)", got, wantTxPkts)
+	}
+
+	got = gnmi.Get(t, dut, ocpath.Root().Interface(dut.Port(t, "port2").Name()).Counters().OutPkts().State())
+	t.Logf("DUT port 2 out-pkts: %d", got)
+	if got < wantRxPkts {
+		t.Errorf("DUT got sent less packets (%d) than OTG received (%d)", got, wantRxPkts)
+	}
+}
+
 // TestIPv4Entry tests a single IPv4Entry forwarding entry.
 func TestIPv4Entry(t *testing.T) {
 	ctx := context.Background()
@@ -314,6 +329,7 @@ func TestIPv4Entry(t *testing.T) {
 		},
 	}}
 	for _, tc := range cases {
+		var txPkts, rxPkts uint64
 		t.Run(tc.desc, func(t *testing.T) {
 			gribic := dut.RawAPIs().GRIBI().Default(t)
 			c := fluent.NewClient()
@@ -348,6 +364,13 @@ func TestIPv4Entry(t *testing.T) {
 			if loss > 1 {
 				t.Errorf("Loss: got %g, want <= 1", loss)
 			}
+
+			otg := ate.OTG()
+			// counters are not erased, so have to accumulate the packets from previous subtests.
+			txPkts += otg.Telemetry().Flow("Flow").Counters().OutPkts().Get(t)
+			rxPkts += otg.Telemetry().Flow("Flow").Counters().InPkts().Get(t)
+			testCounters(t, dut, txPkts, rxPkts)
+
 			gribic.Flush(context.Background(), &gribipb.FlushRequest{
 				NetworkInstance: &gribipb.FlushRequest_All{All: &gribipb.Empty{}},
 			})
