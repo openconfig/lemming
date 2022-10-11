@@ -46,6 +46,14 @@ const (
 	TimestampMetadataKey = "gnmi-timestamp"
 )
 
+// appendToIncomingContext returns a new context with the provided kv merged
+// with any existing metadata in the context. Please refer to the documentation
+// of Pairs for a description of kv.
+func appendToIncomingContext(ctx context.Context, kv ...string) context.Context {
+	md, _ := metadata.FromIncomingContext(ctx)
+	return metadata.NewIncomingContext(ctx, metadata.Join(md, metadata.Pairs(kv...)))
+}
+
 // AddTimestampMetadata adds a gNMI timestamp metadata to the context.
 //
 // - ctx is the context to be used for accessing lemming's internal datastore.
@@ -55,7 +63,7 @@ const (
 // internal lemming gNMI server. This is because it adds an incoming rather
 // than an outgoing context metadata to skip regular protobuf handling.
 func AddTimestampMetadata(ctx context.Context, timestamp int64) context.Context {
-	return metadata.NewIncomingContext(ctx, metadata.Pairs(TimestampMetadataKey, strconv.FormatInt(timestamp, 10)))
+	return appendToIncomingContext(ctx, TimestampMetadataKey, strconv.FormatInt(timestamp, 10))
 }
 
 // new creates a state-based gNMI client for the gNMI cache.
@@ -77,7 +85,7 @@ type localClient struct {
 
 // Set uses the datastore client for Set, instead of the public cache endpoint.
 func (c *localClient) Set(ctx context.Context, in *gpb.SetRequest, _ ...grpc.CallOption) (*gpb.SetResponse, error) {
-	return c.srv.Set(metadata.NewIncomingContext(ctx, metadata.Pairs(GNMIModeMetadataKey, string(c.gnmiMode))), in)
+	return c.srv.Set(appendToIncomingContext(ctx, GNMIModeMetadataKey, string(c.gnmiMode)), in)
 }
 
 // Subscribe implements gNMI Subscribe, by calling a gNMI server directly.
