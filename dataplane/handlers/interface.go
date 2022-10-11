@@ -21,6 +21,7 @@ import (
 	"net"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/openconfig/lemming/dataplane/internal/engine"
 	"github.com/openconfig/lemming/dataplane/internal/kernel"
@@ -129,6 +130,52 @@ func (ni *Interface) Start(ctx context.Context) error {
 		// TODO: handle error
 		if _, err := watcher.Await(); err != nil {
 			log.Warningf("interface watch err: %v", err)
+		}
+	}()
+
+	// Gothread for updating counters.
+	tick := time.NewTicker(time.Second)
+	go func() {
+		// Design comment:
+		// This polling can be eliminated if either the forwarding
+		// service supported streaming the counters, or if somehow the
+		// gnmi cache were able to forward queries to prompt the data
+		// producer to populate the leaf.
+		//
+		// However, given counters are likely frequently-updated values
+		// anyways, it may be fine for counter values to be polled.
+		for range tick.C {
+			ni.stateMu.RLock()
+			var intfNames []string
+			for intfName := range ni.state {
+				// TODO(wenbli): Support interface state deletion when interface is deleted.
+				intfNames = append(intfNames, intfName)
+			}
+			ni.stateMu.RUnlock()
+			for _, intfName := range intfNames {
+				countersReply, err := ni.fwd.ObjectCounters(ctx, &fwdpb.ObjectCountersRequest{
+					ObjectId:  &fwdpb.ObjectId{Id: intfName},
+					ContextId: &fwdpb.ContextId{Id: engine.DefaultContextID},
+				})
+				log.V(1).Infof("querying counters for interface %q, got %v", intfName, countersReply)
+				if err != nil {
+					log.Errorf("interface handler: could not retrieve counter for interface %q", intfName)
+					continue
+				}
+				for _, counter := range countersReply.Counters {
+					switch counter.Id {
+					case fwdpb.CounterId_COUNTER_ID_RX_PACKETS:
+						// TODO(wenbli): Perhaps should make a logging version of ygnmi.
+						if _, err := gnmiclient.Replace(ctx, ni.c, ocpath.Root().Interface(intfName).Counters().InPkts().State(), counter.Value); err != nil {
+							log.Errorf("interface handler: %v", err)
+						}
+					case fwdpb.CounterId_COUNTER_ID_TX_PACKETS:
+						if _, err := gnmiclient.Replace(ctx, ni.c, ocpath.Root().Interface(intfName).Counters().OutPkts().State(), counter.Value); err != nil {
+							log.Errorf("interface handler: %v", err)
+						}
+					}
+				}
+			}
 		}
 	}()
 

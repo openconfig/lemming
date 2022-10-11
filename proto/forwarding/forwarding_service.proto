@@ -66,6 +66,7 @@ service Service {
   rpc ObjectList(ObjectListRequest) returns (ObjectListReply) {}
 
   // ObjectCounters retrieves all the counters associated on the object.
+  // TODO(wenbli): Consider adding a streaming service for counters.
   rpc ObjectCounters(ObjectCountersRequest) returns (ObjectCountersReply) {}
 
   // Operations on tables.

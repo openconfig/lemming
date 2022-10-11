@@ -25,7 +25,7 @@ import (
 )
 
 const (
-	contextID        = "default"
+	DefaultContextID = "default"
 	fibV4Table       = "fib-v4"
 	fibV6Table       = "fib-v6"
 	srcMACTable      = "port-mac"
@@ -52,14 +52,14 @@ func mustParseHex(hexStr string) []byte {
 // SetupForwardingTables creates the forwarding tables.
 func SetupForwardingTables(ctx context.Context, c fwdpb.ServiceClient) error {
 	_, err := c.ContextCreate(context.Background(), &fwdpb.ContextCreateRequest{
-		ContextId: &fwdpb.ContextId{Id: contextID},
+		ContextId: &fwdpb.ContextId{Id: DefaultContextID},
 	})
 	if err != nil {
 		return err
 	}
 
 	v4FIB := &fwdpb.TableCreateRequest{
-		ContextId: &fwdpb.ContextId{Id: contextID},
+		ContextId: &fwdpb.ContextId{Id: DefaultContextID},
 		Desc: &fwdpb.TableDesc{
 			TableType: fwdpb.TableType_TABLE_TYPE_PREFIX,
 			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: fibV4Table}},
@@ -79,7 +79,7 @@ func SetupForwardingTables(ctx context.Context, c fwdpb.ServiceClient) error {
 		return err
 	}
 	v6FIB := &fwdpb.TableCreateRequest{
-		ContextId: &fwdpb.ContextId{Id: contextID},
+		ContextId: &fwdpb.ContextId{Id: DefaultContextID},
 		Desc: &fwdpb.TableDesc{
 			TableType: fwdpb.TableType_TABLE_TYPE_PREFIX,
 			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: fibV6Table}},
@@ -99,7 +99,7 @@ func SetupForwardingTables(ctx context.Context, c fwdpb.ServiceClient) error {
 		return err
 	}
 	portMAC := &fwdpb.TableCreateRequest{
-		ContextId: &fwdpb.ContextId{Id: contextID},
+		ContextId: &fwdpb.ContextId{Id: DefaultContextID},
 		Desc: &fwdpb.TableDesc{
 			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
 			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: srcMACTable}},
@@ -119,7 +119,7 @@ func SetupForwardingTables(ctx context.Context, c fwdpb.ServiceClient) error {
 		return err
 	}
 	neighbor := &fwdpb.TableCreateRequest{
-		ContextId: &fwdpb.ContextId{Id: contextID},
+		ContextId: &fwdpb.ContextId{Id: DefaultContextID},
 		Desc: &fwdpb.TableDesc{
 			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
 			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: neighborTable}},
@@ -159,7 +159,7 @@ func createFIBSelector(ctx context.Context, c fwdpb.ServiceClient) error {
 	}
 
 	etherType := &fwdpb.TableCreateRequest{
-		ContextId: &fwdpb.ContextId{Id: contextID},
+		ContextId: &fwdpb.ContextId{Id: DefaultContextID},
 		Desc: &fwdpb.TableDesc{
 			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
 			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: fibSelectorTable}},
@@ -175,7 +175,7 @@ func createFIBSelector(ctx context.Context, c fwdpb.ServiceClient) error {
 		return err
 	}
 	entries := &fwdpb.TableEntryAddRequest{
-		ContextId: &fwdpb.ContextId{Id: contextID},
+		ContextId: &fwdpb.ContextId{Id: DefaultContextID},
 		TableId: &fwdpb.TableId{
 			ObjectId: &fwdpb.ObjectId{
 				Id: fibSelectorTable,
@@ -230,7 +230,7 @@ func createFIBSelector(ctx context.Context, c fwdpb.ServiceClient) error {
 // createLayer2PuntTable creates a table to packets to punt at layer 2 (input port and mac dst).
 func createLayer2PuntTable(ctx context.Context, c fwdpb.ServiceClient) error {
 	arp := &fwdpb.TableCreateRequest{
-		ContextId: &fwdpb.ContextId{Id: contextID},
+		ContextId: &fwdpb.ContextId{Id: DefaultContextID},
 		Desc: &fwdpb.TableDesc{
 			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
 			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: arpPuntTable}},
@@ -250,7 +250,7 @@ func createLayer2PuntTable(ctx context.Context, c fwdpb.ServiceClient) error {
 		return err
 	}
 	entries := &fwdpb.TableEntryAddRequest{
-		ContextId: &fwdpb.ContextId{Id: contextID},
+		ContextId: &fwdpb.ContextId{Id: DefaultContextID},
 		TableId: &fwdpb.TableId{
 			ObjectId: &fwdpb.ObjectId{
 				Id: arpPuntTable,
@@ -282,7 +282,7 @@ func createLayer2PuntTable(ctx context.Context, c fwdpb.ServiceClient) error {
 		return err
 	}
 	layer2 := &fwdpb.TableCreateRequest{
-		ContextId: &fwdpb.ContextId{Id: contextID},
+		ContextId: &fwdpb.ContextId{Id: DefaultContextID},
 		Desc: &fwdpb.TableDesc{
 			TableType: fwdpb.TableType_TABLE_TYPE_PREFIX,
 			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: layer2PuntTable}},
@@ -321,7 +321,7 @@ func addLayer2PuntRule(ctx context.Context, c fwdpb.ServiceClient, portID uint64
 	binary.BigEndian.PutUint64(nidBytes, portID)
 
 	entries := &fwdpb.TableEntryAddRequest{
-		ContextId: &fwdpb.ContextId{Id: contextID},
+		ContextId: &fwdpb.ContextId{Id: DefaultContextID},
 		TableId: &fwdpb.TableId{
 			ObjectId: &fwdpb.ObjectId{
 				Id: layer2PuntTable,
@@ -366,7 +366,7 @@ func addLayer2PuntRule(ctx context.Context, c fwdpb.ServiceClient, portID uint64
 // createLayer3PuntTable creates a table controlling whether packets to punt at layer 3 (input port and IP dst).
 func createLayer3PuntTable(ctx context.Context, c fwdpb.ServiceClient) error {
 	multicast := &fwdpb.TableCreateRequest{
-		ContextId: &fwdpb.ContextId{Id: contextID},
+		ContextId: &fwdpb.ContextId{Id: DefaultContextID},
 		Desc: &fwdpb.TableDesc{
 			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
 			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: layer3PuntTable}},
@@ -404,7 +404,7 @@ func AddLayer3PuntRule(ctx context.Context, c fwdpb.ServiceClient, portName stri
 	log.Infof("adding layer3 punt rule: portName %s, id %d, ip %v", portName, portID, ip)
 
 	entries := &fwdpb.TableEntryAddRequest{
-		ContextId: &fwdpb.ContextId{Id: contextID},
+		ContextId: &fwdpb.ContextId{Id: DefaultContextID},
 		TableId: &fwdpb.TableId{
 			ObjectId: &fwdpb.ObjectId{
 				Id: layer3PuntTable,
@@ -490,7 +490,7 @@ func AddIPRoute(ctx context.Context, c fwdpb.ServiceClient, v4 bool, ip, mask, n
 
 	entry := &fwdpb.TableEntryAddRequest{
 		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: fib}},
-		ContextId: &fwdpb.ContextId{Id: contextID},
+		ContextId: &fwdpb.ContextId{Id: DefaultContextID},
 		EntryDesc: &fwdpb.EntryDesc{
 			Entry: &fwdpb.EntryDesc_Prefix{
 				Prefix: &fwdpb.PrefixEntryDesc{
@@ -535,7 +535,7 @@ func DeleteIPRoute(ctx context.Context, c fwdpb.ServiceClient, v4 bool, ip, mask
 	}
 	entry := &fwdpb.TableEntryRemoveRequest{
 		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: fib}},
-		ContextId: &fwdpb.ContextId{Id: contextID},
+		ContextId: &fwdpb.ContextId{Id: DefaultContextID},
 		EntryDesc: &fwdpb.EntryDesc{
 			Entry: &fwdpb.EntryDesc_Prefix{
 				Prefix: &fwdpb.PrefixEntryDesc{
@@ -559,7 +559,7 @@ func DeleteIPRoute(ctx context.Context, c fwdpb.ServiceClient, v4 bool, ip, mask
 func AddNeighbor(ctx context.Context, c fwdpb.ServiceClient, ip, mac []byte) error {
 	entry := &fwdpb.TableEntryAddRequest{
 		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: neighborTable}},
-		ContextId: &fwdpb.ContextId{Id: contextID},
+		ContextId: &fwdpb.ContextId{Id: DefaultContextID},
 		EntryDesc: &fwdpb.EntryDesc{
 			Entry: &fwdpb.EntryDesc_Exact{
 				Exact: &fwdpb.ExactEntryDesc{
@@ -596,7 +596,7 @@ func AddNeighbor(ctx context.Context, c fwdpb.ServiceClient, ip, mac []byte) err
 func RemoveNeighbor(ctx context.Context, c fwdpb.ServiceClient, ip []byte) error {
 	entry := &fwdpb.TableEntryRemoveRequest{
 		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: neighborTable}},
-		ContextId: &fwdpb.ContextId{Id: contextID},
+		ContextId: &fwdpb.ContextId{Id: DefaultContextID},
 		EntryDesc: &fwdpb.EntryDesc{
 			Entry: &fwdpb.EntryDesc_Exact{
 				Exact: &fwdpb.ExactEntryDesc{
@@ -624,7 +624,7 @@ func UpdatePortSrcMAC(ctx context.Context, c fwdpb.ServiceClient, portName strin
 
 	entry := &fwdpb.TableEntryAddRequest{
 		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: srcMACTable}},
-		ContextId: &fwdpb.ContextId{Id: contextID},
+		ContextId: &fwdpb.ContextId{Id: DefaultContextID},
 		EntryDesc: &fwdpb.EntryDesc{
 			Entry: &fwdpb.EntryDesc_Exact{
 				Exact: &fwdpb.ExactEntryDesc{
