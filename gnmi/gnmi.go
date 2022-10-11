@@ -18,6 +18,7 @@ package gnmi
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"sync"
 	"time"
 
@@ -107,7 +108,7 @@ func newServer(ctx context.Context, targetName string, enableSet bool, recs ...r
 		if err := ygot.PruneConfigFalse(configSchema.RootSchema(), configSchema.Root); err != nil {
 			return nil, fmt.Errorf("gnmi: %v", err)
 		}
-		updateCache(c.cache, configSchema.Root, nil, targetName, OpenConfigOrigin, true)
+		updateCache(c.cache, configSchema.Root, nil, targetName, OpenConfigOrigin, true, time.Now().UnixNano())
 	}
 
 	stateSchema, err := oc.Schema()
@@ -118,7 +119,7 @@ func newServer(ctx context.Context, targetName string, enableSet bool, recs ...r
 		if err := setupSchema(stateSchema); err != nil {
 			return nil, err
 		}
-		updateCache(c.cache, stateSchema.Root, nil, targetName, OpenConfigOrigin, true)
+		updateCache(c.cache, stateSchema.Root, nil, targetName, OpenConfigOrigin, true, time.Now().UnixNano())
 	}
 
 	for _, rec := range recs {
@@ -160,11 +161,11 @@ func setupSchema(schema *ytypes.Schema) error {
 //
 // If root is nil, then it is assumed the cache is empty, and the entirety of
 // the dirtyRoot is put into the cache.
-func updateCache(cache *cache.Cache, dirtyRoot, root ygot.GoStruct, target, origin string, preferShadowPath bool) error {
+func updateCache(cache *cache.Cache, dirtyRoot, root ygot.GoStruct, target, origin string, preferShadowPath bool, timestamp int64) error {
 	var nos []*gpb.Notification
 	if root == nil {
 		var err error
-		if nos, err = ygot.TogNMINotifications(dirtyRoot, time.Now().UnixNano(), ygot.GNMINotificationsConfig{
+		if nos, err = ygot.TogNMINotifications(dirtyRoot, timestamp, ygot.GNMINotificationsConfig{
 			UsePathElem: true,
 		}); err != nil {
 			return fmt.Errorf("gnmi: %v", err)
@@ -174,7 +175,7 @@ func updateCache(cache *cache.Cache, dirtyRoot, root ygot.GoStruct, target, orig
 		if err != nil {
 			return fmt.Errorf("gnmi: error while creating update notification for Set: %v", err)
 		}
-		n.Timestamp = time.Now().UnixNano()
+		n.Timestamp = timestamp
 		nos = append(nos, n)
 	}
 
@@ -213,7 +214,7 @@ func updateCacheNotifs(cache *cache.Cache, nos []*gpb.Notification, target, orig
 // update indicates whether to update the cache with the values from the set
 // request.
 // set returns a gRPC error with the correct code and shouldn't be wrapped again.
-func set(schema *ytypes.Schema, cache *cache.Cache, target string, req *gpb.SetRequest, preferShadowPath bool, validators []func(*oc.Root) error) error {
+func set(schema *ytypes.Schema, cache *cache.Cache, target string, req *gpb.SetRequest, preferShadowPath bool, validators []func(*oc.Root) error, timestamp int64) error {
 	prevRoot, err := ygot.DeepCopy(schema.Root)
 	if err != nil {
 		return status.Errorf(codes.Internal, "failed to ygot.DeepCopy the cached root object: %v", err)
@@ -248,7 +249,7 @@ func set(schema *ytypes.Schema, cache *cache.Cache, target string, req *gpb.SetR
 
 	success = true
 
-	if err := updateCache(cache, schema.Root, prevRoot, target, req.Prefix.Origin, preferShadowPath); err != nil {
+	if err := updateCache(cache, schema.Root, prevRoot, target, req.Prefix.Origin, preferShadowPath, timestamp); err != nil {
 		return status.Error(codes.Internal, err.Error())
 	}
 	return nil
@@ -256,6 +257,7 @@ func set(schema *ytypes.Schema, cache *cache.Cache, target string, req *gpb.SetR
 
 // Set is a prototype for a gNMI Set operation.
 func (s *Server) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResponse, error) {
+	timestamp := time.Now().UnixNano()
 	// Use ConfigMode by default so that external users don't need to set metadata.
 	gnmiMode := ConfigMode
 	md, ok := metadata.FromIncomingContext(ctx)
@@ -265,6 +267,14 @@ func (s *Server) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResponse
 			gnmiMode = ConfigMode
 		case slices.Contains(md.Get(GNMIModeMetadataKey), string(StateMode)):
 			gnmiMode = StateMode
+
+			timestampMD := md.Get(TimestampMetadataKey)
+			if len(timestampMD) > 0 {
+				var err error
+				if timestamp, err = strconv.ParseInt(timestampMD[0], 10, 64); err != nil {
+					return nil, status.Errorf(codes.InvalidArgument, "timestamp metadata specified in SetRequest cannot be parsed: %v", err)
+				}
+			}
 		}
 	}
 
@@ -280,7 +290,7 @@ func (s *Server) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResponse
 
 		// TODO(wenbli): Reject paths that try to modify read-only values.
 		// TODO(wenbli): Question: what to do if there are operational-state values in a container that is specified to be replaced or deleted?
-		err := set(s.configSchema, s.c.cache, s.c.name, req, true, s.validators)
+		err := set(s.configSchema, s.c.cache, s.c.name, req, true, s.validators, timestamp)
 
 		// TODO(wenbli): Currently the SetResponse is not filled.
 		return &gpb.SetResponse{
@@ -295,7 +305,7 @@ func (s *Server) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResponse
 			return s.UnimplementedGNMIServer.Set(ctx, req)
 		}
 		// TODO(wenbli): Reject values that modify config values. We only allow modifying state in this mode.
-		if err := set(s.stateSchema, s.c.cache, s.c.name, req, false, nil); err != nil {
+		if err := set(s.stateSchema, s.c.cache, s.c.name, req, false, nil, timestamp); err != nil {
 			return &gpb.SetResponse{}, err
 		}
 

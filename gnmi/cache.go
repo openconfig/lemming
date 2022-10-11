@@ -17,6 +17,7 @@ package gnmi
 import (
 	"context"
 	"io"
+	"strconv"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -38,7 +39,24 @@ const (
 	// StateMode indicates that the gNMI service will allow updates to
 	// operational state, but not intended configuration values.
 	StateMode Mode = "state"
+
+	// TimestampMetadataKey is the context metadata key used to specify a
+	// custom timestamp for the values in the SetRequest instead of using
+	// the time at which the SetRequest is received by the server.
+	TimestampMetadataKey = "gnmi-timestamp"
 )
+
+// AddTimestampMetadata adds a gNMI timestamp metadata to the context.
+//
+// - ctx is the context to be used for accessing lemming's internal datastore.
+// - timestamp is the number of nanoseconds since Epoch.
+//
+// NOTE: The output of this function should only be used to call into the
+// internal lemming gNMI server. This is because it adds an incoming rather
+// than an outgoing context metadata to skip regular protobuf handling.
+func AddTimestampMetadata(ctx context.Context, timestamp int64) context.Context {
+	return metadata.NewIncomingContext(ctx, metadata.Pairs(TimestampMetadataKey, strconv.FormatInt(timestamp, 10)))
+}
 
 // new creates a state-based gNMI client for the gNMI cache.
 // The client calls the server gRPC implementation with a custom streaming gRPC implementation
