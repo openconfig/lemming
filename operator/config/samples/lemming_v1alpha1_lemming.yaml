@@ -1,0 +1,6 @@
+apiVersion: lemming.openconfig.net/v1alpha1
+kind: Lemming
+metadata:
+  name: lemming-sample
+spec:
+  image: lemming:latest

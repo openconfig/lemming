@@ -1,0 +1,101 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.9.0
+  creationTimestamp: null
+  name: lemmings.lemming.openconfig.net
+spec:
+  group: lemming.openconfig.net
+  names:
+    kind: Lemming
+    listKind: LemmingList
+    plural: lemmings
+    singular: lemming
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Lemming is the Schema for the lemmings API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: LemmingSpec defines the desired state of Lemming.
+            properties:
+              args:
+                description: Args are the args to pass to the command.
+                items:
+                  type: string
+                type: array
+              command:
+                description: Command is the name of the executable to run.
+                type: string
+              configFile:
+                description: ConfigFile is the default configuration file name for
+                  the pod.
+                type: string
+              configPath:
+                description: ConfigPath is the mount point for configuration inside
+                  the pod.
+                type: string
+              env:
+                additionalProperties:
+                  type: string
+                description: Env are the environment variables to set for the container.
+                type: object
+              image:
+                description: Image is the container image to run.
+                type: string
+              initImage:
+                description: InitImage is the docker image to use as an init container
+                  for the pod.
+                type: string
+              ports:
+                additionalProperties:
+                  properties:
+                    innerPort:
+                      description: InnerPort is port on the container to expose.
+                      format: int32
+                      type: integer
+                    outerPort:
+                      description: OuterPort is port on the container to expose.
+                      format: int32
+                      type: integer
+                  required:
+                  - innerPort
+                  - outerPort
+                  type: object
+                description: Ports are ports to create on the service.
+                type: object
+            type: object
+          status:
+            description: LemmingStatus defines the observed state of Lemming
+            properties:
+              message:
+                description: Message describes why the lemming is in the current phase.
+                type: string
+              phase:
+                description: Phase is the overall status of the Lemming.
+                type: string
+            required:
+            - message
+            - phase
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

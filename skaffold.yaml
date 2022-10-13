@@ -1,0 +1,36 @@
+apiVersion: skaffold/v2beta29
+kind: Config
+metadata:
+  name: lemming-operator
+build:
+  artifacts:
+  - image: controller
+    docker:
+      dockerfile: Dockerfile.operator
+deploy:
+  kustomize:
+    paths:
+    - operator/config/default
+---
+apiVersion: skaffold/v2beta29
+kind: Config
+requires:
+  - configs: ["lemming-operator"]
+metadata:
+  name: lemming
+build:
+  artifacts:
+  - image: lemming
+    docker:
+      dockerfile: Dockerfile.lemming
+  local:
+    useBuildkit: true
+deploy:
+  kubectl:
+    manifests:
+    - operator/config/samples/lemming_v1alpha1_lemming.yaml
+resourceSelector:
+  allow:
+    - groupKind: "Lemming.lemming.openconfig.net"
+      image: [".*"]
+      labels: [".*"]
