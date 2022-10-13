@@ -4,3 +4,14 @@ metadata:
   name: lemming-sample
 spec:
   image: lemming:latest
+  initImage: us-west1-docker.pkg.dev/kne-external/kne/networkop/init-wait:ga
+  command: "/lemming/lemming"
+  args: ["--alsologtostderr"]
+  ports:
+    gnmi:
+      innerPort: 6030
+      outerPort: 6030
+    gribi:
+      innerPort: 6030
+      outerPort: 6031
+
