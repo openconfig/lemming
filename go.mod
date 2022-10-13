@@ -20,14 +20,15 @@ require (
 	github.com/openconfig/ondatra v0.0.0-20220916181150-cf83474b5941
 	github.com/openconfig/ygnmi v0.3.1
 	github.com/openconfig/ygot v0.25.2
-	github.com/osrg/gobgp/v3 v3.5.0
 	github.com/p4lang/p4runtime v1.3.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.13.0
 	github.com/vishvananda/netlink v1.1.1-0.20210330154013-f5de75959ad5
+	github.com/wenovus/gobgp/v3 v3.0.0-20221012192753-b075e5586c18
 	golang.org/x/exp v0.0.0-20221002003631-540bb7301a08
-	golang.org/x/sys v0.0.0-20220915200043-7b5979e65e41
-	google.golang.org/grpc v1.49.0
+	golang.org/x/net v0.0.0-20221004154528-8021a29435af
+	golang.org/x/sys v0.0.0-20221010170243-090e33056c14
+	google.golang.org/grpc v1.50.0
 	google.golang.org/protobuf v1.28.1
 	k8s.io/api v0.24.3
 	k8s.io/apimachinery v0.24.3
@@ -145,14 +146,13 @@ require (
 	go.uber.org/zap v1.19.1 // indirect
 	go.universe.tf/metallb v0.13.5 // indirect
 	golang.org/x/crypto v0.0.0-20220518034528-6f7dac969898 // indirect
-	golang.org/x/net v0.0.0-20220909164309-bea034e7d591 // indirect
 	golang.org/x/oauth2 v0.0.0-20220411215720-9780585627b5 // indirect
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
-	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/text v0.3.8 // indirect
 	golang.org/x/time v0.0.0-20220210224613-90d013bbcef8 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.2.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/genproto v0.0.0-20220916172020-2692e8806bfa // indirect
+	google.golang.org/genproto v0.0.0-20221010155953-15ba04fc1c0e // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

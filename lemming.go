@@ -76,7 +76,7 @@ func New(lis net.Listener, targetName string, opts ...grpc.ServerOption) (*Devic
 	recs := []reconciler.Reconciler{
 		fakedevice.NewSystemBaseTask(),
 		fakedevice.NewBootTimeTask(),
-		fakedevice.NewGoBGPTask(),
+		fakedevice.NewGoBGPTaskDecl(),
 	}
 
 	gnmiServer, err := fgnmi.New(s, targetName, recs...)
