@@ -184,14 +184,14 @@ func (r *LemmingReconciler) reconcilePod(ctx context.Context, lemming *lemmingv1
 	pod.Spec.Containers[0].Env = lemming.Spec.Env
 	pod.Spec.Containers[0].Resources = lemming.Spec.Resources
 
-	var hasVolume bool
+	var hasTLSVolume bool
 	for _, v := range pod.Spec.Volumes {
 		if v.Name == "tls" {
-			hasVolume = true
+			hasTLSVolume = true
 		}
 	}
 
-	if secretName != "" && !hasVolume {
+	if secretName != "" && !hasTLSVolume {
 		pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
 			Name: "tls",
 			VolumeSource: corev1.VolumeSource{
