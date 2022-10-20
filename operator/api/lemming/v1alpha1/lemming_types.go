@@ -53,8 +53,27 @@ type LemmingSpec struct {
 	// Resources are the K8s resources to allocate to lemming container.
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resources"`
+	// TLS is the configuration the key/certs to use for management.
+	// +optional
+	TLS TLSSpec `json:"tls"`
 }
 
+// TLSSpec is the configuration the key/certs to use for management.
+type TLSSpec struct {
+	// SelfSigned generates a new self signed certificate.
+	// +optional
+	SelfSigned SelfSignedSpec `json:"selfSigned"`
+}
+
+// SelfSignedSpec is the configuration to generate a self-signed cert.
+type SelfSignedSpec struct {
+	/// Common name to set in the cert.
+	CommonName string `json:"commonName"`
+	// RSA keysize to use for key generation.
+	KeySize int `json:"keySize"`
+}
+
+// ServicePort describes an external L4 port on the device.
 type ServicePort struct {
 	// InnerPort is port on the container to expose.
 	InnerPort int32 `json:"innerPort"`

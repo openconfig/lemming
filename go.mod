@@ -9,15 +9,15 @@ require (
 	github.com/google/gopacket v1.1.19
 	github.com/h-fam/errdiff v1.0.2
 	github.com/kentik/patricia v1.2.0
-	github.com/open-traffic-generator/snappi/gosnappi v0.9.4
+	github.com/open-traffic-generator/snappi/gosnappi v0.9.5
 	github.com/openconfig/gnmi v0.0.0-20220920173703-480bf53a74d2
-	github.com/openconfig/gnoi v0.0.0-20220912141010-93cdd9ae9f35
+	github.com/openconfig/gnoi v0.0.0-20221010125524-c3391aacaa1b
 	github.com/openconfig/gnsi v0.0.0-20220906172358-1eda48d90de6
 	github.com/openconfig/goyang v1.1.0
 	github.com/openconfig/gribi v0.1.1-0.20220622162620-08d53dffce45
 	github.com/openconfig/gribigo v0.0.0-20220802181317-805e943d8714
 	github.com/openconfig/kne v0.1.6
-	github.com/openconfig/ondatra v0.0.0-20220916181150-cf83474b5941
+	github.com/openconfig/ondatra v0.0.0-20221010171617-7685d009fb88
 	github.com/openconfig/ygnmi v0.3.1
 	github.com/openconfig/ygot v0.25.2
 	github.com/p4lang/p4runtime v1.3.0
@@ -132,7 +132,7 @@ require (
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/spf13/afero v1.9.2 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
-	github.com/spf13/cobra v1.5.0 // indirect
+	github.com/spf13/cobra v1.6.0 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/srl-labs/srl-controller v0.4.2 // indirect
 	github.com/srl-labs/srlinux-scrapli v0.5.0 // indirect

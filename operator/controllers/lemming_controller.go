@@ -18,7 +18,12 @@ package controllers
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"crypto/x509/pkix"
 	"fmt"
+	"math/big"
 	"reflect"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -43,8 +48,7 @@ type LemmingReconciler struct {
 //+kubebuilder:rbac:groups=lemming.openconfig.net,resources=lemmings,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=lemming.openconfig.net,resources=lemmings/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=lemming.openconfig.net,resources=lemmings/finalizers,verbs=update
-//+kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=core,resources=pods;services;secrets,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -59,7 +63,18 @@ func (r *LemmingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	if err := r.reconcilePod(ctx, lemming); err != nil {
+	secret, err := r.reconcileSecrets(ctx, lemming)
+	if err != nil {
+		log.Error(err, "unable to get reconcile secret")
+		return ctrl.Result{}, err
+	}
+	var secretName string
+	if secret != nil {
+		secretName = secret.GetName()
+	}
+
+	pod, err := r.reconcilePod(ctx, lemming, secretName)
+	if err != nil {
 		log.Error(err, "unable to get reconcile pod")
 		return ctrl.Result{}, err
 	}
@@ -69,10 +84,83 @@ func (r *LemmingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, err
 	}
 
+	switch pod.Status.Phase {
+	case corev1.PodRunning:
+		lemming.Status.Phase = lemmingv1alpha1.Running
+	case corev1.PodFailed:
+		lemming.Status.Phase = lemmingv1alpha1.Failed
+	default:
+		lemming.Status.Phase = lemmingv1alpha1.Unknown
+	}
+	lemming.Status.Message = fmt.Sprintf("Pod Details: %s", pod.Status.Message)
+	if err := r.Status().Update(ctx, lemming); err != nil {
+		log.Error(err, "unable to update lemming status")
+		return ctrl.Result{}, err
+	}
+
 	return ctrl.Result{}, nil
 }
 
-func (r *LemmingReconciler) reconcilePod(ctx context.Context, lemming *lemmingv1alpha1.Lemming) error {
+func (r *LemmingReconciler) reconcileSecrets(ctx context.Context, lemming *lemmingv1alpha1.Lemming) (*corev1.Secret, error) {
+	secretName := fmt.Sprintf("%s-tls", lemming.Name)
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      secretName,
+			Namespace: lemming.Namespace,
+		},
+	}
+	err := r.Get(ctx, client.ObjectKeyFromObject(secret), secret)
+	if err != nil && !apierrors.IsNotFound(err) {
+		return nil, err
+	}
+
+	if !apierrors.IsNotFound(err) {
+		if lemming.Spec.TLS.SelfSigned == (lemmingv1alpha1.SelfSignedSpec{}) {
+			return nil, r.Delete(ctx, secret)
+		}
+		return secret, nil
+	}
+
+	if lemming.Spec.TLS.SelfSigned != (lemmingv1alpha1.SelfSignedSpec{}) {
+		data, err := createKeyPair(lemming.Spec.TLS.SelfSigned.KeySize, lemming.Spec.TLS.SelfSigned.CommonName)
+		if err != nil {
+			return nil, err
+		}
+		secret.Data = data
+		secret.Type = corev1.SecretTypeTLS
+		return secret, r.Create(ctx, secret)
+	}
+	return secret, nil
+}
+
+func createKeyPair(keySize int, commonName string) (map[string][]byte, error) {
+	privKey, err := rsa.GenerateKey(rand.Reader, keySize)
+	if err != nil {
+		return nil, err
+	}
+	tmpl := &x509.Certificate{
+		SerialNumber: big.NewInt(1234),
+		Subject: pkix.Name{
+			CommonName: commonName,
+		},
+	}
+
+	cert, err := x509.CreateCertificate(rand.Reader, tmpl, tmpl, &privKey.PublicKey, privKey)
+	if err != nil {
+		return nil, err
+	}
+
+	key, err := x509.MarshalPKCS8PrivateKey(privKey)
+	if err != nil {
+		return nil, err
+	}
+	return map[string][]byte{
+		"tls.crt": cert,
+		"tls.key": key,
+	}, nil
+}
+
+func (r *LemmingReconciler) reconcilePod(ctx context.Context, lemming *lemmingv1alpha1.Lemming, secretName string) (*corev1.Pod, error) {
 	log := log.FromContext(ctx)
 	pod := &corev1.Pod{}
 	err := r.Get(ctx, types.NamespacedName{Name: lemming.Name, Namespace: lemming.Namespace}, pod)
@@ -81,11 +169,11 @@ func (r *LemmingReconciler) reconcilePod(ctx context.Context, lemming *lemmingv1
 	if apierrors.IsNotFound(err) {
 		log.Info("new pod, creating initial spec")
 		if err := r.setupInitialPod(pod, lemming); err != nil {
-			return fmt.Errorf("failed to setup initial deployment: %v", err)
+			return nil, fmt.Errorf("failed to setup initial pod: %v", err)
 		}
 		newPod = true
 	} else if err != nil {
-		return err
+		return nil, err
 	}
 
 	oldPodSpec := pod.Spec.DeepCopy()
@@ -96,19 +184,42 @@ func (r *LemmingReconciler) reconcilePod(ctx context.Context, lemming *lemmingv1
 	pod.Spec.Containers[0].Env = lemming.Spec.Env
 	pod.Spec.Containers[0].Resources = lemming.Spec.Resources
 
+	var hasTLSVolume bool
+	for _, v := range pod.Spec.Volumes {
+		if v.Name == "tls" {
+			hasTLSVolume = true
+		}
+	}
+
+	if secretName != "" && !hasTLSVolume {
+		pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
+			Name: "tls",
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: secretName,
+				},
+			},
+		})
+		pod.Spec.Containers[0].VolumeMounts = append(pod.Spec.Containers[0].VolumeMounts, corev1.VolumeMount{
+			Name:      "tls",
+			ReadOnly:  true,
+			MountPath: "/certs",
+		})
+	}
+
 	if newPod {
-		return r.Create(ctx, pod)
+		return pod, r.Create(ctx, pod)
 	}
 
 	if reflect.DeepEqual(oldPodSpec, &pod.Spec) {
 		log.Info("pod unchanged, doing nothing")
-		return nil
+		return pod, nil
 	}
 	// Pods are mostly immutable, so recreate it if the spec changed.
 	if err := r.Delete(ctx, pod, client.PropagationPolicy(metav1.DeletePropagationForeground)); err != nil {
-		return err
+		return nil, err
 	}
-	return r.Create(ctx, pod)
+	return pod, r.Create(ctx, pod)
 }
 
 // setupInitialPod creates the initial pod configuration for fields that don't change.

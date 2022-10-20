@@ -14,4 +14,7 @@ spec:
     gribi:
       innerPort: 6030
       outerPort: 6031
-
+  tls:
+    selfSigned:
+      commonName: "lemming-sample"
+      keySize: 2048

@@ -175,6 +175,7 @@ spec:
                 type: integer
               ports:
                 additionalProperties:
+                  description: ServicePort describes an external L4 port on the device.
                   properties:
                     innerPort:
                       description: InnerPort is port on the container to expose.
@@ -215,6 +216,23 @@ spec:
                       resources required. If Requests is omitted for a container,
                       it defaults to Limits if that is explicitly specified, otherwise
                       to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                    type: object
+                type: object
+              tls:
+                description: TLS is the configuration the key/certs to use for management.
+                properties:
+                  selfSigned:
+                    description: SelfSigned generates a new self signed certificate.
+                    properties:
+                      commonName:
+                        description: / Common name to set in the cert.
+                        type: string
+                      keySize:
+                        description: RSA keysize to use for key generation.
+                        type: integer
+                    required:
+                    - commonName
+                    - keySize
                     type: object
                 type: object
             type: object
