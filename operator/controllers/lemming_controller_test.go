@@ -70,6 +70,12 @@ func TestReconcile(t *testing.T) {
 						OuterPort: 5678,
 					},
 				},
+				TLS: lemmingv1alpha1.TLSSpec{
+					SelfSigned: lemmingv1alpha1.SelfSignedSpec{
+						KeySize:    2048,
+						CommonName: "lemming",
+					},
+				},
 				InterfaceCount: 1,
 				InitSleep:      1,
 				Resources: corev1.ResourceRequirements{
@@ -120,6 +126,19 @@ func TestReconcile(t *testing.T) {
 					Resources: corev1.ResourceRequirements{
 						Limits: corev1.ResourceList{
 							corev1.ResourceCPU: resource.MustParse("1"),
+						},
+					},
+					VolumeMounts: []corev1.VolumeMount{{
+						Name:      "tls",
+						ReadOnly:  true,
+						MountPath: "/certs",
+					}},
+				}},
+				Volumes: []corev1.Volume{{
+					Name: "tls",
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: "lemming-tls",
 						},
 					},
 				}},

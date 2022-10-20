@@ -8,10 +8,11 @@
 # configure golangci-lint
 # see https://github.com/golangci/golangci-lint/blob/master/.golangci.example.yml
 run:
-  timeout: 25m
+  timeout: 60m
   skip-dirs:
     - dataplane/forwarding # TODO: remove this
     - gnmi/oc
+    - integration_tests # Loading ondatra is very slow
 issues:
   exclude-rules:
     - path: _test\.go
