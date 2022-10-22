@@ -159,6 +159,8 @@ github.com/coreos/go-systemd v0.0.0-20190321100706-95778dfbb74e/go.mod h1:F5haX7
 github.com/coreos/go-systemd/v22 v22.3.2/go.mod h1:Y58oyj3AT4RCenI/lSvhwexgC+NSVTIJ3seZv2GcEnc=
 github.com/coreos/pkg v0.0.0-20160727233714-3ac0863d7acf/go.mod h1:E3G3o1h8I7cfcXa63jLwjI0eiQQMgzzUDFVpN/nH/eA=
 github.com/coreos/pkg v0.0.0-20180928190104-399ea9e2e55f/go.mod h1:E3G3o1h8I7cfcXa63jLwjI0eiQQMgzzUDFVpN/nH/eA=
+github.com/coreswitch/netutil v1.0.0 h1:OG+k0c3GVeI5frzUtEvrn41O4Mb2ih1gdppWTcA5ObY=
+github.com/coreswitch/netutil v1.0.0/go.mod h1:2EQtNb4SeVlMuMI54kfayih2CagBg5mVisolfP6QlK0=
 github.com/cpuguy83/go-md2man/v2 v2.0.0/go.mod h1:maD7wRr/U5Z6m/iR4s+kqSMx2CaBsrgA7czyZG/E6dU=
 github.com/cpuguy83/go-md2man/v2 v2.0.1/go.mod h1:tgQtvFlXSQOSOSIRvRPT7W67SCa46tRHOmNcaadrF8o=
 github.com/cpuguy83/go-md2man/v2 v2.0.2/go.mod h1:tgQtvFlXSQOSOSIRvRPT7W67SCa46tRHOmNcaadrF8o=
@@ -754,8 +756,8 @@ github.com/vishvananda/netlink v1.1.1-0.20210330154013-f5de75959ad5 h1:+UB2BJA85
 github.com/vishvananda/netlink v1.1.1-0.20210330154013-f5de75959ad5/go.mod h1:twkDnbuQxJYemMlGd4JFIcuhgX83tXhKS2B/PRMpOho=
 github.com/vishvananda/netns v0.0.0-20200728191858-db3c7e526aae h1:4hwBBUfQCFe3Cym0ZtKyq7L16eZUtYKs+BaHDN6mAns=
 github.com/vishvananda/netns v0.0.0-20200728191858-db3c7e526aae/go.mod h1:DD4vA1DwXk04H54A1oHXtwZmA0grkVMdPxx/VGLCah0=
-github.com/wenovus/gobgp/v3 v3.0.0-20221012192753-b075e5586c18 h1:/o1q2Rn4dzmzFaOmFg5mS83wuylywHjOiqGcBzrAyhU=
-github.com/wenovus/gobgp/v3 v3.0.0-20221012192753-b075e5586c18/go.mod h1:NFqnp2rAadbEPqnZJBsueUagxHFp21iI+toUATa3hK0=
+github.com/wenovus/gobgp/v3 v3.0.0-20221020180224-563e3ed6472c h1:vxTUpW0X6WLX7Gc3AkiUWem/cbYaTBAbUZwoxnQO70Q=
+github.com/wenovus/gobgp/v3 v3.0.0-20221020180224-563e3ed6472c/go.mod h1:NFqnp2rAadbEPqnZJBsueUagxHFp21iI+toUATa3hK0=
 github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2/go.mod h1:UETIi67q53MR2AWcXfiuqkDkRtnGDLqkBTpCHuJHxtU=
 github.com/xlab/treeprint v0.0.0-20181112141820-a009c3971eca h1:1CFlNzQhALwjS9mBAUkycX616GzgsuYUOCHA5+HSlXI=
 github.com/xlab/treeprint v0.0.0-20181112141820-a009c3971eca/go.mod h1:ce1O1j6UtZfjr22oyGxGLbauSBp2YVXpARAosm7dHBg=

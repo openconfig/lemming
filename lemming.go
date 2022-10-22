@@ -54,7 +54,7 @@ type Device struct {
 }
 
 // New returns a new initialized device.
-func New(lis net.Listener, targetName string, opts ...grpc.ServerOption) (*Device, error) {
+func New(lis net.Listener, targetName, zapiURL string, opts ...grpc.ServerOption) (*Device, error) {
 	var sysDataplane *sysrib.Dataplane
 	var dplane *dataplane.Dataplane
 	if viper.GetBool("enable_dataplane") {
@@ -76,7 +76,7 @@ func New(lis net.Listener, targetName string, opts ...grpc.ServerOption) (*Devic
 	recs := []reconciler.Reconciler{
 		fakedevice.NewSystemBaseTask(),
 		fakedevice.NewBootTimeTask(),
-		fakedevice.NewGoBGPTaskDecl(),
+		fakedevice.NewGoBGPTaskDecl(zapiURL),
 	}
 
 	gnmiServer, err := fgnmi.New(s, targetName, recs...)
@@ -102,10 +102,6 @@ func New(lis net.Listener, targetName string, opts ...grpc.ServerOption) (*Devic
 	reflection.Register(s)
 	d.startServer()
 
-	if err := gnmiServer.StartReconcilers(context.Background()); err != nil {
-		return nil, err
-	}
-
 	cacheClient := gnmiServer.LocalClient()
 	if dplane != nil {
 		if err := dplane.Start(context.Background(), cacheClient, targetName); err != nil {
@@ -118,7 +114,11 @@ func New(lis net.Listener, targetName string, opts ...grpc.ServerOption) (*Devic
 	if err != nil {
 		return nil, err
 	}
-	if err := sysribServer.Start(cacheClient, targetName); err != nil {
+	if err := sysribServer.Start(cacheClient, targetName, zapiURL); err != nil {
+		return nil, err
+	}
+
+	if err := gnmiServer.StartReconcilers(context.Background()); err != nil {
 		return nil, err
 	}
 

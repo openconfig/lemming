@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	"sync"
+	"time"
 
 	log "github.com/golang/glog"
 
@@ -18,19 +19,9 @@ import (
 	"github.com/wenovus/gobgp/v3/pkg/server"
 )
 
-const (
-	gracefulRestart = false
-)
-
 // NewGoBGPTaskDecl creates a new GoBGP task using the declarative configuration style.
-func NewGoBGPTaskDecl() *reconciler.BuiltReconciler {
-	return reconciler.NewBuilder("gobgp-decl").WithStart(startGoBGPFuncDecl).Build()
-}
-
-func setIfNotZero[T any](setter func(T), v T) {
-	if !reflect.ValueOf(v).IsZero() {
-		setter(v)
-	}
+func NewGoBGPTaskDecl(zapiURL string) *reconciler.BuiltReconciler {
+	return reconciler.NewBuilder("gobgp-decl").WithStart(newBgpDeclTask(zapiURL).startGoBGPFuncDecl).Build()
 }
 
 func updateState(yclient *ygnmi.Client, appliedBgp *oc.NetworkInstance_Protocol_Bgp) {
@@ -40,7 +31,18 @@ func updateState(yclient *ygnmi.Client, appliedBgp *oc.NetworkInstance_Protocol_
 	}
 }
 
-func startGoBGPFuncDecl(ctx context.Context, yclient *ygnmi.Client) error {
+// bgpDeclTask can be used to create a reconciler-compatible BGP task.
+type bgpDeclTask struct {
+	zapiURL string
+}
+
+// newBgpDeclTask creates a new bgpDeclTask.
+func newBgpDeclTask(zapiURL string) *bgpDeclTask {
+	return &bgpDeclTask{zapiURL: zapiURL}
+}
+
+// startGoBGPFuncDecl starts a GoBGP server.
+func (t *bgpDeclTask) startGoBGPFuncDecl(ctx context.Context, yclient *ygnmi.Client) error {
 	b := &ocpath.Batch{}
 	bgpPath := ocpath.Root().NetworkInstance(DefaultNetworkInstance).Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").Bgp()
 	b.AddPaths(
@@ -56,15 +58,16 @@ func startGoBGPFuncDecl(ctx context.Context, yclient *ygnmi.Client) error {
 	appliedBgp.PopulateDefaults()
 	var appliedBgpMu sync.Mutex
 
-	// TODO(wenbli): This should look cleaner.
-	bgpHandler := bgpReconciler{
-		bgpServer:     server.NewBgpServer(),
-		currentConfig: &bgpconfig.BgpConfigSet{},
+	bgpServer := server.NewBgpServer()
+	if err := bgpServer.SetLogLevel(context.Background(), &api.SetLogLevelRequest{
+		Level: api.SetLogLevelRequest_DEBUG,
+	}); err != nil {
+		log.Errorf("Error setting GoBGP log level: %v", err)
 	}
-	go bgpHandler.bgpServer.Serve()
+	go bgpServer.Serve()
 
 	// monitor the change of the peer state
-	if err := bgpHandler.bgpServer.WatchEvent(context.Background(), &api.WatchEventRequest{Peer: &api.WatchEventRequest_Peer{}}, func(r *api.WatchEventResponse) {
+	if err := bgpServer.WatchEvent(context.Background(), &api.WatchEventRequest{Peer: &api.WatchEventRequest_Peer{}}, func(r *api.WatchEventResponse) {
 		appliedBgpMu.Lock()
 		defer appliedBgpMu.Unlock()
 		if p := r.GetPeer(); p != nil && p.Type == api.WatchEventResponse_PeerEvent_STATE {
@@ -100,6 +103,12 @@ func startGoBGPFuncDecl(ctx context.Context, yclient *ygnmi.Client) error {
 		return fmt.Errorf("goBgpTask failed to initialize due to error: %v", err)
 	}
 
+	recon := newBgpReconciler(
+		bgpServer,
+		&bgpconfig.BgpConfigSet{},
+		t.zapiURL,
+	)
+
 	bgpWatcher := ygnmi.Watch(
 		context.Background(),
 		yclient,
@@ -111,8 +120,8 @@ func startGoBGPFuncDecl(ctx context.Context, yclient *ygnmi.Client) error {
 			}
 
 			intendedBgp := rootVal.GetOrCreateNetworkInstance(DefaultNetworkInstance).GetOrCreateProtocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").GetOrCreateBgp()
-			if err := bgpHandler.reconcile(intendedBgp, appliedBgp, &appliedBgpMu); err != nil {
-				log.Errorf("BGP failed to reconcile: %v", err)
+			if err := recon.reconcile(intendedBgp, appliedBgp, &appliedBgpMu); err != nil {
+				log.Errorf("GoBGP failed to reconcile: %v", err)
 				// TODO(wenbli): Instead of stopping BGP, we should simply keep trying.
 				return err
 			}
@@ -130,6 +139,43 @@ func startGoBGPFuncDecl(ctx context.Context, yclient *ygnmi.Client) error {
 			log.Warningf("GoBGP Task's watcher has stopped: %v", err)
 		}
 	}()
+
+	if log.V(1) {
+		// Periodically print the BGP table.
+		// TODO(wenbli): Put this in the BGP RIB schema.
+		go func() {
+			tick := time.NewTicker(5 * time.Second)
+			for range tick.C {
+				if err := bgpServer.ListPath(context.Background(), &api.ListPathRequest{
+					TableType: api.TableType_GLOBAL,
+					Family: &api.Family{
+						Afi:  api.Family_AFI_IP,
+						Safi: api.Family_SAFI_UNICAST,
+					},
+				}, func(d *api.Destination) {
+					log.V(1).Infof("GoBGP global table path: %v", d)
+				}); err != nil {
+					log.Errorf("GoBGP ListPath call failed (global table): %v", err)
+				} else {
+					log.V(1).Info("GoBGP ListPath call completed (global table)")
+				}
+
+				if err := bgpServer.ListPath(context.Background(), &api.ListPathRequest{
+					TableType: api.TableType_LOCAL,
+					Family: &api.Family{
+						Afi:  api.Family_AFI_IP,
+						Safi: api.Family_SAFI_UNICAST,
+					},
+				}, func(d *api.Destination) {
+					log.V(1).Infof("GoBGP local table path: %v", d)
+				}); err != nil {
+					log.Errorf("GoBGP ListPath call failed (local table): %v", err)
+				} else {
+					log.V(1).Info("GoBGP ListPath call completed (local table)")
+				}
+			}
+		}()
+	}
 
 	return nil
 }

@@ -3,6 +3,7 @@ package fakedevice
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"sync"
 
 	"golang.org/x/net/context"
@@ -18,7 +19,18 @@ import (
 	"github.com/wenovus/gobgp/v3/pkg/packet/bgp"
 	"github.com/wenovus/gobgp/v3/pkg/server"
 	"github.com/wenovus/gobgp/v3/pkg/table"
+	"github.com/wenovus/gobgp/v3/pkg/zebra"
 )
+
+const (
+	gracefulRestart = false
+)
+
+func setIfNotZero[T any](setter func(T), v T) {
+	if !reflect.ValueOf(v).IsZero() {
+		setter(v)
+	}
+}
 
 // ReadConfigFile parses a config file into a BgpConfigSet which can be applied
 // using InitialConfig and UpdateConfig.
@@ -239,8 +251,18 @@ func updateNeighbors(ctx context.Context, bgpServer *server.BgpServer, updated [
 
 type bgpReconciler struct {
 	bgpServer     *server.BgpServer
-	bgpStarted    bool
 	currentConfig *bgpconfig.BgpConfigSet
+	zapiURL       string
+
+	bgpStarted bool
+}
+
+func newBgpReconciler(bgpServer *server.BgpServer, currentConfig *bgpconfig.BgpConfigSet, zapiURL string) *bgpReconciler {
+	return &bgpReconciler{
+		bgpServer:     bgpServer,
+		currentConfig: currentConfig,
+		zapiURL:       zapiURL,
+	}
 }
 
 func (r *bgpReconciler) reconcile(intended, applied *oc.NetworkInstance_Protocol_Bgp, appliedMu *sync.Mutex) error {
@@ -248,7 +270,7 @@ func (r *bgpReconciler) reconcile(intended, applied *oc.NetworkInstance_Protocol
 	defer appliedMu.Unlock()
 
 	intendedGlobal := intended.GetOrCreateGlobal()
-	newConfig := intendedToGoBGP(intended)
+	newConfig := intendedToGoBGP(intended, r.zapiURL)
 
 	bgpShouldStart := intendedGlobal.As != nil && intendedGlobal.RouterId != nil
 	switch {
@@ -291,7 +313,7 @@ func (r *bgpReconciler) reconcile(intended, applied *oc.NetworkInstance_Protocol
 // GoBGP's notion of config vs. state does not conform to OpenConfig (see
 // https://github.com/osrg/gobgp/issues/2584)
 // Therefore, we need a compatibility layer between the two configs.
-func intendedToGoBGP(bgpoc *oc.NetworkInstance_Protocol_Bgp) *bgpconfig.BgpConfigSet {
+func intendedToGoBGP(bgpoc *oc.NetworkInstance_Protocol_Bgp, zapiURL string) *bgpconfig.BgpConfigSet {
 	bgpConfig := &bgpconfig.BgpConfigSet{}
 	global := bgpoc.GetOrCreateGlobal()
 
@@ -312,6 +334,18 @@ func intendedToGoBGP(bgpoc *oc.NetworkInstance_Protocol_Bgp) *bgpconfig.BgpConfi
 				},
 			},
 		})
+	}
+
+	bgpConfig.Zebra.Config = bgpconfig.ZebraConfig{
+		Enabled: true,
+		Url:     zapiURL,
+		// TODO(wenbli): This should actually be filled with the types
+		// of routes it wants redistributed instead of getting all
+		// routes.
+		RedistributeRouteTypeList: []string{},
+		Version:                   zebra.MaxZapiVer,
+		NexthopTriggerEnable:      false,
+		SoftwareName:              "frr8.2",
 	}
 
 	return bgpConfig
