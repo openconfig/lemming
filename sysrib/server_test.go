@@ -807,14 +807,6 @@ func TestServer(t *testing.T) {
 				}
 				ocaddr.PrefixLength = ygot.Uint8(uint8(plen))
 
-				notifs, err := ygot.TogNMINotifications(ocintf, 0, ygot.GNMINotificationsConfig{UsePathElem: true})
-				if err != nil {
-					t.Fatalf("Cannot marshal GoStruct: %v", err)
-				}
-				var updates []*gpb.Update
-				for _, notif := range notifs {
-					updates = append(updates, notif.Update...)
-				}
 				js, err := ygot.Marshal7951(ocintf)
 				if err != nil {
 					t.Fatalf("Cannot marshal GoStruct: %v", err)
