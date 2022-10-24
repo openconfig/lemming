@@ -119,23 +119,22 @@ func checkResolvedRoutesEqual(got, want []*ResolvedRoute) error {
 	return nil
 }
 
-// TODO(wenbli): Use this when https://github.com/openconfig/lemming/issues/67 is fixed.
-// func mustPath(s string) *gpb.Path {
-// 	p, err := ygot.StringToStructuredPath(s)
-// 	if err != nil {
-// 		panic(fmt.Sprintf("cannot parse subscription path %s, %v", s, err))
-// 	}
-// 	return p
-// }
-//
+func mustPath(s string) *gpb.Path {
+	p, err := ygot.StringToStructuredPath(s)
+	if err != nil {
+		panic(fmt.Sprintf("cannot parse subscription path %s, %v", s, err))
+	}
+	return p
+}
+
 // Disable linter for this helper function.
 //
 //nolint:unparam
-// func mustTargetPath(t, s string) *gpb.Path {
-// 	p := mustPath(s)
-// 	p.Target = t
-// 	return p
-// }
+func mustTargetPath(t, s string) *gpb.Path {
+	p := mustPath(s)
+	p.Target = t
+	return p
+}
 
 func mustPSPath(ps ygnmi.PathStruct) *gpb.Path {
 	p, _, err := ygnmi.ResolvePath(ps)
@@ -816,25 +815,16 @@ func TestServer(t *testing.T) {
 				for _, notif := range notifs {
 					updates = append(updates, notif.Update...)
 				}
-				// TODO(wenbli): Use this when https://github.com/openconfig/lemming/issues/67 is fixed.
-				// js, err := ygot.Marshal7951(ocintf)
-				// if err != nil {
-				// 	t.Fatalf("Cannot marshal GoStruct: %v", err)
-				// }
-				intfPath := mustPSPath(ocpath.Root().Interface(intf.name))
-				intfPath.Target = "local"
+				js, err := ygot.Marshal7951(ocintf)
+				if err != nil {
+					t.Fatalf("Cannot marshal GoStruct: %v", err)
+				}
 				if _, err := client.Set(context.Background(), &gpb.SetRequest{
-					Prefix: intfPath,
-					Delete: []*gpb.Path{
-						mustPSPath(ocpath.Root()),
-					},
-					Update: updates,
-					// TODO(wenbli): Use this when https://github.com/openconfig/lemming/issues/67 is fixed.
-					// Prefix: mustTargetPath("local", "")
-					// Replace: []*gpb.Update{{
-					// 	Path: mustPSPath(ocpath.Root().Interface(intf.name)),
-					// 	Val:  &gpb.TypedValue{Value: &gpb.TypedValue_JsonIetfVal{JsonIetfVal: js}},
-					// }},
+					Prefix: mustTargetPath("local", ""),
+					Replace: []*gpb.Update{{
+						Path: mustPSPath(ocpath.Root().Interface(intf.name)),
+						Val:  &gpb.TypedValue{Value: &gpb.TypedValue_JsonIetfVal{JsonIetfVal: js}},
+					}},
 				}); err != nil {
 					t.Fatalf("set request failed: %v", err)
 				}
