@@ -59,10 +59,12 @@ func (t *bgpDeclTask) startGoBGPFuncDecl(ctx context.Context, yclient *ygnmi.Cli
 	var appliedBgpMu sync.Mutex
 
 	bgpServer := server.NewBgpServer()
-	if err := bgpServer.SetLogLevel(context.Background(), &api.SetLogLevelRequest{
-		Level: api.SetLogLevelRequest_DEBUG,
-	}); err != nil {
-		log.Errorf("Error setting GoBGP log level: %v", err)
+	if log.V(2) {
+		if err := bgpServer.SetLogLevel(context.Background(), &api.SetLogLevelRequest{
+			Level: api.SetLogLevelRequest_DEBUG,
+		}); err != nil {
+			log.Errorf("Error setting GoBGP log level: %v", err)
+		}
 	}
 	go bgpServer.Serve()
 
