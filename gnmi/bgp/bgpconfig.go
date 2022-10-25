@@ -1,4 +1,4 @@
-package fakedevice
+package bgp
 
 import (
 	"errors"
