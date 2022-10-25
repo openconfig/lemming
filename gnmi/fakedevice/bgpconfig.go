@@ -3,6 +3,7 @@ package fakedevice
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"sync"
 
 	"golang.org/x/net/context"
@@ -19,6 +20,16 @@ import (
 	"github.com/wenovus/gobgp/v3/pkg/server"
 	"github.com/wenovus/gobgp/v3/pkg/table"
 )
+
+const (
+	gracefulRestart = false
+)
+
+func setIfNotZero[T any](setter func(T), v T) {
+	if !reflect.ValueOf(v).IsZero() {
+		setter(v)
+	}
+}
 
 // ReadConfigFile parses a config file into a BgpConfigSet which can be applied
 // using InitialConfig and UpdateConfig.
@@ -239,8 +250,16 @@ func updateNeighbors(ctx context.Context, bgpServer *server.BgpServer, updated [
 
 type bgpReconciler struct {
 	bgpServer     *server.BgpServer
-	bgpStarted    bool
 	currentConfig *bgpconfig.BgpConfigSet
+
+	bgpStarted bool
+}
+
+func newBgpReconciler(bgpServer *server.BgpServer, currentConfig *bgpconfig.BgpConfigSet) *bgpReconciler {
+	return &bgpReconciler{
+		bgpServer:     bgpServer,
+		currentConfig: currentConfig,
+	}
 }
 
 func (r *bgpReconciler) reconcile(intended, applied *oc.NetworkInstance_Protocol_Bgp, appliedMu *sync.Mutex) error {
