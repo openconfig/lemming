@@ -144,6 +144,39 @@ func mustPSPath(ps ygnmi.PathStruct) *gpb.Path {
 	return p
 }
 
+func configureInterface(t *testing.T, intf AddIntfAction, client gpb.GNMIClient) {
+	t.Helper()
+
+	ocintf := &oc.Interface{}
+	ocintf.Name = ygot.String(intf.name)
+	ocintf.Enabled = ygot.Bool(intf.enabled)
+	ocintf.Ifindex = ygot.Uint32(uint32(intf.ifindex))
+	ss := strings.Split(intf.prefix, "/")
+	if len(ss) != 2 {
+		t.Fatalf("Invalid prefix: %q", intf.prefix)
+	}
+	ocaddr := ocintf.GetOrCreateSubinterface(0).GetOrCreateIpv4().GetOrCreateAddress(ss[0])
+	plen, err := strconv.Atoi(ss[1])
+	if err != nil {
+		t.Fatalf("Invalid prefix: %v", err)
+	}
+	ocaddr.PrefixLength = ygot.Uint8(uint8(plen))
+
+	js, err := ygot.Marshal7951(ocintf)
+	if err != nil {
+		t.Fatalf("Cannot marshal GoStruct: %v", err)
+	}
+	if _, err := client.Set(context.Background(), &gpb.SetRequest{
+		Prefix: mustTargetPath("local", ""),
+		Replace: []*gpb.Update{{
+			Path: mustPSPath(ocpath.Root().Interface(intf.name)),
+			Val:  &gpb.TypedValue{Value: &gpb.TypedValue_JsonIetfVal{JsonIetfVal: js}},
+		}},
+	}); err != nil {
+		t.Fatalf("set request failed: %v", err)
+	}
+}
+
 func TestServer(t *testing.T) {
 	// TODO(wenbli): This test should be refactored such that the wantResolvedRoutes is inlined with the inSetRouteRequests for easier reading.
 	tests := []struct {
@@ -792,34 +825,7 @@ func TestServer(t *testing.T) {
 			}
 
 			for _, intf := range tt.inInterfaces {
-				ocintf := &oc.Interface{}
-				ocintf.Name = ygot.String(intf.name)
-				ocintf.Enabled = ygot.Bool(intf.enabled)
-				ocintf.Ifindex = ygot.Uint32(uint32(intf.ifindex))
-				ss := strings.Split(intf.prefix, "/")
-				if len(ss) != 2 {
-					t.Fatalf("Invalid prefix: %q", intf.prefix)
-				}
-				ocaddr := ocintf.GetOrCreateSubinterface(0).GetOrCreateIpv4().GetOrCreateAddress(ss[0])
-				plen, err := strconv.Atoi(ss[1])
-				if err != nil {
-					t.Fatalf("Invalid prefix: %v", err)
-				}
-				ocaddr.PrefixLength = ygot.Uint8(uint8(plen))
-
-				js, err := ygot.Marshal7951(ocintf)
-				if err != nil {
-					t.Fatalf("Cannot marshal GoStruct: %v", err)
-				}
-				if _, err := client.Set(context.Background(), &gpb.SetRequest{
-					Prefix: mustTargetPath("local", ""),
-					Replace: []*gpb.Update{{
-						Path: mustPSPath(ocpath.Root().Interface(intf.name)),
-						Val:  &gpb.TypedValue{Value: &gpb.TypedValue_JsonIetfVal{JsonIetfVal: js}},
-					}},
-				}); err != nil {
-					t.Fatalf("set request failed: %v", err)
-				}
+				configureInterface(t, intf, client)
 			}
 
 			// Wait for Sysrib to pick up the connected prefixes.
