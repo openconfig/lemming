@@ -57,6 +57,8 @@ type Client struct {
 	zserver   *ZServer
 }
 
+// TODO(wenbli): Client management variables should reside within the ZServer
+// struct instead of being globals.
 var (
 	// ClientMutex protects the ZAPI client map.
 	ClientMutex sync.RWMutex
@@ -106,6 +108,38 @@ func convertZebraRoute(niName string, zroute *zebra.IPRouteBody) *Route {
 	}
 }
 
+// RedistributeResolvedRoutes sends RedistributeRouteAdd messages to the client
+// connection for all currently-resolved routes.
+func (c *Client) RedistributeResolvedRoutes(logger log.Logger, conn net.Conn) {
+	resolvedRoutes := c.zserver.sysrib.ResolvedRoutes()
+	logger.Info(fmt.Sprintf("Sending %d resolved routes to client", len(resolvedRoutes)),
+		log.Fields{
+			"Topic": "Sysrib",
+		})
+	for routeKey, route := range resolvedRoutes {
+		zrouteBody, _, err := convertToZAPIRoute(routeKey, route)
+		if err != nil {
+			logger.Warn(fmt.Sprintf("failed to convert resolved route to zebra BGP route: %v", err),
+				log.Fields{
+					"Topic": "Sysrib",
+				})
+		}
+		logger.Info("Sending resolved route",
+			log.Fields{
+				"Topic":   "Sysrib",
+				"Message": zrouteBody,
+			})
+		if zrouteBody != nil {
+			if err := serverSendMessage(logger, conn, zebra.RedistributeRouteAdd, zrouteBody); err != nil {
+				logger.Error(fmt.Sprintf("Cannot send RedistributeRouteAdd message: %v", err),
+					log.Fields{
+						"Topic": "Sysrib",
+					})
+			}
+		}
+	}
+}
+
 // HandleRequest handles an incoming ZAPI client connection.
 func (c *Client) HandleRequest(conn net.Conn, vrfID uint32) {
 	version := zebra.MaxZapiVer
@@ -141,66 +175,26 @@ func (c *Client) HandleRequest(conn net.Conn, vrfID uint32) {
 					"Topic":   "Sysrib",
 					"Message": m,
 				})
-			// HACK: A capabilities message should be sent instead.
+			// TODO(wenbli): A capabilities message should be sent instead.
 			// This doesn't matter right now because it appears no
 			// client (isisd nor GoBGP) actually looks at this message.
-			if serverSendMessage(logger, conn, zebra.Hello, &zebra.HelloBody{}) {
-				logger.Error("Cannot send hello message",
+			if err := serverSendMessage(logger, conn, zebra.Hello, &zebra.HelloBody{}); err != nil {
+				logger.Error(fmt.Sprintf("Cannot send hello message: %v", err),
 					log.Fields{
 						"Topic":   "Sysrib",
 						"Message": m,
 					})
 				return
 			}
-			resolvedRoutes := c.zserver.sysrib.ResolvedRoutes()
-			logger.Info(fmt.Sprintf("Sending %d resolved routes to client", len(resolvedRoutes)),
-				log.Fields{
-					"Topic":   "Sysrib",
-					"Message": m,
-				})
-			for routeKey, route := range resolvedRoutes {
-				zrouteBody, _, err := convertToZAPIRoute(routeKey, route)
-				if err != nil {
-					logger.Warn(fmt.Sprintf("failed to convert resolved route to zebra BGP route: %v", err),
-						log.Fields{
-							"Topic":   "Sysrib",
-							"Message": m,
-						})
-				}
-				logger.Info("Sending resolved route",
-					log.Fields{
-						"Topic":   "Sysrib",
-						"Message": zrouteBody,
-					})
-				if zrouteBody != nil {
-					if serverSendMessage(logger, conn, zebra.RedistributeRouteAdd, zrouteBody) {
-						logger.Error("Cannot send RedistributeRouteAdd message",
-							log.Fields{
-								"Topic":   "Sysrib",
-								"Message": m,
-							})
-					}
-				}
-			}
+			c.RedistributeResolvedRoutes(logger, conn)
 		case zebra.RouteAdd:
 			logger.Info("Received Zebra RouteAdd from client:",
 				log.Fields{
 					"Topic":   "Sysrib",
 					"Message": m,
 				})
-			zroute := m.Body.(*zebra.IPRouteBody)
-			niName := vrfIDToNiName(vrfID)
-			route := convertZebraRoute(niName, zroute)
-			if c.zserver.sysrib != nil {
-				if err := c.zserver.sysrib.setRoute(niName, route); err != nil {
-					logger.Warn(fmt.Sprintf("Could not add route to sysrib: %v", route),
-						log.Fields{
-							"Topic":   "Sysrib",
-							"Message": m,
-						})
-				}
-			} else {
-				logger.Warn("ZServer does not have reference to sysrib, cannot add route to RIB manager",
+			if err := c.zserver.sysrib.setZebraRoute(vrfIDToNiName(vrfID), m.Body.(*zebra.IPRouteBody)); err != nil {
+				logger.Warn(fmt.Sprintf("Could not add route to sysrib: %v", err),
 					log.Fields{
 						"Topic":   "Sysrib",
 						"Message": m,
@@ -224,7 +218,7 @@ func (c *Client) HandleRequest(conn net.Conn, vrfID uint32) {
 
 // serverSendMessage sends a message and returns a bool indicating whether a
 // fatal error was encountered and logged.
-func serverSendMessage(logger log.Logger, conn net.Conn, command zebra.APIType, body zebra.Body) bool {
+func serverSendMessage(logger log.Logger, conn net.Conn, command zebra.APIType, body zebra.Body) error {
 	serverVersion := zebra.MaxZapiVer
 	serverSoftware := zebra.MaxSoftware
 	m := &zebra.Message{
@@ -244,24 +238,13 @@ func serverSendMessage(logger log.Logger, conn net.Conn, command zebra.APIType, 
 		})
 	b, err := m.Serialize(serverSoftware)
 	if err != nil {
-		logger.Warn(fmt.Sprintf("failed to serialize: %v", m),
-			log.Fields{
-				"Topic": "Sysrib",
-				"Error": err,
-			})
-		return false
+		return err
 	}
 
-	_, err = conn.Write(b)
-	if err != nil {
-		logger.Error("failed to write to client, closing connection to client and stopping client handling thread.",
-			log.Fields{
-				"Topic": "Sysrib",
-				"Error": err,
-			})
-		return true
+	if _, err := conn.Write(b); err != nil {
+		return err
 	}
-	return false
+	return nil
 }
 
 // ZServer is a ZAPI server.

@@ -308,49 +308,6 @@ func (s *Server) programRoute(r *ResolvedRoute) error {
 	return s.dataplane.ProgramRoute(r)
 }
 
-// FIXME(wenbli): delete this.
-func convertResolvedRoute(route *ResolvedRoute) (*zebra.IPRouteBody, *zebra.NexthopRegisterBody, error) {
-	vrfID, err := niNameToVrfID(route.NIName)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	_, ipv4Net, err := net.ParseCIDR(route.Prefix)
-	if err != nil {
-		return nil, nil, fmt.Errorf("gribigo/zapi: %v", err)
-	}
-	prefixLen, _ := ipv4Net.Mask.Size()
-
-	var nexthops []zebra.Nexthop
-	var regNexthops []*zebra.RegisteredNexthop
-	for nhs := range route.Nexthops {
-		nexthops = append(nexthops, zebra.Nexthop{
-			VrfID:  vrfID,
-			Gate:   net.ParseIP(nhs.Address),
-			Weight: uint32(nhs.Weight),
-		})
-		regNexthops = append(regNexthops, &zebra.RegisteredNexthop{
-			Family: syscall.AF_INET,
-			Prefix: net.ParseIP(nhs.Address).To4(),
-		})
-	}
-
-	return &zebra.IPRouteBody{
-			Flags:   zebra.FlagAllowRecursion,
-			Type:    zebra.RouteStatic,
-			Safi:    zebra.SafiUnicast,
-			Message: zebra.MessageNexthop,
-			Prefix: zebra.Prefix{
-				Prefix:    ipv4Net.IP.To4(),
-				PrefixLen: uint8(prefixLen),
-			},
-			Nexthops: nexthops,
-			Distance: 1, // Static
-		}, &zebra.NexthopRegisterBody{
-			Nexthops: regNexthops,
-		}, nil
-}
-
 // convertToZAPIRoute converts a route to a ZAPI route for redistributing to
 // other protocols (e.g. BGP).
 func convertToZAPIRoute(routeKey RouteKey, route *Route) (*zebra.IPRouteBody, *zebra.NexthopRegisterBody, error) {
@@ -539,6 +496,18 @@ func (s *Server) setRoute(niName string, route *Route) error {
 
 	if err := s.ResolveAndProgramDiff(); err != nil {
 		return fmt.Errorf("error while resolving sysrib: %v", err)
+	}
+	return nil
+}
+
+// setZebraRoute adds a zebra-formatted route to the RIB manager.
+func (s *Server) setZebraRoute(niName string, zroute *zebra.IPRouteBody) error {
+	if s == nil {
+		return fmt.Errorf("cannot add route to nil sysrib server")
+	}
+	route := convertZebraRoute(niName, zroute)
+	if err := s.setRoute(niName, route); err != nil {
+		return err
 	}
 	return nil
 }
