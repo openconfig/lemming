@@ -1,3 +1,17 @@
+// Copyright 2022 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 // Copyright 2016, 2017 zebra project.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,12 +40,14 @@ import (
 	"github.com/wenovus/gobgp/v3/pkg/zebra"
 )
 
-const (
-	ZAPI_ADDR = "unix:/var/run/zserv.api"
-)
+// TODO(wenbli): Consider putting this into a different, internal package once
+// the API boundary between ZAPI and the RIB manager becomes more stable. An
+// interface is a way to break the circular dependency.
 
-// FIXME(wenbli): This should be put into a different package.
+// TODO(wenbli): Unify logging calls. "Topic=" is actually a good way of
+// filtering through logs rather than simply using verbosity.
 
+// Client is a ZAPI client.
 type Client struct {
 	conn      net.Conn
 	version   uint8
@@ -42,10 +58,13 @@ type Client struct {
 }
 
 var (
-	ClientMap   = map[net.Conn]*Client{}
+	// ClientMutex protects the ZAPI client map.
 	ClientMutex sync.RWMutex
+	// ClientMap stores all connected ZAPI clients.
+	ClientMap = map[net.Conn]*Client{}
 )
 
+// ClientRegister creates a new ZAPI client connection.
 func ClientRegister(conn net.Conn) *Client {
 	ClientMutex.Lock()
 	defer ClientMutex.Unlock()
@@ -56,6 +75,7 @@ func ClientRegister(conn net.Conn) *Client {
 	return client
 }
 
+// ClientUnregister deletes a ZAPI client connection.
 func ClientUnregister(conn net.Conn) {
 	ClientMutex.Lock()
 	defer ClientMutex.Unlock()
@@ -64,6 +84,7 @@ func ClientUnregister(conn net.Conn) {
 	delete(ClientMap, conn)
 }
 
+// convertZebraRoute converts a zebra route to a Sysrib route.
 func convertZebraRoute(niName string, zroute *zebra.IPRouteBody) *Route {
 	var nexthops []*afthelper.NextHopSummary
 	for _, znh := range zroute.Nexthops {
@@ -85,6 +106,7 @@ func convertZebraRoute(niName string, zroute *zebra.IPRouteBody) *Route {
 	}
 }
 
+// HandleRequest handles an incoming ZAPI client connection.
 func (c *Client) HandleRequest(conn net.Conn, vrfID uint32) {
 	version := zebra.MaxZapiVer
 	software := zebra.MaxSoftware
@@ -98,13 +120,14 @@ func (c *Client) HandleRequest(conn net.Conn, vrfID uint32) {
 					"Error": err,
 				})
 		}
-		fmt.Println("[zapi] disconnected", "vrf", vrfID, "version", version)
+		glog.Infof("[zapi] disconnected, vrf %d, version %v", vrfID, version)
 		ClientUnregister(conn)
 	}()
 
 	for {
 		m, err := zebra.ReceiveSingleMsg(logger, conn, version, software, "Sysrib")
 		if err != nil {
+			glog.Errorf("ZAPI server stopping, HandleRequest error: %v", err)
 			return
 		} else if m == nil {
 			continue
@@ -129,18 +152,13 @@ func (c *Client) HandleRequest(conn net.Conn, vrfID uint32) {
 					})
 				return
 			}
-			logger.Info("DEBUG A",
+			resolvedRoutes := c.zserver.sysrib.ResolvedRoutes()
+			logger.Info(fmt.Sprintf("Sending %d resolved routes to client", len(resolvedRoutes)),
 				log.Fields{
 					"Topic":   "Sysrib",
 					"Message": m,
 				})
-			c.zserver.sysrib.rib.mu.RLock()
-			for routeKey, route := range c.zserver.sysrib.resolvedRoutes {
-				logger.Info("DEBUG B",
-					log.Fields{
-						"Topic":   "Sysrib",
-						"Message": m,
-					})
+			for routeKey, route := range resolvedRoutes {
 				zrouteBody, _, err := convertToZAPIRoute(routeKey, route)
 				if err != nil {
 					logger.Warn(fmt.Sprintf("failed to convert resolved route to zebra BGP route: %v", err),
@@ -149,7 +167,7 @@ func (c *Client) HandleRequest(conn net.Conn, vrfID uint32) {
 							"Message": m,
 						})
 				}
-				logger.Info("DEBUG C",
+				logger.Info("Sending resolved route",
 					log.Fields{
 						"Topic":   "Sysrib",
 						"Message": zrouteBody,
@@ -164,17 +182,6 @@ func (c *Client) HandleRequest(conn net.Conn, vrfID uint32) {
 					}
 				}
 			}
-			logger.Info("DEBUG D",
-				log.Fields{
-					"Topic":   "Sysrib",
-					"Message": m,
-				})
-			c.zserver.sysrib.rib.mu.RUnlock()
-			logger.Info("DEBUG E",
-				log.Fields{
-					"Topic":   "Sysrib",
-					"Message": m,
-				})
 		case zebra.RouteAdd:
 			logger.Info("Received Zebra RouteAdd from client:",
 				log.Fields{
@@ -247,7 +254,7 @@ func serverSendMessage(logger log.Logger, conn net.Conn, command zebra.APIType, 
 
 	_, err = conn.Write(b)
 	if err != nil {
-		logger.Error("failed to write, closing connection to client and stopping client handling thread.",
+		logger.Error("failed to write to client, closing connection to client and stopping client handling thread.",
 			log.Fields{
 				"Topic": "Sysrib",
 				"Error": err,
@@ -257,6 +264,7 @@ func serverSendMessage(logger log.Logger, conn net.Conn, command zebra.APIType, 
 	return false
 }
 
+// ZServer is a ZAPI server.
 type ZServer struct {
 	path   string
 	vrfID  uint32
@@ -264,40 +272,32 @@ type ZServer struct {
 	lis    net.Listener
 }
 
-func ZServerStart(typ string, path string, vrfID uint32, sysrib *Server) *ZServer {
+// ZServerStart starts a ZAPI server on the given connection type and path,
+//
+// e.g.
+// - "unix", "/var/run/zapi.serv"
+func ZServerStart(socketType string, path string, vrfID uint32, sysrib *Server) (*ZServer, error) {
+	if err := os.RemoveAll(path); err != nil {
+		return nil, err
+	}
+
 	var lis net.Listener
 	var err error
 
-	switch typ {
-	case "tcp":
-		// e.g. path: ":9000"
-		tcpAddr, err := net.ResolveTCPAddr("tcp", path)
-		if err != nil {
-			fmt.Println("Error listening:", err.Error())
-			return nil
-		}
-		lis, err = net.ListenTCP("tcp", tcpAddr)
-		if err != nil {
-			fmt.Println("Error listening:", err.Error())
-			return nil
-		}
+	switch socketType {
 	case "unix", "unix-writable":
-		// e.g. path: "/var/run/zapi.serv"
 		os.Remove(path)
 		lis, err = net.Listen("unix", path)
 		if err != nil {
-			fmt.Println("Error listening:", err.Error())
-			return nil
+			return nil, fmt.Errorf("ZAPI server: %v", err)
 		}
-		if typ == "unix-writable" {
-			err = os.Chmod(path, 0777)
-			if err != nil {
-				return nil
+		if socketType == "unix-writable" {
+			if err = os.Chmod(path, 0777); err != nil {
+				return nil, fmt.Errorf("ZAPI server: %v", err)
 			}
 		}
 	default:
-		fmt.Println("ZServerStart type is not unix nor tcp.")
-		return nil
+		return nil, fmt.Errorf("ZServer socket type is not unix.")
 	}
 
 	server := &ZServer{
@@ -308,12 +308,12 @@ func ZServerStart(typ string, path string, vrfID uint32, sysrib *Server) *ZServe
 	}
 
 	go func() {
-		glog.Infof("zapi:Server started at %s", path)
+		glog.Infof("ZAPI Server started at %s", path)
 		for {
 			// Listen for an incoming connection.
 			conn, err := lis.Accept()
 			if err != nil {
-				fmt.Println("Error accepting: ", err.Error())
+				glog.Infof("Stopping ZAPI server: %v", err)
 				return
 			}
 
@@ -326,9 +326,10 @@ func ZServerStart(typ string, path string, vrfID uint32, sysrib *Server) *ZServe
 		}
 	}()
 
-	return server
+	return server, nil
 }
 
+// Stop stops the ZAPI server.
 func (s *ZServer) Stop() {
 	if s != nil {
 		if s.lis != nil {

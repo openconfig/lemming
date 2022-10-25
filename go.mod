@@ -26,7 +26,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.13.0
 	github.com/vishvananda/netlink v1.1.1-0.20210330154013-f5de75959ad5
-	github.com/wenovus/gobgp/v3 v3.0.0-20221020180224-563e3ed6472c
+	github.com/wenovus/gobgp/v3 v3.0.0-20221024234659-8df3c6938ab7
 	golang.org/x/exp v0.0.0-20221002003631-540bb7301a08
 	golang.org/x/net v0.0.0-20221004154528-8021a29435af
 	golang.org/x/sys v0.0.0-20221010170243-090e33056c14
