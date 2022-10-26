@@ -49,7 +49,9 @@ import (
 	apb "google.golang.org/protobuf/types/known/anypb"
 )
 
-// This file is copied and modified from GoBGP.
+// NOTE: This file is copied and modified from an internal package in GoBGP and
+// may be removed due to the following TODO. Reconsider significant
+// modifications to this code.
 //
 // TODO(wenbli): When the BGP implementation is more mature, consider skipping
 // converting to GoBGP's config, and instead find the gRPC API calls directly
