@@ -14,6 +14,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/openconfig/gribigo/afthelper"
 	"github.com/openconfig/lemming/gnmi"
+	"github.com/openconfig/lemming/gnmi/gnmiclient"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 	"github.com/openconfig/ygnmi/ygnmi"
@@ -144,7 +145,7 @@ func mustPSPath(ps ygnmi.PathStruct) *gpb.Path {
 	return p
 }
 
-func configureInterface(t *testing.T, intf AddIntfAction, client gpb.GNMIClient) {
+func configureInterface(t *testing.T, intf AddIntfAction, yclient *ygnmi.Client) {
 	t.Helper()
 
 	ocintf := &oc.Interface{}
@@ -162,18 +163,8 @@ func configureInterface(t *testing.T, intf AddIntfAction, client gpb.GNMIClient)
 	}
 	ocaddr.PrefixLength = ygot.Uint8(uint8(plen))
 
-	js, err := ygot.Marshal7951(ocintf)
-	if err != nil {
-		t.Fatalf("Cannot marshal GoStruct: %v", err)
-	}
-	if _, err := client.Set(context.Background(), &gpb.SetRequest{
-		Prefix: mustTargetPath("local", ""),
-		Replace: []*gpb.Update{{
-			Path: mustPSPath(ocpath.Root().Interface(intf.name)),
-			Val:  &gpb.TypedValue{Value: &gpb.TypedValue_JsonIetfVal{JsonIetfVal: js}},
-		}},
-	}); err != nil {
-		t.Fatalf("set request failed: %v", err)
+	if _, err := gnmiclient.Replace(context.Background(), yclient, ocpath.Root().Interface(intf.name).State(), ocintf); err != nil {
+		t.Fatalf("Cannot configure interface: %v", err)
 	}
 }
 
@@ -825,8 +816,12 @@ func TestServer(t *testing.T) {
 			}
 			defer s.Stop()
 
+			c, err := ygnmi.NewClient(client, ygnmi.WithTarget("local"))
+			if err != nil {
+				t.Fatalf("cannot create ygnmi client: %v", err)
+			}
 			for _, intf := range tt.inInterfaces {
-				configureInterface(t, intf, client)
+				configureInterface(t, intf, c)
 			}
 
 			// Wait for Sysrib to pick up the connected prefixes.
