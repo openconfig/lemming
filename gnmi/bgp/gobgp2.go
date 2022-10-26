@@ -15,7 +15,6 @@ import (
 	"github.com/openconfig/lemming/gnmi/reconciler"
 	"github.com/openconfig/ygnmi/ygnmi"
 	api "github.com/wenovus/gobgp/v3/api"
-	"github.com/wenovus/gobgp/v3/pkg/bgpconfig"
 	"github.com/wenovus/gobgp/v3/pkg/server"
 )
 
@@ -106,7 +105,6 @@ func (t *bgpDeclTask) startGoBGPFuncDecl(ctx context.Context, yclient *ygnmi.Cli
 
 	recon := newBgpReconciler(
 		bgpServer,
-		&bgpconfig.BgpConfigSet{},
 	)
 
 	bgpWatcher := ygnmi.Watch(
