@@ -1,4 +1,18 @@
-package fakedevice
+// Copyright 2022 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package bgp
 
 import (
 	"context"
@@ -7,6 +21,7 @@ import (
 	"sync"
 
 	log "github.com/golang/glog"
+	"github.com/openconfig/lemming/gnmi/fakedevice"
 	"github.com/openconfig/lemming/gnmi/gnmiclient"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
@@ -60,7 +75,7 @@ func NewGoBGPTask() *reconciler.BuiltReconciler {
 //     ; however, if the global setting hasn't been set up, we actually need to erase the entirety of the applied config. This is because the watcher doesn't tell us this information.
 func startGoBGPFunc(ctx context.Context, yclient *ygnmi.Client) error {
 	b := &ocpath.Batch{}
-	bgpPath := ocpath.Root().NetworkInstance(DefaultNetworkInstance).Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").Bgp()
+	bgpPath := ocpath.Root().NetworkInstance(fakedevice.DefaultNetworkInstance).Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").Bgp()
 	b.AddPaths(
 		bgpPath.Global().As().Config().PathStruct(),
 		bgpPath.Global().RouterId().Config().PathStruct(),
@@ -75,7 +90,7 @@ func startGoBGPFunc(ctx context.Context, yclient *ygnmi.Client) error {
 
 	appliedRoot := &oc.Root{}
 	// appliedBgp is the SoT for BGP applied configuration. It is maintained locally by the task.
-	appliedBgp := appliedRoot.GetOrCreateNetworkInstance(DefaultNetworkInstance).GetOrCreateProtocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").GetOrCreateBgp()
+	appliedBgp := appliedRoot.GetOrCreateNetworkInstance(fakedevice.DefaultNetworkInstance).GetOrCreateProtocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").GetOrCreateBgp()
 	appliedBgp.PopulateDefaults()
 	var appliedBgpMu sync.Mutex
 
@@ -158,7 +173,7 @@ func startGoBGPFunc(ctx context.Context, yclient *ygnmi.Client) error {
 			if !ok {
 				return ygnmi.Continue
 			}
-			intended := rootVal.GetOrCreateNetworkInstance(DefaultNetworkInstance).GetOrCreateProtocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").GetOrCreateBgp()
+			intended := rootVal.GetOrCreateNetworkInstance(fakedevice.DefaultNetworkInstance).GetOrCreateProtocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").GetOrCreateBgp()
 
 			processBgp := func() {
 				log.V(1).Info("Processing BGP update")

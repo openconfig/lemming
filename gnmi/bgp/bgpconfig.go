@@ -1,13 +1,39 @@
-package fakedevice
+// Copyright 2022 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Copyright (C) 2016 Nippon Telegraph and Telephone Corporation.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Package bgp contains a BGP implementation (using GoBGP) whose API is OpenConfig.
+package bgp
 
 import (
-	"errors"
-	"fmt"
 	"reflect"
-	"sync"
 
 	"golang.org/x/net/context"
-	apb "google.golang.org/protobuf/types/known/anypb"
 
 	"github.com/golang/glog"
 
@@ -19,12 +45,17 @@ import (
 	"github.com/wenovus/gobgp/v3/pkg/packet/bgp"
 	"github.com/wenovus/gobgp/v3/pkg/server"
 	"github.com/wenovus/gobgp/v3/pkg/table"
-	"github.com/wenovus/gobgp/v3/pkg/zebra"
+
+	apb "google.golang.org/protobuf/types/known/anypb"
 )
 
-const (
-	gracefulRestart = false
-)
+// NOTE: This file is copied and modified from an internal package in GoBGP and
+// may be removed due to the following TODO. Reconsider significant
+// modifications to this code.
+//
+// TODO(wenbli): When the BGP implementation is more mature, consider skipping
+// converting to GoBGP's config, and instead find the gRPC API calls directly
+// from diffing the OpenConfig intended vs. applied configuration.
 
 func setIfNotZero[T any](setter func(T), v T) {
 	if !reflect.ValueOf(v).IsZero() {
@@ -249,113 +280,16 @@ func updateNeighbors(ctx context.Context, bgpServer *server.BgpServer, updated [
 	return false
 }
 
-type bgpReconciler struct {
-	bgpServer     *server.BgpServer
-	currentConfig *bgpconfig.BgpConfigSet
-	zapiURL       string
-
-	bgpStarted bool
-}
-
-func newBgpReconciler(bgpServer *server.BgpServer, currentConfig *bgpconfig.BgpConfigSet, zapiURL string) *bgpReconciler {
-	return &bgpReconciler{
-		bgpServer:     bgpServer,
-		currentConfig: currentConfig,
-		zapiURL:       zapiURL,
-	}
-}
-
-func (r *bgpReconciler) reconcile(intended, applied *oc.NetworkInstance_Protocol_Bgp, appliedMu *sync.Mutex) error {
-	appliedMu.Lock()
-	defer appliedMu.Unlock()
-
-	intendedGlobal := intended.GetOrCreateGlobal()
-	newConfig := intendedToGoBGP(intended, r.zapiURL)
-
-	bgpShouldStart := intendedGlobal.As != nil && intendedGlobal.RouterId != nil
-	switch {
-	case bgpShouldStart && !r.bgpStarted:
-		glog.V(1).Info("Starting BGP")
-		var err error
-		r.currentConfig, err = InitialConfig(context.Background(), applied, r.bgpServer, newConfig, gracefulRestart)
-		if err != nil {
-			return fmt.Errorf("Failed to apply initial BGP configuration %v", newConfig)
-		} else {
-			r.bgpStarted = true
-		}
-	case !bgpShouldStart && r.bgpStarted:
-		glog.V(1).Info("Stopping BGP")
-		if err := r.bgpServer.StopBgp(context.Background(), &api.StopBgpRequest{}); err != nil {
-			return errors.New("Failed to stop BGP service")
-		} else {
-			r.bgpStarted = false
-		}
-		r.currentConfig = &bgpconfig.BgpConfigSet{}
-		*applied = oc.NetworkInstance_Protocol_Bgp{}
-		applied.PopulateDefaults()
-	case r.bgpStarted:
-		glog.V(1).Info("Updating BGP")
-		var err error
-		r.currentConfig, err = UpdateConfig(context.Background(), applied, r.bgpServer, r.currentConfig, newConfig)
-		if err != nil {
-			return fmt.Errorf("Failed to update BGP service: %v", newConfig)
-		}
-	default:
-		// Waiting for BGP to be startable.
-		return nil
-	}
-
-	return nil
-}
-
-// intendedToGoBGP translates from OC to GoBGP intended config.
-//
-// GoBGP's notion of config vs. state does not conform to OpenConfig (see
-// https://github.com/osrg/gobgp/issues/2584)
-// Therefore, we need a compatibility layer between the two configs.
-func intendedToGoBGP(bgpoc *oc.NetworkInstance_Protocol_Bgp, zapiURL string) *bgpconfig.BgpConfigSet {
-	bgpConfig := &bgpconfig.BgpConfigSet{}
-	global := bgpoc.GetOrCreateGlobal()
-
-	bgpConfig.Global.Config.As = global.GetAs()
-	bgpConfig.Global.Config.RouterId = global.GetRouterId()
-	bgpConfig.Global.Config.Port = listenPort
-
-	bgpConfig.Neighbors = []bgpconfig.Neighbor{}
-	for neighAddr, neigh := range bgpoc.Neighbor {
-		bgpConfig.Neighbors = append(bgpConfig.Neighbors, bgpconfig.Neighbor{
-			Config: bgpconfig.NeighborConfig{
-				PeerAs:          neigh.GetPeerAs(),
-				NeighborAddress: neighAddr,
-			},
-			Transport: bgpconfig.Transport{
-				Config: bgpconfig.TransportConfig{
-					RemotePort: listenPort,
-				},
-			},
-		})
-	}
-
-	bgpConfig.Zebra.Config = bgpconfig.ZebraConfig{
-		Enabled: true,
-		Url:     zapiURL,
-		// TODO(wenbli): This should actually be filled with the types
-		// of routes it wants redistributed instead of getting all
-		// routes.
-		RedistributeRouteTypeList: []string{},
-		Version:                   zebra.MaxZapiVer,
-		NexthopTriggerEnable:      false,
-		SoftwareName:              "frr8.2",
-	}
-
-	return bgpConfig
-}
-
 // InitialConfig applies initial configuration to a pristine gobgp instance. It
 // can only be called once for an instance. Subsequent changes to the
 // configuration can be applied using UpdateConfig. The BgpConfigSet can be
 // obtained by calling ReadConfigFile. If graceful restart behavior is desired,
 // pass true for isGracefulRestart. Otherwise, pass false.
+//
+// - applied is the OpenConfig applied configuration. It is supplied as an
+// argument in order for its state to be updated as the gRPC API calls are
+// made. GoBGP's config/state is not as rigorous as OpenConfig config/state
+// separation.
 func InitialConfig(ctx context.Context, applied *oc.NetworkInstance_Protocol_Bgp, bgpServer *server.BgpServer, newConfig *bgpconfig.BgpConfigSet, isGracefulRestart bool) (*bgpconfig.BgpConfigSet, error) {
 	if err := bgpServer.StartBgp(ctx, &api.StartBgpRequest{
 		Global: bgpconfig.NewGlobalFromConfigStruct(&newConfig.Global),
@@ -499,6 +433,11 @@ func InitialConfig(ctx context.Context, applied *oc.NetworkInstance_Protocol_Bgp
 // hangle graceful restart and 2) requires a BgpConfigSet for the previous
 // configuration so that it can compute the delta between it and the new
 // bgpconfig. The new BgpConfigSet can be obtained using ReadConfigFile.
+//
+// - applied is the OpenConfig applied configuration. It is supplied as an
+// argument in order for its state to be updated as the gRPC API calls are
+// made. GoBGP's config/state is not as rigorous as OpenConfig config/state
+// separation.
 func UpdateConfig(ctx context.Context, applied *oc.NetworkInstance_Protocol_Bgp, bgpServer *server.BgpServer, c, newConfig *bgpconfig.BgpConfigSet) (*bgpconfig.BgpConfigSet, error) {
 	addedPg, deletedPg, updatedPg := bgpconfig.UpdatePeerGroupConfig(bgpServer.Log(), c, newConfig)
 	added, deleted, updated := bgpconfig.UpdateNeighborConfig(bgpServer.Log(), c, newConfig)

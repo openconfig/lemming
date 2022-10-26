@@ -22,6 +22,7 @@ import (
 
 	"github.com/openconfig/lemming/dataplane"
 	fgnmi "github.com/openconfig/lemming/gnmi"
+	"github.com/openconfig/lemming/gnmi/bgp"
 	"github.com/openconfig/lemming/gnmi/fakedevice"
 	"github.com/openconfig/lemming/gnmi/reconciler"
 	fgnoi "github.com/openconfig/lemming/gnoi"
@@ -76,7 +77,7 @@ func New(lis net.Listener, targetName, zapiURL string, opts ...grpc.ServerOption
 	recs := []reconciler.Reconciler{
 		fakedevice.NewSystemBaseTask(),
 		fakedevice.NewBootTimeTask(),
-		fakedevice.NewGoBGPTaskDecl(zapiURL),
+		bgp.NewGoBGPTaskDecl(zapiURL),
 	}
 
 	gnmiServer, err := fgnmi.New(s, targetName, recs...)

@@ -1,4 +1,18 @@
-package fakedevice
+// Copyright 2022 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package bgp
 
 import (
 	"context"
@@ -9,13 +23,13 @@ import (
 
 	log "github.com/golang/glog"
 
+	"github.com/openconfig/lemming/gnmi/fakedevice"
 	"github.com/openconfig/lemming/gnmi/gnmiclient"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 	"github.com/openconfig/lemming/gnmi/reconciler"
 	"github.com/openconfig/ygnmi/ygnmi"
 	api "github.com/wenovus/gobgp/v3/api"
-	"github.com/wenovus/gobgp/v3/pkg/bgpconfig"
 	"github.com/wenovus/gobgp/v3/pkg/server"
 )
 
@@ -26,7 +40,7 @@ func NewGoBGPTaskDecl(zapiURL string) *reconciler.BuiltReconciler {
 
 func updateState(yclient *ygnmi.Client, appliedBgp *oc.NetworkInstance_Protocol_Bgp) {
 	log.V(1).Infof("BGP task: updating state")
-	if _, err := gnmiclient.Replace(context.Background(), yclient, ocpath.Root().NetworkInstance(DefaultNetworkInstance).Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").Bgp().State(), appliedBgp); err != nil {
+	if _, err := gnmiclient.Replace(context.Background(), yclient, ocpath.Root().NetworkInstance(fakedevice.DefaultNetworkInstance).Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").Bgp().State(), appliedBgp); err != nil {
 		log.Errorf("BGP failed to update state: %v", err)
 	}
 }
@@ -44,7 +58,7 @@ func newBgpDeclTask(zapiURL string) *bgpDeclTask {
 // startGoBGPFuncDecl starts a GoBGP server.
 func (t *bgpDeclTask) startGoBGPFuncDecl(ctx context.Context, yclient *ygnmi.Client) error {
 	b := &ocpath.Batch{}
-	bgpPath := ocpath.Root().NetworkInstance(DefaultNetworkInstance).Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").Bgp()
+	bgpPath := ocpath.Root().NetworkInstance(fakedevice.DefaultNetworkInstance).Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").Bgp()
 	b.AddPaths(
 		bgpPath.Global().As().Config().PathStruct(),
 		bgpPath.Global().RouterId().Config().PathStruct(),
@@ -54,7 +68,7 @@ func (t *bgpDeclTask) startGoBGPFuncDecl(ctx context.Context, yclient *ygnmi.Cli
 
 	appliedRoot := &oc.Root{}
 	// appliedBgp is the SoT for BGP applied configuration. It is maintained locally by the task.
-	appliedBgp := appliedRoot.GetOrCreateNetworkInstance(DefaultNetworkInstance).GetOrCreateProtocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").GetOrCreateBgp()
+	appliedBgp := appliedRoot.GetOrCreateNetworkInstance(fakedevice.DefaultNetworkInstance).GetOrCreateProtocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").GetOrCreateBgp()
 	appliedBgp.PopulateDefaults()
 	var appliedBgpMu sync.Mutex
 
@@ -107,7 +121,6 @@ func (t *bgpDeclTask) startGoBGPFuncDecl(ctx context.Context, yclient *ygnmi.Cli
 
 	recon := newBgpReconciler(
 		bgpServer,
-		&bgpconfig.BgpConfigSet{},
 		t.zapiURL,
 	)
 
@@ -121,7 +134,7 @@ func (t *bgpDeclTask) startGoBGPFuncDecl(ctx context.Context, yclient *ygnmi.Cli
 				return ygnmi.Continue
 			}
 
-			intendedBgp := rootVal.GetOrCreateNetworkInstance(DefaultNetworkInstance).GetOrCreateProtocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").GetOrCreateBgp()
+			intendedBgp := rootVal.GetOrCreateNetworkInstance(fakedevice.DefaultNetworkInstance).GetOrCreateProtocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").GetOrCreateBgp()
 			if err := recon.reconcile(intendedBgp, appliedBgp, &appliedBgpMu); err != nil {
 				log.Errorf("GoBGP failed to reconcile: %v", err)
 				// TODO(wenbli): Instead of stopping BGP, we should simply keep trying.
