@@ -38,6 +38,7 @@ import (
 	"github.com/coreswitch/netutil"
 	"github.com/openconfig/lemming/gnmi"
 	pb "github.com/openconfig/lemming/proto/sysrib"
+	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/wenovus/gobgp/v3/pkg/zebra"
 	"google.golang.org/grpc"
 )
@@ -175,13 +176,17 @@ func testRouteRedistribution(t *testing.T, routeReadyBeforeDial bool) {
 	}
 	defer s.Stop()
 
+	c, err := ygnmi.NewClient(client, ygnmi.WithTarget("local"))
+	if err != nil {
+		t.Fatalf("cannot create ygnmi client: %v", err)
+	}
 	configureInterface(t, AddIntfAction{
 		name:    "eth0",
 		ifindex: 0,
 		enabled: true,
 		prefix:  "192.168.1.1/24",
 		niName:  "DEFAULT",
-	}, client)
+	}, c)
 
 	routeReq := &pb.SetRouteRequest{
 		AdminDistance: 10,
