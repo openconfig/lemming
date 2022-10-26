@@ -14,6 +14,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/openconfig/gribigo/afthelper"
 	"github.com/openconfig/lemming/gnmi"
+	"github.com/openconfig/lemming/gnmi/gnmiclient"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 	"github.com/openconfig/ygnmi/ygnmi"
@@ -142,6 +143,29 @@ func mustPSPath(ps ygnmi.PathStruct) *gpb.Path {
 		panic(err)
 	}
 	return p
+}
+
+func configureInterface(t *testing.T, intf AddIntfAction, yclient *ygnmi.Client) {
+	t.Helper()
+
+	ocintf := &oc.Interface{}
+	ocintf.Name = ygot.String(intf.name)
+	ocintf.Enabled = ygot.Bool(intf.enabled)
+	ocintf.Ifindex = ygot.Uint32(uint32(intf.ifindex))
+	ss := strings.Split(intf.prefix, "/")
+	if len(ss) != 2 {
+		t.Fatalf("Invalid prefix: %q", intf.prefix)
+	}
+	ocaddr := ocintf.GetOrCreateSubinterface(0).GetOrCreateIpv4().GetOrCreateAddress(ss[0])
+	plen, err := strconv.Atoi(ss[1])
+	if err != nil {
+		t.Fatalf("Invalid prefix: %v", err)
+	}
+	ocaddr.PrefixLength = ygot.Uint8(uint8(plen))
+
+	if _, err := gnmiclient.Replace(context.Background(), yclient, ocpath.Root().Interface(intf.name).State(), ocintf); err != nil {
+		t.Fatalf("Cannot configure interface: %v", err)
+	}
 }
 
 func TestServer(t *testing.T) {
@@ -791,35 +815,12 @@ func TestServer(t *testing.T) {
 				t.Fatalf("cannot start sysrib server, %v", err)
 			}
 
+			c, err := ygnmi.NewClient(client, ygnmi.WithTarget("local"))
+			if err != nil {
+				t.Fatalf("cannot create ygnmi client: %v", err)
+			}
 			for _, intf := range tt.inInterfaces {
-				ocintf := &oc.Interface{}
-				ocintf.Name = ygot.String(intf.name)
-				ocintf.Enabled = ygot.Bool(intf.enabled)
-				ocintf.Ifindex = ygot.Uint32(uint32(intf.ifindex))
-				ss := strings.Split(intf.prefix, "/")
-				if len(ss) != 2 {
-					t.Fatalf("Invalid prefix: %q", intf.prefix)
-				}
-				ocaddr := ocintf.GetOrCreateSubinterface(0).GetOrCreateIpv4().GetOrCreateAddress(ss[0])
-				plen, err := strconv.Atoi(ss[1])
-				if err != nil {
-					t.Fatalf("Invalid prefix: %v", err)
-				}
-				ocaddr.PrefixLength = ygot.Uint8(uint8(plen))
-
-				js, err := ygot.Marshal7951(ocintf)
-				if err != nil {
-					t.Fatalf("Cannot marshal GoStruct: %v", err)
-				}
-				if _, err := client.Set(context.Background(), &gpb.SetRequest{
-					Prefix: mustTargetPath("local", ""),
-					Replace: []*gpb.Update{{
-						Path: mustPSPath(ocpath.Root().Interface(intf.name)),
-						Val:  &gpb.TypedValue{Value: &gpb.TypedValue_JsonIetfVal{JsonIetfVal: js}},
-					}},
-				}); err != nil {
-					t.Fatalf("set request failed: %v", err)
-				}
+				configureInterface(t, intf, c)
 			}
 
 			// Wait for Sysrib to pick up the connected prefixes.
