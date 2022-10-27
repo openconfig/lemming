@@ -204,7 +204,8 @@ func (c *Client) HandleRequest(conn net.Conn, vrfID uint32) {
 					})
 			}
 		case zebra.RouteDelete:
-			logger.Info("Received Zebra RouteDelete from client:",
+			// TODO(wenbli): Implement RouteDelete.
+			logger.Warn("Received Zebra RouteDelete from client which is not handled:",
 				log.Fields{
 					"Topic":   "Sysrib",
 					"Message": m,
