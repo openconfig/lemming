@@ -22,10 +22,15 @@ import (
 	"os"
 	"reflect"
 	"strconv"
+	"strings"
+	"sync"
+	"syscall"
 
 	log "github.com/golang/glog"
 	"github.com/openconfig/gribigo/afthelper"
 	"github.com/openconfig/ygnmi/ygnmi"
+	"github.com/wenovus/gobgp/v3/pkg/zebra"
+	"golang.org/x/exp/maps"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -39,8 +44,13 @@ import (
 )
 
 const (
+	// SockAddr is the unix domain socket address for the Sysrib API.
 	SockAddr  = "/tmp/sysrib.api"
 	defaultNI = "DEFAULT"
+
+	// ZAPI_ADDR is the connection address for ZAPI, which is in the form
+	// of "type:address", where type can either be a unix or tcp socket.
+	ZAPI_ADDR = "unix:/var/run/zserv.api"
 )
 
 // Server is the implementation of the Sysrib API.
@@ -61,11 +71,19 @@ type Server struct {
 	// indicated by the forwarding plane.
 	interfaces map[Interface]bool
 
+	programmedRoutesMu sync.Mutex
 	// programmedRoutes contain a map of resolved routes with which to do
 	// diff for sending to the dataplane for programming.
 	programmedRoutes map[RouteKey]*ResolvedRoute
 
+	resolvedRoutesMu sync.Mutex
+	// resolvedRoutes keeps track of all the original routes that have now
+	// been programmed. This allows looking up the original route.
+	resolvedRoutes map[RouteKey]*Route
+
 	dataplane dataplaneAPI
+
+	zServer *ZServer
 }
 
 type dataplaneAPI interface {
@@ -106,6 +124,7 @@ func New(dp dataplaneAPI) (*Server, error) {
 		rib:              rib,
 		interfaces:       map[Interface]bool{},
 		programmedRoutes: map[RouteKey]*ResolvedRoute{},
+		resolvedRoutes:   map[RouteKey]*Route{},
 		dataplane:        dp,
 	}
 	return s, nil
@@ -114,7 +133,7 @@ func New(dp dataplaneAPI) (*Server, error) {
 // Start starts the sysrib gRPC service at a unix domain socket. This
 // should be started prior to routing services to allow them to connect to
 // sysrib during their initialization.
-func (s *Server) Start(gClient gpb.GNMIClient, target string) error {
+func (s *Server) Start(gClient gpb.GNMIClient, target, zapiURL string) error {
 	if s == nil {
 		return errors.New("cannot start nil sysrib server")
 	}
@@ -140,7 +159,22 @@ func (s *Server) Start(gClient gpb.GNMIClient, target string) error {
 
 	go grpcServer.Serve(lis)
 
+	// Start ZAPI server.
+	if zapiURL != "" {
+		l := strings.SplitN(zapiURL, ":", 2)
+		if len(l) != 2 {
+			return fmt.Errorf("unsupported ZAPI url, has to be \"protocol:address\", got: %s", zapiURL)
+		}
+		if s.zServer, err = ZServerStart(l[0], l[1], 0, s); err != nil {
+			return err
+		}
+	}
+
 	return nil
+}
+
+func (s *Server) Stop() {
+	s.zServer.Stop()
 }
 
 // monitorConnectedIntfs starts a gothread to check for connected prefixes from
@@ -196,6 +230,7 @@ func (s *Server) monitorConnectedIntfs(yclient *ygnmi.Client) error {
 	return nil
 }
 
+// RouteKey is the unique identifier of an IP route.
 type RouteKey struct {
 	Prefix string
 	NIName string
@@ -210,6 +245,7 @@ type ResolvedRoute struct {
 	// TODO(wenbli): backup nexthops.
 }
 
+// ResolvedNexthop contains the information required to forward an IP packet.
 type ResolvedNexthop struct {
 	afthelper.NextHopSummary
 
@@ -272,6 +308,56 @@ func (s *Server) programRoute(r *ResolvedRoute) error {
 	return s.dataplane.ProgramRoute(r)
 }
 
+// convertToZAPIRoute converts a route to a ZAPI route for redistributing to
+// other protocols (e.g. BGP).
+func convertToZAPIRoute(routeKey RouteKey, route *Route) (*zebra.IPRouteBody, *zebra.NexthopRegisterBody, error) {
+	if route.Connected != nil {
+		// TODO(wenbli): Connected routes not supported. This is not
+		// needed right now since only need to redistribute
+		// non-connected routes.
+		return nil, nil, nil
+	}
+	vrfID, err := niNameToVrfID(routeKey.NIName)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	_, ipv4Net, err := net.ParseCIDR(route.Prefix)
+	if err != nil {
+		return nil, nil, fmt.Errorf("gribigo/zapi: %v", err)
+	}
+	prefixLen, _ := ipv4Net.Mask.Size()
+
+	var nexthops []zebra.Nexthop
+	var regNexthops []*zebra.RegisteredNexthop
+	for _, nh := range route.NextHops {
+		nexthops = append(nexthops, zebra.Nexthop{
+			VrfID:  vrfID,
+			Gate:   net.ParseIP(nh.Address),
+			Weight: uint32(nh.Weight),
+		})
+		regNexthops = append(regNexthops, &zebra.RegisteredNexthop{
+			Family: syscall.AF_INET,
+			Prefix: net.ParseIP(nh.Address).To4(),
+		})
+	}
+
+	return &zebra.IPRouteBody{
+			Flags:   zebra.FlagAllowRecursion,
+			Type:    zebra.RouteStatic,
+			Safi:    zebra.SafiUnicast,
+			Message: zebra.MessageNexthop,
+			Prefix: zebra.Prefix{
+				Prefix:    ipv4Net.IP.To4(),
+				PrefixLen: uint8(prefixLen),
+			},
+			Nexthops: nexthops,
+			Distance: 1, // Static
+		}, &zebra.NexthopRegisterBody{
+			Nexthops: regNexthops,
+		}, nil
+}
+
 // ResolveAndProgramDiff walks through each prefix in the RIB, resolving it and
 // programs the forwarding plane.
 //
@@ -280,6 +366,7 @@ func (s *Server) ResolveAndProgramDiff() error {
 	log.Info("Recalculating resolved RIB")
 	s.rib.mu.RLock()
 	defer s.rib.mu.RUnlock()
+	newResolvedRoutes := map[RouteKey]*Route{}
 	for niName, ni := range s.rib.NI {
 		for it := ni.IPV4.Iterate(); it.Next(); {
 			log.V(1).Infof("Iterating at prefix %v out of %d tags", it.Address().String(), ni.IPV4.CountTags())
@@ -288,11 +375,12 @@ func (s *Server) ResolveAndProgramDiff() error {
 				log.Errorf("sysrib: %v", err)
 				continue
 			}
-			nhs, err := s.rib.EgressNexthops(niName, prefix, s.interfaces)
+			nhs, route, err := s.rib.EgressNexthops(niName, prefix, s.interfaces)
 			if err != nil {
 				log.Errorf("sysrib: %v", err)
 				continue
 			}
+			routeResolved := len(nhs) > 0
 
 			rr := &ResolvedRoute{
 				RouteKey: RouteKey{
@@ -302,21 +390,51 @@ func (s *Server) ResolveAndProgramDiff() error {
 				},
 				Nexthops: nhs,
 			}
+			if routeResolved {
+				newResolvedRoutes[rr.RouteKey] = route
+			}
 
+			s.programmedRoutesMu.Lock()
 			currentRoute, ok := s.programmedRoutes[rr.RouteKey]
+			s.programmedRoutesMu.Unlock()
 			switch {
-			case !ok && len(nhs) > 0, ok && !reflect.DeepEqual(currentRoute, rr):
+			case !ok && routeResolved, ok && !reflect.DeepEqual(currentRoute, rr):
 				if err := s.programRoute(rr); err != nil {
 					log.Warningf("failed to program route %+v: %v", rr, err)
 					continue
 				}
+				s.programmedRoutesMu.Lock()
 				s.programmedRoutes[rr.RouteKey] = rr
+				s.programmedRoutesMu.Unlock()
+				zrouteBody, _, err := convertToZAPIRoute(rr.RouteKey, route)
+				if err != nil {
+					log.Warningf("failed to convert resolved route to zebra BGP route: %v", err)
+				}
+				if zrouteBody != nil {
+					log.V(1).Info("Sending new route to ZAPI clients: ", zrouteBody)
+					ClientMutex.RLock()
+					for conn := range ClientMap {
+						serverSendMessage(NewLogger(), conn, zebra.RedistributeRouteAdd, zrouteBody)
+					}
+					ClientMutex.RUnlock()
+				}
 			default:
 				// No diff, so don't do anything.
 			}
 		}
 	}
+	s.resolvedRoutesMu.Lock()
+	s.resolvedRoutes = newResolvedRoutes
+	s.resolvedRoutesMu.Unlock()
 	return nil
+}
+
+// ResolvedRoutes returns the shallow copy of the resolved routes of the RIB
+// manager.
+func (s *Server) ResolvedRoutes() map[RouteKey]*Route {
+	s.resolvedRoutesMu.Lock()
+	defer s.resolvedRoutesMu.Unlock()
+	return maps.Clone(s.resolvedRoutes)
 }
 
 // SetRoute implements ROUTE_ADD and ROUTE_DELETE
@@ -346,7 +464,8 @@ func (s *Server) SetRoute(_ context.Context, req *pb.SetRouteRequest) (*pb.SetRo
 	// TODO(wenbli): Check if recursive resolution is an infinite recursion. This happens if there is a cycle.
 
 	niName := vrfIDToNiName(req.GetVrfId())
-	if _, err := s.rib.AddRoute(niName, &Route{
+	if err := s.setRoute(niName, &Route{
+		// TODO(wenbli): check if pfx has to be canonical or does it tolerate it: i.e. 1.1.1.0/24 instead of 1.1.1.1/24
 		Prefix:   pfx,
 		NextHops: nexthops,
 		RoutePref: RoutePreference{
@@ -354,21 +473,43 @@ func (s *Server) SetRoute(_ context.Context, req *pb.SetRouteRequest) (*pb.SetRo
 			Metric:        req.GetMetric(),
 		},
 	}); err != nil {
-		return nil, status.Errorf(codes.Aborted, "error while adding route to sysrib: %v", err)
-	}
-
-	if err := s.ResolveAndProgramDiff(); err != nil {
-		return nil, status.Errorf(codes.Aborted, "error while resolving sysrib: %v", err)
+		return nil, status.Error(codes.Aborted, fmt.Sprint(err))
 	}
 
 	// There could be operations carried out by ResolveAndProgramDiff() other than the input route, so we look up our particular prefix.
 	status := pb.SetRouteResponse_STATUS_FAIL
+	s.programmedRoutesMu.Lock()
 	if _, ok := s.programmedRoutes[RouteKey{Prefix: pfx, NIName: niName}]; ok {
 		status = pb.SetRouteResponse_STATUS_SUCCESS
 	}
+	s.programmedRoutesMu.Unlock()
 	return &pb.SetRouteResponse{
 		Status: status,
 	}, nil
+}
+
+// setRoute adds/deletes a route from the RIB manager.
+func (s *Server) setRoute(niName string, route *Route) error {
+	if _, err := s.rib.AddRoute(niName, route); err != nil {
+		return fmt.Errorf("error while adding route to sysrib: %v", err)
+	}
+
+	if err := s.ResolveAndProgramDiff(); err != nil {
+		return fmt.Errorf("error while resolving sysrib: %v", err)
+	}
+	return nil
+}
+
+// setZebraRoute adds a zebra-formatted route to the RIB manager.
+func (s *Server) setZebraRoute(niName string, zroute *zebra.IPRouteBody) error {
+	if s == nil {
+		return fmt.Errorf("cannot add route to nil sysrib server")
+	}
+	route := convertZebraRoute(niName, zroute)
+	if err := s.setRoute(niName, route); err != nil {
+		return err
+	}
+	return nil
 }
 
 // addInterfacePrefix adds a prefix to the sysrib as a connected route.

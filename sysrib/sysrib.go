@@ -69,6 +69,28 @@ type Route struct {
 	RoutePref RoutePreference
 }
 
+func (r *Route) String() string {
+	readable := fmt.Sprintf("%s (%+v)", r.Prefix, r.RoutePref)
+	switch {
+	case r.Connected != nil:
+		return fmt.Sprintf("%s: connected interface %+v", readable, *r.Connected)
+	default:
+		readable += ": ["
+		for i, nh := range r.NextHops {
+			if i != 0 {
+				readable += ", "
+			}
+			readable += fmt.Sprintf("nexthop %d: ", i)
+			if nh == nil {
+				readable += "nil nexthop"
+			}
+			readable += fmt.Sprintf("%+v", nh)
+		}
+		readable += "]"
+		return readable
+	}
+}
+
 // NewSysRIB returns a SysRIB from an input parsed OpenConfig configuration.
 func NewSysRIB(cfg *oc.Device) (*SysRIB, error) {
 	sr := &SysRIB{
@@ -225,7 +247,7 @@ func (sr *SysRIB) EgressInterface(inputNI string, ip *net.IPNet) ([]*Interface, 
 
 // EgressNexthops returns the resolved nexthops for the input IP prefix for
 // network instance inputNI based on the device's interface state.
-func (sr *SysRIB) EgressNexthops(inputNI string, ip *net.IPNet, interfaces map[Interface]bool) (map[ResolvedNexthop]bool, error) {
+func (sr *SysRIB) EgressNexthops(inputNI string, ip *net.IPNet, interfaces map[Interface]bool) (map[ResolvedNexthop]bool, *Route, error) {
 	// no RIB recursion currently
 	if inputNI == "" {
 		inputNI = sr.defaultNI
@@ -233,11 +255,11 @@ func (sr *SysRIB) EgressNexthops(inputNI string, ip *net.IPNet, interfaces map[I
 
 	found, routes, err := sr.entryForCIDR(inputNI, ip)
 	if err != nil {
-		return nil, fmt.Errorf("cannot lookup IP %s", ip)
+		return nil, nil, fmt.Errorf("cannot lookup IP %s", ip)
 	}
 
 	if !found {
-		return nil, nil
+		return nil, nil, nil
 	}
 
 	// For each route entry for the prefix, recursively resolve their nexthops.
@@ -249,9 +271,11 @@ func (sr *SysRIB) EgressNexthops(inputNI string, ip *net.IPNet, interfaces map[I
 	//
 	// TODO(wenbli): Support WCMP.
 	allEgressNhs := map[RoutePreference]map[ResolvedNexthop]bool{}
+	resolvedRoutes := map[RoutePreference]*Route{}
 	for _, cr := range routes {
 		if allEgressNhs[cr.RoutePref] == nil {
 			allEgressNhs[cr.RoutePref] = map[ResolvedNexthop]bool{}
+			resolvedRoutes[cr.RoutePref] = cr
 		}
 		egressNhs := allEgressNhs[cr.RoutePref]
 		if cr.Connected != nil {
@@ -275,11 +299,11 @@ func (sr *SysRIB) EgressNexthops(inputNI string, ip *net.IPNet, interfaces map[I
 		for _, nh := range cr.NextHops {
 			_, nhop, err := net.ParseCIDR(fmt.Sprintf("%s/32", nh.Address))
 			if err != nil {
-				return nil, fmt.Errorf("can't parse %s/32 into CIDR, %v", nh.Address, err)
+				return nil, nil, fmt.Errorf("can't parse %s/32 into CIDR, %v", nh.Address, err)
 			}
-			recursiveNHs, err := sr.EgressNexthops(nh.NetworkInstance, nhop, interfaces)
+			recursiveNHs, _, err := sr.EgressNexthops(nh.NetworkInstance, nhop, interfaces)
 			if err != nil {
-				return nil, fmt.Errorf("for nexthop %s, can't resolve: %v", nh.Address, err)
+				return nil, nil, fmt.Errorf("for nexthop %s, can't resolve: %v", nh.Address, err)
 			}
 			for nh := range recursiveNHs {
 				// TODO(wenbli): Implement WCMP: there could be a merger of two nexthops, in which case we add their weights.
@@ -299,11 +323,11 @@ func (sr *SysRIB) EgressNexthops(inputNI string, ip *net.IPNet, interfaces map[I
 
 	for _, rp := range allRoutePrefs {
 		if len(allEgressNhs[rp]) != 0 {
-			return allEgressNhs[rp], nil
+			return allEgressNhs[rp], resolvedRoutes[rp], nil
 		}
 	}
 
-	return nil, nil
+	return nil, nil, nil
 }
 
 // niConnected is a description of a set of connected routes within a network instance.
