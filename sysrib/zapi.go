@@ -40,6 +40,9 @@ import (
 	"github.com/wenovus/gobgp/v3/pkg/zebra"
 )
 
+// Part of this file was adapted from
+// https://github.com/coreswitch/zebra/blob/master/rib/zapi.go
+
 // TODO(wenbli): Consider putting this into a different, internal package once
 // the API boundary between ZAPI and the RIB manager becomes more stable. An
 // interface is a way to break the circular dependency.
