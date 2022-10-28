@@ -21,7 +21,6 @@ import (
 	"github.com/openconfig/ygot/ygot"
 	"google.golang.org/grpc"
 
-	gpb "github.com/openconfig/gnmi/proto/gnmi"
 	dpb "github.com/openconfig/lemming/proto/dataplane"
 	pb "github.com/openconfig/lemming/proto/sysrib"
 )
@@ -118,31 +117,6 @@ func checkResolvedRoutesEqual(got, want []*ResolvedRoute) error {
 		return fmt.Errorf("Resolved routes are not equal: (-got, +want):\n%s", diff)
 	}
 	return nil
-}
-
-func mustPath(s string) *gpb.Path {
-	p, err := ygot.StringToStructuredPath(s)
-	if err != nil {
-		panic(fmt.Sprintf("cannot parse subscription path %s, %v", s, err))
-	}
-	return p
-}
-
-// Disable linter for this helper function.
-//
-//nolint:unparam
-func mustTargetPath(t, s string) *gpb.Path {
-	p := mustPath(s)
-	p.Target = t
-	return p
-}
-
-func mustPSPath(ps ygnmi.PathStruct) *gpb.Path {
-	p, _, err := ygnmi.ResolvePath(ps)
-	if err != nil {
-		panic(err)
-	}
-	return p
 }
 
 func configureInterface(t *testing.T, intf AddIntfAction, yclient *ygnmi.Client) {
