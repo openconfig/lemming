@@ -14,17 +14,15 @@
 # limitations under the License.
 
 
-set -xe
+set -xeE
 
-export PATH=${PATH}:/usr/local/go/bin
-gopath=$(go env GOPATH)
-export PATH=${PATH}:$gopath/bin
-curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-amd64 && \
-sudo install skaffold /usr/local/bin/
+printf "\n  apiServerPort: 6443" >> /kne-internal/kind/kind-no-cni.yaml
+sed -i "s/name: kne/name: kne\n    recycle: true/g" /kne-internal/deploy/kne/kind-bridge.yaml
 
-cd /tmp/workspace
-kne deploy ~/kne-internal/deploy/kne/kind-bridge.yaml
+kne deploy /kne-internal/deploy/kne/kind-bridge.yaml || true
+mkdir -p ~/.kube
+kind get kubeconfig --internal --name kne > ~/.kube/config
+docker network connect kind "$(cat /etc/hostname)"
 
-skaffold run -m lemming-operator
-make load
+kne deploy /kne-internal/deploy/kne/kind-bridge.yaml
 make itest
