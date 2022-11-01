@@ -414,8 +414,9 @@ type NextHop struct {
 	Port   string `protobuf:"bytes,1,opt,name=port,proto3" json:"port,omitempty"`
 	Ip     string `protobuf:"bytes,2,opt,name=ip,proto3" json:"ip,omitempty"`
 	Weight uint64 `protobuf:"varint,3,opt,name=weight,proto3" json:"weight,omitempty"`
-	// extra_tail_actions are extra egress actions that are applied just prior to
-	// outputting the packet.
+	// extra_tail_actions are extra actions that are applied just prior to
+	// transmitting the packet to the output port (at which time the output
+	// actions are applied).
 	ExtraTailActions []*forwarding.ActionDesc `protobuf:"bytes,4,rep,name=extra_tail_actions,json=extraTailActions,proto3" json:"extra_tail_actions,omitempty"`
 }
 
