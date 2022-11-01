@@ -21,7 +21,7 @@ package forwarding;
 
 import "proto/forwarding/forwarding_table.proto";
 
-option go_package = "github.com/openconfig/lemming/dataplane/proto/forwarding";
+option go_package = "github.com/openconfig/lemming/proto/forwarding";
 
 // Union of all possible streaming message requests.
 message OperationRequest {

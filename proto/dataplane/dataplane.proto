@@ -16,6 +16,8 @@ syntax = "proto3";
 
 package lemming.dataplane;
 
+import "proto/forwarding/forwarding_action.proto";
+
 option go_package = "github.com/openconfig/lemming/proto/dataplane";
 
 message UpdatePortRequest {
@@ -53,6 +55,9 @@ message NextHop {
   string port = 1;
   string ip = 2;
   uint64 weight = 3;
+  // extra_tail_actions are extra egress actions that are applied just prior to
+  // outputting the packet.
+  repeated forwarding.ActionDesc extra_tail_actions = 4;
 }
 
 message InsertRouteRequest {
