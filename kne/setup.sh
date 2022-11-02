@@ -13,7 +13,7 @@ DIR=$(pwd)
 cat > config.yaml << EOF
 topology: $DIR/$1
 kubecfg: $HOME/.kube/config
-cli: $GOPATH/bin/kne
+cli: $(which kne)
 username: foo
 password: fake
 EOF

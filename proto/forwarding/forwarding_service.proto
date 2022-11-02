@@ -27,7 +27,7 @@ import "proto/forwarding/forwarding_packetsink.proto";
 import "proto/forwarding/forwarding_port.proto";
 import "proto/forwarding/forwarding_table.proto";
 
-option go_package = "github.com/openconfig/lemming/dataplane/proto/forwarding";
+option go_package = "github.com/openconfig/lemming/proto/forwarding";
 
 // Service provisions the forwarding service.
 service Service {
