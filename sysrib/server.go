@@ -24,7 +24,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"syscall"
 
 	log "github.com/golang/glog"
 	"github.com/openconfig/gribigo/afthelper"
@@ -48,9 +47,9 @@ const (
 	SockAddr  = "/tmp/sysrib.api"
 	defaultNI = "DEFAULT"
 
-	// ZAPI_ADDR is the connection address for ZAPI, which is in the form
+	// ZAPIAddr is the connection address for ZAPI, which is in the form
 	// of "type:address", where type can either be a unix or tcp socket.
-	ZAPI_ADDR = "unix:/var/run/zserv.api"
+	ZAPIAddr = "unix:/var/run/zserv.api"
 )
 
 // Server is the implementation of the Sysrib API.
@@ -310,52 +309,45 @@ func (s *Server) programRoute(r *ResolvedRoute) error {
 
 // convertToZAPIRoute converts a route to a ZAPI route for redistributing to
 // other protocols (e.g. BGP).
-func convertToZAPIRoute(routeKey RouteKey, route *Route) (*zebra.IPRouteBody, *zebra.NexthopRegisterBody, error) {
+func convertToZAPIRoute(routeKey RouteKey, route *Route) (*zebra.IPRouteBody, error) {
 	if route.Connected != nil {
 		// TODO(wenbli): Connected routes not supported. This is not
 		// needed right now since only need to redistribute
 		// non-connected routes.
-		return nil, nil, nil
+		return nil, nil
 	}
 	vrfID, err := niNameToVrfID(routeKey.NIName)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	_, ipv4Net, err := net.ParseCIDR(route.Prefix)
 	if err != nil {
-		return nil, nil, fmt.Errorf("gribigo/zapi: %v", err)
+		return nil, fmt.Errorf("gribigo/zapi: %v", err)
 	}
 	prefixLen, _ := ipv4Net.Mask.Size()
 
 	var nexthops []zebra.Nexthop
-	var regNexthops []*zebra.RegisteredNexthop
 	for _, nh := range route.NextHops {
 		nexthops = append(nexthops, zebra.Nexthop{
 			VrfID:  vrfID,
 			Gate:   net.ParseIP(nh.Address),
 			Weight: uint32(nh.Weight),
 		})
-		regNexthops = append(regNexthops, &zebra.RegisteredNexthop{
-			Family: syscall.AF_INET,
-			Prefix: net.ParseIP(nh.Address).To4(),
-		})
 	}
 
 	return &zebra.IPRouteBody{
-			Flags:   zebra.FlagAllowRecursion,
-			Type:    zebra.RouteStatic,
-			Safi:    zebra.SafiUnicast,
-			Message: zebra.MessageNexthop,
-			Prefix: zebra.Prefix{
-				Prefix:    ipv4Net.IP.To4(),
-				PrefixLen: uint8(prefixLen),
-			},
-			Nexthops: nexthops,
-			Distance: 1, // Static
-		}, &zebra.NexthopRegisterBody{
-			Nexthops: regNexthops,
-		}, nil
+		Flags:   zebra.FlagAllowRecursion,
+		Type:    zebra.RouteStatic,
+		Safi:    zebra.SafiUnicast,
+		Message: zebra.MessageNexthop,
+		Prefix: zebra.Prefix{
+			Prefix:    ipv4Net.IP.To4(),
+			PrefixLen: uint8(prefixLen),
+		},
+		Nexthops: nexthops,
+		Distance: 1, // Static
+	}, nil
 }
 
 // ResolveAndProgramDiff walks through each prefix in the RIB, resolving it and
@@ -406,7 +398,7 @@ func (s *Server) ResolveAndProgramDiff() error {
 				s.programmedRoutesMu.Lock()
 				s.programmedRoutes[rr.RouteKey] = rr
 				s.programmedRoutesMu.Unlock()
-				zrouteBody, _, err := convertToZAPIRoute(rr.RouteKey, route)
+				zrouteBody, err := convertToZAPIRoute(rr.RouteKey, route)
 				if err != nil {
 					log.Warningf("failed to convert resolved route to zebra BGP route: %v", err)
 				}
@@ -414,7 +406,7 @@ func (s *Server) ResolveAndProgramDiff() error {
 					log.V(1).Info("Sending new route to ZAPI clients: ", zrouteBody)
 					ClientMutex.RLock()
 					for conn := range ClientMap {
-						serverSendMessage(NewLogger(), conn, zebra.RedistributeRouteAdd, zrouteBody)
+						serverSendMessage(newLogger(), conn, zebra.RedistributeRouteAdd, zrouteBody)
 					}
 					ClientMutex.RUnlock()
 				}

@@ -227,7 +227,7 @@ func testRouteRedistribution(t *testing.T, routeReadyBeforeDial bool) {
 
 	version := zebra.MaxZapiVer
 	software := zebra.MaxSoftware
-	logger := NewLogger()
+	logger := newLogger()
 
 	SendMessage(t, conn, &zebra.Message{
 		Header: zebra.Header{

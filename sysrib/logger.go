@@ -42,9 +42,9 @@ func (l *myLogger) GetLevel() log.LogLevel {
 	return log.LogLevel(l.logger.GetLevel())
 }
 
-// NewLogger creates a new logger that is compatible with GoBGP's logger
+// newLogger creates a new logger that is compatible with GoBGP's logger
 // interface.
-func NewLogger() *myLogger {
+func newLogger() *myLogger {
 	var l = logrus.New()
 	return &myLogger{logger: l}
 }
