@@ -43,7 +43,7 @@ func main() {
 		log.Fatalf("failed to create credentials: %v", err)
 	}
 
-	f, err := lemming.New(lis, *target, sysrib.ZAPI_ADDR, grpc.Creds(creds))
+	f, err := lemming.New(lis, *target, sysrib.ZAPIAddr, grpc.Creds(creds))
 	if err != nil {
 		log.Fatalf("Failed to start lemming: %v", err)
 	}
