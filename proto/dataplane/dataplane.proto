@@ -55,10 +55,10 @@ message NextHop {
   string port = 1;
   string ip = 2;
   uint64 weight = 3;
-  // extra_tail_actions are extra actions that are applied just prior to
+  // pre_transmit_actions are extra actions that are applied just prior to
   // transmitting the packet to the output port (at which time the output
   // actions are applied).
-  repeated forwarding.ActionDesc extra_tail_actions = 4;
+  repeated forwarding.ActionDesc pre_transmit_actions = 4;
 }
 
 message InsertRouteRequest {
