@@ -19,7 +19,7 @@ package forwarding;
 
 import "proto/forwarding/forwarding_common.proto";
 
-option go_package = "github.com/openconfig/lemming/dataplane/proto/forwarding";
+option go_package = "github.com/openconfig/lemming/proto/forwarding";
 
 // An ActionType enumerates all supported forwarding actions.
 enum ActionType {

@@ -179,7 +179,7 @@ func waitOTGARPEntry(t *testing.T) {
 // testTraffic generates traffic flow from source network to
 // destination network via srcEndPoint to dstEndPoint and checks for
 // packet loss and returns loss percentage as float.
-func testTraffic(t *testing.T, ate *ondatra.ATEDevice, top gosnappi.Config, srcEndPoint, dstEndPoint Attributes) float32 {
+func testTraffic(t *testing.T, ate *ondatra.ATEDevice, top gosnappi.Config, srcEndPoint, dstEndPoint Attributes, dur time.Duration) float32 {
 	otg := ate.OTG()
 	gwIP := gatewayMap[srcEndPoint].IPv4
 	waitOTGARPEntry(t)
@@ -201,7 +201,7 @@ func testTraffic(t *testing.T, ate *ondatra.ATEDevice, top gosnappi.Config, srcE
 	otg.PushConfig(t, top)
 
 	otg.StartTraffic(t)
-	time.Sleep(15 * time.Second)
+	time.Sleep(dur)
 	t.Logf("Stop traffic")
 	otg.StopTraffic(t)
 
@@ -360,7 +360,10 @@ func TestIPv4Entry(t *testing.T) {
 				chk.HasResult(t, c.Results(t), wantResult, chk.IgnoreOperationID())
 			}
 
-			loss := testTraffic(t, ate, ateTop, atePort1, atePort2)
+			// Send some traffic to make sure neighbor cache is warmed up on the dut.
+			testTraffic(t, ate, ateTop, atePort1, atePort2, 1*time.Second)
+
+			loss := testTraffic(t, ate, ateTop, atePort1, atePort2, 15*time.Second)
 			if loss > 1 {
 				t.Errorf("Loss: got %g, want <= 1", loss)
 			}
