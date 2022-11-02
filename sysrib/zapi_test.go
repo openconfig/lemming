@@ -227,7 +227,7 @@ func testRouteRedistribution(t *testing.T, routeReadyBeforeDial bool) {
 
 	version := zebra.MaxZapiVer
 	software := zebra.MaxSoftware
-	logger := NewLogger()
+	logger := newLogger()
 
 	SendMessage(t, conn, &zebra.Message{
 		Header: zebra.Header{
@@ -239,7 +239,11 @@ func testRouteRedistribution(t *testing.T, routeReadyBeforeDial bool) {
 		Body: &zebra.HelloBody{},
 	})
 
-	_, err = zebra.ReceiveSingleMsg(logger, conn, version, software, "test-client")
+	// The first message is expected to be a capabilities message which is
+	// discarded since no client uses it.
+	if _, err := zebra.ReceiveSingleMsg(logger, conn, version, software, "test-client"); err != nil {
+		t.Fatalf("Got error during call to first ReceiveSingleMsg: %v", err)
+	}
 
 	if !routeReadyBeforeDial {
 		if _, err := s.SetRoute(context.Background(), routeReq); err != nil {

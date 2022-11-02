@@ -52,12 +52,8 @@ import (
 
 // Client is a ZAPI client.
 type Client struct {
-	conn      net.Conn
-	version   uint8
-	allVrf    bool
-	vrfId     uint32
-	routeType zebra.RouteType
-	zserver   *ZServer
+	conn    net.Conn
+	zserver *ZServer
 }
 
 // TODO(wenbli): Client management variables should reside within the ZServer
@@ -120,7 +116,7 @@ func (c *Client) RedistributeResolvedRoutes(logger log.Logger, conn net.Conn) {
 			"Topic": "Sysrib",
 		})
 	for routeKey, route := range resolvedRoutes {
-		zrouteBody, _, err := convertToZAPIRoute(routeKey, route)
+		zrouteBody, err := convertToZAPIRoute(routeKey, route)
 		if err != nil {
 			logger.Warn(fmt.Sprintf("failed to convert resolved route to zebra BGP route: %v", err),
 				log.Fields{
@@ -147,7 +143,7 @@ func (c *Client) RedistributeResolvedRoutes(logger log.Logger, conn net.Conn) {
 func (c *Client) HandleRequest(conn net.Conn, vrfID uint32) {
 	version := zebra.MaxZapiVer
 	software := zebra.MaxSoftware
-	logger := NewLogger()
+	logger := newLogger()
 	defer func() {
 		err := conn.Close()
 		if err != nil {
@@ -284,7 +280,7 @@ func ZServerStart(socketType string, path string, vrfID uint32, sysrib *Server) 
 			}
 		}
 	default:
-		return nil, fmt.Errorf("ZServer socket type is not unix.")
+		return nil, fmt.Errorf("zebra server socket type must be unix or unix-writable")
 	}
 
 	server := &ZServer{
