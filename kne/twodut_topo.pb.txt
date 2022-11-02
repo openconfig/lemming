@@ -2,6 +2,7 @@ name: "twodut"
 nodes: {
     name: "lemming"
     type: LEMMING
+    vendor: OPENCONFIG
     config: {
         args: "--target=lemming"
         args: "--enable_dataplane"
@@ -13,6 +14,7 @@ nodes: {
 nodes: {
     name: "lemming2"
     type: LEMMING
+    vendor: OPENCONFIG
     config: {
         args: "--target=lemming2"
         args: "--enable_dataplane"

@@ -2,6 +2,7 @@ name: "ixia-c"
 nodes: {
     name: "otg"
     type: IXIA_TG
+    vendor: KEYSIGHT
     version: "0.0.1-9999"
     services: {
         key: 40051
@@ -21,6 +22,7 @@ nodes: {
 nodes: {
     name: "lemming"
     type: LEMMING
+    vendor: OPENCONFIG
     config: {
         args: "--target=lemming"
         args: "--enable_dataplane"

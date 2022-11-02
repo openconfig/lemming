@@ -20,7 +20,7 @@ package forwarding;
 import "proto/forwarding/forwarding_action.proto";
 import "proto/forwarding/forwarding_common.proto";
 
-option go_package = "github.com/openconfig/lemming/dataplane/proto/forwarding";
+option go_package = "github.com/openconfig/lemming/proto/forwarding";
 
 // PacketInjectRequest is a request to inject frames into the port.
 message PacketInjectRequest {
