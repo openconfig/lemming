@@ -20,7 +20,7 @@ package forwarding;
 import "proto/forwarding/forwarding_common.proto";
 import "proto/forwarding/forwarding_port.proto";
 
-option go_package = "github.com/openconfig/lemming/dataplane/proto/forwarding";
+option go_package = "github.com/openconfig/lemming/proto/forwarding";
 
 // Event enumerates different types of events that can be generated.
 enum Event {
