@@ -68,16 +68,14 @@ func (r *bgpReconciler) reconcile(intended, applied *oc.NetworkInstance_Protocol
 		r.currentConfig, err = InitialConfig(context.Background(), applied, r.bgpServer, newConfig, gracefulRestart)
 		if err != nil {
 			return fmt.Errorf("Failed to apply initial BGP configuration %v", newConfig)
-		} else {
-			r.bgpStarted = true
 		}
+		r.bgpStarted = true
 	case !bgpShouldStart && r.bgpStarted:
 		glog.V(1).Info("Stopping BGP")
 		if err := r.bgpServer.StopBgp(context.Background(), &api.StopBgpRequest{}); err != nil {
 			return errors.New("Failed to stop BGP service")
-		} else {
-			r.bgpStarted = false
 		}
+		r.bgpStarted = false
 		r.currentConfig = &bgpconfig.BgpConfigSet{}
 		*applied = oc.NetworkInstance_Protocol_Bgp{}
 		applied.PopulateDefaults()

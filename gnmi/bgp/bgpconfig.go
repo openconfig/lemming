@@ -127,11 +127,11 @@ func assignGlobalpolicy(ctx context.Context, bgpServer *server.BgpServer, a *bgp
 			Default:  def,
 		}),
 	})
-
 }
 
 func addPeerGroups(ctx context.Context, bgpServer *server.BgpServer, addedPg []bgpconfig.PeerGroup) {
 	for _, pg := range addedPg {
+		pg := pg
 		bgpServer.Log().Info("Add PeerGroup",
 			log.Fields{
 				"Topic": "config",
@@ -170,6 +170,7 @@ func deletePeerGroups(ctx context.Context, bgpServer *server.BgpServer, deletedP
 
 func updatePeerGroups(ctx context.Context, bgpServer *server.BgpServer, updatedPg []bgpconfig.PeerGroup) bool {
 	for _, pg := range updatedPg {
+		pg := pg
 		bgpServer.Log().Info("update PeerGroup",
 			log.Fields{
 				"Topic": "config",
@@ -214,6 +215,7 @@ func addDynamicNeighbors(ctx context.Context, bgpServer *server.BgpServer, dynam
 
 func addNeighbors(ctx context.Context, applied *oc.NetworkInstance_Protocol_Bgp, bgpServer *server.BgpServer, added []bgpconfig.Neighbor) {
 	for _, p := range added {
+		p := p
 		bgpServer.Log().Info("Add Peer",
 			log.Fields{
 				"Topic": "config",
@@ -311,7 +313,7 @@ func InitialConfig(ctx context.Context, applied *oc.NetworkInstance_Protocol_Bgp
 			Version:              uint32(newConfig.Zebra.Config.Version),
 			NexthopTriggerEnable: newConfig.Zebra.Config.NexthopTriggerEnable,
 			NexthopTriggerDelay:  uint32(newConfig.Zebra.Config.NexthopTriggerDelay),
-			MplsLabelRangeSize:   uint32(newConfig.Zebra.Config.MplsLabelRangeSize),
+			MplsLabelRangeSize:   newConfig.Zebra.Config.MplsLabelRangeSize,
 			SoftwareName:         newConfig.Zebra.Config.SoftwareName,
 		}); err != nil {
 			bgpServer.Log().Fatal("failed to set zebra config",
@@ -374,7 +376,7 @@ func InitialConfig(ctx context.Context, applied *oc.NetworkInstance_Protocol_Bgp
 			Vrf: &api.Vrf{
 				Name:     vrf.Config.Name,
 				Rd:       a,
-				Id:       uint32(vrf.Config.Id),
+				Id:       vrf.Config.Id,
 				ImportRt: importRtList,
 				ExportRt: exportRtList,
 			},
