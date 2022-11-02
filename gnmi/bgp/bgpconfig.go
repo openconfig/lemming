@@ -263,6 +263,7 @@ func deleteNeighbors(ctx context.Context, bgpServer *server.BgpServer, deleted [
 
 func updateNeighbors(ctx context.Context, bgpServer *server.BgpServer, updated []bgpconfig.Neighbor) bool {
 	for _, p := range updated {
+		p := p
 		bgpServer.Log().Info("Update Peer",
 			log.Fields{
 				"Topic": "config",
