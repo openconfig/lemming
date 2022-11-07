@@ -16,6 +16,7 @@ package integration_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -181,23 +182,19 @@ func waitOTGARPEntry(t *testing.T) {
 // packet loss and returns loss percentage as float.
 func testTraffic(t *testing.T, ate *ondatra.ATEDevice, top gosnappi.Config, srcEndPoint, dstEndPoint Attributes, dur time.Duration) float32 {
 	otg := ate.OTG()
-	gwIP := gatewayMap[srcEndPoint].IPv4
 	waitOTGARPEntry(t)
-	dstMac := gnmi.Get(t, ate.OTG(), otgpath.Root().Interface(srcEndPoint.Name+".Eth").Ipv4Neighbor(gwIP).LinkLayerAddress().State())
 	top.Flows().Clear().Items()
 	flowipv4 := top.Flows().Add().SetName("Flow")
 	flowipv4.Metrics().SetEnable(true)
-	flowipv4.TxRx().Port().
-		SetTxName(srcEndPoint.Name).
-		SetRxName(dstEndPoint.Name)
+	flowipv4.TxRx().Device().
+		SetTxNames([]string{srcEndPoint.Name + ".IPv4"}).
+		SetRxNames([]string{dstEndPoint.Name + ".IPv4"})
 	flowipv4.Duration().SetChoice("continuous")
-	e1 := flowipv4.Packet().Add().Ethernet()
-	e1.Src().SetValue(srcEndPoint.MAC)
-	e1.Dst().SetChoice("value").SetValue(dstMac)
+	flowipv4.Packet().Add().Ethernet()
 	v4 := flowipv4.Packet().Add().Ipv4()
-	srcIpv4 := srcEndPoint.IPv4
-	v4.Src().SetValue(srcIpv4)
+	v4.Src().SetValue(srcEndPoint.IPv4)
 	v4.Dst().Increment().SetStart("198.51.100.0").SetCount(250)
+	//printOTGConfig(t, top, "flow")
 	otg.PushConfig(t, top)
 
 	otg.StartTraffic(t)
@@ -235,6 +232,15 @@ func testCounters(t *testing.T, dut *ondatra.DUTDevice, wantTxPkts, wantRxPkts u
 	}
 }
 
+func printOTGConfig(t testing.TB, config gosnappi.Config, marker string) {
+	t.Helper()
+	jsoncfg, err := config.ToJson()
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Printf("%s: %s\n", marker, jsoncfg)
+}
+
 // TestIPv4Entry tests a single IPv4Entry forwarding entry.
 func TestIPv4Entry(t *testing.T) {
 	ctx := context.Background()
@@ -244,6 +250,7 @@ func TestIPv4Entry(t *testing.T) {
 
 	ate := ondatra.ATE(t, "ate")
 	ateTop := configureATE(t, ate)
+	//printOTGConfig(t, ateTop, "beginning")
 	ate.OTG().PushConfig(t, ateTop)
 
 	cases := []struct {
