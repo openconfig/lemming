@@ -16,7 +16,6 @@ package integration_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -194,7 +193,6 @@ func testTraffic(t *testing.T, ate *ondatra.ATEDevice, top gosnappi.Config, srcE
 	v4 := flowipv4.Packet().Add().Ipv4()
 	v4.Src().SetValue(srcEndPoint.IPv4)
 	v4.Dst().Increment().SetStart("198.51.100.0").SetCount(250)
-	//printOTGConfig(t, top, "flow")
 	otg.PushConfig(t, top)
 
 	otg.StartTraffic(t)
@@ -232,15 +230,6 @@ func testCounters(t *testing.T, dut *ondatra.DUTDevice, wantTxPkts, wantRxPkts u
 	}
 }
 
-func printOTGConfig(t testing.TB, config gosnappi.Config, marker string) {
-	t.Helper()
-	jsoncfg, err := config.ToJson()
-	if err != nil {
-		t.Fatal(err)
-	}
-	fmt.Printf("%s: %s\n", marker, jsoncfg)
-}
-
 // TestIPv4Entry tests a single IPv4Entry forwarding entry.
 func TestIPv4Entry(t *testing.T) {
 	ctx := context.Background()
@@ -250,7 +239,6 @@ func TestIPv4Entry(t *testing.T) {
 
 	ate := ondatra.ATE(t, "ate")
 	ateTop := configureATE(t, ate)
-	//printOTGConfig(t, ateTop, "beginning")
 	ate.OTG().PushConfig(t, ateTop)
 
 	cases := []struct {
