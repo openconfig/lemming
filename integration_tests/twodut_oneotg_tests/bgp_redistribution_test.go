@@ -136,6 +136,7 @@ var (
 
 // configureATE configures port1 and port2 on the ATE.
 func configureATE(t *testing.T, ate *ondatra.ATEDevice) gosnappi.Config {
+	t.Helper()
 	otg := ate.OTG()
 	top := otg.NewConfig(t)
 
@@ -160,7 +161,7 @@ func configureATE(t *testing.T, ate *ondatra.ATEDevice) gosnappi.Config {
 	eth3 := i3.Ethernets().Add().SetName(atePort3.Name + ".Eth").
 		SetPortName(i3.Name()).SetMac(atePort3.MAC)
 	eth3.Ipv4Addresses().Add().SetName(i3.Name() + ".IPv4").
-		SetAddress(atePort3.IPv4).SetGateway(dutPort3.IPv4).
+		SetAddress(atePort3.IPv4).SetGateway(dut2Port1.IPv4).
 		SetPrefix(int32(atePort3.IPv4Len))
 	return top
 }
