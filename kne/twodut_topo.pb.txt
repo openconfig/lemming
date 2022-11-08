@@ -1,7 +1,6 @@
 name: "twodut"
 nodes: {
     name: "lemming"
-    type: LEMMING
     vendor: OPENCONFIG
     config: {
         args: "--target=lemming"
@@ -13,7 +12,6 @@ nodes: {
 }
 nodes: {
     name: "lemming2"
-    type: LEMMING
     vendor: OPENCONFIG
     config: {
         args: "--target=lemming2"
