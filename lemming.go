@@ -74,6 +74,7 @@ func New(lis net.Listener, targetName string, opts ...grpc.ServerOption) (*Devic
 	s := grpc.NewServer(opts...)
 
 	recs := []reconciler.Reconciler{
+		dplane,
 		fakedevice.NewSystemBaseTask(),
 		fakedevice.NewBootTimeTask(),
 		fakedevice.NewGoBGPTask(),
@@ -107,11 +108,6 @@ func New(lis net.Listener, targetName string, opts ...grpc.ServerOption) (*Devic
 	}
 
 	cacheClient := gnmiServer.LocalClient()
-	if dplane != nil {
-		if err := dplane.Start(context.Background(), cacheClient, targetName); err != nil {
-			return nil, err
-		}
-	}
 
 	log.Infof("starting sysrib")
 	sysribServer, err := sysrib.New(sysDataplane)

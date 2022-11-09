@@ -36,11 +36,6 @@ const (
 	arpPuntTable     = "arp-punt"
 )
 
-var (
-	etherTypeIPV4 = mustParseHex("0800")
-	etherTypeIPV6 = mustParseHex("86DD")
-)
-
 func mustParseHex(hexStr string) []byte {
 	b, err := hex.DecodeString(hexStr)
 	if err != nil {
@@ -154,11 +149,11 @@ func SetupForwardingTables(ctx context.Context, c fwdpb.ServiceClient) error {
 func createFIBSelector(ctx context.Context, c fwdpb.ServiceClient) error {
 	fieldID := &fwdpb.PacketFieldId{
 		Field: &fwdpb.PacketField{
-			FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_TYPE,
+			FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION,
 		},
 	}
 
-	etherType := &fwdpb.TableCreateRequest{
+	ipVersion := &fwdpb.TableCreateRequest{
 		ContextId: &fwdpb.ContextId{Id: DefaultContextID},
 		Desc: &fwdpb.TableDesc{
 			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
@@ -171,7 +166,7 @@ func createFIBSelector(ctx context.Context, c fwdpb.ServiceClient) error {
 			},
 		},
 	}
-	if _, err := c.TableCreate(ctx, etherType); err != nil {
+	if _, err := c.TableCreate(ctx, ipVersion); err != nil {
 		return err
 	}
 	entries := &fwdpb.TableEntryAddRequest{
@@ -186,7 +181,7 @@ func createFIBSelector(ctx context.Context, c fwdpb.ServiceClient) error {
 				Entry: &fwdpb.EntryDesc_Exact{
 					Exact: &fwdpb.ExactEntryDesc{
 						Fields: []*fwdpb.PacketFieldBytes{{
-							Bytes:   etherTypeIPV4,
+							Bytes:   []byte{0x4},
 							FieldId: fieldID,
 						}},
 					},
@@ -205,7 +200,7 @@ func createFIBSelector(ctx context.Context, c fwdpb.ServiceClient) error {
 				Entry: &fwdpb.EntryDesc_Exact{
 					Exact: &fwdpb.ExactEntryDesc{
 						Fields: []*fwdpb.PacketFieldBytes{{
-							Bytes:   etherTypeIPV6,
+							Bytes:   []byte{0x6},
 							FieldId: fieldID,
 						}},
 					},
@@ -446,7 +441,7 @@ func AddLayer3PuntRule(ctx context.Context, c fwdpb.ServiceClient, portName stri
 }
 
 // AddIPRoute adds a route to the FIB.
-func AddIPRoute(ctx context.Context, c fwdpb.ServiceClient, v4 bool, ip, mask, nextHopIP []byte, port string) error {
+func AddIPRoute(ctx context.Context, c fwdpb.ServiceClient, v4 bool, ip, mask, nextHopIP []byte, port string, extraActs []*fwdpb.ActionDesc) error {
 	fib := fibV6Table
 	if v4 {
 		fib = fibV4Table
@@ -488,6 +483,17 @@ func AddIPRoute(ctx context.Context, c fwdpb.ServiceClient, v4 bool, ip, mask, n
 	}
 	log.V(1).Infof("adding ip route: isv4 %t, ip %v, mask %v, nextHop %v, port %s", v4, ip, mask, nextHopIP, port)
 
+	actions := []*fwdpb.ActionDesc{{ // Set the output port.
+		ActionType: fwdpb.ActionType_ACTION_TYPE_TRANSMIT,
+		Action: &fwdpb.ActionDesc_Transmit{
+			Transmit: &fwdpb.TransmitActionDesc{
+				PortId: &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: port}},
+			},
+		},
+	}, nextHopAct}
+
+	actions = append(actions, extraActs...)
+
 	entry := &fwdpb.TableEntryAddRequest{
 		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: fib}},
 		ContextId: &fwdpb.ContextId{Id: DefaultContextID},
@@ -502,23 +508,7 @@ func AddIPRoute(ctx context.Context, c fwdpb.ServiceClient, v4 bool, ip, mask, n
 				},
 			},
 		},
-		Actions: []*fwdpb.ActionDesc{{ // Set the output port.
-			ActionType: fwdpb.ActionType_ACTION_TYPE_TRANSMIT,
-			Action: &fwdpb.ActionDesc_Transmit{
-				Transmit: &fwdpb.TransmitActionDesc{
-					PortId: &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: port}},
-				},
-			},
-		}, nextHopAct, { // Lookup in the neighbor table.
-			ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
-			Action: &fwdpb.ActionDesc_Lookup{
-				Lookup: &fwdpb.LookupActionDesc{
-					TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: neighborTable}},
-				},
-			},
-		}, { // Finally output the packet.
-			ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
-		}},
+		Actions: actions,
 	}
 	if _, err := c.TableEntryAdd(ctx, entry); err != nil {
 		return err
