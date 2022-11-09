@@ -55,18 +55,18 @@ func CreateExternalPort(ctx context.Context, c fwdpb.ServiceClient, name string)
 								TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: layer2PuntTable}},
 							},
 						},
-					}, { // Decap L2 header.
-						ActionType: fwdpb.ActionType_ACTION_TYPE_DECAP,
-						Action: &fwdpb.ActionDesc_Decap{
-							Decap: &fwdpb.DecapActionDesc{
-								HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET,
-							},
-						},
 					}, { // Lookup in layer 3 table.
 						ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
 						Action: &fwdpb.ActionDesc_Lookup{
 							Lookup: &fwdpb.LookupActionDesc{
 								TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: layer3PuntTable}},
+							},
+						},
+					}, { // Decap L2 header.
+						ActionType: fwdpb.ActionType_ACTION_TYPE_DECAP,
+						Action: &fwdpb.ActionDesc_Decap{
+							Decap: &fwdpb.DecapActionDesc{
+								HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET,
 							},
 						},
 					}, { // Lookup in FIB.
@@ -134,6 +134,13 @@ func CreateLocalPort(ctx context.Context, c fwdpb.ServiceClient, name string, fd
 						Action: &fwdpb.ActionDesc_Lookup{
 							Lookup: &fwdpb.LookupActionDesc{
 								TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: fibSelectorTable}},
+							},
+						},
+					}, { // Lookup in the neighbor table.
+						ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
+						Action: &fwdpb.ActionDesc_Lookup{
+							Lookup: &fwdpb.LookupActionDesc{
+								TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: neighborTable}},
 							},
 						},
 					}, {

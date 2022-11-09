@@ -136,5 +136,5 @@ func TestEstablish(t *testing.T) {
 	gnmi.Replace(t, dut2, bgpPath.Config(), dut2Conf)
 
 	nbrPath := bgpPath.Neighbor(dut2Port1.IPv4)
-	gnmi.Await(t, dut, nbrPath.SessionState().State(), 90*time.Second, oc.Bgp_Neighbor_SessionState_ESTABLISHED)
+	gnmi.Await(t, dut, nbrPath.SessionState().State(), 60*time.Second, oc.Bgp_Neighbor_SessionState_ESTABLISHED)
 }
