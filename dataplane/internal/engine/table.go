@@ -440,8 +440,8 @@ func AddLayer3PuntRule(ctx context.Context, c fwdpb.ServiceClient, portName stri
 	return nil
 }
 
-// AddIPRoute adds a route to the FIB.
-func AddIPRoute(ctx context.Context, c fwdpb.ServiceClient, v4 bool, ip, mask, nextHopIP []byte, port string, extraActs []*fwdpb.ActionDesc) error {
+// AddIPRoute adds a route to the FIB, where pre-transmit are run after setting the output port and next-hop.
+func AddIPRoute(ctx context.Context, c fwdpb.ServiceClient, v4 bool, ip, mask, nextHopIP []byte, port string, preTransmitActions []*fwdpb.ActionDesc) error {
 	fib := fibV6Table
 	if v4 {
 		fib = fibV4Table
@@ -492,7 +492,7 @@ func AddIPRoute(ctx context.Context, c fwdpb.ServiceClient, v4 bool, ip, mask, n
 		},
 	}, nextHopAct}
 
-	actions = append(actions, extraActs...)
+	actions = append(actions, preTransmitActions...)
 
 	entry := &fwdpb.TableEntryAddRequest{
 		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: fib}},
