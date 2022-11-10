@@ -21,10 +21,11 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdtable/mock_fwdpacket"
-	tables "github.com/openconfig/lemming/dataplane/forwarding/fwdtable/tabletestutil"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdpacket"
+	"google.golang.org/protobuf/proto"
+
+	tables "github.com/openconfig/lemming/dataplane/forwarding/fwdtable/tabletestutil"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 
 	_ "github.com/openconfig/lemming/dataplane/forwarding/fwdaction/actions"
@@ -124,14 +125,14 @@ func TestPacketFields(t *testing.T) {
 // determine if the entry descriptor can successfully generate a key.
 func EntryDescBytes(fields []fwdpb.PacketBytes, count int, size int) EntryDesc {
 	var ed EntryDesc
-	for _, f := range fields {
+	for i := 0; i < len(fields); i++ {
 		if count == 0 {
 			break
 		}
-		copied := f
+		copied := proto.Clone(&fields[i]).(*fwdpb.PacketBytes)
 		ed = append(ed, &fwdpb.PacketFieldBytes{
 			FieldId: &fwdpb.PacketFieldId{
-				Bytes: &copied,
+				Bytes: copied,
 			},
 			Bytes: make([]byte, size),
 		})
@@ -140,10 +141,10 @@ func EntryDescBytes(fields []fwdpb.PacketBytes, count int, size int) EntryDesc {
 
 	// Add additional fields as duplicates.
 	for ; count > 0; count-- {
-		field := fields[0]
+		field := proto.Clone(&fields[0]).(*fwdpb.PacketBytes)
 		ed = append(ed, &fwdpb.PacketFieldBytes{
 			FieldId: &fwdpb.PacketFieldId{
-				Bytes: &field,
+				Bytes: field,
 			},
 			Bytes: make([]byte, size),
 		})

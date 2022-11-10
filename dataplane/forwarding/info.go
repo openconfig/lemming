@@ -103,7 +103,6 @@ func CounterInfo(obj fwdobject.Object) string {
 	for _, n := range names {
 		c := counters[fwdpb.CounterId(fwdpb.CounterId_value[n])]
 		buffer = append(buffer, c.String())
-
 	}
 	buffer = append(buffer, "")
 	return strings.Join(buffer, "\n")

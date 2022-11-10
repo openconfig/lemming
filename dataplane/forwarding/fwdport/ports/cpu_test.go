@@ -113,6 +113,5 @@ func TestCpuWrite(t *testing.T) {
 	}
 	if !proto.Equal(list[0], want) {
 		t.Fatalf("Write failed to get parsed fields, Got %v, want %v", list[0], want)
-
 	}
 }

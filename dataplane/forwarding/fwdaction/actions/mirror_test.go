@@ -66,7 +66,7 @@ func (recordPort) State(op *fwdpb.PortInfo) (*fwdpb.PortStateReply, error) {
 var _ fwdport.Port = &recordPort{}
 
 // makeUpdateDstMacAction returns an action desc to update the mac address.
-func makeUpdateDstMacAction(mac []byte) (*fwdpb.ActionDesc, error) {
+func makeUpdateDstMacAction(mac []byte) *fwdpb.ActionDesc {
 	desc := fwdpb.ActionDesc{
 		ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
 	}
@@ -82,7 +82,7 @@ func makeUpdateDstMacAction(mac []byte) (*fwdpb.ActionDesc, error) {
 	desc.Action = &fwdpb.ActionDesc_Update{
 		Update: &update,
 	}
-	return &desc, nil
+	return &desc
 }
 
 // TestMirror tests the mirror action and builder.
@@ -150,10 +150,7 @@ func TestMirror(t *testing.T) {
 		mirror := fwdpb.MirrorActionDesc{}
 
 		if test.hasActions {
-			ad, err := makeUpdateDstMacAction(dmac)
-			if err != nil {
-				t.Fatalf("%d: Unable to create update action, err %v", idx, err)
-			}
+			ad := makeUpdateDstMacAction(dmac)
 			mirror.Actions = []*fwdpb.ActionDesc{ad}
 		}
 		if test.hasPort {
@@ -165,7 +162,7 @@ func TestMirror(t *testing.T) {
 		}
 		action, err := fwdaction.New(&desc, ctx)
 		if err != nil {
-			t.Fatalf("%v: NewAction failed, desc %v failed, err %v.", idx, desc, err)
+			t.Fatalf("%v: NewAction failed, desc %v failed, err %v.", idx, &desc, err)
 		}
 
 		// Verify the action by processing a packet and verifying the counters

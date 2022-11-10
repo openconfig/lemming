@@ -70,7 +70,7 @@ func (s *selectActionList) Process(packet fwdpacket.Packet, counters fwdobject.C
 	}
 	index := s.hashFn(key)
 	if index >= len(s.set) {
-		index = index - len(s.set)*(index/len(s.set))
+		index -= len(s.set) * (index / len(s.set))
 	}
 	a := s.set[index]
 	packet.Logf(fwdpacket.LogDebugMessage, "hash selected %v", a)
@@ -89,7 +89,8 @@ func hashCRC16(key []byte) int {
 
 // random selects a random index.
 func random([]byte) int {
-	return int(rand.Int())
+	//nolint:gosec
+	return rand.Int()
 }
 
 // A selectActionListBuilder builds selectActionList actions.

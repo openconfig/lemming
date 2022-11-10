@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//nolint:revive
 package mock_fwdtable
 
 //go:generate mockgen -destination=mock.go github.com/openconfig/lemming/dataplane/forwarding/fwdtable Table

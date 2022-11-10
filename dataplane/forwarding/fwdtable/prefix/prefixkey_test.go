@@ -254,7 +254,7 @@ func TestKeyFindPrefix(t *testing.T) {
 		},
 	}
 	for pos, test := range tests {
-		s1 := Prefix(test.key1, test.key2)
+		s1 := prefixKey(test.key1, test.key2)
 		if !s1.IsEqual(test.prefix) {
 			t.Errorf("%d: Split did not return the expected prefix. Got %v want %v, (%v,%v). ", pos, s1, test.prefix, test.key1, test.key2)
 		}

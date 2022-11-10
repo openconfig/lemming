@@ -524,7 +524,6 @@ func TestPacketProcessing(t *testing.T) {
 			continue
 		case err != nil && !test.err:
 			t.Errorf("#%d: Packet processing failed %v.", id, err)
-
 		}
 		if state != test.result {
 			t.Errorf("#%d: Incorrect packet state, got state %v want %v.", id, state, test.result)
@@ -561,100 +560,73 @@ func TestActionsEquality(t *testing.T) {
 		},
 		// Lists are not equal if the first has actions and the second does not.
 		{
-			first: []*fwdpb.ActionDesc{
-				&fwdpb.ActionDesc{
-					ActionType: fwdpb.ActionType_ACTION_TYPE_DROP,
-				},
-				&fwdpb.ActionDesc{
-					ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
-				},
-			},
+			first: []*fwdpb.ActionDesc{{
+				ActionType: fwdpb.ActionType_ACTION_TYPE_DROP,
+			}, {
+				ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
+			}},
 			wantEqual: false,
 		},
 		// Lists are not equal if the second has actions and the first does not.
 		{
-			second: []*fwdpb.ActionDesc{
-				&fwdpb.ActionDesc{
-					ActionType: fwdpb.ActionType_ACTION_TYPE_DROP,
-				},
-				&fwdpb.ActionDesc{
-					ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
-				},
-			},
+			second: []*fwdpb.ActionDesc{{
+				ActionType: fwdpb.ActionType_ACTION_TYPE_DROP,
+			}, {
+				ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
+			}},
 			wantEqual: false,
 		},
 		// Lists are not equal if the order is different.
 		{
-			first: []*fwdpb.ActionDesc{
-				&fwdpb.ActionDesc{
-					ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
-				},
-				&fwdpb.ActionDesc{
-					ActionType: fwdpb.ActionType_ACTION_TYPE_DROP,
-				},
+			first: []*fwdpb.ActionDesc{{
+				ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
+			}, {
+				ActionType: fwdpb.ActionType_ACTION_TYPE_DROP,
+			}},
+			second: []*fwdpb.ActionDesc{{
+				ActionType: fwdpb.ActionType_ACTION_TYPE_DROP,
+			}, {
+				ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
 			},
-			second: []*fwdpb.ActionDesc{
-				&fwdpb.ActionDesc{
-					ActionType: fwdpb.ActionType_ACTION_TYPE_DROP,
-				},
-				&fwdpb.ActionDesc{
-					ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
-				},
 			},
 			wantEqual: false,
 		},
 		// Lists are not equal if the second is a subset of the first.
 		{
-			first: []*fwdpb.ActionDesc{
-				&fwdpb.ActionDesc{
-					ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
-				},
-				&fwdpb.ActionDesc{
-					ActionType: fwdpb.ActionType_ACTION_TYPE_DROP,
-				},
-			},
-			second: []*fwdpb.ActionDesc{
-				&fwdpb.ActionDesc{
-					ActionType: fwdpb.ActionType_ACTION_TYPE_DROP,
-				},
-			},
+			first: []*fwdpb.ActionDesc{{
+				ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
+			}, {
+				ActionType: fwdpb.ActionType_ACTION_TYPE_DROP,
+			}},
+			second: []*fwdpb.ActionDesc{{
+				ActionType: fwdpb.ActionType_ACTION_TYPE_DROP,
+			}},
 			wantEqual: false,
 		},
 		// Lists are not equal if the first is a subset of the second.
 		{
-			first: []*fwdpb.ActionDesc{
-				&fwdpb.ActionDesc{
-					ActionType: fwdpb.ActionType_ACTION_TYPE_DROP,
-				},
-			},
-			second: []*fwdpb.ActionDesc{
-				&fwdpb.ActionDesc{
-					ActionType: fwdpb.ActionType_ACTION_TYPE_DROP,
-				},
-				&fwdpb.ActionDesc{
-					ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
-				},
-			},
+			first: []*fwdpb.ActionDesc{{
+				ActionType: fwdpb.ActionType_ACTION_TYPE_DROP,
+			}},
+			second: []*fwdpb.ActionDesc{{
+				ActionType: fwdpb.ActionType_ACTION_TYPE_DROP,
+			}, {
+				ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
+			}},
 			wantEqual: false,
 		},
 		// Lists are equal if the first is the same as the second.
 		{
-			first: []*fwdpb.ActionDesc{
-				&fwdpb.ActionDesc{
-					ActionType: fwdpb.ActionType_ACTION_TYPE_DROP,
-				},
-				&fwdpb.ActionDesc{
-					ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
-				},
-			},
-			second: []*fwdpb.ActionDesc{
-				&fwdpb.ActionDesc{
-					ActionType: fwdpb.ActionType_ACTION_TYPE_DROP,
-				},
-				&fwdpb.ActionDesc{
-					ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
-				},
-			},
+			first: []*fwdpb.ActionDesc{{
+				ActionType: fwdpb.ActionType_ACTION_TYPE_DROP,
+			}, {
+				ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
+			}},
+			second: []*fwdpb.ActionDesc{{
+				ActionType: fwdpb.ActionType_ACTION_TYPE_DROP,
+			}, {
+				ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
+			}},
 			wantEqual: true,
 		},
 	}

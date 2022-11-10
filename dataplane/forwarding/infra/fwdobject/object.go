@@ -218,7 +218,7 @@ func (b *Base) InitCounters(prefix, desc string, ids ...fwdpb.CounterId) error {
 	for _, id := range ids {
 		// We use CounterId as id of the stat and id.String(), which
 		// returns CounterId_COUNTER_ID_name, as the name of the stat.
-		entries = append(entries, stats.EntryDesc{int(id), id.String()})
+		entries = append(entries, stats.EntryDesc{ID: int(id), Name: id.String()})
 	}
 	ss, err := stats.New(prefix, desc, entries...)
 	if err != nil {
