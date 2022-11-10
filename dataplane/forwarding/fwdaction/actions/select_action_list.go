@@ -17,6 +17,7 @@ package actions
 import (
 	"fmt"
 	"hash/crc32"
+	"math"
 	"math/rand"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
@@ -31,10 +32,12 @@ import (
 // such lists, using the specified algorithm and packet fields.
 type selectActionList struct {
 	fwdobject.Base
-	fields []fwdpacket.FieldID                              // packet fields used to create a packet hash
-	set    []fwdaction.Actions                              // set of action lists
-	hashFn func(key []byte) int                             // function used to hash a set of bytes
-	hash   fwdpb.SelectActionListActionDesc_SelectAlgorithm // hash algorithm used to select the action list
+	fields    []fwdpacket.FieldID // packet fields used to create a packet hash
+	set       []fwdaction.Actions // set of action lists
+	weights   []int               // weights associates the set of action lists
+	weightSum uint64
+	hashFn    func(key []byte, max uint64) int                 // function used to hash a set of bytes
+	hash      fwdpb.SelectActionListActionDesc_SelectAlgorithm // hash algorithm used to select the action list
 }
 
 // String returns the action as a formatted string.
@@ -68,9 +71,14 @@ func (s *selectActionList) Process(packet fwdpacket.Packet, counters fwdobject.C
 			key = append(key, f...)
 		}
 	}
-	index := s.hashFn(key)
-	if index >= len(s.set) {
-		index -= len(s.set) * (index / len(s.set))
+
+	h := s.hashFn(key, s.weightSum)
+	var index int
+	for i, w := range s.weights {
+		index = i
+		if w < h {
+			break
+		}
 	}
 	a := s.set[index]
 	packet.Logf(fwdpacket.LogDebugMessage, "hash selected %v", a)
@@ -78,19 +86,21 @@ func (s *selectActionList) Process(packet fwdpacket.Packet, counters fwdobject.C
 }
 
 // hashCRC32 computes the CRC32 checksum of the key.
-func hashCRC32(key []byte) int {
-	return int(crc32.ChecksumIEEE(key))
+func hashCRC32(key []byte, max uint64) int {
+	rand := crc32.ChecksumIEEE(key)
+	return int(uint64(rand) * max / math.MaxUint32)
 }
 
 // hashCRC16 computes the CRC16 checksum of the key.
-func hashCRC16(key []byte) int {
-	return int(crc16.ChecksumANSI(key))
+func hashCRC16(key []byte, max uint64) int {
+	rand := crc16.ChecksumANSI(key)
+	return int(uint64(rand) * max / math.MaxUint16)
 }
 
 // random selects a random index.
-func random([]byte) int {
+func random(_ []byte, max uint64) int {
 	//nolint:gosec
-	return rand.Int()
+	return int(rand.Intn(int(max)))
 }
 
 // A selectActionListBuilder builds selectActionList actions.
@@ -130,12 +140,24 @@ func (*selectActionListBuilder) Build(desc *fwdpb.ActionDesc, ctx *fwdcontext.Co
 		return nil, fmt.Errorf("actions: Unable to find select function %v", s.hash)
 	}
 
+	allZeros := true
 	for _, l := range sal.Select.GetActionLists() {
 		a, err := fwdaction.NewActions(l.GetActions(), ctx)
 		if err != nil {
 			return nil, fmt.Errorf("actions: Unable to create actions %v, err %v", l, err)
 		}
 		s.set = append(s.set, a)
+		if l.GetWeight() != 0 {
+			allZeros = false
+		}
+		s.weights = append(s.weights, int(l.GetWeight()+s.weightSum))
+		s.weightSum += l.GetWeight()
+	}
+	if allZeros {
+		s.weightSum = uint64(len(s.weights))
+		for i := range s.weights {
+			s.weights[i] = i + 1
+		}
 	}
 	return s, nil
 }
