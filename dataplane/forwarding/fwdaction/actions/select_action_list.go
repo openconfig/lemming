@@ -100,7 +100,7 @@ func hashCRC16(key []byte, max uint64) int {
 // random selects a random index.
 func random(_ []byte, max uint64) int {
 	//nolint:gosec
-	return int(rand.Intn(int(max)))
+	return rand.Intn(int(max))
 }
 
 // A selectActionListBuilder builds selectActionList actions.
