@@ -361,7 +361,7 @@ func (p *portGroup) selectLink(packet fwdpacket.Packet) (fwdaction.State, error)
 	}
 	index := p.hashFn(key)
 	if index >= len(p.members) {
-		index = index - len(p.members)*(index/len(p.members))
+		index -= len(p.members) * (index / len(p.members))
 	}
 	m := p.members[index]
 	packet.Logf(fwdpacket.LogDebugMessage, "hash selected %v", m.port.ID())

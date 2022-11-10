@@ -164,7 +164,7 @@ func (packet) StartHeader() fwdpb.PacketHeaderId {
 
 // sendPacket sends a packet from the source network to the destination network
 // through the bridge and returns the port used for transmission.
-func sendPacket(ctrl *gomock.Controller, table fwdtable.Table, action fwdaction.Action, networks []network, src, dst int, ctx *fwdcontext.Context) (fwdobject.ID, error) {
+func sendPacket(_ *gomock.Controller, table fwdtable.Table, action fwdaction.Action, networks []network, src, dst int, ctx *fwdcontext.Context) (fwdobject.ID, error) {
 	p := &packet{
 		fields: make(map[fwdpacket.FieldID][]byte),
 	}

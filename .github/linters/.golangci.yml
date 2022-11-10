@@ -24,7 +24,6 @@
 run:
   timeout: 60m
   skip-dirs:
-    - dataplane/forwarding # TODO: remove this
     - gnmi/oc
     - integration_tests # Loading ondatra is very slow
 issues:

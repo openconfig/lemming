@@ -215,118 +215,83 @@ func TestExactTableStale(t *testing.T) {
 		want      int           // number of entries expected
 		next      time.Duration // time pending for next expiration
 	}
-	tests := [][]testEvent{
-		// Table with no transient entries.
-		[]testEvent{
-			{
-				elapse: 0 * time.Second,
-				static: []int{1, 2, 3},
-				want:   3,
-				next:   1 * time.Minute,
-			},
-		},
-		// Table containing static entries and unused transient entries.
-		[]testEvent{
-			{
-				elapse:    0 * time.Second,
-				static:    []int{1, 2, 3},
-				transient: []int{4, 5},
-				want:      5,
-				next:      10 * time.Second,
-			},
-			{
-				elapse: 4 * time.Second,
-				want:   5,
-				next:   6 * time.Second,
-			},
-			{
-				elapse: 7 * time.Second,
-				want:   3,
-				next:   1 * time.Minute,
-			},
-		},
-		// Table containing static entries, used transient entries and
-		// unused transient entries.
-		[]testEvent{
-			{
-				elapse:    0 * time.Second,
-				static:    []int{1, 2, 3},
-				transient: []int{4, 5},
-				want:      5,
-				next:      10 * time.Second,
-			},
-			{
-				elapse: 4 * time.Second,
-				reset:  []int{4},
-				want:   5,
-				next:   6 * time.Second,
-			},
-			{
-				elapse: 7 * time.Second,
-				want:   4,
-				next:   3 * time.Second,
-			},
-			{
-				elapse: 4 * time.Second,
-				want:   3,
-				next:   1 * time.Minute,
-			},
-		},
-		// Table containing static and transient entries. A transient
-		// entry is updated by another transient entry.
-		[]testEvent{
-			{
-				elapse:    0 * time.Second,
-				static:    []int{1, 2, 3},
-				transient: []int{4, 5},
-				want:      5,
-				next:      10 * time.Second,
-			},
-			{
-				elapse:    4 * time.Second,
-				transient: []int{4},
-				want:      5,
-				next:      6 * time.Second,
-			},
-			{
-				elapse: 7 * time.Second,
-				want:   4,
-				next:   3 * time.Second,
-			},
-			{
-				elapse: 4 * time.Second,
-				want:   3,
-				next:   1 * time.Minute,
-			},
-		},
-		// Table containing static and transient entries. A transient
-		// entry is updated by a static entry.
-		[]testEvent{
-			{
-				elapse:    0 * time.Second,
-				static:    []int{1, 2, 3},
-				transient: []int{4, 5},
-				want:      5,
-				next:      10 * time.Second,
-			},
-			{
-				elapse: 4 * time.Second,
-				static: []int{4},
-				want:   5,
-				next:   6 * time.Second,
-			},
-			{
-				elapse: 7 * time.Second,
-				want:   4,
-				next:   1 * time.Minute,
-			},
-			{
-				elapse: 4 * time.Second,
-				want:   4,
-				next:   1 * time.Minute,
-			},
-		},
-	}
+	tests := [][]testEvent{{{ // Table with no transient entries.
+		elapse: 0 * time.Second,
+		static: []int{1, 2, 3},
+		want:   3,
+		next:   1 * time.Minute,
+	}}, {{ // Table containing static entries and unused transient entries.
+		elapse:    0 * time.Second,
+		static:    []int{1, 2, 3},
+		transient: []int{4, 5},
+		want:      5,
+		next:      10 * time.Second,
+	}, {
+		elapse: 4 * time.Second,
+		want:   5,
+		next:   6 * time.Second,
+	}, {
+		elapse: 7 * time.Second,
+		want:   3,
+		next:   1 * time.Minute,
+	}}, {{ // Table containing static entries, used transient entries and unused transient entries.
+		elapse:    0 * time.Second,
+		static:    []int{1, 2, 3},
+		transient: []int{4, 5},
+		want:      5,
+		next:      10 * time.Second,
+	}, {
+		elapse: 4 * time.Second,
+		reset:  []int{4},
+		want:   5,
+		next:   6 * time.Second,
+	}, {
+		elapse: 7 * time.Second,
+		want:   4,
+		next:   3 * time.Second,
+	}, {
+		elapse: 4 * time.Second,
+		want:   3,
+		next:   1 * time.Minute,
+	}}, {{ // Table containing static and transient entries. A transient entry is updated by another transient entry.
+		elapse:    0 * time.Second,
+		static:    []int{1, 2, 3},
+		transient: []int{4, 5},
+		want:      5,
+		next:      10 * time.Second,
+	}, {
+		elapse:    4 * time.Second,
+		transient: []int{4},
+		want:      5,
+		next:      6 * time.Second,
+	}, {
+		elapse: 7 * time.Second,
+		want:   4,
+		next:   3 * time.Second,
+	}, {
+		elapse: 4 * time.Second,
+		want:   3,
+		next:   1 * time.Minute,
+	}}, {{ // Table containing static and transient entries. A transient entry is updated by a static entry.
+		elapse:    0 * time.Second,
+		static:    []int{1, 2, 3},
+		transient: []int{4, 5},
+		want:      5,
+		next:      10 * time.Second,
+	}, {
+		elapse: 4 * time.Second,
+		static: []int{4},
+		want:   5,
+		next:   6 * time.Second,
+	}, {
+		elapse: 7 * time.Second,
+		want:   4,
+		next:   1 * time.Minute,
+	}, {
+		elapse: 4 * time.Second,
+		want:   4,
+		next:   1 * time.Minute,
+	}}}
 	for tid, test := range tests {
 		var now time.Time
 		table := tableCreate(&now, tid)

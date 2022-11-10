@@ -320,7 +320,7 @@ func (e *Engine) ContextList(_ context.Context, request *fwdpb.ContextListReques
 	for _, ctx := range e.ctx {
 		reply.Contexts = append(reply.Contexts, &fwdpb.ContextAttr{
 			ContextId: &fwdpb.ContextId{
-				Id: string(ctx.ID),
+				Id: ctx.ID,
 			},
 			PacketAddress:       ctx.PacketAddress,
 			NotificationAddress: ctx.NotificationAddress,

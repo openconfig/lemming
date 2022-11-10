@@ -40,7 +40,7 @@ type wordset []byte
 func (ws wordset) bit(bitpos int) byte {
 	idx := bitpos >> byteLogCount
 	pos := byteBitCount - 1 - (bitpos & (byteBitCount - 1))
-	return byte((ws[idx] >> uint(pos))) & 0x1
+	return (ws[idx] >> uint(pos)) & 0x1
 }
 
 // set sets the bit at the specified position.
@@ -181,8 +181,8 @@ func (s *key) Copy() *key {
 	}
 }
 
-// Combine creates a new key by appending s2 to s1.
-func Combine(s1, s2 *key) *key {
+// combine creates a new key by appending s2 to s1.
+func combine(s1, s2 *key) *key {
 	bitCount := s1.bitCount + s2.bitCount
 	s := &key{
 		bytes:    make([]byte, byteCount(bitCount)),
@@ -198,8 +198,8 @@ func Combine(s1, s2 *key) *key {
 	return s
 }
 
-// Prefix finds the common prefix between two keys.
-func Prefix(s1, s2 *key) *key {
+// prefixKey finds the common prefixKey between two keys.
+func prefixKey(s1, s2 *key) *key {
 	max := s1.bitCount
 	if s2.bitCount < max {
 		max = s2.bitCount
