@@ -18,9 +18,11 @@ import (
 	"context"
 	"encoding/binary"
 	"encoding/hex"
+	"net"
 
 	log "github.com/golang/glog"
 
+	dpb "github.com/openconfig/lemming/proto/dataplane"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
@@ -440,13 +442,16 @@ func AddLayer3PuntRule(ctx context.Context, c fwdpb.ServiceClient, portName stri
 	return nil
 }
 
-// AddIPRoute adds a route to the FIB, where pre-transmit are run after setting the output port and next-hop.
-func AddIPRoute(ctx context.Context, c fwdpb.ServiceClient, v4 bool, ip, mask, nextHopIP []byte, port string, preTransmitActions []*fwdpb.ActionDesc) error {
-	fib := fibV6Table
-	if v4 {
-		fib = fibV4Table
+// nextHop returns the forwarding actions for a nexthop.
+func nextHopToActions(nh *dpb.NextHop) []*fwdpb.ActionDesc {
+	var nextHopIP []byte
+	if nhIPStr := nh.GetIp(); nhIPStr != "" {
+		nextHop := net.ParseIP(nhIPStr)
+		nextHopIP = nextHop.To4()
+		if nextHopIP == nil {
+			nextHopIP = nextHop.To16()
+		}
 	}
-
 	nextHopAct := &fwdpb.ActionDesc{ // Set the next hop IP in the packet's metadata.
 		ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
 		Action: &fwdpb.ActionDesc_Update{
@@ -481,18 +486,55 @@ func AddIPRoute(ctx context.Context, c fwdpb.ServiceClient, v4 bool, ip, mask, n
 			},
 		}
 	}
-	log.V(1).Infof("adding ip route: isv4 %t, ip %v, mask %v, nextHop %v, port %s", v4, ip, mask, nextHopIP, port)
-
-	actions := []*fwdpb.ActionDesc{{ // Set the output port.
+	return append([]*fwdpb.ActionDesc{{ // Set the output port.
 		ActionType: fwdpb.ActionType_ACTION_TYPE_TRANSMIT,
 		Action: &fwdpb.ActionDesc_Transmit{
 			Transmit: &fwdpb.TransmitActionDesc{
-				PortId: &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: port}},
+				PortId: &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: nh.GetPort()}},
 			},
 		},
-	}, nextHopAct}
+	}, nextHopAct}, nh.GetPreTransmitActions()...)
+}
 
-	actions = append(actions, preTransmitActions...)
+// AddIPRoute adds a route to the FIB with the input next hops.
+func AddIPRoute(ctx context.Context, c fwdpb.ServiceClient, v4 bool, ip, mask []byte, nextHops []*dpb.NextHop) error {
+	fib := fibV6Table
+	if v4 {
+		fib = fibV4Table
+	}
+
+	actions := nextHopToActions(nextHops[0])
+
+	if len(nextHops) > 1 {
+		var actLists []*fwdpb.ActionList
+		for _, nh := range nextHops {
+			actLists = append(actLists, &fwdpb.ActionList{
+				Weight:  nh.GetWeight(),
+				Actions: nextHopToActions(nh),
+			})
+		}
+
+		actions = []*fwdpb.ActionDesc{{
+			ActionType: fwdpb.ActionType_ACTION_TYPE_SELECT_ACTION_LIST,
+			Action: &fwdpb.ActionDesc_Select{
+				Select: &fwdpb.SelectActionListActionDesc{
+					SelectAlgorithm: fwdpb.SelectActionListActionDesc_SELECT_ALGORITHM_CRC32, // TODO: should algo + hash be configurable?
+					FieldIds: []*fwdpb.PacketFieldId{{Field: &fwdpb.PacketField{
+						FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO,
+					}}, {Field: &fwdpb.PacketField{
+						FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC,
+					}}, {Field: &fwdpb.PacketField{
+						FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST,
+					}}, {Field: &fwdpb.PacketField{
+						FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_SRC,
+					}}, {Field: &fwdpb.PacketField{
+						FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST,
+					}}},
+					ActionLists: actLists,
+				},
+			},
+		}}
+	}
 
 	entry := &fwdpb.TableEntryAddRequest{
 		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: fib}},

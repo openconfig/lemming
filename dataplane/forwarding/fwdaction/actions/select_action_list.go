@@ -34,7 +34,7 @@ type selectActionList struct {
 	fwdobject.Base
 	fields    []fwdpacket.FieldID // packet fields used to create a packet hash
 	set       []fwdaction.Actions // set of action lists
-	weights   []int               // weights associates the set of action lists
+	weights   []int               // Cumulative sum of weights associates the set of action lists.
 	weightSum uint64
 	hashFn    func(key []byte, max uint64) int                 // function used to hash a set of bytes
 	hash      fwdpb.SelectActionListActionDesc_SelectAlgorithm // hash algorithm used to select the action list
