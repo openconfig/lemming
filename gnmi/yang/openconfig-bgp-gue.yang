@@ -1,0 +1,104 @@
+module openconfig-bgp-gue {
+
+  yang-version "1";
+
+  // namespace
+  namespace "http://openconfig.net/yang/bgp-triggered-gue";
+
+  prefix "oc-bgp-gue";
+
+  import openconfig-extensions { prefix oc-ext; }
+  import openconfig-inet-types { prefix oc-inet; }
+
+  // meta
+  organization "OpenConfig working group";
+
+  contact
+    "OpenConfig working group
+    www.openconfig.net";
+
+  description
+    "This module defines configuration and operational state
+    data for BGP-triggered GUE Policies.";
+
+  oc-ext:openconfig-version "0.1.0";
+
+  revision "2022-11-10" {
+    description
+      "Initial revision";
+    reference "0.1.0";
+  }
+
+  // OpenConfig specific extensions for module metadata.
+  oc-ext:catalog-organization "openconfig";
+  oc-ext:origin "openconfig";
+
+  // grouping statements
+
+  grouping bgp-gue-policy-config {
+    description
+      "Config data for BGP-triggered GUE policy";
+
+    leaf prefix {
+      type oc-inet:ip-prefix;
+      description
+        "Prefix to which the GUE policy applies.";
+    }
+
+    leaf dst-port {
+      type oc-inet:port-number;
+      description
+        "Destination port of UDP encap.";
+    }
+
+    leaf src-ip {
+      type oc-inet:ip-address;
+      description
+        "Source IP address of IP encap.";
+    }
+  }
+
+  grouping bgp-gue-top {
+    description
+      "Top level grouping for BGP-triggered GUE.";
+
+    container bgp-gue-policies {
+      description
+        "Container for List of BGP-triggered GUE policies.";
+
+      list bgp-gue-policy {
+        key "prefix";
+        description
+          "List of BGP-triggered GUE policies.";
+
+        leaf prefix {
+          type leafref {
+            path "../config/prefix";
+          }
+          description
+            "Prefix to which the GUE policy applies.";
+        }
+
+        container config {
+          description
+            "Config data for BGP-triggered GUE policy.";
+
+          uses bgp-gue-policy-config;
+        }
+
+        container state {
+          config false;
+          description
+            "Config data for BGP-triggered GUE policy.";
+
+          uses bgp-gue-policy-config;
+        }
+      }
+    }
+  }
+
+  // data definition statements
+  uses bgp-gue-top;
+
+  // augment statements
+}

@@ -49,6 +49,7 @@ using the following YANG input files:
   - public/third_party/ietf/ietf-inet-types.yang
   - public/third_party/ietf/ietf-interfaces.yang
   - public/third_party/ietf/ietf-yang-types.yang
+  - yang/openconfig-bgp-gue.yang
 
 Imported modules were sourced from:
   - public/release/models/...
@@ -59,6 +60,7 @@ package ocpath
 import (
 	oc "github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/acl"
+	"github.com/openconfig/lemming/gnmi/oc/bgpgue"
 	"github.com/openconfig/lemming/gnmi/oc/interfaces"
 	"github.com/openconfig/lemming/gnmi/oc/keychain"
 	"github.com/openconfig/lemming/gnmi/oc/lacp"
@@ -94,6 +96,40 @@ func (n *RootPath) Acl() *acl.AclPath {
 		NodePath: ygnmi.NewNodePath(
 			[]string{"acl"},
 			map[string]interface{}{},
+			n,
+		),
+	}
+}
+
+// BgpGuePolicyAny (list): List of BGP-triggered GUE policies.
+//
+//	Defining module:      "openconfig-bgp-gue"
+//	Instantiating module: "openconfig-bgp-gue"
+//	Path from parent:     "bgp-gue-policies/bgp-gue-policy"
+//	Path from root:       "/bgp-gue-policies/bgp-gue-policy"
+func (n *RootPath) BgpGuePolicyAny() *bgpgue.BgpGuePolicyPathAny {
+	return &bgpgue.BgpGuePolicyPathAny{
+		NodePath: ygnmi.NewNodePath(
+			[]string{"bgp-gue-policies", "bgp-gue-policy"},
+			map[string]interface{}{"prefix": "*"},
+			n,
+		),
+	}
+}
+
+// BgpGuePolicy (list): List of BGP-triggered GUE policies.
+//
+//	Defining module:      "openconfig-bgp-gue"
+//	Instantiating module: "openconfig-bgp-gue"
+//	Path from parent:     "bgp-gue-policies/bgp-gue-policy"
+//	Path from root:       "/bgp-gue-policies/bgp-gue-policy"
+//
+//	Prefix: string
+func (n *RootPath) BgpGuePolicy(Prefix string) *bgpgue.BgpGuePolicyPath {
+	return &bgpgue.BgpGuePolicyPath{
+		NodePath: ygnmi.NewNodePath(
+			[]string{"bgp-gue-policies", "bgp-gue-policy"},
+			map[string]interface{}{"prefix": Prefix},
 			n,
 		),
 	}
