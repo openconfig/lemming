@@ -89,7 +89,7 @@ module openconfig-bgp-gue {
         container state {
           config false;
           description
-            "Config data for BGP-triggered GUE policy.";
+            "State data for BGP-triggered GUE policy.";
 
           uses bgp-gue-policy-config;
         }
