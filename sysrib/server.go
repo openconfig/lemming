@@ -39,6 +39,7 @@ import (
 
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 	dpb "github.com/openconfig/lemming/proto/dataplane"
+	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 	pb "github.com/openconfig/lemming/proto/sysrib"
 )
 
@@ -245,10 +246,19 @@ type ResolvedRoute struct {
 }
 
 // ResolvedNexthop contains the information required to forward an IP packet.
+//
+// This type must be hashable, and uniquely identifies nexthops.
 type ResolvedNexthop struct {
 	afthelper.NextHopSummary
 
-	Port Interface
+	Port       Interface
+	GUEHeaders GUEHeaders
+}
+
+// HasGUE returns a bool indicating whether the resolved nexthop contains GUE
+// information.
+func (nh ResolvedNexthop) HasGUE() bool {
+	return nh.GUEHeaders != GUEHeaders{}
 }
 
 func vrfIDToNiName(vrfID uint32) string {
@@ -280,6 +290,93 @@ func prefixString(prefix *pb.Prefix) (string, error) {
 	}
 }
 
+// gueActions generates the forwarding actions that encapsulates a packet with
+// a UDP and then an IP header using the information from gueHeaders.
+func gueActions(gueHeaders GUEHeaders) []*fwdpb.ActionDesc {
+	udpEncapActions := []*fwdpb.ActionDesc{{
+		ActionType: fwdpb.ActionType_ACTION_TYPE_ENCAP,
+		Action: &fwdpb.ActionDesc_Encap{
+			Encap: &fwdpb.EncapActionDesc{
+				HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_UDP,
+			},
+		},
+	}, {
+		ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
+		Action: &fwdpb.ActionDesc_Update{
+			Update: &fwdpb.UpdateActionDesc{
+				FieldId: &fwdpb.PacketFieldId{
+					Field: &fwdpb.PacketField{
+						FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_SRC,
+					},
+				},
+				Type: fwdpb.UpdateType_UPDATE_TYPE_SET,
+				// TODO(wenbli): Implement hashing for srcPort.
+				Value: []byte{0, 0},
+			},
+		},
+	}, {
+		ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
+		Action: &fwdpb.ActionDesc_Update{
+			Update: &fwdpb.UpdateActionDesc{
+				FieldId: &fwdpb.PacketFieldId{
+					Field: &fwdpb.PacketField{
+						FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST,
+					},
+				},
+				Type:  fwdpb.UpdateType_UPDATE_TYPE_SET,
+				Value: gueHeaders.dstPort[:],
+			},
+		},
+		// TODO(wenbli): Update length (if necessary) and checksum on UDP header.
+	}}
+
+	headerID := fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4
+	srcIP := gueHeaders.srcIP4[:]
+	dstIP := gueHeaders.dstIP4[:]
+	if gueHeaders.isV6 {
+		headerID = fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP6
+		srcIP = gueHeaders.srcIP6[:]
+		dstIP = gueHeaders.dstIP6[:]
+	}
+
+	ipEncapActions := []*fwdpb.ActionDesc{{
+		ActionType: fwdpb.ActionType_ACTION_TYPE_ENCAP,
+		Action: &fwdpb.ActionDesc_Encap{
+			Encap: &fwdpb.EncapActionDesc{
+				HeaderId: headerID,
+			},
+		},
+	}, {
+		ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
+		Action: &fwdpb.ActionDesc_Update{
+			Update: &fwdpb.UpdateActionDesc{
+				FieldId: &fwdpb.PacketFieldId{
+					Field: &fwdpb.PacketField{
+						FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC,
+					},
+				},
+				Type:  fwdpb.UpdateType_UPDATE_TYPE_SET,
+				Value: srcIP,
+			},
+		},
+	}, {
+		ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
+		Action: &fwdpb.ActionDesc_Update{
+			Update: &fwdpb.UpdateActionDesc{
+				FieldId: &fwdpb.PacketFieldId{
+					Field: &fwdpb.PacketField{
+						FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST,
+					},
+				},
+				Type:  fwdpb.UpdateType_UPDATE_TYPE_SET,
+				Value: dstIP,
+			},
+		},
+	}}
+
+	return append(udpEncapActions, ipEncapActions...)
+}
+
 func resolvedRouteToRouteRequest(r *ResolvedRoute) (*dpb.InsertRouteRequest, error) {
 	vrfID, err := niNameToVrfID(r.NIName)
 	if err != nil {
@@ -288,10 +385,15 @@ func resolvedRouteToRouteRequest(r *ResolvedRoute) (*dpb.InsertRouteRequest, err
 
 	var nexthops []*dpb.NextHop
 	for nh := range r.Nexthops {
+		var actions []*fwdpb.ActionDesc
+		if nh.HasGUE() {
+			actions = gueActions(nh.GUEHeaders)
+		}
 		nexthops = append(nexthops, &dpb.NextHop{
-			Port:   nh.Port.Name,
-			Ip:     nh.Address,
-			Weight: nh.Weight,
+			Port:               nh.Port.Name,
+			Ip:                 nh.Address,
+			Weight:             nh.Weight,
+			PreTransmitActions: actions,
 		})
 	}
 
@@ -538,3 +640,29 @@ func (s *Server) setInterface(name string, ifindex int32, enabled bool) error {
 
 // TODO(wenbli): Do we need to handle interface deletion?
 // This is not required in the MVP since basic tests will just need to enable/disable interfaces.
+
+// setGUEPolicy adds a new GUE policy and triggers resolved route
+// computation and programming.
+func (s *Server) setGUEPolicy(prefix string, policy GUEPolicy) error {
+	if err := s.rib.SetGUEPolicy(prefix, policy); err != nil {
+		return fmt.Errorf("error while adding route to sysrib: %v", err)
+	}
+
+	if err := s.ResolveAndProgramDiff(); err != nil {
+		return fmt.Errorf("error while resolving sysrib: %v", err)
+	}
+	return nil
+}
+
+// deleteGUEPolicy adds a new GUE policy and triggers resolved route
+// computation and programming.
+func (s *Server) deleteGUEPolicy(prefix string) error {
+	if _, err := s.rib.DeleteGUEPolicy(prefix); err != nil {
+		return fmt.Errorf("error while adding route to sysrib: %v", err)
+	}
+
+	if err := s.ResolveAndProgramDiff(); err != nil {
+		return fmt.Errorf("error while resolving sysrib: %v", err)
+	}
+	return nil
+}

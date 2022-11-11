@@ -837,3 +837,567 @@ func TestServer(t *testing.T) {
 		})
 	}
 }
+
+func TestBGPGUEPolicy(t *testing.T) {
+	grpcServer := grpc.NewServer()
+	gnmiServer, err := gnmi.New(grpcServer, "local")
+	if err != nil {
+		t.Fatal(err)
+	}
+	lis, err := net.Listen("tcp", "localhost:0")
+	if err != nil {
+		t.Fatalf("Failed to start listener: %v", err)
+	}
+	go func() {
+		grpcServer.Serve(lis)
+	}()
+
+	dp := NewFakeDataplane()
+	s, err := New(dp)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Update the interface configuration on the gNMI server.
+	client := gnmiServer.LocalClient()
+	if err := s.Start(client, "local", ""); err != nil {
+		t.Fatalf("cannot start sysrib server, %v", err)
+	}
+	defer s.Stop()
+
+	c, err := ygnmi.NewClient(client, ygnmi.WithTarget("local"))
+	if err != nil {
+		t.Fatalf("cannot create ygnmi client: %v", err)
+	}
+
+	for _, intf := range []AddIntfAction{{
+		name:    "eth0",
+		ifindex: 0,
+		enabled: true,
+		prefix:  "192.168.1.1/24",
+		niName:  "DEFAULT",
+	}, {
+		name:    "eth1",
+		ifindex: 1,
+		enabled: true,
+		prefix:  "192.168.2.1/24",
+		niName:  "DEFAULT",
+	}, {
+		name:    "eth2",
+		ifindex: 2,
+		enabled: true,
+		prefix:  "192.168.3.1/24",
+		niName:  "DEFAULT",
+	}, {
+		name:    "eth3",
+		ifindex: 3,
+		enabled: true,
+		prefix:  "192.168.4.1/24",
+		niName:  "DEFAULT",
+	}, {
+		name:    "eth4",
+		ifindex: 4,
+		enabled: true,
+		prefix:  "192.168.5.1/24",
+		niName:  "DEFAULT",
+	}} {
+		configureInterface(t, intf, c)
+	}
+	// Wait for Sysrib to pick up the connected prefixes.
+	for i := 0; i != maxGNMIWaitQuanta; i++ {
+		if err = checkResolvedRoutesEqual(dp.GetRoutes(), []*ResolvedRoute{{
+			RouteKey: RouteKey{
+				Prefix: "192.168.1.0/24",
+				NIName: "DEFAULT",
+			},
+			Nexthops: map[ResolvedNexthop]bool{
+				{
+					NextHopSummary: afthelper.NextHopSummary{
+						NetworkInstance: "DEFAULT",
+					},
+					Port: Interface{
+						Name:  "eth0",
+						Index: 0,
+					},
+				}: true,
+			},
+		}, {
+			RouteKey: RouteKey{
+				Prefix: "192.168.2.0/24",
+				NIName: "DEFAULT",
+			},
+			Nexthops: map[ResolvedNexthop]bool{
+				{
+					NextHopSummary: afthelper.NextHopSummary{
+						NetworkInstance: "DEFAULT",
+					},
+					Port: Interface{
+						Name:  "eth1",
+						Index: 1,
+					},
+				}: true,
+			},
+		}, {
+			RouteKey: RouteKey{
+				Prefix: "192.168.3.0/24",
+				NIName: "DEFAULT",
+			},
+			Nexthops: map[ResolvedNexthop]bool{
+				{
+					NextHopSummary: afthelper.NextHopSummary{
+						NetworkInstance: "DEFAULT",
+					},
+					Port: Interface{
+						Name:  "eth2",
+						Index: 2,
+					},
+				}: true,
+			},
+		}, {
+			RouteKey: RouteKey{
+				Prefix: "192.168.4.0/24",
+				NIName: "DEFAULT",
+			},
+			Nexthops: map[ResolvedNexthop]bool{
+				{
+					NextHopSummary: afthelper.NextHopSummary{
+						NetworkInstance: "DEFAULT",
+					},
+					Port: Interface{
+						Name:  "eth3",
+						Index: 3,
+					},
+				}: true,
+			},
+		}, {
+			RouteKey: RouteKey{
+				Prefix: "192.168.5.0/24",
+				NIName: "DEFAULT",
+			},
+			Nexthops: map[ResolvedNexthop]bool{
+				{
+					NextHopSummary: afthelper.NextHopSummary{
+						NetworkInstance: "DEFAULT",
+					},
+					Port: Interface{
+						Name:  "eth4",
+						Index: 4,
+					},
+				}: true,
+			},
+		}}); err == nil {
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	if err != nil {
+		t.Fatalf("After initial interface operations: %v", err)
+	}
+	dp.ClearQueue()
+
+	// Note: This is a sequential test.
+	tests := []struct {
+		desc               string
+		inSetRouteRequests []*pb.SetRouteRequest
+		inAddPolicies      map[string]GUEPolicy
+		inDeletePolicies   []string
+		wantResolvedRoutes []*ResolvedRoute
+	}{{
+		desc: "Add gRIBI and BGP routes",
+		inSetRouteRequests: []*pb.SetRouteRequest{{
+			AdminDistance: 10, // not BGP
+			Metric:        10,
+			Prefix: &pb.Prefix{
+				Family:     pb.Prefix_FAMILY_IPV4,
+				Address:    "10.0.0.0",
+				MaskLength: 8,
+			},
+			Nexthops: []*pb.Nexthop{{
+				Type:    pb.Nexthop_TYPE_IPV4,
+				Address: "192.168.1.42",
+			}},
+		}, {
+			AdminDistance: 20, // EBGP
+			Metric:        10,
+			Prefix: &pb.Prefix{
+				Family:     pb.Prefix_FAMILY_IPV4,
+				Address:    "20.0.0.0",
+				MaskLength: 8,
+			},
+			Nexthops: []*pb.Nexthop{{
+				Type:    pb.Nexthop_TYPE_IPV4,
+				Address: "192.168.1.42",
+			}},
+		}},
+		wantResolvedRoutes: []*ResolvedRoute{{
+			RouteKey: RouteKey{
+				Prefix: "10.0.0.0/8",
+				NIName: "DEFAULT",
+			},
+			Nexthops: map[ResolvedNexthop]bool{
+				{
+					NextHopSummary: afthelper.NextHopSummary{
+						NetworkInstance: "DEFAULT",
+						Address:         "192.168.1.42",
+					},
+					Port: Interface{
+						Name:  "eth0",
+						Index: 0,
+					},
+				}: true,
+			},
+		}, {
+			RouteKey: RouteKey{
+				Prefix: "20.0.0.0/8",
+				NIName: "DEFAULT",
+			},
+			Nexthops: map[ResolvedNexthop]bool{
+				{
+					NextHopSummary: afthelper.NextHopSummary{
+						NetworkInstance: "DEFAULT",
+						Address:         "192.168.1.42",
+					},
+					Port: Interface{
+						Name:  "eth0",
+						Index: 0,
+					},
+				}: true,
+			},
+		}},
+	}, {
+		desc: "Add Policy",
+		inAddPolicies: map[string]GUEPolicy{
+			"192.168.0.0/16": {
+				dstPort: [2]byte{8, 0},
+				srcIP4:  [4]byte{42, 42, 42, 42},
+				isV6:    false,
+			},
+		},
+		wantResolvedRoutes: []*ResolvedRoute{{
+			RouteKey: RouteKey{
+				Prefix: "20.0.0.0/8",
+				NIName: "DEFAULT",
+			},
+			Nexthops: map[ResolvedNexthop]bool{
+				{
+					NextHopSummary: afthelper.NextHopSummary{
+						NetworkInstance: "DEFAULT",
+						Address:         "192.168.1.42",
+					},
+					Port: Interface{
+						Name:  "eth0",
+						Index: 0,
+					},
+					GUEHeaders: GUEHeaders{
+						GUEPolicy: GUEPolicy{
+							dstPort: [2]byte{8, 0},
+							srcIP4:  [4]byte{42, 42, 42, 42},
+							isV6:    false,
+						},
+						dstIP4: [4]byte{192, 168, 1, 42},
+					},
+				}: true,
+			},
+		}},
+	}, {
+		desc:             "Remove Policy",
+		inDeletePolicies: []string{"192.168.0.0/16"},
+		wantResolvedRoutes: []*ResolvedRoute{{
+			RouteKey: RouteKey{
+				Prefix: "20.0.0.0/8",
+				NIName: "DEFAULT",
+			},
+			Nexthops: map[ResolvedNexthop]bool{
+				{
+					NextHopSummary: afthelper.NextHopSummary{
+						NetworkInstance: "DEFAULT",
+						Address:         "192.168.1.42",
+					},
+					Port: Interface{
+						Name:  "eth0",
+						Index: 0,
+					},
+				}: true,
+			},
+		}},
+	}, {
+		desc: "Add BGP route that resolves over the gRIBI route",
+		inSetRouteRequests: []*pb.SetRouteRequest{{
+			AdminDistance: 20, // EBGP
+			Metric:        10,
+			Prefix: &pb.Prefix{
+				Family:     pb.Prefix_FAMILY_IPV4,
+				Address:    "30.0.0.0",
+				MaskLength: 8,
+			},
+			Nexthops: []*pb.Nexthop{{
+				Type:    pb.Nexthop_TYPE_IPV4,
+				Address: "10.10.10.10",
+			}},
+		}},
+		wantResolvedRoutes: []*ResolvedRoute{{
+			RouteKey: RouteKey{
+				Prefix: "30.0.0.0/8",
+				NIName: "DEFAULT",
+			},
+			Nexthops: map[ResolvedNexthop]bool{
+				{
+					NextHopSummary: afthelper.NextHopSummary{
+						NetworkInstance: "DEFAULT",
+						Address:         "192.168.1.42",
+					},
+					Port: Interface{
+						Name:  "eth0",
+						Index: 0,
+					},
+				}: true,
+			},
+		}},
+	}, {
+		desc: "Add Policy for second BGP route",
+		inAddPolicies: map[string]GUEPolicy{
+			"10.10.0.0/16": {
+				dstPort: [2]byte{9, 0},
+				srcIP4:  [4]byte{43, 43, 43, 43},
+				isV6:    false,
+			},
+		},
+		wantResolvedRoutes: []*ResolvedRoute{{
+			RouteKey: RouteKey{
+				Prefix: "30.0.0.0/8",
+				NIName: "DEFAULT",
+			},
+			Nexthops: map[ResolvedNexthop]bool{
+				{
+					NextHopSummary: afthelper.NextHopSummary{
+						NetworkInstance: "DEFAULT",
+						Address:         "192.168.1.42",
+					},
+					Port: Interface{
+						Name:  "eth0",
+						Index: 0,
+					},
+					GUEHeaders: GUEHeaders{
+						GUEPolicy: GUEPolicy{
+							dstPort: [2]byte{9, 0},
+							srcIP4:  [4]byte{43, 43, 43, 43},
+							isV6:    false,
+						},
+						dstIP4: [4]byte{10, 10, 10, 10},
+					},
+				}: true,
+			},
+		}},
+	}, {
+		desc:             "Remove Policy for second BGP route",
+		inDeletePolicies: []string{"10.10.0.0/16"},
+		wantResolvedRoutes: []*ResolvedRoute{{
+			RouteKey: RouteKey{
+				Prefix: "30.0.0.0/8",
+				NIName: "DEFAULT",
+			},
+			Nexthops: map[ResolvedNexthop]bool{
+				{
+					NextHopSummary: afthelper.NextHopSummary{
+						NetworkInstance: "DEFAULT",
+						Address:         "192.168.1.42",
+					},
+					Port: Interface{
+						Name:  "eth0",
+						Index: 0,
+					},
+				}: true,
+			},
+		}},
+	}, {
+		desc: "Add another BGP route that resolves over the gRIBI route",
+		inSetRouteRequests: []*pb.SetRouteRequest{{
+			AdminDistance: 20, // EBGP
+			Metric:        10,
+			Prefix: &pb.Prefix{
+				Family:     pb.Prefix_FAMILY_IPV4,
+				Address:    "40.0.0.0",
+				MaskLength: 8,
+			},
+			Nexthops: []*pb.Nexthop{{
+				Type:    pb.Nexthop_TYPE_IPV4,
+				Address: "10.10.20.20",
+			}},
+		}},
+		wantResolvedRoutes: []*ResolvedRoute{{
+			RouteKey: RouteKey{
+				Prefix: "40.0.0.0/8",
+				NIName: "DEFAULT",
+			},
+			Nexthops: map[ResolvedNexthop]bool{
+				{
+					NextHopSummary: afthelper.NextHopSummary{
+						NetworkInstance: "DEFAULT",
+						Address:         "192.168.1.42",
+					},
+					Port: Interface{
+						Name:  "eth0",
+						Index: 0,
+					},
+				}: true,
+			},
+		}},
+	}, {
+		desc: "Add a policy that applies to two BGP routes",
+		inAddPolicies: map[string]GUEPolicy{
+			"10.0.0.0/8": {
+				dstPort: [2]byte{8, 0},
+				srcIP4:  [4]byte{8, 8, 8, 8},
+				isV6:    false,
+			},
+		},
+		wantResolvedRoutes: []*ResolvedRoute{{
+			RouteKey: RouteKey{
+				Prefix: "30.0.0.0/8",
+				NIName: "DEFAULT",
+			},
+			Nexthops: map[ResolvedNexthop]bool{
+				{
+					NextHopSummary: afthelper.NextHopSummary{
+						NetworkInstance: "DEFAULT",
+						Address:         "192.168.1.42",
+					},
+					Port: Interface{
+						Name:  "eth0",
+						Index: 0,
+					},
+					GUEHeaders: GUEHeaders{
+						GUEPolicy: GUEPolicy{
+							dstPort: [2]byte{8, 0},
+							srcIP4:  [4]byte{8, 8, 8, 8},
+							isV6:    false,
+						},
+						dstIP4: [4]byte{10, 10, 10, 10},
+					},
+				}: true,
+			},
+		}, {
+			RouteKey: RouteKey{
+				Prefix: "40.0.0.0/8",
+				NIName: "DEFAULT",
+			},
+			Nexthops: map[ResolvedNexthop]bool{
+				{
+					NextHopSummary: afthelper.NextHopSummary{
+						NetworkInstance: "DEFAULT",
+						Address:         "192.168.1.42",
+					},
+					Port: Interface{
+						Name:  "eth0",
+						Index: 0,
+					},
+					GUEHeaders: GUEHeaders{
+						GUEPolicy: GUEPolicy{
+							dstPort: [2]byte{8, 0},
+							srcIP4:  [4]byte{8, 8, 8, 8},
+							isV6:    false,
+						},
+						dstIP4: [4]byte{10, 10, 20, 20},
+					},
+				}: true,
+			},
+		}},
+	}, {
+		desc: "Add a more specific policy that applies to a BGP route",
+		inAddPolicies: map[string]GUEPolicy{
+			"10.10.20.0/24": {
+				dstPort: [2]byte{16, 0},
+				srcIP4:  [4]byte{16, 16, 16, 16},
+				isV6:    false,
+			},
+		},
+		wantResolvedRoutes: []*ResolvedRoute{{
+			RouteKey: RouteKey{
+				Prefix: "40.0.0.0/8",
+				NIName: "DEFAULT",
+			},
+			Nexthops: map[ResolvedNexthop]bool{
+				{
+					NextHopSummary: afthelper.NextHopSummary{
+						NetworkInstance: "DEFAULT",
+						Address:         "192.168.1.42",
+					},
+					Port: Interface{
+						Name:  "eth0",
+						Index: 0,
+					},
+					GUEHeaders: GUEHeaders{
+						GUEPolicy: GUEPolicy{
+							dstPort: [2]byte{16, 0},
+							srcIP4:  [4]byte{16, 16, 16, 16},
+							isV6:    false,
+						},
+						dstIP4: [4]byte{10, 10, 20, 20},
+					},
+				}: true,
+			},
+		}},
+	}, {
+		desc:             "Remove the less-specific policy",
+		inDeletePolicies: []string{"10.0.0.0/8"},
+		wantResolvedRoutes: []*ResolvedRoute{{
+			RouteKey: RouteKey{
+				Prefix: "30.0.0.0/8",
+				NIName: "DEFAULT",
+			},
+			Nexthops: map[ResolvedNexthop]bool{
+				{
+					NextHopSummary: afthelper.NextHopSummary{
+						NetworkInstance: "DEFAULT",
+						Address:         "192.168.1.42",
+					},
+					Port: Interface{
+						Name:  "eth0",
+						Index: 0,
+					},
+				}: true,
+			},
+		}},
+	}, {
+		desc:             "Remove the more-specific policy",
+		inDeletePolicies: []string{"10.10.20.0/24"},
+		wantResolvedRoutes: []*ResolvedRoute{{
+			RouteKey: RouteKey{
+				Prefix: "40.0.0.0/8",
+				NIName: "DEFAULT",
+			},
+			Nexthops: map[ResolvedNexthop]bool{
+				{
+					NextHopSummary: afthelper.NextHopSummary{
+						NetworkInstance: "DEFAULT",
+						Address:         "192.168.1.42",
+					},
+					Port: Interface{
+						Name:  "eth0",
+						Index: 0,
+					},
+				}: true,
+			},
+		}},
+	}}
+
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			for _, routeReq := range tt.inSetRouteRequests {
+				if _, err := s.SetRoute(context.Background(), routeReq); err != nil {
+					t.Fatalf("Got unexpected error during call to SetRoute: %v", err)
+				}
+			}
+			for prefix, policy := range tt.inAddPolicies {
+				s.setGUEPolicy(prefix, policy)
+			}
+			for _, prefix := range tt.inDeletePolicies {
+				s.deleteGUEPolicy(prefix)
+			}
+			if err := checkResolvedRoutesEqual(dp.GetRoutes(), tt.wantResolvedRoutes); err != nil {
+				t.Fatalf("%v", err)
+			}
+			dp.ClearQueue()
+		})
+	}
+}
