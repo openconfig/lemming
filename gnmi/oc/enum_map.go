@@ -50,6 +50,7 @@ using the following YANG input files:
   - public/third_party/ietf/ietf-inet-types.yang
   - public/third_party/ietf/ietf-interfaces.yang
   - public/third_party/ietf/ietf-yang-types.yang
+  - yang/openconfig-bgp-gue.yang
 
 Imported modules were sourced from:
   - public/release/models/...
@@ -1920,9 +1921,11 @@ var ΛEnum = map[string]map[int64]ygot.EnumDefinition{
 		12: {Name: "QSFP56_DD_TYPE2", DefiningModule: "openconfig-transport-types"},
 		13: {Name: "QSFP_PLUS", DefiningModule: "openconfig-transport-types"},
 		14: {Name: "SFP", DefiningModule: "openconfig-transport-types"},
-		15: {Name: "SFP_PLUS", DefiningModule: "openconfig-transport-types"},
-		16: {Name: "X2", DefiningModule: "openconfig-transport-types"},
-		17: {Name: "XFP", DefiningModule: "openconfig-transport-types"},
+		15: {Name: "SFP28", DefiningModule: "openconfig-transport-types"},
+		16: {Name: "SFP56", DefiningModule: "openconfig-transport-types"},
+		17: {Name: "SFP_PLUS", DefiningModule: "openconfig-transport-types"},
+		18: {Name: "X2", DefiningModule: "openconfig-transport-types"},
+		19: {Name: "XFP", DefiningModule: "openconfig-transport-types"},
 	},
 	"E_TransportTypes_TRANSCEIVER_MODULE_FUNCTIONAL_TYPE": {
 		1: {Name: "TYPE_DIGITAL_COHERENT_OPTIC", DefiningModule: "openconfig-transport-types"},

@@ -49,6 +49,7 @@ using the following YANG input files:
   - public/third_party/ietf/ietf-inet-types.yang
   - public/third_party/ietf/ietf-interfaces.yang
   - public/third_party/ietf/ietf-yang-types.yang
+  - yang/openconfig-bgp-gue.yang
 
 Imported modules were sourced from:
   - public/release/models/...
