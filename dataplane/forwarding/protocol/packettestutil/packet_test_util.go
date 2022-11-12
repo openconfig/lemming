@@ -191,7 +191,6 @@ type PacketHeaderTest struct {
 
 // TestPacketHeaders performs a series of packet header tests.
 func TestPacketHeaders(name string, t *testing.T, tests []PacketHeaderTest) {
-
 	for pos, test := range tests {
 		orig := makeFrame(test.Orig)
 		packet, err := fwdpacket.New(test.StartHeader, orig)

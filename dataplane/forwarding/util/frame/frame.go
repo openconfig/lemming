@@ -95,7 +95,7 @@ func (f Field) SetBits(bitpos, bitcount uint8, bitmask uint64) {
 	set := bitmask << bitpos
 	switch len(f) {
 	case 1:
-		f[0] = (uint8(f[0]) & uint8(clr)) | uint8(set)
+		f[0] = (f[0] & uint8(clr)) | uint8(set)
 	case 2:
 		value := binary.BigEndian.Uint16(f)
 		value = (value & uint16(clr)) | uint16(set)
@@ -124,7 +124,7 @@ func (f Field) BitField(bitpos, bitcount uint8) Field {
 	mask := ((1 << bitcount) - 1)
 	switch len(f) {
 	case 1:
-		bit[0] = (uint8(f[0]) >> bitpos) & uint8(mask)
+		bit[0] = (f[0] >> bitpos) & uint8(mask)
 		return bit
 	case 2:
 		value := binary.BigEndian.Uint16(f)
@@ -165,7 +165,7 @@ type Header []byte
 
 // Field returns a field of n bytes at offset off within the header.
 func (h Header) Field(off, n int) Field {
-	if len(h) < int(off+n) {
+	if len(h) < (off + n) {
 		return nil
 	}
 	return Field(h[off : off+n])

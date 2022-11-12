@@ -75,7 +75,7 @@ func TestLookup(t *testing.T) {
 	}
 	action, err := fwdaction.New(&desc, ctx)
 	if err != nil {
-		t.Errorf("NewAction failed, desc %v failed, err %v.", desc, err)
+		t.Errorf("NewAction failed, desc %v failed, err %v.", &desc, err)
 	}
 
 	// Verify the action by processing a packet and verifying the counters
