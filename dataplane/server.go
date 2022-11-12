@@ -23,6 +23,8 @@ import (
 	"github.com/openconfig/lemming/dataplane/forwarding"
 	"github.com/openconfig/lemming/dataplane/handlers"
 	"github.com/openconfig/lemming/dataplane/internal/engine"
+	"github.com/openconfig/lemming/gnmi/oc"
+	"github.com/openconfig/lemming/gnmi/reconciler"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -38,11 +40,11 @@ import (
 // Dataplane is an implementation of Dataplane HAL API.
 type Dataplane struct {
 	dpb.UnimplementedHALServer
-	ifaceHandler *handlers.Interface
-	engine       *forwarding.Engine
-	srv          *grpc.Server
-	lis          net.Listener
-	fwd          fwdpb.ServiceClient
+	engine      *forwarding.Engine
+	srv         *grpc.Server
+	lis         net.Listener
+	fwd         fwdpb.ServiceClient
+	reconcilers []reconciler.Reconciler
 }
 
 // New create a new dataplane instance.
@@ -65,28 +67,31 @@ func New() (*Dataplane, error) {
 	return data, nil
 }
 
+// ID returns the ID of the dataplane reconciler.
+func (d *Dataplane) ID() string {
+	return "dataplane"
+}
+
 // Start starts the HAL gRPC server and packet forwarding engine.
 func (d *Dataplane) Start(ctx context.Context, c gpb.GNMIClient, target string) error {
 	if d.srv != nil {
 		return fmt.Errorf("dataplane already started")
 	}
 
-	yc, err := ygnmi.NewClient(c, ygnmi.WithTarget(target))
-	if err != nil {
-		return err
-	}
 	fc, err := d.FwdClient()
 	if err != nil {
 		return err
 	}
+	d.reconcilers = append(d.reconcilers, handlers.NewInterface(fc))
 	d.fwd = fc
 	if err := engine.SetupForwardingTables(ctx, fc); err != nil {
 		return fmt.Errorf("failed to setup forwarding tables: %v", err)
 	}
 
-	d.ifaceHandler = handlers.NewInterface(yc, fc)
-	if err := d.ifaceHandler.Start(ctx); err != nil {
-		return fmt.Errorf("failed to start interface handler: %v", err)
+	for _, rec := range d.reconcilers {
+		if err := rec.Start(ctx, c, target); err != nil {
+			return fmt.Errorf("failed to stop handler %q: %v", rec.ID(), err)
+		}
 	}
 
 	return nil
@@ -111,9 +116,14 @@ func (d *Dataplane) FwdClient() (fwdpb.ServiceClient, error) {
 }
 
 // Stop gracefully stops the server.
-func (d *Dataplane) Stop() {
+func (d *Dataplane) Stop(ctx context.Context) error {
+	for _, rec := range d.reconcilers {
+		if err := rec.Stop(ctx); err != nil {
+			return fmt.Errorf("failed to stop handler %q: %v", rec.ID(), err)
+		}
+	}
 	d.srv.GracefulStop()
-	d.ifaceHandler.Stop()
+	return nil
 }
 
 // InsertRoute inserts a route into the dataplane.
@@ -152,7 +162,7 @@ func (d *Dataplane) InsertRoute(ctx context.Context, route *dpb.InsertRouteReque
 	}
 	log.V(1).Infof("inserting route: prefix %s, nexthop %s, port %s,", route.GetPrefix(), route.GetNextHops()[0].GetIp(), route.GetNextHops()[0].GetPort())
 
-	if err := engine.AddIPRoute(ctx, d.fwd, isIPv4, ip, ipNet.Mask, nextHopIP, route.GetNextHops()[0].Port); err != nil {
+	if err := engine.AddIPRoute(ctx, d.fwd, isIPv4, ip, ipNet.Mask, nextHopIP, route.GetNextHops()[0].Port, route.GetNextHops()[0].GetPreTransmitActions()); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to add route: %v", err)
 	}
 
@@ -177,4 +187,14 @@ func (d *Dataplane) DeleteRoute(ctx context.Context, route *dpb.DeleteRouteReque
 	}
 
 	return &dpb.DeleteRouteResponse{}, nil
+}
+
+// Validate is a noop to implement to the reconciler interface.
+func (d *Dataplane) Validate(intendedConfig *oc.Root) error {
+	return nil
+}
+
+// ValidationPaths is a noop to implement to the reconciler interface.
+func (d *Dataplane) ValidationPaths() []ygnmi.PathStruct {
+	return nil
 }

@@ -143,7 +143,7 @@ func TestQueueConcurrent(t *testing.T) {
 		all.Add(test.read)
 		toFinish.Add(test.readWant)
 		for i := 0; i < test.read; i++ {
-			go func(idx int) {
+			go func() {
 				defer all.Done()
 				start.Done()
 				if v, ok := <-c.Receive(); ok {
@@ -153,7 +153,7 @@ func TestQueueConcurrent(t *testing.T) {
 					l.Unlock()
 					toFinish.Done()
 				}
-			}(i)
+			}()
 		}
 		start.Wait()
 		toFinish.Wait()

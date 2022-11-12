@@ -20,11 +20,11 @@ import (
 	"hash/fnv"
 	"strings"
 
-	"google.golang.org/protobuf/proto"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdpacket"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdset"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
+	"google.golang.org/protobuf/proto"
 )
 
 // A PacketKey is a sequence of bytes formed by concatenating packet fields in
@@ -169,7 +169,7 @@ func (l *FieldList) Size() int {
 // MakeEntryKey creates an EntryKey for a FlowDesc. The EntryKey is formed by
 // concatenating the value and mask of the fieldKey in the FlowDesc in the
 // sequence specified by the FieldList.
-func (l *FieldList) MakeEntryKey(fd *FlowDesc) *EntryKey {
+func (l *FieldList) MakeEntryKey(fd *Desc) *EntryKey {
 	k := EntryKey{
 		value: make([]byte, 0, l.size),
 		mask:  make([]byte, 0, l.size),
@@ -192,7 +192,7 @@ func (l *FieldList) MakeEntryKey(fd *FlowDesc) *EntryKey {
 // MakeEntryQualifier creates an EntryQualifier for a FlowDesc. The
 // EntryQualifier is formed by referencing the Set specified in the
 // FlowDesc for each field in FieldList.
-func (l *FieldList) MakeEntryQualifier(fd *FlowDesc) (*EntryQualifier, error) {
+func (l *FieldList) MakeEntryQualifier(fd *Desc) (*EntryQualifier, error) {
 	q := EntryQualifier{
 		values: make(map[fwdpacket.FieldID]*fwdset.Set),
 	}
@@ -245,20 +245,20 @@ type fieldKey struct {
 	mask  []byte
 }
 
-// A FlowDesc describes a packet flow by specifying keys and qualifiers.
+// A Desc describes a packet flow by specifying keys and qualifiers.
 // keys specify values of packet fields by describing the bits in them.
 // qualifiers specify values of packet fields as a value in a fwdset.Set.
-type FlowDesc struct {
+type Desc struct {
 	keys       map[fwdpacket.FieldID]fieldKey
 	qualifiers map[fwdpacket.FieldID]*fwdpb.SetId
 	hash       uint32
 	ctx        *fwdcontext.Context
 }
 
-// NewFlowDesc creates a new FlowDesc corresponding to the specified keys and qualifiers.
-func NewFlowDesc(ctx *fwdcontext.Context, keys []*fwdpb.PacketFieldMaskedBytes, qualifiers []*fwdpb.PacketFieldSet) (*FlowDesc, error) {
+// NewDesc creates a new Desc corresponding to the specified keys and qualifiers.
+func NewDesc(ctx *fwdcontext.Context, keys []*fwdpb.PacketFieldMaskedBytes, qualifiers []*fwdpb.PacketFieldSet) (*Desc, error) {
 	hash := fnv.New32()
-	fd := &FlowDesc{
+	fd := &Desc{
 		keys:       make(map[fwdpacket.FieldID]fieldKey),
 		qualifiers: make(map[fwdpacket.FieldID]*fwdpb.SetId),
 		ctx:        ctx,
@@ -301,7 +301,7 @@ func NewFlowDesc(ctx *fwdcontext.Context, keys []*fwdpb.PacketFieldMaskedBytes, 
 
 // Fields returns the list of fields specified in the flow desc's keys and
 // qualifiers.
-func (d *FlowDesc) Fields() (keys []fwdpacket.FieldID, qualifiers []fwdpacket.FieldID) {
+func (d *Desc) Fields() (keys []fwdpacket.FieldID, qualifiers []fwdpacket.FieldID) {
 	for id := range d.keys {
 		keys = append(keys, id)
 	}
@@ -312,7 +312,7 @@ func (d *FlowDesc) Fields() (keys []fwdpacket.FieldID, qualifiers []fwdpacket.Fi
 }
 
 // String formats a flow descriptor as a string.
-func (d *FlowDesc) String() string {
+func (d *Desc) String() string {
 	index := 0
 	buffer := make([]string, len(d.keys)+len(d.qualifiers))
 	for pos, v := range d.keys {
@@ -327,7 +327,7 @@ func (d *FlowDesc) String() string {
 }
 
 // Equal returns true if two flow desc are equal.
-func (d *FlowDesc) Equal(d2 *FlowDesc) bool {
+func (d *Desc) Equal(d2 *Desc) bool {
 	if (len(d.keys) != len(d2.keys)) || (len(d.qualifiers) != len(d2.qualifiers)) {
 		return false
 	}
@@ -345,6 +345,6 @@ func (d *FlowDesc) Equal(d2 *FlowDesc) bool {
 }
 
 // Hash returns a hash value for the flow desc.
-func (d *FlowDesc) Hash() uint32 {
+func (d *Desc) Hash() uint32 {
 	return d.hash
 }

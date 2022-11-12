@@ -49,6 +49,7 @@ using the following YANG input files:
   - public/third_party/ietf/ietf-inet-types.yang
   - public/third_party/ietf/ietf-interfaces.yang
   - public/third_party/ietf/ietf-yang-types.yang
+  - yang/openconfig-bgp-gue.yang
 
 Imported modules were sourced from:
   - public/release/models/...
@@ -535,6 +536,72 @@ func (n *System_HostnamePathAny) Config() ygnmi.WildcardQuery[string] {
 //
 //	Defining module:      "openconfig-system"
 //	Instantiating module: "openconfig-system"
+//	Path from parent:     "state/last-configuration-timestamp"
+//	Path from root:       "/system/state/last-configuration-timestamp"
+func (n *System_LastConfigurationTimestampPath) State() ygnmi.SingletonQuery[uint64] {
+	return ygnmi.NewLeafSingletonQuery[uint64](
+		"System",
+		true,
+		true,
+		ygnmi.NewNodePath(
+			[]string{"state", "last-configuration-timestamp"},
+			nil,
+			n.parent,
+		),
+		func(gs ygot.ValidatedGoStruct) (uint64, bool) {
+			ret := gs.(*oc.System).LastConfigurationTimestamp
+			if ret == nil {
+				var zero uint64
+				return zero, false
+			}
+			return *ret, true
+		},
+		func() ygot.ValidatedGoStruct { return new(oc.System) },
+		&ytypes.Schema{
+			Root:       &oc.Root{},
+			SchemaTree: oc.SchemaTree,
+			Unmarshal:  oc.Unmarshal,
+		},
+	)
+}
+
+// State returns a Query that can be used in gNMI operations.
+//
+//	Defining module:      "openconfig-system"
+//	Instantiating module: "openconfig-system"
+//	Path from parent:     "state/last-configuration-timestamp"
+//	Path from root:       "/system/state/last-configuration-timestamp"
+func (n *System_LastConfigurationTimestampPathAny) State() ygnmi.WildcardQuery[uint64] {
+	return ygnmi.NewLeafWildcardQuery[uint64](
+		"System",
+		true,
+		true,
+		ygnmi.NewNodePath(
+			[]string{"state", "last-configuration-timestamp"},
+			nil,
+			n.parent,
+		),
+		func(gs ygot.ValidatedGoStruct) (uint64, bool) {
+			ret := gs.(*oc.System).LastConfigurationTimestamp
+			if ret == nil {
+				var zero uint64
+				return zero, false
+			}
+			return *ret, true
+		},
+		func() ygot.ValidatedGoStruct { return new(oc.System) },
+		&ytypes.Schema{
+			Root:       &oc.Root{},
+			SchemaTree: oc.SchemaTree,
+			Unmarshal:  oc.Unmarshal,
+		},
+	)
+}
+
+// State returns a Query that can be used in gNMI operations.
+//
+//	Defining module:      "openconfig-system"
+//	Instantiating module: "openconfig-system"
 //	Path from parent:     "state/login-banner"
 //	Path from root:       "/system/state/login-banner"
 func (n *System_LoginBannerPath) State() ygnmi.SingletonQuery[string] {
@@ -893,6 +960,18 @@ type System_HostnamePath struct {
 
 // System_HostnamePathAny represents the wildcard version of the /openconfig-system/system/state/hostname YANG schema element.
 type System_HostnamePathAny struct {
+	*ygnmi.NodePath
+	parent ygnmi.PathStruct
+}
+
+// System_LastConfigurationTimestampPath represents the /openconfig-system/system/state/last-configuration-timestamp YANG schema element.
+type System_LastConfigurationTimestampPath struct {
+	*ygnmi.NodePath
+	parent ygnmi.PathStruct
+}
+
+// System_LastConfigurationTimestampPathAny represents the wildcard version of the /openconfig-system/system/state/last-configuration-timestamp YANG schema element.
+type System_LastConfigurationTimestampPathAny struct {
 	*ygnmi.NodePath
 	parent ygnmi.PathStruct
 }
@@ -1324,6 +1403,44 @@ func (n *SystemPathAny) Hostname() *System_HostnamePathAny {
 	return &System_HostnamePathAny{
 		NodePath: ygnmi.NewNodePath(
 			[]string{"*", "hostname"},
+			map[string]interface{}{},
+			n,
+		),
+		parent: n,
+	}
+}
+
+// LastConfigurationTimestamp (leaf): Indicates the monotonically increasing timestamp at which the
+// last configuration change was made. This may may be through CLI,
+// gNMI or some other mechanism.
+//
+//	Defining module:      "openconfig-system"
+//	Instantiating module: "openconfig-system"
+//	Path from parent:     "state/last-configuration-timestamp"
+//	Path from root:       "/system/state/last-configuration-timestamp"
+func (n *SystemPath) LastConfigurationTimestamp() *System_LastConfigurationTimestampPath {
+	return &System_LastConfigurationTimestampPath{
+		NodePath: ygnmi.NewNodePath(
+			[]string{"state", "last-configuration-timestamp"},
+			map[string]interface{}{},
+			n,
+		),
+		parent: n,
+	}
+}
+
+// LastConfigurationTimestamp (leaf): Indicates the monotonically increasing timestamp at which the
+// last configuration change was made. This may may be through CLI,
+// gNMI or some other mechanism.
+//
+//	Defining module:      "openconfig-system"
+//	Instantiating module: "openconfig-system"
+//	Path from parent:     "state/last-configuration-timestamp"
+//	Path from root:       "/system/state/last-configuration-timestamp"
+func (n *SystemPathAny) LastConfigurationTimestamp() *System_LastConfigurationTimestampPathAny {
+	return &System_LastConfigurationTimestampPathAny{
+		NodePath: ygnmi.NewNodePath(
+			[]string{"state", "last-configuration-timestamp"},
 			map[string]interface{}{},
 			n,
 		),

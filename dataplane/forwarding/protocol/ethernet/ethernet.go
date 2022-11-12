@@ -176,7 +176,6 @@ func (eth *Ethernet) UpdateField(id fwdpacket.FieldID, op int, arg []byte) (bool
 		return true, field.Set(arg)
 	}
 	switch id.Num {
-
 	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG:
 		field.SetBits(tagBitPos, tagBitSize, uint64(binary.BigEndian.Uint16(arg)))
 		return true, nil

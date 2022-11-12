@@ -28,6 +28,7 @@ import (
 	"github.com/openconfig/lemming/gnmi/gnmiclient"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
+	"github.com/openconfig/lemming/gnmi/reconciler"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot"
 	"github.com/vishvananda/netlink"
@@ -50,19 +51,20 @@ type Interface struct {
 }
 
 // NewInterface creates a new interface handler.
-func NewInterface(yc *ygnmi.Client, fwd fwdpb.ServiceClient) *Interface {
-	return &Interface{
-		c:         yc,
+func NewInterface(fwd fwdpb.ServiceClient) *reconciler.BuiltReconciler {
+	i := &Interface{
 		fwd:       fwd,
 		idxToName: map[int]string{},
 		state:     map[string]*oc.Interface{},
 	}
+	return reconciler.NewBuilder("interface").WithStart(i.start).WithStop(i.stop).Build()
 }
 
 // Start starts running the handler, watching the cache and the kernel interfaces.
-func (ni *Interface) Start(ctx context.Context) error {
+func (ni *Interface) start(ctx context.Context, client *ygnmi.Client) error {
 	log.Info("starting interface handler")
 	b := &ocpath.Batch{}
+	ni.c = client
 
 	if err := ni.setupPorts(ctx); err != nil {
 		return fmt.Errorf("failed to setup ports: %v", err)
@@ -139,11 +141,12 @@ func (ni *Interface) Start(ctx context.Context) error {
 }
 
 // Stop stops all watchers.
-func (ni *Interface) Stop() {
+func (ni *Interface) stop(context.Context) error {
 	// TODO: prevent stopping more than once.
 	for _, closeFn := range ni.closers {
 		closeFn()
 	}
+	return nil
 }
 
 // startCounterUpdates starts a goroutine for updating counters for configured

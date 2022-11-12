@@ -19,6 +19,7 @@ package tabletestutil
 import (
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdtable/tableutil"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
+	"google.golang.org/protobuf/proto"
 )
 
 // KeyDescFields creates a key descriptor from a set of packet fields.
@@ -37,10 +38,10 @@ func KeyDescFields(fields []fwdpb.PacketFieldNum) tableutil.KeyDesc {
 // KeyDescBytes creates a key descriptor from a set of packet bytes.
 func KeyDescBytes(fields []fwdpb.PacketBytes) tableutil.KeyDesc {
 	var desc []*fwdpb.PacketFieldId
-	for _, f := range fields {
-		copied := f
+	for i := 0; i < len(fields); i++ {
+		copied := proto.Clone(&fields[i]).(*fwdpb.PacketBytes)
 		desc = append(desc, &fwdpb.PacketFieldId{
-			Bytes: &copied,
+			Bytes: copied,
 		})
 	}
 	return tableutil.MakeKeyDesc(desc)
