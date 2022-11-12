@@ -91,7 +91,7 @@ func (l *level) getResult() (fwdaction.Actions, bool) {
 
 // entries formats an entry and its childern as a list of strings.
 func (l *level) entries(parent *key) []string {
-	prefix := Combine(parent, l.prefix)
+	prefix := combine(parent, l.prefix)
 
 	var list []string
 	if actions, ok := l.getResult(); ok {
@@ -147,10 +147,10 @@ func (t *Table) match(in []byte) (*key, fwdaction.Actions) {
 }
 
 // add adds or updates an entry in the prefix table.
-func (t *Table) add(prefix *key, actions fwdaction.Actions) {
+func (t *Table) add(pre *key, actions fwdaction.Actions) {
 	// Start the iteration with the table's root.
 	curr := t.root
-	key := prefix
+	key := pre
 
 	// At the start of each iteration, curr is known to be a prefix of key.
 	for {
@@ -181,7 +181,7 @@ func (t *Table) add(prefix *key, actions fwdaction.Actions) {
 		// the key, we can strip the common prefix from the child and make the
 		// suffix a child of the common prefix. Continue the loop with the
 		// common prefix.
-		p := Prefix(child.prefix, key)
+		p := prefixKey(child.prefix, key)
 		curr = newLevel(p, curr)
 		child.prefix.TrimPrefix(p)
 		curr.child[child.prefix.Bit(0)] = child
@@ -245,7 +245,7 @@ func (t *Table) remove(prefix *key) error {
 			child = child2
 		}
 
-		child.prefix = Combine(curr.prefix, child.prefix)
+		child.prefix = combine(curr.prefix, child.prefix)
 		curr.parent.child[curr.prefix.Bit(0)] = child
 		child.parent = curr.parent
 		curr = curr.parent

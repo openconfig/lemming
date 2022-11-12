@@ -75,7 +75,7 @@ func TestCopy(t *testing.T) {
 	}
 	action, err := fwdaction.New(&desc, ctx)
 	if err != nil {
-		t.Errorf("NewAction failed, desc %v failed, err %v.", desc, err)
+		t.Errorf("NewAction failed, desc %v failed, err %v.", &desc, err)
 	}
 
 	// Verify the action by processing a packet where the source field exists.
@@ -204,9 +204,9 @@ func TestBitWrite(t *testing.T) {
 		action, err := fwdaction.New(&desc, ctx)
 		switch {
 		case !test.buildErr && err != nil:
-			t.Fatalf("%d: NewAction failed, desc %v failed, err %v.", tid, desc, err)
+			t.Fatalf("%d: NewAction failed, desc %v failed, err %v.", tid, &desc, err)
 		case test.buildErr && err == nil:
-			t.Fatalf("%d: NewAction failed, desc %v did not fail.", tid, desc)
+			t.Fatalf("%d: NewAction failed, desc %v did not fail.", tid, &desc)
 		}
 		if test.buildErr {
 			continue
@@ -220,7 +220,7 @@ func TestBitWrite(t *testing.T) {
 			packet.EXPECT().Field(fwdpacket.NewFieldID(field)).Return(test.original, nil)
 			packet.EXPECT().String().Return("").AnyTimes()
 			if _, state := action.Process(packet, nil); state != fwdaction.DROP {
-				t.Errorf("%d: Packet processing did not fail for value %x, desc %+v", tid, test.original, desc)
+				t.Errorf("%d: Packet processing did not fail for value %x, desc %+v", tid, test.original, &desc)
 			}
 			continue
 		}
@@ -232,7 +232,7 @@ func TestBitWrite(t *testing.T) {
 		packet.EXPECT().Field(fwdpacket.NewFieldID(field)).Return(test.original, nil)
 		packet.EXPECT().Update(fwdpacket.NewFieldID(field), fwdpacket.OpSet, test.final)
 		if _, state := action.Process(packet, nil); state != fwdaction.CONTINUE {
-			t.Errorf("%d: Packet processing failed for value %x, desc %+v", tid, test.original, desc)
+			t.Errorf("%d: Packet processing failed for value %x, desc %+v", tid, test.original, &desc)
 		}
 	}
 }
@@ -307,7 +307,7 @@ func TestBitAndOr(t *testing.T) {
 		}
 		action, err := fwdaction.New(&desc, ctx)
 		if err != nil {
-			t.Fatalf("%d: NewAction failed, desc %v failed, err %v.", tid, desc, err)
+			t.Fatalf("%d: NewAction failed, desc %v failed, err %v.", tid, &desc, err)
 		}
 
 		// If packet processing is expected to fail.
@@ -318,7 +318,7 @@ func TestBitAndOr(t *testing.T) {
 			packet.EXPECT().Field(fwdpacket.NewFieldID(field)).Return(test.original, nil)
 			packet.EXPECT().String().Return("").AnyTimes()
 			if _, state := action.Process(packet, nil); state != fwdaction.DROP {
-				t.Errorf("%d: Packet processing did not fail for value %x, desc %+v", tid, test.original, desc)
+				t.Errorf("%d: Packet processing did not fail for value %x, desc %+v", tid, test.original, &desc)
 			}
 			continue
 		}
@@ -330,7 +330,7 @@ func TestBitAndOr(t *testing.T) {
 		packet.EXPECT().Field(fwdpacket.NewFieldID(field)).Return(test.original, nil)
 		packet.EXPECT().Update(fwdpacket.NewFieldID(field), fwdpacket.OpSet, test.final)
 		if _, state := action.Process(packet, nil); state != fwdaction.CONTINUE {
-			t.Errorf("%d: Packet processing failed for value %x, desc %+v", tid, test.original, desc)
+			t.Errorf("%d: Packet processing failed for value %x, desc %+v", tid, test.original, &desc)
 		}
 	}
 }

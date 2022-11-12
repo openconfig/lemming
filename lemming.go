@@ -58,6 +58,8 @@ type Device struct {
 func New(lis net.Listener, targetName string, opts ...grpc.ServerOption) (*Device, error) {
 	var sysDataplane *sysrib.Dataplane
 	var dplane *dataplane.Dataplane
+	var recs []reconciler.Reconciler
+
 	if viper.GetBool("enable_dataplane") {
 		log.Info("enabling dataplane")
 		var err error
@@ -70,15 +72,16 @@ func New(lis net.Listener, targetName string, opts ...grpc.ServerOption) (*Devic
 			return nil, err
 		}
 		sysDataplane = &sysrib.Dataplane{HALClient: hal}
+		recs = append(recs, dplane)
 	}
 
 	s := grpc.NewServer(opts...)
 
-	recs := []reconciler.Reconciler{
+	recs = append(recs,
 		fakedevice.NewSystemBaseTask(),
 		fakedevice.NewBootTimeTask(),
 		bgp.NewGoBGPTaskDecl(),
-	}
+	)
 
 	gnmiServer, err := fgnmi.New(s, targetName, recs...)
 	if err != nil {
@@ -108,11 +111,6 @@ func New(lis net.Listener, targetName string, opts ...grpc.ServerOption) (*Devic
 	}
 
 	cacheClient := gnmiServer.LocalClient()
-	if dplane != nil {
-		if err := dplane.Start(context.Background(), cacheClient, targetName); err != nil {
-			return nil, err
-		}
-	}
 
 	log.Infof("starting sysrib")
 	sysribServer, err := sysrib.New(sysDataplane)

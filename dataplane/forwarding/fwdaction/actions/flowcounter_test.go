@@ -62,7 +62,7 @@ func TestFlowCounter(t *testing.T) {
 	}
 	action, err := fwdaction.New(&desc, ctx)
 	if err != nil {
-		t.Errorf("NewAction failed for desc %v, err %v.", desc, err)
+		t.Errorf("NewAction failed for desc %v, err %v.", &desc, err)
 	}
 
 	// Create a packet of fixed length.

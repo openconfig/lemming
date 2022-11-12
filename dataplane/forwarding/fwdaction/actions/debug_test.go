@@ -42,7 +42,7 @@ func TestDebug(t *testing.T) {
 	}
 	action, err := fwdaction.New(&desc, nil)
 	if err != nil {
-		t.Errorf("NewAction failed for desc %v, err %v.", desc, err)
+		t.Errorf("NewAction failed for desc %v, err %v.", &desc, err)
 	}
 
 	// Verify the action by processing a packet and verifying the counters

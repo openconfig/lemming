@@ -67,6 +67,7 @@ YANG_FILES=(
   public/third_party/ietf/ietf-inet-types.yang
   public/third_party/ietf/ietf-interfaces.yang
   public/third_party/ietf/ietf-yang-types.yang
+  yang/openconfig-bgp-gue.yang
 )
 
 rm -r oc || true

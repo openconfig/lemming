@@ -37,7 +37,7 @@ const (
 func getBit(bytes []byte, bitpos uint) byte {
 	idx := len(bytes) - 1 - int(bitpos>>byteLogCount)
 	pos := (bitpos & (byteBitCount - 1))
-	return byte((bytes[idx] >> uint(pos))) & 0x1
+	return (bytes[idx] >> pos) & 0x1
 }
 
 // writeBit sets the bit at the specified position.
@@ -46,7 +46,7 @@ func getBit(bytes []byte, bitpos uint) byte {
 func writeBit(bytes []byte, bitpos uint, v byte) {
 	idx := len(bytes) - 1 - int(bitpos>>byteLogCount)
 	pos := (bitpos & (byteBitCount - 1))
-	mask := byte(1 << uint(pos))
+	mask := byte(1 << pos)
 	if v == 0x1 {
 		bytes[idx] |= mask
 	} else {
@@ -132,7 +132,7 @@ func (u *update) Process(packet fwdpacket.Packet, counters fwdobject.Counters) (
 			return nil, fwdaction.DROP
 		}
 		for i := 0; i < len(u.bytesArg); i++ {
-			arg[i] = arg[i] & u.bytesArg[i]
+			arg[i] &= u.bytesArg[i]
 		}
 		e = packet.Update(u.fieldID, fwdpacket.OpSet, arg)
 
@@ -147,10 +147,9 @@ func (u *update) Process(packet fwdpacket.Packet, counters fwdobject.Counters) (
 			return nil, fwdaction.DROP
 		}
 		for i := 0; i < len(u.bytesArg); i++ {
-			arg[i] = arg[i] | u.bytesArg[i]
+			arg[i] |= u.bytesArg[i]
 		}
 		e = packet.Update(u.fieldID, fwdpacket.OpSet, arg)
-
 	}
 	if e != nil {
 		return nil, fwdaction.DROP

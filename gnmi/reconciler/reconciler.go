@@ -82,6 +82,15 @@ func (b *Builder) WithStart(startFn func(context.Context, *ygnmi.Client) error) 
 	return b
 }
 
+// WithStop appends a new stop func to the reconciler.
+func (b *Builder) WithStop(stopFn func(context.Context) error) *Builder {
+	if b.br == nil {
+		b.br = &BuiltReconciler{}
+	}
+	b.br.stopFns = append(b.br.stopFns, stopFn)
+	return b
+}
+
 // WithValidator appends a validator and validations paths to the reconciler.
 // The Validate func is only called if the SetRequest contains paths which match the paths.
 func (b *Builder) WithValidator(paths []ygnmi.PathStruct, validator func(*oc.Root) error) *Builder {
@@ -113,7 +122,7 @@ func NewTypedBuilder[T any](id string) *TypedBuilder[T] {
 func (tb *TypedBuilder[T]) WithWatch(query ygnmi.SingletonQuery[T], predicate func(context.Context, *ygnmi.Client, *ygnmi.Value[T]) error) *TypedBuilder[T] {
 	tb.WithStart(func(ctx context.Context, c *ygnmi.Client) error {
 		watchCtx, cancel := context.WithCancel(ctx)
-		tb.br.stopFns = append(tb.br.stopFns, func() error { cancel(); return nil })
+		tb.br.stopFns = append(tb.br.stopFns, func(context.Context) error { cancel(); return nil })
 		w := ygnmi.Watch(watchCtx, c, query, func(v *ygnmi.Value[T]) error {
 			return predicate(watchCtx, c, v)
 		})
@@ -132,8 +141,8 @@ func (tb *TypedBuilder[T]) WithWatch(query ygnmi.SingletonQuery[T], predicate fu
 // BuiltReconciler is an implementation of the reconciler interface returned by builders.
 type BuiltReconciler struct {
 	id              string
-	startFns        []func(ctx context.Context, client gpb.GNMIClient, target string) error
-	stopFns         []func() error
+	startFns        []func(context.Context, gpb.GNMIClient, string) error
+	stopFns         []func(context.Context) error
 	validateFns     []func(*oc.Root) error
 	validationPaths []ygnmi.PathStruct
 }
@@ -153,10 +162,10 @@ func (bt *BuiltReconciler) Start(ctx context.Context, client gpb.GNMIClient, tar
 	return nil
 }
 
-func (bt *BuiltReconciler) Stop(context.Context) error {
+func (bt *BuiltReconciler) Stop(ctx context.Context) error {
 	var l errlist.List
 	for _, stopFn := range bt.stopFns {
-		l.Add(stopFn())
+		l.Add(stopFn(ctx))
 	}
 	if err := l.Err(); err != nil {
 		return fmt.Errorf("reconciler %q stop errs: %v", bt.id, l.Err())
