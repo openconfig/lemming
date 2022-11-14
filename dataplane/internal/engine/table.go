@@ -514,6 +514,7 @@ func AddIPRoute(ctx context.Context, c fwdpb.ServiceClient, v4 bool, ip, mask []
 			})
 		}
 
+		// If there are multiple next-hops, configure the route to use ECMP or WCMP.
 		actions = []*fwdpb.ActionDesc{{
 			ActionType: fwdpb.ActionType_ACTION_TYPE_SELECT_ACTION_LIST,
 			Action: &fwdpb.ActionDesc_Select{

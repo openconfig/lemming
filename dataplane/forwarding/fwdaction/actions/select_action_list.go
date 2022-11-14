@@ -31,12 +31,12 @@ import (
 // such lists, using the specified algorithm and packet fields.
 type selectActionList struct {
 	fwdobject.Base
-	fields    []fwdpacket.FieldID // packet fields used to create a packet hash
-	set       []fwdaction.Actions // set of action lists
-	weights   []int               // Cumulative sum of weights associates the set of action lists.
-	weightSum uint64
-	hashFn    func(key []byte) int                             // function used to hash a set of bytes
-	hash      fwdpb.SelectActionListActionDesc_SelectAlgorithm // hash algorithm used to select the action list
+	fields       []fwdpacket.FieldID // packet fields used to create a packet hash
+	set          []fwdaction.Actions // set of action lists
+	weightBounds []int               // Cumulative sum of weights associates the set of action lists.
+	weightSum    uint64
+	hashFn       func(key []byte) int                             // function used to hash a set of bytes
+	hash         fwdpb.SelectActionListActionDesc_SelectAlgorithm // hash algorithm used to select the action list
 }
 
 // String returns the action as a formatted string.
@@ -72,8 +72,9 @@ func (s *selectActionList) Process(packet fwdpacket.Packet, counters fwdobject.C
 	}
 
 	h := s.hashFn(key) % int(s.weightSum)
+	// Choose the action index based on which weight bucket the hash value falls under.
 	var index int
-	for i, w := range s.weights {
+	for i, w := range s.weightBounds {
 		index = i
 		if h < w {
 			break
@@ -147,13 +148,13 @@ func (*selectActionListBuilder) Build(desc *fwdpb.ActionDesc, ctx *fwdcontext.Co
 		if l.GetWeight() != 0 {
 			allZeros = false
 		}
-		s.weights = append(s.weights, int(l.GetWeight()+s.weightSum))
+		s.weightBounds = append(s.weightBounds, int(l.GetWeight()+s.weightSum))
 		s.weightSum += l.GetWeight() // TODO: this may overflow.
 	}
 	if allZeros {
-		s.weightSum = uint64(len(s.weights))
-		for i := range s.weights {
-			s.weights[i] = i + 1
+		s.weightSum = uint64(len(s.weightBounds))
+		for i := range s.weightBounds {
+			s.weightBounds[i] = i + 1
 		}
 	}
 	return s, nil
