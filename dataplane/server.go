@@ -128,10 +128,6 @@ func (d *Dataplane) Stop(ctx context.Context) error {
 
 // InsertRoute inserts a route into the dataplane.
 func (d *Dataplane) InsertRoute(ctx context.Context, route *dpb.InsertRouteRequest) (*dpb.InsertRouteResponse, error) {
-	// TODO: support multiple next hops.
-	if len(route.GetNextHops()) > 1 {
-		return nil, status.Errorf(codes.InvalidArgument, "multiple next hops not supported")
-	}
 	if len(route.NextHops) == 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "no next hops provided")
 	}
@@ -152,17 +148,9 @@ func (d *Dataplane) InsertRoute(ctx context.Context, route *dpb.InsertRouteReque
 		isIPv4 = false
 	}
 
-	var nextHopIP []byte
-	if nh := route.GetNextHops()[0].GetIp(); nh != "" {
-		nextHop := net.ParseIP(nh)
-		nextHopIP = nextHop.To4()
-		if nextHopIP == nil {
-			nextHopIP = nextHop.To16()
-		}
-	}
-	log.V(1).Infof("inserting route: prefix %s, nexthop %s, port %s,", route.GetPrefix(), route.GetNextHops()[0].GetIp(), route.GetNextHops()[0].GetPort())
+	log.V(1).Infof("inserting route: prefix %s, nexthops %v", route.GetPrefix(), route.GetNextHops())
 
-	if err := engine.AddIPRoute(ctx, d.fwd, isIPv4, ip, ipNet.Mask, nextHopIP, route.GetNextHops()[0].Port, route.GetNextHops()[0].GetPreTransmitActions()); err != nil {
+	if err := engine.AddIPRoute(ctx, d.fwd, isIPv4, ip, ipNet.Mask, route.GetNextHops()); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to add route: %v", err)
 	}
 
