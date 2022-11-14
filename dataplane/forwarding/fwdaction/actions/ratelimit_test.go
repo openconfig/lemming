@@ -118,8 +118,7 @@ func TestRate(t *testing.T) {
 		}
 		action, err := fwdaction.New(&desc, ctx)
 		if err != nil {
-			t.Errorf("%d: NewAction failed, desc %v failed, err %v.", pos, desc, err)
-
+			t.Errorf("%d: NewAction failed, desc %v failed, err %v.", pos, &desc, err)
 		}
 
 		// Change the ratelimit action's clock function.

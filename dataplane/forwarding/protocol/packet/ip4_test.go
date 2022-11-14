@@ -194,7 +194,6 @@ func TestIP4TTL(t *testing.T) {
 
 // TestReparse adds an opaque ethernet header to an ethernet/IP header and reparses it.
 func TestReparse(t *testing.T) {
-
 	// Create the original ethernet packet
 	originalBytes := append(ethernetIP4, ip4...)
 	p, err := fwdpacket.New(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET, originalBytes)

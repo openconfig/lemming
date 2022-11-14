@@ -498,7 +498,7 @@ var headers = map[int]header{
 // Note that the newValue is always the same size as the current value. This
 // allows us to generate values for fields like QoS which have different sizes
 // depending on the packet type.
-func newValue(t *testing.T, arg, cur []byte) []byte {
+func newValue(arg, cur []byte) []byte {
 	if arg == nil {
 		var upd []byte
 		for _, b := range cur {
@@ -599,7 +599,7 @@ func TestTunnelParsing(t *testing.T) {
 					updates = append(updates, packettestutil.FieldUpdate{
 						ID:  field.id,
 						Op:  fwdpacket.OpSet,
-						Arg: newValue(t, attr.arg, field.value),
+						Arg: newValue(attr.arg, field.value),
 					})
 				}
 			}
@@ -1145,7 +1145,6 @@ func TestTunnelDecapErrors(t *testing.T) {
 		},
 	}
 	packettestutil.TestPacketHeaders("tunnel-decap-errors", t, tests)
-
 }
 
 // TestTunnelEncapErrors tests errors during tunnel encap
@@ -1197,5 +1196,4 @@ func TestTunnelEncapErrors(t *testing.T) {
 		},
 	}
 	packettestutil.TestPacketHeaders("tunnel-encap-errors", t, tests)
-
 }

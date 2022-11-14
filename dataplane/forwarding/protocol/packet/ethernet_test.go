@@ -37,11 +37,6 @@ var ethernetIP6 = []byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0
 var ethernetVLANIP6 = []byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x81, 0x00, 0x71, 0x23, 0x86, 0xDD}
 var ethernet1QIP6 = []byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x91, 0x00, 0x24, 0x56, 0x81, 0x00, 0x71, 0x23, 0x86, 0xDD}
 
-// Ethernet headers carrying opaque payload.
-var ethernetTest = []byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0xFF, 0xFF}
-var ethernetVLANTest = []byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x81, 0x00, 0x71, 0x23, 0xFF, 0xFF}
-var ethernet1QTest = []byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x91, 0x00, 0x24, 0x56, 0x81, 0x00, 0x71, 0x23, 0xFF, 0xFF}
-
 // Ethernet headers carrying ARP payload.
 var ethernetARP = []byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x08, 0x06}
 var ethernetVLANARP = []byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x81, 0x00, 0x71, 0x23, 0x08, 0x06}
@@ -64,263 +59,192 @@ func TestEthernetFields(t *testing.T) {
 		// Parse an ethernet frame with no payload.
 		{
 			StartHeader: fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET,
-			Orig: [][]byte{
-				[]byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x08, 0x23},
+			Orig:        [][]byte{{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x08, 0x23}},
+			Queries: []packettestutil.FieldQuery{{
+				ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION, 0),
+				Err: "failed",
+			}, {
+				ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST, 0),
+				Result: []byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05},
+			}, {
+				ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC, 0),
+				Result: []byte{0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b},
+			}, {
+				ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_TYPE, 0),
+				Result: []byte{0x08, 0x23},
+			}, {
+				ID:     fwdpacket.NewFieldIDFromBytes(fwdpb.PacketHeaderGroup_PACKET_HEADER_GROUP_L2, 1, 2, 0),
+				Result: []byte{0x01, 0x02},
+			}, {
+				ID:  fwdpacket.NewFieldIDFromBytes(fwdpb.PacketHeaderGroup_PACKET_HEADER_GROUP_L2, 10, 20, 0),
+				Err: "failed",
+			}},
+			Updates: []packettestutil.FieldUpdate{{
+				ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION, 0),
+				Op:  fwdpacket.OpSet,
+				Err: "failed",
+			}, {
+				ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST, 0),
+				Arg: []byte{0x10, 0x11, 0x12, 0x13, 0x14, 0x15},
+				Op:  fwdpacket.OpSet,
+			}, {
+				ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC, 0),
+				Arg: []byte{0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b},
+				Op:  fwdpacket.OpSet,
+			}, {
+				ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_TYPE, 0),
+				Arg: []byte{0x1C, 0x1D},
+				Op:  fwdpacket.OpSet,
+			}, {
+				ID:  fwdpacket.NewFieldIDFromBytes(fwdpb.PacketHeaderGroup_PACKET_HEADER_GROUP_L2, 1, 2, 0),
+				Arg: []byte{0x21, 0x22},
+				Op:  fwdpacket.OpSet,
+			}},
+			Final: [][]byte{{0x10, 0x21, 0x22, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D}},
+		}, { // Parse an ethernet frame with one vlan tag.
+			StartHeader: fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET,
+			Orig:        [][]byte{{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x81, 0x00, 0x71, 0x23, 0x08, 0x23}},
+			Queries: []packettestutil.FieldQuery{{
+				ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION, 0),
+				Err: "failed",
+			}, {
+				ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST, 0),
+				Result: []byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05},
+			}, {
+				ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC, 0),
+				Result: []byte{0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b},
+			}, {
+				ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_TYPE, 0),
+				Result: []byte{0x08, 0x23},
+			}, {
+				ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG, 0),
+				Result: []byte{0x01, 0x23},
+			}, {
+				ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_PRIORITY, 0),
+				Result: []byte{0x00, 0x07},
+			}, {
+				ID:     fwdpacket.NewFieldIDFromBytes(fwdpb.PacketHeaderGroup_PACKET_HEADER_GROUP_L2, 15, 1, 0),
+				Result: []byte{0x23},
+			}},
+			Updates: []packettestutil.FieldUpdate{{
+				ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION, 0),
+				Err: "failed",
+				Op:  fwdpacket.OpSet,
+			}, {
+				ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST, 0),
+				Arg: []byte{0x10, 0x11, 0x12, 0x13, 0x14, 0x15},
+				Op:  fwdpacket.OpSet,
+			}, {
+				ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC, 0),
+				Arg: []byte{0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b},
+				Op:  fwdpacket.OpSet,
+			}, {
+				ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_TYPE, 0),
+				Arg: []byte{0x1C, 0x1D},
+				Op:  fwdpacket.OpSet,
+			}, {
+				ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG, 0),
+				Arg: []byte{0x02, 0x34},
+				Op:  fwdpacket.OpSet,
+			}, {
+				ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_PRIORITY, 0),
+				Arg: []byte{0x00, 0x04},
+				Op:  fwdpacket.OpSet,
+			}},
+			Final: [][]byte{{0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x81, 0x00, 0x42, 0x34, 0x1C, 0x1D}},
+		}, { // Parse an ethernet frame with two vlan tags.
+			StartHeader: fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET,
+			Orig:        [][]byte{{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x91, 0x00, 0x24, 0x56, 0x81, 0x00, 0x71, 0x23, 0x08, 0x23}},
+			Queries: []packettestutil.FieldQuery{{
+				ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION, 0),
+				Err: "failed",
+			}, {
+				ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST, 0),
+				Result: []byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05},
+			}, {
+				ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC, 0),
+				Result: []byte{0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b},
+			}, {
+				ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_TYPE, 0),
+				Result: []byte{0x08, 0x23},
+			}, {
+				ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG, 0),
+				Result: []byte{0x04, 0x56},
+			}, {
+				ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_PRIORITY, 0),
+				Result: []byte{0x00, 0x02},
+			}, {
+				ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG, 1),
+				Result: []byte{0x01, 0x23},
+			}, {
+				ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_PRIORITY, 1),
+				Result: []byte{0x00, 0x07},
+			}},
+			Updates: []packettestutil.FieldUpdate{{
+				ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION, 0),
+				Err: "failed",
+				Op:  fwdpacket.OpSet,
+			}, {
+				ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST, 0),
+				Arg: []byte{0x10, 0x11, 0x12, 0x13, 0x14, 0x15},
+				Op:  fwdpacket.OpSet,
+			}, {
+				ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC, 0),
+				Arg: []byte{0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b},
+				Op:  fwdpacket.OpSet,
+			}, {
+				ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_TYPE, 0),
+				Arg: []byte{0x1C, 0x1D},
+				Op:  fwdpacket.OpSet,
+			}, {
+				ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG, 0),
+				Arg: []byte{0x05, 0x67},
+				Op:  fwdpacket.OpSet,
+			}, {
+				ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_PRIORITY, 0),
+				Arg: []byte{0x00, 0x01},
+				Op:  fwdpacket.OpSet,
+			}, {
+				ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG, 1),
+				Arg: []byte{0x02, 0x34},
+				Op:  fwdpacket.OpSet,
+			}, {
+				ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_PRIORITY, 1),
+				Arg: []byte{0x00, 0x04},
+				Op:  fwdpacket.OpSet,
 			},
-			Queries: []packettestutil.FieldQuery{
-				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION, 0),
-					Err: "failed",
-				},
-				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST, 0),
-					Result: []byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05},
-				},
-				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC, 0),
-					Result: []byte{0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b},
-				},
-				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_TYPE, 0),
-					Result: []byte{0x08, 0x23},
-				},
-				{
-					ID:     fwdpacket.NewFieldIDFromBytes(fwdpb.PacketHeaderGroup_PACKET_HEADER_GROUP_L2, 1, 2, 0),
-					Result: []byte{0x01, 0x02},
-				},
-				{
-					ID:  fwdpacket.NewFieldIDFromBytes(fwdpb.PacketHeaderGroup_PACKET_HEADER_GROUP_L2, 10, 20, 0),
-					Err: "failed",
-				},
 			},
-			Updates: []packettestutil.FieldUpdate{
-				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION, 0),
-					Op:  fwdpacket.OpSet,
-					Err: "failed",
-				},
-				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST, 0),
-					Arg: []byte{0x10, 0x11, 0x12, 0x13, 0x14, 0x15},
-					Op:  fwdpacket.OpSet,
-				},
-				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC, 0),
-					Arg: []byte{0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b},
-					Op:  fwdpacket.OpSet,
-				},
-				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_TYPE, 0),
-					Arg: []byte{0x1C, 0x1D},
-					Op:  fwdpacket.OpSet,
-				},
-				{
-					ID:  fwdpacket.NewFieldIDFromBytes(fwdpb.PacketHeaderGroup_PACKET_HEADER_GROUP_L2, 1, 2, 0),
-					Arg: []byte{0x21, 0x22},
-					Op:  fwdpacket.OpSet,
-				},
-			},
-			Final: [][]byte{
-				[]byte{0x10, 0x21, 0x22, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D},
-			},
-		},
-		// Parse an ethernet frame with one vlan tag.
-		{
+			Final: [][]byte{{0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x91, 0x00, 0x15, 0x67, 0x81, 0x00, 0x42, 0x34, 0x1C, 0x1D}},
+		}, { // Parse an ethernet frame with an ISIS payload.
 			StartHeader: fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET,
 			Orig: [][]byte{
-				[]byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x81, 0x00, 0x71, 0x23, 0x08, 0x23},
-			},
-			Queries: []packettestutil.FieldQuery{
-				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION, 0),
-					Err: "failed",
-				},
-				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST, 0),
-					Result: []byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05},
-				},
-				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC, 0),
-					Result: []byte{0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b},
-				},
-				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_TYPE, 0),
-					Result: []byte{0x08, 0x23},
-				},
-				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG, 0),
-					Result: []byte{0x01, 0x23},
-				},
-				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_PRIORITY, 0),
-					Result: []byte{0x00, 0x07},
-				},
-				{
-					ID:     fwdpacket.NewFieldIDFromBytes(fwdpb.PacketHeaderGroup_PACKET_HEADER_GROUP_L2, 15, 1, 0),
-					Result: []byte{0x23},
-				},
-			},
-			Updates: []packettestutil.FieldUpdate{
-				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION, 0),
-					Err: "failed",
-					Op:  fwdpacket.OpSet,
-				},
-				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST, 0),
-					Arg: []byte{0x10, 0x11, 0x12, 0x13, 0x14, 0x15},
-					Op:  fwdpacket.OpSet,
-				},
-				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC, 0),
-					Arg: []byte{0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b},
-					Op:  fwdpacket.OpSet,
-				},
-				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_TYPE, 0),
-					Arg: []byte{0x1C, 0x1D},
-					Op:  fwdpacket.OpSet,
-				},
-				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG, 0),
-					Arg: []byte{0x02, 0x34},
-					Op:  fwdpacket.OpSet,
-				},
-				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_PRIORITY, 0),
-					Arg: []byte{0x00, 0x04},
-					Op:  fwdpacket.OpSet,
-				},
-			},
-			Final: [][]byte{
-				[]byte{0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x81, 0x00, 0x42, 0x34, 0x1C, 0x1D},
-			},
-		},
-		// Parse an ethernet frame with two vlan tags.
-		{
-			StartHeader: fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET,
-			Orig: [][]byte{
-				[]byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x91, 0x00, 0x24, 0x56, 0x81, 0x00, 0x71, 0x23, 0x08, 0x23},
-			},
-			Queries: []packettestutil.FieldQuery{
-				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION, 0),
-					Err: "failed",
-				},
-				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST, 0),
-					Result: []byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05},
-				},
-				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC, 0),
-					Result: []byte{0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b},
-				},
-				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_TYPE, 0),
-					Result: []byte{0x08, 0x23},
-				},
-				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG, 0),
-					Result: []byte{0x04, 0x56},
-				},
-				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_PRIORITY, 0),
-					Result: []byte{0x00, 0x02},
-				},
-				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG, 1),
-					Result: []byte{0x01, 0x23},
-				},
-				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_PRIORITY, 1),
-					Result: []byte{0x00, 0x07},
-				},
-			},
-			Updates: []packettestutil.FieldUpdate{
-				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION, 0),
-					Err: "failed",
-					Op:  fwdpacket.OpSet,
-				},
-				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST, 0),
-					Arg: []byte{0x10, 0x11, 0x12, 0x13, 0x14, 0x15},
-					Op:  fwdpacket.OpSet,
-				},
-				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC, 0),
-					Arg: []byte{0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b},
-					Op:  fwdpacket.OpSet,
-				},
-				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_TYPE, 0),
-					Arg: []byte{0x1C, 0x1D},
-					Op:  fwdpacket.OpSet,
-				},
-				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG, 0),
-					Arg: []byte{0x05, 0x67},
-					Op:  fwdpacket.OpSet,
-				},
-				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_PRIORITY, 0),
-					Arg: []byte{0x00, 0x01},
-					Op:  fwdpacket.OpSet,
-				},
-				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG, 1),
-					Arg: []byte{0x02, 0x34},
-					Op:  fwdpacket.OpSet,
-				},
-				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_PRIORITY, 1),
-					Arg: []byte{0x00, 0x04},
-					Op:  fwdpacket.OpSet,
-				},
-			},
-			Final: [][]byte{
-				[]byte{0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x91, 0x00, 0x15, 0x67, 0x81, 0x00, 0x42, 0x34, 0x1C, 0x1D},
-			},
-		},
-		// Parse an ethernet frame with an ISIS payload.
-		{
-			StartHeader: fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET,
-			Orig: [][]byte{
-				[]byte{0x01, 0x80, 0xc2, 0x00, 0x00, 0x15, 0xc2, 0x03, 0x29, 0xa9, 0x00, 0x00},
+				{0x01, 0x80, 0xc2, 0x00, 0x00, 0x15, 0xc2, 0x03, 0x29, 0xa9, 0x00, 0x00},
 				payloadISIS,
 			},
-			Queries: []packettestutil.FieldQuery{
-				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION, 0),
-					Err: "failed",
-				},
-				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST, 0),
-					Result: []byte{0x01, 0x80, 0xc2, 0x00, 0x00, 0x15},
-				},
-				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC, 0),
-					Result: []byte{0xc2, 0x03, 0x29, 0xa9, 0x00, 0x00},
-				},
-				{
-					ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_TYPE, 0),
-					Result: []byte{0x00, 0x67},
-				},
-			},
-			Updates: []packettestutil.FieldUpdate{
-				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST, 0),
-					Arg: []byte{0x10, 0x11, 0x12, 0x13, 0x14, 0x15},
-					Op:  fwdpacket.OpSet,
-				},
-				{
-					ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC, 0),
-					Arg: []byte{0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b},
-					Op:  fwdpacket.OpSet,
-				},
-			},
+			Queries: []packettestutil.FieldQuery{{
+				ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION, 0),
+				Err: "failed",
+			}, {
+				ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST, 0),
+				Result: []byte{0x01, 0x80, 0xc2, 0x00, 0x00, 0x15},
+			}, {
+				ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC, 0),
+				Result: []byte{0xc2, 0x03, 0x29, 0xa9, 0x00, 0x00},
+			}, {
+				ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_TYPE, 0),
+				Result: []byte{0x00, 0x67},
+			}},
+			Updates: []packettestutil.FieldUpdate{{
+				ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST, 0),
+				Arg: []byte{0x10, 0x11, 0x12, 0x13, 0x14, 0x15},
+				Op:  fwdpacket.OpSet,
+			}, {
+				ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC, 0),
+				Arg: []byte{0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b},
+				Op:  fwdpacket.OpSet,
+			}},
 			Final: [][]byte{
-				[]byte{0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b},
+				{0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b},
 				payloadISIS,
 			},
 		},

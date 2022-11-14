@@ -140,12 +140,10 @@ func (ratelimitBuilder) Build(desc *fwdpb.ActionDesc, ctx *fwdcontext.Context) (
 	}
 
 	return &ratelimit{
-		last:  time.Now(),
-		burst: uint64(r.Rate.GetBurstBytes()),
-		rate:  uint64(r.Rate.GetRateBps()),
-		clock: func() time.Time {
-			return time.Now()
-		},
+		last:    time.Now(),
+		burst:   uint64(r.Rate.GetBurstBytes()),
+		rate:    uint64(r.Rate.GetRateBps()),
+		clock:   time.Now,
 		running: false,
 	}, nil
 }

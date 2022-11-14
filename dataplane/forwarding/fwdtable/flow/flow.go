@@ -31,7 +31,7 @@ import (
 type level struct {
 	priority   uint32
 	next, prev *level
-	flows      *FlowMap
+	flows      *Map
 }
 
 // A flowBank is a collection for flow maps associated with a priority.
@@ -43,7 +43,7 @@ type flowBank struct {
 }
 
 // addLevel adds a new FlowMap to the bank at the specified priority level.
-func (b *flowBank) addLevel(fm *FlowMap, priority uint32) {
+func (b *flowBank) addLevel(fm *Map, priority uint32) {
 	curr := &level{
 		flows:    fm,
 		priority: priority,
@@ -191,7 +191,7 @@ func (t *Table) AddEntry(ed *fwdpb.EntryDesc, ad []*fwdpb.ActionDesc) error {
 		return fmt.Errorf("flow: AddEntry failed, invalid bankID %v", bankID)
 	}
 	bank := t.banks[bankID]
-	desc, err := NewFlowDesc(t.ctx, fl.Flow.GetFields(), fl.Flow.GetQualifiers())
+	desc, err := NewDesc(t.ctx, fl.Flow.GetFields(), fl.Flow.GetQualifiers())
 	if err != nil {
 		return err
 	}
@@ -221,7 +221,7 @@ func (t *Table) AddEntry(ed *fwdpb.EntryDesc, ad []*fwdpb.ActionDesc) error {
 		level.flows.Add(desc, actions)
 		return nil
 	}
-	flows := NewFlowMap(t.keyDesc.list, t.qualifierDesc.list, bankID, priority)
+	flows := NewMap(t.keyDesc.list, t.qualifierDesc.list, bankID, priority)
 	bank.addLevel(flows, priority)
 	flows.Add(desc, actions)
 	return nil
@@ -243,7 +243,7 @@ func (t *Table) RemoveEntry(ed *fwdpb.EntryDesc) error {
 	if !ok {
 		return fmt.Errorf("flow: RemoveEntry failed, invalid priority %v", priority)
 	}
-	desc, err := NewFlowDesc(t.ctx, fl.Flow.GetFields(), fl.Flow.GetQualifiers())
+	desc, err := NewDesc(t.ctx, fl.Flow.GetFields(), fl.Flow.GetQualifiers())
 	if err != nil {
 		return err
 	}
@@ -277,7 +277,7 @@ func (t *Table) Process(packet fwdpacket.Packet, counters fwdobject.Counters) (f
 	var actions fwdaction.Actions
 	match := false
 	for bid, bank := range t.banks {
-		m, f, a, p := func(b *flowBank) (bool, *FlowDesc, fwdaction.Actions, uint32) {
+		m, f, a, p := func(b *flowBank) (bool, *Desc, fwdaction.Actions, uint32) {
 			for priority := b.head; priority != nil; priority = priority.next {
 				if match, f, a := priority.flows.Match(key, qualifier); match {
 					return true, f, a, priority.priority
@@ -286,7 +286,7 @@ func (t *Table) Process(packet fwdpacket.Packet, counters fwdobject.Counters) (f
 			return false, nil, nil, 0
 		}(bank)
 		if m {
-			packet.Logf(fwdpacket.LogDebugMessage, "%v: bank %v priority %v matched entry %v, actions %v", t.ID(), bid, p, f, fwdaction.Actions(a))
+			packet.Logf(fwdpacket.LogDebugMessage, "%v: bank %v priority %v matched entry %v, actions %v", t.ID(), bid, p, f, a)
 			actions = append(actions, a...)
 			match = true
 		}

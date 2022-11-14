@@ -126,18 +126,15 @@ func TestSelectActionList(t *testing.T) {
 	}
 
 	// Packet fields used to compute the hash.
-	fields := []*fwdpb.PacketFieldId{
-		&fwdpb.PacketFieldId{
-			Field: &fwdpb.PacketField{
-				FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO,
-			},
+	fields := []*fwdpb.PacketFieldId{{
+		Field: &fwdpb.PacketField{
+			FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO,
 		},
-		&fwdpb.PacketFieldId{
-			Field: &fwdpb.PacketField{
-				FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP,
-			},
+	}, {
+		Field: &fwdpb.PacketField{
+			FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP,
 		},
-	}
+	}}
 
 	// List of each type of select function.
 	hashFn := []fwdpb.SelectActionListActionDesc_SelectAlgorithm{
@@ -164,7 +161,7 @@ func TestSelectActionList(t *testing.T) {
 		b := newBuilder()
 		actions, err := fwdaction.NewActions([]*fwdpb.ActionDesc{&desc}, ctx)
 		if err != nil {
-			t.Errorf("NewAction failed for desc %v, err %v.", desc, err)
+			t.Errorf("NewAction failed for desc %v, err %v.", &desc, err)
 		}
 
 		// Send multiple packets using all possible 1 byte keys. This ensures that a hash

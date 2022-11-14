@@ -31,8 +31,6 @@ const (
 	lengthOffset   = 1                // Offset in bytes of the ICMP Option length
 	ndTargetBytes  = protocol.SizeIP6 // Number of bytes in the target address
 	ndTargetOffset = 8                // Offset in bytes of the target address
-	ndSLLBytes     = protocol.SizeMAC // Number of bytes in the source link address
-	ndTLLBytes     = protocol.SizeMAC // Number of bytes in the target link address
 )
 
 // Set of supported ICMP6 message types.

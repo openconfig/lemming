@@ -35,92 +35,66 @@ func TestSetContains(t *testing.T) {
 	tests := []struct {
 		members [][]byte // members in the test set
 		checks  []check  // checkes performed on the set
-	}{
-		// Set with no member.
-		{
-			checks: []check{
-				{
-					member:   []byte{0x00},
-					contains: false,
-				},
-				{
-					member:   []byte{0x01},
-					contains: false,
-				},
-				{
-					member:   []byte{},
-					contains: false,
-				},
-			},
+	}{{ // Set with no member.
+		checks: []check{{
+			member:   []byte{0x00},
+			contains: false,
+		}, {
+			member:   []byte{0x01},
+			contains: false,
+		}, {
+			member:   []byte{},
+			contains: false,
+		}},
+	}, { // Set with one member.
+		members: [][]byte{
+			{0x00},
 		},
-		// Set with one member.
-		{
-			members: [][]byte{
-				[]byte{0x00},
-			},
-			checks: []check{
-				{
-					member:   []byte{0x00},
-					contains: true,
-				},
-				{
-					member:   []byte{0x01},
-					contains: false,
-				},
-			},
+		checks: []check{{
+			member:   []byte{0x00},
+			contains: true,
+		}, {
+			member:   []byte{0x01},
+			contains: false,
+		}},
+	}, { // Set with one member, the empty string.
+		members: [][]byte{
+			{},
 		},
-		// Set with one member, the empty string.
-		{
-			members: [][]byte{
-				[]byte{},
-			},
-			checks: []check{
-				{
-					member:   []byte{0x00},
-					contains: false,
-				},
-				{
-					member:   []byte{},
-					contains: true,
-				},
-			},
+		checks: []check{{
+			member:   []byte{0x00},
+			contains: false,
+		}, {
+			member:   []byte{},
+			contains: true,
+		}},
+	}, { // Set with multiple members.
+		members: [][]byte{
+			{0x00},
+			{0x00, 0x01},
+			{0x01},
+			{0x01, 0x02, 0x03},
 		},
-		// Set with multiple members.
-		{
-			members: [][]byte{
-				[]byte{0x00},
-				[]byte{0x00, 0x01},
-				[]byte{0x01},
-				[]byte{0x01, 0x02, 0x03},
-			},
-			checks: []check{
-				{
-					member:   []byte{0x00},
-					contains: true,
-				},
-				{
-					member:   []byte{},
-					contains: false,
-				},
-				{
-					member:   []byte{0x01},
-					contains: true,
-				},
-				{
-					member:   []byte{0x02},
-					contains: false,
-				},
-				{
-					member:   []byte{0x01, 0x03, 0x02},
-					contains: false,
-				},
-				{
-					member:   []byte{0x01, 0x02, 0x03},
-					contains: true,
-				},
-			},
-		},
-	}
+		checks: []check{{
+			member:   []byte{0x00},
+			contains: true,
+		}, {
+			member:   []byte{},
+			contains: false,
+		}, {
+			member:   []byte{0x01},
+			contains: true,
+		}, {
+			member:   []byte{0x02},
+			contains: false,
+		}, {
+			member:   []byte{0x01, 0x03, 0x02},
+			contains: false,
+		}, {
+			member:   []byte{0x01, 0x02, 0x03},
+			contains: true,
+		}},
+	}}
 
 	// For each test, create the specified set and perform the specified checks.
 	for id, test := range tests {
@@ -209,7 +183,6 @@ func TestSetOperations(t *testing.T) {
 
 		case err != nil && search.success == true:
 			t.Errorf("Find(%v) failed. Got error %v", search.name, err)
-
 		}
 	}
 }

@@ -49,6 +49,7 @@ using the following YANG input files:
   - public/third_party/ietf/ietf-inet-types.yang
   - public/third_party/ietf/ietf-interfaces.yang
   - public/third_party/ietf/ietf-yang-types.yang
+  - yang/openconfig-bgp-gue.yang
 
 Imported modules were sourced from:
   - public/release/models/...
@@ -188,6 +189,72 @@ func (n *Component_AllocatedPowerPathAny) State() ygnmi.WildcardQuery[uint32] {
 			ret := gs.(*oc.Component).AllocatedPower
 			if ret == nil {
 				var zero uint32
+				return zero, false
+			}
+			return *ret, true
+		},
+		func() ygot.ValidatedGoStruct { return new(oc.Component) },
+		&ytypes.Schema{
+			Root:       &oc.Root{},
+			SchemaTree: oc.SchemaTree,
+			Unmarshal:  oc.Unmarshal,
+		},
+	)
+}
+
+// State returns a Query that can be used in gNMI operations.
+//
+//	Defining module:      "openconfig-platform"
+//	Instantiating module: "openconfig-platform"
+//	Path from parent:     "state/base-mac-address"
+//	Path from root:       "/components/component/state/base-mac-address"
+func (n *Component_BaseMacAddressPath) State() ygnmi.SingletonQuery[string] {
+	return ygnmi.NewLeafSingletonQuery[string](
+		"Component",
+		true,
+		true,
+		ygnmi.NewNodePath(
+			[]string{"state", "base-mac-address"},
+			nil,
+			n.parent,
+		),
+		func(gs ygot.ValidatedGoStruct) (string, bool) {
+			ret := gs.(*oc.Component).BaseMacAddress
+			if ret == nil {
+				var zero string
+				return zero, false
+			}
+			return *ret, true
+		},
+		func() ygot.ValidatedGoStruct { return new(oc.Component) },
+		&ytypes.Schema{
+			Root:       &oc.Root{},
+			SchemaTree: oc.SchemaTree,
+			Unmarshal:  oc.Unmarshal,
+		},
+	)
+}
+
+// State returns a Query that can be used in gNMI operations.
+//
+//	Defining module:      "openconfig-platform"
+//	Instantiating module: "openconfig-platform"
+//	Path from parent:     "state/base-mac-address"
+//	Path from root:       "/components/component/state/base-mac-address"
+func (n *Component_BaseMacAddressPathAny) State() ygnmi.WildcardQuery[string] {
+	return ygnmi.NewLeafWildcardQuery[string](
+		"Component",
+		true,
+		true,
+		ygnmi.NewNodePath(
+			[]string{"state", "base-mac-address"},
+			nil,
+			n.parent,
+		),
+		func(gs ygot.ValidatedGoStruct) (string, bool) {
+			ret := gs.(*oc.Component).BaseMacAddress
+			if ret == nil {
+				var zero string
 				return zero, false
 			}
 			return *ret, true
@@ -1885,6 +1952,18 @@ func (n *Component_UsedPowerPathAny) State() ygnmi.WildcardQuery[uint32] {
 	)
 }
 
+// Component_BaseMacAddressPath represents the /openconfig-platform/components/component/state/base-mac-address YANG schema element.
+type Component_BaseMacAddressPath struct {
+	*ygnmi.NodePath
+	parent ygnmi.PathStruct
+}
+
+// Component_BaseMacAddressPathAny represents the wildcard version of the /openconfig-platform/components/component/state/base-mac-address YANG schema element.
+type Component_BaseMacAddressPathAny struct {
+	*ygnmi.NodePath
+	parent ygnmi.PathStruct
+}
+
 // Component_CleiCodePath represents the /openconfig-platform/components/component/state/clei-code YANG schema element.
 type Component_CleiCodePath struct {
 	*ygnmi.NodePath
@@ -2258,6 +2337,48 @@ func (n *ComponentPathAny) Backplane() *Component_BackplanePathAny {
 			map[string]interface{}{},
 			n,
 		),
+	}
+}
+
+// BaseMacAddress (leaf): This is a MAC address representing the root or primary MAC
+// address for a component.  Components such as CHASSIS and
+// CONTROLLER_CARD are expected to provide a base-mac-address.  The
+// base mac-address for CHASSIS and a PRIMARY CONTROLLER_CARD may
+// contain the same value.
+//
+//	Defining module:      "openconfig-platform"
+//	Instantiating module: "openconfig-platform"
+//	Path from parent:     "state/base-mac-address"
+//	Path from root:       "/components/component/state/base-mac-address"
+func (n *ComponentPath) BaseMacAddress() *Component_BaseMacAddressPath {
+	return &Component_BaseMacAddressPath{
+		NodePath: ygnmi.NewNodePath(
+			[]string{"state", "base-mac-address"},
+			map[string]interface{}{},
+			n,
+		),
+		parent: n,
+	}
+}
+
+// BaseMacAddress (leaf): This is a MAC address representing the root or primary MAC
+// address for a component.  Components such as CHASSIS and
+// CONTROLLER_CARD are expected to provide a base-mac-address.  The
+// base mac-address for CHASSIS and a PRIMARY CONTROLLER_CARD may
+// contain the same value.
+//
+//	Defining module:      "openconfig-platform"
+//	Instantiating module: "openconfig-platform"
+//	Path from parent:     "state/base-mac-address"
+//	Path from root:       "/components/component/state/base-mac-address"
+func (n *ComponentPathAny) BaseMacAddress() *Component_BaseMacAddressPathAny {
+	return &Component_BaseMacAddressPathAny{
+		NodePath: ygnmi.NewNodePath(
+			[]string{"state", "base-mac-address"},
+			map[string]interface{}{},
+			n,
+		),
+		parent: n,
 	}
 }
 

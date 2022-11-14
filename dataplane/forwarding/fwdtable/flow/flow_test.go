@@ -32,7 +32,7 @@ import (
 
 // A testAction is a test action that encodes a flow and priority.
 type testAction struct {
-	flow     *FlowDesc
+	flow     *Desc
 	priority uint32
 }
 
@@ -68,104 +68,78 @@ func TestFlowMapManagement(t *testing.T) {
 	fl := NewFieldList(map[fwdpacket.FieldID]bool{
 		fid: true,
 	})
-	fm := NewFlowMap(fl, fl, 0, 0)
+	fm := NewMap(fl, fl, 0, 0)
 
 	// Set of sets used to to test.
 	testSets := []struct {
 		id      string
 		members [][]byte
-	}{
-		{
-			id: "1",
-			members: [][]byte{
-				[]byte{0x01, 0x02},
-				[]byte{0x01, 0x03},
-			},
+	}{{
+		id: "1",
+		members: [][]byte{
+			{0x01, 0x02},
+			{0x01, 0x03},
 		},
-	}
+	}}
 
 	// Set of flows used to test.
 	testFlows := []struct {
 		keys       []*fwdpb.PacketFieldMaskedBytes
 		qualifiers []*fwdpb.PacketFieldSet
-	}{
-		{
-			keys: []*fwdpb.PacketFieldMaskedBytes{
-				{
-					FieldId: id,
-					Bytes:   []byte{0x01, 0x02, 0x00, 0x00},
-					Masks:   []byte{0xFF, 0xFF, 0xFF, 0xFF},
+	}{{
+		keys: []*fwdpb.PacketFieldMaskedBytes{{
+			FieldId: id,
+			Bytes:   []byte{0x01, 0x02, 0x00, 0x00},
+			Masks:   []byte{0xFF, 0xFF, 0xFF, 0xFF},
+		}},
+	}, {
+		keys: []*fwdpb.PacketFieldMaskedBytes{{
+			FieldId: id,
+			Bytes:   []byte{0x01, 0x00, 0x00, 0x00},
+			Masks:   []byte{0xFF, 0xFF, 0xFF, 0xFF},
+		}},
+	}, {
+		keys: []*fwdpb.PacketFieldMaskedBytes{{
+			FieldId: id,
+			Bytes:   []byte{0x02, 0x00, 0x00, 0x00},
+			Masks:   []byte{0xFF, 0xFF, 0xFF, 0xFF},
+		}},
+	}, {
+		keys: []*fwdpb.PacketFieldMaskedBytes{{
+			FieldId: id,
+			Bytes:   []byte{0x05, 0x06, 0x07, 0x00},
+			Masks:   []byte{0xFF, 0xFF, 0xFF, 0xFF},
+		}},
+	}, {
+		keys: []*fwdpb.PacketFieldMaskedBytes{{
+			FieldId: id,
+			Bytes:   []byte{0x07, 0x07, 0x06, 0x08},
+			Masks:   []byte{0xFF, 0xFF, 0xFF, 0xFF},
+		}},
+	}, {
+		qualifiers: []*fwdpb.PacketFieldSet{{
+			FieldId: id,
+			SetId: &fwdpb.SetId{
+				ObjectId: &fwdpb.ObjectId{
+					Id: "1",
 				},
 			},
-		},
-		{
-			keys: []*fwdpb.PacketFieldMaskedBytes{
-				{
-					FieldId: id,
-					Bytes:   []byte{0x01, 0x00, 0x00, 0x00},
-					Masks:   []byte{0xFF, 0xFF, 0xFF, 0xFF},
+		}},
+	}, {
+		keys: []*fwdpb.PacketFieldMaskedBytes{{
+			FieldId: id,
+			Bytes:   []byte{0x07, 0x07, 0x06, 0x08},
+			Masks:   []byte{0xFF, 0xFF, 0xFF, 0xFF},
+		}},
+		qualifiers: []*fwdpb.PacketFieldSet{{
+			FieldId: id,
+			SetId: &fwdpb.SetId{
+				ObjectId: &fwdpb.ObjectId{
+					Id: "1",
 				},
 			},
-		},
-		{
-			keys: []*fwdpb.PacketFieldMaskedBytes{
-				{
-					FieldId: id,
-					Bytes:   []byte{0x02, 0x00, 0x00, 0x00},
-					Masks:   []byte{0xFF, 0xFF, 0xFF, 0xFF},
-				},
-			},
-		},
-		{
-			keys: []*fwdpb.PacketFieldMaskedBytes{
-				{
-					FieldId: id,
-					Bytes:   []byte{0x05, 0x06, 0x07, 0x00},
-					Masks:   []byte{0xFF, 0xFF, 0xFF, 0xFF},
-				},
-			},
-		},
-		{
-			keys: []*fwdpb.PacketFieldMaskedBytes{
-				{
-					FieldId: id,
-					Bytes:   []byte{0x07, 0x07, 0x06, 0x08},
-					Masks:   []byte{0xFF, 0xFF, 0xFF, 0xFF},
-				},
-			},
-		},
-		{
-			qualifiers: []*fwdpb.PacketFieldSet{
-				{
-					FieldId: id,
-					SetId: &fwdpb.SetId{
-						ObjectId: &fwdpb.ObjectId{
-							Id: "1",
-						},
-					},
-				},
-			},
-		},
-		{
-			keys: []*fwdpb.PacketFieldMaskedBytes{
-				{
-					FieldId: id,
-					Bytes:   []byte{0x07, 0x07, 0x06, 0x08},
-					Masks:   []byte{0xFF, 0xFF, 0xFF, 0xFF},
-				},
-			},
-			qualifiers: []*fwdpb.PacketFieldSet{
-				{
-					FieldId: id,
-					SetId: &fwdpb.SetId{
-						ObjectId: &fwdpb.ObjectId{
-							Id: "1",
-						},
-					},
-				},
-			},
-		},
-	}
+		}},
+	}}
 
 	// Build the sets required for tests.
 	for pos, ts := range testSets {
@@ -180,9 +154,9 @@ func TestFlowMapManagement(t *testing.T) {
 	}
 
 	// Build a list of flow desc. from the test.
-	var flows []*FlowDesc
+	var flows []*Desc
 	for pos, tf := range testFlows {
-		fd, err := NewFlowDesc(ctx, tf.keys, tf.qualifiers)
+		fd, err := NewDesc(ctx, tf.keys, tf.qualifiers)
 		if err == nil {
 			flows = append(flows, fd)
 		} else {
@@ -257,21 +231,19 @@ func TestFlowMapMatch(t *testing.T) {
 	fl2 := NewFieldList(map[fwdpacket.FieldID]bool{
 		fid2: true,
 	})
-	fm := NewFlowMap(fl1, fl2, 0, 0)
+	fm := NewMap(fl1, fl2, 0, 0)
 
 	// Set of sets used to to test.
 	testSets := []struct {
 		id      string
 		members [][]byte
-	}{
-		{
-			id: "1",
-			members: [][]byte{
-				[]byte{0x01, 0x02, 0x03, 0x04},
-				[]byte{0x01, 0x03, 0x04, 0x05},
-			},
+	}{{
+		id: "1",
+		members: [][]byte{
+			{0x01, 0x02, 0x03, 0x04},
+			{0x01, 0x03, 0x04, 0x05},
 		},
-	}
+	}}
 
 	// List of flows used to test. Each flow is associated with a non-'id'
 	noFlow := 0
@@ -279,189 +251,143 @@ func TestFlowMapMatch(t *testing.T) {
 		id         int
 		keys       []*fwdpb.PacketFieldMaskedBytes
 		qualifiers []*fwdpb.PacketFieldSet
-	}{
-		{
-			id: 1,
-			keys: []*fwdpb.PacketFieldMaskedBytes{
-				{
-					FieldId: id1,
-					Bytes:   []byte{0x01, 0x02, 0x00, 0x00},
-					Masks:   []byte{0xFF, 0xFF, 0xFF, 0xFF},
+	}{{
+		id: 1,
+		keys: []*fwdpb.PacketFieldMaskedBytes{{
+			FieldId: id1,
+			Bytes:   []byte{0x01, 0x02, 0x00, 0x00},
+			Masks:   []byte{0xFF, 0xFF, 0xFF, 0xFF},
+		}},
+	}, {
+		id: 2,
+		keys: []*fwdpb.PacketFieldMaskedBytes{{
+			FieldId: id1,
+			Bytes:   []byte{0x01, 0x00, 0x00, 0x00},
+			Masks:   []byte{0xFF, 0xFF, 0xFF, 0xFF},
+		}},
+	}, {
+		id: 3,
+		keys: []*fwdpb.PacketFieldMaskedBytes{{
+			FieldId: id1,
+			Bytes:   []byte{0x01, 0x00, 0x01, 0x00},
+			Masks:   []byte{0xFF, 0xFF, 0xFD, 0xFF},
+		}},
+	}, {
+		id: 4,
+		keys: []*fwdpb.PacketFieldMaskedBytes{{
+			FieldId: id1,
+			Bytes:   []byte{0x02, 0x00, 0x00, 0x00},
+			Masks:   []byte{0xFF, 0xFF, 0xFF, 0xFF},
+		}},
+	}, {
+		id: 5,
+		keys: []*fwdpb.PacketFieldMaskedBytes{{
+			FieldId: id1,
+			Bytes:   []byte{0x20, 0x04, 0x01, 0x00},
+			Masks:   []byte{0xFF, 0xFF, 0xFF, 0xFF},
+		}},
+	}, {
+		id: 6,
+		keys: []*fwdpb.PacketFieldMaskedBytes{{
+			FieldId: id1,
+			Bytes:   []byte{0x20, 0x04, 0xF6, 0x00},
+			Masks:   []byte{0xFF, 0xFF, 0xFF, 0xFF},
+		}},
+	}, {
+		id: 7,
+		keys: []*fwdpb.PacketFieldMaskedBytes{{
+			FieldId: id1,
+			Bytes:   []byte{0x20, 0x04, 0xF6, 0x00},
+			Masks:   []byte{0xFF, 0xFF, 0xF0, 0xFF},
+		}},
+	}, {
+		id: 8,
+		keys: []*fwdpb.PacketFieldMaskedBytes{{
+			FieldId: id1,
+			Bytes:   []byte{0x20, 0x04, 0xF6, 0x00},
+			Masks:   []byte{0xFF, 0xFF, 0xF0, 0xFF},
+		}},
+		qualifiers: []*fwdpb.PacketFieldSet{{
+			FieldId: id2,
+			SetId: &fwdpb.SetId{
+				ObjectId: &fwdpb.ObjectId{
+					Id: "1",
 				},
 			},
-		},
-		{
-			id: 2,
-			keys: []*fwdpb.PacketFieldMaskedBytes{
-				{
-					FieldId: id1,
-					Bytes:   []byte{0x01, 0x00, 0x00, 0x00},
-					Masks:   []byte{0xFF, 0xFF, 0xFF, 0xFF},
+		}},
+	}, {
+		id: 9,
+		keys: []*fwdpb.PacketFieldMaskedBytes{{
+			FieldId: id1,
+			Bytes:   []byte{0x20, 0x04, 0xF6, 0x00},
+			Masks:   []byte{0xFF, 0xFF, 0xFF, 0xFF},
+		}},
+		qualifiers: []*fwdpb.PacketFieldSet{{
+			FieldId: id2,
+			SetId: &fwdpb.SetId{
+				ObjectId: &fwdpb.ObjectId{
+					Id: "1",
 				},
 			},
-		},
-		{
-			id: 3,
-			keys: []*fwdpb.PacketFieldMaskedBytes{
-				{
-					FieldId: id1,
-					Bytes:   []byte{0x01, 0x00, 0x01, 0x00},
-					Masks:   []byte{0xFF, 0xFF, 0xFD, 0xFF},
+		}},
+	}, {
+		id: 10,
+		qualifiers: []*fwdpb.PacketFieldSet{{
+			FieldId: id2,
+			SetId: &fwdpb.SetId{
+				ObjectId: &fwdpb.ObjectId{
+					Id: "1",
 				},
 			},
-		},
-		{
-			id: 4,
-			keys: []*fwdpb.PacketFieldMaskedBytes{
-				{
-					FieldId: id1,
-					Bytes:   []byte{0x02, 0x00, 0x00, 0x00},
-					Masks:   []byte{0xFF, 0xFF, 0xFF, 0xFF},
-				},
-			},
-		},
-		{
-			id: 5,
-			keys: []*fwdpb.PacketFieldMaskedBytes{
-				{
-					FieldId: id1,
-					Bytes:   []byte{0x20, 0x04, 0x01, 0x00},
-					Masks:   []byte{0xFF, 0xFF, 0xFF, 0xFF},
-				},
-			},
-		},
-		{
-			id: 6,
-			keys: []*fwdpb.PacketFieldMaskedBytes{
-				{
-					FieldId: id1,
-					Bytes:   []byte{0x20, 0x04, 0xF6, 0x00},
-					Masks:   []byte{0xFF, 0xFF, 0xFF, 0xFF},
-				},
-			},
-		},
-		{
-			id: 7,
-			keys: []*fwdpb.PacketFieldMaskedBytes{
-				{
-					FieldId: id1,
-					Bytes:   []byte{0x20, 0x04, 0xF6, 0x00},
-					Masks:   []byte{0xFF, 0xFF, 0xF0, 0xFF},
-				},
-			},
-		},
-		{
-			id: 8,
-			keys: []*fwdpb.PacketFieldMaskedBytes{
-				{
-					FieldId: id1,
-					Bytes:   []byte{0x20, 0x04, 0xF6, 0x00},
-					Masks:   []byte{0xFF, 0xFF, 0xF0, 0xFF},
-				},
-			},
-			qualifiers: []*fwdpb.PacketFieldSet{
-				{
-					FieldId: id2,
-					SetId: &fwdpb.SetId{
-						ObjectId: &fwdpb.ObjectId{
-							Id: "1",
-						},
-					},
-				},
-			},
-		},
-		{
-			id: 9,
-			keys: []*fwdpb.PacketFieldMaskedBytes{
-				{
-					FieldId: id1,
-					Bytes:   []byte{0x20, 0x04, 0xF6, 0x00},
-					Masks:   []byte{0xFF, 0xFF, 0xFF, 0xFF},
-				},
-			},
-			qualifiers: []*fwdpb.PacketFieldSet{
-				{
-					FieldId: id2,
-					SetId: &fwdpb.SetId{
-						ObjectId: &fwdpb.ObjectId{
-							Id: "1",
-						},
-					},
-				},
-			},
-		},
-		{
-			id: 10,
-			qualifiers: []*fwdpb.PacketFieldSet{
-				{
-					FieldId: id2,
-					SetId: &fwdpb.SetId{
-						ObjectId: &fwdpb.ObjectId{
-							Id: "1",
-						},
-					},
-				},
-			},
-		},
-	}
+		}},
+	}}
 	matches := []struct {
 		key       PacketKey
 		qualifier PacketQualifier
 		id        int
-	}{
-		{
-			key: []byte{0x01, 0x02, 0x00, 0x00},
-			id:  1,
+	}{{
+		key: []byte{0x01, 0x02, 0x00, 0x00},
+		id:  1,
+	}, {
+		key: []byte{0x01, 0x00, 0x03, 0x00},
+		id:  3,
+	}, {
+		key: []byte{0x20, 0x04, 0xF6, 0x00},
+		id:  7,
+	}, {
+		key: []byte{0x20, 0x04, 0xF7, 0x00},
+		id:  7,
+	}, {
+		key: []byte{0x20, 0x04, 0xE2, 0x00},
+		id:  noFlow,
+	}, {
+		key: []byte{0x20, 0x04, 0x00, 0x01},
+		id:  noFlow,
+	}, {
+		key: []byte{0xAB, 0xCD, 0xEF, 0x00},
+		qualifier: PacketQualifier{
+			fid2: []byte{0x01, 0x03, 0x04, 0x05},
 		},
-		{
-			key: []byte{0x01, 0x00, 0x03, 0x00},
-			id:  3,
+		id: 10,
+	}, {
+		key: []byte{0xAB, 0xCD, 0xEF, 0x00},
+		qualifier: PacketQualifier{
+			fid2: []byte{0x01, 0x02, 0x03, 0x04},
 		},
-		{
-			key: []byte{0x20, 0x04, 0xF6, 0x00},
-			id:  7,
+		id: 10,
+	}, {
+		key: []byte{0xAB, 0xCD, 0xEF, 0x00},
+		qualifier: PacketQualifier{
+			fid2: []byte{0x01, 0x02, 0x03, 0x05},
 		},
-		{
-			key: []byte{0x20, 0x04, 0xF7, 0x00},
-			id:  7,
+		id: noFlow,
+	}, {
+		key: []byte{0x20, 0x04, 0xF6, 0x00},
+		qualifier: PacketQualifier{
+			fid2: []byte{0x01, 0x02, 0x03, 0x04},
 		},
-		{
-			key: []byte{0x20, 0x04, 0xE2, 0x00},
-			id:  noFlow,
-		},
-		{
-			key: []byte{0x20, 0x04, 0x00, 0x01},
-			id:  noFlow,
-		},
-		{
-			key: []byte{0xAB, 0xCD, 0xEF, 0x00},
-			qualifier: PacketQualifier{
-				fid2: []byte{0x01, 0x03, 0x04, 0x05},
-			},
-			id: 10,
-		},
-		{
-			key: []byte{0xAB, 0xCD, 0xEF, 0x00},
-			qualifier: PacketQualifier{
-				fid2: []byte{0x01, 0x02, 0x03, 0x04},
-			},
-			id: 10,
-		},
-		{
-			key: []byte{0xAB, 0xCD, 0xEF, 0x00},
-			qualifier: PacketQualifier{
-				fid2: []byte{0x01, 0x02, 0x03, 0x05},
-			},
-			id: noFlow,
-		},
-		{
-			key: []byte{0x20, 0x04, 0xF6, 0x00},
-			qualifier: PacketQualifier{
-				fid2: []byte{0x01, 0x02, 0x03, 0x04},
-			},
-			id: 10,
-		},
-	}
+		id: 10,
+	}}
 
 	// Build the sets required for tests.
 	for pos, ts := range testSets {
@@ -476,10 +402,10 @@ func TestFlowMapMatch(t *testing.T) {
 	}
 
 	// map of flows indexed by the id.
-	mapFlows := make(map[int]*FlowDesc)
+	mapFlows := make(map[int]*Desc)
 
 	for pos, f := range testFlows {
-		fd, err := NewFlowDesc(ctx, f.keys, f.qualifiers)
+		fd, err := NewDesc(ctx, f.keys, f.qualifiers)
 		if err != nil {
 			t.Fatalf("%v: Unable to create flow test, err %v", pos, err)
 		}
@@ -510,15 +436,6 @@ func TestFlowMapMatch(t *testing.T) {
 	}
 }
 
-// A testFlow describes a flow generated for the test. It includes a map of values and
-// masks used to describe keys in the packet flow. Fields in the test flow are
-// identified by their field number and have the same field size.
-type testFlow struct {
-	values map[fwdpacket.FieldID][]byte
-	masks  map[fwdpacket.FieldID][]byte
-	key    []byte
-}
-
 // A testKey describes a key formed by a single packet field. The testKey
 // descibes the field's id  and bytes. The field contains size number of
 // bytes with value encoded at index 0.
@@ -536,7 +453,7 @@ func (k *testKey) field() fwdpacket.FieldID {
 // bytes returns the bytes of a test key.
 func (k *testKey) bytes() []byte {
 	b := make([]byte, k.size)
-	b[0] = byte(k.value)
+	b[0] = k.value
 	return b
 }
 
@@ -567,7 +484,7 @@ func (q *testQualifier) field() fwdpacket.FieldID {
 // bytes returns the bytes of a test qualifier.
 func (q *testQualifier) bytes() []byte {
 	b := make([]byte, q.size)
-	b[0] = byte(q.value)
+	b[0] = q.value
 	return b
 }
 
@@ -577,13 +494,13 @@ func (q *testQualifier) bytes() []byte {
 // looks up the flow descriptor corresponding to the priority encoded in the
 // ActionDesc, and encodes it as a part of the action.
 type testBuilder struct {
-	flows map[int]*FlowDesc
+	flows map[int]*Desc
 }
 
 // newBuilder creates and registers a new builder for the test actions.
 func newBuilder() *testBuilder {
 	tb := testBuilder{
-		flows: make(map[int]*FlowDesc),
+		flows: make(map[int]*Desc),
 	}
 	fwdaction.Register(fwdpb.ActionType_ACTION_TYPE_TEST, &tb)
 	return &tb
@@ -650,12 +567,12 @@ func genFlowDesc(t *testing.T, tb *testBuilder, bank, priority uint32, keys []te
 	}
 	desc := &fwdpb.EntryDesc{}
 	flow := &fwdpb.FlowEntryDesc{
-		Priority:   uint32(priority),
-		Bank:       uint32(bank),
+		Priority:   priority,
+		Bank:       bank,
 		Fields:     f,
 		Qualifiers: q,
 	}
-	fd, err := NewFlowDesc(nil, nil, nil)
+	fd, err := NewDesc(nil, nil, nil)
 	if err != nil {
 		t.Fatalf("Unable to initialize flow for test, err %v", err)
 		return nil
@@ -709,22 +626,19 @@ func TestFlowTable(t *testing.T) {
 	testSets := []struct {
 		id      string
 		members [][]byte
-	}{
-		{
-			id: "1",
-			members: [][]byte{
-				[]byte{0x0a, 0x00, 0x00, 0x00},
-				[]byte{0x0b, 0x00, 0x00, 0x00},
-			},
+	}{{
+		id: "1",
+		members: [][]byte{
+			{0x0a, 0x00, 0x00, 0x00},
+			{0x0b, 0x00, 0x00, 0x00},
 		},
-		{
-			id: "2",
-			members: [][]byte{
-				[]byte{0x0c, 0x00, 0x00, 0x00},
-				[]byte{0x0d, 0x00, 0x00, 0x00},
-			},
+	}, {
+		id: "2",
+		members: [][]byte{
+			{0x0c, 0x00, 0x00, 0x00},
+			{0x0d, 0x00, 0x00, 0x00},
 		},
-	}
+	}}
 
 	// Build the sets required for tests.
 	for pos, ts := range testSets {
@@ -778,384 +692,295 @@ func TestFlowTable(t *testing.T) {
 		value: 12,
 		size:  fieldSize,
 	}
-	tests := [][]testOp{
-		// Flow table with a single entry.
-		[]testOp{
-			{
-				count:    1,
-				event:    ADD,
-				priority: 10,
-				keys:     []testKey{field1},
-			},
-			{
-				count:    1,
-				event:    MATCH,
-				priority: 10,
-				keys:     []testKey{field1},
-			},
-			{
-				count:    0,
-				event:    REMOVE,
-				priority: 10,
-				keys:     []testKey{field1},
-			},
-		},
-		// Flow table with adds / removes of the same flow with
-		// different priorities.
-		[]testOp{
-			{
-				count:    1,
-				event:    ADD,
-				priority: 10,
-				keys:     []testKey{field1},
-			},
-			{
-				count:    1,
-				event:    MATCH,
-				priority: 10,
-				keys:     []testKey{field1},
-			},
-			{
-				count:    2,
-				event:    ADD,
-				priority: 5,
-				keys:     []testKey{field1},
-			},
-			{
-				count:    2,
-				event:    MATCH,
-				priority: 5,
-				keys:     []testKey{field1},
-			},
-			{
-				count:    3,
-				event:    ADD,
-				priority: 15,
-				keys:     []testKey{field1},
-			},
-			{
-				count:    3,
-				event:    MATCH,
-				priority: 5,
-				keys:     []testKey{field1},
-			},
-			{
-				count:    2,
-				event:    REMOVE,
-				priority: 5,
-				keys:     []testKey{field1},
-			},
-			{
-				count:    2,
-				event:    MATCH,
-				priority: 10,
-				keys:     []testKey{field1},
-			},
-			{
-				count:    1,
-				event:    REMOVE,
-				priority: 10,
-				keys:     []testKey{field1},
-			},
-			{
-				count:    1,
-				event:    MATCH,
-				priority: 15,
-				keys:     []testKey{field1},
-			},
-		},
-		// Flow table with adds / removes of flows with different
-		// keys
-		[]testOp{
-			{
-				count:    1,
-				event:    ADD,
-				priority: 10,
-				keys:     []testKey{field1},
-			},
-			{
-				count:    1,
-				event:    MATCH,
-				priority: 10,
-				keys:     []testKey{field1, field2},
-			},
-			{
-				count:    2,
-				event:    ADD,
-				priority: 5,
-				keys:     []testKey{field1, field2},
-			},
-			{
-				count:    2,
-				event:    MATCH,
-				priority: 5,
-				keys:     []testKey{field1, field2},
-			},
-			{
-				count:    1,
-				event:    REMOVE,
-				priority: 10,
-				keys:     []testKey{field1},
-			},
-			{
-				count:    1,
-				event:    MATCH,
-				priority: 5,
-				keys:     []testKey{field1, field2},
-			},
-		},
-
-		// Flow table with a add and match of three entries of the same
-		// flow.
-		[]testOp{
-			{
-				count:    1,
-				event:    ADD,
-				priority: 10,
-				keys:     []testKey{field1},
-			},
-			{
-				count:    2,
-				event:    ADD,
-				priority: 20,
-				keys:     []testKey{field1},
-			},
-			{
-				count:    3,
-				event:    ADD,
-				priority: 15,
-				keys:     []testKey{field1},
-			},
-			{
-				count:    3,
-				event:    MATCH,
-				priority: 10,
-				keys:     []testKey{field1},
-			},
-			{
-				count:    2,
-				event:    REMOVE,
-				priority: 10,
-				keys:     []testKey{field1},
-			},
-			{
-				count:    2,
-				event:    MATCH,
-				priority: 15,
-				keys:     []testKey{field1},
-			},
-			{
-				count:    1,
-				event:    REMOVE,
-				priority: 15,
-				keys:     []testKey{field1},
-			},
-			{
-				count:    1,
-				event:    MATCH,
-				priority: 20,
-				keys:     []testKey{field1},
-			},
-		},
-		// Flow table with a single entry (with keys and qualifiers).
-		[]testOp{
-			{
-				count:      1,
-				event:      ADD,
-				priority:   10,
-				keys:       []testKey{field1},
-				qualifiers: []testQualifier{qual1},
-			},
-			{
-				count:      1,
-				event:      MATCH,
-				priority:   10,
-				keys:       []testKey{field1},
-				qualifiers: []testQualifier{qual1},
-			},
-			{
-				count:      0,
-				event:      REMOVE,
-				priority:   10,
-				keys:       []testKey{field1},
-				qualifiers: []testQualifier{qual1},
-			},
-		},
-		// Flow table with adds / removes of the same flow with
-		// different priorities (keys and qualifiers).
-		[]testOp{
-			{
-				count:      1,
-				event:      ADD,
-				priority:   10,
-				keys:       []testKey{field1},
-				qualifiers: []testQualifier{qual1},
-			},
-			{
-				count:      2,
-				event:      ADD,
-				priority:   15,
-				keys:       []testKey{field1},
-				qualifiers: []testQualifier{qual1},
-			},
-			{
-				count:      2,
-				event:      MATCH,
-				priority:   10,
-				keys:       []testKey{field1},
-				qualifiers: []testQualifier{qual1},
-			},
-			{
-				count:      3,
-				event:      ADD,
-				priority:   5,
-				keys:       []testKey{field1},
-				qualifiers: []testQualifier{qual1},
-			},
-			{
-				count:      3,
-				event:      MATCH,
-				priority:   5,
-				keys:       []testKey{field1},
-				qualifiers: []testQualifier{qual1},
-			},
-			{
-				count:      4,
-				event:      ADD,
-				priority:   6,
-				keys:       []testKey{field1},
-				qualifiers: []testQualifier{qual1, qual2},
-			},
-			{
-				count:      4,
-				event:      MATCH,
-				priority:   5,
-				keys:       []testKey{field1},
-				qualifiers: []testQualifier{qual2, qual1},
-			},
-			{
-				count:      4,
-				event:      MATCH,
-				priority:   5,
-				keys:       []testKey{field1},
-				qualifiers: []testQualifier{qual1},
-			},
-			{
-				count:      3,
-				event:      REMOVE,
-				priority:   5,
-				keys:       []testKey{field1},
-				qualifiers: []testQualifier{qual1},
-			},
-			{
-				count:      3,
-				event:      MATCH,
-				priority:   10,
-				keys:       []testKey{field1},
-				qualifiers: []testQualifier{qual1},
-			},
-			{
-				count:      3,
-				event:      MATCH,
-				priority:   6,
-				keys:       []testKey{field1},
-				qualifiers: []testQualifier{qual2, qual1},
-			},
-		},
-		// Flow table with a single entry (no keys).
-		[]testOp{
-			{
-				count:      1,
-				event:      ADD,
-				priority:   10,
-				qualifiers: []testQualifier{qual1},
-			},
-			{
-				count:      1,
-				event:      MATCH,
-				priority:   10,
-				qualifiers: []testQualifier{qual1},
-			},
-			{
-				count:      0,
-				event:      REMOVE,
-				priority:   10,
-				qualifiers: []testQualifier{qual1},
-			},
-		},
-		// Flow table with a single entry that can be matched. Repeated after a clear.
-		[]testOp{
-			{
-				count:    1,
-				event:    ADD,
-				priority: 10,
-				keys:     []testKey{field1},
-			},
-			{
-				count:    1,
-				event:    MATCH,
-				priority: 10,
-				keys:     []testKey{field1},
-			},
-			{
-				count: 0,
-				event: CLEAR,
-			},
-			{
-				count:    1,
-				event:    ADD,
-				priority: 10,
-				keys:     []testKey{field1},
-			},
-			{
-				count:    1,
-				event:    MATCH,
-				priority: 10,
-				keys:     []testKey{field1},
-			},
-			{
-				count:    0,
-				event:    REMOVE,
-				priority: 10,
-				keys:     []testKey{field1},
-			},
-		},
-		// Flow table is cleared when it is empty.
-		[]testOp{
-			{
-				count: 0,
-				event: CLEAR,
-			},
-			{
-				count:    1,
-				event:    ADD,
-				priority: 10,
-				keys:     []testKey{field1},
-			},
-			{
-				count:    1,
-				event:    MATCH,
-				priority: 10,
-				keys:     []testKey{field1},
-			},
-			{
-				count: 0,
-				event: CLEAR,
-			},
-			{
-				count:    1,
-				event:    ADD,
-				priority: 10,
-				keys:     []testKey{field1},
-			},
-			{
-				count:    1,
-				event:    MATCH,
-				priority: 10,
-				keys:     []testKey{field1},
-			},
-		},
-	}
+	tests := [][]testOp{{{ // Flow table with a single entry.
+		count:    1,
+		event:    ADD,
+		priority: 10,
+		keys:     []testKey{field1},
+	}, {
+		count:    1,
+		event:    MATCH,
+		priority: 10,
+		keys:     []testKey{field1},
+	}, {
+		count:    0,
+		event:    REMOVE,
+		priority: 10,
+		keys:     []testKey{field1},
+	}}, {{ // Flow table with adds / removes of the same flow with different priorities.
+		count:    1,
+		event:    ADD,
+		priority: 10,
+		keys:     []testKey{field1},
+	}, {
+		count:    1,
+		event:    MATCH,
+		priority: 10,
+		keys:     []testKey{field1},
+	}, {
+		count:    2,
+		event:    ADD,
+		priority: 5,
+		keys:     []testKey{field1},
+	}, {
+		count:    2,
+		event:    MATCH,
+		priority: 5,
+		keys:     []testKey{field1},
+	}, {
+		count:    3,
+		event:    ADD,
+		priority: 15,
+		keys:     []testKey{field1},
+	}, {
+		count:    3,
+		event:    MATCH,
+		priority: 5,
+		keys:     []testKey{field1},
+	}, {
+		count:    2,
+		event:    REMOVE,
+		priority: 5,
+		keys:     []testKey{field1},
+	}, {
+		count:    2,
+		event:    MATCH,
+		priority: 10,
+		keys:     []testKey{field1},
+	}, {
+		count:    1,
+		event:    REMOVE,
+		priority: 10,
+		keys:     []testKey{field1},
+	}, {
+		count:    1,
+		event:    MATCH,
+		priority: 15,
+		keys:     []testKey{field1},
+	}}, {{ // Flow table with adds / removes of flows with different keys
+		count:    1,
+		event:    ADD,
+		priority: 10,
+		keys:     []testKey{field1},
+	}, {
+		count:    1,
+		event:    MATCH,
+		priority: 10,
+		keys:     []testKey{field1, field2},
+	}, {
+		count:    2,
+		event:    ADD,
+		priority: 5,
+		keys:     []testKey{field1, field2},
+	}, {
+		count:    2,
+		event:    MATCH,
+		priority: 5,
+		keys:     []testKey{field1, field2},
+	}, {
+		count:    1,
+		event:    REMOVE,
+		priority: 10,
+		keys:     []testKey{field1},
+	}, {
+		count:    1,
+		event:    MATCH,
+		priority: 5,
+		keys:     []testKey{field1, field2},
+	}}, {{ // Flow table with a add and match of three entries of the same flow.
+		count:    1,
+		event:    ADD,
+		priority: 10,
+		keys:     []testKey{field1},
+	}, {
+		count:    2,
+		event:    ADD,
+		priority: 20,
+		keys:     []testKey{field1},
+	}, {
+		count:    3,
+		event:    ADD,
+		priority: 15,
+		keys:     []testKey{field1},
+	}, {
+		count:    3,
+		event:    MATCH,
+		priority: 10,
+		keys:     []testKey{field1},
+	}, {
+		count:    2,
+		event:    REMOVE,
+		priority: 10,
+		keys:     []testKey{field1},
+	}, {
+		count:    2,
+		event:    MATCH,
+		priority: 15,
+		keys:     []testKey{field1},
+	}, {
+		count:    1,
+		event:    REMOVE,
+		priority: 15,
+		keys:     []testKey{field1},
+	}, {
+		count:    1,
+		event:    MATCH,
+		priority: 20,
+		keys:     []testKey{field1},
+	}}, {{ // Flow table with a single entry (with keys and qualifiers).
+		count:      1,
+		event:      ADD,
+		priority:   10,
+		keys:       []testKey{field1},
+		qualifiers: []testQualifier{qual1},
+	}, {
+		count:      1,
+		event:      MATCH,
+		priority:   10,
+		keys:       []testKey{field1},
+		qualifiers: []testQualifier{qual1},
+	}, {
+		count:      0,
+		event:      REMOVE,
+		priority:   10,
+		keys:       []testKey{field1},
+		qualifiers: []testQualifier{qual1},
+	}}, {{ // Flow table with adds / removes of the same flow with different priorities (keys and qualifiers).
+		count:      1,
+		event:      ADD,
+		priority:   10,
+		keys:       []testKey{field1},
+		qualifiers: []testQualifier{qual1},
+	}, {
+		count:      2,
+		event:      ADD,
+		priority:   15,
+		keys:       []testKey{field1},
+		qualifiers: []testQualifier{qual1},
+	}, {
+		count:      2,
+		event:      MATCH,
+		priority:   10,
+		keys:       []testKey{field1},
+		qualifiers: []testQualifier{qual1},
+	}, {
+		count:      3,
+		event:      ADD,
+		priority:   5,
+		keys:       []testKey{field1},
+		qualifiers: []testQualifier{qual1},
+	}, {
+		count:      3,
+		event:      MATCH,
+		priority:   5,
+		keys:       []testKey{field1},
+		qualifiers: []testQualifier{qual1},
+	}, {
+		count:      4,
+		event:      ADD,
+		priority:   6,
+		keys:       []testKey{field1},
+		qualifiers: []testQualifier{qual1, qual2},
+	}, {
+		count:      4,
+		event:      MATCH,
+		priority:   5,
+		keys:       []testKey{field1},
+		qualifiers: []testQualifier{qual2, qual1},
+	}, {
+		count:      4,
+		event:      MATCH,
+		priority:   5,
+		keys:       []testKey{field1},
+		qualifiers: []testQualifier{qual1},
+	}, {
+		count:      3,
+		event:      REMOVE,
+		priority:   5,
+		keys:       []testKey{field1},
+		qualifiers: []testQualifier{qual1},
+	}, {
+		count:      3,
+		event:      MATCH,
+		priority:   10,
+		keys:       []testKey{field1},
+		qualifiers: []testQualifier{qual1},
+	}, {
+		count:      3,
+		event:      MATCH,
+		priority:   6,
+		keys:       []testKey{field1},
+		qualifiers: []testQualifier{qual2, qual1},
+	}}, {{ // Flow table with a single entry (no keys).
+		count:      1,
+		event:      ADD,
+		priority:   10,
+		qualifiers: []testQualifier{qual1},
+	}, {
+		count:      1,
+		event:      MATCH,
+		priority:   10,
+		qualifiers: []testQualifier{qual1},
+	}, {
+		count:      0,
+		event:      REMOVE,
+		priority:   10,
+		qualifiers: []testQualifier{qual1},
+	}}, {{ // Flow table with a single entry that can be matched. Repeated after a clear.
+		count:    1,
+		event:    ADD,
+		priority: 10,
+		keys:     []testKey{field1},
+	}, {
+		count:    1,
+		event:    MATCH,
+		priority: 10,
+		keys:     []testKey{field1},
+	}, {
+		count: 0,
+		event: CLEAR,
+	}, {
+		count:    1,
+		event:    ADD,
+		priority: 10,
+		keys:     []testKey{field1},
+	}, {
+		count:    1,
+		event:    MATCH,
+		priority: 10,
+		keys:     []testKey{field1},
+	}, {
+		count:    0,
+		event:    REMOVE,
+		priority: 10,
+		keys:     []testKey{field1},
+	}}, {{ // Flow table is cleared when it is empty.
+		count: 0,
+		event: CLEAR,
+	}, {
+		count:    1,
+		event:    ADD,
+		priority: 10,
+		keys:     []testKey{field1},
+	}, {
+		count:    1,
+		event:    MATCH,
+		priority: 10,
+		keys:     []testKey{field1},
+	}, {
+		count: 0,
+		event: CLEAR,
+	}, {
+		count:    1,
+		event:    ADD,
+		priority: 10,
+		keys:     []testKey{field1},
+	}, {
+		count:    1,
+		event:    MATCH,
+		priority: 10,
+		keys:     []testKey{field1},
+	}}}
 next:
 	// For simplicity, all flows are added to a single bank in the flow table.
 	for tid, test := range tests {
@@ -1199,7 +1024,6 @@ next:
 				if state != fwdaction.CONTINUE {
 					t.Errorf("%d, opid %d: Incorrect state after packet processing. Got %v, want %v.", tid, opid, state, fwdaction.CONTINUE)
 					continue next
-
 				}
 				if len(actions) != 1 {
 					t.Errorf("%d, opid %d: Incorrect action count after packet processing. Got %v, want 1.", tid, opid, len(actions))

@@ -55,7 +55,7 @@ func createPortGroup(t *testing.T, ctx *fwdcontext.Context, ports []fwdport.Port
 	group := &fwdpb.AggregatePortUpdateDesc{
 		PortIds: portList,
 		Hash:    hashFn,
-		FieldIds: []*fwdpb.PacketFieldId{&fwdpb.PacketFieldId{
+		FieldIds: []*fwdpb.PacketFieldId{{
 			Field: &fwdpb.PacketField{
 				FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO,
 				Instance: 10,
@@ -219,7 +219,7 @@ func TestFloodWrite(t *testing.T) {
 }
 
 // addMember adds a member to a specified port group.
-func addMember(t *testing.T, ctx *fwdcontext.Context, pg fwdport.Port, name string, count int) {
+func addMember(t *testing.T, _ *fwdcontext.Context, pg fwdport.Port, name string, count int) {
 	var update fwdpb.PortUpdateDesc
 	add := &fwdpb.AggregatePortAddMemberUpdateDesc{
 		PortId: &fwdpb.PortId{
@@ -238,7 +238,7 @@ func addMember(t *testing.T, ctx *fwdcontext.Context, pg fwdport.Port, name stri
 }
 
 // removeMember removes a member from the specified port group.
-func removeMember(t *testing.T, ctx *fwdcontext.Context, pg fwdport.Port, name string) {
+func removeMember(t *testing.T, _ *fwdcontext.Context, pg fwdport.Port, name string) {
 	var update fwdpb.PortUpdateDesc
 	remove := &fwdpb.AggregatePortRemoveMemberUpdateDesc{
 		PortId: &fwdpb.PortId{
