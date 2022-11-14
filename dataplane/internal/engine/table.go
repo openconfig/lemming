@@ -519,7 +519,7 @@ func AddIPRoute(ctx context.Context, c fwdpb.ServiceClient, v4 bool, ip, mask []
 			Action: &fwdpb.ActionDesc_Select{
 				Select: &fwdpb.SelectActionListActionDesc{
 					SelectAlgorithm: fwdpb.SelectActionListActionDesc_SELECT_ALGORITHM_CRC32, // TODO: should algo + hash be configurable?
-					FieldIds: []*fwdpb.PacketFieldId{{Field: &fwdpb.PacketField{
+					FieldIds: []*fwdpb.PacketFieldId{{Field: &fwdpb.PacketField{ // Hash the traffic flow, identified, IP protocol, L3 SRC, DST address, and L4 ports (if present).
 						FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO,
 					}}, {Field: &fwdpb.PacketField{
 						FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC,

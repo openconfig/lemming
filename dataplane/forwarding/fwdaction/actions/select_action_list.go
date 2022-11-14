@@ -17,7 +17,6 @@ package actions
 import (
 	"fmt"
 	"hash/crc32"
-	"math"
 	"math/rand"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
@@ -36,7 +35,7 @@ type selectActionList struct {
 	set       []fwdaction.Actions // set of action lists
 	weights   []int               // Cumulative sum of weights associates the set of action lists.
 	weightSum uint64
-	hashFn    func(key []byte, max uint64) int                 // function used to hash a set of bytes
+	hashFn    func(key []byte) int                             // function used to hash a set of bytes
 	hash      fwdpb.SelectActionListActionDesc_SelectAlgorithm // hash algorithm used to select the action list
 }
 
@@ -72,11 +71,11 @@ func (s *selectActionList) Process(packet fwdpacket.Packet, counters fwdobject.C
 		}
 	}
 
-	h := s.hashFn(key, s.weightSum)
+	h := s.hashFn(key) % int(s.weightSum)
 	var index int
 	for i, w := range s.weights {
 		index = i
-		if w < h {
+		if h < w {
 			break
 		}
 	}
@@ -86,21 +85,19 @@ func (s *selectActionList) Process(packet fwdpacket.Packet, counters fwdobject.C
 }
 
 // hashCRC32 computes the CRC32 checksum of the key.
-func hashCRC32(key []byte, max uint64) int {
-	rand := crc32.ChecksumIEEE(key)
-	return int(uint64(rand) * max / math.MaxUint32)
+func hashCRC32(key []byte) int {
+	return int(crc32.ChecksumIEEE(key))
 }
 
 // hashCRC16 computes the CRC16 checksum of the key.
-func hashCRC16(key []byte, max uint64) int {
-	rand := crc16.ChecksumANSI(key)
-	return int(uint64(rand) * max / math.MaxUint16)
+func hashCRC16(key []byte) int {
+	return int(crc16.ChecksumANSI(key))
 }
 
 // random selects a random index.
-func random(_ []byte, max uint64) int {
+func random(_ []byte) int {
 	//nolint:gosec
-	return rand.Intn(int(max))
+	return rand.Int()
 }
 
 // A selectActionListBuilder builds selectActionList actions.
@@ -151,7 +148,7 @@ func (*selectActionListBuilder) Build(desc *fwdpb.ActionDesc, ctx *fwdcontext.Co
 			allZeros = false
 		}
 		s.weights = append(s.weights, int(l.GetWeight()+s.weightSum))
-		s.weightSum += l.GetWeight()
+		s.weightSum += l.GetWeight() // TODO: this may overflow.
 	}
 	if allZeros {
 		s.weightSum = uint64(len(s.weights))
