@@ -176,6 +176,7 @@ message ReparseActionDesc {
 // An ActionList describes a sequence of actions.
 message ActionList {
   repeated ActionDesc actions = 1;
+  uint64 weight = 2;
 }
 
 // A SelectActionListActionDesc describes a SELECT_ACTION_LIST_ACTION.
