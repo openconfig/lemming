@@ -42,7 +42,11 @@ module openconfig-bgp-gue {
     leaf prefix {
       type oc-inet:ip-prefix;
       description
-        "Prefix to which the GUE policy applies.";
+        "Prefix containing BGP path's next-hop attribute of NLRI to which GUE
+        policy applies.
+
+        In case of overlapping prefixes, the policy with the longest-matching
+        prefix will apply.";
     }
 
     leaf dst-port {
@@ -76,7 +80,11 @@ module openconfig-bgp-gue {
             path "../config/prefix";
           }
           description
-            "Prefix to which the GUE policy applies.";
+            "Prefix containing BGP path's next-hop attribute of NLRI to which
+            GUE policy applies.
+
+            In case of overlapping prefixes, the policy with the
+            longest-matching prefix will apply.";
         }
 
         container config {
