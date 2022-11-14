@@ -45,6 +45,7 @@ type ServiceClient interface {
 	// ObjectList lists all the objects in the system.
 	ObjectList(ctx context.Context, in *ObjectListRequest, opts ...grpc.CallOption) (*ObjectListReply, error)
 	// ObjectCounters retrieves all the counters associated on the object.
+	// TODO(wenbli): Consider adding a streaming service for counters.
 	ObjectCounters(ctx context.Context, in *ObjectCountersRequest, opts ...grpc.CallOption) (*ObjectCountersReply, error)
 	// TableCreate creates an empty table.
 	TableCreate(ctx context.Context, in *TableCreateRequest, opts ...grpc.CallOption) (*TableCreateReply, error)
@@ -314,6 +315,7 @@ type ServiceServer interface {
 	// ObjectList lists all the objects in the system.
 	ObjectList(context.Context, *ObjectListRequest) (*ObjectListReply, error)
 	// ObjectCounters retrieves all the counters associated on the object.
+	// TODO(wenbli): Consider adding a streaming service for counters.
 	ObjectCounters(context.Context, *ObjectCountersRequest) (*ObjectCountersReply, error)
 	// TableCreate creates an empty table.
 	TableCreate(context.Context, *TableCreateRequest) (*TableCreateReply, error)
