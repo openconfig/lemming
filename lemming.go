@@ -20,9 +20,9 @@ import (
 	"net"
 	"sync"
 
+	"github.com/openconfig/lemming/bgp"
 	"github.com/openconfig/lemming/dataplane"
 	fgnmi "github.com/openconfig/lemming/gnmi"
-	"github.com/openconfig/lemming/gnmi/bgp"
 	"github.com/openconfig/lemming/gnmi/fakedevice"
 	"github.com/openconfig/lemming/gnmi/reconciler"
 	fgnoi "github.com/openconfig/lemming/gnoi"
