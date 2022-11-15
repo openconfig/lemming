@@ -77,7 +77,8 @@ type Server struct {
 
 	resolvedRoutesMu sync.Mutex
 	// resolvedRoutes keeps track of all the original routes that have now
-	// been programmed. This allows looking up the original route.
+	// been programmed. This allows looking up the top-level routes that
+	// have been resolved.
 	resolvedRoutes map[RouteKey]*Route
 
 	dataplane dataplaneAPI
@@ -363,6 +364,8 @@ func (s *Server) ResolveAndProgramDiff() error {
 	log.Info("Recalculating resolved RIB")
 	s.rib.mu.RLock()
 	defer s.rib.mu.RUnlock()
+	// newResolvedRoutes keeps track of the new set of top-level resolved
+	// routes after re-processing.
 	newResolvedRoutes := map[RouteKey]*Route{}
 	for niName, ni := range s.rib.NI {
 		for it := ni.IPV4.Iterate(); it.Next(); {
@@ -377,7 +380,7 @@ func (s *Server) ResolveAndProgramDiff() error {
 				log.Errorf("sysrib: %v", err)
 				continue
 			}
-			routeResolved := len(nhs) > 0
+			routeIsResolved := len(nhs) > 0
 
 			rr := &ResolvedRoute{
 				RouteKey: RouteKey{
@@ -387,7 +390,7 @@ func (s *Server) ResolveAndProgramDiff() error {
 				},
 				Nexthops: nhs,
 			}
-			if routeResolved {
+			if routeIsResolved {
 				newResolvedRoutes[rr.RouteKey] = route
 			}
 
@@ -395,7 +398,7 @@ func (s *Server) ResolveAndProgramDiff() error {
 			currentRoute, ok := s.programmedRoutes[rr.RouteKey]
 			s.programmedRoutesMu.Unlock()
 			switch {
-			case !ok && routeResolved, ok && !reflect.DeepEqual(currentRoute, rr):
+			case !ok && routeIsResolved, ok && !reflect.DeepEqual(currentRoute, rr):
 				if err := s.programRoute(rr); err != nil {
 					log.Warningf("failed to program route %+v: %v", rr, err)
 					continue
@@ -403,6 +406,8 @@ func (s *Server) ResolveAndProgramDiff() error {
 				s.programmedRoutesMu.Lock()
 				s.programmedRoutes[rr.RouteKey] = rr
 				s.programmedRoutesMu.Unlock()
+				// ZAPI: If a new/updated route is programmed, redistribute it to clients.
+				// TODO(wenbli): RedistributeRouteDel
 				zrouteBody, err := convertToZAPIRoute(rr.RouteKey, route)
 				if err != nil {
 					log.Warningf("failed to convert resolved route to zebra BGP route: %v", err)
@@ -497,7 +502,7 @@ func (s *Server) setRoute(niName string, route *Route) error {
 	return nil
 }
 
-// setZebraRoute adds a zebra-formatted route to the RIB manager.
+// setZebraRoute calls setRoute after reformatting a zebra-formatted input route.
 func (s *Server) setZebraRoute(niName string, zroute *zebra.IPRouteBody) error {
 	if s == nil {
 		return fmt.Errorf("cannot add route to nil sysrib server")
