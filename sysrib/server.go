@@ -132,6 +132,8 @@ func New(dp dataplaneAPI) (*Server, error) {
 // Start starts the sysrib gRPC service at a unix domain socket. This
 // should be started prior to routing services to allow them to connect to
 // sysrib during their initialization.
+//
+// - If zapiURL is not specified, then the ZAPI server will not be started.
 func (s *Server) Start(gClient gpb.GNMIClient, target, zapiURL string) error {
 	if s == nil {
 		return errors.New("cannot start nil sysrib server")
@@ -172,8 +174,11 @@ func (s *Server) Start(gClient gpb.GNMIClient, target, zapiURL string) error {
 	return nil
 }
 
+// Stop stops the sysrib server.
 func (s *Server) Stop() {
-	s.zServer.Stop()
+	if s.zServer != nil {
+		s.zServer.Stop()
+	}
 }
 
 // monitorConnectedIntfs starts a gothread to check for connected prefixes from
@@ -346,7 +351,7 @@ func convertToZAPIRoute(routeKey RouteKey, route *Route) (*zebra.IPRouteBody, er
 			PrefixLen: uint8(prefixLen),
 		},
 		Nexthops: nexthops,
-		Distance: 1, // Static
+		Distance: route.RoutePref.AdminDistance,
 	}, nil
 }
 
