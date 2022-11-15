@@ -43,6 +43,15 @@ import (
 	"google.golang.org/grpc"
 )
 
+func TestZServer(t *testing.T) {
+	// Need to test these serially since they all use the same UDS address.
+	testHello(t)
+	testRouteAdd(t)
+	testRouteRedistribution(t, true)
+	testRouteRedistribution(t, false)
+}
+
+// SendMessage sends a zebra message to the given connection.
 func SendMessage(t *testing.T, conn net.Conn, msg *zebra.Message) error {
 	s, err := msg.Serialize(zebra.MaxSoftware)
 	if err != nil {
@@ -69,19 +78,11 @@ func ZAPIServerStart(t *testing.T) *ZServer {
 		t.Fatal(err)
 	}
 
-	s, err := ZServerStart("unix", "/tmp/zserv.api", 0, sysribServer)
+	s, err := StartZServer("unix:/tmp/zserv.api", 0, sysribServer)
 	if err != nil {
 		t.Fatal(err)
 	}
 	return s
-}
-
-func TestZServer(t *testing.T) {
-	// Need to test these serially since they all use the same UDS address.
-	testHello(t)
-	testRouteAdd(t)
-	testRouteRedistribution(t, true)
-	testRouteRedistribution(t, false)
 }
 
 func testHello(t *testing.T) {
@@ -158,6 +159,12 @@ func testRouteAdd(t *testing.T) {
 	}
 }
 
+// testRouteRedistribution tests that a route redistribution is sent by the
+// ZAPI server when a new route is added to sysrib, or when a new client ZAPI
+// connection is added where there already exists routes in the sysrib.
+//
+// - routeReadyBeforeDial specifies whether to make the route ready before the
+// client dials to the ZAPI server.
 func testRouteRedistribution(t *testing.T, routeReadyBeforeDial bool) {
 	dp := NewFakeDataplane()
 	s, err := New(dp)
@@ -227,7 +234,6 @@ func testRouteRedistribution(t *testing.T, routeReadyBeforeDial bool) {
 
 	version := zebra.MaxZapiVer
 	software := zebra.MaxSoftware
-	logger := newLogger()
 
 	SendMessage(t, conn, &zebra.Message{
 		Header: zebra.Header{
@@ -241,7 +247,7 @@ func testRouteRedistribution(t *testing.T, routeReadyBeforeDial bool) {
 
 	// The first message is expected to be a capabilities message which is
 	// discarded since no client uses it.
-	if _, err := zebra.ReceiveSingleMsg(logger, conn, version, software, "test-client"); err != nil {
+	if _, err := zebra.ReceiveSingleMsg(topicLogger, conn, version, software, "test-client"); err != nil {
 		t.Fatalf("Got error during call to first ReceiveSingleMsg: %v", err)
 	}
 
@@ -251,7 +257,7 @@ func testRouteRedistribution(t *testing.T, routeReadyBeforeDial bool) {
 		}
 	}
 
-	m, err := zebra.ReceiveSingleMsg(logger, conn, version, software, "test-client")
+	m, err := zebra.ReceiveSingleMsg(topicLogger, conn, version, software, "test-client")
 	if err != nil {
 		t.Fatal(err)
 	} else if m == nil {
