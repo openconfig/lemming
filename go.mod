@@ -3,7 +3,6 @@ module github.com/openconfig/lemming
 go 1.18
 
 require (
-	github.com/coreswitch/netutil v1.0.0
 	github.com/golang/glog v1.0.0
 	github.com/golang/mock v1.6.0
 	github.com/google/go-cmp v0.5.9

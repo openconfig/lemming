@@ -22,7 +22,6 @@ import (
 	"os"
 	"reflect"
 	"strconv"
-	"strings"
 	"sync"
 
 	log "github.com/golang/glog"
@@ -163,11 +162,7 @@ func (s *Server) Start(gClient gpb.GNMIClient, target, zapiURL string) error {
 
 	// Start ZAPI server.
 	if zapiURL != "" {
-		l := strings.SplitN(zapiURL, ":", 2)
-		if len(l) != 2 {
-			return fmt.Errorf("unsupported ZAPI url, has to be \"protocol:address\", got: %s", zapiURL)
-		}
-		if s.zServer, err = ZServerStart(l[0], l[1], 0, s); err != nil {
+		if s.zServer, err = StartZServer(zapiURL, 0, s); err != nil {
 			return err
 		}
 	}
@@ -412,13 +407,13 @@ func (s *Server) ResolveAndProgramDiff() error {
 				if err != nil {
 					log.Warningf("failed to convert resolved route to zebra BGP route: %v", err)
 				}
-				if zrouteBody != nil {
+				if zrouteBody != nil && s.zServer != nil {
 					log.V(1).Info("Sending new route to ZAPI clients: ", zrouteBody)
-					ClientMutex.RLock()
-					for conn := range ClientMap {
-						serverSendMessage(newLogger(), conn, zebra.RedistributeRouteAdd, zrouteBody)
+					s.zServer.ClientMutex.RLock()
+					for conn := range s.zServer.ClientMap {
+						serverSendMessage(conn, zebra.RedistributeRouteAdd, zrouteBody)
 					}
-					ClientMutex.RUnlock()
+					s.zServer.ClientMutex.RUnlock()
 				}
 			default:
 				// No diff, so don't do anything.
@@ -512,6 +507,28 @@ func (s *Server) setZebraRoute(niName string, zroute *zebra.IPRouteBody) error {
 		return err
 	}
 	return nil
+}
+
+// convertZebraRoute converts a zebra route to a Sysrib route.
+func convertZebraRoute(niName string, zroute *zebra.IPRouteBody) *Route {
+	var nexthops []*afthelper.NextHopSummary
+	for _, znh := range zroute.Nexthops {
+		nexthops = append(nexthops, &afthelper.NextHopSummary{
+			Weight:          1,
+			Address:         znh.Gate.String(),
+			NetworkInstance: niName,
+		})
+	}
+	return &Route{
+		Prefix: fmt.Sprintf("%s/%d", zroute.Prefix.Prefix.String(), zroute.Prefix.PrefixLen),
+		// NextHops is the set of IP nexthops that the route uses if
+		// it is not a connected route.
+		NextHops: nexthops,
+		RoutePref: RoutePreference{
+			AdminDistance: zroute.Distance,
+			Metric:        zroute.Metric,
+		},
+	}
 }
 
 // addInterfacePrefix adds a prefix to the sysrib as a connected route.
