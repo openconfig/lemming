@@ -5,6 +5,12 @@ import (
 	"github.com/wenovus/gobgp/v3/pkg/log"
 )
 
+// newLogger creates a new logger that is compatible with GoBGP's logger
+// interface.
+var (
+	topicLogger = &myLogger{logger: logrus.New()}
+)
+
 // myLogger implements the github.com/wenovus/gobgp/v3/pkg/log/Logger interface
 type myLogger struct {
 	logger *logrus.Logger
@@ -40,11 +46,4 @@ func (l *myLogger) SetLevel(level log.LogLevel) {
 
 func (l *myLogger) GetLevel() log.LogLevel {
 	return log.LogLevel(l.logger.GetLevel())
-}
-
-// newLogger creates a new logger that is compatible with GoBGP's logger
-// interface.
-func newLogger() *myLogger {
-	var l = logrus.New()
-	return &myLogger{logger: l}
 }

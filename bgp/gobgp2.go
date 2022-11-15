@@ -16,6 +16,7 @@ package bgp
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"reflect"
 	"sync"
@@ -30,7 +31,13 @@ import (
 	"github.com/openconfig/lemming/gnmi/reconciler"
 	"github.com/openconfig/ygnmi/ygnmi"
 	api "github.com/wenovus/gobgp/v3/api"
+	"github.com/wenovus/gobgp/v3/pkg/bgpconfig"
 	"github.com/wenovus/gobgp/v3/pkg/server"
+	"github.com/wenovus/gobgp/v3/pkg/zebra"
+)
+
+const (
+	gracefulRestart = false
 )
 
 // NewGoBGPTaskDecl creates a new GoBGP task using the declarative configuration style.
@@ -47,7 +54,11 @@ func updateState(yclient *ygnmi.Client, appliedBgp *oc.NetworkInstance_Protocol_
 
 // bgpDeclTask can be used to create a reconciler-compatible BGP task.
 type bgpDeclTask struct {
-	zapiURL string
+	zapiURL       string
+	bgpServer     *server.BgpServer
+	currentConfig *bgpconfig.BgpConfigSet
+
+	bgpStarted bool
 }
 
 // newBgpDeclTask creates a new bgpDeclTask.
@@ -119,10 +130,9 @@ func (t *bgpDeclTask) startGoBGPFuncDecl(ctx context.Context, yclient *ygnmi.Cli
 		return fmt.Errorf("goBgpTask failed to initialize due to error: %v", err)
 	}
 
-	recon := newBgpReconciler(
-		bgpServer,
-		t.zapiURL,
-	)
+	// Initialize values required for reconile to be called.
+	t.bgpServer = bgpServer
+	t.currentConfig = &bgpconfig.BgpConfigSet{}
 
 	bgpWatcher := ygnmi.Watch(
 		context.Background(),
@@ -135,7 +145,7 @@ func (t *bgpDeclTask) startGoBGPFuncDecl(ctx context.Context, yclient *ygnmi.Cli
 			}
 
 			intendedBgp := rootVal.GetOrCreateNetworkInstance(fakedevice.DefaultNetworkInstance).GetOrCreateProtocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").GetOrCreateBgp()
-			if err := recon.reconcile(intendedBgp, appliedBgp, &appliedBgpMu); err != nil {
+			if err := t.reconcile(intendedBgp, appliedBgp, &appliedBgpMu); err != nil {
 				log.Errorf("GoBGP failed to reconcile: %v", err)
 				// TODO(wenbli): Instead of stopping BGP, we should simply keep trying.
 				return err
@@ -193,4 +203,91 @@ func (t *bgpDeclTask) startGoBGPFuncDecl(ctx context.Context, yclient *ygnmi.Cli
 	}
 
 	return nil
+}
+
+// reconcile examines the difference between the intended and applied
+// configuration, and makes GoBGP API calls accordingly to update the applied
+// configuration in the direction of intended configuration.
+func (t *bgpDeclTask) reconcile(intended, applied *oc.NetworkInstance_Protocol_Bgp, appliedMu *sync.Mutex) error {
+	appliedMu.Lock()
+	defer appliedMu.Unlock()
+
+	intendedGlobal := intended.GetOrCreateGlobal()
+	newConfig := intendedToGoBGP(intended, t.zapiURL)
+
+	bgpShouldStart := intendedGlobal.As != nil && intendedGlobal.RouterId != nil
+	switch {
+	case bgpShouldStart && !t.bgpStarted:
+		log.V(1).Info("Starting BGP")
+		var err error
+		t.currentConfig, err = InitialConfig(context.Background(), applied, t.bgpServer, newConfig, gracefulRestart)
+		if err != nil {
+			return fmt.Errorf("Failed to apply initial BGP configuration %v", newConfig)
+		}
+		t.bgpStarted = true
+	case !bgpShouldStart && t.bgpStarted:
+		log.V(1).Info("Stopping BGP")
+		if err := t.bgpServer.StopBgp(context.Background(), &api.StopBgpRequest{}); err != nil {
+			return errors.New("Failed to stop BGP service")
+		}
+		t.bgpStarted = false
+		t.currentConfig = &bgpconfig.BgpConfigSet{}
+		*applied = oc.NetworkInstance_Protocol_Bgp{}
+		applied.PopulateDefaults()
+	case t.bgpStarted:
+		log.V(1).Info("Updating BGP")
+		var err error
+		t.currentConfig, err = UpdateConfig(context.Background(), applied, t.bgpServer, t.currentConfig, newConfig)
+		if err != nil {
+			return fmt.Errorf("Failed to update BGP service: %v", newConfig)
+		}
+	default:
+		// Waiting for BGP to be startable.
+		return nil
+	}
+
+	return nil
+}
+
+// intendedToGoBGP translates from OC to GoBGP intended config.
+//
+// GoBGP's notion of config vs. state does not conform to OpenConfig (see
+// https://github.com/osrg/gobgp/issues/2584)
+// Therefore, we need a compatibility layer between the two configs.
+func intendedToGoBGP(bgpoc *oc.NetworkInstance_Protocol_Bgp, zapiURL string) *bgpconfig.BgpConfigSet {
+	bgpConfig := &bgpconfig.BgpConfigSet{}
+	global := bgpoc.GetOrCreateGlobal()
+
+	bgpConfig.Global.Config.As = global.GetAs()
+	bgpConfig.Global.Config.RouterId = global.GetRouterId()
+	bgpConfig.Global.Config.Port = listenPort
+
+	bgpConfig.Neighbors = []bgpconfig.Neighbor{}
+	for neighAddr, neigh := range bgpoc.Neighbor {
+		bgpConfig.Neighbors = append(bgpConfig.Neighbors, bgpconfig.Neighbor{
+			Config: bgpconfig.NeighborConfig{
+				PeerAs:          neigh.GetPeerAs(),
+				NeighborAddress: neighAddr,
+			},
+			Transport: bgpconfig.Transport{
+				Config: bgpconfig.TransportConfig{
+					RemotePort: listenPort,
+				},
+			},
+		})
+	}
+
+	bgpConfig.Zebra.Config = bgpconfig.ZebraConfig{
+		Enabled: true,
+		Url:     zapiURL,
+		// TODO(wenbli): This should actually be filled with the types
+		// of routes it wants redistributed instead of getting all
+		// routes.
+		RedistributeRouteTypeList: []string{},
+		Version:                   zebra.MaxZapiVer,
+		NexthopTriggerEnable:      false,
+		SoftwareName:              "frr8.2",
+	}
+
+	return bgpConfig
 }
