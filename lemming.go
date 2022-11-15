@@ -20,6 +20,7 @@ import (
 	"net"
 	"sync"
 
+	"github.com/openconfig/lemming/bgp"
 	"github.com/openconfig/lemming/dataplane"
 	fgnmi "github.com/openconfig/lemming/gnmi"
 	"github.com/openconfig/lemming/gnmi/fakedevice"
@@ -79,7 +80,7 @@ func New(lis net.Listener, targetName string, opts ...grpc.ServerOption) (*Devic
 	recs = append(recs,
 		fakedevice.NewSystemBaseTask(),
 		fakedevice.NewBootTimeTask(),
-		fakedevice.NewGoBGPTask(),
+		bgp.NewGoBGPTaskDecl(),
 	)
 
 	gnmiServer, err := fgnmi.New(s, targetName, recs...)
