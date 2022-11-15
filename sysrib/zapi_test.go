@@ -35,7 +35,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/coreswitch/netutil"
 	"github.com/openconfig/lemming/gnmi"
 	pb "github.com/openconfig/lemming/proto/sysrib"
 	"github.com/openconfig/ygnmi/ygnmi"
@@ -123,11 +122,10 @@ func testRouteAdd(t *testing.T) {
 	}
 	defer conn.Close()
 
-	addr := netutil.ParseIPv4("10.0.0.0")
 	body := &zebra.IPRouteBody{Prefix: zebra.Prefix{
 		Family:    syscall.AF_INET,
 		PrefixLen: 24,
-		Prefix:    addr,
+		Prefix:    net.IPv4(10, 0, 0, 0),
 	}}
 
 	serverVersion := zebra.MaxZapiVer
