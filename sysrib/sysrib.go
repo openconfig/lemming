@@ -246,7 +246,9 @@ func (sr *SysRIB) EgressInterface(inputNI string, ip *net.IPNet) ([]*Interface, 
 }
 
 // EgressNexthops returns the resolved nexthops for the input IP prefix for
-// network instance inputNI based on the device's interface state.
+// network instance inputNI based on the device's interface state. It also
+// returns the top-level route (at this level) that was successfully resolved
+// (if any).
 func (sr *SysRIB) EgressNexthops(inputNI string, ip *net.IPNet, interfaces map[Interface]bool) (map[ResolvedNexthop]bool, *Route, error) {
 	// no RIB recursion currently
 	if inputNI == "" {
