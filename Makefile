@@ -1,7 +1,7 @@
 ## Build lemming and deploy KNE topology
 .PHONY: clean
 clean:
-	kne delete kne/twodut_topo.pb.txt; kne delete kne/topo.pb.txt; kne delete kne/twodut_oneotg_topo.pb.txt
+	kne delete kne/twodut_topo.pb.txt; kne delete kne/topo.pb.txt; kne delete kne/twodut_oneotg_topo.pb.txt; exit 0
 
 .PHONY: deploy 
 deploy:
