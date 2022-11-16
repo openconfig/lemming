@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"reflect"
 	"sync"
+	"time"
 
 	log "github.com/golang/glog"
 
@@ -32,6 +33,7 @@ import (
 	api "github.com/wenovus/gobgp/v3/api"
 	"github.com/wenovus/gobgp/v3/pkg/bgpconfig"
 	"github.com/wenovus/gobgp/v3/pkg/server"
+	"github.com/wenovus/gobgp/v3/pkg/zebra"
 )
 
 const (
@@ -39,8 +41,8 @@ const (
 )
 
 // NewGoBGPTaskDecl creates a new GoBGP task using the declarative configuration style.
-func NewGoBGPTaskDecl() *reconciler.BuiltReconciler {
-	return reconciler.NewBuilder("gobgp-decl").WithStart(new(bgpDeclTask).startGoBGPFuncDecl).Build()
+func NewGoBGPTaskDecl(zapiURL string) *reconciler.BuiltReconciler {
+	return reconciler.NewBuilder("gobgp-decl").WithStart(newBgpDeclTask(zapiURL).startGoBGPFuncDecl).Build()
 }
 
 func updateState(yclient *ygnmi.Client, appliedBgp *oc.NetworkInstance_Protocol_Bgp) {
@@ -52,10 +54,16 @@ func updateState(yclient *ygnmi.Client, appliedBgp *oc.NetworkInstance_Protocol_
 
 // bgpDeclTask can be used to create a reconciler-compatible BGP task.
 type bgpDeclTask struct {
+	zapiURL       string
 	bgpServer     *server.BgpServer
 	currentConfig *bgpconfig.BgpConfigSet
 
 	bgpStarted bool
+}
+
+// newBgpDeclTask creates a new bgpDeclTask.
+func newBgpDeclTask(zapiURL string) *bgpDeclTask {
+	return &bgpDeclTask{zapiURL: zapiURL}
 }
 
 // startGoBGPFuncDecl starts a GoBGP server.
@@ -157,6 +165,43 @@ func (t *bgpDeclTask) startGoBGPFuncDecl(ctx context.Context, yclient *ygnmi.Cli
 		}
 	}()
 
+	if log.V(1) {
+		// Periodically print the BGP table.
+		// TODO(wenbli): Put this in the BGP RIB schema.
+		go func() {
+			tick := time.NewTicker(5 * time.Second)
+			for range tick.C {
+				if err := bgpServer.ListPath(context.Background(), &api.ListPathRequest{
+					TableType: api.TableType_GLOBAL,
+					Family: &api.Family{
+						Afi:  api.Family_AFI_IP,
+						Safi: api.Family_SAFI_UNICAST,
+					},
+				}, func(d *api.Destination) {
+					log.V(1).Infof("GoBGP global table path: %v", d)
+				}); err != nil {
+					log.Errorf("GoBGP ListPath call failed (global table): %v", err)
+				} else {
+					log.V(1).Info("GoBGP ListPath call completed (global table)")
+				}
+
+				if err := bgpServer.ListPath(context.Background(), &api.ListPathRequest{
+					TableType: api.TableType_LOCAL,
+					Family: &api.Family{
+						Afi:  api.Family_AFI_IP,
+						Safi: api.Family_SAFI_UNICAST,
+					},
+				}, func(d *api.Destination) {
+					log.V(1).Infof("GoBGP local table path: %v", d)
+				}); err != nil {
+					log.Errorf("GoBGP ListPath call failed (local table): %v", err)
+				} else {
+					log.V(1).Info("GoBGP ListPath call completed (local table)")
+				}
+			}
+		}()
+	}
+
 	return nil
 }
 
@@ -168,7 +213,7 @@ func (t *bgpDeclTask) reconcile(intended, applied *oc.NetworkInstance_Protocol_B
 	defer appliedMu.Unlock()
 
 	intendedGlobal := intended.GetOrCreateGlobal()
-	newConfig := intendedToGoBGP(intended)
+	newConfig := intendedToGoBGP(intended, t.zapiURL)
 
 	bgpShouldStart := intendedGlobal.As != nil && intendedGlobal.RouterId != nil
 	switch {
@@ -209,7 +254,7 @@ func (t *bgpDeclTask) reconcile(intended, applied *oc.NetworkInstance_Protocol_B
 // GoBGP's notion of config vs. state does not conform to OpenConfig (see
 // https://github.com/osrg/gobgp/issues/2584)
 // Therefore, we need a compatibility layer between the two configs.
-func intendedToGoBGP(bgpoc *oc.NetworkInstance_Protocol_Bgp) *bgpconfig.BgpConfigSet {
+func intendedToGoBGP(bgpoc *oc.NetworkInstance_Protocol_Bgp, zapiURL string) *bgpconfig.BgpConfigSet {
 	bgpConfig := &bgpconfig.BgpConfigSet{}
 	global := bgpoc.GetOrCreateGlobal()
 
@@ -230,6 +275,18 @@ func intendedToGoBGP(bgpoc *oc.NetworkInstance_Protocol_Bgp) *bgpconfig.BgpConfi
 				},
 			},
 		})
+	}
+
+	bgpConfig.Zebra.Config = bgpconfig.ZebraConfig{
+		Enabled: true,
+		Url:     zapiURL,
+		// TODO(wenbli): This should actually be filled with the types
+		// of routes it wants redistributed instead of getting all
+		// routes.
+		RedistributeRouteTypeList: []string{},
+		Version:                   zebra.MaxZapiVer,
+		NexthopTriggerEnable:      false,
+		SoftwareName:              "frr8.2",
 	}
 
 	return bgpConfig

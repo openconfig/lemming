@@ -55,7 +55,7 @@ type Device struct {
 }
 
 // New returns a new initialized device.
-func New(lis net.Listener, targetName string, opts ...grpc.ServerOption) (*Device, error) {
+func New(lis net.Listener, targetName, zapiURL string, opts ...grpc.ServerOption) (*Device, error) {
 	var sysDataplane *sysrib.Dataplane
 	var dplane *dataplane.Dataplane
 	var recs []reconciler.Reconciler
@@ -80,7 +80,7 @@ func New(lis net.Listener, targetName string, opts ...grpc.ServerOption) (*Devic
 	recs = append(recs,
 		fakedevice.NewSystemBaseTask(),
 		fakedevice.NewBootTimeTask(),
-		bgp.NewGoBGPTaskDecl(),
+		bgp.NewGoBGPTaskDecl(zapiURL),
 	)
 
 	gnmiServer, err := fgnmi.New(s, targetName, recs...)
@@ -113,7 +113,7 @@ func New(lis net.Listener, targetName string, opts ...grpc.ServerOption) (*Devic
 	if err != nil {
 		return nil, err
 	}
-	if err := sysribServer.Start(cacheClient, targetName, ""); err != nil {
+	if err := sysribServer.Start(cacheClient, targetName, zapiURL); err != nil {
 		return nil, err
 	}
 

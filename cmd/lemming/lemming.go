@@ -27,6 +27,7 @@ import (
 
 	log "github.com/golang/glog"
 	"github.com/openconfig/lemming"
+	"github.com/openconfig/lemming/sysrib"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
@@ -56,7 +57,7 @@ func main() {
 		log.Fatalf("failed to create credentials: %v", err)
 	}
 
-	f, err := lemming.New(lis, *target, grpc.Creds(creds))
+	f, err := lemming.New(lis, *target, sysrib.ZAPIAddr, grpc.Creds(creds))
 	if err != nil {
 		log.Fatalf("Failed to start lemming: %v", err)
 	}

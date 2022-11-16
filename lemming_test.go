@@ -325,7 +325,7 @@ func startLemming(t *testing.T) *Device {
 	if err != nil {
 		t.Fatalf("Failed to start listener: %v", err)
 	}
-	f, err := New(lis, "fakedevice")
+	f, err := New(lis, "fakedevice", "unix:/tmp/zserv.api")
 	if err != nil {
 		t.Fatalf("Failed to start lemming: %v", err)
 	}
