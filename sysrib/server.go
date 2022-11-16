@@ -412,6 +412,8 @@ func (s *Server) programRoute(r *ResolvedRoute) error {
 
 // convertToZAPIRoute converts a route to a ZAPI route for redistributing to
 // other protocols (e.g. BGP).
+//
+// TODO(wenbli): Add support for converting an IPv6 route.
 func convertToZAPIRoute(routeKey RouteKey, route *Route) (*zebra.IPRouteBody, error) {
 	if route.Connected != nil {
 		// TODO(wenbli): Connected routes not supported. This is not

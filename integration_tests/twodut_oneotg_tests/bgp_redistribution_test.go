@@ -1,18 +1,16 @@
-/*
- Copyright 2022 Google LLC
-
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
-
-      https://www.apache.org/licenses/LICENSE-2.0
-
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
-*/
+// Copyright 2022 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 package integration_test
 
@@ -238,22 +236,17 @@ func waitOTGARPEntry(t *testing.T) {
 // packet loss and returns loss percentage as float.
 func testTraffic(t *testing.T, ate *ondatra.ATEDevice, top gosnappi.Config, srcEndPoint, dstEndPoint Attributes) float32 {
 	otg := ate.OTG()
-	gwIP := gatewayMap[srcEndPoint].IPv4
 	waitOTGARPEntry(t)
-	dstMac := gnmi.Get(t, ate.OTG(), otgpath.Root().Interface(srcEndPoint.Name+".Eth").Ipv4Neighbor(gwIP).LinkLayerAddress().State())
 	top.Flows().Clear().Items()
 	flowipv4 := top.Flows().Add().SetName("Flow")
 	flowipv4.Metrics().SetEnable(true)
-	flowipv4.TxRx().Port().
-		SetTxName(srcEndPoint.Name).
-		SetRxName(dstEndPoint.Name)
+	flowipv4.TxRx().Device().
+		SetTxNames([]string{srcEndPoint.Name + ".IPv4"}).
+		SetRxNames([]string{dstEndPoint.Name + ".IPv4"})
 	flowipv4.Duration().SetChoice("continuous")
-	e1 := flowipv4.Packet().Add().Ethernet()
-	e1.Src().SetValue(srcEndPoint.MAC)
-	e1.Dst().SetChoice("value").SetValue(dstMac)
+	flowipv4.Packet().Add().Ethernet()
 	v4 := flowipv4.Packet().Add().Ipv4()
-	srcIpv4 := srcEndPoint.IPv4
-	v4.Src().SetValue(srcIpv4)
+	v4.Src().SetValue(srcEndPoint.IPv4)
 	v4.Dst().Increment().SetStart("198.51.100.0").SetCount(250)
 	otg.PushConfig(t, top)
 
