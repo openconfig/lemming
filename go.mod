@@ -21,10 +21,11 @@ require (
 	github.com/openconfig/ygnmi v0.4.0
 	github.com/openconfig/ygot v0.25.2
 	github.com/p4lang/p4runtime v1.3.0
+	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.13.0
 	github.com/vishvananda/netlink v1.1.1-0.20210330154013-f5de75959ad5
-	github.com/wenovus/gobgp/v3 v3.0.0-20221012192753-b075e5586c18
+	github.com/wenovus/gobgp/v3 v3.0.0-20221024234659-8df3c6938ab7
 	golang.org/x/exp v0.0.0-20221002003631-540bb7301a08
 	golang.org/x/net v0.0.0-20221004154528-8021a29435af
 	golang.org/x/sys v0.0.0-20221010170243-090e33056c14
@@ -129,7 +130,6 @@ require (
 	github.com/scrapli/scrapligo v1.1.2 // indirect
 	github.com/scrapli/scrapligocfg v1.0.0 // indirect
 	github.com/sirikothe/gotextfsm v1.0.1-0.20200816110946-6aa2cfd355e4 // indirect
-	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/spf13/afero v1.9.2 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/spf13/cobra v1.6.0 // indirect

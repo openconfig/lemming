@@ -106,10 +106,6 @@ func New(lis net.Listener, targetName string, opts ...grpc.ServerOption) (*Devic
 	reflection.Register(s)
 	d.startServer()
 
-	if err := gnmiServer.StartReconcilers(context.Background()); err != nil {
-		return nil, err
-	}
-
 	cacheClient := gnmiServer.LocalClient()
 
 	log.Infof("starting sysrib")
@@ -117,7 +113,11 @@ func New(lis net.Listener, targetName string, opts ...grpc.ServerOption) (*Devic
 	if err != nil {
 		return nil, err
 	}
-	if err := sysribServer.Start(cacheClient, targetName); err != nil {
+	if err := sysribServer.Start(cacheClient, targetName, ""); err != nil {
+		return nil, err
+	}
+
+	if err := gnmiServer.StartReconcilers(context.Background()); err != nil {
 		return nil, err
 	}
 
