@@ -133,6 +133,9 @@ var (
 )
 
 // configureATE configures port1 and port2 on the ATE.
+//
+// TODO: Add helpers, or see if featureprofiles already has them, to reduce
+// replication.
 func configureATE(t *testing.T, ate *ondatra.ATEDevice) gosnappi.Config {
 	t.Helper()
 	otg := ate.OTG()
