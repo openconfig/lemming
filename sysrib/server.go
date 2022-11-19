@@ -305,7 +305,7 @@ func (s *Server) monitorBGPGUEPolicies(yclient *ygnmi.Client) error {
 				}
 				policiesFound[prefix] = true
 				if existingPolicy := s.bgpGUEPolicies[prefix]; policy != existingPolicy {
-					log.Infof("Adding new/updated policy: %s: %v", prefix, policy)
+					log.V(1).Infof("Adding new/updated BGP GUE policy: %s: %v", prefix, policy)
 					if err := s.setGUEPolicy(prefix, policy); err != nil {
 						log.Errorf("Failed while setting BGP GUE Policy: %v", err)
 					} else {
@@ -400,7 +400,14 @@ func prefixString(prefix *pb.Prefix) (string, error) {
 // gueActions generates the forwarding actions that encapsulates a packet with
 // a UDP and then an IP header using the information from gueHeaders.
 func gueActions(gueHeaders GUEHeaders) []*fwdpb.ActionDesc {
-	udpEncapActions := []*fwdpb.ActionDesc{{
+	_ = []*fwdpb.ActionDesc{{
+		//		ActionType: fwdpb.ActionType_ACTION_TYPE_REPARSE,
+		//		Action: &fwdpb.ActionDesc_Reparse{
+		//			Reparse: &fwdpb.ReparseActionDesc{
+		//				HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_OPAQUE,
+		//			},
+		//		},
+		//	}, {
 		ActionType: fwdpb.ActionType_ACTION_TYPE_ENCAP,
 		Action: &fwdpb.ActionDesc_Encap{
 			Encap: &fwdpb.EncapActionDesc{
@@ -446,7 +453,7 @@ func gueActions(gueHeaders GUEHeaders) []*fwdpb.ActionDesc {
 		dstIP = gueHeaders.dstIP6[:]
 	}
 
-	ipEncapActions := []*fwdpb.ActionDesc{{
+	_ = []*fwdpb.ActionDesc{{
 		ActionType: fwdpb.ActionType_ACTION_TYPE_ENCAP,
 		Action: &fwdpb.ActionDesc_Encap{
 			Encap: &fwdpb.EncapActionDesc{
@@ -481,7 +488,19 @@ func gueActions(gueHeaders GUEHeaders) []*fwdpb.ActionDesc {
 		},
 	}}
 
-	return append(udpEncapActions, ipEncapActions...)
+	//return append(udpEncapActions, ipEncapActions...)
+	//return reparseActions
+
+	return []*fwdpb.ActionDesc{{
+		ActionType: fwdpb.ActionType_ACTION_TYPE_REPARSE,
+		Action: &fwdpb.ActionDesc_Reparse{
+			Reparse: &fwdpb.ReparseActionDesc{
+				HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4,
+				//HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET,
+				Prepend: []byte{69, 0, 0, 46, 0, 0, 0, 0, 64, 255, 237, 22, 192, 0, 2, 2, 198, 51, 4, 133},
+			},
+		},
+	}}
 }
 
 func resolvedRouteToRouteRequest(r *ResolvedRoute) (*dpb.InsertRouteRequest, error) {
@@ -513,6 +532,7 @@ func resolvedRouteToRouteRequest(r *ResolvedRoute) (*dpb.InsertRouteRequest, err
 
 // programRoute programs the route in the dataplane, returning an error on failure.
 func (s *Server) programRoute(r *ResolvedRoute) error {
+	log.Infof("Programming route: %+v", r)
 	return s.dataplane.ProgramRoute(r)
 }
 
@@ -712,6 +732,7 @@ func (s *Server) setZebraRoute(niName string, zroute *zebra.IPRouteBody) error {
 	if s == nil {
 		return fmt.Errorf("cannot add route to nil sysrib server")
 	}
+	log.V(1).Infof("setZebraRoute: %+v", *zroute)
 	route := convertZebraRoute(niName, zroute)
 	if err := s.setRoute(niName, route); err != nil {
 		return err
