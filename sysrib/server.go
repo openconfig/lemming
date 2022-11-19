@@ -623,15 +623,18 @@ func convertZebraRoute(niName string, zroute *zebra.IPRouteBody) *Route {
 			NetworkInstance: niName,
 		})
 	}
+	var routePref RoutePreference
+	switch zroute.Type {
+	case zebra.RouteBGP:
+		routePref.AdminDistance = 20
+	}
+	routePref.Metric = zroute.Metric
 	return &Route{
 		Prefix: fmt.Sprintf("%s/%d", zroute.Prefix.Prefix.String(), zroute.Prefix.PrefixLen),
 		// NextHops is the set of IP nexthops that the route uses if
 		// it is not a connected route.
-		NextHops: nexthops,
-		RoutePref: RoutePreference{
-			AdminDistance: zroute.Distance,
-			Metric:        zroute.Metric,
-		},
+		NextHops:  nexthops,
+		RoutePref: routePref,
 	}
 }
 

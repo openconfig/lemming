@@ -91,7 +91,7 @@ func (s *SysRIB) getGUEHeader(address string) (GUEHeaders, bool, error) {
 	}
 	ip := net.ParseIP(address)
 	if ip == nil {
-		return GUEHeaders{}, false, nil
+		return GUEHeaders{}, false, fmt.Errorf("cannot parse IP address: %q", address)
 	}
 	switch policy.isV6 {
 	case true:
