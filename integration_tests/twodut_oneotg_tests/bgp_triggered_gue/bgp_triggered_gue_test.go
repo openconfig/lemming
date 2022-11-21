@@ -509,12 +509,13 @@ func TestBGPTriggeredGUE(t *testing.T) {
 		ps := gopacket.NewPacketSource(handleRead, layers.LinkTypeEthernet)
 		for i := 0; i != 10; i++ {
 			pkt, err := ps.NextPacket()
+
 			if err != nil {
 				t.Fatalf("error reading next packet: %v", err)
 			}
-			fmt.Printf("received packet %d: %v\n", i, pkt)
+			fmt.Printf("received packet %d: %v\ndump: %s\n", i, pkt, pkt.Dump())
 			for i, layer := range pkt.Layers() {
-				fmt.Printf("layer %d: %v\n%v\n", i, layer.LayerType().String(), layer.LayerContents())
+				fmt.Printf("layer %d: %v\n%v, bytes: %d\n", i, layer.LayerType().String(), layer.LayerContents(), len(layer.LayerContents()))
 			}
 		}
 	}

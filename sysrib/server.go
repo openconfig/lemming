@@ -401,13 +401,13 @@ func prefixString(prefix *pb.Prefix) (string, error) {
 // a UDP and then an IP header using the information from gueHeaders.
 func gueActions(gueHeaders GUEHeaders) []*fwdpb.ActionDesc {
 	_ = []*fwdpb.ActionDesc{{
-		//		ActionType: fwdpb.ActionType_ACTION_TYPE_REPARSE,
-		//		Action: &fwdpb.ActionDesc_Reparse{
-		//			Reparse: &fwdpb.ReparseActionDesc{
-		//				HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_OPAQUE,
-		//			},
-		//		},
-		//	}, {
+		ActionType: fwdpb.ActionType_ACTION_TYPE_REPARSE,
+		Action: &fwdpb.ActionDesc_Reparse{
+			Reparse: &fwdpb.ReparseActionDesc{
+				HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_OPAQUE,
+			},
+		},
+	}, {
 		ActionType: fwdpb.ActionType_ACTION_TYPE_ENCAP,
 		Action: &fwdpb.ActionDesc_Encap{
 			Encap: &fwdpb.EncapActionDesc{
@@ -491,6 +491,7 @@ func gueActions(gueHeaders GUEHeaders) []*fwdpb.ActionDesc {
 	//return append(udpEncapActions, ipEncapActions...)
 	//return reparseActions
 
+	//return nil
 	return []*fwdpb.ActionDesc{{
 		ActionType: fwdpb.ActionType_ACTION_TYPE_REPARSE,
 		Action: &fwdpb.ActionDesc_Reparse{
