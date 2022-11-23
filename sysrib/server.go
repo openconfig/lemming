@@ -482,7 +482,6 @@ func resolvedRouteToRouteRequest(r *ResolvedRoute) (*dpb.InsertRouteRequest, err
 
 // programRoute programs the route in the dataplane, returning an error on failure.
 func (s *Server) programRoute(r *ResolvedRoute) error {
-	log.Infof("Programming route: %+v", r)
 	return s.dataplane.ProgramRoute(r)
 }
 
