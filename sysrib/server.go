@@ -432,7 +432,7 @@ func gueActions(gueHeaders GUEHeaders) ([]*fwdpb.ActionDesc, error) {
 	}
 
 	buf := gopacket.NewSerializeBuffer()
-	gopacket.SerializeLayers(buf, gopacket.SerializeOptions{}, udp, ip)
+	gopacket.SerializeLayers(buf, gopacket.SerializeOptions{}, ip, udp)
 
 	return []*fwdpb.ActionDesc{{
 		ActionType: fwdpb.ActionType_ACTION_TYPE_REPARSE,

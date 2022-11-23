@@ -517,7 +517,11 @@ func TestBGPTriggeredGUE(t *testing.T) {
 					SrcIP:   net.IP{192, 0, 2, 2}, // ATE port 1.
 				}
 				var gotNL layers.IPv4
-				if err := gotNL.DecodeFromBytes(pkt.NetworkLayer().LayerContents(), gopacket.NilDecodeFeedback); err != nil {
+				nl := pkt.NetworkLayer()
+				if nl == nil {
+					t.Errorf("packet doesn't have network layer: %s", pkt.Dump())
+				}
+				if err := gotNL.DecodeFromBytes(nl.LayerContents(), gopacket.NilDecodeFeedback); err != nil {
 					t.Errorf("cannot decode network layer header: %v", err)
 					continue
 				}
@@ -534,7 +538,11 @@ func TestBGPTriggeredGUE(t *testing.T) {
 					DstIP:    encapFields.dstIP,
 				}
 				var gotNL layers.IPv4
-				if err := gotNL.DecodeFromBytes(pkt.NetworkLayer().LayerContents(), gopacket.NilDecodeFeedback); err != nil {
+				nl := pkt.NetworkLayer()
+				if nl == nil {
+					t.Fatalf("packet doesn't have network layer: %s", pkt.Dump())
+				}
+				if err := gotNL.DecodeFromBytes(nl.LayerContents(), gopacket.NilDecodeFeedback); err != nil {
 					t.Errorf("cannot decode network layer header: %v", err)
 					continue
 				}
@@ -548,7 +556,11 @@ func TestBGPTriggeredGUE(t *testing.T) {
 					Length:  34,
 				}
 				var gotTL layers.UDP
-				if err := gotTL.DecodeFromBytes(pkt.TransportLayer().LayerContents(), gopacket.NilDecodeFeedback); err != nil {
+				tl := pkt.TransportLayer()
+				if tl == nil {
+					t.Errorf("packet doesn't have transport layer: %s", pkt.Dump())
+				}
+				if err := gotTL.DecodeFromBytes(tl.LayerContents(), gopacket.NilDecodeFeedback); err != nil {
 					t.Errorf("cannot decode network layer header: %v", err)
 					continue
 				}
