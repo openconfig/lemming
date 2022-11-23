@@ -27,6 +27,8 @@ import (
 	"sync"
 
 	log "github.com/golang/glog"
+	"github.com/google/gopacket"
+	"github.com/google/gopacket/layers"
 	"github.com/openconfig/gribigo/afthelper"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/wenovus/gobgp/v3/pkg/zebra"
@@ -399,89 +401,49 @@ func prefixString(prefix *pb.Prefix) (string, error) {
 
 // gueActions generates the forwarding actions that encapsulates a packet with
 // a UDP and then an IP header using the information from gueHeaders.
-func gueActions(gueHeaders GUEHeaders) []*fwdpb.ActionDesc {
-	udpEncapActions := []*fwdpb.ActionDesc{{
-		ActionType: fwdpb.ActionType_ACTION_TYPE_ENCAP,
-		Action: &fwdpb.ActionDesc_Encap{
-			Encap: &fwdpb.EncapActionDesc{
-				HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_UDP,
-			},
-		},
-	}, {
-		ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
-		Action: &fwdpb.ActionDesc_Update{
-			Update: &fwdpb.UpdateActionDesc{
-				FieldId: &fwdpb.PacketFieldId{
-					Field: &fwdpb.PacketField{
-						FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_SRC,
-					},
-				},
-				Type: fwdpb.UpdateType_UPDATE_TYPE_SET,
-				// TODO(wenbli): Implement hashing for srcPort.
-				Value: []byte{0, 0},
-			},
-		},
-	}, {
-		ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
-		Action: &fwdpb.ActionDesc_Update{
-			Update: &fwdpb.UpdateActionDesc{
-				FieldId: &fwdpb.PacketFieldId{
-					Field: &fwdpb.PacketField{
-						FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST,
-					},
-				},
-				Type:  fwdpb.UpdateType_UPDATE_TYPE_SET,
-				Value: gueHeaders.dstPort[:],
-			},
-		},
-		// TODO(wenbli): Update length (if necessary) and checksum on UDP header.
-	}}
-
-	headerID := fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4
-	srcIP := gueHeaders.srcIP4[:]
-	dstIP := gueHeaders.dstIP4[:]
+func gueActions(gueHeaders GUEHeaders) ([]*fwdpb.ActionDesc, error) {
+	ip := layers.IPv4{
+		Version:  4,
+		IHL:      5,
+		Length:   74,
+		Protocol: layers.IPProtocolUDP,
+		SrcIP:    gueHeaders.srcIP4[:],
+		DstIP:    gueHeaders.dstIP4[:],
+	}
 	if gueHeaders.isV6 {
-		headerID = fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP6
-		srcIP = gueHeaders.srcIP6[:]
-		dstIP = gueHeaders.dstIP6[:]
+		ip.Version = 6
+		ip.SrcIP = gueHeaders.srcIP6[:]
+		ip.DstIP = gueHeaders.dstIP6[:]
+	}
+	udp := layers.UDP{
+		SrcPort: 0, // TODO(wenbli): Implement hashing for srcPort.
+		DstPort: layers.UDPPort(binary.BigEndian.Uint16(gueHeaders.dstPort[:])),
+		Length:  34,
 	}
 
-	ipEncapActions := []*fwdpb.ActionDesc{{
-		ActionType: fwdpb.ActionType_ACTION_TYPE_ENCAP,
-		Action: &fwdpb.ActionDesc_Encap{
-			Encap: &fwdpb.EncapActionDesc{
-				HeaderId: headerID,
-			},
-		},
-	}, {
-		ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
-		Action: &fwdpb.ActionDesc_Update{
-			Update: &fwdpb.UpdateActionDesc{
-				FieldId: &fwdpb.PacketFieldId{
-					Field: &fwdpb.PacketField{
-						FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC,
-					},
-				},
-				Type:  fwdpb.UpdateType_UPDATE_TYPE_SET,
-				Value: srcIP,
-			},
-		},
-	}, {
-		ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
-		Action: &fwdpb.ActionDesc_Update{
-			Update: &fwdpb.UpdateActionDesc{
-				FieldId: &fwdpb.PacketFieldId{
-					Field: &fwdpb.PacketField{
-						FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST,
-					},
-				},
-				Type:  fwdpb.UpdateType_UPDATE_TYPE_SET,
-				Value: dstIP,
-			},
-		},
-	}}
+	buf := gopacket.NewSerializeBuffer()
+	opts := gopacket.SerializeOptions{} // See SerializeOptions for more details.
+	if err := udp.SerializeTo(buf, opts); err != nil {
+		return nil, fmt.Errorf("error while serializing IP header: %v", err)
+	}
+	if err := ip.SerializeTo(buf, opts); err != nil {
+		return nil, fmt.Errorf("error while serializing UDP header: %v", err)
+	}
 
-	return append(udpEncapActions, ipEncapActions...)
+	return []*fwdpb.ActionDesc{{
+		ActionType: fwdpb.ActionType_ACTION_TYPE_REPARSE,
+		Action: &fwdpb.ActionDesc_Reparse{
+			Reparse: &fwdpb.ReparseActionDesc{
+				HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4,
+				FieldIds: []*fwdpb.PacketFieldId{
+					{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP}},
+					{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT}},
+					{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT}},
+				},
+				Prepend: buf.Bytes(),
+			},
+		},
+	}}, nil
 }
 
 func resolvedRouteToRouteRequest(r *ResolvedRoute) (*dpb.InsertRouteRequest, error) {
@@ -494,7 +456,9 @@ func resolvedRouteToRouteRequest(r *ResolvedRoute) (*dpb.InsertRouteRequest, err
 	for nh := range r.Nexthops {
 		var actions []*fwdpb.ActionDesc
 		if nh.HasGUE() {
-			actions = gueActions(nh.GUEHeaders)
+			if actions, err = gueActions(nh.GUEHeaders); err != nil {
+				return nil, fmt.Errorf("error retrieving GUE actions: %v", err)
+			}
 		}
 		nexthops = append(nexthops, &dpb.NextHop{
 			Port:               nh.Port.Name,
