@@ -291,7 +291,7 @@ func (s *Server) monitorBGPGUEPolicies(yclient *ygnmi.Client) error {
 				policy := GUEPolicy{
 					isV6: pfx.Addr().Is6(),
 				}
-				binary.PutUvarint(policy.dstPort[:], uint64(*ocPolicy.DstPort))
+				policy.dstPort = *ocPolicy.DstPort
 				addr, err := netip.ParseAddr(*ocPolicy.SrcIp)
 				if err != nil {
 					log.Errorf("BGP GUE Policy source IP cannot be parsed: %v", err)
