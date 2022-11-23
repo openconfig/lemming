@@ -60,7 +60,7 @@ type NIRIB struct {
 // srcPort is a hash.
 // dstIP is the nexthop of the BGP route.
 type GUEPolicy struct {
-	dstPort [2]byte
+	dstPort uint16
 	srcIP4  [4]byte
 	srcIP6  [16]byte
 	isV6    bool
@@ -93,8 +93,7 @@ func (sr *SysRIB) getGUEHeader(address string) (GUEHeaders, bool, error) {
 	if ip == nil {
 		return GUEHeaders{}, false, fmt.Errorf("cannot parse IP address: %q", address)
 	}
-	switch policy.isV6 {
-	case true:
+	if policy.isV6 {
 		var dstIP6 [16]byte
 		for i, octet := range ip.To16() {
 			dstIP6[i] = octet
@@ -103,7 +102,7 @@ func (sr *SysRIB) getGUEHeader(address string) (GUEHeaders, bool, error) {
 			GUEPolicy: policy,
 			dstIP6:    dstIP6,
 		}, true, nil
-	default:
+	} else {
 		var dstIP4 [4]byte
 		for i, octet := range ip.To4() {
 			dstIP4[i] = octet
