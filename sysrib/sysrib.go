@@ -77,7 +77,7 @@ type GUEHeaders struct {
 // getGUEHeader retrieves the GUEHeader for the given address if it matched a
 // GUE policy. The boolean return indicates whether a GUE policy was
 // matched.
-func (s *SysRIB) getGUEHeader(address string) (GUEHeaders, bool, error) {
+func (sr *SysRIB) getGUEHeader(address string) (GUEHeaders, bool, error) {
 	addr, _, err := patricia.ParseIPFromString(address)
 	if err != nil {
 		return GUEHeaders{}, false, err
@@ -85,7 +85,7 @@ func (s *SysRIB) getGUEHeader(address string) (GUEHeaders, bool, error) {
 	if addr == nil {
 		return GUEHeaders{}, false, fmt.Errorf("only v4 prefixes are supported for GUE policy: %v", address)
 	}
-	ok, policy := s.GUEPolicies.FindDeepestTag(*addr)
+	ok, policy := sr.GUEPolicies.FindDeepestTag(*addr)
 	if !ok {
 		return GUEHeaders{}, false, nil
 	}
