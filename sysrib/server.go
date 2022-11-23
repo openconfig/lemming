@@ -16,7 +16,6 @@ package sysrib
 
 import (
 	"context"
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"net"
@@ -54,6 +53,14 @@ const (
 	// ZAPIAddr is the connection address for ZAPI, which is in the form
 	// of "type:address", where type can either be a unix or tcp socket.
 	ZAPIAddr = "unix:/var/run/zserv.api"
+)
+
+// AdminDistance is the admin-distance of a routing protocol. See
+// https://docs.frrouting.org/en/latest/zebra.html#administrative-distance
+const (
+	AdminDistanceConnected = 0
+	AdminDistanceStatic    = 1
+	AdminDistanceBGP       = 20
 )
 
 // Server is the implementation of the Sysrib API.
@@ -402,33 +409,30 @@ func prefixString(prefix *pb.Prefix) (string, error) {
 // gueActions generates the forwarding actions that encapsulates a packet with
 // a UDP and then an IP header using the information from gueHeaders.
 func gueActions(gueHeaders GUEHeaders) ([]*fwdpb.ActionDesc, error) {
-	ip := layers.IPv4{
+	var ip gopacket.SerializableLayer
+	ip = &layers.IPv4{
 		Version:  4,
 		IHL:      5,
-		Length:   74,
 		Protocol: layers.IPProtocolUDP,
 		SrcIP:    gueHeaders.srcIP4[:],
 		DstIP:    gueHeaders.dstIP4[:],
 	}
 	if gueHeaders.isV6 {
-		ip.Version = 6
-		ip.SrcIP = gueHeaders.srcIP6[:]
-		ip.DstIP = gueHeaders.dstIP6[:]
+		ip = &layers.IPv6{
+			Version:    6,
+			NextHeader: layers.IPProtocolUDP,
+			SrcIP:      gueHeaders.srcIP6[:],
+			DstIP:      gueHeaders.dstIP6[:],
+		}
 	}
-	udp := layers.UDP{
+	udp := &layers.UDP{
 		SrcPort: 0, // TODO(wenbli): Implement hashing for srcPort.
-		DstPort: layers.UDPPort(binary.BigEndian.Uint16(gueHeaders.dstPort[:])),
+		DstPort: layers.UDPPort(gueHeaders.dstPort),
 		Length:  34,
 	}
 
 	buf := gopacket.NewSerializeBuffer()
-	opts := gopacket.SerializeOptions{}
-	if err := udp.SerializeTo(buf, opts); err != nil {
-		return nil, fmt.Errorf("error while serializing IP header: %v", err)
-	}
-	if err := ip.SerializeTo(buf, opts); err != nil {
-		return nil, fmt.Errorf("error while serializing UDP header: %v", err)
-	}
+	gopacket.SerializeLayers(buf, gopacket.SerializeOptions{}, udp, ip)
 
 	return []*fwdpb.ActionDesc{{
 		ActionType: fwdpb.ActionType_ACTION_TYPE_REPARSE,
@@ -697,7 +701,7 @@ func convertZebraRoute(niName string, zroute *zebra.IPRouteBody) *Route {
 	var routePref RoutePreference
 	switch zroute.Type {
 	case zebra.RouteBGP:
-		routePref.AdminDistance = 20
+		routePref.AdminDistance = AdminDistanceBGP
 	}
 	routePref.Metric = zroute.Metric
 	return &Route{
