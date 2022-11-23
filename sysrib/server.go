@@ -286,12 +286,12 @@ func (s *Server) monitorBGPGUEPolicies(yclient *ygnmi.Client) error {
 				pfx = pfx.Masked() // make canonical
 				prefix := pfx.String()
 				if ocPolicy.DstPort == nil || ocPolicy.SrcIp == nil {
-					continue // Incomplete configuration.
+					continue // Wait for complete configuration to arrive.
 				}
 				policy := GUEPolicy{
-					isV6: pfx.Addr().Is6(),
+					isV6:    pfx.Addr().Is6(),
+					dstPort: *ocPolicy.DstPort,
 				}
-				policy.dstPort = *ocPolicy.DstPort
 				addr, err := netip.ParseAddr(*ocPolicy.SrcIp)
 				if err != nil {
 					log.Errorf("BGP GUE Policy source IP cannot be parsed: %v", err)
