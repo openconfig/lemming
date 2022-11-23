@@ -422,7 +422,7 @@ func gueActions(gueHeaders GUEHeaders) ([]*fwdpb.ActionDesc, error) {
 	}
 
 	buf := gopacket.NewSerializeBuffer()
-	opts := gopacket.SerializeOptions{} // See SerializeOptions for more details.
+	opts := gopacket.SerializeOptions{}
 	if err := udp.SerializeTo(buf, opts); err != nil {
 		return nil, fmt.Errorf("error while serializing IP header: %v", err)
 	}
@@ -440,6 +440,7 @@ func gueActions(gueHeaders GUEHeaders) ([]*fwdpb.ActionDesc, error) {
 					{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT}},
 					{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT}},
 				},
+				// After the UDP header, the rest of the packet (original packet) will be classified as payload.
 				Prepend: buf.Bytes(),
 			},
 		},
