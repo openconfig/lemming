@@ -28,3 +28,6 @@ make deploy2 itest2
 make clean
 sleep 5
 make deploy3 itest3
+make clean
+sleep 5
+make deploy3 itest4
