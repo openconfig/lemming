@@ -27,7 +27,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
-	"github.com/google/gopacket/pcap"
+	"github.com/google/gopacket/pcapgo"
 	"github.com/open-traffic-generator/snappi/gosnappi"
 	"github.com/openconfig/gribigo/chk"
 	"github.com/openconfig/gribigo/client"
@@ -284,6 +284,112 @@ func testTraffic(t *testing.T, ate *ondatra.ATEDevice, top gosnappi.Config, srcE
 	return float32(lossPct)
 }
 
+// testTrafficAndEncap checks that traffic can reach from ATE port1 to ATE
+// port2 with the correct GUE encap fields (if any).
+func testTrafficAndEncap(t *testing.T, ate *ondatra.ATEDevice, top gosnappi.Config, startingIP string, encapFields *EncapFields) {
+	t.Helper()
+	otg := ate.OTG()
+	otg.StartCapture(t, atePort2.Name)
+
+	if loss := testTraffic(t, ate, top, atePort1, atePort2, startingIP); loss > 1 {
+		t.Errorf("Loss: got %g, want <= 1", loss)
+	}
+
+	otg.StopCapture(t, atePort2.Name)
+
+	captureBytes := ate.OTG().FetchCapture(t, atePort2.Name)
+
+	f, err := os.CreateTemp(".", "pcap")
+	if err != nil {
+		t.Fatalf("ERROR: Could not create temporary pcap file: %v\n", err)
+	}
+	defer os.Remove(f.Name())
+
+	if _, err := f.Write(captureBytes); err != nil {
+		t.Fatalf("ERROR: Could not write bytes to pcap file: %v\n", err)
+	}
+	f.Close()
+
+	f, err = os.Open(f.Name())
+	if err != nil {
+		t.Fatalf("ERROR: Could not open pcap file %s: %v\n", f.Name(), err)
+	}
+	defer f.Close()
+
+	handleRead, err := pcapgo.NewReader(f)
+	if err != nil {
+		t.Fatalf("ERROR: Could not create reader on pcap file %s: %v\n", f.Name(), err)
+	}
+	ps := gopacket.NewPacketSource(handleRead, layers.LinkTypeEthernet)
+
+	for i := 0; i != 10; i++ {
+		pkt, err := ps.NextPacket()
+		if err != nil {
+			t.Fatalf("error reading next packet: %v", err)
+		}
+		if encapFields == nil {
+			wantNL := layers.IPv4{
+				Version: 4,
+				IHL:     5,
+				Length:  46,
+				SrcIP:   net.IP{192, 0, 2, 2}, // ATE port 1.
+			}
+			var gotNL layers.IPv4
+			nl := pkt.NetworkLayer()
+			if nl == nil {
+				t.Errorf("packet doesn't have network layer: %s", pkt.Dump())
+			}
+			if err := gotNL.DecodeFromBytes(nl.LayerContents(), gopacket.NilDecodeFeedback); err != nil {
+				t.Errorf("cannot decode network layer header: %v", err)
+				continue
+			}
+			if diff := cmp.Diff(wantNL, gotNL, cmpopts.IgnoreUnexported(layers.IPv4{}), cmpopts.IgnoreFields(layers.IPv4{}, "BaseLayer", "Checksum", "TTL", "Protocol", "DstIP")); diff != "" {
+				t.Errorf("network layer (-want, +got):\n%s", diff)
+			}
+		} else {
+			wantNL := layers.IPv4{
+				Version:  4,
+				IHL:      5,
+				Length:   74,
+				Protocol: layers.IPProtocolUDP,
+				SrcIP:    encapFields.srcIP,
+				DstIP:    encapFields.dstIP,
+			}
+			var gotNL layers.IPv4
+			nl := pkt.NetworkLayer()
+			if nl == nil {
+				t.Fatalf("packet doesn't have network layer: %s", pkt.Dump())
+			}
+			if err := gotNL.DecodeFromBytes(nl.LayerContents(), gopacket.NilDecodeFeedback); err != nil {
+				t.Errorf("cannot decode network layer header: %v", err)
+				continue
+			}
+			if diff := cmp.Diff(wantNL, gotNL, cmpopts.IgnoreUnexported(layers.IPv4{}), cmpopts.IgnoreFields(layers.IPv4{}, "BaseLayer", "Checksum")); diff != "" {
+				t.Errorf("network layer (-want, +got):\n%s", diff)
+			}
+
+			wantTL := layers.UDP{
+				SrcPort: 0, // TODO(wenbli): Implement and test hashing for srcPort.
+				DstPort: layers.UDPPort(encapFields.dstPort),
+				Length:  34,
+			}
+			var gotTL layers.UDP
+			tl := pkt.TransportLayer()
+			if tl == nil {
+				t.Errorf("packet doesn't have transport layer: %s", pkt.Dump())
+			}
+			if err := gotTL.DecodeFromBytes(tl.LayerContents(), gopacket.NilDecodeFeedback); err != nil {
+				t.Errorf("cannot decode transport layer header: %v", err)
+				continue
+			}
+			if diff := cmp.Diff(wantTL, gotTL, cmpopts.IgnoreUnexported(layers.UDP{}), cmpopts.IgnoreFields(layers.UDP{}, "BaseLayer")); diff != "" {
+				t.Errorf("network layer (-want, +got):\n%s", diff)
+			}
+			// TODO: Check that lower layers is the original packet.
+		}
+	}
+}
+
 // awaitTimeout calls a fluent client Await, adding a timeout to the context.
 func awaitTimeout(ctx context.Context, c *fluent.GRIBIClient, t testing.TB, timeout time.Duration) error {
 	subctx, cancel := context.WithTimeout(ctx, timeout)
@@ -473,146 +579,81 @@ func TestBGPTriggeredGUE(t *testing.T) {
 	nbrPath := bgpPath.Neighbor(dut2Port2.IPv4)
 	gnmi.Await(t, dut, nbrPath.SessionState().State(), 60*time.Second, oc.Bgp_Neighbor_SessionState_ESTABLISHED)
 
-	testTrafficAndPrintCapture := func(t *testing.T, title string, startingIP string, encapFields *EncapFields) {
-		t.Helper()
-		t.Logf("testing traffic %s (starting IP %s)", title, startingIP)
-		otg := ate.OTG()
-		otg.StartCapture(t, atePort2.Name)
+	tests := []struct {
+		desc         string
+		gnmiOp       func()
+		encapFields1 *EncapFields
+		encapFields2 *EncapFields
+		encapFields3 *EncapFields
+	}{{
+		desc:   "without policy",
+		gnmiOp: func() {},
+	}, {
+		desc: "with single policy",
+		gnmiOp: func() {
+			policy2Pfx := "203.0.113.0/29"
+			gnmi.Replace(t, dut, ocpath.Root().BgpGuePolicy(policy2Pfx).Config(), &oc.BgpGuePolicy{
+				DstPort: ygot.Uint16(84),
+				Prefix:  ygot.String(policy2Pfx),
+				SrcIp:   ygot.String("84.84.84.84"),
+			})
+		},
+		encapFields1: &EncapFields{
+			srcIP:   net.IP{84, 84, 84, 84},
+			dstIP:   net.IP{203, 0, 113, 1},
+			dstPort: 84,
+		},
+		encapFields2: &EncapFields{
+			srcIP:   net.IP{84, 84, 84, 84},
+			dstIP:   net.IP{203, 0, 113, 5},
+			dstPort: 84,
+		},
+	}, {
+		desc: "with two overlapping policies",
+		gnmiOp: func() {
+			policy1Pfx := "203.0.113.0/30"
+			gnmi.Replace(t, dut, ocpath.Root().BgpGuePolicy(policy1Pfx).Config(), &oc.BgpGuePolicy{
+				DstPort: ygot.Uint16(42),
+				Prefix:  ygot.String(policy1Pfx),
+				SrcIp:   ygot.String("42.42.42.42"),
+			})
+		},
+		encapFields1: &EncapFields{
+			srcIP:   net.IP{42, 42, 42, 42},
+			dstIP:   net.IP{203, 0, 113, 1},
+			dstPort: 42,
+		},
+		encapFields2: &EncapFields{
+			srcIP:   net.IP{84, 84, 84, 84},
+			dstIP:   net.IP{203, 0, 113, 5},
+			dstPort: 84,
+		},
+	}}
 
-		if loss := testTraffic(t, ate, ateTop, atePort1, atePort2, startingIP); loss > 1 {
-			t.Errorf("Loss: got %g, want <= 1", loss)
-		}
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			tests := []struct {
+				startingIP  string
+				encapFields *EncapFields
+			}{{
+				startingIP:  "198.51.0.0",
+				encapFields: tt.encapFields1,
+			}, {
+				startingIP:  "198.51.2.0",
+				encapFields: tt.encapFields2,
+			}, {
+				startingIP:  "198.51.4.0",
+				encapFields: tt.encapFields3,
+			}}
 
-		otg.StopCapture(t, atePort2.Name)
-
-		captureBytes := ate.OTG().FetchCapture(t, atePort2.Name)
-
-		f, err := os.CreateTemp(".", "pcap")
-		if err != nil {
-			t.Fatalf("ERROR: Could not create temporary pcap file: %v\n", err)
-		}
-		defer os.Remove(f.Name())
-
-		if _, err := f.Write(captureBytes); err != nil {
-			t.Fatalf("ERROR: Could not write bytes to pcap file: %v\n", err)
-		}
-		f.Close()
-
-		handleRead, err := pcap.OpenOffline(f.Name())
-		if err != nil {
-			t.Fatalf("ERROR: Could not open pcap file %s: %v\n", f.Name(), err)
-		}
-		ps := gopacket.NewPacketSource(handleRead, layers.LinkTypeEthernet)
-
-		for i := 0; i != 10; i++ {
-			pkt, err := ps.NextPacket()
-			if err != nil {
-				t.Fatalf("error reading next packet: %v", err)
+			tt.gnmiOp()
+			for _, tt := range tests {
+				t.Run(tt.startingIP, func(t *testing.T) {
+					testTrafficAndEncap(t, ate, ateTop, tt.startingIP, tt.encapFields)
+				})
 			}
-			if encapFields == nil {
-				wantNL := layers.IPv4{
-					Version: 4,
-					IHL:     5,
-					Length:  46,
-					SrcIP:   net.IP{192, 0, 2, 2}, // ATE port 1.
-				}
-				var gotNL layers.IPv4
-				nl := pkt.NetworkLayer()
-				if nl == nil {
-					t.Errorf("packet doesn't have network layer: %s", pkt.Dump())
-				}
-				if err := gotNL.DecodeFromBytes(nl.LayerContents(), gopacket.NilDecodeFeedback); err != nil {
-					t.Errorf("cannot decode network layer header: %v", err)
-					continue
-				}
-				if diff := cmp.Diff(wantNL, gotNL, cmpopts.IgnoreUnexported(layers.IPv4{}), cmpopts.IgnoreFields(layers.IPv4{}, "BaseLayer", "Checksum", "TTL", "Protocol", "DstIP")); diff != "" {
-					t.Errorf("network layer (-want, +got):\n%s", diff)
-				}
-			} else {
-				wantNL := layers.IPv4{
-					Version:  4,
-					IHL:      5,
-					Length:   74,
-					Protocol: layers.IPProtocolUDP,
-					SrcIP:    encapFields.srcIP,
-					DstIP:    encapFields.dstIP,
-				}
-				var gotNL layers.IPv4
-				nl := pkt.NetworkLayer()
-				if nl == nil {
-					t.Fatalf("packet doesn't have network layer: %s", pkt.Dump())
-				}
-				if err := gotNL.DecodeFromBytes(nl.LayerContents(), gopacket.NilDecodeFeedback); err != nil {
-					t.Errorf("cannot decode network layer header: %v", err)
-					continue
-				}
-				if diff := cmp.Diff(wantNL, gotNL, cmpopts.IgnoreUnexported(layers.IPv4{}), cmpopts.IgnoreFields(layers.IPv4{}, "BaseLayer", "Checksum")); diff != "" {
-					t.Errorf("network layer (-want, +got):\n%s", diff)
-				}
-
-				wantTL := layers.UDP{
-					SrcPort: 0, // TODO(wenbli): Implement and test hashing for srcPort.
-					DstPort: layers.UDPPort(encapFields.dstPort),
-					Length:  34,
-				}
-				var gotTL layers.UDP
-				tl := pkt.TransportLayer()
-				if tl == nil {
-					t.Errorf("packet doesn't have transport layer: %s", pkt.Dump())
-				}
-				if err := gotTL.DecodeFromBytes(tl.LayerContents(), gopacket.NilDecodeFeedback); err != nil {
-					t.Errorf("cannot decode network layer header: %v", err)
-					continue
-				}
-				if diff := cmp.Diff(wantTL, gotTL, cmpopts.IgnoreUnexported(layers.UDP{}), cmpopts.IgnoreFields(layers.UDP{}, "BaseLayer")); diff != "" {
-					t.Errorf("network layer (-want, +got):\n%s", diff)
-				}
-				// TODO: Check that lower layers is the original packet.
-			}
-		}
+		})
 	}
-
-	testTrafficAndPrintCapture(t, "without policy", "198.51.0.0", nil)
-	testTrafficAndPrintCapture(t, "without policy", "198.51.2.0", nil)
-	testTrafficAndPrintCapture(t, "without policy", "198.51.4.0", nil)
-
-	policy2Pfx := "203.0.113.0/29"
-	gnmi.Replace(t, dut, ocpath.Root().BgpGuePolicy(policy2Pfx).Config(), &oc.BgpGuePolicy{
-		DstPort: ygot.Uint16(84),
-		Prefix:  ygot.String(policy2Pfx),
-		SrcIp:   ygot.String("84.84.84.84"),
-	})
-
-	testTrafficAndPrintCapture(t, "with policy", "198.51.0.0", &EncapFields{
-		srcIP:   net.IP{84, 84, 84, 84},
-		dstIP:   net.IP{203, 0, 113, 1},
-		dstPort: 84,
-	})
-	testTrafficAndPrintCapture(t, "with policy", "198.51.2.0", &EncapFields{
-		srcIP:   net.IP{84, 84, 84, 84},
-		dstIP:   net.IP{203, 0, 113, 5},
-		dstPort: 84,
-	})
-	testTrafficAndPrintCapture(t, "with policy", "198.51.4.0", nil)
-
-	policy1Pfx := "203.0.113.0/30"
-	gnmi.Replace(t, dut, ocpath.Root().BgpGuePolicy(policy1Pfx).Config(), &oc.BgpGuePolicy{
-		DstPort: ygot.Uint16(42),
-		Prefix:  ygot.String(policy1Pfx),
-		SrcIp:   ygot.String("42.42.42.42"),
-	})
-
-	testTrafficAndPrintCapture(t, "with LPM policy", "198.51.0.0", &EncapFields{
-		srcIP:   net.IP{42, 42, 42, 42},
-		dstIP:   net.IP{203, 0, 113, 1},
-		dstPort: 42,
-	})
-	testTrafficAndPrintCapture(t, "with LPM policy", "198.51.2.0", &EncapFields{
-		srcIP:   net.IP{84, 84, 84, 84},
-		dstIP:   net.IP{203, 0, 113, 5},
-		dstPort: 84,
-	})
-	testTrafficAndPrintCapture(t, "with LPM policy", "198.51.4.0", nil)
 
 	dut.RawAPIs().GRIBI().Default(t).Flush(context.Background(), &gribipb.FlushRequest{
 		NetworkInstance: &gribipb.FlushRequest_All{All: &gribipb.Empty{}},
