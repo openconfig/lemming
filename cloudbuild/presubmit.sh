@@ -20,10 +20,6 @@ export PATH=${PATH}:/usr/local/go/bin
 gopath=$(go env GOPATH)
 export PATH=${PATH}:$gopath/bin
 
-KNE_TAG="v0.1.6"
-go install github.com/openconfig/kne/kne_cli@"${KNE_TAG}"
-mv "$HOME/go/bin/kne_cli" "$HOME/go/bin/kne"
-
 cd /tmp/workspace
 kne deploy ~/kne-internal/deploy/kne/kind-bridge.yaml
 make deploy itest
