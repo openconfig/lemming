@@ -408,7 +408,7 @@ func prefixString(prefix *pb.Prefix) (string, error) {
 
 // gueActions generates the forwarding actions that encapsulates a packet with
 // a UDP and then an IP header using the information from gueHeaders.
-func gueActions(gueHeaders GUEHeaders) []*fwdpb.ActionDesc {
+func gueActions(gueHeaders GUEHeaders) ([]*fwdpb.ActionDesc, error) {
 	var ip gopacket.SerializableLayer
 	ip = &layers.IPv4{
 		Version:  4,
@@ -450,7 +450,7 @@ func gueActions(gueHeaders GUEHeaders) []*fwdpb.ActionDesc {
 				Prepend: buf.Bytes(),
 			},
 		},
-	}}
+	}}, nil
 }
 
 func resolvedRouteToRouteRequest(r *ResolvedRoute) (*dpb.InsertRouteRequest, error) {
@@ -463,7 +463,9 @@ func resolvedRouteToRouteRequest(r *ResolvedRoute) (*dpb.InsertRouteRequest, err
 	for nh := range r.Nexthops {
 		var actions []*fwdpb.ActionDesc
 		if nh.HasGUE() {
-			actions = gueActions(nh.GUEHeaders)
+			if actions, err = gueActions(nh.GUEHeaders); err != nil {
+				return nil, fmt.Errorf("error retrieving GUE actions: %v", err)
+			}
 		}
 		nexthops = append(nexthops, &dpb.NextHop{
 			Port:               nh.Port.Name,
