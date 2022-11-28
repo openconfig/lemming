@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"net/netip"
 	"os"
 	"reflect"
 	"strconv"
@@ -80,6 +81,11 @@ type Server struct {
 	// indicated by the forwarding plane.
 	interfaces map[Interface]bool
 
+	// bgpGUEPolicies contains the current set of BGP GUE policies as
+	// received from the configuration. Comparison against this prevents
+	// unnecessary sysrib updates.
+	bgpGUEPolicies map[string]GUEPolicy
+
 	programmedRoutesMu sync.Mutex
 	// programmedRoutes contain a map of resolved routes with which to do
 	// diff for sending to the dataplane for programming.
@@ -133,6 +139,7 @@ func New(dp dataplaneAPI) (*Server, error) {
 	s := &Server{
 		rib:              rib,
 		interfaces:       map[Interface]bool{},
+		bgpGUEPolicies:   map[string]GUEPolicy{},
 		programmedRoutes: map[RouteKey]*ResolvedRoute{},
 		resolvedRoutes:   map[RouteKey]*Route{},
 		dataplane:        dp,
@@ -155,6 +162,10 @@ func (s *Server) Start(gClient gpb.GNMIClient, target, zapiURL string) error {
 		return err
 	}
 	if err := s.monitorConnectedIntfs(yclient); err != nil {
+		return err
+	}
+
+	if err := s.monitorBGPGUEPolicies(yclient); err != nil {
 		return err
 	}
 
@@ -236,6 +247,100 @@ func (s *Server) monitorConnectedIntfs(yclient *ygnmi.Client) error {
 	go func() {
 		if _, err := interfaceWatcher.Await(); err != nil {
 			log.Warningf("Sysrib interface watcher has stopped: %v", err)
+		}
+	}()
+	return nil
+}
+
+// monitorBGPGUEPolicies starts a gothread to check for BGP GUE policies being
+// added or deleted from the config, and informs the sysrib server accordingly
+// to update programmed routes.
+func (s *Server) monitorBGPGUEPolicies(yclient *ygnmi.Client) error {
+	b := &ocpath.Batch{}
+	b.AddPaths(
+		ocpath.Root().BgpGuePolicyAny().Prefix().Config().PathStruct(),
+		ocpath.Root().BgpGuePolicyAny().DstPort().Config().PathStruct(),
+		ocpath.Root().BgpGuePolicyAny().SrcIp().Config().PathStruct(),
+	)
+
+	bgpGUEPolicyWatcher := ygnmi.Watch(
+		context.Background(),
+		yclient,
+		b.Config(),
+		func(root *ygnmi.Value[*oc.Root]) error {
+			rootVal, ok := root.Val()
+			if !ok {
+				return ygnmi.Continue
+			}
+
+			policiesFound := map[string]bool{}
+			// Add new/updated policies.
+			for nonCanonicalPrefix, ocPolicy := range rootVal.BgpGuePolicy {
+				// TODO(wenbli): Support other VRFs.
+				pfx, err := netip.ParsePrefix(nonCanonicalPrefix)
+				if err != nil {
+					// TODO(wenbli): This should be a Reconciler.Validate checker function.
+					log.Errorf("BGP GUE Policy prefix cannot be parsed: %v", err)
+					continue
+				}
+				pfx = pfx.Masked() // make canonical
+				prefix := pfx.String()
+				if ocPolicy.DstPort == nil || ocPolicy.SrcIp == nil {
+					continue // Wait for complete configuration to arrive.
+				}
+				policy := GUEPolicy{
+					isV6:    pfx.Addr().Is6(),
+					dstPort: *ocPolicy.DstPort,
+				}
+				addr, err := netip.ParseAddr(*ocPolicy.SrcIp)
+				if err != nil {
+					log.Errorf("BGP GUE Policy source IP cannot be parsed: %v", err)
+					continue
+				}
+				if policy.isV6 {
+					if addr.Is4() {
+						// TODO(wenbli): This should be a Reconciler.Validate checker function.
+						log.Errorf("BGP GUE Policy prefix is IPv6 (%s) but source IP is IPv4: %s", prefix, *ocPolicy.SrcIp)
+						continue
+					}
+					policy.srcIP6 = addr.As16()
+				} else {
+					if addr.Is6() {
+						// TODO(wenbli): This should be a Reconciler.Validate checker function.
+						log.Errorf("BGP GUE Policy prefix is IPv4 (%s) but source IP is IPv6: %s", prefix, *ocPolicy.SrcIp)
+						continue
+					}
+					policy.srcIP4 = addr.As4()
+				}
+				policiesFound[prefix] = true
+				if existingPolicy := s.bgpGUEPolicies[prefix]; policy != existingPolicy {
+					log.Infof("Adding new/updated policy: %s: %v", prefix, policy)
+					if err := s.setGUEPolicy(prefix, policy); err != nil {
+						log.Errorf("Failed while setting BGP GUE Policy: %v", err)
+					} else {
+						s.bgpGUEPolicies[prefix] = policy
+					}
+				}
+			}
+
+			// Delete incomplete/non-existent policies.
+			for prefix := range s.bgpGUEPolicies {
+				if _, ok := policiesFound[prefix]; !ok {
+					log.Infof("Deleting incomplete/non-existent policy: %s", prefix)
+					if err := s.deleteGUEPolicy(prefix); err != nil {
+						log.Errorf("Failed while deleting BGP GUE Policy: %v", err)
+					} else {
+						delete(s.bgpGUEPolicies, prefix)
+					}
+				}
+			}
+			return ygnmi.Continue
+		},
+	)
+
+	go func() {
+		if _, err := bgpGUEPolicyWatcher.Await(); err != nil {
+			log.Warningf("Sysrib BGP GUE policy watcher has stopped: %v", err)
 		}
 	}()
 	return nil
