@@ -85,13 +85,13 @@ func (r *route) start(ctx context.Context, client *ygnmi.Client) error {
 
 		if !present {
 			if err := engine.DeleteIPRoute(ctx, r.fwd, isIPv4, ipNet.IP, ipNet.Mask); err != nil {
-				log.Warningf("failed to delete route")
+				log.Warningf("failed to delete route: %v", err)
 				return ygnmi.Continue
 			}
 			return ygnmi.Continue
 		}
 		if err := engine.AddIPRoute(ctx, r.fwd, isIPv4, ip, ipNet.Mask, route.GetNextHops()); err != nil {
-			log.Warningf("failed to delete route")
+			log.Warningf("failed to delete route: %v", err)
 		}
 
 		return ygnmi.Continue
