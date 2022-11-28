@@ -31,6 +31,11 @@ itest3:
 	kne/setup.sh twodut_oneotg_topo.pb.txt
 	go test -v ./integration_tests/twodut_oneotg_tests -args -config $(shell pwd)/kne/config.yaml -testbed $(shell pwd)/kne/twodut_oneotg_testbed.pb.txt
 
+.PHONY: itest4
+itest4:
+	kne/setup.sh twodut_oneotg_topo.pb.txt
+	go test -v ./integration_tests/twodut_oneotg_tests/bgp_triggered_gue -args -config $(shell pwd)/kne/config.yaml -testbed $(shell pwd)/kne/twodut_oneotg_testbed.pb.txt
+
 .PHONY: test
 test:
 	go test $(shell go list ./... | grep -v integration_test)

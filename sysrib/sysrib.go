@@ -29,6 +29,7 @@ import (
 	"github.com/kentik/patricia/generics_tree"
 	"github.com/openconfig/gribigo/afthelper"
 	oc "github.com/openconfig/gribigo/ocrt"
+	"github.com/openconfig/lemming/gnmi/fakedevice"
 	"github.com/openconfig/ygot/ytypes"
 )
 
@@ -40,6 +41,11 @@ type SysRIB struct {
 	// NI is the list of network instances (aka VRFs)
 	NI        map[string]*NIRIB
 	defaultNI string
+
+	// GUEPolicies are the configured BGP-triggered GUE policies.
+	// Every update to this should trigger a re-computation of the resolved
+	// routes.
+	GUEPolicies *generics_tree.TreeV4[GUEPolicy]
 }
 
 // NIRIB is the RIB for a single network instance.
@@ -48,9 +54,69 @@ type NIRIB struct {
 	IPV4 *generics_tree.TreeV4[*Route]
 }
 
+// GUEPolicy represents the static values in the IP and UDP headers that are
+// to encapsulate the packet.
+//
+// srcPort is a hash.
+// dstIP is the nexthop of the BGP route.
+type GUEPolicy struct {
+	dstPort uint16
+	srcIP4  [4]byte
+	srcIP6  [16]byte
+	isV6    bool
+}
+
+// GUEHeaders represents the IP and UDP headers that are to encapsulate the
+// packet.
+type GUEHeaders struct {
+	GUEPolicy
+	dstIP4 [4]byte
+	dstIP6 [16]byte
+}
+
+// getGUEHeader retrieves the GUEHeader for the given address if it matched a
+// GUE policy. The boolean return indicates whether a GUE policy was
+// matched.
+func (sr *SysRIB) getGUEHeader(address string) (GUEHeaders, bool, error) {
+	addr, _, err := patricia.ParseIPFromString(address)
+	if err != nil {
+		return GUEHeaders{}, false, err
+	}
+	if addr == nil {
+		return GUEHeaders{}, false, fmt.Errorf("only v4 prefixes are supported for GUE policy: %v", address)
+	}
+	ok, policy := sr.GUEPolicies.FindDeepestTag(*addr)
+	if !ok {
+		return GUEHeaders{}, false, nil
+	}
+	ip := net.ParseIP(address)
+	if ip == nil {
+		return GUEHeaders{}, false, fmt.Errorf("cannot parse IP address: %q", address)
+	}
+	if policy.isV6 {
+		var dstIP6 [16]byte
+		for i, octet := range ip.To16() {
+			dstIP6[i] = octet
+		}
+		return GUEHeaders{
+			GUEPolicy: policy,
+			dstIP6:    dstIP6,
+		}, true, nil
+	}
+	var dstIP4 [4]byte
+	for i, octet := range ip.To4() {
+		dstIP4[i] = octet
+	}
+	return GUEHeaders{
+		GUEPolicy: policy,
+		dstIP4:    dstIP4,
+	}, true, nil
+}
+
 type RoutePreference struct {
 	// AdminDistance is the admin distance of the protocol that added this
 	// route.
+	// See https://docs.frrouting.org/en/latest/zebra.html#administrative-distance
 	AdminDistance uint8 `json:"admin-distance"`
 	// Metric is the metric of the route. It is comparable only within
 	// routes of the same protocol, and therefore the same admin distance.
@@ -94,7 +160,8 @@ func (r *Route) String() string {
 // NewSysRIB returns a SysRIB from an input parsed OpenConfig configuration.
 func NewSysRIB(cfg *oc.Device) (*SysRIB, error) {
 	sr := &SysRIB{
-		NI: map[string]*NIRIB{},
+		NI:          map[string]*NIRIB{},
+		GUEPolicies: generics_tree.NewTreeV4[GUEPolicy](),
 	}
 
 	if cfg != nil {
@@ -117,7 +184,7 @@ func NewSysRIB(cfg *oc.Device) (*SysRIB, error) {
 			}
 		}
 	} else {
-		sr.defaultNI = "DEFAULT"
+		sr.defaultNI = fakedevice.DefaultNetworkInstance
 		sr.NI[sr.defaultNI] = &NIRIB{
 			IPV4: generics_tree.NewTreeV4[*Route](),
 		}
@@ -137,6 +204,12 @@ func routeMatches(a *Route, b *Route) bool {
 	return reflect.DeepEqual(*a, *b)
 }
 
+// guePolicyUnconditionalMatch always returns true. It is intended to be used
+// for kentik/patricia's matchFunc argument for Delete.
+func guePolicyUnconditionalMatch(_ GUEPolicy, _ GUEPolicy) bool {
+	return true
+}
+
 // AddRoute adds a route, r, to the network instance, ni, in the sysRIB.
 // It returns true if the route was added, and false if not. If the route
 // already exists, it returns (false, nil)
@@ -153,6 +226,37 @@ func (sr *SysRIB) AddRoute(ni string, r *Route) (bool, error) {
 	added, _ := sr.NI[ni].IPV4.Add(*addr, r, routeMatches)
 	log.V(1).Infof("AddRoute attempt: %v, %v, result: %v", *addr, r, added)
 	return added, nil
+}
+
+// SetGUEPolicy sets a GUE Policy in the RIB.
+func (sr *SysRIB) SetGUEPolicy(prefix string, policy GUEPolicy) error {
+	sr.mu.Lock()
+	defer sr.mu.Unlock()
+	addr, _, err := patricia.ParseIPFromString(prefix)
+	if err != nil {
+		return fmt.Errorf("cannot create prefix for %s, %v", prefix, err)
+	}
+	if addr == nil {
+		return fmt.Errorf("only v4 prefixes are supported for GUE policy: %v", prefix)
+	}
+	sr.GUEPolicies.Set(*addr, policy)
+	return nil
+}
+
+// DeleteGUEPolicy sets a GUE Policy in the RIB.
+// It returns true if a policy was deleted, and false if not.
+func (sr *SysRIB) DeleteGUEPolicy(prefix string) (bool, error) {
+	sr.mu.Lock()
+	defer sr.mu.Unlock()
+	addr, _, err := patricia.ParseIPFromString(prefix)
+	if err != nil {
+		return false, fmt.Errorf("cannot create prefix for %s, %v", prefix, err)
+	}
+	if addr == nil {
+		return false, fmt.Errorf("only v4 prefixes are supported for GUE policy: %v", prefix)
+	}
+	count := sr.GUEPolicies.Delete(*addr, guePolicyUnconditionalMatch, GUEPolicy{})
+	return count > 0, nil
 }
 
 // NewRoute returns a new route for the specified prefix.
@@ -245,10 +349,14 @@ func (sr *SysRIB) EgressInterface(inputNI string, ip *net.IPNet) ([]*Interface, 
 	return egressIfs, nil
 }
 
-// EgressNexthops returns the resolved nexthops for the input IP prefix for
-// network instance inputNI based on the device's interface state. It also
-// returns the top-level route (at this level) that was successfully resolved
-// (if any).
+// EgressNexthops returns the resolved nexthops for the input IP prefix. It
+// also returns the top-level route (at this level) that was successfully
+// resolved (if any). This is useful for determining the properties of the
+// route that was ultimately resolved, for example its route preference and
+// first-level nexthops.
+//
+// - inputNI is the network instance of the input prefix.
+// - interfaces is the set of known interface states on the device.
 func (sr *SysRIB) EgressNexthops(inputNI string, ip *net.IPNet, interfaces map[Interface]bool) (map[ResolvedNexthop]bool, *Route, error) {
 	// no RIB recursion currently
 	if inputNI == "" {
@@ -307,9 +415,31 @@ func (sr *SysRIB) EgressNexthops(inputNI string, ip *net.IPNet, interfaces map[I
 			if err != nil {
 				return nil, nil, fmt.Errorf("for nexthop %s, can't resolve: %v", nh.Address, err)
 			}
-			for nh := range recursiveNHs {
+
+			// pseudocode for BGP-triggered GUE:
+			// if route is BGP, then
+			// - For each of its nexthops,
+			//   - if the nexthop falls within the policy prefix, and
+			//   - the same nexthop doesn't also already have a BGP-triggered GUE action
+			//   then, add the route with an encap action for the nexthop.
+			var encapHeaders GUEHeaders
+			if cr.RoutePref.AdminDistance == 20 { // EBGP
+				gueHeaders, ok, err := sr.getGUEHeader(nh.Address)
+				if ok {
+					encapHeaders = gueHeaders
+				}
+				if err != nil {
+					return nil, nil, fmt.Errorf("Error during GUE policy look-up: %v", err)
+				}
+			}
+			for rnh := range recursiveNHs {
+				switch {
+				case rnh.HasGUE():
+					return nil, nil, fmt.Errorf("route %v resolves over another route that has a BGP-triggered GUE action, the behaviour is undefined, nexthop: %v, recursive nexthop: %v", cr, nh, rnh)
+				}
+				rnh.GUEHeaders = encapHeaders
 				// TODO(wenbli): Implement WCMP: there could be a merger of two nexthops, in which case we add their weights.
-				egressNhs[nh] = true
+				egressNhs[rnh] = true
 			}
 		}
 	}

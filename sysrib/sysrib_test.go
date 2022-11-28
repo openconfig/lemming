@@ -388,6 +388,9 @@ func baseCfg() *oc.Device {
 	return d
 }
 
+// TODO(wenbli): test that a new route with the same prefix and route
+// preference overwrites the existing route or errors out (depending on which
+// behaviour we want).
 func TestAddRoute(t *testing.T) {
 	tests := []struct {
 		desc              string
