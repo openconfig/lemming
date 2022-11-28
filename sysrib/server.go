@@ -314,7 +314,7 @@ func (s *Server) monitorBGPGUEPolicies(yclient *ygnmi.Client) error {
 				}
 				policiesFound[prefix] = true
 				if existingPolicy := s.bgpGUEPolicies[prefix]; policy != existingPolicy {
-					log.Infof("Adding new/updated policy: %s: %v", prefix, policy)
+					log.V(1).Infof("Adding new/updated BGP GUE policy: %s: %v", prefix, policy)
 					if err := s.setGUEPolicy(prefix, policy); err != nil {
 						log.Errorf("Failed while setting BGP GUE Policy: %v", err)
 					} else {
@@ -408,7 +408,7 @@ func prefixString(prefix *pb.Prefix) (string, error) {
 
 // gueActions generates the forwarding actions that encapsulates a packet with
 // a UDP and then an IP header using the information from gueHeaders.
-func gueActions(gueHeaders GUEHeaders) ([]*fwdpb.ActionDesc, error) {
+func gueActions(gueHeaders GUEHeaders) []*fwdpb.ActionDesc {
 	var ip gopacket.SerializableLayer
 	ip = &layers.IPv4{
 		Version:  4,
@@ -450,7 +450,7 @@ func gueActions(gueHeaders GUEHeaders) ([]*fwdpb.ActionDesc, error) {
 				Prepend: buf.Bytes(),
 			},
 		},
-	}}, nil
+	}}
 }
 
 func resolvedRouteToRouteRequest(r *ResolvedRoute) (*dpb.InsertRouteRequest, error) {
@@ -463,9 +463,7 @@ func resolvedRouteToRouteRequest(r *ResolvedRoute) (*dpb.InsertRouteRequest, err
 	for nh := range r.Nexthops {
 		var actions []*fwdpb.ActionDesc
 		if nh.HasGUE() {
-			if actions, err = gueActions(nh.GUEHeaders); err != nil {
-				return nil, fmt.Errorf("error retrieving GUE actions: %v", err)
-			}
+			actions = gueActions(nh.GUEHeaders)
 		}
 		nexthops = append(nexthops, &dpb.NextHop{
 			Port:               nh.Port.Name,
@@ -683,6 +681,7 @@ func (s *Server) setZebraRoute(niName string, zroute *zebra.IPRouteBody) error {
 	if s == nil {
 		return fmt.Errorf("cannot add route to nil sysrib server")
 	}
+	log.V(1).Infof("setZebraRoute: %+v", *zroute)
 	route := convertZebraRoute(niName, zroute)
 	if err := s.setRoute(niName, route); err != nil {
 		return err

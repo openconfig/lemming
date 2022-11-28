@@ -442,7 +442,7 @@ func AddLayer3PuntRule(ctx context.Context, c fwdpb.ServiceClient, portName stri
 	return nil
 }
 
-// nextHop returns the forwarding actions for a nexthop.
+// nextHopToActions returns the forwarding actions for a nexthop.
 func nextHopToActions(nh *dpb.NextHop) []*fwdpb.ActionDesc {
 	var nextHopIP []byte
 	if nhIPStr := nh.GetIp(); nhIPStr != "" {
