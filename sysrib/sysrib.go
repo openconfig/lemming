@@ -102,16 +102,15 @@ func (sr *SysRIB) getGUEHeader(address string) (GUEHeaders, bool, error) {
 			GUEPolicy: policy,
 			dstIP6:    dstIP6,
 		}, true, nil
-	} else {
-		var dstIP4 [4]byte
-		for i, octet := range ip.To4() {
-			dstIP4[i] = octet
-		}
-		return GUEHeaders{
-			GUEPolicy: policy,
-			dstIP4:    dstIP4,
-		}, true, nil
 	}
+	var dstIP4 [4]byte
+	for i, octet := range ip.To4() {
+		dstIP4[i] = octet
+	}
+	return GUEHeaders{
+		GUEPolicy: policy,
+		dstIP4:    dstIP4,
+	}, true, nil
 }
 
 type RoutePreference struct {
