@@ -16,19 +16,18 @@ require (
 	github.com/openconfig/goyang v1.1.0
 	github.com/openconfig/gribi v0.1.1-0.20220622162620-08d53dffce45
 	github.com/openconfig/gribigo v0.0.0-20220802181317-805e943d8714
-	github.com/openconfig/kne v0.1.6
-	github.com/openconfig/ondatra v0.0.0-20221104001721-66d3c2d6da80
-	github.com/openconfig/ygnmi v0.4.0
-	github.com/openconfig/ygot v0.25.2
+	github.com/openconfig/kne v0.1.5
+	github.com/openconfig/ygnmi v0.6.1
+	github.com/openconfig/ygot v0.25.3
 	github.com/p4lang/p4runtime v1.3.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.13.0
 	github.com/vishvananda/netlink v1.1.1-0.20210330154013-f5de75959ad5
 	github.com/wenovus/gobgp/v3 v3.0.0-20221024234659-8df3c6938ab7
-	golang.org/x/exp v0.0.0-20221002003631-540bb7301a08
-	golang.org/x/net v0.0.0-20221004154528-8021a29435af
-	golang.org/x/sys v0.0.0-20221010170243-090e33056c14
+	golang.org/x/exp v0.0.0-20221106115401-f9659909a136
+	golang.org/x/net v0.1.0
+	golang.org/x/sys v0.1.0
 	google.golang.org/grpc v1.50.0
 	google.golang.org/protobuf v1.28.1
 	k8s.io/api v0.24.3
@@ -144,11 +143,11 @@ require (
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.7.0 // indirect
 	go.uber.org/zap v1.19.1 // indirect
-	go.universe.tf/metallb v0.13.5 // indirect
-	golang.org/x/crypto v0.0.0-20220518034528-6f7dac969898 // indirect
+	go.universe.tf/metallb v0.10.3 // indirect
+	golang.org/x/crypto v0.1.0 // indirect
 	golang.org/x/oauth2 v0.0.0-20220411215720-9780585627b5 // indirect
-	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
-	golang.org/x/text v0.3.8 // indirect
+	golang.org/x/term v0.1.0 // indirect
+	golang.org/x/text v0.4.0 // indirect
 	golang.org/x/time v0.0.0-20220210224613-90d013bbcef8 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.2.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect

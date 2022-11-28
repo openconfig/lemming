@@ -256,6 +256,56 @@ func set(schema *ytypes.Schema, cache *cache.Cache, target string, req *gpb.SetR
 	return nil
 }
 
+const (
+	// InternalOrigin is a special gNMI path origin used to store schemaless values.
+	InternalOrigin = "lemming-internal"
+)
+
+// handleInternalOrigin handles SetRequests whose path has schemaless values.
+func (s *Server) handleInternalOrigin(req *gpb.SetRequest) (bool, error) {
+	notif := &gpb.Notification{
+		Prefix: &gpb.Path{
+			Origin: InternalOrigin,
+			Elem:   req.Prefix.Elem,
+			Target: req.Prefix.Target,
+		},
+		Timestamp: time.Now().UnixNano(),
+	}
+	var hasInternal bool
+
+	for _, del := range req.Delete {
+		if del.Origin == InternalOrigin {
+			hasInternal = true
+			notif.Delete = append(notif.Delete, del)
+		}
+	}
+	if hasInternal {
+		if err := s.c.cache.GnmiUpdate(notif); err != nil {
+			return true, err
+		}
+	}
+
+	notif.Delete = nil
+
+	for _, replace := range req.Replace {
+		if replace.Path.Origin == InternalOrigin {
+			hasInternal = true
+			notif.Update = append(notif.Update, replace)
+		}
+	}
+	for _, update := range req.Update {
+		if update.Path.Origin == InternalOrigin {
+			hasInternal = true
+			notif.Update = append(notif.Update, update)
+		}
+	}
+	log.V(2).Infof("internal origin notification: %v", notif)
+	if hasInternal {
+		return true, s.c.cache.GnmiUpdate(notif)
+	}
+	return false, nil
+}
+
 // Set implements lemming's gNMI Set operation.
 //
 // If the given SetRequest is schema compliant AND passes higher-level
@@ -290,6 +340,13 @@ func (s *Server) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResponse
 				}
 			}
 		}
+	}
+
+	if found, err := s.handleInternalOrigin(req); found {
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "error handling set request with internal origin: %v", err)
+		}
+		return &gpb.SetResponse{}, nil
 	}
 
 	switch gnmiMode {

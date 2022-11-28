@@ -588,6 +588,116 @@ func TestSetState(t *testing.T) {
 	}
 }
 
+func TestSetInternal(t *testing.T) {
+	ctx := context.Background()
+	gnmiServer, err := newServer(ctx, "local", true)
+	if err != nil {
+		t.Fatalf("cannot create server, got err: %v", err)
+	}
+	addr, err := startServer(gnmiServer)
+	if err != nil {
+		t.Fatalf("cannot start server, got err: %v", err)
+	}
+
+	pathStr := "/test/foo"
+	path := mustPath(pathStr)
+	path.Origin = InternalOrigin
+
+	got := []*upd{}
+	clientCtx, cancel := context.WithCancel(context.Background())
+	var sendErr, recvErr error
+	go func(ctx context.Context) {
+		defer cancel()
+		conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(local.NewCredentials()))
+		if err != nil {
+			sendErr = fmt.Errorf("cannot dial gNMI server, %v", err)
+			return
+		}
+
+		client := gpb.NewGNMIClient(conn)
+
+		if _, err := client.Set(metadata.AppendToOutgoingContext(ctx, TimestampMetadataKey, strconv.FormatInt(42, 10)), &gpb.SetRequest{
+			Prefix: mustTargetPath("local", "", false),
+			Replace: []*gpb.Update{{
+				Path: path,
+				Val:  &gpb.TypedValue{Value: &gpb.TypedValue_StringVal{StringVal: "test"}},
+			}},
+		}); err != nil {
+			sendErr = fmt.Errorf("set request failed: %v", err)
+			return
+		}
+
+		subc, err := client.Subscribe(ctx)
+		if err != nil {
+			sendErr = err
+			return
+		}
+		sr := &gpb.SubscribeRequest{
+			Request: &gpb.SubscribeRequest_Subscribe{
+				Subscribe: &gpb.SubscriptionList{
+					Prefix: mustTargetPath("local", "", false),
+					Mode:   gpb.SubscriptionList_ONCE,
+					Subscription: []*gpb.Subscription{{
+						Path: path,
+					}},
+				},
+			},
+		}
+
+		if err := subc.Send(sr); err != nil {
+			sendErr = fmt.Errorf("cannot send subscribe request %s, %v", prototext.Format(sr), err)
+			return
+		}
+
+		for {
+			in, err := subc.Recv()
+			if err == io.EOF {
+				return
+			}
+			if err != nil {
+				recvErr = err
+				return
+			}
+			got = append(got, toUpd(in)...)
+		}
+	}(clientCtx)
+
+	<-clientCtx.Done()
+
+	gnmiServer.c.Stop()
+
+	if sendErr != nil {
+		t.Errorf("got unexpected send error, %v", sendErr)
+	}
+
+	if recvErr != nil {
+		t.Errorf("got unexpected recv error, %v", recvErr)
+	}
+
+	if diff := cmp.Diff(got, []*upd{{
+		T:    VAL,
+		TS:   42,
+		Path: pathStr,
+		Val:  "test",
+	}, {
+		T: SYNC,
+	}}, cmpopts.IgnoreFields(upd{}, "TS")); diff != "" {
+		t.Fatalf("did not get expected updates, diff(-got,+want)\n:%s", diff)
+	}
+
+	// Test that timestamp is not 42: we don't want the timestamp metadata to affect config values.
+	if cmp.Equal(got, []*upd{{
+		T:    VAL,
+		TS:   42,
+		Path: pathStr,
+		Val:  "world",
+	}, {
+		T: SYNC,
+	}}) {
+		t.Fatalf("Expected error -- timestamp metadata should be ignored but it is not ignored.")
+	}
+}
+
 // TestSTREAM tests the STREAM mode of gnmit.
 func TestSTREAM(t *testing.T) {
 	ctx := context.Background()
