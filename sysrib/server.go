@@ -25,6 +25,8 @@ import (
 	"sync"
 
 	log "github.com/golang/glog"
+	"github.com/google/gopacket"
+	"github.com/google/gopacket/layers"
 	"github.com/openconfig/gribigo/afthelper"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/wenovus/gobgp/v3/pkg/zebra"
@@ -38,6 +40,7 @@ import (
 
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 	dpb "github.com/openconfig/lemming/proto/dataplane"
+	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 	pb "github.com/openconfig/lemming/proto/sysrib"
 )
 
@@ -49,6 +52,14 @@ const (
 	// ZAPIAddr is the connection address for ZAPI, which is in the form
 	// of "type:address", where type can either be a unix or tcp socket.
 	ZAPIAddr = "unix:/var/run/zserv.api"
+)
+
+// AdminDistance is the admin-distance of a routing protocol. See
+// https://docs.frrouting.org/en/latest/zebra.html#administrative-distance
+const (
+	AdminDistanceConnected = 0
+	AdminDistanceStatic    = 1
+	AdminDistanceBGP       = 20
 )
 
 // Server is the implementation of the Sysrib API.
@@ -246,10 +257,19 @@ type ResolvedRoute struct {
 }
 
 // ResolvedNexthop contains the information required to forward an IP packet.
+//
+// This type must be hashable, and uniquely identifies nexthops.
 type ResolvedNexthop struct {
 	afthelper.NextHopSummary
 
-	Port Interface
+	Port       Interface
+	GUEHeaders GUEHeaders
+}
+
+// HasGUE returns a bool indicating whether the resolved nexthop contains GUE
+// information.
+func (nh ResolvedNexthop) HasGUE() bool {
+	return nh.GUEHeaders != GUEHeaders{}
 }
 
 func vrfIDToNiName(vrfID uint32) string {
@@ -281,6 +301,53 @@ func prefixString(prefix *pb.Prefix) (string, error) {
 	}
 }
 
+// gueActions generates the forwarding actions that encapsulates a packet with
+// a UDP and then an IP header using the information from gueHeaders.
+func gueActions(gueHeaders GUEHeaders) ([]*fwdpb.ActionDesc, error) {
+	var ip gopacket.SerializableLayer
+	ip = &layers.IPv4{
+		Version:  4,
+		IHL:      5,
+		Protocol: layers.IPProtocolUDP,
+		SrcIP:    gueHeaders.srcIP4[:],
+		DstIP:    gueHeaders.dstIP4[:],
+	}
+	if gueHeaders.isV6 {
+		ip = &layers.IPv6{
+			Version:    6,
+			NextHeader: layers.IPProtocolUDP,
+			SrcIP:      gueHeaders.srcIP6[:],
+			DstIP:      gueHeaders.dstIP6[:],
+		}
+	}
+	udp := &layers.UDP{
+		SrcPort: 0, // TODO(wenbli): Implement hashing for srcPort.
+		DstPort: layers.UDPPort(gueHeaders.dstPort),
+		Length:  34,
+	}
+
+	buf := gopacket.NewSerializeBuffer()
+	if err := gopacket.SerializeLayers(buf, gopacket.SerializeOptions{}, ip, udp); err != nil {
+		return nil, fmt.Errorf("failed to serialize GUE headers: %v", err)
+	}
+
+	return []*fwdpb.ActionDesc{{
+		ActionType: fwdpb.ActionType_ACTION_TYPE_REPARSE,
+		Action: &fwdpb.ActionDesc_Reparse{
+			Reparse: &fwdpb.ReparseActionDesc{
+				HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4,
+				FieldIds: []*fwdpb.PacketFieldId{
+					{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP}},
+					{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT}},
+					{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT}},
+				},
+				// After the UDP header, the rest of the packet (original packet) will be classified as payload.
+				Prepend: buf.Bytes(),
+			},
+		},
+	}}, nil
+}
+
 func resolvedRouteToRouteRequest(r *ResolvedRoute) (*dpb.InsertRouteRequest, error) {
 	vrfID, err := niNameToVrfID(r.NIName)
 	if err != nil {
@@ -289,10 +356,17 @@ func resolvedRouteToRouteRequest(r *ResolvedRoute) (*dpb.InsertRouteRequest, err
 
 	var nexthops []*dpb.NextHop
 	for nh := range r.Nexthops {
+		var actions []*fwdpb.ActionDesc
+		if nh.HasGUE() {
+			if actions, err = gueActions(nh.GUEHeaders); err != nil {
+				return nil, fmt.Errorf("error retrieving GUE actions: %v", err)
+			}
+		}
 		nexthops = append(nexthops, &dpb.NextHop{
-			Port:   nh.Port.Name,
-			Ip:     nh.Address,
-			Weight: nh.Weight,
+			Port:               nh.Port.Name,
+			Ip:                 nh.Address,
+			Weight:             nh.Weight,
+			PreTransmitActions: actions,
 		})
 	}
 
@@ -521,15 +595,18 @@ func convertZebraRoute(niName string, zroute *zebra.IPRouteBody) *Route {
 			NetworkInstance: niName,
 		})
 	}
+	var routePref RoutePreference
+	switch zroute.Type {
+	case zebra.RouteBGP:
+		routePref.AdminDistance = AdminDistanceBGP
+	}
+	routePref.Metric = zroute.Metric
 	return &Route{
 		Prefix: fmt.Sprintf("%s/%d", zroute.Prefix.Prefix.String(), zroute.Prefix.PrefixLen),
 		// NextHops is the set of IP nexthops that the route uses if
 		// it is not a connected route.
-		NextHops: nexthops,
-		RoutePref: RoutePreference{
-			AdminDistance: zroute.Distance,
-			Metric:        zroute.Metric,
-		},
+		NextHops:  nexthops,
+		RoutePref: routePref,
 	}
 }
 
@@ -567,3 +644,29 @@ func (s *Server) setInterface(name string, ifindex int32, enabled bool) error {
 
 // TODO(wenbli): Do we need to handle interface deletion?
 // This is not required in the MVP since basic tests will just need to enable/disable interfaces.
+
+// setGUEPolicy adds a new GUE policy and triggers resolved route
+// computation and programming.
+func (s *Server) setGUEPolicy(prefix string, policy GUEPolicy) error {
+	if err := s.rib.SetGUEPolicy(prefix, policy); err != nil {
+		return fmt.Errorf("error while adding route to sysrib: %v", err)
+	}
+
+	if err := s.ResolveAndProgramDiff(); err != nil {
+		return fmt.Errorf("error while resolving sysrib: %v", err)
+	}
+	return nil
+}
+
+// deleteGUEPolicy adds a new GUE policy and triggers resolved route
+// computation and programming.
+func (s *Server) deleteGUEPolicy(prefix string) error {
+	if _, err := s.rib.DeleteGUEPolicy(prefix); err != nil {
+		return fmt.Errorf("error while adding route to sysrib: %v", err)
+	}
+
+	if err := s.ResolveAndProgramDiff(); err != nil {
+		return fmt.Errorf("error while resolving sysrib: %v", err)
+	}
+	return nil
+}
