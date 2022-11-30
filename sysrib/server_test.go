@@ -35,7 +35,6 @@ import (
 	"github.com/openconfig/ygot/ygot"
 	"google.golang.org/grpc"
 
-	dpb "github.com/openconfig/lemming/proto/dataplane"
 	pb "github.com/openconfig/lemming/proto/sysrib"
 )
 
@@ -58,8 +57,6 @@ type SetRouteRequestAction struct {
 }
 
 type FakeDataplane struct {
-	dpb.HALClient
-
 	mu             sync.Mutex
 	incomingRoutes []*ResolvedRoute
 

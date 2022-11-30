@@ -405,7 +405,7 @@ type Nexthop struct {
 
 	VrfId uint32       `protobuf:"varint,1,opt,name=vrf_id,json=vrfId,proto3" json:"vrf_id,omitempty"`
 	Type  Nexthop_Type `protobuf:"varint,2,opt,name=type,proto3,enum=sysrib.Nexthop_Type" json:"type,omitempty"`
-	//int32 ifindex = 3;
+	// int32 ifindex = 3;
 	Address string `protobuf:"bytes,3,opt,name=address,proto3" json:"address,omitempty"`
 	Weight  uint64 `protobuf:"varint,4,opt,name=weight,proto3" json:"weight,omitempty"`
 }

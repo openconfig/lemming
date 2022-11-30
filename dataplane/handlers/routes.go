@@ -32,13 +32,13 @@ import (
 )
 
 type route struct {
-	w   *ygnmi.Watcher[*dpb.InsertRouteRequest]
+	w   *ygnmi.Watcher[*dpb.Route]
 	fwd fwdpb.ServiceClient
 }
 
 // RouteQuery returns a ygnmi query for a route with the given prefix and vrf.
-func RouteQuery(vrf uint64, prefix string) ygnmi.ConfigQuery[*dpb.InsertRouteRequest] {
-	q, err := schemaless.NewConfig[*dpb.InsertRouteRequest](fmt.Sprintf("/dataplane/routes/route[prefix=%s][vrf=%d]", prefix, vrf), gnmi.InternalOrigin)
+func RouteQuery(vrf uint64, prefix string) ygnmi.ConfigQuery[*dpb.Route] {
+	q, err := schemaless.NewConfig[*dpb.Route](fmt.Sprintf("/dataplane/routes/route[prefix=%s][vrf=%d]", prefix, vrf), gnmi.InternalOrigin)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -46,7 +46,7 @@ func RouteQuery(vrf uint64, prefix string) ygnmi.ConfigQuery[*dpb.InsertRouteReq
 }
 
 var (
-	routesQuery ygnmi.WildcardQuery[*dpb.InsertRouteRequest]
+	routesQuery ygnmi.WildcardQuery[*dpb.Route]
 )
 
 // NewRoute returns a new route reconciler.
@@ -58,7 +58,7 @@ func NewRoute(fwd fwdpb.ServiceClient) *reconciler.BuiltReconciler {
 }
 
 func (r *route) start(ctx context.Context, client *ygnmi.Client) error {
-	r.w = ygnmi.WatchAll(ctx, client, routesQuery, func(v *ygnmi.Value[*dpb.InsertRouteRequest]) error {
+	r.w = ygnmi.WatchAll(ctx, client, routesQuery, func(v *ygnmi.Value[*dpb.Route]) error {
 		route, present := v.Val()
 		prefix := v.Path.Elem[2].Key["prefix"]
 		vrf, err := strconv.ParseUint(v.Path.Elem[2].Key["vrf"], 10, 64)
@@ -100,7 +100,7 @@ func (r *route) start(ctx context.Context, client *ygnmi.Client) error {
 }
 
 func init() {
-	q, err := schemaless.NewWildcard[*dpb.InsertRouteRequest]("/dataplane/routes/route[prefix=*][vrf=*]", gnmi.InternalOrigin)
+	q, err := schemaless.NewWildcard[*dpb.Route]("/dataplane/routes/route[prefix=*][vrf=*]", gnmi.InternalOrigin)
 	if err != nil {
 		log.Fatal(err)
 	}

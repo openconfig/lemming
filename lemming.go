@@ -30,6 +30,7 @@ import (
 	fgribi "github.com/openconfig/lemming/gribi"
 	fp4rt "github.com/openconfig/lemming/p4rt"
 	"github.com/openconfig/lemming/sysrib"
+	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
@@ -56,7 +57,6 @@ type Device struct {
 
 // New returns a new initialized device.
 func New(lis net.Listener, targetName, zapiURL string, opts ...grpc.ServerOption) (*Device, error) {
-	var sysDataplane *sysrib.Dataplane
 	var dplane *dataplane.Dataplane
 	var recs []reconciler.Reconciler
 
@@ -67,11 +67,6 @@ func New(lis net.Listener, targetName, zapiURL string, opts ...grpc.ServerOption
 		if err != nil {
 			return nil, err
 		}
-		hal, err := dplane.HALClient()
-		if err != nil {
-			return nil, err
-		}
-		sysDataplane = &sysrib.Dataplane{HALClient: hal}
 		recs = append(recs, dplane)
 	}
 
@@ -107,9 +102,13 @@ func New(lis net.Listener, targetName, zapiURL string, opts ...grpc.ServerOption
 	d.startServer()
 
 	cacheClient := gnmiServer.LocalClient()
+	yclient, err := ygnmi.NewClient(cacheClient, ygnmi.WithTarget(targetName))
+	if err != nil {
+		return nil, err
+	}
 
 	log.Infof("starting sysrib")
-	sysribServer, err := sysrib.New(sysDataplane)
+	sysribServer, err := sysrib.New(&sysrib.Dataplane{Client: yclient})
 	if err != nil {
 		return nil, err
 	}
