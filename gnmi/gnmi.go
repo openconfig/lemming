@@ -286,6 +286,7 @@ func (s *Server) handleInternalOrigin(req *gpb.SetRequest) (bool, error) {
 	}
 
 	notif.Delete = nil
+	hasInternal = false
 
 	for _, replace := range req.Replace {
 		if replace.Path.Origin == InternalOrigin {

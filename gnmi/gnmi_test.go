@@ -588,6 +588,7 @@ func TestSetState(t *testing.T) {
 	}
 }
 
+// TestSetInternal tests that the server is able to handle schemaless queries.
 func TestSetInternal(t *testing.T) {
 	ctx := context.Background()
 	gnmiServer, err := newServer(ctx, "local", true)
