@@ -412,8 +412,9 @@ github.com/imdario/mergo v0.3.10/go.mod h1:jmQim1M+e3UYxmgPu/WyfjB3N3VflVyUjjjwH
 github.com/imdario/mergo v0.3.12 h1:b6R2BslTbIEToALKP7LxUvijTsNI9TAe80pLWN2g/HU=
 github.com/imdario/mergo v0.3.12/go.mod h1:jmQim1M+e3UYxmgPu/WyfjB3N3VflVyUjjjwH0dnCYA=
 github.com/inconshreveable/mousetrap v1.0.0/go.mod h1:PxqpIevigyE2G7u3NXJIT2ANytuPF1OarO4DADm73n8=
-github.com/inconshreveable/mousetrap v1.0.1 h1:U3uMjPSQEBMNp1lFxmllqCPM6P5u/Xq7Pgzkat/bFNc=
 github.com/inconshreveable/mousetrap v1.0.1/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
+github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2s0bqwp9tc8=
+github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
 github.com/jessevdk/go-flags v1.4.0/go.mod h1:4FA24M0QyGHXBuZZK/XkWh8h0e1EYbRYJSGM75WSRxI=
 github.com/jonboulle/clockwork v0.1.0/go.mod h1:Ii8DK3G1RaLaWxj9trq07+26W01tbo22gdxWY5EU2bo=
 github.com/jonboulle/clockwork v0.2.2/go.mod h1:Pkfl5aHPm1nk2H9h0bjmnJD/BcgbGXUBGnn1kMkgxc8=
@@ -564,12 +565,10 @@ github.com/openconfig/grpctunnel v0.0.0-20220819142823-6f5422b8ca70 h1:t6SvvdfWC
 github.com/openconfig/grpctunnel v0.0.0-20220819142823-6f5422b8ca70/go.mod h1:OmTWe7RyZj2CIzIgy4ovEBzCLBJzRvWSZmn7u02U9gU=
 github.com/openconfig/kne v0.1.6 h1:NcuRPSuvcbKHB+mWxztlQ8nuZRScMRsOX5T7s//jLXM=
 github.com/openconfig/kne v0.1.6/go.mod h1:Ua3W+2CbNsf8zk3v8KiFk7XUUN2ISYhvwjFXNqOpE2Y=
-github.com/openconfig/ondatra v0.0.0-20221123212123-b5f50a04bf4d h1:eGu4UQx1gv4map7LWxBGzZmKCAzR9lNdt+4XN7R8q1M=
-github.com/openconfig/ondatra v0.0.0-20221123212123-b5f50a04bf4d/go.mod h1:4tK6z87ItU2/JG5/tT5r59h3U9se9FCX915h2D++eMw=
+github.com/openconfig/ondatra v0.0.0-20221130193814-844b60762564 h1:goZUi2Jz2m5pISEHuacg4/kjB0HA8rJc6b8tBRdxy1g=
+github.com/openconfig/ondatra v0.0.0-20221130193814-844b60762564/go.mod h1:utsQbWXJuLhgnE6DzEK1qbVKb71tt0mmvqg/zKYNvjg=
 github.com/openconfig/testt v0.0.0-20220311054427-efbb1a32ec07 h1:X631iD/B0ximGFb5P9LY5wHju4SiedxUhc5UZEo7VSw=
 github.com/openconfig/testt v0.0.0-20220311054427-efbb1a32ec07/go.mod h1:bmpU0kIsCiXuncozViVuQx1HqolC3C94H7lD9KKmoTo=
-github.com/openconfig/ygnmi v0.6.1 h1:xsNfSYI1o2YCQWu22dca4wb8J2/tTxx12tDYGqVWyKg=
-github.com/openconfig/ygnmi v0.6.1/go.mod h1:HrffgNKKJALh2KuzxiKgaMZ+GdIiyBrpF/mb90yZYlM=
 github.com/openconfig/ygnmi v0.6.2 h1:GParczEp0tSoWK9lLdoIyKy3tZCjH6igpJHFQT6HSZk=
 github.com/openconfig/ygnmi v0.6.2/go.mod h1:HrffgNKKJALh2KuzxiKgaMZ+GdIiyBrpF/mb90yZYlM=
 github.com/openconfig/ygot v0.6.0/go.mod h1:o30svNf7O0xK+R35tlx95odkDmZWS9JyWWQSmIhqwAs=
@@ -1200,8 +1199,8 @@ google.golang.org/genproto v0.0.0-20210811021853-ddbe55d93216/go.mod h1:cFeNkxwy
 google.golang.org/genproto v0.0.0-20210831024726-fe130286e0e2/go.mod h1:eFjDcFEctNawg4eG61bRv87N7iHBWyVhJu7u1kqDUXY=
 google.golang.org/genproto v0.0.0-20220107163113-42d7afdf6368/go.mod h1:5CzLGKJ67TSI2B9POpiiyGha0AjJvZIUgRMt1dSmuhc=
 google.golang.org/genproto v0.0.0-20220608133413-ed9918b62aac/go.mod h1:KEWEmljWE5zPzLBa/oHl6DaEt9LmfH6WtH1OHIvleBA=
-google.golang.org/genproto v0.0.0-20221118155620-16455021b5e6 h1:a2S6M0+660BgMNl++4JPlcAO/CjkqYItDEZwkoDQK7c=
-google.golang.org/genproto v0.0.0-20221118155620-16455021b5e6/go.mod h1:rZS5c/ZVYMaOGBfO68GWtjOw/eLaZM1X6iVtgjZ+EWg=
+google.golang.org/genproto v0.0.0-20221130183247-a2ec334bae6f h1:G9JGt1JAvAkcv0+x6gGEWkgjEPxsI3fQhNq6L/DJTZ8=
+google.golang.org/genproto v0.0.0-20221130183247-a2ec334bae6f/go.mod h1:rZS5c/ZVYMaOGBfO68GWtjOw/eLaZM1X6iVtgjZ+EWg=
 google.golang.org/grpc v1.19.0/go.mod h1:mqu4LbDTu4XGKhr4mRzUsmM4RtVoemTSY81AxZiDr8c=
 google.golang.org/grpc v1.20.1/go.mod h1:10oTOabMzJvdu6/UiuZezV6QK5dSlG84ov/aaiqXj38=
 google.golang.org/grpc v1.21.1/go.mod h1:oYelfM1adQP15Ek0mdvEgi9Df8B9CZIaU1084ijfRaM=

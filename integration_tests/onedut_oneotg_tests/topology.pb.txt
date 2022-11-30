@@ -1,4 +1,4 @@
-name: "ixia-c"
+name: "onedut-oneotg"
 nodes: {
     name: "otg"
     vendor: KEYSIGHT

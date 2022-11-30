@@ -22,12 +22,5 @@ export PATH=${PATH}:$gopath/bin
 
 cd /tmp/workspace
 kne deploy ~/kne-internal/deploy/kne/kind-bridge.yaml
-make deploy itest
-make clean
-make deploy2 itest2
-make clean
-sleep 5
-make deploy3 itest3
-make clean
-sleep 5
-make deploy3 itest4
+make load
+make itest

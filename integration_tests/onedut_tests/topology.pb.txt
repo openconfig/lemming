@@ -1,0 +1,12 @@
+name: "onedut"
+nodes: {
+    name: "lemming"
+    vendor: OPENCONFIG
+    config: {
+        args: "--target=lemming"
+        args: "--enable_dataplane"
+        args: "--enable_tls"
+        args: "--alsologtostderr"
+        args: "--v=1"
+    }
+}
