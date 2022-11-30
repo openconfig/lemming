@@ -82,7 +82,7 @@ func (d *Dataplane) Start(ctx context.Context, c gpb.GNMIClient, target string) 
 	if err != nil {
 		return err
 	}
-	d.reconcilers = append(d.reconcilers, handlers.NewInterface(fc))
+	d.reconcilers = append(d.reconcilers, handlers.NewInterface(fc), handlers.NewRoute(fc))
 	d.fwd = fc
 	if err := engine.SetupForwardingTables(ctx, fc); err != nil {
 		return fmt.Errorf("failed to setup forwarding tables: %v", err)
