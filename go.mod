@@ -18,7 +18,7 @@ require (
 	github.com/openconfig/gribigo v0.0.0-20220802181317-805e943d8714
 	github.com/openconfig/kne v0.1.6
 	github.com/openconfig/ondatra v0.0.0-20221123212123-b5f50a04bf4d
-	github.com/openconfig/ygnmi v0.6.1
+	github.com/openconfig/ygnmi v0.6.2
 	github.com/openconfig/ygot v0.25.3
 	github.com/p4lang/p4runtime v1.3.0
 	github.com/sirupsen/logrus v1.8.1
