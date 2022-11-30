@@ -131,7 +131,7 @@ func (d *Dataplane) ProgramRoute(r *ResolvedRoute) error {
 // New instantiates server to handle client queries.
 //
 // If dp is nil, then a connection attempt is made.
-func New(dp dataplaneAPI) (*Server, error) {
+func New() (*Server, error) {
 	rib, err := NewSysRIB(nil)
 	if err != nil {
 		return nil, err
@@ -143,7 +143,6 @@ func New(dp dataplaneAPI) (*Server, error) {
 		bgpGUEPolicies:   map[string]GUEPolicy{},
 		programmedRoutes: map[RouteKey]*ResolvedRoute{},
 		resolvedRoutes:   map[RouteKey]*Route{},
-		dataplane:        dp,
 	}
 	return s, nil
 }
@@ -162,6 +161,8 @@ func (s *Server) Start(gClient gpb.GNMIClient, target, zapiURL string) error {
 	if err != nil {
 		return err
 	}
+	s.dataplane = &Dataplane{Client: yclient}
+
 	if err := s.monitorConnectedIntfs(yclient); err != nil {
 		return err
 	}

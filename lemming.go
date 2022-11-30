@@ -30,7 +30,6 @@ import (
 	fgribi "github.com/openconfig/lemming/gribi"
 	fp4rt "github.com/openconfig/lemming/p4rt"
 	"github.com/openconfig/lemming/sysrib"
-	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
@@ -102,13 +101,9 @@ func New(lis net.Listener, targetName, zapiURL string, opts ...grpc.ServerOption
 	d.startServer()
 
 	cacheClient := gnmiServer.LocalClient()
-	yclient, err := ygnmi.NewClient(cacheClient, ygnmi.WithTarget(targetName))
-	if err != nil {
-		return nil, err
-	}
 
 	log.Infof("starting sysrib")
-	sysribServer, err := sysrib.New(&sysrib.Dataplane{Client: yclient})
+	sysribServer, err := sysrib.New()
 	if err != nil {
 		return nil, err
 	}

@@ -90,6 +90,10 @@ func (r *route) start(ctx context.Context, client *ygnmi.Client) error {
 			}
 			return ygnmi.Continue
 		}
+		if len(route.NextHops) == 0 {
+			log.Warningf("no next hops for route insert or update")
+			return ygnmi.Continue
+		}
 		if err := engine.AddIPRoute(ctx, r.fwd, isIPv4, ip, ipNet.Mask, route.GetNextHops()); err != nil {
 			log.Warningf("failed to add route: %v", err)
 		}
