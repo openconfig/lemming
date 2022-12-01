@@ -71,8 +71,7 @@ func Dial() (net.Conn, error) {
 
 func ZAPIServerStart(t *testing.T) *ZServer {
 	t.Helper()
-	dp := NewFakeDataplane()
-	sysribServer, err := New(dp)
+	sysribServer, err := New()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -165,7 +164,7 @@ func testRouteAdd(t *testing.T) {
 // client dials to the ZAPI server.
 func testRouteRedistribution(t *testing.T, routeReadyBeforeDial bool) {
 	dp := NewFakeDataplane()
-	s, err := New(dp)
+	s, err := New()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -179,6 +178,7 @@ func testRouteRedistribution(t *testing.T, routeReadyBeforeDial bool) {
 	if err := s.Start(client, "local", "unix:/tmp/zserv.api"); err != nil {
 		t.Fatalf("cannot start sysrib server, %v", err)
 	}
+	s.dataplane = dp
 	defer s.Stop()
 
 	c, err := ygnmi.NewClient(client, ygnmi.WithTarget("local"))

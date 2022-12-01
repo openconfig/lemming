@@ -35,7 +35,6 @@ import (
 	"github.com/openconfig/ygot/ygot"
 	"google.golang.org/grpc"
 
-	dpb "github.com/openconfig/lemming/proto/dataplane"
 	pb "github.com/openconfig/lemming/proto/sysrib"
 )
 
@@ -58,8 +57,6 @@ type SetRouteRequestAction struct {
 }
 
 type FakeDataplane struct {
-	dpb.HALClient
-
 	mu             sync.Mutex
 	incomingRoutes []*ResolvedRoute
 
@@ -792,7 +789,7 @@ func TestServer(t *testing.T) {
 
 			dp := NewFakeDataplane()
 			dp.SetupFailRoutes(tt.inFailRoutes)
-			s, err := New(dp)
+			s, err := New()
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -802,6 +799,7 @@ func TestServer(t *testing.T) {
 			if err := s.Start(client, "local", ""); err != nil {
 				t.Fatalf("cannot start sysrib server, %v", err)
 			}
+			s.dataplane = dp
 			defer s.Stop()
 
 			c, err := ygnmi.NewClient(client, ygnmi.WithTarget("local"))
@@ -853,7 +851,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 	}()
 
 	dp := NewFakeDataplane()
-	s, err := New(dp)
+	s, err := New()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -863,6 +861,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 	if err := s.Start(client, "local", ""); err != nil {
 		t.Fatalf("cannot start sysrib server, %v", err)
 	}
+	s.dataplane = dp
 	defer s.Stop()
 
 	c, err := ygnmi.NewClient(client, ygnmi.WithTarget("local"))

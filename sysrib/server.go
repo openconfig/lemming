@@ -36,6 +36,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/openconfig/lemming/dataplane/handlers"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 
@@ -113,7 +114,7 @@ type dataplaneAPI interface {
 // API. Once the dataplane API is stable, then we'll want to test at the API
 // layer instead.
 type Dataplane struct {
-	dpb.HALClient
+	Client *ygnmi.Client
 }
 
 // programRoute programs the route in the dataplane, returning an error on failure.
@@ -123,14 +124,14 @@ func (d *Dataplane) ProgramRoute(r *ResolvedRoute) error {
 	if err != nil {
 		return err
 	}
-	_, err = d.InsertRoute(context.Background(), rr)
+	_, err = ygnmi.Replace(context.TODO(), d.Client, handlers.RouteQuery(rr.GetVrf(), rr.GetPrefix()), rr, ygnmi.WithSetFallbackEncoding())
 	return err
 }
 
 // New instantiates server to handle client queries.
 //
 // If dp is nil, then a connection attempt is made.
-func New(dp dataplaneAPI) (*Server, error) {
+func New() (*Server, error) {
 	rib, err := NewSysRIB(nil)
 	if err != nil {
 		return nil, err
@@ -142,7 +143,6 @@ func New(dp dataplaneAPI) (*Server, error) {
 		bgpGUEPolicies:   map[string]GUEPolicy{},
 		programmedRoutes: map[RouteKey]*ResolvedRoute{},
 		resolvedRoutes:   map[RouteKey]*Route{},
-		dataplane:        dp,
 	}
 	return s, nil
 }
@@ -161,6 +161,8 @@ func (s *Server) Start(gClient gpb.GNMIClient, target, zapiURL string) error {
 	if err != nil {
 		return err
 	}
+	s.dataplane = &Dataplane{Client: yclient}
+
 	if err := s.monitorConnectedIntfs(yclient); err != nil {
 		return err
 	}
@@ -453,7 +455,7 @@ func gueActions(gueHeaders GUEHeaders) ([]*fwdpb.ActionDesc, error) {
 	}}, nil
 }
 
-func resolvedRouteToRouteRequest(r *ResolvedRoute) (*dpb.InsertRouteRequest, error) {
+func resolvedRouteToRouteRequest(r *ResolvedRoute) (*dpb.Route, error) {
 	vrfID, err := niNameToVrfID(r.NIName)
 	if err != nil {
 		return nil, err
@@ -475,7 +477,7 @@ func resolvedRouteToRouteRequest(r *ResolvedRoute) (*dpb.InsertRouteRequest, err
 		})
 	}
 
-	return &dpb.InsertRouteRequest{
+	return &dpb.Route{
 		Vrf:      uint64(vrfID),
 		Prefix:   r.Prefix,
 		NextHops: nexthops,
