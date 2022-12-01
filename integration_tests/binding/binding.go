@@ -56,6 +56,10 @@ type configFields struct {
 	Password   string
 }
 
+var (
+	keep = flag.Bool("keep", false, "Keep topology deployed after test")
+)
+
 // Get returns the custom lemming binding.
 func Get(topoDir string) func() (binding.Binding, error) {
 	dir, _ := filepath.Abs(topoDir)
@@ -104,7 +108,7 @@ func (lb *LemmingBind) Release(ctx context.Context) error {
 	if err := lb.Binding.Release(ctx); err != nil {
 		return err
 	}
-	if !lb.created {
+	if !lb.created || *keep {
 		return nil
 	}
 	if out, err := exec.Command("kne", "delete", lb.topoFile).CombinedOutput(); err != nil {
@@ -182,6 +186,8 @@ func (lb *LemmingBind) Reserve(ctx context.Context, tb *proto.Testbed, runTime t
 			return nil, fmt.Errorf("failed create topology: %v output:\n%s", err, string(out))
 		}
 		lb.created = true
+		// TODO: Wait for all pods to be ready.
+		time.Sleep(5 * time.Second)
 	} else if err != nil {
 		return nil, err
 	}

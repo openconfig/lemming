@@ -10,7 +10,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/h-fam/errdiff v1.0.2
 	github.com/kentik/patricia v1.2.0
-	github.com/open-traffic-generator/snappi/gosnappi v0.9.8
+	github.com/open-traffic-generator/snappi/gosnappi v0.9.6
 	github.com/openconfig/gnmi v0.0.0-20220920173703-480bf53a74d2
 	github.com/openconfig/gnoi v0.0.0-20221111175026-79709cdf28e1
 	github.com/openconfig/gnsi v0.0.0-20220906172358-1eda48d90de6
@@ -172,4 +172,7 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-replace k8s.io/kubectl => k8s.io/kubectl v0.24.3
+replace (
+	github.com/open-traffic-generator/snappi/gosnappi => github.com/open-traffic-generator/snappi/gosnappi v0.9.8
+	k8s.io/kubectl => k8s.io/kubectl v0.24.3
+)
