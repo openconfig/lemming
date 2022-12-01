@@ -66,7 +66,7 @@ func Get(topoDir string) func() (binding.Binding, error) {
 
 	return func() (binding.Binding, error) {
 		fmt.Println("Checking for KNE CLI installation")
-		knePath, err := getOrInstallKNE()
+		knePath, err := getKNECLIPath()
 		if err != nil {
 			return nil, err
 		}
@@ -190,20 +190,10 @@ func (lb *LemmingBind) Reserve(ctx context.Context, tb *proto.Testbed, runTime t
 	return lb.Binding.Reserve(ctx, tb, runTime, waitTime, partial)
 }
 
-func getOrInstallKNE() (string, error) {
+func getKNECLIPath() (string, error) {
 	path, err := exec.LookPath("kne")
 	if err != nil {
-		out, err := exec.Command("go", "install", "github.com/openconfig/kne/kne_cli").CombinedOutput()
-		if err != nil {
-			return "", fmt.Errorf("failed install kne cli: %v output:\n%s", err, string(out))
-		}
-		if err := os.Rename(os.ExpandEnv("$GOPATH/bin/kne_cli"), os.ExpandEnv("$GOPATH/bin/kne")); err != nil {
-			return "", fmt.Errorf("failed to rename kne cli: %v", err)
-		}
-		path, err = exec.LookPath("kne")
-		if err != nil {
-			return "", fmt.Errorf("failed to get after installing: %v", err)
-		}
+		return exec.LookPath("kne_cli")
 	}
 	return path, nil
 }
