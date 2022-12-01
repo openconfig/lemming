@@ -65,11 +65,14 @@ func Get(topoDir string) func() (binding.Binding, error) {
 	flag.Set("testbed", testbedFile)
 
 	return func() (binding.Binding, error) {
+		fmt.Println("Checking for KNE CLI installation")
 		knePath, err := getOrInstallKNE()
 		if err != nil {
 			return nil, err
 		}
-		if err := writeKNEBingCfg(knePath, topoFile); err != nil {
+
+		fmt.Println("Creating knebind config file")
+		if err := writeKNEBindCfg(knePath, topoFile); err != nil {
 			return nil, err
 		}
 		b, err := kinit.Init()
@@ -169,10 +172,12 @@ func (lb *LemmingBind) Reserve(ctx context.Context, tb *proto.Testbed, runTime t
 
 	go elect.Run(electCtx)
 
+	fmt.Println("Waiting for topology lock")
 	<-ready
 
 	// Check if topology already exists, if not deploy it.
 	if _, err := client.CoreV1().Namespaces().Get(ctx, topo.GetName(), metav1.GetOptions{}); apierrors.IsNotFound(err) {
+		fmt.Println("Deploying KNE topology")
 		if out, err := exec.Command("kne", "create", lb.topoFile).CombinedOutput(); err != nil {
 			return nil, fmt.Errorf("failed create topology: %v output:\n%s", err, string(out))
 		}
@@ -181,6 +186,7 @@ func (lb *LemmingBind) Reserve(ctx context.Context, tb *proto.Testbed, runTime t
 		return nil, err
 	}
 
+	fmt.Println("Reserving KNE topology")
 	return lb.Binding.Reserve(ctx, tb, runTime, waitTime, partial)
 }
 
@@ -202,7 +208,7 @@ func getOrInstallKNE() (string, error) {
 	return path, nil
 }
 
-func writeKNEBingCfg(knePath, topoFile string) error {
+func writeKNEBindCfg(knePath, topoFile string) error {
 	cf := &configFields{
 		Kubeconfig: os.ExpandEnv("$HOME/.kube/config"),
 		CLI:        knePath,
