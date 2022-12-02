@@ -1,9 +1,13 @@
 FROM docker.io/golang:1.18-bullseye AS build
+ARG license=true
 WORKDIR /build
+RUN go install github.com/google/go-licenses@latest
 COPY go.* ./
 RUN go mod download
 COPY . .
 RUN --mount=type=cache,target=/root/.cache/go-build go build -o /out/lemming ./cmd/lemming 
+RUN if [ "${license}" = "true" ] ; then go-licenses save ./cmd/lemming --save_path THIRD_PARTY_LICENSES ; else mkdir THIRD_PARTY_LICENSES ; fi
 
 FROM docker.io/debian:bullseye
 COPY --from=build /out/lemming /lemming/lemming
+COPY --from=build /build/THIRD_PARTY_LICENSES /lemming/THIRD_PARTY_LICENSES
