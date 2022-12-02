@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package binding contains an Ondatra binding wrapping knebind for lemming.
+// Package binding wraps knebind to allow running integration tests without the need to supply kne/ondatra flags for configuration files.
 package binding
 
 import (
@@ -60,7 +60,8 @@ var (
 	keep = flag.Bool("keep", false, "Keep topology deployed after test")
 )
 
-// Get returns the custom lemming binding.
+// Get returns the custom lemming binding. The topoDir is the relative path to a
+// directory containing the Ondatra testbed and KNE topology pb.txt files.
 func Get(topoDir string) func() (binding.Binding, error) {
 	dir, _ := filepath.Abs(topoDir)
 	testbedFile := filepath.Join(dir, "testbed.pb.txt")
