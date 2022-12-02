@@ -36,6 +36,7 @@ import (
 	"github.com/openconfig/lemming/gnmi/fakedevice"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
+	"github.com/openconfig/lemming/integration_tests/binding"
 	"github.com/openconfig/ondatra"
 	"github.com/openconfig/ondatra/gnmi"
 	"github.com/openconfig/ondatra/gnmi/otg/otgpath"
@@ -43,8 +44,6 @@ import (
 	"github.com/openconfig/ygot/ygot"
 
 	gribipb "github.com/openconfig/gribi/v1/proto/service"
-
-	kinit "github.com/openconfig/ondatra/knebind/init"
 )
 
 // Settings for configuring the baseline testbed with the test
@@ -78,7 +77,7 @@ const (
 )
 
 func TestMain(m *testing.M) {
-	ondatra.RunTests(m, kinit.Init)
+	ondatra.RunTests(m, binding.Get(".."))
 }
 
 // Attributes bundles some common attributes for devices and/or interfaces.
@@ -241,7 +240,6 @@ func configureDUT2(t *testing.T, dut *ondatra.DUTDevice) {
 func waitOTGARPEntry(t *testing.T) {
 	ate := ondatra.ATE(t, "ate")
 
-	ate.OTG().Telemetry().InterfaceAny().Ipv4NeighborAny().LinkLayerAddress()
 	val, ok := gnmi.WatchAll(t, ate.OTG(), otgpath.Root().InterfaceAny().Ipv4NeighborAny().LinkLayerAddress().State(), time.Minute, func(v *ygnmi.Value[string]) bool {
 		return v.IsPresent()
 	}).Await(t)
@@ -278,8 +276,8 @@ func testTraffic(t *testing.T, ate *ondatra.ATEDevice, top gosnappi.Config, srcE
 
 	time.Sleep(5 * time.Second)
 
-	txPkts := otg.Telemetry().Flow("Flow").Counters().OutPkts().Get(t)
-	rxPkts := otg.Telemetry().Flow("Flow").Counters().InPkts().Get(t)
+	txPkts := gnmi.Get(t, otg, gnmi.OTG().Flow("Flow").Counters().OutPkts().State())
+	rxPkts := gnmi.Get(t, otg, gnmi.OTG().Flow("Flow").Counters().InPkts().State())
 	lossPct := (txPkts - rxPkts) * 100 / txPkts
 	return float32(lossPct)
 }

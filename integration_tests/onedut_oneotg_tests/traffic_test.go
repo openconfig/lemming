@@ -24,6 +24,7 @@ import (
 	"github.com/openconfig/gribigo/client"
 	"github.com/openconfig/gribigo/constants"
 	"github.com/openconfig/gribigo/fluent"
+	"github.com/openconfig/lemming/integration_tests/binding"
 	"github.com/openconfig/ondatra"
 	"github.com/openconfig/ondatra/gnmi"
 	"github.com/openconfig/ondatra/gnmi/oc"
@@ -33,12 +34,10 @@ import (
 	"github.com/openconfig/ygot/ygot"
 
 	gribipb "github.com/openconfig/gribi/v1/proto/service"
-
-	kinit "github.com/openconfig/ondatra/knebind/init"
 )
 
 func TestMain(m *testing.M) {
-	ondatra.RunTests(m, kinit.Init)
+	ondatra.RunTests(m, binding.Get("."))
 }
 
 // Settings for configuring the baseline testbed with the test
@@ -165,7 +164,6 @@ func configureDUT(t *testing.T, dut *ondatra.DUTDevice) {
 func waitOTGARPEntry(t *testing.T) {
 	ate := ondatra.ATE(t, "ate")
 
-	ate.OTG().Telemetry().InterfaceAny().Ipv4NeighborAny().LinkLayerAddress()
 	val, ok := gnmi.WatchAll(t, ate.OTG(), otgpath.Root().InterfaceAny().Ipv4NeighborAny().LinkLayerAddress().State(), time.Minute, func(v *ygnmi.Value[string]) bool {
 		return v.IsPresent()
 	}).Await(t)
@@ -202,8 +200,8 @@ func testTraffic(t *testing.T, ate *ondatra.ATEDevice, top gosnappi.Config, srcE
 
 	time.Sleep(5 * time.Second)
 
-	txPkts := otg.Telemetry().Flow("Flow").Counters().OutPkts().Get(t)
-	rxPkts := otg.Telemetry().Flow("Flow").Counters().InPkts().Get(t)
+	txPkts := gnmi.Get(t, otg, gnmi.OTG().Flow("Flow").Counters().OutPkts().State())
+	rxPkts := gnmi.Get(t, otg, gnmi.OTG().Flow("Flow").Counters().InPkts().State())
 	lossPct := (txPkts - rxPkts) * 100 / txPkts
 	return float32(lossPct)
 }
@@ -365,8 +363,8 @@ func TestIPv4Entry(t *testing.T) {
 
 			otg := ate.OTG()
 			// counters are not erased, so have to accumulate the packets from previous subtests.
-			txPkts += otg.Telemetry().Flow("Flow").Counters().OutPkts().Get(t)
-			rxPkts += otg.Telemetry().Flow("Flow").Counters().InPkts().Get(t)
+			txPkts += gnmi.Get(t, otg, gnmi.OTG().Flow("Flow").Counters().OutPkts().State())
+			rxPkts += gnmi.Get(t, otg, gnmi.OTG().Flow("Flow").Counters().InPkts().State())
 			testCounters(t, dut, txPkts, rxPkts)
 
 			gribic.Flush(context.Background(), &gribipb.FlushRequest{
