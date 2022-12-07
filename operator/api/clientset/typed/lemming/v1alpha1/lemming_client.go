@@ -84,7 +84,7 @@ func New(c rest.Interface) *LemmingV1alpha1Client {
 func setConfigDefaults(config *rest.Config) error {
 	gv := v1alpha1.SchemeGroupVersion
 	config.GroupVersion = &gv
-	config.APIPath = "api"
+	config.APIPath = "/apis"
 	config.NegotiatedSerializer = scheme.Codecs.WithoutConversion()
 
 	if config.UserAgent == "" {
