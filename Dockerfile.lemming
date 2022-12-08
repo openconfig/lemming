@@ -10,4 +10,4 @@ RUN if [ "${license}" = "true" ] ; then go-licenses save ./cmd/lemming --save_pa
 
 FROM docker.io/debian:bullseye
 COPY --from=build /out/lemming /lemming/lemming
-COPY --from=build /build/THIRD_PARTY_LICENSES /lemming/THIRD_PARTY_LICENSES
+COPY --from=build /build/THIRD_PARTY_LICENSES /lemming/THIRD_PARTY

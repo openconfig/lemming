@@ -46,7 +46,7 @@ manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and Cust
 .PHONY: generate
 generate: client-gen controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
-	$(CLIENTGEN) --input="lemming/v1alpha1" --clientset-api-path=api --input-base=github.com/openconfig/lemming/operator/api -p github.com/openconfig/lemming/operator/api --clientset-name=clientset -h hack/boilerplate.go.txt
+	$(CLIENTGEN) --input="lemming/v1alpha1" --input-base=github.com/openconfig/lemming/operator/api -p github.com/openconfig/lemming/operator/api --clientset-name=clientset -h hack/boilerplate.go.txt
 	cp -r github.com/openconfig/lemming/operator/api/clientset api
 	rm -rf github.com/
 
