@@ -93,6 +93,7 @@ func TestReconcile(t *testing.T) {
 					"app":  "lemming",
 					"topo": "fake",
 				},
+				Type: corev1.ServiceTypeLoadBalancer,
 				Ports: []corev1.ServicePort{{
 					Name:       "gnmi",
 					Protocol:   corev1.ProtocolTCP,
@@ -116,7 +117,7 @@ func TestReconcile(t *testing.T) {
 					Name:    "lemming",
 					Image:   "lemming:latest",
 					Command: []string{"./test"},
-					Args:    []string{"--alsologtostderr"},
+					Args:    []string{"--alsologtostderr", "--target=lemming"},
 					Env: []corev1.EnvVar{{
 						Name:  "ENV_TEST",
 						Value: "FOO",
