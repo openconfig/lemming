@@ -19,7 +19,13 @@ module openconfig-bgp-gue {
 
   description
     "This module defines configuration and operational state
-    data for BGP-triggered GUE Policies.";
+    data for BGP-triggered GUE Policies.
+
+    NOTE: This is a DRAFT for demonstrating this feature that only contains a
+    subset of the complete configuration of this feature. It WILL be different
+    from the final YANG to be checked into github.com/openconfig/public as more
+    configuration knobs are applied, and this feature is viewed in context of
+    other features.";
 
   oc-ext:openconfig-version "0.1.0";
 
