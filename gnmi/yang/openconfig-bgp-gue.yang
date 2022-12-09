@@ -85,10 +85,16 @@ module openconfig-bgp-gue {
         since the IPv4 policy must be used for IPv4 next-hop addresses.";
     }
 
-    leaf dst-port {
+    leaf dst-port-ipv4 {
       type oc-inet:port-number;
       description
-        "Destination port of UDP encap for the IPv6 payload.";
+        "Destination port of UDP encap for an IPv4 payload.";
+    }
+
+    leaf dst-port-ipv6 {
+      type oc-inet:port-number;
+      description
+        "Destination port of UDP encap for an IPv6 payload.";
     }
 
     leaf src-ip {

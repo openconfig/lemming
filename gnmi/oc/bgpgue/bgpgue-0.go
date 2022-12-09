@@ -860,14 +860,14 @@ func (n *BgpGueIpv4PolicyPathAny) SrcIp() *BgpGueIpv4Policy_SrcIpPathAny {
 	}
 }
 
-// BgpGueIpv6Policy_DstPortPath represents the /openconfig-bgp-gue/bgp-gue-ipv6-policies/bgp-gue-ipv6-policy/state/dst-port YANG schema element.
-type BgpGueIpv6Policy_DstPortPath struct {
+// BgpGueIpv6Policy_DstPortIpv4Path represents the /openconfig-bgp-gue/bgp-gue-ipv6-policies/bgp-gue-ipv6-policy/state/dst-port-ipv4 YANG schema element.
+type BgpGueIpv6Policy_DstPortIpv4Path struct {
 	*ygnmi.NodePath
 	parent ygnmi.PathStruct
 }
 
-// BgpGueIpv6Policy_DstPortPathAny represents the wildcard version of the /openconfig-bgp-gue/bgp-gue-ipv6-policies/bgp-gue-ipv6-policy/state/dst-port YANG schema element.
-type BgpGueIpv6Policy_DstPortPathAny struct {
+// BgpGueIpv6Policy_DstPortIpv4PathAny represents the wildcard version of the /openconfig-bgp-gue/bgp-gue-ipv6-policies/bgp-gue-ipv6-policy/state/dst-port-ipv4 YANG schema element.
+type BgpGueIpv6Policy_DstPortIpv4PathAny struct {
 	*ygnmi.NodePath
 	parent ygnmi.PathStruct
 }
@@ -934,20 +934,20 @@ func (n *BgpGueIpv6PolicyPathAny) Config() ygnmi.WildcardQuery[*oc.BgpGueIpv6Pol
 //
 //	Defining module:      "openconfig-bgp-gue"
 //	Instantiating module: "openconfig-bgp-gue"
-//	Path from parent:     "state/dst-port"
-//	Path from root:       "/bgp-gue-ipv6-policies/bgp-gue-ipv6-policy/state/dst-port"
-func (n *BgpGueIpv6Policy_DstPortPath) State() ygnmi.SingletonQuery[uint16] {
+//	Path from parent:     "state/dst-port-ipv4"
+//	Path from root:       "/bgp-gue-ipv6-policies/bgp-gue-ipv6-policy/state/dst-port-ipv4"
+func (n *BgpGueIpv6Policy_DstPortIpv4Path) State() ygnmi.SingletonQuery[uint16] {
 	return ygnmi.NewLeafSingletonQuery[uint16](
 		"BgpGueIpv6Policy",
 		true,
 		true,
 		ygnmi.NewNodePath(
-			[]string{"state", "dst-port"},
+			[]string{"state", "dst-port-ipv4"},
 			nil,
 			n.parent,
 		),
 		func(gs ygot.ValidatedGoStruct) (uint16, bool) {
-			ret := gs.(*oc.BgpGueIpv6Policy).DstPort
+			ret := gs.(*oc.BgpGueIpv6Policy).DstPortIpv4
 			if ret == nil {
 				var zero uint16
 				return zero, false
@@ -967,20 +967,20 @@ func (n *BgpGueIpv6Policy_DstPortPath) State() ygnmi.SingletonQuery[uint16] {
 //
 //	Defining module:      "openconfig-bgp-gue"
 //	Instantiating module: "openconfig-bgp-gue"
-//	Path from parent:     "state/dst-port"
-//	Path from root:       "/bgp-gue-ipv6-policies/bgp-gue-ipv6-policy/state/dst-port"
-func (n *BgpGueIpv6Policy_DstPortPathAny) State() ygnmi.WildcardQuery[uint16] {
+//	Path from parent:     "state/dst-port-ipv4"
+//	Path from root:       "/bgp-gue-ipv6-policies/bgp-gue-ipv6-policy/state/dst-port-ipv4"
+func (n *BgpGueIpv6Policy_DstPortIpv4PathAny) State() ygnmi.WildcardQuery[uint16] {
 	return ygnmi.NewLeafWildcardQuery[uint16](
 		"BgpGueIpv6Policy",
 		true,
 		true,
 		ygnmi.NewNodePath(
-			[]string{"state", "dst-port"},
+			[]string{"state", "dst-port-ipv4"},
 			nil,
 			n.parent,
 		),
 		func(gs ygot.ValidatedGoStruct) (uint16, bool) {
-			ret := gs.(*oc.BgpGueIpv6Policy).DstPort
+			ret := gs.(*oc.BgpGueIpv6Policy).DstPortIpv4
 			if ret == nil {
 				var zero uint16
 				return zero, false
@@ -1000,20 +1000,20 @@ func (n *BgpGueIpv6Policy_DstPortPathAny) State() ygnmi.WildcardQuery[uint16] {
 //
 //	Defining module:      "openconfig-bgp-gue"
 //	Instantiating module: "openconfig-bgp-gue"
-//	Path from parent:     "config/dst-port"
-//	Path from root:       "/bgp-gue-ipv6-policies/bgp-gue-ipv6-policy/config/dst-port"
-func (n *BgpGueIpv6Policy_DstPortPath) Config() ygnmi.ConfigQuery[uint16] {
+//	Path from parent:     "config/dst-port-ipv4"
+//	Path from root:       "/bgp-gue-ipv6-policies/bgp-gue-ipv6-policy/config/dst-port-ipv4"
+func (n *BgpGueIpv6Policy_DstPortIpv4Path) Config() ygnmi.ConfigQuery[uint16] {
 	return ygnmi.NewLeafConfigQuery[uint16](
 		"BgpGueIpv6Policy",
 		false,
 		true,
 		ygnmi.NewNodePath(
-			[]string{"config", "dst-port"},
+			[]string{"config", "dst-port-ipv4"},
 			nil,
 			n.parent,
 		),
 		func(gs ygot.ValidatedGoStruct) (uint16, bool) {
-			ret := gs.(*oc.BgpGueIpv6Policy).DstPort
+			ret := gs.(*oc.BgpGueIpv6Policy).DstPortIpv4
 			if ret == nil {
 				var zero uint16
 				return zero, false
@@ -1033,20 +1033,152 @@ func (n *BgpGueIpv6Policy_DstPortPath) Config() ygnmi.ConfigQuery[uint16] {
 //
 //	Defining module:      "openconfig-bgp-gue"
 //	Instantiating module: "openconfig-bgp-gue"
-//	Path from parent:     "config/dst-port"
-//	Path from root:       "/bgp-gue-ipv6-policies/bgp-gue-ipv6-policy/config/dst-port"
-func (n *BgpGueIpv6Policy_DstPortPathAny) Config() ygnmi.WildcardQuery[uint16] {
+//	Path from parent:     "config/dst-port-ipv4"
+//	Path from root:       "/bgp-gue-ipv6-policies/bgp-gue-ipv6-policy/config/dst-port-ipv4"
+func (n *BgpGueIpv6Policy_DstPortIpv4PathAny) Config() ygnmi.WildcardQuery[uint16] {
 	return ygnmi.NewLeafWildcardQuery[uint16](
 		"BgpGueIpv6Policy",
 		false,
 		true,
 		ygnmi.NewNodePath(
-			[]string{"config", "dst-port"},
+			[]string{"config", "dst-port-ipv4"},
 			nil,
 			n.parent,
 		),
 		func(gs ygot.ValidatedGoStruct) (uint16, bool) {
-			ret := gs.(*oc.BgpGueIpv6Policy).DstPort
+			ret := gs.(*oc.BgpGueIpv6Policy).DstPortIpv4
+			if ret == nil {
+				var zero uint16
+				return zero, false
+			}
+			return *ret, true
+		},
+		func() ygot.ValidatedGoStruct { return new(oc.BgpGueIpv6Policy) },
+		&ytypes.Schema{
+			Root:       &oc.Root{},
+			SchemaTree: oc.SchemaTree,
+			Unmarshal:  oc.Unmarshal,
+		},
+	)
+}
+
+// State returns a Query that can be used in gNMI operations.
+//
+//	Defining module:      "openconfig-bgp-gue"
+//	Instantiating module: "openconfig-bgp-gue"
+//	Path from parent:     "state/dst-port-ipv6"
+//	Path from root:       "/bgp-gue-ipv6-policies/bgp-gue-ipv6-policy/state/dst-port-ipv6"
+func (n *BgpGueIpv6Policy_DstPortIpv6Path) State() ygnmi.SingletonQuery[uint16] {
+	return ygnmi.NewLeafSingletonQuery[uint16](
+		"BgpGueIpv6Policy",
+		true,
+		true,
+		ygnmi.NewNodePath(
+			[]string{"state", "dst-port-ipv6"},
+			nil,
+			n.parent,
+		),
+		func(gs ygot.ValidatedGoStruct) (uint16, bool) {
+			ret := gs.(*oc.BgpGueIpv6Policy).DstPortIpv6
+			if ret == nil {
+				var zero uint16
+				return zero, false
+			}
+			return *ret, true
+		},
+		func() ygot.ValidatedGoStruct { return new(oc.BgpGueIpv6Policy) },
+		&ytypes.Schema{
+			Root:       &oc.Root{},
+			SchemaTree: oc.SchemaTree,
+			Unmarshal:  oc.Unmarshal,
+		},
+	)
+}
+
+// State returns a Query that can be used in gNMI operations.
+//
+//	Defining module:      "openconfig-bgp-gue"
+//	Instantiating module: "openconfig-bgp-gue"
+//	Path from parent:     "state/dst-port-ipv6"
+//	Path from root:       "/bgp-gue-ipv6-policies/bgp-gue-ipv6-policy/state/dst-port-ipv6"
+func (n *BgpGueIpv6Policy_DstPortIpv6PathAny) State() ygnmi.WildcardQuery[uint16] {
+	return ygnmi.NewLeafWildcardQuery[uint16](
+		"BgpGueIpv6Policy",
+		true,
+		true,
+		ygnmi.NewNodePath(
+			[]string{"state", "dst-port-ipv6"},
+			nil,
+			n.parent,
+		),
+		func(gs ygot.ValidatedGoStruct) (uint16, bool) {
+			ret := gs.(*oc.BgpGueIpv6Policy).DstPortIpv6
+			if ret == nil {
+				var zero uint16
+				return zero, false
+			}
+			return *ret, true
+		},
+		func() ygot.ValidatedGoStruct { return new(oc.BgpGueIpv6Policy) },
+		&ytypes.Schema{
+			Root:       &oc.Root{},
+			SchemaTree: oc.SchemaTree,
+			Unmarshal:  oc.Unmarshal,
+		},
+	)
+}
+
+// Config returns a Query that can be used in gNMI operations.
+//
+//	Defining module:      "openconfig-bgp-gue"
+//	Instantiating module: "openconfig-bgp-gue"
+//	Path from parent:     "config/dst-port-ipv6"
+//	Path from root:       "/bgp-gue-ipv6-policies/bgp-gue-ipv6-policy/config/dst-port-ipv6"
+func (n *BgpGueIpv6Policy_DstPortIpv6Path) Config() ygnmi.ConfigQuery[uint16] {
+	return ygnmi.NewLeafConfigQuery[uint16](
+		"BgpGueIpv6Policy",
+		false,
+		true,
+		ygnmi.NewNodePath(
+			[]string{"config", "dst-port-ipv6"},
+			nil,
+			n.parent,
+		),
+		func(gs ygot.ValidatedGoStruct) (uint16, bool) {
+			ret := gs.(*oc.BgpGueIpv6Policy).DstPortIpv6
+			if ret == nil {
+				var zero uint16
+				return zero, false
+			}
+			return *ret, true
+		},
+		func() ygot.ValidatedGoStruct { return new(oc.BgpGueIpv6Policy) },
+		&ytypes.Schema{
+			Root:       &oc.Root{},
+			SchemaTree: oc.SchemaTree,
+			Unmarshal:  oc.Unmarshal,
+		},
+	)
+}
+
+// Config returns a Query that can be used in gNMI operations.
+//
+//	Defining module:      "openconfig-bgp-gue"
+//	Instantiating module: "openconfig-bgp-gue"
+//	Path from parent:     "config/dst-port-ipv6"
+//	Path from root:       "/bgp-gue-ipv6-policies/bgp-gue-ipv6-policy/config/dst-port-ipv6"
+func (n *BgpGueIpv6Policy_DstPortIpv6PathAny) Config() ygnmi.WildcardQuery[uint16] {
+	return ygnmi.NewLeafWildcardQuery[uint16](
+		"BgpGueIpv6Policy",
+		false,
+		true,
+		ygnmi.NewNodePath(
+			[]string{"config", "dst-port-ipv6"},
+			nil,
+			n.parent,
+		),
+		func(gs ygot.ValidatedGoStruct) (uint16, bool) {
+			ret := gs.(*oc.BgpGueIpv6Policy).DstPortIpv6
 			if ret == nil {
 				var zero uint16
 				return zero, false
@@ -1326,6 +1458,18 @@ func (n *BgpGueIpv6Policy_SrcIpPathAny) Config() ygnmi.WildcardQuery[string] {
 	)
 }
 
+// BgpGueIpv6Policy_DstPortIpv6Path represents the /openconfig-bgp-gue/bgp-gue-ipv6-policies/bgp-gue-ipv6-policy/state/dst-port-ipv6 YANG schema element.
+type BgpGueIpv6Policy_DstPortIpv6Path struct {
+	*ygnmi.NodePath
+	parent ygnmi.PathStruct
+}
+
+// BgpGueIpv6Policy_DstPortIpv6PathAny represents the wildcard version of the /openconfig-bgp-gue/bgp-gue-ipv6-policies/bgp-gue-ipv6-policy/state/dst-port-ipv6 YANG schema element.
+type BgpGueIpv6Policy_DstPortIpv6PathAny struct {
+	*ygnmi.NodePath
+	parent ygnmi.PathStruct
+}
+
 // BgpGueIpv6Policy_PrefixPath represents the /openconfig-bgp-gue/bgp-gue-ipv6-policies/bgp-gue-ipv6-policy/state/prefix YANG schema element.
 type BgpGueIpv6Policy_PrefixPath struct {
 	*ygnmi.NodePath
@@ -1360,16 +1504,16 @@ type BgpGueIpv6PolicyPathAny struct {
 	*ygnmi.NodePath
 }
 
-// DstPort (leaf): Destination port of UDP encap for the IPv6 payload.
+// DstPortIpv4 (leaf): Destination port of UDP encap for an IPv4 payload.
 //
 //	Defining module:      "openconfig-bgp-gue"
 //	Instantiating module: "openconfig-bgp-gue"
-//	Path from parent:     "*/dst-port"
-//	Path from root:       "/bgp-gue-ipv6-policies/bgp-gue-ipv6-policy/*/dst-port"
-func (n *BgpGueIpv6PolicyPath) DstPort() *BgpGueIpv6Policy_DstPortPath {
-	return &BgpGueIpv6Policy_DstPortPath{
+//	Path from parent:     "*/dst-port-ipv4"
+//	Path from root:       "/bgp-gue-ipv6-policies/bgp-gue-ipv6-policy/*/dst-port-ipv4"
+func (n *BgpGueIpv6PolicyPath) DstPortIpv4() *BgpGueIpv6Policy_DstPortIpv4Path {
+	return &BgpGueIpv6Policy_DstPortIpv4Path{
 		NodePath: ygnmi.NewNodePath(
-			[]string{"*", "dst-port"},
+			[]string{"*", "dst-port-ipv4"},
 			map[string]interface{}{},
 			n,
 		),
@@ -1377,16 +1521,50 @@ func (n *BgpGueIpv6PolicyPath) DstPort() *BgpGueIpv6Policy_DstPortPath {
 	}
 }
 
-// DstPort (leaf): Destination port of UDP encap for the IPv6 payload.
+// DstPortIpv4 (leaf): Destination port of UDP encap for an IPv4 payload.
 //
 //	Defining module:      "openconfig-bgp-gue"
 //	Instantiating module: "openconfig-bgp-gue"
-//	Path from parent:     "*/dst-port"
-//	Path from root:       "/bgp-gue-ipv6-policies/bgp-gue-ipv6-policy/*/dst-port"
-func (n *BgpGueIpv6PolicyPathAny) DstPort() *BgpGueIpv6Policy_DstPortPathAny {
-	return &BgpGueIpv6Policy_DstPortPathAny{
+//	Path from parent:     "*/dst-port-ipv4"
+//	Path from root:       "/bgp-gue-ipv6-policies/bgp-gue-ipv6-policy/*/dst-port-ipv4"
+func (n *BgpGueIpv6PolicyPathAny) DstPortIpv4() *BgpGueIpv6Policy_DstPortIpv4PathAny {
+	return &BgpGueIpv6Policy_DstPortIpv4PathAny{
 		NodePath: ygnmi.NewNodePath(
-			[]string{"*", "dst-port"},
+			[]string{"*", "dst-port-ipv4"},
+			map[string]interface{}{},
+			n,
+		),
+		parent: n,
+	}
+}
+
+// DstPortIpv6 (leaf): Destination port of UDP encap for an IPv6 payload.
+//
+//	Defining module:      "openconfig-bgp-gue"
+//	Instantiating module: "openconfig-bgp-gue"
+//	Path from parent:     "*/dst-port-ipv6"
+//	Path from root:       "/bgp-gue-ipv6-policies/bgp-gue-ipv6-policy/*/dst-port-ipv6"
+func (n *BgpGueIpv6PolicyPath) DstPortIpv6() *BgpGueIpv6Policy_DstPortIpv6Path {
+	return &BgpGueIpv6Policy_DstPortIpv6Path{
+		NodePath: ygnmi.NewNodePath(
+			[]string{"*", "dst-port-ipv6"},
+			map[string]interface{}{},
+			n,
+		),
+		parent: n,
+	}
+}
+
+// DstPortIpv6 (leaf): Destination port of UDP encap for an IPv6 payload.
+//
+//	Defining module:      "openconfig-bgp-gue"
+//	Instantiating module: "openconfig-bgp-gue"
+//	Path from parent:     "*/dst-port-ipv6"
+//	Path from root:       "/bgp-gue-ipv6-policies/bgp-gue-ipv6-policy/*/dst-port-ipv6"
+func (n *BgpGueIpv6PolicyPathAny) DstPortIpv6() *BgpGueIpv6Policy_DstPortIpv6PathAny {
+	return &BgpGueIpv6Policy_DstPortIpv6PathAny{
+		NodePath: ygnmi.NewNodePath(
+			[]string{"*", "dst-port-ipv6"},
 			map[string]interface{}{},
 			n,
 		),
