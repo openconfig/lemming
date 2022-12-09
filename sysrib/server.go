@@ -260,9 +260,9 @@ func (s *Server) monitorConnectedIntfs(yclient *ygnmi.Client) error {
 func (s *Server) monitorBGPGUEPolicies(yclient *ygnmi.Client) error {
 	b := &ocpath.Batch{}
 	b.AddPaths(
-		ocpath.Root().BgpGuePolicyAny().Prefix().Config().PathStruct(),
-		ocpath.Root().BgpGuePolicyAny().DstPort().Config().PathStruct(),
-		ocpath.Root().BgpGuePolicyAny().SrcIp().Config().PathStruct(),
+		ocpath.Root().BgpGueIpv4PolicyAny().Prefix().Config().PathStruct(),
+		ocpath.Root().BgpGueIpv4PolicyAny().DstPortIpv4().Config().PathStruct(),
+		ocpath.Root().BgpGueIpv4PolicyAny().SrcIp().Config().PathStruct(),
 	)
 
 	bgpGUEPolicyWatcher := ygnmi.Watch(
@@ -277,7 +277,7 @@ func (s *Server) monitorBGPGUEPolicies(yclient *ygnmi.Client) error {
 
 			policiesFound := map[string]bool{}
 			// Add new/updated policies.
-			for nonCanonicalPrefix, ocPolicy := range rootVal.BgpGuePolicy {
+			for nonCanonicalPrefix, ocPolicy := range rootVal.BgpGueIpv4Policy {
 				// TODO(wenbli): Support other VRFs.
 				pfx, err := netip.ParsePrefix(nonCanonicalPrefix)
 				if err != nil {
@@ -287,12 +287,12 @@ func (s *Server) monitorBGPGUEPolicies(yclient *ygnmi.Client) error {
 				}
 				pfx = pfx.Masked() // make canonical
 				prefix := pfx.String()
-				if ocPolicy.DstPort == nil || ocPolicy.SrcIp == nil {
+				if ocPolicy.DstPortIpv4 == nil || ocPolicy.SrcIp == nil {
 					continue // Wait for complete configuration to arrive.
 				}
 				policy := GUEPolicy{
 					isV6:    pfx.Addr().Is6(),
-					dstPort: *ocPolicy.DstPort,
+					dstPort: *ocPolicy.DstPortIpv4,
 				}
 				addr, err := netip.ParseAddr(*ocPolicy.SrcIp)
 				if err != nil {
