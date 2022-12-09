@@ -590,10 +590,11 @@ func TestBGPTriggeredGUE(t *testing.T) {
 		desc: "with single policy",
 		gnmiOp: func() {
 			policy2Pfx := "203.0.113.0/29"
-			gnmi.Replace(t, dut, ocpath.Root().BgpGuePolicy(policy2Pfx).Config(), &oc.BgpGuePolicy{
-				DstPort: ygot.Uint16(84),
-				Prefix:  ygot.String(policy2Pfx),
-				SrcIp:   ygot.String("84.84.84.84"),
+			gnmi.Replace(t, dut, ocpath.Root().BgpGueIpv4Policy(policy2Pfx).Config(), &oc.BgpGueIpv4Policy{
+				// TODO(wenbli): Support IPv4-mapped IPv6 traffic that would use a different dstPort.
+				DstPortIpv4: ygot.Uint16(84),
+				Prefix:      ygot.String(policy2Pfx),
+				SrcIp:       ygot.String("84.84.84.84"),
 			})
 		},
 		encapFields1: &EncapFields{
@@ -610,10 +611,10 @@ func TestBGPTriggeredGUE(t *testing.T) {
 		desc: "with two overlapping policies",
 		gnmiOp: func() {
 			policy1Pfx := "203.0.113.0/30"
-			gnmi.Replace(t, dut, ocpath.Root().BgpGuePolicy(policy1Pfx).Config(), &oc.BgpGuePolicy{
-				DstPort: ygot.Uint16(42),
-				Prefix:  ygot.String(policy1Pfx),
-				SrcIp:   ygot.String("42.42.42.42"),
+			gnmi.Replace(t, dut, ocpath.Root().BgpGueIpv4Policy(policy1Pfx).Config(), &oc.BgpGueIpv4Policy{
+				DstPortIpv4: ygot.Uint16(42),
+				Prefix:      ygot.String(policy1Pfx),
+				SrcIp:       ygot.String("42.42.42.42"),
 			})
 		},
 		encapFields1: &EncapFields{
