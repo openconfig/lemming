@@ -22,7 +22,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	authzpb "github.com/openconfig/gnsi/authz"
-	certpb "github.com/openconfig/gnsi/cert"
+	certpb "github.com/openconfig/gnsi/certz"
 	credentialzpb "github.com/openconfig/gnsi/credentialz"
 	pathzpb "github.com/openconfig/gnsi/pathz"
 )
@@ -40,14 +40,14 @@ func (a *authz) Get(context.Context, *authzpb.GetRequest) (*authzpb.GetResponse,
 }
 
 type cert struct {
-	certpb.UnimplementedCertificateManagementServer
+	certpb.UnimplementedCertzServer
 }
 
-func (c *cert) Install(certpb.CertificateManagement_InstallServer) error {
-	return status.Errorf(codes.Unimplemented, "Fake UnImplemented")
+func (c *cert) CanGenerateCSR(context.Context, *certpb.CanGenerateCSRRequest) (*certpb.CanGenerateCSRResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "Fake UnImplemented")
 }
 
-func (c *cert) Rotate(certpb.CertificateManagement_RotateServer) error {
+func (c *cert) Rotate(certpb.Certz_RotateServer) error {
 	return status.Errorf(codes.Unimplemented, "Fake UnImplemented")
 }
 
@@ -94,7 +94,7 @@ func New(s *grpc.Server) *Server {
 		credz: &credentialz{},
 	}
 	authzpb.RegisterAuthzServer(s, srv.authz)
-	certpb.RegisterCertificateManagementServer(s, srv.cert)
+	certpb.RegisterCertzServer(s, srv.cert)
 	credentialzpb.RegisterCredentialzServer(s, srv.credz)
 	pathzpb.RegisterPathzServer(s, srv.pathz)
 
