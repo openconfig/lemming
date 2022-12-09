@@ -40,7 +40,7 @@ import (
 
 const (
 	// Each quantum is 100 ms
-	maxGNMIWaitQuanta = 100
+	maxGNMIWaitQuanta = 200 // 20s
 )
 
 type AddIntfAction struct {
