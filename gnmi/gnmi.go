@@ -162,6 +162,7 @@ func setupSchema(schema *ytypes.Schema) error {
 // If root is nil, then it is assumed the cache is empty, and the entirety of
 // the dirtyRoot is put into the cache.
 func updateCache(cache *cache.Cache, dirtyRoot, root ygot.GoStruct, target, origin string, preferShadowPath bool, timestamp int64) error {
+	dirtyRoot.(populateDefaultser).PopulateDefaults()
 	var nos []*gpb.Notification
 	if root == nil {
 		var err error

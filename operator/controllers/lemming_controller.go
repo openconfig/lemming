@@ -178,7 +178,7 @@ func (r *LemmingReconciler) reconcilePod(ctx context.Context, lemming *lemmingv1
 	pod.Spec.Containers[0].Image = lemming.Spec.Image
 	pod.Spec.InitContainers[0].Image = lemming.Spec.InitImage
 	pod.Spec.Containers[0].Command = []string{lemming.Spec.Command}
-	pod.Spec.Containers[0].Args = lemming.Spec.Args
+	pod.Spec.Containers[0].Args = append(lemming.Spec.Args, fmt.Sprintf("--target=%s", lemming.Name))
 	pod.Spec.Containers[0].Env = lemming.Spec.Env
 	pod.Spec.Containers[0].Resources = lemming.Spec.Resources
 
@@ -263,6 +263,7 @@ func (r *LemmingReconciler) reconcileService(ctx context.Context, lemming *lemmi
 			},
 		}
 		service.Spec = corev1.ServiceSpec{
+			Type: corev1.ServiceTypeLoadBalancer,
 			Selector: map[string]string{
 				"app":  lemming.Name,
 				"topo": lemming.Namespace,
