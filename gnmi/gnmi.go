@@ -162,7 +162,6 @@ func setupSchema(schema *ytypes.Schema) error {
 // If root is nil, then it is assumed the cache is empty, and the entirety of
 // the dirtyRoot is put into the cache.
 func updateCache(cache *cache.Cache, dirtyRoot, root ygot.GoStruct, target, origin string, preferShadowPath bool, timestamp int64) error {
-	dirtyRoot.(populateDefaultser).PopulateDefaults()
 	var nos []*gpb.Notification
 	if root == nil {
 		var err error
@@ -239,6 +238,9 @@ func set(schema *ytypes.Schema, cache *cache.Cache, target string, req *gpb.SetR
 	if err := ytypes.UnmarshalSetRequest(schema, req, unmarshalOpts...); err != nil {
 		return status.Errorf(codes.InvalidArgument, "failed to unmarshal set request %v", err)
 	}
+	// Populate and defaults after any possible replace/delete operations.
+	// NOTE: This statement can introduce significant slowdowns.
+	schema.Root.(populateDefaultser).PopulateDefaults()
 
 	if err := schema.Validate(); err != nil {
 		return status.Errorf(codes.InvalidArgument, "invalid SetRequest: %v", err)
