@@ -336,6 +336,7 @@ func testTrafficAndEncap(t *testing.T, ate *ondatra.ATEDevice, top gosnappi.Conf
 			nl := pkt.NetworkLayer()
 			if nl == nil {
 				t.Errorf("packet doesn't have network layer: %s", pkt.Dump())
+				continue
 			}
 			if err := gotNL.DecodeFromBytes(nl.LayerContents(), gopacket.NilDecodeFeedback); err != nil {
 				t.Errorf("cannot decode network layer header: %v", err)
@@ -357,6 +358,7 @@ func testTrafficAndEncap(t *testing.T, ate *ondatra.ATEDevice, top gosnappi.Conf
 			nl := pkt.NetworkLayer()
 			if nl == nil {
 				t.Fatalf("packet doesn't have network layer: %s", pkt.Dump())
+				continue
 			}
 			if err := gotNL.DecodeFromBytes(nl.LayerContents(), gopacket.NilDecodeFeedback); err != nil {
 				t.Errorf("cannot decode network layer header: %v", err)
@@ -375,6 +377,7 @@ func testTrafficAndEncap(t *testing.T, ate *ondatra.ATEDevice, top gosnappi.Conf
 			tl := pkt.TransportLayer()
 			if tl == nil {
 				t.Errorf("packet doesn't have transport layer: %s", pkt.Dump())
+				continue
 			}
 			if err := gotTL.DecodeFromBytes(tl.LayerContents(), gopacket.NilDecodeFeedback); err != nil {
 				t.Errorf("cannot decode transport layer header: %v", err)
@@ -575,7 +578,7 @@ func TestBGPTriggeredGUE(t *testing.T) {
 	gnmi.Replace(t, dut2, bgpPath.Config(), dut2Conf)
 
 	nbrPath := bgpPath.Neighbor(dut2Port2.IPv4)
-	gnmi.Await(t, dut, nbrPath.SessionState().State(), 60*time.Second, oc.Bgp_Neighbor_SessionState_ESTABLISHED)
+	gnmi.Await(t, dut, nbrPath.SessionState().State(), 120*time.Second, oc.Bgp_Neighbor_SessionState_ESTABLISHED)
 
 	tests := []struct {
 		desc         string
@@ -593,6 +596,7 @@ func TestBGPTriggeredGUE(t *testing.T) {
 			gnmi.Replace(t, dut, ocpath.Root().BgpGueIpv4Policy(policy2Pfx).Config(), &oc.BgpGueIpv4Policy{
 				// TODO(wenbli): Support IPv4-mapped IPv6 traffic that would use a different dstPort.
 				DstPortIpv4: ygot.Uint16(84),
+				DstPortIpv6: ygot.Uint16(168),
 				Prefix:      ygot.String(policy2Pfx),
 				SrcIp:       ygot.String("84.84.84.84"),
 			})
@@ -613,6 +617,7 @@ func TestBGPTriggeredGUE(t *testing.T) {
 			policy1Pfx := "203.0.113.0/30"
 			gnmi.Replace(t, dut, ocpath.Root().BgpGueIpv4Policy(policy1Pfx).Config(), &oc.BgpGueIpv4Policy{
 				DstPortIpv4: ygot.Uint16(42),
+				DstPortIpv6: ygot.Uint16(168),
 				Prefix:      ygot.String(policy1Pfx),
 				SrcIp:       ygot.String("42.42.42.42"),
 			})

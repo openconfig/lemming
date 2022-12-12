@@ -157,7 +157,7 @@ func (s *Server) Start(gClient gpb.GNMIClient, target, zapiURL string) error {
 		return errors.New("cannot start nil sysrib server")
 	}
 
-	yclient, err := ygnmi.NewClient(gClient, ygnmi.WithTarget(target))
+	yclient, err := ygnmi.NewClient(gClient, ygnmi.WithTarget(target), ygnmi.WithRequestLogLevel(2))
 	if err != nil {
 		return err
 	}
@@ -262,6 +262,7 @@ func (s *Server) monitorBGPGUEPolicies(yclient *ygnmi.Client) error {
 	b.AddPaths(
 		ocpath.Root().BgpGueIpv4PolicyAny().Prefix().Config().PathStruct(),
 		ocpath.Root().BgpGueIpv4PolicyAny().DstPortIpv4().Config().PathStruct(),
+		ocpath.Root().BgpGueIpv4PolicyAny().DstPortIpv6().Config().PathStruct(),
 		ocpath.Root().BgpGueIpv4PolicyAny().SrcIp().Config().PathStruct(),
 	)
 
@@ -287,32 +288,19 @@ func (s *Server) monitorBGPGUEPolicies(yclient *ygnmi.Client) error {
 				}
 				pfx = pfx.Masked() // make canonical
 				prefix := pfx.String()
-				if ocPolicy.DstPortIpv4 == nil || ocPolicy.SrcIp == nil {
+				if ocPolicy.DstPortIpv4 == nil || ocPolicy.DstPortIpv6 == nil || ocPolicy.SrcIp == nil {
 					continue // Wait for complete configuration to arrive.
-				}
-				policy := GUEPolicy{
-					isV6:    pfx.Addr().Is6(),
-					dstPort: *ocPolicy.DstPortIpv4,
 				}
 				addr, err := netip.ParseAddr(*ocPolicy.SrcIp)
 				if err != nil {
 					log.Errorf("BGP GUE Policy source IP cannot be parsed: %v", err)
 					continue
 				}
-				if policy.isV6 {
-					if addr.Is4() {
-						// TODO(wenbli): This should be a Reconciler.Validate checker function.
-						log.Errorf("BGP GUE Policy prefix is IPv6 (%s) but source IP is IPv4: %s", prefix, *ocPolicy.SrcIp)
-						continue
-					}
-					policy.srcIP6 = addr.As16()
-				} else {
-					if addr.Is6() {
-						// TODO(wenbli): This should be a Reconciler.Validate checker function.
-						log.Errorf("BGP GUE Policy prefix is IPv4 (%s) but source IP is IPv6: %s", prefix, *ocPolicy.SrcIp)
-						continue
-					}
-					policy.srcIP4 = addr.As4()
+				policy := GUEPolicy{
+					isV6:      false,
+					dstPortv4: *ocPolicy.DstPortIpv4,
+					dstPortv6: *ocPolicy.DstPortIpv6,
+					srcIP4:    addr.As4(),
 				}
 				policiesFound[prefix] = true
 				if existingPolicy := s.bgpGUEPolicies[prefix]; policy != existingPolicy {
@@ -410,16 +398,19 @@ func prefixString(prefix *pb.Prefix) (string, error) {
 
 // gueActions generates the forwarding actions that encapsulates a packet with
 // a UDP and then an IP header using the information from gueHeaders.
-func gueActions(gueHeaders GUEHeaders) ([]*fwdpb.ActionDesc, error) {
+//
+// - isRouteV4 indicates whether the route is a v4 route or a v6 route.
+func gueActions(isRouteV4 bool, gueHeaders GUEHeaders) ([]*fwdpb.ActionDesc, error) {
 	var ip gopacket.SerializableLayer
-	ip = &layers.IPv4{
-		Version:  4,
-		IHL:      5,
-		Protocol: layers.IPProtocolUDP,
-		SrcIP:    gueHeaders.srcIP4[:],
-		DstIP:    gueHeaders.dstIP4[:],
-	}
-	if gueHeaders.isV6 {
+	if !gueHeaders.isV6 {
+		ip = &layers.IPv4{
+			Version:  4,
+			IHL:      5,
+			Protocol: layers.IPProtocolUDP,
+			SrcIP:    gueHeaders.srcIP4[:],
+			DstIP:    gueHeaders.dstIP4[:],
+		}
+	} else {
 		ip = &layers.IPv6{
 			Version:    6,
 			NextHeader: layers.IPProtocolUDP,
@@ -427,10 +418,15 @@ func gueActions(gueHeaders GUEHeaders) ([]*fwdpb.ActionDesc, error) {
 			DstIP:      gueHeaders.dstIP6[:],
 		}
 	}
+
 	udp := &layers.UDP{
-		SrcPort: 0, // TODO(wenbli): Implement hashing for srcPort.
-		DstPort: layers.UDPPort(gueHeaders.dstPort),
-		Length:  34,
+		SrcPort: 0,  // TODO(wenbli): Implement hashing for srcPort.
+		Length:  34, // TODO(wenbli): Figure out how to not make this hardcoded.
+	}
+	if isRouteV4 {
+		udp.DstPort = layers.UDPPort(gueHeaders.dstPortv4)
+	} else {
+		udp.DstPort = layers.UDPPort(gueHeaders.dstPortv6)
 	}
 
 	buf := gopacket.NewSerializeBuffer()
@@ -461,11 +457,17 @@ func resolvedRouteToRouteRequest(r *ResolvedRoute) (*dpb.Route, error) {
 		return nil, err
 	}
 
+	pfx, err := netip.ParsePrefix(r.Prefix)
+	if err != nil {
+		log.Errorf("Route prefix cannot be parsed: %v", err)
+		return nil, err
+	}
+
 	var nexthops []*dpb.NextHop
 	for nh := range r.Nexthops {
 		var actions []*fwdpb.ActionDesc
 		if nh.HasGUE() {
-			if actions, err = gueActions(nh.GUEHeaders); err != nil {
+			if actions, err = gueActions(pfx.Addr().Is4() || pfx.Addr().Is4In6(), nh.GUEHeaders); err != nil {
 				return nil, fmt.Errorf("error retrieving GUE actions: %v", err)
 			}
 		}

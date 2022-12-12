@@ -1067,9 +1067,9 @@ func TestBGPGUEPolicy(t *testing.T) {
 		desc: "Add Policy",
 		inAddPolicies: map[string]GUEPolicy{
 			"192.168.0.0/16": {
-				dstPort: 8,
-				srcIP4:  [4]byte{42, 42, 42, 42},
-				isV6:    false,
+				dstPortv4: 8,
+				srcIP4:    [4]byte{42, 42, 42, 42},
+				isV6:      false,
 			},
 		},
 		wantResolvedRoutes: []*ResolvedRoute{{
@@ -1089,9 +1089,9 @@ func TestBGPGUEPolicy(t *testing.T) {
 					},
 					GUEHeaders: GUEHeaders{
 						GUEPolicy: GUEPolicy{
-							dstPort: 8,
-							srcIP4:  [4]byte{42, 42, 42, 42},
-							isV6:    false,
+							dstPortv4: 8,
+							srcIP4:    [4]byte{42, 42, 42, 42},
+							isV6:      false,
 						},
 						dstIP4: [4]byte{192, 168, 1, 42},
 					},
@@ -1156,9 +1156,9 @@ func TestBGPGUEPolicy(t *testing.T) {
 		desc: "Add Policy for second BGP route",
 		inAddPolicies: map[string]GUEPolicy{
 			"10.10.0.0/16": {
-				dstPort: 9,
-				srcIP4:  [4]byte{43, 43, 43, 43},
-				isV6:    false,
+				dstPortv4: 9,
+				srcIP4:    [4]byte{43, 43, 43, 43},
+				isV6:      false,
 			},
 		},
 		wantResolvedRoutes: []*ResolvedRoute{{
@@ -1178,9 +1178,9 @@ func TestBGPGUEPolicy(t *testing.T) {
 					},
 					GUEHeaders: GUEHeaders{
 						GUEPolicy: GUEPolicy{
-							dstPort: 9,
-							srcIP4:  [4]byte{43, 43, 43, 43},
-							isV6:    false,
+							dstPortv4: 9,
+							srcIP4:    [4]byte{43, 43, 43, 43},
+							isV6:      false,
 						},
 						dstIP4: [4]byte{10, 10, 10, 10},
 					},
@@ -1245,9 +1245,9 @@ func TestBGPGUEPolicy(t *testing.T) {
 		desc: "Add a policy that applies to two BGP routes",
 		inAddPolicies: map[string]GUEPolicy{
 			"10.0.0.0/8": {
-				dstPort: 8,
-				srcIP4:  [4]byte{8, 8, 8, 8},
-				isV6:    false,
+				dstPortv4: 8,
+				srcIP4:    [4]byte{8, 8, 8, 8},
+				isV6:      false,
 			},
 		},
 		wantResolvedRoutes: []*ResolvedRoute{{
@@ -1267,9 +1267,9 @@ func TestBGPGUEPolicy(t *testing.T) {
 					},
 					GUEHeaders: GUEHeaders{
 						GUEPolicy: GUEPolicy{
-							dstPort: 8,
-							srcIP4:  [4]byte{8, 8, 8, 8},
-							isV6:    false,
+							dstPortv4: 8,
+							srcIP4:    [4]byte{8, 8, 8, 8},
+							isV6:      false,
 						},
 						dstIP4: [4]byte{10, 10, 10, 10},
 					},
@@ -1292,9 +1292,9 @@ func TestBGPGUEPolicy(t *testing.T) {
 					},
 					GUEHeaders: GUEHeaders{
 						GUEPolicy: GUEPolicy{
-							dstPort: 8,
-							srcIP4:  [4]byte{8, 8, 8, 8},
-							isV6:    false,
+							dstPortv4: 8,
+							srcIP4:    [4]byte{8, 8, 8, 8},
+							isV6:      false,
 						},
 						dstIP4: [4]byte{10, 10, 20, 20},
 					},
@@ -1305,9 +1305,9 @@ func TestBGPGUEPolicy(t *testing.T) {
 		desc: "Add a more specific policy that applies to a BGP route",
 		inAddPolicies: map[string]GUEPolicy{
 			"10.10.20.0/24": {
-				dstPort: 16,
-				srcIP4:  [4]byte{16, 16, 16, 16},
-				isV6:    false,
+				dstPortv4: 16,
+				srcIP4:    [4]byte{16, 16, 16, 16},
+				isV6:      false,
 			},
 		},
 		wantResolvedRoutes: []*ResolvedRoute{{
@@ -1327,9 +1327,9 @@ func TestBGPGUEPolicy(t *testing.T) {
 					},
 					GUEHeaders: GUEHeaders{
 						GUEPolicy: GUEPolicy{
-							dstPort: 16,
-							srcIP4:  [4]byte{16, 16, 16, 16},
-							isV6:    false,
+							dstPortv4: 16,
+							srcIP4:    [4]byte{16, 16, 16, 16},
+							isV6:      false,
 						},
 						dstIP4: [4]byte{10, 10, 20, 20},
 					},

@@ -73,7 +73,7 @@ func (b *Builder) WithStart(startFn func(context.Context, *ygnmi.Client) error) 
 		b.br = &BuiltReconciler{}
 	}
 	b.br.startFns = append(b.br.startFns, func(ctx context.Context, client gpb.GNMIClient, target string) error {
-		c, err := ygnmi.NewClient(client, ygnmi.WithTarget(target))
+		c, err := ygnmi.NewClient(client, ygnmi.WithTarget(target), ygnmi.WithRequestLogLevel(2))
 		if err != nil {
 			return fmt.Errorf("failed to build client: %v", err)
 		}
