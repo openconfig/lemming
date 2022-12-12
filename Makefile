@@ -12,7 +12,7 @@ load:
 ## Run integration tests
 .PHONY: itest
 itest:
-	go test -v ./integration_tests/...
+	go test -v ./integration_tests/... -p 1 -count 1
 
 .PHONY: test
 test:
