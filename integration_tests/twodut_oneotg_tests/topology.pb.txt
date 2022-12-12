@@ -22,7 +22,6 @@ nodes: {
     name: "lemming"
     vendor: OPENCONFIG
     config: {
-        args: "--target=lemming"
         args: "--enable_dataplane"
         args: "--enable_tls"
         args: "--alsologtostderr"
@@ -33,7 +32,6 @@ nodes: {
     name: "lemming2"
     vendor: OPENCONFIG
     config: {
-        args: "--target=lemming2"
         args: "--enable_dataplane"
         args: "--enable_tls"
         args: "--alsologtostderr"
