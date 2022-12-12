@@ -213,61 +213,102 @@ func (ni *Interface) reconcile(config *oc.Interface) {
 			log.V(1).Infof("setting interface %s hw-addr %q", tapName, config.GetEthernet().GetMacAddress())
 			if err := kernel.SetInterfaceHWAddr(config.GetName(), config.GetEthernet().GetMacAddress()); err != nil {
 				log.Warningf("Failed to set mac address of port: %v", err)
-				return
+			}
+		}
+	} else {
+		if state.GetEthernet().GetHwMacAddress() != state.GetEthernet().GetMacAddress() {
+			log.V(1).Infof("resetting interface %s hw-addr %q", tapName, state.GetEthernet().GetHwMacAddress())
+			if err := kernel.SetInterfaceHWAddr(config.GetName(), state.GetEthernet().GetHwMacAddress()); err != nil {
+				log.Warningf("Failed to set mac address of port: %v", err)
 			}
 		}
 	}
+
 	if config.GetOrCreateSubinterface(0).Enabled != nil {
 		if state.GetOrCreateSubinterface(0).Enabled == nil || config.GetSubinterface(0).GetEnabled() != state.GetSubinterface(0).GetEnabled() {
 			log.V(1).Infof("setting interface %s enabled %t", tapName, config.GetSubinterface(0).GetEnabled())
 			if err := kernel.SetInterfaceState(tapName, config.GetSubinterface(0).GetEnabled()); err != nil {
 				log.Warningf("Failed to set state address of port: %v", err)
-				return
 			}
 		}
 	}
-	// TODO: refactor this.
-	for _, addr := range config.GetOrCreateSubinterface(0).GetOrCreateIpv4().Address {
-		configIP := addr.Ip
-		configPL := addr.PrefixLength
-		var stateIP *string
-		var statePL *uint8
-		stateAddr := state.GetSubinterface(0).GetIpv4().GetAddress(addr.GetIp())
-		if stateAddr != nil {
-			stateIP = stateAddr.Ip
-			statePL = stateAddr.PrefixLength
-		}
 
-		if configIP != nil && configPL != nil && (stateIP == nil || *statePL != *configPL) {
-			log.V(1).Infof("Config IP: %v, Config PL: %v. State IP: %v, State PL: %v", addr.GetIp(), addr.GetPrefixLength(), stateAddr.GetIp(), stateAddr.GetPrefixLength())
-			log.V(2).Infof("setting interface %s ip %s/%d", tapName, *configIP, *configPL)
-			if err := kernel.SetInterfaceIP(tapName, *configIP, int(*configPL)); err != nil {
+	type addrPair struct {
+		cfgIP, stateIP *string
+		cfgPL, statePL *uint8
+	}
+
+	// Get all state IPs and their corresponding config IPs (if they exist).
+	var maybeDeletedPairs []*addrPair
+	for _, addr := range state.GetOrCreateSubinterface(0).GetOrCreateIpv4().Address {
+		pair := &addrPair{
+			stateIP: addr.Ip,
+			statePL: addr.PrefixLength,
+		}
+		if pairAddr := config.GetSubinterface(0).GetIpv4().GetAddress(addr.GetIp()); pairAddr != nil {
+			pair.cfgIP = pairAddr.Ip
+			pair.cfgPL = pairAddr.PrefixLength
+		}
+		maybeDeletedPairs = append(maybeDeletedPairs, pair)
+	}
+	for _, addr := range state.GetOrCreateSubinterface(0).GetOrCreateIpv6().Address {
+		pair := &addrPair{
+			stateIP: addr.Ip,
+			statePL: addr.PrefixLength,
+		}
+		if pairAddr := config.GetSubinterface(0).GetIpv6().GetAddress(addr.GetIp()); pairAddr != nil {
+			pair.cfgIP = pairAddr.Ip
+			pair.cfgPL = pairAddr.PrefixLength
+		}
+		maybeDeletedPairs = append(maybeDeletedPairs, pair)
+	}
+
+	for _, pair := range maybeDeletedPairs {
+		// If an IP exists in state, but not in config, remove the IP.
+		if pair.stateIP != nil && pair.statePL != nil && (pair.cfgIP == nil && pair.cfgPL == nil) {
+			log.V(1).Infof("Delete Config IP: %v, Config PL: %v. State IP: %v, State PL: %v", pair.cfgIP, pair.cfgPL, *pair.stateIP, *pair.statePL)
+			log.V(2).Infof("deleting interface %s ip %s/%d", tapName, *pair.stateIP, *pair.statePL)
+			if err := kernel.DeleteInterfaceIP(tapName, *pair.stateIP, int(*pair.statePL)); err != nil {
 				log.Warningf("Failed to set ip address of port: %v", err)
-				return
 			}
 		}
+	}
+
+	// Get all config IPs and their corresponding state IPs (if they exist).
+	var maybeAddedPairs []*addrPair
+	for _, addr := range config.GetOrCreateSubinterface(0).GetOrCreateIpv4().Address {
+		pair := &addrPair{
+			cfgIP: addr.Ip,
+			cfgPL: addr.PrefixLength,
+		}
+		if pairAddr := state.GetSubinterface(0).GetIpv4().GetAddress(addr.GetIp()); pairAddr != nil {
+			pair.stateIP = pairAddr.Ip
+			pair.statePL = pairAddr.PrefixLength
+		}
+		maybeAddedPairs = append(maybeAddedPairs, pair)
 	}
 	for _, addr := range config.GetOrCreateSubinterface(0).GetOrCreateIpv6().Address {
-		configIP := addr.Ip
-		configPL := addr.PrefixLength
-		var stateIP *string
-		var statePL *uint8
-		stateAddr := state.GetSubinterface(0).GetIpv6().GetAddress(addr.GetIp())
-		if stateAddr != nil {
-			stateIP = stateAddr.Ip
-			statePL = stateAddr.PrefixLength
+		pair := &addrPair{
+			cfgIP: addr.Ip,
+			cfgPL: addr.PrefixLength,
 		}
+		if pairAddr := state.GetSubinterface(0).GetIpv6().GetAddress(addr.GetIp()); pairAddr != nil {
+			pair.stateIP = pairAddr.Ip
+			pair.statePL = pairAddr.PrefixLength
+		}
+		maybeAddedPairs = append(maybeAddedPairs, pair)
+	}
 
-		if configIP != nil && configPL != nil && (stateIP == nil || *statePL != *configPL) {
-			log.V(1).Infof("Config IP: %v, Config PL: %v. State IP: %v, State PL: %v", addr.GetIp(), addr.GetPrefixLength(), stateAddr.GetIp(), stateAddr.GetPrefixLength())
-			log.V(2).Infof("setting interface %s ip %s/%d", tapName, *configIP, *configPL)
-			if err := kernel.SetInterfaceIP(tapName, *configIP, int(*configPL)); err != nil {
+	for _, pair := range maybeAddedPairs {
+		// If an IP exists in config, but not in state (or state is different) add the IP.
+		if pair.cfgIP != nil && pair.cfgPL != nil && (pair.stateIP == nil || *pair.statePL != *pair.cfgPL) {
+			log.V(1).Infof("Set Config IP: %v, Config PL: %v. State IP: %v, State PL: %v", *pair.cfgIP, *pair.cfgPL, pair.stateIP, pair.statePL)
+			log.V(2).Infof("setting interface %s ip %s/%d", tapName, *pair.cfgIP, *pair.cfgPL)
+			if err := kernel.SetInterfaceIP(tapName, *pair.cfgIP, int(*pair.cfgPL)); err != nil {
 				log.Warningf("Failed to set ip address of port: %v", err)
-				return
 			}
 		}
 	}
-	// TODO: delete IPs
 }
 
 // getOrCreateInterface returns the state interface from the cache.
@@ -475,6 +516,14 @@ func (ni *Interface) setupPorts(ctx context.Context) error {
 		}
 		if err := engine.UpdatePortSrcMAC(ctx, ni.fwd, i.Name, tap.HardwareAddr); err != nil {
 			return fmt.Errorf("failed to update MAC address for port %q: %w", i.Name, err)
+		}
+		ni.getOrCreateInterface(i.Name).GetOrCreateEthernet().SetHwMacAddress(tap.HardwareAddr.String())
+		ni.getOrCreateInterface(i.Name).GetOrCreateEthernet().SetMacAddress(tap.HardwareAddr.String())
+		if _, err := gnmiclient.Update(ctx, ni.c, ocpath.Root().Interface(i.Name).Ethernet().HwMacAddress().State(), tap.HardwareAddr.String()); err != nil {
+			return fmt.Errorf("failed to set hw addr of interface %q: %v", tap.Name, err)
+		}
+		if _, err := gnmiclient.Update(ctx, ni.c, ocpath.Root().Interface(i.Name).Ethernet().MacAddress().State(), tap.HardwareAddr.String()); err != nil {
+			return fmt.Errorf("failed to set hw addr of interface %q: %v", tap.Name, err)
 		}
 	}
 	return nil
