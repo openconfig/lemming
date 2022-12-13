@@ -22,16 +22,17 @@ import (
 	"crypto/x509/pkix"
 	"fmt"
 	"math/big"
-	"reflect"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	lemmingv1alpha1 "github.com/openconfig/lemming/operator/api/lemming/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -100,6 +101,7 @@ func (r *LemmingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 }
 
 func (r *LemmingReconciler) reconcileSecrets(ctx context.Context, lemming *lemmingv1alpha1.Lemming) (*corev1.Secret, error) {
+	log := log.FromContext(ctx)
 	secretName := fmt.Sprintf("%s-tls", lemming.Name)
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -114,21 +116,27 @@ func (r *LemmingReconciler) reconcileSecrets(ctx context.Context, lemming *lemmi
 
 	if !apierrors.IsNotFound(err) {
 		if lemming.Spec.TLS.SelfSigned == (lemmingv1alpha1.SelfSignedSpec{}) {
+			log.Info("no tls config and secret exists, deleting it.")
 			return nil, r.Delete(ctx, secret)
 		}
 		return secret, nil
 	}
 
 	if lemming.Spec.TLS.SelfSigned != (lemmingv1alpha1.SelfSignedSpec{}) {
+		if err := ctrl.SetControllerReference(lemming, secret, r.Scheme); err != nil {
+			return nil, err
+		}
 		data, err := createKeyPair(lemming.Spec.TLS.SelfSigned.KeySize, lemming.Spec.TLS.SelfSigned.CommonName)
 		if err != nil {
 			return nil, err
 		}
 		secret.Data = data
 		secret.Type = corev1.SecretTypeTLS
+		log.Info("tls config not empty and secret doesn't exist, creating it.")
 		return secret, r.Create(ctx, secret)
 	}
-	return secret, nil
+	log.Info("no tls config and secret doesn't exist, doing nothing.")
+	return nil, nil
 }
 
 func createKeyPair(keySize int, commonName string) (map[string][]byte, error) {
@@ -175,41 +183,65 @@ func (r *LemmingReconciler) reconcilePod(ctx context.Context, lemming *lemmingv1
 	}
 
 	oldPodSpec := pod.Spec.DeepCopy()
+
 	pod.Spec.Containers[0].Image = lemming.Spec.Image
 	pod.Spec.InitContainers[0].Image = lemming.Spec.InitImage
+	pod.Spec.InitContainers[0].Args = []string{fmt.Sprintf("%d", lemming.Spec.InterfaceCount), fmt.Sprintf("%d", lemming.Spec.InitSleep)}
 	pod.Spec.Containers[0].Command = []string{lemming.Spec.Command}
 	pod.Spec.Containers[0].Args = append(lemming.Spec.Args, fmt.Sprintf("--target=%s", lemming.Name))
 	pod.Spec.Containers[0].Env = lemming.Spec.Env
 	pod.Spec.Containers[0].Resources = lemming.Spec.Resources
 
-	var hasTLSVolume bool
-	for _, v := range pod.Spec.Volumes {
-		if v.Name == "tls" {
-			hasTLSVolume = true
-		}
+	mounts := map[string]corev1.VolumeMount{}
+	volumes := map[string]corev1.Volume{}
+
+	for _, vol := range pod.Spec.Volumes {
+		volumes[vol.Name] = vol
+	}
+	for _, mount := range pod.Spec.Containers[0].VolumeMounts {
+		mounts[mount.Name] = mount
 	}
 
-	if secretName != "" && !hasTLSVolume {
-		pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
+	var changedMounts bool
+	if _, ok := volumes["tls"]; secretName != "" && !ok {
+		log.Info("adding tls secret to pod spec")
+		volumes["tls"] = corev1.Volume{
 			Name: "tls",
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: secretName,
 				},
 			},
-		})
-		pod.Spec.Containers[0].VolumeMounts = append(pod.Spec.Containers[0].VolumeMounts, corev1.VolumeMount{
+		}
+		mounts["tls"] = corev1.VolumeMount{
 			Name:      "tls",
 			ReadOnly:  true,
 			MountPath: "/certs",
-		})
+		}
+		changedMounts = true
+	} else if secretName == "" && ok {
+		delete(mounts, "tls")
+		delete(volumes, "tls")
+		changedMounts = true
+	}
+
+	if changedMounts {
+		pod.Spec.Containers[0].VolumeMounts = []corev1.VolumeMount{}
+		pod.Spec.Volumes = []corev1.Volume{}
+		for _, mount := range mounts {
+			pod.Spec.Containers[0].VolumeMounts = append(pod.Spec.Containers[0].VolumeMounts, mount)
+		}
+		for _, volume := range volumes {
+			pod.Spec.Volumes = append(pod.Spec.Volumes, volume)
+		}
 	}
 
 	if newPod {
 		return pod, r.Create(ctx, pod)
 	}
+	log.Info("pod", "old pod", *oldPodSpec, "new pod", pod.Spec)
 
-	if reflect.DeepEqual(oldPodSpec, &pod.Spec) {
+	if equality.Semantic.DeepEqual(oldPodSpec, &pod.Spec) {
 		log.Info("pod unchanged, doing nothing")
 		return pod, nil
 	}
@@ -230,20 +262,18 @@ func (r *LemmingReconciler) setupInitialPod(pod *corev1.Pod, lemming *lemmingv1a
 			"topo": lemming.Namespace,
 		},
 	}
+	pod.Spec.InitContainers = []corev1.Container{{
+		Name: "init",
+	}}
+	pod.Spec.Containers = []corev1.Container{{
+		Name: "lemming",
+		SecurityContext: &corev1.SecurityContext{
+			Privileged: pointer.Bool(true),
+		},
+	}}
+
 	if err := ctrl.SetControllerReference(lemming, pod, r.Scheme); err != nil {
 		return err
-	}
-	pod.Spec = corev1.PodSpec{
-		InitContainers: []corev1.Container{{
-			Name: "init",
-			Args: []string{
-				fmt.Sprintf("%d", lemming.Spec.InterfaceCount+1),
-				fmt.Sprintf("%d", lemming.Spec.InitSleep),
-			},
-		}},
-		Containers: []corev1.Container{{
-			Name: "lemming",
-		}},
 	}
 	return nil
 }
@@ -304,5 +334,6 @@ func (r *LemmingReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&lemmingv1alpha1.Lemming{}).
 		Owns(&corev1.Pod{}).
 		Owns(&corev1.Service{}).
+		Owns(&corev1.Secret{}).
 		Complete(r)
 }

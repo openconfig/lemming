@@ -5,14 +5,14 @@ clean:
 
 .PHONY: load 
 load:
-	DOCKER_BUILDKIT=1 docker build . -f Dockerfile.lemming -t "lemming:latest"
-	kind load docker-image lemming:latest --name kne
+	DOCKER_BUILDKIT=1 docker build . -f Dockerfile.lemming -t "us-west1-docker.pkg.dev/openconfig-lemming/release/lemming:ga"
+	kind load docker-image us-west1-docker.pkg.dev/openconfig-lemming/release/lemming:ga --name kne
 
 
 ## Run integration tests
 .PHONY: itest
 itest:
-	go test -v ./integration_tests/...
+	go test -v ./integration_tests/... -p 1 -count 1
 
 .PHONY: test
 test:

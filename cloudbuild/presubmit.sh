@@ -19,9 +19,12 @@ set -xe
 export PATH=${PATH}:/usr/local/go/bin
 gopath=$(go env GOPATH)
 export PATH=${PATH}:$gopath/bin
+curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-amd64 && \
+sudo install skaffold /usr/local/bin/
 
 cd /tmp/workspace
 kne deploy ~/kne-internal/deploy/kne/kind-bridge.yaml
 
+skaffold run -m lemming-operator
 make load
 make itest
