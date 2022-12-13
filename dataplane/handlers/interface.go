@@ -207,7 +207,6 @@ func (ni *Interface) reconcile(config *oc.Interface) {
 	tapName := engine.IntfNameToTapName(config.GetName())
 	state := ni.getOrCreateInterface(config.GetName())
 
-	// TODO: handle deleting interface.
 	if config.GetOrCreateEthernet().MacAddress != nil {
 		if config.GetEthernet().GetMacAddress() != state.GetEthernet().GetMacAddress() {
 			log.V(1).Infof("setting interface %s hw-addr %q", tapName, config.GetEthernet().GetMacAddress())
@@ -216,6 +215,8 @@ func (ni *Interface) reconcile(config *oc.Interface) {
 			}
 		}
 	} else {
+		// Deleting the configured MAC address means it should be the system-assigned MAC address, as detailed in the OpenConfig schema.
+		// https://openconfig.net/projects/models/schemadocs/yangdoc/openconfig-interfaces.html#interfaces-interface-ethernet-state-mac-address
 		if state.GetEthernet().GetHwMacAddress() != state.GetEthernet().GetMacAddress() {
 			log.V(1).Infof("resetting interface %s hw-addr %q", tapName, state.GetEthernet().GetHwMacAddress())
 			if err := kernel.SetInterfaceHWAddr(config.GetName(), state.GetEthernet().GetHwMacAddress()); err != nil {
@@ -233,15 +234,15 @@ func (ni *Interface) reconcile(config *oc.Interface) {
 		}
 	}
 
-	type addrPair struct {
+	type prefixPair struct {
 		cfgIP, stateIP *string
 		cfgPL, statePL *uint8
 	}
 
 	// Get all state IPs and their corresponding config IPs (if they exist).
-	var maybeDeletedPairs []*addrPair
+	var interfacePairs []*prefixPair
 	for _, addr := range state.GetOrCreateSubinterface(0).GetOrCreateIpv4().Address {
-		pair := &addrPair{
+		pair := &prefixPair{
 			stateIP: addr.Ip,
 			statePL: addr.PrefixLength,
 		}
@@ -249,10 +250,10 @@ func (ni *Interface) reconcile(config *oc.Interface) {
 			pair.cfgIP = pairAddr.Ip
 			pair.cfgPL = pairAddr.PrefixLength
 		}
-		maybeDeletedPairs = append(maybeDeletedPairs, pair)
+		interfacePairs = append(interfacePairs, pair)
 	}
 	for _, addr := range state.GetOrCreateSubinterface(0).GetOrCreateIpv6().Address {
-		pair := &addrPair{
+		pair := &prefixPair{
 			stateIP: addr.Ip,
 			statePL: addr.PrefixLength,
 		}
@@ -260,24 +261,12 @@ func (ni *Interface) reconcile(config *oc.Interface) {
 			pair.cfgIP = pairAddr.Ip
 			pair.cfgPL = pairAddr.PrefixLength
 		}
-		maybeDeletedPairs = append(maybeDeletedPairs, pair)
-	}
-
-	for _, pair := range maybeDeletedPairs {
-		// If an IP exists in state, but not in config, remove the IP.
-		if pair.stateIP != nil && pair.statePL != nil && (pair.cfgIP == nil && pair.cfgPL == nil) {
-			log.V(1).Infof("Delete Config IP: %v, Config PL: %v. State IP: %v, State PL: %v", pair.cfgIP, pair.cfgPL, *pair.stateIP, *pair.statePL)
-			log.V(2).Infof("deleting interface %s ip %s/%d", tapName, *pair.stateIP, *pair.statePL)
-			if err := kernel.DeleteInterfaceIP(tapName, *pair.stateIP, int(*pair.statePL)); err != nil {
-				log.Warningf("Failed to set ip address of port: %v", err)
-			}
-		}
+		interfacePairs = append(interfacePairs, pair)
 	}
 
 	// Get all config IPs and their corresponding state IPs (if they exist).
-	var maybeAddedPairs []*addrPair
 	for _, addr := range config.GetOrCreateSubinterface(0).GetOrCreateIpv4().Address {
-		pair := &addrPair{
+		pair := &prefixPair{
 			cfgIP: addr.Ip,
 			cfgPL: addr.PrefixLength,
 		}
@@ -285,10 +274,10 @@ func (ni *Interface) reconcile(config *oc.Interface) {
 			pair.stateIP = pairAddr.Ip
 			pair.statePL = pairAddr.PrefixLength
 		}
-		maybeAddedPairs = append(maybeAddedPairs, pair)
+		interfacePairs = append(interfacePairs, pair)
 	}
 	for _, addr := range config.GetOrCreateSubinterface(0).GetOrCreateIpv6().Address {
-		pair := &addrPair{
+		pair := &prefixPair{
 			cfgIP: addr.Ip,
 			cfgPL: addr.PrefixLength,
 		}
@@ -296,12 +285,20 @@ func (ni *Interface) reconcile(config *oc.Interface) {
 			pair.stateIP = pairAddr.Ip
 			pair.statePL = pairAddr.PrefixLength
 		}
-		maybeAddedPairs = append(maybeAddedPairs, pair)
+		interfacePairs = append(interfacePairs, pair)
 	}
 
-	for _, pair := range maybeAddedPairs {
+	for _, pair := range interfacePairs {
+		// If an IP exists in state, but not in config, remove the IP.
+		if (pair.stateIP != nil && pair.statePL != nil) && (pair.cfgIP == nil && pair.cfgPL == nil) {
+			log.V(1).Infof("Delete Config IP: %v, Config PL: %v. State IP: %v, State PL: %v", pair.cfgIP, pair.cfgPL, *pair.stateIP, *pair.statePL)
+			log.V(2).Infof("deleting interface %s ip %s/%d", tapName, *pair.stateIP, *pair.statePL)
+			if err := kernel.DeleteInterfaceIP(tapName, *pair.stateIP, int(*pair.statePL)); err != nil {
+				log.Warningf("Failed to set ip address of port: %v", err)
+			}
+		}
 		// If an IP exists in config, but not in state (or state is different) add the IP.
-		if pair.cfgIP != nil && pair.cfgPL != nil && (pair.stateIP == nil || *pair.statePL != *pair.cfgPL) {
+		if (pair.cfgIP != nil && pair.cfgPL != nil) && (pair.stateIP == nil || *pair.statePL != *pair.cfgPL) {
 			log.V(1).Infof("Set Config IP: %v, Config PL: %v. State IP: %v, State PL: %v", *pair.cfgIP, *pair.cfgPL, pair.stateIP, pair.statePL)
 			log.V(2).Infof("setting interface %s ip %s/%d", tapName, *pair.cfgIP, *pair.cfgPL)
 			if err := kernel.SetInterfaceIP(tapName, *pair.cfgIP, int(*pair.cfgPL)); err != nil {
