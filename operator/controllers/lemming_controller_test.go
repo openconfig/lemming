@@ -22,6 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -111,7 +112,7 @@ func TestReconcile(t *testing.T) {
 				InitContainers: []corev1.Container{{
 					Name:  "init",
 					Image: "sleep:latest",
-					Args:  []string{"2", "1"},
+					Args:  []string{"1", "1"},
 				}},
 				Containers: []corev1.Container{{
 					Name:    "lemming",
@@ -122,6 +123,9 @@ func TestReconcile(t *testing.T) {
 						Name:  "ENV_TEST",
 						Value: "FOO",
 					}},
+					SecurityContext: &corev1.SecurityContext{
+						Privileged: pointer.Bool(true),
+					},
 					Resources: corev1.ResourceRequirements{
 						Limits: corev1.ResourceList{
 							corev1.ResourceCPU: resource.MustParse("1"),
