@@ -61,12 +61,21 @@ func SetInterfaceIP(name string, ip string, prefixLen int) error {
 }
 
 // DeleteInterfaceIP delete an IP addresses from a network interface.
-func DeleteInterfaceIP(name string, ip *net.IPNet) error {
+func DeleteInterfaceIP(name string, ip string, prefixLen int) error {
 	link, err := netlink.LinkByName(name)
 	if err != nil {
 		return fmt.Errorf("failed to get interface: %w", err)
 	}
-	if err := netlink.AddrDel(link, &netlink.Addr{IPNet: ip}); err != nil {
+	ipNet := &net.IPNet{}
+	ipNet.IP = net.ParseIP(ip)
+	if ipNet.IP == nil {
+		return fmt.Errorf("failed to parse ip")
+	}
+	ipNet.Mask = net.CIDRMask(prefixLen, 128)
+	if ipNet.IP.To4() != nil { // If ip is IPv4.
+		ipNet.Mask = net.CIDRMask(prefixLen, 32)
+	}
+	if err := netlink.AddrDel(link, &netlink.Addr{IPNet: ipNet}); err != nil {
 		return fmt.Errorf("failed to add ip to link: %w", err)
 	}
 	return nil
