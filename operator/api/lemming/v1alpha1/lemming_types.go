@@ -89,6 +89,8 @@ const (
 	Failed LemmingPhase = "Failed"
 	// Unknown indicates an unknown state.
 	Unknown LemmingPhase = "Unknown"
+	// Pending indicates a pending state.
+	Pending LemmingPhase = "Pending"
 )
 
 // LemmingStatus defines the observed state of Lemming
