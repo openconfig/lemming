@@ -60,10 +60,13 @@ type NIRIB struct {
 // srcPort is a hash.
 // dstIP is the nexthop of the BGP route.
 type GUEPolicy struct {
-	dstPort uint16
-	srcIP4  [4]byte
-	srcIP6  [16]byte
-	isV6    bool
+	// dstPortv4 is the UDP port used when the packet payload is IPv4.
+	dstPortv4 uint16
+	// dstPortv6 is the UDP port used when the packet payload is IPv6.
+	dstPortv6 uint16
+	srcIP4    [4]byte
+	srcIP6    [16]byte
+	isV6      bool
 }
 
 // GUEHeaders represents the IP and UDP headers that are to encapsulate the

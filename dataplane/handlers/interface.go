@@ -176,7 +176,7 @@ func (ni *Interface) startCounterUpdates(ctx context.Context) {
 					ObjectId:  &fwdpb.ObjectId{Id: intfName},
 					ContextId: &fwdpb.ContextId{Id: engine.DefaultContextID},
 				})
-				log.V(1).Infof("querying counters for interface %q, got %v", intfName, countersReply)
+				log.V(2).Infof("querying counters for interface %q, got %v", intfName, countersReply)
 				if err != nil {
 					log.Errorf("interface handler: could not retrieve counter for interface %q", intfName)
 					continue
