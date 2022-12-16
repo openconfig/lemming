@@ -357,7 +357,7 @@ func testTrafficAndEncap(t *testing.T, ate *ondatra.ATEDevice, top gosnappi.Conf
 			var gotNL layers.IPv4
 			nl := pkt.NetworkLayer()
 			if nl == nil {
-				t.Fatalf("packet doesn't have network layer: %s", pkt.Dump())
+				t.Errorf("packet doesn't have network layer: %s", pkt.Dump())
 				continue
 			}
 			if err := gotNL.DecodeFromBytes(nl.LayerContents(), gopacket.NilDecodeFeedback); err != nil {

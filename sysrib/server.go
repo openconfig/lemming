@@ -210,7 +210,10 @@ func (s *Server) Stop() {
 func (s *Server) monitorConnectedIntfs(yclient *ygnmi.Client) error {
 	b := &ocpath.Batch{}
 	b.AddPaths(
-		ocpath.Root().InterfaceAny().State().PathStruct(),
+		ocpath.Root().InterfaceAny().Enabled().State().PathStruct(),
+		ocpath.Root().InterfaceAny().Ifindex().State().PathStruct(),
+		ocpath.Root().InterfaceAny().Subinterface(0).Ipv4().AddressAny().Ip().State().PathStruct(),
+		ocpath.Root().InterfaceAny().Subinterface(0).Ipv4().AddressAny().PrefixLength().State().PathStruct(),
 	)
 
 	interfaceWatcher := ygnmi.Watch(
