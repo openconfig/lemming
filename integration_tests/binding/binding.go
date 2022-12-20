@@ -19,9 +19,11 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sync"
 	"text/template"
 	"time"
 
@@ -112,8 +114,8 @@ func (lb *LemmingBind) Release(ctx context.Context) error {
 	if !lb.created || *keep {
 		return nil
 	}
-	if out, err := exec.Command("kne", "delete", lb.topoFile).CombinedOutput(); err != nil {
-		return fmt.Errorf("failed delete topology: %v output:\n%s", err, string(out))
+	if err := runAndStreamOutput(exec.Command("kne", "delete", lb.topoFile)); err != nil {
+		return fmt.Errorf("failed delete topology: %v", err)
 	}
 	return nil
 }
@@ -183,9 +185,10 @@ func (lb *LemmingBind) Reserve(ctx context.Context, tb *proto.Testbed, runTime t
 	// Check if topology already exists, if not deploy it.
 	if _, err := client.CoreV1().Namespaces().Get(ctx, topo.GetName(), metav1.GetOptions{}); apierrors.IsNotFound(err) {
 		fmt.Println("Deploying KNE topology")
-		if out, err := exec.Command("kne", "create", lb.topoFile).CombinedOutput(); err != nil {
-			return nil, fmt.Errorf("failed create topology: %v output:\n%s", err, string(out))
+		if err := runAndStreamOutput(exec.Command("kne", "create", lb.topoFile)); err != nil {
+			return nil, fmt.Errorf("failed to create topology: %v", err)
 		}
+
 		lb.created = true
 		// TODO: Wait for all pods to be ready.
 		time.Sleep(5 * time.Second)
@@ -228,4 +231,29 @@ func writeKNEBindCfg(knePath, topoFile string) error {
 	}
 	flag.Set("config", f.Name())
 	return nil
+}
+
+func runAndStreamOutput(cmd *exec.Cmd) error {
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return err
+	}
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		return err
+	}
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		io.Copy(os.Stdout, stdout)
+	}()
+	go func() {
+		defer wg.Done()
+		io.Copy(os.Stderr, stderr)
+	}()
+	return cmd.Wait()
 }
