@@ -17,3 +17,4 @@ itest:
 .PHONY: test
 test:
 	go test $(shell go list ./... | grep -v integration_test)
+	go test ./operator/...
