@@ -1,0 +1,6 @@
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'us-west1-docker.pkg.dev/${PROJECT_ID/release/lemming:${_IMAGE_TAG}', '.', '-f', 'Dockerfile.lemming']
+images: ['us-west1-docker.pkg.dev/${PROJECT_ID/release/lemming:${_IMAGE_TAG}']
+substitutions:
+  _IMAGE_TAG: latest #default value

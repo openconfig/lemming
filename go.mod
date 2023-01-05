@@ -3,6 +3,7 @@ module github.com/openconfig/lemming
 go 1.18
 
 require (
+	cloud.google.com/go/cloudbuild v1.5.0
 	github.com/golang/glog v1.0.0
 	github.com/golang/mock v1.6.0
 	github.com/google/go-cmp v0.5.9
@@ -18,11 +19,12 @@ require (
 	github.com/openconfig/gribi v0.1.1-0.20220622162620-08d53dffce45
 	github.com/openconfig/gribigo v0.0.0-20220802181317-805e943d8714
 	github.com/openconfig/kne v0.1.6
-	github.com/openconfig/ondatra v0.0.0-20221209174951-99f065f9847c
-	github.com/openconfig/ygnmi v0.7.1
+	github.com/openconfig/ondatra v0.0.0-20221222161349-d76ac82a8db0
+	github.com/openconfig/ygnmi v0.7.3
 	github.com/openconfig/ygot v0.25.4
 	github.com/p4lang/p4runtime v1.3.0
 	github.com/sirupsen/logrus v1.8.1
+	github.com/spf13/cobra v1.6.1
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.14.0
 	github.com/vishvananda/netlink v1.1.1-0.20210330154013-f5de75959ad5
@@ -30,6 +32,7 @@ require (
 	golang.org/x/exp v0.0.0-20221106115401-f9659909a136
 	golang.org/x/net v0.4.0
 	golang.org/x/sys v0.3.0
+	google.golang.org/api v0.102.0
 	google.golang.org/grpc v1.51.0
 	google.golang.org/protobuf v1.28.1
 	k8s.io/apimachinery v0.25.0
@@ -38,6 +41,10 @@ require (
 )
 
 require (
+	cloud.google.com/go v0.105.0 // indirect
+	cloud.google.com/go/compute v1.12.1 // indirect
+	cloud.google.com/go/compute/metadata v0.2.1 // indirect
+	cloud.google.com/go/longrunning v0.3.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
 	github.com/MakeNowJust/heredoc v0.0.0-20170808103936-bb23615498cd // indirect
 	github.com/Microsoft/go-winio v0.5.1 // indirect
@@ -75,6 +82,8 @@ require (
 	github.com/google/gnostic v0.6.9 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
+	github.com/googleapis/enterprise-certificate-proxy v0.2.0 // indirect
+	github.com/googleapis/gax-go/v2 v2.7.0 // indirect
 	github.com/gregjones/httpcache v0.0.0-20180305231024-9cad4c3443a7 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/imdario/mergo v0.3.13 // indirect
@@ -120,7 +129,6 @@ require (
 	github.com/sirikothe/gotextfsm v1.0.1-0.20200816110946-6aa2cfd355e4 // indirect
 	github.com/spf13/afero v1.9.3 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
-	github.com/spf13/cobra v1.6.1 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/srl-labs/srl-controller v0.4.2 // indirect
 	github.com/srl-labs/srlinux-scrapli v0.5.0 // indirect
@@ -128,6 +136,7 @@ require (
 	github.com/subosito/gotenv v1.4.1 // indirect
 	github.com/vishvananda/netns v0.0.0-20200728191858-db3c7e526aae // indirect
 	github.com/xlab/treeprint v0.0.0-20181112141820-a009c3971eca // indirect
+	go.opencensus.io v0.23.0 // indirect
 	go.starlark.net v0.0.0-20200306205701-8dd3e2ee1dd5 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.universe.tf/metallb v0.13.5 // indirect
