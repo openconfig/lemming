@@ -10,7 +10,7 @@ steps:
       - REMOTE_WORKSPACE=/tmp/workspace
       - COMMAND=source /tmp/workspace/cloudbuild/operator-test.sh 2>&1
 
-timeout: 1800s
+timeout: 1800s # TODO: Run this a few times to set a lower timeout.
 
 options:
   pool:

@@ -106,9 +106,16 @@ func createAndPushTag(tag string) error {
 	return nil
 }
 
+const (
+	// cloudBuildEndpoint is the regional endpoint for the cloud build API.
+	// Related to issue https://github.com/googleapis/google-cloud-go/issues/5095.
+	cloudBuildEndpoint = "us-central1-cloudbuild.googleapis.com:443"
+	triggerNamePrefix  = "projects/openconfig-lemming/locations/us-central1/triggers"
+)
+
 // triggerBuild runs a cloud build trigger at the given tag if set, or the main branch if unset.
 func triggerBuild(ctx context.Context, trigger, tagOrSHA string, tag bool) error {
-	c, err := cloudbuild.NewClient(ctx, option.WithEndpoint("us-central1-cloudbuild.googleapis.com:443"))
+	c, err := cloudbuild.NewClient(ctx, option.WithEndpoint(cloudBuildEndpoint))
 	if err != nil {
 		return err
 	}
@@ -128,7 +135,7 @@ func triggerBuild(ctx context.Context, trigger, tagOrSHA string, tag bool) error
 	}
 
 	op, err := c.RunBuildTrigger(ctx, &cloudbuildpb.RunBuildTriggerRequest{
-		Name:   fmt.Sprintf("projects/openconfig-lemming/locations/us-central1/triggers/%s", trigger),
+		Name:   fmt.Sprintf("%s/%s", triggerNamePrefix, trigger),
 		Source: src,
 	})
 	if err != nil {
