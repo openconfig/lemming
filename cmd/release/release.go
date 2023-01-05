@@ -44,12 +44,12 @@ func operator() *cobra.Command {
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Println("Validating working directory")
-			_, err := validateWorkDir()
+			sha, err := validateWorkDir()
 			if err != nil {
 				return err
 			}
 			fmt.Println("Running prerelease tests")
-			if err := triggerBuild(cmd.Context(), "operator-test", ""); err != nil {
+			if err := triggerBuild(cmd.Context(), "operator-test", sha, false); err != nil {
 				return err
 			}
 
@@ -59,7 +59,7 @@ func operator() *cobra.Command {
 				return err
 			}
 			fmt.Println("Building and Pushing container")
-			if err := triggerBuild(cmd.Context(), "operator-release", tag); err != nil {
+			if err := triggerBuild(cmd.Context(), "operator-release", tag, true); err != nil {
 				return err
 			}
 			return nil
@@ -73,12 +73,12 @@ func lemming() *cobra.Command {
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Println("Validating working directory")
-			_, err := validateWorkDir()
+			sha, err := validateWorkDir()
 			if err != nil {
 				return err
 			}
 			fmt.Println("Running prerelease tests")
-			if err := triggerBuild(cmd.Context(), "lemming-test", ""); err != nil {
+			if err := triggerBuild(cmd.Context(), "lemming-test", sha, false); err != nil {
 				return err
 			}
 
@@ -88,7 +88,7 @@ func lemming() *cobra.Command {
 				return err
 			}
 			fmt.Println("Building and Pushing container")
-			if err := triggerBuild(cmd.Context(), "lemming-release", tag); err != nil {
+			if err := triggerBuild(cmd.Context(), "lemming-release", tag, true); err != nil {
 				return err
 			}
 			return nil
@@ -107,7 +107,7 @@ func createAndPushTag(tag string) error {
 }
 
 // triggerBuild runs a cloud build trigger at the given tag if set, or the main branch if unset.
-func triggerBuild(ctx context.Context, trigger, tag string) error {
+func triggerBuild(ctx context.Context, trigger, tagOrSHA string, tag bool) error {
 	c, err := cloudbuild.NewClient(ctx, option.WithEndpoint("us-central1-cloudbuild.googleapis.com:443"))
 	if err != nil {
 		return err
@@ -115,14 +115,14 @@ func triggerBuild(ctx context.Context, trigger, tag string) error {
 	defer c.Close()
 
 	src := &cloudbuildpb.RepoSource{
-		Revision: &cloudbuildpb.RepoSource_BranchName{
-			BranchName: "main",
+		Revision: &cloudbuildpb.RepoSource_CommitSha{
+			CommitSha: tagOrSHA,
 		},
 	}
-	if tag != "" {
+	if tag {
 		src = &cloudbuildpb.RepoSource{
 			Revision: &cloudbuildpb.RepoSource_TagName{
-				TagName: tag,
+				TagName: tagOrSHA,
 			},
 		}
 	}
