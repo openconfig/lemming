@@ -148,8 +148,8 @@ func triggerBuild(ctx context.Context, trigger, tagOrSHA string, tag bool) error
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Build ID: %s\n Logs: %s", md.GetBuild().GetId(), md.GetBuild().GetLogUrl())
-	fmt.Println("Waiting for Op")
+	fmt.Printf("Build ID: %s\nLogs: %s\n", md.GetBuild().GetId(), md.GetBuild().GetLogUrl())
+	fmt.Println("Waiting for build to finish")
 	b, err := op.Wait(ctx)
 	if err != nil {
 		return err

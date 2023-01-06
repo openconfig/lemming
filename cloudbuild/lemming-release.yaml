@@ -1,6 +1,14 @@
 steps:
 - name: 'gcr.io/cloud-builders/docker'
   args: ['build', '-t', 'us-west1-docker.pkg.dev/${PROJECT_ID}/release/lemming:${_IMAGE_TAG}', '.', '-f', 'Dockerfile.lemming']
+  env:
+    - "DOCKER_BUILDKIT=1"
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['tag', 'us-west1-docker.pkg.dev/${PROJECT_ID}/release/lemming:${_IMAGE_TAG}', 'us-west1-docker.pkg.dev/${PROJECT_ID}/release/lemming:ga']
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['push', 'us-west1-docker.pkg.dev/${PROJECT_ID}/release/lemming:ga']
 images: ['us-west1-docker.pkg.dev/${PROJECT_ID}/release/lemming:${_IMAGE_TAG}']
 substitutions:
   _IMAGE_TAG: latest #default value
+options:
+  machineType: 'E2_HIGHCPU_8'
