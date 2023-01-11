@@ -33,7 +33,7 @@ import (
 )
 
 const (
-	listenPort = 1234
+	listenPort = 179
 )
 
 // NewGoBGPTask creates a new GoBGP task.
