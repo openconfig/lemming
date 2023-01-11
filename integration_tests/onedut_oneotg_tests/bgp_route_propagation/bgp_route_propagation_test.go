@@ -16,11 +16,16 @@
 package bgp_route_propagation_test
 
 import (
+	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/google/gopacket"
+	"github.com/google/gopacket/layers"
+	"github.com/google/gopacket/pcapgo"
 	"github.com/open-traffic-generator/snappi/gosnappi"
 	"github.com/openconfig/lemming/gnmi/fakedevice"
 	"github.com/openconfig/lemming/gnmi/oc"
@@ -175,6 +180,7 @@ func (ad *ateData) ConfigureOTG(t *testing.T, otg *otg.OTG, ateList []string) go
 		devName := ateList[ateIndex] + ".dev"
 		port := config.Ports().Add().SetName(ateList[ateIndex])
 		dev := config.Devices().Add().SetName(devName)
+		config.Captures().Add().SetName(fmt.Sprintf("ca%d", ateIndex)).SetPortNames([]string{ateList[ateIndex]}).SetFormat(gosnappi.CaptureFormat.PCAP)
 		ateIndex++
 
 		eth := dev.Ethernets().Add().SetName(devName + ".Eth")
@@ -250,7 +256,7 @@ type dutData struct {
 }
 
 func (d *dutData) Configure(t *testing.T, dut *ondatra.DUTDevice) {
-	for _, a := range []Attributes{dutPort1, dutPort2} {
+	for _, a := range []Attributes{dutPort1 /*, dutPort2*/} {
 		ocName := dut.Port(t, a.Name).Name()
 		gnmi.Replace(t, dut, ocpath.Root().Interface(ocName).Config(), a.NewOCInterface(ocName))
 	}
@@ -376,6 +382,40 @@ func waitFor(fn func() bool, t testing.TB) {
 	}
 }
 
+func displayCapture(t *testing.T, captureBytes []byte) {
+	f, err := os.CreateTemp(".", "pcap")
+	if err != nil {
+		t.Fatalf("ERROR: Could not create temporary pcap file: %v\n", err)
+	}
+	defer os.Remove(f.Name())
+
+	if _, err := f.Write(captureBytes); err != nil {
+		t.Fatalf("ERROR: Could not write bytes to pcap file: %v\n", err)
+	}
+	f.Close()
+
+	f, err = os.Open(f.Name())
+	if err != nil {
+		t.Fatalf("ERROR: Could not open pcap file %s: %v\n", f.Name(), err)
+	}
+	defer f.Close()
+
+	fmt.Printf("Capture bytes: %d\n", len(captureBytes))
+	handleRead, err := pcapgo.NewReader(f)
+	if err != nil {
+		t.Fatalf("ERROR: Could not create reader on pcap file %s: %v\n", f.Name(), err)
+	}
+	ps := gopacket.NewPacketSource(handleRead, layers.LinkTypeEthernet)
+
+	for i := 0; i != 10; i++ {
+		pkt, err := ps.NextPacket()
+		if err != nil {
+			t.Fatalf("error reading next packet: %v", err)
+		}
+		fmt.Println(pkt.Dump())
+	}
+}
+
 func TestBGP(t *testing.T) {
 	tests := []struct {
 		desc, fullDesc string
@@ -389,7 +429,7 @@ func TestBGP(t *testing.T) {
 		dut: dutData{&oc.NetworkInstance_Protocol_Bgp{
 			Global: &oc.NetworkInstance_Protocol_Bgp_Global{
 				As:       ygot.Uint32(dutAS),
-				RouterId: ygot.String(dutPort2.IPv4),
+				RouterId: ygot.String(dutPort1.IPv4),
 			},
 			Neighbor: map[string]*oc.NetworkInstance_Protocol_Bgp_Neighbor{
 				"192.0.2.2": {
@@ -397,11 +437,11 @@ func TestBGP(t *testing.T) {
 					NeighborAddress: ygot.String("192.0.2.2"),
 					//PeerGroup:       ygot.String("BGP-PEER-GROUP1"),
 				},
-				"192.0.2.6": {
-					PeerAs:          ygot.Uint32(ateAS2),
-					NeighborAddress: ygot.String("192.0.2.6"),
-					//PeerGroup:       ygot.String("BGP-PEER-GROUP2"),
-				},
+				//"192.0.2.6": {
+				//	PeerAs:          ygot.Uint32(ateAS2),
+				//	NeighborAddress: ygot.String("192.0.2.6"),
+				//	//PeerGroup:       ygot.String("BGP-PEER-GROUP2"),
+				//},
 			},
 		}},
 		ate: ateData{
@@ -538,6 +578,13 @@ func TestBGP(t *testing.T) {
 			otg := ate.OTG()
 			ateList := []string{"port1", "port2"}
 			otgConfig := tc.ate.ConfigureOTG(t, otg, ateList)
+
+			otg.StartCapture(t, "port1")
+			time.Sleep(20 * time.Second)
+			otg.StopCapture(t, "port1")
+
+			captureBytes := ate.OTG().FetchCapture(t, "port1")
+			displayCapture(t, captureBytes)
 
 			t.Logf("Verify DUT BGP sessions up")
 			tc.dut.AwaitBGPEstablished(t, dut)
