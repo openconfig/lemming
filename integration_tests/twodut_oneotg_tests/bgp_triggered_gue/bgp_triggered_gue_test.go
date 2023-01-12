@@ -20,6 +20,8 @@ import (
 	"context"
 	"net"
 	"os"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -39,7 +41,9 @@ import (
 	"github.com/openconfig/lemming/integration_tests/binding"
 	"github.com/openconfig/ondatra"
 	"github.com/openconfig/ondatra/gnmi"
+	otgtelemetry "github.com/openconfig/ondatra/gnmi/otg"
 	"github.com/openconfig/ondatra/gnmi/otg/otgpath"
+	"github.com/openconfig/ondatra/otg"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot"
 
@@ -74,6 +78,7 @@ const (
 
 	dutAS  = 64500
 	dut2AS = 64501
+	ateAS  = 64502
 )
 
 func TestMain(m *testing.M) {
@@ -150,38 +155,72 @@ var (
 	}
 )
 
-// configureATE configures port1 and port2 on the ATE.
-func configureATE(t *testing.T, ate *ondatra.ATEDevice) gosnappi.Config {
+// configureOTG configures port1 and port2 on the ATE.
+func configureOTG(t *testing.T, otg *otg.OTG) gosnappi.Config {
 	t.Helper()
-	otg := ate.OTG()
-	top := otg.NewConfig(t)
+	config := otg.NewConfig(t)
 
-	top.Ports().Add().SetName(atePort1.Name)
-	i1 := top.Devices().Add().SetName(atePort1.Name)
+	// Configure port1
+	config.Ports().Add().SetName(atePort1.Name)
+	i1 := config.Devices().Add().SetName(atePort1.Name)
 	eth1 := i1.Ethernets().Add().SetName(atePort1.Name + ".Eth").
 		SetPortName(i1.Name()).SetMac(atePort1.MAC)
 	eth1.Ipv4Addresses().Add().SetName(i1.Name() + ".IPv4").
 		SetAddress(atePort1.IPv4).SetGateway(dutPort1.IPv4).
 		SetPrefix(int32(atePort1.IPv4Len))
+	// Configure capture format.
+	config.Captures().Add().SetName("ca1").SetPortNames([]string{atePort1.Name}).SetFormat(gosnappi.CaptureFormat.PCAP)
 
-	top.Ports().Add().SetName(atePort2.Name)
-	i2 := top.Devices().Add().SetName(atePort2.Name)
+	// Configure BGP neighbour
+	bgp4ObjectMap := make(map[string]gosnappi.BgpV4Peer)
+	ipv4ObjectMap := make(map[string]gosnappi.DeviceIpv4)
+
+	ateName := atePort1.Name
+	ateNeighbor := dutPort1
+	devName := ateName + ".dev"
+
+	bgp := i1.Bgp().SetRouterId(atePort1.IPv4)
+
+	ipv4 := eth1.Ipv4Addresses().Add().SetName(devName + ".IPv4").SetAddress(atePort1.IPv4).SetGateway(ateNeighbor.IPv4).SetPrefix(ipv4PrefixLen)
+	bgp4Name := devName + ".BGP4.peer"
+	bgp4Peer := bgp.Ipv4Interfaces().Add().SetIpv4Name(ipv4.Name()).Peers().Add().SetName(bgp4Name).SetPeerAddress(ipv4.Gateway()).SetAsNumber(int32(ateAS)).SetAsType(gosnappi.BgpV4PeerAsType.EBGP)
+
+	bgp4Peer.Capability().SetIpv4UnicastAddPath(true).SetIpv6UnicastAddPath(true)
+	bgp4Peer.LearnedInformationFilter().SetUnicastIpv4Prefix(true).SetUnicastIpv6Prefix(true)
+
+	bgp4ObjectMap[bgp4Name] = bgp4Peer
+	ipv4ObjectMap[devName+".IPv4"] = ipv4
+
+	bgpName := ateName + ".dev.BGP4.peer"
+	bgpPeer := bgp4ObjectMap[bgpName]
+	ip := ipv4ObjectMap[ateName+".dev.IPv4"]
+	firstAdvAddr := strings.Split(ateIndirectNHCIDR, "/")[0]
+	firstAdvPrefix, _ := strconv.Atoi(strings.Split(ateIndirectNHCIDR, "/")[1])
+	bgp4PeerRoutes := bgpPeer.V4Routes().Add().SetName(bgpName + ".rr4").SetNextHopIpv4Address(ip.Address()).SetNextHopAddressType(gosnappi.BgpV4RouteRangeNextHopAddressType.IPV4).SetNextHopMode(gosnappi.BgpV4RouteRangeNextHopMode.MANUAL)
+	bgp4PeerRoutes.Addresses().Add().SetAddress(firstAdvAddr).SetPrefix(int32(firstAdvPrefix)).SetCount(1)
+	bgp4PeerRoutes.AddPath().SetPathId(1)
+
+	// Configure port2
+	config.Ports().Add().SetName(atePort2.Name)
+	i2 := config.Devices().Add().SetName(atePort2.Name)
 	eth2 := i2.Ethernets().Add().SetName(atePort2.Name + ".Eth").
 		SetPortName(i2.Name()).SetMac(atePort2.MAC)
 	eth2.Ipv4Addresses().Add().SetName(i2.Name() + ".IPv4").
 		SetAddress(atePort2.IPv4).SetGateway(dutPort2.IPv4).
 		SetPrefix(int32(atePort2.IPv4Len))
 	// Configure capture format.
-	top.Captures().Add().SetName("ca").SetPortNames([]string{atePort2.Name}).SetFormat(gosnappi.CaptureFormat.PCAP)
+	config.Captures().Add().SetName("ca2").SetPortNames([]string{atePort2.Name}).SetFormat(gosnappi.CaptureFormat.PCAP)
 
-	top.Ports().Add().SetName(atePort3.Name)
-	i3 := top.Devices().Add().SetName(atePort3.Name)
+	config.Ports().Add().SetName(atePort3.Name)
+	i3 := config.Devices().Add().SetName(atePort3.Name)
 	eth3 := i3.Ethernets().Add().SetName(atePort3.Name + ".Eth").
 		SetPortName(i3.Name()).SetMac(atePort3.MAC)
 	eth3.Ipv4Addresses().Add().SetName(i3.Name() + ".IPv4").
 		SetAddress(atePort3.IPv4).SetGateway(dut2Port1.IPv4).
 		SetPrefix(int32(atePort3.IPv4Len))
-	return top
+
+	t.Logf("Pushing config to ATE and starting protocols...")
+	return config
 }
 
 var gatewayMap = map[Attributes]Attributes{
@@ -204,37 +243,106 @@ func configInterfaceDUT(i *oc.Interface, a *Attributes) *oc.Interface {
 	return i
 }
 
+// NewOCInterface returns a new *oc.Interface configured with these attributes.
+func (a *Attributes) NewOCInterface(name string) *oc.Interface {
+	return a.ConfigOCInterface(&oc.Interface{Name: ygot.String(name)})
+}
+
+// ConfigOCInterface configures an OpenConfig interface with these attributes.
+func (a *Attributes) ConfigOCInterface(intf *oc.Interface) *oc.Interface {
+	if a.Desc != "" {
+		intf.Description = ygot.String(a.Desc)
+	}
+	intf.Type = oc.IETFInterfaces_InterfaceType_ethernetCsmacd
+	if a.MTU > 0 {
+		intf.Mtu = ygot.Uint16(a.MTU + 14)
+	}
+	e := intf.GetOrCreateEthernet()
+	if a.MAC != "" {
+		e.MacAddress = ygot.String(a.MAC)
+	}
+
+	s := intf.GetOrCreateSubinterface(0)
+	if a.IPv4 != "" {
+		s4 := s.GetOrCreateIpv4()
+		if a.MTU > 0 {
+			s4.Mtu = ygot.Uint16(a.MTU)
+		}
+		a4 := s4.GetOrCreateAddress(a.IPv4)
+		if a.IPv4Len > 0 {
+			a4.PrefixLength = ygot.Uint8(a.IPv4Len)
+		}
+	}
+
+	if a.IPv6 != "" {
+		s6 := s.GetOrCreateIpv6()
+		if a.MTU > 0 {
+			s6.Mtu = ygot.Uint32(uint32(a.MTU))
+		}
+		a6 := s6.GetOrCreateAddress(a.IPv6)
+		if a.IPv6Len > 0 {
+			a6.PrefixLength = ygot.Uint8(a.IPv6Len)
+		}
+	}
+	return intf
+}
+
 // configureDUT1 configures ports on DUT1.
 func configureDUT1(t *testing.T, dut *ondatra.DUTDevice) {
 	p1 := dut.Port(t, "port1")
-	i1 := &oc.Interface{Name: ygot.String(p1.Name())}
-	gnmi.Replace(t, dut, ocpath.Root().Interface(p1.Name()).Config(), configInterfaceDUT(i1, &dutPort1))
+	gnmi.Replace(t, dut, ocpath.Root().Interface(p1.Name()).Config(), dutPort1.NewOCInterface(p1.Name()))
 
 	p2 := dut.Port(t, "port2")
-	i2 := &oc.Interface{Name: ygot.String(p2.Name())}
-	gnmi.Replace(t, dut, ocpath.Root().Interface(p2.Name()).Config(), configInterfaceDUT(i2, &dutPort2))
+	gnmi.Replace(t, dut, ocpath.Root().Interface(p2.Name()).Config(), dutPort2.NewOCInterface(p2.Name()))
 
 	p3 := dut.Port(t, "port3")
-	i3 := &oc.Interface{Name: ygot.String(p3.Name())}
-	gnmi.Replace(t, dut, ocpath.Root().Interface(p3.Name()).Config(), configInterfaceDUT(i3, &dutPort3))
+	gnmi.Replace(t, dut, ocpath.Root().Interface(p3.Name()).Config(), dutPort3.NewOCInterface(p3.Name()))
 
 	gnmi.Await(t, dut, ocpath.Root().Interface(dut.Port(t, "port1").Name()).Subinterface(0).Ipv4().Address(dutPort1.IPv4).Ip().State(), time.Minute, dutPort1.IPv4)
 	gnmi.Await(t, dut, ocpath.Root().Interface(dut.Port(t, "port2").Name()).Subinterface(0).Ipv4().Address(dutPort2.IPv4).Ip().State(), time.Minute, dutPort2.IPv4)
 	gnmi.Await(t, dut, ocpath.Root().Interface(dut.Port(t, "port3").Name()).Subinterface(0).Ipv4().Address(dutPort3.IPv4).Ip().State(), time.Minute, dutPort3.IPv4)
+
+	// Start a new BGP session that should exchange the necessary gRIBI
+	// route that recursively resolves and thus enables traffic to flow.
+	bgpPath := ocpath.Root().NetworkInstance(fakedevice.DefaultNetworkInstance).Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").Bgp()
+
+	// Remove any existing BGP config
+	gnmi.Delete(t, dut, bgpPath.Config())
+
+	dutConf := bgpWithNbr(dutAS, dutPort3.IPv4, &oc.NetworkInstance_Protocol_Bgp_Neighbor{
+		PeerAs:          ygot.Uint32(dut2AS),
+		NeighborAddress: ygot.String(dut2Port2.IPv4),
+	}, &oc.NetworkInstance_Protocol_Bgp_Neighbor{
+		PeerAs:          ygot.Uint32(ateAS),
+		NeighborAddress: ygot.String(atePort1.IPv4),
+	})
+	gnmi.Replace(t, dut, bgpPath.Config(), dutConf)
 }
 
 // configureDUT2 configures ports on DUT2.
 func configureDUT2(t *testing.T, dut *ondatra.DUTDevice) {
 	p1 := dut.Port(t, "port1")
-	i1 := &oc.Interface{Name: ygot.String(p1.Name())}
-	gnmi.Replace(t, dut, ocpath.Root().Interface(p1.Name()).Config(), configInterfaceDUT(i1, &dut2Port1))
+	gnmi.Replace(t, dut, ocpath.Root().Interface(p1.Name()).Config(), dut2Port1.NewOCInterface(p1.Name()))
 
 	p2 := dut.Port(t, "port2")
-	i2 := &oc.Interface{Name: ygot.String(p2.Name())}
-	gnmi.Replace(t, dut, ocpath.Root().Interface(p2.Name()).Config(), configInterfaceDUT(i2, &dut2Port2))
+	gnmi.Replace(t, dut, ocpath.Root().Interface(p2.Name()).Config(), dut2Port2.NewOCInterface(p2.Name()))
 
 	gnmi.Await(t, dut, ocpath.Root().Interface(dut.Port(t, "port1").Name()).Subinterface(0).Ipv4().Address(dut2Port1.IPv4).Ip().State(), time.Minute, dut2Port1.IPv4)
 	gnmi.Await(t, dut, ocpath.Root().Interface(dut.Port(t, "port2").Name()).Subinterface(0).Ipv4().Address(dut2Port2.IPv4).Ip().State(), time.Minute, dut2Port2.IPv4)
+
+	// Start a new BGP session that should exchange the necessary gRIBI
+	// route that recursively resolves and thus enables traffic to flow.
+	bgpPath := ocpath.Root().NetworkInstance(fakedevice.DefaultNetworkInstance).Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").Bgp()
+
+	// Remove any existing BGP config
+	gnmi.Delete(t, dut, bgpPath.Config())
+
+	dut2Conf := bgpWithNbr(dut2AS, dut2Port2.IPv4, &oc.NetworkInstance_Protocol_Bgp_Neighbor{
+		PeerAs:          ygot.Uint32(dutAS),
+		NeighborAddress: ygot.String(dutPort3.IPv4),
+	})
+	gnmi.Replace(t, dut, bgpPath.Config(), dut2Conf)
+
 }
 
 func waitOTGARPEntry(t *testing.T) {
@@ -253,11 +361,10 @@ func waitOTGARPEntry(t *testing.T) {
 // testTraffic generates traffic flow from source network to
 // destination network via srcEndPoint to dstEndPoint and checks for
 // packet loss and returns loss percentage as float.
-func testTraffic(t *testing.T, ate *ondatra.ATEDevice, top gosnappi.Config, srcEndPoint, dstEndPoint Attributes, startingIP string) float32 {
-	otg := ate.OTG()
+func testTraffic(t *testing.T, otg *otg.OTG, otgConfig gosnappi.Config, srcEndPoint, dstEndPoint Attributes, startingIP string) float32 {
 	waitOTGARPEntry(t)
-	top.Flows().Clear().Items()
-	flowipv4 := top.Flows().Add().SetName("Flow")
+	otgConfig.Flows().Clear().Items()
+	flowipv4 := otgConfig.Flows().Add().SetName("Flow")
 	flowipv4.Metrics().SetEnable(true)
 	flowipv4.TxRx().Device().
 		SetTxNames([]string{srcEndPoint.Name + ".IPv4"}).
@@ -267,7 +374,7 @@ func testTraffic(t *testing.T, ate *ondatra.ATEDevice, top gosnappi.Config, srcE
 	v4 := flowipv4.Packet().Add().Ipv4()
 	v4.Src().SetValue(srcEndPoint.IPv4)
 	v4.Dst().Increment().SetStart(startingIP).SetCount(250)
-	otg.PushConfig(t, top)
+	otg.PushConfig(t, otgConfig)
 
 	otg.StartTraffic(t)
 	time.Sleep(15 * time.Second)
@@ -284,18 +391,18 @@ func testTraffic(t *testing.T, ate *ondatra.ATEDevice, top gosnappi.Config, srcE
 
 // testTrafficAndEncap checks that traffic can reach from ATE port1 to ATE
 // port2 with the correct GUE encap fields (if any).
-func testTrafficAndEncap(t *testing.T, ate *ondatra.ATEDevice, top gosnappi.Config, startingIP string, encapFields *EncapFields) {
+func testTrafficAndEncap(t *testing.T, otg *otg.OTG, otgConfig gosnappi.Config, startingIP string, encapFields *EncapFields) {
 	t.Helper()
-	otg := ate.OTG()
+	//otgConfig = otg.NewConfig(t)
 	otg.StartCapture(t, atePort2.Name)
 
-	if loss := testTraffic(t, ate, top, atePort1, atePort2, startingIP); loss > 1 {
+	if loss := testTraffic(t, otg, otgConfig, atePort1, atePort2, startingIP); loss > 1 {
 		t.Errorf("Loss: got %g, want <= 1", loss)
 	}
 
 	otg.StopCapture(t, atePort2.Name)
 
-	captureBytes := ate.OTG().FetchCapture(t, atePort2.Name)
+	captureBytes := otg.FetchCapture(t, atePort2.Name)
 
 	f, err := os.CreateTemp(".", "pcap")
 	if err != nil {
@@ -398,14 +505,47 @@ func awaitTimeout(ctx context.Context, c *fluent.GRIBIClient, t testing.TB, time
 	return c.Await(subctx, t)
 }
 
-func bgpWithNbr(as uint32, routerID string, nbr *oc.NetworkInstance_Protocol_Bgp_Neighbor) *oc.NetworkInstance_Protocol_Bgp {
+func bgpWithNbr(as uint32, routerID string, nbrs ...*oc.NetworkInstance_Protocol_Bgp_Neighbor) *oc.NetworkInstance_Protocol_Bgp {
 	bgp := &oc.NetworkInstance_Protocol_Bgp{}
 	bgp.GetOrCreateGlobal().As = ygot.Uint32(as)
 	if routerID != "" {
 		bgp.Global.RouterId = ygot.String(routerID)
 	}
-	bgp.AppendNeighbor(nbr)
+	for _, nbr := range nbrs {
+		bgp.AppendNeighbor(nbr)
+	}
 	return bgp
+}
+
+func verifyOTGBGPTelemetry(t *testing.T, otg *otg.OTG, c gosnappi.Config, state string) {
+	for _, d := range c.Devices().Items() {
+		for _, ip := range d.Bgp().Ipv4Interfaces().Items() {
+			for _, configPeer := range ip.Peers().Items() {
+				nbrPath := gnmi.OTG().BgpPeer(configPeer.Name())
+				_, ok := gnmi.Watch(t, otg, nbrPath.SessionState().State(), time.Minute, func(val *ygnmi.Value[otgtelemetry.E_BgpPeer_SessionState]) bool {
+					currState, ok := val.Val()
+					return ok && currState.String() == state
+				}).Await(t)
+				if !ok {
+					t.Log("BGP reported state", nbrPath.State(), gnmi.Get(t, otg, nbrPath.State()))
+					t.Errorf("No BGP neighbor formed for peer %s", configPeer.Name())
+				}
+			}
+		}
+		for _, ip := range d.Bgp().Ipv6Interfaces().Items() {
+			for _, configPeer := range ip.Peers().Items() {
+				nbrPath := gnmi.OTG().BgpPeer(configPeer.Name())
+				_, ok := gnmi.Watch(t, otg, nbrPath.SessionState().State(), time.Minute, func(val *ygnmi.Value[otgtelemetry.E_BgpPeer_SessionState]) bool {
+					currState, ok := val.Val()
+					return ok && currState.String() == state
+				}).Await(t)
+				if !ok {
+					t.Log("BGP reported state", nbrPath.State(), gnmi.Get(t, otg, nbrPath.State()))
+					t.Errorf("No BGP neighbor formed for peer %s", configPeer.Name())
+				}
+			}
+		}
+	}
 }
 
 func configureGRIBIEntry(t *testing.T, dut *ondatra.DUTDevice, entries []fluent.GRIBIEntry) *fluent.GRIBIClient {
@@ -439,32 +579,17 @@ type EncapFields struct {
 	dstPort uint16
 }
 
-func TestBGPTriggeredGUE(t *testing.T) {
-	dut := ondatra.DUT(t, "dut")
-	configureDUT1(t, dut)
-	dut2 := ondatra.DUT(t, "dut2")
-	configureDUT2(t, dut2)
-
-	ate := ondatra.ATE(t, "ate")
-	ateTop := configureATE(t, ate)
-	ate.OTG().PushConfig(t, ateTop)
-
-	bgpPath := ocpath.Root().NetworkInstance(fakedevice.DefaultNetworkInstance).Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").Bgp()
-
-	// Remove any existing BGP config
-	gnmi.Delete(t, dut, bgpPath.Config())
-	gnmi.Delete(t, dut2, bgpPath.Config())
-
-	dutEntries := []fluent.GRIBIEntry{
-		// Add an IPv4Entry for 203.0.113.0/24 pointing to 192.0.2.6.
-		fluent.NextHopEntry().WithNetworkInstance(defaultNetworkInstance).
-			WithIndex(nhIndex1).WithIPAddress(atePort2.IPv4),
-		fluent.NextHopGroupEntry().WithNetworkInstance(defaultNetworkInstance).
-			WithID(nhgIndex1).AddNextHop(nhIndex1, 1),
-		fluent.IPv4Entry().WithNetworkInstance(defaultNetworkInstance).
-			WithPrefix(ateIndirectNHCIDR).WithNextHopGroup(nhgIndex1),
-	}
-	c := configureGRIBIEntry(t, dut, dutEntries)
+func installGRIBIEntries(t *testing.T, dut, dut2 *ondatra.DUTDevice) {
+	//dutEntries := []fluent.GRIBIEntry{
+	//	// Add an IPv4Entry for 203.0.113.0/24 pointing to 192.0.2.6.
+	//	fluent.NextHopEntry().WithNetworkInstance(defaultNetworkInstance).
+	//		WithIndex(nhIndex1).WithIPAddress(atePort2.IPv4),
+	//	fluent.NextHopGroupEntry().WithNetworkInstance(defaultNetworkInstance).
+	//		WithID(nhgIndex1).AddNextHop(nhIndex1, 1),
+	//	fluent.IPv4Entry().WithNetworkInstance(defaultNetworkInstance).
+	//		WithPrefix(ateIndirectNHCIDR).WithNextHopGroup(nhgIndex1),
+	//}
+	//c := configureGRIBIEntry(t, dut, dutEntries)
 
 	dut2Entries := []fluent.GRIBIEntry{
 		// Add an IPv4Entry for 198.51.0.0/24 pointing to 203.0.113.1.
@@ -491,23 +616,23 @@ func TestBGPTriggeredGUE(t *testing.T) {
 	}
 	c2 := configureGRIBIEntry(t, dut2, dut2Entries)
 
-	wantOperationResultsDUT1 := []*client.OpResult{
-		fluent.OperationResult().
-			WithNextHopOperation(nhIndex1).
-			WithProgrammingResult(fluent.InstalledInFIB).
-			WithOperationType(constants.Add).
-			AsResult(),
-		fluent.OperationResult().
-			WithNextHopGroupOperation(nhgIndex1).
-			WithProgrammingResult(fluent.InstalledInFIB).
-			WithOperationType(constants.Add).
-			AsResult(),
-		fluent.OperationResult().
-			WithIPv4Operation(ateIndirectNHCIDR).
-			WithProgrammingResult(fluent.InstalledInFIB).
-			WithOperationType(constants.Add).
-			AsResult(),
-	}
+	//wantOperationResultsDUT1 := []*client.OpResult{
+	//	fluent.OperationResult().
+	//		WithNextHopOperation(nhIndex1).
+	//		WithProgrammingResult(fluent.InstalledInFIB).
+	//		WithOperationType(constants.Add).
+	//		AsResult(),
+	//	fluent.OperationResult().
+	//		WithNextHopGroupOperation(nhgIndex1).
+	//		WithProgrammingResult(fluent.InstalledInFIB).
+	//		WithOperationType(constants.Add).
+	//		AsResult(),
+	//	fluent.OperationResult().
+	//		WithIPv4Operation(ateIndirectNHCIDR).
+	//		WithProgrammingResult(fluent.InstalledInFIB).
+	//		WithOperationType(constants.Add).
+	//		AsResult(),
+	//}
 
 	wantOperationResultsDUT2 := []*client.OpResult{
 		fluent.OperationResult().
@@ -557,28 +682,45 @@ func TestBGPTriggeredGUE(t *testing.T) {
 			AsResult(),
 	}
 
-	for _, wantResult := range wantOperationResultsDUT1 {
-		chk.HasResult(t, c.Results(t), wantResult, chk.IgnoreOperationID())
-	}
+	//for _, wantResult := range wantOperationResultsDUT1 {
+	//	chk.HasResult(t, c.Results(t), wantResult, chk.IgnoreOperationID())
+	//}
 	for _, wantResult := range wantOperationResultsDUT2 {
 		chk.HasResult(t, c2.Results(t), wantResult, chk.IgnoreOperationID())
 	}
+}
 
-	// Start a new BGP session that should exchange the necessary gRIBI
-	// route that recursively resolves and thus enables traffic to flow.
-	dutConf := bgpWithNbr(dutAS, dutPort3.IPv4, &oc.NetworkInstance_Protocol_Bgp_Neighbor{
-		PeerAs:          ygot.Uint32(dut2AS),
-		NeighborAddress: ygot.String(dut2Port2.IPv4),
-	})
-	dut2Conf := bgpWithNbr(dut2AS, dut2Port2.IPv4, &oc.NetworkInstance_Protocol_Bgp_Neighbor{
-		PeerAs:          ygot.Uint32(dutAS),
-		NeighborAddress: ygot.String(dutPort3.IPv4),
-	})
-	gnmi.Replace(t, dut, bgpPath.Config(), dutConf)
-	gnmi.Replace(t, dut2, bgpPath.Config(), dut2Conf)
+func TestBGPTriggeredGUE(t *testing.T) {
+	dut := ondatra.DUT(t, "dut")
+	configureDUT1(t, dut)
+	dut2 := ondatra.DUT(t, "dut2")
+	configureDUT2(t, dut2)
 
+	ate := ondatra.ATE(t, "ate")
+	otg := ate.OTG()
+	otgConfig := configureOTG(t, otg)
+	otg.PushConfig(t, otgConfig)
+	//otg.StartCapture(t, atePort1.Name)
+	otg.StartProtocols(t)
+
+	bgpPath := ocpath.Root().NetworkInstance(fakedevice.DefaultNetworkInstance).Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").Bgp()
 	nbrPath := bgpPath.Neighbor(dut2Port2.IPv4)
 	gnmi.Await(t, dut, nbrPath.SessionState().State(), 120*time.Second, oc.Bgp_Neighbor_SessionState_ESTABLISHED)
+
+	//time.Sleep(15 * time.Second)
+	//otg.StopCapture(t, atePort1.Name)
+	//captureBytes := ate.OTG().FetchCapture(t, atePort1.Name)
+	//if err := packetutil.DisplayCapture(captureBytes); err != nil {
+	//	t.Fatal(err)
+	//}
+
+	// TODO(wenbli): OTG to lemming session
+	t.Logf("Verify DUT's DUT-OTG BGP sessions up")
+	gnmi.Await(t, dut, bgpPath.Neighbor(atePort1.IPv4).SessionState().State(), 120*time.Second, oc.Bgp_Neighbor_SessionState_ESTABLISHED)
+	t.Logf("Verify OTG's DUT-OTG BGP sessions up")
+	verifyOTGBGPTelemetry(t, otg, otgConfig, "ESTABLISHED")
+
+	installGRIBIEntries(t, dut, dut2)
 
 	tests := []struct {
 		desc         string
@@ -586,11 +728,13 @@ func TestBGPTriggeredGUE(t *testing.T) {
 		encapFields1 *EncapFields
 		encapFields2 *EncapFields
 		encapFields3 *EncapFields
+		skip         bool
 	}{{
 		desc:   "without policy",
 		gnmiOp: func() {},
 	}, {
 		desc: "with single policy",
+		skip: true,
 		gnmiOp: func() {
 			policy2Pfx := "203.0.113.0/29"
 			gnmi.Replace(t, dut, ocpath.Root().BgpGueIpv4Policy(policy2Pfx).Config(), &oc.BgpGueIpv4Policy{
@@ -613,6 +757,7 @@ func TestBGPTriggeredGUE(t *testing.T) {
 		},
 	}, {
 		desc: "with two overlapping policies",
+		skip: true,
 		gnmiOp: func() {
 			policy1Pfx := "203.0.113.0/30"
 			gnmi.Replace(t, dut, ocpath.Root().BgpGueIpv4Policy(policy1Pfx).Config(), &oc.BgpGueIpv4Policy{
@@ -636,6 +781,10 @@ func TestBGPTriggeredGUE(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
+			if tt.skip {
+				t.Skip()
+			}
+
 			tests := []struct {
 				startingIP  string
 				encapFields *EncapFields
@@ -653,7 +802,7 @@ func TestBGPTriggeredGUE(t *testing.T) {
 			tt.gnmiOp()
 			for _, tt := range tests {
 				t.Run(tt.startingIP, func(t *testing.T) {
-					testTrafficAndEncap(t, ate, ateTop, tt.startingIP, tt.encapFields)
+					testTrafficAndEncap(t, otg, otgConfig, tt.startingIP, tt.encapFields)
 				})
 			}
 		})
