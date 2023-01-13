@@ -26,6 +26,8 @@ import (
 	"github.com/openconfig/ygnmi/ygnmi"
 )
 
+const ()
+
 // convertStaticRoute converts an OC static route to a sysrib Route
 func convertStaticRoute(sroute *oc.NetworkInstance_Protocol_Static) *Route {
 	var nexthops []*afthelper.NextHopSummary
@@ -60,13 +62,13 @@ func convertStaticRoute(sroute *oc.NetworkInstance_Protocol_Static) *Route {
 // It returns an error if there is an error before monitoring can begin.
 func (s *Server) monitorStaticRoutes(yclient *ygnmi.Client) error {
 	b := &ocpath.Batch{}
-	staticroot := ocpath.Root().NetworkInstance(fakedevice.DefaultNetworkInstance).Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_STATIC, "DEFAULT")
+	staticroot := ocpath.Root().NetworkInstance(fakedevice.DefaultNetworkInstance).Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_STATIC, fakedevice.StaticRoutingProtocol)
 	staticpath := staticroot.StaticAny()
 	b.AddPaths(
 		staticpath.NextHopAny().NextHop().Config().PathStruct(),
 		// TODO(wenbli): Handle these paths.
-		//staticpath.NextHopAny().Preference().Config().PathStruct(),
-		//staticpath.NextHopAny().Metric().Config().PathStruct(),
+		// staticpath.NextHopAny().Preference().Config().PathStruct(),
+		// staticpath.NextHopAny().Metric().Config().PathStruct(),
 		staticpath.NextHopAny().Recurse().Config().PathStruct(),
 		staticpath.Prefix().Config().PathStruct(),
 	)
@@ -80,7 +82,7 @@ func (s *Server) monitorStaticRoutes(yclient *ygnmi.Client) error {
 			if !ok {
 				return ygnmi.Continue
 			}
-			staticp := rootVal.GetOrCreateNetworkInstance(fakedevice.DefaultNetworkInstance).GetOrCreateProtocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_STATIC, "DEFAULT")
+			staticp := rootVal.GetOrCreateNetworkInstance(fakedevice.DefaultNetworkInstance).GetOrCreateProtocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_STATIC, fakedevice.StaticRoutingProtocol)
 			for _, sroute := range staticp.Static {
 				if route := convertStaticRoute(sroute); route != nil {
 					if err := s.setRoute(fakedevice.DefaultNetworkInstance, route); err != nil {

@@ -47,17 +47,16 @@ func TestMain(m *testing.M) {
 //   - ate:port1 -> dut:port1 subnet 192.0.2.0/30
 //   - ate:port2 -> dut:port2 subnet 192.0.2.4/30
 const (
-	ipv4PrefixLen          = 30
-	ateDstNetCIDR          = "198.51.100.0/24"
-	ateIndirectNH          = "203.0.113.1"
-	ateIndirectNHCIDR      = ateIndirectNH + "/32"
-	nhIndex                = 1
-	nhgIndex               = 42
-	nhIndex2               = 2
-	nhgIndex2              = 52
-	nhIndex3               = 3
-	nhgIndex3              = 62
-	defaultNetworkInstance = "DEFAULT"
+	ipv4PrefixLen     = 30
+	ateDstNetCIDR     = "198.51.100.0/24"
+	ateIndirectNH     = "203.0.113.1"
+	ateIndirectNHCIDR = ateIndirectNH + "/32"
+	nhIndex           = 1
+	nhgIndex          = 42
+	nhIndex2          = 2
+	nhgIndex2         = 52
+	nhIndex3          = 3
+	nhgIndex3         = 62
 )
 
 // Attributes bundles some common attributes for devices and/or interfaces.
@@ -276,7 +275,7 @@ func TestIPv4Entry(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			// Install Static Routes
 			staticp := ocpath.Root().NetworkInstance(fakedevice.DefaultNetworkInstance).
-				Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_STATIC, "DEFAULT")
+				Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_STATIC, fakedevice.StaticRoutingProtocol)
 			for _, route := range tc.routes {
 				gnmi.Replace(t, dut, staticp.Static(*route.Prefix).Config(), route)
 				//gnmi.Await(t, dut, staticp.Static(*route.Prefix).State(), 30*time.Second, route)
