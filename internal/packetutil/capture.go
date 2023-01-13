@@ -28,13 +28,13 @@ import (
 func DisplayCaptureFile(pcapfile string) error {
 	f, err := os.Open(pcapfile)
 	if err != nil {
-		return fmt.Errorf("ERROR: Could not open pcap file %s: %v\n", f.Name(), err)
+		return fmt.Errorf("could not open pcap file %s: %v", f.Name(), err)
 	}
 	defer f.Close()
 
 	handleRead, err := pcapgo.NewReader(f)
 	if err != nil {
-		return fmt.Errorf("ERROR: Could not create reader on pcap file %s: %v\n", f.Name(), err)
+		return fmt.Errorf("could not create reader on pcap file %s: %v", f.Name(), err)
 	}
 	ps := gopacket.NewPacketSource(handleRead, layers.LinkTypeEthernet)
 
@@ -55,7 +55,7 @@ func DisplayCapture(captureBytes []byte) error {
 
 	handleRead, err := pcapgo.NewReader(bytes.NewReader(captureBytes))
 	if err != nil {
-		return fmt.Errorf("ERROR: Could not create reader on captured bytes")
+		return fmt.Errorf("could not create reader on captured bytes")
 	}
 	ps := gopacket.NewPacketSource(handleRead, layers.LinkTypeEthernet)
 
