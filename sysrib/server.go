@@ -171,6 +171,10 @@ func (s *Server) Start(gClient gpb.GNMIClient, target, zapiURL string) error {
 		return err
 	}
 
+	if err := s.monitorStaticRoutes(yclient); err != nil {
+		return err
+	}
+
 	if err := os.RemoveAll(SockAddr); err != nil {
 		return err
 	}
