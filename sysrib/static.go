@@ -81,9 +81,6 @@ func (s *Server) monitorStaticRoutes(yclient *ygnmi.Client) error {
 				return ygnmi.Continue
 			}
 			staticp := rootVal.GetOrCreateNetworkInstance(fakedevice.DefaultNetworkInstance).GetOrCreateProtocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_STATIC, "DEFAULT")
-			if staticp == nil {
-				return ygnmi.Continue
-			}
 			for _, sroute := range staticp.Static {
 				if route := convertStaticRoute(sroute); route != nil {
 					if err := s.setRoute(fakedevice.DefaultNetworkInstance, route); err != nil {
