@@ -26,8 +26,8 @@ import (
 	"github.com/openconfig/ygnmi/ygnmi"
 )
 
-// createRoute converts a Route to a sysrib SetRouteRequest
-func createRoute(sroute *oc.NetworkInstance_Protocol_Static) *Route {
+// convertStaticRoute converts an OC static route to a sysrib Route
+func convertStaticRoute(sroute *oc.NetworkInstance_Protocol_Static) *Route {
 	var nexthops []*afthelper.NextHopSummary
 	for _, snh := range sroute.NextHop {
 		// TODO(wenbli): Implement recurse option.
@@ -85,7 +85,7 @@ func (s *Server) monitorStaticRoutes(yclient *ygnmi.Client) error {
 				return ygnmi.Continue
 			}
 			for _, sroute := range staticp.Static {
-				if route := createRoute(sroute); route != nil {
+				if route := convertStaticRoute(sroute); route != nil {
 					if err := s.setRoute(fakedevice.DefaultNetworkInstance, route); err != nil {
 						log.Warningf("Failed to add static route: %v", err)
 					} else {
