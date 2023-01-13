@@ -26,8 +26,6 @@ import (
 	"github.com/openconfig/ygnmi/ygnmi"
 )
 
-const ()
-
 // convertStaticRoute converts an OC static route to a sysrib Route
 func convertStaticRoute(sroute *oc.NetworkInstance_Protocol_Static) *Route {
 	var nexthops []*afthelper.NextHopSummary
