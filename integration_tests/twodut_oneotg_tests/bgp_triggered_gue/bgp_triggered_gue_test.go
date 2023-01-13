@@ -155,7 +155,7 @@ var (
 	}
 )
 
-// configureOTG configures port1 and port2 on the ATE.
+// configureOTG configures ports and other configurations on the OTG device.
 func configureOTG(t *testing.T, otg *otg.OTG) gosnappi.Config {
 	t.Helper()
 	config := otg.NewConfig(t)

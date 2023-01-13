@@ -18,6 +18,7 @@ package packetutil
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/google/gopacket"
@@ -25,44 +26,37 @@ import (
 	"github.com/google/gopacket/pcapgo"
 )
 
-func DisplayCaptureFile(pcapfile string) error {
+// DisplayCaptureFile displays the first n packets.
+func DisplayCaptureFile(pcapfile string, n int) error {
 	f, err := os.Open(pcapfile)
 	if err != nil {
 		return fmt.Errorf("could not open pcap file %s: %v", f.Name(), err)
 	}
 	defer f.Close()
 
-	handleRead, err := pcapgo.NewReader(f)
-	if err != nil {
-		return fmt.Errorf("could not create reader on pcap file %s: %v", f.Name(), err)
-	}
-	ps := gopacket.NewPacketSource(handleRead, layers.LinkTypeEthernet)
-
-	for i := 0; i != 10; i++ {
-		pkt, err := ps.NextPacket()
-		if err != nil {
-			return fmt.Errorf("error reading next packet: %v", err)
-		}
-		fmt.Println(pkt.Dump())
-	}
-	return nil
+	return displayCapture(f, n)
 }
 
-func DisplayCapture(captureBytes []byte) error {
+// DisplayCapture displays the first n packets from a PCAP capture.
+func DisplayCapture(captureBytes []byte, n int) error {
 	if len(captureBytes) == 0 {
 		return fmt.Errorf("packetutil: zero captured bytes")
 	}
 
-	handleRead, err := pcapgo.NewReader(bytes.NewReader(captureBytes))
+	return displayCapture(bytes.NewReader(captureBytes), n)
+}
+
+func displayCapture(reader io.Reader, n int) error {
+	handleRead, err := pcapgo.NewReader(reader)
 	if err != nil {
-		return fmt.Errorf("could not create reader on captured bytes")
+		return fmt.Errorf("packetutil: could not create reader")
 	}
 	ps := gopacket.NewPacketSource(handleRead, layers.LinkTypeEthernet)
 
-	for i := 0; i != 10; i++ {
+	for i := 0; i != n; i++ {
 		pkt, err := ps.NextPacket()
 		if err != nil {
-			return fmt.Errorf("error reading next packet: %v", err)
+			return fmt.Errorf("packetutil: error reading next packet: %v", err)
 		}
 		fmt.Println(pkt.Dump())
 	}
