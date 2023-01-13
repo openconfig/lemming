@@ -34,6 +34,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/encoding/prototext"
 
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 )
@@ -358,7 +359,7 @@ func (s *Server) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResponse
 		s.configMu.Lock()
 		defer s.configMu.Unlock()
 
-		log.V(1).Infof("config datastore service received SetRequest: %v", req)
+		log.V(1).Infof("config datastore service received SetRequest: %v", prototext.Format(req))
 		if s.configSchema == nil {
 			return s.UnimplementedGNMIServer.Set(ctx, req)
 		}
