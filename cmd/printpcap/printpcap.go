@@ -26,5 +26,5 @@ func main() {
 	if len(os.Args) < 2 {
 		log.Fatal("expected exactly 1 arg: the path to the pcap file")
 	}
-	packetutil.DisplayCapture(os.Args[1])
+	packetutil.DisplayCaptureFile(os.Args[1])
 }

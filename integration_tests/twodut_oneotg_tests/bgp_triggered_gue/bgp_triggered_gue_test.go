@@ -171,15 +171,38 @@ func configureOTG(t *testing.T, otg *otg.OTG) gosnappi.Config {
 	// Configure capture format.
 	config.Captures().Add().SetName("ca1").SetPortNames([]string{atePort1.Name}).SetFormat(gosnappi.CaptureFormat.PCAP)
 
+	// Configure port2
+	config.Ports().Add().SetName(atePort2.Name)
+	i2 := config.Devices().Add().SetName(atePort2.Name)
+	eth2 := i2.Ethernets().Add().SetName(atePort2.Name + ".Eth").
+		SetPortName(i2.Name()).SetMac(atePort2.MAC)
+	eth2.Ipv4Addresses().Add().SetName(i2.Name() + ".IPv4").
+		SetAddress(atePort2.IPv4).SetGateway(dutPort2.IPv4).
+		SetPrefix(int32(atePort2.IPv4Len))
+	// Configure capture format.
+	config.Captures().Add().SetName("ca2").SetPortNames([]string{atePort2.Name}).SetFormat(gosnappi.CaptureFormat.PCAP)
+
+	// Configure port3
+	config.Ports().Add().SetName(atePort3.Name)
+	i3 := config.Devices().Add().SetName(atePort3.Name)
+	eth3 := i3.Ethernets().Add().SetName(atePort3.Name + ".Eth").
+		SetPortName(i3.Name()).SetMac(atePort3.MAC)
+	eth3.Ipv4Addresses().Add().SetName(i3.Name() + ".IPv4").
+		SetAddress(atePort3.IPv4).SetGateway(dut2Port1.IPv4).
+		SetPrefix(int32(atePort3.IPv4Len))
+
 	// Configure BGP neighbour
+	// This causes the route ateIndirectNHCIDR -> atePort2's IP to be
+	// exchanged from OTG to DUT on DUT port 1.
 	bgp4ObjectMap := make(map[string]gosnappi.BgpV4Peer)
 	ipv4ObjectMap := make(map[string]gosnappi.DeviceIpv4)
 
-	ateName := atePort1.Name
+	ateName := atePort2.Name
 	ateNeighbor := dutPort1
 	devName := ateName + ".dev"
+	bgpNexthop := atePort2.IPv4
 
-	bgp := i1.Bgp().SetRouterId(atePort1.IPv4)
+	bgp := i1.Bgp().SetRouterId(atePort2.IPv4)
 
 	ipv4 := eth1.Ipv4Addresses().Add().SetName(devName + ".IPv4").SetAddress(atePort1.IPv4).SetGateway(ateNeighbor.IPv4).SetPrefix(ipv4PrefixLen)
 	bgp4Name := devName + ".BGP4.peer"
@@ -193,33 +216,12 @@ func configureOTG(t *testing.T, otg *otg.OTG) gosnappi.Config {
 
 	bgpName := ateName + ".dev.BGP4.peer"
 	bgpPeer := bgp4ObjectMap[bgpName]
-	ip := ipv4ObjectMap[ateName+".dev.IPv4"]
 	firstAdvAddr := strings.Split(ateIndirectNHCIDR, "/")[0]
 	firstAdvPrefix, _ := strconv.Atoi(strings.Split(ateIndirectNHCIDR, "/")[1])
-	bgp4PeerRoutes := bgpPeer.V4Routes().Add().SetName(bgpName + ".rr4").SetNextHopIpv4Address(ip.Address()).SetNextHopAddressType(gosnappi.BgpV4RouteRangeNextHopAddressType.IPV4).SetNextHopMode(gosnappi.BgpV4RouteRangeNextHopMode.MANUAL)
+	bgp4PeerRoutes := bgpPeer.V4Routes().Add().SetName(bgpName + ".rr4").SetNextHopIpv4Address(bgpNexthop).SetNextHopAddressType(gosnappi.BgpV4RouteRangeNextHopAddressType.IPV4).SetNextHopMode(gosnappi.BgpV4RouteRangeNextHopMode.MANUAL)
 	bgp4PeerRoutes.Addresses().Add().SetAddress(firstAdvAddr).SetPrefix(int32(firstAdvPrefix)).SetCount(1)
 	bgp4PeerRoutes.AddPath().SetPathId(1)
 
-	// Configure port2
-	config.Ports().Add().SetName(atePort2.Name)
-	i2 := config.Devices().Add().SetName(atePort2.Name)
-	eth2 := i2.Ethernets().Add().SetName(atePort2.Name + ".Eth").
-		SetPortName(i2.Name()).SetMac(atePort2.MAC)
-	eth2.Ipv4Addresses().Add().SetName(i2.Name() + ".IPv4").
-		SetAddress(atePort2.IPv4).SetGateway(dutPort2.IPv4).
-		SetPrefix(int32(atePort2.IPv4Len))
-	// Configure capture format.
-	config.Captures().Add().SetName("ca2").SetPortNames([]string{atePort2.Name}).SetFormat(gosnappi.CaptureFormat.PCAP)
-
-	config.Ports().Add().SetName(atePort3.Name)
-	i3 := config.Devices().Add().SetName(atePort3.Name)
-	eth3 := i3.Ethernets().Add().SetName(atePort3.Name + ".Eth").
-		SetPortName(i3.Name()).SetMac(atePort3.MAC)
-	eth3.Ipv4Addresses().Add().SetName(i3.Name() + ".IPv4").
-		SetAddress(atePort3.IPv4).SetGateway(dut2Port1.IPv4).
-		SetPrefix(int32(atePort3.IPv4Len))
-
-	t.Logf("Pushing config to ATE and starting protocols...")
 	return config
 }
 
@@ -361,8 +363,9 @@ func waitOTGARPEntry(t *testing.T) {
 // testTraffic generates traffic flow from source network to
 // destination network via srcEndPoint to dstEndPoint and checks for
 // packet loss and returns loss percentage as float.
-func testTraffic(t *testing.T, otg *otg.OTG, otgConfig gosnappi.Config, srcEndPoint, dstEndPoint Attributes, startingIP string) float32 {
+func testTraffic(t *testing.T, otg *otg.OTG, srcEndPoint, dstEndPoint Attributes, startingIP string) float32 {
 	waitOTGARPEntry(t)
+	otgConfig := otg.FetchConfig(t)
 	otgConfig.Flows().Clear().Items()
 	flowipv4 := otgConfig.Flows().Add().SetName("Flow")
 	flowipv4.Metrics().SetEnable(true)
@@ -391,12 +394,11 @@ func testTraffic(t *testing.T, otg *otg.OTG, otgConfig gosnappi.Config, srcEndPo
 
 // testTrafficAndEncap checks that traffic can reach from ATE port1 to ATE
 // port2 with the correct GUE encap fields (if any).
-func testTrafficAndEncap(t *testing.T, otg *otg.OTG, otgConfig gosnappi.Config, startingIP string, encapFields *EncapFields) {
+func testTrafficAndEncap(t *testing.T, otg *otg.OTG, startingIP string, encapFields *EncapFields) {
 	t.Helper()
-	//otgConfig = otg.NewConfig(t)
 	otg.StartCapture(t, atePort2.Name)
 
-	if loss := testTraffic(t, otg, otgConfig, atePort1, atePort2, startingIP); loss > 1 {
+	if loss := testTraffic(t, otg, atePort1, atePort2, startingIP); loss > 1 {
 		t.Errorf("Loss: got %g, want <= 1", loss)
 	}
 
@@ -579,18 +581,7 @@ type EncapFields struct {
 	dstPort uint16
 }
 
-func installGRIBIEntries(t *testing.T, dut, dut2 *ondatra.DUTDevice) {
-	//dutEntries := []fluent.GRIBIEntry{
-	//	// Add an IPv4Entry for 203.0.113.0/24 pointing to 192.0.2.6.
-	//	fluent.NextHopEntry().WithNetworkInstance(defaultNetworkInstance).
-	//		WithIndex(nhIndex1).WithIPAddress(atePort2.IPv4),
-	//	fluent.NextHopGroupEntry().WithNetworkInstance(defaultNetworkInstance).
-	//		WithID(nhgIndex1).AddNextHop(nhIndex1, 1),
-	//	fluent.IPv4Entry().WithNetworkInstance(defaultNetworkInstance).
-	//		WithPrefix(ateIndirectNHCIDR).WithNextHopGroup(nhgIndex1),
-	//}
-	//c := configureGRIBIEntry(t, dut, dutEntries)
-
+func installGRIBIEntries(t *testing.T, dut2 *ondatra.DUTDevice) {
 	dut2Entries := []fluent.GRIBIEntry{
 		// Add an IPv4Entry for 198.51.0.0/24 pointing to 203.0.113.1.
 		fluent.NextHopEntry().WithNetworkInstance(defaultNetworkInstance).
@@ -615,24 +606,6 @@ func installGRIBIEntries(t *testing.T, dut, dut2 *ondatra.DUTDevice) {
 			WithPrefix(ateDstNetCIDR3).WithNextHopGroup(nhgIndex3),
 	}
 	c2 := configureGRIBIEntry(t, dut2, dut2Entries)
-
-	//wantOperationResultsDUT1 := []*client.OpResult{
-	//	fluent.OperationResult().
-	//		WithNextHopOperation(nhIndex1).
-	//		WithProgrammingResult(fluent.InstalledInFIB).
-	//		WithOperationType(constants.Add).
-	//		AsResult(),
-	//	fluent.OperationResult().
-	//		WithNextHopGroupOperation(nhgIndex1).
-	//		WithProgrammingResult(fluent.InstalledInFIB).
-	//		WithOperationType(constants.Add).
-	//		AsResult(),
-	//	fluent.OperationResult().
-	//		WithIPv4Operation(ateIndirectNHCIDR).
-	//		WithProgrammingResult(fluent.InstalledInFIB).
-	//		WithOperationType(constants.Add).
-	//		AsResult(),
-	//}
 
 	wantOperationResultsDUT2 := []*client.OpResult{
 		fluent.OperationResult().
@@ -682,9 +655,6 @@ func installGRIBIEntries(t *testing.T, dut, dut2 *ondatra.DUTDevice) {
 			AsResult(),
 	}
 
-	//for _, wantResult := range wantOperationResultsDUT1 {
-	//	chk.HasResult(t, c.Results(t), wantResult, chk.IgnoreOperationID())
-	//}
 	for _, wantResult := range wantOperationResultsDUT2 {
 		chk.HasResult(t, c2.Results(t), wantResult, chk.IgnoreOperationID())
 	}
@@ -699,28 +669,21 @@ func TestBGPTriggeredGUE(t *testing.T) {
 	ate := ondatra.ATE(t, "ate")
 	otg := ate.OTG()
 	otgConfig := configureOTG(t, otg)
+	t.Logf("Pushing config to ATE and starting protocols...")
 	otg.PushConfig(t, otgConfig)
-	//otg.StartCapture(t, atePort1.Name)
 	otg.StartProtocols(t)
 
 	bgpPath := ocpath.Root().NetworkInstance(fakedevice.DefaultNetworkInstance).Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").Bgp()
 	nbrPath := bgpPath.Neighbor(dut2Port2.IPv4)
 	gnmi.Await(t, dut, nbrPath.SessionState().State(), 120*time.Second, oc.Bgp_Neighbor_SessionState_ESTABLISHED)
 
-	//time.Sleep(15 * time.Second)
-	//otg.StopCapture(t, atePort1.Name)
-	//captureBytes := ate.OTG().FetchCapture(t, atePort1.Name)
-	//if err := packetutil.DisplayCapture(captureBytes); err != nil {
-	//	t.Fatal(err)
-	//}
-
-	// TODO(wenbli): OTG to lemming session
 	t.Logf("Verify DUT's DUT-OTG BGP sessions up")
 	gnmi.Await(t, dut, bgpPath.Neighbor(atePort1.IPv4).SessionState().State(), 120*time.Second, oc.Bgp_Neighbor_SessionState_ESTABLISHED)
 	t.Logf("Verify OTG's DUT-OTG BGP sessions up")
 	verifyOTGBGPTelemetry(t, otg, otgConfig, "ESTABLISHED")
 
-	installGRIBIEntries(t, dut, dut2)
+	// Install entries to be propagated to DUT1.
+	installGRIBIEntries(t, dut2)
 
 	tests := []struct {
 		desc         string
@@ -734,7 +697,6 @@ func TestBGPTriggeredGUE(t *testing.T) {
 		gnmiOp: func() {},
 	}, {
 		desc: "with single policy",
-		skip: true,
 		gnmiOp: func() {
 			policy2Pfx := "203.0.113.0/29"
 			gnmi.Replace(t, dut, ocpath.Root().BgpGueIpv4Policy(policy2Pfx).Config(), &oc.BgpGueIpv4Policy{
@@ -757,7 +719,6 @@ func TestBGPTriggeredGUE(t *testing.T) {
 		},
 	}, {
 		desc: "with two overlapping policies",
-		skip: true,
 		gnmiOp: func() {
 			policy1Pfx := "203.0.113.0/30"
 			gnmi.Replace(t, dut, ocpath.Root().BgpGueIpv4Policy(policy1Pfx).Config(), &oc.BgpGueIpv4Policy{
@@ -802,15 +763,12 @@ func TestBGPTriggeredGUE(t *testing.T) {
 			tt.gnmiOp()
 			for _, tt := range tests {
 				t.Run(tt.startingIP, func(t *testing.T) {
-					testTrafficAndEncap(t, otg, otgConfig, tt.startingIP, tt.encapFields)
+					testTrafficAndEncap(t, otg, tt.startingIP, tt.encapFields)
 				})
 			}
 		})
 	}
 
-	dut.RawAPIs().GRIBI().Default(t).Flush(context.Background(), &gribipb.FlushRequest{
-		NetworkInstance: &gribipb.FlushRequest_All{All: &gribipb.Empty{}},
-	})
 	dut2.RawAPIs().GRIBI().Default(t).Flush(context.Background(), &gribipb.FlushRequest{
 		NetworkInstance: &gribipb.FlushRequest_All{All: &gribipb.Empty{}},
 	})
