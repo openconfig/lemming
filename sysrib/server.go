@@ -37,6 +37,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/openconfig/lemming/dataplane/handlers"
+	"github.com/openconfig/lemming/gnmi/fakedevice"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 
@@ -48,8 +49,7 @@ import (
 
 const (
 	// SockAddr is the unix domain socket address for the Sysrib API.
-	SockAddr  = "/tmp/sysrib.api"
-	defaultNI = "DEFAULT"
+	SockAddr = "/tmp/sysrib.api"
 
 	// ZAPIAddr is the connection address for ZAPI, which is in the form
 	// of "type:address", where type can either be a unix or tcp socket.
@@ -171,6 +171,10 @@ func (s *Server) Start(gClient gpb.GNMIClient, target, zapiURL string) error {
 		return err
 	}
 
+	if err := s.monitorStaticRoutes(yclient); err != nil {
+		return err
+	}
+
 	if err := os.RemoveAll(SockAddr); err != nil {
 		return err
 	}
@@ -234,7 +238,7 @@ func (s *Server) monitorConnectedIntfs(yclient *ygnmi.Client) error {
 						if subintf := intf.GetSubinterface(0); subintf != nil {
 							for _, addr := range subintf.GetOrCreateIpv4().Address {
 								if addr.Ip != nil && addr.PrefixLength != nil {
-									if err := s.addInterfacePrefix(name, int32(ifindex), fmt.Sprintf("%s/%d", addr.GetIp(), addr.GetPrefixLength()), defaultNI); err != nil {
+									if err := s.addInterfacePrefix(name, int32(ifindex), fmt.Sprintf("%s/%d", addr.GetIp(), addr.GetPrefixLength()), fakedevice.DefaultNetworkInstance); err != nil {
 										log.Warningf("adding interface prefix failed: %v", err)
 									}
 								}
@@ -373,7 +377,7 @@ func (nh ResolvedNexthop) HasGUE() bool {
 func vrfIDToNiName(vrfID uint32) string {
 	switch vrfID {
 	case 0:
-		return defaultNI
+		return fakedevice.DefaultNetworkInstance
 	default:
 		return strconv.Itoa(int(vrfID))
 	}
@@ -381,11 +385,11 @@ func vrfIDToNiName(vrfID uint32) string {
 
 func niNameToVrfID(niName string) (uint32, error) {
 	switch niName {
-	case defaultNI:
+	case fakedevice.DefaultNetworkInstance:
 		return 0, nil
 	default:
 		// TODO(wenbli): This mapping should probably be stored in a map.
-		return 1, fmt.Errorf("sysrib: only %s VRF is recognized", defaultNI)
+		return 1, fmt.Errorf("sysrib: only %s VRF is recognized", fakedevice.DefaultNetworkInstance)
 	}
 }
 

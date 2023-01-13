@@ -29,6 +29,7 @@ import (
 
 const (
 	DefaultNetworkInstance = "DEFAULT"
+	StaticRoutingProtocol  = "DEFAULT"
 )
 
 func NewBootTimeTask() *reconciler.BuiltReconciler {
