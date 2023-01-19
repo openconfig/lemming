@@ -77,7 +77,7 @@ const (
 	defaultNetworkInstance = "DEFAULT"
 
 	dutAS  = 64500
-	dut2AS = 64501
+	dut2AS = 64500
 	ateAS  = 64502
 )
 

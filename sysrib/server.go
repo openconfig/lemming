@@ -26,6 +26,7 @@ import (
 	"sync"
 
 	log "github.com/golang/glog"
+	"github.com/google/go-cmp/cmp"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/openconfig/gribigo/afthelper"
@@ -586,6 +587,9 @@ func (s *Server) ResolveAndProgramDiff() error {
 			s.programmedRoutesMu.Unlock()
 			switch {
 			case !ok && routeIsResolved, ok && !reflect.DeepEqual(currentRoute, rr):
+				// TODO(wenbli): A route becoming unresolved here may trigger a nil-pointer exception.
+				// This should be unit-tested and resolved when route deletion is supported.
+				log.V(1).Infof("(-currentRoute, +resolvedRoute):\n%s", cmp.Diff(currentRoute, rr))
 				if err := s.programRoute(rr); err != nil {
 					log.Warningf("failed to program route %+v: %v", rr, err)
 					continue

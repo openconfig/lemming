@@ -372,6 +372,7 @@ func (sr *SysRIB) EgressNexthops(inputNI string, ip *net.IPNet, interfaces map[I
 	}
 
 	if !found {
+		log.V(1).Infof("Prefix not found in RIB: %v", ip)
 		return nil, nil, nil
 	}
 
@@ -462,6 +463,7 @@ func (sr *SysRIB) EgressNexthops(inputNI string, ip *net.IPNet, interfaces map[I
 		}
 	}
 
+	log.V(1).Infof("Route with prefix %v cannot be resolved in RIB.", ip)
 	return nil, nil, nil
 }
 
