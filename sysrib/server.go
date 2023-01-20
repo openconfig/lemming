@@ -510,8 +510,6 @@ func (s *Server) programRoute(r *ResolvedRoute) error {
 
 // convertToZAPIRoute converts a route to a ZAPI route for redistributing to
 // other protocols (e.g. BGP).
-//
-// TODO(wenbli): Add support for converting an IPv6 route.
 func convertToZAPIRoute(routeKey RouteKey, route *Route) (*zebra.IPRouteBody, error) {
 	if route.Connected != nil {
 		// TODO(wenbli): Connected routes not supported. This is not
@@ -578,14 +576,19 @@ func (s *Server) ResolveAndProgramDiff() error {
 	return nil
 }
 
-func (s *Server) resolveAndProgramDiffAux(niName string, ni *NIRIB, address string, newResolvedRoutes map[RouteKey]*Route) {
-	log.V(1).Infof("Iterating at prefix %v out of %d tags", address, ni.IPV4.CountTags())
-	_, prefix, err := net.ParseCIDR(address)
+// resolveAndProgramDiffAux is a helper function for ResolveAndProgramDiff.
+//
+// It carries out the following functionalities:
+// - Resolve a single route specified by prefix and program if it's different.
+// - Populate the resolved route into newResolvedRoutes.
+func (s *Server) resolveAndProgramDiffAux(niName string, ni *NIRIB, prefix string, newResolvedRoutes map[RouteKey]*Route) {
+	log.V(1).Infof("Iterating at prefix %v out of %d tags", prefix, ni.IPV4.CountTags())
+	_, pfx, err := net.ParseCIDR(prefix)
 	if err != nil {
 		log.Errorf("sysrib: %v", err)
 		return
 	}
-	nhs, route, err := s.rib.EgressNexthops(niName, prefix, s.interfaces)
+	nhs, route, err := s.rib.EgressNexthops(niName, pfx, s.interfaces)
 	if err != nil {
 		log.Errorf("sysrib: %v", err)
 		return
@@ -594,8 +597,8 @@ func (s *Server) resolveAndProgramDiffAux(niName string, ni *NIRIB, address stri
 
 	rr := &ResolvedRoute{
 		RouteKey: RouteKey{
-			// TODO(wenbli): Could it.Address() be different from prefix.String()?
-			Prefix: prefix.String(),
+			// TODO(wenbli): Could it.Address() be different from pfx.String()?
+			Prefix: pfx.String(),
 			NIName: niName,
 		},
 		Nexthops: nhs,
