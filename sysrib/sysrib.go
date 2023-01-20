@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"net/netip"
 	"reflect"
 	"sort"
 	"sync"
@@ -45,6 +46,8 @@ type SysRIB struct {
 	// GUEPolicies are the configured BGP-triggered GUE policies.
 	// Every update to this should trigger a re-computation of the resolved
 	// routes.
+	// TODO(wenbli): Support v6 GUE policies. When adding support, make
+	// sure to error out when an IPv6-mapped IPv4 prefix is provided.
 	GUEPolicies *generics_tree.TreeV4[GUEPolicy]
 }
 
@@ -52,6 +55,8 @@ type SysRIB struct {
 type NIRIB struct {
 	// IPV4 is the IPv4 RIB
 	IPV4 *generics_tree.TreeV4[*Route]
+	// IPV6 is the IPv6 RIB
+	IPV6 *generics_tree.TreeV6[*Route]
 }
 
 // GUEPolicy represents the static values in the IP and UDP headers that are
@@ -176,6 +181,7 @@ func NewSysRIB(cfg *oc.Device) (*SysRIB, error) {
 		for ni, niR := range cr {
 			sr.NI[ni] = &NIRIB{
 				IPV4: generics_tree.NewTreeV4[*Route](),
+				IPV6: generics_tree.NewTreeV6[*Route](),
 			}
 			if niR.T == oc.NetworkInstanceTypes_NETWORK_INSTANCE_TYPE_DEFAULT_INSTANCE {
 				sr.defaultNI = ni
@@ -190,6 +196,7 @@ func NewSysRIB(cfg *oc.Device) (*SysRIB, error) {
 		sr.defaultNI = fakedevice.DefaultNetworkInstance
 		sr.NI[sr.defaultNI] = &NIRIB{
 			IPV4: generics_tree.NewTreeV4[*Route](),
+			IPV6: generics_tree.NewTreeV6[*Route](),
 		}
 	}
 
@@ -222,13 +229,22 @@ func (sr *SysRIB) AddRoute(ni string, r *Route) (bool, error) {
 	if _, ok := sr.NI[ni]; !ok {
 		return false, fmt.Errorf("cannot find network instance %s", ni)
 	}
-	addr, _, err := patricia.ParseIPFromString(r.Prefix)
+	addr4, addr6, err := patricia.ParseIPFromString(r.Prefix)
 	if err != nil {
 		return false, fmt.Errorf("cannot create prefix for %s, %v", r.Prefix, err)
 	}
-	added, _ := sr.NI[ni].IPV4.Add(*addr, r, routeMatches)
-	log.V(1).Infof("AddRoute attempt: %v, %v, result: %v", *addr, r, added)
-	return added, nil
+	switch {
+	case addr4 != nil:
+		added, _ := sr.NI[ni].IPV4.Add(*addr4, r, routeMatches)
+		log.V(1).Infof("AddRoute attempt: %v, %v, result: %v", *addr4, r, added)
+		return added, nil
+	case addr6 != nil:
+		added, _ := sr.NI[ni].IPV6.Add(*addr6, r, routeMatches)
+		log.V(1).Infof("AddRoute attempt: %v, %v, result: %v", *addr6, r, added)
+		return added, nil
+	default:
+		return false, fmt.Errorf("route prefix is neither v4 or v6: %v", r.Prefix)
+	}
 }
 
 // SetGUEPolicy sets a GUE Policy in the RIB.
@@ -296,12 +312,42 @@ func (sr *SysRIB) entryForCIDR(ni string, ip *net.IPNet) (bool, []*Route, error)
 	if !ok {
 		return false, nil, fmt.Errorf("cannot find a RIB for network instance %s", ni)
 	}
-	addr, _, err := patricia.ParseFromIPAddr(ip)
+	addr4, addr6, err := patricia.ParseFromIPAddr(ip)
 	if err != nil {
 		return false, nil, fmt.Errorf("cannot parse IP to lookup, %s: %v", ip, err)
 	}
-	found, tags := rib.IPV4.FindDeepestTags(*addr)
-	return found, tags, nil
+	switch {
+	case addr4 != nil:
+		found, tags := rib.IPV4.FindDeepestTags(*addr4)
+		return found, tags, nil
+	case addr6 != nil:
+		found, tags := rib.IPV6.FindDeepestTags(*addr6)
+		return found, tags, nil
+	default:
+		return false, nil, fmt.Errorf("route prefix is neither v4 or v6: %v", ip)
+	}
+}
+
+// addressToPrefix returns a prefix of /32 or /128 of the input v4 or v6 address.
+//
+// It returns an error if the input address cannot be parsed.
+//
+// e.g. 1.1.1.1 -> 1.1.1.1/32
+// e.g. 2001:: -> 2001::/128
+func addressToPrefix(address string) (*net.IPNet, error) {
+	addr, err := netip.ParseAddr(address)
+	if err != nil {
+		return nil, fmt.Errorf("sysrib.addressToPrefix: cannot parse address: %v", address)
+	}
+	mask := 32
+	if addr.Is6() {
+		mask = 128
+	}
+	_, nhop, err := net.ParseCIDR(fmt.Sprintf("%s/%d", address, mask))
+	if err != nil {
+		return nil, fmt.Errorf("can't parse %s/%d into CIDR, %v", address, mask, err)
+	}
+	return nhop, nil
 }
 
 // EgressInterface looks up the IP destination address ip in the routes for network instance
@@ -312,8 +358,6 @@ func (sr *SysRIB) entryForCIDR(ni string, ip *net.IPNet) (bool, []*Route, error)
 // TODO(robjs): support a better description of a packet using the formats that ONDATRA uses.
 //
 // TODO(robjs): support WCMP
-//
-// This is really a POC that we can emulate our FIB for basic IPV4 routes.
 func (sr *SysRIB) EgressInterface(inputNI string, ip *net.IPNet) ([]*Interface, error) {
 	// no RIB recursion currently
 	if inputNI == "" {
@@ -338,9 +382,9 @@ func (sr *SysRIB) EgressInterface(inputNI string, ip *net.IPNet) ([]*Interface, 
 
 		// This isn't a connected route, check whether we can resolve the next-hops.
 		for _, nh := range cr.NextHops {
-			_, nhop, err := net.ParseCIDR(fmt.Sprintf("%s/32", nh.Address))
+			nhop, err := addressToPrefix(nh.Address)
 			if err != nil {
-				return nil, fmt.Errorf("can't parse %s/32 into CIDR, %v", nh.Address, err)
+				return nil, err
 			}
 			recursiveNHIfs, err := sr.EgressInterface(nh.NetworkInstance, nhop)
 			if err != nil {
@@ -400,7 +444,7 @@ func (sr *SysRIB) EgressNexthops(inputNI string, ip *net.IPNet, interfaces map[I
 						NetworkInstance: inputNI,
 					},
 				}
-				if length, _ := ip.Mask.Size(); length == 32 {
+				if length, _ := ip.Mask.Size(); (ip.IP.To4() != nil && length == 32) || (ip.IP.To16() != nil && length == 128) {
 					nh.Address = ip.IP.String()
 				}
 				// TODO(wenbli): Implement WCMP: there could be a merger of two nexthops, in which case we add their weights.
@@ -411,9 +455,9 @@ func (sr *SysRIB) EgressNexthops(inputNI string, ip *net.IPNet, interfaces map[I
 
 		// This isn't a connected route, check whether we can resolve the next-hops.
 		for _, nh := range cr.NextHops {
-			_, nhop, err := net.ParseCIDR(fmt.Sprintf("%s/32", nh.Address))
+			nhop, err := addressToPrefix(nh.Address)
 			if err != nil {
-				return nil, nil, fmt.Errorf("can't parse %s/32 into CIDR, %v", nh.Address, err)
+				return nil, nil, err
 			}
 			recursiveNHs, _, err := sr.EgressNexthops(nh.NetworkInstance, nhop, interfaces)
 			if err != nil {
@@ -480,8 +524,6 @@ type niConnected struct {
 // connectedRoutesFromConfig returns the set of 'connected' routes from the input configuration supplied.
 // Connected routes are defined to be those that are directly configured as a subnet to which the
 // system is attached.
-//
-// This function only returns connected IPV4 routes.
 func connectedRoutesFromConfig(cfg *oc.Device) (map[string]*niConnected, error) {
 	// TODO(robjs): figure out where the reference that is referencing policy
 	// definitions is that has not yet been removed, improve ygot error message.
@@ -505,6 +547,26 @@ func connectedRoutesFromConfig(cfg *oc.Device) (map[string]*niConnected, error) 
 					_, cidr, err := net.ParseCIDR(fmt.Sprintf("%s/%d", a.GetIp(), a.GetPrefixLength()))
 					if err != nil {
 						return nil, fmt.Errorf("invalid IPV4 prefix on interface %s, subinterface %d, %s/%d", intf.GetName(), subintf.GetIndex(), a.GetIp(), a.GetPrefixLength())
+					}
+					rt := &Route{
+						Prefix: cidr.String(),
+						Connected: &Interface{
+							Name:         intf.GetName(),
+							Subinterface: subintf.GetIndex(),
+						},
+					}
+					intfRoute[intName][subIntIdx] = append(intfRoute[intName][subIntIdx], rt)
+					if matched[intf.GetName()] == nil {
+						matched[intf.GetName()] = map[uint32]bool{}
+					}
+					matched[intf.GetName()][subintf.GetIndex()] = false
+				}
+			}
+			if subintf.GetIpv6() != nil {
+				for _, a := range subintf.GetIpv6().Address {
+					_, cidr, err := net.ParseCIDR(fmt.Sprintf("%s/%d", a.GetIp(), a.GetPrefixLength()))
+					if err != nil {
+						return nil, fmt.Errorf("invalid IPV6 prefix on interface %s, subinterface %d, %s/%d", intf.GetName(), subintf.GetIndex(), a.GetIp(), a.GetPrefixLength())
 					}
 					rt := &Route{
 						Prefix: cidr.String(),
@@ -558,6 +620,7 @@ func connectedRoutesFromConfig(cfg *oc.Device) (map[string]*niConnected, error) 
 			}
 		}
 
+		// Make deterministic
 		sort.Slice(netInstRoutes.Rts, func(i, j int) bool {
 			return netInstRoutes.Rts[i].Prefix < netInstRoutes.Rts[j].Prefix
 		})

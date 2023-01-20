@@ -16,11 +16,9 @@ package integration_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/open-traffic-generator/snappi/gosnappi"
 	"github.com/openconfig/gribigo/fluent"
 	"github.com/openconfig/lemming/gnmi/fakedevice"
@@ -278,10 +276,7 @@ func TestIPv4Entry(t *testing.T) {
 				Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_STATIC, fakedevice.StaticRoutingProtocol)
 			for _, route := range tc.routes {
 				gnmi.Replace(t, dut, staticp.Static(*route.Prefix).Config(), route)
-				//gnmi.Await(t, dut, staticp.Static(*route.Prefix).State(), 30*time.Second, route)
-				time.Sleep(10 * time.Second)
-				gotRoute := gnmi.Get(t, dut, staticp.Static(*route.Prefix).State())
-				fmt.Println(cmp.Diff(route, gotRoute))
+				gnmi.Await(t, dut, staticp.Static(*route.Prefix).State(), 30*time.Second, route)
 			}
 
 			// Send some traffic to make sure neighbor cache is warmed up on the dut.
