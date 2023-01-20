@@ -219,6 +219,8 @@ func (s *Server) monitorConnectedIntfs(yclient *ygnmi.Client) error {
 		ocpath.Root().InterfaceAny().Ifindex().State().PathStruct(),
 		ocpath.Root().InterfaceAny().Subinterface(0).Ipv4().AddressAny().Ip().State().PathStruct(),
 		ocpath.Root().InterfaceAny().Subinterface(0).Ipv4().AddressAny().PrefixLength().State().PathStruct(),
+		ocpath.Root().InterfaceAny().Subinterface(0).Ipv6().AddressAny().Ip().State().PathStruct(),
+		ocpath.Root().InterfaceAny().Subinterface(0).Ipv6().AddressAny().PrefixLength().State().PathStruct(),
 	)
 
 	interfaceWatcher := ygnmi.Watch(
@@ -238,6 +240,13 @@ func (s *Server) monitorConnectedIntfs(yclient *ygnmi.Client) error {
 						// TODO(wenbli): Support other VRFs.
 						if subintf := intf.GetSubinterface(0); subintf != nil {
 							for _, addr := range subintf.GetOrCreateIpv4().Address {
+								if addr.Ip != nil && addr.PrefixLength != nil {
+									if err := s.addInterfacePrefix(name, int32(ifindex), fmt.Sprintf("%s/%d", addr.GetIp(), addr.GetPrefixLength()), fakedevice.DefaultNetworkInstance); err != nil {
+										log.Warningf("adding interface prefix failed: %v", err)
+									}
+								}
+							}
+							for _, addr := range subintf.GetOrCreateIpv6().Address {
 								if addr.Ip != nil && addr.PrefixLength != nil {
 									if err := s.addInterfacePrefix(name, int32(ifindex), fmt.Sprintf("%s/%d", addr.GetIp(), addr.GetPrefixLength()), fakedevice.DefaultNetworkInstance); err != nil {
 										log.Warningf("adding interface prefix failed: %v", err)
@@ -396,7 +405,7 @@ func niNameToVrfID(niName string) (uint32, error) {
 
 func prefixString(prefix *pb.Prefix) (string, error) {
 	switch fam := prefix.GetFamily(); fam {
-	case pb.Prefix_FAMILY_IPV4:
+	case pb.Prefix_FAMILY_IPV4, pb.Prefix_FAMILY_IPV6:
 		// TODO(wenbli): Handle invalid input values.
 		return fmt.Sprintf("%s/%d", prefix.GetAddress(), prefix.GetMaskLength()), nil
 	default:
@@ -515,11 +524,11 @@ func convertToZAPIRoute(routeKey RouteKey, route *Route) (*zebra.IPRouteBody, er
 		return nil, err
 	}
 
-	_, ipv4Net, err := net.ParseCIDR(route.Prefix)
+	_, ipnet, err := net.ParseCIDR(route.Prefix)
 	if err != nil {
 		return nil, fmt.Errorf("gribigo/zapi: %v", err)
 	}
-	prefixLen, _ := ipv4Net.Mask.Size()
+	prefixLen, _ := ipnet.Mask.Size()
 
 	var nexthops []zebra.Nexthop
 	for _, nh := range route.NextHops {
@@ -536,7 +545,7 @@ func convertToZAPIRoute(routeKey RouteKey, route *Route) (*zebra.IPRouteBody, er
 		Safi:    zebra.SafiUnicast,
 		Message: zebra.MessageNexthop,
 		Prefix: zebra.Prefix{
-			Prefix:    ipv4Net.IP.To4(),
+			Prefix:    ipnet.IP,
 			PrefixLen: uint8(prefixLen),
 		},
 		Nexthops: nexthops,
@@ -557,69 +566,76 @@ func (s *Server) ResolveAndProgramDiff() error {
 	newResolvedRoutes := map[RouteKey]*Route{}
 	for niName, ni := range s.rib.NI {
 		for it := ni.IPV4.Iterate(); it.Next(); {
-			log.V(1).Infof("Iterating at prefix %v out of %d tags", it.Address().String(), ni.IPV4.CountTags())
-			_, prefix, err := net.ParseCIDR(it.Address().String())
-			if err != nil {
-				log.Errorf("sysrib: %v", err)
-				continue
-			}
-			nhs, route, err := s.rib.EgressNexthops(niName, prefix, s.interfaces)
-			if err != nil {
-				log.Errorf("sysrib: %v", err)
-				continue
-			}
-			routeIsResolved := len(nhs) > 0
-
-			rr := &ResolvedRoute{
-				RouteKey: RouteKey{
-					// TODO(wenbli): Could it.Address() be different from prefix.String()?
-					Prefix: prefix.String(),
-					NIName: niName,
-				},
-				Nexthops: nhs,
-			}
-			if routeIsResolved {
-				newResolvedRoutes[rr.RouteKey] = route
-			}
-
-			s.programmedRoutesMu.Lock()
-			currentRoute, ok := s.programmedRoutes[rr.RouteKey]
-			s.programmedRoutesMu.Unlock()
-			switch {
-			case !ok && routeIsResolved, ok && !reflect.DeepEqual(currentRoute, rr):
-				// TODO(wenbli): A route becoming unresolved here may trigger a nil-pointer exception.
-				// This should be unit-tested and resolved when route deletion is supported.
-				log.V(1).Infof("(-currentRoute, +resolvedRoute):\n%s", cmp.Diff(currentRoute, rr))
-				if err := s.programRoute(rr); err != nil {
-					log.Warningf("failed to program route %+v: %v", rr, err)
-					continue
-				}
-				s.programmedRoutesMu.Lock()
-				s.programmedRoutes[rr.RouteKey] = rr
-				s.programmedRoutesMu.Unlock()
-				// ZAPI: If a new/updated route is programmed, redistribute it to clients.
-				// TODO(wenbli): RedistributeRouteDel
-				zrouteBody, err := convertToZAPIRoute(rr.RouteKey, route)
-				if err != nil {
-					log.Warningf("failed to convert resolved route to zebra BGP route: %v", err)
-				}
-				if zrouteBody != nil && s.zServer != nil {
-					log.V(1).Info("Sending new route to ZAPI clients: ", zrouteBody)
-					s.zServer.ClientMutex.RLock()
-					for conn := range s.zServer.ClientMap {
-						serverSendMessage(conn, zebra.RedistributeRouteAdd, zrouteBody)
-					}
-					s.zServer.ClientMutex.RUnlock()
-				}
-			default:
-				// No diff, so don't do anything.
-			}
+			s.resolveAndProgramDiffAux(niName, ni, it.Address().String(), newResolvedRoutes)
+		}
+		for it := ni.IPV6.Iterate(); it.Next(); {
+			s.resolveAndProgramDiffAux(niName, ni, it.Address().String(), newResolvedRoutes)
 		}
 	}
 	s.resolvedRoutesMu.Lock()
 	s.resolvedRoutes = newResolvedRoutes
 	s.resolvedRoutesMu.Unlock()
 	return nil
+}
+
+func (s *Server) resolveAndProgramDiffAux(niName string, ni *NIRIB, address string, newResolvedRoutes map[RouteKey]*Route) {
+	log.V(1).Infof("Iterating at prefix %v out of %d tags", address, ni.IPV4.CountTags())
+	_, prefix, err := net.ParseCIDR(address)
+	if err != nil {
+		log.Errorf("sysrib: %v", err)
+		return
+	}
+	nhs, route, err := s.rib.EgressNexthops(niName, prefix, s.interfaces)
+	if err != nil {
+		log.Errorf("sysrib: %v", err)
+		return
+	}
+	routeIsResolved := len(nhs) > 0
+
+	rr := &ResolvedRoute{
+		RouteKey: RouteKey{
+			// TODO(wenbli): Could it.Address() be different from prefix.String()?
+			Prefix: prefix.String(),
+			NIName: niName,
+		},
+		Nexthops: nhs,
+	}
+	if routeIsResolved {
+		newResolvedRoutes[rr.RouteKey] = route
+	}
+
+	s.programmedRoutesMu.Lock()
+	currentRoute, ok := s.programmedRoutes[rr.RouteKey]
+	s.programmedRoutesMu.Unlock()
+	switch {
+	case !ok && routeIsResolved, ok && !reflect.DeepEqual(currentRoute, rr):
+		// TODO(wenbli): A route becoming unresolved here may trigger a nil-pointer exception.
+		// This should be unit-tested and resolved when route deletion is supported.
+		log.V(1).Infof("(-currentRoute, +resolvedRoute):\n%s", cmp.Diff(currentRoute, rr))
+		if err := s.programRoute(rr); err != nil {
+			log.Warningf("failed to program route %+v: %v", rr, err)
+			return
+		}
+		s.programmedRoutesMu.Lock()
+		s.programmedRoutes[rr.RouteKey] = rr
+		s.programmedRoutesMu.Unlock()
+		// ZAPI: If a new/updated route is programmed, redistribute it to clients.
+		// TODO(wenbli): RedistributeRouteDel
+		zrouteBody, err := convertToZAPIRoute(rr.RouteKey, route)
+		if err != nil {
+			log.Warningf("failed to convert resolved route to zebra BGP route: %v", err)
+		}
+		if zrouteBody != nil && s.zServer != nil {
+			log.V(1).Info("Sending new route to ZAPI clients: ", zrouteBody)
+			s.zServer.ClientMutex.RLock()
+			for conn := range s.zServer.ClientMap {
+				serverSendMessage(conn, zebra.RedistributeRouteAdd, zrouteBody)
+			}
+			s.zServer.ClientMutex.RUnlock()
+		}
+	default:
+		// No diff, so don't do anything.
+	}
 }
 
 // ResolvedRoutes returns the shallow copy of the resolved routes of the RIB
@@ -644,8 +660,8 @@ func (s *Server) SetRoute(_ context.Context, req *pb.SetRouteRequest) (*pb.SetRo
 
 	nexthops := []*afthelper.NextHopSummary{}
 	for _, nh := range req.GetNexthops() {
-		if nh.GetType() != pb.Nexthop_TYPE_IPV4 {
-			return nil, status.Errorf(codes.Unimplemented, "non-IPV4 nexthop not supported")
+		if nh.GetType() != pb.Nexthop_TYPE_IPV4 && nh.GetType() != pb.Nexthop_TYPE_IPV6 {
+			return nil, status.Errorf(codes.Unimplemented, "Unrecognized nexthop type: %s", nh.GetType())
 		}
 		nexthops = append(nexthops, &afthelper.NextHopSummary{
 			Weight:          nh.GetWeight(),

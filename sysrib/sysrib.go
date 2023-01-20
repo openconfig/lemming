@@ -91,7 +91,8 @@ func (sr *SysRIB) getGUEHeader(address string) (GUEHeaders, bool, error) {
 		return GUEHeaders{}, false, err
 	}
 	if addr == nil {
-		return GUEHeaders{}, false, fmt.Errorf("only v4 prefixes are supported for GUE policy: %v", address)
+		log.Warningf("only v4 prefixes are supported for GUE policy: %v", address)
+		return GUEHeaders{}, false, nil
 	}
 	ok, policy := sr.GUEPolicies.FindDeepestTag(*addr)
 	if !ok {
@@ -256,7 +257,7 @@ func (sr *SysRIB) SetGUEPolicy(prefix string, policy GUEPolicy) error {
 		return fmt.Errorf("cannot create prefix for %s, %v", prefix, err)
 	}
 	if addr == nil {
-		return fmt.Errorf("only v4 prefixes are supported for GUE policy: %v", prefix)
+		return fmt.Errorf("SetGUEPolicy: only v4 prefixes are supported for GUE policy: %v", prefix)
 	}
 	sr.GUEPolicies.Set(*addr, policy)
 	return nil
@@ -272,7 +273,7 @@ func (sr *SysRIB) DeleteGUEPolicy(prefix string) (bool, error) {
 		return false, fmt.Errorf("cannot create prefix for %s, %v", prefix, err)
 	}
 	if addr == nil {
-		return false, fmt.Errorf("only v4 prefixes are supported for GUE policy: %v", prefix)
+		return false, fmt.Errorf("DeleteGUEPolicy: only v4 prefixes are supported for GUE policy: %v", prefix)
 	}
 	count := sr.GUEPolicies.Delete(*addr, guePolicyUnconditionalMatch, GUEPolicy{})
 	return count > 0, nil

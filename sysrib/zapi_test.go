@@ -185,7 +185,7 @@ func testRouteRedistribution(t *testing.T, routeReadyBeforeDial bool) {
 	if err != nil {
 		t.Fatalf("cannot create ygnmi client: %v", err)
 	}
-	configureInterface(t, AddIntfAction{
+	configureInterface(t, &AddIntfAction{
 		name:    "eth0",
 		ifindex: 0,
 		enabled: true,
