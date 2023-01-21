@@ -48,7 +48,7 @@ message Prefix {
   enum Family {
     FAMILY_UNSPECIFIED = 0;
     FAMILY_IPV4 = 1;
-    //IPv6 = 1;
+    FAMILY_IPV6 = 2;
   }
   Family family = 1;
   string address = 2;
@@ -60,7 +60,7 @@ message Nexthop {
   enum Type {
     TYPE_UNSPECIFIED = 0;
     TYPE_IPV4 = 1;
-    //IPV6 = 3;
+    TYPE_IPV6 = 2;
     //IPV4IFINDEX = 2;
     //IPV6IFINDEX = 4;
     //IFINDEX = 0;

@@ -18,9 +18,8 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"net/netip"
 	"reflect"
-	"strconv"
-	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -130,23 +129,27 @@ func checkResolvedRoutesEqual(got, want []*ResolvedRoute) error {
 	return nil
 }
 
-func configureInterface(t *testing.T, intf AddIntfAction, yclient *ygnmi.Client) {
+func configureInterface(t *testing.T, intf *AddIntfAction, yclient *ygnmi.Client) {
 	t.Helper()
 
 	ocintf := &oc.Interface{}
 	ocintf.Name = ygot.String(intf.name)
 	ocintf.Enabled = ygot.Bool(intf.enabled)
 	ocintf.Ifindex = ygot.Uint32(uint32(intf.ifindex))
-	ss := strings.Split(intf.prefix, "/")
-	if len(ss) != 2 {
+	prefix, err := netip.ParsePrefix(intf.prefix)
+	if err != nil {
 		t.Fatalf("Invalid prefix: %q", intf.prefix)
 	}
-	ocaddr := ocintf.GetOrCreateSubinterface(0).GetOrCreateIpv4().GetOrCreateAddress(ss[0])
-	plen, err := strconv.Atoi(ss[1])
-	if err != nil {
-		t.Fatalf("Invalid prefix: %v", err)
+	switch {
+	case prefix.Addr().Is4():
+		ocaddr := ocintf.GetOrCreateSubinterface(0).GetOrCreateIpv4().GetOrCreateAddress(prefix.Addr().String())
+		ocaddr.PrefixLength = ygot.Uint8(uint8(prefix.Bits()))
+	case prefix.Addr().Is6():
+		ocaddr := ocintf.GetOrCreateSubinterface(0).GetOrCreateIpv6().GetOrCreateAddress(prefix.Addr().String())
+		ocaddr.PrefixLength = ygot.Uint8(uint8(prefix.Bits()))
+	default:
+		t.Fatalf("Prefix is neither IPv4 nor IPv6: %q", intf.prefix)
 	}
-	ocaddr.PrefixLength = ygot.Uint8(uint8(plen))
 
 	if _, err := gnmiclient.Replace(context.Background(), yclient, ocpath.Root().Interface(intf.name).State(), ocintf); err != nil {
 		t.Fatalf("Cannot configure interface: %v", err)
@@ -157,14 +160,14 @@ func TestServer(t *testing.T) {
 	// TODO(wenbli): This test should be refactored such that the wantResolvedRoutes is inlined with the inSetRouteRequests for easier reading.
 	tests := []struct {
 		desc                       string
-		inInterfaces               []AddIntfAction
+		inInterfaces               []*AddIntfAction
 		wantInitialConnectedRoutes []*ResolvedRoute
-		inSetRouteRequests         []SetRouteRequestAction
+		inSetRouteRequests         []*SetRouteRequestAction
 		inFailRoutes               []*ResolvedRoute
 		wantResolvedRoutes         [][]*ResolvedRoute
 	}{{
 		desc: "Route Additions", // TODO(wenbli): test route deletion in this test case once it's implemented.
-		inInterfaces: []AddIntfAction{{
+		inInterfaces: []*AddIntfAction{{
 			name:    "eth0",
 			ifindex: 0,
 			enabled: true,
@@ -276,7 +279,7 @@ func TestServer(t *testing.T) {
 				}: true,
 			},
 		}},
-		inSetRouteRequests: []SetRouteRequestAction{{
+		inSetRouteRequests: []*SetRouteRequestAction{{
 			Desc: "1st level indirect route",
 			RouteReq: &pb.SetRouteRequest{
 				AdminDistance: 10,
@@ -540,7 +543,7 @@ func TestServer(t *testing.T) {
 		}}},
 	}, {
 		desc: "Unresolvable and ECMP",
-		inInterfaces: []AddIntfAction{{
+		inInterfaces: []*AddIntfAction{{
 			name:    "eth0",
 			ifindex: 0,
 			enabled: false,
@@ -592,7 +595,7 @@ func TestServer(t *testing.T) {
 				}: true,
 			},
 		}},
-		inSetRouteRequests: []SetRouteRequestAction{{
+		inSetRouteRequests: []*SetRouteRequestAction{{
 			Desc: "unresolvable route",
 			RouteReq: &pb.SetRouteRequest{
 				AdminDistance: 10,
@@ -700,7 +703,7 @@ func TestServer(t *testing.T) {
 		}}},
 	}, {
 		desc: "test route program failures",
-		inInterfaces: []AddIntfAction{{
+		inInterfaces: []*AddIntfAction{{
 			name:    "eth1",
 			ifindex: 3,
 			enabled: true,
@@ -771,66 +774,166 @@ func TestServer(t *testing.T) {
 		}},
 	}}
 
+	// v4v6Mapper maps IPv4 addresses to IPv6 addresses for testing v6.
+	v4v6Mapper := map[string]string{
+		"192.168.1.1/24": "2001::1/49",
+		"192.168.2.1/24": "2002::1/49",
+		"192.168.3.1/24": "2003::1/49",
+		"192.168.4.1/24": "2004::1/49",
+		"192.168.5.1/24": "2005::1/49",
+		"192.168.1.0/24": "2001::/49",
+		"192.168.2.0/24": "2002::/49",
+		"192.168.3.0/24": "2003::/49",
+		"192.168.4.0/24": "2004::/49",
+		"192.168.5.0/24": "2005::/49",
+		"192.168.1.42":   "2001::42",
+		"192.168.2.42":   "2002::42",
+		"192.168.3.42":   "2003::42",
+		"192.168.4.42":   "2004::42",
+		"192.168.5.42":   "2005::42",
+		"10.0.0.0/8":     "1000::/40",
+		"20.0.0.0/8":     "2000::/40",
+		"30.0.0.0/8":     "3000::/40",
+		"10.0.0.0":       "1000::",
+		"20.0.0.0":       "2000::",
+		"30.0.0.0":       "3000::",
+		"10.10.10.10":    "1000::10",
+		"20.10.10.10":    "2000::10",
+		"15.0.0.0":       "1500::",
+		"11.10.10.10":    "1100::10",
+		"192.0.2.1/30":   "2001:1::1/49",
+		"192.0.2.5/30":   "2001:2::1/49",
+		"192.0.2.9/30":   "2001:3::1/49",
+		"192.0.2.0/30":   "2001:1::/49",
+		"192.0.2.4/30":   "2001:2::/49",
+		"192.0.2.8/30":   "2001:3::/49",
+	}
+
+	mapAddress := func(t *testing.T, dst *string) {
+		if *dst == "" {
+			return
+		}
+		v6, ok := v4v6Mapper[*dst]
+		if !ok {
+			t.Fatalf("v4 address not in v4v6Mapper: %q", *dst)
+		}
+		*dst = v6
+	}
+
+	mapResolvedRoute := func(t *testing.T, route *ResolvedRoute) {
+		mapAddress(t, &route.Prefix)
+		// Since this is not a pointer need to overwrite.
+		nexthops := map[ResolvedNexthop]bool{}
+		for nh, v := range route.Nexthops {
+			mapAddress(t, &nh.Address)
+			nexthops[nh] = v
+		}
+		route.Nexthops = nexthops
+	}
+
+	mapPrefix := func(t *testing.T, prefix *pb.Prefix) {
+		if prefix.Family == pb.Prefix_FAMILY_IPV4 {
+			prefix.Family = pb.Prefix_FAMILY_IPV6
+		}
+		mapAddress(t, &prefix.Address)
+		if prefix.MaskLength == 8 {
+			prefix.MaskLength = 40
+		}
+	}
+
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			// TODO(wenbli): Don't re-create gNMI server, simply erase it and then reconnect to it afterwards.
-			grpcServer := grpc.NewServer()
-			gnmiServer, err := gnmi.New(grpcServer, "local")
-			if err != nil {
-				t.Fatal(err)
-			}
-			lis, err := net.Listen("tcp", "localhost:0")
-			if err != nil {
-				t.Fatalf("Failed to start listener: %v", err)
-			}
-			go func() {
-				grpcServer.Serve(lis)
-			}()
-
-			dp := NewFakeDataplane()
-			dp.SetupFailRoutes(tt.inFailRoutes)
-			s, err := New()
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			// Update the interface configuration on the gNMI server.
-			client := gnmiServer.LocalClient()
-			if err := s.Start(client, "local", ""); err != nil {
-				t.Fatalf("cannot start sysrib server, %v", err)
-			}
-			s.dataplane = dp
-			defer s.Stop()
-
-			c, err := ygnmi.NewClient(client, ygnmi.WithTarget("local"))
-			if err != nil {
-				t.Fatalf("cannot create ygnmi client: %v", err)
-			}
-			for _, intf := range tt.inInterfaces {
-				configureInterface(t, intf, c)
-			}
-
-			// Wait for Sysrib to pick up the connected prefixes.
-			for i := 0; i != maxGNMIWaitQuanta; i++ {
-				if err = checkResolvedRoutesEqual(dp.GetRoutes(), tt.wantInitialConnectedRoutes); err == nil {
-					break
+			for _, v4 := range []bool{true, false} {
+				desc := "v4"
+				if !v4 {
+					desc = "v6"
+					// Convert all v4 addresses to v6.
+					for _, intf := range tt.inInterfaces {
+						mapAddress(t, &intf.prefix)
+					}
+					for _, req := range tt.inSetRouteRequests {
+						mapPrefix(t, req.RouteReq.Prefix)
+						for _, nh := range req.RouteReq.Nexthops {
+							if nh.Type == pb.Nexthop_TYPE_IPV4 {
+								nh.Type = pb.Nexthop_TYPE_IPV6
+							}
+							mapAddress(t, &nh.Address)
+						}
+					}
+					for _, route := range tt.wantInitialConnectedRoutes {
+						mapResolvedRoute(t, route)
+					}
+					for _, route := range tt.inFailRoutes {
+						mapResolvedRoute(t, route)
+					}
+					for _, routes := range tt.wantResolvedRoutes {
+						for _, route := range routes {
+							mapResolvedRoute(t, route)
+						}
+					}
 				}
-				time.Sleep(100 * time.Millisecond)
-			}
-			if err != nil {
-				t.Fatalf("After initial interface operations: %v", err)
-			}
-			dp.ClearQueue()
 
-			for i, routeReq := range tt.inSetRouteRequests {
-				// TODO(wenbli): Test SetRouteResponse
-				if _, err := s.SetRoute(context.Background(), routeReq.RouteReq); err != nil {
-					t.Fatalf("%s: Got unexpected error during call to SetRoute: %v", routeReq.Desc, err)
-				}
-				if err := checkResolvedRoutesEqual(dp.GetRoutes(), tt.wantResolvedRoutes[i]); err != nil {
-					t.Fatalf("%s: %v", routeReq.Desc, err)
-				}
-				dp.ClearQueue()
+				t.Run(desc, func(t *testing.T) {
+					// TODO(wenbli): Don't re-create gNMI server, simply erase it and then reconnect to it afterwards.
+					grpcServer := grpc.NewServer()
+					gnmiServer, err := gnmi.New(grpcServer, "local")
+					if err != nil {
+						t.Fatal(err)
+					}
+					lis, err := net.Listen("tcp", "localhost:0")
+					if err != nil {
+						t.Fatalf("Failed to start listener: %v", err)
+					}
+					go func() {
+						grpcServer.Serve(lis)
+					}()
+
+					dp := NewFakeDataplane()
+					dp.SetupFailRoutes(tt.inFailRoutes)
+					s, err := New()
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					// Update the interface configuration on the gNMI server.
+					client := gnmiServer.LocalClient()
+					if err := s.Start(client, "local", ""); err != nil {
+						t.Fatalf("cannot start sysrib server, %v", err)
+					}
+					s.dataplane = dp
+					defer s.Stop()
+
+					c, err := ygnmi.NewClient(client, ygnmi.WithTarget("local"))
+					if err != nil {
+						t.Fatalf("cannot create ygnmi client: %v", err)
+					}
+					for _, intf := range tt.inInterfaces {
+						configureInterface(t, intf, c)
+					}
+
+					// Wait for Sysrib to pick up the connected prefixes.
+					for i := 0; i != maxGNMIWaitQuanta; i++ {
+						if err = checkResolvedRoutesEqual(dp.GetRoutes(), tt.wantInitialConnectedRoutes); err == nil {
+							break
+						}
+						time.Sleep(100 * time.Millisecond)
+					}
+					if err != nil {
+						t.Fatalf("After initial interface operations: %v", err)
+					}
+					dp.ClearQueue()
+
+					for i, routeReq := range tt.inSetRouteRequests {
+						// TODO(wenbli): Test SetRouteResponse
+						if _, err := s.SetRoute(context.Background(), routeReq.RouteReq); err != nil {
+							t.Fatalf("%s: Got unexpected error during call to SetRoute: %v", routeReq.Desc, err)
+						}
+						if err := checkResolvedRoutesEqual(dp.GetRoutes(), tt.wantResolvedRoutes[i]); err != nil {
+							t.Fatalf("%s: %v", routeReq.Desc, err)
+						}
+						dp.ClearQueue()
+					}
+				})
 			}
 		})
 	}
@@ -869,7 +972,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 		t.Fatalf("cannot create ygnmi client: %v", err)
 	}
 
-	for _, intf := range []AddIntfAction{{
+	for _, intf := range []*AddIntfAction{{
 		name:    "eth0",
 		ifindex: 0,
 		enabled: true,
