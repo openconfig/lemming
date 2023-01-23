@@ -156,6 +156,173 @@ func configureInterface(t *testing.T, intf *AddIntfAction, yclient *ygnmi.Client
 	}
 }
 
+var (
+	// v4v6Mapper maps IPv4 addresses to IPv6 addresses for testing v6.
+	v4v6Mapper = map[string]string{
+		"192.168.1.1/24": "2001::1/49",
+		"192.168.2.1/24": "2002::1/49",
+		"192.168.3.1/24": "2003::1/49",
+		"192.168.4.1/24": "2004::1/49",
+		"192.168.5.1/24": "2005::1/49",
+		"192.168.1.0/24": "2001::/49",
+		"192.168.2.0/24": "2002::/49",
+		"192.168.3.0/24": "2003::/49",
+		"192.168.4.0/24": "2004::/49",
+		"192.168.5.0/24": "2005::/49",
+		"192.168.1.42":   "2001::42",
+		"192.168.2.42":   "2002::42",
+		"192.168.3.42":   "2003::42",
+		"192.168.4.42":   "2004::42",
+		"192.168.5.42":   "2005::42",
+		"10.0.0.0/8":     "1000::/40",
+		"20.0.0.0/8":     "2100::/40",
+		"30.0.0.0/8":     "3000::/40",
+		"40.0.0.0/8":     "4000::/40",
+		"10.0.0.0":       "1000::",
+		"20.0.0.0":       "2100::",
+		"30.0.0.0":       "3000::",
+		"40.0.0.0":       "4000::",
+		"10.10.10.10":    "1000::10",
+		"20.10.10.10":    "2100::10",
+		"15.0.0.0":       "1500::",
+		"11.10.10.10":    "1100::10",
+		"192.0.2.1/30":   "2001:1::1/49",
+		"192.0.2.5/30":   "2001:2::1/49",
+		"192.0.2.9/30":   "2001:3::1/49",
+		"192.0.2.0/30":   "2001:1::/49",
+		"192.0.2.4/30":   "2001:2::/49",
+		"192.0.2.8/30":   "2001:3::/49",
+		// GUE only
+		"10.10.20.20": "1000:0:20::20",
+	}
+
+	v4v6PolicyMap = map[GUEHeaders]GUEHeaders{
+		{
+			GUEPolicy: GUEPolicy{
+				dstPortv4: 8,
+				srcIP4:    [4]byte{42, 42, 42, 42},
+				isV6:      false,
+			},
+			dstIP4: [4]byte{192, 168, 1, 42},
+		}: {
+			GUEPolicy: GUEPolicy{
+				dstPortv6: 8,
+				srcIP6:    [16]byte{42, 42, 42, 42, 42},
+				isV6:      true,
+			},
+			dstIP6: [16]byte{0x20, 0x1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x42},
+		},
+		{
+			GUEPolicy: GUEPolicy{
+				dstPortv4: 9,
+				srcIP4:    [4]byte{43, 43, 43, 43},
+				isV6:      false,
+			},
+			dstIP4: [4]byte{10, 10, 10, 10},
+		}: {
+			GUEPolicy: GUEPolicy{
+				dstPortv6: 9,
+				srcIP6:    [16]byte{43, 43, 43, 43, 43},
+				isV6:      true,
+			},
+			// 10::10
+			dstIP6: [16]byte{0x10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x10},
+		},
+		{
+			GUEPolicy: GUEPolicy{
+				dstPortv4: 8,
+				srcIP4:    [4]byte{8, 8, 8, 8},
+				isV6:      false,
+			},
+			dstIP4: [4]byte{10, 10, 10, 10},
+		}: {
+			GUEPolicy: GUEPolicy{
+				dstPortv6: 8,
+				srcIP6:    [16]byte{8, 8, 8, 8, 8},
+				isV6:      true,
+			},
+			// 10::10
+			dstIP6: [16]byte{0x10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x10},
+		},
+		{
+			GUEPolicy: GUEPolicy{
+				dstPortv4: 8,
+				srcIP4:    [4]byte{8, 8, 8, 8},
+				isV6:      false,
+			},
+			dstIP4: [4]byte{10, 10, 20, 20},
+		}: {
+			GUEPolicy: GUEPolicy{
+				dstPortv6: 8,
+				srcIP6:    [16]byte{8, 8, 8, 8, 8},
+				isV6:      true,
+			},
+			dstIP6: [16]byte{0x10, 0, 0, 0, 0, 0x20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x20},
+		},
+		{
+			GUEPolicy: GUEPolicy{
+				dstPortv4: 16,
+				srcIP4:    [4]byte{16, 16, 16, 16},
+				isV6:      false,
+			},
+			dstIP4: [4]byte{10, 10, 20, 20},
+		}: {
+			GUEPolicy: GUEPolicy{
+				dstPortv6: 16,
+				srcIP6:    [16]byte{16, 16, 16, 16, 16},
+				isV6:      true,
+			},
+			// 1000:20::20
+			dstIP6: [16]byte{0x10, 0, 0, 0, 0, 0x20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x20},
+		},
+	}
+)
+
+func mapPolicy(t *testing.T, h *GUEHeaders) {
+	zero := GUEHeaders{}
+	if *h == zero {
+		return
+	}
+	v6, ok := v4v6PolicyMap[*h]
+	if !ok {
+		t.Fatalf("v4 policy not in v4v6PolicyMap: %v", *h)
+	}
+	*h = v6
+}
+
+func mapAddress(t *testing.T, dst *string) {
+	if *dst == "" {
+		return
+	}
+	v6, ok := v4v6Mapper[*dst]
+	if !ok {
+		t.Fatalf("v4 address not in v4v6Mapper: %q", *dst)
+	}
+	*dst = v6
+}
+
+func mapResolvedRoute(t *testing.T, route *ResolvedRoute) {
+	mapAddress(t, &route.Prefix)
+	// Since this is not a pointer need to overwrite.
+	nexthops := map[ResolvedNexthop]bool{}
+	for nh, v := range route.Nexthops {
+		mapAddress(t, &nh.Address)
+		mapPolicy(t, &nh.GUEHeaders)
+		nexthops[nh] = v
+	}
+	route.Nexthops = nexthops
+}
+
+func mapPrefix(t *testing.T, prefix *pb.Prefix) {
+	if prefix.Family == pb.Prefix_FAMILY_IPV4 {
+		prefix.Family = pb.Prefix_FAMILY_IPV6
+	}
+	mapAddress(t, &prefix.Address)
+	if prefix.MaskLength == 8 {
+		prefix.MaskLength = 40
+	}
+}
+
 func TestServer(t *testing.T) {
 	// TODO(wenbli): This test should be refactored such that the wantResolvedRoutes is inlined with the inSetRouteRequests for easier reading.
 	tests := []struct {
@@ -774,73 +941,6 @@ func TestServer(t *testing.T) {
 		}},
 	}}
 
-	// v4v6Mapper maps IPv4 addresses to IPv6 addresses for testing v6.
-	v4v6Mapper := map[string]string{
-		"192.168.1.1/24": "2001::1/49",
-		"192.168.2.1/24": "2002::1/49",
-		"192.168.3.1/24": "2003::1/49",
-		"192.168.4.1/24": "2004::1/49",
-		"192.168.5.1/24": "2005::1/49",
-		"192.168.1.0/24": "2001::/49",
-		"192.168.2.0/24": "2002::/49",
-		"192.168.3.0/24": "2003::/49",
-		"192.168.4.0/24": "2004::/49",
-		"192.168.5.0/24": "2005::/49",
-		"192.168.1.42":   "2001::42",
-		"192.168.2.42":   "2002::42",
-		"192.168.3.42":   "2003::42",
-		"192.168.4.42":   "2004::42",
-		"192.168.5.42":   "2005::42",
-		"10.0.0.0/8":     "1000::/40",
-		"20.0.0.0/8":     "2000::/40",
-		"30.0.0.0/8":     "3000::/40",
-		"10.0.0.0":       "1000::",
-		"20.0.0.0":       "2000::",
-		"30.0.0.0":       "3000::",
-		"10.10.10.10":    "1000::10",
-		"20.10.10.10":    "2000::10",
-		"15.0.0.0":       "1500::",
-		"11.10.10.10":    "1100::10",
-		"192.0.2.1/30":   "2001:1::1/49",
-		"192.0.2.5/30":   "2001:2::1/49",
-		"192.0.2.9/30":   "2001:3::1/49",
-		"192.0.2.0/30":   "2001:1::/49",
-		"192.0.2.4/30":   "2001:2::/49",
-		"192.0.2.8/30":   "2001:3::/49",
-	}
-
-	mapAddress := func(t *testing.T, dst *string) {
-		if *dst == "" {
-			return
-		}
-		v6, ok := v4v6Mapper[*dst]
-		if !ok {
-			t.Fatalf("v4 address not in v4v6Mapper: %q", *dst)
-		}
-		*dst = v6
-	}
-
-	mapResolvedRoute := func(t *testing.T, route *ResolvedRoute) {
-		mapAddress(t, &route.Prefix)
-		// Since this is not a pointer need to overwrite.
-		nexthops := map[ResolvedNexthop]bool{}
-		for nh, v := range route.Nexthops {
-			mapAddress(t, &nh.Address)
-			nexthops[nh] = v
-		}
-		route.Nexthops = nexthops
-	}
-
-	mapPrefix := func(t *testing.T, prefix *pb.Prefix) {
-		if prefix.Family == pb.Prefix_FAMILY_IPV4 {
-			prefix.Family = pb.Prefix_FAMILY_IPV6
-		}
-		mapAddress(t, &prefix.Address)
-		if prefix.MaskLength == 8 {
-			prefix.MaskLength = 40
-		}
-	}
-
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
 			for _, v4 := range []bool{true, false} {
@@ -940,39 +1040,7 @@ func TestServer(t *testing.T) {
 }
 
 func TestBGPGUEPolicy(t *testing.T) {
-	grpcServer := grpc.NewServer()
-	gnmiServer, err := gnmi.New(grpcServer, "local")
-	if err != nil {
-		t.Fatal(err)
-	}
-	lis, err := net.Listen("tcp", "localhost:0")
-	if err != nil {
-		t.Fatalf("Failed to start listener: %v", err)
-	}
-	go func() {
-		grpcServer.Serve(lis)
-	}()
-
-	dp := NewFakeDataplane()
-	s, err := New()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Update the interface configuration on the gNMI server.
-	client := gnmiServer.LocalClient()
-	if err := s.Start(client, "local", ""); err != nil {
-		t.Fatalf("cannot start sysrib server, %v", err)
-	}
-	s.dataplane = dp
-	defer s.Stop()
-
-	c, err := ygnmi.NewClient(client, ygnmi.WithTarget("local"))
-	if err != nil {
-		t.Fatalf("cannot create ygnmi client: %v", err)
-	}
-
-	for _, intf := range []*AddIntfAction{{
+	intfs := []*AddIntfAction{{
 		name:    "eth0",
 		ifindex: 0,
 		enabled: true,
@@ -1002,110 +1070,101 @@ func TestBGPGUEPolicy(t *testing.T) {
 		enabled: true,
 		prefix:  "192.168.5.1/24",
 		niName:  "DEFAULT",
-	}} {
-		configureInterface(t, intf, c)
-	}
-	// Wait for Sysrib to pick up the connected prefixes.
-	for i := 0; i != maxGNMIWaitQuanta; i++ {
-		if err = checkResolvedRoutesEqual(dp.GetRoutes(), []*ResolvedRoute{{
-			RouteKey: RouteKey{
-				Prefix: "192.168.1.0/24",
-				NIName: "DEFAULT",
-			},
-			Nexthops: map[ResolvedNexthop]bool{
-				{
-					NextHopSummary: afthelper.NextHopSummary{
-						NetworkInstance: "DEFAULT",
-					},
-					Port: Interface{
-						Name:  "eth0",
-						Index: 0,
-					},
-				}: true,
-			},
-		}, {
-			RouteKey: RouteKey{
-				Prefix: "192.168.2.0/24",
-				NIName: "DEFAULT",
-			},
-			Nexthops: map[ResolvedNexthop]bool{
-				{
-					NextHopSummary: afthelper.NextHopSummary{
-						NetworkInstance: "DEFAULT",
-					},
-					Port: Interface{
-						Name:  "eth1",
-						Index: 1,
-					},
-				}: true,
-			},
-		}, {
-			RouteKey: RouteKey{
-				Prefix: "192.168.3.0/24",
-				NIName: "DEFAULT",
-			},
-			Nexthops: map[ResolvedNexthop]bool{
-				{
-					NextHopSummary: afthelper.NextHopSummary{
-						NetworkInstance: "DEFAULT",
-					},
-					Port: Interface{
-						Name:  "eth2",
-						Index: 2,
-					},
-				}: true,
-			},
-		}, {
-			RouteKey: RouteKey{
-				Prefix: "192.168.4.0/24",
-				NIName: "DEFAULT",
-			},
-			Nexthops: map[ResolvedNexthop]bool{
-				{
-					NextHopSummary: afthelper.NextHopSummary{
-						NetworkInstance: "DEFAULT",
-					},
-					Port: Interface{
-						Name:  "eth3",
-						Index: 3,
-					},
-				}: true,
-			},
-		}, {
-			RouteKey: RouteKey{
-				Prefix: "192.168.5.0/24",
-				NIName: "DEFAULT",
-			},
-			Nexthops: map[ResolvedNexthop]bool{
-				{
-					NextHopSummary: afthelper.NextHopSummary{
-						NetworkInstance: "DEFAULT",
-					},
-					Port: Interface{
-						Name:  "eth4",
-						Index: 4,
-					},
-				}: true,
-			},
-		}}); err == nil {
-			break
-		}
-		time.Sleep(100 * time.Millisecond)
-	}
-	if err != nil {
-		t.Fatalf("After initial interface operations: %v", err)
-	}
-	dp.ClearQueue()
+	}}
 
-	// Note: This is a sequential test.
+	wantConnectedRoutes := []*ResolvedRoute{{
+		RouteKey: RouteKey{
+			Prefix: "192.168.1.0/24",
+			NIName: "DEFAULT",
+		},
+		Nexthops: map[ResolvedNexthop]bool{
+			{
+				NextHopSummary: afthelper.NextHopSummary{
+					NetworkInstance: "DEFAULT",
+				},
+				Port: Interface{
+					Name:  "eth0",
+					Index: 0,
+				},
+			}: true,
+		},
+	}, {
+		RouteKey: RouteKey{
+			Prefix: "192.168.2.0/24",
+			NIName: "DEFAULT",
+		},
+		Nexthops: map[ResolvedNexthop]bool{
+			{
+				NextHopSummary: afthelper.NextHopSummary{
+					NetworkInstance: "DEFAULT",
+				},
+				Port: Interface{
+					Name:  "eth1",
+					Index: 1,
+				},
+			}: true,
+		},
+	}, {
+		RouteKey: RouteKey{
+			Prefix: "192.168.3.0/24",
+			NIName: "DEFAULT",
+		},
+		Nexthops: map[ResolvedNexthop]bool{
+			{
+				NextHopSummary: afthelper.NextHopSummary{
+					NetworkInstance: "DEFAULT",
+				},
+				Port: Interface{
+					Name:  "eth2",
+					Index: 2,
+				},
+			}: true,
+		},
+	}, {
+		RouteKey: RouteKey{
+			Prefix: "192.168.4.0/24",
+			NIName: "DEFAULT",
+		},
+		Nexthops: map[ResolvedNexthop]bool{
+			{
+				NextHopSummary: afthelper.NextHopSummary{
+					NetworkInstance: "DEFAULT",
+				},
+				Port: Interface{
+					Name:  "eth3",
+					Index: 3,
+				},
+			}: true,
+		},
+	}, {
+		RouteKey: RouteKey{
+			Prefix: "192.168.5.0/24",
+			NIName: "DEFAULT",
+		},
+		Nexthops: map[ResolvedNexthop]bool{
+			{
+				NextHopSummary: afthelper.NextHopSummary{
+					NetworkInstance: "DEFAULT",
+				},
+				Port: Interface{
+					Name:  "eth4",
+					Index: 4,
+				},
+			}: true,
+		},
+	}}
+
+	// Note: This is a sequential test -- each test case depends on the previous one.
 	tests := []struct {
 		desc               string
 		inSetRouteRequests []*pb.SetRouteRequest
 		inAddPolicies      map[string]GUEPolicy
+		inAddPoliciesV6    map[string]GUEPolicy
 		inDeletePolicies   []string
+		inDeletePoliciesV6 []string
 		wantResolvedRoutes []*ResolvedRoute
 	}{{
-		desc: "Add gRIBI and BGP routes",
+		desc: "Add static and BGP routes",
 		inSetRouteRequests: []*pb.SetRouteRequest{{
 			AdminDistance: 10, // not BGP
 			Metric:        10,
@@ -1175,6 +1234,13 @@ func TestBGPGUEPolicy(t *testing.T) {
 				isV6:      false,
 			},
 		},
+		inAddPoliciesV6: map[string]GUEPolicy{
+			"2001::/16": {
+				dstPortv6: 8,
+				srcIP6:    [16]byte{42, 42, 42, 42, 42},
+				isV6:      true,
+			},
+		},
 		wantResolvedRoutes: []*ResolvedRoute{{
 			RouteKey: RouteKey{
 				Prefix: "20.0.0.0/8",
@@ -1202,8 +1268,9 @@ func TestBGPGUEPolicy(t *testing.T) {
 			},
 		}},
 	}, {
-		desc:             "Remove Policy",
-		inDeletePolicies: []string{"192.168.0.0/16"},
+		desc:               "Remove Policy",
+		inDeletePolicies:   []string{"192.168.0.0/16"},
+		inDeletePoliciesV6: []string{"2001::/16"},
 		wantResolvedRoutes: []*ResolvedRoute{{
 			RouteKey: RouteKey{
 				Prefix: "20.0.0.0/8",
@@ -1223,7 +1290,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 			},
 		}},
 	}, {
-		desc: "Add BGP route that resolves over the gRIBI route",
+		desc: "Add BGP route that resolves over the static route",
 		inSetRouteRequests: []*pb.SetRouteRequest{{
 			AdminDistance: 20, // EBGP
 			Metric:        10,
@@ -1264,6 +1331,13 @@ func TestBGPGUEPolicy(t *testing.T) {
 				isV6:      false,
 			},
 		},
+		inAddPoliciesV6: map[string]GUEPolicy{
+			"1000::/16": {
+				dstPortv6: 9,
+				srcIP6:    [16]byte{43, 43, 43, 43, 43},
+				isV6:      true,
+			},
+		},
 		wantResolvedRoutes: []*ResolvedRoute{{
 			RouteKey: RouteKey{
 				Prefix: "30.0.0.0/8",
@@ -1291,8 +1365,9 @@ func TestBGPGUEPolicy(t *testing.T) {
 			},
 		}},
 	}, {
-		desc:             "Remove Policy for second BGP route",
-		inDeletePolicies: []string{"10.10.0.0/16"},
+		desc:               "Remove Policy for second BGP route",
+		inDeletePolicies:   []string{"10.10.0.0/16"},
+		inDeletePoliciesV6: []string{"1000::/16"},
 		wantResolvedRoutes: []*ResolvedRoute{{
 			RouteKey: RouteKey{
 				Prefix: "30.0.0.0/8",
@@ -1312,7 +1387,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 			},
 		}},
 	}, {
-		desc: "Add another BGP route that resolves over the gRIBI route",
+		desc: "Add another BGP route that resolves over the static route",
 		inSetRouteRequests: []*pb.SetRouteRequest{{
 			AdminDistance: 20, // EBGP
 			Metric:        10,
@@ -1351,6 +1426,13 @@ func TestBGPGUEPolicy(t *testing.T) {
 				dstPortv4: 8,
 				srcIP4:    [4]byte{8, 8, 8, 8},
 				isV6:      false,
+			},
+		},
+		inAddPoliciesV6: map[string]GUEPolicy{
+			"1000::/8": {
+				dstPortv6: 8,
+				srcIP6:    [16]byte{8, 8, 8, 8, 8},
+				isV6:      true,
 			},
 		},
 		wantResolvedRoutes: []*ResolvedRoute{{
@@ -1413,6 +1495,13 @@ func TestBGPGUEPolicy(t *testing.T) {
 				isV6:      false,
 			},
 		},
+		inAddPoliciesV6: map[string]GUEPolicy{
+			"1000:0:20::/48": {
+				dstPortv6: 16,
+				srcIP6:    [16]byte{16, 16, 16, 16, 16},
+				isV6:      true,
+			},
+		},
 		wantResolvedRoutes: []*ResolvedRoute{{
 			RouteKey: RouteKey{
 				Prefix: "40.0.0.0/8",
@@ -1440,8 +1529,9 @@ func TestBGPGUEPolicy(t *testing.T) {
 			},
 		}},
 	}, {
-		desc:             "Remove the less-specific policy",
-		inDeletePolicies: []string{"10.0.0.0/8"},
+		desc:               "Remove the less-specific policy",
+		inDeletePolicies:   []string{"10.0.0.0/8"},
+		inDeletePoliciesV6: []string{"1000::/8"},
 		wantResolvedRoutes: []*ResolvedRoute{{
 			RouteKey: RouteKey{
 				Prefix: "30.0.0.0/8",
@@ -1461,8 +1551,9 @@ func TestBGPGUEPolicy(t *testing.T) {
 			},
 		}},
 	}, {
-		desc:             "Remove the more-specific policy",
-		inDeletePolicies: []string{"10.10.20.0/24"},
+		desc:               "Remove the more-specific policy",
+		inDeletePolicies:   []string{"10.10.20.0/24"},
+		inDeletePoliciesV6: []string{"1000:0:20::/48"},
 		wantResolvedRoutes: []*ResolvedRoute{{
 			RouteKey: RouteKey{
 				Prefix: "40.0.0.0/8",
@@ -1483,23 +1574,108 @@ func TestBGPGUEPolicy(t *testing.T) {
 		}},
 	}}
 
-	for _, tt := range tests {
-		t.Run(tt.desc, func(t *testing.T) {
-			for _, routeReq := range tt.inSetRouteRequests {
-				if _, err := s.SetRoute(context.Background(), routeReq); err != nil {
-					t.Fatalf("Got unexpected error during call to SetRoute: %v", err)
+	for _, v4 := range []bool{true, false} {
+		desc := "v4"
+		if !v4 {
+			desc = "v6"
+			// Convert all v4 addresses to v6.
+			for _, intf := range intfs {
+				mapAddress(t, &intf.prefix)
+			}
+			for _, route := range wantConnectedRoutes {
+				mapResolvedRoute(t, route)
+			}
+		}
+
+		t.Run(desc, func(t *testing.T) {
+			grpcServer := grpc.NewServer()
+			gnmiServer, err := gnmi.New(grpcServer, "local")
+			if err != nil {
+				t.Fatal(err)
+			}
+			lis, err := net.Listen("tcp", "localhost:0")
+			if err != nil {
+				t.Fatalf("Failed to start listener: %v", err)
+			}
+			go func() {
+				grpcServer.Serve(lis)
+			}()
+
+			dp := NewFakeDataplane()
+			s, err := New()
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			// Update the interface configuration on the gNMI server.
+			client := gnmiServer.LocalClient()
+			if err := s.Start(client, "local", ""); err != nil {
+				t.Fatalf("cannot start sysrib server, %v", err)
+			}
+			s.dataplane = dp
+			defer s.Stop()
+
+			c, err := ygnmi.NewClient(client, ygnmi.WithTarget("local"))
+			if err != nil {
+				t.Fatalf("cannot create ygnmi client: %v", err)
+			}
+
+			for _, intf := range intfs {
+				configureInterface(t, intf, c)
+			}
+			// Wait for Sysrib to pick up the connected prefixes.
+			for i := 0; i != maxGNMIWaitQuanta; i++ {
+				if err = checkResolvedRoutesEqual(dp.GetRoutes(), wantConnectedRoutes); err == nil {
+					break
 				}
+				time.Sleep(100 * time.Millisecond)
 			}
-			for prefix, policy := range tt.inAddPolicies {
-				s.setGUEPolicy(prefix, policy)
-			}
-			for _, prefix := range tt.inDeletePolicies {
-				s.deleteGUEPolicy(prefix)
-			}
-			if err := checkResolvedRoutesEqual(dp.GetRoutes(), tt.wantResolvedRoutes); err != nil {
-				t.Fatalf("%v", err)
+			if err != nil {
+				t.Fatalf("After initial interface operations: %v", err)
 			}
 			dp.ClearQueue()
+
+			for _, tt := range tests {
+				inAddPolicies := tt.inAddPolicies
+				inDeletePolicies := tt.inDeletePolicies
+				if !v4 { // Convert v4 to v6.
+					for _, req := range tt.inSetRouteRequests {
+						mapPrefix(t, req.Prefix)
+						for _, nh := range req.Nexthops {
+							if nh.Type == pb.Nexthop_TYPE_IPV4 {
+								nh.Type = pb.Nexthop_TYPE_IPV6
+							}
+							mapAddress(t, &nh.Address)
+						}
+					}
+					for _, route := range tt.wantResolvedRoutes {
+						mapResolvedRoute(t, route)
+					}
+					inAddPolicies = tt.inAddPoliciesV6
+					inDeletePolicies = tt.inDeletePoliciesV6
+				}
+
+				t.Run(tt.desc, func(t *testing.T) {
+					for _, routeReq := range tt.inSetRouteRequests {
+						if _, err := s.SetRoute(context.Background(), routeReq); err != nil {
+							t.Fatalf("Got unexpected error during call to SetRoute: %v", err)
+						}
+					}
+					for prefix, policy := range inAddPolicies {
+						s.setGUEPolicy(prefix, policy)
+					}
+					for _, prefix := range inDeletePolicies {
+						s.deleteGUEPolicy(prefix)
+					}
+					if err := checkResolvedRoutesEqual(dp.GetRoutes(), tt.wantResolvedRoutes); err != nil {
+						// DEBUG
+						fmt.Println(tt.desc)
+						s.rib.PrintRIB()
+						t.Fatalf("%v", err)
+					}
+					dp.ClearQueue()
+				})
+			}
 		})
 	}
 }

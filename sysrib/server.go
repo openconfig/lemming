@@ -281,6 +281,9 @@ func (s *Server) monitorBGPGUEPolicies(yclient *ygnmi.Client) error {
 		ocpath.Root().BgpGueIpv4PolicyAny().DstPortIpv4().Config().PathStruct(),
 		ocpath.Root().BgpGueIpv4PolicyAny().DstPortIpv6().Config().PathStruct(),
 		ocpath.Root().BgpGueIpv4PolicyAny().SrcIp().Config().PathStruct(),
+		ocpath.Root().BgpGueIpv6PolicyAny().Prefix().Config().PathStruct(),
+		ocpath.Root().BgpGueIpv6PolicyAny().DstPortIpv6().Config().PathStruct(),
+		ocpath.Root().BgpGueIpv6PolicyAny().SrcIp().Config().PathStruct(),
 	)
 
 	bgpGUEPolicyWatcher := ygnmi.Watch(
@@ -294,31 +297,7 @@ func (s *Server) monitorBGPGUEPolicies(yclient *ygnmi.Client) error {
 			}
 
 			policiesFound := map[string]bool{}
-			// Add new/updated policies.
-			for nonCanonicalPrefix, ocPolicy := range rootVal.BgpGueIpv4Policy {
-				// TODO(wenbli): Support other VRFs.
-				pfx, err := netip.ParsePrefix(nonCanonicalPrefix)
-				if err != nil {
-					// TODO(wenbli): This should be a Reconciler.Validate checker function.
-					log.Errorf("BGP GUE Policy prefix cannot be parsed: %v", err)
-					continue
-				}
-				pfx = pfx.Masked() // make canonical
-				prefix := pfx.String()
-				if ocPolicy.DstPortIpv4 == nil || ocPolicy.DstPortIpv6 == nil || ocPolicy.SrcIp == nil {
-					continue // Wait for complete configuration to arrive.
-				}
-				addr, err := netip.ParseAddr(*ocPolicy.SrcIp)
-				if err != nil {
-					log.Errorf("BGP GUE Policy source IP cannot be parsed: %v", err)
-					continue
-				}
-				policy := GUEPolicy{
-					isV6:      false,
-					dstPortv4: *ocPolicy.DstPortIpv4,
-					dstPortv6: *ocPolicy.DstPortIpv6,
-					srcIP4:    addr.As4(),
-				}
+			updatePolicy := func(prefix string, policy GUEPolicy) {
 				policiesFound[prefix] = true
 				if existingPolicy := s.bgpGUEPolicies[prefix]; policy != existingPolicy {
 					log.V(1).Infof("Adding new/updated BGP GUE policy: %s: %v", prefix, policy)
@@ -328,6 +307,53 @@ func (s *Server) monitorBGPGUEPolicies(yclient *ygnmi.Client) error {
 						s.bgpGUEPolicies[prefix] = policy
 					}
 				}
+			}
+
+			// Add new/updated policies.
+			for pfx, ocPolicy := range rootVal.BgpGueIpv4Policy {
+				// TODO(wenbli): Support other VRFs.
+				prefix, err := canonicalPrefix(pfx)
+				if err != nil {
+					// TODO(wenbli): This should be a Reconciler.Validate checker function.
+					log.Errorf("BGP GUE Policy prefix cannot be parsed: %v", err)
+					continue
+				}
+				if ocPolicy.DstPortIpv4 == nil || ocPolicy.DstPortIpv6 == nil || ocPolicy.SrcIp == nil {
+					continue // Wait for complete configuration to arrive.
+				}
+				addr, err := netip.ParseAddr(*ocPolicy.SrcIp)
+				if err != nil {
+					log.Errorf("BGP GUE Policy source IP cannot be parsed: %v", err)
+					continue
+				}
+				updatePolicy(prefix.String(), GUEPolicy{
+					isV6:      false,
+					dstPortv4: *ocPolicy.DstPortIpv4,
+					dstPortv6: *ocPolicy.DstPortIpv6,
+					srcIP4:    addr.As4(),
+				})
+			}
+			for pfx, ocPolicy := range rootVal.BgpGueIpv6Policy {
+				// TODO(wenbli): Support other VRFs.
+				prefix, err := canonicalPrefix(pfx)
+				if err != nil {
+					// TODO(wenbli): This should be a Reconciler.Validate checker function.
+					log.Errorf("BGP GUE Policy prefix cannot be parsed: %v", err)
+					continue
+				}
+				if ocPolicy.DstPortIpv6 == nil || ocPolicy.SrcIp == nil {
+					continue // Wait for complete configuration to arrive.
+				}
+				addr, err := netip.ParseAddr(*ocPolicy.SrcIp)
+				if err != nil {
+					log.Errorf("BGP GUE Policy source IP cannot be parsed: %v", err)
+					continue
+				}
+				updatePolicy(prefix.String(), GUEPolicy{
+					isV6:      true,
+					dstPortv6: *ocPolicy.DstPortIpv6,
+					srcIP6:    addr.As16(),
+				})
 			}
 
 			// Delete incomplete/non-existent policies.
@@ -582,7 +608,7 @@ func (s *Server) ResolveAndProgramDiff() error {
 // - Resolve a single route specified by prefix and program if it's different.
 // - Populate the resolved route into newResolvedRoutes.
 func (s *Server) resolveAndProgramDiffAux(niName string, ni *NIRIB, prefix string, newResolvedRoutes map[RouteKey]*Route) {
-	log.V(1).Infof("Iterating at prefix %v out of %d tags", prefix, ni.IPV4.CountTags())
+	log.V(1).Infof("Iterating at prefix %v (v4 has %d tags) (v6 has %d tags)", prefix, ni.IPV4.CountTags(), ni.IPV6.CountTags())
 	_, pfx, err := net.ParseCIDR(prefix)
 	if err != nil {
 		log.Errorf("sysrib: %v", err)
@@ -595,10 +621,14 @@ func (s *Server) resolveAndProgramDiffAux(niName string, ni *NIRIB, prefix strin
 	}
 	routeIsResolved := len(nhs) > 0
 
+	cPfx, err := canonicalPrefix(prefix)
+	if err != nil {
+		log.Errorf("sysrib: %v", err)
+	}
+
 	rr := &ResolvedRoute{
 		RouteKey: RouteKey{
-			// TODO(wenbli): Could it.Address() be different from pfx.String()?
-			Prefix: pfx.String(),
+			Prefix: cPfx.String(),
 			NIName: niName,
 		},
 		Nexthops: nhs,
@@ -753,8 +783,13 @@ func convertZebraRoute(niName string, zroute *zebra.IPRouteBody) *Route {
 // addInterfacePrefix adds a prefix to the sysrib as a connected route.
 func (s *Server) addInterfacePrefix(name string, ifindex int32, prefix string, niName string) error {
 	log.V(1).Infof("Adding interface prefix: intf %s, idx %d, prefix %s, ni %s", name, ifindex, prefix, niName)
+	// TODO(wenbli): Support other VRFs.
+	pfx, err := canonicalPrefix(prefix)
+	if err != nil {
+		return fmt.Errorf("sysrib: prefix cannot be parsed: %v", err)
+	}
 	connectedRoute := &Route{
-		Prefix: prefix,
+		Prefix: pfx.String(),
 		Connected: &Interface{
 			Name:  name,
 			Index: ifindex,
