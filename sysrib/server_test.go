@@ -157,7 +157,8 @@ func configureInterface(t *testing.T, intf *AddIntfAction, yclient *ygnmi.Client
 }
 
 var (
-	// v4v6Mapper maps IPv4 addresses to IPv6 addresses for testing v6.
+	// v4v6Mapper provides a mapping of IPv4 addresses to IPv6 addresses
+	// for running the same tests, but using v6 addresses.
 	v4v6Mapper = map[string]string{
 		"192.168.1.1/24": "2001::1/49",
 		"192.168.2.1/24": "2002::1/49",
