@@ -586,7 +586,9 @@ func convertToZAPIRoute(routeKey RouteKey, route *Route) (*zebra.IPRouteBody, er
 // TODO(wenbli): handle route deletion.
 func (s *Server) ResolveAndProgramDiff() error {
 	log.Info("Recalculating resolved RIB")
-	defer s.rib.PrintRIB() // DEBUG
+	if debugRIB {
+		defer s.rib.PrintRIB()
+	}
 	s.rib.mu.RLock()
 	defer s.rib.mu.RUnlock()
 	// newResolvedRoutes keeps track of the new set of top-level resolved
@@ -656,7 +658,9 @@ func (s *Server) resolveAndProgramDiffAux(niName string, ni *NIRIB, prefix strin
 		s.programmedRoutesMu.Lock()
 		s.programmedRoutes[rr.RouteKey] = rr
 		s.programmedRoutesMu.Unlock()
-		s.PrintProgrammedRoutes()
+		if debugRIB {
+			s.PrintProgrammedRoutes()
+		}
 		// ZAPI: If a new/updated route is programmed, redistribute it to clients.
 		// TODO(wenbli): RedistributeRouteDel
 		zrouteBody, err := convertToZAPIRoute(rr.RouteKey, route)

@@ -295,8 +295,7 @@ func updateNeighbors(ctx context.Context, bgpServer *server.BgpServer, updated [
 // made. GoBGP's config/state is not as rigorous as OpenConfig config/state
 // separation.
 func InitialConfig(ctx context.Context, applied *oc.NetworkInstance_Protocol_Bgp, bgpServer *server.BgpServer, newConfig *bgpconfig.BgpConfigSet, isGracefulRestart bool) (*bgpconfig.BgpConfigSet, error) {
-	//bgpServer.Log().SetLevel(log.InfoLevel)
-	bgpServer.Log().Info(fmt.Sprintf("DEEBUG initial: %+v", newConfig.Neighbors), log.Fields{"Topic": "config"})
+	debugBGPPrint(bgpServer.Log(), fmt.Sprintf("initial neighbors: %+v", newConfig.Neighbors))
 	if err := bgpServer.StartBgp(ctx, &api.StartBgpRequest{
 		Global: bgpconfig.NewGlobalFromConfigStruct(&newConfig.Global),
 	}); err != nil {
@@ -446,8 +445,8 @@ func InitialConfig(ctx context.Context, applied *oc.NetworkInstance_Protocol_Bgp
 // separation.
 func UpdateConfig(ctx context.Context, applied *oc.NetworkInstance_Protocol_Bgp, bgpServer *server.BgpServer, c, newConfig *bgpconfig.BgpConfigSet) (*bgpconfig.BgpConfigSet, error) {
 	addedPg, deletedPg, updatedPg := bgpconfig.UpdatePeerGroupConfig(bgpServer.Log(), c, newConfig)
-	bgpServer.Log().Info(fmt.Sprintf("DEEBUG old: %+v", c.Neighbors), log.Fields{"Topic": "config"})
-	bgpServer.Log().Info(fmt.Sprintf("DEEBUG new: %+v", newConfig.Neighbors), log.Fields{"Topic": "config"})
+	debugBGPPrint(bgpServer.Log(), fmt.Sprintf("old neighbors: %+v", c.Neighbors))
+	debugBGPPrint(bgpServer.Log(), fmt.Sprintf("new neighbors: %+v", newConfig.Neighbors))
 	added, deleted, updated := bgpconfig.UpdateNeighborConfig(bgpServer.Log(), c, newConfig)
 	updatePolicy := bgpconfig.CheckPolicyDifference(bgpServer.Log(), bgpconfig.ConfigSetToRoutingPolicy(c), bgpconfig.ConfigSetToRoutingPolicy(newConfig))
 

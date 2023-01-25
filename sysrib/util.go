@@ -5,6 +5,11 @@ import (
 	"net/netip"
 )
 
+const (
+	// debugRIB controls whether debug messages for the RIB are printed.
+	debugRIB = false
+)
+
 func canonicalPrefix(prefix string) (netip.Prefix, error) {
 	pfx, err := netip.ParsePrefix(prefix)
 	if err != nil {
