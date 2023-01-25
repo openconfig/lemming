@@ -15,7 +15,7 @@ func canonicalPrefix(prefix string) (netip.Prefix, error) {
 }
 
 // PrintRIB prints the IPv4 and IPv6 RIBs.
-func (s *SysRIB) PrintRIB() error {
+func (s *SysRIB) PrintRIB() {
 	fmt.Println("RIB DUMP")
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -34,5 +34,15 @@ func (s *SysRIB) PrintRIB() error {
 			fmt.Println("------------------")
 		}
 	}
-	return nil
+}
+
+// PrintProgrammedRoutes prints the programmed routes.
+func (s *Server) PrintProgrammedRoutes() {
+	fmt.Println("Programmed Routes DUMP (From Sysrib)")
+	s.programmedRoutesMu.Lock()
+	defer s.programmedRoutesMu.Unlock()
+	for _, route := range s.programmedRoutes {
+		fmt.Printf("%+v\n", route)
+		fmt.Println("------------------")
+	}
 }

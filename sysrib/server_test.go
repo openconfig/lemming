@@ -1668,8 +1668,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 						s.deleteGUEPolicy(prefix)
 					}
 					if err := checkResolvedRoutesEqual(dp.GetRoutes(), tt.wantResolvedRoutes); err != nil {
-						// DEBUG
-						fmt.Println(tt.desc)
+						fmt.Println("debug", tt.desc)
 						s.rib.PrintRIB()
 						t.Fatalf("%v", err)
 					}

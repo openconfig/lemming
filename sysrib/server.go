@@ -583,6 +583,7 @@ func convertToZAPIRoute(routeKey RouteKey, route *Route) (*zebra.IPRouteBody, er
 // TODO(wenbli): handle route deletion.
 func (s *Server) ResolveAndProgramDiff() error {
 	log.Info("Recalculating resolved RIB")
+	defer s.rib.PrintRIB() // DEBUG
 	s.rib.mu.RLock()
 	defer s.rib.mu.RUnlock()
 	// newResolvedRoutes keeps track of the new set of top-level resolved
@@ -652,6 +653,7 @@ func (s *Server) resolveAndProgramDiffAux(niName string, ni *NIRIB, prefix strin
 		s.programmedRoutesMu.Lock()
 		s.programmedRoutes[rr.RouteKey] = rr
 		s.programmedRoutesMu.Unlock()
+		s.PrintProgrammedRoutes()
 		// ZAPI: If a new/updated route is programmed, redistribute it to clients.
 		// TODO(wenbli): RedistributeRouteDel
 		zrouteBody, err := convertToZAPIRoute(rr.RouteKey, route)
@@ -783,13 +785,8 @@ func convertZebraRoute(niName string, zroute *zebra.IPRouteBody) *Route {
 // addInterfacePrefix adds a prefix to the sysrib as a connected route.
 func (s *Server) addInterfacePrefix(name string, ifindex int32, prefix string, niName string) error {
 	log.V(1).Infof("Adding interface prefix: intf %s, idx %d, prefix %s, ni %s", name, ifindex, prefix, niName)
-	// TODO(wenbli): Support other VRFs.
-	pfx, err := canonicalPrefix(prefix)
-	if err != nil {
-		return fmt.Errorf("sysrib: prefix cannot be parsed: %v", err)
-	}
 	connectedRoute := &Route{
-		Prefix: pfx.String(),
+		Prefix: prefix,
 		Connected: &Interface{
 			Name:  name,
 			Index: ifindex,
