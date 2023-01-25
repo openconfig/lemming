@@ -445,6 +445,7 @@ func prefixString(prefix *pb.Prefix) (string, error) {
 // - isRouteV4 indicates whether the route is a v4 route or a v6 route.
 func gueActions(isRouteV4 bool, gueHeaders GUEHeaders) ([]*fwdpb.ActionDesc, error) {
 	var ip gopacket.SerializableLayer
+	var headerID fwdpb.PacketHeaderId
 	if !gueHeaders.isV6 {
 		ip = &layers.IPv4{
 			Version:  4,
@@ -453,6 +454,7 @@ func gueActions(isRouteV4 bool, gueHeaders GUEHeaders) ([]*fwdpb.ActionDesc, err
 			SrcIP:    gueHeaders.srcIP4[:],
 			DstIP:    gueHeaders.dstIP4[:],
 		}
+		headerID = fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4
 	} else {
 		ip = &layers.IPv6{
 			Version:    6,
@@ -460,6 +462,7 @@ func gueActions(isRouteV4 bool, gueHeaders GUEHeaders) ([]*fwdpb.ActionDesc, err
 			SrcIP:      gueHeaders.srcIP6[:],
 			DstIP:      gueHeaders.dstIP6[:],
 		}
+		headerID = fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP6
 	}
 
 	udp := &layers.UDP{
@@ -481,7 +484,7 @@ func gueActions(isRouteV4 bool, gueHeaders GUEHeaders) ([]*fwdpb.ActionDesc, err
 		ActionType: fwdpb.ActionType_ACTION_TYPE_REPARSE,
 		Action: &fwdpb.ActionDesc_Reparse{
 			Reparse: &fwdpb.ReparseActionDesc{
-				HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4,
+				HeaderId: headerID,
 				FieldIds: []*fwdpb.PacketFieldId{
 					{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP}},
 					{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT}},

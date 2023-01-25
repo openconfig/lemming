@@ -273,19 +273,16 @@ func (a *Attributes) ConfigOCInterface(intf *oc.Interface) *oc.Interface {
 	}
 
 	s := intf.GetOrCreateSubinterface(0)
-	// TODO(wenbli): Fix this.
-	/*
-		if a.IPv4 != "" {
-			s4 := s.GetOrCreateIpv4()
-			if a.MTU > 0 {
-				s4.Mtu = ygot.Uint16(a.MTU)
-			}
-			a4 := s4.GetOrCreateAddress(a.IPv4)
-			if a.IPv4Len > 0 {
-				a4.PrefixLength = ygot.Uint8(a.IPv4Len)
-			}
+	if a.IPv4 != "" {
+		s4 := s.GetOrCreateIpv4()
+		if a.MTU > 0 {
+			s4.Mtu = ygot.Uint16(a.MTU)
 		}
-	*/
+		a4 := s4.GetOrCreateAddress(a.IPv4)
+		if a.IPv4Len > 0 {
+			a4.PrefixLength = ygot.Uint8(a.IPv4Len)
+		}
+	}
 
 	if a.IPv6 != "" {
 		s6 := s.GetOrCreateIpv6()
@@ -468,7 +465,7 @@ func testTrafficAndEncap(t *testing.T, otg *otg.OTG, startingIP string, encapFie
 		} else {
 			wantNL := layers.IPv6{
 				Version:    6,
-				Length:     32,
+				Length:     72,
 				NextHeader: layers.IPProtocolUDP,
 				SrcIP:      encapFields.srcIP,
 				DstIP:      encapFields.dstIP,
@@ -490,7 +487,7 @@ func testTrafficAndEncap(t *testing.T, otg *otg.OTG, startingIP string, encapFie
 			wantTL := layers.UDP{
 				SrcPort: 0, // TODO(wenbli): Implement and test hashing for srcPort.
 				DstPort: layers.UDPPort(encapFields.dstPort),
-				Length:  32,
+				Length:  34,
 			}
 			var gotTL layers.UDP
 			tl := pkt.TransportLayer()
@@ -503,7 +500,7 @@ func testTrafficAndEncap(t *testing.T, otg *otg.OTG, startingIP string, encapFie
 				continue
 			}
 			if diff := cmp.Diff(wantTL, gotTL, cmpopts.IgnoreUnexported(layers.UDP{}), cmpopts.IgnoreFields(layers.UDP{}, "BaseLayer")); diff != "" {
-				t.Errorf("network layer (-want, +got):\n%s", diff)
+				t.Errorf("transport layer (-want, +got):\n%s", diff)
 			}
 			// TODO: Check that lower layers is the original packet.
 		}
@@ -654,12 +651,12 @@ func TestBGPTriggeredGUEV6(t *testing.T) {
 	})
 
 	tests := []struct {
-		desc         string
-		gnmiOp       func()
-		encapFields1 *EncapFields
-		encapFields2 *EncapFields
-		encapFields3 *EncapFields
-		skip         bool
+		desc             string
+		gnmiOp           func()
+		wantEncapFields1 *EncapFields
+		wantEncapFields2 *EncapFields
+		wantEncapFields3 *EncapFields
+		skip             bool
 	}{{
 		desc:   "without policy",
 		gnmiOp: func() {},
@@ -668,42 +665,40 @@ func TestBGPTriggeredGUEV6(t *testing.T) {
 		gnmiOp: func() {
 			policy2Pfx := "2002::/48"
 			gnmi.Replace(t, dut, ocpath.Root().BgpGueIpv6Policy(policy2Pfx).Config(), &oc.BgpGueIpv6Policy{
-				// TODO(wenbli): Support IPv4-mapped IPv6 traffic that would use a different dstPort.
 				DstPortIpv6: ygot.Uint16(168),
 				Prefix:      ygot.String(policy2Pfx),
 				SrcIp:       ygot.String("8484:8484::"),
 			})
 		},
-		encapFields1: &EncapFields{
+		wantEncapFields1: &EncapFields{
 			srcIP:   net.IP{0x84, 0x84, 0x84, 0x84, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 			dstIP:   net.IP{0x20, 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-			dstPort: 84,
+			dstPort: 168,
 		},
-		encapFields2: &EncapFields{
+		wantEncapFields2: &EncapFields{
 			srcIP:   net.IP{0x84, 0x84, 0x84, 0x84, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 			dstIP:   net.IP{0x20, 0x02, 0, 0, 0x10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-			dstPort: 84,
+			dstPort: 168,
 		},
 	}, {
-		skip: true,
 		desc: "with two overlapping policies",
 		gnmiOp: func() {
 			policy1Pfx := "2002::/64"
 			gnmi.Replace(t, dut, ocpath.Root().BgpGueIpv6Policy(policy1Pfx).Config(), &oc.BgpGueIpv6Policy{
-				DstPortIpv6: ygot.Uint16(168),
+				DstPortIpv6: ygot.Uint16(84),
 				Prefix:      ygot.String(policy1Pfx),
 				SrcIp:       ygot.String("4242:4242::"),
 			})
 		},
-		encapFields1: &EncapFields{
+		wantEncapFields1: &EncapFields{
 			srcIP:   net.IP{0x42, 0x42, 0x42, 0x42, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 			dstIP:   net.IP{0x20, 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-			dstPort: 42,
+			dstPort: 84,
 		},
-		encapFields2: &EncapFields{
+		wantEncapFields2: &EncapFields{
 			srcIP:   net.IP{0x84, 0x84, 0x84, 0x84, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 			dstIP:   net.IP{0x20, 0x02, 0, 0, 0x10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-			dstPort: 84,
+			dstPort: 168,
 		},
 	}}
 
@@ -714,23 +709,23 @@ func TestBGPTriggeredGUEV6(t *testing.T) {
 			}
 
 			tests := []struct {
-				startingIP  string
-				encapFields *EncapFields
+				startingIP      string
+				wantEncapFields *EncapFields
 			}{{
-				startingIP:  "2003:aaaa::",
-				encapFields: tt.encapFields1,
+				startingIP:      "2003:aaaa::",
+				wantEncapFields: tt.wantEncapFields1,
 			}, {
-				startingIP:  "2003:bbbb::",
-				encapFields: tt.encapFields2,
+				startingIP:      "2003:bbbb::",
+				wantEncapFields: tt.wantEncapFields2,
 			}, {
-				startingIP:  "2003:cccc::",
-				encapFields: tt.encapFields3,
+				startingIP:      "2003:cccc::",
+				wantEncapFields: tt.wantEncapFields3,
 			}}
 
 			tt.gnmiOp()
 			for _, tt := range tests {
 				t.Run(tt.startingIP, func(t *testing.T) {
-					testTrafficAndEncap(t, otg, tt.startingIP, tt.encapFields)
+					testTrafficAndEncap(t, otg, tt.startingIP, tt.wantEncapFields)
 				})
 			}
 		})
