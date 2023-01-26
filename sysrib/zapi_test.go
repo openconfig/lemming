@@ -44,10 +44,10 @@ import (
 
 func TestZServer(t *testing.T) {
 	// Need to test these serially since they all use the same UDS address.
-	testHello(t)
-	testRouteAdd(t)
-	testRouteRedistribution(t, true)
-	testRouteRedistribution(t, false)
+	t.Run("hello", testHello)
+	t.Run("RouteAdd", testRouteAdd)
+	t.Run("RouteRedistribution-routeReadyBeforeDial", func(t *testing.T) { testRouteRedistribution(t, true) })
+	t.Run("RouteRedistribution-routeNotReadyBeforeDial", func(t *testing.T) { testRouteRedistribution(t, false) })
 }
 
 // SendMessage sends a zebra message to the given connection.
@@ -111,48 +111,65 @@ func testHello(t *testing.T) {
 }
 
 func testRouteAdd(t *testing.T) {
-	s := ZAPIServerStart(t)
-	defer s.Stop()
-
-	conn, err := Dial()
-	if err != nil {
-		t.Errorf("Dial failed %v\n", err)
-		return
-	}
-	defer conn.Close()
-
-	body := &zebra.IPRouteBody{Prefix: zebra.Prefix{
-		Family:    syscall.AF_INET,
-		PrefixLen: 24,
-		Prefix:    net.IPv4(10, 0, 0, 0),
+	tests := []struct {
+		desc   string
+		inBody *zebra.IPRouteBody
+	}{{
+		desc: "IPv4",
+		inBody: &zebra.IPRouteBody{Prefix: zebra.Prefix{
+			Family:    syscall.AF_INET,
+			PrefixLen: 24,
+			Prefix:    net.IPv4(10, 0, 0, 0),
+		}},
+	}, {
+		desc: "IPv6",
+		inBody: &zebra.IPRouteBody{Prefix: zebra.Prefix{
+			Family:    syscall.AF_INET6,
+			PrefixLen: 49,
+			Prefix:    net.ParseIP("2001:aaaa:bbbb::"),
+		}},
 	}}
 
-	serverVersion := zebra.MaxZapiVer
-	serverSoftware := zebra.MaxSoftware
-	helloMsg := zebra.Message{
-		Header: zebra.Header{
-			Len:     zebra.HeaderSize(serverVersion),
-			Marker:  zebra.HeaderMarker(serverVersion),
-			Version: serverVersion,
-			Command: zebra.Hello.ToEach(serverVersion, serverSoftware),
-		},
-		Body: &zebra.HelloBody{},
-	}
-	if err := SendMessage(t, conn, &helloMsg); err != nil {
-		t.Error(err)
-	}
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			s := ZAPIServerStart(t)
+			defer s.Stop()
 
-	msg := zebra.Message{
-		Header: zebra.Header{
-			Len:     zebra.HeaderSize(serverVersion),
-			Marker:  zebra.HeaderMarker(serverVersion),
-			Version: serverVersion,
-			Command: zebra.RouteAdd.ToEach(serverVersion, serverSoftware),
-		},
-		Body: body,
-	}
-	if err := SendMessage(t, conn, &msg); err != nil {
-		t.Error(err)
+			conn, err := Dial()
+			if err != nil {
+				t.Errorf("Dial failed %v\n", err)
+				return
+			}
+			defer conn.Close()
+
+			serverVersion := zebra.MaxZapiVer
+			serverSoftware := zebra.MaxSoftware
+			helloMsg := zebra.Message{
+				Header: zebra.Header{
+					Len:     zebra.HeaderSize(serverVersion),
+					Marker:  zebra.HeaderMarker(serverVersion),
+					Version: serverVersion,
+					Command: zebra.Hello.ToEach(serverVersion, serverSoftware),
+				},
+				Body: &zebra.HelloBody{},
+			}
+			if err := SendMessage(t, conn, &helloMsg); err != nil {
+				t.Error(err)
+			}
+
+			msg := zebra.Message{
+				Header: zebra.Header{
+					Len:     zebra.HeaderSize(serverVersion),
+					Marker:  zebra.HeaderMarker(serverVersion),
+					Version: serverVersion,
+					Command: zebra.RouteAdd.ToEach(serverVersion, serverSoftware),
+				},
+				Body: tt.inBody,
+			}
+			if err := SendMessage(t, conn, &msg); err != nil {
+				t.Error(err)
+			}
+		})
 	}
 }
 
@@ -163,105 +180,140 @@ func testRouteAdd(t *testing.T) {
 // - routeReadyBeforeDial specifies whether to make the route ready before the
 // client dials to the ZAPI server.
 func testRouteRedistribution(t *testing.T, routeReadyBeforeDial bool) {
-	dp := NewFakeDataplane()
-	s, err := New()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	grpcServer := grpc.NewServer()
-	gnmiServer, err := gnmi.New(grpcServer, "local")
-	if err != nil {
-		t.Fatal(err)
-	}
-	client := gnmiServer.LocalClient()
-	if err := s.Start(client, "local", "unix:/tmp/zserv.api"); err != nil {
-		t.Fatalf("cannot start sysrib server, %v", err)
-	}
-	s.dataplane = dp
-	defer s.Stop()
-
-	c, err := ygnmi.NewClient(client, ygnmi.WithTarget("local"))
-	if err != nil {
-		t.Fatalf("cannot create ygnmi client: %v", err)
-	}
-	configureInterface(t, &AddIntfAction{
-		name:    "eth0",
-		ifindex: 0,
-		enabled: true,
-		prefix:  "192.168.1.1/24",
-		niName:  "DEFAULT",
-	}, c)
-
-	routeReq := &pb.SetRouteRequest{
-		AdminDistance: 10,
-		Metric:        10,
-		Prefix: &pb.Prefix{
-			Family:     pb.Prefix_FAMILY_IPV4,
-			Address:    "10.0.0.0",
-			MaskLength: 8,
+	tests := []struct {
+		desc              string
+		inAddIntfAction   *AddIntfAction
+		inSetRouteRequest *pb.SetRouteRequest
+	}{{
+		desc: "IPv4",
+		inAddIntfAction: &AddIntfAction{
+			name:    "eth0",
+			ifindex: 0,
+			enabled: true,
+			prefix:  "192.168.1.1/24",
+			niName:  "DEFAULT",
 		},
-		Nexthops: []*pb.Nexthop{{
-			Type:    pb.Nexthop_TYPE_IPV4,
-			Address: "192.168.1.42",
-			Weight:  1,
-		}},
-	}
+		inSetRouteRequest: &pb.SetRouteRequest{
+			AdminDistance: 10,
+			Metric:        10,
+			Prefix: &pb.Prefix{
+				Family:     pb.Prefix_FAMILY_IPV4,
+				Address:    "10.0.0.0",
+				MaskLength: 8,
+			},
+			Nexthops: []*pb.Nexthop{{
+				Type:    pb.Nexthop_TYPE_IPV4,
+				Address: "192.168.1.42",
+				Weight:  1,
+			}},
+		},
+	}, {
+		desc: "IPv6",
+		inAddIntfAction: &AddIntfAction{
+			name:    "eth0",
+			ifindex: 0,
+			enabled: true,
+			prefix:  "2001::aaaa/42",
+			niName:  "DEFAULT",
+		},
+		inSetRouteRequest: &pb.SetRouteRequest{
+			AdminDistance: 10,
+			Metric:        10,
+			Prefix: &pb.Prefix{
+				Family:     pb.Prefix_FAMILY_IPV6,
+				Address:    "4242::4242",
+				MaskLength: 42,
+			},
+			Nexthops: []*pb.Nexthop{{
+				Type:    pb.Nexthop_TYPE_IPV6,
+				Address: "2001::ffff",
+				Weight:  1,
+			}},
+		},
+	}}
 
-	if routeReadyBeforeDial {
-		if _, err := s.SetRoute(context.Background(), routeReq); err != nil {
-			t.Fatalf("Got unexpected error during call to SetRoute: %v", err)
-		}
-		for i := 0; i != maxGNMIWaitQuanta; i++ {
-			if len(dp.GetRoutes()) != 0 {
-				break
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			dp := NewFakeDataplane()
+			s, err := New()
+			if err != nil {
+				t.Fatal(err)
 			}
-			time.Sleep(100 * time.Millisecond)
-		}
-		if len(dp.GetRoutes()) == 0 {
-			t.Fatalf("Route not resolved in time limit.")
-		}
-	}
 
-	conn, err := Dial()
-	if err != nil {
-		t.Errorf("Dial failed %v\n", err)
-		return
-	}
-	defer conn.Close()
+			grpcServer := grpc.NewServer()
+			gnmiServer, err := gnmi.New(grpcServer, "local")
+			if err != nil {
+				t.Fatal(err)
+			}
+			client := gnmiServer.LocalClient()
+			if err := s.Start(client, "local", "unix:/tmp/zserv.api"); err != nil {
+				t.Fatalf("cannot start sysrib server, %v", err)
+			}
+			s.dataplane = dp
+			defer s.Stop()
 
-	version := zebra.MaxZapiVer
-	software := zebra.MaxSoftware
+			c, err := ygnmi.NewClient(client, ygnmi.WithTarget("local"))
+			if err != nil {
+				t.Fatalf("cannot create ygnmi client: %v", err)
+			}
+			configureInterface(t, tt.inAddIntfAction, c)
 
-	SendMessage(t, conn, &zebra.Message{
-		Header: zebra.Header{
-			Len:     zebra.HeaderSize(version),
-			Marker:  zebra.HeaderMarker(version),
-			Version: version,
-			Command: zebra.Hello.ToEach(version, software),
-		},
-		Body: &zebra.HelloBody{},
-	})
+			if routeReadyBeforeDial {
+				if _, err := s.SetRoute(context.Background(), tt.inSetRouteRequest); err != nil {
+					t.Fatalf("Got unexpected error during call to SetRoute: %v", err)
+				}
+				for i := 0; i != maxGNMIWaitQuanta; i++ {
+					if len(dp.GetRoutes()) != 0 {
+						break
+					}
+					time.Sleep(100 * time.Millisecond)
+				}
+				if len(dp.GetRoutes()) == 0 {
+					t.Fatalf("Route not resolved in time limit.")
+				}
+			}
 
-	// The first message is expected to be a capabilities message which is
-	// discarded since no client uses it.
-	if _, err := zebra.ReceiveSingleMsg(topicLogger, conn, version, software, "test-client"); err != nil {
-		t.Fatalf("Got error during call to first ReceiveSingleMsg: %v", err)
-	}
+			conn, err := Dial()
+			if err != nil {
+				t.Errorf("Dial failed %v\n", err)
+				return
+			}
+			defer conn.Close()
 
-	if !routeReadyBeforeDial {
-		if _, err := s.SetRoute(context.Background(), routeReq); err != nil {
-			t.Fatalf("Got unexpected error during call to SetRoute: %v", err)
-		}
-	}
+			version := zebra.MaxZapiVer
+			software := zebra.MaxSoftware
 
-	m, err := zebra.ReceiveSingleMsg(topicLogger, conn, version, software, "test-client")
-	if err != nil {
-		t.Fatal(err)
-	} else if m == nil {
-		t.Fatal("got empty message")
-	}
-	if got, want := m.Header.Command.ToCommon(version, software), zebra.RedistributeRouteAdd; got != want {
-		t.Errorf("Got message %s, want %s", got, want)
+			SendMessage(t, conn, &zebra.Message{
+				Header: zebra.Header{
+					Len:     zebra.HeaderSize(version),
+					Marker:  zebra.HeaderMarker(version),
+					Version: version,
+					Command: zebra.Hello.ToEach(version, software),
+				},
+				Body: &zebra.HelloBody{},
+			})
+
+			// The first message is expected to be a capabilities message which is
+			// discarded since no client uses it.
+			if _, err := zebra.ReceiveSingleMsg(topicLogger, conn, version, software, "test-client"); err != nil {
+				t.Fatalf("Got error during call to first ReceiveSingleMsg: %v", err)
+			}
+
+			if !routeReadyBeforeDial {
+				if _, err := s.SetRoute(context.Background(), tt.inSetRouteRequest); err != nil {
+					t.Fatalf("Got unexpected error during call to SetRoute: %v", err)
+				}
+			}
+
+			m, err := zebra.ReceiveSingleMsg(topicLogger, conn, version, software, "test-client")
+			if err != nil {
+				t.Fatal(err)
+			} else if m == nil {
+				t.Fatal("got empty message")
+			}
+			if got, want := m.Header.Command.ToCommon(version, software), zebra.RedistributeRouteAdd; got != want {
+				t.Errorf("Got message %s, want %s", got, want)
+			}
+		})
 	}
 }
