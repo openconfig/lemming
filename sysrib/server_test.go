@@ -248,11 +248,9 @@ func mapResolvedRouteTo6(t *testing.T, route *ResolvedRoute) {
 func mapPrefixTo6(t *testing.T, prefix *pb.Prefix) {
 	if prefix.Family == pb.Prefix_FAMILY_IPV4 {
 		prefix.Family = pb.Prefix_FAMILY_IPV6
-	}
-	prefix.Address = mapAddressTo6(t, prefix.Address)
-	if prefix.MaskLength == 8 {
 		prefix.MaskLength += v4v6ConversionStartPos * 8
 	}
+	prefix.Address = mapAddressTo6(t, prefix.Address)
 }
 
 type SetAndProgramPair struct {
