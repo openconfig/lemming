@@ -20,6 +20,7 @@ import (
 	"net"
 	"net/netip"
 	"reflect"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -40,6 +41,10 @@ import (
 const (
 	// Each quantum is 100 ms
 	maxGNMIWaitQuanta = 200 // 20s
+	// v4v6ConversionStartPos is the position in the IPv6 address byte
+	// slice into which to start copying the 4 bytes of the IPv4 address
+	// for conversion.
+	v4v6ConversionStartPos = 8
 )
 
 type AddIntfAction struct {
@@ -156,171 +161,95 @@ func configureInterface(t *testing.T, intf *AddIntfAction, yclient *ygnmi.Client
 	}
 }
 
-var (
-	// v4v6Mapper provides a mapping of IPv4 addresses to IPv6 addresses
-	// for running the same tests, but using v6 addresses.
-	v4v6Mapper = map[string]string{
-		"192.168.1.1/24": "2001::1/49",
-		"192.168.2.1/24": "2002::1/49",
-		"192.168.3.1/24": "2003::1/49",
-		"192.168.4.1/24": "2004::1/49",
-		"192.168.5.1/24": "2005::1/49",
-		"192.168.1.0/24": "2001::/49",
-		"192.168.2.0/24": "2002::/49",
-		"192.168.3.0/24": "2003::/49",
-		"192.168.4.0/24": "2004::/49",
-		"192.168.5.0/24": "2005::/49",
-		"192.168.1.42":   "2001::42",
-		"192.168.2.42":   "2002::42",
-		"192.168.3.42":   "2003::42",
-		"192.168.4.42":   "2004::42",
-		"192.168.5.42":   "2005::42",
-		"10.0.0.0/8":     "1000::/40",
-		"20.0.0.0/8":     "2100::/40",
-		"30.0.0.0/8":     "3000::/40",
-		"40.0.0.0/8":     "4000::/40",
-		"10.0.0.0":       "1000::",
-		"20.0.0.0":       "2100::",
-		"30.0.0.0":       "3000::",
-		"40.0.0.0":       "4000::",
-		"10.10.10.10":    "1000::10",
-		"20.10.10.10":    "2100::10",
-		"15.0.0.0":       "1500::",
-		"11.10.10.10":    "1100::10",
-		"192.0.2.1/30":   "2001:1::1/49",
-		"192.0.2.5/30":   "2001:2::1/49",
-		"192.0.2.9/30":   "2001:3::1/49",
-		"192.0.2.0/30":   "2001:1::/49",
-		"192.0.2.4/30":   "2001:2::/49",
-		"192.0.2.8/30":   "2001:3::/49",
-		// GUE only
-		"10.10.20.20": "1000:0:20::20",
+func mapPolicyTo6(t *testing.T, h GUEPolicy) GUEPolicy {
+	zero := GUEPolicy{}
+	if h == zero {
+		return h
 	}
+	zero.dstPortv6 = h.dstPortv4
+	zero.srcIP6 = mapAddressTo6Bytes(h.srcIP4, v4v6ConversionStartPos)
+	zero.isV6 = true
+	return zero
+}
 
-	v4v6PolicyMap = map[GUEHeaders]GUEHeaders{
-		{
-			GUEPolicy: GUEPolicy{
-				dstPortv4: 8,
-				srcIP4:    [4]byte{42, 42, 42, 42},
-				isV6:      false,
-			},
-			dstIP4: [4]byte{192, 168, 1, 42},
-		}: {
-			GUEPolicy: GUEPolicy{
-				dstPortv6: 8,
-				srcIP6:    [16]byte{42, 42, 42, 42, 42},
-				isV6:      true,
-			},
-			dstIP6: [16]byte{0x20, 0x1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x42},
-		},
-		{
-			GUEPolicy: GUEPolicy{
-				dstPortv4: 9,
-				srcIP4:    [4]byte{43, 43, 43, 43},
-				isV6:      false,
-			},
-			dstIP4: [4]byte{10, 10, 10, 10},
-		}: {
-			GUEPolicy: GUEPolicy{
-				dstPortv6: 9,
-				srcIP6:    [16]byte{43, 43, 43, 43, 43},
-				isV6:      true,
-			},
-			// 10::10
-			dstIP6: [16]byte{0x10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x10},
-		},
-		{
-			GUEPolicy: GUEPolicy{
-				dstPortv4: 8,
-				srcIP4:    [4]byte{8, 8, 8, 8},
-				isV6:      false,
-			},
-			dstIP4: [4]byte{10, 10, 10, 10},
-		}: {
-			GUEPolicy: GUEPolicy{
-				dstPortv6: 8,
-				srcIP6:    [16]byte{8, 8, 8, 8, 8},
-				isV6:      true,
-			},
-			// 10::10
-			dstIP6: [16]byte{0x10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x10},
-		},
-		{
-			GUEPolicy: GUEPolicy{
-				dstPortv4: 8,
-				srcIP4:    [4]byte{8, 8, 8, 8},
-				isV6:      false,
-			},
-			dstIP4: [4]byte{10, 10, 20, 20},
-		}: {
-			GUEPolicy: GUEPolicy{
-				dstPortv6: 8,
-				srcIP6:    [16]byte{8, 8, 8, 8, 8},
-				isV6:      true,
-			},
-			dstIP6: [16]byte{0x10, 0, 0, 0, 0, 0x20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x20},
-		},
-		{
-			GUEPolicy: GUEPolicy{
-				dstPortv4: 16,
-				srcIP4:    [4]byte{16, 16, 16, 16},
-				isV6:      false,
-			},
-			dstIP4: [4]byte{10, 10, 20, 20},
-		}: {
-			GUEPolicy: GUEPolicy{
-				dstPortv6: 16,
-				srcIP6:    [16]byte{16, 16, 16, 16, 16},
-				isV6:      true,
-			},
-			// 1000:20::20
-			dstIP6: [16]byte{0x10, 0, 0, 0, 0, 0x20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x20},
-		},
-	}
-)
-
-func mapPolicy(t *testing.T, h *GUEHeaders) {
+func mapPolicyHeadersTo6(t *testing.T, h GUEHeaders) GUEHeaders {
 	zero := GUEHeaders{}
-	if *h == zero {
-		return
+	if h == zero {
+		return h
 	}
-	v6, ok := v4v6PolicyMap[*h]
-	if !ok {
-		t.Fatalf("v4 policy not in v4v6PolicyMap: %v", *h)
-	}
-	*h = v6
+	zero.dstPortv6 = h.dstPortv4
+	zero.srcIP6 = mapAddressTo6Bytes(h.srcIP4, v4v6ConversionStartPos)
+	zero.dstIP6 = mapAddressTo6Bytes(h.dstIP4, v4v6ConversionStartPos)
+	zero.isV6 = true
+	return zero
 }
 
-func mapAddress(t *testing.T, dst *string) {
-	if *dst == "" {
-		return
-	}
-	v6, ok := v4v6Mapper[*dst]
-	if !ok {
-		t.Fatalf("v4 address not in v4v6Mapper: %q", *dst)
-	}
-	*dst = v6
+func mapAddressTo6Bytes(v4Address [4]byte, startPos int) [16]byte {
+	ipv6Bytes := [16]byte{0x20, 0x01, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	copy(ipv6Bytes[startPos:], v4Address[:])
+	return ipv6Bytes
 }
 
-func mapResolvedRoute(t *testing.T, route *ResolvedRoute) {
-	mapAddress(t, &route.Prefix)
+// mapAddressTo6 converts an input address to an IPv6 address that is *not* an
+// IPv4-mapped IPv6 address. This allows running the same test cases except
+// with IPv6 addresses.
+func mapAddressTo6(t *testing.T, addrStr string) string {
+	if addrStr == "" {
+		return ""
+	}
+	var addr netip.Addr
+	var pfxLen int
+	isPrefix := strings.Contains(addrStr, "/")
+	if isPrefix {
+		pfx, err := netip.ParsePrefix(addrStr)
+		if err != nil {
+			t.Fatalf("not a valid prefix: %q", addrStr)
+		}
+		addr = pfx.Addr()
+		pfxLen = pfx.Bits()
+	} else {
+		var err error
+		if addr, err = netip.ParseAddr(addrStr); err != nil {
+			t.Fatalf("not a valid address: %q", addrStr)
+		}
+	}
+
+	// Don't convert IPv6 addresses.
+	if !addr.Is4() {
+		return addrStr
+	}
+
+	ipv6Bytes := mapAddressTo6Bytes(*(*[4]byte)(addr.AsSlice()), v4v6ConversionStartPos)
+
+	var newAddrStr string
+	if isPrefix {
+		newAddrStr = netip.PrefixFrom(netip.AddrFrom16(ipv6Bytes), pfxLen+v4v6ConversionStartPos*8).String()
+	} else {
+		newAddrStr = netip.AddrFrom16(ipv6Bytes).String()
+	}
+
+	return newAddrStr
+}
+
+func mapResolvedRouteTo6(t *testing.T, route *ResolvedRoute) {
+	route.Prefix = mapAddressTo6(t, route.Prefix)
 	// Since this is not a pointer need to overwrite.
 	nexthops := map[ResolvedNexthop]bool{}
 	for nh, v := range route.Nexthops {
-		mapAddress(t, &nh.Address)
-		mapPolicy(t, &nh.GUEHeaders)
+		nh.Address = mapAddressTo6(t, nh.Address)
+		nh.GUEHeaders = mapPolicyHeadersTo6(t, nh.GUEHeaders)
 		nexthops[nh] = v
 	}
 	route.Nexthops = nexthops
 }
 
-func mapPrefix(t *testing.T, prefix *pb.Prefix) {
+func mapPrefixTo6(t *testing.T, prefix *pb.Prefix) {
 	if prefix.Family == pb.Prefix_FAMILY_IPV4 {
 		prefix.Family = pb.Prefix_FAMILY_IPV6
 	}
-	mapAddress(t, &prefix.Address)
+	prefix.Address = mapAddressTo6(t, prefix.Address)
 	if prefix.MaskLength == 8 {
-		prefix.MaskLength = 40
+		prefix.MaskLength += v4v6ConversionStartPos * 8
 	}
 }
 
@@ -950,26 +879,26 @@ func TestServer(t *testing.T) {
 					desc = "v6"
 					// Convert all v4 addresses to v6.
 					for _, intf := range tt.inInterfaces {
-						mapAddress(t, &intf.prefix)
+						intf.prefix = mapAddressTo6(t, intf.prefix)
 					}
 					for _, req := range tt.inSetRouteRequests {
-						mapPrefix(t, req.RouteReq.Prefix)
+						mapPrefixTo6(t, req.RouteReq.Prefix)
 						for _, nh := range req.RouteReq.Nexthops {
 							if nh.Type == pb.Nexthop_TYPE_IPV4 {
 								nh.Type = pb.Nexthop_TYPE_IPV6
 							}
-							mapAddress(t, &nh.Address)
+							nh.Address = mapAddressTo6(t, nh.Address)
 						}
 					}
 					for _, route := range tt.wantInitialConnectedRoutes {
-						mapResolvedRoute(t, route)
+						mapResolvedRouteTo6(t, route)
 					}
 					for _, route := range tt.inFailRoutes {
-						mapResolvedRoute(t, route)
+						mapResolvedRouteTo6(t, route)
 					}
 					for _, routes := range tt.wantResolvedRoutes {
 						for _, route := range routes {
-							mapResolvedRoute(t, route)
+							mapResolvedRouteTo6(t, route)
 						}
 					}
 				}
@@ -1160,9 +1089,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 		desc               string
 		inSetRouteRequests []*pb.SetRouteRequest
 		inAddPolicies      map[string]GUEPolicy
-		inAddPoliciesV6    map[string]GUEPolicy
 		inDeletePolicies   []string
-		inDeletePoliciesV6 []string
 		wantResolvedRoutes []*ResolvedRoute
 	}{{
 		desc: "Add static and BGP routes",
@@ -1235,13 +1162,6 @@ func TestBGPGUEPolicy(t *testing.T) {
 				isV6:      false,
 			},
 		},
-		inAddPoliciesV6: map[string]GUEPolicy{
-			"2001::/16": {
-				dstPortv6: 8,
-				srcIP6:    [16]byte{42, 42, 42, 42, 42},
-				isV6:      true,
-			},
-		},
 		wantResolvedRoutes: []*ResolvedRoute{{
 			RouteKey: RouteKey{
 				Prefix: "20.0.0.0/8",
@@ -1269,9 +1189,8 @@ func TestBGPGUEPolicy(t *testing.T) {
 			},
 		}},
 	}, {
-		desc:               "Remove Policy",
-		inDeletePolicies:   []string{"192.168.0.0/16"},
-		inDeletePoliciesV6: []string{"2001::/16"},
+		desc:             "Remove Policy",
+		inDeletePolicies: []string{"192.168.0.0/16"},
 		wantResolvedRoutes: []*ResolvedRoute{{
 			RouteKey: RouteKey{
 				Prefix: "20.0.0.0/8",
@@ -1332,13 +1251,6 @@ func TestBGPGUEPolicy(t *testing.T) {
 				isV6:      false,
 			},
 		},
-		inAddPoliciesV6: map[string]GUEPolicy{
-			"1000::/16": {
-				dstPortv6: 9,
-				srcIP6:    [16]byte{43, 43, 43, 43, 43},
-				isV6:      true,
-			},
-		},
 		wantResolvedRoutes: []*ResolvedRoute{{
 			RouteKey: RouteKey{
 				Prefix: "30.0.0.0/8",
@@ -1366,9 +1278,8 @@ func TestBGPGUEPolicy(t *testing.T) {
 			},
 		}},
 	}, {
-		desc:               "Remove Policy for second BGP route",
-		inDeletePolicies:   []string{"10.10.0.0/16"},
-		inDeletePoliciesV6: []string{"1000::/16"},
+		desc:             "Remove Policy for second BGP route",
+		inDeletePolicies: []string{"10.10.0.0/16"},
 		wantResolvedRoutes: []*ResolvedRoute{{
 			RouteKey: RouteKey{
 				Prefix: "30.0.0.0/8",
@@ -1427,13 +1338,6 @@ func TestBGPGUEPolicy(t *testing.T) {
 				dstPortv4: 8,
 				srcIP4:    [4]byte{8, 8, 8, 8},
 				isV6:      false,
-			},
-		},
-		inAddPoliciesV6: map[string]GUEPolicy{
-			"1000::/8": {
-				dstPortv6: 8,
-				srcIP6:    [16]byte{8, 8, 8, 8, 8},
-				isV6:      true,
 			},
 		},
 		wantResolvedRoutes: []*ResolvedRoute{{
@@ -1496,13 +1400,6 @@ func TestBGPGUEPolicy(t *testing.T) {
 				isV6:      false,
 			},
 		},
-		inAddPoliciesV6: map[string]GUEPolicy{
-			"1000:0:20::/48": {
-				dstPortv6: 16,
-				srcIP6:    [16]byte{16, 16, 16, 16, 16},
-				isV6:      true,
-			},
-		},
 		wantResolvedRoutes: []*ResolvedRoute{{
 			RouteKey: RouteKey{
 				Prefix: "40.0.0.0/8",
@@ -1530,9 +1427,8 @@ func TestBGPGUEPolicy(t *testing.T) {
 			},
 		}},
 	}, {
-		desc:               "Remove the less-specific policy",
-		inDeletePolicies:   []string{"10.0.0.0/8"},
-		inDeletePoliciesV6: []string{"1000::/8"},
+		desc:             "Remove the less-specific policy",
+		inDeletePolicies: []string{"10.0.0.0/8"},
 		wantResolvedRoutes: []*ResolvedRoute{{
 			RouteKey: RouteKey{
 				Prefix: "30.0.0.0/8",
@@ -1552,9 +1448,8 @@ func TestBGPGUEPolicy(t *testing.T) {
 			},
 		}},
 	}, {
-		desc:               "Remove the more-specific policy",
-		inDeletePolicies:   []string{"10.10.20.0/24"},
-		inDeletePoliciesV6: []string{"1000:0:20::/48"},
+		desc:             "Remove the more-specific policy",
+		inDeletePolicies: []string{"10.10.20.0/24"},
 		wantResolvedRoutes: []*ResolvedRoute{{
 			RouteKey: RouteKey{
 				Prefix: "40.0.0.0/8",
@@ -1581,10 +1476,10 @@ func TestBGPGUEPolicy(t *testing.T) {
 			desc = "v6"
 			// Convert all v4 addresses to v6.
 			for _, intf := range intfs {
-				mapAddress(t, &intf.prefix)
+				intf.prefix = mapAddressTo6(t, intf.prefix)
 			}
 			for _, route := range wantConnectedRoutes {
-				mapResolvedRoute(t, route)
+				mapResolvedRouteTo6(t, route)
 			}
 		}
 
@@ -1637,23 +1532,27 @@ func TestBGPGUEPolicy(t *testing.T) {
 			dp.ClearQueue()
 
 			for _, tt := range tests {
-				inAddPolicies := tt.inAddPolicies
-				inDeletePolicies := tt.inDeletePolicies
 				if !v4 { // Convert v4 to v6.
 					for _, req := range tt.inSetRouteRequests {
-						mapPrefix(t, req.Prefix)
+						mapPrefixTo6(t, req.Prefix)
 						for _, nh := range req.Nexthops {
 							if nh.Type == pb.Nexthop_TYPE_IPV4 {
 								nh.Type = pb.Nexthop_TYPE_IPV6
 							}
-							mapAddress(t, &nh.Address)
+							nh.Address = mapAddressTo6(t, nh.Address)
 						}
 					}
 					for _, route := range tt.wantResolvedRoutes {
-						mapResolvedRoute(t, route)
+						mapResolvedRouteTo6(t, route)
 					}
-					inAddPolicies = tt.inAddPoliciesV6
-					inDeletePolicies = tt.inDeletePoliciesV6
+					inAddPolicies := map[string]GUEPolicy{}
+					for prefix, gueHeaders := range tt.inAddPolicies {
+						inAddPolicies[mapAddressTo6(t, prefix)] = mapPolicyTo6(t, gueHeaders)
+					}
+					tt.inAddPolicies = inAddPolicies
+					for i := range tt.inDeletePolicies {
+						tt.inDeletePolicies[i] = mapAddressTo6(t, tt.inDeletePolicies[i])
+					}
 				}
 
 				t.Run(tt.desc, func(t *testing.T) {
@@ -1662,10 +1561,10 @@ func TestBGPGUEPolicy(t *testing.T) {
 							t.Fatalf("Got unexpected error during call to SetRoute: %v", err)
 						}
 					}
-					for prefix, policy := range inAddPolicies {
+					for prefix, policy := range tt.inAddPolicies {
 						s.setGUEPolicy(prefix, policy)
 					}
-					for _, prefix := range inDeletePolicies {
+					for _, prefix := range tt.inDeletePolicies {
 						s.deleteGUEPolicy(prefix)
 					}
 					if err := checkResolvedRoutesEqual(dp.GetRoutes(), tt.wantResolvedRoutes); err != nil {
