@@ -161,32 +161,32 @@ func configureInterface(t *testing.T, intf *AddIntfAction, yclient *ygnmi.Client
 	}
 }
 
-func mapPolicyTo6(t *testing.T, h GUEPolicy) GUEPolicy {
+func mapPolicyTo6(h GUEPolicy) GUEPolicy {
 	zero := GUEPolicy{}
 	if h == zero {
 		return h
 	}
 	zero.dstPortv6 = h.dstPortv4
-	zero.srcIP6 = mapAddressTo6Bytes(h.srcIP4, v4v6ConversionStartPos)
+	zero.srcIP6 = mapAddressTo6Bytes(h.srcIP4)
 	zero.isV6 = true
 	return zero
 }
 
-func mapPolicyHeadersTo6(t *testing.T, h GUEHeaders) GUEHeaders {
+func mapPolicyHeadersTo6(h GUEHeaders) GUEHeaders {
 	zero := GUEHeaders{}
 	if h == zero {
 		return h
 	}
 	zero.dstPortv6 = h.dstPortv4
-	zero.srcIP6 = mapAddressTo6Bytes(h.srcIP4, v4v6ConversionStartPos)
-	zero.dstIP6 = mapAddressTo6Bytes(h.dstIP4, v4v6ConversionStartPos)
+	zero.srcIP6 = mapAddressTo6Bytes(h.srcIP4)
+	zero.dstIP6 = mapAddressTo6Bytes(h.dstIP4)
 	zero.isV6 = true
 	return zero
 }
 
-func mapAddressTo6Bytes(v4Address [4]byte, startPos int) [16]byte {
+func mapAddressTo6Bytes(v4Address [4]byte) [16]byte {
 	ipv6Bytes := [16]byte{0x20, 0x01, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-	copy(ipv6Bytes[startPos:], v4Address[:])
+	copy(ipv6Bytes[v4v6ConversionStartPos:], v4Address[:])
 	return ipv6Bytes
 }
 
@@ -219,7 +219,7 @@ func mapAddressTo6(t *testing.T, addrStr string) string {
 		return addrStr
 	}
 
-	ipv6Bytes := mapAddressTo6Bytes(*(*[4]byte)(addr.AsSlice()), v4v6ConversionStartPos)
+	ipv6Bytes := mapAddressTo6Bytes(*(*[4]byte)(addr.AsSlice()))
 
 	var newAddrStr string
 	if isPrefix {
@@ -237,7 +237,7 @@ func mapResolvedRouteTo6(t *testing.T, route *ResolvedRoute) {
 	nexthops := map[ResolvedNexthop]bool{}
 	for nh, v := range route.Nexthops {
 		nh.Address = mapAddressTo6(t, nh.Address)
-		nh.GUEHeaders = mapPolicyHeadersTo6(t, nh.GUEHeaders)
+		nh.GUEHeaders = mapPolicyHeadersTo6(nh.GUEHeaders)
 		nexthops[nh] = v
 	}
 	route.Nexthops = nexthops
@@ -1547,7 +1547,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 					}
 					inAddPolicies := map[string]GUEPolicy{}
 					for prefix, gueHeaders := range tt.inAddPolicies {
-						inAddPolicies[mapAddressTo6(t, prefix)] = mapPolicyTo6(t, gueHeaders)
+						inAddPolicies[mapAddressTo6(t, prefix)] = mapPolicyTo6(gueHeaders)
 					}
 					tt.inAddPolicies = inAddPolicies
 					for i := range tt.inDeletePolicies {
