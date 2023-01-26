@@ -260,7 +260,10 @@ type SetAndProgramPair struct {
 
 func TestServer(t *testing.T) {
 	tests := []struct {
-		desc                       string
+		desc string
+		// noV6 indicates whether the test should be run again after converting all
+		// IPv4 addresses to IPv6.
+		noV6                       bool
 		inInterfaces               []*AddIntfAction
 		wantInitialConnectedRoutes []*ResolvedRoute
 		inSetAndProgramPairs       []*SetAndProgramPair
@@ -903,6 +906,233 @@ func TestServer(t *testing.T) {
 				}: true,
 			},
 		}},
+	}, {
+		desc: "IPv4-mapped IPv6",
+		noV6: true,
+		inInterfaces: []*AddIntfAction{{
+			name:    "eth0",
+			ifindex: 0,
+			enabled: true,
+			prefix:  "192.168.1.1/24",
+			niName:  "DEFAULT",
+		}, {
+			name:    "eth1",
+			ifindex: 1,
+			enabled: true,
+			prefix:  "192.168.2.1/24",
+			niName:  "DEFAULT",
+		}},
+		wantInitialConnectedRoutes: []*ResolvedRoute{{
+			RouteKey: RouteKey{
+				Prefix: "192.168.1.0/24",
+				NIName: "DEFAULT",
+			},
+			Nexthops: map[ResolvedNexthop]bool{
+				{
+					NextHopSummary: afthelper.NextHopSummary{
+						NetworkInstance: "DEFAULT",
+					},
+					Port: Interface{
+						Name:  "eth0",
+						Index: 0,
+					},
+				}: true,
+			},
+		}, {
+			RouteKey: RouteKey{
+				Prefix: "192.168.2.0/24",
+				NIName: "DEFAULT",
+			},
+			Nexthops: map[ResolvedNexthop]bool{
+				{
+					NextHopSummary: afthelper.NextHopSummary{
+						NetworkInstance: "DEFAULT",
+					},
+					Port: Interface{
+						Name:  "eth1",
+						Index: 1,
+					},
+				}: true,
+			},
+		}},
+		// TODO(wenbli): Test when a more specific route is not resolvable --> route is deleted.
+		inSetAndProgramPairs: []*SetAndProgramPair{{
+			SetRouteRequestAction: &SetRouteRequestAction{
+				Desc: "1st level indirect route",
+				RouteReq: &pb.SetRouteRequest{
+					AdminDistance: 10,
+					Metric:        10,
+					Prefix: &pb.Prefix{
+						Family:     pb.Prefix_FAMILY_IPV4,
+						Address:    "10.0.0.0",
+						MaskLength: 8,
+					},
+					Nexthops: []*pb.Nexthop{{
+						Type:    pb.Nexthop_TYPE_IPV4,
+						Address: "192.168.1.42",
+						// TODO(wenbli): Implement WCMP, for all route requests in this test.
+						Weight: 1,
+					}},
+				},
+			},
+			ResolvedRoutes: []*ResolvedRoute{{
+				RouteKey: RouteKey{
+					Prefix: "10.0.0.0/8",
+					NIName: "DEFAULT",
+				},
+				Nexthops: map[ResolvedNexthop]bool{
+					{
+						NextHopSummary: afthelper.NextHopSummary{
+							NetworkInstance: "DEFAULT",
+							Address:         "192.168.1.42",
+						},
+						Port: Interface{
+							Name:  "eth0",
+							Index: 0,
+						},
+					}: true,
+				},
+			}},
+		}, {
+			SetRouteRequestAction: &SetRouteRequestAction{
+				Desc: "2nd level indirect route",
+				RouteReq: &pb.SetRouteRequest{
+					AdminDistance: 10,
+					Metric:        10,
+					Prefix: &pb.Prefix{
+						Family:     pb.Prefix_FAMILY_IPV4,
+						Address:    "20.0.0.0",
+						MaskLength: 8,
+					},
+					Nexthops: []*pb.Nexthop{{
+						Type:    pb.Nexthop_TYPE_IPV4,
+						Address: "10.10.10.10",
+					}},
+				},
+			},
+			ResolvedRoutes: []*ResolvedRoute{{
+				RouteKey: RouteKey{
+					Prefix: "20.0.0.0/8",
+					NIName: "DEFAULT",
+				},
+				Nexthops: map[ResolvedNexthop]bool{
+					{
+						NextHopSummary: afthelper.NextHopSummary{
+							NetworkInstance: "DEFAULT",
+							Address:         "192.168.1.42",
+						},
+						Port: Interface{
+							Name:  "eth0",
+							Index: 0,
+						},
+					}: true,
+				},
+			}},
+		}, {
+			SetRouteRequestAction: &SetRouteRequestAction{
+				Desc: "3rd level indirect route ipv4-mapped ipv6",
+				RouteReq: &pb.SetRouteRequest{
+					AdminDistance: 10,
+					Metric:        10,
+					Prefix: &pb.Prefix{
+						Family:     pb.Prefix_FAMILY_IPV6,
+						Address:    "2002::aaaa",
+						MaskLength: 49,
+					},
+					Nexthops: []*pb.Nexthop{{
+						Type:    pb.Nexthop_TYPE_IPV6,
+						Address: "::ffff:20.10.10.10",
+					}},
+				},
+			},
+			ResolvedRoutes: []*ResolvedRoute{{
+				RouteKey: RouteKey{
+					Prefix: "2002::/49",
+					NIName: "DEFAULT",
+				},
+				Nexthops: map[ResolvedNexthop]bool{
+					{
+						NextHopSummary: afthelper.NextHopSummary{
+							NetworkInstance: "DEFAULT",
+							Address:         "192.168.1.42",
+						},
+						Port: Interface{
+							Name:  "eth0",
+							Index: 0,
+						},
+					}: true,
+				},
+			}},
+		}, {
+			SetRouteRequestAction: &SetRouteRequestAction{
+				Desc: "secondary 1st level indirect route that is more specific but higher admin distance",
+				RouteReq: &pb.SetRouteRequest{
+					AdminDistance: 20,
+					Metric:        10,
+					Prefix: &pb.Prefix{
+						Family:     pb.Prefix_FAMILY_IPV4,
+						Address:    "10.10.0.0",
+						MaskLength: 16,
+					},
+					Nexthops: []*pb.Nexthop{{
+						Type:    pb.Nexthop_TYPE_IPV4,
+						Address: "192.168.2.42",
+					}},
+				},
+			},
+			ResolvedRoutes: []*ResolvedRoute{{
+				RouteKey: RouteKey{
+					Prefix: "10.10.0.0/16",
+					NIName: "DEFAULT",
+				},
+				Nexthops: map[ResolvedNexthop]bool{
+					{
+						NextHopSummary: afthelper.NextHopSummary{
+							NetworkInstance: "DEFAULT",
+							Address:         "192.168.2.42",
+						},
+						Port: Interface{
+							Name:  "eth1",
+							Index: 1,
+						},
+					}: true,
+				},
+			}, {
+				RouteKey: RouteKey{
+					Prefix: "20.0.0.0/8",
+					NIName: "DEFAULT",
+				},
+				Nexthops: map[ResolvedNexthop]bool{
+					{
+						NextHopSummary: afthelper.NextHopSummary{
+							NetworkInstance: "DEFAULT",
+							Address:         "192.168.2.42",
+						},
+						Port: Interface{
+							Name:  "eth1",
+							Index: 1,
+						},
+					}: true,
+				},
+			}, {
+				RouteKey: RouteKey{
+					Prefix: "2002::/49",
+					NIName: "DEFAULT",
+				},
+				Nexthops: map[ResolvedNexthop]bool{
+					{
+						NextHopSummary: afthelper.NextHopSummary{
+							NetworkInstance: "DEFAULT",
+							Address:         "192.168.2.42",
+						},
+						Port: Interface{
+							Name:  "eth1",
+							Index: 1,
+						},
+					}: true,
+				},
+			}},
+		}},
 	}}
 
 	for _, tt := range tests {
@@ -910,6 +1140,9 @@ func TestServer(t *testing.T) {
 			for _, v4 := range []bool{true, false} {
 				desc := "v4"
 				if !v4 {
+					if tt.noV6 {
+						continue
+					}
 					desc = "v6"
 					// Convert all v4 addresses to v6.
 					for _, intf := range tt.inInterfaces {
