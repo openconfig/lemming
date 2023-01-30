@@ -48,7 +48,8 @@ type SysRIB struct {
 	// routes.
 	// TODO(wenbli): Support v6 GUE policies. When adding support, make
 	// sure to error out when an IPv6-mapped IPv4 prefix is provided.
-	GUEPolicies *generics_tree.TreeV4[GUEPolicy]
+	GUEPoliciesV4 *generics_tree.TreeV4[GUEPolicy]
+	GUEPoliciesV6 *generics_tree.TreeV6[GUEPolicy]
 }
 
 // NIRIB is the RIB for a single network instance.
@@ -86,15 +87,20 @@ type GUEHeaders struct {
 // GUE policy. The boolean return indicates whether a GUE policy was
 // matched.
 func (sr *SysRIB) getGUEHeader(address string) (GUEHeaders, bool, error) {
-	addr, _, err := patricia.ParseIPFromString(address)
+	addr4, addr6, err := patricia.ParseIPFromString(address)
 	if err != nil {
 		return GUEHeaders{}, false, err
 	}
-	if addr == nil {
-		log.Warningf("only v4 prefixes are supported for GUE policy: %v", address)
-		return GUEHeaders{}, false, nil
+	var ok bool
+	var policy GUEPolicy
+	switch {
+	case addr4 != nil:
+		ok, policy = sr.GUEPoliciesV4.FindDeepestTag(*addr4)
+	case addr6 != nil:
+		ok, policy = sr.GUEPoliciesV6.FindDeepestTag(*addr6)
+	default:
+		return GUEHeaders{}, false, fmt.Errorf("Invalid IP address for looking up GUE header")
 	}
-	ok, policy := sr.GUEPolicies.FindDeepestTag(*addr)
 	if !ok {
 		return GUEHeaders{}, false, nil
 	}
@@ -169,8 +175,9 @@ func (r *Route) String() string {
 // NewSysRIB returns a SysRIB from an input parsed OpenConfig configuration.
 func NewSysRIB(cfg *oc.Device) (*SysRIB, error) {
 	sr := &SysRIB{
-		NI:          map[string]*NIRIB{},
-		GUEPolicies: generics_tree.NewTreeV4[GUEPolicy](),
+		NI:            map[string]*NIRIB{},
+		GUEPoliciesV4: generics_tree.NewTreeV4[GUEPolicy](),
+		GUEPoliciesV6: generics_tree.NewTreeV6[GUEPolicy](),
 	}
 
 	if cfg != nil {
@@ -230,7 +237,11 @@ func (sr *SysRIB) AddRoute(ni string, r *Route) (bool, error) {
 	if _, ok := sr.NI[ni]; !ok {
 		return false, fmt.Errorf("cannot find network instance %s", ni)
 	}
-	addr4, addr6, err := patricia.ParseIPFromString(r.Prefix)
+	prefix, err := canonicalPrefix(r.Prefix)
+	if err != nil {
+		return false, fmt.Errorf("sysrib: prefix cannot be parsed: %v", err)
+	}
+	addr4, addr6, err := patricia.ParseIPFromString(prefix.String())
 	if err != nil {
 		return false, fmt.Errorf("cannot create prefix for %s, %v", r.Prefix, err)
 	}
@@ -252,14 +263,18 @@ func (sr *SysRIB) AddRoute(ni string, r *Route) (bool, error) {
 func (sr *SysRIB) SetGUEPolicy(prefix string, policy GUEPolicy) error {
 	sr.mu.Lock()
 	defer sr.mu.Unlock()
-	addr, _, err := patricia.ParseIPFromString(prefix)
+	addr4, addr6, err := patricia.ParseIPFromString(prefix)
 	if err != nil {
 		return fmt.Errorf("cannot create prefix for %s, %v", prefix, err)
 	}
-	if addr == nil {
-		return fmt.Errorf("SetGUEPolicy: only v4 prefixes are supported for GUE policy: %v", prefix)
+	switch {
+	case addr4 != nil:
+		sr.GUEPoliciesV4.Set(*addr4, policy)
+	case addr6 != nil:
+		sr.GUEPoliciesV6.Set(*addr6, policy)
+	default:
+		return fmt.Errorf("SetGUEPolicy: invalid prefix: %v", prefix)
 	}
-	sr.GUEPolicies.Set(*addr, policy)
 	return nil
 }
 
@@ -268,14 +283,19 @@ func (sr *SysRIB) SetGUEPolicy(prefix string, policy GUEPolicy) error {
 func (sr *SysRIB) DeleteGUEPolicy(prefix string) (bool, error) {
 	sr.mu.Lock()
 	defer sr.mu.Unlock()
-	addr, _, err := patricia.ParseIPFromString(prefix)
+	addr4, addr6, err := patricia.ParseIPFromString(prefix)
 	if err != nil {
 		return false, fmt.Errorf("cannot create prefix for %s, %v", prefix, err)
 	}
-	if addr == nil {
-		return false, fmt.Errorf("DeleteGUEPolicy: only v4 prefixes are supported for GUE policy: %v", prefix)
+	var count int
+	switch {
+	case addr4 != nil:
+		count = sr.GUEPoliciesV4.Delete(*addr4, guePolicyUnconditionalMatch, GUEPolicy{})
+	case addr6 != nil:
+		count = sr.GUEPoliciesV6.Delete(*addr6, guePolicyUnconditionalMatch, GUEPolicy{})
+	default:
+		return false, fmt.Errorf("DeleteGUEPolicy: invalid prefix: %v", prefix)
 	}
-	count := sr.GUEPolicies.Delete(*addr, guePolicyUnconditionalMatch, GUEPolicy{})
 	return count > 0, nil
 }
 

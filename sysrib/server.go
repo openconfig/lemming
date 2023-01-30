@@ -281,6 +281,9 @@ func (s *Server) monitorBGPGUEPolicies(yclient *ygnmi.Client) error {
 		ocpath.Root().BgpGueIpv4PolicyAny().DstPortIpv4().Config().PathStruct(),
 		ocpath.Root().BgpGueIpv4PolicyAny().DstPortIpv6().Config().PathStruct(),
 		ocpath.Root().BgpGueIpv4PolicyAny().SrcIp().Config().PathStruct(),
+		ocpath.Root().BgpGueIpv6PolicyAny().Prefix().Config().PathStruct(),
+		ocpath.Root().BgpGueIpv6PolicyAny().DstPortIpv6().Config().PathStruct(),
+		ocpath.Root().BgpGueIpv6PolicyAny().SrcIp().Config().PathStruct(),
 	)
 
 	bgpGUEPolicyWatcher := ygnmi.Watch(
@@ -294,31 +297,7 @@ func (s *Server) monitorBGPGUEPolicies(yclient *ygnmi.Client) error {
 			}
 
 			policiesFound := map[string]bool{}
-			// Add new/updated policies.
-			for nonCanonicalPrefix, ocPolicy := range rootVal.BgpGueIpv4Policy {
-				// TODO(wenbli): Support other VRFs.
-				pfx, err := netip.ParsePrefix(nonCanonicalPrefix)
-				if err != nil {
-					// TODO(wenbli): This should be a Reconciler.Validate checker function.
-					log.Errorf("BGP GUE Policy prefix cannot be parsed: %v", err)
-					continue
-				}
-				pfx = pfx.Masked() // make canonical
-				prefix := pfx.String()
-				if ocPolicy.DstPortIpv4 == nil || ocPolicy.DstPortIpv6 == nil || ocPolicy.SrcIp == nil {
-					continue // Wait for complete configuration to arrive.
-				}
-				addr, err := netip.ParseAddr(*ocPolicy.SrcIp)
-				if err != nil {
-					log.Errorf("BGP GUE Policy source IP cannot be parsed: %v", err)
-					continue
-				}
-				policy := GUEPolicy{
-					isV6:      false,
-					dstPortv4: *ocPolicy.DstPortIpv4,
-					dstPortv6: *ocPolicy.DstPortIpv6,
-					srcIP4:    addr.As4(),
-				}
+			updatePolicy := func(prefix string, policy GUEPolicy) {
 				policiesFound[prefix] = true
 				if existingPolicy := s.bgpGUEPolicies[prefix]; policy != existingPolicy {
 					log.V(1).Infof("Adding new/updated BGP GUE policy: %s: %v", prefix, policy)
@@ -328,6 +307,53 @@ func (s *Server) monitorBGPGUEPolicies(yclient *ygnmi.Client) error {
 						s.bgpGUEPolicies[prefix] = policy
 					}
 				}
+			}
+
+			// Add new/updated policies.
+			for pfx, ocPolicy := range rootVal.BgpGueIpv4Policy {
+				// TODO(wenbli): Support other VRFs.
+				prefix, err := canonicalPrefix(pfx)
+				if err != nil {
+					// TODO(wenbli): This should be a Reconciler.Validate checker function.
+					log.Errorf("BGP GUE Policy prefix cannot be parsed: %v", err)
+					continue
+				}
+				if ocPolicy.DstPortIpv4 == nil || ocPolicy.DstPortIpv6 == nil || ocPolicy.SrcIp == nil {
+					continue // Wait for complete configuration to arrive.
+				}
+				addr, err := netip.ParseAddr(*ocPolicy.SrcIp)
+				if err != nil {
+					log.Errorf("BGP GUE Policy source IP cannot be parsed: %v", err)
+					continue
+				}
+				updatePolicy(prefix.String(), GUEPolicy{
+					isV6:      false,
+					dstPortv4: *ocPolicy.DstPortIpv4,
+					dstPortv6: *ocPolicy.DstPortIpv6,
+					srcIP4:    addr.As4(),
+				})
+			}
+			for pfx, ocPolicy := range rootVal.BgpGueIpv6Policy {
+				// TODO(wenbli): Support other VRFs.
+				prefix, err := canonicalPrefix(pfx)
+				if err != nil {
+					// TODO(wenbli): This should be a Reconciler.Validate checker function.
+					log.Errorf("BGP GUE Policy prefix cannot be parsed: %v", err)
+					continue
+				}
+				if ocPolicy.DstPortIpv6 == nil || ocPolicy.SrcIp == nil {
+					continue // Wait for complete configuration to arrive.
+				}
+				addr, err := netip.ParseAddr(*ocPolicy.SrcIp)
+				if err != nil {
+					log.Errorf("BGP GUE Policy source IP cannot be parsed: %v", err)
+					continue
+				}
+				updatePolicy(prefix.String(), GUEPolicy{
+					isV6:      true,
+					dstPortv6: *ocPolicy.DstPortIpv6,
+					srcIP6:    addr.As16(),
+				})
 			}
 
 			// Delete incomplete/non-existent policies.
@@ -419,6 +445,7 @@ func prefixString(prefix *pb.Prefix) (string, error) {
 // - isRouteV4 indicates whether the route is a v4 route or a v6 route.
 func gueActions(isRouteV4 bool, gueHeaders GUEHeaders) ([]*fwdpb.ActionDesc, error) {
 	var ip gopacket.SerializableLayer
+	var headerID fwdpb.PacketHeaderId
 	if !gueHeaders.isV6 {
 		ip = &layers.IPv4{
 			Version:  4,
@@ -427,6 +454,7 @@ func gueActions(isRouteV4 bool, gueHeaders GUEHeaders) ([]*fwdpb.ActionDesc, err
 			SrcIP:    gueHeaders.srcIP4[:],
 			DstIP:    gueHeaders.dstIP4[:],
 		}
+		headerID = fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4
 	} else {
 		ip = &layers.IPv6{
 			Version:    6,
@@ -434,6 +462,7 @@ func gueActions(isRouteV4 bool, gueHeaders GUEHeaders) ([]*fwdpb.ActionDesc, err
 			SrcIP:      gueHeaders.srcIP6[:],
 			DstIP:      gueHeaders.dstIP6[:],
 		}
+		headerID = fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP6
 	}
 
 	udp := &layers.UDP{
@@ -455,7 +484,7 @@ func gueActions(isRouteV4 bool, gueHeaders GUEHeaders) ([]*fwdpb.ActionDesc, err
 		ActionType: fwdpb.ActionType_ACTION_TYPE_REPARSE,
 		Action: &fwdpb.ActionDesc_Reparse{
 			Reparse: &fwdpb.ReparseActionDesc{
-				HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4,
+				HeaderId: headerID,
 				FieldIds: []*fwdpb.PacketFieldId{
 					{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP}},
 					{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT}},
@@ -557,6 +586,9 @@ func convertToZAPIRoute(routeKey RouteKey, route *Route) (*zebra.IPRouteBody, er
 // TODO(wenbli): handle route deletion.
 func (s *Server) ResolveAndProgramDiff() error {
 	log.Info("Recalculating resolved RIB")
+	if debugRIB {
+		defer s.rib.PrintRIB()
+	}
 	s.rib.mu.RLock()
 	defer s.rib.mu.RUnlock()
 	// newResolvedRoutes keeps track of the new set of top-level resolved
@@ -582,7 +614,7 @@ func (s *Server) ResolveAndProgramDiff() error {
 // - Resolve a single route specified by prefix and program if it's different.
 // - Populate the resolved route into newResolvedRoutes.
 func (s *Server) resolveAndProgramDiffAux(niName string, ni *NIRIB, prefix string, newResolvedRoutes map[RouteKey]*Route) {
-	log.V(1).Infof("Iterating at prefix %v out of %d tags", prefix, ni.IPV4.CountTags())
+	log.V(1).Infof("Iterating at prefix %v (v4 has %d tags) (v6 has %d tags)", prefix, ni.IPV4.CountTags(), ni.IPV6.CountTags())
 	_, pfx, err := net.ParseCIDR(prefix)
 	if err != nil {
 		log.Errorf("sysrib: %v", err)
@@ -595,10 +627,14 @@ func (s *Server) resolveAndProgramDiffAux(niName string, ni *NIRIB, prefix strin
 	}
 	routeIsResolved := len(nhs) > 0
 
+	cPfx, err := canonicalPrefix(prefix)
+	if err != nil {
+		log.Errorf("sysrib: %v", err)
+	}
+
 	rr := &ResolvedRoute{
 		RouteKey: RouteKey{
-			// TODO(wenbli): Could it.Address() be different from pfx.String()?
-			Prefix: pfx.String(),
+			Prefix: cPfx.String(),
 			NIName: niName,
 		},
 		Nexthops: nhs,
@@ -622,6 +658,9 @@ func (s *Server) resolveAndProgramDiffAux(niName string, ni *NIRIB, prefix strin
 		s.programmedRoutesMu.Lock()
 		s.programmedRoutes[rr.RouteKey] = rr
 		s.programmedRoutesMu.Unlock()
+		if debugRIB {
+			s.PrintProgrammedRoutes()
+		}
 		// ZAPI: If a new/updated route is programmed, redistribute it to clients.
 		// TODO(wenbli): RedistributeRouteDel
 		zrouteBody, err := convertToZAPIRoute(rr.RouteKey, route)

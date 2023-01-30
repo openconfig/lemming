@@ -269,6 +269,13 @@ func intendedToGoBGP(bgpoc *oc.NetworkInstance_Protocol_Bgp, zapiURL string) *bg
 				PeerAs:          neigh.GetPeerAs(),
 				NeighborAddress: neighAddr,
 			},
+			// This is needed because GoBGP's configuration diffing
+			// logic may check the state value instead of the
+			// config value.
+			State: bgpconfig.NeighborState{
+				PeerAs:          neigh.GetPeerAs(),
+				NeighborAddress: neighAddr,
+			},
 			Transport: bgpconfig.Transport{
 				Config: bgpconfig.TransportConfig{
 					RemotePort: listenPort,
