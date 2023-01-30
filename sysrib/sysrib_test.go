@@ -444,6 +444,33 @@ func TestEgressInterface(t *testing.T) {
 			{Name: "eth0", Subinterface: 0},
 		},
 	}, {
+		desc: "v6 recursive route onto connected v4 route",
+		inCfg: func() *oc.Device {
+			d := &oc.Device{}
+			d.GetOrCreateInterface("eth0").
+				GetOrCreateSubinterface(0).
+				GetOrCreateIpv4().
+				GetOrCreateAddress("192.0.2.1").
+				PrefixLength = ygot.Uint8(24)
+			d.GetOrCreateNetworkInstance("DEFAULT").
+				Type = oc.NetworkInstanceTypes_NETWORK_INSTANCE_TYPE_DEFAULT_INSTANCE
+			return d
+		}(),
+		inAddRoutes: map[string][]*Route{
+			"DEFAULT": {{
+				Prefix: "2023::2025/128",
+				NextHops: []*afthelper.NextHopSummary{{
+					Address:         "::ffff:192.0.2.1",
+					NetworkInstance: "DEFAULT",
+				}},
+			}},
+		},
+		inNI: "DEFAULT",
+		inIP: mustCIDR("2023::2025/128"),
+		wantInterface: []*Interface{
+			{Name: "eth0", Subinterface: 0},
+		},
+	}, {
 		desc: "v4 recursive route onto two connected route",
 		inCfg: func() *oc.Device {
 			d := &oc.Device{}
@@ -502,6 +529,42 @@ func TestEgressInterface(t *testing.T) {
 				Prefix: "2023::2025/128",
 				NextHops: []*afthelper.NextHopSummary{{
 					Address:         "2001::abcd",
+					NetworkInstance: "DEFAULT",
+				}, {
+					Address:         "4002::def0",
+					NetworkInstance: "DEFAULT",
+				}},
+			}},
+		},
+		inNI: "DEFAULT",
+		inIP: mustCIDR("2023::2025/128"),
+		wantInterface: []*Interface{
+			{Name: "eth0", Subinterface: 0},
+			{Name: "eth1", Subinterface: 42},
+		},
+	}, {
+		desc: "v6 recursive route onto v4 and v6 connected routes",
+		inCfg: func() *oc.Device {
+			d := &oc.Device{}
+			d.GetOrCreateInterface("eth0").
+				GetOrCreateSubinterface(0).
+				GetOrCreateIpv4().
+				GetOrCreateAddress("192.0.2.1").
+				PrefixLength = ygot.Uint8(24)
+			d.GetOrCreateInterface("eth1").
+				GetOrCreateSubinterface(42).
+				GetOrCreateIpv6().
+				GetOrCreateAddress("4002::bbbb").
+				PrefixLength = ygot.Uint8(40)
+			d.GetOrCreateNetworkInstance("DEFAULT").
+				Type = oc.NetworkInstanceTypes_NETWORK_INSTANCE_TYPE_DEFAULT_INSTANCE
+			return d
+		}(),
+		inAddRoutes: map[string][]*Route{
+			"DEFAULT": {{
+				Prefix: "2023::2025/128",
+				NextHops: []*afthelper.NextHopSummary{{
+					Address:         "::ffff:192.0.2.1",
 					NetworkInstance: "DEFAULT",
 				}, {
 					Address:         "4002::def0",

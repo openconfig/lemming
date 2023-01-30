@@ -351,6 +351,8 @@ func (sr *SysRIB) entryForCIDR(ni string, ip *net.IPNet) (bool, []*Route, error)
 
 // addressToPrefix returns a prefix of /32 or /128 of the input v4 or v6 address.
 //
+// It interprets IPv4-mapped IPv6 addresses as IPv4 addresses.
+//
 // It returns an error if the input address cannot be parsed.
 //
 // e.g. 1.1.1.1 -> 1.1.1.1/32
@@ -364,6 +366,7 @@ func addressToPrefix(address string) (*net.IPNet, error) {
 	if addr.Is6() {
 		mask = 128
 	}
+	// Note: net.ParseCIDR interprets IPv4-mapped IPv6 addresses as IPv4 addresses.
 	_, nhop, err := net.ParseCIDR(fmt.Sprintf("%s/%d", address, mask))
 	if err != nil {
 		return nil, fmt.Errorf("can't parse %s/%d into CIDR, %v", address, mask, err)
