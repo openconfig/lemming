@@ -380,7 +380,7 @@ func TestIPv4Entry(t *testing.T) {
 			NextHop: map[string]*oc.NetworkInstance_Protocol_Static_NextHop{
 				"single": {
 					Index:   ygot.String("single"),
-					NextHop: oc.UnionString(ateIndirectNH),
+					NextHop: oc.UnionString(ateIndirectNHv6),
 					Recurse: ygot.Bool(true),
 				},
 			},
