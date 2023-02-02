@@ -327,7 +327,6 @@ func (s *Server) monitorBGPGUEPolicies(yclient *ygnmi.Client) error {
 					continue
 				}
 				updatePolicy(prefix.String(), GUEPolicy{
-					isV6:      false,
 					dstPortv4: *ocPolicy.DstPortIpv4,
 					dstPortv6: *ocPolicy.DstPortIpv6,
 					srcIP4:    addr.As4(),
@@ -350,7 +349,6 @@ func (s *Server) monitorBGPGUEPolicies(yclient *ygnmi.Client) error {
 					continue
 				}
 				updatePolicy(prefix.String(), GUEPolicy{
-					isV6:      true,
 					dstPortv6: *ocPolicy.DstPortIpv6,
 					srcIP6:    addr.As16(),
 				})

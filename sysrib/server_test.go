@@ -170,7 +170,6 @@ func mapPolicyTo6(h GUEPolicy) GUEPolicy {
 	}
 	zero.dstPortv6 = h.dstPortv4
 	zero.srcIP6 = mapAddressTo6Bytes(h.srcIP4)
-	zero.isV6 = true
 	return zero
 }
 
@@ -1351,7 +1350,11 @@ func TestBGPGUEPolicy(t *testing.T) {
 
 	// Note: This is a sequential test -- each test case depends on the previous one.
 	tests := []struct {
-		desc               string
+		desc string
+		// Skip this step in V4 testing.
+		skipV4 bool
+		// Skip this step in V6 testing.
+		skipV6             bool
 		inSetRouteRequests []*pb.SetRouteRequest
 		inAddPolicies      map[string]GUEPolicy
 		inDeletePolicies   []string
@@ -1423,8 +1426,9 @@ func TestBGPGUEPolicy(t *testing.T) {
 		inAddPolicies: map[string]GUEPolicy{
 			"192.168.0.0/16": {
 				dstPortv4: 8,
+				dstPortv6: 16,
 				srcIP4:    [4]byte{42, 42, 42, 42},
-				isV6:      false,
+				srcIP6:    [16]byte{42, 42, 42, 42, 42},
 			},
 		},
 		wantResolvedRoutes: []*ResolvedRoute{{
@@ -1446,9 +1450,9 @@ func TestBGPGUEPolicy(t *testing.T) {
 						GUEPolicy: GUEPolicy{
 							dstPortv4: 8,
 							srcIP4:    [4]byte{42, 42, 42, 42},
-							isV6:      false,
 						},
 						dstIP4: [4]byte{192, 168, 1, 42},
+						isV6:   false,
 					},
 				}: true,
 			},
@@ -1512,8 +1516,9 @@ func TestBGPGUEPolicy(t *testing.T) {
 		inAddPolicies: map[string]GUEPolicy{
 			"10.10.0.0/16": {
 				dstPortv4: 9,
+				dstPortv6: 18,
 				srcIP4:    [4]byte{43, 43, 43, 43},
-				isV6:      false,
+				srcIP6:    [16]byte{43, 43, 43, 43, 43},
 			},
 		},
 		wantResolvedRoutes: []*ResolvedRoute{{
@@ -1535,9 +1540,9 @@ func TestBGPGUEPolicy(t *testing.T) {
 						GUEPolicy: GUEPolicy{
 							dstPortv4: 9,
 							srcIP4:    [4]byte{43, 43, 43, 43},
-							isV6:      false,
 						},
 						dstIP4: [4]byte{10, 10, 10, 10},
+						isV6:   false,
 					},
 				}: true,
 			},
@@ -1601,8 +1606,9 @@ func TestBGPGUEPolicy(t *testing.T) {
 		inAddPolicies: map[string]GUEPolicy{
 			"10.0.0.0/8": {
 				dstPortv4: 8,
+				dstPortv6: 16,
 				srcIP4:    [4]byte{8, 8, 8, 8},
-				isV6:      false,
+				srcIP6:    [16]byte{8, 8, 8, 8, 8},
 			},
 		},
 		wantResolvedRoutes: []*ResolvedRoute{{
@@ -1624,9 +1630,9 @@ func TestBGPGUEPolicy(t *testing.T) {
 						GUEPolicy: GUEPolicy{
 							dstPortv4: 8,
 							srcIP4:    [4]byte{8, 8, 8, 8},
-							isV6:      false,
 						},
 						dstIP4: [4]byte{10, 10, 10, 10},
+						isV6:   false,
 					},
 				}: true,
 			},
@@ -1649,9 +1655,9 @@ func TestBGPGUEPolicy(t *testing.T) {
 						GUEPolicy: GUEPolicy{
 							dstPortv4: 8,
 							srcIP4:    [4]byte{8, 8, 8, 8},
-							isV6:      false,
 						},
 						dstIP4: [4]byte{10, 10, 20, 20},
+						isV6:   false,
 					},
 				}: true,
 			},
@@ -1661,8 +1667,9 @@ func TestBGPGUEPolicy(t *testing.T) {
 		inAddPolicies: map[string]GUEPolicy{
 			"10.10.20.0/24": {
 				dstPortv4: 16,
+				dstPortv6: 32,
 				srcIP4:    [4]byte{16, 16, 16, 16},
-				isV6:      false,
+				srcIP6:    [16]byte{16, 16, 16, 16, 16},
 			},
 		},
 		wantResolvedRoutes: []*ResolvedRoute{{
@@ -1684,9 +1691,51 @@ func TestBGPGUEPolicy(t *testing.T) {
 						GUEPolicy: GUEPolicy{
 							dstPortv4: 16,
 							srcIP4:    [4]byte{16, 16, 16, 16},
-							isV6:      false,
 						},
 						dstIP4: [4]byte{10, 10, 20, 20},
+						isV6:   false,
+					},
+				}: true,
+			},
+		}},
+	}, {
+		desc:   "Add an IPv4-mapped IPv6 BGP route over the more specific policy",
+		skipV6: true,
+		inSetRouteRequests: []*pb.SetRouteRequest{{
+			AdminDistance: 20, // EBGP
+			Metric:        10,
+			Prefix: &pb.Prefix{
+				Family:     pb.Prefix_FAMILY_IPV6,
+				Address:    "4242::",
+				MaskLength: 42,
+			},
+			Nexthops: []*pb.Nexthop{{
+				Type:    pb.Nexthop_TYPE_IPV6,
+				Address: "::ffff:10.10.20.30",
+			}},
+		}},
+		wantResolvedRoutes: []*ResolvedRoute{{
+			RouteKey: RouteKey{
+				Prefix: "4242::/42",
+				NIName: "DEFAULT",
+			},
+			Nexthops: map[ResolvedNexthop]bool{
+				{
+					NextHopSummary: afthelper.NextHopSummary{
+						NetworkInstance: "DEFAULT",
+						Address:         "192.168.1.42",
+					},
+					Port: Interface{
+						Name:  "eth0",
+						Index: 0,
+					},
+					GUEHeaders: GUEHeaders{
+						GUEPolicy: GUEPolicy{
+							dstPortv6: 32,
+							srcIP6:    [16]byte{16, 16, 16, 16, 16},
+						},
+						dstIP6: [16]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff, 10, 10, 20, 30},
+						isV6:   true,
 					},
 				}: true,
 			},
@@ -1714,10 +1763,50 @@ func TestBGPGUEPolicy(t *testing.T) {
 		}},
 	}, {
 		desc:             "Remove the more-specific policy",
+		skipV4:           true,
 		inDeletePolicies: []string{"10.10.20.0/24"},
 		wantResolvedRoutes: []*ResolvedRoute{{
 			RouteKey: RouteKey{
 				Prefix: "40.0.0.0/8",
+				NIName: "DEFAULT",
+			},
+			Nexthops: map[ResolvedNexthop]bool{
+				{
+					NextHopSummary: afthelper.NextHopSummary{
+						NetworkInstance: "DEFAULT",
+						Address:         "192.168.1.42",
+					},
+					Port: Interface{
+						Name:  "eth0",
+						Index: 0,
+					},
+				}: true,
+			},
+		}},
+	}, {
+		desc:             "Remove the more-specific policy",
+		skipV6:           true,
+		inDeletePolicies: []string{"10.10.20.0/24"},
+		wantResolvedRoutes: []*ResolvedRoute{{
+			RouteKey: RouteKey{
+				Prefix: "40.0.0.0/8",
+				NIName: "DEFAULT",
+			},
+			Nexthops: map[ResolvedNexthop]bool{
+				{
+					NextHopSummary: afthelper.NextHopSummary{
+						NetworkInstance: "DEFAULT",
+						Address:         "192.168.1.42",
+					},
+					Port: Interface{
+						Name:  "eth0",
+						Index: 0,
+					},
+				}: true,
+			},
+		}, {
+			RouteKey: RouteKey{
+				Prefix: "4242::/42",
 				NIName: "DEFAULT",
 			},
 			Nexthops: map[ResolvedNexthop]bool{
@@ -1797,6 +1886,13 @@ func TestBGPGUEPolicy(t *testing.T) {
 			dp.ClearQueue()
 
 			for _, tt := range tests {
+				if v4 && tt.skipV4 {
+					continue
+				}
+				if !v4 && tt.skipV6 {
+					continue
+				}
+
 				if !v4 { // Convert v4 to v6.
 					for _, req := range tt.inSetRouteRequests {
 						mapPrefixTo6(t, req.Prefix)

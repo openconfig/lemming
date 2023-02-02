@@ -72,7 +72,6 @@ type GUEPolicy struct {
 	dstPortv6 uint16
 	srcIP4    [4]byte
 	srcIP6    [16]byte
-	isV6      bool
 }
 
 // GUEHeaders represents the IP and UDP headers that are to encapsulate the
@@ -81,12 +80,13 @@ type GUEHeaders struct {
 	GUEPolicy
 	dstIP4 [4]byte
 	dstIP6 [16]byte
+	isV6   bool
 }
 
 // getGUEHeader retrieves the GUEHeader for the given address if it matched a
 // GUE policy. The boolean return indicates whether a GUE policy was
 // matched.
-func (sr *SysRIB) getGUEHeader(address string) (GUEHeaders, bool, error) {
+func (sr *SysRIB) getGUEHeader(address string, payloadIsV6 bool) (GUEHeaders, bool, error) {
 	addr4, addr6, err := patricia.ParseIPFromString(address)
 	if err != nil {
 		return GUEHeaders{}, false, err
@@ -108,14 +108,18 @@ func (sr *SysRIB) getGUEHeader(address string) (GUEHeaders, bool, error) {
 	if ip == nil {
 		return GUEHeaders{}, false, fmt.Errorf("cannot parse IP address: %q", address)
 	}
-	if policy.isV6 {
+	if payloadIsV6 {
 		var dstIP6 [16]byte
 		for i, octet := range ip.To16() {
 			dstIP6[i] = octet
 		}
 		return GUEHeaders{
-			GUEPolicy: policy,
-			dstIP6:    dstIP6,
+			GUEPolicy: GUEPolicy{
+				dstPortv6: policy.dstPortv6,
+				srcIP6:    policy.srcIP6,
+			},
+			dstIP6: dstIP6,
+			isV6:   true,
 		}, true, nil
 	}
 	var dstIP4 [4]byte
@@ -123,8 +127,12 @@ func (sr *SysRIB) getGUEHeader(address string) (GUEHeaders, bool, error) {
 		dstIP4[i] = octet
 	}
 	return GUEHeaders{
-		GUEPolicy: policy,
-		dstIP4:    dstIP4,
+		GUEPolicy: GUEPolicy{
+			dstPortv4: policy.dstPortv4,
+			srcIP4:    policy.srcIP4,
+		},
+		dstIP4: dstIP4,
+		isV6:   false,
 	}, true, nil
 }
 
@@ -496,7 +504,8 @@ func (sr *SysRIB) EgressNexthops(inputNI string, ip *net.IPNet, interfaces map[I
 			//   then, add the route with an encap action for the nexthop.
 			var encapHeaders GUEHeaders
 			if cr.RoutePref.AdminDistance == 20 { // EBGP
-				gueHeaders, ok, err := sr.getGUEHeader(nh.Address)
+				// Use net.ParseIP to convert IPv4-mapped IPv6 addresses to IPv4.
+				gueHeaders, ok, err := sr.getGUEHeader(net.ParseIP(nh.Address).String(), ip.IP.To4() == nil)
 				if ok {
 					encapHeaders = gueHeaders
 				}
