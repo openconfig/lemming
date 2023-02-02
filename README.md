@@ -38,9 +38,9 @@ Prerequisites:
 
 Setup:
 
-* Run setup script to install KNE CLI and create Ondatra config: `kne/setup.sh`
+* Deploy the operator: `kubectl apply -k operator/config/default`
+* Optional: Build and load lemming container from source: `make load`
 
 Deploy and Test:
 
-* Run deploy script to build image and load into k8s: `kne/deploy.sh`
-* Run integration tests: `go test -v ./integration_tests -args -config $(pwd)/kne/config.yaml -testbed $(pwd)/kne/testbed.pb.txt`
+* Run integration tests: `go test ./integration_tests/...`
