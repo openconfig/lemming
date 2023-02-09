@@ -1,0 +1,320 @@
+// Copyright 2023 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package acltrie
+
+import (
+	"fmt"
+	"testing"
+
+	"github.com/openconfig/gnmi/errdiff"
+	"github.com/openconfig/ygot/ygot"
+
+	gpb "github.com/openconfig/gnmi/proto/gnmi"
+	pathzpb "github.com/openconfig/gnsi/pathz"
+)
+
+func mustPath(s string) *gpb.Path {
+	p, err := ygot.StringToStructuredPath(s)
+	if err != nil {
+		panic(fmt.Sprintf("cannot parse subscription path %s, %v", s, err))
+	}
+	return p
+}
+
+func TestInsert(t *testing.T) {
+	tests := []struct {
+		desc        string
+		wantErr     string
+		initialRule *pathzpb.AuthorizationRule
+		testRule    *pathzpb.AuthorizationRule
+	}{{
+		desc: "success empty trie",
+		testRule: &pathzpb.AuthorizationRule{
+			Path:      mustPath("/bar"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		},
+	}, {
+		desc: "success different path no list",
+		initialRule: &pathzpb.AuthorizationRule{
+			Path:      mustPath("/foo"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		},
+		testRule: &pathzpb.AuthorizationRule{
+			Path:      mustPath("/bar"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		},
+	}, {
+		desc: "success path with different list keys",
+		initialRule: &pathzpb.AuthorizationRule{
+			Path:      mustPath("/foo[a=1]"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		},
+		testRule: &pathzpb.AuthorizationRule{
+			Path:      mustPath("/foo[a=2]"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		},
+	}, {
+		desc: "success path with wildcard and non-wildcard list keys",
+		initialRule: &pathzpb.AuthorizationRule{
+			Path:      mustPath("/foo[a=1]"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		},
+		testRule: &pathzpb.AuthorizationRule{
+			Path:      mustPath("/foo[a=*]"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		},
+	}, {
+		desc: "success path with the same prefix",
+		initialRule: &pathzpb.AuthorizationRule{
+			Path:      mustPath("/foo"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		},
+		testRule: &pathzpb.AuthorizationRule{
+			Path:      mustPath("/foo/bar"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		},
+	}, {
+		desc: "success list variable amount of wildcards",
+		initialRule: &pathzpb.AuthorizationRule{
+			Path:      mustPath("/foo[a=*][b=2]"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		},
+		testRule: &pathzpb.AuthorizationRule{
+			Path:      mustPath("/foo[a=1][b=2]"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		},
+	}, {
+		desc: "success same path, different user",
+		initialRule: &pathzpb.AuthorizationRule{
+			Path:      mustPath("/foo"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		},
+		testRule: &pathzpb.AuthorizationRule{
+			Path:      mustPath("/foo"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "testuser"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		},
+	}, {
+		desc: "success same path, different mode",
+		initialRule: &pathzpb.AuthorizationRule{
+			Path:      mustPath("/foo"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		},
+		testRule: &pathzpb.AuthorizationRule{
+			Path:      mustPath("/foo"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_WRITE,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		},
+	}, {
+		desc: "success same path, group",
+		initialRule: &pathzpb.AuthorizationRule{
+			Path:      mustPath("/foo"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		},
+		testRule: &pathzpb.AuthorizationRule{
+			Path:      mustPath("/foo"),
+			Principal: &pathzpb.AuthorizationRule_Group{Group: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		},
+	}, {
+		desc: "failure no action",
+		testRule: &pathzpb.AuthorizationRule{
+			Path:      mustPath("/bar"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+		},
+		wantErr: "action unspecified",
+	}, {
+		desc: "failure no mode",
+		testRule: &pathzpb.AuthorizationRule{
+			Path:      mustPath("/bar"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Action:    pathzpb.Action_ACTION_DENY,
+		},
+		wantErr: "mode unspecified",
+	}, {
+		desc: "failure no principal",
+		testRule: &pathzpb.AuthorizationRule{
+			Path:   mustPath("/bar"),
+			Action: pathzpb.Action_ACTION_DENY,
+			Mode:   pathzpb.Mode_MODE_READ,
+		},
+		wantErr: "principal unset",
+	}, {
+		desc: "failure bad path",
+		testRule: &pathzpb.AuthorizationRule{
+			Path:      mustPath("//bar"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		},
+		wantErr: "empty name",
+	}, {
+		desc: "failure wildcard Name",
+		initialRule: &pathzpb.AuthorizationRule{
+			Path:      mustPath("/foo"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		},
+		testRule: &pathzpb.AuthorizationRule{
+			Path:      mustPath("/*/bar"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		},
+		wantErr: "wildcard path names",
+	}, {
+		desc: "failure duplicate rule",
+		initialRule: &pathzpb.AuthorizationRule{
+			Path:      mustPath("/foo/bar"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		},
+		testRule: &pathzpb.AuthorizationRule{
+			Path:      mustPath("/foo/bar"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		},
+		wantErr: "policy already contains action for principal",
+	}, {
+		desc: "failure duplicate rule list keys",
+		initialRule: &pathzpb.AuthorizationRule{
+			Path:      mustPath("/foo[a=1]/bar"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		},
+		testRule: &pathzpb.AuthorizationRule{
+			Path:      mustPath("/foo[a=1]/bar"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		},
+		wantErr: "policy already contains action for principal",
+	}, {
+		// In this case, the path /foo[a=1][b=2], matches both policies
+		// so the test policy is invalid.
+		desc: "failure ambiguous list keys",
+		initialRule: &pathzpb.AuthorizationRule{
+			Path:      mustPath("/foo[a=*][b=2]"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		},
+		testRule: &pathzpb.AuthorizationRule{
+			Path:      mustPath("/foo[a=1][b=*]"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		},
+		wantErr: "policy path conflict",
+	}, {
+		// The initial rule is  more specific than the test rule,
+		// but the path is ambiguous for the "foo" path.Elem.
+		desc: "failure ambiguous list keys of different length",
+		initialRule: &pathzpb.AuthorizationRule{
+			Path:      mustPath("/foo[a=*][b=2]/bar"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		},
+		testRule: &pathzpb.AuthorizationRule{
+			Path:      mustPath("/foo[a=1][b=*]"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		},
+		wantErr: "policy path conflict",
+	}, {
+		desc: "failure ambiguous list keys implicit wildcard",
+		initialRule: &pathzpb.AuthorizationRule{
+			Path:      mustPath("/foo[b=2]"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		},
+		testRule: &pathzpb.AuthorizationRule{
+			Path:      mustPath("/foo[a=1]"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		},
+		wantErr: "policy path conflict",
+	}, {
+		desc: "failure ambiguous list keys with matching suffix",
+		initialRule: &pathzpb.AuthorizationRule{
+			Path:      mustPath("/foo[a=*][b=2]/c[a=1]/d"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		},
+		testRule: &pathzpb.AuthorizationRule{
+			Path:      mustPath("/foo[a=1][b=*]/c[a=*]/d"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		},
+		wantErr: "policy path conflict",
+	}}
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			trie := &Trie{}
+			if tt.initialRule != nil {
+				err := trie.Insert(tt.initialRule)
+				if err != nil {
+					t.Fatalf("Insert() failed to setup initial trie: %v", err)
+				}
+			}
+			gotErr := trie.Insert(tt.testRule)
+			if d := errdiff.Check(gotErr, tt.wantErr); d != "" {
+				t.Errorf("Insert() unexpected err: %s", d)
+			}
+		})
+	}
+}
