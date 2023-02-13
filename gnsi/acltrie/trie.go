@@ -40,6 +40,24 @@ type trieNode struct {
 	groups         policies
 }
 
+// policies are map of mode to user to action.
+type policies map[pathzpb.Mode]map[string]pathzpb.Action
+
+// insert adds a principal for a given mode and action to policies, returning an error on duplicate entry.
+func (p policies) insert(principal string, mode pathzpb.Mode, action pathzpb.Action) error {
+	m, ok := p[mode]
+	if !ok {
+		p[mode] = make(map[string]pathzpb.Action)
+		m = p[mode]
+	}
+	if _, ok := m[principal]; ok {
+		return fmt.Errorf("policy already contains action for principal")
+	}
+	m[principal] = action
+
+	return nil
+}
+
 // Insert inserts a new policy into the trie.
 func (t *Trie) Insert(r *pathzpb.AuthorizationRule) error {
 	if t.root == nil {
@@ -69,9 +87,9 @@ func (t *Trie) Insert(r *pathzpb.AuthorizationRule) error {
 			return fmt.Errorf("invalid path element: %v", err)
 		}
 
-		// The rank of the child is the number of non-wildcards key (if any).
+		// The rank of the child is the number of non-wildcard keys (if any).
 		rank := len(setKeys(elem.Key))
-		if rank >= len(node.childrenByRank) {
+		if rank >= len(node.childrenByRank) { // Resize the slice to [0, rank].
 			node.childrenByRank = append(node.childrenByRank, make([]map[string]*trieNode, rank-len(node.childrenByRank)+1)...)
 		}
 		if node.childrenByRank[rank] == nil {
@@ -115,25 +133,9 @@ func (t *Trie) Insert(r *pathzpb.AuthorizationRule) error {
 	return nil
 }
 
-// policies are map of mode to user to action.
-type policies map[pathzpb.Mode]map[string]pathzpb.Action
-
-// insert adds a principal for a given mode and action to policies, returning an error on duplicate entry.
-func (p policies) insert(principal string, mode pathzpb.Mode, action pathzpb.Action) error {
-	m, ok := p[mode]
-	if !ok {
-		p[mode] = make(map[string]pathzpb.Action)
-		m = p[mode]
-	}
-	if _, ok := m[principal]; ok {
-		return fmt.Errorf("policy already contains action for principal")
-	}
-	m[principal] = action
-
-	return nil
-}
-
-// checkPathConflict returns an error if the candidate path overlaps with the accepted path.
+// checkPathConflict returns false if the candidate path overlaps with the accepted path.
+// The candidate path conflicts with the accepted path if its name matches and
+// all keys match (where * matches with anything).
 func checkPathConflict(accepted, candidate *gpb.PathElem) bool {
 	if accepted.Name != candidate.Name {
 		return false
@@ -144,7 +146,7 @@ func checkPathConflict(accepted, candidate *gpb.PathElem) bool {
 		if !ok || acceptedV == "*" { // Candidate key matches against wildcard accepted.
 			continue
 		}
-		if v == "*" { // Candidate is wildcard, matches against
+		if v == "*" { // Candidate is wildcard, matches against anything.
 			continue
 		}
 		if v != acceptedV {
@@ -156,7 +158,8 @@ func checkPathConflict(accepted, candidate *gpb.PathElem) bool {
 }
 
 // elemToString returns a formatted string representation of a single path elem.
-// wildcard keys are pruned from the resulting string
+// wildcard keys are pruned from the resulting string.
+// TODO: upstream to ygot.
 func elemToString(name string, kv map[string]string) (string, error) {
 	if name == "" {
 		return "", errors.New("empty name for PathElem")
