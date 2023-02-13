@@ -31,8 +31,8 @@ type Trie struct {
 }
 
 type trieNode struct {
-	// childrenByRank orders the children of the node by number the set leaves for the element.
-	// This allows fast lookup of the best match: the one with the most number of set keys.
+	// childrenByRank orders the children of the node by number the non-wildcard keys in the child.
+	// This allows fast lookup of the best match: the one with the largest number of non-wildcard keys.
 	childrenByRank []map[string]*trieNode
 	elem           *gpb.PathElem
 	hasPolicy      bool
@@ -105,7 +105,7 @@ func (t *Trie) Insert(r *pathzpb.AuthorizationRule) error {
 
 		// Before adding a new node, check if the path conflicts with another policy.
 		for _, child := range children {
-			if checkPathConflict(child.elem, elem) {
+			if pathElemsMatch(child.elem, elem) {
 				return fmt.Errorf("policy path conflict with %v/%v", path.Elem[0:i], child.elem)
 			}
 		}
@@ -133,23 +133,22 @@ func (t *Trie) Insert(r *pathzpb.AuthorizationRule) error {
 	return nil
 }
 
-// checkPathConflict returns false if the candidate path overlaps with the accepted path.
-// The candidate path conflicts with the accepted path if its name matches and
-// all keys match (where * matches with anything).
-func checkPathConflict(accepted, candidate *gpb.PathElem) bool {
-	if accepted.Name != candidate.Name {
+// pathElemsMatch returns true if the a PathElem matches the b PathElem.
+// A match is when both the name match and all keys match (where * or unset matches with anything).
+func pathElemsMatch(a, b *gpb.PathElem) bool {
+	if a.Name != b.Name {
 		return false
 	}
 
-	for k, v := range candidate.Key {
-		acceptedV, ok := accepted.Key[k]
-		if !ok || acceptedV == "*" { // Candidate key matches against wildcard accepted.
+	for k, bVal := range b.Key {
+		aVal, ok := a.Key[k]
+		if !ok || aVal == "*" { // Candidate key matches against wildcard accepted.
 			continue
 		}
-		if v == "*" { // Candidate is wildcard, matches against anything.
+		if bVal == "*" { // Candidate is wildcard, matches against anything.
 			continue
 		}
-		if v != acceptedV {
+		if bVal != aVal {
 			return false
 		}
 	}
