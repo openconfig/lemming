@@ -17,6 +17,7 @@ package lemming
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"sync"
 
@@ -108,7 +109,7 @@ func New(lis net.Listener, targetName, zapiURL string, opts ...grpc.ServerOption
 		return nil, err
 	}
 	if err := sysribServer.Start(cacheClient, targetName, zapiURL); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("sysribServer failed to start: %v", err)
 	}
 
 	if err := gnmiServer.StartReconcilers(context.Background()); err != nil {

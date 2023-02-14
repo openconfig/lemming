@@ -41,6 +41,7 @@ var (
 	// nolint:unused,varcheck
 	enableDataplane = pflag.Bool("enable_dataplane", false, "Controls whether to enable dataplane")
 	enableTLS       = pflag.Bool("enable_tls", false, "Controls whether to enable TLS for gNXI services. If enabled and TLS key/cert path unspecified, a generated cert is used.")
+	zapiAddr        = pflag.String("zapi_addr", sysrib.ZAPIAddr, "Custom ZAPI address: use unix:/tmp/zserv.api for a temp.")
 )
 
 func main() {
@@ -57,7 +58,7 @@ func main() {
 		log.Fatalf("failed to create credentials: %v", err)
 	}
 
-	f, err := lemming.New(lis, *target, sysrib.ZAPIAddr, grpc.Creds(creds))
+	f, err := lemming.New(lis, *target, *zapiAddr, grpc.Creds(creds))
 	if err != nil {
 		log.Fatalf("Failed to start lemming: %v", err)
 	}
