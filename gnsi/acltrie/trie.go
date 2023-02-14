@@ -21,6 +21,8 @@ import (
 	"sort"
 	"strings"
 
+	"golang.org/x/exp/slices"
+
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 	pathzpb "github.com/openconfig/gnsi/pathz"
 )
@@ -32,6 +34,7 @@ type Trie struct {
 
 type trieNode struct {
 	// childrenByRank orders the children of the node by number the non-wildcard keys in the child.
+	// The rank of the child is the number of non-wildcard keys (if any).
 	// This allows fast lookup of the best match: the one with the largest number of non-wildcard keys.
 	childrenByRank []map[string]*trieNode
 	elem           *gpb.PathElem
@@ -90,7 +93,8 @@ func (t *Trie) Insert(r *pathzpb.AuthorizationRule) error {
 		// The rank of the child is the number of non-wildcard keys (if any).
 		rank := len(setKeys(elem.Key))
 		if rank >= len(node.childrenByRank) { // Resize the slice to [0, rank].
-			node.childrenByRank = append(node.childrenByRank, make([]map[string]*trieNode, rank-len(node.childrenByRank)+1)...)
+			newLen := rank + 1
+			node.childrenByRank = slices.Grow(node.childrenByRank, newLen-len(node.childrenByRank))[:newLen]
 		}
 		if node.childrenByRank[rank] == nil {
 			node.childrenByRank[rank] = make(map[string]*trieNode)
