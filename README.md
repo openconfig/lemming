@@ -28,6 +28,8 @@ go run ./cmd/lemming --zapi_addr unix:/tmp/zserv.api --alsologtostderr
 
 Wait for the message "lemming initialization complete"
 
+Install gnmic: https://gnmic.openconfig.net/
+
 ```bash
 // SetRequest configuring hostname
 gnmic -a localhost:6030 --insecure -u foo -p bar --target fakedut set --update-path openconfig:/system/config/hostname --update-value rosesarered -e json_ietf
