@@ -30,20 +30,25 @@ type Trie struct {
 	root *trieNode
 }
 
+// PolicySet contains policies for users and groups.
+type PolicySet struct {
+	Users  Policies
+	Groups Policies
+}
+
 type trieNode struct {
 	children  map[string]*trieNode
 	elem      *gpb.PathElem
 	hasPolicy bool
-	users     policies
-	groups    policies
+	policies  *PolicySet
 	parent    *trieNode
 }
 
-// policies are map of mode to user to action.
-type policies map[pathzpb.Mode]map[string]pathzpb.Action
+// Policies are map of mode to user to action.
+type Policies map[pathzpb.Mode]map[string]pathzpb.Action
 
 // insert adds a principal for a given mode and action to policies, returning an error on duplicate entry.
-func (p policies) insert(principal string, mode pathzpb.Mode, action pathzpb.Action) error {
+func (p Policies) insert(principal string, mode pathzpb.Mode, action pathzpb.Action) error {
 	m, ok := p[mode]
 	if !ok {
 		p[mode] = make(map[string]pathzpb.Action)
@@ -95,9 +100,11 @@ func (t *Trie) Insert(r *pathzpb.AuthorizationRule) error {
 		}
 
 		node.children[pathStr] = &trieNode{
-			elem:     elem,
-			groups:   policies{},
-			users:    policies{},
+			elem: elem,
+			policies: &PolicySet{
+				Groups: Policies{},
+				Users:  Policies{},
+			},
 			parent:   node,
 			children: make(map[string]*trieNode),
 		}
@@ -138,10 +145,10 @@ func (t *Trie) Insert(r *pathzpb.AuthorizationRule) error {
 	}
 
 	principal := r.GetUser()
-	policy := node.users
+	policy := node.policies.Users
 	if _, isUser := r.GetPrincipal().(*pathzpb.AuthorizationRule_User); !isUser {
 		principal = r.GetGroup()
-		policy = node.groups
+		policy = node.policies.Groups
 	}
 
 	if err := policy.insert(principal, r.GetMode(), r.GetAction()); err != nil {
@@ -150,6 +157,53 @@ func (t *Trie) Insert(r *pathzpb.AuthorizationRule) error {
 	node.hasPolicy = true
 
 	return nil
+}
+
+// Get returns the best policies for the given path; if there is no match, nothing is returned.
+func (t *Trie) Get(path *gpb.Path) *PolicySet {
+	potentialPolicies := []*trieNode{}
+	maxDepth := 0
+
+	// Walk the matching rules, keeping only the longest ones.
+	t.walk(func(node *trieNode, depth int) (bool, error) {
+		if !pathElemsMatch(node.elem, path.Elem[depth]) {
+			return false, nil
+		}
+		if !node.hasPolicy {
+			return true, nil
+		}
+		if depth+1 > maxDepth {
+			potentialPolicies = nil
+			maxDepth = depth + 1
+		}
+		potentialPolicies = append(potentialPolicies, node)
+		return true, nil
+	})
+	if len(potentialPolicies) == 0 {
+		return nil
+	}
+
+	// The best policy is the one with the largest number of non-wildcard keys.
+	var ps *PolicySet
+	maxSetKeys := -1
+	for _, p := range potentialPolicies {
+		path := &gpb.Path{
+			Elem: make([]*gpb.PathElem, maxDepth),
+		}
+		n := p
+		setKey := 0
+		for i := maxDepth - 1; i >= 0; i-- {
+			path.Elem[i] = n.elem
+			setKey += setKeys(path.Elem[i].Key)
+			n = p.parent
+		}
+		if setKey > maxSetKeys {
+			ps = p.policies
+			maxSetKeys = setKey
+		}
+	}
+
+	return ps
 }
 
 // walk explores the trie in breadth first order and invokes walkFn on every node.
@@ -254,4 +308,38 @@ func elemToString(name string, kv map[string]string) (string, error) {
 	}
 
 	return name, nil
+}
+
+// pathElemsMatch returns true if the a PathElem matches the b PathElem.
+// A match is when both the name match and all keys match (where * or unset matches with anything).
+func pathElemsMatch(a, b *gpb.PathElem) bool {
+	if a.Name != b.Name {
+		return false
+	}
+
+	for k, bVal := range b.Key {
+		aVal, ok := a.Key[k]
+		if !ok || aVal == "*" { // a key matches against wildcard.
+			continue
+		}
+		if bVal == "*" { // b is wildcard, matches against anything.
+			continue
+		}
+		if bVal != aVal {
+			return false
+		}
+	}
+
+	return true
+}
+
+// setKeys returns the number on non-wildcard keys in the map.
+func setKeys(in map[string]string) int {
+	c := 0
+	for _, v := range in {
+		if v != "*" {
+			c++
+		}
+	}
+	return c
 }

@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/openconfig/gnmi/errdiff"
 	"github.com/openconfig/ygot/ygot"
 
@@ -368,6 +369,158 @@ func TestInsert(t *testing.T) {
 			gotErr := trie.Insert(tt.testRule)
 			if d := errdiff.Check(gotErr, tt.wantErr); d != "" {
 				t.Errorf("Insert() unexpected err: %s", d)
+			}
+		})
+	}
+}
+
+func TestGet(t *testing.T) {
+	tests := []struct {
+		desc         string
+		initialRules []*pathzpb.AuthorizationRule
+		path         *gpb.Path
+		want         *PolicySet
+	}{{
+		desc: "simple match",
+		initialRules: []*pathzpb.AuthorizationRule{{
+			Path:      mustPath("/foo/bar"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		}},
+		path: mustPath("/foo/bar"),
+		want: &PolicySet{
+			Users: Policies{
+				pathzpb.Mode_MODE_READ: map[string]pathzpb.Action{
+					"bob": pathzpb.Action_ACTION_PERMIT,
+				},
+			},
+			Groups: Policies{},
+		},
+	}, {
+		desc: "rule is a prefix match",
+		initialRules: []*pathzpb.AuthorizationRule{{
+			Path:      mustPath("/foo"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		}},
+		path: mustPath("/foo/bar"),
+		want: &PolicySet{
+			Users: Policies{
+				pathzpb.Mode_MODE_READ: map[string]pathzpb.Action{
+					"bob": pathzpb.Action_ACTION_PERMIT,
+				},
+			},
+			Groups: Policies{},
+		},
+	}, {
+		desc: "simple match multiple rules",
+		initialRules: []*pathzpb.AuthorizationRule{{
+			Path:      mustPath("/foo"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		}, {
+			Path:      mustPath("/foo"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "jane"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_DENY,
+		}},
+		path: mustPath("/foo"),
+		want: &PolicySet{
+			Users: Policies{
+				pathzpb.Mode_MODE_READ: map[string]pathzpb.Action{
+					"bob":  pathzpb.Action_ACTION_PERMIT,
+					"jane": pathzpb.Action_ACTION_DENY,
+				},
+			},
+			Groups: Policies{},
+		},
+	}, {
+		desc: "explicit key against partial wildcard",
+		initialRules: []*pathzpb.AuthorizationRule{{
+			Path:      mustPath("/foo[a=1][b=*]"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		}},
+		path: mustPath("/foo[a=1][b=2]"),
+		want: &PolicySet{
+			Users: Policies{
+				pathzpb.Mode_MODE_READ: map[string]pathzpb.Action{
+					"bob": pathzpb.Action_ACTION_PERMIT,
+				},
+			},
+			Groups: Policies{},
+		},
+	}, {
+		desc: "prefer longer path",
+		initialRules: []*pathzpb.AuthorizationRule{{
+			Path:      mustPath("/foo[a=*]/bar"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		}, {
+			Path:      mustPath("/foo[a=*]"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_DENY,
+		}},
+		path: mustPath("/foo[a=1]/bar"),
+		want: &PolicySet{
+			Users: Policies{
+				pathzpb.Mode_MODE_READ: map[string]pathzpb.Action{
+					"bob": pathzpb.Action_ACTION_PERMIT,
+				},
+			},
+			Groups: Policies{},
+		},
+	}, {
+		desc: "prefer definite key",
+		initialRules: []*pathzpb.AuthorizationRule{{
+			Path:      mustPath("/foo[a=*]"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		}, {
+			Path:      mustPath("/foo[a=1]"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_DENY,
+		}},
+		path: mustPath("/foo[a=1]/bar"),
+		want: &PolicySet{
+			Users: Policies{
+				pathzpb.Mode_MODE_READ: map[string]pathzpb.Action{
+					"bob": pathzpb.Action_ACTION_DENY,
+				},
+			},
+			Groups: Policies{},
+		},
+	}, {
+		desc: "default policy",
+		initialRules: []*pathzpb.AuthorizationRule{{
+			Path:      mustPath("/foo"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_DENY,
+		}},
+		path: mustPath("/bar"),
+		want: nil,
+	}}
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			trie := &Trie{}
+			for _, rule := range tt.initialRules {
+				err := trie.Insert(rule)
+				if err != nil {
+					t.Fatalf("Get() failed to setup initial trie: %v", err)
+				}
+			}
+			got := trie.Get(tt.path)
+			if d := cmp.Diff(got, tt.want); d != "" {
+				t.Errorf("Get() unexpected diff: %s", d)
 			}
 		})
 	}
