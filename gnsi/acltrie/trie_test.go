@@ -90,15 +90,29 @@ func TestInsert(t *testing.T) {
 			Action:    pathzpb.Action_ACTION_PERMIT,
 		},
 	}, {
-		desc: "success path with the same prefix",
+		desc: "success path with wildcard and non-wildcard list keys",
 		initialRule: &pathzpb.AuthorizationRule{
-			Path:      mustPath("/foo"),
+			Path:      mustPath("/foo[a=*]"),
 			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
 			Mode:      pathzpb.Mode_MODE_READ,
 			Action:    pathzpb.Action_ACTION_PERMIT,
 		},
 		testRule: &pathzpb.AuthorizationRule{
-			Path:      mustPath("/foo/bar"),
+			Path:      mustPath("/foo[a=1]"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		},
+	}, {
+		desc: "success path with the same prefix",
+		initialRule: &pathzpb.AuthorizationRule{
+			Path:      mustPath("/foo[a=*]"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		},
+		testRule: &pathzpb.AuthorizationRule{
+			Path:      mustPath("/foo[a=*]/bar"),
 			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
 			Mode:      pathzpb.Mode_MODE_READ,
 			Action:    pathzpb.Action_ACTION_PERMIT,
@@ -156,6 +170,20 @@ func TestInsert(t *testing.T) {
 		testRule: &pathzpb.AuthorizationRule{
 			Path:      mustPath("/foo"),
 			Principal: &pathzpb.AuthorizationRule_Group{Group: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		},
+	}, {
+		desc: "success ambiguous list keys of different length",
+		initialRule: &pathzpb.AuthorizationRule{
+			Path:      mustPath("/foo[a=*][b=2]/bar"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		},
+		testRule: &pathzpb.AuthorizationRule{
+			Path:      mustPath("/foo[a=1][b=*]"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
 			Mode:      pathzpb.Mode_MODE_READ,
 			Action:    pathzpb.Action_ACTION_PERMIT,
 		},
@@ -238,28 +266,9 @@ func TestInsert(t *testing.T) {
 		},
 		wantErr: "policy already contains action for principal",
 	}, {
-		// In this case, the path /foo[a=1][b=2], matches both policies
-		// so the test policy is invalid.
 		desc: "failure ambiguous list keys",
 		initialRule: &pathzpb.AuthorizationRule{
 			Path:      mustPath("/foo[a=*][b=2]"),
-			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
-			Mode:      pathzpb.Mode_MODE_READ,
-			Action:    pathzpb.Action_ACTION_PERMIT,
-		},
-		testRule: &pathzpb.AuthorizationRule{
-			Path:      mustPath("/foo[a=1][b=*]"),
-			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
-			Mode:      pathzpb.Mode_MODE_READ,
-			Action:    pathzpb.Action_ACTION_PERMIT,
-		},
-		wantErr: "policy path conflict",
-	}, {
-		// The initial rule is  more specific than the test rule,
-		// but the path is ambiguous for the "foo" path.Elem.
-		desc: "failure ambiguous list keys of different length",
-		initialRule: &pathzpb.AuthorizationRule{
-			Path:      mustPath("/foo[a=*][b=2]/bar"),
 			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
 			Mode:      pathzpb.Mode_MODE_READ,
 			Action:    pathzpb.Action_ACTION_PERMIT,
@@ -287,15 +296,45 @@ func TestInsert(t *testing.T) {
 		},
 		wantErr: "policy path conflict",
 	}, {
-		desc: "failure ambiguous list keys with matching suffix",
+		desc: "failure ambiguous list keys implicit wildcard",
 		initialRule: &pathzpb.AuthorizationRule{
-			Path:      mustPath("/foo[a=*][b=2]/c[a=1]/d"),
+			Path:      mustPath("/foo[a=2]"),
 			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
 			Mode:      pathzpb.Mode_MODE_READ,
 			Action:    pathzpb.Action_ACTION_PERMIT,
 		},
 		testRule: &pathzpb.AuthorizationRule{
-			Path:      mustPath("/foo[a=1][b=*]/c[a=*]/d"),
+			Path:      mustPath("/foo[b=1]"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		},
+		wantErr: "policy path conflict",
+	}, {
+		desc: "failure ambiguous list keys with matching suffix",
+		initialRule: &pathzpb.AuthorizationRule{
+			Path:      mustPath("/foo[a=*][b=2]/c/d"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		},
+		testRule: &pathzpb.AuthorizationRule{
+			Path:      mustPath("/foo[a=1][b=*]/c/d"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		},
+		wantErr: "policy path conflict",
+	}, {
+		desc: "failure ambiguous list keys across multiple lists",
+		initialRule: &pathzpb.AuthorizationRule{
+			Path:      mustPath("/foo[a=1][b=*]/bar[c=1]"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		},
+		testRule: &pathzpb.AuthorizationRule{
+			Path:      mustPath("/foo[a=1][b=2]/bar[c=*]"),
 			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
 			Mode:      pathzpb.Mode_MODE_READ,
 			Action:    pathzpb.Action_ACTION_PERMIT,

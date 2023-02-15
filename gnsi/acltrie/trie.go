@@ -21,8 +21,6 @@ import (
 	"sort"
 	"strings"
 
-	"golang.org/x/exp/slices"
-
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 	pathzpb "github.com/openconfig/gnsi/pathz"
 )
@@ -33,14 +31,12 @@ type Trie struct {
 }
 
 type trieNode struct {
-	// childrenByRank orders the children of the node by number the non-wildcard keys in the child.
-	// The rank of the child is the number of non-wildcard keys (if any).
-	// This allows fast lookup of the best match: the one with the largest number of non-wildcard keys.
-	childrenByRank []map[string]*trieNode
-	elem           *gpb.PathElem
-	hasPolicy      bool
-	users          policies
-	groups         policies
+	children  map[string]*trieNode
+	elem      *gpb.PathElem
+	hasPolicy bool
+	users     policies
+	groups    policies
+	parent    *trieNode
 }
 
 // policies are map of mode to user to action.
@@ -64,7 +60,9 @@ func (p policies) insert(principal string, mode pathzpb.Mode, action pathzpb.Act
 // Insert inserts a new policy into the trie.
 func (t *Trie) Insert(r *pathzpb.AuthorizationRule) error {
 	if t.root == nil {
-		t.root = &trieNode{}
+		t.root = &trieNode{
+			children: make(map[string]*trieNode),
+		}
 	}
 	if r.Action == pathzpb.Action_ACTION_UNSPECIFIED {
 		return fmt.Errorf("action unspecified")
@@ -79,7 +77,7 @@ func (t *Trie) Insert(r *pathzpb.AuthorizationRule) error {
 	path := r.GetPath()
 	node := t.root
 
-	for i, elem := range path.Elem {
+	for _, elem := range path.Elem {
 		if elem.Name == "*" {
 			return fmt.Errorf("wildcard path names are not permitted")
 		}
@@ -90,38 +88,55 @@ func (t *Trie) Insert(r *pathzpb.AuthorizationRule) error {
 			return fmt.Errorf("invalid path element: %v", err)
 		}
 
-		// The rank of the child is the number of non-wildcard keys (if any).
-		rank := len(setKeys(elem.Key))
-		if rank >= len(node.childrenByRank) { // Resize the slice to [0, rank].
-			newLen := rank + 1
-			node.childrenByRank = slices.Grow(node.childrenByRank, newLen-len(node.childrenByRank))[:newLen]
-		}
-		if node.childrenByRank[rank] == nil {
-			node.childrenByRank[rank] = make(map[string]*trieNode)
-		}
-		children := node.childrenByRank[rank]
-
 		// If the node already exists, keep going.
-		if _, ok := children[pathStr]; ok {
-			node = children[pathStr]
+		if _, ok := node.children[pathStr]; ok {
+			node = node.children[pathStr]
 			continue
 		}
 
-		// Before adding a new node, check if the path conflicts with another policy.
-		for _, child := range children {
-			if pathElemsMatch(child.elem, elem) {
-				return fmt.Errorf("policy path conflict with %v/%v", path.Elem[0:i], child.elem)
+		node.children[pathStr] = &trieNode{
+			elem:     elem,
+			groups:   policies{},
+			users:    policies{},
+			parent:   node,
+			children: make(map[string]*trieNode),
+		}
+
+		node = node.children[pathStr]
+	}
+	// Validate the path by ensuring that compared to all other paths with the same length and same name,
+	// all list keys do not overlap.
+	err := t.walk(func(node *trieNode, depth int) (bool, error) {
+		if depth >= len(path.Elem) {
+			return false, nil
+		}
+		if node.elem.Name != path.Elem[depth].Name {
+			return false, nil
+		}
+		if depth == len(path.Elem)-1 && node.hasPolicy {
+			pathCmp := other
+			n := node
+			for i := depth; i >= 0; i-- {
+				elemCmp, err := comparePathElem(path.Elem[i], n.elem)
+				if err != nil {
+					return false, err
+				}
+				if pathCmp != other && elemCmp != pathCmp {
+					return false, fmt.Errorf("path is not consistently subset or superset of other rules")
+				}
+				if elemCmp != other {
+					pathCmp = elemCmp
+				}
+
+				n = n.parent
 			}
 		}
-
-		children[pathStr] = &trieNode{
-			elem:   elem,
-			groups: policies{},
-			users:  policies{},
-		}
-
-		node = children[pathStr]
+		return true, nil
+	})
+	if err != nil {
+		return fmt.Errorf("policy path conflict: %v", err)
 	}
+
 	principal := r.GetUser()
 	policy := node.users
 	if _, isUser := r.GetPrincipal().(*pathzpb.AuthorizationRule_User); !isUser {
@@ -137,27 +152,75 @@ func (t *Trie) Insert(r *pathzpb.AuthorizationRule) error {
 	return nil
 }
 
-// pathElemsMatch returns true if the a PathElem matches the b PathElem.
-// A match is when both the name match and all keys match (where * or unset matches with anything).
-func pathElemsMatch(a, b *gpb.PathElem) bool {
-	if a.Name != b.Name {
-		return false
+// walk explores the trie in breadth first order invoke in the walkFn on every node.
+// To continue exploring children of the node, the walk func must return true.
+func (t *Trie) walk(walkFn func(node *trieNode, depth int) (bool, error)) error {
+	type traversal struct {
+		node  *trieNode
+		depth int
 	}
 
+	tr := []*traversal{{node: t.root}}
+	for len(tr) > 0 {
+		front := tr[0]
+		tr = tr[1:]
+		for _, c := range front.node.children {
+			cont, err := walkFn(c, front.depth)
+			if err != nil {
+				return err
+			}
+			if cont {
+				tr = append(tr, &traversal{node: c, depth: front.depth + 1})
+			}
+		}
+	}
+	return nil
+}
+
+type compareResult int
+
+const (
+	other compareResult = iota
+	subset
+	superset
+)
+
+// comparePathElem compare two path elements a, b and returns:
+// subset: if every definite key in a is wildcard in b.
+// superset: if every wildcard key in b is non-wildcard in b.
+// other: all keys are the same or all keys are different.
+// error: not two keys are both subset and superset.
+func comparePathElem(a, b *gpb.PathElem) (compareResult, error) {
+	result := other
+	for k, aVal := range a.Key {
+		bVal, ok := b.Key[k]
+		switch {
+		case aVal == bVal:
+			continue
+		case aVal == "*" && !ok:
+			continue
+		case aVal == "*":
+			if result == subset {
+				return other, fmt.Errorf("path %v is not consistently a superset of %v", a, b)
+			}
+			result = superset
+		case bVal == "*" || !ok:
+			if result == superset {
+				return other, fmt.Errorf("path %v is not consistently a subset of %v", a, b)
+			}
+			result = subset
+		}
+	}
 	for k, bVal := range b.Key {
-		aVal, ok := a.Key[k]
-		if !ok || aVal == "*" { // Candidate key matches against wildcard accepted.
-			continue
-		}
-		if bVal == "*" { // Candidate is wildcard, matches against anything.
-			continue
-		}
-		if bVal != aVal {
-			return false
+		_, ok := a.Key[k]
+		if !ok && bVal != "*" { // If a contains an implicit wildcard.
+			if result == subset {
+				return other, fmt.Errorf("path %v is not consistently a superset of %v", a, b)
+			}
 		}
 	}
 
-	return true
+	return result, nil
 }
 
 // elemToString returns a formatted string representation of a single path elem.
@@ -189,15 +252,4 @@ func elemToString(name string, kv map[string]string) (string, error) {
 	}
 
 	return name, nil
-}
-
-// setKeys returns a copy of the input map containing only the keys that not wildcards.
-func setKeys(in map[string]string) map[string]string {
-	m := make(map[string]string)
-	for k, v := range in {
-		if v != "*" {
-			m[k] = v
-		}
-	}
-	return m
 }
