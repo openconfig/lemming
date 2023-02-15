@@ -190,38 +190,39 @@ const (
 // superset: if every wildcard key in b is non-wildcard in b.
 // other: all keys are the same or all keys are different.
 // error: not two keys are both subset and superset.
-// TODO: Make to more broadly useful compare that outputs subset, superset, equal, disjoint.
+// TODO: Change to more broadly useful compare func that outputs subset, superset, equal, disjoint and upstream to ygot.
 func comparePathElem(a, b *gpb.PathElem) (compareResult, error) {
-	result := other
+	setRelation := other
 	for k, aVal := range a.Key {
 		bVal, ok := b.Key[k]
 		switch {
 		case aVal == bVal:
 			continue
-		case aVal == "*" && !ok:
+		case aVal == "*" && !ok: // b is implicitly wildcarded.
 			continue
 		case aVal == "*":
-			if result == subset {
+			if setRelation == subset {
 				return other, fmt.Errorf("path %v is not consistently a superset of %v", a, b)
 			}
-			result = superset
+			setRelation = superset
 		case bVal == "*" || !ok:
-			if result == superset {
+			if setRelation == superset {
 				return other, fmt.Errorf("path %v is not consistently a subset of %v", a, b)
 			}
-			result = subset
+			setRelation = subset
 		}
 	}
 	for k, bVal := range b.Key {
 		_, ok := a.Key[k]
 		if !ok && bVal != "*" { // If a contains an implicit wildcard.
-			if result == subset {
+			if setRelation == subset {
 				return other, fmt.Errorf("path %v is not consistently a superset of %v", a, b)
 			}
+			setRelation = superset
 		}
 	}
 
-	return result, nil
+	return setRelation, nil
 }
 
 // elemToString returns a formatted string representation of a single path elem.

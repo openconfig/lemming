@@ -340,6 +340,21 @@ func TestInsert(t *testing.T) {
 			Action:    pathzpb.Action_ACTION_PERMIT,
 		},
 		wantErr: "policy path conflict",
+	}, {
+		desc: "failure ambiguous list keys across multiple lists",
+		initialRule: &pathzpb.AuthorizationRule{
+			Path:      mustPath("/foo[a=*][b=*]/bar[c=1]"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		},
+		testRule: &pathzpb.AuthorizationRule{
+			Path:      mustPath("/foo[a=1][b=*]/bar"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		},
+		wantErr: "policy path conflict",
 	}}
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
