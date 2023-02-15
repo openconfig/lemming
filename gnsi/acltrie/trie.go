@@ -152,25 +152,25 @@ func (t *Trie) Insert(r *pathzpb.AuthorizationRule) error {
 	return nil
 }
 
-// walk explores the trie in breadth first order invoke in the walkFn on every node.
-// To continue exploring children of the node, the walk func must return true.
+// walk explores the trie in breadth first order and invokes walkFn on every node.
+// To continue exploring children of the node, the walkFn must return true.
 func (t *Trie) walk(walkFn func(node *trieNode, depth int) (bool, error)) error {
-	type traversal struct {
+	type traversalNode struct {
 		node  *trieNode
 		depth int
 	}
 
-	tr := []*traversal{{node: t.root}}
-	for len(tr) > 0 {
-		front := tr[0]
-		tr = tr[1:]
+	queue := []*traversalNode{{node: t.root}}
+	for len(queue) > 0 {
+		front := queue[0]
+		queue = queue[1:]
 		for _, c := range front.node.children {
 			cont, err := walkFn(c, front.depth)
 			if err != nil {
 				return err
 			}
 			if cont {
-				tr = append(tr, &traversal{node: c, depth: front.depth + 1})
+				queue = append(queue, &traversalNode{node: c, depth: front.depth + 1})
 			}
 		}
 	}
@@ -190,6 +190,7 @@ const (
 // superset: if every wildcard key in b is non-wildcard in b.
 // other: all keys are the same or all keys are different.
 // error: not two keys are both subset and superset.
+// TODO: Make to more broadly useful compare that outputs subset, superset, equal, disjoint.
 func comparePathElem(a, b *gpb.PathElem) (compareResult, error) {
 	result := other
 	for k, aVal := range a.Key {
