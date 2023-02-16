@@ -27,28 +27,46 @@ import (
 
 // Trie is the root of the ACL trie.
 type Trie struct {
-	root *trieNode
-}
-
-// PolicySet contains policies for users and groups.
-type PolicySet struct {
-	Users  Policies
-	Groups Policies
+	root        *trieNode
+	memberships map[string]map[string]bool
 }
 
 type trieNode struct {
-	children  map[string]*trieNode
-	elem      *gpb.PathElem
-	hasPolicy bool
-	policies  *PolicySet
-	parent    *trieNode
+	children map[string]*trieNode
+	elem     *gpb.PathElem
+	ruleID   string
+	users    policies
+	groups   policies
+	parent   *trieNode
+}
+
+// getAction returns the action associated for the given user and mode.
+// It returns UNSPECIFIED, if the user does not have an action in the node.
+// It returns true, if the policy was for the user, and false if it was for the group.
+func (tn *trieNode) getAction(user string, mode pathzpb.Mode, memberships map[string]map[string]bool) (pathzpb.Action, bool) {
+	if m, ok := tn.users[mode]; ok {
+		if act, ok := m[user]; ok {
+			return act, true
+		}
+	}
+
+	var act pathzpb.Action
+	for group, action := range tn.groups[mode] {
+		if _, ok := memberships[group][user]; ok {
+			if action == pathzpb.Action_ACTION_DENY { // DENY action take precedence over PERMIT.
+				return action, false
+			}
+			act = action
+		}
+	}
+	return act, false
 }
 
 // Policies are map of mode to user to action.
-type Policies map[pathzpb.Mode]map[string]pathzpb.Action
+type policies map[pathzpb.Mode]map[string]pathzpb.Action
 
 // insert adds a principal for a given mode and action to policies, returning an error on duplicate entry.
-func (p Policies) insert(principal string, mode pathzpb.Mode, action pathzpb.Action) error {
+func (p policies) insert(principal string, mode pathzpb.Mode, action pathzpb.Action) error {
 	m, ok := p[mode]
 	if !ok {
 		p[mode] = make(map[string]pathzpb.Action)
@@ -100,11 +118,9 @@ func (t *Trie) Insert(r *pathzpb.AuthorizationRule) error {
 		}
 
 		node.children[pathStr] = &trieNode{
-			elem: elem,
-			policies: &PolicySet{
-				Groups: Policies{},
-				Users:  Policies{},
-			},
+			elem:     elem,
+			groups:   policies{},
+			users:    policies{},
 			parent:   node,
 			children: make(map[string]*trieNode),
 		}
@@ -120,7 +136,7 @@ func (t *Trie) Insert(r *pathzpb.AuthorizationRule) error {
 		if node.elem.Name != path.Elem[depth].Name {
 			return false, nil
 		}
-		if depth == len(path.Elem)-1 && node.hasPolicy {
+		if depth == len(path.Elem)-1 && node.ruleID != "" {
 			pathCmp := other
 			n := node
 			for i := depth; i >= 0; i-- {
@@ -145,46 +161,49 @@ func (t *Trie) Insert(r *pathzpb.AuthorizationRule) error {
 	}
 
 	principal := r.GetUser()
-	policy := node.policies.Users
+	policy := node.users
 	if _, isUser := r.GetPrincipal().(*pathzpb.AuthorizationRule_User); !isUser {
 		principal = r.GetGroup()
-		policy = node.policies.Groups
+		policy = node.groups
 	}
 
 	if err := policy.insert(principal, r.GetMode(), r.GetAction()); err != nil {
 		return fmt.Errorf("error inserting policy at %v: %v", r.Path, err)
 	}
-	node.hasPolicy = true
+	node.ruleID = r.GetId()
 
 	return nil
 }
 
-// Get returns the best policies for the given path; if there is no match, nothing is returned.
-func (t *Trie) Get(path *gpb.Path) *PolicySet {
+// Probe returns the for the given path, user, and mode; if there is no match, deny is returned
+func (t *Trie) Probe(path *gpb.Path, user string, mode pathzpb.Mode) (string, pathzpb.Action) {
 	potentialPolicies := []*trieNode{}
 	maxDepth := 0
 
-	// Walk the matching rules, keeping only the longest ones.
+	// Walk the matching rules, keeping only the longest ones that contain either the user or a group that the user belongs too.
 	t.walk(func(node *trieNode, depth int) (bool, error) {
 		if !pathElemsMatch(node.elem, path.Elem[depth]) {
 			return false, nil
 		}
-		if !node.hasPolicy {
+		if node.ruleID == "" {
 			return true, nil
 		}
-		if depth+1 > maxDepth {
-			potentialPolicies = nil
-			maxDepth = depth + 1
+		if act, _ := node.getAction(user, mode, t.memberships); act != pathzpb.Action_ACTION_UNSPECIFIED {
+			if depth > maxDepth {
+				potentialPolicies = nil
+				maxDepth = depth
+			}
+			potentialPolicies = append(potentialPolicies, node)
 		}
-		potentialPolicies = append(potentialPolicies, node)
+
 		return true, nil
 	})
 	if len(potentialPolicies) == 0 {
-		return nil
+		return "", pathzpb.Action_ACTION_DENY
 	}
 
-	// The best policy is the one with the largest number of non-wildcard keys.
-	var ps *PolicySet
+	// Pick the policies with the largest number of definite keys.
+	var bestPaths []*trieNode
 	maxSetKeys := -1
 	for _, p := range potentialPolicies {
 		path := &gpb.Path{
@@ -197,13 +216,30 @@ func (t *Trie) Get(path *gpb.Path) *PolicySet {
 			setKey += setKeys(path.Elem[i].Key)
 			n = p.parent
 		}
-		if setKey > maxSetKeys {
-			ps = p.policies
+		if setKey >= maxSetKeys {
 			maxSetKeys = setKey
+			bestPaths = append(bestPaths, p)
 		}
 	}
 
-	return ps
+	var finalAction pathzpb.Action
+	var finalID string
+	// Prefer user over groups and DENY over permit.
+	for _, n := range bestPaths {
+		act, isUser := n.getAction(user, mode, t.memberships)
+		switch {
+		case isUser && act == pathzpb.Action_ACTION_DENY: // Prefer user and deny, so return immediately.
+			return n.ruleID, act
+		case isUser: // Prefer a user over group.
+			finalAction = act
+			finalID = n.ruleID
+		case finalAction != pathzpb.Action_ACTION_DENY: // Prefer deny over allow.
+			finalAction = act
+			finalID = n.ruleID
+		}
+	}
+
+	return finalID, finalAction
 }
 
 // walk explores the trie in breadth first order and invokes walkFn on every node.
