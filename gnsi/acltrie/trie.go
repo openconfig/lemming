@@ -32,12 +32,12 @@ type Trie struct {
 }
 
 type trieNode struct {
-	children map[string]*trieNode
-	elem     *gpb.PathElem
-	ruleID   string
-	users    policies
-	groups   policies
-	parent   *trieNode
+	children  map[string]*trieNode
+	elem      *gpb.PathElem
+	hasPolicy bool
+	users     policies
+	groups    policies
+	parent    *trieNode
 }
 
 // getAction returns the action associated for the given user and mode.
@@ -136,7 +136,7 @@ func (t *Trie) Insert(r *pathzpb.AuthorizationRule) error {
 		if node.elem.Name != path.Elem[depth].Name {
 			return false, nil
 		}
-		if depth == len(path.Elem)-1 && node.ruleID != "" {
+		if depth == len(path.Elem)-1 && node.hasPolicy {
 			pathCmp := other
 			n := node
 			for i := depth; i >= 0; i-- {
@@ -170,13 +170,13 @@ func (t *Trie) Insert(r *pathzpb.AuthorizationRule) error {
 	if err := policy.insert(principal, r.GetMode(), r.GetAction()); err != nil {
 		return fmt.Errorf("error inserting policy at %v: %v", r.Path, err)
 	}
-	node.ruleID = r.GetId()
+	node.hasPolicy = true
 
 	return nil
 }
 
 // Probe returns the for the given path, user, and mode; if there is no match, deny is returned
-func (t *Trie) Probe(path *gpb.Path, user string, mode pathzpb.Mode) (string, pathzpb.Action) {
+func (t *Trie) Probe(path *gpb.Path, user string, mode pathzpb.Mode) pathzpb.Action {
 	potentialPolicies := []*trieNode{}
 	maxDepth := 0
 
@@ -185,7 +185,7 @@ func (t *Trie) Probe(path *gpb.Path, user string, mode pathzpb.Mode) (string, pa
 		if !pathElemsMatch(node.elem, path.Elem[depth]) {
 			return false, nil
 		}
-		if node.ruleID == "" {
+		if !node.hasPolicy {
 			return true, nil
 		}
 		if act, _ := node.getAction(user, mode, t.memberships); act != pathzpb.Action_ACTION_UNSPECIFIED {
@@ -199,7 +199,7 @@ func (t *Trie) Probe(path *gpb.Path, user string, mode pathzpb.Mode) (string, pa
 		return true, nil
 	})
 	if len(potentialPolicies) == 0 {
-		return "", pathzpb.Action_ACTION_DENY
+		return pathzpb.Action_ACTION_DENY
 	}
 
 	// Pick the policies with the largest number of definite keys.
@@ -223,23 +223,20 @@ func (t *Trie) Probe(path *gpb.Path, user string, mode pathzpb.Mode) (string, pa
 	}
 
 	var finalAction pathzpb.Action
-	var finalID string
 	// Prefer user over groups and DENY over permit.
 	for _, n := range bestPaths {
 		act, isUser := n.getAction(user, mode, t.memberships)
 		switch {
 		case isUser && act == pathzpb.Action_ACTION_DENY: // Prefer user and deny, so return immediately.
-			return n.ruleID, act
+			return act
 		case isUser: // Prefer a user over group.
 			finalAction = act
-			finalID = n.ruleID
 		case finalAction != pathzpb.Action_ACTION_DENY: // Prefer deny over allow.
 			finalAction = act
-			finalID = n.ruleID
 		}
 	}
 
-	return finalID, finalAction
+	return finalAction
 }
 
 // walk explores the trie in breadth first order and invokes walkFn on every node.
