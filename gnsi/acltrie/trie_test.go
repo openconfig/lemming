@@ -510,7 +510,7 @@ func TestProbe(t *testing.T) {
 				}
 			}
 			got := trie.Probe(tt.path, "bob", pathzpb.Mode_MODE_READ)
-			if d := cmp.Diff(got, tt.want); d != "" {
+			if d := cmp.Diff(tt.want, got); d != "" {
 				t.Errorf("Get() unexpected diff: %s", d)
 			}
 		})

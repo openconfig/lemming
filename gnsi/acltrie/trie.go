@@ -27,7 +27,8 @@ import (
 
 // Trie is the root of the ACL trie.
 type Trie struct {
-	root        *trieNode
+	root *trieNode
+	// memberships is a map of group name to a set of users.
 	memberships map[string]map[string]bool
 }
 
@@ -175,7 +176,7 @@ func (t *Trie) Insert(r *pathzpb.AuthorizationRule) error {
 	return nil
 }
 
-// Probe returns the for the given path, user, and mode; if there is no match, deny is returned
+// Probe returns the action for the given path, user, and mode; if there is no match, deny is returned
 func (t *Trie) Probe(path *gpb.Path, user string, mode pathzpb.Mode) pathzpb.Action {
 	potentialPolicies := []*trieNode{}
 	maxDepth := 0
