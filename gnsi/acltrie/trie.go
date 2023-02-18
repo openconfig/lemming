@@ -238,8 +238,6 @@ func (t *Trie) walk(walkFn func(*trieNode, *gpb.Path) (bool, error)) error {
 		depth int
 	}
 
-	fmt.Printf("new call\n\n\n")
-
 	path := &gpb.Path{}
 	stack := []*traversalNode{{node: t.root}}
 
@@ -253,14 +251,13 @@ func (t *Trie) walk(walkFn func(*trieNode, *gpb.Path) (bool, error)) error {
 				path.Elem = []*gpb.PathElem{last.node.elem}
 			}
 			path.Elem = append(path.Elem[:last.depth], c.elem)
-			fmt.Println(path)
-			_, err := walkFn(c, path)
+			cont, err := walkFn(c, path)
 			if err != nil {
 				return err
 			}
-			// if cont {
-			stack = append(stack, &traversalNode{node: c, depth: last.depth + 1})
-			// }
+			if cont {
+				stack = append(stack, &traversalNode{node: c, depth: last.depth + 1})
+			}
 		}
 	}
 	return nil
