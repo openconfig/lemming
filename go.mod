@@ -11,17 +11,17 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/h-fam/errdiff v1.0.2
 	github.com/kentik/patricia v1.2.0
-	github.com/open-traffic-generator/snappi/gosnappi v0.10.4
+	github.com/open-traffic-generator/snappi/gosnappi v0.10.8
 	github.com/openconfig/gnmi v0.0.0-20220920173703-480bf53a74d2
 	github.com/openconfig/gnoi v0.0.0-20221111175026-79709cdf28e1
 	github.com/openconfig/gnsi v0.0.0-20221208171320-0b0fb2f32f67
 	github.com/openconfig/goyang v1.2.0
-	github.com/openconfig/gribi v0.1.1-0.20220622162620-08d53dffce45
+	github.com/openconfig/gribi v0.1.1-0.20221218044856-ec9f4fc18013
 	github.com/openconfig/gribigo v0.0.0-20220802181317-805e943d8714
 	github.com/openconfig/kne v0.1.6
-	github.com/openconfig/ondatra v0.1.0
-	github.com/openconfig/ygnmi v0.7.3
-	github.com/openconfig/ygot v0.25.4
+	github.com/openconfig/ondatra v0.1.5
+	github.com/openconfig/ygnmi v0.7.6
+	github.com/openconfig/ygot v0.25.7
 	github.com/p4lang/p4runtime v1.3.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.6.1
@@ -30,10 +30,10 @@ require (
 	github.com/vishvananda/netlink v1.1.1-0.20210330154013-f5de75959ad5
 	github.com/wenovus/gobgp/v3 v3.0.0-20221024234659-8df3c6938ab7
 	golang.org/x/exp v0.0.0-20221106115401-f9659909a136
-	golang.org/x/net v0.5.0
-	golang.org/x/sys v0.4.0
-	google.golang.org/api v0.103.0
-	google.golang.org/grpc v1.52.0
+	golang.org/x/net v0.7.0
+	golang.org/x/sys v0.5.0
+	google.golang.org/api v0.108.0
+	google.golang.org/grpc v1.53.0
 	google.golang.org/protobuf v1.28.1
 	k8s.io/apimachinery v0.25.0
 	k8s.io/client-go v0.25.0
@@ -41,9 +41,9 @@ require (
 )
 
 require (
-	cloud.google.com/go v0.105.0 // indirect
-	cloud.google.com/go/compute v1.13.0 // indirect
-	cloud.google.com/go/compute/metadata v0.2.1 // indirect
+	cloud.google.com/go v0.107.0 // indirect
+	cloud.google.com/go/compute v1.18.0 // indirect
+	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	cloud.google.com/go/longrunning v0.3.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
 	github.com/MakeNowJust/heredoc v0.0.0-20170808103936-bb23615498cd // indirect
@@ -82,7 +82,7 @@ require (
 	github.com/google/gnostic v0.6.9 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
-	github.com/googleapis/enterprise-certificate-proxy v0.2.0 // indirect
+	github.com/googleapis/enterprise-certificate-proxy v0.2.1 // indirect
 	github.com/googleapis/gax-go/v2 v2.7.0 // indirect
 	github.com/gregjones/httpcache v0.0.0-20180305231024-9cad4c3443a7 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
@@ -141,13 +141,13 @@ require (
 	go.uber.org/atomic v1.9.0 // indirect
 	go.universe.tf/metallb v0.13.5 // indirect
 	golang.org/x/crypto v0.1.0 // indirect
-	golang.org/x/oauth2 v0.3.0 // indirect
-	golang.org/x/term v0.4.0 // indirect
-	golang.org/x/text v0.6.0 // indirect
+	golang.org/x/oauth2 v0.4.0 // indirect
+	golang.org/x/term v0.5.0 // indirect
+	golang.org/x/text v0.7.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.2.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/genproto v0.0.0-20230110181048-76db0878b65f // indirect
+	google.golang.org/genproto v0.0.0-20230216225411-c8e22ba71e44 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
