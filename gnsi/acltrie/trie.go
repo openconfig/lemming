@@ -23,23 +23,49 @@ import (
 
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 	pathzpb "github.com/openconfig/gnsi/pathz"
+	"github.com/openconfig/ygot/util"
 )
 
 // Trie is the root of the ACL trie.
 type Trie struct {
 	root *trieNode
+	// memberships is a map of group name to a set of users.
+	memberships map[string]map[string]bool
 }
 
 type trieNode struct {
-	children  map[string]*trieNode
-	elem      *gpb.PathElem
-	hasPolicy bool
-	users     policies
-	groups    policies
-	parent    *trieNode
+	children     map[string]*trieNode
+	elem         *gpb.PathElem
+	hasPolicy    bool
+	users        policies
+	groups       policies
+	totalSetKeys int
+	parent       *trieNode
 }
 
-// policies are map of mode to user to action.
+// getAction returns the action associated for the given user and mode.
+// It returns UNSPECIFIED, if the user does not have an action in the node.
+// It returns true, if the policy was for the user, and false if it was for the group.
+func (tn *trieNode) getAction(user string, mode pathzpb.Mode, memberships map[string]map[string]bool) (pathzpb.Action, bool) {
+	if m, ok := tn.users[mode]; ok {
+		if act, ok := m[user]; ok {
+			return act, true
+		}
+	}
+
+	var act pathzpb.Action
+	for group, action := range tn.groups[mode] {
+		if _, ok := memberships[group][user]; ok {
+			if action == pathzpb.Action_ACTION_DENY { // DENY action take precedence over PERMIT.
+				return action, false
+			}
+			act = action
+		}
+	}
+	return act, false
+}
+
+// Policies are map of mode to user to action.
 type policies map[pathzpb.Mode]map[string]pathzpb.Action
 
 // insert adds a principal for a given mode and action to policies, returning an error on duplicate entry.
@@ -67,6 +93,9 @@ func (t *Trie) Insert(r *pathzpb.AuthorizationRule) error {
 	if r.Action == pathzpb.Action_ACTION_UNSPECIFIED {
 		return fmt.Errorf("action unspecified")
 	}
+	if r.Action != pathzpb.Action_ACTION_DENY && r.Action != pathzpb.Action_ACTION_PERMIT {
+		return fmt.Errorf("unknown action type")
+	}
 	if r.Mode == pathzpb.Mode_MODE_UNSPECIFIED {
 		return fmt.Errorf("mode unspecified")
 	}
@@ -83,7 +112,7 @@ func (t *Trie) Insert(r *pathzpb.AuthorizationRule) error {
 		}
 
 		// Normalize path string by pruning wildcard keys.
-		pathStr, err := elemToString(elem.Name, elem.Key)
+		pathStr, keys, err := elemToString(elem.Name, elem.Key)
 		if err != nil {
 			return fmt.Errorf("invalid path element: %v", err)
 		}
@@ -95,40 +124,28 @@ func (t *Trie) Insert(r *pathzpb.AuthorizationRule) error {
 		}
 
 		node.children[pathStr] = &trieNode{
-			elem:     elem,
-			groups:   policies{},
-			users:    policies{},
-			parent:   node,
-			children: make(map[string]*trieNode),
+			elem:         elem,
+			groups:       policies{},
+			users:        policies{},
+			parent:       node,
+			totalSetKeys: node.totalSetKeys + keys,
+			children:     make(map[string]*trieNode),
 		}
 
 		node = node.children[pathStr]
 	}
 	// Validate the path by ensuring that compared to all other paths with the same length and same name,
 	// all list keys do not overlap.
-	err := t.walk(func(node *trieNode, depth int) (bool, error) {
-		if depth >= len(path.Elem) {
+	err := t.walk(func(node *trieNode, walkPath *gpb.Path) (bool, error) {
+		if len(walkPath.Elem) > len(path.Elem) {
 			return false, nil
 		}
-		if node.elem.Name != path.Elem[depth].Name {
+		if path.Elem[len(walkPath.Elem)-1].Name != walkPath.Elem[len(walkPath.Elem)-1].Name {
 			return false, nil
 		}
-		if depth == len(path.Elem)-1 && node.hasPolicy {
-			pathCmp := other
-			n := node
-			for i := depth; i >= 0; i-- {
-				elemCmp, err := comparePathElem(path.Elem[i], n.elem)
-				if err != nil {
-					return false, err
-				}
-				if pathCmp != other && elemCmp != pathCmp {
-					return false, fmt.Errorf("path is not consistently subset or superset of other rules")
-				}
-				if elemCmp != other {
-					pathCmp = elemCmp
-				}
-
-				n = n.parent
+		if len(walkPath.Elem) == len(path.Elem) && node.hasPolicy {
+			if res := util.ComparePaths(walkPath, path); res == util.PartialIntersect {
+				return false, fmt.Errorf("new rule path %v partially intersects with existing path %v", path, walkPath)
 			}
 		}
 		return true, nil
@@ -152,94 +169,109 @@ func (t *Trie) Insert(r *pathzpb.AuthorizationRule) error {
 	return nil
 }
 
-// walk explores the trie in breadth first order and invokes walkFn on every node.
+// Probe returns the action for the given path, user, and mode; if there is no match, deny is returned
+func (t *Trie) Probe(path *gpb.Path, user string, mode pathzpb.Mode) pathzpb.Action {
+	matchingPolicies := []*trieNode{}
+	longestPolicyLen := 0
+
+	// Walk the matching rules, keeping only the longest ones that contain either the user or a group that the user belongs too.
+	t.walk(func(node *trieNode, walkPath *gpb.Path) (bool, error) {
+		if res := util.ComparePaths(path, walkPath); res != util.Equal && res != util.Subset {
+			return false, nil
+		}
+		if !node.hasPolicy {
+			return true, nil
+		}
+		if act, _ := node.getAction(user, mode, t.memberships); act != pathzpb.Action_ACTION_UNSPECIFIED {
+			if len(walkPath.Elem) > longestPolicyLen {
+				matchingPolicies = nil
+				longestPolicyLen = len(walkPath.Elem)
+			}
+			matchingPolicies = append(matchingPolicies, node)
+		}
+
+		return true, nil
+	})
+	if len(matchingPolicies) == 0 {
+		return pathzpb.Action_ACTION_DENY
+	}
+
+	// Pick the policies with the largest number of definite keys.
+	var mostSpecificPolicies []*trieNode
+	maxSetKeys := -1
+	for _, p := range matchingPolicies {
+		if p.totalSetKeys >= maxSetKeys {
+			maxSetKeys = p.totalSetKeys
+			mostSpecificPolicies = append(mostSpecificPolicies, p)
+		}
+	}
+
+	var finalAction pathzpb.Action
+	// Prefer user over groups and DENY over permit.
+	for _, n := range mostSpecificPolicies {
+		act, isUser := n.getAction(user, mode, t.memberships)
+		switch {
+		case isUser && act == pathzpb.Action_ACTION_DENY: // Prefer user and deny, so return immediately.
+			return act
+		case isUser: // Prefer a user over group.
+			finalAction = act
+		case finalAction != pathzpb.Action_ACTION_DENY: // Prefer deny over allow.
+			finalAction = act
+		}
+	}
+
+	return finalAction
+}
+
+// walk explores the trie in depth first order and invokes walkFn on every node.
 // To continue exploring children of the node, the walkFn must return true.
-func (t *Trie) walk(walkFn func(node *trieNode, depth int) (bool, error)) error {
+// Note: the path object is modified between calls.
+func (t *Trie) walk(walkFn func(*trieNode, *gpb.Path) (bool, error)) error {
 	type traversalNode struct {
 		node  *trieNode
 		depth int
 	}
 
-	queue := []*traversalNode{{node: t.root}}
-	for len(queue) > 0 {
-		front := queue[0]
-		queue = queue[1:]
-		for _, c := range front.node.children {
-			cont, err := walkFn(c, front.depth)
+	path := &gpb.Path{}
+	stack := []*traversalNode{{node: t.root, depth: 0}}
+
+	for len(stack) > 0 {
+		last := stack[len(stack)-1]
+		stack = stack[:len(stack)-1]
+
+		if last.node.elem != nil {
+			path.Elem = append(path.Elem[:last.depth-1], last.node.elem)
+			cont, err := walkFn(last.node, path)
 			if err != nil {
 				return err
 			}
-			if cont {
-				queue = append(queue, &traversalNode{node: c, depth: front.depth + 1})
+			if !cont {
+				continue
 			}
+		}
+
+		for _, c := range last.node.children {
+			stack = append(stack, &traversalNode{node: c, depth: last.depth + 1})
 		}
 	}
 	return nil
 }
 
-type compareResult int
-
-const (
-	other compareResult = iota
-	subset
-	superset
-)
-
-// comparePathElem compare two path elements a, b and returns:
-// subset: if every definite key in a is wildcard in b.
-// superset: if every wildcard key in b is non-wildcard in b.
-// other: all keys are the same or all keys are different.
-// error: not two keys are both subset and superset.
-// TODO: Change to more broadly useful compare func that outputs subset, superset, equal, disjoint and upstream to ygot.
-func comparePathElem(a, b *gpb.PathElem) (compareResult, error) {
-	setRelation := other
-	for k, aVal := range a.Key {
-		bVal, ok := b.Key[k]
-		switch {
-		case aVal == bVal:
-			continue
-		case aVal == "*" && !ok: // b is implicitly wildcarded.
-			continue
-		case aVal == "*":
-			if setRelation == subset {
-				return other, fmt.Errorf("path %v is not consistently a superset of %v", a, b)
-			}
-			setRelation = superset
-		case bVal == "*" || !ok:
-			if setRelation == superset {
-				return other, fmt.Errorf("path %v is not consistently a subset of %v", a, b)
-			}
-			setRelation = subset
-		}
-	}
-	for k, bVal := range b.Key {
-		_, ok := a.Key[k]
-		if !ok && bVal != "*" { // If a contains an implicit wildcard.
-			if setRelation == subset {
-				return other, fmt.Errorf("path %v is not consistently a superset of %v", a, b)
-			}
-			setRelation = superset
-		}
-	}
-
-	return setRelation, nil
-}
-
 // elemToString returns a formatted string representation of a single path elem.
-// wildcard keys are pruned from the resulting string.
+// wildcard keys are pruned from the resulting string and the number of non-wildcard keys are returned.
 // TODO: upstream to ygot.
-func elemToString(name string, kv map[string]string) (string, error) {
+func elemToString(name string, kv map[string]string) (string, int, error) {
 	if name == "" {
-		return "", errors.New("empty name for PathElem")
+		return "", 0, errors.New("empty name for PathElem")
 	}
 	if len(kv) == 0 {
-		return name, nil
+		return name, 0, nil
 	}
 
 	var keys []string
 	for k, v := range kv {
 		if k == "" {
-			return "", fmt.Errorf("empty key name (value: %s) in element %s", v, name)
+			return "", 0, fmt.Errorf("empty key name (value: %s) in element %s", v, name)
 		}
 		if v != "*" {
 			keys = append(keys, k)
@@ -253,5 +285,5 @@ func elemToString(name string, kv map[string]string) (string, error) {
 		name = fmt.Sprintf("%s[%s=%s]", name, k, v)
 	}
 
-	return name, nil
+	return name, len(keys), nil
 }
