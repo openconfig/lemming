@@ -34,12 +34,13 @@ type Trie struct {
 }
 
 type trieNode struct {
-	children  map[string]*trieNode
-	elem      *gpb.PathElem
-	hasPolicy bool
-	users     policies
-	groups    policies
-	parent    *trieNode
+	children     map[string]*trieNode
+	elem         *gpb.PathElem
+	hasPolicy    bool
+	users        policies
+	groups       policies
+	totalSetKeys int
+	parent       *trieNode
 }
 
 // getAction returns the action associated for the given user and mode.
@@ -92,6 +93,9 @@ func (t *Trie) Insert(r *pathzpb.AuthorizationRule) error {
 	if r.Action == pathzpb.Action_ACTION_UNSPECIFIED {
 		return fmt.Errorf("action unspecified")
 	}
+	if r.Action != pathzpb.Action_ACTION_DENY && r.Action != pathzpb.Action_ACTION_PERMIT {
+		return fmt.Errorf("unknown action type")
+	}
 	if r.Mode == pathzpb.Mode_MODE_UNSPECIFIED {
 		return fmt.Errorf("mode unspecified")
 	}
@@ -108,7 +112,7 @@ func (t *Trie) Insert(r *pathzpb.AuthorizationRule) error {
 		}
 
 		// Normalize path string by pruning wildcard keys.
-		pathStr, err := elemToString(elem.Name, elem.Key)
+		pathStr, keys, err := elemToString(elem.Name, elem.Key)
 		if err != nil {
 			return fmt.Errorf("invalid path element: %v", err)
 		}
@@ -120,11 +124,12 @@ func (t *Trie) Insert(r *pathzpb.AuthorizationRule) error {
 		}
 
 		node.children[pathStr] = &trieNode{
-			elem:     elem,
-			groups:   policies{},
-			users:    policies{},
-			parent:   node,
-			children: make(map[string]*trieNode),
+			elem:         elem,
+			groups:       policies{},
+			users:        policies{},
+			parent:       node,
+			totalSetKeys: node.totalSetKeys + keys,
+			children:     make(map[string]*trieNode),
 		}
 
 		node = node.children[pathStr]
@@ -139,7 +144,6 @@ func (t *Trie) Insert(r *pathzpb.AuthorizationRule) error {
 			return false, nil
 		}
 		if len(walkPath.Elem) == len(path.Elem) && node.hasPolicy {
-			fmt.Println(walkPath)
 			if res := util.ComparePaths(walkPath, path); res == util.PartialIntersect {
 				return false, fmt.Errorf("new rule path %v partially intersects with existing path %v", path, walkPath)
 			}
@@ -167,8 +171,8 @@ func (t *Trie) Insert(r *pathzpb.AuthorizationRule) error {
 
 // Probe returns the action for the given path, user, and mode; if there is no match, deny is returned
 func (t *Trie) Probe(path *gpb.Path, user string, mode pathzpb.Mode) pathzpb.Action {
-	potentialPolicies := []*trieNode{}
-	maxLen := 0
+	matchingPolicies := []*trieNode{}
+	longestPolicyLen := 0
 
 	// Walk the matching rules, keeping only the longest ones that contain either the user or a group that the user belongs too.
 	t.walk(func(node *trieNode, walkPath *gpb.Path) (bool, error) {
@@ -179,42 +183,32 @@ func (t *Trie) Probe(path *gpb.Path, user string, mode pathzpb.Mode) pathzpb.Act
 			return true, nil
 		}
 		if act, _ := node.getAction(user, mode, t.memberships); act != pathzpb.Action_ACTION_UNSPECIFIED {
-			if len(walkPath.Elem) > maxLen {
-				potentialPolicies = nil
-				maxLen = len(walkPath.Elem) - 1
+			if len(walkPath.Elem) > longestPolicyLen {
+				matchingPolicies = nil
+				longestPolicyLen = len(walkPath.Elem)
 			}
-			potentialPolicies = append(potentialPolicies, node)
+			matchingPolicies = append(matchingPolicies, node)
 		}
 
 		return true, nil
 	})
-	if len(potentialPolicies) == 0 {
+	if len(matchingPolicies) == 0 {
 		return pathzpb.Action_ACTION_DENY
 	}
 
 	// Pick the policies with the largest number of definite keys.
-	var bestPaths []*trieNode
+	var mostSpecificPolicies []*trieNode
 	maxSetKeys := -1
-	for _, p := range potentialPolicies {
-		path := &gpb.Path{
-			Elem: make([]*gpb.PathElem, maxLen),
-		}
-		n := p
-		setKey := 0
-		for i := maxLen - 1; i >= 0; i-- {
-			path.Elem[i] = n.elem
-			setKey += setKeys(path.Elem[i].Key)
-			n = p.parent
-		}
-		if setKey >= maxSetKeys {
-			maxSetKeys = setKey
-			bestPaths = append(bestPaths, p)
+	for _, p := range matchingPolicies {
+		if p.totalSetKeys >= maxSetKeys {
+			maxSetKeys = p.totalSetKeys
+			mostSpecificPolicies = append(mostSpecificPolicies, p)
 		}
 	}
 
 	var finalAction pathzpb.Action
 	// Prefer user over groups and DENY over permit.
-	for _, n := range bestPaths {
+	for _, n := range mostSpecificPolicies {
 		act, isUser := n.getAction(user, mode, t.memberships)
 		switch {
 		case isUser && act == pathzpb.Action_ACTION_DENY: // Prefer user and deny, so return immediately.
@@ -239,45 +233,45 @@ func (t *Trie) walk(walkFn func(*trieNode, *gpb.Path) (bool, error)) error {
 	}
 
 	path := &gpb.Path{}
-	stack := []*traversalNode{{node: t.root}}
+	stack := []*traversalNode{{node: t.root, depth: 0}}
 
 	for len(stack) > 0 {
 		last := stack[len(stack)-1]
 		stack = stack[:len(stack)-1]
-		for _, c := range last.node.children {
-			// Handle inconsistency with the start of a path being at depth 1,
-			// but should be 0th elem in the slice.
-			if last.depth == 1 {
-				path.Elem = []*gpb.PathElem{last.node.elem}
-			}
-			path.Elem = append(path.Elem[:last.depth], c.elem)
-			cont, err := walkFn(c, path)
+
+		if last.node.elem != nil {
+			path.Elem = append(path.Elem[:last.depth-1], last.node.elem)
+			cont, err := walkFn(last.node, path)
 			if err != nil {
 				return err
 			}
-			if cont {
-				stack = append(stack, &traversalNode{node: c, depth: last.depth + 1})
+			if !cont {
+				continue
 			}
+		}
+
+		for _, c := range last.node.children {
+			stack = append(stack, &traversalNode{node: c, depth: last.depth + 1})
 		}
 	}
 	return nil
 }
 
 // elemToString returns a formatted string representation of a single path elem.
-// wildcard keys are pruned from the resulting string.
+// wildcard keys are pruned from the resulting string and the number of non-wildcard keys are returned.
 // TODO: upstream to ygot.
-func elemToString(name string, kv map[string]string) (string, error) {
+func elemToString(name string, kv map[string]string) (string, int, error) {
 	if name == "" {
-		return "", errors.New("empty name for PathElem")
+		return "", 0, errors.New("empty name for PathElem")
 	}
 	if len(kv) == 0 {
-		return name, nil
+		return name, 0, nil
 	}
 
 	var keys []string
 	for k, v := range kv {
 		if k == "" {
-			return "", fmt.Errorf("empty key name (value: %s) in element %s", v, name)
+			return "", 0, fmt.Errorf("empty key name (value: %s) in element %s", v, name)
 		}
 		if v != "*" {
 			keys = append(keys, k)
@@ -291,16 +285,5 @@ func elemToString(name string, kv map[string]string) (string, error) {
 		name = fmt.Sprintf("%s[%s=%s]", name, k, v)
 	}
 
-	return name, nil
-}
-
-// setKeys returns the number on non-wildcard keys in the map.
-func setKeys(in map[string]string) int {
-	c := 0
-	for _, v := range in {
-		if v != "*" {
-			c++
-		}
-	}
-	return c
+	return name, len(keys), nil
 }
