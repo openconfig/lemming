@@ -83,7 +83,29 @@ func (p policies) insert(principal string, mode pathzpb.Mode, action pathzpb.Act
 	return nil
 }
 
-// Insert inserts a new policy into the trie.
+// FromPolicy creates a new trie from a pathzpb.AuthorizationPolicy.
+func FromPolicy(p *pathzpb.AuthorizationPolicy) (*Trie, error) {
+	t := &Trie{
+		memberships: map[string]map[string]bool{},
+	}
+	for _, group := range p.GetGroups() {
+		if _, ok := t.memberships[group.GetName()]; !ok {
+			t.memberships[group.GetName()] = make(map[string]bool)
+		}
+		for _, user := range group.GetUsers() {
+			t.memberships[group.GetName()][user.GetName()] = true
+		}
+	}
+
+	for _, rule := range p.GetRules() {
+		if err := t.Insert(rule); err != nil {
+			return nil, err
+		}
+	}
+	return t, nil
+}
+
+// Insert inserts a new rule into the trie.
 func (t *Trie) Insert(r *pathzpb.AuthorizationRule) error {
 	if t.root == nil {
 		t.root = &trieNode{
@@ -133,25 +155,6 @@ func (t *Trie) Insert(r *pathzpb.AuthorizationRule) error {
 		}
 
 		node = node.children[pathStr]
-	}
-	// Validate the path by ensuring that compared to all other paths with the same length and same name,
-	// all list keys do not overlap.
-	err := t.walk(func(node *trieNode, walkPath *gpb.Path) (bool, error) {
-		if len(walkPath.Elem) > len(path.Elem) {
-			return false, nil
-		}
-		if path.Elem[len(walkPath.Elem)-1].Name != walkPath.Elem[len(walkPath.Elem)-1].Name {
-			return false, nil
-		}
-		if len(walkPath.Elem) == len(path.Elem) && node.hasPolicy {
-			if res := util.ComparePaths(walkPath, path); res == util.PartialIntersect {
-				return false, fmt.Errorf("new rule path %v partially intersects with existing path %v", path, walkPath)
-			}
-		}
-		return true, nil
-	})
-	if err != nil {
-		return fmt.Errorf("policy path conflict: %v", err)
 	}
 
 	principal := r.GetUser()

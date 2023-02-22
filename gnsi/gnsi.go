@@ -25,6 +25,7 @@ import (
 	certpb "github.com/openconfig/gnsi/certz"
 	credentialzpb "github.com/openconfig/gnsi/credentialz"
 	pathzpb "github.com/openconfig/gnsi/pathz"
+	"github.com/openconfig/lemming/gnsi/pathz"
 )
 
 type authz struct {
@@ -51,18 +52,6 @@ func (c *cert) Rotate(certpb.Certz_RotateServer) error {
 	return status.Errorf(codes.Unimplemented, "Fake UnImplemented")
 }
 
-type pathz struct {
-	pathzpb.UnimplementedPathzServer
-}
-
-func (p *pathz) Rotate(pathzpb.Pathz_RotateServer) error {
-	return status.Errorf(codes.Unimplemented, "Fake UnImplemented")
-}
-
-func (p *pathz) Probe(context.Context, *pathzpb.ProbeRequest) (*pathzpb.ProbeResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "Fake UnImplemented")
-}
-
 type credentialz struct {
 	credentialzpb.UnimplementedCredentialzServer
 }
@@ -80,7 +69,7 @@ type Server struct {
 	s     *grpc.Server
 	authz *authz
 	cert  *cert
-	pathz *pathz
+	pathz *pathz.Server
 	credz *credentialz
 }
 
@@ -90,7 +79,7 @@ func New(s *grpc.Server) *Server {
 		s:     s,
 		authz: &authz{},
 		cert:  &cert{},
-		pathz: &pathz{},
+		pathz: &pathz.Server{},
 		credz: &credentialz{},
 	}
 	authzpb.RegisterAuthzServer(s, srv.authz)
