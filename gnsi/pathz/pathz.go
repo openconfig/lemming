@@ -25,6 +25,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	gpb "github.com/openconfig/gnmi/proto/gnmi"
 	pathzpb "github.com/openconfig/gnsi/pathz"
 )
 
@@ -110,6 +111,22 @@ func (s *Server) getPolicyWithRLock(i pathzpb.PolicyInstance) (*policyData, *syn
 	default:
 		return nil, nil, fmt.Errorf("unknown instance type: %v", i)
 	}
+}
+
+// Check implements the gNMI path auth interface, by using Probe.
+func (s *Server) Check(path *gpb.Path, user string, write bool) bool {
+	s.activeMu.RLock()
+	defer s.activeMu.RUnlock()
+
+	if s.active == nil {
+		return false
+	}
+	mode := pathzpb.Mode_MODE_READ
+	if write {
+		mode = pathzpb.Mode_MODE_WRITE
+	}
+	act := s.active.trie.Probe(path, user, mode)
+	return act == pathzpb.Action_ACTION_PERMIT
 }
 
 // Probe implements the pathz Probe RPC.

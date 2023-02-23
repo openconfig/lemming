@@ -21,9 +21,10 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/openconfig/ygot/util"
+
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 	pathzpb "github.com/openconfig/gnsi/pathz"
-	"github.com/openconfig/ygot/util"
 )
 
 // Trie is the root of the ACL trie.
