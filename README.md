@@ -26,8 +26,8 @@ tool for consensus in the device-implementor <-> device-consumer relationship.
 go run ./cmd/lemming --zapi_addr unix:/tmp/zserv.api --alsologtostderr
 ```
 
-Wait for the message "lemming initialization complete".
-This might take a minute to compile the first time due to the size of the generated OpenConfig code.
+Wait for the message "lemming initialization complete".  
+This might take a minute the first time to compile the large generated OpenConfig code.
 
 Install gnmic: <https://gnmic.openconfig.net/>
 
