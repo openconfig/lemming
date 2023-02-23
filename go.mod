@@ -1,6 +1,6 @@
 module github.com/openconfig/lemming
 
-go 1.18
+go 1.20
 
 require (
 	cloud.google.com/go/cloudbuild v1.5.0
