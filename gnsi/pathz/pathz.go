@@ -89,8 +89,8 @@ func (s *Server) Rotate(rs pathzpb.Pathz_RotateServer) error {
 			s.sandboxMu.Lock()
 			s.active = s.sandbox
 			s.sandbox = nil
-			s.activeMu.Unlock()
 			s.sandboxMu.Unlock()
+			s.activeMu.Unlock()
 			if err := rs.Send(&pathzpb.RotateResponse{}); err != nil {
 				return err
 			}
@@ -99,7 +99,7 @@ func (s *Server) Rotate(rs pathzpb.Pathz_RotateServer) error {
 	}
 }
 
-func (s *Server) getPolicyWithLock(i pathzpb.PolicyInstance) (*policyData, *sync.RWMutex, error) {
+func (s *Server) getPolicyWithRLock(i pathzpb.PolicyInstance) (*policyData, *sync.RWMutex, error) {
 	switch i {
 	case pathzpb.PolicyInstance_POLICY_INSTANCE_SANDBOX:
 		s.sandboxMu.RLock()
@@ -123,7 +123,7 @@ func (s *Server) Probe(_ context.Context, req *pathzpb.ProbeRequest) (*pathzpb.P
 	if req.GetPath() == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "path not specified")
 	}
-	policy, mu, err := s.getPolicyWithLock(req.GetPolicyInstance())
+	policy, mu, err := s.getPolicyWithRLock(req.GetPolicyInstance())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -141,7 +141,7 @@ func (s *Server) Probe(_ context.Context, req *pathzpb.ProbeRequest) (*pathzpb.P
 
 // Probe implements the pathz Get RPC.
 func (s *Server) Get(_ context.Context, req *pathzpb.GetRequest) (*pathzpb.GetResponse, error) {
-	policy, mu, err := s.getPolicyWithLock(req.GetPolicyInstance())
+	policy, mu, err := s.getPolicyWithRLock(req.GetPolicyInstance())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}

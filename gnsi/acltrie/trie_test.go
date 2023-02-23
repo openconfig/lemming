@@ -266,6 +266,21 @@ func TestInsert(t *testing.T) {
 			Action:    pathzpb.Action_ACTION_PERMIT,
 		},
 		wantErr: "policy already contains action for principal",
+	}, {
+		desc: "failure duplicate rule list keys with wildcard",
+		initialRule: &pathzpb.AuthorizationRule{
+			Path:      mustPath("/foo[a=*]/bar"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		},
+		testRule: &pathzpb.AuthorizationRule{
+			Path:      mustPath("/foo[a=*]/bar"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		},
+		wantErr: "policy already contains action for principal",
 	}}
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
