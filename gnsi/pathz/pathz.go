@@ -113,8 +113,8 @@ func (s *Server) getPolicyWithRLock(i pathzpb.PolicyInstance) (*policyData, *syn
 	}
 }
 
-// Check implements the gNMI path auth interface, by using Probe.
-func (s *Server) Check(path *gpb.Path, user string, write bool) bool {
+// CheckPermit implements the gNMI path auth interface, by using Probe.
+func (s *Server) CheckPermit(path *gpb.Path, user string, write bool) bool {
 	s.activeMu.RLock()
 	defer s.activeMu.RUnlock()
 

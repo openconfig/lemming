@@ -908,7 +908,7 @@ type testAuth struct {
 	allow bool
 }
 
-func (t testAuth) Check(path *gpb.Path, user string, write bool) bool {
+func (t testAuth) CheckPermit(path *gpb.Path, user string, write bool) bool {
 	return t.allow
 }
 
@@ -936,8 +936,7 @@ func TestSubscribeWithAuth(t *testing.T) {
 	}}
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			ctx := metadata.NewOutgoingContext(context.Background(), metadata.New(map[string]string{"username": tt.user}))
-			gnmiServer, err := newServer(ctx, "local", false)
+			gnmiServer, err := newServer(context.Background(), "local", false)
 			if err != nil {
 				t.Fatalf("cannot create server, got err: %v", err)
 			}
@@ -967,6 +966,7 @@ func TestSubscribeWithAuth(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to create client: %v", err)
 			}
+			ctx := metadata.NewOutgoingContext(context.Background(), metadata.New(map[string]string{"username": tt.user}))
 			got, err := ygnmi.Get(ctx, c, ocpath.Root().Interface("eth0").OperStatus().State())
 			if d := errdiff.Check(err, tt.wantErr); d != "" {
 				t.Errorf("Subscribe() unexpected err: %s", d)

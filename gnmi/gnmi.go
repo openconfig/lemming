@@ -69,6 +69,7 @@ type Server struct {
 // New creates and registers a reference gNMI server on the given gRPC server.
 //
 // - targetName is the gNMI target name of the datastore.
+// - pa is an optional PathAuth instance used for authorization gNMI requests, set to nil for no authorization.
 func New(srv *grpc.Server, targetName string, pa PathAuth, recs ...reconciler.Reconciler) (*Server, error) {
 	gnmiServer, err := newServer(context.Background(), targetName, true, recs...)
 	if err != nil {
@@ -419,8 +420,8 @@ func (s *Server) Get(ctx context.Context, req *gpb.GetRequest) (*gpb.GetResponse
 
 // PathAuth is an interface for checking authorization for gNMI paths.
 type PathAuth interface {
-	// Check returns if the user is allowed to read from or write from in the input path.
-	Check(path *gpb.Path, user string, write bool) bool
+	// CheckPermit returns if the user is allowed to read from or write from in the input path.
+	CheckPermit(path *gpb.Path, user string, write bool) bool
 }
 
 type subscribeWithAuth struct {
@@ -430,11 +431,11 @@ type subscribeWithAuth struct {
 }
 
 // Send implements gNMI subscribe send with authorization.
-func (s *subscribeWithAuth) Send(req *gpb.SubscribeResponse) error {
-	if req.GetSyncResponse() {
-		return s.GNMI_SubscribeServer.Send(req)
+func (s *subscribeWithAuth) Send(resp *gpb.SubscribeResponse) error {
+	if resp.GetSyncResponse() {
+		return s.GNMI_SubscribeServer.Send(resp)
 	}
-	reqUpd := req.Response.(*gpb.SubscribeResponse_Update).Update
+	reqUpd := resp.Response.(*gpb.SubscribeResponse_Update).Update
 
 	i := 0
 	for _, del := range reqUpd.Delete {
@@ -442,7 +443,7 @@ func (s *subscribeWithAuth) Send(req *gpb.SubscribeResponse) error {
 		if err != nil {
 			return err
 		}
-		if s.auth.Check(p, s.user, false) {
+		if s.auth.CheckPermit(p, s.user, false) {
 			reqUpd.Delete[i] = del
 			i++
 		}
@@ -454,7 +455,7 @@ func (s *subscribeWithAuth) Send(req *gpb.SubscribeResponse) error {
 		if err != nil {
 			return err
 		}
-		if s.auth.Check(p, s.user, false) {
+		if s.auth.CheckPermit(p, s.user, false) {
 			reqUpd.Update[i] = upd
 			i++
 		}
@@ -464,14 +465,14 @@ func (s *subscribeWithAuth) Send(req *gpb.SubscribeResponse) error {
 		return nil
 	}
 
-	return s.GNMI_SubscribeServer.Send(req)
+	return s.GNMI_SubscribeServer.Send(resp)
 }
 
 // Subscribe wraps the internal subscribe with optional authorization.
 func (s *Server) Subscribe(srv gpb.GNMI_SubscribeServer) error {
 	p, _ := peer.FromContext(srv.Context())
 
-	if s.pathAuth == nil || p.Addr == nil {
+	if s.pathAuth == nil || p.Addr == nil { // Addr is nil for calls from the reconcilers.
 		return s.Server.Subscribe(srv)
 	}
 	md, _ := metadata.FromIncomingContext(srv.Context()) // Metadata exists even if not explicitly set by client.
