@@ -27,12 +27,14 @@ import (
 	"github.com/openconfig/gnmi/subscribe"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/reconciler"
+	"github.com/openconfig/ygot/util"
 	"github.com/openconfig/ygot/ygot"
 	"github.com/openconfig/ygot/ytypes"
 	"golang.org/x/exp/slices"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/prototext"
 
@@ -60,16 +62,20 @@ type Server struct {
 
 	validators  []func(*oc.Root) error
 	reconcilers []reconciler.Reconciler
+
+	pathAuth PathAuth
 }
 
 // New creates and registers a reference gNMI server on the given gRPC server.
 //
 // - targetName is the gNMI target name of the datastore.
-func New(srv *grpc.Server, targetName string, recs ...reconciler.Reconciler) (*Server, error) {
+// - pa is an optional PathAuth instance used for authorization gNMI requests, set to nil for no authorization.
+func New(srv *grpc.Server, targetName string, pa PathAuth, recs ...reconciler.Reconciler) (*Server, error) {
 	gnmiServer, err := newServer(context.Background(), targetName, true, recs...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create gNMI server: %v", err)
 	}
+	gnmiServer.pathAuth = pa
 	gpb.RegisterGNMIServer(srv, gnmiServer)
 	return gnmiServer, nil
 }
@@ -410,6 +416,78 @@ func (s *Server) Get(ctx context.Context, req *gpb.GetRequest) (*gpb.GetResponse
 	default:
 		return nil, status.Errorf(codes.DataLoss, "Unknown message type: %T", resp)
 	}
+}
+
+// PathAuth is an interface for checking authorization for gNMI paths.
+type PathAuth interface {
+	// CheckPermit returns if the user is allowed to read from or write from in the input path.
+	CheckPermit(path *gpb.Path, user string, write bool) bool
+}
+
+type subscribeWithAuth struct {
+	gpb.GNMI_SubscribeServer
+	auth PathAuth
+	user string
+}
+
+// Send implements gNMI subscribe send with authorization.
+func (s *subscribeWithAuth) Send(resp *gpb.SubscribeResponse) error {
+	if resp.GetSyncResponse() {
+		return s.GNMI_SubscribeServer.Send(resp)
+	}
+	reqUpd := resp.Response.(*gpb.SubscribeResponse_Update).Update
+
+	i := 0
+	for _, del := range reqUpd.Delete {
+		p, err := util.JoinPaths(reqUpd.GetPrefix(), del)
+		if err != nil {
+			return err
+		}
+		if s.auth.CheckPermit(p, s.user, false) {
+			reqUpd.Delete[i] = del
+			i++
+		}
+	}
+	reqUpd.Delete = reqUpd.Delete[:i]
+	i = 0
+	for _, upd := range reqUpd.Update {
+		p, err := util.JoinPaths(reqUpd.GetPrefix(), upd.GetPath())
+		if err != nil {
+			return err
+		}
+		if s.auth.CheckPermit(p, s.user, false) {
+			reqUpd.Update[i] = upd
+			i++
+		}
+	}
+	reqUpd.Update = reqUpd.Update[:i]
+	if len(reqUpd.Update) == 0 && len(reqUpd.Delete) == 0 {
+		return nil
+	}
+
+	return s.GNMI_SubscribeServer.Send(resp)
+}
+
+// Subscribe wraps the internal subscribe with optional authorization.
+func (s *Server) Subscribe(srv gpb.GNMI_SubscribeServer) error {
+	p, _ := peer.FromContext(srv.Context())
+
+	if s.pathAuth == nil || p.Addr == nil { // Addr is nil for calls from the reconcilers.
+		return s.Server.Subscribe(srv)
+	}
+	md, _ := metadata.FromIncomingContext(srv.Context()) // Metadata exists even if not explicitly set by client.
+	// TODO: Authentication, for now just looking at the username field.
+	user := md["username"]
+	if len(user) != 1 || user[0] == "" {
+		return status.Errorf(codes.Unauthenticated, "no username set in metadata %v", user)
+	}
+	sa := &subscribeWithAuth{
+		GNMI_SubscribeServer: srv,
+		auth:                 s.pathAuth,
+		user:                 user[0],
+	}
+
+	return s.Server.Subscribe(sa)
 }
 
 // LocalClient returns a gNMI client for the server.

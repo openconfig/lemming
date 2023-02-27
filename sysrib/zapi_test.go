@@ -241,7 +241,7 @@ func testRouteRedistribution(t *testing.T, routeReadyBeforeDial bool) {
 			}
 
 			grpcServer := grpc.NewServer()
-			gnmiServer, err := gnmi.New(grpcServer, "local")
+			gnmiServer, err := gnmi.New(grpcServer, "local", nil)
 			if err != nil {
 				t.Fatal(err)
 			}

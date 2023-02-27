@@ -73,6 +73,10 @@ type Server struct {
 	credz *credentialz
 }
 
+func (s *Server) GetPathZ() *pathz.Server {
+	return s.pathz
+}
+
 // New returns a new fake gNMI server.
 func New(s *grpc.Server) *Server {
 	srv := &Server{

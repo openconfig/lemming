@@ -1171,7 +1171,7 @@ func TestServer(t *testing.T) {
 				t.Run(desc, func(t *testing.T) {
 					// TODO(wenbli): Don't re-create gNMI server, simply erase it and then reconnect to it afterwards.
 					grpcServer := grpc.NewServer()
-					gnmiServer, err := gnmi.New(grpcServer, "local")
+					gnmiServer, err := gnmi.New(grpcServer, "local", nil)
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -1750,7 +1750,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 
 		t.Run(desc, func(t *testing.T) {
 			grpcServer := grpc.NewServer()
-			gnmiServer, err := gnmi.New(grpcServer, "local")
+			gnmiServer, err := gnmi.New(grpcServer, "local", nil)
 			if err != nil {
 				t.Fatal(err)
 			}

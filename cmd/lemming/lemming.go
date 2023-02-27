@@ -36,15 +36,16 @@ import (
 )
 
 var (
-	port   = pflag.Int("port", 6030, "localhost port to listen to.")
-	target = pflag.String("target", "fakedut", "name of the fake target")
-	// nolint:unused,varcheck
-	enableDataplane = pflag.Bool("enable_dataplane", false, "Controls whether to enable dataplane")
-	enableTLS       = pflag.Bool("enable_tls", false, "Controls whether to enable TLS for gNXI services. If enabled and TLS key/cert path unspecified, a generated cert is used.")
-	zapiAddr        = pflag.String("zapi_addr", sysrib.ZAPIAddr, "Custom ZAPI address: use unix:/tmp/zserv.api for a temp.")
+	port      = pflag.Int("port", 6030, "localhost port to listen to.")
+	target    = pflag.String("target", "fakedut", "name of the fake target")
+	enableTLS = pflag.Bool("enable_tls", false, "Controls whether to enable TLS for gNXI services. If enabled and TLS key/cert path unspecified, a generated cert is used.")
+	zapiAddr  = pflag.String("zapi_addr", sysrib.ZAPIAddr, "Custom ZAPI address: use unix:/tmp/zserv.api for a temp.")
 )
 
 func main() {
+	pflag.Bool("enable_dataplane", false, "Controls whether to enable dataplane")
+	pflag.Bool("enable_pathz", false, "Controls whether to enable pathz authorization for the gNMI server")
+
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
 	pflag.Parse()
 	viper.BindPFlags(pflag.CommandLine)

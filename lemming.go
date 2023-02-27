@@ -23,6 +23,7 @@ import (
 
 	"github.com/openconfig/lemming/bgp"
 	"github.com/openconfig/lemming/dataplane"
+	"github.com/openconfig/lemming/gnmi"
 	fgnmi "github.com/openconfig/lemming/gnmi"
 	"github.com/openconfig/lemming/gnmi/fakedevice"
 	"github.com/openconfig/lemming/gnmi/reconciler"
@@ -78,7 +79,13 @@ func New(lis net.Listener, targetName, zapiURL string, opts ...grpc.ServerOption
 		bgp.NewGoBGPTaskDecl(zapiURL),
 	)
 
-	gnmiServer, err := fgnmi.New(s, targetName, recs...)
+	gnsiServer := fgnsi.New(s)
+	var pathzAuth gnmi.PathAuth
+	if viper.GetBool("enable_pathz") {
+		pathzAuth = gnsiServer.GetPathZ()
+	}
+
+	gnmiServer, err := fgnmi.New(s, targetName, pathzAuth, recs...)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +102,7 @@ func New(lis net.Listener, targetName, zapiURL string, opts ...grpc.ServerOption
 		gnmiServer:  gnmiServer,
 		gnoiServer:  fgnoi.New(s),
 		gribiServer: gribiServer,
-		gnsiServer:  fgnsi.New(s),
+		gnsiServer:  gnsiServer,
 		p4rtServer:  fp4rt.New(s),
 	}
 	reflection.Register(s)

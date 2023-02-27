@@ -28,7 +28,11 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/h-fam/errdiff"
 	"github.com/openconfig/gnmi/value"
+	"github.com/openconfig/lemming/gnmi/oc"
+	"github.com/openconfig/lemming/gnmi/oc/ocpath"
+	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/local"
@@ -897,5 +901,82 @@ func TestSTREAM(t *testing.T) {
 		return true
 	})); diff != "" {
 		t.Fatalf("did not get expected updates, diff(-got,+want)\n:%s", diff)
+	}
+}
+
+type testAuth struct {
+	allow bool
+}
+
+func (t testAuth) CheckPermit(path *gpb.Path, user string, write bool) bool {
+	return t.allow
+}
+
+func TestSubscribeWithAuth(t *testing.T) {
+	tests := []struct {
+		desc      string
+		authAllow bool
+		user      string
+		want      oc.E_Interface_OperStatus
+		wantErr   string
+	}{{
+		desc:      "allowed",
+		authAllow: true,
+		user:      "test",
+		want:      oc.Interface_OperStatus_UP,
+	}, {
+		desc:      "denied",
+		authAllow: false,
+		user:      "test",
+		wantErr:   "not present",
+	}, {
+		desc:      "error no user",
+		authAllow: false,
+		wantErr:   "no username set in metadata",
+	}}
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			gnmiServer, err := newServer(context.Background(), "local", false)
+			if err != nil {
+				t.Fatalf("cannot create server, got err: %v", err)
+			}
+			gnmiServer.pathAuth = &testAuth{allow: tt.authAllow}
+			addr, err := startServer(gnmiServer)
+			if err != nil {
+				t.Fatalf("cannot start server, got err: %v", err)
+			}
+			gnmiServer.c.TargetUpdate(&gpb.SubscribeResponse{
+				Response: &gpb.SubscribeResponse_Update{
+					Update: &gpb.Notification{
+						Prefix:    mustTargetPath("local", "", true),
+						Timestamp: 1,
+						Update: []*gpb.Update{{
+							Path: mustPath("/interfaces/interface[name=eth0]/state/oper-status"),
+							Val:  mustTypedValue("UP"),
+						}},
+					},
+				},
+			})
+			defer gnmiServer.c.Stop()
+			conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(local.NewCredentials()))
+			if err != nil {
+				t.Fatalf("cannot dial gNMI server, %v", err)
+			}
+			c, err := ygnmi.NewClient(gpb.NewGNMIClient(conn), ygnmi.WithTarget("local"))
+			if err != nil {
+				t.Fatalf("failed to create client: %v", err)
+			}
+			ctx := metadata.NewOutgoingContext(context.Background(), metadata.New(map[string]string{"username": tt.user}))
+			got, err := ygnmi.Get(ctx, c, ocpath.Root().Interface("eth0").OperStatus().State())
+			if d := errdiff.Check(err, tt.wantErr); d != "" {
+				t.Errorf("Subscribe() unexpected err: %s", d)
+			}
+			if err != nil {
+				return
+			}
+			if d := cmp.Diff(tt.want, got); d != "" {
+				t.Errorf("Subscribe() unexpected diff: %s", d)
+			}
+		})
 	}
 }
