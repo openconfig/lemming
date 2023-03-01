@@ -186,21 +186,22 @@ func updateCache(cache *cache.Cache, dirtyRoot, root ygot.GoStruct, target, orig
 		n.Timestamp = timestamp
 		nos = append(nos, n)
 	}
-	if auth == nil || !auth.IsInitialized() {
-		return updateCacheNotifs(cache, nos, target, origin)
+
+	if auth != nil && auth.IsInitialized() {
+		// Check authorization of the diff to check if implicit deletes (caused by replaces) are allowed.
+		allowed, err := checkWritePermission(auth, user, nos...)
+		if err != nil {
+			return err
+		}
+		if !allowed {
+			return status.Errorf(codes.PermissionDenied, "cannot set all paths in request")
+		}
 	}
-	// Check authorization of the diff to check if implicit deletes (caused by replaces) are allowed.
-	allowed, err := checkNotifications(auth, user, nos...)
-	if err != nil {
-		return err
-	}
-	if !allowed {
-		return status.Errorf(codes.PermissionDenied, "cannot set all paths in request")
-	}
+
 	return updateCacheNotifs(cache, nos, target, origin)
 }
 
-func checkNotifications(auth PathAuth, user string, nos ...*gpb.Notification) (bool, error) {
+func checkWritePermission(auth PathAuth, user string, nos ...*gpb.Notification) (bool, error) {
 	for _, no := range nos {
 		for _, del := range no.Delete {
 			p, err := util.JoinPaths(no.GetPrefix(), del)
