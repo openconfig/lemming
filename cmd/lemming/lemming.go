@@ -44,7 +44,6 @@ var (
 
 func main() {
 	pflag.Bool("enable_dataplane", false, "Controls whether to enable dataplane")
-	pflag.Bool("enable_pathz", false, "Controls whether to enable pathz authorization for the gNMI server")
 
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
 	pflag.Parse()

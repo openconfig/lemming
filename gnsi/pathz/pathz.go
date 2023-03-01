@@ -129,6 +129,13 @@ func (s *Server) CheckPermit(path *gpb.Path, user string, write bool) bool {
 	return act == pathzpb.Action_ACTION_PERMIT
 }
 
+// IsInitialized implements the gNMI path auth interface, by checking the active policy exists.
+func (s *Server) IsInitialized() bool {
+	s.activeMu.RLock()
+	defer s.activeMu.RUnlock()
+	return s.active != nil
+}
+
 // Probe implements the pathz Probe RPC.
 func (s *Server) Probe(_ context.Context, req *pathzpb.ProbeRequest) (*pathzpb.ProbeResponse, error) {
 	if req.GetMode() == pathzpb.Mode_MODE_UNSPECIFIED {

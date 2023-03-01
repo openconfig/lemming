@@ -703,6 +703,58 @@ func TestSetInternal(t *testing.T) {
 	}
 }
 
+func TestSetWithAuth(t *testing.T) {
+	tests := []struct {
+		desc      string
+		authAllow bool
+		user      string
+		wantErr   string
+	}{{
+		desc:      "allowed",
+		authAllow: true,
+		user:      "test",
+	}, {
+		desc:      "denied",
+		authAllow: false,
+		user:      "test",
+		wantErr:   "PermissionDenied",
+	}, {
+		desc:      "error no user",
+		authAllow: false,
+		wantErr:   "no username set in metadata",
+	}}
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			gnmiServer, err := newServer(context.Background(), "local", true)
+			if err != nil {
+				t.Fatalf("cannot create server, got err: %v", err)
+			}
+
+			addr, err := startServer(gnmiServer)
+			if err != nil {
+				t.Fatalf("cannot start server, got err: %v", err)
+			}
+			defer gnmiServer.c.Stop()
+			conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(local.NewCredentials()))
+			if err != nil {
+				t.Fatalf("cannot dial gNMI server, %v", err)
+			}
+			c, err := ygnmi.NewClient(gpb.NewGNMIClient(conn), ygnmi.WithTarget("local"))
+			if err != nil {
+				t.Fatalf("failed to create client: %v", err)
+			}
+
+			gnmiServer.pathAuth = &testAuth{allow: tt.authAllow}
+
+			ctx := metadata.NewOutgoingContext(context.Background(), metadata.New(map[string]string{"username": tt.user}))
+			_, err = ygnmi.Update(ctx, c, ocpath.Root().System().Hostname().Config(), "test")
+			if d := errdiff.Check(err, tt.wantErr); d != "" {
+				t.Errorf("Set() unexpected err: %s", d)
+			}
+		})
+	}
+}
+
 // TestSTREAM tests the STREAM mode of gnmit.
 func TestSTREAM(t *testing.T) {
 	ctx := context.Background()
@@ -910,6 +962,10 @@ type testAuth struct {
 
 func (t testAuth) CheckPermit(path *gpb.Path, user string, write bool) bool {
 	return t.allow
+}
+
+func (t testAuth) IsInitialized() bool {
+	return true
 }
 
 func TestSubscribeWithAuth(t *testing.T) {
