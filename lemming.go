@@ -23,7 +23,6 @@ import (
 
 	"github.com/openconfig/lemming/bgp"
 	"github.com/openconfig/lemming/dataplane"
-	"github.com/openconfig/lemming/gnmi"
 	fgnmi "github.com/openconfig/lemming/gnmi"
 	"github.com/openconfig/lemming/gnmi/fakedevice"
 	"github.com/openconfig/lemming/gnmi/reconciler"
@@ -80,12 +79,8 @@ func New(lis net.Listener, targetName, zapiURL string, opts ...grpc.ServerOption
 	)
 
 	gnsiServer := fgnsi.New(s)
-	var pathzAuth gnmi.PathAuth
-	if viper.GetBool("enable_pathz") {
-		pathzAuth = gnsiServer.GetPathZ()
-	}
 
-	gnmiServer, err := fgnmi.New(s, targetName, pathzAuth, recs...)
+	gnmiServer, err := fgnmi.New(s, targetName, gnsiServer.GetPathZ(), recs...)
 	if err != nil {
 		return nil, err
 	}
