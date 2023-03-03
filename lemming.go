@@ -25,6 +25,7 @@ import (
 	"github.com/openconfig/lemming/dataplane"
 	fgnmi "github.com/openconfig/lemming/gnmi"
 	"github.com/openconfig/lemming/gnmi/fakedevice"
+	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/reconciler"
 	fgnoi "github.com/openconfig/lemming/gnoi"
 	fgnsi "github.com/openconfig/lemming/gnsi"
@@ -33,6 +34,7 @@ import (
 	"github.com/openconfig/lemming/sysrib"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/reflection"
 	"k8s.io/klog/v2"
 
@@ -55,8 +57,56 @@ type Device struct {
 	stopped chan struct{}
 }
 
+// DevOpt is an interface that is implemented by options that can be handed to New()
+// for the device.
+type DevOpt interface {
+	isDevOpt()
+}
+
+// deviceConfig is a wrapper for an input OpenConfig RFC7951-marshalled JSON
+// configuration for the device.
+type deviceConfig struct {
+	// json is the contents of the JSON document (prior to unmarshal).
+	json []byte
+}
+
+// isDevOpt marks deviceConfig as a device option.
+func (*deviceConfig) isDevOpt() {}
+
+// DeviceConfig sets the startup config of the device to c.
+// Today we do not allow the configuration to be changed in flight, but this
+// can be implemented in the future.
+//
+// This DeviceOption is intended for standalone device testing.
+func DeviceConfig(c []byte) *deviceConfig {
+	return &deviceConfig{json: c}
+}
+
+// tlsCreds returns TLS credentials that can be used for a device.
+type tlsCreds struct {
+	c credentials.TransportCredentials
+}
+
+// TLSCredsFromFile loads the credentials from the specified cert and key file
+// and returns them such that they can be used for the gNMI and gRIBI servers.
+func TLSCredsFromFile(certFile, keyFile string) (*tlsCreds, error) {
+	t, err := credentials.NewServerTLSFromFile(certFile, keyFile)
+	if err != nil {
+		return nil, err
+	}
+	return &tlsCreds{c: t}, nil
+}
+
+// TLSCreds returns a wrapper of TransportCredentials into a DevOpt.
+func TLSCreds(c credentials.TransportCredentials) *tlsCreds {
+	return &tlsCreds{c: c}
+}
+
+// IsDevOpt implements the DevOpt interface for tlsCreds.
+func (*tlsCreds) isDevOpt() {}
+
 // New returns a new initialized device.
-func New(lis net.Listener, targetName, zapiURL string, opts ...grpc.ServerOption) (*Device, error) {
+func New(lis net.Listener, targetName, zapiURL string, opts ...DevOpt) (*Device, error) {
 	var dplane *dataplane.Dataplane
 	var recs []reconciler.Reconciler
 
@@ -70,7 +120,24 @@ func New(lis net.Listener, targetName, zapiURL string, opts ...grpc.ServerOption
 		recs = append(recs, dplane)
 	}
 
-	s := grpc.NewServer(opts...)
+	jcfg := optDeviceCfg(opts)
+	root := &oc.Root{}
+	switch jcfg {
+	case nil:
+		root.GetOrCreateNetworkInstance(fakedevice.DefaultNetworkInstance).Type = oc.NetworkInstanceTypes_NETWORK_INSTANCE_TYPE_DEFAULT_INSTANCE
+	default:
+		if err := oc.Unmarshal(jcfg, root); err != nil {
+			return nil, fmt.Errorf("cannot unmarshal JSON configuration, %v", err)
+		}
+	}
+
+	var grpcOpts []grpc.ServerOption
+	creds := optTLSCreds(opts)
+	if creds != nil {
+		grpcOpts = append(grpcOpts, grpc.Creds(creds.c))
+	}
+
+	s := grpc.NewServer(grpcOpts...)
 
 	recs = append(recs,
 		fakedevice.NewSystemBaseTask(),
@@ -86,7 +153,7 @@ func New(lis net.Listener, targetName, zapiURL string, opts ...grpc.ServerOption
 	}
 
 	log.Info("starting gRIBI")
-	gribiServer, err := fgribi.New(s)
+	gribiServer, err := fgribi.New(s, root)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +173,7 @@ func New(lis net.Listener, targetName, zapiURL string, opts ...grpc.ServerOption
 	cacheClient := gnmiServer.LocalClient()
 
 	log.Infof("starting sysrib")
-	sysribServer, err := sysrib.New()
+	sysribServer, err := sysrib.New(root)
 	if err != nil {
 		return nil, err
 	}
@@ -120,6 +187,26 @@ func New(lis net.Listener, targetName, zapiURL string, opts ...grpc.ServerOption
 
 	log.Info("lemming created")
 	return d, nil
+}
+
+// optDeviceCfg finds the first occurrence of the DeviceConfig option in opts.
+func optDeviceCfg(opts []DevOpt) []byte {
+	for _, o := range opts {
+		if v, ok := o.(*deviceConfig); ok {
+			return v.json
+		}
+	}
+	return nil
+}
+
+// optTLSCreds finds the first occurrence of the tlsCreds option in opts.
+func optTLSCreds(opts []DevOpt) *tlsCreds {
+	for _, o := range opts {
+		if v, ok := o.(*tlsCreds); ok {
+			return v
+		}
+	}
+	return nil
 }
 
 // Addr returns the currently configured ip:port for the listening services.

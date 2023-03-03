@@ -132,8 +132,8 @@ func (d *Dataplane) ProgramRoute(r *ResolvedRoute) error {
 // New instantiates server to handle client queries.
 //
 // If dp is nil, then a connection attempt is made.
-func New() (*Server, error) {
-	rib, err := NewSysRIB(nil)
+func New(cfg *oc.Root) (*Server, error) {
+	rib, err := NewSysRIB(cfg)
 	if err != nil {
 		return nil, err
 	}

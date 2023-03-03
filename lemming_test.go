@@ -26,6 +26,7 @@ import (
 
 	// gNMI
 	gnmipb "github.com/openconfig/gnmi/proto/gnmi"
+
 	// gNOI
 	bpb "github.com/openconfig/gnoi/bgp"
 	cmpb "github.com/openconfig/gnoi/cert"
@@ -320,12 +321,12 @@ func TestGNSI(t *testing.T) {
 }
 */
 
-func startLemming(t *testing.T) *Device {
+func startLemming(t *testing.T, devopts ...DevOpt) *Device {
 	lis, err := net.Listen("tcp", ":0")
 	if err != nil {
 		t.Fatalf("Failed to start listener: %v", err)
 	}
-	f, err := New(lis, "fakedevice", "unix:/tmp/zserv.api")
+	f, err := New(lis, "fakedevice", "unix:/tmp/zserv.api", devopts...)
 	if err != nil {
 		t.Fatalf("Failed to start lemming: %v", err)
 	}
