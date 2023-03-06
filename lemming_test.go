@@ -320,8 +320,8 @@ func TestGNSI(t *testing.T) {
 }
 */
 
-func startLemming(t *testing.T, devopts ...DevOpt) *Device {
-	f, err := New("fakedevice", "unix:/tmp/zserv.api", devopts...)
+func startLemming(t *testing.T, opts ...Option) *Device {
+	f, err := New("fakedevice", "unix:/tmp/zserv.api", opts...)
 	if err != nil {
 		t.Fatalf("Failed to start lemming: %v", err)
 	}
