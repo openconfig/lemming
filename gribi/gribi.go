@@ -28,6 +28,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 
 	gribipb "github.com/openconfig/gribi/v1/proto/service"
+	"github.com/openconfig/lemming/gnmi/oc"
 	zpb "github.com/openconfig/lemming/proto/sysrib"
 	"github.com/openconfig/lemming/sysrib"
 )
@@ -39,8 +40,13 @@ type Server struct {
 }
 
 // New returns a new fake gRIBI server.
-func New(s *grpc.Server) (*Server, error) {
-	gs, err := createGRIBIServer()
+//
+// - s is the gRPC server on which the reference gRIBI service will be
+// installed.
+// - root, if specified, will be used to populate connected routes into the RIB
+// manager. Note this is intended to be used for unit/standalone device testing.
+func New(s *grpc.Server, root *oc.Root) (*Server, error) {
+	gs, err := createGRIBIServer(root)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create gRIBI server, %v", err)
 	}
@@ -56,12 +62,22 @@ func New(s *grpc.Server) (*Server, error) {
 
 // createGRIBIServer creates and returns a gRIBI server that is ready be
 // registered by a gRPC server.
-func createGRIBIServer() (*server.Server, error) {
+//
+// - root, if specified, will be used to populate connected routes into the RIB
+// manager. Note this is intended to be used for unit/standalone device testing.
+func createGRIBIServer(root *oc.Root) (*server.Server, error) {
 	gzebraConn, err := grpc.DialContext(context.Background(), fmt.Sprintf("unix:%s", sysrib.SockAddr), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, fmt.Errorf("cannot dial to sysrib, %v", err)
 	}
 	gzebraClient := zpb.NewSysribClient(gzebraConn)
+
+	networkInstances := []string{}
+	for name, ni := range root.NetworkInstance {
+		if ni.Type == oc.NetworkInstanceTypes_NETWORK_INSTANCE_TYPE_L3VRF {
+			networkInstances = append(networkInstances, name)
+		}
+	}
 
 	ribAddfn := func(ribs map[string]*aft.RIB, optype constants.OpType, netinst, prefix string) {
 		if optype != constants.Add {
@@ -93,6 +109,7 @@ func createGRIBIServer() (*server.Server, error) {
 
 	return server.New(
 		server.WithRIBResolvedEntryHook(ribAddfn),
+		server.WithVRFs(networkInstances),
 	)
 }
 

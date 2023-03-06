@@ -1185,7 +1185,7 @@ func TestServer(t *testing.T) {
 
 					dp := NewFakeDataplane()
 					dp.SetupFailRoutes(tt.inFailRoutes)
-					s, err := New()
+					s, err := New(nil)
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -1763,7 +1763,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 			}()
 
 			dp := NewFakeDataplane()
-			s, err := New()
+			s, err := New(nil)
 			if err != nil {
 				t.Fatal(err)
 			}

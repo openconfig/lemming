@@ -25,6 +25,7 @@ import (
 	"github.com/openconfig/lemming/dataplane"
 	fgnmi "github.com/openconfig/lemming/gnmi"
 	"github.com/openconfig/lemming/gnmi/fakedevice"
+	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/reconciler"
 	fgnoi "github.com/openconfig/lemming/gnoi"
 	fgnsi "github.com/openconfig/lemming/gnsi"
@@ -33,6 +34,7 @@ import (
 	"github.com/openconfig/lemming/sysrib"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/reflection"
 	"k8s.io/klog/v2"
 
@@ -55,8 +57,57 @@ type Device struct {
 	stopped chan struct{}
 }
 
+// Option are device startup options for lemming.
+type Option func(*opt)
+
+type opt struct {
+	// deviceConfigJSON is the contents of the JSON document (prior to unmarshal).
+	deviceConfigJSON []byte
+	// tlsCredentials contains TLS credentials that can be used for a device.
+	tlsCredentials credentials.TransportCredentials
+}
+
+// resolveOpts applies all the options and returns a struct containing the result.
+func resolveOpts(opts []Option) *opt {
+	o := &opt{}
+	for _, opt := range opts {
+		opt(o)
+	}
+	return o
+}
+
+// WithInitialConfig sets the startup config of the device to c.
+// Today we do not allow the configuration to be changed in flight, but this
+// can be implemented in the future.
+//
+// This option is intended for standalone device testing.
+func WithInitialConfig(c []byte) Option {
+	return func(o *opt) {
+		o.deviceConfigJSON = c
+	}
+}
+
+// WithTLSCredsFromFile loads the credentials from the specified cert and key file
+// and returns them such that they can be used for the gNMI and gRIBI servers.
+func WithTLSCredsFromFile(certFile, keyFile string) (Option, error) {
+	t, err := credentials.NewServerTLSFromFile(certFile, keyFile)
+	if err != nil {
+		return nil, err
+	}
+	return func(o *opt) {
+		o.tlsCredentials = t
+	}, nil
+}
+
+// WithTransportCreds returns a wrapper of TransportCredentials into a DevOpt.
+func WithTransportCreds(c credentials.TransportCredentials) Option {
+	return func(o *opt) {
+		o.tlsCredentials = c
+	}
+}
+
 // New returns a new initialized device.
-func New(lis net.Listener, targetName, zapiURL string, opts ...grpc.ServerOption) (*Device, error) {
+func New(lis net.Listener, targetName, zapiURL string, opts ...Option) (*Device, error) {
 	var dplane *dataplane.Dataplane
 	var recs []reconciler.Reconciler
 
@@ -70,7 +121,26 @@ func New(lis net.Listener, targetName, zapiURL string, opts ...grpc.ServerOption
 		recs = append(recs, dplane)
 	}
 
-	s := grpc.NewServer(opts...)
+	resolvedOpts := resolveOpts(opts)
+
+	root := &oc.Root{}
+	if jcfg := resolvedOpts.deviceConfigJSON; jcfg != nil {
+		if err := oc.Unmarshal(jcfg, root); err != nil {
+			return nil, fmt.Errorf("cannot unmarshal JSON configuration, %v", err)
+		}
+	} else {
+		// The initial config may specify a differently-named network
+		// instance, so only add when it is not present.
+		root.GetOrCreateNetworkInstance(fakedevice.DefaultNetworkInstance).Type = oc.NetworkInstanceTypes_NETWORK_INSTANCE_TYPE_DEFAULT_INSTANCE
+	}
+
+	var grpcOpts []grpc.ServerOption
+	creds := resolvedOpts.tlsCredentials
+	if creds != nil {
+		grpcOpts = append(grpcOpts, grpc.Creds(creds))
+	}
+
+	s := grpc.NewServer(grpcOpts...)
 
 	recs = append(recs,
 		fakedevice.NewSystemBaseTask(),
@@ -86,7 +156,7 @@ func New(lis net.Listener, targetName, zapiURL string, opts ...grpc.ServerOption
 	}
 
 	log.Info("starting gRIBI")
-	gribiServer, err := fgribi.New(s)
+	gribiServer, err := fgribi.New(s, root)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +176,7 @@ func New(lis net.Listener, targetName, zapiURL string, opts ...grpc.ServerOption
 	cacheClient := gnmiServer.LocalClient()
 
 	log.Infof("starting sysrib")
-	sysribServer, err := sysrib.New()
+	sysribServer, err := sysrib.New(root)
 	if err != nil {
 		return nil, err
 	}

@@ -16,8 +16,8 @@ require (
 	github.com/openconfig/gnoi v0.0.0-20221111175026-79709cdf28e1
 	github.com/openconfig/gnsi v0.0.0-20221208171320-0b0fb2f32f67
 	github.com/openconfig/goyang v1.2.0
-	github.com/openconfig/gribi v0.1.1-0.20221218044856-ec9f4fc18013
-	github.com/openconfig/gribigo v0.0.0-20220802181317-805e943d8714
+	github.com/openconfig/gribi v0.1.1-0.20230111180713-7ea0c4e1ee20
+	github.com/openconfig/gribigo v0.0.0-20230207233343-ef59db57c4fc
 	github.com/openconfig/kne v0.1.6
 	github.com/openconfig/ondatra v0.1.6
 	github.com/openconfig/ygnmi v0.7.7
