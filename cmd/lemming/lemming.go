@@ -64,7 +64,7 @@ func main() {
 		log.Exitf("cannot parse gnmi listen address: %s", err)
 	}
 
-	f, err := lemming.New(*target, *zapiAddr, lemming.WithTLSCreds(creds), lemming.WithGRIBIAddr(gribiHost, gribiPort), lemming.WithGNMIAddr(gnmiHost, gnmiPort))
+	f, err := lemming.New(*target, *zapiAddr, lemming.WithTransportCreds(creds), lemming.WithGRIBIAddr(gribiHost, gribiPort), lemming.WithGNMIAddr(gnmiHost, gnmiPort))
 	if err != nil {
 		log.Fatalf("Failed to start lemming: %v", err)
 	}
