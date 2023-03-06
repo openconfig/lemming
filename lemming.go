@@ -198,7 +198,6 @@ func New(targetName, zapiURL string, opts ...DevOpt) (*Device, error) {
 		return nil, err
 	}
 
-	log.Info("starting gRIBI")
 	jcfg := optDeviceCfg(opts)
 	root := &oc.Root{}
 	switch jcfg {
@@ -210,9 +209,21 @@ func New(targetName, zapiURL string, opts ...DevOpt) (*Device, error) {
 		}
 	}
 
+	cacheClient := gnmiServer.LocalClient()
+
+	log.Infof("starting sysrib")
+	sysribServer, err := sysrib.New(root)
+	if err != nil {
+		return nil, err
+	}
+	if err := sysribServer.Start(cacheClient, targetName, zapiURL); err != nil {
+		return nil, fmt.Errorf("sysribServer failed to start: %v", err)
+	}
+
+	log.Info("starting gRIBI")
 	// TODO(wenbli): Use gRIBIs once we change lemming's KNE config to use different ports.
 	//gRIBIs := grpc.NewServer()
-	gribiServer, err := fgribi.New(s, root)
+	gribiServer, err := fgribi.New(s, cacheClient, targetName, root)
 	if err != nil {
 		return nil, err
 	}
@@ -265,17 +276,6 @@ func New(targetName, zapiURL string, opts ...DevOpt) (*Device, error) {
 	}
 	reflection.Register(s)
 	d.startServer()
-
-	cacheClient := gnmiServer.LocalClient()
-
-	log.Infof("starting sysrib")
-	sysribServer, err := sysrib.New(root)
-	if err != nil {
-		return nil, err
-	}
-	if err := sysribServer.Start(cacheClient, targetName, zapiURL); err != nil {
-		return nil, fmt.Errorf("sysribServer failed to start: %v", err)
-	}
 
 	if err := gnmiServer.StartReconcilers(context.Background()); err != nil {
 		return nil, err
