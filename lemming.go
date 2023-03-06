@@ -74,16 +74,9 @@ type opt struct {
 	deviceConfigJSON []byte
 	// tlsCredentials contains TLS credentials that can be used for a device.
 	tlsCredentials credentials.TransportCredentials
-	gribiAddr      serviceAddr
-	gnmiAddr       serviceAddr
-	p4rtAddr       serviceAddr
-}
-
-// serviceAddr is the internal implementation that specifies the port that a g*
-// service should listen on.
-type serviceAddr struct {
-	host string
-	port int
+	gribiAddr      string
+	gnmiAddr       string
+	p4rtAddr       string
 }
 
 // resolveOpts applies all the options and returns a struct containing the result.
@@ -107,57 +100,24 @@ func WithInitialConfig(c []byte) Option {
 }
 
 // WithGRIBIAddr is a device option that specifies that the gRIBI address.
-func WithGRIBIAddr(host string, port int) Option {
+func WithGRIBIAddr(addr string) Option {
 	return func(o *opt) {
-		o.gribiAddr.host = host
-		o.gribiAddr.port = port
+		o.gribiAddr = addr
 	}
 }
 
 // WithGNMIAddr is a device option that specifies that the gRIBI address.
-func WithGNMIAddr(host string, port int) Option {
+func WithGNMIAddr(addr string) Option {
 	return func(o *opt) {
-		o.gnmiAddr.host = host
-		o.gnmiAddr.port = port
+		o.gnmiAddr = addr
 	}
 }
 
 // WithP4RTAddr is a device option that specifies that the P4RT address.
-func WithP4RTAddr(host string, port int) Option {
+func WithP4RTAddr(addr string) Option {
 	return func(o *opt) {
-		o.p4rtAddr.host = host
-		o.p4rtAddr.port = port
+		o.p4rtAddr = addr
 	}
-}
-
-// gNMIAddress is the internal implementation that specifies the port that gNMI should
-// listen on.
-type gNMIAddr struct {
-	host string
-	port int
-}
-
-// isDevOpt implements the DevOpt interface.
-func (*gNMIAddr) isDevOpt() {}
-
-// GNMIAddr specifies the host and port that the gNMI server should listen on.
-func GNMIAddr(host string, i int) *gNMIAddr {
-	return &gNMIAddr{host: host, port: i}
-}
-
-// p4RTAddress is the internal implementation that specifies the port that p4RT should
-// listen on.
-type p4RTAddr struct {
-	host string
-	port int
-}
-
-// isDevOpt implements the DevOpt interface.
-func (*p4RTAddr) isDevOpt() {}
-
-// P4RTAddr specifies the host and port that the p4RT server should listen on.
-func P4RTAddr(host string, i int) *p4RTAddr {
-	return &p4RTAddr{host: host, port: i}
 }
 
 // WithTLSCredsFromFile loads the credentials from the specified cert and key file
@@ -234,7 +194,7 @@ func New(targetName, zapiURL string, opts ...Option) (*Device, error) {
 	log.Info("starting gRIBI")
 
 	// TODO(wenbli): Use gRIBIs once we change lemming's KNE config to use different ports.
-	//gRIBIs := grpc.NewServer()
+	// gRIBIs := grpc.NewServer()
 	gribiServer, err := fgribi.New(s, root)
 	if err != nil {
 		return nil, err
@@ -244,21 +204,17 @@ func New(targetName, zapiURL string, opts ...Option) (*Device, error) {
 	P4RTs := grpc.NewServer()
 
 	log.Info("Create listeners")
-	gr := resolvedOpts.gribiAddr
-	gn := resolvedOpts.gnmiAddr
-	p4 := resolvedOpts.p4rtAddr
-
-	lgnmi, err := net.Listen("tcp", fmt.Sprintf("%s:%d", gn.host, gn.port))
+	lgnmi, err := net.Listen("tcp", resolvedOpts.gnmiAddr)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create gRPC server for gNMI/gNOI/gNSI, %v", err)
 	}
 
-	lgribi, err := net.Listen("tcp", fmt.Sprintf("%s:%d", gr.host, gr.port))
+	lgribi, err := net.Listen("tcp", resolvedOpts.gribiAddr)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create gRPC server for gRIBI, %v", err)
 	}
 
-	lp4rt, err := net.Listen("tcp", fmt.Sprintf("%s:%d", p4.host, p4.port))
+	lp4rt, err := net.Listen("tcp", resolvedOpts.p4rtAddr)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create gRPC server for P4RT, %v", err)
 	}

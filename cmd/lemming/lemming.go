@@ -55,16 +55,7 @@ func main() {
 		log.Fatalf("failed to create credentials: %v", err)
 	}
 
-	gribiHost, gribiPort, err := splitHostPort(*gribiAddr)
-	if err != nil {
-		log.Exitf("cannot parse gribi listen address: %s", err)
-	}
-	gnmiHost, gnmiPort, err := splitHostPort(*gnmiAddr)
-	if err != nil {
-		log.Exitf("cannot parse gnmi listen address: %s", err)
-	}
-
-	f, err := lemming.New(*target, *zapiAddr, lemming.WithTransportCreds(creds), lemming.WithGRIBIAddr(gribiHost, gribiPort), lemming.WithGNMIAddr(gnmiHost, gnmiPort))
+	f, err := lemming.New(*target, *zapiAddr, lemming.WithTransportCreds(creds), lemming.WithGRIBIAddr(*gribiAddr), lemming.WithGNMIAddr(*gnmiAddr))
 	if err != nil {
 		log.Fatalf("Failed to start lemming: %v", err)
 	}
