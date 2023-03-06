@@ -22,8 +22,6 @@ import (
 	"encoding/pem"
 	"flag"
 	"math/big"
-	"net"
-	"strconv"
 
 	log "github.com/golang/glog"
 	"github.com/openconfig/lemming"
@@ -99,18 +97,4 @@ func newCreds() (credentials.TransportCredentials, error) {
 		MinVersion:   tls.VersionTLS13,
 		Certificates: []tls.Certificate{serverCert},
 	}), nil
-}
-
-func splitHostPort(address string) (string, int, error) {
-	addr, port, err := net.SplitHostPort(address)
-	if err != nil {
-		return "", 0, err
-	}
-
-	portnum, err := strconv.Atoi(port)
-	if err != nil {
-		return "", 0, err
-	}
-
-	return addr, portnum, nil
 }
