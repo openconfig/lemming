@@ -66,26 +66,68 @@ type Device struct {
 	stopped chan struct{}
 }
 
-// DevOpt is an interface that is implemented by options that can be handed to New()
-// for the device.
-type DevOpt interface {
-	isDevOpt()
+// Option are device startup options for lemming.
+type Option func(*opt)
+
+type opt struct {
+	// deviceConfigJSON is the contents of the JSON document (prior to unmarshal).
+	deviceConfigJSON []byte
+	// tlsCredentials contains TLS credentials that can be used for a device.
+	tlsCredentials credentials.TransportCredentials
+	gribiAddr      serviceAddr
+	gnmiAddr       serviceAddr
+	p4rtAddr       serviceAddr
 }
 
-// gRIBIAddr is the internal implementation that specifies the port that gRIBI should
-// listen on.
-type gRIBIAddr struct {
+// serviceAddr is the internal implementation that specifies the port that a g*
+// service should listen on.
+type serviceAddr struct {
 	host string
 	port int
 }
 
-// isDevOpt implements the DevOpt interface.
-func (*gRIBIAddr) isDevOpt() {}
+// resolveOpts applies all the options and returns a struct containing the result.
+func resolveOpts(opts []Option) *opt {
+	o := &opt{}
+	for _, opt := range opts {
+		opt(o)
+	}
+	return o
+}
 
-// GRIBIAddr is a device option that specifies that the port that should be listened on
-// is i.
-func GRIBIAddr(host string, i int) *gRIBIAddr {
-	return &gRIBIAddr{host: host, port: i}
+// WithDeviceConfig sets the startup config of the device to c.
+// Today we do not allow the configuration to be changed in flight, but this
+// can be implemented in the future.
+//
+// This DeviceOption is intended for standalone device testing.
+func WithDeviceConfig(c []byte) Option {
+	return func(o *opt) {
+		o.deviceConfigJSON = c
+	}
+}
+
+// WithGRIBIAddr is a device option that specifies that the gRIBI address.
+func WithGRIBIAddr(host string, port int) Option {
+	return func(o *opt) {
+		o.gribiAddr.host = host
+		o.gribiAddr.port = port
+	}
+}
+
+// WithGNMIAddr is a device option that specifies that the gRIBI address.
+func WithGNMIAddr(host string, port int) Option {
+	return func(o *opt) {
+		o.gnmiAddr.host = host
+		o.gnmiAddr.port = port
+	}
+}
+
+// WithP4RTAddr is a device option that specifies that the P4RT address.
+func WithP4RTAddr(host string, port int) Option {
+	return func(o *opt) {
+		o.p4rtAddr.host = host
+		o.p4rtAddr.port = port
+	}
 }
 
 // gNMIAddress is the internal implementation that specifies the port that gNMI should
@@ -118,50 +160,27 @@ func P4RTAddr(host string, i int) *p4RTAddr {
 	return &p4RTAddr{host: host, port: i}
 }
 
-// deviceConfig is a wrapper for an input OpenConfig RFC7951-marshalled JSON
-// configuration for the device.
-type deviceConfig struct {
-	// json is the contents of the JSON document (prior to unmarshal).
-	json []byte
-}
-
-// isDevOpt marks deviceConfig as a device option.
-func (*deviceConfig) isDevOpt() {}
-
-// DeviceConfig sets the startup config of the device to c.
-// Today we do not allow the configuration to be changed in flight, but this
-// can be implemented in the future.
-//
-// This DeviceOption is intended for standalone device testing.
-func DeviceConfig(c []byte) *deviceConfig {
-	return &deviceConfig{json: c}
-}
-
-// tlsCreds returns TLS credentials that can be used for a device.
-type tlsCreds struct {
-	c credentials.TransportCredentials
-}
-
-// TLSCredsFromFile loads the credentials from the specified cert and key file
+// WithTLSCredsFromFile loads the credentials from the specified cert and key file
 // and returns them such that they can be used for the gNMI and gRIBI servers.
-func TLSCredsFromFile(certFile, keyFile string) (*tlsCreds, error) {
+func WithTLSCredsFromFile(certFile, keyFile string) (Option, error) {
 	t, err := credentials.NewServerTLSFromFile(certFile, keyFile)
 	if err != nil {
 		return nil, err
 	}
-	return &tlsCreds{c: t}, nil
+	return func(o *opt) {
+		o.tlsCredentials = t
+	}, nil
 }
 
-// TLSCreds returns a wrapper of TransportCredentials into a DevOpt.
-func TLSCreds(c credentials.TransportCredentials) *tlsCreds {
-	return &tlsCreds{c: c}
+// WithTLSCreds returns a wrapper of TransportCredentials into a DevOpt.
+func WithTLSCreds(c credentials.TransportCredentials) Option {
+	return func(o *opt) {
+		o.tlsCredentials = c
+	}
 }
-
-// IsDevOpt implements the DevOpt interface for tlsCreds.
-func (*tlsCreds) isDevOpt() {}
 
 // New returns a new initialized device.
-func New(targetName, zapiURL string, opts ...DevOpt) (*Device, error) {
+func New(targetName, zapiURL string, opts ...Option) (*Device, error) {
 	var dplane *dataplane.Dataplane
 	var recs []reconciler.Reconciler
 
@@ -176,10 +195,24 @@ func New(targetName, zapiURL string, opts ...DevOpt) (*Device, error) {
 	}
 
 	log.Info("starting gNMI")
+
+	resolvedOpts := resolveOpts(opts)
+
+	jcfg := resolvedOpts.deviceConfigJSON
+	root := &oc.Root{}
+	switch jcfg {
+	case nil:
+		root.GetOrCreateNetworkInstance(fakedevice.DefaultNetworkInstance).Type = oc.NetworkInstanceTypes_NETWORK_INSTANCE_TYPE_DEFAULT_INSTANCE
+	default:
+		if err := oc.Unmarshal(jcfg, root); err != nil {
+			return nil, fmt.Errorf("cannot unmarshal JSON configuration, %v", err)
+		}
+	}
+
 	var grpcOpts []grpc.ServerOption
-	creds := optTLSCreds(opts)
+	creds := resolvedOpts.tlsCredentials
 	if creds != nil {
-		grpcOpts = append(grpcOpts, grpc.Creds(creds.c))
+		grpcOpts = append(grpcOpts, grpc.Creds(creds))
 	}
 
 	s := grpc.NewServer(grpcOpts...)
@@ -199,16 +232,6 @@ func New(targetName, zapiURL string, opts ...DevOpt) (*Device, error) {
 	}
 
 	log.Info("starting gRIBI")
-	jcfg := optDeviceCfg(opts)
-	root := &oc.Root{}
-	switch jcfg {
-	case nil:
-		root.GetOrCreateNetworkInstance(fakedevice.DefaultNetworkInstance).Type = oc.NetworkInstanceTypes_NETWORK_INSTANCE_TYPE_DEFAULT_INSTANCE
-	default:
-		if err := oc.Unmarshal(jcfg, root); err != nil {
-			return nil, fmt.Errorf("cannot unmarshal JSON configuration, %v", err)
-		}
-	}
 
 	// TODO(wenbli): Use gRIBIs once we change lemming's KNE config to use different ports.
 	//gRIBIs := grpc.NewServer()
@@ -221,9 +244,9 @@ func New(targetName, zapiURL string, opts ...DevOpt) (*Device, error) {
 	P4RTs := grpc.NewServer()
 
 	log.Info("Create listeners")
-	gr := optGRIBIAddr(opts)
-	gn := optGNMIAddr(opts)
-	p4 := optP4RTAddr(opts)
+	gr := resolvedOpts.gribiAddr
+	gn := resolvedOpts.gnmiAddr
+	p4 := resolvedOpts.p4rtAddr
 
 	lgnmi, err := net.Listen("tcp", fmt.Sprintf("%s:%d", gn.host, gn.port))
 	if err != nil {
@@ -283,59 +306,6 @@ func New(targetName, zapiURL string, opts ...DevOpt) (*Device, error) {
 
 	log.Info("lemming created")
 	return d, nil
-}
-
-// optGRIBIAddr finds the first occurrence of the GRIBIAddr option in opts.
-// If no GRIBIAddr option is found, the default of localhost:0 is returned.
-func optGRIBIAddr(opts []DevOpt) *gRIBIAddr {
-	for _, o := range opts {
-		if v, ok := o.(*gRIBIAddr); ok {
-			return v
-		}
-	}
-	return &gRIBIAddr{host: "localhost", port: 0}
-}
-
-// optGNMIAddr finds the first occurrence of the GNMIAddr option in opts.
-// If no GNMIAddr option is found, the default of localhost:0 is returned.
-func optGNMIAddr(opts []DevOpt) *gNMIAddr {
-	for _, o := range opts {
-		if v, ok := o.(*gNMIAddr); ok {
-			return v
-		}
-	}
-	return &gNMIAddr{host: "localhost", port: 0}
-}
-
-// optP4RTAddr finds the first occurrence of the P4RTAddr option in opts.
-// If no P4RTAddr option is found, the default of localhost:0 is returned.
-func optP4RTAddr(opts []DevOpt) *p4RTAddr {
-	for _, o := range opts {
-		if v, ok := o.(*p4RTAddr); ok {
-			return v
-		}
-	}
-	return &p4RTAddr{host: "localhost", port: 0}
-}
-
-// optDeviceCfg finds the first occurrence of the DeviceConfig option in opts.
-func optDeviceCfg(opts []DevOpt) []byte {
-	for _, o := range opts {
-		if v, ok := o.(*deviceConfig); ok {
-			return v.json
-		}
-	}
-	return nil
-}
-
-// optTLSCreds finds the first occurrence of the tlsCreds option in opts.
-func optTLSCreds(opts []DevOpt) *tlsCreds {
-	for _, o := range opts {
-		if v, ok := o.(*tlsCreds); ok {
-			return v
-		}
-	}
-	return nil
 }
 
 // GRIBIAddr returns the address that the gRIBI server is listening on.
