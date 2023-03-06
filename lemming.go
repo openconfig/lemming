@@ -76,12 +76,12 @@ func resolveOpts(opts []Option) *opt {
 	return o
 }
 
-// WithDeviceConfig sets the startup config of the device to c.
+// WithInitialConfig sets the startup config of the device to c.
 // Today we do not allow the configuration to be changed in flight, but this
 // can be implemented in the future.
 //
-// This DeviceOption is intended for standalone device testing.
-func WithDeviceConfig(c []byte) Option {
+// This option is intended for standalone device testing.
+func WithInitialConfig(c []byte) Option {
 	return func(o *opt) {
 		o.deviceConfigJSON = c
 	}
@@ -99,8 +99,8 @@ func WithTLSCredsFromFile(certFile, keyFile string) (Option, error) {
 	}, nil
 }
 
-// WithTLSCreds returns a wrapper of TransportCredentials into a DevOpt.
-func WithTLSCreds(c credentials.TransportCredentials) Option {
+// WithTransportCreds returns a wrapper of TransportCredentials into a DevOpt.
+func WithTransportCreds(c credentials.TransportCredentials) Option {
 	return func(o *opt) {
 		o.tlsCredentials = c
 	}
@@ -123,15 +123,15 @@ func New(lis net.Listener, targetName, zapiURL string, opts ...Option) (*Device,
 
 	resolvedOpts := resolveOpts(opts)
 
-	jcfg := resolvedOpts.deviceConfigJSON
 	root := &oc.Root{}
-	switch jcfg {
-	case nil:
-		root.GetOrCreateNetworkInstance(fakedevice.DefaultNetworkInstance).Type = oc.NetworkInstanceTypes_NETWORK_INSTANCE_TYPE_DEFAULT_INSTANCE
-	default:
+	if jcfg := resolvedOpts.deviceConfigJSON; jcfg != nil {
 		if err := oc.Unmarshal(jcfg, root); err != nil {
 			return nil, fmt.Errorf("cannot unmarshal JSON configuration, %v", err)
 		}
+	} else {
+		// The initial config may specify a differently-named network
+		// instance, so only add when it is not present.
+		root.GetOrCreateNetworkInstance(fakedevice.DefaultNetworkInstance).Type = oc.NetworkInstanceTypes_NETWORK_INSTANCE_TYPE_DEFAULT_INSTANCE
 	}
 
 	var grpcOpts []grpc.ServerOption
