@@ -95,7 +95,6 @@ func createGRIBIServer(gClient gpb.GNMIClient, target string, root *oc.Root) (*s
 			// TODO(wenbli): handle replace and delete :-)
 			return
 		}
-		_, _, _ = o, ni, data
 		// write gNMI notifications
 		if err := updateAft(yclient, o, ni, data); err != nil {
 			log.Errorf("invalid notifications, %v", err)
@@ -179,17 +178,17 @@ func createSetRouteRequest(prefix string, nexthops []*afthelper.NextHopSummary) 
 
 // convertGoStruct converts GoStruct a to GoStruct b.
 //
-// - Unmarshal is the generated Unmarshal function of b's generated package.
-func convertGoStruct(a, b ygot.GoStruct, Unmarshal func(data []byte, destStruct ygot.GoStruct, opts ...ytypes.UnmarshalOpt) error) error {
+// - unmarshal is the generated Unmarshal function of b's generated package.
+func convertGoStruct(a, b ygot.GoStruct, unmarshal func(data []byte, destStruct ygot.GoStruct, opts ...ytypes.UnmarshalOpt) error) error {
 	data, err := ygot.Marshal7951(a)
 	if err != nil {
 		return err
 	}
-	return Unmarshal(data, b)
+	return unmarshal(data, b)
 }
 
 // updateAft creates the corresponding ygnmi PathStruct from a RIB operation.
-func updateAft(yclient *ygnmi.Client, t constants.OpType, ni string, e ygot.GoStruct) error {
+func updateAft(yclient *ygnmi.Client, _ constants.OpType, ni string, e ygot.GoStruct) error {
 	var err error
 	switch t := e.(type) {
 	case *aft.Afts_Ipv4Entry:
