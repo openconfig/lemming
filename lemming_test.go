@@ -321,12 +321,12 @@ func TestGNSI(t *testing.T) {
 }
 */
 
-func startLemming(t *testing.T, devopts ...DevOpt) *Device {
+func startLemming(t *testing.T, opts ...Option) *Device {
 	lis, err := net.Listen("tcp", ":0")
 	if err != nil {
 		t.Fatalf("Failed to start listener: %v", err)
 	}
-	f, err := New(lis, "fakedevice", "unix:/tmp/zserv.api", devopts...)
+	f, err := New(lis, "fakedevice", "unix:/tmp/zserv.api", opts...)
 	if err != nil {
 		t.Fatalf("Failed to start lemming: %v", err)
 	}

@@ -57,56 +57,57 @@ type Device struct {
 	stopped chan struct{}
 }
 
-// DevOpt is an interface that is implemented by options that can be handed to New()
-// for the device.
-type DevOpt interface {
-	isDevOpt()
+// Option are device startup options for lemming.
+type Option func(*opt)
+
+type opt struct {
+	// deviceConfigJSON is the contents of the JSON document (prior to unmarshal).
+	deviceConfigJSON []byte
+	// tlsCredentials contains TLS credentials that can be used for a device.
+	tlsCredentials credentials.TransportCredentials
 }
 
-// deviceConfig is a wrapper for an input OpenConfig RFC7951-marshalled JSON
-// configuration for the device.
-type deviceConfig struct {
-	// json is the contents of the JSON document (prior to unmarshal).
-	json []byte
+// resolveOpts applies all the options and returns a struct containing the result.
+func resolveOpts(opts []Option) *opt {
+	o := &opt{}
+	for _, opt := range opts {
+		opt(o)
+	}
+	return o
 }
 
-// isDevOpt marks deviceConfig as a device option.
-func (*deviceConfig) isDevOpt() {}
-
-// DeviceConfig sets the startup config of the device to c.
+// WithDeviceConfig sets the startup config of the device to c.
 // Today we do not allow the configuration to be changed in flight, but this
 // can be implemented in the future.
 //
 // This DeviceOption is intended for standalone device testing.
-func DeviceConfig(c []byte) *deviceConfig {
-	return &deviceConfig{json: c}
+func WithDeviceConfig(c []byte) Option {
+	return func(o *opt) {
+		o.deviceConfigJSON = c
+	}
 }
 
-// tlsCreds returns TLS credentials that can be used for a device.
-type tlsCreds struct {
-	c credentials.TransportCredentials
-}
-
-// TLSCredsFromFile loads the credentials from the specified cert and key file
+// WithTLSCredsFromFile loads the credentials from the specified cert and key file
 // and returns them such that they can be used for the gNMI and gRIBI servers.
-func TLSCredsFromFile(certFile, keyFile string) (*tlsCreds, error) {
+func WithTLSCredsFromFile(certFile, keyFile string) (Option, error) {
 	t, err := credentials.NewServerTLSFromFile(certFile, keyFile)
 	if err != nil {
 		return nil, err
 	}
-	return &tlsCreds{c: t}, nil
+	return func(o *opt) {
+		o.tlsCredentials = t
+	}, nil
 }
 
-// TLSCreds returns a wrapper of TransportCredentials into a DevOpt.
-func TLSCreds(c credentials.TransportCredentials) *tlsCreds {
-	return &tlsCreds{c: c}
+// WithTLSCreds returns a wrapper of TransportCredentials into a DevOpt.
+func WithTLSCreds(c credentials.TransportCredentials) Option {
+	return func(o *opt) {
+		o.tlsCredentials = c
+	}
 }
-
-// IsDevOpt implements the DevOpt interface for tlsCreds.
-func (*tlsCreds) isDevOpt() {}
 
 // New returns a new initialized device.
-func New(lis net.Listener, targetName, zapiURL string, opts ...DevOpt) (*Device, error) {
+func New(lis net.Listener, targetName, zapiURL string, opts ...Option) (*Device, error) {
 	var dplane *dataplane.Dataplane
 	var recs []reconciler.Reconciler
 
@@ -120,7 +121,9 @@ func New(lis net.Listener, targetName, zapiURL string, opts ...DevOpt) (*Device,
 		recs = append(recs, dplane)
 	}
 
-	jcfg := optDeviceCfg(opts)
+	resolvedOpts := resolveOpts(opts)
+
+	jcfg := resolvedOpts.deviceConfigJSON
 	root := &oc.Root{}
 	switch jcfg {
 	case nil:
@@ -132,9 +135,9 @@ func New(lis net.Listener, targetName, zapiURL string, opts ...DevOpt) (*Device,
 	}
 
 	var grpcOpts []grpc.ServerOption
-	creds := optTLSCreds(opts)
+	creds := resolvedOpts.tlsCredentials
 	if creds != nil {
-		grpcOpts = append(grpcOpts, grpc.Creds(creds.c))
+		grpcOpts = append(grpcOpts, grpc.Creds(creds))
 	}
 
 	s := grpc.NewServer(grpcOpts...)
@@ -187,26 +190,6 @@ func New(lis net.Listener, targetName, zapiURL string, opts ...DevOpt) (*Device,
 
 	log.Info("lemming created")
 	return d, nil
-}
-
-// optDeviceCfg finds the first occurrence of the DeviceConfig option in opts.
-func optDeviceCfg(opts []DevOpt) []byte {
-	for _, o := range opts {
-		if v, ok := o.(*deviceConfig); ok {
-			return v.json
-		}
-	}
-	return nil
-}
-
-// optTLSCreds finds the first occurrence of the tlsCreds option in opts.
-func optTLSCreds(opts []DevOpt) *tlsCreds {
-	for _, o := range opts {
-		if v, ok := o.(*tlsCreds); ok {
-			return v
-		}
-	}
-	return nil
 }
 
 // Addr returns the currently configured ip:port for the listening services.
