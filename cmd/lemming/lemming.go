@@ -21,9 +21,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"flag"
-	"fmt"
 	"math/big"
-	"net"
 
 	log "github.com/golang/glog"
 	"github.com/openconfig/lemming"
@@ -35,7 +33,9 @@ import (
 )
 
 var (
-	port      = pflag.Int("port", 6030, "localhost port to listen to.")
+	// TODO(wenbli): Change 6030 -> 9339 once KNE uses multiple ports for lemming.
+	gnmiAddr  = flag.String("gnmi", ":6030", "gNMI listen address")
+	gribiAddr = flag.String("gribi", ":9340", "gRIBI listen address")
 	target    = pflag.String("target", "fakedut", "name of the fake target")
 	enableTLS = pflag.Bool("enable_tls", false, "Controls whether to enable TLS for gNXI services. If enabled and TLS key/cert path unspecified, a generated cert is used.")
 	zapiAddr  = pflag.String("zapi_addr", sysrib.ZAPIAddr, "Custom ZAPI address: use unix:/tmp/zserv.api for a temp.")
@@ -48,16 +48,12 @@ func main() {
 	pflag.Parse()
 	viper.BindPFlags(pflag.CommandLine)
 
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
-	if err != nil {
-		log.Fatalf("Failed to start listener: %v", err)
-	}
 	creds, err := newCreds()
 	if err != nil {
 		log.Fatalf("failed to create credentials: %v", err)
 	}
 
-	f, err := lemming.New(lis, *target, *zapiAddr, lemming.WithTransportCreds(creds))
+	f, err := lemming.New(*target, *zapiAddr, lemming.WithTransportCreds(creds), lemming.WithGRIBIAddr(*gribiAddr), lemming.WithGNMIAddr(*gnmiAddr))
 	if err != nil {
 		log.Fatalf("Failed to start lemming: %v", err)
 	}

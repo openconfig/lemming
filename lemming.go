@@ -41,19 +41,28 @@ import (
 	log "github.com/golang/glog"
 )
 
+type gRPCService struct {
+	s       *grpc.Server
+	lis     net.Listener
+	stopped chan struct{}
+}
+
 // Device is the reference device implementation.
 type Device struct {
-	s           *grpc.Server
-	lis         net.Listener
-	stop        func()
+	gnmignoignsiService *gRPCService
+	gribiService        *gRPCService
+	p4rtService         *gRPCService
+	stop                func()
+
 	gnmiServer  *fgnmi.Server
 	gnoiServer  *fgnoi.Server
 	gribiServer *fgribi.Server
 	gnsiServer  *fgnsi.Server
 	p4rtServer  *fp4rt.Server
-	// Stores the error if the server fails will be returned on call to stop.
-	mu      sync.Mutex
-	err     error
+	// Stores the errors if the server fails will be returned on call to stop.
+	errsMu sync.Mutex
+	errs   []error
+
 	stopped chan struct{}
 }
 
@@ -65,6 +74,9 @@ type opt struct {
 	deviceConfigJSON []byte
 	// tlsCredentials contains TLS credentials that can be used for a device.
 	tlsCredentials credentials.TransportCredentials
+	gribiAddr      string
+	gnmiAddr       string
+	p4rtAddr       string
 }
 
 // resolveOpts applies all the options and returns a struct containing the result.
@@ -84,6 +96,27 @@ func resolveOpts(opts []Option) *opt {
 func WithInitialConfig(c []byte) Option {
 	return func(o *opt) {
 		o.deviceConfigJSON = c
+	}
+}
+
+// WithGRIBIAddr is a device option that specifies that the gRIBI address.
+func WithGRIBIAddr(addr string) Option {
+	return func(o *opt) {
+		o.gribiAddr = addr
+	}
+}
+
+// WithGNMIAddr is a device option that specifies that the gRIBI address.
+func WithGNMIAddr(addr string) Option {
+	return func(o *opt) {
+		o.gnmiAddr = addr
+	}
+}
+
+// WithP4RTAddr is a device option that specifies that the P4RT address.
+func WithP4RTAddr(addr string) Option {
+	return func(o *opt) {
+		o.p4rtAddr = addr
 	}
 }
 
@@ -107,7 +140,7 @@ func WithTransportCreds(c credentials.TransportCredentials) Option {
 }
 
 // New returns a new initialized device.
-func New(lis net.Listener, targetName, zapiURL string, opts ...Option) (*Device, error) {
+func New(targetName, zapiURL string, opts ...Option) (*Device, error) {
 	var dplane *dataplane.Dataplane
 	var recs []reconciler.Reconciler
 
@@ -120,6 +153,8 @@ func New(lis net.Listener, targetName, zapiURL string, opts ...Option) (*Device,
 		}
 		recs = append(recs, dplane)
 	}
+
+	log.Info("starting gNMI")
 
 	resolvedOpts := resolveOpts(opts)
 
@@ -148,6 +183,7 @@ func New(lis net.Listener, targetName, zapiURL string, opts ...Option) (*Device,
 		bgp.NewGoBGPTaskDecl(zapiURL),
 	)
 
+	log.Info("starting gNSI")
 	gnsiServer := fgnsi.New(s)
 
 	gnmiServer, err := fgnmi.New(s, targetName, gnsiServer.GetPathZ(), recs...)
@@ -156,19 +192,55 @@ func New(lis net.Listener, targetName, zapiURL string, opts ...Option) (*Device,
 	}
 
 	log.Info("starting gRIBI")
+
+	// TODO(wenbli): Use gRIBIs once we change lemming's KNE config to use different ports.
+	// gRIBIs := grpc.NewServer()
 	gribiServer, err := fgribi.New(s, root)
 	if err != nil {
 		return nil, err
 	}
 
+	log.Info("starting P4RT (there is nothing here yet)")
+	P4RTs := grpc.NewServer()
+
+	log.Info("Create listeners")
+	lgnmi, err := net.Listen("tcp", resolvedOpts.gnmiAddr)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create gRPC server for gNMI/gNOI/gNSI, %v", err)
+	}
+
+	lgribi, err := net.Listen("tcp", resolvedOpts.gribiAddr)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create gRPC server for gRIBI, %v", err)
+	}
+
+	lp4rt, err := net.Listen("tcp", resolvedOpts.p4rtAddr)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create gRPC server for P4RT, %v", err)
+	}
+
 	d := &Device{
-		lis:         lis,
-		s:           s,
+		gnmignoignsiService: &gRPCService{
+			s:       s,
+			lis:     lgnmi,
+			stopped: make(chan struct{}),
+		},
+		gribiService: &gRPCService{
+			// TODO(wenbli): Change s to gRIBIs once we change lemming's KNE config to use different ports.
+			s:       s,
+			lis:     lgribi,
+			stopped: make(chan struct{}),
+		},
+		p4rtService: &gRPCService{
+			s:       P4RTs,
+			lis:     lp4rt,
+			stopped: make(chan struct{}),
+		},
 		gnmiServer:  gnmiServer,
 		gnoiServer:  fgnoi.New(s),
 		gribiServer: gribiServer,
 		gnsiServer:  gnsiServer,
-		p4rtServer:  fp4rt.New(s),
+		p4rtServer:  fp4rt.New(P4RTs),
 	}
 	reflection.Register(s)
 	d.startServer()
@@ -192,9 +264,34 @@ func New(lis net.Listener, targetName, zapiURL string, opts ...Option) (*Device,
 	return d, nil
 }
 
-// Addr returns the currently configured ip:port for the listening services.
-func (d *Device) Addr() string {
-	return d.lis.Addr().String()
+// GRIBIAddr returns the address that the gRIBI server is listening on.
+func (d *Device) GRIBIAddr() string {
+	return d.gribiService.lis.Addr().String()
+}
+
+// GNMIAddr returns the address that the gNMI/gNOI/gNSI server is listening on.
+func (d *Device) GNMIAddr() string {
+	return d.gnmignoignsiService.lis.Addr().String()
+}
+
+// P4RTAddr returns the address that the P4RT server is listening on.
+func (d *Device) P4RTAddr() string {
+	return d.p4rtService.lis.Addr().String()
+}
+
+// GRIBIListener returns the listener that the gRIBI server is listening on.
+func (d *Device) GRIBIListener() net.Listener {
+	return d.gribiService.lis
+}
+
+// GNMIListener returns the listener that the gNMI/gNOI/gNSI server is listening on.
+func (d *Device) GNMIListener() net.Listener {
+	return d.gnmignoignsiService.lis
+}
+
+// P4RTListener returns the listener that the P4RT server is listening on.
+func (d *Device) P4RTListener() net.Listener {
+	return d.p4rtService.lis
 }
 
 // Stop stops the listening services.
@@ -203,17 +300,17 @@ func (d *Device) Stop() error {
 	klog.Info("Stopping server")
 	select {
 	case <-d.stopped:
-		klog.Info("Server already stopped: ", d.err)
+		klog.Infof("Server already stopped: %v", d.errs)
 	default:
 		d.stop()
 	}
-	d.mu.Lock()
-	defer d.mu.Unlock()
+	d.errsMu.Lock()
+	defer d.errsMu.Unlock()
 	if err := d.gnmiServer.StopReconcilers(context.Background()); err != nil {
-		return err
+		d.errs = append(d.errs, err)
 	}
 
-	return d.err
+	return fmt.Errorf("%v", d.errs)
 }
 
 // GNMI returns the gNMI server implementation.
@@ -228,16 +325,31 @@ func (d *Device) GNSI() *fgnsi.Server {
 
 func (d *Device) startServer() {
 	d.stopped = make(chan struct{})
-	go func() {
-		err := d.s.Serve(d.lis)
-		d.mu.Lock()
-		defer d.mu.Unlock()
-		d.err = err
-		klog.Infof("Server stopped: %v", err)
-		close(d.stopped)
-	}()
+	services := map[string]*gRPCService{
+		"gNMI/gNOI/gNSI": d.gnmignoignsiService,
+		"gRIBI":          d.gribiService,
+		"P4RT":           d.p4rtService,
+	}
+	for svcName, svc := range services {
+		// Capture loop variables by value instead of reference.
+		svcName, svc := svcName, svc
+		go func() {
+			if err := svc.s.Serve(svc.lis); err != nil {
+				d.errsMu.Lock()
+				defer d.errsMu.Unlock()
+				d.errs = append(d.errs, err)
+			}
+			klog.Infof("%s server stopped: %v", svcName, d.errs)
+			close(svc.stopped)
+		}()
+	}
+
 	d.stop = func() {
-		d.s.Stop()
-		<-d.stopped
+		for _, svc := range services {
+			svc.s.Stop()
+		}
+		for _, svc := range services {
+			<-svc.stopped
+		}
 	}
 }

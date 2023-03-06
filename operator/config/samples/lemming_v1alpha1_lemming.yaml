@@ -9,11 +9,11 @@ spec:
   args: ["--alsologtostderr"]
   ports:
     gnmi:
-      innerPort: 6030
-      outerPort: 6030
+      innerPort: 9339
+      outerPort: 9339
     gribi:
-      innerPort: 6030
-      outerPort: 6031
+      innerPort: 9340
+      outerPort: 9340
   tls:
     selfSigned:
       commonName: "lemming-sample"
