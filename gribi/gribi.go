@@ -100,6 +100,7 @@ func createGRIBIServer(gClient gpb.GNMIClient, target string, root *oc.Root) (*s
 			log.Errorf("invalid notifications, %v", err)
 		}
 
+		// TODO(wenbli): Check if this is needed with @robshakir.
 		// server.WithFIBProgrammedCheck()
 		//   -> gives us a function that checks whether an ID is a tristate (ok, failed, pending)
 		//   -> plumb this through to the rib - and have a fib pending queue for responding.
