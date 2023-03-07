@@ -191,8 +191,6 @@ func New(targetName, zapiURL string, opts ...Option) (*Device, error) {
 		return nil, err
 	}
 
-	log.Info("starting gRIBI")
-
 	cacheClient := gnmiServer.LocalClient()
 
 	log.Infof("starting sysrib")
