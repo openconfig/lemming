@@ -107,7 +107,9 @@ func (c *localClient) Subscribe(ctx context.Context, _ ...grpc.CallOption) (gpb.
 
 	go func() {
 		err := c.srv.Subscribe(sub)
-		errCh <- err
+		if err != nil {
+			errCh <- err
+		}
 	}()
 	return client, nil
 }

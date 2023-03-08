@@ -12,7 +12,7 @@ require (
 	github.com/h-fam/errdiff v1.0.2
 	github.com/kentik/patricia v1.2.0
 	github.com/open-traffic-generator/snappi/gosnappi v0.10.8
-	github.com/openconfig/gnmi v0.0.0-20220920173703-480bf53a74d2
+	github.com/openconfig/gnmi v0.9.1
 	github.com/openconfig/gnoi v0.0.0-20221111175026-79709cdf28e1
 	github.com/openconfig/gnsi v0.0.0-20221208171320-0b0fb2f32f67
 	github.com/openconfig/goyang v1.2.0

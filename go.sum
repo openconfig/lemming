@@ -438,8 +438,9 @@ github.com/open-traffic-generator/snappi/gosnappi v0.10.4 h1:LhcvWPBcnZK/z2ihOhp
 github.com/open-traffic-generator/snappi/gosnappi v0.10.4/go.mod h1:jscPwzdT/z64GxIKPxju4RtjkB0GIGVqnALMYvJ0fB4=
 github.com/openconfig/gnmi v0.0.0-20200414194230-1597cc0f2600/go.mod h1:M/EcuapNQgvzxo1DDXHK4tx3QpYM/uG4l591v33jG2A=
 github.com/openconfig/gnmi v0.0.0-20200508230933-d19cebf5e7be/go.mod h1:M/EcuapNQgvzxo1DDXHK4tx3QpYM/uG4l591v33jG2A=
-github.com/openconfig/gnmi v0.0.0-20220920173703-480bf53a74d2 h1:3YLlQFLDsFTvruKoYBbuYqhCgsXMtNewSrLjNXcF/Sg=
 github.com/openconfig/gnmi v0.0.0-20220920173703-480bf53a74d2/go.mod h1:Y9os75GmSkhHw2wX8sMsxfI7qRGAEcDh8NTa5a8vj6E=
+github.com/openconfig/gnmi v0.9.1 h1:hVOdLTaRjdy68oCGJbkf2vrmnUoQ5xbINqBOAMix4xM=
+github.com/openconfig/gnmi v0.9.1/go.mod h1:Y9os75GmSkhHw2wX8sMsxfI7qRGAEcDh8NTa5a8vj6E=
 github.com/openconfig/gnoi v0.0.0-20221111175026-79709cdf28e1 h1:PuoTTRGmVb642GkyUTMOlW9gc8KMDKHXLY0ie7bLPvs=
 github.com/openconfig/gnoi v0.0.0-20221111175026-79709cdf28e1/go.mod h1:ZMRwQ7maVNSOjie3Jn67fW5WY7UDrFSiYSlV/GxthQs=
 github.com/openconfig/gnsi v0.0.0-20221208171320-0b0fb2f32f67 h1:r1GtPxuMqnIyogRTJL8TmJOgxTuOQ8TZMgQFly3yF5Y=
