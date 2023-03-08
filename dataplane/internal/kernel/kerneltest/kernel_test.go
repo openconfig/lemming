@@ -49,10 +49,9 @@ func TestSetHWAddr(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			fi := New()
-			fi.Links = map[string]*Iface{
+			fi := New(map[string]*Iface{
 				"test": {},
-			}
+			})
 			gotErr := fi.SetHWAddr(tt.name, tt.addr)
 			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
 				t.Fatalf("SetHWAddr(%s, %s) unexpected err: %s", tt.name, tt.addr, diff)
@@ -92,10 +91,9 @@ func TestReplaceIP(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			fi := New()
-			fi.Links = map[string]*Iface{
+			fi := New(map[string]*Iface{
 				"test": {},
-			}
+			})
 			gotErr := fi.ReplaceIP(tt.name, tt.addr, tt.prefixLen)
 			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
 				t.Fatalf("ReplaceIP(%s, %s, %d) unexpected err: %s", tt.name, tt.addr, tt.prefixLen, diff)
@@ -141,7 +139,9 @@ func TestDeleteIP(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			fi := New()
+			fi := New(map[string]*Iface{
+				"test": {},
+			})
 			fi.Links = map[string]*Iface{
 				"test": {
 					IPs: map[string]struct{}{"127.0.0.1/32": {}},
@@ -181,10 +181,9 @@ func TestSetState(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			fi := New()
-			fi.Links = map[string]*Iface{
+			fi := New(map[string]*Iface{
 				"test": {},
-			}
+			})
 			gotErr := fi.SetState(tt.name, tt.state)
 			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
 				t.Fatalf("SetState(%s, %v) unexpected err: %s", tt.name, tt.state, diff)
@@ -221,10 +220,9 @@ func TestCreateTAP(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			fi := New()
-			fi.Links = map[string]*Iface{
+			fi := New(map[string]*Iface{
 				"test": {},
-			}
+			})
 			gotFd, gotErr := fi.CreateTAP(tt.name)
 			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
 				t.Fatalf("CreateTAP(%s) unexpected err: %s", tt.name, diff)
@@ -243,12 +241,11 @@ func TestCreateTAP(t *testing.T) {
 }
 
 func TestLinkSubscribe(t *testing.T) {
-	fi := New()
-	fi.Links = map[string]*Iface{
+	fi := New(map[string]*Iface{
 		"test": {
 			up: true,
 		},
-	}
+	})
 	ch := make(chan netlink.LinkUpdate, 1)
 	done := make(chan struct{})
 	defer close(done)
@@ -273,12 +270,11 @@ func TestLinkSubscribe(t *testing.T) {
 }
 
 func TestAddrSubscribe(t *testing.T) {
-	fi := New()
-	fi.Links = map[string]*Iface{
+	fi := New(map[string]*Iface{
 		"test": {
 			Idx: 1,
 		},
-	}
+	})
 	ch := make(chan netlink.AddrUpdate, 1)
 	done := make(chan struct{})
 

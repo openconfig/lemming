@@ -31,15 +31,16 @@ type Iface struct {
 }
 
 // New returns a new FakeInterfaces.
-func New() *FakeInterfaces {
+func New(initialIfaces map[string]*Iface) *FakeInterfaces {
 	return &FakeInterfaces{
-		Links: map[string]*Iface{},
+		Links: initialIfaces,
 	}
 }
 
 // FakeInterfaces contains a fake implementation methods for modifying networking interfaces.
 type FakeInterfaces struct {
-	Links  map[string]*Iface
+	Links map[string]*Iface
+	// Channels are set by calls LinkSubscribe and AddrSubscribe.
 	linkCh chan<- netlink.LinkUpdate
 	addrCh chan<- netlink.AddrUpdate
 }
@@ -192,7 +193,7 @@ func (fi *FakeInterfaces) sendLinkUpdate(name string, l *Iface) {
 		return
 	}
 	var flag net.Flags
-	state := netlink.LinkOperState(netlink.OperDown)
+	var state netlink.LinkOperState = netlink.OperDown
 	if l.up {
 		flag = net.FlagUp
 		state = netlink.OperUp
