@@ -506,11 +506,11 @@ func TestBGPRouteAdvertisement(t *testing.T) {
 		},
 	})
 
-	loss := testTraffic(t, otg, atePort1, atePort2, "198.51.100.0", 15*time.Second)
+	loss := testTraffic(t, otg, atePort1, atePort2, "198.51.100.0", 3*time.Second)
 	if loss != 100 {
 		t.Errorf("Loss: got %g, want 100", loss)
 	}
-	loss = testTrafficv6(t, otg, atePort1, atePort2, "2003::", 15*time.Second)
+	loss = testTrafficv6(t, otg, atePort1, atePort2, "2003::", 3*time.Second)
 	if loss != 100 {
 		t.Errorf("Loss: got %g, want 100", loss)
 	}

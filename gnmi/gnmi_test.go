@@ -30,6 +30,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/h-fam/errdiff"
 	"github.com/openconfig/gnmi/value"
+	"github.com/openconfig/lemming/gnmi/gnmiclient"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 	"github.com/openconfig/ygnmi/ygnmi"
@@ -281,8 +282,11 @@ func TestONCE(t *testing.T) {
 	}
 }
 
-// TestSet tests gnmi.Set on a config value.
-func TestSet(t *testing.T) {
+// TestSetConfig tests gnmi.Set on a config value.
+//
+// It purposely avoids using ygnmi in order to test lower-level details
+// (e.g. timestamp metadata)
+func TestSetConfig(t *testing.T) {
 	ctx := context.Background()
 	gnmiServer, err := newServer(ctx, "local", true)
 	if err != nil {
@@ -391,109 +395,10 @@ func TestSet(t *testing.T) {
 	}
 }
 
-// TestSetJSON tests gnmi.Set on a JSON value.
-func TestSetJSON(t *testing.T) {
-	ctx := context.Background()
-	gnmiServer, err := newServer(ctx, "local", true)
-	if err != nil {
-		t.Fatalf("cannot create server, got err: %v", err)
-	}
-	addr, err := startServer(gnmiServer)
-	if err != nil {
-		t.Fatalf("cannot start server, got err: %v", err)
-	}
-
-	pathStr := "/interfaces/interface[name=foo]/config/description"
-	path := mustPath(pathStr)
-
-	got := []*upd{}
-	clientCtx, cancel := context.WithCancel(context.Background())
-	var sendErr, recvErr error
-	go func(ctx context.Context) {
-		defer cancel()
-		conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(local.NewCredentials()))
-		if err != nil {
-			sendErr = fmt.Errorf("cannot dial gNMI server, %v", err)
-			return
-		}
-
-		client := gpb.NewGNMIClient(conn)
-
-		if _, err := client.Set(ctx, &gpb.SetRequest{
-			Prefix: mustTargetPath("local", "", true),
-			Replace: []*gpb.Update{{
-				Path: path,
-				Val: &gpb.TypedValue{
-					Value: &gpb.TypedValue_JsonIetfVal{
-						JsonIetfVal: []byte{0x22, 0x77, 0x6f, 0x72, 0x6c, 0x64, 0x22},
-					},
-				},
-			}},
-		}); err != nil {
-			sendErr = fmt.Errorf("set request failed: %v", err)
-			return
-		}
-
-		subc, err := client.Subscribe(ctx)
-		if err != nil {
-			sendErr = err
-			return
-		}
-		sr := &gpb.SubscribeRequest{
-			Request: &gpb.SubscribeRequest_Subscribe{
-				Subscribe: &gpb.SubscriptionList{
-					Prefix: mustTargetPath("local", "", true),
-					Mode:   gpb.SubscriptionList_ONCE,
-					Subscription: []*gpb.Subscription{{
-						Path: path,
-					}},
-				},
-			},
-		}
-
-		if err := subc.Send(sr); err != nil {
-			sendErr = fmt.Errorf("cannot send subscribe request %s, %v", prototext.Format(sr), err)
-			return
-		}
-
-		for {
-			in, err := subc.Recv()
-			if err == io.EOF {
-				return
-			}
-			if err != nil {
-				recvErr = err
-				return
-			}
-			got = append(got, toUpd(in)...)
-		}
-	}(clientCtx)
-
-	<-clientCtx.Done()
-
-	gnmiServer.c.Stop()
-
-	if sendErr != nil {
-		t.Errorf("got unexpected send error, %v", sendErr)
-	}
-
-	if recvErr != nil {
-		t.Errorf("got unexpected recv error, %v", recvErr)
-	}
-
-	if diff := cmp.Diff(got, []*upd{{
-		T:    VAL,
-		TS:   42,
-		Path: pathStr,
-		Val:  "world",
-	}, {
-		T: SYNC,
-	}}, cmpopts.IgnoreFields(upd{}, "TS")); diff != "" {
-		t.Fatalf("did not get expected updates, diff(-got,+want)\n:%s", diff)
-	}
-}
-
 // TestSetState tests gnmi.Set on a state value.
+//
+// It purposely avoids using ygnmi in order to test lower-level details
+// (e.g. timestamp metadata)
 func TestSetState(t *testing.T) {
 	ctx := context.Background()
 	gnmiServer, err := newServer(ctx, "local", true)
@@ -700,6 +605,309 @@ func TestSetInternal(t *testing.T) {
 		T: SYNC,
 	}}) {
 		t.Fatalf("Expected error -- timestamp metadata should be ignored but it is not ignored.")
+	}
+}
+
+func TestSetYGNMI(t *testing.T) {
+	tests := []struct {
+		desc    string
+		isState bool
+		inOp    func(c *ygnmi.Client) error
+		checkOp func(t *testing.T, c *ygnmi.Client)
+		wantErr string
+	}{{
+		desc: "leaf config update",
+		inOp: func(c *ygnmi.Client) error {
+			_, err := ygnmi.Update(context.Background(), c, ocpath.Root().System().Hostname().Config(), "foo")
+			return err
+		},
+		checkOp: func(t *testing.T, c *ygnmi.Client) {
+			v, err := ygnmi.Get[string](context.Background(), c, ocpath.Root().System().Hostname().Config())
+			if err != nil {
+				t.Fatal(err)
+			}
+			if diff := cmp.Diff("foo", v); diff != "" {
+				t.Errorf("(-want, +got):\n%s", diff)
+			}
+		},
+	}, {
+		desc: "leaf config replace",
+		inOp: func(c *ygnmi.Client) error {
+			_, err := ygnmi.Replace(context.Background(), c, ocpath.Root().System().Hostname().Config(), "foo")
+			return err
+		},
+		checkOp: func(t *testing.T, c *ygnmi.Client) {
+			v, err := ygnmi.Get[string](context.Background(), c, ocpath.Root().System().Hostname().Config())
+			if err != nil {
+				t.Fatal(err)
+			}
+			if diff := cmp.Diff("foo", v); diff != "" {
+				t.Errorf("(-want, +got):\n%s", diff)
+			}
+		},
+	}, {
+		desc: "leaf config delete",
+		inOp: func(c *ygnmi.Client) error {
+			if _, err := ygnmi.Update(context.Background(), c, ocpath.Root().System().Hostname().Config(), "foo"); err != nil {
+				return err
+			}
+			_, err := ygnmi.Delete(context.Background(), c, ocpath.Root().System().Hostname().Config())
+			return err
+		},
+		checkOp: func(t *testing.T, c *ygnmi.Client) {
+			v, err := ygnmi.Lookup[string](context.Background(), c, ocpath.Root().System().Hostname().Config())
+			if err != nil {
+				t.Fatal(err)
+			}
+			if v.IsPresent() {
+				t.Errorf("Got present, want not present")
+			}
+		},
+	}, {
+		desc: "non-leaf config update",
+		inOp: func(c *ygnmi.Client) error {
+			if _, err := ygnmi.Update(context.Background(), c, ocpath.Root().System().Config(), &oc.System{Hostname: ygot.String("foo")}); err != nil {
+				return err
+			}
+			_, err := gnmiclient.Update[*oc.System](context.Background(), c, ocpath.Root().System().Config(), &oc.System{MotdBanner: ygot.String("bar")})
+			return err
+		},
+		checkOp: func(t *testing.T, c *ygnmi.Client) {
+			v, err := ygnmi.Get[*oc.System](context.Background(), c, ocpath.Root().System().Config())
+			if err != nil {
+				t.Fatal(err)
+			}
+			nos, err := ygot.Diff(&oc.System{Hostname: ygot.String("foo"), MotdBanner: ygot.String("bar")}, v)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(nos.Update)+len(nos.Delete) != 0 {
+				t.Errorf("Got diff:\n%s", nos)
+			}
+		},
+	}, {
+		desc: "non-leaf config replace",
+		inOp: func(c *ygnmi.Client) error {
+			if _, err := ygnmi.Update(context.Background(), c, ocpath.Root().System().Config(), &oc.System{Hostname: ygot.String("foo")}); err != nil {
+				return err
+			}
+			_, err := ygnmi.Replace(context.Background(), c, ocpath.Root().System().Config(), &oc.System{MotdBanner: ygot.String("foo")})
+			return err
+		},
+		checkOp: func(t *testing.T, c *ygnmi.Client) {
+			v, err := ygnmi.Get[*oc.System](context.Background(), c, ocpath.Root().System().Config())
+			if err != nil {
+				t.Fatal(err)
+			}
+			nos, err := ygot.Diff(&oc.System{MotdBanner: ygot.String("foo")}, v)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(nos.Update)+len(nos.Delete) != 0 {
+				t.Errorf("Got diff:\n%s", nos)
+			}
+		},
+	}, {
+		desc: "non-leaf config delete",
+		inOp: func(c *ygnmi.Client) error {
+			if _, err := ygnmi.Update(context.Background(), c, ocpath.Root().System().Config(), &oc.System{Hostname: ygot.String("foo")}); err != nil {
+				return err
+			}
+			_, err := ygnmi.Delete(context.Background(), c, ocpath.Root().System().Config())
+			return err
+		},
+		checkOp: func(t *testing.T, c *ygnmi.Client) {
+			v, err := ygnmi.Lookup[*oc.System](context.Background(), c, ocpath.Root().System().Config())
+			if err != nil {
+				t.Fatal(err)
+			}
+			val, ok := v.Val()
+			if !ok {
+				return
+			}
+			nos, err := ygot.Diff(&oc.System{}, val)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(nos.Update)+len(nos.Delete) != 0 {
+				t.Errorf("Got diff:\n%s", nos)
+			}
+		},
+	}, {
+		desc: "fail due to missing leafref",
+		inOp: func(c *ygnmi.Client) error {
+			_, err := ygnmi.Update(context.Background(), c, ocpath.Root().Lldp().Interface("eth1").Name().Config(), "eth1")
+			return err
+		},
+		wantErr: "pointed-to value with path /interfaces/interface/name",
+	}, {
+		desc:    "leaf state update",
+		isState: true,
+		inOp: func(c *ygnmi.Client) error {
+			_, err := gnmiclient.Update(context.Background(), c, ocpath.Root().System().Hostname().State(), "foo")
+			return err
+		},
+		checkOp: func(t *testing.T, c *ygnmi.Client) {
+			v, err := ygnmi.Get(context.Background(), c, ocpath.Root().System().Hostname().State())
+			if err != nil {
+				t.Fatal(err)
+			}
+			if diff := cmp.Diff("foo", v); diff != "" {
+				t.Errorf("(-want, +got):\n%s", diff)
+			}
+		},
+	}, {
+		desc:    "leaf state replace",
+		isState: true,
+		inOp: func(c *ygnmi.Client) error {
+			_, err := gnmiclient.Replace(context.Background(), c, ocpath.Root().System().Hostname().State(), "foo")
+			return err
+		},
+		checkOp: func(t *testing.T, c *ygnmi.Client) {
+			v, err := ygnmi.Get(context.Background(), c, ocpath.Root().System().Hostname().State())
+			if err != nil {
+				t.Fatal(err)
+			}
+			if diff := cmp.Diff("foo", v); diff != "" {
+				t.Errorf("(-want, +got):\n%s", diff)
+			}
+		},
+	}, {
+		desc:    "leaf state delete",
+		isState: true,
+		inOp: func(c *ygnmi.Client) error {
+			if _, err := gnmiclient.Update(context.Background(), c, ocpath.Root().System().Hostname().State(), "foo"); err != nil {
+				return err
+			}
+			_, err := gnmiclient.Delete(context.Background(), c, ocpath.Root().System().Hostname().State())
+			return err
+		},
+		checkOp: func(t *testing.T, c *ygnmi.Client) {
+			v, err := ygnmi.Lookup(context.Background(), c, ocpath.Root().System().Hostname().State())
+			if err != nil {
+				t.Fatal(err)
+			}
+			if v.IsPresent() {
+				t.Errorf("Got present, want not present")
+			}
+		},
+	}, {
+		desc:    "non-leaf state update",
+		isState: true,
+		inOp: func(c *ygnmi.Client) error {
+			if _, err := gnmiclient.Update(context.Background(), c, ocpath.Root().System().State(), &oc.System{Hostname: ygot.String("foo")}); err != nil {
+				return err
+			}
+			_, err := gnmiclient.Update(context.Background(), c, ocpath.Root().System().State(), &oc.System{MotdBanner: ygot.String("bar")})
+			return err
+		},
+		checkOp: func(t *testing.T, c *ygnmi.Client) {
+			v, err := ygnmi.Get(context.Background(), c, ocpath.Root().System().State())
+			if err != nil {
+				t.Fatal(err)
+			}
+			want := &oc.System{Hostname: ygot.String("foo"), MotdBanner: ygot.String("bar")}
+			want.PopulateDefaults()
+			nos, err := ygot.Diff(want, v)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(nos.Update)+len(nos.Delete) != 0 {
+				t.Errorf("Got diff:\n%s", nos)
+			}
+		},
+	}, {
+		desc:    "non-leaf state replace",
+		isState: true,
+		inOp: func(c *ygnmi.Client) error {
+			if _, err := gnmiclient.Update(context.Background(), c, ocpath.Root().System().State(), &oc.System{Hostname: ygot.String("foo")}); err != nil {
+				return err
+			}
+			_, err := gnmiclient.Replace(context.Background(), c, ocpath.Root().System().State(), &oc.System{MotdBanner: ygot.String("foo")})
+			return err
+		},
+		checkOp: func(t *testing.T, c *ygnmi.Client) {
+			v, err := ygnmi.Get(context.Background(), c, ocpath.Root().System().State())
+			if err != nil {
+				t.Fatal(err)
+			}
+			want := &oc.System{MotdBanner: ygot.String("foo")}
+			want.PopulateDefaults()
+			nos, err := ygot.Diff(want, v)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(nos.Update)+len(nos.Delete) != 0 {
+				t.Errorf("Got diff:\n%s", nos)
+			}
+		},
+	}, {
+		desc:    "non-leaf state delete",
+		isState: true,
+		inOp: func(c *ygnmi.Client) error {
+			if _, err := gnmiclient.Update(context.Background(), c, ocpath.Root().System().State(), &oc.System{Hostname: ygot.String("foo")}); err != nil {
+				return err
+			}
+			_, err := gnmiclient.Delete(context.Background(), c, ocpath.Root().System().State())
+			return err
+		},
+		checkOp: func(t *testing.T, c *ygnmi.Client) {
+			v, err := ygnmi.Lookup(context.Background(), c, ocpath.Root().System().State())
+			if err != nil {
+				t.Fatal(err)
+			}
+			val, ok := v.Val()
+			if !ok {
+				return
+			}
+			want := &oc.System{}
+			want.PopulateDefaults()
+			nos, err := ygot.Diff(want, val)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(nos.Update)+len(nos.Delete) != 0 {
+				t.Errorf("Got diff:\n%s", nos)
+			}
+		},
+	}}
+
+	gnmiServer, err := newServer(context.Background(), "local", true)
+	if err != nil {
+		t.Fatalf("cannot create server, got err: %v", err)
+	}
+	addr, err := startServer(gnmiServer)
+	if err != nil {
+		t.Fatalf("cannot start server, got err: %v", err)
+	}
+	defer gnmiServer.c.Stop()
+	conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(local.NewCredentials()))
+	if err != nil {
+		t.Fatalf("cannot dial gNMI server, %v", err)
+	}
+	configClient, err := ygnmi.NewClient(gpb.NewGNMIClient(conn), ygnmi.WithTarget("local"))
+	if err != nil {
+		t.Fatalf("failed to create client: %v", err)
+	}
+	stateClient, err := ygnmi.NewClient(gnmiServer.LocalClient(), ygnmi.WithTarget("local"))
+	if err != nil {
+		t.Fatalf("failed to create client: %v", err)
+	}
+
+	for _, tt := range tests {
+		c := configClient
+		if tt.isState {
+			c = stateClient
+		}
+		t.Run(tt.desc, func(t *testing.T) {
+			err := tt.inOp(c)
+			if d := errdiff.Check(err, tt.wantErr); d != "" {
+				t.Errorf("Set() unexpected err: %s", d)
+			}
+			if tt.wantErr == "" {
+				tt.checkOp(t, c)
+			}
+		})
 	}
 }
 

@@ -203,9 +203,9 @@ var logMu sync.Mutex
 func Log(packet Packet) {
 	if m := packet.Log(); len(m) != 0 {
 		logMu.Lock()
-		log.Infof("Packet Trace:\n")
+		log.V(1).Infof("Packet Trace:\n")
 		for _, msg := range m {
-			log.Infof("%v\n", msg)
+			log.V(1).Infof("%v\n", msg)
 		}
 		logMu.Unlock()
 	}

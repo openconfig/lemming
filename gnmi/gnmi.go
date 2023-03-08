@@ -242,11 +242,32 @@ func updateCacheNotifs(cache *cache.Cache, nos []*gpb.Notification, target, orig
 			}
 			pathsForDelete = append(pathsForDelete, p)
 		}
-		log.V(1).Infof("datastore: updating the following values: %+v", n.Update)
-		log.V(1).Infof("datastore: deleting the following paths: %+v", pathsForDelete)
+		if len(n.Update) > 0 {
+			log.V(1).Infof("datastore: updating the following values: %+v", n.Update)
+		}
+		if len(pathsForDelete) > 0 {
+			log.V(1).Infof("datastore: deleting the following paths: %+v", pathsForDelete)
+		}
 		if err := cacheTarget.GnmiUpdate(n); err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+// unmarshalSetRequest unmarshals the setrequest into the schema.
+func unmarshalSetRequest(schema *ytypes.Schema, req *gpb.SetRequest, preferShadowPath, populateDefaults bool) error {
+	var unmarshalOpts []ytypes.UnmarshalOpt
+	if preferShadowPath {
+		unmarshalOpts = append(unmarshalOpts, &ytypes.PreferShadowPath{})
+	}
+	if err := ytypes.UnmarshalSetRequest(schema, req, unmarshalOpts...); err != nil {
+		return status.Errorf(codes.InvalidArgument, "failed to unmarshal set request %v", err)
+	}
+	if populateDefaults {
+		// Populate and defaults after any possible replace/delete operations.
+		// NOTE: This statement can introduce significant slowdowns.
+		schema.Root.(populateDefaultser).PopulateDefaults()
 	}
 	return nil
 }
@@ -260,6 +281,30 @@ func updateCacheNotifs(cache *cache.Cache, nos []*gpb.Notification, target, orig
 // the gNMI cache.
 // - auth adds authorization to before writing vals to the cache, if set to nil, not authorization is checked.
 func set(schema *ytypes.Schema, cache *cache.Cache, target string, req *gpb.SetRequest, preferShadowPath bool, validators []func(*oc.Root) error, timestamp int64, user string, auth PathAuth) error {
+	// skip validation and diffing for performance.
+	// TODO(wenbli): This if block should be removed once a more performant diffing utility is created.
+	if !preferShadowPath && len(req.Delete)+len(req.Replace) == 0 {
+		tempSchema := &ytypes.Schema{
+			Root:       &oc.Root{},
+			SchemaTree: schema.SchemaTree,
+			Unmarshal:  schema.Unmarshal,
+		}
+		// TODO(wenbli): This is a temporary solution to allow higher-scale tests.
+		// Remove the populateDefault field once this is removed -- it
+		// should always be called.
+		unmarshalSetRequest(tempSchema, req, preferShadowPath, false)
+		notifs, err := ygot.TogNMINotifications(tempSchema.Root, timestamp, ygot.GNMINotificationsConfig{UsePathElem: true})
+		if err != nil {
+			return err
+		}
+
+		if err := updateCacheNotifs(cache, notifs, target, req.Prefix.Origin); err != nil {
+			return err
+		}
+
+		return unmarshalSetRequest(schema, req, preferShadowPath, true)
+	}
+
 	prevRoot, err := ygot.DeepCopy(schema.Root)
 	if err != nil {
 		return status.Errorf(codes.Internal, "failed to ygot.DeepCopy the cached root object: %v", err)
@@ -275,16 +320,9 @@ func set(schema *ytypes.Schema, cache *cache.Cache, target string, req *gpb.SetR
 		}
 	}()
 
-	var unmarshalOpts []ytypes.UnmarshalOpt
-	if preferShadowPath {
-		unmarshalOpts = append(unmarshalOpts, &ytypes.PreferShadowPath{})
+	if err := unmarshalSetRequest(schema, req, preferShadowPath, true); err != nil {
+		return err
 	}
-	if err := ytypes.UnmarshalSetRequest(schema, req, unmarshalOpts...); err != nil {
-		return status.Errorf(codes.InvalidArgument, "failed to unmarshal set request %v", err)
-	}
-	// Populate and defaults after any possible replace/delete operations.
-	// NOTE: This statement can introduce significant slowdowns.
-	schema.Root.(populateDefaultser).PopulateDefaults()
 
 	if err := schema.Validate(); err != nil {
 		return status.Errorf(codes.InvalidArgument, "invalid SetRequest: %v", err)
