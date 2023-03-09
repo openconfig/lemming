@@ -33,8 +33,7 @@ import (
 )
 
 var (
-	// TODO(wenbli): Change 6030 -> 9339 once KNE uses multiple ports for lemming.
-	gnmiAddr  = flag.String("gnmi", ":6030", "gNMI listen address")
+	gnmiAddr  = flag.String("gnmi", ":9339", "gNMI listen address")
 	gribiAddr = flag.String("gribi", ":9340", "gRIBI listen address")
 	target    = pflag.String("target", "fakedut", "name of the fake target")
 	enableTLS = pflag.Bool("enable_tls", false, "Controls whether to enable TLS for gNXI services. If enabled and TLS key/cert path unspecified, a generated cert is used.")
