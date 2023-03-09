@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/openconfig/lemming/dataplane/internal/engine"
+	"github.com/openconfig/lemming/dataplane/internal/kernel"
 	"github.com/openconfig/lemming/gnmi/gnmiclient"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
@@ -69,6 +70,7 @@ func NewInterface(fwd fwdpb.ServiceClient) *reconciler.BuiltReconciler {
 		fwd:       fwd,
 		idxToName: map[int]string{},
 		state:     map[string]*oc.Interface{},
+		ifaceMgr:  &kernel.Interfaces{},
 	}
 	return reconciler.NewBuilder("interface").WithStart(i.start).WithStop(i.stop).Build()
 }
@@ -314,7 +316,7 @@ func (ni *Interface) reconcile(config *oc.Interface) {
 		if (pair.cfgIP != nil && pair.cfgPL != nil) && (pair.stateIP == nil || *pair.statePL != *pair.cfgPL) {
 			log.V(1).Infof("Set Config IP: %v, Config PL: %v. State IP: %v, State PL: %v", *pair.cfgIP, *pair.cfgPL, pair.stateIP, pair.statePL)
 			log.V(2).Infof("setting interface %s ip %s/%d", tapName, *pair.cfgIP, *pair.cfgPL)
-			if err := ni.ifaceMgr.DeleteIP(tapName, *pair.cfgIP, int(*pair.cfgPL)); err != nil {
+			if err := ni.ifaceMgr.ReplaceIP(tapName, *pair.cfgIP, int(*pair.cfgPL)); err != nil {
 				log.Warningf("Failed to set ip address of port: %v", err)
 			}
 		}
