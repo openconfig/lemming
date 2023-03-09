@@ -15,16 +15,11 @@
 package main
 
 import (
-	"crypto/rand"
-	"crypto/rsa"
-	"crypto/tls"
-	"crypto/x509"
-	"encoding/pem"
 	"flag"
-	"math/big"
 
 	log "github.com/golang/glog"
 	"github.com/openconfig/lemming"
+	"github.com/openconfig/lemming/internal/creds"
 	"github.com/openconfig/lemming/sysrib"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -69,32 +64,5 @@ func newCreds() (credentials.TransportCredentials, error) {
 	if !*enableTLS {
 		return insecure.NewCredentials(), nil
 	}
-	key, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		return nil, err
-	}
-	tmpl := &x509.Certificate{
-		SerialNumber: big.NewInt(1234),
-	}
-
-	certDer, err := x509.CreateCertificate(rand.Reader, tmpl, tmpl, &key.PublicKey, key)
-	if err != nil {
-		return nil, err
-	}
-	certPem := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: certDer})
-
-	keyDer, err := x509.MarshalPKCS8PrivateKey(key)
-	if err != nil {
-		return nil, err
-	}
-	keyPem := pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: keyDer})
-
-	serverCert, err := tls.X509KeyPair(certPem, keyPem)
-	if err != nil {
-		return nil, err
-	}
-	return credentials.NewTLS(&tls.Config{
-		MinVersion:   tls.VersionTLS13,
-		Certificates: []tls.Certificate{serverCert},
-	}), nil
+	return creds.NewCreds()
 }

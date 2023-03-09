@@ -17,6 +17,7 @@ package gnmi
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"fmt"
 	"io"
 	"log"
@@ -33,9 +34,11 @@ import (
 	"github.com/openconfig/lemming/gnmi/gnmiclient"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
+	"github.com/openconfig/lemming/internal/creds"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/local"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/encoding/prototext"
@@ -159,9 +162,9 @@ func toUpd(r *gpb.SubscribeResponse) []*upd {
 //
 // It returns the address it is listening on in the form hostname:port or any
 // errors encounted whilst setting it up.
-func startServer(s *Server) (string, error) {
+func startServer(s *Server, opts ...grpc.ServerOption) (string, error) {
 	// Start gNMI server.
-	srv := grpc.NewServer()
+	srv := grpc.NewServer(opts...)
 	gpb.RegisterGNMIServer(srv, s)
 	// Forward streaming updates to clients.
 	// Register listening port and start serving.
@@ -1242,5 +1245,31 @@ func TestSubscribeWithAuth(t *testing.T) {
 				t.Errorf("Subscribe() unexpected diff: %s", d)
 			}
 		})
+	}
+}
+
+func TestWithCreds(t *testing.T) {
+	creds, err := creds.NewCreds()
+	if err != nil {
+		t.Fatalf("cannot open test TLS credentials, %v", err)
+	}
+
+	gnmiServer, err := newServer(context.Background(), "local", true)
+	if err != nil {
+		t.Fatalf("cannot create server, got err: %v", err)
+	}
+	addr, err := startServer(gnmiServer, grpc.Creds(creds))
+	if err != nil {
+		t.Fatalf("cannot start server, got err: %v", err)
+	}
+
+	cctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if _, err := grpc.DialContext(cctx, addr,
+		grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+			InsecureSkipVerify: true,
+		})),
+		grpc.WithBlock()); err != nil {
+		t.Fatalf("cannot dial server with TLS credentials, err: %v", err)
 	}
 }
