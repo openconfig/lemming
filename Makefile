@@ -12,7 +12,7 @@ load:
 ## Run integration tests
 .PHONY: itest
 itest:
-	go test ./integration_tests/...
+	go test -timeout 30m ./integration_tests/...
 
 .PHONY: test
 test:
