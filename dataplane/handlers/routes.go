@@ -28,12 +28,11 @@ import (
 
 	log "github.com/golang/glog"
 	dpb "github.com/openconfig/lemming/proto/dataplane"
-	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
 type route struct {
-	w   *ygnmi.Watcher[*dpb.Route]
-	fwd fwdpb.ServiceClient
+	w *ygnmi.Watcher[*dpb.Route]
+	e *engine.Engine
 }
 
 // RouteQuery returns a ygnmi query for a route with the given prefix and vrf.
@@ -50,9 +49,9 @@ var (
 )
 
 // NewRoute returns a new route reconciler.
-func NewRoute(fwd fwdpb.ServiceClient) *reconciler.BuiltReconciler {
+func NewRoute(e *engine.Engine) *reconciler.BuiltReconciler {
 	r := &route{
-		fwd: fwd,
+		e: e,
 	}
 	return reconciler.NewBuilder("dataplane-routes").WithStart(r.start).Build()
 }
@@ -64,10 +63,6 @@ func (r *route) start(ctx context.Context, client *ygnmi.Client) error {
 		vrf, err := strconv.ParseUint(v.Path.Elem[2].Key["vrf"], 10, 64)
 		if err != nil {
 			log.Warningf("non-int vrf set in path: %v", err)
-			return ygnmi.Continue
-		}
-		if vrf != 0 {
-			log.Warningf("non-zero vrf")
 			return ygnmi.Continue
 		}
 
@@ -84,7 +79,7 @@ func (r *route) start(ctx context.Context, client *ygnmi.Client) error {
 		}
 
 		if !present {
-			if err := engine.DeleteIPRoute(ctx, r.fwd, isIPv4, ipNet.IP, ipNet.Mask); err != nil {
+			if err := r.e.DeleteIPRoute(ctx, isIPv4, ipNet.IP, ipNet.Mask, vrf); err != nil {
 				log.Warningf("failed to delete route: %v", err)
 				return ygnmi.Continue
 			}
@@ -94,7 +89,7 @@ func (r *route) start(ctx context.Context, client *ygnmi.Client) error {
 			log.Warningf("no next hops for route insert or update")
 			return ygnmi.Continue
 		}
-		if err := engine.AddIPRoute(ctx, r.fwd, isIPv4, ip, ipNet.Mask, route.GetNextHops()); err != nil {
+		if err := r.e.AddIPRoute(ctx, isIPv4, ip, ipNet.Mask, vrf, route.GetNextHops()); err != nil {
 			log.Warningf("failed to add route: %v", err)
 		}
 

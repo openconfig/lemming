@@ -33,13 +33,13 @@ Install gnmic: <https://gnmic.openconfig.net/>
 
 ```bash
 // SetRequest configuring hostname
-gnmic -a localhost:6030 --insecure -u foo -p bar --target fakedut set --update-path openconfig:/system/config/hostname --update-value rosesarered -e json_ietf
+gnmic -a localhost:9339 --insecure -u foo -p bar --target fakedut set --update-path openconfig:/system/config/hostname --update-value rosesarered -e json_ietf
 
 // SubscribeRequest/ONCE getting configured hostname
-gnmic -a localhost:6030 --insecure -u foo -p bar --target fakedut subscribe --mode once --path openconfig:/system/config/hostname
+gnmic -a localhost:9339 --insecure -u foo -p bar --target fakedut subscribe --mode once --path openconfig:/system/config/hostname
 
 // SubscribeRequest/ONCE getting hostname reflected as system state
-gnmic -a localhost:6030 --insecure -u foo -p bar --target fakedut subscribe --mode once --path openconfig:/system/state/hostname
+gnmic -a localhost:9339 --insecure -u foo -p bar --target fakedut subscribe --mode once --path openconfig:/system/state/hostname
 ```
 
 ## Running integration tests
@@ -48,11 +48,7 @@ Prerequisites:
 
 * [KNE](https://github.com/openconfig/kne) setup and cluster deployed
 
-Setup:
-
-* Deploy the operator: `kubectl apply -k operator/config/default`
-* Optional: Build and load lemming container from source: `make load`
-
 Deploy and Test:
 
+* Optional: Build and load lemming container from source: `make load`
 * Run integration tests: `go test ./integration_tests/...`

@@ -35,7 +35,8 @@ import (
 
 // Dataplane is an implementation of Dataplane HAL API.
 type Dataplane struct {
-	engine      *forwarding.Engine
+	fwdSrv      *forwarding.Engine
+	e           *engine.Engine
 	srv         *grpc.Server
 	lis         net.Listener
 	fwd         fwdpb.ServiceClient
@@ -45,7 +46,7 @@ type Dataplane struct {
 // New create a new dataplane instance.
 func New() (*Dataplane, error) {
 	data := &Dataplane{
-		engine: forwarding.New("engine"),
+		fwdSrv: forwarding.New("engine"),
 	}
 
 	lis, err := net.Listen("tcp", "127.0.0.1:0")
@@ -55,7 +56,7 @@ func New() (*Dataplane, error) {
 
 	data.lis = lis
 	srv := grpc.NewServer(grpc.Creds(local.NewCredentials()))
-	fwdpb.RegisterServiceServer(srv, data.engine)
+	fwdpb.RegisterServiceServer(srv, data.fwdSrv)
 	go srv.Serve(data.lis)
 
 	return data, nil
@@ -76,11 +77,14 @@ func (d *Dataplane) Start(ctx context.Context, c gpb.GNMIClient, target string) 
 	if err != nil {
 		return err
 	}
-	d.reconcilers = append(d.reconcilers, handlers.NewInterface(fc), handlers.NewRoute(fc))
 	d.fwd = fc
-	if err := engine.SetupForwardingTables(ctx, fc); err != nil {
-		return fmt.Errorf("failed to setup forwarding tables: %v", err)
+
+	d.e, err = engine.New(ctx, "default", fc)
+	if err != nil {
+		return err
 	}
+
+	d.reconcilers = append(d.reconcilers, handlers.NewInterface(d.e), handlers.NewRoute(d.e))
 
 	for _, rec := range d.reconcilers {
 		if err := rec.Start(ctx, c, target); err != nil {
