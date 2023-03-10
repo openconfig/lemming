@@ -42,6 +42,8 @@ jobs:
       - run: |
           # shellcheck disable=SC2046
           go test -v -coverprofile=profile.cov $(go list ./... | grep -v integration_test)
+      - run: |
+          make test-race
       - name: Test Operator
         run: |
           # shellcheck disable=SC2046

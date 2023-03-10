@@ -331,8 +331,6 @@ type Interface struct {
 // entry was found, a slice of strings which contains its tags, and an optional
 // error.
 func (sr *SysRIB) entryForCIDR(ni string, ip *net.IPNet) (bool, []*Route, error) {
-	sr.mu.RLock()
-	defer sr.mu.RUnlock()
 	rib, ok := sr.NI[ni]
 	if !ok {
 		return false, nil, fmt.Errorf("cannot find a RIB for network instance %s", ni)
@@ -392,7 +390,9 @@ func (sr *SysRIB) EgressInterface(inputNI string, ip *net.IPNet) ([]*Interface, 
 		inputNI = sr.defaultNI
 	}
 
+	sr.mu.RLock()
 	found, routes, err := sr.entryForCIDR(inputNI, ip)
+	sr.mu.RUnlock()
 	if err != nil {
 		return nil, fmt.Errorf("cannot lookup IP %s", ip)
 	}
@@ -424,7 +424,7 @@ func (sr *SysRIB) EgressInterface(inputNI string, ip *net.IPNet) ([]*Interface, 
 	return egressIfs, nil
 }
 
-// EgressNexthops returns the resolved nexthops for the input IP prefix. It
+// egressNexthops returns the resolved nexthops for the input IP prefix. It
 // also returns the top-level route (at this level) that was successfully
 // resolved (if any). This is useful for determining the properties of the
 // route that was ultimately resolved, for example its route preference and
@@ -432,7 +432,9 @@ func (sr *SysRIB) EgressInterface(inputNI string, ip *net.IPNet) ([]*Interface, 
 //
 // - inputNI is the network instance of the input prefix.
 // - interfaces is the set of known interface states on the device.
-func (sr *SysRIB) EgressNexthops(inputNI string, ip *net.IPNet, interfaces map[Interface]bool) (map[ResolvedNexthop]bool, *Route, error) {
+//
+// NOTE: sr.mu.RLock() must be called prior to calling this function.
+func (sr *SysRIB) egressNexthops(inputNI string, ip *net.IPNet, interfaces map[Interface]bool) (map[ResolvedNexthop]bool, *Route, error) {
 	// no RIB recursion currently
 	if inputNI == "" {
 		inputNI = sr.defaultNI
@@ -487,7 +489,7 @@ func (sr *SysRIB) EgressNexthops(inputNI string, ip *net.IPNet, interfaces map[I
 			if err != nil {
 				return nil, nil, err
 			}
-			recursiveNHs, _, err := sr.EgressNexthops(nh.NetworkInstance, nhop, interfaces)
+			recursiveNHs, _, err := sr.egressNexthops(nh.NetworkInstance, nhop, interfaces)
 			if err != nil {
 				return nil, nil, fmt.Errorf("for nexthop %s, can't resolve: %v", nh.Address, err)
 			}
