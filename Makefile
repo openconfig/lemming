@@ -12,7 +12,7 @@ load:
 ## Run integration tests
 .PHONY: itest
 itest:
-	set -e; go list ./integration_tests/... |  while read -r test ; do echo "Running test $$test"; go test -v -count 1 "$$test"; done
+	go test ./integration_tests/...
 
 .PHONY: test
 test:
