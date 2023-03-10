@@ -202,7 +202,7 @@ func TestReparse(t *testing.T) {
 	}
 
 	// Set the VRF of the packet.
-	vrf := []byte{0xff, 0x07}
+	vrf := []byte{0xff, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
 	updates := []packettestutil.FieldUpdate{
 		{
 			ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF, 0),
