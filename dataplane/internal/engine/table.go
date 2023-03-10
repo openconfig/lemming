@@ -65,6 +65,10 @@ func SetupForwardingTables(ctx context.Context, c fwdpb.ServiceClient) error {
 				Prefix: &fwdpb.PrefixTableDesc{
 					FieldIds: []*fwdpb.PacketFieldId{{
 						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF,
+						},
+					}, {
+						Field: &fwdpb.PacketField{
 							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST,
 						},
 					}},
@@ -84,6 +88,10 @@ func SetupForwardingTables(ctx context.Context, c fwdpb.ServiceClient) error {
 			Table: &fwdpb.TableDesc_Prefix{
 				Prefix: &fwdpb.PrefixTableDesc{
 					FieldIds: []*fwdpb.PacketFieldId{{
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF,
+						},
+					}, {
 						Field: &fwdpb.PacketField{
 							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST,
 						},
@@ -497,7 +505,7 @@ func nextHopToActions(nh *dpb.NextHop) []*fwdpb.ActionDesc {
 }
 
 // AddIPRoute adds a route to the FIB with the input next hops.
-func AddIPRoute(ctx context.Context, c fwdpb.ServiceClient, v4 bool, ip, mask []byte, nextHops []*dpb.NextHop) error {
+func AddIPRoute(ctx context.Context, c fwdpb.ServiceClient, v4 bool, ip, mask []byte, vrf uint64, nextHops []*dpb.NextHop) error {
 	fib := fibV6Table
 	if v4 {
 		fib = fibV4Table
@@ -544,6 +552,9 @@ func AddIPRoute(ctx context.Context, c fwdpb.ServiceClient, v4 bool, ip, mask []
 			Entry: &fwdpb.EntryDesc_Prefix{
 				Prefix: &fwdpb.PrefixEntryDesc{
 					Fields: []*fwdpb.PacketFieldMaskedBytes{{
+						FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF}},
+						Bytes:   binary.BigEndian.AppendUint64(nil, vrf),
+					}, {
 						FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST}},
 						Bytes:   ip,
 						Masks:   mask,
@@ -561,7 +572,7 @@ func AddIPRoute(ctx context.Context, c fwdpb.ServiceClient, v4 bool, ip, mask []
 }
 
 // DeleteIPRoute deletes a route from the FIB.
-func DeleteIPRoute(ctx context.Context, c fwdpb.ServiceClient, v4 bool, ip, mask []byte) error {
+func DeleteIPRoute(ctx context.Context, c fwdpb.ServiceClient, v4 bool, ip, mask []byte, vrf uint64) error {
 	fib := fibV6Table
 	if v4 {
 		fib = fibV4Table
@@ -573,6 +584,9 @@ func DeleteIPRoute(ctx context.Context, c fwdpb.ServiceClient, v4 bool, ip, mask
 			Entry: &fwdpb.EntryDesc_Prefix{
 				Prefix: &fwdpb.PrefixEntryDesc{
 					Fields: []*fwdpb.PacketFieldMaskedBytes{{
+						FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF}},
+						Bytes:   binary.BigEndian.AppendUint64(nil, vrf),
+					}, {
 						FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST}},
 						Bytes:   ip,
 						Masks:   mask,

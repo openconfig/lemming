@@ -66,10 +66,6 @@ func (r *route) start(ctx context.Context, client *ygnmi.Client) error {
 			log.Warningf("non-int vrf set in path: %v", err)
 			return ygnmi.Continue
 		}
-		if vrf != 0 {
-			log.Warningf("non-zero vrf")
-			return ygnmi.Continue
-		}
 
 		_, ipNet, err := net.ParseCIDR(prefix)
 		if err != nil {
@@ -84,7 +80,7 @@ func (r *route) start(ctx context.Context, client *ygnmi.Client) error {
 		}
 
 		if !present {
-			if err := engine.DeleteIPRoute(ctx, r.fwd, isIPv4, ipNet.IP, ipNet.Mask); err != nil {
+			if err := engine.DeleteIPRoute(ctx, r.fwd, isIPv4, ipNet.IP, ipNet.Mask, vrf); err != nil {
 				log.Warningf("failed to delete route: %v", err)
 				return ygnmi.Continue
 			}
@@ -94,7 +90,7 @@ func (r *route) start(ctx context.Context, client *ygnmi.Client) error {
 			log.Warningf("no next hops for route insert or update")
 			return ygnmi.Continue
 		}
-		if err := engine.AddIPRoute(ctx, r.fwd, isIPv4, ip, ipNet.Mask, route.GetNextHops()); err != nil {
+		if err := engine.AddIPRoute(ctx, r.fwd, isIPv4, ip, ipNet.Mask, vrf, route.GetNextHops()); err != nil {
 			log.Warningf("failed to add route: %v", err)
 		}
 
