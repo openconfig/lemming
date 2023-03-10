@@ -18,3 +18,9 @@ itest:
 test:
 	go test $(shell go list ./... | grep -v integration_test)
 	cd operator && go test ./... && cd ..
+
+.PHONY: test-race
+test-race:
+	# TODO: Fix race tests for lemming/gnmi and dataplane
+	go test -race $(shell go list ./... | grep -v integration_test$ | grep -v openconfig/lemming/dataplane | grep -v openconfig/lemming/gnmi$)
+	cd operator && go test -race ./... && cd ..

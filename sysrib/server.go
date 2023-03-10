@@ -620,7 +620,7 @@ func (s *Server) resolveAndProgramDiffAux(niName string, ni *NIRIB, prefix strin
 		log.Errorf("sysrib: %v", err)
 		return
 	}
-	nhs, route, err := s.rib.EgressNexthops(niName, pfx, s.interfaces)
+	nhs, route, err := s.rib.egressNexthops(niName, pfx, s.interfaces)
 	if err != nil {
 		log.Errorf("sysrib: %v", err)
 		return
