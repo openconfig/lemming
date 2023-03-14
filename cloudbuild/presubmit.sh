@@ -17,11 +17,18 @@
 set -xeE
 
 printf "\n  apiServerPort: 6443" >> /kne-internal/kind/kind-no-cni.yaml
+sed -i "s/name: kne/name: kne\n    recycle: true/g" /kne-internal/deploy/kne/kind-bridge.yaml
 
-kne deploy /kne-internal/deploy/kne/kind-bridge.yaml || true
+NAME="$(yq '.cluster.spec.name' < /kne-internal/deploy/kne/kind-bridge.yaml)"
+IMAGE="$(yq '.cluster.spec.image' < /kne-internal/deploy/kne/kind-bridge.yaml)"
+CONFIG="$(yq '.cluster.spec.config' < /kne-internal/deploy/kne/kind-bridge.yaml)"
+
+pushd /kne-internal/deploy/kne
+kind create cluster --name $NAME --config $CONFIG --image $IMAGE
 mkdir -p ~/.kube
-kind get kubeconfig --internal --name kne > ~/.kube/config
+kind get kubeconfig --internal --name $NAME > ~/.kube/config
 docker network connect kind "$(cat /etc/hostname)"
 
+popd
 kne deploy /kne-internal/deploy/kne/kind-bridge.yaml
 make itest
