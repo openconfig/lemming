@@ -16,13 +16,12 @@
 
 set -xeE
 
-printf "\n  apiServerPort: 6443" >> /kne-internal/kind/kind-no-cni.yaml
-sed -i "s/name: kne/name: kne\n    recycle: true/g" /kne-internal/deploy/kne/kind-bridge.yaml
+printf "\n  apiServerPort: 6443" >> ~/kne-internal/kind/kind-no-cni.yaml
 
-kne deploy /kne-internal/deploy/kne/kind-bridge.yaml || true
+kne deploy ~/kne-internal/deploy/kne/kind-bridge.yaml || true
 mkdir -p ~/.kube
 kind get kubeconfig --internal --name kne > ~/.kube/config
 docker network connect kind "$(cat /etc/hostname)"
 
-kne deploy /kne-internal/deploy/kne/kind-bridge.yaml
+kne deploy ~/kne-internal/deploy/kne/kind-bridge.yaml
 make itest
