@@ -24,7 +24,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"sync"
-	"text/template"
 	"time"
 
 	"github.com/google/uuid"
@@ -42,22 +41,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const config = `
-topology: {{  .Topology }}
-kubecfg: {{ .Kubeconfig }}
-cli: {{ .CLI }}
-username: {{ .Username }}
-password: {{ .Password }}
-`
-
-type configFields struct {
-	Topology   string
-	Kubeconfig string
-	CLI        string
-	Username   string
-	Password   string
-}
-
 var (
 	keep = flag.Bool("keep", false, "Keep topology deployed after test")
 )
@@ -72,16 +55,9 @@ func Get(topoDir string) func() (binding.Binding, error) {
 	flag.Set("testbed", testbedFile)
 
 	return func() (binding.Binding, error) {
-		fmt.Println("Checking for KNE CLI installation")
-		knePath, err := getKNECLIPath()
-		if err != nil {
-			return nil, err
-		}
+		flag.Set("topology", topoFile)
+		flag.Set("kubeconfig", os.ExpandEnv("$HOME/.kube/config"))
 
-		fmt.Println("Creating knebind config file")
-		if err := writeKNEBindCfg(knePath, topoFile); err != nil {
-			return nil, err
-		}
 		b, err := kinit.Init()
 		if err != nil {
 			return nil, err
@@ -198,39 +174,6 @@ func (lb *LemmingBind) Reserve(ctx context.Context, tb *proto.Testbed, runTime t
 
 	fmt.Println("Reserving KNE topology")
 	return lb.Binding.Reserve(ctx, tb, runTime, waitTime, partial)
-}
-
-func getKNECLIPath() (string, error) {
-	path, err := exec.LookPath("kne")
-	if err != nil {
-		return exec.LookPath("kne_cli")
-	}
-	return path, nil
-}
-
-func writeKNEBindCfg(knePath, topoFile string) error {
-	cf := &configFields{
-		Kubeconfig: os.ExpandEnv("$HOME/.kube/config"),
-		CLI:        knePath,
-		Username:   "fake",
-		Password:   "fake",
-		Topology:   topoFile,
-	}
-	tmpl, err := template.New("config").Parse(config)
-	if err != nil {
-		return fmt.Errorf("failed to parse template: %v", err)
-	}
-
-	f, err := os.CreateTemp("", "config")
-	if err != nil {
-		return fmt.Errorf("failed to create config file: %v", err)
-	}
-	defer f.Close()
-	if err := tmpl.Execute(f, cf); err != nil {
-		return fmt.Errorf("failed to execute template: %v", err)
-	}
-	flag.Set("config", f.Name())
-	return nil
 }
 
 func runAndStreamOutput(cmd *exec.Cmd) error {
