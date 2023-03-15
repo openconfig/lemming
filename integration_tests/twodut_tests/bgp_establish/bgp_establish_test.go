@@ -23,14 +23,14 @@ import (
 	"github.com/openconfig/lemming/gnmi/fakedevice"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
-	"github.com/openconfig/lemming/integration_tests/binding"
+	"github.com/openconfig/lemming/internal/binding"
 	"github.com/openconfig/ondatra"
 	"github.com/openconfig/ondatra/gnmi"
 	"github.com/openconfig/ygot/ygot"
 )
 
 func TestMain(m *testing.M) {
-	ondatra.RunTests(m, binding.Get("."))
+	ondatra.RunTests(m, binding.Get(".."))
 }
 
 // Settings for configuring the baseline testbed with the test

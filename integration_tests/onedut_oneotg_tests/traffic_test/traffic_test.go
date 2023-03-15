@@ -24,7 +24,7 @@ import (
 	"github.com/openconfig/gribigo/client"
 	"github.com/openconfig/gribigo/constants"
 	"github.com/openconfig/gribigo/fluent"
-	"github.com/openconfig/lemming/integration_tests/binding"
+	"github.com/openconfig/lemming/internal/binding"
 	"github.com/openconfig/ondatra"
 	"github.com/openconfig/ondatra/gnmi"
 	"github.com/openconfig/ondatra/gnmi/oc"
@@ -37,7 +37,7 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	ondatra.RunTests(m, binding.Get("."))
+	ondatra.RunTests(m, binding.Get(".."))
 }
 
 // Settings for configuring the baseline testbed with the test

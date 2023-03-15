@@ -21,13 +21,13 @@ import (
 	"time"
 
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
-	"github.com/openconfig/lemming/integration_tests/binding"
+	"github.com/openconfig/lemming/internal/binding"
 	"github.com/openconfig/ondatra"
 	"github.com/openconfig/ondatra/gnmi"
 )
 
 func TestMain(m *testing.M) {
-	ondatra.RunTests(m, binding.Get("."))
+	ondatra.RunTests(m, binding.Get(".."))
 }
 
 // TestHostname verifies that the hostname configuration paths can be read,
