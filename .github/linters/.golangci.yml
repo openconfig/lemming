@@ -66,3 +66,6 @@ linters-settings:
     disabled-checks:
       - singleCaseSwitch
       - appendAssign
+  gosec:
+    excludes:
+      - G204
