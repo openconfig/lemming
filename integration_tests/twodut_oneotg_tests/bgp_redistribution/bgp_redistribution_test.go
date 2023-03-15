@@ -27,7 +27,7 @@ import (
 	"github.com/openconfig/lemming/gnmi/fakedevice"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
-	"github.com/openconfig/lemming/integration_tests/binding"
+	"github.com/openconfig/lemming/internal/binding"
 	"github.com/openconfig/ondatra"
 	"github.com/openconfig/ondatra/gnmi"
 	"github.com/openconfig/ondatra/gnmi/otg/otgpath"
@@ -66,7 +66,7 @@ const (
 )
 
 func TestMain(m *testing.M) {
-	ondatra.RunTests(m, binding.Get("."))
+	ondatra.RunTests(m, binding.Get(".."))
 }
 
 // Attributes bundles some common attributes for devices and/or interfaces.

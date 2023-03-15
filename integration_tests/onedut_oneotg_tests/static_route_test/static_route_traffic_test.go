@@ -23,7 +23,7 @@ import (
 	"github.com/open-traffic-generator/snappi/gosnappi"
 	"github.com/openconfig/gribigo/fluent"
 	"github.com/openconfig/lemming/gnmi/fakedevice"
-	"github.com/openconfig/lemming/integration_tests/binding"
+	"github.com/openconfig/lemming/internal/binding"
 	"github.com/openconfig/ondatra"
 	"github.com/openconfig/ondatra/gnmi"
 	"github.com/openconfig/ondatra/gnmi/oc"
