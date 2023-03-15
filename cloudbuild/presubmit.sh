@@ -31,4 +31,4 @@ docker network connect kind "$(cat /etc/hostname)"
 
 popd
 kne deploy /kne-internal/deploy/kne/kind-bridge.yaml
-make itest
+go test -v ./integration_tests/onedut_tests/
