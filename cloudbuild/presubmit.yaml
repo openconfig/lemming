@@ -21,4 +21,5 @@ steps:
 timeout: 1800s
 
 options:
-  machineType: E2_HIGHCPU_8
+  pool:
+    name: 'projects/openconfig-lemming/locations/us-central1/workerPools/test-pool'

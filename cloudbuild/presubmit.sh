@@ -24,11 +24,13 @@ IMAGE="$(yq '.cluster.spec.image' < /kne-internal/deploy/kne/kind-bridge.yaml)"
 CONFIG="$(yq '.cluster.spec.config' < /kne-internal/deploy/kne/kind-bridge.yaml)"
 
 pushd /kne-internal/deploy/kne
+# kne deploy /kne-internal/deploy/kne/kind-bridge.yaml || true
 kind create cluster --name $NAME --config $CONFIG --image $IMAGE
 mkdir -p ~/.kube
 kind get kubeconfig --internal --name $NAME > ~/.kube/config
 docker network connect kind "$(cat /etc/hostname)"
 
 popd
+make load
 kne deploy /kne-internal/deploy/kne/kind-bridge.yaml
 go test -v ./integration_tests/onedut_tests/
