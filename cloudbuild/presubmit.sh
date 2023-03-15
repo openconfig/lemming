@@ -14,17 +14,23 @@
 # limitations under the License.
 
 
-set -xe
+set -xeE
 
-export PATH=${PATH}:/usr/local/go/bin
-gopath=$(go env GOPATH)
-export PATH=${PATH}:$gopath/bin
-curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-amd64 && \
-sudo install skaffold /usr/local/bin/
+printf "\n  apiServerPort: 6443" >> /kne-internal/kind/kind-no-cni.yaml
+sed -i "s/name: kne/name: kne\n    recycle: true/g" /kne-internal/deploy/kne/kind-bridge.yaml
 
-cd /tmp/workspace
-kne deploy ~/kne-internal/deploy/kne/kind-bridge.yaml
+NAME="$(yq '.cluster.spec.name' < /kne-internal/deploy/kne/kind-bridge.yaml)"
+IMAGE="$(yq '.cluster.spec.image' < /kne-internal/deploy/kne/kind-bridge.yaml)"
+CONFIG="$(yq '.cluster.spec.config' < /kne-internal/deploy/kne/kind-bridge.yaml)"
 
-skaffold run -m lemming-operator
+pushd /kne-internal/deploy/kne
+# kne deploy /kne-internal/deploy/kne/kind-bridge.yaml || true
+kind create cluster --name $NAME --config $CONFIG --image $IMAGE
+mkdir -p ~/.kube
+kind get kubeconfig --internal --name $NAME > ~/.kube/config
+docker network connect kind "$(cat /etc/hostname)"
+
+popd
 make load
-make itest
+kne deploy /kne-internal/deploy/kne/kind-bridge.yaml
+go test -v ./integration_tests/onedut_tests/
