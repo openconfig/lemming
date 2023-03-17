@@ -29,8 +29,8 @@ import (
 	"github.com/kentik/patricia"
 	"github.com/kentik/patricia/generics_tree"
 	"github.com/openconfig/gribigo/afthelper"
-	oc "github.com/openconfig/gribigo/ocrt"
 	"github.com/openconfig/lemming/gnmi/fakedevice"
+	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/ygot/ytypes"
 )
 
@@ -194,15 +194,19 @@ func (r *Route) String() string {
 }
 
 // NewSysRIB returns a SysRIB from an input parsed OpenConfig configuration.
-func NewSysRIB(cfg *oc.Device) (*SysRIB, error) {
+//
+// - initialCfg, if specified, will be used to populate connected routes into
+// the RIB manager. Note this is intended to be used for standalone device
+// testing.
+func NewSysRIB(initialCfg *oc.Root) (*SysRIB, error) {
 	sr := &SysRIB{
 		NI:            map[string]*NIRIB{},
 		GUEPoliciesV4: generics_tree.NewTreeV4[GUEPolicy](),
 		GUEPoliciesV6: generics_tree.NewTreeV6[GUEPolicy](),
 	}
 
-	if cfg != nil {
-		cr, err := connectedRoutesFromConfig(cfg)
+	if initialCfg != nil {
+		cr, err := connectedRoutesFromConfig(initialCfg)
 		if err != nil {
 			return nil, err
 		}
@@ -329,7 +333,7 @@ func NewRouteViaIF(pfx string, intf *Interface) *Route {
 
 // NewSysRIBFromJSON returns a new SysRIB from an RFC7951 marshalled JSON OpenConfig configuration.
 func NewSysRIBFromJSON(jsonCfg []byte) (*SysRIB, error) {
-	cfg := &oc.Device{}
+	cfg := &oc.Root{}
 	if err := oc.Unmarshal(jsonCfg, cfg); err != nil {
 		return nil, fmt.Errorf("cannot unmarshal JSON configuration, %v", err)
 	}
@@ -348,8 +352,6 @@ type Interface struct {
 // entry was found, a slice of strings which contains its tags, and an optional
 // error.
 func (sr *SysRIB) entryForCIDR(ni string, ip *net.IPNet) (bool, []*Route, error) {
-	sr.mu.RLock()
-	defer sr.mu.RUnlock()
 	rib, ok := sr.NI[ni]
 	if !ok {
 		return false, nil, fmt.Errorf("cannot find a RIB for network instance %s", ni)
@@ -409,7 +411,9 @@ func (sr *SysRIB) EgressInterface(inputNI string, ip *net.IPNet) ([]*Interface, 
 		inputNI = sr.defaultNI
 	}
 
+	sr.mu.RLock()
 	found, routes, err := sr.entryForCIDR(inputNI, ip)
+	sr.mu.RUnlock()
 	if err != nil {
 		return nil, fmt.Errorf("cannot lookup IP %s", ip)
 	}
@@ -441,7 +445,7 @@ func (sr *SysRIB) EgressInterface(inputNI string, ip *net.IPNet) ([]*Interface, 
 	return egressIfs, nil
 }
 
-// EgressNexthops returns the resolved nexthops for the input IP prefix. It
+// egressNexthops returns the resolved nexthops for the input IP prefix. It
 // also returns the top-level route (at this level) that was successfully
 // resolved (if any). This is useful for determining the properties of the
 // route that was ultimately resolved, for example its route preference and
@@ -449,7 +453,9 @@ func (sr *SysRIB) EgressInterface(inputNI string, ip *net.IPNet) ([]*Interface, 
 //
 // - inputNI is the network instance of the input prefix.
 // - interfaces is the set of known interface states on the device.
-func (sr *SysRIB) EgressNexthops(inputNI string, ip *net.IPNet, interfaces map[Interface]bool) (map[ResolvedNexthop]bool, *Route, error) {
+//
+// NOTE: sr.mu.RLock() must be called prior to calling this function.
+func (sr *SysRIB) egressNexthops(inputNI string, ip *net.IPNet, interfaces map[Interface]bool) (map[ResolvedNexthop]bool, *Route, error) {
 	// no RIB recursion currently
 	if inputNI == "" {
 		inputNI = sr.defaultNI
@@ -506,7 +512,7 @@ func (sr *SysRIB) EgressNexthops(inputNI string, ip *net.IPNet, interfaces map[I
 			if err != nil {
 				return nil, nil, err
 			}
-			recursiveNHs, _, err := sr.EgressNexthops(nh.NetworkInstance, nhop, interfaces)
+			recursiveNHs, _, err := sr.egressNexthops(nh.NetworkInstance, nhop, interfaces)
 			if err != nil {
 				return nil, nil, fmt.Errorf("for nexthop %s, can't resolve: %v", nh.Address, err)
 			}
@@ -572,7 +578,7 @@ type niConnected struct {
 // connectedRoutesFromConfig returns the set of 'connected' routes from the input configuration supplied.
 // Connected routes are defined to be those that are directly configured as a subnet to which the
 // system is attached.
-func connectedRoutesFromConfig(cfg *oc.Device) (map[string]*niConnected, error) {
+func connectedRoutesFromConfig(cfg *oc.Root) (map[string]*niConnected, error) {
 	// TODO(robjs): figure out where the reference that is referencing policy
 	// definitions is that has not yet been removed, improve ygot error message.
 	if err := cfg.Validate(&ytypes.LeafrefOptions{

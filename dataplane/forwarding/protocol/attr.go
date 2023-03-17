@@ -71,7 +71,7 @@ var FieldAttr = map[fwdpb.PacketFieldNum]struct {
 		Sizes: []int{SizeUint64},
 	},
 	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF: {
-		Sizes: []int{SizeUint16},
+		Sizes: []int{SizeUint64},
 	},
 	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_32: {
 		Sizes: []int{SizeUint32},

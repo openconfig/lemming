@@ -22,7 +22,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/openconfig/gribigo/afthelper"
-	oc "github.com/openconfig/gribigo/ocrt"
+	"github.com/openconfig/lemming/gnmi/fakedevice"
+	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/ygot/ygot"
 )
 
@@ -37,13 +38,13 @@ func mustCIDR(s string) net.IPNet {
 func TestRoutesFromConfig(t *testing.T) {
 	tests := []struct {
 		desc       string
-		inConfig   *oc.Device
+		inConfig   *oc.Root
 		wantRoutes map[string]*niConnected
 		wantErr    bool
 	}{{
 		desc: "only default NI with explicit interfaces",
-		inConfig: func() *oc.Device {
-			d := &oc.Device{}
+		inConfig: func() *oc.Root {
+			d := &oc.Root{}
 
 			dni := d.GetOrCreateNetworkInstance("DEFAULT")
 			dni.Type = oc.NetworkInstanceTypes_NETWORK_INSTANCE_TYPE_DEFAULT_INSTANCE
@@ -76,8 +77,8 @@ func TestRoutesFromConfig(t *testing.T) {
 		},
 	}, {
 		desc: "only default NI with implicit interfaces",
-		inConfig: func() *oc.Device {
-			d := &oc.Device{}
+		inConfig: func() *oc.Root {
+			d := &oc.Root{}
 			dni := d.GetOrCreateNetworkInstance("DEFAULT")
 			dni.Type = oc.NetworkInstanceTypes_NETWORK_INSTANCE_TYPE_DEFAULT_INSTANCE
 			d.GetOrCreateInterface("eth0").GetOrCreateSubinterface(0).GetOrCreateIpv4().GetOrCreateAddress("192.0.2.1").PrefixLength = ygot.Uint8(24)
@@ -105,8 +106,8 @@ func TestRoutesFromConfig(t *testing.T) {
 		},
 	}, {
 		desc: "non-default NI, with multiple routes",
-		inConfig: func() *oc.Device {
-			d := &oc.Device{}
+		inConfig: func() *oc.Root {
+			d := &oc.Root{}
 			dni := d.GetOrCreateNetworkInstance("DEFAULT")
 			dni.Type = oc.NetworkInstanceTypes_NETWORK_INSTANCE_TYPE_DEFAULT_INSTANCE
 			d.GetOrCreateInterface("eth0").GetOrCreateSubinterface(0).GetOrCreateIpv4().GetOrCreateAddress("192.0.2.1").PrefixLength = ygot.Uint8(24)
@@ -175,8 +176,8 @@ func TestRoutesFromConfig(t *testing.T) {
 		},
 	}, {
 		desc: "multiple default instances",
-		inConfig: func() *oc.Device {
-			d := &oc.Device{}
+		inConfig: func() *oc.Root {
+			d := &oc.Root{}
 			d.GetOrCreateNetworkInstance("one").Type = oc.NetworkInstanceTypes_NETWORK_INSTANCE_TYPE_DEFAULT_INSTANCE
 			d.GetOrCreateNetworkInstance("two").Type = oc.NetworkInstanceTypes_NETWORK_INSTANCE_TYPE_DEFAULT_INSTANCE
 			return d
@@ -184,16 +185,16 @@ func TestRoutesFromConfig(t *testing.T) {
 		wantErr: true,
 	}, {
 		desc: "invalid NI type",
-		inConfig: func() *oc.Device {
-			d := &oc.Device{}
+		inConfig: func() *oc.Root {
+			d := &oc.Root{}
 			d.GetOrCreateNetworkInstance("one").Type = oc.NetworkInstanceTypes_NETWORK_INSTANCE_TYPE_L2P2P
 			return d
 		}(),
 		wantErr: true,
 	}, {
 		desc: "skip if with no subif",
-		inConfig: func() *oc.Device {
-			d := &oc.Device{}
+		inConfig: func() *oc.Root {
+			d := &oc.Root{}
 			d.GetOrCreateNetworkInstance("D").Type = oc.NetworkInstanceTypes_NETWORK_INSTANCE_TYPE_DEFAULT_INSTANCE
 			d.GetOrCreateInterface("eth0")
 			return d
@@ -206,8 +207,8 @@ func TestRoutesFromConfig(t *testing.T) {
 		},
 	}, {
 		desc: "no default instance",
-		inConfig: func() *oc.Device {
-			d := &oc.Device{}
+		inConfig: func() *oc.Root {
+			d := &oc.Root{}
 			d.GetOrCreateInterface("eth0")
 			return d
 		}(),
@@ -230,7 +231,7 @@ func TestRoutesFromConfig(t *testing.T) {
 func TestEgressInterface(t *testing.T) {
 	tests := []struct {
 		desc  string
-		inCfg *oc.Device
+		inCfg *oc.Root
 		// keyed by network-instance
 		inAddRoutes   map[string][]*Route
 		inNI          string
@@ -239,8 +240,8 @@ func TestEgressInterface(t *testing.T) {
 		wantErr       bool
 	}{{
 		desc: "v4 single connected route",
-		inCfg: func() *oc.Device {
-			d := &oc.Device{}
+		inCfg: func() *oc.Root {
+			d := &oc.Root{}
 			d.GetOrCreateInterface("eth0").
 				GetOrCreateSubinterface(0).
 				GetOrCreateIpv4().
@@ -257,8 +258,8 @@ func TestEgressInterface(t *testing.T) {
 		},
 	}, {
 		desc: "v6 single connected route",
-		inCfg: func() *oc.Device {
-			d := &oc.Device{}
+		inCfg: func() *oc.Root {
+			d := &oc.Root{}
 			d.GetOrCreateInterface("eth0").
 				GetOrCreateSubinterface(0).
 				GetOrCreateIpv6().
@@ -275,8 +276,8 @@ func TestEgressInterface(t *testing.T) {
 		},
 	}, {
 		desc: "v4 connected and less specific",
-		inCfg: func() *oc.Device {
-			d := &oc.Device{}
+		inCfg: func() *oc.Root {
+			d := &oc.Root{}
 			d.GetOrCreateInterface("eth0").
 				GetOrCreateSubinterface(0).
 				GetOrCreateIpv4().
@@ -303,8 +304,8 @@ func TestEgressInterface(t *testing.T) {
 		},
 	}, {
 		desc: "v6 connected and less specific",
-		inCfg: func() *oc.Device {
-			d := &oc.Device{}
+		inCfg: func() *oc.Root {
+			d := &oc.Root{}
 			d.GetOrCreateInterface("eth0").
 				GetOrCreateSubinterface(0).
 				GetOrCreateIpv6().
@@ -331,8 +332,8 @@ func TestEgressInterface(t *testing.T) {
 		},
 	}, {
 		desc: "v4 ecmp",
-		inCfg: func() *oc.Device {
-			d := &oc.Device{}
+		inCfg: func() *oc.Root {
+			d := &oc.Root{}
 			d.GetOrCreateInterface("eth0").
 				GetOrCreateSubinterface(0).
 				GetOrCreateIpv4().
@@ -361,8 +362,8 @@ func TestEgressInterface(t *testing.T) {
 		},
 	}, {
 		desc: "v6 ecmp",
-		inCfg: func() *oc.Device {
-			d := &oc.Device{}
+		inCfg: func() *oc.Root {
+			d := &oc.Root{}
 			d.GetOrCreateInterface("eth0").
 				GetOrCreateSubinterface(0).
 				GetOrCreateIpv6().
@@ -391,8 +392,8 @@ func TestEgressInterface(t *testing.T) {
 		},
 	}, {
 		desc: "v4 recursive route onto connected route",
-		inCfg: func() *oc.Device {
-			d := &oc.Device{}
+		inCfg: func() *oc.Root {
+			d := &oc.Root{}
 			d.GetOrCreateInterface("eth0").
 				GetOrCreateSubinterface(0).
 				GetOrCreateIpv4().
@@ -418,8 +419,8 @@ func TestEgressInterface(t *testing.T) {
 		},
 	}, {
 		desc: "v6 recursive route onto connected route",
-		inCfg: func() *oc.Device {
-			d := &oc.Device{}
+		inCfg: func() *oc.Root {
+			d := &oc.Root{}
 			d.GetOrCreateInterface("eth0").
 				GetOrCreateSubinterface(0).
 				GetOrCreateIpv6().
@@ -445,8 +446,8 @@ func TestEgressInterface(t *testing.T) {
 		},
 	}, {
 		desc: "v6 recursive route onto connected v4 route",
-		inCfg: func() *oc.Device {
-			d := &oc.Device{}
+		inCfg: func() *oc.Root {
+			d := &oc.Root{}
 			d.GetOrCreateInterface("eth0").
 				GetOrCreateSubinterface(0).
 				GetOrCreateIpv4().
@@ -472,8 +473,8 @@ func TestEgressInterface(t *testing.T) {
 		},
 	}, {
 		desc: "v4 recursive route onto two connected route",
-		inCfg: func() *oc.Device {
-			d := &oc.Device{}
+		inCfg: func() *oc.Root {
+			d := &oc.Root{}
 			d.GetOrCreateInterface("eth0").
 				GetOrCreateSubinterface(0).
 				GetOrCreateIpv4().
@@ -508,8 +509,8 @@ func TestEgressInterface(t *testing.T) {
 		},
 	}, {
 		desc: "v6 recursive route onto two connected route",
-		inCfg: func() *oc.Device {
-			d := &oc.Device{}
+		inCfg: func() *oc.Root {
+			d := &oc.Root{}
 			d.GetOrCreateInterface("eth0").
 				GetOrCreateSubinterface(0).
 				GetOrCreateIpv6().
@@ -544,8 +545,8 @@ func TestEgressInterface(t *testing.T) {
 		},
 	}, {
 		desc: "v6 recursive route onto v4 and v6 connected routes",
-		inCfg: func() *oc.Device {
-			d := &oc.Device{}
+		inCfg: func() *oc.Root {
+			d := &oc.Root{}
 			d.GetOrCreateInterface("eth0").
 				GetOrCreateSubinterface(0).
 				GetOrCreateIpv4().
@@ -608,13 +609,9 @@ func TestEgressInterface(t *testing.T) {
 	}
 }
 
-var (
-	defaultNIName = "DEFAULT"
-)
-
-func baseCfg() *oc.Device {
-	d := &oc.Device{}
-	d.GetOrCreateNetworkInstance(defaultNIName).Type = oc.NetworkInstanceTypes_NETWORK_INSTANCE_TYPE_DEFAULT_INSTANCE
+func baseCfg() *oc.Root {
+	d := &oc.Root{}
+	d.GetOrCreateNetworkInstance(fakedevice.DefaultNetworkInstance).Type = oc.NetworkInstanceTypes_NETWORK_INSTANCE_TYPE_DEFAULT_INSTANCE
 	return d
 }
 
@@ -624,14 +621,14 @@ func baseCfg() *oc.Device {
 func TestAddRoute(t *testing.T) {
 	tests := []struct {
 		desc              string
-		inCfg             *oc.Device
+		inCfg             *oc.Root
 		inNetworkInstance string
 		inRoute           *Route
 		wantErr           bool
 	}{{
 		desc:              "v4 connected route, default NI",
 		inCfg:             baseCfg(),
-		inNetworkInstance: defaultNIName,
+		inNetworkInstance: fakedevice.DefaultNetworkInstance,
 		inRoute: &Route{
 			Prefix: "8.8.8.8/32",
 			Connected: &Interface{
@@ -642,23 +639,23 @@ func TestAddRoute(t *testing.T) {
 	}, {
 		desc:              "v4 next-hop route, default NI",
 		inCfg:             baseCfg(),
-		inNetworkInstance: defaultNIName,
+		inNetworkInstance: fakedevice.DefaultNetworkInstance,
 		inRoute: &Route{
 			Prefix: "2.0.0.0/8",
 			NextHops: []*afthelper.NextHopSummary{{
 				Weight:          32,
 				Address:         "1.1.1.1",
-				NetworkInstance: defaultNIName,
+				NetworkInstance: fakedevice.DefaultNetworkInstance,
 			}, {
 				Weight:          32,
 				Address:         "3.3.3.3",
-				NetworkInstance: defaultNIName,
+				NetworkInstance: fakedevice.DefaultNetworkInstance,
 			}},
 		},
 	}, {
 		desc:              "v6 connected route, default NI",
 		inCfg:             baseCfg(),
-		inNetworkInstance: defaultNIName,
+		inNetworkInstance: fakedevice.DefaultNetworkInstance,
 		inRoute: &Route{
 			Prefix: "2001::ab:cd:ef/42",
 			Connected: &Interface{
@@ -669,33 +666,33 @@ func TestAddRoute(t *testing.T) {
 	}, {
 		desc:              "v4 next-hop route, default NI",
 		inCfg:             baseCfg(),
-		inNetworkInstance: defaultNIName,
+		inNetworkInstance: fakedevice.DefaultNetworkInstance,
 		inRoute: &Route{
 			Prefix: "2.0.0.0/8",
 			NextHops: []*afthelper.NextHopSummary{{
 				Weight:          32,
 				Address:         "1.1.1.1",
-				NetworkInstance: defaultNIName,
+				NetworkInstance: fakedevice.DefaultNetworkInstance,
 			}, {
 				Weight:          32,
 				Address:         "3.3.3.3",
-				NetworkInstance: defaultNIName,
+				NetworkInstance: fakedevice.DefaultNetworkInstance,
 			}},
 		},
 	}, {
 		desc:              "v6 next-hop route, default NI",
 		inCfg:             baseCfg(),
-		inNetworkInstance: defaultNIName,
+		inNetworkInstance: fakedevice.DefaultNetworkInstance,
 		inRoute: &Route{
 			Prefix: "2023::ab:cd:ef/42",
 			NextHops: []*afthelper.NextHopSummary{{
 				Weight:          32,
 				Address:         "2222::ab:cd:ef/42",
-				NetworkInstance: defaultNIName,
+				NetworkInstance: fakedevice.DefaultNetworkInstance,
 			}, {
 				Weight:          32,
 				Address:         "2223::ab:cd:ef/42",
-				NetworkInstance: defaultNIName,
+				NetworkInstance: fakedevice.DefaultNetworkInstance,
 			}},
 		},
 	}}
@@ -740,7 +737,7 @@ func TestAddAndDeleteRoute(t *testing.T) {
 			}
 
 			// Add a new route
-			if added, err := s.AddRoute(defaultNIName, &Route{
+			if added, err := s.AddRoute(fakedevice.DefaultNetworkInstance, &Route{
 				Prefix: tt.prefix1,
 				Connected: &Interface{
 					Name:         "eth0",
@@ -753,7 +750,7 @@ func TestAddAndDeleteRoute(t *testing.T) {
 			}
 
 			// Add a duplicate route
-			if added, err := s.AddRoute(defaultNIName, &Route{
+			if added, err := s.AddRoute(fakedevice.DefaultNetworkInstance, &Route{
 				Prefix: tt.prefix1,
 				Connected: &Interface{
 					Name:         "eth0",
@@ -767,16 +764,16 @@ func TestAddAndDeleteRoute(t *testing.T) {
 
 			var gotTags int
 			if tt.v4 {
-				gotTags = s.NI[defaultNIName].IPV4.CountTags()
+				gotTags = s.NI[fakedevice.DefaultNetworkInstance].IPV4.CountTags()
 			} else {
-				gotTags = s.NI[defaultNIName].IPV6.CountTags()
+				gotTags = s.NI[fakedevice.DefaultNetworkInstance].IPV6.CountTags()
 			}
 			if got, want := gotTags, 1; got != want {
 				t.Errorf("got %d tags, want %d", got, want)
 			}
 
 			// Add a new route
-			if added, err := s.AddRoute(defaultNIName, &Route{
+			if added, err := s.AddRoute(fakedevice.DefaultNetworkInstance, &Route{
 				Prefix: tt.prefix2,
 				Connected: &Interface{
 					Name:         "eth0",
@@ -789,9 +786,9 @@ func TestAddAndDeleteRoute(t *testing.T) {
 			}
 
 			if tt.v4 {
-				gotTags = s.NI[defaultNIName].IPV4.CountTags()
+				gotTags = s.NI[fakedevice.DefaultNetworkInstance].IPV4.CountTags()
 			} else {
-				gotTags = s.NI[defaultNIName].IPV6.CountTags()
+				gotTags = s.NI[fakedevice.DefaultNetworkInstance].IPV6.CountTags()
 			}
 			if got, want := gotTags, 2; got != want {
 				t.Errorf("got %d tags, want %d", got, want)

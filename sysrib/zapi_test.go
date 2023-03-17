@@ -71,7 +71,7 @@ func Dial() (net.Conn, error) {
 
 func ZAPIServerStart(t *testing.T) *ZServer {
 	t.Helper()
-	sysribServer, err := New()
+	sysribServer, err := New(nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -235,13 +235,13 @@ func testRouteRedistribution(t *testing.T, routeReadyBeforeDial bool) {
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
 			dp := NewFakeDataplane()
-			s, err := New()
+			s, err := New(nil)
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			grpcServer := grpc.NewServer()
-			gnmiServer, err := gnmi.New(grpcServer, "local")
+			gnmiServer, err := gnmi.New(grpcServer, "local", nil)
 			if err != nil {
 				t.Fatal(err)
 			}

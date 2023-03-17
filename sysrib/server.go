@@ -132,8 +132,8 @@ func (d *Dataplane) ProgramRoute(r *ResolvedRoute) error {
 // New instantiates server to handle client queries.
 //
 // If dp is nil, then a connection attempt is made.
-func New() (*Server, error) {
-	rib, err := NewSysRIB(nil)
+func New(cfg *oc.Root) (*Server, error) {
+	rib, err := NewSysRIB(cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -618,7 +618,7 @@ func (s *Server) resolveAndProgramDiffAux(niName string, ni *NIRIB, prefix strin
 		log.Errorf("sysrib: %v", err)
 		return
 	}
-	nhs, route, err := s.rib.EgressNexthops(niName, pfx, s.interfaces)
+	nhs, route, err := s.rib.egressNexthops(niName, pfx, s.interfaces)
 	if err != nil {
 		log.Errorf("sysrib: %v", err)
 		return

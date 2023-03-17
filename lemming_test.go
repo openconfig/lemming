@@ -16,7 +16,6 @@ package lemming
 
 import (
 	"context"
-	"net"
 	"testing"
 
 	"github.com/h-fam/errdiff"
@@ -26,6 +25,7 @@ import (
 
 	// gNMI
 	gnmipb "github.com/openconfig/gnmi/proto/gnmi"
+
 	// gNOI
 	bpb "github.com/openconfig/gnoi/bgp"
 	cmpb "github.com/openconfig/gnoi/cert"
@@ -51,7 +51,7 @@ import (
 func TestFakeGNMI(t *testing.T) {
 	f := startLemming(t)
 	defer f.Stop()
-	conn, err := grpc.Dial(f.Addr(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.Dial(f.GNMIAddr(), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		t.Fatalf("failed to Dial fake: %v", err)
 	}
@@ -86,7 +86,7 @@ func TestFakeGNMI(t *testing.T) {
 
 func TestStop(t *testing.T) {
 	f := startLemming(t)
-	conn, err := grpc.Dial(f.Addr(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.Dial(f.GNMIAddr(), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		t.Fatalf("failed to Dial fake: %v", err)
 	}
@@ -111,7 +111,7 @@ func TestStop(t *testing.T) {
 	f.gnmiServer.GetResponses = []interface{}{want}
 	cGNMI := gnmipb.NewGNMIClient(conn)
 	// Close the listener so the get must fail.
-	f.lis.Close()
+	f.GNMIListener().Close()
 	_, err = cGNMI.Get(context.Background(), &gnmipb.GetRequest{})
 	if err == nil {
 		t.Fatalf("gnmi.Get unexpected success")
@@ -125,7 +125,7 @@ func TestStop(t *testing.T) {
 func TestFakeGNOI(t *testing.T) {
 	f := startLemming(t)
 	defer f.stop()
-	conn, err := grpc.Dial(f.Addr(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.Dial(f.GNMIAddr(), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		t.Fatalf("failed to Dial fake: %v", err)
 	}
@@ -320,12 +320,8 @@ func TestGNSI(t *testing.T) {
 }
 */
 
-func startLemming(t *testing.T) *Device {
-	lis, err := net.Listen("tcp", ":0")
-	if err != nil {
-		t.Fatalf("Failed to start listener: %v", err)
-	}
-	f, err := New(lis, "fakedevice", "unix:/tmp/zserv.api")
+func startLemming(t *testing.T, opts ...Option) *Device {
+	f, err := New("fakedevice", "unix:/tmp/zserv.api", opts...)
 	if err != nil {
 		t.Fatalf("Failed to start lemming: %v", err)
 	}

@@ -23,8 +23,11 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-// SetInterfaceHWAddr sets the MAC address of a network interface.
-func SetInterfaceHWAddr(name string, addr string) error {
+// Interfaces contains methods for modifying networking interfaces.
+type Interfaces struct{}
+
+// SetHWAddr sets the MAC address of a network interface.
+func (k *Interfaces) SetHWAddr(name string, addr string) error {
 	link, err := netlink.LinkByName(name)
 	if err != nil {
 		return fmt.Errorf("failed to get interface: %w", err)
@@ -39,8 +42,8 @@ func SetInterfaceHWAddr(name string, addr string) error {
 	return nil
 }
 
-// SetInterfaceIP sets the IP addresses of a network interface.
-func SetInterfaceIP(name string, ip string, prefixLen int) error {
+// ReplaceIP sets the IP addresses of a network interface.
+func (k *Interfaces) ReplaceIP(name string, ip string, prefixLen int) error {
 	link, err := netlink.LinkByName(name)
 	if err != nil {
 		return fmt.Errorf("failed to get interface: %w", err)
@@ -60,8 +63,8 @@ func SetInterfaceIP(name string, ip string, prefixLen int) error {
 	return nil
 }
 
-// DeleteInterfaceIP delete an IP addresses from a network interface.
-func DeleteInterfaceIP(name string, ip string, prefixLen int) error {
+// DeleteIP delete an IP addresses from a network interface.
+func (k *Interfaces) DeleteIP(name string, ip string, prefixLen int) error {
 	link, err := netlink.LinkByName(name)
 	if err != nil {
 		return fmt.Errorf("failed to get interface: %w", err)
@@ -81,8 +84,8 @@ func DeleteInterfaceIP(name string, ip string, prefixLen int) error {
 	return nil
 }
 
-// SetInterfaceState sets a links up or down.
-func SetInterfaceState(name string, up bool) error {
+// SetState sets a links up or down.
+func (k *Interfaces) SetState(name string, up bool) error {
 	link, err := netlink.LinkByName(name)
 	if err != nil {
 		return fmt.Errorf("failed to get interface: %w", err)
@@ -94,7 +97,7 @@ func SetInterfaceState(name string, up bool) error {
 }
 
 // CreateTAP creates kernel TAP interface.
-func CreateTAP(name string) (int, error) {
+func (k *Interfaces) CreateTAP(name string) (int, error) {
 	fd, err := unix.Open("/dev/net/tun", unix.O_RDWR, 0)
 	if err != nil {
 		return 0, fmt.Errorf("failed to open tun file: %w", err)
@@ -108,4 +111,29 @@ func CreateTAP(name string) (int, error) {
 		return 0, fmt.Errorf("failed to do ioctl: %v", err)
 	}
 	return fd, nil
+}
+
+// GetAll returns all interfaces.
+func (k *Interfaces) GetAll() ([]net.Interface, error) {
+	return net.Interfaces()
+}
+
+// GetByName returns all interfaces.
+func (k *Interfaces) GetByName(name string) (*net.Interface, error) {
+	return net.InterfaceByName(name)
+}
+
+// LinkSubscribe subscribes to link status for all interfaces.
+func (k *Interfaces) LinkSubscribe(ch chan<- netlink.LinkUpdate, done <-chan struct{}) error {
+	return netlink.LinkSubscribe(ch, done)
+}
+
+// AddrSubscribe subscribes to address changes for all interfaces.
+func (k *Interfaces) AddrSubscribe(ch chan<- netlink.AddrUpdate, done <-chan struct{}) error {
+	return netlink.AddrSubscribe(ch, done)
+}
+
+// NeighSubscribe subscribes to neighbor table updates.
+func (k *Interfaces) NeighSubscribe(ch chan<- netlink.NeighUpdate, done <-chan struct{}) error {
+	return netlink.NeighSubscribe(ch, done)
 }

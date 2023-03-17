@@ -21,43 +21,38 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"flag"
-	"fmt"
 	"math/big"
-	"net"
 
 	log "github.com/golang/glog"
 	"github.com/openconfig/lemming"
 	"github.com/openconfig/lemming/sysrib"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
 var (
-	port   = pflag.Int("port", 6030, "localhost port to listen to.")
-	target = pflag.String("target", "fakedut", "name of the fake target")
-	// nolint:unused,varcheck
-	enableDataplane = pflag.Bool("enable_dataplane", false, "Controls whether to enable dataplane")
-	enableTLS       = pflag.Bool("enable_tls", false, "Controls whether to enable TLS for gNXI services. If enabled and TLS key/cert path unspecified, a generated cert is used.")
+	gnmiAddr  = flag.String("gnmi", ":9339", "gNMI listen address")
+	gribiAddr = flag.String("gribi", ":9340", "gRIBI listen address")
+	target    = pflag.String("target", "fakedut", "name of the fake target")
+	enableTLS = pflag.Bool("enable_tls", false, "Controls whether to enable TLS for gNXI services. If enabled and TLS key/cert path unspecified, a generated cert is used.")
+	zapiAddr  = pflag.String("zapi_addr", sysrib.ZAPIAddr, "Custom ZAPI address: use unix:/tmp/zserv.api for a temp.")
 )
 
 func main() {
+	pflag.Bool("enable_dataplane", false, "Controls whether to enable dataplane")
+
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
 	pflag.Parse()
 	viper.BindPFlags(pflag.CommandLine)
 
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
-	if err != nil {
-		log.Fatalf("Failed to start listener: %v", err)
-	}
 	creds, err := newCreds()
 	if err != nil {
 		log.Fatalf("failed to create credentials: %v", err)
 	}
 
-	f, err := lemming.New(lis, *target, sysrib.ZAPIAddr, grpc.Creds(creds))
+	f, err := lemming.New(*target, *zapiAddr, lemming.WithTransportCreds(creds), lemming.WithGRIBIAddr(*gribiAddr), lemming.WithGNMIAddr(*gnmiAddr))
 	if err != nil {
 		log.Fatalf("Failed to start lemming: %v", err)
 	}

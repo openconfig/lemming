@@ -23,11 +23,23 @@ tool for consensus in the device-implementor <-> device-consumer relationship.
 ## Running the Fake gNMI Server
 
 ```bash
-go run cmd/lemming/lemming.go
+go run ./cmd/lemming --zapi_addr unix:/tmp/zserv.api --alsologtostderr
 ```
 
+Wait for the message "lemming initialization complete".  
+This might take a minute the first time to compile the large generated code.
+
+Install gnmic: <https://gnmic.openconfig.net/>
+
 ```bash
-gnmic -a localhost:6030 --insecure subscribe --mode stream --path openconfig:/system/state/current-datetime -u foo -p bar --target fakedut
+// SetRequest configuring hostname
+gnmic -a localhost:9339 --insecure -u foo -p bar --target fakedut set --update-path openconfig:/system/config/hostname --update-value rosesarered -e json_ietf
+
+// SubscribeRequest/ONCE getting configured hostname
+gnmic -a localhost:9339 --insecure -u foo -p bar --target fakedut subscribe --mode once --path openconfig:/system/config/hostname
+
+// SubscribeRequest/ONCE getting hostname reflected as system state
+gnmic -a localhost:9339 --insecure -u foo -p bar --target fakedut subscribe --mode once --path openconfig:/system/state/hostname
 ```
 
 ## Running integration tests
@@ -36,11 +48,7 @@ Prerequisites:
 
 * [KNE](https://github.com/openconfig/kne) setup and cluster deployed
 
-Setup:
-
-* Deploy the operator: `kubectl apply -k operator/config/default`
-* Optional: Build and load lemming container from source: `make load`
-
 Deploy and Test:
 
+* Optional: Build and load lemming container from source: `make load`
 * Run integration tests: `go test ./integration_tests/...`

@@ -43,19 +43,34 @@ type Interface struct {
 	c *ygnmi.Client
 	// closers functions should all be invoked when the interface handler stops running.
 	closers []func()
-	fwd     fwdpb.ServiceClient
+	e       *engine.Engine
 	stateMu sync.RWMutex
 	// state keeps track of the applied state of the device's interfaces so that we do not issue duplicate configuration commands to the device's interfaces.
 	state     map[string]*oc.Interface
 	idxToName map[int]string
+	ifaceMgr  interfaceManager
+}
+
+type interfaceManager interface {
+	SetHWAddr(name string, addr string) error
+	SetState(name string, up bool) error
+	ReplaceIP(name string, ip string, prefixLen int) error
+	DeleteIP(name string, ip string, prefixLen int) error
+	GetAll() ([]net.Interface, error)
+	GetByName(name string) (*net.Interface, error)
+	CreateTAP(name string) (int, error)
+	LinkSubscribe(ch chan<- netlink.LinkUpdate, done <-chan struct{}) error
+	AddrSubscribe(ch chan<- netlink.AddrUpdate, done <-chan struct{}) error
+	NeighSubscribe(ch chan<- netlink.NeighUpdate, done <-chan struct{}) error
 }
 
 // NewInterface creates a new interface handler.
-func NewInterface(fwd fwdpb.ServiceClient) *reconciler.BuiltReconciler {
+func NewInterface(e *engine.Engine) *reconciler.BuiltReconciler {
 	i := &Interface{
-		fwd:       fwd,
+		e:         e,
 		idxToName: map[int]string{},
 		state:     map[string]*oc.Interface{},
+		ifaceMgr:  &kernel.Interfaces{},
 	}
 	return reconciler.NewBuilder("interface").WithStart(i.start).WithStop(i.stop).Build()
 }
@@ -105,13 +120,13 @@ func (ni *Interface) start(ctx context.Context, client *ygnmi.Client) error {
 		close(neighDoneCh)
 	}, cancelFn)
 
-	if err := netlink.LinkSubscribe(linkUpdateCh, linkDoneCh); err != nil {
+	if err := ni.ifaceMgr.LinkSubscribe(linkUpdateCh, linkDoneCh); err != nil {
 		return fmt.Errorf("failed to sub to link: %v", err)
 	}
-	if err := netlink.AddrSubscribe(addrUpdateCh, addrDoneCh); err != nil {
+	if err := ni.ifaceMgr.AddrSubscribe(addrUpdateCh, addrDoneCh); err != nil {
 		return fmt.Errorf("failed to sub to addr: %v", err)
 	}
-	if err := netlink.NeighSubscribe(neighUpdateCh, addrDoneCh); err != nil {
+	if err := ni.ifaceMgr.NeighSubscribe(neighUpdateCh, addrDoneCh); err != nil {
 		return fmt.Errorf("failed to sub to neighbor: %v", err)
 	}
 
@@ -172,10 +187,7 @@ func (ni *Interface) startCounterUpdates(ctx context.Context) {
 			}
 			ni.stateMu.RUnlock()
 			for _, intfName := range intfNames {
-				countersReply, err := ni.fwd.ObjectCounters(ctx, &fwdpb.ObjectCountersRequest{
-					ObjectId:  &fwdpb.ObjectId{Id: intfName},
-					ContextId: &fwdpb.ContextId{Id: engine.DefaultContextID},
-				})
+				countersReply, err := ni.e.GetCounters(ctx, intfName)
 				log.V(2).Infof("querying counters for interface %q, got %v", intfName, countersReply)
 				if err != nil {
 					log.Errorf("interface handler: could not retrieve counter for interface %q", intfName)
@@ -210,7 +222,7 @@ func (ni *Interface) reconcile(config *oc.Interface) {
 	if config.GetOrCreateEthernet().MacAddress != nil {
 		if config.GetEthernet().GetMacAddress() != state.GetEthernet().GetMacAddress() {
 			log.V(1).Infof("setting interface %s hw-addr %q", tapName, config.GetEthernet().GetMacAddress())
-			if err := kernel.SetInterfaceHWAddr(config.GetName(), config.GetEthernet().GetMacAddress()); err != nil {
+			if err := ni.ifaceMgr.SetHWAddr(config.GetName(), config.GetEthernet().GetMacAddress()); err != nil {
 				log.Warningf("Failed to set mac address of port: %v", err)
 			}
 		}
@@ -219,7 +231,7 @@ func (ni *Interface) reconcile(config *oc.Interface) {
 		// https://openconfig.net/projects/models/schemadocs/yangdoc/openconfig-interfaces.html#interfaces-interface-ethernet-state-mac-address
 		if state.GetEthernet().GetHwMacAddress() != state.GetEthernet().GetMacAddress() {
 			log.V(1).Infof("resetting interface %s hw-addr %q", tapName, state.GetEthernet().GetHwMacAddress())
-			if err := kernel.SetInterfaceHWAddr(config.GetName(), state.GetEthernet().GetHwMacAddress()); err != nil {
+			if err := ni.ifaceMgr.SetHWAddr(config.GetName(), state.GetEthernet().GetHwMacAddress()); err != nil {
 				log.Warningf("Failed to set mac address of port: %v", err)
 			}
 		}
@@ -228,7 +240,7 @@ func (ni *Interface) reconcile(config *oc.Interface) {
 	if config.GetOrCreateSubinterface(0).Enabled != nil {
 		if state.GetOrCreateSubinterface(0).Enabled == nil || config.GetSubinterface(0).GetEnabled() != state.GetSubinterface(0).GetEnabled() {
 			log.V(1).Infof("setting interface %s enabled %t", tapName, config.GetSubinterface(0).GetEnabled())
-			if err := kernel.SetInterfaceState(tapName, config.GetSubinterface(0).GetEnabled()); err != nil {
+			if err := ni.ifaceMgr.SetState(tapName, config.GetSubinterface(0).GetEnabled()); err != nil {
 				log.Warningf("Failed to set state address of port: %v", err)
 			}
 		}
@@ -293,7 +305,7 @@ func (ni *Interface) reconcile(config *oc.Interface) {
 		if (pair.stateIP != nil && pair.statePL != nil) && (pair.cfgIP == nil && pair.cfgPL == nil) {
 			log.V(1).Infof("Delete Config IP: %v, Config PL: %v. State IP: %v, State PL: %v", pair.cfgIP, pair.cfgPL, *pair.stateIP, *pair.statePL)
 			log.V(2).Infof("deleting interface %s ip %s/%d", tapName, *pair.stateIP, *pair.statePL)
-			if err := kernel.DeleteInterfaceIP(tapName, *pair.stateIP, int(*pair.statePL)); err != nil {
+			if err := ni.ifaceMgr.DeleteIP(tapName, *pair.stateIP, int(*pair.statePL)); err != nil {
 				log.Warningf("Failed to set ip address of port: %v", err)
 			}
 		}
@@ -301,7 +313,7 @@ func (ni *Interface) reconcile(config *oc.Interface) {
 		if (pair.cfgIP != nil && pair.cfgPL != nil) && (pair.stateIP == nil || *pair.statePL != *pair.cfgPL) {
 			log.V(1).Infof("Set Config IP: %v, Config PL: %v. State IP: %v, State PL: %v", *pair.cfgIP, *pair.cfgPL, pair.stateIP, pair.statePL)
 			log.V(2).Infof("setting interface %s ip %s/%d", tapName, *pair.cfgIP, *pair.cfgPL)
-			if err := kernel.SetInterfaceIP(tapName, *pair.cfgIP, int(*pair.cfgPL)); err != nil {
+			if err := ni.ifaceMgr.ReplaceIP(tapName, *pair.cfgIP, int(*pair.cfgPL)); err != nil {
 				log.Warningf("Failed to set ip address of port: %v", err)
 			}
 		}
@@ -331,7 +343,7 @@ func (ni *Interface) handleLinkUpdate(ctx context.Context, lu *netlink.LinkUpdat
 
 	modelName := engine.TapNameToIntfName(lu.Attrs().Name)
 	iface := ni.getOrCreateInterface(modelName)
-	if err := engine.UpdatePortSrcMAC(ctx, ni.fwd, modelName, lu.Attrs().HardwareAddr); err != nil {
+	if err := ni.e.UpdatePortSrcMAC(ctx, modelName, lu.Attrs().HardwareAddr); err != nil {
 		log.Warningf("failed to update src mac: %v", err)
 	}
 	iface.GetOrCreateEthernet().MacAddress = ygot.String(lu.Attrs().HardwareAddr.String())
@@ -395,7 +407,7 @@ func (ni *Interface) handleAddrUpdate(ctx context.Context, au *netlink.AddrUpdat
 			gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv6().Address(ip).PrefixLength().State(), uint8(pl))
 		}
 		// Forward all packets destined to this interface to the corresponding TAP interface.
-		if err := engine.AddLayer3PuntRule(ctx, ni.fwd, modelName, ipBytes); err != nil {
+		if err := ni.e.AddLayer3PuntRule(ctx, modelName, ipBytes); err != nil {
 			log.Warningf("failed to add layer3 punt rule: %v", err)
 		}
 	} else {
@@ -428,7 +440,7 @@ func (ni *Interface) handleNeighborUpdate(ctx context.Context, nu *netlink.Neigh
 
 	switch nu.Type {
 	case unix.RTM_DELNEIGH:
-		if err := engine.RemoveNeighbor(ctx, ni.fwd, ipToBytes(nu.IP)); err != nil {
+		if err := ni.e.RemoveNeighbor(ctx, ipToBytes(nu.IP)); err != nil {
 			log.Warningf("failed to add neighbor to dataplane: %v", err)
 			return
 		}
@@ -444,7 +456,7 @@ func (ni *Interface) handleNeighborUpdate(ctx context.Context, nu *netlink.Neigh
 			log.Info("skipping neighbor update with no hwaddr")
 			return
 		}
-		if err := engine.AddNeighbor(ctx, ni.fwd, ipToBytes(nu.IP), nu.HardwareAddr); err != nil {
+		if err := ni.e.AddNeighbor(ctx, ipToBytes(nu.IP), nu.HardwareAddr); err != nil {
 			log.Warningf("failed to add neighbor to dataplane: %v", err)
 			return
 		}
@@ -482,7 +494,7 @@ func (ni *Interface) handleNeighborUpdate(ctx context.Context, nu *netlink.Neigh
 
 // setupPorts creates the dataplane ports and TAP interfaces for all interfaces on the device.
 func (ni *Interface) setupPorts(ctx context.Context) error {
-	ifs, err := net.Interfaces()
+	ifs, err := ni.ifaceMgr.GetAll()
 	if err != nil {
 		return err
 	}
@@ -491,27 +503,27 @@ func (ni *Interface) setupPorts(ctx context.Context) error {
 		if i.Name == "lo" || i.Name == "eth0" || engine.IsTap(i.Name) {
 			continue
 		}
-		fd, err := kernel.CreateTAP(engine.IntfNameToTapName(i.Name))
+		fd, err := ni.ifaceMgr.CreateTAP(engine.IntfNameToTapName(i.Name))
 		if err != nil {
 			return fmt.Errorf("failed to create tap port %q: %w", engine.IntfNameToTapName(i.Name), err)
 		}
-		tap, err := net.InterfaceByName(engine.IntfNameToTapName(i.Name))
+		tap, err := ni.ifaceMgr.GetByName(engine.IntfNameToTapName(i.Name))
 		if err != nil {
 			return fmt.Errorf("failed to find tap interface %q: %w", engine.IntfNameToTapName(i.Name), err)
 		}
 		ni.idxToName[i.Index] = i.Name
 		ni.idxToName[tap.Index] = tap.Name
-		if err := engine.CreateLocalPort(ctx, ni.fwd, tap.Name, fd); err != nil {
+		if err := ni.e.CreateLocalPort(ctx, tap.Name, fd); err != nil {
 			return fmt.Errorf("failed to create internal port %q: %w", tap.Name, err)
 		}
-		if err := engine.CreateExternalPort(ctx, ni.fwd, i.Name); err != nil {
+		if err := ni.e.CreateExternalPort(ctx, i.Name); err != nil {
 			return fmt.Errorf("failed to create external port %q: %w", i.Name, err)
 		}
 		// Make port only reply to IPs it have
 		if err := os.WriteFile(fmt.Sprintf("/proc/sys/net/ipv4/conf/%s/arp_ignore", i.Name), []byte("2"), 0600); err != nil {
 			return fmt.Errorf("failed to set arp_ignore to 2: %v", err)
 		}
-		if err := engine.UpdatePortSrcMAC(ctx, ni.fwd, i.Name, tap.HardwareAddr); err != nil {
+		if err := ni.e.UpdatePortSrcMAC(ctx, i.Name, tap.HardwareAddr); err != nil {
 			return fmt.Errorf("failed to update MAC address for port %q: %w", i.Name, err)
 		}
 		ni.getOrCreateInterface(i.Name).GetOrCreateEthernet().SetHwMacAddress(tap.HardwareAddr.String())

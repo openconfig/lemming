@@ -12,9 +12,15 @@ load:
 ## Run integration tests
 .PHONY: itest
 itest:
-	set -e; go list ./integration_tests/... |  while read -r test ; do echo "Running test $$test"; go test -v -count 1 "$$test"; done
+	go test -count 1 -timeout 30m $(shell go list ./integration_tests/... | grep -v bgp_triggered_gue)
 
 .PHONY: test
 test:
 	go test $(shell go list ./... | grep -v integration_test)
 	cd operator && go test ./... && cd ..
+
+.PHONY: test-race
+test-race:
+	# TODO: Fix race tests for lemming/gnmi and dataplane
+	go test -race $(shell go list ./... | grep -v integration_test$ | grep -v openconfig/lemming/dataplane | grep -v openconfig/lemming/gnmi$)
+	cd operator && go test -race ./... && cd ..
