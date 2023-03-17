@@ -1,2 +1,4 @@
 bazel-*
 kne/*config.yaml
+go.work
+go.work.sum

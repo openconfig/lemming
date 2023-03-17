@@ -53,14 +53,14 @@ type LemmingSpec struct {
 	Resources corev1.ResourceRequirements `json:"resources"`
 	// TLS is the configuration the key/certs to use for management.
 	// +optional
-	TLS TLSSpec `json:"tls"`
+	TLS *TLSSpec `json:"tls"`
 }
 
 // TLSSpec is the configuration the key/certs to use for management.
 type TLSSpec struct {
 	// SelfSigned generates a new self signed certificate.
 	// +optional
-	SelfSigned SelfSignedSpec `json:"selfSigned"`
+	SelfSigned *SelfSignedSpec `json:"selfSigned"`
 }
 
 // SelfSignedSpec is the configuration to generate a self-signed cert.

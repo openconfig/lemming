@@ -22,6 +22,7 @@ import (
 	"crypto/x509/pkix"
 	"fmt"
 	"math/big"
+	"path/filepath"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -115,14 +116,14 @@ func (r *LemmingReconciler) reconcileSecrets(ctx context.Context, lemming *lemmi
 	}
 
 	if !apierrors.IsNotFound(err) {
-		if lemming.Spec.TLS.SelfSigned == (lemmingv1alpha1.SelfSignedSpec{}) {
+		if lemming.Spec.TLS.SelfSigned == nil {
 			log.Info("no tls config and secret exists, deleting it.")
 			return nil, r.Delete(ctx, secret)
 		}
 		return secret, nil
 	}
 
-	if lemming.Spec.TLS.SelfSigned != (lemmingv1alpha1.SelfSignedSpec{}) {
+	if lemming.Spec.TLS.SelfSigned != nil {
 		if err := ctrl.SetControllerReference(lemming, secret, r.Scheme); err != nil {
 			return nil, err
 		}
@@ -166,6 +167,10 @@ func createKeyPair(keySize int, commonName string) (map[string][]byte, error) {
 	}, nil
 }
 
+const (
+	secretMountPath = "/certs"
+)
+
 func (r *LemmingReconciler) reconcilePod(ctx context.Context, lemming *lemmingv1alpha1.Lemming, secretName string) (*corev1.Pod, error) {
 	log := log.FromContext(ctx)
 	pod := &corev1.Pod{}
@@ -191,6 +196,19 @@ func (r *LemmingReconciler) reconcilePod(ctx context.Context, lemming *lemmingv1
 	pod.Spec.Containers[0].Args = append(lemming.Spec.Args, fmt.Sprintf("--target=%s", lemming.Name))
 	pod.Spec.Containers[0].Env = lemming.Spec.Env
 	pod.Spec.Containers[0].Resources = lemming.Spec.Resources
+
+	requiredArgs := map[string]struct{}{
+		"--enable-dataplane": {},
+		"--alsologtostderr":  {},
+	}
+	for _, arg := range pod.Spec.Containers[0].Args {
+		if _, ok := requiredArgs[arg]; ok {
+			delete(requiredArgs, arg)
+		}
+	}
+	for arg := range requiredArgs {
+		pod.Spec.Containers[0].Args = append(pod.Spec.Containers[0].Args, arg)
+	}
 
 	mounts := map[string]corev1.VolumeMount{}
 	volumes := map[string]corev1.Volume{}
@@ -223,6 +241,9 @@ func (r *LemmingReconciler) reconcilePod(ctx context.Context, lemming *lemmingv1
 		delete(mounts, "tls")
 		delete(volumes, "tls")
 		changedMounts = true
+	}
+	if secretName != "" {
+		pod.Spec.Containers[0].Args = append(pod.Spec.Containers[0].Args, "--tls_key_file", filepath.Join(secretMountPath, "tls.key"), "--tls_cert_file", filepath.Join(secretMountPath, "tls.crt"))
 	}
 
 	if changedMounts {

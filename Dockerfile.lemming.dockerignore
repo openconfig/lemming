@@ -1,2 +1,4 @@
 integration_tests
 operator
+go.work
+go.work.sum
