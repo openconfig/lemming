@@ -905,12 +905,10 @@ func TestBGPTriggeredGUE(t *testing.T) {
 	}{{
 		desc:   "IPv4 without policy",
 		gnmiOp: func() {},
-		skip:   true,
 	}, {
 		desc:      "IPv6 without policy",
 		gnmiOp:    func() {},
 		v6Traffic: true,
-		skip:      true,
 	}, {
 		desc: "with single IPv4 policy",
 		gnmiOp: func() {
@@ -932,7 +930,6 @@ func TestBGPTriggeredGUE(t *testing.T) {
 			dstIP:   net.IP{203, 0, 113, 5},
 			dstPort: 84,
 		},
-		skip: true,
 	}, {
 		desc: "with single IPv6 policy",
 		gnmiOp: func() {
@@ -954,7 +951,6 @@ func TestBGPTriggeredGUE(t *testing.T) {
 			dstPort: 184,
 		},
 		v6Traffic: true,
-		skip:      true,
 	}, {
 		desc: "with two overlapping IPv4 policies",
 		gnmiOp: func() {
@@ -976,7 +972,6 @@ func TestBGPTriggeredGUE(t *testing.T) {
 			dstIP:   net.IP{203, 0, 113, 5},
 			dstPort: 84,
 		},
-		skip: true,
 	}, {
 		desc: "with two overlapping IPv6 policies",
 		gnmiOp: func() {
@@ -998,7 +993,6 @@ func TestBGPTriggeredGUE(t *testing.T) {
 			dstPort: 184,
 		},
 		v6Traffic: true,
-		skip:      true,
 	}, {
 		desc: "IPv4 policy but with IPv6 traffic via IPv4-mapped IPv6 route",
 		gnmiOp: func() {
@@ -1048,7 +1042,6 @@ func TestBGPTriggeredGUE(t *testing.T) {
 			dstPort: 184,
 		},
 		v6Traffic: true,
-		skip:      false,
 	}}
 
 	selectAddr := func(v4, v6 string, isv6 bool) string {
@@ -1061,7 +1054,7 @@ func TestBGPTriggeredGUE(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
 			if tt.skip {
-				//t.Skip()
+				t.Skip()
 			}
 
 			tests := []struct {
