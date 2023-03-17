@@ -1732,10 +1732,10 @@ func TestBGPGUEPolicy(t *testing.T) {
 					GUEHeaders: GUEHeaders{
 						GUEPolicy: GUEPolicy{
 							dstPortv6: 32,
-							srcIP6:    [16]byte{16, 16, 16, 16, 16},
+							srcIP4:    [4]byte{16, 16, 16, 16},
 						},
-						dstIP6: [16]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff, 10, 10, 20, 30},
-						isV6:   true,
+						dstIP4: [4]byte{10, 10, 20, 30},
+						isV6:   false,
 					},
 				}: true,
 			},

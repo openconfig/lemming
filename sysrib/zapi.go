@@ -173,13 +173,18 @@ type Client struct {
 // RedistributeResolvedRoutes sends RedistributeRouteAdd messages to the client
 // connection for all currently-resolved routes.
 func (c *Client) RedistributeResolvedRoutes(conn net.Conn) {
-	resolvedRoutes := c.zServer.sysrib.ResolvedRoutes()
-	topicLogger.Info(fmt.Sprintf("Sending %d resolved routes to client", len(resolvedRoutes)),
+	resolvableRoutes := c.zServer.sysrib.ResolvedRoutes()
+	programmedRoutes := c.zServer.sysrib.ProgrammedRoutes()
+	topicLogger.Info(fmt.Sprintf("Sending %d resolved routes to client", len(programmedRoutes)),
 		log.Fields{
 			"Topic": "Sysrib",
 		})
-	for routeKey, route := range resolvedRoutes {
-		zrouteBody, err := convertToZAPIRoute(routeKey, route)
+	for routeKey, rr := range resolvableRoutes {
+		route, ok := programmedRoutes[routeKey]
+		if !ok {
+			continue
+		}
+		zrouteBody, err := convertToZAPIRoute(routeKey, rr, route)
 		if err != nil {
 			topicLogger.Warn(fmt.Sprintf("failed to convert resolved route to zebra BGP route: %v", err),
 				log.Fields{

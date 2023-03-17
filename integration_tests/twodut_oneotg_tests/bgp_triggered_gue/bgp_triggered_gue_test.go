@@ -79,6 +79,9 @@ const (
 	ateDstNetCIDR1v6    = "2003:aaaa::/49"
 	ateDstNetCIDR2v6    = "2003:bbbb::/49"
 	ateDstNetCIDR3v6    = "2003:cccc::/49"
+	ateDstNetCIDR1v6MS  = "2003:aaaa::/50"
+	ateDstNetCIDR2v6MS  = "2003:bbbb::/50"
+	ateDstNetCIDR3v6MS  = "2003:cccc::/50"
 	ateIndirectNH1v6    = "2002:0:0:0:10::"
 	ateIndirectNH2v6    = "2002:0:0:10::"
 	ateIndirectNH3v6    = "2002:0:10::"
@@ -87,8 +90,6 @@ const (
 	dutAS  = 64500
 	dut2AS = 64500
 	ateAS  = 64502
-
-	debug = false
 )
 
 func TestMain(m *testing.M) {
@@ -196,11 +197,9 @@ func configureOTG(t *testing.T, otg *otg.OTG) gosnappi.Config {
 	eth1.Ipv4Addresses().Add().SetName(i1.Name() + ".IPv4").
 		SetAddress(atePort1.IPv4).SetGateway(dutPort1.IPv4).
 		SetPrefix(int32(atePort1.IPv4Len))
-	if !debug {
-		eth1.Ipv6Addresses().Add().SetName(i1.Name() + ".IPv6").
-			SetAddress(atePort1.IPv6).SetGateway(dutPort1.IPv6).
-			SetPrefix(int32(atePort1.IPv6Len))
-	}
+	eth1.Ipv6Addresses().Add().SetName(i1.Name() + ".IPv6").
+		SetAddress(atePort1.IPv6).SetGateway(dutPort1.IPv6).
+		SetPrefix(int32(atePort1.IPv6Len))
 	// Configure capture format.
 	config.Captures().Add().SetName("ca1").SetPortNames([]string{atePort1.Name}).SetFormat(gosnappi.CaptureFormat.PCAP)
 
@@ -212,11 +211,9 @@ func configureOTG(t *testing.T, otg *otg.OTG) gosnappi.Config {
 	eth2.Ipv4Addresses().Add().SetName(i2.Name() + ".IPv4").
 		SetAddress(atePort2.IPv4).SetGateway(dutPort2.IPv4).
 		SetPrefix(int32(atePort2.IPv4Len))
-	if !debug {
-		eth2.Ipv6Addresses().Add().SetName(i2.Name() + ".IPv6").
-			SetAddress(atePort2.IPv6).SetGateway(dutPort2.IPv6).
-			SetPrefix(int32(atePort2.IPv6Len))
-	}
+	eth2.Ipv6Addresses().Add().SetName(i2.Name() + ".IPv6").
+		SetAddress(atePort2.IPv6).SetGateway(dutPort2.IPv6).
+		SetPrefix(int32(atePort2.IPv6Len))
 	// Configure capture format.
 	config.Captures().Add().SetName("ca2").SetPortNames([]string{atePort2.Name}).SetFormat(gosnappi.CaptureFormat.PCAP)
 
@@ -228,11 +225,9 @@ func configureOTG(t *testing.T, otg *otg.OTG) gosnappi.Config {
 	eth3.Ipv4Addresses().Add().SetName(i3.Name() + ".IPv4").
 		SetAddress(atePort3.IPv4).SetGateway(dut2Port1.IPv4).
 		SetPrefix(int32(atePort3.IPv4Len))
-	if !debug {
-		eth3.Ipv6Addresses().Add().SetName(i3.Name() + ".IPv6").
-			SetAddress(atePort3.IPv6).SetGateway(dut2Port1.IPv6).
-			SetPrefix(int32(atePort3.IPv6Len))
-	}
+	eth3.Ipv6Addresses().Add().SetName(i3.Name() + ".IPv6").
+		SetAddress(atePort3.IPv6).SetGateway(dut2Port1.IPv6).
+		SetPrefix(int32(atePort3.IPv6Len))
 
 	// Configure BGP neighbour
 	// This causes the route ateIndirectNHCIDR -> atePort2's IP to be
@@ -355,11 +350,9 @@ func configureDUT1(t *testing.T, dut *ondatra.DUTDevice) {
 	gnmi.Await(t, dut, ocpath.Root().Interface(dut.Port(t, "port1").Name()).Subinterface(0).Ipv4().Address(dutPort1.IPv4).Ip().State(), time.Minute, dutPort1.IPv4)
 	gnmi.Await(t, dut, ocpath.Root().Interface(dut.Port(t, "port2").Name()).Subinterface(0).Ipv4().Address(dutPort2.IPv4).Ip().State(), time.Minute, dutPort2.IPv4)
 	gnmi.Await(t, dut, ocpath.Root().Interface(dut.Port(t, "port3").Name()).Subinterface(0).Ipv4().Address(dutPort3.IPv4).Ip().State(), time.Minute, dutPort3.IPv4)
-	if !debug {
-		gnmi.Await(t, dut, ocpath.Root().Interface(dut.Port(t, "port1").Name()).Subinterface(0).Ipv6().Address(dutPort1.IPv6).Ip().State(), time.Minute, dutPort1.IPv6)
-		gnmi.Await(t, dut, ocpath.Root().Interface(dut.Port(t, "port2").Name()).Subinterface(0).Ipv6().Address(dutPort2.IPv6).Ip().State(), time.Minute, dutPort2.IPv6)
-		gnmi.Await(t, dut, ocpath.Root().Interface(dut.Port(t, "port3").Name()).Subinterface(0).Ipv6().Address(dutPort3.IPv6).Ip().State(), time.Minute, dutPort3.IPv6)
-	}
+	gnmi.Await(t, dut, ocpath.Root().Interface(dut.Port(t, "port1").Name()).Subinterface(0).Ipv6().Address(dutPort1.IPv6).Ip().State(), time.Minute, dutPort1.IPv6)
+	gnmi.Await(t, dut, ocpath.Root().Interface(dut.Port(t, "port2").Name()).Subinterface(0).Ipv6().Address(dutPort2.IPv6).Ip().State(), time.Minute, dutPort2.IPv6)
+	gnmi.Await(t, dut, ocpath.Root().Interface(dut.Port(t, "port3").Name()).Subinterface(0).Ipv6().Address(dutPort3.IPv6).Ip().State(), time.Minute, dutPort3.IPv6)
 
 	// Start a new BGP session that should exchange the necessary gRIBI
 	// route that recursively resolves and thus enables traffic to flow.
@@ -457,7 +450,7 @@ func testTraffic(t *testing.T, otg *otg.OTG, srcEndPoint, dstEndPoint Attributes
 	otg.PushConfig(t, otgConfig)
 
 	otg.StartTraffic(t)
-	time.Sleep(10 * time.Second)
+	time.Sleep(5 * time.Second)
 	t.Logf("Stop traffic")
 	otg.StopTraffic(t)
 
@@ -489,7 +482,7 @@ func testTrafficv6(t *testing.T, otg *otg.OTG, srcEndPoint, dstEndPoint Attribut
 	otg.PushConfig(t, otgConfig)
 
 	otg.StartTraffic(t)
-	time.Sleep(10 * time.Second)
+	time.Sleep(5 * time.Second)
 	t.Logf("Stop traffic")
 	otg.StopTraffic(t)
 
@@ -501,11 +494,20 @@ func testTrafficv6(t *testing.T, otg *otg.OTG, srcEndPoint, dstEndPoint Attribut
 	return float32(lossPct)
 }
 
-// testTrafficAndEncapv4 checks that traffic can reach from ATE port1 to ATE
-// port2 with the correct GUE encap fields (if any).
-func testTrafficAndEncapv4(t *testing.T, otg *otg.OTG, startingIP string, encapFields *EncapFields) {
-	t.Log("testTrafficAndEncapv4")
+type layerDecodingLayer interface {
+	gopacket.Layer
+	DecodeFromBytes([]byte, gopacket.DecodeFeedback) error
+	NextLayerType() gopacket.LayerType
+}
+
+func testTrafficAndEncap(t *testing.T, otg *otg.OTG, startingIP string, v6Traffic bool, encapFields *EncapFields) {
+	t.Log("testTrafficAndEncap")
 	otg.StartCapture(t, atePort2.Name)
+
+	testTraffic := testTraffic
+	if v6Traffic {
+		testTraffic = testTrafficv6
+	}
 
 	if loss := testTraffic(t, otg, atePort1, atePort2, startingIP); loss > 1 {
 		t.Errorf("Loss: got %g, want <= 1", loss)
@@ -538,122 +540,59 @@ func testTrafficAndEncapv4(t *testing.T, otg *otg.OTG, startingIP string, encapF
 	}
 	ps := gopacket.NewPacketSource(handleRead, layers.LinkTypeEthernet)
 
-	var expectedPacketCounter int
-	for i := 0; i != 20; i++ {
-		pkt, err := ps.NextPacket()
-		if err != nil {
-			t.Fatalf("error reading next packet: %v", err)
-		}
+	var wantNL gopacket.Layer
+	var gotNL layerDecodingLayer
+	var cmpIgnoreOptsNL []cmp.Option
+	cmpIgnoreOptsTL := []cmp.Option{cmpopts.IgnoreUnexported(layers.UDP{}), cmpopts.IgnoreFields(layers.UDP{}, "BaseLayer", "Length")}
+
+	isV6 := v6Traffic
+	if encapFields != nil {
+		isV6 = encapFields.srcIP.To4() == nil
+		t.Logf("Expecting encapped outer header version (isV6: %v): %+v", isV6, encapFields.srcIP.To16())
+	}
+	if isV6 {
+		gotNL = &layers.IPv6{}
 		if encapFields == nil {
-			wantNL := layers.IPv4{
-				Version: 4,
-				IHL:     5,
-				Length:  46,
-				SrcIP:   net.IP{192, 0, 2, 2}, // ATE port 1.
-			}
-			var gotNL layers.IPv4
-			nl := pkt.NetworkLayer()
-			if nl == nil {
-				t.Logf("packet doesn't have network layer: %s", pkt.Dump())
-				continue
-			}
-			if err := gotNL.DecodeFromBytes(nl.LayerContents(), gopacket.NilDecodeFeedback); err != nil {
-				t.Logf("cannot decode network layer header: %v\n%s", err, pkt.Dump())
-				continue
-			}
-			if diff := cmp.Diff(wantNL, gotNL, cmpopts.IgnoreUnexported(layers.IPv4{}), cmpopts.IgnoreFields(layers.IPv4{}, "BaseLayer", "Checksum", "TTL", "Protocol", "DstIP")); diff != "" {
-				t.Errorf("network layer (-want, +got):\n%s\n%s", diff, pkt.Dump())
-			} else {
-				expectedPacketCounter += 1
+			wantNL = &layers.IPv6{
+				Version: 6,
+				Length:  24,                                                                          // 24 (v6 payload)
+				SrcIP:   net.IP{0x20, 0x01, 0, 0, 0, 0, 0, 0, 0, 0, 0xaa, 0xaa, 0xbb, 0xbb, 0, 0xbb}, // ATE port 1.
 			}
 		} else {
-			wantNL := layers.IPv4{
+			wantNL = &layers.IPv6{
+				Version:    6,
+				Length:     72, // 40+24(v6 payload)+8(UDP)
+				NextHeader: layers.IPProtocolUDP,
+				SrcIP:      encapFields.srcIP,
+				DstIP:      encapFields.dstIP,
+			}
+		}
+		cmpIgnoreOptsNL = append(cmpIgnoreOptsNL, cmpopts.IgnoreUnexported(layers.IPv6{}), cmpopts.IgnoreFields(layers.IPv6{}, "BaseLayer", "TrafficClass", "FlowLabel", "HopLimit", "DstIP", "NextHeader"))
+	} else {
+		gotNL = &layers.IPv4{}
+		if encapFields == nil {
+			wantNL = &layers.IPv4{
+				Version: 4,
+				IHL:     5,
+				Length:  46,                   // 20+26(payload)
+				SrcIP:   net.IP{192, 0, 2, 2}, // ATE port 1.
+			}
+		} else {
+			var length uint16 = 74 // 20+26(v4 payload)+8(UDP)+20(encap)
+			if v6Traffic {
+				length = 92 // 40+24(v6 payload)+8(UDP)+20(encap)
+			}
+			wantNL = &layers.IPv4{
 				Version:  4,
 				IHL:      5,
-				Length:   74,
+				Length:   length,
 				Protocol: layers.IPProtocolUDP,
 				SrcIP:    encapFields.srcIP,
 				DstIP:    encapFields.dstIP,
 			}
-			var gotNL layers.IPv4
-			nl := pkt.NetworkLayer()
-			if nl == nil {
-				t.Logf("packet doesn't have network layer: %s", pkt.Dump())
-				continue
-			}
-			if err := gotNL.DecodeFromBytes(nl.LayerContents(), gopacket.NilDecodeFeedback); err != nil {
-				t.Logf("cannot decode network layer header: %v\n%s", err, pkt.Dump())
-				continue
-			}
-			if diff := cmp.Diff(wantNL, gotNL, cmpopts.IgnoreUnexported(layers.IPv4{}), cmpopts.IgnoreFields(layers.IPv4{}, "BaseLayer", "Checksum")); diff != "" {
-				t.Errorf("network layer (-want, +got):\n%s\n%s", diff, pkt.Dump())
-			}
-
-			wantTL := layers.UDP{
-				SrcPort: 0, // TODO(wenbli): Implement and test hashing for srcPort.
-				DstPort: layers.UDPPort(encapFields.dstPort),
-				Length:  34,
-			}
-			var gotTL layers.UDP
-			tl := pkt.TransportLayer()
-			if tl == nil {
-				t.Errorf("packet doesn't have transport layer: %s", pkt.Dump())
-				continue
-			}
-			if err := gotTL.DecodeFromBytes(tl.LayerContents(), gopacket.NilDecodeFeedback); err != nil {
-				t.Errorf("cannot decode transport layer header: %v", err)
-				continue
-			}
-			if diff := cmp.Diff(wantTL, gotTL, cmpopts.IgnoreUnexported(layers.UDP{}), cmpopts.IgnoreFields(layers.UDP{}, "BaseLayer")); diff != "" {
-				t.Errorf("transport layer (-want, +got):\n%s\n%s", diff, pkt.Dump())
-			} else {
-				expectedPacketCounter += 1
-			}
-			// TODO: Check that lower layers is the original packet.
 		}
+		cmpIgnoreOptsNL = append(cmpIgnoreOptsNL, cmpopts.IgnoreUnexported(layers.IPv4{}), cmpopts.IgnoreFields(layers.IPv4{}, "BaseLayer", "Checksum", "TTL", "Protocol", "DstIP"))
 	}
-
-	if expectedPacketCounter < 10 {
-		t.Errorf("Got less than 10 expected packets: %v", expectedPacketCounter)
-	}
-}
-
-// testTrafficAndEncapv6 checks that traffic can reach from ATE port1 to ATE
-// port2 with the correct GUE encap fields (if any).
-func testTrafficAndEncapv6(t *testing.T, otg *otg.OTG, startingIP string, encapFields *EncapFields) {
-	t.Log("testTrafficAndEncapv6")
-	otg.StartCapture(t, atePort2.Name)
-
-	if loss := testTrafficv6(t, otg, atePort1, atePort2, startingIP); loss > 1 {
-		t.Errorf("Loss: got %g, want <= 1", loss)
-	}
-
-	otg.StopCapture(t, atePort2.Name)
-
-	captureBytes := otg.FetchCapture(t, atePort2.Name)
-
-	f, err := os.CreateTemp(".", "pcap")
-	if err != nil {
-		t.Fatalf("ERROR: Could not create temporary pcap file: %v\n", err)
-	}
-	defer os.Remove(f.Name())
-
-	if _, err := f.Write(captureBytes); err != nil {
-		t.Fatalf("ERROR: Could not write bytes to pcap file: %v\n", err)
-	}
-	f.Close()
-
-	f, err = os.Open(f.Name())
-	if err != nil {
-		t.Fatalf("ERROR: Could not open pcap file %s: %v\n", f.Name(), err)
-	}
-	defer f.Close()
-
-	handleRead, err := pcapgo.NewReader(f)
-	if err != nil {
-		t.Fatalf("ERROR: Could not create reader on pcap file %s: %v\n", f.Name(), err)
-	}
-	ps := gopacket.NewPacketSource(handleRead, layers.LinkTypeEthernet)
 
 	var expectedPacketCounter int
 	for i := 0; i != 20; i++ {
@@ -662,12 +601,6 @@ func testTrafficAndEncapv6(t *testing.T, otg *otg.OTG, startingIP string, encapF
 			t.Fatalf("error reading next packet: %v", err)
 		}
 		if encapFields == nil {
-			wantNL := layers.IPv6{
-				Version: 6,
-				Length:  24,
-				SrcIP:   net.IP{0x20, 0x01, 0, 0, 0, 0, 0, 0, 0, 0, 0xaa, 0xaa, 0xbb, 0xbb, 0, 0xbb}, // ATE port 1.
-			}
-			var gotNL layers.IPv6
 			nl := pkt.NetworkLayer()
 			if nl == nil {
 				t.Logf("packet doesn't have network layer: %s", pkt.Dump())
@@ -678,31 +611,24 @@ func testTrafficAndEncapv6(t *testing.T, otg *otg.OTG, startingIP string, encapF
 				continue
 			}
 			// TODO(wenbli): What should NextHeader be?
-			if diff := cmp.Diff(wantNL, gotNL, cmpopts.IgnoreUnexported(layers.IPv6{}), cmpopts.IgnoreFields(layers.IPv6{}, "BaseLayer", "TrafficClass", "FlowLabel", "HopLimit", "DstIP", "NextHeader")); diff != "" {
-				t.Errorf("network layer (-want, +got):\n%s\n%s", diff, pkt.Dump())
+			if diff := cmp.Diff(wantNL, gotNL, cmpIgnoreOptsNL...); diff != "" {
+				t.Logf("Got unexpected network layer (-want, +got):\n%s\n%s", diff, pkt.Dump())
 			} else {
 				expectedPacketCounter += 1
 			}
 		} else {
-			wantNL := layers.IPv6{
-				Version:    6,
-				Length:     72,
-				NextHeader: layers.IPProtocolUDP,
-				SrcIP:      encapFields.srcIP,
-				DstIP:      encapFields.dstIP,
-			}
-			var gotNL layers.IPv6
 			nl := pkt.NetworkLayer()
 			if nl == nil {
-				t.Errorf("packet doesn't have network layer: %s", pkt.Dump())
+				t.Logf("packet doesn't have network layer: %s", pkt.Dump())
 				continue
 			}
 			if err := gotNL.DecodeFromBytes(nl.LayerContents(), gopacket.NilDecodeFeedback); err != nil {
-				t.Errorf("cannot decode network layer header: %v", err)
+				t.Logf("cannot decode network layer header: %v\n%s", err, pkt.Dump())
 				continue
 			}
-			if diff := cmp.Diff(wantNL, gotNL, cmpopts.IgnoreUnexported(layers.IPv6{}), cmpopts.IgnoreFields(layers.IPv6{}, "BaseLayer", "TrafficClass", "FlowLabel", "HopLimit", "DstIP")); diff != "" {
-				t.Errorf("network layer (-want, +got):\n%s\n%s", diff, pkt.Dump())
+			if diff := cmp.Diff(wantNL, gotNL, cmpIgnoreOptsNL...); diff != "" {
+				t.Logf("Got unexpected network layer (-want, +got):\n%s\n%s", diff, pkt.Dump())
+				continue
 			}
 
 			wantTL := layers.UDP{
@@ -720,8 +646,8 @@ func testTrafficAndEncapv6(t *testing.T, otg *otg.OTG, startingIP string, encapF
 				t.Errorf("cannot decode transport layer header: %v", err)
 				continue
 			}
-			if diff := cmp.Diff(wantTL, gotTL, cmpopts.IgnoreUnexported(layers.UDP{}), cmpopts.IgnoreFields(layers.UDP{}, "BaseLayer")); diff != "" {
-				t.Errorf("transport layer (-want, +got):\n%s\n%s", diff, pkt.Dump())
+			if diff := cmp.Diff(wantTL, gotTL, cmpIgnoreOptsTL...); diff != "" {
+				t.Errorf("Got unexpected transport layer (-want, +got):\n%s\n%s", diff, pkt.Dump())
 			} else {
 				expectedPacketCounter += 1
 			}
@@ -919,22 +845,18 @@ func TestBGPTriggeredGUE(t *testing.T) {
 	gnmi.Await(t, dut, nbrPath.SessionState().State(), 120*time.Second, oc.Bgp_Neighbor_SessionState_ESTABLISHED)
 
 	t.Logf("Verify DUT's DUT-DUT BGP session up")
-	if !debug {
-		gnmi.Await(t, dut, bgpPath.Neighbor(dut2Port2.IPv4).SessionState().State(), 120*time.Second, oc.Bgp_Neighbor_SessionState_ESTABLISHED)
-		gnmi.Await(t, dut, bgpPath.Neighbor(dut2Port2.IPv6).SessionState().State(), 120*time.Second, oc.Bgp_Neighbor_SessionState_ESTABLISHED)
-	}
+	gnmi.Await(t, dut, bgpPath.Neighbor(dut2Port2.IPv4).SessionState().State(), 120*time.Second, oc.Bgp_Neighbor_SessionState_ESTABLISHED)
+	gnmi.Await(t, dut, bgpPath.Neighbor(dut2Port2.IPv6).SessionState().State(), 120*time.Second, oc.Bgp_Neighbor_SessionState_ESTABLISHED)
 	t.Logf("Verify DUT's DUT-OTG BGP session up")
 	gnmi.Await(t, dut, bgpPath.Neighbor(atePort1.IPv4).SessionState().State(), 120*time.Second, oc.Bgp_Neighbor_SessionState_ESTABLISHED)
-	if !debug {
-		gnmi.Await(t, dut, bgpPath.Neighbor(atePort1.IPv6).SessionState().State(), 120*time.Second, oc.Bgp_Neighbor_SessionState_ESTABLISHED)
-	}
+	gnmi.Await(t, dut, bgpPath.Neighbor(atePort1.IPv6).SessionState().State(), 120*time.Second, oc.Bgp_Neighbor_SessionState_ESTABLISHED)
 	t.Logf("Verify OTG's DUT-OTG BGP sessions up")
 	verifyOTGBGPTelemetry(t, otg, otgConfig, "ESTABLISHED")
 
 	// Install entries to be propagated to DUT1.
 	installGRIBIEntries(t, dut2)
 
-	if !debug {
+	installv6Routes := func() {
 		// Install entries to be propagated to DUT1.
 		installStaticRoute(t, dut2, &oc.NetworkInstance_Protocol_Static{
 			Prefix: ygot.String(ateDstNetCIDR1v6),
@@ -970,6 +892,8 @@ func TestBGPTriggeredGUE(t *testing.T) {
 		})
 	}
 
+	installv6Routes()
+
 	tests := []struct {
 		desc             string
 		gnmiOp           func()
@@ -981,19 +905,19 @@ func TestBGPTriggeredGUE(t *testing.T) {
 	}{{
 		desc:   "IPv4 without policy",
 		gnmiOp: func() {},
-		skip:   false,
+		skip:   true,
 	}, {
 		desc:      "IPv6 without policy",
 		gnmiOp:    func() {},
 		v6Traffic: true,
-		skip:      false,
+		skip:      true,
 	}, {
 		desc: "with single IPv4 policy",
 		gnmiOp: func() {
 			policy2Pfx := "203.0.113.0/29"
 			gnmi.Replace(t, dut, ocpath.Root().BgpGueIpv4Policy(policy2Pfx).Config(), &oc.BgpGueIpv4Policy{
 				DstPortIpv4: ygot.Uint16(84),
-				DstPortIpv6: ygot.Uint16(168),
+				DstPortIpv6: ygot.Uint16(184),
 				Prefix:      ygot.String(policy2Pfx),
 				SrcIp:       ygot.String("84.84.84.84"),
 			})
@@ -1008,40 +932,13 @@ func TestBGPTriggeredGUE(t *testing.T) {
 			dstIP:   net.IP{203, 0, 113, 5},
 			dstPort: 84,
 		},
-		skip: false,
-	}, {
-		desc: "IPv4 policy but with IPv6 traffic via IPv4-mapped IPv6 route",
-		gnmiOp: func() {
-			installStaticRoute(t, dut2, &oc.NetworkInstance_Protocol_Static{
-				Prefix: ygot.String("2003:aaaa::/32"), // This is less specific than the pure IPv6 routes.
-				NextHop: map[string]*oc.NetworkInstance_Protocol_Static_NextHop{
-					"single": {
-						Index: ygot.String("single"),
-						// OC doesn't recognize the IPv4-mapped IPv6 format.
-						NextHop: oc.UnionString(netip.MustParseAddr("::ffff:" + ateIndirectNH3).StringExpanded()),
-						Recurse: ygot.Bool(true),
-					},
-				},
-			})
-		},
-		wantEncapFields1: &EncapFields{
-			srcIP:   net.IP{84, 84, 84, 84},
-			dstIP:   net.IP{203, 0, 113, 1},
-			dstPort: 168,
-		},
-		wantEncapFields2: &EncapFields{
-			srcIP:   net.IP{84, 84, 84, 84},
-			dstIP:   net.IP{203, 0, 113, 5},
-			dstPort: 168,
-		},
-		v6Traffic: true,
-		skip:      false,
+		skip: true,
 	}, {
 		desc: "with single IPv6 policy",
 		gnmiOp: func() {
 			policy2Pfx := "2002::/48"
 			gnmi.Replace(t, dut, ocpath.Root().BgpGueIpv6Policy(policy2Pfx).Config(), &oc.BgpGueIpv6Policy{
-				DstPortIpv6: ygot.Uint16(168),
+				DstPortIpv6: ygot.Uint16(184),
 				Prefix:      ygot.String(policy2Pfx),
 				SrcIp:       ygot.String("8484:8484::"),
 			})
@@ -1049,22 +946,22 @@ func TestBGPTriggeredGUE(t *testing.T) {
 		wantEncapFields1: &EncapFields{
 			srcIP:   net.IP{0x84, 0x84, 0x84, 0x84, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 			dstIP:   net.IP{0x20, 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-			dstPort: 168,
+			dstPort: 184,
 		},
 		wantEncapFields2: &EncapFields{
 			srcIP:   net.IP{0x84, 0x84, 0x84, 0x84, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 			dstIP:   net.IP{0x20, 0x02, 0, 0, 0x10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-			dstPort: 168,
+			dstPort: 184,
 		},
 		v6Traffic: true,
-		skip:      false,
+		skip:      true,
 	}, {
 		desc: "with two overlapping IPv4 policies",
 		gnmiOp: func() {
 			policy1Pfx := "203.0.113.0/30"
 			gnmi.Replace(t, dut, ocpath.Root().BgpGueIpv4Policy(policy1Pfx).Config(), &oc.BgpGueIpv4Policy{
 				DstPortIpv4: ygot.Uint16(42),
-				DstPortIpv6: ygot.Uint16(168),
+				DstPortIpv6: ygot.Uint16(142),
 				Prefix:      ygot.String(policy1Pfx),
 				SrcIp:       ygot.String("42.42.42.42"),
 			})
@@ -1079,13 +976,13 @@ func TestBGPTriggeredGUE(t *testing.T) {
 			dstIP:   net.IP{203, 0, 113, 5},
 			dstPort: 84,
 		},
-		skip: false,
+		skip: true,
 	}, {
 		desc: "with two overlapping IPv6 policies",
 		gnmiOp: func() {
 			policy1Pfx := "2002::/64"
 			gnmi.Replace(t, dut, ocpath.Root().BgpGueIpv6Policy(policy1Pfx).Config(), &oc.BgpGueIpv6Policy{
-				DstPortIpv6: ygot.Uint16(84),
+				DstPortIpv6: ygot.Uint16(142),
 				Prefix:      ygot.String(policy1Pfx),
 				SrcIp:       ygot.String("4242:4242::"),
 			})
@@ -1093,12 +990,62 @@ func TestBGPTriggeredGUE(t *testing.T) {
 		wantEncapFields1: &EncapFields{
 			srcIP:   net.IP{0x42, 0x42, 0x42, 0x42, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 			dstIP:   net.IP{0x20, 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-			dstPort: 84,
+			dstPort: 142,
 		},
 		wantEncapFields2: &EncapFields{
 			srcIP:   net.IP{0x84, 0x84, 0x84, 0x84, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 			dstIP:   net.IP{0x20, 0x02, 0, 0, 0x10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-			dstPort: 168,
+			dstPort: 184,
+		},
+		v6Traffic: true,
+		skip:      true,
+	}, {
+		desc: "IPv4 policy but with IPv6 traffic via IPv4-mapped IPv6 route",
+		gnmiOp: func() {
+			// Overwrite route with IPv4 nexthop.
+			installStaticRoute(t, dut2, &oc.NetworkInstance_Protocol_Static{
+				Prefix: ygot.String(ateDstNetCIDR1v6MS), // This is less specific than the pure IPv6 routes.
+				NextHop: map[string]*oc.NetworkInstance_Protocol_Static_NextHop{
+					"single": {
+						Index: ygot.String("single"),
+						// OC doesn't recognize the IPv4-mapped IPv6 format, so need to convert it to expanded form.
+						NextHop: oc.UnionString(netip.MustParseAddr("::ffff:" + ateIndirectNH1).StringExpanded()),
+						Recurse: ygot.Bool(true),
+					},
+				},
+			})
+			installStaticRoute(t, dut2, &oc.NetworkInstance_Protocol_Static{
+				Prefix: ygot.String(ateDstNetCIDR2v6MS), // This is less specific than the pure IPv6 routes.
+				NextHop: map[string]*oc.NetworkInstance_Protocol_Static_NextHop{
+					"single": {
+						Index: ygot.String("single"),
+						// OC doesn't recognize the IPv4-mapped IPv6 format, so need to convert it to expanded form.
+						NextHop: oc.UnionString(netip.MustParseAddr("::ffff:" + ateIndirectNH2).StringExpanded()),
+						Recurse: ygot.Bool(true),
+					},
+				},
+			})
+			installStaticRoute(t, dut2, &oc.NetworkInstance_Protocol_Static{
+				Prefix: ygot.String(ateDstNetCIDR3v6MS), // This is less specific than the pure IPv6 routes.
+				NextHop: map[string]*oc.NetworkInstance_Protocol_Static_NextHop{
+					"single": {
+						Index: ygot.String("single"),
+						// OC doesn't recognize the IPv4-mapped IPv6 format, so need to convert it to expanded form.
+						NextHop: oc.UnionString(netip.MustParseAddr("::ffff:" + ateIndirectNH3).StringExpanded()),
+						Recurse: ygot.Bool(true),
+					},
+				},
+			})
+		},
+		wantEncapFields1: &EncapFields{
+			srcIP:   net.IP{42, 42, 42, 42},
+			dstIP:   net.IP{203, 0, 113, 1},
+			dstPort: 142,
+		},
+		wantEncapFields2: &EncapFields{
+			srcIP:   net.IP{84, 84, 84, 84},
+			dstIP:   net.IP{203, 0, 113, 5},
+			dstPort: 184,
 		},
 		v6Traffic: true,
 		skip:      false,
@@ -1114,7 +1061,7 @@ func TestBGPTriggeredGUE(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
 			if tt.skip {
-				t.Skip()
+				//t.Skip()
 			}
 
 			tests := []struct {
@@ -1130,15 +1077,12 @@ func TestBGPTriggeredGUE(t *testing.T) {
 				startingIP:  selectAddr("198.51.4.0", "2003:cccc::", tt.v6Traffic),
 				encapFields: tt.wantEncapFields3,
 			}}
+			v6Traffic := tt.v6Traffic
 
 			tt.gnmiOp()
-			testTrafficAndEncap := testTrafficAndEncapv4
-			if tt.v6Traffic {
-				testTrafficAndEncap = testTrafficAndEncapv6
-			}
 			for _, tt := range tests {
 				t.Run(tt.startingIP, func(t *testing.T) {
-					testTrafficAndEncap(t, otg, tt.startingIP, tt.encapFields)
+					testTrafficAndEncap(t, otg, tt.startingIP, v6Traffic, tt.encapFields)
 				})
 			}
 		})

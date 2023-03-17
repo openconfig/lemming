@@ -86,29 +86,37 @@ type GUEHeaders struct {
 // getGUEHeader retrieves the GUEHeader for the given address if it matched a
 // GUE policy. The boolean return indicates whether a GUE policy was
 // matched.
+//
+// - payloadIsV6 indicates what type of IP traffic is being encapsulated. This
+// determines which UDP port is used from the GUE policy.
 func (sr *SysRIB) getGUEHeader(address string, payloadIsV6 bool) (GUEHeaders, bool, error) {
+	log.V(1).Infof("getGUEHeader: %s, %v", address, payloadIsV6)
 	addr4, addr6, err := patricia.ParseIPFromString(address)
 	if err != nil {
 		return GUEHeaders{}, false, err
 	}
 	var ok bool
 	var policy GUEPolicy
+	// nexthopIsV6 determines whether the v4 or v6 GUE headers must be applied.
+	var nexthopIsV6 bool
 	switch {
 	case addr4 != nil:
 		ok, policy = sr.GUEPoliciesV4.FindDeepestTag(*addr4)
 	case addr6 != nil:
 		ok, policy = sr.GUEPoliciesV6.FindDeepestTag(*addr6)
+		nexthopIsV6 = true
 	default:
 		return GUEHeaders{}, false, fmt.Errorf("Invalid IP address for looking up GUE header")
 	}
 	if !ok {
+		log.V(1).Infof("getGUEHeader: did not find matching policy: %+v, %+v", addr4, addr6)
 		return GUEHeaders{}, false, nil
 	}
 	ip := net.ParseIP(address)
 	if ip == nil {
 		return GUEHeaders{}, false, fmt.Errorf("cannot parse IP address: %q", address)
 	}
-	if payloadIsV6 {
+	if nexthopIsV6 {
 		var dstIP6 [16]byte
 		for i, octet := range ip.To16() {
 			dstIP6[i] = octet
@@ -126,14 +134,19 @@ func (sr *SysRIB) getGUEHeader(address string, payloadIsV6 bool) (GUEHeaders, bo
 	for i, octet := range ip.To4() {
 		dstIP4[i] = octet
 	}
-	return GUEHeaders{
+	gueHeaders := GUEHeaders{
 		GUEPolicy: GUEPolicy{
-			dstPortv4: policy.dstPortv4,
-			srcIP4:    policy.srcIP4,
+			srcIP4: policy.srcIP4,
 		},
 		dstIP4: dstIP4,
 		isV6:   false,
-	}, true, nil
+	}
+	if payloadIsV6 {
+		gueHeaders.dstPortv6 = policy.dstPortv6
+	} else {
+		gueHeaders.dstPortv4 = policy.dstPortv4
+	}
+	return gueHeaders, true, nil
 }
 
 type RoutePreference struct {
@@ -463,6 +476,7 @@ func (sr *SysRIB) EgressNexthops(inputNI string, ip *net.IPNet, interfaces map[I
 	allEgressNhs := map[RoutePreference]map[ResolvedNexthop]bool{}
 	resolvedRoutes := map[RoutePreference]*Route{}
 	for _, cr := range routes {
+		log.V(1).Infof("Resolving route: %v", cr)
 		if allEgressNhs[cr.RoutePref] == nil {
 			allEgressNhs[cr.RoutePref] = map[ResolvedNexthop]bool{}
 			resolvedRoutes[cr.RoutePref] = cr
@@ -487,6 +501,7 @@ func (sr *SysRIB) EgressNexthops(inputNI string, ip *net.IPNet, interfaces map[I
 
 		// This isn't a connected route, check whether we can resolve the next-hops.
 		for _, nh := range cr.NextHops {
+			log.V(1).Infof("Recursively resolving nexthop: %+v", *nh)
 			nhop, err := addressToPrefix(nh.Address)
 			if err != nil {
 				return nil, nil, err
