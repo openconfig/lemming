@@ -16,17 +16,13 @@ package controllers
 
 import (
 	"context"
-	"crypto/rand"
-	"crypto/rsa"
-	"crypto/x509"
-	"crypto/x509/pkix"
 	"fmt"
-	"math/big"
 	"path/filepath"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/client-go/util/cert"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -127,44 +123,20 @@ func (r *LemmingReconciler) reconcileSecrets(ctx context.Context, lemming *lemmi
 		if err := ctrl.SetControllerReference(lemming, secret, r.Scheme); err != nil {
 			return nil, err
 		}
-		data, err := createKeyPair(lemming.Spec.TLS.SelfSigned.KeySize, lemming.Spec.TLS.SelfSigned.CommonName)
+		cert, key, err := cert.GenerateSelfSignedCertKey(lemming.Spec.TLS.SelfSigned.CommonName, nil, nil)
 		if err != nil {
 			return nil, err
 		}
-		secret.Data = data
+		secret.Data = map[string][]byte{
+			"tls.crt": cert,
+			"tls.key": key,
+		}
 		secret.Type = corev1.SecretTypeTLS
 		log.Info("tls config not empty and secret doesn't exist, creating it.")
 		return secret, r.Create(ctx, secret)
 	}
 	log.Info("no tls config and secret doesn't exist, doing nothing.")
 	return nil, nil
-}
-
-func createKeyPair(keySize int, commonName string) (map[string][]byte, error) {
-	privKey, err := rsa.GenerateKey(rand.Reader, keySize)
-	if err != nil {
-		return nil, err
-	}
-	tmpl := &x509.Certificate{
-		SerialNumber: big.NewInt(1234),
-		Subject: pkix.Name{
-			CommonName: commonName,
-		},
-	}
-
-	cert, err := x509.CreateCertificate(rand.Reader, tmpl, tmpl, &privKey.PublicKey, privKey)
-	if err != nil {
-		return nil, err
-	}
-
-	key, err := x509.MarshalPKCS8PrivateKey(privKey)
-	if err != nil {
-		return nil, err
-	}
-	return map[string][]byte{
-		"tls.crt": cert,
-		"tls.key": key,
-	}, nil
 }
 
 const (
@@ -198,7 +170,7 @@ func (r *LemmingReconciler) reconcilePod(ctx context.Context, lemming *lemmingv1
 	pod.Spec.Containers[0].Resources = lemming.Spec.Resources
 
 	requiredArgs := map[string]struct{}{
-		"--enable-dataplane": {},
+		"--enable_dataplane": {},
 		"--alsologtostderr":  {},
 	}
 	for _, arg := range pod.Spec.Containers[0].Args {

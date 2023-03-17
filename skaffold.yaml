@@ -7,7 +7,7 @@ build:
     gitCommit:
       ignoreChanges: true
   artifacts:
-  - image: us-west1-docker.pkg.dev/openconfig-lemming/release/lemming-operator
+  - image: us-west1-docker.pkg.dev/openconfig-lemming/release/operator
     docker:
       dockerfile: Dockerfile.operator
 manifests:
