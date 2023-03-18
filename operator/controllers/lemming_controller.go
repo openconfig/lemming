@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"sort"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -27,6 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
+	"github.com/google/go-cmp/cmp"
 	lemmingv1alpha1 "github.com/openconfig/lemming/operator/api/lemming/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -178,9 +180,12 @@ func (r *LemmingReconciler) reconcilePod(ctx context.Context, lemming *lemmingv1
 			delete(requiredArgs, arg)
 		}
 	}
+	sortedArgs := make([]string, 0, len(requiredArgs))
 	for arg := range requiredArgs {
-		pod.Spec.Containers[0].Args = append(pod.Spec.Containers[0].Args, arg)
+		sortedArgs = append(sortedArgs, arg)
 	}
+	sort.Strings(sortedArgs)
+	pod.Spec.Containers[0].Args = append(pod.Spec.Containers[0].Args, sortedArgs...)
 
 	mounts := map[string]corev1.VolumeMount{}
 	volumes := map[string]corev1.Volume{}
@@ -232,12 +237,12 @@ func (r *LemmingReconciler) reconcilePod(ctx context.Context, lemming *lemmingv1
 	if newPod {
 		return pod, r.Create(ctx, pod)
 	}
-	log.Info("pod", "old pod", *oldPodSpec, "new pod", pod.Spec)
 
 	if equality.Semantic.DeepEqual(oldPodSpec, &pod.Spec) {
 		log.Info("pod unchanged, doing nothing")
 		return pod, nil
 	}
+	log.Info("pod changed, recreating", "diff", cmp.Diff(*oldPodSpec, pod.Spec))
 	// Pods are mostly immutable, so recreate it if the spec changed.
 	if err := r.Delete(ctx, pod, client.PropagationPolicy(metav1.DeletePropagationForeground)); err != nil {
 		return nil, err
