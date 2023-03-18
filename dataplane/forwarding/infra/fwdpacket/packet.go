@@ -42,10 +42,6 @@ const (
 	LogDesc                // sets the packet's description (prefixed to all messages)
 )
 
-const (
-	logPacketTrace = false
-)
-
 // AttrPacketDebug controls packet debugging.
 var AttrPacketDebug = fwdattribute.ID("PacketDebug")
 
@@ -205,14 +201,12 @@ var logMu sync.Mutex
 
 // Log logs the packet's buffer if it is not empty.
 func Log(packet Packet) {
-	if logPacketTrace {
-		if m := packet.Log(); len(m) != 0 {
-			logMu.Lock()
-			log.Infof("Packet Trace:\n")
-			for _, msg := range m {
-				log.Infof("%v\n", msg)
-			}
-			logMu.Unlock()
+	if m := packet.Log(); len(m) != 0 {
+		logMu.Lock()
+		log.Infof("Packet Trace:\n")
+		for _, msg := range m {
+			log.Infof("%v\n", msg)
 		}
+		logMu.Unlock()
 	}
 }

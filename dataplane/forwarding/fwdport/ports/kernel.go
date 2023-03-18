@@ -25,6 +25,7 @@ import (
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdobject"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdpacket"
+	"github.com/openconfig/lemming/internal/debug"
 	"github.com/vishvananda/netlink"
 
 	log "github.com/golang/glog"
@@ -107,7 +108,7 @@ func (p *kernelPort) process() {
 					fwdport.Increment(p, len(pkt.Data()), fwdpb.CounterId_COUNTER_ID_RX_BAD_PACKETS, fwdpb.CounterId_COUNTER_ID_RX_BAD_OCTETS)
 					continue
 				}
-				fwdPkt.Debug(true) // TODO: put this behind a flag
+				fwdPkt.Debug(debug.PacketTrace)
 				fwdport.Process(p, fwdPkt, fwdpb.PortAction_PORT_ACTION_INPUT, p.ctx, "Kernel")
 			}
 		}
