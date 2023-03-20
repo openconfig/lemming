@@ -309,7 +309,7 @@ func testTraffic(t *testing.T, otg *otg.OTG, srcEndPoint, dstEndPoint Attributes
 	t.Logf("Stop traffic")
 	otg.StopTraffic(t)
 
-	time.Sleep(5 * time.Second)
+	time.Sleep(3 * time.Second)
 
 	txPkts := gnmi.Get(t, otg, gnmi.OTG().Flow("Flow").Counters().OutPkts().State())
 	rxPkts := gnmi.Get(t, otg, gnmi.OTG().Flow("Flow").Counters().InPkts().State())
@@ -341,7 +341,7 @@ func testTrafficv6(t *testing.T, otg *otg.OTG, srcEndPoint, dstEndPoint Attribut
 	t.Logf("Stop traffic")
 	otg.StopTraffic(t)
 
-	time.Sleep(5 * time.Second)
+	time.Sleep(3 * time.Second)
 
 	txPkts := gnmi.Get(t, otg, gnmi.OTG().Flow("Flow2").Counters().OutPkts().State())
 	rxPkts := gnmi.Get(t, otg, gnmi.OTG().Flow("Flow2").Counters().InPkts().State())
@@ -506,11 +506,11 @@ func TestBGPRouteAdvertisement(t *testing.T) {
 		},
 	})
 
-	loss := testTraffic(t, otg, atePort1, atePort2, "198.51.100.0", 5*time.Second)
+	loss := testTraffic(t, otg, atePort1, atePort2, "198.51.100.0", 3*time.Second)
 	if loss != 100 {
 		t.Errorf("Loss: got %g, want 100", loss)
 	}
-	loss = testTrafficv6(t, otg, atePort1, atePort2, "2003::", 5*time.Second)
+	loss = testTrafficv6(t, otg, atePort1, atePort2, "2003::", 3*time.Second)
 	if loss != 100 {
 		t.Errorf("Loss: got %g, want 100", loss)
 	}
@@ -539,11 +539,11 @@ func TestBGPRouteAdvertisement(t *testing.T) {
 	nbrPathv6 := bgpPath.Neighbor(dut2Port2.IPv6)
 	gnmi.Await(t, dut, nbrPathv6.SessionState().State(), 60*time.Second, oc.Bgp_Neighbor_SessionState_ESTABLISHED)
 
-	loss = testTraffic(t, otg, atePort1, atePort2, "198.51.100.0", 5*time.Second)
+	loss = testTraffic(t, otg, atePort1, atePort2, "198.51.100.0", 3*time.Second)
 	if loss > 1 {
 		t.Errorf("Loss: got %g, want <= 1", loss)
 	}
-	loss = testTrafficv6(t, otg, atePort1, atePort2, "2003::", 5*time.Second)
+	loss = testTrafficv6(t, otg, atePort1, atePort2, "2003::", 3*time.Second)
 	if loss > 1 {
 		t.Errorf("Loss: got %g, want <= 1", loss)
 	}
