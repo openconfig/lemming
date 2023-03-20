@@ -15,29 +15,25 @@
 package main
 
 import (
-	"crypto/rand"
-	"crypto/rsa"
-	"crypto/tls"
-	"crypto/x509"
-	"encoding/pem"
 	"flag"
-	"math/big"
 
-	log "github.com/golang/glog"
 	"github.com/openconfig/lemming"
 	"github.com/openconfig/lemming/sysrib"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
+
+	log "github.com/golang/glog"
 )
 
 var (
-	gnmiAddr  = flag.String("gnmi", ":9339", "gNMI listen address")
-	gribiAddr = flag.String("gribi", ":9340", "gRIBI listen address")
-	target    = pflag.String("target", "fakedut", "name of the fake target")
-	enableTLS = pflag.Bool("enable_tls", false, "Controls whether to enable TLS for gNXI services. If enabled and TLS key/cert path unspecified, a generated cert is used.")
-	zapiAddr  = pflag.String("zapi_addr", sysrib.ZAPIAddr, "Custom ZAPI address: use unix:/tmp/zserv.api for a temp.")
+	gnmiAddr    = flag.String("gnmi", ":9339", "gNMI listen address")
+	gribiAddr   = flag.String("gribi", ":9340", "gRIBI listen address")
+	target      = pflag.String("target", "fakedut", "name of the fake target")
+	tlsKeyFile  = pflag.String("tls_key_file", "", "Controls whether to enable TLS for gNXI services. If unspecified, insecure credentials are used.")
+	tlsCertFile = pflag.String("tls_cert_file", "", "Controls whether to enable TLS for gNXI services. If unspecified, insecure credentials are used.")
+	zapiAddr    = pflag.String("zapi_addr", sysrib.ZAPIAddr, "Custom ZAPI address: use unix:/tmp/zserv.api for a temp.")
 )
 
 func main() {
@@ -47,9 +43,13 @@ func main() {
 	pflag.Parse()
 	viper.BindPFlags(pflag.CommandLine)
 
-	creds, err := newCreds()
-	if err != nil {
-		log.Fatalf("failed to create credentials: %v", err)
+	creds := insecure.NewCredentials()
+	if *tlsCertFile != "" && *tlsKeyFile != "" {
+		var err error
+		creds, err = credentials.NewServerTLSFromFile(*tlsCertFile, *tlsKeyFile)
+		if err != nil {
+			log.Fatalf("failed to create tls credentials: %v", err)
+		}
 	}
 
 	f, err := lemming.New(*target, *zapiAddr, lemming.WithTransportCreds(creds), lemming.WithGRIBIAddr(*gribiAddr), lemming.WithGNMIAddr(*gnmiAddr))
@@ -60,40 +60,4 @@ func main() {
 
 	log.Info("lemming initialization complete")
 	select {}
-}
-
-// newCreds returns either insecure or tls credentials, depending the enable_tls flag.
-// TODO: figure out long term plan for certs, this implementation is here to unblock using Ondatra KNEBind.
-func newCreds() (credentials.TransportCredentials, error) {
-	if !*enableTLS {
-		return insecure.NewCredentials(), nil
-	}
-	key, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		return nil, err
-	}
-	tmpl := &x509.Certificate{
-		SerialNumber: big.NewInt(1234),
-	}
-
-	certDer, err := x509.CreateCertificate(rand.Reader, tmpl, tmpl, &key.PublicKey, key)
-	if err != nil {
-		return nil, err
-	}
-	certPem := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: certDer})
-
-	keyDer, err := x509.MarshalPKCS8PrivateKey(key)
-	if err != nil {
-		return nil, err
-	}
-	keyPem := pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: keyDer})
-
-	serverCert, err := tls.X509KeyPair(certPem, keyPem)
-	if err != nil {
-		return nil, err
-	}
-	return credentials.NewTLS(&tls.Config{
-		MinVersion:   tls.VersionTLS13,
-		Certificates: []tls.Certificate{serverCert},
-	}), nil
 }

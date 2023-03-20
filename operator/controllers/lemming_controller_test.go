@@ -69,8 +69,8 @@ func TestReconcile(t *testing.T) {
 						OuterPort: 5678,
 					},
 				},
-				TLS: lemmingv1alpha1.TLSSpec{
-					SelfSigned: lemmingv1alpha1.SelfSignedSpec{
+				TLS: &lemmingv1alpha1.TLSSpec{
+					SelfSigned: &lemmingv1alpha1.SelfSignedSpec{
 						KeySize:    2048,
 						CommonName: "lemming",
 					},
@@ -118,7 +118,7 @@ func TestReconcile(t *testing.T) {
 					Name:    "lemming",
 					Image:   "lemming:latest",
 					Command: []string{"./test"},
-					Args:    []string{"--alsologtostderr", "--target=lemming"},
+					Args:    []string{"--alsologtostderr", "--target=lemming", "--enable_dataplane", "--tls_key_file", "/certs/tls.key", "--tls_cert_file", "/certs/tls.crt"},
 					Env: []corev1.EnvVar{{
 						Name:  "ENV_TEST",
 						Value: "FOO",

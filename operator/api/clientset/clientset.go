@@ -30,8 +30,7 @@ type Interface interface {
 	LemmingV1alpha1() lemmingv1alpha1.LemmingV1alpha1Interface
 }
 
-// Clientset contains the clients for groups. Each group has exactly one
-// version included in a Clientset.
+// Clientset contains the clients for groups.
 type Clientset struct {
 	*discovery.DiscoveryClient
 	lemmingV1alpha1 *lemmingv1alpha1.LemmingV1alpha1Client
