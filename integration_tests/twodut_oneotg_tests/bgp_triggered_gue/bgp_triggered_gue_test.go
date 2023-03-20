@@ -657,6 +657,8 @@ func testTrafficAndEncap(t *testing.T, otg *otg.OTG, startingIP string, v6Traffi
 
 	if expectedPacketCounter < 10 {
 		t.Errorf("Got less than 10 expected packets: %v", expectedPacketCounter)
+	} else {
+		t.Logf("Got %d expected packets:", expectedPacketCounter)
 	}
 }
 

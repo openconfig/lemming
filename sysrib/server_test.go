@@ -47,6 +47,16 @@ const (
 	v4v6ConversionStartPos = 8
 )
 
+var (
+	// failedRoutesMu avoids any races on the failedRoutes in
+	// TestBGPGUEPolicy. The test passes in the pointer to the failed
+	// routes to a concurrently-running sysrib server, and also modifies
+	// the IP addresses/port numbers for v6 testing, so this is necessary
+	// to avoid `go test -race` from reporting a race (which it does so
+	// intermittently).
+	failedRoutesMu sync.Mutex
+)
+
 type AddIntfAction struct {
 	name    string
 	ifindex int32
@@ -71,6 +81,8 @@ type FakeDataplane struct {
 
 func (dp *FakeDataplane) ProgramRoute(r *ResolvedRoute) error {
 	dp.mu.Lock()
+	failedRoutesMu.Lock()
+	defer failedRoutesMu.Unlock()
 	defer dp.mu.Unlock()
 	// Intentionally fail to program failRoutes.
 	for _, failroute := range dp.failRoutes {
@@ -1162,9 +1174,11 @@ func TestServer(t *testing.T) {
 					for _, route := range tt.wantInitialConnectedRoutes {
 						mapResolvedRouteTo6(t, route)
 					}
+					failedRoutesMu.Lock()
 					for _, route := range tt.inFailRoutes {
 						mapResolvedRouteTo6(t, route)
 					}
+					failedRoutesMu.Unlock()
 				}
 
 				t.Run(desc, func(t *testing.T) {
@@ -1183,7 +1197,9 @@ func TestServer(t *testing.T) {
 					}()
 
 					dp := NewFakeDataplane()
+					failedRoutesMu.Lock()
 					dp.SetupFailRoutes(tt.inFailRoutes)
+					failedRoutesMu.Unlock()
 					s, err := New(nil)
 					if err != nil {
 						t.Fatal(err)
