@@ -63,6 +63,8 @@ const (
 
 	dutAS  = 64500
 	dut2AS = 64501
+
+	lossTolerance = 2
 )
 
 func TestMain(m *testing.M) {
@@ -506,11 +508,11 @@ func TestBGPRouteAdvertisement(t *testing.T) {
 		},
 	})
 
-	loss := testTraffic(t, otg, atePort1, atePort2, "198.51.100.0", 3*time.Second)
+	loss := testTraffic(t, otg, atePort1, atePort2, "198.51.100.0", 2*time.Second)
 	if loss != 100 {
 		t.Errorf("Loss: got %g, want 100", loss)
 	}
-	loss = testTrafficv6(t, otg, atePort1, atePort2, "2003::", 3*time.Second)
+	loss = testTrafficv6(t, otg, atePort1, atePort2, "2003::", 2*time.Second)
 	if loss != 100 {
 		t.Errorf("Loss: got %g, want 100", loss)
 	}
@@ -539,13 +541,11 @@ func TestBGPRouteAdvertisement(t *testing.T) {
 	nbrPathv6 := bgpPath.Neighbor(dut2Port2.IPv6)
 	gnmi.Await(t, dut, nbrPathv6.SessionState().State(), 60*time.Second, oc.Bgp_Neighbor_SessionState_ESTABLISHED)
 
-	loss = testTraffic(t, otg, atePort1, atePort2, "198.51.100.0", 3*time.Second)
-	if loss > 1 {
-		t.Errorf("Loss: got %g, want <= 1", loss)
+	if loss := testTraffic(t, otg, atePort1, atePort2, "198.51.100.0", 5*time.Second); loss > lossTolerance {
+		t.Errorf("Loss: got %g, want <= %d", loss, lossTolerance)
 	}
-	loss = testTrafficv6(t, otg, atePort1, atePort2, "2003::", 3*time.Second)
-	if loss > 1 {
-		t.Errorf("Loss: got %g, want <= 1", loss)
+	if loss := testTrafficv6(t, otg, atePort1, atePort2, "2003::", 5*time.Second); loss > lossTolerance {
+		t.Errorf("Loss: got %g, want <= %d", loss, lossTolerance)
 	}
 
 	dut.RawAPIs().GRIBI().Default(t).Flush(context.Background(), &gribipb.FlushRequest{

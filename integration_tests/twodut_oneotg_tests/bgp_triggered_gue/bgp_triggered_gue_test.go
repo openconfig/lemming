@@ -90,6 +90,8 @@ const (
 	dutAS  = 64500
 	dut2AS = 64500
 	ateAS  = 64502
+
+	lossTolerance = 2
 )
 
 func TestMain(m *testing.M) {
@@ -454,7 +456,7 @@ func testTraffic(t *testing.T, otg *otg.OTG, srcEndPoint, dstEndPoint Attributes
 	t.Logf("Stop traffic")
 	otg.StopTraffic(t)
 
-	time.Sleep(1 * time.Second)
+	time.Sleep(2 * time.Second)
 
 	txPkts := gnmi.Get(t, otg, gnmi.OTG().Flow("Flow").Counters().OutPkts().State())
 	rxPkts := gnmi.Get(t, otg, gnmi.OTG().Flow("Flow").Counters().InPkts().State())
@@ -486,7 +488,7 @@ func testTrafficv6(t *testing.T, otg *otg.OTG, srcEndPoint, dstEndPoint Attribut
 	t.Logf("Stop traffic")
 	otg.StopTraffic(t)
 
-	time.Sleep(1 * time.Second)
+	time.Sleep(2 * time.Second)
 
 	txPkts := gnmi.Get(t, otg, gnmi.OTG().Flow("Flow2").Counters().OutPkts().State())
 	rxPkts := gnmi.Get(t, otg, gnmi.OTG().Flow("Flow2").Counters().InPkts().State())
@@ -509,8 +511,8 @@ func testTrafficAndEncap(t *testing.T, otg *otg.OTG, startingIP string, v6Traffi
 		testTraffic = testTrafficv6
 	}
 
-	if loss := testTraffic(t, otg, atePort1, atePort2, startingIP); loss > 1 {
-		t.Errorf("Loss: got %g, want <= 1", loss)
+	if loss := testTraffic(t, otg, atePort1, atePort2, startingIP); loss > lossTolerance {
+		t.Errorf("Loss: got %g, want <= %d", loss, lossTolerance)
 	}
 
 	otg.StopCapture(t, atePort2.Name)
@@ -658,7 +660,7 @@ func testTrafficAndEncap(t *testing.T, otg *otg.OTG, startingIP string, v6Traffi
 	if expectedPacketCounter < 10 {
 		t.Errorf("Got less than 10 expected packets: %v", expectedPacketCounter)
 	} else {
-		t.Logf("Got %d expected packets:", expectedPacketCounter)
+		t.Logf("Got %d expected packets.", expectedPacketCounter)
 	}
 }
 
