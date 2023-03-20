@@ -16,5 +16,10 @@
 package debug
 
 const (
-	PacketTrace = true
+	// ExternalPortPacketTrace turns on packet tracing for lemming's ports
+	// that interface with other devices.
+	ExternalPortPacketTrace = true
+	// TAPPortPacketTrace turns on packet tracing for lemming's TAP interface ports
+	// that communicate between each external port and lemming's tasks.
+	TAPPortPacketTrace = true
 )

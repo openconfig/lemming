@@ -108,7 +108,7 @@ func (p *kernelPort) process() {
 					fwdport.Increment(p, len(pkt.Data()), fwdpb.CounterId_COUNTER_ID_RX_BAD_PACKETS, fwdpb.CounterId_COUNTER_ID_RX_BAD_OCTETS)
 					continue
 				}
-				fwdPkt.Debug(debug.PacketTrace)
+				fwdPkt.Debug(debug.ExternalPortPacketTrace)
 				fwdport.Process(p, fwdPkt, fwdpb.PortAction_PORT_ACTION_INPUT, p.ctx, "Kernel")
 			}
 		}

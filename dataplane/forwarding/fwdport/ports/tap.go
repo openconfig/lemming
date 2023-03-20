@@ -23,6 +23,7 @@ import (
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdobject"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdpacket"
+	"github.com/openconfig/lemming/internal/debug"
 	"golang.org/x/sys/unix"
 
 	log "github.com/golang/glog"
@@ -99,7 +100,7 @@ func (p *tapPort) process() {
 				fwdport.Increment(p, n, fwdpb.CounterId_COUNTER_ID_RX_BAD_PACKETS, fwdpb.CounterId_COUNTER_ID_RX_BAD_OCTETS)
 				continue
 			}
-			fwdPkt.Debug(true) // TODO: put this behind a flag
+			fwdPkt.Debug(debug.TAPPortPacketTrace)
 			fwdport.Process(p, fwdPkt, fwdpb.PortAction_PORT_ACTION_INPUT, p.ctx, "TAP")
 		}
 	}()
