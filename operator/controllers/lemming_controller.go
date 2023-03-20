@@ -145,6 +145,13 @@ const (
 	secretMountPath = "/certs"
 )
 
+var (
+	requiredArgs = map[string]struct{}{
+		"--enable_dataplane": {},
+		"--alsologtostderr":  {},
+	}
+)
+
 func (r *LemmingReconciler) reconcilePod(ctx context.Context, lemming *lemmingv1alpha1.Lemming, secretName string) (*corev1.Pod, error) {
 	log := log.FromContext(ctx)
 	pod := &corev1.Pod{}
@@ -171,10 +178,6 @@ func (r *LemmingReconciler) reconcilePod(ctx context.Context, lemming *lemmingv1
 	pod.Spec.Containers[0].Env = lemming.Spec.Env
 	pod.Spec.Containers[0].Resources = lemming.Spec.Resources
 
-	requiredArgs := map[string]struct{}{
-		"--enable_dataplane": {},
-		"--alsologtostderr":  {},
-	}
 	for _, arg := range pod.Spec.Containers[0].Args {
 		if _, ok := requiredArgs[arg]; ok {
 			delete(requiredArgs, arg)
@@ -211,7 +214,7 @@ func (r *LemmingReconciler) reconcilePod(ctx context.Context, lemming *lemmingv1
 		mounts["tls"] = corev1.VolumeMount{
 			Name:      "tls",
 			ReadOnly:  true,
-			MountPath: "/certs",
+			MountPath: secretMountPath,
 		}
 		changedMounts = true
 	} else if secretName == "" && ok {

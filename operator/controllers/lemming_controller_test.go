@@ -118,7 +118,7 @@ func TestReconcile(t *testing.T) {
 					Name:    "lemming",
 					Image:   "lemming:latest",
 					Command: []string{"./test"},
-					Args:    []string{"--alsologtostderr", "--target=lemming", "--enable-dataplane", "--tls_key_file", "/certs/tls.key", "--tls_cert_file", "/certs/tls.crt"},
+					Args:    []string{"--alsologtostderr", "--target=lemming", "--enable_dataplane", "--tls_key_file", "/certs/tls.key", "--tls_cert_file", "/certs/tls.crt"},
 					Env: []corev1.EnvVar{{
 						Name:  "ENV_TEST",
 						Value: "FOO",
