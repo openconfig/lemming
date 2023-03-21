@@ -12,7 +12,7 @@ load:
 ## Run integration tests
 .PHONY: itest
 itest:
-	go test -count 1 -timeout 30m $(shell go list ./integration_tests/... | grep -v bgp_triggered_gue)
+	go test -count 1 -timeout 30m $(shell go list ./integration_tests/...)
 
 .PHONY: test
 test:

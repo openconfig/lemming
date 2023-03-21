@@ -327,7 +327,6 @@ func (s *Server) monitorBGPGUEPolicies(yclient *ygnmi.Client) error {
 					continue
 				}
 				updatePolicy(prefix.String(), GUEPolicy{
-					isV6:      false,
 					dstPortv4: *ocPolicy.DstPortIpv4,
 					dstPortv6: *ocPolicy.DstPortIpv6,
 					srcIP4:    addr.As4(),
@@ -350,7 +349,6 @@ func (s *Server) monitorBGPGUEPolicies(yclient *ygnmi.Client) error {
 					continue
 				}
 				updatePolicy(prefix.String(), GUEPolicy{
-					isV6:      true,
 					dstPortv6: *ocPolicy.DstPortIpv6,
 					srcIP6:    addr.As16(),
 				})
@@ -442,7 +440,7 @@ func prefixString(prefix *pb.Prefix) (string, error) {
 // gueActions generates the forwarding actions that encapsulates a packet with
 // a UDP and then an IP header using the information from gueHeaders.
 //
-// - isRouteV4 indicates whether the route is a v4 route or a v6 route.
+// - isRouteV4 indicates whether the route is a v4/v6-mapped v4 route or a v6 route.
 func gueActions(isRouteV4 bool, gueHeaders GUEHeaders) ([]*fwdpb.ActionDesc, error) {
 	var ip gopacket.SerializableLayer
 	var headerID fwdpb.PacketHeaderId
@@ -539,11 +537,11 @@ func (s *Server) programRoute(r *ResolvedRoute) error {
 
 // convertToZAPIRoute converts a route to a ZAPI route for redistributing to
 // other protocols (e.g. BGP).
-func convertToZAPIRoute(routeKey RouteKey, route *Route) (*zebra.IPRouteBody, error) {
+func convertToZAPIRoute(routeKey RouteKey, route *Route, rr *ResolvedRoute) (*zebra.IPRouteBody, error) {
 	if route.Connected != nil {
-		// TODO(wenbli): Connected routes not supported. This is not
-		// needed right now since only need to redistribute
-		// non-connected routes.
+		// TODO(wenbli): Connected route redistribution not supported.
+		// This is not needed right now since only need to redistribute
+		// non-connected routes. It also breaks some of the integration tests.
 		return nil, nil
 	}
 	vrfID, err := niNameToVrfID(routeKey.NIName)
@@ -551,14 +549,14 @@ func convertToZAPIRoute(routeKey RouteKey, route *Route) (*zebra.IPRouteBody, er
 		return nil, err
 	}
 
-	_, ipnet, err := net.ParseCIDR(route.Prefix)
+	_, ipnet, err := net.ParseCIDR(rr.Prefix)
 	if err != nil {
 		return nil, fmt.Errorf("gribigo/zapi: %v", err)
 	}
 	prefixLen, _ := ipnet.Mask.Size()
 
 	var nexthops []zebra.Nexthop
-	for _, nh := range route.NextHops {
+	for nh := range rr.Nexthops {
 		nexthops = append(nexthops, zebra.Nexthop{
 			VrfID:  vrfID,
 			Gate:   net.ParseIP(nh.Address),
@@ -663,7 +661,7 @@ func (s *Server) resolveAndProgramDiffAux(niName string, ni *NIRIB, prefix strin
 		}
 		// ZAPI: If a new/updated route is programmed, redistribute it to clients.
 		// TODO(wenbli): RedistributeRouteDel
-		zrouteBody, err := convertToZAPIRoute(rr.RouteKey, route)
+		zrouteBody, err := convertToZAPIRoute(rr.RouteKey, route, rr)
 		if err != nil {
 			log.Warningf("failed to convert resolved route to zebra BGP route: %v", err)
 		}
@@ -686,6 +684,14 @@ func (s *Server) ResolvedRoutes() map[RouteKey]*Route {
 	s.resolvedRoutesMu.Lock()
 	defer s.resolvedRoutesMu.Unlock()
 	return maps.Clone(s.resolvedRoutes)
+}
+
+// ProgrammedRoutes returns the shallow copy of the programmed routes of the RIB
+// manager.
+func (s *Server) ProgrammedRoutes() map[RouteKey]*ResolvedRoute {
+	s.programmedRoutesMu.Lock()
+	defer s.programmedRoutesMu.Unlock()
+	return maps.Clone(s.programmedRoutes)
 }
 
 // SetRoute implements ROUTE_ADD and ROUTE_DELETE

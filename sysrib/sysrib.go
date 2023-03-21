@@ -72,7 +72,6 @@ type GUEPolicy struct {
 	dstPortv6 uint16
 	srcIP4    [4]byte
 	srcIP6    [16]byte
-	isV6      bool
 }
 
 // GUEHeaders represents the IP and UDP headers that are to encapsulate the
@@ -81,51 +80,73 @@ type GUEHeaders struct {
 	GUEPolicy
 	dstIP4 [4]byte
 	dstIP6 [16]byte
+	isV6   bool
 }
 
 // getGUEHeader retrieves the GUEHeader for the given address if it matched a
 // GUE policy. The boolean return indicates whether a GUE policy was
 // matched.
-func (sr *SysRIB) getGUEHeader(address string) (GUEHeaders, bool, error) {
+//
+// - payloadIsV6 indicates what type of IP traffic is being encapsulated. This
+// determines which UDP port is used from the GUE policy.
+func (sr *SysRIB) getGUEHeader(address string, payloadIsV6 bool) (GUEHeaders, bool, error) {
+	log.V(1).Infof("getGUEHeader: %s, %v", address, payloadIsV6)
 	addr4, addr6, err := patricia.ParseIPFromString(address)
 	if err != nil {
 		return GUEHeaders{}, false, err
 	}
 	var ok bool
 	var policy GUEPolicy
+	// nexthopIsV6 determines whether the v4 or v6 GUE headers must be applied.
+	var nexthopIsV6 bool
 	switch {
 	case addr4 != nil:
 		ok, policy = sr.GUEPoliciesV4.FindDeepestTag(*addr4)
 	case addr6 != nil:
 		ok, policy = sr.GUEPoliciesV6.FindDeepestTag(*addr6)
+		nexthopIsV6 = true
 	default:
 		return GUEHeaders{}, false, fmt.Errorf("Invalid IP address for looking up GUE header")
 	}
 	if !ok {
+		log.V(1).Infof("getGUEHeader: did not find matching policy: %+v, %+v", addr4, addr6)
 		return GUEHeaders{}, false, nil
 	}
 	ip := net.ParseIP(address)
 	if ip == nil {
 		return GUEHeaders{}, false, fmt.Errorf("cannot parse IP address: %q", address)
 	}
-	if policy.isV6 {
+	if nexthopIsV6 {
 		var dstIP6 [16]byte
 		for i, octet := range ip.To16() {
 			dstIP6[i] = octet
 		}
 		return GUEHeaders{
-			GUEPolicy: policy,
-			dstIP6:    dstIP6,
+			GUEPolicy: GUEPolicy{
+				dstPortv6: policy.dstPortv6,
+				srcIP6:    policy.srcIP6,
+			},
+			dstIP6: dstIP6,
+			isV6:   true,
 		}, true, nil
 	}
 	var dstIP4 [4]byte
 	for i, octet := range ip.To4() {
 		dstIP4[i] = octet
 	}
-	return GUEHeaders{
-		GUEPolicy: policy,
-		dstIP4:    dstIP4,
-	}, true, nil
+	gueHeaders := GUEHeaders{
+		GUEPolicy: GUEPolicy{
+			srcIP4: policy.srcIP4,
+		},
+		dstIP4: dstIP4,
+		isV6:   false,
+	}
+	if payloadIsV6 {
+		gueHeaders.dstPortv6 = policy.dstPortv6
+	} else {
+		gueHeaders.dstPortv4 = policy.dstPortv4
+	}
+	return gueHeaders, true, nil
 }
 
 type RoutePreference struct {
@@ -461,6 +482,7 @@ func (sr *SysRIB) egressNexthops(inputNI string, ip *net.IPNet, interfaces map[I
 	allEgressNhs := map[RoutePreference]map[ResolvedNexthop]bool{}
 	resolvedRoutes := map[RoutePreference]*Route{}
 	for _, cr := range routes {
+		log.V(1).Infof("Resolving route: %v", cr)
 		if allEgressNhs[cr.RoutePref] == nil {
 			allEgressNhs[cr.RoutePref] = map[ResolvedNexthop]bool{}
 			resolvedRoutes[cr.RoutePref] = cr
@@ -485,6 +507,7 @@ func (sr *SysRIB) egressNexthops(inputNI string, ip *net.IPNet, interfaces map[I
 
 		// This isn't a connected route, check whether we can resolve the next-hops.
 		for _, nh := range cr.NextHops {
+			log.V(1).Infof("Recursively resolving nexthop: %+v", *nh)
 			nhop, err := addressToPrefix(nh.Address)
 			if err != nil {
 				return nil, nil, err
@@ -502,7 +525,8 @@ func (sr *SysRIB) egressNexthops(inputNI string, ip *net.IPNet, interfaces map[I
 			//   then, add the route with an encap action for the nexthop.
 			var encapHeaders GUEHeaders
 			if cr.RoutePref.AdminDistance == 20 { // EBGP
-				gueHeaders, ok, err := sr.getGUEHeader(nh.Address)
+				// Use net.ParseIP to convert IPv4-mapped IPv6 addresses to IPv4.
+				gueHeaders, ok, err := sr.getGUEHeader(net.ParseIP(nh.Address).String(), ip.IP.To4() == nil)
 				if ok {
 					encapHeaders = gueHeaders
 				}

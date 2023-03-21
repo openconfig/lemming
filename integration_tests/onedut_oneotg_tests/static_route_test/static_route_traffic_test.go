@@ -406,7 +406,7 @@ func TestIPv4Entry(t *testing.T) {
 			// Send some traffic to make sure neighbor cache is warmed up on the dut.
 			testTrafficFn(t, otg, atePort1, atePort2, tc.startAddress, 1*time.Second)
 
-			loss := testTrafficFn(t, otg, atePort1, atePort2, tc.startAddress, 15*time.Second)
+			loss := testTrafficFn(t, otg, atePort1, atePort2, tc.startAddress, 10*time.Second)
 			if loss > 1 {
 				t.Errorf("Loss: got %g, want <= 1", loss)
 			}
