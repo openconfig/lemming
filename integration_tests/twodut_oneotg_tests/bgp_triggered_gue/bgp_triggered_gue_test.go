@@ -210,10 +210,10 @@ func configureOTG(t *testing.T, otg *otg.OTG) gosnappi.Config {
 	i2 := config.Devices().Add().SetName(atePort2.Name)
 	eth2 := i2.Ethernets().Add().SetName(atePort2.Name + ".Eth").
 		SetPortName(i2.Name()).SetMac(atePort2.MAC)
-	eth2.Ipv4Addresses().Add().SetName(i2.Name() + ".IPv4").
+	ipv4 := eth2.Ipv4Addresses().Add().SetName(i2.Name() + ".IPv4").
 		SetAddress(atePort2.IPv4).SetGateway(dutPort2.IPv4).
 		SetPrefix(int32(atePort2.IPv4Len))
-	eth2.Ipv6Addresses().Add().SetName(i2.Name() + ".IPv6").
+	ipv6 := eth2.Ipv6Addresses().Add().SetName(i2.Name() + ".IPv6").
 		SetAddress(atePort2.IPv6).SetGateway(dutPort2.IPv6).
 		SetPrefix(int32(atePort2.IPv6Len))
 	// Configure capture format.
@@ -240,15 +240,13 @@ func configureOTG(t *testing.T, otg *otg.OTG) gosnappi.Config {
 	ipv6ObjectMap := make(map[string]gosnappi.DeviceIpv6)
 
 	ateName := atePort2.Name
-	ateNeighbor := dutPort1
 	devName := ateName + ".dev"
 	bgpNexthop := atePort2.IPv4
 	bgpNexthopv6 := atePort2.IPv6
 
-	bgp := i1.Bgp().SetRouterId(atePort2.IPv4)
+	bgp := i2.Bgp().SetRouterId(atePort2.IPv4)
 
 	// IPv4
-	ipv4 := eth1.Ipv4Addresses().Add().SetName(devName + ".IPv4").SetAddress(atePort1.IPv4).SetGateway(ateNeighbor.IPv4).SetPrefix(ipv4PrefixLen)
 	bgp4Name := devName + ".BGP4.peer"
 	bgp4Peer := bgp.Ipv4Interfaces().Add().SetIpv4Name(ipv4.Name()).Peers().Add().SetName(bgp4Name).SetPeerAddress(ipv4.Gateway()).SetAsNumber(int32(ateAS)).SetAsType(gosnappi.BgpV4PeerAsType.EBGP)
 
@@ -267,7 +265,6 @@ func configureOTG(t *testing.T, otg *otg.OTG) gosnappi.Config {
 	bgp4PeerRoutes.AddPath().SetPathId(1)
 
 	// IPv6
-	ipv6 := eth1.Ipv6Addresses().Add().SetName(devName + ".IPv6").SetAddress(atePort1.IPv6).SetGateway(ateNeighbor.IPv6).SetPrefix(ipv6PrefixLen)
 	bgp6Name := devName + ".BGP6.peer"
 	bgp6Peer := bgp.Ipv6Interfaces().Add().SetIpv6Name(ipv6.Name()).Peers().Add().SetName(bgp6Name).SetPeerAddress(ipv6.Gateway()).SetAsNumber(int32(ateAS)).SetAsType(gosnappi.BgpV6PeerAsType.EBGP)
 
@@ -368,13 +365,13 @@ func configureDUT1(t *testing.T, dut *ondatra.DUTDevice) {
 		NeighborAddress: ygot.String(dut2Port2.IPv4),
 	}, &oc.NetworkInstance_Protocol_Bgp_Neighbor{
 		PeerAs:          ygot.Uint32(ateAS),
-		NeighborAddress: ygot.String(atePort1.IPv4),
+		NeighborAddress: ygot.String(atePort2.IPv4),
 	}, &oc.NetworkInstance_Protocol_Bgp_Neighbor{
 		PeerAs:          ygot.Uint32(dut2AS),
 		NeighborAddress: ygot.String(dut2Port2.IPv6),
 	}, &oc.NetworkInstance_Protocol_Bgp_Neighbor{
 		PeerAs:          ygot.Uint32(ateAS),
-		NeighborAddress: ygot.String(atePort1.IPv6),
+		NeighborAddress: ygot.String(atePort2.IPv6),
 	})
 	gnmi.Replace(t, dut, bgpPath.Config(), dutConf)
 }
@@ -852,8 +849,8 @@ func TestBGPTriggeredGUE(t *testing.T) {
 	gnmi.Await(t, dut, bgpPath.Neighbor(dut2Port2.IPv4).SessionState().State(), 120*time.Second, oc.Bgp_Neighbor_SessionState_ESTABLISHED)
 	gnmi.Await(t, dut, bgpPath.Neighbor(dut2Port2.IPv6).SessionState().State(), 120*time.Second, oc.Bgp_Neighbor_SessionState_ESTABLISHED)
 	t.Logf("Verify DUT's DUT-OTG BGP session up")
-	gnmi.Await(t, dut, bgpPath.Neighbor(atePort1.IPv4).SessionState().State(), 120*time.Second, oc.Bgp_Neighbor_SessionState_ESTABLISHED)
-	gnmi.Await(t, dut, bgpPath.Neighbor(atePort1.IPv6).SessionState().State(), 120*time.Second, oc.Bgp_Neighbor_SessionState_ESTABLISHED)
+	gnmi.Await(t, dut, bgpPath.Neighbor(atePort2.IPv4).SessionState().State(), 120*time.Second, oc.Bgp_Neighbor_SessionState_ESTABLISHED)
+	gnmi.Await(t, dut, bgpPath.Neighbor(atePort2.IPv6).SessionState().State(), 120*time.Second, oc.Bgp_Neighbor_SessionState_ESTABLISHED)
 	t.Logf("Verify OTG's DUT-OTG BGP sessions up")
 	verifyOTGBGPTelemetry(t, otg, otgConfig, "ESTABLISHED")
 
