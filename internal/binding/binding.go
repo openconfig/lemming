@@ -42,7 +42,8 @@ import (
 )
 
 var (
-	keep = flag.Bool("keep", false, "Keep topology deployed after test")
+	keep     = flag.Bool("keep", false, "Keep topology deployed after test")
+	skipLock = flag.Bool("skip-lock", false, "Do not acquire a lock on the topology")
 )
 
 // Get returns the custom lemming binding. The topoDir is the relative path to a
@@ -83,7 +84,9 @@ type LemmingBind struct {
 
 // Release runs knebind release then deletes the topology if it was created by this binding.
 func (lb *LemmingBind) Release(ctx context.Context) error {
-	defer lb.cancel()
+	if !*skipLock {
+		defer lb.cancel()
+	}
 	if err := lb.Binding.Release(ctx); err != nil {
 		return err
 	}
@@ -132,31 +135,33 @@ func (lb *LemmingBind) Reserve(ctx context.Context, tb *proto.Testbed, runTime t
 		return nil, err
 	}
 
-	ready := make(chan bool)
-	elect, err := leaderelection.NewLeaderElector(leaderelection.LeaderElectionConfig{
-		Lock:            lock,
-		LeaseDuration:   15 * time.Second,
-		RenewDeadline:   10 * time.Second,
-		RetryPeriod:     2 * time.Second,
-		ReleaseOnCancel: true,
-		Callbacks: leaderelection.LeaderCallbacks{
-			OnStartedLeading: func(ctx context.Context) {
-				ready <- true
+	if !*skipLock {
+		ready := make(chan bool)
+		elect, err := leaderelection.NewLeaderElector(leaderelection.LeaderElectionConfig{
+			Lock:            lock,
+			LeaseDuration:   15 * time.Second,
+			RenewDeadline:   10 * time.Second,
+			RetryPeriod:     2 * time.Second,
+			ReleaseOnCancel: true,
+			Callbacks: leaderelection.LeaderCallbacks{
+				OnStartedLeading: func(ctx context.Context) {
+					ready <- true
+				},
+				OnStoppedLeading: func() {},
+				OnNewLeader:      func(identity string) {},
 			},
-			OnStoppedLeading: func() {},
-			OnNewLeader:      func(identity string) {},
-		},
-	})
-	if err != nil {
-		return nil, err
+		})
+		if err != nil {
+			return nil, err
+		}
+		electCtx, cancel := context.WithCancel(ctx)
+		lb.cancel = cancel
+
+		go elect.Run(electCtx)
+
+		fmt.Println("Waiting for topology lock")
+		<-ready
 	}
-	electCtx, cancel := context.WithCancel(ctx)
-	lb.cancel = cancel
-
-	go elect.Run(electCtx)
-
-	fmt.Println("Waiting for topology lock")
-	<-ready
 
 	// Check if topology already exists, if not deploy it.
 	if _, err := client.CoreV1().Namespaces().Get(ctx, topo.GetName(), metav1.GetOptions{}); apierrors.IsNotFound(err) {

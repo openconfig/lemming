@@ -111,6 +111,8 @@ func (t *Trie) Insert(r *pathzpb.AuthorizationRule) error {
 	if t.root == nil {
 		t.root = &trieNode{
 			children: make(map[string]*trieNode),
+			users:    make(policies),
+			groups:   make(policies),
 		}
 	}
 	if r.Action == pathzpb.Action_ACTION_UNSPECIFIED {
@@ -186,7 +188,8 @@ func (t *Trie) Probe(path *gpb.Path, user string, mode pathzpb.Mode) pathzpb.Act
 		if !node.hasPolicy {
 			return true, nil
 		}
-		if act, _ := node.getAction(user, mode, t.memberships); act != pathzpb.Action_ACTION_UNSPECIFIED {
+		act, _ := node.getAction(user, mode, t.memberships)
+		if act != pathzpb.Action_ACTION_UNSPECIFIED {
 			if len(walkPath.Elem) > longestPolicyLen {
 				matchingPolicies = nil
 				longestPolicyLen = len(walkPath.Elem)
@@ -196,6 +199,7 @@ func (t *Trie) Probe(path *gpb.Path, user string, mode pathzpb.Mode) pathzpb.Act
 
 		return true, nil
 	})
+
 	if len(matchingPolicies) == 0 {
 		return pathzpb.Action_ACTION_DENY
 	}
@@ -243,15 +247,18 @@ func (t *Trie) walk(walkFn func(*trieNode, *gpb.Path) (bool, error)) error {
 		last := stack[len(stack)-1]
 		stack = stack[:len(stack)-1]
 
-		if last.node.elem != nil {
+		if last.depth == 0 {
+			path.Elem = []*gpb.PathElem{}
+		} else {
 			path.Elem = append(path.Elem[:last.depth-1], last.node.elem)
-			cont, err := walkFn(last.node, path)
-			if err != nil {
-				return err
-			}
-			if !cont {
-				continue
-			}
+		}
+
+		cont, err := walkFn(last.node, path)
+		if err != nil {
+			return err
+		}
+		if !cont {
+			continue
 		}
 
 		for _, c := range last.node.children {

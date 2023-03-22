@@ -336,6 +336,16 @@ func TestProbe(t *testing.T) {
 		path: mustPath("/foo/bar"),
 		want: pathzpb.Action_ACTION_PERMIT,
 	}, {
+		desc: "policy at root level",
+		initialRules: []*pathzpb.AuthorizationRule{{
+			Path:      mustPath("/"),
+			Principal: &pathzpb.AuthorizationRule_User{User: "bob"},
+			Mode:      pathzpb.Mode_MODE_READ,
+			Action:    pathzpb.Action_ACTION_PERMIT,
+		}},
+		path: mustPath("/foo/bar"),
+		want: pathzpb.Action_ACTION_PERMIT,
+	}, {
 		desc: "explicit key against partial wildcard",
 		initialRules: []*pathzpb.AuthorizationRule{{
 			Path:      mustPath("/foo[a=1][b=*]"),
