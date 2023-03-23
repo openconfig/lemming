@@ -803,6 +803,8 @@ github.com/openconfig/ygot v0.13.2/go.mod h1:kJN0yCXIH07dOXvNBEFm3XxXdnDD5NI6K99
 github.com/openconfig/ygot v0.25.6/go.mod h1:+IVqHe5iTfGcDRi3szuq1Mgvy5q3S4x8DG69K5kw62o=
 github.com/openconfig/ygot v0.26.1 h1:YXE03BFDFBDZirpR6UPl5Gl/Sm1tYgA99ghKeydDfkg=
 github.com/openconfig/ygot v0.26.1/go.mod h1:DkI4ml0qgGmfjEBO1S4oeWmxDFgt6r9vTt6iaTJTHAA=
+github.com/openconfig/ygot v0.26.2-0.20230322213422-0259101ec270 h1:9yzAv3BmVeFOtfWCBKVsU/B0yNDo8jSaVm/HlKD0hBY=
+github.com/openconfig/ygot v0.26.2-0.20230322213422-0259101ec270/go.mod h1:DkI4ml0qgGmfjEBO1S4oeWmxDFgt6r9vTt6iaTJTHAA=
 github.com/p4lang/p4runtime v1.3.0 h1:3fUhHj0JtsGcL2Bh0uxpACdBJBDqpZyLgj93tqKzoJY=
 github.com/p4lang/p4runtime v1.3.0/go.mod h1:voPsRsgz/TDEhcaFvBxfMbI++hSKR/QGJusJveEs9Jg=
 github.com/pascaldekloe/goe v0.0.0-20180627143212-57f6aae5913c/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=

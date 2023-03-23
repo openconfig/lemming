@@ -209,6 +209,7 @@ func checkWritePermission(auth PathAuth, user string, nos ...*gpb.Notification) 
 				return false, err
 			}
 			if !auth.CheckPermit(p, user, true) {
+				log.V(1).Infof("user %q not allowed to set path %s", user, p)
 				return false, nil
 			}
 		}
@@ -218,6 +219,7 @@ func checkWritePermission(auth PathAuth, user string, nos ...*gpb.Notification) 
 				return false, err
 			}
 			if !auth.CheckPermit(p, user, true) {
+				log.V(1).Infof("user %q not allowed to set path %s", user, p)
 				return false, nil
 			}
 		}
@@ -333,11 +335,11 @@ func set(schema *ytypes.Schema, cache *cache.Cache, target string, req *gpb.SetR
 		}
 	}
 
-	success = true
-
 	if err := updateCache(cache, schema.Root, prevRoot, target, req.Prefix.Origin, preferShadowPath, timestamp, user, auth); err != nil {
 		return status.Error(codes.Internal, err.Error())
 	}
+	success = true
+
 	return nil
 }
 
@@ -431,8 +433,8 @@ func (s *Server) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResponse
 				}
 			}
 		}
-		p, _ := peer.FromContext(ctx)
-		if s.pathAuth != nil && s.pathAuth.IsInitialized() && p.Addr != nil {
+		p, ok := peer.FromContext(ctx)
+		if s.pathAuth != nil && s.pathAuth.IsInitialized() && ok && p.Addr != nil {
 			if len(md[usernameKey]) != 1 || md[usernameKey][0] == "" {
 				return nil, status.Errorf(codes.Unauthenticated, "no username set in metadata %v", user)
 			}
@@ -560,9 +562,9 @@ func (s *subscribeWithAuth) Send(resp *gpb.SubscribeResponse) error {
 
 // Subscribe wraps the internal subscribe with optional authorization.
 func (s *Server) Subscribe(srv gpb.GNMI_SubscribeServer) error {
-	p, _ := peer.FromContext(srv.Context())
+	p, ok := peer.FromContext(srv.Context())
 
-	if s.pathAuth == nil || !s.pathAuth.IsInitialized() || p.Addr == nil { // Addr is nil for calls from the reconcilers.
+	if s.pathAuth == nil || !s.pathAuth.IsInitialized() || !ok || p.Addr == nil { // Addr is nil for calls from the reconcilers.
 		return s.Server.Subscribe(srv)
 	}
 	md, _ := metadata.FromIncomingContext(srv.Context()) // Metadata exists even if not explicitly set by client.
