@@ -449,11 +449,11 @@ func testTraffic(t *testing.T, otg *otg.OTG, srcEndPoint, dstEndPoint Attributes
 	otg.PushConfig(t, otgConfig)
 
 	otg.StartTraffic(t)
-	time.Sleep(4 * time.Second)
+	time.Sleep(5 * time.Second)
 	t.Logf("Stop traffic")
 	otg.StopTraffic(t)
 
-	time.Sleep(2 * time.Second)
+	time.Sleep(3 * time.Second)
 
 	txPkts := gnmi.Get(t, otg, gnmi.OTG().Flow("Flow").Counters().OutPkts().State())
 	rxPkts := gnmi.Get(t, otg, gnmi.OTG().Flow("Flow").Counters().InPkts().State())
@@ -481,11 +481,11 @@ func testTrafficv6(t *testing.T, otg *otg.OTG, srcEndPoint, dstEndPoint Attribut
 	otg.PushConfig(t, otgConfig)
 
 	otg.StartTraffic(t)
-	time.Sleep(4 * time.Second)
+	time.Sleep(5 * time.Second)
 	t.Logf("Stop traffic")
 	otg.StopTraffic(t)
 
-	time.Sleep(2 * time.Second)
+	time.Sleep(3 * time.Second)
 
 	txPkts := gnmi.Get(t, otg, gnmi.OTG().Flow("Flow2").Counters().OutPkts().State())
 	rxPkts := gnmi.Get(t, otg, gnmi.OTG().Flow("Flow2").Counters().InPkts().State())
