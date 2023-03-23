@@ -188,8 +188,7 @@ func (t *Trie) Probe(path *gpb.Path, user string, mode pathzpb.Mode) pathzpb.Act
 		if !node.hasPolicy {
 			return true, nil
 		}
-		act, _ := node.getAction(user, mode, t.memberships)
-		if act != pathzpb.Action_ACTION_UNSPECIFIED {
+		if act, _ := node.getAction(user, mode, t.memberships); act != pathzpb.Action_ACTION_UNSPECIFIED {
 			if len(walkPath.Elem) > longestPolicyLen {
 				matchingPolicies = nil
 				longestPolicyLen = len(walkPath.Elem)
