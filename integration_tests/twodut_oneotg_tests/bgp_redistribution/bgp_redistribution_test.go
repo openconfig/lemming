@@ -541,10 +541,10 @@ func TestBGPRouteAdvertisement(t *testing.T) {
 	nbrPathv6 := bgpPath.Neighbor(dut2Port2.IPv6)
 	gnmi.Await(t, dut, nbrPathv6.SessionState().State(), 60*time.Second, oc.Bgp_Neighbor_SessionState_ESTABLISHED)
 
-	if loss := testTraffic(t, otg, atePort1, atePort2, "198.51.100.0", 5*time.Second); loss > lossTolerance {
+	if loss := testTraffic(t, otg, atePort1, atePort2, "198.51.100.0", 10*time.Second); loss > lossTolerance {
 		t.Errorf("Loss: got %g, want <= %d", loss, lossTolerance)
 	}
-	if loss := testTrafficv6(t, otg, atePort1, atePort2, "2003::", 5*time.Second); loss > lossTolerance {
+	if loss := testTrafficv6(t, otg, atePort1, atePort2, "2003::", 10*time.Second); loss > lossTolerance {
 		t.Errorf("Loss: got %g, want <= %d", loss, lossTolerance)
 	}
 
