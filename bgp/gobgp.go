@@ -192,10 +192,9 @@ func startGoBGPFunc(ctx context.Context, yclient *ygnmi.Client) error {
 							log.V(1).Info("Stopping BGP")
 							if err := s.StopBgp(context.Background(), &api.StopBgpRequest{}); err != nil {
 								log.Fatal(err)
-							} else {
-								appliedGlobal.As = nil
-								appliedGlobal.RouterId = nil
 							}
+							appliedGlobal.As = nil
+							appliedGlobal.RouterId = nil
 							for neighAddr := range appliedBgp.Neighbor {
 								delete(appliedBgp.Neighbor, neighAddr)
 							}

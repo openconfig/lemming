@@ -71,7 +71,7 @@ func init() {
 }
 
 // Build creates a new swap output action.
-func (*swapOutputBuilder) Build(desc *fwdpb.ActionDesc, ctx *fwdcontext.Context) (fwdaction.Action, error) {
+func (*swapOutputBuilder) Build(_ *fwdpb.ActionDesc, ctx *fwdcontext.Context) (fwdaction.Action, error) {
 	return &swapOutput{
 		ctx: ctx,
 	}, nil

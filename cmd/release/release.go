@@ -59,10 +59,7 @@ func operator() *cobra.Command {
 				return err
 			}
 			fmt.Println("Building and Pushing container")
-			if err := triggerBuild(cmd.Context(), "operator-release", tag, true); err != nil {
-				return err
-			}
-			return nil
+			return triggerBuild(cmd.Context(), "operator-release", tag, true)
 		},
 	}
 }
@@ -88,10 +85,7 @@ func lemming() *cobra.Command {
 				return err
 			}
 			fmt.Println("Building and Pushing container")
-			if err := triggerBuild(cmd.Context(), "lemming-release", tag, true); err != nil {
-				return err
-			}
-			return nil
+			return triggerBuild(cmd.Context(), "lemming-release", tag, true)
 		},
 	}
 }

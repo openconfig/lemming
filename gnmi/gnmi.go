@@ -488,11 +488,11 @@ func (s *Server) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResponse
 	}
 }
 
-func (s *Server) Capabilities(ctx context.Context, req *gpb.CapabilityRequest) (*gpb.CapabilityResponse, error) {
+func (s *Server) Capabilities(_ context.Context, req *gpb.CapabilityRequest) (*gpb.CapabilityResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "Reference Implementation Unimplemented")
 }
 
-func (s *Server) Get(ctx context.Context, req *gpb.GetRequest) (*gpb.GetResponse, error) {
+func (s *Server) Get(_ context.Context, req *gpb.GetRequest) (*gpb.GetResponse, error) {
 	if len(s.GetResponses) == 0 {
 		return nil, status.Errorf(codes.Unimplemented, "Reference Implementation Unimplemented")
 	}

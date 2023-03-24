@@ -323,7 +323,7 @@ func (portGroup) Actions(fwdpb.PortAction) fwdaction.Actions {
 // State implements the port interface. The port group state cannot be
 // externally controlled. The group is considered ready to transmit
 // at-least one constituent is ready to transmit.
-func (p *portGroup) State(op *fwdpb.PortInfo) (*fwdpb.PortStateReply, error) {
+func (p *portGroup) State(*fwdpb.PortInfo) (*fwdpb.PortStateReply, error) {
 	for _, m := range p.members {
 		if m.Ready() {
 			ready := fwdpb.PortStateReply{

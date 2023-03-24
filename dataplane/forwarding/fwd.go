@@ -417,7 +417,7 @@ func (e *Engine) ObjectCounters(_ context.Context, request *fwdpb.ObjectCounters
 }
 
 // AttributeList lists all attributes.
-func (*Engine) AttributeList(_ context.Context, request *fwdpb.AttributeListRequest) (*fwdpb.AttributeListReply, error) {
+func (*Engine) AttributeList(context.Context, *fwdpb.AttributeListRequest) (*fwdpb.AttributeListReply, error) {
 	reply := &fwdpb.AttributeListReply{}
 	for id, help := range fwdattribute.List {
 		reply.Attrs = append(reply.Attrs, &fwdpb.AttributeDesc{
