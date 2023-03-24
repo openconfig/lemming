@@ -213,14 +213,14 @@ func (b *Base) Release(forceCleanup bool) error {
 
 // InitCounters initializes all the counters that are maintained on the object.
 // Note that this must be called before any call to Increment.
-func (b *Base) InitCounters(prefix, desc string, ids ...fwdpb.CounterId) error {
+func (b *Base) InitCounters(desc string, ids ...fwdpb.CounterId) error {
 	var entries []stats.EntryDesc
 	for _, id := range ids {
 		// We use CounterId as id of the stat and id.String(), which
 		// returns CounterId_COUNTER_ID_name, as the name of the stat.
 		entries = append(entries, stats.EntryDesc{ID: int(id), Name: id.String()})
 	}
-	ss, err := stats.New(prefix, desc, entries...)
+	ss, err := stats.New(desc, entries...)
 	if err != nil {
 		return fmt.Errorf("failed to make stats, %v", err)
 	}

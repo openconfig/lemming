@@ -353,7 +353,7 @@ func (builder) Build(ctx *fwdcontext.Context, td *fwdpb.TableDesc) (fwdtable.Tab
 	if table.actions, err = fwdaction.NewActions(td.GetActions(), ctx); err != nil {
 		return nil, fmt.Errorf("prefix: Build for table failed, err %v", err)
 	}
-	if err := table.InitCounters("", "", fwdtable.CounterList...); err != nil {
+	if err := table.InitCounters("", fwdtable.CounterList...); err != nil {
 		return nil, fmt.Errorf("prefix: Build for table failed, counter init error, %v", err)
 	}
 	return table, nil

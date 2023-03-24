@@ -377,7 +377,7 @@ func New(ctx *fwdcontext.Context, td *fwdpb.TableDesc) (*Table, error) {
 	if t.actions, err = fwdaction.NewActions(td.GetActions(), ctx); err != nil {
 		return nil, fmt.Errorf("exact: Build for extact table failed, err %v", err)
 	}
-	if err := t.InitCounters("", "", fwdtable.CounterList...); err != nil {
+	if err := t.InitCounters("", fwdtable.CounterList...); err != nil {
 		return nil, fmt.Errorf("exact: Build for extact table failed, counter init error, %v", err)
 	}
 	return t, nil

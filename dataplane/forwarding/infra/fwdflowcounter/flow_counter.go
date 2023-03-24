@@ -106,7 +106,7 @@ func New(ctx *fwdcontext.Context, req *fwdpb.FlowCounterCreateRequest) (*FlowCou
 	}
 
 	fc := &FlowCounter{}
-	if err := fc.InitCounters("", "", counterList...); err != nil {
+	if err := fc.InitCounters("", counterList...); err != nil {
 		return nil, fmt.Errorf("Failed to init FlowCounter %v: %v", fc.ID(), err)
 	}
 

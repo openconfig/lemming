@@ -221,7 +221,7 @@ func (*cpuBuilder) Build(pd *fwdpb.PortDesc, ctx *fwdcontext.Context) (fwdport.P
 
 	// Store counters for all ports and actions.
 	list := append(fwdport.CounterList, fwdaction.CounterList...)
-	if err := p.InitCounters("", "", list...); err != nil {
+	if err := p.InitCounters("", list...); err != nil {
 		return nil, fmt.Errorf("cpu: Unable to initialize counters, %v", err)
 	}
 	return &p, nil

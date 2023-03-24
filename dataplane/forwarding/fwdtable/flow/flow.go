@@ -329,7 +329,7 @@ func (flowBuilder) Build(ctx *fwdcontext.Context, td *fwdpb.TableDesc) (fwdtable
 	if t.actions, err = fwdaction.NewActions(td.GetActions(), ctx); err != nil {
 		return nil, fmt.Errorf("flow: Build for flow table failed, err %v", err)
 	}
-	if err := t.InitCounters("", "", fwdtable.CounterList...); err != nil {
+	if err := t.InitCounters("", fwdtable.CounterList...); err != nil {
 		return nil, fmt.Errorf("flow: Build for flow table failed, counter init error, %v", err)
 	}
 	return t, nil

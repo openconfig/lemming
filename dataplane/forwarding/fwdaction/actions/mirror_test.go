@@ -168,7 +168,7 @@ func TestMirror(t *testing.T) {
 		// Verify the action by processing a packet and verifying the counters
 		// and results.
 		var base fwdobject.Base
-		if err := base.InitCounters("prefix", "desc", fwdpb.CounterId_COUNTER_ID_MIRROR_ERROR_PACKETS, fwdpb.CounterId_COUNTER_ID_MIRROR_ERROR_OCTETS, fwdpb.CounterId_COUNTER_ID_MIRROR_PACKETS, fwdpb.CounterId_COUNTER_ID_MIRROR_OCTETS); err != nil {
+		if err := base.InitCounters("desc", fwdpb.CounterId_COUNTER_ID_MIRROR_ERROR_PACKETS, fwdpb.CounterId_COUNTER_ID_MIRROR_ERROR_OCTETS, fwdpb.CounterId_COUNTER_ID_MIRROR_PACKETS, fwdpb.CounterId_COUNTER_ID_MIRROR_OCTETS); err != nil {
 			t.Fatalf("%v: InitCounters failed, %v", idx, err)
 		}
 

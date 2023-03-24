@@ -443,7 +443,7 @@ func (groupBuilder) Build(pd *fwdpb.PortDesc, ctx *fwdcontext.Context) (fwdport.
 
 	// Store counters for all ports and actions.
 	list := append(fwdport.CounterList, fwdaction.CounterList...)
-	if err := p.InitCounters("", "", list...); err != nil {
+	if err := p.InitCounters("", list...); err != nil {
 		return nil, fmt.Errorf("group: Unable to initialize counters, %v", err)
 	}
 	return &p, nil

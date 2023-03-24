@@ -41,7 +41,7 @@ type EntryDesc struct {
 }
 
 // New returns a new Stats.
-func New(prefix, desc string, stats ...EntryDesc) (*Stats, error) {
+func New(desc string, stats ...EntryDesc) (*Stats, error) {
 	s := &Stats{
 		statMap: make(map[int]*statEntry),
 	}

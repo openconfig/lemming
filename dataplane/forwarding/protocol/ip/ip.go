@@ -245,7 +245,7 @@ func (ip *IP) Rebuild() error {
 
 // add adds an IP header to an empty L3.
 // Note that the L3 cannot contain a stand-alone GRE header.
-func add(id fwdpb.PacketHeaderId, desc *protocol.Desc) (protocol.Handler, error) {
+func add(id fwdpb.PacketHeaderId, _ *protocol.Desc) (protocol.Handler, error) {
 	var h header
 	switch id {
 	case fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4:

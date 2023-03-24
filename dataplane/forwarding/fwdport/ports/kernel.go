@@ -184,7 +184,7 @@ func (kernelBuilder) Build(portDesc *fwdpb.PortDesc, ctx *fwdcontext.Context) (f
 		devName: kp.Kernel.DeviceName,
 	}
 	list := append(fwdport.CounterList, fwdaction.CounterList...)
-	if err := p.InitCounters("", "", list...); err != nil {
+	if err := p.InitCounters("", list...); err != nil {
 		return nil, err
 	}
 	p.process()

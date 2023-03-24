@@ -163,7 +163,7 @@ func (tapBuilder) Build(portDesc *fwdpb.PortDesc, ctx *fwdcontext.Context) (fwdp
 		fd:   int(kp.Tap.Fd),
 	}
 	list := append(fwdport.CounterList, fwdaction.CounterList...)
-	if err := p.InitCounters("", "", list...); err != nil {
+	if err := p.InitCounters("", list...); err != nil {
 		return nil, err
 	}
 	p.process()

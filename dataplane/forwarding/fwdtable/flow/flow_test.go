@@ -507,7 +507,7 @@ func newBuilder() *testBuilder {
 }
 
 // Build creates a new test action.
-func (t *testBuilder) Build(desc *fwdpb.ActionDesc, ctx *fwdcontext.Context) (fwdaction.Action, error) {
+func (t *testBuilder) Build(desc *fwdpb.ActionDesc, _ *fwdcontext.Context) (fwdaction.Action, error) {
 	ta, ok := desc.Action.(*fwdpb.ActionDesc_Test)
 	if !ok {
 		return nil, fmt.Errorf("flow: Build for test action failed, missing desc")

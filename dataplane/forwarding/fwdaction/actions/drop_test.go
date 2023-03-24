@@ -48,7 +48,7 @@ func TestDrop(t *testing.T) {
 	// Verify the action by processing a packet and verifying the counters
 	// and results.
 	var counters fwdobject.Base
-	if err := counters.InitCounters("prefix", "desc", fwdpb.CounterId_COUNTER_ID_DROP_PACKETS, fwdpb.CounterId_COUNTER_ID_DROP_OCTETS); err != nil {
+	if err := counters.InitCounters("desc", fwdpb.CounterId_COUNTER_ID_DROP_PACKETS, fwdpb.CounterId_COUNTER_ID_DROP_OCTETS); err != nil {
 		t.Fatalf("InitCounter failed, %v", err)
 	}
 

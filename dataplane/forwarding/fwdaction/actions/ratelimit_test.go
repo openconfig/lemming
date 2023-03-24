@@ -130,7 +130,7 @@ func TestRate(t *testing.T) {
 				return now.Add(p.duration)
 			}
 			var base fwdobject.Base
-			if err := base.InitCounters("prefix", "desc", fwdpb.CounterId_COUNTER_ID_RATELIMIT_PACKETS, fwdpb.CounterId_COUNTER_ID_RATELIMIT_OCTETS); err != nil {
+			if err := base.InitCounters("desc", fwdpb.CounterId_COUNTER_ID_RATELIMIT_PACKETS, fwdpb.CounterId_COUNTER_ID_RATELIMIT_OCTETS); err != nil {
 				t.Fatalf("InitCounters failed, %v", err)
 			}
 

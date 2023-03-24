@@ -83,7 +83,7 @@ func TestLookup(t *testing.T) {
 	const length = 10
 	verify := func(errorPackets, errorBytes uint64, n fwdaction.Actions, s fwdaction.State) {
 		var base fwdobject.Base
-		if err := base.InitCounters("prefix", "desc", fwdpb.CounterId_COUNTER_ID_ERROR_PACKETS, fwdpb.CounterId_COUNTER_ID_ERROR_OCTETS); err != nil {
+		if err := base.InitCounters("desc", fwdpb.CounterId_COUNTER_ID_ERROR_PACKETS, fwdpb.CounterId_COUNTER_ID_ERROR_OCTETS); err != nil {
 			t.Fatalf("InitCounters failed, %v", err)
 		}
 

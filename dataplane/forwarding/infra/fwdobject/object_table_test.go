@@ -194,7 +194,7 @@ func TestCounters(t *testing.T) {
 
 	// Add 4 counters to the counter set.
 	testLength := 4
-	if err := base.InitCounters("prefix", "desc", fwdpb.CounterId_COUNTER_ID_RX_DROP_PACKETS, fwdpb.CounterId_COUNTER_ID_RX_DROP_OCTETS, fwdpb.CounterId_COUNTER_ID_RX_PACKETS, fwdpb.CounterId_COUNTER_ID_RX_OCTETS); err != nil {
+	if err := base.InitCounters("desc", fwdpb.CounterId_COUNTER_ID_RX_DROP_PACKETS, fwdpb.CounterId_COUNTER_ID_RX_DROP_OCTETS, fwdpb.CounterId_COUNTER_ID_RX_PACKETS, fwdpb.CounterId_COUNTER_ID_RX_OCTETS); err != nil {
 		t.Fatalf("InitCounters failed, %v", err)
 	}
 	list = base.Counters()

@@ -77,7 +77,7 @@ func unregister(portType fwdpb.PortType) {
 }
 
 // Build uses the prebuilt port.
-func (builder *testBuilder) Build(desc *fwdpb.PortDesc, ctx *fwdcontext.Context) (Port, error) {
+func (builder *testBuilder) Build(*fwdpb.PortDesc, *fwdcontext.Context) (Port, error) {
 	builder.port.allocated = true
 	return builder.port, nil
 }
