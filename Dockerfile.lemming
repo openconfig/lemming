@@ -1,13 +1,22 @@
 FROM docker.io/golang:1.20-bullseye AS build
-ARG license=true
 WORKDIR /build
-RUN go install github.com/google/go-licenses@latest
 COPY go.* ./
 RUN go mod download
 COPY . .
-RUN --mount=type=cache,target=/root/.cache/go-build go build -o /out/lemming ./cmd/lemming 
-RUN if [ "${license}" = "true" ] ; then go-licenses save ./cmd/lemming --save_path THIRD_PARTY_LICENSES ; else mkdir THIRD_PARTY_LICENSES ; fi
 
-FROM docker.io/debian:bullseye
-COPY --from=build /out/lemming /lemming/lemming
-COPY --from=build /build/THIRD_PARTY_LICENSES /lemming/THIRD_PARTY
+FROM build as release-build
+RUN go install github.com/google/go-licenses@latest
+RUN --mount=type=cache,target=/root/.cache/go-build go build -o /out/lemming ./cmd/lemming
+RUN  go-licenses save ./cmd/lemming --save_path THIRD_PARTY_LICENSES
+
+FROM build as debug-build
+RUN go install github.com/go-delve/delve/cmd/dlv@latest
+RUN --mount=type=cache,target=/root/.cache/go-build go build -gcflags='all=-N -l' -o /out/lemming ./cmd/lemming
+
+FROM docker.io/debian:bullseye as debug
+COPY --from=debug-build /out/lemming /lemming/lemming
+COPY --from=debug-build /go/bin/dlv /dlv/dlv
+
+FROM docker.io/debian:bullseye as release
+COPY --from=release-build /out/lemming /lemming/lemming
+COPY --from=release-build /build/THIRD_PARTY_LICENSES /lemming/THIRD_PARTY
