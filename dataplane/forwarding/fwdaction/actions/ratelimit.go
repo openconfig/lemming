@@ -133,7 +133,7 @@ func init() {
 }
 
 // Build creates a new ratelimit action.
-func (ratelimitBuilder) Build(desc *fwdpb.ActionDesc, ctx *fwdcontext.Context) (fwdaction.Action, error) {
+func (ratelimitBuilder) Build(desc *fwdpb.ActionDesc, _ *fwdcontext.Context) (fwdaction.Action, error) {
 	r, ok := desc.Action.(*fwdpb.ActionDesc_Rate)
 	if !ok {
 		return nil, fmt.Errorf("actions: Build for ratelimit action failed, missing desc")

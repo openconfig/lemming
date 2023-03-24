@@ -166,7 +166,7 @@ func init() {
 }
 
 // Build creates a new update action.
-func (*updateBuilder) Build(desc *fwdpb.ActionDesc, ctx *fwdcontext.Context) (fwdaction.Action, error) {
+func (*updateBuilder) Build(desc *fwdpb.ActionDesc, _ *fwdcontext.Context) (fwdaction.Action, error) {
 	upd, ok := desc.Action.(*fwdpb.ActionDesc_Update)
 	if !ok {
 		return nil, fmt.Errorf("actions: Build for update action failed, missing extension")
