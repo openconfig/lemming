@@ -17,6 +17,7 @@ package lemming
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/h-fam/errdiff"
 	"google.golang.org/grpc"
@@ -110,8 +111,9 @@ func TestStop(t *testing.T) {
 	}
 	f.gnmiServer.GetResponses = []interface{}{want}
 	cGNMI := gnmipb.NewGNMIClient(conn)
-	// Close the listener so the get must fail.
+	// Close the listener so the get must fail. Sleep to ensure listener is closed before Get.
 	f.GNMIListener().Close()
+	time.Sleep(100 * time.Millisecond)
 	_, err = cGNMI.Get(context.Background(), &gnmipb.GetRequest{})
 	if err == nil {
 		t.Fatalf("gnmi.Get unexpected success")
