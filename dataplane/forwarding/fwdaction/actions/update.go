@@ -81,7 +81,7 @@ func (u *update) String() string {
 //
 // COPY: This operation is implemented using the Get/Set of the packet field.
 // BIT:  This operation is implemented using the Get/Set of the packet field.
-func (u *update) Process(packet fwdpacket.Packet, counters fwdobject.Counters) (fwdaction.Actions, fwdaction.State) {
+func (u *update) Process(packet fwdpacket.Packet, _ fwdobject.Counters) (fwdaction.Actions, fwdaction.State) {
 	var e error
 	defer func() {
 		if e != nil {

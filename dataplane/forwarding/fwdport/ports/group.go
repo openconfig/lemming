@@ -435,7 +435,7 @@ func init() {
 }
 
 // Build creates a new port group.
-func (groupBuilder) Build(pd *fwdpb.PortDesc, ctx *fwdcontext.Context) (fwdport.Port, error) {
+func (groupBuilder) Build(_ *fwdpb.PortDesc, ctx *fwdcontext.Context) (fwdport.Port, error) {
 	p := portGroup{
 		ctx:       ctx,
 		memberMap: make(map[fwdobject.ID]*member),

@@ -50,6 +50,6 @@ func init() {
 }
 
 // Build creates a new drop action.
-func (*dropBuilder) Build(desc *fwdpb.ActionDesc, _ *fwdcontext.Context) (fwdaction.Action, error) {
+func (*dropBuilder) Build(*fwdpb.ActionDesc, *fwdcontext.Context) (fwdaction.Action, error) {
 	return &drop{}, nil
 }

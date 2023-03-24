@@ -27,7 +27,7 @@ import (
 
 // DescTestPort builds a port descriptor for a test port using the specified
 // unique name. Test ports are created using CPU ports.
-func DescTestPort(t *testing.T, name string) *fwdpb.PortDesc {
+func DescTestPort(name string) *fwdpb.PortDesc {
 	desc := &fwdpb.PortDesc{
 		PortType: fwdpb.PortType_PORT_TYPE_CPU_PORT,
 		PortId:   fwdport.MakeID(fwdobject.NewID(name)),
@@ -46,7 +46,7 @@ func CreateTestPort(t *testing.T, ctx *fwdcontext.Context, name string) fwdport.
 	ctx.Lock()
 	defer ctx.Unlock()
 
-	desc := DescTestPort(t, name)
+	desc := DescTestPort(name)
 	port, err := fwdport.New(desc, ctx)
 	if err != nil {
 		t.Fatalf("Port create failed: %v.", err)

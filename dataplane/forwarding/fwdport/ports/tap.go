@@ -128,7 +128,7 @@ func (p *tapPort) Actions(dir fwdpb.PortAction) fwdaction.Actions {
 
 // State return the state of the port (UP).
 // TODO: handle port state correctly.
-func (p *tapPort) State(op *fwdpb.PortInfo) (*fwdpb.PortStateReply, error) {
+func (p *tapPort) State(*fwdpb.PortInfo) (*fwdpb.PortStateReply, error) {
 	ready := fwdpb.PortStateReply{
 		LocalPort: &fwdpb.PortInfo{
 			Laser: fwdpb.PortLaserState_PORT_LASER_STATE_ENABLED,

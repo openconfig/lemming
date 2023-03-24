@@ -40,7 +40,7 @@ func (swapOutput) String() string {
 }
 
 // Process processes the packet by updating the output port.
-func (s *swapOutput) Process(packet fwdpacket.Packet, counters fwdobject.Counters) (fwdaction.Actions, fwdaction.State) {
+func (s *swapOutput) Process(packet fwdpacket.Packet, _ fwdobject.Counters) (fwdaction.Actions, fwdaction.State) {
 	p, err := fwdport.InputPort(packet, s.ctx)
 	if err != nil {
 		log.Warningf("failed to get input port: %v", err)

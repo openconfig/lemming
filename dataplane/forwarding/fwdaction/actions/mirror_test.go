@@ -58,7 +58,7 @@ func (recordPort) String() string { return "" }
 func (recordPort) Actions(fwdpb.PortAction) fwdaction.Actions { return nil }
 
 // State is ignored.
-func (recordPort) State(op *fwdpb.PortInfo) (*fwdpb.PortStateReply, error) {
+func (recordPort) State(*fwdpb.PortInfo) (*fwdpb.PortStateReply, error) {
 	return &fwdpb.PortStateReply{}, nil
 }
 

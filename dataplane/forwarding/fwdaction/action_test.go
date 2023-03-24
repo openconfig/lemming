@@ -168,7 +168,7 @@ func (action *recordAction) String() string {
 }
 
 // Process ensures that testAction satisfies the interface Action.
-func (action *recordAction) Process(packet fwdpacket.Packet, counters fwdobject.Counters) (Actions, State) {
+func (action *recordAction) Process(_ fwdpacket.Packet, counters fwdobject.Counters) (Actions, State) {
 	*action.record = append(*action.record, action.id)
 	return action.next, action.result
 }
