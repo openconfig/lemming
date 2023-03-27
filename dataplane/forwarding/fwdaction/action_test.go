@@ -39,7 +39,7 @@ func (action *testAction) Cleanup() {
 }
 
 // Process ensures that testAction satisfies interface Action.
-func (action *testAction) Process(packet fwdpacket.Packet, counters fwdobject.Counters) (Actions, State) {
+func (action *testAction) Process(fwdpacket.Packet, fwdobject.Counters) (Actions, State) {
 	return nil, DROP
 }
 
@@ -54,7 +54,7 @@ type testBuilder struct {
 }
 
 // Build uses the prebuilt action.
-func (builder *testBuilder) Build(desc *fwdpb.ActionDesc, ctx *fwdcontext.Context) (Action, error) {
+func (builder *testBuilder) Build(*fwdpb.ActionDesc, *fwdcontext.Context) (Action, error) {
 	builder.action.allocated = true
 	return builder.action, nil
 }
@@ -168,7 +168,7 @@ func (action *recordAction) String() string {
 }
 
 // Process ensures that testAction satisfies the interface Action.
-func (action *recordAction) Process(packet fwdpacket.Packet, counters fwdobject.Counters) (Actions, State) {
+func (action *recordAction) Process(fwdpacket.Packet, fwdobject.Counters) (Actions, State) {
 	*action.record = append(*action.record, action.id)
 	return action.next, action.result
 }

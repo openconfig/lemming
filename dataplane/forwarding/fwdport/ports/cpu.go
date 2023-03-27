@@ -158,7 +158,7 @@ func (p *cpuPort) Actions(dir fwdpb.PortAction) fwdaction.Actions {
 // State implements the port interface. The CPU port state cannot be controlled
 // (it is always enabled). It is considered to be connected if a packet sink
 // is present in the port's context.
-func (cpuPort) State(req *fwdpb.PortInfo) (*fwdpb.PortStateReply, error) {
+func (cpuPort) State(*fwdpb.PortInfo) (*fwdpb.PortStateReply, error) {
 	ready := &fwdpb.PortStateReply{
 		LocalPort: &fwdpb.PortInfo{
 			Laser: fwdpb.PortLaserState_PORT_LASER_STATE_ENABLED,
@@ -221,7 +221,7 @@ func (*cpuBuilder) Build(pd *fwdpb.PortDesc, ctx *fwdcontext.Context) (fwdport.P
 
 	// Store counters for all ports and actions.
 	list := append(fwdport.CounterList, fwdaction.CounterList...)
-	if err := p.InitCounters("", "", list...); err != nil {
+	if err := p.InitCounters("", list...); err != nil {
 		return nil, fmt.Errorf("cpu: Unable to initialize counters, %v", err)
 	}
 	return &p, nil

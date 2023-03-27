@@ -184,7 +184,7 @@ func (fi *FakeInterfaces) AddrSubscribe(ch chan<- netlink.AddrUpdate, done <-cha
 
 // NeighSubscribe subscribes to neighbor table updates.
 // TODO: not implemented.
-func (fi *FakeInterfaces) NeighSubscribe(ch chan<- netlink.NeighUpdate, done <-chan struct{}) error {
+func (fi *FakeInterfaces) NeighSubscribe(chan<- netlink.NeighUpdate, <-chan struct{}) error {
 	return nil
 }
 

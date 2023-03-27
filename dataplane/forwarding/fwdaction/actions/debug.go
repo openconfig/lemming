@@ -51,6 +51,6 @@ func init() {
 }
 
 // Build creates a new debug action.
-func (*debugBuilder) Build(desc *fwdpb.ActionDesc, _ *fwdcontext.Context) (fwdaction.Action, error) {
+func (*debugBuilder) Build(*fwdpb.ActionDesc, *fwdcontext.Context) (fwdaction.Action, error) {
 	return &debug{}, nil
 }

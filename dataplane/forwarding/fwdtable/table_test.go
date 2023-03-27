@@ -47,17 +47,17 @@ func (table *testTable) Cleanup() {
 }
 
 // Process ensures that testAction satisfies interface Action.
-func (table *testTable) Process(packet fwdpacket.Packet, counters fwdobject.Counters) (fwdaction.Actions, fwdaction.State) {
+func (table *testTable) Process(fwdpacket.Packet, fwdobject.Counters) (fwdaction.Actions, fwdaction.State) {
 	return nil, fwdaction.DROP
 }
 
 // Add adds or updates a table entry (satisfies interface Table).
-func (table *testTable) AddEntry(entryDesc *fwdpb.EntryDesc, descs []*fwdpb.ActionDesc) error {
+func (table *testTable) AddEntry(*fwdpb.EntryDesc, []*fwdpb.ActionDesc) error {
 	return nil
 }
 
 // Remove removes a table entry (satisfies interface Table).
-func (table *testTable) RemoveEntry(entryDesc *fwdpb.EntryDesc) error {
+func (table *testTable) RemoveEntry(*fwdpb.EntryDesc) error {
 	return nil
 }
 
@@ -75,7 +75,7 @@ type testBuilder struct {
 }
 
 // Build uses the prebuilt table.
-func (builder *testBuilder) Build(ctx *fwdcontext.Context, desc *fwdpb.TableDesc) (Table, error) {
+func (builder *testBuilder) Build(*fwdcontext.Context, *fwdpb.TableDesc) (Table, error) {
 	builder.table.allocated = true
 	return builder.table, nil
 }

@@ -205,7 +205,7 @@ func prefixKey(s1, s2 *key) *key {
 		max = s2.bitCount
 	}
 	bytes := wordset(make([]byte, byteCount(max)))
-	count := 0
+	var count int
 	for count = 0; count < max; count++ {
 		v := s1.Bit(count)
 		if v != s2.Bit(count) {

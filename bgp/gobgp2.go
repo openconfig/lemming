@@ -67,7 +67,7 @@ func newBgpDeclTask(zapiURL string) *bgpDeclTask {
 }
 
 // startGoBGPFuncDecl starts a GoBGP server.
-func (t *bgpDeclTask) startGoBGPFuncDecl(ctx context.Context, yclient *ygnmi.Client) error {
+func (t *bgpDeclTask) startGoBGPFuncDecl(_ context.Context, yclient *ygnmi.Client) error {
 	b := &ocpath.Batch{}
 	bgpPath := ocpath.Root().NetworkInstance(fakedevice.DefaultNetworkInstance).Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").Bgp()
 	b.AddPaths(

@@ -49,7 +49,7 @@ func (f *flowcounter) Cleanup() {
 }
 
 // Process increments the octet and packet counter fields, based on the packet.
-func (f *flowcounter) Process(packet fwdpacket.Packet, counters fwdobject.Counters) (fwdaction.Actions, fwdaction.State) {
+func (f *flowcounter) Process(packet fwdpacket.Packet, _ fwdobject.Counters) (fwdaction.Actions, fwdaction.State) {
 	if f.counter != nil {
 		octetCount := uint32(packet.Length())
 		const packetCount = 1

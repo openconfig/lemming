@@ -81,7 +81,7 @@ func (u *update) String() string {
 //
 // COPY: This operation is implemented using the Get/Set of the packet field.
 // BIT:  This operation is implemented using the Get/Set of the packet field.
-func (u *update) Process(packet fwdpacket.Packet, counters fwdobject.Counters) (fwdaction.Actions, fwdaction.State) {
+func (u *update) Process(packet fwdpacket.Packet, _ fwdobject.Counters) (fwdaction.Actions, fwdaction.State) {
 	var e error
 	defer func() {
 		if e != nil {
@@ -166,7 +166,7 @@ func init() {
 }
 
 // Build creates a new update action.
-func (*updateBuilder) Build(desc *fwdpb.ActionDesc, ctx *fwdcontext.Context) (fwdaction.Action, error) {
+func (*updateBuilder) Build(desc *fwdpb.ActionDesc, _ *fwdcontext.Context) (fwdaction.Action, error) {
 	upd, ok := desc.Action.(*fwdpb.ActionDesc_Update)
 	if !ok {
 		return nil, fmt.Errorf("actions: Build for update action failed, missing extension")

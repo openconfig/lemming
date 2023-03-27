@@ -116,7 +116,7 @@ func (d *Dataplane) Stop(ctx context.Context) error {
 }
 
 // Validate is a noop to implement to the reconciler interface.
-func (d *Dataplane) Validate(intendedConfig *oc.Root) error {
+func (d *Dataplane) Validate(*oc.Root) error {
 	return nil
 }
 

@@ -28,11 +28,10 @@ func TestStat(t *testing.T) {
 		{testCounter1, "testCounter1"},
 		{testCounter2, "testCounter2"},
 	}
-	prefix := "/test/"
 	desc := "test metric"
-	st, err := New(prefix, desc, counters...)
+	st, err := New(desc, counters...)
 	if err != nil {
-		t.Fatalf("New(%v,%v,%v) = %v, %v, want _, nil", prefix, desc, counters, st, err)
+		t.Fatalf("New(%v,%v) = %v, %v, want _, nil", desc, counters, st, err)
 	}
 	all := st.GetAll()
 	if len(all) != len(st.statMap) {
@@ -60,8 +59,8 @@ func TestStat(t *testing.T) {
 		},
 	}
 	for _, tt := range regTests {
-		if got, err := New(prefix, desc, tt.in...); tt.wantErr == (err == nil) {
-			t.Fatalf("New(%v, %v, %v) = %v, want error(%v)", prefix, desc, tt.in, got, tt.wantErr)
+		if got, err := New(desc, tt.in...); tt.wantErr == (err == nil) {
+			t.Fatalf("New(%v, %v) = %v, want error(%v)", desc, tt.in, got, tt.wantErr)
 		}
 	}
 

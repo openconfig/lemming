@@ -323,7 +323,7 @@ func (portGroup) Actions(fwdpb.PortAction) fwdaction.Actions {
 // State implements the port interface. The port group state cannot be
 // externally controlled. The group is considered ready to transmit
 // at-least one constituent is ready to transmit.
-func (p *portGroup) State(op *fwdpb.PortInfo) (*fwdpb.PortStateReply, error) {
+func (p *portGroup) State(*fwdpb.PortInfo) (*fwdpb.PortStateReply, error) {
 	for _, m := range p.members {
 		if m.Ready() {
 			ready := fwdpb.PortStateReply{
@@ -435,7 +435,7 @@ func init() {
 }
 
 // Build creates a new port group.
-func (groupBuilder) Build(pd *fwdpb.PortDesc, ctx *fwdcontext.Context) (fwdport.Port, error) {
+func (groupBuilder) Build(_ *fwdpb.PortDesc, ctx *fwdcontext.Context) (fwdport.Port, error) {
 	p := portGroup{
 		ctx:       ctx,
 		memberMap: make(map[fwdobject.ID]*member),
@@ -443,7 +443,7 @@ func (groupBuilder) Build(pd *fwdpb.PortDesc, ctx *fwdcontext.Context) (fwdport.
 
 	// Store counters for all ports and actions.
 	list := append(fwdport.CounterList, fwdaction.CounterList...)
-	if err := p.InitCounters("", "", list...); err != nil {
+	if err := p.InitCounters("", list...); err != nil {
 		return nil, fmt.Errorf("group: Unable to initialize counters, %v", err)
 	}
 	return &p, nil
