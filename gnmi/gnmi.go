@@ -37,7 +37,6 @@ import (
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/prototext"
-	"google.golang.org/protobuf/proto"
 
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 )
@@ -529,34 +528,37 @@ func (s *subscribeWithAuth) Send(resp *gpb.SubscribeResponse) error {
 		return s.GNMI_SubscribeServer.Send(resp)
 	}
 	// Create a copy of the resp so that we don't modify the notification stored in the cache.
-	authResp := proto.Clone(resp).(*gpb.SubscribeResponse)
-	reqUpd := authResp.Response.(*gpb.SubscribeResponse_Update).Update
+	authResp := &gpb.SubscribeResponse{
+		Response: &gpb.SubscribeResponse_Update{
+			Update: &gpb.Notification{
+				Prefix:    resp.GetUpdate().GetPrefix(),
+				Timestamp: resp.GetUpdate().GetTimestamp(),
+				Atomic:    resp.GetUpdate().GetAtomic(),
+			},
+		},
+	}
+	authUpd := authResp.Response.(*gpb.SubscribeResponse_Update).Update
 
-	i := 0
-	for _, del := range reqUpd.Delete {
-		p, err := util.JoinPaths(reqUpd.GetPrefix(), del)
+	for _, del := range authUpd.Delete {
+		p, err := util.JoinPaths(authUpd.GetPrefix(), del)
 		if err != nil {
 			return err
 		}
 		if s.auth.CheckPermit(p, s.user, false) {
-			reqUpd.Delete[i] = del
-			i++
+			authUpd.Delete = append(authUpd.Delete, del)
 		}
 	}
-	reqUpd.Delete = reqUpd.Delete[:i]
-	i = 0
-	for _, upd := range reqUpd.Update {
-		p, err := util.JoinPaths(reqUpd.GetPrefix(), upd.GetPath())
+
+	for _, upd := range authUpd.Update {
+		p, err := util.JoinPaths(authUpd.GetPrefix(), upd.GetPath())
 		if err != nil {
 			return err
 		}
 		if s.auth.CheckPermit(p, s.user, false) {
-			reqUpd.Update[i] = upd
-			i++
+			authUpd.Update = append(authUpd.Update, upd)
 		}
 	}
-	reqUpd.Update = reqUpd.Update[:i]
-	if len(reqUpd.Update) == 0 && len(reqUpd.Delete) == 0 {
+	if len(authUpd.Update) == 0 && len(authUpd.Delete) == 0 {
 		return nil
 	}
 
