@@ -527,37 +527,43 @@ func (s *subscribeWithAuth) Send(resp *gpb.SubscribeResponse) error {
 	if resp.GetSyncResponse() {
 		return s.GNMI_SubscribeServer.Send(resp)
 	}
-	reqUpd := resp.Response.(*gpb.SubscribeResponse_Update).Update
+	// Create a copy of the resp so that we don't modify the notification stored in the cache.
+	authResp := &gpb.SubscribeResponse{
+		Response: &gpb.SubscribeResponse_Update{
+			Update: &gpb.Notification{
+				Prefix:    resp.GetUpdate().GetPrefix(),
+				Timestamp: resp.GetUpdate().GetTimestamp(),
+				Atomic:    resp.GetUpdate().GetAtomic(),
+			},
+		},
+	}
+	respUpd := resp.Response.(*gpb.SubscribeResponse_Update).Update
+	authUpd := authResp.Response.(*gpb.SubscribeResponse_Update).Update
 
-	i := 0
-	for _, del := range reqUpd.Delete {
-		p, err := util.JoinPaths(reqUpd.GetPrefix(), del)
+	for _, del := range respUpd.Delete {
+		p, err := util.JoinPaths(authUpd.GetPrefix(), del)
 		if err != nil {
 			return err
 		}
 		if s.auth.CheckPermit(p, s.user, false) {
-			reqUpd.Delete[i] = del
-			i++
+			authUpd.Delete = append(authUpd.Delete, del)
 		}
 	}
-	reqUpd.Delete = reqUpd.Delete[:i]
-	i = 0
-	for _, upd := range reqUpd.Update {
-		p, err := util.JoinPaths(reqUpd.GetPrefix(), upd.GetPath())
+
+	for _, upd := range respUpd.Update {
+		p, err := util.JoinPaths(authUpd.GetPrefix(), upd.GetPath())
 		if err != nil {
 			return err
 		}
 		if s.auth.CheckPermit(p, s.user, false) {
-			reqUpd.Update[i] = upd
-			i++
+			authUpd.Update = append(authUpd.Update, upd)
 		}
 	}
-	reqUpd.Update = reqUpd.Update[:i]
-	if len(reqUpd.Update) == 0 && len(reqUpd.Delete) == 0 {
+	if len(authUpd.Update) == 0 && len(authUpd.Delete) == 0 {
 		return nil
 	}
 
-	return s.GNMI_SubscribeServer.Send(resp)
+	return s.GNMI_SubscribeServer.Send(authResp)
 }
 
 // Subscribe wraps the internal subscribe with optional authorization.
