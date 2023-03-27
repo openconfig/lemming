@@ -537,9 +537,10 @@ func (s *subscribeWithAuth) Send(resp *gpb.SubscribeResponse) error {
 			},
 		},
 	}
+	respUpd := resp.Response.(*gpb.SubscribeResponse_Update).Update
 	authUpd := authResp.Response.(*gpb.SubscribeResponse_Update).Update
 
-	for _, del := range authUpd.Delete {
+	for _, del := range respUpd.Delete {
 		p, err := util.JoinPaths(authUpd.GetPrefix(), del)
 		if err != nil {
 			return err
@@ -549,7 +550,7 @@ func (s *subscribeWithAuth) Send(resp *gpb.SubscribeResponse) error {
 		}
 	}
 
-	for _, upd := range authUpd.Update {
+	for _, upd := range respUpd.Update {
 		p, err := util.JoinPaths(authUpd.GetPrefix(), upd.GetPath())
 		if err != nil {
 			return err
