@@ -37,6 +37,7 @@ import (
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/prototext"
+	"google.golang.org/protobuf/proto"
 
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 )
@@ -527,7 +528,9 @@ func (s *subscribeWithAuth) Send(resp *gpb.SubscribeResponse) error {
 	if resp.GetSyncResponse() {
 		return s.GNMI_SubscribeServer.Send(resp)
 	}
-	reqUpd := resp.Response.(*gpb.SubscribeResponse_Update).Update
+	// Create a copy of the resp so that we don't modify the notification stored in the cache.
+	authResp := proto.Clone(resp).(*gpb.SubscribeResponse)
+	reqUpd := authResp.Response.(*gpb.SubscribeResponse_Update).Update
 
 	i := 0
 	for _, del := range reqUpd.Delete {
@@ -557,7 +560,7 @@ func (s *subscribeWithAuth) Send(resp *gpb.SubscribeResponse) error {
 		return nil
 	}
 
-	return s.GNMI_SubscribeServer.Send(resp)
+	return s.GNMI_SubscribeServer.Send(authResp)
 }
 
 // Subscribe wraps the internal subscribe with optional authorization.

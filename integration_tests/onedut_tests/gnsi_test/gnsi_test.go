@@ -43,11 +43,11 @@ func TestMain(m *testing.M) {
 
 func TestPathz(t *testing.T) {
 	dut := ondatra.DUT(t, "dut")
-	pathzClient := fetchGNSI(t, dut)
 	yc, err := ygnmi.NewClient(dut.RawAPIs().GNMI().Default(t), ygnmi.WithTarget(dut.Name()))
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer reset(t, dut)
 
 	tests := []struct {
 		desc       string
@@ -134,6 +134,55 @@ func TestPathz(t *testing.T) {
 			DomainName: ygot.String("lemming.example.com"),
 		},
 		wantOpErr: "PermissionDenied",
+	}, {
+		desc: "deny read all paths",
+		policy: &pathzpb.AuthorizationPolicy{
+			Rules: []*pathzpb.AuthorizationRule{{
+				Path:      mustPath(t, "/system"),
+				Principal: &pathzpb.AuthorizationRule_User{User: "testuser"},
+				Action:    pathzpb.Action_ACTION_PERMIT,
+				Mode:      pathzpb.Mode_MODE_WRITE,
+			}, {
+				Path:      mustPath(t, "/system"),
+				Principal: &pathzpb.AuthorizationRule_User{User: "testuser"},
+				Action:    pathzpb.Action_ACTION_DENY,
+				Mode:      pathzpb.Mode_MODE_READ,
+			}},
+		},
+		op: func(ctx context.Context, c *ygnmi.Client) (*ygnmi.Result, error) {
+			return ygnmi.Replace(ctx, c, gnmi.OC().System().Config(), &oc.System{Hostname: ygot.String("test")})
+		},
+		want: &oc.System{
+			Hostname:   ygot.String("lemming"),
+			DomainName: ygot.String("lemming.example.com"),
+		},
+		wantGetErr: "value not present",
+	}, {
+		desc: "deny read sub path",
+		policy: &pathzpb.AuthorizationPolicy{
+			Rules: []*pathzpb.AuthorizationRule{{
+				Path:      mustPath(t, "/system"),
+				Principal: &pathzpb.AuthorizationRule_User{User: "testuser"},
+				Action:    pathzpb.Action_ACTION_PERMIT,
+				Mode:      pathzpb.Mode_MODE_WRITE,
+			}, {
+				Path:      mustPath(t, "/system"),
+				Principal: &pathzpb.AuthorizationRule_User{User: "testuser"},
+				Action:    pathzpb.Action_ACTION_PERMIT,
+				Mode:      pathzpb.Mode_MODE_READ,
+			}, {
+				Path:      mustPath(t, "/system/config/hostname"),
+				Principal: &pathzpb.AuthorizationRule_User{User: "testuser"},
+				Action:    pathzpb.Action_ACTION_DENY,
+				Mode:      pathzpb.Mode_MODE_READ,
+			}},
+		},
+		op: func(ctx context.Context, c *ygnmi.Client) (*ygnmi.Result, error) {
+			return ygnmi.Update(ctx, c, gnmi.OC().System().Config(), &oc.System{Hostname: ygot.String("test")})
+		},
+		want: &oc.System{
+			DomainName: ygot.String("lemming.example.com"),
+		},
 	}}
 
 	ctx := metadata.AppendToOutgoingContext(context.Background(), "username", "testuser")
@@ -141,7 +190,7 @@ func TestPathz(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
 			reset(t, dut)
-			installPolicy(t, pathzClient, tt.policy)
+			installPolicy(t, fetchGNSI(t, dut), tt.policy)
 
 			_, err := tt.op(ctx, yc)
 			if d := errdiff.Check(err, tt.wantOpErr); d != "" {
