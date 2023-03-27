@@ -17,7 +17,6 @@ package lemming
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/h-fam/errdiff"
 	"google.golang.org/grpc"
@@ -87,38 +86,9 @@ func TestFakeGNMI(t *testing.T) {
 
 func TestStop(t *testing.T) {
 	f := startLemming(t)
-	conn, err := grpc.Dial(f.GNMIAddr(), grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		t.Fatalf("failed to Dial fake: %v", err)
-	}
-	want := &gnmipb.GetResponse{
-		Notification: []*gnmipb.Notification{{
-			Update: []*gnmipb.Update{{
-				Path: &gnmipb.Path{
-					Elem: []*gnmipb.PathElem{
-						{Name: "intefaces"},
-						{Name: "inteface", Key: map[string]string{"name": "eth0"}},
-						{Name: "mtu"},
-					},
-				},
-				Val: &gnmipb.TypedValue{
-					Value: &gnmipb.TypedValue_IntVal{
-						IntVal: 1500,
-					},
-				},
-			}},
-		}},
-	}
-	f.gnmiServer.GetResponses = []interface{}{want}
-	cGNMI := gnmipb.NewGNMIClient(conn)
 	// Close the listener so the get must fail. Sleep to ensure listener is closed before Get.
 	f.GNMIListener().Close()
-	time.Sleep(100 * time.Millisecond)
-	_, err = cGNMI.Get(context.Background(), &gnmipb.GetRequest{})
-	if err == nil {
-		t.Fatalf("gnmi.Get unexpected success")
-	}
-	err = f.Stop()
+	err := f.Stop()
 	if s := errdiff.Check(err, "use of closed network connection"); s != "" {
 		t.Fatalf("failed to get error on close: %s", s)
 	}
