@@ -5,7 +5,7 @@ clean:
 
 .PHONY: load 
 load:
-	DOCKER_BUILDKIT=1 docker build . -f Dockerfile.lemming -t "us-west1-docker.pkg.dev/openconfig-lemming/release/lemming:ga"
+	DOCKER_BUILDKIT=1 docker build . --target release -f Dockerfile.lemming -t "us-west1-docker.pkg.dev/openconfig-lemming/release/lemming:ga"
 	kind load docker-image us-west1-docker.pkg.dev/openconfig-lemming/release/lemming:ga --name kne
 
 .PHONY: load-debug
