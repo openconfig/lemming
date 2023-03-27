@@ -58,7 +58,7 @@ func init() {
 }
 
 // Build creates a new reparse action.
-func (*reparseBuilder) Build(desc *fwdpb.ActionDesc, ctx *fwdcontext.Context) (fwdaction.Action, error) {
+func (*reparseBuilder) Build(desc *fwdpb.ActionDesc, _ *fwdcontext.Context) (fwdaction.Action, error) {
 	r, ok := desc.Action.(*fwdpb.ActionDesc_Reparse)
 	if !ok {
 		return nil, fmt.Errorf("actions: Build for reparse action failed, missing desc")

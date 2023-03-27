@@ -36,7 +36,7 @@ func (evaluate) String() string {
 }
 
 // Process evaluates if the packet has an evaluate port and transmits it.
-func (o *evaluate) Process(pkt fwdpacket.Packet, _ fwdobject.Counters) (fwdaction.Actions, fwdaction.State) {
+func (o *evaluate) Process(fwdpacket.Packet, fwdobject.Counters) (fwdaction.Actions, fwdaction.State) {
 	return nil, fwdaction.EVALUATE
 }
 

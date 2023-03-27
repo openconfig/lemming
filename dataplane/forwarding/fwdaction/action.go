@@ -283,7 +283,7 @@ func ProcessPacket(packet fwdpacket.Packet, actions Actions, counters fwdobject.
 		// accumulated evaluate list. These actions are then used to update the
 		// number of executed action and the next state of processing.
 		if state == EVALUATE {
-			count := 0
+			var count int
 			var err error
 			if state, count, err = evaluatePacket(packet, evaluate, counters); err != nil {
 				return DROP, err

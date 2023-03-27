@@ -53,7 +53,7 @@ func init() {
 }
 
 // Build creates a new encap action.
-func (*encapBuilder) Build(desc *fwdpb.ActionDesc, ctx *fwdcontext.Context) (fwdaction.Action, error) {
+func (*encapBuilder) Build(desc *fwdpb.ActionDesc, _ *fwdcontext.Context) (fwdaction.Action, error) {
 	e, ok := desc.Action.(*fwdpb.ActionDesc_Encap)
 	if !ok {
 		return nil, fmt.Errorf("actions: Build for encap action failed, missing desc")

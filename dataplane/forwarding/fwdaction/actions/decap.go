@@ -35,7 +35,7 @@ func (d *decap) String() string {
 }
 
 // Process removes a header from the packet. Decap errors are explicitly ignored.
-func (d *decap) Process(packet fwdpacket.Packet, counters fwdobject.Counters) (fwdaction.Actions, fwdaction.State) {
+func (d *decap) Process(packet fwdpacket.Packet, _ fwdobject.Counters) (fwdaction.Actions, fwdaction.State) {
 	_ = packet.Decap(d.id)
 	return nil, fwdaction.CONTINUE
 }
@@ -49,7 +49,7 @@ func init() {
 }
 
 // Build creates a new decap action.
-func (*decapBuilder) Build(desc *fwdpb.ActionDesc, ctx *fwdcontext.Context) (fwdaction.Action, error) {
+func (*decapBuilder) Build(desc *fwdpb.ActionDesc, _ *fwdcontext.Context) (fwdaction.Action, error) {
 	d, ok := desc.Action.(*fwdpb.ActionDesc_Decap)
 	if !ok {
 		return nil, fmt.Errorf("actions: Build for decap action failed, missing description")

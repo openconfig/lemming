@@ -134,7 +134,7 @@ func (packet) Encap(fwdpb.PacketHeaderId) error { return nil }
 func (packet) Reparse(fwdpb.PacketHeaderId, []fwdpacket.FieldID, []byte) error { return nil }
 
 // Mirror mirrors the packet
-func (packet) Mirror(fields []fwdpacket.FieldID) (fwdpacket.Packet, error) { return nil, nil }
+func (packet) Mirror([]fwdpacket.FieldID) (fwdpacket.Packet, error) { return nil, nil }
 
 // String formats the packet into a string.
 func (packet) String() string { return "" }

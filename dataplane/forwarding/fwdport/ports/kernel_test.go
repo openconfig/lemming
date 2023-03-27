@@ -31,7 +31,7 @@ type fakePacketHandle struct {
 	writeErr error
 }
 
-func (f *fakePacketHandle) WritePacketData(pkt []byte) error {
+func (f *fakePacketHandle) WritePacketData([]byte) error {
 	return f.writeErr
 }
 

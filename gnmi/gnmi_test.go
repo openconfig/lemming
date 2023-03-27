@@ -1168,7 +1168,7 @@ type testAuth struct {
 	allow bool
 }
 
-func (t testAuth) CheckPermit(path *gpb.Path, user string, write bool) bool {
+func (t testAuth) CheckPermit(*gpb.Path, string, bool) bool {
 	return t.allow
 }
 

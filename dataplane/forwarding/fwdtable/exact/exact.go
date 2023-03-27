@@ -334,7 +334,7 @@ func (t *Table) staleMonitor() {
 // Process matches the packet to the entries within the table to determine the
 // actions to be performed. If the packet does not match any entries, the
 // default actions are used. In case of errors, the packet is dropped.
-func (t *Table) Process(packet fwdpacket.Packet, counters fwdobject.Counters) (fwdaction.Actions, fwdaction.State) {
+func (t *Table) Process(packet fwdpacket.Packet, _ fwdobject.Counters) (fwdaction.Actions, fwdaction.State) {
 	key := t.desc.MakePacketKey(packet)
 	if entry := t.Find(key); entry != nil {
 		if t.stale != nil && entry.transient {
@@ -377,7 +377,7 @@ func New(ctx *fwdcontext.Context, td *fwdpb.TableDesc) (*Table, error) {
 	if t.actions, err = fwdaction.NewActions(td.GetActions(), ctx); err != nil {
 		return nil, fmt.Errorf("exact: Build for extact table failed, err %v", err)
 	}
-	if err := t.InitCounters("", "", fwdtable.CounterList...); err != nil {
+	if err := t.InitCounters("", fwdtable.CounterList...); err != nil {
 		return nil, fmt.Errorf("exact: Build for extact table failed, counter init error, %v", err)
 	}
 	return t, nil

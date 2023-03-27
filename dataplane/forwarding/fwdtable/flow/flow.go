@@ -62,6 +62,7 @@ func (b *flowBank) addLevel(fm *Map, priority uint32) {
 	}
 
 	pos := b.head
+	//nolint:revive // Empty block is ok here.
 	for ; pos.next != nil && pos.next.priority < priority; pos = pos.next {
 	}
 	curr.next = pos.next
@@ -271,7 +272,7 @@ func (t *Table) Entries() []string {
 // Process matches the packet to the entries within the table to determine the
 // actions to be performed. If the packet does not match any entries, the
 // default actions are used. In case of errors, the packet is dropped.
-func (t *Table) Process(packet fwdpacket.Packet, counters fwdobject.Counters) (fwdaction.Actions, fwdaction.State) {
+func (t *Table) Process(packet fwdpacket.Packet, _ fwdobject.Counters) (fwdaction.Actions, fwdaction.State) {
 	key := t.keyDesc.list.MakePacketKey(packet)
 	qualifier := t.qualifierDesc.list.MakePacketQualifier(packet)
 	var actions fwdaction.Actions
@@ -329,7 +330,7 @@ func (flowBuilder) Build(ctx *fwdcontext.Context, td *fwdpb.TableDesc) (fwdtable
 	if t.actions, err = fwdaction.NewActions(td.GetActions(), ctx); err != nil {
 		return nil, fmt.Errorf("flow: Build for flow table failed, err %v", err)
 	}
-	if err := t.InitCounters("", "", fwdtable.CounterList...); err != nil {
+	if err := t.InitCounters("", fwdtable.CounterList...); err != nil {
 		return nil, fmt.Errorf("flow: Build for flow table failed, counter init error, %v", err)
 	}
 	return t, nil
