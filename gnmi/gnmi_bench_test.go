@@ -1,3 +1,17 @@
+// Copyright 2023 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package gnmi
 
 import (
@@ -45,13 +59,31 @@ func BenchmarkGNMISet(b *testing.B) {
 	}{{
 		desc: "config replace",
 		op: func(name string, i int) error {
-			_, err := gnmiclient.Replace[*oc.Interface](context.Background(), configClient, ocpath.Root().Interface(name).Config(), &oc.Interface{Description: ygot.String(fmt.Sprintf("iteration %d", i)), Enabled: ygot.Bool(true), Type: oc.IETFInterfaces_InterfaceType_fast, Mtu: ygot.Uint16(42), LoopbackMode: oc.Interfaces_LoopbackModeType_FACILITY, Tpid: oc.VlanTypes_TPID_TYPES_TPID_0X8100})
+			_, err := gnmiclient.Replace[*oc.Interface](context.Background(), configClient, ocpath.Root().Interface(name).Config(),
+				&oc.Interface{
+					Description:  ygot.String(fmt.Sprintf("iteration %d", i)),
+					Enabled:      ygot.Bool(true),
+					Type:         oc.IETFInterfaces_InterfaceType_fast,
+					Mtu:          ygot.Uint16(42),
+					LoopbackMode: oc.Interfaces_LoopbackModeType_FACILITY,
+					Tpid:         oc.VlanTypes_TPID_TYPES_TPID_0X8100,
+				},
+			)
 			return err
 		},
 	}, {
 		desc: "state replace",
 		op: func(name string, i int) error {
-			_, err := gnmiclient.Replace(context.Background(), stateClient, ocpath.Root().Interface(name).State(), &oc.Interface{Description: ygot.String(fmt.Sprintf("iteration %d", i)), Enabled: ygot.Bool(true), Type: oc.IETFInterfaces_InterfaceType_fast, Mtu: ygot.Uint16(42), LoopbackMode: oc.Interfaces_LoopbackModeType_FACILITY, Tpid: oc.VlanTypes_TPID_TYPES_TPID_0X8100})
+			_, err := gnmiclient.Replace(context.Background(), stateClient, ocpath.Root().Interface(name).State(),
+				&oc.Interface{
+					Description:  ygot.String(fmt.Sprintf("iteration %d", i)),
+					Enabled:      ygot.Bool(true),
+					Type:         oc.IETFInterfaces_InterfaceType_fast,
+					Mtu:          ygot.Uint16(42),
+					LoopbackMode: oc.Interfaces_LoopbackModeType_FACILITY,
+					Tpid:         oc.VlanTypes_TPID_TYPES_TPID_0X8100,
+				},
+			)
 			return err
 		},
 	}, {
