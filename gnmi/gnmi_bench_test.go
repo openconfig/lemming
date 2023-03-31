@@ -56,8 +56,9 @@ func BenchmarkGNMISet(b *testing.B) {
 		desc string
 		op   func(name string, i int) error
 		op2  func(name string, i int) error
+		skip bool
 	}{{
-		desc: "config replace",
+		desc: "config replace nonleaf",
 		op: func(name string, i int) error {
 			_, err := gnmiclient.Replace[*oc.Interface](context.Background(), configClient, ocpath.Root().Interface(name).Config(),
 				&oc.Interface{
@@ -72,7 +73,7 @@ func BenchmarkGNMISet(b *testing.B) {
 			return err
 		},
 	}, {
-		desc: "state replace",
+		desc: "state replace nonleaf",
 		op: func(name string, i int) error {
 			_, err := gnmiclient.Replace(context.Background(), stateClient, ocpath.Root().Interface(name).State(),
 				&oc.Interface{
@@ -87,7 +88,7 @@ func BenchmarkGNMISet(b *testing.B) {
 			return err
 		},
 	}, {
-		desc: "config update",
+		desc: "config update leaf",
 		op: func(name string, i int) error {
 			if _, err := gnmiclient.Update[string](context.Background(), configClient, ocpath.Root().Interface(name).Description().Config(), fmt.Sprintf("iteration %d", i)); err != nil {
 				return err
@@ -110,7 +111,7 @@ func BenchmarkGNMISet(b *testing.B) {
 			return nil
 		},
 	}, {
-		desc: "state update",
+		desc: "state update leaf",
 		op: func(name string, i int) error {
 			if _, err := gnmiclient.Update(context.Background(), stateClient, ocpath.Root().Interface(name).Description().State(), fmt.Sprintf("iteration %d", i)); err != nil {
 				return err
@@ -145,11 +146,11 @@ func BenchmarkGNMISet(b *testing.B) {
 	}, {
 		desc: "state replace and delete",
 		op: func(name string, i int) error {
-			_, err := gnmiclient.Replace(context.Background(), configClient, ocpath.Root().Interface(name).State(), &oc.Interface{Description: ygot.String(fmt.Sprintf("iteration %d", i))})
+			_, err := gnmiclient.Replace(context.Background(), stateClient, ocpath.Root().Interface(name).State(), &oc.Interface{Description: ygot.String(fmt.Sprintf("iteration %d", i))})
 			return err
 		},
 		op2: func(name string, i int) error {
-			_, err := gnmiclient.Delete(context.Background(), configClient, ocpath.Root().Interface(name).State())
+			_, err := gnmiclient.Delete(context.Background(), stateClient, ocpath.Root().Interface(name).State())
 			return err
 		},
 	}}
@@ -157,6 +158,9 @@ func BenchmarkGNMISet(b *testing.B) {
 	interfaceN := 10
 	for _, bb := range tests {
 		b.Run(bb.desc, func(b *testing.B) {
+			if bb.skip {
+				b.Skip()
+			}
 			for i := 0; i != b.N; i++ {
 				for j := 0; j != interfaceN; j++ {
 					if err := bb.op(fmt.Sprintf("eth%d", j), i); err != nil {

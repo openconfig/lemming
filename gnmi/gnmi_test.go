@@ -807,6 +807,7 @@ func TestSetYGNMI(t *testing.T) {
 				t.Fatal(err)
 			}
 			want := &oc.System{Hostname: ygot.String("foo"), MotdBanner: ygot.String("bar")}
+			// TODO: Figure out why this is needed. We should not be automatically populating state paths -- only config paths.
 			want.PopulateDefaults()
 			nos, err := ygot.Diff(want, v)
 			if err != nil {
@@ -832,7 +833,6 @@ func TestSetYGNMI(t *testing.T) {
 				t.Fatal(err)
 			}
 			want := &oc.System{MotdBanner: ygot.String("foo")}
-			want.PopulateDefaults()
 			nos, err := ygot.Diff(want, v)
 			if err != nil {
 				t.Fatal(err)
@@ -861,7 +861,6 @@ func TestSetYGNMI(t *testing.T) {
 				return
 			}
 			want := &oc.System{}
-			want.PopulateDefaults()
 			nos, err := ygot.Diff(want, val)
 			if err != nil {
 				t.Fatal(err)
