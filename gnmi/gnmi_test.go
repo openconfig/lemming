@@ -677,7 +677,11 @@ func TestSetYGNMI(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			nos, err := ygot.Diff(&oc.System{Hostname: ygot.String("foo"), MotdBanner: ygot.String("bar")}, v)
+
+			want := &oc.System{Hostname: ygot.String("foo"), MotdBanner: ygot.String("bar")}
+			// Defaults are implicit when writing to config paths.
+			want.PopulateDefaults()
+			nos, err := ygot.Diff(want, v)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -699,7 +703,9 @@ func TestSetYGNMI(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			nos, err := ygot.Diff(&oc.System{MotdBanner: ygot.String("foo")}, v)
+			want := &oc.System{MotdBanner: ygot.String("foo")}
+			want.PopulateDefaults()
+			nos, err := ygot.Diff(want, v)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -725,7 +731,9 @@ func TestSetYGNMI(t *testing.T) {
 			if !ok {
 				return
 			}
-			nos, err := ygot.Diff(&oc.System{}, val)
+			want := &oc.System{}
+			want.PopulateDefaults()
+			nos, err := ygot.Diff(want, val)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -807,8 +815,6 @@ func TestSetYGNMI(t *testing.T) {
 				t.Fatal(err)
 			}
 			want := &oc.System{Hostname: ygot.String("foo"), MotdBanner: ygot.String("bar")}
-			// TODO: Figure out why this is needed. We should not be automatically populating state paths -- only config paths.
-			want.PopulateDefaults()
 			nos, err := ygot.Diff(want, v)
 			if err != nil {
 				t.Fatal(err)

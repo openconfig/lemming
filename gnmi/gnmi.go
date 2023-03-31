@@ -103,19 +103,24 @@ func newServer(ctx context.Context, targetName string, enableSet bool, recs ...r
 		return gnmiServer, nil
 	}
 
+	emptySchema, err := oc.Schema()
+	if err != nil {
+		return nil, fmt.Errorf("cannot create ygot schema object: %v", err)
+	}
+
 	configSchema, err := oc.Schema()
 	if err != nil {
 		return nil, fmt.Errorf("cannot create ygot schema object: %v", err)
 	}
 	// Initialize the cache with the input schema root.
 	if configSchema != nil {
-		if err := setupSchema(configSchema); err != nil {
+		if err := setupSchema(configSchema, true); err != nil {
 			return nil, err
 		}
 		if err := ygot.PruneConfigFalse(configSchema.RootSchema(), configSchema.Root); err != nil {
 			return nil, fmt.Errorf("gnmi: %v", err)
 		}
-		updateCache(c.cache, configSchema.Root, nil, targetName, OpenConfigOrigin, true, time.Now().UnixNano(), "", nil)
+		updateCache(c.cache, configSchema.Root, emptySchema.Root, targetName, OpenConfigOrigin, true, time.Now().UnixNano(), "", nil)
 	}
 
 	stateSchema, err := oc.Schema()
@@ -123,10 +128,10 @@ func newServer(ctx context.Context, targetName string, enableSet bool, recs ...r
 		return nil, fmt.Errorf("cannot create ygot schema object: %v", err)
 	}
 	if stateSchema != nil {
-		if err := setupSchema(stateSchema); err != nil {
+		if err := setupSchema(stateSchema, false); err != nil {
 			return nil, err
 		}
-		updateCache(c.cache, stateSchema.Root, nil, targetName, OpenConfigOrigin, true, time.Now().UnixNano(), "", nil)
+		updateCache(c.cache, stateSchema.Root, emptySchema.Root, targetName, OpenConfigOrigin, true, time.Now().UnixNano(), "", nil)
 	}
 
 	for _, rec := range recs {
@@ -148,13 +153,18 @@ type populateDefaultser interface {
 // setupSchema takes in a ygot schema object which it assumes to be
 // uninitialized. It initializes and validates it, returning any errors
 // encountered.
-func setupSchema(schema *ytypes.Schema) error {
+//
+// If config is set, then default values are automatically populated.
+// State paths are not automatically populated since internal goroutines should
+// populate them instead.
+func setupSchema(schema *ytypes.Schema, config bool) error {
 	if !schema.IsValid() {
 		return fmt.Errorf("cannot obtain valid schema for GoStructs: %v", schema)
 	}
 
-	// Initialize the root with default values.
-	schema.Root.(populateDefaultser).PopulateDefaults()
+	if config {
+		schema.Root.(populateDefaultser).PopulateDefaults()
+	}
 	if err := schema.Validate(); err != nil {
 		return fmt.Errorf("default root of input schema fails validation: %v", err)
 	}
