@@ -103,19 +103,24 @@ func newServer(ctx context.Context, targetName string, enableSet bool, recs ...r
 		return gnmiServer, nil
 	}
 
+	emptySchema, err := oc.Schema()
+	if err != nil {
+		return nil, fmt.Errorf("cannot create ygot schema object: %v", err)
+	}
+
 	configSchema, err := oc.Schema()
 	if err != nil {
 		return nil, fmt.Errorf("cannot create ygot schema object: %v", err)
 	}
 	// Initialize the cache with the input schema root.
 	if configSchema != nil {
-		if err := setupSchema(configSchema); err != nil {
+		if err := setupSchema(configSchema, true); err != nil {
 			return nil, err
 		}
 		if err := ygot.PruneConfigFalse(configSchema.RootSchema(), configSchema.Root); err != nil {
 			return nil, fmt.Errorf("gnmi: %v", err)
 		}
-		updateCache(c.cache, configSchema.Root, nil, targetName, OpenConfigOrigin, true, time.Now().UnixNano(), "", nil)
+		updateCache(c.cache, configSchema.Root, emptySchema.Root, targetName, OpenConfigOrigin, true, time.Now().UnixNano(), "", nil)
 	}
 
 	stateSchema, err := oc.Schema()
@@ -123,10 +128,10 @@ func newServer(ctx context.Context, targetName string, enableSet bool, recs ...r
 		return nil, fmt.Errorf("cannot create ygot schema object: %v", err)
 	}
 	if stateSchema != nil {
-		if err := setupSchema(stateSchema); err != nil {
+		if err := setupSchema(stateSchema, false); err != nil {
 			return nil, err
 		}
-		updateCache(c.cache, stateSchema.Root, nil, targetName, OpenConfigOrigin, true, time.Now().UnixNano(), "", nil)
+		updateCache(c.cache, stateSchema.Root, emptySchema.Root, targetName, OpenConfigOrigin, true, time.Now().UnixNano(), "", nil)
 	}
 
 	for _, rec := range recs {
@@ -148,13 +153,18 @@ type populateDefaultser interface {
 // setupSchema takes in a ygot schema object which it assumes to be
 // uninitialized. It initializes and validates it, returning any errors
 // encountered.
-func setupSchema(schema *ytypes.Schema) error {
+//
+// If config is set, then default values are automatically populated.
+// State paths are not automatically populated since internal goroutines should
+// populate them instead.
+func setupSchema(schema *ytypes.Schema, config bool) error {
 	if !schema.IsValid() {
 		return fmt.Errorf("cannot obtain valid schema for GoStructs: %v", schema)
 	}
 
-	// Initialize the root with default values.
-	schema.Root.(populateDefaultser).PopulateDefaults()
+	if config {
+		schema.Root.(populateDefaultser).PopulateDefaults()
+	}
 	if err := schema.Validate(); err != nil {
 		return fmt.Errorf("default root of input schema fails validation: %v", err)
 	}
@@ -258,7 +268,9 @@ func updateCacheNotifs(cache *cache.Cache, nos []*gpb.Notification, target, orig
 }
 
 // unmarshalSetRequest unmarshals the setrequest into the schema.
-func unmarshalSetRequest(schema *ytypes.Schema, req *gpb.SetRequest, preferShadowPath, populateDefaults bool) error {
+// Where preferShadowPath=true, this means that any default configuration will
+// be automatically populated in the schema.
+func unmarshalSetRequest(schema *ytypes.Schema, req *gpb.SetRequest, preferShadowPath bool) error {
 	var unmarshalOpts []ytypes.UnmarshalOpt
 	if preferShadowPath {
 		unmarshalOpts = append(unmarshalOpts, &ytypes.PreferShadowPath{})
@@ -266,7 +278,7 @@ func unmarshalSetRequest(schema *ytypes.Schema, req *gpb.SetRequest, preferShado
 	if err := ytypes.UnmarshalSetRequest(schema, req, unmarshalOpts...); err != nil {
 		return status.Errorf(codes.InvalidArgument, "failed to unmarshal set request %v", err)
 	}
-	if populateDefaults {
+	if preferShadowPath {
 		// Populate and defaults after any possible replace/delete operations.
 		// NOTE: This statement can introduce significant slowdowns.
 		schema.Root.(populateDefaultser).PopulateDefaults()
@@ -283,18 +295,21 @@ func unmarshalSetRequest(schema *ytypes.Schema, req *gpb.SetRequest, preferShado
 // the gNMI cache.
 // - auth adds authorization to before writing vals to the cache, if set to nil, not authorization is checked.
 func set(schema *ytypes.Schema, cache *cache.Cache, target string, req *gpb.SetRequest, preferShadowPath bool, validators []func(*oc.Root) error, timestamp int64, user string, auth PathAuth) error {
-	// skip validation and diffing for performance.
-	// TODO(wenbli): This if block should be removed once a more performant diffing utility is created.
+	// skip diffing and deepcopy for performance when handling state update paths.
+	// Currently this is not possible for replace/delete paths, since
+	// without doing a diff, it is not possible to compute what was
+	// deleted. Furthermore, since we're using a single cache, we would be
+	// affecting both config/state leafs at the same time.
+	//
+	// TODO: Once unmarshalSetRequest can return a diff itself, then this
+	// block can be deleted.
 	if !preferShadowPath && len(req.Delete)+len(req.Replace) == 0 {
 		tempSchema := &ytypes.Schema{
 			Root:       &oc.Root{},
 			SchemaTree: schema.SchemaTree,
 			Unmarshal:  schema.Unmarshal,
 		}
-		// TODO(wenbli): This is a temporary solution to allow higher-scale tests.
-		// Remove the populateDefault field once this is removed -- it
-		// should always be called.
-		unmarshalSetRequest(tempSchema, req, preferShadowPath, false)
+		unmarshalSetRequest(tempSchema, req, preferShadowPath)
 		notifs, err := ygot.TogNMINotifications(tempSchema.Root, timestamp, ygot.GNMINotificationsConfig{UsePathElem: true})
 		if err != nil {
 			return err
@@ -304,7 +319,7 @@ func set(schema *ytypes.Schema, cache *cache.Cache, target string, req *gpb.SetR
 			return err
 		}
 
-		return unmarshalSetRequest(schema, req, preferShadowPath, true)
+		return unmarshalSetRequest(schema, req, preferShadowPath)
 	}
 
 	prevRoot, err := ygot.DeepCopy(schema.Root)
@@ -322,12 +337,14 @@ func set(schema *ytypes.Schema, cache *cache.Cache, target string, req *gpb.SetR
 		}
 	}()
 
-	if err := unmarshalSetRequest(schema, req, preferShadowPath, true); err != nil {
+	if err := unmarshalSetRequest(schema, req, preferShadowPath); err != nil {
 		return err
 	}
 
-	if err := schema.Validate(); err != nil {
-		return status.Errorf(codes.InvalidArgument, "invalid SetRequest: %v", err)
+	if preferShadowPath {
+		if err := schema.Validate(); err != nil {
+			return status.Errorf(codes.InvalidArgument, "invalid SetRequest: %v", err)
+		}
 	}
 	for _, validator := range validators {
 		if err := validator(schema.Root.(*oc.Root)); err != nil {
