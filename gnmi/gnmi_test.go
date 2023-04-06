@@ -609,14 +609,16 @@ func TestSetInternal(t *testing.T) {
 }
 
 func TestSetYGNMI(t *testing.T) {
-	tests := []struct {
+	type testSpec struct {
 		desc      string
 		isState   bool
 		inOp      func(c *ygnmi.Client) error
 		getOp     func(t *testing.T, c *ygnmi.Client) (interface{}, bool)
 		wantValue interface{}
 		wantErr   string
-	}{{
+	}
+
+	passingTests := []testSpec{{
 		desc: "leaf config update",
 		inOp: func(c *ygnmi.Client) error {
 			_, err := ygnmi.Update(context.Background(), c, ocpath.Root().System().Hostname().Config(), "foo")
@@ -725,13 +727,6 @@ func TestSetYGNMI(t *testing.T) {
 			return v.Val()
 		},
 	}, {
-		desc: "fail due to missing leafref",
-		inOp: func(c *ygnmi.Client) error {
-			_, err := ygnmi.Update(context.Background(), c, ocpath.Root().Lldp().Interface("eth1").Name().Config(), "eth1")
-			return err
-		},
-		wantErr: "pointed-to value with path /interfaces/interface/name",
-	}, {
 		desc:    "leaf state update",
 		isState: true,
 		inOp: func(c *ygnmi.Client) error {
@@ -835,6 +830,36 @@ func TestSetYGNMI(t *testing.T) {
 		},
 	}}
 
+	failingTests := []testSpec{{
+		desc: "fail due to missing leafref",
+		inOp: func(c *ygnmi.Client) error {
+			_, err := ygnmi.Update(context.Background(), c, ocpath.Root().Lldp().Interface("eth1").Name().Config(), "eth1")
+			return err
+		},
+		wantErr: "pointed-to value with path /interfaces/interface/name",
+	}, {
+		desc: "fail due to non-matching key names",
+		inOp: func(c *ygnmi.Client) error {
+			_, err := ygnmi.Update(context.Background(), c, ocpath.Root().RoutingPolicy().DefinedSets().PrefixSet("test").Prefix("1.1.1.1", "exact").IpPrefix().Config(), "2.2.2.2/32")
+			return err
+		},
+		wantErr: "key value 2.2.2.2/32 for key field IpPrefix has different value from map key 1.1.1.1",
+	}, {
+		desc: "fail due to bad regex",
+		inOp: func(c *ygnmi.Client) error {
+			_, err := ygnmi.Update(context.Background(), c, ocpath.Root().RoutingPolicy().DefinedSets().PrefixSet("test").Prefix("1.1.1.1", "24").IpPrefix().Config(), "1.1.1.1")
+			return err
+		},
+		wantErr: `"24" does not match regular expression pattern`,
+	}, {
+		desc: "fail due to value restriction",
+		inOp: func(c *ygnmi.Client) error {
+			_, err := ygnmi.Update(context.Background(), c, ocpath.Root().RoutingPolicy().PolicyDefinition("test").Statement("test").Actions().BgpActions().SetAsPathPrepend().RepeatN().Config(), 0)
+			return err
+		},
+		wantErr: "value 0 is outside specified ranges",
+	}}
+
 	gnmiServer, err := newServer(context.Background(), "local", true)
 	if err != nil {
 		t.Fatalf("cannot create server, got err: %v", err)
@@ -857,7 +882,7 @@ func TestSetYGNMI(t *testing.T) {
 		t.Fatalf("failed to create client: %v", err)
 	}
 
-	for _, tt := range tests {
+	for _, tt := range append(passingTests, failingTests...) {
 		c := configClient
 		if tt.isState {
 			c = stateClient
