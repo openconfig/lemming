@@ -15,6 +15,9 @@
 package gnoi
 
 import (
+	"context"
+	"time"
+
 	bpb "github.com/openconfig/gnoi/bgp"
 	cmpb "github.com/openconfig/gnoi/cert"
 	dpb "github.com/openconfig/gnoi/diag"
@@ -77,6 +80,10 @@ type otdr struct {
 
 type system struct {
 	spb.UnimplementedSystemServer
+}
+
+func (*system) Time(context.Context, *spb.TimeRequest) (*spb.TimeResponse, error) {
+	return &spb.TimeResponse{Time: uint64(time.Now().UnixNano())}, nil
 }
 
 type wavelengthRouter struct {
