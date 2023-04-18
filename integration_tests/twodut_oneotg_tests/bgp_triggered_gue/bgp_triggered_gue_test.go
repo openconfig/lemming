@@ -915,7 +915,7 @@ func TestBGPTriggeredGUE(t *testing.T) {
 		desc: "with single IPv4 policy",
 		gnmiOp: func() {
 			policy2Pfx := "203.0.113.0/29"
-			gnmi.Replace(t, dut, ocpath.Root().BgpGueIpv4Policy(policy2Pfx).Config(), &oc.BgpGueIpv4Policy{
+			gnmi.Replace(t, dut, ocpath.Root().BgpGueIpv4GlobalPolicy(policy2Pfx).Config(), &oc.BgpGueIpv4GlobalPolicy{
 				DstPortIpv4: ygot.Uint16(84),
 				DstPortIpv6: ygot.Uint16(184),
 				Prefix:      ygot.String(policy2Pfx),
@@ -936,7 +936,7 @@ func TestBGPTriggeredGUE(t *testing.T) {
 		desc: "with single IPv6 policy",
 		gnmiOp: func() {
 			policy2Pfx := "2002::/48"
-			gnmi.Replace(t, dut, ocpath.Root().BgpGueIpv6Policy(policy2Pfx).Config(), &oc.BgpGueIpv6Policy{
+			gnmi.Replace(t, dut, ocpath.Root().BgpGueIpv6GlobalPolicy(policy2Pfx).Config(), &oc.BgpGueIpv6GlobalPolicy{
 				DstPortIpv6: ygot.Uint16(184),
 				Prefix:      ygot.String(policy2Pfx),
 				SrcIp:       ygot.String("8484:8484::"),
@@ -957,7 +957,7 @@ func TestBGPTriggeredGUE(t *testing.T) {
 		desc: "with two overlapping IPv4 policies",
 		gnmiOp: func() {
 			policy1Pfx := "203.0.113.0/30"
-			gnmi.Replace(t, dut, ocpath.Root().BgpGueIpv4Policy(policy1Pfx).Config(), &oc.BgpGueIpv4Policy{
+			gnmi.Replace(t, dut, ocpath.Root().BgpGueIpv4GlobalPolicy(policy1Pfx).Config(), &oc.BgpGueIpv4GlobalPolicy{
 				DstPortIpv4: ygot.Uint16(42),
 				DstPortIpv6: ygot.Uint16(142),
 				Prefix:      ygot.String(policy1Pfx),
@@ -978,7 +978,7 @@ func TestBGPTriggeredGUE(t *testing.T) {
 		desc: "with two overlapping IPv6 policies",
 		gnmiOp: func() {
 			policy1Pfx := "2002::/64"
-			gnmi.Replace(t, dut, ocpath.Root().BgpGueIpv6Policy(policy1Pfx).Config(), &oc.BgpGueIpv6Policy{
+			gnmi.Replace(t, dut, ocpath.Root().BgpGueIpv6GlobalPolicy(policy1Pfx).Config(), &oc.BgpGueIpv6GlobalPolicy{
 				DstPortIpv6: ygot.Uint16(142),
 				Prefix:      ygot.String(policy1Pfx),
 				SrcIp:       ygot.String("4242:4242::"),
