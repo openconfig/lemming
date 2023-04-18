@@ -41,18 +41,18 @@ module openconfig-bgp-gue {
 
   // grouping statements
 
-  grouping bgp-gue-ipv4-policy-config {
+  grouping bgp-gue-ipv4-global-policy-config {
     description
-      "Config data for IPv4 BGP-triggered GUE policy";
+      "Config data for IPv4 BGP-triggered GUE global policy";
 
     leaf prefix {
       type oc-inet:ipv4-prefix;
       description
         "Prefix containing BGP path's next-hop attribute of NLRI to which GUE
-        policy applies.
+        global policy applies.
 
-        In case of overlapping prefixes, the policy with the longest-matching
-        prefix will apply.";
+        In case of overlapping prefixes, the global policy with the
+        longest-matching prefix will apply.";
     }
 
     leaf dst-port-ipv4 {
@@ -74,21 +74,22 @@ module openconfig-bgp-gue {
     }
   }
 
-  grouping bgp-gue-ipv6-policy-config {
+  grouping bgp-gue-ipv6-global-policy-config {
     description
-      "Config data for IPv6 BGP-triggered GUE policy";
+      "Config data for IPv6 BGP-triggered GUE global policy";
 
     leaf prefix {
       type oc-inet:ipv6-prefix;
       description
         "Prefix containing BGP path's next-hop attribute of NLRI to which GUE
-        policy applies.
+        global policy applies.
 
-        In case of overlapping prefixes, the policy with the longest-matching
-        prefix will apply.
+        In case of overlapping prefixes, the global policy with the
+        longest-matching prefix will apply.
 
         Any prefix coverage of IPv4-mapped IPv6 addresses will be ignored,
-        since the IPv4 policy must be used for IPv4 next-hop addresses.";
+        since the IPv4 global policy must be used for IPv4 next-hop
+        addresses.";
     }
 
     leaf dst-port-ipv6 {
@@ -112,7 +113,7 @@ module openconfig-bgp-gue {
       description
         "Container for List of BGP-triggered IPv4 GUE policies.";
 
-      list bgp-gue-ipv4-policy {
+      list bgp-gue-ipv4-global-policy {
         key "prefix";
         description
           "List of BGP-triggered IPv4 GUE policies.";
@@ -123,25 +124,25 @@ module openconfig-bgp-gue {
           }
           description
             "Prefix containing BGP path's next-hop attribute of NLRI to which
-            the GUE policy applies.
+            the GUE global policy applies.
 
-            In case of overlapping prefixes, the policy with the
+            In case of overlapping prefixes, the global policy with the
             longest-matching prefix will apply.";
         }
 
         container config {
           description
-            "Config data for BGP-triggered GUE policy.";
+            "Config data for BGP-triggered GUE global policy.";
 
-          uses bgp-gue-ipv4-policy-config;
+          uses bgp-gue-ipv4-global-policy-config;
         }
 
         container state {
           config false;
           description
-            "State data for BGP-triggered GUE policy.";
+            "State data for BGP-triggered GUE global policy.";
 
-          uses bgp-gue-ipv4-policy-config;
+          uses bgp-gue-ipv4-global-policy-config;
         }
       }
     }
@@ -150,7 +151,7 @@ module openconfig-bgp-gue {
       description
         "Container for List of BGP-triggered IPv6 GUE policies.";
 
-      list bgp-gue-ipv6-policy {
+      list bgp-gue-ipv6-global-policy {
         key "prefix";
         description
           "List of BGP-triggered IPv6 GUE policies.";
@@ -161,25 +162,25 @@ module openconfig-bgp-gue {
           }
           description
             "Prefix containing BGP path's next-hop attribute of NLRI to which
-            the GUE policy applies.
+            the GUE global policy applies.
 
-            In case of overlapping prefixes, the policy with the
+            In case of overlapping prefixes, the global policy with the
             longest-matching prefix will apply.";
         }
 
         container config {
           description
-            "Config data for BGP-triggered GUE policy.";
+            "Config data for BGP-triggered GUE global policy.";
 
-          uses bgp-gue-ipv6-policy-config;
+          uses bgp-gue-ipv6-global-policy-config;
         }
 
         container state {
           config false;
           description
-            "State data for BGP-triggered GUE policy.";
+            "State data for BGP-triggered GUE global policy.";
 
-          uses bgp-gue-ipv6-policy-config;
+          uses bgp-gue-ipv6-global-policy-config;
         }
       }
     }

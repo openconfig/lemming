@@ -277,13 +277,13 @@ func (s *Server) monitorConnectedIntfs(yclient *ygnmi.Client) error {
 func (s *Server) monitorBGPGUEPolicies(yclient *ygnmi.Client) error {
 	b := &ocpath.Batch{}
 	b.AddPaths(
-		ocpath.Root().BgpGueIpv4PolicyAny().Prefix().Config().PathStruct(),
-		ocpath.Root().BgpGueIpv4PolicyAny().DstPortIpv4().Config().PathStruct(),
-		ocpath.Root().BgpGueIpv4PolicyAny().DstPortIpv6().Config().PathStruct(),
-		ocpath.Root().BgpGueIpv4PolicyAny().SrcIp().Config().PathStruct(),
-		ocpath.Root().BgpGueIpv6PolicyAny().Prefix().Config().PathStruct(),
-		ocpath.Root().BgpGueIpv6PolicyAny().DstPortIpv6().Config().PathStruct(),
-		ocpath.Root().BgpGueIpv6PolicyAny().SrcIp().Config().PathStruct(),
+		ocpath.Root().BgpGueIpv4GlobalPolicyAny().Prefix().Config().PathStruct(),
+		ocpath.Root().BgpGueIpv4GlobalPolicyAny().DstPortIpv4().Config().PathStruct(),
+		ocpath.Root().BgpGueIpv4GlobalPolicyAny().DstPortIpv6().Config().PathStruct(),
+		ocpath.Root().BgpGueIpv4GlobalPolicyAny().SrcIp().Config().PathStruct(),
+		ocpath.Root().BgpGueIpv6GlobalPolicyAny().Prefix().Config().PathStruct(),
+		ocpath.Root().BgpGueIpv6GlobalPolicyAny().DstPortIpv6().Config().PathStruct(),
+		ocpath.Root().BgpGueIpv6GlobalPolicyAny().SrcIp().Config().PathStruct(),
 	)
 
 	bgpGUEPolicyWatcher := ygnmi.Watch(
@@ -310,7 +310,7 @@ func (s *Server) monitorBGPGUEPolicies(yclient *ygnmi.Client) error {
 			}
 
 			// Add new/updated policies.
-			for pfx, ocPolicy := range rootVal.BgpGueIpv4Policy {
+			for pfx, ocPolicy := range rootVal.BgpGueIpv4GlobalPolicy {
 				// TODO(wenbli): Support other VRFs.
 				prefix, err := canonicalPrefix(pfx)
 				if err != nil {
@@ -332,7 +332,7 @@ func (s *Server) monitorBGPGUEPolicies(yclient *ygnmi.Client) error {
 					srcIP4:    addr.As4(),
 				})
 			}
-			for pfx, ocPolicy := range rootVal.BgpGueIpv6Policy {
+			for pfx, ocPolicy := range rootVal.BgpGueIpv6GlobalPolicy {
 				// TODO(wenbli): Support other VRFs.
 				prefix, err := canonicalPrefix(pfx)
 				if err != nil {
