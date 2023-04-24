@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "gnoi",
+    srcs = ["gnoi.go"],
+    importpath = "github.com/openconfig/lemming/gnoi",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_github_openconfig_gnoi//bgp:bgp_go_proto",
+        "@com_github_openconfig_gnoi//cert:cert_go_proto",
+        "@com_github_openconfig_gnoi//diag:diag_go_proto",
+        "@com_github_openconfig_gnoi//factory_reset:factory_reset_go_proto",
+        "@com_github_openconfig_gnoi//file:file_go_proto",
+        "@com_github_openconfig_gnoi//healthz:healthz_go_proto",
+        "@com_github_openconfig_gnoi//layer2:layer2_go_proto",
+        "@com_github_openconfig_gnoi//mpls:mpls_go_proto",
+        "@com_github_openconfig_gnoi//os:os_go_proto",
+        "@com_github_openconfig_gnoi//otdr:otdr_go_proto",
+        "@com_github_openconfig_gnoi//system:system_go_proto",
+        "@com_github_openconfig_gnoi//wavelength_router:wavelength_router_go_proto",
+        "@org_golang_google_grpc//:go_default_library",
+    ],
+)

@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/h-fam/errdiff"
+	"github.com/openconfig/gnmi/errdiff"
 	"github.com/openconfig/lemming/internal/binding"
 	"github.com/openconfig/ondatra"
 	"github.com/openconfig/ondatra/gnmi"
