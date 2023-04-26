@@ -1,0 +1,7 @@
+cc_library(
+    name = "sai",
+    srcs = [
+        "sai.cc",
+    ],
+    deps = ["//proto/dataplane:dataplane_cc_proto"],
+)

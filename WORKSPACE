@@ -25,28 +25,19 @@ http_archive(
     ],
 )
 
-
-http_archive(
-    name = "com_google_protobuf",
-    strip_prefix = "protobuf-22.3",
-    urls = [
-        "https://github.com/protocolbuffers/protobuf/releases/download/v22.3/protobuf-22.3.tar.gz",
-    ],
-)
-
 load("@rules_proto_grpc//:repositories.bzl", "rules_proto_grpc_repos", "rules_proto_grpc_toolchains")
-
 rules_proto_grpc_toolchains()
 rules_proto_grpc_repos()
 
 load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_proto_toolchains")
-
 rules_proto_dependencies()
 rules_proto_toolchains()
 
 load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
-
 protobuf_deps()
+
+load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
+grpc_deps()
 
 load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_dependencies")
 load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies")
@@ -54,12 +45,11 @@ load("//:repositories.bzl", "go_repositories")
 
 # gazelle:repository_macro repositories.bzl%go_repositories
 go_repositories()
-
 go_rules_dependencies()
-
 go_register_toolchains(version = "1.20.2")
-
 gazelle_dependencies()
+
+# External non-Go or bazel friendly dependencies
 
 http_archive(
     name = "com_github_p4lang_p4runtime",
