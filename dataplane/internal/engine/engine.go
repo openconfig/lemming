@@ -20,6 +20,7 @@ import (
 	"sync"
 
 	log "github.com/golang/glog"
+
 	dpb "github.com/openconfig/lemming/proto/dataplane"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
@@ -37,14 +38,14 @@ const (
 
 // Engine contains a routing context and methods to manage it.
 type Engine struct {
-	client     fwdpb.ServiceClient
+	client     fwdpb.ForwardingClient
 	id         string
 	nameToIDMu sync.RWMutex
 	nameToID   map[string]uint64
 }
 
 // New creates a new engine and sets up the forwarding tables.
-func New(ctx context.Context, id string, c fwdpb.ServiceClient) (*Engine, error) {
+func New(ctx context.Context, id string, c fwdpb.ForwardingClient) (*Engine, error) {
 	e := &Engine{
 		id:       id,
 		client:   c,

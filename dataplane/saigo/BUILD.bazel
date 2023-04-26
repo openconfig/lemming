@@ -1,12 +1,22 @@
 cc_library(
-    name = "sai",
+    name = "saigo",
     srcs = [
-        "saigo.cc",
+        "sai_entrypoint.cc",
+        "translator.cc",
     ],
-    hdrs = ["saigo.h"],
+    hdrs = ["translator.h"],
     deps = [
         "//proto/forwarding:forwarding_cc_grpc",
         "//proto/forwarding:forwarding_cc_proto",
         "@com_github_opencomputeproject_sai//:sai",
+        "//dataplane/saigo/standalone",
     ],
+)
+
+cc_shared_library(
+    name = "saigo_shared",
+    deps = [
+        ":saigo",
+    ],
+    shared_lib_name = "libsai.so",
 )

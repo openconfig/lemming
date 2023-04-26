@@ -60,7 +60,7 @@ import (
 // forwarding contexts, each of which contain forwarding objects such as
 // tables, ports and actions.
 type Engine struct {
-	fwdpb.UnimplementedServiceServer
+	fwdpb.UnimplementedForwardingServer
 	fwdpb.UnimplementedInfoServer
 	fwdpb.UnimplementedPacketSinkServer
 
@@ -883,7 +883,7 @@ func (e *Engine) InfoElement(_ context.Context, request *fwdpb.InfoElementReques
 }
 
 // Operation processes incoming OperationRequests and extracts the contained Request.
-func (e *Engine) Operation(stream fwdpb.Service_OperationServer) error {
+func (e *Engine) Operation(stream fwdpb.Forwarding_OperationServer) error {
 	for {
 		operationRequest, err := stream.Recv()
 

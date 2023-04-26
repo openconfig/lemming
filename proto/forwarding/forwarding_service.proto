@@ -30,7 +30,7 @@ import "proto/forwarding/forwarding_table.proto";
 option go_package = "github.com/openconfig/lemming/proto/forwarding";
 
 // Service provisions the forwarding service.
-service ForwardingService {
+service Forwarding {
   // Operations on the service.
 
   // ContextCreate creates a forwarding context.
