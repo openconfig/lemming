@@ -1,7 +1,12 @@
 cc_library(
     name = "sai",
     srcs = [
-        "sai.cc",
+        "saigo.cc",
     ],
-    deps = ["//proto/dataplane:dataplane_cc_proto"],
+    hdrs = ["saigo.h"],
+    deps = [
+        "//proto/forwarding:forwarding_cc_grpc",
+        "//proto/forwarding:forwarding_cc_proto",
+        "@com_github_opencomputeproject_sai//:sai",
+    ],
 )

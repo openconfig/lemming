@@ -60,3 +60,17 @@ http_archive(
     urls = ["https://github.com/p4lang/p4runtime/archive/refs/tags/v1.4.0-rc.5.zip"],
 )
 
+http_archive(
+    name = "com_github_opencomputeproject_sai",
+    strip_prefix = "SAI-1.7.1",
+    sha256 = "e18eb1a2a6e5dd286d97e13569d8b78cc1f8229030beed0db4775b9a50ab6a83",
+    urls = ["https://github.com/opencomputeproject/SAI/archive/refs/tags/v1.7.1.tar.gz"],
+    build_file_content = """
+cc_library(
+    name = "sai",
+    hdrs = glob(["inc/*.h"]),
+    includes = ["inc"],
+    visibility = ["//visibility:public"],
+)
+""",
+)
