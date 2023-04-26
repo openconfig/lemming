@@ -13,8 +13,8 @@ require (
 	github.com/kentik/patricia v1.2.0
 	github.com/open-traffic-generator/snappi/gosnappi v0.10.11
 	github.com/openconfig/gnmi v0.9.1
-	github.com/openconfig/gnoi v0.0.0-20230221223856-1727ed932554
-	github.com/openconfig/gnsi v0.0.0-20221208171320-0b0fb2f32f67
+	github.com/openconfig/gnoi v0.0.0-20230331232029-cc419f3696d3
+	github.com/openconfig/gnsi v0.2.1-0.20230406234913-6acb1b496c20
 	github.com/openconfig/goyang v1.2.0
 	github.com/openconfig/gribi v1.0.0
 	github.com/openconfig/gribigo v0.0.0-20230207233343-ef59db57c4fc
@@ -22,7 +22,7 @@ require (
 	github.com/openconfig/ondatra v0.1.7
 	github.com/openconfig/ygnmi v0.7.7
 	github.com/openconfig/ygot v0.27.0
-	github.com/p4lang/p4runtime v1.3.0
+	github.com/p4lang/p4runtime v1.4.0-rc.5.0.20220728214547-13f0d02a521e
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/pflag v1.0.5

@@ -7,7 +7,7 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "@com_github_openconfig_gnmi//proto/gnmi",
-        "@com_github_openconfig_gnsi//pathz:pathz_go_proto",
+        "@com_github_openconfig_gnsi//pathz",
         "@com_github_openconfig_ygot//util",
     ],
 )
@@ -20,7 +20,7 @@ go_test(
         "@com_github_google_go_cmp//cmp",
         "@com_github_openconfig_gnmi//errdiff",
         "@com_github_openconfig_gnmi//proto/gnmi",
-        "@com_github_openconfig_gnsi//pathz:pathz_go_proto",
+        "@com_github_openconfig_gnsi//pathz",
         "@com_github_openconfig_ygot//ygot",
     ],
 )

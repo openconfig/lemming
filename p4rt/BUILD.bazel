@@ -6,7 +6,7 @@ go_library(
     importpath = "github.com/openconfig/lemming/p4rt",
     visibility = ["//visibility:public"],
     deps = [
-        "@com_github_p4lang_p4runtime//go/p4/v1:p4",
+        "@com_github_p4lang_p4runtime//:p4runtime_go_proto",
         "@org_golang_google_grpc//:go_default_library",
     ],
 )

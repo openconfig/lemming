@@ -1,4 +1,4 @@
-load("@bazel_gazelle//:deps.bzl", "go_repository")
+load("@bazel_gazelle//:def.bzl", "go_repository")
 
 def go_repositories():
     go_repository(
@@ -477,6 +477,7 @@ def go_repositories():
     )
     go_repository(
         name = "com_github_google_gnostic",
+        build_file_proto_mode = "disable",
         importpath = "github.com/google/gnostic",
         sum = "h1:ZK/5VhkoX835RikCHpSUJV9a+S3e1zLh59YnyWeBW+0=",
         version = "v0.6.9",
@@ -935,27 +936,32 @@ def go_repositories():
         name = "com_github_open_traffic_generator_snappi_gosnappi",
         importpath = "github.com/open-traffic-generator/snappi/gosnappi",
         sum = "h1:s73SOj9BzQLaX8jRXYfz2tGvLZfMDpNqhteTcmYXowU=",
+        build_file_proto_mode = "disable",
         version = "v0.10.11",
     )
     go_repository(
         name = "com_github_openconfig_gnmi",
-        importpath = "github.com/openconfig/gnmi",
-        build_file_generation = "on",
         build_directives = ["gazelle:proto_import_prefix github.com/openconfig/gnmi"],
+        build_file_generation = "on",
+        importpath = "github.com/openconfig/gnmi",
         sum = "h1:hVOdLTaRjdy68oCGJbkf2vrmnUoQ5xbINqBOAMix4xM=",
         version = "v0.9.1",
     )
     go_repository(
         name = "com_github_openconfig_gnoi",
         importpath = "github.com/openconfig/gnoi",
-        sum = "h1:qV9anDoBeILsK/rUe7sc0DePwo7dkA45lzDQhfeTniA=",
-        version = "v0.0.0-20230221223856-1727ed932554",
+        patches = ["//patches:gnoi.patch"],
+        patch_args = ["-p1"],
+        sum = "h1:nyVpgoCaVqng9lHRFlqbdvL+z/h8dUeKmoqmdHX5WPk=",
+        version = "v0.0.0-20230331232029-cc419f3696d3",
     )
     go_repository(
         name = "com_github_openconfig_gnsi",
         importpath = "github.com/openconfig/gnsi",
-        sum = "h1:r1GtPxuMqnIyogRTJL8TmJOgxTuOQ8TZMgQFly3yF5Y=",
-        version = "v0.0.0-20221208171320-0b0fb2f32f67",
+        patches = ["//patches:gnsi.patch"],
+        patch_args = ["-p1"],
+        sum = "h1:oes3klKmvdxvORgGKhJMOD7Oc3bkwPnGzjAxyBezdI8=",
+        version = "v0.2.1-0.20230406234913-6acb1b496c20",
     )
     go_repository(
         name = "com_github_openconfig_gocloser",
@@ -971,8 +977,8 @@ def go_repositories():
     )
     go_repository(
         name = "com_github_openconfig_gribi",
-        importpath = "github.com/openconfig/gribi",
         build_file_proto_mode = "disable",
+        importpath = "github.com/openconfig/gribi",
         sum = "h1:xMwEg0mBD+21mOxuFOw0d9dBKuIPwJEhMUUeUulZdLg=",
         version = "v1.0.0",
     )
@@ -1002,7 +1008,25 @@ def go_repositories():
     )
     go_repository(
         name = "com_github_openconfig_ondatra",
-        build_directives = ["gazelle:resolve go github.com/openconfig/gnoi/packet_link_qualification @com_github_openconfig_gnoi//packet_link_qualification:linkqual"],
+        build_directives = [
+            "gazelle:resolve go github.com/openconfig/gnsi/pathz @com_github_openconfig_gnsi//pathz:pathz",
+            "gazelle:resolve go github.com/openconfig/gnoi/bgp @com_github_openconfig_gnoi//bgp:bgp",
+            "gazelle:resolve go github.com/openconfig/gnoi/interface @com_github_openconfig_gnoi//interface:interface",
+            "gazelle:resolve go github.com/openconfig/gnoi/healthz @com_github_openconfig_gnoi//healthz:healthz",
+            "gazelle:resolve go github.com/openconfig/gnoi/cert @com_github_openconfig_gnoi//cert:cert",
+            "gazelle:resolve go github.com/openconfig/gnoi/diag @com_github_openconfig_gnoi//diag:diag",
+            "gazelle:resolve go github.com/openconfig/gnoi/file @com_github_openconfig_gnoi//file:file",
+            "gazelle:resolve go github.com/openconfig/gnoi/types @com_github_openconfig_gnoi//types:types",
+            "gazelle:resolve go github.com/openconfig/gnoi/packet_link_qualification @com_github_openconfig_gnoi//packet_link_qualification:linkqual",
+            "gazelle:resolve go github.com/openconfig/gnoi/factory_reset @com_github_openconfig_gnoi//factory_reset:factory_reset",
+            "gazelle:resolve go github.com/openconfig/gnoi/layer2 @com_github_openconfig_gnoi//layer2:layer2",
+            "gazelle:resolve go github.com/openconfig/gnoi/mpls @com_github_openconfig_gnoi//mpls:mpls",
+            "gazelle:resolve go github.com/openconfig/gnoi/system @com_github_openconfig_gnoi//system:system",
+            "gazelle:resolve go github.com/openconfig/gnoi/os @com_github_openconfig_gnoi//os:os",
+            "gazelle:resolve go github.com/openconfig/gnoi/otdr @com_github_openconfig_gnoi//otdr:otdr",
+            "gazelle:resolve go github.com/openconfig/gnoi/wavelength_router @com_github_openconfig_gnoi//wavelength_router:wavelength_router",
+            "gazelle:resolve go github.com/p4lang/p4runtime/go/p4/v1 @com_github_p4lang_p4runtime//:p4runtime_go_proto",
+        ],
         importpath = "github.com/openconfig/ondatra",
         sum = "h1:TVUz99aoOl7Fe5u7bHlxTbV2cEHJ8iGnI+njxBGU5Bw=",
         version = "v0.1.7",
@@ -1022,6 +1046,7 @@ def go_repositories():
     go_repository(
         name = "com_github_openconfig_ygot",
         importpath = "github.com/openconfig/ygot",
+        build_file_proto_mode = "disable",
         sum = "h1:B2f6BMp4v0Lex5qzcsqODv+HdQWqcc748pQ4eDF+ty4=",
         version = "v0.27.0",
     )
@@ -1036,12 +1061,6 @@ def go_repositories():
         importpath = "github.com/opencontainers/image-spec",
         sum = "h1:9yCKha/T5XdGtO0q9Q9a6T5NUCsTn/DrBg0D7ufOcFM=",
         version = "v1.0.2",
-    )
-    go_repository(
-        name = "com_github_p4lang_p4runtime",
-        importpath = "github.com/p4lang/p4runtime",
-        sum = "h1:3fUhHj0JtsGcL2Bh0uxpACdBJBDqpZyLgj93tqKzoJY=",
-        version = "v1.3.0",
     )
     go_repository(
         name = "com_github_patrickmn_go_cache",
@@ -1106,6 +1125,7 @@ def go_repositories():
     go_repository(
         name = "com_github_prometheus_client_model",
         importpath = "github.com/prometheus/client_model",
+        build_file_proto_mode = "disable",
         sum = "h1:UBgGFHqYdG/TPFD1B1ogZywDqEkwp3fBMvqdiQ7Xew4=",
         version = "v0.3.0",
     )
@@ -1291,8 +1311,8 @@ def go_repositories():
     )
     go_repository(
         name = "com_github_wenovus_gobgp_v3",
-        importpath = "github.com/wenovus/gobgp/v3",
         build_file_proto_mode = "disable",
+        importpath = "github.com/wenovus/gobgp/v3",
         sum = "h1:YdiZGs+Ptnvq8jpBHQfIXLAaH4gc+yKXkPTsUNHJI3k=",
         version = "v3.0.0-20221024234659-8df3c6938ab7",
     )
@@ -1467,6 +1487,11 @@ def go_repositories():
     go_repository(
         name = "com_google_cloud_go_cloudbuild",
         importpath = "cloud.google.com/go/cloudbuild",
+        build_directives = [
+            "gazelle:resolve go google.golang.org/genproto/googleapis/longrunning @org_golang_google_genproto//googleapis/longrunning",  # keep
+            "gazelle:resolve go google.golang.org/genproto/googleapis/logging/v2 @org_golang_google_genproto//googleapis/logging/v2:logging",  # keep
+        ],
+        build_file_proto_mode = "disable",
         sum = "h1:osBOHQJqLPqNfHfkRQXz6sCKAIEKRrupA9NaAGiLN4s=",
         version = "v1.7.0",
     )
@@ -1737,6 +1762,7 @@ def go_repositories():
     go_repository(
         name = "com_google_cloud_go_longrunning",
         importpath = "cloud.google.com/go/longrunning",
+        build_file_proto_mode = "disable",
         sum = "h1:v+yFJOfKC3yZdY6ZUI933pIYdhyhV8S3NpWrXWmg7jM=",
         version = "v0.4.1",
     )
@@ -2192,29 +2218,28 @@ def go_repositories():
     )
     go_repository(
         name = "io_k8s_api",
-        importpath = "k8s.io/api",
         build_file_proto_mode = "disable",
+        importpath = "k8s.io/api",
         sum = "h1:dM3cinp3PGB6asOySalOZxEG4CZ0IAdJsrYZXE/ovGQ=",
         version = "v0.26.2",
     )
     go_repository(
         name = "io_k8s_apiextensions_apiserver",
-        importpath = "k8s.io/apiextensions-apiserver",
         build_file_proto_mode = "disable",
+        importpath = "k8s.io/apiextensions-apiserver",
         sum = "h1:/yTG2B9jGY2Q70iGskMf41qTLhL9XeNN2KhI0uDgwko=",
         version = "v0.26.2",
     )
     go_repository(
         name = "io_k8s_apimachinery",
+        build_file_proto_mode = "disable",
         importpath = "k8s.io/apimachinery",
-        build_directives = ["gazelle:proto_import_prefix k8s.io/apimachinery"],
         sum = "h1:da1u3D5wfR5u2RpLhE/ZtZS2P7QvDgLZTi9wrNZl/tQ=",
         version = "v0.26.2",
     )
     go_repository(
         name = "io_k8s_apiserver",
         importpath = "k8s.io/apiserver",
-        build_directives = ["gazelle:proto_import_prefix k8s.io/api"],
         sum = "h1:Pk8lmX4G14hYqJd1poHGC08G03nIHVqdJMR0SD3IH3o=",
         version = "v0.26.2",
     )
@@ -2395,13 +2420,14 @@ def go_repositories():
     go_repository(
         name = "org_golang_google_genproto",
         importpath = "google.golang.org/genproto",
+        build_file_proto_mode = "disable",
         sum = "h1:DdoeryqhaXp1LtT/emMP1BRJPHHKFi5akj/nbx/zNTA=",
         version = "v0.0.0-20230306155012-7f2fa6fef1f4",
     )
     go_repository(
         name = "org_golang_google_grpc",
-        build_file_proto_mode = "disable",
         importpath = "google.golang.org/grpc",
+        build_file_proto_mode = "disable",
         sum = "h1:LAv2ds7cmFV/XTS3XG1NneeENYrXGmorPxsBbptIjNc=",
         version = "v1.53.0",
     )
