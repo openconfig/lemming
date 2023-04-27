@@ -19,10 +19,10 @@
 #include <grpcpp/security/credentials.h>
 
 #include "dataplane/standalone/lucius/lucius_clib.h"
-#include "translator.h"
+#include "dataplane/standalone/translator.h"
 
 extern "C" {
-#include "sai.h"
+#include "inc/sai.h"
 }
 
 std::shared_ptr<Translator> translator;
@@ -33,7 +33,7 @@ sai_status_t create_switch(_Out_ sai_object_id_t *switch_id,
   return translator->create_switch(switch_id, attr_count, attr_list);
 }
 
-// TODO: implement this without using gRPC.
+// TODO(DanG100): implement this without using gRPC.
 sai_status_t sai_api_initialize(
     _In_ uint64_t flags, _In_ const sai_service_method_table_t *services) {
   initialize(GoInt(50000));
@@ -46,8 +46,8 @@ sai_status_t sai_api_initialize(
 sai_status_t sai_api_query(_In_ sai_api_t api, _Out_ void **api_method_table) {
   switch (api) {
     case SAI_API_SWITCH: {
-      sai_switch_api_t *swapi =
-          (sai_switch_api_t *)malloc(sizeof(sai_switch_api_t));
+      sai_switch_api_t *swapi = reinterpret_cast<sai_switch_api_t *>(
+          malloc(sizeof(sai_switch_api_t)));
       swapi->create_switch = create_switch;
       *api_method_table = swapi;
       break;

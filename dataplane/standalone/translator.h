@@ -12,25 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef TRANSLATOR_H
-#define TRANSLATOR_H
+#ifndef DATAPLANE_STANDALONE_TRANSLATOR_H_
+#define DATAPLANE_STANDALONE_TRANSLATOR_H_
 
 #include <grpcpp/channel.h>
 #include <grpcpp/security/credentials.h>
+
+#include <memory>
 
 #include "dataplane/standalone/lucius/lucius_clib.h"
 #include "proto/forwarding/forwarding_service.grpc.pb.h"
 #include "proto/forwarding/forwarding_service.pb.h"
 
 extern "C" {
-#include "sai.h"
+#include "inc/sai.h"
 }
 
 class Translator {
  public:
-  Translator(std::shared_ptr<grpc::Channel> chan) {
+  explicit Translator(std::shared_ptr<grpc::Channel> chan) {
     client = forwarding::Forwarding::NewStub(chan);
-  };
+  }
   sai_status_t create_switch(_Out_ sai_object_id_t *switch_id,
                              _In_ uint32_t attr_count,
                              _In_ const sai_attribute_t *attr_list);
@@ -39,4 +41,4 @@ class Translator {
   std::unique_ptr<forwarding::Forwarding::Stub> client;
 };
 
-#endif
+#endif  // DATAPLANE_STANDALONE_TRANSLATOR_H_

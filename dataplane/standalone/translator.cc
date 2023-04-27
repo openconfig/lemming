@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "translator.h"
+#include "dataplane/standalone/translator.h"
 extern "C" {
-#include "sai.h"
+#include "inc/sai.h"
 }
 
 sai_status_t Translator::create_switch(_Out_ sai_object_id_t *switch_id,
