@@ -13,17 +13,30 @@
 // limitations under the License.
 
 #include "translator.h"
+#include "dataplane/standalone/lucius/lucius_clib.h"
+#include <grpc/grpc.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/create_channel.h>
+#include <grpcpp/security/credentials.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+extern "C"
+{
+#include "sai.h"
+}
+
+std::shared_ptr<Translator> translator;
+
+sai_status_t create_switch(_Out_ sai_object_id_t *switch_id, _In_ uint32_t attr_count, _In_ const sai_attribute_t *attr_list) {
+    return translator->create_switch(switch_id,attr_count,attr_list);
+}
 
 // TODO: implement this without using gRPC.
 sai_status_t sai_api_initialize(_In_ uint64_t flags, _In_ const sai_service_method_table_t *services)
 {
     initialize(GoInt(50000));
     auto chan = grpc::CreateChannel("localhost:50000",grpc::InsecureChannelCredentials());
-    Translator::client = forwarding::Forwarding::NewStub(chan);
+    translator = std::make_shared<Translator>(chan);
     return SAI_STATUS_SUCCESS;
 }
 
@@ -34,7 +47,7 @@ sai_status_t sai_api_query(_In_ sai_api_t api, _Out_ void **api_method_table)
     case SAI_API_SWITCH:
     {
         sai_switch_api_t *swapi = (sai_switch_api_t *)malloc(sizeof(sai_switch_api_t));
-        swapi->create_switch = Translator::create_switch;
+        swapi->create_switch = create_switch;
         *api_method_table = swapi;
         break;
     }
@@ -49,6 +62,3 @@ sai_status_t sai_log_set(_In_ sai_api_t api, _In_ sai_log_level_t log_level)
     return SAI_STATUS_SUCCESS;
 }
 
-#ifdef __cplusplus
-}
-#endif

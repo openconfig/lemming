@@ -13,8 +13,10 @@
 // limitations under the License.
 
 #include "translator.h"
-
-using namespace Translator;
+extern "C"
+{
+#include "sai.h"
+}
 
 sai_status_t Translator::create_switch(_Out_ sai_object_id_t *switch_id, _In_ uint32_t attr_count, _In_ const sai_attribute_t *attr_list)
 {

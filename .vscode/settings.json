@@ -80,6 +80,10 @@
       "type_traits": "cpp",
       "tuple": "cpp",
       "typeinfo": "cpp",
-      "utility": "cpp"
+      "utility": "cpp",
+      "chrono": "cpp",
+      "complex": "cpp",
+      "list": "cpp",
+      "sstream": "cpp"
     },
   }
