@@ -27,15 +27,16 @@ extern "C"
 
 std::shared_ptr<Translator> translator;
 
-sai_status_t create_switch(_Out_ sai_object_id_t *switch_id, _In_ uint32_t attr_count, _In_ const sai_attribute_t *attr_list) {
-    return translator->create_switch(switch_id,attr_count,attr_list);
+sai_status_t create_switch(_Out_ sai_object_id_t *switch_id, _In_ uint32_t attr_count, _In_ const sai_attribute_t *attr_list)
+{
+    return translator->create_switch(switch_id, attr_count, attr_list);
 }
 
 // TODO: implement this without using gRPC.
 sai_status_t sai_api_initialize(_In_ uint64_t flags, _In_ const sai_service_method_table_t *services)
 {
     initialize(GoInt(50000));
-    auto chan = grpc::CreateChannel("localhost:50000",grpc::InsecureChannelCredentials());
+    auto chan = grpc::CreateChannel("localhost:50000", grpc::InsecureChannelCredentials());
     translator = std::make_shared<Translator>(chan);
     return SAI_STATUS_SUCCESS;
 }
@@ -61,4 +62,3 @@ sai_status_t sai_log_set(_In_ sai_api_t api, _In_ sai_log_level_t log_level)
 {
     return SAI_STATUS_SUCCESS;
 }
-

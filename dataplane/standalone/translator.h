@@ -17,10 +17,7 @@
 
 #include "proto/forwarding/forwarding_service.pb.h"
 #include "proto/forwarding/forwarding_service.grpc.pb.h"
-#include <grpc/grpc.h>
 #include <grpcpp/channel.h>
-#include <grpcpp/client_context.h>
-#include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
 #include "dataplane/standalone/lucius/lucius_clib.h"
 
@@ -29,12 +26,14 @@ extern "C"
 #include "sai.h"
 }
 
-class Translator {
-    public:
-        Translator(std::shared_ptr<grpc::Channel> chan) { client = forwarding::Forwarding::NewStub(chan); };
-        sai_status_t create_switch(_Out_ sai_object_id_t *switch_id, _In_ uint32_t attr_count, _In_ const sai_attribute_t *attr_list);
-    private:
-        std::unique_ptr<forwarding::Forwarding::Stub> client;        
+class Translator
+{
+public:
+    Translator(std::shared_ptr<grpc::Channel> chan) { client = forwarding::Forwarding::NewStub(chan); };
+    sai_status_t create_switch(_Out_ sai_object_id_t *switch_id, _In_ uint32_t attr_count, _In_ const sai_attribute_t *attr_list);
+
+private:
+    std::unique_ptr<forwarding::Forwarding::Stub> client;
 };
 
 #endif
