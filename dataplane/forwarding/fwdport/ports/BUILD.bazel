@@ -1,0 +1,60 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "ports",
+    srcs = [
+        "cpu.go",
+        "doc.go",
+        "group.go",
+        "kernel.go",
+        "tap.go",
+    ],
+    importpath = "github.com/openconfig/lemming/dataplane/forwarding/fwdport/ports",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//dataplane/forwarding/fwdaction",
+        "//dataplane/forwarding/fwdport",
+        "//dataplane/forwarding/infra/deadlock",
+        "//dataplane/forwarding/infra/fwdcontext",
+        "//dataplane/forwarding/infra/fwdobject",
+        "//dataplane/forwarding/infra/fwdpacket",
+        "//dataplane/forwarding/util/hash/crc16",
+        "//dataplane/forwarding/util/queue",
+        "//internal/debug",
+        "//proto/forwarding",
+        "@com_github_golang_glog//:glog",
+        "@com_github_google_gopacket//:gopacket",
+        "@com_github_google_gopacket//afpacket",
+        "@com_github_google_gopacket//layers",
+        "@com_github_vishvananda_netlink//:netlink",
+        "@org_golang_x_sys//unix",
+    ],
+)
+
+go_test(
+    name = "ports_test",
+    srcs = [
+        "cpu_test.go",
+        "group_test.go",
+        "kernel_test.go",
+    ],
+    embed = [":ports"],
+    deps = [
+        "//dataplane/forwarding/fwdaction",
+        "//dataplane/forwarding/fwdport",
+        "//dataplane/forwarding/fwdport/mock_fwdpacket",
+        "//dataplane/forwarding/fwdport/porttestutil",
+        "//dataplane/forwarding/infra/fwdcontext",
+        "//dataplane/forwarding/infra/fwdobject",
+        "//dataplane/forwarding/infra/fwdpacket",
+        "//dataplane/forwarding/protocol/arp",
+        "//dataplane/forwarding/protocol/ethernet",
+        "//dataplane/forwarding/protocol/metadata",
+        "//dataplane/forwarding/protocol/opaque",
+        "//proto/forwarding",
+        "@com_github_golang_mock//gomock",
+        "@com_github_google_gopacket//:gopacket",
+        "@com_github_google_gopacket//layers",
+        "@org_golang_google_protobuf//proto",
+    ],
+)

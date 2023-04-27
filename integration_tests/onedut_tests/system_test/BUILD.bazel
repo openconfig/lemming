@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
+
+go_test(
+    name = "system_test_test",
+    srcs = ["system_test.go"],
+    deps = [
+        "//gnmi/oc/ocpath",
+        "//internal/binding",
+        "@com_github_openconfig_ondatra//:ondatra",
+        "@com_github_openconfig_ondatra//gnmi",
+    ],
+)

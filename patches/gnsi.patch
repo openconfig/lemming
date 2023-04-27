@@ -1,0 +1,191 @@
+diff --git a/BUILD.bazel b/BUILD.bazel
+index 7847882..70fc8bd 100644
+--- a/BUILD.bazel
++++ b/BUILD.bazel
+@@ -1,6 +1,9 @@
+ load("@bazel_gazelle//:def.bzl", "gazelle")
+ 
+ # gazelle:prefix github.com/openconfig/gnsi
++# gazelle:proto_import_prefix github.com/openconfig/gnsi
++# gazelle:resolve proto github.com/openconfig/gnmi/proto/gnmi/gnmi.proto @com_github_openconfig_gnmi//proto/gnmi:gnmi_proto
++# gazelle:resolve proto github.com/openconfig/gnoi/types/types.proto @com_github_openconfig_gnoi//types:types_proto
+ gazelle(name = "gazelle")
+ 
+ alias(
+diff --git a/accounting/BUILD.bazel b/accounting/BUILD.bazel
+index 2e2f26f..2165445 100644
+--- a/accounting/BUILD.bazel
++++ b/accounting/BUILD.bazel
+@@ -40,13 +40,10 @@ cpp_grpc_library(
+ ##############################################################################
+ go_proto_library(
+     name = "acct_go_proto",
+-    compilers = [
+-        "go_protoc_gen_go",
+-        "go_protoc_gen_go_grpc",
+-    ],
++    compilers = ["@io_bazel_rules_go//proto:go_grpc"],
+     importpath = "github.com/openconfig/gnsi/accounting",
+     proto = ":acct_proto",
+-    deps = ["//version:version_go_proto"],
++    deps = ["//version"],
+ )
+ 
+ go_library(
+diff --git a/authz/BUILD.bazel b/authz/BUILD.bazel
+index 5615a73..d910c82 100644
+--- a/authz/BUILD.bazel
++++ b/authz/BUILD.bazel
+@@ -36,13 +36,10 @@ cpp_grpc_library(
+ ##############################################################################
+ go_proto_library(
+     name = "authz_go_proto",
+-    compilers = [
+-        "go_protoc_gen_go",
+-        "go_protoc_gen_go_grpc",
+-    ],
++    compilers = ["@io_bazel_rules_go//proto:go_grpc"],
+     importpath = "github.com/openconfig/gnsi/authz",
+     proto = ":authz_proto",
+-    deps = ["//version:version_go_proto"],
++    deps = ["//version"],
+ )
+ 
+ go_library(
+diff --git a/certz/BUILD.bazel b/certz/BUILD.bazel
+index c4af0e1..839329d 100644
+--- a/certz/BUILD.bazel
++++ b/certz/BUILD.bazel
+@@ -48,7 +48,7 @@ go_proto_library(
+     ],
+     importpath = "github.com/openconfig/gnsi/certz",
+     proto = ":certz_proto",
+-    deps = ["//version:version_go_proto"],
++    deps = ["//version:version"],
+ )
+ 
+ go_library(
+@@ -56,3 +56,17 @@ go_library(
+     embed = [":certz_go_proto"],
+     importpath = "github.com/openconfig/gnsi/certz",
+ )
++
++go_proto_library(
++    name = "cert_go_proto",
++    compilers = ["@io_bazel_rules_go//proto:go_grpc"],
++    importpath = "github.com/openconfig/gnsi/cert",
++    proto = ":certz_proto",
++    deps = ["//version"],
++)
++
++go_library(
++    name = "cert",
++    embed = [":cert_go_proto"],
++    importpath = "github.com/openconfig/gnsi/cert",
++)
+diff --git a/credentialz/BUILD.bazel b/credentialz/BUILD.bazel
+index 92cff71..c0d9d83 100644
+--- a/credentialz/BUILD.bazel
++++ b/credentialz/BUILD.bazel
+@@ -41,13 +41,10 @@ cpp_grpc_library(
+ 
+ go_proto_library(
+     name = "credentialz_go_proto",
+-    compilers = [
+-        "go_protoc_gen_go",
+-        "go_protoc_gen_go_grpc",
+-    ],
++    compilers = ["@io_bazel_rules_go//proto:go_grpc"],
+     importpath = "github.com/openconfig/gnsi/credentialz",
+     proto = ":credentialz_proto",
+-    deps = ["//version:version_go_proto"],
++    deps = ["//version"],
+ )
+ 
+ go_library(
+diff --git a/pathz/BUILD.bazel b/pathz/BUILD.bazel
+index 2e423cc..fbcafb5 100644
+--- a/pathz/BUILD.bazel
++++ b/pathz/BUILD.bazel
+@@ -45,14 +45,17 @@ cpp_grpc_library(
+ ##############################################################################
+ go_proto_library(
+     name = "pathz_go_proto",
+-    compilers = [
+-        "go_protoc_gen_go",
+-        "go_protoc_gen_go_grpc",
+-    ],
++    compilers = ["@io_bazel_rules_go//proto:go_grpc"],
+     importpath = "github.com/openconfig/gnsi/pathz",
+     proto = ":pathz_proto",
+     deps = [
+-        "//version:version_go_proto",
+-        "@com_github_openconfig_gnmi//proto/gnmi:gnmi_go_proto",
++        "//version",
++        "@com_github_openconfig_gnmi//proto/gnmi:gnmi",
+     ],
+ )
++
++go_library(
++    name = "pathz",
++    embed = [":pathz_go_proto"],
++    importpath = "github.com/openconfig/gnsi/pathz",
++)
+diff --git a/pathz/authorization.proto b/pathz/authorization.proto
+index 4362ad3..09a6d97 100644
+--- a/pathz/authorization.proto
++++ b/pathz/authorization.proto
+@@ -37,7 +37,7 @@
+ //
+ syntax = "proto3";
+ 
+-package gnsi.pathz;
++package gnsi.pathz.v1;
+ 
+ import "github.com/openconfig/gnmi/proto/gnmi/gnmi.proto";
+ import "github.com/openconfig/gnsi/version/version.proto";
+diff --git a/version/BUILD.bazel b/version/BUILD.bazel
+index e047013..321f740 100644
+--- a/version/BUILD.bazel
++++ b/version/BUILD.bazel
+@@ -1,7 +1,9 @@
++load("@io_bazel_rules_go//go:def.bzl", "go_library")
+ load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+ load("@rules_proto//proto:defs.bzl", "proto_library")
+ load("@rules_proto_grpc//cpp:defs.bzl", "cpp_proto_library")
+ load("//:common.bzl", "use_new_compilers")
++
+ use_new_compilers()
+ 
+ package(default_visibility = ["//visibility:public"])
+@@ -11,9 +13,9 @@ proto_library(
+     srcs = [
+         "version.proto",
+     ],
+-    deps = ["@com_github_openconfig_gnoi//types:types_proto"],
+     import_prefix = "github.com/openconfig/gnsi",
+     visibility = ["//visibility:public"],
++    deps = ["@com_github_openconfig_gnoi//types:types_proto"],
+ )
+ 
+ cpp_proto_library(
+@@ -26,11 +28,16 @@ cpp_proto_library(
+ 
+ go_proto_library(
+     name = "version_go_proto",
+-    compilers = ["go_protoc_gen_go"],
+     importpath = "github.com/openconfig/gnsi/version",
+     proto = ":version_proto",
++    visibility = ["//visibility:public"],
+     deps = [
+-        "@com_github_openconfig_gnoi//types:types_go_proto",
++        "@com_github_openconfig_gnoi//types:types",
+     ],
+-    visibility = ["//visibility:public"],
++)
++
++go_library(
++    name = "version",
++    embed = [":version_go_proto"],
++    importpath = "github.com/openconfig/gnsi/version",
+ )
