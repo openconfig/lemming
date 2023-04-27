@@ -1,10 +1,10 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 
 go_library(
-    name = "standalone_lib",
-    srcs = ["standalone.go"],
+    name = "lucius_lib",
+    srcs = ["lucius.go"],
     cgo = True,
-    importpath = "github.com/openconfig/lemming/dataplane/saigo/standalone",
+    importpath = "github.com/openconfig/lemming/dataplane/standalone/lucius",
     visibility = ["//visibility:private"],
     deps = [
         "//dataplane/forwarding",
@@ -15,8 +15,8 @@ go_library(
 )
 
 go_binary(
-    name = "standalone",
-    embed = [":standalone_lib"],
+    name = "lucius_clib",
+    embed = [":lucius_lib"],
     linkmode = "c-archive",
     visibility = ["//visibility:public"],
 )
