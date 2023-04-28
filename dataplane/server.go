@@ -20,16 +20,18 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/openconfig/ygnmi/ygnmi"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/local"
+
 	"github.com/openconfig/lemming/dataplane/forwarding"
 	"github.com/openconfig/lemming/dataplane/handlers"
 	"github.com/openconfig/lemming/dataplane/internal/engine"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/reconciler"
-	"github.com/openconfig/ygnmi/ygnmi"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/local"
 
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
+
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
@@ -39,7 +41,7 @@ type Dataplane struct {
 	e           *engine.Engine
 	srv         *grpc.Server
 	lis         net.Listener
-	fwd         fwdpb.ServiceClient
+	fwd         fwdpb.ForwardingClient
 	reconcilers []reconciler.Reconciler
 }
 
@@ -56,7 +58,7 @@ func New() (*Dataplane, error) {
 
 	data.lis = lis
 	srv := grpc.NewServer(grpc.Creds(local.NewCredentials()))
-	fwdpb.RegisterServiceServer(srv, data.fwdSrv)
+	fwdpb.RegisterForwardingServer(srv, data.fwdSrv)
 	go srv.Serve(data.lis)
 
 	return data, nil
@@ -96,12 +98,12 @@ func (d *Dataplane) Start(ctx context.Context, c gpb.GNMIClient, target string) 
 }
 
 // FwdClient gets a gRPC client to the packet forwarding engine.
-func (d *Dataplane) FwdClient() (fwdpb.ServiceClient, error) {
+func (d *Dataplane) FwdClient() (fwdpb.ForwardingClient, error) {
 	conn, err := grpc.Dial(d.lis.Addr().String(), grpc.WithTransportCredentials(local.NewCredentials()))
 	if err != nil {
 		return nil, fmt.Errorf("failed to dial server: %w", err)
 	}
-	return fwdpb.NewServiceClient(conn), nil
+	return fwdpb.NewForwardingClient(conn), nil
 }
 
 // Stop gracefully stops the server.

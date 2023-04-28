@@ -25,28 +25,26 @@ http_archive(
     ],
 )
 
-
 http_archive(
-    name = "com_google_protobuf",
-    strip_prefix = "protobuf-22.3",
-    urls = [
-        "https://github.com/protocolbuffers/protobuf/releases/download/v22.3/protobuf-22.3.tar.gz",
-    ],
+    name = "rules_oci",
+    sha256 = "1c4730c85b90e793679ec534d47878bc19ecc267e43b21cf050081c7fe025af7",
+    strip_prefix = "rules_oci-0.5.0",
+    url = "https://github.com/bazel-contrib/rules_oci/releases/download/v0.5.0/rules_oci-v0.5.0.tar.gz",
 )
 
 load("@rules_proto_grpc//:repositories.bzl", "rules_proto_grpc_repos", "rules_proto_grpc_toolchains")
-
 rules_proto_grpc_toolchains()
 rules_proto_grpc_repos()
 
 load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_proto_toolchains")
-
 rules_proto_dependencies()
 rules_proto_toolchains()
 
 load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
-
 protobuf_deps()
+
+load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
+grpc_deps()
 
 load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_dependencies")
 load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies")
@@ -54,12 +52,23 @@ load("//:repositories.bzl", "go_repositories")
 
 # gazelle:repository_macro repositories.bzl%go_repositories
 go_repositories()
-
 go_rules_dependencies()
-
 go_register_toolchains(version = "1.20.2")
-
 gazelle_dependencies()
+
+load("@rules_oci//oci:dependencies.bzl", "rules_oci_dependencies")
+rules_oci_dependencies()
+load("@rules_oci//oci:repositories.bzl", "LATEST_CRANE_VERSION", "oci_register_toolchains")
+
+oci_register_toolchains(
+    name = "oci",
+    crane_version = LATEST_CRANE_VERSION,
+)
+
+load("@rules_pkg//:deps.bzl", "rules_pkg_dependencies")
+rules_pkg_dependencies()
+
+# External non-Go or bazel friendly dependencies
 
 http_archive(
     name = "com_github_p4lang_p4runtime",
@@ -70,3 +79,17 @@ http_archive(
     urls = ["https://github.com/p4lang/p4runtime/archive/refs/tags/v1.4.0-rc.5.zip"],
 )
 
+http_archive(
+    name = "com_github_opencomputeproject_sai",
+    strip_prefix = "SAI-1.7.1",
+    sha256 = "e18eb1a2a6e5dd286d97e13569d8b78cc1f8229030beed0db4775b9a50ab6a83",
+    urls = ["https://github.com/opencomputeproject/SAI/archive/refs/tags/v1.7.1.tar.gz"],
+    build_file_content = """
+cc_library(
+    name = "sai",
+    hdrs = glob(["inc/*.h"]),
+    includes = ["inc"],
+    visibility = ["//visibility:public"],
+)
+""",
+)

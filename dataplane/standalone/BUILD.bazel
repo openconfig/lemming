@@ -1,0 +1,25 @@
+cc_library(
+    name = "saigo",
+    srcs = [
+        "sai_entrypoint.cc",
+        "translator.cc",
+    ],
+    alwayslink = True,
+    hdrs = ["translator.h"],
+    deps = [
+        "//dataplane/standalone/lucius:lucius_clib",
+        "//proto/forwarding:forwarding_cc_grpc",
+        "//proto/forwarding:forwarding_cc_proto",
+        "@com_github_opencomputeproject_sai//:sai",
+    ],
+)
+
+
+
+cc_binary(
+    name = "sai",
+    linkshared = True,
+    deps = [
+        ":saigo",
+    ],
+)

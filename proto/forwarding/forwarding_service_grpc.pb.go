@@ -18,10 +18,10 @@ import (
 // Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
-// ServiceClient is the client API for Service service.
+// ForwardingClient is the client API for Forwarding service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type ServiceClient interface {
+type ForwardingClient interface {
 	// ContextCreate creates a forwarding context.
 	ContextCreate(ctx context.Context, in *ContextCreateRequest, opts ...grpc.CallOption) (*ContextCreateReply, error)
 	// ContextUpdate updates a forwarding context.
@@ -66,221 +66,221 @@ type ServiceClient interface {
 	// FlowCounterQuery requests the values of a bunch of flow counters.
 	FlowCounterQuery(ctx context.Context, in *FlowCounterQueryRequest, opts ...grpc.CallOption) (*FlowCounterQueryReply, error)
 	// Operation performs a stream of operations.
-	Operation(ctx context.Context, opts ...grpc.CallOption) (Service_OperationClient, error)
+	Operation(ctx context.Context, opts ...grpc.CallOption) (Forwarding_OperationClient, error)
 }
 
-type serviceClient struct {
+type forwardingClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewServiceClient(cc grpc.ClientConnInterface) ServiceClient {
-	return &serviceClient{cc}
+func NewForwardingClient(cc grpc.ClientConnInterface) ForwardingClient {
+	return &forwardingClient{cc}
 }
 
-func (c *serviceClient) ContextCreate(ctx context.Context, in *ContextCreateRequest, opts ...grpc.CallOption) (*ContextCreateReply, error) {
+func (c *forwardingClient) ContextCreate(ctx context.Context, in *ContextCreateRequest, opts ...grpc.CallOption) (*ContextCreateReply, error) {
 	out := new(ContextCreateReply)
-	err := c.cc.Invoke(ctx, "/forwarding.Service/ContextCreate", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/forwarding.Forwarding/ContextCreate", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *serviceClient) ContextUpdate(ctx context.Context, in *ContextUpdateRequest, opts ...grpc.CallOption) (*ContextUpdateReply, error) {
+func (c *forwardingClient) ContextUpdate(ctx context.Context, in *ContextUpdateRequest, opts ...grpc.CallOption) (*ContextUpdateReply, error) {
 	out := new(ContextUpdateReply)
-	err := c.cc.Invoke(ctx, "/forwarding.Service/ContextUpdate", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/forwarding.Forwarding/ContextUpdate", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *serviceClient) ContextDelete(ctx context.Context, in *ContextDeleteRequest, opts ...grpc.CallOption) (*ContextDeleteReply, error) {
+func (c *forwardingClient) ContextDelete(ctx context.Context, in *ContextDeleteRequest, opts ...grpc.CallOption) (*ContextDeleteReply, error) {
 	out := new(ContextDeleteReply)
-	err := c.cc.Invoke(ctx, "/forwarding.Service/ContextDelete", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/forwarding.Forwarding/ContextDelete", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *serviceClient) ContextList(ctx context.Context, in *ContextListRequest, opts ...grpc.CallOption) (*ContextListReply, error) {
+func (c *forwardingClient) ContextList(ctx context.Context, in *ContextListRequest, opts ...grpc.CallOption) (*ContextListReply, error) {
 	out := new(ContextListReply)
-	err := c.cc.Invoke(ctx, "/forwarding.Service/ContextList", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/forwarding.Forwarding/ContextList", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *serviceClient) SetCreate(ctx context.Context, in *SetCreateRequest, opts ...grpc.CallOption) (*SetCreateReply, error) {
+func (c *forwardingClient) SetCreate(ctx context.Context, in *SetCreateRequest, opts ...grpc.CallOption) (*SetCreateReply, error) {
 	out := new(SetCreateReply)
-	err := c.cc.Invoke(ctx, "/forwarding.Service/SetCreate", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/forwarding.Forwarding/SetCreate", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *serviceClient) SetUpdate(ctx context.Context, in *SetUpdateRequest, opts ...grpc.CallOption) (*SetUpdateReply, error) {
+func (c *forwardingClient) SetUpdate(ctx context.Context, in *SetUpdateRequest, opts ...grpc.CallOption) (*SetUpdateReply, error) {
 	out := new(SetUpdateReply)
-	err := c.cc.Invoke(ctx, "/forwarding.Service/SetUpdate", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/forwarding.Forwarding/SetUpdate", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *serviceClient) AttributeList(ctx context.Context, in *AttributeListRequest, opts ...grpc.CallOption) (*AttributeListReply, error) {
+func (c *forwardingClient) AttributeList(ctx context.Context, in *AttributeListRequest, opts ...grpc.CallOption) (*AttributeListReply, error) {
 	out := new(AttributeListReply)
-	err := c.cc.Invoke(ctx, "/forwarding.Service/AttributeList", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/forwarding.Forwarding/AttributeList", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *serviceClient) AttributeUpdate(ctx context.Context, in *AttributeUpdateRequest, opts ...grpc.CallOption) (*AttributeUpdateReply, error) {
+func (c *forwardingClient) AttributeUpdate(ctx context.Context, in *AttributeUpdateRequest, opts ...grpc.CallOption) (*AttributeUpdateReply, error) {
 	out := new(AttributeUpdateReply)
-	err := c.cc.Invoke(ctx, "/forwarding.Service/AttributeUpdate", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/forwarding.Forwarding/AttributeUpdate", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *serviceClient) ObjectDelete(ctx context.Context, in *ObjectDeleteRequest, opts ...grpc.CallOption) (*ObjectDeleteReply, error) {
+func (c *forwardingClient) ObjectDelete(ctx context.Context, in *ObjectDeleteRequest, opts ...grpc.CallOption) (*ObjectDeleteReply, error) {
 	out := new(ObjectDeleteReply)
-	err := c.cc.Invoke(ctx, "/forwarding.Service/ObjectDelete", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/forwarding.Forwarding/ObjectDelete", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *serviceClient) ObjectList(ctx context.Context, in *ObjectListRequest, opts ...grpc.CallOption) (*ObjectListReply, error) {
+func (c *forwardingClient) ObjectList(ctx context.Context, in *ObjectListRequest, opts ...grpc.CallOption) (*ObjectListReply, error) {
 	out := new(ObjectListReply)
-	err := c.cc.Invoke(ctx, "/forwarding.Service/ObjectList", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/forwarding.Forwarding/ObjectList", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *serviceClient) ObjectCounters(ctx context.Context, in *ObjectCountersRequest, opts ...grpc.CallOption) (*ObjectCountersReply, error) {
+func (c *forwardingClient) ObjectCounters(ctx context.Context, in *ObjectCountersRequest, opts ...grpc.CallOption) (*ObjectCountersReply, error) {
 	out := new(ObjectCountersReply)
-	err := c.cc.Invoke(ctx, "/forwarding.Service/ObjectCounters", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/forwarding.Forwarding/ObjectCounters", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *serviceClient) TableCreate(ctx context.Context, in *TableCreateRequest, opts ...grpc.CallOption) (*TableCreateReply, error) {
+func (c *forwardingClient) TableCreate(ctx context.Context, in *TableCreateRequest, opts ...grpc.CallOption) (*TableCreateReply, error) {
 	out := new(TableCreateReply)
-	err := c.cc.Invoke(ctx, "/forwarding.Service/TableCreate", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/forwarding.Forwarding/TableCreate", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *serviceClient) TableEntryAdd(ctx context.Context, in *TableEntryAddRequest, opts ...grpc.CallOption) (*TableEntryAddReply, error) {
+func (c *forwardingClient) TableEntryAdd(ctx context.Context, in *TableEntryAddRequest, opts ...grpc.CallOption) (*TableEntryAddReply, error) {
 	out := new(TableEntryAddReply)
-	err := c.cc.Invoke(ctx, "/forwarding.Service/TableEntryAdd", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/forwarding.Forwarding/TableEntryAdd", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *serviceClient) TableEntryRemove(ctx context.Context, in *TableEntryRemoveRequest, opts ...grpc.CallOption) (*TableEntryRemoveReply, error) {
+func (c *forwardingClient) TableEntryRemove(ctx context.Context, in *TableEntryRemoveRequest, opts ...grpc.CallOption) (*TableEntryRemoveReply, error) {
 	out := new(TableEntryRemoveReply)
-	err := c.cc.Invoke(ctx, "/forwarding.Service/TableEntryRemove", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/forwarding.Forwarding/TableEntryRemove", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *serviceClient) TableList(ctx context.Context, in *TableListRequest, opts ...grpc.CallOption) (*TableListReply, error) {
+func (c *forwardingClient) TableList(ctx context.Context, in *TableListRequest, opts ...grpc.CallOption) (*TableListReply, error) {
 	out := new(TableListReply)
-	err := c.cc.Invoke(ctx, "/forwarding.Service/TableList", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/forwarding.Forwarding/TableList", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *serviceClient) PortCreate(ctx context.Context, in *PortCreateRequest, opts ...grpc.CallOption) (*PortCreateReply, error) {
+func (c *forwardingClient) PortCreate(ctx context.Context, in *PortCreateRequest, opts ...grpc.CallOption) (*PortCreateReply, error) {
 	out := new(PortCreateReply)
-	err := c.cc.Invoke(ctx, "/forwarding.Service/PortCreate", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/forwarding.Forwarding/PortCreate", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *serviceClient) PortUpdate(ctx context.Context, in *PortUpdateRequest, opts ...grpc.CallOption) (*PortUpdateReply, error) {
+func (c *forwardingClient) PortUpdate(ctx context.Context, in *PortUpdateRequest, opts ...grpc.CallOption) (*PortUpdateReply, error) {
 	out := new(PortUpdateReply)
-	err := c.cc.Invoke(ctx, "/forwarding.Service/PortUpdate", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/forwarding.Forwarding/PortUpdate", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *serviceClient) PortState(ctx context.Context, in *PortStateRequest, opts ...grpc.CallOption) (*PortStateReply, error) {
+func (c *forwardingClient) PortState(ctx context.Context, in *PortStateRequest, opts ...grpc.CallOption) (*PortStateReply, error) {
 	out := new(PortStateReply)
-	err := c.cc.Invoke(ctx, "/forwarding.Service/PortState", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/forwarding.Forwarding/PortState", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *serviceClient) FlowCounterCreate(ctx context.Context, in *FlowCounterCreateRequest, opts ...grpc.CallOption) (*FlowCounterCreateReply, error) {
+func (c *forwardingClient) FlowCounterCreate(ctx context.Context, in *FlowCounterCreateRequest, opts ...grpc.CallOption) (*FlowCounterCreateReply, error) {
 	out := new(FlowCounterCreateReply)
-	err := c.cc.Invoke(ctx, "/forwarding.Service/FlowCounterCreate", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/forwarding.Forwarding/FlowCounterCreate", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *serviceClient) FlowCounterQuery(ctx context.Context, in *FlowCounterQueryRequest, opts ...grpc.CallOption) (*FlowCounterQueryReply, error) {
+func (c *forwardingClient) FlowCounterQuery(ctx context.Context, in *FlowCounterQueryRequest, opts ...grpc.CallOption) (*FlowCounterQueryReply, error) {
 	out := new(FlowCounterQueryReply)
-	err := c.cc.Invoke(ctx, "/forwarding.Service/FlowCounterQuery", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/forwarding.Forwarding/FlowCounterQuery", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *serviceClient) Operation(ctx context.Context, opts ...grpc.CallOption) (Service_OperationClient, error) {
-	stream, err := c.cc.NewStream(ctx, &Service_ServiceDesc.Streams[0], "/forwarding.Service/Operation", opts...)
+func (c *forwardingClient) Operation(ctx context.Context, opts ...grpc.CallOption) (Forwarding_OperationClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Forwarding_ServiceDesc.Streams[0], "/forwarding.Forwarding/Operation", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &serviceOperationClient{stream}
+	x := &forwardingOperationClient{stream}
 	return x, nil
 }
 
-type Service_OperationClient interface {
+type Forwarding_OperationClient interface {
 	Send(*OperationRequest) error
 	Recv() (*OperationReply, error)
 	grpc.ClientStream
 }
 
-type serviceOperationClient struct {
+type forwardingOperationClient struct {
 	grpc.ClientStream
 }
 
-func (x *serviceOperationClient) Send(m *OperationRequest) error {
+func (x *forwardingOperationClient) Send(m *OperationRequest) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *serviceOperationClient) Recv() (*OperationReply, error) {
+func (x *forwardingOperationClient) Recv() (*OperationReply, error) {
 	m := new(OperationReply)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -288,10 +288,10 @@ func (x *serviceOperationClient) Recv() (*OperationReply, error) {
 	return m, nil
 }
 
-// ServiceServer is the server API for Service service.
-// All implementations must embed UnimplementedServiceServer
+// ForwardingServer is the server API for Forwarding service.
+// All implementations must embed UnimplementedForwardingServer
 // for forward compatibility
-type ServiceServer interface {
+type ForwardingServer interface {
 	// ContextCreate creates a forwarding context.
 	ContextCreate(context.Context, *ContextCreateRequest) (*ContextCreateReply, error)
 	// ContextUpdate updates a forwarding context.
@@ -336,469 +336,469 @@ type ServiceServer interface {
 	// FlowCounterQuery requests the values of a bunch of flow counters.
 	FlowCounterQuery(context.Context, *FlowCounterQueryRequest) (*FlowCounterQueryReply, error)
 	// Operation performs a stream of operations.
-	Operation(Service_OperationServer) error
-	mustEmbedUnimplementedServiceServer()
+	Operation(Forwarding_OperationServer) error
+	mustEmbedUnimplementedForwardingServer()
 }
 
-// UnimplementedServiceServer must be embedded to have forward compatible implementations.
-type UnimplementedServiceServer struct {
+// UnimplementedForwardingServer must be embedded to have forward compatible implementations.
+type UnimplementedForwardingServer struct {
 }
 
-func (UnimplementedServiceServer) ContextCreate(context.Context, *ContextCreateRequest) (*ContextCreateReply, error) {
+func (UnimplementedForwardingServer) ContextCreate(context.Context, *ContextCreateRequest) (*ContextCreateReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ContextCreate not implemented")
 }
-func (UnimplementedServiceServer) ContextUpdate(context.Context, *ContextUpdateRequest) (*ContextUpdateReply, error) {
+func (UnimplementedForwardingServer) ContextUpdate(context.Context, *ContextUpdateRequest) (*ContextUpdateReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ContextUpdate not implemented")
 }
-func (UnimplementedServiceServer) ContextDelete(context.Context, *ContextDeleteRequest) (*ContextDeleteReply, error) {
+func (UnimplementedForwardingServer) ContextDelete(context.Context, *ContextDeleteRequest) (*ContextDeleteReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ContextDelete not implemented")
 }
-func (UnimplementedServiceServer) ContextList(context.Context, *ContextListRequest) (*ContextListReply, error) {
+func (UnimplementedForwardingServer) ContextList(context.Context, *ContextListRequest) (*ContextListReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ContextList not implemented")
 }
-func (UnimplementedServiceServer) SetCreate(context.Context, *SetCreateRequest) (*SetCreateReply, error) {
+func (UnimplementedForwardingServer) SetCreate(context.Context, *SetCreateRequest) (*SetCreateReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetCreate not implemented")
 }
-func (UnimplementedServiceServer) SetUpdate(context.Context, *SetUpdateRequest) (*SetUpdateReply, error) {
+func (UnimplementedForwardingServer) SetUpdate(context.Context, *SetUpdateRequest) (*SetUpdateReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetUpdate not implemented")
 }
-func (UnimplementedServiceServer) AttributeList(context.Context, *AttributeListRequest) (*AttributeListReply, error) {
+func (UnimplementedForwardingServer) AttributeList(context.Context, *AttributeListRequest) (*AttributeListReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AttributeList not implemented")
 }
-func (UnimplementedServiceServer) AttributeUpdate(context.Context, *AttributeUpdateRequest) (*AttributeUpdateReply, error) {
+func (UnimplementedForwardingServer) AttributeUpdate(context.Context, *AttributeUpdateRequest) (*AttributeUpdateReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AttributeUpdate not implemented")
 }
-func (UnimplementedServiceServer) ObjectDelete(context.Context, *ObjectDeleteRequest) (*ObjectDeleteReply, error) {
+func (UnimplementedForwardingServer) ObjectDelete(context.Context, *ObjectDeleteRequest) (*ObjectDeleteReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ObjectDelete not implemented")
 }
-func (UnimplementedServiceServer) ObjectList(context.Context, *ObjectListRequest) (*ObjectListReply, error) {
+func (UnimplementedForwardingServer) ObjectList(context.Context, *ObjectListRequest) (*ObjectListReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ObjectList not implemented")
 }
-func (UnimplementedServiceServer) ObjectCounters(context.Context, *ObjectCountersRequest) (*ObjectCountersReply, error) {
+func (UnimplementedForwardingServer) ObjectCounters(context.Context, *ObjectCountersRequest) (*ObjectCountersReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ObjectCounters not implemented")
 }
-func (UnimplementedServiceServer) TableCreate(context.Context, *TableCreateRequest) (*TableCreateReply, error) {
+func (UnimplementedForwardingServer) TableCreate(context.Context, *TableCreateRequest) (*TableCreateReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method TableCreate not implemented")
 }
-func (UnimplementedServiceServer) TableEntryAdd(context.Context, *TableEntryAddRequest) (*TableEntryAddReply, error) {
+func (UnimplementedForwardingServer) TableEntryAdd(context.Context, *TableEntryAddRequest) (*TableEntryAddReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method TableEntryAdd not implemented")
 }
-func (UnimplementedServiceServer) TableEntryRemove(context.Context, *TableEntryRemoveRequest) (*TableEntryRemoveReply, error) {
+func (UnimplementedForwardingServer) TableEntryRemove(context.Context, *TableEntryRemoveRequest) (*TableEntryRemoveReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method TableEntryRemove not implemented")
 }
-func (UnimplementedServiceServer) TableList(context.Context, *TableListRequest) (*TableListReply, error) {
+func (UnimplementedForwardingServer) TableList(context.Context, *TableListRequest) (*TableListReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method TableList not implemented")
 }
-func (UnimplementedServiceServer) PortCreate(context.Context, *PortCreateRequest) (*PortCreateReply, error) {
+func (UnimplementedForwardingServer) PortCreate(context.Context, *PortCreateRequest) (*PortCreateReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PortCreate not implemented")
 }
-func (UnimplementedServiceServer) PortUpdate(context.Context, *PortUpdateRequest) (*PortUpdateReply, error) {
+func (UnimplementedForwardingServer) PortUpdate(context.Context, *PortUpdateRequest) (*PortUpdateReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PortUpdate not implemented")
 }
-func (UnimplementedServiceServer) PortState(context.Context, *PortStateRequest) (*PortStateReply, error) {
+func (UnimplementedForwardingServer) PortState(context.Context, *PortStateRequest) (*PortStateReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PortState not implemented")
 }
-func (UnimplementedServiceServer) FlowCounterCreate(context.Context, *FlowCounterCreateRequest) (*FlowCounterCreateReply, error) {
+func (UnimplementedForwardingServer) FlowCounterCreate(context.Context, *FlowCounterCreateRequest) (*FlowCounterCreateReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FlowCounterCreate not implemented")
 }
-func (UnimplementedServiceServer) FlowCounterQuery(context.Context, *FlowCounterQueryRequest) (*FlowCounterQueryReply, error) {
+func (UnimplementedForwardingServer) FlowCounterQuery(context.Context, *FlowCounterQueryRequest) (*FlowCounterQueryReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FlowCounterQuery not implemented")
 }
-func (UnimplementedServiceServer) Operation(Service_OperationServer) error {
+func (UnimplementedForwardingServer) Operation(Forwarding_OperationServer) error {
 	return status.Errorf(codes.Unimplemented, "method Operation not implemented")
 }
-func (UnimplementedServiceServer) mustEmbedUnimplementedServiceServer() {}
+func (UnimplementedForwardingServer) mustEmbedUnimplementedForwardingServer() {}
 
-// UnsafeServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to ServiceServer will
+// UnsafeForwardingServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to ForwardingServer will
 // result in compilation errors.
-type UnsafeServiceServer interface {
-	mustEmbedUnimplementedServiceServer()
+type UnsafeForwardingServer interface {
+	mustEmbedUnimplementedForwardingServer()
 }
 
-func RegisterServiceServer(s grpc.ServiceRegistrar, srv ServiceServer) {
-	s.RegisterService(&Service_ServiceDesc, srv)
+func RegisterForwardingServer(s grpc.ServiceRegistrar, srv ForwardingServer) {
+	s.RegisterService(&Forwarding_ServiceDesc, srv)
 }
 
-func _Service_ContextCreate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Forwarding_ContextCreate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ContextCreateRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ServiceServer).ContextCreate(ctx, in)
+		return srv.(ForwardingServer).ContextCreate(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/forwarding.Service/ContextCreate",
+		FullMethod: "/forwarding.Forwarding/ContextCreate",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ServiceServer).ContextCreate(ctx, req.(*ContextCreateRequest))
+		return srv.(ForwardingServer).ContextCreate(ctx, req.(*ContextCreateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Service_ContextUpdate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Forwarding_ContextUpdate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ContextUpdateRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ServiceServer).ContextUpdate(ctx, in)
+		return srv.(ForwardingServer).ContextUpdate(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/forwarding.Service/ContextUpdate",
+		FullMethod: "/forwarding.Forwarding/ContextUpdate",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ServiceServer).ContextUpdate(ctx, req.(*ContextUpdateRequest))
+		return srv.(ForwardingServer).ContextUpdate(ctx, req.(*ContextUpdateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Service_ContextDelete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Forwarding_ContextDelete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ContextDeleteRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ServiceServer).ContextDelete(ctx, in)
+		return srv.(ForwardingServer).ContextDelete(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/forwarding.Service/ContextDelete",
+		FullMethod: "/forwarding.Forwarding/ContextDelete",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ServiceServer).ContextDelete(ctx, req.(*ContextDeleteRequest))
+		return srv.(ForwardingServer).ContextDelete(ctx, req.(*ContextDeleteRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Service_ContextList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Forwarding_ContextList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ContextListRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ServiceServer).ContextList(ctx, in)
+		return srv.(ForwardingServer).ContextList(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/forwarding.Service/ContextList",
+		FullMethod: "/forwarding.Forwarding/ContextList",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ServiceServer).ContextList(ctx, req.(*ContextListRequest))
+		return srv.(ForwardingServer).ContextList(ctx, req.(*ContextListRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Service_SetCreate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Forwarding_SetCreate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SetCreateRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ServiceServer).SetCreate(ctx, in)
+		return srv.(ForwardingServer).SetCreate(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/forwarding.Service/SetCreate",
+		FullMethod: "/forwarding.Forwarding/SetCreate",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ServiceServer).SetCreate(ctx, req.(*SetCreateRequest))
+		return srv.(ForwardingServer).SetCreate(ctx, req.(*SetCreateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Service_SetUpdate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Forwarding_SetUpdate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SetUpdateRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ServiceServer).SetUpdate(ctx, in)
+		return srv.(ForwardingServer).SetUpdate(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/forwarding.Service/SetUpdate",
+		FullMethod: "/forwarding.Forwarding/SetUpdate",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ServiceServer).SetUpdate(ctx, req.(*SetUpdateRequest))
+		return srv.(ForwardingServer).SetUpdate(ctx, req.(*SetUpdateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Service_AttributeList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Forwarding_AttributeList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AttributeListRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ServiceServer).AttributeList(ctx, in)
+		return srv.(ForwardingServer).AttributeList(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/forwarding.Service/AttributeList",
+		FullMethod: "/forwarding.Forwarding/AttributeList",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ServiceServer).AttributeList(ctx, req.(*AttributeListRequest))
+		return srv.(ForwardingServer).AttributeList(ctx, req.(*AttributeListRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Service_AttributeUpdate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Forwarding_AttributeUpdate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AttributeUpdateRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ServiceServer).AttributeUpdate(ctx, in)
+		return srv.(ForwardingServer).AttributeUpdate(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/forwarding.Service/AttributeUpdate",
+		FullMethod: "/forwarding.Forwarding/AttributeUpdate",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ServiceServer).AttributeUpdate(ctx, req.(*AttributeUpdateRequest))
+		return srv.(ForwardingServer).AttributeUpdate(ctx, req.(*AttributeUpdateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Service_ObjectDelete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Forwarding_ObjectDelete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ObjectDeleteRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ServiceServer).ObjectDelete(ctx, in)
+		return srv.(ForwardingServer).ObjectDelete(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/forwarding.Service/ObjectDelete",
+		FullMethod: "/forwarding.Forwarding/ObjectDelete",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ServiceServer).ObjectDelete(ctx, req.(*ObjectDeleteRequest))
+		return srv.(ForwardingServer).ObjectDelete(ctx, req.(*ObjectDeleteRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Service_ObjectList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Forwarding_ObjectList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ObjectListRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ServiceServer).ObjectList(ctx, in)
+		return srv.(ForwardingServer).ObjectList(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/forwarding.Service/ObjectList",
+		FullMethod: "/forwarding.Forwarding/ObjectList",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ServiceServer).ObjectList(ctx, req.(*ObjectListRequest))
+		return srv.(ForwardingServer).ObjectList(ctx, req.(*ObjectListRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Service_ObjectCounters_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Forwarding_ObjectCounters_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ObjectCountersRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ServiceServer).ObjectCounters(ctx, in)
+		return srv.(ForwardingServer).ObjectCounters(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/forwarding.Service/ObjectCounters",
+		FullMethod: "/forwarding.Forwarding/ObjectCounters",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ServiceServer).ObjectCounters(ctx, req.(*ObjectCountersRequest))
+		return srv.(ForwardingServer).ObjectCounters(ctx, req.(*ObjectCountersRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Service_TableCreate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Forwarding_TableCreate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(TableCreateRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ServiceServer).TableCreate(ctx, in)
+		return srv.(ForwardingServer).TableCreate(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/forwarding.Service/TableCreate",
+		FullMethod: "/forwarding.Forwarding/TableCreate",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ServiceServer).TableCreate(ctx, req.(*TableCreateRequest))
+		return srv.(ForwardingServer).TableCreate(ctx, req.(*TableCreateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Service_TableEntryAdd_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Forwarding_TableEntryAdd_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(TableEntryAddRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ServiceServer).TableEntryAdd(ctx, in)
+		return srv.(ForwardingServer).TableEntryAdd(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/forwarding.Service/TableEntryAdd",
+		FullMethod: "/forwarding.Forwarding/TableEntryAdd",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ServiceServer).TableEntryAdd(ctx, req.(*TableEntryAddRequest))
+		return srv.(ForwardingServer).TableEntryAdd(ctx, req.(*TableEntryAddRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Service_TableEntryRemove_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Forwarding_TableEntryRemove_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(TableEntryRemoveRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ServiceServer).TableEntryRemove(ctx, in)
+		return srv.(ForwardingServer).TableEntryRemove(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/forwarding.Service/TableEntryRemove",
+		FullMethod: "/forwarding.Forwarding/TableEntryRemove",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ServiceServer).TableEntryRemove(ctx, req.(*TableEntryRemoveRequest))
+		return srv.(ForwardingServer).TableEntryRemove(ctx, req.(*TableEntryRemoveRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Service_TableList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Forwarding_TableList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(TableListRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ServiceServer).TableList(ctx, in)
+		return srv.(ForwardingServer).TableList(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/forwarding.Service/TableList",
+		FullMethod: "/forwarding.Forwarding/TableList",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ServiceServer).TableList(ctx, req.(*TableListRequest))
+		return srv.(ForwardingServer).TableList(ctx, req.(*TableListRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Service_PortCreate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Forwarding_PortCreate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PortCreateRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ServiceServer).PortCreate(ctx, in)
+		return srv.(ForwardingServer).PortCreate(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/forwarding.Service/PortCreate",
+		FullMethod: "/forwarding.Forwarding/PortCreate",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ServiceServer).PortCreate(ctx, req.(*PortCreateRequest))
+		return srv.(ForwardingServer).PortCreate(ctx, req.(*PortCreateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Service_PortUpdate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Forwarding_PortUpdate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PortUpdateRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ServiceServer).PortUpdate(ctx, in)
+		return srv.(ForwardingServer).PortUpdate(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/forwarding.Service/PortUpdate",
+		FullMethod: "/forwarding.Forwarding/PortUpdate",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ServiceServer).PortUpdate(ctx, req.(*PortUpdateRequest))
+		return srv.(ForwardingServer).PortUpdate(ctx, req.(*PortUpdateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Service_PortState_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Forwarding_PortState_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PortStateRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ServiceServer).PortState(ctx, in)
+		return srv.(ForwardingServer).PortState(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/forwarding.Service/PortState",
+		FullMethod: "/forwarding.Forwarding/PortState",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ServiceServer).PortState(ctx, req.(*PortStateRequest))
+		return srv.(ForwardingServer).PortState(ctx, req.(*PortStateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Service_FlowCounterCreate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Forwarding_FlowCounterCreate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(FlowCounterCreateRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ServiceServer).FlowCounterCreate(ctx, in)
+		return srv.(ForwardingServer).FlowCounterCreate(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/forwarding.Service/FlowCounterCreate",
+		FullMethod: "/forwarding.Forwarding/FlowCounterCreate",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ServiceServer).FlowCounterCreate(ctx, req.(*FlowCounterCreateRequest))
+		return srv.(ForwardingServer).FlowCounterCreate(ctx, req.(*FlowCounterCreateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Service_FlowCounterQuery_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Forwarding_FlowCounterQuery_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(FlowCounterQueryRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ServiceServer).FlowCounterQuery(ctx, in)
+		return srv.(ForwardingServer).FlowCounterQuery(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/forwarding.Service/FlowCounterQuery",
+		FullMethod: "/forwarding.Forwarding/FlowCounterQuery",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ServiceServer).FlowCounterQuery(ctx, req.(*FlowCounterQueryRequest))
+		return srv.(ForwardingServer).FlowCounterQuery(ctx, req.(*FlowCounterQueryRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Service_Operation_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(ServiceServer).Operation(&serviceOperationServer{stream})
+func _Forwarding_Operation_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(ForwardingServer).Operation(&forwardingOperationServer{stream})
 }
 
-type Service_OperationServer interface {
+type Forwarding_OperationServer interface {
 	Send(*OperationReply) error
 	Recv() (*OperationRequest, error)
 	grpc.ServerStream
 }
 
-type serviceOperationServer struct {
+type forwardingOperationServer struct {
 	grpc.ServerStream
 }
 
-func (x *serviceOperationServer) Send(m *OperationReply) error {
+func (x *forwardingOperationServer) Send(m *OperationReply) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *serviceOperationServer) Recv() (*OperationRequest, error) {
+func (x *forwardingOperationServer) Recv() (*OperationRequest, error) {
 	m := new(OperationRequest)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -806,98 +806,98 @@ func (x *serviceOperationServer) Recv() (*OperationRequest, error) {
 	return m, nil
 }
 
-// Service_ServiceDesc is the grpc.ServiceDesc for Service service.
+// Forwarding_ServiceDesc is the grpc.ServiceDesc for Forwarding service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var Service_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "forwarding.Service",
-	HandlerType: (*ServiceServer)(nil),
+var Forwarding_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "forwarding.Forwarding",
+	HandlerType: (*ForwardingServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "ContextCreate",
-			Handler:    _Service_ContextCreate_Handler,
+			Handler:    _Forwarding_ContextCreate_Handler,
 		},
 		{
 			MethodName: "ContextUpdate",
-			Handler:    _Service_ContextUpdate_Handler,
+			Handler:    _Forwarding_ContextUpdate_Handler,
 		},
 		{
 			MethodName: "ContextDelete",
-			Handler:    _Service_ContextDelete_Handler,
+			Handler:    _Forwarding_ContextDelete_Handler,
 		},
 		{
 			MethodName: "ContextList",
-			Handler:    _Service_ContextList_Handler,
+			Handler:    _Forwarding_ContextList_Handler,
 		},
 		{
 			MethodName: "SetCreate",
-			Handler:    _Service_SetCreate_Handler,
+			Handler:    _Forwarding_SetCreate_Handler,
 		},
 		{
 			MethodName: "SetUpdate",
-			Handler:    _Service_SetUpdate_Handler,
+			Handler:    _Forwarding_SetUpdate_Handler,
 		},
 		{
 			MethodName: "AttributeList",
-			Handler:    _Service_AttributeList_Handler,
+			Handler:    _Forwarding_AttributeList_Handler,
 		},
 		{
 			MethodName: "AttributeUpdate",
-			Handler:    _Service_AttributeUpdate_Handler,
+			Handler:    _Forwarding_AttributeUpdate_Handler,
 		},
 		{
 			MethodName: "ObjectDelete",
-			Handler:    _Service_ObjectDelete_Handler,
+			Handler:    _Forwarding_ObjectDelete_Handler,
 		},
 		{
 			MethodName: "ObjectList",
-			Handler:    _Service_ObjectList_Handler,
+			Handler:    _Forwarding_ObjectList_Handler,
 		},
 		{
 			MethodName: "ObjectCounters",
-			Handler:    _Service_ObjectCounters_Handler,
+			Handler:    _Forwarding_ObjectCounters_Handler,
 		},
 		{
 			MethodName: "TableCreate",
-			Handler:    _Service_TableCreate_Handler,
+			Handler:    _Forwarding_TableCreate_Handler,
 		},
 		{
 			MethodName: "TableEntryAdd",
-			Handler:    _Service_TableEntryAdd_Handler,
+			Handler:    _Forwarding_TableEntryAdd_Handler,
 		},
 		{
 			MethodName: "TableEntryRemove",
-			Handler:    _Service_TableEntryRemove_Handler,
+			Handler:    _Forwarding_TableEntryRemove_Handler,
 		},
 		{
 			MethodName: "TableList",
-			Handler:    _Service_TableList_Handler,
+			Handler:    _Forwarding_TableList_Handler,
 		},
 		{
 			MethodName: "PortCreate",
-			Handler:    _Service_PortCreate_Handler,
+			Handler:    _Forwarding_PortCreate_Handler,
 		},
 		{
 			MethodName: "PortUpdate",
-			Handler:    _Service_PortUpdate_Handler,
+			Handler:    _Forwarding_PortUpdate_Handler,
 		},
 		{
 			MethodName: "PortState",
-			Handler:    _Service_PortState_Handler,
+			Handler:    _Forwarding_PortState_Handler,
 		},
 		{
 			MethodName: "FlowCounterCreate",
-			Handler:    _Service_FlowCounterCreate_Handler,
+			Handler:    _Forwarding_FlowCounterCreate_Handler,
 		},
 		{
 			MethodName: "FlowCounterQuery",
-			Handler:    _Service_FlowCounterQuery_Handler,
+			Handler:    _Forwarding_FlowCounterQuery_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "Operation",
-			Handler:       _Service_Operation_Handler,
+			Handler:       _Forwarding_Operation_Handler,
 			ServerStreams: true,
 			ClientStreams: true,
 		},
