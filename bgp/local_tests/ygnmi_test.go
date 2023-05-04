@@ -14,6 +14,8 @@
 
 package local_test
 
+// TODO: Consider introducing an Ondatra binding for non-dataplane tests of lemming.
+
 import (
 	"context"
 	"testing"
