@@ -20,13 +20,13 @@
 
 #include <memory>
 
-#include "dataplane/standalone/lucius/lucius_clib.h"
 #include "proto/forwarding/forwarding_service.grpc.pb.h"
 #include "proto/forwarding/forwarding_service.pb.h"
 
 extern "C" {
 #include "inc/sai.h"
 }
+
 
 class Translator {
  public:
@@ -40,5 +40,7 @@ class Translator {
  private:
   std::unique_ptr<forwarding::Forwarding::Stub> client;
 };
+
+extern std::shared_ptr<Translator> translator;
 
 #endif  // DATAPLANE_STANDALONE_TRANSLATOR_H_

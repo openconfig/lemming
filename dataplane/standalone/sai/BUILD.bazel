@@ -1,0 +1,10 @@
+cc_library(
+    name = "sai",
+    srcs = glob(["*.cc"]),
+    hdrs = glob(["*.h"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//dataplane/standalone/log",
+        "@com_github_opencomputeproject_sai//:sai",
+    ],
+)

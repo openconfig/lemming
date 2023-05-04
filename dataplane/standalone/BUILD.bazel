@@ -4,21 +4,33 @@ cc_library(
         "sai_entrypoint.cc",
         "translator.cc",
     ],
-    alwayslink = True,
-    hdrs = ["translator.h"],
+    hdrs = [
+        "translator.h",
+    ],
     deps = [
+        "//dataplane/standalone/log",
         "//dataplane/standalone/lucius:lucius_clib",
+        "//dataplane/standalone/sai",
         "//proto/forwarding:forwarding_cc_grpc",
         "//proto/forwarding:forwarding_cc_proto",
+        "@com_github_grpc_grpc//:grpc++",
         "@com_github_opencomputeproject_sai//:sai",
     ],
+    alwayslink = True,
 )
-
-
 
 cc_binary(
     name = "sai",
     linkshared = True,
+    linkstatic = True,
+    deps = [
+        ":saigo",
+    ],
+)
+
+cc_binary(
+    name = "saibin",
+    linkstatic = True,
     deps = [
         ":saigo",
     ],
