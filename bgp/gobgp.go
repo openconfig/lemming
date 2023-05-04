@@ -37,13 +37,12 @@ import (
 )
 
 const (
-	listenPort      = 179
 	gracefulRestart = false
 )
 
 // NewGoBGPTaskDecl creates a new GoBGP task using the declarative configuration style.
-func NewGoBGPTaskDecl(zapiURL string) *reconciler.BuiltReconciler {
-	return reconciler.NewBuilder("gobgp-decl").WithStart(newBgpDeclTask(zapiURL).startGoBGPFuncDecl).Build()
+func NewGoBGPTaskDecl(zapiURL string, listenPort uint16) *reconciler.BuiltReconciler {
+	return reconciler.NewBuilder("gobgp-decl").WithStart(newBgpDeclTask(zapiURL, listenPort).startGoBGPFuncDecl).Build()
 }
 
 func updateState(yclient *ygnmi.Client, appliedBgp *oc.NetworkInstance_Protocol_Bgp) {
@@ -58,13 +57,17 @@ type bgpDeclTask struct {
 	zapiURL       string
 	bgpServer     *server.BgpServer
 	currentConfig *bgpconfig.BgpConfigSet
+	listenPort    uint16
 
 	bgpStarted bool
 }
 
 // newBgpDeclTask creates a new bgpDeclTask.
-func newBgpDeclTask(zapiURL string) *bgpDeclTask {
-	return &bgpDeclTask{zapiURL: zapiURL}
+func newBgpDeclTask(zapiURL string, listenPort uint16) *bgpDeclTask {
+	return &bgpDeclTask{
+		zapiURL:    zapiURL,
+		listenPort: listenPort,
+	}
 }
 
 // startGoBGPFuncDecl starts a GoBGP server.
@@ -76,6 +79,7 @@ func (t *bgpDeclTask) startGoBGPFuncDecl(_ context.Context, yclient *ygnmi.Clien
 		bgpPath.Global().RouterId().Config().PathStruct(),
 		bgpPath.NeighborAny().PeerAs().Config().PathStruct(),
 		bgpPath.NeighborAny().NeighborAddress().Config().PathStruct(),
+		bgpPath.NeighborAny().NeighborPort().Config().PathStruct(),
 	)
 
 	appliedRoot := &oc.Root{}
@@ -214,7 +218,7 @@ func (t *bgpDeclTask) reconcile(intended, applied *oc.NetworkInstance_Protocol_B
 	defer appliedMu.Unlock()
 
 	intendedGlobal := intended.GetOrCreateGlobal()
-	newConfig := intendedToGoBGP(intended, t.zapiURL)
+	newConfig := intendedToGoBGP(intended, t.zapiURL, t.listenPort)
 
 	bgpShouldStart := intendedGlobal.As != nil && intendedGlobal.RouterId != nil
 	switch {
@@ -255,13 +259,13 @@ func (t *bgpDeclTask) reconcile(intended, applied *oc.NetworkInstance_Protocol_B
 // GoBGP's notion of config vs. state does not conform to OpenConfig (see
 // https://github.com/osrg/gobgp/issues/2584)
 // Therefore, we need a compatibility layer between the two configs.
-func intendedToGoBGP(bgpoc *oc.NetworkInstance_Protocol_Bgp, zapiURL string) *bgpconfig.BgpConfigSet {
+func intendedToGoBGP(bgpoc *oc.NetworkInstance_Protocol_Bgp, zapiURL string, listenPort uint16) *bgpconfig.BgpConfigSet {
 	bgpConfig := &bgpconfig.BgpConfigSet{}
 	global := bgpoc.GetOrCreateGlobal()
 
 	bgpConfig.Global.Config.As = global.GetAs()
 	bgpConfig.Global.Config.RouterId = global.GetRouterId()
-	bgpConfig.Global.Config.Port = listenPort
+	bgpConfig.Global.Config.Port = int32(listenPort)
 
 	bgpConfig.Neighbors = []bgpconfig.Neighbor{}
 	for neighAddr, neigh := range bgpoc.Neighbor {
@@ -279,7 +283,7 @@ func intendedToGoBGP(bgpoc *oc.NetworkInstance_Protocol_Bgp, zapiURL string) *bg
 			},
 			Transport: bgpconfig.Transport{
 				Config: bgpconfig.TransportConfig{
-					RemotePort: listenPort,
+					RemotePort: neigh.GetNeighborPort(),
 				},
 			},
 		})
