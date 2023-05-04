@@ -30,6 +30,7 @@ import (
 var (
 	gnmiAddr    = flag.String("gnmi", ":9339", "gNMI listen address")
 	gribiAddr   = flag.String("gribi", ":9340", "gRIBI listen address")
+	bgpPort     = flag.Uint("bgp_port", 179, "BGP listening port")
 	target      = pflag.String("target", "fakedut", "name of the fake target")
 	tlsKeyFile  = pflag.String("tls_key_file", "", "Controls whether to enable TLS for gNXI services. If unspecified, insecure credentials are used.")
 	tlsCertFile = pflag.String("tls_cert_file", "", "Controls whether to enable TLS for gNXI services. If unspecified, insecure credentials are used.")
@@ -52,7 +53,7 @@ func main() {
 		}
 	}
 
-	f, err := lemming.New(*target, *zapiAddr, lemming.WithTransportCreds(creds), lemming.WithGRIBIAddr(*gribiAddr), lemming.WithGNMIAddr(*gnmiAddr))
+	f, err := lemming.New(*target, *zapiAddr, lemming.WithTransportCreds(creds), lemming.WithGRIBIAddr(*gribiAddr), lemming.WithGNMIAddr(*gnmiAddr), lemming.WithBGPPort(uint16(*bgpPort)))
 	if err != nil {
 		log.Fatalf("Failed to start lemming: %v", err)
 	}

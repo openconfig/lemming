@@ -77,6 +77,7 @@ type opt struct {
 	gribiAddr      string
 	gnmiAddr       string
 	p4rtAddr       string
+	bgpPort        uint16
 }
 
 // resolveOpts applies all the options and returns a struct containing the result.
@@ -117,6 +118,13 @@ func WithGNMIAddr(addr string) Option {
 func WithP4RTAddr(addr string) Option {
 	return func(o *opt) {
 		o.p4rtAddr = addr
+	}
+}
+
+// WithBGPPort is a device option that specifies that the BGP port.
+func WithBGPPort(port uint16) Option {
+	return func(o *opt) {
+		o.bgpPort = port
 	}
 }
 
@@ -180,7 +188,7 @@ func New(targetName, zapiURL string, opts ...Option) (*Device, error) {
 	recs = append(recs,
 		fakedevice.NewSystemBaseTask(),
 		fakedevice.NewBootTimeTask(),
-		bgp.NewGoBGPTaskDecl(zapiURL),
+		bgp.NewGoBGPTaskDecl(zapiURL, resolvedOpts.bgpPort),
 	)
 
 	log.Info("starting gNSI")
