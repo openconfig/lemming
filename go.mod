@@ -9,7 +9,6 @@ require (
 	github.com/google/go-cmp v0.5.9
 	github.com/google/gopacket v1.1.19
 	github.com/google/uuid v1.3.0
-	github.com/h-fam/errdiff v1.0.2
 	github.com/kentik/patricia v1.2.0
 	github.com/open-traffic-generator/snappi/gosnappi v0.10.11
 	github.com/openconfig/gnmi v0.9.1
@@ -20,7 +19,7 @@ require (
 	github.com/openconfig/gribigo v0.0.0-20230207233343-ef59db57c4fc
 	github.com/openconfig/kne v0.1.8-0.20230309181728-8fc46a2e57e2
 	github.com/openconfig/ondatra v0.1.7
-	github.com/openconfig/ygnmi v0.7.7
+	github.com/openconfig/ygnmi v0.7.9
 	github.com/openconfig/ygot v0.27.0
 	github.com/p4lang/p4runtime v1.4.0-rc.5.0.20220728214547-13f0d02a521e
 	github.com/sirupsen/logrus v1.9.0
