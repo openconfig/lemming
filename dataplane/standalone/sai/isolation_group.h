@@ -17,27 +17,37 @@
 #define DATAPLANE_STANDALONE_SAI_ISOLATION_GROUP_H_
 
 extern "C" {
-	#include "inc/sai.h"
+#include "inc/sai.h"
 }
 
 extern const sai_isolation_group_api_t l_isolation_group;
 
-
-sai_status_t l_create_isolation_group(sai_object_id_t *isolation_group_id, sai_object_id_t switch_id, uint32_t attr_count, const sai_attribute_t *attr_list);
+sai_status_t l_create_isolation_group(sai_object_id_t *isolation_group_id,
+                                      sai_object_id_t switch_id,
+                                      uint32_t attr_count,
+                                      const sai_attribute_t *attr_list);
 
 sai_status_t l_remove_isolation_group(sai_object_id_t isolation_group_id);
 
-sai_status_t l_set_isolation_group_attribute(sai_object_id_t isolation_group_id, const sai_attribute_t *attr);
+sai_status_t l_set_isolation_group_attribute(sai_object_id_t isolation_group_id,
+                                             const sai_attribute_t *attr);
 
-sai_status_t l_get_isolation_group_attribute(sai_object_id_t isolation_group_id, uint32_t attr_count, sai_attribute_t *attr_list);
+sai_status_t l_get_isolation_group_attribute(sai_object_id_t isolation_group_id,
+                                             uint32_t attr_count,
+                                             sai_attribute_t *attr_list);
 
-sai_status_t l_create_isolation_group_member(sai_object_id_t *isolation_group_member_id, sai_object_id_t switch_id, uint32_t attr_count, const sai_attribute_t *attr_list);
+sai_status_t l_create_isolation_group_member(
+    sai_object_id_t *isolation_group_member_id, sai_object_id_t switch_id,
+    uint32_t attr_count, const sai_attribute_t *attr_list);
 
-sai_status_t l_remove_isolation_group_member(sai_object_id_t isolation_group_member_id);
+sai_status_t l_remove_isolation_group_member(
+    sai_object_id_t isolation_group_member_id);
 
-sai_status_t l_set_isolation_group_member_attribute(sai_object_id_t isolation_group_member_id, const sai_attribute_t *attr);
+sai_status_t l_set_isolation_group_member_attribute(
+    sai_object_id_t isolation_group_member_id, const sai_attribute_t *attr);
 
-sai_status_t l_get_isolation_group_member_attribute(sai_object_id_t isolation_group_member_id, uint32_t attr_count, sai_attribute_t *attr_list);
-
+sai_status_t l_get_isolation_group_member_attribute(
+    sai_object_id_t isolation_group_member_id, uint32_t attr_count,
+    sai_attribute_t *attr_list);
 
 #endif  // DATAPLANE_STANDALONE_SAI_ISOLATION_GROUP_H_

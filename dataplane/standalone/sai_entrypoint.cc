@@ -22,50 +22,50 @@
 
 #include "dataplane/standalone/log/log.h"
 #include "dataplane/standalone/lucius/lucius_clib.h"
-#include "dataplane/standalone/sai/fdb.h"
-#include "dataplane/standalone/sai/port.h"
-#include "dataplane/standalone/sai/switch.h"
-#include "dataplane/standalone/sai/vlan.h"
-#include "dataplane/standalone/sai/virtual_router.h"
-#include "dataplane/standalone/sai/route.h"
-#include "dataplane/standalone/sai/next_hop.h"
-#include "dataplane/standalone/sai/next_hop_group.h"
-#include "dataplane/standalone/sai/router_interface.h"
-#include "dataplane/standalone/sai/neighbor.h"
 #include "dataplane/standalone/sai/acl.h"
-#include "dataplane/standalone/sai/hostif.h"
-#include "dataplane/standalone/sai/mirror.h"
-#include "dataplane/standalone/sai/samplepacket.h"
-#include "dataplane/standalone/sai/stp.h"
-#include "dataplane/standalone/sai/lag.h"
-#include "dataplane/standalone/sai/policer.h"
-#include "dataplane/standalone/sai/wred.h"
-#include "dataplane/standalone/sai/qos_map.h"
-#include "dataplane/standalone/sai/queue.h"
-#include "dataplane/standalone/sai/scheduler.h"
-#include "dataplane/standalone/sai/scheduler_group.h"
-#include "dataplane/standalone/sai/buffer.h"
-#include "dataplane/standalone/sai/hash.h"
-#include "dataplane/standalone/sai/udf.h"
-#include "dataplane/standalone/sai/tunnel.h"
-#include "dataplane/standalone/sai/l2mc.h"
-#include "dataplane/standalone/sai/ipmc.h"
-#include "dataplane/standalone/sai/rpf_group.h"
-#include "dataplane/standalone/sai/l2mc_group.h"
-#include "dataplane/standalone/sai/ipmc_group.h"
-#include "dataplane/standalone/sai/mcast_fdb.h"
-#include "dataplane/standalone/sai/bridge.h"
-#include "dataplane/standalone/sai/tam.h"
-#include "dataplane/standalone/sai/segmentroute.h"
-#include "dataplane/standalone/sai/mpls.h"
-#include "dataplane/standalone/sai/dtel.h"
 #include "dataplane/standalone/sai/bfd.h"
-#include "dataplane/standalone/sai/isolation_group.h"
-#include "dataplane/standalone/sai/nat.h"
+#include "dataplane/standalone/sai/bridge.h"
+#include "dataplane/standalone/sai/buffer.h"
 #include "dataplane/standalone/sai/counter.h"
 #include "dataplane/standalone/sai/debug_counter.h"
+#include "dataplane/standalone/sai/dtel.h"
+#include "dataplane/standalone/sai/fdb.h"
+#include "dataplane/standalone/sai/hash.h"
+#include "dataplane/standalone/sai/hostif.h"
+#include "dataplane/standalone/sai/ipmc.h"
+#include "dataplane/standalone/sai/ipmc_group.h"
+#include "dataplane/standalone/sai/isolation_group.h"
+#include "dataplane/standalone/sai/l2mc.h"
+#include "dataplane/standalone/sai/l2mc_group.h"
+#include "dataplane/standalone/sai/lag.h"
 #include "dataplane/standalone/sai/macsec.h"
+#include "dataplane/standalone/sai/mcast_fdb.h"
+#include "dataplane/standalone/sai/mirror.h"
+#include "dataplane/standalone/sai/mpls.h"
+#include "dataplane/standalone/sai/nat.h"
+#include "dataplane/standalone/sai/neighbor.h"
+#include "dataplane/standalone/sai/next_hop.h"
+#include "dataplane/standalone/sai/next_hop_group.h"
+#include "dataplane/standalone/sai/policer.h"
+#include "dataplane/standalone/sai/port.h"
+#include "dataplane/standalone/sai/qos_map.h"
+#include "dataplane/standalone/sai/queue.h"
+#include "dataplane/standalone/sai/route.h"
+#include "dataplane/standalone/sai/router_interface.h"
+#include "dataplane/standalone/sai/rpf_group.h"
+#include "dataplane/standalone/sai/samplepacket.h"
+#include "dataplane/standalone/sai/scheduler.h"
+#include "dataplane/standalone/sai/scheduler_group.h"
+#include "dataplane/standalone/sai/segmentroute.h"
+#include "dataplane/standalone/sai/stp.h"
+#include "dataplane/standalone/sai/switch.h"
 #include "dataplane/standalone/sai/system_port.h"
+#include "dataplane/standalone/sai/tam.h"
+#include "dataplane/standalone/sai/tunnel.h"
+#include "dataplane/standalone/sai/udf.h"
+#include "dataplane/standalone/sai/virtual_router.h"
+#include "dataplane/standalone/sai/vlan.h"
+#include "dataplane/standalone/sai/wred.h"
 #include "dataplane/standalone/translator.h"
 
 extern "C" {
@@ -106,7 +106,8 @@ sai_status_t sai_api_query(_In_ sai_api_t api, _Out_ void **api_method_table) {
       break;
     }
     case SAI_API_VIRTUAL_ROUTER: {
-      *api_method_table = const_cast<sai_virtual_router_api_t *>(&l_virtual_router);
+      *api_method_table =
+          const_cast<sai_virtual_router_api_t *>(&l_virtual_router);
       break;
     }
     case SAI_API_ROUTE: {
@@ -118,11 +119,13 @@ sai_status_t sai_api_query(_In_ sai_api_t api, _Out_ void **api_method_table) {
       break;
     }
     case SAI_API_NEXT_HOP_GROUP: {
-      *api_method_table = const_cast<sai_next_hop_group_api_t *>(&l_next_hop_group);
+      *api_method_table =
+          const_cast<sai_next_hop_group_api_t *>(&l_next_hop_group);
       break;
     }
     case SAI_API_ROUTER_INTERFACE: {
-      *api_method_table = const_cast<sai_router_interface_api_t *>(&l_router_interface);
+      *api_method_table =
+          const_cast<sai_router_interface_api_t *>(&l_router_interface);
       break;
     }
     case SAI_API_NEIGHBOR: {
@@ -174,7 +177,8 @@ sai_status_t sai_api_query(_In_ sai_api_t api, _Out_ void **api_method_table) {
       break;
     }
     case SAI_API_SCHEDULER_GROUP: {
-      *api_method_table = const_cast<sai_scheduler_group_api_t *>(&l_scheduler_group);
+      *api_method_table =
+          const_cast<sai_scheduler_group_api_t *>(&l_scheduler_group);
       break;
     }
     case SAI_API_BUFFER: {
@@ -242,7 +246,8 @@ sai_status_t sai_api_query(_In_ sai_api_t api, _Out_ void **api_method_table) {
       break;
     }
     case SAI_API_ISOLATION_GROUP: {
-      *api_method_table = const_cast<sai_isolation_group_api_t *>(&l_isolation_group);
+      *api_method_table =
+          const_cast<sai_isolation_group_api_t *>(&l_isolation_group);
       break;
     }
     case SAI_API_NAT: {
@@ -254,7 +259,8 @@ sai_status_t sai_api_query(_In_ sai_api_t api, _Out_ void **api_method_table) {
       break;
     }
     case SAI_API_DEBUG_COUNTER: {
-      *api_method_table = const_cast<sai_debug_counter_api_t *>(&l_debug_counter);
+      *api_method_table =
+          const_cast<sai_debug_counter_api_t *>(&l_debug_counter);
       break;
     }
     case SAI_API_MACSEC: {

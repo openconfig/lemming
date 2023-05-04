@@ -14,65 +14,70 @@
 // limitations under the License.
 
 #include "dataplane/standalone/sai/isolation_group.h"
+
 #include "dataplane/standalone/log/log.h"
 
 const sai_isolation_group_api_t l_isolation_group = {
-	.create_isolation_group = l_create_isolation_group,
-	.remove_isolation_group = l_remove_isolation_group,
-	.set_isolation_group_attribute = l_set_isolation_group_attribute,
-	.get_isolation_group_attribute = l_get_isolation_group_attribute,
-	.create_isolation_group_member = l_create_isolation_group_member,
-	.remove_isolation_group_member = l_remove_isolation_group_member,
-	.set_isolation_group_member_attribute = l_set_isolation_group_member_attribute,
-	.get_isolation_group_member_attribute = l_get_isolation_group_member_attribute,
+    .create_isolation_group = l_create_isolation_group,
+    .remove_isolation_group = l_remove_isolation_group,
+    .set_isolation_group_attribute = l_set_isolation_group_attribute,
+    .get_isolation_group_attribute = l_get_isolation_group_attribute,
+    .create_isolation_group_member = l_create_isolation_group_member,
+    .remove_isolation_group_member = l_remove_isolation_group_member,
+    .set_isolation_group_member_attribute =
+        l_set_isolation_group_member_attribute,
+    .get_isolation_group_member_attribute =
+        l_get_isolation_group_member_attribute,
 };
 
-
-sai_status_t l_create_isolation_group(sai_object_id_t *isolation_group_id, sai_object_id_t switch_id, uint32_t attr_count, const sai_attribute_t *attr_list) {
-	LUCIUS_LOG_FUNC();
-	return SAI_STATUS_NOT_IMPLEMENTED;
+sai_status_t l_create_isolation_group(sai_object_id_t *isolation_group_id,
+                                      sai_object_id_t switch_id,
+                                      uint32_t attr_count,
+                                      const sai_attribute_t *attr_list) {
+  LUCIUS_LOG_FUNC();
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
-
 
 sai_status_t l_remove_isolation_group(sai_object_id_t isolation_group_id) {
-	LUCIUS_LOG_FUNC();
-	return SAI_STATUS_NOT_IMPLEMENTED;
+  LUCIUS_LOG_FUNC();
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
-
-sai_status_t l_set_isolation_group_attribute(sai_object_id_t isolation_group_id, const sai_attribute_t *attr) {
-	LUCIUS_LOG_FUNC();
-	return SAI_STATUS_NOT_IMPLEMENTED;
+sai_status_t l_set_isolation_group_attribute(sai_object_id_t isolation_group_id,
+                                             const sai_attribute_t *attr) {
+  LUCIUS_LOG_FUNC();
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
-
-sai_status_t l_get_isolation_group_attribute(sai_object_id_t isolation_group_id, uint32_t attr_count, sai_attribute_t *attr_list) {
-	LUCIUS_LOG_FUNC();
-	return SAI_STATUS_NOT_IMPLEMENTED;
+sai_status_t l_get_isolation_group_attribute(sai_object_id_t isolation_group_id,
+                                             uint32_t attr_count,
+                                             sai_attribute_t *attr_list) {
+  LUCIUS_LOG_FUNC();
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
-
-sai_status_t l_create_isolation_group_member(sai_object_id_t *isolation_group_member_id, sai_object_id_t switch_id, uint32_t attr_count, const sai_attribute_t *attr_list) {
-	LUCIUS_LOG_FUNC();
-	return SAI_STATUS_NOT_IMPLEMENTED;
+sai_status_t l_create_isolation_group_member(
+    sai_object_id_t *isolation_group_member_id, sai_object_id_t switch_id,
+    uint32_t attr_count, const sai_attribute_t *attr_list) {
+  LUCIUS_LOG_FUNC();
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
-
-sai_status_t l_remove_isolation_group_member(sai_object_id_t isolation_group_member_id) {
-	LUCIUS_LOG_FUNC();
-	return SAI_STATUS_NOT_IMPLEMENTED;
+sai_status_t l_remove_isolation_group_member(
+    sai_object_id_t isolation_group_member_id) {
+  LUCIUS_LOG_FUNC();
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
-
-sai_status_t l_set_isolation_group_member_attribute(sai_object_id_t isolation_group_member_id, const sai_attribute_t *attr) {
-	LUCIUS_LOG_FUNC();
-	return SAI_STATUS_NOT_IMPLEMENTED;
+sai_status_t l_set_isolation_group_member_attribute(
+    sai_object_id_t isolation_group_member_id, const sai_attribute_t *attr) {
+  LUCIUS_LOG_FUNC();
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
-
-sai_status_t l_get_isolation_group_member_attribute(sai_object_id_t isolation_group_member_id, uint32_t attr_count, sai_attribute_t *attr_list) {
-	LUCIUS_LOG_FUNC();
-	return SAI_STATUS_NOT_IMPLEMENTED;
+sai_status_t l_get_isolation_group_member_attribute(
+    sai_object_id_t isolation_group_member_id, uint32_t attr_count,
+    sai_attribute_t *attr_list) {
+  LUCIUS_LOG_FUNC();
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
-
-

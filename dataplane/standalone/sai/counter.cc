@@ -14,58 +14,64 @@
 // limitations under the License.
 
 #include "dataplane/standalone/sai/counter.h"
+
 #include "dataplane/standalone/log/log.h"
 
 const sai_counter_api_t l_counter = {
-	.create_counter = l_create_counter,
-	.remove_counter = l_remove_counter,
-	.set_counter_attribute = l_set_counter_attribute,
-	.get_counter_attribute = l_get_counter_attribute,
-	.get_counter_stats = l_get_counter_stats,
-	.get_counter_stats_ext = l_get_counter_stats_ext,
-	.clear_counter_stats = l_clear_counter_stats,
+    .create_counter = l_create_counter,
+    .remove_counter = l_remove_counter,
+    .set_counter_attribute = l_set_counter_attribute,
+    .get_counter_attribute = l_get_counter_attribute,
+    .get_counter_stats = l_get_counter_stats,
+    .get_counter_stats_ext = l_get_counter_stats_ext,
+    .clear_counter_stats = l_clear_counter_stats,
 };
 
-
-sai_status_t l_create_counter(sai_object_id_t *counter_id, sai_object_id_t switch_id, uint32_t attr_count, const sai_attribute_t *attr_list) {
-	LUCIUS_LOG_FUNC();
-	return SAI_STATUS_NOT_IMPLEMENTED;
+sai_status_t l_create_counter(sai_object_id_t *counter_id,
+                              sai_object_id_t switch_id, uint32_t attr_count,
+                              const sai_attribute_t *attr_list) {
+  LUCIUS_LOG_FUNC();
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
-
 
 sai_status_t l_remove_counter(sai_object_id_t counter_id) {
-	LUCIUS_LOG_FUNC();
-	return SAI_STATUS_NOT_IMPLEMENTED;
+  LUCIUS_LOG_FUNC();
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
-
-sai_status_t l_set_counter_attribute(sai_object_id_t counter_id, const sai_attribute_t *attr) {
-	LUCIUS_LOG_FUNC();
-	return SAI_STATUS_NOT_IMPLEMENTED;
+sai_status_t l_set_counter_attribute(sai_object_id_t counter_id,
+                                     const sai_attribute_t *attr) {
+  LUCIUS_LOG_FUNC();
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
-
-sai_status_t l_get_counter_attribute(sai_object_id_t counter_id, uint32_t attr_count, sai_attribute_t *attr_list) {
-	LUCIUS_LOG_FUNC();
-	return SAI_STATUS_NOT_IMPLEMENTED;
+sai_status_t l_get_counter_attribute(sai_object_id_t counter_id,
+                                     uint32_t attr_count,
+                                     sai_attribute_t *attr_list) {
+  LUCIUS_LOG_FUNC();
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
-
-sai_status_t l_get_counter_stats(sai_object_id_t counter_id, uint32_t number_of_counters, const sai_stat_id_t *counter_ids, uint64_t *counters) {
-	LUCIUS_LOG_FUNC();
-	return SAI_STATUS_NOT_IMPLEMENTED;
+sai_status_t l_get_counter_stats(sai_object_id_t counter_id,
+                                 uint32_t number_of_counters,
+                                 const sai_stat_id_t *counter_ids,
+                                 uint64_t *counters) {
+  LUCIUS_LOG_FUNC();
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
-
-sai_status_t l_get_counter_stats_ext(sai_object_id_t counter_id, uint32_t number_of_counters, const sai_stat_id_t *counter_ids, sai_stats_mode_t mode, uint64_t *counters) {
-	LUCIUS_LOG_FUNC();
-	return SAI_STATUS_NOT_IMPLEMENTED;
+sai_status_t l_get_counter_stats_ext(sai_object_id_t counter_id,
+                                     uint32_t number_of_counters,
+                                     const sai_stat_id_t *counter_ids,
+                                     sai_stats_mode_t mode,
+                                     uint64_t *counters) {
+  LUCIUS_LOG_FUNC();
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
-
-sai_status_t l_clear_counter_stats(sai_object_id_t counter_id, uint32_t number_of_counters, const sai_stat_id_t *counter_ids) {
-	LUCIUS_LOG_FUNC();
-	return SAI_STATUS_NOT_IMPLEMENTED;
+sai_status_t l_clear_counter_stats(sai_object_id_t counter_id,
+                                   uint32_t number_of_counters,
+                                   const sai_stat_id_t *counter_ids) {
+  LUCIUS_LOG_FUNC();
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
-
-

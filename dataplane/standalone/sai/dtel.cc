@@ -14,149 +14,155 @@
 // limitations under the License.
 
 #include "dataplane/standalone/sai/dtel.h"
+
 #include "dataplane/standalone/log/log.h"
 
 const sai_dtel_api_t l_dtel = {
-	.create_dtel = l_create_dtel,
-	.remove_dtel = l_remove_dtel,
-	.set_dtel_attribute = l_set_dtel_attribute,
-	.get_dtel_attribute = l_get_dtel_attribute,
-	.create_dtel_queue_report = l_create_dtel_queue_report,
-	.remove_dtel_queue_report = l_remove_dtel_queue_report,
-	.set_dtel_queue_report_attribute = l_set_dtel_queue_report_attribute,
-	.get_dtel_queue_report_attribute = l_get_dtel_queue_report_attribute,
-	.create_dtel_int_session = l_create_dtel_int_session,
-	.remove_dtel_int_session = l_remove_dtel_int_session,
-	.set_dtel_int_session_attribute = l_set_dtel_int_session_attribute,
-	.get_dtel_int_session_attribute = l_get_dtel_int_session_attribute,
-	.create_dtel_report_session = l_create_dtel_report_session,
-	.remove_dtel_report_session = l_remove_dtel_report_session,
-	.set_dtel_report_session_attribute = l_set_dtel_report_session_attribute,
-	.get_dtel_report_session_attribute = l_get_dtel_report_session_attribute,
-	.create_dtel_event = l_create_dtel_event,
-	.remove_dtel_event = l_remove_dtel_event,
-	.set_dtel_event_attribute = l_set_dtel_event_attribute,
-	.get_dtel_event_attribute = l_get_dtel_event_attribute,
+    .create_dtel = l_create_dtel,
+    .remove_dtel = l_remove_dtel,
+    .set_dtel_attribute = l_set_dtel_attribute,
+    .get_dtel_attribute = l_get_dtel_attribute,
+    .create_dtel_queue_report = l_create_dtel_queue_report,
+    .remove_dtel_queue_report = l_remove_dtel_queue_report,
+    .set_dtel_queue_report_attribute = l_set_dtel_queue_report_attribute,
+    .get_dtel_queue_report_attribute = l_get_dtel_queue_report_attribute,
+    .create_dtel_int_session = l_create_dtel_int_session,
+    .remove_dtel_int_session = l_remove_dtel_int_session,
+    .set_dtel_int_session_attribute = l_set_dtel_int_session_attribute,
+    .get_dtel_int_session_attribute = l_get_dtel_int_session_attribute,
+    .create_dtel_report_session = l_create_dtel_report_session,
+    .remove_dtel_report_session = l_remove_dtel_report_session,
+    .set_dtel_report_session_attribute = l_set_dtel_report_session_attribute,
+    .get_dtel_report_session_attribute = l_get_dtel_report_session_attribute,
+    .create_dtel_event = l_create_dtel_event,
+    .remove_dtel_event = l_remove_dtel_event,
+    .set_dtel_event_attribute = l_set_dtel_event_attribute,
+    .get_dtel_event_attribute = l_get_dtel_event_attribute,
 };
 
-
-sai_status_t l_create_dtel(sai_object_id_t *dtel_id, sai_object_id_t switch_id, uint32_t attr_count, const sai_attribute_t *attr_list) {
-	LUCIUS_LOG_FUNC();
-	return SAI_STATUS_NOT_IMPLEMENTED;
+sai_status_t l_create_dtel(sai_object_id_t *dtel_id, sai_object_id_t switch_id,
+                           uint32_t attr_count,
+                           const sai_attribute_t *attr_list) {
+  LUCIUS_LOG_FUNC();
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
-
 
 sai_status_t l_remove_dtel(sai_object_id_t dtel_id) {
-	LUCIUS_LOG_FUNC();
-	return SAI_STATUS_NOT_IMPLEMENTED;
+  LUCIUS_LOG_FUNC();
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
-
-sai_status_t l_set_dtel_attribute(sai_object_id_t dtel_id, const sai_attribute_t *attr) {
-	LUCIUS_LOG_FUNC();
-	return SAI_STATUS_NOT_IMPLEMENTED;
+sai_status_t l_set_dtel_attribute(sai_object_id_t dtel_id,
+                                  const sai_attribute_t *attr) {
+  LUCIUS_LOG_FUNC();
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
-
-sai_status_t l_get_dtel_attribute(sai_object_id_t dtel_id, uint32_t attr_count, sai_attribute_t *attr_list) {
-	LUCIUS_LOG_FUNC();
-	return SAI_STATUS_NOT_IMPLEMENTED;
+sai_status_t l_get_dtel_attribute(sai_object_id_t dtel_id, uint32_t attr_count,
+                                  sai_attribute_t *attr_list) {
+  LUCIUS_LOG_FUNC();
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
-
-sai_status_t l_create_dtel_queue_report(sai_object_id_t *dtel_queue_report_id, sai_object_id_t switch_id, uint32_t attr_count, const sai_attribute_t *attr_list) {
-	LUCIUS_LOG_FUNC();
-	return SAI_STATUS_NOT_IMPLEMENTED;
+sai_status_t l_create_dtel_queue_report(sai_object_id_t *dtel_queue_report_id,
+                                        sai_object_id_t switch_id,
+                                        uint32_t attr_count,
+                                        const sai_attribute_t *attr_list) {
+  LUCIUS_LOG_FUNC();
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
-
 
 sai_status_t l_remove_dtel_queue_report(sai_object_id_t dtel_queue_report_id) {
-	LUCIUS_LOG_FUNC();
-	return SAI_STATUS_NOT_IMPLEMENTED;
+  LUCIUS_LOG_FUNC();
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
-
-sai_status_t l_set_dtel_queue_report_attribute(sai_object_id_t dtel_queue_report_id, const sai_attribute_t *attr) {
-	LUCIUS_LOG_FUNC();
-	return SAI_STATUS_NOT_IMPLEMENTED;
+sai_status_t l_set_dtel_queue_report_attribute(
+    sai_object_id_t dtel_queue_report_id, const sai_attribute_t *attr) {
+  LUCIUS_LOG_FUNC();
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
-
-sai_status_t l_get_dtel_queue_report_attribute(sai_object_id_t dtel_queue_report_id, uint32_t attr_count, sai_attribute_t *attr_list) {
-	LUCIUS_LOG_FUNC();
-	return SAI_STATUS_NOT_IMPLEMENTED;
+sai_status_t l_get_dtel_queue_report_attribute(
+    sai_object_id_t dtel_queue_report_id, uint32_t attr_count,
+    sai_attribute_t *attr_list) {
+  LUCIUS_LOG_FUNC();
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
-
-sai_status_t l_create_dtel_int_session(sai_object_id_t *dtel_int_session_id, sai_object_id_t switch_id, uint32_t attr_count, const sai_attribute_t *attr_list) {
-	LUCIUS_LOG_FUNC();
-	return SAI_STATUS_NOT_IMPLEMENTED;
+sai_status_t l_create_dtel_int_session(sai_object_id_t *dtel_int_session_id,
+                                       sai_object_id_t switch_id,
+                                       uint32_t attr_count,
+                                       const sai_attribute_t *attr_list) {
+  LUCIUS_LOG_FUNC();
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
-
 
 sai_status_t l_remove_dtel_int_session(sai_object_id_t dtel_int_session_id) {
-	LUCIUS_LOG_FUNC();
-	return SAI_STATUS_NOT_IMPLEMENTED;
+  LUCIUS_LOG_FUNC();
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
-
-sai_status_t l_set_dtel_int_session_attribute(sai_object_id_t dtel_int_session_id, const sai_attribute_t *attr) {
-	LUCIUS_LOG_FUNC();
-	return SAI_STATUS_NOT_IMPLEMENTED;
+sai_status_t l_set_dtel_int_session_attribute(
+    sai_object_id_t dtel_int_session_id, const sai_attribute_t *attr) {
+  LUCIUS_LOG_FUNC();
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
-
-sai_status_t l_get_dtel_int_session_attribute(sai_object_id_t dtel_int_session_id, uint32_t attr_count, sai_attribute_t *attr_list) {
-	LUCIUS_LOG_FUNC();
-	return SAI_STATUS_NOT_IMPLEMENTED;
+sai_status_t l_get_dtel_int_session_attribute(
+    sai_object_id_t dtel_int_session_id, uint32_t attr_count,
+    sai_attribute_t *attr_list) {
+  LUCIUS_LOG_FUNC();
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
-
-sai_status_t l_create_dtel_report_session(sai_object_id_t *dtel_report_session_id, sai_object_id_t switch_id, uint32_t attr_count, const sai_attribute_t *attr_list) {
-	LUCIUS_LOG_FUNC();
-	return SAI_STATUS_NOT_IMPLEMENTED;
+sai_status_t l_create_dtel_report_session(
+    sai_object_id_t *dtel_report_session_id, sai_object_id_t switch_id,
+    uint32_t attr_count, const sai_attribute_t *attr_list) {
+  LUCIUS_LOG_FUNC();
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
-
-sai_status_t l_remove_dtel_report_session(sai_object_id_t dtel_report_session_id) {
-	LUCIUS_LOG_FUNC();
-	return SAI_STATUS_NOT_IMPLEMENTED;
+sai_status_t l_remove_dtel_report_session(
+    sai_object_id_t dtel_report_session_id) {
+  LUCIUS_LOG_FUNC();
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
-
-sai_status_t l_set_dtel_report_session_attribute(sai_object_id_t dtel_report_session_id, const sai_attribute_t *attr) {
-	LUCIUS_LOG_FUNC();
-	return SAI_STATUS_NOT_IMPLEMENTED;
+sai_status_t l_set_dtel_report_session_attribute(
+    sai_object_id_t dtel_report_session_id, const sai_attribute_t *attr) {
+  LUCIUS_LOG_FUNC();
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
-
-sai_status_t l_get_dtel_report_session_attribute(sai_object_id_t dtel_report_session_id, uint32_t attr_count, sai_attribute_t *attr_list) {
-	LUCIUS_LOG_FUNC();
-	return SAI_STATUS_NOT_IMPLEMENTED;
+sai_status_t l_get_dtel_report_session_attribute(
+    sai_object_id_t dtel_report_session_id, uint32_t attr_count,
+    sai_attribute_t *attr_list) {
+  LUCIUS_LOG_FUNC();
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
-
-sai_status_t l_create_dtel_event(sai_object_id_t *dtel_event_id, sai_object_id_t switch_id, uint32_t attr_count, const sai_attribute_t *attr_list) {
-	LUCIUS_LOG_FUNC();
-	return SAI_STATUS_NOT_IMPLEMENTED;
+sai_status_t l_create_dtel_event(sai_object_id_t *dtel_event_id,
+                                 sai_object_id_t switch_id, uint32_t attr_count,
+                                 const sai_attribute_t *attr_list) {
+  LUCIUS_LOG_FUNC();
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
-
 
 sai_status_t l_remove_dtel_event(sai_object_id_t dtel_event_id) {
-	LUCIUS_LOG_FUNC();
-	return SAI_STATUS_NOT_IMPLEMENTED;
+  LUCIUS_LOG_FUNC();
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
-
-sai_status_t l_set_dtel_event_attribute(sai_object_id_t dtel_event_id, const sai_attribute_t *attr) {
-	LUCIUS_LOG_FUNC();
-	return SAI_STATUS_NOT_IMPLEMENTED;
+sai_status_t l_set_dtel_event_attribute(sai_object_id_t dtel_event_id,
+                                        const sai_attribute_t *attr) {
+  LUCIUS_LOG_FUNC();
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
-
-sai_status_t l_get_dtel_event_attribute(sai_object_id_t dtel_event_id, uint32_t attr_count, sai_attribute_t *attr_list) {
-	LUCIUS_LOG_FUNC();
-	return SAI_STATUS_NOT_IMPLEMENTED;
+sai_status_t l_get_dtel_event_attribute(sai_object_id_t dtel_event_id,
+                                        uint32_t attr_count,
+                                        sai_attribute_t *attr_list) {
+  LUCIUS_LOG_FUNC();
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
-
-

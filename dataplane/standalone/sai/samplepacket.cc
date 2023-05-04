@@ -14,37 +14,38 @@
 // limitations under the License.
 
 #include "dataplane/standalone/sai/samplepacket.h"
+
 #include "dataplane/standalone/log/log.h"
 
 const sai_samplepacket_api_t l_samplepacket = {
-	.create_samplepacket = l_create_samplepacket,
-	.remove_samplepacket = l_remove_samplepacket,
-	.set_samplepacket_attribute = l_set_samplepacket_attribute,
-	.get_samplepacket_attribute = l_get_samplepacket_attribute,
+    .create_samplepacket = l_create_samplepacket,
+    .remove_samplepacket = l_remove_samplepacket,
+    .set_samplepacket_attribute = l_set_samplepacket_attribute,
+    .get_samplepacket_attribute = l_get_samplepacket_attribute,
 };
 
-
-sai_status_t l_create_samplepacket(sai_object_id_t *samplepacket_id, sai_object_id_t switch_id, uint32_t attr_count, const sai_attribute_t *attr_list) {
-	LUCIUS_LOG_FUNC();
-	return SAI_STATUS_NOT_IMPLEMENTED;
+sai_status_t l_create_samplepacket(sai_object_id_t *samplepacket_id,
+                                   sai_object_id_t switch_id,
+                                   uint32_t attr_count,
+                                   const sai_attribute_t *attr_list) {
+  LUCIUS_LOG_FUNC();
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
-
 
 sai_status_t l_remove_samplepacket(sai_object_id_t samplepacket_id) {
-	LUCIUS_LOG_FUNC();
-	return SAI_STATUS_NOT_IMPLEMENTED;
+  LUCIUS_LOG_FUNC();
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
-
-sai_status_t l_set_samplepacket_attribute(sai_object_id_t samplepacket_id, const sai_attribute_t *attr) {
-	LUCIUS_LOG_FUNC();
-	return SAI_STATUS_NOT_IMPLEMENTED;
+sai_status_t l_set_samplepacket_attribute(sai_object_id_t samplepacket_id,
+                                          const sai_attribute_t *attr) {
+  LUCIUS_LOG_FUNC();
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
-
-sai_status_t l_get_samplepacket_attribute(sai_object_id_t samplepacket_id, uint32_t attr_count, sai_attribute_t *attr_list) {
-	LUCIUS_LOG_FUNC();
-	return SAI_STATUS_NOT_IMPLEMENTED;
+sai_status_t l_get_samplepacket_attribute(sai_object_id_t samplepacket_id,
+                                          uint32_t attr_count,
+                                          sai_attribute_t *attr_list) {
+  LUCIUS_LOG_FUNC();
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
-
-

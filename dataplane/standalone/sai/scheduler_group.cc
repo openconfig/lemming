@@ -14,37 +14,38 @@
 // limitations under the License.
 
 #include "dataplane/standalone/sai/scheduler_group.h"
+
 #include "dataplane/standalone/log/log.h"
 
 const sai_scheduler_group_api_t l_scheduler_group = {
-	.create_scheduler_group = l_create_scheduler_group,
-	.remove_scheduler_group = l_remove_scheduler_group,
-	.set_scheduler_group_attribute = l_set_scheduler_group_attribute,
-	.get_scheduler_group_attribute = l_get_scheduler_group_attribute,
+    .create_scheduler_group = l_create_scheduler_group,
+    .remove_scheduler_group = l_remove_scheduler_group,
+    .set_scheduler_group_attribute = l_set_scheduler_group_attribute,
+    .get_scheduler_group_attribute = l_get_scheduler_group_attribute,
 };
 
-
-sai_status_t l_create_scheduler_group(sai_object_id_t *scheduler_group_id, sai_object_id_t switch_id, uint32_t attr_count, const sai_attribute_t *attr_list) {
-	LUCIUS_LOG_FUNC();
-	return SAI_STATUS_NOT_IMPLEMENTED;
+sai_status_t l_create_scheduler_group(sai_object_id_t *scheduler_group_id,
+                                      sai_object_id_t switch_id,
+                                      uint32_t attr_count,
+                                      const sai_attribute_t *attr_list) {
+  LUCIUS_LOG_FUNC();
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
-
 
 sai_status_t l_remove_scheduler_group(sai_object_id_t scheduler_group_id) {
-	LUCIUS_LOG_FUNC();
-	return SAI_STATUS_NOT_IMPLEMENTED;
+  LUCIUS_LOG_FUNC();
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
-
-sai_status_t l_set_scheduler_group_attribute(sai_object_id_t scheduler_group_id, const sai_attribute_t *attr) {
-	LUCIUS_LOG_FUNC();
-	return SAI_STATUS_NOT_IMPLEMENTED;
+sai_status_t l_set_scheduler_group_attribute(sai_object_id_t scheduler_group_id,
+                                             const sai_attribute_t *attr) {
+  LUCIUS_LOG_FUNC();
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
-
-sai_status_t l_get_scheduler_group_attribute(sai_object_id_t scheduler_group_id, uint32_t attr_count, sai_attribute_t *attr_list) {
-	LUCIUS_LOG_FUNC();
-	return SAI_STATUS_NOT_IMPLEMENTED;
+sai_status_t l_get_scheduler_group_attribute(sai_object_id_t scheduler_group_id,
+                                             uint32_t attr_count,
+                                             sai_attribute_t *attr_list) {
+  LUCIUS_LOG_FUNC();
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
-
-

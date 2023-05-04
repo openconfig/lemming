@@ -14,37 +14,37 @@
 // limitations under the License.
 
 #include "dataplane/standalone/sai/next_hop.h"
+
 #include "dataplane/standalone/log/log.h"
 
 const sai_next_hop_api_t l_next_hop = {
-	.create_next_hop = l_create_next_hop,
-	.remove_next_hop = l_remove_next_hop,
-	.set_next_hop_attribute = l_set_next_hop_attribute,
-	.get_next_hop_attribute = l_get_next_hop_attribute,
+    .create_next_hop = l_create_next_hop,
+    .remove_next_hop = l_remove_next_hop,
+    .set_next_hop_attribute = l_set_next_hop_attribute,
+    .get_next_hop_attribute = l_get_next_hop_attribute,
 };
 
-
-sai_status_t l_create_next_hop(sai_object_id_t *next_hop_id, sai_object_id_t switch_id, uint32_t attr_count, const sai_attribute_t *attr_list) {
-	LUCIUS_LOG_FUNC();
-	return SAI_STATUS_NOT_IMPLEMENTED;
+sai_status_t l_create_next_hop(sai_object_id_t *next_hop_id,
+                               sai_object_id_t switch_id, uint32_t attr_count,
+                               const sai_attribute_t *attr_list) {
+  LUCIUS_LOG_FUNC();
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
-
 
 sai_status_t l_remove_next_hop(sai_object_id_t next_hop_id) {
-	LUCIUS_LOG_FUNC();
-	return SAI_STATUS_NOT_IMPLEMENTED;
+  LUCIUS_LOG_FUNC();
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
-
-sai_status_t l_set_next_hop_attribute(sai_object_id_t next_hop_id, const sai_attribute_t *attr) {
-	LUCIUS_LOG_FUNC();
-	return SAI_STATUS_NOT_IMPLEMENTED;
+sai_status_t l_set_next_hop_attribute(sai_object_id_t next_hop_id,
+                                      const sai_attribute_t *attr) {
+  LUCIUS_LOG_FUNC();
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
-
-sai_status_t l_get_next_hop_attribute(sai_object_id_t next_hop_id, uint32_t attr_count, sai_attribute_t *attr_list) {
-	LUCIUS_LOG_FUNC();
-	return SAI_STATUS_NOT_IMPLEMENTED;
+sai_status_t l_get_next_hop_attribute(sai_object_id_t next_hop_id,
+                                      uint32_t attr_count,
+                                      sai_attribute_t *attr_list) {
+  LUCIUS_LOG_FUNC();
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
-
-

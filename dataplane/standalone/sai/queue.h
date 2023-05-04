@@ -17,25 +17,36 @@
 #define DATAPLANE_STANDALONE_SAI_QUEUE_H_
 
 extern "C" {
-	#include "inc/sai.h"
+#include "inc/sai.h"
 }
 
 extern const sai_queue_api_t l_queue;
 
-
-sai_status_t l_create_queue(sai_object_id_t *queue_id, sai_object_id_t switch_id, uint32_t attr_count, const sai_attribute_t *attr_list);
+sai_status_t l_create_queue(sai_object_id_t *queue_id,
+                            sai_object_id_t switch_id, uint32_t attr_count,
+                            const sai_attribute_t *attr_list);
 
 sai_status_t l_remove_queue(sai_object_id_t queue_id);
 
-sai_status_t l_set_queue_attribute(sai_object_id_t queue_id, const sai_attribute_t *attr);
+sai_status_t l_set_queue_attribute(sai_object_id_t queue_id,
+                                   const sai_attribute_t *attr);
 
-sai_status_t l_get_queue_attribute(sai_object_id_t queue_id, uint32_t attr_count, sai_attribute_t *attr_list);
+sai_status_t l_get_queue_attribute(sai_object_id_t queue_id,
+                                   uint32_t attr_count,
+                                   sai_attribute_t *attr_list);
 
-sai_status_t l_get_queue_stats(sai_object_id_t queue_id, uint32_t number_of_counters, const sai_stat_id_t *counter_ids, uint64_t *counters);
+sai_status_t l_get_queue_stats(sai_object_id_t queue_id,
+                               uint32_t number_of_counters,
+                               const sai_stat_id_t *counter_ids,
+                               uint64_t *counters);
 
-sai_status_t l_get_queue_stats_ext(sai_object_id_t queue_id, uint32_t number_of_counters, const sai_stat_id_t *counter_ids, sai_stats_mode_t mode, uint64_t *counters);
+sai_status_t l_get_queue_stats_ext(sai_object_id_t queue_id,
+                                   uint32_t number_of_counters,
+                                   const sai_stat_id_t *counter_ids,
+                                   sai_stats_mode_t mode, uint64_t *counters);
 
-sai_status_t l_clear_queue_stats(sai_object_id_t queue_id, uint32_t number_of_counters, const sai_stat_id_t *counter_ids);
-
+sai_status_t l_clear_queue_stats(sai_object_id_t queue_id,
+                                 uint32_t number_of_counters,
+                                 const sai_stat_id_t *counter_ids);
 
 #endif  // DATAPLANE_STANDALONE_SAI_QUEUE_H_

@@ -19,6 +19,9 @@
 
 // TODO(dgrau): Replace with a logging library.
 extern std::ofstream logger;
-#define LUCIUS_LOG_FUNC() logger <<  "Line: "  << __LINE__ << " Func: " << __PRETTY_FUNCTION__ << std::endl; logger.flush()
+#define LUCIUS_LOG_FUNC()                                            \
+  logger << "Line: " << __LINE__ << " Func: " << __PRETTY_FUNCTION__ \
+         << std::endl;                                               \
+  logger.flush()
 
 #endif  // DATAPLANE_STANDALONE_LOG_LOG_H_
