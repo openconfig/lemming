@@ -1,5 +1,15 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
+# External tools and libraries
+
+http_archive(
+    name = "com_github_grpc_grpc",
+    strip_prefix = "grpc-1.54.1",
+    urls = [
+        "https://github.com/grpc/grpc/archive/refs/tags/v1.54.1.tar.gz",
+    ],
+)
+
 http_archive(
     name = "rules_proto_grpc",
     sha256 = "fb7fc7a3c19a92b2f15ed7c4ffb2983e956625c1436f57a3430b897ba9864059",
@@ -32,19 +42,20 @@ http_archive(
     url = "https://github.com/bazel-contrib/rules_oci/releases/download/v0.5.0/rules_oci-v0.5.0.tar.gz",
 )
 
-load("@rules_proto_grpc//:repositories.bzl", "rules_proto_grpc_repos", "rules_proto_grpc_toolchains")
-rules_proto_grpc_toolchains()
-rules_proto_grpc_repos()
+http_archive(
+    name = "bazel_skylib",
+    sha256 = "b8a1527901774180afc798aeb28c4634bdccf19c4d98e7bdd1ce79d1fe9aaad7",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/releases/download/1.4.1/bazel-skylib-1.4.1.tar.gz",
+        "https://github.com/bazelbuild/bazel-skylib/releases/download/1.4.1/bazel-skylib-1.4.1.tar.gz",
+    ],
+)
 
-load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_proto_toolchains")
-rules_proto_dependencies()
-rules_proto_toolchains()
+load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
 
-load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
-protobuf_deps()
+bazel_skylib_workspace()
 
-load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
-grpc_deps()
+# Go
 
 load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_dependencies")
 load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies")
@@ -52,12 +63,49 @@ load("//:repositories.bzl", "go_repositories")
 
 # gazelle:repository_macro repositories.bzl%go_repositories
 go_repositories()
+
 go_rules_dependencies()
+
 go_register_toolchains(version = "1.20.2")
+
 gazelle_dependencies()
 
+# Protobuf and gRPC
+
+load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
+
+grpc_deps()
+
+load("@rules_proto_grpc//:repositories.bzl", "rules_proto_grpc_repos", "rules_proto_grpc_toolchains")
+
+rules_proto_grpc_toolchains()
+
+rules_proto_grpc_repos()
+
+load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_proto_toolchains")
+
+rules_proto_dependencies()
+
+rules_proto_toolchains()
+
+load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
+
+protobuf_deps()
+
+load("@com_google_googleapis//:repository_rules.bzl", "switched_rules_by_language")
+
+switched_rules_by_language(
+    name = "com_google_googleapis_imports",
+    cc = True,
+    grpc = True,
+)
+
+# OCI Container
+
 load("@rules_oci//oci:dependencies.bzl", "rules_oci_dependencies")
+
 rules_oci_dependencies()
+
 load("@rules_oci//oci:repositories.bzl", "LATEST_CRANE_VERSION", "oci_register_toolchains")
 
 oci_register_toolchains(
@@ -66,6 +114,7 @@ oci_register_toolchains(
 )
 
 load("@rules_pkg//:deps.bzl", "rules_pkg_dependencies")
+
 rules_pkg_dependencies()
 
 # External non-Go or bazel friendly dependencies
@@ -81,9 +130,6 @@ http_archive(
 
 http_archive(
     name = "com_github_opencomputeproject_sai",
-    strip_prefix = "SAI-1.7.1",
-    sha256 = "e18eb1a2a6e5dd286d97e13569d8b78cc1f8229030beed0db4775b9a50ab6a83",
-    urls = ["https://github.com/opencomputeproject/SAI/archive/refs/tags/v1.7.1.tar.gz"],
     build_file_content = """
 cc_library(
     name = "sai",
@@ -92,4 +138,7 @@ cc_library(
     visibility = ["//visibility:public"],
 )
 """,
+    sha256 = "e18eb1a2a6e5dd286d97e13569d8b78cc1f8229030beed0db4775b9a50ab6a83",
+    strip_prefix = "SAI-1.7.1",
+    urls = ["https://github.com/opencomputeproject/SAI/archive/refs/tags/v1.7.1.tar.gz"],
 )
