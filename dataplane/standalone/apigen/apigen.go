@@ -138,8 +138,7 @@ func getFuncAndTypes(ast *cc.AST) *saiApi {
 }
 
 var (
-	headerTmpl = template.Must(template.New("header").Parse(`
-// Copyright 2023 Google LLC
+	headerTmpl = template.Must(template.New("header").Parse(`// Copyright 2023 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -168,8 +167,7 @@ extern const {{ .APIType }} l_{{ .APIName }};
 
 #endif  // {{ .IncludeGuard }}
 `))
-	ccTmpl = template.Must(template.New("cc").Parse(`
-// Copyright 2023 Google LLC
+	ccTmpl = template.Must(template.New("cc").Parse(`// Copyright 2023 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.

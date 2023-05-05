@@ -28,6 +28,7 @@ cc_binary(
     ],
 )
 
+# By building a non-shared library, detect some linker issues.
 cc_binary(
     name = "saibin",
     linkstatic = True,
