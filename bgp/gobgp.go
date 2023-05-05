@@ -42,7 +42,8 @@ const (
 
 // NewGoBGPTaskDecl creates a new GoBGP task using the declarative configuration style.
 func NewGoBGPTaskDecl(zapiURL string, listenPort uint16) *reconciler.BuiltReconciler {
-	return reconciler.NewBuilder("gobgp-decl").WithStart(newBgpDeclTask(zapiURL, listenPort).startGoBGPFuncDecl).Build()
+	gobgpTask := newBgpDeclTask(zapiURL, listenPort)
+	return reconciler.NewBuilder("gobgp-decl").WithStart(gobgpTask.startGoBGPFuncDecl).WithStop(gobgpTask.stop).Build()
 }
 
 func updateState(yclient *ygnmi.Client, appliedBgp *oc.NetworkInstance_Protocol_Bgp) {
@@ -66,8 +67,15 @@ type bgpDeclTask struct {
 func newBgpDeclTask(zapiURL string, listenPort uint16) *bgpDeclTask {
 	return &bgpDeclTask{
 		zapiURL:    zapiURL,
+		bgpServer:  server.NewBgpServer(),
 		listenPort: listenPort,
 	}
+}
+
+// stop stops the GoBGP server.
+func (t *bgpDeclTask) stop(context.Context) error {
+	t.bgpServer.Stop()
+	return nil
 }
 
 // startGoBGPFuncDecl starts a GoBGP server.
@@ -88,18 +96,17 @@ func (t *bgpDeclTask) startGoBGPFuncDecl(_ context.Context, yclient *ygnmi.Clien
 	appliedBgp.PopulateDefaults()
 	var appliedBgpMu sync.Mutex
 
-	bgpServer := server.NewBgpServer()
 	if log.V(2) {
-		if err := bgpServer.SetLogLevel(context.Background(), &api.SetLogLevelRequest{
+		if err := t.bgpServer.SetLogLevel(context.Background(), &api.SetLogLevelRequest{
 			Level: api.SetLogLevelRequest_DEBUG,
 		}); err != nil {
 			log.Errorf("Error setting GoBGP log level: %v", err)
 		}
 	}
-	go bgpServer.Serve()
+	go t.bgpServer.Serve()
 
 	// monitor the change of the peer state
-	if err := bgpServer.WatchEvent(context.Background(), &api.WatchEventRequest{Peer: &api.WatchEventRequest_Peer{}}, func(r *api.WatchEventResponse) {
+	if err := t.bgpServer.WatchEvent(context.Background(), &api.WatchEventRequest{Peer: &api.WatchEventRequest_Peer{}}, func(r *api.WatchEventResponse) {
 		appliedBgpMu.Lock()
 		defer appliedBgpMu.Unlock()
 		if p := r.GetPeer(); p != nil && p.Type == api.WatchEventResponse_PeerEvent_STATE {
@@ -136,7 +143,6 @@ func (t *bgpDeclTask) startGoBGPFuncDecl(_ context.Context, yclient *ygnmi.Clien
 	}
 
 	// Initialize values required for reconile to be called.
-	t.bgpServer = bgpServer
 	t.currentConfig = &bgpconfig.BgpConfigSet{}
 
 	bgpWatcher := ygnmi.Watch(
@@ -176,7 +182,7 @@ func (t *bgpDeclTask) startGoBGPFuncDecl(_ context.Context, yclient *ygnmi.Clien
 		go func() {
 			tick := time.NewTicker(5 * time.Second)
 			for range tick.C {
-				if err := bgpServer.ListPath(context.Background(), &api.ListPathRequest{
+				if err := t.bgpServer.ListPath(context.Background(), &api.ListPathRequest{
 					TableType: api.TableType_GLOBAL,
 					Family: &api.Family{
 						Afi:  api.Family_AFI_IP,
@@ -190,7 +196,7 @@ func (t *bgpDeclTask) startGoBGPFuncDecl(_ context.Context, yclient *ygnmi.Clien
 					log.V(1).Info("GoBGP ListPath call completed (global table)")
 				}
 
-				if err := bgpServer.ListPath(context.Background(), &api.ListPathRequest{
+				if err := t.bgpServer.ListPath(context.Background(), &api.ListPathRequest{
 					TableType: api.TableType_LOCAL,
 					Family: &api.Family{
 						Afi:  api.Family_AFI_IP,
