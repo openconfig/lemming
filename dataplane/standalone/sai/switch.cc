@@ -43,14 +43,14 @@ sai_status_t l_remove_switch(sai_object_id_t switch_id) {
 sai_status_t l_set_switch_attribute(sai_object_id_t switch_id,
                                     const sai_attribute_t *attr) {
   LUCIUS_LOG_FUNC();
-  return translator->sw->set_switch_attribute(switch_id,attr);
+  return translator->sw->set_switch_attribute(switch_id, attr);
 }
 
 sai_status_t l_get_switch_attribute(sai_object_id_t switch_id,
                                     uint32_t attr_count,
                                     sai_attribute_t *attr_list) {
   LUCIUS_LOG_FUNC();
-  return translator->sw->get_switch_attribute(switch_id,attr_count,attr_list);
+  return translator->sw->get_switch_attribute(switch_id, attr_count, attr_list);
 }
 
 sai_status_t l_get_switch_stats(sai_object_id_t switch_id,
