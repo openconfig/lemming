@@ -83,11 +83,11 @@ sai_status_t sai_api_initialize(
   auto chan = grpc::CreateChannel("localhost:50000",
                                   grpc::InsecureChannelCredentials());
   translator = std::make_shared<Translator>(chan);
-  LUCIUS_LOG_FUNC();
   return SAI_STATUS_SUCCESS;
 }
 
 sai_status_t sai_api_query(_In_ sai_api_t api, _Out_ void **api_method_table) {
+  LUCIUS_LOG_FUNC();
   switch (api) {
     case SAI_API_SWITCH: {
       *api_method_table = const_cast<sai_switch_api_t *>(&l_switch);
@@ -268,13 +268,18 @@ sai_status_t sai_api_query(_In_ sai_api_t api, _Out_ void **api_method_table) {
       break;
     }
     default:
-      return SAI_STATUS_FAILURE;
+      return SAI_STATUS_SUCCESS;
   }
   return SAI_STATUS_SUCCESS;
 }
 
 sai_status_t sai_log_set(_In_ sai_api_t api, _In_ sai_log_level_t log_level) {
   return SAI_STATUS_SUCCESS;
+}
+
+sai_object_type_t sai_object_type_query(_In_ sai_object_id_t object_id) {
+  LUCIUS_LOG_FUNC();
+  return translator->getObjectType(object_id);
 }
 
 int main() {}

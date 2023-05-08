@@ -14,8 +14,9 @@
 // limitations under the License.
 
 #include "dataplane/standalone/sai/port.h"
-
+#include "dataplane/standalone/translator.h"
 #include "dataplane/standalone/log/log.h"
+#include "dataplane/standalone/sai/common.h"
 
 const sai_port_api_t l_port = {
     .create_port = l_create_port,
@@ -47,7 +48,7 @@ sai_status_t l_create_port(sai_object_id_t *port_id, sai_object_id_t switch_id,
                            uint32_t attr_count,
                            const sai_attribute_t *attr_list) {
   LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  return translator->port->create_port(port_id, switch_id, attr_count, attr_list);
 }
 
 sai_status_t l_remove_port(sai_object_id_t port_id) {
@@ -58,13 +59,14 @@ sai_status_t l_remove_port(sai_object_id_t port_id) {
 sai_status_t l_set_port_attribute(sai_object_id_t port_id,
                                   const sai_attribute_t *attr) {
   LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+
+  return translator->port->set_port_attribute(port_id, attr);
 }
 
 sai_status_t l_get_port_attribute(sai_object_id_t port_id, uint32_t attr_count,
                                   sai_attribute_t *attr_list) {
   LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  return translator->port->get_port_attribute(port_id, attr_count, attr_list);
 }
 
 sai_status_t l_get_port_stats(sai_object_id_t port_id,

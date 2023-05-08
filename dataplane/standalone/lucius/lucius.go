@@ -40,9 +40,11 @@ func initialize(port int) {
 
 	srv := grpc.NewServer(grpc.Creds(insecure.NewCredentials()))
 	fwdpb.RegisterForwardingServer(srv, fwdSrv)
-	if err := srv.Serve(lis); err != nil {
-		log.Fatalf("failed to serve forwarding server: %v", err)
-	}
+	go func() {
+		if err := srv.Serve(lis); err != nil {
+			log.Fatalf("failed to serve forwarding server: %v", err)
+		}
+	}()
 }
 
 func main() {
