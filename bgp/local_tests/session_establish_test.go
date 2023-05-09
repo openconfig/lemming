@@ -37,6 +37,8 @@ import (
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 )
 
+// TODO: Consolidate test helper code with integration and other unit tests.
+
 type BGPDevice struct {
 	AS       uint32
 	RouterID string
