@@ -4,6 +4,7 @@ cc_library(
     hdrs = glob(["*.h"]),
     visibility = ["//visibility:public"],
     deps = [
+        "//dataplane/standalone:translator",
         "//dataplane/standalone/log",
         "@com_github_opencomputeproject_sai//:sai",
     ],

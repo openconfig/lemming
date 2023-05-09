@@ -3,6 +3,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_test")
 go_test(
     name = "bgp_triggered_gue_test",
     srcs = ["bgp_triggered_gue_test.go"],
+    data = ["//integration_tests/twodut_oneotg_tests:topology_testbed"],
     deps = [
         "//gnmi/fakedevice",
         "//gnmi/oc",
