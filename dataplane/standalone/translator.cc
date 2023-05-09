@@ -22,28 +22,30 @@ extern "C" {
 }
 
 sai_object_type_t Translator::getObjectType(sai_object_id_t id) {
-  if (id >= this->object_types.size()) {
+  auto iter = this->objects.find(id);
+  if (iter == this->objects.end()) {
     return SAI_OBJECT_TYPE_NULL;
   }
-  return this->object_types[id];
+  return iter->second.type;
 }
 
 sai_object_id_t Translator::createObject(sai_object_type_t type) {
-  this->object_types.push_back(type);
-  auto id = this->object_types.size() - 1;
-  this->attributes[id] =
-      std::unordered_map<sai_attr_id_t, sai_attribute_value_t>();
+  auto id = this->objects.size() + 1;
+  this->objects[id] = {
+      .type = type,
+      .attributes = std::unordered_map<sai_attr_id_t, sai_attribute_value_t>(),
+  };
   return id;
 }
 
 void Translator::setAttribute(sai_object_id_t id, sai_attribute_t attr) {
-  this->attributes[id][attr.id] = attr.value;
+  this->objects[id].attributes[attr.id] = attr.value;
 }
 
 sai_status_t Translator::getAttribute(sai_object_id_t id,
                                       sai_attribute_t* attr) {
-  auto iter = this->attributes[id].find(attr->id);
-  if (iter == this->attributes[id].end()) {
+  auto iter = this->objects[id].attributes.find(attr->id);
+  if (iter == this->objects[id].attributes.end()) {
     return SAI_STATUS_ITEM_NOT_FOUND;
   }
   attr->value = iter->second;

@@ -35,13 +35,18 @@ extern "C" {
 class Switch;
 class Port;
 
+class SaiObject {
+  public:
+    sai_object_type_t type;
+    std::unordered_map<sai_attr_id_t, sai_attribute_value_t> attributes;
+};
+
 class Translator {
  public:
   explicit Translator(std::shared_ptr<grpc::Channel> chan) {
     client = std::shared_ptr<forwarding::Forwarding::Stub>(
         forwarding::Forwarding::NewStub(chan));
-    object_types.push_back(
-        SAI_OBJECT_TYPE_NULL);  // ID == 0, is invalid so skip.
+    objects[0] = {.type = SAI_OBJECT_TYPE_NULL};  // ID == 0, is invalid so skip.
     sw = std::make_unique<Switch>(this, client);
     port = std::make_unique<Port>(this, client);
   }
@@ -55,11 +60,7 @@ class Translator {
 
  private:
   std::shared_ptr<forwarding::Forwarding::Stub> client;
-  // objects_types maintains a global list of object id to types.
-  std::vector<sai_object_type_t> object_types;
-  std::unordered_map<sai_object_id_t,
-                     std::unordered_map<sai_attr_id_t, sai_attribute_value_t>>
-      attributes;
+  std::unordered_map<sai_object_id_t, SaiObject> objects;
 };
 
 #endif  // DATAPLANE_STANDALONE_TRANSLATOR_H_
