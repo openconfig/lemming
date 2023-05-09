@@ -13,7 +13,7 @@
 # limitations under the License.
 
 ---
-name: Go
+name: Build and Test
 on:
   push:
     branches: [main]
@@ -23,32 +23,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: 1.20.x
+      - name: Set up Bazel
+        uses: bazelbuild/setup-bazelisk@v2
       - name: Build Lemming
-        run: go build -v ./...
-      - name: Build Operator
-        run: cd operator && go build -v ./...
+        run: bazel build //...
   test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: 1.20.x
+      - name: Set up Bazel
+        uses: bazelbuild/setup-bazelisk@v2
       - run: |
-          # shellcheck disable=SC2046
-          go test -v -coverprofile=profile.cov $(go list ./... | grep -v integration_test)
+          bazel coverage --combined_report=lcov $(bazel query 'tests("//...") except "//integration_tests/..."')
       - run: |
-          make test-race
-      - name: Test Operator
-        run: |
-          # shellcheck disable=SC2046
-          cd operator && go test -v -coverprofile=profile.cov ./...
-      - name: Send coverage
-        uses: shogo82148/actions-goveralls@v1
+          bazel test --@io_bazel_rules_go//go/config:race $(bazel query 'kind("go_test", "//...") except "//integration_tests/..."')
+      - name: Coveralls
+        uses: coverallsapp/github-action@v2
         with:
-          path-to-profile: profile.cov
+          path-to-lcov: bazel-out/_coverage/_coverage_report.dat

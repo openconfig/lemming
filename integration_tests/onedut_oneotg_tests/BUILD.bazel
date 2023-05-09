@@ -1,0 +1,8 @@
+filegroup(
+    name = "onedut_oneotg_test",
+    srcs = [
+        "testbed.pb.txt",
+        "topology.pb.txt",
+    ],
+    visibility = ["//visibility:public"],
+)

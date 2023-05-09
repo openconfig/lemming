@@ -57,7 +57,6 @@ func Get(topoDir string) func() (binding.Binding, error) {
 
 	return func() (binding.Binding, error) {
 		flag.Set("topology", topoFile)
-		flag.Set("kubeconfig", os.ExpandEnv("$HOME/.kube/config"))
 
 		b, err := kinit.Init()
 		if err != nil {
