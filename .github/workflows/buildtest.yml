@@ -44,10 +44,10 @@ jobs:
           path: "~/.cache/bazel"
           key: bazel
       - run: |
-          bazel coverage --combined_report=lcov "$(bazel query 'tests("//...") except "//integration_tests/..."')"
+          # shellcheck disable=SC2046
+          bazel coverage --combined_report=lcov $(bazel query 'tests("//...") except "//integration_tests/..."')
       - run: |
-          bazel test --@io_bazel_rules_go//go/config:race \
-          "$(bazel query 'kind("go_test", "//...") except "//integration_tests/..."')"
+          make test-race
       - name: Coveralls
         uses: coverallsapp/github-action@v2
         with:
