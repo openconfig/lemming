@@ -1,20 +1,37 @@
 cc_library(
-    name = "saigo",
+    name = "translator",
     srcs = [
-        "sai_entrypoint.cc",
+        "port.cc",
+        "switch.cc",
         "translator.cc",
     ],
     hdrs = [
+        "port.h",
+        "switch.h",
         "translator.h",
     ],
+    visibility = ["//visibility:public"],
     deps = [
         "//dataplane/standalone/log",
         "//dataplane/standalone/lucius:lucius_clib",
-        "//dataplane/standalone/sai",
         "//proto/forwarding:forwarding_cc_grpc",
         "//proto/forwarding:forwarding_cc_proto",
         "@com_github_grpc_grpc//:grpc++",
         "@com_github_opencomputeproject_sai//:sai",
+    ],
+)
+
+cc_library(
+    name = "entrypoint",
+    srcs = [
+        "entrypoint.cc",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":translator",
+        "//dataplane/standalone/log",
+        "//dataplane/standalone/sai",
+        "@com_github_grpc_grpc//:grpc++",
     ],
     alwayslink = True,
 )
@@ -24,7 +41,7 @@ cc_binary(
     linkshared = True,
     linkstatic = True,
     deps = [
-        ":saigo",
+        ":entrypoint",
     ],
 )
 
@@ -33,6 +50,6 @@ cc_binary(
     name = "saibin",
     linkstatic = True,
     deps = [
-        ":saigo",
+        ":entrypoint",
     ],
 )

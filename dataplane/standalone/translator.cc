@@ -13,12 +13,41 @@
 // limitations under the License.
 
 #include "dataplane/standalone/translator.h"
+
+#include "dataplane/standalone/log/log.h"
+#include "dataplane/standalone/switch.h"
+
 extern "C" {
 #include "inc/sai.h"
 }
 
-sai_status_t Translator::create_switch(_Out_ sai_object_id_t *switch_id,
-                                       _In_ uint32_t attr_count,
-                                       _In_ const sai_attribute_t *attr_list) {
+sai_object_type_t Translator::getObjectType(sai_object_id_t id) {
+  auto iter = this->objects.find(id);
+  if (iter == this->objects.end()) {
+    return SAI_OBJECT_TYPE_NULL;
+  }
+  return iter->second.type;
+}
+
+sai_object_id_t Translator::createObject(sai_object_type_t type) {
+  auto id = this->objects.size() + 1;
+  this->objects[id] = {
+      .type = type,
+      .attributes = std::unordered_map<sai_attr_id_t, sai_attribute_value_t>(),
+  };
+  return id;
+}
+
+void Translator::setAttribute(sai_object_id_t id, sai_attribute_t attr) {
+  this->objects[id].attributes[attr.id] = attr.value;
+}
+
+sai_status_t Translator::getAttribute(sai_object_id_t id,
+                                      sai_attribute_t* attr) {
+  auto iter = this->objects[id].attributes.find(attr->id);
+  if (iter == this->objects[id].attributes.end()) {
+    return SAI_STATUS_ITEM_NOT_FOUND;
+  }
+  attr->value = iter->second;
   return SAI_STATUS_SUCCESS;
 }

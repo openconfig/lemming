@@ -1,4 +1,3 @@
-
 // Copyright 2023 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +15,7 @@
 #include "dataplane/standalone/sai/switch.h"
 
 #include "dataplane/standalone/log/log.h"
+#include "dataplane/standalone/sai/common.h"
 
 const sai_switch_api_t l_switch = {
     .create_switch = l_create_switch,
@@ -32,7 +32,7 @@ const sai_switch_api_t l_switch = {
 sai_status_t l_create_switch(sai_object_id_t *switch_id, uint32_t attr_count,
                              const sai_attribute_t *attr_list) {
   LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  return translator->sw->create_switch(switch_id, attr_count, attr_list);
 }
 
 sai_status_t l_remove_switch(sai_object_id_t switch_id) {
@@ -43,14 +43,14 @@ sai_status_t l_remove_switch(sai_object_id_t switch_id) {
 sai_status_t l_set_switch_attribute(sai_object_id_t switch_id,
                                     const sai_attribute_t *attr) {
   LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  return translator->sw->set_switch_attribute(switch_id, attr);
 }
 
 sai_status_t l_get_switch_attribute(sai_object_id_t switch_id,
                                     uint32_t attr_count,
                                     sai_attribute_t *attr_list) {
   LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  return translator->sw->get_switch_attribute(switch_id, attr_count, attr_list);
 }
 
 sai_status_t l_get_switch_stats(sai_object_id_t switch_id,
