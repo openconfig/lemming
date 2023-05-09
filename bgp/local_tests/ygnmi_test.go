@@ -23,6 +23,40 @@ import (
 	"github.com/openconfig/ygnmi/ygnmi"
 )
 
+// Get fetches the value of a SingletonQuery with a ONCE subscription,
+// failing the test fatally if no value is present at the path.
+// Use Lookup to also get metadata or tolerate no value present.
+func Get[T any](t testing.TB, c *ygnmi.Client, q ygnmi.SingletonQuery[T]) T {
+	t.Helper()
+	v, err := ygnmi.Get(context.Background(), c, q)
+	if err != nil {
+		t.Fatalf("Get(t) on %s at %v: %v", c, q, err)
+	}
+	return v
+}
+
+// GetConfig fetches the value of a SingletonQuery with a ONCE subscription,
+// failing the test fatally if no value is present at the path.
+// Use Lookup to also get metadata or tolerate no value present.
+// Note: This is a workaround for Go's type inference not working for this use case and may be removed in a subsequent release.
+// Note: This is equivalent to calling Get with a ConfigQuery and providing a fully-qualified type parameter.
+func GetConfig[T any](t testing.TB, c *ygnmi.Client, q ygnmi.ConfigQuery[T]) T {
+	t.Helper()
+	return Get[T](t, c, q)
+}
+
+// GetAll fetches the value of a WildcardQuery with a ONCE subscription skipping any non-present paths.
+// It fails the test fatally if no value is present at the path
+// Use LookupAll to also get metadata or tolerate no values present.
+func GetAll[T any](t testing.TB, c *ygnmi.Client, q ygnmi.WildcardQuery[T]) []T {
+	t.Helper()
+	v, err := ygnmi.GetAll(context.Background(), c, q)
+	if err != nil {
+		t.Fatalf("GetAll(t) on %s at %v: %v", c, q, err)
+	}
+	return v
+}
+
 // Update updates the configuration at the given query path with the val.
 func Update[T any](t testing.TB, c *ygnmi.Client, q ygnmi.ConfigQuery[T], val T) *ygnmi.Result {
 	t.Helper()
