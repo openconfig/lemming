@@ -38,8 +38,10 @@ class Port;
 class Translator {
  public:
   explicit Translator(std::shared_ptr<grpc::Channel> chan) {
-    client = std::shared_ptr<forwarding::Forwarding::Stub>(forwarding::Forwarding::NewStub(chan));
-    object_types.push_back(SAI_OBJECT_TYPE_NULL);  // ID == 0, is invalid so skip.
+    client = std::shared_ptr<forwarding::Forwarding::Stub>(
+        forwarding::Forwarding::NewStub(chan));
+    object_types.push_back(
+        SAI_OBJECT_TYPE_NULL);  // ID == 0, is invalid so skip.
     sw = std::make_unique<Switch>(this, client);
     port = std::make_unique<Port>(this, client);
   }

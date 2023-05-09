@@ -24,6 +24,8 @@ extern std::ofstream logger;
          << std::endl;                                               \
   logger.flush()
 
-#define LOG(msg) logger << "Line: " << __LINE__ << " : " << msg << std::endl; logger.flush()
+#define LOG(msg)                                               \
+  logger << "Line: " << __LINE__ << " : " << msg << std::endl; \
+  logger.flush()
 
 #endif  // DATAPLANE_STANDALONE_LOG_LOG_H_
