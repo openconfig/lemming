@@ -268,7 +268,7 @@ sai_status_t sai_api_query(_In_ sai_api_t api, _Out_ void **api_method_table) {
       break;
     }
     default:
-      return SAI_STATUS_SUCCESS;
+      return SAI_STATUS_FAILURE;
   }
   return SAI_STATUS_SUCCESS;
 }

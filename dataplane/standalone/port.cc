@@ -28,12 +28,9 @@ sai_status_t Port::create_port(_Out_ sai_object_id_t *port_id,
                                                  .id = attr_list[i].id,
                                                  .value = attr_list[i].value,
                                              });
-    switch (attr_list[i].id) {
-      // TODO(dgrau): handle this attributes specially.
-    }
   }
 
-  LOG("created switch");
+  LOG("created port");
   return SAI_STATUS_SUCCESS;
 }
 
@@ -47,7 +44,7 @@ sai_status_t Port::get_port_attribute(_In_ sai_object_id_t switch_id,
                                       _In_ uint32_t attr_count,
                                       _Inout_ sai_attribute_t *attr_list) {
   for (uint32_t i = 0; i < attr_count; i++) {
-    LOG(attr_list[i].id);
+    LOG("get port attr id: " << attr_list[i].id);
     if (auto ret = this->translator->getAttribute(switch_id, &attr_list[i]);
         ret != SAI_STATUS_SUCCESS) {
       return ret;

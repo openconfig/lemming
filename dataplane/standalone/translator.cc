@@ -21,15 +21,15 @@ extern "C" {
 }
 
 sai_object_type_t Translator::getObjectType(sai_object_id_t id) {
-  if (id >= this->objects.size()) {
+  if (id >= this->object_types.size()) {
     return SAI_OBJECT_TYPE_NULL;
   }
-  return this->objects[id];
+  return this->object_types[id];
 }
 
 sai_object_id_t Translator::createObject(sai_object_type_t type) {
-  this->objects.push_back(type);
-  auto id = this->objects.size() - 1;
+  this->object_types.push_back(type);
+  auto id = this->object_types.size() - 1;
   this->attributes[id] =
       std::unordered_map<sai_attr_id_t, sai_attribute_value_t>();
   return id;
