@@ -23,7 +23,7 @@ sai_status_t Port::create_port(_Out_ sai_object_id_t *port_id,
                                _In_ const sai_attribute_t *attr_list) {
   *port_id = this->translator->createObject(SAI_OBJECT_TYPE_PORT);
   for (uint32_t i = 0; i < attr_count; i++) {
-    LOG(attr_list[i].id);
+    LOG("create port attr id" << attr_list[i].id);
     this->translator->setAttribute(*port_id, sai_attribute_t{
                                                  .id = attr_list[i].id,
                                                  .value = attr_list[i].value,
