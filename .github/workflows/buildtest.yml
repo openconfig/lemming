@@ -25,6 +25,11 @@ jobs:
       - uses: actions/checkout@v3
       - name: Set up Bazel
         uses: bazelbuild/setup-bazelisk@v2
+      - name: Bazel cache
+        uses: actions/cache@v3
+        with:
+          path: "~/.cache/bazel"
+          key: bazel
       - name: Build Lemming
         run: bazel build //...
   test:
@@ -33,10 +38,16 @@ jobs:
       - uses: actions/checkout@v3
       - name: Set up Bazel
         uses: bazelbuild/setup-bazelisk@v2
+      - name: Bazel cache
+        uses: actions/cache@v3
+        with:
+          path: "~/.cache/bazel"
+          key: bazel
       - run: |
-          bazel coverage --combined_report=lcov $(bazel query 'tests("//...") except "//integration_tests/..."')
+          bazel coverage --combined_report=lcov "$(bazel query 'tests("//...") except "//integration_tests/..."')"
       - run: |
-          bazel test --@io_bazel_rules_go//go/config:race $(bazel query 'kind("go_test", "//...") except "//integration_tests/..."')
+          bazel test --@io_bazel_rules_go//go/config:race \
+          "$(bazel query 'kind("go_test", "//...") except "//integration_tests/..."')"
       - name: Coveralls
         uses: coverallsapp/github-action@v2
         with:
