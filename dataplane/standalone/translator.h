@@ -36,9 +36,9 @@ class Switch;
 class Port;
 
 class SaiObject {
-  public:
-    sai_object_type_t type;
-    std::unordered_map<sai_attr_id_t, sai_attribute_value_t> attributes;
+ public:
+  sai_object_type_t type;
+  std::unordered_map<sai_attr_id_t, sai_attribute_value_t> attributes;
 };
 
 class Translator {
@@ -46,7 +46,8 @@ class Translator {
   explicit Translator(std::shared_ptr<grpc::Channel> chan) {
     client = std::shared_ptr<forwarding::Forwarding::Stub>(
         forwarding::Forwarding::NewStub(chan));
-    objects[0] = {.type = SAI_OBJECT_TYPE_NULL};  // ID == 0, is invalid so skip.
+    objects[0] = {.type =
+                      SAI_OBJECT_TYPE_NULL};  // ID == 0, is invalid so skip.
     sw = std::make_unique<Switch>(this, client);
     port = std::make_unique<Port>(this, client);
   }
