@@ -34,7 +34,7 @@ jobs:
       - name: Set up Bazel
         uses: bazelbuild/setup-bazelisk@v2
       - name: Cache Bazel
-        uses: actions/cache@v3
+        uses: actions/cache/restore@v3
         with:
           path: |
             ~/.cache/bazel
