@@ -26,7 +26,7 @@ import (
 	cc "modernc.org/cc/v4"
 )
 
-type saiApi struct {
+type saiAPI struct {
 	ifaces []*saiInterface
 	funcs  map[string]*saiFunc
 }
@@ -102,8 +102,8 @@ func handleIfaces(name string, decl *cc.Declaration) *saiInterface {
 	return si
 }
 
-func getFuncAndTypes(ast *cc.AST) *saiApi {
-	sa := saiApi{
+func getFuncAndTypes(ast *cc.AST) *saiAPI {
+	sa := saiAPI{
 		funcs: map[string]*saiFunc{},
 	}
 	for unit := ast.TranslationUnit; unit != nil; unit = unit.TranslationUnit {
@@ -132,7 +132,6 @@ func getFuncAndTypes(ast *cc.AST) *saiApi {
 				sa.ifaces = append(sa.ifaces, si)
 			}
 		}
-
 	}
 	return &sa
 }

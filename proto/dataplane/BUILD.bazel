@@ -20,7 +20,6 @@ go_proto_library(
 
 go_library(
     name = "dataplane",
-    srcs = ["generate.go"],
     embed = [":dataplane_go_proto"],
     importpath = "github.com/openconfig/lemming/proto/dataplane",
     visibility = ["//visibility:public"],
