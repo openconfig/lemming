@@ -22,6 +22,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"os/user"
 	"path/filepath"
 	"sync"
 	"time"
@@ -54,9 +55,15 @@ func Get(topoDir string) func() (binding.Binding, error) {
 	topoFile := filepath.Join(dir, "topology.pb.txt")
 
 	flag.Set("testbed", testbedFile)
+	flag.Set("topology", topoFile)
 
 	return func() (binding.Binding, error) {
-		flag.Set("topology", topoFile)
+		u, err := user.Current()
+		if err != nil {
+			return nil, err
+		}
+		kcfg := filepath.Join(u.HomeDir, ".kube/config")
+		flag.Set("kubeconfig", kcfg)
 
 		b, err := kinit.Init()
 		if err != nil {
@@ -65,7 +72,7 @@ func Get(topoDir string) func() (binding.Binding, error) {
 		return &LemmingBind{
 			Binding:  b,
 			topoFile: topoFile,
-			kubecfg:  os.ExpandEnv("$HOME/.kube/config"),
+			kubecfg:  kcfg,
 		}, nil
 	}
 }
@@ -92,7 +99,7 @@ func (lb *LemmingBind) Release(ctx context.Context) error {
 	if !lb.created || *keep {
 		return nil
 	}
-	if err := runAndStreamOutput(exec.Command("kne", "delete", lb.topoFile)); err != nil {
+	if err := runAndStreamOutput(exec.Command("kne", "delete", lb.topoFile, "--kubecfg", lb.kubecfg)); err != nil {
 		return fmt.Errorf("failed delete topology: %v", err)
 	}
 	return nil
@@ -165,7 +172,7 @@ func (lb *LemmingBind) Reserve(ctx context.Context, tb *proto.Testbed, runTime t
 	// Check if topology already exists, if not deploy it.
 	if _, err := client.CoreV1().Namespaces().Get(ctx, topo.GetName(), metav1.GetOptions{}); apierrors.IsNotFound(err) {
 		fmt.Println("Deploying KNE topology")
-		if err := runAndStreamOutput(exec.Command("kne", "create", lb.topoFile)); err != nil {
+		if err := runAndStreamOutput(exec.Command("kne", "create", lb.topoFile, "--kubecfg", lb.kubecfg)); err != nil {
 			return nil, fmt.Errorf("failed to create topology: %v", err)
 		}
 
