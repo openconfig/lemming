@@ -20,6 +20,7 @@ gopath=$(go env GOPATH)
 export PATH=${PATH}:$gopath/bin
 curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-amd64 && \
 sudo install skaffold /usr/local/bin/
+go install github.com/bazelbuild/bazelisk@latest
 
 cd /tmp/workspace
 kne deploy ~/kne-internal/deploy/kne/kind-bridge.yaml
