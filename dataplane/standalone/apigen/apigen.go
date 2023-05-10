@@ -132,7 +132,6 @@ func getFuncAndTypes(ast *cc.AST) *saiAPI {
 				sa.ifaces = append(sa.ifaces, si)
 			}
 		}
-
 	}
 	return &sa
 }

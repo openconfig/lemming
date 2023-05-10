@@ -46,9 +46,10 @@ jobs:
       - run: |
           # shellcheck disable=SC2046
           bazel coverage --combined_report=lcov $(bazel query 'tests("//...") except "//integration_tests/..."')
-      - run: |
-          make test-race
       - name: Coveralls
         uses: coverallsapp/github-action@v2
         with:
           path-to-lcov: bazel-out/_coverage/_coverage_report.dat
+      - run: |
+          make test-race
+
