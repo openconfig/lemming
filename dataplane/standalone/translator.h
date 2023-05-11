@@ -23,12 +23,9 @@
 #include <utility>
 #include <vector>
 
-#include "dataplane/standalone/bridge.h"
 #include "dataplane/standalone/port.h"
-#include "dataplane/standalone/router_interface.h"
 #include "dataplane/standalone/sai/entry.h"
 #include "dataplane/standalone/switch.h"
-#include "dataplane/standalone/vlan.h"
 #include "proto/forwarding/forwarding_service.grpc.pb.h"
 #include "proto/forwarding/forwarding_service.pb.h"
 
@@ -37,10 +34,7 @@ extern "C" {
 }
 
 class Switch;
-class RouterInterface;
 class Port;
-class VLAN;
-class Bridge;
 
 class SaiObject {
  public:
@@ -57,9 +51,6 @@ class Translator {
                       SAI_OBJECT_TYPE_NULL};  // ID == 0, is invalid so skip.
     sw = std::make_unique<Switch>(this, client);
     port = std::make_unique<Port>(this, client);
-    rif = std::make_unique<RouterInterface>(this, client);
-    vlan = std::make_unique<VLAN>(this, client);
-    bridge = std::make_unique<Bridge>(this, client);
   }
   sai_object_type_t getObjectType(sai_object_id_t id);
   sai_object_id_t createObject(sai_object_type_t type);
@@ -68,9 +59,6 @@ class Translator {
 
   std::unique_ptr<Switch> sw;
   std::unique_ptr<Port> port;
-  std::unique_ptr<RouterInterface> rif;
-  std::unique_ptr<VLAN> vlan;
-  std::unique_ptr<Bridge> bridge;
 
   sai_status_t create(sai_object_type_t type, sai_object_id_t *id,
                       uint32_t attr_count, const sai_attribute_t *attr_list);

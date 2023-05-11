@@ -3,17 +3,11 @@ cc_library(
     srcs = [
         "port.cc",
         "switch.cc",
-        "router_interface.cc",
         "translator.cc",
-        "vlan.cc",
-        "bridge.cc",
     ],
     hdrs = [
-        "router_interface.h",
-        "vlan.h",
         "port.h",
         "switch.h",
-        "bridge.h",
         "translator.h",
     ],
     visibility = ["//visibility:public"],

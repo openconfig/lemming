@@ -4,8 +4,8 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
     name = "com_github_grpc_grpc",
-    strip_prefix = "grpc-1.54.1",
     sha256 = "79e3ff93f7fa3c8433e2165f2550fa14889fce147c15d9828531cbfc7ad11e01",
+    strip_prefix = "grpc-1.54.1",
     urls = [
         "https://github.com/grpc/grpc/archive/refs/tags/v1.54.1.tar.gz",
     ],
@@ -139,7 +139,7 @@ cc_library(
     visibility = ["//visibility:public"],
 )
 """,
-sha256 = "2eb547dbde2bc8d3ffd2edb1ef6fb282be4994a43cd4886a67dd8ecef002ffa7",
+    sha256 = "2eb547dbde2bc8d3ffd2edb1ef6fb282be4994a43cd4886a67dd8ecef002ffa7",
     strip_prefix = "SAI-1.9.1",
     urls = ["https://github.com/opencomputeproject/SAI/archive/refs/tags/v1.9.1.tar.gz"],
 )

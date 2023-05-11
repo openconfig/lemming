@@ -18,7 +18,6 @@
 
 extern "C" {
 #include "inc/sai.h"
-#include "translator.h"
 }
 
 sai_object_type_t Translator::getObjectType(sai_object_id_t id) {
