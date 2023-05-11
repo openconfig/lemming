@@ -5,6 +5,7 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 http_archive(
     name = "com_github_grpc_grpc",
     strip_prefix = "grpc-1.54.1",
+    sha256 = "79e3ff93f7fa3c8433e2165f2550fa14889fce147c15d9828531cbfc7ad11e01",
     urls = [
         "https://github.com/grpc/grpc/archive/refs/tags/v1.54.1.tar.gz",
     ],
