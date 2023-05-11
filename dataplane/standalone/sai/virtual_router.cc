@@ -13,35 +13,44 @@
 // limitations under the License.
 
 #include "dataplane/standalone/sai/virtual_router.h"
+
 #include <glog/logging.h>
+
 #include "dataplane/standalone/sai/common.h"
 #include "dataplane/standalone/sai/entry.h"
 
 const sai_virtual_router_api_t l_virtual_router = {
-	.create_virtual_router = l_create_virtual_router,
-	.remove_virtual_router = l_remove_virtual_router,
-	.set_virtual_router_attribute = l_set_virtual_router_attribute,
-	.get_virtual_router_attribute = l_get_virtual_router_attribute,
+    .create_virtual_router = l_create_virtual_router,
+    .remove_virtual_router = l_remove_virtual_router,
+    .set_virtual_router_attribute = l_set_virtual_router_attribute,
+    .get_virtual_router_attribute = l_get_virtual_router_attribute,
 };
 
-
-sai_status_t l_create_virtual_router(sai_object_id_t *virtual_router_id, sai_object_id_t switch_id, uint32_t attr_count, const sai_attribute_t *attr_list) {
-	LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-	return translator->create(SAI_OBJECT_TYPE_VIRTUAL_ROUTER, virtual_router_id, switch_id, attr_count, attr_list);
+sai_status_t l_create_virtual_router(sai_object_id_t *virtual_router_id,
+                                     sai_object_id_t switch_id,
+                                     uint32_t attr_count,
+                                     const sai_attribute_t *attr_list) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->create(SAI_OBJECT_TYPE_VIRTUAL_ROUTER, virtual_router_id,
+                            switch_id, attr_count, attr_list);
 }
 
 sai_status_t l_remove_virtual_router(sai_object_id_t virtual_router_id) {
-	LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-	return translator->remove(SAI_OBJECT_TYPE_VIRTUAL_ROUTER, virtual_router_id);
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->remove(SAI_OBJECT_TYPE_VIRTUAL_ROUTER, virtual_router_id);
 }
 
-sai_status_t l_set_virtual_router_attribute(sai_object_id_t virtual_router_id, const sai_attribute_t *attr) {
-	LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-	return translator->set_attribute(SAI_OBJECT_TYPE_VIRTUAL_ROUTER, virtual_router_id, attr);
+sai_status_t l_set_virtual_router_attribute(sai_object_id_t virtual_router_id,
+                                            const sai_attribute_t *attr) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->set_attribute(SAI_OBJECT_TYPE_VIRTUAL_ROUTER,
+                                   virtual_router_id, attr);
 }
 
-sai_status_t l_get_virtual_router_attribute(sai_object_id_t virtual_router_id, uint32_t attr_count, sai_attribute_t *attr_list) {
-	LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-	return translator->get_attribute(SAI_OBJECT_TYPE_VIRTUAL_ROUTER, virtual_router_id, attr_count, attr_list);
+sai_status_t l_get_virtual_router_attribute(sai_object_id_t virtual_router_id,
+                                            uint32_t attr_count,
+                                            sai_attribute_t *attr_list) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->get_attribute(SAI_OBJECT_TYPE_VIRTUAL_ROUTER,
+                                   virtual_router_id, attr_count, attr_list);
 }
-

@@ -16,19 +16,22 @@
 #define DATAPLANE_STANDALONE_SAI_L2MC_H_
 
 extern "C" {
-	#include "inc/sai.h"
+#include "inc/sai.h"
 }
 
 extern const sai_l2mc_api_t l_l2mc;
 
-
-sai_status_t l_create_l2mc_entry(const sai_l2mc_entry_t *l2mc_entry, uint32_t attr_count, const sai_attribute_t *attr_list);
+sai_status_t l_create_l2mc_entry(const sai_l2mc_entry_t *l2mc_entry,
+                                 uint32_t attr_count,
+                                 const sai_attribute_t *attr_list);
 
 sai_status_t l_remove_l2mc_entry(const sai_l2mc_entry_t *l2mc_entry);
 
-sai_status_t l_set_l2mc_entry_attribute(const sai_l2mc_entry_t *l2mc_entry, const sai_attribute_t *attr);
+sai_status_t l_set_l2mc_entry_attribute(const sai_l2mc_entry_t *l2mc_entry,
+                                        const sai_attribute_t *attr);
 
-sai_status_t l_get_l2mc_entry_attribute(const sai_l2mc_entry_t *l2mc_entry, uint32_t attr_count, sai_attribute_t *attr_list);
-
+sai_status_t l_get_l2mc_entry_attribute(const sai_l2mc_entry_t *l2mc_entry,
+                                        uint32_t attr_count,
+                                        sai_attribute_t *attr_list);
 
 #endif  // DATAPLANE_STANDALONE_SAI_L2MC_H_

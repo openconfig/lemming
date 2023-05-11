@@ -16,39 +16,71 @@
 #define DATAPLANE_STANDALONE_SAI_SRV6_H_
 
 extern "C" {
-	#include "inc/sai.h"
+#include "inc/sai.h"
 }
 
 extern const sai_srv6_api_t l_srv6;
 
-
-sai_status_t l_create_srv6_sidlist(sai_object_id_t *srv6_sidlist_id, sai_object_id_t switch_id, uint32_t attr_count, const sai_attribute_t *attr_list);
+sai_status_t l_create_srv6_sidlist(sai_object_id_t *srv6_sidlist_id,
+                                   sai_object_id_t switch_id,
+                                   uint32_t attr_count,
+                                   const sai_attribute_t *attr_list);
 
 sai_status_t l_remove_srv6_sidlist(sai_object_id_t srv6_sidlist_id);
 
-sai_status_t l_set_srv6_sidlist_attribute(sai_object_id_t srv6_sidlist_id, const sai_attribute_t *attr);
+sai_status_t l_set_srv6_sidlist_attribute(sai_object_id_t srv6_sidlist_id,
+                                          const sai_attribute_t *attr);
 
-sai_status_t l_get_srv6_sidlist_attribute(sai_object_id_t srv6_sidlist_id, uint32_t attr_count, sai_attribute_t *attr_list);
+sai_status_t l_get_srv6_sidlist_attribute(sai_object_id_t srv6_sidlist_id,
+                                          uint32_t attr_count,
+                                          sai_attribute_t *attr_list);
 
-sai_status_t l_create_srv6_sidlists(sai_object_id_t switch_id, uint32_t object_count, const uint32_t *attr_count, const sai_attribute_t **attr_list, sai_bulk_op_error_mode_t mode, sai_object_id_t *object_id, sai_status_t *object_statuses);
+sai_status_t l_create_srv6_sidlists(sai_object_id_t switch_id,
+                                    uint32_t object_count,
+                                    const uint32_t *attr_count,
+                                    const sai_attribute_t **attr_list,
+                                    sai_bulk_op_error_mode_t mode,
+                                    sai_object_id_t *object_id,
+                                    sai_status_t *object_statuses);
 
-sai_status_t l_remove_srv6_sidlists(uint32_t object_count, const sai_object_id_t *object_id, sai_bulk_op_error_mode_t mode, sai_status_t *object_statuses);
+sai_status_t l_remove_srv6_sidlists(uint32_t object_count,
+                                    const sai_object_id_t *object_id,
+                                    sai_bulk_op_error_mode_t mode,
+                                    sai_status_t *object_statuses);
 
-sai_status_t l_create_my_sid_entry(const sai_my_sid_entry_t *my_sid_entry, uint32_t attr_count, const sai_attribute_t *attr_list);
+sai_status_t l_create_my_sid_entry(const sai_my_sid_entry_t *my_sid_entry,
+                                   uint32_t attr_count,
+                                   const sai_attribute_t *attr_list);
 
 sai_status_t l_remove_my_sid_entry(const sai_my_sid_entry_t *my_sid_entry);
 
-sai_status_t l_set_my_sid_entry_attribute(const sai_my_sid_entry_t *my_sid_entry, const sai_attribute_t *attr);
+sai_status_t l_set_my_sid_entry_attribute(
+    const sai_my_sid_entry_t *my_sid_entry, const sai_attribute_t *attr);
 
-sai_status_t l_get_my_sid_entry_attribute(const sai_my_sid_entry_t *my_sid_entry, uint32_t attr_count, sai_attribute_t *attr_list);
+sai_status_t l_get_my_sid_entry_attribute(
+    const sai_my_sid_entry_t *my_sid_entry, uint32_t attr_count,
+    sai_attribute_t *attr_list);
 
-sai_status_t l_create_my_sid_entries(uint32_t object_count, const sai_my_sid_entry_t *my_sid_entry, const uint32_t *attr_count, const sai_attribute_t **attr_list, sai_bulk_op_error_mode_t mode, sai_status_t *object_statuses);
+sai_status_t l_create_my_sid_entries(uint32_t object_count,
+                                     const sai_my_sid_entry_t *my_sid_entry,
+                                     const uint32_t *attr_count,
+                                     const sai_attribute_t **attr_list,
+                                     sai_bulk_op_error_mode_t mode,
+                                     sai_status_t *object_statuses);
 
-sai_status_t l_remove_my_sid_entries(uint32_t object_count, const sai_my_sid_entry_t *my_sid_entry, sai_bulk_op_error_mode_t mode, sai_status_t *object_statuses);
+sai_status_t l_remove_my_sid_entries(uint32_t object_count,
+                                     const sai_my_sid_entry_t *my_sid_entry,
+                                     sai_bulk_op_error_mode_t mode,
+                                     sai_status_t *object_statuses);
 
-sai_status_t l_set_my_sid_entries_attribute(uint32_t object_count, const sai_my_sid_entry_t *my_sid_entry, const sai_attribute_t *attr_list, sai_bulk_op_error_mode_t mode, sai_status_t *object_statuses);
+sai_status_t l_set_my_sid_entries_attribute(
+    uint32_t object_count, const sai_my_sid_entry_t *my_sid_entry,
+    const sai_attribute_t *attr_list, sai_bulk_op_error_mode_t mode,
+    sai_status_t *object_statuses);
 
-sai_status_t l_get_my_sid_entries_attribute(uint32_t object_count, const sai_my_sid_entry_t *my_sid_entry, const uint32_t *attr_count, sai_attribute_t **attr_list, sai_bulk_op_error_mode_t mode, sai_status_t *object_statuses);
-
+sai_status_t l_get_my_sid_entries_attribute(
+    uint32_t object_count, const sai_my_sid_entry_t *my_sid_entry,
+    const uint32_t *attr_count, sai_attribute_t **attr_list,
+    sai_bulk_op_error_mode_t mode, sai_status_t *object_statuses);
 
 #endif  // DATAPLANE_STANDALONE_SAI_SRV6_H_
