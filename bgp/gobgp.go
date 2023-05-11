@@ -48,7 +48,7 @@ func NewGoBGPTaskDecl(zapiURL string, listenPort uint16) *reconciler.BuiltReconc
 
 func updateState(yclient *ygnmi.Client, appliedBgp *oc.NetworkInstance_Protocol_Bgp) {
 	log.V(1).Infof("BGP task: updating state")
-	if _, err := gnmiclient.Replace(context.Background(), yclient, ocpath.Root().NetworkInstance(fakedevice.DefaultNetworkInstance).Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").Bgp().State(), appliedBgp); err != nil {
+	if _, err := gnmiclient.Replace(context.Background(), yclient, ocpath.Root().NetworkInstance(fakedevice.DefaultNetworkInstance).Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, fakedevice.BGPRoutingProtocol).Bgp().State(), appliedBgp); err != nil {
 		log.Errorf("BGP failed to update state: %v", err)
 	}
 }
@@ -81,7 +81,7 @@ func (t *bgpDeclTask) stop(context.Context) error {
 // startGoBGPFuncDecl starts a GoBGP server.
 func (t *bgpDeclTask) startGoBGPFuncDecl(_ context.Context, yclient *ygnmi.Client) error {
 	b := &ocpath.Batch{}
-	bgpPath := ocpath.Root().NetworkInstance(fakedevice.DefaultNetworkInstance).Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").Bgp()
+	bgpPath := ocpath.Root().NetworkInstance(fakedevice.DefaultNetworkInstance).Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, fakedevice.BGPRoutingProtocol).Bgp()
 	b.AddPaths(
 		bgpPath.Global().As().Config().PathStruct(),
 		bgpPath.Global().RouterId().Config().PathStruct(),
@@ -92,7 +92,7 @@ func (t *bgpDeclTask) startGoBGPFuncDecl(_ context.Context, yclient *ygnmi.Clien
 
 	appliedRoot := &oc.Root{}
 	// appliedBgp is the SoT for BGP applied configuration. It is maintained locally by the task.
-	appliedBgp := appliedRoot.GetOrCreateNetworkInstance(fakedevice.DefaultNetworkInstance).GetOrCreateProtocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").GetOrCreateBgp()
+	appliedBgp := appliedRoot.GetOrCreateNetworkInstance(fakedevice.DefaultNetworkInstance).GetOrCreateProtocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, fakedevice.BGPRoutingProtocol).GetOrCreateBgp()
 	appliedBgp.PopulateDefaults()
 	var appliedBgpMu sync.Mutex
 
@@ -155,7 +155,7 @@ func (t *bgpDeclTask) startGoBGPFuncDecl(_ context.Context, yclient *ygnmi.Clien
 				return ygnmi.Continue
 			}
 
-			intendedBgp := rootVal.GetOrCreateNetworkInstance(fakedevice.DefaultNetworkInstance).GetOrCreateProtocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").GetOrCreateBgp()
+			intendedBgp := rootVal.GetOrCreateNetworkInstance(fakedevice.DefaultNetworkInstance).GetOrCreateProtocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, fakedevice.BGPRoutingProtocol).GetOrCreateBgp()
 			if err := t.reconcile(intendedBgp, appliedBgp, &appliedBgpMu); err != nil {
 				log.Errorf("GoBGP failed to reconcile: %v", err)
 				// TODO(wenbli): Instead of stopping BGP, we should simply keep trying.
@@ -176,42 +176,62 @@ func (t *bgpDeclTask) startGoBGPFuncDecl(_ context.Context, yclient *ygnmi.Clien
 		}
 	}()
 
-	if log.V(1) {
-		// Periodically print the BGP table.
-		// TODO(wenbli): Put this in the BGP RIB schema.
-		go func() {
-			tick := time.NewTicker(5 * time.Second)
-			for range tick.C {
-				if err := t.bgpServer.ListPath(context.Background(), &api.ListPathRequest{
-					TableType: api.TableType_GLOBAL,
-					Family: &api.Family{
-						Afi:  api.Family_AFI_IP,
-						Safi: api.Family_SAFI_UNICAST,
-					},
-				}, func(d *api.Destination) {
-					log.V(1).Infof("GoBGP global table path: %v", d)
-				}); err != nil {
-					log.Errorf("GoBGP ListPath call failed (global table): %v", err)
-				} else {
-					log.V(1).Info("GoBGP ListPath call completed (global table)")
-				}
-
-				if err := t.bgpServer.ListPath(context.Background(), &api.ListPathRequest{
-					TableType: api.TableType_LOCAL,
-					Family: &api.Family{
-						Afi:  api.Family_AFI_IP,
-						Safi: api.Family_SAFI_UNICAST,
-					},
-				}, func(d *api.Destination) {
-					log.V(1).Infof("GoBGP local table path: %v", d)
-				}); err != nil {
-					log.Errorf("GoBGP ListPath call failed (local table): %v", err)
-				} else {
-					log.V(1).Info("GoBGP ListPath call completed (local table)")
-				}
+	// Periodically query the BGP table.
+	go func() {
+		tick := time.NewTicker(5 * time.Second)
+		for range tick.C {
+			if err := t.bgpServer.ListPath(context.Background(), &api.ListPathRequest{
+				TableType: api.TableType_GLOBAL,
+				Family: &api.Family{
+					Afi:  api.Family_AFI_IP,
+					Safi: api.Family_SAFI_UNICAST,
+				},
+			}, func(d *api.Destination) {
+				log.V(1).Infof("GoBGP global table path: %v", d)
+			}); err != nil {
+				log.Errorf("GoBGP ListPath call failed (global table): %v", err)
+			} else {
+				log.V(1).Info("GoBGP ListPath call completed (global table)")
 			}
-		}()
-	}
+
+			var allLocalRoutes []*api.Destination
+			if err := t.bgpServer.ListPath(context.Background(), &api.ListPathRequest{
+				TableType: api.TableType_LOCAL,
+				Family: &api.Family{
+					Afi:  api.Family_AFI_IP,
+					Safi: api.Family_SAFI_UNICAST,
+				},
+			}, func(d *api.Destination) {
+				allLocalRoutes = append(allLocalRoutes, d)
+				log.V(1).Infof("GoBGP local table path: %v", d)
+			}); err != nil {
+				log.Errorf("GoBGP ListPath call failed (local table): %v", err)
+			} else {
+				log.V(1).Info("GoBGP ListPath call completed (local table)")
+
+				appliedBgpMu.Lock()
+				v4uni := appliedBgp.GetOrCreateRib().GetOrCreateAfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST).GetOrCreateIpv4Unicast()
+				v4uni.LocRib = nil
+				locRib := v4uni.GetOrCreateLocRib()
+				for i, route := range allLocalRoutes {
+					var origin oc.NetworkInstance_Protocol_Bgp_Rib_AfiSafi_Ipv4Unicast_LocRib_Route_Origin_Union
+					// TODO: determine which path element to use for determining the origin IP instead of just choosing the first one.
+					if route.GetPaths()[0].SourceId == "" {
+						// TODO: For locally-originated routes figure out how to get the originating protocol.
+						origin = oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_UNSET
+					} else {
+						origin = oc.UnionString(route.GetPaths()[0].SourceId)
+					}
+					// TODO: Once adj-rib-in-post is populated, this ID should match that.
+					locRib.GetOrCreateRoute(route.Prefix, origin, uint32(i))
+				}
+				updateState(yclient, appliedBgp)
+				appliedBgpMu.Unlock()
+			}
+
+			// TODO(wenbli): Populate adj-rib-in-post and adj-rib-out-post.
+		}
+	}()
 
 	return nil
 }

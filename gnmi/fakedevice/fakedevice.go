@@ -30,6 +30,7 @@ import (
 const (
 	DefaultNetworkInstance = "DEFAULT"
 	StaticRoutingProtocol  = "DEFAULT"
+	BGPRoutingProtocol     = "BGP"
 )
 
 func NewBootTimeTask() *reconciler.BuiltReconciler {

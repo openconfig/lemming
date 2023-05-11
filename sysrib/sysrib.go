@@ -452,7 +452,9 @@ func (sr *SysRIB) EgressInterface(inputNI string, ip *net.IPNet) ([]*Interface, 
 // first-level nexthops.
 //
 // - inputNI is the network instance of the input prefix.
-// - interfaces is the set of known interface states on the device.
+// - interfaces is the set of known interface states on the device. Connected
+// routes must resolve to one of these interfaces in order for them to be
+// returned as resolvable routes.
 //
 // NOTE: sr.mu.RLock() must be called prior to calling this function.
 func (sr *SysRIB) egressNexthops(inputNI string, ip *net.IPNet, interfaces map[Interface]bool) (map[ResolvedNexthop]bool, *Route, error) {
