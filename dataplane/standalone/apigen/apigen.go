@@ -181,7 +181,9 @@ extern const {{ .APIType }} l_{{ .APIName }};
 // limitations under the License.
 
 #include "dataplane/standalone/sai/{{ .Header }}"
-#include "dataplane/standalone/log/log.h"
+#include <glog/logging.h>
+#include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/entry.h"
 
 const {{ .APIType }} l_{{ .APIName }} = {
 {{- range .Funcs }}
@@ -191,18 +193,27 @@ const {{ .APIType }} l_{{ .APIName }} = {
 
 {{ range .Funcs }}
 {{ .ReturnType }} l_{{ .Name }}({{ .Args }}) {
-	LUCIUS_LOG_FUNC();
+	LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+	{{- if .UseCommonAPI }}
+	{{- if .Entry }} {{ .Entry }} {{ end }}
+	return translator->{{ .Operation }}(SAI_OBJECT_TYPE_{{ .TypeName }}, {{ .Vars }});
+	{{- else }}
 	return SAI_STATUS_NOT_IMPLEMENTED;
+	{{- end }}
 }
-
 {{ end }}
 `))
 )
 
 type templateFunc struct {
-	ReturnType string
-	Name       string
-	Args       string
+	ReturnType   string
+	Name         string
+	Args         string
+	TypeName     string
+	Operation    string
+	Vars         string
+	UseCommonAPI bool
+	Entry        string
 }
 
 type templateData struct {
@@ -235,6 +246,14 @@ const (
 	outDir  = "dataplane/standalone/sai"
 )
 
+var supportedOperation = map[string]bool{
+	"create": true,
+	"remove": true,
+	"set":    true,
+	"get":    true,
+	"clear":  true,
+}
+
 func generate() error {
 	headerFile, err := filepath.Abs(filepath.Join(saiPath, "inc/sai.h"))
 	if err != nil {
@@ -263,17 +282,55 @@ func generate() error {
 			APIName:      nameTrimmed,
 		}
 		for _, fn := range iface.funcs {
-			var params []string
-			for _, param := range sai.funcs[fn.typ].params {
-				name := param.name
-				typ := param.typ
-				params = append(params, fmt.Sprintf("%s %s", typ, name))
-			}
-			data.Funcs = append(data.Funcs, templateFunc{
+			name := strings.TrimSuffix(strings.TrimPrefix(fn.name, "sai_"), "_fn")
+			tf := templateFunc{
 				ReturnType: sai.funcs[fn.typ].returnType,
-				Name:       strings.TrimSuffix(strings.TrimPrefix(fn.name, "sai_"), "_fn"),
-				Args:       strings.Join(params, ", "),
-			})
+				Name:       name,
+			}
+
+			var paramDefs []string
+			var paramVars []string
+			for _, param := range sai.funcs[fn.typ].params {
+				paramDefs = append(paramDefs, fmt.Sprintf("%s %s", param.typ, param.name))
+				name := strings.ReplaceAll(param.name, "*", "")
+				if strings.Contains(param.typ, "entry") {
+					tf.Entry = fmt.Sprintf("common_entry_t entry = {.%s = %s};", name, name)
+					name = "entry"
+				}
+				paramVars = append(paramVars, name)
+			}
+
+			tf.Args = strings.Join(paramDefs, ", ")
+			tf.Vars = strings.Join(paramVars, ", ")
+
+			splits := strings.Split(name, "_")
+			tf.Operation = splits[0]
+			tf.UseCommonAPI = supportedOperation[tf.Operation]
+
+			i := 1
+			for ; i < len(splits); i++ {
+				if splits[i] == "attribute" || splits[i] == "stats" {
+					break
+				}
+			}
+
+			tf.Operation = strings.Join(append([]string{tf.Operation}, splits[i:]...), "_")
+			tf.TypeName = strings.ToUpper(strings.Join(splits[1:i], "_"))
+			if strings.HasSuffix(tf.TypeName, "PORTS") || strings.HasSuffix(tf.TypeName, "ENTRIES") || strings.HasSuffix(tf.TypeName, "MEMBERS") || strings.HasSuffix(tf.TypeName, "LISTS") {
+				tf.Operation += "_bulk"
+				tf.TypeName = strings.TrimSuffix(tf.TypeName, "S")
+				if strings.HasSuffix(tf.TypeName, "IE") {
+					tf.TypeName = strings.TrimSuffix(tf.TypeName, "IE")
+					tf.TypeName += "Y"
+				}
+			}
+
+			if strings.Contains(tf.TypeName, "PORT_ALL") || strings.Contains(tf.TypeName, "ALL_NEIGHBOR") {
+				tf.UseCommonAPI = false
+			}
+
+			data.Funcs = append(data.Funcs, tf)
+
 		}
 		header, err := os.Create(filepath.Join(outDir, data.Header))
 		if err != nil {

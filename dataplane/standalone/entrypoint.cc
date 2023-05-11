@@ -20,7 +20,7 @@
 
 #include <fstream>
 
-#include "dataplane/standalone/log/log.h"
+
 #include "dataplane/standalone/lucius/lucius_clib.h"
 #include "dataplane/standalone/sai/acl.h"
 #include "dataplane/standalone/sai/bfd.h"
@@ -34,6 +34,7 @@
 #include "dataplane/standalone/sai/hostif.h"
 #include "dataplane/standalone/sai/ipmc.h"
 #include "dataplane/standalone/sai/ipmc_group.h"
+#include "dataplane/standalone/sai/ipsec.h"
 #include "dataplane/standalone/sai/isolation_group.h"
 #include "dataplane/standalone/sai/l2mc.h"
 #include "dataplane/standalone/sai/l2mc_group.h"
@@ -42,6 +43,7 @@
 #include "dataplane/standalone/sai/mcast_fdb.h"
 #include "dataplane/standalone/sai/mirror.h"
 #include "dataplane/standalone/sai/mpls.h"
+#include "dataplane/standalone/sai/my_mac.h"
 #include "dataplane/standalone/sai/nat.h"
 #include "dataplane/standalone/sai/neighbor.h"
 #include "dataplane/standalone/sai/next_hop.h"
@@ -56,7 +58,7 @@
 #include "dataplane/standalone/sai/samplepacket.h"
 #include "dataplane/standalone/sai/scheduler.h"
 #include "dataplane/standalone/sai/scheduler_group.h"
-#include "dataplane/standalone/sai/segmentroute.h"
+#include "dataplane/standalone/sai/srv6.h"
 #include "dataplane/standalone/sai/stp.h"
 #include "dataplane/standalone/sai/switch.h"
 #include "dataplane/standalone/sai/system_port.h"
@@ -77,7 +79,6 @@ std::shared_ptr<Translator> translator;
 // TODO(dgrau): implement this without using gRPC.
 sai_status_t sai_api_initialize(
     _In_ uint64_t flags, _In_ const sai_service_method_table_t *services) {
-  LUCIUS_LOG_FUNC();
   initialize(GoInt(50000));
 
   auto chan = grpc::CreateChannel("localhost:50000",
@@ -87,7 +88,6 @@ sai_status_t sai_api_initialize(
 }
 
 sai_status_t sai_api_query(_In_ sai_api_t api, _Out_ void **api_method_table) {
-  LUCIUS_LOG_FUNC();
   switch (api) {
     case SAI_API_SWITCH: {
       *api_method_table = const_cast<sai_switch_api_t *>(&l_switch);
@@ -229,8 +229,8 @@ sai_status_t sai_api_query(_In_ sai_api_t api, _Out_ void **api_method_table) {
       *api_method_table = const_cast<sai_tam_api_t *>(&l_tam);
       break;
     }
-    case SAI_API_SEGMENTROUTE: {
-      *api_method_table = const_cast<sai_segmentroute_api_t *>(&l_segmentroute);
+    case SAI_API_SRV6: {
+      *api_method_table = const_cast<sai_srv6_api_t *>(&l_srv6);
       break;
     }
     case SAI_API_MPLS: {
@@ -267,6 +267,14 @@ sai_status_t sai_api_query(_In_ sai_api_t api, _Out_ void **api_method_table) {
       *api_method_table = const_cast<sai_macsec_api_t *>(&l_macsec);
       break;
     }
+    case SAI_API_SYSTEM_PORT: {
+      *api_method_table = const_cast<sai_system_port_api_t *>(&l_system_port);
+      break;
+    }
+    case SAI_API_MY_MAC: {
+      *api_method_table = const_cast<sai_my_mac_api_t *>(&l_my_mac);
+      break;
+    }
     default:
       return SAI_STATUS_FAILURE;
   }
@@ -278,8 +286,22 @@ sai_status_t sai_log_set(_In_ sai_api_t api, _In_ sai_log_level_t log_level) {
 }
 
 sai_object_type_t sai_object_type_query(_In_ sai_object_id_t object_id) {
-  LUCIUS_LOG_FUNC();
   return translator->getObjectType(object_id);
+}
+
+sai_status_t sai_query_attribute_capability(
+    _In_ sai_object_id_t switch_id, _In_ sai_object_type_t object_type,
+    _In_ sai_attr_id_t attr_id, _Out_ sai_attr_capability_t *attr_capability) {
+  *attr_capability = {true, true, true};
+  return SAI_STATUS_SUCCESS;
+}
+
+sai_status_t sai_query_attribute_enum_values_capability(
+    _In_ sai_object_id_t switch_id, _In_ sai_object_type_t object_type,
+    _In_ sai_attr_id_t attr_id,
+    _Inout_ sai_s32_list_t *enum_values_capability) {
+
+  return SAI_STATUS_SUCCESS;
 }
 
 int main() {}

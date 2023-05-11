@@ -1,4 +1,3 @@
-
 // Copyright 2023 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,47 +16,27 @@
 #define DATAPLANE_STANDALONE_SAI_ROUTE_H_
 
 extern "C" {
-#include "inc/sai.h"
+	#include "inc/sai.h"
 }
 
 extern const sai_route_api_t l_route;
 
-sai_status_t l_create_route_entry(const sai_route_entry_t *route_entry,
-                                  uint32_t attr_count,
-                                  const sai_attribute_t *attr_list);
+
+sai_status_t l_create_route_entry(const sai_route_entry_t *route_entry, uint32_t attr_count, const sai_attribute_t *attr_list);
 
 sai_status_t l_remove_route_entry(const sai_route_entry_t *route_entry);
 
-sai_status_t l_set_route_entry_attribute(const sai_route_entry_t *route_entry,
-                                         const sai_attribute_t *attr);
+sai_status_t l_set_route_entry_attribute(const sai_route_entry_t *route_entry, const sai_attribute_t *attr);
 
-sai_status_t l_get_route_entry_attribute(const sai_route_entry_t *route_entry,
-                                         uint32_t attr_count,
-                                         sai_attribute_t *attr_list);
+sai_status_t l_get_route_entry_attribute(const sai_route_entry_t *route_entry, uint32_t attr_count, sai_attribute_t *attr_list);
 
-sai_status_t l_create_route_entries(uint32_t object_count,
-                                    const sai_route_entry_t *route_entry,
-                                    const uint32_t *attr_count,
-                                    const sai_attribute_t **attr_list,
-                                    sai_bulk_op_error_mode_t mode,
-                                    sai_status_t *object_statuses);
+sai_status_t l_create_route_entries(uint32_t object_count, const sai_route_entry_t *route_entry, const uint32_t *attr_count, const sai_attribute_t **attr_list, sai_bulk_op_error_mode_t mode, sai_status_t *object_statuses);
 
-sai_status_t l_remove_route_entries(uint32_t object_count,
-                                    const sai_route_entry_t *route_entry,
-                                    sai_bulk_op_error_mode_t mode,
-                                    sai_status_t *object_statuses);
+sai_status_t l_remove_route_entries(uint32_t object_count, const sai_route_entry_t *route_entry, sai_bulk_op_error_mode_t mode, sai_status_t *object_statuses);
 
-sai_status_t l_set_route_entries_attribute(uint32_t object_count,
-                                           const sai_route_entry_t *route_entry,
-                                           const sai_attribute_t *attr_list,
-                                           sai_bulk_op_error_mode_t mode,
-                                           sai_status_t *object_statuses);
+sai_status_t l_set_route_entries_attribute(uint32_t object_count, const sai_route_entry_t *route_entry, const sai_attribute_t *attr_list, sai_bulk_op_error_mode_t mode, sai_status_t *object_statuses);
 
-sai_status_t l_get_route_entries_attribute(uint32_t object_count,
-                                           const sai_route_entry_t *route_entry,
-                                           const uint32_t *attr_count,
-                                           sai_attribute_t **attr_list,
-                                           sai_bulk_op_error_mode_t mode,
-                                           sai_status_t *object_statuses);
+sai_status_t l_get_route_entries_attribute(uint32_t object_count, const sai_route_entry_t *route_entry, const uint32_t *attr_count, sai_attribute_t **attr_list, sai_bulk_op_error_mode_t mode, sai_status_t *object_statuses);
+
 
 #endif  // DATAPLANE_STANDALONE_SAI_ROUTE_H_

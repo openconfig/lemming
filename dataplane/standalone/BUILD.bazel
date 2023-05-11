@@ -3,17 +3,23 @@ cc_library(
     srcs = [
         "port.cc",
         "switch.cc",
+        "router_interface.cc",
         "translator.cc",
+        "vlan.cc",
+        "bridge.cc",
     ],
     hdrs = [
+        "router_interface.h",
+        "vlan.h",
         "port.h",
         "switch.h",
+        "bridge.h",
         "translator.h",
     ],
     visibility = ["//visibility:public"],
     deps = [
-        "//dataplane/standalone/log",
         "//dataplane/standalone/lucius:lucius_clib",
+        "//dataplane/standalone/sai:entry",
         "//proto/forwarding:forwarding_cc_grpc",
         "//proto/forwarding:forwarding_cc_proto",
         "@com_github_grpc_grpc//:grpc++",
@@ -29,7 +35,6 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":translator",
-        "//dataplane/standalone/log",
         "//dataplane/standalone/sai",
         "@com_github_grpc_grpc//:grpc++",
     ],

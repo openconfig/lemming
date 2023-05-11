@@ -12,23 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef DATAPLANE_STANDALONE_SAI_WRED_H_
-#define DATAPLANE_STANDALONE_SAI_WRED_H_
+#ifndef DATAPLANE_STANDALONE_SAI_MY_MAC_H_
+#define DATAPLANE_STANDALONE_SAI_MY_MAC_H_
 
 extern "C" {
 	#include "inc/sai.h"
 }
 
-extern const sai_wred_api_t l_wred;
+extern const sai_my_mac_api_t l_my_mac;
 
 
-sai_status_t l_create_wred(sai_object_id_t *wred_id, sai_object_id_t switch_id, uint32_t attr_count, const sai_attribute_t *attr_list);
+sai_status_t l_create_my_mac(sai_object_id_t *my_mac_id, sai_object_id_t switch_id, uint32_t attr_count, const sai_attribute_t *attr_list);
 
-sai_status_t l_remove_wred(sai_object_id_t wred_id);
+sai_status_t l_remove_my_mac(sai_object_id_t my_mac_id);
 
-sai_status_t l_set_wred_attribute(sai_object_id_t wred_id, const sai_attribute_t *attr);
+sai_status_t l_set_my_mac_attribute(sai_object_id_t my_mac_id, const sai_attribute_t *attr);
 
-sai_status_t l_get_wred_attribute(sai_object_id_t wred_id, uint32_t attr_count, sai_attribute_t *attr_list);
+sai_status_t l_get_my_mac_attribute(sai_object_id_t my_mac_id, uint32_t attr_count, sai_attribute_t *attr_list);
 
 
-#endif  // DATAPLANE_STANDALONE_SAI_WRED_H_
+#endif  // DATAPLANE_STANDALONE_SAI_MY_MAC_H_
