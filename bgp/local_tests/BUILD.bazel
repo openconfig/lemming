@@ -3,12 +3,15 @@ load("@io_bazel_rules_go//go:def.bzl", "go_test")
 go_test(
     name = "local_tests_test",
     srcs = [
+        "route_propagation_test.go",
         "session_establish_test.go",
         "ygnmi_test.go",
     ],
     deps = [
         "//:lemming",
+        "//gnmi",
         "//gnmi/fakedevice",
+        "//gnmi/gnmiclient",
         "//gnmi/oc",
         "//gnmi/oc/ocpath",
         "@com_github_openconfig_gnmi//proto/gnmi",
