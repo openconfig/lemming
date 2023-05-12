@@ -85,5 +85,5 @@ func TestRoutePropagation(t *testing.T) {
 
 	// Check route is in Adj-In of dut3.
 	// TODO: Figure out why route is not being exchanged to dut3.
-	//Await(t, dut3, v4uni.Neighbor(dut2spec.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), prefix)
+	// Await(t, dut3, v4uni.Neighbor(dut2spec.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), prefix)
 }
