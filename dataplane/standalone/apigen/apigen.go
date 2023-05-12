@@ -330,9 +330,7 @@ func generate() error {
 			if strings.Contains(tf.TypeName, "PORT_ALL") || strings.Contains(tf.TypeName, "ALL_NEIGHBOR") {
 				tf.UseCommonAPI = false
 			}
-
 			data.Funcs = append(data.Funcs, tf)
-
 		}
 		header, err := os.Create(filepath.Join(outDir, data.Header))
 		if err != nil {
