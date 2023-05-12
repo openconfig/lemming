@@ -41,14 +41,21 @@ func formatYgot(v any) string {
 }
 
 func TestRoutePropagation(t *testing.T) {
-	dut1, dut2, stop := establishSession(t, 1111, 1112, []*AddIntfAction{{
+	dut1, stop1 := newLemming(t, dut1spec, []*AddIntfAction{{
 		name:    "eth0",
 		ifindex: 0,
 		enabled: true,
 		prefix:  "192.0.2.1/31",
 		niName:  "DEFAULT",
-	}}, nil)
-	defer stop()
+	}})
+	defer stop1()
+	dut2, stop2 := newLemming(t, dut2spec, nil)
+	defer stop2()
+	dut3, stop3 := newLemming(t, dut3spec, nil)
+	defer stop3()
+
+	establishSessionPair(t, dut1, dut2, dut1spec, dut2spec)
+	establishSessionPair(t, dut2, dut3, dut2spec, dut3spec)
 
 	prefix := "10.10.10.0/24"
 	installStaticRoute(t, dut1, &oc.NetworkInstance_Protocol_Static{
@@ -66,6 +73,17 @@ func TestRoutePropagation(t *testing.T) {
 	v := GetAll(t, dut1, staticp.StaticAny().Config())
 	t.Logf("Installed static route: %s", formatYgot(v))
 
+	v4uni := ocpath.Root().NetworkInstance(fakedevice.DefaultNetworkInstance).Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, fakedevice.BGPRoutingProtocol).Bgp().Rib().AfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST).Ipv4Unicast()
+	// Check route is in Adj-In of dut2.
+	Await(t, dut2, v4uni.Neighbor(dut1spec.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), prefix)
+	Await(t, dut2, v4uni.Neighbor(dut1spec.RouterID).AdjRibInPost().Route(prefix, 0).Prefix().State(), prefix)
 	// Check route is in Loc-RIB of dut2.
-	Await(t, dut2, ocpath.Root().NetworkInstance(fakedevice.DefaultNetworkInstance).Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, fakedevice.BGPRoutingProtocol).Bgp().Rib().AfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST).Ipv4Unicast().LocRib().Route(prefix, oc.UnionString(dut1BGP.RouterID), 0).Prefix().State(), prefix)
+	Await(t, dut2, v4uni.LocRib().Route(prefix, oc.UnionString(dut1spec.RouterID), 0).Prefix().State(), prefix)
+	// Check route is in Adj-Out of dut2.
+	Await(t, dut2, v4uni.Neighbor(dut3spec.RouterID).AdjRibOutPre().Route(prefix, 0).Prefix().State(), prefix)
+	Await(t, dut2, v4uni.Neighbor(dut3spec.RouterID).AdjRibOutPost().Route(prefix, 0).Prefix().State(), prefix)
+
+	// Check route is in Adj-In of dut3.
+	// TODO: Figure out why route is not being exchanged to dut3.
+	// Await(t, dut3, v4uni.Neighbor(dut2spec.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), prefix)
 }
