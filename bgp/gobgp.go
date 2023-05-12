@@ -177,6 +177,7 @@ func (t *bgpDeclTask) startGoBGPFuncDecl(_ context.Context, yclient *ygnmi.Clien
 	}()
 
 	// Periodically query the BGP table and update the RIBs.
+	// TODO: Break this out into its own function.
 	go func() {
 		tick := time.NewTicker(5 * time.Second)
 		for range tick.C {
