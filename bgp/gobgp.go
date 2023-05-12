@@ -176,7 +176,7 @@ func (t *bgpDeclTask) startGoBGPFuncDecl(_ context.Context, yclient *ygnmi.Clien
 		}
 	}()
 
-	// Periodically query the BGP table.
+	// Periodically query the BGP table and update the RIBs.
 	go func() {
 		tick := time.NewTicker(5 * time.Second)
 		for range tick.C {
@@ -194,46 +194,92 @@ func (t *bgpDeclTask) startGoBGPFuncDecl(_ context.Context, yclient *ygnmi.Clien
 				log.V(1).Info("GoBGP ListPath call completed (global table)")
 			}
 
-			var allLocalRoutes []*api.Destination
-			if err := t.bgpServer.ListPath(context.Background(), &api.ListPathRequest{
-				TableType: api.TableType_LOCAL,
-				Family: &api.Family{
-					Afi:  api.Family_AFI_IP,
-					Safi: api.Family_SAFI_UNICAST,
-				},
-			}, func(d *api.Destination) {
-				allLocalRoutes = append(allLocalRoutes, d)
-				log.V(1).Infof("GoBGP local table path: %v", d)
-			}); err != nil {
-				log.Errorf("GoBGP ListPath call failed (local table): %v", err)
-			} else {
-				log.V(1).Info("GoBGP ListPath call completed (local table)")
+			appliedBgpMu.Lock()
+			v4uni := appliedBgp.GetOrCreateRib().GetOrCreateAfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST).GetOrCreateIpv4Unicast()
 
-				appliedBgpMu.Lock()
-				v4uni := appliedBgp.GetOrCreateRib().GetOrCreateAfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST).GetOrCreateIpv4Unicast()
+			// TODO: Support IPv6
+			t.queryTable("", "local", api.TableType_LOCAL, func(routes []*api.Destination) {
 				v4uni.LocRib = nil
 				locRib := v4uni.GetOrCreateLocRib()
-				for i, route := range allLocalRoutes {
-					var origin oc.NetworkInstance_Protocol_Bgp_Rib_AfiSafi_Ipv4Unicast_LocRib_Route_Origin_Union
-					// TODO: determine which path element to use for determining the origin IP instead of just choosing the first one.
-					if route.GetPaths()[0].SourceId == "" {
-						// TODO: For locally-originated routes figure out how to get the originating protocol.
-						origin = oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_UNSET
-					} else {
-						origin = oc.UnionString(route.GetPaths()[0].SourceId)
+				for _, route := range routes {
+					for j, path := range route.Paths {
+						var origin oc.NetworkInstance_Protocol_Bgp_Rib_AfiSafi_Ipv4Unicast_LocRib_Route_Origin_Union
+						if path.SourceId == "" {
+							// TODO: For locally-originated routes figure out how to get the originating protocol.
+							origin = oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_UNSET
+						} else {
+							origin = oc.UnionString(path.SourceId)
+						}
+						// TODO: this ID should match the ID in adj-rib-in-post.
+						locRib.GetOrCreateRoute(route.Prefix, origin, uint32(j))
 					}
-					// TODO: Once adj-rib-in-post is populated, this ID should match that.
-					locRib.GetOrCreateRoute(route.Prefix, origin, uint32(i))
 				}
-				updateState(yclient, appliedBgp)
-				appliedBgpMu.Unlock()
+			})
+
+			for neigh := range appliedBgp.Neighbor {
+				t.queryTable(neigh, "adj-rib-in", api.TableType_ADJ_IN, func(routes []*api.Destination) {
+					for _, route := range routes {
+						for j, path := range route.Paths {
+							fmt.Printf("%v: %v, %v, %v, %v\n", appliedBgp.GetGlobal().GetRouterId(), neigh, path.NeighborIp, route.Prefix, uint32(j))
+							v4uni.GetOrCreateNeighbor(path.NeighborIp).GetOrCreateAdjRibInPre().GetOrCreateRoute(route.Prefix, uint32(j))
+							if !path.Filtered {
+								v4uni.GetOrCreateNeighbor(path.NeighborIp).GetOrCreateAdjRibInPost().GetOrCreateRoute(route.Prefix, uint32(j))
+							}
+						}
+					}
+				})
+
+				t.queryTable(neigh, "adj-rib-out", api.TableType_ADJ_OUT, func(routes []*api.Destination) {
+					for _, route := range routes {
+						for j, path := range route.Paths {
+							// Per OpenConfig the ID of this should be the ID assigned when exchanging add-path routes. However
+							// GoBGP doesn't seem to support the add-path capability and so just going to use the first path
+							// with 0 as the ID here. GoBGP does support AddPath as a gRPC call but when advertising the routes
+							// the generated UUID isn't propagated.
+							//
+							// Note that path.NeighborIp is <nil> for some reason so have to use neigh.
+							v4uni.GetOrCreateNeighbor(neigh).GetOrCreateAdjRibOutPre().GetOrCreateRoute(route.Prefix, uint32(j))
+							if !path.Filtered {
+								v4uni.GetOrCreateNeighbor(neigh).GetOrCreateAdjRibOutPost().GetOrCreateRoute(route.Prefix, uint32(j))
+							}
+						}
+					}
+				})
 			}
 
-			// TODO(wenbli): Populate adj-rib-in-post and adj-rib-out-post.
+			updateState(yclient, appliedBgp)
+			appliedBgpMu.Unlock()
 		}
 	}()
 
 	return nil
+}
+
+// queryTable queries for all routes stored in the specified table, applying f
+// to the routes that are queried if the query was successful or logging an
+// error otherwise.
+func (t *bgpDeclTask) queryTable(neighbor, tableName string, tableType api.TableType, f func(route []*api.Destination)) {
+	var routes []*api.Destination
+	if err := t.bgpServer.ListPath(context.Background(), &api.ListPathRequest{
+		Name:      neighbor,
+		TableType: tableType,
+		Family: &api.Family{
+			Afi:  api.Family_AFI_IP,
+			Safi: api.Family_SAFI_UNICAST,
+		},
+		// This is always set to true since GoBGP doesn't actually
+		// filter the paths out, only mark them as filtered out by the
+		// IMPORT or EXPORT policy.
+		EnableFiltered: true,
+	}, func(d *api.Destination) {
+		routes = append(routes, d)
+		log.V(0).Infof("GoBGP %s table path (neighbor if applicable: %q): %v", tableName, neighbor, d)
+	}); err != nil {
+		log.Errorf("GoBGP ListPath call failed (%s table): %v", tableType, err)
+	} else {
+		log.V(1).Info("GoBGP ListPath call completed (%s table)", tableName)
+		f(routes)
+	}
 }
 
 // reconcile examines the difference between the intended and applied
@@ -309,7 +355,8 @@ func intendedToGoBGP(bgpoc *oc.NetworkInstance_Protocol_Bgp, zapiURL string, lis
 			},
 			Transport: bgpconfig.Transport{
 				Config: bgpconfig.TransportConfig{
-					RemotePort: neigh.GetNeighborPort(),
+					LocalAddress: global.GetRouterId(),
+					RemotePort:   neigh.GetNeighborPort(),
 				},
 			},
 		})
