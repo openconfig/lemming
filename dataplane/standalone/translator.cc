@@ -14,7 +14,6 @@
 
 #include "dataplane/standalone/translator.h"
 
-#include "dataplane/standalone/log/log.h"
 #include "dataplane/standalone/switch.h"
 
 extern "C" {
@@ -48,6 +47,129 @@ sai_status_t Translator::getAttribute(sai_object_id_t id,
   if (iter == this->objects[id].attributes.end()) {
     return SAI_STATUS_ITEM_NOT_FOUND;
   }
-  attr->value = iter->second;
+  *attr = {
+      iter->first,
+      iter->second,
+  };
   return SAI_STATUS_SUCCESS;
+}
+
+sai_status_t Translator::create(sai_object_type_t type, sai_object_id_t* id,
+                                uint32_t attr_count,
+                                const sai_attribute_t* attr_list) {
+  return sai_status_t();
+}
+
+sai_status_t Translator::create(sai_object_type_t type, common_entry_t id,
+                                uint32_t attr_count,
+                                const sai_attribute_t* attr_list) {
+  return sai_status_t();
+}
+
+sai_status_t Translator::create(sai_object_type_t type, sai_object_id_t* id,
+                                sai_object_id_t switch_id, uint32_t attr_count,
+                                const sai_attribute_t* attr_list) {
+  return sai_status_t();
+}
+
+sai_status_t Translator::remove(sai_object_type_t type, sai_object_id_t id) {
+  return sai_status_t();
+}
+
+sai_status_t Translator::remove(sai_object_type_t type, common_entry_t id) {
+  return sai_status_t();
+}
+
+sai_status_t Translator::set_attribute(sai_object_type_t type,
+                                       sai_object_id_t id,
+                                       const sai_attribute_t* attr) {
+  return sai_status_t();
+}
+
+sai_status_t Translator::get_attribute(sai_object_type_t type,
+                                       sai_object_id_t id, uint32_t attr_count,
+                                       sai_attribute_t* attr_list) {
+  return sai_status_t();
+}
+
+sai_status_t Translator::set_attribute(sai_object_type_t type,
+                                       common_entry_t id,
+                                       const sai_attribute_t* attr) {
+  return sai_status_t();
+}
+
+sai_status_t Translator::get_attribute(sai_object_type_t type,
+                                       common_entry_t id, uint32_t attr_count,
+                                       sai_attribute_t* attr_list) {
+  return sai_status_t();
+}
+
+sai_status_t Translator::get_stats(sai_object_type_t type, sai_object_id_t id,
+                                   uint32_t number_of_counters,
+                                   const sai_stat_id_t* counter_ids,
+                                   uint64_t* counters) {
+  return sai_status_t();
+}
+
+sai_status_t Translator::get_stats_ext(sai_object_type_t type,
+                                       sai_object_id_t bfd_session_id,
+                                       uint32_t number_of_counters,
+                                       const sai_stat_id_t* counter_ids,
+                                       sai_stats_mode_t mode,
+                                       uint64_t* counters) {
+  return sai_status_t();
+}
+
+sai_status_t Translator::clear_stats(sai_object_type_t type,
+                                     sai_object_id_t bfd_session_id,
+                                     uint32_t number_of_counters,
+                                     const sai_stat_id_t* counter_ids) {
+  return sai_status_t();
+}
+
+sai_status_t Translator::create_bulk(
+    sai_object_type_t type, sai_object_id_t switch_id, uint32_t object_count,
+    const uint32_t* attr_count, const sai_attribute_t** attr_list,
+    sai_bulk_op_error_mode_t mode, sai_object_id_t* object_id,
+    sai_status_t* object_statuses) {
+  return sai_status_t();
+}
+
+sai_status_t Translator::remove_bulk(sai_object_type_t type,
+                                     uint32_t object_count,
+                                     const sai_object_id_t* object_id,
+                                     sai_bulk_op_error_mode_t mode,
+                                     sai_status_t* object_statuses) {
+  return sai_status_t();
+}
+
+sai_status_t Translator::create_bulk(
+    sai_object_type_t type, uint32_t object_count, common_entry_t object_id,
+    const uint32_t* attr_count, const sai_attribute_t** attr_list,
+    sai_bulk_op_error_mode_t mode, sai_status_t* object_statuses) {
+  return sai_status_t();
+}
+
+sai_status_t Translator::remove_bulk(sai_object_type_t type,
+                                     uint32_t object_count,
+                                     common_entry_t object_id,
+                                     sai_bulk_op_error_mode_t mode,
+                                     sai_status_t* object_statuses) {
+  return sai_status_t();
+}
+
+sai_status_t Translator::set_attribute_bulk(sai_object_type_t type,
+                                            uint32_t object_count,
+                                            common_entry_t object_id,
+                                            const sai_attribute_t* attr_list,
+                                            sai_bulk_op_error_mode_t mode,
+                                            sai_status_t* object_statuses) {
+  return sai_status_t();
+}
+
+sai_status_t Translator::get_attribute_bulk(
+    sai_object_type_t type, uint32_t object_count, common_entry_t object_id,
+    const uint32_t* attr_count, sai_attribute_t** attr_list,
+    sai_bulk_op_error_mode_t mode, sai_status_t* object_statuses) {
+  return sai_status_t();
 }

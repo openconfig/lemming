@@ -14,7 +14,6 @@
 
 #include "dataplane/standalone/switch.h"
 
-#include "dataplane/standalone/log/log.h"
 #include "dataplane/standalone/translator.h"
 
 sai_status_t Switch::create_switch(_Out_ sai_object_id_t *switch_id,
@@ -22,7 +21,6 @@ sai_status_t Switch::create_switch(_Out_ sai_object_id_t *switch_id,
                                    _In_ const sai_attribute_t *attr_list) {
   *switch_id = this->translator->createObject(SAI_OBJECT_TYPE_SWITCH);
   for (uint32_t i = 0; i < attr_count; i++) {
-    LOG(attr_list[i].id);
     this->translator->setAttribute(*switch_id, sai_attribute_t{
                                                    .id = attr_list[i].id,
                                                    .value = attr_list[i].value,
@@ -202,7 +200,6 @@ sai_status_t Switch::create_switch(_Out_ sai_object_id_t *switch_id,
                       .value = {.oid = SAI_NULL_OBJECT_ID},
                   });  // 175
 
-  LOG("created switch");
   return SAI_STATUS_SUCCESS;
 }
 
@@ -216,7 +213,6 @@ sai_status_t Switch::get_switch_attribute(_In_ sai_object_id_t switch_id,
                                           _In_ uint32_t attr_count,
                                           _Inout_ sai_attribute_t *attr_list) {
   for (uint32_t i = 0; i < attr_count; i++) {
-    LOG(attr_list[i].id);
     if (auto ret = this->translator->getAttribute(switch_id, &attr_list[i]);
         ret != SAI_STATUS_SUCCESS) {
       return ret;

@@ -14,7 +14,6 @@
 
 #include "dataplane/standalone/port.h"
 
-#include "dataplane/standalone/log/log.h"
 #include "dataplane/standalone/translator.h"
 
 sai_status_t Port::create_port(_Out_ sai_object_id_t *port_id,
@@ -23,14 +22,12 @@ sai_status_t Port::create_port(_Out_ sai_object_id_t *port_id,
                                _In_ const sai_attribute_t *attr_list) {
   *port_id = this->translator->createObject(SAI_OBJECT_TYPE_PORT);
   for (uint32_t i = 0; i < attr_count; i++) {
-    LOG("create port attr id" << attr_list[i].id);
     this->translator->setAttribute(*port_id, sai_attribute_t{
                                                  .id = attr_list[i].id,
                                                  .value = attr_list[i].value,
                                              });
   }
 
-  LOG("created port");
   return SAI_STATUS_SUCCESS;
 }
 
@@ -44,7 +41,6 @@ sai_status_t Port::get_port_attribute(_In_ sai_object_id_t switch_id,
                                       _In_ uint32_t attr_count,
                                       _Inout_ sai_attribute_t *attr_list) {
   for (uint32_t i = 0; i < attr_count; i++) {
-    LOG("get port attr id: " << attr_list[i].id);
     if (auto ret = this->translator->getAttribute(switch_id, &attr_list[i]);
         ret != SAI_STATUS_SUCCESS) {
       return ret;

@@ -57,4 +57,18 @@ sai_status_t l_switch_mdio_write(sai_object_id_t switch_id,
                                  uint32_t number_of_registers,
                                  const uint32_t *reg_val);
 
+sai_status_t l_create_switch_tunnel(sai_object_id_t *switch_tunnel_id,
+                                    sai_object_id_t switch_id,
+                                    uint32_t attr_count,
+                                    const sai_attribute_t *attr_list);
+
+sai_status_t l_remove_switch_tunnel(sai_object_id_t switch_tunnel_id);
+
+sai_status_t l_set_switch_tunnel_attribute(sai_object_id_t switch_tunnel_id,
+                                           const sai_attribute_t *attr);
+
+sai_status_t l_get_switch_tunnel_attribute(sai_object_id_t switch_tunnel_id,
+                                           uint32_t attr_count,
+                                           sai_attribute_t *attr_list);
+
 #endif  // DATAPLANE_STANDALONE_SAI_SWITCH_H_

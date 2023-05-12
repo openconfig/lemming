@@ -45,7 +45,6 @@ class Port {
  private:
   std::shared_ptr<Translator> translator;
   std::shared_ptr<forwarding::Forwarding::Stub> client;
-  std::unordered_map<sai_attr_id_t, sai_attribute_value_t> attributes;
 };
 
 #endif  // DATAPLANE_STANDALONE_PORT_H_

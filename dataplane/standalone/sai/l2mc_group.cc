@@ -1,4 +1,3 @@
-
 // Copyright 2023 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +14,10 @@
 
 #include "dataplane/standalone/sai/l2mc_group.h"
 
-#include "dataplane/standalone/log/log.h"
+#include <glog/logging.h>
+
+#include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/entry.h"
 
 const sai_l2mc_group_api_t l_l2mc_group = {
     .create_l2mc_group = l_create_l2mc_group,
@@ -31,50 +33,58 @@ const sai_l2mc_group_api_t l_l2mc_group = {
 sai_status_t l_create_l2mc_group(sai_object_id_t *l2mc_group_id,
                                  sai_object_id_t switch_id, uint32_t attr_count,
                                  const sai_attribute_t *attr_list) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->create(SAI_OBJECT_TYPE_L2MC_GROUP, l2mc_group_id,
+                            switch_id, attr_count, attr_list);
 }
 
 sai_status_t l_remove_l2mc_group(sai_object_id_t l2mc_group_id) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->remove(SAI_OBJECT_TYPE_L2MC_GROUP, l2mc_group_id);
 }
 
 sai_status_t l_set_l2mc_group_attribute(sai_object_id_t l2mc_group_id,
                                         const sai_attribute_t *attr) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->set_attribute(SAI_OBJECT_TYPE_L2MC_GROUP, l2mc_group_id,
+                                   attr);
 }
 
 sai_status_t l_get_l2mc_group_attribute(sai_object_id_t l2mc_group_id,
                                         uint32_t attr_count,
                                         sai_attribute_t *attr_list) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->get_attribute(SAI_OBJECT_TYPE_L2MC_GROUP, l2mc_group_id,
+                                   attr_count, attr_list);
 }
 
 sai_status_t l_create_l2mc_group_member(sai_object_id_t *l2mc_group_member_id,
                                         sai_object_id_t switch_id,
                                         uint32_t attr_count,
                                         const sai_attribute_t *attr_list) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->create(SAI_OBJECT_TYPE_L2MC_GROUP_MEMBER,
+                            l2mc_group_member_id, switch_id, attr_count,
+                            attr_list);
 }
 
 sai_status_t l_remove_l2mc_group_member(sai_object_id_t l2mc_group_member_id) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->remove(SAI_OBJECT_TYPE_L2MC_GROUP_MEMBER,
+                            l2mc_group_member_id);
 }
 
 sai_status_t l_set_l2mc_group_member_attribute(
     sai_object_id_t l2mc_group_member_id, const sai_attribute_t *attr) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->set_attribute(SAI_OBJECT_TYPE_L2MC_GROUP_MEMBER,
+                                   l2mc_group_member_id, attr);
 }
 
 sai_status_t l_get_l2mc_group_member_attribute(
     sai_object_id_t l2mc_group_member_id, uint32_t attr_count,
     sai_attribute_t *attr_list) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->get_attribute(SAI_OBJECT_TYPE_L2MC_GROUP_MEMBER,
+                                   l2mc_group_member_id, attr_count, attr_list);
 }

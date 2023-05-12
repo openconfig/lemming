@@ -1,4 +1,3 @@
-
 // Copyright 2023 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +14,10 @@
 
 #include "dataplane/standalone/sai/hash.h"
 
-#include "dataplane/standalone/log/log.h"
+#include <glog/logging.h>
+
+#include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/entry.h"
 
 const sai_hash_api_t l_hash = {
     .create_hash = l_create_hash,
@@ -33,49 +35,57 @@ const sai_hash_api_t l_hash = {
 sai_status_t l_create_hash(sai_object_id_t *hash_id, sai_object_id_t switch_id,
                            uint32_t attr_count,
                            const sai_attribute_t *attr_list) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->create(SAI_OBJECT_TYPE_HASH, hash_id, switch_id,
+                            attr_count, attr_list);
 }
 
 sai_status_t l_remove_hash(sai_object_id_t hash_id) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->remove(SAI_OBJECT_TYPE_HASH, hash_id);
 }
 
 sai_status_t l_set_hash_attribute(sai_object_id_t hash_id,
                                   const sai_attribute_t *attr) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->set_attribute(SAI_OBJECT_TYPE_HASH, hash_id, attr);
 }
 
 sai_status_t l_get_hash_attribute(sai_object_id_t hash_id, uint32_t attr_count,
                                   sai_attribute_t *attr_list) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->get_attribute(SAI_OBJECT_TYPE_HASH, hash_id, attr_count,
+                                   attr_list);
 }
 
 sai_status_t l_create_fine_grained_hash_field(
     sai_object_id_t *fine_grained_hash_field_id, sai_object_id_t switch_id,
     uint32_t attr_count, const sai_attribute_t *attr_list) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->create(SAI_OBJECT_TYPE_FINE_GRAINED_HASH_FIELD,
+                            fine_grained_hash_field_id, switch_id, attr_count,
+                            attr_list);
 }
 
 sai_status_t l_remove_fine_grained_hash_field(
     sai_object_id_t fine_grained_hash_field_id) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->remove(SAI_OBJECT_TYPE_FINE_GRAINED_HASH_FIELD,
+                            fine_grained_hash_field_id);
 }
 
 sai_status_t l_set_fine_grained_hash_field_attribute(
     sai_object_id_t fine_grained_hash_field_id, const sai_attribute_t *attr) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->set_attribute(SAI_OBJECT_TYPE_FINE_GRAINED_HASH_FIELD,
+                                   fine_grained_hash_field_id, attr);
 }
 
 sai_status_t l_get_fine_grained_hash_field_attribute(
     sai_object_id_t fine_grained_hash_field_id, uint32_t attr_count,
     sai_attribute_t *attr_list) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->get_attribute(SAI_OBJECT_TYPE_FINE_GRAINED_HASH_FIELD,
+                                   fine_grained_hash_field_id, attr_count,
+                                   attr_list);
 }

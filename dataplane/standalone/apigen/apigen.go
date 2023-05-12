@@ -19,6 +19,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 	"text/template"
@@ -181,7 +182,9 @@ extern const {{ .APIType }} l_{{ .APIName }};
 // limitations under the License.
 
 #include "dataplane/standalone/sai/{{ .Header }}"
-#include "dataplane/standalone/log/log.h"
+#include <glog/logging.h>
+#include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/entry.h"
 
 const {{ .APIType }} l_{{ .APIName }} = {
 {{- range .Funcs }}
@@ -191,18 +194,27 @@ const {{ .APIType }} l_{{ .APIName }} = {
 
 {{ range .Funcs }}
 {{ .ReturnType }} l_{{ .Name }}({{ .Args }}) {
-	LUCIUS_LOG_FUNC();
+	LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+	{{- if .UseCommonAPI }}
+	{{- if .Entry }} {{ .Entry }} {{ end }}
+	return translator->{{ .Operation }}(SAI_OBJECT_TYPE_{{ .TypeName }}, {{ .Vars }});
+	{{- else }}
 	return SAI_STATUS_NOT_IMPLEMENTED;
+	{{- end }}
 }
-
 {{ end }}
 `))
 )
 
 type templateFunc struct {
-	ReturnType string
-	Name       string
-	Args       string
+	ReturnType   string
+	Name         string
+	Args         string
+	TypeName     string
+	Operation    string
+	Vars         string
+	UseCommonAPI bool
+	Entry        string
 }
 
 type templateData struct {
@@ -235,6 +247,19 @@ const (
 	outDir  = "dataplane/standalone/sai"
 )
 
+var (
+	supportedOperation = map[string]bool{
+		"create":        true,
+		"remove":        true,
+		"get_attribute": true,
+		"set_attribute": true,
+		"clear_stats":   true,
+		"get_stats":     true,
+		"get_stats_ext": true,
+	}
+	funcExpr = regexp.MustCompile(`^([a-z]*_)(\w*)_(attribute|stats_ext|stats)|([a-z]*)_(\w*)$`)
+)
+
 func generate() error {
 	headerFile, err := filepath.Abs(filepath.Join(saiPath, "inc/sai.h"))
 	if err != nil {
@@ -263,17 +288,49 @@ func generate() error {
 			APIName:      nameTrimmed,
 		}
 		for _, fn := range iface.funcs {
-			var params []string
-			for _, param := range sai.funcs[fn.typ].params {
-				name := param.name
-				typ := param.typ
-				params = append(params, fmt.Sprintf("%s %s", typ, name))
-			}
-			data.Funcs = append(data.Funcs, templateFunc{
+			name := strings.TrimSuffix(strings.TrimPrefix(fn.name, "sai_"), "_fn")
+			tf := templateFunc{
 				ReturnType: sai.funcs[fn.typ].returnType,
-				Name:       strings.TrimSuffix(strings.TrimPrefix(fn.name, "sai_"), "_fn"),
-				Args:       strings.Join(params, ", "),
-			})
+				Name:       name,
+			}
+
+			var paramDefs []string
+			var paramVars []string
+			for _, param := range sai.funcs[fn.typ].params {
+				paramDefs = append(paramDefs, fmt.Sprintf("%s %s", param.typ, param.name))
+				name := strings.ReplaceAll(param.name, "*", "")
+				// Functions that operator on entries take some entry type instead of an object id as argument.
+				// Generate a entry union with the pointer to entry instead.
+				if strings.Contains(param.typ, "entry") {
+					tf.Entry = fmt.Sprintf("common_entry_t entry = {.%s = %s};", name, name)
+					name = "entry"
+				}
+				paramVars = append(paramVars, name)
+			}
+			tf.Args = strings.Join(paramDefs, ", ")
+			tf.Vars = strings.Join(paramVars, ", ")
+
+			matches := funcExpr.FindStringSubmatch(name)
+			tf.Operation = matches[1] + matches[4] + matches[3]
+
+			tf.UseCommonAPI = supportedOperation[tf.Operation]
+			tf.TypeName = strings.ToUpper(matches[2]) + strings.ToUpper(matches[5])
+
+			// Handle plural types using the bulk API.
+			if strings.HasSuffix(tf.TypeName, "PORTS") || strings.HasSuffix(tf.TypeName, "ENTRIES") || strings.HasSuffix(tf.TypeName, "MEMBERS") || strings.HasSuffix(tf.TypeName, "LISTS") {
+				tf.Operation += "_bulk"
+				tf.TypeName = strings.TrimSuffix(tf.TypeName, "S")
+				if strings.HasSuffix(tf.TypeName, "IE") {
+					tf.TypeName = strings.TrimSuffix(tf.TypeName, "IE")
+					tf.TypeName += "Y"
+				}
+			}
+
+			// Function or types that don't follow standard naming.
+			if strings.Contains(tf.TypeName, "PORT_ALL") || strings.Contains(tf.TypeName, "ALL_NEIGHBOR") {
+				tf.UseCommonAPI = false
+			}
+			data.Funcs = append(data.Funcs, tf)
 		}
 		header, err := os.Create(filepath.Join(outDir, data.Header))
 		if err != nil {

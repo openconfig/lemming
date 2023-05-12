@@ -1,4 +1,3 @@
-
 // Copyright 2023 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +14,10 @@
 
 #include "dataplane/standalone/sai/nat.h"
 
-#include "dataplane/standalone/log/log.h"
+#include <glog/logging.h>
+
+#include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/entry.h"
 
 const sai_nat_api_t l_nat = {
     .create_nat_entry = l_create_nat_entry,
@@ -35,26 +37,32 @@ const sai_nat_api_t l_nat = {
 sai_status_t l_create_nat_entry(const sai_nat_entry_t *nat_entry,
                                 uint32_t attr_count,
                                 const sai_attribute_t *attr_list) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  common_entry_t entry = {.nat_entry = nat_entry};
+  return translator->create(SAI_OBJECT_TYPE_NAT_ENTRY, entry, attr_count,
+                            attr_list);
 }
 
 sai_status_t l_remove_nat_entry(const sai_nat_entry_t *nat_entry) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  common_entry_t entry = {.nat_entry = nat_entry};
+  return translator->remove(SAI_OBJECT_TYPE_NAT_ENTRY, entry);
 }
 
 sai_status_t l_set_nat_entry_attribute(const sai_nat_entry_t *nat_entry,
                                        const sai_attribute_t *attr) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  common_entry_t entry = {.nat_entry = nat_entry};
+  return translator->set_attribute(SAI_OBJECT_TYPE_NAT_ENTRY, entry, attr);
 }
 
 sai_status_t l_get_nat_entry_attribute(const sai_nat_entry_t *nat_entry,
                                        uint32_t attr_count,
                                        sai_attribute_t *attr_list) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  common_entry_t entry = {.nat_entry = nat_entry};
+  return translator->get_attribute(SAI_OBJECT_TYPE_NAT_ENTRY, entry, attr_count,
+                                   attr_list);
 }
 
 sai_status_t l_create_nat_entries(uint32_t object_count,
@@ -63,16 +71,20 @@ sai_status_t l_create_nat_entries(uint32_t object_count,
                                   const sai_attribute_t **attr_list,
                                   sai_bulk_op_error_mode_t mode,
                                   sai_status_t *object_statuses) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  common_entry_t entry = {.nat_entry = nat_entry};
+  return translator->create_bulk(SAI_OBJECT_TYPE_NAT_ENTRY, object_count, entry,
+                                 attr_count, attr_list, mode, object_statuses);
 }
 
 sai_status_t l_remove_nat_entries(uint32_t object_count,
                                   const sai_nat_entry_t *nat_entry,
                                   sai_bulk_op_error_mode_t mode,
                                   sai_status_t *object_statuses) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  common_entry_t entry = {.nat_entry = nat_entry};
+  return translator->remove_bulk(SAI_OBJECT_TYPE_NAT_ENTRY, object_count, entry,
+                                 mode, object_statuses);
 }
 
 sai_status_t l_set_nat_entries_attribute(uint32_t object_count,
@@ -80,8 +92,11 @@ sai_status_t l_set_nat_entries_attribute(uint32_t object_count,
                                          const sai_attribute_t *attr_list,
                                          sai_bulk_op_error_mode_t mode,
                                          sai_status_t *object_statuses) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  common_entry_t entry = {.nat_entry = nat_entry};
+  return translator->set_attribute_bulk(SAI_OBJECT_TYPE_NAT_ENTRY, object_count,
+                                        entry, attr_list, mode,
+                                        object_statuses);
 }
 
 sai_status_t l_get_nat_entries_attribute(uint32_t object_count,
@@ -90,32 +105,40 @@ sai_status_t l_get_nat_entries_attribute(uint32_t object_count,
                                          sai_attribute_t **attr_list,
                                          sai_bulk_op_error_mode_t mode,
                                          sai_status_t *object_statuses) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  common_entry_t entry = {.nat_entry = nat_entry};
+  return translator->get_attribute_bulk(SAI_OBJECT_TYPE_NAT_ENTRY, object_count,
+                                        entry, attr_count, attr_list, mode,
+                                        object_statuses);
 }
 
 sai_status_t l_create_nat_zone_counter(sai_object_id_t *nat_zone_counter_id,
                                        sai_object_id_t switch_id,
                                        uint32_t attr_count,
                                        const sai_attribute_t *attr_list) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->create(SAI_OBJECT_TYPE_NAT_ZONE_COUNTER,
+                            nat_zone_counter_id, switch_id, attr_count,
+                            attr_list);
 }
 
 sai_status_t l_remove_nat_zone_counter(sai_object_id_t nat_zone_counter_id) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->remove(SAI_OBJECT_TYPE_NAT_ZONE_COUNTER,
+                            nat_zone_counter_id);
 }
 
 sai_status_t l_set_nat_zone_counter_attribute(
     sai_object_id_t nat_zone_counter_id, const sai_attribute_t *attr) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->set_attribute(SAI_OBJECT_TYPE_NAT_ZONE_COUNTER,
+                                   nat_zone_counter_id, attr);
 }
 
 sai_status_t l_get_nat_zone_counter_attribute(
     sai_object_id_t nat_zone_counter_id, uint32_t attr_count,
     sai_attribute_t *attr_list) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->get_attribute(SAI_OBJECT_TYPE_NAT_ZONE_COUNTER,
+                                   nat_zone_counter_id, attr_count, attr_list);
 }

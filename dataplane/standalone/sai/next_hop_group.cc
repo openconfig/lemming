@@ -1,4 +1,3 @@
-
 // Copyright 2023 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +14,10 @@
 
 #include "dataplane/standalone/sai/next_hop_group.h"
 
-#include "dataplane/standalone/log/log.h"
+#include <glog/logging.h>
+
+#include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/entry.h"
 
 const sai_next_hop_group_api_t l_next_hop_group = {
     .create_next_hop_group = l_create_next_hop_group,
@@ -30,58 +32,71 @@ const sai_next_hop_group_api_t l_next_hop_group = {
         l_get_next_hop_group_member_attribute,
     .create_next_hop_group_members = l_create_next_hop_group_members,
     .remove_next_hop_group_members = l_remove_next_hop_group_members,
+    .create_next_hop_group_map = l_create_next_hop_group_map,
+    .remove_next_hop_group_map = l_remove_next_hop_group_map,
+    .set_next_hop_group_map_attribute = l_set_next_hop_group_map_attribute,
+    .get_next_hop_group_map_attribute = l_get_next_hop_group_map_attribute,
 };
 
 sai_status_t l_create_next_hop_group(sai_object_id_t *next_hop_group_id,
                                      sai_object_id_t switch_id,
                                      uint32_t attr_count,
                                      const sai_attribute_t *attr_list) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->create(SAI_OBJECT_TYPE_NEXT_HOP_GROUP, next_hop_group_id,
+                            switch_id, attr_count, attr_list);
 }
 
 sai_status_t l_remove_next_hop_group(sai_object_id_t next_hop_group_id) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->remove(SAI_OBJECT_TYPE_NEXT_HOP_GROUP, next_hop_group_id);
 }
 
 sai_status_t l_set_next_hop_group_attribute(sai_object_id_t next_hop_group_id,
                                             const sai_attribute_t *attr) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->set_attribute(SAI_OBJECT_TYPE_NEXT_HOP_GROUP,
+                                   next_hop_group_id, attr);
 }
 
 sai_status_t l_get_next_hop_group_attribute(sai_object_id_t next_hop_group_id,
                                             uint32_t attr_count,
                                             sai_attribute_t *attr_list) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->get_attribute(SAI_OBJECT_TYPE_NEXT_HOP_GROUP,
+                                   next_hop_group_id, attr_count, attr_list);
 }
 
 sai_status_t l_create_next_hop_group_member(
     sai_object_id_t *next_hop_group_member_id, sai_object_id_t switch_id,
     uint32_t attr_count, const sai_attribute_t *attr_list) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->create(SAI_OBJECT_TYPE_NEXT_HOP_GROUP_MEMBER,
+                            next_hop_group_member_id, switch_id, attr_count,
+                            attr_list);
 }
 
 sai_status_t l_remove_next_hop_group_member(
     sai_object_id_t next_hop_group_member_id) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->remove(SAI_OBJECT_TYPE_NEXT_HOP_GROUP_MEMBER,
+                            next_hop_group_member_id);
 }
 
 sai_status_t l_set_next_hop_group_member_attribute(
     sai_object_id_t next_hop_group_member_id, const sai_attribute_t *attr) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->set_attribute(SAI_OBJECT_TYPE_NEXT_HOP_GROUP_MEMBER,
+                                   next_hop_group_member_id, attr);
 }
 
 sai_status_t l_get_next_hop_group_member_attribute(
     sai_object_id_t next_hop_group_member_id, uint32_t attr_count,
     sai_attribute_t *attr_list) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->get_attribute(SAI_OBJECT_TYPE_NEXT_HOP_GROUP_MEMBER,
+                                   next_hop_group_member_id, attr_count,
+                                   attr_list);
 }
 
 sai_status_t l_create_next_hop_group_members(sai_object_id_t switch_id,
@@ -91,14 +106,51 @@ sai_status_t l_create_next_hop_group_members(sai_object_id_t switch_id,
                                              sai_bulk_op_error_mode_t mode,
                                              sai_object_id_t *object_id,
                                              sai_status_t *object_statuses) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->create_bulk(SAI_OBJECT_TYPE_NEXT_HOP_GROUP_MEMBER,
+                                 switch_id, object_count, attr_count, attr_list,
+                                 mode, object_id, object_statuses);
 }
 
 sai_status_t l_remove_next_hop_group_members(uint32_t object_count,
                                              const sai_object_id_t *object_id,
                                              sai_bulk_op_error_mode_t mode,
                                              sai_status_t *object_statuses) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->remove_bulk(SAI_OBJECT_TYPE_NEXT_HOP_GROUP_MEMBER,
+                                 object_count, object_id, mode,
+                                 object_statuses);
+}
+
+sai_status_t l_create_next_hop_group_map(sai_object_id_t *next_hop_group_map_id,
+                                         sai_object_id_t switch_id,
+                                         uint32_t attr_count,
+                                         const sai_attribute_t *attr_list) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->create(SAI_OBJECT_TYPE_NEXT_HOP_GROUP_MAP,
+                            next_hop_group_map_id, switch_id, attr_count,
+                            attr_list);
+}
+
+sai_status_t l_remove_next_hop_group_map(
+    sai_object_id_t next_hop_group_map_id) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->remove(SAI_OBJECT_TYPE_NEXT_HOP_GROUP_MAP,
+                            next_hop_group_map_id);
+}
+
+sai_status_t l_set_next_hop_group_map_attribute(
+    sai_object_id_t next_hop_group_map_id, const sai_attribute_t *attr) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->set_attribute(SAI_OBJECT_TYPE_NEXT_HOP_GROUP_MAP,
+                                   next_hop_group_map_id, attr);
+}
+
+sai_status_t l_get_next_hop_group_map_attribute(
+    sai_object_id_t next_hop_group_map_id, uint32_t attr_count,
+    sai_attribute_t *attr_list) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->get_attribute(SAI_OBJECT_TYPE_NEXT_HOP_GROUP_MAP,
+                                   next_hop_group_map_id, attr_count,
+                                   attr_list);
 }

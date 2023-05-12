@@ -24,6 +24,7 @@
 #include <vector>
 
 #include "dataplane/standalone/port.h"
+#include "dataplane/standalone/sai/entry.h"
 #include "dataplane/standalone/switch.h"
 #include "proto/forwarding/forwarding_service.grpc.pb.h"
 #include "proto/forwarding/forwarding_service.pb.h"
@@ -58,6 +59,77 @@ class Translator {
 
   std::unique_ptr<Switch> sw;
   std::unique_ptr<Port> port;
+
+  sai_status_t create(sai_object_type_t type, sai_object_id_t *id,
+                      uint32_t attr_count, const sai_attribute_t *attr_list);
+
+  sai_status_t create(sai_object_type_t type, common_entry_t id,
+                      uint32_t attr_count, const sai_attribute_t *attr_list);
+
+  sai_status_t create(sai_object_type_t type, sai_object_id_t *id,
+                      sai_object_id_t switch_id, uint32_t attr_count,
+                      const sai_attribute_t *attr_list);
+
+  sai_status_t remove(sai_object_type_t type, sai_object_id_t id);
+  sai_status_t remove(sai_object_type_t type, common_entry_t id);
+
+  sai_status_t set_attribute(sai_object_type_t type, sai_object_id_t id,
+                             const sai_attribute_t *attr);
+  sai_status_t get_attribute(sai_object_type_t type, sai_object_id_t id,
+                             uint32_t attr_count, sai_attribute_t *attr_list);
+
+  sai_status_t set_attribute(sai_object_type_t type, common_entry_t id,
+                             const sai_attribute_t *attr);
+  sai_status_t get_attribute(sai_object_type_t type, common_entry_t id,
+                             uint32_t attr_count, sai_attribute_t *attr_list);
+
+  sai_status_t get_stats(sai_object_type_t type, sai_object_id_t id,
+                         uint32_t number_of_counters,
+                         const sai_stat_id_t *counter_ids, uint64_t *counters);
+  sai_status_t get_stats_ext(sai_object_type_t type,
+                             sai_object_id_t bfd_session_id,
+                             uint32_t number_of_counters,
+                             const sai_stat_id_t *counter_ids,
+                             sai_stats_mode_t mode, uint64_t *counters);
+  sai_status_t clear_stats(sai_object_type_t type,
+                           sai_object_id_t bfd_session_id,
+                           uint32_t number_of_counters,
+                           const sai_stat_id_t *counter_ids);
+
+  sai_status_t create_bulk(sai_object_type_t type, sai_object_id_t switch_id,
+                           uint32_t object_count, const uint32_t *attr_count,
+                           const sai_attribute_t **attr_list,
+                           sai_bulk_op_error_mode_t mode,
+                           sai_object_id_t *object_id,
+                           sai_status_t *object_statuses);
+  sai_status_t remove_bulk(sai_object_type_t type, uint32_t object_count,
+                           const sai_object_id_t *object_id,
+                           sai_bulk_op_error_mode_t mode,
+                           sai_status_t *object_statuses);
+
+  sai_status_t create_bulk(sai_object_type_t type, uint32_t object_count,
+                           common_entry_t object_id, const uint32_t *attr_count,
+                           const sai_attribute_t **attr_list,
+                           sai_bulk_op_error_mode_t mode,
+                           sai_status_t *object_statuses);
+
+  sai_status_t remove_bulk(sai_object_type_t type, uint32_t object_count,
+                           common_entry_t object_id,
+                           sai_bulk_op_error_mode_t mode,
+                           sai_status_t *object_statuses);
+
+  sai_status_t set_attribute_bulk(sai_object_type_t type, uint32_t object_count,
+                                  common_entry_t object_id,
+                                  const sai_attribute_t *attr_list,
+                                  sai_bulk_op_error_mode_t mode,
+                                  sai_status_t *object_statuses);
+
+  sai_status_t get_attribute_bulk(sai_object_type_t type, uint32_t object_count,
+                                  common_entry_t object_id,
+                                  const uint32_t *attr_count,
+                                  sai_attribute_t **attr_list,
+                                  sai_bulk_op_error_mode_t mode,
+                                  sai_status_t *object_statuses);
 
  private:
   std::shared_ptr<forwarding::Forwarding::Stub> client;

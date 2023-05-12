@@ -302,14 +302,14 @@ http_archive(
     build_file_content = """
 cc_library(
     name = "sai",
-    hdrs = glob(["inc/*.h"]),
-    includes = ["inc"],
+    hdrs = glob(["meta/saimetadatatypes.h", "inc/*.h","experimental/*.h"]),
+    includes = ["inc", "experimental"],
     visibility = ["//visibility:public"],
 )
 """,
-    sha256 = "e18eb1a2a6e5dd286d97e13569d8b78cc1f8229030beed0db4775b9a50ab6a83",
-    strip_prefix = "SAI-1.7.1",
-    urls = ["https://github.com/opencomputeproject/SAI/archive/refs/tags/v1.7.1.tar.gz"],
+    sha256 = "2eb547dbde2bc8d3ffd2edb1ef6fb282be4994a43cd4886a67dd8ecef002ffa7",
+    strip_prefix = "SAI-1.9.1",
+    urls = ["https://github.com/opencomputeproject/SAI/archive/refs/tags/v1.9.1.tar.gz"],
 )
 
 http_archive(

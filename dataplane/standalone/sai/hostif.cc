@@ -1,4 +1,3 @@
-
 // Copyright 2023 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +14,10 @@
 
 #include "dataplane/standalone/sai/hostif.h"
 
-#include "dataplane/standalone/log/log.h"
+#include <glog/logging.h>
+
+#include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/entry.h"
 
 const sai_hostif_api_t l_hostif = {
     .create_hostif = l_create_hostif,
@@ -49,138 +51,160 @@ const sai_hostif_api_t l_hostif = {
 sai_status_t l_create_hostif(sai_object_id_t *hostif_id,
                              sai_object_id_t switch_id, uint32_t attr_count,
                              const sai_attribute_t *attr_list) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->create(SAI_OBJECT_TYPE_HOSTIF, hostif_id, switch_id,
+                            attr_count, attr_list);
 }
 
 sai_status_t l_remove_hostif(sai_object_id_t hostif_id) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->remove(SAI_OBJECT_TYPE_HOSTIF, hostif_id);
 }
 
 sai_status_t l_set_hostif_attribute(sai_object_id_t hostif_id,
                                     const sai_attribute_t *attr) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->set_attribute(SAI_OBJECT_TYPE_HOSTIF, hostif_id, attr);
 }
 
 sai_status_t l_get_hostif_attribute(sai_object_id_t hostif_id,
                                     uint32_t attr_count,
                                     sai_attribute_t *attr_list) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->get_attribute(SAI_OBJECT_TYPE_HOSTIF, hostif_id,
+                                   attr_count, attr_list);
 }
 
 sai_status_t l_create_hostif_table_entry(sai_object_id_t *hostif_table_entry_id,
                                          sai_object_id_t switch_id,
                                          uint32_t attr_count,
                                          const sai_attribute_t *attr_list) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->create(SAI_OBJECT_TYPE_HOSTIF_TABLE_ENTRY,
+                            hostif_table_entry_id, switch_id, attr_count,
+                            attr_list);
 }
 
 sai_status_t l_remove_hostif_table_entry(
     sai_object_id_t hostif_table_entry_id) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->remove(SAI_OBJECT_TYPE_HOSTIF_TABLE_ENTRY,
+                            hostif_table_entry_id);
 }
 
 sai_status_t l_set_hostif_table_entry_attribute(
     sai_object_id_t hostif_table_entry_id, const sai_attribute_t *attr) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->set_attribute(SAI_OBJECT_TYPE_HOSTIF_TABLE_ENTRY,
+                                   hostif_table_entry_id, attr);
 }
 
 sai_status_t l_get_hostif_table_entry_attribute(
     sai_object_id_t hostif_table_entry_id, uint32_t attr_count,
     sai_attribute_t *attr_list) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->get_attribute(SAI_OBJECT_TYPE_HOSTIF_TABLE_ENTRY,
+                                   hostif_table_entry_id, attr_count,
+                                   attr_list);
 }
 
 sai_status_t l_create_hostif_trap_group(sai_object_id_t *hostif_trap_group_id,
                                         sai_object_id_t switch_id,
                                         uint32_t attr_count,
                                         const sai_attribute_t *attr_list) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->create(SAI_OBJECT_TYPE_HOSTIF_TRAP_GROUP,
+                            hostif_trap_group_id, switch_id, attr_count,
+                            attr_list);
 }
 
 sai_status_t l_remove_hostif_trap_group(sai_object_id_t hostif_trap_group_id) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->remove(SAI_OBJECT_TYPE_HOSTIF_TRAP_GROUP,
+                            hostif_trap_group_id);
 }
 
 sai_status_t l_set_hostif_trap_group_attribute(
     sai_object_id_t hostif_trap_group_id, const sai_attribute_t *attr) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->set_attribute(SAI_OBJECT_TYPE_HOSTIF_TRAP_GROUP,
+                                   hostif_trap_group_id, attr);
 }
 
 sai_status_t l_get_hostif_trap_group_attribute(
     sai_object_id_t hostif_trap_group_id, uint32_t attr_count,
     sai_attribute_t *attr_list) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->get_attribute(SAI_OBJECT_TYPE_HOSTIF_TRAP_GROUP,
+                                   hostif_trap_group_id, attr_count, attr_list);
 }
 
 sai_status_t l_create_hostif_trap(sai_object_id_t *hostif_trap_id,
                                   sai_object_id_t switch_id,
                                   uint32_t attr_count,
                                   const sai_attribute_t *attr_list) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->create(SAI_OBJECT_TYPE_HOSTIF_TRAP, hostif_trap_id,
+                            switch_id, attr_count, attr_list);
 }
 
 sai_status_t l_remove_hostif_trap(sai_object_id_t hostif_trap_id) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->remove(SAI_OBJECT_TYPE_HOSTIF_TRAP, hostif_trap_id);
 }
 
 sai_status_t l_set_hostif_trap_attribute(sai_object_id_t hostif_trap_id,
                                          const sai_attribute_t *attr) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->set_attribute(SAI_OBJECT_TYPE_HOSTIF_TRAP, hostif_trap_id,
+                                   attr);
 }
 
 sai_status_t l_get_hostif_trap_attribute(sai_object_id_t hostif_trap_id,
                                          uint32_t attr_count,
                                          sai_attribute_t *attr_list) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->get_attribute(SAI_OBJECT_TYPE_HOSTIF_TRAP, hostif_trap_id,
+                                   attr_count, attr_list);
 }
 
 sai_status_t l_create_hostif_user_defined_trap(
     sai_object_id_t *hostif_user_defined_trap_id, sai_object_id_t switch_id,
     uint32_t attr_count, const sai_attribute_t *attr_list) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->create(SAI_OBJECT_TYPE_HOSTIF_USER_DEFINED_TRAP,
+                            hostif_user_defined_trap_id, switch_id, attr_count,
+                            attr_list);
 }
 
 sai_status_t l_remove_hostif_user_defined_trap(
     sai_object_id_t hostif_user_defined_trap_id) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->remove(SAI_OBJECT_TYPE_HOSTIF_USER_DEFINED_TRAP,
+                            hostif_user_defined_trap_id);
 }
 
 sai_status_t l_set_hostif_user_defined_trap_attribute(
     sai_object_id_t hostif_user_defined_trap_id, const sai_attribute_t *attr) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->set_attribute(SAI_OBJECT_TYPE_HOSTIF_USER_DEFINED_TRAP,
+                                   hostif_user_defined_trap_id, attr);
 }
 
 sai_status_t l_get_hostif_user_defined_trap_attribute(
     sai_object_id_t hostif_user_defined_trap_id, uint32_t attr_count,
     sai_attribute_t *attr_list) {
-  LUCIUS_LOG_FUNC();
-  return SAI_STATUS_NOT_IMPLEMENTED;
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return translator->get_attribute(SAI_OBJECT_TYPE_HOSTIF_USER_DEFINED_TRAP,
+                                   hostif_user_defined_trap_id, attr_count,
+                                   attr_list);
 }
 
 sai_status_t l_recv_hostif_packet(sai_object_id_t hostif_id,
                                   sai_size_t *buffer_size, void *buffer,
                                   uint32_t *attr_count,
                                   sai_attribute_t *attr_list) {
-  LUCIUS_LOG_FUNC();
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
   return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
@@ -188,7 +212,7 @@ sai_status_t l_send_hostif_packet(sai_object_id_t hostif_id,
                                   sai_size_t buffer_size, const void *buffer,
                                   uint32_t attr_count,
                                   const sai_attribute_t *attr_list) {
-  LUCIUS_LOG_FUNC();
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
   return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
@@ -196,11 +220,11 @@ sai_status_t l_allocate_hostif_packet(sai_object_id_t hostif_id,
                                       sai_size_t buffer_size, void **buffer,
                                       uint32_t attr_count,
                                       const sai_attribute_t *attr_list) {
-  LUCIUS_LOG_FUNC();
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
   return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
 sai_status_t l_free_hostif_packet(sai_object_id_t hostif_id, void *buffer) {
-  LUCIUS_LOG_FUNC();
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
   return SAI_STATUS_NOT_IMPLEMENTED;
 }

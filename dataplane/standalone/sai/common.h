@@ -19,6 +19,10 @@
 
 #include "dataplane/standalone/translator.h"
 
+extern "C" {
+#include "inc/sai.h"
+}
+
 extern std::shared_ptr<Translator> translator;
 
 #endif  // DATAPLANE_STANDALONE_SAI_COMMON_H_
