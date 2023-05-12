@@ -1327,8 +1327,8 @@ def go_repositories():
         name = "com_github_wenovus_gobgp_v3",
         build_file_proto_mode = "disable",
         importpath = "github.com/wenovus/gobgp/v3",
-        sum = "h1:YdiZGs+Ptnvq8jpBHQfIXLAaH4gc+yKXkPTsUNHJI3k=",
-        version = "v3.0.0-20221024234659-8df3c6938ab7",
+        sum = "h1:O3EW2hZ0IQDlT4VKEmXujLL/9YVslMIz3vG/wMQW9TI=",
+        version = "v3.0.0-20230512225508-639b46f0d89c",
     )
     go_repository(
         name = "com_github_xeipuuv_gojsonpointer",

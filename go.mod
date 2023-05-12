@@ -26,8 +26,8 @@ require (
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.15.0
-	github.com/vishvananda/netlink v1.1.1-0.20210330154013-f5de75959ad5
-	github.com/wenovus/gobgp/v3 v3.0.0-20221024234659-8df3c6938ab7
+	github.com/vishvananda/netlink v1.2.1-beta.2
+	github.com/wenovus/gobgp/v3 v3.0.0-20230512225508-639b46f0d89c
 	golang.org/x/exp v0.0.0-20221106115401-f9659909a136
 	golang.org/x/net v0.8.0
 	golang.org/x/sys v0.6.0
@@ -74,7 +74,7 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/jstemmer/go-junit-report/v2 v2.0.1-0.20220823220451-7b10b4285462 // indirect
 	github.com/k-sone/critbitgo v1.4.0 // indirect
-	github.com/kr/pretty v0.3.0 // indirect
+	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
@@ -87,12 +87,13 @@ require (
 	github.com/open-traffic-generator/ixia-c-operator v0.3.0 // indirect
 	github.com/openconfig/gocloser v0.0.0-20220310182203-c6c950ed3b0b // indirect
 	github.com/openconfig/lemming/operator v0.1.0 // indirect
+	github.com/osrg/gobgp/v3 v3.14.0 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pborman/uuid v1.2.1 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.7 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20200410134404-eec4a21b6bb0 // indirect
-	github.com/rogpeppe/go-internal v1.6.1 // indirect
+	github.com/rogpeppe/go-internal v1.9.0 // indirect
 	github.com/scrapli/scrapligo v1.1.6 // indirect
 	github.com/scrapli/scrapligocfg v1.0.0 // indirect
 	github.com/sirikothe/gotextfsm v1.0.1-0.20200816110946-6aa2cfd355e4 // indirect
@@ -102,7 +103,7 @@ require (
 	github.com/srl-labs/srl-controller v0.4.6 // indirect
 	github.com/srl-labs/srlinux-scrapli v0.5.0 // indirect
 	github.com/subosito/gotenv v1.4.2 // indirect
-	github.com/vishvananda/netns v0.0.0-20200728191858-db3c7e526aae // indirect
+	github.com/vishvananda/netns v0.0.4 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/multierr v1.10.0 // indirect
@@ -112,7 +113,7 @@ require (
 	golang.org/x/text v0.8.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/genproto v0.0.0-20230306155012-7f2fa6fef1f4 // indirect
+	google.golang.org/genproto v0.0.0-20230320184635-7606e756e683 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

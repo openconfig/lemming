@@ -221,7 +221,6 @@ func (t *bgpDeclTask) startGoBGPFuncDecl(_ context.Context, yclient *ygnmi.Clien
 				t.queryTable(neigh, "adj-rib-in", api.TableType_ADJ_IN, func(routes []*api.Destination) {
 					for _, route := range routes {
 						for j, path := range route.Paths {
-							fmt.Printf("%v: %v, %v, %v, %v\n", appliedBgp.GetGlobal().GetRouterId(), neigh, path.NeighborIp, route.Prefix, uint32(j))
 							v4uni.GetOrCreateNeighbor(path.NeighborIp).GetOrCreateAdjRibInPre().GetOrCreateRoute(route.Prefix, uint32(j))
 							if !path.Filtered {
 								v4uni.GetOrCreateNeighbor(path.NeighborIp).GetOrCreateAdjRibInPost().GetOrCreateRoute(route.Prefix, uint32(j))
