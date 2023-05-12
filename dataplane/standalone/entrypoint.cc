@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <glog/logging.h>
 #include <grpc/grpc.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -79,6 +80,7 @@ std::shared_ptr<Translator> translator;
 sai_status_t sai_api_initialize(
     _In_ uint64_t flags, _In_ const sai_service_method_table_t *services) {
   initialize(GoInt(50000));
+  google::InitGoogleLogging("lucius");
 
   auto chan = grpc::CreateChannel("localhost:50000",
                                   grpc::InsecureChannelCredentials());

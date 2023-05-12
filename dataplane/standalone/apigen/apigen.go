@@ -19,6 +19,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 	"text/template"
@@ -246,13 +247,18 @@ const (
 	outDir  = "dataplane/standalone/sai"
 )
 
-var supportedOperation = map[string]bool{
-	"create": true,
-	"remove": true,
-	"set":    true,
-	"get":    true,
-	"clear":  true,
-}
+var (
+	supportedOperation = map[string]bool{
+		"create":        true,
+		"remove":        true,
+		"get_attribute": true,
+		"set_attribute": true,
+		"clear_stats":   true,
+		"get_stats":     true,
+		"get_stats_ext": true,
+	}
+	funcExpr = regexp.MustCompile(`^([a-z]*_)(\w*)_(attribute|stats_ext|stats)|([a-z]*)_(\w*)$`)
+)
 
 func generate() error {
 	headerFile, err := filepath.Abs(filepath.Join(saiPath, "inc/sai.h"))
@@ -293,29 +299,24 @@ func generate() error {
 			for _, param := range sai.funcs[fn.typ].params {
 				paramDefs = append(paramDefs, fmt.Sprintf("%s %s", param.typ, param.name))
 				name := strings.ReplaceAll(param.name, "*", "")
+				// Functions that operator on entries take some entry type instead of an object id as argument.
+				// Generate a entry union with the pointer to entry instead.
 				if strings.Contains(param.typ, "entry") {
 					tf.Entry = fmt.Sprintf("common_entry_t entry = {.%s = %s};", name, name)
 					name = "entry"
 				}
 				paramVars = append(paramVars, name)
 			}
-
 			tf.Args = strings.Join(paramDefs, ", ")
 			tf.Vars = strings.Join(paramVars, ", ")
 
-			splits := strings.Split(name, "_")
-			tf.Operation = splits[0]
+			matches := funcExpr.FindStringSubmatch(name)
+			tf.Operation = matches[1] + matches[4] + matches[3]
+
 			tf.UseCommonAPI = supportedOperation[tf.Operation]
+			tf.TypeName = strings.ToUpper(matches[2]) + strings.ToUpper(matches[5])
 
-			i := 1
-			for ; i < len(splits); i++ {
-				if splits[i] == "attribute" || splits[i] == "stats" {
-					break
-				}
-			}
-
-			tf.Operation = strings.Join(append([]string{tf.Operation}, splits[i:]...), "_")
-			tf.TypeName = strings.ToUpper(strings.Join(splits[1:i], "_"))
+			// Handle plural types using the bulk API.
 			if strings.HasSuffix(tf.TypeName, "PORTS") || strings.HasSuffix(tf.TypeName, "ENTRIES") || strings.HasSuffix(tf.TypeName, "MEMBERS") || strings.HasSuffix(tf.TypeName, "LISTS") {
 				tf.Operation += "_bulk"
 				tf.TypeName = strings.TrimSuffix(tf.TypeName, "S")
@@ -325,6 +326,7 @@ func generate() error {
 				}
 			}
 
+			// Function or types that don't follow standard naming.
 			if strings.Contains(tf.TypeName, "PORT_ALL") || strings.Contains(tf.TypeName, "ALL_NEIGHBOR") {
 				tf.UseCommonAPI = false
 			}
