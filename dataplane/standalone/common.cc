@@ -15,7 +15,6 @@
 #include "dataplane/standalone/common.h"
 
 extern "C" {
-#include "common.h"
 #include "inc/sai.h"
 #include "meta/saimetadata.h"
 }

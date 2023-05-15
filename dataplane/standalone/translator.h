@@ -21,7 +21,7 @@
 #include <memory>
 #include <unordered_map>
 #include <utility>
-#include <vector>
+#include <string>
 
 #include "dataplane/standalone/common.h"
 #include "dataplane/standalone/sai/entry.h"

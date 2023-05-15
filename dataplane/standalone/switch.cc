@@ -14,12 +14,13 @@
 
 #include "dataplane/standalone/switch.h"
 
+#include <string>
+
 #include "dataplane/standalone/translator.h"
 
 extern "C" {
 #include "inc/sai.h"
 #include "meta/saimetadata.h"
-#include "switch.h"
 }
 
 sai_status_t Switch::create(_In_ uint32_t attr_count,

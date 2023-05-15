@@ -17,6 +17,7 @@
 
 #include <memory>
 #include <unordered_map>
+#include <string>
 
 #include "dataplane/standalone/common.h"
 #include "dataplane/standalone/port.h"
