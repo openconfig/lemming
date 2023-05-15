@@ -1063,6 +1063,13 @@ def go_repositories():
         version = "v1.0.2",
     )
     go_repository(
+        name = "com_github_osrg_gobgp_v3",
+        importpath = "github.com/osrg/gobgp/v3",
+        sum = "h1:zfXhM8+QSfAPUkzWYTbH8pMkvxkcUfvQEKnBU7ikk4g=",
+        version = "v3.14.0",
+    )
+
+    go_repository(
         name = "com_github_patrickmn_go_cache",
         importpath = "github.com/patrickmn/go-cache",
         sum = "h1:HRMgzkcYKYpi3C8ajMPV8OFXaaRUnok+kx1WdO15EQc=",

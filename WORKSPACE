@@ -230,13 +230,6 @@ go_repository(
     version = "v2.2.6",
 )
 
-go_repository(
-    name = "com_github_osrg_gobgp_v3",
-    importpath = "github.com/osrg/gobgp/v3",
-    sum = "h1:zfXhM8+QSfAPUkzWYTbH8pMkvxkcUfvQEKnBU7ikk4g=",
-    version = "v3.14.0",
-)
-
 # gazelle:repository_macro repositories.bzl%go_repositories
 go_repositories()
 
