@@ -11,7 +11,7 @@ load:
 .PHONY: buildfile
 buildfile:
 	go mod tidy
-	bazel run //:gazelle -- update-repos -from_file=go.mod
+	bazel run //:gazelle -- update-repos -to_macro=repositories.bzl%go_repositories -from_file=go.mod
 	bazel run //:gazelle
 
 .PHONY: load-debug
