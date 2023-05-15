@@ -14,62 +14,91 @@
 
 #include "dataplane/standalone/translator.h"
 
+#include <glog/logging.h>
+
+#include <string>
+#include <unordered_map>
+
 #include "dataplane/standalone/switch.h"
 
 extern "C" {
 #include "inc/sai.h"
+#include "meta/saimetadata.h"
 }
 
 sai_object_type_t Translator::getObjectType(sai_object_id_t id) {
-  auto iter = this->objects.find(id);
-  if (iter == this->objects.end()) {
-    return SAI_OBJECT_TYPE_NULL;
+  return this->attrMgr->get_type(std::to_string(id));
+}
+
+// create globally scoped objects.
+sai_status_t Translator::create(sai_object_type_t type, sai_object_id_t* id,
+                                uint32_t attr_count,
+                                const sai_attribute_t* attr_list) {
+  *id = this->attrMgr->create(type, 0);
+  sai_status_t status = 0;
+  switch (type) {
+    case SAI_OBJECT_TYPE_SWITCH: {
+      auto sw = std::make_shared<Switch>(*id, this->attrMgr, this->client);
+      this->switches[*id] = sw;
+      this->apis[std::to_string(*id)] = sw;
+      status = this->apis[std::to_string(*id)]->create(attr_count, attr_list);
+      break;
+    }
+    default:
+      LOG(INFO) << "Unknown type " << type;
+      // TODO(dgrau): handle other types
   }
-  return iter->second.type;
-}
 
-sai_object_id_t Translator::createObject(sai_object_type_t type) {
-  auto id = this->objects.size() + 1;
-  this->objects[id] = {
-      .type = type,
-      .attributes = std::unordered_map<sai_attr_id_t, sai_attribute_value_t>(),
-  };
-  return id;
-}
-
-void Translator::setAttribute(sai_object_id_t id, sai_attribute_t attr) {
-  this->objects[id].attributes[attr.id] = attr.value;
-}
-
-sai_status_t Translator::getAttribute(sai_object_id_t id,
-                                      sai_attribute_t* attr) {
-  auto iter = this->objects[id].attributes.find(attr->id);
-  if (iter == this->objects[id].attributes.end()) {
-    return SAI_STATUS_ITEM_NOT_FOUND;
+  if (status != SAI_STATUS_SUCCESS) {
+    return status;
   }
-  *attr = {
-      iter->first,
-      iter->second,
-  };
+  // Save attributes to attr managers.
+  for (uint32_t i = 0; i < attr_count; i++) {
+    this->attrMgr->set_attribute(std::to_string(*id), attr_list[i]);
+  }
+
   return SAI_STATUS_SUCCESS;
 }
 
-sai_status_t Translator::create(sai_object_type_t type, sai_object_id_t* id,
-                                uint32_t attr_count,
-                                const sai_attribute_t* attr_list) {
-  return sai_status_t();
-}
-
-sai_status_t Translator::create(sai_object_type_t type, common_entry_t id,
-                                uint32_t attr_count,
-                                const sai_attribute_t* attr_list) {
-  return sai_status_t();
-}
-
+// create switch-scoped objects.
 sai_status_t Translator::create(sai_object_type_t type, sai_object_id_t* id,
                                 sai_object_id_t switch_id, uint32_t attr_count,
                                 const sai_attribute_t* attr_list) {
-  return sai_status_t();
+  *id = this->attrMgr->create(type, switch_id);  // Allocate new id for object.
+  auto status = this->switches[switch_id]->create_child(
+      type, *id, attr_count,
+      attr_list);  // Delegate creation to switch instance.
+  if (status != SAI_STATUS_SUCCESS) {
+    return status;
+  }
+  // Save attributes to attr managers.
+  for (uint32_t i = 0; i < attr_count; i++) {
+    this->attrMgr->set_attribute(std::to_string(*id), attr_list[i]);
+  }
+  return SAI_STATUS_SUCCESS;
+}
+
+// create entry type objects.
+sai_status_t Translator::create(sai_object_type_t type, common_entry_t id,
+                                uint32_t attr_count,
+                                const sai_attribute_t* attr_list) {
+  std::string idStr = this->attrMgr->serialize_entry(type, id);
+  sai_object_id_t switch_id = this->attrMgr->entry_to_switch_id(type, id);
+
+  this->attrMgr->create(type, idStr, switch_id);
+
+  auto status = this->switches[switch_id]->create_child(
+      type, id, attr_count,
+      attr_list);  // Delegate creation to switch instance.
+  if (status != SAI_STATUS_SUCCESS) {
+    return status;
+  }
+  // Save attributes to attr managers.
+  for (uint32_t i = 0; i < attr_count; i++) {
+    this->attrMgr->set_attribute(idStr, attr_list[i]);
+  }
+
+  return SAI_STATUS_SUCCESS;
 }
 
 sai_status_t Translator::remove(sai_object_type_t type, sai_object_id_t id) {
@@ -83,25 +112,56 @@ sai_status_t Translator::remove(sai_object_type_t type, common_entry_t id) {
 sai_status_t Translator::set_attribute(sai_object_type_t type,
                                        sai_object_id_t id,
                                        const sai_attribute_t* attr) {
-  return sai_status_t();
-}
+  sai_object_id_t switch_id = this->attrMgr->get_switch_id(std::to_string(id));
 
-sai_status_t Translator::get_attribute(sai_object_type_t type,
-                                       sai_object_id_t id, uint32_t attr_count,
-                                       sai_attribute_t* attr_list) {
-  return sai_status_t();
+  sai_status_t status;
+  if (switch_id != SAI_NULL_OBJECT_ID) {
+    status = this->switches[switch_id]->set_child_attr(type, std::to_string(id),
+                                                       attr);
+  } else {
+    status = this->apis[std::to_string(id)]->set_attribute(attr);
+  }
+  if (status != SAI_STATUS_SUCCESS) {
+    return status;
+  }
+
+  this->attrMgr->set_attribute(std::to_string(id), attr);
+  return SAI_STATUS_SUCCESS;
 }
 
 sai_status_t Translator::set_attribute(sai_object_type_t type,
                                        common_entry_t id,
                                        const sai_attribute_t* attr) {
-  return sai_status_t();
+  std::string idStr = this->attrMgr->serialize_entry(type, id);
+  sai_object_id_t switch_id = this->attrMgr->entry_to_switch_id(type, id);
+
+  sai_status_t status;
+  if (switch_id != SAI_NULL_OBJECT_ID) {
+    status = this->switches[switch_id]->set_child_attr(type, idStr, attr);
+  } else {
+    status = this->apis[idStr]->set_attribute(attr);
+  }
+  if (status != SAI_STATUS_SUCCESS) {
+    return status;
+  }
+
+  this->attrMgr->set_attribute(idStr, attr);
+
+  return SAI_STATUS_SUCCESS;
+}
+
+sai_status_t Translator::get_attribute(sai_object_type_t type,
+                                       sai_object_id_t id, uint32_t attr_count,
+                                       sai_attribute_t* attr_list) {
+  return this->attrMgr->get_attribute(std::to_string(id), attr_count,
+                                      attr_list);
 }
 
 sai_status_t Translator::get_attribute(sai_object_type_t type,
                                        common_entry_t id, uint32_t attr_count,
                                        sai_attribute_t* attr_list) {
-  return sai_status_t();
+  std::string idStr = this->attrMgr->serialize_entry(type, id);
+  return this->attrMgr->get_attribute(idStr, attr_count, attr_list);
 }
 
 sai_status_t Translator::get_stats(sai_object_type_t type, sai_object_id_t id,

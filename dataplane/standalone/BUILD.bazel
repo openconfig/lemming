@@ -4,8 +4,10 @@ cc_library(
         "port.cc",
         "switch.cc",
         "translator.cc",
+        "common.cc"
     ],
     hdrs = [
+        "common.h",
         "port.h",
         "switch.h",
         "translator.h",
@@ -16,7 +18,9 @@ cc_library(
         "//dataplane/standalone/sai:entry",
         "//proto/forwarding:forwarding_cc_grpc",
         "//proto/forwarding:forwarding_cc_proto",
+        "@com_github_google_glog//:glog",
         "@com_github_grpc_grpc//:grpc++",
+        "@com_github_opencomputeproject_sai//:meta",
         "@com_github_opencomputeproject_sai//:sai",
     ],
 )
