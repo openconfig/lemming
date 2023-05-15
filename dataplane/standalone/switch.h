@@ -33,9 +33,9 @@ class Switch : public APIBase {
   Switch(sai_object_id_t id, std::shared_ptr<AttributeManager> mgr,
          std::shared_ptr<forwarding::Forwarding::Stub> c)
       : APIBase(mgr, c), id(id) {}
-  virtual ~Switch() = default;
+  ~Switch() = default;
   sai_status_t create(_In_ uint32_t attr_count,
-                      _In_ const sai_attribute_t* attr_list);
+                              _In_ const sai_attribute_t* attr_list);
   sai_status_t set_attribute(_In_ const sai_attribute_t* attr);
 
   sai_status_t create_child(sai_object_type_t type, sai_object_id_t id,

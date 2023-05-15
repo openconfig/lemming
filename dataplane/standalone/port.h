@@ -31,7 +31,7 @@ class Port : public APIBase {
   Port(std::shared_ptr<AttributeManager> mgr,
        std::shared_ptr<forwarding::Forwarding::Stub> c)
       : APIBase(mgr, c) {}
-  virtual ~Port() = default;
+  ~Port() = default;
   sai_status_t create(_In_ uint32_t attr_count,
                       _In_ const sai_attribute_t* attr_list);
   sai_status_t set_attribute(_In_ const sai_attribute_t* attr);

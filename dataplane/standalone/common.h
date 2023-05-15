@@ -66,8 +66,8 @@ class APIBase {
       : attrMgr(mgr), client(c) {}
   virtual ~APIBase() = default;
   virtual sai_status_t create(_In_ uint32_t attr_count,
-                              _In_ const sai_attribute_t* attr_list);
-  virtual sai_status_t set_attribute(_In_ const sai_attribute_t* attr);
+                              _In_ const sai_attribute_t* attr_list) = 0;
+  virtual sai_status_t set_attribute(_In_ const sai_attribute_t* attr) = 0;
 
  protected:
   std::shared_ptr<AttributeManager> attrMgr;

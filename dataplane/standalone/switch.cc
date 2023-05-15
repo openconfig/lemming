@@ -24,7 +24,7 @@ extern "C" {
 }
 
 sai_status_t Switch::create(_In_ uint32_t attr_count,
-                            _In_ const sai_attribute_t *attr_list) {
+                              _In_ const sai_attribute_t* attr_list) {
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       // TODO(dgrau): handle this attributes specially.
@@ -235,6 +235,10 @@ sai_status_t Switch::create(_In_ uint32_t attr_count,
       });
 
   return SAI_STATUS_SUCCESS;
+}
+
+sai_status_t Switch::set_attribute(const sai_attribute_t *attr) {
+  return sai_status_t();
 }
 
 sai_status_t Switch::create_child(sai_object_type_t type, sai_object_id_t id,
