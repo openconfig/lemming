@@ -45,6 +45,12 @@ func TestRoutePropagation(t *testing.T) {
 		name:    "eth0",
 		ifindex: 0,
 		enabled: true,
+		prefix:  "127.0.0.0/30",
+		niName:  "DEFAULT",
+	}, {
+		name:    "eth1",
+		ifindex: 1,
+		enabled: true,
 		prefix:  "192.0.2.1/31",
 		niName:  "DEFAULT",
 	}})
@@ -53,9 +59,12 @@ func TestRoutePropagation(t *testing.T) {
 	defer stop2()
 	dut3, stop3 := newLemming(t, dut3spec, nil)
 	defer stop3()
+	dut4, stop4 := newLemming(t, dut4spec, nil)
+	defer stop4()
 
 	establishSessionPair(t, dut1, dut2, dut1spec, dut2spec)
 	establishSessionPair(t, dut2, dut3, dut2spec, dut3spec)
+	establishSessionPair(t, dut3, dut4, dut3spec, dut4spec)
 
 	prefix := "10.10.10.0/24"
 	installStaticRoute(t, dut1, &oc.NetworkInstance_Protocol_Static{
@@ -84,6 +93,8 @@ func TestRoutePropagation(t *testing.T) {
 	Await(t, dut2, v4uni.Neighbor(dut3spec.RouterID).AdjRibOutPost().Route(prefix, 0).Prefix().State(), prefix)
 
 	// Check route is in Adj-In of dut3.
-	// TODO: Figure out why route is not being exchanged to dut3.
-	// Await(t, dut3, v4uni.Neighbor(dut2spec.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), prefix)
+	Await(t, dut3, v4uni.Neighbor(dut2spec.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), prefix)
+
+	// Check route is in Adj-In of dut4.
+	Await(t, dut4, v4uni.Neighbor(dut3spec.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), prefix)
 }

@@ -1063,6 +1063,13 @@ def go_repositories():
         version = "v1.0.2",
     )
     go_repository(
+        name = "com_github_osrg_gobgp_v3",
+        importpath = "github.com/osrg/gobgp/v3",
+        sum = "h1:zfXhM8+QSfAPUkzWYTbH8pMkvxkcUfvQEKnBU7ikk4g=",
+        version = "v3.14.0",
+    )
+
+    go_repository(
         name = "com_github_patrickmn_go_cache",
         importpath = "github.com/patrickmn/go-cache",
         sum = "h1:HRMgzkcYKYpi3C8ajMPV8OFXaaRUnok+kx1WdO15EQc=",
@@ -1327,8 +1334,8 @@ def go_repositories():
         name = "com_github_wenovus_gobgp_v3",
         build_file_proto_mode = "disable",
         importpath = "github.com/wenovus/gobgp/v3",
-        sum = "h1:YdiZGs+Ptnvq8jpBHQfIXLAaH4gc+yKXkPTsUNHJI3k=",
-        version = "v3.0.0-20221024234659-8df3c6938ab7",
+        sum = "h1:O3EW2hZ0IQDlT4VKEmXujLL/9YVslMIz3vG/wMQW9TI=",
+        version = "v3.0.0-20230512225508-639b46f0d89c",
     )
     go_repository(
         name = "com_github_xeipuuv_gojsonpointer",
