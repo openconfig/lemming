@@ -33,13 +33,17 @@ sai_object_id_t AttributeManager::create(sai_object_type_t type,
 
 // create a object with the given type with a serialized version of the object
 // used as the id.
-void AttributeManager::create(sai_object_type_t type, std::string id,
-                              sai_object_id_t switch_id) {
+std::string AttributeManager::create(sai_object_type_t type,
+                                     common_entry_t entry) {
+  std::string id = this->serialize_entry(type, entry);
+  sai_object_id_t switch_id = this->entry_to_switch_id(type, entry);
+
   this->objects[id] = {
       .type = type,
       .switch_id = switch_id,
       .attributes = std::unordered_map<sai_attr_id_t, sai_attribute_value_t>(),
   };
+  return id;
 }
 
 sai_object_type_t AttributeManager::get_type(std::string id) {

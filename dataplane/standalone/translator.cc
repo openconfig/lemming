@@ -79,16 +79,14 @@ sai_status_t Translator::create(sai_object_type_t type, sai_object_id_t* id,
 }
 
 // create entry type objects.
-sai_status_t Translator::create(sai_object_type_t type, common_entry_t id,
+sai_status_t Translator::create(sai_object_type_t type, common_entry_t entry,
                                 uint32_t attr_count,
                                 const sai_attribute_t* attr_list) {
-  std::string idStr = this->attrMgr->serialize_entry(type, id);
-  sai_object_id_t switch_id = this->attrMgr->entry_to_switch_id(type, id);
-
-  this->attrMgr->create(type, idStr, switch_id);
+  std::string idStr = this->attrMgr->create(type, entry);
+  sai_object_id_t switch_id = this->attrMgr->entry_to_switch_id(type, entry);
 
   auto status = this->switches[switch_id]->create_child(
-      type, id, attr_count,
+      type, entry, attr_count,
       attr_list);  // Delegate creation to switch instance.
   if (status != SAI_STATUS_SUCCESS) {
     return status;

@@ -43,8 +43,7 @@ class AttributeManager {
         .type = SAI_OBJECT_TYPE_NULL};  // ID == 0, is invalid so skip.
   }
   sai_object_id_t create(sai_object_type_t type, sai_object_id_t switch_id);
-  void create(sai_object_type_t type, std::string id,
-              sai_object_id_t switch_id);
+  std::string create(sai_object_type_t type, common_entry_t entry);
   sai_object_type_t get_type(std::string id);
   sai_object_id_t get_switch_id(std::string id);
   void set_attribute(std::string id, const sai_attribute_t* attr);
