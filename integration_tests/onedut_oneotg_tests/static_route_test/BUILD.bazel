@@ -2,6 +2,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_test")
 
 go_test(
     name = "static_route_test_test",
+    size = "enormous",
     srcs = ["static_route_traffic_test.go"],
     data = ["//integration_tests/onedut_oneotg_tests:topology_testbed"],
     deps = [
