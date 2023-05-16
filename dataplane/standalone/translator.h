@@ -117,7 +117,7 @@ class Translator {
   std::shared_ptr<AttributeManager> attrMgr;
   std::shared_ptr<forwarding::Forwarding::Stub> client;
   std::unordered_map<sai_object_id_t, std::shared_ptr<Switch>> switches;
-  std::unordered_map<std::string, std::shared_ptr<APIBase>> apis;
+  std::unordered_map<std::string, std::shared_ptr<APIBase>> apis; // TODO(dgrau): Confirm that switch is the only global API and remove.
 };
 
 #endif  // DATAPLANE_STANDALONE_TRANSLATOR_H_

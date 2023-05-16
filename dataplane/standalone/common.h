@@ -27,7 +27,7 @@ extern "C" {
 #include "inc/sai.h"
 }
 
-// SaiObject is an object and it's attributes.
+// SaiObject is an object and its attributes.
 class SaiObject {
  public:
   sai_object_type_t type;
@@ -59,6 +59,7 @@ class AttributeManager {
 };
 
 // APIBase is a base that all implementation of SAI APIs should inherit.
+// TODO(dgrau): Verify no concurrent access or add mutex.
 class APIBase {
  public:
   APIBase(std::shared_ptr<AttributeManager> mgr,
