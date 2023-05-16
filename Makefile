@@ -22,7 +22,7 @@ load-debug:
 ## Run integration tests
 .PHONY: itest
 itest:
-	bazel test //integration_tests/...
+	bazel test --cache_test_results=no //integration_tests/...
 
 .PHONY: test
 test:
