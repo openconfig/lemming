@@ -460,8 +460,8 @@ def go_repositories():
     go_repository(
         name = "com_github_golang_snappy",
         importpath = "github.com/golang/snappy",
-        sum = "h1:yAGX7huGHXlcLOEtBnF4w7FQwA26wojNCwOYAEhLjQM=",
-        version = "v0.0.4",
+        sum = "h1:fHPg5GQYlCeLIPB9BZqMVR5nR9A+IM5zcgeTdjMYmLA=",
+        version = "v0.0.3",
     )
     go_repository(
         name = "com_github_google_btree",
@@ -1112,6 +1112,13 @@ def go_repositories():
         sum = "h1:UBdAOUP5p4RWqPBg048CAvpKN+vxiaj6gdUUzhl4XmI=",
         version = "v2.0.1+incompatible",
     )
+    go_repository(
+        name = "com_github_pkg_diff",
+        importpath = "github.com/pkg/diff",
+        sum = "h1:aoZm08cpOy4WuID//EZDgcC4zIxODThtZNPirFr42+A=",
+        version = "v0.0.0-20210226163009-20ebb0f2a09e",
+    )
+
     go_repository(
         name = "com_github_pkg_errors",
         importpath = "github.com/pkg/errors",

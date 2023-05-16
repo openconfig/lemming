@@ -18,7 +18,7 @@
 #include <memory>
 #include <unordered_map>
 
-#include "dataplane/standalone/translator.h"
+#include "dataplane/standalone/common.h"
 #include "proto/forwarding/forwarding_service.grpc.pb.h"
 #include "proto/forwarding/forwarding_service.pb.h"
 
@@ -26,25 +26,15 @@ extern "C" {
 #include "inc/sai.h"
 }
 
-class Translator;
-
-class Port {
+class Port : public APIBase {
  public:
-  Port(Translator* translator, std::shared_ptr<forwarding::Forwarding::Stub> c)
-      : translator(translator), client(c) {}
-  sai_status_t create_port(_Out_ sai_object_id_t* port_id,
-                           _In_ sai_object_id_t switch_id,
-                           _In_ uint32_t attr_count,
-                           _In_ const sai_attribute_t* attr_list);
-  sai_status_t set_port_attribute(_In_ sai_object_id_t port_id,
-                                  _In_ const sai_attribute_t* attr);
-  sai_status_t get_port_attribute(_In_ sai_object_id_t port_id,
-                                  _In_ uint32_t attr_count,
-                                  _Inout_ sai_attribute_t* attr_list);
-
- private:
-  std::shared_ptr<Translator> translator;
-  std::shared_ptr<forwarding::Forwarding::Stub> client;
+  Port(std::shared_ptr<AttributeManager> mgr,
+       std::shared_ptr<forwarding::Forwarding::Stub> c)
+      : APIBase(mgr, c) {}
+  ~Port() = default;
+  sai_status_t create(_In_ uint32_t attr_count,
+                      _In_ const sai_attribute_t* attr_list);
+  sai_status_t set_attribute(_In_ const sai_attribute_t* attr);
 };
 
 #endif  // DATAPLANE_STANDALONE_PORT_H_

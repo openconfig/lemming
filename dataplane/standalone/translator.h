@@ -19,11 +19,11 @@
 #include <grpcpp/security/credentials.h>
 
 #include <memory>
+#include <string>
 #include <unordered_map>
 #include <utility>
-#include <vector>
 
-#include "dataplane/standalone/port.h"
+#include "dataplane/standalone/common.h"
 #include "dataplane/standalone/sai/entry.h"
 #include "dataplane/standalone/switch.h"
 #include "proto/forwarding/forwarding_service.grpc.pb.h"
@@ -33,32 +33,14 @@ extern "C" {
 #include "inc/sai.h"
 }
 
-class Switch;
-class Port;
-
-class SaiObject {
- public:
-  sai_object_type_t type;
-  std::unordered_map<sai_attr_id_t, sai_attribute_value_t> attributes;
-};
-
 class Translator {
  public:
   explicit Translator(std::shared_ptr<grpc::Channel> chan) {
+    attrMgr = std::make_shared<AttributeManager>();
     client = std::shared_ptr<forwarding::Forwarding::Stub>(
         forwarding::Forwarding::NewStub(chan));
-    objects[0] = {.type =
-                      SAI_OBJECT_TYPE_NULL};  // ID == 0, is invalid so skip.
-    sw = std::make_unique<Switch>(this, client);
-    port = std::make_unique<Port>(this, client);
   }
   sai_object_type_t getObjectType(sai_object_id_t id);
-  sai_object_id_t createObject(sai_object_type_t type);
-  void setAttribute(sai_object_id_t id, sai_attribute_t attr);
-  sai_status_t getAttribute(sai_object_id_t id, sai_attribute_t *attr);
-
-  std::unique_ptr<Switch> sw;
-  std::unique_ptr<Port> port;
 
   sai_status_t create(sai_object_type_t type, sai_object_id_t *id,
                       uint32_t attr_count, const sai_attribute_t *attr_list);
@@ -132,8 +114,12 @@ class Translator {
                                   sai_status_t *object_statuses);
 
  private:
+  std::shared_ptr<AttributeManager> attrMgr;
   std::shared_ptr<forwarding::Forwarding::Stub> client;
-  std::unordered_map<sai_object_id_t, SaiObject> objects;
+  std::unordered_map<sai_object_id_t, std::shared_ptr<Switch>> switches;
+  std::unordered_map<std::string, std::shared_ptr<APIBase>>
+      apis;  // TODO(dgrau): Confirm that switch is the only global API and
+             // remove.
 };
 
 #endif  // DATAPLANE_STANDALONE_TRANSLATOR_H_

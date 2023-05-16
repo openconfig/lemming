@@ -16,34 +16,40 @@
 #define DATAPLANE_STANDALONE_SWITCH_H_
 
 #include <memory>
+#include <string>
 #include <unordered_map>
 
-#include "dataplane/standalone/translator.h"
+#include "dataplane/standalone/common.h"
+#include "dataplane/standalone/port.h"
 #include "proto/forwarding/forwarding_service.grpc.pb.h"
 #include "proto/forwarding/forwarding_service.pb.h"
+
 extern "C" {
 #include "inc/sai.h"
 }
 
-class Translator;
-
-class Switch {
+class Switch : public APIBase {
  public:
-  Switch(Translator* translator,
+  Switch(sai_object_id_t id, std::shared_ptr<AttributeManager> mgr,
          std::shared_ptr<forwarding::Forwarding::Stub> c)
-      : translator(translator), client(c) {}
-  sai_status_t create_switch(_Out_ sai_object_id_t* switch_id,
-                             _In_ uint32_t attr_count,
-                             _In_ const sai_attribute_t* attr_list);
-  sai_status_t set_switch_attribute(_In_ sai_object_id_t switch_id,
-                                    _In_ const sai_attribute_t* attr);
-  sai_status_t get_switch_attribute(_In_ sai_object_id_t switch_id,
-                                    _In_ uint32_t attr_count,
-                                    _Inout_ sai_attribute_t* attr_list);
+      : APIBase(mgr, c), id(id) {}
+  ~Switch() = default;
+  sai_status_t create(_In_ uint32_t attr_count,
+                      _In_ const sai_attribute_t* attr_list);
+  sai_status_t set_attribute(_In_ const sai_attribute_t* attr);
+
+  sai_status_t create_child(sai_object_type_t type, sai_object_id_t id,
+                            _In_ uint32_t attr_count,
+                            _In_ const sai_attribute_t* attr_list);
+  sai_status_t create_child(sai_object_type_t type, common_entry_t id,
+                            _In_ uint32_t attr_count,
+                            _In_ const sai_attribute_t* attr_list);
+  sai_status_t set_child_attr(sai_object_type_t type, std::string id,
+                              const sai_attribute_t* attr);
 
  private:
-  std::shared_ptr<Translator> translator;
-  std::shared_ptr<forwarding::Forwarding::Stub> client;
+  sai_object_id_t id;
+  std::unordered_map<std::string, std::unique_ptr<APIBase>> apis;
 };
 
 #endif  // DATAPLANE_STANDALONE_SWITCH_H_
