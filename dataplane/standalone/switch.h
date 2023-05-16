@@ -16,8 +16,8 @@
 #define DATAPLANE_STANDALONE_SWITCH_H_
 
 #include <memory>
-#include <unordered_map>
 #include <string>
+#include <unordered_map>
 
 #include "dataplane/standalone/common.h"
 #include "dataplane/standalone/port.h"
@@ -35,7 +35,7 @@ class Switch : public APIBase {
       : APIBase(mgr, c), id(id) {}
   ~Switch() = default;
   sai_status_t create(_In_ uint32_t attr_count,
-                              _In_ const sai_attribute_t* attr_list);
+                      _In_ const sai_attribute_t* attr_list);
   sai_status_t set_attribute(_In_ const sai_attribute_t* attr);
 
   sai_status_t create_child(sai_object_type_t type, sai_object_id_t id,

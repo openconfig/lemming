@@ -130,10 +130,10 @@ sai_status_t Translator::set_attribute(sai_object_type_t type,
 }
 
 sai_status_t Translator::set_attribute(sai_object_type_t type,
-                                       common_entry_t id,
+                                       common_entry_t entry,
                                        const sai_attribute_t* attr) {
-  std::string idStr = this->attrMgr->serialize_entry(type, id);
-  sai_object_id_t switch_id = this->attrMgr->entry_to_switch_id(type, id);
+  std::string idStr = this->attrMgr->serialize_entry(type, entry);
+  sai_object_id_t switch_id = this->attrMgr->entry_to_switch_id(type, entry);
 
   sai_status_t status;
   if (switch_id != SAI_NULL_OBJECT_ID) {

@@ -19,6 +19,7 @@ extern "C" {
 #include "meta/saimetadata.h"
 }
 
+// create a object with the given type and allocate a new id.
 sai_object_id_t AttributeManager::create(sai_object_type_t type,
                                          sai_object_id_t switch_id) {
   sai_object_id_t id = this->objects.size();
@@ -30,6 +31,8 @@ sai_object_id_t AttributeManager::create(sai_object_type_t type,
   return id;
 }
 
+// create a object with the given type with a serialized version of the object
+// used as the id.
 void AttributeManager::create(sai_object_type_t type, std::string id,
                               sai_object_id_t switch_id) {
   this->objects[id] = {
