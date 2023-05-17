@@ -16,6 +16,8 @@ cc_library(
     deps = [
         "//dataplane/standalone/lucius:lucius_clib",
         "//dataplane/standalone/sai:entry",
+        "//proto/dataplane:dataplane_cc_grpc",
+        "//proto/dataplane:dataplane_cc_proto",
         "//proto/forwarding:forwarding_cc_grpc",
         "//proto/forwarding:forwarding_cc_proto",
         "@com_github_google_glog//:glog",

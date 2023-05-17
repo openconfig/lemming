@@ -26,6 +26,8 @@
 #include "dataplane/standalone/common.h"
 #include "dataplane/standalone/sai/entry.h"
 #include "dataplane/standalone/switch.h"
+#include "proto/dataplane/dataplane.grpc.pb.h"
+#include "proto/dataplane/dataplane.pb.h"
 #include "proto/forwarding/forwarding_service.grpc.pb.h"
 #include "proto/forwarding/forwarding_service.pb.h"
 
@@ -37,8 +39,10 @@ class Translator {
  public:
   explicit Translator(std::shared_ptr<grpc::Channel> chan) {
     attrMgr = std::make_shared<AttributeManager>();
-    client = std::shared_ptr<forwarding::Forwarding::Stub>(
+    fwd = std::shared_ptr<forwarding::Forwarding::Stub>(
         forwarding::Forwarding::NewStub(chan));
+    dataplane = std::shared_ptr<lemming::dataplane::Dataplane::Stub>(
+        lemming::dataplane::Dataplane::NewStub(chan));
   }
   sai_object_type_t getObjectType(sai_object_id_t id);
 
@@ -113,10 +117,12 @@ class Translator {
                                   sai_bulk_op_error_mode_t mode,
                                   sai_status_t *object_statuses);
 
- private:
   std::shared_ptr<AttributeManager> attrMgr;
-  std::shared_ptr<forwarding::Forwarding::Stub> client;
-  std::unordered_map<sai_object_id_t, std::shared_ptr<Switch>> switches;
+
+ private:
+  std::shared_ptr<forwarding::Forwarding::Stub> fwd;
+  std::shared_ptr<lemming::dataplane::Dataplane::Stub> dataplane;
+  std::unordered_map<std::string, std::shared_ptr<Switch>> switches;
   std::unordered_map<std::string, std::shared_ptr<APIBase>>
       apis;  // TODO(dgrau): Confirm that switch is the only global API and
              // remove.

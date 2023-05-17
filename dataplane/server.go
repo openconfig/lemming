@@ -24,7 +24,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/local"
 
-	"github.com/openconfig/lemming/dataplane/forwarding"
 	"github.com/openconfig/lemming/dataplane/handlers"
 	"github.com/openconfig/lemming/dataplane/internal/engine"
 	"github.com/openconfig/lemming/gnmi/oc"
@@ -32,12 +31,12 @@ import (
 
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 
+	dpb "github.com/openconfig/lemming/proto/dataplane"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
 // Dataplane is an implementation of Dataplane HAL API.
 type Dataplane struct {
-	fwdSrv      *forwarding.Engine
 	e           *engine.Engine
 	srv         *grpc.Server
 	lis         net.Listener
@@ -46,10 +45,14 @@ type Dataplane struct {
 }
 
 // New create a new dataplane instance.
-func New() (*Dataplane, error) {
-	data := &Dataplane{
-		fwdSrv: forwarding.New("engine"),
+func New(ctx context.Context) (*Dataplane, error) {
+	data := &Dataplane{}
+
+	e, err := engine.New(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create engine: %w", err)
 	}
+	data.e = e
 
 	lis, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
@@ -58,7 +61,8 @@ func New() (*Dataplane, error) {
 
 	data.lis = lis
 	srv := grpc.NewServer(grpc.Creds(local.NewCredentials()))
-	fwdpb.RegisterForwardingServer(srv, data.fwdSrv)
+	fwdpb.RegisterForwardingServer(srv, data.e)
+	dpb.RegisterDataplaneServer(srv, data.e)
 	go srv.Serve(data.lis)
 
 	return data, nil
@@ -80,12 +84,6 @@ func (d *Dataplane) Start(ctx context.Context, c gpb.GNMIClient, target string) 
 		return err
 	}
 	d.fwd = fc
-
-	d.e, err = engine.New(ctx, "default", fc)
-	if err != nil {
-		return err
-	}
-
 	d.reconcilers = append(d.reconcilers, handlers.NewInterface(d.e), handlers.NewRoute(d.e))
 
 	for _, rec := range d.reconcilers {

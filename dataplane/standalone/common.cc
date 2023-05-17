@@ -14,6 +14,8 @@
 
 #include "dataplane/standalone/common.h"
 
+#include <glog/logging.h>
+
 extern "C" {
 #include "inc/sai.h"
 #include "meta/saimetadata.h"
@@ -21,7 +23,7 @@ extern "C" {
 
 // create a object with the given type and allocate a new id.
 sai_object_id_t AttributeManager::create(sai_object_type_t type,
-                                         sai_object_id_t switch_id) {
+                                         std::string switch_id) {
   sai_object_id_t id = this->objects.size();
   this->objects[std::to_string(id)] = {
       .type = type,
@@ -36,7 +38,7 @@ sai_object_id_t AttributeManager::create(sai_object_type_t type,
 std::string AttributeManager::create(sai_object_type_t type,
                                      common_entry_t entry) {
   std::string id = this->serialize_entry(type, entry);
-  sai_object_id_t switch_id = this->entry_to_switch_id(type, entry);
+  auto switch_id = this->entry_to_switch_id(type, entry);
 
   this->objects[id] = {
       .type = type,
@@ -54,7 +56,7 @@ sai_object_type_t AttributeManager::get_type(std::string id) {
   return iter->second.type;
 }
 
-sai_object_id_t AttributeManager::get_switch_id(std::string id) {
+std::string AttributeManager::get_switch_id(std::string id) {
   auto iter = this->objects.find(id);
   if (iter == this->objects.end()) {
     return SAI_NULL_OBJECT_ID;
@@ -75,11 +77,12 @@ sai_status_t AttributeManager::get_attribute(std::string id,
                                              uint32_t attr_count,
                                              sai_attribute_t* attr_list) {
   for (uint32_t i = 0; i < attr_count; i++) {
+    LOG(INFO) << "Get Attr object id " << id << " attr id " << attr_list[i].id;
     auto iter = this->objects[id].attributes.find(attr_list[i].id);
     if (iter == this->objects[id].attributes.end()) {
       return SAI_STATUS_ITEM_NOT_FOUND;
     }
-    attr_list->value = iter->second;
+    attr_list[i].value = iter->second;
   }
   return SAI_STATUS_SUCCESS;
 }
@@ -122,8 +125,8 @@ std::string AttributeManager::serialize_entry(sai_object_type_t type,
   return std::string(serialize_buf);
 }
 
-sai_object_id_t AttributeManager::entry_to_switch_id(sai_object_type_t type,
-                                                     common_entry_t id) {
+std::string AttributeManager::entry_to_switch_id(sai_object_type_t type,
+                                                 common_entry_t id) {
   sai_object_id_t swID;
   switch (type) {
     case SAI_OBJECT_TYPE_FDB_ENTRY:
@@ -156,5 +159,26 @@ sai_object_id_t AttributeManager::entry_to_switch_id(sai_object_type_t type,
     default:
       throw "Invalid type";
   }
-  return swID;
+  return std::to_string(swID);
+}
+
+sai_status_t APIBase::create(common_entry_t id, uint32_t attr_count,
+                             const sai_attribute_t* attr_list) {
+  for (uint32_t i = 0; i < attr_count; i++) {
+    this->attrMgr->set_attribute(this->id, attr_list[i]);
+  }
+  return SAI_STATUS_SUCCESS;
+}
+
+sai_status_t APIBase::create(uint32_t attr_count,
+                             const sai_attribute_t* attr_list) {
+  for (uint32_t i = 0; i < attr_count; i++) {
+    this->attrMgr->set_attribute(this->id, attr_list[i]);
+  }
+  return SAI_STATUS_SUCCESS;
+}
+
+sai_status_t APIBase::set_attribute(const sai_attribute_t* attr) {
+  this->attrMgr->set_attribute(this->id, attr);
+  return SAI_STATUS_SUCCESS;
 }

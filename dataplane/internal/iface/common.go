@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package engine contains funcs for interacting with the forwarding engine.
-package engine
+// Package iface contains funcs from handling interface names
+package iface
 
 import "strings"
 

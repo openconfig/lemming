@@ -34,12 +34,13 @@ sai_object_type_t Translator::getObjectType(sai_object_id_t id) {
 sai_status_t Translator::create(sai_object_type_t type, sai_object_id_t* id,
                                 uint32_t attr_count,
                                 const sai_attribute_t* attr_list) {
-  *id = this->attrMgr->create(type, 0);
+  *id = this->attrMgr->create(type, "0");
   sai_status_t status = 0;
   switch (type) {
     case SAI_OBJECT_TYPE_SWITCH: {
-      auto sw = std::make_shared<Switch>(*id, this->attrMgr, this->client);
-      this->switches[*id] = sw;
+      auto sw = std::make_shared<Switch>(std::to_string(*id), this->attrMgr,
+                                         this->fwd, this->dataplane);
+      this->switches[std::to_string(*id)] = sw;
       this->apis[std::to_string(*id)] = sw;
       status = this->apis[std::to_string(*id)]->create(attr_count, attr_list);
       break;
@@ -64,16 +65,13 @@ sai_status_t Translator::create(sai_object_type_t type, sai_object_id_t* id,
 sai_status_t Translator::create(sai_object_type_t type, sai_object_id_t* id,
                                 sai_object_id_t switch_id, uint32_t attr_count,
                                 const sai_attribute_t* attr_list) {
-  *id = this->attrMgr->create(type, switch_id);  // Allocate new id for object.
-  auto status = this->switches[switch_id]->create_child(
+  *id = this->attrMgr->create(
+      type, std::to_string(switch_id));  // Allocate new id for object.
+  auto status = this->switches[std::to_string(switch_id)]->create_child(
       type, *id, attr_count,
       attr_list);  // Delegate creation to switch instance.
   if (status != SAI_STATUS_SUCCESS) {
     return status;
-  }
-  // Save attributes to attr managers.
-  for (uint32_t i = 0; i < attr_count; i++) {
-    this->attrMgr->set_attribute(std::to_string(*id), attr_list[i]);
   }
   return SAI_STATUS_SUCCESS;
 }
@@ -83,7 +81,7 @@ sai_status_t Translator::create(sai_object_type_t type, common_entry_t entry,
                                 uint32_t attr_count,
                                 const sai_attribute_t* attr_list) {
   std::string idStr = this->attrMgr->create(type, entry);
-  sai_object_id_t switch_id = this->attrMgr->entry_to_switch_id(type, entry);
+  auto switch_id = this->attrMgr->entry_to_switch_id(type, entry);
 
   auto status = this->switches[switch_id]->create_child(
       type, entry, attr_count,
@@ -91,11 +89,6 @@ sai_status_t Translator::create(sai_object_type_t type, common_entry_t entry,
   if (status != SAI_STATUS_SUCCESS) {
     return status;
   }
-  // Save attributes to attr managers.
-  for (uint32_t i = 0; i < attr_count; i++) {
-    this->attrMgr->set_attribute(idStr, attr_list[i]);
-  }
-
   return SAI_STATUS_SUCCESS;
 }
 
@@ -110,42 +103,31 @@ sai_status_t Translator::remove(sai_object_type_t type, common_entry_t id) {
 sai_status_t Translator::set_attribute(sai_object_type_t type,
                                        sai_object_id_t id,
                                        const sai_attribute_t* attr) {
-  sai_object_id_t switch_id = this->attrMgr->get_switch_id(std::to_string(id));
+  std::string switch_id = this->attrMgr->get_switch_id(std::to_string(id));
 
   sai_status_t status;
-  if (switch_id != SAI_NULL_OBJECT_ID) {
+  if (switch_id != "0") {
     status = this->switches[switch_id]->set_child_attr(type, std::to_string(id),
                                                        attr);
   } else {
     status = this->apis[std::to_string(id)]->set_attribute(attr);
   }
-  if (status != SAI_STATUS_SUCCESS) {
-    return status;
-  }
-
-  this->attrMgr->set_attribute(std::to_string(id), attr);
-  return SAI_STATUS_SUCCESS;
+  return status;
 }
 
 sai_status_t Translator::set_attribute(sai_object_type_t type,
                                        common_entry_t entry,
                                        const sai_attribute_t* attr) {
   std::string idStr = this->attrMgr->serialize_entry(type, entry);
-  sai_object_id_t switch_id = this->attrMgr->entry_to_switch_id(type, entry);
+  auto switch_id = this->attrMgr->entry_to_switch_id(type, entry);
 
   sai_status_t status;
-  if (switch_id != SAI_NULL_OBJECT_ID) {
+  if (switch_id != "0") {
     status = this->switches[switch_id]->set_child_attr(type, idStr, attr);
   } else {
     status = this->apis[idStr]->set_attribute(attr);
   }
-  if (status != SAI_STATUS_SUCCESS) {
-    return status;
-  }
-
-  this->attrMgr->set_attribute(idStr, attr);
-
-  return SAI_STATUS_SUCCESS;
+  return status;
 }
 
 sai_status_t Translator::get_attribute(sai_object_type_t type,

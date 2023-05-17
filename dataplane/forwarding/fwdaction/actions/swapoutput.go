@@ -22,9 +22,10 @@ import (
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdobject"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdpacket"
-	"github.com/openconfig/lemming/dataplane/internal/engine"
+	"github.com/openconfig/lemming/dataplane/internal/iface"
 
 	log "github.com/golang/glog"
+
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
@@ -48,10 +49,10 @@ func (s *swapOutput) Process(packet fwdpacket.Packet, _ fwdobject.Counters) (fwd
 	}
 	var outPort string
 
-	if engine.IsTap(string(p.ID())) {
-		outPort = engine.TapNameToIntfName(string(p.ID()))
+	if iface.IsTap(string(p.ID())) {
+		outPort = iface.TapNameToIntfName(string(p.ID()))
 	} else {
-		outPort = engine.IntfNameToTapName(string(p.ID()))
+		outPort = iface.IntfNameToTapName(string(p.ID()))
 	}
 	port, err := fwdport.Acquire(&fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: outPort}}, s.ctx)
 	if err != nil {

@@ -155,7 +155,7 @@ func New(targetName, zapiURL string, opts ...Option) (*Device, error) {
 	if viper.GetBool("enable_dataplane") {
 		log.Info("enabling dataplane")
 		var err error
-		dplane, err = dataplane.New()
+		dplane, err = dataplane.New(context.Background())
 		if err != nil {
 			return nil, err
 		}

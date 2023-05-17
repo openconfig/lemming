@@ -19,22 +19,25 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"os"
 	"sync"
 	"time"
 
-	"github.com/openconfig/lemming/dataplane/internal/engine"
-	"github.com/openconfig/lemming/dataplane/internal/kernel"
-	"github.com/openconfig/lemming/gnmi/gnmiclient"
-	"github.com/openconfig/lemming/gnmi/oc"
-	"github.com/openconfig/lemming/gnmi/oc/ocpath"
-	"github.com/openconfig/lemming/gnmi/reconciler"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot"
 	"github.com/vishvananda/netlink"
 	"golang.org/x/sys/unix"
 
+	"github.com/openconfig/lemming/dataplane/internal/engine"
+	"github.com/openconfig/lemming/dataplane/internal/iface"
+	"github.com/openconfig/lemming/dataplane/internal/kernel"
+	"github.com/openconfig/lemming/gnmi/gnmiclient"
+	"github.com/openconfig/lemming/gnmi/oc"
+	"github.com/openconfig/lemming/gnmi/oc/ocpath"
+	"github.com/openconfig/lemming/gnmi/reconciler"
+
 	log "github.com/golang/glog"
+
+	"github.com/openconfig/lemming/proto/dataplane"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
@@ -216,7 +219,7 @@ func (ni *Interface) reconcile(config *oc.Interface) {
 	ni.stateMu.RLock()
 	defer ni.stateMu.RUnlock()
 
-	tapName := engine.IntfNameToTapName(config.GetName())
+	tapName := iface.IntfNameToTapName(config.GetName())
 	state := ni.getOrCreateInterface(config.GetName())
 
 	if config.GetOrCreateEthernet().MacAddress != nil {
@@ -337,11 +340,11 @@ func (ni *Interface) handleLinkUpdate(ctx context.Context, lu *netlink.LinkUpdat
 
 	log.V(1).Infof("handling link update for %s", lu.Attrs().Name)
 
-	if !engine.IsTap(lu.Attrs().Name) {
+	if !iface.IsTap(lu.Attrs().Name) {
 		return
 	}
 
-	modelName := engine.TapNameToIntfName(lu.Attrs().Name)
+	modelName := iface.TapNameToIntfName(lu.Attrs().Name)
 	iface := ni.getOrCreateInterface(modelName)
 	if err := ni.e.UpdatePortSrcMAC(ctx, modelName, lu.Attrs().HardwareAddr); err != nil {
 		log.Warningf("failed to update src mac: %v", err)
@@ -381,12 +384,12 @@ func (ni *Interface) handleAddrUpdate(ctx context.Context, au *netlink.AddrUpdat
 	ni.stateMu.Lock()
 	defer ni.stateMu.Unlock()
 	name := ni.idxToName[au.LinkIndex]
-	if !engine.IsTap(name) || name == "" {
+	if !iface.IsTap(name) || name == "" {
 		return
 	}
 
 	sb := &ygnmi.SetBatch{}
-	modelName := engine.TapNameToIntfName(name)
+	modelName := iface.TapNameToIntfName(name)
 	sub := ni.getOrCreateInterface(modelName).GetOrCreateSubinterface(0)
 
 	ip := au.LinkAddress.IP.String()
@@ -435,7 +438,7 @@ func (ni *Interface) handleNeighborUpdate(ctx context.Context, nu *netlink.Neigh
 		return
 	}
 	sb := &ygnmi.SetBatch{}
-	modelName := engine.TapNameToIntfName(name)
+	modelName := iface.TapNameToIntfName(name)
 	sub := ni.getOrCreateInterface(modelName).GetOrCreateSubinterface(0)
 
 	switch nu.Type {
@@ -500,29 +503,39 @@ func (ni *Interface) setupPorts(ctx context.Context) error {
 	}
 	for _, i := range ifs {
 		// Skip loopback, k8s pod interface, and tap interfaces.
-		if i.Name == "lo" || i.Name == "eth0" || engine.IsTap(i.Name) {
+		if i.Name == "lo" || i.Name == "eth0" || iface.IsTap(i.Name) {
 			continue
 		}
-		fd, err := ni.ifaceMgr.CreateTAP(engine.IntfNameToTapName(i.Name))
+
+		_, err := ni.e.CreatePort(ctx, &dataplane.CreatePortRequest{
+			Id:   iface.IntfNameToTapName(i.Name),
+			Type: fwdpb.PortType_PORT_TYPE_TAP,
+			Src: &dataplane.CreatePortRequest_KernelDev{
+				KernelDev: iface.IntfNameToTapName(i.Name),
+			},
+		})
 		if err != nil {
-			return fmt.Errorf("failed to create tap port %q: %w", engine.IntfNameToTapName(i.Name), err)
+			return fmt.Errorf("failed to create tap interface %q: %w", iface.IntfNameToTapName(i.Name), err)
 		}
-		tap, err := ni.ifaceMgr.GetByName(engine.IntfNameToTapName(i.Name))
+
+		tap, err := ni.ifaceMgr.GetByName(iface.IntfNameToTapName(i.Name))
 		if err != nil {
-			return fmt.Errorf("failed to find tap interface %q: %w", engine.IntfNameToTapName(i.Name), err)
+			return fmt.Errorf("failed to find tap interface %q: %w", iface.IntfNameToTapName(i.Name), err)
 		}
 		ni.idxToName[i.Index] = i.Name
 		ni.idxToName[tap.Index] = tap.Name
-		if err := ni.e.CreateLocalPort(ctx, tap.Name, fd); err != nil {
-			return fmt.Errorf("failed to create internal port %q: %w", tap.Name, err)
+
+		_, err = ni.e.CreatePort(ctx, &dataplane.CreatePortRequest{
+			Id:   iface.IntfNameToTapName(i.Name),
+			Type: fwdpb.PortType_PORT_TYPE_KERNEL,
+			Src: &dataplane.CreatePortRequest_KernelDev{
+				KernelDev: i.Name,
+			},
+		})
+		if err != nil {
+			return fmt.Errorf("failed to create kernel interface %q: %w", i.Name, err)
 		}
-		if err := ni.e.CreateExternalPort(ctx, i.Name); err != nil {
-			return fmt.Errorf("failed to create external port %q: %w", i.Name, err)
-		}
-		// Make port only reply to IPs it have
-		if err := os.WriteFile(fmt.Sprintf("/proc/sys/net/ipv4/conf/%s/arp_ignore", i.Name), []byte("2"), 0600); err != nil {
-			return fmt.Errorf("failed to set arp_ignore to 2: %v", err)
-		}
+
 		if err := ni.e.UpdatePortSrcMAC(ctx, i.Name, tap.HardwareAddr); err != nil {
 			return fmt.Errorf("failed to update MAC address for port %q: %w", i.Name, err)
 		}

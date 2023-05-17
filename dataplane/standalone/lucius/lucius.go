@@ -17,6 +17,7 @@ package main
 import "C"
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net"
@@ -24,14 +25,17 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	"github.com/openconfig/lemming/dataplane/forwarding"
-
+	"github.com/openconfig/lemming/dataplane/internal/engine"
+	dpb "github.com/openconfig/lemming/proto/dataplane"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
 //export initialize
 func initialize(port int) {
-	fwdSrv := forwarding.New("engine")
+	e, err := engine.New(context.Background())
+	if err != nil {
+		log.Fatalf("failed create engine: %v", err)
+	}
 
 	lis, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
 	if err != nil {
@@ -39,7 +43,8 @@ func initialize(port int) {
 	}
 
 	srv := grpc.NewServer(grpc.Creds(insecure.NewCredentials()))
-	fwdpb.RegisterForwardingServer(srv, fwdSrv)
+	fwdpb.RegisterForwardingServer(srv, e)
+	dpb.RegisterDataplaneServer(srv, e)
 	go func() {
 		if err := srv.Serve(lis); err != nil {
 			log.Fatalf("failed to serve forwarding server: %v", err)
