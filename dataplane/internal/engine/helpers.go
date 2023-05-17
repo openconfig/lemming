@@ -370,7 +370,7 @@ func createKernelPort(ctx context.Context, id string, c fwdpb.ForwardingServer, 
 }
 
 // createKernelPort creates a port using the "TAP" dataplane type (tap file API) and returns the fd to read/write from.
-func createTapPort(ctx context.Context, id string, c fwdpb.ForwardingServer, name string, fd int) (uint64, error) {
+func createTapPort(ctx context.Context, id string, c fwdpb.ForwardingServer, name string) (uint64, error) {
 	port := &fwdpb.PortCreateRequest{
 		ContextId: &fwdpb.ContextId{Id: id},
 		Port: &fwdpb.PortDesc{

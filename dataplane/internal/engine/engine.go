@@ -506,8 +506,8 @@ func (e *Engine) CreateExternalPort(ctx context.Context, name string) error {
 }
 
 // CreateLocalPort creates an local (ie TAP) port for the given linux device name.
-func (e *Engine) CreateLocalPort(ctx context.Context, name string, fd int) error {
-	id, err := createTapPort(ctx, e.id, e.Engine, name, fd)
+func (e *Engine) CreateLocalPort(ctx context.Context, name string) error {
+	id, err := createTapPort(ctx, e.id, e.Engine, name)
 	if err != nil {
 		return err
 	}

@@ -16,7 +16,9 @@
 #define DATAPLANE_STANDALONE_PORT_H_
 
 #include <memory>
+#include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "dataplane/standalone/common.h"
 #include "proto/dataplane/dataplane.grpc.pb.h"

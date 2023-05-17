@@ -17,6 +17,8 @@
 #include <glog/logging.h>
 
 #include <fstream>
+#include <string>
+#include <vector>
 
 #include "absl/strings/str_split.h"
 #include "dataplane/standalone/translator.h"
@@ -87,14 +89,14 @@ sai_status_t Port::create(_In_ uint32_t attr_count,
   attrs.push_back({
       .id = SAI_PORT_ATTR_SUPPORTED_SPEED,
       .value = {.u32list =
-                    {
+                    { // NOLINT(*)
                         .count = 0,
                     }},
   });
   attrs.push_back({
       .id = SAI_PORT_ATTR_SUPPORTED_FEC_MODE,
       .value = {.s32list =
-                    {
+                    { // NOLINT(*)
                         .count = 0,
                     }},
   });

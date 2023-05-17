@@ -17,7 +17,6 @@
 #include <glog/logging.h>
 
 extern "C" {
-#include "common.h"
 #include "inc/sai.h"
 #include "meta/saimetadata.h"
 }
