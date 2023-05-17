@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/netip"
 	"reflect"
 	"sync"
 	"time"
@@ -339,6 +340,11 @@ func intendedToGoBGP(bgpoc *oc.NetworkInstance_Protocol_Bgp, zapiURL string, lis
 	bgpConfig.Global.Config.RouterId = global.GetRouterId()
 	bgpConfig.Global.Config.Port = int32(listenPort)
 
+	localAddress := ""
+	if localAddr, err := netip.ParseAddr(global.GetRouterId()); err == nil && localAddr.IsLoopback() {
+		localAddress = localAddr.String()
+	}
+
 	bgpConfig.Neighbors = []bgpconfig.Neighbor{}
 	for neighAddr, neigh := range bgpoc.Neighbor {
 		bgpConfig.Neighbors = append(bgpConfig.Neighbors, bgpconfig.Neighbor{
@@ -355,7 +361,7 @@ func intendedToGoBGP(bgpoc *oc.NetworkInstance_Protocol_Bgp, zapiURL string, lis
 			},
 			Transport: bgpconfig.Transport{
 				Config: bgpconfig.TransportConfig{
-					LocalAddress: global.GetRouterId(),
+					LocalAddress: localAddress,
 					RemotePort:   neigh.GetNeighborPort(),
 				},
 			},
