@@ -18,15 +18,18 @@ import (
 	"fmt"
 	"os"
 
+	"golang.org/x/sys/unix"
+
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdport"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdobject"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdpacket"
+	"github.com/openconfig/lemming/dataplane/internal/kernel"
 	"github.com/openconfig/lemming/internal/debug"
-	"golang.org/x/sys/unix"
 
 	log "github.com/golang/glog"
+
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
@@ -144,23 +147,27 @@ func (p *tapPort) State(*fwdpb.PortInfo) (*fwdpb.PortStateReply, error) {
 }
 
 type tapBuilder struct {
+	ifaceMgr kernel.Interfaces
 }
 
 // Build creates a new port.
-func (tapBuilder) Build(portDesc *fwdpb.PortDesc, ctx *fwdcontext.Context) (fwdport.Port, error) {
+func (tp tapBuilder) Build(portDesc *fwdpb.PortDesc, ctx *fwdcontext.Context) (fwdport.Port, error) {
 	kp, ok := portDesc.Port.(*fwdpb.PortDesc_Tap)
 	if !ok {
 		return nil, fmt.Errorf("invalid port type in proto")
 	}
-	err := unix.SetNonblock(int(kp.Tap.Fd), true)
+	fd, err := tp.ifaceMgr.CreateTAP(kp.Tap.GetDeviceName())
 	if err != nil {
+		return nil, fmt.Errorf("failed to create tap port %q: %w", kp.Tap.GetDeviceName(), err)
+	}
+	if err := unix.SetNonblock(fd, true); err != nil {
 		return nil, fmt.Errorf("failed to set tap in non-blocking mode: %v", err)
 	}
-	file := os.NewFile(uintptr(kp.Tap.Fd), "/dev/tun")
+	file := os.NewFile(uintptr(fd), "/dev/tun")
 	p := &tapPort{
 		ctx:  ctx,
 		file: file,
-		fd:   int(kp.Tap.Fd),
+		fd:   fd,
 	}
 	list := append(fwdport.CounterList, fwdaction.CounterList...)
 	if err := p.InitCounters("", list...); err != nil {

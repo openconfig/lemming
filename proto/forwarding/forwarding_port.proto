@@ -59,7 +59,7 @@ message KernelPortDesc {
 }
 
 message TAPPortDesc {
-  int64 fd = 1;
+  string device_name = 1;
 }
 
 // A PortCreateRequest is a request to create a port.

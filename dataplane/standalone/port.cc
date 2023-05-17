@@ -14,13 +14,111 @@
 
 #include "dataplane/standalone/port.h"
 
+#include <glog/logging.h>
+
+#include <fstream>
+
+#include "absl/strings/str_split.h"
 #include "dataplane/standalone/translator.h"
 
 sai_status_t Port::create(_In_ uint32_t attr_count,
                           _In_ const sai_attribute_t* attr_list) {
+  std::vector<sai_attribute_t> attrs(attr_list, attr_list + attr_count);
+  std::vector<int> lanes;
+  std::string name;
+  for (auto attr : attrs) {
+    switch (attr.id) {
+      case SAI_PORT_ATTR_HW_LANE_LIST:
+        lanes = std::vector<int>(
+            attr.value.u32list.list,
+            attr.value.u32list.list + attr.value.u32list.count);
+
+        for (auto port : Port::laneMap) {
+          if (port.second == lanes) {
+            name = port.first;
+            break;
+          }
+        }
+
+        break;
+    }
+  }
+  if (name != "") {
+    grpc::ClientContext context;
+    lemming::dataplane::CreatePortRequest req;
+    lemming::dataplane::CreatePortResponse resp;
+    req.set_id(name);
+    req.set_type(forwarding::PORT_TYPE_KERNEL);
+    req.set_kernel_dev(name);
+    auto status = this->dataplane->CreatePort(&context, req, &resp);
+    if (!status.ok()) {
+      LOG(ERROR) << "Failed to create port: " << status.error_message();
+      return SAI_STATUS_FAILURE;
+    }
+  } else {  // TODO(dgrau): Figure out what to do for this ports.
+    LOG(WARNING) << "Skipped port for SAI interface without kernel device"
+                 << std::to_string(lanes[0]);
+  }
+
+  attrs.push_back({
+      .id = SAI_PORT_ATTR_NUMBER_OF_INGRESS_PRIORITY_GROUPS,
+      .value = {.u32 = 0},
+  });
+  attrs.push_back({
+      .id = SAI_PORT_ATTR_QOS_NUMBER_OF_QUEUES,
+      .value = {.u32 = 0},
+  });
+  attrs.push_back({
+      .id = SAI_PORT_ATTR_QOS_MAXIMUM_HEADROOM_SIZE,
+      .value = {.u32 = 0},
+  });
+  attrs.push_back({
+      .id = SAI_PORT_ATTR_ADMIN_STATE,
+      .value = {.booldata = false},
+  });
+  attrs.push_back({
+      .id = SAI_PORT_ATTR_AUTO_NEG_MODE,
+      .value = {.booldata = false},
+  });
+  attrs.push_back({
+      .id = SAI_PORT_ATTR_MTU,
+      .value = {.u32 = 1514},
+  });
+  attrs.push_back({
+      .id = SAI_PORT_ATTR_SUPPORTED_SPEED,
+      .value = {.u32list =
+                    {
+                        .count = 0,
+                    }},
+  });
+  attrs.push_back({
+      .id = SAI_PORT_ATTR_SUPPORTED_FEC_MODE,
+      .value = {.s32list =
+                    {
+                        .count = 0,
+                    }},
+  });
+  APIBase::create(attrs.size(), attrs.data());
   return SAI_STATUS_SUCCESS;
 }
 
 sai_status_t Port::set_attribute(_In_ const sai_attribute_t* attr) {
   return SAI_STATUS_SUCCESS;
 }
+
+std::unordered_map<std::string, std::vector<int>> Port::parseLaneMap() {
+  std::ifstream file("/usr/share/sonic/hwsku/lanemap.ini");
+  std::string line;
+  std::unordered_map<std::string, std::vector<int>> res;
+  while (std::getline(file, line)) {
+    std::vector<std::string> elems = absl::StrSplit(line, ":");
+    std::vector<std::string> lanes = absl::StrSplit(elems[1], ",");
+    for (auto lane : lanes) {
+      res[elems[0]].push_back(std::stoi(lane));
+    }
+  }
+  return res;
+}
+
+std::unordered_map<std::string, std::vector<int>> Port::laneMap =
+    Port::parseLaneMap();

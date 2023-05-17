@@ -42,7 +42,7 @@ func mustParseHex(hexStr string) []byte {
 }
 
 // createFIBSelector creates a table that controls which forwarding table is used.
-func createFIBSelector(ctx context.Context, id string, c fwdpb.ForwardingClient) error {
+func createFIBSelector(ctx context.Context, id string, c fwdpb.ForwardingServer) error {
 	fieldID := &fwdpb.PacketFieldId{
 		Field: &fwdpb.PacketField{
 			FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION,
@@ -119,7 +119,7 @@ func createFIBSelector(ctx context.Context, id string, c fwdpb.ForwardingClient)
 }
 
 // createLayer2PuntTable creates a table to packets to punt at layer 2 (input port and mac dst).
-func createLayer2PuntTable(ctx context.Context, id string, c fwdpb.ForwardingClient) error {
+func createLayer2PuntTable(ctx context.Context, id string, c fwdpb.ForwardingServer) error {
 	arp := &fwdpb.TableCreateRequest{
 		ContextId: &fwdpb.ContextId{Id: id},
 		Desc: &fwdpb.TableDesc{
@@ -207,7 +207,7 @@ func createLayer2PuntTable(ctx context.Context, id string, c fwdpb.ForwardingCli
 }
 
 // addLayer2PuntRule adds rule to output packets to a corresponding port based on the destination MAC and input port.
-func addLayer2PuntRule(ctx context.Context, id string, c fwdpb.ForwardingClient, portID uint64, mac, macMask []byte) error {
+func addLayer2PuntRule(ctx context.Context, id string, c fwdpb.ForwardingServer, portID uint64, mac, macMask []byte) error {
 	nidBytes := make([]byte, binary.Size(portID))
 	binary.BigEndian.PutUint64(nidBytes, portID)
 
@@ -255,7 +255,7 @@ func addLayer2PuntRule(ctx context.Context, id string, c fwdpb.ForwardingClient,
 }
 
 // createLayer3PuntTable creates a table controlling whether packets to punt at layer 3 (input port and IP dst).
-func createLayer3PuntTable(ctx context.Context, id string, c fwdpb.ForwardingClient) error {
+func createLayer3PuntTable(ctx context.Context, id string, c fwdpb.ForwardingServer) error {
 	multicast := &fwdpb.TableCreateRequest{
 		ContextId: &fwdpb.ContextId{Id: id},
 		Desc: &fwdpb.TableDesc{
@@ -338,7 +338,7 @@ func nextHopToActions(nh *dpb.NextHop) []*fwdpb.ActionDesc {
 }
 
 // createKernelPort creates a port using the "Kernel" dataplane type (socket API).
-func createKernelPort(ctx context.Context, id string, c fwdpb.ForwardingClient, name string) (uint64, error) {
+func createKernelPort(ctx context.Context, id string, c fwdpb.ForwardingServer, name string) (uint64, error) {
 	port := &fwdpb.PortCreateRequest{
 		ContextId: &fwdpb.ContextId{Id: id},
 		Port: &fwdpb.PortDesc{
@@ -370,7 +370,7 @@ func createKernelPort(ctx context.Context, id string, c fwdpb.ForwardingClient, 
 }
 
 // createKernelPort creates a port using the "TAP" dataplane type (tap file API) and returns the fd to read/write from.
-func createTapPort(ctx context.Context, id string, c fwdpb.ForwardingClient, name string, fd int) (uint64, error) {
+func createTapPort(ctx context.Context, id string, c fwdpb.ForwardingServer, name string, fd int) (uint64, error) {
 	port := &fwdpb.PortCreateRequest{
 		ContextId: &fwdpb.ContextId{Id: id},
 		Port: &fwdpb.PortDesc{
@@ -380,7 +380,7 @@ func createTapPort(ctx context.Context, id string, c fwdpb.ForwardingClient, nam
 			},
 			Port: &fwdpb.PortDesc_Tap{
 				Tap: &fwdpb.TAPPortDesc{
-					Fd: int64(fd),
+					DeviceName: name,
 				},
 			},
 		},

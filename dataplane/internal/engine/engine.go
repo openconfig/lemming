@@ -19,6 +19,8 @@ import (
 	"encoding/binary"
 	"sync"
 
+	"github.com/openconfig/lemming/dataplane/forwarding"
+
 	log "github.com/golang/glog"
 
 	dpb "github.com/openconfig/lemming/proto/dataplane"
@@ -38,22 +40,23 @@ const (
 
 // Engine contains a routing context and methods to manage it.
 type Engine struct {
-	client     fwdpb.ForwardingClient
+	dpb.UnimplementedDataplaneServer
+	*forwarding.Engine
 	id         string
 	nameToIDMu sync.RWMutex
 	nameToID   map[string]uint64
 }
 
 // New creates a new engine and sets up the forwarding tables.
-func New(ctx context.Context, id string, c fwdpb.ForwardingClient) (*Engine, error) {
+func New(ctx context.Context) (*Engine, error) {
 	e := &Engine{
-		id:       id,
-		client:   c,
+		id:       "default",
+		Engine:   forwarding.New("engine"),
 		nameToID: map[string]uint64{},
 	}
 
-	_, err := c.ContextCreate(context.Background(), &fwdpb.ContextCreateRequest{
-		ContextId: &fwdpb.ContextId{Id: id},
+	_, err := e.Engine.ContextCreate(context.Background(), &fwdpb.ContextCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: "default"},
 	})
 	if err != nil {
 		return nil, err
@@ -80,7 +83,7 @@ func New(ctx context.Context, id string, c fwdpb.ForwardingClient) (*Engine, err
 			},
 		},
 	}
-	if _, err := c.TableCreate(ctx, v4FIB); err != nil {
+	if _, err := e.Engine.TableCreate(ctx, v4FIB); err != nil {
 		return nil, err
 	}
 	v6FIB := &fwdpb.TableCreateRequest{
@@ -104,7 +107,7 @@ func New(ctx context.Context, id string, c fwdpb.ForwardingClient) (*Engine, err
 			},
 		},
 	}
-	if _, err := c.TableCreate(ctx, v6FIB); err != nil {
+	if _, err := e.Engine.TableCreate(ctx, v6FIB); err != nil {
 		return nil, err
 	}
 	portMAC := &fwdpb.TableCreateRequest{
@@ -124,7 +127,7 @@ func New(ctx context.Context, id string, c fwdpb.ForwardingClient) (*Engine, err
 			},
 		},
 	}
-	if _, err := c.TableCreate(ctx, portMAC); err != nil {
+	if _, err := e.Engine.TableCreate(ctx, portMAC); err != nil {
 		return nil, err
 	}
 	neighbor := &fwdpb.TableCreateRequest{
@@ -144,19 +147,30 @@ func New(ctx context.Context, id string, c fwdpb.ForwardingClient) (*Engine, err
 			},
 		},
 	}
-	if _, err := c.TableCreate(ctx, neighbor); err != nil {
+	if _, err := e.Engine.TableCreate(ctx, neighbor); err != nil {
 		return nil, err
 	}
-	if err := createFIBSelector(ctx, e.id, c); err != nil {
+	if err := createFIBSelector(ctx, e.id, e.Engine); err != nil {
 		return nil, err
 	}
-	if err := createLayer2PuntTable(ctx, e.id, c); err != nil {
+	if err := createLayer2PuntTable(ctx, e.id, e.Engine); err != nil {
 		return nil, err
 	}
-	if err := createLayer3PuntTable(ctx, e.id, c); err != nil {
+	if err := createLayer3PuntTable(ctx, e.id, e.Engine); err != nil {
 		return nil, err
 	}
 	return e, nil
+}
+
+func (e *Engine) CreatePort(ctx context.Context, req *dpb.CreatePortRequest) (*dpb.CreatePortResponse, error) {
+	var err error
+	switch req.Type {
+	case fwdpb.PortType_PORT_TYPE_KERNEL:
+		err = e.CreateExternalPort(ctx, req.GetKernelDev())
+	case fwdpb.PortType_PORT_TYPE_TAP:
+		err = e.CreateExternalPort(ctx, req.GetKernelDev())
+	}
+	return &dpb.CreatePortResponse{}, err
 }
 
 // AddLayer3PuntRule adds rule to output packets to a corresponding port based on the destination IP and input port.
@@ -206,7 +220,7 @@ func (e *Engine) AddLayer3PuntRule(ctx context.Context, portName string, ip []by
 			}},
 		}},
 	}
-	if _, err := e.client.TableEntryAdd(ctx, entries); err != nil {
+	if _, err := e.Engine.TableEntryAdd(ctx, entries); err != nil {
 		return err
 	}
 	return nil
@@ -272,7 +286,7 @@ func (e *Engine) AddIPRoute(ctx context.Context, v4 bool, ip, mask []byte, vrf u
 		},
 		Actions: actions,
 	}
-	if _, err := e.client.TableEntryAdd(ctx, entry); err != nil {
+	if _, err := e.Engine.TableEntryAdd(ctx, entry); err != nil {
 		return err
 	}
 
@@ -303,7 +317,7 @@ func (e *Engine) DeleteIPRoute(ctx context.Context, v4 bool, ip, mask []byte, vr
 			},
 		},
 	}
-	if _, err := e.client.TableEntryRemove(ctx, entry); err != nil {
+	if _, err := e.Engine.TableEntryRemove(ctx, entry); err != nil {
 		return err
 	}
 
@@ -340,7 +354,7 @@ func (e *Engine) AddNeighbor(ctx context.Context, ip, mac []byte) error {
 			},
 		}},
 	}
-	if _, err := e.client.TableEntryAdd(ctx, entry); err != nil {
+	if _, err := e.Engine.TableEntryAdd(ctx, entry); err != nil {
 		return err
 	}
 
@@ -363,7 +377,7 @@ func (e *Engine) RemoveNeighbor(ctx context.Context, ip []byte) error {
 			},
 		},
 	}
-	if _, err := e.client.TableEntryRemove(ctx, entry); err != nil {
+	if _, err := e.Engine.TableEntryRemove(ctx, entry); err != nil {
 		return err
 	}
 
@@ -405,7 +419,7 @@ func (e *Engine) UpdatePortSrcMAC(ctx context.Context, portName string, mac []by
 			},
 		}},
 	}
-	if _, err := e.client.TableEntryAdd(ctx, entry); err != nil {
+	if _, err := e.Engine.TableEntryAdd(ctx, entry); err != nil {
 		return err
 	}
 
@@ -414,7 +428,7 @@ func (e *Engine) UpdatePortSrcMAC(ctx context.Context, portName string, mac []by
 
 // CreateExternalPort creates an external port (connected to other devices).
 func (e *Engine) CreateExternalPort(ctx context.Context, name string) error {
-	id, err := createKernelPort(ctx, e.id, e.client, name)
+	id, err := createKernelPort(ctx, e.id, e.Engine, name)
 	if err != nil {
 		return err
 	}
@@ -485,7 +499,7 @@ func (e *Engine) CreateExternalPort(ctx context.Context, name string) error {
 			},
 		},
 	}
-	if _, err := e.client.PortUpdate(ctx, update); err != nil {
+	if _, err := e.Engine.PortUpdate(ctx, update); err != nil {
 		return err
 	}
 	return nil
@@ -493,7 +507,7 @@ func (e *Engine) CreateExternalPort(ctx context.Context, name string) error {
 
 // CreateLocalPort creates an local (ie TAP) port for the given linux device name.
 func (e *Engine) CreateLocalPort(ctx context.Context, name string, fd int) error {
-	id, err := createTapPort(ctx, e.id, e.client, name, fd)
+	id, err := createTapPort(ctx, e.id, e.Engine, name, fd)
 	if err != nil {
 		return err
 	}
@@ -535,7 +549,7 @@ func (e *Engine) CreateLocalPort(ctx context.Context, name string, fd int) error
 			},
 		},
 	}
-	if _, err := e.client.PortUpdate(ctx, update); err != nil {
+	if _, err := e.Engine.PortUpdate(ctx, update); err != nil {
 		return err
 	}
 	return nil
@@ -543,7 +557,7 @@ func (e *Engine) CreateLocalPort(ctx context.Context, name string, fd int) error
 
 // CreateLocalPort returns the counters for the object by name.
 func (e *Engine) GetCounters(ctx context.Context, name string) (*fwdpb.ObjectCountersReply, error) {
-	return e.client.ObjectCounters(ctx, &fwdpb.ObjectCountersRequest{
+	return e.Engine.ObjectCounters(ctx, &fwdpb.ObjectCountersRequest{
 		ObjectId:  &fwdpb.ObjectId{Id: name},
 		ContextId: &fwdpb.ContextId{Id: e.id},
 	})

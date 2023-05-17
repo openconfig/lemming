@@ -16,19 +16,22 @@ package ports
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/afpacket"
 	"github.com/google/gopacket/layers"
+	"github.com/vishvananda/netlink"
+
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdport"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdobject"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdpacket"
 	"github.com/openconfig/lemming/internal/debug"
-	"github.com/vishvananda/netlink"
 
 	log "github.com/golang/glog"
+
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
@@ -152,8 +155,7 @@ func (p *kernelPort) State(*fwdpb.PortInfo) (*fwdpb.PortStateReply, error) {
 	return &ready, nil
 }
 
-type kernelBuilder struct {
-}
+type kernelBuilder struct{}
 
 // Build creates a new port.
 func (kernelBuilder) Build(portDesc *fwdpb.PortDesc, ctx *fwdcontext.Context) (fwdport.Port, error) {
@@ -171,6 +173,9 @@ func (kernelBuilder) Build(portDesc *fwdpb.PortDesc, ctx *fwdcontext.Context) (f
 		if err := netlink.SetPromiscOn(l); err != nil {
 			return nil, fmt.Errorf("failed to set sec promisc on: %v", err)
 		}
+	}
+	if err := os.WriteFile(fmt.Sprintf("/proc/sys/net/ipv4/conf/%s/arp_ignore", kp.Kernel.GetDeviceName()), []byte("2"), 0o600); err != nil {
+		return nil, fmt.Errorf("failed to set arp_ignore to 2: %v", err)
 	}
 
 	// TODO: configure MTU

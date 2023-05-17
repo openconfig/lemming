@@ -33,7 +33,7 @@ go_library(
         "//dataplane/forwarding/infra/fwdobject",
         "//dataplane/forwarding/infra/fwdpacket",
         "//dataplane/forwarding/util/hash/crc16",
-        "//dataplane/internal/engine",
+        "//dataplane/internal/iface",
         "//proto/forwarding",
         "@com_github_golang_glog//:glog",
     ],

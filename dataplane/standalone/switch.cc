@@ -15,12 +15,13 @@
 #include "dataplane/standalone/switch.h"
 
 #include <string>
+#include <vector>
 
+#include "dataplane/standalone/port.h"
 #include "dataplane/standalone/translator.h"
 
 extern "C" {
 #include "inc/sai.h"
-#include "meta/saimetadata.h"
 }
 
 sai_status_t Switch::create(_In_ uint32_t attr_count,
@@ -48,192 +49,184 @@ sai_status_t Switch::create(_In_ uint32_t attr_count,
     }
   }
 
-  this->attrMgr->set_attribute(std::to_string(this->id),
-                               sai_attribute_t{
-                                   .id = SAI_SWITCH_ATTR_NUMBER_OF_ACTIVE_PORTS,
-                                   .value = {.u32 = 0},
-                               });
+  std::vector<sai_attribute_t> attrs(attr_list, attr_list + attr_count);
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_NUMBER_OF_ACTIVE_PORTS,
+      .value = {.u32 = 0},
+  });
 
-  this->attrMgr->set_attribute(std::to_string(this->id),
-                               sai_attribute_t{
-                                   .id = SAI_SWITCH_ATTR_PORT_LIST,
-                                   .value = {.objlist = {.count = 0}},
-                               });
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_PORT_LIST,
+      .value = {.objlist = {.count = 0}},
+  });
 
   auto portOid = this->attrMgr->create(SAI_OBJECT_TYPE_PORT, this->id);
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_CPU_PORT,
+      .value = {.oid = portOid},
+  });
 
-  this->attrMgr->set_attribute(std::to_string(this->id),
-                               sai_attribute_t{
-                                   .id = SAI_SWITCH_ATTR_CPU_PORT,
-                                   .value = {.oid = portOid},
-                               });
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_ACL_ENTRY_MINIMUM_PRIORITY,
+      .value = {.u32 = 0},
+  });
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_ACL_ENTRY_MAXIMUM_PRIORITY,
+      .value = {.u32 = 1},
+  });
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_MAX_ACL_ACTION_COUNT,
+      .value = {.u32 = 10},
+  });
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_ACL_STAGE_INGRESS,
+      .value = {.aclcapability = {}},
+  });
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_ACL_STAGE_EGRESS,
+      .value = {.aclcapability = {}},
+  });
 
   auto vlanOid = this->attrMgr->create(SAI_OBJECT_TYPE_VLAN, this->id);
-  this->attrMgr->set_attribute(std::to_string(this->id),
-                               sai_attribute_t{
-                                   .id = SAI_SWITCH_ATTR_DEFAULT_VLAN_ID,
-                                   .value = {.oid = vlanOid},
-                               });
+  this->create_child(SAI_OBJECT_TYPE_VLAN, vlanOid, 0, nullptr);
+
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_DEFAULT_VLAN_ID,
+      .value = {.oid = vlanOid},
+  });
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_NUMBER_OF_ECMP_GROUPS,
+      .value = {.u32 = 1},
+  });
 
   auto stpOid = this->attrMgr->create(SAI_OBJECT_TYPE_STP, this->id);
-  this->attrMgr->set_attribute(std::to_string(this->id),
-                               sai_attribute_t{
-                                   .id = SAI_SWITCH_ATTR_DEFAULT_STP_INST_ID,
-                                   .value = {.oid = stpOid},
-                               });
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_DEFAULT_STP_INST_ID,
+      .value = {.oid = stpOid},
+  });
 
   auto vrOid = this->attrMgr->create(SAI_OBJECT_TYPE_VIRTUAL_ROUTER, this->id);
-  this->attrMgr->set_attribute(
-      std::to_string(this->id),
-      sai_attribute_t{
-          .id = SAI_SWITCH_ATTR_DEFAULT_VIRTUAL_ROUTER_ID,
-          .value = {.oid = vrOid},
-      });
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_DEFAULT_VIRTUAL_ROUTER_ID,
+      .value = {.oid = vrOid},
+  });
 
-  this->attrMgr->set_attribute(
-      std::to_string(this->id),
-      sai_attribute_t{
-          .id = SAI_SWITCH_ATTR_DEFAULT_OVERRIDE_VIRTUAL_ROUTER_ID,
-          .value = {.oid = vrOid},
-      });
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_DEFAULT_OVERRIDE_VIRTUAL_ROUTER_ID,
+      .value = {.oid = vrOid},
+  });
 
   auto brOid = this->attrMgr->create(SAI_OBJECT_TYPE_BRIDGE, this->id);
-  this->attrMgr->set_attribute(std::to_string(this->id),
-                               sai_attribute_t{
-                                   .id = SAI_SWITCH_ATTR_DEFAULT_1Q_BRIDGE_ID,
-                                   .value = {.oid = brOid},
-                               });
-  this->attrMgr->set_attribute(std::to_string(this->id),
-                               sai_attribute_t{
-                                   .id = SAI_SWITCH_ATTR_INGRESS_ACL,
-                                   .value = {.oid = SAI_NULL_OBJECT_ID},
-                               });
-  this->attrMgr->set_attribute(std::to_string(this->id),
-                               sai_attribute_t{
-                                   .id = SAI_SWITCH_ATTR_EGRESS_ACL,
-                                   .value = {.oid = SAI_NULL_OBJECT_ID},
-                               });
-  this->attrMgr->set_attribute(
-      std::to_string(this->id),
-      sai_attribute_t{
-          .id = SAI_SWITCH_ATTR_QOS_MAX_NUMBER_OF_TRAFFIC_CLASSES,
-          .value = {.u8 = 0},
-      });
+  this->create_child(SAI_OBJECT_TYPE_BRIDGE, brOid, 0, nullptr);
+
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_DEFAULT_1Q_BRIDGE_ID,
+      .value = {.oid = brOid},
+  });
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_INGRESS_ACL,
+      .value = {.oid = SAI_NULL_OBJECT_ID},
+  });
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_EGRESS_ACL,
+      .value = {.oid = SAI_NULL_OBJECT_ID},
+  });
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_QOS_MAX_NUMBER_OF_TRAFFIC_CLASSES,
+      .value = {.u8 = 0},
+  });
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_TOTAL_BUFFER_SIZE,
+      .value = {.u64 = 1024 * 1024},
+  });
 
   auto trGrpOid =
       this->attrMgr->create(SAI_OBJECT_TYPE_HOSTIF_TRAP_GROUP, this->id);
-  this->attrMgr->set_attribute(std::to_string(this->id),
-                               sai_attribute_t{
-                                   .id = SAI_SWITCH_ATTR_DEFAULT_TRAP_GROUP,
-                                   .value = {.oid = trGrpOid},
-                               });
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_DEFAULT_TRAP_GROUP,
+      .value = {.oid = trGrpOid},
+  });
   auto ecmpOid = this->attrMgr->create(SAI_OBJECT_TYPE_HASH, this->id);
-  this->attrMgr->set_attribute(std::to_string(this->id),
-                               sai_attribute_t{
-                                   .id = SAI_SWITCH_ATTR_ECMP_HASH,
-                                   .value = {.oid = ecmpOid},
-                               });
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_ECMP_HASH,
+      .value = {.oid = ecmpOid},
+  });
 
   auto hashOid = this->attrMgr->create(SAI_OBJECT_TYPE_HASH, this->id);
-  this->attrMgr->set_attribute(std::to_string(this->id),
-                               sai_attribute_t{
-                                   .id = SAI_SWITCH_ATTR_LAG_HASH,
-                                   .value = {.oid = hashOid},
-                               });
-  this->attrMgr->set_attribute(std::to_string(this->id),
-                               sai_attribute_t{
-                                   .id = SAI_SWITCH_ATTR_RESTART_WARM,
-                                   .value = {.booldata = false},
-                               });
-  this->attrMgr->set_attribute(std::to_string(this->id),
-                               sai_attribute_t{
-                                   .id = SAI_SWITCH_ATTR_WARM_RECOVER,
-                                   .value = {.booldata = false},
-                               });
-  this->attrMgr->set_attribute(
-      std::to_string(this->id),
-      sai_attribute_t{
-          .id = SAI_SWITCH_ATTR_LAG_DEFAULT_HASH_ALGORITHM,
-          .value = {.s32 = SAI_HASH_ALGORITHM_CRC},
-      });
-  this->attrMgr->set_attribute(std::to_string(this->id),
-                               sai_attribute_t{
-                                   .id = SAI_SWITCH_ATTR_LAG_DEFAULT_HASH_SEED,
-                                   .value = {.u32 = 0},
-                               });
-  this->attrMgr->set_attribute(
-      std::to_string(this->id),
-      sai_attribute_t{
-          .id = SAI_SWITCH_ATTR_LAG_DEFAULT_SYMMETRIC_HASH,
-          .value = {.booldata = false},
-      });
-  this->attrMgr->set_attribute(std::to_string(this->id),
-                               sai_attribute_t{
-                                   .id = SAI_SWITCH_ATTR_QOS_DEFAULT_TC,
-                                   .value = {.u8 = 0},
-                               });
-  this->attrMgr->set_attribute(std::to_string(this->id),
-                               sai_attribute_t{
-                                   .id = SAI_SWITCH_ATTR_QOS_DOT1P_TO_TC_MAP,
-                                   .value = {.oid = SAI_NULL_OBJECT_ID},
-                               });
-  this->attrMgr->set_attribute(std::to_string(this->id),
-                               sai_attribute_t{
-                                   .id = SAI_SWITCH_ATTR_QOS_DOT1P_TO_COLOR_MAP,
-                                   .value = {.oid = SAI_NULL_OBJECT_ID},
-                               });
-  this->attrMgr->set_attribute(std::to_string(this->id),
-                               sai_attribute_t{
-                                   .id = SAI_SWITCH_ATTR_QOS_TC_TO_QUEUE_MAP,
-                                   .value = {.oid = SAI_NULL_OBJECT_ID},
-                               });
-  this->attrMgr->set_attribute(
-      std::to_string(this->id),
-      sai_attribute_t{
-          .id = SAI_SWITCH_ATTR_QOS_TC_AND_COLOR_TO_DOT1P_MAP,
-          .value = {.oid = SAI_NULL_OBJECT_ID},
-      });
-  this->attrMgr->set_attribute(
-      std::to_string(this->id),
-      sai_attribute_t{
-          .id = SAI_SWITCH_ATTR_QOS_TC_AND_COLOR_TO_DSCP_MAP,
-          .value = {.oid = SAI_NULL_OBJECT_ID},
-      });
-  this->attrMgr->set_attribute(std::to_string(this->id),
-                               sai_attribute_t{
-                                   .id = SAI_SWITCH_ATTR_SWITCH_SHELL_ENABLE,
-                                   .value = {.booldata = false},
-                               });
-  this->attrMgr->set_attribute(std::to_string(this->id),
-                               sai_attribute_t{
-                                   .id = SAI_SWITCH_ATTR_SWITCH_PROFILE_ID,
-                                   .value = {.u32 = 0},
-                               });
-  this->attrMgr->set_attribute(std::to_string(this->id),
-                               sai_attribute_t{
-                                   .id = SAI_SWITCH_ATTR_SWITCH_HARDWARE_INFO,
-                                   .value = {.s8list = {.count = 0}},
-                               });
-  this->attrMgr->set_attribute(std::to_string(this->id),
-                               sai_attribute_t{
-                                   .id = SAI_SWITCH_ATTR_FIRMWARE_PATH_NAME,
-                                   .value = {.s8list = {.count = 0}},
-                               });
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_LAG_HASH,
+      .value = {.oid = hashOid},
+  });
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_RESTART_WARM,
+      .value = {.booldata = false},
+  });
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_WARM_RECOVER,
+      .value = {.booldata = false},
+  });
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_LAG_DEFAULT_HASH_ALGORITHM,
+      .value = {.s32 = SAI_HASH_ALGORITHM_CRC},
+  });
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_LAG_DEFAULT_HASH_SEED,
+      .value = {.u32 = 0},
+  });
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_LAG_DEFAULT_SYMMETRIC_HASH,
+      .value = {.booldata = false},
+  });
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_QOS_DEFAULT_TC,
+      .value = {.u8 = 0},
+  });
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_QOS_DOT1P_TO_TC_MAP,
+      .value = {.oid = SAI_NULL_OBJECT_ID},
+  });
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_QOS_DOT1P_TO_COLOR_MAP,
+      .value = {.oid = SAI_NULL_OBJECT_ID},
+  });
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_QOS_TC_TO_QUEUE_MAP,
+      .value = {.oid = SAI_NULL_OBJECT_ID},
+  });
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_QOS_TC_AND_COLOR_TO_DOT1P_MAP,
+      .value = {.oid = SAI_NULL_OBJECT_ID},
+  });
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_QOS_TC_AND_COLOR_TO_DSCP_MAP,
+      .value = {.oid = SAI_NULL_OBJECT_ID},
+  });
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_SWITCH_SHELL_ENABLE,
+      .value = {.booldata = false},
+  });
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_SWITCH_PROFILE_ID,
+      .value = {.u32 = 0},
+  });
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_SWITCH_HARDWARE_INFO,
+      .value = {.s8list = {.count = 0}},
+  });
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_FIRMWARE_PATH_NAME,
+      .value = {.s8list = {.count = 0}},
+  });
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_NAT_ZONE_COUNTER_OBJECT_ID,
+      .value = {.oid = SAI_NULL_OBJECT_ID},
+  });
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_QOS_TC_AND_COLOR_TO_MPLS_EXP_MAP,
+      .value = {.oid = SAI_NULL_OBJECT_ID},
+  });
 
-  this->attrMgr->set_attribute(
-      std::to_string(this->id),
-      sai_attribute_t{
-          .id = SAI_SWITCH_ATTR_NAT_ZONE_COUNTER_OBJECT_ID,
-          .value = {.oid = SAI_NULL_OBJECT_ID},
-      });
-
-  this->attrMgr->set_attribute(
-      std::to_string(this->id),
-      sai_attribute_t{
-          .id = SAI_SWITCH_ATTR_QOS_TC_AND_COLOR_TO_MPLS_EXP_MAP,
-          .value = {.oid = SAI_NULL_OBJECT_ID},
-      });
-
+  APIBase::create(attrs.size(), attrs.data());
   return SAI_STATUS_SUCCESS;
 }
 
@@ -246,12 +239,13 @@ sai_status_t Switch::create_child(sai_object_type_t type, sai_object_id_t id,
                                   const sai_attribute_t *attr_list) {
   switch (type) {
     case SAI_OBJECT_TYPE_PORT:
-      this->apis[std::to_string(id)] =
-          std::make_unique<Port>(this->attrMgr, this->client);
+      this->apis[std::to_string(id)] = std::make_unique<Port>(
+          std::to_string(id), this->attrMgr, this->fwd, this->dataplane);
+      break;
     default:
       return SAI_STATUS_FAILURE;
   }
-  return SAI_STATUS_SUCCESS;
+  return this->apis[std::to_string(id)]->create(attr_count, attr_list);
 }
 
 sai_status_t Switch::create_child(sai_object_type_t type, common_entry_t id,

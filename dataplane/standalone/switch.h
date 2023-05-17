@@ -21,6 +21,8 @@
 
 #include "dataplane/standalone/common.h"
 #include "dataplane/standalone/port.h"
+#include "proto/dataplane/dataplane.grpc.pb.h"
+#include "proto/dataplane/dataplane.pb.h"
 #include "proto/forwarding/forwarding_service.grpc.pb.h"
 #include "proto/forwarding/forwarding_service.pb.h"
 
@@ -30,9 +32,10 @@ extern "C" {
 
 class Switch : public APIBase {
  public:
-  Switch(sai_object_id_t id, std::shared_ptr<AttributeManager> mgr,
-         std::shared_ptr<forwarding::Forwarding::Stub> c)
-      : APIBase(mgr, c), id(id) {}
+  Switch(std::string id, std::shared_ptr<AttributeManager> mgr,
+         std::shared_ptr<forwarding::Forwarding::Stub> fwd,
+         std::shared_ptr<lemming::dataplane::Dataplane::Stub> dplane)
+      : APIBase(id, mgr, fwd, dplane) {}
   ~Switch() = default;
   sai_status_t create(_In_ uint32_t attr_count,
                       _In_ const sai_attribute_t* attr_list);
@@ -48,7 +51,7 @@ class Switch : public APIBase {
                               const sai_attribute_t* attr);
 
  private:
-  sai_object_id_t id;
+  std::string id;
   std::unordered_map<std::string, std::unique_ptr<APIBase>> apis;
 };
 

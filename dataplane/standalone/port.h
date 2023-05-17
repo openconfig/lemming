@@ -19,6 +19,8 @@
 #include <unordered_map>
 
 #include "dataplane/standalone/common.h"
+#include "proto/dataplane/dataplane.grpc.pb.h"
+#include "proto/dataplane/dataplane.pb.h"
 #include "proto/forwarding/forwarding_service.grpc.pb.h"
 #include "proto/forwarding/forwarding_service.pb.h"
 
@@ -28,13 +30,18 @@ extern "C" {
 
 class Port : public APIBase {
  public:
-  Port(std::shared_ptr<AttributeManager> mgr,
-       std::shared_ptr<forwarding::Forwarding::Stub> c)
-      : APIBase(mgr, c) {}
+  Port(std::string id, std::shared_ptr<AttributeManager> mgr,
+       std::shared_ptr<forwarding::Forwarding::Stub> fwd,
+       std::shared_ptr<lemming::dataplane::Dataplane::Stub> dplane)
+      : APIBase(id, mgr, fwd, dplane) {}
   ~Port() = default;
   sai_status_t create(_In_ uint32_t attr_count,
                       _In_ const sai_attribute_t* attr_list);
   sai_status_t set_attribute(_In_ const sai_attribute_t* attr);
+
+ private:
+  static std::unordered_map<std::string, std::vector<int>> parseLaneMap();
+  static std::unordered_map<std::string, std::vector<int>> laneMap;
 };
 
 #endif  // DATAPLANE_STANDALONE_PORT_H_

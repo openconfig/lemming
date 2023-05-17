@@ -20,6 +20,8 @@
 #include <unordered_map>
 
 #include "dataplane/standalone/sai/entry.h"
+#include "proto/dataplane/dataplane.grpc.pb.h"
+#include "proto/dataplane/dataplane.pb.h"
 #include "proto/forwarding/forwarding_service.grpc.pb.h"
 #include "proto/forwarding/forwarding_service.pb.h"
 
@@ -31,27 +33,30 @@ extern "C" {
 class SaiObject {
  public:
   sai_object_type_t type;
-  sai_object_id_t switch_id;
+  std::string switch_id;
   std::unordered_map<sai_attr_id_t, sai_attribute_value_t> attributes;
 };
 
 // AttributeManager tracks objects and their attributes values.
 class AttributeManager {
  public:
-  AttributeManager() : objects() {
+  AttributeManager() {
     objects[std::string("0")] = {
         .type = SAI_OBJECT_TYPE_NULL};  // ID == 0, is invalid so skip.
   }
-  sai_object_id_t create(sai_object_type_t type, sai_object_id_t switch_id);
+  sai_object_id_t create(sai_object_type_t type, std::string switch_id);
   std::string create(sai_object_type_t type, common_entry_t entry);
   sai_object_type_t get_type(std::string id);
-  sai_object_id_t get_switch_id(std::string id);
+  std::string get_switch_id(std::string id);
+
   void set_attribute(std::string id, const sai_attribute_t* attr);
   void set_attribute(std::string id, sai_attribute_t attr);
+
   sai_status_t get_attribute(std::string id, uint32_t attr_count,
                              sai_attribute_t* attr_list);
+
   std::string serialize_entry(sai_object_type_t type, common_entry_t id);
-  sai_object_id_t entry_to_switch_id(sai_object_type_t type, common_entry_t id);
+  std::string entry_to_switch_id(sai_object_type_t type, common_entry_t id);
 
  private:
   std::unordered_map<std::string, SaiObject> objects;
@@ -61,17 +66,22 @@ class AttributeManager {
 // TODO(dgrau): Verify no concurrent access or add mutex.
 class APIBase {
  public:
-  APIBase(std::shared_ptr<AttributeManager> mgr,
-          std::shared_ptr<forwarding::Forwarding::Stub> c)
-      : attrMgr(mgr), client(c) {}
+  APIBase(std::string id, std::shared_ptr<AttributeManager> mgr,
+          std::shared_ptr<forwarding::Forwarding::Stub> fwd,
+          std::shared_ptr<lemming::dataplane::Dataplane::Stub> dplane)
+      : id(id), attrMgr(mgr), fwd(fwd), dataplane(dplane) {}
   virtual ~APIBase() = default;
+  virtual sai_status_t create(common_entry_t id, _In_ uint32_t attr_count,
+                              _In_ const sai_attribute_t* attr_list);
   virtual sai_status_t create(_In_ uint32_t attr_count,
-                              _In_ const sai_attribute_t* attr_list) = 0;
-  virtual sai_status_t set_attribute(_In_ const sai_attribute_t* attr) = 0;
+                              _In_ const sai_attribute_t* attr_list);
+  virtual sai_status_t set_attribute(_In_ const sai_attribute_t* attr);
 
  protected:
+  std::string id;
   std::shared_ptr<AttributeManager> attrMgr;
-  std::shared_ptr<forwarding::Forwarding::Stub> client;
+  std::shared_ptr<forwarding::Forwarding::Stub> fwd;
+  std::shared_ptr<lemming::dataplane::Dataplane::Stub> dataplane;
 };
 
 #endif  // DATAPLANE_STANDALONE_COMMON_H_
