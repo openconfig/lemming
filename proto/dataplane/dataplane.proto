@@ -43,7 +43,8 @@ message CreatePortRequest {
   forwarding.PortType type = 1; 
   string id = 2;
   oneof src {
-    string kernel_dev = 3;
+    // Name of the linux kernel device to use for the port (eg eth0).
+    string kernel_dev = 3; 
   }
 }
 

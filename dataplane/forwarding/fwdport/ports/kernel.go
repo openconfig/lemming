@@ -174,6 +174,7 @@ func (kernelBuilder) Build(portDesc *fwdpb.PortDesc, ctx *fwdcontext.Context) (f
 			return nil, fmt.Errorf("failed to set sec promisc on: %v", err)
 		}
 	}
+	// Make port only reply to IPs it has.
 	if err := os.WriteFile(fmt.Sprintf("/proc/sys/net/ipv4/conf/%s/arp_ignore", kp.Kernel.GetDeviceName()), []byte("2"), 0o600); err != nil {
 		return nil, fmt.Errorf("failed to set arp_ignore to 2: %v", err)
 	}

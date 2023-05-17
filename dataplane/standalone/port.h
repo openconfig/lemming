@@ -43,6 +43,7 @@ class Port : public APIBase {
 
  private:
   static std::unordered_map<std::string, std::vector<int>> parseLaneMap();
+  // laneMap is map from port name ("eth0") to lanes of hardware lanes.
   static std::unordered_map<std::string, std::vector<int>> laneMap;
 };
 
