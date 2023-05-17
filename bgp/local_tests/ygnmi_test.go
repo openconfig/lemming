@@ -18,9 +18,13 @@ package local_test
 
 import (
 	"context"
+	"errors"
 	"testing"
+	"time"
 
 	"github.com/openconfig/ygnmi/ygnmi"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // Get fetches the value of a SingletonQuery with a ONCE subscription,
@@ -98,4 +102,74 @@ func Await[T any](t testing.TB, c *ygnmi.Client, q ygnmi.SingletonQuery[T], val 
 		t.Fatalf("Await(t) on %v at %v: %v", c, q, err)
 	}
 	return v
+
+}
+
+type watchAwaiter[T any] interface {
+	Await() (*ygnmi.Value[T], error)
+}
+
+// Watcher represents an ongoing watch of telemetry values.
+type Watcher[T any] struct {
+	watcher  watchAwaiter[T]
+	cancelFn func()
+	c        *ygnmi.Client
+	query    ygnmi.AnyQuery[T]
+}
+
+func isContextErr(err error) bool {
+	// https://pkg.go.dev/google.golang.org/grpc@v1.48.0/internal/status#Error
+	var st interface {
+		GRPCStatus() *status.Status
+	}
+	ok := errors.As(err, &st)
+	return ok && (st.GRPCStatus().Code() == codes.DeadlineExceeded || st.GRPCStatus().Code() == codes.Canceled)
+}
+
+// statusErr is an interface implemented by errors returned by gRPC.
+// https://pkg.go.dev/google.golang.org/grpc@v1.48.0/internal/status#Error
+type statusErr interface {
+	GRPCStatus() *status.Status
+}
+
+// Await waits for the watch to finish and returns the last received value
+// and a boolean indicating whether the predicate evaluated to true.
+// When Await returns the watcher is closed, and Await may not be called again.
+func (w *Watcher[T]) Await(t testing.TB) (*ygnmi.Value[T], bool) {
+	t.Helper()
+	v, err := w.watcher.Await()
+	if err != nil {
+		if isContextErr(err) {
+			return v, false
+		}
+		t.Fatalf("Await(t) on %s at %v: %v", w.c, w.query, err)
+	}
+	return v, true
+}
+
+// Cancel stops the watch immediately.
+func (w *Watcher[T]) Cancel() {
+	w.cancelFn()
+}
+
+// Watch starts an asynchronous STREAM subscription, evaluating each observed value with the
+// specified predicate. The subscription completes when either the predicate is true
+// or the timeout is reached. Calling Await on the returned Watcher waits for the subscription
+// to complete. It returns the last observed value and a boolean that indicates whether
+// that value satisfies the predicate.
+func Watch[T any](t testing.TB, c *ygnmi.Client, q ygnmi.SingletonQuery[T], timeout time.Duration, pred func(*ygnmi.Value[T]) bool) *Watcher[T] {
+	t.Helper()
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	w := ygnmi.Watch(ctx, c, q, func(v *ygnmi.Value[T]) error {
+		if ok := pred(v); ok {
+			return nil
+		}
+		return ygnmi.Continue
+	})
+	return &Watcher[T]{
+		watcher:  w,
+		cancelFn: cancel,
+		c:        c,
+		query:    q,
+	}
 }
