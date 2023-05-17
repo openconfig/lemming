@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"strings"
 	"sync"
 	"time"
 
@@ -28,7 +29,6 @@ import (
 	"golang.org/x/sys/unix"
 
 	"github.com/openconfig/lemming/dataplane/internal/engine"
-	"github.com/openconfig/lemming/dataplane/internal/iface"
 	"github.com/openconfig/lemming/dataplane/internal/kernel"
 	"github.com/openconfig/lemming/gnmi/gnmiclient"
 	"github.com/openconfig/lemming/gnmi/oc"
@@ -49,9 +49,11 @@ type Interface struct {
 	e       *engine.Engine
 	stateMu sync.RWMutex
 	// state keeps track of the applied state of the device's interfaces so that we do not issue duplicate configuration commands to the device's interfaces.
-	state     map[string]*oc.Interface
-	idxToName map[int]string
-	ifaceMgr  interfaceManager
+	state                  map[string]*oc.Interface
+	idxToName              map[int]string
+	internalToExternalPort map[string]string
+	externalToInternalPort map[string]string
+	ifaceMgr               interfaceManager
 }
 
 type interfaceManager interface {
@@ -70,10 +72,12 @@ type interfaceManager interface {
 // NewInterface creates a new interface handler.
 func NewInterface(e *engine.Engine) *reconciler.BuiltReconciler {
 	i := &Interface{
-		e:         e,
-		idxToName: map[int]string{},
-		state:     map[string]*oc.Interface{},
-		ifaceMgr:  &kernel.Interfaces{},
+		e:                      e,
+		idxToName:              map[int]string{},
+		state:                  map[string]*oc.Interface{},
+		ifaceMgr:               &kernel.Interfaces{},
+		internalToExternalPort: map[string]string{},
+		externalToInternalPort: map[string]string{},
 	}
 	return reconciler.NewBuilder("interface").WithStart(i.start).WithStop(i.stop).Build()
 }
@@ -219,7 +223,7 @@ func (ni *Interface) reconcile(config *oc.Interface) {
 	ni.stateMu.RLock()
 	defer ni.stateMu.RUnlock()
 
-	tapName := iface.IntfNameToTapName(config.GetName())
+	tapName := ni.externalToInternalPort[config.GetName()]
 	state := ni.getOrCreateInterface(config.GetName())
 
 	if config.GetOrCreateEthernet().MacAddress != nil {
@@ -340,11 +344,11 @@ func (ni *Interface) handleLinkUpdate(ctx context.Context, lu *netlink.LinkUpdat
 
 	log.V(1).Infof("handling link update for %s", lu.Attrs().Name)
 
-	if !iface.IsTap(lu.Attrs().Name) {
+	modelName, ok := ni.internalToExternalPort[lu.Attrs().Name]
+	if !ok {
 		return
 	}
 
-	modelName := iface.TapNameToIntfName(lu.Attrs().Name)
 	iface := ni.getOrCreateInterface(modelName)
 	if err := ni.e.UpdatePortSrcMAC(ctx, modelName, lu.Attrs().HardwareAddr); err != nil {
 		log.Warningf("failed to update src mac: %v", err)
@@ -384,12 +388,13 @@ func (ni *Interface) handleAddrUpdate(ctx context.Context, au *netlink.AddrUpdat
 	ni.stateMu.Lock()
 	defer ni.stateMu.Unlock()
 	name := ni.idxToName[au.LinkIndex]
-	if !iface.IsTap(name) || name == "" {
+
+	modelName, ok := ni.internalToExternalPort[name]
+	if !ok || name == "" {
 		return
 	}
 
 	sb := &ygnmi.SetBatch{}
-	modelName := iface.TapNameToIntfName(name)
 	sub := ni.getOrCreateInterface(modelName).GetOrCreateSubinterface(0)
 
 	ip := au.LinkAddress.IP.String()
@@ -434,11 +439,12 @@ func (ni *Interface) handleNeighborUpdate(ctx context.Context, nu *netlink.Neigh
 	log.V(1).Infof("handling neighbor update for %s on %d", nu.IP.String(), nu.LinkIndex)
 
 	name := ni.idxToName[nu.LinkIndex]
-	if name == "" {
+	modelName, ok := ni.internalToExternalPort[name]
+	if name == "" || !ok {
 		return
 	}
+
 	sb := &ygnmi.SetBatch{}
-	modelName := iface.TapNameToIntfName(name)
 	sub := ni.getOrCreateInterface(modelName).GetOrCreateSubinterface(0)
 
 	switch nu.Type {
@@ -495,6 +501,10 @@ func (ni *Interface) handleNeighborUpdate(ctx context.Context, nu *netlink.Neigh
 	}
 }
 
+const (
+	internalSuffix = "-internal"
+)
+
 // setupPorts creates the dataplane ports and TAP interfaces for all interfaces on the device.
 func (ni *Interface) setupPorts(ctx context.Context) error {
 	ifs, err := ni.ifaceMgr.GetAll()
@@ -503,30 +513,11 @@ func (ni *Interface) setupPorts(ctx context.Context) error {
 	}
 	for _, i := range ifs {
 		// Skip loopback, k8s pod interface, and tap interfaces.
-		if i.Name == "lo" || i.Name == "eth0" || iface.IsTap(i.Name) {
+		if i.Name == "lo" || i.Name == "eth0" || strings.HasSuffix(i.Name, internalSuffix) {
 			continue
 		}
-
-		_, err := ni.e.CreatePort(ctx, &dataplane.CreatePortRequest{
-			Id:   iface.IntfNameToTapName(i.Name),
-			Type: fwdpb.PortType_PORT_TYPE_TAP,
-			Src: &dataplane.CreatePortRequest_KernelDev{
-				KernelDev: iface.IntfNameToTapName(i.Name),
-			},
-		})
-		if err != nil {
-			return fmt.Errorf("failed to create tap interface %q: %w", iface.IntfNameToTapName(i.Name), err)
-		}
-
-		tap, err := ni.ifaceMgr.GetByName(iface.IntfNameToTapName(i.Name))
-		if err != nil {
-			return fmt.Errorf("failed to find tap interface %q: %w", iface.IntfNameToTapName(i.Name), err)
-		}
-		ni.idxToName[i.Index] = i.Name
-		ni.idxToName[tap.Index] = tap.Name
-
 		_, err = ni.e.CreatePort(ctx, &dataplane.CreatePortRequest{
-			Id:   iface.IntfNameToTapName(i.Name),
+			Id:   i.Name,
 			Type: fwdpb.PortType_PORT_TYPE_KERNEL,
 			Src: &dataplane.CreatePortRequest_KernelDev{
 				KernelDev: i.Name,
@@ -535,6 +526,28 @@ func (ni *Interface) setupPorts(ctx context.Context) error {
 		if err != nil {
 			return fmt.Errorf("failed to create kernel interface %q: %w", i.Name, err)
 		}
+
+		ni.externalToInternalPort[i.Name] = i.Name + internalSuffix
+		ni.internalToExternalPort[i.Name+internalSuffix] = i.Name
+
+		_, err := ni.e.CreatePort(ctx, &dataplane.CreatePortRequest{
+			Id:   ni.externalToInternalPort[i.Name],
+			Type: fwdpb.PortType_PORT_TYPE_TAP,
+			Src: &dataplane.CreatePortRequest_KernelDev{
+				KernelDev: ni.externalToInternalPort[i.Name],
+			},
+			ExternalPort: i.Name,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to create tap interface %q: %w", ni.externalToInternalPort[i.Name], err)
+		}
+
+		tap, err := ni.ifaceMgr.GetByName(ni.externalToInternalPort[i.Name])
+		if err != nil {
+			return fmt.Errorf("failed to find tap interface %q: %w", ni.externalToInternalPort[i.Name], err)
+		}
+		ni.idxToName[i.Index] = i.Name
+		ni.idxToName[tap.Index] = tap.Name
 
 		if err := ni.e.UpdatePortSrcMAC(ctx, i.Name, tap.HardwareAddr); err != nil {
 			return fmt.Errorf("failed to update MAC address for port %q: %w", i.Name, err)

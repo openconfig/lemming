@@ -24,6 +24,7 @@ go_library(
     importpath = "github.com/openconfig/lemming/dataplane/forwarding/fwdaction/actions",
     visibility = ["//visibility:public"],
     deps = [
+        "//dataplane/forwarding/attributes",
         "//dataplane/forwarding/fwdaction",
         "//dataplane/forwarding/fwdport",
         "//dataplane/forwarding/fwdtable",
@@ -33,7 +34,6 @@ go_library(
         "//dataplane/forwarding/infra/fwdobject",
         "//dataplane/forwarding/infra/fwdpacket",
         "//dataplane/forwarding/util/hash/crc16",
-        "//dataplane/internal/iface",
         "//proto/forwarding",
         "@com_github_golang_glog//:glog",
     ],

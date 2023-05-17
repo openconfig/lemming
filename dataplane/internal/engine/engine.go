@@ -20,6 +20,7 @@ import (
 	"sync"
 
 	"github.com/openconfig/lemming/dataplane/forwarding"
+	"github.com/openconfig/lemming/dataplane/forwarding/attributes"
 
 	log "github.com/golang/glog"
 
@@ -168,7 +169,7 @@ func (e *Engine) CreatePort(ctx context.Context, req *dpb.CreatePortRequest) (*d
 	case fwdpb.PortType_PORT_TYPE_KERNEL:
 		err = e.CreateExternalPort(ctx, req.GetKernelDev())
 	case fwdpb.PortType_PORT_TYPE_TAP:
-		err = e.CreateExternalPort(ctx, req.GetKernelDev())
+		err = e.CreateLocalPort(ctx, req.GetKernelDev(), req.GetExternalPort())
 	}
 	return &dpb.CreatePortResponse{}, err
 }
@@ -214,7 +215,7 @@ func (e *Engine) AddLayer3PuntRule(ctx context.Context, portName string, ip []by
 				},
 			},
 			Actions: []*fwdpb.ActionDesc{{
-				ActionType: fwdpb.ActionType_ACTION_TYPE_SWAP_OUTPUT_TAP_EXTERNAL,
+				ActionType: fwdpb.ActionType_ACTION_TYPE_SWAP_OUTPUT_INTERNAL_EXTERNAL,
 			}, {
 				ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
 			}},
@@ -506,11 +507,30 @@ func (e *Engine) CreateExternalPort(ctx context.Context, name string) error {
 }
 
 // CreateLocalPort creates an local (ie TAP) port for the given linux device name.
-func (e *Engine) CreateLocalPort(ctx context.Context, name string) error {
+func (e *Engine) CreateLocalPort(ctx context.Context, name, externalName string) error {
 	id, err := createTapPort(ctx, e.id, e.Server, name)
 	if err != nil {
 		return err
 	}
+	_, err = e.Server.AttributeUpdate(ctx, &fwdpb.AttributeUpdateRequest{
+		ContextId: &fwdpb.ContextId{Id: e.id},
+		ObjectId:  &fwdpb.ObjectId{Id: name},
+		AttrId:    attributes.SwapActionRelatedPort,
+		AttrValue: externalName,
+	})
+	if err != nil {
+		return err
+	}
+	_, err = e.Server.AttributeUpdate(ctx, &fwdpb.AttributeUpdateRequest{
+		ContextId: &fwdpb.ContextId{Id: e.id},
+		ObjectId:  &fwdpb.ObjectId{Id: externalName},
+		AttrId:    attributes.SwapActionRelatedPort,
+		AttrValue: name,
+	})
+	if err != nil {
+		return err
+	}
+
 	e.nameToIDMu.Lock()
 	e.nameToID[name] = id
 	e.nameToIDMu.Unlock()

@@ -163,7 +163,7 @@ func createLayer2PuntTable(ctx context.Context, id string, c fwdpb.ForwardingSer
 				},
 			},
 			Actions: []*fwdpb.ActionDesc{{
-				ActionType: fwdpb.ActionType_ACTION_TYPE_SWAP_OUTPUT_TAP_EXTERNAL,
+				ActionType: fwdpb.ActionType_ACTION_TYPE_SWAP_OUTPUT_INTERNAL_EXTERNAL,
 			}, {
 				ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
 			}},
@@ -242,7 +242,7 @@ func addLayer2PuntRule(ctx context.Context, id string, c fwdpb.ForwardingServer,
 				},
 			},
 			Actions: []*fwdpb.ActionDesc{{
-				ActionType: fwdpb.ActionType_ACTION_TYPE_SWAP_OUTPUT_TAP_EXTERNAL,
+				ActionType: fwdpb.ActionType_ACTION_TYPE_SWAP_OUTPUT_INTERNAL_EXTERNAL,
 			}, {
 				ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
 			}},

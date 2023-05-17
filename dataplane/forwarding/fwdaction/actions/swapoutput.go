@@ -17,12 +17,12 @@ package actions
 import (
 	"fmt"
 
+	"github.com/openconfig/lemming/dataplane/forwarding/attributes"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdport"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdobject"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdpacket"
-	"github.com/openconfig/lemming/dataplane/internal/iface"
 
 	log "github.com/golang/glog"
 
@@ -37,7 +37,7 @@ type swapOutput struct {
 
 // String formats the state of the action as a string.
 func (swapOutput) String() string {
-	return fmt.Sprintf("Type=%v;", fwdpb.ActionType_ACTION_TYPE_SWAP_OUTPUT_TAP_EXTERNAL)
+	return fmt.Sprintf("Type=%v;", fwdpb.ActionType_ACTION_TYPE_SWAP_OUTPUT_INTERNAL_EXTERNAL)
 }
 
 // Process processes the packet by updating the output port.
@@ -47,13 +47,8 @@ func (s *swapOutput) Process(packet fwdpacket.Packet, _ fwdobject.Counters) (fwd
 		log.Warningf("failed to get input port: %v", err)
 		return nil, fwdaction.DROP
 	}
-	var outPort string
+	outPort, _ := p.Attributes().Get(attributes.SwapActionRelatedPort)
 
-	if iface.IsTap(string(p.ID())) {
-		outPort = iface.TapNameToIntfName(string(p.ID()))
-	} else {
-		outPort = iface.IntfNameToTapName(string(p.ID()))
-	}
 	port, err := fwdport.Acquire(&fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: outPort}}, s.ctx)
 	if err != nil {
 		log.Warningf("failed to get output port: %v", err)
@@ -68,7 +63,7 @@ type swapOutputBuilder struct{}
 
 // init registers a builder for the swap output action type.
 func init() {
-	fwdaction.Register(fwdpb.ActionType_ACTION_TYPE_SWAP_OUTPUT_TAP_EXTERNAL, &swapOutputBuilder{})
+	fwdaction.Register(fwdpb.ActionType_ACTION_TYPE_SWAP_OUTPUT_INTERNAL_EXTERNAL, &swapOutputBuilder{})
 }
 
 // Build creates a new swap output action.
