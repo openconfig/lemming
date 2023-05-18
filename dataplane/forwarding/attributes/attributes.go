@@ -15,5 +15,6 @@
 package attributes
 
 const (
+	// SwapActionRelatedPort is the attribute key for a port's related port.
 	SwapActionRelatedPort = "SwapActionRelatedPort"
 )
