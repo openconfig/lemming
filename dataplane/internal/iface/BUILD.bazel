@@ -1,8 +1,0 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
-
-go_library(
-    name = "iface",
-    srcs = ["common.go"],
-    importpath = "github.com/openconfig/lemming/dataplane/internal/iface",
-    visibility = ["//dataplane:__subpackages__"],
-)

@@ -10,7 +10,6 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//dataplane/internal/engine",
-        "//dataplane/internal/iface",
         "//dataplane/internal/kernel",
         "//gnmi",
         "//gnmi/gnmiclient",

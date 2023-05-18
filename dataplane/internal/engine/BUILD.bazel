@@ -10,6 +10,7 @@ go_library(
     visibility = ["//dataplane:__subpackages__"],
     deps = [
         "//dataplane/forwarding",
+        "//dataplane/forwarding/attributes",
         "//proto/dataplane",
         "//proto/forwarding",
         "@com_github_golang_glog//:glog",
