@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	log "github.com/golang/glog"
+
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdport"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/deadlock"
@@ -160,14 +161,9 @@ func (p *cpuPort) Actions(dir fwdpb.PortAction) fwdaction.Actions {
 // is present in the port's context.
 func (cpuPort) State(*fwdpb.PortInfo) (*fwdpb.PortStateReply, error) {
 	ready := &fwdpb.PortStateReply{
-		LocalPort: &fwdpb.PortInfo{
-			Laser: fwdpb.PortLaserState_PORT_LASER_STATE_ENABLED,
-		},
-		Link: &fwdpb.LinkStateDesc{
-			State: fwdpb.LinkState_LINK_STATE_UP,
-			RemotePort: &fwdpb.PortInfo{
-				Laser: fwdpb.PortLaserState_PORT_LASER_STATE_DISABLED,
-			},
+		Status: &fwdpb.PortInfo{
+			OperStatus:  fwdpb.PortState_PORT_STATE_ENABLED_UP,
+			AdminStatus: fwdpb.PortState_PORT_STATE_ENABLED_UP,
 		},
 	}
 	return ready, nil

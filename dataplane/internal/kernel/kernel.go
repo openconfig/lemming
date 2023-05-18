@@ -123,6 +123,11 @@ func (k *Interfaces) GetByName(name string) (*net.Interface, error) {
 	return net.InterfaceByName(name)
 }
 
+// LinkByName returns a network interface by name.
+func (k *Interfaces) LinkByName(name string) (netlink.Link, error) {
+	return netlink.LinkByName(name)
+}
+
 // LinkSubscribe subscribes to link status for all interfaces.
 func (k *Interfaces) LinkSubscribe(ch chan<- netlink.LinkUpdate, done <-chan struct{}) error {
 	return netlink.LinkSubscribe(ch, done)

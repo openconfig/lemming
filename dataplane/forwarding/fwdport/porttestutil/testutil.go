@@ -51,7 +51,7 @@ func CreateTestPort(t *testing.T, ctx *fwdcontext.Context, name string) fwdport.
 	if err != nil {
 		t.Fatalf("Port create failed: %v.", err)
 	}
-	port.State(&fwdpb.PortInfo{Laser: fwdpb.PortLaserState_PORT_LASER_STATE_ENABLED})
+	port.State(&fwdpb.PortInfo{OperStatus: fwdpb.PortState_PORT_STATE_ENABLED_UP})
 	return port
 }
 

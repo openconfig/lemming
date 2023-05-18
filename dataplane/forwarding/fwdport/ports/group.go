@@ -21,6 +21,7 @@ import (
 	"hash/crc32"
 
 	log "github.com/golang/glog"
+
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdport"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
@@ -86,7 +87,7 @@ func (m *member) Ready() bool {
 		log.Warningf("ports: error querying port state (%v)", err)
 		return false
 	}
-	return ps.GetLink().GetState() == fwdpb.LinkState_LINK_STATE_UP
+	return ps.GetStatus().GetOperStatus() == fwdpb.PortState_PORT_STATE_ENABLED_UP
 }
 
 // A portGroup is a port that writes packets to a group of ports. A port can
@@ -327,22 +328,17 @@ func (p *portGroup) State(*fwdpb.PortInfo) (*fwdpb.PortStateReply, error) {
 	for _, m := range p.members {
 		if m.Ready() {
 			ready := fwdpb.PortStateReply{
-				LocalPort: &fwdpb.PortInfo{
-					Laser: fwdpb.PortLaserState_PORT_LASER_STATE_ENABLED,
-				},
-				Link: &fwdpb.LinkStateDesc{
-					State: fwdpb.LinkState_LINK_STATE_UP,
-					RemotePort: &fwdpb.PortInfo{
-						Laser: fwdpb.PortLaserState_PORT_LASER_STATE_ENABLED,
-					},
+				Status: &fwdpb.PortInfo{
+					OperStatus: fwdpb.PortState_PORT_STATE_ENABLED_UP,
 				},
 			}
 			return &ready, nil
 		}
 	}
 	down := fwdpb.PortStateReply{
-		LocalPort: &fwdpb.PortInfo{Laser: fwdpb.PortLaserState_PORT_LASER_STATE_DISABLED},
-		Link:      &fwdpb.LinkStateDesc{State: fwdpb.LinkState_LINK_STATE_DOWN},
+		Status: &fwdpb.PortInfo{
+			OperStatus: fwdpb.PortState_PORT_STATE_DISABLED_DOWN,
+		},
 	}
 	return &down, nil
 }
