@@ -207,12 +207,12 @@ func createLayer2PuntTable(ctx context.Context, id string, c fwdpb.ForwardingSer
 }
 
 // addLayer2PuntRule adds rule to output packets to a corresponding port based on the destination MAC and input port.
-func addLayer2PuntRule(ctx context.Context, id string, c fwdpb.ForwardingServer, portID uint64, mac, macMask []byte) error {
-	nidBytes := make([]byte, binary.Size(portID))
-	binary.BigEndian.PutUint64(nidBytes, portID)
+func addLayer2PuntRule(ctx context.Context, ctxID string, c fwdpb.ForwardingServer, portNID uint64, mac, macMask []byte) error {
+	nidBytes := make([]byte, binary.Size(portNID))
+	binary.BigEndian.PutUint64(nidBytes, portNID)
 
 	entries := &fwdpb.TableEntryAddRequest{
-		ContextId: &fwdpb.ContextId{Id: id},
+		ContextId: &fwdpb.ContextId{Id: ctxID},
 		TableId: &fwdpb.TableId{
 			ObjectId: &fwdpb.ObjectId{
 				Id: layer2PuntTable,
@@ -255,9 +255,9 @@ func addLayer2PuntRule(ctx context.Context, id string, c fwdpb.ForwardingServer,
 }
 
 // createLayer3PuntTable creates a table controlling whether packets to punt at layer 3 (input port and IP dst).
-func createLayer3PuntTable(ctx context.Context, id string, c fwdpb.ForwardingServer) error {
+func createLayer3PuntTable(ctx context.Context, ctxID string, c fwdpb.ForwardingServer) error {
 	multicast := &fwdpb.TableCreateRequest{
-		ContextId: &fwdpb.ContextId{Id: id},
+		ContextId: &fwdpb.ContextId{Id: ctxID},
 		Desc: &fwdpb.TableDesc{
 			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
 			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: layer3PuntTable}},
@@ -338,17 +338,17 @@ func nextHopToActions(nh *dpb.NextHop) []*fwdpb.ActionDesc {
 }
 
 // createKernelPort creates a port using the "Kernel" dataplane type (socket API).
-func createKernelPort(ctx context.Context, id string, c fwdpb.ForwardingServer, name string) (uint64, error) {
+func createKernelPort(ctx context.Context, ctxID string, c fwdpb.ForwardingServer, id, devName string) (uint64, error) {
 	port := &fwdpb.PortCreateRequest{
-		ContextId: &fwdpb.ContextId{Id: id},
+		ContextId: &fwdpb.ContextId{Id: ctxID},
 		Port: &fwdpb.PortDesc{
 			PortType: fwdpb.PortType_PORT_TYPE_KERNEL,
 			PortId: &fwdpb.PortId{
-				ObjectId: &fwdpb.ObjectId{Id: name},
+				ObjectId: &fwdpb.ObjectId{Id: id},
 			},
 			Port: &fwdpb.PortDesc_Kernel{
 				Kernel: &fwdpb.KernelPortDesc{
-					DeviceName: name,
+					DeviceName: devName,
 				},
 			},
 		},
@@ -357,30 +357,30 @@ func createKernelPort(ctx context.Context, id string, c fwdpb.ForwardingServer, 
 	if err != nil {
 		return 0, err
 	}
-	if err := addLayer2PuntRule(ctx, id, c, portID.GetObjectIndex().GetIndex(), etherBroadcast, etherBroadcastMask); err != nil {
+	if err := addLayer2PuntRule(ctx, ctxID, c, portID.GetObjectIndex().GetIndex(), etherBroadcast, etherBroadcastMask); err != nil {
 		return 0, err
 	}
-	if err := addLayer2PuntRule(ctx, id, c, portID.GetObjectIndex().GetIndex(), etherMulticast, etherMulticastMask); err != nil {
+	if err := addLayer2PuntRule(ctx, ctxID, c, portID.GetObjectIndex().GetIndex(), etherMulticast, etherMulticastMask); err != nil {
 		return 0, err
 	}
-	if err := addLayer2PuntRule(ctx, id, c, portID.GetObjectIndex().GetIndex(), etherIPV6Multi, etherIPV6MultiMask); err != nil {
+	if err := addLayer2PuntRule(ctx, ctxID, c, portID.GetObjectIndex().GetIndex(), etherIPV6Multi, etherIPV6MultiMask); err != nil {
 		return 0, err
 	}
 	return portID.GetObjectIndex().GetIndex(), nil
 }
 
 // createKernelPort creates a port using the "TAP" dataplane type (tap file API) and returns the fd to read/write from.
-func createTapPort(ctx context.Context, id string, c fwdpb.ForwardingServer, name string) (uint64, error) {
+func createTapPort(ctx context.Context, ctxID string, c fwdpb.ForwardingServer, id, devName string) (uint64, error) {
 	port := &fwdpb.PortCreateRequest{
-		ContextId: &fwdpb.ContextId{Id: id},
+		ContextId: &fwdpb.ContextId{Id: ctxID},
 		Port: &fwdpb.PortDesc{
 			PortType: fwdpb.PortType_PORT_TYPE_TAP,
 			PortId: &fwdpb.PortId{
-				ObjectId: &fwdpb.ObjectId{Id: name},
+				ObjectId: &fwdpb.ObjectId{Id: id},
 			},
 			Port: &fwdpb.PortDesc_Tap{
 				Tap: &fwdpb.TAPPortDesc{
-					DeviceName: name,
+					DeviceName: devName,
 				},
 			},
 		},
@@ -389,13 +389,13 @@ func createTapPort(ctx context.Context, id string, c fwdpb.ForwardingServer, nam
 	if err != nil {
 		return 0, err
 	}
-	if err := addLayer2PuntRule(ctx, id, c, portID.GetObjectIndex().GetIndex(), etherBroadcast, etherBroadcastMask); err != nil {
+	if err := addLayer2PuntRule(ctx, ctxID, c, portID.GetObjectIndex().GetIndex(), etherBroadcast, etherBroadcastMask); err != nil {
 		return 0, err
 	}
-	if err := addLayer2PuntRule(ctx, id, c, portID.GetObjectIndex().GetIndex(), etherMulticast, etherMulticastMask); err != nil {
+	if err := addLayer2PuntRule(ctx, ctxID, c, portID.GetObjectIndex().GetIndex(), etherMulticast, etherMulticastMask); err != nil {
 		return 0, err
 	}
-	if err := addLayer2PuntRule(ctx, id, c, portID.GetObjectIndex().GetIndex(), etherIPV6Multi, etherIPV6MultiMask); err != nil {
+	if err := addLayer2PuntRule(ctx, ctxID, c, portID.GetObjectIndex().GetIndex(), etherIPV6Multi, etherIPV6MultiMask); err != nil {
 		return 0, err
 	}
 

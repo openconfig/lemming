@@ -85,6 +85,7 @@ sai_status_t sai_api_initialize(
   auto chan = grpc::CreateChannel("localhost:50000",
                                   grpc::InsecureChannelCredentials());
   translator = std::make_shared<Translator>(chan);
+
   return SAI_STATUS_SUCCESS;
 }
 
@@ -302,6 +303,13 @@ sai_status_t sai_query_attribute_enum_values_capability(
     _In_ sai_attr_id_t attr_id,
     _Inout_ sai_s32_list_t *enum_values_capability) {
   return SAI_STATUS_SUCCESS;
+}
+
+sai_status_t sai_object_type_get_availability(
+    _In_ sai_object_id_t switch_id, _In_ sai_object_type_t object_type,
+    _In_ uint32_t attr_count, _In_ const sai_attribute_t *attr_list,
+    _Out_ uint64_t *count) {
+  return SAI_STATUS_NOT_SUPPORTED;
 }
 
 int main() {}

@@ -17,8 +17,16 @@
 #include <string>
 #include <vector>
 
+#include "dataplane/standalone/acl.h"
+#include "dataplane/standalone/bridge.h"
+#include "dataplane/standalone/buffer.h"
+#include "dataplane/standalone/dtel.h"
+#include "dataplane/standalone/hostif.h"
 #include "dataplane/standalone/port.h"
+#include "dataplane/standalone/route.h"
+#include "dataplane/standalone/router_interface.h"
 #include "dataplane/standalone/translator.h"
+#include "dataplane/standalone/vlan.h"
 
 extern "C" {
 #include "inc/sai.h"
@@ -139,6 +147,66 @@ sai_status_t Switch::create(_In_ uint32_t attr_count,
       .id = SAI_SWITCH_ATTR_TOTAL_BUFFER_SIZE,
       .value = {.u64 = 1024 * 1024},
   });
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_AVAILABLE_IPV4_ROUTE_ENTRY,
+      .value = {.u32 = 1024},
+  });
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_AVAILABLE_IPV6_ROUTE_ENTRY,
+      .value = {.u32 = 1024},
+  });
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_AVAILABLE_IPV4_NEXTHOP_ENTRY,
+      .value = {.u32 = 1024},
+  });
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_AVAILABLE_IPV6_NEXTHOP_ENTRY,
+      .value = {.u32 = 1024},
+  });
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_AVAILABLE_IPV4_NEIGHBOR_ENTRY,
+      .value = {.u32 = 1024},
+  });
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_AVAILABLE_IPV6_NEIGHBOR_ENTRY,
+      .value = {.u32 = 1024},
+  });
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_AVAILABLE_NEXT_HOP_GROUP_ENTRY,
+      .value = {.u32 = 1024},
+  });
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_AVAILABLE_NEXT_HOP_GROUP_MEMBER_ENTRY,
+      .value = {.u32 = 1024},
+  });
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_AVAILABLE_FDB_ENTRY,
+      .value = {.u32 = 1024},
+  });
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_AVAILABLE_L2MC_ENTRY,
+      .value = {.u32 = 1024},
+  });
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_AVAILABLE_IPMC_ENTRY,
+      .value = {.u32 = 1024},
+  });
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_AVAILABLE_SNAT_ENTRY,
+      .value = {.u32 = 1024},
+  });
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_AVAILABLE_DNAT_ENTRY,
+      .value = {.u32 = 1024},
+  });
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_AVAILABLE_ACL_TABLE,
+      .value = {.u32 = 1024},
+  });
+  attrs.push_back({
+      .id = SAI_SWITCH_ATTR_AVAILABLE_ACL_TABLE_GROUP,
+      .value = {.u32 = 1024},
+  });
 
   auto trGrpOid =
       this->attrMgr->create(SAI_OBJECT_TYPE_HOSTIF_TRAP_GROUP, this->id);
@@ -240,6 +308,45 @@ sai_status_t Switch::create_child(sai_object_type_t type, sai_object_id_t id,
   switch (type) {
     case SAI_OBJECT_TYPE_PORT:
       this->apis[std::to_string(id)] = std::make_unique<Port>(
+          std::to_string(id), this->attrMgr, this->fwd, this->dataplane);
+      break;
+    case SAI_OBJECT_TYPE_ROUTER_INTERFACE:
+      this->apis[std::to_string(id)] = std::make_unique<RouterInterface>(
+          std::to_string(id), this->attrMgr, this->fwd, this->dataplane);
+      break;
+    case SAI_OBJECT_TYPE_VLAN:
+      this->apis[std::to_string(id)] = std::make_unique<VLAN>(
+          std::to_string(id), this->attrMgr, this->fwd, this->dataplane);
+      break;
+    case SAI_OBJECT_TYPE_BRIDGE:
+      this->apis[std::to_string(id)] = std::make_unique<Bridge>(
+          std::to_string(id), this->attrMgr, this->fwd, this->dataplane);
+      break;
+    case SAI_OBJECT_TYPE_HOSTIF:
+      this->apis[std::to_string(id)] = std::make_unique<HostIf>(
+          std::to_string(id), this->attrMgr, this->fwd, this->dataplane);
+      break;
+    case SAI_OBJECT_TYPE_HOSTIF_TABLE_ENTRY:
+      this->apis[std::to_string(id)] = std::make_unique<HostIfTableEntry>(
+          std::to_string(id), this->attrMgr, this->fwd, this->dataplane);
+      break;
+    case SAI_OBJECT_TYPE_HOSTIF_TRAP:
+      this->apis[std::to_string(id)] = std::make_unique<HostIfTrap>(
+          std::to_string(id), this->attrMgr, this->fwd, this->dataplane);
+      break;
+    case SAI_OBJECT_TYPE_DTEL:
+      this->apis[std::to_string(id)] = std::make_unique<DTEL>(
+          std::to_string(id), this->attrMgr, this->fwd, this->dataplane);
+      break;
+    case SAI_OBJECT_TYPE_ACL_TABLE:
+      this->apis[std::to_string(id)] = std::make_unique<ACLTable>(
+          std::to_string(id), this->attrMgr, this->fwd, this->dataplane);
+    case SAI_OBJECT_TYPE_BUFFER_POOL:
+      this->apis[std::to_string(id)] = std::make_unique<BufferPool>(
+          std::to_string(id), this->attrMgr, this->fwd, this->dataplane);
+      break;
+    case SAI_OBJECT_TYPE_BUFFER_PROFILE:
+      this->apis[std::to_string(id)] = std::make_unique<BufferProfile>(
           std::to_string(id), this->attrMgr, this->fwd, this->dataplane);
       break;
     default:

@@ -49,7 +49,7 @@ sai_status_t Port::create(_In_ uint32_t attr_count,
     grpc::ClientContext context;
     lemming::dataplane::CreatePortRequest req;
     lemming::dataplane::CreatePortResponse resp;
-    req.set_id(name);
+    req.set_id(this->id);
     req.set_type(forwarding::PORT_TYPE_KERNEL);
     req.set_kernel_dev(name);
     auto status = this->dataplane->CreatePort(&context, req, &resp);
@@ -57,7 +57,12 @@ sai_status_t Port::create(_In_ uint32_t attr_count,
       LOG(ERROR) << "Failed to create port: " << status.error_message();
       return SAI_STATUS_FAILURE;
     }
+    LOG(INFO) << "Created port with id " << this->id;
   } else {  // TODO(dgrau): Figure out what to do for this ports.
+    attrs.push_back({
+        .id = SAI_PORT_ATTR_OPER_STATUS,
+        .value = {.s32 = SAI_PORT_OPER_STATUS_NOT_PRESENT},
+    });
     LOG(WARNING) << "Skipped port for SAI interface without kernel device"
                  << std::to_string(lanes[0]);
   }
@@ -89,14 +94,16 @@ sai_status_t Port::create(_In_ uint32_t attr_count,
   attrs.push_back({
       .id = SAI_PORT_ATTR_SUPPORTED_SPEED,
       .value = {.u32list =
-                    { // NOLINT(*)
+                    {
+                        // NOLINT(*)
                         .count = 0,
                     }},
   });
   attrs.push_back({
       .id = SAI_PORT_ATTR_SUPPORTED_FEC_MODE,
       .value = {.s32list =
-                    { // NOLINT(*)
+                    {
+                        // NOLINT(*)
                         .count = 0,
                     }},
   });
