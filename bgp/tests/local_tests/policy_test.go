@@ -74,7 +74,7 @@ func testPolicy(t *testing.T, testspec PolicyTestCase, installPolicyAfterRoutes 
 	establishSessionPair(t, dut1, dut2, dut1spec, dut2spec)
 	establishSessionPair(t, dut2, dut3, dut2spec, dut3spec)
 
-	for _, routeTest := range testspec.spec.RouteTest {
+	for _, routeTest := range testspec.spec.RouteTests {
 		// Install both prefixes into DUT2.
 		route := &oc.NetworkInstance_Protocol_Static{
 			Prefix: ygot.String(routeTest.GetInput().GetReachPrefix()),
@@ -95,7 +95,7 @@ func testPolicy(t *testing.T, testspec PolicyTestCase, installPolicyAfterRoutes 
 
 	v4uni := bgp.BGPPath.Rib().AfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST).Ipv4Unicast()
 
-	for _, routeTest := range testspec.spec.RouteTest {
+	for _, routeTest := range testspec.spec.RouteTests {
 		prefix := routeTest.GetInput().GetReachPrefix()
 		// Check propagation to AdjRibOutPre for all prefixes.
 		Await(t, dut1, v4uni.Neighbor(dut2spec.RouterID).AdjRibOutPre().Route(prefix, 0).Prefix().State(), prefix)
@@ -121,7 +121,7 @@ func testPolicy(t *testing.T, testspec PolicyTestCase, installPolicyAfterRoutes 
 	if installPolicyAfterRoutes {
 		testspec.installPolicy(t, dut2)
 
-		for _, routeTest := range testspec.spec.RouteTest {
+		for _, routeTest := range testspec.spec.RouteTests {
 			prefix := routeTest.GetInput().GetReachPrefix()
 
 			Await(t, dut2, v4uni.Neighbor(dut1spec.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), prefix)

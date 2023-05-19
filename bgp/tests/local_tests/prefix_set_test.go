@@ -30,7 +30,7 @@ func TestPrefixSet(t *testing.T) {
 	testspec := PolicyTestCase{
 		spec: &valpb.PolicyTestCase{
 			Description: "Test that one prefix gets accepted and the other rejected via a prefix-set.",
-			RouteTest: []*valpb.RouteTestCase{{
+			RouteTests: []*valpb.RouteTestCase{{
 				Description: "Rejected route",
 				Input: &valpb.TestRoute{
 					ReachPrefix: "10.33.0.0/16",

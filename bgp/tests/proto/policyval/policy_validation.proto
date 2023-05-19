@@ -21,7 +21,7 @@ option go_package = "github.com/openconfig/lemming/bgp/tests/proto/policyval";
 // Defines a set of tests to be run against the specified policy.
 message PolicyTestCase {
   string description = 1;
-  repeated RouteTestCase route_test = 4;
+  repeated RouteTestCase route_tests = 4;
 }
 
 // This message represents a single prefix and its associated BGP attributes.
@@ -31,10 +31,11 @@ message TestRoute {
 
 // The expected result for a RouteTestCase
 enum RouteTestResult {
+  ROUTE_TEST_RESULT_UNSPECIFIED = 0;
   // Accept the input TestRoute.
-  ROUTE_TEST_RESULT_ACCEPT = 0;
+  ROUTE_TEST_RESULT_ACCEPT = 1;
   // Discard the input TestRoute.
-  ROUTE_TEST_RESULT_DISCARD = 1;
+  ROUTE_TEST_RESULT_DISCARD = 2;
 }
 
 // Specifies an input route and expected output.
