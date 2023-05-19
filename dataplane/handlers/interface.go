@@ -136,6 +136,10 @@ func (ni *Interface) start(ctx context.Context, client *ygnmi.Client) error {
 	if err := ni.ifaceMgr.NeighSubscribe(neighUpdateCh, addrDoneCh); err != nil {
 		return fmt.Errorf("failed to sub to neighbor: %v", err)
 	}
+	// TODO: Decide if this needs another layer of abstraction. Currently, one notification callback is allowed.
+	if err := ni.e.Server.UpdateNotification(&fwdpb.ContextId{Id: ni.e.ID()}, func(ed *fwdpb.EventDesc) { ni.handleDataplaneEvent(ctx, ed) }, "local"); err != nil {
+		return fmt.Errorf("failed  to sub to dataplane: %v", err)
+	}
 
 	go func() {
 		for {
@@ -247,7 +251,16 @@ func (ni *Interface) reconcile(config *oc.Interface) {
 	if config.GetOrCreateSubinterface(0).Enabled != nil {
 		if state.GetOrCreateSubinterface(0).Enabled == nil || config.GetSubinterface(0).GetEnabled() != state.GetSubinterface(0).GetEnabled() {
 			log.V(1).Infof("setting interface %s enabled %t", tapName, config.GetSubinterface(0).GetEnabled())
-			if err := ni.ifaceMgr.SetState(tapName, config.GetSubinterface(0).GetEnabled()); err != nil {
+			state := fwdpb.PortState_PORT_STATE_DISABLED_DOWN
+			if config.GetSubinterface(0).GetEnabled() {
+				state = fwdpb.PortState_PORT_STATE_ENABLED_UP
+			}
+			_, err := ni.e.PortState(context.Background(), &fwdpb.PortStateRequest{
+				ContextId: &fwdpb.ContextId{Id: ni.e.ID()},
+				PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: tapName}},
+				Operation: &fwdpb.PortInfo{AdminStatus: state},
+			})
+			if err != nil {
 				log.Warningf("Failed to set state address of port: %v", err)
 			}
 		}
@@ -337,6 +350,43 @@ func (ni *Interface) getOrCreateInterface(iface string) *oc.Interface {
 	return ni.state[iface]
 }
 
+func (ni *Interface) handleDataplaneEvent(ctx context.Context, ed *fwdpb.EventDesc) {
+	if ed.Event != fwdpb.Event_EVENT_PORT {
+		return
+	}
+	desc := ed.Desc.(*fwdpb.EventDesc_Port).Port
+	log.V(1).Infof("handling dataplane update on: %q", desc.GetPortId().GetObjectId().GetId())
+	modelName, ok := ni.internalToExternalPort[desc.GetPortId().GetObjectId().GetId()]
+	if !ok {
+		return
+	}
+	operStatus := oc.Interface_OperStatus_UNKNOWN
+	enabled := false
+	adminStatus := oc.Interface_AdminStatus_UNSET
+	switch desc.PortInfo.OperStatus {
+	case fwdpb.PortState_PORT_STATE_ENABLED_UP:
+		operStatus = oc.Interface_OperStatus_UP
+	case fwdpb.PortState_PORT_STATE_DISABLED_DOWN:
+		operStatus = oc.Interface_OperStatus_DOWN
+	}
+	switch desc.PortInfo.AdminStatus {
+	case fwdpb.PortState_PORT_STATE_ENABLED_UP:
+		enabled = true
+		adminStatus = oc.Interface_AdminStatus_UP
+	case fwdpb.PortState_PORT_STATE_DISABLED_DOWN:
+		adminStatus = oc.Interface_AdminStatus_DOWN
+	}
+
+	sb := &ygnmi.SetBatch{}
+	gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(modelName).Enabled().State(), enabled)
+	gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(modelName).OperStatus().State(), operStatus)
+	gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(modelName).AdminStatus().State(), adminStatus)
+
+	if _, err := sb.Set(ctx, ni.c); err != nil {
+		log.Warningf("failed to set link status: %v", err)
+	}
+}
+
 // handleLinkUpdate modifies the state based on changes to link state.
 func (ni *Interface) handleLinkUpdate(ctx context.Context, lu *netlink.LinkUpdate) {
 	ni.stateMu.Lock()
@@ -356,28 +406,10 @@ func (ni *Interface) handleLinkUpdate(ctx context.Context, lu *netlink.LinkUpdat
 	iface.GetOrCreateEthernet().MacAddress = ygot.String(lu.Attrs().HardwareAddr.String())
 
 	iface.Ifindex = ygot.Uint32(uint32(lu.Attrs().Index))
-	iface.Enabled = ygot.Bool(lu.Attrs().Flags&net.FlagUp != 0)
-	iface.AdminStatus = oc.Interface_AdminStatus_DOWN
-	if *iface.Enabled {
-		iface.AdminStatus = oc.Interface_AdminStatus_UP
-	}
-
-	// TODO: handle other states.
-	var operStatus oc.E_Interface_OperStatus
-	switch lu.Attrs().OperState {
-	case netlink.OperDown:
-		operStatus = oc.Interface_OperStatus_DOWN
-	case netlink.OperUp, netlink.OperUnknown: // TAP interface may be unknown state because the dataplane doesn't bind to its fd, so treat unknown as up.
-		operStatus = oc.Interface_OperStatus_UP
-	}
-	iface.OperStatus = operStatus
-
 	sb := &ygnmi.SetBatch{}
 
 	gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(modelName).Ethernet().MacAddress().State(), *iface.Ethernet.MacAddress)
 	gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(modelName).Ifindex().State(), *iface.Ifindex)
-	gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(modelName).Enabled().State(), *iface.Enabled)
-	gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(modelName).OperStatus().State(), iface.OperStatus)
 	if _, err := sb.Set(ctx, ni.c); err != nil {
 		log.Warningf("failed to set link status: %v", err)
 	}

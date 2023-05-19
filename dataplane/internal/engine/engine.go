@@ -163,6 +163,11 @@ func New(ctx context.Context) (*Engine, error) {
 	return e, nil
 }
 
+// ID returns the engine's forwarding context id.
+func (e *Engine) ID() string {
+	return e.id
+}
+
 func (e *Engine) CreatePort(ctx context.Context, req *dpb.CreatePortRequest) (*dpb.CreatePortResponse, error) {
 	var err error
 	switch req.Type {
