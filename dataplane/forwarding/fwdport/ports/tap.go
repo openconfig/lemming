@@ -162,6 +162,8 @@ func stateFromAttrs(attrs *netlink.LinkAttrs) (fwdpb.PortState, fwdpb.PortState)
 	return adminState, state
 }
 
+// getAndSetState returns the state of the port and optionally sets the state to the new value.
+// Note: the reply doesn't contain the updated oper-status (if applicable).
 func getAndSetState(name string, ifMgr *kernel.Interfaces, pi *fwdpb.PortInfo) (*fwdpb.PortStateReply, error) {
 	adminState, operState, err := getPortState(name, ifMgr)
 	if err != nil {
@@ -185,6 +187,9 @@ func getAndSetState(name string, ifMgr *kernel.Interfaces, pi *fwdpb.PortInfo) (
 		err = ifMgr.SetState(name, false)
 	} else if pi.AdminStatus == fwdpb.PortState_PORT_STATE_ENABLED_UP {
 		err = ifMgr.SetState(name, true)
+	}
+	if err != nil {
+		reply.Status.AdminStatus = pi.AdminStatus
 	}
 	return reply, err
 }
