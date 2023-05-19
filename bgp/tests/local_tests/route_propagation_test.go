@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/openconfig/lemming/bgp"
 	"github.com/openconfig/lemming/gnmi/fakedevice"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
@@ -61,6 +62,17 @@ func TestRoutePropagation(t *testing.T) {
 	defer stop3()
 	dut4, stop4 := newLemming(t, dut4spec, nil)
 	defer stop4()
+
+	installDefaultPolicies := func() {
+		// Clear the path for routes to be propagated.
+		Replace(t, dut1, bgp.BGPPath.Neighbor(dut2spec.RouterID).ApplyPolicy().DefaultExportPolicy().Config(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
+		Replace(t, dut2, bgp.BGPPath.Neighbor(dut1spec.RouterID).ApplyPolicy().DefaultImportPolicy().Config(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
+		Replace(t, dut2, bgp.BGPPath.Neighbor(dut3spec.RouterID).ApplyPolicy().DefaultExportPolicy().Config(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
+		Replace(t, dut3, bgp.BGPPath.Neighbor(dut2spec.RouterID).ApplyPolicy().DefaultImportPolicy().Config(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
+		Replace(t, dut3, bgp.BGPPath.Neighbor(dut4spec.RouterID).ApplyPolicy().DefaultExportPolicy().Config(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
+		Replace(t, dut4, bgp.BGPPath.Neighbor(dut3spec.RouterID).ApplyPolicy().DefaultImportPolicy().Config(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
+	}
+	installDefaultPolicies()
 
 	establishSessionPair(t, dut1, dut2, dut1spec, dut2spec)
 	establishSessionPair(t, dut2, dut3, dut2spec, dut3spec)

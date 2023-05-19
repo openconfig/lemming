@@ -6,6 +6,7 @@ go_library(
         "bgpconfig.go",
         "debug.go",
         "gobgp.go",
+        "ocgobgp.go",
     ],
     importpath = "github.com/openconfig/lemming/bgp",
     visibility = ["//visibility:public"],
