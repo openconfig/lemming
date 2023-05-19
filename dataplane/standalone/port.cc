@@ -93,19 +93,11 @@ sai_status_t Port::create(_In_ uint32_t attr_count,
   });
   attrs.push_back({
       .id = SAI_PORT_ATTR_SUPPORTED_SPEED,
-      .value = {.u32list =
-                    {
-                        // NOLINT(*)
-                        .count = 0,
-                    }},
+      .value = {.u32list = {.count = 0}},
   });
   attrs.push_back({
       .id = SAI_PORT_ATTR_SUPPORTED_FEC_MODE,
-      .value = {.s32list =
-                    {
-                        // NOLINT(*)
-                        .count = 0,
-                    }},
+      .value = {.s32list = {.count = 0}},
   });
   APIBase::create(attrs.size(), attrs.data());
   return SAI_STATUS_SUCCESS;

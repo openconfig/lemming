@@ -14,6 +14,8 @@
 
 #include "dataplane/standalone/acl.h"
 
+#include <vector>
+
 #include "dataplane/standalone/translator.h"
 
 sai_status_t ACLTable::create(_In_ uint32_t attr_count,

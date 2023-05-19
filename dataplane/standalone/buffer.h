@@ -16,6 +16,7 @@
 #define DATAPLANE_STANDALONE_BUFFER_H_
 
 #include <memory>
+#include <string>
 #include <unordered_map>
 
 #include "dataplane/standalone/common.h"

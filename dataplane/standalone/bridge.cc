@@ -14,6 +14,8 @@
 
 #include "dataplane/standalone/bridge.h"
 
+#include <vector>
+
 #include "dataplane/standalone/translator.h"
 
 sai_status_t Bridge::create(_In_ uint32_t attr_count,
@@ -21,10 +23,7 @@ sai_status_t Bridge::create(_In_ uint32_t attr_count,
   std::vector<sai_attribute_t> attrs(attr_list, attr_list + attr_count);
   attrs.push_back({
       .id = SAI_BRIDGE_ATTR_PORT_LIST,
-      .value = {.objlist =
-                    {
-                        .count = 0,
-                    }},
+      .value = {.objlist = {.count = 0}},
   });
   APIBase::create(attrs.size(), attrs.data());
   return SAI_STATUS_SUCCESS;

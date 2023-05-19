@@ -16,6 +16,7 @@
 #define DATAPLANE_STANDALONE_ROUTE_H_
 
 #include <memory>
+#include <string>
 #include <unordered_map>
 
 #include "dataplane/standalone/common.h"
@@ -40,4 +41,4 @@ class Route : public APIBase {
   sai_status_t set_attribute(_In_ const sai_attribute_t* attr);
 };
 
-#endif  // DATAPLANE_STANDALONE_Route_H_
+#endif  // DATAPLANE_STANDALONE_ROUTE_H_

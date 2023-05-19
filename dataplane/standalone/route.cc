@@ -14,6 +14,8 @@
 
 #include "dataplane/standalone/route.h"
 
+#include <vector>
+
 #include "dataplane/standalone/translator.h"
 
 sai_status_t Route::create(common_entry_t id, _In_ uint32_t attr_count,

@@ -16,6 +16,7 @@
 #define DATAPLANE_STANDALONE_HOSTIF_H_
 
 #include <memory>
+#include <string>
 #include <unordered_map>
 
 #include "dataplane/standalone/common.h"
@@ -64,4 +65,4 @@ class HostIfTrap : public APIBase {
   sai_status_t set_attribute(_In_ const sai_attribute_t* attr);
 };
 
-#endif  // DATAPLANE_STANDALONE_HostIf_H_
+#endif  // DATAPLANE_STANDALONE_HOSTIF_H_
