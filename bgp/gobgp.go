@@ -31,6 +31,7 @@ import (
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 	"github.com/openconfig/lemming/gnmi/reconciler"
 	"github.com/openconfig/ygnmi/ygnmi"
+	"github.com/openconfig/ygot/ygot"
 	api "github.com/wenovus/gobgp/v3/api"
 	"github.com/wenovus/gobgp/v3/pkg/bgpconfig"
 	"github.com/wenovus/gobgp/v3/pkg/server"
@@ -41,17 +42,17 @@ const (
 	gracefulRestart = false
 )
 
+var (
+	BGPPath                = ocpath.Root().NetworkInstance(fakedevice.DefaultNetworkInstance).Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, fakedevice.BGPRoutingProtocol).Bgp()
+	BGPStatePath           = BGPPath.State()
+	RoutingPolicyPath      = ocpath.Root().RoutingPolicy()
+	RoutingPolicyStatePath = ocpath.Root().RoutingPolicy().State()
+)
+
 // NewGoBGPTaskDecl creates a new GoBGP task using the declarative configuration style.
 func NewGoBGPTaskDecl(zapiURL string, listenPort uint16) *reconciler.BuiltReconciler {
 	gobgpTask := newBgpDeclTask(zapiURL, listenPort)
 	return reconciler.NewBuilder("gobgp-decl").WithStart(gobgpTask.startGoBGPFuncDecl).WithStop(gobgpTask.stop).Build()
-}
-
-func updateState(yclient *ygnmi.Client, appliedBgp *oc.NetworkInstance_Protocol_Bgp) {
-	log.V(1).Infof("BGP task: updating state")
-	if _, err := gnmiclient.Replace(context.Background(), yclient, ocpath.Root().NetworkInstance(fakedevice.DefaultNetworkInstance).Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, fakedevice.BGPRoutingProtocol).Bgp().State(), appliedBgp); err != nil {
-		log.Errorf("BGP failed to update state: %v", err)
-	}
 }
 
 // bgpDeclTask can be used to create a reconciler-compatible BGP task.
@@ -62,15 +63,55 @@ type bgpDeclTask struct {
 	listenPort    uint16
 
 	bgpStarted bool
+
+	yclient *ygnmi.Client
+
+	appliedStateMu       sync.Mutex
+	appliedState         *oc.Root
+	appliedBGP           *oc.NetworkInstance_Protocol_Bgp
+	appliedRoutingPolicy *oc.RoutingPolicy
 }
 
 // newBgpDeclTask creates a new bgpDeclTask.
 func newBgpDeclTask(zapiURL string, listenPort uint16) *bgpDeclTask {
+	appliedState := &oc.Root{}
+	// appliedBGP is the SoT for BGP applied configuration. It is maintained locally by the task.
+	appliedBGP := appliedState.GetOrCreateNetworkInstance(fakedevice.DefaultNetworkInstance).GetOrCreateProtocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, fakedevice.BGPRoutingProtocol).GetOrCreateBgp()
+	appliedBGP.PopulateDefaults()
+	appliedRoutingPolicy := appliedState.GetOrCreateRoutingPolicy()
+	appliedRoutingPolicy.PopulateDefaults()
+
 	return &bgpDeclTask{
 		zapiURL:    zapiURL,
 		bgpServer:  server.NewBgpServer(),
 		listenPort: listenPort,
+
+		appliedState:         appliedState,
+		appliedBGP:           appliedBGP,
+		appliedRoutingPolicy: appliedRoutingPolicy,
 	}
+}
+
+func updateAppliedStateHelper[T ygot.GoStruct](yclient *ygnmi.Client, path ygnmi.SingletonQuery[T], appliedState T) {
+	if _, err := gnmiclient.Replace(context.Background(), yclient, path, appliedState); err != nil {
+		log.Errorf("BGP failed to update state at path %v: %v", path, err)
+	}
+}
+
+// updateAppliedState is the ONLY function that's called when updating the appliedState.
+//
+// The input function is expected to make modifications to the applied state,
+// which then this function will use to update the central cache.
+func (t *bgpDeclTask) updateAppliedState(f func() error) error {
+	log.V(1).Infof("BGP task: updating state")
+	t.appliedStateMu.Lock()
+	defer t.appliedStateMu.Unlock()
+	if err := f(); err != nil {
+		return err
+	}
+	updateAppliedStateHelper(t.yclient, BGPStatePath, t.appliedBGP)
+	updateAppliedStateHelper(t.yclient, RoutingPolicyStatePath, t.appliedRoutingPolicy)
+	return nil
 }
 
 // stop stops the GoBGP server.
@@ -81,21 +122,24 @@ func (t *bgpDeclTask) stop(context.Context) error {
 
 // startGoBGPFuncDecl starts a GoBGP server.
 func (t *bgpDeclTask) startGoBGPFuncDecl(_ context.Context, yclient *ygnmi.Client) error {
-	b := &ocpath.Batch{}
-	bgpPath := ocpath.Root().NetworkInstance(fakedevice.DefaultNetworkInstance).Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, fakedevice.BGPRoutingProtocol).Bgp()
-	b.AddPaths(
-		bgpPath.Global().As().Config().PathStruct(),
-		bgpPath.Global().RouterId().Config().PathStruct(),
-		bgpPath.NeighborAny().PeerAs().Config().PathStruct(),
-		bgpPath.NeighborAny().NeighborAddress().Config().PathStruct(),
-		bgpPath.NeighborAny().NeighborPort().Config().PathStruct(),
-	)
+	t.yclient = yclient
 
-	appliedRoot := &oc.Root{}
-	// appliedBgp is the SoT for BGP applied configuration. It is maintained locally by the task.
-	appliedBgp := appliedRoot.GetOrCreateNetworkInstance(fakedevice.DefaultNetworkInstance).GetOrCreateProtocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, fakedevice.BGPRoutingProtocol).GetOrCreateBgp()
-	appliedBgp.PopulateDefaults()
-	var appliedBgpMu sync.Mutex
+	b := &ocpath.Batch{}
+	b.AddPaths(
+		// Basic BGP paths for session establishment.
+		BGPPath.Global().As().Config().PathStruct(),
+		BGPPath.Global().RouterId().Config().PathStruct(),
+		BGPPath.NeighborAny().PeerAs().Config().PathStruct(),
+		BGPPath.NeighborAny().NeighborAddress().Config().PathStruct(),
+		BGPPath.NeighborAny().NeighborPort().Config().PathStruct(),
+		// BGP Policy paths
+		RoutingPolicyPath.DefinedSets().PrefixSetAny().PrefixAny().IpPrefix().Config().PathStruct(),
+		RoutingPolicyPath.DefinedSets().PrefixSetAny().PrefixAny().MasklengthRange().Config().PathStruct(),
+		RoutingPolicyPath.PolicyDefinitionAny().StatementAny().Conditions().MatchPrefixSet().PrefixSet().Config().PathStruct(),
+		RoutingPolicyPath.PolicyDefinitionAny().StatementAny().Conditions().MatchPrefixSet().MatchSetOptions().Config().PathStruct(),
+		RoutingPolicyPath.PolicyDefinitionAny().StatementAny().Actions().PolicyResult().Config().PathStruct(),
+		BGPPath.NeighborAny().AfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST).ApplyPolicy().ExportPolicy().Config().PathStruct(),
+	)
 
 	if log.V(2) {
 		if err := t.bgpServer.SetLogLevel(context.Background(), &api.SetLogLevelRequest{
@@ -108,36 +152,35 @@ func (t *bgpDeclTask) startGoBGPFuncDecl(_ context.Context, yclient *ygnmi.Clien
 
 	// monitor the change of the peer state
 	if err := t.bgpServer.WatchEvent(context.Background(), &api.WatchEventRequest{Peer: &api.WatchEventRequest_Peer{}}, func(r *api.WatchEventResponse) {
-		appliedBgpMu.Lock()
-		defer appliedBgpMu.Unlock()
 		if p := r.GetPeer(); p != nil && p.Type == api.WatchEventResponse_PeerEvent_STATE {
 			log.V(1).Info("Got peer event update:", p)
 			ps := p.GetPeer().State
 
-			neigh := appliedBgp.GetOrCreateNeighbor(ps.NeighborAddress)
+			t.updateAppliedState(func() error {
+				neigh := t.appliedBGP.GetOrCreateNeighbor(ps.NeighborAddress)
 
-			found := false
-			if ps.SessionState.String() == "UNKNOWN" {
-				neigh.SessionState = oc.Bgp_Neighbor_SessionState_UNSET
-				found = true
-			} else {
-				for enumCode, v := range neigh.SessionState.ΛMap()[reflect.TypeOf(neigh.SessionState).Name()] {
-					if v.Name == ps.SessionState.String() {
-						newSessionState := oc.E_Bgp_Neighbor_SessionState(enumCode)
-						if neigh.SessionState != newSessionState {
-							log.V(1).Infof("Peer %s transitioned to session state %s", ps.NeighborAddress, v.Name)
-							neigh.SessionState = newSessionState
+				found := false
+				if ps.SessionState.String() == "UNKNOWN" {
+					neigh.SessionState = oc.Bgp_Neighbor_SessionState_UNSET
+					found = true
+				} else {
+					for enumCode, v := range neigh.SessionState.ΛMap()[reflect.TypeOf(neigh.SessionState).Name()] {
+						if v.Name == ps.SessionState.String() {
+							newSessionState := oc.E_Bgp_Neighbor_SessionState(enumCode)
+							if neigh.SessionState != newSessionState {
+								log.V(1).Infof("Peer %s transitioned to session state %s", ps.NeighborAddress, v.Name)
+								neigh.SessionState = newSessionState
+							}
+							found = true
+							break
 						}
-						found = true
-						break
 					}
 				}
-			}
-			if !found {
-				log.Warningf("Unknown neighbor session-state value received: %v", ps.SessionState)
-			}
-
-			updateState(yclient, appliedBgp)
+				if !found {
+					log.Warningf("Unknown neighbor session-state value received: %v", ps.SessionState)
+				}
+				return nil
+			})
 		}
 	}); err != nil {
 		return fmt.Errorf("goBgpTask failed to initialize due to error: %v", err)
@@ -146,6 +189,7 @@ func (t *bgpDeclTask) startGoBGPFuncDecl(_ context.Context, yclient *ygnmi.Clien
 	// Initialize values required for reconile to be called.
 	t.currentConfig = &bgpconfig.BgpConfigSet{}
 
+	// Monitor changes to BGP intended config and apply them.
 	bgpWatcher := ygnmi.Watch(
 		context.Background(),
 		yclient,
@@ -156,16 +200,9 @@ func (t *bgpDeclTask) startGoBGPFuncDecl(_ context.Context, yclient *ygnmi.Clien
 				return ygnmi.Continue
 			}
 
-			intendedBgp := rootVal.GetOrCreateNetworkInstance(fakedevice.DefaultNetworkInstance).GetOrCreateProtocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, fakedevice.BGPRoutingProtocol).GetOrCreateBgp()
-			if err := t.reconcile(intendedBgp, appliedBgp, &appliedBgpMu); err != nil {
-				log.Errorf("GoBGP failed to reconcile: %v", err)
-				// TODO(wenbli): Instead of stopping BGP, we should simply keep trying.
-				return err
-			}
-
-			appliedBgpMu.Lock()
-			updateState(yclient, appliedBgp)
-			appliedBgpMu.Unlock()
+			t.updateAppliedState(func() error {
+				return t.reconcile(rootVal)
+			})
 
 			return ygnmi.Continue
 		},
@@ -196,60 +233,59 @@ func (t *bgpDeclTask) startGoBGPFuncDecl(_ context.Context, yclient *ygnmi.Clien
 				log.V(1).Info("GoBGP ListPath call completed (global table)")
 			}
 
-			appliedBgpMu.Lock()
-			v4uni := appliedBgp.GetOrCreateRib().GetOrCreateAfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST).GetOrCreateIpv4Unicast()
+			t.updateAppliedState(func() error {
+				v4uni := t.appliedBGP.GetOrCreateRib().GetOrCreateAfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST).GetOrCreateIpv4Unicast()
 
-			// TODO: Support IPv6
-			t.queryTable("", "local", api.TableType_LOCAL, func(routes []*api.Destination) {
-				v4uni.LocRib = nil
-				locRib := v4uni.GetOrCreateLocRib()
-				for _, route := range routes {
-					for j, path := range route.Paths {
-						var origin oc.NetworkInstance_Protocol_Bgp_Rib_AfiSafi_Ipv4Unicast_LocRib_Route_Origin_Union
-						if path.SourceId == "" {
-							// TODO: For locally-originated routes figure out how to get the originating protocol.
-							origin = oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_UNSET
-						} else {
-							origin = oc.UnionString(path.SourceId)
+				// TODO: Support IPv6
+				t.queryTable("", "local", api.TableType_LOCAL, func(routes []*api.Destination) {
+					v4uni.LocRib = nil
+					locRib := v4uni.GetOrCreateLocRib()
+					for _, route := range routes {
+						for j, path := range route.Paths {
+							var origin oc.NetworkInstance_Protocol_Bgp_Rib_AfiSafi_Ipv4Unicast_LocRib_Route_Origin_Union
+							if path.SourceId == "" {
+								// TODO: For locally-originated routes figure out how to get the originating protocol.
+								origin = oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_UNSET
+							} else {
+								origin = oc.UnionString(path.SourceId)
+							}
+							// TODO: this ID should match the ID in adj-rib-in-post.
+							locRib.GetOrCreateRoute(route.Prefix, origin, uint32(j))
 						}
-						// TODO: this ID should match the ID in adj-rib-in-post.
-						locRib.GetOrCreateRoute(route.Prefix, origin, uint32(j))
 					}
+				})
+
+				for neigh := range t.appliedBGP.Neighbor {
+					t.queryTable(neigh, "adj-rib-in", api.TableType_ADJ_IN, func(routes []*api.Destination) {
+						for _, route := range routes {
+							for j, path := range route.Paths {
+								v4uni.GetOrCreateNeighbor(path.NeighborIp).GetOrCreateAdjRibInPre().GetOrCreateRoute(route.Prefix, uint32(j))
+								if !path.Filtered {
+									v4uni.GetOrCreateNeighbor(path.NeighborIp).GetOrCreateAdjRibInPost().GetOrCreateRoute(route.Prefix, uint32(j))
+								}
+							}
+						}
+					})
+
+					t.queryTable(neigh, "adj-rib-out", api.TableType_ADJ_OUT, func(routes []*api.Destination) {
+						for _, route := range routes {
+							for j, path := range route.Paths {
+								// Per OpenConfig the ID of this should be the ID assigned when exchanging add-path routes. However
+								// GoBGP doesn't seem to support the add-path capability and so just going to use the first path
+								// with 0 as the ID here. GoBGP does support AddPath as a gRPC call but when advertising the routes
+								// the generated UUID isn't propagated.
+								//
+								// Note that path.NeighborIp is <nil> for some reason so have to use neigh.
+								v4uni.GetOrCreateNeighbor(neigh).GetOrCreateAdjRibOutPre().GetOrCreateRoute(route.Prefix, uint32(j))
+								if !path.Filtered {
+									v4uni.GetOrCreateNeighbor(neigh).GetOrCreateAdjRibOutPost().GetOrCreateRoute(route.Prefix, uint32(j))
+								}
+							}
+						}
+					})
 				}
+				return nil
 			})
-
-			for neigh := range appliedBgp.Neighbor {
-				t.queryTable(neigh, "adj-rib-in", api.TableType_ADJ_IN, func(routes []*api.Destination) {
-					for _, route := range routes {
-						for j, path := range route.Paths {
-							v4uni.GetOrCreateNeighbor(path.NeighborIp).GetOrCreateAdjRibInPre().GetOrCreateRoute(route.Prefix, uint32(j))
-							if !path.Filtered {
-								v4uni.GetOrCreateNeighbor(path.NeighborIp).GetOrCreateAdjRibInPost().GetOrCreateRoute(route.Prefix, uint32(j))
-							}
-						}
-					}
-				})
-
-				t.queryTable(neigh, "adj-rib-out", api.TableType_ADJ_OUT, func(routes []*api.Destination) {
-					for _, route := range routes {
-						for j, path := range route.Paths {
-							// Per OpenConfig the ID of this should be the ID assigned when exchanging add-path routes. However
-							// GoBGP doesn't seem to support the add-path capability and so just going to use the first path
-							// with 0 as the ID here. GoBGP does support AddPath as a gRPC call but when advertising the routes
-							// the generated UUID isn't propagated.
-							//
-							// Note that path.NeighborIp is <nil> for some reason so have to use neigh.
-							v4uni.GetOrCreateNeighbor(neigh).GetOrCreateAdjRibOutPre().GetOrCreateRoute(route.Prefix, uint32(j))
-							if !path.Filtered {
-								v4uni.GetOrCreateNeighbor(neigh).GetOrCreateAdjRibOutPost().GetOrCreateRoute(route.Prefix, uint32(j))
-							}
-						}
-					}
-				})
-			}
-
-			updateState(yclient, appliedBgp)
-			appliedBgpMu.Unlock()
 		}
 	}()
 
@@ -286,19 +322,17 @@ func (t *bgpDeclTask) queryTable(neighbor, tableName string, tableType api.Table
 // reconcile examines the difference between the intended and applied
 // configuration, and makes GoBGP API calls accordingly to update the applied
 // configuration in the direction of intended configuration.
-func (t *bgpDeclTask) reconcile(intended, applied *oc.NetworkInstance_Protocol_Bgp, appliedMu *sync.Mutex) error {
-	appliedMu.Lock()
-	defer appliedMu.Unlock()
-
-	intendedGlobal := intended.GetOrCreateGlobal()
-	newConfig := intendedToGoBGP(intended, t.zapiURL, t.listenPort)
+func (t *bgpDeclTask) reconcile(intended *oc.Root) error {
+	intendedBGP := intended.GetOrCreateNetworkInstance(fakedevice.DefaultNetworkInstance).GetOrCreateProtocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, fakedevice.BGPRoutingProtocol).GetOrCreateBgp()
+	intendedGlobal := intendedBGP.GetOrCreateGlobal()
+	newConfig := intendedToGoBGP(intendedBGP, t.zapiURL, t.listenPort)
 
 	bgpShouldStart := intendedGlobal.As != nil && intendedGlobal.RouterId != nil
 	switch {
 	case bgpShouldStart && !t.bgpStarted:
 		log.V(1).Info("Starting BGP")
 		var err error
-		t.currentConfig, err = InitialConfig(context.Background(), applied, t.bgpServer, newConfig, gracefulRestart)
+		t.currentConfig, err = InitialConfig(context.Background(), t.appliedBGP, t.bgpServer, newConfig, gracefulRestart)
 		if err != nil {
 			return fmt.Errorf("Failed to apply initial BGP configuration %v", newConfig)
 		}
@@ -310,12 +344,12 @@ func (t *bgpDeclTask) reconcile(intended, applied *oc.NetworkInstance_Protocol_B
 		}
 		t.bgpStarted = false
 		t.currentConfig = &bgpconfig.BgpConfigSet{}
-		*applied = oc.NetworkInstance_Protocol_Bgp{}
-		applied.PopulateDefaults()
+		*t.appliedBGP = oc.NetworkInstance_Protocol_Bgp{}
+		t.appliedBGP.PopulateDefaults()
 	case t.bgpStarted:
 		log.V(1).Info("Updating BGP")
 		var err error
-		t.currentConfig, err = UpdateConfig(context.Background(), applied, t.bgpServer, t.currentConfig, newConfig)
+		t.currentConfig, err = UpdateConfig(context.Background(), t.appliedBGP, t.bgpServer, t.currentConfig, newConfig)
 		if err != nil {
 			return fmt.Errorf("Failed to update BGP service: %v", newConfig)
 		}

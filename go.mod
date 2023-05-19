@@ -14,16 +14,16 @@ require (
 	github.com/openconfig/gnmi v0.9.1
 	github.com/openconfig/gnoi v0.0.0-20230331232029-cc419f3696d3
 	github.com/openconfig/gnsi v0.2.1-0.20230406234913-6acb1b496c20
-	github.com/openconfig/goyang v1.2.0
+	github.com/openconfig/goyang v1.3.0
 	github.com/openconfig/gribi v1.0.0
 	github.com/openconfig/gribigo v0.0.0-20230207233343-ef59db57c4fc
 	github.com/openconfig/kne v0.1.8-0.20230309181728-8fc46a2e57e2
 	github.com/openconfig/ondatra v0.1.7
 	github.com/openconfig/ygnmi v0.7.9
-	github.com/openconfig/ygot v0.27.0
+	github.com/openconfig/ygot v0.28.3
 	github.com/p4lang/p4runtime v1.4.0-rc.5.0.20220728214547-13f0d02a521e
 	github.com/sirupsen/logrus v1.9.0
-	github.com/spf13/cobra v1.6.1
+	github.com/spf13/cobra v1.7.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.15.0
 	github.com/vishvananda/netlink v1.2.1-beta.2
@@ -32,7 +32,7 @@ require (
 	golang.org/x/net v0.8.0
 	golang.org/x/sys v0.6.0
 	google.golang.org/api v0.110.0
-	google.golang.org/grpc v1.53.0
+	google.golang.org/grpc v1.54.0
 	google.golang.org/protobuf v1.30.0
 	k8s.io/apimachinery v0.26.2
 	k8s.io/client-go v0.26.2
