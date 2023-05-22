@@ -43,17 +43,18 @@ const (
 type Engine struct {
 	dpb.UnimplementedDataplaneServer
 	*forwarding.Server
-	id         string
-	nameToIDMu sync.RWMutex
-	nameToID   map[string]uint64
+	id        string
+	idToNIDMu sync.RWMutex
+	// idToNID is map from RPC ID (proto), to internal object NID.
+	idToNID map[string]uint64
 }
 
 // New creates a new engine and sets up the forwarding tables.
 func New(ctx context.Context) (*Engine, error) {
 	e := &Engine{
-		id:       "default",
-		Server:   forwarding.New("engine"),
-		nameToID: map[string]uint64{},
+		id:      "default",
+		Server:  forwarding.New("engine"),
+		idToNID: map[string]uint64{},
 	}
 
 	_, err := e.Server.ContextCreate(context.Background(), &fwdpb.ContextCreateRequest{
@@ -172,18 +173,18 @@ func (e *Engine) CreatePort(ctx context.Context, req *dpb.CreatePortRequest) (*d
 	var err error
 	switch req.Type {
 	case fwdpb.PortType_PORT_TYPE_KERNEL:
-		err = e.CreateExternalPort(ctx, req.GetKernelDev())
+		err = e.CreateExternalPort(ctx, req.GetId(), req.GetKernelDev())
 	case fwdpb.PortType_PORT_TYPE_TAP:
-		err = e.CreateLocalPort(ctx, req.GetKernelDev(), req.GetExternalPort())
+		err = e.CreateLocalPort(ctx, req.GetId(), req.GetKernelDev(), req.GetExternalPort())
 	}
 	return &dpb.CreatePortResponse{}, err
 }
 
 // AddLayer3PuntRule adds rule to output packets to a corresponding port based on the destination IP and input port.
 func (e *Engine) AddLayer3PuntRule(ctx context.Context, portName string, ip []byte) error {
-	e.nameToIDMu.Lock()
-	defer e.nameToIDMu.Unlock()
-	portID := e.nameToID[portName]
+	e.idToNIDMu.Lock()
+	defer e.idToNIDMu.Unlock()
+	portID := e.idToNID[portName]
 
 	nidBytes := make([]byte, binary.Size(portID))
 	binary.BigEndian.PutUint64(nidBytes, portID)
@@ -391,11 +392,11 @@ func (e *Engine) RemoveNeighbor(ctx context.Context, ip []byte) error {
 }
 
 // UpdatePortSrcMAC updates a port's source mac address.
-func (e *Engine) UpdatePortSrcMAC(ctx context.Context, portName string, mac []byte) error {
-	e.nameToIDMu.RLock()
-	defer e.nameToIDMu.RUnlock()
-	idBytes := make([]byte, binary.Size(e.nameToID[portName]))
-	binary.BigEndian.PutUint64(idBytes, e.nameToID[portName])
+func (e *Engine) UpdatePortSrcMAC(ctx context.Context, portID string, mac []byte) error {
+	e.idToNIDMu.RLock()
+	defer e.idToNIDMu.RUnlock()
+	idBytes := make([]byte, binary.Size(e.idToNID[portID]))
+	binary.BigEndian.PutUint64(idBytes, e.idToNID[portID])
 
 	entry := &fwdpb.TableEntryAddRequest{
 		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: srcMACTable}},
@@ -433,18 +434,18 @@ func (e *Engine) UpdatePortSrcMAC(ctx context.Context, portName string, mac []by
 }
 
 // CreateExternalPort creates an external port (connected to other devices).
-func (e *Engine) CreateExternalPort(ctx context.Context, name string) error {
-	id, err := createKernelPort(ctx, e.id, e.Server, name)
+func (e *Engine) CreateExternalPort(ctx context.Context, id, devName string) error {
+	nid, err := createKernelPort(ctx, e.id, e.Server, id, devName)
 	if err != nil {
 		return err
 	}
-	e.nameToIDMu.Lock()
-	e.nameToID[name] = id
-	e.nameToIDMu.Unlock()
+	e.idToNIDMu.Lock()
+	e.idToNID[devName] = nid
+	e.idToNIDMu.Unlock()
 
 	update := &fwdpb.PortUpdateRequest{
 		ContextId: &fwdpb.ContextId{Id: e.id},
-		PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: name}},
+		PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: id}},
 		Update: &fwdpb.PortUpdateDesc{
 			Port: &fwdpb.PortUpdateDesc_Kernel{
 				Kernel: &fwdpb.KernelPortUpdateDesc{
@@ -512,37 +513,19 @@ func (e *Engine) CreateExternalPort(ctx context.Context, name string) error {
 }
 
 // CreateLocalPort creates an local (ie TAP) port for the given linux device name.
-func (e *Engine) CreateLocalPort(ctx context.Context, name, externalName string) error {
-	id, err := createTapPort(ctx, e.id, e.Server, name)
-	if err != nil {
-		return err
-	}
-	_, err = e.Server.AttributeUpdate(ctx, &fwdpb.AttributeUpdateRequest{
-		ContextId: &fwdpb.ContextId{Id: e.id},
-		ObjectId:  &fwdpb.ObjectId{Id: name},
-		AttrId:    attributes.SwapActionRelatedPort,
-		AttrValue: externalName,
-	})
-	if err != nil {
-		return err
-	}
-	_, err = e.Server.AttributeUpdate(ctx, &fwdpb.AttributeUpdateRequest{
-		ContextId: &fwdpb.ContextId{Id: e.id},
-		ObjectId:  &fwdpb.ObjectId{Id: externalName},
-		AttrId:    attributes.SwapActionRelatedPort,
-		AttrValue: name,
-	})
+func (e *Engine) CreateLocalPort(ctx context.Context, id, devName, externalID string) error {
+	nid, err := createTapPort(ctx, e.id, e.Server, id, devName)
 	if err != nil {
 		return err
 	}
 
-	e.nameToIDMu.Lock()
-	e.nameToID[name] = id
-	e.nameToIDMu.Unlock()
+	e.idToNIDMu.Lock()
+	e.idToNID[id] = nid
+	e.idToNIDMu.Unlock()
 
 	update := &fwdpb.PortUpdateRequest{
 		ContextId: &fwdpb.ContextId{Id: e.id},
-		PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: name}},
+		PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: id}},
 		Update: &fwdpb.PortUpdateDesc{
 			Port: &fwdpb.PortUpdateDesc_Kernel{
 				Kernel: &fwdpb.KernelPortUpdateDesc{
@@ -577,6 +560,28 @@ func (e *Engine) CreateLocalPort(ctx context.Context, name, externalName string)
 	if _, err := e.Server.PortUpdate(ctx, update); err != nil {
 		return err
 	}
+	if externalID == "" {
+		return nil
+	}
+	_, err = e.Server.AttributeUpdate(ctx, &fwdpb.AttributeUpdateRequest{
+		ContextId: &fwdpb.ContextId{Id: e.id},
+		ObjectId:  &fwdpb.ObjectId{Id: id},
+		AttrId:    attributes.SwapActionRelatedPort,
+		AttrValue: externalID,
+	})
+	if err != nil {
+		return err
+	}
+	_, err = e.Server.AttributeUpdate(ctx, &fwdpb.AttributeUpdateRequest{
+		ContextId: &fwdpb.ContextId{Id: e.id},
+		ObjectId:  &fwdpb.ObjectId{Id: externalID},
+		AttrId:    attributes.SwapActionRelatedPort,
+		AttrValue: id,
+	})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

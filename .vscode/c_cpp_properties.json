@@ -5,7 +5,10 @@
             "includePath": [
                 "${workspaceFolder}/bazel-lemming/external/com_github_opencomputeproject_sai/**",
                 "${workspaceFolder}/bazel-lemming/external/com_github_grpc_grpc/include/**",
-                "${workspaceFolder}/**"
+                "${workspaceFolder}/bazel-lemming/external/com_github_google_glog/src/**",
+                "${workspaceFolder}/bazel-lemming/external/com_google_absl/**",
+                "${workspaceFolder}/**",
+                
             ],
             "defines": [],
             "compilerPath": "/usr/bin/clang",
