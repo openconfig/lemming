@@ -108,7 +108,6 @@ func Await[T any](t testing.TB, c *ygnmi.Client, q ygnmi.SingletonQuery[T], val 
 		t.Fatalf("Await(t) on %v at %v: %v", c, q, err)
 	}
 	return v
-
 }
 
 type watchAwaiter[T any] interface {
@@ -130,12 +129,6 @@ func isContextErr(err error) bool {
 	}
 	ok := errors.As(err, &st)
 	return ok && (st.GRPCStatus().Code() == codes.DeadlineExceeded || st.GRPCStatus().Code() == codes.Canceled)
-}
-
-// statusErr is an interface implemented by errors returned by gRPC.
-// https://pkg.go.dev/google.golang.org/grpc@v1.48.0/internal/status#Error
-type statusErr interface {
-	GRPCStatus() *status.Status
 }
 
 // Await waits for the watch to finish and returns the last received value

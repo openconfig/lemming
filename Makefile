@@ -33,4 +33,4 @@ test-race:
 	# TODO: Fix race tests for lemming/gnmi and dataplane
 	# Failure in local_tests are due to GoBGP itself unable to issue a Stop
 	# command without conflicting with the running server (e.g. TestRoutePropagation)
-	bazel test --@io_bazel_rules_go//go/config:race $(shell bazel query 'tests("//...") except "//integration_tests/..." except "//dataplane/..." except "//gnmi/..." except "//bgp/local_tests/..."')
+	bazel test --@io_bazel_rules_go//go/config:race $(shell bazel query 'tests("//...") except "//integration_tests/..." except "//dataplane/..." except "//gnmi/..." except "//bgp/tests/local_tests/..."')
