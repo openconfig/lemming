@@ -79,6 +79,7 @@ type Server struct {
 	// dataplane.
 	rib *SysRIB
 
+	interfacesMu sync.Mutex
 	// interfaces contains the status of all existing interfaces as
 	// indicated by the forwarding plane.
 	interfaces map[Interface]bool
@@ -589,6 +590,8 @@ func (s *Server) ResolveAndProgramDiff() error {
 	}
 	s.rib.mu.RLock()
 	defer s.rib.mu.RUnlock()
+	s.interfacesMu.Lock()
+	defer s.interfacesMu.Unlock()
 	// newResolvedRoutes keeps track of the new set of top-level resolved
 	// routes after re-processing.
 	newResolvedRoutes := map[RouteKey]*Route{}
@@ -816,10 +819,12 @@ func (s *Server) addInterfacePrefix(name string, ifindex int32, prefix string, n
 // setInterface responds to INTERFACE_UP/INTERFACE_DOWN messages from the dataplane.
 func (s *Server) setInterface(name string, ifindex int32, enabled bool) error {
 	log.V(1).Infof("Setting interface %q(%d) to enabled=%v", name, ifindex, enabled)
+	s.interfacesMu.Lock()
 	s.interfaces[Interface{
 		Name:  name,
 		Index: ifindex,
 	}] = enabled
+	s.interfacesMu.Unlock()
 
 	return s.ResolveAndProgramDiff()
 }
