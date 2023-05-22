@@ -26,7 +26,7 @@ itest:
 
 .PHONY: test
 test:
-	bazel test $(shell bazel query 'tests("//...") except "//integration_tests/..."')
+	bazel test --test_output=errors $(shell bazel query 'tests("//...") except "//integration_tests/..."')
 
 .PHONY: test-race
 test-race:
