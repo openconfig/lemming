@@ -590,8 +590,6 @@ func (s *Server) ResolveAndProgramDiff() error {
 	}
 	s.rib.mu.RLock()
 	defer s.rib.mu.RUnlock()
-	s.interfacesMu.Lock()
-	defer s.interfacesMu.Unlock()
 	// newResolvedRoutes keeps track of the new set of top-level resolved
 	// routes after re-processing.
 	newResolvedRoutes := map[RouteKey]*Route{}
@@ -621,7 +619,9 @@ func (s *Server) resolveAndProgramDiffAux(niName string, ni *NIRIB, prefix strin
 		log.Errorf("sysrib: %v", err)
 		return
 	}
+	s.interfacesMu.Lock()
 	nhs, route, err := s.rib.egressNexthops(niName, pfx, s.interfaces)
+	s.interfacesMu.Unlock()
 	if err != nil {
 		log.Errorf("sysrib: %v", err)
 		return
