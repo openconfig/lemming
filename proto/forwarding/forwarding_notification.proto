@@ -44,8 +44,7 @@ message Empty {
 
 // PortEventDesc describes a change on the indicated port.
 message PortEventDesc {
-  reserved 1, 3, 4;
-  ContextId context = 2;
-  PortId port_id = 5;
-  LinkStateDesc link_event = 6;
+  ContextId context = 1;
+  PortId port_id = 2;
+  PortInfo port_info = 3;
 }

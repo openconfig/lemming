@@ -156,14 +156,13 @@ message AggregatePortAlgorithmUpdateDesc {
   repeated PacketFieldId field_ids = 2;  // List of fields to use for hashing.
 }
 
-// PortLaserState describes the laser state of a port. It can be used either as
-// a passive status or as an indicator of the desired state. For the link to be
+// PortLaserState describes the state of a port. It can be used either as
+// a current status or as an indicator of the desired state. For the link to be
 // up, neither port laser can be disabled.
-enum PortLaserState {
-  PORT_LASER_STATE_UNSPECIFIED = 0;
-  PORT_LASER_STATE_NOT_EMULATED = 1;  // Port is state-agnostic.
-  PORT_LASER_STATE_ENABLED = 2;       // Port laser is on.
-  PORT_LASER_STATE_DISABLED = 3;      // Port laser is off.
+enum PortState {
+  PORT_STATE_UNSPECIFIED = 0;
+  PORT_STATE_ENABLED_UP = 2;       // Port is ADMIN enable or OPER up.
+  PORT_STATE_DISABLED_DOWN = 3;      // Port is ADMIN disabled or OPER down.
 }
 
 // PortSpeedBehavior defines how the speed of a port affects its ability to
@@ -185,41 +184,18 @@ message PortSpeed {
 
 // PortInfo carries state information for a port.
 message PortInfo {
-  PortLaserState laser = 1;
-  PortSpeed speed = 2;
-}
-
-// LinkState enumerates the state of a link between two ports. This can be the
-// objective state of the link, or the state as seen by one of the ports.
-//
-// LinkState is determined by the following rules:
-// 1) If either port laser is DISABLED, the link is DOWN; else
-// 2) if either port speed behavior is MATCH_ANY, the link is UP; else
-// 3) if the speed of both ports is equal, the link is UP; else
-// 4) the link is DOWN.
-enum LinkState {
-  LINK_STATE_UNSPECIFIED = 0;
-  LINK_STATE_UP = 1;
-  LINK_STATE_DOWN = 2;
-}
-
-// LinkStateDesc specifies whether a port's link is up, as well as more granular
-// laser and speed information for the remote port (if one is connected).
-message LinkStateDesc {
-  LinkState state = 1;
-  PortInfo remote_port = 2;
+  PortState oper_status = 1;
+  PortState admin_status = 2;
+  PortSpeed speed = 3;
 }
 
 // A PortStateRequest can change a port's state and returns the resulting state.
 message PortStateRequest {
-  reserved 3;
   PortId port_id = 1;
   ContextId context_id = 2;
-  PortInfo operation = 4;
+  PortInfo operation = 3;
 }
 
 message PortStateReply {
-  reserved 1;
-  PortInfo local_port = 2;
-  LinkStateDesc link = 3;
+  PortInfo status = 1;
 }

@@ -28,6 +28,7 @@ import (
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdobject"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdpacket"
+	"github.com/openconfig/lemming/dataplane/internal/kernel"
 	"github.com/openconfig/lemming/internal/debug"
 
 	log "github.com/golang/glog"
@@ -42,11 +43,14 @@ func init() {
 // kernelPort is a ports that receives from and writes a linux network device.
 type kernelPort struct {
 	fwdobject.Base
-	devName string
-	input   fwdaction.Actions
-	output  fwdaction.Actions
-	ctx     *fwdcontext.Context // Forwarding context containing the port
-	handle  packetHandle
+	devName      string
+	input        fwdaction.Actions
+	output       fwdaction.Actions
+	ctx          *fwdcontext.Context // Forwarding context containing the port
+	handle       packetHandle
+	linkDoneCh   chan struct{}
+	linkUpdateCh chan netlink.LinkUpdate
+	ifaceMgr     kernel.Interfaces
 }
 
 type packetHandle interface {
@@ -67,6 +71,7 @@ func (p *kernelPort) Cleanup() {
 	p.input.Cleanup()
 	p.output.Cleanup()
 	p.handle.Close()
+	close(p.linkDoneCh)
 	p.input = nil
 	p.output = nil
 }
@@ -95,6 +100,7 @@ func (p *kernelPort) Update(upd *fwdpb.PortUpdateDesc) error {
 }
 
 func (p *kernelPort) process() {
+	startStateWatch(p.linkUpdateCh, p.devName, p, p.ctx)
 	src := gopacket.NewPacketSource(p.handle, layers.LinkTypeEthernet)
 	go func() {
 		for {
@@ -138,21 +144,9 @@ func (p *kernelPort) Actions(dir fwdpb.PortAction) fwdaction.Actions {
 	return nil
 }
 
-// State return the state of the port (UP).
-// TODO: handle port state correct.
-func (p *kernelPort) State(*fwdpb.PortInfo) (*fwdpb.PortStateReply, error) {
-	ready := fwdpb.PortStateReply{
-		LocalPort: &fwdpb.PortInfo{
-			Laser: fwdpb.PortLaserState_PORT_LASER_STATE_ENABLED,
-		},
-		Link: &fwdpb.LinkStateDesc{
-			State: fwdpb.LinkState_LINK_STATE_UP,
-			RemotePort: &fwdpb.PortInfo{
-				Laser: fwdpb.PortLaserState_PORT_LASER_STATE_ENABLED,
-			},
-		},
-	}
-	return &ready, nil
+// State returns the state of the port.
+func (p *kernelPort) State(pi *fwdpb.PortInfo) (*fwdpb.PortStateReply, error) {
+	return getAndSetState(p.devName, &p.ifaceMgr, pi)
 }
 
 type kernelBuilder struct{}
@@ -185,9 +179,11 @@ func (kernelBuilder) Build(portDesc *fwdpb.PortDesc, ctx *fwdcontext.Context) (f
 		return nil, fmt.Errorf("failed to create afpacket: %v", err)
 	}
 	p := &kernelPort{
-		ctx:     ctx,
-		handle:  handle,
-		devName: kp.Kernel.DeviceName,
+		ctx:          ctx,
+		handle:       handle,
+		devName:      kp.Kernel.DeviceName,
+		linkDoneCh:   make(chan struct{}),
+		linkUpdateCh: make(chan netlink.LinkUpdate),
 	}
 	list := append(fwdport.CounterList, fwdaction.CounterList...)
 	if err := p.InitCounters("", list...); err != nil {
