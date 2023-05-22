@@ -79,6 +79,7 @@ type Server struct {
 	// dataplane.
 	rib *SysRIB
 
+	interfacesMu sync.Mutex
 	// interfaces contains the status of all existing interfaces as
 	// indicated by the forwarding plane.
 	interfaces map[Interface]bool
@@ -618,7 +619,9 @@ func (s *Server) resolveAndProgramDiffAux(niName string, ni *NIRIB, prefix strin
 		log.Errorf("sysrib: %v", err)
 		return
 	}
+	s.interfacesMu.Lock()
 	nhs, route, err := s.rib.egressNexthops(niName, pfx, s.interfaces)
+	s.interfacesMu.Unlock()
 	if err != nil {
 		log.Errorf("sysrib: %v", err)
 		return
@@ -816,10 +819,12 @@ func (s *Server) addInterfacePrefix(name string, ifindex int32, prefix string, n
 // setInterface responds to INTERFACE_UP/INTERFACE_DOWN messages from the dataplane.
 func (s *Server) setInterface(name string, ifindex int32, enabled bool) error {
 	log.V(1).Infof("Setting interface %q(%d) to enabled=%v", name, ifindex, enabled)
+	s.interfacesMu.Lock()
 	s.interfaces[Interface{
 		Name:  name,
 		Index: ifindex,
 	}] = enabled
+	s.interfacesMu.Unlock()
 
 	return s.ResolveAndProgramDiff()
 }

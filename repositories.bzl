@@ -1179,8 +1179,8 @@ def go_repositories():
         name = "com_github_openconfig_ygot",
         build_file_proto_mode = "disable",
         importpath = "github.com/openconfig/ygot",
-        sum = "h1:B2f6BMp4v0Lex5qzcsqODv+HdQWqcc748pQ4eDF+ty4=",
-        version = "v0.27.0",
+        sum = "h1:r1GSxzamx+HaO0/MdMTmSlOtX7us6arG+fDMWvRVGI0=",
+        version = "v0.28.3",
     )
     go_repository(
         name = "com_github_opencontainers_go_digest",

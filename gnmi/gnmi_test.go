@@ -1170,7 +1170,7 @@ func TestSTREAM(t *testing.T) {
 		if a.Val != b.Val {
 			return fmt.Sprintf("%v", a.Val) < fmt.Sprintf("%v", b.Val)
 		}
-		return true
+		return false
 	})); diff != "" {
 		t.Fatalf("did not get expected updates, diff(-got,+want)\n:%s", diff)
 	}

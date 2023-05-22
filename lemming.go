@@ -343,10 +343,12 @@ func (d *Device) startServer() {
 		go func() {
 			if err := svc.s.Serve(svc.lis); err != nil {
 				d.errsMu.Lock()
-				defer d.errsMu.Unlock()
 				d.errs = append(d.errs, err)
+				d.errsMu.Unlock()
 			}
+			d.errsMu.Lock()
 			klog.Infof("%s server stopped: %v", svcName, d.errs)
+			d.errsMu.Unlock()
 			close(svc.stopped)
 		}()
 	}

@@ -23,8 +23,8 @@ import (
 	"testing"
 
 	"github.com/openconfig/lemming"
+	"github.com/openconfig/lemming/bgp"
 	"github.com/openconfig/lemming/gnmi"
-	"github.com/openconfig/lemming/gnmi/fakedevice"
 	"github.com/openconfig/lemming/gnmi/gnmiclient"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
@@ -168,8 +168,6 @@ func newLemming(t *testing.T, dev DeviceSpec, connectedIntfs []*AddIntfAction) (
 }
 
 func establishSessionPair(t *testing.T, dut1, dut2 *ygnmi.Client, spec1, spec2 DeviceSpec) {
-	bgpPath := ocpath.Root().NetworkInstance(fakedevice.DefaultNetworkInstance).Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, fakedevice.BGPRoutingProtocol).Bgp()
-
 	dutConf := bgpWithNbr(spec1.AS, spec1.RouterID, &oc.NetworkInstance_Protocol_Bgp_Neighbor{
 		PeerAs:          ygot.Uint32(spec2.AS),
 		NeighborAddress: ygot.String(spec2.RouterID),
@@ -180,10 +178,10 @@ func establishSessionPair(t *testing.T, dut1, dut2 *ygnmi.Client, spec1, spec2 D
 		NeighborAddress: ygot.String(spec1.RouterID),
 		NeighborPort:    ygot.Uint16(spec1.bgpPort),
 	})
-	Update(t, dut1, bgpPath.Config(), dutConf)
-	Update(t, dut2, bgpPath.Config(), dut2Conf)
+	Update(t, dut1, bgp.BGPPath.Config(), dutConf)
+	Update(t, dut2, bgp.BGPPath.Config(), dut2Conf)
 
-	nbrPath := bgpPath.Neighbor(spec2.RouterID)
+	nbrPath := bgp.BGPPath.Neighbor(spec2.RouterID)
 	Await(t, dut1, nbrPath.SessionState().State(), oc.Bgp_Neighbor_SessionState_ESTABLISHED)
 }
 

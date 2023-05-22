@@ -120,7 +120,9 @@ func newServer(ctx context.Context, targetName string, enableSet bool, recs ...r
 		if err := ygot.PruneConfigFalse(configSchema.RootSchema(), configSchema.Root); err != nil {
 			return nil, fmt.Errorf("gnmi: %v", err)
 		}
-		updateCache(c.cache, configSchema.Root, emptySchema.Root, targetName, OpenConfigOrigin, true, time.Now().UnixNano(), "", nil)
+		if err := updateCache(c.cache, configSchema.Root, emptySchema.Root, targetName, OpenConfigOrigin, true, time.Now().UnixNano(), "", nil); err != nil {
+			return nil, fmt.Errorf("gnmi newServer: %v", err)
+		}
 	}
 
 	stateSchema, err := oc.Schema()
@@ -131,7 +133,9 @@ func newServer(ctx context.Context, targetName string, enableSet bool, recs ...r
 		if err := setupSchema(stateSchema, false); err != nil {
 			return nil, err
 		}
-		updateCache(c.cache, stateSchema.Root, emptySchema.Root, targetName, OpenConfigOrigin, true, time.Now().UnixNano(), "", nil)
+		if err := updateCache(c.cache, stateSchema.Root, emptySchema.Root, targetName, OpenConfigOrigin, true, time.Now().UnixNano(), "", nil); err != nil {
+			return nil, fmt.Errorf("gnmi newServer: %v", err)
+		}
 	}
 
 	for _, rec := range recs {
@@ -238,8 +242,8 @@ func checkWritePermission(auth PathAuth, user string, nos ...*gpb.Notification) 
 }
 
 // updateCacheNotifs updates the target cache with the given notifications.
-func updateCacheNotifs(cache *cache.Cache, nos []*gpb.Notification, target, origin string) error {
-	cacheTarget := cache.GetTarget(target)
+func updateCacheNotifs(ca *cache.Cache, nos []*gpb.Notification, target, origin string) error {
+	cacheTarget := ca.GetTarget(target)
 	for _, n := range nos {
 		n.Prefix = &gpb.Path{Origin: origin, Target: target}
 		if n.Prefix.Origin == "" {
@@ -261,7 +265,7 @@ func updateCacheNotifs(cache *cache.Cache, nos []*gpb.Notification, target, orig
 			log.V(1).Infof("datastore: deleting the following paths: %+v", pathsForDelete)
 		}
 		if err := cacheTarget.GnmiUpdate(n); err != nil {
-			return err
+			return fmt.Errorf("%w: notification:\n%s", err, prototext.Format(n))
 		}
 	}
 	return nil
