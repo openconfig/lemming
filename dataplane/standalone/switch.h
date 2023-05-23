@@ -51,8 +51,10 @@ class Switch : public APIBase {
                               const sai_attribute_t* attr);
 
  private:
+  void handle_notification();
   std::string id;
   std::unordered_map<std::string, std::unique_ptr<APIBase>> apis;
+  sai_port_state_change_notification_fn port_callback_fn;
 };
 
 #endif  // DATAPLANE_STANDALONE_SWITCH_H_

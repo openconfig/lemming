@@ -304,8 +304,6 @@ message ObjectListReply {
 message ContextCreateRequest {
   ContextId context_id = 1;
   string packet_address = 2;  // Address of the context's packet service.
-  string notification_address =
-      3;  // Address of the context's notification service.
 }
 
 message ContextCreateReply {
