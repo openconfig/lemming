@@ -52,13 +52,13 @@ type Engine struct {
 // New creates a new engine and sets up the forwarding tables.
 func New(ctx context.Context) (*Engine, error) {
 	e := &Engine{
-		id:      "default",
+		id:      "lucius",
 		Server:  forwarding.New("engine"),
 		idToNID: map[string]uint64{},
 	}
 
 	_, err := e.Server.ContextCreate(context.Background(), &fwdpb.ContextCreateRequest{
-		ContextId: &fwdpb.ContextId{Id: "default"},
+		ContextId: &fwdpb.ContextId{Id: e.id},
 	})
 	if err != nil {
 		return nil, err

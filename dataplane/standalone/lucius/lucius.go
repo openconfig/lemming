@@ -30,12 +30,20 @@ import (
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
+var fwdCtxID string
+
+//export getForwardCtxID
+func getForwardCtxID() *C.char {
+	return C.CString(fwdCtxID)
+}
+
 //export initialize
 func initialize(port int) {
 	e, err := engine.New(context.Background())
 	if err != nil {
 		log.Fatalf("failed create engine: %v", err)
 	}
+	fwdCtxID = e.ID()
 
 	lis, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
 	if err != nil {

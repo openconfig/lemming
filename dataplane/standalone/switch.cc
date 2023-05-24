@@ -29,6 +29,7 @@
 #include "dataplane/standalone/route.h"
 #include "dataplane/standalone/router_interface.h"
 #include "dataplane/standalone/translator.h"
+#include "dataplane/standalone/lucius/lucius_clib.h"
 #include "dataplane/standalone/vlan.h"
 
 extern "C" {
@@ -378,8 +379,10 @@ sai_status_t Switch::set_child_attr(sai_object_type_t type, std::string id,
 void Switch::handle_notification() {
   grpc::ClientContext ctx;
   forwarding::NotifySubscribeRequest req;
-  req.mutable_context()->set_id("default");
+  char* id = getForwardCtxID();
+  req.mutable_context()->set_id(id);
   auto reader = this->fwd->NotifySubscribe(&ctx, req);
+  free(id);
   forwarding::EventDesc ed;
   while (reader->Read(&ed)) {
     if (!ed.has_port()) {

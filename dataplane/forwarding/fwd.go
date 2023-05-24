@@ -886,6 +886,7 @@ func (e *Server) NotifySubscribe(sub *fwdpb.NotifySubscribeRequest, srv fwdpb.Fo
 		eventCh <- ed
 	}
 
+	// TODO: Remove unused address field.
 	if err := e.UpdateNotification(sub.GetContext(), fn, "callback"); err != nil {
 		return err
 	}
