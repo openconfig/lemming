@@ -38,8 +38,8 @@ message EventDesc {
   }
 }
 
-message Empty {
-
+message NotifySubscribeRequest {
+  ContextId context = 1;
 }
 
 // PortEventDesc describes a change on the indicated port.

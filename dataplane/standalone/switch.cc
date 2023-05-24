@@ -14,7 +14,10 @@
 
 #include "dataplane/standalone/switch.h"
 
+#include <glog/logging.h>
+
 #include <string>
+#include <thread> // NOLINT
 #include <vector>
 
 #include "dataplane/standalone/acl.h"
@@ -26,6 +29,7 @@
 #include "dataplane/standalone/route.h"
 #include "dataplane/standalone/router_interface.h"
 #include "dataplane/standalone/translator.h"
+#include "dataplane/standalone/lucius/lucius_clib.h"
 #include "dataplane/standalone/vlan.h"
 
 extern "C" {
@@ -44,8 +48,9 @@ sai_status_t Switch::create(_In_ uint32_t attr_count,
         reinterpret_cast<sai_fdb_event_notification_fn>(attr_list[i].value.ptr);
       }
       case SAI_SWITCH_ATTR_PORT_STATE_CHANGE_NOTIFY: {
-        reinterpret_cast<sai_port_state_change_notification_fn>(
-            attr_list[i].value.ptr);
+        this->port_callback_fn =
+            reinterpret_cast<sai_port_state_change_notification_fn>(
+                attr_list[i].value.ptr);
       }
       case SAI_SWITCH_ATTR_SWITCH_SHUTDOWN_REQUEST_NOTIFY: {
         reinterpret_cast<sai_switch_shutdown_request_notification_fn>(
@@ -76,15 +81,15 @@ sai_status_t Switch::create(_In_ uint32_t attr_count,
 
   attrs.push_back({
       .id = SAI_SWITCH_ATTR_ACL_ENTRY_MINIMUM_PRIORITY,
-      .value = {.u32 = 0},
-  });
-  attrs.push_back({
-      .id = SAI_SWITCH_ATTR_ACL_ENTRY_MAXIMUM_PRIORITY,
       .value = {.u32 = 1},
   });
   attrs.push_back({
+      .id = SAI_SWITCH_ATTR_ACL_ENTRY_MAXIMUM_PRIORITY,
+      .value = {.u32 = 16000},
+  });
+  attrs.push_back({
       .id = SAI_SWITCH_ATTR_MAX_ACL_ACTION_COUNT,
-      .value = {.u32 = 10},
+      .value = {.u32 = 53},
   });
   attrs.push_back({
       .id = SAI_SWITCH_ATTR_ACL_STAGE_INGRESS,
@@ -294,7 +299,12 @@ sai_status_t Switch::create(_In_ uint32_t attr_count,
       .value = {.oid = SAI_NULL_OBJECT_ID},
   });
 
+  LOG(INFO) << "Starting notif thread";
+  std::thread thread(&Switch::handle_notification, this);
+  thread.detach();
+
   APIBase::create(attrs.size(), attrs.data());
+  LOG(INFO) << "Switch created successfuly";
   return SAI_STATUS_SUCCESS;
 }
 
@@ -364,4 +374,43 @@ sai_status_t Switch::create_child(sai_object_type_t type, common_entry_t id,
 sai_status_t Switch::set_child_attr(sai_object_type_t type, std::string id,
                                     const sai_attribute_t *attr) {
   return this->apis[id]->set_attribute(attr);
+}
+
+void Switch::handle_notification() {
+  grpc::ClientContext ctx;
+  forwarding::NotifySubscribeRequest req;
+  char* id = getForwardCtxID();
+  req.mutable_context()->set_id(id);
+  auto reader = this->fwd->NotifySubscribe(&ctx, req);
+  free(id);
+  forwarding::EventDesc ed;
+  while (reader->Read(&ed)) {
+    if (!ed.has_port()) {
+      continue;
+    }
+    auto type = attrMgr->get_type(ed.port().port_id().object_id().id());
+    if (type !=
+        SAI_OBJECT_TYPE_PORT) {  // Ignore notification for host if ports.
+      continue;
+    }
+    sai_port_oper_status_notification_t sai_notif{
+        .port_id = std::stoul(ed.port().port_id().object_id().id()),
+    };
+    switch (ed.port().port_info().oper_status()) {
+      case forwarding::PORT_STATE_ENABLED_UP:
+        sai_notif.port_state = SAI_PORT_OPER_STATUS_UP;
+        break;
+      case forwarding::PORT_STATE_DISABLED_DOWN:
+        sai_notif.port_state = SAI_PORT_OPER_STATUS_DOWN;
+        break;
+      default:
+        sai_notif.port_state = SAI_PORT_OPER_STATUS_UNKNOWN;
+    }
+    LOG(INFO) << "Sending port callback for port id " << sai_notif.port_id;
+    this->port_callback_fn(1, &sai_notif);
+  }
+  grpc::Status st = reader->Finish();
+  if (!st.ok()) {
+    LOG(ERROR) << st.error_message();
+  }
 }

@@ -107,12 +107,9 @@ service Forwarding {
 
   // Operation performs a stream of operations.
   rpc Operation(stream OperationRequest) returns (stream OperationReply) {}
-}
 
-// Notification is a service that processes various events.
-service Notification {
-  // Notify notifies an event.
-  rpc Notify(EventDesc) returns (Empty) {}
+  // NotifySubscribe subscribes to notifications.
+  rpc NotifySubscribe(NotifySubscribeRequest) returns (stream EventDesc) {}
 }
 
 // PacketSink is a service that processes packets on the specified port.

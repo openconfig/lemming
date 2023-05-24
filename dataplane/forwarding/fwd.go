@@ -67,11 +67,10 @@ type Server struct {
 	mu  sync.Mutex
 	ctx map[string]*fwdcontext.Context // forwarding contexts indexed by name
 
-	name         string                                     // name of the forwarding engine
-	info         *InfoList                                  // list of info elements that can be queried
-	conn         map[string]*grpc.ClientConn                // client connections indexed by address
-	notification map[string]fwdcontext.NotificationCallback // notification callback indexed by address
-	packet       map[string]fwdcontext.PacketCallback       // packet callback indexed by address
+	name   string                               // name of the forwarding engine
+	info   *InfoList                            // list of info elements that can be queried
+	conn   map[string]*grpc.ClientConn          // client connections indexed by address
+	packet map[string]fwdcontext.PacketCallback // packet callback indexed by address
 }
 
 // New creates a new forwarding instance using the specified name.
@@ -95,32 +94,6 @@ func (e *Server) client(addr string) (*grpc.ClientConn, error) {
 	}
 	e.conn[addr] = c
 	return c, nil
-}
-
-// GetNotificationCallback returns a callback that posts notifications to the
-// specified address.  If the address is "", the returned callback ignores all
-// events.
-func (e *Server) GetNotificationCallback(address string) (fwdcontext.NotificationCallback, error) {
-	if address == "" {
-		return nil, nil
-	}
-
-	e.mu.Lock()
-	defer e.mu.Unlock()
-
-	if h, ok := e.notification[address]; ok {
-		return h, nil
-	}
-	c, err := e.client(address)
-	if err != nil {
-		return nil, fmt.Errorf("service: connection to notification service failed, err %v", err)
-	}
-	client := fwdpb.NewNotificationClient(c)
-	h := func(ed *fwdpb.EventDesc) {
-		client.Notify(context.TODO(), ed)
-	}
-	e.notification[address] = h
-	return h, nil
 }
 
 // GetPacketSinkCallback returns a callback that posts packets to a packet sink
@@ -197,11 +170,6 @@ func (e *Server) UpdatePacketSink(contextID *fwdpb.ContextId, packet fwdcontext.
 // fails.
 func (e *Server) ContextCreate(_ context.Context, request *fwdpb.ContextCreateRequest) (*fwdpb.ContextCreateReply, error) {
 	paddr := request.GetPacketAddress()
-	naddr := request.GetNotificationAddress()
-	ns, err := e.GetNotificationCallback(naddr)
-	if err != nil {
-		return nil, err
-	}
 
 	ps, err := e.GetPacketSinkCallback(paddr)
 	if err != nil {
@@ -212,10 +180,6 @@ func (e *Server) ContextCreate(_ context.Context, request *fwdpb.ContextCreateRe
 	if err := e.contextCreateByID(cid); err != nil {
 		return nil, err
 	}
-
-	if err := e.UpdateNotification(cid, ns, naddr); err != nil {
-		return nil, err
-	}
 	return &fwdpb.ContextCreateReply{}, e.UpdatePacketSink(cid, ps, paddr)
 }
 
@@ -224,7 +188,6 @@ func (e *Server) ContextCreate(_ context.Context, request *fwdpb.ContextCreateRe
 // fails.
 func (e *Server) ContextUpdate(_ context.Context, request *fwdpb.ContextUpdateRequest) (*fwdpb.ContextUpdateReply, error) {
 	paddr := request.GetPacketAddress()
-	naddr := request.GetNotificationAddress()
 	cid := request.GetContextId()
 
 	for _, op := range request.GetOperations() {
@@ -235,14 +198,6 @@ func (e *Server) ContextUpdate(_ context.Context, request *fwdpb.ContextUpdateRe
 				return nil, err
 			}
 			if err = e.UpdatePacketSink(cid, ps, paddr); err != nil {
-				return nil, err
-			}
-		case fwdpb.ContextUpdateRequest_OPERATION_UPDATE_NOTIFICATION_ADDRESS:
-			ns, err := e.GetNotificationCallback(naddr)
-			if err != nil {
-				return nil, err
-			}
-			if err = e.UpdateNotification(cid, ns, naddr); err != nil {
 				return nil, err
 			}
 		}
@@ -918,6 +873,27 @@ func (e *Server) Operation(stream fwdpb.Forwarding_OperationServer) error {
 			return fmt.Errorf("OperationRequest.Request has unexpected type %T", request)
 		}
 		if err := stream.Send(&operationReply); err != nil {
+			return err
+		}
+	}
+}
+
+// NotifySubscribe subscribes to notification for a forwarding context.
+// TODO: Only one notification client is supported per forwarding context.
+func (e *Server) NotifySubscribe(sub *fwdpb.NotifySubscribeRequest, srv fwdpb.Forwarding_NotifySubscribeServer) error {
+	eventCh := make(chan *fwdpb.EventDesc)
+	fn := func(ed *fwdpb.EventDesc) {
+		eventCh <- ed
+	}
+
+	// TODO: Remove unused address field.
+	if err := e.UpdateNotification(sub.GetContext(), fn, "callback"); err != nil {
+		return err
+	}
+
+	for {
+		e := <-eventCh
+		if err := srv.Send(e); err != nil {
 			return err
 		}
 	}

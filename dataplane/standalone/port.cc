@@ -57,6 +57,10 @@ sai_status_t Port::create(_In_ uint32_t attr_count,
       LOG(ERROR) << "Failed to create port: " << status.error_message();
       return SAI_STATUS_FAILURE;
     }
+    attrs.push_back({
+        .id = SAI_PORT_ATTR_OPER_STATUS,
+        .value = {.s32 = SAI_PORT_OPER_STATUS_UP},
+    });
     LOG(INFO) << "Created port with id " << this->id;
   } else {  // TODO(dgrau): Figure out what to do for this ports.
     attrs.push_back({
@@ -81,7 +85,7 @@ sai_status_t Port::create(_In_ uint32_t attr_count,
   });
   attrs.push_back({
       .id = SAI_PORT_ATTR_ADMIN_STATE,
-      .value = {.booldata = false},
+      .value = {.booldata = true},
   });
   attrs.push_back({
       .id = SAI_PORT_ATTR_AUTO_NEG_MODE,
