@@ -17,16 +17,17 @@ package handlers
 import (
 	"context"
 	"fmt"
-	"net"
 	"strconv"
+
+	"github.com/openconfig/ygnmi/schemaless"
+	"github.com/openconfig/ygnmi/ygnmi"
 
 	"github.com/openconfig/lemming/dataplane/internal/engine"
 	"github.com/openconfig/lemming/gnmi"
 	"github.com/openconfig/lemming/gnmi/reconciler"
-	"github.com/openconfig/ygnmi/schemaless"
-	"github.com/openconfig/ygnmi/ygnmi"
 
 	log "github.com/golang/glog"
+
 	dpb "github.com/openconfig/lemming/proto/dataplane"
 )
 
@@ -44,9 +45,7 @@ func RouteQuery(vrf uint64, prefix string) ygnmi.ConfigQuery[*dpb.Route] {
 	return q
 }
 
-var (
-	routesQuery ygnmi.WildcardQuery[*dpb.Route]
-)
+var routesQuery ygnmi.WildcardQuery[*dpb.Route]
 
 // NewRoute returns a new route reconciler.
 func NewRoute(e *engine.Engine) *reconciler.BuiltReconciler {
@@ -66,30 +65,18 @@ func (r *route) start(ctx context.Context, client *ygnmi.Client) error {
 			return ygnmi.Continue
 		}
 
-		_, ipNet, err := net.ParseCIDR(prefix)
-		if err != nil {
-			log.Warningf("failed to parse prefix: %v", err)
-			return ygnmi.Continue
-		}
-		ip := ipNet.IP.To4()
-		isIPv4 := true
-		if ip == nil {
-			ip = ipNet.IP.To16()
-			isIPv4 = false
-		}
-
 		if !present {
-			if err := r.e.DeleteIPRoute(ctx, isIPv4, ipNet.IP, ipNet.Mask, vrf); err != nil {
+			if _, err := r.e.RemoveIPRoute(ctx, &dpb.RemoveIPRouteRequest{Prefix: &dpb.RoutePrefix{Prefix: &dpb.RoutePrefix_Str{Str: prefix}, VrfId: vrf}}); err != nil {
 				log.Warningf("failed to delete route: %v", err)
 				return ygnmi.Continue
 			}
 			return ygnmi.Continue
 		}
-		if len(route.NextHops) == 0 {
+		if route.GetNextHops() == nil || len(route.GetNextHops().GetHops()) == 0 {
 			log.Warningf("no next hops for route insert or update")
 			return ygnmi.Continue
 		}
-		if err := r.e.AddIPRoute(ctx, isIPv4, ip, ipNet.Mask, vrf, route.GetNextHops()); err != nil {
+		if _, err := r.e.AddIPRoute(ctx, &dpb.AddIPRouteRequest{Route: route}); err != nil {
 			log.Warningf("failed to add route: %v", err)
 		}
 

@@ -11,6 +11,7 @@ go_library(
     deps = [
         "//dataplane/forwarding",
         "//dataplane/forwarding/attributes",
+        "//dataplane/forwarding/fwdbuilder",
         "//proto/dataplane",
         "//proto/forwarding",
         "@com_github_golang_glog//:glog",

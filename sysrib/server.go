@@ -43,6 +43,7 @@ import (
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
+
 	dpb "github.com/openconfig/lemming/proto/dataplane"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 	pb "github.com/openconfig/lemming/proto/sysrib"
@@ -126,7 +127,7 @@ func (d *Dataplane) ProgramRoute(r *ResolvedRoute) error {
 	if err != nil {
 		return err
 	}
-	_, err = ygnmi.Replace(context.TODO(), d.Client, handlers.RouteQuery(rr.GetVrf(), rr.GetPrefix()), rr, ygnmi.WithSetFallbackEncoding())
+	_, err = ygnmi.Replace(context.TODO(), d.Client, handlers.RouteQuery(rr.GetPrefix().GetVrfId(), rr.GetPrefix().GetStr()), rr, ygnmi.WithSetFallbackEncoding())
 	return err
 }
 
@@ -525,9 +526,15 @@ func resolvedRouteToRouteRequest(r *ResolvedRoute) (*dpb.Route, error) {
 	}
 
 	return &dpb.Route{
-		Vrf:      uint64(vrfID),
-		Prefix:   r.Prefix,
-		NextHops: nexthops,
+		Prefix: &dpb.RoutePrefix{
+			VrfId: uint64(vrfID),
+			Prefix: &dpb.RoutePrefix_Str{
+				Str: r.Prefix,
+			},
+		},
+		Hop: &dpb.Route_NextHops{
+			NextHops: &dpb.NextHopList{Hops: nexthops},
+		},
 	}, nil
 }
 

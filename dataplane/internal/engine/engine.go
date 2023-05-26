@@ -17,10 +17,14 @@ package engine
 import (
 	"context"
 	"encoding/binary"
+	"fmt"
+	"net"
 	"sync"
+	"sync/atomic"
 
 	"github.com/openconfig/lemming/dataplane/forwarding"
 	"github.com/openconfig/lemming/dataplane/forwarding/attributes"
+	"github.com/openconfig/lemming/dataplane/forwarding/fwdbuilder"
 
 	log "github.com/golang/glog"
 
@@ -34,6 +38,8 @@ const (
 	srcMACTable      = "port-mac"
 	fibSelectorTable = "fib-selector"
 	neighborTable    = "neighbor"
+	nhgTable         = "nhg-table"
+	nhTable          = "nh-table"
 	layer2PuntTable  = "layer2-punt"
 	layer3PuntTable  = "layer3-punt"
 	arpPuntTable     = "arp-punt"
@@ -46,7 +52,10 @@ type Engine struct {
 	id        string
 	idToNIDMu sync.RWMutex
 	// idToNID is map from RPC ID (proto), to internal object NID.
-	idToNID map[string]uint64
+	idToNID   map[string]uint64
+	nextHopMu sync.Mutex
+	nextNHGID atomic.Uint64
+	nextNHID  atomic.Uint64
 }
 
 // New creates a new engine and sets up the forwarding tables.
@@ -152,6 +161,46 @@ func New(ctx context.Context) (*Engine, error) {
 	if _, err := e.Server.TableCreate(ctx, neighbor); err != nil {
 		return nil, err
 	}
+	nh := &fwdpb.TableCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: e.id},
+		Desc: &fwdpb.TableDesc{
+			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: nhTable}},
+			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_DROP}},
+			Table: &fwdpb.TableDesc_Exact{
+				Exact: &fwdpb.ExactTableDesc{
+					FieldIds: []*fwdpb.PacketFieldId{{
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_ID,
+						},
+					}},
+				},
+			},
+		},
+	}
+	if _, err := e.Server.TableCreate(ctx, nh); err != nil {
+		return nil, err
+	}
+	nhg := &fwdpb.TableCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: e.id},
+		Desc: &fwdpb.TableDesc{
+			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: nhgTable}},
+			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_DROP}},
+			Table: &fwdpb.TableDesc_Exact{
+				Exact: &fwdpb.ExactTableDesc{
+					FieldIds: []*fwdpb.PacketFieldId{{
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_GROUP_ID,
+						},
+					}},
+				},
+			},
+		},
+	}
+	if _, err := e.Server.TableCreate(ctx, nhg); err != nil {
+		return nil, err
+	}
 	if err := createFIBSelector(ctx, e.id, e.Server); err != nil {
 		return nil, err
 	}
@@ -233,45 +282,249 @@ func (e *Engine) AddLayer3PuntRule(ctx context.Context, portName string, ip []by
 	return nil
 }
 
-// AddIPRoute adds a route to the FIB with the input next hops.
-func (e *Engine) AddIPRoute(ctx context.Context, v4 bool, ip, mask []byte, vrf uint64, nextHops []*dpb.NextHop) error {
-	fib := fibV6Table
-	if v4 {
-		fib = fibV4Table
+// prefixToPrimitives returns the primitive types of the route prefix.
+// ip addr bytes, ip mask bytes, is ipv4, vrf id, error.
+func prefixToPrimitives(prefix *dpb.RoutePrefix) ([]byte, []byte, bool, uint64, error) {
+	var ip []byte
+	var mask []byte
+	var isIPv4 bool
+	vrf := prefix.GetVrfId()
+
+	switch pre := prefix.GetPrefix().(type) {
+	case *dpb.RoutePrefix_Str:
+		_, ipNet, err := net.ParseCIDR(pre.Str)
+		if err != nil {
+			return ip, mask, isIPv4, vrf, fmt.Errorf("failed to parse ip prefix: %v", err)
+		}
+		ip = ipNet.IP.To4()
+		mask = ipNet.Mask
+		isIPv4 = true
+		if ip == nil {
+			ip = ipNet.IP.To16()
+			mask = ipNet.Mask
+			isIPv4 = false
+		}
+	case *dpb.RoutePrefix_Mask:
+		ip = pre.Mask.Addr
+		mask = pre.Mask.Mask
+		switch len(ip) {
+		case net.IPv4len:
+			isIPv4 = true
+		case net.IPv6len:
+			isIPv4 = false
+		default:
+			return ip, mask, isIPv4, vrf, fmt.Errorf("invalid ip addr length")
+		}
+	default:
+		return ip, mask, isIPv4, vrf, fmt.Errorf("invalid prefix type")
+	}
+	return ip, mask, isIPv4, vrf, nil
+}
+
+// addNextHopList creates all the next hops from the message, then create a next hop group if there are multiple next hops.
+func (e *Engine) addNextHopList(ctx context.Context, nhg *dpb.NextHopList) ([]*fwdpb.ActionDesc, error) {
+	if len(nhg.GetHops()) == 1 {
+		nhID := e.nextNHID.Add(1)
+		if err := e.addNextHop(ctx, nhID, nhg.Hops[0]); err != nil {
+			return nil, err
+		}
+		return []*fwdpb.ActionDesc{
+			fwdbuilder.Action(fwdbuilder.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_ID).WithUint64Value(nhID)).Build(),
+			fwdbuilder.Action(fwdbuilder.LookupAction(nhTable)).Build(),
+		}, nil
 	}
 
-	actions := nextHopToActions(nextHops[0])
-
-	if len(nextHops) > 1 {
-		var actLists []*fwdpb.ActionList
-		for _, nh := range nextHops {
-			actLists = append(actLists, &fwdpb.ActionList{
-				Weight:  nh.GetWeight(),
-				Actions: nextHopToActions(nh),
-			})
+	idList := &dpb.NextHopIDList{}
+	for _, hop := range nhg.GetHops() {
+		nhID := e.nextNHID.Add(1)
+		if err := e.addNextHop(ctx, nhID, hop); err != nil {
+			return nil, err
 		}
+		idList.Hops = append(idList.Hops, nhID)
+		idList.Weights = append(idList.Weights, hop.Weight)
+	}
+	nhgID := e.nextNHGID.Add(1)
+	if err := e.addNextHopGroupIDList(ctx, nhgID, idList); err != nil {
+		return nil, err
+	}
+	return []*fwdpb.ActionDesc{
+		fwdbuilder.Action(fwdbuilder.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_GROUP_ID).WithUint64Value(nhgID)).Build(),
+		fwdbuilder.Action(fwdbuilder.LookupAction(nhgTable)).Build(),
+	}, nil
+}
 
-		// If there are multiple next-hops, configure the route to use ECMP or WCMP.
-		actions = []*fwdpb.ActionDesc{{
-			ActionType: fwdpb.ActionType_ACTION_TYPE_SELECT_ACTION_LIST,
-			Action: &fwdpb.ActionDesc_Select{
-				Select: &fwdpb.SelectActionListActionDesc{
-					SelectAlgorithm: fwdpb.SelectActionListActionDesc_SELECT_ALGORITHM_CRC32, // TODO: should algo + hash be configurable?
-					FieldIds: []*fwdpb.PacketFieldId{{Field: &fwdpb.PacketField{ // Hash the traffic flow, identified, IP protocol, L3 SRC, DST address, and L4 ports (if present).
-						FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO,
-					}}, {Field: &fwdpb.PacketField{
-						FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC,
-					}}, {Field: &fwdpb.PacketField{
-						FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST,
-					}}, {Field: &fwdpb.PacketField{
-						FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_SRC,
-					}}, {Field: &fwdpb.PacketField{
-						FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST,
-					}}},
-					ActionLists: actLists,
+// addNextHopGroupIDList adds an entry to the next hop group table.
+func (e *Engine) addNextHopGroupIDList(ctx context.Context, id uint64, nhg *dpb.NextHopIDList) error {
+	var actLists []*fwdpb.ActionList
+	for i, nh := range nhg.GetHops() {
+		actLists = append(actLists, &fwdpb.ActionList{
+			Weight: nhg.Weights[i],
+			Actions: []*fwdpb.ActionDesc{{
+				ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
+				Action: &fwdpb.ActionDesc_Update{
+					Update: &fwdpb.UpdateActionDesc{
+						FieldId: &fwdpb.PacketFieldId{
+							Field: &fwdpb.PacketField{
+								FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_ID,
+							},
+						},
+						Type:  fwdpb.UpdateType_UPDATE_TYPE_SET,
+						Value: binary.BigEndian.AppendUint64(nil, nh),
+					},
+				},
+			}},
+		})
+	}
+	actions := []*fwdpb.ActionDesc{{
+		ActionType: fwdpb.ActionType_ACTION_TYPE_SELECT_ACTION_LIST,
+		Action: &fwdpb.ActionDesc_Select{
+			Select: &fwdpb.SelectActionListActionDesc{
+				SelectAlgorithm: fwdpb.SelectActionListActionDesc_SELECT_ALGORITHM_CRC32, // TODO: should algo + hash be configurable?
+				FieldIds: []*fwdpb.PacketFieldId{{Field: &fwdpb.PacketField{ // Hash the traffic flow, identified, IP protocol, L3 SRC, DST address, and L4 ports (if present).
+					FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO,
+				}}, {Field: &fwdpb.PacketField{
+					FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC,
+				}}, {Field: &fwdpb.PacketField{
+					FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST,
+				}}, {Field: &fwdpb.PacketField{
+					FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_SRC,
+				}}, {Field: &fwdpb.PacketField{
+					FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST,
+				}}},
+				ActionLists: actLists,
+			},
+		},
+	}, {
+		ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
+		Action: &fwdpb.ActionDesc_Lookup{
+			Lookup: &fwdpb.LookupActionDesc{
+				TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{
+					Id: nhTable,
+				}},
+			},
+		},
+	}}
+
+	entries := &fwdpb.TableEntryAddRequest{
+		ContextId: &fwdpb.ContextId{Id: e.id},
+		TableId: &fwdpb.TableId{
+			ObjectId: &fwdpb.ObjectId{
+				Id: nhgTable,
+			},
+		},
+		Entries: []*fwdpb.TableEntryAddRequest_Entry{{
+			EntryDesc: &fwdpb.EntryDesc{
+				Entry: &fwdpb.EntryDesc_Exact{
+					Exact: &fwdpb.ExactEntryDesc{
+						Fields: []*fwdpb.PacketFieldBytes{{
+							Bytes: binary.BigEndian.AppendUint64(nil, id),
+							FieldId: &fwdpb.PacketFieldId{
+								Field: &fwdpb.PacketField{
+									FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_GROUP_ID,
+								},
+							},
+						}},
+					},
 				},
 			},
-		}}
+			Actions: actions,
+		}},
+	}
+	if _, err := e.Server.TableEntryAdd(ctx, entries); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// addNextHop adds an entry to the next hop table.
+func (e *Engine) addNextHop(ctx context.Context, id uint64, nh *dpb.NextHop) error {
+	var nextHopIP []byte
+	if nhIPStr := nh.GetIp(); nhIPStr != "" {
+		nextHop := net.ParseIP(nhIPStr)
+		nextHopIP = nextHop.To4()
+		if nextHopIP == nil {
+			nextHopIP = nextHop.To16()
+		}
+	}
+	// Set the next hop IP in the packet's metadata.
+	nextHopAct := fwdbuilder.Action(fwdbuilder.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP).WithValue(nextHopIP)).Build()
+	if nextHopIP == nil {
+		nextHopAct = fwdbuilder.Action(fwdbuilder.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_COPY, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP).WithFieldSrc(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST)).Build()
+	}
+	// Set the output port of the packet.
+	transmitAct := fwdbuilder.Action(fwdbuilder.TransmitAction(nh.GetPort())).Build()
+
+	acts := append([]*fwdpb.ActionDesc{nextHopAct, transmitAct}, nh.GetPreTransmitActions()...)
+	entries := &fwdpb.TableEntryAddRequest{
+		ContextId: &fwdpb.ContextId{Id: e.id},
+		TableId: &fwdpb.TableId{
+			ObjectId: &fwdpb.ObjectId{
+				Id: nhTable,
+			},
+		},
+		Entries: []*fwdpb.TableEntryAddRequest_Entry{{
+			EntryDesc: &fwdpb.EntryDesc{
+				Entry: &fwdpb.EntryDesc_Exact{
+					Exact: &fwdpb.ExactEntryDesc{
+						Fields: []*fwdpb.PacketFieldBytes{{
+							Bytes: binary.BigEndian.AppendUint64(nil, id),
+							FieldId: &fwdpb.PacketFieldId{
+								Field: &fwdpb.PacketField{
+									FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_ID,
+								},
+							},
+						}},
+					},
+				},
+			},
+			Actions: acts,
+		}},
+	}
+	if _, err := e.Server.TableEntryAdd(ctx, entries); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// AddIPRoute adds a route to the FIB. It operates in two modes:
+// 1. Client-managed IDs: each next hop and next hop group must be created before adding to a route with user provided ids.
+// 2. Server-managed IDs: each next hop and next hop group must be specified with route. The server implicitly creates ids.
+func (e *Engine) AddIPRoute(ctx context.Context, req *dpb.AddIPRouteRequest) (*dpb.AddIPRouteResponse, error) {
+	ip, mask, isIPv4, vrf, err := prefixToPrimitives(req.GetRoute().GetPrefix())
+	if err != nil {
+		return nil, err
+	}
+	fib := fibV6Table
+	if isIPv4 {
+		fib = fibV4Table
+	}
+	var actions []*fwdpb.ActionDesc
+
+	switch hop := req.GetRoute().GetHop().(type) {
+	case *dpb.Route_PortId:
+		actions = []*fwdpb.ActionDesc{
+			// Set the next hop IP in the packet's metadata.
+			fwdbuilder.Action(fwdbuilder.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_COPY, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP).WithFieldSrc(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST)).Build(),
+			// Set the output port.
+			fwdbuilder.Action(fwdbuilder.TransmitAction(hop.PortId)).Build(),
+		}
+	case *dpb.Route_NextHopId:
+		actions = []*fwdpb.ActionDesc{ // Set the next hop ID in the packet's metadata.
+			fwdbuilder.Action(fwdbuilder.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_ID).WithUint64Value(hop.NextHopId)).Build(),
+			fwdbuilder.Action(fwdbuilder.LookupAction(nhTable)).Build(),
+		}
+	case *dpb.Route_NextHopGroupId:
+		actions = []*fwdpb.ActionDesc{ // Set the next hop group ID in the packet's metadata.
+			fwdbuilder.Action(fwdbuilder.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_GROUP_ID).WithUint64Value(hop.NextHopGroupId)).Build(),
+			fwdbuilder.Action(fwdbuilder.LookupAction(nhgTable)).Build(),
+		}
+	case *dpb.Route_NextHops:
+		actions, err = e.addNextHopList(ctx, hop.NextHops)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	entry := &fwdpb.TableEntryAddRequest{
@@ -294,16 +547,21 @@ func (e *Engine) AddIPRoute(ctx context.Context, v4 bool, ip, mask []byte, vrf u
 		Actions: actions,
 	}
 	if _, err := e.Server.TableEntryAdd(ctx, entry); err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return &dpb.AddIPRouteResponse{}, nil
 }
 
-// DeleteIPRoute deletes a route from the FIB.
-func (e *Engine) DeleteIPRoute(ctx context.Context, v4 bool, ip, mask []byte, vrf uint64) error {
+// Remove deletes a route from the FIB.
+// TODO: Clean up orphaned next-hop and next-hop-groups for server managed ids.
+func (e *Engine) RemoveIPRoute(ctx context.Context, req *dpb.RemoveIPRouteRequest) (*dpb.RemoveIPRouteResponse, error) {
+	ip, mask, isIPv4, vrf, err := prefixToPrimitives(req.GetPrefix())
+	if err != nil {
+		return nil, err
+	}
 	fib := fibV6Table
-	if v4 {
+	if isIPv4 {
 		fib = fibV4Table
 	}
 	entry := &fwdpb.TableEntryRemoveRequest{
@@ -325,10 +583,9 @@ func (e *Engine) DeleteIPRoute(ctx context.Context, v4 bool, ip, mask []byte, vr
 		},
 	}
 	if _, err := e.Server.TableEntryRemove(ctx, entry); err != nil {
-		return err
+		return nil, err
 	}
-
-	return nil
+	return &dpb.RemoveIPRouteResponse{}, nil
 }
 
 // AddNeighbor adds a neighbor to the neighbor table.
