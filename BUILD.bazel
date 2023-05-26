@@ -46,7 +46,6 @@ go_test(
         "@com_github_openconfig_gnoi//factory_reset",
         "@com_github_openconfig_gnoi//file",
         "@com_github_openconfig_gnoi//healthz",
-        "@com_github_openconfig_gnoi//interface",
         "@com_github_openconfig_gnoi//layer2",
         "@com_github_openconfig_gnoi//mpls",
         "@com_github_openconfig_gnoi//os",

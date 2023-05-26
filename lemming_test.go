@@ -33,7 +33,6 @@ import (
 	frpb "github.com/openconfig/gnoi/factory_reset"
 	fpb "github.com/openconfig/gnoi/file"
 	hpb "github.com/openconfig/gnoi/healthz"
-	ipb "github.com/openconfig/gnoi/interface"
 	lpb "github.com/openconfig/gnoi/layer2"
 	mpb "github.com/openconfig/gnoi/mpls"
 	ospb "github.com/openconfig/gnoi/os"
@@ -139,12 +138,6 @@ func TestFakeGNOI(t *testing.T) {
 	_, err = cHealthz.Get(context.Background(), &hpb.GetRequest{})
 	if err == nil {
 		t.Errorf("gnoi.Healthz.Get failed to return error")
-	}
-
-	cInterface := ipb.NewInterfaceClient(conn)
-	_, err = cInterface.ClearInterfaceCounters(context.Background(), &ipb.ClearInterfaceCountersRequest{})
-	if err == nil {
-		t.Errorf("gnoi.Interface.ClearInterfaceCounters failed to return error")
 	}
 
 	cLayer2 := lpb.NewLayer2Client(conn)

@@ -30,16 +30,18 @@ import (
 // Since metadata is not a real packet header, it does not contribute to the
 // packet's frame.
 type Metadata struct {
-	length      uint64           // Packet length.
-	inputPort   []byte           // Input port identifier.
-	outputPort  []byte           // Output port identifier.
-	vrf         []byte           // VRF identifier.
-	attribute32 map[uint8][]byte // Map of 32-bit attributes indexed by instance.
-	attribute24 map[uint8][]byte // Map of 24-bit attributes indexed by instance.
-	attribute16 map[uint8][]byte // Map of 16-bit attributes indexed by instance.
-	attribute8  map[uint8][]byte // Map of 8-bit attributes indexed by instance.
-	nextHopIP   []byte
-	desc        *protocol.Desc // Protocol descriptor.
+	length         uint64           // Packet length.
+	inputPort      []byte           // Input port identifier.
+	outputPort     []byte           // Output port identifier.
+	vrf            []byte           // VRF identifier.
+	attribute32    map[uint8][]byte // Map of 32-bit attributes indexed by instance.
+	attribute24    map[uint8][]byte // Map of 24-bit attributes indexed by instance.
+	attribute16    map[uint8][]byte // Map of 16-bit attributes indexed by instance.
+	attribute8     map[uint8][]byte // Map of 8-bit attributes indexed by instance.
+	nextHopIP      []byte
+	nextHopID      []byte         // ID of the next hop.
+	nextHopGroupID []byte         // ID of the next hop group.
+	desc           *protocol.Desc // Protocol descriptor.
 }
 
 // Header returns nil as it does not contribute to the packet's frame.
@@ -105,6 +107,11 @@ func (m *Metadata) Field(id fwdpacket.FieldID) ([]byte, error) {
 		return make([]byte, 1), nil
 	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP:
 		return m.nextHopIP, nil
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_GROUP_ID:
+		return m.nextHopGroupID, nil
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_ID:
+		return m.nextHopID, nil
+
 	default:
 		return nil, fmt.Errorf("metadata: Field %v failed, unsupported field", id)
 	}
@@ -188,6 +195,12 @@ func (m *Metadata) updateSet(id fwdpacket.FieldID, arg []byte) (bool, error) {
 		return true, nil
 	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP:
 		m.nextHopIP = arg
+		return true, nil
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_ID:
+		m.nextHopID = arg
+		return true, nil
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_GROUP_ID:
+		m.nextHopGroupID = arg
 		return true, nil
 	default:
 		return false, fmt.Errorf("metadata: UpdateField failed, set unsupported for field %v", id)
