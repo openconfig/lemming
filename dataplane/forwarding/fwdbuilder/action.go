@@ -23,12 +23,12 @@ import (
 
 type actionDescBuilder interface {
 	set(*fwdpb.ActionDesc)
-	atype() fwdpb.ActionType
+	actionType() fwdpb.ActionType
 }
 
 var (
 	// Compile-time checks that builders implement actionDescBuilder interface.
-	_ actionDescBuilder = &LookupActionBuilder{}
+	_ actionDescBuilder = &UpdateActionBuilder{}
 	_ actionDescBuilder = &TransmitActionBuilder{}
 	_ actionDescBuilder = &LookupActionBuilder{}
 )
@@ -54,7 +54,7 @@ func (ab *ActionBuilder) WithActionDesc(adb actionDescBuilder) *ActionBuilder {
 // Build returns a new action.
 func (ab *ActionBuilder) Build() *fwdpb.ActionDesc {
 	a := &fwdpb.ActionDesc{
-		ActionType: ab.adb.atype(),
+		ActionType: ab.adb.actionType(),
 	}
 	ab.adb.set(a)
 	return a
@@ -126,7 +126,7 @@ func (u *UpdateActionBuilder) set(ad *fwdpb.ActionDesc) {
 	ad.Action = upd
 }
 
-func (u *UpdateActionBuilder) atype() fwdpb.ActionType {
+func (u *UpdateActionBuilder) actionType() fwdpb.ActionType {
 	return fwdpb.ActionType_ACTION_TYPE_UPDATE
 }
 
@@ -161,16 +161,16 @@ func (u *TransmitActionBuilder) set(ad *fwdpb.ActionDesc) {
 	ad.Action = upd
 }
 
-func (u *TransmitActionBuilder) atype() fwdpb.ActionType {
+func (u *TransmitActionBuilder) actionType() fwdpb.ActionType {
 	return fwdpb.ActionType_ACTION_TYPE_TRANSMIT
 }
 
-// TransmitActionBuilder is a builder for a transmit action.
+// LookupActionBuilder is a builder for a lookup action.
 type LookupActionBuilder struct {
 	tableID string
 }
 
-// TransmitAction returns a new update action builder.
+// LookupAction returns a new lookup action builder.
 func LookupAction(tableID string) *LookupActionBuilder {
 	return &LookupActionBuilder{
 		tableID: tableID,
@@ -196,6 +196,6 @@ func (u *LookupActionBuilder) set(ad *fwdpb.ActionDesc) {
 	ad.Action = upd
 }
 
-func (u *LookupActionBuilder) atype() fwdpb.ActionType {
+func (u *LookupActionBuilder) actionType() fwdpb.ActionType {
 	return fwdpb.ActionType_ACTION_TYPE_LOOKUP
 }
