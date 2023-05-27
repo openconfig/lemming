@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package fwdbuilder contains builders for varius proto types.
-package fwdbuilder
+// Package fwdconfig contains builders for varius proto types.
+package fwdconfig
 
 import (
 	"encoding/binary"
