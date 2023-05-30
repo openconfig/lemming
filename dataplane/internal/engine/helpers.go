@@ -18,9 +18,7 @@ import (
 	"context"
 	"encoding/binary"
 	"encoding/hex"
-	"net"
 
-	dpb "github.com/openconfig/lemming/proto/dataplane"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
@@ -281,60 +279,6 @@ func createLayer3PuntTable(ctx context.Context, ctxID string, c fwdpb.Forwarding
 		return err
 	}
 	return nil
-}
-
-// nextHopToActions returns the forwarding actions for a nexthop.
-func nextHopToActions(nh *dpb.NextHop) []*fwdpb.ActionDesc {
-	var nextHopIP []byte
-	if nhIPStr := nh.GetIp(); nhIPStr != "" {
-		nextHop := net.ParseIP(nhIPStr)
-		nextHopIP = nextHop.To4()
-		if nextHopIP == nil {
-			nextHopIP = nextHop.To16()
-		}
-	}
-	nextHopAct := &fwdpb.ActionDesc{ // Set the next hop IP in the packet's metadata.
-		ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
-		Action: &fwdpb.ActionDesc_Update{
-			Update: &fwdpb.UpdateActionDesc{
-				FieldId: &fwdpb.PacketFieldId{
-					Field: &fwdpb.PacketField{
-						FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP,
-					},
-				},
-				Type:  fwdpb.UpdateType_UPDATE_TYPE_SET,
-				Value: nextHopIP,
-			},
-		},
-	}
-	if nextHopIP == nil {
-		nextHopAct = &fwdpb.ActionDesc{ // Set the next hop IP in the packet's metadata.
-			ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
-			Action: &fwdpb.ActionDesc_Update{
-				Update: &fwdpb.UpdateActionDesc{
-					FieldId: &fwdpb.PacketFieldId{
-						Field: &fwdpb.PacketField{
-							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP,
-						},
-					},
-					Type: fwdpb.UpdateType_UPDATE_TYPE_COPY,
-					Field: &fwdpb.PacketFieldId{
-						Field: &fwdpb.PacketField{
-							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST,
-						},
-					},
-				},
-			},
-		}
-	}
-	return append([]*fwdpb.ActionDesc{{ // Set the output port.
-		ActionType: fwdpb.ActionType_ACTION_TYPE_TRANSMIT,
-		Action: &fwdpb.ActionDesc_Transmit{
-			Transmit: &fwdpb.TransmitActionDesc{
-				PortId: &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: nh.GetPort()}},
-			},
-		},
-	}, nextHopAct}, nh.GetPreTransmitActions()...)
 }
 
 // createKernelPort creates a port using the "Kernel" dataplane type (socket API).

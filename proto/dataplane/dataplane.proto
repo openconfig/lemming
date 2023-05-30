@@ -32,12 +32,35 @@ message NextHop {
   repeated forwarding.ActionDesc pre_transmit_actions = 4;
 }
 
-message Route {
-  uint64 vrf = 1;
-  string prefix = 2;
-  repeated NextHop next_hops = 3;
+message NextHopList {
+  repeated NextHop hops = 1;
 }
 
+message NextHopIDList {
+  repeated uint64 hops = 1;
+  repeated uint64 weights = 2;
+}
+
+message RoutePrefix {
+  oneof prefix { // Specify either cidr string or ip and mask bytes.
+    string cidr = 1;
+    IpMask mask = 2;
+  }
+  uint64 vrf_id = 3;
+}
+
+
+
+message Route {
+  RoutePrefix prefix = 1;
+  PacketAction action = 2;
+  oneof hop  {
+    string port_id = 3; // Id of the output port.
+    uint64 next_hop_id = 4; // Id of the next hop.
+    uint64 next_hop_group_id = 5; // Id of the next hop group
+    NextHopList next_hops = 6; // Implicitly create next hop, next hop groups.
+  }
+}
 
 message CreatePortRequest {
   forwarding.PortType type = 1; 
@@ -54,6 +77,34 @@ message CreatePortRequest {
 message CreatePortResponse {
 }
 
+message IpMask {
+  bytes addr = 1;
+  bytes mask = 2;
+}
+
+enum PacketAction {
+  PACKET_ACTION_UNSPECIFIED = 0;
+  PACKET_ACTION_DROP = 1;
+  PACKET_ACTION_FORWARD = 2;
+}
+
+message AddIPRouteRequest{
+  Route route = 1;
+}
+
+message AddIPRouteResponse {
+}
+
+message RemoveIPRouteRequest{
+  RoutePrefix prefix = 1;
+}
+
+message RemoveIPRouteResponse {
+}
+
+
 service Dataplane {
   rpc CreatePort(CreatePortRequest) returns (CreatePortResponse) {}
+  rpc AddIPRoute(AddIPRouteRequest) returns (AddIPRouteResponse) {}
+  rpc RemoveIPRoute(RemoveIPRouteRequest) returns (RemoveIPRouteResponse) {}
 }
