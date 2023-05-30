@@ -53,7 +53,6 @@ type Engine struct {
 	idToNIDMu sync.RWMutex
 	// idToNID is map from RPC ID (proto), to internal object NID.
 	idToNID   map[string]uint64
-	nextHopMu sync.Mutex
 	nextNHGID atomic.Uint64
 	nextNHID  atomic.Uint64
 }

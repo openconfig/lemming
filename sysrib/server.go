@@ -127,7 +127,7 @@ func (d *Dataplane) ProgramRoute(r *ResolvedRoute) error {
 	if err != nil {
 		return err
 	}
-	_, err = ygnmi.Replace(context.TODO(), d.Client, handlers.RouteQuery(rr.GetPrefix().GetVrfId(), rr.GetPrefix().GetStr()), rr, ygnmi.WithSetFallbackEncoding())
+	_, err = ygnmi.Replace(context.TODO(), d.Client, handlers.RouteQuery(rr.GetPrefix().GetVrfId(), rr.GetPrefix().GetCidr()), rr, ygnmi.WithSetFallbackEncoding())
 	return err
 }
 
@@ -528,8 +528,8 @@ func resolvedRouteToRouteRequest(r *ResolvedRoute) (*dpb.Route, error) {
 	return &dpb.Route{
 		Prefix: &dpb.RoutePrefix{
 			VrfId: uint64(vrfID),
-			Prefix: &dpb.RoutePrefix_Str{
-				Str: r.Prefix,
+			Prefix: &dpb.RoutePrefix_Cidr{
+				Cidr: r.Prefix,
 			},
 		},
 		Hop: &dpb.Route_NextHops{
