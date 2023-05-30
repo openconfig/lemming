@@ -502,8 +502,37 @@ func (e *Engine) AddIPRoute(ctx context.Context, req *dpb.AddIPRouteRequest) (*d
 	if isIPv4 {
 		fib = fibV4Table
 	}
-	var actions []*fwdpb.ActionDesc
 
+	entry := &fwdpb.TableEntryAddRequest{
+		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: fib}},
+		ContextId: &fwdpb.ContextId{Id: e.id},
+		EntryDesc: &fwdpb.EntryDesc{
+			Entry: &fwdpb.EntryDesc_Prefix{
+				Prefix: &fwdpb.PrefixEntryDesc{
+					Fields: []*fwdpb.PacketFieldMaskedBytes{{
+						FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF}},
+						Bytes:   binary.BigEndian.AppendUint64(nil, vrf),
+					}, {
+						FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST}},
+						Bytes:   ip,
+						Masks:   mask,
+					}},
+				},
+			},
+		},
+	}
+
+	// If action is DROP, then skip handling next hops.
+	if req.GetRoute().GetAction() == dpb.PacketAction_PACKET_ACTION_DROP {
+		entry.Actions = []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_DROP}}
+		if _, err := e.Server.TableEntryAdd(ctx, entry); err != nil {
+			return nil, err
+		}
+
+		return &dpb.AddIPRouteResponse{}, nil
+	}
+
+	var actions []*fwdpb.ActionDesc
 	switch hop := req.GetRoute().GetHop().(type) {
 	case *dpb.Route_PortId:
 		actions = []*fwdpb.ActionDesc{
@@ -529,25 +558,7 @@ func (e *Engine) AddIPRoute(ctx context.Context, req *dpb.AddIPRouteRequest) (*d
 		}
 	}
 
-	entry := &fwdpb.TableEntryAddRequest{
-		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: fib}},
-		ContextId: &fwdpb.ContextId{Id: e.id},
-		EntryDesc: &fwdpb.EntryDesc{
-			Entry: &fwdpb.EntryDesc_Prefix{
-				Prefix: &fwdpb.PrefixEntryDesc{
-					Fields: []*fwdpb.PacketFieldMaskedBytes{{
-						FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF}},
-						Bytes:   binary.BigEndian.AppendUint64(nil, vrf),
-					}, {
-						FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST}},
-						Bytes:   ip,
-						Masks:   mask,
-					}},
-				},
-			},
-		},
-		Actions: actions,
-	}
+	entry.Actions = actions
 	if _, err := e.Server.TableEntryAdd(ctx, entry); err != nil {
 		return nil, err
 	}
