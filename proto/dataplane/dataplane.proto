@@ -42,8 +42,8 @@ message NextHopIDList {
 }
 
 message RoutePrefix {
-  oneof prefix {
-    string str = 1;
+  oneof prefix { // Specify either cidr string or ip and mask bytes.
+    string cidr = 1;
     IpMask mask = 2;
   }
   uint64 vrf_id = 3;
@@ -56,7 +56,7 @@ message Route {
   PacketAction action = 2;
   oneof hop  {
     string port_id = 3; // Id of the output port.
-    uint64 next_hop_id = 4; // Id of the next hop
+    uint64 next_hop_id = 4; // Id of the next hop.
     uint64 next_hop_group_id = 5; // Id of the next hop group
     NextHopList next_hops = 6; // Implicitly create next hop, next hop groups.
   }

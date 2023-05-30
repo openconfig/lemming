@@ -24,7 +24,7 @@ import (
 
 	"github.com/openconfig/lemming/dataplane/forwarding"
 	"github.com/openconfig/lemming/dataplane/forwarding/attributes"
-	"github.com/openconfig/lemming/dataplane/forwarding/fwdbuilder"
+	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
 
 	log "github.com/golang/glog"
 
@@ -291,8 +291,8 @@ func prefixToPrimitives(prefix *dpb.RoutePrefix) ([]byte, []byte, bool, uint64, 
 	vrf := prefix.GetVrfId()
 
 	switch pre := prefix.GetPrefix().(type) {
-	case *dpb.RoutePrefix_Str:
-		_, ipNet, err := net.ParseCIDR(pre.Str)
+	case *dpb.RoutePrefix_Cidr:
+		_, ipNet, err := net.ParseCIDR(pre.Cidr)
 		if err != nil {
 			return ip, mask, isIPv4, vrf, fmt.Errorf("failed to parse ip prefix: %v", err)
 		}
@@ -329,8 +329,8 @@ func (e *Engine) addNextHopList(ctx context.Context, nhg *dpb.NextHopList) ([]*f
 			return nil, err
 		}
 		return []*fwdpb.ActionDesc{
-			fwdbuilder.Action(fwdbuilder.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_ID).WithUint64Value(nhID)).Build(),
-			fwdbuilder.Action(fwdbuilder.LookupAction(nhTable)).Build(),
+			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_ID).WithUint64Value(nhID)).Build(),
+			fwdconfig.Action(fwdconfig.LookupAction(nhTable)).Build(),
 		}, nil
 	}
 
@@ -348,8 +348,8 @@ func (e *Engine) addNextHopList(ctx context.Context, nhg *dpb.NextHopList) ([]*f
 		return nil, err
 	}
 	return []*fwdpb.ActionDesc{
-		fwdbuilder.Action(fwdbuilder.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_GROUP_ID).WithUint64Value(nhgID)).Build(),
-		fwdbuilder.Action(fwdbuilder.LookupAction(nhgTable)).Build(),
+		fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_GROUP_ID).WithUint64Value(nhgID)).Build(),
+		fwdconfig.Action(fwdconfig.LookupAction(nhgTable)).Build(),
 	}, nil
 }
 
@@ -375,6 +375,7 @@ func (e *Engine) addNextHopGroupIDList(ctx context.Context, id uint64, nhg *dpb.
 			}},
 		})
 	}
+	// If there are multiple next-hops, configure the route to use ECMP or WCMP.
 	actions := []*fwdpb.ActionDesc{{
 		ActionType: fwdpb.ActionType_ACTION_TYPE_SELECT_ACTION_LIST,
 		Action: &fwdpb.ActionDesc_Select{
@@ -438,6 +439,7 @@ func (e *Engine) addNextHopGroupIDList(ctx context.Context, id uint64, nhg *dpb.
 }
 
 // addNextHop adds an entry to the next hop table.
+// TODO: Remove workaround that nexthop IP is not specified that the packet is treated as directly connected.
 func (e *Engine) addNextHop(ctx context.Context, id uint64, nh *dpb.NextHop) error {
 	var nextHopIP []byte
 	if nhIPStr := nh.GetIp(); nhIPStr != "" {
@@ -448,12 +450,12 @@ func (e *Engine) addNextHop(ctx context.Context, id uint64, nh *dpb.NextHop) err
 		}
 	}
 	// Set the next hop IP in the packet's metadata.
-	nextHopAct := fwdbuilder.Action(fwdbuilder.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP).WithValue(nextHopIP)).Build()
+	nextHopAct := fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP).WithValue(nextHopIP)).Build()
 	if nextHopIP == nil {
-		nextHopAct = fwdbuilder.Action(fwdbuilder.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_COPY, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP).WithFieldSrc(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST)).Build()
+		nextHopAct = fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_COPY, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP).WithFieldSrc(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST)).Build()
 	}
 	// Set the output port of the packet.
-	transmitAct := fwdbuilder.Action(fwdbuilder.TransmitAction(nh.GetPort())).Build()
+	transmitAct := fwdconfig.Action(fwdconfig.TransmitAction(nh.GetPort())).Build()
 
 	acts := append([]*fwdpb.ActionDesc{nextHopAct, transmitAct}, nh.GetPreTransmitActions()...)
 	entries := &fwdpb.TableEntryAddRequest{
@@ -491,6 +493,7 @@ func (e *Engine) addNextHop(ctx context.Context, id uint64, nh *dpb.NextHop) err
 // AddIPRoute adds a route to the FIB. It operates in two modes:
 // 1. Client-managed IDs: each next hop and next hop group must be created before adding to a route with user provided ids.
 // 2. Server-managed IDs: each next hop and next hop group must be specified with route. The server implicitly creates ids.
+// TODO: Enforce that only one mode can be used.
 func (e *Engine) AddIPRoute(ctx context.Context, req *dpb.AddIPRouteRequest) (*dpb.AddIPRouteResponse, error) {
 	ip, mask, isIPv4, vrf, err := prefixToPrimitives(req.GetRoute().GetPrefix())
 	if err != nil {
@@ -506,19 +509,19 @@ func (e *Engine) AddIPRoute(ctx context.Context, req *dpb.AddIPRouteRequest) (*d
 	case *dpb.Route_PortId:
 		actions = []*fwdpb.ActionDesc{
 			// Set the next hop IP in the packet's metadata.
-			fwdbuilder.Action(fwdbuilder.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_COPY, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP).WithFieldSrc(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST)).Build(),
+			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_COPY, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP).WithFieldSrc(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST)).Build(),
 			// Set the output port.
-			fwdbuilder.Action(fwdbuilder.TransmitAction(hop.PortId)).Build(),
+			fwdconfig.Action(fwdconfig.TransmitAction(hop.PortId)).Build(),
 		}
 	case *dpb.Route_NextHopId:
 		actions = []*fwdpb.ActionDesc{ // Set the next hop ID in the packet's metadata.
-			fwdbuilder.Action(fwdbuilder.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_ID).WithUint64Value(hop.NextHopId)).Build(),
-			fwdbuilder.Action(fwdbuilder.LookupAction(nhTable)).Build(),
+			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_ID).WithUint64Value(hop.NextHopId)).Build(),
+			fwdconfig.Action(fwdconfig.LookupAction(nhTable)).Build(),
 		}
 	case *dpb.Route_NextHopGroupId:
 		actions = []*fwdpb.ActionDesc{ // Set the next hop group ID in the packet's metadata.
-			fwdbuilder.Action(fwdbuilder.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_GROUP_ID).WithUint64Value(hop.NextHopGroupId)).Build(),
-			fwdbuilder.Action(fwdbuilder.LookupAction(nhgTable)).Build(),
+			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_GROUP_ID).WithUint64Value(hop.NextHopGroupId)).Build(),
+			fwdconfig.Action(fwdconfig.LookupAction(nhgTable)).Build(),
 		}
 	case *dpb.Route_NextHops:
 		actions, err = e.addNextHopList(ctx, hop.NextHops)

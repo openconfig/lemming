@@ -66,13 +66,13 @@ func (r *route) start(ctx context.Context, client *ygnmi.Client) error {
 		}
 
 		if !present {
-			if _, err := r.e.RemoveIPRoute(ctx, &dpb.RemoveIPRouteRequest{Prefix: &dpb.RoutePrefix{Prefix: &dpb.RoutePrefix_Str{Str: prefix}, VrfId: vrf}}); err != nil {
+			if _, err := r.e.RemoveIPRoute(ctx, &dpb.RemoveIPRouteRequest{Prefix: &dpb.RoutePrefix{Prefix: &dpb.RoutePrefix_Cidr{Cidr: prefix}, VrfId: vrf}}); err != nil {
 				log.Warningf("failed to delete route: %v", err)
 				return ygnmi.Continue
 			}
 			return ygnmi.Continue
 		}
-		if route.GetNextHops() == nil || len(route.GetNextHops().GetHops()) == 0 {
+		if len(route.GetNextHops().GetHops()) == 0 {
 			log.Warningf("no next hops for route insert or update")
 			return ygnmi.Continue
 		}
