@@ -17,7 +17,7 @@
 #include <glog/logging.h>
 
 #include <string>
-#include <thread> // NOLINT
+#include <thread>  // NOLINT
 #include <vector>
 
 #include "dataplane/standalone/acl.h"
@@ -25,11 +25,11 @@
 #include "dataplane/standalone/buffer.h"
 #include "dataplane/standalone/dtel.h"
 #include "dataplane/standalone/hostif.h"
+#include "dataplane/standalone/lucius/lucius_clib.h"
 #include "dataplane/standalone/port.h"
 #include "dataplane/standalone/route.h"
 #include "dataplane/standalone/router_interface.h"
 #include "dataplane/standalone/translator.h"
-#include "dataplane/standalone/lucius/lucius_clib.h"
 #include "dataplane/standalone/vlan.h"
 
 extern "C" {
@@ -109,7 +109,7 @@ sai_status_t Switch::create(_In_ uint32_t attr_count,
   });
   attrs.push_back({
       .id = SAI_SWITCH_ATTR_NUMBER_OF_ECMP_GROUPS,
-      .value = {.u32 = 1},
+      .value = {.u32 = 1024},
   });
 
   auto stpOid = this->attrMgr->create(SAI_OBJECT_TYPE_STP, this->id);
@@ -365,10 +365,19 @@ sai_status_t Switch::create_child(sai_object_type_t type, sai_object_id_t id,
   return this->apis[std::to_string(id)]->create(attr_count, attr_list);
 }
 
-sai_status_t Switch::create_child(sai_object_type_t type, common_entry_t id,
+sai_status_t Switch::create_child(sai_object_type_t type, common_entry_t entry,
                                   uint32_t attr_count,
                                   const sai_attribute_t *attr_list) {
-  return sai_status_t();
+  std::string id = this->attrMgr->serialize_entry(type, entry);
+  switch (type) {
+    case SAI_OBJECT_TYPE_ROUTE_ENTRY:
+      this->apis[id] = std::make_unique<Route>(id, this->attrMgr, this->fwd,
+                                               this->dataplane);
+      break;
+    default:
+      return SAI_STATUS_FAILURE;
+  }
+  return this->apis[id]->create(entry, attr_count, attr_list);
 }
 
 sai_status_t Switch::set_child_attr(sai_object_type_t type, std::string id,
@@ -379,7 +388,7 @@ sai_status_t Switch::set_child_attr(sai_object_type_t type, std::string id,
 void Switch::handle_notification() {
   grpc::ClientContext ctx;
   forwarding::NotifySubscribeRequest req;
-  char* id = getForwardCtxID();
+  char *id = getForwardCtxID();
   req.mutable_context()->set_id(id);
   auto reader = this->fwd->NotifySubscribe(&ctx, req);
   free(id);

@@ -489,22 +489,14 @@ func (e *Engine) addNextHop(ctx context.Context, id uint64, nh *dpb.NextHop) err
 	return nil
 }
 
-// AddIPRoute adds a route to the FIB. It operates in two modes:
-// 1. Client-managed IDs: each next hop and next hop group must be created before adding to a route with user provided ids.
-// 2. Server-managed IDs: each next hop and next hop group must be specified with route. The server implicitly creates ids.
-// TODO: Enforce that only one mode can be used.
-func (e *Engine) AddIPRoute(ctx context.Context, req *dpb.AddIPRouteRequest) (*dpb.AddIPRouteResponse, error) {
-	ip, mask, isIPv4, vrf, err := prefixToPrimitives(req.GetRoute().GetPrefix())
-	if err != nil {
-		return nil, err
+func (e *Engine) actionsFromRoute(ctx context.Context, route *dpb.Route) ([]*fwdpb.ActionDesc, error) {
+	// If action is DROP, then skip handling next hops.
+	if route.GetAction() == dpb.PacketAction_PACKET_ACTION_DROP {
+		return []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_DROP}}, nil
 	}
-	fib := fibV6Table
-	if isIPv4 {
-		fib = fibV4Table
-	}
-	var actions []*fwdpb.ActionDesc
 
-	switch hop := req.GetRoute().GetHop().(type) {
+	var actions []*fwdpb.ActionDesc
+	switch hop := route.GetHop().(type) {
 	case *dpb.Route_PortId:
 		actions = []*fwdpb.ActionDesc{
 			// Set the next hop IP in the packet's metadata.
@@ -523,10 +515,27 @@ func (e *Engine) AddIPRoute(ctx context.Context, req *dpb.AddIPRouteRequest) (*d
 			fwdconfig.Action(fwdconfig.LookupAction(nhgTable)).Build(),
 		}
 	case *dpb.Route_NextHops:
+		var err error
 		actions, err = e.addNextHopList(ctx, hop.NextHops)
 		if err != nil {
 			return nil, err
 		}
+	}
+	return actions, nil
+}
+
+// AddIPRoute adds a route to the FIB. It operates in two modes:
+// 1. Client-managed IDs: each next hop and next hop group must be created before adding to a route with user provided ids.
+// 2. Server-managed IDs: each next hop and next hop group must be specified with route. The server implicitly creates ids.
+// TODO: Enforce that only one mode can be used.
+func (e *Engine) AddIPRoute(ctx context.Context, req *dpb.AddIPRouteRequest) (*dpb.AddIPRouteResponse, error) {
+	ip, mask, isIPv4, vrf, err := prefixToPrimitives(req.GetRoute().GetPrefix())
+	if err != nil {
+		return nil, err
+	}
+	fib := fibV6Table
+	if isIPv4 {
+		fib = fibV4Table
 	}
 
 	entry := &fwdpb.TableEntryAddRequest{
@@ -546,8 +555,13 @@ func (e *Engine) AddIPRoute(ctx context.Context, req *dpb.AddIPRouteRequest) (*d
 				},
 			},
 		},
-		Actions: actions,
 	}
+
+	entry.Actions, err = e.actionsFromRoute(ctx, req.GetRoute())
+	if err != nil {
+		return nil, err
+	}
+
 	if _, err := e.Server.TableEntryAdd(ctx, entry); err != nil {
 		return nil, err
 	}
