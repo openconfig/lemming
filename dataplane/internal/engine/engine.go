@@ -489,6 +489,41 @@ func (e *Engine) addNextHop(ctx context.Context, id uint64, nh *dpb.NextHop) err
 	return nil
 }
 
+func (e *Engine) actionsFromRoute(ctx context.Context, route *dpb.Route) ([]*fwdpb.ActionDesc, error) {
+	// If action is DROP, then skip handling next hops.
+	if route.GetAction() == dpb.PacketAction_PACKET_ACTION_DROP {
+		return []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_DROP}}, nil
+	}
+
+	var actions []*fwdpb.ActionDesc
+	switch hop := route.GetHop().(type) {
+	case *dpb.Route_PortId:
+		actions = []*fwdpb.ActionDesc{
+			// Set the next hop IP in the packet's metadata.
+			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_COPY, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP).WithFieldSrc(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST)).Build(),
+			// Set the output port.
+			fwdconfig.Action(fwdconfig.TransmitAction(hop.PortId)).Build(),
+		}
+	case *dpb.Route_NextHopId:
+		actions = []*fwdpb.ActionDesc{ // Set the next hop ID in the packet's metadata.
+			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_ID).WithUint64Value(hop.NextHopId)).Build(),
+			fwdconfig.Action(fwdconfig.LookupAction(nhTable)).Build(),
+		}
+	case *dpb.Route_NextHopGroupId:
+		actions = []*fwdpb.ActionDesc{ // Set the next hop group ID in the packet's metadata.
+			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_GROUP_ID).WithUint64Value(hop.NextHopGroupId)).Build(),
+			fwdconfig.Action(fwdconfig.LookupAction(nhgTable)).Build(),
+		}
+	case *dpb.Route_NextHops:
+		var err error
+		actions, err = e.addNextHopList(ctx, hop.NextHops)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return actions, nil
+}
+
 // AddIPRoute adds a route to the FIB. It operates in two modes:
 // 1. Client-managed IDs: each next hop and next hop group must be created before adding to a route with user provided ids.
 // 2. Server-managed IDs: each next hop and next hop group must be specified with route. The server implicitly creates ids.
@@ -522,43 +557,11 @@ func (e *Engine) AddIPRoute(ctx context.Context, req *dpb.AddIPRouteRequest) (*d
 		},
 	}
 
-	// If action is DROP, then skip handling next hops.
-	if req.GetRoute().GetAction() == dpb.PacketAction_PACKET_ACTION_DROP {
-		entry.Actions = []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_DROP}}
-		if _, err := e.Server.TableEntryAdd(ctx, entry); err != nil {
-			return nil, err
-		}
-
-		return &dpb.AddIPRouteResponse{}, nil
+	entry.Actions, err = e.actionsFromRoute(ctx, req.GetRoute())
+	if err != nil {
+		return nil, err
 	}
 
-	var actions []*fwdpb.ActionDesc
-	switch hop := req.GetRoute().GetHop().(type) {
-	case *dpb.Route_PortId:
-		actions = []*fwdpb.ActionDesc{
-			// Set the next hop IP in the packet's metadata.
-			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_COPY, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP).WithFieldSrc(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST)).Build(),
-			// Set the output port.
-			fwdconfig.Action(fwdconfig.TransmitAction(hop.PortId)).Build(),
-		}
-	case *dpb.Route_NextHopId:
-		actions = []*fwdpb.ActionDesc{ // Set the next hop ID in the packet's metadata.
-			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_ID).WithUint64Value(hop.NextHopId)).Build(),
-			fwdconfig.Action(fwdconfig.LookupAction(nhTable)).Build(),
-		}
-	case *dpb.Route_NextHopGroupId:
-		actions = []*fwdpb.ActionDesc{ // Set the next hop group ID in the packet's metadata.
-			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_GROUP_ID).WithUint64Value(hop.NextHopGroupId)).Build(),
-			fwdconfig.Action(fwdconfig.LookupAction(nhgTable)).Build(),
-		}
-	case *dpb.Route_NextHops:
-		actions, err = e.addNextHopList(ctx, hop.NextHops)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	entry.Actions = actions
 	if _, err := e.Server.TableEntryAdd(ctx, entry); err != nil {
 		return nil, err
 	}
