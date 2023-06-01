@@ -359,6 +359,18 @@ sai_status_t Switch::create_child(sai_object_type_t type, sai_object_id_t id,
       this->apis[std::to_string(id)] = std::make_unique<BufferProfile>(
           std::to_string(id), this->attrMgr, this->fwd, this->dataplane);
       break;
+    case SAI_OBJECT_TYPE_NEXT_HOP:
+      this->apis[std::to_string(id)] = std::make_unique<NextHop>(
+          std::to_string(id), this->attrMgr, this->fwd, this->dataplane);
+      break;
+    case SAI_OBJECT_TYPE_NEXT_HOP_GROUP:
+      this->apis[std::to_string(id)] = std::make_unique<NextHopGroup>(
+          std::to_string(id), this->attrMgr, this->fwd, this->dataplane);
+      break;
+    case SAI_OBJECT_TYPE_NEXT_HOP_GROUP_MEMBER:
+      this->apis[std::to_string(id)] = std::make_unique<NextHopGroupMember>(
+          std::to_string(id), this->attrMgr, this->fwd, this->dataplane);
+      break;
     default:
       return SAI_STATUS_FAILURE;
   }

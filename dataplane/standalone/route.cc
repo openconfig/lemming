@@ -17,6 +17,7 @@
 #include <glog/logging.h>
 
 #include <bitset>
+#include <string>
 #include <vector>
 
 #include "dataplane/standalone/translator.h"
@@ -120,5 +121,126 @@ sai_status_t Route::create(common_entry_t entry, _In_ uint32_t attr_count,
 }
 
 sai_status_t Route::set_attribute(_In_ const sai_attribute_t* attr) {
+  return SAI_STATUS_SUCCESS;
+}
+
+sai_status_t NextHop::create(_In_ uint32_t attr_count,
+                             _In_ const sai_attribute_t* attr_list) {
+  std::vector<sai_attribute_t> attrs(attr_list, attr_list + attr_count);
+  sai_next_hop_type_t type;
+  sai_ip_address_t ip;
+  sai_object_id_t oid;
+  for (auto attr : attrs) {
+    switch (attr.id) {
+      case SAI_NEXT_HOP_ATTR_TYPE:
+        type = static_cast<sai_next_hop_type_t>(attr.value.s32);
+        break;
+      case SAI_NEXT_HOP_ATTR_IP:
+        ip = attr.value.ipaddr;
+        break;
+      case SAI_NEXT_HOP_ATTR_ROUTER_INTERFACE_ID:
+        oid = attr.value.oid;
+        break;
+    }
+  }
+  if (type != SAI_NEXT_HOP_TYPE_IP) {
+    return SAI_STATUS_NOT_SUPPORTED;
+  }
+  grpc::ClientContext context;
+  lemming::dataplane::AddNextHopRequest req;
+  lemming::dataplane::AddNextHopResponse resp;
+  req.set_id(std::stoul(this->id));
+  req.mutable_next_hop()->set_port(std::to_string(oid));
+
+  switch (ip.addr_family) {
+    case SAI_IP_ADDR_FAMILY_IPV4:
+      req.mutable_next_hop()->set_ip_bytes(&ip.addr.ip4, sizeof(ip.addr.ip4));
+      break;
+    case SAI_IP_ADDR_FAMILY_IPV6:
+      req.mutable_next_hop()->set_ip_bytes(ip.addr.ip6, sizeof(ip.addr.ip6));
+      break;
+    default:
+      return SAI_STATUS_INVALID_PARAMETER;
+  }
+
+  auto status = this->dataplane->AddNextHop(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to create route: " << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  APIBase::create(attrs.size(), attrs.data());
+  return SAI_STATUS_SUCCESS;
+}
+
+sai_status_t NextHop::set_attribute(_In_ const sai_attribute_t* attr) {
+  return SAI_STATUS_SUCCESS;
+}
+
+sai_status_t NextHopGroup::create(_In_ uint32_t attr_count,
+                                  _In_ const sai_attribute_t* attr_list) {
+  std::vector<sai_attribute_t> attrs(attr_list, attr_list + attr_count);
+
+  sai_next_hop_group_type_t type;
+  for (auto attr : attrs) {
+    switch (attr.id) {
+      case SAI_NEXT_HOP_GROUP_ATTR_TYPE:
+        type = static_cast<sai_next_hop_group_type_t>(attr.value.s32);
+        break;
+    }
+  }
+  if (type != SAI_NEXT_HOP_GROUP_TYPE_DYNAMIC_UNORDERED_ECMP) {
+    return SAI_STATUS_NOT_SUPPORTED;
+  }
+  grpc::ClientContext context;
+  lemming::dataplane::AddNextHopGroupRequest req;
+  lemming::dataplane::AddNextHopGroupResponse resp;
+  req.set_id(std::stoul(this->id));
+  auto status = this->dataplane->AddNextHopGroup(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to create route: " << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+
+  APIBase::create(attrs.size(), attrs.data());
+  return SAI_STATUS_SUCCESS;
+}
+
+sai_status_t NextHopGroup::set_attribute(_In_ const sai_attribute_t* attr) {
+  return SAI_STATUS_SUCCESS;
+}
+
+sai_status_t NextHopGroupMember::create(_In_ uint32_t attr_count,
+                                        _In_ const sai_attribute_t* attr_list) {
+  std::vector<sai_attribute_t> attrs(attr_list, attr_list + attr_count);
+
+  sai_object_id_t group_id, hop_id;
+  for (auto attr : attrs) {
+    switch (attr.id) {
+      case SAI_NEXT_HOP_GROUP_MEMBER_ATTR_NEXT_HOP_GROUP_ID:
+        group_id = attr.value.oid;
+        break;
+      case SAI_NEXT_HOP_GROUP_MEMBER_ATTR_NEXT_HOP_ID:
+        hop_id = attr.value.oid;
+        break;
+    }
+  }
+  grpc::ClientContext context;
+  lemming::dataplane::AddNextHopGroupRequest req;
+  lemming::dataplane::AddNextHopGroupResponse resp;
+  req.set_id(group_id);
+  req.mutable_list()->add_hops(hop_id);
+  req.mutable_list()->add_weights(1);
+  req.set_mode(lemming::dataplane::GROUP_UPDATE_MODE_APPEND);
+  auto status = this->dataplane->AddNextHopGroup(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to create route: " << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  APIBase::create(attrs.size(), attrs.data());
+  return SAI_STATUS_SUCCESS;
+}
+
+sai_status_t NextHopGroupMember::set_attribute(
+    _In_ const sai_attribute_t* attr) {
   return SAI_STATUS_SUCCESS;
 }

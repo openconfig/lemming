@@ -21,15 +21,18 @@ import "proto/forwarding/forwarding_port.proto";
 
 option go_package = "github.com/openconfig/lemming/proto/dataplane";
 
-
 message NextHop {
   string port = 1;
-  string ip = 2;
-  uint64 weight = 3;
+  oneof ip {
+    string ip_str = 2;
+    bytes ip_bytes = 3;
+  }
+
+  uint64 weight = 4;
   // pre_transmit_actions are extra actions that are applied just prior to
   // transmitting the packet to the output port (at which time the output
   // actions are applied).
-  repeated forwarding.ActionDesc pre_transmit_actions = 4;
+  repeated forwarding.ActionDesc pre_transmit_actions = 5;
 }
 
 message NextHopList {
@@ -42,32 +45,30 @@ message NextHopIDList {
 }
 
 message RoutePrefix {
-  oneof prefix { // Specify either cidr string or ip and mask bytes.
+  oneof prefix {  // Specify either cidr string or ip and mask bytes.
     string cidr = 1;
     IpMask mask = 2;
   }
   uint64 vrf_id = 3;
 }
 
-
-
 message Route {
   RoutePrefix prefix = 1;
   PacketAction action = 2;
-  oneof hop  {
-    string port_id = 3; // Id of the output port.
-    uint64 next_hop_id = 4; // Id of the next hop.
-    uint64 next_hop_group_id = 5; // Id of the next hop group
-    NextHopList next_hops = 6; // Implicitly create next hop, next hop groups.
+  oneof hop {
+    string port_id = 3;            // Id of the output port.
+    uint64 next_hop_id = 4;        // Id of the next hop.
+    uint64 next_hop_group_id = 5;  // Id of the next hop group
+    NextHopList next_hops = 6;  // Implicitly create next hop, next hop groups.
   }
 }
 
 message CreatePortRequest {
-  forwarding.PortType type = 1; 
+  forwarding.PortType type = 1;
   string id = 2;
   oneof src {
     // Name of the linux kernel device to use for the port (eg eth0).
-    string kernel_dev = 3; 
+    string kernel_dev = 3;
   }
   // For internal ports (TAP interface),
   // the id of the corresponding port for punt rules.
@@ -75,6 +76,7 @@ message CreatePortRequest {
 }
 
 message CreatePortResponse {
+
 }
 
 message IpMask {
@@ -88,23 +90,53 @@ enum PacketAction {
   PACKET_ACTION_FORWARD = 2;
 }
 
-message AddIPRouteRequest{
+message AddIPRouteRequest {
   Route route = 1;
 }
 
 message AddIPRouteResponse {
+
 }
 
-message RemoveIPRouteRequest{
+message RemoveIPRouteRequest {
   RoutePrefix prefix = 1;
 }
 
 message RemoveIPRouteResponse {
+
 }
 
+message AddNextHopRequest {
+  uint64 id = 1;
+  NextHop next_hop = 2;
+
+}
+
+message AddNextHopResponse {
+  
+}
+
+enum GroupUpdateMode {
+  // If unspecified, returns error if group already exists.
+  GROUP_UPDATE_MODE_UNSPECIFIED = 0;
+  GROUP_UPDATE_MODE_APPEND = 1;
+  GROUP_UPDATE_MODE_REPLACE = 2;
+}
+
+
+message AddNextHopGroupRequest {
+  uint64 id = 1;
+  NextHopIDList list = 2;
+  GroupUpdateMode mode = 3;
+}
+
+message AddNextHopGroupResponse {}
 
 service Dataplane {
   rpc CreatePort(CreatePortRequest) returns (CreatePortResponse) {}
   rpc AddIPRoute(AddIPRouteRequest) returns (AddIPRouteResponse) {}
   rpc RemoveIPRoute(RemoveIPRouteRequest) returns (RemoveIPRouteResponse) {}
+  rpc AddNextHop(AddNextHopRequest) returns (AddNextHopResponse) {}
+  rpc AddNextHopGroup(AddNextHopGroupRequest)
+      returns (AddNextHopGroupResponse) {}
 }
