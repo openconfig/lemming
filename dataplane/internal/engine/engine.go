@@ -456,6 +456,10 @@ func (e *Engine) addNextHopGroupIDList(ctx context.Context, id uint64, nhg *dpb.
 	if _, err := e.Server.TableEntryAdd(ctx, entries); err != nil {
 		return err
 	}
+	e.nextHopGroups[id] = &dpb.NextHopIDList{
+		Weights: weights,
+		Hops:    hops,
+	}
 
 	return nil
 }

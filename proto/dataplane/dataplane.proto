@@ -113,7 +113,7 @@ message AddNextHopRequest {
 }
 
 message AddNextHopResponse {
-  
+
 }
 
 enum GroupUpdateMode {
@@ -130,7 +130,9 @@ message AddNextHopGroupRequest {
   GroupUpdateMode mode = 3;
 }
 
-message AddNextHopGroupResponse {}
+message AddNextHopGroupResponse {
+  
+}
 
 service Dataplane {
   rpc CreatePort(CreatePortRequest) returns (CreatePortResponse) {}
