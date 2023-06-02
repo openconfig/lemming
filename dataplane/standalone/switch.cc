@@ -26,6 +26,8 @@
 #include "dataplane/standalone/dtel.h"
 #include "dataplane/standalone/hostif.h"
 #include "dataplane/standalone/lucius/lucius_clib.h"
+#include "dataplane/standalone/next_hop.h"
+#include "dataplane/standalone/next_hop_group.h"
 #include "dataplane/standalone/port.h"
 #include "dataplane/standalone/route.h"
 #include "dataplane/standalone/router_interface.h"

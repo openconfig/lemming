@@ -362,8 +362,8 @@ func (e *Engine) addNextHopGroupIDList(ctx context.Context, id uint64, nhg *dpb.
 	hops := nhg.GetHops()
 	weights := nhg.GetWeights()
 	if mode == dpb.GroupUpdateMode_GROUP_UPDATE_MODE_APPEND {
-		hops = append(hops, e.nextHopGroups[id].Hops...)
-		weights = append(weights, e.nextHopGroups[id].Weights...)
+		hops = append(e.nextHopGroups[id].Hops, nhg.GetHops()...)
+		weights = append(e.nextHopGroups[id].Weights, nhg.GetWeights()...)
 	}
 
 	var actLists []*fwdpb.ActionList
@@ -443,7 +443,10 @@ func (e *Engine) addNextHopGroupIDList(ctx context.Context, id uint64, nhg *dpb.
 		}},
 	}
 
-	if mode == dpb.GroupUpdateMode_GROUP_UPDATE_MODE_APPEND || mode == dpb.GroupUpdateMode_GROUP_UPDATE_MODE_REPLACE {
+	switch mode {
+	case dpb.GroupUpdateMode_GROUP_UPDATE_MODE_ERROR_ON_CONFLICT:
+		break
+	case dpb.GroupUpdateMode_GROUP_UPDATE_MODE_APPEND, dpb.GroupUpdateMode_GROUP_UPDATE_MODE_REPLACE:
 		if _, err := e.Server.TableEntryRemove(ctx, &fwdpb.TableEntryRemoveRequest{
 			ContextId: entries.GetContextId(),
 			TableId:   entries.GetTableId(),
@@ -451,6 +454,8 @@ func (e *Engine) addNextHopGroupIDList(ctx context.Context, id uint64, nhg *dpb.
 		}); err != nil {
 			return err
 		}
+	default:
+		return fmt.Errorf("unknown mode: %v", mode)
 	}
 
 	if _, err := e.Server.TableEntryAdd(ctx, entries); err != nil {
@@ -545,7 +550,7 @@ func (e *Engine) actionsFromRoute(ctx context.Context, route *dpb.Route) ([]*fwd
 		}
 	case *dpb.Route_NextHops:
 		var err error
-		actions, err = e.addNextHopList(ctx, hop.NextHops, dpb.GroupUpdateMode_GROUP_UPDATE_MODE_UNSPECIFIED)
+		actions, err = e.addNextHopList(ctx, hop.NextHops, dpb.GroupUpdateMode_GROUP_UPDATE_MODE_ERROR_ON_CONFLICT)
 		if err != nil {
 			return nil, err
 		}

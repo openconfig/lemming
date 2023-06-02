@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef DATAPLANE_STANDALONE_ROUTE_H_
-#define DATAPLANE_STANDALONE_ROUTE_H_
+#ifndef DATAPLANE_STANDALONE_NEXT_HOP_GROUP_H_
+#define DATAPLANE_STANDALONE_NEXT_HOP_GROUP_H_
 
 #include <memory>
 #include <string>
@@ -29,16 +29,31 @@ extern "C" {
 #include "inc/sai.h"
 }
 
-class Route : public APIBase {
+class NextHopGroup : public APIBase {
  public:
-  Route(std::string id, std::shared_ptr<AttributeManager> mgr,
-        std::shared_ptr<forwarding::Forwarding::Stub> fwd,
-        std::shared_ptr<lemming::dataplane::Dataplane::Stub> dplane)
+  NextHopGroup(std::string id, std::shared_ptr<AttributeManager> mgr,
+               std::shared_ptr<forwarding::Forwarding::Stub> fwd,
+               std::shared_ptr<lemming::dataplane::Dataplane::Stub> dplane)
       : APIBase(id, mgr, fwd, dplane) {}
-  ~Route() = default;
-  sai_status_t create(common_entry_t id, _In_ uint32_t attr_count,
+  ~NextHopGroup() = default;
+  sai_status_t create(_In_ uint32_t attr_count,
                       _In_ const sai_attribute_t* attr_list);
   sai_status_t set_attribute(_In_ const sai_attribute_t* attr);
 };
 
-#endif  // DATAPLANE_STANDALONE_ROUTE_H_
+// TODO(dgrau): If this a common pattern, extend APIBase with a way to own other
+// object types.
+class NextHopGroupMember : public APIBase {
+ public:
+  NextHopGroupMember(
+      std::string id, std::shared_ptr<AttributeManager> mgr,
+      std::shared_ptr<forwarding::Forwarding::Stub> fwd,
+      std::shared_ptr<lemming::dataplane::Dataplane::Stub> dplane)
+      : APIBase(id, mgr, fwd, dplane) {}
+  ~NextHopGroupMember() = default;
+  sai_status_t create(_In_ uint32_t attr_count,
+                      _In_ const sai_attribute_t* attr_list);
+  sai_status_t set_attribute(_In_ const sai_attribute_t* attr);
+};
+
+#endif  // DATAPLANE_STANDALONE_NEXT_HOP_GROUP_H_

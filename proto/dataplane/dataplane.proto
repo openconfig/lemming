@@ -117,10 +117,10 @@ message AddNextHopResponse {
 }
 
 enum GroupUpdateMode {
-  // If unspecified, returns error if group already exists.
   GROUP_UPDATE_MODE_UNSPECIFIED = 0;
-  GROUP_UPDATE_MODE_APPEND = 1;
-  GROUP_UPDATE_MODE_REPLACE = 2;
+  GROUP_UPDATE_MODE_ERROR_ON_CONFLICT = 1;
+  GROUP_UPDATE_MODE_APPEND = 2;
+  GROUP_UPDATE_MODE_REPLACE = 3;
 }
 
 
