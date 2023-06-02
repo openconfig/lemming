@@ -29,18 +29,6 @@ extern "C" {
 #include "inc/sai.h"
 }
 
-class Route : public APIBase {
- public:
-  Route(std::string id, std::shared_ptr<AttributeManager> mgr,
-        std::shared_ptr<forwarding::Forwarding::Stub> fwd,
-        std::shared_ptr<lemming::dataplane::Dataplane::Stub> dplane)
-      : APIBase(id, mgr, fwd, dplane) {}
-  ~Route() = default;
-  sai_status_t create(common_entry_t id, _In_ uint32_t attr_count,
-                      _In_ const sai_attribute_t* attr_list);
-  sai_status_t set_attribute(_In_ const sai_attribute_t* attr);
-};
-
 class NextHop : public APIBase {
  public:
   NextHop(std::string id, std::shared_ptr<AttributeManager> mgr,
@@ -48,33 +36,6 @@ class NextHop : public APIBase {
           std::shared_ptr<lemming::dataplane::Dataplane::Stub> dplane)
       : APIBase(id, mgr, fwd, dplane) {}
   ~NextHop() = default;
-  sai_status_t create(_In_ uint32_t attr_count,
-                      _In_ const sai_attribute_t* attr_list);
-  sai_status_t set_attribute(_In_ const sai_attribute_t* attr);
-};
-
-class NextHopGroup : public APIBase {
- public:
-  NextHopGroup(std::string id, std::shared_ptr<AttributeManager> mgr,
-               std::shared_ptr<forwarding::Forwarding::Stub> fwd,
-               std::shared_ptr<lemming::dataplane::Dataplane::Stub> dplane)
-      : APIBase(id, mgr, fwd, dplane) {}
-  ~NextHopGroup() = default;
-  sai_status_t create(_In_ uint32_t attr_count,
-                      _In_ const sai_attribute_t* attr_list);
-  sai_status_t set_attribute(_In_ const sai_attribute_t* attr);
-};
-
-// TODO(dgrau): If this a common pattern, extend APIBase with a way to own other
-// object types.
-class NextHopGroupMember : public APIBase {
- public:
-  NextHopGroupMember(
-      std::string id, std::shared_ptr<AttributeManager> mgr,
-      std::shared_ptr<forwarding::Forwarding::Stub> fwd,
-      std::shared_ptr<lemming::dataplane::Dataplane::Stub> dplane)
-      : APIBase(id, mgr, fwd, dplane) {}
-  ~NextHopGroupMember() = default;
   sai_status_t create(_In_ uint32_t attr_count,
                       _In_ const sai_attribute_t* attr_list);
   sai_status_t set_attribute(_In_ const sai_attribute_t* attr);
