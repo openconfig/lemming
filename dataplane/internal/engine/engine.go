@@ -52,9 +52,11 @@ type Engine struct {
 	id        string
 	idToNIDMu sync.RWMutex
 	// idToNID is map from RPC ID (proto), to internal object NID.
-	idToNID   map[string]uint64
-	nextNHGID atomic.Uint64
-	nextNHID  atomic.Uint64
+	idToNID         map[string]uint64
+	nextNHGID       atomic.Uint64
+	nextNHID        atomic.Uint64
+	nextHopGroupsMu sync.Mutex
+	nextHopGroups   map[uint64]*dpb.NextHopIDList
 }
 
 // New creates a new engine and sets up the forwarding tables.
@@ -321,7 +323,7 @@ func prefixToPrimitives(prefix *dpb.RoutePrefix) ([]byte, []byte, bool, uint64, 
 }
 
 // addNextHopList creates all the next hops from the message, then create a next hop group if there are multiple next hops.
-func (e *Engine) addNextHopList(ctx context.Context, nhg *dpb.NextHopList) ([]*fwdpb.ActionDesc, error) {
+func (e *Engine) addNextHopList(ctx context.Context, nhg *dpb.NextHopList, mode dpb.GroupUpdateMode) ([]*fwdpb.ActionDesc, error) {
 	if len(nhg.GetHops()) == 1 {
 		nhID := e.nextNHID.Add(1)
 		if err := e.addNextHop(ctx, nhID, nhg.Hops[0]); err != nil {
@@ -343,7 +345,7 @@ func (e *Engine) addNextHopList(ctx context.Context, nhg *dpb.NextHopList) ([]*f
 		idList.Weights = append(idList.Weights, hop.Weight)
 	}
 	nhgID := e.nextNHGID.Add(1)
-	if err := e.addNextHopGroupIDList(ctx, nhgID, idList); err != nil {
+	if err := e.addNextHopGroupIDList(ctx, nhgID, idList, mode); err != nil {
 		return nil, err
 	}
 	return []*fwdpb.ActionDesc{
@@ -353,11 +355,21 @@ func (e *Engine) addNextHopList(ctx context.Context, nhg *dpb.NextHopList) ([]*f
 }
 
 // addNextHopGroupIDList adds an entry to the next hop group table.
-func (e *Engine) addNextHopGroupIDList(ctx context.Context, id uint64, nhg *dpb.NextHopIDList) error {
+func (e *Engine) addNextHopGroupIDList(ctx context.Context, id uint64, nhg *dpb.NextHopIDList, mode dpb.GroupUpdateMode) error {
+	e.nextHopGroupsMu.Lock()
+	defer e.nextHopGroupsMu.Unlock()
+
+	hops := nhg.GetHops()
+	weights := nhg.GetWeights()
+	if mode == dpb.GroupUpdateMode_GROUP_UPDATE_MODE_APPEND {
+		hops = append(e.nextHopGroups[id].Hops, nhg.GetHops()...)
+		weights = append(e.nextHopGroups[id].Weights, nhg.GetWeights()...)
+	}
+
 	var actLists []*fwdpb.ActionList
-	for i, nh := range nhg.GetHops() {
+	for i, nh := range hops {
 		actLists = append(actLists, &fwdpb.ActionList{
-			Weight: nhg.Weights[i],
+			Weight: weights[i],
 			Actions: []*fwdpb.ActionDesc{{
 				ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
 				Action: &fwdpb.ActionDesc_Update{
@@ -430,8 +442,28 @@ func (e *Engine) addNextHopGroupIDList(ctx context.Context, id uint64, nhg *dpb.
 			Actions: actions,
 		}},
 	}
+
+	switch mode {
+	case dpb.GroupUpdateMode_GROUP_UPDATE_MODE_ERROR_ON_CONFLICT:
+		break
+	case dpb.GroupUpdateMode_GROUP_UPDATE_MODE_APPEND, dpb.GroupUpdateMode_GROUP_UPDATE_MODE_REPLACE:
+		if _, err := e.Server.TableEntryRemove(ctx, &fwdpb.TableEntryRemoveRequest{
+			ContextId: entries.GetContextId(),
+			TableId:   entries.GetTableId(),
+			Entries:   []*fwdpb.EntryDesc{entries.GetEntries()[0].GetEntryDesc()},
+		}); err != nil {
+			return err
+		}
+	default:
+		return fmt.Errorf("unknown mode: %v", mode)
+	}
+
 	if _, err := e.Server.TableEntryAdd(ctx, entries); err != nil {
 		return err
+	}
+	e.nextHopGroups[id] = &dpb.NextHopIDList{
+		Weights: weights,
+		Hops:    hops,
 	}
 
 	return nil
@@ -441,16 +473,18 @@ func (e *Engine) addNextHopGroupIDList(ctx context.Context, id uint64, nhg *dpb.
 // TODO: Remove workaround that nexthop IP is not specified that the packet is treated as directly connected.
 func (e *Engine) addNextHop(ctx context.Context, id uint64, nh *dpb.NextHop) error {
 	var nextHopIP []byte
-	if nhIPStr := nh.GetIp(); nhIPStr != "" {
+	if nhIPStr := nh.GetIpStr(); nhIPStr != "" {
 		nextHop := net.ParseIP(nhIPStr)
 		nextHopIP = nextHop.To4()
 		if nextHopIP == nil {
 			nextHopIP = nextHop.To16()
 		}
+	} else {
+		nextHopIP = nh.GetIpBytes()
 	}
 	// Set the next hop IP in the packet's metadata.
 	nextHopAct := fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP).WithValue(nextHopIP)).Build()
-	if nextHopIP == nil {
+	if len(nextHopIP) == 0 {
 		nextHopAct = fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_COPY, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP).WithFieldSrc(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST)).Build()
 	}
 	// Set the output port of the packet.
@@ -516,7 +550,7 @@ func (e *Engine) actionsFromRoute(ctx context.Context, route *dpb.Route) ([]*fwd
 		}
 	case *dpb.Route_NextHops:
 		var err error
-		actions, err = e.addNextHopList(ctx, hop.NextHops)
+		actions, err = e.addNextHopList(ctx, hop.NextHops, dpb.GroupUpdateMode_GROUP_UPDATE_MODE_ERROR_ON_CONFLICT)
 		if err != nil {
 			return nil, err
 		}
@@ -602,6 +636,24 @@ func (e *Engine) RemoveIPRoute(ctx context.Context, req *dpb.RemoveIPRouteReques
 		return nil, err
 	}
 	return &dpb.RemoveIPRouteResponse{}, nil
+}
+
+// AddNext adds a next hop with a client-managed id.
+func (e *Engine) AddNextHop(ctx context.Context, req *dpb.AddNextHopRequest) (*dpb.AddNextHopResponse, error) {
+	if err := e.addNextHop(ctx, req.GetId(), req.GetNextHop()); err != nil {
+		return nil, err
+	}
+
+	return &dpb.AddNextHopResponse{}, nil
+}
+
+// AddNext adds a next hop group with a client-managed id.
+func (e *Engine) AddNextHopGroup(ctx context.Context, req *dpb.AddNextHopGroupRequest) (*dpb.AddNextHopGroupResponse, error) {
+	if err := e.addNextHopGroupIDList(ctx, req.GetId(), req.GetList(), req.GetMode()); err != nil {
+		return nil, err
+	}
+
+	return &dpb.AddNextHopGroupResponse{}, nil
 }
 
 // AddNeighbor adds a neighbor to the neighbor table.

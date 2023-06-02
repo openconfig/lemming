@@ -26,6 +26,8 @@
 #include "dataplane/standalone/dtel.h"
 #include "dataplane/standalone/hostif.h"
 #include "dataplane/standalone/lucius/lucius_clib.h"
+#include "dataplane/standalone/next_hop.h"
+#include "dataplane/standalone/next_hop_group.h"
 #include "dataplane/standalone/port.h"
 #include "dataplane/standalone/route.h"
 #include "dataplane/standalone/router_interface.h"
@@ -357,6 +359,18 @@ sai_status_t Switch::create_child(sai_object_type_t type, sai_object_id_t id,
       break;
     case SAI_OBJECT_TYPE_BUFFER_PROFILE:
       this->apis[std::to_string(id)] = std::make_unique<BufferProfile>(
+          std::to_string(id), this->attrMgr, this->fwd, this->dataplane);
+      break;
+    case SAI_OBJECT_TYPE_NEXT_HOP:
+      this->apis[std::to_string(id)] = std::make_unique<NextHop>(
+          std::to_string(id), this->attrMgr, this->fwd, this->dataplane);
+      break;
+    case SAI_OBJECT_TYPE_NEXT_HOP_GROUP:
+      this->apis[std::to_string(id)] = std::make_unique<NextHopGroup>(
+          std::to_string(id), this->attrMgr, this->fwd, this->dataplane);
+      break;
+    case SAI_OBJECT_TYPE_NEXT_HOP_GROUP_MEMBER:
+      this->apis[std::to_string(id)] = std::make_unique<NextHopGroupMember>(
           std::to_string(id), this->attrMgr, this->fwd, this->dataplane);
       break;
     default:

@@ -17,6 +17,7 @@
 #include <glog/logging.h>
 
 #include <bitset>
+#include <string>
 #include <vector>
 
 #include "dataplane/standalone/translator.h"
