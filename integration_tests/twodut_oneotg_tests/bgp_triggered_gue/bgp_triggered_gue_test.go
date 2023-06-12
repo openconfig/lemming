@@ -36,10 +36,6 @@ import (
 	"github.com/openconfig/gribigo/client"
 	"github.com/openconfig/gribigo/constants"
 	"github.com/openconfig/gribigo/fluent"
-	"github.com/openconfig/lemming/gnmi/fakedevice"
-	"github.com/openconfig/lemming/gnmi/oc"
-	"github.com/openconfig/lemming/gnmi/oc/ocpath"
-	"github.com/openconfig/lemming/internal/binding"
 	"github.com/openconfig/ondatra"
 	"github.com/openconfig/ondatra/gnmi"
 	otgtelemetry "github.com/openconfig/ondatra/gnmi/otg"
@@ -47,6 +43,11 @@ import (
 	"github.com/openconfig/ondatra/otg"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot"
+
+	"github.com/openconfig/lemming/gnmi/fakedevice"
+	"github.com/openconfig/lemming/gnmi/oc"
+	"github.com/openconfig/lemming/gnmi/oc/ocpath"
+	"github.com/openconfig/lemming/internal/binding"
 
 	gribipb "github.com/openconfig/gribi/v1/proto/service"
 )
@@ -405,7 +406,6 @@ func configureDUT2(t *testing.T, dut *ondatra.DUTDevice) {
 		NeighborAddress: ygot.String(dutPort3.IPv6),
 	})
 	gnmi.Replace(t, dut, bgpPath.Config(), dut2Conf)
-
 }
 
 func waitOTGARPEntry(t *testing.T) {
@@ -502,7 +502,9 @@ type layerDecodingLayer interface {
 
 func testTrafficAndEncap(t *testing.T, otg *otg.OTG, startingIP string, v6Traffic bool, encapFields *EncapFields) {
 	t.Log("testTrafficAndEncap")
-	otg.StartCapture(t, atePort2.Name)
+	controlState := gosnappi.NewControlState()
+	controlState.Port().Capture().SetState(gosnappi.StatePortCaptureState.START).SetPortNames([]string{atePort2.Name})
+	otg.SetControlState(t, controlState)
 
 	testTraffic := testTraffic
 	if v6Traffic {
@@ -513,9 +515,10 @@ func testTrafficAndEncap(t *testing.T, otg *otg.OTG, startingIP string, v6Traffi
 		t.Errorf("Loss: got %g, want <= %d", loss, lossTolerance)
 	}
 
-	otg.StopCapture(t, atePort2.Name)
+	controlState.Port().Capture().SetState(gosnappi.StatePortCaptureState.STOP).SetPortNames([]string{atePort2.Name})
+	otg.SetControlState(t, controlState)
 
-	captureBytes := otg.FetchCapture(t, atePort2.Name)
+	captureBytes := otg.GetCapture(t, gosnappi.NewCaptureRequest().SetPortName(atePort2.Name))
 
 	f, err := os.CreateTemp(".", "pcap")
 	if err != nil {
