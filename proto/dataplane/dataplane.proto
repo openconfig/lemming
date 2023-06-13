@@ -134,6 +134,31 @@ message AddNextHopGroupResponse {
   
 }
 
+message AddNeighborRequest {
+  string port_id = 1;
+  oneof ip {
+    string ip_str = 2;
+    bytes ip_bytes = 3;
+  }
+  bytes mac = 4;
+}
+
+message AddNeighborResponse {
+  
+}
+
+message RemoveNeighborRequest {
+  string port_id = 1;
+  oneof ip {
+    string ip_str = 2;
+    bytes ip_bytes = 3;
+  }
+}
+
+message RemoveNeighborResponse {
+  
+}
+
 service Dataplane {
   rpc CreatePort(CreatePortRequest) returns (CreatePortResponse) {}
   rpc AddIPRoute(AddIPRouteRequest) returns (AddIPRouteResponse) {}
@@ -141,4 +166,6 @@ service Dataplane {
   rpc AddNextHop(AddNextHopRequest) returns (AddNextHopResponse) {}
   rpc AddNextHopGroup(AddNextHopGroupRequest)
       returns (AddNextHopGroupResponse) {}
+  rpc AddNeighbor(AddNeighborRequest) returns (AddNeighborResponse) {}
+  rpc RemoveNeighbor(RemoveNeighborRequest) returns (RemoveNeighborResponse) {}
 }
