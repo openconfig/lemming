@@ -661,8 +661,13 @@ func (e *Engine) AddNextHopGroup(ctx context.Context, req *dpb.AddNextHopGroupRe
 	return &dpb.AddNextHopGroupResponse{}, nil
 }
 
-// AddNeighbor adds a neighbor to the neighbor table.
-func (e *Engine) AddNeighbor(ctx context.Context, req *dpb.AddNeighborRequest) (*dpb.AddNeighborResponse, error) {
+type neighRequest interface {
+	GetIpBytes() []byte
+	GetIpStr() string
+	GetPortId() string
+}
+
+func (e *Engine) neighborReqToEntry(req neighRequest) (*fwdpb.EntryDesc, error) {
 	ip := req.GetIpBytes()
 	if len(ip) == 0 {
 		addr, err := netip.ParseAddr(req.GetIpStr())
@@ -676,22 +681,32 @@ func (e *Engine) AddNeighbor(ctx context.Context, req *dpb.AddNeighborRequest) (
 	idBytes := make([]byte, binary.Size(e.idToNID[req.GetPortId()]))
 	binary.BigEndian.PutUint64(idBytes, e.idToNID[req.GetPortId()])
 
+	return &fwdpb.EntryDesc{
+		Entry: &fwdpb.EntryDesc_Exact{
+			Exact: &fwdpb.ExactEntryDesc{
+				Fields: []*fwdpb.PacketFieldBytes{{
+					FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT}},
+					Bytes:   idBytes,
+				}, {
+					FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP}},
+					Bytes:   ip,
+				}},
+			},
+		},
+	}, nil
+}
+
+// AddNeighbor adds a neighbor to the neighbor table.
+func (e *Engine) AddNeighbor(ctx context.Context, req *dpb.AddNeighborRequest) (*dpb.AddNeighborResponse, error) {
+	entryDesc, err := e.neighborReqToEntry(req)
+	if err != nil {
+		return nil, err
+	}
+
 	entry := &fwdpb.TableEntryAddRequest{
 		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: neighborTable}},
 		ContextId: &fwdpb.ContextId{Id: e.id},
-		EntryDesc: &fwdpb.EntryDesc{
-			Entry: &fwdpb.EntryDesc_Exact{
-				Exact: &fwdpb.ExactEntryDesc{
-					Fields: []*fwdpb.PacketFieldBytes{{
-						FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT}},
-						Bytes:   idBytes,
-					}, {
-						FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP}},
-						Bytes:   ip,
-					}},
-				},
-			},
-		},
+		EntryDesc: entryDesc,
 		Actions: []*fwdpb.ActionDesc{{ // Set the dst MAC.
 			ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
 			Action: &fwdpb.ActionDesc_Update{
@@ -716,35 +731,15 @@ func (e *Engine) AddNeighbor(ctx context.Context, req *dpb.AddNeighborRequest) (
 
 // RemoveNeighbor removes a neighbor from the neighbor table.
 func (e *Engine) RemoveNeighbor(ctx context.Context, req *dpb.RemoveNeighborRequest) (*dpb.RemoveNeighborResponse, error) {
-	ip := req.GetIpBytes()
-	if len(ip) == 0 {
-		addr, err := netip.ParseAddr(req.GetIpStr())
-		if err != nil {
-			return nil, err
-		}
-		ip = addr.AsSlice()
+	entryDesc, err := e.neighborReqToEntry(req)
+	if err != nil {
+		return nil, err
 	}
-	e.idToNIDMu.RLock()
-	defer e.idToNIDMu.RUnlock()
-	idBytes := make([]byte, binary.Size(e.idToNID[req.GetPortId()]))
-	binary.BigEndian.PutUint64(idBytes, e.idToNID[req.GetPortId()])
 
 	entry := &fwdpb.TableEntryRemoveRequest{
 		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: neighborTable}},
 		ContextId: &fwdpb.ContextId{Id: e.id},
-		EntryDesc: &fwdpb.EntryDesc{
-			Entry: &fwdpb.EntryDesc_Exact{
-				Exact: &fwdpb.ExactEntryDesc{
-					Fields: []*fwdpb.PacketFieldBytes{{
-						FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT}},
-						Bytes:   idBytes,
-					}, {
-						FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP}},
-						Bytes:   ip,
-					}},
-				},
-			},
-		},
+		EntryDesc: entryDesc,
 	}
 	if _, err := e.Server.TableEntryRemove(ctx, entry); err != nil {
 		return nil, err
