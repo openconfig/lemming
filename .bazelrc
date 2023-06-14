@@ -1,2 +1,1 @@
 build --cxxopt=-std=c++17 --host_cxxopt=-std=c++17
-build --experimental_cc_shared_library
