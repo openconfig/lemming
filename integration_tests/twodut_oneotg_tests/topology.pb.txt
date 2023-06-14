@@ -21,6 +21,7 @@ nodes: {
 nodes: {
     name: "lemming"
     vendor: OPENCONFIG
+    model: "LEMMING"
     config: {
         args: "--v=1"
     }
@@ -28,6 +29,7 @@ nodes: {
 nodes: {
     name: "lemming2"
     vendor: OPENCONFIG
+    model: "LEMMING"
     config: {
         args: "--v=1"
     }
