@@ -30,6 +30,7 @@
 #include "dataplane/standalone/next_hop_group.h"
 #include "dataplane/standalone/port.h"
 #include "dataplane/standalone/route.h"
+#include "dataplane/standalone/neighbor.h"
 #include "dataplane/standalone/router_interface.h"
 #include "dataplane/standalone/translator.h"
 #include "dataplane/standalone/vlan.h"
@@ -386,6 +387,10 @@ sai_status_t Switch::create_child(sai_object_type_t type, common_entry_t entry,
   switch (type) {
     case SAI_OBJECT_TYPE_ROUTE_ENTRY:
       this->apis[id] = std::make_unique<Route>(id, this->attrMgr, this->fwd,
+                                               this->dataplane);
+      break;
+        case SAI_OBJECT_TYPE_NEIGHBOR_ENTRY:
+      this->apis[id] = std::make_unique<Neighbor>(id, this->attrMgr, this->fwd,
                                                this->dataplane);
       break;
     default:
