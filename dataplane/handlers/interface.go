@@ -38,6 +38,7 @@ import (
 	log "github.com/golang/glog"
 
 	"github.com/openconfig/lemming/proto/dataplane"
+	dpb "github.com/openconfig/lemming/proto/dataplane"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
@@ -481,8 +482,14 @@ func (ni *Interface) handleNeighborUpdate(ctx context.Context, nu *netlink.Neigh
 
 	switch nu.Type {
 	case unix.RTM_DELNEIGH:
-		if err := ni.e.RemoveNeighbor(ctx, ipToBytes(nu.IP)); err != nil {
-			log.Warningf("failed to add neighbor to dataplane: %v", err)
+		req := &dpb.RemoveNeighborRequest{
+			PortId: ni.internalToExternalPort[ni.idxToName[nu.LinkIndex]],
+			Ip: &dpb.RemoveNeighborRequest_IpBytes{
+				IpBytes: ipToBytes(nu.IP),
+			},
+		}
+		if _, err := ni.e.RemoveNeighbor(ctx, req); err != nil {
+			log.Warningf("failed to remove neighbor to dataplane: %v", err)
 			return
 		}
 		if nu.Family == unix.AF_INET6 {
@@ -497,7 +504,14 @@ func (ni *Interface) handleNeighborUpdate(ctx context.Context, nu *netlink.Neigh
 			log.Info("skipping neighbor update with no hwaddr")
 			return
 		}
-		if err := ni.e.AddNeighbor(ctx, ipToBytes(nu.IP), nu.HardwareAddr); err != nil {
+		req := &dpb.AddNeighborRequest{
+			PortId: ni.internalToExternalPort[ni.idxToName[nu.LinkIndex]],
+			Mac:    nu.HardwareAddr,
+			Ip: &dpb.AddNeighborRequest_IpBytes{
+				IpBytes: ipToBytes(nu.IP),
+			},
+		}
+		if _, err := ni.e.AddNeighbor(ctx, req); err != nil {
 			log.Warningf("failed to add neighbor to dataplane: %v", err)
 			return
 		}
