@@ -232,6 +232,20 @@ func (e *Engine) CreatePort(ctx context.Context, req *dpb.CreatePortRequest) (*d
 		err = e.CreateExternalPort(ctx, req.GetId(), req.GetKernelDev())
 	case fwdpb.PortType_PORT_TYPE_TAP:
 		err = e.CreateLocalPort(ctx, req.GetId(), req.GetKernelDev(), req.GetExternalPort())
+	case fwdpb.PortType_PORT_TYPE_CPU_PORT:
+		req := &fwdpb.PortCreateRequest{
+			ContextId: &fwdpb.ContextId{Id: e.id},
+			Port: &fwdpb.PortDesc{
+				PortId:   &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: req.GetId()}},
+				PortType: req.GetType(),
+				Port: &fwdpb.PortDesc_Cpu{
+					Cpu: &fwdpb.CPUPortDesc{},
+				},
+			},
+		}
+		_, err = e.PortCreate(ctx, req)
+	default:
+		return nil, fmt.Errorf("invalid port type")
 	}
 	return &dpb.CreatePortResponse{}, err
 }
