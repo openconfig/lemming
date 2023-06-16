@@ -79,8 +79,10 @@ std::shared_ptr<Translator> translator;
 // TODO(dgrau): implement this without using gRPC.
 sai_status_t sai_api_initialize(
     _In_ uint64_t flags, _In_ const sai_service_method_table_t *services) {
-  initialize(GoInt(50000));
   google::InitGoogleLogging("lucius");
+  google::InstallFailureSignalHandler();
+  initialize(GoInt(50000));
+
 
   auto chan = grpc::CreateChannel("localhost:50000",
                                   grpc::InsecureChannelCredentials());
