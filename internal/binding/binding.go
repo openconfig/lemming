@@ -24,15 +24,16 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/openconfig/kne/topo"
 	"github.com/openconfig/ondatra/binding"
-	"github.com/openconfig/ondatra/proto"
+
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 
-	"github.com/openconfig/kne/topo"
 	kinit "github.com/openconfig/ondatra/knebind/init"
+	opb "github.com/openconfig/ondatra/proto"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -111,7 +112,7 @@ func (lb *LemmingBind) Release(ctx context.Context) error {
 }
 
 // Reserve deploys the topology if it doesn't exists, then runs knebind Reserve.
-func (lb *LemmingBind) Reserve(ctx context.Context, tb *proto.Testbed, runTime time.Duration, waitTime time.Duration, partial map[string]string) (*binding.Reservation, error) {
+func (lb *LemmingBind) Reserve(ctx context.Context, tb *opb.Testbed, runTime time.Duration, waitTime time.Duration, partial map[string]string) (*binding.Reservation, error) {
 	// Get kubernetes API client.
 	cfg, err := clientcmd.BuildConfigFromFlags("", lb.kubecfg)
 	if err != nil {

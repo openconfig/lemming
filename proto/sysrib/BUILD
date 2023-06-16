@@ -18,7 +18,6 @@ go_proto_library(
 
 go_library(
     name = "sysrib",
-    srcs = ["generate.go"],
     embed = [":sysrib_go_proto"],
     importpath = "github.com/openconfig/lemming/proto/sysrib",
     visibility = ["//visibility:public"],

@@ -35,9 +35,10 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/golang/glog"
-	"github.com/wenovus/gobgp/v3/pkg/log"
 	"github.com/wenovus/gobgp/v3/pkg/zebra"
+
+	log "github.com/golang/glog"
+	bgplog "github.com/wenovus/gobgp/v3/pkg/log"
 )
 
 // Part of this file was adapted from
@@ -113,12 +114,12 @@ func StartZServer(address string, vrfID uint32, sysrib *Server) (*ZServer, error
 	}
 
 	go func() {
-		glog.Infof("ZAPI Server started at %s", path)
+		log.Infof("ZAPI Server started at %s", path)
 		for {
 			// Listen for an incoming connection.
 			conn, err := lis.Accept()
 			if err != nil {
-				glog.Infof("Stopping ZAPI server: %v", err)
+				log.Infof("Stopping ZAPI server: %v", err)
 				return
 			}
 
@@ -139,7 +140,7 @@ func (s *ZServer) ClientRegister(conn net.Conn) *Client {
 	s.ClientMutex.Lock()
 	defer s.ClientMutex.Unlock()
 
-	glog.Info("zapi:ClientRegister", conn)
+	log.Info("zapi:ClientRegister", conn)
 	client := &Client{conn: conn}
 	s.ClientMap[conn] = client
 	return client
@@ -150,7 +151,7 @@ func (s *ZServer) ClientUnregister(conn net.Conn) {
 	s.ClientMutex.Lock()
 	defer s.ClientMutex.Unlock()
 
-	glog.Info("zapi:ClientUnregister", conn)
+	log.Info("zapi:ClientUnregister", conn)
 	delete(s.ClientMap, conn)
 }
 
@@ -176,7 +177,7 @@ func (c *Client) RedistributeResolvedRoutes(conn net.Conn) {
 	resolvableRoutes := c.zServer.sysrib.ResolvedRoutes()
 	programmedRoutes := c.zServer.sysrib.ProgrammedRoutes()
 	topicLogger.Info(fmt.Sprintf("Sending %d resolved routes to client", len(programmedRoutes)),
-		log.Fields{
+		bgplog.Fields{
 			"Topic": "Sysrib",
 		})
 	for routeKey, rr := range resolvableRoutes {
@@ -187,19 +188,19 @@ func (c *Client) RedistributeResolvedRoutes(conn net.Conn) {
 		zrouteBody, err := convertToZAPIRoute(routeKey, rr, route)
 		if err != nil {
 			topicLogger.Warn(fmt.Sprintf("failed to convert resolved route to zebra BGP route: %v", err),
-				log.Fields{
+				bgplog.Fields{
 					"Topic": "Sysrib",
 				})
 		}
 		topicLogger.Info("Sending resolved route",
-			log.Fields{
+			bgplog.Fields{
 				"Topic":   "Sysrib",
 				"Message": zrouteBody,
 			})
 		if zrouteBody != nil {
 			if err := serverSendMessage(conn, zebra.RedistributeRouteAdd, zrouteBody); err != nil {
 				topicLogger.Error(fmt.Sprintf("Cannot send RedistributeRouteAdd message: %v", err),
-					log.Fields{
+					bgplog.Fields{
 						"Topic": "Sysrib",
 					})
 			}
@@ -215,19 +216,19 @@ func (c *Client) HandleRequest(conn net.Conn, vrfID uint32) {
 		err := conn.Close()
 		if err != nil {
 			topicLogger.Error("error while closing connection to client, stopping client handling thread.",
-				log.Fields{
+				bgplog.Fields{
 					"Topic": "Sysrib",
 					"Error": err,
 				})
 		}
-		glog.Infof("[zapi] disconnected, vrf %d, version %v", vrfID, version)
+		log.Infof("[zapi] disconnected, vrf %d, version %v", vrfID, version)
 		c.zServer.ClientUnregister(conn)
 	}()
 
 	for {
 		m, err := zebra.ReceiveSingleMsg(topicLogger, conn, version, software, "Sysrib")
 		if err != nil {
-			glog.Errorf("ZAPI server stopping, HandleRequest error: %v", err)
+			log.Errorf("ZAPI server stopping, HandleRequest error: %v", err)
 			return
 		} else if m == nil {
 			continue
@@ -237,7 +238,7 @@ func (c *Client) HandleRequest(conn net.Conn, vrfID uint32) {
 		switch command {
 		case zebra.Hello:
 			topicLogger.Info("Received Zebra Hello from client:",
-				log.Fields{
+				bgplog.Fields{
 					"Topic":   "Sysrib",
 					"Message": m,
 				})
@@ -246,7 +247,7 @@ func (c *Client) HandleRequest(conn net.Conn, vrfID uint32) {
 			// client (isisd nor GoBGP) actually looks at this message.
 			if err := serverSendMessage(conn, zebra.Hello, &zebra.HelloBody{}); err != nil {
 				topicLogger.Error(fmt.Sprintf("Cannot send hello message: %v", err),
-					log.Fields{
+					bgplog.Fields{
 						"Topic":   "Sysrib",
 						"Message": m,
 					})
@@ -255,13 +256,13 @@ func (c *Client) HandleRequest(conn net.Conn, vrfID uint32) {
 			c.RedistributeResolvedRoutes(conn)
 		case zebra.RouteAdd:
 			topicLogger.Info("Received Zebra RouteAdd from client:",
-				log.Fields{
+				bgplog.Fields{
 					"Topic":   "Sysrib",
 					"Message": m,
 				})
 			if err := c.zServer.sysrib.setZebraRoute(vrfIDToNiName(vrfID), m.Body.(*zebra.IPRouteBody)); err != nil {
 				topicLogger.Warn(fmt.Sprintf("Could not add route to sysrib: %v", err),
-					log.Fields{
+					bgplog.Fields{
 						"Topic":   "Sysrib",
 						"Message": m,
 					})
@@ -269,13 +270,13 @@ func (c *Client) HandleRequest(conn net.Conn, vrfID uint32) {
 		case zebra.RouteDelete:
 			// TODO(wenbli): Implement RouteDelete.
 			topicLogger.Warn("Received Zebra RouteDelete from client which is not handled:",
-				log.Fields{
+				bgplog.Fields{
 					"Topic":   "Sysrib",
 					"Message": m,
 				})
 		default:
 			topicLogger.Warn(fmt.Sprintf("Received unhandled Zebra message %v from client:", command),
-				log.Fields{
+				bgplog.Fields{
 					"Topic":   "Sysrib",
 					"Message": m,
 				})
@@ -299,7 +300,7 @@ func serverSendMessage(conn net.Conn, command zebra.APIType, body zebra.Body) er
 		Body: body,
 	}
 	topicLogger.Info(fmt.Sprintf("sending message: %v", command),
-		log.Fields{
+		bgplog.Fields{
 			"Topic":   "Sysrib",
 			"Message": m,
 		})
