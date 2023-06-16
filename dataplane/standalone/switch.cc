@@ -76,6 +76,7 @@ sai_status_t Switch::create(_In_ uint32_t attr_count,
       .value = {.objlist = {.count = 0}},
   });
 
+  // SAI expects a CPU port to exist to switch init, so create it.
   auto portOid = this->attrMgr->create(SAI_OBJECT_TYPE_PORT, this->id);
   std::vector<sai_attribute_t> portAttrs;
   portAttrs.push_back({

@@ -237,7 +237,7 @@ func (e *Engine) CreatePort(ctx context.Context, req *dpb.CreatePortRequest) (*d
 			ContextId: &fwdpb.ContextId{Id: e.id},
 			Port: &fwdpb.PortDesc{
 				PortId:   &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: req.GetId()}},
-				PortType: req.GetType(),
+				PortType: fwdpb.PortType_PORT_TYPE_CPU_PORT,
 				Port: &fwdpb.PortDesc_Cpu{
 					Cpu: &fwdpb.CPUPortDesc{},
 				},
