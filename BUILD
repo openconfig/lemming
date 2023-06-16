@@ -3,6 +3,7 @@ load("@bazel_gazelle//:def.bzl", "gazelle")
 
 # gazelle:prefix github.com/openconfig/lemming
 # gazelle:resolve go github.com/p4lang/p4runtime/go/p4/v1 @com_github_p4lang_p4runtime//:p4runtime_go_proto
+# gazelle:build_file_name BUILD
 gazelle(
     name = "gazelle",
 )
