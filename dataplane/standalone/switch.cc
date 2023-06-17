@@ -26,11 +26,11 @@
 #include "dataplane/standalone/dtel.h"
 #include "dataplane/standalone/hostif.h"
 #include "dataplane/standalone/lucius/lucius_clib.h"
+#include "dataplane/standalone/neighbor.h"
 #include "dataplane/standalone/next_hop.h"
 #include "dataplane/standalone/next_hop_group.h"
 #include "dataplane/standalone/port.h"
 #include "dataplane/standalone/route.h"
-#include "dataplane/standalone/neighbor.h"
 #include "dataplane/standalone/router_interface.h"
 #include "dataplane/standalone/translator.h"
 #include "dataplane/standalone/vlan.h"
@@ -76,7 +76,16 @@ sai_status_t Switch::create(_In_ uint32_t attr_count,
       .value = {.objlist = {.count = 0}},
   });
 
+  // SAI expects a CPU port to exist to switch init, so create it.
   auto portOid = this->attrMgr->create(SAI_OBJECT_TYPE_PORT, this->id);
+  std::vector<sai_attribute_t> portAttrs;
+  portAttrs.push_back({
+      .id = SAI_PORT_ATTR_TYPE,
+      .value = {.s32 = SAI_PORT_TYPE_CPU},
+  });
+  this->create_child(SAI_OBJECT_TYPE_PORT, portOid, portAttrs.size(),
+                     portAttrs.data());
+
   attrs.push_back({
       .id = SAI_SWITCH_ATTR_CPU_PORT,
       .value = {.oid = portOid},
@@ -389,9 +398,9 @@ sai_status_t Switch::create_child(sai_object_type_t type, common_entry_t entry,
       this->apis[id] = std::make_unique<Route>(id, this->attrMgr, this->fwd,
                                                this->dataplane);
       break;
-        case SAI_OBJECT_TYPE_NEIGHBOR_ENTRY:
+    case SAI_OBJECT_TYPE_NEIGHBOR_ENTRY:
       this->apis[id] = std::make_unique<Neighbor>(id, this->attrMgr, this->fwd,
-                                               this->dataplane);
+                                                  this->dataplane);
       break;
     default:
       return SAI_STATUS_FAILURE;

@@ -28,8 +28,12 @@ sai_status_t Port::create(_In_ uint32_t attr_count,
   std::vector<sai_attribute_t> attrs(attr_list, attr_list + attr_count);
   std::vector<int> lanes;
   std::string name;
+  sai_port_type_t type;
   for (auto attr : attrs) {
     switch (attr.id) {
+      case SAI_PORT_ATTR_TYPE:
+        type = static_cast<sai_port_type_t>(attr.value.s32);
+        break;
       case SAI_PORT_ATTR_HW_LANE_LIST:
         lanes = std::vector<int>(
             attr.value.u32list.list,
@@ -41,17 +45,29 @@ sai_status_t Port::create(_In_ uint32_t attr_count,
             break;
           }
         }
-
         break;
     }
   }
-  if (name != "") {
+
+  // TODO(dgrau): Figure out what to do with these ports.
+  if (type != SAI_PORT_TYPE_CPU && name == "") {
+    attrs.push_back({
+        .id = SAI_PORT_ATTR_OPER_STATUS,
+        .value = {.s32 = SAI_PORT_OPER_STATUS_NOT_PRESENT},
+    });
+    LOG(WARNING) << "Skipped port for SAI interface without kernel device"
+                 << std::to_string(lanes[0]);
+  } else {
     grpc::ClientContext context;
     lemming::dataplane::CreatePortRequest req;
     lemming::dataplane::CreatePortResponse resp;
     req.set_id(this->id);
-    req.set_type(forwarding::PORT_TYPE_KERNEL);
-    req.set_kernel_dev(name);
+    if (type == SAI_PORT_TYPE_CPU) {
+      req.set_type(forwarding::PORT_TYPE_CPU_PORT);
+    } else {
+      req.set_type(forwarding::PORT_TYPE_KERNEL);
+      req.set_kernel_dev(name);
+    }
     auto status = this->dataplane->CreatePort(&context, req, &resp);
     if (!status.ok()) {
       LOG(ERROR) << "Failed to create port: " << status.error_message();
@@ -61,14 +77,6 @@ sai_status_t Port::create(_In_ uint32_t attr_count,
         .id = SAI_PORT_ATTR_OPER_STATUS,
         .value = {.s32 = SAI_PORT_OPER_STATUS_UP},
     });
-    LOG(INFO) << "Created port with id " << this->id;
-  } else {  // TODO(dgrau): Figure out what to do for this ports.
-    attrs.push_back({
-        .id = SAI_PORT_ATTR_OPER_STATUS,
-        .value = {.s32 = SAI_PORT_OPER_STATUS_NOT_PRESENT},
-    });
-    LOG(WARNING) << "Skipped port for SAI interface without kernel device"
-                 << std::to_string(lanes[0]);
   }
 
   attrs.push_back({
