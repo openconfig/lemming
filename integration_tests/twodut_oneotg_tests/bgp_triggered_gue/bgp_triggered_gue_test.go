@@ -679,6 +679,10 @@ func bgpWithNbr(as uint32, routerID string, nbrs ...*oc.NetworkInstance_Protocol
 		bgp.Global.RouterId = ygot.String(routerID)
 	}
 	for _, nbr := range nbrs {
+		nbr.ApplyPolicy = &oc.NetworkInstance_Protocol_Bgp_Neighbor_ApplyPolicy{
+			DefaultImportPolicy: oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE,
+			DefaultExportPolicy: oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE,
+		}
 		bgp.AppendNeighbor(nbr)
 	}
 	return bgp
