@@ -18,6 +18,7 @@ package gnmi
 import (
 	"context"
 	"fmt"
+	"runtime/debug"
 	"strconv"
 	"sync"
 	"time"
@@ -43,6 +44,10 @@ import (
 
 const (
 	OpenConfigOrigin = "openconfig"
+)
+
+const (
+	enableDebugLog = true
 )
 
 // Server is a reference gNMI implementation.
@@ -265,7 +270,10 @@ func updateCacheNotifs(ca *cache.Cache, nos []*gpb.Notification, target, origin 
 			log.V(1).Infof("datastore: deleting the following paths: %+v", pathsForDelete)
 		}
 		if err := cacheTarget.GnmiUpdate(n); err != nil {
-			return fmt.Errorf("%w: notification:\n%s", err, prototext.Format(n))
+			return fmt.Errorf("%w: notification:\n%s\n%s", err, prototext.Format(n), string(debug.Stack()))
+		}
+		if enableDebugLog {
+			log.V(0).Infof("updateCacheNotifs:\n%s", prototext.Format(n))
 		}
 	}
 	return nil

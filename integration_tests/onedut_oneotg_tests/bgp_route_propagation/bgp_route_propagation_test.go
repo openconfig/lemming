@@ -396,11 +396,19 @@ func TestBGP(t *testing.T) {
 					PeerAs:          ygot.Uint32(ateAS1),
 					NeighborAddress: ygot.String("192.0.2.2"),
 					//PeerGroup:       ygot.String("BGP-PEER-GROUP1"),
+					ApplyPolicy: &oc.NetworkInstance_Protocol_Bgp_Neighbor_ApplyPolicy{
+						DefaultImportPolicy: oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE,
+						DefaultExportPolicy: oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE,
+					},
 				},
 				"192.0.2.6": {
 					PeerAs:          ygot.Uint32(ateAS2),
 					NeighborAddress: ygot.String("192.0.2.6"),
 					//PeerGroup:       ygot.String("BGP-PEER-GROUP2"),
+					ApplyPolicy: &oc.NetworkInstance_Protocol_Bgp_Neighbor_ApplyPolicy{
+						DefaultImportPolicy: oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE,
+						DefaultExportPolicy: oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE,
+					},
 				},
 			},
 		}},
