@@ -31,5 +31,5 @@ skaffold run -m lemming-operator
 make load
 make itest
 # Make sure we can populate this file.
-eval stat ~/.ssh/google_compute_known_hosts; return 0
+stat ~/.ssh/google_compute_known_hosts || true
 touch ~/.ssh/google_compute_known_hosts
