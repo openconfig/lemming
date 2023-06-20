@@ -18,6 +18,7 @@ package gnmi
 import (
 	"context"
 	"fmt"
+	"runtime/debug"
 	"strconv"
 	"sync"
 	"time"
@@ -265,7 +266,7 @@ func updateCacheNotifs(ca *cache.Cache, nos []*gpb.Notification, target, origin 
 			log.V(1).Infof("datastore: deleting the following paths: %+v", pathsForDelete)
 		}
 		if err := cacheTarget.GnmiUpdate(n); err != nil {
-			return fmt.Errorf("%w: notification:\n%s", err, prototext.Format(n))
+			return fmt.Errorf("%w: notification:\n%s\n%s", err, prototext.Format(n), string(debug.Stack()))
 		}
 	}
 	return nil
