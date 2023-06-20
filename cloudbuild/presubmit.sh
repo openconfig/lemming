@@ -16,6 +16,11 @@
 
 set -xe
 
+cat << EOF > ~/.bazelrc
+build --remote_cache https://storage.googleapis.com/lemming-build-cache
+build --google_default_credentials
+EOF
+
 export PATH=${PATH}:/usr/local/go/bin
 gopath=$(go env GOPATH)
 export PATH=${PATH}:$gopath/bin
