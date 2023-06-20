@@ -30,3 +30,6 @@ kne deploy ~/kne-internal/deploy/kne/kind-bridge.yaml
 skaffold run -m lemming-operator
 make load
 make itest
+# Make sure we can populate this file.
+$(stat ~/.ssh/google_compute_known_hosts; return 0)
+touch ~/.ssh/google_compute_known_hosts
