@@ -24,19 +24,21 @@ import (
 	"github.com/openconfig/gribigo/afthelper"
 	"github.com/openconfig/gribigo/constants"
 	"github.com/openconfig/gribigo/server"
-	"github.com/openconfig/lemming/gnmi/gnmiclient"
-	"github.com/openconfig/lemming/gnmi/oc"
-	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot"
 	"github.com/openconfig/ygot/ytypes"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
+	"github.com/openconfig/lemming/gnmi/gnmiclient"
+	"github.com/openconfig/lemming/gnmi/oc"
+	"github.com/openconfig/lemming/gnmi/oc/ocpath"
+	"github.com/openconfig/lemming/sysrib"
+
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 	gribipb "github.com/openconfig/gribi/v1/proto/service"
-	zpb "github.com/openconfig/lemming/proto/sysrib"
-	"github.com/openconfig/lemming/sysrib"
+
+	sysribpb "github.com/openconfig/lemming/proto/sysrib"
 )
 
 // Server is a fake gRIBI implementation.
@@ -76,7 +78,7 @@ func createGRIBIServer(gClient gpb.GNMIClient, target string, root *oc.Root) (*s
 	if err != nil {
 		return nil, fmt.Errorf("cannot dial to sysrib, %v", err)
 	}
-	gzebraClient := zpb.NewSysribClient(gzebraConn)
+	gzebraClient := sysribpb.NewSysribClient(gzebraConn)
 
 	networkInstances := []string{}
 	for name, ni := range root.NetworkInstance {
@@ -144,7 +146,7 @@ func createGRIBIServer(gClient gpb.GNMIClient, target string, root *oc.Root) (*s
 }
 
 // createSetRouteRequest converts a Route to a sysrib SetRouteRequest
-func createSetRouteRequest(prefix string, nexthops []*afthelper.NextHopSummary) (*zpb.SetRouteRequest, error) {
+func createSetRouteRequest(prefix string, nexthops []*afthelper.NextHopSummary) (*sysribpb.SetRouteRequest, error) {
 	ip, ipnet, err := net.ParseCIDR(prefix)
 	if err != nil {
 		log.Errorf("Cannot parse prefix %q as CIDR for calling sysrib", prefix)
@@ -155,21 +157,21 @@ func createSetRouteRequest(prefix string, nexthops []*afthelper.NextHopSummary) 
 	}
 	maskLength, _ := ipnet.Mask.Size()
 
-	var zNexthops []*zpb.Nexthop
+	var zNexthops []*sysribpb.Nexthop
 	for _, nhs := range nexthops {
-		zNexthops = append(zNexthops, &zpb.Nexthop{
-			Type:    zpb.Nexthop_TYPE_IPV4,
+		zNexthops = append(zNexthops, &sysribpb.Nexthop{
+			Type:    sysribpb.Nexthop_TYPE_IPV4,
 			Address: nhs.Address,
 			Weight:  nhs.Weight,
 		})
 	}
 
-	return &zpb.SetRouteRequest{
+	return &sysribpb.SetRouteRequest{
 		AdminDistance: 5,
 		ProtocolName:  "gRIBI",
-		Safi:          zpb.SetRouteRequest_SAFI_UNICAST,
-		Prefix: &zpb.Prefix{
-			Family:     zpb.Prefix_FAMILY_IPV4,
+		Safi:          sysribpb.SetRouteRequest_SAFI_UNICAST,
+		Prefix: &sysribpb.Prefix{
+			Family:     sysribpb.Prefix_FAMILY_IPV4,
 			Address:    ip.String(),
 			MaskLength: uint32(maskLength),
 		},
