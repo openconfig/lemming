@@ -26,8 +26,8 @@ go_binary(
 
 pkg_tar(
     name = "bin-tar",
-    package_dir = "lemming",
     srcs = [":lemming"],
+    package_dir = "lemming",
 )
 
 oci_image(
