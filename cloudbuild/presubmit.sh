@@ -32,7 +32,8 @@ sudo install bazel /usr/local/bin/
 cd /tmp/workspace
 kne deploy ~/kne-internal/deploy/kne/kind-bridge.yaml
 
-skaffold run -m lemming-operator
+make load-operator
+kubectl rollout restart -n lemming-operator deployment lemming-controller-manager 
 make load
 make itest
 # Make sure we can populate this file.
