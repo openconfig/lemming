@@ -9,7 +9,7 @@ build:
   artifacts:
   - image: us-west1-docker.pkg.dev/openconfig-lemming/release/operator
     bazel:
-      target: //operator:image_tar
+      target: //operator:image-tar
 manifests:
   kustomize:
     paths:
@@ -31,9 +31,7 @@ build:
   artifacts:
   - image: us-west1-docker.pkg.dev/openconfig-lemming/release/lemming
     bazel:
-      target: //cmd/lemming:image_tar
-  local:
-    useBuildkit: true
+      target: //cmd/lemming:image-tar
 manifests:
   rawYaml:
   - operator/config/samples/lemming_v1alpha1_lemming.yaml
