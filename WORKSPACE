@@ -38,9 +38,9 @@ http_archive(
 
 http_archive(
     name = "rules_oci",
-    sha256 = "1c4730c85b90e793679ec534d47878bc19ecc267e43b21cf050081c7fe025af7",
-    strip_prefix = "rules_oci-0.5.0",
-    url = "https://github.com/bazel-contrib/rules_oci/releases/download/v0.5.0/rules_oci-v0.5.0.tar.gz",
+    sha256 = "db57efd706f01eb3ce771468366baa1614b5b25f4cce99757e2b8d942155b8ec",
+    strip_prefix = "rules_oci-1.0.0",
+    url = "https://github.com/bazel-contrib/rules_oci/releases/download/v1.0.0/rules_oci-v1.0.0.tar.gz",
 )
 
 http_archive(
@@ -167,4 +167,19 @@ http_archive(
     sha256 = "122fb6b712808ef43fbf80f75c52a21c9760683dae470154f02bddfc61135022",
     strip_prefix = "glog-0.6.0",
     urls = ["https://github.com/google/glog/archive/v0.6.0.zip"],
+)
+
+load("@rules_oci//oci:pull.bzl", "oci_pull")
+
+oci_pull(
+    name = "debian_bookworm",
+    digest = "sha256:e7072ef5bbeaca98db3056a7d944d5dfb7a44d47770d10d54ee3f5a61144f049",  # bookworm as of 06/22/23
+    image = "debian",
+)
+
+oci_pull(
+    name = "distroless_static_debug_nonroot",
+    digest = "sha256:312a533b1f5584141a7d212ddcc1d079259a84ef68a1a5b0f522017093e3afda",  # debug-nonroute as of 06/22/23
+    image = "gcr.io/distroless/static",
+    platforms = ["linux/amd64"],
 )
