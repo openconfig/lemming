@@ -33,7 +33,7 @@ cd /tmp/workspace
 kne deploy ~/kne-internal/deploy/kne/kind-bridge.yaml
 
 make load-operator
-kubectl rollout restart -n lemming-operator deployment lemming-controller-manager 
+kubectl set image -n lemming-operator deployment/lemming-controller-manager manager=us-west1-docker.pkg.dev/openconfig-lemming/release/operator:ga
 make load
 make itest
 # Make sure we can populate this file.
