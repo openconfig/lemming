@@ -19,7 +19,7 @@ steps:
       - USERNAME=user
       - SSH_ARGS=--internal-ip --ssh-key-expire-after=1d
       - INSTANCE_NAME=kne-presubmit-$BUILD_ID
-      - INSTANCE_ARGS=--network cloudbuild-workers --image-project gep-kne --image-family kne --machine-type e2-standard-16 --preemptible
+      - INSTANCE_ARGS=--network cloudbuild-workers --image-project gep-kne --image-family kne --machine-type e2-standard-16 --preemptible --scopes=cloud-platform
       - ZONE=us-central1-a
       - REMOTE_WORKSPACE=/tmp/workspace
       - COMMAND=source /tmp/workspace/cloudbuild/presubmit.sh 2>&1

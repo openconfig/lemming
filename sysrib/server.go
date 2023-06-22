@@ -46,7 +46,7 @@ import (
 
 	dpb "github.com/openconfig/lemming/proto/dataplane"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
-	pb "github.com/openconfig/lemming/proto/sysrib"
+	sysribpb "github.com/openconfig/lemming/proto/sysrib"
 )
 
 const (
@@ -73,7 +73,7 @@ const (
 // - addInterfacePrefix
 // - setInterface
 type Server struct {
-	pb.UnimplementedSysribServer // For forward-compatibility
+	sysribpb.UnimplementedSysribServer // For forward-compatibility
 
 	// rib contains the current set of all raw routes from the routing
 	// clients as well as the configured connected prefixes from the
@@ -187,7 +187,7 @@ func (s *Server) Start(gClient gpb.GNMIClient, target, zapiURL string) error {
 	}
 
 	grpcServer := grpc.NewServer()
-	pb.RegisterSysribServer(grpcServer, s)
+	sysribpb.RegisterSysribServer(grpcServer, s)
 
 	go grpcServer.Serve(lis)
 
@@ -429,9 +429,9 @@ func niNameToVrfID(niName string) (uint32, error) {
 	}
 }
 
-func prefixString(prefix *pb.Prefix) (string, error) {
+func prefixString(prefix *sysribpb.Prefix) (string, error) {
 	switch fam := prefix.GetFamily(); fam {
-	case pb.Prefix_FAMILY_IPV4, pb.Prefix_FAMILY_IPV6:
+	case sysribpb.Prefix_FAMILY_IPV4, sysribpb.Prefix_FAMILY_IPV6:
 		// TODO(wenbli): Handle invalid input values.
 		return fmt.Sprintf("%s/%d", prefix.GetAddress(), prefix.GetMaskLength()), nil
 	default:
@@ -705,7 +705,7 @@ func (s *Server) ProgrammedRoutes() map[RouteKey]*ResolvedRoute {
 }
 
 // SetRoute implements ROUTE_ADD and ROUTE_DELETE
-func (s *Server) SetRoute(_ context.Context, req *pb.SetRouteRequest) (*pb.SetRouteResponse, error) {
+func (s *Server) SetRoute(_ context.Context, req *sysribpb.SetRouteRequest) (*sysribpb.SetRouteResponse, error) {
 	// TODO(wenbli): Handle route deletion.
 	if req.Delete {
 		return nil, status.Errorf(codes.Unimplemented, "route delete not yet supported")
@@ -718,7 +718,7 @@ func (s *Server) SetRoute(_ context.Context, req *pb.SetRouteRequest) (*pb.SetRo
 
 	nexthops := []*afthelper.NextHopSummary{}
 	for _, nh := range req.GetNexthops() {
-		if nh.GetType() != pb.Nexthop_TYPE_IPV4 && nh.GetType() != pb.Nexthop_TYPE_IPV6 {
+		if nh.GetType() != sysribpb.Nexthop_TYPE_IPV4 && nh.GetType() != sysribpb.Nexthop_TYPE_IPV6 {
 			return nil, status.Errorf(codes.Unimplemented, "Unrecognized nexthop type: %s", nh.GetType())
 		}
 		nexthops = append(nexthops, &afthelper.NextHopSummary{
@@ -744,13 +744,13 @@ func (s *Server) SetRoute(_ context.Context, req *pb.SetRouteRequest) (*pb.SetRo
 	}
 
 	// There could be operations carried out by ResolveAndProgramDiff() other than the input route, so we look up our particular prefix.
-	status := pb.SetRouteResponse_STATUS_FAIL
+	status := sysribpb.SetRouteResponse_STATUS_FAIL
 	s.programmedRoutesMu.Lock()
 	if _, ok := s.programmedRoutes[RouteKey{Prefix: pfx, NIName: niName}]; ok {
-		status = pb.SetRouteResponse_STATUS_SUCCESS
+		status = sysribpb.SetRouteResponse_STATUS_SUCCESS
 	}
 	s.programmedRoutesMu.Unlock()
-	return &pb.SetRouteResponse{
+	return &sysribpb.SetRouteResponse{
 		Status: status,
 	}, nil
 }

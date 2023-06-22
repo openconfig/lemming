@@ -3,10 +3,15 @@
 clean:
 	find integration_tests -name "topology.pb.txt" -exec kne delete {} \;; exit 0
 
+.PHONY: load-operator 
+load-operator:
+	bazel build //operator:image-tar
+	kind load image-archive bazel-bin/operator/image-tar/tarball.tar --name kne
+
 .PHONY: load 
 load:
-	DOCKER_BUILDKIT=1 docker build . --target release -f Dockerfile.lemming -t "us-west1-docker.pkg.dev/openconfig-lemming/release/lemming:ga"
-	kind load docker-image us-west1-docker.pkg.dev/openconfig-lemming/release/lemming:ga --name kne
+	bazel build //cmd/lemming:image-tar
+	kind load image-archive bazel-bin/cmd/lemming/image-tar/tarball.tar --name kne
 
 .PHONY: buildfile
 buildfile:
