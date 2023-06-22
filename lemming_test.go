@@ -29,7 +29,7 @@ import (
 	// gNOI
 	bpb "github.com/openconfig/gnoi/bgp"
 	cmpb "github.com/openconfig/gnoi/cert"
-	dpb "github.com/openconfig/gnoi/diag"
+	diagpb "github.com/openconfig/gnoi/diag"
 	frpb "github.com/openconfig/gnoi/factory_reset"
 	fpb "github.com/openconfig/gnoi/file"
 	hpb "github.com/openconfig/gnoi/healthz"
@@ -112,8 +112,8 @@ func TestFakeGNOI(t *testing.T) {
 		t.Errorf("gnoi.Cert.CanGenerateCSR failed to return error")
 	}
 
-	cDiag := dpb.NewDiagClient(conn)
-	_, err = cDiag.GetBERTResult(context.Background(), &dpb.GetBERTResultRequest{})
+	cDiag := diagpb.NewDiagClient(conn)
+	_, err = cDiag.GetBERTResult(context.Background(), &diagpb.GetBERTResultRequest{})
 	if err == nil {
 		t.Errorf("gnoi.Diag.GetBERTResult failed to return error")
 	}

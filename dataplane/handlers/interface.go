@@ -37,7 +37,6 @@ import (
 
 	log "github.com/golang/glog"
 
-	"github.com/openconfig/lemming/proto/dataplane"
 	dpb "github.com/openconfig/lemming/proto/dataplane"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
@@ -562,10 +561,10 @@ func (ni *Interface) setupPorts(ctx context.Context) error {
 		if i.Name == "lo" || i.Name == "eth0" || strings.HasSuffix(i.Name, internalSuffix) {
 			continue
 		}
-		_, err = ni.e.CreatePort(ctx, &dataplane.CreatePortRequest{
+		_, err = ni.e.CreatePort(ctx, &dpb.CreatePortRequest{
 			Id:   i.Name,
 			Type: fwdpb.PortType_PORT_TYPE_KERNEL,
-			Src: &dataplane.CreatePortRequest_KernelDev{
+			Src: &dpb.CreatePortRequest_KernelDev{
 				KernelDev: i.Name,
 			},
 		})
@@ -576,10 +575,10 @@ func (ni *Interface) setupPorts(ctx context.Context) error {
 		ni.externalToInternalPort[i.Name] = i.Name + internalSuffix
 		ni.internalToExternalPort[i.Name+internalSuffix] = i.Name
 
-		_, err := ni.e.CreatePort(ctx, &dataplane.CreatePortRequest{
+		_, err := ni.e.CreatePort(ctx, &dpb.CreatePortRequest{
 			Id:   ni.externalToInternalPort[i.Name],
 			Type: fwdpb.PortType_PORT_TYPE_TAP,
-			Src: &dataplane.CreatePortRequest_KernelDev{
+			Src: &dpb.CreatePortRequest_KernelDev{
 				KernelDev: ni.externalToInternalPort[i.Name],
 			},
 			ExternalPort: i.Name,

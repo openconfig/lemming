@@ -20,7 +20,7 @@ import (
 
 	bpb "github.com/openconfig/gnoi/bgp"
 	cmpb "github.com/openconfig/gnoi/cert"
-	dpb "github.com/openconfig/gnoi/diag"
+	diagpb "github.com/openconfig/gnoi/diag"
 	frpb "github.com/openconfig/gnoi/factory_reset"
 	fpb "github.com/openconfig/gnoi/file"
 	hpb "github.com/openconfig/gnoi/healthz"
@@ -42,7 +42,7 @@ type cert struct {
 }
 
 type diag struct {
-	dpb.UnimplementedDiagServer
+	diagpb.UnimplementedDiagServer
 }
 
 type factoryReset struct {
@@ -119,7 +119,7 @@ func New(s *grpc.Server) *Server {
 	}
 	bpb.RegisterBGPServer(s, srv.bgpServer)
 	cmpb.RegisterCertificateManagementServer(s, srv.certServer)
-	dpb.RegisterDiagServer(s, srv.diagServer)
+	diagpb.RegisterDiagServer(s, srv.diagServer)
 	fpb.RegisterFileServer(s, srv.fileServer)
 	frpb.RegisterFactoryResetServer(s, srv.resetServer)
 	hpb.RegisterHealthzServer(s, srv.healthzServer)
