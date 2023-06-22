@@ -52,7 +52,7 @@ jobs:
       - name: Test
         run: |
           # shellcheck disable=SC2046
-          bazel coverage --test_output=errors --combined_report=lcov $(bazel query 'tests("//...") except "//integration_tests/..."')
+          bazel coverage --test_output=all --test_arg=-v=0 --test_arg=-alsologtostderr --combined_report=lcov $(bazel query 'tests("//...") except "//integration_tests/..."')
       - name: Coveralls
         uses: coverallsapp/github-action@v2
         with:
