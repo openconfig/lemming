@@ -8,8 +8,8 @@ build:
       ignoreChanges: true
   artifacts:
   - image: us-west1-docker.pkg.dev/openconfig-lemming/release/operator
-    docker:
-      dockerfile: Dockerfile.operator
+    bazel:
+      target: //operator:image_tar
 manifests:
   kustomize:
     paths:
@@ -30,8 +30,8 @@ build:
       ignoreChanges: true
   artifacts:
   - image: us-west1-docker.pkg.dev/openconfig-lemming/release/lemming
-    docker:
-      dockerfile: Dockerfile.lemming
+    bazel:
+      target: //cmd/lemming:image_tar
   local:
     useBuildkit: true
 manifests:

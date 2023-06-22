@@ -172,8 +172,14 @@ http_archive(
 load("@rules_oci//oci:pull.bzl", "oci_pull")
 
 oci_pull(
-    name = "distroless_base_debug",
-    digest = "sha256:e431944c6b21b3ec487638d170a2ef73e0c548eac3abed8075124c29f8decda0",
-    image = "gcr.io/distroless/base",
+    name = "debian_bookworm",
+    digest = "sha256:e7072ef5bbeaca98db3056a7d944d5dfb7a44d47770d10d54ee3f5a61144f049", # bookworm as of 06/22/23
+    image = "debian",
+)
+
+oci_pull(
+    name = "distroless_static_debug_nonroot",
+    digest = "sha256:312a533b1f5584141a7d212ddcc1d079259a84ef68a1a5b0f522017093e3afda", # debug-nonroute as of 06/22/23
+    image = "gcr.io/distroless/static",
     platforms = ["linux/amd64"],
 )

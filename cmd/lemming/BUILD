@@ -32,11 +32,12 @@ pkg_tar(
 
 oci_image(
     name = "image",
-    base = "@distroless_base_debug",
+    base = "@debian_bookworm",
     entrypoint = ["/lemming/lemming"],
     tars = [":bin-tar"],
 )
 
+# Note: This is image isn't suitable for release, as it doesn't contain license information.
 oci_tarball(
     name = "image-tar",
     image = ":image",

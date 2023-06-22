@@ -18,15 +18,15 @@ COPY operator/api/ api/
 COPY operator/controllers/ controllers/
 
 # Build
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o manager main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o operator main.go
 RUN if [ "${license}" = "true" ] ; then go-licenses save . --save_path THIRD_PARTY_LICENSES ; else mkdir THIRD_PARTY_LICENSES ; fi
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
 FROM gcr.io/distroless/static:debug-nonroot
 WORKDIR /
-COPY --from=builder /workspace/manager .
+COPY --from=builder /workspace/operator .
 COPY --from=builder /workspace/THIRD_PARTY_LICENSES ./THIRD_PARTY
 USER 65532:65532
 
-ENTRYPOINT ["/manager"]
+ENTRYPOINT ["/operator"]
