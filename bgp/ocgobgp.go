@@ -19,6 +19,52 @@ import (
 	"github.com/wenovus/gobgp/v3/pkg/bgpconfig"
 )
 
+// convertPolicyName converts from OC policy name to a neighbour-qualified
+// policy name in order to put all the policies into a global list.
+func convertPolicyName(neighAddr, ocPolicyName string) string {
+	return neighAddr + "|" + ocPolicyName
+}
+
+func convertPolicyNames(neighAddr string, ocPolicyNames []string) []string {
+	var convertedNames []string
+	for _, n := range ocPolicyNames {
+		convertedNames = append(convertedNames, convertPolicyName(neighAddr, n))
+	}
+	return convertedNames
+}
+
+// convertPolicyDefinition converts an OC policy definition to GoBGP policy definition.
+//
+// It adds neighbour set to disambiguate it from another instance of the policy
+// for another neighbour. This is necessary since all policies will go into a
+// single apply-policy list.
+func convertPolicyDefinition(policy *oc.RoutingPolicy_PolicyDefinition, neighAddr string) bgpconfig.PolicyDefinition {
+	var statements []bgpconfig.Statement
+	for _, statement := range policy.Statement {
+		statements = append(statements, bgpconfig.Statement{
+			Name: statement.GetName(),
+			Conditions: bgpconfig.Conditions{
+				MatchPrefixSet: bgpconfig.MatchPrefixSet{
+					PrefixSet:       statement.GetConditions().GetMatchPrefixSet().GetPrefixSet(),
+					MatchSetOptions: convertMatchSetOptionsRestrictedType(statement.GetConditions().GetMatchPrefixSet().GetMatchSetOptions()),
+				},
+				MatchNeighborSet: bgpconfig.MatchNeighborSet{
+					// Name the neighbor set as the policy so that the policy only applies to referring neighbours.
+					NeighborSet: neighAddr,
+				},
+			},
+			Actions: bgpconfig.Actions{
+				RouteDisposition: convertRouteDisposition(statement.GetActions().GetPolicyResult()),
+			},
+		})
+	}
+
+	return bgpconfig.PolicyDefinition{
+		Name:       convertPolicyName(neighAddr, policy.GetName()),
+		Statements: statements,
+	}
+}
+
 func convertNeighborApplyPolicy(neigh *oc.NetworkInstance_Protocol_Bgp_Neighbor) bgpconfig.ApplyPolicy {
 	return bgpconfig.ApplyPolicy{
 		Config: bgpconfig.ApplyPolicyConfig{
