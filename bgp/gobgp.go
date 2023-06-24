@@ -370,6 +370,18 @@ func (t *bgpDeclTask) reconcile(intended *oc.Root) error {
 	return nil
 }
 
+func convertPolicyName(neighAddr, ocPolicyName string) string {
+	return neighAddr + "|" + ocPolicyName
+}
+
+func convertPolicyNames(neighAddr string, ocPolicyNames []string) []string {
+	var convertedNames []string
+	for _, n := range ocPolicyNames {
+		convertedNames = append(convertedNames, convertPolicyName(neighAddr, n))
+	}
+	return convertedNames
+}
+
 // intendedToGoBGP translates from OC to GoBGP intended config.
 //
 // GoBGP's notion of config vs. state does not conform to OpenConfig (see
@@ -391,6 +403,10 @@ func intendedToGoBGP(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *oc.Routin
 	}
 
 	for neighAddr, neigh := range bgpoc.Neighbor {
+		applyPolicy := convertNeighborApplyPolicy(neigh)
+		applyPolicy.Config.ImportPolicyList = convertPolicyNames(neighAddr, applyPolicy.Config.ImportPolicyList)
+		applyPolicy.Config.ExportPolicyList = convertPolicyNames(neighAddr, applyPolicy.Config.ExportPolicyList)
+
 		// Add neighbour config.
 		bgpConfig.Neighbors = append(bgpConfig.Neighbors, bgpconfig.Neighbor{
 			Config: bgpconfig.NeighborConfig{
@@ -421,15 +437,7 @@ func intendedToGoBGP(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *oc.Routin
 			//
 			// As such this configuration is kept to get the withdraw behaviour, but how
 			// this works is not well-understood and needs more work.
-			ApplyPolicy: bgpconfig.ApplyPolicy{
-				Config: bgpconfig.ApplyPolicyConfig{
-					// TODO(wenbli): Update applied state.
-					DefaultImportPolicy: convertDefaultPolicy(neigh.GetApplyPolicy().GetDefaultImportPolicy()),
-					DefaultExportPolicy: convertDefaultPolicy(neigh.GetApplyPolicy().GetDefaultExportPolicy()),
-					ImportPolicyList:    neigh.GetApplyPolicy().GetImportPolicy(),
-					ExportPolicyList:    neigh.GetApplyPolicy().GetExportPolicy(),
-				},
-			},
+			ApplyPolicy: applyPolicy,
 		})
 	}
 
@@ -450,46 +458,86 @@ func intendedToGoBGP(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *oc.Routin
 	return bgpConfig
 }
 
+func convertPolicyDefinition(policy *oc.RoutingPolicy_PolicyDefinition, neighAddr string) bgpconfig.PolicyDefinition {
+	var statements []bgpconfig.Statement
+	for _, statement := range policy.Statement {
+		statements = append(statements, bgpconfig.Statement{
+			Name: statement.GetName(),
+			Conditions: bgpconfig.Conditions{
+				MatchPrefixSet: bgpconfig.MatchPrefixSet{
+					PrefixSet:       statement.GetConditions().GetMatchPrefixSet().GetPrefixSet(),
+					MatchSetOptions: convertMatchSetOptionsRestrictedType(statement.GetConditions().GetMatchPrefixSet().GetMatchSetOptions()),
+				},
+				MatchNeighborSet: bgpconfig.MatchNeighborSet{
+					// Name the neighbor set as the policy so that the policy only applies to referring neighbours.
+					NeighborSet: neighAddr,
+				},
+			},
+			Actions: bgpconfig.Actions{
+				RouteDisposition: convertRouteDisposition(statement.GetActions().GetPolicyResult()),
+			},
+		})
+	}
+
+	return bgpconfig.PolicyDefinition{
+		Name:       convertPolicyName(neighAddr, policy.GetName()),
+		Statements: statements,
+	}
+}
+
 // intendedToGoBGPPolicies populates bgpConfig from the OC configuration.
 func intendedToGoBGPPolicies(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *oc.RoutingPolicy, bgpConfig *bgpconfig.BgpConfigSet) {
-	// Neighbours & apply policy
-	neighborSets := map[string]bgpconfig.NeighborSet{}
-	var neighborDefaultPolicies []bgpconfig.PolicyDefinition
+	// Neighbours, global policy definitions, and global apply policy list.
 	for neighAddr, neigh := range bgpoc.Neighbor {
-		// Ideally A simple conversion of apply-policy is sufficient, but due to GoBGP using
+		// Ideally a simple conversion of apply-policy is sufficient, but due to GoBGP using
 		// a global set of apply-policy instead of per-neighbour policies, we need to create
 		// neighbour sets and modify input policy statements so that we retain the same
 		// per-neighbour behaviour while only using a single set of global policies.
 		//
-		// To do this, we first make the assumption that each policy is only be used for a
-		// single neighbour across import and export policies (TODO: this is a simplifying
-		// assumption that will be changed). Then, we add a neighbor-set for each policy based on the
-		// relevant neighbour, and lastly simply concatenate the set of all apply-policy for
-		// each neighbour into the global apply-policy.
-		applyPolicy := bgpconfig.ApplyPolicy{
-			Config: bgpconfig.ApplyPolicyConfig{
-				DefaultImportPolicy: convertDefaultPolicy(neigh.GetApplyPolicy().GetDefaultImportPolicy()),
-				DefaultExportPolicy: convertDefaultPolicy(neigh.GetApplyPolicy().GetDefaultExportPolicy()),
-				ImportPolicyList:    neigh.GetApplyPolicy().GetImportPolicy(),
-				ExportPolicyList:    neigh.GetApplyPolicy().GetExportPolicy(),
-			},
-		}
-
-		neighborsetName := neighAddr + "default"
-		neighborSets[neighborsetName] = bgpconfig.NeighborSet{
-			NeighborSetName:  neighborsetName,
+		// To do this, we create a neighbour set for each neighbour containing just the
+		// single neighbour address, and then concatenate the ApplyPolicy lists of every
+		// neighbour into the global ApplyPolicy list.
+		bgpConfig.DefinedSets.NeighborSets = append(bgpConfig.DefinedSets.NeighborSets, bgpconfig.NeighborSet{
+			NeighborSetName:  neighAddr,
 			NeighborInfoList: []string{neighAddr},
+		})
+
+		applyPolicy := convertNeighborApplyPolicy(neigh)
+
+		policies := map[string]bool{}
+		convertPolicies := func(policyList []string) []string {
+			var applyPolicyList []string
+			for _, policyName := range policyList {
+				convertedPolicyName := convertPolicyName(neighAddr, policyName)
+				if policies[policyName] {
+					// Already processed
+					applyPolicyList = append(applyPolicyList, convertedPolicyName)
+					continue
+				}
+				policy, ok := policyoc.PolicyDefinition[policyName]
+				if !ok {
+					log.Errorf("Neighbour policy doesn't exist in policy definitions: %q", policyName)
+					continue
+				}
+				convertedPolicy := convertPolicyDefinition(policy, neighAddr)
+				bgpConfig.PolicyDefinitions = append(bgpConfig.PolicyDefinitions, convertedPolicy)
+				applyPolicyList = append(applyPolicyList, convertedPolicyName)
+			}
+			return applyPolicyList
 		}
-		defaultImportPolicyName := neighborsetName + "import"
-		defaultExportPolicyName := neighborsetName + "export"
-		neighborDefaultPolicies = append(neighborDefaultPolicies, bgpconfig.PolicyDefinition{
+		bgpConfig.Global.ApplyPolicy.Config.ImportPolicyList = append(bgpConfig.Global.ApplyPolicy.Config.ImportPolicyList, convertPolicies(applyPolicy.Config.ImportPolicyList)...)
+		bgpConfig.Global.ApplyPolicy.Config.ExportPolicyList = append(bgpConfig.Global.ApplyPolicy.Config.ExportPolicyList, convertPolicies(applyPolicy.Config.ExportPolicyList)...)
+
+		defaultImportPolicyName := "default-import|" + neighAddr
+		defaultExportPolicyName := "default-export|" + neighAddr
+		bgpConfig.PolicyDefinitions = append(bgpConfig.PolicyDefinitions, bgpconfig.PolicyDefinition{
 			Name: defaultImportPolicyName,
 			Statements: []bgpconfig.Statement{{
 				// Use a customized name for the default policies.
 				Name: defaultImportPolicyName,
 				Conditions: bgpconfig.Conditions{
 					MatchNeighborSet: bgpconfig.MatchNeighborSet{
-						NeighborSet: neighborsetName,
+						NeighborSet: neighAddr,
 					},
 				},
 				Actions: bgpconfig.Actions{
@@ -503,7 +551,7 @@ func intendedToGoBGPPolicies(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *o
 				Name: defaultExportPolicyName,
 				Conditions: bgpconfig.Conditions{
 					MatchNeighborSet: bgpconfig.MatchNeighborSet{
-						NeighborSet: neighborsetName,
+						NeighborSet: neighAddr,
 					},
 				},
 				Actions: bgpconfig.Actions{
@@ -511,29 +559,11 @@ func intendedToGoBGPPolicies(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *o
 				},
 			}},
 		})
-		for _, importPolicyName := range applyPolicy.Config.ImportPolicyList {
-			neighborSet := neighborSets[importPolicyName]
-			neighborSet.NeighborSetName = importPolicyName
-			neighborSet.NeighborInfoList = append(neighborSet.NeighborInfoList, neighAddr)
-			neighborSets[importPolicyName] = neighborSet
-		}
-		for _, exportPolicyName := range applyPolicy.Config.ExportPolicyList {
-			neighborSet := neighborSets[exportPolicyName]
-			neighborSet.NeighborSetName = exportPolicyName
-			neighborSet.NeighborInfoList = append(neighborSet.NeighborInfoList, neighAddr)
-			neighborSets[exportPolicyName] = neighborSet
-		}
-		applyPolicy.Config.ImportPolicyList = append(applyPolicy.Config.ImportPolicyList, defaultImportPolicyName)
-		applyPolicy.Config.ExportPolicyList = append(applyPolicy.Config.ExportPolicyList, defaultExportPolicyName)
-
-		// GoBGP in non-route server mode doesn't have per-neighbor
-		// policies -- instead it uses a global policy for everything.
-		// So, concatenate policies from all
-		// neighbours to create one giant apply-policy list.
-		bgpConfig.Global.ApplyPolicy.Config.ImportPolicyList = append(bgpConfig.Global.ApplyPolicy.Config.ImportPolicyList, applyPolicy.Config.ImportPolicyList...)
-		bgpConfig.Global.ApplyPolicy.Config.ExportPolicyList = append(bgpConfig.Global.ApplyPolicy.Config.ExportPolicyList, applyPolicy.Config.ExportPolicyList...)
+		bgpConfig.Global.ApplyPolicy.Config.ImportPolicyList = append(bgpConfig.Global.ApplyPolicy.Config.ImportPolicyList, defaultImportPolicyName)
+		bgpConfig.Global.ApplyPolicy.Config.ExportPolicyList = append(bgpConfig.Global.ApplyPolicy.Config.ExportPolicyList, defaultExportPolicyName)
 	}
 
+	// Prefix set
 	for prefixSetName, prefixSet := range policyoc.GetOrCreateDefinedSets().PrefixSet {
 		var prefixList []bgpconfig.Prefix
 		for _, prefix := range prefixSet.Prefix {
@@ -552,46 +582,5 @@ func intendedToGoBGPPolicies(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *o
 			PrefixSetName: prefixSetName,
 			PrefixList:    prefixList,
 		})
-	}
-
-	// Policy definitions
-	//
-	// TODO(wenbli): Duplicate policy definitions so that we allow the same
-	// policy to be used by different apply-policy references.
-	for _, policy := range policyoc.PolicyDefinition {
-		var statements []bgpconfig.Statement
-		for _, statement := range policy.Statement {
-			statements = append(statements, bgpconfig.Statement{
-				Name: statement.GetName(),
-				Conditions: bgpconfig.Conditions{
-					MatchPrefixSet: bgpconfig.MatchPrefixSet{
-						PrefixSet:       statement.GetConditions().GetMatchPrefixSet().GetPrefixSet(),
-						MatchSetOptions: convertMatchSetOptionsRestrictedType(statement.GetConditions().GetMatchPrefixSet().GetMatchSetOptions()),
-					},
-					MatchNeighborSet: bgpconfig.MatchNeighborSet{
-						// Name the neighbor set as the policy so that the policy only applies to referring neighbours.
-						NeighborSet: policy.GetName(),
-					},
-				},
-				Actions: bgpconfig.Actions{
-					RouteDisposition: convertRouteDisposition(statement.GetActions().GetPolicyResult()),
-				},
-			})
-		}
-
-		bgpConfig.PolicyDefinitions = append(bgpConfig.PolicyDefinitions, bgpconfig.PolicyDefinition{
-			Name:       policy.GetName(),
-			Statements: statements,
-		})
-
-		if _, ok := neighborSets[policy.GetName()]; !ok {
-			neighborSets[policy.GetName()] = bgpconfig.NeighborSet{NeighborSetName: policy.GetName()}
-		}
-	}
-	bgpConfig.PolicyDefinitions = append(bgpConfig.PolicyDefinitions, neighborDefaultPolicies...)
-
-	// Convert defined sets.
-	for _, neighborSet := range neighborSets {
-		bgpConfig.DefinedSets.NeighborSets = append(bgpConfig.DefinedSets.NeighborSets, neighborSet)
 	}
 }

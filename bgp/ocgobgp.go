@@ -19,6 +19,17 @@ import (
 	"github.com/wenovus/gobgp/v3/pkg/bgpconfig"
 )
 
+func convertNeighborApplyPolicy(neigh *oc.NetworkInstance_Protocol_Bgp_Neighbor) bgpconfig.ApplyPolicy {
+	return bgpconfig.ApplyPolicy{
+		Config: bgpconfig.ApplyPolicyConfig{
+			DefaultImportPolicy: convertDefaultPolicy(neigh.GetApplyPolicy().GetDefaultImportPolicy()),
+			DefaultExportPolicy: convertDefaultPolicy(neigh.GetApplyPolicy().GetDefaultExportPolicy()),
+			ImportPolicyList:    neigh.GetApplyPolicy().GetImportPolicy(),
+			ExportPolicyList:    neigh.GetApplyPolicy().GetExportPolicy(),
+		},
+	}
+}
+
 func convertDefaultPolicy(ocpolicy oc.E_RoutingPolicy_DefaultPolicyType) bgpconfig.DefaultPolicyType {
 	switch ocpolicy {
 	case oc.RoutingPolicy_DefaultPolicyType_REJECT_ROUTE:
