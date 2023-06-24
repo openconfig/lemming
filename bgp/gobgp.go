@@ -486,6 +486,8 @@ func intendedToGoBGPPolicies(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *o
 					applyPolicyList = append(applyPolicyList, convertedPolicyName)
 					continue
 				}
+				// TODO(wenbli): Add unit tests for BGP policy conversion.
+				policies[policyName] = true
 				policy, ok := policyoc.PolicyDefinition[policyName]
 				if !ok {
 					log.Errorf("Neighbour policy doesn't exist in policy definitions: %q", policyName)
