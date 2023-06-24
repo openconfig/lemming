@@ -390,6 +390,51 @@ func intendedToGoBGP(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *oc.Routin
 		localAddress = localAddr.String()
 	}
 
+	for neighAddr, neigh := range bgpoc.Neighbor {
+		// Add neighbour config.
+		bgpConfig.Neighbors = append(bgpConfig.Neighbors, bgpconfig.Neighbor{
+			Config: bgpconfig.NeighborConfig{
+				PeerAs:          neigh.GetPeerAs(),
+				NeighborAddress: neighAddr,
+			},
+			// This is needed because GoBGP's configuration diffing
+			// logic may check the state value instead of the
+			// config value.
+			State: bgpconfig.NeighborState{
+				PeerAs:          neigh.GetPeerAs(),
+				NeighborAddress: neighAddr,
+			},
+			Transport: bgpconfig.Transport{
+				Config: bgpconfig.TransportConfig{
+					LocalAddress: localAddress,
+					RemotePort:   neigh.GetNeighborPort(),
+				},
+			},
+			// NOTE: From reading GoBGP's source code these are not used for filtering
+			// routes (the global ApplyPolicy list is used instead) unless the neighbour
+			// is a route server client.
+			//
+			// However, testing shows that when a REJECT policy is installed in the
+			// presence of routes, they are not withdrawn UNLESS this configuration is
+			// populated. Therefore it's possible this is a bug in GoBGP where the
+			// global apply policy list is not used for computing route withdrawals.
+			//
+			// As such this configuration is kept to get the withdraw behaviour, but how
+			// this works is not well-understood and needs more work.
+			ApplyPolicy: bgpconfig.ApplyPolicy{
+				Config: bgpconfig.ApplyPolicyConfig{
+					// TODO(wenbli): Update applied state.
+					DefaultImportPolicy: convertDefaultPolicy(neigh.GetApplyPolicy().GetDefaultImportPolicy()),
+					DefaultExportPolicy: convertDefaultPolicy(neigh.GetApplyPolicy().GetDefaultExportPolicy()),
+					ImportPolicyList:    neigh.GetApplyPolicy().GetImportPolicy(),
+					ExportPolicyList:    neigh.GetApplyPolicy().GetExportPolicy(),
+				},
+			},
+		})
+	}
+
+	intendedToGoBGPPolicies(bgpoc, policyoc, bgpConfig)
+
 	bgpConfig.Zebra.Config = bgpconfig.ZebraConfig{
 		Enabled: true,
 		Url:     zapiURL,
@@ -402,8 +447,12 @@ func intendedToGoBGP(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *oc.Routin
 		SoftwareName:              "frr8.2",
 	}
 
+	return bgpConfig
+}
+
+// intendedToGoBGPPolicies populates bgpConfig from the OC configuration.
+func intendedToGoBGPPolicies(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *oc.RoutingPolicy, bgpConfig *bgpconfig.BgpConfigSet) {
 	// Neighbours & apply policy
-	bgpConfig.Neighbors = []bgpconfig.Neighbor{}
 	neighborSets := map[string]bgpconfig.NeighborSet{}
 	var neighborDefaultPolicies []bgpconfig.PolicyDefinition
 	for neighAddr, neigh := range bgpoc.Neighbor {
@@ -419,7 +468,6 @@ func intendedToGoBGP(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *oc.Routin
 		// each neighbour into the global apply-policy.
 		applyPolicy := bgpconfig.ApplyPolicy{
 			Config: bgpconfig.ApplyPolicyConfig{
-				// TODO(wenbli): Update applied state.
 				DefaultImportPolicy: convertDefaultPolicy(neigh.GetApplyPolicy().GetDefaultImportPolicy()),
 				DefaultExportPolicy: convertDefaultPolicy(neigh.GetApplyPolicy().GetDefaultExportPolicy()),
 				ImportPolicyList:    neigh.GetApplyPolicy().GetImportPolicy(),
@@ -484,31 +532,6 @@ func intendedToGoBGP(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *oc.Routin
 		// neighbours to create one giant apply-policy list.
 		bgpConfig.Global.ApplyPolicy.Config.ImportPolicyList = append(bgpConfig.Global.ApplyPolicy.Config.ImportPolicyList, applyPolicy.Config.ImportPolicyList...)
 		bgpConfig.Global.ApplyPolicy.Config.ExportPolicyList = append(bgpConfig.Global.ApplyPolicy.Config.ExportPolicyList, applyPolicy.Config.ExportPolicyList...)
-
-		// Add neighbour config.
-		bgpConfig.Neighbors = append(bgpConfig.Neighbors, bgpconfig.Neighbor{
-			Config: bgpconfig.NeighborConfig{
-				PeerAs:          neigh.GetPeerAs(),
-				NeighborAddress: neighAddr,
-			},
-			// This is needed because GoBGP's configuration diffing
-			// logic may check the state value instead of the
-			// config value.
-			State: bgpconfig.NeighborState{
-				PeerAs:          neigh.GetPeerAs(),
-				NeighborAddress: neighAddr,
-			},
-			Transport: bgpconfig.Transport{
-				Config: bgpconfig.TransportConfig{
-					LocalAddress: localAddress,
-					RemotePort:   neigh.GetNeighborPort(),
-				},
-			},
-			// NOTE: This line only matters when the neighbour is a
-			// route server client, since otherwise GoBGP will
-			// simply use the global RIB and global policies.
-			ApplyPolicy: applyPolicy,
-		})
 	}
 
 	for prefixSetName, prefixSet := range policyoc.GetOrCreateDefinedSets().PrefixSet {
@@ -571,6 +594,4 @@ func intendedToGoBGP(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *oc.Routin
 	for _, neighborSet := range neighborSets {
 		bgpConfig.DefinedSets.NeighborSets = append(bgpConfig.DefinedSets.NeighborSets, neighborSet)
 	}
-
-	return bgpConfig
 }
