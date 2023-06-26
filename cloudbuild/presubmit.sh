@@ -36,3 +36,4 @@ make load-operator
 kubectl set image -n lemming-operator deployment/lemming-controller-manager manager=us-west1-docker.pkg.dev/openconfig-lemming/release/operator:ga
 make load
 make itest
+cd cloudbuild && ./fp-tests.sh
