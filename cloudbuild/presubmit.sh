@@ -16,6 +16,11 @@
 
 set -xe
 
+function dumpinfo {
+    kubectl cluster-info dump --output-directory /tmp/cluster-info
+    gsutil cp -r -Z /tmp/cluster-info gs://lemming-test-logs/$BUILD/
+}
+
 echo $BUILD
 cat << EOF > ~/.bazelrc
 build --remote_cache https://storage.googleapis.com/lemming-bazel-cache
@@ -32,6 +37,8 @@ sudo install bazel /usr/local/bin/
 
 cd /tmp/workspace
 kne deploy ~/kne-internal/deploy/kne/kind-bridge.yaml
+
+trap dumpinfo EXIT
 
 make load-operator
 kubectl set image -n lemming-operator deployment/lemming-controller-manager manager=us-west1-docker.pkg.dev/openconfig-lemming/release/operator:ga
