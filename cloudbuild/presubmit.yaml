@@ -22,7 +22,7 @@ steps:
       - INSTANCE_ARGS=--network cloudbuild-workers --image-project gep-kne --image-family kne --machine-type e2-standard-16 --preemptible --scopes=cloud-platform
       - ZONE=us-central1-a
       - REMOTE_WORKSPACE=/tmp/workspace
-      - COMMAND="BUILD=$BUILD_ID /tmp/workspace/cloudbuild/presubmit.sh"
+      - COMMAND=sh -c "BUILD=$BUILD_ID /tmp/workspace/cloudbuild/presubmit.sh"
 
 timeout: 1800s
 
