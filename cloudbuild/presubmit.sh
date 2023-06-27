@@ -16,6 +16,7 @@
 
 set -xe
 
+echo $BUILD
 cat << EOF > ~/.bazelrc
 build --remote_cache https://storage.googleapis.com/lemming-bazel-cache
 build --google_default_credentials
