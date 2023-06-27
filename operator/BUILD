@@ -33,7 +33,7 @@ pkg_tar(
 
 oci_image(
     name = "image",
-    base = "@distroless_static_debug_nonroot",
+    base = "@debian_bookworm",
     entrypoint = ["/operator"],
     tars = [":bin-tar"],
 )

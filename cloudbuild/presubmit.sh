@@ -17,8 +17,9 @@
 set -xe
 
 function dumpinfo {
-    kubectl cluster-info dump --output-directory /tmp/cluster-info
-    gsutil cp -r -Z /tmp/cluster-info gs://lemming-test-logs/$BUILD/
+    if [ -d "/tmp/cluster-log" ]; then
+        gsutil cp -r -Z /tmp/cluster-log gs://lemming-test-logs/$BUILD/
+    fi
 }
 
 echo $BUILD
