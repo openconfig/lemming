@@ -66,13 +66,17 @@ func Get(topoDir string) func() (binding.Binding, error) {
 		kcfg := filepath.Join(u.HomeDir, ".kube/config")
 		flag.Set("kubeconfig", kcfg)
 
+		top, err := topo.Load(topoFile)
+		if err != nil {
+			return nil, err
+		}
 		ondatra.EventListener().AddAfterTestsCallback(func(event *eventlis.AfterTestsEvent) error {
 			passed := event.ExitCode == nil || *event.ExitCode == 0
 			if !passed {
 				target := strings.ReplaceAll(os.Getenv("TEST_TARGET"), "/", "-")
 				target = strings.TrimPrefix(target, "--")
 				path := filepath.Join(*clusterLogPath, target)
-				if out, err := exec.Command("kubectl", "--kubeconfig", kcfg, "cluster-info", "dump", "--output-directory", path).CombinedOutput(); err != nil {
+				if out, err := exec.Command("kubectl", "--kubeconfig", kcfg, "cluster-info", "dump", "--output-directory", path, "--namespaces", top.GetName()).CombinedOutput(); err != nil {
 					return fmt.Errorf("failed to dump cluster info: %v\n%s", err, string(out))
 				}
 			}
@@ -80,10 +84,6 @@ func Get(topoDir string) func() (binding.Binding, error) {
 		})
 
 		b, err := kinit.Init()
-		if err != nil {
-			return nil, err
-		}
-		top, err := topo.Load(topoFile)
 		if err != nil {
 			return nil, err
 		}

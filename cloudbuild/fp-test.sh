@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 git clone https://github.com/openconfig/featureprofiles.git
 cd featureprofiles || exit
 
