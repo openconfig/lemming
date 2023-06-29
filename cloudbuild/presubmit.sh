@@ -15,6 +15,7 @@
 
 set -xe
 
+# shellcheck disable=SC2317
 function dumpinfo {
     if [ -d "/tmp/cluster-log" ]; then
         gsutil cp -r -Z /tmp/cluster-log "gs://lemming-test-logs/$BUILD"
@@ -40,6 +41,7 @@ kne deploy ~/kne-internal/deploy/kne/kind-bridge.yaml
 
 set +e
 
+rc=0
 trap dumpinfo EXIT
 trap 'rc=$?' ERR
 
@@ -49,4 +51,4 @@ make load
 make itest
 cd cloudbuild && ./fp-test.sh
 
-return ${rc} 
+exit "${rc}"
