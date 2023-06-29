@@ -2,7 +2,7 @@
 
 
 git clone https://github.com/openconfig/featureprofiles.git
-cd featureprofiles
+cd ... || exit
 
 function metadata_kne_topology() {
   local metadata_test_path
@@ -26,11 +26,11 @@ function metadata_kne_topology() {
 
 platform="topologies/kne/openconfig/lemming"
 
-for test_path in $(cat fp-tests); do
+while read -r test_path; do
     kne_topology=$(metadata_kne_topology "${test_path}")
     echo "$kne_topology"
-    echo "$test_paths"
+    echo "$test_path"
     kne create "${kne_topology}"
     go test "./$test_path" -kne-topo "$(pwd)/${kne_topology}" -alsologtostderr
-    kne delete $kne_topology
-done
+    kne delete "$kne_topology"
+done < fp-tests

@@ -18,11 +18,11 @@ set -xe
 
 function dumpinfo {
     if [ -d "/tmp/cluster-log" ]; then
-        gsutil cp -r -Z /tmp/cluster-log gs://lemming-test-logs/$BUILD/
+        gsutil cp -r -Z /tmp/cluster-log "gs://lemming-test-logs/$BUILD"
     fi
 }
 
-echo $BUILD
+echo "$BUILD"
 cat << EOF > ~/.bazelrc
 build --remote_cache https://storage.googleapis.com/lemming-bazel-cache
 build --google_default_credentials
