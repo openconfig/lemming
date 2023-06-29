@@ -13,8 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+set -x
 
-set -xe
+trap 'rc=$?' ERR
 
 function dumpinfo {
     if [ -d "/tmp/cluster-log" ]; then
@@ -44,4 +45,7 @@ trap dumpinfo EXIT
 make load-operator
 kubectl set image -n lemming-operator deployment/lemming-controller-manager manager=us-west1-docker.pkg.dev/openconfig-lemming/release/operator:ga
 make load
-make itest || cd cloudbuild || ./fp-test.sh
+make itest
+cd cloudbuild && ./fp-test.sh
+
+exit $rc
