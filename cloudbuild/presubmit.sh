@@ -13,9 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -x
-
-trap 'rc=$?' ERR
+set -xe
 
 function dumpinfo {
     if [ -d "/tmp/cluster-log" ]; then
@@ -40,7 +38,10 @@ sudo install bazel /usr/local/bin/
 cd /tmp/workspace
 kne deploy ~/kne-internal/deploy/kne/kind-bridge.yaml
 
+set +e
+
 trap dumpinfo EXIT
+trap 'rc=$?' ERR
 
 make load-operator
 kubectl set image -n lemming-operator deployment/lemming-controller-manager manager=us-west1-docker.pkg.dev/openconfig-lemming/release/operator:ga
@@ -48,4 +49,4 @@ make load
 make itest
 cd cloudbuild && ./fp-test.sh
 
-exit $rc
+return ${rc} 
