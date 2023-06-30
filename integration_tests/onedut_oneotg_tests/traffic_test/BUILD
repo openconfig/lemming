@@ -5,6 +5,9 @@ go_test(
     size = "enormous",
     srcs = ["traffic_test.go"],
     data = ["//integration_tests/onedut_oneotg_tests:topology_testbed"],
+    tags = [
+        "exclusive",
+    ],
     deps = [
         "//internal/binding",
         "@com_github_open_traffic_generator_snappi_gosnappi//:gosnappi",

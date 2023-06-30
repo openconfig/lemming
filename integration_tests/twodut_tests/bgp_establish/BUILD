@@ -4,6 +4,9 @@ go_test(
     name = "bgp_establish_test",
     srcs = ["bgp_establish_test.go"],
     data = ["//integration_tests/twodut_tests:topology_testbed"],
+    tags = [
+        "exclusive",
+    ],
     deps = [
         "//gnmi/fakedevice",
         "//gnmi/oc",

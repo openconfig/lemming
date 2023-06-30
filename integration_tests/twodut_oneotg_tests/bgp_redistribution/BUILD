@@ -5,6 +5,9 @@ go_test(
     size = "enormous",
     srcs = ["bgp_redistribution_test.go"],
     data = ["//integration_tests/twodut_oneotg_tests:topology_testbed"],
+    tags = [
+        "exclusive",
+    ],
     deps = [
         "//gnmi/fakedevice",
         "//gnmi/oc",
