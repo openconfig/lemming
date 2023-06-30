@@ -15,6 +15,7 @@ while read -r test_path; do
       kubectl cluster-info dump --output-directory "/tmp/cluster-log/${test_path/\//-}"  --namespaces openconfig-lemming
     fi
     kne delete "${kne_topology}"
+    sleep 10 # Give namespace time to be deleted
 done < ../fp-tests
 
 exit "$rc"
