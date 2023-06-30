@@ -5,6 +5,9 @@ go_test(
     size = "enormous",
     srcs = ["gnsi_test.go"],
     data = ["//integration_tests/onedut_tests:topology_testbed"],
+    tags = [
+        "exclusive",
+    ],
     deps = [
         "//internal/binding",
         "@com_github_openconfig_gnmi//errdiff",

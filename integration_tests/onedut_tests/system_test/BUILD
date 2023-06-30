@@ -5,6 +5,9 @@ go_test(
     size = "enormous",
     srcs = ["system_test.go"],
     data = ["//integration_tests/onedut_tests:topology_testbed"],
+    tags = [
+        "exclusive",
+    ],
     deps = [
         "//gnmi/oc/ocpath",
         "//internal/binding",
