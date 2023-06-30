@@ -28,13 +28,15 @@ go_binary(
 
 pkg_tar(
     name = "bin-tar",
-    srcs = [":operator"],
+    files = {
+        ":operator": "manager",
+    },
 )
 
 oci_image(
     name = "image",
-    base = "@distroless_static_debug_nonroot",
-    entrypoint = ["/operator"],
+    base = "@debian_bookworm",
+    entrypoint = ["/manager"],
     tars = [":bin-tar"],
 )
 

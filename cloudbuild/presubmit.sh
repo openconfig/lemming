@@ -13,9 +13,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 set -xe
 
+# shellcheck disable=SC2317
+function dumpinfo {
+    if [ -d "/tmp/cluster-log" ]; then
+        gsutil cp -r -Z /tmp/cluster-log "gs://lemming-test-logs/$BUILD"
+    fi
+}
+
+echo "$BUILD"
 cat << EOF > ~/.bazelrc
 build --remote_cache https://storage.googleapis.com/lemming-bazel-cache
 build --google_default_credentials
@@ -32,7 +39,16 @@ sudo install bazel /usr/local/bin/
 cd /tmp/workspace
 kne deploy ~/kne-internal/deploy/kne/kind-bridge.yaml
 
+set +e
+
+rc=0
+trap dumpinfo EXIT
+trap 'rc=$?' ERR
+
 make load-operator
 kubectl set image -n lemming-operator deployment/lemming-controller-manager manager=us-west1-docker.pkg.dev/openconfig-lemming/release/operator:ga
 make load
 make itest
+cd cloudbuild && ./fp-test.sh
+
+exit "${rc}"

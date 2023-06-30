@@ -8,7 +8,9 @@ go_library(
     deps = [
         "@com_github_google_uuid//:uuid",
         "@com_github_openconfig_kne//topo",
+        "@com_github_openconfig_ondatra//:ondatra",
         "@com_github_openconfig_ondatra//binding",
+        "@com_github_openconfig_ondatra//eventlis",
         "@com_github_openconfig_ondatra//knebind/init",
         "@com_github_openconfig_ondatra//proto",
         "@io_k8s_apimachinery//pkg/api/errors",

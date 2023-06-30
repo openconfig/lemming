@@ -19,14 +19,18 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"os"
+	"os/exec"
 	"os/user"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/openconfig/kne/topo"
+	"github.com/openconfig/ondatra"
 	"github.com/openconfig/ondatra/binding"
-
+	"github.com/openconfig/ondatra/eventlis"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/leaderelection"
@@ -39,8 +43,9 @@ import (
 )
 
 var (
-	keep     = flag.Bool("keep", false, "Keep topology deployed after test")
-	skipLock = flag.Bool("skip-lock", false, "Do not acquire a lock on the topology")
+	keep           = flag.Bool("keep", false, "Keep topology deployed after test")
+	skipLock       = flag.Bool("skip-lock", false, "Do not acquire a lock on the topology")
+	clusterLogPath = flag.String("cluser-log-path", "/tmp/cluster-log", "Path to directory to dump cluster logs on test failure. Set to \"\" to disable.")
 )
 
 // Get returns the custom lemming binding. The topoDir is the relative path to a
@@ -61,11 +66,24 @@ func Get(topoDir string) func() (binding.Binding, error) {
 		kcfg := filepath.Join(u.HomeDir, ".kube/config")
 		flag.Set("kubeconfig", kcfg)
 
-		b, err := kinit.Init()
+		top, err := topo.Load(topoFile)
 		if err != nil {
 			return nil, err
 		}
-		top, err := topo.Load(topoFile)
+		ondatra.EventListener().AddAfterTestsCallback(func(event *eventlis.AfterTestsEvent) error {
+			passed := event.ExitCode == nil || *event.ExitCode == 0
+			if !passed {
+				target := strings.ReplaceAll(os.Getenv("TEST_TARGET"), "/", "-")
+				target = strings.TrimPrefix(target, "--")
+				path := filepath.Join(*clusterLogPath, target)
+				if out, err := exec.Command("kubectl", "--kubeconfig", kcfg, "cluster-info", "dump", "--output-directory", path, "--namespaces", top.GetName()).CombinedOutput(); err != nil {
+					return fmt.Errorf("failed to dump cluster info: %v\n%s", err, string(out))
+				}
+			}
+			return nil
+		})
+
+		b, err := kinit.Init()
 		if err != nil {
 			return nil, err
 		}
