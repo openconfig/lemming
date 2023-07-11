@@ -81,3 +81,25 @@ nodes: {
     1. Using VS Code: Run and Debug -> Connect to server
     2. Using dlv cli: `dlv connect localhost:56268`
         1. Required: Configure subsitute-path so dlv can resolve source code: `config substitute-path /build <abs path to lemming src>`
+
+## Configuration
+
+In general, Lemming should be configured through gNMI, however in some cases using flags is acceptable.
+
+When to use gNMI:
+* Config modelled in OC
+* Values that may be modified at runtime
+
+When to use flags:
+* Startup options: (eg gNMI listen port)
+* Immutable config
+* Environment specific options (location of some resource)
+
+Lemming uses Viper and pflags for configuration. Currently, only flags are supported (no env vars and no config file).
+Flags are defined in cmd/lemming/lemming.go.
+
+
+In KNE, flags are set using the `args` attribute in the topology file.
+The Lemming operator also adds some mandatory flags to lemming for ease of use. These are flags that are always set
+since they required to run lemming in a containerized environment.
+They are defined at operator/controllers/lemming_controller.go.
