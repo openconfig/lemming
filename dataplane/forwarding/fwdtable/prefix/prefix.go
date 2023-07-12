@@ -323,10 +323,10 @@ func (t *Table) Entries() []string {
 func (t *Table) Process(packet fwdpacket.Packet, _ fwdobject.Counters) (fwdaction.Actions, fwdaction.State) {
 	key := t.desc.MakePacketKey(packet)
 	if record, actions := t.match(key); actions != nil {
-		packet.Logf(fwdpacket.LogDebugMessage, "%v: matched entry %v, actions %v", t.ID(), record, actions)
+		packet.Log().V(3).Info("prefix table matched entry", "table", t.ID(), "entry", record, "actions", actions)
 		return actions, fwdaction.CONTINUE
 	}
-	packet.Logf(fwdpacket.LogDebugMessage, "%v: default actions %v", t.ID(), t.actions)
+	packet.Log().V(3).Info("%prefix table default actions", "table", t.ID(), "actions", t.actions)
 	return t.actions, fwdaction.CONTINUE
 }
 

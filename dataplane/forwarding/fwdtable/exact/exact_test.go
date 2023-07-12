@@ -19,7 +19,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
+	"go.uber.org/mock/gomock"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdtable"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdtable/mock_fwdpacket"
@@ -311,7 +311,6 @@ func TestExactTableStale(t *testing.T) {
 			for _, reset := range e.reset {
 				packet := mock_fwdpacket.NewMockPacket(ctrl)
 				packet.EXPECT().Field(gomock.Any()).Return([]byte{byte(reset)}, nil).AnyTimes()
-				packet.EXPECT().Logf(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 				table.Process(packet, nil)
 			}
 			if next := et.stale.process(et); next != e.next {

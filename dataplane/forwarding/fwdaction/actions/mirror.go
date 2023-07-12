@@ -96,8 +96,8 @@ func (m *mirror) Process(packet fwdpacket.Packet, counters fwdobject.Counters) (
 			if err != nil {
 				return fmt.Errorf("actions: mirror actions failed to get output port, err %v", err)
 			}
-			packet.Logf(fwdpacket.LogDebugMessage, "transmitting packet to %q", out.ID())
-			packet.Logf(fwdpacket.LogDesc, fmt.Sprintf("%v: Transmit %v", m.ctx.ID, out.ID()))
+			packet.Log().Info("transmitting packet", "port", out.ID())
+			packet.Log().WithValues("context", m.ctx.ID, "port", out.ID())
 			fwdport.Output(out, cp, fwdpb.PortAction_PORT_ACTION_OUTPUT, m.ctx)
 
 		case fwdaction.CONTINUE:
@@ -114,7 +114,7 @@ func (m *mirror) Process(packet fwdpacket.Packet, counters fwdobject.Counters) (
 	// Note that if the mirror fails, we increment counters and log the error.
 	// However the packet processing is continued for the original packet.
 	if err != nil {
-		packet.Logf(fwdpacket.LogErrorFrame, "mirrored packet failed, %v", err)
+		packet.Log().Error(err, "mirrored packet failed, %v")
 		counters.Increment(fwdpb.CounterId_COUNTER_ID_MIRROR_PACKETS, 1)
 		counters.Increment(fwdpb.CounterId_COUNTER_ID_MIRROR_OCTETS, uint32(packet.Length()))
 	}

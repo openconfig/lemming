@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/golang/mock/gomock"
+	"go.uber.org/mock/gomock"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction/mock_fwdpacket"
@@ -169,8 +169,6 @@ func TestSelectActionList(t *testing.T) {
 		// that the action lists are fully executed.
 		for v := 0; v < 256; v++ {
 			packet := mock_fwdpacket.NewMockPacket(ctrl)
-			packet.EXPECT().Logf(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
-			packet.EXPECT().Logf(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 			packet.EXPECT().Field(gomock.Any()).Return([]byte{uint8(v), 0, 0, 0, 0, 0, 0, 0}, nil).AnyTimes()
 
 			s, err := fwdaction.ProcessPacket(packet, actions, nil)

@@ -287,7 +287,7 @@ func (t *Table) Process(packet fwdpacket.Packet, _ fwdobject.Counters) (fwdactio
 			return false, nil, nil, 0
 		}(bank)
 		if m {
-			packet.Logf(fwdpacket.LogDebugMessage, "%v: bank %v priority %v matched entry %v, actions %v", t.ID(), bid, p, f, a)
+			packet.Log().V(3).Info("flow table matched action", "table", t.ID(), "bank", bid, "priority", p, "entry", f, "actions", a)
 			actions = append(actions, a...)
 			match = true
 		}
@@ -295,7 +295,7 @@ func (t *Table) Process(packet fwdpacket.Packet, _ fwdobject.Counters) (fwdactio
 	if match {
 		return actions, fwdaction.CONTINUE
 	}
-	packet.Logf(fwdpacket.LogDebugMessage, "%v: default actions %v", t.ID(), t.actions)
+	packet.Log().V(3).Info("flow table default actions", "table", t.ID(), "actions", t.actions)
 	return t.actions, fwdaction.CONTINUE
 }
 

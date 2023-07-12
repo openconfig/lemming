@@ -31,6 +31,7 @@ import (
 	"fmt"
 
 	log "github.com/golang/glog"
+
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdattribute"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
@@ -229,14 +230,14 @@ func Increment(port Port, octets int, packetID, octetID fwdpb.CounterId) {
 func Input(port Port, packet fwdpacket.Packet, dir fwdpb.PortAction, ctx *fwdcontext.Context) (err error) {
 	defer func() {
 		if err != nil {
-			packet.Logf(fwdpacket.LogErrorFrame, "input processing failed, err %v", err)
+			packet.Log().Error(err, "input processing failed")
 		}
 	}()
 
 	Increment(port, packet.Length(), fwdpb.CounterId_COUNTER_ID_RX_PACKETS, fwdpb.CounterId_COUNTER_ID_RX_OCTETS)
 	SetInputPort(packet, port)
 
-	packet.Logf(fwdpacket.LogDebugFrame, "input packet")
+	packet.Log().V(1).Info("input packet", "port", port.ID(), "frame", fwdpacket.IncludeFrameInLog)
 	state, err := fwdaction.ProcessPacket(packet, port.Actions(dir), port)
 	if err != nil {
 		Increment(port, packet.Length(), fwdpb.CounterId_COUNTER_ID_RX_ERROR_PACKETS, fwdpb.CounterId_COUNTER_ID_RX_ERROR_OCTETS)
@@ -245,6 +246,7 @@ func Input(port Port, packet fwdpacket.Packet, dir fwdpb.PortAction, ctx *fwdcon
 
 	switch state {
 	case fwdaction.DROP:
+		packet.Log().V(1).Info("input dropped frame", "port", port.ID(), "frame", fwdpacket.IncludeFrameInLog)
 		Increment(port, packet.Length(), fwdpb.CounterId_COUNTER_ID_RX_DROP_PACKETS, fwdpb.CounterId_COUNTER_ID_RX_DROP_OCTETS)
 		return nil
 
@@ -258,8 +260,8 @@ func Input(port Port, packet fwdpacket.Packet, dir fwdpb.PortAction, ctx *fwdcon
 			Increment(port, packet.Length(), fwdpb.CounterId_COUNTER_ID_RX_DROP_PACKETS, fwdpb.CounterId_COUNTER_ID_RX_DROP_OCTETS)
 			return nil
 		}
-		packet.Logf(fwdpacket.LogDebugMessage, "transmitting packet to %q", out.ID())
-		packet.Logf(fwdpacket.LogDesc, fmt.Sprintf("%v: Transmit %v", ctx.ID, out.ID()))
+		packet.Log().V(3).Info("transmitting packet", "port", out.ID())
+		packet.Log().WithValues("context", ctx.ID, "port", out.ID())
 		Output(out, packet, fwdpb.PortAction_PORT_ACTION_OUTPUT, ctx)
 		return nil
 	}
@@ -272,13 +274,13 @@ func Input(port Port, packet fwdpacket.Packet, dir fwdpb.PortAction, ctx *fwdcon
 func Output(port Port, packet fwdpacket.Packet, dir fwdpb.PortAction, _ *fwdcontext.Context) (err error) {
 	defer func() {
 		if err != nil {
-			packet.Logf(fwdpacket.LogErrorFrame, "output processing failed, err %v", err)
+			packet.Log().Error(err, "output processing failed")
 		}
 	}()
 	Increment(port, packet.Length(), fwdpb.CounterId_COUNTER_ID_TX_PACKETS, fwdpb.CounterId_COUNTER_ID_TX_OCTETS)
 	SetOutputPort(packet, port)
 
-	packet.Logf(fwdpacket.LogDebugFrame, "output packet")
+	packet.Log().V(3).Info("output packet", "frame", fwdpacket.IncludeFrameInLog)
 	state, err := fwdaction.ProcessPacket(packet, port.Actions(dir), port)
 	if err == nil && state == fwdaction.CONTINUE {
 		state, err = port.Write(packet)
@@ -289,10 +291,11 @@ func Output(port Port, packet fwdpacket.Packet, dir fwdpb.PortAction, _ *fwdcont
 	}
 	switch state {
 	case fwdaction.DROP:
+		packet.Log().V(1).Info("output dropped frame", "port", port.ID(), "frame", fwdpacket.IncludeFrameInLog)
 		Increment(port, packet.Length(), fwdpb.CounterId_COUNTER_ID_TX_DROP_PACKETS, fwdpb.CounterId_COUNTER_ID_TX_DROP_OCTETS)
 		return nil
 	case fwdaction.CONSUME:
-		packet.Logf(fwdpacket.LogDebugFrame, "consumed frame")
+		packet.Log().V(1).Info("consumed frame", "port", port.ID(), "frame", fwdpacket.IncludeFrameInLog)
 		return nil
 	case fwdaction.CONTINUE:
 		Increment(port, packet.Length(), fwdpb.CounterId_COUNTER_ID_TX_ERROR_PACKETS, fwdpb.CounterId_COUNTER_ID_TX_ERROR_OCTETS)
@@ -303,10 +306,10 @@ func Output(port Port, packet fwdpacket.Packet, dir fwdpb.PortAction, _ *fwdcont
 
 // Write writes out a packet through a port without changing it. No actions are applied.
 func Write(port Port, packet fwdpacket.Packet) {
-	packet.Logf(fwdpacket.LogDebugFrame, "write packet")
+	packet.Log().V(1).Info("write packet", "port", port.ID(), "frame", fwdpacket.IncludeFrameInLog)
 	Increment(port, packet.Length(), fwdpb.CounterId_COUNTER_ID_TX_PACKETS, fwdpb.CounterId_COUNTER_ID_TX_OCTETS)
 	if _, err := port.Write(packet); err != nil {
-		packet.Logf(fwdpacket.LogErrorFrame, "write failed, err %v", err)
+		packet.Log().Error(err, "write failed")
 		Increment(port, packet.Length(), fwdpb.CounterId_COUNTER_ID_TX_ERROR_PACKETS, fwdpb.CounterId_COUNTER_ID_TX_ERROR_OCTETS)
 	}
 }
@@ -333,7 +336,7 @@ func Process(port Port, packet fwdpacket.Packet, dir fwdpb.PortAction, ctx *fwdc
 		packet.Debug(true)
 	}
 
-	packet.Logf(fwdpacket.LogDesc, prefix)
+	packet.Log().WithName(prefix)
 	switch dir {
 	case fwdpb.PortAction_PORT_ACTION_INPUT:
 		Input(port, packet, dir, ctx)

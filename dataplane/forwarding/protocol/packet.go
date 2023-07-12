@@ -18,8 +18,13 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"sync"
 
+	"github.com/go-logr/logr"
+	"github.com/go-logr/logr/funcr"
+	"github.com/golang/glog"
 	log "github.com/golang/glog"
+
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdattribute"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdpacket"
 	"github.com/openconfig/lemming/dataplane/forwarding/util/frame"
@@ -67,10 +72,12 @@ import (
 type Packet struct {
 	headers    []*Desc              // Descriptors for each header in the packet
 	debug      bool                 // true if the packet is being debugged
-	messages   []string             // list of log messages associated with the packet
 	desc       string               // describes the packet in human readable form
 	attributes fwdattribute.Set     // set of attributes associated with the packet
 	start      fwdpb.PacketHeaderId // Start header of the packet
+	loggerMu   sync.Mutex
+	logger     logr.Logger
+	logSync    *packetLogger
 }
 
 // fieldDesc returns the Desc of the packet and the corresponding field id that
@@ -194,37 +201,70 @@ func (p *Packet) Debug(enable bool) {
 	p.debug = enable
 }
 
-// addLine adds a new line to the packet's message log.
-func (p *Packet) addLine(addFrame bool, format string, args ...interface{}) {
-	str := p.desc + ": " + fmt.Sprintf(format, args...)
-	if addFrame {
-		str += fmt.Sprintf(", packet %x", p.Frame())
-	}
-	p.messages = append(p.messages, str)
+var _ logr.LogSink = &packetLogger{}
+
+type packetLogger struct {
+	funcr.Formatter
+	msgs []string
 }
 
-// Logf controls the packet's message log. Debug messages are added only if
-// the packet is being debugged, while error messages are always written.
-func (p *Packet) Logf(cmd int, format string, args ...interface{}) {
-	switch cmd {
-	case fwdpacket.LogErrorFrame:
-		p.addLine(true, format, args...)
-	case fwdpacket.LogDebugFrame:
-		if p.debug {
-			p.addLine(true, format, args...)
-		}
-	case fwdpacket.LogDebugMessage:
-		if p.debug {
-			p.addLine(false, format, args...)
-		}
-	case fwdpacket.LogDesc:
-		p.desc = format
+// Init receives optional information about the logr library for LogSink
+// implementations that need it.
+func (pl packetLogger) Init(info logr.RuntimeInfo) {}
+
+// Enabled tests whether this LogSink is enabled at the specified V-level.
+// For example, commandline flags might be used to set the logging
+// verbosity and disable some info logs.
+func (pl packetLogger) Enabled(level int) bool {
+	return bool(glog.V(glog.Level(level)))
+}
+
+// Info logs a non-error message with the given key/value pairs as context.
+// The level argument is provided for optional logging.  This method will
+// only be called when Enabled(level) is true. See Logger.Info for more
+// details.
+func (pl *packetLogger) Info(level int, msg string, keysAndValues ...interface{}) {
+	prefix, arg := pl.FormatInfo(level, msg, keysAndValues)
+	if prefix == "" {
+		pl.msgs = append(pl.msgs, arg)
+	} else {
+		pl.msgs = append(pl.msgs, prefix+" "+arg)
 	}
 }
 
-// Log returns the contents of the packet's log.
-func (p *Packet) Log() []string {
-	return p.messages
+// Error logs an error, with the given message and key/value pairs as
+// context.  See Logger.Error for more details.
+func (pl *packetLogger) Error(err error, msg string, keysAndValues ...interface{}) {
+	prefix, arg := pl.FormatError(err, msg, keysAndValues)
+	if prefix == "" {
+		pl.msgs = append(pl.msgs, arg)
+	} else {
+		pl.msgs = append(pl.msgs, prefix+" "+arg)
+	}
+}
+
+// WithValues returns a new LogSink with additional key/value pairs.  See
+// Logger.WithValues for more details.
+func (pl packetLogger) WithValues(keysAndValues ...interface{}) logr.LogSink {
+	pl.Formatter.AddValues(keysAndValues)
+	return &pl
+}
+
+// WithName returns a new LogSink with the specified name appended.  See
+// Logger.WithName for more details.
+func (pl packetLogger) WithName(name string) logr.LogSink {
+	pl.Formatter.AddName(name)
+	return &pl
+}
+
+// Log returns a logger.
+func (p *Packet) Log() logr.Logger {
+	return p.logger
+}
+
+// LogMsgs returns the log messages for the packet.
+func (p *Packet) LogMsgs() []string {
+	return p.logSync.msgs
 }
 
 // NewPacket parses a frame into a Packet and returns it.
@@ -235,6 +275,21 @@ func NewPacket(start fwdpb.PacketHeaderId, frame *frame.Frame) (*Packet, error) 
 		attributes: fwdattribute.NewSet(),
 		start:      start,
 	}
+
+	sync := &packetLogger{
+		Formatter: funcr.NewFormatter(funcr.Options{
+			RenderArgsHook: func(kvList []interface{}) []interface{} {
+				for i, kv := range kvList {
+					if _, ok := kv.(fwdpacket.LogFrameValue); ok {
+						kvList[i] = fmt.Sprintf("%x", p.Frame())
+					}
+				}
+				return kvList
+			},
+		}),
+	}
+	p.logSync = sync
+	p.logger = logr.New(p.logSync)
 
 	// Start parsing the packet using the first Header. The metadata is a
 	// lucius only special header. It is always followed by the specified
@@ -400,8 +455,10 @@ func (p *Packet) clone(replicate bool, prepend []byte, id fwdpb.PacketHeaderId, 
 	np.debug = p.debug
 	np.desc = p.desc
 	np.attributes = p.attributes
+	np.logSync = p.logSync
+	np.logger = logr.New(np.logSync)
 	if !replicate {
-		np.messages = p.messages
+		np.logSync.msgs = p.logSync.msgs
 	}
 
 	// Restore the saved values into the cloned packet.

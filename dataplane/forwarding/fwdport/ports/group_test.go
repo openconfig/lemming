@@ -19,7 +19,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
+	"go.uber.org/mock/gomock"
+
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdport"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdport/mock_fwdpacket"
@@ -91,8 +92,6 @@ func TestPortGroupWrite(t *testing.T) {
 	packet.EXPECT().Field(gomock.Any()).Return(make([]byte, 8), nil).AnyTimes()
 	packet.EXPECT().Update(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	packet.EXPECT().Frame().Return(nil).AnyTimes()
-	packet.EXPECT().Logf(gomock.Any(), gomock.Any()).AnyTimes()
-	packet.EXPECT().Logf(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
 	pg.Write(packet)
 	pm := porttestutil.PortMap(ports)
@@ -146,8 +145,6 @@ func TestPortGroupHash(t *testing.T) {
 			packet.EXPECT().Field(gomock.Any()).Return([]byte{uint8(v), 0, 0, 0, 0, 0, 0, 0}, nil).AnyTimes()
 			packet.EXPECT().Update(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 			packet.EXPECT().Frame().Return(nil).AnyTimes()
-			packet.EXPECT().Logf(gomock.Any(), gomock.Any()).AnyTimes()
-			packet.EXPECT().Logf(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 			pg.Write(packet)
 		}
 		pm := porttestutil.PortMap(ports)

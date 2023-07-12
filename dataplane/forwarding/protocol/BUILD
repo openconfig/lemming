@@ -17,6 +17,8 @@ go_library(
         "//dataplane/forwarding/infra/fwdpacket",
         "//dataplane/forwarding/util/frame",
         "//proto/forwarding",
+        "@com_github_go_logr_logr//:logr",
+        "@com_github_go_logr_logr//funcr",
         "@com_github_golang_glog//:glog",
     ],
 )

@@ -20,10 +20,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/golang/mock/gomock"
+	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/proto"
+
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdtable/mock_fwdpacket"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdpacket"
-	"google.golang.org/protobuf/proto"
 
 	tables "github.com/openconfig/lemming/dataplane/forwarding/fwdtable/tabletestutil"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
@@ -167,7 +168,8 @@ func EntryDescFields(fields []fwdpb.PacketFieldNum, count int, size int) EntryDe
 			FieldId: &fwdpb.PacketFieldId{
 				Field: &fwdpb.PacketField{
 					FieldNum: id,
-				}},
+				},
+			},
 			Bytes: make([]byte, size),
 		})
 		count--
@@ -180,7 +182,8 @@ func EntryDescFields(fields []fwdpb.PacketFieldNum, count int, size int) EntryDe
 			FieldId: &fwdpb.PacketFieldId{
 				Field: &fwdpb.PacketField{
 					FieldNum: id,
-				}},
+				},
+			},
 			Bytes: make([]byte, size),
 		})
 	}

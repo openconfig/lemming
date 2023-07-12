@@ -20,7 +20,9 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/go-logr/logr"
 	log "github.com/golang/glog"
+
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdattribute"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdobject"
 	"github.com/openconfig/lemming/dataplane/forwarding/util/frame"
@@ -34,13 +36,10 @@ const (
 	OpSet        // Set a field to the specified value.
 )
 
-// Enumeration of various operations that can be performed on the packet log.
-const (
-	LogDebugMessage = iota // log a debug message
-	LogDebugFrame          // log a debug message with the frame
-	LogErrorFrame          // log an error message with the frame
-	LogDesc                // sets the packet's description (prefixed to all messages)
-)
+type LogFrameValue int
+
+// LogFrameValue is special value used to indicate that the packet frame should be including in the log.
+const IncludeFrameInLog LogFrameValue = 0
 
 // AttrPacketDebug controls packet debugging.
 var AttrPacketDebug = fwdattribute.ID("PacketDebug")
@@ -95,11 +94,11 @@ type Packet interface {
 	// Debug control debugging for the packet.
 	Debug(enable bool)
 
-	// Logf controls the packet's message log.
-	Logf(level int, fmt string, args ...interface{})
+	// Log returns the logging API for the packet.
+	Log() logr.Logger
 
-	// Log returns the contents of the packet's log.
-	Log() []string
+	// LogMsgs returns the log messages attached to the packet.
+	LogMsgs() []string
 
 	// Attributes returns the attributes associated with the packet.
 	Attributes() fwdattribute.Set
@@ -201,7 +200,7 @@ var logMu sync.Mutex
 
 // Log logs the packet's buffer if it is not empty.
 func Log(packet Packet) {
-	if m := packet.Log(); len(m) != 0 {
+	if m := packet.LogMsgs(); len(m) != 0 {
 		logMu.Lock()
 		log.Infof("Packet Trace:\n")
 		for _, msg := range m {

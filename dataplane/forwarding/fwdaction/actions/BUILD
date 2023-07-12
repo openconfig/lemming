@@ -71,6 +71,6 @@ go_test(
         "//dataplane/forwarding/protocol/metadata",
         "//dataplane/forwarding/protocol/opaque",
         "//proto/forwarding",
-        "@com_github_golang_mock//gomock",
+        "@org_uber_go_mock//gomock",
     ],
 )
