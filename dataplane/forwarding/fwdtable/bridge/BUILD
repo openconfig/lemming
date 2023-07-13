@@ -40,6 +40,7 @@ go_test(
         "//dataplane/forwarding/infra/fwdpacket",
         "//dataplane/forwarding/protocol",
         "//proto/forwarding",
+        "@com_github_go_logr_logr//:logr",
         "@org_uber_go_mock//gomock",
     ],
 )
