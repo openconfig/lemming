@@ -18,7 +18,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/golang/mock/gomock"
+	"go.uber.org/mock/gomock"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction/mock_fwdpacket"
@@ -53,12 +53,11 @@ func TestCopy(t *testing.T) {
 		},
 	}
 
-	dstField :=
-		&fwdpb.PacketFieldId{
-			Field: &fwdpb.PacketField{
-				FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST,
-			},
-		}
+	dstField := &fwdpb.PacketFieldId{
+		Field: &fwdpb.PacketField{
+			FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST,
+		},
+	}
 
 	// Create a copy update action for a packet field of the same size.
 	// This is expected to succeed.
@@ -81,8 +80,6 @@ func TestCopy(t *testing.T) {
 	// Verify the action by processing a packet where the source field exists.
 	fieldBytes := []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04}
 	packet1 := mock_fwdpacket.NewMockPacket(ctrl)
-	packet1.EXPECT().Logf(gomock.Any(), gomock.Any()).AnyTimes()
-	packet1.EXPECT().Logf(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	packet1.EXPECT().Field(fwdpacket.NewFieldID(srcField)).Return(fieldBytes, nil)
 	packet1.EXPECT().Update(fwdpacket.NewFieldID(dstField), fwdpacket.OpSet, fieldBytes)
 
@@ -93,8 +90,6 @@ func TestCopy(t *testing.T) {
 	// Verify the action by processing a packet where the source field does not
 	// exist.
 	packet2 := mock_fwdpacket.NewMockPacket(ctrl)
-	packet2.EXPECT().Logf(gomock.Any(), gomock.Any()).AnyTimes()
-	packet2.EXPECT().Logf(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	packet2.EXPECT().Field(fwdpacket.NewFieldID(srcField)).Return(nil, errors.New("No field"))
 	packet2.EXPECT().String().Return("").AnyTimes()
 
@@ -215,8 +210,6 @@ func TestBitWrite(t *testing.T) {
 		// If packet processing is expected to fail.
 		if test.processErr {
 			packet := mock_fwdpacket.NewMockPacket(ctrl)
-			packet.EXPECT().Logf(gomock.Any(), gomock.Any()).AnyTimes()
-			packet.EXPECT().Logf(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 			packet.EXPECT().Field(fwdpacket.NewFieldID(field)).Return(test.original, nil)
 			packet.EXPECT().String().Return("").AnyTimes()
 			if _, state := action.Process(packet, nil); state != fwdaction.DROP {
@@ -227,8 +220,6 @@ func TestBitWrite(t *testing.T) {
 
 		// If packet processing is expected to suceed.
 		packet := mock_fwdpacket.NewMockPacket(ctrl)
-		packet.EXPECT().Logf(gomock.Any(), gomock.Any()).AnyTimes()
-		packet.EXPECT().Logf(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 		packet.EXPECT().Field(fwdpacket.NewFieldID(field)).Return(test.original, nil)
 		packet.EXPECT().Update(fwdpacket.NewFieldID(field), fwdpacket.OpSet, test.final)
 		if _, state := action.Process(packet, nil); state != fwdaction.CONTINUE {
@@ -313,8 +304,6 @@ func TestBitAndOr(t *testing.T) {
 		// If packet processing is expected to fail.
 		if test.processErr {
 			packet := mock_fwdpacket.NewMockPacket(ctrl)
-			packet.EXPECT().Logf(gomock.Any(), gomock.Any()).AnyTimes()
-			packet.EXPECT().Logf(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 			packet.EXPECT().Field(fwdpacket.NewFieldID(field)).Return(test.original, nil)
 			packet.EXPECT().String().Return("").AnyTimes()
 			if _, state := action.Process(packet, nil); state != fwdaction.DROP {
@@ -325,8 +314,6 @@ func TestBitAndOr(t *testing.T) {
 
 		// If packet processing is expected to suceed.
 		packet := mock_fwdpacket.NewMockPacket(ctrl)
-		packet.EXPECT().Logf(gomock.Any(), gomock.Any()).AnyTimes()
-		packet.EXPECT().Logf(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 		packet.EXPECT().Field(fwdpacket.NewFieldID(field)).Return(test.original, nil)
 		packet.EXPECT().Update(fwdpacket.NewFieldID(field), fwdpacket.OpSet, test.final)
 		if _, state := action.Process(packet, nil); state != fwdaction.CONTINUE {

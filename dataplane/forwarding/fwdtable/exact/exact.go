@@ -342,10 +342,10 @@ func (t *Table) Process(packet fwdpacket.Packet, _ fwdobject.Counters) (fwdactio
 			t.stale.use(entry)
 			t.staleMu.Unlock()
 		}
-		packet.Logf(fwdpacket.LogDebugMessage, "%v: matched %v", t.ID(), entry)
+		packet.Log().V(3).Info("exact table entry matched", "table", t.ID(), "entry", entry)
 		return entry.actions, fwdaction.CONTINUE
 	}
-	packet.Logf(fwdpacket.LogDebugMessage, "%v: default actions %v", t.ID(), t.actions)
+	packet.Log().V(3).Info("exact table default actions", "table", t.ID(), "actions", t.actions)
 	return t.actions, fwdaction.CONTINUE
 }
 

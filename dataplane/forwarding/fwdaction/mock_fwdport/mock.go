@@ -7,12 +7,12 @@ package mock_fwdport
 import (
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	fwdaction "github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
 	fwdattribute "github.com/openconfig/lemming/dataplane/forwarding/infra/fwdattribute"
 	fwdobject "github.com/openconfig/lemming/dataplane/forwarding/infra/fwdobject"
 	fwdpacket "github.com/openconfig/lemming/dataplane/forwarding/infra/fwdpacket"
 	forwarding "github.com/openconfig/lemming/proto/forwarding"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockPort is a mock of Port interface.

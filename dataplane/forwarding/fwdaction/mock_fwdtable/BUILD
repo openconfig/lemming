@@ -14,6 +14,6 @@ go_library(
         "//dataplane/forwarding/infra/fwdobject",
         "//dataplane/forwarding/infra/fwdpacket",
         "//proto/forwarding",
-        "@com_github_golang_mock//gomock",
+        "@org_uber_go_mock//gomock",
     ],
 )

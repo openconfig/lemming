@@ -20,14 +20,13 @@ import (
 	"fmt"
 	"runtime/debug"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
 	log "github.com/golang/glog"
 	"github.com/openconfig/gnmi/cache"
 	"github.com/openconfig/gnmi/subscribe"
-	"github.com/openconfig/lemming/gnmi/oc"
-	"github.com/openconfig/lemming/gnmi/reconciler"
 	"github.com/openconfig/ygot/util"
 	"github.com/openconfig/ygot/ygot"
 	"github.com/openconfig/ygot/ytypes"
@@ -38,6 +37,9 @@ import (
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/prototext"
+
+	"github.com/openconfig/lemming/gnmi/oc"
+	"github.com/openconfig/lemming/gnmi/reconciler"
 
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 )
@@ -272,11 +274,36 @@ func updateCacheNotifs(ca *cache.Cache, nos []*gpb.Notification, target, origin 
 		if err := cacheTarget.GnmiUpdate(n); err != nil {
 			return fmt.Errorf("%w: notification:\n%s\n%s", err, prototext.Format(n), string(debug.Stack()))
 		}
-		if enableDebugLog {
-			log.V(0).Infof("updateCacheNotifs:\n%s", prototext.Format(n))
+		if enableDebugLog && (len(n.Delete) != 0 || len(n.Update) != 0) {
+			log.V(0).Infof("updateCacheNotifs:\n%s", compactNotifString(n))
 		}
 	}
 	return nil
+}
+
+func compactNotifString(n *gpb.Notification) string {
+	var build strings.Builder
+	prefix, err := ygot.PathToString(n.Prefix)
+	if err != nil {
+		return prototext.Format(n)
+	}
+	build.WriteString(fmt.Sprintf("prefix: %s\n", prefix))
+	build.WriteString(fmt.Sprintf("timestamp: %d\n", n.GetTimestamp()))
+	for _, d := range n.Delete {
+		path, err := ygot.PathToString(d)
+		if err != nil {
+			return prototext.Format(n)
+		}
+		build.WriteString(fmt.Sprintf("delete: %s\n", path))
+	}
+	for _, u := range n.Update {
+		path, err := ygot.PathToString(u.GetPath())
+		if err != nil {
+			return prototext.Format(n)
+		}
+		build.WriteString(fmt.Sprintf("update %s: %v\n", path, u.GetVal()))
+	}
+	return build.String()
 }
 
 // unmarshalSetRequest unmarshals the setrequest into the schema.

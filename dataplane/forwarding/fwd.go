@@ -803,13 +803,13 @@ func (e *Server) PacketInject(_ context.Context, request *fwdpb.PacketInjectRequ
 
 			packet.Debug(request.GetDebug())
 			if len(pre) != 0 {
-				packet.Logf(fwdpacket.LogDesc, fmt.Sprintf("%v: Preprocess %v", ctx.ID, port.ID()))
+				packet.Log().WithValues("context", ctx.ID, "port", port.ID())
 				state, err := fwdaction.ProcessPacket(packet, pre, port)
 				if state != fwdaction.CONTINUE || err != nil {
 					log.Errorf("%v: preprocessing failed, state %v, err %v", port.ID(), state, err)
 					return
 				}
-				packet.Logf(fwdpacket.LogDebugFrame, "injecting packet")
+				packet.Log().V(1).Info("injecting packet", "frame", fwdpacket.IncludeFrameInLog)
 			}
 			fwdport.Process(port, packet, request.GetAction(), ctx, "Control")
 		}()

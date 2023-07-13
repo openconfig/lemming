@@ -56,7 +56,7 @@ func (m *member) String() string {
 
 // Write writes a packet out of the member after applying the member actions.
 func (m *member) Write(packet fwdpacket.Packet, caller string) error {
-	packet.Logf(fwdpacket.LogDesc, fmt.Sprintf("%v: %v %v:", m.ctx.ID, caller, m.port.ID()))
+	packet.Log().WithValues("context", m.ctx.ID, "caller", caller, "port", m.port.ID())
 	state, err := fwdaction.ProcessPacket(packet, m.actions, m.port)
 	if err != nil {
 		return fmt.Errorf("ports: %v unable to write out of member %v: %v ", m.parent, m.port, err)
@@ -178,7 +178,7 @@ func newGroupMember(pid *fwdpb.PortId, actions fwdaction.Actions, ctx *fwdcontex
 					continue
 				}
 				if err := m.Write(packet, "async"); err != nil {
-					packet.Logf(fwdpacket.LogErrorFrame, "Async write to %v failed, err %v", m, err)
+					packet.Log().Error(err, "async write failed", "member", m)
 				}
 			}
 		}
@@ -360,7 +360,7 @@ func (p *portGroup) selectLink(packet fwdpacket.Packet) (fwdaction.State, error)
 		index -= len(p.members) * (index / len(p.members))
 	}
 	m := p.members[index]
-	packet.Logf(fwdpacket.LogDebugMessage, "hash selected %v", m.port.ID())
+	packet.Log().V(3).Info("port group hash selected", "port", m.port.ID())
 	return fwdaction.CONSUME, m.Write(packet, "Hash")
 }
 
@@ -377,13 +377,13 @@ func (p *portGroup) floodLink(packet fwdpacket.Packet) (fwdaction.State, error) 
 	frame := packet.Frame()
 	for _, m := range p.members {
 		if !m.Ready() {
-			packet.Logf(fwdpacket.LogDebugMessage, "flood to %v skipped, not ready", m)
+			packet.Log().V(3).Info("flood skipped, not ready", "member", m)
 			continue
 		}
 
 		// Note that this check works even if the packet does not an input port.
 		if pid == m.port.NID() {
-			packet.Logf(fwdpacket.LogDebugMessage, "flood to %v skipped, do not flood on input", m)
+			packet.Log().V(3).Info("flood skipped, do not flood on input", "member", m)
 			continue
 		}
 
@@ -392,7 +392,7 @@ func (p *portGroup) floodLink(packet fwdpacket.Packet) (fwdaction.State, error) 
 		copy(c, frame)
 		pkt, err := fwdpacket.NewNID(packet.StartHeader(), c, pid)
 		if err != nil {
-			packet.Logf(fwdpacket.LogErrorFrame, "flood to %v failed, err %v", m, err)
+			packet.Log().Error(err, "flood failed", "member", m)
 			continue
 		}
 

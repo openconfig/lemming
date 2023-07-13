@@ -7,10 +7,11 @@ package mock_fwdpacket
 import (
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
+	logr "github.com/go-logr/logr"
 	fwdattribute "github.com/openconfig/lemming/dataplane/forwarding/infra/fwdattribute"
 	fwdpacket "github.com/openconfig/lemming/dataplane/forwarding/infra/fwdpacket"
 	forwarding "github.com/openconfig/lemming/proto/forwarding"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockPacket is a mock of Packet interface.
@@ -134,10 +135,10 @@ func (mr *MockPacketMockRecorder) Length() *gomock.Call {
 }
 
 // Log mocks base method.
-func (m *MockPacket) Log() []string {
+func (m *MockPacket) Log() logr.Logger {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Log")
-	ret0, _ := ret[0].([]string)
+	ret0, _ := ret[0].(logr.Logger)
 	return ret0
 }
 
@@ -147,21 +148,18 @@ func (mr *MockPacketMockRecorder) Log() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Log", reflect.TypeOf((*MockPacket)(nil).Log))
 }
 
-// Logf mocks base method.
-func (m *MockPacket) Logf(arg0 int, arg1 string, arg2 ...interface{}) {
+// LogMsgs mocks base method.
+func (m *MockPacket) LogMsgs() []string {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1}
-	for _, a := range arg2 {
-		varargs = append(varargs, a)
-	}
-	m.ctrl.Call(m, "Logf", varargs...)
+	ret := m.ctrl.Call(m, "LogMsgs")
+	ret0, _ := ret[0].([]string)
+	return ret0
 }
 
-// Logf indicates an expected call of Logf.
-func (mr *MockPacketMockRecorder) Logf(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+// LogMsgs indicates an expected call of LogMsgs.
+func (mr *MockPacketMockRecorder) LogMsgs() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Logf", reflect.TypeOf((*MockPacket)(nil).Logf), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LogMsgs", reflect.TypeOf((*MockPacket)(nil).LogMsgs))
 }
 
 // Mirror mocks base method.

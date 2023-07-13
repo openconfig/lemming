@@ -81,7 +81,7 @@ func (s *selectActionList) Process(packet fwdpacket.Packet, counters fwdobject.C
 		}
 	}
 	a := s.set[index]
-	packet.Logf(fwdpacket.LogDebugMessage, "hash selected %v", a)
+	packet.Log().V(3).Info("action selected ", "action", a)
 	return a, fwdaction.CONTINUE
 }
 

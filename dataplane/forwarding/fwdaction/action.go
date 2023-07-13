@@ -35,6 +35,7 @@ import (
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdobject"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdpacket"
+
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
@@ -219,9 +220,9 @@ func evaluatePacket(packet fwdpacket.Packet, actions Actions, counters fwdobject
 		curr++
 
 		var next Actions
-		packet.Logf(fwdpacket.LogDebugMessage, "curr action %v", a)
+		packet.Log().V(3).Info("evaluate current", "action", a)
 		next, state = a.action.Process(packet, counters)
-		packet.Logf(fwdpacket.LogDebugMessage, "result state %v action %v", state, next)
+		packet.Log().V(3).Info("evaluate result", "state", state, "action", next)
 		exec++
 
 		// Any intervening "EVALUATE" is treated as a "CONTINUE".
@@ -268,15 +269,16 @@ func ProcessPacket(packet fwdpacket.Packet, actions Actions, counters fwdobject.
 
 		// If the action is tagged as onEvaluate, append it to the evaluate list.
 		if a.onEvaluate {
-			packet.Logf(fwdpacket.LogDebugMessage, "defer action %v", a)
+			packet.Log().Info("process defer", "action", a)
+
 			evaluate = append(evaluate, a)
 			continue
 		}
 
 		var next Actions
-		packet.Logf(fwdpacket.LogDebugMessage, "curr action %v", a)
+		packet.Log().V(3).Info("process current", "action", a)
 		next, state = a.action.Process(packet, counters)
-		packet.Logf(fwdpacket.LogDebugMessage, "result state %v action %v", state, next)
+		packet.Log().V(3).Info("process result", "state", state, "action", next)
 		exec++
 
 		// If the state is Evaluate, then evaluate the packet by running the

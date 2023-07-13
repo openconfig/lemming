@@ -19,7 +19,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/golang/mock/gomock"
+	"go.uber.org/mock/gomock"
+
+	"github.com/go-logr/logr/testr"
+
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdtable"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdtable/mock_fwdpacket"
@@ -146,7 +149,8 @@ func TestFlowMapManagement(t *testing.T) {
 		set, err := fwdset.New(ctx, &fwdpb.SetId{
 			ObjectId: &fwdpb.ObjectId{
 				Id: ts.id,
-			}})
+			},
+		})
 		if err != nil {
 			t.Errorf("%v: Unable to create test set, err %v", pos, err)
 		}
@@ -394,7 +398,8 @@ func TestFlowMapMatch(t *testing.T) {
 		set, err := fwdset.New(ctx, &fwdpb.SetId{
 			ObjectId: &fwdpb.ObjectId{
 				Id: ts.id,
-			}})
+			},
+		})
 		if err != nil {
 			t.Errorf("%v: Unable to create test set, err %v", pos, err)
 		}
@@ -645,7 +650,8 @@ func TestFlowTable(t *testing.T) {
 		set, err := fwdset.New(ctx, &fwdpb.SetId{
 			ObjectId: &fwdpb.ObjectId{
 				Id: ts.id,
-			}})
+			},
+		})
 		if err != nil {
 			t.Errorf("%v: Unable to create test set, err %v", pos, err)
 		}
@@ -1016,9 +1022,7 @@ next:
 					packet.EXPECT().Field(q.field()).Return(q.bytes(), nil).AnyTimes()
 				}
 				packet.EXPECT().Field(gomock.Any()).Return(nil, errors.New("no field")).AnyTimes()
-				packet.EXPECT().Logf(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
-				packet.EXPECT().Logf(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
-				packet.EXPECT().Logf(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+				packet.EXPECT().Log().Return(testr.New(t)).AnyTimes()
 
 				actions, state := table.Process(packet, nil)
 				if state != fwdaction.CONTINUE {

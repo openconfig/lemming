@@ -21,6 +21,7 @@ import (
 	"sync"
 
 	log "github.com/golang/glog"
+
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdport"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdtable"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdattribute"
@@ -291,7 +292,7 @@ func (l *InfoList) lookupInfo(e *entry, arg []byte, l2 fwdpb.PacketHeaderId) (st
 	}
 	packet.Debug(true)
 	table.Process(packet, table)
-	m := packet.Log()
+	m := packet.LogMsgs()
 	return strings.Join(m, "\n"), nil
 }
 
@@ -317,7 +318,7 @@ func (l *InfoList) lookupPacket(e *entry, arg []byte, l2 fwdpb.PacketHeaderId, d
 
 	packet.Debug(true)
 	fwdport.Process(port, packet, dir, e.ctx, "Info")
-	m := packet.Log()
+	m := packet.LogMsgs()
 	return strings.Join(m, "\n"), nil
 }
 

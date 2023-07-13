@@ -18,7 +18,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/golang/mock/gomock"
+	"go.uber.org/mock/gomock"
+
+	"github.com/go-logr/logr/testr"
+
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction/mock_fwdpacket"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdobject"
@@ -93,7 +96,7 @@ func validateAllocate(t *testing.T, builder *testBuilder) {
 
 // TestActions tests the creation of various action sets.
 func TestActions(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		count   int
 		actions []fwdpb.ActionType
 	}{
@@ -188,7 +191,7 @@ func TestPacketProcessing(t *testing.T) {
 	}
 	infinite.next = []*ActionAttr{NewActionAttr(infinite, false)}
 
-	var processingTests = []struct {
+	processingTests := []struct {
 		count   int
 		err     bool
 		result  State
@@ -198,7 +201,8 @@ func TestPacketProcessing(t *testing.T) {
 		{0, false, CONTINUE, nil},
 
 		// Test a packet with one action.
-		{1, false, CONTINUE,
+		{
+			1, false, CONTINUE,
 			[]*ActionAttr{
 				NewActionAttr(&recordAction{
 					id:     0,
@@ -209,7 +213,8 @@ func TestPacketProcessing(t *testing.T) {
 		},
 
 		// Test a packet with multiple actions (last terminating).
-		{3, false, DROP,
+		{
+			3, false, DROP,
 			[]*ActionAttr{
 				NewActionAttr(
 					&recordAction{
@@ -231,7 +236,8 @@ func TestPacketProcessing(t *testing.T) {
 		},
 
 		// Test a packet with multiple actions (last terminating).
-		{3, false, OUTPUT,
+		{
+			3, false, OUTPUT,
 			[]*ActionAttr{
 				NewActionAttr(&recordAction{
 					id:     0,
@@ -252,7 +258,8 @@ func TestPacketProcessing(t *testing.T) {
 		},
 
 		// Test a packet with multiple actions (middle terminating).
-		{2, false, CONSUME,
+		{
+			2, false, CONSUME,
 			[]*ActionAttr{
 				NewActionAttr(&recordAction{
 					id:     0,
@@ -273,7 +280,8 @@ func TestPacketProcessing(t *testing.T) {
 		},
 
 		// Test a packet with multiple actions (middle terminating).
-		{2, false, OUTPUT,
+		{
+			2, false, OUTPUT,
 			[]*ActionAttr{
 				NewActionAttr(&recordAction{
 					id:     0,
@@ -294,7 +302,8 @@ func TestPacketProcessing(t *testing.T) {
 		},
 
 		// Test a packet with multiple actions (complex).
-		{7, false, DROP,
+		{
+			7, false, DROP,
 			[]*ActionAttr{
 				NewActionAttr(&recordAction{
 					id:     0,
@@ -349,7 +358,8 @@ func TestPacketProcessing(t *testing.T) {
 		},
 
 		// Test a packet with multiple actions (complex).
-		{9, false, CONTINUE,
+		{
+			9, false, CONTINUE,
 			[]*ActionAttr{
 				NewActionAttr(&recordAction{
 					id:     0,
@@ -407,7 +417,8 @@ func TestPacketProcessing(t *testing.T) {
 		{50, true, DROP, []*ActionAttr{NewActionAttr(infinite, false)}},
 
 		// Test a packet with one onEvaluate action.
-		{0, false, CONTINUE,
+		{
+			0, false, CONTINUE,
 			[]*ActionAttr{
 				NewActionAttr(&recordAction{
 					id:     0,
@@ -418,7 +429,8 @@ func TestPacketProcessing(t *testing.T) {
 		},
 
 		// Test a packet with one Evaluate action.
-		{1, false, CONTINUE,
+		{
+			1, false, CONTINUE,
 			[]*ActionAttr{
 				NewActionAttr(&recordAction{
 					id:     0,
@@ -429,7 +441,8 @@ func TestPacketProcessing(t *testing.T) {
 		},
 
 		// Test a packet with multiple actions, two onevaluate and no evaluate.
-		{1, false, DROP,
+		{
+			1, false, DROP,
 			[]*ActionAttr{
 				NewActionAttr(
 					&recordAction{
@@ -452,7 +465,8 @@ func TestPacketProcessing(t *testing.T) {
 
 		// Test a packet with multiple actions, two onevaluate and one drop
 		// before evaluate.
-		{1, false, DROP,
+		{
+			1, false, DROP,
 			[]*ActionAttr{
 				NewActionAttr(
 					&recordAction{
@@ -480,7 +494,8 @@ func TestPacketProcessing(t *testing.T) {
 
 		// Test a packet with multiple actions, two onevaluate and no drop
 		// before evaluate.
-		{4, false, CONTINUE,
+		{
+			4, false, CONTINUE,
 			[]*ActionAttr{
 				NewActionAttr(
 					&recordAction{
@@ -513,8 +528,7 @@ func TestPacketProcessing(t *testing.T) {
 
 		packet := mock_fwdpacket.NewMockPacket(ctrl)
 		packet.EXPECT().Length().Return(100).AnyTimes()
-		packet.EXPECT().Logf(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
-		packet.EXPECT().Logf(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+		packet.EXPECT().Log().Return(testr.New(t)).AnyTimes()
 		state, err := ProcessPacket(packet, test.actions, nil)
 		switch {
 		case err != nil && test.err:
@@ -549,7 +563,7 @@ func TestActionsEquality(t *testing.T) {
 	newTestBuilder(1, fwdpb.ActionType_ACTION_TYPE_OUTPUT)
 
 	// Run tests of various inputs.
-	var tests = []struct {
+	tests := []struct {
 		first     []*fwdpb.ActionDesc
 		second    []*fwdpb.ActionDesc
 		wantEqual bool // true if we expect them to be equal
@@ -583,11 +597,12 @@ func TestActionsEquality(t *testing.T) {
 			}, {
 				ActionType: fwdpb.ActionType_ACTION_TYPE_DROP,
 			}},
-			second: []*fwdpb.ActionDesc{{
-				ActionType: fwdpb.ActionType_ACTION_TYPE_DROP,
-			}, {
-				ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
-			},
+			second: []*fwdpb.ActionDesc{
+				{
+					ActionType: fwdpb.ActionType_ACTION_TYPE_DROP,
+				}, {
+					ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
+				},
 			},
 			wantEqual: false,
 		},
