@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"sync"
 
 	"github.com/go-logr/logr"
 	"github.com/go-logr/logr/funcr"
@@ -75,7 +74,6 @@ type Packet struct {
 	desc       string               // describes the packet in human readable form
 	attributes fwdattribute.Set     // set of attributes associated with the packet
 	start      fwdpb.PacketHeaderId // Start header of the packet
-	loggerMu   sync.Mutex
 	logger     logr.Logger
 	logSync    *packetLogger
 }
@@ -210,7 +208,7 @@ type packetLogger struct {
 
 // Init receives optional information about the logr library for LogSink
 // implementations that need it.
-func (pl packetLogger) Init(info logr.RuntimeInfo) {}
+func (pl packetLogger) Init(_ logr.RuntimeInfo) {}
 
 // Enabled tests whether this LogSink is enabled at the specified V-level.
 // For example, commandline flags might be used to set the logging
