@@ -75,7 +75,7 @@ type Packet struct {
 	attributes fwdattribute.Set     // set of attributes associated with the packet
 	start      fwdpb.PacketHeaderId // Start header of the packet
 	logger     logr.Logger
-	logSync    *packetLogger
+	logSink    *packetLogger
 }
 
 // fieldDesc returns the Desc of the packet and the corresponding field id that
@@ -262,7 +262,7 @@ func (p *Packet) Log() logr.Logger {
 
 // LogMsgs returns the log messages for the packet.
 func (p *Packet) LogMsgs() []string {
-	return p.logSync.msgs
+	return p.logSink.msgs
 }
 
 // NewPacket parses a frame into a Packet and returns it.
@@ -286,8 +286,8 @@ func NewPacket(start fwdpb.PacketHeaderId, frame *frame.Frame) (*Packet, error) 
 			},
 		}),
 	}
-	p.logSync = sync
-	p.logger = logr.New(p.logSync)
+	p.logSink = sync
+	p.logger = logr.New(p.logSink)
 
 	// Start parsing the packet using the first Header. The metadata is a
 	// lucius only special header. It is always followed by the specified
@@ -453,10 +453,10 @@ func (p *Packet) clone(replicate bool, prepend []byte, id fwdpb.PacketHeaderId, 
 	np.debug = p.debug
 	np.desc = p.desc
 	np.attributes = p.attributes
-	np.logSync = p.logSync
-	np.logger = logr.New(np.logSync)
+	np.logSink = p.logSink
+	np.logger = logr.New(np.logSink)
 	if !replicate {
-		np.logSync.msgs = p.logSync.msgs
+		np.logSink.msgs = p.logSink.msgs
 	}
 
 	// Restore the saved values into the cloned packet.

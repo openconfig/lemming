@@ -230,7 +230,7 @@ func Increment(port Port, octets int, packetID, octetID fwdpb.CounterId) {
 func Input(port Port, packet fwdpacket.Packet, dir fwdpb.PortAction, ctx *fwdcontext.Context) (err error) {
 	defer func() {
 		if err != nil {
-			packet.Log().Error(err, "input processing failed")
+			packet.Log().Error(err, "input processing failed", "frame", fwdpacket.IncludeFrameInLog)
 		}
 	}()
 
