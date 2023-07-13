@@ -41,6 +41,7 @@ go_test(
         "//dataplane/forwarding/protocol",
         "//proto/forwarding",
         "@com_github_go_logr_logr//:logr",
+        "@com_github_go_logr_logr//funcr",
         "@org_uber_go_mock//gomock",
     ],
 )

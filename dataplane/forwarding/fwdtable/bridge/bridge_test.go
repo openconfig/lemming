@@ -23,6 +23,7 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/go-logr/logr"
+	"github.com/go-logr/logr/funcr"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdport"
@@ -155,7 +156,11 @@ func (packet) Debug(bool) {}
 func (packet) LogMsgs() []string { return nil }
 
 // Log returns the packet logger.
-func (packet) Log() logr.Logger { return logr.New(nil) }
+func (packet) Log() logr.Logger {
+	return funcr.New(func(prefix, args string) {
+		fmt.Println(prefix, args)
+	}, funcr.Options{})
+}
 
 // Attributes returns the attributes associated with the packet.
 func (packet) Attributes() fwdattribute.Set { return nil }

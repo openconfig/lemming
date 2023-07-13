@@ -20,6 +20,8 @@ import (
 
 	"go.uber.org/mock/gomock"
 
+	"github.com/go-logr/logr/testr"
+
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction/mock_fwdpacket"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
@@ -170,6 +172,7 @@ func TestSelectActionList(t *testing.T) {
 		for v := 0; v < 256; v++ {
 			packet := mock_fwdpacket.NewMockPacket(ctrl)
 			packet.EXPECT().Field(gomock.Any()).Return([]byte{uint8(v), 0, 0, 0, 0, 0, 0, 0}, nil).AnyTimes()
+			packet.EXPECT().Log().Return(testr.New(t)).AnyTimes()
 
 			s, err := fwdaction.ProcessPacket(packet, actions, nil)
 			if err != nil {

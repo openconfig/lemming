@@ -21,6 +21,8 @@ import (
 
 	"go.uber.org/mock/gomock"
 
+	"github.com/go-logr/logr/testr"
+
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdport"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdport/mock_fwdpacket"
@@ -89,6 +91,7 @@ func TestPortGroupWrite(t *testing.T) {
 	pg := createPortGroup(t, ctx, ports, fwdpb.AggregateHashAlgorithm_AGGREGATE_HASH_ALGORITHM_CRC32, 0)
 	packet := mock_fwdpacket.NewMockPacket(ctrl)
 	packet.EXPECT().Length().Return(10).AnyTimes()
+	packet.EXPECT().Log().Return(testr.New(t)).AnyTimes()
 	packet.EXPECT().Field(gomock.Any()).Return(make([]byte, 8), nil).AnyTimes()
 	packet.EXPECT().Update(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	packet.EXPECT().Frame().Return(nil).AnyTimes()
@@ -142,6 +145,7 @@ func TestPortGroupHash(t *testing.T) {
 		for v := 0; v < 256; v++ {
 			packet := mock_fwdpacket.NewMockPacket(ctrl)
 			packet.EXPECT().Length().Return(10).AnyTimes()
+			packet.EXPECT().Log().Return(testr.New(t)).AnyTimes()
 			packet.EXPECT().Field(gomock.Any()).Return([]byte{uint8(v), 0, 0, 0, 0, 0, 0, 0}, nil).AnyTimes()
 			packet.EXPECT().Update(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 			packet.EXPECT().Frame().Return(nil).AnyTimes()

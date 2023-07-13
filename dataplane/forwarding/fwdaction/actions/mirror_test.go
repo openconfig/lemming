@@ -21,6 +21,8 @@ import (
 
 	"go.uber.org/mock/gomock"
 
+	"github.com/go-logr/logr/testr"
+
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction/mock_fwdpacket"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdport"
@@ -193,6 +195,8 @@ func TestMirror(t *testing.T) {
 			mirrored.EXPECT().Frame().Return(orgFrame).AnyTimes()
 		}
 		mirrored.EXPECT().Attributes().Return(nil).AnyTimes()
+		mirrored.EXPECT().Log().Return(testr.New(t)).AnyTimes()
+		mirrored.EXPECT().LogMsgs().Return(nil).AnyTimes()
 		mirrored.EXPECT().Update(opFID, fwdpacket.OpSet, gomock.Any()).Return(nil).AnyTimes()
 		mirrored.EXPECT().Update(inFID, fwdpacket.OpSet, gomock.Any()).Return(nil).AnyTimes()
 		mirrored.EXPECT().Update(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST, 0),
@@ -205,6 +209,7 @@ func TestMirror(t *testing.T) {
 		original.EXPECT().Frame().Return(orgFrame).AnyTimes()
 		original.EXPECT().Mirror(fields).Return(mirrored, nil).AnyTimes()
 		original.EXPECT().Attributes().Return(nil).AnyTimes()
+		original.EXPECT().Log().Return(testr.New(t)).AnyTimes()
 		original.EXPECT().Field(opFID).Return(make([]byte, protocol.SizeUint64), nil).AnyTimes()
 		original.EXPECT().Field(inFID).Return(make([]byte, protocol.SizeUint64), nil).AnyTimes()
 

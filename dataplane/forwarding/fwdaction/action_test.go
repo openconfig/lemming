@@ -20,6 +20,8 @@ import (
 
 	"go.uber.org/mock/gomock"
 
+	"github.com/go-logr/logr/testr"
+
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction/mock_fwdpacket"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdobject"
@@ -526,6 +528,7 @@ func TestPacketProcessing(t *testing.T) {
 
 		packet := mock_fwdpacket.NewMockPacket(ctrl)
 		packet.EXPECT().Length().Return(100).AnyTimes()
+		packet.EXPECT().Log().Return(testr.New(t)).AnyTimes()
 		state, err := ProcessPacket(packet, test.actions, nil)
 		switch {
 		case err != nil && test.err:

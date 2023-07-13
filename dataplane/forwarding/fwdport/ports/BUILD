@@ -53,6 +53,7 @@ go_test(
         "//dataplane/forwarding/protocol/metadata",
         "//dataplane/forwarding/protocol/opaque",
         "//proto/forwarding",
+        "@com_github_go_logr_logr//testr",
         "@com_github_google_gopacket//:gopacket",
         "@com_github_google_gopacket//layers",
         "@org_golang_google_protobuf//proto",
