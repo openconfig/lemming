@@ -25,17 +25,21 @@
 #include "proto/dataplane/dataplane.pb.h"
 #include "proto/forwarding/forwarding_service.grpc.pb.h"
 #include "proto/forwarding/forwarding_service.pb.h"
+#include "dataplane/standalone/translator.h"
 
 extern "C" {
 #include "inc/sai.h"
 }
 
+class Translator;
+
 class Switch : public APIBase {
  public:
   Switch(std::string id, std::shared_ptr<AttributeManager> mgr,
          std::shared_ptr<forwarding::Forwarding::Stub> fwd,
-         std::shared_ptr<lemming::dataplane::Dataplane::Stub> dplane)
-      : APIBase(id, mgr, fwd, dplane) {}
+         std::shared_ptr<lemming::dataplane::Dataplane::Stub> dplane,
+         Translator* tr)
+      : APIBase(id, mgr, fwd, dplane), translator(tr) {}
   ~Switch() = default;
   sai_status_t create(_In_ uint32_t attr_count,
                       _In_ const sai_attribute_t* attr_list);
@@ -55,6 +59,7 @@ class Switch : public APIBase {
   std::string id;
   std::unordered_map<std::string, std::unique_ptr<APIBase>> apis;
   sai_port_state_change_notification_fn port_callback_fn;
+  Translator* translator;
 };
 
 #endif  // DATAPLANE_STANDALONE_SWITCH_H_

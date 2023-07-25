@@ -19,13 +19,15 @@ import "C"
 import (
 	"context"
 	"fmt"
-	"log"
 	"net"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/openconfig/lemming/dataplane/internal/engine"
+
+	log "github.com/golang/glog"
+
 	dpb "github.com/openconfig/lemming/proto/dataplane"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
@@ -39,6 +41,7 @@ func getForwardCtxID() *C.char {
 
 //export initialize
 func initialize(port int) {
+	log.Info("lemming initialized")
 	e, err := engine.New(context.Background())
 	if err != nil {
 		log.Fatalf("failed create engine: %v", err)

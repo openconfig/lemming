@@ -29,10 +29,12 @@
 #include "dataplane/standalone/neighbor.h"
 #include "dataplane/standalone/next_hop.h"
 #include "dataplane/standalone/next_hop_group.h"
+#include "dataplane/standalone/policer.h"
 #include "dataplane/standalone/port.h"
 #include "dataplane/standalone/route.h"
 #include "dataplane/standalone/router_interface.h"
 #include "dataplane/standalone/translator.h"
+#include "dataplane/standalone/tunnel.h"
 #include "dataplane/standalone/vlan.h"
 
 extern "C" {
@@ -225,8 +227,10 @@ sai_status_t Switch::create(_In_ uint32_t attr_count,
       .value = {.u32 = 1024},
   });
 
-  auto trGrpOid =
-      this->attrMgr->create(SAI_OBJECT_TYPE_HOSTIF_TRAP_GROUP, this->id);
+  sai_object_id_t trGrpOid;
+  this->translator->create(SAI_OBJECT_TYPE_HOSTIF_TRAP_GROUP, &trGrpOid, 0,
+                           nullptr);
+
   attrs.push_back({
       .id = SAI_SWITCH_ATTR_DEFAULT_TRAP_GROUP,
       .value = {.oid = trGrpOid},
@@ -356,6 +360,10 @@ sai_status_t Switch::create_child(sai_object_type_t type, sai_object_id_t id,
       this->apis[std::to_string(id)] = std::make_unique<HostIfTrap>(
           std::to_string(id), this->attrMgr, this->fwd, this->dataplane);
       break;
+    case SAI_OBJECT_TYPE_HOSTIF_TRAP_GROUP:
+      this->apis[std::to_string(id)] = std::make_unique<HostIfTrapGroup>(
+          std::to_string(id), this->attrMgr, this->fwd, this->dataplane);
+      break;
     case SAI_OBJECT_TYPE_DTEL:
       this->apis[std::to_string(id)] = std::make_unique<DTEL>(
           std::to_string(id), this->attrMgr, this->fwd, this->dataplane);
@@ -381,6 +389,18 @@ sai_status_t Switch::create_child(sai_object_type_t type, sai_object_id_t id,
       break;
     case SAI_OBJECT_TYPE_NEXT_HOP_GROUP_MEMBER:
       this->apis[std::to_string(id)] = std::make_unique<NextHopGroupMember>(
+          std::to_string(id), this->attrMgr, this->fwd, this->dataplane);
+      break;
+    case SAI_OBJECT_TYPE_TUNNEL:
+      this->apis[std::to_string(id)] = std::make_unique<Tunnel>(
+          std::to_string(id), this->attrMgr, this->fwd, this->dataplane);
+      break;
+    case SAI_OBJECT_TYPE_TUNNEL_TERM_TABLE_ENTRY:
+      this->apis[std::to_string(id)] = std::make_unique<TunnelTable>(
+          std::to_string(id), this->attrMgr, this->fwd, this->dataplane);
+      break;
+    case SAI_OBJECT_TYPE_POLICER:
+      this->apis[std::to_string(id)] = std::make_unique<Policer>(
           std::to_string(id), this->attrMgr, this->fwd, this->dataplane);
       break;
     default:
@@ -422,14 +442,20 @@ void Switch::handle_notification() {
   free(id);
   forwarding::EventDesc ed;
   while (reader->Read(&ed)) {
+    LOG(INFO) << "Got port notification";
     if (!ed.has_port()) {
       continue;
     }
+    LOG(INFO) << "Got port notification: id "
+              << ed.port().port_id().object_id().id();
     auto type = attrMgr->get_type(ed.port().port_id().object_id().id());
+    LOG(INFO) << "Got port notification: id " << type;
     if (type !=
         SAI_OBJECT_TYPE_PORT) {  // Ignore notification for host if ports.
       continue;
     }
+    LOG(INFO) << "Got port notification: status "
+              << ed.port().port_info().oper_status();
     sai_port_oper_status_notification_t sai_notif{
         .port_id = std::stoul(ed.port().port_id().object_id().id()),
     };
@@ -443,6 +469,11 @@ void Switch::handle_notification() {
       default:
         sai_notif.port_state = SAI_PORT_OPER_STATUS_UNKNOWN;
     }
+    this->attrMgr->set_attribute(std::to_string(sai_notif.port_id),
+                                 {
+                                     .id = SAI_PORT_ATTR_OPER_STATUS,
+                                     .value = {.s32 = sai_notif.port_state},
+                                 });
     LOG(INFO) << "Sending port callback for port id " << sai_notif.port_id;
     this->port_callback_fn(1, &sai_notif);
   }

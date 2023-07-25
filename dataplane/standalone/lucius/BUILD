@@ -10,6 +10,7 @@ go_library(
         "//dataplane/internal/engine",
         "//proto/dataplane",
         "//proto/forwarding",
+        "@com_github_golang_glog//:glog",
         "@org_golang_google_grpc//:go_default_library",
         "@org_golang_google_grpc//credentials/insecure",
     ],

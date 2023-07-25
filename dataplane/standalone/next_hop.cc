@@ -47,7 +47,7 @@ sai_status_t NextHop::create(_In_ uint32_t attr_count,
   lemming::dataplane::AddNextHopRequest req;
   lemming::dataplane::AddNextHopResponse resp;
   req.set_id(std::stoul(this->id));
-  req.mutable_next_hop()->set_port(std::to_string(oid));
+  req.mutable_next_hop()->set_interface(std::to_string(oid));
 
   switch (ip.addr_family) {
     case SAI_IP_ADDR_FAMILY_IPV4:

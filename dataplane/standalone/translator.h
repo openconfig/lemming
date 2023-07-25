@@ -35,6 +35,8 @@ extern "C" {
 #include "inc/sai.h"
 }
 
+class Switch;
+
 class Translator {
  public:
   explicit Translator(std::shared_ptr<grpc::Channel> chan) {

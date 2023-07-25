@@ -22,17 +22,21 @@ import "proto/forwarding/forwarding_port.proto";
 option go_package = "github.com/openconfig/lemming/proto/dataplane";
 
 message NextHop {
-  string port = 1;
-  oneof ip {
-    string ip_str = 2;
-    bytes ip_bytes = 3;
+  oneof dev {
+    string port = 1;
+    string interface = 2;
   }
 
-  uint64 weight = 4;
+  oneof ip {
+    string ip_str = 3;
+    bytes ip_bytes = 4;
+  }
+
+  uint64 weight = 5;
   // pre_transmit_actions are extra actions that are applied just prior to
   // transmitting the packet to the output port (at which time the output
   // actions are applied).
-  repeated forwarding.ActionDesc pre_transmit_actions = 5;
+  repeated forwarding.ActionDesc pre_transmit_actions = 6;
 }
 
 message NextHopList {
@@ -60,6 +64,7 @@ message Route {
     uint64 next_hop_id = 4;        // Id of the next hop.
     uint64 next_hop_group_id = 5;  // Id of the next hop group
     NextHopList next_hops = 6;  // Implicitly create next hop, next hop groups.
+    string interface_id = 7;
   }
 }
 
@@ -135,7 +140,10 @@ message AddNextHopGroupResponse {
 }
 
 message AddNeighborRequest {
-  string port_id = 1;
+  oneof dev {
+    string port_id = 1;
+    string interface_id = 5;
+  }
   oneof ip {
     string ip_str = 2;
     bytes ip_bytes = 3;
@@ -148,7 +156,10 @@ message AddNeighborResponse {
 }
 
 message RemoveNeighborRequest {
-  string port_id = 1;
+  oneof dev {
+    string port_id = 1;
+    string interface_id = 4;
+  }
   oneof ip {
     string ip_str = 2;
     bytes ip_bytes = 3;
@@ -157,6 +168,25 @@ message RemoveNeighborRequest {
 
 message RemoveNeighborResponse {
   
+}
+
+enum InterfaceType {
+  INTERFACE_TYPE_UNSPECIFIED = 0;
+  INTERFACE_TYPE_PORT = 1;
+  INTERFACE_TYPE_LOOPBACK = 2;
+}
+
+message AddInterfaceRequest {
+  string id = 1;
+  uint32 vr_id = 2;
+  bytes src_mac = 3;
+  InterfaceType type = 4;
+  string port_id = 5;
+  uint64 mtu = 6;
+}
+
+message AddInterfaceResponse {
+
 }
 
 service Dataplane {
@@ -168,4 +198,5 @@ service Dataplane {
       returns (AddNextHopGroupResponse) {}
   rpc AddNeighbor(AddNeighborRequest) returns (AddNeighborResponse) {}
   rpc RemoveNeighbor(RemoveNeighborRequest) returns (RemoveNeighborResponse) {}
+  rpc AddInterface(AddInterfaceRequest) returns (AddInterfaceResponse) {}
 }

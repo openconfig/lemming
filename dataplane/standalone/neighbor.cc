@@ -35,16 +35,16 @@ sai_status_t Neighbor::create(common_entry_t entry, _In_ uint32_t attr_count,
   }
   lemming::dataplane::AddNeighborRequest req;
   req.set_mac(mac, sizeof(sai_mac_t));
-  req.set_port_id(std::to_string(entry.neighbor_entry->rif_id));
+  req.set_interface_id(std::to_string(entry.neighbor_entry->rif_id));
 
   switch (entry.neighbor_entry->ip_address.addr_family) {
     case SAI_IP_ADDR_FAMILY_IPV4:
       req.set_ip_bytes(&entry.neighbor_entry->ip_address.addr.ip4,
-                       sizeof(entry.neighbor_entry->ip_address.addr.ip4));
+                       sizeof(sai_ip4_t));
       break;
     case SAI_IP_ADDR_FAMILY_IPV6:
       req.set_ip_bytes(&entry.neighbor_entry->ip_address.addr.ip6,
-                       sizeof(entry.neighbor_entry->ip_address.addr.ip6));
+                       sizeof(sai_ip6_t));
       break;
     default:
       return SAI_STATUS_INVALID_PARAMETER;

@@ -20,6 +20,7 @@
 #include <unordered_map>
 
 #include "dataplane/standalone/switch.h"
+#include "dataplane/standalone/hostif.h"
 
 extern "C" {
 #include "inc/sai.h"
@@ -39,12 +40,16 @@ sai_status_t Translator::create(sai_object_type_t type, sai_object_id_t* id,
   switch (type) {
     case SAI_OBJECT_TYPE_SWITCH: {
       auto sw = std::make_shared<Switch>(std::to_string(*id), this->attrMgr,
-                                         this->fwd, this->dataplane);
+                                         this->fwd, this->dataplane,this);
       this->switches[std::to_string(*id)] = sw;
       this->apis[std::to_string(*id)] = sw;
       status = this->apis[std::to_string(*id)]->create(attr_count, attr_list);
       break;
     }
+    case SAI_OBJECT_TYPE_HOSTIF_TRAP_GROUP:
+          this->apis[std::to_string(*id)] = std::make_unique<HostIfTrapGroup>(
+          std::to_string(*id), this->attrMgr, this->fwd, this->dataplane);
+      break;
     default:
       LOG(INFO) << "Unknown type " << type;
       // TODO(dgrau): handle other types
@@ -112,6 +117,9 @@ sai_status_t Translator::set_attribute(sai_object_type_t type,
   } else {
     status = this->apis[std::to_string(id)]->set_attribute(attr);
   }
+    if (status == SAI_STATUS_SUCCESS) {
+      this->attrMgr->set_attribute(std::to_string(id), attr);
+  }
   return status;
 }
 
@@ -126,6 +134,9 @@ sai_status_t Translator::set_attribute(sai_object_type_t type,
     status = this->switches[switch_id]->set_child_attr(type, idStr, attr);
   } else {
     status = this->apis[idStr]->set_attribute(attr);
+  }
+  if (status == SAI_STATUS_SUCCESS) {
+      this->attrMgr->set_attribute(idStr, attr);
   }
   return status;
 }

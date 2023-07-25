@@ -16,6 +16,7 @@
 
 #include <glog/logging.h>
 
+#include <experimental/filesystem>
 #include <fstream>
 #include <string>
 #include <vector>
@@ -27,7 +28,8 @@ sai_status_t Port::create(_In_ uint32_t attr_count,
                           _In_ const sai_attribute_t* attr_list) {
   std::vector<sai_attribute_t> attrs(attr_list, attr_list + attr_count);
   std::vector<int> lanes;
-  std::string name;
+  std::string name = "eth" + std::to_string(Port::nextIdx);
+  Port::nextIdx += 1;
   sai_port_type_t type;
   for (auto attr : attrs) {
     switch (attr.id) {
@@ -35,29 +37,31 @@ sai_status_t Port::create(_In_ uint32_t attr_count,
         type = static_cast<sai_port_type_t>(attr.value.s32);
         break;
       case SAI_PORT_ATTR_HW_LANE_LIST:
-        lanes = std::vector<int>(
-            attr.value.u32list.list,
-            attr.value.u32list.list + attr.value.u32list.count);
+        // lanes = std::vector<int>(
+        //     attr.value.u32list.list,
+        //     attr.value.u32list.list + attr.value.u32list.count);
 
-        for (auto port : Port::laneMap) {
-          if (port.second == lanes) {
-            name = port.first;
-            break;
-          }
-        }
+        // for (auto port : Port::laneMap) {
+        //   if (port.second == lanes) {
+        //     name = port.first;
+        //     break;
+        //   }
+        // }
         break;
     }
   }
+  bool exists = std::experimental::filesystem::exists("/sys/class/net/" + name);
 
   // TODO(dgrau): Figure out what to do with these ports.
-  if (type != SAI_PORT_TYPE_CPU && name == "") {
+  if (type != SAI_PORT_TYPE_CPU && !exists) {
     attrs.push_back({
         .id = SAI_PORT_ATTR_OPER_STATUS,
         .value = {.s32 = SAI_PORT_OPER_STATUS_NOT_PRESENT},
     });
-    LOG(WARNING) << "Skipped port for SAI interface without kernel device"
-                 << std::to_string(lanes[0]);
+    LOG(WARNING) << "Skipped port for SAI interface without kernel device "
+                 << name;
   } else {
+    this->portExists = true;
     grpc::ClientContext context;
     lemming::dataplane::CreatePortRequest req;
     lemming::dataplane::CreatePortResponse resp;
@@ -78,7 +82,10 @@ sai_status_t Port::create(_In_ uint32_t attr_count,
         .value = {.s32 = SAI_PORT_OPER_STATUS_UP},
     });
   }
-
+  attrs.push_back({
+    .id = SAI_PORT_ATTR_OPER_SPEED,
+    .value = {.u32= 1024},
+  });
   attrs.push_back({
       .id = SAI_PORT_ATTR_NUMBER_OF_INGRESS_PRIORITY_GROUPS,
       .value = {.u32 = 0},
@@ -116,6 +123,36 @@ sai_status_t Port::create(_In_ uint32_t attr_count,
 }
 
 sai_status_t Port::set_attribute(_In_ const sai_attribute_t* attr) {
+  LOG(INFO) << "port set: " << attr->id;
+  switch (attr->id) {
+    case SAI_PORT_ATTR_ADMIN_STATE:
+      if (!this->portExists) {
+        return SAI_STATUS_SUCCESS;
+      }
+      grpc::ClientContext context;
+      forwarding::PortStateRequest req;
+      req.mutable_context_id()->set_id("lucius");
+      req.mutable_port_id()->mutable_object_id()->set_id(this->id);
+
+      if (attr->value.booldata) {
+        LOG(INFO) << "Setting to port up, id " << this->id;
+        req.mutable_operation()->set_admin_status(
+            forwarding::PORT_STATE_ENABLED_UP);
+      } else {
+        LOG(INFO) << "Setting to port down, id " << this->id;
+        req.mutable_operation()->set_admin_status(
+
+            forwarding::PORT_STATE_DISABLED_DOWN);
+      }
+
+      forwarding::PortStateReply resp;
+      auto status = this->fwd->PortState(&context, req, &resp);
+      if (!status.ok()) {
+        LOG(ERROR) << "Failed to port state: " << status.error_message();
+        return SAI_STATUS_FAILURE;
+      }
+      break;
+  }
   return SAI_STATUS_SUCCESS;
 }
 
@@ -135,3 +172,5 @@ std::unordered_map<std::string, std::vector<int>> Port::parseLaneMap() {
 
 std::unordered_map<std::string, std::vector<int>> Port::laneMap =
     Port::parseLaneMap();
+
+int Port::nextIdx = 2;

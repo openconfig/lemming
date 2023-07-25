@@ -518,7 +518,9 @@ func resolvedRouteToRouteRequest(r *ResolvedRoute) (*dpb.Route, error) {
 			}
 		}
 		nexthops = append(nexthops, &dpb.NextHop{
-			Port:               nh.Port.Name,
+			Dev: &dpb.NextHop_Port{
+				Port: nh.Port.Name,
+			},
 			Ip:                 &dpb.NextHop_IpStr{IpStr: nh.Address},
 			Weight:             nh.Weight,
 			PreTransmitActions: actions,
