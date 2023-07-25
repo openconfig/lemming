@@ -50,4 +50,6 @@ class Port : public APIBase {
   bool portExists;
 };
 
+int Port::nextIdx = 2;
+
 #endif  // DATAPLANE_STANDALONE_PORT_H_

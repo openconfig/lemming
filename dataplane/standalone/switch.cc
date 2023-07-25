@@ -126,6 +126,7 @@ sai_status_t Switch::create(_In_ uint32_t attr_count,
       .value = {.u32 = 1024},
   });
 
+  // TODO(dgrau): Implement these APIs and use create child.
   auto stpOid = this->attrMgr->create(SAI_OBJECT_TYPE_STP, this->id);
   attrs.push_back({
       .id = SAI_SWITCH_ATTR_DEFAULT_STP_INST_ID,

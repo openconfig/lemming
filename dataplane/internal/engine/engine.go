@@ -789,11 +789,15 @@ func (e *Engine) neighborReqToEntry(req neighRequest) (*fwdpb.EntryDesc, error) 
 	}
 	e.idToNIDMu.RLock()
 	defer e.idToNIDMu.RUnlock()
+
 	port := req.GetPortId()
 	if port == "" {
 		e.ifaceToPortMu.Lock()
 		port = e.ifaceToPort[req.GetInterfaceId()]
 		e.ifaceToPortMu.Unlock()
+	}
+	if port == "" {
+		return nil, fmt.Errorf("neither port nor interface specified")
 	}
 
 	idBytes := binary.BigEndian.AppendUint64([]byte{}, e.idToNID[port])
@@ -842,7 +846,7 @@ func (e *Engine) AddNeighbor(ctx context.Context, req *dpb.AddNeighborRequest) (
 	if _, err := e.Server.TableEntryAdd(ctx, entry); err != nil {
 		return nil, err
 	}
-	log.Infof("added neighbor req: %v", req.String())
+	log.V(1).Infof("added neighbor req: %v", req.String())
 
 	return &dpb.AddNeighborResponse{}, nil
 }
@@ -1074,9 +1078,9 @@ func (e *Engine) AddInterface(ctx context.Context, req *dpb.AddInterfaceRequest)
 	switch req.GetType() {
 	case dpb.InterfaceType_INTERFACE_TYPE_PORT:
 		log.Infof("added interface id %s port id %s", req.GetId(), req.GetPortId())
-		log.Infof("added port src mac %x", req.GetSrcMac())
+		log.Infof("added port src mac %x", req.GetMac())
 		e.ifaceToPort[req.GetId()] = req.GetPortId()
-		if err := e.UpdatePortSrcMAC(ctx, req.GetPortId(), req.GetSrcMac()); err != nil {
+		if err := e.UpdatePortSrcMAC(ctx, req.GetPortId(), req.GetMac()); err != nil {
 			return nil, err
 		}
 	case dpb.InterfaceType_INTERFACE_TYPE_LOOPBACK: // TODO: this may need to handled differently if multiple loopbacks are created.
@@ -1086,7 +1090,7 @@ func (e *Engine) AddInterface(ctx context.Context, req *dpb.AddInterfaceRequest)
 		}
 		e.ifaceToPort[req.GetId()] = portID
 	default:
-		return nil, status.Errorf(codes.InvalidArgument, "interface type not specified")
+		return nil, status.Errorf(codes.InvalidArgument, "interface type %T unrecongnized", req.GetType())
 	}
 	return &dpb.AddInterfaceResponse{}, nil
 }

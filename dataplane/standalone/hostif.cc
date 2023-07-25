@@ -79,7 +79,7 @@ sai_status_t HostIf::set_attribute(_In_ const sai_attribute_t* attr) {
     case SAI_HOSTIF_ATTR_OPER_STATUS:
       grpc::ClientContext context;
       forwarding::PortStateRequest req;
-      req.mutable_context_id()->set_id("lucius");
+      req.mutable_context_id()->set_id(contextID);
       req.mutable_port_id()->mutable_object_id()->set_id(this->id);
 
       if (attr->value.booldata) {

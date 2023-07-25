@@ -14,9 +14,8 @@
 
 #include "dataplane/standalone/port.h"
 
-#include <sys/stat.h>
-
 #include <glog/logging.h>
+#include <sys/stat.h>
 
 #include <fstream>
 #include <string>
@@ -37,7 +36,8 @@ sai_status_t Port::create(_In_ uint32_t attr_count,
       case SAI_PORT_ATTR_TYPE:
         type = static_cast<sai_port_type_t>(attr.value.s32);
         break;
-      case SAI_PORT_ATTR_HW_LANE_LIST:
+      case SAI_PORT_ATTR_HW_LANE_LIST:  // TODO(dgrau): Decide whether to use hw
+                                        // lane list or interface names.
         // lanes = std::vector<int>(
         //     attr.value.u32list.list,
         //     attr.value.u32list.list + attr.value.u32list.count);
@@ -128,7 +128,7 @@ sai_status_t Port::create(_In_ uint32_t attr_count,
 sai_status_t Port::set_attribute(_In_ const sai_attribute_t* attr) {
   LOG(INFO) << "port set: " << attr->id;
   switch (attr->id) {
-    case SAI_PORT_ATTR_ADMIN_STATE:
+    case SAI_PORT_ATTR_ADMIN_STATE:  // TODO(dgrau): dedup with hostif state.
       if (!this->portExists) {
         return SAI_STATUS_SUCCESS;
       }
@@ -175,5 +175,3 @@ std::unordered_map<std::string, std::vector<int>> Port::parseLaneMap() {
 
 std::unordered_map<std::string, std::vector<int>> Port::laneMap =
     Port::parseLaneMap();
-
-int Port::nextIdx = 2;

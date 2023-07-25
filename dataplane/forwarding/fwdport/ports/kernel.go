@@ -118,7 +118,7 @@ func (p *kernelPort) process() {
 					continue
 				}
 				fwdPkt.Debug(debug.ExternalPortPacketTrace)
-				fwdPkt.Log().V(1).Info("input packet", "device", p.devName, "port", p.ID(), "frame", fwdpacket.IncludeFrameInLog)
+				fwdPkt.Log().V(2).Info("input packet", "device", p.devName, "port", p.ID(), "frame", fwdpacket.IncludeFrameInLog)
 				fwdport.Process(p, fwdPkt, fwdpb.PortAction_PORT_ACTION_INPUT, p.ctx, "Kernel")
 			}
 		}

@@ -41,7 +41,7 @@ func getForwardCtxID() *C.char {
 
 //export initialize
 func initialize(port int) {
-	log.Info("lemming initialized")
+	log.Info("lucius initialized")
 	e, err := engine.New(context.Background())
 	if err != nil {
 		log.Fatalf("failed create engine: %v", err)
