@@ -67,7 +67,7 @@ type Engine struct {
 	// ifaceToPort is a map from interface id to port. For now, assume a 1:1 mapping.
 	// TODO: Clean up all the map and mutexes
 	ifaceToPort   map[string]string
-	cpuPortId     string
+	cpuPortID     string
 	ipToDevNameMu sync.Mutex
 	// ipToDevName is a map from IPs to kernel device name.
 	ipToDevName       map[string]string
@@ -108,7 +108,7 @@ func New(ctx context.Context) (*Engine, error) {
 				log.Infof("added new ip %s to device %s", upd.LinkAddress.IP.String(), l.Attrs().Name)
 				e.ipToDevName[upd.LinkAddress.IP.String()] = l.Attrs().Name
 			} else {
-				delete(e.ipToDevName, fmt.Sprintf(upd.LinkAddress.IP.String()))
+				delete(e.ipToDevName, upd.LinkAddress.IP.String())
 			}
 			e.ipToDevNameMu.Unlock()
 		}
@@ -280,7 +280,7 @@ func (e *Engine) CreatePort(ctx context.Context, req *dpb.CreatePortRequest) (*d
 	case fwdpb.PortType_PORT_TYPE_TAP:
 		err = e.CreateInternalPort(ctx, req.GetId(), req.GetKernelDev(), req.GetExternalPort())
 	case fwdpb.PortType_PORT_TYPE_CPU_PORT:
-		e.cpuPortId = req.GetId()
+		e.cpuPortID = req.GetId()
 		req := &fwdpb.PortCreateRequest{
 			ContextId: &fwdpb.ContextId{Id: e.id},
 			Port: &fwdpb.PortDesc{
@@ -663,7 +663,7 @@ func (e *Engine) AddIPRoute(ctx context.Context, req *dpb.AddIPRouteRequest) (*d
 	}
 
 	//  SAI creates these are special routes for the IPs assigned to the interfaces.
-	if req.Route.GetPortId() == e.cpuPortId {
+	if req.Route.GetPortId() == e.cpuPortID {
 		addr, ok := netip.AddrFromSlice(ip)
 		if !ok {
 			return nil, fmt.Errorf("invalid ip addr")
