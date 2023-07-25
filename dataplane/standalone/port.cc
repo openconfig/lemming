@@ -14,9 +14,10 @@
 
 #include "dataplane/standalone/port.h"
 
+#include <sys/stat.h>
+
 #include <glog/logging.h>
 
-#include <experimental/filesystem>
 #include <fstream>
 #include <string>
 #include <vector>
@@ -50,7 +51,9 @@ sai_status_t Port::create(_In_ uint32_t attr_count,
         break;
     }
   }
-  bool exists = std::experimental::filesystem::exists("/sys/class/net/" + name);
+  std::string filename("/sys/class/net/" + name);
+  struct stat buffer;
+  bool exists = stat(filename.c_str(), &buffer) == 0;
 
   // TODO(dgrau): Figure out what to do with these ports.
   if (type != SAI_PORT_TYPE_CPU && !exists) {
