@@ -31,7 +31,7 @@ sai_status_t RouterInterface::create(_In_ uint32_t attr_count,
     switch (attr.id) {
       // TODO(dgrau): Handle vr and mtu.
       case SAI_ROUTER_INTERFACE_ATTR_VIRTUAL_ROUTER_ID:
-        req.set_vr_id(attr.value.oid);
+        req.set_vrf_id(attr.value.oid);
         break;
       case SAI_ROUTER_INTERFACE_ATTR_MTU:
         req.set_mtu(attr.value.u32);
@@ -40,7 +40,7 @@ sai_status_t RouterInterface::create(_In_ uint32_t attr_count,
         req.set_port_id(std::to_string(attr.value.oid));
         break;
       case SAI_ROUTER_INTERFACE_ATTR_SRC_MAC_ADDRESS:
-        req.set_src_mac(attr.value.mac, sizeof(attr.value.mac));
+        req.set_mac(attr.value.mac, sizeof(attr.value.mac));
         break;
       case SAI_ROUTER_INTERFACE_ATTR_TYPE:
         type = static_cast<sai_router_interface_type_t>(attr.value.s32);

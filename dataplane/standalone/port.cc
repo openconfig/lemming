@@ -29,6 +29,7 @@ sai_status_t Port::create(_In_ uint32_t attr_count,
   std::vector<sai_attribute_t> attrs(attr_list, attr_list + attr_count);
   std::vector<int> lanes;
   std::string name = "eth" + std::to_string(Port::nextIdx);
+  // TODO(dgrau): Decide on approach for port naming and make static.
   Port::nextIdx += 1;
   sai_port_type_t type;
   for (auto attr : attrs) {
@@ -175,3 +176,5 @@ std::unordered_map<std::string, std::vector<int>> Port::parseLaneMap() {
 
 std::unordered_map<std::string, std::vector<int>> Port::laneMap =
     Port::parseLaneMap();
+
+int Port::nextIdx = 2;

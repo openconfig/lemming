@@ -29,10 +29,10 @@ extern "C" {
 #include "inc/sai.h"
 }
 
-const std::string contextID = "lucius"
+const std::string contextID = "lucius";
 
-    // SaiObject is an object and its attributes.
-    class SaiObject {
+// SaiObject is an object and its attributes.
+class SaiObject {
  public:
   sai_object_type_t type;
   std::string switch_id;

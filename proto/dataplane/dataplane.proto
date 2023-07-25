@@ -178,8 +178,8 @@ enum InterfaceType {
 
 message AddInterfaceRequest {
   string id = 1;
-  uint32 vr_id = 2;
-  bytes src_mac = 3;
+  uint32 vrf_id = 2;
+  bytes mac = 3;
   InterfaceType type = 4;
   string port_id = 5;
   uint64 mtu = 6;
