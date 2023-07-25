@@ -54,7 +54,7 @@ sai_status_t RouterInterface::create(_In_ uint32_t attr_count,
       break;
     case SAI_ROUTER_INTERFACE_TYPE_LOOPBACK:
       ifaceType = lemming::dataplane::INTERFACE_TYPE_LOOPBACK;
-      return SAI_STATUS_SUCCESS; // TODO: Support these for real.
+      return SAI_STATUS_SUCCESS;  // TODO(dgrau): Support these for real.
       break;
     default:
       return SAI_STATUS_NOT_SUPPORTED;

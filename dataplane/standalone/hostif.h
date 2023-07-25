@@ -68,8 +68,8 @@ class HostIfTrap : public APIBase {
 class HostIfTrapGroup : public APIBase {
  public:
   HostIfTrapGroup(std::string id, std::shared_ptr<AttributeManager> mgr,
-             std::shared_ptr<forwarding::Forwarding::Stub> fwd,
-             std::shared_ptr<lemming::dataplane::Dataplane::Stub> dplane)
+                  std::shared_ptr<forwarding::Forwarding::Stub> fwd,
+                  std::shared_ptr<lemming::dataplane::Dataplane::Stub> dplane)
       : APIBase(id, mgr, fwd, dplane) {}
   ~HostIfTrapGroup() = default;
   sai_status_t create(_In_ uint32_t attr_count,

@@ -19,7 +19,7 @@
 #include "dataplane/standalone/translator.h"
 
 sai_status_t Policer::create(_In_ uint32_t attr_count,
-                          _In_ const sai_attribute_t* attr_list) {
+                             _In_ const sai_attribute_t* attr_list) {
   std::vector<sai_attribute_t> attrs(attr_list, attr_list + attr_count);
   APIBase::create(attrs.size(), attrs.data());
   return SAI_STATUS_SUCCESS;

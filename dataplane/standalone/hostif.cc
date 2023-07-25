@@ -30,12 +30,13 @@ sai_status_t HostIf::create(_In_ uint32_t attr_count,
     switch (attr.id) {
       case SAI_HOSTIF_ATTR_TYPE:
         if (attr.value.s32 ==
-            SAI_HOSTIF_TYPE_GENETLINK) {  // TODO: figure what this is.
+            SAI_HOSTIF_TYPE_GENETLINK) {  // TODO(dgrau): figure what this is.
           return SAI_STATUS_SUCCESS;
         } else if (attr.value.s32 != SAI_HOSTIF_TYPE_NETDEV) {
           return SAI_STATUS_NOT_SUPPORTED;
-        } else
+        } else {
           break;
+        }
       case SAI_HOSTIF_ATTR_OBJ_ID:
         external_port = attr.value.oid;
         break;

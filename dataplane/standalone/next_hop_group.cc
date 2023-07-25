@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "dataplane/standalone/next_hop_group.h"
+
 #include <glog/logging.h>
 
 #include <bitset>
 #include <string>
 #include <vector>
 
-#include "dataplane/standalone/next_hop_group.h"
 #include "dataplane/standalone/translator.h"
 
 sai_status_t NextHopGroup::create(_In_ uint32_t attr_count,

@@ -83,8 +83,8 @@ sai_status_t Port::create(_In_ uint32_t attr_count,
     });
   }
   attrs.push_back({
-    .id = SAI_PORT_ATTR_OPER_SPEED,
-    .value = {.u32= 1024},
+      .id = SAI_PORT_ATTR_OPER_SPEED,
+      .value = {.u32 = 1024},
   });
   attrs.push_back({
       .id = SAI_PORT_ATTR_NUMBER_OF_INGRESS_PRIORITY_GROUPS,

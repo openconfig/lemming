@@ -21,11 +21,11 @@
 
 #include "dataplane/standalone/common.h"
 #include "dataplane/standalone/port.h"
+#include "dataplane/standalone/translator.h"
 #include "proto/dataplane/dataplane.grpc.pb.h"
 #include "proto/dataplane/dataplane.pb.h"
 #include "proto/forwarding/forwarding_service.grpc.pb.h"
 #include "proto/forwarding/forwarding_service.pb.h"
-#include "dataplane/standalone/translator.h"
 
 extern "C" {
 #include "inc/sai.h"

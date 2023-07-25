@@ -32,8 +32,8 @@ extern "C" {
 class Tunnel : public APIBase {
  public:
   Tunnel(std::string id, std::shared_ptr<AttributeManager> mgr,
-       std::shared_ptr<forwarding::Forwarding::Stub> fwd,
-       std::shared_ptr<lemming::dataplane::Dataplane::Stub> dplane)
+         std::shared_ptr<forwarding::Forwarding::Stub> fwd,
+         std::shared_ptr<lemming::dataplane::Dataplane::Stub> dplane)
       : APIBase(id, mgr, fwd, dplane) {}
   ~Tunnel() = default;
   sai_status_t create(_In_ uint32_t attr_count,
@@ -44,8 +44,8 @@ class Tunnel : public APIBase {
 class TunnelTable : public APIBase {
  public:
   TunnelTable(std::string id, std::shared_ptr<AttributeManager> mgr,
-       std::shared_ptr<forwarding::Forwarding::Stub> fwd,
-       std::shared_ptr<lemming::dataplane::Dataplane::Stub> dplane)
+              std::shared_ptr<forwarding::Forwarding::Stub> fwd,
+              std::shared_ptr<lemming::dataplane::Dataplane::Stub> dplane)
       : APIBase(id, mgr, fwd, dplane) {}
   ~TunnelTable() = default;
   sai_status_t create(_In_ uint32_t attr_count,

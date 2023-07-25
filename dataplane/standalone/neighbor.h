@@ -32,8 +32,8 @@ extern "C" {
 class Neighbor : public APIBase {
  public:
   Neighbor(std::string id, std::shared_ptr<AttributeManager> mgr,
-        std::shared_ptr<forwarding::Forwarding::Stub> fwd,
-        std::shared_ptr<lemming::dataplane::Dataplane::Stub> dplane)
+           std::shared_ptr<forwarding::Forwarding::Stub> fwd,
+           std::shared_ptr<lemming::dataplane::Dataplane::Stub> dplane)
       : APIBase(id, mgr, fwd, dplane) {}
   ~Neighbor() = default;
   sai_status_t create(common_entry_t id, _In_ uint32_t attr_count,
