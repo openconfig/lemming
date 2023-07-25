@@ -663,7 +663,7 @@ func (e *Engine) AddIPRoute(ctx context.Context, req *dpb.AddIPRouteRequest) (*d
 	}
 
 	//  SAI creates these are special routes for the IPs assigned to the interfaces.
-	if req.Route.GetPortId() == e.cpuPortID {
+	if req.GetRoute().GetPortId() != "" && req.GetRoute().GetPortId() == e.cpuPortID {
 		addr, ok := netip.AddrFromSlice(ip)
 		if !ok {
 			return nil, fmt.Errorf("invalid ip addr")
@@ -1013,31 +1013,18 @@ func (e *Engine) CreateInternalPort(ctx context.Context, id, devName, externalID
 		Update: &fwdpb.PortUpdateDesc{
 			Port: &fwdpb.PortUpdateDesc_Kernel{
 				Kernel: &fwdpb.KernelPortUpdateDesc{
-					Inputs: []*fwdpb.ActionDesc{
-						{ // Lookup in layer 2 table.
-							ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
-							Action: &fwdpb.ActionDesc_Lookup{
-								Lookup: &fwdpb.LookupActionDesc{
-									TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: layer2PuntTable}},
-								},
+					Inputs: []*fwdpb.ActionDesc{{ // Lookup in layer 2 table.
+						ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
+						Action: &fwdpb.ActionDesc_Lookup{
+							Lookup: &fwdpb.LookupActionDesc{
+								TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: layer2PuntTable}},
 							},
 						},
-						{ // Assume that the packet's originating from the device are sent to correct port.
-							ActionType: fwdpb.ActionType_ACTION_TYPE_SWAP_OUTPUT_INTERNAL_EXTERNAL,
-						},
-						// fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_COPY, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP).WithFieldSrc(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST)).Build(),
-						// { // Lookup in the neighbor table.
-						// 	ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
-						// 	Action: &fwdpb.ActionDesc_Lookup{
-						// 		Lookup: &fwdpb.LookupActionDesc{
-						// 			TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: neighborTable}},
-						// 		},
-						// 	},
-						// },
-						{
-							ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
-						},
-					},
+					}, { // Assume that the packet's originating from the device are sent to correct port.
+						ActionType: fwdpb.ActionType_ACTION_TYPE_SWAP_OUTPUT_INTERNAL_EXTERNAL,
+					}, {
+						ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
+					}},
 				},
 			},
 		},
