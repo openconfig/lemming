@@ -52,6 +52,7 @@ sai_status_t Port::create(_In_ uint32_t attr_count,
         break;
     }
   }
+  // Check if the interface exists.
   std::string filename("/sys/class/net/" + name);
   struct stat buffer;
   bool exists = stat(filename.c_str(), &buffer) == 0;
