@@ -45,6 +45,11 @@ class Port : public APIBase {
   static std::unordered_map<std::string, std::vector<int>> parseLaneMap();
   // laneMap is map from port name ("eth0") to lanes of hardware lanes.
   static std::unordered_map<std::string, std::vector<int>> laneMap;
+  static int nextIdx;
+  // There may be more ports in the model than physical ports.
+  bool portExists;
 };
+
+
 
 #endif  // DATAPLANE_STANDALONE_PORT_H_

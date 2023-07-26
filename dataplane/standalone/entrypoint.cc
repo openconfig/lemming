@@ -83,7 +83,6 @@ sai_status_t sai_api_initialize(
   google::InstallFailureSignalHandler();
   initialize(GoInt(50000));
 
-
   auto chan = grpc::CreateChannel("localhost:50000",
                                   grpc::InsecureChannelCredentials());
   translator = std::make_shared<Translator>(chan);

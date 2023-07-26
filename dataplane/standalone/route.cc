@@ -43,7 +43,7 @@ sai_status_t Route::create(common_entry_t entry, _In_ uint32_t attr_count,
       req.mutable_route()->mutable_prefix()->mutable_mask()->set_addr(
           &entry.route_entry->destination.addr.ip4,
           sizeof(entry.route_entry->destination.addr.ip4));
-      req.mutable_route()->mutable_prefix()->mutable_mask()->set_addr(
+      req.mutable_route()->mutable_prefix()->mutable_mask()->set_mask(
           &entry.route_entry->destination.mask.ip4,
           sizeof(entry.route_entry->destination.mask.ip4));
       break;
@@ -51,7 +51,7 @@ sai_status_t Route::create(common_entry_t entry, _In_ uint32_t attr_count,
       req.mutable_route()->mutable_prefix()->mutable_mask()->set_addr(
           &entry.route_entry->destination.addr.ip6,
           sizeof(entry.route_entry->destination.addr.ip6));
-      req.mutable_route()->mutable_prefix()->mutable_mask()->set_addr(
+      req.mutable_route()->mutable_prefix()->mutable_mask()->set_mask(
           &entry.route_entry->destination.mask.ip6,
           sizeof(entry.route_entry->destination.mask.ip6));
       break;
@@ -95,7 +95,7 @@ sai_status_t Route::create(common_entry_t entry, _In_ uint32_t attr_count,
         req.mutable_route()->set_next_hop_group_id(oid);
         break;
       case SAI_OBJECT_TYPE_ROUTER_INTERFACE:
-        // TODO(dgrau): Support router interfaces.
+        req.mutable_route()->set_interface_id(hop_id);
         break;
       case SAI_OBJECT_TYPE_PORT:
         req.mutable_route()->set_port_id(hop_id);

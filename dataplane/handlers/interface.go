@@ -482,7 +482,9 @@ func (ni *Interface) handleNeighborUpdate(ctx context.Context, nu *netlink.Neigh
 	switch nu.Type {
 	case unix.RTM_DELNEIGH:
 		req := &dpb.RemoveNeighborRequest{
-			PortId: ni.internalToExternalPort[ni.idxToName[nu.LinkIndex]],
+			Dev: &dpb.RemoveNeighborRequest_PortId{
+				PortId: ni.internalToExternalPort[ni.idxToName[nu.LinkIndex]],
+			},
 			Ip: &dpb.RemoveNeighborRequest_IpBytes{
 				IpBytes: ipToBytes(nu.IP),
 			},
@@ -504,8 +506,10 @@ func (ni *Interface) handleNeighborUpdate(ctx context.Context, nu *netlink.Neigh
 			return
 		}
 		req := &dpb.AddNeighborRequest{
-			PortId: ni.internalToExternalPort[ni.idxToName[nu.LinkIndex]],
-			Mac:    nu.HardwareAddr,
+			Dev: &dpb.AddNeighborRequest_PortId{
+				PortId: ni.internalToExternalPort[ni.idxToName[nu.LinkIndex]],
+			},
+			Mac: nu.HardwareAddr,
 			Ip: &dpb.AddNeighborRequest_IpBytes{
 				IpBytes: ipToBytes(nu.IP),
 			},

@@ -29,10 +29,14 @@ sai_status_t HostIf::create(_In_ uint32_t attr_count,
     LOG(INFO) << "create hostif attr id " << attr.id;
     switch (attr.id) {
       case SAI_HOSTIF_ATTR_TYPE:
-        if (attr.value.s32 != SAI_HOSTIF_TYPE_NETDEV) {
+        if (attr.value.s32 ==
+            SAI_HOSTIF_TYPE_GENETLINK) {  // TODO(dgrau): figure what this is.
+          return SAI_STATUS_SUCCESS;
+        } else if (attr.value.s32 != SAI_HOSTIF_TYPE_NETDEV) {
           return SAI_STATUS_NOT_SUPPORTED;
+        } else {
+          break;
         }
-        break;
       case SAI_HOSTIF_ATTR_OBJ_ID:
         external_port = attr.value.oid;
         break;
@@ -73,6 +77,28 @@ sai_status_t HostIf::set_attribute(_In_ const sai_attribute_t* attr) {
   LOG(INFO) << "set hostif attr id " << attr->id;
   switch (attr->id) {
     case SAI_HOSTIF_ATTR_OPER_STATUS:
+      grpc::ClientContext context;
+      forwarding::PortStateRequest req;
+      req.mutable_context_id()->set_id(contextID);
+      req.mutable_port_id()->mutable_object_id()->set_id(this->id);
+
+      if (attr->value.booldata) {
+        LOG(INFO) << "Setting to hostif up, id " << this->id;
+        req.mutable_operation()->set_admin_status(
+            forwarding::PORT_STATE_ENABLED_UP);
+      } else {
+        LOG(INFO) << "Setting to hostif down, id " << this->id;
+        req.mutable_operation()->set_admin_status(
+
+            forwarding::PORT_STATE_DISABLED_DOWN);
+      }
+
+      forwarding::PortStateReply resp;
+      auto status = this->fwd->PortState(&context, req, &resp);
+      if (!status.ok()) {
+        LOG(ERROR) << "Failed to hostif state: " << status.error_message();
+        return SAI_STATUS_FAILURE;
+      }
       break;
   }
   return SAI_STATUS_SUCCESS;
@@ -97,5 +123,16 @@ sai_status_t HostIfTrap::create(_In_ uint32_t attr_count,
 }
 
 sai_status_t HostIfTrap::set_attribute(_In_ const sai_attribute_t* attr) {
+  return SAI_STATUS_SUCCESS;
+}
+
+sai_status_t HostIfTrapGroup::create(_In_ uint32_t attr_count,
+                                     _In_ const sai_attribute_t* attr_list) {
+  std::vector<sai_attribute_t> attrs(attr_list, attr_list + attr_count);
+  APIBase::create(attrs.size(), attrs.data());
+  return SAI_STATUS_SUCCESS;
+}
+
+sai_status_t HostIfTrapGroup::set_attribute(_In_ const sai_attribute_t* attr) {
   return SAI_STATUS_SUCCESS;
 }

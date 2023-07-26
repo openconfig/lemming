@@ -15,5 +15,8 @@ go_library(
         "//proto/dataplane",
         "//proto/forwarding",
         "@com_github_golang_glog//:glog",
+        "@com_github_vishvananda_netlink//:netlink",
+        "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//status",
     ],
 )

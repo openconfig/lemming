@@ -118,6 +118,7 @@ func (p *kernelPort) process() {
 					continue
 				}
 				fwdPkt.Debug(debug.ExternalPortPacketTrace)
+				fwdPkt.Log().V(2).Info("input packet", "device", p.devName, "port", p.ID(), "frame", fwdpacket.IncludeFrameInLog)
 				fwdport.Process(p, fwdPkt, fwdpb.PortAction_PORT_ACTION_INPUT, p.ctx, "Kernel")
 			}
 		}
@@ -189,6 +190,10 @@ func (kernelBuilder) Build(portDesc *fwdpb.PortDesc, ctx *fwdcontext.Context) (f
 	if err := p.InitCounters("", list...); err != nil {
 		return nil, err
 	}
+	if err := p.ifaceMgr.LinkSubscribe(p.linkUpdateCh, p.linkDoneCh); err != nil {
+		return nil, err
+	}
+
 	p.process()
 	return p, nil
 }

@@ -29,6 +29,8 @@ extern "C" {
 #include "inc/sai.h"
 }
 
+const char contextID[] = "lucius";
+
 // SaiObject is an object and its attributes.
 class SaiObject {
  public:

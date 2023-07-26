@@ -527,7 +527,7 @@ func (s *Server) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResponse
 		s.stateMu.Lock()
 		defer s.stateMu.Unlock()
 
-		log.V(1).Infof("operational state datastore service received SetRequest: %v", req)
+		log.V(3).Infof("operational state datastore service received SetRequest: %v", req)
 		if s.stateSchema == nil {
 			return s.UnimplementedGNMIServer.Set(ctx, req)
 		}

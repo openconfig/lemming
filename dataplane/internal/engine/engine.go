@@ -23,6 +23,11 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
+	"github.com/vishvananda/netlink"
+
 	"github.com/openconfig/lemming/dataplane/forwarding"
 	"github.com/openconfig/lemming/dataplane/forwarding/attributes"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
@@ -36,7 +41,7 @@ import (
 const (
 	fibV4Table       = "fib-v4"
 	fibV6Table       = "fib-v6"
-	srcMACTable      = "port-mac"
+	SRCMACTable      = "port-mac"
 	fibSelectorTable = "fib-selector"
 	neighborTable    = "neighbor"
 	nhgTable         = "nhg-table"
@@ -58,16 +63,58 @@ type Engine struct {
 	nextNHID        atomic.Uint64
 	nextHopGroupsMu sync.Mutex
 	nextHopGroups   map[uint64]*dpb.NextHopIDList
+	ifaceToPortMu   sync.Mutex
+	// ifaceToPort is a map from interface id to port. For now, assume a 1:1 mapping.
+	// TODO: Clean up all the map and mutexes
+	ifaceToPort   map[string]string
+	cpuPortID     string
+	ipToDevNameMu sync.Mutex
+	// ipToDevName is a map from IPs to kernel device name.
+	ipToDevName       map[string]string
+	devNameToPortIDMu sync.Mutex
+	// devNameToPortID is a map from kernel device name to lucius port id.
+	devNameToPortID        map[string]string
+	internalToExternalIDMu sync.Mutex
+	// internalToExternalID is a map from the internal port id to it's corresponding external port.
+	internalToExternalID map[string]string
 }
 
 // New creates a new engine and sets up the forwarding tables.
 func New(ctx context.Context) (*Engine, error) {
 	e := &Engine{
-		id:            "lucius",
-		Server:        forwarding.New("engine"),
-		idToNID:       map[string]uint64{},
-		nextHopGroups: map[uint64]*dpb.NextHopIDList{},
+		id:                   "lucius",
+		Server:               forwarding.New("engine"),
+		idToNID:              map[string]uint64{},
+		nextHopGroups:        map[uint64]*dpb.NextHopIDList{},
+		ifaceToPort:          map[string]string{},
+		ipToDevName:          map[string]string{},
+		devNameToPortID:      map[string]string{},
+		internalToExternalID: map[string]string{},
 	}
+
+	updCh := make(chan netlink.AddrUpdate)
+	doneCh := make(chan struct{})
+
+	go func() {
+		for {
+			upd := <-updCh
+			l, err := netlink.LinkByIndex(upd.LinkIndex)
+			if err != nil {
+				log.Warningf("failed to get link: %v", err)
+				continue
+			}
+			e.ipToDevNameMu.Lock()
+			if upd.NewAddr {
+				log.Infof("added new ip %s to device %s", upd.LinkAddress.IP.String(), l.Attrs().Name)
+				e.ipToDevName[upd.LinkAddress.IP.String()] = l.Attrs().Name
+			} else {
+				delete(e.ipToDevName, upd.LinkAddress.IP.String())
+			}
+			e.ipToDevNameMu.Unlock()
+		}
+	}()
+
+	netlink.AddrSubscribe(updCh, doneCh)
 
 	_, err := e.Server.ContextCreate(context.Background(), &fwdpb.ContextCreateRequest{
 		ContextId: &fwdpb.ContextId{Id: e.id},
@@ -128,7 +175,7 @@ func New(ctx context.Context) (*Engine, error) {
 		ContextId: &fwdpb.ContextId{Id: e.id},
 		Desc: &fwdpb.TableDesc{
 			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
-			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: srcMACTable}},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: SRCMACTable}},
 			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_DROP}},
 			Table: &fwdpb.TableDesc_Exact{
 				Exact: &fwdpb.ExactTableDesc{
@@ -231,8 +278,9 @@ func (e *Engine) CreatePort(ctx context.Context, req *dpb.CreatePortRequest) (*d
 	case fwdpb.PortType_PORT_TYPE_KERNEL:
 		err = e.CreateExternalPort(ctx, req.GetId(), req.GetKernelDev())
 	case fwdpb.PortType_PORT_TYPE_TAP:
-		err = e.CreateLocalPort(ctx, req.GetId(), req.GetKernelDev(), req.GetExternalPort())
+		err = e.CreateInternalPort(ctx, req.GetId(), req.GetKernelDev(), req.GetExternalPort())
 	case fwdpb.PortType_PORT_TYPE_CPU_PORT:
+		e.cpuPortID = req.GetId()
 		req := &fwdpb.PortCreateRequest{
 			ContextId: &fwdpb.ContextId{Id: e.id},
 			Port: &fwdpb.PortDesc{
@@ -251,15 +299,15 @@ func (e *Engine) CreatePort(ctx context.Context, req *dpb.CreatePortRequest) (*d
 }
 
 // AddLayer3PuntRule adds rule to output packets to a corresponding port based on the destination IP and input port.
-func (e *Engine) AddLayer3PuntRule(ctx context.Context, portName string, ip []byte) error {
+func (e *Engine) AddLayer3PuntRule(ctx context.Context, portID string, ip []byte) error {
 	e.idToNIDMu.Lock()
 	defer e.idToNIDMu.Unlock()
-	portID := e.idToNID[portName]
+	portNID := e.idToNID[portID]
 
-	nidBytes := make([]byte, binary.Size(portID))
-	binary.BigEndian.PutUint64(nidBytes, portID)
+	nidBytes := make([]byte, binary.Size(portNID))
+	binary.BigEndian.PutUint64(nidBytes, portNID)
 
-	log.Infof("adding layer3 punt rule: portName %s, id %d, ip %v", portName, portID, ip)
+	log.Infof("adding layer3 punt rule: portID %s, id %d, ip %x", portID, portNID, ip)
 
 	entries := &fwdpb.TableEntryAddRequest{
 		ContextId: &fwdpb.ContextId{Id: e.id},
@@ -507,8 +555,19 @@ func (e *Engine) addNextHop(ctx context.Context, id uint64, nh *dpb.NextHop) err
 	if len(nextHopIP) == 0 {
 		nextHopAct = fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_COPY, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP).WithFieldSrc(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST)).Build()
 	}
+	var port string
 	// Set the output port of the packet.
-	transmitAct := fwdconfig.Action(fwdconfig.TransmitAction(nh.GetPort())).Build()
+	switch dev := nh.GetDev().(type) {
+	case *dpb.NextHop_Port:
+		port = dev.Port
+	case *dpb.NextHop_Interface:
+		e.ifaceToPortMu.Lock()
+		port = e.ifaceToPort[dev.Interface]
+		e.ifaceToPortMu.Unlock()
+	default:
+		return fmt.Errorf("neither port nor interface specified")
+	}
+	transmitAct := fwdconfig.Action(fwdconfig.TransmitAction(port)).Build()
 
 	acts := append([]*fwdpb.ActionDesc{nextHopAct, transmitAct}, nh.GetPreTransmitActions()...)
 	entries := &fwdpb.TableEntryAddRequest{
@@ -558,6 +617,17 @@ func (e *Engine) actionsFromRoute(ctx context.Context, route *dpb.Route) ([]*fwd
 			// Set the output port.
 			fwdconfig.Action(fwdconfig.TransmitAction(hop.PortId)).Build(),
 		}
+	case *dpb.Route_InterfaceId:
+		e.ifaceToPortMu.Lock()
+		port := e.ifaceToPort[hop.InterfaceId]
+		e.ifaceToPortMu.Unlock()
+
+		actions = []*fwdpb.ActionDesc{
+			// Set the next hop IP in the packet's metadata.
+			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_COPY, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP).WithFieldSrc(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST)).Build(),
+			// Set the output port.
+			fwdconfig.Action(fwdconfig.TransmitAction(port)).Build(),
+		}
 	case *dpb.Route_NextHopId:
 		actions = []*fwdpb.ActionDesc{ // Set the next hop ID in the packet's metadata.
 			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_ID).WithUint64Value(hop.NextHopId)).Build(),
@@ -590,6 +660,31 @@ func (e *Engine) AddIPRoute(ctx context.Context, req *dpb.AddIPRouteRequest) (*d
 	fib := fibV6Table
 	if isIPv4 {
 		fib = fibV4Table
+	}
+
+	//  SAI creates these are special routes for the IPs assigned to the interfaces.
+	if req.GetRoute().GetPortId() != "" && req.GetRoute().GetPortId() == e.cpuPortID {
+		addr, ok := netip.AddrFromSlice(ip)
+		if !ok {
+			return nil, fmt.Errorf("invalid ip addr")
+		}
+		e.ipToDevNameMu.Lock()
+		devName := e.ipToDevName[addr.String()]
+		e.ipToDevNameMu.Unlock()
+
+		e.devNameToPortIDMu.Lock()
+		internalPortID := e.devNameToPortID[devName]
+		e.devNameToPortIDMu.Unlock()
+
+		e.internalToExternalIDMu.Lock()
+		portID := e.internalToExternalID[internalPortID]
+		e.internalToExternalIDMu.Unlock()
+
+		log.Infof("adding ip to me route: ip %s, devname %s, internalPortID %s, externalPortID %s", addr.String(), devName, internalPortID, portID)
+		if err := e.AddLayer3PuntRule(ctx, portID, ip); err != nil {
+			return nil, err
+		}
+		return &dpb.AddIPRouteResponse{}, nil
 	}
 
 	entry := &fwdpb.TableEntryAddRequest{
@@ -680,6 +775,7 @@ type neighRequest interface {
 	GetIpBytes() []byte
 	GetIpStr() string
 	GetPortId() string
+	GetInterfaceId() string
 }
 
 func (e *Engine) neighborReqToEntry(req neighRequest) (*fwdpb.EntryDesc, error) {
@@ -693,8 +789,18 @@ func (e *Engine) neighborReqToEntry(req neighRequest) (*fwdpb.EntryDesc, error) 
 	}
 	e.idToNIDMu.RLock()
 	defer e.idToNIDMu.RUnlock()
-	idBytes := make([]byte, binary.Size(e.idToNID[req.GetPortId()]))
-	binary.BigEndian.PutUint64(idBytes, e.idToNID[req.GetPortId()])
+
+	port := req.GetPortId()
+	if port == "" {
+		e.ifaceToPortMu.Lock()
+		port = e.ifaceToPort[req.GetInterfaceId()]
+		e.ifaceToPortMu.Unlock()
+	}
+	if port == "" {
+		return nil, fmt.Errorf("neither port nor interface specified")
+	}
+
+	idBytes := binary.BigEndian.AppendUint64([]byte{}, e.idToNID[port])
 
 	return &fwdpb.EntryDesc{
 		Entry: &fwdpb.EntryDesc_Exact{
@@ -740,6 +846,7 @@ func (e *Engine) AddNeighbor(ctx context.Context, req *dpb.AddNeighborRequest) (
 	if _, err := e.Server.TableEntryAdd(ctx, entry); err != nil {
 		return nil, err
 	}
+	log.V(1).Infof("added neighbor req: %v", req.String())
 
 	return &dpb.AddNeighborResponse{}, nil
 }
@@ -771,7 +878,7 @@ func (e *Engine) UpdatePortSrcMAC(ctx context.Context, portID string, mac []byte
 	binary.BigEndian.PutUint64(idBytes, e.idToNID[portID])
 
 	entry := &fwdpb.TableEntryAddRequest{
-		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: srcMACTable}},
+		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: SRCMACTable}},
 		ContextId: &fwdpb.ContextId{Id: e.id},
 		EntryDesc: &fwdpb.EntryDesc{
 			Entry: &fwdpb.EntryDesc_Exact{
@@ -807,12 +914,13 @@ func (e *Engine) UpdatePortSrcMAC(ctx context.Context, portID string, mac []byte
 
 // CreateExternalPort creates an external port (connected to other devices).
 func (e *Engine) CreateExternalPort(ctx context.Context, id, devName string) error {
+	log.Infof("added external id %s, dev %s", id, devName)
 	nid, err := createKernelPort(ctx, e.id, e.Server, id, devName)
 	if err != nil {
 		return err
 	}
 	e.idToNIDMu.Lock()
-	e.idToNID[devName] = nid
+	e.idToNID[id] = nid
 	e.idToNIDMu.Unlock()
 
 	update := &fwdpb.PortUpdateRequest{
@@ -870,7 +978,7 @@ func (e *Engine) CreateExternalPort(ctx context.Context, id, devName string) err
 						ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
 						Action: &fwdpb.ActionDesc_Lookup{
 							Lookup: &fwdpb.LookupActionDesc{
-								TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: srcMACTable}},
+								TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: SRCMACTable}},
 							},
 						},
 					}},
@@ -884,16 +992,24 @@ func (e *Engine) CreateExternalPort(ctx context.Context, id, devName string) err
 	return nil
 }
 
-// CreateLocalPort creates an local (ie TAP) port for the given linux device name.
-func (e *Engine) CreateLocalPort(ctx context.Context, id, devName, externalID string) error {
+// CreateInternalPort creates an local (ie TAP) port for the given linux device name.
+func (e *Engine) CreateInternalPort(ctx context.Context, id, devName, externalID string) error {
+	log.Infof("added internal id %s, dev %s, external %s", id, devName, externalID)
 	nid, err := createTapPort(ctx, e.id, e.Server, id, devName)
 	if err != nil {
 		return err
 	}
+	e.devNameToPortIDMu.Lock()
+	e.devNameToPortID[devName] = id
+	e.devNameToPortIDMu.Unlock()
 
 	e.idToNIDMu.Lock()
 	e.idToNID[id] = nid
 	e.idToNIDMu.Unlock()
+
+	e.internalToExternalIDMu.Lock()
+	e.internalToExternalID[id] = externalID
+	e.internalToExternalIDMu.Unlock()
 
 	update := &fwdpb.PortUpdateRequest{
 		ContextId: &fwdpb.ContextId{Id: e.id},
@@ -908,20 +1024,8 @@ func (e *Engine) CreateLocalPort(ctx context.Context, id, devName, externalID st
 								TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: layer2PuntTable}},
 							},
 						},
-					}, { // Lookup in FIB.
-						ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
-						Action: &fwdpb.ActionDesc_Lookup{
-							Lookup: &fwdpb.LookupActionDesc{
-								TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: fibSelectorTable}},
-							},
-						},
-					}, { // Lookup in the neighbor table.
-						ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
-						Action: &fwdpb.ActionDesc_Lookup{
-							Lookup: &fwdpb.LookupActionDesc{
-								TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: neighborTable}},
-							},
-						},
+					}, { // Assume that the packet's originating from the device are sent to correct port.
+						ActionType: fwdpb.ActionType_ACTION_TYPE_SWAP_OUTPUT_INTERNAL_EXTERNAL,
 					}, {
 						ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
 					}},
@@ -963,4 +1067,30 @@ func (e *Engine) GetCounters(ctx context.Context, name string) (*fwdpb.ObjectCou
 		ObjectId:  &fwdpb.ObjectId{Id: name},
 		ContextId: &fwdpb.ContextId{Id: e.id},
 	})
+}
+
+// AddInterface adds an interface to the dataplane.
+// TODO: Handle virtual router, mtu.
+func (e *Engine) AddInterface(ctx context.Context, req *dpb.AddInterfaceRequest) (*dpb.AddInterfaceResponse, error) {
+	e.ifaceToPortMu.Lock()
+	defer e.ifaceToPortMu.Unlock()
+
+	switch req.GetType() {
+	case dpb.InterfaceType_INTERFACE_TYPE_PORT:
+		log.Infof("added interface id %s port id %s", req.GetId(), req.GetPortId())
+		log.Infof("added port src mac %x", req.GetMac())
+		e.ifaceToPort[req.GetId()] = req.GetPortId()
+		if err := e.UpdatePortSrcMAC(ctx, req.GetPortId(), req.GetMac()); err != nil {
+			return nil, err
+		}
+	case dpb.InterfaceType_INTERFACE_TYPE_LOOPBACK: // TODO: this may need to handled differently if multiple loopbacks are created.
+		portID := fmt.Sprintf("%s-port", req.GetId())
+		if err := e.CreateExternalPort(ctx, portID, "lo"); err != nil {
+			return nil, err
+		}
+		e.ifaceToPort[req.GetId()] = portID
+	default:
+		return nil, status.Errorf(codes.InvalidArgument, "interface type %T unrecongnized", req.GetType())
+	}
+	return &dpb.AddInterfaceResponse{}, nil
 }
