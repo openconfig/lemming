@@ -108,7 +108,7 @@ func handleEnumAttr(enum MemberDef) attrInfo {
 				case strings.Contains(annotation, "CREATE_AND_SET"):
 					canCreate = true
 					canRead = true
-					canCreate = true
+					canSet = true
 				case strings.Contains(annotation, "READ_ONLY"):
 					canRead = true
 				}
@@ -126,10 +126,10 @@ func handleEnumAttr(enum MemberDef) attrInfo {
 			info.createFields = append(info.createFields, atn)
 		}
 		if canRead {
-			info.setFields = append(info.setFields, atn)
+			info.readFields = append(info.readFields, atn)
 		}
 		if canSet {
-			info.readFields = append(info.readFields, atn)
+			info.setFields = append(info.setFields, atn)
 		}
 	}
 	return info
