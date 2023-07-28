@@ -959,6 +959,8 @@ github.com/srl-labs/srl-controller v0.6.0/go.mod h1:PedxdPZPtDcC+wDOKhG6uXR4xgkH
 github.com/srl-labs/srlinux-scrapli v0.6.0 h1:YQjckD+a7f6u2M+k4SmJUrDa7BFvoOTb2mMbPe6hLZM=
 github.com/srl-labs/srlinux-scrapli v0.6.0/go.mod h1:8hCoel3XaSyZD8hxSs8Pij/uZqaccd57mfeHgc0oJhM=
 github.com/stoewer/go-strcase v1.2.0/go.mod h1:IBiWB2sKIp3wVVQ3Y035++gc+knqhUQag1KpM8ahLw8=
+github.com/stoewer/go-strcase v1.3.0 h1:g0eASXYtp+yvN9fK8sH94oCIk0fau9uV1/ZdJ0AVEzs=
+github.com/stoewer/go-strcase v1.3.0/go.mod h1:fAH5hQ5pehh+j3nZfvwdk2RgEgQjAoM8wodgtPmh1xo=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.4.0/go.mod h1:YvHI0jy2hoMjB+UWwv71VJQ9isScKT/TqJzVSSt89Yw=
 github.com/stretchr/objx v0.5.0/go.mod h1:Yh+to48EsGEfYuaHDzXPcE3xhTkx73EhmCGUpEOglKo=

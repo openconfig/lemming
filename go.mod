@@ -26,6 +26,7 @@ require (
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.16.0
+	github.com/stoewer/go-strcase v1.3.0
 	github.com/vishvananda/netlink v1.2.1-beta.2
 	github.com/wenovus/gobgp/v3 v3.0.0-20230512225508-639b46f0d89c
 	go.uber.org/mock v0.2.0
