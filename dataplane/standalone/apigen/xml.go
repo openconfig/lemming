@@ -70,7 +70,8 @@ type SimpleSect struct {
 
 const xmlPath = "dataplane/standalone/apigen/xml"
 
-func parseXML() (*xmlInfo, error) {
+// parseSAIXMLDir parses all the SAI Doxygen XML files in a directory.
+func parseSAIXMLDir() (*xmlInfo, error) {
 	i := &xmlInfo{
 		attrs: make(map[string]attrInfo),
 		enums: make(map[string][]string),
@@ -89,6 +90,8 @@ func parseXML() (*xmlInfo, error) {
 
 var typeNameExpr = regexp.MustCompile("sai_(.*)_attr.*")
 
+// handleEnumAttr converts the MemberDef into attrInfo extracting the enum values,
+// their types, and if they createable, readable, and/or writable.
 func handleEnumAttr(enum MemberDef) attrInfo {
 	info := attrInfo{}
 	trimStr := strings.TrimSuffix(strings.TrimPrefix(enum.Name, "_"), "_t") + "_"
@@ -143,6 +146,7 @@ func handleEnum(enum MemberDef) []string {
 	return res
 }
 
+// parseXMLFile parses a single XML and appends the values into xmlInfo.
 func parseXMLFile(file string, xmlInfo *xmlInfo) error {
 	b, err := os.ReadFile(file)
 	if err != nil {

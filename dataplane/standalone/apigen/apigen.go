@@ -527,7 +527,7 @@ func generate() error {
 		return err
 	}
 	sai := getFuncAndTypes(ast)
-	xmlInfo, err := parseXML()
+	xmlInfo, err := parseSAIXMLDir()
 	if err != nil {
 		return err
 	}
