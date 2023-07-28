@@ -55,22 +55,22 @@ type EnumValue struct {
 
 // DetailedDescription contains extra information about an enum value.
 type DetailedDescription struct {
-	Para Para `xml:"para"`
+	Paragraph Paragraph `xml:"para"`
 }
 
-// Para is a generic paragraph.
-type Para struct {
-	SinpleSect []SinpleSect `xml:"simplesect"`
+// Paragraph is a generic paragraph.
+type Paragraph struct {
+	SimpleSect []SimpleSect `xml:"simplesect"`
 }
 
-// SinpleSect contains a description of an element.
-type SinpleSect struct {
+// SimpleSect contains a description of an element.
+type SimpleSect struct {
 	Para string `xml:"para"`
 }
 
 const xmlPath = "dataplane/standalone/apigen/xml"
 
-func parseXml() (*xmlInfo, error) {
+func parseXML() (*xmlInfo, error) {
 	i := &xmlInfo{
 		attrs: make(map[string]attrInfo),
 		enums: make(map[string][]string),
@@ -80,7 +80,7 @@ func parseXml() (*xmlInfo, error) {
 		return nil, err
 	}
 	for _, file := range files {
-		if err := parseXmlFile(filepath.Join(xmlPath, file.Name()), i); err != nil {
+		if err := parseXMLFile(filepath.Join(xmlPath, file.Name()), i); err != nil {
 			return nil, err
 		}
 	}
@@ -95,7 +95,7 @@ func handleEnumAttr(enum MemberDef) attrInfo {
 	for _, value := range enum.EnumValues {
 		var canCreate, canRead, canSet bool
 		var saiType string
-		for _, details := range value.DetailedDescription.Para.SinpleSect {
+		for _, details := range value.DetailedDescription.Paragraph.SimpleSect {
 			annotation := strings.TrimSpace(details.Para)
 			switch {
 			case strings.HasPrefix(annotation, "@@type"):
@@ -143,7 +143,7 @@ func handleEnum(enum MemberDef) []string {
 	return res
 }
 
-func parseXmlFile(file string, xmlInfo *xmlInfo) error {
+func parseXMLFile(file string, xmlInfo *xmlInfo) error {
 	b, err := os.ReadFile(file)
 	if err != nil {
 		return err
@@ -169,7 +169,6 @@ func parseXmlFile(file string, xmlInfo *xmlInfo) error {
 		} else {
 			xmlInfo.enums[strings.TrimPrefix(enum.Name, "_")] = handleEnum(enum)
 		}
-
 	}
 	return nil
 }

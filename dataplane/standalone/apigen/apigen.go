@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// The apigen command generates C++ and protobuf code for the SAI API.
 package main
 
 import (
@@ -261,7 +262,8 @@ var (
 	funcExpr = regexp.MustCompile(`^([a-z]*_)(\w*)_(attribute|stats_ext|stats)|([a-z]*)_(\w*)$`)
 )
 
-var protoTmpl = template.Must(template.New("cc").Parse(`
+// TODO: Enable generation.
+var _ = template.Must(template.New("cc").Parse(`
 syntax = "proto3";
 
 package lemming.dataplane.sai;
@@ -326,7 +328,6 @@ type protoRPC struct {
 
 type saiTypeInfo struct {
 	Repeated  bool
-	Primitive bool
 	ProtoType string
 }
 
@@ -470,12 +471,15 @@ var saiTypeToProto = map[string]saiTypeInfo{
 	},
 }
 
-var saiTypeToProtoTypeCompound = map[string]func(next string, xmlInfo *xmlInfo) string{
-	"sai_s32_list_t": func(next string, xmlInfo *xmlInfo) string {
-		if _, ok := xmlInfo.enums[next]; !ok {
+// saiTypeToProtoTypeCompound handles compound sai types (eg list of enums).
+// The map key contains the base type (eg list) and func accepts the subtype (eg an enum type)
+// and returns the full type string (eg repeated sample_enum).
+var saiTypeToProtoTypeCompound = map[string]func(subType string, xmlInfo *xmlInfo) string{
+	"sai_s32_list_t": func(subType string, xmlInfo *xmlInfo) string {
+		if _, ok := xmlInfo.enums[subType]; !ok {
 			return ""
 		}
-		return "repeated " + next
+		return "repeated " + subType
 	},
 	// TODO: Support these types
 	"sai_acl_field_data_t":  func(next string, xmlInfo *xmlInfo) string { return "-" },
@@ -483,6 +487,8 @@ var saiTypeToProtoTypeCompound = map[string]func(next string, xmlInfo *xmlInfo) 
 	"sai_pointer_t":         func(next string, xmlInfo *xmlInfo) string { return "-" },
 }
 
+// saiTypeToProtoType returns the protobuf type string for a SAI type.
+// example: sai_u8_list_t -> repeated uint32
 func saiTypeToProtoType(saiType string, xmlInfo *xmlInfo) (string, error) {
 	typ := ""
 
@@ -521,7 +527,7 @@ func generate() error {
 		return err
 	}
 	sai := getFuncAndTypes(ast)
-	xmlInfo, err := parseXml()
+	xmlInfo, err := parseXML()
 	if err != nil {
 		return err
 	}
@@ -588,8 +594,9 @@ func generate() error {
 			}
 
 			// Handle proto generation
-			// TODO: Enable proto generation.
-			if tf.Operation == "create" {
+			// TODO: Enable proto generation and handle other funcs.
+			switch tf.Operation {
+			case "create":
 				for i, attr := range xmlInfo.attrs[tf.TypeName].createFields {
 					field := protoTmplField{
 						Index: i + 1,
@@ -608,7 +615,7 @@ func generate() error {
 					ResponseName: msg.ResponseName,
 					Name:         strcase.UpperCamelCase(tf.Name),
 				})
-			} else if tf.Operation == "set_attribute" {
+			case "set_attribute":
 				for i, attr := range xmlInfo.attrs[tf.TypeName].setFields {
 					field := protoTmplField{
 						Index: i + 1,
@@ -629,7 +636,7 @@ func generate() error {
 					ResponseName: msg.ResponseName,
 					Name:         strcase.UpperCamelCase(tf.Name),
 				})
-			} else if tf.Operation == "get_attribute" {
+			case "get_attribute":
 				for i, attr := range xmlInfo.attrs[tf.TypeName].readFields {
 					field := protoTmplField{
 						Index: i + 1,
