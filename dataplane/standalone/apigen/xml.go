@@ -138,7 +138,7 @@ func handleEnumAttr(enum MemberDef) attrInfo {
 	return info
 }
 
-func handleEnum(enum MemberDef) []string {
+func memberToEnumValueStrings(enum MemberDef) []string {
 	res := []string{}
 	for _, value := range enum.EnumValues {
 		res = append(res, value.Name)
@@ -171,7 +171,7 @@ func parseXMLFile(file string, xmlInfo *xmlInfo) error {
 			info := handleEnumAttr(enum)
 			xmlInfo.attrs[strings.ToUpper(matches[1])] = info
 		} else {
-			xmlInfo.enums[strings.TrimPrefix(enum.Name, "_")] = handleEnum(enum)
+			xmlInfo.enums[strings.TrimPrefix(enum.Name, "_")] = memberToEnumValueStrings(enum)
 		}
 	}
 	return nil
@@ -193,6 +193,8 @@ type attrTypeName struct {
 
 // xmlInfo contains all the info parsed from the doxygen.
 type xmlInfo struct {
+	// attrs is a map from sai type (sai_port_t) to its attributes.
 	attrs map[string]attrInfo
+	// attrs is a map from enum name (sai_port_media_type_t) to the values of the enum.
 	enums map[string][]string
 }

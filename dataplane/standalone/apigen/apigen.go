@@ -490,8 +490,7 @@ var saiTypeToProtoTypeCompound = map[string]func(subType string, xmlInfo *xmlInf
 // saiTypeToProtoType returns the protobuf type string for a SAI type.
 // example: sai_u8_list_t -> repeated uint32
 func saiTypeToProtoType(saiType string, xmlInfo *xmlInfo) (string, error) {
-	typ := ""
-
+	var typ string
 	if protoType, ok := saiTypeToProto[saiType]; ok {
 		typ = protoType.ProtoType
 		if protoType.Repeated {
@@ -500,9 +499,11 @@ func saiTypeToProtoType(saiType string, xmlInfo *xmlInfo) (string, error) {
 	} else if _, ok := xmlInfo.enums[saiType]; ok {
 		typ = saiType
 	} else if splits := strings.Split(saiType, " "); len(splits) == 2 {
-		if fn, ok := saiTypeToProtoTypeCompound[splits[0]]; ok {
-			typ = fn(splits[1], xmlInfo)
+		fn, ok := saiTypeToProtoTypeCompound[splits[0]]
+		if !ok {
+			return "", fmt.Errorf("unknown sai type: %v", saiType)
 		}
+		typ = fn(splits[1], xmlInfo)
 	} else {
 		return "", fmt.Errorf("unknown sai type: %v", saiType)
 	}
@@ -588,6 +589,7 @@ func generate() error {
 			}
 			ccData.Funcs = append(ccData.Funcs, tf)
 
+			// TODO: handle proto in its own func.
 			msg := protoTmplMessage{
 				RequestName:  strcase.UpperCamelCase(tf.Name + "_request"),
 				ResponseName: strcase.UpperCamelCase(tf.Name + "_response"),
