@@ -4,6 +4,8 @@ go_library(
     name = "apigen_lib",
     srcs = [
         "apigen.go",
+        "ccgen.go",
+        "protogen.go",
         "xml.go",
     ],
     importpath = "github.com/openconfig/lemming/dataplane/standalone/apigen",

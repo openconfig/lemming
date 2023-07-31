@@ -48,18 +48,20 @@ type MemberDef struct {
 
 // EnumValue is a single values in a enum.
 type EnumValue struct {
-	Name                string              `xml:"name"`
-	Initializer         string              `xml:"initializer"`
-	DetailedDescription DetailedDescription `xml:"detaileddescription"`
+	Name                string      `xml:"name"`
+	Initializer         string      `xml:"initializer"`
+	DetailedDescription Description `xml:"detaileddescription"`
+	BriefDescription    Description `xml:"briefdescription"`
 }
 
-// DetailedDescription contains extra information about an enum value.
-type DetailedDescription struct {
+// Description contains extra information about an enum value.
+type Description struct {
 	Paragraph Paragraph `xml:"para"`
 }
 
 // Paragraph is a generic paragraph.
 type Paragraph struct {
+	InlineText string       `xml:",chardata"` // For BriefDescription, the paragraph contains raw text.
 	SimpleSect []SimpleSect `xml:"simplesect"`
 }
 
@@ -71,8 +73,8 @@ type SimpleSect struct {
 const xmlPath = "dataplane/standalone/apigen/xml"
 
 // parseSAIXMLDir parses all the SAI Doxygen XML files in a directory.
-func parseSAIXMLDir() (*xmlInfo, error) {
-	i := &xmlInfo{
+func parseSAIXMLDir() (*protoGenInfo, error) {
+	i := &protoGenInfo{
 		attrs: make(map[string]attrInfo),
 		enums: make(map[string][]string),
 	}
@@ -90,9 +92,9 @@ func parseSAIXMLDir() (*xmlInfo, error) {
 
 var typeNameExpr = regexp.MustCompile("sai_(.*)_attr.*")
 
-// handleEnumAttr converts the MemberDef into attrInfo extracting the enum values,
+// memberToAttrInfo converts the MemberDef into attrInfo extracting the enum values,
 // their types, and if they createable, readable, and/or writable.
-func handleEnumAttr(enum MemberDef) attrInfo {
+func memberToAttrInfo(enum MemberDef) attrInfo {
 	info := attrInfo{}
 	trimStr := strings.TrimSuffix(strings.TrimPrefix(enum.Name, "_"), "_t") + "_"
 	for _, value := range enum.EnumValues {
@@ -124,6 +126,7 @@ func handleEnumAttr(enum MemberDef) attrInfo {
 			EnumName:   value.Name,
 			MemberName: strings.TrimPrefix(strings.ToLower(value.Name), trimStr),
 			SaiType:    saiType,
+			Comment:    strings.TrimSpace(value.BriefDescription.Paragraph.InlineText),
 		}
 		if canCreate {
 			info.createFields = append(info.createFields, atn)
@@ -147,7 +150,7 @@ func memberToEnumValueStrings(enum MemberDef) []string {
 }
 
 // parseXMLFile parses a single XML and appends the values into xmlInfo.
-func parseXMLFile(file string, xmlInfo *xmlInfo) error {
+func parseXMLFile(file string, xmlInfo *protoGenInfo) error {
 	b, err := os.ReadFile(file)
 	if err != nil {
 		return err
@@ -157,23 +160,25 @@ func parseXMLFile(file string, xmlInfo *xmlInfo) error {
 		return err
 	}
 
-	for _, enum := range dox.CompoundDef.SectionDef[0].MemberDef {
-		if enum.Kind != "enum" {
-			fmt.Printf("skipping kind %s\n", enum.Kind)
-			continue
-		}
-
-		if strings.Contains(enum.Name, "attr_t") {
-			matches := typeNameExpr.FindStringSubmatch(enum.Name)
-			if len(matches) != 2 {
-				return fmt.Errorf("unexpected number of matches: got %v", matches)
+	for _, section := range dox.CompoundDef.SectionDef {
+		for _, enum := range section.MemberDef {
+			if enum.Kind != "enum" {
+				fmt.Printf("skipping kind %s\n", enum.Kind)
+				continue
 			}
-			info := handleEnumAttr(enum)
-			xmlInfo.attrs[strings.ToUpper(matches[1])] = info
-		} else {
-			xmlInfo.enums[strings.TrimPrefix(enum.Name, "_")] = memberToEnumValueStrings(enum)
+			if strings.Contains(enum.Name, "attr_t") {
+				matches := typeNameExpr.FindStringSubmatch(enum.Name)
+				if len(matches) != 2 {
+					return fmt.Errorf("unexpected number of matches: got %v", matches)
+				}
+				info := memberToAttrInfo(enum)
+				xmlInfo.attrs[strings.ToUpper(matches[1])] = info
+			} else {
+				xmlInfo.enums[strings.TrimPrefix(enum.Name, "_")] = memberToEnumValueStrings(enum)
+			}
 		}
 	}
+
 	return nil
 }
 
@@ -189,10 +194,11 @@ type attrTypeName struct {
 	MemberName string
 	SaiType    string
 	EnumName   string
+	Comment    string
 }
 
-// xmlInfo contains all the info parsed from the doxygen.
-type xmlInfo struct {
+// protoGenInfo contains all the info parsed from the doxygen.
+type protoGenInfo struct {
 	// attrs is a map from sai type (sai_port_t) to its attributes.
 	attrs map[string]attrInfo
 	// attrs is a map from enum name (sai_port_media_type_t) to the values of the enum.
