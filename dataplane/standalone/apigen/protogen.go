@@ -105,8 +105,8 @@ func populateTmplDataFromFunc(protoTmplData *protoTmplData, funcName, entryType,
 			// TODO: Otherwise mark them for generation in a common package.
 			if strings.HasPrefix(attr.SaiType, "sai_"+nameTrimmed) {
 				protoName := trimSAIName(attr.SaiType, true, false)
-				vals, ok := xmlInfo.enums[attr.SaiType]
-				if ok {
+				// TODO: Generated code for non-enum types.
+				if vals, ok := xmlInfo.enums[attr.SaiType]; ok {
 					enum := protoEnum{
 						Name:   protoName,
 						Values: []protoEnumValues{{Index: 0, Name: trimSAIName(attr.SaiType, false, true) + "_UNSPECIFIED"}},
@@ -118,12 +118,6 @@ func populateTmplDataFromFunc(protoTmplData *protoTmplData, funcName, entryType,
 						})
 					}
 					protoTmplData.Enums[protoName] = enum
-				} else {
-					var err error
-					protoName, err = saiTypeToProtoType(attr.SaiType, xmlInfo, false)
-					if err != nil {
-						return err
-					}
 				}
 			}
 		}
@@ -511,9 +505,9 @@ var saiTypeToProtoTypeCompound = map[string]func(subType string, xmlInfo *protoG
 			return ""
 		}
 		if inOneof {
-			return "List" + subType
+			return "List" + trimSAIName(subType, true, false)
 		}
-		return "repeated " + subType
+		return "repeated " + trimSAIName(subType, true, false)
 	},
 	// TODO: Support these types
 	"sai_acl_field_data_t":  func(next string, xmlInfo *protoGenInfo, inOneof bool) string { return "AclFieldData" },
