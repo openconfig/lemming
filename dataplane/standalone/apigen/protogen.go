@@ -28,7 +28,7 @@ func populateTmplDataFromFunc(protoTmplData *protoTmplData, funcName, entryType,
 		RequestName:  strcase.UpperCamelCase(funcName + "_request"),
 		ResponseName: strcase.UpperCamelCase(funcName + "_response"),
 	}
-	nameTrimmed := strings.TrimSuffix(strings.TrimPrefix(apiName, "sai_"), "_api_t")
+	apiNameTrimmed := strings.TrimSuffix(trimSAIName(apiName, false, false), "_api")
 	idField := protoTmplField{
 		Index:     1,
 		ProtoType: "uint64",
@@ -103,7 +103,7 @@ func populateTmplDataFromFunc(protoTmplData *protoTmplData, funcName, entryType,
 
 			// For types that begin sai_api_name, generate them in the package.
 			// TODO: Otherwise mark them for generation in a common package.
-			if strings.HasPrefix(attr.SaiType, "sai_"+nameTrimmed) {
+			if strings.HasPrefix(attr.SaiType, "sai_"+apiNameTrimmed) {
 				protoName := trimSAIName(attr.SaiType, true, false)
 				// TODO: Generated code for non-enum types.
 				if vals, ok := xmlInfo.enums[attr.SaiType]; ok {
