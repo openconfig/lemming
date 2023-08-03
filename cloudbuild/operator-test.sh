@@ -15,6 +15,12 @@
 
 set -xe
 
+cat << EOF > ~/.bazelrc
+build --remote_cache https://storage.googleapis.com/lemming-bazel-cache
+build --google_default_credentials
+build --remote_download_minimal
+EOF
+
 export PATH=${PATH}:/usr/local/go/bin
 gopath=$(go env GOPATH)
 export PATH=${PATH}:$gopath/bin
@@ -26,5 +32,6 @@ sudo install bazel /usr/local/bin/
 cd /tmp/workspace
 kne deploy ~/kne-internal/deploy/kne/kind-bridge.yaml
 
-skaffold run -m lemming-operator
+make load-operator
+kubectl set image -n lemming-operator deployment/lemming-controller-manager manager=us-west1-docker.pkg.dev/openconfig-lemming/release/operator:ga
 kne create integration_tests/twodut_tests/topology.pb.txt
