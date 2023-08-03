@@ -39,7 +39,7 @@ func createCCData(sai *saiAPI, fn typeDecl) (*templateFunc, bool, string) {
 		if strings.Contains(param.typ, "entry") {
 			tf.Entry = fmt.Sprintf("common_entry_t entry = {.%s = %s};", name, name)
 			name = "entry"
-			entryType = trimSAIName(strings.TrimPrefix(param.typ, "const"), true, false)
+			entryType = trimSAIName(strings.TrimPrefix(param.typ, "const "), true, false)
 		}
 		if i == 1 && param.name == "switch_id" {
 			isSwitchScoped = true

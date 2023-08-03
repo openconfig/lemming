@@ -24,7 +24,6 @@ import (
 	"runtime"
 	"strings"
 
-	strcase "github.com/stoewer/go-strcase"
 	cc "modernc.org/cc/v4"
 )
 
@@ -197,6 +196,54 @@ func generate() error {
 		return err
 	}
 
+	protoData := &protoApiData{
+		apis:    make(map[string]*protoAPITmplData),
+		docInfo: xmlInfo,
+		common: &protoCommonTmplData{
+			Enums: map[string]*protoEnum{},
+			Lists: map[string]*protoTmplMessage{},
+		},
+	}
+
+	for _, typeInfo := range saiTypeToProto {
+		if typeInfo.MessageDef != "" {
+			protoData.common.Messages = append(protoData.common.Messages, typeInfo.MessageDef)
+		}
+	}
+	for name, vals := range protoData.docInfo.enums {
+		protoName := trimSAIName(name, true, false)
+		unspecifiedName := trimSAIName(name, false, true) + "_UNSPECIFIED"
+		enum := &protoEnum{
+			Name:   protoName,
+			Values: []protoEnumValues{{Index: 0, Name: unspecifiedName}},
+		}
+		for i, val := range vals {
+			if strings.TrimPrefix(val, "SAI_") == unspecifiedName {
+				continue
+			}
+			enum.Values = append(enum.Values, protoEnumValues{
+				Index: i + 1,
+				Name:  strings.TrimPrefix(val, "SAI_"),
+			})
+		}
+		protoData.common.Enums[protoName] = enum
+	}
+	for _, attr := range protoData.docInfo.attrs {
+		for _, f := range attr.setFields {
+			name, isRepeated, err := saiTypeToProtoType(f.SaiType, protoData.docInfo, true)
+			if err != nil {
+				return err
+			}
+			if !isRepeated {
+				continue
+			}
+			msg := &protoTmplMessage{
+				Name: name,
+			}
+			protoData.common.Lists[name] = msg
+		}
+	}
+
 	for _, iface := range sai.ifaces {
 		nameTrimmed := strings.TrimSuffix(strings.TrimPrefix(iface.name, "sai_"), "_api_t")
 		ccData := ccTemplateData{
@@ -205,15 +252,11 @@ func generate() error {
 			APIType:      iface.name,
 			APIName:      nameTrimmed,
 		}
-		protoData := &protoTmplData{
-			ServiceName: strcase.UpperCamelCase(nameTrimmed),
-			Enums:       make(map[string]protoEnum),
-		}
 		for _, fn := range iface.funcs {
 			tf, isSwitchScoped, entry := createCCData(sai, fn)
 			ccData.Funcs = append(ccData.Funcs, *tf)
 
-			err := populateTmplDataFromFunc(protoData, tf.Name, entry, tf.Operation, tf.TypeName, iface.name, isSwitchScoped, xmlInfo)
+			err := populateTmplDataFromFunc(protoData, tf.Name, entry, tf.Operation, tf.TypeName, iface.name, isSwitchScoped)
 			if err != nil {
 				return err
 			}
@@ -237,9 +280,17 @@ func generate() error {
 		if err := ccTmpl.Execute(impl, ccData); err != nil {
 			return err
 		}
-		if err := protoTmpl.Execute(proto, protoData); err != nil {
+		if err := protoTmpl.Execute(proto, protoData.apis[iface.name]); err != nil {
 			return err
 		}
+	}
+	protoCommonFile, err := os.Create(filepath.Join(protoOutDir, "common.proto"))
+	if err != nil {
+		return err
+	}
+
+	if err := protoCommonTmpl.Execute(protoCommonFile, protoData.common); err != nil {
+		return err
 	}
 	return nil
 }

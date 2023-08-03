@@ -18,17 +18,27 @@ import (
 	"fmt"
 	"strings"
 	"text/template"
+	"unicode"
 
 	strcase "github.com/stoewer/go-strcase"
 )
 
 // populateTmplDataFromFunc populatsd the protobuf template struct from a SAI function call.
-func populateTmplDataFromFunc(protoTmplData *protoTmplData, funcName, entryType, operation, typeName, apiName string, isSwitchScoped bool, xmlInfo *protoGenInfo) error {
-	msg := &protoTmplMessage{
-		RequestName:  strcase.UpperCamelCase(funcName + "_request"),
-		ResponseName: strcase.UpperCamelCase(funcName + "_response"),
+func populateTmplDataFromFunc(protoData *protoApiData, funcName, entryType, operation, typeName, apiName string, isSwitchScoped bool) error {
+	if _, ok := protoData.apis[apiName]; !ok {
+		protoData.apis[apiName] = &protoAPITmplData{
+			Enums:       make(map[string]protoEnum),
+			ServiceName: trimSAIName(apiName, true, false),
+		}
 	}
-	apiNameTrimmed := strings.TrimSuffix(trimSAIName(apiName, false, false), "_api")
+
+	req := &protoTmplMessage{
+		Name: strcase.UpperCamelCase(funcName + "_request"),
+	}
+	resp := &protoTmplMessage{
+		Name: strcase.UpperCamelCase(funcName + "_response"),
+	}
+
 	idField := protoTmplField{
 		Index:     1,
 		ProtoType: "uint64",
@@ -43,46 +53,45 @@ func populateTmplDataFromFunc(protoTmplData *protoTmplData, funcName, entryType,
 	}
 
 	// Handle proto generation
-	// TODO: Enable proto generation.
 	switch operation {
 	case "create":
 		requestIdx := 1
 		if isSwitchScoped {
-			msg.RequestFields = append(msg.RequestFields, protoTmplField{
+			req.Fields = append(req.Fields, protoTmplField{
 				Index:     requestIdx,
 				ProtoType: "uint64",
-				Name:      "switch_id",
+				Name:      "switch",
 			})
 		} else if entryType != "" {
-			msg.RequestFields = append(msg.RequestFields, idField)
+			req.Fields = append(req.Fields, idField)
 		}
 		requestIdx++
-		attrs, err := createAttrs(requestIdx, xmlInfo, xmlInfo.attrs[typeName].createFields, false)
+		attrs, err := createAttrs(requestIdx, protoData.docInfo, protoData.docInfo.attrs[typeName].createFields, false)
 		if err != nil {
 			return err
 		}
-		msg.RequestAttrs = attrs
+		req.Attrs = attrs
 
-		msg.ResponseFields = append(msg.ResponseFields, protoTmplField{
+		resp.Fields = append(resp.Fields, protoTmplField{
 			Index:     1,
 			ProtoType: "uint64",
 			Name:      "oid",
 		})
 	case "set_attribute":
 		// If there are no settable attributes, do nothing.
-		if len(xmlInfo.attrs[typeName].setFields) == 0 {
+		if len(protoData.docInfo.attrs[typeName].setFields) == 0 {
 			return nil
 		}
-		msg.RequestFields = append(msg.RequestFields, idField)
-		msg.RequestAttrsWrapperStart = "oneof attr {"
-		msg.RequestAttrsWrapperEnd = "}"
-		attrs, err := createAttrs(2, xmlInfo, xmlInfo.attrs[typeName].setFields, true)
+		req.Fields = append(req.Fields, idField)
+		req.AttrsWrapperStart = "oneof attr {"
+		req.AttrsWrapperEnd = "}"
+		attrs, err := createAttrs(2, protoData.docInfo, protoData.docInfo.attrs[typeName].setFields, true)
 		if err != nil {
 			return err
 		}
-		msg.RequestAttrs = attrs
+		req.Attrs = attrs
 	case "get_attribute":
-		msg.RequestFields = append(msg.RequestFields, idField, protoTmplField{
+		req.Fields = append(req.Fields, idField, protoTmplField{
 			ProtoType: strcase.UpperCamelCase(typeName + " attr"),
 			Index:     2,
 			Name:      "attr_type",
@@ -95,46 +104,26 @@ func populateTmplDataFromFunc(protoTmplData *protoTmplData, funcName, entryType,
 		}
 
 		// For the attributes, generate code for the type if needed.
-		for i, attr := range xmlInfo.attrs[typeName].readFields {
+		for i, attr := range protoData.docInfo.attrs[typeName].readFields {
 			attrEnum.Values = append(attrEnum.Values, protoEnumValues{
 				Index: i + 1,
 				Name:  strings.TrimPrefix(attr.EnumName, "SAI_"),
 			})
-
-			// For types that begin sai_api_name, generate them in the package.
-			// TODO: Otherwise mark them for generation in a common package.
-			if strings.HasPrefix(attr.SaiType, "sai_"+apiNameTrimmed) {
-				protoName := trimSAIName(attr.SaiType, true, false)
-				// TODO: Generated code for non-enum types.
-				if vals, ok := xmlInfo.enums[attr.SaiType]; ok {
-					enum := protoEnum{
-						Name:   protoName,
-						Values: []protoEnumValues{{Index: 0, Name: trimSAIName(attr.SaiType, false, true) + "_UNSPECIFIED"}},
-					}
-					for i, val := range vals {
-						enum.Values = append(enum.Values, protoEnumValues{
-							Index: i + 1,
-							Name:  strings.TrimPrefix(val, "SAI_"),
-						})
-					}
-					protoTmplData.Enums[protoName] = enum
-				}
-			}
 		}
-		protoTmplData.Enums[attrEnum.Name] = attrEnum
+		protoData.apis[apiName].Enums[attrEnum.Name] = attrEnum
 
-		attrs, err := createAttrs(1, xmlInfo, xmlInfo.attrs[typeName].readFields, false)
+		attrs, err := createAttrs(1, protoData.docInfo, protoData.docInfo.attrs[typeName].readFields, false)
 		if err != nil {
 			return err
 		}
-		msg.ResponseAttrs = attrs
+		resp.Attrs = attrs
 	default:
 		return nil
 	}
-	protoTmplData.Messages = append(protoTmplData.Messages, *msg)
-	protoTmplData.RPCs = append(protoTmplData.RPCs, protoRPC{
-		RequestName:  msg.RequestName,
-		ResponseName: msg.ResponseName,
+	protoData.apis[apiName].Messages = append(protoData.apis[apiName].Messages, *req, *resp)
+	protoData.apis[apiName].RPCs = append(protoData.apis[apiName].RPCs, protoRPC{
+		RequestName:  req.Name,
+		ResponseName: resp.Name,
 		Name:         strcase.UpperCamelCase(funcName),
 	})
 	return nil
@@ -143,11 +132,20 @@ func populateTmplDataFromFunc(protoTmplData *protoTmplData, funcName, entryType,
 func createAttrs(startIdx int, xmlInfo *protoGenInfo, attrs []attrTypeName, inOneof bool) ([]protoTmplField, error) {
 	fields := []protoTmplField{}
 	for _, attr := range attrs {
+		// Function pointers are attempted as streaming RPCs.
+		if strings.Contains(attr.SaiType, "sai_pointer_t") {
+			continue
+		}
+		// Proto field names can't beging with numbers, prepend _.
+		name := attr.MemberName
+		if unicode.IsDigit(rune(attr.MemberName[0])) {
+			name = fmt.Sprintf("_%s", name)
+		}
 		field := protoTmplField{
 			Index: startIdx,
-			Name:  attr.MemberName,
+			Name:  name,
 		}
-		typ, err := saiTypeToProtoType(attr.SaiType, xmlInfo, inOneof)
+		typ, _, err := saiTypeToProtoType(attr.SaiType, xmlInfo, inOneof)
 		if err != nil {
 			return nil, err
 		}
@@ -158,11 +156,13 @@ func createAttrs(startIdx int, xmlInfo *protoGenInfo, attrs []attrTypeName, inOn
 	return fields, nil
 }
 
-// TODO: Enable generation.
-var protoTmpl = template.Must(template.New("cc").Parse(`
+var (
+	protoTmpl = template.Must(template.New("cc").Parse(`
 syntax = "proto3";
 
 package lemming.dataplane.sai;
+
+import "dataplane/standalone/proto/common.proto";
 
 option go_package = "github.com/openconfig/lemming/proto/dataplane/sai";
 
@@ -175,28 +175,16 @@ enum {{ .Name }} {
 {{ end }}
 
 {{ range .Messages }}
-message {{ .RequestName }} {
-	{{- range .RequestFields }}
+message {{ .Name }} {
+	{{- range .Fields }}
 	{{ .ProtoType }} {{ .Name }} = {{ .Index }};
 	{{- end }}
-	{{ .RequestAttrsWrapperStart -}}
-	{{- range .RequestAttrs }}
+	{{ .AttrsWrapperStart -}}
+	{{- range .Attrs }}
 	{{ .ProtoType }} {{ .Name }} = {{ .Index }};
 	{{- end }}
-	{{ .RequestAttrsWrapperEnd }}
+	{{ .AttrsWrapperEnd }}
 }
-
-message {{ .ResponseName }} {
-	{{- range .ResponseFields }}
-	{{ .ProtoType }} {{ .Name }} = {{ .Index }};
-	{{- end }}
-	{{ .ResponseAttrsWrapperStart -}}
-	{{- range .ResponseAttrs }}
-	{{ .ProtoType }} {{ .Name }} = {{ .Index }};
-	{{- end }}
-	{{ .ResponseAttrsWrapperEnd }}
-}
-
 {{ end }}
 
 
@@ -206,13 +194,55 @@ service {{ .ServiceName }} {
 	{{- end }}
 }
 `))
+	protoCommonTmpl = template.Must(template.New("common").Parse(`
+syntax = "proto3";
 
-// protoTmplData contains the formated information needed to render the protobuf template.
-type protoTmplData struct {
+package lemming.dataplane.sai;
+	
+option go_package = "github.com/openconfig/lemming/proto/dataplane/sai";
+
+{{ range .Enums }}
+enum {{ .Name }} {
+	{{- range .Values }}
+	{{ .Name }} = {{ .Index }};
+	{{- end}}
+}
+{{ end }}
+
+{{ range .Messages }}
+{{ . }}
+{{ end }}
+
+{{ range .Lists }}
+message {{ .Name }} {
+	{{- range .Fields }}
+	{{ .ProtoType }} {{ .Name }} = {{ .Index }};
+	{{- end }}
+}
+{{ end }}
+`))
+)
+
+// protoApiData contains the input and output for protobuf generation.
+type protoApiData struct {
+	docInfo *protoGenInfo
+	apis    map[string]*protoAPITmplData
+	common  *protoCommonTmplData
+}
+
+// protoAPITmplData contains the formated information needed to render the protobuf template.
+type protoAPITmplData struct {
 	Messages    []protoTmplMessage
 	RPCs        []protoRPC
 	Enums       map[string]protoEnum
 	ServiceName string
+}
+
+// protoCommonTmplData contains the formated information needed to render the protobuf template.
+type protoCommonTmplData struct {
+	Messages []string
+	Enums    map[string]*protoEnum
+	Lists    map[string]*protoTmplMessage
 }
 
 type protoEnum struct {
@@ -226,16 +256,11 @@ type protoEnumValues struct {
 }
 
 type protoTmplMessage struct {
-	RequestName               string
-	ResponseName              string
-	RequestAttrsWrapperStart  string
-	RequestAttrsWrapperEnd    string
-	RequestFields             []protoTmplField
-	RequestAttrs              []protoTmplField
-	ResponseAttrsWrapperStart string
-	ResponseAttrsWrapperEnd   string
-	ResponseFields            []protoTmplField
-	ResponseAttrs             []protoTmplField
+	Name              string
+	AttrsWrapperStart string
+	AttrsWrapperEnd   string
+	Fields            []protoTmplField
+	Attrs             []protoTmplField
 }
 
 type protoTmplField struct {
@@ -356,9 +381,12 @@ uint64 max = 2;
 	"sai_ip_address_t": {
 		ProtoType: "bytes",
 	},
-	"sai_map_list_t": {
+	"sai_map_list_t": { // Wrap the map in a message because maps can't be repeated.
 		Repeated:  true,
-		ProtoType: "map<uint32, uint32>",
+		ProtoType: "UintMap",
+		MessageDef: `message UintMap {
+	map<uint32, uint32> uintmap = 1;
+}`,
 	},
 	"sai_tlv_list_t": {
 		Repeated:  true,
@@ -388,9 +416,9 @@ message	QOSMapParams {
 	uint32 prio = 4;
 	uint32 pg = 5;
 	uint32 queue_index = 6;
-	PacketColor color 7;
-	uint32 mpls_exp;
-	uint32 fc;
+	PacketColor color = 7;
+	uint32 mpls_exp = 8;
+	uint32 fc = 9;
 }
 		
 message QOSMap {
@@ -406,7 +434,7 @@ message QOSMap {
 	uint32 attached_core_index = 3;
 	uint32 attached_core_port_index = 4;
 	uint32 speed = 5;
-	uint32 num_voq 6;
+	uint32 num_voq = 6;
 }`,
 	},
 	"sai_system_port_config_list_t": {
@@ -415,12 +443,12 @@ message QOSMap {
 	},
 	"sai_ip_address_list_t": {
 		Repeated:  true,
-		ProtoType: "IpAddress",
+		ProtoType: "bytes",
 	},
 	"sai_port_eye_values_list_t": {
 		Repeated:  true,
 		ProtoType: "PortEyeValues",
-		MessageDef: `message PortLaneEyeValues {
+		MessageDef: `message PortEyeValues {
 	uint32 lane = 1;
 	int32 left = 2;
 	int32 right = 3;
@@ -432,7 +460,7 @@ message QOSMap {
 		ProtoType: "PRBS_RXState",
 		MessageDef: `message PRBS_RXState {
 	PortPrbsRxStatus rx_status = 1;
-	uint32 error_count 2;
+	uint32 error_count = 2;
 }`,
 	},
 	"sai_fabric_port_reachability_t": {
@@ -447,7 +475,7 @@ message QOSMap {
 		ProtoType: "ACLResource",
 		MessageDef: `message ACLResource {
 	AclStage stage = 1;
-	BindPointType bind_point = 2;
+	AclBindPointType bind_point = 2;
 	uint32 avail_num = 3;
 }`,
 	},
@@ -463,19 +491,19 @@ message QOSMap {
 		MessageDef: `message AclFieldData {
 	bool enable = 1;
 	oneof mask {
-		uint64 uint = 2;
-		uint64 int = 3;
-		bytes mac = 4;
-		bytes ip = 5;
-		Uint64List list = 6;
+		uint64 mask_uint = 2;
+		uint64 mask_int = 3;
+		bytes mask_mac = 4;
+		bytes mask_ip = 5;
+		Uint64List mask_list = 6;
 	};
 	oneof data {
-		bool booldata = 7;
-		uint64 uint = 8;
-		int64 int = 9;
-		bytes mac = 10;
-		bytes ip = 11;
-		Uint64List list = 12;
+		bool data_bool = 7;
+		uint64 data_uint = 8;
+		int64 data_int = 9;
+		bytes data_mac = 10;
+		bytes data_ip = 11;
+		Uint64List data_list = 12;
 	};
 }`,
 	},
@@ -490,8 +518,114 @@ message QOSMap {
 		bytes ip = 5;
 		uint64 oid = 6;
 		Uint64List objlist = 7;
-		IpAddress ipaddr = 8;
+		bytes ipaddr = 8;
 	};
+}`,
+	},
+	"sai_fdb_entry_t": {
+		ProtoType: "FdbEntry",
+		MessageDef: `message FdbEntry {
+	uint64 switch_id = 1;
+	bytes mac_address = 2;
+	uint64 bv_id = 3;
+}`,
+	},
+	"sai_ipmc_entry_t": {
+		ProtoType: "IpmcEntry",
+		MessageDef: `message IpmcEntry {
+	uint64 switch_id = 1;
+	uint64 vr_id = 2;
+	IpmcEntryType type = 3;
+	bytes destination = 4;
+	bytes source = 5;
+}`,
+	},
+	"sai_l2mc_entry_t": {
+		ProtoType: "L2mcEntry",
+		MessageDef: `message L2mcEntry {
+	uint64 switch_id = 1;
+	uint64 bv_id = 2;
+	L2mcEntryType type = 3;
+	bytes destination = 4;
+	bytes source = 5;
+}`,
+	},
+	"sai_mcast_fdb_entry_t": {
+		ProtoType: "McastFdbEntry",
+		MessageDef: `message McastFdbEntry {
+	uint64 switch_id = 1;
+	bytes mac_address = 2;
+	uint64 bv_id = 3;
+}`,
+	},
+	"sai_inseg_entry_t": {
+		ProtoType: "InsegEntry",
+		MessageDef: `message InsegEntry {
+	uint64 switch_id = 1;
+	uint32 label = 2;
+}`,
+	},
+	"sai_nat_entry_data_t": {
+		ProtoType: "NatEntryData",
+		MessageDef: `message NatEntryData{
+	oneof key {
+		bytes key_src_ip = 2;
+		bytes key_dst_ip = 3;
+		uint32 key_proto = 4;
+		uint32 key_l4_src_port = 5;
+		uint32 key_l4_dst_port = 6;
+	};
+	oneof mask {
+		bytes mask_src_ip = 7;
+		bytes mask_dst_ip = 8;
+		uint32 mask_proto = 9;
+		uint32 mask_l4_src_port = 10;
+		uint32 mask_l4_dst_port = 11;
+	};
+}`,
+	},
+	"sai_nat_entry_t": {
+		ProtoType: "NatEntry",
+		MessageDef: `message NatEntry {
+	uint64 switch_id = 1;
+	uint64 vr_id = 2;
+	NatType nat_type = 3;
+	NatEntryData data = 4;
+}`,
+	},
+	"sai_neighbor_entry_t": {
+		ProtoType: "NeighborEntry",
+		MessageDef: `message NeighborEntry {
+	uint64 switch_id = 1;
+	uint64 rif_id = 2;
+	bytes ip_address = 3;
+}`,
+	},
+	"sai_ip_prefix_t": {
+		ProtoType: "IpPrefix",
+		MessageDef: `message IpPrefix {
+	bytes addr = 1;
+	bytes mask = 2;
+}`,
+	},
+	"sai_route_entry_t": {
+		ProtoType: "RouteEntry",
+		MessageDef: `message RouteEntry {
+	uint64 switch_id = 1;
+	uint64 vr_id = 2;
+	IpPrefix destination = 3;
+}`,
+	},
+	"sai_my_sid_entry_t": {
+		ProtoType: "MySidEntry",
+		MessageDef: `message MySidEntry {
+	uint64 switch_id = 1;
+	uint64 vr_id = 2;
+	uint32 locator_block_len = 3;
+	uint32 locator_node_len = 4;
+	uint32 function_len = 5;
+	uint32 args_len = 6;
+	bytes sid = 7;
 }`,
 	},
 }
@@ -499,44 +633,48 @@ message QOSMap {
 // saiTypeToProtoTypeCompound handles compound sai types (eg list of enums).
 // The map key contains the base type (eg list) and func accepts the subtype (eg an enum type)
 // and returns the full type string (eg repeated sample_enum).
-var saiTypeToProtoTypeCompound = map[string]func(subType string, xmlInfo *protoGenInfo, inOneof bool) string{
-	"sai_s32_list_t": func(subType string, xmlInfo *protoGenInfo, inOneof bool) string {
+var saiTypeToProtoTypeCompound = map[string]func(subType string, xmlInfo *protoGenInfo, inOneof bool) (string, bool){
+	"sai_s32_list_t": func(subType string, xmlInfo *protoGenInfo, inOneof bool) (string, bool) {
 		if _, ok := xmlInfo.enums[subType]; !ok {
-			return ""
+			return "", false
 		}
 		if inOneof {
-			return "List" + trimSAIName(subType, true, false)
+			return trimSAIName(subType, true, false) + "List", true
 		}
-		return "repeated " + trimSAIName(subType, true, false)
+		return "repeated " + trimSAIName(subType, true, false), true
 	},
 	// TODO: Support these types
-	"sai_acl_field_data_t":  func(next string, xmlInfo *protoGenInfo, inOneof bool) string { return "AclFieldData" },
-	"sai_acl_action_data_t": func(next string, xmlInfo *protoGenInfo, inOneof bool) string { return "AclActionData" },
-	"sai_pointer_t":         func(next string, xmlInfo *protoGenInfo, inOneof bool) string { return "-" },
+	"sai_acl_field_data_t":  func(next string, xmlInfo *protoGenInfo, inOneof bool) (string, bool) { return "AclFieldData", false },
+	"sai_acl_action_data_t": func(next string, xmlInfo *protoGenInfo, inOneof bool) (string, bool) { return "AclActionData", false },
+	"sai_pointer_t":         func(next string, xmlInfo *protoGenInfo, inOneof bool) (string, bool) { return "-", false },
 }
 
 // saiTypeToProtoType returns the protobuf type string for a SAI type.
 // example: sai_u8_list_t -> repeated uint32
-func saiTypeToProtoType(saiType string, xmlInfo *protoGenInfo, inOneof bool) (string, error) {
-	if protoType, ok := saiTypeToProto[saiType]; ok {
-		if protoType.Repeated {
-			return "repeated " + protoType.ProtoType, nil
+func saiTypeToProtoType(saiType string, xmlInfo *protoGenInfo, inOneof bool) (string, bool, error) {
+	if pt, ok := saiTypeToProto[saiType]; ok {
+		if pt.Repeated {
+			if inOneof {
+				return strcase.UpperCamelCase(pt.ProtoType + " List"), true, nil
+			}
+			return "repeated " + pt.ProtoType, true, nil
 		}
-		return protoType.ProtoType, nil
+		return pt.ProtoType, false, nil
 	}
 	if _, ok := xmlInfo.enums[saiType]; ok {
-		return trimSAIName(saiType, true, false), nil
+		return trimSAIName(saiType, true, false), false, nil
 	}
 
 	if splits := strings.Split(saiType, " "); len(splits) == 2 {
 		fn, ok := saiTypeToProtoTypeCompound[splits[0]]
 		if !ok {
-			return "", fmt.Errorf("unknown sai type: %v", saiType)
+			return "", false, fmt.Errorf("unknown sai type: %v", saiType)
 		}
-		return fn(splits[1], xmlInfo, inOneof), nil
+		name, isRepeated := fn(splits[1], xmlInfo, inOneof)
+		return name, isRepeated, nil
 	}
 
-	return "", fmt.Errorf("unknown sai type: %v", saiType)
+	return "", false, fmt.Errorf("unknown sai type: %v", saiType)
 }
 
 // trimSAIName trims sai_ prefix and _t from the string
