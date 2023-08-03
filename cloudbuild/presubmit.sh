@@ -26,7 +26,6 @@ echo "$BUILD"
 cat << EOF > ~/.bazelrc
 build --remote_cache https://storage.googleapis.com/lemming-bazel-cache
 build --google_default_credentials
-build --remote_download_minimal
 EOF
 
 export PATH=${PATH}:/usr/local/go/bin
