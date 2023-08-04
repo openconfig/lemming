@@ -39,15 +39,15 @@ sudo install bazel /usr/local/bin/
 cd /tmp/workspace
 kne deploy ~/kne-internal/deploy/kne/kind-bridge.yaml
 
-set +e
+make load-operator
+kubectl set image -n lemming-operator deployment/lemming-controller-manager manager=us-west1-docker.pkg.dev/openconfig-lemming/release/operator:ga
+make load
 
+set +e
 rc=0
 trap dumpinfo EXIT
 trap 'rc=$?' ERR
 
-make load-operator
-kubectl set image -n lemming-operator deployment/lemming-controller-manager manager=us-west1-docker.pkg.dev/openconfig-lemming/release/operator:ga
-make load
 make itest
 # Reenable these tests once not flaky.
 # cd cloudbuild && ./fp-test.sh
