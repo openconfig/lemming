@@ -345,8 +345,8 @@ def go_repositories():
     go_repository(
         name = "com_github_elazarl_goproxy",
         importpath = "github.com/elazarl/goproxy",
-        sum = "h1:RIB4cRk+lBqKK3Oy0r2gRX4ui7tuhiZq2SuTtTCi0/0=",
-        version = "v0.0.0-20221015165544-a0805db90819",
+        sum = "h1:1L0aalTpPz7YlMxETKpmQoWMBkeiuorElZIXoNmgiPE=",
+        version = "v0.0.0-20230731152917-f99041a5c027",
     )
     go_repository(
         name = "com_github_elazarl_goproxy_ext",
