@@ -163,7 +163,7 @@ type fakeBuilder struct{}
 func (fakeBuilder) Build(portDesc *fwdpb.PortDesc, ctx *fwdcontext.Context) (fwdport.Port, error) {
 	fp, ok := portDesc.Port.(*fwdpb.PortDesc_Fake)
 	if !ok {
-		return nil, fmt.Errorf("invalid port type in proto")
+		return nil, fmt.Errorf("invalid port type in proto, got %T, expected *fwdpb.PortDesc_Fake", portDesc.Port)
 	}
 
 	inFile, err := openFile(fp.Fake.InFile)
