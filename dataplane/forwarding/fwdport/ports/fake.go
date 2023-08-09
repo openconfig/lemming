@@ -120,9 +120,7 @@ var (
 	openFile = func(filename string) (io.Reader, error) {
 		return os.Open(filename)
 	}
-	timeNow = func() time.Time {
-		return time.Now()
-	}
+	timeNow = time.Now
 )
 
 // Write writes a packet out. If successful, the port returns
@@ -150,7 +148,7 @@ func (p *fakePort) Actions(dir fwdpb.PortAction) fwdaction.Actions {
 }
 
 // State returns the state of the port.
-func (p *fakePort) State(pi *fwdpb.PortInfo) (*fwdpb.PortStateReply, error) {
+func (p *fakePort) State(*fwdpb.PortInfo) (*fwdpb.PortStateReply, error) {
 	return &fwdpb.PortStateReply{
 		Status: &fwdpb.PortInfo{
 			OperStatus:  fwdpb.PortState_PORT_STATE_ENABLED_UP,

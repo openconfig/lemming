@@ -135,6 +135,10 @@ func TestFakeWrite(t *testing.T) {
 			}
 			timeNow = func() time.Time { return time.Unix(1, 0) }
 			_, err = fp.Write(createEthPacket(t))
+			// The write error is only visible on flush, but check it here to be safe.
+			if d := errdiff.Check(err, tt.wantErr); err != nil && d != "" {
+				t.Fatalf("Write() unexpected error diff: %s", d)
+			}
 			err = w.Flush()
 			if d := errdiff.Check(err, tt.wantErr); d != "" {
 				t.Fatalf("Write() unexpected error diff: %s", d)
