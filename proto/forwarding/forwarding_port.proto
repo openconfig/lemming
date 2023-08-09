@@ -29,6 +29,7 @@ enum PortType {
   PORT_TYPE_AGGREGATE_PORT = 2;  // Port that is an aggregate of ports
   PORT_TYPE_KERNEL = 3;          // Port that is kernel network interface.
   PORT_TYPE_TAP = 4; // Port that is kernel TAP interface.
+  PORT_TYPE_FAKE = 5; // Fake port type that uses files for packet io.
 }
 
 // A PortDesc describes a forwarding port. It is assumed that the descriptor
@@ -41,6 +42,7 @@ message PortDesc {
     CPUPortDesc cpu = 3;
     KernelPortDesc kernel = 4;
     TAPPortDesc tap = 5;
+    FakePortDesc fake = 6;
   }
 }
 
@@ -60,6 +62,11 @@ message KernelPortDesc {
 
 message TAPPortDesc {
   string device_name = 1;
+}
+
+message FakePortDesc {
+  string in_file = 1;
+  string out_file = 2;
 }
 
 // A PortCreateRequest is a request to create a port.

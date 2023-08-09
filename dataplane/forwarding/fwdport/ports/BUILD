@@ -5,6 +5,7 @@ go_library(
     srcs = [
         "cpu.go",
         "doc.go",
+        "fake.go",
         "group.go",
         "kernel.go",
         "tap.go",
@@ -27,6 +28,7 @@ go_library(
         "@com_github_google_gopacket//:gopacket",
         "@com_github_google_gopacket//afpacket",
         "@com_github_google_gopacket//layers",
+        "@com_github_google_gopacket//pcapgo",
         "@com_github_vishvananda_netlink//:netlink",
         "@org_golang_x_sys//unix",
     ],
