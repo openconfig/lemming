@@ -247,10 +247,7 @@ func generate() error {
 		return err
 	}
 
-	if err := protoCommonTmpl.Execute(protoCommonFile, common); err != nil {
-		return err
-	}
-	return nil
+	return protoCommonTmpl.Execute(protoCommonFile, common)
 }
 
 func main() {
