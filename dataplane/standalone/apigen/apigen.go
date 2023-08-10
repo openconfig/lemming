@@ -196,52 +196,10 @@ func generate() error {
 		return err
 	}
 
-	protoData := &protoApiData{
-		apis:    make(map[string]*protoAPITmplData),
-		docInfo: xmlInfo,
-		common: &protoCommonTmplData{
-			Enums: map[string]*protoEnum{},
-			Lists: map[string]*protoTmplMessage{},
-		},
-	}
-
-	for _, typeInfo := range saiTypeToProto {
-		if typeInfo.MessageDef != "" {
-			protoData.common.Messages = append(protoData.common.Messages, typeInfo.MessageDef)
-		}
-	}
-	for name, vals := range protoData.docInfo.enums {
-		protoName := trimSAIName(name, true, false)
-		unspecifiedName := trimSAIName(name, false, true) + "_UNSPECIFIED"
-		enum := &protoEnum{
-			Name:   protoName,
-			Values: []protoEnumValues{{Index: 0, Name: unspecifiedName}},
-		}
-		for i, val := range vals {
-			if strings.TrimPrefix(val, "SAI_") == unspecifiedName {
-				continue
-			}
-			enum.Values = append(enum.Values, protoEnumValues{
-				Index: i + 1,
-				Name:  strings.TrimPrefix(val, "SAI_"),
-			})
-		}
-		protoData.common.Enums[protoName] = enum
-	}
-	for _, attr := range protoData.docInfo.attrs {
-		for _, f := range attr.setFields {
-			name, isRepeated, err := saiTypeToProtoType(f.SaiType, protoData.docInfo, true)
-			if err != nil {
-				return err
-			}
-			if !isRepeated {
-				continue
-			}
-			msg := &protoTmplMessage{
-				Name: name,
-			}
-			protoData.common.Lists[name] = msg
-		}
+	apis := make(map[string]*protoAPITmplData)
+	common, err := populateCommonTypes(xmlInfo)
+	if err != nil {
+		return err
 	}
 
 	for _, iface := range sai.ifaces {
@@ -256,7 +214,7 @@ func generate() error {
 			tf, isSwitchScoped, entry := createCCData(sai, fn)
 			ccData.Funcs = append(ccData.Funcs, *tf)
 
-			err := populateTmplDataFromFunc(protoData, tf.Name, entry, tf.Operation, tf.TypeName, iface.name, isSwitchScoped)
+			err := populateTmplDataFromFunc(apis, xmlInfo, tf.Name, entry, tf.Operation, tf.TypeName, iface.name, isSwitchScoped)
 			if err != nil {
 				return err
 			}
@@ -280,7 +238,7 @@ func generate() error {
 		if err := ccTmpl.Execute(impl, ccData); err != nil {
 			return err
 		}
-		if err := protoTmpl.Execute(proto, protoData.apis[iface.name]); err != nil {
+		if err := protoTmpl.Execute(proto, apis[iface.name]); err != nil {
 			return err
 		}
 	}
@@ -289,7 +247,7 @@ func generate() error {
 		return err
 	}
 
-	if err := protoCommonTmpl.Execute(protoCommonFile, protoData.common); err != nil {
+	if err := protoCommonTmpl.Execute(protoCommonFile, common); err != nil {
 		return err
 	}
 	return nil
