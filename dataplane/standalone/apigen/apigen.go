@@ -24,7 +24,6 @@ import (
 	"runtime"
 	"strings"
 
-	strcase "github.com/stoewer/go-strcase"
 	cc "modernc.org/cc/v4"
 )
 
@@ -197,6 +196,12 @@ func generate() error {
 		return err
 	}
 
+	apis := make(map[string]*protoAPITmplData)
+	common, err := populateCommonTypes(xmlInfo)
+	if err != nil {
+		return err
+	}
+
 	for _, iface := range sai.ifaces {
 		nameTrimmed := strings.TrimSuffix(strings.TrimPrefix(iface.name, "sai_"), "_api_t")
 		ccData := ccTemplateData{
@@ -205,15 +210,11 @@ func generate() error {
 			APIType:      iface.name,
 			APIName:      nameTrimmed,
 		}
-		protoData := &protoTmplData{
-			ServiceName: strcase.UpperCamelCase(nameTrimmed),
-			Enums:       make(map[string]protoEnum),
-		}
 		for _, fn := range iface.funcs {
 			tf, isSwitchScoped, entry := createCCData(sai, fn)
 			ccData.Funcs = append(ccData.Funcs, *tf)
 
-			err := populateTmplDataFromFunc(protoData, tf.Name, entry, tf.Operation, tf.TypeName, iface.name, isSwitchScoped, xmlInfo)
+			err := populateTmplDataFromFunc(apis, xmlInfo, tf.Name, entry, tf.Operation, tf.TypeName, iface.name, isSwitchScoped)
 			if err != nil {
 				return err
 			}
@@ -237,11 +238,16 @@ func generate() error {
 		if err := ccTmpl.Execute(impl, ccData); err != nil {
 			return err
 		}
-		if err := protoTmpl.Execute(proto, protoData); err != nil {
+		if err := protoTmpl.Execute(proto, apis[iface.name]); err != nil {
 			return err
 		}
 	}
-	return nil
+	protoCommonFile, err := os.Create(filepath.Join(protoOutDir, "common.proto"))
+	if err != nil {
+		return err
+	}
+
+	return protoCommonTmpl.Execute(protoCommonFile, common)
 }
 
 func main() {
