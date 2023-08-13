@@ -95,7 +95,7 @@ func TestStop(t *testing.T) {
 	})
 
 	t.Run("success", func(t *testing.T) {
-		f := startLemming(t)
+		f := startLemming(t, []Option{}...)
 		if err := f.Stop(); err != nil {
 			t.Fatalf("did not get nil error on stop, got: %v", err)
 		}
