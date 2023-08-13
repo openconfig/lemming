@@ -84,13 +84,22 @@ func TestFakeGNMI(t *testing.T) {
 }
 
 func TestStop(t *testing.T) {
-	f := startLemming(t)
-	// Close the listener so the get must fail. Sleep to ensure listener is closed before Get.
-	f.GNMIListener().Close()
-	err := f.Stop()
-	if s := errdiff.Check(err, "use of closed network connection"); s != "" {
-		t.Fatalf("failed to get error on close: %s", s)
-	}
+	t.Run("errors", func(t *testing.T) {
+		f := startLemming(t)
+		// Close the listener so the get must fail. Sleep to ensure listener is closed before Get.
+		f.GNMIListener().Close()
+		err := f.Stop()
+		if s := errdiff.Check(err, "use of closed network connection"); s != "" {
+			t.Fatalf("failed to get error on close: %s", s)
+		}
+	})
+
+	t.Run("success", func(t *testing.T) {
+		f := startLemming(t)
+		if err := f.Stop(); err != nil {
+			t.Fatalf("did not get nil error on stop, got: %v", err)
+		}
+	})
 }
 
 func TestFakeGNOI(t *testing.T) {

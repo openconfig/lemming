@@ -317,6 +317,9 @@ func (d *Device) Stop() error {
 		d.errs = append(d.errs, err)
 	}
 
+	if len(d.errs) == 0 {
+		return nil
+	}
 	return fmt.Errorf("%v", d.errs)
 }
 
