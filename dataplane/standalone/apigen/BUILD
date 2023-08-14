@@ -11,6 +11,7 @@ go_library(
     importpath = "github.com/openconfig/lemming/dataplane/standalone/apigen",
     visibility = ["//visibility:private"],
     deps = [
+        "@com_github_golang_glog//:glog",
         "@com_github_stoewer_go_strcase//:go-strcase",
         "@org_modernc_cc_v4//:cc",
     ],
