@@ -26,8 +26,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/vishvananda/netlink"
-
 	"github.com/openconfig/lemming/dataplane/forwarding"
 	"github.com/openconfig/lemming/dataplane/forwarding/attributes"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
@@ -92,29 +90,7 @@ func New(ctx context.Context) (*Engine, error) {
 		internalToExternalID: map[string]string{},
 	}
 
-	updCh := make(chan netlink.AddrUpdate)
-	doneCh := make(chan struct{})
-
-	go func() {
-		for {
-			upd := <-updCh
-			l, err := netlink.LinkByIndex(upd.LinkIndex)
-			if err != nil {
-				log.Warningf("failed to get link: %v", err)
-				continue
-			}
-			e.ipToDevNameMu.Lock()
-			if upd.NewAddr {
-				log.Infof("added new ip %s to device %s", upd.LinkAddress.IP.String(), l.Attrs().Name)
-				e.ipToDevName[upd.LinkAddress.IP.String()] = l.Attrs().Name
-			} else {
-				delete(e.ipToDevName, upd.LinkAddress.IP.String())
-			}
-			e.ipToDevNameMu.Unlock()
-		}
-	}()
-
-	netlink.AddrSubscribe(updCh, doneCh)
+	e.handleIpUpdates()
 
 	_, err := e.Server.ContextCreate(context.Background(), &fwdpb.ContextCreateRequest{
 		ContextId: &fwdpb.ContextId{Id: e.id},
