@@ -33,7 +33,6 @@ import (
 	"net"
 	"os"
 	"strings"
-	"sync"
 
 	"github.com/wenovus/gobgp/v3/pkg/zebra"
 
@@ -51,20 +50,6 @@ import (
 // TODO(wenbli): Consider unifying logging calls. Although klog is the
 // currently-desired logger, "Topic=" is actually a good way of filtering
 // through logs rather than simply using verbosity.
-
-// ZServer is a ZAPI server.
-type ZServer struct {
-	socketType string
-	path       string
-	vrfID      uint32
-	sysrib     *Server
-	lis        net.Listener
-
-	// ClientMutex protects the ZAPI client map.
-	ClientMutex sync.RWMutex
-	// ClientMap stores all connected ZAPI clients.
-	ClientMap map[net.Conn]*Client
-}
 
 // StartZServer starts a ZAPI server on the given connection type and path,
 //

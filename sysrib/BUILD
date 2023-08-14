@@ -5,6 +5,7 @@ go_library(
     srcs = [
         "logger.go",
         "server.go",
+        "server_zapi.go",
         "static.go",
         "sysrib.go",
         "util.go",
