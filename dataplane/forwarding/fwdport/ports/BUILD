@@ -8,6 +8,7 @@ go_library(
         "fake.go",
         "group.go",
         "kernel.go",
+        "kernel_nonlinux.go",
         "tap.go",
     ],
     importpath = "github.com/openconfig/lemming/dataplane/forwarding/fwdport/ports",
@@ -26,12 +27,19 @@ go_library(
         "//proto/forwarding",
         "@com_github_golang_glog//:glog",
         "@com_github_google_gopacket//:gopacket",
-        "@com_github_google_gopacket//afpacket",
         "@com_github_google_gopacket//layers",
         "@com_github_google_gopacket//pcapgo",
         "@com_github_vishvananda_netlink//:netlink",
         "@org_golang_x_sys//unix",
-    ],
+    ] + select({
+        "@io_bazel_rules_go//go/platform:android": [
+            "@com_github_google_gopacket//afpacket",
+        ],
+        "@io_bazel_rules_go//go/platform:linux": [
+            "@com_github_google_gopacket//afpacket",
+        ],
+        "//conditions:default": [],
+    }),
 )
 
 go_test(
