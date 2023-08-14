@@ -1,3 +1,4 @@
+
 syntax = "proto3";
 
 package lemming.dataplane.sai;
@@ -7,24 +8,26 @@ import "dataplane/standalone/proto/common.proto";
 option go_package = "github.com/openconfig/lemming/proto/dataplane/sai";
 
 enum SchedulerAttr {
-  SCHEDULER_ATTR_UNSPECIFIED              = 0;
-  SCHEDULER_ATTR_SCHEDULING_TYPE          = 1;
-  SCHEDULER_ATTR_SCHEDULING_WEIGHT        = 2;
-  SCHEDULER_ATTR_METER_TYPE               = 3;
-  SCHEDULER_ATTR_MIN_BANDWIDTH_RATE       = 4;
+  SCHEDULER_ATTR_UNSPECIFIED = 0;
+  SCHEDULER_ATTR_SCHEDULING_TYPE = 1;
+  SCHEDULER_ATTR_SCHEDULING_WEIGHT = 2;
+  SCHEDULER_ATTR_METER_TYPE = 3;
+  SCHEDULER_ATTR_MIN_BANDWIDTH_RATE = 4;
   SCHEDULER_ATTR_MIN_BANDWIDTH_BURST_RATE = 5;
-  SCHEDULER_ATTR_MAX_BANDWIDTH_RATE       = 6;
+  SCHEDULER_ATTR_MAX_BANDWIDTH_RATE = 6;
   SCHEDULER_ATTR_MAX_BANDWIDTH_BURST_RATE = 7;
 }
+
 message CreateSchedulerRequest {
-  uint64         switch                   = 1;
-  SchedulingType scheduling_type          = 2;
-  uint32         scheduling_weight        = 3;
-  MeterType      meter_type               = 4;
-  uint64         min_bandwidth_rate       = 5;
-  uint64         min_bandwidth_burst_rate = 6;
-  uint64         max_bandwidth_rate       = 7;
-  uint64         max_bandwidth_burst_rate = 8;
+  uint64 switch = 1;
+
+  SchedulingType scheduling_type = 2;
+  uint32 scheduling_weight = 3;
+  MeterType meter_type = 4;
+  uint64 min_bandwidth_rate = 5;
+  uint64 min_bandwidth_burst_rate = 6;
+  uint64 max_bandwidth_rate = 7;
+  uint64 max_bandwidth_burst_rate = 8;
 }
 
 message CreateSchedulerResponse {
@@ -35,26 +38,27 @@ message RemoveSchedulerRequest {
   uint64 oid = 1;
 }
 
-message RemoveSchedulerResponse {}
+message RemoveSchedulerResponse {
+}
 
 message SetSchedulerAttributeRequest {
   uint64 oid = 1;
-
   oneof attr {
-    SchedulingType scheduling_type          = 2;
-    uint32         scheduling_weight        = 3;
-    MeterType      meter_type               = 4;
-    uint64         min_bandwidth_rate       = 5;
-    uint64         min_bandwidth_burst_rate = 6;
-    uint64         max_bandwidth_rate       = 7;
-    uint64         max_bandwidth_burst_rate = 8;
+    SchedulingType scheduling_type = 2;
+    uint32 scheduling_weight = 3;
+    MeterType meter_type = 4;
+    uint64 min_bandwidth_rate = 5;
+    uint64 min_bandwidth_burst_rate = 6;
+    uint64 max_bandwidth_rate = 7;
+    uint64 max_bandwidth_burst_rate = 8;
   }
 }
 
-message SetSchedulerAttributeResponse {}
+message SetSchedulerAttributeResponse {
+}
 
 message GetSchedulerAttributeRequest {
-  uint64        oid       = 1;
+  uint64 oid = 1;
   SchedulerAttr attr_type = 2;
 }
 
@@ -63,8 +67,12 @@ message GetSchedulerAttributeResponse {
 }
 
 service Scheduler {
-  rpc CreateScheduler       (CreateSchedulerRequest      ) returns (CreateSchedulerResponse      );
-  rpc RemoveScheduler       (RemoveSchedulerRequest      ) returns (RemoveSchedulerResponse      );
-  rpc SetSchedulerAttribute (SetSchedulerAttributeRequest) returns (SetSchedulerAttributeResponse);
-  rpc GetSchedulerAttribute (GetSchedulerAttributeRequest) returns (GetSchedulerAttributeResponse);
+  rpc CreateScheduler(CreateSchedulerRequest)
+      returns (CreateSchedulerResponse) {}
+  rpc RemoveScheduler(RemoveSchedulerRequest)
+      returns (RemoveSchedulerResponse) {}
+  rpc SetSchedulerAttribute(SetSchedulerAttributeRequest)
+      returns (SetSchedulerAttributeResponse) {}
+  rpc GetSchedulerAttribute(GetSchedulerAttributeRequest)
+      returns (GetSchedulerAttributeResponse) {}
 }

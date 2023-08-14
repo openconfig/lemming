@@ -1,3 +1,4 @@
+
 syntax = "proto3";
 
 package lemming.dataplane.sai;
@@ -7,20 +8,22 @@ import "dataplane/standalone/proto/common.proto";
 option go_package = "github.com/openconfig/lemming/proto/dataplane/sai";
 
 enum SystemPortAttr {
-  SYSTEM_PORT_ATTR_UNSPECIFIED         = 0;
-  SYSTEM_PORT_ATTR_TYPE                = 1;
-  SYSTEM_PORT_ATTR_QOS_NUMBER_OF_VOQS  = 2;
-  SYSTEM_PORT_ATTR_QOS_VOQ_LIST        = 3;
-  SYSTEM_PORT_ATTR_PORT                = 4;
-  SYSTEM_PORT_ATTR_ADMIN_STATE         = 5;
-  SYSTEM_PORT_ATTR_CONFIG_INFO         = 6;
+  SYSTEM_PORT_ATTR_UNSPECIFIED = 0;
+  SYSTEM_PORT_ATTR_TYPE = 1;
+  SYSTEM_PORT_ATTR_QOS_NUMBER_OF_VOQS = 2;
+  SYSTEM_PORT_ATTR_QOS_VOQ_LIST = 3;
+  SYSTEM_PORT_ATTR_PORT = 4;
+  SYSTEM_PORT_ATTR_ADMIN_STATE = 5;
+  SYSTEM_PORT_ATTR_CONFIG_INFO = 6;
   SYSTEM_PORT_ATTR_QOS_TC_TO_QUEUE_MAP = 7;
 }
+
 message CreateSystemPortRequest {
-  uint64           switch              = 1;
-  bool             admin_state         = 2;
-  SystemPortConfig config_info         = 3;
-  uint64           qos_tc_to_queue_map = 4;
+  uint64 switch = 1;
+
+  bool admin_state = 2;
+  SystemPortConfig config_info = 3;
+  uint64 qos_tc_to_queue_map = 4;
 }
 
 message CreateSystemPortResponse {
@@ -31,21 +34,22 @@ message RemoveSystemPortRequest {
   uint64 oid = 1;
 }
 
-message RemoveSystemPortResponse {}
+message RemoveSystemPortResponse {
+}
 
 message SetSystemPortAttributeRequest {
   uint64 oid = 1;
-
   oneof attr {
-    bool   admin_state         = 2;
+    bool admin_state = 2;
     uint64 qos_tc_to_queue_map = 3;
   }
 }
 
-message SetSystemPortAttributeResponse {}
+message SetSystemPortAttributeResponse {
+}
 
 message GetSystemPortAttributeRequest {
-  uint64         oid       = 1;
+  uint64 oid = 1;
   SystemPortAttr attr_type = 2;
 }
 
@@ -54,8 +58,12 @@ message GetSystemPortAttributeResponse {
 }
 
 service SystemPort {
-  rpc CreateSystemPort       (CreateSystemPortRequest      ) returns (CreateSystemPortResponse      );
-  rpc RemoveSystemPort       (RemoveSystemPortRequest      ) returns (RemoveSystemPortResponse      );
-  rpc SetSystemPortAttribute (SetSystemPortAttributeRequest) returns (SetSystemPortAttributeResponse);
-  rpc GetSystemPortAttribute (GetSystemPortAttributeRequest) returns (GetSystemPortAttributeResponse);
+  rpc CreateSystemPort(CreateSystemPortRequest)
+      returns (CreateSystemPortResponse) {}
+  rpc RemoveSystemPort(RemoveSystemPortRequest)
+      returns (RemoveSystemPortResponse) {}
+  rpc SetSystemPortAttribute(SetSystemPortAttributeRequest)
+      returns (SetSystemPortAttributeResponse) {}
+  rpc GetSystemPortAttribute(GetSystemPortAttributeRequest)
+      returns (GetSystemPortAttributeResponse) {}
 }

@@ -1,3 +1,4 @@
+
 syntax = "proto3";
 
 package lemming.dataplane.sai;
@@ -7,14 +8,16 @@ import "dataplane/standalone/proto/common.proto";
 option go_package = "github.com/openconfig/lemming/proto/dataplane/sai";
 
 enum L2mcEntryAttr {
-  L2MC_ENTRY_ATTR_UNSPECIFIED     = 0;
-  L2MC_ENTRY_ATTR_PACKET_ACTION   = 1;
+  L2MC_ENTRY_ATTR_UNSPECIFIED = 0;
+  L2MC_ENTRY_ATTR_PACKET_ACTION = 1;
   L2MC_ENTRY_ATTR_OUTPUT_GROUP_ID = 2;
 }
+
 message CreateL2mcEntryRequest {
-  L2mcEntry    entry           = 1;
-  PacketAction packet_action   = 2;
-  uint64       output_group_id = 3;
+  L2mcEntry entry = 1;
+
+  PacketAction packet_action = 2;
+  uint64 output_group_id = 3;
 }
 
 message CreateL2mcEntryResponse {
@@ -25,21 +28,22 @@ message RemoveL2mcEntryRequest {
   L2mcEntry entry = 1;
 }
 
-message RemoveL2mcEntryResponse {}
+message RemoveL2mcEntryResponse {
+}
 
 message SetL2mcEntryAttributeRequest {
   L2mcEntry entry = 1;
-
   oneof attr {
-    PacketAction packet_action   = 2;
-    uint64       output_group_id = 3;
+    PacketAction packet_action = 2;
+    uint64 output_group_id = 3;
   }
 }
 
-message SetL2mcEntryAttributeResponse {}
+message SetL2mcEntryAttributeResponse {
+}
 
 message GetL2mcEntryAttributeRequest {
-  L2mcEntry     entry     = 1;
+  L2mcEntry entry = 1;
   L2mcEntryAttr attr_type = 2;
 }
 
@@ -48,8 +52,12 @@ message GetL2mcEntryAttributeResponse {
 }
 
 service L2mc {
-  rpc CreateL2mcEntry       (CreateL2mcEntryRequest      ) returns (CreateL2mcEntryResponse      );
-  rpc RemoveL2mcEntry       (RemoveL2mcEntryRequest      ) returns (RemoveL2mcEntryResponse      );
-  rpc SetL2mcEntryAttribute (SetL2mcEntryAttributeRequest) returns (SetL2mcEntryAttributeResponse);
-  rpc GetL2mcEntryAttribute (GetL2mcEntryAttributeRequest) returns (GetL2mcEntryAttributeResponse);
+  rpc CreateL2mcEntry(CreateL2mcEntryRequest)
+      returns (CreateL2mcEntryResponse) {}
+  rpc RemoveL2mcEntry(RemoveL2mcEntryRequest)
+      returns (RemoveL2mcEntryResponse) {}
+  rpc SetL2mcEntryAttribute(SetL2mcEntryAttributeRequest)
+      returns (SetL2mcEntryAttributeResponse) {}
+  rpc GetL2mcEntryAttribute(GetL2mcEntryAttributeRequest)
+      returns (GetL2mcEntryAttributeResponse) {}
 }

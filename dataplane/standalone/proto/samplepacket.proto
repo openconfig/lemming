@@ -1,3 +1,4 @@
+
 syntax = "proto3";
 
 package lemming.dataplane.sai;
@@ -9,14 +10,16 @@ option go_package = "github.com/openconfig/lemming/proto/dataplane/sai";
 enum SamplepacketAttr {
   SAMPLEPACKET_ATTR_UNSPECIFIED = 0;
   SAMPLEPACKET_ATTR_SAMPLE_RATE = 1;
-  SAMPLEPACKET_ATTR_TYPE        = 2;
-  SAMPLEPACKET_ATTR_MODE        = 3;
+  SAMPLEPACKET_ATTR_TYPE = 2;
+  SAMPLEPACKET_ATTR_MODE = 3;
 }
+
 message CreateSamplepacketRequest {
-  uint64           switch      = 1;
-  uint32           sample_rate = 2;
-  SamplepacketType type        = 3;
-  SamplepacketMode mode        = 4;
+  uint64 switch = 1;
+
+  uint32 sample_rate = 2;
+  SamplepacketType type = 3;
+  SamplepacketMode mode = 4;
 }
 
 message CreateSamplepacketResponse {
@@ -27,20 +30,21 @@ message RemoveSamplepacketRequest {
   uint64 oid = 1;
 }
 
-message RemoveSamplepacketResponse {}
+message RemoveSamplepacketResponse {
+}
 
 message SetSamplepacketAttributeRequest {
   uint64 oid = 1;
-
   oneof attr {
     uint32 sample_rate = 2;
   }
 }
 
-message SetSamplepacketAttributeResponse {}
+message SetSamplepacketAttributeResponse {
+}
 
 message GetSamplepacketAttributeRequest {
-  uint64           oid       = 1;
+  uint64 oid = 1;
   SamplepacketAttr attr_type = 2;
 }
 
@@ -49,8 +53,12 @@ message GetSamplepacketAttributeResponse {
 }
 
 service Samplepacket {
-  rpc CreateSamplepacket       (CreateSamplepacketRequest      ) returns (CreateSamplepacketResponse      );
-  rpc RemoveSamplepacket       (RemoveSamplepacketRequest      ) returns (RemoveSamplepacketResponse      );
-  rpc SetSamplepacketAttribute (SetSamplepacketAttributeRequest) returns (SetSamplepacketAttributeResponse);
-  rpc GetSamplepacketAttribute (GetSamplepacketAttributeRequest) returns (GetSamplepacketAttributeResponse);
+  rpc CreateSamplepacket(CreateSamplepacketRequest)
+      returns (CreateSamplepacketResponse) {}
+  rpc RemoveSamplepacket(RemoveSamplepacketRequest)
+      returns (RemoveSamplepacketResponse) {}
+  rpc SetSamplepacketAttribute(SetSamplepacketAttributeRequest)
+      returns (SetSamplepacketAttributeResponse) {}
+  rpc GetSamplepacketAttribute(GetSamplepacketAttributeRequest)
+      returns (GetSamplepacketAttributeResponse) {}
 }

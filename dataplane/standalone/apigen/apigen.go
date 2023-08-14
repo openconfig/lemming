@@ -111,7 +111,7 @@ func generate() error {
 		}
 	}
 	for file, content := range protos {
-		if err := os.WriteFile(filepath.Join(protoOutDir, file), []byte(content), 0666); err != nil {
+		if err := os.WriteFile(filepath.Join(protoOutDir, file), []byte(content), 0600); err != nil {
 			return err
 		}
 	}

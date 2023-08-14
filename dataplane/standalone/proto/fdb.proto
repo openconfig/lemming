@@ -1,3 +1,4 @@
+
 syntax = "proto3";
 
 package lemming.dataplane.sai;
@@ -7,26 +8,28 @@ import "dataplane/standalone/proto/common.proto";
 option go_package = "github.com/openconfig/lemming/proto/dataplane/sai";
 
 enum FdbEntryAttr {
-  FDB_ENTRY_ATTR_UNSPECIFIED    = 0;
-  FDB_ENTRY_ATTR_TYPE           = 1;
-  FDB_ENTRY_ATTR_PACKET_ACTION  = 2;
-  FDB_ENTRY_ATTR_USER_TRAP_ID   = 3;
+  FDB_ENTRY_ATTR_UNSPECIFIED = 0;
+  FDB_ENTRY_ATTR_TYPE = 1;
+  FDB_ENTRY_ATTR_PACKET_ACTION = 2;
+  FDB_ENTRY_ATTR_USER_TRAP_ID = 3;
   FDB_ENTRY_ATTR_BRIDGE_PORT_ID = 4;
-  FDB_ENTRY_ATTR_META_DATA      = 5;
-  FDB_ENTRY_ATTR_ENDPOINT_IP    = 6;
-  FDB_ENTRY_ATTR_COUNTER_ID     = 7;
+  FDB_ENTRY_ATTR_META_DATA = 5;
+  FDB_ENTRY_ATTR_ENDPOINT_IP = 6;
+  FDB_ENTRY_ATTR_COUNTER_ID = 7;
   FDB_ENTRY_ATTR_ALLOW_MAC_MOVE = 8;
 }
+
 message CreateFdbEntryRequest {
-  FdbEntry     entry          = 1;
-  FdbEntryType type           = 2;
-  PacketAction packet_action  = 3;
-  uint64       user_trap_id   = 4;
-  uint64       bridge_port_id = 5;
-  uint32       meta_data      = 6;
-  bytes        endpoint_ip    = 7;
-  uint64       counter_id     = 8;
-  bool         allow_mac_move = 9;
+  FdbEntry entry = 1;
+
+  FdbEntryType type = 2;
+  PacketAction packet_action = 3;
+  uint64 user_trap_id = 4;
+  uint64 bridge_port_id = 5;
+  uint32 meta_data = 6;
+  bytes endpoint_ip = 7;
+  uint64 counter_id = 8;
+  bool allow_mac_move = 9;
 }
 
 message CreateFdbEntryResponse {
@@ -37,27 +40,28 @@ message RemoveFdbEntryRequest {
   FdbEntry entry = 1;
 }
 
-message RemoveFdbEntryResponse {}
+message RemoveFdbEntryResponse {
+}
 
 message SetFdbEntryAttributeRequest {
   FdbEntry entry = 1;
-
   oneof attr {
-    FdbEntryType type           = 2;
-    PacketAction packet_action  = 3;
-    uint64       user_trap_id   = 4;
-    uint64       bridge_port_id = 5;
-    uint32       meta_data      = 6;
-    bytes        endpoint_ip    = 7;
-    uint64       counter_id     = 8;
-    bool         allow_mac_move = 9;
+    FdbEntryType type = 2;
+    PacketAction packet_action = 3;
+    uint64 user_trap_id = 4;
+    uint64 bridge_port_id = 5;
+    uint32 meta_data = 6;
+    bytes endpoint_ip = 7;
+    uint64 counter_id = 8;
+    bool allow_mac_move = 9;
   }
 }
 
-message SetFdbEntryAttributeResponse {}
+message SetFdbEntryAttributeResponse {
+}
 
 message GetFdbEntryAttributeRequest {
-  FdbEntry     entry     = 1;
+  FdbEntry entry = 1;
   FdbEntryAttr attr_type = 2;
 }
 
@@ -66,8 +70,10 @@ message GetFdbEntryAttributeResponse {
 }
 
 service Fdb {
-  rpc CreateFdbEntry       (CreateFdbEntryRequest      ) returns (CreateFdbEntryResponse      );
-  rpc RemoveFdbEntry       (RemoveFdbEntryRequest      ) returns (RemoveFdbEntryResponse      );
-  rpc SetFdbEntryAttribute (SetFdbEntryAttributeRequest) returns (SetFdbEntryAttributeResponse);
-  rpc GetFdbEntryAttribute (GetFdbEntryAttributeRequest) returns (GetFdbEntryAttributeResponse);
+  rpc CreateFdbEntry(CreateFdbEntryRequest) returns (CreateFdbEntryResponse) {}
+  rpc RemoveFdbEntry(RemoveFdbEntryRequest) returns (RemoveFdbEntryResponse) {}
+  rpc SetFdbEntryAttribute(SetFdbEntryAttributeRequest)
+      returns (SetFdbEntryAttributeResponse) {}
+  rpc GetFdbEntryAttribute(GetFdbEntryAttributeRequest)
+      returns (GetFdbEntryAttributeResponse) {}
 }
