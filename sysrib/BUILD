@@ -5,6 +5,7 @@ go_library(
     srcs = [
         "logger.go",
         "server.go",
+        "server_linux.go",
         "static.go",
         "sysrib.go",
         "util.go",
@@ -13,7 +14,6 @@ go_library(
     importpath = "github.com/openconfig/lemming/sysrib",
     visibility = ["//visibility:public"],
     deps = [
-        "//dataplane/handlers",
         "//gnmi/fakedevice",
         "//gnmi/gnmiclient",
         "//gnmi/oc",
@@ -38,7 +38,15 @@ go_library(
         "@org_golang_google_grpc//codes",
         "@org_golang_google_grpc//status",
         "@org_golang_x_exp//maps",
-    ],
+    ] + select({
+        "@io_bazel_rules_go//go/platform:android": [
+            "//dataplane/handlers",
+        ],
+        "@io_bazel_rules_go//go/platform:linux": [
+            "//dataplane/handlers",
+        ],
+        "//conditions:default": [],
+    }),
 )
 
 go_test(

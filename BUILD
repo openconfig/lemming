@@ -10,12 +10,14 @@ gazelle(
 
 go_library(
     name = "lemming",
-    srcs = ["lemming.go"],
+    srcs = [
+        "lemming.go",
+        "lemming_linux.go",
+    ],
     importpath = "github.com/openconfig/lemming",
     visibility = ["//visibility:public"],
     deps = [
         "//bgp",
-        "//dataplane",
         "//gnmi",
         "//gnmi/fakedevice",
         "//gnmi/oc",
@@ -31,7 +33,15 @@ go_library(
         "@org_golang_google_grpc//:go_default_library",
         "@org_golang_google_grpc//credentials",
         "@org_golang_google_grpc//reflection",
-    ],
+    ] + select({
+        "@io_bazel_rules_go//go/platform:android": [
+            "//dataplane",
+        ],
+        "@io_bazel_rules_go//go/platform:linux": [
+            "//dataplane",
+        ],
+        "//conditions:default": [],
+    }),
 )
 
 go_test(

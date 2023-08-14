@@ -37,7 +37,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/openconfig/lemming/dataplane/handlers"
 	"github.com/openconfig/lemming/gnmi/fakedevice"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
@@ -64,6 +63,10 @@ const (
 	AdminDistanceConnected = 0
 	AdminDistanceStatic    = 1
 	AdminDistanceBGP       = 20
+)
+
+var (
+	programRouteFns []func(context.Context, *ygnmi.Client, *dpb.Route) error
 )
 
 // Server is the implementation of the Sysrib API.
@@ -127,7 +130,9 @@ func (d *Dataplane) ProgramRoute(r *ResolvedRoute) error {
 	if err != nil {
 		return err
 	}
-	_, err = ygnmi.Replace(context.TODO(), d.Client, handlers.RouteQuery(rr.GetPrefix().GetVrfId(), rr.GetPrefix().GetCidr()), rr, ygnmi.WithSetFallbackEncoding())
+	for _, programRouteFn := range programRouteFns {
+		programRouteFn(context.TODO(), d.Client, rr)
+	}
 	return err
 }
 

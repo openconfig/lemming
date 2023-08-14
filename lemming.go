@@ -19,10 +19,10 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"runtime"
 	"sync"
 
 	"github.com/openconfig/lemming/bgp"
-	"github.com/openconfig/lemming/dataplane"
 	fgnmi "github.com/openconfig/lemming/gnmi"
 	"github.com/openconfig/lemming/gnmi/fakedevice"
 	"github.com/openconfig/lemming/gnmi/oc"
@@ -39,6 +39,10 @@ import (
 	"k8s.io/klog/v2"
 
 	log "github.com/golang/glog"
+)
+
+var (
+	initializeDataplane func() (reconciler.Reconciler, error)
 )
 
 type gRPCService struct {
@@ -149,17 +153,18 @@ func WithTransportCreds(c credentials.TransportCredentials) Option {
 
 // New returns a new initialized device.
 func New(targetName, zapiURL string, opts ...Option) (*Device, error) {
-	var dplane *dataplane.Dataplane
 	var recs []reconciler.Reconciler
 
 	if viper.GetBool("enable_dataplane") {
-		log.Info("enabling dataplane")
-		var err error
-		dplane, err = dataplane.New(context.Background())
-		if err != nil {
-			return nil, err
+		if initializeDataplane == nil {
+			return nil, fmt.Errorf("dataplane cannot compile on non-linux platforms, current platform: %v", runtime.GOOS)
+		} else {
+			dplane, err := initializeDataplane()
+			if err != nil {
+				return nil, err
+			}
+			recs = append(recs, dplane)
 		}
-		recs = append(recs, dplane)
 	}
 
 	log.Info("starting gNMI")
