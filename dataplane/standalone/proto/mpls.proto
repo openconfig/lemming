@@ -46,8 +46,7 @@ message RemoveInsegEntryRequest {
   InsegEntry entry = 1;
 }
 
-message RemoveInsegEntryResponse {
-}
+message RemoveInsegEntryResponse {}
 
 message SetInsegEntryAttributeRequest {
   InsegEntry entry = 1;
@@ -66,8 +65,7 @@ message SetInsegEntryAttributeRequest {
   }
 }
 
-message SetInsegEntryAttributeResponse {
-}
+message SetInsegEntryAttributeResponse {}
 
 message GetInsegEntryAttributeRequest {
   InsegEntry entry = 1;

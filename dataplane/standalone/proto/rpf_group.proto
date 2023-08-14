@@ -31,8 +31,7 @@ message RemoveRpfGroupRequest {
   uint64 oid = 1;
 }
 
-message RemoveRpfGroupResponse {
-}
+message RemoveRpfGroupResponse {}
 
 message GetRpfGroupAttributeRequest {
   uint64 oid = 1;
@@ -58,8 +57,7 @@ message RemoveRpfGroupMemberRequest {
   uint64 oid = 1;
 }
 
-message RemoveRpfGroupMemberResponse {
-}
+message RemoveRpfGroupMemberResponse {}
 
 message GetRpfGroupMemberAttributeRequest {
   uint64 oid = 1;

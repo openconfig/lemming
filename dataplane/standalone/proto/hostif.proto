@@ -72,8 +72,7 @@ message RemoveHostifRequest {
   uint64 oid = 1;
 }
 
-message RemoveHostifResponse {
-}
+message RemoveHostifResponse {}
 
 message SetHostifAttributeRequest {
   uint64 oid = 1;
@@ -84,8 +83,7 @@ message SetHostifAttributeRequest {
   }
 }
 
-message SetHostifAttributeResponse {
-}
+message SetHostifAttributeResponse {}
 
 message GetHostifAttributeRequest {
   uint64 oid = 1;
@@ -114,8 +112,7 @@ message RemoveHostifTableEntryRequest {
   uint64 oid = 1;
 }
 
-message RemoveHostifTableEntryResponse {
-}
+message RemoveHostifTableEntryResponse {}
 
 message GetHostifTableEntryAttributeRequest {
   uint64 oid = 1;
@@ -142,8 +139,7 @@ message RemoveHostifTrapGroupRequest {
   uint64 oid = 1;
 }
 
-message RemoveHostifTrapGroupResponse {
-}
+message RemoveHostifTrapGroupResponse {}
 
 message SetHostifTrapGroupAttributeRequest {
   uint64 oid = 1;
@@ -154,8 +150,7 @@ message SetHostifTrapGroupAttributeRequest {
   }
 }
 
-message SetHostifTrapGroupAttributeResponse {
-}
+message SetHostifTrapGroupAttributeResponse {}
 
 message GetHostifTrapGroupAttributeRequest {
   uint64 oid = 1;
@@ -172,9 +167,9 @@ message CreateHostifTrapRequest {
   HostifTrapType trap_type = 2;
   PacketAction packet_action = 3;
   uint32 trap_priority = 4;
-  repeated uint64 exclude_port_lists = 5;
+  repeated uint64 exclude_port_list = 5;
   uint64 trap_group = 6;
-  repeated uint64 mirror_sessions = 7;
+  repeated uint64 mirror_session = 7;
   uint64 counter_id = 8;
 }
 
@@ -186,8 +181,7 @@ message RemoveHostifTrapRequest {
   uint64 oid = 1;
 }
 
-message RemoveHostifTrapResponse {
-}
+message RemoveHostifTrapResponse {}
 
 message SetHostifTrapAttributeRequest {
   uint64 oid = 1;
@@ -201,8 +195,7 @@ message SetHostifTrapAttributeRequest {
   }
 }
 
-message SetHostifTrapAttributeResponse {
-}
+message SetHostifTrapAttributeResponse {}
 
 message GetHostifTrapAttributeRequest {
   uint64 oid = 1;
@@ -229,8 +222,7 @@ message RemoveHostifUserDefinedTrapRequest {
   uint64 oid = 1;
 }
 
-message RemoveHostifUserDefinedTrapResponse {
-}
+message RemoveHostifUserDefinedTrapResponse {}
 
 message SetHostifUserDefinedTrapAttributeRequest {
   uint64 oid = 1;
@@ -240,8 +232,7 @@ message SetHostifUserDefinedTrapAttributeRequest {
   }
 }
 
-message SetHostifUserDefinedTrapAttributeResponse {
-}
+message SetHostifUserDefinedTrapAttributeResponse {}
 
 message GetHostifUserDefinedTrapAttributeRequest {
   uint64 oid = 1;

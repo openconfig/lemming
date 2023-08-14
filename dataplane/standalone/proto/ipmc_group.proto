@@ -31,8 +31,7 @@ message RemoveIpmcGroupRequest {
   uint64 oid = 1;
 }
 
-message RemoveIpmcGroupResponse {
-}
+message RemoveIpmcGroupResponse {}
 
 message GetIpmcGroupAttributeRequest {
   uint64 oid = 1;
@@ -58,8 +57,7 @@ message RemoveIpmcGroupMemberRequest {
   uint64 oid = 1;
 }
 
-message RemoveIpmcGroupMemberResponse {
-}
+message RemoveIpmcGroupMemberResponse {}
 
 message GetIpmcGroupMemberAttributeRequest {
   uint64 oid = 1;

@@ -38,7 +38,7 @@ message CreateUdfRequest {
   uint64 group_id = 3;
   UdfBase base = 4;
   uint32 offset = 5;
-  repeated uint32 hash_masks = 6;
+  repeated uint32 hash_mask = 6;
 }
 
 message CreateUdfResponse {
@@ -49,8 +49,7 @@ message RemoveUdfRequest {
   uint64 oid = 1;
 }
 
-message RemoveUdfResponse {
-}
+message RemoveUdfResponse {}
 
 message SetUdfAttributeRequest {
   uint64 oid = 1;
@@ -60,8 +59,7 @@ message SetUdfAttributeRequest {
   }
 }
 
-message SetUdfAttributeResponse {
-}
+message SetUdfAttributeResponse {}
 
 message GetUdfAttributeRequest {
   uint64 oid = 1;
@@ -89,8 +87,7 @@ message RemoveUdfMatchRequest {
   uint64 oid = 1;
 }
 
-message RemoveUdfMatchResponse {
-}
+message RemoveUdfMatchResponse {}
 
 message GetUdfMatchAttributeRequest {
   uint64 oid = 1;
@@ -116,8 +113,7 @@ message RemoveUdfGroupRequest {
   uint64 oid = 1;
 }
 
-message RemoveUdfGroupResponse {
-}
+message RemoveUdfGroupResponse {}
 
 message GetUdfGroupAttributeRequest {
   uint64 oid = 1;

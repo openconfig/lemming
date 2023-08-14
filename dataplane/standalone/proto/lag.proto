@@ -51,8 +51,7 @@ message RemoveLagRequest {
   uint64 oid = 1;
 }
 
-message RemoveLagResponse {
-}
+message RemoveLagResponse {}
 
 message SetLagAttributeRequest {
   uint64 oid = 1;
@@ -68,8 +67,7 @@ message SetLagAttributeRequest {
   }
 }
 
-message SetLagAttributeResponse {
-}
+message SetLagAttributeResponse {}
 
 message GetLagAttributeRequest {
   uint64 oid = 1;
@@ -97,8 +95,7 @@ message RemoveLagMemberRequest {
   uint64 oid = 1;
 }
 
-message RemoveLagMemberResponse {
-}
+message RemoveLagMemberResponse {}
 
 message SetLagMemberAttributeRequest {
   uint64 oid = 1;
@@ -108,8 +105,7 @@ message SetLagMemberAttributeRequest {
   }
 }
 
-message SetLagMemberAttributeResponse {
-}
+message SetLagMemberAttributeResponse {}
 
 message GetLagMemberAttributeRequest {
   uint64 oid = 1;

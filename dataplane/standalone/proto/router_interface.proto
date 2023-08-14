@@ -66,8 +66,7 @@ message RemoveRouterInterfaceRequest {
   uint64 oid = 1;
 }
 
-message RemoveRouterInterfaceResponse {
-}
+message RemoveRouterInterfaceResponse {}
 
 message SetRouterInterfaceAttributeRequest {
   uint64 oid = 1;
@@ -88,8 +87,7 @@ message SetRouterInterfaceAttributeRequest {
   }
 }
 
-message SetRouterInterfaceAttributeResponse {
-}
+message SetRouterInterfaceAttributeResponse {}
 
 message GetRouterInterfaceAttributeRequest {
   uint64 oid = 1;

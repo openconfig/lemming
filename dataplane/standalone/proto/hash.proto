@@ -25,9 +25,9 @@ enum HashAttr {
 message CreateHashRequest {
   uint64 switch = 1;
 
-  repeated NativeHashField native_hash_field_lists = 2;
-  repeated uint64 udf_group_lists = 3;
-  repeated uint64 fine_grained_hash_field_lists = 4;
+  repeated NativeHashField native_hash_field_list = 2;
+  repeated uint64 udf_group_list = 3;
+  repeated uint64 fine_grained_hash_field_list = 4;
 }
 
 message CreateHashResponse {
@@ -38,8 +38,7 @@ message RemoveHashRequest {
   uint64 oid = 1;
 }
 
-message RemoveHashResponse {
-}
+message RemoveHashResponse {}
 
 message SetHashAttributeRequest {
   uint64 oid = 1;
@@ -50,8 +49,7 @@ message SetHashAttributeRequest {
   }
 }
 
-message SetHashAttributeResponse {
-}
+message SetHashAttributeResponse {}
 
 message GetHashAttributeRequest {
   uint64 oid = 1;
@@ -79,8 +77,7 @@ message RemoveFineGrainedHashFieldRequest {
   uint64 oid = 1;
 }
 
-message RemoveFineGrainedHashFieldResponse {
-}
+message RemoveFineGrainedHashFieldResponse {}
 
 message GetFineGrainedHashFieldAttributeRequest {
   uint64 oid = 1;

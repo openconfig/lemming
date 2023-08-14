@@ -56,8 +56,7 @@ message RemoveNextHopGroupRequest {
   uint64 oid = 1;
 }
 
-message RemoveNextHopGroupResponse {
-}
+message RemoveNextHopGroupResponse {}
 
 message SetNextHopGroupAttributeRequest {
   uint64 oid = 1;
@@ -68,8 +67,7 @@ message SetNextHopGroupAttributeRequest {
   }
 }
 
-message SetNextHopGroupAttributeResponse {
-}
+message SetNextHopGroupAttributeResponse {}
 
 message GetNextHopGroupAttributeRequest {
   uint64 oid = 1;
@@ -101,8 +99,7 @@ message RemoveNextHopGroupMemberRequest {
   uint64 oid = 1;
 }
 
-message RemoveNextHopGroupMemberResponse {
-}
+message RemoveNextHopGroupMemberResponse {}
 
 message SetNextHopGroupMemberAttributeRequest {
   uint64 oid = 1;
@@ -115,8 +112,7 @@ message SetNextHopGroupMemberAttributeRequest {
   }
 }
 
-message SetNextHopGroupMemberAttributeResponse {
-}
+message SetNextHopGroupMemberAttributeResponse {}
 
 message GetNextHopGroupMemberAttributeRequest {
   uint64 oid = 1;
@@ -131,7 +127,7 @@ message CreateNextHopGroupMapRequest {
   uint64 switch = 1;
 
   NextHopGroupMapType type = 2;
-  repeated UintMap map_to_value_lists = 3;
+  repeated UintMap map_to_value_list = 3;
 }
 
 message CreateNextHopGroupMapResponse {
@@ -142,8 +138,7 @@ message RemoveNextHopGroupMapRequest {
   uint64 oid = 1;
 }
 
-message RemoveNextHopGroupMapResponse {
-}
+message RemoveNextHopGroupMapResponse {}
 
 message SetNextHopGroupMapAttributeRequest {
   uint64 oid = 1;
@@ -152,8 +147,7 @@ message SetNextHopGroupMapAttributeRequest {
   }
 }
 
-message SetNextHopGroupMapAttributeResponse {
-}
+message SetNextHopGroupMapAttributeResponse {}
 
 message GetNextHopGroupMapAttributeRequest {
   uint64 oid = 1;

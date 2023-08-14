@@ -43,8 +43,7 @@ message RemoveNeighborEntryRequest {
   NeighborEntry entry = 1;
 }
 
-message RemoveNeighborEntryResponse {
-}
+message RemoveNeighborEntryResponse {}
 
 message SetNeighborEntryAttributeRequest {
   NeighborEntry entry = 1;
@@ -61,8 +60,7 @@ message SetNeighborEntryAttributeRequest {
   }
 }
 
-message SetNeighborEntryAttributeResponse {
-}
+message SetNeighborEntryAttributeResponse {}
 
 message GetNeighborEntryAttributeRequest {
   NeighborEntry entry = 1;

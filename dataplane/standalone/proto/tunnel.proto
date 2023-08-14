@@ -90,8 +90,7 @@ message RemoveTunnelMapRequest {
   uint64 oid = 1;
 }
 
-message RemoveTunnelMapResponse {
-}
+message RemoveTunnelMapResponse {}
 
 message GetTunnelMapAttributeRequest {
   uint64 oid = 1;
@@ -128,7 +127,7 @@ message CreateTunnelRequest {
   uint32 vxlan_udp_sport = 22;
   uint32 vxlan_udp_sport_mask = 23;
   uint32 sa_index = 24;
-  repeated uint64 ipsec_sa_port_lists = 25;
+  repeated uint64 ipsec_sa_port_list = 25;
 }
 
 message CreateTunnelResponse {
@@ -139,8 +138,7 @@ message RemoveTunnelRequest {
   uint64 oid = 1;
 }
 
-message RemoveTunnelResponse {
-}
+message RemoveTunnelResponse {}
 
 message SetTunnelAttributeRequest {
   uint64 oid = 1;
@@ -161,8 +159,7 @@ message SetTunnelAttributeRequest {
   }
 }
 
-message SetTunnelAttributeResponse {
-}
+message SetTunnelAttributeResponse {}
 
 message GetTunnelAttributeRequest {
   uint64 oid = 1;
@@ -195,8 +192,7 @@ message RemoveTunnelTermTableEntryRequest {
   uint64 oid = 1;
 }
 
-message RemoveTunnelTermTableEntryResponse {
-}
+message RemoveTunnelTermTableEntryResponse {}
 
 message SetTunnelTermTableEntryAttributeRequest {
   uint64 oid = 1;
@@ -205,8 +201,7 @@ message SetTunnelTermTableEntryAttributeRequest {
   }
 }
 
-message SetTunnelTermTableEntryAttributeResponse {
-}
+message SetTunnelTermTableEntryAttributeResponse {}
 
 message GetTunnelTermTableEntryAttributeRequest {
   uint64 oid = 1;
@@ -246,8 +241,7 @@ message RemoveTunnelMapEntryRequest {
   uint64 oid = 1;
 }
 
-message RemoveTunnelMapEntryResponse {
-}
+message RemoveTunnelMapEntryResponse {}
 
 message GetTunnelMapEntryAttributeRequest {
   uint64 oid = 1;

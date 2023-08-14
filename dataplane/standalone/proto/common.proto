@@ -1664,12 +1664,12 @@ enum SchedulingType {
 }
 
 enum Srv6SidlistType {
-  SRV6SIDLIST_TYPE_SRV6_SIDLIST_TYPE_UNSPECIFIED = 0;
-  SRV6SIDLIST_TYPE_SRV6_SIDLIST_TYPE_INSERT = 1;
-  SRV6SIDLIST_TYPE_SRV6_SIDLIST_TYPE_INSERT_RED = 2;
-  SRV6SIDLIST_TYPE_SRV6_SIDLIST_TYPE_ENCAPS = 3;
-  SRV6SIDLIST_TYPE_SRV6_SIDLIST_TYPE_ENCAPS_RED = 4;
-  SRV6SIDLIST_TYPE_SRV6_SIDLIST_TYPE_CUSTOM_RANGE_BASE = 5;
+  SRV6_SIDLIST_TYPE_UNSPECIFIED = 0;
+  SRV6_SIDLIST_TYPE_INSERT = 1;
+  SRV6_SIDLIST_TYPE_INSERT_RED = 2;
+  SRV6_SIDLIST_TYPE_ENCAPS = 3;
+  SRV6_SIDLIST_TYPE_ENCAPS_RED = 4;
+  SRV6_SIDLIST_TYPE_CUSTOM_RANGE_BASE = 5;
 }
 
 enum StatsMode {
@@ -2048,103 +2048,12 @@ enum VlanTaggingMode {
   VLAN_TAGGING_MODE_PRIORITY_TAGGED = 3;
 }
 
-message QOSMapParams {
-  uint32 tc = 1;
-  uint32 dscp = 2;
-  uint32 dot1p = 3;
-  uint32 prio = 4;
-  uint32 pg = 5;
-  uint32 queue_index = 6;
-  PacketColor color = 7;
-  uint32 mpls_exp = 8;
-  uint32 fc = 9;
-}
-
-message QOSMap {
-  QOSMapParams key = 1;
-  QOSMapParams value = 2;
-}
-
-message FabricPortReachability {
-  uint32 switch_id = 1;
-  bool reachable = 2;
-}
-
-message UintMap {
-  map<uint32, uint32> uintmap = 1;
-}
-
-message HMAC {
-  uint32 key_id = 1;
-  repeated uint32 hmacs = 2;
-}
-
-message TLVEntry {
-  oneof entry {
-    bytes ingress_node = 1;
-    bytes egress_node = 2;
-    bytes opaque_container = 3;
-    HMAC hmac = 4;
-  }
-}
-
-message ACLCapability {
-  bool is_action_list_mandatory = 1;
-  repeated int32 action_lists = 2;
-}
-
-message NatEntry {
+message IpmcEntry {
   uint64 switch_id = 1;
   uint64 vr_id = 2;
-  NatType nat_type = 3;
-  NatEntryData data = 4;
-}
-
-message IpPrefix {
-  bytes addr = 1;
-  bytes mask = 2;
-}
-
-message FdbEntry {
-  uint64 switch_id = 1;
-  bytes mac_address = 2;
-  uint64 bv_id = 3;
-}
-
-message MySidEntry {
-  uint64 switch_id = 1;
-  uint64 vr_id = 2;
-  uint32 locator_block_len = 3;
-  uint32 locator_node_len = 4;
-  uint32 function_len = 5;
-  uint32 args_len = 6;
-  bytes sid = 7;
-}
-
-message QueueDeadlockNotificationData {
-  uint64 queue_id = 1;
-  QueuePfcDeadlockEventType event = 2;
-  bool app_managed_recovery = 3;
-}
-
-message PortEyeValues {
-  uint32 lane = 1;
-  int32 left = 2;
-  int32 right = 3;
-  int32 up = 4;
-  int32 down = 5;
-}
-
-message NeighborEntry {
-  uint64 switch_id = 1;
-  uint64 rif_id = 2;
-  bytes ip_address = 3;
-}
-
-message ACLResource {
-  AclStage stage = 1;
-  AclBindPointType bind_point = 2;
-  uint32 avail_num = 3;
+  IpmcEntryType type = 3;
+  bytes destination = 4;
+  bytes source = 5;
 }
 
 message IpsecSaStatusNotificationData {
@@ -2153,17 +2062,10 @@ message IpsecSaStatusNotificationData {
   bool ipsec_egress_sn_at_max_limit = 3;
 }
 
-message PRBSRXState {
-  PortPrbsRxStatus rx_status = 1;
-  uint32 error_count = 2;
-}
-
-message L2mcEntry {
-  uint64 switch_id = 1;
-  uint64 bv_id = 2;
-  L2mcEntryType type = 3;
-  bytes destination = 4;
-  bytes source = 5;
+message QueueDeadlockNotificationData {
+  uint64 queue_id = 1;
+  QueuePfcDeadlockEventType event = 2;
+  bool app_managed_recovery = 3;
 }
 
 message McastFdbEntry {
@@ -2172,14 +2074,30 @@ message McastFdbEntry {
   uint64 bv_id = 3;
 }
 
-message InsegEntry {
-  uint64 switch_id = 1;
-  uint32 label = 2;
+message Uint32Range {
+  uint64 min = 1;
+  uint64 max = 2;
 }
 
-message BfdSessionStateChangeNotificationData {
-  uint64 bfd_session_id = 1;
-  BfdSessionState session_state = 2;
+message PRBS_RXState {
+  PortPrbsRxStatus rx_status = 1;
+  uint32 error_count = 2;
+}
+
+message ACLCapability {
+  bool is_action_list_mandatory = 1;
+  repeated int32 action_list = 2;
+}
+
+message RouteEntry {
+  uint64 switch_id = 1;
+  uint64 vr_id = 2;
+  IpPrefix destination = 3;
+}
+
+message PortOperStatusNotification {
+  uint64 port_id = 1;
+  PortOperStatus port_state = 2;
 }
 
 message AclFieldData {
@@ -2201,28 +2119,108 @@ message AclFieldData {
   };
 }
 
-message AclActionData {
-  bool enable = 1;
-  oneof parameter {
-    uint64 uint = 2;
-    uint64 int = 3;
-    bytes mac = 4;
-    bytes ip = 5;
-    uint64 oid = 6;
-    Uint64List objlist = 7;
-    bytes ipaddr = 8;
-  };
+message FdbEntry {
+  uint64 switch_id = 1;
+  bytes mac_address = 2;
+  uint64 bv_id = 3;
 }
 
-message Uint32Range {
-  uint64 min = 1;
-  uint64 max = 2;
+message NatEntry {
+  uint64 switch_id = 1;
+  uint64 vr_id = 2;
+  NatType nat_type = 3;
+  NatEntryData data = 4;
+}
+
+message NeighborEntry {
+  uint64 switch_id = 1;
+  uint64 rif_id = 2;
+  bytes ip_address = 3;
+}
+
+message ACLResource {
+  AclStage stage = 1;
+  AclBindPointType bind_point = 2;
+  uint32 avail_num = 3;
+}
+
+message PortEyeValues {
+  uint32 lane = 1;
+  int32 left = 2;
+  int32 right = 3;
+  int32 up = 4;
+  int32 down = 5;
+}
+
+message MySidEntry {
+  uint64 switch_id = 1;
+  uint64 vr_id = 2;
+  uint32 locator_block_len = 3;
+  uint32 locator_node_len = 4;
+  uint32 function_len = 5;
+  uint32 args_len = 6;
+  bytes sid = 7;
+}
+
+message UintMap {
+  map<uint32, uint32> uintmap = 1;
+}
+
+message SystemPortConfig {
+  uint32 port_id = 1;
+  uint32 attached_switch_id = 2;
+  uint32 attached_core_index = 3;
+  uint32 attached_core_port_index = 4;
+  uint32 speed = 5;
+  uint32 num_voq = 6;
+}
+
+message BfdSessionStateChangeNotificationData {
+  uint64 bfd_session_id = 1;
+  BfdSessionState session_state = 2;
+}
+
+message HMAC {
+  uint32 key_id = 1;
+  repeated uint32 hmac = 2;
+}
+
+message TLVEntry {
+  oneof entry {
+    bytes ingress_node = 1;
+    bytes egress_node = 2;
+    bytes opaque_container = 3;
+    HMAC hmac = 4;
+  }
+}
+
+message InsegEntry {
+  uint64 switch_id = 1;
+  uint32 label = 2;
 }
 
 message FdbEventNotificationData {
   FdbEvent event_type = 1;
   FdbEntry fdb_entry = 2;
   repeated FdbEntryAttribute attrs = 3;
+}
+
+message IpPrefix {
+  bytes addr = 1;
+  bytes mask = 2;
+}
+
+message FabricPortReachability {
+  uint32 switch_id = 1;
+  bool reachable = 2;
+}
+
+message L2mcEntry {
+  uint64 switch_id = 1;
+  uint64 bv_id = 2;
+  L2mcEntryType type = 3;
+  bytes destination = 4;
+  bytes source = 5;
 }
 
 message NatEntryData {
@@ -2242,32 +2240,34 @@ message NatEntryData {
   };
 }
 
-message SystemPortConfig {
-  uint32 port_id = 1;
-  uint32 attached_switch_id = 2;
-  uint32 attached_core_index = 3;
-  uint32 attached_core_port_index = 4;
-  uint32 speed = 5;
-  uint32 num_voq = 6;
+message QOSMapParams {
+  uint32 tc = 1;
+  uint32 dscp = 2;
+  uint32 dot1p = 3;
+  uint32 prio = 4;
+  uint32 pg = 5;
+  uint32 queue_index = 6;
+  PacketColor color = 7;
+  uint32 mpls_exp = 8;
+  uint32 fc = 9;
 }
 
-message PortOperStatusNotification {
-  uint64 port_id = 1;
-  PortOperStatus port_state = 2;
+message QOSMap {
+  QOSMapParams key = 1;
+  QOSMapParams value = 2;
 }
 
-message IpmcEntry {
-  uint64 switch_id = 1;
-  uint64 vr_id = 2;
-  IpmcEntryType type = 3;
-  bytes destination = 4;
-  bytes source = 5;
-}
-
-message RouteEntry {
-  uint64 switch_id = 1;
-  uint64 vr_id = 2;
-  IpPrefix destination = 3;
+message AclActionData {
+  bool enable = 1;
+  oneof parameter {
+    uint64 uint = 2;
+    uint64 int = 3;
+    bytes mac = 4;
+    bytes ip = 5;
+    uint64 oid = 6;
+    Uint64List objlist = 7;
+    bytes ipaddr = 8;
+  };
 }
 
 message AclCounterAttribute {
@@ -2552,19 +2552,19 @@ message AclTableGroupMemberAttribute {
 }
 
 message AclActionTypeList {
-  repeated AclActionType lists = 1;
+  repeated AclActionType list = 1;
 }
 
 message AclBindPointTypeList {
-  repeated AclBindPointType lists = 1;
+  repeated AclBindPointType list = 1;
 }
 
 message AclRangeTypeList {
-  repeated AclRangeType lists = 1;
+  repeated AclRangeType list = 1;
 }
 
 message AclResourceList {
-  repeated ACLResource lists = 1;
+  repeated ACLResource list = 1;
 }
 
 message BfdSessionAttribute {
@@ -2662,11 +2662,11 @@ message BufferProfileAttribute {
 }
 
 message BfdSessionOffloadTypeList {
-  repeated BfdSessionOffloadType lists = 1;
+  repeated BfdSessionOffloadType list = 1;
 }
 
 message BytesList {
-  repeated bytes lists = 1;
+  repeated bytes list = 1;
 }
 
 message CounterAttribute {
@@ -2911,15 +2911,15 @@ message IsolationGroupMemberAttribute {
 }
 
 message InDropReasonList {
-  repeated InDropReason lists = 1;
+  repeated InDropReason list = 1;
 }
 
 message Int32List {
-  repeated int32 lists = 1;
+  repeated int32 list = 1;
 }
 
 message IpsecCipherList {
-  repeated IpsecCipher lists = 1;
+  repeated IpsecCipher list = 1;
 }
 
 message L2mcEntryAttribute {
@@ -3081,7 +3081,7 @@ message MySidEntryAttribute {
 }
 
 message MacsecCipherSuiteList {
-  repeated MacsecCipherSuite lists = 1;
+  repeated MacsecCipherSuite list = 1;
 }
 
 message NatEntryAttribute {
@@ -3173,15 +3173,15 @@ message NextHopGroupMemberAttribute {
 }
 
 message NativeHashFieldList {
-  repeated NativeHashField lists = 1;
+  repeated NativeHashField list = 1;
 }
 
 message ObjectTypeList {
-  repeated ObjectType lists = 1;
+  repeated ObjectType list = 1;
 }
 
 message OutDropReasonList {
-  repeated OutDropReason lists = 1;
+  repeated OutDropReason list = 1;
 }
 
 message PolicerAttribute {
@@ -3375,31 +3375,31 @@ message PortSerdesAttribute {
 }
 
 message PacketActionList {
-  repeated PacketAction lists = 1;
+  repeated PacketAction list = 1;
 }
 
 message PortBreakoutModeTypeList {
-  repeated PortBreakoutModeType lists = 1;
+  repeated PortBreakoutModeType list = 1;
 }
 
 message PortErrStatusList {
-  repeated PortErrStatus lists = 1;
+  repeated PortErrStatus list = 1;
 }
 
 message PortEyeValuesList {
-  repeated PortEyeValues lists = 1;
+  repeated PortEyeValues list = 1;
 }
 
 message PortFecModeExtendedList {
-  repeated PortFecModeExtended lists = 1;
+  repeated PortFecModeExtended list = 1;
 }
 
 message PortFecModeList {
-  repeated PortFecMode lists = 1;
+  repeated PortFecMode list = 1;
 }
 
 message PortInterfaceTypeList {
-  repeated PortInterfaceType lists = 1;
+  repeated PortInterfaceType list = 1;
 }
 
 message QosMapAttribute {
@@ -3422,7 +3422,7 @@ message QueueAttribute {
 }
 
 message QosMapList {
-  repeated QOSMap lists = 1;
+  repeated QOSMap list = 1;
 }
 
 message RouterInterfaceAttribute {
@@ -3735,11 +3735,11 @@ message SystemPortAttribute {
 }
 
 message StatsModeList {
-  repeated StatsMode lists = 1;
+  repeated StatsMode list = 1;
 }
 
 message SystemPortConfigList {
-  repeated SystemPortConfig lists = 1;
+  repeated SystemPortConfig list = 1;
 }
 
 message TamAttribute {
@@ -3924,15 +3924,15 @@ message TunnelTermTableEntryAttribute {
 }
 
 message TamBindPointTypeList {
-  repeated TamBindPointType lists = 1;
+  repeated TamBindPointType list = 1;
 }
 
 message TlvEntryList {
-  repeated TLVEntry lists = 1;
+  repeated TLVEntry list = 1;
 }
 
 message TlvTypeList {
-  repeated TlvType lists = 1;
+  repeated TlvType list = 1;
 }
 
 message UdfAttribute {
@@ -3957,15 +3957,15 @@ message UdfMatchAttribute {
 }
 
 message Uint32List {
-  repeated uint32 lists = 1;
+  repeated uint32 list = 1;
 }
 
 message Uint64List {
-  repeated uint64 lists = 1;
+  repeated uint64 list = 1;
 }
 
 message UintMapList {
-  repeated UintMap lists = 1;
+  repeated UintMap list = 1;
 }
 
 message VirtualRouterAttribute {

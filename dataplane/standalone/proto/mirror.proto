@@ -60,7 +60,7 @@ message CreateMirrorSessionRequest {
   bytes dst_mac_address = 20;
   uint32 gre_protocol_type = 21;
   bool monitor_portlist_valid = 22;
-  repeated uint64 monitor_portlists = 23;
+  repeated uint64 monitor_portlist = 23;
   uint64 policer = 24;
   uint32 udp_src_port = 25;
   uint32 udp_dst_port = 26;
@@ -74,8 +74,7 @@ message RemoveMirrorSessionRequest {
   uint64 oid = 1;
 }
 
-message RemoveMirrorSessionResponse {
-}
+message RemoveMirrorSessionResponse {}
 
 message SetMirrorSessionAttributeRequest {
   uint64 oid = 1;
@@ -105,8 +104,7 @@ message SetMirrorSessionAttributeRequest {
   }
 }
 
-message SetMirrorSessionAttributeResponse {
-}
+message SetMirrorSessionAttributeResponse {}
 
 message GetMirrorSessionAttributeRequest {
   uint64 oid = 1;

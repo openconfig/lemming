@@ -63,7 +63,7 @@ message CreateVlanRequest {
   VlanFloodControlType broadcast_flood_control_type = 19;
   uint64 broadcast_flood_group = 20;
   bool custom_igmp_snooping_enable = 21;
-  repeated uint64 tam_objects = 22;
+  repeated uint64 tam_object = 22;
 }
 
 message CreateVlanResponse {
@@ -74,8 +74,7 @@ message RemoveVlanRequest {
   uint64 oid = 1;
 }
 
-message RemoveVlanResponse {
-}
+message RemoveVlanResponse {}
 
 message SetVlanAttributeRequest {
   uint64 oid = 1;
@@ -103,8 +102,7 @@ message SetVlanAttributeRequest {
   }
 }
 
-message SetVlanAttributeResponse {
-}
+message SetVlanAttributeResponse {}
 
 message GetVlanAttributeRequest {
   uint64 oid = 1;
@@ -131,8 +129,7 @@ message RemoveVlanMemberRequest {
   uint64 oid = 1;
 }
 
-message RemoveVlanMemberResponse {
-}
+message RemoveVlanMemberResponse {}
 
 message SetVlanMemberAttributeRequest {
   uint64 oid = 1;
@@ -141,8 +138,7 @@ message SetVlanMemberAttributeRequest {
   }
 }
 
-message SetVlanMemberAttributeResponse {
-}
+message SetVlanMemberAttributeResponse {}
 
 message GetVlanMemberAttributeRequest {
   uint64 oid = 1;

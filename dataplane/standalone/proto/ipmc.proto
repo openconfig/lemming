@@ -30,8 +30,7 @@ message RemoveIpmcEntryRequest {
   IpmcEntry entry = 1;
 }
 
-message RemoveIpmcEntryResponse {
-}
+message RemoveIpmcEntryResponse {}
 
 message SetIpmcEntryAttributeRequest {
   IpmcEntry entry = 1;
@@ -42,8 +41,7 @@ message SetIpmcEntryAttributeRequest {
   }
 }
 
-message SetIpmcEntryAttributeResponse {
-}
+message SetIpmcEntryAttributeResponse {}
 
 message GetIpmcEntryAttributeRequest {
   IpmcEntry entry = 1;

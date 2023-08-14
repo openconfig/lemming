@@ -28,8 +28,7 @@ message RemoveL2mcEntryRequest {
   L2mcEntry entry = 1;
 }
 
-message RemoveL2mcEntryResponse {
-}
+message RemoveL2mcEntryResponse {}
 
 message SetL2mcEntryAttributeRequest {
   L2mcEntry entry = 1;
@@ -39,8 +38,7 @@ message SetL2mcEntryAttributeRequest {
   }
 }
 
-message SetL2mcEntryAttributeResponse {
-}
+message SetL2mcEntryAttributeResponse {}
 
 message GetL2mcEntryAttributeRequest {
   L2mcEntry entry = 1;

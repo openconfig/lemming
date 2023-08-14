@@ -190,16 +190,16 @@ enum PortSerdesAttr {
 message CreatePortRequest {
   uint64 switch = 1;
 
-  repeated uint32 hw_lane_lists = 2;
+  repeated uint32 hw_lane_list = 2;
   uint32 speed = 3;
   bool full_duplex_mode = 4;
   bool auto_neg_mode = 5;
   bool admin_state = 6;
   PortMediaType media_type = 7;
-  repeated uint32 advertised_speeds = 8;
-  repeated PortFecMode advertised_fec_modes = 9;
-  repeated PortFecModeExtended advertised_fec_mode_extendeds = 10;
-  repeated uint32 advertised_half_duplex_speeds = 11;
+  repeated uint32 advertised_speed = 8;
+  repeated PortFecMode advertised_fec_mode = 9;
+  repeated PortFecModeExtended advertised_fec_mode_extended = 10;
+  repeated uint32 advertised_half_duplex_speed = 11;
   bool advertised_auto_neg_mode = 12;
   PortFlowControlMode advertised_flow_control_mode = 13;
   bool advertised_asymmetric_pause_mode = 14;
@@ -223,12 +223,12 @@ message CreatePortRequest {
   uint64 egress_acl = 32;
   uint64 ingress_macsec_acl = 33;
   uint64 egress_macsec_acl = 34;
-  repeated uint64 ingress_mirror_sessions = 35;
-  repeated uint64 egress_mirror_sessions = 36;
+  repeated uint64 ingress_mirror_session = 35;
+  repeated uint64 egress_mirror_session = 36;
   uint64 ingress_samplepacket_enable = 37;
   uint64 egress_samplepacket_enable = 38;
-  repeated uint64 ingress_sample_mirror_sessions = 39;
-  repeated uint64 egress_sample_mirror_sessions = 40;
+  repeated uint64 ingress_sample_mirror_session = 39;
+  repeated uint64 egress_sample_mirror_session = 40;
   uint64 policer_id = 41;
   uint32 qos_default_tc = 42;
   uint64 qos_dot1p_to_tc_map = 43;
@@ -242,28 +242,28 @@ message CreatePortRequest {
   uint64 qos_pfc_priority_to_priority_group_map = 51;
   uint64 qos_pfc_priority_to_queue_map = 52;
   uint64 qos_scheduler_profile_id = 53;
-  repeated uint64 qos_ingress_buffer_profile_lists = 54;
-  repeated uint64 qos_egress_buffer_profile_lists = 55;
+  repeated uint64 qos_ingress_buffer_profile_list = 54;
+  repeated uint64 qos_egress_buffer_profile_list = 55;
   PortPriorityFlowControlMode priority_flow_control_mode = 56;
   uint32 priority_flow_control = 57;
   uint32 priority_flow_control_rx = 58;
   uint32 priority_flow_control_tx = 59;
   uint32 meta_data = 60;
-  repeated uint64 egress_block_port_lists = 61;
+  repeated uint64 egress_block_port_list = 61;
   uint64 hw_profile_id = 62;
   bool eee_enable = 63;
   uint32 eee_idle_time = 64;
   uint32 eee_wake_time = 65;
   uint64 isolation_group = 66;
   bool pkt_tx_enable = 67;
-  repeated uint64 tam_objects = 68;
-  repeated uint32 serdes_preemphases = 69;
-  repeated uint32 serdes_idrivers = 70;
-  repeated uint32 serdes_ipredrivers = 71;
+  repeated uint64 tam_object = 68;
+  repeated uint32 serdes_preemphasis = 69;
+  repeated uint32 serdes_idriver = 70;
+  repeated uint32 serdes_ipredriver = 71;
   bool link_training_enable = 72;
   PortPtpMode ptp_mode = 73;
   PortInterfaceType interface_type = 74;
-  repeated PortInterfaceType advertised_interface_types = 75;
+  repeated PortInterfaceType advertised_interface_type = 75;
   uint64 reference_clock = 76;
   uint32 prbs_polynomial = 77;
   PortPrbsConfig prbs_config = 78;
@@ -294,8 +294,7 @@ message RemovePortRequest {
   uint64 oid = 1;
 }
 
-message RemovePortResponse {
-}
+message RemovePortResponse {}
 
 message SetPortAttributeRequest {
   uint64 oid = 1;
@@ -394,8 +393,7 @@ message SetPortAttributeRequest {
   }
 }
 
-message SetPortAttributeResponse {
-}
+message SetPortAttributeResponse {}
 
 message GetPortAttributeRequest {
   uint64 oid = 1;
@@ -422,8 +420,7 @@ message RemovePortPoolRequest {
   uint64 oid = 1;
 }
 
-message RemovePortPoolResponse {
-}
+message RemovePortPoolResponse {}
 
 message SetPortPoolAttributeRequest {
   uint64 oid = 1;
@@ -432,8 +429,7 @@ message SetPortPoolAttributeRequest {
   }
 }
 
-message SetPortPoolAttributeResponse {
-}
+message SetPortPoolAttributeResponse {}
 
 message GetPortPoolAttributeRequest {
   uint64 oid = 1;
@@ -462,8 +458,7 @@ message RemovePortConnectorRequest {
   uint64 oid = 1;
 }
 
-message RemovePortConnectorResponse {
-}
+message RemovePortConnectorResponse {}
 
 message SetPortConnectorAttributeRequest {
   uint64 oid = 1;
@@ -472,8 +467,7 @@ message SetPortConnectorAttributeRequest {
   }
 }
 
-message SetPortConnectorAttributeResponse {
-}
+message SetPortConnectorAttributeResponse {}
 
 message GetPortConnectorAttributeRequest {
   uint64 oid = 1;
@@ -488,17 +482,17 @@ message CreatePortSerdesRequest {
   uint64 switch = 1;
 
   uint64 port_id = 2;
-  repeated int32 preemphases = 3;
-  repeated int32 idrivers = 4;
-  repeated int32 ipredrivers = 5;
-  repeated int32 tx_fir_pre1s = 6;
-  repeated int32 tx_fir_pre2s = 7;
-  repeated int32 tx_fir_pre3s = 8;
-  repeated int32 tx_fir_mains = 9;
-  repeated int32 tx_fir_post1s = 10;
-  repeated int32 tx_fir_post2s = 11;
-  repeated int32 tx_fir_post3s = 12;
-  repeated int32 tx_fir_attns = 13;
+  repeated int32 preemphasis = 3;
+  repeated int32 idriver = 4;
+  repeated int32 ipredriver = 5;
+  repeated int32 tx_fir_pre1 = 6;
+  repeated int32 tx_fir_pre2 = 7;
+  repeated int32 tx_fir_pre3 = 8;
+  repeated int32 tx_fir_main = 9;
+  repeated int32 tx_fir_post1 = 10;
+  repeated int32 tx_fir_post2 = 11;
+  repeated int32 tx_fir_post3 = 12;
+  repeated int32 tx_fir_attn = 13;
 }
 
 message CreatePortSerdesResponse {
@@ -509,8 +503,7 @@ message RemovePortSerdesRequest {
   uint64 oid = 1;
 }
 
-message RemovePortSerdesResponse {
-}
+message RemovePortSerdesResponse {}
 
 message GetPortSerdesAttributeRequest {
   uint64 oid = 1;

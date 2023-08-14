@@ -32,8 +32,7 @@ message RemoveL2mcGroupRequest {
   uint64 oid = 1;
 }
 
-message RemoveL2mcGroupResponse {
-}
+message RemoveL2mcGroupResponse {}
 
 message GetL2mcGroupAttributeRequest {
   uint64 oid = 1;
@@ -60,8 +59,7 @@ message RemoveL2mcGroupMemberRequest {
   uint64 oid = 1;
 }
 
-message RemoveL2mcGroupMemberResponse {
-}
+message RemoveL2mcGroupMemberResponse {}
 
 message GetL2mcGroupMemberAttributeRequest {
   uint64 oid = 1;

@@ -76,8 +76,7 @@ message RemoveWredRequest {
   uint64 oid = 1;
 }
 
-message RemoveWredResponse {
-}
+message RemoveWredResponse {}
 
 message SetWredAttributeRequest {
   uint64 oid = 1;
@@ -111,8 +110,7 @@ message SetWredAttributeRequest {
   }
 }
 
-message SetWredAttributeResponse {
-}
+message SetWredAttributeResponse {}
 
 message GetWredAttributeRequest {
   uint64 oid = 1;

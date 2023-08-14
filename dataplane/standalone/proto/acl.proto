@@ -298,9 +298,9 @@ message CreateAclTableRequest {
   uint64 switch = 1;
 
   AclStage acl_stage = 2;
-  repeated AclBindPointType acl_bind_point_type_lists = 3;
+  repeated AclBindPointType acl_bind_point_type_list = 3;
   uint32 size = 4;
-  repeated AclActionType acl_action_type_lists = 5;
+  repeated AclActionType acl_action_type_list = 5;
   bool field_src_ipv6 = 6;
   bool field_src_ipv6_word3 = 7;
   bool field_src_ipv6_word2 = 8;
@@ -390,7 +390,7 @@ message CreateAclTableRequest {
   bool field_aeth_syndrome = 92;
   uint64 user_defined_field_group_min = 93;
   uint64 user_defined_field_group_max = 94;
-  repeated AclRangeType field_acl_range_types = 95;
+  repeated AclRangeType field_acl_range_type = 95;
   bool field_ipv6_next_header = 96;
   bool field_gre_key = 97;
   bool field_tam_int_type = 98;
@@ -404,8 +404,7 @@ message RemoveAclTableRequest {
   uint64 oid = 1;
 }
 
-message RemoveAclTableResponse {
-}
+message RemoveAclTableResponse {}
 
 message GetAclTableAttributeRequest {
   uint64 oid = 1;
@@ -578,8 +577,7 @@ message RemoveAclEntryRequest {
   uint64 oid = 1;
 }
 
-message RemoveAclEntryResponse {
-}
+message RemoveAclEntryResponse {}
 
 message SetAclEntryAttributeRequest {
   uint64 oid = 1;
@@ -735,8 +733,7 @@ message SetAclEntryAttributeRequest {
   }
 }
 
-message SetAclEntryAttributeResponse {
-}
+message SetAclEntryAttributeResponse {}
 
 message GetAclEntryAttributeRequest {
   uint64 oid = 1;
@@ -765,8 +762,7 @@ message RemoveAclCounterRequest {
   uint64 oid = 1;
 }
 
-message RemoveAclCounterResponse {
-}
+message RemoveAclCounterResponse {}
 
 message SetAclCounterAttributeRequest {
   uint64 oid = 1;
@@ -776,8 +772,7 @@ message SetAclCounterAttributeRequest {
   }
 }
 
-message SetAclCounterAttributeResponse {
-}
+message SetAclCounterAttributeResponse {}
 
 message GetAclCounterAttributeRequest {
   uint64 oid = 1;
@@ -803,8 +798,7 @@ message RemoveAclRangeRequest {
   uint64 oid = 1;
 }
 
-message RemoveAclRangeResponse {
-}
+message RemoveAclRangeResponse {}
 
 message GetAclRangeAttributeRequest {
   uint64 oid = 1;
@@ -819,7 +813,7 @@ message CreateAclTableGroupRequest {
   uint64 switch = 1;
 
   AclStage acl_stage = 2;
-  repeated AclBindPointType acl_bind_point_type_lists = 3;
+  repeated AclBindPointType acl_bind_point_type_list = 3;
   AclTableGroupType type = 4;
 }
 
@@ -831,8 +825,7 @@ message RemoveAclTableGroupRequest {
   uint64 oid = 1;
 }
 
-message RemoveAclTableGroupResponse {
-}
+message RemoveAclTableGroupResponse {}
 
 message GetAclTableGroupAttributeRequest {
   uint64 oid = 1;
@@ -859,8 +852,7 @@ message RemoveAclTableGroupMemberRequest {
   uint64 oid = 1;
 }
 
-message RemoveAclTableGroupMemberResponse {
-}
+message RemoveAclTableGroupMemberResponse {}
 
 message GetAclTableGroupMemberAttributeRequest {
   uint64 oid = 1;

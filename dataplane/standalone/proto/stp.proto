@@ -33,8 +33,7 @@ message RemoveStpRequest {
   uint64 oid = 1;
 }
 
-message RemoveStpResponse {
-}
+message RemoveStpResponse {}
 
 message GetStpAttributeRequest {
   uint64 oid = 1;
@@ -61,8 +60,7 @@ message RemoveStpPortRequest {
   uint64 oid = 1;
 }
 
-message RemoveStpPortResponse {
-}
+message RemoveStpPortResponse {}
 
 message SetStpPortAttributeRequest {
   uint64 oid = 1;
@@ -71,8 +69,7 @@ message SetStpPortAttributeRequest {
   }
 }
 
-message SetStpPortAttributeResponse {
-}
+message SetStpPortAttributeResponse {}
 
 message GetStpPortAttributeRequest {
   uint64 oid = 1;

@@ -67,7 +67,7 @@ message CreateDtelRequest {
   uint32 switch_id = 7;
   uint32 flow_state_clear_cycle = 8;
   uint32 latency_sensitivity = 9;
-  repeated uint64 sink_port_lists = 10;
+  repeated uint64 sink_port_list = 10;
   AclFieldData int_l4_dscp = 11;
 }
 
@@ -79,8 +79,7 @@ message RemoveDtelRequest {
   uint64 oid = 1;
 }
 
-message RemoveDtelResponse {
-}
+message RemoveDtelResponse {}
 
 message SetDtelAttributeRequest {
   uint64 oid = 1;
@@ -98,8 +97,7 @@ message SetDtelAttributeRequest {
   }
 }
 
-message SetDtelAttributeResponse {
-}
+message SetDtelAttributeResponse {}
 
 message GetDtelAttributeRequest {
   uint64 oid = 1;
@@ -128,8 +126,7 @@ message RemoveDtelQueueReportRequest {
   uint64 oid = 1;
 }
 
-message RemoveDtelQueueReportResponse {
-}
+message RemoveDtelQueueReportResponse {}
 
 message SetDtelQueueReportAttributeRequest {
   uint64 oid = 1;
@@ -141,8 +138,7 @@ message SetDtelQueueReportAttributeRequest {
   }
 }
 
-message SetDtelQueueReportAttributeResponse {
-}
+message SetDtelQueueReportAttributeResponse {}
 
 message GetDtelQueueReportAttributeRequest {
   uint64 oid = 1;
@@ -172,8 +168,7 @@ message RemoveDtelIntSessionRequest {
   uint64 oid = 1;
 }
 
-message RemoveDtelIntSessionResponse {
-}
+message RemoveDtelIntSessionResponse {}
 
 message SetDtelIntSessionAttributeRequest {
   uint64 oid = 1;
@@ -187,8 +182,7 @@ message SetDtelIntSessionAttributeRequest {
   }
 }
 
-message SetDtelIntSessionAttributeResponse {
-}
+message SetDtelIntSessionAttributeResponse {}
 
 message GetDtelIntSessionAttributeRequest {
   uint64 oid = 1;
@@ -203,7 +197,7 @@ message CreateDtelReportSessionRequest {
   uint64 switch = 1;
 
   bytes src_ip = 2;
-  repeated bytes dst_ip_lists = 3;
+  repeated bytes dst_ip_list = 3;
   uint64 virtual_router_id = 4;
   uint32 truncate_size = 5;
   uint32 udp_dst_port = 6;
@@ -217,8 +211,7 @@ message RemoveDtelReportSessionRequest {
   uint64 oid = 1;
 }
 
-message RemoveDtelReportSessionResponse {
-}
+message RemoveDtelReportSessionResponse {}
 
 message SetDtelReportSessionAttributeRequest {
   uint64 oid = 1;
@@ -231,8 +224,7 @@ message SetDtelReportSessionAttributeRequest {
   }
 }
 
-message SetDtelReportSessionAttributeResponse {
-}
+message SetDtelReportSessionAttributeResponse {}
 
 message GetDtelReportSessionAttributeRequest {
   uint64 oid = 1;
@@ -259,8 +251,7 @@ message RemoveDtelEventRequest {
   uint64 oid = 1;
 }
 
-message RemoveDtelEventResponse {
-}
+message RemoveDtelEventResponse {}
 
 message SetDtelEventAttributeRequest {
   uint64 oid = 1;
@@ -270,8 +261,7 @@ message SetDtelEventAttributeRequest {
   }
 }
 
-message SetDtelEventAttributeResponse {
-}
+message SetDtelEventAttributeResponse {}
 
 message GetDtelEventAttributeRequest {
   uint64 oid = 1;

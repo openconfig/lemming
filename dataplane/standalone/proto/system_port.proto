@@ -34,8 +34,7 @@ message RemoveSystemPortRequest {
   uint64 oid = 1;
 }
 
-message RemoveSystemPortResponse {
-}
+message RemoveSystemPortResponse {}
 
 message SetSystemPortAttributeRequest {
   uint64 oid = 1;
@@ -45,8 +44,7 @@ message SetSystemPortAttributeRequest {
   }
 }
 
-message SetSystemPortAttributeResponse {
-}
+message SetSystemPortAttributeResponse {}
 
 message GetSystemPortAttributeRequest {
   uint64 oid = 1;

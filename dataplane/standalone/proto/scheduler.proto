@@ -38,8 +38,7 @@ message RemoveSchedulerRequest {
   uint64 oid = 1;
 }
 
-message RemoveSchedulerResponse {
-}
+message RemoveSchedulerResponse {}
 
 message SetSchedulerAttributeRequest {
   uint64 oid = 1;
@@ -54,8 +53,7 @@ message SetSchedulerAttributeRequest {
   }
 }
 
-message SetSchedulerAttributeResponse {
-}
+message SetSchedulerAttributeResponse {}
 
 message GetSchedulerAttributeRequest {
   uint64 oid = 1;

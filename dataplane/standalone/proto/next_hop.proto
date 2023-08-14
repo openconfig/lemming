@@ -37,7 +37,7 @@ message CreateNextHopRequest {
   uint32 tunnel_vni = 6;
   bytes tunnel_mac = 7;
   uint64 srv6_sidlist_id = 8;
-  repeated uint32 labelstacks = 9;
+  repeated uint32 labelstack = 9;
   uint64 counter_id = 10;
   bool disable_decrement_ttl = 11;
   OutsegType outseg_type = 12;
@@ -56,8 +56,7 @@ message RemoveNextHopRequest {
   uint64 oid = 1;
 }
 
-message RemoveNextHopResponse {
-}
+message RemoveNextHopResponse {}
 
 message SetNextHopAttributeRequest {
   uint64 oid = 1;
@@ -75,8 +74,7 @@ message SetNextHopAttributeRequest {
   }
 }
 
-message SetNextHopAttributeResponse {
-}
+message SetNextHopAttributeResponse {}
 
 message GetNextHopAttributeRequest {
   uint64 oid = 1;

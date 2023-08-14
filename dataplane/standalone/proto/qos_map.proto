@@ -17,7 +17,7 @@ message CreateQosMapRequest {
   uint64 switch = 1;
 
   QosMapType type = 2;
-  repeated QOSMap map_to_value_lists = 3;
+  repeated QOSMap map_to_value_list = 3;
 }
 
 message CreateQosMapResponse {
@@ -28,8 +28,7 @@ message RemoveQosMapRequest {
   uint64 oid = 1;
 }
 
-message RemoveQosMapResponse {
-}
+message RemoveQosMapResponse {}
 
 message SetQosMapAttributeRequest {
   uint64 oid = 1;
@@ -38,8 +37,7 @@ message SetQosMapAttributeRequest {
   }
 }
 
-message SetQosMapAttributeResponse {
-}
+message SetQosMapAttributeResponse {}
 
 message GetQosMapAttributeRequest {
   uint64 oid = 1;

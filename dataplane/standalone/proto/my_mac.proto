@@ -34,8 +34,7 @@ message RemoveMyMacRequest {
   uint64 oid = 1;
 }
 
-message RemoveMyMacResponse {
-}
+message RemoveMyMacResponse {}
 
 message SetMyMacAttributeRequest {
   uint64 oid = 1;
@@ -44,8 +43,7 @@ message SetMyMacAttributeRequest {
   }
 }
 
-message SetMyMacAttributeResponse {
-}
+message SetMyMacAttributeResponse {}
 
 message GetMyMacAttributeRequest {
   uint64 oid = 1;

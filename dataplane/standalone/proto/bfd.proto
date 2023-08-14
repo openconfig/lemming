@@ -96,8 +96,7 @@ message RemoveBfdSessionRequest {
   uint64 oid = 1;
 }
 
-message RemoveBfdSessionResponse {
-}
+message RemoveBfdSessionResponse {}
 
 message SetBfdSessionAttributeRequest {
   uint64 oid = 1;
@@ -122,8 +121,7 @@ message SetBfdSessionAttributeRequest {
   }
 }
 
-message SetBfdSessionAttributeResponse {
-}
+message SetBfdSessionAttributeResponse {}
 
 message GetBfdSessionAttributeRequest {
   uint64 oid = 1;

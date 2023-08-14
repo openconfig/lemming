@@ -35,8 +35,7 @@ message RemoveRouteEntryRequest {
   RouteEntry entry = 1;
 }
 
-message RemoveRouteEntryResponse {
-}
+message RemoveRouteEntryResponse {}
 
 message SetRouteEntryAttributeRequest {
   RouteEntry entry = 1;
@@ -49,8 +48,7 @@ message SetRouteEntryAttributeRequest {
   }
 }
 
-message SetRouteEntryAttributeResponse {
-}
+message SetRouteEntryAttributeResponse {}
 
 message GetRouteEntryAttributeRequest {
   RouteEntry entry = 1;

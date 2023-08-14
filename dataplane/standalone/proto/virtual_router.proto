@@ -38,8 +38,7 @@ message RemoveVirtualRouterRequest {
   uint64 oid = 1;
 }
 
-message RemoveVirtualRouterResponse {
-}
+message RemoveVirtualRouterResponse {}
 
 message SetVirtualRouterAttributeRequest {
   uint64 oid = 1;
@@ -54,8 +53,7 @@ message SetVirtualRouterAttributeRequest {
   }
 }
 
-message SetVirtualRouterAttributeResponse {
-}
+message SetVirtualRouterAttributeResponse {}
 
 message GetVirtualRouterAttributeRequest {
   uint64 oid = 1;

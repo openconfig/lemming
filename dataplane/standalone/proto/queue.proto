@@ -34,7 +34,7 @@ message CreateQueueRequest {
   uint64 scheduler_profile_id = 8;
   bool enable_pfc_dldr = 9;
   bool pfc_dlr_init = 10;
-  repeated uint64 tam_objects = 11;
+  repeated uint64 tam_object = 11;
 }
 
 message CreateQueueResponse {
@@ -45,8 +45,7 @@ message RemoveQueueRequest {
   uint64 oid = 1;
 }
 
-message RemoveQueueResponse {
-}
+message RemoveQueueResponse {}
 
 message SetQueueAttributeRequest {
   uint64 oid = 1;
@@ -61,8 +60,7 @@ message SetQueueAttributeRequest {
   }
 }
 
-message SetQueueAttributeResponse {
-}
+message SetQueueAttributeResponse {}
 
 message GetQueueAttributeRequest {
   uint64 oid = 1;

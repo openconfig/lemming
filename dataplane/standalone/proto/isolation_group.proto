@@ -33,8 +33,7 @@ message RemoveIsolationGroupRequest {
   uint64 oid = 1;
 }
 
-message RemoveIsolationGroupResponse {
-}
+message RemoveIsolationGroupResponse {}
 
 message GetIsolationGroupAttributeRequest {
   uint64 oid = 1;
@@ -60,8 +59,7 @@ message RemoveIsolationGroupMemberRequest {
   uint64 oid = 1;
 }
 
-message RemoveIsolationGroupMemberResponse {
-}
+message RemoveIsolationGroupMemberResponse {}
 
 message GetIsolationGroupMemberAttributeRequest {
   uint64 oid = 1;

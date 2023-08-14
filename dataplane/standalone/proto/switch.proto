@@ -271,14 +271,14 @@ message CreateSwitchRequest {
   uint64 qos_tc_and_color_to_dscp_map = 37;
   bool switch_shell_enable = 38;
   uint32 switch_profile_id = 39;
-  repeated int32 switch_hardware_infos = 40;
-  repeated int32 firmware_path_names = 41;
+  repeated int32 switch_hardware_info = 40;
+  repeated int32 firmware_path_name = 41;
   bool init_switch = 42;
   bool fast_api_enable = 43;
   uint32 mirror_tc = 44;
   PacketAction pfc_dlr_packet_action = 45;
-  repeated UintMap pfc_tc_dld_intervals = 46;
-  repeated UintMap pfc_tc_dlr_intervals = 47;
+  repeated UintMap pfc_tc_dld_interval = 46;
+  repeated UintMap pfc_tc_dlr_interval = 47;
   uint32 tpid_outer_vlan = 48;
   uint32 tpid_inner_vlan = 49;
   bool crc_check_enable = 50;
@@ -287,7 +287,7 @@ message CreateSwitchRequest {
   bytes vxlan_default_router_mac = 53;
   uint32 vxlan_default_port = 54;
   bool uninit_data_plane_on_removal = 55;
-  repeated uint64 tam_object_ids = 56;
+  repeated uint64 tam_object_id = 56;
   bool pre_shutdown = 57;
   uint64 nat_zone_counter_object_id = 58;
   bool nat_enable = 59;
@@ -300,17 +300,17 @@ message CreateSwitchRequest {
   bool firmware_broadcast_stop = 66;
   bool firmware_verify_and_init_switch = 67;
   SwitchType type = 68;
-  repeated uint64 macsec_object_lists = 69;
+  repeated uint64 macsec_object_list = 69;
   uint64 qos_mpls_exp_to_tc_map = 70;
   uint64 qos_mpls_exp_to_color_map = 71;
   uint64 qos_tc_and_color_to_mpls_exp_map = 72;
   uint32 switch_id = 73;
   uint32 max_system_cores = 74;
-  repeated SystemPortConfig system_port_config_lists = 75;
+  repeated SystemPortConfig system_port_config_list = 75;
   SwitchFailoverConfigMode failover_config_mode = 76;
-  repeated uint64 tunnel_objects_lists = 77;
+  repeated uint64 tunnel_objects_list = 77;
   uint64 pre_ingress_acl = 78;
-  repeated uint32 slave_mdio_addr_lists = 79;
+  repeated uint32 slave_mdio_addr_list = 79;
   uint64 qos_dscp_to_forwarding_class_map = 80;
   uint64 qos_mpls_exp_to_forwarding_class_map = 81;
   uint64 ipsec_object_id = 82;
@@ -325,8 +325,7 @@ message RemoveSwitchRequest {
   uint64 oid = 1;
 }
 
-message RemoveSwitchResponse {
-}
+message RemoveSwitchResponse {}
 
 message SetSwitchAttributeRequest {
   uint64 oid = 1;
@@ -402,40 +401,34 @@ message SetSwitchAttributeRequest {
   }
 }
 
-message SetSwitchAttributeResponse {
-}
+message SetSwitchAttributeResponse {}
 
-message SwitchStateChangeNotificationRequest {
-}
+message SwitchStateChangeNotificationRequest {}
 
 message SwitchStateChangeNotificationResponse {
   uint64 switch_id = 1;
   SwitchOperStatus switch_oper_status = 2;
 }
 
-message SwitchShutdownRequestNotificationRequest {
-}
+message SwitchShutdownRequestNotificationRequest {}
 
 message SwitchShutdownRequestNotificationResponse {
   uint64 switch_id = 1;
 }
 
-message FdbEventNotificationRequest {
-}
+message FdbEventNotificationRequest {}
 
 message FdbEventNotificationResponse {
   repeated FdbEventNotificationData data = 1;
 }
 
-message PortStateChangeNotificationRequest {
-}
+message PortStateChangeNotificationRequest {}
 
 message PortStateChangeNotificationResponse {
   repeated PortOperStatusNotification data = 1;
 }
 
-message PacketEventNotificationRequest {
-}
+message PacketEventNotificationRequest {}
 
 message PacketEventNotificationResponse {
   uint64 switch_id = 1;
@@ -443,22 +436,19 @@ message PacketEventNotificationResponse {
   repeated HostifPacketAttribute attrs = 3;
 }
 
-message QueuePfcDeadlockNotificationRequest {
-}
+message QueuePfcDeadlockNotificationRequest {}
 
 message QueuePfcDeadlockNotificationResponse {
   repeated QueueDeadlockNotificationData data = 1;
 }
 
-message BfdSessionStateChangeNotificationRequest {
-}
+message BfdSessionStateChangeNotificationRequest {}
 
 message BfdSessionStateChangeNotificationResponse {
   repeated BfdSessionStateChangeNotificationData data = 1;
 }
 
-message TamEventNotificationRequest {
-}
+message TamEventNotificationRequest {}
 
 message TamEventNotificationResponse {
   uint64 tam_event_id = 1;
@@ -466,8 +456,7 @@ message TamEventNotificationResponse {
   repeated TamEventActionAttribute attrs = 3;
 }
 
-message IpsecSaStatusChangeNotificationRequest {
-}
+message IpsecSaStatusChangeNotificationRequest {}
 
 message IpsecSaStatusNotificationDataResponse {
   repeated IpsecSaStatusNotificationData data = 1;
@@ -504,8 +493,7 @@ message RemoveSwitchTunnelRequest {
   uint64 oid = 1;
 }
 
-message RemoveSwitchTunnelResponse {
-}
+message RemoveSwitchTunnelResponse {}
 
 message SetSwitchTunnelAttributeRequest {
   uint64 oid = 1;
@@ -517,8 +505,7 @@ message SetSwitchTunnelAttributeRequest {
   }
 }
 
-message SetSwitchTunnelAttributeResponse {
-}
+message SetSwitchTunnelAttributeResponse {}
 
 message GetSwitchTunnelAttributeRequest {
   uint64 oid = 1;

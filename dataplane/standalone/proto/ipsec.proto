@@ -87,8 +87,7 @@ message RemoveIpsecRequest {
   uint64 oid = 1;
 }
 
-message RemoveIpsecResponse {
-}
+message RemoveIpsecResponse {}
 
 message SetIpsecAttributeRequest {
   uint64 oid = 1;
@@ -103,8 +102,7 @@ message SetIpsecAttributeRequest {
   }
 }
 
-message SetIpsecAttributeResponse {
-}
+message SetIpsecAttributeResponse {}
 
 message GetIpsecAttributeRequest {
   uint64 oid = 1;
@@ -134,8 +132,7 @@ message RemoveIpsecPortRequest {
   uint64 oid = 1;
 }
 
-message RemoveIpsecPortResponse {
-}
+message RemoveIpsecPortResponse {}
 
 message SetIpsecPortAttributeRequest {
   uint64 oid = 1;
@@ -147,8 +144,7 @@ message SetIpsecPortAttributeRequest {
   }
 }
 
-message SetIpsecPortAttributeResponse {
-}
+message SetIpsecPortAttributeResponse {}
 
 message GetIpsecPortAttributeRequest {
   uint64 oid = 1;
@@ -165,7 +161,7 @@ message CreateIpsecSaRequest {
   IpsecDirection ipsec_direction = 2;
   uint64 ipsec_id = 3;
   uint32 external_sa_index = 4;
-  repeated uint64 ipsec_port_lists = 5;
+  repeated uint64 ipsec_port_list = 5;
   uint32 ipsec_spi = 6;
   bool ipsec_esn_enable = 7;
   IpsecCipher ipsec_cipher = 8;
@@ -191,8 +187,7 @@ message RemoveIpsecSaRequest {
   uint64 oid = 1;
 }
 
-message RemoveIpsecSaResponse {
-}
+message RemoveIpsecSaResponse {}
 
 message SetIpsecSaAttributeRequest {
   uint64 oid = 1;
@@ -206,8 +201,7 @@ message SetIpsecSaAttributeRequest {
   }
 }
 
-message SetIpsecSaAttributeResponse {
-}
+message SetIpsecSaAttributeResponse {}
 
 message GetIpsecSaAttributeRequest {
   uint64 oid = 1;

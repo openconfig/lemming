@@ -30,8 +30,7 @@ message RemoveSamplepacketRequest {
   uint64 oid = 1;
 }
 
-message RemoveSamplepacketResponse {
-}
+message RemoveSamplepacketResponse {}
 
 message SetSamplepacketAttributeRequest {
   uint64 oid = 1;
@@ -40,8 +39,7 @@ message SetSamplepacketAttributeRequest {
   }
 }
 
-message SetSamplepacketAttributeResponse {
-}
+message SetSamplepacketAttributeResponse {}
 
 message GetSamplepacketAttributeRequest {
   uint64 oid = 1;

@@ -30,8 +30,7 @@ message RemoveMcastFdbEntryRequest {
   McastFdbEntry entry = 1;
 }
 
-message RemoveMcastFdbEntryResponse {
-}
+message RemoveMcastFdbEntryResponse {}
 
 message SetMcastFdbEntryAttributeRequest {
   McastFdbEntry entry = 1;
@@ -42,8 +41,7 @@ message SetMcastFdbEntryAttributeRequest {
   }
 }
 
-message SetMcastFdbEntryAttributeResponse {
-}
+message SetMcastFdbEntryAttributeResponse {}
 
 message GetMcastFdbEntryAttributeRequest {
   McastFdbEntry entry = 1;

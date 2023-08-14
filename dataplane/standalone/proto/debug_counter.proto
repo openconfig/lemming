@@ -21,8 +21,8 @@ message CreateDebugCounterRequest {
 
   DebugCounterType type = 2;
   DebugCounterBindMethod bind_method = 3;
-  repeated InDropReason in_drop_reason_lists = 4;
-  repeated OutDropReason out_drop_reason_lists = 5;
+  repeated InDropReason in_drop_reason_list = 4;
+  repeated OutDropReason out_drop_reason_list = 5;
 }
 
 message CreateDebugCounterResponse {
@@ -33,8 +33,7 @@ message RemoveDebugCounterRequest {
   uint64 oid = 1;
 }
 
-message RemoveDebugCounterResponse {
-}
+message RemoveDebugCounterResponse {}
 
 message SetDebugCounterAttributeRequest {
   uint64 oid = 1;
@@ -44,8 +43,7 @@ message SetDebugCounterAttributeRequest {
   }
 }
 
-message SetDebugCounterAttributeResponse {
-}
+message SetDebugCounterAttributeResponse {}
 
 message GetDebugCounterAttributeRequest {
   uint64 oid = 1;

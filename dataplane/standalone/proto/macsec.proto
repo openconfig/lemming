@@ -101,8 +101,7 @@ message RemoveMacsecRequest {
   uint64 oid = 1;
 }
 
-message RemoveMacsecResponse {
-}
+message RemoveMacsecResponse {}
 
 message SetMacsecAttributeRequest {
   uint64 oid = 1;
@@ -116,8 +115,7 @@ message SetMacsecAttributeRequest {
   }
 }
 
-message SetMacsecAttributeResponse {
-}
+message SetMacsecAttributeResponse {}
 
 message GetMacsecAttributeRequest {
   uint64 oid = 1;
@@ -146,8 +144,7 @@ message RemoveMacsecPortRequest {
   uint64 oid = 1;
 }
 
-message RemoveMacsecPortResponse {
-}
+message RemoveMacsecPortResponse {}
 
 message SetMacsecPortAttributeRequest {
   uint64 oid = 1;
@@ -158,8 +155,7 @@ message SetMacsecPortAttributeRequest {
   }
 }
 
-message SetMacsecPortAttributeResponse {
-}
+message SetMacsecPortAttributeResponse {}
 
 message GetMacsecPortAttributeRequest {
   uint64 oid = 1;
@@ -184,8 +180,7 @@ message RemoveMacsecFlowRequest {
   uint64 oid = 1;
 }
 
-message RemoveMacsecFlowResponse {
-}
+message RemoveMacsecFlowResponse {}
 
 message GetMacsecFlowAttributeRequest {
   uint64 oid = 1;
@@ -218,8 +213,7 @@ message RemoveMacsecScRequest {
   uint64 oid = 1;
 }
 
-message RemoveMacsecScResponse {
-}
+message RemoveMacsecScResponse {}
 
 message SetMacsecScAttributeRequest {
   uint64 oid = 1;
@@ -233,8 +227,7 @@ message SetMacsecScAttributeRequest {
   }
 }
 
-message SetMacsecScAttributeResponse {
-}
+message SetMacsecScAttributeResponse {}
 
 message GetMacsecScAttributeRequest {
   uint64 oid = 1;
@@ -267,8 +260,7 @@ message RemoveMacsecSaRequest {
   uint64 oid = 1;
 }
 
-message RemoveMacsecSaResponse {
-}
+message RemoveMacsecSaResponse {}
 
 message SetMacsecSaAttributeRequest {
   uint64 oid = 1;
@@ -278,8 +270,7 @@ message SetMacsecSaAttributeRequest {
   }
 }
 
-message SetMacsecSaAttributeResponse {
-}
+message SetMacsecSaAttributeResponse {}
 
 message GetMacsecSaAttributeRequest {
   uint64 oid = 1;

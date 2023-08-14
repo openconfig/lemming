@@ -35,7 +35,7 @@ message CreatePolicerRequest {
   PacketAction green_packet_action = 9;
   PacketAction yellow_packet_action = 10;
   PacketAction red_packet_action = 11;
-  repeated PacketAction enable_counter_packet_action_lists = 12;
+  repeated PacketAction enable_counter_packet_action_list = 12;
 }
 
 message CreatePolicerResponse {
@@ -46,8 +46,7 @@ message RemovePolicerRequest {
   uint64 oid = 1;
 }
 
-message RemovePolicerResponse {
-}
+message RemovePolicerResponse {}
 
 message SetPolicerAttributeRequest {
   uint64 oid = 1;
@@ -63,8 +62,7 @@ message SetPolicerAttributeRequest {
   }
 }
 
-message SetPolicerAttributeResponse {
-}
+message SetPolicerAttributeResponse {}
 
 message GetPolicerAttributeRequest {
   uint64 oid = 1;

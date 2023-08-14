@@ -36,8 +36,7 @@ message RemoveSchedulerGroupRequest {
   uint64 oid = 1;
 }
 
-message RemoveSchedulerGroupResponse {
-}
+message RemoveSchedulerGroupResponse {}
 
 message SetSchedulerGroupAttributeRequest {
   uint64 oid = 1;
@@ -47,8 +46,7 @@ message SetSchedulerGroupAttributeRequest {
   }
 }
 
-message SetSchedulerGroupAttributeResponse {
-}
+message SetSchedulerGroupAttributeResponse {}
 
 message GetSchedulerGroupAttributeRequest {
   uint64 oid = 1;

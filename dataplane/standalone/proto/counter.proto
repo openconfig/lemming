@@ -26,8 +26,7 @@ message RemoveCounterRequest {
   uint64 oid = 1;
 }
 
-message RemoveCounterResponse {
-}
+message RemoveCounterResponse {}
 
 message GetCounterAttributeRequest {
   uint64 oid = 1;

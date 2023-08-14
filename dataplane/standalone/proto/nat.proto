@@ -64,8 +64,7 @@ message RemoveNatEntryRequest {
   NatEntry entry = 1;
 }
 
-message RemoveNatEntryResponse {
-}
+message RemoveNatEntryResponse {}
 
 message SetNatEntryAttributeRequest {
   NatEntry entry = 1;
@@ -87,8 +86,7 @@ message SetNatEntryAttributeRequest {
   }
 }
 
-message SetNatEntryAttributeResponse {
-}
+message SetNatEntryAttributeResponse {}
 
 message GetNatEntryAttributeRequest {
   NatEntry entry = 1;
@@ -120,8 +118,7 @@ message RemoveNatZoneCounterRequest {
   uint64 oid = 1;
 }
 
-message RemoveNatZoneCounterResponse {
-}
+message RemoveNatZoneCounterResponse {}
 
 message SetNatZoneCounterAttributeRequest {
   uint64 oid = 1;
@@ -134,8 +131,7 @@ message SetNatZoneCounterAttributeRequest {
   }
 }
 
-message SetNatZoneCounterAttributeResponse {
-}
+message SetNatZoneCounterAttributeResponse {}
 
 message GetNatZoneCounterAttributeRequest {
   uint64 oid = 1;

@@ -61,8 +61,7 @@ message RemoveBridgeRequest {
   uint64 oid = 1;
 }
 
-message RemoveBridgeResponse {
-}
+message RemoveBridgeResponse {}
 
 message SetBridgeAttributeRequest {
   uint64 oid = 1;
@@ -78,8 +77,7 @@ message SetBridgeAttributeRequest {
   }
 }
 
-message SetBridgeAttributeResponse {
-}
+message SetBridgeAttributeResponse {}
 
 message GetBridgeAttributeRequest {
   uint64 oid = 1;
@@ -117,8 +115,7 @@ message RemoveBridgePortRequest {
   uint64 oid = 1;
 }
 
-message RemoveBridgePortResponse {
-}
+message RemoveBridgePortResponse {}
 
 message SetBridgePortAttributeRequest {
   uint64 oid = 1;
@@ -135,8 +132,7 @@ message SetBridgePortAttributeRequest {
   }
 }
 
-message SetBridgePortAttributeResponse {
-}
+message SetBridgePortAttributeResponse {}
 
 message GetBridgePortAttributeRequest {
   uint64 oid = 1;
