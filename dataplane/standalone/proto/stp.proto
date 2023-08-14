@@ -1,0 +1,88 @@
+syntax = "proto3";
+
+package lemming.dataplane.sai;
+
+import "dataplane/standalone/proto/common.proto";
+
+option go_package = "github.com/openconfig/lemming/proto/dataplane/sai";
+
+enum StpAttr {
+  STP_ATTR_UNSPECIFIED = 0;
+  STP_ATTR_VLAN_LIST   = 1;
+  STP_ATTR_BRIDGE_ID   = 2;
+  STP_ATTR_PORT_LIST   = 3;
+}
+enum StpPortAttr {
+  STP_PORT_ATTR_UNSPECIFIED = 0;
+  STP_PORT_ATTR_STP         = 1;
+  STP_PORT_ATTR_BRIDGE_PORT = 2;
+  STP_PORT_ATTR_STATE       = 3;
+}
+message CreateStpRequest {
+  uint64 switch = 1;
+}
+
+message CreateStpResponse {
+  uint64 oid = 1;
+}
+
+message RemoveStpRequest {
+  uint64 oid = 1;
+}
+
+message RemoveStpResponse {}
+
+message GetStpAttributeRequest {
+  uint64  oid       = 1;
+  StpAttr attr_type = 2;
+}
+
+message GetStpAttributeResponse {
+  StpAttribute attr = 1;
+}
+
+message CreateStpPortRequest {
+  uint64       switch      = 1;
+  uint64       stp         = 2;
+  uint64       bridge_port = 3;
+  StpPortState state       = 4;
+}
+
+message CreateStpPortResponse {
+  uint64 oid = 1;
+}
+
+message RemoveStpPortRequest {
+  uint64 oid = 1;
+}
+
+message RemoveStpPortResponse {}
+
+message SetStpPortAttributeRequest {
+  uint64 oid = 1;
+
+  oneof attr {
+    StpPortState state = 2;
+  }
+}
+
+message SetStpPortAttributeResponse {}
+
+message GetStpPortAttributeRequest {
+  uint64      oid       = 1;
+  StpPortAttr attr_type = 2;
+}
+
+message GetStpPortAttributeResponse {
+  StpPortAttribute attr = 1;
+}
+
+service Stp {
+  rpc CreateStp           (CreateStpRequest          ) returns (CreateStpResponse          );
+  rpc RemoveStp           (RemoveStpRequest          ) returns (RemoveStpResponse          );
+  rpc GetStpAttribute     (GetStpAttributeRequest    ) returns (GetStpAttributeResponse    );
+  rpc CreateStpPort       (CreateStpPortRequest      ) returns (CreateStpPortResponse      );
+  rpc RemoveStpPort       (RemoveStpPortRequest      ) returns (RemoveStpPortResponse      );
+  rpc SetStpPortAttribute (SetStpPortAttributeRequest) returns (SetStpPortAttributeResponse);
+  rpc GetStpPortAttribute (GetStpPortAttributeRequest) returns (GetStpPortAttributeResponse);
+}

@@ -50,7 +50,7 @@ func Generate(doc *docparser.Info, sai *saiast.SAIAPI) (map[string]string, error
 		if err := protoTmpl.Execute(&builder, apis[apiName]); err != nil {
 			return nil, err
 		}
-		files[iface.Name] = builder.String()
+		files[apiName+".proto"] = builder.String()
 	}
 	return files, nil
 }
@@ -134,7 +134,7 @@ func populateTmplDataFromFunc(apis map[string]*protoAPITmplData, docInfo *docpar
 	if _, ok := apis[apiName]; !ok {
 		apis[apiName] = &protoAPITmplData{
 			Enums:       make(map[string]protoEnum),
-			ServiceName: saiast.TrimSAIName(meta.TypeName, true, false),
+			ServiceName: saiast.TrimSAIName(apiName, true, false),
 		}
 	}
 

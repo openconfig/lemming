@@ -1,0 +1,138 @@
+syntax = "proto3";
+
+package lemming.dataplane.sai;
+
+import "dataplane/standalone/proto/common.proto";
+
+option go_package = "github.com/openconfig/lemming/proto/dataplane/sai";
+
+enum BfdSessionAttr {
+  BFD_SESSION_ATTR_UNSPECIFIED            =  0;
+  BFD_SESSION_ATTR_TYPE                   =  1;
+  BFD_SESSION_ATTR_HW_LOOKUP_VALID        =  2;
+  BFD_SESSION_ATTR_VIRTUAL_ROUTER         =  3;
+  BFD_SESSION_ATTR_PORT                   =  4;
+  BFD_SESSION_ATTR_LOCAL_DISCRIMINATOR    =  5;
+  BFD_SESSION_ATTR_REMOTE_DISCRIMINATOR   =  6;
+  BFD_SESSION_ATTR_UDP_SRC_PORT           =  7;
+  BFD_SESSION_ATTR_TC                     =  8;
+  BFD_SESSION_ATTR_VLAN_TPID              =  9;
+  BFD_SESSION_ATTR_VLAN_ID                = 10;
+  BFD_SESSION_ATTR_VLAN_PRI               = 11;
+  BFD_SESSION_ATTR_VLAN_CFI               = 12;
+  BFD_SESSION_ATTR_VLAN_HEADER_VALID      = 13;
+  BFD_SESSION_ATTR_BFD_ENCAPSULATION_TYPE = 14;
+  BFD_SESSION_ATTR_IPHDR_VERSION          = 15;
+  BFD_SESSION_ATTR_TOS                    = 16;
+  BFD_SESSION_ATTR_TTL                    = 17;
+  BFD_SESSION_ATTR_SRC_IP_ADDRESS         = 18;
+  BFD_SESSION_ATTR_DST_IP_ADDRESS         = 19;
+  BFD_SESSION_ATTR_TUNNEL_TOS             = 20;
+  BFD_SESSION_ATTR_TUNNEL_TTL             = 21;
+  BFD_SESSION_ATTR_TUNNEL_SRC_IP_ADDRESS  = 22;
+  BFD_SESSION_ATTR_TUNNEL_DST_IP_ADDRESS  = 23;
+  BFD_SESSION_ATTR_SRC_MAC_ADDRESS        = 24;
+  BFD_SESSION_ATTR_DST_MAC_ADDRESS        = 25;
+  BFD_SESSION_ATTR_ECHO_ENABLE            = 26;
+  BFD_SESSION_ATTR_MULTIHOP               = 27;
+  BFD_SESSION_ATTR_CBIT                   = 28;
+  BFD_SESSION_ATTR_MIN_TX                 = 29;
+  BFD_SESSION_ATTR_MIN_RX                 = 30;
+  BFD_SESSION_ATTR_MULTIPLIER             = 31;
+  BFD_SESSION_ATTR_REMOTE_MIN_TX          = 32;
+  BFD_SESSION_ATTR_REMOTE_MIN_RX          = 33;
+  BFD_SESSION_ATTR_STATE                  = 34;
+  BFD_SESSION_ATTR_OFFLOAD_TYPE           = 35;
+  BFD_SESSION_ATTR_NEGOTIATED_TX          = 36;
+  BFD_SESSION_ATTR_NEGOTIATED_RX          = 37;
+  BFD_SESSION_ATTR_LOCAL_DIAG             = 38;
+  BFD_SESSION_ATTR_REMOTE_DIAG            = 39;
+  BFD_SESSION_ATTR_REMOTE_MULTIPLIER      = 40;
+}
+message CreateBfdSessionRequest {
+  uint64                switch                 =  1;
+  BfdSessionType        type                   =  2;
+  bool                  hw_lookup_valid        =  3;
+  uint64                virtual_router         =  4;
+  uint64                port                   =  5;
+  uint32                local_discriminator    =  6;
+  uint32                remote_discriminator   =  7;
+  uint32                udp_src_port           =  8;
+  uint32                tc                     =  9;
+  uint32                vlan_tpid              = 10;
+  uint32                vlan_id                = 11;
+  uint32                vlan_pri               = 12;
+  uint32                vlan_cfi               = 13;
+  bool                  vlan_header_valid      = 14;
+  BfdEncapsulationType  bfd_encapsulation_type = 15;
+  uint32                iphdr_version          = 16;
+  uint32                tos                    = 17;
+  uint32                ttl                    = 18;
+  bytes                 src_ip_address         = 19;
+  bytes                 dst_ip_address         = 20;
+  uint32                tunnel_tos             = 21;
+  uint32                tunnel_ttl             = 22;
+  bytes                 tunnel_src_ip_address  = 23;
+  bytes                 tunnel_dst_ip_address  = 24;
+  bytes                 src_mac_address        = 25;
+  bytes                 dst_mac_address        = 26;
+  bool                  echo_enable            = 27;
+  bool                  multihop               = 28;
+  bool                  cbit                   = 29;
+  uint32                min_tx                 = 30;
+  uint32                min_rx                 = 31;
+  uint32                multiplier             = 32;
+  BfdSessionOffloadType offload_type           = 33;
+}
+
+message CreateBfdSessionResponse {
+  uint64 oid = 1;
+}
+
+message RemoveBfdSessionRequest {
+  uint64 oid = 1;
+}
+
+message RemoveBfdSessionResponse {}
+
+message SetBfdSessionAttributeRequest {
+  uint64 oid = 1;
+
+  oneof attr {
+    uint64 virtual_router  =  2;
+    uint64 port            =  3;
+    uint32 tc              =  4;
+    uint32 vlan_tpid       =  5;
+    uint32 vlan_pri        =  6;
+    uint32 vlan_cfi        =  7;
+    uint32 iphdr_version   =  8;
+    uint32 tos             =  9;
+    uint32 ttl             = 10;
+    uint32 tunnel_tos      = 11;
+    uint32 tunnel_ttl      = 12;
+    bytes  src_mac_address = 13;
+    bytes  dst_mac_address = 14;
+    bool   echo_enable     = 15;
+    uint32 min_tx          = 16;
+    uint32 min_rx          = 17;
+    uint32 multiplier      = 18;
+  }
+}
+
+message SetBfdSessionAttributeResponse {}
+
+message GetBfdSessionAttributeRequest {
+  uint64         oid       = 1;
+  BfdSessionAttr attr_type = 2;
+}
+
+message GetBfdSessionAttributeResponse {
+  BfdSessionAttribute attr = 1;
+}
+
+service Bfd {
+  rpc CreateBfdSession       (CreateBfdSessionRequest      ) returns (CreateBfdSessionResponse      );
+  rpc RemoveBfdSession       (RemoveBfdSessionRequest      ) returns (RemoveBfdSessionResponse      );
+  rpc SetBfdSessionAttribute (SetBfdSessionAttributeRequest) returns (SetBfdSessionAttributeResponse);
+  rpc GetBfdSessionAttribute (GetBfdSessionAttributeRequest) returns (GetBfdSessionAttributeResponse);
+}

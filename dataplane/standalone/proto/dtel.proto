@@ -1,0 +1,290 @@
+syntax = "proto3";
+
+package lemming.dataplane.sai;
+
+import "dataplane/standalone/proto/common.proto";
+
+option go_package = "github.com/openconfig/lemming/proto/dataplane/sai";
+
+enum DtelAttr {
+  DTEL_ATTR_UNSPECIFIED            =  0;
+  DTEL_ATTR_INT_ENDPOINT_ENABLE    =  1;
+  DTEL_ATTR_INT_TRANSIT_ENABLE     =  2;
+  DTEL_ATTR_POSTCARD_ENABLE        =  3;
+  DTEL_ATTR_DROP_REPORT_ENABLE     =  4;
+  DTEL_ATTR_QUEUE_REPORT_ENABLE    =  5;
+  DTEL_ATTR_SWITCH_ID              =  6;
+  DTEL_ATTR_FLOW_STATE_CLEAR_CYCLE =  7;
+  DTEL_ATTR_LATENCY_SENSITIVITY    =  8;
+  DTEL_ATTR_SINK_PORT_LIST         =  9;
+  DTEL_ATTR_INT_L4_DSCP            = 10;
+}
+enum DtelEventAttr {
+  DTEL_EVENT_ATTR_UNSPECIFIED    = 0;
+  DTEL_EVENT_ATTR_TYPE           = 1;
+  DTEL_EVENT_ATTR_REPORT_SESSION = 2;
+  DTEL_EVENT_ATTR_DSCP_VALUE     = 3;
+}
+enum DtelIntSessionAttr {
+  DTEL_INT_SESSION_ATTR_UNSPECIFIED               = 0;
+  DTEL_INT_SESSION_ATTR_MAX_HOP_COUNT             = 1;
+  DTEL_INT_SESSION_ATTR_COLLECT_SWITCH_ID         = 2;
+  DTEL_INT_SESSION_ATTR_COLLECT_SWITCH_PORTS      = 3;
+  DTEL_INT_SESSION_ATTR_COLLECT_INGRESS_TIMESTAMP = 4;
+  DTEL_INT_SESSION_ATTR_COLLECT_EGRESS_TIMESTAMP  = 5;
+  DTEL_INT_SESSION_ATTR_COLLECT_QUEUE_INFO        = 6;
+}
+enum DtelQueueReportAttr {
+  DTEL_QUEUE_REPORT_ATTR_UNSPECIFIED       = 0;
+  DTEL_QUEUE_REPORT_ATTR_QUEUE_ID          = 1;
+  DTEL_QUEUE_REPORT_ATTR_DEPTH_THRESHOLD   = 2;
+  DTEL_QUEUE_REPORT_ATTR_LATENCY_THRESHOLD = 3;
+  DTEL_QUEUE_REPORT_ATTR_BREACH_QUOTA      = 4;
+  DTEL_QUEUE_REPORT_ATTR_TAIL_DROP         = 5;
+}
+enum DtelReportSessionAttr {
+  DTEL_REPORT_SESSION_ATTR_UNSPECIFIED       = 0;
+  DTEL_REPORT_SESSION_ATTR_SRC_IP            = 1;
+  DTEL_REPORT_SESSION_ATTR_DST_IP_LIST       = 2;
+  DTEL_REPORT_SESSION_ATTR_VIRTUAL_ROUTER_ID = 3;
+  DTEL_REPORT_SESSION_ATTR_TRUNCATE_SIZE     = 4;
+  DTEL_REPORT_SESSION_ATTR_UDP_DST_PORT      = 5;
+}
+message CreateDtelRequest {
+           uint64       switch                 =  1;
+           bool         int_endpoint_enable    =  2;
+           bool         int_transit_enable     =  3;
+           bool         postcard_enable        =  4;
+           bool         drop_report_enable     =  5;
+           bool         queue_report_enable    =  6;
+           uint32       switch_id              =  7;
+           uint32       flow_state_clear_cycle =  8;
+           uint32       latency_sensitivity    =  9;
+  repeated uint64       sink_port_list         = 10;
+           AclFieldData int_l4_dscp            = 11;
+}
+
+message CreateDtelResponse {
+  uint64 oid = 1;
+}
+
+message RemoveDtelRequest {
+  uint64 oid = 1;
+}
+
+message RemoveDtelResponse {}
+
+message SetDtelAttributeRequest {
+  uint64 oid = 1;
+
+  oneof attr {
+    bool         int_endpoint_enable    =  2;
+    bool         int_transit_enable     =  3;
+    bool         postcard_enable        =  4;
+    bool         drop_report_enable     =  5;
+    bool         queue_report_enable    =  6;
+    uint32       switch_id              =  7;
+    uint32       flow_state_clear_cycle =  8;
+    uint32       latency_sensitivity    =  9;
+    Uint64List   sink_port_list         = 10;
+    AclFieldData int_l4_dscp            = 11;
+  }
+}
+
+message SetDtelAttributeResponse {}
+
+message GetDtelAttributeRequest {
+  uint64   oid       = 1;
+  DtelAttr attr_type = 2;
+}
+
+message GetDtelAttributeResponse {
+  DtelAttribute attr = 1;
+}
+
+message CreateDtelQueueReportRequest {
+  uint64 switch            = 1;
+  uint64 queue_id          = 2;
+  uint32 depth_threshold   = 3;
+  uint32 latency_threshold = 4;
+  uint32 breach_quota      = 5;
+  bool   tail_drop         = 6;
+}
+
+message CreateDtelQueueReportResponse {
+  uint64 oid = 1;
+}
+
+message RemoveDtelQueueReportRequest {
+  uint64 oid = 1;
+}
+
+message RemoveDtelQueueReportResponse {}
+
+message SetDtelQueueReportAttributeRequest {
+  uint64 oid = 1;
+
+  oneof attr {
+    uint32 depth_threshold   = 2;
+    uint32 latency_threshold = 3;
+    uint32 breach_quota      = 4;
+    bool   tail_drop         = 5;
+  }
+}
+
+message SetDtelQueueReportAttributeResponse {}
+
+message GetDtelQueueReportAttributeRequest {
+  uint64              oid       = 1;
+  DtelQueueReportAttr attr_type = 2;
+}
+
+message GetDtelQueueReportAttributeResponse {
+  DtelQueueReportAttribute attr = 1;
+}
+
+message CreateDtelIntSessionRequest {
+  uint64 switch                    = 1;
+  uint32 max_hop_count             = 2;
+  bool   collect_switch_id         = 3;
+  bool   collect_switch_ports      = 4;
+  bool   collect_ingress_timestamp = 5;
+  bool   collect_egress_timestamp  = 6;
+  bool   collect_queue_info        = 7;
+}
+
+message CreateDtelIntSessionResponse {
+  uint64 oid = 1;
+}
+
+message RemoveDtelIntSessionRequest {
+  uint64 oid = 1;
+}
+
+message RemoveDtelIntSessionResponse {}
+
+message SetDtelIntSessionAttributeRequest {
+  uint64 oid = 1;
+
+  oneof attr {
+    uint32 max_hop_count             = 2;
+    bool   collect_switch_id         = 3;
+    bool   collect_switch_ports      = 4;
+    bool   collect_ingress_timestamp = 5;
+    bool   collect_egress_timestamp  = 6;
+    bool   collect_queue_info        = 7;
+  }
+}
+
+message SetDtelIntSessionAttributeResponse {}
+
+message GetDtelIntSessionAttributeRequest {
+  uint64             oid       = 1;
+  DtelIntSessionAttr attr_type = 2;
+}
+
+message GetDtelIntSessionAttributeResponse {
+  DtelIntSessionAttribute attr = 1;
+}
+
+message CreateDtelReportSessionRequest {
+           uint64 switch            = 1;
+           bytes  src_ip            = 2;
+  repeated bytes  dst_ip_list       = 3;
+           uint64 virtual_router_id = 4;
+           uint32 truncate_size     = 5;
+           uint32 udp_dst_port      = 6;
+}
+
+message CreateDtelReportSessionResponse {
+  uint64 oid = 1;
+}
+
+message RemoveDtelReportSessionRequest {
+  uint64 oid = 1;
+}
+
+message RemoveDtelReportSessionResponse {}
+
+message SetDtelReportSessionAttributeRequest {
+  uint64 oid = 1;
+
+  oneof attr {
+    bytes     src_ip            = 2;
+    BytesList dst_ip_list       = 3;
+    uint64    virtual_router_id = 4;
+    uint32    truncate_size     = 5;
+    uint32    udp_dst_port      = 6;
+  }
+}
+
+message SetDtelReportSessionAttributeResponse {}
+
+message GetDtelReportSessionAttributeRequest {
+  uint64                oid       = 1;
+  DtelReportSessionAttr attr_type = 2;
+}
+
+message GetDtelReportSessionAttributeResponse {
+  DtelReportSessionAttribute attr = 1;
+}
+
+message CreateDtelEventRequest {
+  uint64        switch         = 1;
+  DtelEventType type           = 2;
+  uint64        report_session = 3;
+  uint32        dscp_value     = 4;
+}
+
+message CreateDtelEventResponse {
+  uint64 oid = 1;
+}
+
+message RemoveDtelEventRequest {
+  uint64 oid = 1;
+}
+
+message RemoveDtelEventResponse {}
+
+message SetDtelEventAttributeRequest {
+  uint64 oid = 1;
+
+  oneof attr {
+    uint64 report_session = 2;
+    uint32 dscp_value     = 3;
+  }
+}
+
+message SetDtelEventAttributeResponse {}
+
+message GetDtelEventAttributeRequest {
+  uint64        oid       = 1;
+  DtelEventAttr attr_type = 2;
+}
+
+message GetDtelEventAttributeResponse {
+  DtelEventAttribute attr = 1;
+}
+
+service Dtel {
+  rpc CreateDtel                    (CreateDtelRequest                   ) returns (CreateDtelResponse                   );
+  rpc RemoveDtel                    (RemoveDtelRequest                   ) returns (RemoveDtelResponse                   );
+  rpc SetDtelAttribute              (SetDtelAttributeRequest             ) returns (SetDtelAttributeResponse             );
+  rpc GetDtelAttribute              (GetDtelAttributeRequest             ) returns (GetDtelAttributeResponse             );
+  rpc CreateDtelQueueReport         (CreateDtelQueueReportRequest        ) returns (CreateDtelQueueReportResponse        );
+  rpc RemoveDtelQueueReport         (RemoveDtelQueueReportRequest        ) returns (RemoveDtelQueueReportResponse        );
+  rpc SetDtelQueueReportAttribute   (SetDtelQueueReportAttributeRequest  ) returns (SetDtelQueueReportAttributeResponse  );
+  rpc GetDtelQueueReportAttribute   (GetDtelQueueReportAttributeRequest  ) returns (GetDtelQueueReportAttributeResponse  );
+  rpc CreateDtelIntSession          (CreateDtelIntSessionRequest         ) returns (CreateDtelIntSessionResponse         );
+  rpc RemoveDtelIntSession          (RemoveDtelIntSessionRequest         ) returns (RemoveDtelIntSessionResponse         );
+  rpc SetDtelIntSessionAttribute    (SetDtelIntSessionAttributeRequest   ) returns (SetDtelIntSessionAttributeResponse   );
+  rpc GetDtelIntSessionAttribute    (GetDtelIntSessionAttributeRequest   ) returns (GetDtelIntSessionAttributeResponse   );
+  rpc CreateDtelReportSession       (CreateDtelReportSessionRequest      ) returns (CreateDtelReportSessionResponse      );
+  rpc RemoveDtelReportSession       (RemoveDtelReportSessionRequest      ) returns (RemoveDtelReportSessionResponse      );
+  rpc SetDtelReportSessionAttribute (SetDtelReportSessionAttributeRequest) returns (SetDtelReportSessionAttributeResponse);
+  rpc GetDtelReportSessionAttribute (GetDtelReportSessionAttributeRequest) returns (GetDtelReportSessionAttributeResponse);
+  rpc CreateDtelEvent               (CreateDtelEventRequest              ) returns (CreateDtelEventResponse              );
+  rpc RemoveDtelEvent               (RemoveDtelEventRequest              ) returns (RemoveDtelEventResponse              );
+  rpc SetDtelEventAttribute         (SetDtelEventAttributeRequest        ) returns (SetDtelEventAttributeResponse        );
+  rpc GetDtelEventAttribute         (GetDtelEventAttributeRequest        ) returns (GetDtelEventAttributeResponse        );
+}

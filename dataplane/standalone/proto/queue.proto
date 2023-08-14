@@ -1,0 +1,77 @@
+syntax = "proto3";
+
+package lemming.dataplane.sai;
+
+import "dataplane/standalone/proto/common.proto";
+
+option go_package = "github.com/openconfig/lemming/proto/dataplane/sai";
+
+enum QueueAttr {
+  QUEUE_ATTR_UNSPECIFIED           =  0;
+  QUEUE_ATTR_TYPE                  =  1;
+  QUEUE_ATTR_PORT                  =  2;
+  QUEUE_ATTR_INDEX                 =  3;
+  QUEUE_ATTR_PARENT_SCHEDULER_NODE =  4;
+  QUEUE_ATTR_WRED_PROFILE_ID       =  5;
+  QUEUE_ATTR_BUFFER_PROFILE_ID     =  6;
+  QUEUE_ATTR_SCHEDULER_PROFILE_ID  =  7;
+  QUEUE_ATTR_PAUSE_STATUS          =  8;
+  QUEUE_ATTR_ENABLE_PFC_DLDR       =  9;
+  QUEUE_ATTR_PFC_DLR_INIT          = 10;
+  QUEUE_ATTR_TAM_OBJECT            = 11;
+}
+message CreateQueueRequest {
+           uint64    switch                =  1;
+           QueueType type                  =  2;
+           uint64    port                  =  3;
+           uint32    index                 =  4;
+           uint64    parent_scheduler_node =  5;
+           uint64    wred_profile_id       =  6;
+           uint64    buffer_profile_id     =  7;
+           uint64    scheduler_profile_id  =  8;
+           bool      enable_pfc_dldr       =  9;
+           bool      pfc_dlr_init          = 10;
+  repeated uint64    tam_object            = 11;
+}
+
+message CreateQueueResponse {
+  uint64 oid = 1;
+}
+
+message RemoveQueueRequest {
+  uint64 oid = 1;
+}
+
+message RemoveQueueResponse {}
+
+message SetQueueAttributeRequest {
+  uint64 oid = 1;
+
+  oneof attr {
+    uint64     parent_scheduler_node = 2;
+    uint64     wred_profile_id       = 3;
+    uint64     buffer_profile_id     = 4;
+    uint64     scheduler_profile_id  = 5;
+    bool       enable_pfc_dldr       = 6;
+    bool       pfc_dlr_init          = 7;
+    Uint64List tam_object            = 8;
+  }
+}
+
+message SetQueueAttributeResponse {}
+
+message GetQueueAttributeRequest {
+  uint64    oid       = 1;
+  QueueAttr attr_type = 2;
+}
+
+message GetQueueAttributeResponse {
+  QueueAttribute attr = 1;
+}
+
+service Queue {
+  rpc CreateQueue       (CreateQueueRequest      ) returns (CreateQueueResponse      );
+  rpc RemoveQueue       (RemoveQueueRequest      ) returns (RemoveQueueResponse      );
+  rpc SetQueueAttribute (SetQueueAttributeRequest) returns (SetQueueAttributeResponse);
+  rpc GetQueueAttribute (GetQueueAttributeRequest) returns (GetQueueAttributeResponse);
+}

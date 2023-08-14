@@ -1,0 +1,263 @@
+syntax = "proto3";
+
+package lemming.dataplane.sai;
+
+import "dataplane/standalone/proto/common.proto";
+
+option go_package = "github.com/openconfig/lemming/proto/dataplane/sai";
+
+enum TunnelAttr {
+  TUNNEL_ATTR_UNSPECIFIED            =  0;
+  TUNNEL_ATTR_TYPE                   =  1;
+  TUNNEL_ATTR_UNDERLAY_INTERFACE     =  2;
+  TUNNEL_ATTR_OVERLAY_INTERFACE      =  3;
+  TUNNEL_ATTR_PEER_MODE              =  4;
+  TUNNEL_ATTR_ENCAP_SRC_IP           =  5;
+  TUNNEL_ATTR_ENCAP_DST_IP           =  6;
+  TUNNEL_ATTR_ENCAP_TTL_MODE         =  7;
+  TUNNEL_ATTR_ENCAP_TTL_VAL          =  8;
+  TUNNEL_ATTR_ENCAP_DSCP_MODE        =  9;
+  TUNNEL_ATTR_ENCAP_DSCP_VAL         = 10;
+  TUNNEL_ATTR_ENCAP_GRE_KEY_VALID    = 11;
+  TUNNEL_ATTR_ENCAP_GRE_KEY          = 12;
+  TUNNEL_ATTR_ENCAP_ECN_MODE         = 13;
+  TUNNEL_ATTR_ENCAP_MAPPERS          = 14;
+  TUNNEL_ATTR_DECAP_ECN_MODE         = 15;
+  TUNNEL_ATTR_DECAP_MAPPERS          = 16;
+  TUNNEL_ATTR_DECAP_TTL_MODE         = 17;
+  TUNNEL_ATTR_DECAP_DSCP_MODE        = 18;
+  TUNNEL_ATTR_TERM_TABLE_ENTRY_LIST  = 19;
+  TUNNEL_ATTR_LOOPBACK_PACKET_ACTION = 20;
+  TUNNEL_ATTR_VXLAN_UDP_SPORT_MODE   = 21;
+  TUNNEL_ATTR_VXLAN_UDP_SPORT        = 22;
+  TUNNEL_ATTR_VXLAN_UDP_SPORT_MASK   = 23;
+  TUNNEL_ATTR_SA_INDEX               = 24;
+  TUNNEL_ATTR_IPSEC_SA_PORT_LIST     = 25;
+}
+enum TunnelMapAttr {
+  TUNNEL_MAP_ATTR_UNSPECIFIED = 0;
+  TUNNEL_MAP_ATTR_TYPE        = 1;
+  TUNNEL_MAP_ATTR_ENTRY_LIST  = 2;
+}
+enum TunnelMapEntryAttr {
+  TUNNEL_MAP_ENTRY_ATTR_UNSPECIFIED             =  0;
+  TUNNEL_MAP_ENTRY_ATTR_TUNNEL_MAP_TYPE         =  1;
+  TUNNEL_MAP_ENTRY_ATTR_TUNNEL_MAP              =  2;
+  TUNNEL_MAP_ENTRY_ATTR_OECN_KEY                =  3;
+  TUNNEL_MAP_ENTRY_ATTR_OECN_VALUE              =  4;
+  TUNNEL_MAP_ENTRY_ATTR_UECN_KEY                =  5;
+  TUNNEL_MAP_ENTRY_ATTR_UECN_VALUE              =  6;
+  TUNNEL_MAP_ENTRY_ATTR_VLAN_ID_KEY             =  7;
+  TUNNEL_MAP_ENTRY_ATTR_VLAN_ID_VALUE           =  8;
+  TUNNEL_MAP_ENTRY_ATTR_VNI_ID_KEY              =  9;
+  TUNNEL_MAP_ENTRY_ATTR_VNI_ID_VALUE            = 10;
+  TUNNEL_MAP_ENTRY_ATTR_BRIDGE_ID_KEY           = 11;
+  TUNNEL_MAP_ENTRY_ATTR_BRIDGE_ID_VALUE         = 12;
+  TUNNEL_MAP_ENTRY_ATTR_VIRTUAL_ROUTER_ID_KEY   = 13;
+  TUNNEL_MAP_ENTRY_ATTR_VIRTUAL_ROUTER_ID_VALUE = 14;
+  TUNNEL_MAP_ENTRY_ATTR_VSID_ID_KEY             = 15;
+  TUNNEL_MAP_ENTRY_ATTR_VSID_ID_VALUE           = 16;
+}
+enum TunnelTermTableEntryAttr {
+  TUNNEL_TERM_TABLE_ENTRY_ATTR_UNSPECIFIED      =  0;
+  TUNNEL_TERM_TABLE_ENTRY_ATTR_VR_ID            =  1;
+  TUNNEL_TERM_TABLE_ENTRY_ATTR_TYPE             =  2;
+  TUNNEL_TERM_TABLE_ENTRY_ATTR_DST_IP           =  3;
+  TUNNEL_TERM_TABLE_ENTRY_ATTR_DST_IP_MASK      =  4;
+  TUNNEL_TERM_TABLE_ENTRY_ATTR_SRC_IP           =  5;
+  TUNNEL_TERM_TABLE_ENTRY_ATTR_SRC_IP_MASK      =  6;
+  TUNNEL_TERM_TABLE_ENTRY_ATTR_TUNNEL_TYPE      =  7;
+  TUNNEL_TERM_TABLE_ENTRY_ATTR_ACTION_TUNNEL_ID =  8;
+  TUNNEL_TERM_TABLE_ENTRY_ATTR_IP_ADDR_FAMILY   =  9;
+  TUNNEL_TERM_TABLE_ENTRY_ATTR_IPSEC_VERIFIED   = 10;
+}
+message CreateTunnelMapRequest {
+  uint64        switch = 1;
+  TunnelMapType type   = 2;
+}
+
+message CreateTunnelMapResponse {
+  uint64 oid = 1;
+}
+
+message RemoveTunnelMapRequest {
+  uint64 oid = 1;
+}
+
+message RemoveTunnelMapResponse {}
+
+message GetTunnelMapAttributeRequest {
+  uint64        oid       = 1;
+  TunnelMapAttr attr_type = 2;
+}
+
+message GetTunnelMapAttributeResponse {
+  TunnelMapAttribute attr = 1;
+}
+
+message CreateTunnelRequest {
+           uint64                  switch                 =  1;
+           TunnelType              type                   =  2;
+           uint64                  underlay_interface     =  3;
+           uint64                  overlay_interface      =  4;
+           TunnelPeerMode          peer_mode              =  5;
+           bytes                   encap_src_ip           =  6;
+           bytes                   encap_dst_ip           =  7;
+           TunnelTtlMode           encap_ttl_mode         =  8;
+           uint32                  encap_ttl_val          =  9;
+           TunnelDscpMode          encap_dscp_mode        = 10;
+           uint32                  encap_dscp_val         = 11;
+           bool                    encap_gre_key_valid    = 12;
+           uint32                  encap_gre_key          = 13;
+           TunnelEncapEcnMode      encap_ecn_mode         = 14;
+  repeated uint64                  encap_mappers          = 15;
+           TunnelDecapEcnMode      decap_ecn_mode         = 16;
+  repeated uint64                  decap_mappers          = 17;
+           TunnelTtlMode           decap_ttl_mode         = 18;
+           TunnelDscpMode          decap_dscp_mode        = 19;
+           PacketAction            loopback_packet_action = 20;
+           TunnelVxlanUdpSportMode vxlan_udp_sport_mode   = 21;
+           uint32                  vxlan_udp_sport        = 22;
+           uint32                  vxlan_udp_sport_mask   = 23;
+           uint32                  sa_index               = 24;
+  repeated uint64                  ipsec_sa_port_list     = 25;
+}
+
+message CreateTunnelResponse {
+  uint64 oid = 1;
+}
+
+message RemoveTunnelRequest {
+  uint64 oid = 1;
+}
+
+message RemoveTunnelResponse {}
+
+message SetTunnelAttributeRequest {
+  uint64 oid = 1;
+
+  oneof attr {
+    TunnelTtlMode           encap_ttl_mode         =  2;
+    uint32                  encap_ttl_val          =  3;
+    TunnelDscpMode          encap_dscp_mode        =  4;
+    uint32                  encap_dscp_val         =  5;
+    uint32                  encap_gre_key          =  6;
+    TunnelTtlMode           decap_ttl_mode         =  7;
+    TunnelDscpMode          decap_dscp_mode        =  8;
+    PacketAction            loopback_packet_action =  9;
+    TunnelVxlanUdpSportMode vxlan_udp_sport_mode   = 10;
+    uint32                  vxlan_udp_sport        = 11;
+    uint32                  vxlan_udp_sport_mask   = 12;
+    uint32                  sa_index               = 13;
+    Uint64List              ipsec_sa_port_list     = 14;
+  }
+}
+
+message SetTunnelAttributeResponse {}
+
+message GetTunnelAttributeRequest {
+  uint64     oid       = 1;
+  TunnelAttr attr_type = 2;
+}
+
+message GetTunnelAttributeResponse {
+  TunnelAttribute attr = 1;
+}
+
+message CreateTunnelTermTableEntryRequest {
+  uint64                   switch           =  1;
+  uint64                   vr_id            =  2;
+  TunnelTermTableEntryType type             =  3;
+  bytes                    dst_ip           =  4;
+  bytes                    dst_ip_mask      =  5;
+  bytes                    src_ip           =  6;
+  bytes                    src_ip_mask      =  7;
+  TunnelType               tunnel_type      =  8;
+  uint64                   action_tunnel_id =  9;
+  bool                     ipsec_verified   = 10;
+}
+
+message CreateTunnelTermTableEntryResponse {
+  uint64 oid = 1;
+}
+
+message RemoveTunnelTermTableEntryRequest {
+  uint64 oid = 1;
+}
+
+message RemoveTunnelTermTableEntryResponse {}
+
+message SetTunnelTermTableEntryAttributeRequest {
+  uint64 oid = 1;
+
+  oneof attr {
+    bool ipsec_verified = 2;
+  }
+}
+
+message SetTunnelTermTableEntryAttributeResponse {}
+
+message GetTunnelTermTableEntryAttributeRequest {
+  uint64                   oid       = 1;
+  TunnelTermTableEntryAttr attr_type = 2;
+}
+
+message GetTunnelTermTableEntryAttributeResponse {
+  TunnelTermTableEntryAttribute attr = 1;
+}
+
+message CreateTunnelMapEntryRequest {
+  uint64        switch                  =  1;
+  TunnelMapType tunnel_map_type         =  2;
+  uint64        tunnel_map              =  3;
+  uint32        oecn_key                =  4;
+  uint32        oecn_value              =  5;
+  uint32        uecn_key                =  6;
+  uint32        uecn_value              =  7;
+  uint32        vlan_id_key             =  8;
+  uint32        vlan_id_value           =  9;
+  uint32        vni_id_key              = 10;
+  uint32        vni_id_value            = 11;
+  uint64        bridge_id_key           = 12;
+  uint64        bridge_id_value         = 13;
+  uint64        virtual_router_id_key   = 14;
+  uint64        virtual_router_id_value = 15;
+  uint32        vsid_id_key             = 16;
+  uint32        vsid_id_value           = 17;
+}
+
+message CreateTunnelMapEntryResponse {
+  uint64 oid = 1;
+}
+
+message RemoveTunnelMapEntryRequest {
+  uint64 oid = 1;
+}
+
+message RemoveTunnelMapEntryResponse {}
+
+message GetTunnelMapEntryAttributeRequest {
+  uint64             oid       = 1;
+  TunnelMapEntryAttr attr_type = 2;
+}
+
+message GetTunnelMapEntryAttributeResponse {
+  TunnelMapEntryAttribute attr = 1;
+}
+
+service Tunnel {
+  rpc CreateTunnelMap                  (CreateTunnelMapRequest                 ) returns (CreateTunnelMapResponse                 );
+  rpc RemoveTunnelMap                  (RemoveTunnelMapRequest                 ) returns (RemoveTunnelMapResponse                 );
+  rpc GetTunnelMapAttribute            (GetTunnelMapAttributeRequest           ) returns (GetTunnelMapAttributeResponse           );
+  rpc CreateTunnel                     (CreateTunnelRequest                    ) returns (CreateTunnelResponse                    );
+  rpc RemoveTunnel                     (RemoveTunnelRequest                    ) returns (RemoveTunnelResponse                    );
+  rpc SetTunnelAttribute               (SetTunnelAttributeRequest              ) returns (SetTunnelAttributeResponse              );
+  rpc GetTunnelAttribute               (GetTunnelAttributeRequest              ) returns (GetTunnelAttributeResponse              );
+  rpc CreateTunnelTermTableEntry       (CreateTunnelTermTableEntryRequest      ) returns (CreateTunnelTermTableEntryResponse      );
+  rpc RemoveTunnelTermTableEntry       (RemoveTunnelTermTableEntryRequest      ) returns (RemoveTunnelTermTableEntryResponse      );
+  rpc SetTunnelTermTableEntryAttribute (SetTunnelTermTableEntryAttributeRequest) returns (SetTunnelTermTableEntryAttributeResponse);
+  rpc GetTunnelTermTableEntryAttribute (GetTunnelTermTableEntryAttributeRequest) returns (GetTunnelTermTableEntryAttributeResponse);
+  rpc CreateTunnelMapEntry             (CreateTunnelMapEntryRequest            ) returns (CreateTunnelMapEntryResponse            );
+  rpc RemoveTunnelMapEntry             (RemoveTunnelMapEntryRequest            ) returns (RemoveTunnelMapEntryResponse            );
+  rpc GetTunnelMapEntryAttribute       (GetTunnelMapEntryAttributeRequest      ) returns (GetTunnelMapEntryAttributeResponse      );
+}

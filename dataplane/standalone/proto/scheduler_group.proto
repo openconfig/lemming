@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+package lemming.dataplane.sai;
+
+import "dataplane/standalone/proto/common.proto";
+
+option go_package = "github.com/openconfig/lemming/proto/dataplane/sai";
+
+enum SchedulerGroupAttr {
+  SCHEDULER_GROUP_ATTR_UNSPECIFIED          = 0;
+  SCHEDULER_GROUP_ATTR_CHILD_COUNT          = 1;
+  SCHEDULER_GROUP_ATTR_CHILD_LIST           = 2;
+  SCHEDULER_GROUP_ATTR_PORT_ID              = 3;
+  SCHEDULER_GROUP_ATTR_LEVEL                = 4;
+  SCHEDULER_GROUP_ATTR_MAX_CHILDS           = 5;
+  SCHEDULER_GROUP_ATTR_SCHEDULER_PROFILE_ID = 6;
+  SCHEDULER_GROUP_ATTR_PARENT_NODE          = 7;
+}
+message CreateSchedulerGroupRequest {
+  uint64 switch               = 1;
+  uint64 port_id              = 2;
+  uint32 level                = 3;
+  uint32 max_childs           = 4;
+  uint64 scheduler_profile_id = 5;
+  uint64 parent_node          = 6;
+}
+
+message CreateSchedulerGroupResponse {
+  uint64 oid = 1;
+}
+
+message RemoveSchedulerGroupRequest {
+  uint64 oid = 1;
+}
+
+message RemoveSchedulerGroupResponse {}
+
+message SetSchedulerGroupAttributeRequest {
+  uint64 oid = 1;
+
+  oneof attr {
+    uint64 scheduler_profile_id = 2;
+    uint64 parent_node          = 3;
+  }
+}
+
+message SetSchedulerGroupAttributeResponse {}
+
+message GetSchedulerGroupAttributeRequest {
+  uint64             oid       = 1;
+  SchedulerGroupAttr attr_type = 2;
+}
+
+message GetSchedulerGroupAttributeResponse {
+  SchedulerGroupAttribute attr = 1;
+}
+
+service SchedulerGroup {
+  rpc CreateSchedulerGroup       (CreateSchedulerGroupRequest      ) returns (CreateSchedulerGroupResponse      );
+  rpc RemoveSchedulerGroup       (RemoveSchedulerGroupRequest      ) returns (RemoveSchedulerGroupResponse      );
+  rpc SetSchedulerGroupAttribute (SetSchedulerGroupAttributeRequest) returns (SetSchedulerGroupAttributeResponse);
+  rpc GetSchedulerGroupAttribute (GetSchedulerGroupAttributeRequest) returns (GetSchedulerGroupAttributeResponse);
+}

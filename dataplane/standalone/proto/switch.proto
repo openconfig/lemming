@@ -1,0 +1,535 @@
+syntax = "proto3";
+
+package lemming.dataplane.sai;
+
+import "dataplane/standalone/proto/common.proto";
+
+option go_package = "github.com/openconfig/lemming/proto/dataplane/sai";
+
+enum SwitchAttr {
+  SWITCH_ATTR_UNSPECIFIED                                            =   0;
+  SWITCH_ATTR_NUMBER_OF_ACTIVE_PORTS                                 =   1;
+  SWITCH_ATTR_MAX_NUMBER_OF_SUPPORTED_PORTS                          =   2;
+  SWITCH_ATTR_PORT_LIST                                              =   3;
+  SWITCH_ATTR_PORT_MAX_MTU                                           =   4;
+  SWITCH_ATTR_CPU_PORT                                               =   5;
+  SWITCH_ATTR_MAX_VIRTUAL_ROUTERS                                    =   6;
+  SWITCH_ATTR_FDB_TABLE_SIZE                                         =   7;
+  SWITCH_ATTR_L3_NEIGHBOR_TABLE_SIZE                                 =   8;
+  SWITCH_ATTR_L3_ROUTE_TABLE_SIZE                                    =   9;
+  SWITCH_ATTR_LAG_MEMBERS                                            =  10;
+  SWITCH_ATTR_NUMBER_OF_LAGS                                         =  11;
+  SWITCH_ATTR_ECMP_MEMBERS                                           =  12;
+  SWITCH_ATTR_NUMBER_OF_ECMP_GROUPS                                  =  13;
+  SWITCH_ATTR_NUMBER_OF_UNICAST_QUEUES                               =  14;
+  SWITCH_ATTR_NUMBER_OF_MULTICAST_QUEUES                             =  15;
+  SWITCH_ATTR_NUMBER_OF_QUEUES                                       =  16;
+  SWITCH_ATTR_NUMBER_OF_CPU_QUEUES                                   =  17;
+  SWITCH_ATTR_ON_LINK_ROUTE_SUPPORTED                                =  18;
+  SWITCH_ATTR_OPER_STATUS                                            =  19;
+  SWITCH_ATTR_MAX_NUMBER_OF_TEMP_SENSORS                             =  20;
+  SWITCH_ATTR_TEMP_LIST                                              =  21;
+  SWITCH_ATTR_MAX_TEMP                                               =  22;
+  SWITCH_ATTR_AVERAGE_TEMP                                           =  23;
+  SWITCH_ATTR_ACL_TABLE_MINIMUM_PRIORITY                             =  24;
+  SWITCH_ATTR_ACL_TABLE_MAXIMUM_PRIORITY                             =  25;
+  SWITCH_ATTR_ACL_ENTRY_MINIMUM_PRIORITY                             =  26;
+  SWITCH_ATTR_ACL_ENTRY_MAXIMUM_PRIORITY                             =  27;
+  SWITCH_ATTR_ACL_TABLE_GROUP_MINIMUM_PRIORITY                       =  28;
+  SWITCH_ATTR_ACL_TABLE_GROUP_MAXIMUM_PRIORITY                       =  29;
+  SWITCH_ATTR_FDB_DST_USER_META_DATA_RANGE                           =  30;
+  SWITCH_ATTR_ROUTE_DST_USER_META_DATA_RANGE                         =  31;
+  SWITCH_ATTR_NEIGHBOR_DST_USER_META_DATA_RANGE                      =  32;
+  SWITCH_ATTR_PORT_USER_META_DATA_RANGE                              =  33;
+  SWITCH_ATTR_VLAN_USER_META_DATA_RANGE                              =  34;
+  SWITCH_ATTR_ACL_USER_META_DATA_RANGE                               =  35;
+  SWITCH_ATTR_ACL_USER_TRAP_ID_RANGE                                 =  36;
+  SWITCH_ATTR_DEFAULT_VLAN_ID                                        =  37;
+  SWITCH_ATTR_DEFAULT_STP_INST_ID                                    =  38;
+  SWITCH_ATTR_MAX_STP_INSTANCE                                       =  39;
+  SWITCH_ATTR_DEFAULT_VIRTUAL_ROUTER_ID                              =  40;
+  SWITCH_ATTR_DEFAULT_OVERRIDE_VIRTUAL_ROUTER_ID                     =  41;
+  SWITCH_ATTR_DEFAULT_1Q_BRIDGE_ID                                   =  42;
+  SWITCH_ATTR_INGRESS_ACL                                            =  43;
+  SWITCH_ATTR_EGRESS_ACL                                             =  44;
+  SWITCH_ATTR_QOS_MAX_NUMBER_OF_TRAFFIC_CLASSES                      =  45;
+  SWITCH_ATTR_QOS_MAX_NUMBER_OF_SCHEDULER_GROUP_HIERARCHY_LEVELS     =  46;
+  SWITCH_ATTR_QOS_MAX_NUMBER_OF_SCHEDULER_GROUPS_PER_HIERARCHY_LEVEL =  47;
+  SWITCH_ATTR_QOS_MAX_NUMBER_OF_CHILDS_PER_SCHEDULER_GROUP           =  48;
+  SWITCH_ATTR_TOTAL_BUFFER_SIZE                                      =  49;
+  SWITCH_ATTR_INGRESS_BUFFER_POOL_NUM                                =  50;
+  SWITCH_ATTR_EGRESS_BUFFER_POOL_NUM                                 =  51;
+  SWITCH_ATTR_AVAILABLE_IPV4_ROUTE_ENTRY                             =  52;
+  SWITCH_ATTR_AVAILABLE_IPV6_ROUTE_ENTRY                             =  53;
+  SWITCH_ATTR_AVAILABLE_IPV4_NEXTHOP_ENTRY                           =  54;
+  SWITCH_ATTR_AVAILABLE_IPV6_NEXTHOP_ENTRY                           =  55;
+  SWITCH_ATTR_AVAILABLE_IPV4_NEIGHBOR_ENTRY                          =  56;
+  SWITCH_ATTR_AVAILABLE_IPV6_NEIGHBOR_ENTRY                          =  57;
+  SWITCH_ATTR_AVAILABLE_NEXT_HOP_GROUP_ENTRY                         =  58;
+  SWITCH_ATTR_AVAILABLE_NEXT_HOP_GROUP_MEMBER_ENTRY                  =  59;
+  SWITCH_ATTR_AVAILABLE_FDB_ENTRY                                    =  60;
+  SWITCH_ATTR_AVAILABLE_L2MC_ENTRY                                   =  61;
+  SWITCH_ATTR_AVAILABLE_IPMC_ENTRY                                   =  62;
+  SWITCH_ATTR_AVAILABLE_SNAT_ENTRY                                   =  63;
+  SWITCH_ATTR_AVAILABLE_DNAT_ENTRY                                   =  64;
+  SWITCH_ATTR_AVAILABLE_DOUBLE_NAT_ENTRY                             =  65;
+  SWITCH_ATTR_AVAILABLE_ACL_TABLE                                    =  66;
+  SWITCH_ATTR_AVAILABLE_ACL_TABLE_GROUP                              =  67;
+  SWITCH_ATTR_AVAILABLE_MY_SID_ENTRY                                 =  68;
+  SWITCH_ATTR_DEFAULT_TRAP_GROUP                                     =  69;
+  SWITCH_ATTR_ECMP_HASH                                              =  70;
+  SWITCH_ATTR_LAG_HASH                                               =  71;
+  SWITCH_ATTR_RESTART_WARM                                           =  72;
+  SWITCH_ATTR_WARM_RECOVER                                           =  73;
+  SWITCH_ATTR_RESTART_TYPE                                           =  74;
+  SWITCH_ATTR_MIN_PLANNED_RESTART_INTERVAL                           =  75;
+  SWITCH_ATTR_NV_STORAGE_SIZE                                        =  76;
+  SWITCH_ATTR_MAX_ACL_ACTION_COUNT                                   =  77;
+  SWITCH_ATTR_MAX_ACL_RANGE_COUNT                                    =  78;
+  SWITCH_ATTR_ACL_CAPABILITY                                         =  79;
+  SWITCH_ATTR_MCAST_SNOOPING_CAPABILITY                              =  80;
+  SWITCH_ATTR_SWITCHING_MODE                                         =  81;
+  SWITCH_ATTR_BCAST_CPU_FLOOD_ENABLE                                 =  82;
+  SWITCH_ATTR_MCAST_CPU_FLOOD_ENABLE                                 =  83;
+  SWITCH_ATTR_SRC_MAC_ADDRESS                                        =  84;
+  SWITCH_ATTR_MAX_LEARNED_ADDRESSES                                  =  85;
+  SWITCH_ATTR_FDB_AGING_TIME                                         =  86;
+  SWITCH_ATTR_FDB_UNICAST_MISS_PACKET_ACTION                         =  87;
+  SWITCH_ATTR_FDB_BROADCAST_MISS_PACKET_ACTION                       =  88;
+  SWITCH_ATTR_FDB_MULTICAST_MISS_PACKET_ACTION                       =  89;
+  SWITCH_ATTR_ECMP_DEFAULT_HASH_ALGORITHM                            =  90;
+  SWITCH_ATTR_ECMP_DEFAULT_HASH_SEED                                 =  91;
+  SWITCH_ATTR_ECMP_DEFAULT_HASH_OFFSET                               =  92;
+  SWITCH_ATTR_ECMP_DEFAULT_SYMMETRIC_HASH                            =  93;
+  SWITCH_ATTR_ECMP_HASH_IPV4                                         =  94;
+  SWITCH_ATTR_ECMP_HASH_IPV4_IN_IPV4                                 =  95;
+  SWITCH_ATTR_ECMP_HASH_IPV6                                         =  96;
+  SWITCH_ATTR_LAG_DEFAULT_HASH_ALGORITHM                             =  97;
+  SWITCH_ATTR_LAG_DEFAULT_HASH_SEED                                  =  98;
+  SWITCH_ATTR_LAG_DEFAULT_HASH_OFFSET                                =  99;
+  SWITCH_ATTR_LAG_DEFAULT_SYMMETRIC_HASH                             = 100;
+  SWITCH_ATTR_LAG_HASH_IPV4                                          = 101;
+  SWITCH_ATTR_LAG_HASH_IPV4_IN_IPV4                                  = 102;
+  SWITCH_ATTR_LAG_HASH_IPV6                                          = 103;
+  SWITCH_ATTR_COUNTER_REFRESH_INTERVAL                               = 104;
+  SWITCH_ATTR_QOS_DEFAULT_TC                                         = 105;
+  SWITCH_ATTR_QOS_DOT1P_TO_TC_MAP                                    = 106;
+  SWITCH_ATTR_QOS_DOT1P_TO_COLOR_MAP                                 = 107;
+  SWITCH_ATTR_QOS_DSCP_TO_TC_MAP                                     = 108;
+  SWITCH_ATTR_QOS_DSCP_TO_COLOR_MAP                                  = 109;
+  SWITCH_ATTR_QOS_TC_TO_QUEUE_MAP                                    = 110;
+  SWITCH_ATTR_QOS_TC_AND_COLOR_TO_DOT1P_MAP                          = 111;
+  SWITCH_ATTR_QOS_TC_AND_COLOR_TO_DSCP_MAP                           = 112;
+  SWITCH_ATTR_SWITCH_SHELL_ENABLE                                    = 113;
+  SWITCH_ATTR_SWITCH_PROFILE_ID                                      = 114;
+  SWITCH_ATTR_SWITCH_HARDWARE_INFO                                   = 115;
+  SWITCH_ATTR_FIRMWARE_PATH_NAME                                     = 116;
+  SWITCH_ATTR_INIT_SWITCH                                            = 117;
+  SWITCH_ATTR_SWITCH_STATE_CHANGE_NOTIFY                             = 118;
+  SWITCH_ATTR_SWITCH_SHUTDOWN_REQUEST_NOTIFY                         = 119;
+  SWITCH_ATTR_FDB_EVENT_NOTIFY                                       = 120;
+  SWITCH_ATTR_PORT_STATE_CHANGE_NOTIFY                               = 121;
+  SWITCH_ATTR_PACKET_EVENT_NOTIFY                                    = 122;
+  SWITCH_ATTR_FAST_API_ENABLE                                        = 123;
+  SWITCH_ATTR_MIRROR_TC                                              = 124;
+  SWITCH_ATTR_ACL_STAGE_INGRESS                                      = 125;
+  SWITCH_ATTR_ACL_STAGE_EGRESS                                       = 126;
+  SWITCH_ATTR_SRV6_MAX_SID_DEPTH                                     = 127;
+  SWITCH_ATTR_SRV6_TLV_TYPE                                          = 128;
+  SWITCH_ATTR_QOS_NUM_LOSSLESS_QUEUES                                = 129;
+  SWITCH_ATTR_QUEUE_PFC_DEADLOCK_NOTIFY                              = 130;
+  SWITCH_ATTR_PFC_DLR_PACKET_ACTION                                  = 131;
+  SWITCH_ATTR_PFC_TC_DLD_INTERVAL_RANGE                              = 132;
+  SWITCH_ATTR_PFC_TC_DLD_INTERVAL                                    = 133;
+  SWITCH_ATTR_PFC_TC_DLR_INTERVAL_RANGE                              = 134;
+  SWITCH_ATTR_PFC_TC_DLR_INTERVAL                                    = 135;
+  SWITCH_ATTR_SUPPORTED_PROTECTED_OBJECT_TYPE                        = 136;
+  SWITCH_ATTR_TPID_OUTER_VLAN                                        = 137;
+  SWITCH_ATTR_TPID_INNER_VLAN                                        = 138;
+  SWITCH_ATTR_CRC_CHECK_ENABLE                                       = 139;
+  SWITCH_ATTR_CRC_RECALCULATION_ENABLE                               = 140;
+  SWITCH_ATTR_BFD_SESSION_STATE_CHANGE_NOTIFY                        = 141;
+  SWITCH_ATTR_NUMBER_OF_BFD_SESSION                                  = 142;
+  SWITCH_ATTR_MAX_BFD_SESSION                                        = 143;
+  SWITCH_ATTR_SUPPORTED_IPV4_BFD_SESSION_OFFLOAD_TYPE                = 144;
+  SWITCH_ATTR_SUPPORTED_IPV6_BFD_SESSION_OFFLOAD_TYPE                = 145;
+  SWITCH_ATTR_MIN_BFD_RX                                             = 146;
+  SWITCH_ATTR_MIN_BFD_TX                                             = 147;
+  SWITCH_ATTR_ECN_ECT_THRESHOLD_ENABLE                               = 148;
+  SWITCH_ATTR_VXLAN_DEFAULT_ROUTER_MAC                               = 149;
+  SWITCH_ATTR_VXLAN_DEFAULT_PORT                                     = 150;
+  SWITCH_ATTR_MAX_MIRROR_SESSION                                     = 151;
+  SWITCH_ATTR_MAX_SAMPLED_MIRROR_SESSION                             = 152;
+  SWITCH_ATTR_SUPPORTED_EXTENDED_STATS_MODE                          = 153;
+  SWITCH_ATTR_UNINIT_DATA_PLANE_ON_REMOVAL                           = 154;
+  SWITCH_ATTR_TAM_OBJECT_ID                                          = 155;
+  SWITCH_ATTR_TAM_EVENT_NOTIFY                                       = 156;
+  SWITCH_ATTR_SUPPORTED_OBJECT_TYPE_LIST                             = 157;
+  SWITCH_ATTR_PRE_SHUTDOWN                                           = 158;
+  SWITCH_ATTR_NAT_ZONE_COUNTER_OBJECT_ID                             = 159;
+  SWITCH_ATTR_NAT_ENABLE                                             = 160;
+  SWITCH_ATTR_HARDWARE_ACCESS_BUS                                    = 161;
+  SWITCH_ATTR_PLATFROM_CONTEXT                                       = 162;
+  SWITCH_ATTR_REGISTER_READ                                          = 163;
+  SWITCH_ATTR_REGISTER_WRITE                                         = 164;
+  SWITCH_ATTR_FIRMWARE_DOWNLOAD_BROADCAST                            = 165;
+  SWITCH_ATTR_FIRMWARE_LOAD_METHOD                                   = 166;
+  SWITCH_ATTR_FIRMWARE_LOAD_TYPE                                     = 167;
+  SWITCH_ATTR_FIRMWARE_DOWNLOAD_EXECUTE                              = 168;
+  SWITCH_ATTR_FIRMWARE_BROADCAST_STOP                                = 169;
+  SWITCH_ATTR_FIRMWARE_VERIFY_AND_INIT_SWITCH                        = 170;
+  SWITCH_ATTR_FIRMWARE_STATUS                                        = 171;
+  SWITCH_ATTR_FIRMWARE_MAJOR_VERSION                                 = 172;
+  SWITCH_ATTR_FIRMWARE_MINOR_VERSION                                 = 173;
+  SWITCH_ATTR_PORT_CONNECTOR_LIST                                    = 174;
+  SWITCH_ATTR_PROPOGATE_PORT_STATE_FROM_LINE_TO_SYSTEM_PORT_SUPPORT  = 175;
+  SWITCH_ATTR_TYPE                                                   = 176;
+  SWITCH_ATTR_MACSEC_OBJECT_LIST                                     = 177;
+  SWITCH_ATTR_QOS_MPLS_EXP_TO_TC_MAP                                 = 178;
+  SWITCH_ATTR_QOS_MPLS_EXP_TO_COLOR_MAP                              = 179;
+  SWITCH_ATTR_QOS_TC_AND_COLOR_TO_MPLS_EXP_MAP                       = 180;
+  SWITCH_ATTR_SWITCH_ID                                              = 181;
+  SWITCH_ATTR_MAX_SYSTEM_CORES                                       = 182;
+  SWITCH_ATTR_SYSTEM_PORT_CONFIG_LIST                                = 183;
+  SWITCH_ATTR_NUMBER_OF_SYSTEM_PORTS                                 = 184;
+  SWITCH_ATTR_SYSTEM_PORT_LIST                                       = 185;
+  SWITCH_ATTR_NUMBER_OF_FABRIC_PORTS                                 = 186;
+  SWITCH_ATTR_FABRIC_PORT_LIST                                       = 187;
+  SWITCH_ATTR_PACKET_DMA_MEMORY_POOL_SIZE                            = 188;
+  SWITCH_ATTR_FAILOVER_CONFIG_MODE                                   = 189;
+  SWITCH_ATTR_SUPPORTED_FAILOVER_MODE                                = 190;
+  SWITCH_ATTR_TUNNEL_OBJECTS_LIST                                    = 191;
+  SWITCH_ATTR_PACKET_AVAILABLE_DMA_MEMORY_POOL_SIZE                  = 192;
+  SWITCH_ATTR_PRE_INGRESS_ACL                                        = 193;
+  SWITCH_ATTR_AVAILABLE_SNAPT_ENTRY                                  = 194;
+  SWITCH_ATTR_AVAILABLE_DNAPT_ENTRY                                  = 195;
+  SWITCH_ATTR_AVAILABLE_DOUBLE_NAPT_ENTRY                            = 196;
+  SWITCH_ATTR_SLAVE_MDIO_ADDR_LIST                                   = 197;
+  SWITCH_ATTR_MY_MAC_TABLE_MINIMUM_PRIORITY                          = 198;
+  SWITCH_ATTR_MY_MAC_TABLE_MAXIMUM_PRIORITY                          = 199;
+  SWITCH_ATTR_MY_MAC_LIST                                            = 200;
+  SWITCH_ATTR_INSTALLED_MY_MAC_ENTRIES                               = 201;
+  SWITCH_ATTR_AVAILABLE_MY_MAC_ENTRIES                               = 202;
+  SWITCH_ATTR_MAX_NUMBER_OF_FORWARDING_CLASSES                       = 203;
+  SWITCH_ATTR_QOS_DSCP_TO_FORWARDING_CLASS_MAP                       = 204;
+  SWITCH_ATTR_QOS_MPLS_EXP_TO_FORWARDING_CLASS_MAP                   = 205;
+  SWITCH_ATTR_IPSEC_OBJECT_ID                                        = 206;
+  SWITCH_ATTR_IPSEC_SA_TAG_TPID                                      = 207;
+  SWITCH_ATTR_IPSEC_SA_STATUS_CHANGE_NOTIFY                          = 208;
+}
+enum SwitchTunnelAttr {
+  SWITCH_TUNNEL_ATTR_UNSPECIFIED                 = 0;
+  SWITCH_TUNNEL_ATTR_TUNNEL_TYPE                 = 1;
+  SWITCH_TUNNEL_ATTR_LOOPBACK_PACKET_ACTION      = 2;
+  SWITCH_TUNNEL_ATTR_TUNNEL_ENCAP_ECN_MODE       = 3;
+  SWITCH_TUNNEL_ATTR_ENCAP_MAPPERS               = 4;
+  SWITCH_TUNNEL_ATTR_TUNNEL_DECAP_ECN_MODE       = 5;
+  SWITCH_TUNNEL_ATTR_DECAP_MAPPERS               = 6;
+  SWITCH_TUNNEL_ATTR_TUNNEL_VXLAN_UDP_SPORT_MODE = 7;
+  SWITCH_TUNNEL_ATTR_VXLAN_UDP_SPORT             = 8;
+  SWITCH_TUNNEL_ATTR_VXLAN_UDP_SPORT_MASK        = 9;
+}
+message CreateSwitchRequest {
+           uint64                   ingress_acl                          =  2;
+           uint64                   egress_acl                           =  3;
+           bool                     restart_warm                         =  4;
+           bool                     warm_recover                         =  5;
+           SwitchSwitchingMode      switching_mode                       =  6;
+           bool                     bcast_cpu_flood_enable               =  7;
+           bool                     mcast_cpu_flood_enable               =  8;
+           bytes                    src_mac_address                      =  9;
+           uint32                   max_learned_addresses                = 10;
+           uint32                   fdb_aging_time                       = 11;
+           PacketAction             fdb_unicast_miss_packet_action       = 12;
+           PacketAction             fdb_broadcast_miss_packet_action     = 13;
+           PacketAction             fdb_multicast_miss_packet_action     = 14;
+           HashAlgorithm            ecmp_default_hash_algorithm          = 15;
+           uint32                   ecmp_default_hash_seed               = 16;
+           uint32                   ecmp_default_hash_offset             = 17;
+           bool                     ecmp_default_symmetric_hash          = 18;
+           uint64                   ecmp_hash_ipv4                       = 19;
+           uint64                   ecmp_hash_ipv4_in_ipv4               = 20;
+           uint64                   ecmp_hash_ipv6                       = 21;
+           HashAlgorithm            lag_default_hash_algorithm           = 22;
+           uint32                   lag_default_hash_seed                = 23;
+           uint32                   lag_default_hash_offset              = 24;
+           bool                     lag_default_symmetric_hash           = 25;
+           uint64                   lag_hash_ipv4                        = 26;
+           uint64                   lag_hash_ipv4_in_ipv4                = 27;
+           uint64                   lag_hash_ipv6                        = 28;
+           uint32                   counter_refresh_interval             = 29;
+           uint32                   qos_default_tc                       = 30;
+           uint64                   qos_dot1p_to_tc_map                  = 31;
+           uint64                   qos_dot1p_to_color_map               = 32;
+           uint64                   qos_dscp_to_tc_map                   = 33;
+           uint64                   qos_dscp_to_color_map                = 34;
+           uint64                   qos_tc_to_queue_map                  = 35;
+           uint64                   qos_tc_and_color_to_dot1p_map        = 36;
+           uint64                   qos_tc_and_color_to_dscp_map         = 37;
+           bool                     switch_shell_enable                  = 38;
+           uint32                   switch_profile_id                    = 39;
+  repeated int32                    switch_hardware_info                 = 40;
+  repeated int32                    firmware_path_name                   = 41;
+           bool                     init_switch                          = 42;
+           bool                     fast_api_enable                      = 43;
+           uint32                   mirror_tc                            = 44;
+           PacketAction             pfc_dlr_packet_action                = 45;
+  repeated UintMap                  pfc_tc_dld_interval                  = 46;
+  repeated UintMap                  pfc_tc_dlr_interval                  = 47;
+           uint32                   tpid_outer_vlan                      = 48;
+           uint32                   tpid_inner_vlan                      = 49;
+           bool                     crc_check_enable                     = 50;
+           bool                     crc_recalculation_enable             = 51;
+           bool                     ecn_ect_threshold_enable             = 52;
+           bytes                    vxlan_default_router_mac             = 53;
+           uint32                   vxlan_default_port                   = 54;
+           bool                     uninit_data_plane_on_removal         = 55;
+  repeated uint64                   tam_object_id                        = 56;
+           bool                     pre_shutdown                         = 57;
+           uint64                   nat_zone_counter_object_id           = 58;
+           bool                     nat_enable                           = 59;
+           SwitchHardwareAccessBus  hardware_access_bus                  = 60;
+           uint64                   platfrom_context                     = 61;
+           bool                     firmware_download_broadcast          = 62;
+           SwitchFirmwareLoadMethod firmware_load_method                 = 63;
+           SwitchFirmwareLoadType   firmware_load_type                   = 64;
+           bool                     firmware_download_execute            = 65;
+           bool                     firmware_broadcast_stop              = 66;
+           bool                     firmware_verify_and_init_switch      = 67;
+           SwitchType               type                                 = 68;
+  repeated uint64                   macsec_object_list                   = 69;
+           uint64                   qos_mpls_exp_to_tc_map               = 70;
+           uint64                   qos_mpls_exp_to_color_map            = 71;
+           uint64                   qos_tc_and_color_to_mpls_exp_map     = 72;
+           uint32                   switch_id                            = 73;
+           uint32                   max_system_cores                     = 74;
+  repeated SystemPortConfig         system_port_config_list              = 75;
+           SwitchFailoverConfigMode failover_config_mode                 = 76;
+  repeated uint64                   tunnel_objects_list                  = 77;
+           uint64                   pre_ingress_acl                      = 78;
+  repeated uint32                   slave_mdio_addr_list                 = 79;
+           uint64                   qos_dscp_to_forwarding_class_map     = 80;
+           uint64                   qos_mpls_exp_to_forwarding_class_map = 81;
+           uint64                   ipsec_object_id                      = 82;
+           uint32                   ipsec_sa_tag_tpid                    = 83;
+}
+
+message CreateSwitchResponse {
+  uint64 oid = 1;
+}
+
+message RemoveSwitchRequest {
+  uint64 oid = 1;
+}
+
+message RemoveSwitchResponse {}
+
+message SetSwitchAttributeRequest {
+  uint64 oid = 1;
+
+  oneof attr {
+    uint64                   ingress_acl                          =  2;
+    uint64                   egress_acl                           =  3;
+    bool                     restart_warm                         =  4;
+    bool                     warm_recover                         =  5;
+    SwitchSwitchingMode      switching_mode                       =  6;
+    bool                     bcast_cpu_flood_enable               =  7;
+    bool                     mcast_cpu_flood_enable               =  8;
+    bytes                    src_mac_address                      =  9;
+    uint32                   max_learned_addresses                = 10;
+    uint32                   fdb_aging_time                       = 11;
+    PacketAction             fdb_unicast_miss_packet_action       = 12;
+    PacketAction             fdb_broadcast_miss_packet_action     = 13;
+    PacketAction             fdb_multicast_miss_packet_action     = 14;
+    HashAlgorithm            ecmp_default_hash_algorithm          = 15;
+    uint32                   ecmp_default_hash_seed               = 16;
+    uint32                   ecmp_default_hash_offset             = 17;
+    bool                     ecmp_default_symmetric_hash          = 18;
+    uint64                   ecmp_hash_ipv4                       = 19;
+    uint64                   ecmp_hash_ipv4_in_ipv4               = 20;
+    uint64                   ecmp_hash_ipv6                       = 21;
+    HashAlgorithm            lag_default_hash_algorithm           = 22;
+    uint32                   lag_default_hash_seed                = 23;
+    uint32                   lag_default_hash_offset              = 24;
+    bool                     lag_default_symmetric_hash           = 25;
+    uint64                   lag_hash_ipv4                        = 26;
+    uint64                   lag_hash_ipv4_in_ipv4                = 27;
+    uint64                   lag_hash_ipv6                        = 28;
+    uint32                   counter_refresh_interval             = 29;
+    uint32                   qos_default_tc                       = 30;
+    uint64                   qos_dot1p_to_tc_map                  = 31;
+    uint64                   qos_dot1p_to_color_map               = 32;
+    uint64                   qos_dscp_to_tc_map                   = 33;
+    uint64                   qos_dscp_to_color_map                = 34;
+    uint64                   qos_tc_to_queue_map                  = 35;
+    uint64                   qos_tc_and_color_to_dot1p_map        = 36;
+    uint64                   qos_tc_and_color_to_dscp_map         = 37;
+    bool                     switch_shell_enable                  = 38;
+    bool                     fast_api_enable                      = 39;
+    uint32                   mirror_tc                            = 40;
+    PacketAction             pfc_dlr_packet_action                = 41;
+    UintMapList              pfc_tc_dld_interval                  = 42;
+    UintMapList              pfc_tc_dlr_interval                  = 43;
+    uint32                   tpid_outer_vlan                      = 44;
+    uint32                   tpid_inner_vlan                      = 45;
+    bool                     crc_check_enable                     = 46;
+    bool                     crc_recalculation_enable             = 47;
+    bool                     ecn_ect_threshold_enable             = 48;
+    bytes                    vxlan_default_router_mac             = 49;
+    uint32                   vxlan_default_port                   = 50;
+    bool                     uninit_data_plane_on_removal         = 51;
+    Uint64List               tam_object_id                        = 52;
+    bool                     pre_shutdown                         = 53;
+    uint64                   nat_zone_counter_object_id           = 54;
+    bool                     nat_enable                           = 55;
+    bool                     firmware_download_execute            = 56;
+    bool                     firmware_broadcast_stop              = 57;
+    bool                     firmware_verify_and_init_switch      = 58;
+    Uint64List               macsec_object_list                   = 59;
+    uint64                   qos_mpls_exp_to_tc_map               = 60;
+    uint64                   qos_mpls_exp_to_color_map            = 61;
+    uint64                   qos_tc_and_color_to_mpls_exp_map     = 62;
+    SwitchFailoverConfigMode failover_config_mode                 = 63;
+    Uint64List               tunnel_objects_list                  = 64;
+    uint64                   pre_ingress_acl                      = 65;
+    uint64                   qos_dscp_to_forwarding_class_map     = 66;
+    uint64                   qos_mpls_exp_to_forwarding_class_map = 67;
+    uint64                   ipsec_object_id                      = 68;
+    uint32                   ipsec_sa_tag_tpid                    = 69;
+  }
+}
+
+message SetSwitchAttributeResponse {}
+
+message SwitchStateChangeNotificationRequest {}
+
+message SwitchStateChangeNotificationResponse {
+  uint64           switch_id          = 1;
+  SwitchOperStatus switch_oper_status = 2;
+}
+
+message SwitchShutdownRequestNotificationRequest {}
+
+message SwitchShutdownRequestNotificationResponse {
+  uint64 switch_id = 1;
+}
+
+message FdbEventNotificationRequest {}
+
+message FdbEventNotificationResponse {
+  repeated FdbEventNotificationData data = 1;
+}
+
+message PortStateChangeNotificationRequest {}
+
+message PortStateChangeNotificationResponse {
+  repeated PortOperStatusNotification data = 1;
+}
+
+message PacketEventNotificationRequest {}
+
+message PacketEventNotificationResponse {
+           uint64                switch_id = 1;
+           bytes                 buffer    = 2;
+  repeated HostifPacketAttribute attrs     = 3;
+}
+
+message QueuePfcDeadlockNotificationRequest {}
+
+message QueuePfcDeadlockNotificationResponse {
+  repeated QueueDeadlockNotificationData data = 1;
+}
+
+message BfdSessionStateChangeNotificationRequest {}
+
+message BfdSessionStateChangeNotificationResponse {
+  repeated BfdSessionStateChangeNotificationData data = 1;
+}
+
+message TamEventNotificationRequest {}
+
+message TamEventNotificationResponse {
+           uint64                  tam_event_id = 1;
+           bytes                   buffer       = 2;
+  repeated TamEventActionAttribute attrs        = 3;
+}
+
+message IpsecSaStatusChangeNotificationRequest {}
+
+message IpsecSaStatusNotificationDataResponse {
+  repeated IpsecSaStatusNotificationData data = 1;
+}
+
+message GetSwitchAttributeRequest {
+  uint64     oid       = 1;
+  SwitchAttr attr_type = 2;
+}
+
+message GetSwitchAttributeResponse {
+  SwitchAttribute attr = 1;
+}
+
+message CreateSwitchTunnelRequest {
+           uint64                  switch                      =  1;
+           TunnelType              tunnel_type                 =  2;
+           PacketAction            loopback_packet_action      =  3;
+           TunnelEncapEcnMode      tunnel_encap_ecn_mode       =  4;
+  repeated uint64                  encap_mappers               =  5;
+           TunnelDecapEcnMode      tunnel_decap_ecn_mode       =  6;
+  repeated uint64                  decap_mappers               =  7;
+           TunnelVxlanUdpSportMode tunnel_vxlan_udp_sport_mode =  8;
+           uint32                  vxlan_udp_sport             =  9;
+           uint32                  vxlan_udp_sport_mask        = 10;
+}
+
+message CreateSwitchTunnelResponse {
+  uint64 oid = 1;
+}
+
+message RemoveSwitchTunnelRequest {
+  uint64 oid = 1;
+}
+
+message RemoveSwitchTunnelResponse {}
+
+message SetSwitchTunnelAttributeRequest {
+  uint64 oid = 1;
+
+  oneof attr {
+    PacketAction            loopback_packet_action      = 2;
+    TunnelVxlanUdpSportMode tunnel_vxlan_udp_sport_mode = 3;
+    uint32                  vxlan_udp_sport             = 4;
+    uint32                  vxlan_udp_sport_mask        = 5;
+  }
+}
+
+message SetSwitchTunnelAttributeResponse {}
+
+message GetSwitchTunnelAttributeRequest {
+  uint64           oid       = 1;
+  SwitchTunnelAttr attr_type = 2;
+}
+
+message GetSwitchTunnelAttributeResponse {
+  SwitchTunnelAttribute attr = 1;
+}
+
+service Switch {
+  rpc CreateSwitch                      (CreateSwitchRequest                     ) returns (       CreateSwitchResponse                     );
+  rpc RemoveSwitch                      (RemoveSwitchRequest                     ) returns (       RemoveSwitchResponse                     );
+  rpc SetSwitchAttribute                (SetSwitchAttributeRequest               ) returns (       SetSwitchAttributeResponse               );
+  rpc SwitchStateChangeNotification     (SwitchStateChangeNotificationRequest    ) returns (stream SwitchStateChangeNotificationResponse    );
+  rpc SwitchShutdownRequestNotification (SwitchShutdownRequestNotificationRequest) returns (stream SwitchShutdownRequestNotificationResponse);
+  rpc FdbEventNotification              (FdbEventNotificationRequest             ) returns (stream FdbEventNotificationResponse             );
+  rpc PortStateChangeNotification       (PortStateChangeNotificationRequest      ) returns (stream PortStateChangeNotificationResponse      );
+  rpc PacketEventNotification           (PacketEventNotificationRequest          ) returns (stream PacketEventNotificationResponse          );
+  rpc QueuePfcDeadlockNotification      (QueuePfcDeadlockNotificationRequest     ) returns (stream QueuePfcDeadlockNotificationResponse     );
+  rpc BfdSessionStateChangeNotification (BfdSessionStateChangeNotificationRequest) returns (stream BfdSessionStateChangeNotificationResponse);
+  rpc TamEventNotification              (TamEventNotificationRequest             ) returns (stream TamEventNotificationResponse             );
+  rpc IpsecSaStatusChangeNotification   (IpsecSaStatusChangeNotificationRequest  ) returns (stream IpsecSaStatusNotificationDataResponse    );
+  rpc GetSwitchAttribute                (GetSwitchAttributeRequest               ) returns (       GetSwitchAttributeResponse               );
+  rpc CreateSwitchTunnel                (CreateSwitchTunnelRequest               ) returns (       CreateSwitchTunnelResponse               );
+  rpc RemoveSwitchTunnel                (RemoveSwitchTunnelRequest               ) returns (       RemoveSwitchTunnelResponse               );
+  rpc SetSwitchTunnelAttribute          (SetSwitchTunnelAttributeRequest         ) returns (       SetSwitchTunnelAttributeResponse         );
+  rpc GetSwitchTunnelAttribute          (GetSwitchTunnelAttributeRequest         ) returns (       GetSwitchTunnelAttributeResponse         );
+}

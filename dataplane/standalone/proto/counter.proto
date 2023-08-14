@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package lemming.dataplane.sai;
+
+import "dataplane/standalone/proto/common.proto";
+
+option go_package = "github.com/openconfig/lemming/proto/dataplane/sai";
+
+enum CounterAttr {
+  COUNTER_ATTR_UNSPECIFIED = 0;
+  COUNTER_ATTR_TYPE        = 1;
+}
+message CreateCounterRequest {
+  uint64      switch = 1;
+  CounterType type   = 2;
+}
+
+message CreateCounterResponse {
+  uint64 oid = 1;
+}
+
+message RemoveCounterRequest {
+  uint64 oid = 1;
+}
+
+message RemoveCounterResponse {}
+
+message GetCounterAttributeRequest {
+  uint64      oid       = 1;
+  CounterAttr attr_type = 2;
+}
+
+message GetCounterAttributeResponse {
+  CounterAttribute attr = 1;
+}
+
+service Counter {
+  rpc CreateCounter       (CreateCounterRequest      ) returns (CreateCounterResponse      );
+  rpc RemoveCounter       (RemoveCounterRequest      ) returns (RemoveCounterResponse      );
+  rpc GetCounterAttribute (GetCounterAttributeRequest) returns (GetCounterAttributeResponse);
+}
