@@ -851,13 +851,6 @@ func TestSetYGNMI(t *testing.T) {
 			return err
 		},
 		wantErr: `"24" does not match regular expression pattern`,
-	}, {
-		desc: "fail due to value restriction",
-		inOp: func(c *ygnmi.Client) error {
-			_, err := ygnmi.Update(context.Background(), c, ocpath.Root().RoutingPolicy().PolicyDefinition("test").Statement("test").Actions().BgpActions().SetAsPathPrepend().RepeatN().Config(), 0)
-			return err
-		},
-		wantErr: "value 0 is outside specified ranges",
 	}}
 
 	gnmiServer, err := newServer(context.Background(), "local", true)

@@ -40,7 +40,7 @@ func convertPolicyNames(neighAddr string, ocPolicyNames []string) []string {
 // single apply-policy list.
 func convertPolicyDefinition(policy *oc.RoutingPolicy_PolicyDefinition, neighAddr string) bgpconfig.PolicyDefinition {
 	var statements []bgpconfig.Statement
-	for _, statement := range policy.Statement {
+	for _, statement := range policy.Statement.Values() {
 		statements = append(statements, bgpconfig.Statement{
 			Name: statement.GetName(),
 			Conditions: bgpconfig.Conditions{
