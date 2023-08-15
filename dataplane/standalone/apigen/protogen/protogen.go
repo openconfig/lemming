@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+// Package protogen implements a generator for SAI to protobuf.
+package protogen
 
 import (
 	"fmt"
@@ -20,13 +21,43 @@ import (
 	"text/template"
 	"unicode"
 
+	"github.com/openconfig/lemming/dataplane/standalone/apigen/docparser"
+	"github.com/openconfig/lemming/dataplane/standalone/apigen/saiast"
+
 	log "github.com/golang/glog"
 	strcase "github.com/stoewer/go-strcase"
 )
 
-// populateCommonTypes fills the templates for all types that aren't attributes.
+// Generates returns a map of files containing the generated code code.
+func Generate(doc *docparser.SAIInfo, sai *saiast.SAIAPI) (map[string]string, error) {
+	files := map[string]string{}
+	common, err := generateCommonTypes(doc)
+	if err != nil {
+		return nil, err
+	}
+	files["common.proto"] = common
+
+	apis := map[string]*protoAPITmplData{}
+	for _, iface := range sai.Ifaces {
+		apiName := strings.TrimSuffix(strings.TrimPrefix(iface.Name, "sai_"), "_api_t")
+		for _, fn := range iface.Funcs {
+			meta := sai.GetFuncMeta(fn)
+			if err := populateTmplDataFromFunc(apis, doc, apiName, meta); err != nil {
+				return nil, err
+			}
+		}
+		var builder strings.Builder
+		if err := protoTmpl.Execute(&builder, apis[apiName]); err != nil {
+			return nil, err
+		}
+		files[apiName+".proto"] = builder.String()
+	}
+	return files, nil
+}
+
+// generateCommonTypes returns all contents of the common proto.
 // These all reside in the common.proto file to simplify handling imports.
-func populateCommonTypes(docInfo *protoGenInfo) (*protoCommonTmplData, error) {
+func generateCommonTypes(docInfo *docparser.SAIInfo) (string, error) {
 	common := &protoCommonTmplData{
 		Enums: map[string]*protoEnum{},
 		Lists: map[string]*protoTmplMessage{},
@@ -38,9 +69,9 @@ func populateCommonTypes(docInfo *protoGenInfo) (*protoCommonTmplData, error) {
 		}
 	}
 	// Generate non-attribute enums.
-	for name, vals := range docInfo.enums {
-		protoName := trimSAIName(name, true, false)
-		unspecifiedName := trimSAIName(name, false, true) + "_UNSPECIFIED"
+	for name, vals := range docInfo.Enums {
+		protoName := saiast.TrimSAIName(name, true, false)
+		unspecifiedName := saiast.TrimSAIName(name, false, true) + "_UNSPECIFIED"
 		enum := &protoEnum{
 			Name:   protoName,
 			Values: []protoEnumValues{{Index: 0, Name: unspecifiedName}},
@@ -57,18 +88,18 @@ func populateCommonTypes(docInfo *protoGenInfo) (*protoCommonTmplData, error) {
 		common.Enums[protoName] = enum
 	}
 	// Find all the repeated fields that appear in oneof and generate a list wrapper type.
-	for n, attr := range docInfo.attrs {
-		for _, f := range attr.readFields {
+	for n, attr := range docInfo.Attrs {
+		for _, f := range attr.ReadFields {
 			msgName, isRepeated, err := saiTypeToProtoType(f.SaiType, docInfo, true)
 			if err != nil {
-				return nil, err
+				return "", err
 			}
 			if !isRepeated {
 				continue
 			}
 			repeatedName, _, err := saiTypeToProtoType(f.SaiType, docInfo, false)
 			if err != nil {
-				return nil, err
+				return "", err
 			}
 			msg := &protoTmplMessage{
 				Name: msgName,
@@ -80,34 +111,38 @@ func populateCommonTypes(docInfo *protoGenInfo) (*protoCommonTmplData, error) {
 			}
 			common.Lists[msgName] = msg
 		}
-		attrFields, err := createAttrs(2, docInfo, attr.readFields, true)
+		attrFields, err := createAttrs(2, docInfo, attr.ReadFields, true)
 		if err != nil {
-			return nil, err
+			return "", err
 		}
 		common.Lists[n] = &protoTmplMessage{
 			Fields:            attrFields,
-			Name:              trimSAIName(n, true, false) + "Attribute",
+			Name:              saiast.TrimSAIName(n, true, false) + "Attribute",
 			AttrsWrapperStart: "oneof {",
 			AttrsWrapperEnd:   "}",
 		}
 	}
-	return common, nil
+	var builder strings.Builder
+	if err := protoCommonTmpl.Execute(&builder, common); err != nil {
+		return "", err
+	}
+	return builder.String(), nil
 }
 
 // populateTmplDataFromFunc populatsd the protobuf template struct from a SAI function call.
-func populateTmplDataFromFunc(apis map[string]*protoAPITmplData, docInfo *protoGenInfo, funcName, entryType, operation, typeName, apiName string, isSwitchScoped bool) error {
+func populateTmplDataFromFunc(apis map[string]*protoAPITmplData, docInfo *docparser.SAIInfo, apiName string, meta *saiast.FuncMetadata) error {
 	if _, ok := apis[apiName]; !ok {
 		apis[apiName] = &protoAPITmplData{
 			Enums:       make(map[string]protoEnum),
-			ServiceName: trimSAIName(apiName, true, false),
+			ServiceName: saiast.TrimSAIName(apiName, true, false),
 		}
 	}
 
 	req := &protoTmplMessage{
-		Name: strcase.UpperCamelCase(funcName + "_request"),
+		Name: strcase.UpperCamelCase(meta.Name + "_request"),
 	}
 	resp := &protoTmplMessage{
-		Name: strcase.UpperCamelCase(funcName + "_response"),
+		Name: strcase.UpperCamelCase(meta.Name + "_response"),
 	}
 
 	idField := protoTmplField{
@@ -115,29 +150,29 @@ func populateTmplDataFromFunc(apis map[string]*protoAPITmplData, docInfo *protoG
 		ProtoType: "uint64",
 		Name:      "oid",
 	}
-	if entryType != "" {
+	if meta.Entry != "" {
 		idField = protoTmplField{
 			Index:     1,
-			ProtoType: entryType,
+			ProtoType: meta.Entry,
 			Name:      "entry",
 		}
 	}
 
 	// Handle proto generation
-	switch operation {
+	switch meta.Operation {
 	case "create":
 		requestIdx := 1
-		if isSwitchScoped {
+		if meta.IsSwitchScoped {
 			req.Fields = append(req.Fields, protoTmplField{
 				Index:     requestIdx,
 				ProtoType: "uint64",
 				Name:      "switch",
 			})
-		} else if entryType != "" {
+		} else if meta.Entry != "" {
 			req.Fields = append(req.Fields, idField)
 		}
 		requestIdx++
-		attrs, err := createAttrs(requestIdx, docInfo, docInfo.attrs[typeName].createFields, false)
+		attrs, err := createAttrs(requestIdx, docInfo, docInfo.Attrs[meta.TypeName].CreateFields, false)
 		if err != nil {
 			return err
 		}
@@ -150,37 +185,37 @@ func populateTmplDataFromFunc(apis map[string]*protoAPITmplData, docInfo *protoG
 		})
 	case "set_attribute":
 		// If there are no settable attributes, do nothing.
-		if len(docInfo.attrs[typeName].setFields) == 0 {
+		if len(docInfo.Attrs[meta.TypeName].SetFields) == 0 {
 			return nil
 		}
 		req.Fields = append(req.Fields, idField)
 		req.AttrsWrapperStart = "oneof attr {"
 		req.AttrsWrapperEnd = "}"
-		attrs, err := createAttrs(2, docInfo, docInfo.attrs[typeName].setFields, true)
+		attrs, err := createAttrs(2, docInfo, docInfo.Attrs[meta.TypeName].SetFields, true)
 		if err != nil {
 			return err
 		}
 		req.Attrs = attrs
 	case "get_attribute":
 		req.Fields = append(req.Fields, idField, protoTmplField{
-			ProtoType: strcase.UpperCamelCase(typeName + " attr"),
+			ProtoType: strcase.UpperCamelCase(meta.TypeName + " attr"),
 			Index:     2,
 			Name:      "attr_type",
 		})
 		resp.Fields = append(resp.Fields, protoTmplField{
 			Index:     1,
 			Name:      "attr",
-			ProtoType: strcase.UpperCamelCase(typeName + "Attribute"),
+			ProtoType: strcase.UpperCamelCase(meta.TypeName + "Attribute"),
 		})
 
 		// attrEnum is the special emun that describes the possible values can be set/get for the API.
 		attrEnum := protoEnum{
-			Name:   strcase.UpperCamelCase(typeName + "_ATTR"),
-			Values: []protoEnumValues{{Index: 0, Name: typeName + "_ATTR_UNSPECIFIED"}},
+			Name:   strcase.UpperCamelCase(meta.TypeName + "_ATTR"),
+			Values: []protoEnumValues{{Index: 0, Name: meta.TypeName + "_ATTR_UNSPECIFIED"}},
 		}
 
 		// For the attributes, generate code for the type if needed.
-		for i, attr := range docInfo.attrs[typeName].readFields {
+		for i, attr := range docInfo.Attrs[meta.TypeName].ReadFields {
 			attrEnum.Values = append(attrEnum.Values, protoEnumValues{
 				Index: i + 1,
 				Name:  strings.TrimPrefix(attr.EnumName, "SAI_"),
@@ -188,7 +223,7 @@ func populateTmplDataFromFunc(apis map[string]*protoAPITmplData, docInfo *protoG
 			// Handle function pointers as streaming RPCs.
 			if strings.Contains(attr.SaiType, "sai_pointer_t") {
 				funcName := strings.Split(attr.SaiType, " ")[1]
-				name := trimSAIName(strings.TrimSuffix(funcName, "_fn"), true, false)
+				name := saiast.TrimSAIName(strings.TrimSuffix(funcName, "_fn"), true, false)
 				req := &protoTmplMessage{
 					Name: strcase.UpperCamelCase(name + "_request"),
 				}
@@ -216,12 +251,12 @@ func populateTmplDataFromFunc(apis map[string]*protoAPITmplData, docInfo *protoG
 	apis[apiName].RPCs = append(apis[apiName].RPCs, protoRPC{
 		RequestName:  req.Name,
 		ResponseName: resp.Name,
-		Name:         strcase.UpperCamelCase(funcName),
+		Name:         strcase.UpperCamelCase(meta.Name),
 	})
 	return nil
 }
 
-func createAttrs(startIdx int, xmlInfo *protoGenInfo, attrs []attrTypeName, inOneof bool) ([]protoTmplField, error) {
+func createAttrs(startIdx int, xmlInfo *docparser.SAIInfo, attrs []*docparser.AttrTypeName, inOneof bool) ([]protoTmplField, error) {
 	fields := []protoTmplField{}
 	for _, attr := range attrs {
 		// Function pointers are implemented as streaming RPCs instead of settable attributes.
@@ -861,25 +896,28 @@ message FdbEventNotificationData {
 // saiTypeToProtoTypeCompound handles compound sai types (eg list of enums).
 // The map key contains the base type (eg list) and func accepts the subtype (eg an enum type)
 // and returns the full type string (eg repeated sample_enum).
-var saiTypeToProtoTypeCompound = map[string]func(subType string, xmlInfo *protoGenInfo, inOneof bool) (string, bool){
-	"sai_s32_list_t": func(subType string, xmlInfo *protoGenInfo, inOneof bool) (string, bool) {
-		if _, ok := xmlInfo.enums[subType]; !ok {
+var saiTypeToProtoTypeCompound = map[string]func(subType string, xmlInfo *docparser.SAIInfo, inOneof bool) (string, bool){
+	"sai_s32_list_t": func(subType string, xmlInfo *docparser.SAIInfo, inOneof bool) (string, bool) {
+		if _, ok := xmlInfo.Enums[subType]; !ok {
 			return "", false
 		}
 		if inOneof {
-			return trimSAIName(subType, true, false) + "List", true
+			return saiast.TrimSAIName(subType, true, false) + "List", true
 		}
-		return "repeated " + trimSAIName(subType, true, false), true
+		return "repeated " + saiast.TrimSAIName(subType, true, false), true
 	},
-	// TODO: Support these types
-	"sai_acl_field_data_t":  func(next string, xmlInfo *protoGenInfo, inOneof bool) (string, bool) { return "AclFieldData", false },
-	"sai_acl_action_data_t": func(next string, xmlInfo *protoGenInfo, inOneof bool) (string, bool) { return "AclActionData", false },
-	"sai_pointer_t":         func(next string, xmlInfo *protoGenInfo, inOneof bool) (string, bool) { return "-", false },
+	"sai_acl_field_data_t": func(next string, xmlInfo *docparser.SAIInfo, inOneof bool) (string, bool) {
+		return "AclFieldData", false
+	},
+	"sai_acl_action_data_t": func(next string, xmlInfo *docparser.SAIInfo, inOneof bool) (string, bool) {
+		return "AclActionData", false
+	},
+	"sai_pointer_t": func(next string, xmlInfo *docparser.SAIInfo, inOneof bool) (string, bool) { return "-", false }, // Noop, these are special cases.
 }
 
 // saiTypeToProtoType returns the protobuf type string for a SAI type.
 // example: sai_u8_list_t -> repeated uint32
-func saiTypeToProtoType(saiType string, xmlInfo *protoGenInfo, inOneof bool) (string, bool, error) {
+func saiTypeToProtoType(saiType string, xmlInfo *docparser.SAIInfo, inOneof bool) (string, bool, error) {
 	saiType = strings.TrimPrefix(saiType, "const ")
 
 	if pt, ok := saiTypeToProto[saiType]; ok {
@@ -891,8 +929,8 @@ func saiTypeToProtoType(saiType string, xmlInfo *protoGenInfo, inOneof bool) (st
 		}
 		return pt.ProtoType, false, nil
 	}
-	if _, ok := xmlInfo.enums[saiType]; ok {
-		return trimSAIName(saiType, true, false), false, nil
+	if _, ok := xmlInfo.Enums[saiType]; ok {
+		return saiast.TrimSAIName(saiType, true, false), false, nil
 	}
 
 	if splits := strings.Split(saiType, " "); len(splits) == 2 {
@@ -905,17 +943,4 @@ func saiTypeToProtoType(saiType string, xmlInfo *protoGenInfo, inOneof bool) (st
 	}
 
 	return "", false, fmt.Errorf("unknown sai type: %v", saiType)
-}
-
-// trimSAIName trims sai_ prefix and _t from the string
-func trimSAIName(name string, makeCamel, makeUpper bool) string {
-	str := strings.TrimSuffix(strings.TrimPrefix(name, "sai_"), "_t")
-	if makeCamel {
-		str = strcase.UpperCamelCase(str)
-	}
-	if makeUpper {
-		str = strings.ToUpper(str)
-	}
-
-	return str
 }

@@ -1,0 +1,167 @@
+
+syntax = "proto3";
+
+package lemming.dataplane.sai;
+
+import "dataplane/standalone/proto/common.proto";
+
+option go_package = "github.com/openconfig/lemming/proto/dataplane/sai";
+
+enum VlanAttr {
+  VLAN_ATTR_UNSPECIFIED = 0;
+  VLAN_ATTR_VLAN_ID = 1;
+  VLAN_ATTR_MEMBER_LIST = 2;
+  VLAN_ATTR_MAX_LEARNED_ADDRESSES = 3;
+  VLAN_ATTR_STP_INSTANCE = 4;
+  VLAN_ATTR_LEARN_DISABLE = 5;
+  VLAN_ATTR_IPV4_MCAST_LOOKUP_KEY_TYPE = 6;
+  VLAN_ATTR_IPV6_MCAST_LOOKUP_KEY_TYPE = 7;
+  VLAN_ATTR_UNKNOWN_NON_IP_MCAST_OUTPUT_GROUP_ID = 8;
+  VLAN_ATTR_UNKNOWN_IPV4_MCAST_OUTPUT_GROUP_ID = 9;
+  VLAN_ATTR_UNKNOWN_IPV6_MCAST_OUTPUT_GROUP_ID = 10;
+  VLAN_ATTR_UNKNOWN_LINKLOCAL_MCAST_OUTPUT_GROUP_ID = 11;
+  VLAN_ATTR_INGRESS_ACL = 12;
+  VLAN_ATTR_EGRESS_ACL = 13;
+  VLAN_ATTR_META_DATA = 14;
+  VLAN_ATTR_UNKNOWN_UNICAST_FLOOD_CONTROL_TYPE = 15;
+  VLAN_ATTR_UNKNOWN_UNICAST_FLOOD_GROUP = 16;
+  VLAN_ATTR_UNKNOWN_MULTICAST_FLOOD_CONTROL_TYPE = 17;
+  VLAN_ATTR_UNKNOWN_MULTICAST_FLOOD_GROUP = 18;
+  VLAN_ATTR_BROADCAST_FLOOD_CONTROL_TYPE = 19;
+  VLAN_ATTR_BROADCAST_FLOOD_GROUP = 20;
+  VLAN_ATTR_CUSTOM_IGMP_SNOOPING_ENABLE = 21;
+  VLAN_ATTR_TAM_OBJECT = 22;
+}
+
+enum VlanMemberAttr {
+  VLAN_MEMBER_ATTR_UNSPECIFIED = 0;
+  VLAN_MEMBER_ATTR_VLAN_ID = 1;
+  VLAN_MEMBER_ATTR_BRIDGE_PORT_ID = 2;
+  VLAN_MEMBER_ATTR_VLAN_TAGGING_MODE = 3;
+}
+
+message CreateVlanRequest {
+  uint64 switch = 1;
+
+  uint32 vlan_id = 2;
+  uint32 max_learned_addresses = 3;
+  uint64 stp_instance = 4;
+  bool learn_disable = 5;
+  VlanMcastLookupKeyType ipv4_mcast_lookup_key_type = 6;
+  VlanMcastLookupKeyType ipv6_mcast_lookup_key_type = 7;
+  uint64 unknown_non_ip_mcast_output_group_id = 8;
+  uint64 unknown_ipv4_mcast_output_group_id = 9;
+  uint64 unknown_ipv6_mcast_output_group_id = 10;
+  uint64 unknown_linklocal_mcast_output_group_id = 11;
+  uint64 ingress_acl = 12;
+  uint64 egress_acl = 13;
+  uint32 meta_data = 14;
+  VlanFloodControlType unknown_unicast_flood_control_type = 15;
+  uint64 unknown_unicast_flood_group = 16;
+  VlanFloodControlType unknown_multicast_flood_control_type = 17;
+  uint64 unknown_multicast_flood_group = 18;
+  VlanFloodControlType broadcast_flood_control_type = 19;
+  uint64 broadcast_flood_group = 20;
+  bool custom_igmp_snooping_enable = 21;
+  repeated uint64 tam_object = 22;
+}
+
+message CreateVlanResponse {
+  uint64 oid = 1;
+}
+
+message RemoveVlanRequest {
+  uint64 oid = 1;
+}
+
+message RemoveVlanResponse {}
+
+message SetVlanAttributeRequest {
+  uint64 oid = 1;
+  oneof attr {
+    uint32 max_learned_addresses = 2;
+    uint64 stp_instance = 3;
+    bool learn_disable = 4;
+    VlanMcastLookupKeyType ipv4_mcast_lookup_key_type = 5;
+    VlanMcastLookupKeyType ipv6_mcast_lookup_key_type = 6;
+    uint64 unknown_non_ip_mcast_output_group_id = 7;
+    uint64 unknown_ipv4_mcast_output_group_id = 8;
+    uint64 unknown_ipv6_mcast_output_group_id = 9;
+    uint64 unknown_linklocal_mcast_output_group_id = 10;
+    uint64 ingress_acl = 11;
+    uint64 egress_acl = 12;
+    uint32 meta_data = 13;
+    VlanFloodControlType unknown_unicast_flood_control_type = 14;
+    uint64 unknown_unicast_flood_group = 15;
+    VlanFloodControlType unknown_multicast_flood_control_type = 16;
+    uint64 unknown_multicast_flood_group = 17;
+    VlanFloodControlType broadcast_flood_control_type = 18;
+    uint64 broadcast_flood_group = 19;
+    bool custom_igmp_snooping_enable = 20;
+    Uint64List tam_object = 21;
+  }
+}
+
+message SetVlanAttributeResponse {}
+
+message GetVlanAttributeRequest {
+  uint64 oid = 1;
+  VlanAttr attr_type = 2;
+}
+
+message GetVlanAttributeResponse {
+  VlanAttribute attr = 1;
+}
+
+message CreateVlanMemberRequest {
+  uint64 switch = 1;
+
+  uint64 vlan_id = 2;
+  uint64 bridge_port_id = 3;
+  VlanTaggingMode vlan_tagging_mode = 4;
+}
+
+message CreateVlanMemberResponse {
+  uint64 oid = 1;
+}
+
+message RemoveVlanMemberRequest {
+  uint64 oid = 1;
+}
+
+message RemoveVlanMemberResponse {}
+
+message SetVlanMemberAttributeRequest {
+  uint64 oid = 1;
+  oneof attr {
+    VlanTaggingMode vlan_tagging_mode = 2;
+  }
+}
+
+message SetVlanMemberAttributeResponse {}
+
+message GetVlanMemberAttributeRequest {
+  uint64 oid = 1;
+  VlanMemberAttr attr_type = 2;
+}
+
+message GetVlanMemberAttributeResponse {
+  VlanMemberAttribute attr = 1;
+}
+
+service Vlan {
+  rpc CreateVlan(CreateVlanRequest) returns (CreateVlanResponse) {}
+  rpc RemoveVlan(RemoveVlanRequest) returns (RemoveVlanResponse) {}
+  rpc SetVlanAttribute(SetVlanAttributeRequest)
+      returns (SetVlanAttributeResponse) {}
+  rpc GetVlanAttribute(GetVlanAttributeRequest)
+      returns (GetVlanAttributeResponse) {}
+  rpc CreateVlanMember(CreateVlanMemberRequest)
+      returns (CreateVlanMemberResponse) {}
+  rpc RemoveVlanMember(RemoveVlanMemberRequest)
+      returns (RemoveVlanMemberResponse) {}
+  rpc SetVlanMemberAttribute(SetVlanMemberAttributeRequest)
+      returns (SetVlanMemberAttributeResponse) {}
+  rpc GetVlanMemberAttribute(GetVlanMemberAttributeRequest)
+      returns (GetVlanMemberAttributeResponse) {}
+}

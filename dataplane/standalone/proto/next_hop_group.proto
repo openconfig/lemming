@@ -1,0 +1,186 @@
+
+syntax = "proto3";
+
+package lemming.dataplane.sai;
+
+import "dataplane/standalone/proto/common.proto";
+
+option go_package = "github.com/openconfig/lemming/proto/dataplane/sai";
+
+enum NextHopGroupAttr {
+  NEXT_HOP_GROUP_ATTR_UNSPECIFIED = 0;
+  NEXT_HOP_GROUP_ATTR_NEXT_HOP_COUNT = 1;
+  NEXT_HOP_GROUP_ATTR_NEXT_HOP_MEMBER_LIST = 2;
+  NEXT_HOP_GROUP_ATTR_TYPE = 3;
+  NEXT_HOP_GROUP_ATTR_SET_SWITCHOVER = 4;
+  NEXT_HOP_GROUP_ATTR_COUNTER_ID = 5;
+  NEXT_HOP_GROUP_ATTR_CONFIGURED_SIZE = 6;
+  NEXT_HOP_GROUP_ATTR_REAL_SIZE = 7;
+  NEXT_HOP_GROUP_ATTR_SELECTION_MAP = 8;
+}
+
+enum NextHopGroupMapAttr {
+  NEXT_HOP_GROUP_MAP_ATTR_UNSPECIFIED = 0;
+  NEXT_HOP_GROUP_MAP_ATTR_TYPE = 1;
+  NEXT_HOP_GROUP_MAP_ATTR_MAP_TO_VALUE_LIST = 2;
+}
+
+enum NextHopGroupMemberAttr {
+  NEXT_HOP_GROUP_MEMBER_ATTR_UNSPECIFIED = 0;
+  NEXT_HOP_GROUP_MEMBER_ATTR_NEXT_HOP_GROUP_ID = 1;
+  NEXT_HOP_GROUP_MEMBER_ATTR_NEXT_HOP_ID = 2;
+  NEXT_HOP_GROUP_MEMBER_ATTR_WEIGHT = 3;
+  NEXT_HOP_GROUP_MEMBER_ATTR_CONFIGURED_ROLE = 4;
+  NEXT_HOP_GROUP_MEMBER_ATTR_OBSERVED_ROLE = 5;
+  NEXT_HOP_GROUP_MEMBER_ATTR_MONITORED_OBJECT = 6;
+  NEXT_HOP_GROUP_MEMBER_ATTR_INDEX = 7;
+  NEXT_HOP_GROUP_MEMBER_ATTR_SEQUENCE_ID = 8;
+  NEXT_HOP_GROUP_MEMBER_ATTR_COUNTER_ID = 9;
+}
+
+message CreateNextHopGroupRequest {
+  uint64 switch = 1;
+
+  NextHopGroupType type = 2;
+  bool set_switchover = 3;
+  uint64 counter_id = 4;
+  uint32 configured_size = 5;
+  uint64 selection_map = 6;
+}
+
+message CreateNextHopGroupResponse {
+  uint64 oid = 1;
+}
+
+message RemoveNextHopGroupRequest {
+  uint64 oid = 1;
+}
+
+message RemoveNextHopGroupResponse {}
+
+message SetNextHopGroupAttributeRequest {
+  uint64 oid = 1;
+  oneof attr {
+    bool set_switchover = 2;
+    uint64 counter_id = 3;
+    uint64 selection_map = 4;
+  }
+}
+
+message SetNextHopGroupAttributeResponse {}
+
+message GetNextHopGroupAttributeRequest {
+  uint64 oid = 1;
+  NextHopGroupAttr attr_type = 2;
+}
+
+message GetNextHopGroupAttributeResponse {
+  NextHopGroupAttribute attr = 1;
+}
+
+message CreateNextHopGroupMemberRequest {
+  uint64 switch = 1;
+
+  uint64 next_hop_group_id = 2;
+  uint64 next_hop_id = 3;
+  uint32 weight = 4;
+  NextHopGroupMemberConfiguredRole configured_role = 5;
+  uint64 monitored_object = 6;
+  uint32 index = 7;
+  uint32 sequence_id = 8;
+  uint64 counter_id = 9;
+}
+
+message CreateNextHopGroupMemberResponse {
+  uint64 oid = 1;
+}
+
+message RemoveNextHopGroupMemberRequest {
+  uint64 oid = 1;
+}
+
+message RemoveNextHopGroupMemberResponse {}
+
+message SetNextHopGroupMemberAttributeRequest {
+  uint64 oid = 1;
+  oneof attr {
+    uint64 next_hop_id = 2;
+    uint32 weight = 3;
+    uint64 monitored_object = 4;
+    uint32 sequence_id = 5;
+    uint64 counter_id = 6;
+  }
+}
+
+message SetNextHopGroupMemberAttributeResponse {}
+
+message GetNextHopGroupMemberAttributeRequest {
+  uint64 oid = 1;
+  NextHopGroupMemberAttr attr_type = 2;
+}
+
+message GetNextHopGroupMemberAttributeResponse {
+  NextHopGroupMemberAttribute attr = 1;
+}
+
+message CreateNextHopGroupMapRequest {
+  uint64 switch = 1;
+
+  NextHopGroupMapType type = 2;
+  repeated UintMap map_to_value_list = 3;
+}
+
+message CreateNextHopGroupMapResponse {
+  uint64 oid = 1;
+}
+
+message RemoveNextHopGroupMapRequest {
+  uint64 oid = 1;
+}
+
+message RemoveNextHopGroupMapResponse {}
+
+message SetNextHopGroupMapAttributeRequest {
+  uint64 oid = 1;
+  oneof attr {
+    UintMapList map_to_value_list = 2;
+  }
+}
+
+message SetNextHopGroupMapAttributeResponse {}
+
+message GetNextHopGroupMapAttributeRequest {
+  uint64 oid = 1;
+  NextHopGroupMapAttr attr_type = 2;
+}
+
+message GetNextHopGroupMapAttributeResponse {
+  NextHopGroupMapAttribute attr = 1;
+}
+
+service NextHopGroup {
+  rpc CreateNextHopGroup(CreateNextHopGroupRequest)
+      returns (CreateNextHopGroupResponse) {}
+  rpc RemoveNextHopGroup(RemoveNextHopGroupRequest)
+      returns (RemoveNextHopGroupResponse) {}
+  rpc SetNextHopGroupAttribute(SetNextHopGroupAttributeRequest)
+      returns (SetNextHopGroupAttributeResponse) {}
+  rpc GetNextHopGroupAttribute(GetNextHopGroupAttributeRequest)
+      returns (GetNextHopGroupAttributeResponse) {}
+  rpc CreateNextHopGroupMember(CreateNextHopGroupMemberRequest)
+      returns (CreateNextHopGroupMemberResponse) {}
+  rpc RemoveNextHopGroupMember(RemoveNextHopGroupMemberRequest)
+      returns (RemoveNextHopGroupMemberResponse) {}
+  rpc SetNextHopGroupMemberAttribute(SetNextHopGroupMemberAttributeRequest)
+      returns (SetNextHopGroupMemberAttributeResponse) {}
+  rpc GetNextHopGroupMemberAttribute(GetNextHopGroupMemberAttributeRequest)
+      returns (GetNextHopGroupMemberAttributeResponse) {}
+  rpc CreateNextHopGroupMap(CreateNextHopGroupMapRequest)
+      returns (CreateNextHopGroupMapResponse) {}
+  rpc RemoveNextHopGroupMap(RemoveNextHopGroupMapRequest)
+      returns (RemoveNextHopGroupMapResponse) {}
+  rpc SetNextHopGroupMapAttribute(SetNextHopGroupMapAttributeRequest)
+      returns (SetNextHopGroupMapAttributeResponse) {}
+  rpc GetNextHopGroupMapAttribute(GetNextHopGroupMapAttributeRequest)
+      returns (GetNextHopGroupMapAttributeResponse) {}
+}

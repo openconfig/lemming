@@ -50,6 +50,4 @@ class Port : public APIBase {
   bool portExists;
 };
 
-
-
 #endif  // DATAPLANE_STANDALONE_PORT_H_

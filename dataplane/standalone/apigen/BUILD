@@ -5,14 +5,13 @@ go_library(
     srcs = [
         "apigen.go",
         "ccgen.go",
-        "protogen.go",
-        "xml.go",
     ],
     importpath = "github.com/openconfig/lemming/dataplane/standalone/apigen",
     visibility = ["//visibility:private"],
     deps = [
-        "@com_github_golang_glog//:glog",
-        "@com_github_stoewer_go_strcase//:go-strcase",
+        "//dataplane/standalone/apigen/docparser",
+        "//dataplane/standalone/apigen/protogen",
+        "//dataplane/standalone/apigen/saiast",
         "@org_modernc_cc_v4//:cc",
     ],
 )

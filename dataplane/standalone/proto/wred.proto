@@ -1,0 +1,131 @@
+
+syntax = "proto3";
+
+package lemming.dataplane.sai;
+
+import "dataplane/standalone/proto/common.proto";
+
+option go_package = "github.com/openconfig/lemming/proto/dataplane/sai";
+
+enum WredAttr {
+  WRED_ATTR_UNSPECIFIED = 0;
+  WRED_ATTR_GREEN_ENABLE = 1;
+  WRED_ATTR_GREEN_MIN_THRESHOLD = 2;
+  WRED_ATTR_GREEN_MAX_THRESHOLD = 3;
+  WRED_ATTR_GREEN_DROP_PROBABILITY = 4;
+  WRED_ATTR_YELLOW_ENABLE = 5;
+  WRED_ATTR_YELLOW_MIN_THRESHOLD = 6;
+  WRED_ATTR_YELLOW_MAX_THRESHOLD = 7;
+  WRED_ATTR_YELLOW_DROP_PROBABILITY = 8;
+  WRED_ATTR_RED_ENABLE = 9;
+  WRED_ATTR_RED_MIN_THRESHOLD = 10;
+  WRED_ATTR_RED_MAX_THRESHOLD = 11;
+  WRED_ATTR_RED_DROP_PROBABILITY = 12;
+  WRED_ATTR_WEIGHT = 13;
+  WRED_ATTR_ECN_MARK_MODE = 14;
+  WRED_ATTR_ECN_GREEN_MIN_THRESHOLD = 15;
+  WRED_ATTR_ECN_GREEN_MAX_THRESHOLD = 16;
+  WRED_ATTR_ECN_GREEN_MARK_PROBABILITY = 17;
+  WRED_ATTR_ECN_YELLOW_MIN_THRESHOLD = 18;
+  WRED_ATTR_ECN_YELLOW_MAX_THRESHOLD = 19;
+  WRED_ATTR_ECN_YELLOW_MARK_PROBABILITY = 20;
+  WRED_ATTR_ECN_RED_MIN_THRESHOLD = 21;
+  WRED_ATTR_ECN_RED_MAX_THRESHOLD = 22;
+  WRED_ATTR_ECN_RED_MARK_PROBABILITY = 23;
+  WRED_ATTR_ECN_COLOR_UNAWARE_MIN_THRESHOLD = 24;
+  WRED_ATTR_ECN_COLOR_UNAWARE_MAX_THRESHOLD = 25;
+  WRED_ATTR_ECN_COLOR_UNAWARE_MARK_PROBABILITY = 26;
+}
+
+message CreateWredRequest {
+  uint64 switch = 1;
+
+  bool green_enable = 2;
+  uint32 green_min_threshold = 3;
+  uint32 green_max_threshold = 4;
+  uint32 green_drop_probability = 5;
+  bool yellow_enable = 6;
+  uint32 yellow_min_threshold = 7;
+  uint32 yellow_max_threshold = 8;
+  uint32 yellow_drop_probability = 9;
+  bool red_enable = 10;
+  uint32 red_min_threshold = 11;
+  uint32 red_max_threshold = 12;
+  uint32 red_drop_probability = 13;
+  uint32 weight = 14;
+  EcnMarkMode ecn_mark_mode = 15;
+  uint32 ecn_green_min_threshold = 16;
+  uint32 ecn_green_max_threshold = 17;
+  uint32 ecn_green_mark_probability = 18;
+  uint32 ecn_yellow_min_threshold = 19;
+  uint32 ecn_yellow_max_threshold = 20;
+  uint32 ecn_yellow_mark_probability = 21;
+  uint32 ecn_red_min_threshold = 22;
+  uint32 ecn_red_max_threshold = 23;
+  uint32 ecn_red_mark_probability = 24;
+  uint32 ecn_color_unaware_min_threshold = 25;
+  uint32 ecn_color_unaware_max_threshold = 26;
+  uint32 ecn_color_unaware_mark_probability = 27;
+}
+
+message CreateWredResponse {
+  uint64 oid = 1;
+}
+
+message RemoveWredRequest {
+  uint64 oid = 1;
+}
+
+message RemoveWredResponse {}
+
+message SetWredAttributeRequest {
+  uint64 oid = 1;
+  oneof attr {
+    bool green_enable = 2;
+    uint32 green_min_threshold = 3;
+    uint32 green_max_threshold = 4;
+    uint32 green_drop_probability = 5;
+    bool yellow_enable = 6;
+    uint32 yellow_min_threshold = 7;
+    uint32 yellow_max_threshold = 8;
+    uint32 yellow_drop_probability = 9;
+    bool red_enable = 10;
+    uint32 red_min_threshold = 11;
+    uint32 red_max_threshold = 12;
+    uint32 red_drop_probability = 13;
+    uint32 weight = 14;
+    EcnMarkMode ecn_mark_mode = 15;
+    uint32 ecn_green_min_threshold = 16;
+    uint32 ecn_green_max_threshold = 17;
+    uint32 ecn_green_mark_probability = 18;
+    uint32 ecn_yellow_min_threshold = 19;
+    uint32 ecn_yellow_max_threshold = 20;
+    uint32 ecn_yellow_mark_probability = 21;
+    uint32 ecn_red_min_threshold = 22;
+    uint32 ecn_red_max_threshold = 23;
+    uint32 ecn_red_mark_probability = 24;
+    uint32 ecn_color_unaware_min_threshold = 25;
+    uint32 ecn_color_unaware_max_threshold = 26;
+    uint32 ecn_color_unaware_mark_probability = 27;
+  }
+}
+
+message SetWredAttributeResponse {}
+
+message GetWredAttributeRequest {
+  uint64 oid = 1;
+  WredAttr attr_type = 2;
+}
+
+message GetWredAttributeResponse {
+  WredAttribute attr = 1;
+}
+
+service Wred {
+  rpc CreateWred(CreateWredRequest) returns (CreateWredResponse) {}
+  rpc RemoveWred(RemoveWredRequest) returns (RemoveWredResponse) {}
+  rpc SetWredAttribute(SetWredAttributeRequest)
+      returns (SetWredAttributeResponse) {}
+  rpc GetWredAttribute(GetWredAttributeRequest)
+      returns (GetWredAttributeResponse) {}
+}
