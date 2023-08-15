@@ -306,8 +306,9 @@ type OTGBGPPrefix struct {
 	PrefixLength uint32
 }
 
-func checkOTGBGP4Prefix(t *testing.T, otg *otg.OTG, config gosnappi.Config, expectedOTGBGPPrefix OTGBGPPrefix) bool {
-	_, ok := gnmi.WatchAll(t, otg, gnmi.OTG().BgpPeer(expectedOTGBGPPrefix.PeerName).UnicastIpv4PrefixAny().State(), time.Minute, func(v *ygnmi.Value[*otgtelemetry.BgpPeer_UnicastIpv4Prefix]) bool {
+func checkOTGBGP4Prefix(t *testing.T, otg *otg.OTG, config gosnappi.Config, expectedOTGBGPPrefix OTGBGPPrefix) {
+	t.Helper()
+	val, ok := gnmi.WatchAll(t, otg, gnmi.OTG().BgpPeer(expectedOTGBGPPrefix.PeerName).UnicastIpv4PrefixAny().State(), time.Minute, func(v *ygnmi.Value[*otgtelemetry.BgpPeer_UnicastIpv4Prefix]) bool {
 		bgpPrefix, ok := v.Val()
 		if ok && bgpPrefix.Address != nil && bgpPrefix.GetAddress() == expectedOTGBGPPrefix.Address &&
 			bgpPrefix.PrefixLength != nil && bgpPrefix.GetPrefixLength() == expectedOTGBGPPrefix.PrefixLength {
@@ -315,12 +316,14 @@ func checkOTGBGP4Prefix(t *testing.T, otg *otg.OTG, config gosnappi.Config, expe
 		}
 		return false
 	}).Await(t)
-
-	return ok
+	if !ok {
+		t.Fatalf("OTG BGP didn't get expected prefix: got %v, want %v", val, expectedOTGBGPPrefix)
+	}
 }
 
-func checkOTGBGP6Prefix(t *testing.T, otg *otg.OTG, config gosnappi.Config, expectedOTGBGPPrefix OTGBGPPrefix) bool {
-	_, ok := gnmi.WatchAll(t, otg, gnmi.OTG().BgpPeer(expectedOTGBGPPrefix.PeerName).UnicastIpv6PrefixAny().State(), time.Minute, func(v *ygnmi.Value[*otgtelemetry.BgpPeer_UnicastIpv6Prefix]) bool {
+func checkOTGBGP6Prefix(t *testing.T, otg *otg.OTG, config gosnappi.Config, expectedOTGBGPPrefix OTGBGPPrefix) {
+	t.Helper()
+	val, ok := gnmi.WatchAll(t, otg, gnmi.OTG().BgpPeer(expectedOTGBGPPrefix.PeerName).UnicastIpv6PrefixAny().State(), time.Minute, func(v *ygnmi.Value[*otgtelemetry.BgpPeer_UnicastIpv6Prefix]) bool {
 		bgpPrefix, ok := v.Val()
 		if ok && bgpPrefix.Address != nil && bgpPrefix.GetAddress() == expectedOTGBGPPrefix.Address &&
 			bgpPrefix.PrefixLength != nil && bgpPrefix.GetPrefixLength() == expectedOTGBGPPrefix.PrefixLength {
@@ -328,23 +331,8 @@ func checkOTGBGP6Prefix(t *testing.T, otg *otg.OTG, config gosnappi.Config, expe
 		}
 		return false
 	}).Await(t)
-
-	return ok
-}
-
-func waitFor(fn func() bool, t testing.TB) {
-	start := time.Now()
-	for {
-		done := fn()
-		if done {
-			t.Logf("Expected BGP Prefix received")
-			break
-		}
-		if time.Since(start) > time.Minute {
-			t.Errorf("Timeout while waiting for expected stats...")
-			break
-		}
-		time.Sleep(500 * time.Millisecond)
+	if !ok {
+		t.Fatalf("OTG BGP didn't get expected prefix: got %v, want %v", val, expectedOTGBGPPrefix)
 	}
 }
 
@@ -535,15 +523,14 @@ func TestBGP(t *testing.T) {
 					} else {
 						expectedOTGBGPPrefix = OTGBGPPrefix{PeerName: "port2.dev.BGP6.peer", Address: addr, PrefixLength: uint32(prefixLen)}
 					}
-					waitFor(func() bool { return checkOTGBGP4Prefix(t, otg, otgConfig, expectedOTGBGPPrefix) }, t)
-					// verifyOTGBGP4Prefix(t, otg, otgConfig, expectedOTGBGPPrefix)
+					checkOTGBGP4Prefix(t, otg, otgConfig, expectedOTGBGPPrefix)
 				}
 				if prefix.v6 != "" {
 					t.Logf("Checking for BGP Prefix %v", prefix.v6)
 					addr := strings.Split(prefix.v6, "/")[0]
 					prefixLen, _ := strconv.Atoi(strings.Split(prefix.v6, "/")[1])
 					expectedOTGBGPPrefix = OTGBGPPrefix{PeerName: "port2.dev.BGP6.peer", Address: addr, PrefixLength: uint32(prefixLen)}
-					waitFor(func() bool { return checkOTGBGP6Prefix(t, otg, otgConfig, expectedOTGBGPPrefix) }, t)
+					checkOTGBGP6Prefix(t, otg, otgConfig, expectedOTGBGPPrefix)
 				}
 			}
 		})
