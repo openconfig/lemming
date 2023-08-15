@@ -56,9 +56,15 @@ func TestPrefixSet(t *testing.T) {
 			Replace(t, dut2, prefix1Path.Config(), prefix1)
 
 			policyName := "def1"
-			Replace(t, dut2, ocpath.Root().RoutingPolicy().PolicyDefinition(policyName).Statement("stmt1").Conditions().MatchPrefixSet().PrefixSet().Config(), prefixSetName)
-			Replace(t, dut2, ocpath.Root().RoutingPolicy().PolicyDefinition(policyName).Statement("stmt1").Conditions().MatchPrefixSet().MatchSetOptions().Config(), oc.RoutingPolicy_MatchSetOptionsRestrictedType_ANY)
-			Replace(t, dut2, ocpath.Root().RoutingPolicy().PolicyDefinition(policyName).Statement("stmt1").Actions().PolicyResult().Config(), oc.RoutingPolicy_PolicyResultType_REJECT_ROUTE)
+			policy := &oc.RoutingPolicy_PolicyDefinition_Statement_OrderedMap{}
+			stmt, err := policy.AppendNew("stmt1")
+			if err != nil {
+				t.Fatalf("Cannot append new BGP policy statement: %v", err)
+			}
+			stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetPrefixSet(prefixSetName)
+			stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.RoutingPolicy_MatchSetOptionsRestrictedType_ANY)
+			stmt.GetOrCreateActions().SetPolicyResult(oc.RoutingPolicy_PolicyResultType_REJECT_ROUTE)
+			Replace(t, dut2, ocpath.Root().RoutingPolicy().PolicyDefinition(policyName).Config(), &oc.RoutingPolicy_PolicyDefinition{Statement: policy})
 			Replace(t, dut2, bgp.BGPPath.Neighbor(dut3spec.RouterID).ApplyPolicy().ExportPolicy().Config(), []string{policyName})
 		},
 	}

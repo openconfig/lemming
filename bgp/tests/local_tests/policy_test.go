@@ -75,7 +75,7 @@ func testPolicy(t *testing.T, testspec PolicyTestCase, installPolicyAfterRoutes 
 	establishSessionPair(t, dut2, dut3, dut2spec, dut3spec)
 
 	for _, routeTest := range testspec.spec.RouteTests {
-		// Install both prefixes into DUT2.
+		// Install all test routes into DUT1.
 		route := &oc.NetworkInstance_Protocol_Static{
 			Prefix: ygot.String(routeTest.GetInput().GetReachPrefix()),
 			NextHop: map[string]*oc.NetworkInstance_Protocol_Static_NextHop{
