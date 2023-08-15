@@ -19,7 +19,14 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"runtime"
 	"sync"
+
+	"github.com/spf13/viper"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/reflection"
+	"k8s.io/klog/v2"
 
 	"github.com/openconfig/lemming/bgp"
 	"github.com/openconfig/lemming/dataplane"
@@ -32,11 +39,6 @@ import (
 	fgribi "github.com/openconfig/lemming/gribi"
 	fp4rt "github.com/openconfig/lemming/p4rt"
 	"github.com/openconfig/lemming/sysrib"
-	"github.com/spf13/viper"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/reflection"
-	"k8s.io/klog/v2"
 
 	log "github.com/golang/glog"
 )
@@ -151,6 +153,10 @@ func WithTransportCreds(c credentials.TransportCredentials) Option {
 func New(targetName, zapiURL string, opts ...Option) (*Device, error) {
 	var dplane *dataplane.Dataplane
 	var recs []reconciler.Reconciler
+
+	if viper.GetBool("enable_dataplane") && runtime.GOOS != "linux" {
+		return nil, fmt.Errorf("dataplane only supported on linux, GOOS is %s", runtime.GOOS)
+	}
 
 	if viper.GetBool("enable_dataplane") {
 		log.Info("enabling dataplane")
