@@ -29,7 +29,7 @@ import (
 )
 
 // Generates returns a map of files containing the generated code code.
-func Generate(doc *docparser.Info, sai *saiast.SAIAPI) (map[string]string, error) {
+func Generate(doc *docparser.SAIInfo, sai *saiast.SAIAPI) (map[string]string, error) {
 	files := map[string]string{}
 	common, err := generateCommonTypes(doc)
 	if err != nil {
@@ -41,7 +41,7 @@ func Generate(doc *docparser.Info, sai *saiast.SAIAPI) (map[string]string, error
 	for _, iface := range sai.Ifaces {
 		apiName := strings.TrimSuffix(strings.TrimPrefix(iface.Name, "sai_"), "_api_t")
 		for _, fn := range iface.Funcs {
-			meta := saiast.GetFuncMeta(fn, sai)
+			meta := sai.GetFuncMeta(fn)
 			if err := populateTmplDataFromFunc(apis, doc, apiName, meta); err != nil {
 				return nil, err
 			}
@@ -57,7 +57,7 @@ func Generate(doc *docparser.Info, sai *saiast.SAIAPI) (map[string]string, error
 
 // generateCommonTypes returns all contents of the common proto.
 // These all reside in the common.proto file to simplify handling imports.
-func generateCommonTypes(docInfo *docparser.Info) (string, error) {
+func generateCommonTypes(docInfo *docparser.SAIInfo) (string, error) {
 	common := &protoCommonTmplData{
 		Enums: map[string]*protoEnum{},
 		Lists: map[string]*protoTmplMessage{},
@@ -130,7 +130,7 @@ func generateCommonTypes(docInfo *docparser.Info) (string, error) {
 }
 
 // populateTmplDataFromFunc populatsd the protobuf template struct from a SAI function call.
-func populateTmplDataFromFunc(apis map[string]*protoAPITmplData, docInfo *docparser.Info, apiName string, meta *saiast.FuncMetadata) error {
+func populateTmplDataFromFunc(apis map[string]*protoAPITmplData, docInfo *docparser.SAIInfo, apiName string, meta *saiast.FuncMetadata) error {
 	if _, ok := apis[apiName]; !ok {
 		apis[apiName] = &protoAPITmplData{
 			Enums:       make(map[string]protoEnum),
@@ -256,7 +256,7 @@ func populateTmplDataFromFunc(apis map[string]*protoAPITmplData, docInfo *docpar
 	return nil
 }
 
-func createAttrs(startIdx int, xmlInfo *docparser.Info, attrs []*docparser.AttrTypeName, inOneof bool) ([]protoTmplField, error) {
+func createAttrs(startIdx int, xmlInfo *docparser.SAIInfo, attrs []*docparser.AttrTypeName, inOneof bool) ([]protoTmplField, error) {
 	fields := []protoTmplField{}
 	for _, attr := range attrs {
 		// Function pointers are implemented as streaming RPCs instead of settable attributes.
@@ -896,8 +896,8 @@ message FdbEventNotificationData {
 // saiTypeToProtoTypeCompound handles compound sai types (eg list of enums).
 // The map key contains the base type (eg list) and func accepts the subtype (eg an enum type)
 // and returns the full type string (eg repeated sample_enum).
-var saiTypeToProtoTypeCompound = map[string]func(subType string, xmlInfo *docparser.Info, inOneof bool) (string, bool){
-	"sai_s32_list_t": func(subType string, xmlInfo *docparser.Info, inOneof bool) (string, bool) {
+var saiTypeToProtoTypeCompound = map[string]func(subType string, xmlInfo *docparser.SAIInfo, inOneof bool) (string, bool){
+	"sai_s32_list_t": func(subType string, xmlInfo *docparser.SAIInfo, inOneof bool) (string, bool) {
 		if _, ok := xmlInfo.Enums[subType]; !ok {
 			return "", false
 		}
@@ -906,14 +906,18 @@ var saiTypeToProtoTypeCompound = map[string]func(subType string, xmlInfo *docpar
 		}
 		return "repeated " + saiast.TrimSAIName(subType, true, false), true
 	},
-	"sai_acl_field_data_t":  func(next string, xmlInfo *docparser.Info, inOneof bool) (string, bool) { return "AclFieldData", false },
-	"sai_acl_action_data_t": func(next string, xmlInfo *docparser.Info, inOneof bool) (string, bool) { return "AclActionData", false },
-	"sai_pointer_t":         func(next string, xmlInfo *docparser.Info, inOneof bool) (string, bool) { return "-", false }, // Noop, these are special cases.
+	"sai_acl_field_data_t": func(next string, xmlInfo *docparser.SAIInfo, inOneof bool) (string, bool) {
+		return "AclFieldData", false
+	},
+	"sai_acl_action_data_t": func(next string, xmlInfo *docparser.SAIInfo, inOneof bool) (string, bool) {
+		return "AclActionData", false
+	},
+	"sai_pointer_t": func(next string, xmlInfo *docparser.SAIInfo, inOneof bool) (string, bool) { return "-", false }, // Noop, these are special cases.
 }
 
 // saiTypeToProtoType returns the protobuf type string for a SAI type.
 // example: sai_u8_list_t -> repeated uint32
-func saiTypeToProtoType(saiType string, xmlInfo *docparser.Info, inOneof bool) (string, bool, error) {
+func saiTypeToProtoType(saiType string, xmlInfo *docparser.SAIInfo, inOneof bool) (string, bool, error) {
 	saiType = strings.TrimPrefix(saiType, "const ")
 
 	if pt, ok := saiTypeToProto[saiType]; ok {

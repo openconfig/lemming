@@ -90,7 +90,7 @@ func generate() error {
 			APIName:      nameTrimmed,
 		}
 		for _, fn := range iface.Funcs {
-			meta := saiast.GetFuncMeta(fn, sai)
+			meta := sai.GetFuncMeta(fn)
 			tf := createCCData(meta, sai, fn)
 			ccData.Funcs = append(ccData.Funcs, *tf)
 		}

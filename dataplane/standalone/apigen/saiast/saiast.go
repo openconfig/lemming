@@ -115,7 +115,7 @@ type FuncMetadata struct {
 }
 
 // GetFuncMeta returns the metadata for a SAI func.
-func GetFuncMeta(fn *TypeDecl, sai *SAIAPI) *FuncMetadata {
+func (sai *SAIAPI) GetFuncMeta(fn *TypeDecl) *FuncMetadata {
 	meta := &FuncMetadata{}
 	meta.Name = strings.TrimSuffix(strings.TrimPrefix(fn.Name, "sai_"), "_fn")
 	matches := funcExpr.FindStringSubmatch(meta.Name)

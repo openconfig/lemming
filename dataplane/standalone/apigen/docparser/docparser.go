@@ -24,8 +24,8 @@ import (
 	"strings"
 )
 
-// Info contains all the info parsed from the doxygen.
-type Info struct {
+// SAIInfo contains all the info parsed from the doxygen.
+type SAIInfo struct {
 	// attrs is a map from sai type (sai_port_t) to its attributes.
 	Attrs map[string]*Attr
 	// attrs is a map from enum name (sai_port_media_type_t) to the values of the enum.
@@ -97,8 +97,8 @@ type SimpleSect struct {
 const xmlPath = "dataplane/standalone/apigen/xml"
 
 // ParseSAIXMLDir parses all the SAI Doxygen XML files in a directory.
-func ParseSAIXMLDir() (*Info, error) {
-	i := &Info{
+func ParseSAIXMLDir() (*SAIInfo, error) {
+	i := &SAIInfo{
 		Attrs: make(map[string]*Attr),
 		Enums: make(map[string][]string),
 	}
@@ -174,7 +174,7 @@ func memberToEnumValueStrings(enum MemberDef) []string {
 }
 
 // parseXMLFile parses a single XML and appends the values into xmlInfo.
-func parseXMLFile(file string, xmlInfo *Info) error {
+func parseXMLFile(file string, xmlInfo *SAIInfo) error {
 	b, err := os.ReadFile(file)
 	if err != nil {
 		return err
