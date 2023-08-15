@@ -22,16 +22,17 @@ import (
 	"time"
 
 	"github.com/open-traffic-generator/snappi/gosnappi"
-	"github.com/openconfig/lemming/gnmi/fakedevice"
-	"github.com/openconfig/lemming/gnmi/oc"
-	"github.com/openconfig/lemming/gnmi/oc/ocpath"
-	"github.com/openconfig/lemming/internal/binding"
 	"github.com/openconfig/ondatra"
 	"github.com/openconfig/ondatra/gnmi"
 	otgtelemetry "github.com/openconfig/ondatra/gnmi/otg"
 	otg "github.com/openconfig/ondatra/otg"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot"
+
+	"github.com/openconfig/lemming/gnmi/fakedevice"
+	"github.com/openconfig/lemming/gnmi/oc"
+	"github.com/openconfig/lemming/gnmi/oc/ocpath"
+	"github.com/openconfig/lemming/internal/binding"
 )
 
 func TestMain(m *testing.M) {
@@ -155,7 +156,6 @@ type ateData struct {
 }
 
 func (ad *ateData) ConfigureOTG(t *testing.T, otg *otg.OTG, ateList []string) gosnappi.Config {
-
 	config := otg.NewConfig(t)
 	bgp4ObjectMap := make(map[string]gosnappi.BgpV4Peer)
 	bgp6ObjectMap := make(map[string]gosnappi.BgpV6Peer)
@@ -242,7 +242,6 @@ func (ad *ateData) ConfigureOTG(t *testing.T, otg *otg.OTG, ateList []string) go
 	otg.PushConfig(t, config)
 	otg.StartProtocols(t)
 	return config
-
 }
 
 type dutData struct {
@@ -307,57 +306,30 @@ type OTGBGPPrefix struct {
 	PrefixLength uint32
 }
 
-// TODO: Use this function below after is fixed in OTG https://github.com/open-traffic-generator/ixia-c-gnmi-server/issues/29
-
-// func verifyOTGBGP4Prefix(t *testing.T, otg *otg.OTG, config gosnappi.Config, expectedOTGBGPPrefix OTGBGPPrefix) {
-// 	lastValue, ok := otg.Telemetry().BgpPeer(expectedOTGBGPPrefix.PeerName).UnicastIpv4PrefixAny().Watch(
-// 		t,
-// 		10*time.Second,
-// 		func(bgpPrefix *otgtelemetry.QualifiedBgpPeer_UnicastIpv4Prefix) bool {
-// 			if !bgpPrefix.IsPresent() {
-// 				t.Log("Any peer not present")
-// 				return false
-// 			}
-// 			val := bgpPrefix.Val(t)
-// 			addr, plen := val.GetAddress(), val.GetPrefixLength()
-// 			t.Logf("Any peer got: %s/%d", addr, plen)
-// 			return addr == expectedOTGBGPPrefix.Address && plen == expectedOTGBGPPrefix.PrefixLength
-// 		}).Await(t)
-
-// 	if !ok {
-// 		t.Logf("Last value was: %v", lastValue)
-// 		actPrefixes := otg.Telemetry().BgpPeer(expectedOTGBGPPrefix.PeerName).UnicastIpv4PrefixAny().Get(t)
-// 		for _, actPrefix := range actPrefixes {
-// 			t.Logf("Peer: %v, Address: %v, Prefix Length: %v", expectedOTGBGPPrefix.PeerName, actPrefix.GetAddress(), actPrefix.GetPrefixLength())
-// 		}
-// 		t.Errorf("Given BGP IPv4 Prefix is not formed %v", expectedOTGBGPPrefix)
-// 	}
-// }
-
 func checkOTGBGP4Prefix(t *testing.T, otg *otg.OTG, config gosnappi.Config, expectedOTGBGPPrefix OTGBGPPrefix) bool {
-	bgpPrefixes := gnmi.GetAll(t, otg, gnmi.OTG().BgpPeer(expectedOTGBGPPrefix.PeerName).UnicastIpv4PrefixAny().State())
-	found := false
-	for _, bgpPrefix := range bgpPrefixes {
-		if bgpPrefix.Address != nil && bgpPrefix.GetAddress() == expectedOTGBGPPrefix.Address &&
+	_, ok := gnmi.WatchAll(t, otg, gnmi.OTG().BgpPeer(expectedOTGBGPPrefix.PeerName).UnicastIpv4PrefixAny().State(), time.Minute, func(v *ygnmi.Value[*otgtelemetry.BgpPeer_UnicastIpv4Prefix]) bool {
+		bgpPrefix, ok := v.Val()
+		if ok && bgpPrefix.Address != nil && bgpPrefix.GetAddress() == expectedOTGBGPPrefix.Address &&
 			bgpPrefix.PrefixLength != nil && bgpPrefix.GetPrefixLength() == expectedOTGBGPPrefix.PrefixLength {
-			found = true
-			break
+			return true
 		}
-	}
-	return found
+		return false
+	}).Await(t)
+
+	return ok
 }
 
 func checkOTGBGP6Prefix(t *testing.T, otg *otg.OTG, config gosnappi.Config, expectedOTGBGPPrefix OTGBGPPrefix) bool {
-	bgpPrefixes := gnmi.GetAll(t, otg, gnmi.OTG().BgpPeer(expectedOTGBGPPrefix.PeerName).UnicastIpv6PrefixAny().State())
-	found := false
-	for _, bgpPrefix := range bgpPrefixes {
-		if bgpPrefix.Address != nil && bgpPrefix.GetAddress() == expectedOTGBGPPrefix.Address &&
+	_, ok := gnmi.WatchAll(t, otg, gnmi.OTG().BgpPeer(expectedOTGBGPPrefix.PeerName).UnicastIpv6PrefixAny().State(), time.Minute, func(v *ygnmi.Value[*otgtelemetry.BgpPeer_UnicastIpv6Prefix]) bool {
+		bgpPrefix, ok := v.Val()
+		if ok && bgpPrefix.Address != nil && bgpPrefix.GetAddress() == expectedOTGBGPPrefix.Address &&
 			bgpPrefix.PrefixLength != nil && bgpPrefix.GetPrefixLength() == expectedOTGBGPPrefix.PrefixLength {
-			found = true
-			break
+			return true
 		}
-	}
-	return found
+		return false
+	}).Await(t)
+
+	return ok
 }
 
 func waitFor(fn func() bool, t testing.TB) {
@@ -395,7 +367,7 @@ func TestBGP(t *testing.T) {
 				"192.0.2.2": {
 					PeerAs:          ygot.Uint32(ateAS1),
 					NeighborAddress: ygot.String("192.0.2.2"),
-					//PeerGroup:       ygot.String("BGP-PEER-GROUP1"),
+					// PeerGroup:       ygot.String("BGP-PEER-GROUP1"),
 					ApplyPolicy: &oc.NetworkInstance_Protocol_Bgp_Neighbor_ApplyPolicy{
 						DefaultImportPolicy: oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE,
 						DefaultExportPolicy: oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE,
@@ -404,7 +376,7 @@ func TestBGP(t *testing.T) {
 				"192.0.2.6": {
 					PeerAs:          ygot.Uint32(ateAS2),
 					NeighborAddress: ygot.String("192.0.2.6"),
-					//PeerGroup:       ygot.String("BGP-PEER-GROUP2"),
+					// PeerGroup:       ygot.String("BGP-PEER-GROUP2"),
 					ApplyPolicy: &oc.NetworkInstance_Protocol_Bgp_Neighbor_ApplyPolicy{
 						DefaultImportPolicy: oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE,
 						DefaultExportPolicy: oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE,
