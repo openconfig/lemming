@@ -24,7 +24,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/local"
 
-	"github.com/openconfig/lemming/dataplane/handlers"
 	"github.com/openconfig/lemming/dataplane/internal/engine"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/reconciler"
@@ -84,7 +83,7 @@ func (d *Dataplane) Start(ctx context.Context, c gpb.GNMIClient, target string) 
 		return err
 	}
 	d.fwd = fc
-	d.reconcilers = append(d.reconcilers, handlers.NewInterface(d.e), handlers.NewRoute(d.e))
+	d.reconcilers = append(d.reconcilers, getReconcilers(d.e)...)
 
 	for _, rec := range d.reconcilers {
 		if err := rec.Start(ctx, c, target); err != nil {
