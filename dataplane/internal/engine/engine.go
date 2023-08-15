@@ -90,7 +90,7 @@ func New(ctx context.Context) (*Engine, error) {
 		internalToExternalID: map[string]string{},
 	}
 
-	e.handleIpUpdates()
+	e.handleIPUpdates()
 
 	_, err := e.Server.ContextCreate(context.Background(), &fwdpb.ContextCreateRequest{
 		ContextId: &fwdpb.ContextId{Id: e.id},

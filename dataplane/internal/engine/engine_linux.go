@@ -22,7 +22,7 @@ import (
 	log "github.com/golang/glog"
 )
 
-func (e *Engine) handleIpUpdates() {
+func (e *Engine) handleIPUpdates() {
 	updCh := make(chan netlink.AddrUpdate)
 	doneCh := make(chan struct{})
 
