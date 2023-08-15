@@ -154,11 +154,11 @@ func New(targetName, zapiURL string, opts ...Option) (*Device, error) {
 	var dplane *dataplane.Dataplane
 	var recs []reconciler.Reconciler
 
-	if viper.GetBool("enable_dataplane") && runtime.GOOS != "linux" {
-		return nil, fmt.Errorf("dataplane only supported on linux, GOOS is %s", runtime.GOOS)
-	}
-
 	if viper.GetBool("enable_dataplane") {
+		if runtime.GOOS != "linux" {
+			return nil, fmt.Errorf("dataplane only supported on linux, GOOS is %s", runtime.GOOS)
+		}
+
 		log.Info("enabling dataplane")
 		var err error
 		dplane, err = dataplane.New(context.Background())
