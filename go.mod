@@ -17,8 +17,8 @@ require (
 	github.com/openconfig/goyang v1.4.0
 	github.com/openconfig/gribi v1.0.0
 	github.com/openconfig/gribigo v0.0.0-20230207233343-ef59db57c4fc
-	github.com/openconfig/kne v0.1.13
-	github.com/openconfig/ondatra v0.1.22
+	github.com/openconfig/kne v0.1.14
+	github.com/openconfig/ondatra v0.2.5
 	github.com/openconfig/ygnmi v0.8.7
 	github.com/openconfig/ygot v0.29.9
 	github.com/p4lang/p4runtime v1.4.0-rc.5.0.20220728214547-13f0d02a521e
@@ -46,7 +46,9 @@ require (
 	cloud.google.com/go v0.110.0 // indirect
 	cloud.google.com/go/compute v1.19.1 // indirect
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
+	cloud.google.com/go/iam v0.13.0 // indirect
 	cloud.google.com/go/longrunning v0.4.1 // indirect
+	cloud.google.com/go/pubsub v1.30.0 // indirect
 	github.com/Masterminds/semver/v3 v3.2.1 // indirect
 	github.com/aristanetworks/arista-ceoslab-operator/v2 v2.0.1 // indirect
 	github.com/carlmontanari/difflibgo v0.0.0-20210718194309-31b9e131c298 // indirect
@@ -89,7 +91,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/networkop/meshnet-cni v0.3.1-0.20230525201116-d7c306c635cf // indirect
-	github.com/open-traffic-generator/ixia-c-operator v0.3.0 // indirect
+	github.com/open-traffic-generator/ixia-c-operator v0.3.4 // indirect
 	github.com/openconfig/gocloser v0.0.0-20220310182203-c6c950ed3b0b // indirect
 	github.com/openconfig/lemming/operator v0.2.0 // indirect
 	github.com/osrg/gobgp/v3 v3.14.0 // indirect

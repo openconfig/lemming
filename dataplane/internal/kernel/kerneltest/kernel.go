@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build linux
+
 // package kerneltest contains fake implemetation of structs in kernel package
 package kerneltest
 

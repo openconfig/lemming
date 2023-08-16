@@ -1214,8 +1214,8 @@ def go_repositories():
     go_repository(
         name = "com_github_open_traffic_generator_ixia_c_operator",
         importpath = "github.com/open-traffic-generator/ixia-c-operator",
-        sum = "h1:DFINZYbM9MLNnKvi2+BgQgrwXZvXFG3Y7jRm+Qv/4mQ=",
-        version = "v0.3.0",
+        sum = "h1:xH0hLVWf2wuVUT9ovFdh/WwwBf1oGkBu5YEWD61igck=",
+        version = "v0.3.4",
     )
     go_repository(
         name = "com_github_open_traffic_generator_snappi_gosnappi",
@@ -1289,8 +1289,8 @@ def go_repositories():
     go_repository(
         name = "com_github_openconfig_kne",
         importpath = "github.com/openconfig/kne",
-        sum = "h1:CXcy95vrUDAA7nTPGekwJXunlt2kBwM/oMQUlbDzmFM=",
-        version = "v0.1.13",
+        sum = "h1:3xHy2bP+rr+2/2uFqliWXGjMPR7umO6mvFXh/TA2aJE=",
+        version = "v0.1.14",
     )
     go_repository(
         name = "com_github_openconfig_lemming_operator",
@@ -1304,8 +1304,8 @@ def go_repositories():
             "gazelle:resolve go github.com/p4lang/p4runtime/go/p4/v1 @com_github_p4lang_p4runtime//:p4runtime_go_proto",
         ],
         importpath = "github.com/openconfig/ondatra",
-        sum = "h1:MR8l6tm1IGRTyuko8HG58fx1Ja+fK7TmU+1QdlpkCTM=",
-        version = "v0.1.22",
+        sum = "h1:hR1OQ5oW5BFz4BX5HU7jhh45Wy9eIAQULnljowfNDhU=",
+        version = "v0.2.5",
     )
     go_repository(
         name = "com_github_openconfig_testt",
