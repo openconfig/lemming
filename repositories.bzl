@@ -1227,8 +1227,8 @@ def go_repositories():
     go_repository(
         name = "com_github_openconfig_entity_naming",
         importpath = "github.com/openconfig/entity-naming",
-        sum = "h1:Flw2W/S6peYe4uP1cC/b0gjKRJtNE7++kTVelEaDGxE=",
-        version = "v0.0.0-20230615134154-46b7e6d34924",
+        sum = "h1:o0lPkFXwh9kJzXJo/VExxZZ+6Sda1/QpARywGh+fY5M=",
+        version = "v0.0.0-20230812015236-03f6f9489f24",
     )
 
     go_repository(
@@ -1304,8 +1304,9 @@ def go_repositories():
             "gazelle:resolve go github.com/p4lang/p4runtime/go/p4/v1 @com_github_p4lang_p4runtime//:p4runtime_go_proto",
         ],
         importpath = "github.com/openconfig/ondatra",
-        sum = "h1:hR1OQ5oW5BFz4BX5HU7jhh45Wy9eIAQULnljowfNDhU=",
-        version = "v0.2.5",
+        replace = "github.com/wenovus/ondatra",
+        sum = "h1:uOa2Nhbnvc/VZmO1lOXMF7jFACsPHtIJId2nm+BnnkM=",
+        version = "v0.0.0-20230816212310-16809ddd2869",
     )
     go_repository(
         name = "com_github_openconfig_testt",
