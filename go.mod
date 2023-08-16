@@ -141,4 +141,4 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-replace github.com/openconfig/ondatra => github.com/wenovus/ondatra v0.0.0-20230816211405-e3e0029d4a52
+replace github.com/openconfig/ondatra => github.com/wenovus/ondatra v0.0.0-20230816212310-16809ddd2869
