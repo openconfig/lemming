@@ -21,6 +21,7 @@ go_library(
 
 go_test(
     name = "exact_test",
+    size = "small",
     srcs = [
         "exact_test.go",
         "exactutil_test.go",

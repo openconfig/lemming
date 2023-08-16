@@ -14,6 +14,7 @@ go_library(
 
 go_test(
     name = "fwdflowcounter_test",
+    size = "small",
     srcs = ["flow_counter_test.go"],
     embed = [":fwdflowcounter"],
     deps = [

@@ -36,6 +36,7 @@ go_library(
 
 go_test(
     name = "lemming_test",
+    size = "small",
     srcs = ["lemming_test.go"],
     embed = [":lemming"],
     deps = [

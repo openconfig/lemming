@@ -28,11 +28,11 @@ load-debug:
 ## Run integration tests
 .PHONY: itest
 itest:
-	bazel test --test_output=errors --cache_test_results=no //integration_tests/...
+	bazel test --test_output=errors --cache_test_results=no $(shell bazel query 'tests("//...") except attr(size, small, tests("//..."))')
 
 .PHONY: test
 test:
-	bazel test --test_output=errors $(shell bazel query 'tests("//...") except "//integration_tests/..."')
+	bazel test --test_output=errors $(shell bazel query 'attr(size, small, tests("//..."))')
 
 .PHONY: test-race
 test-race:

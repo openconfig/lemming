@@ -43,7 +43,7 @@ go_library(
 
 go_test(
     name = "sysrib_test",
-    size = "medium",
+    size = "small",
     srcs = [
         "server_test.go",
         "sysrib_test.go",

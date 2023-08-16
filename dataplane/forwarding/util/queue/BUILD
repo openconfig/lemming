@@ -10,6 +10,7 @@ go_library(
 
 go_test(
     name = "queue_test",
+    size = "small",
     srcs = ["queue_test.go"],
     embed = [":queue"],
 )

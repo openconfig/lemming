@@ -9,6 +9,7 @@ go_library(
 
 go_test(
     name = "csum16_test",
+    size = "small",
     srcs = ["csum16_test.go"],
     embed = [":csum16"],
 )

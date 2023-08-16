@@ -20,6 +20,7 @@ go_library(
 
 go_test(
     name = "fwdpacket_test",
+    size = "small",
     srcs = ["field_test.go"],
     embed = [":fwdpacket"],
     deps = ["//proto/forwarding"],
