@@ -65,24 +65,6 @@ const (
 	AdminDistanceBGP       = 20
 )
 
-var (
-	distributeRoute func(s *ZServer, rr *ResolvedRoute, route *Route)
-)
-
-// ZServer is a ZAPI server.
-type ZServer struct {
-	socketType string
-	path       string
-	vrfID      uint32
-	sysrib     *Server
-	lis        net.Listener
-
-	// ClientMutex protects the ZAPI client map.
-	ClientMutex sync.RWMutex
-	// ClientMap stores all connected ZAPI clients.
-	ClientMap map[net.Conn]*Client
-}
-
 // Server is the implementation of the Sysrib API.
 //
 // API:
@@ -208,21 +190,20 @@ func (s *Server) Start(gClient gpb.GNMIClient, target, zapiURL string) error {
 
 	go grpcServer.Serve(lis)
 
-	// Start ZAPI server.
+	// BEGIN Start ZAPI server.
 	if zapiURL != "" {
 		if s.zServer, err = StartZServer(zapiURL, 0, s); err != nil {
 			return err
 		}
 	}
+	// END Start ZAPI server.
 
 	return nil
 }
 
 // Stop stops the sysrib server.
 func (s *Server) Stop() {
-	if s.zServer != nil {
-		s.zServer.Stop()
-	}
+	s.zServer.Stop()
 }
 
 // monitorConnectedIntfs starts a gothread to check for connected prefixes from
