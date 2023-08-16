@@ -21,7 +21,6 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/go-logr/logr/funcr"
-	"github.com/golang/glog"
 	log "github.com/golang/glog"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdattribute"
@@ -214,7 +213,7 @@ func (pl packetLogger) Init(_ logr.RuntimeInfo) {}
 // For example, commandline flags might be used to set the logging
 // verbosity and disable some info logs.
 func (pl packetLogger) Enabled(level int) bool {
-	return bool(glog.V(glog.Level(level)))
+	return bool(log.V(log.Level(level)))
 }
 
 // Info logs a non-error message with the given key/value pairs as context.
