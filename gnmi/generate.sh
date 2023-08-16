@@ -25,7 +25,10 @@ EXCLUDE_MODULES=ietf-interfaces,openconfig-bfd,openconfig-messages
 
 YANG_FILES=(
   gnsi/yang/gnsi-telemetry.yang
+  public/release/models/acl/openconfig-acl.yang
+  public/release/models/acl/openconfig-packet-match.yang
   public/release/models/aft/openconfig-aft.yang
+  public/release/models/bfd/openconfig-bfd.yang
   public/release/models/bgp/openconfig-bgp-policy.yang
   public/release/models/bgp/openconfig-bgp-types.yang
   public/release/models/interfaces/openconfig-if-aggregate.yang
@@ -33,24 +36,35 @@ YANG_FILES=(
   public/release/models/interfaces/openconfig-if-ip-ext.yang
   public/release/models/interfaces/openconfig-if-ip.yang
   public/release/models/interfaces/openconfig-interfaces.yang
+  public/release/models/isis/openconfig-isis.yang
   public/release/models/lacp/openconfig-lacp.yang
   public/release/models/lldp/openconfig-lldp-types.yang
   public/release/models/lldp/openconfig-lldp.yang
   public/release/models/local-routing/openconfig-local-routing.yang
   public/release/models/mpls/openconfig-mpls-types.yang
+  public/release/models/multicast/openconfig-pim.yang
   public/release/models/network-instance/openconfig-network-instance.yang
   public/release/models/openconfig-extensions.yang
   public/release/models/optical-transport/openconfig-transport-types.yang
+  public/release/models/ospf/openconfig-ospfv2.yang
   public/release/models/platform/openconfig-platform-cpu.yang
   public/release/models/platform/openconfig-platform-integrated-circuit.yang
   public/release/models/platform/openconfig-platform-software.yang
   public/release/models/platform/openconfig-platform-transceiver.yang
   public/release/models/platform/openconfig-platform.yang
+  public/release/models/policy-forwarding/openconfig-policy-forwarding.yang
+  public/release/models/policy/openconfig-policy-types.yang
+  public/release/models/qos/openconfig-qos-elements.yang
+  public/release/models/qos/openconfig-qos-interfaces.yang
+  public/release/models/qos/openconfig-qos-types.yang
+  public/release/models/qos/openconfig-qos.yang
   public/release/models/rib/openconfig-rib-bgp.yang
+  public/release/models/segment-routing/openconfig-segment-routing-types.yang
   public/release/models/system/openconfig-system.yang
   public/release/models/types/openconfig-inet-types.yang
   public/release/models/types/openconfig-types.yang
   public/release/models/types/openconfig-yang-types.yang
+  public/release/models/vlan/openconfig-vlan.yang
   public/third_party/ietf/iana-if-type.yang
   public/third_party/ietf/ietf-inet-types.yang
   public/third_party/ietf/ietf-interfaces.yang
@@ -65,6 +79,7 @@ go run github.com/openconfig/ygnmi/app/ygnmi generator \
   --trim_module_prefix=openconfig \
   --exclude_modules="${EXCLUDE_MODULES}" \
   --base_package_path=github.com/openconfig/lemming/gnmi/oc \
+  --split_package_paths="/network-instances/network-instance/protocols/protocol/isis=netinstisis,/network-instances/network-instance/protocols/protocol/bgp=netinstbgp" \
   --output_dir=oc \
   --paths=public/release/models/...,public/third_party/ietf/...,gnsi/... \
   "${YANG_FILES[@]}"

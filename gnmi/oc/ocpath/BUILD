@@ -16,6 +16,7 @@ go_library(
         "//gnmi/oc/lldp",
         "//gnmi/oc/networkinstance",
         "//gnmi/oc/platform",
+        "//gnmi/oc/qos",
         "//gnmi/oc/routingpolicy",
         "//gnmi/oc/system",
         "@com_github_openconfig_ygnmi//ygnmi",
