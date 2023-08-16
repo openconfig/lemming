@@ -140,3 +140,5 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
+
+replace github.com/openconfig/ondatra => github.com/wenovus/ondatra v0.0.0-20230816211405-e3e0029d4a52

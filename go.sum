@@ -879,8 +879,6 @@ github.com/openconfig/kne v0.1.14 h1:3xHy2bP+rr+2/2uFqliWXGjMPR7umO6mvFXh/TA2aJE
 github.com/openconfig/kne v0.1.14/go.mod h1:gMhrUKk6aveDaLSo2yi/25tDm9pSlmgRkG8IP45CGqs=
 github.com/openconfig/lemming/operator v0.2.0 h1:dovZnR6lQkOHXcODli1NDOr/GVYrBY05KS5X11jxVbw=
 github.com/openconfig/lemming/operator v0.2.0/go.mod h1:LKgEXSR5VK2CAeh2uKijKAXFj42uQuwakrCHVPF0iII=
-github.com/openconfig/ondatra v0.2.5 h1:hR1OQ5oW5BFz4BX5HU7jhh45Wy9eIAQULnljowfNDhU=
-github.com/openconfig/ondatra v0.2.5/go.mod h1:ATwM2BVCQoJmao4TSCLymaWX3hJTriCcYvkDu/nFWb4=
 github.com/openconfig/testt v0.0.0-20220311054427-efbb1a32ec07 h1:X631iD/B0ximGFb5P9LY5wHju4SiedxUhc5UZEo7VSw=
 github.com/openconfig/testt v0.0.0-20220311054427-efbb1a32ec07/go.mod h1:bmpU0kIsCiXuncozViVuQx1HqolC3C94H7lD9KKmoTo=
 github.com/openconfig/ygnmi v0.8.7 h1:8K87+VztXhHqsU6/OYRnY/l/bGqFk+qU61mhhdxMCYo=
@@ -989,6 +987,8 @@ github.com/vishvananda/netns v0.0.4 h1:Oeaw1EM2JMxD51g9uhtC0D7erkIjgmj8+JZc26m1Y
 github.com/vishvananda/netns v0.0.4/go.mod h1:SpkAiCQRtJ6TvvxPnOSyH3BMl6unz3xZlaprSwhNNJM=
 github.com/wenovus/gobgp/v3 v3.0.0-20230512225508-639b46f0d89c h1:O3EW2hZ0IQDlT4VKEmXujLL/9YVslMIz3vG/wMQW9TI=
 github.com/wenovus/gobgp/v3 v3.0.0-20230512225508-639b46f0d89c/go.mod h1:P+5INtnzris2TTpWI4m1/RwqCUhniEqc/SOZw5CQCMo=
+github.com/wenovus/ondatra v0.0.0-20230816211405-e3e0029d4a52 h1:Dtp6zTKm5Nnml2PC0R1eiDBXKdfnM2uLzy6hm4dbncA=
+github.com/wenovus/ondatra v0.0.0-20230816211405-e3e0029d4a52/go.mod h1:60Nm7qAOxBqqXaUQWxGGEt9e9c5pImKn7fQSEB9rGwc=
 github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f/go.mod h1:N2zxlSyiKSe5eX1tZViRH5QA0qijqEDrYZiPEAiq3wU=
 github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415/go.mod h1:GwrjFmJcFw6At/Gs6z4yjiIwzuJ1/+UwLxMQDVQXShQ=
 github.com/xeipuuv/gojsonschema v1.2.0/go.mod h1:anYRn/JVcOK2ZgGU+IjEV4nwlhoK5sQluxsYJ78Id3Y=
