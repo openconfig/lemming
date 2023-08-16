@@ -34,7 +34,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-bazel-
       - name: Build Lemming
-        run: bazel build //...
+        run: bazel build //... --jobs=2
   test:
     runs-on: ubuntu-latest
     steps:
