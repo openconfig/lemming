@@ -2,6 +2,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_test")
 
 go_test(
     name = "packet_test",
+    size = "small",
     srcs = [
         "arp_test.go",
         "ethernet_test.go",

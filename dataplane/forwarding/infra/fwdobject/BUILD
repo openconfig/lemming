@@ -19,6 +19,7 @@ go_library(
 
 go_test(
     name = "fwdobject_test",
+    size = "small",
     srcs = [
         "object_id_test.go",
         "object_table_test.go",

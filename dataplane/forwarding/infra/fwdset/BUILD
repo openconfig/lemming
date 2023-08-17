@@ -14,6 +14,7 @@ go_library(
 
 go_test(
     name = "fwdset_test",
+    size = "small",
     srcs = ["set_test.go"],
     embed = [":fwdset"],
     deps = [

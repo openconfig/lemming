@@ -25,6 +25,7 @@ go_library(
 
 go_test(
     name = "controllers_test",
+    size = "small",
     srcs = ["lemming_controller_test.go"],
     embed = [":controllers"],
     deps = [

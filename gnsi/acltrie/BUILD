@@ -14,6 +14,7 @@ go_library(
 
 go_test(
     name = "acltrie_test",
+    size = "small",
     srcs = ["trie_test.go"],
     embed = [":acltrie"],
     deps = [

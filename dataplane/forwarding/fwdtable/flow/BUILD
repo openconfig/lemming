@@ -23,6 +23,7 @@ go_library(
 
 go_test(
     name = "flow_test",
+    size = "small",
     srcs = ["flow_test.go"],
     embed = [":flow"],
     deps = [

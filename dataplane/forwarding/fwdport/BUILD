@@ -19,6 +19,7 @@ go_library(
 
 go_test(
     name = "fwdport_test",
+    size = "small",
     srcs = ["port_test.go"],
     embed = [":fwdport"],
     deps = [

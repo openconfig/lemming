@@ -10,6 +10,7 @@ go_library(
 
 go_test(
     name = "crc16_test",
+    size = "small",
     srcs = ["crc16_test.go"],
     embed = [":crc16"],
     deps = ["//dataplane/forwarding/util/hash/hash16"],

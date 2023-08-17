@@ -46,6 +46,7 @@ go_library(
 
 go_test(
     name = "ports_test",
+    size = "small",
     srcs = [
         "cpu_test.go",
         "fake_test.go",

@@ -24,6 +24,7 @@ go_library(
 
 go_test(
     name = "bridge_test",
+    size = "small",
     srcs = ["bridge_test.go"],
     embed = [":bridge"],
     deps = [

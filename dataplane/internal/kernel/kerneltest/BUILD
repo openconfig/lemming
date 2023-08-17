@@ -18,6 +18,7 @@ go_library(
 
 go_test(
     name = "kerneltest_test",
+    size = "small",
     srcs = ["kernel_test.go"],
     embed = [":kerneltest"],
     deps = select({

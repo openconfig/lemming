@@ -16,6 +16,7 @@ go_library(
 
 go_test(
     name = "pathz_test",
+    size = "small",
     srcs = ["pathz_test.go"],
     embed = [":pathz"],
     deps = [

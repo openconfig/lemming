@@ -15,6 +15,7 @@ go_library(
 
 go_test(
     name = "fwdaction_test",
+    size = "small",
     srcs = ["action_test.go"],
     embed = [":fwdaction"],
     deps = [
