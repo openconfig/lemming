@@ -134,20 +134,19 @@ func (t *bgpDeclTask) startGoBGPFuncDecl(_ context.Context, yclient *ygnmi.Clien
 		BGPPath.NeighborAny().PeerAs().Config().PathStruct(),
 		BGPPath.NeighborAny().NeighborAddress().Config().PathStruct(),
 		BGPPath.NeighborAny().NeighborPort().Config().PathStruct(),
-		// BGP Policy paths
-		// -- basic
+		// BGP Policy statements
 		RoutingPolicyPath.PolicyDefinitionAny().StatementMap().Config().PathStruct(),
 		BGPPath.NeighborAny().ApplyPolicy().DefaultImportPolicy().Config().PathStruct(),
 		BGPPath.NeighborAny().ApplyPolicy().DefaultExportPolicy().Config().PathStruct(),
 		BGPPath.NeighborAny().ApplyPolicy().ImportPolicy().Config().PathStruct(),
 		BGPPath.NeighborAny().ApplyPolicy().ExportPolicy().Config().PathStruct(),
+		// BGP defined sets
 		// -- prefix sets
 		RoutingPolicyPath.DefinedSets().PrefixSetAny().PrefixAny().IpPrefix().Config().PathStruct(),
 		RoutingPolicyPath.DefinedSets().PrefixSetAny().PrefixAny().MasklengthRange().Config().PathStruct(),
 		// -- community sets
 		ocpath.Root().RoutingPolicy().DefinedSets().BgpDefinedSets().CommunitySetAny().CommunityMember().Config().PathStruct(),
 		ocpath.Root().RoutingPolicy().DefinedSets().BgpDefinedSets().CommunitySetAny().MatchSetOptions().Config().PathStruct(),
-		// -- set community
 	)
 
 	if log.V(2) {

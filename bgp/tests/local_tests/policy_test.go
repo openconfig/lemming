@@ -41,10 +41,12 @@ const (
 // * Only checks export policies.
 type PolicyTestCase struct {
 	spec               *valpb.PolicyTestCase
-	installSetPolicies func(t *testing.T, dut1 *ygnmi.Client)
+	installSetPolicies func(t *testing.T, dut2 *ygnmi.Client)
 	installPolicies    func(t *testing.T, dut2 *ygnmi.Client)
 }
 
+// testPolicy is the helper policy integration tests can call to instantiate
+// policy tests.
 func testPolicy(t *testing.T, testspec PolicyTestCase) {
 	t.Helper()
 	t.Run("installPolicyBeforeRoutes", func(t *testing.T) {
@@ -80,7 +82,7 @@ func testPolicyAux(t *testing.T, testspec PolicyTestCase, installPolicyAfterRout
 	installDefaultPolicies()
 
 	if testspec.installSetPolicies != nil {
-		testspec.installSetPolicies(t, dut1)
+		testspec.installSetPolicies(t, dut2)
 	}
 
 	if testspec.installPolicies != nil && !installPolicyAfterRoutes {

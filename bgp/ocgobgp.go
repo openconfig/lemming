@@ -149,6 +149,7 @@ func defaultPolicyToRouteDisp(gobgpdefaultpolicy bgpconfig.DefaultPolicyType) bg
 	}
 }
 
+// convertCommunity converts any community union type to its string representation to be used in GoBGP.
 func convertCommunity(community any) string {
 	switch c := community.(type) {
 	case oc.UnionString:
