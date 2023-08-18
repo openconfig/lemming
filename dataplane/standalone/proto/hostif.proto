@@ -1,0 +1,285 @@
+
+syntax = "proto3";
+
+package lemming.dataplane.sai;
+
+import "dataplane/standalone/proto/common.proto";
+
+option go_package = "github.com/openconfig/lemming/proto/dataplane/sai";
+
+enum HostifAttr {
+  HOSTIF_ATTR_UNSPECIFIED = 0;
+  HOSTIF_ATTR_TYPE = 1;
+  HOSTIF_ATTR_OBJ_ID = 2;
+  HOSTIF_ATTR_NAME = 3;
+  HOSTIF_ATTR_OPER_STATUS = 4;
+  HOSTIF_ATTR_QUEUE = 5;
+  HOSTIF_ATTR_VLAN_TAG = 6;
+  HOSTIF_ATTR_GENETLINK_MCGRP_NAME = 7;
+}
+
+enum HostifTableEntryAttr {
+  HOSTIF_TABLE_ENTRY_ATTR_UNSPECIFIED = 0;
+  HOSTIF_TABLE_ENTRY_ATTR_TYPE = 1;
+  HOSTIF_TABLE_ENTRY_ATTR_OBJ_ID = 2;
+  HOSTIF_TABLE_ENTRY_ATTR_TRAP_ID = 3;
+  HOSTIF_TABLE_ENTRY_ATTR_CHANNEL_TYPE = 4;
+  HOSTIF_TABLE_ENTRY_ATTR_HOST_IF = 5;
+}
+
+enum HostifTrapAttr {
+  HOSTIF_TRAP_ATTR_UNSPECIFIED = 0;
+  HOSTIF_TRAP_ATTR_TRAP_TYPE = 1;
+  HOSTIF_TRAP_ATTR_PACKET_ACTION = 2;
+  HOSTIF_TRAP_ATTR_TRAP_PRIORITY = 3;
+  HOSTIF_TRAP_ATTR_EXCLUDE_PORT_LIST = 4;
+  HOSTIF_TRAP_ATTR_TRAP_GROUP = 5;
+  HOSTIF_TRAP_ATTR_MIRROR_SESSION = 6;
+  HOSTIF_TRAP_ATTR_COUNTER_ID = 7;
+}
+
+enum HostifTrapGroupAttr {
+  HOSTIF_TRAP_GROUP_ATTR_UNSPECIFIED = 0;
+  HOSTIF_TRAP_GROUP_ATTR_ADMIN_STATE = 1;
+  HOSTIF_TRAP_GROUP_ATTR_QUEUE = 2;
+  HOSTIF_TRAP_GROUP_ATTR_POLICER = 3;
+}
+
+enum HostifUserDefinedTrapAttr {
+  HOSTIF_USER_DEFINED_TRAP_ATTR_UNSPECIFIED = 0;
+  HOSTIF_USER_DEFINED_TRAP_ATTR_TYPE = 1;
+  HOSTIF_USER_DEFINED_TRAP_ATTR_TRAP_PRIORITY = 2;
+  HOSTIF_USER_DEFINED_TRAP_ATTR_TRAP_GROUP = 3;
+}
+
+message CreateHostifRequest {
+  uint64 switch = 1;
+
+  HostifType type = 2;
+  uint64 obj_id = 3;
+  bytes name = 4;
+  bool oper_status = 5;
+  uint32 queue = 6;
+  HostifVlanTag vlan_tag = 7;
+  bytes genetlink_mcgrp_name = 8;
+}
+
+message CreateHostifResponse {
+  uint64 oid = 1;
+}
+
+message RemoveHostifRequest {
+  uint64 oid = 1;
+}
+
+message RemoveHostifResponse {}
+
+message SetHostifAttributeRequest {
+  uint64 oid = 1;
+  oneof attr {
+    bool oper_status = 2;
+    uint32 queue = 3;
+    HostifVlanTag vlan_tag = 4;
+  }
+}
+
+message SetHostifAttributeResponse {}
+
+message GetHostifAttributeRequest {
+  uint64 oid = 1;
+  HostifAttr attr_type = 2;
+}
+
+message GetHostifAttributeResponse {
+  HostifAttribute attr = 1;
+}
+
+message CreateHostifTableEntryRequest {
+  uint64 switch = 1;
+
+  HostifTableEntryType type = 2;
+  uint64 obj_id = 3;
+  uint64 trap_id = 4;
+  HostifTableEntryChannelType channel_type = 5;
+  uint64 host_if = 6;
+}
+
+message CreateHostifTableEntryResponse {
+  uint64 oid = 1;
+}
+
+message RemoveHostifTableEntryRequest {
+  uint64 oid = 1;
+}
+
+message RemoveHostifTableEntryResponse {}
+
+message GetHostifTableEntryAttributeRequest {
+  uint64 oid = 1;
+  HostifTableEntryAttr attr_type = 2;
+}
+
+message GetHostifTableEntryAttributeResponse {
+  HostifTableEntryAttribute attr = 1;
+}
+
+message CreateHostifTrapGroupRequest {
+  uint64 switch = 1;
+
+  bool admin_state = 2;
+  uint32 queue = 3;
+  uint64 policer = 4;
+}
+
+message CreateHostifTrapGroupResponse {
+  uint64 oid = 1;
+}
+
+message RemoveHostifTrapGroupRequest {
+  uint64 oid = 1;
+}
+
+message RemoveHostifTrapGroupResponse {}
+
+message SetHostifTrapGroupAttributeRequest {
+  uint64 oid = 1;
+  oneof attr {
+    bool admin_state = 2;
+    uint32 queue = 3;
+    uint64 policer = 4;
+  }
+}
+
+message SetHostifTrapGroupAttributeResponse {}
+
+message GetHostifTrapGroupAttributeRequest {
+  uint64 oid = 1;
+  HostifTrapGroupAttr attr_type = 2;
+}
+
+message GetHostifTrapGroupAttributeResponse {
+  HostifTrapGroupAttribute attr = 1;
+}
+
+message CreateHostifTrapRequest {
+  uint64 switch = 1;
+
+  HostifTrapType trap_type = 2;
+  PacketAction packet_action = 3;
+  uint32 trap_priority = 4;
+  repeated uint64 exclude_port_list = 5;
+  uint64 trap_group = 6;
+  repeated uint64 mirror_session = 7;
+  uint64 counter_id = 8;
+}
+
+message CreateHostifTrapResponse {
+  uint64 oid = 1;
+}
+
+message RemoveHostifTrapRequest {
+  uint64 oid = 1;
+}
+
+message RemoveHostifTrapResponse {}
+
+message SetHostifTrapAttributeRequest {
+  uint64 oid = 1;
+  oneof attr {
+    PacketAction packet_action = 2;
+    uint32 trap_priority = 3;
+    Uint64List exclude_port_list = 4;
+    uint64 trap_group = 5;
+    Uint64List mirror_session = 6;
+    uint64 counter_id = 7;
+  }
+}
+
+message SetHostifTrapAttributeResponse {}
+
+message GetHostifTrapAttributeRequest {
+  uint64 oid = 1;
+  HostifTrapAttr attr_type = 2;
+}
+
+message GetHostifTrapAttributeResponse {
+  HostifTrapAttribute attr = 1;
+}
+
+message CreateHostifUserDefinedTrapRequest {
+  uint64 switch = 1;
+
+  HostifUserDefinedTrapType type = 2;
+  uint32 trap_priority = 3;
+  uint64 trap_group = 4;
+}
+
+message CreateHostifUserDefinedTrapResponse {
+  uint64 oid = 1;
+}
+
+message RemoveHostifUserDefinedTrapRequest {
+  uint64 oid = 1;
+}
+
+message RemoveHostifUserDefinedTrapResponse {}
+
+message SetHostifUserDefinedTrapAttributeRequest {
+  uint64 oid = 1;
+  oneof attr {
+    uint32 trap_priority = 2;
+    uint64 trap_group = 3;
+  }
+}
+
+message SetHostifUserDefinedTrapAttributeResponse {}
+
+message GetHostifUserDefinedTrapAttributeRequest {
+  uint64 oid = 1;
+  HostifUserDefinedTrapAttr attr_type = 2;
+}
+
+message GetHostifUserDefinedTrapAttributeResponse {
+  HostifUserDefinedTrapAttribute attr = 1;
+}
+
+service Hostif {
+  rpc CreateHostif(CreateHostifRequest) returns (CreateHostifResponse) {}
+  rpc RemoveHostif(RemoveHostifRequest) returns (RemoveHostifResponse) {}
+  rpc SetHostifAttribute(SetHostifAttributeRequest)
+      returns (SetHostifAttributeResponse) {}
+  rpc GetHostifAttribute(GetHostifAttributeRequest)
+      returns (GetHostifAttributeResponse) {}
+  rpc CreateHostifTableEntry(CreateHostifTableEntryRequest)
+      returns (CreateHostifTableEntryResponse) {}
+  rpc RemoveHostifTableEntry(RemoveHostifTableEntryRequest)
+      returns (RemoveHostifTableEntryResponse) {}
+  rpc GetHostifTableEntryAttribute(GetHostifTableEntryAttributeRequest)
+      returns (GetHostifTableEntryAttributeResponse) {}
+  rpc CreateHostifTrapGroup(CreateHostifTrapGroupRequest)
+      returns (CreateHostifTrapGroupResponse) {}
+  rpc RemoveHostifTrapGroup(RemoveHostifTrapGroupRequest)
+      returns (RemoveHostifTrapGroupResponse) {}
+  rpc SetHostifTrapGroupAttribute(SetHostifTrapGroupAttributeRequest)
+      returns (SetHostifTrapGroupAttributeResponse) {}
+  rpc GetHostifTrapGroupAttribute(GetHostifTrapGroupAttributeRequest)
+      returns (GetHostifTrapGroupAttributeResponse) {}
+  rpc CreateHostifTrap(CreateHostifTrapRequest)
+      returns (CreateHostifTrapResponse) {}
+  rpc RemoveHostifTrap(RemoveHostifTrapRequest)
+      returns (RemoveHostifTrapResponse) {}
+  rpc SetHostifTrapAttribute(SetHostifTrapAttributeRequest)
+      returns (SetHostifTrapAttributeResponse) {}
+  rpc GetHostifTrapAttribute(GetHostifTrapAttributeRequest)
+      returns (GetHostifTrapAttributeResponse) {}
+  rpc CreateHostifUserDefinedTrap(CreateHostifUserDefinedTrapRequest)
+      returns (CreateHostifUserDefinedTrapResponse) {}
+  rpc RemoveHostifUserDefinedTrap(RemoveHostifUserDefinedTrapRequest)
+      returns (RemoveHostifUserDefinedTrapResponse) {}
+  rpc SetHostifUserDefinedTrapAttribute(
+      SetHostifUserDefinedTrapAttributeRequest)
+      returns (SetHostifUserDefinedTrapAttributeResponse) {}
+  rpc GetHostifUserDefinedTrapAttribute(
+      GetHostifUserDefinedTrapAttributeRequest)
+      returns (GetHostifUserDefinedTrapAttributeResponse) {}
+}

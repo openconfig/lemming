@@ -135,9 +135,7 @@ func (t *bgpDeclTask) startGoBGPFuncDecl(_ context.Context, yclient *ygnmi.Clien
 		// BGP Policy paths
 		RoutingPolicyPath.DefinedSets().PrefixSetAny().PrefixAny().IpPrefix().Config().PathStruct(),
 		RoutingPolicyPath.DefinedSets().PrefixSetAny().PrefixAny().MasklengthRange().Config().PathStruct(),
-		RoutingPolicyPath.PolicyDefinitionAny().StatementAny().Conditions().MatchPrefixSet().PrefixSet().Config().PathStruct(),
-		RoutingPolicyPath.PolicyDefinitionAny().StatementAny().Conditions().MatchPrefixSet().MatchSetOptions().Config().PathStruct(),
-		RoutingPolicyPath.PolicyDefinitionAny().StatementAny().Actions().PolicyResult().Config().PathStruct(),
+		RoutingPolicyPath.PolicyDefinitionAny().StatementMap().Config().PathStruct(),
 		BGPPath.NeighborAny().ApplyPolicy().DefaultImportPolicy().Config().PathStruct(),
 		BGPPath.NeighborAny().ApplyPolicy().DefaultExportPolicy().Config().PathStruct(),
 		BGPPath.NeighborAny().ApplyPolicy().ImportPolicy().Config().PathStruct(),

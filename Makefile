@@ -11,7 +11,8 @@ load-operator:
 .PHONY: load 
 load:
 	bazel build //cmd/lemming:image-tar
-	kind load image-archive bazel-bin/cmd/lemming/image-tar/tarball.tar --name kne
+	docker load -i bazel-bin/cmd/lemming/image-tar/tarball.tar
+	kind load docker-image us-west1-docker.pkg.dev/openconfig-lemming/release/lemming:ga --name kne
 
 .PHONY: buildfile
 buildfile:
@@ -27,11 +28,11 @@ load-debug:
 ## Run integration tests
 .PHONY: itest
 itest:
-	bazel test --test_output=errors --cache_test_results=no //integration_tests/...
+	bazel test --test_output=errors --cache_test_results=no $(shell bazel query 'tests("//...") except (attr(size, small, tests("//...")) + attr(size, medium, tests("//..."))) ')
 
 .PHONY: test
 test:
-	bazel test --test_output=errors $(shell bazel query 'tests("//...") except "//integration_tests/..."')
+	bazel test --test_output=errors $(shell bazel query 'attr(size, small, tests("//...")) +  attr(size, medium, tests("//..."))')
 
 .PHONY: test-race
 test-race:

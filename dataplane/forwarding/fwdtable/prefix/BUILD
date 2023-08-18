@@ -22,6 +22,7 @@ go_library(
 
 go_test(
     name = "prefix_test",
+    size = "small",
     srcs = [
         "prefix_test.go",
         "prefixkey_test.go",

@@ -33,6 +33,7 @@ go_library(
 
 go_test(
     name = "gnmi_test",
+    size = "small",
     srcs = [
         "gnmi_bench_test.go",
         "gnmi_test.go",

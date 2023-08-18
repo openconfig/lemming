@@ -18,58 +18,56 @@ import (
 	"fmt"
 	"strings"
 	"text/template"
+
+	"github.com/openconfig/lemming/dataplane/standalone/apigen/saiast"
 )
 
-func createCCData(sai *saiAPI, fn typeDecl) (*templateFunc, bool, string) {
-	name := strings.TrimSuffix(strings.TrimPrefix(fn.name, "sai_"), "_fn")
+func createCCData(meta *saiast.FuncMetadata, sai *saiast.SAIAPI, fn *saiast.TypeDecl) *templateFunc {
+	name := meta.Name
 	tf := &templateFunc{
-		ReturnType: sai.funcs[fn.typ].returnType,
+		ReturnType: sai.Funcs[fn.Typ].ReturnType,
 		Name:       name,
+		Operation:  meta.Operation,
+		TypeName:   meta.TypeName,
 	}
 
-	isSwitchScoped := false
-	entryType := ""
 	var paramDefs []string
 	var paramVars []string
-	for i, param := range sai.funcs[fn.typ].params {
-		paramDefs = append(paramDefs, fmt.Sprintf("%s %s", param.typ, param.name))
-		name := strings.ReplaceAll(param.name, "*", "")
+	for _, param := range sai.Funcs[fn.Typ].Params {
+		paramDefs = append(paramDefs, fmt.Sprintf("%s %s", param.Typ, param.Name))
+		name := strings.ReplaceAll(param.Name, "*", "")
 		// Functions that operator on entries take some entry type instead of an object id as argument.
 		// Generate a entry union with the pointer to entry instead.
-		if strings.Contains(param.typ, "entry") {
+		if strings.Contains(param.Typ, "entry") {
 			tf.Entry = fmt.Sprintf("common_entry_t entry = {.%s = %s};", name, name)
 			name = "entry"
-			entryType = trimSAIName(strings.TrimPrefix(param.typ, "const"), true, false)
-		}
-		if i == 1 && param.name == "switch_id" {
-			isSwitchScoped = true
 		}
 		paramVars = append(paramVars, name)
 	}
 	tf.Args = strings.Join(paramDefs, ", ")
 	tf.Vars = strings.Join(paramVars, ", ")
 
-	matches := funcExpr.FindStringSubmatch(name)
-	tf.Operation = matches[1] + matches[4] + matches[3]
-
 	tf.UseCommonAPI = supportedOperation[tf.Operation]
-	tf.TypeName = strings.ToUpper(matches[2]) + strings.ToUpper(matches[5])
-
-	// Handle plural types using the bulk API.
-	if strings.HasSuffix(tf.TypeName, "PORTS") || strings.HasSuffix(tf.TypeName, "ENTRIES") || strings.HasSuffix(tf.TypeName, "MEMBERS") || strings.HasSuffix(tf.TypeName, "LISTS") {
-		tf.Operation += "_bulk"
-		tf.TypeName = strings.TrimSuffix(tf.TypeName, "S")
-		if strings.HasSuffix(tf.TypeName, "IE") {
-			tf.TypeName = strings.TrimSuffix(tf.TypeName, "IE")
-			tf.TypeName += "Y"
-		}
-	}
 
 	// Function or types that don't follow standard naming.
 	if strings.Contains(tf.TypeName, "PORT_ALL") || strings.Contains(tf.TypeName, "ALL_NEIGHBOR") {
 		tf.UseCommonAPI = false
 	}
-	return tf, isSwitchScoped, entryType
+	return tf
+}
+
+var supportedOperation = map[string]bool{
+	"create":             true,
+	"remove":             true,
+	"get_attribute":      true,
+	"set_attribute":      true,
+	"clear_stats":        true,
+	"get_stats":          true,
+	"get_stats_ext":      true,
+	"create_bulk":        true,
+	"remove_bulk":        true,
+	"set_attribute_bulk": true,
+	"get_attribute_bulk": true,
 }
 
 var (

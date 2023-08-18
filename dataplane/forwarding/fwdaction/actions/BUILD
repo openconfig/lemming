@@ -41,6 +41,7 @@ go_library(
 
 go_test(
     name = "actions_test",
+    size = "small",
     srcs = [
         "debug_test.go",
         "drop_test.go",

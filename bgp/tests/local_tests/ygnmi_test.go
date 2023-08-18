@@ -128,7 +128,10 @@ func isContextErr(err error) bool {
 		GRPCStatus() *status.Status
 	}
 	ok := errors.As(err, &st)
-	return ok && (st.GRPCStatus().Code() == codes.DeadlineExceeded || st.GRPCStatus().Code() == codes.Canceled)
+	if !ok {
+		return errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled)
+	}
+	return st.GRPCStatus().Code() == codes.DeadlineExceeded || st.GRPCStatus().Code() == codes.Canceled
 }
 
 // Await waits for the watch to finish and returns the last received value

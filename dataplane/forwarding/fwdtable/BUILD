@@ -16,6 +16,7 @@ go_library(
 
 go_test(
     name = "fwdtable_test",
+    size = "small",
     srcs = ["table_test.go"],
     embed = [":fwdtable"],
     deps = [

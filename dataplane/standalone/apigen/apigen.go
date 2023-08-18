@@ -20,123 +20,15 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"regexp"
 	"runtime"
 	"strings"
 
-	strcase "github.com/stoewer/go-strcase"
+	"github.com/openconfig/lemming/dataplane/standalone/apigen/docparser"
+	"github.com/openconfig/lemming/dataplane/standalone/apigen/protogen"
+	"github.com/openconfig/lemming/dataplane/standalone/apigen/saiast"
+
 	cc "modernc.org/cc/v4"
 )
-
-type saiAPI struct {
-	ifaces []*saiInterface
-	funcs  map[string]*saiFunc
-}
-
-type saiInterface struct {
-	name  string
-	funcs []typeDecl
-}
-
-type saiFunc struct {
-	name       string
-	returnType string
-	params     []typeDecl
-}
-
-type typeDecl struct {
-	name string
-	typ  string
-}
-
-func handleFunc(name string, decl *cc.Declaration, directDecl *cc.DirectDeclarator) *saiFunc {
-	sf := &saiFunc{
-		name:       name,
-		returnType: decl.DeclarationSpecifiers.Type().String(),
-	}
-	if directDecl.ParameterTypeList == nil {
-		return nil
-	}
-	for paramList := directDecl.ParameterTypeList.ParameterList; paramList != nil; paramList = paramList.ParameterList {
-		if paramList.ParameterDeclaration.Declarator == nil { // When the parameter is void.
-			return nil
-		}
-		pd := typeDecl{
-			name: paramList.ParameterDeclaration.Declarator.Name(),
-			typ:  paramList.ParameterDeclaration.Declarator.Type().String(),
-		}
-		if ptr, ok := paramList.ParameterDeclaration.Declarator.Type().(*cc.PointerType); ok {
-			pd.typ = ptr.Elem().String()
-			pd.name = fmt.Sprintf("*%s", pd.name)
-			if ptr2, ok := ptr.Elem().(*cc.PointerType); ok {
-				pd.typ = ptr2.Elem().String()
-				pd.name = fmt.Sprintf("*%s", pd.name)
-			}
-		}
-
-		if paramList.ParameterDeclaration.DeclarationSpecifiers.TypeQualifier != nil && paramList.ParameterDeclaration.DeclarationSpecifiers.TypeQualifier.Case == cc.TypeQualifierConst {
-			pd.typ = fmt.Sprintf("const %s", pd.typ)
-		}
-		sf.params = append(sf.params, pd)
-	}
-	return sf
-}
-
-func handleIfaces(name string, decl *cc.Declaration) *saiInterface {
-	ts := decl.DeclarationSpecifiers.DeclarationSpecifiers.TypeSpecifier
-	if ts.StructOrUnionSpecifier == nil || ts.StructOrUnionSpecifier.StructDeclarationList == nil {
-		return nil
-	}
-	if !strings.Contains(name, "api_t") {
-		return nil
-	}
-	si := &saiInterface{
-		name: name,
-	}
-
-	structSpec := ts.StructOrUnionSpecifier.StructDeclarationList
-	for sd := structSpec; sd != nil; sd = sd.StructDeclarationList {
-		si.funcs = append(si.funcs, typeDecl{
-			name: sd.StructDeclaration.StructDeclaratorList.StructDeclarator.Declarator.Name(),
-			typ:  sd.StructDeclaration.StructDeclaratorList.StructDeclarator.Declarator.Type().String(),
-		})
-	}
-	return si
-}
-
-func getFuncAndTypes(ast *cc.AST) *saiAPI {
-	sa := saiAPI{
-		funcs: map[string]*saiFunc{},
-	}
-	for unit := ast.TranslationUnit; unit != nil; unit = unit.TranslationUnit {
-		decl := unit.ExternalDeclaration.Declaration
-		if decl == nil {
-			continue
-		}
-		if decl.InitDeclaratorList == nil {
-			continue
-		}
-
-		name := decl.InitDeclaratorList.InitDeclarator.Declarator.Name()
-		if !strings.Contains(name, "sai") {
-			continue
-		}
-
-		directDecl := decl.InitDeclaratorList.InitDeclarator.Declarator.DirectDeclarator
-		if directDecl != nil { // Possible func declaration.
-			if fn := handleFunc(name, decl, directDecl); fn != nil {
-				sa.funcs[fn.name] = fn
-			}
-		}
-		// Possible struct type declaration.
-		if decl.DeclarationSpecifiers != nil && decl.DeclarationSpecifiers.DeclarationSpecifiers != nil && decl.DeclarationSpecifiers.DeclarationSpecifiers.TypeSpecifier != nil {
-			if si := handleIfaces(name, decl); si != nil {
-				sa.ifaces = append(sa.ifaces, si)
-			}
-		}
-	}
-	return &sa
-}
 
 func parse(header string, includePaths ...string) (*cc.AST, error) {
 	cfg, err := cc.NewConfig(runtime.GOOS, runtime.GOARCH)
@@ -161,19 +53,6 @@ const (
 	protoOutDir = "dataplane/standalone/proto"
 )
 
-var (
-	supportedOperation = map[string]bool{
-		"create":        true,
-		"remove":        true,
-		"get_attribute": true,
-		"set_attribute": true,
-		"clear_stats":   true,
-		"get_stats":     true,
-		"get_stats_ext": true,
-	}
-	funcExpr = regexp.MustCompile(`^([a-z]*_)(\w*)_(attribute|stats_ext|stats)|([a-z]*)_(\w*)$`)
-)
-
 func generate() error {
 	headerFile, err := filepath.Abs(filepath.Join(saiPath, "inc/sai.h"))
 	if err != nil {
@@ -191,34 +70,30 @@ func generate() error {
 	if err != nil {
 		return err
 	}
-	sai := getFuncAndTypes(ast)
-	xmlInfo, err := parseSAIXMLDir()
+	sai := saiast.Get(ast)
+	xmlInfo, err := docparser.ParseSAIXMLDir()
 	if err != nil {
 		return err
 	}
 
-	for _, iface := range sai.ifaces {
-		nameTrimmed := strings.TrimSuffix(strings.TrimPrefix(iface.name, "sai_"), "_api_t")
+	protos, err := protogen.Generate(xmlInfo, sai)
+	if err != nil {
+		return err
+	}
+
+	for _, iface := range sai.Ifaces {
+		nameTrimmed := strings.TrimSuffix(strings.TrimPrefix(iface.Name, "sai_"), "_api_t")
 		ccData := ccTemplateData{
 			IncludeGuard: fmt.Sprintf("DATAPLANE_STANDALONE_SAI_%s_H_", strings.ToUpper(nameTrimmed)),
 			Header:       fmt.Sprintf("%s.h", nameTrimmed),
-			APIType:      iface.name,
+			APIType:      iface.Name,
 			APIName:      nameTrimmed,
 		}
-		protoData := &protoTmplData{
-			ServiceName: strcase.UpperCamelCase(nameTrimmed),
-			Enums:       make(map[string]protoEnum),
-		}
-		for _, fn := range iface.funcs {
-			tf, isSwitchScoped, entry := createCCData(sai, fn)
+		for _, fn := range iface.Funcs {
+			meta := sai.GetFuncMeta(fn)
+			tf := createCCData(meta, sai, fn)
 			ccData.Funcs = append(ccData.Funcs, *tf)
-
-			err := populateTmplDataFromFunc(protoData, tf.Name, entry, tf.Operation, tf.TypeName, iface.name, isSwitchScoped, xmlInfo)
-			if err != nil {
-				return err
-			}
 		}
-
 		header, err := os.Create(filepath.Join(ccOutDir, ccData.Header))
 		if err != nil {
 			return err
@@ -227,20 +102,20 @@ func generate() error {
 		if err != nil {
 			return err
 		}
-		proto, err := os.Create(filepath.Join(protoOutDir, fmt.Sprintf("%s.proto", nameTrimmed)))
-		if err != nil {
-			return err
-		}
+
 		if err := headerTmpl.Execute(header, ccData); err != nil {
 			return err
 		}
 		if err := ccTmpl.Execute(impl, ccData); err != nil {
 			return err
 		}
-		if err := protoTmpl.Execute(proto, protoData); err != nil {
+	}
+	for file, content := range protos {
+		if err := os.WriteFile(filepath.Join(protoOutDir, file), []byte(content), 0600); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 

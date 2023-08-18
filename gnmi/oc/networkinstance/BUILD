@@ -7,6 +7,8 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//gnmi/oc",
+        "//gnmi/oc/netinstbgp",
+        "//gnmi/oc/netinstisis",
         "@com_github_openconfig_ygnmi//ygnmi",
         "@com_github_openconfig_ygot//ygot",
         "@com_github_openconfig_ygot//ytypes",
