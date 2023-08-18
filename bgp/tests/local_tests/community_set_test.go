@@ -33,7 +33,7 @@ const (
 // TestCommunitySet tests set-community and community set.
 //
 // DUT2's import policy from DUT1 sets the community value.
-// DUT2's export policy to DUT3 filters the community value.
+// DUT2's export policy to DUT3 filters the prefix with the community value.
 func TestCommunitySet(t *testing.T) {
 	testPolicy(t, PolicyTestCase{
 		spec: &valpb.PolicyTestCase{
