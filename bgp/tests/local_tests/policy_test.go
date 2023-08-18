@@ -40,11 +40,23 @@ const (
 // * Does not check path attributes.
 // * Only checks export policies.
 type PolicyTestCase struct {
-	spec          *valpb.PolicyTestCase
-	installPolicy func(*testing.T, *ygnmi.Client)
+	spec               *valpb.PolicyTestCase
+	installSetPolicies func(t *testing.T, dut1 *ygnmi.Client)
+	installPolicies    func(t *testing.T, dut2 *ygnmi.Client)
 }
 
-func testPolicy(t *testing.T, testspec PolicyTestCase, installPolicyAfterRoutes bool) {
+func testPolicy(t *testing.T, testspec PolicyTestCase) {
+	t.Helper()
+	t.Run("installPolicyBeforeRoutes", func(t *testing.T) {
+		testPolicyAux(t, testspec, false)
+	})
+
+	t.Run("installPolicyAfterRoutes", func(t *testing.T) {
+		testPolicyAux(t, testspec, true)
+	})
+}
+
+func testPolicyAux(t *testing.T, testspec PolicyTestCase, installPolicyAfterRoutes bool) {
 	dut1, stop1 := newLemming(t, dut1spec, []*AddIntfAction{{
 		name:    "eth0",
 		ifindex: 0,
@@ -67,8 +79,12 @@ func testPolicy(t *testing.T, testspec PolicyTestCase, installPolicyAfterRoutes 
 	}
 	installDefaultPolicies()
 
-	if !installPolicyAfterRoutes {
-		testspec.installPolicy(t, dut2)
+	if testspec.installSetPolicies != nil {
+		testspec.installSetPolicies(t, dut1)
+	}
+
+	if testspec.installPolicies != nil && !installPolicyAfterRoutes {
+		testspec.installPolicies(t, dut2)
 	}
 
 	establishSessionPair(t, dut1, dut2, dut1spec, dut2spec)
@@ -119,7 +135,7 @@ func testPolicy(t *testing.T, testspec PolicyTestCase, installPolicyAfterRoutes 
 	}
 
 	if installPolicyAfterRoutes {
-		testspec.installPolicy(t, dut2)
+		testspec.installPolicies(t, dut2)
 
 		for _, routeTest := range testspec.spec.RouteTests {
 			prefix := routeTest.GetInput().GetReachPrefix()
@@ -139,6 +155,8 @@ func testPolicy(t *testing.T, testspec PolicyTestCase, installPolicyAfterRoutes 
 				})
 				if _, ok := w.Await(t); !ok {
 					t.Errorf("prefix %q was not rejected within timeout.", prefix)
+				} else {
+					t.Logf("prefix %q was successfully rejected from DUT2's AdjRibOutPost within timeout.", prefix)
 				}
 				w = Watch(t, dut3, v4uni.Neighbor(dut2spec.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), rejectTimeout, func(val *ygnmi.Value[string]) bool {
 					_, ok := val.Val()
@@ -146,6 +164,8 @@ func testPolicy(t *testing.T, testspec PolicyTestCase, installPolicyAfterRoutes 
 				})
 				if _, ok := w.Await(t); !ok {
 					t.Errorf("prefix %q was not withdrawn from DUT3 within timeout.", prefix)
+				} else {
+					t.Logf("prefix %q was successfully not seen at DUT3's AdjRibInPre within timeout.", prefix)
 				}
 			}
 		}

@@ -26,10 +26,14 @@ import (
 	valpb "github.com/openconfig/lemming/bgp/tests/proto/policyval"
 )
 
+const (
+	rejectedCommunitySet = oc.UnionString("12345:12345")
+)
+
 func TestCommunitySet(t *testing.T) {
-	testspec := PolicyTestCase{
+	testPolicy(t, PolicyTestCase{
 		spec: &valpb.PolicyTestCase{
-			Description: "Test that one prefix gets accepted and the other rejected via a community-set.",
+			Description: "Test that one NLRI gets accepted and the other rejected via a community-set.",
 			RouteTests: []*valpb.RouteTestCase{{
 				Description: "Rejected route",
 				Input: &valpb.TestRoute{
@@ -44,25 +48,68 @@ func TestCommunitySet(t *testing.T) {
 				ExpectedResult: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
 			}},
 		},
-		installPolicy: func(t *testing.T, dut2 *ygnmi.Client) {
+		installSetPolicies: func(t *testing.T, dut1 *ygnmi.Client) {
 			if debug {
 				fmt.Println("Installing test policies")
 			}
 			prefix1 := "10.33.0.0/16"
 
-			// Custom policy
-			prefixSetName := "reject-" + prefix1
-			prefix1Path := ocpath.Root().RoutingPolicy().DefinedSets().PrefixSet(prefixSetName).Prefix(prefix1, "exact").IpPrefix()
-			Replace(t, dut2, prefix1Path.Config(), prefix1)
-
+			// Policy to set community on dut1
 			policyName := "def1"
-			Replace(t, dut2, ocpath.Root().RoutingPolicy().PolicyDefinition(policyName).Statement("stmt1").Conditions().MatchPrefixSet().PrefixSet().Config(), prefixSetName)
-			Replace(t, dut2, ocpath.Root().RoutingPolicy().PolicyDefinition(policyName).Statement("stmt1").Conditions().MatchPrefixSet().MatchSetOptions().Config(), oc.RoutingPolicy_MatchSetOptionsRestrictedType_ANY)
-			Replace(t, dut2, ocpath.Root().RoutingPolicy().PolicyDefinition(policyName).Statement("stmt1").Actions().PolicyResult().Config(), oc.RoutingPolicy_PolicyResultType_REJECT_ROUTE)
+
+			// Create prefix set
+			prefixSetName := "accept-" + prefix1
+			prefix1Path := ocpath.Root().RoutingPolicy().DefinedSets().PrefixSet(prefixSetName).Prefix(prefix1, "exact").IpPrefix()
+			Replace(t, dut1, prefix1Path.Config(), prefix1)
+
+			policy := &oc.RoutingPolicy_PolicyDefinition_Statement_OrderedMap{}
+			stmt, err := policy.AppendNew("stmt1")
+			if err != nil {
+				t.Fatalf("Cannot append new BGP policy statement: %v", err)
+			}
+			// Match on prefix set
+			stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetPrefixSet(prefixSetName)
+			stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.RoutingPolicy_MatchSetOptionsRestrictedType_ANY)
+			// Add community set
+			stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetOptions(oc.BgpPolicy_BgpSetCommunityOptionType_ADD)
+			stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().GetOrCreateInline().SetCommunities(
+				[]oc.RoutingPolicy_PolicyDefinition_Statement_Actions_BgpActions_SetCommunity_Inline_Communities_Union{
+					rejectedCommunitySet,
+				},
+			)
+			// Accept the route so that it may be advertised.
+			stmt.GetOrCreateActions().SetPolicyResult(oc.RoutingPolicy_PolicyResultType_ACCEPT_ROUTE)
+			// Install policy
+			Replace(t, dut1, ocpath.Root().RoutingPolicy().PolicyDefinition(policyName).Config(), &oc.RoutingPolicy_PolicyDefinition{Statement: policy})
+			Replace(t, dut1, bgp.BGPPath.Neighbor(dut2spec.RouterID).ApplyPolicy().ExportPolicy().Config(), []string{policyName})
+		},
+		installPolicies: func(t *testing.T, dut2 *ygnmi.Client) {
+			if debug {
+				fmt.Println("Installing test policies")
+			}
+
+			// Policy to reject routes with the given community set
+			policyName := "def2"
+
+			// Create community set
+			rejectCommSetName := "reject-community-set"
+			rejCommMemberPath := ocpath.Root().RoutingPolicy().DefinedSets().BgpDefinedSets().CommunitySet(rejectCommSetName).CommunityMember()
+			Replace(t, dut2, rejCommMemberPath.Config(), []oc.RoutingPolicy_DefinedSets_BgpDefinedSets_CommunitySet_CommunityMember_Union{
+				rejectedCommunitySet,
+			})
+			Replace(t, dut2, ocpath.Root().RoutingPolicy().DefinedSets().BgpDefinedSets().CommunitySet(rejectCommSetName).MatchSetOptions().Config(), oc.RoutingPolicy_MatchSetOptionsType_ANY)
+
+			policy := &oc.RoutingPolicy_PolicyDefinition_Statement_OrderedMap{}
+			stmt, err := policy.AppendNew("stmt1")
+			if err != nil {
+				t.Fatalf("Cannot append new BGP policy statement: %v", err)
+			}
+			// Match on given list of community set members.
+			stmt.GetOrCreateConditions().GetOrCreateBgpConditions().SetCommunitySet(rejectCommSetName)
+			stmt.GetOrCreateActions().SetPolicyResult(oc.RoutingPolicy_PolicyResultType_REJECT_ROUTE)
+			// Install policy
+			Replace(t, dut2, ocpath.Root().RoutingPolicy().PolicyDefinition(policyName).Config(), &oc.RoutingPolicy_PolicyDefinition{Statement: policy})
 			Replace(t, dut2, bgp.BGPPath.Neighbor(dut3spec.RouterID).ApplyPolicy().ExportPolicy().Config(), []string{policyName})
 		},
-	}
-
-	testPolicy(t, testspec, false)
-	testPolicy(t, testspec, true)
+	})
 }

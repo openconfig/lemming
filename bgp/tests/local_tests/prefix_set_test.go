@@ -27,7 +27,7 @@ import (
 )
 
 func TestPrefixSet(t *testing.T) {
-	testspec := PolicyTestCase{
+	testPolicy(t, PolicyTestCase{
 		spec: &valpb.PolicyTestCase{
 			Description: "Test that one prefix gets accepted and the other rejected via a prefix-set.",
 			RouteTests: []*valpb.RouteTestCase{{
@@ -44,31 +44,32 @@ func TestPrefixSet(t *testing.T) {
 				ExpectedResult: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
 			}},
 		},
-		installPolicy: func(t *testing.T, dut2 *ygnmi.Client) {
+		installPolicies: func(t *testing.T, dut2 *ygnmi.Client) {
 			if debug {
 				fmt.Println("Installing test policies")
 			}
 			prefix1 := "10.33.0.0/16"
 
-			// Custom policy
+			// Policy to reject routes with the given prefix set
+			policyName := "def1"
+
+			// Create prefix set
 			prefixSetName := "reject-" + prefix1
 			prefix1Path := ocpath.Root().RoutingPolicy().DefinedSets().PrefixSet(prefixSetName).Prefix(prefix1, "exact").IpPrefix()
 			Replace(t, dut2, prefix1Path.Config(), prefix1)
 
-			policyName := "def1"
 			policy := &oc.RoutingPolicy_PolicyDefinition_Statement_OrderedMap{}
 			stmt, err := policy.AppendNew("stmt1")
 			if err != nil {
 				t.Fatalf("Cannot append new BGP policy statement: %v", err)
 			}
+			// Match on prefix set & reject route
 			stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetPrefixSet(prefixSetName)
 			stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.RoutingPolicy_MatchSetOptionsRestrictedType_ANY)
 			stmt.GetOrCreateActions().SetPolicyResult(oc.RoutingPolicy_PolicyResultType_REJECT_ROUTE)
+			// Install policy
 			Replace(t, dut2, ocpath.Root().RoutingPolicy().PolicyDefinition(policyName).Config(), &oc.RoutingPolicy_PolicyDefinition{Statement: policy})
 			Replace(t, dut2, bgp.BGPPath.Neighbor(dut3spec.RouterID).ApplyPolicy().ExportPolicy().Config(), []string{policyName})
 		},
-	}
-
-	testPolicy(t, testspec, false)
-	testPolicy(t, testspec, true)
+	})
 }
