@@ -191,12 +191,6 @@ func awaitSessionEstablished(t *testing.T, dut1, dut2 *ygnmi.Client, spec1, spec
 	Await(t, dut2, bgp.BGPPath.Neighbor(spec1.RouterID).SessionState().State(), oc.Bgp_Neighbor_SessionState_ESTABLISHED)
 }
 
-func awaitSessionIdle(t *testing.T, dut1, dut2 *ygnmi.Client, spec1, spec2 DeviceSpec) {
-	t.Helper()
-	Await(t, dut1, bgp.BGPPath.Neighbor(spec2.RouterID).SessionState().State(), oc.Bgp_Neighbor_SessionState_IDLE)
-	Await(t, dut2, bgp.BGPPath.Neighbor(spec1.RouterID).SessionState().State(), oc.Bgp_Neighbor_SessionState_IDLE)
-}
-
 func TestSessionEstablish(t *testing.T) {
 	dut1, stop1 := newLemming(t, dut1spec, nil)
 	defer stop1()

@@ -19,6 +19,7 @@ package local_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -108,6 +109,19 @@ func Await[T any](t testing.TB, c *ygnmi.Client, q ygnmi.SingletonQuery[T], val 
 		t.Fatalf("Await(t) on %v at %v: %v", c, q, err)
 	}
 	return v
+}
+
+// AwaitWithErr is the same as Await except an error is returned.
+//
+// Its purpose is to add a better error message.
+func AwaitWithErr[T any](c *ygnmi.Client, q ygnmi.SingletonQuery[T], val T) (*ygnmi.Value[T], error) {
+	ctx, cancel := context.WithTimeout(context.Background(), awaitTimeLimit)
+	defer cancel()
+	v, err := ygnmi.Await(ctx, c, q, val)
+	if err != nil {
+		return v, fmt.Errorf("Await(t) on %v at %v: %v", c, q, err)
+	}
+	return v, nil
 }
 
 type watchAwaiter[T any] interface {

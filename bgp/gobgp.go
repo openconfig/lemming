@@ -34,7 +34,6 @@ import (
 	"github.com/openconfig/ygot/ygot"
 	api "github.com/wenovus/gobgp/v3/api"
 	"github.com/wenovus/gobgp/v3/pkg/bgpconfig"
-	"github.com/wenovus/gobgp/v3/pkg/packet/bgp"
 	"github.com/wenovus/gobgp/v3/pkg/server"
 	"github.com/wenovus/gobgp/v3/pkg/zebra"
 )
@@ -401,18 +400,11 @@ func intendedToGoBGP(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *oc.Routin
 		applyPolicy.Config.ImportPolicyList = convertPolicyNames(neighAddr, applyPolicy.Config.ImportPolicyList)
 		applyPolicy.Config.ExportPolicyList = convertPolicyNames(neighAddr, applyPolicy.Config.ExportPolicyList)
 
-		peerType := bgpconfig.PEER_TYPE_EXTERNAL
-		if neigh.GetPeerAs() == global.GetAs() {
-			peerType = bgpconfig.PEER_TYPE_INTERNAL
-		}
-
 		// Add neighbour config.
 		bgpConfig.Neighbors = append(bgpConfig.Neighbors, bgpconfig.Neighbor{
 			Config: bgpconfig.NeighborConfig{
-				LocalAs:         global.GetAs(),
 				PeerAs:          neigh.GetPeerAs(),
 				NeighborAddress: neighAddr,
-				PeerType:        peerType,
 			},
 			// This is needed because GoBGP's configuration diffing
 			// logic may check the state value instead of the
@@ -426,14 +418,7 @@ func intendedToGoBGP(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *oc.Routin
 					LocalAddress: localAddress,
 					RemotePort:   neigh.GetNeighborPort(),
 				},
-				State: bgpconfig.TransportState{
-					LocalAddress: localAddress,
-				},
 			},
-			AfiSafis: []bgpconfig.AfiSafi{{
-				Config: bgpconfig.AfiSafiConfig{AfiSafiName: "ipv4-unicast", Enabled: true},
-				State:  bgpconfig.AfiSafiState{AfiSafiName: "ipv4-unicast", Family: bgp.RF_IPv4_UC},
-			}},
 			// NOTE: From reading GoBGP's source code these are not used for filtering
 			// routes (the global ApplyPolicy list is used instead) unless the neighbour
 			// is a route server client.

@@ -138,23 +138,29 @@ func testPolicyAux(t *testing.T, testspec PolicyTestCase, installPolicyAfterRout
 	}
 
 	if installPolicyAfterRoutes {
-		//awaitNewSession := make(chan struct{})
-		//go func() {
-		//	fmt.Println("<4.1>")
-		//	awaitSessionIdle(t, dut2, dut3, dut2spec, dut3spec)
-		//	fmt.Println("<4.2>")
-		//	awaitSessionEstablished(t, dut2, dut3, dut2spec, dut3spec)
-		//	fmt.Println("<4.3>")
-		//	awaitNewSession <- struct{}{}
-		//}()
-		//fmt.Println("<2.1>")
+		awaitNewSession := make(chan error)
+		go func() {
+			if _, err := AwaitWithErr(dut2, bgp.BGPPath.Neighbor(dut3spec.RouterID).SessionState().State(), oc.Bgp_Neighbor_SessionState_IDLE); err != nil {
+				awaitNewSession <- err
+			}
+			if _, err := AwaitWithErr(dut3, bgp.BGPPath.Neighbor(dut2spec.RouterID).SessionState().State(), oc.Bgp_Neighbor_SessionState_IDLE); err != nil {
+				awaitNewSession <- err
+			}
+			if _, err := AwaitWithErr(dut2, bgp.BGPPath.Neighbor(dut3spec.RouterID).SessionState().State(), oc.Bgp_Neighbor_SessionState_ESTABLISHED); err != nil {
+				awaitNewSession <- err
+			}
+			if _, err := AwaitWithErr(dut3, bgp.BGPPath.Neighbor(dut2spec.RouterID).SessionState().State(), oc.Bgp_Neighbor_SessionState_ESTABLISHED); err != nil {
+				awaitNewSession <- err
+			}
+			awaitNewSession <- nil
+		}()
 		testspec.installPolicies(t, dut2)
-		//fmt.Println("<2.2>")
-		//// Changing policy resets the BGP session, which causes routes
-		//// to disappear from the AdjRIBs, so we need to wait for
-		//// re-establishment first.
-		//<-awaitNewSession
-		//fmt.Println("<2.3>")
+		// Changing policy resets the BGP session, which causes routes
+		// to disappear from the AdjRIBs, so we need to wait for
+		// re-establishment first.
+		if err := <-awaitNewSession; err != nil {
+			t.Fatal(err)
+		}
 
 		for _, routeTest := range testspec.spec.RouteTests {
 			prefix := routeTest.GetInput().GetReachPrefix()
