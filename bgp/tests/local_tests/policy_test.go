@@ -123,6 +123,7 @@ func testPolicyAux(t *testing.T, testspec PolicyTestCase, installPolicyAfterRout
 		Await(t, dut2, v4uni.LocRib().Route(prefix, oc.UnionString(dut1spec.RouterID), 0).Prefix().State(), prefix)
 		Await(t, dut2, v4uni.Neighbor(dut3spec.RouterID).AdjRibOutPre().Route(prefix, 0).Prefix().State(), prefix)
 		if routeTest.GetExpectedResult() == policyval.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT || installPolicyAfterRoutes {
+			t.Logf("Waiting for %s to be propagated", prefix)
 			Await(t, dut2, v4uni.Neighbor(dut3spec.RouterID).AdjRibOutPost().Route(prefix, 0).Prefix().State(), prefix)
 			Await(t, dut3, v4uni.Neighbor(dut2spec.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), prefix)
 		} else {
@@ -131,13 +132,29 @@ func testPolicyAux(t *testing.T, testspec PolicyTestCase, installPolicyAfterRout
 				return ok
 			})
 			if _, ok := w.Await(t); ok {
-				t.Errorf("prefix %q was not rejected.", prefix)
+				t.Errorf("prefix %q (%s) was not rejected.", prefix, routeTest.GetDescription())
 			}
 		}
 	}
 
 	if installPolicyAfterRoutes {
+		//awaitNewSession := make(chan struct{})
+		//go func() {
+		//	fmt.Println("<4.1>")
+		//	awaitSessionIdle(t, dut2, dut3, dut2spec, dut3spec)
+		//	fmt.Println("<4.2>")
+		//	awaitSessionEstablished(t, dut2, dut3, dut2spec, dut3spec)
+		//	fmt.Println("<4.3>")
+		//	awaitNewSession <- struct{}{}
+		//}()
+		//fmt.Println("<2.1>")
 		testspec.installPolicies(t, dut2)
+		//fmt.Println("<2.2>")
+		//// Changing policy resets the BGP session, which causes routes
+		//// to disappear from the AdjRIBs, so we need to wait for
+		//// re-establishment first.
+		//<-awaitNewSession
+		//fmt.Println("<2.3>")
 
 		for _, routeTest := range testspec.spec.RouteTests {
 			prefix := routeTest.GetInput().GetReachPrefix()
@@ -156,18 +173,18 @@ func testPolicyAux(t *testing.T, testspec PolicyTestCase, installPolicyAfterRout
 					return !ok
 				})
 				if _, ok := w.Await(t); !ok {
-					t.Errorf("prefix %q was not rejected within timeout.", prefix)
+					t.Errorf("prefix %q (%s) was not rejected within timeout.", prefix, routeTest.GetDescription())
 				} else {
-					t.Logf("prefix %q was successfully rejected from DUT2's AdjRibOutPost within timeout.", prefix)
+					t.Logf("prefix %q (%s) was successfully rejected from DUT2's AdjRibOutPost within timeout.", prefix, routeTest.GetDescription())
 				}
 				w = Watch(t, dut3, v4uni.Neighbor(dut2spec.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), rejectTimeout, func(val *ygnmi.Value[string]) bool {
 					_, ok := val.Val()
 					return !ok
 				})
 				if _, ok := w.Await(t); !ok {
-					t.Errorf("prefix %q was not withdrawn from DUT3 within timeout.", prefix)
+					t.Errorf("prefix %q (%s) was not withdrawn from DUT3 within timeout.", prefix, routeTest.GetDescription())
 				} else {
-					t.Logf("prefix %q was successfully not seen at DUT3's AdjRibInPre within timeout.", prefix)
+					t.Logf("prefix %q (%s) was successfully not seen at DUT3's AdjRibInPre within timeout.", prefix, routeTest.GetDescription())
 				}
 			}
 		}
