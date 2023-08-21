@@ -50,13 +50,14 @@ var (
 )
 
 // NewGoBGPTaskDecl creates a new GoBGP task using the declarative configuration style.
-func NewGoBGPTaskDecl(zapiURL string, listenPort uint16) *reconciler.BuiltReconciler {
-	gobgpTask := newBgpDeclTask(zapiURL, listenPort)
+func NewGoBGPTaskDecl(targetName, zapiURL string, listenPort uint16) *reconciler.BuiltReconciler {
+	gobgpTask := newBgpDeclTask(targetName, zapiURL, listenPort)
 	return reconciler.NewBuilder("gobgp-decl").WithStart(gobgpTask.startGoBGPFuncDecl).WithStop(gobgpTask.stop).Build()
 }
 
 // bgpDeclTask can be used to create a reconciler-compatible BGP task.
 type bgpDeclTask struct {
+	targetName    string
 	zapiURL       string
 	bgpServer     *server.BgpServer
 	currentConfig *bgpconfig.BgpConfigSet
@@ -73,7 +74,7 @@ type bgpDeclTask struct {
 }
 
 // newBgpDeclTask creates a new bgpDeclTask.
-func newBgpDeclTask(zapiURL string, listenPort uint16) *bgpDeclTask {
+func newBgpDeclTask(targetName, zapiURL string, listenPort uint16) *bgpDeclTask {
 	appliedState := &oc.Root{}
 	// appliedBGP is the SoT for BGP applied configuration. It is maintained locally by the task.
 	appliedBGP := appliedState.GetOrCreateNetworkInstance(fakedevice.DefaultNetworkInstance).GetOrCreateProtocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, fakedevice.BGPRoutingProtocol).GetOrCreateBgp()
@@ -82,6 +83,7 @@ func newBgpDeclTask(zapiURL string, listenPort uint16) *bgpDeclTask {
 	appliedRoutingPolicy.PopulateDefaults()
 
 	return &bgpDeclTask{
+		targetName: targetName,
 		zapiURL:    zapiURL,
 		bgpServer:  server.NewBgpServer(),
 		listenPort: listenPort,
@@ -132,14 +134,19 @@ func (t *bgpDeclTask) startGoBGPFuncDecl(_ context.Context, yclient *ygnmi.Clien
 		BGPPath.NeighborAny().PeerAs().Config().PathStruct(),
 		BGPPath.NeighborAny().NeighborAddress().Config().PathStruct(),
 		BGPPath.NeighborAny().NeighborPort().Config().PathStruct(),
-		// BGP Policy paths
-		RoutingPolicyPath.DefinedSets().PrefixSetAny().PrefixAny().IpPrefix().Config().PathStruct(),
-		RoutingPolicyPath.DefinedSets().PrefixSetAny().PrefixAny().MasklengthRange().Config().PathStruct(),
+		// BGP Policy statements
 		RoutingPolicyPath.PolicyDefinitionAny().StatementMap().Config().PathStruct(),
 		BGPPath.NeighborAny().ApplyPolicy().DefaultImportPolicy().Config().PathStruct(),
 		BGPPath.NeighborAny().ApplyPolicy().DefaultExportPolicy().Config().PathStruct(),
 		BGPPath.NeighborAny().ApplyPolicy().ImportPolicy().Config().PathStruct(),
 		BGPPath.NeighborAny().ApplyPolicy().ExportPolicy().Config().PathStruct(),
+		// BGP defined sets
+		// -- prefix sets
+		RoutingPolicyPath.DefinedSets().PrefixSetAny().PrefixAny().IpPrefix().Config().PathStruct(),
+		RoutingPolicyPath.DefinedSets().PrefixSetAny().PrefixAny().MasklengthRange().Config().PathStruct(),
+		// -- community sets
+		ocpath.Root().RoutingPolicy().DefinedSets().BgpDefinedSets().CommunitySetAny().CommunityMember().Config().PathStruct(),
+		ocpath.Root().RoutingPolicy().DefinedSets().BgpDefinedSets().CommunitySetAny().MatchSetOptions().Config().PathStruct(),
 	)
 
 	if log.V(2) {
@@ -227,7 +234,7 @@ func (t *bgpDeclTask) startGoBGPFuncDecl(_ context.Context, yclient *ygnmi.Clien
 					Safi: api.Family_SAFI_UNICAST,
 				},
 			}, func(d *api.Destination) {
-				log.V(1).Infof("GoBGP global table path: %v", d)
+				log.V(0).Infof("%s: GoBGP global table path: %v", t.targetName, d)
 			}); err != nil {
 				log.Errorf("GoBGP ListPath call failed (global table): %v", err)
 			} else {
@@ -316,7 +323,7 @@ func (t *bgpDeclTask) queryTable(neighbor, tableName string, tableType api.Table
 		EnableFiltered: true,
 	}, func(d *api.Destination) {
 		routes = append(routes, d)
-		log.V(0).Infof("GoBGP %s table path (neighbor if applicable: %q): %v", tableName, neighbor, d)
+		log.V(0).Infof("%s: GoBGP %s table path (neighbor if applicable: %q): %v", t.targetName, tableName, neighbor, d)
 	}); err != nil {
 		log.Errorf("GoBGP ListPath call failed (%s table): %v", tableType, err)
 	} else {
@@ -447,6 +454,9 @@ func intendedToGoBGP(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *oc.Routin
 // intendedToGoBGPPolicies populates bgpConfig's policies from the OC configuration.
 // TODO: applied state
 func intendedToGoBGPPolicies(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *oc.RoutingPolicy, bgpConfig *bgpconfig.BgpConfigSet) {
+	// community sets
+	bgpConfig.DefinedSets.BgpDefinedSets.CommunitySets = convertCommunitySet(policyoc.GetOrCreateDefinedSets().GetOrCreateBgpDefinedSets().CommunitySet)
+
 	// Neighbours, global policy definitions, and global apply policy list.
 	for neighAddr, neigh := range bgpoc.Neighbor {
 		// Ideally a simple conversion of apply-policy is sufficient, but due to GoBGP using
@@ -491,7 +501,7 @@ func intendedToGoBGPPolicies(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *o
 					log.Errorf("Neighbour policy doesn't exist in policy definitions: %q", policyName)
 					continue
 				}
-				convertedPolicy := convertPolicyDefinition(policy, neighAddr)
+				convertedPolicy := convertPolicyDefinition(policy, neighAddr, policyoc.GetOrCreateDefinedSets().GetOrCreateBgpDefinedSets().CommunitySet)
 				bgpConfig.PolicyDefinitions = append(bgpConfig.PolicyDefinitions, convertedPolicy)
 				applyPolicyList = append(applyPolicyList, convertedPolicyName)
 			}
