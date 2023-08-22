@@ -43,13 +43,15 @@ func TestCommunitySet(t *testing.T) {
 				Input: &valpb.TestRoute{
 					ReachPrefix: "10.33.0.0/16",
 				},
-				ExpectedResult: valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD,
+				ExpectedResultBeforePolicy: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
+				ExpectedResult:             valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD,
 			}, {
 				Description: "Accepted route",
 				Input: &valpb.TestRoute{
 					ReachPrefix: "10.3.0.0/16",
 				},
-				ExpectedResult: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
+				ExpectedResultBeforePolicy: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
+				ExpectedResult:             valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
 			}},
 		},
 		installImportSetPolicies: func(t *testing.T, dut2 *ygnmi.Client) {

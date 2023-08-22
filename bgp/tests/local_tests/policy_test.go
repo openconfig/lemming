@@ -68,6 +68,10 @@ func testPolicy(t *testing.T, testspec PolicyTestCase) {
 func testPropagation(t *testing.T, routeTest *valpb.RouteTestCase, prevDUT, currDUT, nextDUT *ygnmi.Client, prevRouterID, currRouterID, nextRouterID string, filterPoliciesInstalled bool) {
 	t.Helper()
 	v4uni := bgp.BGPPath.Rib().AfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST).Ipv4Unicast()
+	expectedResult := routeTest.GetExpectedResultBeforePolicy()
+	if filterPoliciesInstalled {
+		expectedResult = routeTest.GetExpectedResult()
+	}
 
 	prefix := routeTest.GetInput().GetReachPrefix()
 	// Check propagation to AdjRibOutPre for all prefixes.
@@ -75,14 +79,14 @@ func testPropagation(t *testing.T, routeTest *valpb.RouteTestCase, prevDUT, curr
 	Await(t, prevDUT, v4uni.Neighbor(currRouterID).AdjRibOutPost().Route(prefix, 0).Prefix().State(), prefix)
 	Await(t, currDUT, v4uni.Neighbor(prevRouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), prefix)
 	Await(t, currDUT, v4uni.Neighbor(prevRouterID).AdjRibInPost().Route(prefix, 0).Prefix().State(), prefix)
-	switch {
-	case routeTest.GetExpectedResult() == policyval.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT, !filterPoliciesInstalled:
+	switch expectedResult {
+	case policyval.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT:
 		Await(t, currDUT, v4uni.LocRib().Route(prefix, oc.UnionString(prevRouterID), 0).Prefix().State(), prefix)
 		Await(t, currDUT, v4uni.Neighbor(nextRouterID).AdjRibOutPre().Route(prefix, 0).Prefix().State(), prefix)
 		t.Logf("Waiting for %s to be propagated", prefix)
 		Await(t, currDUT, v4uni.Neighbor(nextRouterID).AdjRibOutPost().Route(prefix, 0).Prefix().State(), prefix)
 		Await(t, nextDUT, v4uni.Neighbor(currRouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), prefix)
-	case routeTest.GetExpectedResult() == policyval.RouteTestResult_ROUTE_TEST_RESULT_DISCARD:
+	case policyval.RouteTestResult_ROUTE_TEST_RESULT_DISCARD:
 		Await(t, currDUT, v4uni.LocRib().Route(prefix, oc.UnionString(prevRouterID), 0).Prefix().State(), prefix)
 		Await(t, currDUT, v4uni.Neighbor(nextRouterID).AdjRibOutPre().Route(prefix, 0).Prefix().State(), prefix)
 		w := Watch(t, currDUT, v4uni.Neighbor(nextRouterID).AdjRibOutPost().Route(prefix, 0).Prefix().State(), rejectTimeout, func(val *ygnmi.Value[string]) bool {
@@ -103,7 +107,7 @@ func testPropagation(t *testing.T, routeTest *valpb.RouteTestCase, prevDUT, curr
 		} else {
 			t.Logf("prefix %q (%s) was successfully rejected from adj-rib-in-pre of %v within timeout.", prefix, routeTest.GetDescription(), nextDUT)
 		}
-	case routeTest.GetExpectedResult() == policyval.RouteTestResult_ROUTE_TEST_RESULT_NOT_PREFERRED:
+	case policyval.RouteTestResult_ROUTE_TEST_RESULT_NOT_PREFERRED:
 		w := Watch(t, currDUT, v4uni.LocRib().Route(prefix, oc.UnionString(prevRouterID), 0).Prefix().State(), rejectTimeout, func(val *ygnmi.Value[string]) bool {
 			_, ok := val.Val()
 			return ok
