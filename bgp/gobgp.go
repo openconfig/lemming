@@ -234,7 +234,7 @@ func (t *bgpDeclTask) startGoBGPFuncDecl(_ context.Context, yclient *ygnmi.Clien
 					Safi: api.Family_SAFI_UNICAST,
 				},
 			}, func(d *api.Destination) {
-				log.V(0).Infof("%s: GoBGP global table path: %v", t.targetName, d)
+				log.V(1).Infof("%s: GoBGP global table path: %v", t.targetName, d)
 			}); err != nil {
 				log.Errorf("GoBGP ListPath call failed (global table): %v", err)
 			} else {
