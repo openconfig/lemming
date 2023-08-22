@@ -22,6 +22,7 @@ option go_package = "github.com/openconfig/lemming/bgp/tests/proto/policyval";
 message PolicyTestCase {
   string description = 1;
   repeated RouteTestCase route_tests = 4;
+  repeated RouteTestCase longer_path_route_tests = 5;
 }
 
 // This message represents a single prefix and its associated BGP attributes.
@@ -36,6 +37,8 @@ enum RouteTestResult {
   ROUTE_TEST_RESULT_ACCEPT = 1;
   // Discard the input TestRoute.
   ROUTE_TEST_RESULT_DISCARD = 2;
+  // Input TestRoute not selected by best path selection.
+  ROUTE_TEST_RESULT_NOT_PREFERRED = 3;
 }
 
 // Specifies an input route and expected output.

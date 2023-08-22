@@ -81,6 +81,14 @@ var (
 		AS:        64503,
 		RouterID:  "127.0.0.4",
 	}
+	dut5spec = DeviceSpec{
+		ID:        5,
+		gnmiPort:  9539,
+		gribiPort: 9540,
+		bgpPort:   1115,
+		AS:        64504,
+		RouterID:  "127.0.0.5",
+	}
 )
 
 func ygnmiClient(t *testing.T, target string, port int) *ygnmi.Client {

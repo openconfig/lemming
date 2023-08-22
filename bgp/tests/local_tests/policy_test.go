@@ -36,13 +36,20 @@ const (
 
 // PolicyTestCase contains the specifications for a single policy test.
 //
-// Limitations:
-// * Does not check path attributes.
-// * Only checks export policies.
+// Topology:
+//
+//	DUT1 -> DUT2 -> DUT3
+//	         ^
+//	         |
+//	DUT4 -> DUT5
+//
+// Currently, all policies are installed on DUT2, and by convention,
+// the import policies set attributes, and export policy to DUT3 filters
+// prefixes.
 type PolicyTestCase struct {
-	spec               *valpb.PolicyTestCase
-	installSetPolicies func(t *testing.T, dut2 *ygnmi.Client)
-	installPolicies    func(t *testing.T, dut2 *ygnmi.Client)
+	spec                        *valpb.PolicyTestCase
+	installImportSetPolicies    func(t *testing.T, dut2 *ygnmi.Client)
+	installExportFilterPolicies func(t *testing.T, dut2 *ygnmi.Client)
 }
 
 // testPolicy is the helper policy integration tests can call to instantiate
@@ -58,6 +65,66 @@ func testPolicy(t *testing.T, testspec PolicyTestCase) {
 	})
 }
 
+func testPropagation(t *testing.T, routeTest *valpb.RouteTestCase, prevDUT, currDUT, nextDUT *ygnmi.Client, prevRouterID, currRouterID, nextRouterID string, filterPoliciesInstalled bool) {
+	t.Helper()
+	v4uni := bgp.BGPPath.Rib().AfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST).Ipv4Unicast()
+
+	prefix := routeTest.GetInput().GetReachPrefix()
+	// Check propagation to AdjRibOutPre for all prefixes.
+	Await(t, prevDUT, v4uni.Neighbor(currRouterID).AdjRibOutPre().Route(prefix, 0).Prefix().State(), prefix)
+	Await(t, prevDUT, v4uni.Neighbor(currRouterID).AdjRibOutPost().Route(prefix, 0).Prefix().State(), prefix)
+	Await(t, currDUT, v4uni.Neighbor(prevRouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), prefix)
+	Await(t, currDUT, v4uni.Neighbor(prevRouterID).AdjRibInPost().Route(prefix, 0).Prefix().State(), prefix)
+	switch {
+	case routeTest.GetExpectedResult() == policyval.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT, !filterPoliciesInstalled:
+		Await(t, currDUT, v4uni.LocRib().Route(prefix, oc.UnionString(prevRouterID), 0).Prefix().State(), prefix)
+		Await(t, currDUT, v4uni.Neighbor(nextRouterID).AdjRibOutPre().Route(prefix, 0).Prefix().State(), prefix)
+		t.Logf("Waiting for %s to be propagated", prefix)
+		Await(t, currDUT, v4uni.Neighbor(nextRouterID).AdjRibOutPost().Route(prefix, 0).Prefix().State(), prefix)
+		Await(t, nextDUT, v4uni.Neighbor(currRouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), prefix)
+	case routeTest.GetExpectedResult() == policyval.RouteTestResult_ROUTE_TEST_RESULT_DISCARD:
+		Await(t, currDUT, v4uni.LocRib().Route(prefix, oc.UnionString(prevRouterID), 0).Prefix().State(), prefix)
+		Await(t, currDUT, v4uni.Neighbor(nextRouterID).AdjRibOutPre().Route(prefix, 0).Prefix().State(), prefix)
+		w := Watch(t, currDUT, v4uni.Neighbor(nextRouterID).AdjRibOutPost().Route(prefix, 0).Prefix().State(), rejectTimeout, func(val *ygnmi.Value[string]) bool {
+			_, ok := val.Val()
+			return ok
+		})
+		if _, ok := w.Await(t); ok {
+			t.Errorf("prefix %q (%s) was not rejected from adj-rib-out-post of %v within timeout.", prefix, routeTest.GetDescription(), currDUT)
+		} else {
+			t.Logf("prefix %q (%s) was successfully rejected from adj-rib-out-post of %v within timeout.", prefix, routeTest.GetDescription(), currDUT)
+		}
+		w = Watch(t, nextDUT, v4uni.Neighbor(currRouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), rejectTimeout, func(val *ygnmi.Value[string]) bool {
+			_, ok := val.Val()
+			return ok
+		})
+		if _, ok := w.Await(t); ok {
+			t.Errorf("prefix %q (%s) was not rejected from adj-rib-in-pre of %v within timeout.", prefix, routeTest.GetDescription(), nextDUT)
+		} else {
+			t.Logf("prefix %q (%s) was successfully rejected from adj-rib-in-pre of %v within timeout.", prefix, routeTest.GetDescription(), nextDUT)
+		}
+	case routeTest.GetExpectedResult() == policyval.RouteTestResult_ROUTE_TEST_RESULT_NOT_PREFERRED:
+		w := Watch(t, currDUT, v4uni.LocRib().Route(prefix, oc.UnionString(prevRouterID), 0).Prefix().State(), rejectTimeout, func(val *ygnmi.Value[string]) bool {
+			_, ok := val.Val()
+			return ok
+		})
+		if _, ok := w.Await(t); ok {
+			t.Errorf("prefix %q with origin %q (%s) was selected into loc-rib of %v.", prefix, prevRouterID, routeTest.GetDescription(), currDUT)
+		} else {
+			t.Logf("prefix %q with origin %q (%s) was successfully not selected into loc-rib of %v within timeout.", prefix, prevRouterID, routeTest.GetDescription(), currDUT)
+		}
+		w = Watch(t, currDUT, v4uni.Neighbor(nextRouterID).AdjRibOutPre().Route(prefix, 0).Prefix().State(), rejectTimeout, func(val *ygnmi.Value[string]) bool {
+			_, ok := val.Val()
+			return ok
+		})
+		if _, ok := w.Await(t); ok {
+			t.Errorf("prefix %q (%s) was not rejected from adj-rib-out-pre of %v within timeout.", prefix, routeTest.GetDescription(), currDUT)
+		} else {
+			t.Logf("prefix %q (%s) was successfully rejected from adj-rib-out-pre of %v within timeout.", prefix, routeTest.GetDescription(), currDUT)
+		}
+	}
+}
+
 func testPolicyAux(t *testing.T, testspec PolicyTestCase, installPolicyAfterRoutes bool) {
 	dut1, stop1 := newLemming(t, dut1spec, []*AddIntfAction{{
 		name:    "eth0",
@@ -71,29 +138,50 @@ func testPolicyAux(t *testing.T, testspec PolicyTestCase, installPolicyAfterRout
 	defer stop2()
 	dut3, stop3 := newLemming(t, dut3spec, nil)
 	defer stop3()
+	dut4, stop4 := newLemming(t, dut4spec, []*AddIntfAction{{
+		name:    "eth0",
+		ifindex: 0,
+		enabled: true,
+		prefix:  "192.0.2.2/30",
+		niName:  "DEFAULT",
+	}})
+	defer stop4()
+	dut5, stop5 := newLemming(t, dut5spec, nil)
+	defer stop5()
 
 	installDefaultPolicies := func() {
 		// Clear the path for routes to be propagated.
+		// DUT1 -> DUT2 -> DUT3
 		Replace(t, dut1, bgp.BGPPath.Neighbor(dut2spec.RouterID).ApplyPolicy().DefaultExportPolicy().Config(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
 		Replace(t, dut2, bgp.BGPPath.Neighbor(dut1spec.RouterID).ApplyPolicy().DefaultImportPolicy().Config(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
 		Replace(t, dut2, bgp.BGPPath.Neighbor(dut3spec.RouterID).ApplyPolicy().DefaultExportPolicy().Config(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
 		Replace(t, dut3, bgp.BGPPath.Neighbor(dut2spec.RouterID).ApplyPolicy().DefaultImportPolicy().Config(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
+
+		// This is an alternate source of routes towards DUT2 and thereby DUT3.
+		// Note that this path is longer than the above path:
+		// DUT4 -> DUT5 -> DUT2 (-> DUT3)
+		Replace(t, dut4, bgp.BGPPath.Neighbor(dut5spec.RouterID).ApplyPolicy().DefaultExportPolicy().Config(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
+		Replace(t, dut5, bgp.BGPPath.Neighbor(dut4spec.RouterID).ApplyPolicy().DefaultImportPolicy().Config(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
+		Replace(t, dut5, bgp.BGPPath.Neighbor(dut2spec.RouterID).ApplyPolicy().DefaultExportPolicy().Config(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
+		Replace(t, dut2, bgp.BGPPath.Neighbor(dut5spec.RouterID).ApplyPolicy().DefaultImportPolicy().Config(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
 	}
 	installDefaultPolicies()
 
-	if testspec.installSetPolicies != nil {
-		testspec.installSetPolicies(t, dut2)
+	if testspec.installImportSetPolicies != nil {
+		testspec.installImportSetPolicies(t, dut2)
 	}
 
-	if testspec.installPolicies != nil && !installPolicyAfterRoutes {
-		testspec.installPolicies(t, dut2)
+	if testspec.installExportFilterPolicies != nil && !installPolicyAfterRoutes {
+		testspec.installExportFilterPolicies(t, dut2)
 	}
 
 	establishSessionPair(t, dut1, dut2, dut1spec, dut2spec)
 	establishSessionPair(t, dut2, dut3, dut2spec, dut3spec)
+	establishSessionPair(t, dut4, dut5, dut4spec, dut5spec)
+	establishSessionPair(t, dut5, dut2, dut5spec, dut2spec)
 
 	for _, routeTest := range testspec.spec.RouteTests {
-		// Install all test routes into DUT1.
+		// Install all regular test routes into DUT1.
 		route := &oc.NetworkInstance_Protocol_Static{
 			Prefix: ygot.String(routeTest.GetInput().GetReachPrefix()),
 			NextHop: map[string]*oc.NetworkInstance_Protocol_Static_NextHop{
@@ -107,34 +195,30 @@ func testPolicyAux(t *testing.T, testspec PolicyTestCase, installPolicyAfterRout
 		installStaticRoute(t, dut1, route)
 	}
 
+	for _, routeTest := range testspec.spec.LongerPathRouteTests {
+		// Install all longer-path test routes into DUT4.
+		route := &oc.NetworkInstance_Protocol_Static{
+			Prefix: ygot.String(routeTest.GetInput().GetReachPrefix()),
+			NextHop: map[string]*oc.NetworkInstance_Protocol_Static_NextHop{
+				"single": {
+					Index:   ygot.String("single"),
+					NextHop: oc.UnionString("192.0.2.1"),
+					Recurse: ygot.Bool(true),
+				},
+			},
+		}
+		installStaticRoute(t, dut4, route)
+	}
+
 	staticp := ocpath.Root().NetworkInstance(fakedevice.DefaultNetworkInstance).Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_STATIC, fakedevice.StaticRoutingProtocol)
 	v := GetAll(t, dut1, staticp.StaticAny().Config())
 	t.Logf("Installed static route on %v: %s", dut1, formatYgot(v))
 
-	v4uni := bgp.BGPPath.Rib().AfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST).Ipv4Unicast()
-
 	for _, routeTest := range testspec.spec.RouteTests {
-		prefix := routeTest.GetInput().GetReachPrefix()
-		// Check propagation to AdjRibOutPre for all prefixes.
-		Await(t, dut1, v4uni.Neighbor(dut2spec.RouterID).AdjRibOutPre().Route(prefix, 0).Prefix().State(), prefix)
-		Await(t, dut1, v4uni.Neighbor(dut2spec.RouterID).AdjRibOutPost().Route(prefix, 0).Prefix().State(), prefix)
-		Await(t, dut2, v4uni.Neighbor(dut1spec.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), prefix)
-		Await(t, dut2, v4uni.Neighbor(dut1spec.RouterID).AdjRibInPost().Route(prefix, 0).Prefix().State(), prefix)
-		Await(t, dut2, v4uni.LocRib().Route(prefix, oc.UnionString(dut1spec.RouterID), 0).Prefix().State(), prefix)
-		Await(t, dut2, v4uni.Neighbor(dut3spec.RouterID).AdjRibOutPre().Route(prefix, 0).Prefix().State(), prefix)
-		if routeTest.GetExpectedResult() == policyval.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT || installPolicyAfterRoutes {
-			t.Logf("Waiting for %s to be propagated", prefix)
-			Await(t, dut2, v4uni.Neighbor(dut3spec.RouterID).AdjRibOutPost().Route(prefix, 0).Prefix().State(), prefix)
-			Await(t, dut3, v4uni.Neighbor(dut2spec.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), prefix)
-		} else {
-			w := Watch(t, dut2, v4uni.Neighbor(dut3spec.RouterID).AdjRibOutPost().Route(prefix, 0).Prefix().State(), rejectTimeout, func(val *ygnmi.Value[string]) bool {
-				_, ok := val.Val()
-				return ok
-			})
-			if _, ok := w.Await(t); ok {
-				t.Errorf("prefix %q (%s) was not rejected.", prefix, routeTest.GetDescription())
-			}
-		}
+		testPropagation(t, routeTest, dut1, dut2, dut3, dut1spec.RouterID, dut2spec.RouterID, dut3spec.RouterID, !installPolicyAfterRoutes)
+	}
+	for _, routeTest := range testspec.spec.LongerPathRouteTests {
+		testPropagation(t, routeTest, dut5, dut2, dut3, dut5spec.RouterID, dut2spec.RouterID, dut3spec.RouterID, !installPolicyAfterRoutes)
 	}
 
 	if installPolicyAfterRoutes {
@@ -154,7 +238,7 @@ func testPolicyAux(t *testing.T, testspec PolicyTestCase, installPolicyAfterRout
 			}
 			awaitNewSession <- nil
 		}()
-		testspec.installPolicies(t, dut2)
+		testspec.installExportFilterPolicies(t, dut2)
 		// Changing policy resets the BGP session, which causes routes
 		// to disappear from the AdjRIBs, so we need to wait for
 		// re-establishment first.
@@ -163,36 +247,10 @@ func testPolicyAux(t *testing.T, testspec PolicyTestCase, installPolicyAfterRout
 		}
 
 		for _, routeTest := range testspec.spec.RouteTests {
-			prefix := routeTest.GetInput().GetReachPrefix()
-
-			Await(t, dut2, v4uni.Neighbor(dut1spec.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), prefix)
-			Await(t, dut2, v4uni.Neighbor(dut1spec.RouterID).AdjRibInPost().Route(prefix, 0).Prefix().State(), prefix)
-			Await(t, dut2, v4uni.LocRib().Route(prefix, oc.UnionString(dut1spec.RouterID), 0).Prefix().State(), prefix)
-			Await(t, dut2, v4uni.Neighbor(dut3spec.RouterID).AdjRibOutPre().Route(prefix, 0).Prefix().State(), prefix)
-			if routeTest.GetExpectedResult() == policyval.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT {
-				Await(t, dut2, v4uni.Neighbor(dut3spec.RouterID).AdjRibOutPost().Route(prefix, 0).Prefix().State(), prefix)
-				Await(t, dut3, v4uni.Neighbor(dut2spec.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), prefix)
-			} else {
-				// Check rejected prefix has been withdrawn from AdjRib-out of DUT2 and AdjRib-in of DUT3.
-				w := Watch(t, dut2, v4uni.Neighbor(dut3spec.RouterID).AdjRibOutPost().Route(prefix, 0).Prefix().State(), rejectTimeout, func(val *ygnmi.Value[string]) bool {
-					_, ok := val.Val()
-					return !ok
-				})
-				if _, ok := w.Await(t); !ok {
-					t.Errorf("prefix %q (%s) was not rejected within timeout.", prefix, routeTest.GetDescription())
-				} else {
-					t.Logf("prefix %q (%s) was successfully rejected from DUT2's AdjRibOutPost within timeout.", prefix, routeTest.GetDescription())
-				}
-				w = Watch(t, dut3, v4uni.Neighbor(dut2spec.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), rejectTimeout, func(val *ygnmi.Value[string]) bool {
-					_, ok := val.Val()
-					return !ok
-				})
-				if _, ok := w.Await(t); !ok {
-					t.Errorf("prefix %q (%s) was not withdrawn from DUT3 within timeout.", prefix, routeTest.GetDescription())
-				} else {
-					t.Logf("prefix %q (%s) was successfully not seen at DUT3's AdjRibInPre within timeout.", prefix, routeTest.GetDescription())
-				}
-			}
+			testPropagation(t, routeTest, dut1, dut2, dut3, dut1spec.RouterID, dut2spec.RouterID, dut3spec.RouterID, true)
+		}
+		for _, routeTest := range testspec.spec.LongerPathRouteTests {
+			testPropagation(t, routeTest, dut5, dut2, dut3, dut5spec.RouterID, dut2spec.RouterID, dut3spec.RouterID, true)
 		}
 	}
 }

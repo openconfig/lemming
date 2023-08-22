@@ -52,7 +52,7 @@ func TestCommunitySet(t *testing.T) {
 				ExpectedResult: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
 			}},
 		},
-		installSetPolicies: func(t *testing.T, dut2 *ygnmi.Client) {
+		installImportSetPolicies: func(t *testing.T, dut2 *ygnmi.Client) {
 			if debug {
 				fmt.Println("Installing test policies")
 			}
@@ -87,7 +87,7 @@ func TestCommunitySet(t *testing.T) {
 			Replace(t, dut2, ocpath.Root().RoutingPolicy().PolicyDefinition(policyName).Config(), &oc.RoutingPolicy_PolicyDefinition{Statement: policy})
 			Replace(t, dut2, bgp.BGPPath.Neighbor(dut1spec.RouterID).ApplyPolicy().ImportPolicy().Config(), []string{policyName})
 		},
-		installPolicies: func(t *testing.T, dut2 *ygnmi.Client) {
+		installExportFilterPolicies: func(t *testing.T, dut2 *ygnmi.Client) {
 			if debug {
 				fmt.Println("Installing test policies")
 			}

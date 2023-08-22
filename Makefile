@@ -20,6 +20,10 @@ buildfile:
 	bazel run //:gazelle -- update-repos -to_macro=repositories.bzl%go_repositories -from_file=go.mod
 	bazel run //:gazelle
 
+.PHONY: genprotos
+genprotos:
+	tools/genproto.sh
+
 .PHONY: load-debug
 load-debug:
 	DOCKER_BUILDKIT=1 docker build . --target debug -f Dockerfile.lemming -t "us-west1-docker.pkg.dev/openconfig-lemming/release/lemming:ga"
