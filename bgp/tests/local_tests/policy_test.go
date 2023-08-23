@@ -96,18 +96,18 @@ func testPropagation(t *testing.T, routeTest *valpb.RouteTestCase, prevDUT, curr
 		if _, ok := w.Await(t); ok {
 			t.Errorf("prefix %q (%s) was not rejected from adj-rib-out-post of %v within timeout.", prefix, routeTest.GetDescription(), currDUT)
 			break
-		} else {
-			t.Logf("prefix %q (%s) was successfully rejected from adj-rib-out-post of %v within timeout.", prefix, routeTest.GetDescription(), currDUT)
 		}
+		t.Logf("prefix %q (%s) was successfully rejected from adj-rib-out-post of %v within timeout.", prefix, routeTest.GetDescription(), currDUT)
+
 		w = Watch(t, nextDUT, v4uni.Neighbor(currRouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), rejectTimeout, func(val *ygnmi.Value[string]) bool {
 			_, ok := val.Val()
 			return ok
 		})
 		if _, ok := w.Await(t); ok {
 			t.Errorf("prefix %q (%s) was not rejected from adj-rib-in-pre of %v within timeout.", prefix, routeTest.GetDescription(), nextDUT)
-		} else {
-			t.Logf("prefix %q (%s) was successfully rejected from adj-rib-in-pre of %v within timeout.", prefix, routeTest.GetDescription(), nextDUT)
+			break
 		}
+		t.Logf("prefix %q (%s) was successfully rejected from adj-rib-in-pre of %v within timeout.", prefix, routeTest.GetDescription(), nextDUT)
 	case policyval.RouteTestResult_ROUTE_TEST_RESULT_NOT_PREFERRED:
 		w := Watch(t, currDUT, v4uni.LocRib().Route(prefix, oc.UnionString(prevRouterID), 0).Prefix().State(), rejectTimeout, func(val *ygnmi.Value[string]) bool {
 			_, ok := val.Val()
@@ -116,9 +116,9 @@ func testPropagation(t *testing.T, routeTest *valpb.RouteTestCase, prevDUT, curr
 		if _, ok := w.Await(t); ok {
 			t.Errorf("prefix %q with origin %q (%s) was selected into loc-rib of %v.", prefix, prevRouterID, routeTest.GetDescription(), currDUT)
 			break
-		} else {
-			t.Logf("prefix %q with origin %q (%s) was successfully not selected into loc-rib of %v within timeout.", prefix, prevRouterID, routeTest.GetDescription(), currDUT)
 		}
+		t.Logf("prefix %q with origin %q (%s) was successfully not selected into loc-rib of %v within timeout.", prefix, prevRouterID, routeTest.GetDescription(), currDUT)
+
 		Await(t, currDUT, v4uni.Neighbor(nextRouterID).AdjRibOutPre().Route(prefix, 0).Prefix().State(), prefix)
 		Await(t, currDUT, v4uni.Neighbor(nextRouterID).AdjRibOutPost().Route(prefix, 0).Prefix().State(), prefix)
 		Await(t, nextDUT, v4uni.Neighbor(currRouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), prefix)
