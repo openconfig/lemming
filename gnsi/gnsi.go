@@ -61,7 +61,7 @@ func (c *credentialz) MutateAccountCredentials(credentialzpb.Credentialz_RotateA
 	return status.Errorf(codes.Unimplemented, "Fake UnImplemented")
 }
 
-func (c *credentialz) MutateHostCredentials(credentialzpb.Credentialz_RotateHostCredentialsServer) error {
+func (c *credentialz) MutateHostCredentials(credentialzpb.Credentialz_RotateHostParametersServer) error {
 	return status.Errorf(codes.Unimplemented, "Fake UnImplemented")
 }
 
