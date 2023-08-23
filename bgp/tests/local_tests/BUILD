@@ -4,7 +4,7 @@ go_test(
     name = "local_tests_test",
     size = "large",
     srcs = [
-        "community_set_test.go",
+        "attributes_test.go",
         "policy_test.go",
         "prefix_set_test.go",
         "route_propagation_test.go",

@@ -1495,8 +1495,8 @@ def go_repositories():
     go_repository(
         name = "com_github_openconfig_entity_naming",
         importpath = "github.com/openconfig/entity-naming",
-        sum = "h1:o0lPkFXwh9kJzXJo/VExxZZ+6Sda1/QpARywGh+fY5M=",
-        version = "v0.0.0-20230812015236-03f6f9489f24",
+        sum = "h1:Flw2W/S6peYe4uP1cC/b0gjKRJtNE7++kTVelEaDGxE=",
+        version = "v0.0.0-20230615134154-46b7e6d34924",
     )
 
     go_repository(
@@ -2111,8 +2111,8 @@ def go_repositories():
     go_repository(
         name = "com_google_cloud_go_apikeys",
         importpath = "cloud.google.com/go/apikeys",
-        sum = "h1:B9CdHFZTFjVti89tmyXXrO+7vSNo2jvZuHG8zD5trdQ=",
-        version = "v0.6.0",
+        sum = "h1:+77+/BhFuU476/s78kYiWHObxaYBHsC6Us+Gd7W9pJ4=",
+        version = "v0.5.0",
     )
     go_repository(
         name = "com_google_cloud_go_appengine",
@@ -2681,8 +2681,8 @@ def go_repositories():
     go_repository(
         name = "com_google_cloud_go_servicecontrol",
         importpath = "cloud.google.com/go/servicecontrol",
-        sum = "h1:d0uV7Qegtfaa7Z2ClDzr9HJmnbJW7jn0WhZ7wOX6hLE=",
-        version = "v1.11.1",
+        sum = "h1:iEiMJgD1bzRL9Zu4JYDQUWfqZ+kRLX8wWZSCMBK8Qzs=",
+        version = "v1.11.0",
     )
     go_repository(
         name = "com_google_cloud_go_servicedirectory",
@@ -2693,14 +2693,14 @@ def go_repositories():
     go_repository(
         name = "com_google_cloud_go_servicemanagement",
         importpath = "cloud.google.com/go/servicemanagement",
-        sum = "h1:fopAQI/IAzlxnVeiKn/8WiV6zKndjFkvi+gzu+NjywY=",
-        version = "v1.8.0",
+        sum = "h1:flWoX0eJy21+34I/7HPUbpr6xTHPVzws1xnecLFlUm0=",
+        version = "v1.6.0",
     )
     go_repository(
         name = "com_google_cloud_go_serviceusage",
         importpath = "cloud.google.com/go/serviceusage",
-        sum = "h1:rXyq+0+RSIm3HFypctp7WoXxIA563rn206CfMWdqXX4=",
-        version = "v1.6.0",
+        sum = "h1:fl1AGgOx7E2eyBmH5ofDXT9w8xGvEaEnHYyNYGkxaqg=",
+        version = "v1.5.0",
     )
     go_repository(
         name = "com_google_cloud_go_shell",
@@ -2723,8 +2723,8 @@ def go_repositories():
     go_repository(
         name = "com_google_cloud_go_storage",
         importpath = "cloud.google.com/go/storage",
-        sum = "h1:6weCgzRvMg7lzuUurI4697AqIRPU1SvzHhynwpW31jI=",
-        version = "v1.29.0",
+        sum = "h1:F5QDG5ChchaAVQhINh24U99OWHURqrW8OmQcGKXcbgI=",
+        version = "v1.28.1",
     )
     go_repository(
         name = "com_google_cloud_go_storagetransfer",
