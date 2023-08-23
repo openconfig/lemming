@@ -62,7 +62,7 @@ var (
 		gnmiPort:  8339,
 		gribiPort: 8340,
 		bgpPort:   1112,
-		AS:        64501,
+		AS:        64500,
 		RouterID:  "127.0.0.2",
 	}
 	dut3spec = DeviceSpec{
@@ -70,7 +70,7 @@ var (
 		gnmiPort:  9339,
 		gribiPort: 9340,
 		bgpPort:   1113,
-		AS:        64502,
+		AS:        64501,
 		RouterID:  "127.0.0.3",
 	}
 	dut4spec = DeviceSpec{
@@ -78,7 +78,7 @@ var (
 		gnmiPort:  9439,
 		gribiPort: 9440,
 		bgpPort:   1114,
-		AS:        64503,
+		AS:        64502,
 		RouterID:  "127.0.0.4",
 	}
 	dut5spec = DeviceSpec{
@@ -86,7 +86,7 @@ var (
 		gnmiPort:  9539,
 		gribiPort: 9540,
 		bgpPort:   1115,
-		AS:        64504,
+		AS:        64500,
 		RouterID:  "127.0.0.5",
 	}
 )

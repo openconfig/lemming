@@ -22,7 +22,8 @@ option go_package = "github.com/openconfig/lemming/bgp/tests/proto/policyval";
 message PolicyTestCase {
   string description = 1;
   repeated RouteTestCase route_tests = 4;
-  repeated RouteTestCase longer_path_route_tests = 5;
+  repeated RouteTestCase alternate_path_route_tests = 5;
+  repeated RouteTestCase longer_path_route_tests = 6;
 }
 
 // This message represents a single prefix and its associated BGP attributes.

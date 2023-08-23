@@ -95,6 +95,7 @@ func testPropagation(t *testing.T, routeTest *valpb.RouteTestCase, prevDUT, curr
 		})
 		if _, ok := w.Await(t); ok {
 			t.Errorf("prefix %q (%s) was not rejected from adj-rib-out-post of %v within timeout.", prefix, routeTest.GetDescription(), currDUT)
+			break
 		} else {
 			t.Logf("prefix %q (%s) was successfully rejected from adj-rib-out-post of %v within timeout.", prefix, routeTest.GetDescription(), currDUT)
 		}
@@ -114,18 +115,15 @@ func testPropagation(t *testing.T, routeTest *valpb.RouteTestCase, prevDUT, curr
 		})
 		if _, ok := w.Await(t); ok {
 			t.Errorf("prefix %q with origin %q (%s) was selected into loc-rib of %v.", prefix, prevRouterID, routeTest.GetDescription(), currDUT)
+			break
 		} else {
 			t.Logf("prefix %q with origin %q (%s) was successfully not selected into loc-rib of %v within timeout.", prefix, prevRouterID, routeTest.GetDescription(), currDUT)
 		}
-		w = Watch(t, currDUT, v4uni.Neighbor(nextRouterID).AdjRibOutPre().Route(prefix, 0).Prefix().State(), rejectTimeout, func(val *ygnmi.Value[string]) bool {
-			_, ok := val.Val()
-			return ok
-		})
-		if _, ok := w.Await(t); ok {
-			t.Errorf("prefix %q (%s) was not rejected from adj-rib-out-pre of %v within timeout.", prefix, routeTest.GetDescription(), currDUT)
-		} else {
-			t.Logf("prefix %q (%s) was successfully rejected from adj-rib-out-pre of %v within timeout.", prefix, routeTest.GetDescription(), currDUT)
-		}
+		Await(t, currDUT, v4uni.Neighbor(nextRouterID).AdjRibOutPre().Route(prefix, 0).Prefix().State(), prefix)
+		Await(t, currDUT, v4uni.Neighbor(nextRouterID).AdjRibOutPost().Route(prefix, 0).Prefix().State(), prefix)
+		Await(t, nextDUT, v4uni.Neighbor(currRouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), prefix)
+	default:
+		t.Fatalf("Invalid or unhandled policy result: %v", expectedResult)
 	}
 }
 
@@ -146,11 +144,17 @@ func testPolicyAux(t *testing.T, testspec PolicyTestCase, installPolicyAfterRout
 		name:    "eth0",
 		ifindex: 0,
 		enabled: true,
-		prefix:  "192.0.2.2/30",
+		prefix:  "192.0.2.1/30",
 		niName:  "DEFAULT",
 	}})
 	defer stop4()
-	dut5, stop5 := newLemming(t, dut5spec, nil)
+	dut5, stop5 := newLemming(t, dut5spec, []*AddIntfAction{{
+		name:    "eth0",
+		ifindex: 0,
+		enabled: true,
+		prefix:  "193.0.2.1/30",
+		niName:  "DEFAULT",
+	}})
 	defer stop5()
 
 	installDefaultPolicies := func() {
@@ -212,6 +216,21 @@ func testPolicyAux(t *testing.T, testspec PolicyTestCase, installPolicyAfterRout
 			},
 		}
 		installStaticRoute(t, dut4, route)
+	}
+
+	for _, routeTest := range testspec.spec.AlternatePathRouteTests {
+		// Install all alternate-path test routes into DUT5.
+		route := &oc.NetworkInstance_Protocol_Static{
+			Prefix: ygot.String(routeTest.GetInput().GetReachPrefix()),
+			NextHop: map[string]*oc.NetworkInstance_Protocol_Static_NextHop{
+				"single": {
+					Index:   ygot.String("single"),
+					NextHop: oc.UnionString("193.0.2.1"),
+					Recurse: ygot.Bool(true),
+				},
+			},
+		}
+		installStaticRoute(t, dut5, route)
 	}
 
 	staticp := ocpath.Root().NetworkInstance(fakedevice.DefaultNetworkInstance).Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_STATIC, fakedevice.StaticRoutingProtocol)
