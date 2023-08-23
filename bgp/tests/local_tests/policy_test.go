@@ -31,7 +31,7 @@ import (
 
 const (
 	debug         = true
-	rejectTimeout = 10 * time.Second
+	rejectTimeout = 5 * time.Second
 )
 
 // PolicyTestCase contains the specifications for a single policy test.
@@ -47,9 +47,8 @@ const (
 // the import policies set attributes, and export policy to DUT3 filters
 // prefixes.
 type PolicyTestCase struct {
-	spec                        *valpb.PolicyTestCase
-	installImportSetPolicies    func(t *testing.T, dut2 *ygnmi.Client)
-	installExportFilterPolicies func(t *testing.T, dut2 *ygnmi.Client)
+	spec            *valpb.PolicyTestCase
+	installPolicies func(t *testing.T, dut2 *ygnmi.Client)
 }
 
 // testPolicy is the helper policy integration tests can call to instantiate
@@ -175,12 +174,8 @@ func testPolicyAux(t *testing.T, testspec PolicyTestCase, installPolicyAfterRout
 	}
 	installDefaultPolicies()
 
-	if testspec.installImportSetPolicies != nil {
-		testspec.installImportSetPolicies(t, dut2)
-	}
-
-	if testspec.installExportFilterPolicies != nil && !installPolicyAfterRoutes {
-		testspec.installExportFilterPolicies(t, dut2)
+	if testspec.installPolicies != nil && !installPolicyAfterRoutes {
+		testspec.installPolicies(t, dut2)
 	}
 
 	establishSessionPair(t, dut1, dut2, dut1spec, dut2spec)
@@ -261,7 +256,7 @@ func testPolicyAux(t *testing.T, testspec PolicyTestCase, installPolicyAfterRout
 			}
 			awaitNewSession <- nil
 		}()
-		testspec.installExportFilterPolicies(t, dut2)
+		testspec.installPolicies(t, dut2)
 		// Changing policy resets the BGP session, which causes routes
 		// to disappear from the AdjRIBs, so we need to wait for
 		// re-establishment first.

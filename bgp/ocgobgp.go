@@ -15,6 +15,10 @@
 package bgp
 
 import (
+	"fmt"
+	"strconv"
+
+	log "github.com/golang/glog"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/wenovus/gobgp/v3/pkg/bgpconfig"
 )
@@ -45,6 +49,10 @@ func convertPolicyDefinition(policy *oc.RoutingPolicy_PolicyDefinition, neighAdd
 		for _, comm := range statement.GetActions().BgpActions.GetSetCommunity().GetInline().GetCommunities() {
 			setCommunitiesList = append(setCommunitiesList, convertCommunity(comm))
 		}
+		setmed, err := convertMED(statement.GetActions().GetBgpActions().GetSetMed())
+		if err != nil {
+			log.Errorf("MED value not supported: %v", err)
+		}
 		statements = append(statements, bgpconfig.Statement{
 			Name: statement.GetName(),
 			Conditions: bgpconfig.Conditions{
@@ -72,6 +80,8 @@ func convertPolicyDefinition(policy *oc.RoutingPolicy_PolicyDefinition, neighAdd
 						},
 						Options: statement.GetActions().GetBgpActions().GetSetCommunity().GetOptions().String(),
 					},
+					SetLocalPref: statement.GetActions().GetBgpActions().GetSetLocalPref(),
+					SetMed:       bgpconfig.BgpSetMedType(setmed),
 				},
 			},
 		})
@@ -185,4 +195,24 @@ func convertCommunitySet(occommset map[string]*oc.RoutingPolicy_DefinedSets_BgpD
 		})
 	}
 	return commsets
+}
+
+func convertMED(med oc.RoutingPolicy_PolicyDefinition_Statement_Actions_BgpActions_SetMed_Union) (string, error) {
+	if med == nil {
+		return "", nil
+	}
+	switch c := med.(type) {
+	case oc.UnionString:
+		return string(c), nil
+	case oc.UnionUint32:
+		return strconv.FormatUint(uint64(c), 10), nil
+	case oc.E_BgpActions_SetMed:
+		switch c {
+		case oc.BgpActions_SetMed_IGP:
+			// TODO(wenbli): Find IGP cost to return.
+		}
+		return "", fmt.Errorf("unsupported value for MED: (%T, %v)", med, med)
+	default:
+		return "", fmt.Errorf("unrecognized value for MED: (%T, %v)", med, med)
+	}
 }

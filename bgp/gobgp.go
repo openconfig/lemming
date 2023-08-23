@@ -236,7 +236,9 @@ func (t *bgpDeclTask) startGoBGPFuncDecl(_ context.Context, yclient *ygnmi.Clien
 			}, func(d *api.Destination) {
 				log.V(1).Infof("%s: GoBGP global table path: %v", t.targetName, d)
 			}); err != nil {
-				log.Errorf("GoBGP ListPath call failed (global table): %v", err)
+				if err.Error() != "bgp server hasn't started yet" {
+					log.Errorf("GoBGP ListPath call failed (global table): %v", err)
+				}
 			} else {
 				log.V(1).Info("GoBGP ListPath call completed (global table)")
 			}
@@ -255,7 +257,7 @@ func (t *bgpDeclTask) startGoBGPFuncDecl(_ context.Context, yclient *ygnmi.Clien
 								// TODO: For locally-originated routes figure out how to get the originating protocol.
 								origin = oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_UNSET
 							} else {
-								origin = oc.UnionString(path.SourceId)
+								origin = oc.UnionString(path.NeighborIp)
 							}
 							// TODO: this ID should match the ID in adj-rib-in-post.
 							locRib.GetOrCreateRoute(route.Prefix, origin, uint32(j))
@@ -272,6 +274,7 @@ func (t *bgpDeclTask) startGoBGPFuncDecl(_ context.Context, yclient *ygnmi.Clien
 					t.queryTable(neigh, "adj-rib-in", api.TableType_ADJ_IN, func(routes []*api.Destination) {
 						for _, route := range routes {
 							for j, path := range route.Paths {
+								// TODO: this ID should be retrieved from the update message.
 								neighContainer.GetOrCreateAdjRibInPre().GetOrCreateRoute(route.Prefix, uint32(j))
 								if !path.Filtered {
 									neighContainer.GetOrCreateAdjRibInPost().GetOrCreateRoute(route.Prefix, uint32(j))
@@ -325,7 +328,9 @@ func (t *bgpDeclTask) queryTable(neighbor, tableName string, tableType api.Table
 		routes = append(routes, d)
 		log.V(0).Infof("%s: GoBGP %s table path (neighbor if applicable: %q): %v", t.targetName, tableName, neighbor, d)
 	}); err != nil {
-		log.Errorf("GoBGP ListPath call failed (%s table): %v", tableType, err)
+		if err.Error() != "bgp server hasn't started yet" {
+			log.Errorf("GoBGP ListPath call failed (%s table): %v", tableType, err)
+		}
 	} else {
 		log.V(1).Info("GoBGP ListPath call completed (%s table)", tableName)
 		f(routes)

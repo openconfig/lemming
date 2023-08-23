@@ -46,7 +46,7 @@ func TestPrefixSet(t *testing.T) {
 				ExpectedResult:             valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
 			}},
 		},
-		installExportFilterPolicies: func(t *testing.T, dut2 *ygnmi.Client) {
+		installPolicies: func(t *testing.T, dut2 *ygnmi.Client) {
 			if debug {
 				fmt.Println("Installing test policies")
 			}
