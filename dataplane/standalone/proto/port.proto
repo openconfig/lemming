@@ -404,42 +404,6 @@ message GetPortAttributeResponse {
   PortAttribute attr = 1;
 }
 
-message CreatePortPoolRequest {
-  uint64 switch = 1;
-
-  uint64 port_id = 2;
-  uint64 buffer_pool_id = 3;
-  uint64 qos_wred_profile_id = 4;
-}
-
-message CreatePortPoolResponse {
-  uint64 oid = 1;
-}
-
-message RemovePortPoolRequest {
-  uint64 oid = 1;
-}
-
-message RemovePortPoolResponse {}
-
-message SetPortPoolAttributeRequest {
-  uint64 oid = 1;
-  oneof attr {
-    uint64 qos_wred_profile_id = 2;
-  }
-}
-
-message SetPortPoolAttributeResponse {}
-
-message GetPortPoolAttributeRequest {
-  uint64 oid = 1;
-  PortPoolAttr attr_type = 2;
-}
-
-message GetPortPoolAttributeResponse {
-  PortPoolAttribute attr = 1;
-}
-
 message CreatePortConnectorRequest {
   uint64 switch = 1;
 
@@ -476,6 +440,42 @@ message GetPortConnectorAttributeRequest {
 
 message GetPortConnectorAttributeResponse {
   PortConnectorAttribute attr = 1;
+}
+
+message CreatePortPoolRequest {
+  uint64 switch = 1;
+
+  uint64 port_id = 2;
+  uint64 buffer_pool_id = 3;
+  uint64 qos_wred_profile_id = 4;
+}
+
+message CreatePortPoolResponse {
+  uint64 oid = 1;
+}
+
+message RemovePortPoolRequest {
+  uint64 oid = 1;
+}
+
+message RemovePortPoolResponse {}
+
+message SetPortPoolAttributeRequest {
+  uint64 oid = 1;
+  oneof attr {
+    uint64 qos_wred_profile_id = 2;
+  }
+}
+
+message SetPortPoolAttributeResponse {}
+
+message GetPortPoolAttributeRequest {
+  uint64 oid = 1;
+  PortPoolAttr attr_type = 2;
+}
+
+message GetPortPoolAttributeResponse {
+  PortPoolAttribute attr = 1;
 }
 
 message CreatePortSerdesRequest {
@@ -521,12 +521,6 @@ service Port {
       returns (SetPortAttributeResponse) {}
   rpc GetPortAttribute(GetPortAttributeRequest)
       returns (GetPortAttributeResponse) {}
-  rpc CreatePortPool(CreatePortPoolRequest) returns (CreatePortPoolResponse) {}
-  rpc RemovePortPool(RemovePortPoolRequest) returns (RemovePortPoolResponse) {}
-  rpc SetPortPoolAttribute(SetPortPoolAttributeRequest)
-      returns (SetPortPoolAttributeResponse) {}
-  rpc GetPortPoolAttribute(GetPortPoolAttributeRequest)
-      returns (GetPortPoolAttributeResponse) {}
   rpc CreatePortConnector(CreatePortConnectorRequest)
       returns (CreatePortConnectorResponse) {}
   rpc RemovePortConnector(RemovePortConnectorRequest)
@@ -535,6 +529,12 @@ service Port {
       returns (SetPortConnectorAttributeResponse) {}
   rpc GetPortConnectorAttribute(GetPortConnectorAttributeRequest)
       returns (GetPortConnectorAttributeResponse) {}
+  rpc CreatePortPool(CreatePortPoolRequest) returns (CreatePortPoolResponse) {}
+  rpc RemovePortPool(RemovePortPoolRequest) returns (RemovePortPoolResponse) {}
+  rpc SetPortPoolAttribute(SetPortPoolAttributeRequest)
+      returns (SetPortPoolAttributeResponse) {}
+  rpc GetPortPoolAttribute(GetPortPoolAttributeRequest)
+      returns (GetPortPoolAttributeResponse) {}
   rpc CreatePortSerdes(CreatePortSerdesRequest)
       returns (CreatePortSerdesResponse) {}
   rpc RemovePortSerdes(RemovePortSerdesRequest)

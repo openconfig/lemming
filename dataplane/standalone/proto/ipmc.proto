@@ -22,9 +22,7 @@ message CreateIpmcEntryRequest {
   uint64 rpf_group_id = 4;
 }
 
-message CreateIpmcEntryResponse {
-  uint64 oid = 1;
-}
+message CreateIpmcEntryResponse {}
 
 message RemoveIpmcEntryRequest {
   IpmcEntry entry = 1;

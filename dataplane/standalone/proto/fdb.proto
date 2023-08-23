@@ -32,9 +32,7 @@ message CreateFdbEntryRequest {
   bool allow_mac_move = 9;
 }
 
-message CreateFdbEntryResponse {
-  uint64 oid = 1;
-}
+message CreateFdbEntryResponse {}
 
 message RemoveFdbEntryRequest {
   FdbEntry entry = 1;

@@ -26,12 +26,6 @@ enum TamCollectorAttr {
   TAM_COLLECTOR_ATTR_DSCP_VALUE = 7;
 }
 
-enum TamEventActionAttr {
-  TAM_EVENT_ACTION_ATTR_UNSPECIFIED = 0;
-  TAM_EVENT_ACTION_ATTR_REPORT_TYPE = 1;
-  TAM_EVENT_ACTION_ATTR_QOS_ACTION_TYPE = 2;
-}
-
 enum TamEventAttr {
   TAM_EVENT_ATTR_UNSPECIFIED = 0;
   TAM_EVENT_ATTR_TYPE = 1;
@@ -39,6 +33,12 @@ enum TamEventAttr {
   TAM_EVENT_ATTR_COLLECTOR_LIST = 3;
   TAM_EVENT_ATTR_THRESHOLD = 4;
   TAM_EVENT_ATTR_DSCP_VALUE = 5;
+}
+
+enum TamEventActionAttr {
+  TAM_EVENT_ACTION_ATTR_UNSPECIFIED = 0;
+  TAM_EVENT_ACTION_ATTR_REPORT_TYPE = 1;
+  TAM_EVENT_ACTION_ATTR_QOS_ACTION_TYPE = 2;
 }
 
 enum TamEventThresholdAttr {
@@ -97,6 +97,14 @@ enum TamReportAttr {
   TAM_REPORT_ATTR_ENTERPRISE_NUMBER = 7;
 }
 
+enum TamTelemetryAttr {
+  TAM_TELEMETRY_ATTR_UNSPECIFIED = 0;
+  TAM_TELEMETRY_ATTR_TAM_TYPE_LIST = 1;
+  TAM_TELEMETRY_ATTR_COLLECTOR_LIST = 2;
+  TAM_TELEMETRY_ATTR_TAM_REPORTING_UNIT = 3;
+  TAM_TELEMETRY_ATTR_REPORTING_INTERVAL = 4;
+}
+
 enum TamTelTypeAttr {
   TAM_TEL_TYPE_ATTR_UNSPECIFIED = 0;
   TAM_TEL_TYPE_ATTR_TAM_TELEMETRY_TYPE = 1;
@@ -115,14 +123,6 @@ enum TamTelTypeAttr {
   TAM_TEL_TYPE_ATTR_DSCP_VALUE = 14;
   TAM_TEL_TYPE_ATTR_MATH_FUNC = 15;
   TAM_TEL_TYPE_ATTR_REPORT_ID = 16;
-}
-
-enum TamTelemetryAttr {
-  TAM_TELEMETRY_ATTR_UNSPECIFIED = 0;
-  TAM_TELEMETRY_ATTR_TAM_TYPE_LIST = 1;
-  TAM_TELEMETRY_ATTR_COLLECTOR_LIST = 2;
-  TAM_TELEMETRY_ATTR_TAM_REPORTING_UNIT = 3;
-  TAM_TELEMETRY_ATTR_REPORTING_INTERVAL = 4;
 }
 
 enum TamTransportAttr {
@@ -173,81 +173,125 @@ message GetTamAttributeResponse {
   TamAttribute attr = 1;
 }
 
-message CreateTamMathFuncRequest {
+message CreateTamCollectorRequest {
   uint64 switch = 1;
 
-  TamTelMathFuncType tam_tel_math_func_type = 2;
+  bytes src_ip = 2;
+  bytes dst_ip = 3;
+  bool localhost = 4;
+  uint64 virtual_router_id = 5;
+  uint32 truncate_size = 6;
+  uint64 transport = 7;
+  uint32 dscp_value = 8;
 }
 
-message CreateTamMathFuncResponse {
+message CreateTamCollectorResponse {
   uint64 oid = 1;
 }
 
-message RemoveTamMathFuncRequest {
+message RemoveTamCollectorRequest {
   uint64 oid = 1;
 }
 
-message RemoveTamMathFuncResponse {}
+message RemoveTamCollectorResponse {}
 
-message SetTamMathFuncAttributeRequest {
+message SetTamCollectorAttributeRequest {
   uint64 oid = 1;
   oneof attr {
-    TamTelMathFuncType tam_tel_math_func_type = 2;
+    bytes src_ip = 2;
+    bytes dst_ip = 3;
+    bool localhost = 4;
+    uint64 virtual_router_id = 5;
+    uint32 truncate_size = 6;
+    uint64 transport = 7;
+    uint32 dscp_value = 8;
   }
 }
 
-message SetTamMathFuncAttributeResponse {}
+message SetTamCollectorAttributeResponse {}
 
-message GetTamMathFuncAttributeRequest {
+message GetTamCollectorAttributeRequest {
   uint64 oid = 1;
-  TamMathFuncAttr attr_type = 2;
+  TamCollectorAttr attr_type = 2;
 }
 
-message GetTamMathFuncAttributeResponse {
-  TamMathFuncAttribute attr = 1;
+message GetTamCollectorAttributeResponse {
+  TamCollectorAttribute attr = 1;
 }
 
-message CreateTamReportRequest {
+message CreateTamEventRequest {
   uint64 switch = 1;
 
-  TamReportType type = 2;
-  uint32 histogram_number_of_bins = 3;
-  repeated uint32 histogram_bin_boundary = 4;
-  uint32 quota = 5;
-  TamReportMode report_mode = 6;
-  uint32 report_interval = 7;
-  uint32 enterprise_number = 8;
+  TamEventType type = 2;
+  repeated uint64 action_list = 3;
+  repeated uint64 collector_list = 4;
+  uint64 threshold = 5;
+  uint32 dscp_value = 6;
 }
 
-message CreateTamReportResponse {
+message CreateTamEventResponse {
   uint64 oid = 1;
 }
 
-message RemoveTamReportRequest {
+message RemoveTamEventRequest {
   uint64 oid = 1;
 }
 
-message RemoveTamReportResponse {}
+message RemoveTamEventResponse {}
 
-message SetTamReportAttributeRequest {
+message SetTamEventAttributeRequest {
   uint64 oid = 1;
   oneof attr {
-    TamReportType type = 2;
-    uint32 quota = 3;
-    uint32 report_interval = 4;
-    uint32 enterprise_number = 5;
+    uint64 threshold = 2;
+    uint32 dscp_value = 3;
   }
 }
 
-message SetTamReportAttributeResponse {}
+message SetTamEventAttributeResponse {}
 
-message GetTamReportAttributeRequest {
+message GetTamEventAttributeRequest {
   uint64 oid = 1;
-  TamReportAttr attr_type = 2;
+  TamEventAttr attr_type = 2;
 }
 
-message GetTamReportAttributeResponse {
-  TamReportAttribute attr = 1;
+message GetTamEventAttributeResponse {
+  TamEventAttribute attr = 1;
+}
+
+message CreateTamEventActionRequest {
+  uint64 switch = 1;
+
+  uint64 report_type = 2;
+  uint32 qos_action_type = 3;
+}
+
+message CreateTamEventActionResponse {
+  uint64 oid = 1;
+}
+
+message RemoveTamEventActionRequest {
+  uint64 oid = 1;
+}
+
+message RemoveTamEventActionResponse {}
+
+message SetTamEventActionAttributeRequest {
+  uint64 oid = 1;
+  oneof attr {
+    uint64 report_type = 2;
+    uint32 qos_action_type = 3;
+  }
+}
+
+message SetTamEventActionAttributeResponse {}
+
+message GetTamEventActionAttributeRequest {
+  uint64 oid = 1;
+  TamEventActionAttr attr_type = 2;
+}
+
+message GetTamEventActionAttributeResponse {
+  TamEventActionAttribute attr = 1;
 }
 
 message CreateTamEventThresholdRequest {
@@ -369,6 +413,122 @@ message GetTamIntAttributeResponse {
   TamIntAttribute attr = 1;
 }
 
+message CreateTamMathFuncRequest {
+  uint64 switch = 1;
+
+  TamTelMathFuncType tam_tel_math_func_type = 2;
+}
+
+message CreateTamMathFuncResponse {
+  uint64 oid = 1;
+}
+
+message RemoveTamMathFuncRequest {
+  uint64 oid = 1;
+}
+
+message RemoveTamMathFuncResponse {}
+
+message SetTamMathFuncAttributeRequest {
+  uint64 oid = 1;
+  oneof attr {
+    TamTelMathFuncType tam_tel_math_func_type = 2;
+  }
+}
+
+message SetTamMathFuncAttributeResponse {}
+
+message GetTamMathFuncAttributeRequest {
+  uint64 oid = 1;
+  TamMathFuncAttr attr_type = 2;
+}
+
+message GetTamMathFuncAttributeResponse {
+  TamMathFuncAttribute attr = 1;
+}
+
+message CreateTamReportRequest {
+  uint64 switch = 1;
+
+  TamReportType type = 2;
+  uint32 histogram_number_of_bins = 3;
+  repeated uint32 histogram_bin_boundary = 4;
+  uint32 quota = 5;
+  TamReportMode report_mode = 6;
+  uint32 report_interval = 7;
+  uint32 enterprise_number = 8;
+}
+
+message CreateTamReportResponse {
+  uint64 oid = 1;
+}
+
+message RemoveTamReportRequest {
+  uint64 oid = 1;
+}
+
+message RemoveTamReportResponse {}
+
+message SetTamReportAttributeRequest {
+  uint64 oid = 1;
+  oneof attr {
+    TamReportType type = 2;
+    uint32 quota = 3;
+    uint32 report_interval = 4;
+    uint32 enterprise_number = 5;
+  }
+}
+
+message SetTamReportAttributeResponse {}
+
+message GetTamReportAttributeRequest {
+  uint64 oid = 1;
+  TamReportAttr attr_type = 2;
+}
+
+message GetTamReportAttributeResponse {
+  TamReportAttribute attr = 1;
+}
+
+message CreateTamTelemetryRequest {
+  uint64 switch = 1;
+
+  repeated uint64 tam_type_list = 2;
+  repeated uint64 collector_list = 3;
+  TamReportingUnit tam_reporting_unit = 4;
+  uint32 reporting_interval = 5;
+}
+
+message CreateTamTelemetryResponse {
+  uint64 oid = 1;
+}
+
+message RemoveTamTelemetryRequest {
+  uint64 oid = 1;
+}
+
+message RemoveTamTelemetryResponse {}
+
+message SetTamTelemetryAttributeRequest {
+  uint64 oid = 1;
+  oneof attr {
+    Uint64List tam_type_list = 2;
+    TamReportingUnit tam_reporting_unit = 3;
+    uint32 reporting_interval = 4;
+  }
+}
+
+message SetTamTelemetryAttributeResponse {}
+
+message GetTamTelemetryAttributeRequest {
+  uint64 oid = 1;
+  TamTelemetryAttr attr_type = 2;
+}
+
+message GetTamTelemetryAttributeResponse {
+  TamTelemetryAttribute attr = 1;
+}
+
 message CreateTamTelTypeRequest {
   uint64 switch = 1;
 
@@ -472,166 +632,6 @@ message GetTamTransportAttributeResponse {
   TamTransportAttribute attr = 1;
 }
 
-message CreateTamTelemetryRequest {
-  uint64 switch = 1;
-
-  repeated uint64 tam_type_list = 2;
-  repeated uint64 collector_list = 3;
-  TamReportingUnit tam_reporting_unit = 4;
-  uint32 reporting_interval = 5;
-}
-
-message CreateTamTelemetryResponse {
-  uint64 oid = 1;
-}
-
-message RemoveTamTelemetryRequest {
-  uint64 oid = 1;
-}
-
-message RemoveTamTelemetryResponse {}
-
-message SetTamTelemetryAttributeRequest {
-  uint64 oid = 1;
-  oneof attr {
-    Uint64List tam_type_list = 2;
-    TamReportingUnit tam_reporting_unit = 3;
-    uint32 reporting_interval = 4;
-  }
-}
-
-message SetTamTelemetryAttributeResponse {}
-
-message GetTamTelemetryAttributeRequest {
-  uint64 oid = 1;
-  TamTelemetryAttr attr_type = 2;
-}
-
-message GetTamTelemetryAttributeResponse {
-  TamTelemetryAttribute attr = 1;
-}
-
-message CreateTamCollectorRequest {
-  uint64 switch = 1;
-
-  bytes src_ip = 2;
-  bytes dst_ip = 3;
-  bool localhost = 4;
-  uint64 virtual_router_id = 5;
-  uint32 truncate_size = 6;
-  uint64 transport = 7;
-  uint32 dscp_value = 8;
-}
-
-message CreateTamCollectorResponse {
-  uint64 oid = 1;
-}
-
-message RemoveTamCollectorRequest {
-  uint64 oid = 1;
-}
-
-message RemoveTamCollectorResponse {}
-
-message SetTamCollectorAttributeRequest {
-  uint64 oid = 1;
-  oneof attr {
-    bytes src_ip = 2;
-    bytes dst_ip = 3;
-    bool localhost = 4;
-    uint64 virtual_router_id = 5;
-    uint32 truncate_size = 6;
-    uint64 transport = 7;
-    uint32 dscp_value = 8;
-  }
-}
-
-message SetTamCollectorAttributeResponse {}
-
-message GetTamCollectorAttributeRequest {
-  uint64 oid = 1;
-  TamCollectorAttr attr_type = 2;
-}
-
-message GetTamCollectorAttributeResponse {
-  TamCollectorAttribute attr = 1;
-}
-
-message CreateTamEventActionRequest {
-  uint64 switch = 1;
-
-  uint64 report_type = 2;
-  uint32 qos_action_type = 3;
-}
-
-message CreateTamEventActionResponse {
-  uint64 oid = 1;
-}
-
-message RemoveTamEventActionRequest {
-  uint64 oid = 1;
-}
-
-message RemoveTamEventActionResponse {}
-
-message SetTamEventActionAttributeRequest {
-  uint64 oid = 1;
-  oneof attr {
-    uint64 report_type = 2;
-    uint32 qos_action_type = 3;
-  }
-}
-
-message SetTamEventActionAttributeResponse {}
-
-message GetTamEventActionAttributeRequest {
-  uint64 oid = 1;
-  TamEventActionAttr attr_type = 2;
-}
-
-message GetTamEventActionAttributeResponse {
-  TamEventActionAttribute attr = 1;
-}
-
-message CreateTamEventRequest {
-  uint64 switch = 1;
-
-  TamEventType type = 2;
-  repeated uint64 action_list = 3;
-  repeated uint64 collector_list = 4;
-  uint64 threshold = 5;
-  uint32 dscp_value = 6;
-}
-
-message CreateTamEventResponse {
-  uint64 oid = 1;
-}
-
-message RemoveTamEventRequest {
-  uint64 oid = 1;
-}
-
-message RemoveTamEventResponse {}
-
-message SetTamEventAttributeRequest {
-  uint64 oid = 1;
-  oneof attr {
-    uint64 threshold = 2;
-    uint32 dscp_value = 3;
-  }
-}
-
-message SetTamEventAttributeResponse {}
-
-message GetTamEventAttributeRequest {
-  uint64 oid = 1;
-  TamEventAttr attr_type = 2;
-}
-
-message GetTamEventAttributeResponse {
-  TamEventAttribute attr = 1;
-}
-
 service Tam {
   rpc CreateTam(CreateTamRequest) returns (CreateTamResponse) {}
   rpc RemoveTam(RemoveTamRequest) returns (RemoveTamResponse) {}
@@ -639,6 +639,42 @@ service Tam {
       returns (SetTamAttributeResponse) {}
   rpc GetTamAttribute(GetTamAttributeRequest)
       returns (GetTamAttributeResponse) {}
+  rpc CreateTamCollector(CreateTamCollectorRequest)
+      returns (CreateTamCollectorResponse) {}
+  rpc RemoveTamCollector(RemoveTamCollectorRequest)
+      returns (RemoveTamCollectorResponse) {}
+  rpc SetTamCollectorAttribute(SetTamCollectorAttributeRequest)
+      returns (SetTamCollectorAttributeResponse) {}
+  rpc GetTamCollectorAttribute(GetTamCollectorAttributeRequest)
+      returns (GetTamCollectorAttributeResponse) {}
+  rpc CreateTamEvent(CreateTamEventRequest) returns (CreateTamEventResponse) {}
+  rpc RemoveTamEvent(RemoveTamEventRequest) returns (RemoveTamEventResponse) {}
+  rpc SetTamEventAttribute(SetTamEventAttributeRequest)
+      returns (SetTamEventAttributeResponse) {}
+  rpc GetTamEventAttribute(GetTamEventAttributeRequest)
+      returns (GetTamEventAttributeResponse) {}
+  rpc CreateTamEventAction(CreateTamEventActionRequest)
+      returns (CreateTamEventActionResponse) {}
+  rpc RemoveTamEventAction(RemoveTamEventActionRequest)
+      returns (RemoveTamEventActionResponse) {}
+  rpc SetTamEventActionAttribute(SetTamEventActionAttributeRequest)
+      returns (SetTamEventActionAttributeResponse) {}
+  rpc GetTamEventActionAttribute(GetTamEventActionAttributeRequest)
+      returns (GetTamEventActionAttributeResponse) {}
+  rpc CreateTamEventThreshold(CreateTamEventThresholdRequest)
+      returns (CreateTamEventThresholdResponse) {}
+  rpc RemoveTamEventThreshold(RemoveTamEventThresholdRequest)
+      returns (RemoveTamEventThresholdResponse) {}
+  rpc SetTamEventThresholdAttribute(SetTamEventThresholdAttributeRequest)
+      returns (SetTamEventThresholdAttributeResponse) {}
+  rpc GetTamEventThresholdAttribute(GetTamEventThresholdAttributeRequest)
+      returns (GetTamEventThresholdAttributeResponse) {}
+  rpc CreateTamInt(CreateTamIntRequest) returns (CreateTamIntResponse) {}
+  rpc RemoveTamInt(RemoveTamIntRequest) returns (RemoveTamIntResponse) {}
+  rpc SetTamIntAttribute(SetTamIntAttributeRequest)
+      returns (SetTamIntAttributeResponse) {}
+  rpc GetTamIntAttribute(GetTamIntAttributeRequest)
+      returns (GetTamIntAttributeResponse) {}
   rpc CreateTamMathFunc(CreateTamMathFuncRequest)
       returns (CreateTamMathFuncResponse) {}
   rpc RemoveTamMathFunc(RemoveTamMathFuncRequest)
@@ -655,20 +691,14 @@ service Tam {
       returns (SetTamReportAttributeResponse) {}
   rpc GetTamReportAttribute(GetTamReportAttributeRequest)
       returns (GetTamReportAttributeResponse) {}
-  rpc CreateTamEventThreshold(CreateTamEventThresholdRequest)
-      returns (CreateTamEventThresholdResponse) {}
-  rpc RemoveTamEventThreshold(RemoveTamEventThresholdRequest)
-      returns (RemoveTamEventThresholdResponse) {}
-  rpc SetTamEventThresholdAttribute(SetTamEventThresholdAttributeRequest)
-      returns (SetTamEventThresholdAttributeResponse) {}
-  rpc GetTamEventThresholdAttribute(GetTamEventThresholdAttributeRequest)
-      returns (GetTamEventThresholdAttributeResponse) {}
-  rpc CreateTamInt(CreateTamIntRequest) returns (CreateTamIntResponse) {}
-  rpc RemoveTamInt(RemoveTamIntRequest) returns (RemoveTamIntResponse) {}
-  rpc SetTamIntAttribute(SetTamIntAttributeRequest)
-      returns (SetTamIntAttributeResponse) {}
-  rpc GetTamIntAttribute(GetTamIntAttributeRequest)
-      returns (GetTamIntAttributeResponse) {}
+  rpc CreateTamTelemetry(CreateTamTelemetryRequest)
+      returns (CreateTamTelemetryResponse) {}
+  rpc RemoveTamTelemetry(RemoveTamTelemetryRequest)
+      returns (RemoveTamTelemetryResponse) {}
+  rpc SetTamTelemetryAttribute(SetTamTelemetryAttributeRequest)
+      returns (SetTamTelemetryAttributeResponse) {}
+  rpc GetTamTelemetryAttribute(GetTamTelemetryAttributeRequest)
+      returns (GetTamTelemetryAttributeResponse) {}
   rpc CreateTamTelType(CreateTamTelTypeRequest)
       returns (CreateTamTelTypeResponse) {}
   rpc RemoveTamTelType(RemoveTamTelTypeRequest)
@@ -685,34 +715,4 @@ service Tam {
       returns (SetTamTransportAttributeResponse) {}
   rpc GetTamTransportAttribute(GetTamTransportAttributeRequest)
       returns (GetTamTransportAttributeResponse) {}
-  rpc CreateTamTelemetry(CreateTamTelemetryRequest)
-      returns (CreateTamTelemetryResponse) {}
-  rpc RemoveTamTelemetry(RemoveTamTelemetryRequest)
-      returns (RemoveTamTelemetryResponse) {}
-  rpc SetTamTelemetryAttribute(SetTamTelemetryAttributeRequest)
-      returns (SetTamTelemetryAttributeResponse) {}
-  rpc GetTamTelemetryAttribute(GetTamTelemetryAttributeRequest)
-      returns (GetTamTelemetryAttributeResponse) {}
-  rpc CreateTamCollector(CreateTamCollectorRequest)
-      returns (CreateTamCollectorResponse) {}
-  rpc RemoveTamCollector(RemoveTamCollectorRequest)
-      returns (RemoveTamCollectorResponse) {}
-  rpc SetTamCollectorAttribute(SetTamCollectorAttributeRequest)
-      returns (SetTamCollectorAttributeResponse) {}
-  rpc GetTamCollectorAttribute(GetTamCollectorAttributeRequest)
-      returns (GetTamCollectorAttributeResponse) {}
-  rpc CreateTamEventAction(CreateTamEventActionRequest)
-      returns (CreateTamEventActionResponse) {}
-  rpc RemoveTamEventAction(RemoveTamEventActionRequest)
-      returns (RemoveTamEventActionResponse) {}
-  rpc SetTamEventActionAttribute(SetTamEventActionAttributeRequest)
-      returns (SetTamEventActionAttributeResponse) {}
-  rpc GetTamEventActionAttribute(GetTamEventActionAttributeRequest)
-      returns (GetTamEventActionAttributeResponse) {}
-  rpc CreateTamEvent(CreateTamEventRequest) returns (CreateTamEventResponse) {}
-  rpc RemoveTamEvent(RemoveTamEventRequest) returns (RemoveTamEventResponse) {}
-  rpc SetTamEventAttribute(SetTamEventAttributeRequest)
-      returns (SetTamEventAttributeResponse) {}
-  rpc GetTamEventAttribute(GetTamEventAttributeRequest)
-      returns (GetTamEventAttributeResponse) {}
 }

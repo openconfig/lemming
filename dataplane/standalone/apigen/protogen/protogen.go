@@ -17,6 +17,7 @@ package protogen
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"text/template"
 	"unicode"
@@ -40,6 +41,11 @@ func Generate(doc *docparser.SAIInfo, sai *saiast.SAIAPI) (map[string]string, er
 	apis := map[string]*protoAPITmplData{}
 	for _, iface := range sai.Ifaces {
 		apiName := strings.TrimSuffix(strings.TrimPrefix(iface.Name, "sai_"), "_api_t")
+		sort.SliceStable(iface.Funcs, func(i, j int) bool {
+			metaI := sai.GetFuncMeta(iface.Funcs[i])
+			metaJ := sai.GetFuncMeta(iface.Funcs[j])
+			return metaI.TypeName < metaJ.TypeName
+		})
 		for _, fn := range iface.Funcs {
 			meta := sai.GetFuncMeta(fn)
 			if err := populateTmplDataFromFunc(apis, doc, apiName, meta); err != nil {
@@ -55,21 +61,47 @@ func Generate(doc *docparser.SAIInfo, sai *saiast.SAIAPI) (map[string]string, er
 	return files, nil
 }
 
+func rangeInOrder[T any](m map[string]T, pred func(key string, val T) error) error {
+	list := []*struct {
+		key string
+		val T
+	}{}
+	for k, v := range m {
+		list = append(list, &struct {
+			key string
+			val T
+		}{
+			key: k,
+			val: v,
+		})
+	}
+	sort.SliceStable(list, func(i, j int) bool {
+		return list[i].key < list[j].key
+	})
+	for _, e := range list {
+		if err := pred(e.key, e.val); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // generateCommonTypes returns all contents of the common proto.
 // These all reside in the common.proto file to simplify handling imports.
 func generateCommonTypes(docInfo *docparser.SAIInfo) (string, error) {
-	common := &protoCommonTmplData{
-		Enums: map[string]*protoEnum{},
-		Lists: map[string]*protoTmplMessage{},
-	}
+	common := &protoCommonTmplData{}
+
 	// Generate the hand-crafted messages.
-	for _, typeInfo := range saiTypeToProto {
+	rangeInOrder(saiTypeToProto, func(key string, typeInfo saiTypeInfo) error {
 		if typeInfo.MessageDef != "" {
 			common.Messages = append(common.Messages, typeInfo.MessageDef)
 		}
-	}
+		return nil
+	})
+
+	seenEnums := map[string]bool{}
 	// Generate non-attribute enums.
-	for name, vals := range docInfo.Enums {
+	rangeInOrder(docInfo.Enums, func(name string, vals []string) error {
 		protoName := saiast.TrimSAIName(name, true, false)
 		unspecifiedName := saiast.TrimSAIName(name, false, true) + "_UNSPECIFIED"
 		enum := &protoEnum{
@@ -85,21 +117,27 @@ func generateCommonTypes(docInfo *docparser.SAIInfo) (string, error) {
 				Name:  strings.TrimPrefix(val, "SAI_"),
 			})
 		}
-		common.Enums[protoName] = enum
-	}
+		if _, ok := seenEnums[protoName]; !ok {
+			common.Enums = append(common.Enums, enum)
+			seenEnums[protoName] = true
+		}
+		return nil
+	})
+
+	seenLists := map[string]bool{}
 	// Find all the repeated fields that appear in oneof and generate a list wrapper type.
-	for n, attr := range docInfo.Attrs {
+	err := rangeInOrder(docInfo.Attrs, func(n string, attr *docparser.Attr) error {
 		for _, f := range attr.ReadFields {
-			msgName, isRepeated, err := saiTypeToProtoType(f.SaiType, docInfo, true)
+			msgName, isRepeated, err := SaiTypeToProtoType(f.SaiType, docInfo, true)
 			if err != nil {
-				return "", err
+				return err
 			}
 			if !isRepeated {
 				continue
 			}
-			repeatedName, _, err := saiTypeToProtoType(f.SaiType, docInfo, false)
+			repeatedName, _, err := SaiTypeToProtoType(f.SaiType, docInfo, false)
 			if err != nil {
-				return "", err
+				return err
 			}
 			msg := &protoTmplMessage{
 				Name: msgName,
@@ -109,18 +147,25 @@ func generateCommonTypes(docInfo *docparser.SAIInfo) (string, error) {
 					ProtoType: repeatedName,
 				}},
 			}
-			common.Lists[msgName] = msg
+			if _, ok := seenLists[msgName]; !ok {
+				common.Lists = append(common.Lists, msg)
+				seenLists[msgName] = true
+			}
 		}
-		attrFields, err := createAttrs(2, docInfo, attr.ReadFields, true)
+		attrFields, err := createAttrs(1, docInfo, attr.ReadFields, true)
 		if err != nil {
-			return "", err
+			return err
 		}
-		common.Lists[n] = &protoTmplMessage{
+		common.Lists = append(common.Lists, &protoTmplMessage{
 			Fields:            attrFields,
 			Name:              saiast.TrimSAIName(n, true, false) + "Attribute",
 			AttrsWrapperStart: "oneof {",
 			AttrsWrapperEnd:   "}",
-		}
+		})
+		return nil
+	})
+	if err != nil {
+		return "", err
 	}
 	var builder strings.Builder
 	if err := protoCommonTmpl.Execute(&builder, common); err != nil {
@@ -133,7 +178,6 @@ func generateCommonTypes(docInfo *docparser.SAIInfo) (string, error) {
 func populateTmplDataFromFunc(apis map[string]*protoAPITmplData, docInfo *docparser.SAIInfo, apiName string, meta *saiast.FuncMetadata) error {
 	if _, ok := apis[apiName]; !ok {
 		apis[apiName] = &protoAPITmplData{
-			Enums:       make(map[string]protoEnum),
 			ServiceName: saiast.TrimSAIName(apiName, true, false),
 		}
 	}
@@ -168,21 +212,20 @@ func populateTmplDataFromFunc(apis map[string]*protoAPITmplData, docInfo *docpar
 				ProtoType: "uint64",
 				Name:      "switch",
 			})
+			requestIdx++
 		} else if meta.Entry != "" {
 			req.Fields = append(req.Fields, idField)
+			requestIdx++
 		}
-		requestIdx++
+
 		attrs, err := createAttrs(requestIdx, docInfo, docInfo.Attrs[meta.TypeName].CreateFields, false)
 		if err != nil {
 			return err
 		}
 		req.Attrs = attrs
-
-		resp.Fields = append(resp.Fields, protoTmplField{
-			Index:     1,
-			ProtoType: "uint64",
-			Name:      "oid",
-		})
+		if meta.Entry == "" { // Entries don't have id.
+			resp.Fields = append(resp.Fields, idField)
+		}
 	case "set_attribute":
 		// If there are no settable attributes, do nothing.
 		if len(docInfo.Attrs[meta.TypeName].SetFields) == 0 {
@@ -241,7 +284,7 @@ func populateTmplDataFromFunc(apis map[string]*protoAPITmplData, docInfo *docpar
 				})
 			}
 		}
-		apis[apiName].Enums[attrEnum.Name] = attrEnum
+		apis[apiName].Enums = append(apis[apiName].Enums, attrEnum)
 	case "remove":
 		req.Fields = append(req.Fields, idField)
 	default:
@@ -273,7 +316,7 @@ func createAttrs(startIdx int, xmlInfo *docparser.SAIInfo, attrs []*docparser.At
 			Index: startIdx,
 			Name:  name,
 		}
-		typ, _, err := saiTypeToProtoType(attr.SaiType, xmlInfo, inOneof)
+		typ, _, err := SaiTypeToProtoType(attr.SaiType, xmlInfo, inOneof)
 		if err != nil {
 			return nil, err
 		}
@@ -300,7 +343,7 @@ enum {{ .Name }} {
 	{{ .Name }} = {{ .Index }};
 	{{- end}}
 }
-{{ end }}
+{{ end -}}
 
 {{ range .Messages }}
 message {{ .Name }} {
@@ -314,7 +357,6 @@ message {{ .Name }} {
 	{{ .AttrsWrapperEnd }}
 }
 {{ end }}
-
 
 service {{ .ServiceName }} {
 	{{- range .RPCs }}
@@ -331,25 +373,25 @@ import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/openconfig/lemming/proto/dataplane/sai";
 
-{{ range .Enums }}
+{{ range .Messages }}
+{{ . }}
+{{ end -}}
+
+{{- range .Enums }}
 enum {{ .Name }} {
 	{{- range .Values }}
 	{{ .Name }} = {{ .Index }};
 	{{- end}}
 }
-{{ end }}
+{{ end -}}
 
-{{ range .Messages }}
-{{ . }}
-{{ end }}
-
-{{ range .Lists }}
+{{- range .Lists }}
 message {{ .Name }} {
 	{{- range .Fields }}
 	{{ .ProtoType }} {{ .Name }} = {{ .Index }};
 	{{- end }}
 }
-{{ end }}
+{{ end -}}
 `))
 )
 
@@ -357,15 +399,15 @@ message {{ .Name }} {
 type protoAPITmplData struct {
 	Messages    []protoTmplMessage
 	RPCs        []protoRPC
-	Enums       map[string]protoEnum
+	Enums       []protoEnum
 	ServiceName string
 }
 
 // protoCommonTmplData contains the formated information needed to render the protobuf template.
 type protoCommonTmplData struct {
 	Messages []string
-	Enums    map[string]*protoEnum
-	Lists    map[string]*protoTmplMessage
+	Enums    []*protoEnum
+	Lists    []*protoTmplMessage
 }
 
 type protoEnum struct {
@@ -502,8 +544,8 @@ var (
 		"sai_u32_range_t": {
 			ProtoType: "Uint32Range",
 			MessageDef: `message Uint32Range {
-uint64 min = 1;
-uint64 max = 2;
+	uint64 min = 1;
+	uint64 max = 2;
 }`,
 		},
 		"sai_ip_address_t": {
@@ -548,7 +590,7 @@ message	QOSMapParams {
 	uint32 mpls_exp = 8;
 	uint32 fc = 9;
 }
-		
+
 message QOSMap {
 	QOSMapParams key = 1;
 	QOSMapParams value = 2;
@@ -917,7 +959,7 @@ var saiTypeToProtoTypeCompound = map[string]func(subType string, xmlInfo *docpar
 
 // saiTypeToProtoType returns the protobuf type string for a SAI type.
 // example: sai_u8_list_t -> repeated uint32
-func saiTypeToProtoType(saiType string, xmlInfo *docparser.SAIInfo, inOneof bool) (string, bool, error) {
+func SaiTypeToProtoType(saiType string, xmlInfo *docparser.SAIInfo, inOneof bool) (string, bool, error) {
 	saiType = strings.TrimPrefix(saiType, "const ")
 
 	if pt, ok := saiTypeToProto[saiType]; ok {
