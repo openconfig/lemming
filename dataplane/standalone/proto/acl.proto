@@ -294,125 +294,43 @@ enum AclTableGroupMemberAttr {
   ACL_TABLE_GROUP_MEMBER_ATTR_PRIORITY = 3;
 }
 
-message CreateAclTableRequest {
+message CreateAclCounterRequest {
   uint64 switch = 1;
 
-  AclStage acl_stage = 2;
-  repeated AclBindPointType acl_bind_point_type_list = 3;
-  uint32 size = 4;
-  repeated AclActionType acl_action_type_list = 5;
-  bool field_src_ipv6 = 6;
-  bool field_src_ipv6_word3 = 7;
-  bool field_src_ipv6_word2 = 8;
-  bool field_src_ipv6_word1 = 9;
-  bool field_src_ipv6_word0 = 10;
-  bool field_dst_ipv6 = 11;
-  bool field_dst_ipv6_word3 = 12;
-  bool field_dst_ipv6_word2 = 13;
-  bool field_dst_ipv6_word1 = 14;
-  bool field_dst_ipv6_word0 = 15;
-  bool field_inner_src_ipv6 = 16;
-  bool field_inner_dst_ipv6 = 17;
-  bool field_src_mac = 18;
-  bool field_dst_mac = 19;
-  bool field_src_ip = 20;
-  bool field_dst_ip = 21;
-  bool field_inner_src_ip = 22;
-  bool field_inner_dst_ip = 23;
-  bool field_in_ports = 24;
-  bool field_out_ports = 25;
-  bool field_in_port = 26;
-  bool field_out_port = 27;
-  bool field_src_port = 28;
-  bool field_outer_vlan_id = 29;
-  bool field_outer_vlan_pri = 30;
-  bool field_outer_vlan_cfi = 31;
-  bool field_inner_vlan_id = 32;
-  bool field_inner_vlan_pri = 33;
-  bool field_inner_vlan_cfi = 34;
-  bool field_l4_src_port = 35;
-  bool field_l4_dst_port = 36;
-  bool field_inner_l4_src_port = 37;
-  bool field_inner_l4_dst_port = 38;
-  bool field_ether_type = 39;
-  bool field_inner_ether_type = 40;
-  bool field_ip_protocol = 41;
-  bool field_inner_ip_protocol = 42;
-  bool field_ip_identification = 43;
-  bool field_dscp = 44;
-  bool field_ecn = 45;
-  bool field_ttl = 46;
-  bool field_tos = 47;
-  bool field_ip_flags = 48;
-  bool field_tcp_flags = 49;
-  bool field_acl_ip_type = 50;
-  bool field_acl_ip_frag = 51;
-  bool field_ipv6_flow_label = 52;
-  bool field_tc = 53;
-  bool field_icmp_type = 54;
-  bool field_icmp_code = 55;
-  bool field_icmpv6_type = 56;
-  bool field_icmpv6_code = 57;
-  bool field_packet_vlan = 58;
-  bool field_tunnel_vni = 59;
-  bool field_has_vlan_tag = 60;
-  bool field_macsec_sci = 61;
-  bool field_mpls_label0_label = 62;
-  bool field_mpls_label0_ttl = 63;
-  bool field_mpls_label0_exp = 64;
-  bool field_mpls_label0_bos = 65;
-  bool field_mpls_label1_label = 66;
-  bool field_mpls_label1_ttl = 67;
-  bool field_mpls_label1_exp = 68;
-  bool field_mpls_label1_bos = 69;
-  bool field_mpls_label2_label = 70;
-  bool field_mpls_label2_ttl = 71;
-  bool field_mpls_label2_exp = 72;
-  bool field_mpls_label2_bos = 73;
-  bool field_mpls_label3_label = 74;
-  bool field_mpls_label3_ttl = 75;
-  bool field_mpls_label3_exp = 76;
-  bool field_mpls_label3_bos = 77;
-  bool field_mpls_label4_label = 78;
-  bool field_mpls_label4_ttl = 79;
-  bool field_mpls_label4_exp = 80;
-  bool field_mpls_label4_bos = 81;
-  bool field_fdb_dst_user_meta = 82;
-  bool field_route_dst_user_meta = 83;
-  bool field_neighbor_dst_user_meta = 84;
-  bool field_port_user_meta = 85;
-  bool field_vlan_user_meta = 86;
-  bool field_acl_user_meta = 87;
-  bool field_fdb_npu_meta_dst_hit = 88;
-  bool field_neighbor_npu_meta_dst_hit = 89;
-  bool field_route_npu_meta_dst_hit = 90;
-  bool field_bth_opcode = 91;
-  bool field_aeth_syndrome = 92;
-  uint64 user_defined_field_group_min = 93;
-  uint64 user_defined_field_group_max = 94;
-  repeated AclRangeType field_acl_range_type = 95;
-  bool field_ipv6_next_header = 96;
-  bool field_gre_key = 97;
-  bool field_tam_int_type = 98;
+  uint64 table_id = 2;
+  bool enable_packet_count = 3;
+  bool enable_byte_count = 4;
+  uint64 packets = 5;
+  uint64 bytes = 6;
 }
 
-message CreateAclTableResponse {
+message CreateAclCounterResponse {
   uint64 oid = 1;
 }
 
-message RemoveAclTableRequest {
+message RemoveAclCounterRequest {
   uint64 oid = 1;
 }
 
-message RemoveAclTableResponse {}
+message RemoveAclCounterResponse {}
 
-message GetAclTableAttributeRequest {
+message SetAclCounterAttributeRequest {
   uint64 oid = 1;
-  AclTableAttr attr_type = 2;
+  oneof attr {
+    uint64 packets = 2;
+    uint64 bytes = 3;
+  }
 }
 
-message GetAclTableAttributeResponse {
-  AclTableAttribute attr = 1;
+message SetAclCounterAttributeResponse {}
+
+message GetAclCounterAttributeRequest {
+  uint64 oid = 1;
+  AclCounterAttr attr_type = 2;
+}
+
+message GetAclCounterAttributeResponse {
+  AclCounterAttribute attr = 1;
 }
 
 message CreateAclEntryRequest {
@@ -744,45 +662,6 @@ message GetAclEntryAttributeResponse {
   AclEntryAttribute attr = 1;
 }
 
-message CreateAclCounterRequest {
-  uint64 switch = 1;
-
-  uint64 table_id = 2;
-  bool enable_packet_count = 3;
-  bool enable_byte_count = 4;
-  uint64 packets = 5;
-  uint64 bytes = 6;
-}
-
-message CreateAclCounterResponse {
-  uint64 oid = 1;
-}
-
-message RemoveAclCounterRequest {
-  uint64 oid = 1;
-}
-
-message RemoveAclCounterResponse {}
-
-message SetAclCounterAttributeRequest {
-  uint64 oid = 1;
-  oneof attr {
-    uint64 packets = 2;
-    uint64 bytes = 3;
-  }
-}
-
-message SetAclCounterAttributeResponse {}
-
-message GetAclCounterAttributeRequest {
-  uint64 oid = 1;
-  AclCounterAttr attr_type = 2;
-}
-
-message GetAclCounterAttributeResponse {
-  AclCounterAttribute attr = 1;
-}
-
 message CreateAclRangeRequest {
   uint64 switch = 1;
 
@@ -807,6 +686,127 @@ message GetAclRangeAttributeRequest {
 
 message GetAclRangeAttributeResponse {
   AclRangeAttribute attr = 1;
+}
+
+message CreateAclTableRequest {
+  uint64 switch = 1;
+
+  AclStage acl_stage = 2;
+  repeated AclBindPointType acl_bind_point_type_list = 3;
+  uint32 size = 4;
+  repeated AclActionType acl_action_type_list = 5;
+  bool field_src_ipv6 = 6;
+  bool field_src_ipv6_word3 = 7;
+  bool field_src_ipv6_word2 = 8;
+  bool field_src_ipv6_word1 = 9;
+  bool field_src_ipv6_word0 = 10;
+  bool field_dst_ipv6 = 11;
+  bool field_dst_ipv6_word3 = 12;
+  bool field_dst_ipv6_word2 = 13;
+  bool field_dst_ipv6_word1 = 14;
+  bool field_dst_ipv6_word0 = 15;
+  bool field_inner_src_ipv6 = 16;
+  bool field_inner_dst_ipv6 = 17;
+  bool field_src_mac = 18;
+  bool field_dst_mac = 19;
+  bool field_src_ip = 20;
+  bool field_dst_ip = 21;
+  bool field_inner_src_ip = 22;
+  bool field_inner_dst_ip = 23;
+  bool field_in_ports = 24;
+  bool field_out_ports = 25;
+  bool field_in_port = 26;
+  bool field_out_port = 27;
+  bool field_src_port = 28;
+  bool field_outer_vlan_id = 29;
+  bool field_outer_vlan_pri = 30;
+  bool field_outer_vlan_cfi = 31;
+  bool field_inner_vlan_id = 32;
+  bool field_inner_vlan_pri = 33;
+  bool field_inner_vlan_cfi = 34;
+  bool field_l4_src_port = 35;
+  bool field_l4_dst_port = 36;
+  bool field_inner_l4_src_port = 37;
+  bool field_inner_l4_dst_port = 38;
+  bool field_ether_type = 39;
+  bool field_inner_ether_type = 40;
+  bool field_ip_protocol = 41;
+  bool field_inner_ip_protocol = 42;
+  bool field_ip_identification = 43;
+  bool field_dscp = 44;
+  bool field_ecn = 45;
+  bool field_ttl = 46;
+  bool field_tos = 47;
+  bool field_ip_flags = 48;
+  bool field_tcp_flags = 49;
+  bool field_acl_ip_type = 50;
+  bool field_acl_ip_frag = 51;
+  bool field_ipv6_flow_label = 52;
+  bool field_tc = 53;
+  bool field_icmp_type = 54;
+  bool field_icmp_code = 55;
+  bool field_icmpv6_type = 56;
+  bool field_icmpv6_code = 57;
+  bool field_packet_vlan = 58;
+  bool field_tunnel_vni = 59;
+  bool field_has_vlan_tag = 60;
+  bool field_macsec_sci = 61;
+  bool field_mpls_label0_label = 62;
+  bool field_mpls_label0_ttl = 63;
+  bool field_mpls_label0_exp = 64;
+  bool field_mpls_label0_bos = 65;
+  bool field_mpls_label1_label = 66;
+  bool field_mpls_label1_ttl = 67;
+  bool field_mpls_label1_exp = 68;
+  bool field_mpls_label1_bos = 69;
+  bool field_mpls_label2_label = 70;
+  bool field_mpls_label2_ttl = 71;
+  bool field_mpls_label2_exp = 72;
+  bool field_mpls_label2_bos = 73;
+  bool field_mpls_label3_label = 74;
+  bool field_mpls_label3_ttl = 75;
+  bool field_mpls_label3_exp = 76;
+  bool field_mpls_label3_bos = 77;
+  bool field_mpls_label4_label = 78;
+  bool field_mpls_label4_ttl = 79;
+  bool field_mpls_label4_exp = 80;
+  bool field_mpls_label4_bos = 81;
+  bool field_fdb_dst_user_meta = 82;
+  bool field_route_dst_user_meta = 83;
+  bool field_neighbor_dst_user_meta = 84;
+  bool field_port_user_meta = 85;
+  bool field_vlan_user_meta = 86;
+  bool field_acl_user_meta = 87;
+  bool field_fdb_npu_meta_dst_hit = 88;
+  bool field_neighbor_npu_meta_dst_hit = 89;
+  bool field_route_npu_meta_dst_hit = 90;
+  bool field_bth_opcode = 91;
+  bool field_aeth_syndrome = 92;
+  uint64 user_defined_field_group_min = 93;
+  uint64 user_defined_field_group_max = 94;
+  repeated AclRangeType field_acl_range_type = 95;
+  bool field_ipv6_next_header = 96;
+  bool field_gre_key = 97;
+  bool field_tam_int_type = 98;
+}
+
+message CreateAclTableResponse {
+  uint64 oid = 1;
+}
+
+message RemoveAclTableRequest {
+  uint64 oid = 1;
+}
+
+message RemoveAclTableResponse {}
+
+message GetAclTableAttributeRequest {
+  uint64 oid = 1;
+  AclTableAttr attr_type = 2;
+}
+
+message GetAclTableAttributeResponse {
+  AclTableAttribute attr = 1;
 }
 
 message CreateAclTableGroupRequest {
@@ -864,16 +864,6 @@ message GetAclTableGroupMemberAttributeResponse {
 }
 
 service Acl {
-  rpc CreateAclTable(CreateAclTableRequest) returns (CreateAclTableResponse) {}
-  rpc RemoveAclTable(RemoveAclTableRequest) returns (RemoveAclTableResponse) {}
-  rpc GetAclTableAttribute(GetAclTableAttributeRequest)
-      returns (GetAclTableAttributeResponse) {}
-  rpc CreateAclEntry(CreateAclEntryRequest) returns (CreateAclEntryResponse) {}
-  rpc RemoveAclEntry(RemoveAclEntryRequest) returns (RemoveAclEntryResponse) {}
-  rpc SetAclEntryAttribute(SetAclEntryAttributeRequest)
-      returns (SetAclEntryAttributeResponse) {}
-  rpc GetAclEntryAttribute(GetAclEntryAttributeRequest)
-      returns (GetAclEntryAttributeResponse) {}
   rpc CreateAclCounter(CreateAclCounterRequest)
       returns (CreateAclCounterResponse) {}
   rpc RemoveAclCounter(RemoveAclCounterRequest)
@@ -882,10 +872,20 @@ service Acl {
       returns (SetAclCounterAttributeResponse) {}
   rpc GetAclCounterAttribute(GetAclCounterAttributeRequest)
       returns (GetAclCounterAttributeResponse) {}
+  rpc CreateAclEntry(CreateAclEntryRequest) returns (CreateAclEntryResponse) {}
+  rpc RemoveAclEntry(RemoveAclEntryRequest) returns (RemoveAclEntryResponse) {}
+  rpc SetAclEntryAttribute(SetAclEntryAttributeRequest)
+      returns (SetAclEntryAttributeResponse) {}
+  rpc GetAclEntryAttribute(GetAclEntryAttributeRequest)
+      returns (GetAclEntryAttributeResponse) {}
   rpc CreateAclRange(CreateAclRangeRequest) returns (CreateAclRangeResponse) {}
   rpc RemoveAclRange(RemoveAclRangeRequest) returns (RemoveAclRangeResponse) {}
   rpc GetAclRangeAttribute(GetAclRangeAttributeRequest)
       returns (GetAclRangeAttributeResponse) {}
+  rpc CreateAclTable(CreateAclTableRequest) returns (CreateAclTableResponse) {}
+  rpc RemoveAclTable(RemoveAclTableRequest) returns (RemoveAclTableResponse) {}
+  rpc GetAclTableAttribute(GetAclTableAttributeRequest)
+      returns (GetAclTableAttributeResponse) {}
   rpc CreateAclTableGroup(CreateAclTableGroupRequest)
       returns (CreateAclTableGroupResponse) {}
   rpc RemoveAclTableGroup(RemoveAclTableGroupRequest)

@@ -35,9 +35,7 @@ message CreateNeighborEntryRequest {
   bool is_local = 10;
 }
 
-message CreateNeighborEntryResponse {
-  uint64 oid = 1;
-}
+message CreateNeighborEntryResponse {}
 
 message RemoveNeighborEntryRequest {
   NeighborEntry entry = 1;

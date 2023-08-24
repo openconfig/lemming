@@ -27,9 +27,7 @@ message CreateRouteEntryRequest {
   uint64 counter_id = 6;
 }
 
-message CreateRouteEntryResponse {
-  uint64 oid = 1;
-}
+message CreateRouteEntryResponse {}
 
 message RemoveRouteEntryRequest {
   RouteEntry entry = 1;

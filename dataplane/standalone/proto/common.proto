@@ -7,6 +7,228 @@ import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/openconfig/lemming/proto/dataplane/sai";
 
+message AclActionData {
+  bool enable = 1;
+  oneof parameter {
+    uint64 uint = 2;
+    uint64 int = 3;
+    bytes mac = 4;
+    bytes ip = 5;
+    uint64 oid = 6;
+    Uint64List objlist = 7;
+    bytes ipaddr = 8;
+  };
+}
+
+message ACLCapability {
+  bool is_action_list_mandatory = 1;
+  repeated int32 action_list = 2;
+}
+
+message AclFieldData {
+  bool enable = 1;
+  oneof mask {
+    uint64 mask_uint = 2;
+    uint64 mask_int = 3;
+    bytes mask_mac = 4;
+    bytes mask_ip = 5;
+    Uint64List mask_list = 6;
+  };
+  oneof data {
+    bool data_bool = 7;
+    uint64 data_uint = 8;
+    int64 data_int = 9;
+    bytes data_mac = 10;
+    bytes data_ip = 11;
+    Uint64List data_list = 12;
+  };
+}
+
+message ACLResource {
+  AclStage stage = 1;
+  AclBindPointType bind_point = 2;
+  uint32 avail_num = 3;
+}
+
+message BfdSessionStateChangeNotificationData {
+  uint64 bfd_session_id = 1;
+  BfdSessionState session_state = 2;
+}
+
+message FabricPortReachability {
+  uint32 switch_id = 1;
+  bool reachable = 2;
+}
+
+message FdbEntry {
+  uint64 switch_id = 1;
+  bytes mac_address = 2;
+  uint64 bv_id = 3;
+}
+
+message FdbEventNotificationData {
+  FdbEvent event_type = 1;
+  FdbEntry fdb_entry = 2;
+  repeated FdbEntryAttribute attrs = 3;
+}
+
+message InsegEntry {
+  uint64 switch_id = 1;
+  uint32 label = 2;
+}
+
+message IpPrefix {
+  bytes addr = 1;
+  bytes mask = 2;
+}
+
+message IpmcEntry {
+  uint64 switch_id = 1;
+  uint64 vr_id = 2;
+  IpmcEntryType type = 3;
+  bytes destination = 4;
+  bytes source = 5;
+}
+
+message IpsecSaStatusNotificationData {
+  uint64 ipsec_sa_id = 1;
+  IpsecSaOctetCountStatus ipsec_sa_octet_count_status = 2;
+  bool ipsec_egress_sn_at_max_limit = 3;
+}
+
+message L2mcEntry {
+  uint64 switch_id = 1;
+  uint64 bv_id = 2;
+  L2mcEntryType type = 3;
+  bytes destination = 4;
+  bytes source = 5;
+}
+
+message UintMap {
+  map<uint32, uint32> uintmap = 1;
+}
+
+message McastFdbEntry {
+  uint64 switch_id = 1;
+  bytes mac_address = 2;
+  uint64 bv_id = 3;
+}
+
+message MySidEntry {
+  uint64 switch_id = 1;
+  uint64 vr_id = 2;
+  uint32 locator_block_len = 3;
+  uint32 locator_node_len = 4;
+  uint32 function_len = 5;
+  uint32 args_len = 6;
+  bytes sid = 7;
+}
+
+message NatEntryData {
+  oneof key {
+    bytes key_src_ip = 2;
+    bytes key_dst_ip = 3;
+    uint32 key_proto = 4;
+    uint32 key_l4_src_port = 5;
+    uint32 key_l4_dst_port = 6;
+  };
+  oneof mask {
+    bytes mask_src_ip = 7;
+    bytes mask_dst_ip = 8;
+    uint32 mask_proto = 9;
+    uint32 mask_l4_src_port = 10;
+    uint32 mask_l4_dst_port = 11;
+  };
+}
+
+message NatEntry {
+  uint64 switch_id = 1;
+  uint64 vr_id = 2;
+  NatType nat_type = 3;
+  NatEntryData data = 4;
+}
+
+message NeighborEntry {
+  uint64 switch_id = 1;
+  uint64 rif_id = 2;
+  bytes ip_address = 3;
+}
+
+message PortEyeValues {
+  uint32 lane = 1;
+  int32 left = 2;
+  int32 right = 3;
+  int32 up = 4;
+  int32 down = 5;
+}
+
+message PortOperStatusNotification {
+  uint64 port_id = 1;
+  PortOperStatus port_state = 2;
+}
+
+message PRBS_RXState {
+  PortPrbsRxStatus rx_status = 1;
+  uint32 error_count = 2;
+}
+
+message QOSMapParams {
+  uint32 tc = 1;
+  uint32 dscp = 2;
+  uint32 dot1p = 3;
+  uint32 prio = 4;
+  uint32 pg = 5;
+  uint32 queue_index = 6;
+  PacketColor color = 7;
+  uint32 mpls_exp = 8;
+  uint32 fc = 9;
+}
+
+message QOSMap {
+  QOSMapParams key = 1;
+  QOSMapParams value = 2;
+}
+
+message QueueDeadlockNotificationData {
+  uint64 queue_id = 1;
+  QueuePfcDeadlockEventType event = 2;
+  bool app_managed_recovery = 3;
+}
+
+message RouteEntry {
+  uint64 switch_id = 1;
+  uint64 vr_id = 2;
+  IpPrefix destination = 3;
+}
+
+message SystemPortConfig {
+  uint32 port_id = 1;
+  uint32 attached_switch_id = 2;
+  uint32 attached_core_index = 3;
+  uint32 attached_core_port_index = 4;
+  uint32 speed = 5;
+  uint32 num_voq = 6;
+}
+
+message HMAC {
+  uint32 key_id = 1;
+  repeated uint32 hmac = 2;
+}
+
+message TLVEntry {
+  oneof entry {
+    bytes ingress_node = 1;
+    bytes egress_node = 2;
+    bytes opaque_container = 3;
+    HMAC hmac = 4;
+  }
+}
+
+message Uint32Range {
+  uint64 min = 1;
+  uint64 max = 2;
+}
+
 enum AclActionType {
   ACL_ACTION_TYPE_UNSPECIFIED = 0;
   ACL_ACTION_TYPE_REDIRECT = 1;
@@ -804,6 +1026,18 @@ enum MirrorSessionType {
   MIRROR_SESSION_TYPE_SFLOW = 4;
 }
 
+enum MySidEntryEndpointBehaviorFlavor {
+  MY_SID_ENTRY_ENDPOINT_BEHAVIOR_FLAVOR_UNSPECIFIED = 0;
+  MY_SID_ENTRY_ENDPOINT_BEHAVIOR_FLAVOR_NONE = 1;
+  MY_SID_ENTRY_ENDPOINT_BEHAVIOR_FLAVOR_PSP = 2;
+  MY_SID_ENTRY_ENDPOINT_BEHAVIOR_FLAVOR_USP = 3;
+  MY_SID_ENTRY_ENDPOINT_BEHAVIOR_FLAVOR_USD = 4;
+  MY_SID_ENTRY_ENDPOINT_BEHAVIOR_FLAVOR_PSP_AND_USP = 5;
+  MY_SID_ENTRY_ENDPOINT_BEHAVIOR_FLAVOR_USD_AND_USP = 6;
+  MY_SID_ENTRY_ENDPOINT_BEHAVIOR_FLAVOR_PSP_AND_USD = 7;
+  MY_SID_ENTRY_ENDPOINT_BEHAVIOR_FLAVOR_PSP_AND_USP_AND_USD = 8;
+}
+
 enum MySidEntryEndpointBehavior {
   MY_SID_ENTRY_ENDPOINT_BEHAVIOR_UNSPECIFIED = 0;
   MY_SID_ENTRY_ENDPOINT_BEHAVIOR_E = 1;
@@ -822,18 +1056,6 @@ enum MySidEntryEndpointBehavior {
   MY_SID_ENTRY_ENDPOINT_BEHAVIOR_UA = 14;
   MY_SID_ENTRY_ENDPOINT_BEHAVIOR_CUSTOM_RANGE_START = 15;
   MY_SID_ENTRY_ENDPOINT_BEHAVIOR_CUSTOM_RANGE_END = 16;
-}
-
-enum MySidEntryEndpointBehaviorFlavor {
-  MY_SID_ENTRY_ENDPOINT_BEHAVIOR_FLAVOR_UNSPECIFIED = 0;
-  MY_SID_ENTRY_ENDPOINT_BEHAVIOR_FLAVOR_NONE = 1;
-  MY_SID_ENTRY_ENDPOINT_BEHAVIOR_FLAVOR_PSP = 2;
-  MY_SID_ENTRY_ENDPOINT_BEHAVIOR_FLAVOR_USP = 3;
-  MY_SID_ENTRY_ENDPOINT_BEHAVIOR_FLAVOR_USD = 4;
-  MY_SID_ENTRY_ENDPOINT_BEHAVIOR_FLAVOR_PSP_AND_USP = 5;
-  MY_SID_ENTRY_ENDPOINT_BEHAVIOR_FLAVOR_USD_AND_USP = 6;
-  MY_SID_ENTRY_ENDPOINT_BEHAVIOR_FLAVOR_PSP_AND_USD = 7;
-  MY_SID_ENTRY_ENDPOINT_BEHAVIOR_FLAVOR_PSP_AND_USP_AND_USD = 8;
 }
 
 enum NatType {
@@ -1155,13 +1377,6 @@ enum PortErrStatus {
   PORT_ERR_STATUS_MAX = 9;
 }
 
-enum PortFecMode {
-  PORT_FEC_MODE_UNSPECIFIED = 0;
-  PORT_FEC_MODE_NONE = 1;
-  PORT_FEC_MODE_RS = 2;
-  PORT_FEC_MODE_FC = 3;
-}
-
 enum PortFecModeExtended {
   PORT_FEC_MODE_EXTENDED_UNSPECIFIED = 0;
   PORT_FEC_MODE_EXTENDED_NONE = 1;
@@ -1169,6 +1384,13 @@ enum PortFecModeExtended {
   PORT_FEC_MODE_EXTENDED_RS544 = 3;
   PORT_FEC_MODE_EXTENDED_RS544_INTERLEAVED = 4;
   PORT_FEC_MODE_EXTENDED_FC = 5;
+}
+
+enum PortFecMode {
+  PORT_FEC_MODE_UNSPECIFIED = 0;
+  PORT_FEC_MODE_NONE = 1;
+  PORT_FEC_MODE_RS = 2;
+  PORT_FEC_MODE_FC = 3;
 }
 
 enum PortFlowControlMode {
@@ -2048,1690 +2270,1266 @@ enum VlanTaggingMode {
   VLAN_TAGGING_MODE_PRIORITY_TAGGED = 3;
 }
 
-message IpmcEntry {
-  uint64 switch_id = 1;
-  uint64 vr_id = 2;
-  IpmcEntryType type = 3;
-  bytes destination = 4;
-  bytes source = 5;
-}
-
-message IpsecSaStatusNotificationData {
-  uint64 ipsec_sa_id = 1;
-  IpsecSaOctetCountStatus ipsec_sa_octet_count_status = 2;
-  bool ipsec_egress_sn_at_max_limit = 3;
-}
-
-message QueueDeadlockNotificationData {
-  uint64 queue_id = 1;
-  QueuePfcDeadlockEventType event = 2;
-  bool app_managed_recovery = 3;
-}
-
-message McastFdbEntry {
-  uint64 switch_id = 1;
-  bytes mac_address = 2;
-  uint64 bv_id = 3;
-}
-
-message Uint32Range {
-  uint64 min = 1;
-  uint64 max = 2;
-}
-
-message PRBS_RXState {
-  PortPrbsRxStatus rx_status = 1;
-  uint32 error_count = 2;
-}
-
-message ACLCapability {
-  bool is_action_list_mandatory = 1;
-  repeated int32 action_list = 2;
-}
-
-message RouteEntry {
-  uint64 switch_id = 1;
-  uint64 vr_id = 2;
-  IpPrefix destination = 3;
-}
-
-message PortOperStatusNotification {
-  uint64 port_id = 1;
-  PortOperStatus port_state = 2;
-}
-
-message AclFieldData {
-  bool enable = 1;
-  oneof mask {
-    uint64 mask_uint = 2;
-    uint64 mask_int = 3;
-    bytes mask_mac = 4;
-    bytes mask_ip = 5;
-    Uint64List mask_list = 6;
-  };
-  oneof data {
-    bool data_bool = 7;
-    uint64 data_uint = 8;
-    int64 data_int = 9;
-    bytes data_mac = 10;
-    bytes data_ip = 11;
-    Uint64List data_list = 12;
-  };
-}
-
-message FdbEntry {
-  uint64 switch_id = 1;
-  bytes mac_address = 2;
-  uint64 bv_id = 3;
-}
-
-message NatEntry {
-  uint64 switch_id = 1;
-  uint64 vr_id = 2;
-  NatType nat_type = 3;
-  NatEntryData data = 4;
-}
-
-message NeighborEntry {
-  uint64 switch_id = 1;
-  uint64 rif_id = 2;
-  bytes ip_address = 3;
-}
-
-message ACLResource {
-  AclStage stage = 1;
-  AclBindPointType bind_point = 2;
-  uint32 avail_num = 3;
-}
-
-message PortEyeValues {
-  uint32 lane = 1;
-  int32 left = 2;
-  int32 right = 3;
-  int32 up = 4;
-  int32 down = 5;
-}
-
-message MySidEntry {
-  uint64 switch_id = 1;
-  uint64 vr_id = 2;
-  uint32 locator_block_len = 3;
-  uint32 locator_node_len = 4;
-  uint32 function_len = 5;
-  uint32 args_len = 6;
-  bytes sid = 7;
-}
-
-message UintMap {
-  map<uint32, uint32> uintmap = 1;
-}
-
-message SystemPortConfig {
-  uint32 port_id = 1;
-  uint32 attached_switch_id = 2;
-  uint32 attached_core_index = 3;
-  uint32 attached_core_port_index = 4;
-  uint32 speed = 5;
-  uint32 num_voq = 6;
-}
-
-message BfdSessionStateChangeNotificationData {
-  uint64 bfd_session_id = 1;
-  BfdSessionState session_state = 2;
-}
-
-message HMAC {
-  uint32 key_id = 1;
-  repeated uint32 hmac = 2;
-}
-
-message TLVEntry {
-  oneof entry {
-    bytes ingress_node = 1;
-    bytes egress_node = 2;
-    bytes opaque_container = 3;
-    HMAC hmac = 4;
-  }
-}
-
-message InsegEntry {
-  uint64 switch_id = 1;
-  uint32 label = 2;
-}
-
-message FdbEventNotificationData {
-  FdbEvent event_type = 1;
-  FdbEntry fdb_entry = 2;
-  repeated FdbEntryAttribute attrs = 3;
-}
-
-message IpPrefix {
-  bytes addr = 1;
-  bytes mask = 2;
-}
-
-message FabricPortReachability {
-  uint32 switch_id = 1;
-  bool reachable = 2;
-}
-
-message L2mcEntry {
-  uint64 switch_id = 1;
-  uint64 bv_id = 2;
-  L2mcEntryType type = 3;
-  bytes destination = 4;
-  bytes source = 5;
-}
-
-message NatEntryData {
-  oneof key {
-    bytes key_src_ip = 2;
-    bytes key_dst_ip = 3;
-    uint32 key_proto = 4;
-    uint32 key_l4_src_port = 5;
-    uint32 key_l4_dst_port = 6;
-  };
-  oneof mask {
-    bytes mask_src_ip = 7;
-    bytes mask_dst_ip = 8;
-    uint32 mask_proto = 9;
-    uint32 mask_l4_src_port = 10;
-    uint32 mask_l4_dst_port = 11;
-  };
-}
-
-message QOSMapParams {
-  uint32 tc = 1;
-  uint32 dscp = 2;
-  uint32 dot1p = 3;
-  uint32 prio = 4;
-  uint32 pg = 5;
-  uint32 queue_index = 6;
-  PacketColor color = 7;
-  uint32 mpls_exp = 8;
-  uint32 fc = 9;
-}
-
-message QOSMap {
-  QOSMapParams key = 1;
-  QOSMapParams value = 2;
-}
-
-message AclActionData {
-  bool enable = 1;
-  oneof parameter {
-    uint64 uint = 2;
-    uint64 int = 3;
-    bytes mac = 4;
-    bytes ip = 5;
-    uint64 oid = 6;
-    Uint64List objlist = 7;
-    bytes ipaddr = 8;
-  };
-}
-
 message AclCounterAttribute {
-  uint64 table_id = 2;
-  bool enable_packet_count = 3;
-  bool enable_byte_count = 4;
-  uint64 packets = 5;
-  uint64 bytes = 6;
+  uint64 table_id = 1;
+  bool enable_packet_count = 2;
+  bool enable_byte_count = 3;
+  uint64 packets = 4;
+  uint64 bytes = 5;
 }
 
 message AclEntryAttribute {
-  uint64 table_id = 2;
-  uint32 priority = 3;
-  bool admin_state = 4;
-  AclFieldData field_src_ipv6 = 5;
-  AclFieldData field_src_ipv6_word3 = 6;
-  AclFieldData field_src_ipv6_word2 = 7;
-  AclFieldData field_src_ipv6_word1 = 8;
-  AclFieldData field_src_ipv6_word0 = 9;
-  AclFieldData field_dst_ipv6 = 10;
-  AclFieldData field_dst_ipv6_word3 = 11;
-  AclFieldData field_dst_ipv6_word2 = 12;
-  AclFieldData field_dst_ipv6_word1 = 13;
-  AclFieldData field_dst_ipv6_word0 = 14;
-  AclFieldData field_inner_src_ipv6 = 15;
-  AclFieldData field_inner_dst_ipv6 = 16;
-  AclFieldData field_src_mac = 17;
-  AclFieldData field_dst_mac = 18;
-  AclFieldData field_src_ip = 19;
-  AclFieldData field_dst_ip = 20;
-  AclFieldData field_inner_src_ip = 21;
-  AclFieldData field_inner_dst_ip = 22;
-  AclFieldData field_in_ports = 23;
-  AclFieldData field_out_ports = 24;
-  AclFieldData field_in_port = 25;
-  AclFieldData field_out_port = 26;
-  AclFieldData field_src_port = 27;
-  AclFieldData field_outer_vlan_id = 28;
-  AclFieldData field_outer_vlan_pri = 29;
-  AclFieldData field_outer_vlan_cfi = 30;
-  AclFieldData field_inner_vlan_id = 31;
-  AclFieldData field_inner_vlan_pri = 32;
-  AclFieldData field_inner_vlan_cfi = 33;
-  AclFieldData field_l4_src_port = 34;
-  AclFieldData field_l4_dst_port = 35;
-  AclFieldData field_inner_l4_src_port = 36;
-  AclFieldData field_inner_l4_dst_port = 37;
-  AclFieldData field_ether_type = 38;
-  AclFieldData field_inner_ether_type = 39;
-  AclFieldData field_ip_protocol = 40;
-  AclFieldData field_inner_ip_protocol = 41;
-  AclFieldData field_ip_identification = 42;
-  AclFieldData field_dscp = 43;
-  AclFieldData field_ecn = 44;
-  AclFieldData field_ttl = 45;
-  AclFieldData field_tos = 46;
-  AclFieldData field_ip_flags = 47;
-  AclFieldData field_tcp_flags = 48;
-  AclFieldData field_acl_ip_type = 49;
-  AclFieldData field_acl_ip_frag = 50;
-  AclFieldData field_ipv6_flow_label = 51;
-  AclFieldData field_tc = 52;
-  AclFieldData field_icmp_type = 53;
-  AclFieldData field_icmp_code = 54;
-  AclFieldData field_icmpv6_type = 55;
-  AclFieldData field_icmpv6_code = 56;
-  AclFieldData field_packet_vlan = 57;
-  AclFieldData field_tunnel_vni = 58;
-  AclFieldData field_has_vlan_tag = 59;
-  AclFieldData field_macsec_sci = 60;
-  AclFieldData field_mpls_label0_label = 61;
-  AclFieldData field_mpls_label0_ttl = 62;
-  AclFieldData field_mpls_label0_exp = 63;
-  AclFieldData field_mpls_label0_bos = 64;
-  AclFieldData field_mpls_label1_label = 65;
-  AclFieldData field_mpls_label1_ttl = 66;
-  AclFieldData field_mpls_label1_exp = 67;
-  AclFieldData field_mpls_label1_bos = 68;
-  AclFieldData field_mpls_label2_label = 69;
-  AclFieldData field_mpls_label2_ttl = 70;
-  AclFieldData field_mpls_label2_exp = 71;
-  AclFieldData field_mpls_label2_bos = 72;
-  AclFieldData field_mpls_label3_label = 73;
-  AclFieldData field_mpls_label3_ttl = 74;
-  AclFieldData field_mpls_label3_exp = 75;
-  AclFieldData field_mpls_label3_bos = 76;
-  AclFieldData field_mpls_label4_label = 77;
-  AclFieldData field_mpls_label4_ttl = 78;
-  AclFieldData field_mpls_label4_exp = 79;
-  AclFieldData field_mpls_label4_bos = 80;
-  AclFieldData field_fdb_dst_user_meta = 81;
-  AclFieldData field_route_dst_user_meta = 82;
-  AclFieldData field_neighbor_dst_user_meta = 83;
-  AclFieldData field_port_user_meta = 84;
-  AclFieldData field_vlan_user_meta = 85;
-  AclFieldData field_acl_user_meta = 86;
-  AclFieldData field_fdb_npu_meta_dst_hit = 87;
-  AclFieldData field_neighbor_npu_meta_dst_hit = 88;
-  AclFieldData field_route_npu_meta_dst_hit = 89;
-  AclFieldData field_bth_opcode = 90;
-  AclFieldData field_aeth_syndrome = 91;
-  AclFieldData user_defined_field_group_min = 92;
-  AclFieldData user_defined_field_group_max = 93;
-  AclFieldData field_acl_range_type = 94;
-  AclFieldData field_ipv6_next_header = 95;
-  AclFieldData field_gre_key = 96;
-  AclFieldData field_tam_int_type = 97;
-  AclActionData action_redirect = 98;
-  AclActionData action_endpoint_ip = 99;
-  AclActionData action_redirect_list = 100;
-  AclActionData action_packet_action = 101;
-  AclActionData action_flood = 102;
-  AclActionData action_counter = 103;
-  AclActionData action_mirror_ingress = 104;
-  AclActionData action_mirror_egress = 105;
-  AclActionData action_set_policer = 106;
-  AclActionData action_decrement_ttl = 107;
-  AclActionData action_set_tc = 108;
-  AclActionData action_set_packet_color = 109;
-  AclActionData action_set_inner_vlan_id = 110;
-  AclActionData action_set_inner_vlan_pri = 111;
-  AclActionData action_set_outer_vlan_id = 112;
-  AclActionData action_set_outer_vlan_pri = 113;
-  AclActionData action_add_vlan_id = 114;
-  AclActionData action_add_vlan_pri = 115;
-  AclActionData action_set_src_mac = 116;
-  AclActionData action_set_dst_mac = 117;
-  AclActionData action_set_src_ip = 118;
-  AclActionData action_set_dst_ip = 119;
-  AclActionData action_set_src_ipv6 = 120;
-  AclActionData action_set_dst_ipv6 = 121;
-  AclActionData action_set_dscp = 122;
-  AclActionData action_set_ecn = 123;
-  AclActionData action_set_l4_src_port = 124;
-  AclActionData action_set_l4_dst_port = 125;
-  AclActionData action_ingress_samplepacket_enable = 126;
-  AclActionData action_egress_samplepacket_enable = 127;
-  AclActionData action_set_acl_meta_data = 128;
-  AclActionData action_egress_block_port_list = 129;
-  AclActionData action_set_user_trap_id = 130;
-  AclActionData action_set_do_not_learn = 131;
-  AclActionData action_acl_dtel_flow_op = 132;
-  AclActionData action_dtel_int_session = 133;
-  AclActionData action_dtel_drop_report_enable = 134;
-  AclActionData action_dtel_tail_drop_report_enable = 135;
-  AclActionData action_dtel_flow_sample_percent = 136;
-  AclActionData action_dtel_report_all_packets = 137;
-  AclActionData action_no_nat = 138;
-  AclActionData action_int_insert = 139;
-  AclActionData action_int_delete = 140;
-  AclActionData action_int_report_flow = 141;
-  AclActionData action_int_report_drops = 142;
-  AclActionData action_int_report_tail_drops = 143;
-  AclActionData action_tam_int_object = 144;
-  AclActionData action_set_isolation_group = 145;
-  AclActionData action_macsec_flow = 146;
-  AclActionData action_set_lag_hash_id = 147;
-  AclActionData action_set_ecmp_hash_id = 148;
-  AclActionData action_set_vrf = 149;
-  AclActionData action_set_forwarding_class = 150;
+  uint64 table_id = 1;
+  uint32 priority = 2;
+  bool admin_state = 3;
+  AclFieldData field_src_ipv6 = 4;
+  AclFieldData field_src_ipv6_word3 = 5;
+  AclFieldData field_src_ipv6_word2 = 6;
+  AclFieldData field_src_ipv6_word1 = 7;
+  AclFieldData field_src_ipv6_word0 = 8;
+  AclFieldData field_dst_ipv6 = 9;
+  AclFieldData field_dst_ipv6_word3 = 10;
+  AclFieldData field_dst_ipv6_word2 = 11;
+  AclFieldData field_dst_ipv6_word1 = 12;
+  AclFieldData field_dst_ipv6_word0 = 13;
+  AclFieldData field_inner_src_ipv6 = 14;
+  AclFieldData field_inner_dst_ipv6 = 15;
+  AclFieldData field_src_mac = 16;
+  AclFieldData field_dst_mac = 17;
+  AclFieldData field_src_ip = 18;
+  AclFieldData field_dst_ip = 19;
+  AclFieldData field_inner_src_ip = 20;
+  AclFieldData field_inner_dst_ip = 21;
+  AclFieldData field_in_ports = 22;
+  AclFieldData field_out_ports = 23;
+  AclFieldData field_in_port = 24;
+  AclFieldData field_out_port = 25;
+  AclFieldData field_src_port = 26;
+  AclFieldData field_outer_vlan_id = 27;
+  AclFieldData field_outer_vlan_pri = 28;
+  AclFieldData field_outer_vlan_cfi = 29;
+  AclFieldData field_inner_vlan_id = 30;
+  AclFieldData field_inner_vlan_pri = 31;
+  AclFieldData field_inner_vlan_cfi = 32;
+  AclFieldData field_l4_src_port = 33;
+  AclFieldData field_l4_dst_port = 34;
+  AclFieldData field_inner_l4_src_port = 35;
+  AclFieldData field_inner_l4_dst_port = 36;
+  AclFieldData field_ether_type = 37;
+  AclFieldData field_inner_ether_type = 38;
+  AclFieldData field_ip_protocol = 39;
+  AclFieldData field_inner_ip_protocol = 40;
+  AclFieldData field_ip_identification = 41;
+  AclFieldData field_dscp = 42;
+  AclFieldData field_ecn = 43;
+  AclFieldData field_ttl = 44;
+  AclFieldData field_tos = 45;
+  AclFieldData field_ip_flags = 46;
+  AclFieldData field_tcp_flags = 47;
+  AclFieldData field_acl_ip_type = 48;
+  AclFieldData field_acl_ip_frag = 49;
+  AclFieldData field_ipv6_flow_label = 50;
+  AclFieldData field_tc = 51;
+  AclFieldData field_icmp_type = 52;
+  AclFieldData field_icmp_code = 53;
+  AclFieldData field_icmpv6_type = 54;
+  AclFieldData field_icmpv6_code = 55;
+  AclFieldData field_packet_vlan = 56;
+  AclFieldData field_tunnel_vni = 57;
+  AclFieldData field_has_vlan_tag = 58;
+  AclFieldData field_macsec_sci = 59;
+  AclFieldData field_mpls_label0_label = 60;
+  AclFieldData field_mpls_label0_ttl = 61;
+  AclFieldData field_mpls_label0_exp = 62;
+  AclFieldData field_mpls_label0_bos = 63;
+  AclFieldData field_mpls_label1_label = 64;
+  AclFieldData field_mpls_label1_ttl = 65;
+  AclFieldData field_mpls_label1_exp = 66;
+  AclFieldData field_mpls_label1_bos = 67;
+  AclFieldData field_mpls_label2_label = 68;
+  AclFieldData field_mpls_label2_ttl = 69;
+  AclFieldData field_mpls_label2_exp = 70;
+  AclFieldData field_mpls_label2_bos = 71;
+  AclFieldData field_mpls_label3_label = 72;
+  AclFieldData field_mpls_label3_ttl = 73;
+  AclFieldData field_mpls_label3_exp = 74;
+  AclFieldData field_mpls_label3_bos = 75;
+  AclFieldData field_mpls_label4_label = 76;
+  AclFieldData field_mpls_label4_ttl = 77;
+  AclFieldData field_mpls_label4_exp = 78;
+  AclFieldData field_mpls_label4_bos = 79;
+  AclFieldData field_fdb_dst_user_meta = 80;
+  AclFieldData field_route_dst_user_meta = 81;
+  AclFieldData field_neighbor_dst_user_meta = 82;
+  AclFieldData field_port_user_meta = 83;
+  AclFieldData field_vlan_user_meta = 84;
+  AclFieldData field_acl_user_meta = 85;
+  AclFieldData field_fdb_npu_meta_dst_hit = 86;
+  AclFieldData field_neighbor_npu_meta_dst_hit = 87;
+  AclFieldData field_route_npu_meta_dst_hit = 88;
+  AclFieldData field_bth_opcode = 89;
+  AclFieldData field_aeth_syndrome = 90;
+  AclFieldData user_defined_field_group_min = 91;
+  AclFieldData user_defined_field_group_max = 92;
+  AclFieldData field_acl_range_type = 93;
+  AclFieldData field_ipv6_next_header = 94;
+  AclFieldData field_gre_key = 95;
+  AclFieldData field_tam_int_type = 96;
+  AclActionData action_redirect = 97;
+  AclActionData action_endpoint_ip = 98;
+  AclActionData action_redirect_list = 99;
+  AclActionData action_packet_action = 100;
+  AclActionData action_flood = 101;
+  AclActionData action_counter = 102;
+  AclActionData action_mirror_ingress = 103;
+  AclActionData action_mirror_egress = 104;
+  AclActionData action_set_policer = 105;
+  AclActionData action_decrement_ttl = 106;
+  AclActionData action_set_tc = 107;
+  AclActionData action_set_packet_color = 108;
+  AclActionData action_set_inner_vlan_id = 109;
+  AclActionData action_set_inner_vlan_pri = 110;
+  AclActionData action_set_outer_vlan_id = 111;
+  AclActionData action_set_outer_vlan_pri = 112;
+  AclActionData action_add_vlan_id = 113;
+  AclActionData action_add_vlan_pri = 114;
+  AclActionData action_set_src_mac = 115;
+  AclActionData action_set_dst_mac = 116;
+  AclActionData action_set_src_ip = 117;
+  AclActionData action_set_dst_ip = 118;
+  AclActionData action_set_src_ipv6 = 119;
+  AclActionData action_set_dst_ipv6 = 120;
+  AclActionData action_set_dscp = 121;
+  AclActionData action_set_ecn = 122;
+  AclActionData action_set_l4_src_port = 123;
+  AclActionData action_set_l4_dst_port = 124;
+  AclActionData action_ingress_samplepacket_enable = 125;
+  AclActionData action_egress_samplepacket_enable = 126;
+  AclActionData action_set_acl_meta_data = 127;
+  AclActionData action_egress_block_port_list = 128;
+  AclActionData action_set_user_trap_id = 129;
+  AclActionData action_set_do_not_learn = 130;
+  AclActionData action_acl_dtel_flow_op = 131;
+  AclActionData action_dtel_int_session = 132;
+  AclActionData action_dtel_drop_report_enable = 133;
+  AclActionData action_dtel_tail_drop_report_enable = 134;
+  AclActionData action_dtel_flow_sample_percent = 135;
+  AclActionData action_dtel_report_all_packets = 136;
+  AclActionData action_no_nat = 137;
+  AclActionData action_int_insert = 138;
+  AclActionData action_int_delete = 139;
+  AclActionData action_int_report_flow = 140;
+  AclActionData action_int_report_drops = 141;
+  AclActionData action_int_report_tail_drops = 142;
+  AclActionData action_tam_int_object = 143;
+  AclActionData action_set_isolation_group = 144;
+  AclActionData action_macsec_flow = 145;
+  AclActionData action_set_lag_hash_id = 146;
+  AclActionData action_set_ecmp_hash_id = 147;
+  AclActionData action_set_vrf = 148;
+  AclActionData action_set_forwarding_class = 149;
 }
 
 message AclRangeAttribute {
-  AclRangeType type = 2;
-  Uint32Range limit = 3;
-}
-
-message AclTableAttribute {
-  AclStage acl_stage = 2;
-  AclBindPointTypeList acl_bind_point_type_list = 3;
-  uint32 size = 4;
-  AclActionTypeList acl_action_type_list = 5;
-  bool field_src_ipv6 = 6;
-  bool field_src_ipv6_word3 = 7;
-  bool field_src_ipv6_word2 = 8;
-  bool field_src_ipv6_word1 = 9;
-  bool field_src_ipv6_word0 = 10;
-  bool field_dst_ipv6 = 11;
-  bool field_dst_ipv6_word3 = 12;
-  bool field_dst_ipv6_word2 = 13;
-  bool field_dst_ipv6_word1 = 14;
-  bool field_dst_ipv6_word0 = 15;
-  bool field_inner_src_ipv6 = 16;
-  bool field_inner_dst_ipv6 = 17;
-  bool field_src_mac = 18;
-  bool field_dst_mac = 19;
-  bool field_src_ip = 20;
-  bool field_dst_ip = 21;
-  bool field_inner_src_ip = 22;
-  bool field_inner_dst_ip = 23;
-  bool field_in_ports = 24;
-  bool field_out_ports = 25;
-  bool field_in_port = 26;
-  bool field_out_port = 27;
-  bool field_src_port = 28;
-  bool field_outer_vlan_id = 29;
-  bool field_outer_vlan_pri = 30;
-  bool field_outer_vlan_cfi = 31;
-  bool field_inner_vlan_id = 32;
-  bool field_inner_vlan_pri = 33;
-  bool field_inner_vlan_cfi = 34;
-  bool field_l4_src_port = 35;
-  bool field_l4_dst_port = 36;
-  bool field_inner_l4_src_port = 37;
-  bool field_inner_l4_dst_port = 38;
-  bool field_ether_type = 39;
-  bool field_inner_ether_type = 40;
-  bool field_ip_protocol = 41;
-  bool field_inner_ip_protocol = 42;
-  bool field_ip_identification = 43;
-  bool field_dscp = 44;
-  bool field_ecn = 45;
-  bool field_ttl = 46;
-  bool field_tos = 47;
-  bool field_ip_flags = 48;
-  bool field_tcp_flags = 49;
-  bool field_acl_ip_type = 50;
-  bool field_acl_ip_frag = 51;
-  bool field_ipv6_flow_label = 52;
-  bool field_tc = 53;
-  bool field_icmp_type = 54;
-  bool field_icmp_code = 55;
-  bool field_icmpv6_type = 56;
-  bool field_icmpv6_code = 57;
-  bool field_packet_vlan = 58;
-  bool field_tunnel_vni = 59;
-  bool field_has_vlan_tag = 60;
-  bool field_macsec_sci = 61;
-  bool field_mpls_label0_label = 62;
-  bool field_mpls_label0_ttl = 63;
-  bool field_mpls_label0_exp = 64;
-  bool field_mpls_label0_bos = 65;
-  bool field_mpls_label1_label = 66;
-  bool field_mpls_label1_ttl = 67;
-  bool field_mpls_label1_exp = 68;
-  bool field_mpls_label1_bos = 69;
-  bool field_mpls_label2_label = 70;
-  bool field_mpls_label2_ttl = 71;
-  bool field_mpls_label2_exp = 72;
-  bool field_mpls_label2_bos = 73;
-  bool field_mpls_label3_label = 74;
-  bool field_mpls_label3_ttl = 75;
-  bool field_mpls_label3_exp = 76;
-  bool field_mpls_label3_bos = 77;
-  bool field_mpls_label4_label = 78;
-  bool field_mpls_label4_ttl = 79;
-  bool field_mpls_label4_exp = 80;
-  bool field_mpls_label4_bos = 81;
-  bool field_fdb_dst_user_meta = 82;
-  bool field_route_dst_user_meta = 83;
-  bool field_neighbor_dst_user_meta = 84;
-  bool field_port_user_meta = 85;
-  bool field_vlan_user_meta = 86;
-  bool field_acl_user_meta = 87;
-  bool field_fdb_npu_meta_dst_hit = 88;
-  bool field_neighbor_npu_meta_dst_hit = 89;
-  bool field_route_npu_meta_dst_hit = 90;
-  bool field_bth_opcode = 91;
-  bool field_aeth_syndrome = 92;
-  uint64 user_defined_field_group_min = 93;
-  uint64 user_defined_field_group_max = 94;
-  AclRangeTypeList field_acl_range_type = 95;
-  bool field_ipv6_next_header = 96;
-  bool field_gre_key = 97;
-  bool field_tam_int_type = 98;
-  Uint64List entry_list = 99;
-  uint32 available_acl_entry = 100;
-  uint32 available_acl_counter = 101;
-}
-
-message AclTableGroupAttribute {
-  AclStage acl_stage = 2;
-  AclBindPointTypeList acl_bind_point_type_list = 3;
-  AclTableGroupType type = 4;
-  Uint64List member_list = 5;
-}
-
-message AclTableGroupMemberAttribute {
-  uint64 acl_table_group_id = 2;
-  uint64 acl_table_id = 3;
-  uint32 priority = 4;
-}
-
-message AclActionTypeList {
-  repeated AclActionType list = 1;
+  AclRangeType type = 1;
+  Uint32Range limit = 2;
 }
 
 message AclBindPointTypeList {
   repeated AclBindPointType list = 1;
 }
 
+message AclActionTypeList {
+  repeated AclActionType list = 1;
+}
+
 message AclRangeTypeList {
   repeated AclRangeType list = 1;
 }
 
-message AclResourceList {
-  repeated ACLResource list = 1;
+message Uint64List {
+  repeated uint64 list = 1;
+}
+
+message AclTableAttribute {
+  AclStage acl_stage = 1;
+  AclBindPointTypeList acl_bind_point_type_list = 2;
+  uint32 size = 3;
+  AclActionTypeList acl_action_type_list = 4;
+  bool field_src_ipv6 = 5;
+  bool field_src_ipv6_word3 = 6;
+  bool field_src_ipv6_word2 = 7;
+  bool field_src_ipv6_word1 = 8;
+  bool field_src_ipv6_word0 = 9;
+  bool field_dst_ipv6 = 10;
+  bool field_dst_ipv6_word3 = 11;
+  bool field_dst_ipv6_word2 = 12;
+  bool field_dst_ipv6_word1 = 13;
+  bool field_dst_ipv6_word0 = 14;
+  bool field_inner_src_ipv6 = 15;
+  bool field_inner_dst_ipv6 = 16;
+  bool field_src_mac = 17;
+  bool field_dst_mac = 18;
+  bool field_src_ip = 19;
+  bool field_dst_ip = 20;
+  bool field_inner_src_ip = 21;
+  bool field_inner_dst_ip = 22;
+  bool field_in_ports = 23;
+  bool field_out_ports = 24;
+  bool field_in_port = 25;
+  bool field_out_port = 26;
+  bool field_src_port = 27;
+  bool field_outer_vlan_id = 28;
+  bool field_outer_vlan_pri = 29;
+  bool field_outer_vlan_cfi = 30;
+  bool field_inner_vlan_id = 31;
+  bool field_inner_vlan_pri = 32;
+  bool field_inner_vlan_cfi = 33;
+  bool field_l4_src_port = 34;
+  bool field_l4_dst_port = 35;
+  bool field_inner_l4_src_port = 36;
+  bool field_inner_l4_dst_port = 37;
+  bool field_ether_type = 38;
+  bool field_inner_ether_type = 39;
+  bool field_ip_protocol = 40;
+  bool field_inner_ip_protocol = 41;
+  bool field_ip_identification = 42;
+  bool field_dscp = 43;
+  bool field_ecn = 44;
+  bool field_ttl = 45;
+  bool field_tos = 46;
+  bool field_ip_flags = 47;
+  bool field_tcp_flags = 48;
+  bool field_acl_ip_type = 49;
+  bool field_acl_ip_frag = 50;
+  bool field_ipv6_flow_label = 51;
+  bool field_tc = 52;
+  bool field_icmp_type = 53;
+  bool field_icmp_code = 54;
+  bool field_icmpv6_type = 55;
+  bool field_icmpv6_code = 56;
+  bool field_packet_vlan = 57;
+  bool field_tunnel_vni = 58;
+  bool field_has_vlan_tag = 59;
+  bool field_macsec_sci = 60;
+  bool field_mpls_label0_label = 61;
+  bool field_mpls_label0_ttl = 62;
+  bool field_mpls_label0_exp = 63;
+  bool field_mpls_label0_bos = 64;
+  bool field_mpls_label1_label = 65;
+  bool field_mpls_label1_ttl = 66;
+  bool field_mpls_label1_exp = 67;
+  bool field_mpls_label1_bos = 68;
+  bool field_mpls_label2_label = 69;
+  bool field_mpls_label2_ttl = 70;
+  bool field_mpls_label2_exp = 71;
+  bool field_mpls_label2_bos = 72;
+  bool field_mpls_label3_label = 73;
+  bool field_mpls_label3_ttl = 74;
+  bool field_mpls_label3_exp = 75;
+  bool field_mpls_label3_bos = 76;
+  bool field_mpls_label4_label = 77;
+  bool field_mpls_label4_ttl = 78;
+  bool field_mpls_label4_exp = 79;
+  bool field_mpls_label4_bos = 80;
+  bool field_fdb_dst_user_meta = 81;
+  bool field_route_dst_user_meta = 82;
+  bool field_neighbor_dst_user_meta = 83;
+  bool field_port_user_meta = 84;
+  bool field_vlan_user_meta = 85;
+  bool field_acl_user_meta = 86;
+  bool field_fdb_npu_meta_dst_hit = 87;
+  bool field_neighbor_npu_meta_dst_hit = 88;
+  bool field_route_npu_meta_dst_hit = 89;
+  bool field_bth_opcode = 90;
+  bool field_aeth_syndrome = 91;
+  uint64 user_defined_field_group_min = 92;
+  uint64 user_defined_field_group_max = 93;
+  AclRangeTypeList field_acl_range_type = 94;
+  bool field_ipv6_next_header = 95;
+  bool field_gre_key = 96;
+  bool field_tam_int_type = 97;
+  Uint64List entry_list = 98;
+  uint32 available_acl_entry = 99;
+  uint32 available_acl_counter = 100;
+}
+
+message AclTableGroupAttribute {
+  AclStage acl_stage = 1;
+  AclBindPointTypeList acl_bind_point_type_list = 2;
+  AclTableGroupType type = 3;
+  Uint64List member_list = 4;
+}
+
+message AclTableGroupMemberAttribute {
+  uint64 acl_table_group_id = 1;
+  uint64 acl_table_id = 2;
+  uint32 priority = 3;
 }
 
 message BfdSessionAttribute {
-  BfdSessionType type = 2;
-  bool hw_lookup_valid = 3;
-  uint64 virtual_router = 4;
-  uint64 port = 5;
-  uint32 local_discriminator = 6;
-  uint32 remote_discriminator = 7;
-  uint32 udp_src_port = 8;
-  uint32 tc = 9;
-  uint32 vlan_tpid = 10;
-  uint32 vlan_id = 11;
-  uint32 vlan_pri = 12;
-  uint32 vlan_cfi = 13;
-  bool vlan_header_valid = 14;
-  BfdEncapsulationType bfd_encapsulation_type = 15;
-  uint32 iphdr_version = 16;
-  uint32 tos = 17;
-  uint32 ttl = 18;
-  bytes src_ip_address = 19;
-  bytes dst_ip_address = 20;
-  uint32 tunnel_tos = 21;
-  uint32 tunnel_ttl = 22;
-  bytes tunnel_src_ip_address = 23;
-  bytes tunnel_dst_ip_address = 24;
-  bytes src_mac_address = 25;
-  bytes dst_mac_address = 26;
-  bool echo_enable = 27;
-  bool multihop = 28;
-  bool cbit = 29;
-  uint32 min_tx = 30;
-  uint32 min_rx = 31;
-  uint32 multiplier = 32;
-  uint32 remote_min_tx = 33;
-  uint32 remote_min_rx = 34;
-  BfdSessionState state = 35;
-  BfdSessionOffloadType offload_type = 36;
-  uint32 negotiated_tx = 37;
-  uint32 negotiated_rx = 38;
-  uint32 local_diag = 39;
-  uint32 remote_diag = 40;
-  uint32 remote_multiplier = 41;
+  BfdSessionType type = 1;
+  bool hw_lookup_valid = 2;
+  uint64 virtual_router = 3;
+  uint64 port = 4;
+  uint32 local_discriminator = 5;
+  uint32 remote_discriminator = 6;
+  uint32 udp_src_port = 7;
+  uint32 tc = 8;
+  uint32 vlan_tpid = 9;
+  uint32 vlan_id = 10;
+  uint32 vlan_pri = 11;
+  uint32 vlan_cfi = 12;
+  bool vlan_header_valid = 13;
+  BfdEncapsulationType bfd_encapsulation_type = 14;
+  uint32 iphdr_version = 15;
+  uint32 tos = 16;
+  uint32 ttl = 17;
+  bytes src_ip_address = 18;
+  bytes dst_ip_address = 19;
+  uint32 tunnel_tos = 20;
+  uint32 tunnel_ttl = 21;
+  bytes tunnel_src_ip_address = 22;
+  bytes tunnel_dst_ip_address = 23;
+  bytes src_mac_address = 24;
+  bytes dst_mac_address = 25;
+  bool echo_enable = 26;
+  bool multihop = 27;
+  bool cbit = 28;
+  uint32 min_tx = 29;
+  uint32 min_rx = 30;
+  uint32 multiplier = 31;
+  uint32 remote_min_tx = 32;
+  uint32 remote_min_rx = 33;
+  BfdSessionState state = 34;
+  BfdSessionOffloadType offload_type = 35;
+  uint32 negotiated_tx = 36;
+  uint32 negotiated_rx = 37;
+  uint32 local_diag = 38;
+  uint32 remote_diag = 39;
+  uint32 remote_multiplier = 40;
 }
 
 message BridgeAttribute {
-  BridgeType type = 2;
-  Uint64List port_list = 3;
-  uint32 max_learned_addresses = 4;
-  bool learn_disable = 5;
-  BridgeFloodControlType unknown_unicast_flood_control_type = 6;
-  uint64 unknown_unicast_flood_group = 7;
-  BridgeFloodControlType unknown_multicast_flood_control_type = 8;
-  uint64 unknown_multicast_flood_group = 9;
-  BridgeFloodControlType broadcast_flood_control_type = 10;
-  uint64 broadcast_flood_group = 11;
+  BridgeType type = 1;
+  Uint64List port_list = 2;
+  uint32 max_learned_addresses = 3;
+  bool learn_disable = 4;
+  BridgeFloodControlType unknown_unicast_flood_control_type = 5;
+  uint64 unknown_unicast_flood_group = 6;
+  BridgeFloodControlType unknown_multicast_flood_control_type = 7;
+  uint64 unknown_multicast_flood_group = 8;
+  BridgeFloodControlType broadcast_flood_control_type = 9;
+  uint64 broadcast_flood_group = 10;
 }
 
 message BridgePortAttribute {
-  BridgePortType type = 2;
-  uint64 port_id = 3;
-  BridgePortTaggingMode tagging_mode = 4;
-  uint32 vlan_id = 5;
-  uint64 rif_id = 6;
-  uint64 tunnel_id = 7;
-  uint64 bridge_id = 8;
-  BridgePortFdbLearningMode fdb_learning_mode = 9;
-  uint32 max_learned_addresses = 10;
-  PacketAction fdb_learning_limit_violation_packet_action = 11;
-  bool admin_state = 12;
-  bool ingress_filtering = 13;
-  bool egress_filtering = 14;
-  uint64 isolation_group = 15;
+  BridgePortType type = 1;
+  uint64 port_id = 2;
+  BridgePortTaggingMode tagging_mode = 3;
+  uint32 vlan_id = 4;
+  uint64 rif_id = 5;
+  uint64 tunnel_id = 6;
+  uint64 bridge_id = 7;
+  BridgePortFdbLearningMode fdb_learning_mode = 8;
+  uint32 max_learned_addresses = 9;
+  PacketAction fdb_learning_limit_violation_packet_action = 10;
+  bool admin_state = 11;
+  bool ingress_filtering = 12;
+  bool egress_filtering = 13;
+  uint64 isolation_group = 14;
 }
 
 message BufferPoolAttribute {
-  uint64 shared_size = 2;
-  BufferPoolType type = 3;
-  uint64 size = 4;
-  BufferPoolThresholdMode threshold_mode = 5;
-  Uint64List tam = 6;
-  uint64 xoff_size = 7;
-  uint64 wred_profile_id = 8;
+  uint64 shared_size = 1;
+  BufferPoolType type = 2;
+  uint64 size = 3;
+  BufferPoolThresholdMode threshold_mode = 4;
+  Uint64List tam = 5;
+  uint64 xoff_size = 6;
+  uint64 wred_profile_id = 7;
 }
 
 message BufferProfileAttribute {
-  uint64 pool_id = 2;
-  uint64 reserved_buffer_size = 3;
-  BufferProfileThresholdMode threshold_mode = 4;
-  int32 shared_dynamic_th = 5;
-  uint64 shared_static_th = 6;
-  uint64 xoff_th = 7;
-  uint64 xon_th = 8;
-  uint64 xon_offset_th = 9;
-}
-
-message BfdSessionOffloadTypeList {
-  repeated BfdSessionOffloadType list = 1;
-}
-
-message BytesList {
-  repeated bytes list = 1;
+  uint64 pool_id = 1;
+  uint64 reserved_buffer_size = 2;
+  BufferProfileThresholdMode threshold_mode = 3;
+  int32 shared_dynamic_th = 4;
+  uint64 shared_static_th = 5;
+  uint64 xoff_th = 6;
+  uint64 xon_th = 7;
+  uint64 xon_offset_th = 8;
 }
 
 message CounterAttribute {
-  CounterType type = 2;
-}
-
-message DebugCounterAttribute {
-  uint32 index = 2;
-  DebugCounterType type = 3;
-  DebugCounterBindMethod bind_method = 4;
-  InDropReasonList in_drop_reason_list = 5;
-  OutDropReasonList out_drop_reason_list = 6;
-}
-
-message DtelAttribute {
-  bool int_endpoint_enable = 2;
-  bool int_transit_enable = 3;
-  bool postcard_enable = 4;
-  bool drop_report_enable = 5;
-  bool queue_report_enable = 6;
-  uint32 switch_id = 7;
-  uint32 flow_state_clear_cycle = 8;
-  uint32 latency_sensitivity = 9;
-  Uint64List sink_port_list = 10;
-  AclFieldData int_l4_dscp = 11;
-}
-
-message DtelEventAttribute {
-  DtelEventType type = 2;
-  uint64 report_session = 3;
-  uint32 dscp_value = 4;
-}
-
-message DtelIntSessionAttribute {
-  uint32 max_hop_count = 2;
-  bool collect_switch_id = 3;
-  bool collect_switch_ports = 4;
-  bool collect_ingress_timestamp = 5;
-  bool collect_egress_timestamp = 6;
-  bool collect_queue_info = 7;
-}
-
-message DtelQueueReportAttribute {
-  uint64 queue_id = 2;
-  uint32 depth_threshold = 3;
-  uint32 latency_threshold = 4;
-  uint32 breach_quota = 5;
-  bool tail_drop = 6;
-}
-
-message DtelReportSessionAttribute {
-  bytes src_ip = 2;
-  BytesList dst_ip_list = 3;
-  uint64 virtual_router_id = 4;
-  uint32 truncate_size = 5;
-  uint32 udp_dst_port = 6;
-}
-
-message FdbEntryAttribute {
-  FdbEntryType type = 2;
-  PacketAction packet_action = 3;
-  uint64 user_trap_id = 4;
-  uint64 bridge_port_id = 5;
-  uint32 meta_data = 6;
-  bytes endpoint_ip = 7;
-  uint64 counter_id = 8;
-  bool allow_mac_move = 9;
-}
-
-message FdbFlushAttribute {
-  uint64 bridge_port_id = 2;
-  uint64 bv_id = 3;
-  FdbFlushEntryType entry_type = 4;
-}
-
-message FineGrainedHashFieldAttribute {
-  NativeHashField native_hash_field = 2;
-  bytes ipv4_mask = 3;
-  bytes ipv6_mask = 4;
-  uint32 sequence_id = 5;
-}
-
-message HashAttribute {
-  NativeHashFieldList native_hash_field_list = 2;
-  Uint64List udf_group_list = 3;
-  Uint64List fine_grained_hash_field_list = 4;
-}
-
-message HostifAttribute {
-  HostifType type = 2;
-  uint64 obj_id = 3;
-  bytes name = 4;
-  bool oper_status = 5;
-  uint32 queue = 6;
-  HostifVlanTag vlan_tag = 7;
-  bytes genetlink_mcgrp_name = 8;
-}
-
-message HostifPacketAttribute {
-  uint64 hostif_trap_id = 2;
-  uint64 ingress_port = 3;
-  uint64 ingress_lag = 4;
-  HostifTxType hostif_tx_type = 5;
-  uint64 egress_port_or_lag = 6;
-  uint64 bridge_id = 7;
-  google.protobuf.Timestamp timestamp = 8;
-  uint32 egress_queue_index = 9;
-  bool zero_copy_tx = 10;
-}
-
-message HostifTableEntryAttribute {
-  HostifTableEntryType type = 2;
-  uint64 obj_id = 3;
-  uint64 trap_id = 4;
-  HostifTableEntryChannelType channel_type = 5;
-  uint64 host_if = 6;
-}
-
-message HostifTrapAttribute {
-  HostifTrapType trap_type = 2;
-  PacketAction packet_action = 3;
-  uint32 trap_priority = 4;
-  Uint64List exclude_port_list = 5;
-  uint64 trap_group = 6;
-  Uint64List mirror_session = 7;
-  uint64 counter_id = 8;
-}
-
-message HostifTrapGroupAttribute {
-  bool admin_state = 2;
-  uint32 queue = 3;
-  uint64 policer = 4;
-}
-
-message HostifUserDefinedTrapAttribute {
-  HostifUserDefinedTrapType type = 2;
-  uint32 trap_priority = 3;
-  uint64 trap_group = 4;
-}
-
-message IngressPriorityGroupAttribute {
-  uint64 buffer_profile = 2;
-  uint64 port = 3;
-  Uint64List tam = 4;
-  uint32 index = 5;
-}
-
-message InsegEntryAttribute {
-  uint32 num_of_pop = 2;
-  PacketAction packet_action = 3;
-  uint32 trap_priority = 4;
-  uint64 next_hop_id = 5;
-  InsegEntryPscType psc_type = 6;
-  uint32 qos_tc = 7;
-  uint64 mpls_exp_to_tc_map = 8;
-  uint64 mpls_exp_to_color_map = 9;
-  InsegEntryPopTtlMode pop_ttl_mode = 10;
-  InsegEntryPopQosMode pop_qos_mode = 11;
-  uint64 counter_id = 12;
-}
-
-message IpmcEntryAttribute {
-  PacketAction packet_action = 2;
-  uint64 output_group_id = 3;
-  uint64 rpf_group_id = 4;
-}
-
-message IpmcGroupAttribute {
-  uint32 ipmc_output_count = 2;
-  Uint64List ipmc_member_list = 3;
-}
-
-message IpmcGroupMemberAttribute {
-  uint64 ipmc_group_id = 2;
-  uint64 ipmc_output_id = 3;
-}
-
-message IpsecAttribute {
-  bool term_remote_ip_match_supported = 2;
-  bool switching_mode_cut_through_supported = 3;
-  bool switching_mode_store_and_forward_supported = 4;
-  bool stats_mode_read_supported = 5;
-  bool stats_mode_read_clear_supported = 6;
-  bool sn_32bit_supported = 7;
-  bool esn_64bit_supported = 8;
-  IpsecCipherList supported_cipher_list = 9;
-  uint32 system_side_mtu = 10;
-  bool warm_boot_supported = 11;
-  bool warm_boot_enable = 12;
-  bool external_sa_index_enable = 13;
-  uint32 ctag_tpid = 14;
-  uint32 stag_tpid = 15;
-  uint32 max_vlan_tags_parsed = 16;
-  uint64 octet_count_high_watermark = 17;
-  uint64 octet_count_low_watermark = 18;
-  StatsMode stats_mode = 19;
-  uint32 available_ipsec_sa = 20;
-  Uint64List sa_list = 21;
-}
-
-message IpsecPortAttribute {
-  uint64 port_id = 2;
-  bool ctag_enable = 3;
-  bool stag_enable = 4;
-  uint32 native_vlan_id = 5;
-  bool vrf_from_packet_vlan_enable = 6;
-  SwitchSwitchingMode switch_switching_mode = 7;
-}
-
-message IpsecSaAttribute {
-  IpsecDirection ipsec_direction = 2;
-  uint64 ipsec_id = 3;
-  IpsecSaOctetCountStatus octet_count_status = 4;
-  uint32 external_sa_index = 5;
-  uint32 sa_index = 6;
-  Uint64List ipsec_port_list = 7;
-  uint32 ipsec_spi = 8;
-  bool ipsec_esn_enable = 9;
-  IpsecCipher ipsec_cipher = 10;
-  bytes encrypt_key = 11;
-  uint32 salt = 12;
-  bytes auth_key = 13;
-  bool ipsec_replay_protection_enable = 14;
-  uint32 ipsec_replay_protection_window = 15;
-  bytes term_dst_ip = 16;
-  bool term_vlan_id_enable = 17;
-  uint32 term_vlan_id = 18;
-  bool term_src_ip_enable = 19;
-  bytes term_src_ip = 20;
-  uint64 egress_esn = 21;
-  uint64 minimum_ingress_esn = 22;
-}
-
-message IsolationGroupAttribute {
-  IsolationGroupType type = 2;
-  Uint64List isolation_member_list = 3;
-}
-
-message IsolationGroupMemberAttribute {
-  uint64 isolation_group_id = 2;
-  uint64 isolation_object = 3;
+  CounterType type = 1;
 }
 
 message InDropReasonList {
   repeated InDropReason list = 1;
 }
 
-message Int32List {
-  repeated int32 list = 1;
+message OutDropReasonList {
+  repeated OutDropReason list = 1;
 }
 
-message IpsecCipherList {
-  repeated IpsecCipher list = 1;
+message DebugCounterAttribute {
+  uint32 index = 1;
+  DebugCounterType type = 2;
+  DebugCounterBindMethod bind_method = 3;
+  InDropReasonList in_drop_reason_list = 4;
+  OutDropReasonList out_drop_reason_list = 5;
 }
 
-message L2mcEntryAttribute {
-  PacketAction packet_action = 2;
-  uint64 output_group_id = 3;
+message DtelAttribute {
+  bool int_endpoint_enable = 1;
+  bool int_transit_enable = 2;
+  bool postcard_enable = 3;
+  bool drop_report_enable = 4;
+  bool queue_report_enable = 5;
+  uint32 switch_id = 6;
+  uint32 flow_state_clear_cycle = 7;
+  uint32 latency_sensitivity = 8;
+  Uint64List sink_port_list = 9;
+  AclFieldData int_l4_dscp = 10;
 }
 
-message L2mcGroupAttribute {
-  uint32 l2mc_output_count = 2;
-  Uint64List l2mc_member_list = 3;
+message DtelEventAttribute {
+  DtelEventType type = 1;
+  uint64 report_session = 2;
+  uint32 dscp_value = 3;
 }
 
-message L2mcGroupMemberAttribute {
-  uint64 l2mc_group_id = 2;
-  uint64 l2mc_output_id = 3;
-  bytes l2mc_endpoint_ip = 4;
+message DtelIntSessionAttribute {
+  uint32 max_hop_count = 1;
+  bool collect_switch_id = 2;
+  bool collect_switch_ports = 3;
+  bool collect_ingress_timestamp = 4;
+  bool collect_egress_timestamp = 5;
+  bool collect_queue_info = 6;
 }
 
-message LagAttribute {
-  Uint64List port_list = 2;
-  uint64 ingress_acl = 3;
-  uint64 egress_acl = 4;
-  uint32 port_vlan_id = 5;
-  uint32 default_vlan_priority = 6;
-  bool drop_untagged = 7;
-  bool drop_tagged = 8;
-  uint32 tpid = 9;
-  uint32 system_port_aggregate_id = 10;
-  bytes label = 11;
+message DtelQueueReportAttribute {
+  uint64 queue_id = 1;
+  uint32 depth_threshold = 2;
+  uint32 latency_threshold = 3;
+  uint32 breach_quota = 4;
+  bool tail_drop = 5;
 }
 
-message LagMemberAttribute {
-  uint64 lag_id = 2;
-  uint64 port_id = 3;
-  bool egress_disable = 4;
-  bool ingress_disable = 5;
+message BytesList {
+  repeated bytes list = 1;
 }
 
-message MacsecAttribute {
-  MacsecDirection direction = 2;
-  bool switching_mode_cut_through_supported = 3;
-  bool switching_mode_store_and_forward_supported = 4;
-  bool stats_mode_read_supported = 5;
-  bool stats_mode_read_clear_supported = 6;
-  bool sci_in_ingress_macsec_acl = 7;
-  MacsecCipherSuiteList supported_cipher_suite_list = 8;
-  bool pn_32bit_supported = 9;
-  bool xpn_64bit_supported = 10;
-  bool gcm_aes128_supported = 11;
-  bool gcm_aes256_supported = 12;
-  Uint32List sectag_offsets_supported = 13;
-  uint32 system_side_mtu = 14;
-  bool warm_boot_supported = 15;
-  bool warm_boot_enable = 16;
-  uint32 ctag_tpid = 17;
-  uint32 stag_tpid = 18;
-  uint32 max_vlan_tags_parsed = 19;
-  StatsMode stats_mode = 20;
-  bool physical_bypass_enable = 21;
-  Uint64List supported_port_list = 22;
-  uint32 available_macsec_flow = 23;
-  Uint64List flow_list = 24;
-  uint32 available_macsec_sc = 25;
-  uint32 available_macsec_sa = 26;
-}
-
-message MacsecFlowAttribute {
-  MacsecDirection macsec_direction = 2;
-  Uint64List acl_entry_list = 3;
-  Uint64List sc_list = 4;
-}
-
-message MacsecPortAttribute {
-  MacsecDirection macsec_direction = 2;
-  uint64 port_id = 3;
-  bool ctag_enable = 4;
-  bool stag_enable = 5;
-  SwitchSwitchingMode switch_switching_mode = 6;
-}
-
-message MacsecSaAttribute {
-  MacsecDirection macsec_direction = 2;
-  uint64 sc_id = 3;
-  uint32 an = 4;
-  bytes sak = 5;
-  bytes salt = 6;
-  bytes auth_key = 7;
-  uint64 configured_egress_xpn = 8;
-  uint64 current_xpn = 9;
-  uint64 minimum_ingress_xpn = 10;
-  uint32 macsec_ssci = 11;
-}
-
-message MacsecScAttribute {
-  MacsecDirection macsec_direction = 2;
-  uint64 flow_id = 3;
-  uint64 macsec_sci = 4;
-  bool macsec_explicit_sci_enable = 5;
-  uint32 macsec_sectag_offset = 6;
-  uint64 active_egress_sa_id = 7;
-  bool macsec_replay_protection_enable = 8;
-  uint32 macsec_replay_protection_window = 9;
-  Uint64List sa_list = 10;
-  MacsecCipherSuite macsec_cipher_suite = 11;
-  bool encryption_enable = 12;
-}
-
-message McastFdbEntryAttribute {
-  uint64 group_id = 2;
-  PacketAction packet_action = 3;
-  uint32 meta_data = 4;
-}
-
-message MirrorSessionAttribute {
-  MirrorSessionType type = 2;
-  uint64 monitor_port = 3;
+message DtelReportSessionAttribute {
+  bytes src_ip = 1;
+  BytesList dst_ip_list = 2;
+  uint64 virtual_router_id = 3;
   uint32 truncate_size = 4;
-  uint32 sample_rate = 5;
-  MirrorSessionCongestionMode congestion_mode = 6;
-  uint32 tc = 7;
-  uint32 vlan_tpid = 8;
-  uint32 vlan_id = 9;
-  uint32 vlan_pri = 10;
-  uint32 vlan_cfi = 11;
-  bool vlan_header_valid = 12;
-  ErspanEncapsulationType erspan_encapsulation_type = 13;
-  uint32 iphdr_version = 14;
-  uint32 tos = 15;
-  uint32 ttl = 16;
-  bytes src_ip_address = 17;
-  bytes dst_ip_address = 18;
-  bytes src_mac_address = 19;
-  bytes dst_mac_address = 20;
-  uint32 gre_protocol_type = 21;
-  bool monitor_portlist_valid = 22;
-  Uint64List monitor_portlist = 23;
-  uint64 policer = 24;
-  uint32 udp_src_port = 25;
-  uint32 udp_dst_port = 26;
+  uint32 udp_dst_port = 5;
 }
 
-message MyMacAttribute {
-  uint32 priority = 2;
-  uint64 port_id = 3;
-  uint32 vlan_id = 4;
-  bytes mac_address = 5;
-  bytes mac_address_mask = 6;
-}
-
-message MySidEntryAttribute {
-  MySidEntryEndpointBehavior endpoint_behavior = 2;
-  MySidEntryEndpointBehaviorFlavor endpoint_behavior_flavor = 3;
-  PacketAction packet_action = 4;
-  uint32 trap_priority = 5;
-  uint64 next_hop_id = 6;
-  uint64 tunnel_id = 7;
-  uint64 vrf = 8;
-  uint64 counter_id = 9;
-}
-
-message MacsecCipherSuiteList {
-  repeated MacsecCipherSuite list = 1;
-}
-
-message NatEntryAttribute {
-  NatType nat_type = 2;
-  bytes src_ip = 3;
-  bytes src_ip_mask = 4;
-  uint64 vr_id = 5;
-  bytes dst_ip = 6;
-  bytes dst_ip_mask = 7;
-  uint32 l4_src_port = 8;
-  uint32 l4_dst_port = 9;
-  bool enable_packet_count = 10;
-  uint64 packet_count = 11;
-  bool enable_byte_count = 12;
-  uint64 byte_count = 13;
-  bool hit_bit_cor = 14;
-  bool hit_bit = 15;
-}
-
-message NatZoneCounterAttribute {
-  NatType nat_type = 2;
-  uint32 zone_id = 3;
-  bool enable_discard = 4;
-  uint64 discard_packet_count = 5;
-  bool enable_translation_needed = 6;
-  uint64 translation_needed_packet_count = 7;
-  bool enable_translations = 8;
-  uint64 translations_packet_count = 9;
-}
-
-message NeighborEntryAttribute {
-  bytes dst_mac_address = 2;
-  PacketAction packet_action = 3;
-  uint64 user_trap_id = 4;
-  bool no_host_route = 5;
-  uint32 meta_data = 6;
+message FdbEntryAttribute {
+  FdbEntryType type = 1;
+  PacketAction packet_action = 2;
+  uint64 user_trap_id = 3;
+  uint64 bridge_port_id = 4;
+  uint32 meta_data = 5;
+  bytes endpoint_ip = 6;
   uint64 counter_id = 7;
-  uint32 encap_index = 8;
-  bool encap_impose_index = 9;
-  bool is_local = 10;
-  IpAddrFamily ip_addr_family = 11;
+  bool allow_mac_move = 8;
 }
 
-message NextHopAttribute {
-  NextHopType type = 2;
-  bytes ip = 3;
-  uint64 router_interface_id = 4;
-  uint64 tunnel_id = 5;
-  uint32 tunnel_vni = 6;
-  bytes tunnel_mac = 7;
-  uint64 srv6_sidlist_id = 8;
-  Uint32List labelstack = 9;
-  uint64 counter_id = 10;
-  bool disable_decrement_ttl = 11;
-  OutsegType outseg_type = 12;
-  OutsegTtlMode outseg_ttl_mode = 13;
-  uint32 outseg_ttl_value = 14;
-  OutsegExpMode outseg_exp_mode = 15;
-  uint32 outseg_exp_value = 16;
-  uint64 qos_tc_and_color_to_mpls_exp_map = 17;
+message FdbFlushAttribute {
+  uint64 bridge_port_id = 1;
+  uint64 bv_id = 2;
+  FdbFlushEntryType entry_type = 3;
 }
 
-message NextHopGroupAttribute {
-  uint32 next_hop_count = 2;
-  Uint64List next_hop_member_list = 3;
-  NextHopGroupType type = 4;
-  bool set_switchover = 5;
-  uint64 counter_id = 6;
-  uint32 configured_size = 7;
-  uint32 real_size = 8;
-  uint64 selection_map = 9;
-}
-
-message NextHopGroupMapAttribute {
-  NextHopGroupMapType type = 2;
-  UintMapList map_to_value_list = 3;
-}
-
-message NextHopGroupMemberAttribute {
-  uint64 next_hop_group_id = 2;
-  uint64 next_hop_id = 3;
-  uint32 weight = 4;
-  NextHopGroupMemberConfiguredRole configured_role = 5;
-  NextHopGroupMemberObservedRole observed_role = 6;
-  uint64 monitored_object = 7;
-  uint32 index = 8;
-  uint32 sequence_id = 9;
-  uint64 counter_id = 10;
+message FineGrainedHashFieldAttribute {
+  NativeHashField native_hash_field = 1;
+  bytes ipv4_mask = 2;
+  bytes ipv6_mask = 3;
+  uint32 sequence_id = 4;
 }
 
 message NativeHashFieldList {
   repeated NativeHashField list = 1;
 }
 
-message ObjectTypeList {
-  repeated ObjectType list = 1;
+message HashAttribute {
+  NativeHashFieldList native_hash_field_list = 1;
+  Uint64List udf_group_list = 2;
+  Uint64List fine_grained_hash_field_list = 3;
 }
 
-message OutDropReasonList {
-  repeated OutDropReason list = 1;
+message HostifAttribute {
+  HostifType type = 1;
+  uint64 obj_id = 2;
+  bytes name = 3;
+  bool oper_status = 4;
+  uint32 queue = 5;
+  HostifVlanTag vlan_tag = 6;
+  bytes genetlink_mcgrp_name = 7;
 }
 
-message PolicerAttribute {
-  MeterType meter_type = 2;
-  PolicerMode mode = 3;
-  PolicerColorSource color_source = 4;
-  uint64 cbs = 5;
-  uint64 cir = 6;
-  uint64 pbs = 7;
-  uint64 pir = 8;
-  PacketAction green_packet_action = 9;
-  PacketAction yellow_packet_action = 10;
-  PacketAction red_packet_action = 11;
-  PacketActionList enable_counter_packet_action_list = 12;
+message HostifPacketAttribute {
+  uint64 hostif_trap_id = 1;
+  uint64 ingress_port = 2;
+  uint64 ingress_lag = 3;
+  HostifTxType hostif_tx_type = 4;
+  uint64 egress_port_or_lag = 5;
+  uint64 bridge_id = 6;
+  google.protobuf.Timestamp timestamp = 7;
+  uint32 egress_queue_index = 8;
+  bool zero_copy_tx = 9;
 }
 
-message PortAttribute {
-  PortType type = 2;
-  PortOperStatus oper_status = 3;
-  PortBreakoutModeTypeList supported_breakout_mode_type = 4;
-  PortBreakoutModeType current_breakout_mode_type = 5;
-  uint32 qos_number_of_queues = 6;
-  Uint64List qos_queue_list = 7;
-  uint32 qos_number_of_scheduler_groups = 8;
-  Uint64List qos_scheduler_group_list = 9;
-  uint32 qos_maximum_headroom_size = 10;
-  Uint32List supported_speed = 11;
-  PortFecModeList supported_fec_mode = 12;
-  PortFecModeExtendedList supported_fec_mode_extended = 13;
-  Uint32List supported_half_duplex_speed = 14;
-  bool supported_auto_neg_mode = 15;
-  PortFlowControlMode supported_flow_control_mode = 16;
-  bool supported_asymmetric_pause_mode = 17;
-  PortMediaType supported_media_type = 18;
-  Uint32List remote_advertised_speed = 19;
-  PortFecModeList remote_advertised_fec_mode = 20;
-  PortFecModeExtendedList remote_advertised_fec_mode_extended = 21;
-  Uint32List remote_advertised_half_duplex_speed = 22;
-  bool remote_advertised_auto_neg_mode = 23;
-  PortFlowControlMode remote_advertised_flow_control_mode = 24;
-  bool remote_advertised_asymmetric_pause_mode = 25;
-  PortMediaType remote_advertised_media_type = 26;
-  uint32 remote_advertised_oui_code = 27;
-  uint32 number_of_ingress_priority_groups = 28;
-  Uint64List ingress_priority_group_list = 29;
-  PortEyeValuesList eye_values = 30;
-  uint32 oper_speed = 31;
-  Uint32List hw_lane_list = 32;
-  uint32 speed = 33;
-  bool full_duplex_mode = 34;
-  bool auto_neg_mode = 35;
-  bool admin_state = 36;
-  PortMediaType media_type = 37;
-  Uint32List advertised_speed = 38;
-  PortFecModeList advertised_fec_mode = 39;
-  PortFecModeExtendedList advertised_fec_mode_extended = 40;
-  Uint32List advertised_half_duplex_speed = 41;
-  bool advertised_auto_neg_mode = 42;
-  PortFlowControlMode advertised_flow_control_mode = 43;
-  bool advertised_asymmetric_pause_mode = 44;
-  PortMediaType advertised_media_type = 45;
-  uint32 advertised_oui_code = 46;
-  uint32 port_vlan_id = 47;
-  uint32 default_vlan_priority = 48;
-  bool drop_untagged = 49;
-  bool drop_tagged = 50;
-  PortInternalLoopbackMode internal_loopback_mode = 51;
-  bool use_extended_fec = 52;
-  PortFecMode fec_mode = 53;
-  PortFecModeExtended fec_mode_extended = 54;
-  bool update_dscp = 55;
-  uint32 mtu = 56;
-  uint64 flood_storm_control_policer_id = 57;
-  uint64 broadcast_storm_control_policer_id = 58;
-  uint64 multicast_storm_control_policer_id = 59;
-  PortFlowControlMode global_flow_control_mode = 60;
-  uint64 ingress_acl = 61;
-  uint64 egress_acl = 62;
-  uint64 ingress_macsec_acl = 63;
-  uint64 egress_macsec_acl = 64;
-  Uint64List macsec_port_list = 65;
-  Uint64List ingress_mirror_session = 66;
-  Uint64List egress_mirror_session = 67;
-  uint64 ingress_samplepacket_enable = 68;
-  uint64 egress_samplepacket_enable = 69;
-  Uint64List ingress_sample_mirror_session = 70;
-  Uint64List egress_sample_mirror_session = 71;
-  uint64 policer_id = 72;
-  uint32 qos_default_tc = 73;
-  uint64 qos_dot1p_to_tc_map = 74;
-  uint64 qos_dot1p_to_color_map = 75;
-  uint64 qos_dscp_to_tc_map = 76;
-  uint64 qos_dscp_to_color_map = 77;
-  uint64 qos_tc_to_queue_map = 78;
-  uint64 qos_tc_and_color_to_dot1p_map = 79;
-  uint64 qos_tc_and_color_to_dscp_map = 80;
-  uint64 qos_tc_to_priority_group_map = 81;
-  uint64 qos_pfc_priority_to_priority_group_map = 82;
-  uint64 qos_pfc_priority_to_queue_map = 83;
-  uint64 qos_scheduler_profile_id = 84;
-  Uint64List qos_ingress_buffer_profile_list = 85;
-  Uint64List qos_egress_buffer_profile_list = 86;
-  PortPriorityFlowControlMode priority_flow_control_mode = 87;
-  uint32 priority_flow_control = 88;
-  uint32 priority_flow_control_rx = 89;
-  uint32 priority_flow_control_tx = 90;
-  uint32 meta_data = 91;
-  Uint64List egress_block_port_list = 92;
-  uint64 hw_profile_id = 93;
-  bool eee_enable = 94;
-  uint32 eee_idle_time = 95;
-  uint32 eee_wake_time = 96;
-  Uint64List port_pool_list = 97;
-  uint64 isolation_group = 98;
-  bool pkt_tx_enable = 99;
-  Uint64List tam_object = 100;
-  Uint32List serdes_preemphasis = 101;
-  Uint32List serdes_idriver = 102;
-  Uint32List serdes_ipredriver = 103;
-  bool link_training_enable = 104;
-  PortPtpMode ptp_mode = 105;
-  PortInterfaceType interface_type = 106;
-  PortInterfaceTypeList advertised_interface_type = 107;
-  uint64 reference_clock = 108;
-  uint32 prbs_polynomial = 109;
-  uint64 port_serdes_id = 110;
-  PortLinkTrainingFailureStatus link_training_failure_status = 111;
-  PortLinkTrainingRxStatus link_training_rx_status = 112;
-  PortPrbsConfig prbs_config = 113;
-  bool prbs_lock_status = 114;
-  bool prbs_lock_loss_status = 115;
-  PortPrbsRxStatus prbs_rx_status = 116;
-  PRBS_RXState prbs_rx_state = 117;
-  bool auto_neg_status = 118;
-  bool disable_decrement_ttl = 119;
-  uint64 qos_mpls_exp_to_tc_map = 120;
-  uint64 qos_mpls_exp_to_color_map = 121;
-  uint64 qos_tc_and_color_to_mpls_exp_map = 122;
-  uint32 tpid = 123;
-  PortErrStatusList err_status_list = 124;
-  bool fabric_attached = 125;
-  SwitchType fabric_attached_switch_type = 126;
-  uint32 fabric_attached_switch_id = 127;
-  uint32 fabric_attached_port_index = 128;
-  FabricPortReachability fabric_reachability = 129;
-  uint64 system_port = 130;
-  bool auto_neg_fec_mode_override = 131;
-  PortLoopbackMode loopback_mode = 132;
-  PortMdixModeStatus mdix_mode_status = 133;
-  PortMdixModeConfig mdix_mode_config = 134;
-  PortAutoNegConfigMode auto_neg_config_mode = 135;
-  bool _1000x_sgmii_slave_autodetect = 136;
-  PortModuleType module_type = 137;
-  PortDualMedia dual_media = 138;
-  PortFecModeExtended auto_neg_fec_mode_extended = 139;
-  uint32 ipg = 140;
-  bool global_flow_control_forward = 141;
-  bool priority_flow_control_forward = 142;
-  uint64 qos_dscp_to_forwarding_class_map = 143;
-  uint64 qos_mpls_exp_to_forwarding_class_map = 144;
-  uint64 ipsec_port = 145;
+message HostifTableEntryAttribute {
+  HostifTableEntryType type = 1;
+  uint64 obj_id = 2;
+  uint64 trap_id = 3;
+  HostifTableEntryChannelType channel_type = 4;
+  uint64 host_if = 5;
 }
 
-message PortConnectorAttribute {
-  uint64 system_side_port_id = 2;
-  uint64 line_side_port_id = 3;
-  uint64 system_side_failover_port_id = 4;
-  uint64 line_side_failover_port_id = 5;
-  PortConnectorFailoverMode failover_mode = 6;
+message HostifTrapAttribute {
+  HostifTrapType trap_type = 1;
+  PacketAction packet_action = 2;
+  uint32 trap_priority = 3;
+  Uint64List exclude_port_list = 4;
+  uint64 trap_group = 5;
+  Uint64List mirror_session = 6;
+  uint64 counter_id = 7;
 }
 
-message PortPoolAttribute {
+message HostifTrapGroupAttribute {
+  bool admin_state = 1;
+  uint32 queue = 2;
+  uint64 policer = 3;
+}
+
+message HostifUserDefinedTrapAttribute {
+  HostifUserDefinedTrapType type = 1;
+  uint32 trap_priority = 2;
+  uint64 trap_group = 3;
+}
+
+message IngressPriorityGroupAttribute {
+  uint64 buffer_profile = 1;
+  uint64 port = 2;
+  Uint64List tam = 3;
+  uint32 index = 4;
+}
+
+message InsegEntryAttribute {
+  uint32 num_of_pop = 1;
+  PacketAction packet_action = 2;
+  uint32 trap_priority = 3;
+  uint64 next_hop_id = 4;
+  InsegEntryPscType psc_type = 5;
+  uint32 qos_tc = 6;
+  uint64 mpls_exp_to_tc_map = 7;
+  uint64 mpls_exp_to_color_map = 8;
+  InsegEntryPopTtlMode pop_ttl_mode = 9;
+  InsegEntryPopQosMode pop_qos_mode = 10;
+  uint64 counter_id = 11;
+}
+
+message IpmcEntryAttribute {
+  PacketAction packet_action = 1;
+  uint64 output_group_id = 2;
+  uint64 rpf_group_id = 3;
+}
+
+message IpmcGroupAttribute {
+  uint32 ipmc_output_count = 1;
+  Uint64List ipmc_member_list = 2;
+}
+
+message IpmcGroupMemberAttribute {
+  uint64 ipmc_group_id = 1;
+  uint64 ipmc_output_id = 2;
+}
+
+message IpsecCipherList {
+  repeated IpsecCipher list = 1;
+}
+
+message IpsecAttribute {
+  bool term_remote_ip_match_supported = 1;
+  bool switching_mode_cut_through_supported = 2;
+  bool switching_mode_store_and_forward_supported = 3;
+  bool stats_mode_read_supported = 4;
+  bool stats_mode_read_clear_supported = 5;
+  bool sn_32bit_supported = 6;
+  bool esn_64bit_supported = 7;
+  IpsecCipherList supported_cipher_list = 8;
+  uint32 system_side_mtu = 9;
+  bool warm_boot_supported = 10;
+  bool warm_boot_enable = 11;
+  bool external_sa_index_enable = 12;
+  uint32 ctag_tpid = 13;
+  uint32 stag_tpid = 14;
+  uint32 max_vlan_tags_parsed = 15;
+  uint64 octet_count_high_watermark = 16;
+  uint64 octet_count_low_watermark = 17;
+  StatsMode stats_mode = 18;
+  uint32 available_ipsec_sa = 19;
+  Uint64List sa_list = 20;
+}
+
+message IpsecPortAttribute {
+  uint64 port_id = 1;
+  bool ctag_enable = 2;
+  bool stag_enable = 3;
+  uint32 native_vlan_id = 4;
+  bool vrf_from_packet_vlan_enable = 5;
+  SwitchSwitchingMode switch_switching_mode = 6;
+}
+
+message IpsecSaAttribute {
+  IpsecDirection ipsec_direction = 1;
+  uint64 ipsec_id = 2;
+  IpsecSaOctetCountStatus octet_count_status = 3;
+  uint32 external_sa_index = 4;
+  uint32 sa_index = 5;
+  Uint64List ipsec_port_list = 6;
+  uint32 ipsec_spi = 7;
+  bool ipsec_esn_enable = 8;
+  IpsecCipher ipsec_cipher = 9;
+  bytes encrypt_key = 10;
+  uint32 salt = 11;
+  bytes auth_key = 12;
+  bool ipsec_replay_protection_enable = 13;
+  uint32 ipsec_replay_protection_window = 14;
+  bytes term_dst_ip = 15;
+  bool term_vlan_id_enable = 16;
+  uint32 term_vlan_id = 17;
+  bool term_src_ip_enable = 18;
+  bytes term_src_ip = 19;
+  uint64 egress_esn = 20;
+  uint64 minimum_ingress_esn = 21;
+}
+
+message IsolationGroupAttribute {
+  IsolationGroupType type = 1;
+  Uint64List isolation_member_list = 2;
+}
+
+message IsolationGroupMemberAttribute {
+  uint64 isolation_group_id = 1;
+  uint64 isolation_object = 2;
+}
+
+message L2mcEntryAttribute {
+  PacketAction packet_action = 1;
+  uint64 output_group_id = 2;
+}
+
+message L2mcGroupAttribute {
+  uint32 l2mc_output_count = 1;
+  Uint64List l2mc_member_list = 2;
+}
+
+message L2mcGroupMemberAttribute {
+  uint64 l2mc_group_id = 1;
+  uint64 l2mc_output_id = 2;
+  bytes l2mc_endpoint_ip = 3;
+}
+
+message LagAttribute {
+  Uint64List port_list = 1;
+  uint64 ingress_acl = 2;
+  uint64 egress_acl = 3;
+  uint32 port_vlan_id = 4;
+  uint32 default_vlan_priority = 5;
+  bool drop_untagged = 6;
+  bool drop_tagged = 7;
+  uint32 tpid = 8;
+  uint32 system_port_aggregate_id = 9;
+  bytes label = 10;
+}
+
+message LagMemberAttribute {
+  uint64 lag_id = 1;
   uint64 port_id = 2;
-  uint64 buffer_pool_id = 3;
-  uint64 qos_wred_profile_id = 4;
+  bool egress_disable = 3;
+  bool ingress_disable = 4;
 }
 
-message PortSerdesAttribute {
+message MacsecCipherSuiteList {
+  repeated MacsecCipherSuite list = 1;
+}
+
+message Uint32List {
+  repeated uint32 list = 1;
+}
+
+message MacsecAttribute {
+  MacsecDirection direction = 1;
+  bool switching_mode_cut_through_supported = 2;
+  bool switching_mode_store_and_forward_supported = 3;
+  bool stats_mode_read_supported = 4;
+  bool stats_mode_read_clear_supported = 5;
+  bool sci_in_ingress_macsec_acl = 6;
+  MacsecCipherSuiteList supported_cipher_suite_list = 7;
+  bool pn_32bit_supported = 8;
+  bool xpn_64bit_supported = 9;
+  bool gcm_aes128_supported = 10;
+  bool gcm_aes256_supported = 11;
+  Uint32List sectag_offsets_supported = 12;
+  uint32 system_side_mtu = 13;
+  bool warm_boot_supported = 14;
+  bool warm_boot_enable = 15;
+  uint32 ctag_tpid = 16;
+  uint32 stag_tpid = 17;
+  uint32 max_vlan_tags_parsed = 18;
+  StatsMode stats_mode = 19;
+  bool physical_bypass_enable = 20;
+  Uint64List supported_port_list = 21;
+  uint32 available_macsec_flow = 22;
+  Uint64List flow_list = 23;
+  uint32 available_macsec_sc = 24;
+  uint32 available_macsec_sa = 25;
+}
+
+message MacsecFlowAttribute {
+  MacsecDirection macsec_direction = 1;
+  Uint64List acl_entry_list = 2;
+  Uint64List sc_list = 3;
+}
+
+message MacsecPortAttribute {
+  MacsecDirection macsec_direction = 1;
   uint64 port_id = 2;
-  Int32List preemphasis = 3;
-  Int32List idriver = 4;
-  Int32List ipredriver = 5;
-  Int32List tx_fir_pre1 = 6;
-  Int32List tx_fir_pre2 = 7;
-  Int32List tx_fir_pre3 = 8;
-  Int32List tx_fir_main = 9;
-  Int32List tx_fir_post1 = 10;
-  Int32List tx_fir_post2 = 11;
-  Int32List tx_fir_post3 = 12;
-  Int32List tx_fir_attn = 13;
+  bool ctag_enable = 3;
+  bool stag_enable = 4;
+  SwitchSwitchingMode switch_switching_mode = 5;
+}
+
+message MacsecSaAttribute {
+  MacsecDirection macsec_direction = 1;
+  uint64 sc_id = 2;
+  uint32 an = 3;
+  bytes sak = 4;
+  bytes salt = 5;
+  bytes auth_key = 6;
+  uint64 configured_egress_xpn = 7;
+  uint64 current_xpn = 8;
+  uint64 minimum_ingress_xpn = 9;
+  uint32 macsec_ssci = 10;
+}
+
+message MacsecScAttribute {
+  MacsecDirection macsec_direction = 1;
+  uint64 flow_id = 2;
+  uint64 macsec_sci = 3;
+  bool macsec_explicit_sci_enable = 4;
+  uint32 macsec_sectag_offset = 5;
+  uint64 active_egress_sa_id = 6;
+  bool macsec_replay_protection_enable = 7;
+  uint32 macsec_replay_protection_window = 8;
+  Uint64List sa_list = 9;
+  MacsecCipherSuite macsec_cipher_suite = 10;
+  bool encryption_enable = 11;
+}
+
+message McastFdbEntryAttribute {
+  uint64 group_id = 1;
+  PacketAction packet_action = 2;
+  uint32 meta_data = 3;
+}
+
+message MirrorSessionAttribute {
+  MirrorSessionType type = 1;
+  uint64 monitor_port = 2;
+  uint32 truncate_size = 3;
+  uint32 sample_rate = 4;
+  MirrorSessionCongestionMode congestion_mode = 5;
+  uint32 tc = 6;
+  uint32 vlan_tpid = 7;
+  uint32 vlan_id = 8;
+  uint32 vlan_pri = 9;
+  uint32 vlan_cfi = 10;
+  bool vlan_header_valid = 11;
+  ErspanEncapsulationType erspan_encapsulation_type = 12;
+  uint32 iphdr_version = 13;
+  uint32 tos = 14;
+  uint32 ttl = 15;
+  bytes src_ip_address = 16;
+  bytes dst_ip_address = 17;
+  bytes src_mac_address = 18;
+  bytes dst_mac_address = 19;
+  uint32 gre_protocol_type = 20;
+  bool monitor_portlist_valid = 21;
+  Uint64List monitor_portlist = 22;
+  uint64 policer = 23;
+  uint32 udp_src_port = 24;
+  uint32 udp_dst_port = 25;
+}
+
+message MyMacAttribute {
+  uint32 priority = 1;
+  uint64 port_id = 2;
+  uint32 vlan_id = 3;
+  bytes mac_address = 4;
+  bytes mac_address_mask = 5;
+}
+
+message MySidEntryAttribute {
+  MySidEntryEndpointBehavior endpoint_behavior = 1;
+  MySidEntryEndpointBehaviorFlavor endpoint_behavior_flavor = 2;
+  PacketAction packet_action = 3;
+  uint32 trap_priority = 4;
+  uint64 next_hop_id = 5;
+  uint64 tunnel_id = 6;
+  uint64 vrf = 7;
+  uint64 counter_id = 8;
+}
+
+message NatEntryAttribute {
+  NatType nat_type = 1;
+  bytes src_ip = 2;
+  bytes src_ip_mask = 3;
+  uint64 vr_id = 4;
+  bytes dst_ip = 5;
+  bytes dst_ip_mask = 6;
+  uint32 l4_src_port = 7;
+  uint32 l4_dst_port = 8;
+  bool enable_packet_count = 9;
+  uint64 packet_count = 10;
+  bool enable_byte_count = 11;
+  uint64 byte_count = 12;
+  bool hit_bit_cor = 13;
+  bool hit_bit = 14;
+}
+
+message NatZoneCounterAttribute {
+  NatType nat_type = 1;
+  uint32 zone_id = 2;
+  bool enable_discard = 3;
+  uint64 discard_packet_count = 4;
+  bool enable_translation_needed = 5;
+  uint64 translation_needed_packet_count = 6;
+  bool enable_translations = 7;
+  uint64 translations_packet_count = 8;
+}
+
+message NeighborEntryAttribute {
+  bytes dst_mac_address = 1;
+  PacketAction packet_action = 2;
+  uint64 user_trap_id = 3;
+  bool no_host_route = 4;
+  uint32 meta_data = 5;
+  uint64 counter_id = 6;
+  uint32 encap_index = 7;
+  bool encap_impose_index = 8;
+  bool is_local = 9;
+  IpAddrFamily ip_addr_family = 10;
+}
+
+message NextHopAttribute {
+  NextHopType type = 1;
+  bytes ip = 2;
+  uint64 router_interface_id = 3;
+  uint64 tunnel_id = 4;
+  uint32 tunnel_vni = 5;
+  bytes tunnel_mac = 6;
+  uint64 srv6_sidlist_id = 7;
+  Uint32List labelstack = 8;
+  uint64 counter_id = 9;
+  bool disable_decrement_ttl = 10;
+  OutsegType outseg_type = 11;
+  OutsegTtlMode outseg_ttl_mode = 12;
+  uint32 outseg_ttl_value = 13;
+  OutsegExpMode outseg_exp_mode = 14;
+  uint32 outseg_exp_value = 15;
+  uint64 qos_tc_and_color_to_mpls_exp_map = 16;
+}
+
+message NextHopGroupAttribute {
+  uint32 next_hop_count = 1;
+  Uint64List next_hop_member_list = 2;
+  NextHopGroupType type = 3;
+  bool set_switchover = 4;
+  uint64 counter_id = 5;
+  uint32 configured_size = 6;
+  uint32 real_size = 7;
+  uint64 selection_map = 8;
+}
+
+message UintMapList {
+  repeated UintMap list = 1;
+}
+
+message NextHopGroupMapAttribute {
+  NextHopGroupMapType type = 1;
+  UintMapList map_to_value_list = 2;
+}
+
+message NextHopGroupMemberAttribute {
+  uint64 next_hop_group_id = 1;
+  uint64 next_hop_id = 2;
+  uint32 weight = 3;
+  NextHopGroupMemberConfiguredRole configured_role = 4;
+  NextHopGroupMemberObservedRole observed_role = 5;
+  uint64 monitored_object = 6;
+  uint32 index = 7;
+  uint32 sequence_id = 8;
+  uint64 counter_id = 9;
 }
 
 message PacketActionList {
   repeated PacketAction list = 1;
 }
 
+message PolicerAttribute {
+  MeterType meter_type = 1;
+  PolicerMode mode = 2;
+  PolicerColorSource color_source = 3;
+  uint64 cbs = 4;
+  uint64 cir = 5;
+  uint64 pbs = 6;
+  uint64 pir = 7;
+  PacketAction green_packet_action = 8;
+  PacketAction yellow_packet_action = 9;
+  PacketAction red_packet_action = 10;
+  PacketActionList enable_counter_packet_action_list = 11;
+}
+
 message PortBreakoutModeTypeList {
   repeated PortBreakoutModeType list = 1;
-}
-
-message PortErrStatusList {
-  repeated PortErrStatus list = 1;
-}
-
-message PortEyeValuesList {
-  repeated PortEyeValues list = 1;
-}
-
-message PortFecModeExtendedList {
-  repeated PortFecModeExtended list = 1;
 }
 
 message PortFecModeList {
   repeated PortFecMode list = 1;
 }
 
+message PortFecModeExtendedList {
+  repeated PortFecModeExtended list = 1;
+}
+
+message PortEyeValuesList {
+  repeated PortEyeValues list = 1;
+}
+
 message PortInterfaceTypeList {
   repeated PortInterfaceType list = 1;
 }
 
-message QosMapAttribute {
-  QosMapType type = 2;
-  QosMapList map_to_value_list = 3;
+message PortErrStatusList {
+  repeated PortErrStatus list = 1;
 }
 
-message QueueAttribute {
-  QueueType type = 2;
-  uint64 port = 3;
-  uint32 index = 4;
-  uint64 parent_scheduler_node = 5;
-  uint64 wred_profile_id = 6;
-  uint64 buffer_profile_id = 7;
-  uint64 scheduler_profile_id = 8;
-  bool pause_status = 9;
-  bool enable_pfc_dldr = 10;
-  bool pfc_dlr_init = 11;
-  Uint64List tam_object = 12;
+message PortAttribute {
+  PortType type = 1;
+  PortOperStatus oper_status = 2;
+  PortBreakoutModeTypeList supported_breakout_mode_type = 3;
+  PortBreakoutModeType current_breakout_mode_type = 4;
+  uint32 qos_number_of_queues = 5;
+  Uint64List qos_queue_list = 6;
+  uint32 qos_number_of_scheduler_groups = 7;
+  Uint64List qos_scheduler_group_list = 8;
+  uint32 qos_maximum_headroom_size = 9;
+  Uint32List supported_speed = 10;
+  PortFecModeList supported_fec_mode = 11;
+  PortFecModeExtendedList supported_fec_mode_extended = 12;
+  Uint32List supported_half_duplex_speed = 13;
+  bool supported_auto_neg_mode = 14;
+  PortFlowControlMode supported_flow_control_mode = 15;
+  bool supported_asymmetric_pause_mode = 16;
+  PortMediaType supported_media_type = 17;
+  Uint32List remote_advertised_speed = 18;
+  PortFecModeList remote_advertised_fec_mode = 19;
+  PortFecModeExtendedList remote_advertised_fec_mode_extended = 20;
+  Uint32List remote_advertised_half_duplex_speed = 21;
+  bool remote_advertised_auto_neg_mode = 22;
+  PortFlowControlMode remote_advertised_flow_control_mode = 23;
+  bool remote_advertised_asymmetric_pause_mode = 24;
+  PortMediaType remote_advertised_media_type = 25;
+  uint32 remote_advertised_oui_code = 26;
+  uint32 number_of_ingress_priority_groups = 27;
+  Uint64List ingress_priority_group_list = 28;
+  PortEyeValuesList eye_values = 29;
+  uint32 oper_speed = 30;
+  Uint32List hw_lane_list = 31;
+  uint32 speed = 32;
+  bool full_duplex_mode = 33;
+  bool auto_neg_mode = 34;
+  bool admin_state = 35;
+  PortMediaType media_type = 36;
+  Uint32List advertised_speed = 37;
+  PortFecModeList advertised_fec_mode = 38;
+  PortFecModeExtendedList advertised_fec_mode_extended = 39;
+  Uint32List advertised_half_duplex_speed = 40;
+  bool advertised_auto_neg_mode = 41;
+  PortFlowControlMode advertised_flow_control_mode = 42;
+  bool advertised_asymmetric_pause_mode = 43;
+  PortMediaType advertised_media_type = 44;
+  uint32 advertised_oui_code = 45;
+  uint32 port_vlan_id = 46;
+  uint32 default_vlan_priority = 47;
+  bool drop_untagged = 48;
+  bool drop_tagged = 49;
+  PortInternalLoopbackMode internal_loopback_mode = 50;
+  bool use_extended_fec = 51;
+  PortFecMode fec_mode = 52;
+  PortFecModeExtended fec_mode_extended = 53;
+  bool update_dscp = 54;
+  uint32 mtu = 55;
+  uint64 flood_storm_control_policer_id = 56;
+  uint64 broadcast_storm_control_policer_id = 57;
+  uint64 multicast_storm_control_policer_id = 58;
+  PortFlowControlMode global_flow_control_mode = 59;
+  uint64 ingress_acl = 60;
+  uint64 egress_acl = 61;
+  uint64 ingress_macsec_acl = 62;
+  uint64 egress_macsec_acl = 63;
+  Uint64List macsec_port_list = 64;
+  Uint64List ingress_mirror_session = 65;
+  Uint64List egress_mirror_session = 66;
+  uint64 ingress_samplepacket_enable = 67;
+  uint64 egress_samplepacket_enable = 68;
+  Uint64List ingress_sample_mirror_session = 69;
+  Uint64List egress_sample_mirror_session = 70;
+  uint64 policer_id = 71;
+  uint32 qos_default_tc = 72;
+  uint64 qos_dot1p_to_tc_map = 73;
+  uint64 qos_dot1p_to_color_map = 74;
+  uint64 qos_dscp_to_tc_map = 75;
+  uint64 qos_dscp_to_color_map = 76;
+  uint64 qos_tc_to_queue_map = 77;
+  uint64 qos_tc_and_color_to_dot1p_map = 78;
+  uint64 qos_tc_and_color_to_dscp_map = 79;
+  uint64 qos_tc_to_priority_group_map = 80;
+  uint64 qos_pfc_priority_to_priority_group_map = 81;
+  uint64 qos_pfc_priority_to_queue_map = 82;
+  uint64 qos_scheduler_profile_id = 83;
+  Uint64List qos_ingress_buffer_profile_list = 84;
+  Uint64List qos_egress_buffer_profile_list = 85;
+  PortPriorityFlowControlMode priority_flow_control_mode = 86;
+  uint32 priority_flow_control = 87;
+  uint32 priority_flow_control_rx = 88;
+  uint32 priority_flow_control_tx = 89;
+  uint32 meta_data = 90;
+  Uint64List egress_block_port_list = 91;
+  uint64 hw_profile_id = 92;
+  bool eee_enable = 93;
+  uint32 eee_idle_time = 94;
+  uint32 eee_wake_time = 95;
+  Uint64List port_pool_list = 96;
+  uint64 isolation_group = 97;
+  bool pkt_tx_enable = 98;
+  Uint64List tam_object = 99;
+  Uint32List serdes_preemphasis = 100;
+  Uint32List serdes_idriver = 101;
+  Uint32List serdes_ipredriver = 102;
+  bool link_training_enable = 103;
+  PortPtpMode ptp_mode = 104;
+  PortInterfaceType interface_type = 105;
+  PortInterfaceTypeList advertised_interface_type = 106;
+  uint64 reference_clock = 107;
+  uint32 prbs_polynomial = 108;
+  uint64 port_serdes_id = 109;
+  PortLinkTrainingFailureStatus link_training_failure_status = 110;
+  PortLinkTrainingRxStatus link_training_rx_status = 111;
+  PortPrbsConfig prbs_config = 112;
+  bool prbs_lock_status = 113;
+  bool prbs_lock_loss_status = 114;
+  PortPrbsRxStatus prbs_rx_status = 115;
+  PRBS_RXState prbs_rx_state = 116;
+  bool auto_neg_status = 117;
+  bool disable_decrement_ttl = 118;
+  uint64 qos_mpls_exp_to_tc_map = 119;
+  uint64 qos_mpls_exp_to_color_map = 120;
+  uint64 qos_tc_and_color_to_mpls_exp_map = 121;
+  uint32 tpid = 122;
+  PortErrStatusList err_status_list = 123;
+  bool fabric_attached = 124;
+  SwitchType fabric_attached_switch_type = 125;
+  uint32 fabric_attached_switch_id = 126;
+  uint32 fabric_attached_port_index = 127;
+  FabricPortReachability fabric_reachability = 128;
+  uint64 system_port = 129;
+  bool auto_neg_fec_mode_override = 130;
+  PortLoopbackMode loopback_mode = 131;
+  PortMdixModeStatus mdix_mode_status = 132;
+  PortMdixModeConfig mdix_mode_config = 133;
+  PortAutoNegConfigMode auto_neg_config_mode = 134;
+  bool _1000x_sgmii_slave_autodetect = 135;
+  PortModuleType module_type = 136;
+  PortDualMedia dual_media = 137;
+  PortFecModeExtended auto_neg_fec_mode_extended = 138;
+  uint32 ipg = 139;
+  bool global_flow_control_forward = 140;
+  bool priority_flow_control_forward = 141;
+  uint64 qos_dscp_to_forwarding_class_map = 142;
+  uint64 qos_mpls_exp_to_forwarding_class_map = 143;
+  uint64 ipsec_port = 144;
+}
+
+message PortConnectorAttribute {
+  uint64 system_side_port_id = 1;
+  uint64 line_side_port_id = 2;
+  uint64 system_side_failover_port_id = 3;
+  uint64 line_side_failover_port_id = 4;
+  PortConnectorFailoverMode failover_mode = 5;
+}
+
+message PortPoolAttribute {
+  uint64 port_id = 1;
+  uint64 buffer_pool_id = 2;
+  uint64 qos_wred_profile_id = 3;
+}
+
+message Int32List {
+  repeated int32 list = 1;
+}
+
+message PortSerdesAttribute {
+  uint64 port_id = 1;
+  Int32List preemphasis = 2;
+  Int32List idriver = 3;
+  Int32List ipredriver = 4;
+  Int32List tx_fir_pre1 = 5;
+  Int32List tx_fir_pre2 = 6;
+  Int32List tx_fir_pre3 = 7;
+  Int32List tx_fir_main = 8;
+  Int32List tx_fir_post1 = 9;
+  Int32List tx_fir_post2 = 10;
+  Int32List tx_fir_post3 = 11;
+  Int32List tx_fir_attn = 12;
 }
 
 message QosMapList {
   repeated QOSMap list = 1;
 }
 
+message QosMapAttribute {
+  QosMapType type = 1;
+  QosMapList map_to_value_list = 2;
+}
+
+message QueueAttribute {
+  QueueType type = 1;
+  uint64 port = 2;
+  uint32 index = 3;
+  uint64 parent_scheduler_node = 4;
+  uint64 wred_profile_id = 5;
+  uint64 buffer_profile_id = 6;
+  uint64 scheduler_profile_id = 7;
+  bool pause_status = 8;
+  bool enable_pfc_dldr = 9;
+  bool pfc_dlr_init = 10;
+  Uint64List tam_object = 11;
+}
+
 message RouterInterfaceAttribute {
-  uint64 virtual_router_id = 2;
-  RouterInterfaceType type = 3;
-  uint64 port_id = 4;
-  uint64 vlan_id = 5;
-  uint32 outer_vlan_id = 6;
-  uint32 inner_vlan_id = 7;
-  uint64 bridge_id = 8;
-  bytes src_mac_address = 9;
-  bool admin_v4_state = 10;
-  bool admin_v6_state = 11;
-  uint32 mtu = 12;
-  uint64 ingress_acl = 13;
-  uint64 egress_acl = 14;
-  PacketAction neighbor_miss_packet_action = 15;
-  bool v4_mcast_enable = 16;
-  bool v6_mcast_enable = 17;
-  PacketAction loopback_packet_action = 18;
-  bool is_virtual = 19;
-  uint32 nat_zone_id = 20;
-  bool disable_decrement_ttl = 21;
-  bool admin_mpls_state = 22;
+  uint64 virtual_router_id = 1;
+  RouterInterfaceType type = 2;
+  uint64 port_id = 3;
+  uint64 vlan_id = 4;
+  uint32 outer_vlan_id = 5;
+  uint32 inner_vlan_id = 6;
+  uint64 bridge_id = 7;
+  bytes src_mac_address = 8;
+  bool admin_v4_state = 9;
+  bool admin_v6_state = 10;
+  uint32 mtu = 11;
+  uint64 ingress_acl = 12;
+  uint64 egress_acl = 13;
+  PacketAction neighbor_miss_packet_action = 14;
+  bool v4_mcast_enable = 15;
+  bool v6_mcast_enable = 16;
+  PacketAction loopback_packet_action = 17;
+  bool is_virtual = 18;
+  uint32 nat_zone_id = 19;
+  bool disable_decrement_ttl = 20;
+  bool admin_mpls_state = 21;
 }
 
 message RouteEntryAttribute {
-  PacketAction packet_action = 2;
-  uint64 user_trap_id = 3;
-  uint64 next_hop_id = 4;
-  uint32 meta_data = 5;
-  IpAddrFamily ip_addr_family = 6;
-  uint64 counter_id = 7;
+  PacketAction packet_action = 1;
+  uint64 user_trap_id = 2;
+  uint64 next_hop_id = 3;
+  uint32 meta_data = 4;
+  IpAddrFamily ip_addr_family = 5;
+  uint64 counter_id = 6;
 }
 
 message RpfGroupAttribute {
-  uint32 rpf_interface_count = 2;
-  Uint64List rpf_member_list = 3;
+  uint32 rpf_interface_count = 1;
+  Uint64List rpf_member_list = 2;
 }
 
 message RpfGroupMemberAttribute {
-  uint64 rpf_group_id = 2;
-  uint64 rpf_interface_id = 3;
+  uint64 rpf_group_id = 1;
+  uint64 rpf_interface_id = 2;
 }
 
 message SamplepacketAttribute {
-  uint32 sample_rate = 2;
-  SamplepacketType type = 3;
-  SamplepacketMode mode = 4;
+  uint32 sample_rate = 1;
+  SamplepacketType type = 2;
+  SamplepacketMode mode = 3;
 }
 
 message SchedulerAttribute {
-  SchedulingType scheduling_type = 2;
-  uint32 scheduling_weight = 3;
-  MeterType meter_type = 4;
-  uint64 min_bandwidth_rate = 5;
-  uint64 min_bandwidth_burst_rate = 6;
-  uint64 max_bandwidth_rate = 7;
-  uint64 max_bandwidth_burst_rate = 8;
+  SchedulingType scheduling_type = 1;
+  uint32 scheduling_weight = 2;
+  MeterType meter_type = 3;
+  uint64 min_bandwidth_rate = 4;
+  uint64 min_bandwidth_burst_rate = 5;
+  uint64 max_bandwidth_rate = 6;
+  uint64 max_bandwidth_burst_rate = 7;
 }
 
 message SchedulerGroupAttribute {
-  uint32 child_count = 2;
-  Uint64List child_list = 3;
-  uint64 port_id = 4;
-  uint32 level = 5;
-  uint32 max_childs = 6;
-  uint64 scheduler_profile_id = 7;
-  uint64 parent_node = 8;
+  uint32 child_count = 1;
+  Uint64List child_list = 2;
+  uint64 port_id = 3;
+  uint32 level = 4;
+  uint32 max_childs = 5;
+  uint64 scheduler_profile_id = 6;
+  uint64 parent_node = 7;
+}
+
+message TlvEntryList {
+  repeated TLVEntry list = 1;
 }
 
 message Srv6SidlistAttribute {
-  Srv6SidlistType type = 2;
-  TlvEntryList tlv_list = 3;
-  BytesList segment_list = 4;
+  Srv6SidlistType type = 1;
+  TlvEntryList tlv_list = 2;
+  BytesList segment_list = 3;
 }
 
 message StpAttribute {
-  Uint32List vlan_list = 2;
-  uint64 bridge_id = 3;
-  Uint64List port_list = 4;
+  Uint32List vlan_list = 1;
+  uint64 bridge_id = 2;
+  Uint64List port_list = 3;
 }
 
 message StpPortAttribute {
-  uint64 stp = 2;
-  uint64 bridge_port = 3;
-  StpPortState state = 4;
+  uint64 stp = 1;
+  uint64 bridge_port = 2;
+  StpPortState state = 3;
 }
 
-message SwitchAttribute {
-  uint32 number_of_active_ports = 2;
-  uint32 max_number_of_supported_ports = 3;
-  Uint64List port_list = 4;
-  uint32 port_max_mtu = 5;
-  uint64 cpu_port = 6;
-  uint32 max_virtual_routers = 7;
-  uint32 fdb_table_size = 8;
-  uint32 l3_neighbor_table_size = 9;
-  uint32 l3_route_table_size = 10;
-  uint32 lag_members = 11;
-  uint32 number_of_lags = 12;
-  uint32 ecmp_members = 13;
-  uint32 number_of_ecmp_groups = 14;
-  uint32 number_of_unicast_queues = 15;
-  uint32 number_of_multicast_queues = 16;
-  uint32 number_of_queues = 17;
-  uint32 number_of_cpu_queues = 18;
-  bool on_link_route_supported = 19;
-  SwitchOperStatus oper_status = 20;
-  uint32 max_number_of_temp_sensors = 21;
-  Int32List temp_list = 22;
-  uint32 max_temp = 23;
-  uint32 average_temp = 24;
-  uint32 acl_table_minimum_priority = 25;
-  uint32 acl_table_maximum_priority = 26;
-  uint32 acl_entry_minimum_priority = 27;
-  uint32 acl_entry_maximum_priority = 28;
-  uint32 acl_table_group_minimum_priority = 29;
-  uint32 acl_table_group_maximum_priority = 30;
-  Uint32Range fdb_dst_user_meta_data_range = 31;
-  Uint32Range route_dst_user_meta_data_range = 32;
-  Uint32Range neighbor_dst_user_meta_data_range = 33;
-  Uint32Range port_user_meta_data_range = 34;
-  Uint32Range vlan_user_meta_data_range = 35;
-  Uint32Range acl_user_meta_data_range = 36;
-  Uint32Range acl_user_trap_id_range = 37;
-  uint64 default_vlan_id = 38;
-  uint64 default_stp_inst_id = 39;
-  uint32 max_stp_instance = 40;
-  uint64 default_virtual_router_id = 41;
-  uint64 default_override_virtual_router_id = 42;
-  uint64 default_1q_bridge_id = 43;
-  uint64 ingress_acl = 44;
-  uint64 egress_acl = 45;
-  uint32 qos_max_number_of_traffic_classes = 46;
-  uint32 qos_max_number_of_scheduler_group_hierarchy_levels = 47;
-  Uint32List qos_max_number_of_scheduler_groups_per_hierarchy_level = 48;
-  uint32 qos_max_number_of_childs_per_scheduler_group = 49;
-  uint64 total_buffer_size = 50;
-  uint32 ingress_buffer_pool_num = 51;
-  uint32 egress_buffer_pool_num = 52;
-  uint32 available_ipv4_route_entry = 53;
-  uint32 available_ipv6_route_entry = 54;
-  uint32 available_ipv4_nexthop_entry = 55;
-  uint32 available_ipv6_nexthop_entry = 56;
-  uint32 available_ipv4_neighbor_entry = 57;
-  uint32 available_ipv6_neighbor_entry = 58;
-  uint32 available_next_hop_group_entry = 59;
-  uint32 available_next_hop_group_member_entry = 60;
-  uint32 available_fdb_entry = 61;
-  uint32 available_l2mc_entry = 62;
-  uint32 available_ipmc_entry = 63;
-  uint32 available_snat_entry = 64;
-  uint32 available_dnat_entry = 65;
-  uint32 available_double_nat_entry = 66;
-  AclResourceList available_acl_table = 67;
-  AclResourceList available_acl_table_group = 68;
-  uint32 available_my_sid_entry = 69;
-  uint64 default_trap_group = 70;
-  uint64 ecmp_hash = 71;
-  uint64 lag_hash = 72;
-  bool restart_warm = 73;
-  bool warm_recover = 74;
-  SwitchRestartType restart_type = 75;
-  uint32 min_planned_restart_interval = 76;
-  uint64 nv_storage_size = 77;
-  uint32 max_acl_action_count = 78;
-  uint32 max_acl_range_count = 79;
-  ACLCapability acl_capability = 80;
-  SwitchMcastSnoopingCapability mcast_snooping_capability = 81;
-  SwitchSwitchingMode switching_mode = 82;
-  bool bcast_cpu_flood_enable = 83;
-  bool mcast_cpu_flood_enable = 84;
-  bytes src_mac_address = 85;
-  uint32 max_learned_addresses = 86;
-  uint32 fdb_aging_time = 87;
-  PacketAction fdb_unicast_miss_packet_action = 88;
-  PacketAction fdb_broadcast_miss_packet_action = 89;
-  PacketAction fdb_multicast_miss_packet_action = 90;
-  HashAlgorithm ecmp_default_hash_algorithm = 91;
-  uint32 ecmp_default_hash_seed = 92;
-  uint32 ecmp_default_hash_offset = 93;
-  bool ecmp_default_symmetric_hash = 94;
-  uint64 ecmp_hash_ipv4 = 95;
-  uint64 ecmp_hash_ipv4_in_ipv4 = 96;
-  uint64 ecmp_hash_ipv6 = 97;
-  HashAlgorithm lag_default_hash_algorithm = 98;
-  uint32 lag_default_hash_seed = 99;
-  uint32 lag_default_hash_offset = 100;
-  bool lag_default_symmetric_hash = 101;
-  uint64 lag_hash_ipv4 = 102;
-  uint64 lag_hash_ipv4_in_ipv4 = 103;
-  uint64 lag_hash_ipv6 = 104;
-  uint32 counter_refresh_interval = 105;
-  uint32 qos_default_tc = 106;
-  uint64 qos_dot1p_to_tc_map = 107;
-  uint64 qos_dot1p_to_color_map = 108;
-  uint64 qos_dscp_to_tc_map = 109;
-  uint64 qos_dscp_to_color_map = 110;
-  uint64 qos_tc_to_queue_map = 111;
-  uint64 qos_tc_and_color_to_dot1p_map = 112;
-  uint64 qos_tc_and_color_to_dscp_map = 113;
-  bool switch_shell_enable = 114;
-  uint32 switch_profile_id = 115;
-  Int32List switch_hardware_info = 116;
-  Int32List firmware_path_name = 117;
-  bool init_switch = 118;
-  bool fast_api_enable = 119;
-  uint32 mirror_tc = 120;
-  ACLCapability acl_stage_ingress = 121;
-  ACLCapability acl_stage_egress = 122;
-  uint32 srv6_max_sid_depth = 123;
-  TlvTypeList srv6_tlv_type = 124;
-  uint32 qos_num_lossless_queues = 125;
-  PacketAction pfc_dlr_packet_action = 126;
-  Uint32Range pfc_tc_dld_interval_range = 127;
-  UintMapList pfc_tc_dld_interval = 128;
-  Uint32Range pfc_tc_dlr_interval_range = 129;
-  UintMapList pfc_tc_dlr_interval = 130;
-  ObjectTypeList supported_protected_object_type = 131;
-  uint32 tpid_outer_vlan = 132;
-  uint32 tpid_inner_vlan = 133;
-  bool crc_check_enable = 134;
-  bool crc_recalculation_enable = 135;
-  uint32 number_of_bfd_session = 136;
-  uint32 max_bfd_session = 137;
-  BfdSessionOffloadTypeList supported_ipv4_bfd_session_offload_type = 138;
-  BfdSessionOffloadTypeList supported_ipv6_bfd_session_offload_type = 139;
-  uint32 min_bfd_rx = 140;
-  uint32 min_bfd_tx = 141;
-  bool ecn_ect_threshold_enable = 142;
-  bytes vxlan_default_router_mac = 143;
-  uint32 vxlan_default_port = 144;
-  uint32 max_mirror_session = 145;
-  uint32 max_sampled_mirror_session = 146;
-  StatsModeList supported_extended_stats_mode = 147;
-  bool uninit_data_plane_on_removal = 148;
-  Uint64List tam_object_id = 149;
-  ObjectTypeList supported_object_type_list = 150;
-  bool pre_shutdown = 151;
-  uint64 nat_zone_counter_object_id = 152;
-  bool nat_enable = 153;
-  SwitchHardwareAccessBus hardware_access_bus = 154;
-  uint64 platfrom_context = 155;
-  bool firmware_download_broadcast = 156;
-  SwitchFirmwareLoadMethod firmware_load_method = 157;
-  SwitchFirmwareLoadType firmware_load_type = 158;
-  bool firmware_download_execute = 159;
-  bool firmware_broadcast_stop = 160;
-  bool firmware_verify_and_init_switch = 161;
-  bool firmware_status = 162;
-  uint32 firmware_major_version = 163;
-  uint32 firmware_minor_version = 164;
-  Uint64List port_connector_list = 165;
-  bool propogate_port_state_from_line_to_system_port_support = 166;
-  SwitchType type = 167;
-  Uint64List macsec_object_list = 168;
-  uint64 qos_mpls_exp_to_tc_map = 169;
-  uint64 qos_mpls_exp_to_color_map = 170;
-  uint64 qos_tc_and_color_to_mpls_exp_map = 171;
-  uint32 switch_id = 172;
-  uint32 max_system_cores = 173;
-  SystemPortConfigList system_port_config_list = 174;
-  uint32 number_of_system_ports = 175;
-  Uint64List system_port_list = 176;
-  uint32 number_of_fabric_ports = 177;
-  Uint64List fabric_port_list = 178;
-  uint32 packet_dma_memory_pool_size = 179;
-  SwitchFailoverConfigMode failover_config_mode = 180;
-  bool supported_failover_mode = 181;
-  Uint64List tunnel_objects_list = 182;
-  uint32 packet_available_dma_memory_pool_size = 183;
-  uint64 pre_ingress_acl = 184;
-  uint32 available_snapt_entry = 185;
-  uint32 available_dnapt_entry = 186;
-  uint32 available_double_napt_entry = 187;
-  Uint32List slave_mdio_addr_list = 188;
-  uint32 my_mac_table_minimum_priority = 189;
-  uint32 my_mac_table_maximum_priority = 190;
-  Uint64List my_mac_list = 191;
-  uint32 installed_my_mac_entries = 192;
-  uint32 available_my_mac_entries = 193;
-  uint32 max_number_of_forwarding_classes = 194;
-  uint64 qos_dscp_to_forwarding_class_map = 195;
-  uint64 qos_mpls_exp_to_forwarding_class_map = 196;
-  uint64 ipsec_object_id = 197;
-  uint32 ipsec_sa_tag_tpid = 198;
+message AclResourceList {
+  repeated ACLResource list = 1;
 }
 
-message SwitchTunnelAttribute {
-  TunnelType tunnel_type = 2;
-  PacketAction loopback_packet_action = 3;
-  TunnelEncapEcnMode tunnel_encap_ecn_mode = 4;
-  Uint64List encap_mappers = 5;
-  TunnelDecapEcnMode tunnel_decap_ecn_mode = 6;
-  Uint64List decap_mappers = 7;
-  TunnelVxlanUdpSportMode tunnel_vxlan_udp_sport_mode = 8;
-  uint32 vxlan_udp_sport = 9;
-  uint32 vxlan_udp_sport_mask = 10;
+message TlvTypeList {
+  repeated TlvType list = 1;
 }
 
-message SystemPortAttribute {
-  SystemPortType type = 2;
-  uint32 qos_number_of_voqs = 3;
-  Uint64List qos_voq_list = 4;
-  uint64 port = 5;
-  bool admin_state = 6;
-  SystemPortConfig config_info = 7;
-  uint64 qos_tc_to_queue_map = 8;
+message ObjectTypeList {
+  repeated ObjectType list = 1;
+}
+
+message BfdSessionOffloadTypeList {
+  repeated BfdSessionOffloadType list = 1;
 }
 
 message StatsModeList {
@@ -3742,298 +3540,500 @@ message SystemPortConfigList {
   repeated SystemPortConfig list = 1;
 }
 
-message TamAttribute {
-  Uint64List telemetry_objects_list = 2;
-  Uint64List event_objects_list = 3;
-  Uint64List int_objects_list = 4;
-  TamBindPointTypeList tam_bind_point_type_list = 5;
+message SwitchAttribute {
+  uint32 number_of_active_ports = 1;
+  uint32 max_number_of_supported_ports = 2;
+  Uint64List port_list = 3;
+  uint32 port_max_mtu = 4;
+  uint64 cpu_port = 5;
+  uint32 max_virtual_routers = 6;
+  uint32 fdb_table_size = 7;
+  uint32 l3_neighbor_table_size = 8;
+  uint32 l3_route_table_size = 9;
+  uint32 lag_members = 10;
+  uint32 number_of_lags = 11;
+  uint32 ecmp_members = 12;
+  uint32 number_of_ecmp_groups = 13;
+  uint32 number_of_unicast_queues = 14;
+  uint32 number_of_multicast_queues = 15;
+  uint32 number_of_queues = 16;
+  uint32 number_of_cpu_queues = 17;
+  bool on_link_route_supported = 18;
+  SwitchOperStatus oper_status = 19;
+  uint32 max_number_of_temp_sensors = 20;
+  Int32List temp_list = 21;
+  uint32 max_temp = 22;
+  uint32 average_temp = 23;
+  uint32 acl_table_minimum_priority = 24;
+  uint32 acl_table_maximum_priority = 25;
+  uint32 acl_entry_minimum_priority = 26;
+  uint32 acl_entry_maximum_priority = 27;
+  uint32 acl_table_group_minimum_priority = 28;
+  uint32 acl_table_group_maximum_priority = 29;
+  Uint32Range fdb_dst_user_meta_data_range = 30;
+  Uint32Range route_dst_user_meta_data_range = 31;
+  Uint32Range neighbor_dst_user_meta_data_range = 32;
+  Uint32Range port_user_meta_data_range = 33;
+  Uint32Range vlan_user_meta_data_range = 34;
+  Uint32Range acl_user_meta_data_range = 35;
+  Uint32Range acl_user_trap_id_range = 36;
+  uint64 default_vlan_id = 37;
+  uint64 default_stp_inst_id = 38;
+  uint32 max_stp_instance = 39;
+  uint64 default_virtual_router_id = 40;
+  uint64 default_override_virtual_router_id = 41;
+  uint64 default_1q_bridge_id = 42;
+  uint64 ingress_acl = 43;
+  uint64 egress_acl = 44;
+  uint32 qos_max_number_of_traffic_classes = 45;
+  uint32 qos_max_number_of_scheduler_group_hierarchy_levels = 46;
+  Uint32List qos_max_number_of_scheduler_groups_per_hierarchy_level = 47;
+  uint32 qos_max_number_of_childs_per_scheduler_group = 48;
+  uint64 total_buffer_size = 49;
+  uint32 ingress_buffer_pool_num = 50;
+  uint32 egress_buffer_pool_num = 51;
+  uint32 available_ipv4_route_entry = 52;
+  uint32 available_ipv6_route_entry = 53;
+  uint32 available_ipv4_nexthop_entry = 54;
+  uint32 available_ipv6_nexthop_entry = 55;
+  uint32 available_ipv4_neighbor_entry = 56;
+  uint32 available_ipv6_neighbor_entry = 57;
+  uint32 available_next_hop_group_entry = 58;
+  uint32 available_next_hop_group_member_entry = 59;
+  uint32 available_fdb_entry = 60;
+  uint32 available_l2mc_entry = 61;
+  uint32 available_ipmc_entry = 62;
+  uint32 available_snat_entry = 63;
+  uint32 available_dnat_entry = 64;
+  uint32 available_double_nat_entry = 65;
+  AclResourceList available_acl_table = 66;
+  AclResourceList available_acl_table_group = 67;
+  uint32 available_my_sid_entry = 68;
+  uint64 default_trap_group = 69;
+  uint64 ecmp_hash = 70;
+  uint64 lag_hash = 71;
+  bool restart_warm = 72;
+  bool warm_recover = 73;
+  SwitchRestartType restart_type = 74;
+  uint32 min_planned_restart_interval = 75;
+  uint64 nv_storage_size = 76;
+  uint32 max_acl_action_count = 77;
+  uint32 max_acl_range_count = 78;
+  ACLCapability acl_capability = 79;
+  SwitchMcastSnoopingCapability mcast_snooping_capability = 80;
+  SwitchSwitchingMode switching_mode = 81;
+  bool bcast_cpu_flood_enable = 82;
+  bool mcast_cpu_flood_enable = 83;
+  bytes src_mac_address = 84;
+  uint32 max_learned_addresses = 85;
+  uint32 fdb_aging_time = 86;
+  PacketAction fdb_unicast_miss_packet_action = 87;
+  PacketAction fdb_broadcast_miss_packet_action = 88;
+  PacketAction fdb_multicast_miss_packet_action = 89;
+  HashAlgorithm ecmp_default_hash_algorithm = 90;
+  uint32 ecmp_default_hash_seed = 91;
+  uint32 ecmp_default_hash_offset = 92;
+  bool ecmp_default_symmetric_hash = 93;
+  uint64 ecmp_hash_ipv4 = 94;
+  uint64 ecmp_hash_ipv4_in_ipv4 = 95;
+  uint64 ecmp_hash_ipv6 = 96;
+  HashAlgorithm lag_default_hash_algorithm = 97;
+  uint32 lag_default_hash_seed = 98;
+  uint32 lag_default_hash_offset = 99;
+  bool lag_default_symmetric_hash = 100;
+  uint64 lag_hash_ipv4 = 101;
+  uint64 lag_hash_ipv4_in_ipv4 = 102;
+  uint64 lag_hash_ipv6 = 103;
+  uint32 counter_refresh_interval = 104;
+  uint32 qos_default_tc = 105;
+  uint64 qos_dot1p_to_tc_map = 106;
+  uint64 qos_dot1p_to_color_map = 107;
+  uint64 qos_dscp_to_tc_map = 108;
+  uint64 qos_dscp_to_color_map = 109;
+  uint64 qos_tc_to_queue_map = 110;
+  uint64 qos_tc_and_color_to_dot1p_map = 111;
+  uint64 qos_tc_and_color_to_dscp_map = 112;
+  bool switch_shell_enable = 113;
+  uint32 switch_profile_id = 114;
+  Int32List switch_hardware_info = 115;
+  Int32List firmware_path_name = 116;
+  bool init_switch = 117;
+  bool fast_api_enable = 118;
+  uint32 mirror_tc = 119;
+  ACLCapability acl_stage_ingress = 120;
+  ACLCapability acl_stage_egress = 121;
+  uint32 srv6_max_sid_depth = 122;
+  TlvTypeList srv6_tlv_type = 123;
+  uint32 qos_num_lossless_queues = 124;
+  PacketAction pfc_dlr_packet_action = 125;
+  Uint32Range pfc_tc_dld_interval_range = 126;
+  UintMapList pfc_tc_dld_interval = 127;
+  Uint32Range pfc_tc_dlr_interval_range = 128;
+  UintMapList pfc_tc_dlr_interval = 129;
+  ObjectTypeList supported_protected_object_type = 130;
+  uint32 tpid_outer_vlan = 131;
+  uint32 tpid_inner_vlan = 132;
+  bool crc_check_enable = 133;
+  bool crc_recalculation_enable = 134;
+  uint32 number_of_bfd_session = 135;
+  uint32 max_bfd_session = 136;
+  BfdSessionOffloadTypeList supported_ipv4_bfd_session_offload_type = 137;
+  BfdSessionOffloadTypeList supported_ipv6_bfd_session_offload_type = 138;
+  uint32 min_bfd_rx = 139;
+  uint32 min_bfd_tx = 140;
+  bool ecn_ect_threshold_enable = 141;
+  bytes vxlan_default_router_mac = 142;
+  uint32 vxlan_default_port = 143;
+  uint32 max_mirror_session = 144;
+  uint32 max_sampled_mirror_session = 145;
+  StatsModeList supported_extended_stats_mode = 146;
+  bool uninit_data_plane_on_removal = 147;
+  Uint64List tam_object_id = 148;
+  ObjectTypeList supported_object_type_list = 149;
+  bool pre_shutdown = 150;
+  uint64 nat_zone_counter_object_id = 151;
+  bool nat_enable = 152;
+  SwitchHardwareAccessBus hardware_access_bus = 153;
+  uint64 platfrom_context = 154;
+  bool firmware_download_broadcast = 155;
+  SwitchFirmwareLoadMethod firmware_load_method = 156;
+  SwitchFirmwareLoadType firmware_load_type = 157;
+  bool firmware_download_execute = 158;
+  bool firmware_broadcast_stop = 159;
+  bool firmware_verify_and_init_switch = 160;
+  bool firmware_status = 161;
+  uint32 firmware_major_version = 162;
+  uint32 firmware_minor_version = 163;
+  Uint64List port_connector_list = 164;
+  bool propogate_port_state_from_line_to_system_port_support = 165;
+  SwitchType type = 166;
+  Uint64List macsec_object_list = 167;
+  uint64 qos_mpls_exp_to_tc_map = 168;
+  uint64 qos_mpls_exp_to_color_map = 169;
+  uint64 qos_tc_and_color_to_mpls_exp_map = 170;
+  uint32 switch_id = 171;
+  uint32 max_system_cores = 172;
+  SystemPortConfigList system_port_config_list = 173;
+  uint32 number_of_system_ports = 174;
+  Uint64List system_port_list = 175;
+  uint32 number_of_fabric_ports = 176;
+  Uint64List fabric_port_list = 177;
+  uint32 packet_dma_memory_pool_size = 178;
+  SwitchFailoverConfigMode failover_config_mode = 179;
+  bool supported_failover_mode = 180;
+  Uint64List tunnel_objects_list = 181;
+  uint32 packet_available_dma_memory_pool_size = 182;
+  uint64 pre_ingress_acl = 183;
+  uint32 available_snapt_entry = 184;
+  uint32 available_dnapt_entry = 185;
+  uint32 available_double_napt_entry = 186;
+  Uint32List slave_mdio_addr_list = 187;
+  uint32 my_mac_table_minimum_priority = 188;
+  uint32 my_mac_table_maximum_priority = 189;
+  Uint64List my_mac_list = 190;
+  uint32 installed_my_mac_entries = 191;
+  uint32 available_my_mac_entries = 192;
+  uint32 max_number_of_forwarding_classes = 193;
+  uint64 qos_dscp_to_forwarding_class_map = 194;
+  uint64 qos_mpls_exp_to_forwarding_class_map = 195;
+  uint64 ipsec_object_id = 196;
+  uint32 ipsec_sa_tag_tpid = 197;
 }
 
-message TamCollectorAttribute {
-  bytes src_ip = 2;
-  bytes dst_ip = 3;
-  bool localhost = 4;
-  uint64 virtual_router_id = 5;
-  uint32 truncate_size = 6;
-  uint64 transport = 7;
-  uint32 dscp_value = 8;
+message SwitchTunnelAttribute {
+  TunnelType tunnel_type = 1;
+  PacketAction loopback_packet_action = 2;
+  TunnelEncapEcnMode tunnel_encap_ecn_mode = 3;
+  Uint64List encap_mappers = 4;
+  TunnelDecapEcnMode tunnel_decap_ecn_mode = 5;
+  Uint64List decap_mappers = 6;
+  TunnelVxlanUdpSportMode tunnel_vxlan_udp_sport_mode = 7;
+  uint32 vxlan_udp_sport = 8;
+  uint32 vxlan_udp_sport_mask = 9;
 }
 
-message TamEventAttribute {
-  TamEventType type = 2;
-  Uint64List action_list = 3;
-  Uint64List collector_list = 4;
-  uint64 threshold = 5;
-  uint32 dscp_value = 6;
-}
-
-message TamEventActionAttribute {
-  uint64 report_type = 2;
-  uint32 qos_action_type = 3;
-}
-
-message TamEventThresholdAttribute {
-  uint32 high_watermark = 2;
-  uint32 low_watermark = 3;
-  uint32 latency = 4;
-  uint32 rate = 5;
-  uint32 abs_value = 6;
-  TamEventThresholdUnit unit = 7;
-}
-
-message TamIntAttribute {
-  TamIntType type = 2;
-  uint32 device_id = 3;
-  uint32 ioam_trace_type = 4;
-  TamIntPresenceType int_presence_type = 5;
-  uint32 int_presence_pb1 = 6;
-  uint32 int_presence_pb2 = 7;
-  uint32 int_presence_dscp_value = 8;
-  bool inline = 9;
-  uint32 int_presence_l3_protocol = 10;
-  uint32 trace_vector = 11;
-  uint32 action_vector = 12;
-  uint32 p4_int_instruction_bitmap = 13;
-  bool metadata_fragment_enable = 14;
-  bool metadata_checksum_enable = 15;
-  bool report_all_packets = 16;
-  uint32 flow_liveness_period = 17;
-  uint32 latency_sensitivity = 18;
-  uint64 acl_group = 19;
-  uint32 max_hop_count = 20;
-  uint32 max_length = 21;
-  uint32 name_space_id = 22;
-  bool name_space_id_global = 23;
-  uint64 ingress_samplepacket_enable = 24;
-  Uint64List collector_list = 25;
-  uint64 math_func = 26;
-  uint64 report_id = 27;
-}
-
-message TamMathFuncAttribute {
-  TamTelMathFuncType tam_tel_math_func_type = 2;
-}
-
-message TamReportAttribute {
-  TamReportType type = 2;
-  uint32 histogram_number_of_bins = 3;
-  Uint32List histogram_bin_boundary = 4;
-  uint32 quota = 5;
-  TamReportMode report_mode = 6;
-  uint32 report_interval = 7;
-  uint32 enterprise_number = 8;
-}
-
-message TamTelemetryAttribute {
-  Uint64List tam_type_list = 2;
-  Uint64List collector_list = 3;
-  TamReportingUnit tam_reporting_unit = 4;
-  uint32 reporting_interval = 5;
-}
-
-message TamTelTypeAttribute {
-  TamTelemetryType tam_telemetry_type = 2;
-  uint32 int_switch_identifier = 3;
-  bool switch_enable_port_stats = 4;
-  bool switch_enable_port_stats_ingress = 5;
-  bool switch_enable_port_stats_egress = 6;
-  bool switch_enable_virtual_queue_stats = 7;
-  bool switch_enable_output_queue_stats = 8;
-  bool switch_enable_mmu_stats = 9;
-  bool switch_enable_fabric_stats = 10;
-  bool switch_enable_filter_stats = 11;
-  bool switch_enable_resource_utilization_stats = 12;
-  bool fabric_q = 13;
-  bool ne_enable = 14;
-  uint32 dscp_value = 15;
-  uint64 math_func = 16;
-  uint64 report_id = 17;
-}
-
-message TamTransportAttribute {
-  TamTransportType transport_type = 2;
-  uint32 src_port = 3;
-  uint32 dst_port = 4;
-  TamTransportAuthType transport_auth_type = 5;
-  uint32 mtu = 6;
-}
-
-message TunnelAttribute {
-  TunnelType type = 2;
-  uint64 underlay_interface = 3;
-  uint64 overlay_interface = 4;
-  TunnelPeerMode peer_mode = 5;
-  bytes encap_src_ip = 6;
-  bytes encap_dst_ip = 7;
-  TunnelTtlMode encap_ttl_mode = 8;
-  uint32 encap_ttl_val = 9;
-  TunnelDscpMode encap_dscp_mode = 10;
-  uint32 encap_dscp_val = 11;
-  bool encap_gre_key_valid = 12;
-  uint32 encap_gre_key = 13;
-  TunnelEncapEcnMode encap_ecn_mode = 14;
-  Uint64List encap_mappers = 15;
-  TunnelDecapEcnMode decap_ecn_mode = 16;
-  Uint64List decap_mappers = 17;
-  TunnelTtlMode decap_ttl_mode = 18;
-  TunnelDscpMode decap_dscp_mode = 19;
-  Uint64List term_table_entry_list = 20;
-  PacketAction loopback_packet_action = 21;
-  TunnelVxlanUdpSportMode vxlan_udp_sport_mode = 22;
-  uint32 vxlan_udp_sport = 23;
-  uint32 vxlan_udp_sport_mask = 24;
-  uint32 sa_index = 25;
-  Uint64List ipsec_sa_port_list = 26;
-}
-
-message TunnelMapAttribute {
-  TunnelMapType type = 2;
-  Uint64List entry_list = 3;
-}
-
-message TunnelMapEntryAttribute {
-  TunnelMapType tunnel_map_type = 2;
-  uint64 tunnel_map = 3;
-  uint32 oecn_key = 4;
-  uint32 oecn_value = 5;
-  uint32 uecn_key = 6;
-  uint32 uecn_value = 7;
-  uint32 vlan_id_key = 8;
-  uint32 vlan_id_value = 9;
-  uint32 vni_id_key = 10;
-  uint32 vni_id_value = 11;
-  uint64 bridge_id_key = 12;
-  uint64 bridge_id_value = 13;
-  uint64 virtual_router_id_key = 14;
-  uint64 virtual_router_id_value = 15;
-  uint32 vsid_id_key = 16;
-  uint32 vsid_id_value = 17;
-}
-
-message TunnelTermTableEntryAttribute {
-  uint64 vr_id = 2;
-  TunnelTermTableEntryType type = 3;
-  bytes dst_ip = 4;
-  bytes dst_ip_mask = 5;
-  bytes src_ip = 6;
-  bytes src_ip_mask = 7;
-  TunnelType tunnel_type = 8;
-  uint64 action_tunnel_id = 9;
-  IpAddrFamily ip_addr_family = 10;
-  bool ipsec_verified = 11;
+message SystemPortAttribute {
+  SystemPortType type = 1;
+  uint32 qos_number_of_voqs = 2;
+  Uint64List qos_voq_list = 3;
+  uint64 port = 4;
+  bool admin_state = 5;
+  SystemPortConfig config_info = 6;
+  uint64 qos_tc_to_queue_map = 7;
 }
 
 message TamBindPointTypeList {
   repeated TamBindPointType list = 1;
 }
 
-message TlvEntryList {
-  repeated TLVEntry list = 1;
+message TamAttribute {
+  Uint64List telemetry_objects_list = 1;
+  Uint64List event_objects_list = 2;
+  Uint64List int_objects_list = 3;
+  TamBindPointTypeList tam_bind_point_type_list = 4;
 }
 
-message TlvTypeList {
-  repeated TlvType list = 1;
+message TamCollectorAttribute {
+  bytes src_ip = 1;
+  bytes dst_ip = 2;
+  bool localhost = 3;
+  uint64 virtual_router_id = 4;
+  uint32 truncate_size = 5;
+  uint64 transport = 6;
+  uint32 dscp_value = 7;
+}
+
+message TamEventAttribute {
+  TamEventType type = 1;
+  Uint64List action_list = 2;
+  Uint64List collector_list = 3;
+  uint64 threshold = 4;
+  uint32 dscp_value = 5;
+}
+
+message TamEventActionAttribute {
+  uint64 report_type = 1;
+  uint32 qos_action_type = 2;
+}
+
+message TamEventThresholdAttribute {
+  uint32 high_watermark = 1;
+  uint32 low_watermark = 2;
+  uint32 latency = 3;
+  uint32 rate = 4;
+  uint32 abs_value = 5;
+  TamEventThresholdUnit unit = 6;
+}
+
+message TamIntAttribute {
+  TamIntType type = 1;
+  uint32 device_id = 2;
+  uint32 ioam_trace_type = 3;
+  TamIntPresenceType int_presence_type = 4;
+  uint32 int_presence_pb1 = 5;
+  uint32 int_presence_pb2 = 6;
+  uint32 int_presence_dscp_value = 7;
+  bool inline = 8;
+  uint32 int_presence_l3_protocol = 9;
+  uint32 trace_vector = 10;
+  uint32 action_vector = 11;
+  uint32 p4_int_instruction_bitmap = 12;
+  bool metadata_fragment_enable = 13;
+  bool metadata_checksum_enable = 14;
+  bool report_all_packets = 15;
+  uint32 flow_liveness_period = 16;
+  uint32 latency_sensitivity = 17;
+  uint64 acl_group = 18;
+  uint32 max_hop_count = 19;
+  uint32 max_length = 20;
+  uint32 name_space_id = 21;
+  bool name_space_id_global = 22;
+  uint64 ingress_samplepacket_enable = 23;
+  Uint64List collector_list = 24;
+  uint64 math_func = 25;
+  uint64 report_id = 26;
+}
+
+message TamMathFuncAttribute {
+  TamTelMathFuncType tam_tel_math_func_type = 1;
+}
+
+message TamReportAttribute {
+  TamReportType type = 1;
+  uint32 histogram_number_of_bins = 2;
+  Uint32List histogram_bin_boundary = 3;
+  uint32 quota = 4;
+  TamReportMode report_mode = 5;
+  uint32 report_interval = 6;
+  uint32 enterprise_number = 7;
+}
+
+message TamTelemetryAttribute {
+  Uint64List tam_type_list = 1;
+  Uint64List collector_list = 2;
+  TamReportingUnit tam_reporting_unit = 3;
+  uint32 reporting_interval = 4;
+}
+
+message TamTelTypeAttribute {
+  TamTelemetryType tam_telemetry_type = 1;
+  uint32 int_switch_identifier = 2;
+  bool switch_enable_port_stats = 3;
+  bool switch_enable_port_stats_ingress = 4;
+  bool switch_enable_port_stats_egress = 5;
+  bool switch_enable_virtual_queue_stats = 6;
+  bool switch_enable_output_queue_stats = 7;
+  bool switch_enable_mmu_stats = 8;
+  bool switch_enable_fabric_stats = 9;
+  bool switch_enable_filter_stats = 10;
+  bool switch_enable_resource_utilization_stats = 11;
+  bool fabric_q = 12;
+  bool ne_enable = 13;
+  uint32 dscp_value = 14;
+  uint64 math_func = 15;
+  uint64 report_id = 16;
+}
+
+message TamTransportAttribute {
+  TamTransportType transport_type = 1;
+  uint32 src_port = 2;
+  uint32 dst_port = 3;
+  TamTransportAuthType transport_auth_type = 4;
+  uint32 mtu = 5;
+}
+
+message TunnelAttribute {
+  TunnelType type = 1;
+  uint64 underlay_interface = 2;
+  uint64 overlay_interface = 3;
+  TunnelPeerMode peer_mode = 4;
+  bytes encap_src_ip = 5;
+  bytes encap_dst_ip = 6;
+  TunnelTtlMode encap_ttl_mode = 7;
+  uint32 encap_ttl_val = 8;
+  TunnelDscpMode encap_dscp_mode = 9;
+  uint32 encap_dscp_val = 10;
+  bool encap_gre_key_valid = 11;
+  uint32 encap_gre_key = 12;
+  TunnelEncapEcnMode encap_ecn_mode = 13;
+  Uint64List encap_mappers = 14;
+  TunnelDecapEcnMode decap_ecn_mode = 15;
+  Uint64List decap_mappers = 16;
+  TunnelTtlMode decap_ttl_mode = 17;
+  TunnelDscpMode decap_dscp_mode = 18;
+  Uint64List term_table_entry_list = 19;
+  PacketAction loopback_packet_action = 20;
+  TunnelVxlanUdpSportMode vxlan_udp_sport_mode = 21;
+  uint32 vxlan_udp_sport = 22;
+  uint32 vxlan_udp_sport_mask = 23;
+  uint32 sa_index = 24;
+  Uint64List ipsec_sa_port_list = 25;
+}
+
+message TunnelMapAttribute {
+  TunnelMapType type = 1;
+  Uint64List entry_list = 2;
+}
+
+message TunnelMapEntryAttribute {
+  TunnelMapType tunnel_map_type = 1;
+  uint64 tunnel_map = 2;
+  uint32 oecn_key = 3;
+  uint32 oecn_value = 4;
+  uint32 uecn_key = 5;
+  uint32 uecn_value = 6;
+  uint32 vlan_id_key = 7;
+  uint32 vlan_id_value = 8;
+  uint32 vni_id_key = 9;
+  uint32 vni_id_value = 10;
+  uint64 bridge_id_key = 11;
+  uint64 bridge_id_value = 12;
+  uint64 virtual_router_id_key = 13;
+  uint64 virtual_router_id_value = 14;
+  uint32 vsid_id_key = 15;
+  uint32 vsid_id_value = 16;
+}
+
+message TunnelTermTableEntryAttribute {
+  uint64 vr_id = 1;
+  TunnelTermTableEntryType type = 2;
+  bytes dst_ip = 3;
+  bytes dst_ip_mask = 4;
+  bytes src_ip = 5;
+  bytes src_ip_mask = 6;
+  TunnelType tunnel_type = 7;
+  uint64 action_tunnel_id = 8;
+  IpAddrFamily ip_addr_family = 9;
+  bool ipsec_verified = 10;
 }
 
 message UdfAttribute {
-  uint64 match_id = 2;
-  uint64 group_id = 3;
-  UdfBase base = 4;
-  uint32 offset = 5;
-  Uint32List hash_mask = 6;
+  uint64 match_id = 1;
+  uint64 group_id = 2;
+  UdfBase base = 3;
+  uint32 offset = 4;
+  Uint32List hash_mask = 5;
 }
 
 message UdfGroupAttribute {
-  Uint64List udf_list = 2;
-  UdfGroupType type = 3;
-  uint32 length = 4;
+  Uint64List udf_list = 1;
+  UdfGroupType type = 2;
+  uint32 length = 3;
 }
 
 message UdfMatchAttribute {
-  AclFieldData l2_type = 2;
-  AclFieldData l3_type = 3;
-  AclFieldData gre_type = 4;
-  uint32 priority = 5;
-}
-
-message Uint32List {
-  repeated uint32 list = 1;
-}
-
-message Uint64List {
-  repeated uint64 list = 1;
-}
-
-message UintMapList {
-  repeated UintMap list = 1;
+  AclFieldData l2_type = 1;
+  AclFieldData l3_type = 2;
+  AclFieldData gre_type = 3;
+  uint32 priority = 4;
 }
 
 message VirtualRouterAttribute {
-  bool admin_v4_state = 2;
-  bool admin_v6_state = 3;
-  bytes src_mac_address = 4;
-  PacketAction violation_ttl1_packet_action = 5;
-  PacketAction violation_ip_options_packet_action = 6;
-  PacketAction unknown_l3_multicast_packet_action = 7;
-  bytes label = 8;
+  bool admin_v4_state = 1;
+  bool admin_v6_state = 2;
+  bytes src_mac_address = 3;
+  PacketAction violation_ttl1_packet_action = 4;
+  PacketAction violation_ip_options_packet_action = 5;
+  PacketAction unknown_l3_multicast_packet_action = 6;
+  bytes label = 7;
 }
 
 message VlanAttribute {
-  uint32 vlan_id = 2;
-  Uint64List member_list = 3;
-  uint32 max_learned_addresses = 4;
-  uint64 stp_instance = 5;
-  bool learn_disable = 6;
-  VlanMcastLookupKeyType ipv4_mcast_lookup_key_type = 7;
-  VlanMcastLookupKeyType ipv6_mcast_lookup_key_type = 8;
-  uint64 unknown_non_ip_mcast_output_group_id = 9;
-  uint64 unknown_ipv4_mcast_output_group_id = 10;
-  uint64 unknown_ipv6_mcast_output_group_id = 11;
-  uint64 unknown_linklocal_mcast_output_group_id = 12;
-  uint64 ingress_acl = 13;
-  uint64 egress_acl = 14;
-  uint32 meta_data = 15;
-  VlanFloodControlType unknown_unicast_flood_control_type = 16;
-  uint64 unknown_unicast_flood_group = 17;
-  VlanFloodControlType unknown_multicast_flood_control_type = 18;
-  uint64 unknown_multicast_flood_group = 19;
-  VlanFloodControlType broadcast_flood_control_type = 20;
-  uint64 broadcast_flood_group = 21;
-  bool custom_igmp_snooping_enable = 22;
-  Uint64List tam_object = 23;
+  uint32 vlan_id = 1;
+  Uint64List member_list = 2;
+  uint32 max_learned_addresses = 3;
+  uint64 stp_instance = 4;
+  bool learn_disable = 5;
+  VlanMcastLookupKeyType ipv4_mcast_lookup_key_type = 6;
+  VlanMcastLookupKeyType ipv6_mcast_lookup_key_type = 7;
+  uint64 unknown_non_ip_mcast_output_group_id = 8;
+  uint64 unknown_ipv4_mcast_output_group_id = 9;
+  uint64 unknown_ipv6_mcast_output_group_id = 10;
+  uint64 unknown_linklocal_mcast_output_group_id = 11;
+  uint64 ingress_acl = 12;
+  uint64 egress_acl = 13;
+  uint32 meta_data = 14;
+  VlanFloodControlType unknown_unicast_flood_control_type = 15;
+  uint64 unknown_unicast_flood_group = 16;
+  VlanFloodControlType unknown_multicast_flood_control_type = 17;
+  uint64 unknown_multicast_flood_group = 18;
+  VlanFloodControlType broadcast_flood_control_type = 19;
+  uint64 broadcast_flood_group = 20;
+  bool custom_igmp_snooping_enable = 21;
+  Uint64List tam_object = 22;
 }
 
 message VlanMemberAttribute {
-  uint64 vlan_id = 2;
-  uint64 bridge_port_id = 3;
-  VlanTaggingMode vlan_tagging_mode = 4;
+  uint64 vlan_id = 1;
+  uint64 bridge_port_id = 2;
+  VlanTaggingMode vlan_tagging_mode = 3;
 }
 
 message WredAttribute {
-  bool green_enable = 2;
-  uint32 green_min_threshold = 3;
-  uint32 green_max_threshold = 4;
-  uint32 green_drop_probability = 5;
-  bool yellow_enable = 6;
-  uint32 yellow_min_threshold = 7;
-  uint32 yellow_max_threshold = 8;
-  uint32 yellow_drop_probability = 9;
-  bool red_enable = 10;
-  uint32 red_min_threshold = 11;
-  uint32 red_max_threshold = 12;
-  uint32 red_drop_probability = 13;
-  uint32 weight = 14;
-  EcnMarkMode ecn_mark_mode = 15;
-  uint32 ecn_green_min_threshold = 16;
-  uint32 ecn_green_max_threshold = 17;
-  uint32 ecn_green_mark_probability = 18;
-  uint32 ecn_yellow_min_threshold = 19;
-  uint32 ecn_yellow_max_threshold = 20;
-  uint32 ecn_yellow_mark_probability = 21;
-  uint32 ecn_red_min_threshold = 22;
-  uint32 ecn_red_max_threshold = 23;
-  uint32 ecn_red_mark_probability = 24;
-  uint32 ecn_color_unaware_min_threshold = 25;
-  uint32 ecn_color_unaware_max_threshold = 26;
-  uint32 ecn_color_unaware_mark_probability = 27;
+  bool green_enable = 1;
+  uint32 green_min_threshold = 2;
+  uint32 green_max_threshold = 3;
+  uint32 green_drop_probability = 4;
+  bool yellow_enable = 5;
+  uint32 yellow_min_threshold = 6;
+  uint32 yellow_max_threshold = 7;
+  uint32 yellow_drop_probability = 8;
+  bool red_enable = 9;
+  uint32 red_min_threshold = 10;
+  uint32 red_max_threshold = 11;
+  uint32 red_drop_probability = 12;
+  uint32 weight = 13;
+  EcnMarkMode ecn_mark_mode = 14;
+  uint32 ecn_green_min_threshold = 15;
+  uint32 ecn_green_max_threshold = 16;
+  uint32 ecn_green_mark_probability = 17;
+  uint32 ecn_yellow_min_threshold = 18;
+  uint32 ecn_yellow_max_threshold = 19;
+  uint32 ecn_yellow_mark_probability = 20;
+  uint32 ecn_red_min_threshold = 21;
+  uint32 ecn_red_max_threshold = 22;
+  uint32 ecn_red_mark_probability = 23;
+  uint32 ecn_color_unaware_min_threshold = 24;
+  uint32 ecn_color_unaware_max_threshold = 25;
+  uint32 ecn_color_unaware_mark_probability = 26;
 }

@@ -34,6 +34,10 @@ itest:
 test:
 	bazel test --test_output=errors $(shell bazel query 'attr(size, small, tests("//...")) +  attr(size, medium, tests("//..."))')
 
+.PHONY: coverage
+coverage:
+	bazel coverage --test_output=errors --combined_report=lcov  $(shell bazel query 'attr(size, small, tests("//...")) + attr(size, medium, tests("//..."))')
+
 .PHONY: test-race
 test-race:
 	# TODO: Fix race tests for lemming/gnmi and dataplane

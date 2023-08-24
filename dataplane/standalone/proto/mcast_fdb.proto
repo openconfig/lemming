@@ -22,9 +22,7 @@ message CreateMcastFdbEntryRequest {
   uint32 meta_data = 4;
 }
 
-message CreateMcastFdbEntryResponse {
-  uint64 oid = 1;
-}
+message CreateMcastFdbEntryResponse {}
 
 message RemoveMcastFdbEntryRequest {
   McastFdbEntry entry = 1;
