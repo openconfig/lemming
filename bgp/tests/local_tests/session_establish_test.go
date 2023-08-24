@@ -125,7 +125,7 @@ func bgpWithNbr(as uint32, routerID string, nbr *oc.NetworkInstance_Protocol_Bgp
 	return bgp
 }
 
-func newLemming(t *testing.T, id uint, AS uint32, connectedIntfs []*AddIntfAction) (*Device, func()) {
+func newLemming(t *testing.T, id uint, as uint32, connectedIntfs []*AddIntfAction) (*Device, func()) {
 	routerID := nextLocalHostAddr()
 	gnmiTarget := net.JoinHostPort(routerID, "7339")
 	gribiTarget := net.JoinHostPort(routerID, "7340")
@@ -145,7 +145,7 @@ func newLemming(t *testing.T, id uint, AS uint32, connectedIntfs []*AddIntfActio
 	return &Device{
 		yc:       ygnmiClient(t, target, gnmiTarget),
 		ID:       id,
-		AS:       AS,
+		AS:       as,
 		bgpPort:  1111,
 		RouterID: routerID,
 	}, func() { l.Stop() }
