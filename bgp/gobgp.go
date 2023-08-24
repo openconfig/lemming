@@ -135,6 +135,7 @@ func (t *bgpDeclTask) startGoBGPFuncDecl(_ context.Context, yclient *ygnmi.Clien
 		BGPPath.NeighborAny().NeighborAddress().Config().PathStruct(),
 		BGPPath.NeighborAny().NeighborPort().Config().PathStruct(),
 		// BGP Policy statements
+		RoutingPolicyPath.PolicyDefinitionAny().Name().Config().PathStruct(),
 		RoutingPolicyPath.PolicyDefinitionAny().StatementMap().Config().PathStruct(),
 		BGPPath.NeighborAny().ApplyPolicy().DefaultImportPolicy().Config().PathStruct(),
 		BGPPath.NeighborAny().ApplyPolicy().DefaultExportPolicy().Config().PathStruct(),
@@ -394,6 +395,8 @@ func intendedToGoBGP(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *oc.Routin
 	bgpConfig.Global.Config.As = global.GetAs()
 	bgpConfig.Global.Config.RouterId = global.GetRouterId()
 	bgpConfig.Global.Config.Port = int32(listenPort)
+	// Have GoBGP listen only on this address instead of all addresses.
+	bgpConfig.Global.Config.LocalAddressList = []string{global.GetRouterId()}
 
 	localAddress := ""
 	if localAddr, err := netip.ParseAddr(global.GetRouterId()); err == nil && localAddr.IsLoopback() {

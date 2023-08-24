@@ -35,8 +35,9 @@ const (
 // Get fetches the value of a SingletonQuery with a ONCE subscription,
 // failing the test fatally if no value is present at the path.
 // Use Lookup to also get metadata or tolerate no value present.
-func Get[T any](t testing.TB, c *ygnmi.Client, q ygnmi.SingletonQuery[T]) T {
+func Get[T any](t testing.TB, dut *Device, q ygnmi.SingletonQuery[T]) T {
 	t.Helper()
+	c := dut.yc
 	v, err := ygnmi.Get(context.Background(), c, q)
 	if err != nil {
 		t.Fatalf("Get(t) on %s at %v: %v", c, q, err)
@@ -49,16 +50,17 @@ func Get[T any](t testing.TB, c *ygnmi.Client, q ygnmi.SingletonQuery[T]) T {
 // Use Lookup to also get metadata or tolerate no value present.
 // Note: This is a workaround for Go's type inference not working for this use case and may be removed in a subsequent release.
 // Note: This is equivalent to calling Get with a ConfigQuery and providing a fully-qualified type parameter.
-func GetConfig[T any](t testing.TB, c *ygnmi.Client, q ygnmi.ConfigQuery[T]) T {
+func GetConfig[T any](t testing.TB, dut *Device, q ygnmi.ConfigQuery[T]) T {
 	t.Helper()
-	return Get[T](t, c, q)
+	return Get[T](t, dut, q)
 }
 
 // GetAll fetches the value of a WildcardQuery with a ONCE subscription skipping any non-present paths.
 // It fails the test fatally if no value is present at the path
 // Use LookupAll to also get metadata or tolerate no values present.
-func GetAll[T any](t testing.TB, c *ygnmi.Client, q ygnmi.WildcardQuery[T]) []T {
+func GetAll[T any](t testing.TB, dut *Device, q ygnmi.WildcardQuery[T]) []T {
 	t.Helper()
+	c := dut.yc
 	v, err := ygnmi.GetAll(context.Background(), c, q)
 	if err != nil {
 		t.Fatalf("GetAll(t) on %s at %v: %v", c, q, err)
@@ -67,8 +69,9 @@ func GetAll[T any](t testing.TB, c *ygnmi.Client, q ygnmi.WildcardQuery[T]) []T 
 }
 
 // Update updates the configuration at the given query path with the val.
-func Update[T any](t testing.TB, c *ygnmi.Client, q ygnmi.ConfigQuery[T], val T) *ygnmi.Result {
+func Update[T any](t testing.TB, dut *Device, q ygnmi.ConfigQuery[T], val T) *ygnmi.Result {
 	t.Helper()
+	c := dut.yc
 	res, err := ygnmi.Update(context.Background(), c, q, val)
 	if err != nil {
 		t.Fatalf("Update(t) on %v at %v: %v", c, q, err)
@@ -77,8 +80,9 @@ func Update[T any](t testing.TB, c *ygnmi.Client, q ygnmi.ConfigQuery[T], val T)
 }
 
 // Replace replaces the configuration at the given query path with the val.
-func Replace[T any](t testing.TB, c *ygnmi.Client, q ygnmi.ConfigQuery[T], val T) *ygnmi.Result {
+func Replace[T any](t testing.TB, dut *Device, q ygnmi.ConfigQuery[T], val T) *ygnmi.Result {
 	t.Helper()
+	c := dut.yc
 	res, err := ygnmi.Replace(context.Background(), c, q, val)
 	if err != nil {
 		t.Fatalf("Replace(t) on %v at %v: %v", c, q, err)
@@ -87,8 +91,9 @@ func Replace[T any](t testing.TB, c *ygnmi.Client, q ygnmi.ConfigQuery[T], val T
 }
 
 // Delete deletes the configuration at the given query path.
-func Delete[T any](t testing.TB, c *ygnmi.Client, q ygnmi.ConfigQuery[T]) *ygnmi.Result {
+func Delete[T any](t testing.TB, dut *Device, q ygnmi.ConfigQuery[T]) *ygnmi.Result {
 	t.Helper()
+	c := dut.yc
 	res, err := ygnmi.Delete(context.Background(), c, q)
 	if err != nil {
 		t.Fatalf("Delete(t) on %v at %v: %v", c, q, err)
@@ -100,8 +105,9 @@ func Delete[T any](t testing.TB, c *ygnmi.Client, q ygnmi.ConfigQuery[T]) *ygnmi
 // blocking until a value that is deep equal to the specified val is received
 // or the timeout is reached. To wait for a generic predicate, or to make a
 // non-blocking call, use the Watch method instead.
-func Await[T any](t testing.TB, c *ygnmi.Client, q ygnmi.SingletonQuery[T], val T) *ygnmi.Value[T] {
+func Await[T any](t testing.TB, dut *Device, q ygnmi.SingletonQuery[T], val T) *ygnmi.Value[T] {
 	t.Helper()
+	c := dut.yc
 	ctx, cancel := context.WithTimeout(context.Background(), awaitTimeLimit)
 	defer cancel()
 	v, err := ygnmi.Await(ctx, c, q, val)
@@ -114,9 +120,10 @@ func Await[T any](t testing.TB, c *ygnmi.Client, q ygnmi.SingletonQuery[T], val 
 // AwaitWithErr is the same as Await except an error is returned.
 //
 // Its purpose is to add a better error message.
-func AwaitWithErr[T any](c *ygnmi.Client, q ygnmi.SingletonQuery[T], val T) (*ygnmi.Value[T], error) {
+func AwaitWithErr[T any](dut *Device, q ygnmi.SingletonQuery[T], val T) (*ygnmi.Value[T], error) {
 	ctx, cancel := context.WithTimeout(context.Background(), awaitTimeLimit)
 	defer cancel()
+	c := dut.yc
 	v, err := ygnmi.Await(ctx, c, q, val)
 	if err != nil {
 		return v, fmt.Errorf("Await(t) on %v at %v: %v", c, q, err)
@@ -173,8 +180,9 @@ func (w *Watcher[T]) Cancel() {
 // or the timeout is reached. Calling Await on the returned Watcher waits for the subscription
 // to complete. It returns the last observed value and a boolean that indicates whether
 // that value satisfies the predicate.
-func Watch[T any](t testing.TB, c *ygnmi.Client, q ygnmi.SingletonQuery[T], timeout time.Duration, pred func(*ygnmi.Value[T]) bool) *Watcher[T] {
+func Watch[T any](t testing.TB, dut *Device, q ygnmi.SingletonQuery[T], timeout time.Duration, pred func(*ygnmi.Value[T]) bool) *Watcher[T] {
 	t.Helper()
+	c := dut.yc
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	w := ygnmi.Watch(ctx, c, q, func(v *ygnmi.Value[T]) error {
 		if ok := pred(v); ok {

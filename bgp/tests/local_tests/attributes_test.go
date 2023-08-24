@@ -21,7 +21,6 @@ import (
 	"github.com/openconfig/lemming/bgp"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
-	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot"
 
 	valpb "github.com/openconfig/lemming/bgp/tests/proto/policyval"
@@ -106,7 +105,7 @@ func TestAttributes(t *testing.T) {
 				ExpectedResult:             valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
 			}},
 		},
-		installPolicies: func(t *testing.T, dut2 *ygnmi.Client) {
+		installPolicies: func(t *testing.T, dut1, dut2, dut3, dut4, dut5 *Device) {
 			if debug {
 				fmt.Println("Installing test policies")
 			}
@@ -122,7 +121,8 @@ func TestAttributes(t *testing.T) {
 				// Create prefix set
 				prefixSetName := "accept-" + route
 				prefixPath := ocpath.Root().RoutingPolicy().DefinedSets().PrefixSet(prefixSetName).Prefix(route, "exact").IpPrefix()
-				Replace(t, dut2, prefixPath.Config(), route)
+				Replace(t, dut1, prefixPath.Config(), route)
+				Replace(t, dut5, prefixPath.Config(), route)
 
 				var installDut1Stmt bool
 				dut1Stmt := &oc.RoutingPolicy_PolicyDefinition_Statement{Name: ygot.String(route + "-setattr-policy-dut1")}
@@ -204,14 +204,14 @@ func TestAttributes(t *testing.T) {
 					}
 				}
 			}
+			// Install export policies
+			Replace(t, dut1, ocpath.Root().RoutingPolicy().PolicyDefinition(dut1PolicyName).Config(), &oc.RoutingPolicy_PolicyDefinition{Name: ygot.String(dut1PolicyName), Statement: dut1Policy})
+			Replace(t, dut1, bgp.BGPPath.Neighbor(dut2.RouterID).ApplyPolicy().ExportPolicy().Config(), []string{dut1PolicyName})
+			Replace(t, dut5, ocpath.Root().RoutingPolicy().PolicyDefinition(dut5PolicyName).Config(), &oc.RoutingPolicy_PolicyDefinition{Name: ygot.String(dut5PolicyName), Statement: dut5Policy})
+			Replace(t, dut5, bgp.BGPPath.Neighbor(dut2.RouterID).ApplyPolicy().ExportPolicy().Config(), []string{dut5PolicyName})
 			// Install import policies
-			Replace(t, dut2, ocpath.Root().RoutingPolicy().PolicyDefinition(dut1PolicyName).Config(), &oc.RoutingPolicy_PolicyDefinition{Name: ygot.String(dut1PolicyName), Statement: dut1Policy})
-			Replace(t, dut2, bgp.BGPPath.Neighbor(dut1spec.RouterID).ApplyPolicy().ImportPolicy().Config(), []string{dut1PolicyName})
-			Replace(t, dut2, ocpath.Root().RoutingPolicy().PolicyDefinition(dut5PolicyName).Config(), &oc.RoutingPolicy_PolicyDefinition{Name: ygot.String(dut5PolicyName), Statement: dut5Policy})
-			Replace(t, dut2, bgp.BGPPath.Neighbor(dut5spec.RouterID).ApplyPolicy().ImportPolicy().Config(), []string{dut5PolicyName})
-			// Install export policy
 			Replace(t, dut2, ocpath.Root().RoutingPolicy().PolicyDefinition(rejectPolicyName).Config(), &oc.RoutingPolicy_PolicyDefinition{Name: ygot.String(rejectPolicyName), Statement: rejectPolicy})
-			Replace(t, dut2, bgp.BGPPath.Neighbor(dut3spec.RouterID).ApplyPolicy().ExportPolicy().Config(), []string{rejectPolicyName})
+			Replace(t, dut2, bgp.BGPPath.Neighbor(dut1.RouterID).ApplyPolicy().ImportPolicy().Config(), []string{rejectPolicyName})
 		},
 	})
 }

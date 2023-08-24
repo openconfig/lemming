@@ -21,7 +21,6 @@ import (
 	"github.com/openconfig/lemming/bgp"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
-	"github.com/openconfig/ygnmi/ygnmi"
 
 	valpb "github.com/openconfig/lemming/bgp/tests/proto/policyval"
 )
@@ -46,7 +45,7 @@ func TestPrefixSet(t *testing.T) {
 				ExpectedResult:             valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
 			}},
 		},
-		installPolicies: func(t *testing.T, dut2 *ygnmi.Client) {
+		installPolicies: func(t *testing.T, dut1, dut2, _, _, _ *Device) {
 			if debug {
 				fmt.Println("Installing test policies")
 			}
@@ -71,7 +70,7 @@ func TestPrefixSet(t *testing.T) {
 			stmt.GetOrCreateActions().SetPolicyResult(oc.RoutingPolicy_PolicyResultType_REJECT_ROUTE)
 			// Install policy
 			Replace(t, dut2, ocpath.Root().RoutingPolicy().PolicyDefinition(policyName).Config(), &oc.RoutingPolicy_PolicyDefinition{Statement: policy})
-			Replace(t, dut2, bgp.BGPPath.Neighbor(dut3spec.RouterID).ApplyPolicy().ExportPolicy().Config(), []string{policyName})
+			Replace(t, dut2, bgp.BGPPath.Neighbor(dut1.RouterID).ApplyPolicy().ImportPolicy().Config(), []string{policyName})
 		},
 	})
 }
