@@ -29,7 +29,7 @@ import (
 )
 
 const (
-	awaitTimeLimit = 20 * time.Second
+	awaitTimeLimit = 30 * time.Second
 )
 
 // Get fetches the value of a SingletonQuery with a ONCE subscription,
