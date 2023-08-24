@@ -22,6 +22,9 @@ import (
 	"text/template"
 	"unicode"
 
+	"golang.org/x/exp/maps"
+	"golang.org/x/exp/slices"
+
 	"github.com/openconfig/lemming/dataplane/standalone/apigen/docparser"
 	"github.com/openconfig/lemming/dataplane/standalone/apigen/saiast"
 
@@ -62,24 +65,10 @@ func Generate(doc *docparser.SAIInfo, sai *saiast.SAIAPI) (map[string]string, er
 }
 
 func rangeInOrder[T any](m map[string]T, pred func(key string, val T) error) error {
-	list := []*struct {
-		key string
-		val T
-	}{}
-	for k, v := range m {
-		list = append(list, &struct {
-			key string
-			val T
-		}{
-			key: k,
-			val: v,
-		})
-	}
-	sort.SliceStable(list, func(i, j int) bool {
-		return list[i].key < list[j].key
-	})
-	for _, e := range list {
-		if err := pred(e.key, e.val); err != nil {
+	keys := maps.Keys(m)
+	slices.Sort(keys)
+	for _, key := range keys {
+		if err := pred(key, m[key]); err != nil {
 			return err
 		}
 	}
