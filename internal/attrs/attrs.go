@@ -56,7 +56,7 @@ func (a *Attributes) IPv6CIDR() string {
 }
 
 // ConfigOCInterface configures an OpenConfig interface with these attributes.
-func (a *Attributes) ConfigOCInterface(intf *oc.Interface, dut *ondatra.DUTDevice) *oc.Interface {
+func (a *Attributes) ConfigOCInterface(intf *oc.Interface, _ *ondatra.DUTDevice) *oc.Interface {
 	if a.Desc != "" {
 		intf.Description = ygot.String(a.Desc)
 	}
