@@ -164,11 +164,17 @@ func establishSessionPairs(t *testing.T, dutPairs ...DevicePair) {
 			PeerAs:          ygot.Uint32(dut2.AS),
 			NeighborAddress: ygot.String(dut2.RouterID),
 			NeighborPort:    ygot.Uint16(dut2.bgpPort),
+			Transport: &oc.NetworkInstance_Protocol_Bgp_Neighbor_Transport{
+				LocalAddress: ygot.String(dut1.RouterID),
+			},
 		})
 		dut2Conf := bgpWithNbr(dut2.AS, dut2.RouterID, &oc.NetworkInstance_Protocol_Bgp_Neighbor{
 			PeerAs:          ygot.Uint32(dut1.AS),
 			NeighborAddress: ygot.String(dut1.RouterID),
 			NeighborPort:    ygot.Uint16(dut1.bgpPort),
+			Transport: &oc.NetworkInstance_Protocol_Bgp_Neighbor_Transport{
+				LocalAddress: ygot.String(dut2.RouterID),
+			},
 		})
 		Update(t, dut1, bgp.BGPPath.Config(), dutConf)
 		Update(t, dut2, bgp.BGPPath.Config(), dut2Conf)
