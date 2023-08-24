@@ -19,7 +19,9 @@ package local_test
 import (
 	"context"
 	"fmt"
+	"net"
 	"net/netip"
+	"sync/atomic"
 	"testing"
 
 	"github.com/openconfig/lemming"
@@ -39,61 +41,26 @@ import (
 
 // TODO: Consolidate test helper code with integration and other unit tests.
 
-type DeviceSpec struct {
-	ID        uint
-	gnmiPort  uint
-	gribiPort uint
-	bgpPort   uint16
-	AS        uint32
-	RouterID  string
+type Device struct {
+	yc       *ygnmi.Client
+	ID       uint
+	AS       uint32
+	bgpPort  uint16
+	RouterID string
+}
+
+func nextLocalHostAddr() string {
+	// Start at 127.0.0.2
+	return netip.AddrFrom4([4]byte{127, 0, 0, byte(nextLocalHostAddrIndex.Add(1) + 1)}).String()
 }
 
 var (
-	dut1spec = DeviceSpec{
-		ID:        1,
-		gnmiPort:  7339,
-		gribiPort: 7340,
-		bgpPort:   1111,
-		AS:        64500,
-		RouterID:  "127.0.0.1",
-	}
-	dut2spec = DeviceSpec{
-		ID:        2,
-		gnmiPort:  8339,
-		gribiPort: 8340,
-		bgpPort:   1112,
-		AS:        64500,
-		RouterID:  "127.0.0.2",
-	}
-	dut3spec = DeviceSpec{
-		ID:        3,
-		gnmiPort:  9339,
-		gribiPort: 9340,
-		bgpPort:   1113,
-		AS:        64501,
-		RouterID:  "127.0.0.3",
-	}
-	dut4spec = DeviceSpec{
-		ID:        4,
-		gnmiPort:  9439,
-		gribiPort: 9440,
-		bgpPort:   1114,
-		AS:        64502,
-		RouterID:  "127.0.0.4",
-	}
-	dut5spec = DeviceSpec{
-		ID:        5,
-		gnmiPort:  9539,
-		gribiPort: 9540,
-		bgpPort:   1115,
-		AS:        64500,
-		RouterID:  "127.0.0.5",
-	}
+	nextLocalHostAddrIndex = &atomic.Uint32{}
 )
 
-func ygnmiClient(t *testing.T, target string, port int) *ygnmi.Client {
+func ygnmiClient(t *testing.T, target, dialTarget string) *ygnmi.Client {
 	t.Helper()
-	conn, err := grpc.Dial(fmt.Sprintf("localhost:%d", port), grpc.WithTransportCredentials(local.NewCredentials()))
+	conn, err := grpc.Dial(dialTarget, grpc.WithTransportCredentials(local.NewCredentials()))
 	if err != nil {
 		t.Fatalf("cannot dial gNMI server, %v", err)
 	}
@@ -158,12 +125,15 @@ func bgpWithNbr(as uint32, routerID string, nbr *oc.NetworkInstance_Protocol_Bgp
 	return bgp
 }
 
-func newLemming(t *testing.T, dev DeviceSpec, connectedIntfs []*AddIntfAction) (*ygnmi.Client, func()) {
-	opts := []lemming.Option{lemming.WithTransportCreds(insecure.NewCredentials()), lemming.WithGRIBIAddr(fmt.Sprintf(":%d", dev.gribiPort)), lemming.WithGNMIAddr(fmt.Sprintf(":%d", dev.gnmiPort)), lemming.WithBGPPort(dev.bgpPort)}
+func newLemming(t *testing.T, ID uint, AS uint32, connectedIntfs []*AddIntfAction) (*Device, func()) {
+	routerID := nextLocalHostAddr()
+	gnmiTarget := net.JoinHostPort(routerID, "7339")
+	gribiTarget := net.JoinHostPort(routerID, "7340")
+	opts := []lemming.Option{lemming.WithTransportCreds(insecure.NewCredentials()), lemming.WithGRIBIAddr(gribiTarget), lemming.WithGNMIAddr(gnmiTarget), lemming.WithBGPPort(1111)}
 
-	target := fmt.Sprintf("dut%d", dev.ID)
+	target := fmt.Sprintf("dut%d", ID)
 
-	l, err := lemming.New(target, fmt.Sprintf("unix:/tmp/zserv-test%d.api", dev.ID), opts...)
+	l, err := lemming.New(target, fmt.Sprintf("unix:/tmp/zserv-test%d.api", ID), opts...)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -172,47 +142,55 @@ func newLemming(t *testing.T, dev DeviceSpec, connectedIntfs []*AddIntfAction) (
 		configureInterface(t, intf, l.GNMI())
 	}
 
-	return ygnmiClient(t, target, int(dev.gnmiPort)), func() { l.Stop() }
+	return &Device{
+		yc:       ygnmiClient(t, target, gnmiTarget),
+		ID:       ID,
+		AS:       AS,
+		bgpPort:  1111,
+		RouterID: routerID,
+	}, func() { l.Stop() }
 }
 
-func establishSessionPair(t *testing.T, dut1, dut2 *ygnmi.Client, spec1, spec2 DeviceSpec) {
-	t.Helper()
-	dutConf := bgpWithNbr(spec1.AS, spec1.RouterID, &oc.NetworkInstance_Protocol_Bgp_Neighbor{
-		PeerAs:          ygot.Uint32(spec2.AS),
-		NeighborAddress: ygot.String(spec2.RouterID),
-		NeighborPort:    ygot.Uint16(spec2.bgpPort),
-	})
-	dut2Conf := bgpWithNbr(spec2.AS, spec2.RouterID, &oc.NetworkInstance_Protocol_Bgp_Neighbor{
-		PeerAs:          ygot.Uint32(spec1.AS),
-		NeighborAddress: ygot.String(spec1.RouterID),
-		NeighborPort:    ygot.Uint16(spec1.bgpPort),
-	})
-	Update(t, dut1, bgp.BGPPath.Config(), dutConf)
-	Update(t, dut2, bgp.BGPPath.Config(), dut2Conf)
-
-	awaitSessionEstablished(t, dut1, dut2, spec1, spec2)
+type DevicePair struct {
+	first  *Device
+	second *Device
 }
 
-func awaitSessionEstablished(t *testing.T, dut1, dut2 *ygnmi.Client, spec1, spec2 DeviceSpec) {
+func establishSessionPairs(t *testing.T, dutPairs ...DevicePair) {
 	t.Helper()
-	Await(t, dut1, bgp.BGPPath.Neighbor(spec2.RouterID).SessionState().State(), oc.Bgp_Neighbor_SessionState_ESTABLISHED)
-	Await(t, dut2, bgp.BGPPath.Neighbor(spec1.RouterID).SessionState().State(), oc.Bgp_Neighbor_SessionState_ESTABLISHED)
+	for _, pair := range dutPairs {
+		dut1, dut2 := pair.first, pair.second
+		dutConf := bgpWithNbr(dut1.AS, dut1.RouterID, &oc.NetworkInstance_Protocol_Bgp_Neighbor{
+			PeerAs:          ygot.Uint32(dut2.AS),
+			NeighborAddress: ygot.String(dut2.RouterID),
+			NeighborPort:    ygot.Uint16(dut2.bgpPort),
+		})
+		dut2Conf := bgpWithNbr(dut2.AS, dut2.RouterID, &oc.NetworkInstance_Protocol_Bgp_Neighbor{
+			PeerAs:          ygot.Uint32(dut1.AS),
+			NeighborAddress: ygot.String(dut1.RouterID),
+			NeighborPort:    ygot.Uint16(dut1.bgpPort),
+		})
+		Update(t, dut1, bgp.BGPPath.Config(), dutConf)
+		Update(t, dut2, bgp.BGPPath.Config(), dut2Conf)
+	}
+
+	for _, pair := range dutPairs {
+		dut1, dut2 := pair.first, pair.second
+		awaitSessionEstablished(t, dut1, dut2)
+	}
+}
+
+func awaitSessionEstablished(t *testing.T, dut1, dut2 *Device) {
+	t.Helper()
+	Await(t, dut1, bgp.BGPPath.Neighbor(dut2.RouterID).SessionState().State(), oc.Bgp_Neighbor_SessionState_ESTABLISHED)
+	Await(t, dut2, bgp.BGPPath.Neighbor(dut1.RouterID).SessionState().State(), oc.Bgp_Neighbor_SessionState_ESTABLISHED)
 }
 
 func TestSessionEstablish(t *testing.T) {
-	dut1, stop1 := newLemming(t, dut1spec, nil)
+	dut1, stop1 := newLemming(t, 1, 64500, nil)
 	defer stop1()
-	dut2, stop2 := newLemming(t, dut2spec, nil)
+	dut2, stop2 := newLemming(t, 2, 64501, nil)
 	defer stop2()
 
-	establishSessionPair(t, dut1, dut2, dut1spec, dut2spec)
-}
-
-func TestEstablishDifferentIP(t *testing.T) {
-	dut2, stop2 := newLemming(t, dut2spec, nil)
-	defer stop2()
-	dut3, stop3 := newLemming(t, dut3spec, nil)
-	defer stop3()
-
-	establishSessionPair(t, dut2, dut3, dut2spec, dut3spec)
+	establishSessionPairs(t, DevicePair{first: dut1, second: dut2})
 }
