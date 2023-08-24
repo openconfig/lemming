@@ -20,13 +20,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/openconfig/lemming/gnmi/fakedevice"
-	"github.com/openconfig/lemming/gnmi/oc"
-	"github.com/openconfig/lemming/gnmi/oc/ocpath"
-	"github.com/openconfig/lemming/internal/binding"
 	"github.com/openconfig/ondatra"
 	"github.com/openconfig/ondatra/gnmi"
 	"github.com/openconfig/ygot/ygot"
+
+	"github.com/openconfig/ondatra/gnmi/oc"
+
+	"github.com/openconfig/lemming/gnmi/fakedevice"
+	"github.com/openconfig/lemming/internal/attrs"
+	"github.com/openconfig/lemming/internal/binding"
 )
 
 func TestMain(m *testing.M) {
@@ -48,56 +50,26 @@ const (
 	dut2AS = 64501
 )
 
-// Attributes bundles some common attributes for devices and/or interfaces.
-// It provides helpers to generate appropriate configuration for OpenConfig
-// and for an ATETopology.  All fields are optional; only those that are
-// non-empty will be set when configuring an interface.
-type Attributes struct {
-	IPv4    string
-	IPv6    string
-	MAC     string
-	Name    string // Interface name, only applied to ATE ports.
-	Desc    string // Description, only applied to DUT interfaces.
-	IPv4Len uint8  // Prefix length for IPv4.
-	IPv6Len uint8  // Prefix length for IPv6.
-	MTU     uint16
-}
-
 var (
-	dutPort1 = Attributes{
+	dutPort1 = attrs.Attributes{
 		Desc:    "dutPort1",
 		IPv4:    "192.0.2.1",
 		IPv4Len: ipv4PrefixLen,
 	}
 
-	dut2Port1 = Attributes{
+	dut2Port1 = attrs.Attributes{
 		Desc:    "dut2Port1",
 		IPv4:    "192.0.2.2",
 		IPv4Len: ipv4PrefixLen,
 	}
 )
 
-// configInterfaceDUT configures the interface with the Addrs.
-func configInterfaceDUT(i *oc.Interface, a *Attributes) *oc.Interface {
-	i.Description = ygot.String(a.Desc)
-	i.Type = oc.IETFInterfaces_InterfaceType_ethernetCsmacd
-
-	s := i.GetOrCreateSubinterface(0)
-	s.Enabled = ygot.Bool(true)
-	s4 := s.GetOrCreateIpv4()
-	s4a := s4.GetOrCreateAddress(a.IPv4)
-	s4a.PrefixLength = ygot.Uint8(ipv4PrefixLen)
-
-	return i
-}
-
 // configureDUT configures port1 on the DUT.
-func configureDUT(t *testing.T, dut *ondatra.DUTDevice, attr Attributes) {
+func configureDUT(t *testing.T, dut *ondatra.DUTDevice, attr attrs.Attributes) {
 	p1 := dut.Port(t, "port1")
-	i1 := &oc.Interface{Name: ygot.String(p1.Name())}
-	gnmi.Replace(t, dut, ocpath.Root().Interface(p1.Name()).Config(), configInterfaceDUT(i1, &attr))
+	gnmi.Replace(t, dut, gnmi.OC().Interface(p1.Name()).Config(), attr.NewOCInterface(p1.Name(), dut))
 
-	gnmi.Await(t, dut, ocpath.Root().Interface(dut.Port(t, "port1").Name()).Subinterface(0).Ipv4().Address(attr.IPv4).Ip().State(), time.Minute, attr.IPv4)
+	gnmi.Await(t, dut, gnmi.OC().Interface(p1.Name()).Subinterface(0).Ipv4().Address(attr.IPv4).Ip().State(), time.Minute, attr.IPv4)
 }
 
 func bgpWithNbr(as uint32, routerID string, nbr *oc.NetworkInstance_Protocol_Bgp_Neighbor) *oc.NetworkInstance_Protocol_Bgp {
@@ -116,7 +88,7 @@ func TestEstablish(t *testing.T) {
 	dut2 := ondatra.DUT(t, "dut2")
 	configureDUT(t, dut2, dut2Port1)
 
-	bgpPath := ocpath.Root().NetworkInstance(fakedevice.DefaultNetworkInstance).Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").Bgp()
+	bgpPath := gnmi.OC().NetworkInstance(fakedevice.DefaultNetworkInstance).Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").Bgp()
 
 	// Remove any existing BGP config
 	gnmi.Delete(t, dut, bgpPath.Config())

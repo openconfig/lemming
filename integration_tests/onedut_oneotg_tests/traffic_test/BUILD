@@ -9,6 +9,7 @@ go_test(
         "exclusive",
     ],
     deps = [
+        "//internal/attrs",
         "//internal/binding",
         "@com_github_open_traffic_generator_snappi_gosnappi//:gosnappi",
         "@com_github_openconfig_gribi//v1/proto/service",
@@ -18,10 +19,7 @@ go_test(
         "@com_github_openconfig_gribigo//fluent",
         "@com_github_openconfig_ondatra//:ondatra",
         "@com_github_openconfig_ondatra//gnmi",
-        "@com_github_openconfig_ondatra//gnmi/oc",
-        "@com_github_openconfig_ondatra//gnmi/oc/ocpath",
         "@com_github_openconfig_ondatra//gnmi/otg/otgpath",
         "@com_github_openconfig_ygnmi//ygnmi",
-        "@com_github_openconfig_ygot//ygot",
     ],
 )
