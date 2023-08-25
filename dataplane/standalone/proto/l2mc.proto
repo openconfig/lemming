@@ -20,9 +20,7 @@ message CreateL2mcEntryRequest {
   uint64 output_group_id = 3;
 }
 
-message CreateL2mcEntryResponse {
-  uint64 oid = 1;
-}
+message CreateL2mcEntryResponse {}
 
 message RemoveL2mcEntryRequest {
   L2mcEntry entry = 1;

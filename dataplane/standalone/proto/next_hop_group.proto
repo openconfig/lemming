@@ -78,6 +78,41 @@ message GetNextHopGroupAttributeResponse {
   NextHopGroupAttribute attr = 1;
 }
 
+message CreateNextHopGroupMapRequest {
+  uint64 switch = 1;
+
+  NextHopGroupMapType type = 2;
+  repeated UintMap map_to_value_list = 3;
+}
+
+message CreateNextHopGroupMapResponse {
+  uint64 oid = 1;
+}
+
+message RemoveNextHopGroupMapRequest {
+  uint64 oid = 1;
+}
+
+message RemoveNextHopGroupMapResponse {}
+
+message SetNextHopGroupMapAttributeRequest {
+  uint64 oid = 1;
+  oneof attr {
+    UintMapList map_to_value_list = 2;
+  }
+}
+
+message SetNextHopGroupMapAttributeResponse {}
+
+message GetNextHopGroupMapAttributeRequest {
+  uint64 oid = 1;
+  NextHopGroupMapAttr attr_type = 2;
+}
+
+message GetNextHopGroupMapAttributeResponse {
+  NextHopGroupMapAttribute attr = 1;
+}
+
 message CreateNextHopGroupMemberRequest {
   uint64 switch = 1;
 
@@ -123,41 +158,6 @@ message GetNextHopGroupMemberAttributeResponse {
   NextHopGroupMemberAttribute attr = 1;
 }
 
-message CreateNextHopGroupMapRequest {
-  uint64 switch = 1;
-
-  NextHopGroupMapType type = 2;
-  repeated UintMap map_to_value_list = 3;
-}
-
-message CreateNextHopGroupMapResponse {
-  uint64 oid = 1;
-}
-
-message RemoveNextHopGroupMapRequest {
-  uint64 oid = 1;
-}
-
-message RemoveNextHopGroupMapResponse {}
-
-message SetNextHopGroupMapAttributeRequest {
-  uint64 oid = 1;
-  oneof attr {
-    UintMapList map_to_value_list = 2;
-  }
-}
-
-message SetNextHopGroupMapAttributeResponse {}
-
-message GetNextHopGroupMapAttributeRequest {
-  uint64 oid = 1;
-  NextHopGroupMapAttr attr_type = 2;
-}
-
-message GetNextHopGroupMapAttributeResponse {
-  NextHopGroupMapAttribute attr = 1;
-}
-
 service NextHopGroup {
   rpc CreateNextHopGroup(CreateNextHopGroupRequest)
       returns (CreateNextHopGroupResponse) {}
@@ -167,14 +167,6 @@ service NextHopGroup {
       returns (SetNextHopGroupAttributeResponse) {}
   rpc GetNextHopGroupAttribute(GetNextHopGroupAttributeRequest)
       returns (GetNextHopGroupAttributeResponse) {}
-  rpc CreateNextHopGroupMember(CreateNextHopGroupMemberRequest)
-      returns (CreateNextHopGroupMemberResponse) {}
-  rpc RemoveNextHopGroupMember(RemoveNextHopGroupMemberRequest)
-      returns (RemoveNextHopGroupMemberResponse) {}
-  rpc SetNextHopGroupMemberAttribute(SetNextHopGroupMemberAttributeRequest)
-      returns (SetNextHopGroupMemberAttributeResponse) {}
-  rpc GetNextHopGroupMemberAttribute(GetNextHopGroupMemberAttributeRequest)
-      returns (GetNextHopGroupMemberAttributeResponse) {}
   rpc CreateNextHopGroupMap(CreateNextHopGroupMapRequest)
       returns (CreateNextHopGroupMapResponse) {}
   rpc RemoveNextHopGroupMap(RemoveNextHopGroupMapRequest)
@@ -183,4 +175,12 @@ service NextHopGroup {
       returns (SetNextHopGroupMapAttributeResponse) {}
   rpc GetNextHopGroupMapAttribute(GetNextHopGroupMapAttributeRequest)
       returns (GetNextHopGroupMapAttributeResponse) {}
+  rpc CreateNextHopGroupMember(CreateNextHopGroupMemberRequest)
+      returns (CreateNextHopGroupMemberResponse) {}
+  rpc RemoveNextHopGroupMember(RemoveNextHopGroupMemberRequest)
+      returns (RemoveNextHopGroupMemberResponse) {}
+  rpc SetNextHopGroupMemberAttribute(SetNextHopGroupMemberAttributeRequest)
+      returns (SetNextHopGroupMemberAttributeResponse) {}
+  rpc GetNextHopGroupMemberAttribute(GetNextHopGroupMemberAttributeRequest)
+      returns (GetNextHopGroupMemberAttributeResponse) {}
 }

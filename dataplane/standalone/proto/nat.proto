@@ -56,9 +56,7 @@ message CreateNatEntryRequest {
   bool hit_bit = 15;
 }
 
-message CreateNatEntryResponse {
-  uint64 oid = 1;
-}
+message CreateNatEntryResponse {}
 
 message RemoveNatEntryRequest {
   NatEntry entry = 1;

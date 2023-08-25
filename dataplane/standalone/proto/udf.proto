@@ -70,6 +70,32 @@ message GetUdfAttributeResponse {
   UdfAttribute attr = 1;
 }
 
+message CreateUdfGroupRequest {
+  uint64 switch = 1;
+
+  UdfGroupType type = 2;
+  uint32 length = 3;
+}
+
+message CreateUdfGroupResponse {
+  uint64 oid = 1;
+}
+
+message RemoveUdfGroupRequest {
+  uint64 oid = 1;
+}
+
+message RemoveUdfGroupResponse {}
+
+message GetUdfGroupAttributeRequest {
+  uint64 oid = 1;
+  UdfGroupAttr attr_type = 2;
+}
+
+message GetUdfGroupAttributeResponse {
+  UdfGroupAttribute attr = 1;
+}
+
 message CreateUdfMatchRequest {
   uint64 switch = 1;
 
@@ -98,32 +124,6 @@ message GetUdfMatchAttributeResponse {
   UdfMatchAttribute attr = 1;
 }
 
-message CreateUdfGroupRequest {
-  uint64 switch = 1;
-
-  UdfGroupType type = 2;
-  uint32 length = 3;
-}
-
-message CreateUdfGroupResponse {
-  uint64 oid = 1;
-}
-
-message RemoveUdfGroupRequest {
-  uint64 oid = 1;
-}
-
-message RemoveUdfGroupResponse {}
-
-message GetUdfGroupAttributeRequest {
-  uint64 oid = 1;
-  UdfGroupAttr attr_type = 2;
-}
-
-message GetUdfGroupAttributeResponse {
-  UdfGroupAttribute attr = 1;
-}
-
 service Udf {
   rpc CreateUdf(CreateUdfRequest) returns (CreateUdfResponse) {}
   rpc RemoveUdf(RemoveUdfRequest) returns (RemoveUdfResponse) {}
@@ -131,12 +131,12 @@ service Udf {
       returns (SetUdfAttributeResponse) {}
   rpc GetUdfAttribute(GetUdfAttributeRequest)
       returns (GetUdfAttributeResponse) {}
-  rpc CreateUdfMatch(CreateUdfMatchRequest) returns (CreateUdfMatchResponse) {}
-  rpc RemoveUdfMatch(RemoveUdfMatchRequest) returns (RemoveUdfMatchResponse) {}
-  rpc GetUdfMatchAttribute(GetUdfMatchAttributeRequest)
-      returns (GetUdfMatchAttributeResponse) {}
   rpc CreateUdfGroup(CreateUdfGroupRequest) returns (CreateUdfGroupResponse) {}
   rpc RemoveUdfGroup(RemoveUdfGroupRequest) returns (RemoveUdfGroupResponse) {}
   rpc GetUdfGroupAttribute(GetUdfGroupAttributeRequest)
       returns (GetUdfGroupAttributeResponse) {}
+  rpc CreateUdfMatch(CreateUdfMatchRequest) returns (CreateUdfMatchResponse) {}
+  rpc RemoveUdfMatch(RemoveUdfMatchRequest) returns (RemoveUdfMatchResponse) {}
+  rpc GetUdfMatchAttribute(GetUdfMatchAttributeRequest)
+      returns (GetUdfMatchAttributeResponse) {}
 }

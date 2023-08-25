@@ -26,6 +26,52 @@ enum Srv6SidlistAttr {
   SRV6_SIDLIST_ATTR_SEGMENT_LIST = 3;
 }
 
+message CreateMySidEntryRequest {
+  MySidEntry entry = 1;
+
+  MySidEntryEndpointBehavior endpoint_behavior = 2;
+  MySidEntryEndpointBehaviorFlavor endpoint_behavior_flavor = 3;
+  PacketAction packet_action = 4;
+  uint32 trap_priority = 5;
+  uint64 next_hop_id = 6;
+  uint64 tunnel_id = 7;
+  uint64 vrf = 8;
+  uint64 counter_id = 9;
+}
+
+message CreateMySidEntryResponse {}
+
+message RemoveMySidEntryRequest {
+  MySidEntry entry = 1;
+}
+
+message RemoveMySidEntryResponse {}
+
+message SetMySidEntryAttributeRequest {
+  MySidEntry entry = 1;
+  oneof attr {
+    MySidEntryEndpointBehavior endpoint_behavior = 2;
+    MySidEntryEndpointBehaviorFlavor endpoint_behavior_flavor = 3;
+    PacketAction packet_action = 4;
+    uint32 trap_priority = 5;
+    uint64 next_hop_id = 6;
+    uint64 tunnel_id = 7;
+    uint64 vrf = 8;
+    uint64 counter_id = 9;
+  }
+}
+
+message SetMySidEntryAttributeResponse {}
+
+message GetMySidEntryAttributeRequest {
+  MySidEntry entry = 1;
+  MySidEntryAttr attr_type = 2;
+}
+
+message GetMySidEntryAttributeResponse {
+  MySidEntryAttribute attr = 1;
+}
+
 message CreateSrv6SidlistRequest {
   uint64 switch = 1;
 
@@ -63,63 +109,7 @@ message GetSrv6SidlistAttributeResponse {
   Srv6SidlistAttribute attr = 1;
 }
 
-message CreateMySidEntryRequest {
-  MySidEntry entry = 1;
-
-  MySidEntryEndpointBehavior endpoint_behavior = 2;
-  MySidEntryEndpointBehaviorFlavor endpoint_behavior_flavor = 3;
-  PacketAction packet_action = 4;
-  uint32 trap_priority = 5;
-  uint64 next_hop_id = 6;
-  uint64 tunnel_id = 7;
-  uint64 vrf = 8;
-  uint64 counter_id = 9;
-}
-
-message CreateMySidEntryResponse {
-  uint64 oid = 1;
-}
-
-message RemoveMySidEntryRequest {
-  MySidEntry entry = 1;
-}
-
-message RemoveMySidEntryResponse {}
-
-message SetMySidEntryAttributeRequest {
-  MySidEntry entry = 1;
-  oneof attr {
-    MySidEntryEndpointBehavior endpoint_behavior = 2;
-    MySidEntryEndpointBehaviorFlavor endpoint_behavior_flavor = 3;
-    PacketAction packet_action = 4;
-    uint32 trap_priority = 5;
-    uint64 next_hop_id = 6;
-    uint64 tunnel_id = 7;
-    uint64 vrf = 8;
-    uint64 counter_id = 9;
-  }
-}
-
-message SetMySidEntryAttributeResponse {}
-
-message GetMySidEntryAttributeRequest {
-  MySidEntry entry = 1;
-  MySidEntryAttr attr_type = 2;
-}
-
-message GetMySidEntryAttributeResponse {
-  MySidEntryAttribute attr = 1;
-}
-
 service Srv6 {
-  rpc CreateSrv6Sidlist(CreateSrv6SidlistRequest)
-      returns (CreateSrv6SidlistResponse) {}
-  rpc RemoveSrv6Sidlist(RemoveSrv6SidlistRequest)
-      returns (RemoveSrv6SidlistResponse) {}
-  rpc SetSrv6SidlistAttribute(SetSrv6SidlistAttributeRequest)
-      returns (SetSrv6SidlistAttributeResponse) {}
-  rpc GetSrv6SidlistAttribute(GetSrv6SidlistAttributeRequest)
-      returns (GetSrv6SidlistAttributeResponse) {}
   rpc CreateMySidEntry(CreateMySidEntryRequest)
       returns (CreateMySidEntryResponse) {}
   rpc RemoveMySidEntry(RemoveMySidEntryRequest)
@@ -128,4 +118,12 @@ service Srv6 {
       returns (SetMySidEntryAttributeResponse) {}
   rpc GetMySidEntryAttribute(GetMySidEntryAttributeRequest)
       returns (GetMySidEntryAttributeResponse) {}
+  rpc CreateSrv6Sidlist(CreateSrv6SidlistRequest)
+      returns (CreateSrv6SidlistResponse) {}
+  rpc RemoveSrv6Sidlist(RemoveSrv6SidlistRequest)
+      returns (RemoveSrv6SidlistResponse) {}
+  rpc SetSrv6SidlistAttribute(SetSrv6SidlistAttributeRequest)
+      returns (SetSrv6SidlistAttributeResponse) {}
+  rpc GetSrv6SidlistAttribute(GetSrv6SidlistAttributeRequest)
+      returns (GetSrv6SidlistAttributeResponse) {}
 }
