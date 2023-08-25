@@ -16,13 +16,12 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 	"runtime"
-	"strings"
 
+	"github.com/openconfig/lemming/dataplane/standalone/apigen/ccgen"
 	"github.com/openconfig/lemming/dataplane/standalone/apigen/docparser"
 	"github.com/openconfig/lemming/dataplane/standalone/apigen/protogen"
 	"github.com/openconfig/lemming/dataplane/standalone/apigen/saiast"
@@ -80,38 +79,18 @@ func generate() error {
 	if err != nil {
 		return err
 	}
+	ccFiles, err := ccgen.Generate(xmlInfo, sai)
+	if err != nil {
+		return err
+	}
 
-	for _, iface := range sai.Ifaces {
-		nameTrimmed := strings.TrimSuffix(strings.TrimPrefix(iface.Name, "sai_"), "_api_t")
-		ccData := ccTemplateData{
-			IncludeGuard: fmt.Sprintf("DATAPLANE_STANDALONE_SAI_%s_H_", strings.ToUpper(nameTrimmed)),
-			Header:       fmt.Sprintf("%s.h", nameTrimmed),
-			APIType:      iface.Name,
-			APIName:      nameTrimmed,
-		}
-		for _, fn := range iface.Funcs {
-			meta := sai.GetFuncMeta(fn)
-			tf := createCCData(meta, sai, fn)
-			ccData.Funcs = append(ccData.Funcs, *tf)
-		}
-		header, err := os.Create(filepath.Join(ccOutDir, ccData.Header))
-		if err != nil {
-			return err
-		}
-		impl, err := os.Create(filepath.Join(ccOutDir, fmt.Sprintf("%s.cc", nameTrimmed)))
-		if err != nil {
-			return err
-		}
-
-		if err := headerTmpl.Execute(header, ccData); err != nil {
-			return err
-		}
-		if err := ccTmpl.Execute(impl, ccData); err != nil {
+	for file, content := range protos {
+		if err := os.WriteFile(filepath.Join(protoOutDir, file), []byte(content), 0600); err != nil {
 			return err
 		}
 	}
-	for file, content := range protos {
-		if err := os.WriteFile(filepath.Join(protoOutDir, file), []byte(content), 0600); err != nil {
+	for file, content := range ccFiles {
+		if err := os.WriteFile(filepath.Join(ccOutDir, file), []byte(content), 0600); err != nil {
 			return err
 		}
 	}
