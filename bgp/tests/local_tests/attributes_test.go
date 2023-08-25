@@ -53,6 +53,8 @@ func TestAttributes(t *testing.T) {
 		"10.11.0.0/16",
 		"10.12.0.0/16",
 		"10.13.0.0/16",
+		"10.14.0.0/16",
+		"10.15.0.0/16",
 	}
 	testPolicy(t, PolicyTestCase{
 		spec: &valpb.PolicyTestCase{
@@ -92,6 +94,20 @@ func TestAttributes(t *testing.T) {
 				},
 				ExpectedResultBeforePolicy: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
 				ExpectedResult:             valpb.RouteTestResult_ROUTE_TEST_RESULT_NOT_PREFERRED,
+			}, {
+				Description: "Unpreferred route due to AS path prepend",
+				Input: &valpb.TestRoute{
+					ReachPrefix: routeList[6],
+				},
+				ExpectedResultBeforePolicy: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
+				ExpectedResult:             valpb.RouteTestResult_ROUTE_TEST_RESULT_NOT_PREFERRED,
+			}, {
+				Description: "Rejected route due to AS path match on prepended AS",
+				Input: &valpb.TestRoute{
+					ReachPrefix: routeList[7],
+				},
+				ExpectedResultBeforePolicy: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
+				ExpectedResult:             valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD,
 			}},
 			LongerPathRouteTests: []*valpb.RouteTestCase{{
 				Description: "Accepted route due to higher local-pref",
@@ -107,6 +123,13 @@ func TestAttributes(t *testing.T) {
 				},
 				ExpectedResultBeforePolicy: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
 				ExpectedResult:             valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD,
+			}, {
+				Description: "Accepted route due to shorter AS path after competing route's AS path prepend",
+				Input: &valpb.TestRoute{
+					ReachPrefix: routeList[6],
+				},
+				ExpectedResultBeforePolicy: valpb.RouteTestResult_ROUTE_TEST_RESULT_NOT_PREFERRED,
+				ExpectedResult:             valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
 			}},
 			AlternatePathRouteTests: []*valpb.RouteTestCase{{
 				Description: "Accepted route due to lower MED",
@@ -218,6 +241,27 @@ func TestAttributes(t *testing.T) {
 					// Match on given list of AS path set members.
 					dut5RejectStmt.GetOrCreateConditions().GetOrCreateBgpConditions().GetOrCreateMatchAsPathSet().SetAsPathSet(rejectASPathSetName)
 					dut5RejectStmt.GetOrCreateConditions().GetOrCreateBgpConditions().GetOrCreateMatchAsPathSet().SetMatchSetOptions(oc.RoutingPolicy_MatchSetOptionsType_ANY)
+				case 6:
+					// Set AS Path Prepend
+					installDut1Stmt = true
+					dut1Stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetAsPathPrepend().SetAsn(64499)
+					dut1Stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetAsPathPrepend().SetRepeatN(2)
+				case 7:
+					// Set AS Path Prepend
+					installDut1Stmt = true
+					dut1Stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetAsPathPrepend().SetAsn(64499)
+					dut1Stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetAsPathPrepend().SetRepeatN(2)
+
+					// AS-path-set
+					installDut1RejectStmt = true
+					rejectASPathSetName := "reject-as-path-set2"
+					rejASPathSetPath := ocpath.Root().RoutingPolicy().DefinedSets().BgpDefinedSets().AsPathSet(rejectASPathSetName)
+					Replace(t, dut2, rejASPathSetPath.AsPathSetName().Config(), rejectASPathSetName)
+					Replace(t, dut2, rejASPathSetPath.AsPathSetMember().Config(), []string{"64499"})
+
+					// Match on given list of AS path set members.
+					dut1RejectStmt.GetOrCreateConditions().GetOrCreateBgpConditions().GetOrCreateMatchAsPathSet().SetAsPathSet(rejectASPathSetName)
+					dut1RejectStmt.GetOrCreateConditions().GetOrCreateBgpConditions().GetOrCreateMatchAsPathSet().SetMatchSetOptions(oc.RoutingPolicy_MatchSetOptionsType_ANY)
 				}
 				if installDut1Stmt {
 					dut1Stmt.GetOrCreateActions().SetPolicyResult(oc.RoutingPolicy_PolicyResultType_ACCEPT_ROUTE)
