@@ -137,6 +137,7 @@ func TestAttributes(t *testing.T) {
 				var installRejectStmt bool
 				rejectStmt := &oc.RoutingPolicy_PolicyDefinition_Statement{Name: ygot.String(route + "-reject-policy")}
 
+				// Create the corresponding set and filter policies for each route.
 				switch i {
 				case 1:
 					// Set communities
