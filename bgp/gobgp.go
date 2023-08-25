@@ -149,6 +149,9 @@ func (t *bgpDeclTask) startGoBGPFuncDecl(_ context.Context, yclient *ygnmi.Clien
 		// -- community sets
 		ocpath.Root().RoutingPolicy().DefinedSets().BgpDefinedSets().CommunitySetAny().CommunityMember().Config().PathStruct(),
 		ocpath.Root().RoutingPolicy().DefinedSets().BgpDefinedSets().CommunitySetAny().MatchSetOptions().Config().PathStruct(),
+		// -- AS path sets
+		ocpath.Root().RoutingPolicy().DefinedSets().BgpDefinedSets().AsPathSetAny().AsPathSetName().Config().PathStruct(),
+		ocpath.Root().RoutingPolicy().DefinedSets().BgpDefinedSets().AsPathSetAny().AsPathSetMember().Config().PathStruct(),
 	)
 
 	if log.V(2) {
@@ -464,6 +467,10 @@ func intendedToGoBGP(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *oc.Routin
 func intendedToGoBGPPolicies(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *oc.RoutingPolicy, bgpConfig *bgpconfig.BgpConfigSet) {
 	// community sets
 	bgpConfig.DefinedSets.BgpDefinedSets.CommunitySets = convertCommunitySet(policyoc.GetOrCreateDefinedSets().GetOrCreateBgpDefinedSets().CommunitySet)
+	// Prefix sets
+	bgpConfig.DefinedSets.PrefixSets = convertPrefixSets(policyoc.GetOrCreateDefinedSets().PrefixSet)
+	// AS Path Sets
+	bgpConfig.DefinedSets.BgpDefinedSets.AsPathSets = convertASPathSets(policyoc.GetOrCreateDefinedSets().GetOrCreateBgpDefinedSets().AsPathSet)
 
 	// Neighbours, global policy definitions, and global apply policy list.
 	for neighAddr, neigh := range bgpoc.Neighbor {
@@ -552,26 +559,5 @@ func intendedToGoBGPPolicies(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *o
 		})
 		bgpConfig.Global.ApplyPolicy.Config.ImportPolicyList = append(bgpConfig.Global.ApplyPolicy.Config.ImportPolicyList, defaultImportPolicyName)
 		bgpConfig.Global.ApplyPolicy.Config.ExportPolicyList = append(bgpConfig.Global.ApplyPolicy.Config.ExportPolicyList, defaultExportPolicyName)
-	}
-
-	// Prefix set
-	for prefixSetName, prefixSet := range policyoc.GetOrCreateDefinedSets().PrefixSet {
-		var prefixList []bgpconfig.Prefix
-		for _, prefix := range prefixSet.Prefix {
-			r := prefix.GetMasklengthRange()
-			if r == "exact" {
-				// GoBGP recognizes "" instead of "exact"
-				r = ""
-			}
-			prefixList = append(prefixList, bgpconfig.Prefix{
-				IpPrefix:        prefix.GetIpPrefix(),
-				MasklengthRange: r,
-			})
-		}
-
-		bgpConfig.DefinedSets.PrefixSets = append(bgpConfig.DefinedSets.PrefixSets, bgpconfig.PrefixSet{
-			PrefixSetName: prefixSetName,
-			PrefixList:    prefixList,
-		})
 	}
 }

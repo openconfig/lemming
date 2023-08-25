@@ -35,6 +35,10 @@ const (
 	higherMED            = oc.UnionUint32(11)
 )
 
+var (
+	rejectedASPathSet = []string{"64502"}
+)
+
 // TestAttributes tests BGP attributes.
 // - set-community and community set.
 // - set-local-pref and local pref.
@@ -48,6 +52,7 @@ func TestAttributes(t *testing.T) {
 		"10.10.0.0/16",
 		"10.11.0.0/16",
 		"10.12.0.0/16",
+		"10.13.0.0/16",
 	}
 	testPolicy(t, PolicyTestCase{
 		spec: &valpb.PolicyTestCase{
@@ -95,6 +100,13 @@ func TestAttributes(t *testing.T) {
 				},
 				ExpectedResultBeforePolicy: valpb.RouteTestResult_ROUTE_TEST_RESULT_NOT_PREFERRED,
 				ExpectedResult:             valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
+			}, {
+				Description: "Rejected route due to AS path match",
+				Input: &valpb.TestRoute{
+					ReachPrefix: routeList[5],
+				},
+				ExpectedResultBeforePolicy: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
+				ExpectedResult:             valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD,
 			}},
 			AlternatePathRouteTests: []*valpb.RouteTestCase{{
 				Description: "Accepted route due to lower MED",
@@ -114,14 +126,17 @@ func TestAttributes(t *testing.T) {
 			dut1Policy := &oc.RoutingPolicy_PolicyDefinition_Statement_OrderedMap{}
 			dut5PolicyName := "set-attributes-dut5"
 			dut5Policy := &oc.RoutingPolicy_PolicyDefinition_Statement_OrderedMap{}
-			rejectPolicyName := "export-policy"
-			rejectPolicy := &oc.RoutingPolicy_PolicyDefinition_Statement_OrderedMap{}
+			dut1RejectPolicyName := "dut1-import-policy"
+			dut1RejectPolicy := &oc.RoutingPolicy_PolicyDefinition_Statement_OrderedMap{}
+			dut5RejectPolicyName := "dut5-import-policy"
+			dut5RejectPolicy := &oc.RoutingPolicy_PolicyDefinition_Statement_OrderedMap{}
 
 			for i, route := range routeList {
 				// Create prefix set
 				prefixSetName := "accept-" + route
 				prefixPath := ocpath.Root().RoutingPolicy().DefinedSets().PrefixSet(prefixSetName).Prefix(route, "exact").IpPrefix()
 				Replace(t, dut1, prefixPath.Config(), route)
+				Replace(t, dut2, prefixPath.Config(), route)
 				Replace(t, dut5, prefixPath.Config(), route)
 
 				var installDut1Stmt bool
@@ -134,8 +149,15 @@ func TestAttributes(t *testing.T) {
 				dut5Stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetPrefixSet(prefixSetName)
 				dut5Stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.RoutingPolicy_MatchSetOptionsRestrictedType_ANY)
 
-				var installRejectStmt bool
-				rejectStmt := &oc.RoutingPolicy_PolicyDefinition_Statement{Name: ygot.String(route + "-reject-policy")}
+				var installDut1RejectStmt bool
+				dut1RejectStmt := &oc.RoutingPolicy_PolicyDefinition_Statement{Name: ygot.String(route + "-reject-policy-dut1")}
+				dut1RejectStmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetPrefixSet(prefixSetName)
+				dut1RejectStmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.RoutingPolicy_MatchSetOptionsRestrictedType_ANY)
+
+				var installDut5RejectStmt bool
+				dut5RejectStmt := &oc.RoutingPolicy_PolicyDefinition_Statement{Name: ygot.String(route + "-reject-policy-dut5")}
+				dut5RejectStmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetPrefixSet(prefixSetName)
+				dut5RejectStmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.RoutingPolicy_MatchSetOptionsRestrictedType_ANY)
 
 				// Create the corresponding set and filter policies for each test route.
 				switch i {
@@ -161,7 +183,7 @@ func TestAttributes(t *testing.T) {
 					)
 
 					// Create community set
-					installRejectStmt = true
+					installDut1RejectStmt = true
 					rejectCommSetName := "reject-community-set"
 					rejCommMemberPath := ocpath.Root().RoutingPolicy().DefinedSets().BgpDefinedSets().CommunitySet(rejectCommSetName).CommunityMember()
 					Replace(t, dut2, rejCommMemberPath.Config(), []oc.RoutingPolicy_DefinedSets_BgpDefinedSets_CommunitySet_CommunityMember_Union{
@@ -170,7 +192,7 @@ func TestAttributes(t *testing.T) {
 					Replace(t, dut2, ocpath.Root().RoutingPolicy().DefinedSets().BgpDefinedSets().CommunitySet(rejectCommSetName).MatchSetOptions().Config(), oc.RoutingPolicy_MatchSetOptionsType_ANY)
 
 					// Match on given list of community set members.
-					rejectStmt.GetOrCreateConditions().GetOrCreateBgpConditions().SetCommunitySet(rejectCommSetName)
+					dut1RejectStmt.GetOrCreateConditions().GetOrCreateBgpConditions().SetCommunitySet(rejectCommSetName)
 				case 3:
 					// Set local-pref
 					installDut1Stmt = true
@@ -185,6 +207,17 @@ func TestAttributes(t *testing.T) {
 
 					installDut5Stmt = true
 					dut5Stmt.GetOrCreateActions().GetOrCreateBgpActions().SetSetMed(lowerMED)
+				case 5:
+					// AS-path-set
+					installDut5RejectStmt = true
+					rejectASPathSetName := "reject-as-path-set"
+					rejASPathSetPath := ocpath.Root().RoutingPolicy().DefinedSets().BgpDefinedSets().AsPathSet(rejectASPathSetName)
+					Replace(t, dut2, rejASPathSetPath.AsPathSetName().Config(), rejectASPathSetName)
+					Replace(t, dut2, rejASPathSetPath.AsPathSetMember().Config(), rejectedASPathSet)
+
+					// Match on given list of AS path set members.
+					dut5RejectStmt.GetOrCreateConditions().GetOrCreateBgpConditions().GetOrCreateMatchAsPathSet().SetAsPathSet(rejectASPathSetName)
+					dut5RejectStmt.GetOrCreateConditions().GetOrCreateBgpConditions().GetOrCreateMatchAsPathSet().SetMatchSetOptions(oc.RoutingPolicy_MatchSetOptionsType_ANY)
 				}
 				if installDut1Stmt {
 					dut1Stmt.GetOrCreateActions().SetPolicyResult(oc.RoutingPolicy_PolicyResultType_ACCEPT_ROUTE)
@@ -198,9 +231,15 @@ func TestAttributes(t *testing.T) {
 						t.Fatalf("Cannot append new BGP policy statement: %v", err)
 					}
 				}
-				if installRejectStmt {
-					rejectStmt.GetOrCreateActions().SetPolicyResult(oc.RoutingPolicy_PolicyResultType_REJECT_ROUTE)
-					if err := rejectPolicy.Append(rejectStmt); err != nil {
+				if installDut1RejectStmt {
+					dut1RejectStmt.GetOrCreateActions().SetPolicyResult(oc.RoutingPolicy_PolicyResultType_REJECT_ROUTE)
+					if err := dut1RejectPolicy.Append(dut1RejectStmt); err != nil {
+						t.Fatalf("Cannot append new BGP policy statement: %v", err)
+					}
+				}
+				if installDut5RejectStmt {
+					dut5RejectStmt.GetOrCreateActions().SetPolicyResult(oc.RoutingPolicy_PolicyResultType_REJECT_ROUTE)
+					if err := dut5RejectPolicy.Append(dut5RejectStmt); err != nil {
 						t.Fatalf("Cannot append new BGP policy statement: %v", err)
 					}
 				}
@@ -211,8 +250,10 @@ func TestAttributes(t *testing.T) {
 			Replace(t, dut5, ocpath.Root().RoutingPolicy().PolicyDefinition(dut5PolicyName).Config(), &oc.RoutingPolicy_PolicyDefinition{Name: ygot.String(dut5PolicyName), Statement: dut5Policy})
 			Replace(t, dut5, bgp.BGPPath.Neighbor(dut2.RouterID).ApplyPolicy().ExportPolicy().Config(), []string{dut5PolicyName})
 			// Install import policies
-			Replace(t, dut2, ocpath.Root().RoutingPolicy().PolicyDefinition(rejectPolicyName).Config(), &oc.RoutingPolicy_PolicyDefinition{Name: ygot.String(rejectPolicyName), Statement: rejectPolicy})
-			Replace(t, dut2, bgp.BGPPath.Neighbor(dut1.RouterID).ApplyPolicy().ImportPolicy().Config(), []string{rejectPolicyName})
+			Replace(t, dut2, ocpath.Root().RoutingPolicy().PolicyDefinition(dut1RejectPolicyName).Config(), &oc.RoutingPolicy_PolicyDefinition{Name: ygot.String(dut1RejectPolicyName), Statement: dut1RejectPolicy})
+			Replace(t, dut2, bgp.BGPPath.Neighbor(dut1.RouterID).ApplyPolicy().ImportPolicy().Config(), []string{dut1RejectPolicyName})
+			Replace(t, dut2, ocpath.Root().RoutingPolicy().PolicyDefinition(dut5RejectPolicyName).Config(), &oc.RoutingPolicy_PolicyDefinition{Name: ygot.String(dut5RejectPolicyName), Statement: dut5RejectPolicy})
+			Replace(t, dut2, bgp.BGPPath.Neighbor(dut5.RouterID).ApplyPolicy().ImportPolicy().Config(), []string{dut5RejectPolicyName})
 		},
 	})
 }

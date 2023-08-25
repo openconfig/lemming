@@ -69,6 +69,10 @@ func convertPolicyDefinition(policy *oc.RoutingPolicy_PolicyDefinition, neighAdd
 						CommunitySet:    statement.Conditions.GetBgpConditions().GetCommunitySet(),
 						MatchSetOptions: convertMatchSetOptionsType(occommset[statement.Conditions.GetBgpConditions().GetCommunitySet()].GetMatchSetOptions()),
 					},
+					MatchAsPathSet: bgpconfig.MatchAsPathSet{
+						AsPathSet:       statement.Conditions.GetBgpConditions().GetMatchAsPathSet().GetAsPathSet(),
+						MatchSetOptions: convertMatchSetOptionsType(statement.Conditions.GetBgpConditions().GetMatchAsPathSet().GetMatchSetOptions()),
+					},
 				},
 			},
 			Actions: bgpconfig.Actions{
@@ -195,6 +199,41 @@ func convertCommunitySet(occommset map[string]*oc.RoutingPolicy_DefinedSets_BgpD
 		})
 	}
 	return commsets
+}
+
+func convertPrefixSets(ocprefixsets map[string]*oc.RoutingPolicy_DefinedSets_PrefixSet) []bgpconfig.PrefixSet {
+	var prefixSets []bgpconfig.PrefixSet
+	for prefixSetName, prefixSet := range ocprefixsets {
+		var prefixList []bgpconfig.Prefix
+		for _, prefix := range prefixSet.Prefix {
+			r := prefix.GetMasklengthRange()
+			if r == "exact" {
+				// GoBGP recognizes "" instead of "exact"
+				r = ""
+			}
+			prefixList = append(prefixList, bgpconfig.Prefix{
+				IpPrefix:        prefix.GetIpPrefix(),
+				MasklengthRange: r,
+			})
+		}
+
+		prefixSets = append(prefixSets, bgpconfig.PrefixSet{
+			PrefixSetName: prefixSetName,
+			PrefixList:    prefixList,
+		})
+	}
+	return prefixSets
+}
+
+func convertASPathSets(ocpathset map[string]*oc.RoutingPolicy_DefinedSets_BgpDefinedSets_AsPathSet) []bgpconfig.AsPathSet {
+	var pathsets []bgpconfig.AsPathSet
+	for pathsetName, pathset := range ocpathset {
+		pathsets = append(pathsets, bgpconfig.AsPathSet{
+			AsPathSetName: pathsetName,
+			AsPathList:    pathset.AsPathSetMember,
+		})
+	}
+	return pathsets
 }
 
 func convertMED(med oc.RoutingPolicy_PolicyDefinition_Statement_Actions_BgpActions_SetMed_Union) (string, error) {
