@@ -1,3 +1,5 @@
+
+
 // Copyright 2023 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +18,8 @@
 
 #include <glog/logging.h>
 
+#include "dataplane/standalone/proto/common.pb.h"
+#include "dataplane/standalone/proto/scheduler.pb.h"
 #include "dataplane/standalone/sai/common.h"
 #include "dataplane/standalone/sai/entry.h"
 
@@ -30,18 +34,61 @@ sai_status_t l_create_scheduler(sai_object_id_t *scheduler_id,
                                 sai_object_id_t switch_id, uint32_t attr_count,
                                 const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  lemming::dataplane::sai::CreateSchedulerRequest req;
+  lemming::dataplane::sai::CreateSchedulerResponse resp;
+  grpc::ClientContext context;
+  req.set_switch_(switch_id);
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_SCHEDULER_ATTR_SCHEDULING_TYPE:
+        req.set_scheduling_type(
+            static_cast<lemming::dataplane::sai::SchedulingType>(
+                attr_list[i].value.s32 + 1));
+        break;
+      case SAI_SCHEDULER_ATTR_SCHEDULING_WEIGHT:
+        req.set_scheduling_weight(attr_list[i].value.u8);
+        break;
+      case SAI_SCHEDULER_ATTR_METER_TYPE:
+        req.set_meter_type(static_cast<lemming::dataplane::sai::MeterType>(
+            attr_list[i].value.s32 + 1));
+        break;
+      case SAI_SCHEDULER_ATTR_MIN_BANDWIDTH_RATE:
+        req.set_min_bandwidth_rate(attr_list[i].value.u64);
+        break;
+      case SAI_SCHEDULER_ATTR_MIN_BANDWIDTH_BURST_RATE:
+        req.set_min_bandwidth_burst_rate(attr_list[i].value.u64);
+        break;
+      case SAI_SCHEDULER_ATTR_MAX_BANDWIDTH_RATE:
+        req.set_max_bandwidth_rate(attr_list[i].value.u64);
+        break;
+      case SAI_SCHEDULER_ATTR_MAX_BANDWIDTH_BURST_RATE:
+        req.set_max_bandwidth_burst_rate(attr_list[i].value.u64);
+        break;
+    }
+  }
+  grpc::Status status = scheduler->CreateScheduler(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  *scheduler_id = resp.oid();
+
   return translator->create(SAI_OBJECT_TYPE_SCHEDULER, scheduler_id, switch_id,
                             attr_count, attr_list);
 }
 
 sai_status_t l_remove_scheduler(sai_object_id_t scheduler_id) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return translator->remove(SAI_OBJECT_TYPE_SCHEDULER, scheduler_id);
 }
 
 sai_status_t l_set_scheduler_attribute(sai_object_id_t scheduler_id,
                                        const sai_attribute_t *attr) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return translator->set_attribute(SAI_OBJECT_TYPE_SCHEDULER, scheduler_id,
                                    attr);
 }
@@ -50,6 +97,7 @@ sai_status_t l_get_scheduler_attribute(sai_object_id_t scheduler_id,
                                        uint32_t attr_count,
                                        sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return translator->get_attribute(SAI_OBJECT_TYPE_SCHEDULER, scheduler_id,
                                    attr_count, attr_list);
 }

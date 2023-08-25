@@ -1,3 +1,5 @@
+
+
 // Copyright 2023 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +18,8 @@
 
 #include <glog/logging.h>
 
+#include "dataplane/standalone/proto/common.pb.h"
+#include "dataplane/standalone/proto/stp.pb.h"
 #include "dataplane/standalone/sai/common.h"
 #include "dataplane/standalone/sai/entry.h"
 
@@ -36,24 +40,43 @@ sai_status_t l_create_stp(sai_object_id_t *stp_id, sai_object_id_t switch_id,
                           uint32_t attr_count,
                           const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  lemming::dataplane::sai::CreateStpRequest req;
+  lemming::dataplane::sai::CreateStpResponse resp;
+  grpc::ClientContext context;
+  req.set_switch_(switch_id);
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {}
+  }
+  grpc::Status status = stp->CreateStp(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  *stp_id = resp.oid();
+
   return translator->create(SAI_OBJECT_TYPE_STP, stp_id, switch_id, attr_count,
                             attr_list);
 }
 
 sai_status_t l_remove_stp(sai_object_id_t stp_id) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return translator->remove(SAI_OBJECT_TYPE_STP, stp_id);
 }
 
 sai_status_t l_set_stp_attribute(sai_object_id_t stp_id,
                                  const sai_attribute_t *attr) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return translator->set_attribute(SAI_OBJECT_TYPE_STP, stp_id, attr);
 }
 
 sai_status_t l_get_stp_attribute(sai_object_id_t stp_id, uint32_t attr_count,
                                  sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return translator->get_attribute(SAI_OBJECT_TYPE_STP, stp_id, attr_count,
                                    attr_list);
 }
@@ -62,18 +85,47 @@ sai_status_t l_create_stp_port(sai_object_id_t *stp_port_id,
                                sai_object_id_t switch_id, uint32_t attr_count,
                                const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  lemming::dataplane::sai::CreateStpPortRequest req;
+  lemming::dataplane::sai::CreateStpPortResponse resp;
+  grpc::ClientContext context;
+  req.set_switch_(switch_id);
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_STP_PORT_ATTR_STP:
+        req.set_stp(attr_list[i].value.oid);
+        break;
+      case SAI_STP_PORT_ATTR_BRIDGE_PORT:
+        req.set_bridge_port(attr_list[i].value.oid);
+        break;
+      case SAI_STP_PORT_ATTR_STATE:
+        req.set_state(static_cast<lemming::dataplane::sai::StpPortState>(
+            attr_list[i].value.s32 + 1));
+        break;
+    }
+  }
+  grpc::Status status = stp->CreateStpPort(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  *stp_port_id = resp.oid();
+
   return translator->create(SAI_OBJECT_TYPE_STP_PORT, stp_port_id, switch_id,
                             attr_count, attr_list);
 }
 
 sai_status_t l_remove_stp_port(sai_object_id_t stp_port_id) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return translator->remove(SAI_OBJECT_TYPE_STP_PORT, stp_port_id);
 }
 
 sai_status_t l_set_stp_port_attribute(sai_object_id_t stp_port_id,
                                       const sai_attribute_t *attr) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return translator->set_attribute(SAI_OBJECT_TYPE_STP_PORT, stp_port_id, attr);
 }
 
@@ -81,6 +133,7 @@ sai_status_t l_get_stp_port_attribute(sai_object_id_t stp_port_id,
                                       uint32_t attr_count,
                                       sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return translator->get_attribute(SAI_OBJECT_TYPE_STP_PORT, stp_port_id,
                                    attr_count, attr_list);
 }
@@ -93,6 +146,7 @@ sai_status_t l_create_stp_ports(sai_object_id_t switch_id,
                                 sai_object_id_t *object_id,
                                 sai_status_t *object_statuses) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return translator->create_bulk(SAI_OBJECT_TYPE_STP_PORT, switch_id,
                                  object_count, attr_count, attr_list, mode,
                                  object_id, object_statuses);
@@ -103,6 +157,7 @@ sai_status_t l_remove_stp_ports(uint32_t object_count,
                                 sai_bulk_op_error_mode_t mode,
                                 sai_status_t *object_statuses) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return translator->remove_bulk(SAI_OBJECT_TYPE_STP_PORT, object_count,
                                  object_id, mode, object_statuses);
 }

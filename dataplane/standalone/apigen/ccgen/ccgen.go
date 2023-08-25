@@ -129,7 +129,7 @@ func createCCData(meta *saiast.FuncMetadata, apiName string, sai *saiast.SAIAPI,
 	if strings.Contains(tf.TypeName, "PORT_ALL") || strings.Contains(tf.TypeName, "ALL_NEIGHBOR") {
 		tf.UseCommonAPI = false
 	}
-	return tf, nil
+	return tf
 }
 
 const protoNS = "lemming::dataplane::sai::"

@@ -1,3 +1,5 @@
+
+
 // Copyright 2023 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +18,8 @@
 
 #include <glog/logging.h>
 
+#include "dataplane/standalone/proto/common.pb.h"
+#include "dataplane/standalone/proto/dtel.pb.h"
 #include "dataplane/standalone/sai/common.h"
 #include "dataplane/standalone/sai/entry.h"
 
@@ -46,24 +50,73 @@ sai_status_t l_create_dtel(sai_object_id_t *dtel_id, sai_object_id_t switch_id,
                            uint32_t attr_count,
                            const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  lemming::dataplane::sai::CreateDtelRequest req;
+  lemming::dataplane::sai::CreateDtelResponse resp;
+  grpc::ClientContext context;
+  req.set_switch_(switch_id);
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_DTEL_ATTR_INT_ENDPOINT_ENABLE:
+        req.set_int_endpoint_enable(attr_list[i].value.booldata);
+        break;
+      case SAI_DTEL_ATTR_INT_TRANSIT_ENABLE:
+        req.set_int_transit_enable(attr_list[i].value.booldata);
+        break;
+      case SAI_DTEL_ATTR_POSTCARD_ENABLE:
+        req.set_postcard_enable(attr_list[i].value.booldata);
+        break;
+      case SAI_DTEL_ATTR_DROP_REPORT_ENABLE:
+        req.set_drop_report_enable(attr_list[i].value.booldata);
+        break;
+      case SAI_DTEL_ATTR_QUEUE_REPORT_ENABLE:
+        req.set_queue_report_enable(attr_list[i].value.booldata);
+        break;
+      case SAI_DTEL_ATTR_SWITCH_ID:
+        req.set_switch_id(attr_list[i].value.u32);
+        break;
+      case SAI_DTEL_ATTR_FLOW_STATE_CLEAR_CYCLE:
+        req.set_flow_state_clear_cycle(attr_list[i].value.u16);
+        break;
+      case SAI_DTEL_ATTR_LATENCY_SENSITIVITY:
+        req.set_latency_sensitivity(attr_list[i].value.u8);
+        break;
+      case SAI_DTEL_ATTR_SINK_PORT_LIST:
+        req.mutable_sink_port_list()->Add(
+            attr_list[i].value.objlist.list,
+            attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
+        break;
+    }
+  }
+  grpc::Status status = dtel->CreateDtel(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  *dtel_id = resp.oid();
+
   return translator->create(SAI_OBJECT_TYPE_DTEL, dtel_id, switch_id,
                             attr_count, attr_list);
 }
 
 sai_status_t l_remove_dtel(sai_object_id_t dtel_id) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return translator->remove(SAI_OBJECT_TYPE_DTEL, dtel_id);
 }
 
 sai_status_t l_set_dtel_attribute(sai_object_id_t dtel_id,
                                   const sai_attribute_t *attr) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return translator->set_attribute(SAI_OBJECT_TYPE_DTEL, dtel_id, attr);
 }
 
 sai_status_t l_get_dtel_attribute(sai_object_id_t dtel_id, uint32_t attr_count,
                                   sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return translator->get_attribute(SAI_OBJECT_TYPE_DTEL, dtel_id, attr_count,
                                    attr_list);
 }
@@ -73,6 +126,38 @@ sai_status_t l_create_dtel_queue_report(sai_object_id_t *dtel_queue_report_id,
                                         uint32_t attr_count,
                                         const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  lemming::dataplane::sai::CreateDtelQueueReportRequest req;
+  lemming::dataplane::sai::CreateDtelQueueReportResponse resp;
+  grpc::ClientContext context;
+  req.set_switch_(switch_id);
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_DTEL_QUEUE_REPORT_ATTR_QUEUE_ID:
+        req.set_queue_id(attr_list[i].value.oid);
+        break;
+      case SAI_DTEL_QUEUE_REPORT_ATTR_DEPTH_THRESHOLD:
+        req.set_depth_threshold(attr_list[i].value.u32);
+        break;
+      case SAI_DTEL_QUEUE_REPORT_ATTR_LATENCY_THRESHOLD:
+        req.set_latency_threshold(attr_list[i].value.u32);
+        break;
+      case SAI_DTEL_QUEUE_REPORT_ATTR_BREACH_QUOTA:
+        req.set_breach_quota(attr_list[i].value.u32);
+        break;
+      case SAI_DTEL_QUEUE_REPORT_ATTR_TAIL_DROP:
+        req.set_tail_drop(attr_list[i].value.booldata);
+        break;
+    }
+  }
+  grpc::Status status = dtel->CreateDtelQueueReport(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  *dtel_queue_report_id = resp.oid();
+
   return translator->create(SAI_OBJECT_TYPE_DTEL_QUEUE_REPORT,
                             dtel_queue_report_id, switch_id, attr_count,
                             attr_list);
@@ -80,6 +165,7 @@ sai_status_t l_create_dtel_queue_report(sai_object_id_t *dtel_queue_report_id,
 
 sai_status_t l_remove_dtel_queue_report(sai_object_id_t dtel_queue_report_id) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return translator->remove(SAI_OBJECT_TYPE_DTEL_QUEUE_REPORT,
                             dtel_queue_report_id);
 }
@@ -87,6 +173,7 @@ sai_status_t l_remove_dtel_queue_report(sai_object_id_t dtel_queue_report_id) {
 sai_status_t l_set_dtel_queue_report_attribute(
     sai_object_id_t dtel_queue_report_id, const sai_attribute_t *attr) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return translator->set_attribute(SAI_OBJECT_TYPE_DTEL_QUEUE_REPORT,
                                    dtel_queue_report_id, attr);
 }
@@ -95,6 +182,7 @@ sai_status_t l_get_dtel_queue_report_attribute(
     sai_object_id_t dtel_queue_report_id, uint32_t attr_count,
     sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return translator->get_attribute(SAI_OBJECT_TYPE_DTEL_QUEUE_REPORT,
                                    dtel_queue_report_id, attr_count, attr_list);
 }
@@ -104,6 +192,41 @@ sai_status_t l_create_dtel_int_session(sai_object_id_t *dtel_int_session_id,
                                        uint32_t attr_count,
                                        const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  lemming::dataplane::sai::CreateDtelIntSessionRequest req;
+  lemming::dataplane::sai::CreateDtelIntSessionResponse resp;
+  grpc::ClientContext context;
+  req.set_switch_(switch_id);
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_DTEL_INT_SESSION_ATTR_MAX_HOP_COUNT:
+        req.set_max_hop_count(attr_list[i].value.u8);
+        break;
+      case SAI_DTEL_INT_SESSION_ATTR_COLLECT_SWITCH_ID:
+        req.set_collect_switch_id(attr_list[i].value.booldata);
+        break;
+      case SAI_DTEL_INT_SESSION_ATTR_COLLECT_SWITCH_PORTS:
+        req.set_collect_switch_ports(attr_list[i].value.booldata);
+        break;
+      case SAI_DTEL_INT_SESSION_ATTR_COLLECT_INGRESS_TIMESTAMP:
+        req.set_collect_ingress_timestamp(attr_list[i].value.booldata);
+        break;
+      case SAI_DTEL_INT_SESSION_ATTR_COLLECT_EGRESS_TIMESTAMP:
+        req.set_collect_egress_timestamp(attr_list[i].value.booldata);
+        break;
+      case SAI_DTEL_INT_SESSION_ATTR_COLLECT_QUEUE_INFO:
+        req.set_collect_queue_info(attr_list[i].value.booldata);
+        break;
+    }
+  }
+  grpc::Status status = dtel->CreateDtelIntSession(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  *dtel_int_session_id = resp.oid();
+
   return translator->create(SAI_OBJECT_TYPE_DTEL_INT_SESSION,
                             dtel_int_session_id, switch_id, attr_count,
                             attr_list);
@@ -111,6 +234,7 @@ sai_status_t l_create_dtel_int_session(sai_object_id_t *dtel_int_session_id,
 
 sai_status_t l_remove_dtel_int_session(sai_object_id_t dtel_int_session_id) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return translator->remove(SAI_OBJECT_TYPE_DTEL_INT_SESSION,
                             dtel_int_session_id);
 }
@@ -118,6 +242,7 @@ sai_status_t l_remove_dtel_int_session(sai_object_id_t dtel_int_session_id) {
 sai_status_t l_set_dtel_int_session_attribute(
     sai_object_id_t dtel_int_session_id, const sai_attribute_t *attr) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return translator->set_attribute(SAI_OBJECT_TYPE_DTEL_INT_SESSION,
                                    dtel_int_session_id, attr);
 }
@@ -126,6 +251,7 @@ sai_status_t l_get_dtel_int_session_attribute(
     sai_object_id_t dtel_int_session_id, uint32_t attr_count,
     sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return translator->get_attribute(SAI_OBJECT_TYPE_DTEL_INT_SESSION,
                                    dtel_int_session_id, attr_count, attr_list);
 }
@@ -134,6 +260,35 @@ sai_status_t l_create_dtel_report_session(
     sai_object_id_t *dtel_report_session_id, sai_object_id_t switch_id,
     uint32_t attr_count, const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  lemming::dataplane::sai::CreateDtelReportSessionRequest req;
+  lemming::dataplane::sai::CreateDtelReportSessionResponse resp;
+  grpc::ClientContext context;
+  req.set_switch_(switch_id);
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_DTEL_REPORT_SESSION_ATTR_SRC_IP:
+        req.set_src_ip(convert_from_ip_address(attr_list[i].value.ipaddr));
+        break;
+      case SAI_DTEL_REPORT_SESSION_ATTR_VIRTUAL_ROUTER_ID:
+        req.set_virtual_router_id(attr_list[i].value.oid);
+        break;
+      case SAI_DTEL_REPORT_SESSION_ATTR_TRUNCATE_SIZE:
+        req.set_truncate_size(attr_list[i].value.u16);
+        break;
+      case SAI_DTEL_REPORT_SESSION_ATTR_UDP_DST_PORT:
+        req.set_udp_dst_port(attr_list[i].value.u16);
+        break;
+    }
+  }
+  grpc::Status status = dtel->CreateDtelReportSession(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  *dtel_report_session_id = resp.oid();
+
   return translator->create(SAI_OBJECT_TYPE_DTEL_REPORT_SESSION,
                             dtel_report_session_id, switch_id, attr_count,
                             attr_list);
@@ -142,6 +297,7 @@ sai_status_t l_create_dtel_report_session(
 sai_status_t l_remove_dtel_report_session(
     sai_object_id_t dtel_report_session_id) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return translator->remove(SAI_OBJECT_TYPE_DTEL_REPORT_SESSION,
                             dtel_report_session_id);
 }
@@ -149,6 +305,7 @@ sai_status_t l_remove_dtel_report_session(
 sai_status_t l_set_dtel_report_session_attribute(
     sai_object_id_t dtel_report_session_id, const sai_attribute_t *attr) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return translator->set_attribute(SAI_OBJECT_TYPE_DTEL_REPORT_SESSION,
                                    dtel_report_session_id, attr);
 }
@@ -157,6 +314,7 @@ sai_status_t l_get_dtel_report_session_attribute(
     sai_object_id_t dtel_report_session_id, uint32_t attr_count,
     sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return translator->get_attribute(SAI_OBJECT_TYPE_DTEL_REPORT_SESSION,
                                    dtel_report_session_id, attr_count,
                                    attr_list);
@@ -166,18 +324,47 @@ sai_status_t l_create_dtel_event(sai_object_id_t *dtel_event_id,
                                  sai_object_id_t switch_id, uint32_t attr_count,
                                  const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  lemming::dataplane::sai::CreateDtelEventRequest req;
+  lemming::dataplane::sai::CreateDtelEventResponse resp;
+  grpc::ClientContext context;
+  req.set_switch_(switch_id);
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_DTEL_EVENT_ATTR_TYPE:
+        req.set_type(static_cast<lemming::dataplane::sai::DtelEventType>(
+            attr_list[i].value.s32 + 1));
+        break;
+      case SAI_DTEL_EVENT_ATTR_REPORT_SESSION:
+        req.set_report_session(attr_list[i].value.oid);
+        break;
+      case SAI_DTEL_EVENT_ATTR_DSCP_VALUE:
+        req.set_dscp_value(attr_list[i].value.u8);
+        break;
+    }
+  }
+  grpc::Status status = dtel->CreateDtelEvent(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  *dtel_event_id = resp.oid();
+
   return translator->create(SAI_OBJECT_TYPE_DTEL_EVENT, dtel_event_id,
                             switch_id, attr_count, attr_list);
 }
 
 sai_status_t l_remove_dtel_event(sai_object_id_t dtel_event_id) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return translator->remove(SAI_OBJECT_TYPE_DTEL_EVENT, dtel_event_id);
 }
 
 sai_status_t l_set_dtel_event_attribute(sai_object_id_t dtel_event_id,
                                         const sai_attribute_t *attr) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return translator->set_attribute(SAI_OBJECT_TYPE_DTEL_EVENT, dtel_event_id,
                                    attr);
 }
@@ -186,6 +373,7 @@ sai_status_t l_get_dtel_event_attribute(sai_object_id_t dtel_event_id,
                                         uint32_t attr_count,
                                         sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return translator->get_attribute(SAI_OBJECT_TYPE_DTEL_EVENT, dtel_event_id,
                                    attr_count, attr_list);
 }

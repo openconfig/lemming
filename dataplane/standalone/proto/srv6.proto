@@ -7,6 +7,13 @@ import "dataplane/standalone/proto/common.proto";
 
 option go_package = "github.com/openconfig/lemming/proto/dataplane/sai";
 
+enum Srv6SidlistAttr {
+  SRV6_SIDLIST_ATTR_UNSPECIFIED = 0;
+  SRV6_SIDLIST_ATTR_TYPE = 1;
+  SRV6_SIDLIST_ATTR_TLV_LIST = 2;
+  SRV6_SIDLIST_ATTR_SEGMENT_LIST = 3;
+}
+
 enum MySidEntryAttr {
   MY_SID_ENTRY_ATTR_UNSPECIFIED = 0;
   MY_SID_ENTRY_ATTR_ENDPOINT_BEHAVIOR = 1;
@@ -19,11 +26,41 @@ enum MySidEntryAttr {
   MY_SID_ENTRY_ATTR_COUNTER_ID = 8;
 }
 
-enum Srv6SidlistAttr {
-  SRV6_SIDLIST_ATTR_UNSPECIFIED = 0;
-  SRV6_SIDLIST_ATTR_TYPE = 1;
-  SRV6_SIDLIST_ATTR_TLV_LIST = 2;
-  SRV6_SIDLIST_ATTR_SEGMENT_LIST = 3;
+message CreateSrv6SidlistRequest {
+  uint64 switch = 1;
+
+  Srv6SidlistType type = 2;
+  repeated TLVEntry tlv_list = 3;
+  repeated bytes segment_list = 4;
+}
+
+message CreateSrv6SidlistResponse {
+  uint64 oid = 1;
+}
+
+message RemoveSrv6SidlistRequest {
+  uint64 oid = 1;
+}
+
+message RemoveSrv6SidlistResponse {}
+
+message SetSrv6SidlistAttributeRequest {
+  uint64 oid = 1;
+  oneof attr {
+    TlvEntryList tlv_list = 2;
+    BytesList segment_list = 3;
+  }
+}
+
+message SetSrv6SidlistAttributeResponse {}
+
+message GetSrv6SidlistAttributeRequest {
+  uint64 oid = 1;
+  Srv6SidlistAttr attr_type = 2;
+}
+
+message GetSrv6SidlistAttributeResponse {
+  Srv6SidlistAttribute attr = 1;
 }
 
 message CreateMySidEntryRequest {
@@ -72,52 +109,7 @@ message GetMySidEntryAttributeResponse {
   MySidEntryAttribute attr = 1;
 }
 
-message CreateSrv6SidlistRequest {
-  uint64 switch = 1;
-
-  Srv6SidlistType type = 2;
-  repeated TLVEntry tlv_list = 3;
-  repeated bytes segment_list = 4;
-}
-
-message CreateSrv6SidlistResponse {
-  uint64 oid = 1;
-}
-
-message RemoveSrv6SidlistRequest {
-  uint64 oid = 1;
-}
-
-message RemoveSrv6SidlistResponse {}
-
-message SetSrv6SidlistAttributeRequest {
-  uint64 oid = 1;
-  oneof attr {
-    TlvEntryList tlv_list = 2;
-    BytesList segment_list = 3;
-  }
-}
-
-message SetSrv6SidlistAttributeResponse {}
-
-message GetSrv6SidlistAttributeRequest {
-  uint64 oid = 1;
-  Srv6SidlistAttr attr_type = 2;
-}
-
-message GetSrv6SidlistAttributeResponse {
-  Srv6SidlistAttribute attr = 1;
-}
-
 service Srv6 {
-  rpc CreateMySidEntry(CreateMySidEntryRequest)
-      returns (CreateMySidEntryResponse) {}
-  rpc RemoveMySidEntry(RemoveMySidEntryRequest)
-      returns (RemoveMySidEntryResponse) {}
-  rpc SetMySidEntryAttribute(SetMySidEntryAttributeRequest)
-      returns (SetMySidEntryAttributeResponse) {}
-  rpc GetMySidEntryAttribute(GetMySidEntryAttributeRequest)
-      returns (GetMySidEntryAttributeResponse) {}
   rpc CreateSrv6Sidlist(CreateSrv6SidlistRequest)
       returns (CreateSrv6SidlistResponse) {}
   rpc RemoveSrv6Sidlist(RemoveSrv6SidlistRequest)
@@ -126,4 +118,12 @@ service Srv6 {
       returns (SetSrv6SidlistAttributeResponse) {}
   rpc GetSrv6SidlistAttribute(GetSrv6SidlistAttributeRequest)
       returns (GetSrv6SidlistAttributeResponse) {}
+  rpc CreateMySidEntry(CreateMySidEntryRequest)
+      returns (CreateMySidEntryResponse) {}
+  rpc RemoveMySidEntry(RemoveMySidEntryRequest)
+      returns (RemoveMySidEntryResponse) {}
+  rpc SetMySidEntryAttribute(SetMySidEntryAttributeRequest)
+      returns (SetMySidEntryAttributeResponse) {}
+  rpc GetMySidEntryAttribute(GetMySidEntryAttributeRequest)
+      returns (GetMySidEntryAttributeResponse) {}
 }

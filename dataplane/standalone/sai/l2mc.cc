@@ -1,3 +1,5 @@
+
+
 // Copyright 2023 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +18,8 @@
 
 #include <glog/logging.h>
 
+#include "dataplane/standalone/proto/common.pb.h"
+#include "dataplane/standalone/proto/l2mc.pb.h"
 #include "dataplane/standalone/sai/common.h"
 #include "dataplane/standalone/sai/entry.h"
 
@@ -30,6 +34,29 @@ sai_status_t l_create_l2mc_entry(const sai_l2mc_entry_t *l2mc_entry,
                                  uint32_t attr_count,
                                  const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  lemming::dataplane::sai::CreateL2mcEntryRequest req;
+  lemming::dataplane::sai::CreateL2mcEntryResponse resp;
+  grpc::ClientContext context;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_L2MC_ENTRY_ATTR_PACKET_ACTION:
+        req.set_packet_action(
+            static_cast<lemming::dataplane::sai::PacketAction>(
+                attr_list[i].value.s32 + 1));
+        break;
+      case SAI_L2MC_ENTRY_ATTR_OUTPUT_GROUP_ID:
+        req.set_output_group_id(attr_list[i].value.oid);
+        break;
+    }
+  }
+  grpc::Status status = l2mc->CreateL2mcEntry(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+
   common_entry_t entry = {.l2mc_entry = l2mc_entry};
   return translator->create(SAI_OBJECT_TYPE_L2MC_ENTRY, entry, attr_count,
                             attr_list);

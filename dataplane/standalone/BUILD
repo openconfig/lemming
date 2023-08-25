@@ -64,6 +64,8 @@ cc_library(
         "//dataplane/standalone/sai",
         "@com_github_google_glog//:glog",
         "@com_github_grpc_grpc//:grpc++",
+        "//dataplane/standalone/proto:sai_cc_proto",
+        "//dataplane/standalone/proto:sai_cc_grpc",
     ],
     alwayslink = True,
 )

@@ -7,6 +7,12 @@ import "dataplane/standalone/proto/common.proto";
 
 option go_package = "github.com/openconfig/lemming/proto/dataplane/sai";
 
+enum TunnelMapAttr {
+  TUNNEL_MAP_ATTR_UNSPECIFIED = 0;
+  TUNNEL_MAP_ATTR_TYPE = 1;
+  TUNNEL_MAP_ATTR_ENTRY_LIST = 2;
+}
+
 enum TunnelAttr {
   TUNNEL_ATTR_UNSPECIFIED = 0;
   TUNNEL_ATTR_TYPE = 1;
@@ -36,10 +42,18 @@ enum TunnelAttr {
   TUNNEL_ATTR_IPSEC_SA_PORT_LIST = 25;
 }
 
-enum TunnelMapAttr {
-  TUNNEL_MAP_ATTR_UNSPECIFIED = 0;
-  TUNNEL_MAP_ATTR_TYPE = 1;
-  TUNNEL_MAP_ATTR_ENTRY_LIST = 2;
+enum TunnelTermTableEntryAttr {
+  TUNNEL_TERM_TABLE_ENTRY_ATTR_UNSPECIFIED = 0;
+  TUNNEL_TERM_TABLE_ENTRY_ATTR_VR_ID = 1;
+  TUNNEL_TERM_TABLE_ENTRY_ATTR_TYPE = 2;
+  TUNNEL_TERM_TABLE_ENTRY_ATTR_DST_IP = 3;
+  TUNNEL_TERM_TABLE_ENTRY_ATTR_DST_IP_MASK = 4;
+  TUNNEL_TERM_TABLE_ENTRY_ATTR_SRC_IP = 5;
+  TUNNEL_TERM_TABLE_ENTRY_ATTR_SRC_IP_MASK = 6;
+  TUNNEL_TERM_TABLE_ENTRY_ATTR_TUNNEL_TYPE = 7;
+  TUNNEL_TERM_TABLE_ENTRY_ATTR_ACTION_TUNNEL_ID = 8;
+  TUNNEL_TERM_TABLE_ENTRY_ATTR_IP_ADDR_FAMILY = 9;
+  TUNNEL_TERM_TABLE_ENTRY_ATTR_IPSEC_VERIFIED = 10;
 }
 
 enum TunnelMapEntryAttr {
@@ -62,18 +76,29 @@ enum TunnelMapEntryAttr {
   TUNNEL_MAP_ENTRY_ATTR_VSID_ID_VALUE = 16;
 }
 
-enum TunnelTermTableEntryAttr {
-  TUNNEL_TERM_TABLE_ENTRY_ATTR_UNSPECIFIED = 0;
-  TUNNEL_TERM_TABLE_ENTRY_ATTR_VR_ID = 1;
-  TUNNEL_TERM_TABLE_ENTRY_ATTR_TYPE = 2;
-  TUNNEL_TERM_TABLE_ENTRY_ATTR_DST_IP = 3;
-  TUNNEL_TERM_TABLE_ENTRY_ATTR_DST_IP_MASK = 4;
-  TUNNEL_TERM_TABLE_ENTRY_ATTR_SRC_IP = 5;
-  TUNNEL_TERM_TABLE_ENTRY_ATTR_SRC_IP_MASK = 6;
-  TUNNEL_TERM_TABLE_ENTRY_ATTR_TUNNEL_TYPE = 7;
-  TUNNEL_TERM_TABLE_ENTRY_ATTR_ACTION_TUNNEL_ID = 8;
-  TUNNEL_TERM_TABLE_ENTRY_ATTR_IP_ADDR_FAMILY = 9;
-  TUNNEL_TERM_TABLE_ENTRY_ATTR_IPSEC_VERIFIED = 10;
+message CreateTunnelMapRequest {
+  uint64 switch = 1;
+
+  TunnelMapType type = 2;
+}
+
+message CreateTunnelMapResponse {
+  uint64 oid = 1;
+}
+
+message RemoveTunnelMapRequest {
+  uint64 oid = 1;
+}
+
+message RemoveTunnelMapResponse {}
+
+message GetTunnelMapAttributeRequest {
+  uint64 oid = 1;
+  TunnelMapAttr attr_type = 2;
+}
+
+message GetTunnelMapAttributeResponse {
+  TunnelMapAttribute attr = 1;
 }
 
 message CreateTunnelRequest {
@@ -145,71 +170,6 @@ message GetTunnelAttributeResponse {
   TunnelAttribute attr = 1;
 }
 
-message CreateTunnelMapRequest {
-  uint64 switch = 1;
-
-  TunnelMapType type = 2;
-}
-
-message CreateTunnelMapResponse {
-  uint64 oid = 1;
-}
-
-message RemoveTunnelMapRequest {
-  uint64 oid = 1;
-}
-
-message RemoveTunnelMapResponse {}
-
-message GetTunnelMapAttributeRequest {
-  uint64 oid = 1;
-  TunnelMapAttr attr_type = 2;
-}
-
-message GetTunnelMapAttributeResponse {
-  TunnelMapAttribute attr = 1;
-}
-
-message CreateTunnelMapEntryRequest {
-  uint64 switch = 1;
-
-  TunnelMapType tunnel_map_type = 2;
-  uint64 tunnel_map = 3;
-  uint32 oecn_key = 4;
-  uint32 oecn_value = 5;
-  uint32 uecn_key = 6;
-  uint32 uecn_value = 7;
-  uint32 vlan_id_key = 8;
-  uint32 vlan_id_value = 9;
-  uint32 vni_id_key = 10;
-  uint32 vni_id_value = 11;
-  uint64 bridge_id_key = 12;
-  uint64 bridge_id_value = 13;
-  uint64 virtual_router_id_key = 14;
-  uint64 virtual_router_id_value = 15;
-  uint32 vsid_id_key = 16;
-  uint32 vsid_id_value = 17;
-}
-
-message CreateTunnelMapEntryResponse {
-  uint64 oid = 1;
-}
-
-message RemoveTunnelMapEntryRequest {
-  uint64 oid = 1;
-}
-
-message RemoveTunnelMapEntryResponse {}
-
-message GetTunnelMapEntryAttributeRequest {
-  uint64 oid = 1;
-  TunnelMapEntryAttr attr_type = 2;
-}
-
-message GetTunnelMapEntryAttributeResponse {
-  TunnelMapEntryAttribute attr = 1;
-}
-
 message CreateTunnelTermTableEntryRequest {
   uint64 switch = 1;
 
@@ -252,25 +212,59 @@ message GetTunnelTermTableEntryAttributeResponse {
   TunnelTermTableEntryAttribute attr = 1;
 }
 
+message CreateTunnelMapEntryRequest {
+  uint64 switch = 1;
+
+  TunnelMapType tunnel_map_type = 2;
+  uint64 tunnel_map = 3;
+  uint32 oecn_key = 4;
+  uint32 oecn_value = 5;
+  uint32 uecn_key = 6;
+  uint32 uecn_value = 7;
+  uint32 vlan_id_key = 8;
+  uint32 vlan_id_value = 9;
+  uint32 vni_id_key = 10;
+  uint32 vni_id_value = 11;
+  uint64 bridge_id_key = 12;
+  uint64 bridge_id_value = 13;
+  uint64 virtual_router_id_key = 14;
+  uint64 virtual_router_id_value = 15;
+  uint32 vsid_id_key = 16;
+  uint32 vsid_id_value = 17;
+}
+
+message CreateTunnelMapEntryResponse {
+  uint64 oid = 1;
+}
+
+message RemoveTunnelMapEntryRequest {
+  uint64 oid = 1;
+}
+
+message RemoveTunnelMapEntryResponse {}
+
+message GetTunnelMapEntryAttributeRequest {
+  uint64 oid = 1;
+  TunnelMapEntryAttr attr_type = 2;
+}
+
+message GetTunnelMapEntryAttributeResponse {
+  TunnelMapEntryAttribute attr = 1;
+}
+
 service Tunnel {
-  rpc CreateTunnel(CreateTunnelRequest) returns (CreateTunnelResponse) {}
-  rpc RemoveTunnel(RemoveTunnelRequest) returns (RemoveTunnelResponse) {}
-  rpc SetTunnelAttribute(SetTunnelAttributeRequest)
-      returns (SetTunnelAttributeResponse) {}
-  rpc GetTunnelAttribute(GetTunnelAttributeRequest)
-      returns (GetTunnelAttributeResponse) {}
   rpc CreateTunnelMap(CreateTunnelMapRequest)
       returns (CreateTunnelMapResponse) {}
   rpc RemoveTunnelMap(RemoveTunnelMapRequest)
       returns (RemoveTunnelMapResponse) {}
   rpc GetTunnelMapAttribute(GetTunnelMapAttributeRequest)
       returns (GetTunnelMapAttributeResponse) {}
-  rpc CreateTunnelMapEntry(CreateTunnelMapEntryRequest)
-      returns (CreateTunnelMapEntryResponse) {}
-  rpc RemoveTunnelMapEntry(RemoveTunnelMapEntryRequest)
-      returns (RemoveTunnelMapEntryResponse) {}
-  rpc GetTunnelMapEntryAttribute(GetTunnelMapEntryAttributeRequest)
-      returns (GetTunnelMapEntryAttributeResponse) {}
+  rpc CreateTunnel(CreateTunnelRequest) returns (CreateTunnelResponse) {}
+  rpc RemoveTunnel(RemoveTunnelRequest) returns (RemoveTunnelResponse) {}
+  rpc SetTunnelAttribute(SetTunnelAttributeRequest)
+      returns (SetTunnelAttributeResponse) {}
+  rpc GetTunnelAttribute(GetTunnelAttributeRequest)
+      returns (GetTunnelAttributeResponse) {}
   rpc CreateTunnelTermTableEntry(CreateTunnelTermTableEntryRequest)
       returns (CreateTunnelTermTableEntryResponse) {}
   rpc RemoveTunnelTermTableEntry(RemoveTunnelTermTableEntryRequest)
@@ -279,4 +273,10 @@ service Tunnel {
       returns (SetTunnelTermTableEntryAttributeResponse) {}
   rpc GetTunnelTermTableEntryAttribute(GetTunnelTermTableEntryAttributeRequest)
       returns (GetTunnelTermTableEntryAttributeResponse) {}
+  rpc CreateTunnelMapEntry(CreateTunnelMapEntryRequest)
+      returns (CreateTunnelMapEntryResponse) {}
+  rpc RemoveTunnelMapEntry(RemoveTunnelMapEntryRequest)
+      returns (RemoveTunnelMapEntryResponse) {}
+  rpc GetTunnelMapEntryAttribute(GetTunnelMapEntryAttributeRequest)
+      returns (GetTunnelMapEntryAttributeResponse) {}
 }

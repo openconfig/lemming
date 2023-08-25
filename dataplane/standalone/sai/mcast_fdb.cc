@@ -1,3 +1,5 @@
+
+
 // Copyright 2023 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +18,8 @@
 
 #include <glog/logging.h>
 
+#include "dataplane/standalone/proto/common.pb.h"
+#include "dataplane/standalone/proto/mcast_fdb.pb.h"
 #include "dataplane/standalone/sai/common.h"
 #include "dataplane/standalone/sai/entry.h"
 
@@ -30,6 +34,32 @@ sai_status_t l_create_mcast_fdb_entry(
     const sai_mcast_fdb_entry_t *mcast_fdb_entry, uint32_t attr_count,
     const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  lemming::dataplane::sai::CreateMcastFdbEntryRequest req;
+  lemming::dataplane::sai::CreateMcastFdbEntryResponse resp;
+  grpc::ClientContext context;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_MCAST_FDB_ENTRY_ATTR_GROUP_ID:
+        req.set_group_id(attr_list[i].value.oid);
+        break;
+      case SAI_MCAST_FDB_ENTRY_ATTR_PACKET_ACTION:
+        req.set_packet_action(
+            static_cast<lemming::dataplane::sai::PacketAction>(
+                attr_list[i].value.s32 + 1));
+        break;
+      case SAI_MCAST_FDB_ENTRY_ATTR_META_DATA:
+        req.set_meta_data(attr_list[i].value.u32);
+        break;
+    }
+  }
+  grpc::Status status = mcast_fdb->CreateMcastFdbEntry(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+
   common_entry_t entry = {.mcast_fdb_entry = mcast_fdb_entry};
   return translator->create(SAI_OBJECT_TYPE_MCAST_FDB_ENTRY, entry, attr_count,
                             attr_list);

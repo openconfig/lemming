@@ -18,6 +18,14 @@ enum BufferPoolAttr {
   BUFFER_POOL_ATTR_WRED_PROFILE_ID = 7;
 }
 
+enum IngressPriorityGroupAttr {
+  INGRESS_PRIORITY_GROUP_ATTR_UNSPECIFIED = 0;
+  INGRESS_PRIORITY_GROUP_ATTR_BUFFER_PROFILE = 1;
+  INGRESS_PRIORITY_GROUP_ATTR_PORT = 2;
+  INGRESS_PRIORITY_GROUP_ATTR_TAM = 3;
+  INGRESS_PRIORITY_GROUP_ATTR_INDEX = 4;
+}
+
 enum BufferProfileAttr {
   BUFFER_PROFILE_ATTR_UNSPECIFIED = 0;
   BUFFER_PROFILE_ATTR_POOL_ID = 1;
@@ -28,14 +36,6 @@ enum BufferProfileAttr {
   BUFFER_PROFILE_ATTR_XOFF_TH = 6;
   BUFFER_PROFILE_ATTR_XON_TH = 7;
   BUFFER_PROFILE_ATTR_XON_OFFSET_TH = 8;
-}
-
-enum IngressPriorityGroupAttr {
-  INGRESS_PRIORITY_GROUP_ATTR_UNSPECIFIED = 0;
-  INGRESS_PRIORITY_GROUP_ATTR_BUFFER_PROFILE = 1;
-  INGRESS_PRIORITY_GROUP_ATTR_PORT = 2;
-  INGRESS_PRIORITY_GROUP_ATTR_TAM = 3;
-  INGRESS_PRIORITY_GROUP_ATTR_INDEX = 4;
 }
 
 message CreateBufferPoolRequest {
@@ -78,6 +78,44 @@ message GetBufferPoolAttributeRequest {
 
 message GetBufferPoolAttributeResponse {
   BufferPoolAttribute attr = 1;
+}
+
+message CreateIngressPriorityGroupRequest {
+  uint64 switch = 1;
+
+  uint64 buffer_profile = 2;
+  uint64 port = 3;
+  repeated uint64 tam = 4;
+  uint32 index = 5;
+}
+
+message CreateIngressPriorityGroupResponse {
+  uint64 oid = 1;
+}
+
+message RemoveIngressPriorityGroupRequest {
+  uint64 oid = 1;
+}
+
+message RemoveIngressPriorityGroupResponse {}
+
+message SetIngressPriorityGroupAttributeRequest {
+  uint64 oid = 1;
+  oneof attr {
+    uint64 buffer_profile = 2;
+    Uint64List tam = 3;
+  }
+}
+
+message SetIngressPriorityGroupAttributeResponse {}
+
+message GetIngressPriorityGroupAttributeRequest {
+  uint64 oid = 1;
+  IngressPriorityGroupAttr attr_type = 2;
+}
+
+message GetIngressPriorityGroupAttributeResponse {
+  IngressPriorityGroupAttribute attr = 1;
 }
 
 message CreateBufferProfileRequest {
@@ -126,44 +164,6 @@ message GetBufferProfileAttributeResponse {
   BufferProfileAttribute attr = 1;
 }
 
-message CreateIngressPriorityGroupRequest {
-  uint64 switch = 1;
-
-  uint64 buffer_profile = 2;
-  uint64 port = 3;
-  repeated uint64 tam = 4;
-  uint32 index = 5;
-}
-
-message CreateIngressPriorityGroupResponse {
-  uint64 oid = 1;
-}
-
-message RemoveIngressPriorityGroupRequest {
-  uint64 oid = 1;
-}
-
-message RemoveIngressPriorityGroupResponse {}
-
-message SetIngressPriorityGroupAttributeRequest {
-  uint64 oid = 1;
-  oneof attr {
-    uint64 buffer_profile = 2;
-    Uint64List tam = 3;
-  }
-}
-
-message SetIngressPriorityGroupAttributeResponse {}
-
-message GetIngressPriorityGroupAttributeRequest {
-  uint64 oid = 1;
-  IngressPriorityGroupAttr attr_type = 2;
-}
-
-message GetIngressPriorityGroupAttributeResponse {
-  IngressPriorityGroupAttribute attr = 1;
-}
-
 service Buffer {
   rpc CreateBufferPool(CreateBufferPoolRequest)
       returns (CreateBufferPoolResponse) {}
@@ -173,14 +173,6 @@ service Buffer {
       returns (SetBufferPoolAttributeResponse) {}
   rpc GetBufferPoolAttribute(GetBufferPoolAttributeRequest)
       returns (GetBufferPoolAttributeResponse) {}
-  rpc CreateBufferProfile(CreateBufferProfileRequest)
-      returns (CreateBufferProfileResponse) {}
-  rpc RemoveBufferProfile(RemoveBufferProfileRequest)
-      returns (RemoveBufferProfileResponse) {}
-  rpc SetBufferProfileAttribute(SetBufferProfileAttributeRequest)
-      returns (SetBufferProfileAttributeResponse) {}
-  rpc GetBufferProfileAttribute(GetBufferProfileAttributeRequest)
-      returns (GetBufferProfileAttributeResponse) {}
   rpc CreateIngressPriorityGroup(CreateIngressPriorityGroupRequest)
       returns (CreateIngressPriorityGroupResponse) {}
   rpc RemoveIngressPriorityGroup(RemoveIngressPriorityGroupRequest)
@@ -189,4 +181,12 @@ service Buffer {
       returns (SetIngressPriorityGroupAttributeResponse) {}
   rpc GetIngressPriorityGroupAttribute(GetIngressPriorityGroupAttributeRequest)
       returns (GetIngressPriorityGroupAttributeResponse) {}
+  rpc CreateBufferProfile(CreateBufferProfileRequest)
+      returns (CreateBufferProfileResponse) {}
+  rpc RemoveBufferProfile(RemoveBufferProfileRequest)
+      returns (RemoveBufferProfileResponse) {}
+  rpc SetBufferProfileAttribute(SetBufferProfileAttributeRequest)
+      returns (SetBufferProfileAttributeResponse) {}
+  rpc GetBufferProfileAttribute(GetBufferProfileAttributeRequest)
+      returns (GetBufferProfileAttributeResponse) {}
 }

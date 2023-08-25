@@ -9,6 +9,8 @@ cc_library(
     deps = [
         ":entry",
         "//dataplane/standalone:translator",
+        "//dataplane/standalone/proto:sai_cc_proto",
+        "//dataplane/standalone/proto:sai_cc_grpc",
         "@com_github_google_glog//:glog",
         "@com_github_opencomputeproject_sai//:sai",
     ],

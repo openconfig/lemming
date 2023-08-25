@@ -1,3 +1,5 @@
+
+
 // Copyright 2023 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +18,8 @@
 
 #include <glog/logging.h>
 
+#include "dataplane/standalone/proto/common.pb.h"
+#include "dataplane/standalone/proto/route.pb.h"
 #include "dataplane/standalone/sai/common.h"
 #include "dataplane/standalone/sai/entry.h"
 
@@ -34,6 +38,39 @@ sai_status_t l_create_route_entry(const sai_route_entry_t *route_entry,
                                   uint32_t attr_count,
                                   const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  lemming::dataplane::sai::CreateRouteEntryRequest req;
+  lemming::dataplane::sai::CreateRouteEntryResponse resp;
+  grpc::ClientContext context;
+
+  *req.mutable_entry() = convert_from_route_entry(*route_entry);
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_ROUTE_ENTRY_ATTR_PACKET_ACTION:
+        req.set_packet_action(
+            static_cast<lemming::dataplane::sai::PacketAction>(
+                attr_list[i].value.s32 + 1));
+        break;
+      case SAI_ROUTE_ENTRY_ATTR_USER_TRAP_ID:
+        req.set_user_trap_id(attr_list[i].value.oid);
+        break;
+      case SAI_ROUTE_ENTRY_ATTR_NEXT_HOP_ID:
+        req.set_next_hop_id(attr_list[i].value.oid);
+        break;
+      case SAI_ROUTE_ENTRY_ATTR_META_DATA:
+        req.set_meta_data(attr_list[i].value.u32);
+        break;
+      case SAI_ROUTE_ENTRY_ATTR_COUNTER_ID:
+        req.set_counter_id(attr_list[i].value.oid);
+        break;
+    }
+  }
+  grpc::Status status = route->CreateRouteEntry(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+
   common_entry_t entry = {.route_entry = route_entry};
   return translator->create(SAI_OBJECT_TYPE_ROUTE_ENTRY, entry, attr_count,
                             attr_list);

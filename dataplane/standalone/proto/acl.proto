@@ -7,13 +7,108 @@ import "dataplane/standalone/proto/common.proto";
 
 option go_package = "github.com/openconfig/lemming/proto/dataplane/sai";
 
-enum AclCounterAttr {
-  ACL_COUNTER_ATTR_UNSPECIFIED = 0;
-  ACL_COUNTER_ATTR_TABLE_ID = 1;
-  ACL_COUNTER_ATTR_ENABLE_PACKET_COUNT = 2;
-  ACL_COUNTER_ATTR_ENABLE_BYTE_COUNT = 3;
-  ACL_COUNTER_ATTR_PACKETS = 4;
-  ACL_COUNTER_ATTR_BYTES = 5;
+enum AclTableAttr {
+  ACL_TABLE_ATTR_UNSPECIFIED = 0;
+  ACL_TABLE_ATTR_ACL_STAGE = 1;
+  ACL_TABLE_ATTR_ACL_BIND_POINT_TYPE_LIST = 2;
+  ACL_TABLE_ATTR_SIZE = 3;
+  ACL_TABLE_ATTR_ACL_ACTION_TYPE_LIST = 4;
+  ACL_TABLE_ATTR_FIELD_SRC_IPV6 = 5;
+  ACL_TABLE_ATTR_FIELD_SRC_IPV6_WORD3 = 6;
+  ACL_TABLE_ATTR_FIELD_SRC_IPV6_WORD2 = 7;
+  ACL_TABLE_ATTR_FIELD_SRC_IPV6_WORD1 = 8;
+  ACL_TABLE_ATTR_FIELD_SRC_IPV6_WORD0 = 9;
+  ACL_TABLE_ATTR_FIELD_DST_IPV6 = 10;
+  ACL_TABLE_ATTR_FIELD_DST_IPV6_WORD3 = 11;
+  ACL_TABLE_ATTR_FIELD_DST_IPV6_WORD2 = 12;
+  ACL_TABLE_ATTR_FIELD_DST_IPV6_WORD1 = 13;
+  ACL_TABLE_ATTR_FIELD_DST_IPV6_WORD0 = 14;
+  ACL_TABLE_ATTR_FIELD_INNER_SRC_IPV6 = 15;
+  ACL_TABLE_ATTR_FIELD_INNER_DST_IPV6 = 16;
+  ACL_TABLE_ATTR_FIELD_SRC_MAC = 17;
+  ACL_TABLE_ATTR_FIELD_DST_MAC = 18;
+  ACL_TABLE_ATTR_FIELD_SRC_IP = 19;
+  ACL_TABLE_ATTR_FIELD_DST_IP = 20;
+  ACL_TABLE_ATTR_FIELD_INNER_SRC_IP = 21;
+  ACL_TABLE_ATTR_FIELD_INNER_DST_IP = 22;
+  ACL_TABLE_ATTR_FIELD_IN_PORTS = 23;
+  ACL_TABLE_ATTR_FIELD_OUT_PORTS = 24;
+  ACL_TABLE_ATTR_FIELD_IN_PORT = 25;
+  ACL_TABLE_ATTR_FIELD_OUT_PORT = 26;
+  ACL_TABLE_ATTR_FIELD_SRC_PORT = 27;
+  ACL_TABLE_ATTR_FIELD_OUTER_VLAN_ID = 28;
+  ACL_TABLE_ATTR_FIELD_OUTER_VLAN_PRI = 29;
+  ACL_TABLE_ATTR_FIELD_OUTER_VLAN_CFI = 30;
+  ACL_TABLE_ATTR_FIELD_INNER_VLAN_ID = 31;
+  ACL_TABLE_ATTR_FIELD_INNER_VLAN_PRI = 32;
+  ACL_TABLE_ATTR_FIELD_INNER_VLAN_CFI = 33;
+  ACL_TABLE_ATTR_FIELD_L4_SRC_PORT = 34;
+  ACL_TABLE_ATTR_FIELD_L4_DST_PORT = 35;
+  ACL_TABLE_ATTR_FIELD_INNER_L4_SRC_PORT = 36;
+  ACL_TABLE_ATTR_FIELD_INNER_L4_DST_PORT = 37;
+  ACL_TABLE_ATTR_FIELD_ETHER_TYPE = 38;
+  ACL_TABLE_ATTR_FIELD_INNER_ETHER_TYPE = 39;
+  ACL_TABLE_ATTR_FIELD_IP_PROTOCOL = 40;
+  ACL_TABLE_ATTR_FIELD_INNER_IP_PROTOCOL = 41;
+  ACL_TABLE_ATTR_FIELD_IP_IDENTIFICATION = 42;
+  ACL_TABLE_ATTR_FIELD_DSCP = 43;
+  ACL_TABLE_ATTR_FIELD_ECN = 44;
+  ACL_TABLE_ATTR_FIELD_TTL = 45;
+  ACL_TABLE_ATTR_FIELD_TOS = 46;
+  ACL_TABLE_ATTR_FIELD_IP_FLAGS = 47;
+  ACL_TABLE_ATTR_FIELD_TCP_FLAGS = 48;
+  ACL_TABLE_ATTR_FIELD_ACL_IP_TYPE = 49;
+  ACL_TABLE_ATTR_FIELD_ACL_IP_FRAG = 50;
+  ACL_TABLE_ATTR_FIELD_IPV6_FLOW_LABEL = 51;
+  ACL_TABLE_ATTR_FIELD_TC = 52;
+  ACL_TABLE_ATTR_FIELD_ICMP_TYPE = 53;
+  ACL_TABLE_ATTR_FIELD_ICMP_CODE = 54;
+  ACL_TABLE_ATTR_FIELD_ICMPV6_TYPE = 55;
+  ACL_TABLE_ATTR_FIELD_ICMPV6_CODE = 56;
+  ACL_TABLE_ATTR_FIELD_PACKET_VLAN = 57;
+  ACL_TABLE_ATTR_FIELD_TUNNEL_VNI = 58;
+  ACL_TABLE_ATTR_FIELD_HAS_VLAN_TAG = 59;
+  ACL_TABLE_ATTR_FIELD_MACSEC_SCI = 60;
+  ACL_TABLE_ATTR_FIELD_MPLS_LABEL0_LABEL = 61;
+  ACL_TABLE_ATTR_FIELD_MPLS_LABEL0_TTL = 62;
+  ACL_TABLE_ATTR_FIELD_MPLS_LABEL0_EXP = 63;
+  ACL_TABLE_ATTR_FIELD_MPLS_LABEL0_BOS = 64;
+  ACL_TABLE_ATTR_FIELD_MPLS_LABEL1_LABEL = 65;
+  ACL_TABLE_ATTR_FIELD_MPLS_LABEL1_TTL = 66;
+  ACL_TABLE_ATTR_FIELD_MPLS_LABEL1_EXP = 67;
+  ACL_TABLE_ATTR_FIELD_MPLS_LABEL1_BOS = 68;
+  ACL_TABLE_ATTR_FIELD_MPLS_LABEL2_LABEL = 69;
+  ACL_TABLE_ATTR_FIELD_MPLS_LABEL2_TTL = 70;
+  ACL_TABLE_ATTR_FIELD_MPLS_LABEL2_EXP = 71;
+  ACL_TABLE_ATTR_FIELD_MPLS_LABEL2_BOS = 72;
+  ACL_TABLE_ATTR_FIELD_MPLS_LABEL3_LABEL = 73;
+  ACL_TABLE_ATTR_FIELD_MPLS_LABEL3_TTL = 74;
+  ACL_TABLE_ATTR_FIELD_MPLS_LABEL3_EXP = 75;
+  ACL_TABLE_ATTR_FIELD_MPLS_LABEL3_BOS = 76;
+  ACL_TABLE_ATTR_FIELD_MPLS_LABEL4_LABEL = 77;
+  ACL_TABLE_ATTR_FIELD_MPLS_LABEL4_TTL = 78;
+  ACL_TABLE_ATTR_FIELD_MPLS_LABEL4_EXP = 79;
+  ACL_TABLE_ATTR_FIELD_MPLS_LABEL4_BOS = 80;
+  ACL_TABLE_ATTR_FIELD_FDB_DST_USER_META = 81;
+  ACL_TABLE_ATTR_FIELD_ROUTE_DST_USER_META = 82;
+  ACL_TABLE_ATTR_FIELD_NEIGHBOR_DST_USER_META = 83;
+  ACL_TABLE_ATTR_FIELD_PORT_USER_META = 84;
+  ACL_TABLE_ATTR_FIELD_VLAN_USER_META = 85;
+  ACL_TABLE_ATTR_FIELD_ACL_USER_META = 86;
+  ACL_TABLE_ATTR_FIELD_FDB_NPU_META_DST_HIT = 87;
+  ACL_TABLE_ATTR_FIELD_NEIGHBOR_NPU_META_DST_HIT = 88;
+  ACL_TABLE_ATTR_FIELD_ROUTE_NPU_META_DST_HIT = 89;
+  ACL_TABLE_ATTR_FIELD_BTH_OPCODE = 90;
+  ACL_TABLE_ATTR_FIELD_AETH_SYNDROME = 91;
+  ACL_TABLE_ATTR_USER_DEFINED_FIELD_GROUP_MIN = 92;
+  ACL_TABLE_ATTR_USER_DEFINED_FIELD_GROUP_MAX = 93;
+  ACL_TABLE_ATTR_FIELD_ACL_RANGE_TYPE = 94;
+  ACL_TABLE_ATTR_FIELD_IPV6_NEXT_HEADER = 95;
+  ACL_TABLE_ATTR_FIELD_GRE_KEY = 96;
+  ACL_TABLE_ATTR_FIELD_TAM_INT_TYPE = 97;
+  ACL_TABLE_ATTR_ENTRY_LIST = 98;
+  ACL_TABLE_ATTR_AVAILABLE_ACL_ENTRY = 99;
+  ACL_TABLE_ATTR_AVAILABLE_ACL_COUNTER = 100;
 }
 
 enum AclEntryAttr {
@@ -169,114 +264,19 @@ enum AclEntryAttr {
   ACL_ENTRY_ATTR_ACTION_SET_FORWARDING_CLASS = 149;
 }
 
+enum AclCounterAttr {
+  ACL_COUNTER_ATTR_UNSPECIFIED = 0;
+  ACL_COUNTER_ATTR_TABLE_ID = 1;
+  ACL_COUNTER_ATTR_ENABLE_PACKET_COUNT = 2;
+  ACL_COUNTER_ATTR_ENABLE_BYTE_COUNT = 3;
+  ACL_COUNTER_ATTR_PACKETS = 4;
+  ACL_COUNTER_ATTR_BYTES = 5;
+}
+
 enum AclRangeAttr {
   ACL_RANGE_ATTR_UNSPECIFIED = 0;
   ACL_RANGE_ATTR_TYPE = 1;
   ACL_RANGE_ATTR_LIMIT = 2;
-}
-
-enum AclTableAttr {
-  ACL_TABLE_ATTR_UNSPECIFIED = 0;
-  ACL_TABLE_ATTR_ACL_STAGE = 1;
-  ACL_TABLE_ATTR_ACL_BIND_POINT_TYPE_LIST = 2;
-  ACL_TABLE_ATTR_SIZE = 3;
-  ACL_TABLE_ATTR_ACL_ACTION_TYPE_LIST = 4;
-  ACL_TABLE_ATTR_FIELD_SRC_IPV6 = 5;
-  ACL_TABLE_ATTR_FIELD_SRC_IPV6_WORD3 = 6;
-  ACL_TABLE_ATTR_FIELD_SRC_IPV6_WORD2 = 7;
-  ACL_TABLE_ATTR_FIELD_SRC_IPV6_WORD1 = 8;
-  ACL_TABLE_ATTR_FIELD_SRC_IPV6_WORD0 = 9;
-  ACL_TABLE_ATTR_FIELD_DST_IPV6 = 10;
-  ACL_TABLE_ATTR_FIELD_DST_IPV6_WORD3 = 11;
-  ACL_TABLE_ATTR_FIELD_DST_IPV6_WORD2 = 12;
-  ACL_TABLE_ATTR_FIELD_DST_IPV6_WORD1 = 13;
-  ACL_TABLE_ATTR_FIELD_DST_IPV6_WORD0 = 14;
-  ACL_TABLE_ATTR_FIELD_INNER_SRC_IPV6 = 15;
-  ACL_TABLE_ATTR_FIELD_INNER_DST_IPV6 = 16;
-  ACL_TABLE_ATTR_FIELD_SRC_MAC = 17;
-  ACL_TABLE_ATTR_FIELD_DST_MAC = 18;
-  ACL_TABLE_ATTR_FIELD_SRC_IP = 19;
-  ACL_TABLE_ATTR_FIELD_DST_IP = 20;
-  ACL_TABLE_ATTR_FIELD_INNER_SRC_IP = 21;
-  ACL_TABLE_ATTR_FIELD_INNER_DST_IP = 22;
-  ACL_TABLE_ATTR_FIELD_IN_PORTS = 23;
-  ACL_TABLE_ATTR_FIELD_OUT_PORTS = 24;
-  ACL_TABLE_ATTR_FIELD_IN_PORT = 25;
-  ACL_TABLE_ATTR_FIELD_OUT_PORT = 26;
-  ACL_TABLE_ATTR_FIELD_SRC_PORT = 27;
-  ACL_TABLE_ATTR_FIELD_OUTER_VLAN_ID = 28;
-  ACL_TABLE_ATTR_FIELD_OUTER_VLAN_PRI = 29;
-  ACL_TABLE_ATTR_FIELD_OUTER_VLAN_CFI = 30;
-  ACL_TABLE_ATTR_FIELD_INNER_VLAN_ID = 31;
-  ACL_TABLE_ATTR_FIELD_INNER_VLAN_PRI = 32;
-  ACL_TABLE_ATTR_FIELD_INNER_VLAN_CFI = 33;
-  ACL_TABLE_ATTR_FIELD_L4_SRC_PORT = 34;
-  ACL_TABLE_ATTR_FIELD_L4_DST_PORT = 35;
-  ACL_TABLE_ATTR_FIELD_INNER_L4_SRC_PORT = 36;
-  ACL_TABLE_ATTR_FIELD_INNER_L4_DST_PORT = 37;
-  ACL_TABLE_ATTR_FIELD_ETHER_TYPE = 38;
-  ACL_TABLE_ATTR_FIELD_INNER_ETHER_TYPE = 39;
-  ACL_TABLE_ATTR_FIELD_IP_PROTOCOL = 40;
-  ACL_TABLE_ATTR_FIELD_INNER_IP_PROTOCOL = 41;
-  ACL_TABLE_ATTR_FIELD_IP_IDENTIFICATION = 42;
-  ACL_TABLE_ATTR_FIELD_DSCP = 43;
-  ACL_TABLE_ATTR_FIELD_ECN = 44;
-  ACL_TABLE_ATTR_FIELD_TTL = 45;
-  ACL_TABLE_ATTR_FIELD_TOS = 46;
-  ACL_TABLE_ATTR_FIELD_IP_FLAGS = 47;
-  ACL_TABLE_ATTR_FIELD_TCP_FLAGS = 48;
-  ACL_TABLE_ATTR_FIELD_ACL_IP_TYPE = 49;
-  ACL_TABLE_ATTR_FIELD_ACL_IP_FRAG = 50;
-  ACL_TABLE_ATTR_FIELD_IPV6_FLOW_LABEL = 51;
-  ACL_TABLE_ATTR_FIELD_TC = 52;
-  ACL_TABLE_ATTR_FIELD_ICMP_TYPE = 53;
-  ACL_TABLE_ATTR_FIELD_ICMP_CODE = 54;
-  ACL_TABLE_ATTR_FIELD_ICMPV6_TYPE = 55;
-  ACL_TABLE_ATTR_FIELD_ICMPV6_CODE = 56;
-  ACL_TABLE_ATTR_FIELD_PACKET_VLAN = 57;
-  ACL_TABLE_ATTR_FIELD_TUNNEL_VNI = 58;
-  ACL_TABLE_ATTR_FIELD_HAS_VLAN_TAG = 59;
-  ACL_TABLE_ATTR_FIELD_MACSEC_SCI = 60;
-  ACL_TABLE_ATTR_FIELD_MPLS_LABEL0_LABEL = 61;
-  ACL_TABLE_ATTR_FIELD_MPLS_LABEL0_TTL = 62;
-  ACL_TABLE_ATTR_FIELD_MPLS_LABEL0_EXP = 63;
-  ACL_TABLE_ATTR_FIELD_MPLS_LABEL0_BOS = 64;
-  ACL_TABLE_ATTR_FIELD_MPLS_LABEL1_LABEL = 65;
-  ACL_TABLE_ATTR_FIELD_MPLS_LABEL1_TTL = 66;
-  ACL_TABLE_ATTR_FIELD_MPLS_LABEL1_EXP = 67;
-  ACL_TABLE_ATTR_FIELD_MPLS_LABEL1_BOS = 68;
-  ACL_TABLE_ATTR_FIELD_MPLS_LABEL2_LABEL = 69;
-  ACL_TABLE_ATTR_FIELD_MPLS_LABEL2_TTL = 70;
-  ACL_TABLE_ATTR_FIELD_MPLS_LABEL2_EXP = 71;
-  ACL_TABLE_ATTR_FIELD_MPLS_LABEL2_BOS = 72;
-  ACL_TABLE_ATTR_FIELD_MPLS_LABEL3_LABEL = 73;
-  ACL_TABLE_ATTR_FIELD_MPLS_LABEL3_TTL = 74;
-  ACL_TABLE_ATTR_FIELD_MPLS_LABEL3_EXP = 75;
-  ACL_TABLE_ATTR_FIELD_MPLS_LABEL3_BOS = 76;
-  ACL_TABLE_ATTR_FIELD_MPLS_LABEL4_LABEL = 77;
-  ACL_TABLE_ATTR_FIELD_MPLS_LABEL4_TTL = 78;
-  ACL_TABLE_ATTR_FIELD_MPLS_LABEL4_EXP = 79;
-  ACL_TABLE_ATTR_FIELD_MPLS_LABEL4_BOS = 80;
-  ACL_TABLE_ATTR_FIELD_FDB_DST_USER_META = 81;
-  ACL_TABLE_ATTR_FIELD_ROUTE_DST_USER_META = 82;
-  ACL_TABLE_ATTR_FIELD_NEIGHBOR_DST_USER_META = 83;
-  ACL_TABLE_ATTR_FIELD_PORT_USER_META = 84;
-  ACL_TABLE_ATTR_FIELD_VLAN_USER_META = 85;
-  ACL_TABLE_ATTR_FIELD_ACL_USER_META = 86;
-  ACL_TABLE_ATTR_FIELD_FDB_NPU_META_DST_HIT = 87;
-  ACL_TABLE_ATTR_FIELD_NEIGHBOR_NPU_META_DST_HIT = 88;
-  ACL_TABLE_ATTR_FIELD_ROUTE_NPU_META_DST_HIT = 89;
-  ACL_TABLE_ATTR_FIELD_BTH_OPCODE = 90;
-  ACL_TABLE_ATTR_FIELD_AETH_SYNDROME = 91;
-  ACL_TABLE_ATTR_USER_DEFINED_FIELD_GROUP_MIN = 92;
-  ACL_TABLE_ATTR_USER_DEFINED_FIELD_GROUP_MAX = 93;
-  ACL_TABLE_ATTR_FIELD_ACL_RANGE_TYPE = 94;
-  ACL_TABLE_ATTR_FIELD_IPV6_NEXT_HEADER = 95;
-  ACL_TABLE_ATTR_FIELD_GRE_KEY = 96;
-  ACL_TABLE_ATTR_FIELD_TAM_INT_TYPE = 97;
-  ACL_TABLE_ATTR_ENTRY_LIST = 98;
-  ACL_TABLE_ATTR_AVAILABLE_ACL_ENTRY = 99;
-  ACL_TABLE_ATTR_AVAILABLE_ACL_COUNTER = 100;
 }
 
 enum AclTableGroupAttr {
@@ -294,43 +294,125 @@ enum AclTableGroupMemberAttr {
   ACL_TABLE_GROUP_MEMBER_ATTR_PRIORITY = 3;
 }
 
-message CreateAclCounterRequest {
+message CreateAclTableRequest {
   uint64 switch = 1;
 
-  uint64 table_id = 2;
-  bool enable_packet_count = 3;
-  bool enable_byte_count = 4;
-  uint64 packets = 5;
-  uint64 bytes = 6;
+  AclStage acl_stage = 2;
+  repeated AclBindPointType acl_bind_point_type_list = 3;
+  uint32 size = 4;
+  repeated AclActionType acl_action_type_list = 5;
+  bool field_src_ipv6 = 6;
+  bool field_src_ipv6_word3 = 7;
+  bool field_src_ipv6_word2 = 8;
+  bool field_src_ipv6_word1 = 9;
+  bool field_src_ipv6_word0 = 10;
+  bool field_dst_ipv6 = 11;
+  bool field_dst_ipv6_word3 = 12;
+  bool field_dst_ipv6_word2 = 13;
+  bool field_dst_ipv6_word1 = 14;
+  bool field_dst_ipv6_word0 = 15;
+  bool field_inner_src_ipv6 = 16;
+  bool field_inner_dst_ipv6 = 17;
+  bool field_src_mac = 18;
+  bool field_dst_mac = 19;
+  bool field_src_ip = 20;
+  bool field_dst_ip = 21;
+  bool field_inner_src_ip = 22;
+  bool field_inner_dst_ip = 23;
+  bool field_in_ports = 24;
+  bool field_out_ports = 25;
+  bool field_in_port = 26;
+  bool field_out_port = 27;
+  bool field_src_port = 28;
+  bool field_outer_vlan_id = 29;
+  bool field_outer_vlan_pri = 30;
+  bool field_outer_vlan_cfi = 31;
+  bool field_inner_vlan_id = 32;
+  bool field_inner_vlan_pri = 33;
+  bool field_inner_vlan_cfi = 34;
+  bool field_l4_src_port = 35;
+  bool field_l4_dst_port = 36;
+  bool field_inner_l4_src_port = 37;
+  bool field_inner_l4_dst_port = 38;
+  bool field_ether_type = 39;
+  bool field_inner_ether_type = 40;
+  bool field_ip_protocol = 41;
+  bool field_inner_ip_protocol = 42;
+  bool field_ip_identification = 43;
+  bool field_dscp = 44;
+  bool field_ecn = 45;
+  bool field_ttl = 46;
+  bool field_tos = 47;
+  bool field_ip_flags = 48;
+  bool field_tcp_flags = 49;
+  bool field_acl_ip_type = 50;
+  bool field_acl_ip_frag = 51;
+  bool field_ipv6_flow_label = 52;
+  bool field_tc = 53;
+  bool field_icmp_type = 54;
+  bool field_icmp_code = 55;
+  bool field_icmpv6_type = 56;
+  bool field_icmpv6_code = 57;
+  bool field_packet_vlan = 58;
+  bool field_tunnel_vni = 59;
+  bool field_has_vlan_tag = 60;
+  bool field_macsec_sci = 61;
+  bool field_mpls_label0_label = 62;
+  bool field_mpls_label0_ttl = 63;
+  bool field_mpls_label0_exp = 64;
+  bool field_mpls_label0_bos = 65;
+  bool field_mpls_label1_label = 66;
+  bool field_mpls_label1_ttl = 67;
+  bool field_mpls_label1_exp = 68;
+  bool field_mpls_label1_bos = 69;
+  bool field_mpls_label2_label = 70;
+  bool field_mpls_label2_ttl = 71;
+  bool field_mpls_label2_exp = 72;
+  bool field_mpls_label2_bos = 73;
+  bool field_mpls_label3_label = 74;
+  bool field_mpls_label3_ttl = 75;
+  bool field_mpls_label3_exp = 76;
+  bool field_mpls_label3_bos = 77;
+  bool field_mpls_label4_label = 78;
+  bool field_mpls_label4_ttl = 79;
+  bool field_mpls_label4_exp = 80;
+  bool field_mpls_label4_bos = 81;
+  bool field_fdb_dst_user_meta = 82;
+  bool field_route_dst_user_meta = 83;
+  bool field_neighbor_dst_user_meta = 84;
+  bool field_port_user_meta = 85;
+  bool field_vlan_user_meta = 86;
+  bool field_acl_user_meta = 87;
+  bool field_fdb_npu_meta_dst_hit = 88;
+  bool field_neighbor_npu_meta_dst_hit = 89;
+  bool field_route_npu_meta_dst_hit = 90;
+  bool field_bth_opcode = 91;
+  bool field_aeth_syndrome = 92;
+  uint64 user_defined_field_group_min = 93;
+  uint64 user_defined_field_group_max = 94;
+  repeated AclRangeType field_acl_range_type = 95;
+  bool field_ipv6_next_header = 96;
+  bool field_gre_key = 97;
+  bool field_tam_int_type = 98;
 }
 
-message CreateAclCounterResponse {
+message CreateAclTableResponse {
   uint64 oid = 1;
 }
 
-message RemoveAclCounterRequest {
+message RemoveAclTableRequest {
   uint64 oid = 1;
 }
 
-message RemoveAclCounterResponse {}
+message RemoveAclTableResponse {}
 
-message SetAclCounterAttributeRequest {
+message GetAclTableAttributeRequest {
   uint64 oid = 1;
-  oneof attr {
-    uint64 packets = 2;
-    uint64 bytes = 3;
-  }
+  AclTableAttr attr_type = 2;
 }
 
-message SetAclCounterAttributeResponse {}
-
-message GetAclCounterAttributeRequest {
-  uint64 oid = 1;
-  AclCounterAttr attr_type = 2;
-}
-
-message GetAclCounterAttributeResponse {
-  AclCounterAttribute attr = 1;
+message GetAclTableAttributeResponse {
+  AclTableAttribute attr = 1;
 }
 
 message CreateAclEntryRequest {
@@ -662,6 +744,45 @@ message GetAclEntryAttributeResponse {
   AclEntryAttribute attr = 1;
 }
 
+message CreateAclCounterRequest {
+  uint64 switch = 1;
+
+  uint64 table_id = 2;
+  bool enable_packet_count = 3;
+  bool enable_byte_count = 4;
+  uint64 packets = 5;
+  uint64 bytes = 6;
+}
+
+message CreateAclCounterResponse {
+  uint64 oid = 1;
+}
+
+message RemoveAclCounterRequest {
+  uint64 oid = 1;
+}
+
+message RemoveAclCounterResponse {}
+
+message SetAclCounterAttributeRequest {
+  uint64 oid = 1;
+  oneof attr {
+    uint64 packets = 2;
+    uint64 bytes = 3;
+  }
+}
+
+message SetAclCounterAttributeResponse {}
+
+message GetAclCounterAttributeRequest {
+  uint64 oid = 1;
+  AclCounterAttr attr_type = 2;
+}
+
+message GetAclCounterAttributeResponse {
+  AclCounterAttribute attr = 1;
+}
+
 message CreateAclRangeRequest {
   uint64 switch = 1;
 
@@ -686,127 +807,6 @@ message GetAclRangeAttributeRequest {
 
 message GetAclRangeAttributeResponse {
   AclRangeAttribute attr = 1;
-}
-
-message CreateAclTableRequest {
-  uint64 switch = 1;
-
-  AclStage acl_stage = 2;
-  repeated AclBindPointType acl_bind_point_type_list = 3;
-  uint32 size = 4;
-  repeated AclActionType acl_action_type_list = 5;
-  bool field_src_ipv6 = 6;
-  bool field_src_ipv6_word3 = 7;
-  bool field_src_ipv6_word2 = 8;
-  bool field_src_ipv6_word1 = 9;
-  bool field_src_ipv6_word0 = 10;
-  bool field_dst_ipv6 = 11;
-  bool field_dst_ipv6_word3 = 12;
-  bool field_dst_ipv6_word2 = 13;
-  bool field_dst_ipv6_word1 = 14;
-  bool field_dst_ipv6_word0 = 15;
-  bool field_inner_src_ipv6 = 16;
-  bool field_inner_dst_ipv6 = 17;
-  bool field_src_mac = 18;
-  bool field_dst_mac = 19;
-  bool field_src_ip = 20;
-  bool field_dst_ip = 21;
-  bool field_inner_src_ip = 22;
-  bool field_inner_dst_ip = 23;
-  bool field_in_ports = 24;
-  bool field_out_ports = 25;
-  bool field_in_port = 26;
-  bool field_out_port = 27;
-  bool field_src_port = 28;
-  bool field_outer_vlan_id = 29;
-  bool field_outer_vlan_pri = 30;
-  bool field_outer_vlan_cfi = 31;
-  bool field_inner_vlan_id = 32;
-  bool field_inner_vlan_pri = 33;
-  bool field_inner_vlan_cfi = 34;
-  bool field_l4_src_port = 35;
-  bool field_l4_dst_port = 36;
-  bool field_inner_l4_src_port = 37;
-  bool field_inner_l4_dst_port = 38;
-  bool field_ether_type = 39;
-  bool field_inner_ether_type = 40;
-  bool field_ip_protocol = 41;
-  bool field_inner_ip_protocol = 42;
-  bool field_ip_identification = 43;
-  bool field_dscp = 44;
-  bool field_ecn = 45;
-  bool field_ttl = 46;
-  bool field_tos = 47;
-  bool field_ip_flags = 48;
-  bool field_tcp_flags = 49;
-  bool field_acl_ip_type = 50;
-  bool field_acl_ip_frag = 51;
-  bool field_ipv6_flow_label = 52;
-  bool field_tc = 53;
-  bool field_icmp_type = 54;
-  bool field_icmp_code = 55;
-  bool field_icmpv6_type = 56;
-  bool field_icmpv6_code = 57;
-  bool field_packet_vlan = 58;
-  bool field_tunnel_vni = 59;
-  bool field_has_vlan_tag = 60;
-  bool field_macsec_sci = 61;
-  bool field_mpls_label0_label = 62;
-  bool field_mpls_label0_ttl = 63;
-  bool field_mpls_label0_exp = 64;
-  bool field_mpls_label0_bos = 65;
-  bool field_mpls_label1_label = 66;
-  bool field_mpls_label1_ttl = 67;
-  bool field_mpls_label1_exp = 68;
-  bool field_mpls_label1_bos = 69;
-  bool field_mpls_label2_label = 70;
-  bool field_mpls_label2_ttl = 71;
-  bool field_mpls_label2_exp = 72;
-  bool field_mpls_label2_bos = 73;
-  bool field_mpls_label3_label = 74;
-  bool field_mpls_label3_ttl = 75;
-  bool field_mpls_label3_exp = 76;
-  bool field_mpls_label3_bos = 77;
-  bool field_mpls_label4_label = 78;
-  bool field_mpls_label4_ttl = 79;
-  bool field_mpls_label4_exp = 80;
-  bool field_mpls_label4_bos = 81;
-  bool field_fdb_dst_user_meta = 82;
-  bool field_route_dst_user_meta = 83;
-  bool field_neighbor_dst_user_meta = 84;
-  bool field_port_user_meta = 85;
-  bool field_vlan_user_meta = 86;
-  bool field_acl_user_meta = 87;
-  bool field_fdb_npu_meta_dst_hit = 88;
-  bool field_neighbor_npu_meta_dst_hit = 89;
-  bool field_route_npu_meta_dst_hit = 90;
-  bool field_bth_opcode = 91;
-  bool field_aeth_syndrome = 92;
-  uint64 user_defined_field_group_min = 93;
-  uint64 user_defined_field_group_max = 94;
-  repeated AclRangeType field_acl_range_type = 95;
-  bool field_ipv6_next_header = 96;
-  bool field_gre_key = 97;
-  bool field_tam_int_type = 98;
-}
-
-message CreateAclTableResponse {
-  uint64 oid = 1;
-}
-
-message RemoveAclTableRequest {
-  uint64 oid = 1;
-}
-
-message RemoveAclTableResponse {}
-
-message GetAclTableAttributeRequest {
-  uint64 oid = 1;
-  AclTableAttr attr_type = 2;
-}
-
-message GetAclTableAttributeResponse {
-  AclTableAttribute attr = 1;
 }
 
 message CreateAclTableGroupRequest {
@@ -864,6 +864,16 @@ message GetAclTableGroupMemberAttributeResponse {
 }
 
 service Acl {
+  rpc CreateAclTable(CreateAclTableRequest) returns (CreateAclTableResponse) {}
+  rpc RemoveAclTable(RemoveAclTableRequest) returns (RemoveAclTableResponse) {}
+  rpc GetAclTableAttribute(GetAclTableAttributeRequest)
+      returns (GetAclTableAttributeResponse) {}
+  rpc CreateAclEntry(CreateAclEntryRequest) returns (CreateAclEntryResponse) {}
+  rpc RemoveAclEntry(RemoveAclEntryRequest) returns (RemoveAclEntryResponse) {}
+  rpc SetAclEntryAttribute(SetAclEntryAttributeRequest)
+      returns (SetAclEntryAttributeResponse) {}
+  rpc GetAclEntryAttribute(GetAclEntryAttributeRequest)
+      returns (GetAclEntryAttributeResponse) {}
   rpc CreateAclCounter(CreateAclCounterRequest)
       returns (CreateAclCounterResponse) {}
   rpc RemoveAclCounter(RemoveAclCounterRequest)
@@ -872,20 +882,10 @@ service Acl {
       returns (SetAclCounterAttributeResponse) {}
   rpc GetAclCounterAttribute(GetAclCounterAttributeRequest)
       returns (GetAclCounterAttributeResponse) {}
-  rpc CreateAclEntry(CreateAclEntryRequest) returns (CreateAclEntryResponse) {}
-  rpc RemoveAclEntry(RemoveAclEntryRequest) returns (RemoveAclEntryResponse) {}
-  rpc SetAclEntryAttribute(SetAclEntryAttributeRequest)
-      returns (SetAclEntryAttributeResponse) {}
-  rpc GetAclEntryAttribute(GetAclEntryAttributeRequest)
-      returns (GetAclEntryAttributeResponse) {}
   rpc CreateAclRange(CreateAclRangeRequest) returns (CreateAclRangeResponse) {}
   rpc RemoveAclRange(RemoveAclRangeRequest) returns (RemoveAclRangeResponse) {}
   rpc GetAclRangeAttribute(GetAclRangeAttributeRequest)
       returns (GetAclRangeAttributeResponse) {}
-  rpc CreateAclTable(CreateAclTableRequest) returns (CreateAclTableResponse) {}
-  rpc RemoveAclTable(RemoveAclTableRequest) returns (RemoveAclTableResponse) {}
-  rpc GetAclTableAttribute(GetAclTableAttributeRequest)
-      returns (GetAclTableAttributeResponse) {}
   rpc CreateAclTableGroup(CreateAclTableGroupRequest)
       returns (CreateAclTableGroupResponse) {}
   rpc RemoveAclTableGroup(RemoveAclTableGroupRequest)
