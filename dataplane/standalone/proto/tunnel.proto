@@ -76,31 +76,6 @@ enum TunnelTermTableEntryAttr {
   TUNNEL_TERM_TABLE_ENTRY_ATTR_IPSEC_VERIFIED = 10;
 }
 
-message CreateTunnelMapRequest {
-  uint64 switch = 1;
-
-  TunnelMapType type = 2;
-}
-
-message CreateTunnelMapResponse {
-  uint64 oid = 1;
-}
-
-message RemoveTunnelMapRequest {
-  uint64 oid = 1;
-}
-
-message RemoveTunnelMapResponse {}
-
-message GetTunnelMapAttributeRequest {
-  uint64 oid = 1;
-  TunnelMapAttr attr_type = 2;
-}
-
-message GetTunnelMapAttributeResponse {
-  TunnelMapAttribute attr = 1;
-}
-
 message CreateTunnelRequest {
   uint64 switch = 1;
 
@@ -170,46 +145,29 @@ message GetTunnelAttributeResponse {
   TunnelAttribute attr = 1;
 }
 
-message CreateTunnelTermTableEntryRequest {
+message CreateTunnelMapRequest {
   uint64 switch = 1;
 
-  uint64 vr_id = 2;
-  TunnelTermTableEntryType type = 3;
-  bytes dst_ip = 4;
-  bytes dst_ip_mask = 5;
-  bytes src_ip = 6;
-  bytes src_ip_mask = 7;
-  TunnelType tunnel_type = 8;
-  uint64 action_tunnel_id = 9;
-  bool ipsec_verified = 10;
+  TunnelMapType type = 2;
 }
 
-message CreateTunnelTermTableEntryResponse {
+message CreateTunnelMapResponse {
   uint64 oid = 1;
 }
 
-message RemoveTunnelTermTableEntryRequest {
+message RemoveTunnelMapRequest {
   uint64 oid = 1;
 }
 
-message RemoveTunnelTermTableEntryResponse {}
+message RemoveTunnelMapResponse {}
 
-message SetTunnelTermTableEntryAttributeRequest {
+message GetTunnelMapAttributeRequest {
   uint64 oid = 1;
-  oneof attr {
-    bool ipsec_verified = 2;
-  }
+  TunnelMapAttr attr_type = 2;
 }
 
-message SetTunnelTermTableEntryAttributeResponse {}
-
-message GetTunnelTermTableEntryAttributeRequest {
-  uint64 oid = 1;
-  TunnelTermTableEntryAttr attr_type = 2;
-}
-
-message GetTunnelTermTableEntryAttributeResponse {
-  TunnelTermTableEntryAttribute attr = 1;
+message GetTunnelMapAttributeResponse {
+  TunnelMapAttribute attr = 1;
 }
 
 message CreateTunnelMapEntryRequest {
@@ -252,19 +210,67 @@ message GetTunnelMapEntryAttributeResponse {
   TunnelMapEntryAttribute attr = 1;
 }
 
+message CreateTunnelTermTableEntryRequest {
+  uint64 switch = 1;
+
+  uint64 vr_id = 2;
+  TunnelTermTableEntryType type = 3;
+  bytes dst_ip = 4;
+  bytes dst_ip_mask = 5;
+  bytes src_ip = 6;
+  bytes src_ip_mask = 7;
+  TunnelType tunnel_type = 8;
+  uint64 action_tunnel_id = 9;
+  bool ipsec_verified = 10;
+}
+
+message CreateTunnelTermTableEntryResponse {
+  uint64 oid = 1;
+}
+
+message RemoveTunnelTermTableEntryRequest {
+  uint64 oid = 1;
+}
+
+message RemoveTunnelTermTableEntryResponse {}
+
+message SetTunnelTermTableEntryAttributeRequest {
+  uint64 oid = 1;
+  oneof attr {
+    bool ipsec_verified = 2;
+  }
+}
+
+message SetTunnelTermTableEntryAttributeResponse {}
+
+message GetTunnelTermTableEntryAttributeRequest {
+  uint64 oid = 1;
+  TunnelTermTableEntryAttr attr_type = 2;
+}
+
+message GetTunnelTermTableEntryAttributeResponse {
+  TunnelTermTableEntryAttribute attr = 1;
+}
+
 service Tunnel {
-  rpc CreateTunnelMap(CreateTunnelMapRequest)
-      returns (CreateTunnelMapResponse) {}
-  rpc RemoveTunnelMap(RemoveTunnelMapRequest)
-      returns (RemoveTunnelMapResponse) {}
-  rpc GetTunnelMapAttribute(GetTunnelMapAttributeRequest)
-      returns (GetTunnelMapAttributeResponse) {}
   rpc CreateTunnel(CreateTunnelRequest) returns (CreateTunnelResponse) {}
   rpc RemoveTunnel(RemoveTunnelRequest) returns (RemoveTunnelResponse) {}
   rpc SetTunnelAttribute(SetTunnelAttributeRequest)
       returns (SetTunnelAttributeResponse) {}
   rpc GetTunnelAttribute(GetTunnelAttributeRequest)
       returns (GetTunnelAttributeResponse) {}
+  rpc CreateTunnelMap(CreateTunnelMapRequest)
+      returns (CreateTunnelMapResponse) {}
+  rpc RemoveTunnelMap(RemoveTunnelMapRequest)
+      returns (RemoveTunnelMapResponse) {}
+  rpc GetTunnelMapAttribute(GetTunnelMapAttributeRequest)
+      returns (GetTunnelMapAttributeResponse) {}
+  rpc CreateTunnelMapEntry(CreateTunnelMapEntryRequest)
+      returns (CreateTunnelMapEntryResponse) {}
+  rpc RemoveTunnelMapEntry(RemoveTunnelMapEntryRequest)
+      returns (RemoveTunnelMapEntryResponse) {}
+  rpc GetTunnelMapEntryAttribute(GetTunnelMapEntryAttributeRequest)
+      returns (GetTunnelMapEntryAttributeResponse) {}
   rpc CreateTunnelTermTableEntry(CreateTunnelTermTableEntryRequest)
       returns (CreateTunnelTermTableEntryResponse) {}
   rpc RemoveTunnelTermTableEntry(RemoveTunnelTermTableEntryRequest)
@@ -273,10 +279,4 @@ service Tunnel {
       returns (SetTunnelTermTableEntryAttributeResponse) {}
   rpc GetTunnelTermTableEntryAttribute(GetTunnelTermTableEntryAttributeRequest)
       returns (GetTunnelTermTableEntryAttributeResponse) {}
-  rpc CreateTunnelMapEntry(CreateTunnelMapEntryRequest)
-      returns (CreateTunnelMapEntryResponse) {}
-  rpc RemoveTunnelMapEntry(RemoveTunnelMapEntryRequest)
-      returns (RemoveTunnelMapEntryResponse) {}
-  rpc GetTunnelMapEntryAttribute(GetTunnelMapEntryAttributeRequest)
-      returns (GetTunnelMapEntryAttributeResponse) {}
 }

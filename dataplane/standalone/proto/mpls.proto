@@ -38,9 +38,7 @@ message CreateInsegEntryRequest {
   uint64 counter_id = 12;
 }
 
-message CreateInsegEntryResponse {
-  uint64 oid = 1;
-}
+message CreateInsegEntryResponse {}
 
 message RemoveInsegEntryRequest {
   InsegEntry entry = 1;

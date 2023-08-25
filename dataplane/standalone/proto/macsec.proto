@@ -126,6 +126,31 @@ message GetMacsecAttributeResponse {
   MacsecAttribute attr = 1;
 }
 
+message CreateMacsecFlowRequest {
+  uint64 switch = 1;
+
+  MacsecDirection macsec_direction = 2;
+}
+
+message CreateMacsecFlowResponse {
+  uint64 oid = 1;
+}
+
+message RemoveMacsecFlowRequest {
+  uint64 oid = 1;
+}
+
+message RemoveMacsecFlowResponse {}
+
+message GetMacsecFlowAttributeRequest {
+  uint64 oid = 1;
+  MacsecFlowAttr attr_type = 2;
+}
+
+message GetMacsecFlowAttributeResponse {
+  MacsecFlowAttribute attr = 1;
+}
+
 message CreateMacsecPortRequest {
   uint64 switch = 1;
 
@@ -166,29 +191,47 @@ message GetMacsecPortAttributeResponse {
   MacsecPortAttribute attr = 1;
 }
 
-message CreateMacsecFlowRequest {
+message CreateMacsecSaRequest {
   uint64 switch = 1;
 
   MacsecDirection macsec_direction = 2;
+  uint64 sc_id = 3;
+  uint32 an = 4;
+  bytes sak = 5;
+  bytes salt = 6;
+  bytes auth_key = 7;
+  uint64 configured_egress_xpn = 8;
+  uint64 minimum_ingress_xpn = 9;
+  uint32 macsec_ssci = 10;
 }
 
-message CreateMacsecFlowResponse {
+message CreateMacsecSaResponse {
   uint64 oid = 1;
 }
 
-message RemoveMacsecFlowRequest {
+message RemoveMacsecSaRequest {
   uint64 oid = 1;
 }
 
-message RemoveMacsecFlowResponse {}
+message RemoveMacsecSaResponse {}
 
-message GetMacsecFlowAttributeRequest {
+message SetMacsecSaAttributeRequest {
   uint64 oid = 1;
-  MacsecFlowAttr attr_type = 2;
+  oneof attr {
+    uint64 configured_egress_xpn = 2;
+    uint64 minimum_ingress_xpn = 3;
+  }
 }
 
-message GetMacsecFlowAttributeResponse {
-  MacsecFlowAttribute attr = 1;
+message SetMacsecSaAttributeResponse {}
+
+message GetMacsecSaAttributeRequest {
+  uint64 oid = 1;
+  MacsecSaAttr attr_type = 2;
+}
+
+message GetMacsecSaAttributeResponse {
+  MacsecSaAttribute attr = 1;
 }
 
 message CreateMacsecScRequest {
@@ -238,49 +281,6 @@ message GetMacsecScAttributeResponse {
   MacsecScAttribute attr = 1;
 }
 
-message CreateMacsecSaRequest {
-  uint64 switch = 1;
-
-  MacsecDirection macsec_direction = 2;
-  uint64 sc_id = 3;
-  uint32 an = 4;
-  bytes sak = 5;
-  bytes salt = 6;
-  bytes auth_key = 7;
-  uint64 configured_egress_xpn = 8;
-  uint64 minimum_ingress_xpn = 9;
-  uint32 macsec_ssci = 10;
-}
-
-message CreateMacsecSaResponse {
-  uint64 oid = 1;
-}
-
-message RemoveMacsecSaRequest {
-  uint64 oid = 1;
-}
-
-message RemoveMacsecSaResponse {}
-
-message SetMacsecSaAttributeRequest {
-  uint64 oid = 1;
-  oneof attr {
-    uint64 configured_egress_xpn = 2;
-    uint64 minimum_ingress_xpn = 3;
-  }
-}
-
-message SetMacsecSaAttributeResponse {}
-
-message GetMacsecSaAttributeRequest {
-  uint64 oid = 1;
-  MacsecSaAttr attr_type = 2;
-}
-
-message GetMacsecSaAttributeResponse {
-  MacsecSaAttribute attr = 1;
-}
-
 service Macsec {
   rpc CreateMacsec(CreateMacsecRequest) returns (CreateMacsecResponse) {}
   rpc RemoveMacsec(RemoveMacsecRequest) returns (RemoveMacsecResponse) {}
@@ -288,6 +288,12 @@ service Macsec {
       returns (SetMacsecAttributeResponse) {}
   rpc GetMacsecAttribute(GetMacsecAttributeRequest)
       returns (GetMacsecAttributeResponse) {}
+  rpc CreateMacsecFlow(CreateMacsecFlowRequest)
+      returns (CreateMacsecFlowResponse) {}
+  rpc RemoveMacsecFlow(RemoveMacsecFlowRequest)
+      returns (RemoveMacsecFlowResponse) {}
+  rpc GetMacsecFlowAttribute(GetMacsecFlowAttributeRequest)
+      returns (GetMacsecFlowAttributeResponse) {}
   rpc CreateMacsecPort(CreateMacsecPortRequest)
       returns (CreateMacsecPortResponse) {}
   rpc RemoveMacsecPort(RemoveMacsecPortRequest)
@@ -296,22 +302,16 @@ service Macsec {
       returns (SetMacsecPortAttributeResponse) {}
   rpc GetMacsecPortAttribute(GetMacsecPortAttributeRequest)
       returns (GetMacsecPortAttributeResponse) {}
-  rpc CreateMacsecFlow(CreateMacsecFlowRequest)
-      returns (CreateMacsecFlowResponse) {}
-  rpc RemoveMacsecFlow(RemoveMacsecFlowRequest)
-      returns (RemoveMacsecFlowResponse) {}
-  rpc GetMacsecFlowAttribute(GetMacsecFlowAttributeRequest)
-      returns (GetMacsecFlowAttributeResponse) {}
-  rpc CreateMacsecSc(CreateMacsecScRequest) returns (CreateMacsecScResponse) {}
-  rpc RemoveMacsecSc(RemoveMacsecScRequest) returns (RemoveMacsecScResponse) {}
-  rpc SetMacsecScAttribute(SetMacsecScAttributeRequest)
-      returns (SetMacsecScAttributeResponse) {}
-  rpc GetMacsecScAttribute(GetMacsecScAttributeRequest)
-      returns (GetMacsecScAttributeResponse) {}
   rpc CreateMacsecSa(CreateMacsecSaRequest) returns (CreateMacsecSaResponse) {}
   rpc RemoveMacsecSa(RemoveMacsecSaRequest) returns (RemoveMacsecSaResponse) {}
   rpc SetMacsecSaAttribute(SetMacsecSaAttributeRequest)
       returns (SetMacsecSaAttributeResponse) {}
   rpc GetMacsecSaAttribute(GetMacsecSaAttributeRequest)
       returns (GetMacsecSaAttributeResponse) {}
+  rpc CreateMacsecSc(CreateMacsecScRequest) returns (CreateMacsecScResponse) {}
+  rpc RemoveMacsecSc(RemoveMacsecScRequest) returns (RemoveMacsecScResponse) {}
+  rpc SetMacsecScAttribute(SetMacsecScAttributeRequest)
+      returns (SetMacsecScAttributeResponse) {}
+  rpc GetMacsecScAttribute(GetMacsecScAttributeRequest)
+      returns (GetMacsecScAttributeResponse) {}
 }
