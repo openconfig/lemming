@@ -17,7 +17,6 @@ package protogen
 
 import (
 	"fmt"
-	"sort"
 	"strings"
 	"text/template"
 	"unicode"
@@ -44,11 +43,6 @@ func Generate(doc *docparser.SAIInfo, sai *saiast.SAIAPI) (map[string]string, er
 	apis := map[string]*protoAPITmplData{}
 	for _, iface := range sai.Ifaces {
 		apiName := strings.TrimSuffix(strings.TrimPrefix(iface.Name, "sai_"), "_api_t")
-		sort.SliceStable(iface.Funcs, func(i, j int) bool {
-			metaI := sai.GetFuncMeta(iface.Funcs[i])
-			metaJ := sai.GetFuncMeta(iface.Funcs[j])
-			return metaI.TypeName < metaJ.TypeName
-		})
 		for _, fn := range iface.Funcs {
 			meta := sai.GetFuncMeta(fn)
 			if err := populateTmplDataFromFunc(apis, doc, apiName, meta); err != nil {
