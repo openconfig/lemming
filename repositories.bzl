@@ -1591,8 +1591,8 @@ def go_repositories():
         name = "com_github_openconfig_ygot",
         build_file_proto_mode = "disable",
         importpath = "github.com/openconfig/ygot",
-        sum = "h1:SCDD3Vs0qeYgBu+tqynxgSXsgHMomAnB57Yzhe5221M=",
-        version = "v0.29.9",
+        sum = "h1:FRZXxyeCdiJXz6uat5uOm3Hlg+PUu2N0mY+eiva12MI=",
+        version = "v0.29.10",
     )
     go_repository(
         name = "com_github_opencontainers_go_digest",
@@ -3249,8 +3249,8 @@ def go_repositories():
     go_repository(
         name = "org_golang_x_exp",
         importpath = "golang.org/x/exp",
-        sum = "h1:Di6/M8l0O2lCLc6VVRWhgCiApHV8MnQurBnFSHsQtNY=",
-        version = "v0.0.0-20230725093048-515e97ebf090",
+        sum = "h1:r+vk0EmXNmekl0S0BascoeeoHk/L7wmaW2QF90K+kYI=",
+        version = "v0.0.0-20230801115018-d63ba01acd4b",
     )
     go_repository(
         name = "org_golang_x_image",
