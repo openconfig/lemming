@@ -33,15 +33,23 @@ const (
 	higherLocalPref      = 42
 	lowerMED             = oc.UnionUint32(10)
 	higherMED            = oc.UnionUint32(11)
+
+	rejectCommSetName    = "reject-community-set"
+	rejectASPathSetName  = "reject-as-path-set"
+	rejectASPathSetName2 = "reject-as-path-set2"
 )
 
 var (
 	rejectedASPathSet = []string{"64502"}
 )
 
+func singletonPrefixSetName(route string) string {
+	return "only-" + route
+}
+
 // TestAttributes tests BGP attributes.
 func TestAttributes(t *testing.T) {
-	routeList := []string{
+	routesUnderTest := []string{
 		"10.1.0.0/16",
 		"10.2.0.0/16",
 		"10.10.0.0/16",
@@ -51,55 +59,82 @@ func TestAttributes(t *testing.T) {
 		"10.14.0.0/16",
 		"10.15.0.0/16",
 	}
+
+	installDefinedSets := func(t *testing.T, dut1, dut2, dut5 *Device) {
+		for _, route := range routesUnderTest {
+			// Create prefix set containing just the route under test.
+			prefixPath := ocpath.Root().RoutingPolicy().DefinedSets().PrefixSet(singletonPrefixSetName(route)).Prefix(route, "exact").IpPrefix()
+			Replace(t, dut1, prefixPath.Config(), route)
+			Replace(t, dut2, prefixPath.Config(), route)
+			Replace(t, dut5, prefixPath.Config(), route)
+		}
+
+		// Create a community set
+		rejCommMemberPath := ocpath.Root().RoutingPolicy().DefinedSets().BgpDefinedSets().CommunitySet(rejectCommSetName).CommunityMember()
+		Replace(t, dut2, rejCommMemberPath.Config(), []oc.RoutingPolicy_DefinedSets_BgpDefinedSets_CommunitySet_CommunityMember_Union{
+			rejectedCommunitySet,
+		})
+		Replace(t, dut2, ocpath.Root().RoutingPolicy().DefinedSets().BgpDefinedSets().CommunitySet(rejectCommSetName).MatchSetOptions().Config(), oc.RoutingPolicy_MatchSetOptionsType_ANY)
+
+		// Create AS path-sets
+		rejASPathSetPath := ocpath.Root().RoutingPolicy().DefinedSets().BgpDefinedSets().AsPathSet(rejectASPathSetName)
+		Replace(t, dut2, rejASPathSetPath.AsPathSetName().Config(), rejectASPathSetName)
+		Replace(t, dut2, rejASPathSetPath.AsPathSetMember().Config(), rejectedASPathSet)
+
+		rejASPathSet2Path := ocpath.Root().RoutingPolicy().DefinedSets().BgpDefinedSets().AsPathSet(rejectASPathSetName2)
+		Replace(t, dut2, rejASPathSet2Path.AsPathSetName().Config(), rejectASPathSetName2)
+		Replace(t, dut2, rejASPathSet2Path.AsPathSetMember().Config(), []string{"64499"})
+	}
+
 	testPolicy(t, PolicyTestCase{
 		spec: &valpb.PolicyTestCase{
 			Description: "Test that one NLRI gets accepted and the otheris rejected via various attribute values.",
 			RouteTests: []*valpb.RouteTestCase{{
 				Description: "Accepted route with no attributes",
 				Input: &valpb.TestRoute{
-					ReachPrefix: routeList[0],
+					ReachPrefix: routesUnderTest[0],
 				},
 				ExpectedResultBeforePolicy: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
 				ExpectedResult:             valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
 			}, {
 				Description: "Accepted route with some attributes",
 				Input: &valpb.TestRoute{
-					ReachPrefix: routeList[1],
+					ReachPrefix: routesUnderTest[1],
 				},
 				ExpectedResultBeforePolicy: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
 				ExpectedResult:             valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
 			}, {
 				Description: "Rejected route due to community set",
 				Input: &valpb.TestRoute{
-					ReachPrefix: routeList[2],
+					ReachPrefix: routesUnderTest[2],
 				},
 				ExpectedResultBeforePolicy: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
 				ExpectedResult:             valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD,
 			}, {
 				Description: "Unpreferred route due to local-pref",
 				Input: &valpb.TestRoute{
-					ReachPrefix: routeList[3],
+					ReachPrefix: routesUnderTest[3],
 				},
 				ExpectedResultBeforePolicy: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
 				ExpectedResult:             valpb.RouteTestResult_ROUTE_TEST_RESULT_NOT_PREFERRED,
 			}, {
 				Description: "Unpreferred route due to MED",
 				Input: &valpb.TestRoute{
-					ReachPrefix: routeList[4],
+					ReachPrefix: routesUnderTest[4],
 				},
 				ExpectedResultBeforePolicy: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
 				ExpectedResult:             valpb.RouteTestResult_ROUTE_TEST_RESULT_NOT_PREFERRED,
 			}, {
 				Description: "Unpreferred route due to AS path prepend",
 				Input: &valpb.TestRoute{
-					ReachPrefix: routeList[6],
+					ReachPrefix: routesUnderTest[6],
 				},
 				ExpectedResultBeforePolicy: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
 				ExpectedResult:             valpb.RouteTestResult_ROUTE_TEST_RESULT_NOT_PREFERRED,
 			}, {
 				Description: "Rejected route due to AS path match on prepended AS",
 				Input: &valpb.TestRoute{
-					ReachPrefix: routeList[7],
+					ReachPrefix: routesUnderTest[7],
 				},
 				ExpectedResultBeforePolicy: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
 				ExpectedResult:             valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD,
@@ -107,21 +142,21 @@ func TestAttributes(t *testing.T) {
 			LongerPathRouteTests: []*valpb.RouteTestCase{{
 				Description: "Accepted route due to higher local-pref",
 				Input: &valpb.TestRoute{
-					ReachPrefix: routeList[3],
+					ReachPrefix: routesUnderTest[3],
 				},
 				ExpectedResultBeforePolicy: valpb.RouteTestResult_ROUTE_TEST_RESULT_NOT_PREFERRED,
 				ExpectedResult:             valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
 			}, {
 				Description: "Rejected route due to AS path match",
 				Input: &valpb.TestRoute{
-					ReachPrefix: routeList[5],
+					ReachPrefix: routesUnderTest[5],
 				},
 				ExpectedResultBeforePolicy: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
 				ExpectedResult:             valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD,
 			}, {
 				Description: "Accepted route due to shorter AS path after competing route's AS path prepend",
 				Input: &valpb.TestRoute{
-					ReachPrefix: routeList[6],
+					ReachPrefix: routesUnderTest[6],
 				},
 				ExpectedResultBeforePolicy: valpb.RouteTestResult_ROUTE_TEST_RESULT_NOT_PREFERRED,
 				ExpectedResult:             valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
@@ -129,7 +164,7 @@ func TestAttributes(t *testing.T) {
 			AlternatePathRouteTests: []*valpb.RouteTestCase{{
 				Description: "Accepted route due to lower MED",
 				Input: &valpb.TestRoute{
-					ReachPrefix: routeList[4],
+					ReachPrefix: routesUnderTest[4],
 				},
 				ExpectedResultBeforePolicy: valpb.RouteTestResult_ROUTE_TEST_RESULT_NOT_PREFERRED,
 				ExpectedResult:             valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
@@ -139,160 +174,142 @@ func TestAttributes(t *testing.T) {
 			if debug {
 				fmt.Println("Installing test policies")
 			}
+			installDefinedSets(t, dut1, dut2, dut5)
 
-			dut1PolicyName := "set-attributes-dut1"
-			dut1Policy := &oc.RoutingPolicy_PolicyDefinition_Statement_OrderedMap{}
-			dut5PolicyName := "set-attributes-dut5"
-			dut5Policy := &oc.RoutingPolicy_PolicyDefinition_Statement_OrderedMap{}
-			dut1RejectPolicyName := "dut1-import-policy"
-			dut1RejectPolicy := &oc.RoutingPolicy_PolicyDefinition_Statement_OrderedMap{}
-			dut5RejectPolicyName := "dut5-import-policy"
-			dut5RejectPolicy := &oc.RoutingPolicy_PolicyDefinition_Statement_OrderedMap{}
+			// DUT1 -> DUT2 export policy
+			dut1ExportPolicyName := "set-attributes-dut1"
+			dut1ExportPolicy := &oc.RoutingPolicy_PolicyDefinition_Statement_OrderedMap{}
+			// DUT5 -> DUT2 export policy
+			dut5ExportPolicyName := "set-attributes-dut5"
+			dut5ExportPolicy := &oc.RoutingPolicy_PolicyDefinition_Statement_OrderedMap{}
+			// DUT1 -> DUT2 import policy
+			dut1ImportPolicyName := "dut1-import-policy"
+			dut1ImportPolicy := &oc.RoutingPolicy_PolicyDefinition_Statement_OrderedMap{}
+			// DUT5 -> DUT2 import policy
+			dut5ImportPolicyName := "dut5-import-policy"
+			dut5ImportPolicy := &oc.RoutingPolicy_PolicyDefinition_Statement_OrderedMap{}
 
-			for i, route := range routeList {
-				// Create prefix set
-				prefixSetName := "accept-" + route
-				prefixPath := ocpath.Root().RoutingPolicy().DefinedSets().PrefixSet(prefixSetName).Prefix(route, "exact").IpPrefix()
-				Replace(t, dut1, prefixPath.Config(), route)
-				Replace(t, dut2, prefixPath.Config(), route)
-				Replace(t, dut5, prefixPath.Config(), route)
+			for i, route := range routesUnderTest {
+				// Restrict each policy to apply only to the route under test.
+				prefixSetName := singletonPrefixSetName(route)
 
-				var installDut1Stmt bool
-				dut1Stmt := &oc.RoutingPolicy_PolicyDefinition_Statement{Name: ygot.String(route + "-setattr-policy-dut1")}
-				dut1Stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetPrefixSet(prefixSetName)
-				dut1Stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.RoutingPolicy_MatchSetOptionsRestrictedType_ANY)
+				// Initialize policy statements that apply only to the route under test.
+				// If the boolean is set to true, then the statement will be installed.
+				var installDut1ExportStmt bool
+				dut1ExportStmt := &oc.RoutingPolicy_PolicyDefinition_Statement{Name: ygot.String(route + "-setattr-policy-dut1")}
+				dut1ExportStmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetPrefixSet(prefixSetName)
+				dut1ExportStmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.RoutingPolicy_MatchSetOptionsRestrictedType_ANY)
 
-				var installDut5Stmt bool
-				dut5Stmt := &oc.RoutingPolicy_PolicyDefinition_Statement{Name: ygot.String(route + "-setattr-policy-dut5")}
-				dut5Stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetPrefixSet(prefixSetName)
-				dut5Stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.RoutingPolicy_MatchSetOptionsRestrictedType_ANY)
+				var installDut5ExportStmt bool
+				dut5ExportStmt := &oc.RoutingPolicy_PolicyDefinition_Statement{Name: ygot.String(route + "-setattr-policy-dut5")}
+				dut5ExportStmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetPrefixSet(prefixSetName)
+				dut5ExportStmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.RoutingPolicy_MatchSetOptionsRestrictedType_ANY)
 
-				var installDut1RejectStmt bool
-				dut1RejectStmt := &oc.RoutingPolicy_PolicyDefinition_Statement{Name: ygot.String(route + "-reject-policy-dut1")}
-				dut1RejectStmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetPrefixSet(prefixSetName)
-				dut1RejectStmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.RoutingPolicy_MatchSetOptionsRestrictedType_ANY)
+				var installDut1ImportStmt bool
+				dut1ImportStmt := &oc.RoutingPolicy_PolicyDefinition_Statement{Name: ygot.String(route + "-reject-policy-dut1")}
+				dut1ImportStmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetPrefixSet(prefixSetName)
+				dut1ImportStmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.RoutingPolicy_MatchSetOptionsRestrictedType_ANY)
 
-				var installDut5RejectStmt bool
-				dut5RejectStmt := &oc.RoutingPolicy_PolicyDefinition_Statement{Name: ygot.String(route + "-reject-policy-dut5")}
-				dut5RejectStmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetPrefixSet(prefixSetName)
-				dut5RejectStmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.RoutingPolicy_MatchSetOptionsRestrictedType_ANY)
+				var installDut5ImportStmt bool
+				dut5ImportStmt := &oc.RoutingPolicy_PolicyDefinition_Statement{Name: ygot.String(route + "-reject-policy-dut5")}
+				dut5ImportStmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetPrefixSet(prefixSetName)
+				dut5ImportStmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.RoutingPolicy_MatchSetOptionsRestrictedType_ANY)
 
 				// Create the corresponding set and filter policies for each test route.
 				switch i {
 				case 1:
-					// Set communities
-					installDut1Stmt = true
-					dut1Stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetOptions(oc.BgpPolicy_BgpSetCommunityOptionType_ADD)
-					dut1Stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().GetOrCreateInline().SetCommunities(
+					// Set a attributes that are not filtered so that the route remains accepted.
+					installDut1ExportStmt = true
+					dut1ExportStmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetOptions(oc.BgpPolicy_BgpSetCommunityOptionType_ADD)
+					dut1ExportStmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().GetOrCreateInline().SetCommunities(
 						[]oc.RoutingPolicy_PolicyDefinition_Statement_Actions_BgpActions_SetCommunity_Inline_Communities_Union{
 							acceptedCommunitySet,
 						},
 					)
 
-					dut1Stmt.GetOrCreateActions().GetOrCreateBgpActions().SetSetLocalPref(higherLocalPref)
+					dut1ExportStmt.GetOrCreateActions().GetOrCreateBgpActions().SetSetLocalPref(higherLocalPref)
 				case 2:
-					// Set communities
-					installDut1Stmt = true
-					dut1Stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetOptions(oc.BgpPolicy_BgpSetCommunityOptionType_ADD)
-					dut1Stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().GetOrCreateInline().SetCommunities(
+					// Set communities to a filtered value.
+					installDut1ExportStmt = true
+					dut1ExportStmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetOptions(oc.BgpPolicy_BgpSetCommunityOptionType_ADD)
+					dut1ExportStmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().GetOrCreateInline().SetCommunities(
 						[]oc.RoutingPolicy_PolicyDefinition_Statement_Actions_BgpActions_SetCommunity_Inline_Communities_Union{
 							rejectedCommunitySet,
 						},
 					)
 
-					// Create community set
-					installDut1RejectStmt = true
-					rejectCommSetName := "reject-community-set"
-					rejCommMemberPath := ocpath.Root().RoutingPolicy().DefinedSets().BgpDefinedSets().CommunitySet(rejectCommSetName).CommunityMember()
-					Replace(t, dut2, rejCommMemberPath.Config(), []oc.RoutingPolicy_DefinedSets_BgpDefinedSets_CommunitySet_CommunityMember_Union{
-						rejectedCommunitySet,
-					})
-					Replace(t, dut2, ocpath.Root().RoutingPolicy().DefinedSets().BgpDefinedSets().CommunitySet(rejectCommSetName).MatchSetOptions().Config(), oc.RoutingPolicy_MatchSetOptionsType_ANY)
-
-					// Match on given list of community set members.
-					dut1RejectStmt.GetOrCreateConditions().GetOrCreateBgpConditions().SetCommunitySet(rejectCommSetName)
+					// Match on given list of community set members and reject it.
+					installDut1ImportStmt = true
+					dut1ImportStmt.GetOrCreateConditions().GetOrCreateBgpConditions().SetCommunitySet(rejectCommSetName)
 				case 3:
-					// Set local-pref
-					installDut1Stmt = true
-					dut1Stmt.GetOrCreateActions().GetOrCreateBgpActions().SetSetLocalPref(lowerLocalPref)
+					// Set local-pref such that the longer AS Path is preferred.
+					installDut1ExportStmt = true
+					dut1ExportStmt.GetOrCreateActions().GetOrCreateBgpActions().SetSetLocalPref(lowerLocalPref)
 
-					installDut5Stmt = true
-					dut5Stmt.GetOrCreateActions().GetOrCreateBgpActions().SetSetLocalPref(higherLocalPref)
+					installDut5ExportStmt = true
+					dut5ExportStmt.GetOrCreateActions().GetOrCreateBgpActions().SetSetLocalPref(higherLocalPref)
 				case 4:
-					// Set MED
-					installDut1Stmt = true
-					dut1Stmt.GetOrCreateActions().GetOrCreateBgpActions().SetSetMed(higherMED)
+					// Set MED and make higher RouterID's route be preferred.
+					installDut1ExportStmt = true
+					dut1ExportStmt.GetOrCreateActions().GetOrCreateBgpActions().SetSetMed(higherMED)
 
-					installDut5Stmt = true
-					dut5Stmt.GetOrCreateActions().GetOrCreateBgpActions().SetSetMed(lowerMED)
+					installDut5ExportStmt = true
+					dut5ExportStmt.GetOrCreateActions().GetOrCreateBgpActions().SetSetMed(lowerMED)
 				case 5:
-					// AS-path-set
-					installDut5RejectStmt = true
-					rejectASPathSetName := "reject-as-path-set"
-					rejASPathSetPath := ocpath.Root().RoutingPolicy().DefinedSets().BgpDefinedSets().AsPathSet(rejectASPathSetName)
-					Replace(t, dut2, rejASPathSetPath.AsPathSetName().Config(), rejectASPathSetName)
-					Replace(t, dut2, rejASPathSetPath.AsPathSetMember().Config(), rejectedASPathSet)
-
-					// Match on given list of AS path set members.
-					dut5RejectStmt.GetOrCreateConditions().GetOrCreateBgpConditions().GetOrCreateMatchAsPathSet().SetAsPathSet(rejectASPathSetName)
-					dut5RejectStmt.GetOrCreateConditions().GetOrCreateBgpConditions().GetOrCreateMatchAsPathSet().SetMatchSetOptions(oc.RoutingPolicy_MatchSetOptionsType_ANY)
+					// Reject route with matching AS path set members.
+					installDut5ImportStmt = true
+					dut5ImportStmt.GetOrCreateConditions().GetOrCreateBgpConditions().GetOrCreateMatchAsPathSet().SetAsPathSet(rejectASPathSetName)
+					dut5ImportStmt.GetOrCreateConditions().GetOrCreateBgpConditions().GetOrCreateMatchAsPathSet().SetMatchSetOptions(oc.RoutingPolicy_MatchSetOptionsType_ANY)
 				case 6:
-					// Set AS Path Prepend
-					installDut1Stmt = true
-					dut1Stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetAsPathPrepend().SetAsn(64499)
-					dut1Stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetAsPathPrepend().SetRepeatN(2)
+					// Set AS Path Prepend to lengthen AS path list such that route is no longer preferred.
+					installDut1ExportStmt = true
+					dut1ExportStmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetAsPathPrepend().SetAsn(64499)
+					dut1ExportStmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetAsPathPrepend().SetRepeatN(2)
 				case 7:
-					// Set AS Path Prepend
-					installDut1Stmt = true
-					dut1Stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetAsPathPrepend().SetAsn(64499)
-					dut1Stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetAsPathPrepend().SetRepeatN(2)
+					// Set AS Path Prepend and then match on it for rejection.
+					installDut1ExportStmt = true
+					dut1ExportStmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetAsPathPrepend().SetAsn(64499)
+					dut1ExportStmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetAsPathPrepend().SetRepeatN(2)
 
-					// AS-path-set
-					installDut1RejectStmt = true
-					rejectASPathSetName := "reject-as-path-set2"
-					rejASPathSetPath := ocpath.Root().RoutingPolicy().DefinedSets().BgpDefinedSets().AsPathSet(rejectASPathSetName)
-					Replace(t, dut2, rejASPathSetPath.AsPathSetName().Config(), rejectASPathSetName)
-					Replace(t, dut2, rejASPathSetPath.AsPathSetMember().Config(), []string{"64499"})
-
-					// Match on given list of AS path set members.
-					dut1RejectStmt.GetOrCreateConditions().GetOrCreateBgpConditions().GetOrCreateMatchAsPathSet().SetAsPathSet(rejectASPathSetName)
-					dut1RejectStmt.GetOrCreateConditions().GetOrCreateBgpConditions().GetOrCreateMatchAsPathSet().SetMatchSetOptions(oc.RoutingPolicy_MatchSetOptionsType_ANY)
+					installDut1ImportStmt = true
+					dut1ImportStmt.GetOrCreateConditions().GetOrCreateBgpConditions().GetOrCreateMatchAsPathSet().SetAsPathSet(rejectASPathSetName2)
+					dut1ImportStmt.GetOrCreateConditions().GetOrCreateBgpConditions().GetOrCreateMatchAsPathSet().SetMatchSetOptions(oc.RoutingPolicy_MatchSetOptionsType_ANY)
 				}
-				if installDut1Stmt {
-					dut1Stmt.GetOrCreateActions().SetPolicyResult(oc.RoutingPolicy_PolicyResultType_ACCEPT_ROUTE)
-					if err := dut1Policy.Append(dut1Stmt); err != nil {
+				if installDut1ExportStmt {
+					dut1ExportStmt.GetOrCreateActions().SetPolicyResult(oc.RoutingPolicy_PolicyResultType_ACCEPT_ROUTE)
+					if err := dut1ExportPolicy.Append(dut1ExportStmt); err != nil {
 						t.Fatalf("Cannot append new BGP policy statement: %v", err)
 					}
 				}
-				if installDut5Stmt {
-					dut5Stmt.GetOrCreateActions().SetPolicyResult(oc.RoutingPolicy_PolicyResultType_ACCEPT_ROUTE)
-					if err := dut5Policy.Append(dut5Stmt); err != nil {
+				if installDut5ExportStmt {
+					dut5ExportStmt.GetOrCreateActions().SetPolicyResult(oc.RoutingPolicy_PolicyResultType_ACCEPT_ROUTE)
+					if err := dut5ExportPolicy.Append(dut5ExportStmt); err != nil {
 						t.Fatalf("Cannot append new BGP policy statement: %v", err)
 					}
 				}
-				if installDut1RejectStmt {
-					dut1RejectStmt.GetOrCreateActions().SetPolicyResult(oc.RoutingPolicy_PolicyResultType_REJECT_ROUTE)
-					if err := dut1RejectPolicy.Append(dut1RejectStmt); err != nil {
+				if installDut1ImportStmt {
+					dut1ImportStmt.GetOrCreateActions().SetPolicyResult(oc.RoutingPolicy_PolicyResultType_REJECT_ROUTE)
+					if err := dut1ImportPolicy.Append(dut1ImportStmt); err != nil {
 						t.Fatalf("Cannot append new BGP policy statement: %v", err)
 					}
 				}
-				if installDut5RejectStmt {
-					dut5RejectStmt.GetOrCreateActions().SetPolicyResult(oc.RoutingPolicy_PolicyResultType_REJECT_ROUTE)
-					if err := dut5RejectPolicy.Append(dut5RejectStmt); err != nil {
+				if installDut5ImportStmt {
+					dut5ImportStmt.GetOrCreateActions().SetPolicyResult(oc.RoutingPolicy_PolicyResultType_REJECT_ROUTE)
+					if err := dut5ImportPolicy.Append(dut5ImportStmt); err != nil {
 						t.Fatalf("Cannot append new BGP policy statement: %v", err)
 					}
 				}
 			}
 			// Install export policies
-			Replace(t, dut1, ocpath.Root().RoutingPolicy().PolicyDefinition(dut1PolicyName).Config(), &oc.RoutingPolicy_PolicyDefinition{Name: ygot.String(dut1PolicyName), Statement: dut1Policy})
-			Replace(t, dut1, bgp.BGPPath.Neighbor(dut2.RouterID).ApplyPolicy().ExportPolicy().Config(), []string{dut1PolicyName})
-			Replace(t, dut5, ocpath.Root().RoutingPolicy().PolicyDefinition(dut5PolicyName).Config(), &oc.RoutingPolicy_PolicyDefinition{Name: ygot.String(dut5PolicyName), Statement: dut5Policy})
-			Replace(t, dut5, bgp.BGPPath.Neighbor(dut2.RouterID).ApplyPolicy().ExportPolicy().Config(), []string{dut5PolicyName})
+			Replace(t, dut1, ocpath.Root().RoutingPolicy().PolicyDefinition(dut1ExportPolicyName).Config(), &oc.RoutingPolicy_PolicyDefinition{Name: ygot.String(dut1ExportPolicyName), Statement: dut1ExportPolicy})
+			Replace(t, dut1, bgp.BGPPath.Neighbor(dut2.RouterID).ApplyPolicy().ExportPolicy().Config(), []string{dut1ExportPolicyName})
+			Replace(t, dut5, ocpath.Root().RoutingPolicy().PolicyDefinition(dut5ExportPolicyName).Config(), &oc.RoutingPolicy_PolicyDefinition{Name: ygot.String(dut5ExportPolicyName), Statement: dut5ExportPolicy})
+			Replace(t, dut5, bgp.BGPPath.Neighbor(dut2.RouterID).ApplyPolicy().ExportPolicy().Config(), []string{dut5ExportPolicyName})
 			// Install import policies
-			Replace(t, dut2, ocpath.Root().RoutingPolicy().PolicyDefinition(dut1RejectPolicyName).Config(), &oc.RoutingPolicy_PolicyDefinition{Name: ygot.String(dut1RejectPolicyName), Statement: dut1RejectPolicy})
-			Replace(t, dut2, bgp.BGPPath.Neighbor(dut1.RouterID).ApplyPolicy().ImportPolicy().Config(), []string{dut1RejectPolicyName})
-			Replace(t, dut2, ocpath.Root().RoutingPolicy().PolicyDefinition(dut5RejectPolicyName).Config(), &oc.RoutingPolicy_PolicyDefinition{Name: ygot.String(dut5RejectPolicyName), Statement: dut5RejectPolicy})
-			Replace(t, dut2, bgp.BGPPath.Neighbor(dut5.RouterID).ApplyPolicy().ImportPolicy().Config(), []string{dut5RejectPolicyName})
+			Replace(t, dut2, ocpath.Root().RoutingPolicy().PolicyDefinition(dut1ImportPolicyName).Config(), &oc.RoutingPolicy_PolicyDefinition{Name: ygot.String(dut1ImportPolicyName), Statement: dut1ImportPolicy})
+			Replace(t, dut2, bgp.BGPPath.Neighbor(dut1.RouterID).ApplyPolicy().ImportPolicy().Config(), []string{dut1ImportPolicyName})
+			Replace(t, dut2, ocpath.Root().RoutingPolicy().PolicyDefinition(dut5ImportPolicyName).Config(), &oc.RoutingPolicy_PolicyDefinition{Name: ygot.String(dut5ImportPolicyName), Statement: dut5ImportPolicy})
+			Replace(t, dut2, bgp.BGPPath.Neighbor(dut5.RouterID).ApplyPolicy().ImportPolicy().Config(), []string{dut5ImportPolicyName})
 		},
 	})
 }
