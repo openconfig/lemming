@@ -86,6 +86,10 @@ func convertPolicyDefinition(policy *oc.RoutingPolicy_PolicyDefinition, neighAdd
 					},
 					SetLocalPref: statement.GetActions().GetBgpActions().GetSetLocalPref(),
 					SetMed:       bgpconfig.BgpSetMedType(setmed),
+					SetAsPathPrepend: bgpconfig.SetAsPathPrepend{
+						RepeatN: statement.GetActions().GetBgpActions().GetSetAsPathPrepend().GetRepeatN(),
+						As:      strconv.FormatUint(uint64(statement.GetActions().GetBgpActions().GetSetAsPathPrepend().GetAsn()), 10),
+					},
 				},
 			},
 		})

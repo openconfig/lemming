@@ -20,7 +20,7 @@ require (
 	github.com/openconfig/kne v0.1.14
 	github.com/openconfig/ondatra v0.2.7
 	github.com/openconfig/ygnmi v0.8.7
-	github.com/openconfig/ygot v0.29.9
+	github.com/openconfig/ygot v0.29.10
 	github.com/p4lang/p4runtime v1.4.0-rc.5.0.20220728214547-13f0d02a521e
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/cobra v1.7.0
@@ -30,7 +30,7 @@ require (
 	github.com/vishvananda/netlink v1.2.1-beta.2
 	github.com/wenovus/gobgp/v3 v3.0.0-20230512225508-639b46f0d89c
 	go.uber.org/mock v0.2.0
-	golang.org/x/exp v0.0.0-20230725093048-515e97ebf090
+	golang.org/x/exp v0.0.0-20230801115018-d63ba01acd4b
 	golang.org/x/net v0.14.0
 	golang.org/x/sys v0.11.0
 	google.golang.org/api v0.126.0
