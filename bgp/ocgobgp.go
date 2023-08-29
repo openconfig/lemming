@@ -67,11 +67,11 @@ func convertPolicyDefinition(policy *oc.RoutingPolicy_PolicyDefinition, neighAdd
 				BgpConditions: bgpconfig.BgpConditions{
 					MatchCommunitySet: bgpconfig.MatchCommunitySet{
 						CommunitySet:    statement.Conditions.GetBgpConditions().GetCommunitySet(),
-						MatchSetOptions: convertMatchSetOptionsType(occommset[statement.Conditions.GetBgpConditions().GetCommunitySet()].GetMatchSetOptions()),
+						MatchSetOptions: convertMatchSetOptionsType(occommset[statement.GetConditions().GetBgpConditions().GetCommunitySet()].GetMatchSetOptions()),
 					},
 					MatchAsPathSet: bgpconfig.MatchAsPathSet{
 						AsPathSet:       statement.Conditions.GetBgpConditions().GetMatchAsPathSet().GetAsPathSet(),
-						MatchSetOptions: convertMatchSetOptionsType(statement.Conditions.GetBgpConditions().GetMatchAsPathSet().GetMatchSetOptions()),
+						MatchSetOptions: convertMatchSetOptionsType(statement.GetConditions().GetBgpConditions().GetMatchAsPathSet().GetMatchSetOptions()),
 					},
 				},
 			},
@@ -112,6 +112,8 @@ func convertNeighborApplyPolicy(neigh *oc.NetworkInstance_Protocol_Bgp_Neighbor)
 	}
 }
 
+// TODO(wenbli): Add unit tests for these conversion functions.
+
 func convertDefaultPolicy(ocpolicy oc.E_RoutingPolicy_DefaultPolicyType) bgpconfig.DefaultPolicyType {
 	switch ocpolicy {
 	case oc.RoutingPolicy_DefaultPolicyType_REJECT_ROUTE:
@@ -129,6 +131,8 @@ func convertMatchSetOptionsType(ocMatchSetOpts oc.E_RoutingPolicy_MatchSetOption
 		return bgpconfig.MATCH_SET_OPTIONS_TYPE_INVERT
 	case oc.RoutingPolicy_MatchSetOptionsType_ANY:
 		return bgpconfig.MATCH_SET_OPTIONS_TYPE_ANY
+	case oc.RoutingPolicy_MatchSetOptionsType_ALL:
+		return bgpconfig.MATCH_SET_OPTIONS_TYPE_ALL
 	default:
 		return bgpconfig.MATCH_SET_OPTIONS_TYPE_ANY
 	}
@@ -203,6 +207,23 @@ func convertCommunitySet(occommset map[string]*oc.RoutingPolicy_DefinedSets_BgpD
 		})
 	}
 	return commsets
+}
+
+// convertCommunityOC converts a GoBGP community to its OC representation.
+func convertCommunityOC(y uint32) oc.NetworkInstance_Protocol_Bgp_Rib_Community_Community_Union {
+	switch y {
+	default:
+		return oc.UnionString(fmt.Sprintf("%d:%d", y>>16, y&0x0000ffff))
+	}
+}
+
+// communitiesToOC converts any GoBGP community to its RIB representation in OpenConfig.
+func communitiesToOC(communities []uint32) []oc.NetworkInstance_Protocol_Bgp_Rib_Community_Community_Union {
+	var occomms []oc.NetworkInstance_Protocol_Bgp_Rib_Community_Community_Union
+	for _, comm := range communities {
+		occomms = append(occomms, convertCommunityOC(comm))
+	}
+	return occomms
 }
 
 func convertPrefixSets(ocprefixsets map[string]*oc.RoutingPolicy_DefinedSets_PrefixSet) []bgpconfig.PrefixSet {
