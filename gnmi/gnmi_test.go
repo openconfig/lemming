@@ -614,9 +614,27 @@ func TestSetYGNMI(t *testing.T) {
 		isState   bool
 		inOp      func(c *ygnmi.Client) error
 		getOp     func(t *testing.T, c *ygnmi.Client) (interface{}, bool)
-		wantValue interface{}
+		wantValue any
 		wantErr   string
 	}
+
+	prefixSetName := "accept-route"
+	policyStmts := &oc.RoutingPolicy_PolicyDefinition_Statement_OrderedMap{}
+	policyName := "one"
+	stmt, err := policyStmts.AppendNew(policyName)
+	if err != nil {
+		t.Fatal(err)
+	}
+	stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetPrefixSet(prefixSetName)
+	stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.RoutingPolicy_MatchSetOptionsRestrictedType_ANY)
+	stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetOptions(oc.BgpPolicy_BgpSetCommunityOptionType_REPLACE)
+	stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().GetOrCreateInline().SetCommunities(
+		[]oc.RoutingPolicy_PolicyDefinition_Statement_Actions_BgpActions_SetCommunity_Inline_Communities_Union{
+			oc.UnionString("10000:10000"),
+		},
+	)
+	policy := &oc.RoutingPolicy_PolicyDefinition{Name: ygot.String(policyName), Statement: policyStmts}
+	policy.PopulateDefaults()
 
 	passingTests := []testSpec{{
 		desc: "leaf config update",
@@ -828,6 +846,26 @@ func TestSetYGNMI(t *testing.T) {
 			}
 			return v.Val()
 		},
+	}, {
+		desc: "telemetry-atomic-config-replace",
+		inOp: func(c *ygnmi.Client) error {
+			route := "1.1.0.0/16"
+			prefixPath := ocpath.Root().RoutingPolicy().DefinedSets().PrefixSet(prefixSetName).Prefix(route, "exact").IpPrefix()
+			_, err = ygnmi.Replace(context.Background(), c, prefixPath.Config(), route)
+			if err != nil {
+				return err
+			}
+			_, err = ygnmi.Replace(context.Background(), c, ocpath.Root().RoutingPolicy().PolicyDefinition(policyName).Config(), policy)
+			return err
+		},
+		wantValue: policy,
+		getOp: func(t *testing.T, c *ygnmi.Client) (interface{}, bool) {
+			v, err := ygnmi.Lookup[*oc.RoutingPolicy_PolicyDefinition](context.Background(), c, ocpath.Root().RoutingPolicy().PolicyDefinition(policyName).Config())
+			if err != nil {
+				t.Fatal(err)
+			}
+			return v.Val()
+		},
 	}}
 
 	failingTests := []testSpec{{
@@ -861,6 +899,7 @@ func TestSetYGNMI(t *testing.T) {
 	if err != nil {
 		t.Fatalf("cannot start server, got err: %v", err)
 	}
+	t.Logf("Running gNMI server on %s", addr)
 	defer gnmiServer.c.Stop()
 	conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(local.NewCredentials()))
 	if err != nil {
@@ -896,6 +935,9 @@ func TestSetYGNMI(t *testing.T) {
 					t.Errorf("Got present, want not present")
 				}
 			case ygot.GoStruct:
+				if !ok {
+					t.Fatalf("Got not present, want present")
+				}
 				gotGS, ok := got.(ygot.GoStruct)
 				if !ok {
 					t.Fatalf("Got object not a GoStruct")
@@ -905,7 +947,7 @@ func TestSetYGNMI(t *testing.T) {
 					t.Fatal(err)
 				}
 				if len(nos.Update)+len(nos.Delete) != 0 {
-					t.Errorf("Got diff:\n%s", nos)
+					t.Errorf("Got diff:\n%s\n(-want, +got):\n%s", nos, cmp.Diff(want, gotGS, cmp.AllowUnexported(oc.RoutingPolicy_PolicyDefinition_Statement_OrderedMap{})))
 				}
 			default:
 				if diff := cmp.Diff(want, got); diff != "" {
