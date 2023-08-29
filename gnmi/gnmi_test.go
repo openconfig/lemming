@@ -621,7 +621,7 @@ func TestSetYGNMI(t *testing.T) {
 	prefixSetName := "accept-route"
 	policyStmts := &oc.RoutingPolicy_PolicyDefinition_Statement_OrderedMap{}
 	policyName := "one"
-	stmt, err := policyStmts.AppendNew(policyName)
+	stmt, err := policyStmts.AppendNew("stmt1")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -631,6 +631,18 @@ func TestSetYGNMI(t *testing.T) {
 	stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().GetOrCreateInline().SetCommunities(
 		[]oc.RoutingPolicy_PolicyDefinition_Statement_Actions_BgpActions_SetCommunity_Inline_Communities_Union{
 			oc.UnionString("10000:10000"),
+		},
+	)
+	stmt, err = policyStmts.AppendNew("stmt2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetPrefixSet(prefixSetName)
+	stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.RoutingPolicy_MatchSetOptionsRestrictedType_INVERT)
+	stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetOptions(oc.BgpPolicy_BgpSetCommunityOptionType_ADD)
+	stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().GetOrCreateInline().SetCommunities(
+		[]oc.RoutingPolicy_PolicyDefinition_Statement_Actions_BgpActions_SetCommunity_Inline_Communities_Union{
+			oc.UnionString("20000:20000"),
 		},
 	)
 	policy := &oc.RoutingPolicy_PolicyDefinition{Name: ygot.String(policyName), Statement: policyStmts}
