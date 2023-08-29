@@ -365,7 +365,7 @@ func (ribattrs *ocRIBAttrIndices) populateRIBAttrs(path *api.Path, rib *oc.Netwo
 		case *api.CommunitiesAttribute:
 			if comms := m.GetCommunities(); len(comms) > 0 {
 				rib.GetOrCreateCommunity(ribattrs.commIndex).SetCommunity(communitiesToOC(comms))
-				ribattrs.commIndex += 1
+				ribattrs.commIndex++
 			}
 		}
 	}
