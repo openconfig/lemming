@@ -48,11 +48,6 @@ func singletonPrefixSetName(route string) string {
 }
 
 // TestAttributes tests BGP attributes.
-// - set-community and community set.
-// - set-local-pref and local pref.
-//
-// DUT2's import policy from DUT1 sets the attribute values.
-// DUT2's export policy to DUT3 filters the prefix with the attribute value.
 func TestAttributes(t *testing.T) {
 	routesUnderTest := []string{
 		"10.1.0.0/16",
