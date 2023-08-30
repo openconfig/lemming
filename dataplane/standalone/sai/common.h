@@ -19,6 +19,7 @@
 #include <memory>
 #include <string>
 
+#include "dataplane/standalone/proto/common.pb.h"
 #include "dataplane/standalone/translator.h"
 
 extern "C" {
