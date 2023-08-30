@@ -16,7 +16,9 @@
 
 #include <glog/logging.h>
 
-#include "common.h"
+#include <algorithm>
+#include <string>
+
 #include "dataplane/standalone/proto/common.pb.h"
 #include "dataplane/standalone/sai/entry.h"
 

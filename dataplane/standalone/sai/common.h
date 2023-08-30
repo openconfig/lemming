@@ -15,7 +15,9 @@
 #ifndef DATAPLANE_STANDALONE_SAI_COMMON_H_
 #define DATAPLANE_STANDALONE_SAI_COMMON_H_
 
+#include <algorithm>
 #include <memory>
+#include <string>
 
 #include "dataplane/standalone/translator.h"
 
@@ -43,13 +45,13 @@ sai_ip_prefix_t convert_to_ip_prefix(
 // copy_list copies a scalar proto list to an attribute.
 // Note: It is expected that the attribute list contains preallocated memory.
 template <typename T, typename S>
-void copy_list(S* dst, const google::protobuf::RepeatedField<T>& src,
-                       int attr_len) {
-    // It's not safe to just memcpy this because in some cases to proto types are larger than the corresponding sai types.
-    for (int i = 0; i < std::min(attr_len, src.size()); i++) {
-        dst[i] = src[i]; 
-    }
+void copy_list(S *dst, const google::protobuf::RepeatedField<T> &src,
+               int attr_len) {
+  // It's not safe to just memcpy this because in some cases to proto types are
+  // larger than the corresponding sai types.
+  for (int i = 0; i < std::min(attr_len, src.size()); i++) {
+    dst[i] = src[i];
+  }
 }
 
-
-#endif  // DATAPLANE_STANDALONE_SAI_COMMON_H_b
+#endif  // DATAPLANE_STANDALONE_SAI_COMMON_H_
