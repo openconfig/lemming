@@ -125,11 +125,11 @@ message SetBfdSessionAttributeResponse {}
 
 message GetBfdSessionAttributeRequest {
   uint64 oid = 1;
-  BfdSessionAttr attr_type = 2;
+  repeated BfdSessionAttr attr_type = 2;
 }
 
 message GetBfdSessionAttributeResponse {
-  BfdSessionAttribute attr = 1;
+  repeated BfdSessionAttribute attr = 1;
 }
 
 service Bfd {

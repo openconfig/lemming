@@ -57,11 +57,11 @@ message SetVirtualRouterAttributeResponse {}
 
 message GetVirtualRouterAttributeRequest {
   uint64 oid = 1;
-  VirtualRouterAttr attr_type = 2;
+  repeated VirtualRouterAttr attr_type = 2;
 }
 
 message GetVirtualRouterAttributeResponse {
-  VirtualRouterAttribute attr = 1;
+  repeated VirtualRouterAttribute attr = 1;
 }
 
 service VirtualRouter {

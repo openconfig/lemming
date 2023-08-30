@@ -35,11 +35,11 @@ message RemoveRpfGroupResponse {}
 
 message GetRpfGroupAttributeRequest {
   uint64 oid = 1;
-  RpfGroupAttr attr_type = 2;
+  repeated RpfGroupAttr attr_type = 2;
 }
 
 message GetRpfGroupAttributeResponse {
-  RpfGroupAttribute attr = 1;
+  repeated RpfGroupAttribute attr = 1;
 }
 
 message CreateRpfGroupMemberRequest {
@@ -61,11 +61,11 @@ message RemoveRpfGroupMemberResponse {}
 
 message GetRpfGroupMemberAttributeRequest {
   uint64 oid = 1;
-  RpfGroupMemberAttr attr_type = 2;
+  repeated RpfGroupMemberAttr attr_type = 2;
 }
 
 message GetRpfGroupMemberAttributeResponse {
-  RpfGroupMemberAttribute attr = 1;
+  repeated RpfGroupMemberAttribute attr = 1;
 }
 
 service RpfGroup {

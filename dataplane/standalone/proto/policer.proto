@@ -66,11 +66,11 @@ message SetPolicerAttributeResponse {}
 
 message GetPolicerAttributeRequest {
   uint64 oid = 1;
-  PolicerAttr attr_type = 2;
+  repeated PolicerAttr attr_type = 2;
 }
 
 message GetPolicerAttributeResponse {
-  PolicerAttribute attr = 1;
+  repeated PolicerAttribute attr = 1;
 }
 
 service Policer {

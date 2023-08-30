@@ -36,11 +36,11 @@ message RemoveL2mcGroupResponse {}
 
 message GetL2mcGroupAttributeRequest {
   uint64 oid = 1;
-  L2mcGroupAttr attr_type = 2;
+  repeated L2mcGroupAttr attr_type = 2;
 }
 
 message GetL2mcGroupAttributeResponse {
-  L2mcGroupAttribute attr = 1;
+  repeated L2mcGroupAttribute attr = 1;
 }
 
 message CreateL2mcGroupMemberRequest {
@@ -63,11 +63,11 @@ message RemoveL2mcGroupMemberResponse {}
 
 message GetL2mcGroupMemberAttributeRequest {
   uint64 oid = 1;
-  L2mcGroupMemberAttr attr_type = 2;
+  repeated L2mcGroupMemberAttr attr_type = 2;
 }
 
 message GetL2mcGroupMemberAttributeResponse {
-  L2mcGroupMemberAttribute attr = 1;
+  repeated L2mcGroupMemberAttribute attr = 1;
 }
 
 service L2mcGroup {

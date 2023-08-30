@@ -41,11 +41,11 @@ message SetQosMapAttributeResponse {}
 
 message GetQosMapAttributeRequest {
   uint64 oid = 1;
-  QosMapAttr attr_type = 2;
+  repeated QosMapAttr attr_type = 2;
 }
 
 message GetQosMapAttributeResponse {
-  QosMapAttribute attr = 1;
+  repeated QosMapAttribute attr = 1;
 }
 
 service QosMap {

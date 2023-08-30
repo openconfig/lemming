@@ -30,11 +30,11 @@ message RemoveCounterResponse {}
 
 message GetCounterAttributeRequest {
   uint64 oid = 1;
-  CounterAttr attr_type = 2;
+  repeated CounterAttr attr_type = 2;
 }
 
 message GetCounterAttributeResponse {
-  CounterAttribute attr = 1;
+  repeated CounterAttribute attr = 1;
 }
 
 service Counter {

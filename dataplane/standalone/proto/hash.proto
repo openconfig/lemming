@@ -7,14 +7,6 @@ import "dataplane/standalone/proto/common.proto";
 
 option go_package = "github.com/openconfig/lemming/proto/dataplane/sai";
 
-enum FineGrainedHashFieldAttr {
-  FINE_GRAINED_HASH_FIELD_ATTR_UNSPECIFIED = 0;
-  FINE_GRAINED_HASH_FIELD_ATTR_NATIVE_HASH_FIELD = 1;
-  FINE_GRAINED_HASH_FIELD_ATTR_IPV4_MASK = 2;
-  FINE_GRAINED_HASH_FIELD_ATTR_IPV6_MASK = 3;
-  FINE_GRAINED_HASH_FIELD_ATTR_SEQUENCE_ID = 4;
-}
-
 enum HashAttr {
   HASH_ATTR_UNSPECIFIED = 0;
   HASH_ATTR_NATIVE_HASH_FIELD_LIST = 1;
@@ -22,32 +14,12 @@ enum HashAttr {
   HASH_ATTR_FINE_GRAINED_HASH_FIELD_LIST = 3;
 }
 
-message CreateFineGrainedHashFieldRequest {
-  uint64 switch = 1;
-
-  NativeHashField native_hash_field = 2;
-  bytes ipv4_mask = 3;
-  bytes ipv6_mask = 4;
-  uint32 sequence_id = 5;
-}
-
-message CreateFineGrainedHashFieldResponse {
-  uint64 oid = 1;
-}
-
-message RemoveFineGrainedHashFieldRequest {
-  uint64 oid = 1;
-}
-
-message RemoveFineGrainedHashFieldResponse {}
-
-message GetFineGrainedHashFieldAttributeRequest {
-  uint64 oid = 1;
-  FineGrainedHashFieldAttr attr_type = 2;
-}
-
-message GetFineGrainedHashFieldAttributeResponse {
-  FineGrainedHashFieldAttribute attr = 1;
+enum FineGrainedHashFieldAttr {
+  FINE_GRAINED_HASH_FIELD_ATTR_UNSPECIFIED = 0;
+  FINE_GRAINED_HASH_FIELD_ATTR_NATIVE_HASH_FIELD = 1;
+  FINE_GRAINED_HASH_FIELD_ATTR_IPV4_MASK = 2;
+  FINE_GRAINED_HASH_FIELD_ATTR_IPV6_MASK = 3;
+  FINE_GRAINED_HASH_FIELD_ATTR_SEQUENCE_ID = 4;
 }
 
 message CreateHashRequest {
@@ -81,24 +53,52 @@ message SetHashAttributeResponse {}
 
 message GetHashAttributeRequest {
   uint64 oid = 1;
-  HashAttr attr_type = 2;
+  repeated HashAttr attr_type = 2;
 }
 
 message GetHashAttributeResponse {
-  HashAttribute attr = 1;
+  repeated HashAttribute attr = 1;
+}
+
+message CreateFineGrainedHashFieldRequest {
+  uint64 switch = 1;
+
+  NativeHashField native_hash_field = 2;
+  bytes ipv4_mask = 3;
+  bytes ipv6_mask = 4;
+  uint32 sequence_id = 5;
+}
+
+message CreateFineGrainedHashFieldResponse {
+  uint64 oid = 1;
+}
+
+message RemoveFineGrainedHashFieldRequest {
+  uint64 oid = 1;
+}
+
+message RemoveFineGrainedHashFieldResponse {}
+
+message GetFineGrainedHashFieldAttributeRequest {
+  uint64 oid = 1;
+  repeated FineGrainedHashFieldAttr attr_type = 2;
+}
+
+message GetFineGrainedHashFieldAttributeResponse {
+  repeated FineGrainedHashFieldAttribute attr = 1;
 }
 
 service Hash {
-  rpc CreateFineGrainedHashField(CreateFineGrainedHashFieldRequest)
-      returns (CreateFineGrainedHashFieldResponse) {}
-  rpc RemoveFineGrainedHashField(RemoveFineGrainedHashFieldRequest)
-      returns (RemoveFineGrainedHashFieldResponse) {}
-  rpc GetFineGrainedHashFieldAttribute(GetFineGrainedHashFieldAttributeRequest)
-      returns (GetFineGrainedHashFieldAttributeResponse) {}
   rpc CreateHash(CreateHashRequest) returns (CreateHashResponse) {}
   rpc RemoveHash(RemoveHashRequest) returns (RemoveHashResponse) {}
   rpc SetHashAttribute(SetHashAttributeRequest)
       returns (SetHashAttributeResponse) {}
   rpc GetHashAttribute(GetHashAttributeRequest)
       returns (GetHashAttributeResponse) {}
+  rpc CreateFineGrainedHashField(CreateFineGrainedHashFieldRequest)
+      returns (CreateFineGrainedHashFieldResponse) {}
+  rpc RemoveFineGrainedHashField(RemoveFineGrainedHashFieldRequest)
+      returns (RemoveFineGrainedHashFieldResponse) {}
+  rpc GetFineGrainedHashFieldAttribute(GetFineGrainedHashFieldAttributeRequest)
+      returns (GetFineGrainedHashFieldAttributeResponse) {}
 }

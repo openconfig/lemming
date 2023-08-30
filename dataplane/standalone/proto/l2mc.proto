@@ -40,11 +40,11 @@ message SetL2mcEntryAttributeResponse {}
 
 message GetL2mcEntryAttributeRequest {
   L2mcEntry entry = 1;
-  L2mcEntryAttr attr_type = 2;
+  repeated L2mcEntryAttr attr_type = 2;
 }
 
 message GetL2mcEntryAttributeResponse {
-  L2mcEntryAttribute attr = 1;
+  repeated L2mcEntryAttribute attr = 1;
 }
 
 service L2mc {

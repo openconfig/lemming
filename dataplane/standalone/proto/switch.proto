@@ -464,11 +464,11 @@ message IpsecSaStatusNotificationDataResponse {
 
 message GetSwitchAttributeRequest {
   uint64 oid = 1;
-  SwitchAttr attr_type = 2;
+  repeated SwitchAttr attr_type = 2;
 }
 
 message GetSwitchAttributeResponse {
-  SwitchAttribute attr = 1;
+  repeated SwitchAttribute attr = 1;
 }
 
 message CreateSwitchTunnelRequest {
@@ -509,11 +509,11 @@ message SetSwitchTunnelAttributeResponse {}
 
 message GetSwitchTunnelAttributeRequest {
   uint64 oid = 1;
-  SwitchTunnelAttr attr_type = 2;
+  repeated SwitchTunnelAttr attr_type = 2;
 }
 
 message GetSwitchTunnelAttributeResponse {
-  SwitchTunnelAttribute attr = 1;
+  repeated SwitchTunnelAttribute attr = 1;
 }
 
 service Switch {

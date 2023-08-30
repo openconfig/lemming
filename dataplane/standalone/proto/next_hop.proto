@@ -78,11 +78,11 @@ message SetNextHopAttributeResponse {}
 
 message GetNextHopAttributeRequest {
   uint64 oid = 1;
-  NextHopAttr attr_type = 2;
+  repeated NextHopAttr attr_type = 2;
 }
 
 message GetNextHopAttributeResponse {
-  NextHopAttribute attr = 1;
+  repeated NextHopAttribute attr = 1;
 }
 
 service NextHop {

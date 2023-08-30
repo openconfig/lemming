@@ -35,11 +35,11 @@ message RemoveIpmcGroupResponse {}
 
 message GetIpmcGroupAttributeRequest {
   uint64 oid = 1;
-  IpmcGroupAttr attr_type = 2;
+  repeated IpmcGroupAttr attr_type = 2;
 }
 
 message GetIpmcGroupAttributeResponse {
-  IpmcGroupAttribute attr = 1;
+  repeated IpmcGroupAttribute attr = 1;
 }
 
 message CreateIpmcGroupMemberRequest {
@@ -61,11 +61,11 @@ message RemoveIpmcGroupMemberResponse {}
 
 message GetIpmcGroupMemberAttributeRequest {
   uint64 oid = 1;
-  IpmcGroupMemberAttr attr_type = 2;
+  repeated IpmcGroupMemberAttr attr_type = 2;
 }
 
 message GetIpmcGroupMemberAttributeResponse {
-  IpmcGroupMemberAttribute attr = 1;
+  repeated IpmcGroupMemberAttribute attr = 1;
 }
 
 service IpmcGroup {

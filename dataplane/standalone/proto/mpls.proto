@@ -67,11 +67,11 @@ message SetInsegEntryAttributeResponse {}
 
 message GetInsegEntryAttributeRequest {
   InsegEntry entry = 1;
-  InsegEntryAttr attr_type = 2;
+  repeated InsegEntryAttr attr_type = 2;
 }
 
 message GetInsegEntryAttributeResponse {
-  InsegEntryAttribute attr = 1;
+  repeated InsegEntryAttribute attr = 1;
 }
 
 service Mpls {

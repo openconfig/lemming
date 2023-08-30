@@ -43,11 +43,11 @@ message SetMcastFdbEntryAttributeResponse {}
 
 message GetMcastFdbEntryAttributeRequest {
   McastFdbEntry entry = 1;
-  McastFdbEntryAttr attr_type = 2;
+  repeated McastFdbEntryAttr attr_type = 2;
 }
 
 message GetMcastFdbEntryAttributeResponse {
-  McastFdbEntryAttribute attr = 1;
+  repeated McastFdbEntryAttribute attr = 1;
 }
 
 service McastFdb {

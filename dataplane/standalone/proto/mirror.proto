@@ -108,11 +108,11 @@ message SetMirrorSessionAttributeResponse {}
 
 message GetMirrorSessionAttributeRequest {
   uint64 oid = 1;
-  MirrorSessionAttr attr_type = 2;
+  repeated MirrorSessionAttr attr_type = 2;
 }
 
 message GetMirrorSessionAttributeResponse {
-  MirrorSessionAttribute attr = 1;
+  repeated MirrorSessionAttribute attr = 1;
 }
 
 service Mirror {

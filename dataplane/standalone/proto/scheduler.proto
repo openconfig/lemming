@@ -57,11 +57,11 @@ message SetSchedulerAttributeResponse {}
 
 message GetSchedulerAttributeRequest {
   uint64 oid = 1;
-  SchedulerAttr attr_type = 2;
+  repeated SchedulerAttr attr_type = 2;
 }
 
 message GetSchedulerAttributeResponse {
-  SchedulerAttribute attr = 1;
+  repeated SchedulerAttribute attr = 1;
 }
 
 service Scheduler {

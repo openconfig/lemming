@@ -62,11 +62,11 @@ message SetNeighborEntryAttributeResponse {}
 
 message GetNeighborEntryAttributeRequest {
   NeighborEntry entry = 1;
-  NeighborEntryAttr attr_type = 2;
+  repeated NeighborEntryAttr attr_type = 2;
 }
 
 message GetNeighborEntryAttributeResponse {
-  NeighborEntryAttribute attr = 1;
+  repeated NeighborEntryAttribute attr = 1;
 }
 
 service Neighbor {

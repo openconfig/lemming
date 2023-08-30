@@ -19,12 +19,6 @@ enum NextHopGroupAttr {
   NEXT_HOP_GROUP_ATTR_SELECTION_MAP = 8;
 }
 
-enum NextHopGroupMapAttr {
-  NEXT_HOP_GROUP_MAP_ATTR_UNSPECIFIED = 0;
-  NEXT_HOP_GROUP_MAP_ATTR_TYPE = 1;
-  NEXT_HOP_GROUP_MAP_ATTR_MAP_TO_VALUE_LIST = 2;
-}
-
 enum NextHopGroupMemberAttr {
   NEXT_HOP_GROUP_MEMBER_ATTR_UNSPECIFIED = 0;
   NEXT_HOP_GROUP_MEMBER_ATTR_NEXT_HOP_GROUP_ID = 1;
@@ -36,6 +30,12 @@ enum NextHopGroupMemberAttr {
   NEXT_HOP_GROUP_MEMBER_ATTR_INDEX = 7;
   NEXT_HOP_GROUP_MEMBER_ATTR_SEQUENCE_ID = 8;
   NEXT_HOP_GROUP_MEMBER_ATTR_COUNTER_ID = 9;
+}
+
+enum NextHopGroupMapAttr {
+  NEXT_HOP_GROUP_MAP_ATTR_UNSPECIFIED = 0;
+  NEXT_HOP_GROUP_MAP_ATTR_TYPE = 1;
+  NEXT_HOP_GROUP_MAP_ATTR_MAP_TO_VALUE_LIST = 2;
 }
 
 message CreateNextHopGroupRequest {
@@ -71,46 +71,11 @@ message SetNextHopGroupAttributeResponse {}
 
 message GetNextHopGroupAttributeRequest {
   uint64 oid = 1;
-  NextHopGroupAttr attr_type = 2;
+  repeated NextHopGroupAttr attr_type = 2;
 }
 
 message GetNextHopGroupAttributeResponse {
-  NextHopGroupAttribute attr = 1;
-}
-
-message CreateNextHopGroupMapRequest {
-  uint64 switch = 1;
-
-  NextHopGroupMapType type = 2;
-  repeated UintMap map_to_value_list = 3;
-}
-
-message CreateNextHopGroupMapResponse {
-  uint64 oid = 1;
-}
-
-message RemoveNextHopGroupMapRequest {
-  uint64 oid = 1;
-}
-
-message RemoveNextHopGroupMapResponse {}
-
-message SetNextHopGroupMapAttributeRequest {
-  uint64 oid = 1;
-  oneof attr {
-    UintMapList map_to_value_list = 2;
-  }
-}
-
-message SetNextHopGroupMapAttributeResponse {}
-
-message GetNextHopGroupMapAttributeRequest {
-  uint64 oid = 1;
-  NextHopGroupMapAttr attr_type = 2;
-}
-
-message GetNextHopGroupMapAttributeResponse {
-  NextHopGroupMapAttribute attr = 1;
+  repeated NextHopGroupAttribute attr = 1;
 }
 
 message CreateNextHopGroupMemberRequest {
@@ -151,11 +116,46 @@ message SetNextHopGroupMemberAttributeResponse {}
 
 message GetNextHopGroupMemberAttributeRequest {
   uint64 oid = 1;
-  NextHopGroupMemberAttr attr_type = 2;
+  repeated NextHopGroupMemberAttr attr_type = 2;
 }
 
 message GetNextHopGroupMemberAttributeResponse {
-  NextHopGroupMemberAttribute attr = 1;
+  repeated NextHopGroupMemberAttribute attr = 1;
+}
+
+message CreateNextHopGroupMapRequest {
+  uint64 switch = 1;
+
+  NextHopGroupMapType type = 2;
+  repeated UintMap map_to_value_list = 3;
+}
+
+message CreateNextHopGroupMapResponse {
+  uint64 oid = 1;
+}
+
+message RemoveNextHopGroupMapRequest {
+  uint64 oid = 1;
+}
+
+message RemoveNextHopGroupMapResponse {}
+
+message SetNextHopGroupMapAttributeRequest {
+  uint64 oid = 1;
+  oneof attr {
+    UintMapList map_to_value_list = 2;
+  }
+}
+
+message SetNextHopGroupMapAttributeResponse {}
+
+message GetNextHopGroupMapAttributeRequest {
+  uint64 oid = 1;
+  repeated NextHopGroupMapAttr attr_type = 2;
+}
+
+message GetNextHopGroupMapAttributeResponse {
+  repeated NextHopGroupMapAttribute attr = 1;
 }
 
 service NextHopGroup {
@@ -167,14 +167,6 @@ service NextHopGroup {
       returns (SetNextHopGroupAttributeResponse) {}
   rpc GetNextHopGroupAttribute(GetNextHopGroupAttributeRequest)
       returns (GetNextHopGroupAttributeResponse) {}
-  rpc CreateNextHopGroupMap(CreateNextHopGroupMapRequest)
-      returns (CreateNextHopGroupMapResponse) {}
-  rpc RemoveNextHopGroupMap(RemoveNextHopGroupMapRequest)
-      returns (RemoveNextHopGroupMapResponse) {}
-  rpc SetNextHopGroupMapAttribute(SetNextHopGroupMapAttributeRequest)
-      returns (SetNextHopGroupMapAttributeResponse) {}
-  rpc GetNextHopGroupMapAttribute(GetNextHopGroupMapAttributeRequest)
-      returns (GetNextHopGroupMapAttributeResponse) {}
   rpc CreateNextHopGroupMember(CreateNextHopGroupMemberRequest)
       returns (CreateNextHopGroupMemberResponse) {}
   rpc RemoveNextHopGroupMember(RemoveNextHopGroupMemberRequest)
@@ -183,4 +175,12 @@ service NextHopGroup {
       returns (SetNextHopGroupMemberAttributeResponse) {}
   rpc GetNextHopGroupMemberAttribute(GetNextHopGroupMemberAttributeRequest)
       returns (GetNextHopGroupMemberAttributeResponse) {}
+  rpc CreateNextHopGroupMap(CreateNextHopGroupMapRequest)
+      returns (CreateNextHopGroupMapResponse) {}
+  rpc RemoveNextHopGroupMap(RemoveNextHopGroupMapRequest)
+      returns (RemoveNextHopGroupMapResponse) {}
+  rpc SetNextHopGroupMapAttribute(SetNextHopGroupMapAttributeRequest)
+      returns (SetNextHopGroupMapAttributeResponse) {}
+  rpc GetNextHopGroupMapAttribute(GetNextHopGroupMapAttributeRequest)
+      returns (GetNextHopGroupMapAttributeResponse) {}
 }

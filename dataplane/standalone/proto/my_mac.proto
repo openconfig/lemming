@@ -47,11 +47,11 @@ message SetMyMacAttributeResponse {}
 
 message GetMyMacAttributeRequest {
   uint64 oid = 1;
-  MyMacAttr attr_type = 2;
+  repeated MyMacAttr attr_type = 2;
 }
 
 message GetMyMacAttributeResponse {
-  MyMacAttribute attr = 1;
+  repeated MyMacAttribute attr = 1;
 }
 
 service MyMac {

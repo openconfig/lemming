@@ -48,11 +48,11 @@ message SetSystemPortAttributeResponse {}
 
 message GetSystemPortAttributeRequest {
   uint64 oid = 1;
-  SystemPortAttr attr_type = 2;
+  repeated SystemPortAttr attr_type = 2;
 }
 
 message GetSystemPortAttributeResponse {
-  SystemPortAttribute attr = 1;
+  repeated SystemPortAttribute attr = 1;
 }
 
 service SystemPort {

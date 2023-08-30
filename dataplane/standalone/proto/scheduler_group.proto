@@ -50,11 +50,11 @@ message SetSchedulerGroupAttributeResponse {}
 
 message GetSchedulerGroupAttributeRequest {
   uint64 oid = 1;
-  SchedulerGroupAttr attr_type = 2;
+  repeated SchedulerGroupAttr attr_type = 2;
 }
 
 message GetSchedulerGroupAttributeResponse {
-  SchedulerGroupAttribute attr = 1;
+  repeated SchedulerGroupAttribute attr = 1;
 }
 
 service SchedulerGroup {
