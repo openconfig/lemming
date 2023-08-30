@@ -200,12 +200,14 @@ func updateCache(cache *cache.Cache, dirtyRoot, root ygot.GoStruct, target, orig
 			return fmt.Errorf("gnmi: %v", err)
 		}
 	} else {
-		n, err := ygot.Diff(root, dirtyRoot, &ygot.DiffPathOpt{PreferShadowPath: preferShadowPath})
+		ns, err := ygot.DiffWithAtomic(root, dirtyRoot, &ygot.DiffPathOpt{PreferShadowPath: preferShadowPath})
 		if err != nil {
 			return fmt.Errorf("gnmi: error while creating update notification for Set: %v", err)
 		}
-		n.Timestamp = timestamp
-		nos = append(nos, n)
+		for _, n := range ns {
+			n.Timestamp = timestamp
+		}
+		nos = append(nos, ns...)
 	}
 
 	if auth != nil && auth.IsInitialized() {
@@ -252,7 +254,11 @@ func checkWritePermission(auth PathAuth, user string, nos ...*gpb.Notification) 
 func updateCacheNotifs(ca *cache.Cache, nos []*gpb.Notification, target, origin string) error {
 	cacheTarget := ca.GetTarget(target)
 	for _, n := range nos {
-		n.Prefix = &gpb.Path{Origin: origin, Target: target}
+		if n.Prefix == nil {
+			n.Prefix = &gpb.Path{}
+		}
+		n.Prefix.Origin = origin
+		n.Prefix.Target = target
 		if n.Prefix.Origin == "" {
 			n.Prefix.Origin = OpenConfigOrigin
 		}
@@ -271,6 +277,7 @@ func updateCacheNotifs(ca *cache.Cache, nos []*gpb.Notification, target, origin 
 		if len(pathsForDelete) > 0 {
 			log.V(1).Infof("datastore: deleting the following paths: %+v", pathsForDelete)
 		}
+		log.V(1).Infof("datastore: calling GnmiUpdate with the following notification:\n%s", prototext.Format(n))
 		if err := cacheTarget.GnmiUpdate(n); err != nil {
 			return fmt.Errorf("%w: notification:\n%s\n%s", err, prototext.Format(n), string(debug.Stack()))
 		}
