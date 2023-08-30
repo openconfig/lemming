@@ -458,13 +458,13 @@ message SetFooAttributeResponse {
 
 message GetFooAttributeRequest {
 	uint64 oid = 1;
-	FooAttr attr_type = 2;
+	repeated FooAttr attr_type = 2;
 	
 	
 }
 
 message GetFooAttributeResponse {
-	FooAttribute attr = 1;
+	repeated FooAttribute attr = 1;
 	
 	
 }
@@ -573,13 +573,13 @@ message RemoveFooResponse {
 
 message GetFooAttributeRequest {
 	uint64 oid = 1;
-	FooAttr attr_type = 2;
+	repeated FooAttr attr_type = 2;
 	
 	
 }
 
 message GetFooAttributeResponse {
-	FooAttribute attr = 1;
+	repeated FooAttribute attr = 1;
 	
 	
 }
