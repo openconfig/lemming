@@ -187,20 +187,20 @@ func BenchmarkGNMISet(b *testing.B) {
 		},
 	}}
 
-	interfaceOrIPN := 10
+	interfaceOrPolicyN := 10
 	for _, bb := range tests {
 		b.Run(bb.desc, func(b *testing.B) {
 			if bb.skip {
 				b.Skip()
 			}
 			for i := 0; i != b.N; i++ {
-				for j := 0; j != interfaceOrIPN; j++ {
+				for j := 0; j != interfaceOrPolicyN; j++ {
 					if err := bb.op(fmt.Sprintf("eth%d", j), i); err != nil {
 						b.Fatal(err)
 					}
 				}
 				if bb.op2 != nil {
-					for j := 0; j != interfaceOrIPN; j++ {
+					for j := 0; j != interfaceOrPolicyN; j++ {
 						if err := bb.op2(fmt.Sprintf("eth%d", j), i); err != nil {
 							b.Fatal(err)
 						}
