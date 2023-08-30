@@ -33,7 +33,7 @@ import (
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot"
 	api "github.com/wenovus/gobgp/v3/api"
-	"github.com/wenovus/gobgp/v3/pkg/bgpconfig"
+	"github.com/wenovus/gobgp/v3/pkg/config"
 	"github.com/wenovus/gobgp/v3/pkg/server"
 	"github.com/wenovus/gobgp/v3/pkg/zebra"
 )
@@ -60,7 +60,7 @@ type bgpDeclTask struct {
 	targetName    string
 	zapiURL       string
 	bgpServer     *server.BgpServer
-	currentConfig *bgpconfig.BgpConfigSet
+	currentConfig *config.BgpConfigSet
 	listenPort    uint16
 
 	bgpStarted bool
@@ -200,7 +200,7 @@ func (t *bgpDeclTask) startGoBGPFuncDecl(_ context.Context, yclient *ygnmi.Clien
 	}
 
 	// Initialize values required for reconile to be called.
-	t.currentConfig = &bgpconfig.BgpConfigSet{}
+	t.currentConfig = &config.BgpConfigSet{}
 
 	// Monitor changes to BGP intended config and apply them.
 	bgpWatcher := ygnmi.Watch(
@@ -386,7 +386,7 @@ func (t *bgpDeclTask) reconcile(intended *oc.Root) error {
 	case bgpShouldStart && !t.bgpStarted:
 		log.V(1).Info("Starting BGP")
 		var err error
-		t.currentConfig, err = InitialConfig(context.Background(), t.appliedBGP, t.bgpServer, newConfig, gracefulRestart)
+		t.currentConfig, err = config.InitialConfig(context.Background(), t.bgpServer, newConfig, gracefulRestart)
 		if err != nil {
 			return fmt.Errorf("Failed to apply initial BGP configuration %v", newConfig)
 		}
@@ -397,13 +397,13 @@ func (t *bgpDeclTask) reconcile(intended *oc.Root) error {
 			return errors.New("Failed to stop BGP service")
 		}
 		t.bgpStarted = false
-		t.currentConfig = &bgpconfig.BgpConfigSet{}
+		t.currentConfig = &config.BgpConfigSet{}
 		*t.appliedBGP = oc.NetworkInstance_Protocol_Bgp{}
 		t.appliedBGP.PopulateDefaults()
 	case t.bgpStarted:
 		log.V(1).Info("Updating BGP")
 		var err error
-		t.currentConfig, err = UpdateConfig(context.Background(), t.appliedBGP, t.bgpServer, t.currentConfig, newConfig)
+		t.currentConfig, err = config.UpdateConfig(context.Background(), t.bgpServer, t.currentConfig, newConfig)
 		if err != nil {
 			return fmt.Errorf("Failed to update BGP service: %v", newConfig)
 		}
@@ -420,8 +420,8 @@ func (t *bgpDeclTask) reconcile(intended *oc.Root) error {
 // GoBGP's notion of config vs. state does not conform to OpenConfig (see
 // https://github.com/osrg/gobgp/issues/2584)
 // Therefore, we need a compatibility layer between the two configs.
-func intendedToGoBGP(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *oc.RoutingPolicy, zapiURL string, listenPort uint16) *bgpconfig.BgpConfigSet {
-	bgpConfig := &bgpconfig.BgpConfigSet{}
+func intendedToGoBGP(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *oc.RoutingPolicy, zapiURL string, listenPort uint16) *config.BgpConfigSet {
+	bgpConfig := &config.BgpConfigSet{}
 
 	// Global config
 	global := bgpoc.GetOrCreateGlobal()
@@ -442,20 +442,20 @@ func intendedToGoBGP(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *oc.Routin
 		applyPolicy.Config.ExportPolicyList = convertPolicyNames(neighAddr, applyPolicy.Config.ExportPolicyList)
 
 		// Add neighbour config.
-		bgpConfig.Neighbors = append(bgpConfig.Neighbors, bgpconfig.Neighbor{
-			Config: bgpconfig.NeighborConfig{
+		bgpConfig.Neighbors = append(bgpConfig.Neighbors, config.Neighbor{
+			Config: config.NeighborConfig{
 				PeerAs:          neigh.GetPeerAs(),
 				NeighborAddress: neighAddr,
 			},
 			// This is needed because GoBGP's configuration diffing
 			// logic may check the state value instead of the
 			// config value.
-			State: bgpconfig.NeighborState{
+			State: config.NeighborState{
 				PeerAs:          neigh.GetPeerAs(),
 				NeighborAddress: neighAddr,
 			},
-			Transport: bgpconfig.Transport{
-				Config: bgpconfig.TransportConfig{
+			Transport: config.Transport{
+				Config: config.TransportConfig{
 					LocalAddress: neigh.GetTransport().GetLocalAddress(),
 					RemotePort:   neigh.GetNeighborPort(),
 				},
@@ -477,7 +477,7 @@ func intendedToGoBGP(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *oc.Routin
 
 	intendedToGoBGPPolicies(bgpoc, policyoc, bgpConfig)
 
-	bgpConfig.Zebra.Config = bgpconfig.ZebraConfig{
+	bgpConfig.Zebra.Config = config.ZebraConfig{
 		Enabled: true,
 		Url:     zapiURL,
 		// TODO(wenbli): This should actually be filled with the types
@@ -494,7 +494,7 @@ func intendedToGoBGP(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *oc.Routin
 
 // intendedToGoBGPPolicies populates bgpConfig's policies from the OC configuration.
 // TODO: applied state
-func intendedToGoBGPPolicies(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *oc.RoutingPolicy, bgpConfig *bgpconfig.BgpConfigSet) {
+func intendedToGoBGPPolicies(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *oc.RoutingPolicy, bgpConfig *config.BgpConfigSet) {
 	// community sets
 	bgpConfig.DefinedSets.BgpDefinedSets.CommunitySets = convertCommunitySet(policyoc.GetOrCreateDefinedSets().GetOrCreateBgpDefinedSets().CommunitySet)
 	// Prefix sets
@@ -520,7 +520,7 @@ func intendedToGoBGPPolicies(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *o
 		//                     neigh2polA, neigh2polB, ..., ...
 		//                     ...]
 		// Global ApplyPolicy list: [same as policy-definitions]
-		bgpConfig.DefinedSets.NeighborSets = append(bgpConfig.DefinedSets.NeighborSets, bgpconfig.NeighborSet{
+		bgpConfig.DefinedSets.NeighborSets = append(bgpConfig.DefinedSets.NeighborSets, config.NeighborSet{
 			NeighborSetName:  neighAddr,
 			NeighborInfoList: []string{neighAddr},
 		})
@@ -558,31 +558,31 @@ func intendedToGoBGPPolicies(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *o
 		// Create per-neighbour default policies.
 		defaultImportPolicyName := "default-import|" + neighAddr
 		defaultExportPolicyName := "default-export|" + neighAddr
-		bgpConfig.PolicyDefinitions = append(bgpConfig.PolicyDefinitions, bgpconfig.PolicyDefinition{
+		bgpConfig.PolicyDefinitions = append(bgpConfig.PolicyDefinitions, config.PolicyDefinition{
 			Name: defaultImportPolicyName,
-			Statements: []bgpconfig.Statement{{
+			Statements: []config.Statement{{
 				// Use a customized name for the default policies.
 				Name: defaultImportPolicyName,
-				Conditions: bgpconfig.Conditions{
-					MatchNeighborSet: bgpconfig.MatchNeighborSet{
+				Conditions: config.Conditions{
+					MatchNeighborSet: config.MatchNeighborSet{
 						NeighborSet: neighAddr,
 					},
 				},
-				Actions: bgpconfig.Actions{
+				Actions: config.Actions{
 					RouteDisposition: defaultPolicyToRouteDisp(applyPolicy.Config.DefaultImportPolicy),
 				},
 			}},
-		}, bgpconfig.PolicyDefinition{
+		}, config.PolicyDefinition{
 			Name: defaultExportPolicyName,
-			Statements: []bgpconfig.Statement{{
+			Statements: []config.Statement{{
 				// Use a customized name for the default policies.
 				Name: defaultExportPolicyName,
-				Conditions: bgpconfig.Conditions{
-					MatchNeighborSet: bgpconfig.MatchNeighborSet{
+				Conditions: config.Conditions{
+					MatchNeighborSet: config.MatchNeighborSet{
 						NeighborSet: neighAddr,
 					},
 				},
-				Actions: bgpconfig.Actions{
+				Actions: config.Actions{
 					RouteDisposition: defaultPolicyToRouteDisp(applyPolicy.Config.DefaultExportPolicy),
 				},
 			}},

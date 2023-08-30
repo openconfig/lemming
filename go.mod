@@ -28,10 +28,9 @@ require (
 	github.com/spf13/viper v1.16.0
 	github.com/stoewer/go-strcase v1.3.0
 	github.com/vishvananda/netlink v1.2.1-beta.2
-	github.com/wenovus/gobgp/v3 v3.0.0-20230512225508-639b46f0d89c
+	github.com/wenovus/gobgp/v3 v3.0.0-20230831013712-6d33842cbf42
 	go.uber.org/mock v0.2.0
 	golang.org/x/exp v0.0.0-20230801115018-d63ba01acd4b
-	golang.org/x/net v0.14.0
 	golang.org/x/sys v0.11.0
 	google.golang.org/api v0.126.0
 	google.golang.org/grpc v1.58.0-dev
@@ -94,7 +93,6 @@ require (
 	github.com/open-traffic-generator/ixia-c-operator v0.3.4 // indirect
 	github.com/openconfig/gocloser v0.0.0-20220310182203-c6c950ed3b0b // indirect
 	github.com/openconfig/lemming/operator v0.2.0 // indirect
-	github.com/osrg/gobgp/v3 v3.14.0 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pborman/uuid v1.2.1 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.9 // indirect
@@ -114,6 +112,7 @@ require (
 	go.opencensus.io v0.24.0 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
 	golang.org/x/crypto v0.12.0 // indirect
+	golang.org/x/net v0.14.0 // indirect
 	golang.org/x/oauth2 v0.8.0 // indirect
 	golang.org/x/sync v0.3.0 // indirect
 	golang.org/x/term v0.11.0 // indirect
