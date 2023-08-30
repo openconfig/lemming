@@ -47,8 +47,8 @@ func singletonPrefixSetName(route string) string {
 	return "only-" + route
 }
 
-// TestAttributes tests BGP attributes.
-func TestAttributes(t *testing.T) {
+// TestSetAttributes tests setting BGP attributes.
+func TestSetAttributes(t *testing.T) {
 	routesUnderTest := []string{
 		"10.1.0.0/16",
 		"10.2.0.0/16",

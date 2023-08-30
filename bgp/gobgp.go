@@ -250,6 +250,8 @@ func (t *bgpDeclTask) startGoBGPFuncDecl(_ context.Context, yclient *ygnmi.Clien
 
 			t.updateAppliedState(func() error {
 				v4uni := t.appliedBGP.GetOrCreateRib().GetOrCreateAfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST).GetOrCreateIpv4Unicast()
+				rib := t.appliedBGP.GetOrCreateRib()
+				ribattrs := &ocRIBAttrIndices{}
 
 				// TODO: Support IPv6
 				t.queryTable("", "local", api.TableType_LOCAL, func(routes []*api.Destination) {
@@ -265,7 +267,7 @@ func (t *bgpDeclTask) startGoBGPFuncDecl(_ context.Context, yclient *ygnmi.Clien
 								origin = oc.UnionString(path.NeighborIp)
 							}
 							// TODO: this ID should match the ID in adj-rib-in-post.
-							locRib.GetOrCreateRoute(route.Prefix, origin, uint32(j))
+							ribattrs.populateRIBAttrs(path, rib, locRib.GetOrCreateRoute(route.Prefix, origin, uint32(j)))
 						}
 					}
 				})
@@ -280,9 +282,9 @@ func (t *bgpDeclTask) startGoBGPFuncDecl(_ context.Context, yclient *ygnmi.Clien
 						for _, route := range routes {
 							for j, path := range route.Paths {
 								// TODO: this ID should be retrieved from the update message.
-								neighContainer.GetOrCreateAdjRibInPre().GetOrCreateRoute(route.Prefix, uint32(j))
+								ribattrs.populateRIBAttrs(path, rib, neighContainer.GetOrCreateAdjRibInPre().GetOrCreateRoute(route.Prefix, uint32(j)))
 								if !path.Filtered {
-									neighContainer.GetOrCreateAdjRibInPost().GetOrCreateRoute(route.Prefix, uint32(j))
+									ribattrs.populateRIBAttrs(path, rib, neighContainer.GetOrCreateAdjRibInPost().GetOrCreateRoute(route.Prefix, uint32(j)))
 								}
 							}
 						}
@@ -297,9 +299,9 @@ func (t *bgpDeclTask) startGoBGPFuncDecl(_ context.Context, yclient *ygnmi.Clien
 								// the generated UUID isn't propagated.
 								//
 								// Note that path.NeighborIp is <nil> for some reason so have to use neigh.
-								neighContainer.GetOrCreateAdjRibOutPre().GetOrCreateRoute(route.Prefix, uint32(j))
+								ribattrs.populateRIBAttrs(path, rib, neighContainer.GetOrCreateAdjRibOutPre().GetOrCreateRoute(route.Prefix, uint32(j)))
 								if !path.Filtered {
-									neighContainer.GetOrCreateAdjRibOutPost().GetOrCreateRoute(route.Prefix, uint32(j))
+									ribattrs.populateRIBAttrs(path, rib, neighContainer.GetOrCreateAdjRibOutPost().GetOrCreateRoute(route.Prefix, uint32(j)))
 								}
 							}
 						}
@@ -340,6 +342,34 @@ func (t *bgpDeclTask) queryTable(neighbor, tableName string, tableType api.Table
 		log.V(1).Info("GoBGP ListPath call completed (%s table)", tableName)
 		f(routes)
 	}
+}
+
+type ocRIBRoute interface {
+	SetCommunityIndex(uint64)
+}
+
+type ocRIBAttrIndices struct {
+	commIndex uint64
+}
+
+// populateRIBAttrs populates path attributes of routes in the RIB.
+//
+// TODO(wenbli): Keep a cache and keep indices stable rather than changing.
+func (ribattrs *ocRIBAttrIndices) populateRIBAttrs(path *api.Path, rib *oc.NetworkInstance_Protocol_Bgp_Rib, r ocRIBRoute) {
+	for _, attr := range path.GetPattrs() {
+		m, err := attr.UnmarshalNew()
+		if err != nil {
+			log.Errorf("BGP: Unable to unmarshal a GoBGP path attribute")
+		}
+		switch m := m.(type) {
+		case *api.CommunitiesAttribute:
+			if comms := m.GetCommunities(); len(comms) > 0 {
+				rib.GetOrCreateCommunity(ribattrs.commIndex).SetCommunity(communitiesToOC(comms))
+				ribattrs.commIndex++
+			}
+		}
+	}
+	r.SetCommunityIndex(ribattrs.commIndex)
 }
 
 // reconcile examines the difference between the intended and applied
