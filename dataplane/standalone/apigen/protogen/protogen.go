@@ -224,14 +224,14 @@ func populateTmplDataFromFunc(apis map[string]*protoAPITmplData, docInfo *docpar
 		req.Attrs = attrs
 	case "get_attribute":
 		req.Fields = append(req.Fields, idField, protoTmplField{
-			ProtoType: strcase.UpperCamelCase(meta.TypeName + " attr"),
+			ProtoType: "repeated " + strcase.UpperCamelCase(meta.TypeName+" attr"),
 			Index:     2,
 			Name:      "attr_type",
 		})
 		resp.Fields = append(resp.Fields, protoTmplField{
 			Index:     1,
 			Name:      "attr",
-			ProtoType: strcase.UpperCamelCase(meta.TypeName + "Attribute"),
+			ProtoType: "repeated " + strcase.UpperCamelCase(meta.TypeName+"Attribute"),
 		})
 
 		// attrEnum is the special emun that describes the possible values can be set/get for the API.
