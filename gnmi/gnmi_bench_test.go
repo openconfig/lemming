@@ -52,6 +52,19 @@ func BenchmarkGNMISet(b *testing.B) {
 		b.Fatalf("failed to create client: %v", err)
 	}
 
+	policyStmts := &oc.RoutingPolicy_PolicyDefinition_Statement_OrderedMap{}
+	stmt, err := policyStmts.AppendNew("stmt1")
+	if err != nil {
+		b.Fatal(err)
+	}
+	stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.RoutingPolicy_MatchSetOptionsRestrictedType_ANY)
+	stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetOptions(oc.BgpPolicy_BgpSetCommunityOptionType_REPLACE)
+	stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().GetOrCreateInline().SetCommunities(
+		[]oc.RoutingPolicy_PolicyDefinition_Statement_Actions_BgpActions_SetCommunity_Inline_Communities_Union{
+			oc.UnionString("10000:10000"),
+		},
+	)
+
 	tests := []struct {
 		desc string
 		op   func(name string, i int) error
@@ -153,22 +166,41 @@ func BenchmarkGNMISet(b *testing.B) {
 			_, err := gnmiclient.Delete(context.Background(), stateClient, ocpath.Root().Interface(name).State())
 			return err
 		},
+	}, {
+		desc: "telemetry-atomic-config-replace",
+		op: func(name string, i int) error {
+			prefixSetName := fmt.Sprintf("accept-route-%d", i)
+			stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetPrefixSet(prefixSetName)
+			route := fmt.Sprintf("1.%d.0.0/16", i)
+			prefixPath := ocpath.Root().RoutingPolicy().DefinedSets().PrefixSet(prefixSetName).Prefix(route, "exact").IpPrefix()
+			if _, err := gnmiclient.Replace[string](context.Background(), configClient, prefixPath.Config(), route); err != nil {
+				return err
+			}
+
+			policy := &oc.RoutingPolicy_PolicyDefinition{Name: ygot.String(name), Statement: policyStmts}
+			_, err := gnmiclient.Replace[*oc.RoutingPolicy_PolicyDefinition](context.Background(), configClient, ocpath.Root().RoutingPolicy().PolicyDefinition(name).Config(), policy)
+			return err
+		},
+		op2: func(name string, i int) error {
+			_, err := gnmiclient.Delete[*oc.RoutingPolicy_PolicyDefinition](context.Background(), configClient, ocpath.Root().RoutingPolicy().PolicyDefinition(name).Config())
+			return err
+		},
 	}}
 
-	interfaceN := 10
+	interfaceOrIPN := 10
 	for _, bb := range tests {
 		b.Run(bb.desc, func(b *testing.B) {
 			if bb.skip {
 				b.Skip()
 			}
 			for i := 0; i != b.N; i++ {
-				for j := 0; j != interfaceN; j++ {
+				for j := 0; j != interfaceOrIPN; j++ {
 					if err := bb.op(fmt.Sprintf("eth%d", j), i); err != nil {
 						b.Fatal(err)
 					}
 				}
 				if bb.op2 != nil {
-					for j := 0; j != interfaceN; j++ {
+					for j := 0; j != interfaceOrIPN; j++ {
 						if err := bb.op2(fmt.Sprintf("eth%d", j), i); err != nil {
 							b.Fatal(err)
 						}
