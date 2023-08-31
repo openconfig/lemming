@@ -1,0 +1,5 @@
+FROM docker-syncd-vs:latest
+RUN rm /usr/lib/x86_64-linux-gnu/libsaivs.so.0.0.0 /usr/lib/x86_64-linux-gnu/libsaivs.so.0
+ADD libsai.so /usr/lib/x86_64-linux-gnu/libsaivs.so.0.0.0
+RUN ln /usr/lib/x86_64-linux-gnu/libsaivs.so.0.0.0 /usr/lib/x86_64-linux-gnu/libsaivs.so.0
+RUN apt-get update && apt-get install -y tcpdump
