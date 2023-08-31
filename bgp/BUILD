@@ -3,7 +3,6 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "bgp",
     srcs = [
-        "debug.go",
         "gobgp.go",
         "ocgobgp.go",
         "util.go",
@@ -21,7 +20,6 @@ go_library(
         "@com_github_openconfig_ygot//ygot",
         "@com_github_wenovus_gobgp_v3//api",
         "@com_github_wenovus_gobgp_v3//pkg/config",
-        "@com_github_wenovus_gobgp_v3//pkg/log",
         "@com_github_wenovus_gobgp_v3//pkg/server",
         "@com_github_wenovus_gobgp_v3//pkg/zebra",
     ],
