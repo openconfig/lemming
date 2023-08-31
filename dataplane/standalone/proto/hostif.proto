@@ -27,6 +27,13 @@ enum HostifTableEntryAttr {
   HOSTIF_TABLE_ENTRY_ATTR_HOST_IF = 5;
 }
 
+enum HostifTrapGroupAttr {
+  HOSTIF_TRAP_GROUP_ATTR_UNSPECIFIED = 0;
+  HOSTIF_TRAP_GROUP_ATTR_ADMIN_STATE = 1;
+  HOSTIF_TRAP_GROUP_ATTR_QUEUE = 2;
+  HOSTIF_TRAP_GROUP_ATTR_POLICER = 3;
+}
+
 enum HostifTrapAttr {
   HOSTIF_TRAP_ATTR_UNSPECIFIED = 0;
   HOSTIF_TRAP_ATTR_TRAP_TYPE = 1;
@@ -36,13 +43,6 @@ enum HostifTrapAttr {
   HOSTIF_TRAP_ATTR_TRAP_GROUP = 5;
   HOSTIF_TRAP_ATTR_MIRROR_SESSION = 6;
   HOSTIF_TRAP_ATTR_COUNTER_ID = 7;
-}
-
-enum HostifTrapGroupAttr {
-  HOSTIF_TRAP_GROUP_ATTR_UNSPECIFIED = 0;
-  HOSTIF_TRAP_GROUP_ATTR_ADMIN_STATE = 1;
-  HOSTIF_TRAP_GROUP_ATTR_QUEUE = 2;
-  HOSTIF_TRAP_GROUP_ATTR_POLICER = 3;
 }
 
 enum HostifUserDefinedTrapAttr {
@@ -87,11 +87,11 @@ message SetHostifAttributeResponse {}
 
 message GetHostifAttributeRequest {
   uint64 oid = 1;
-  HostifAttr attr_type = 2;
+  repeated HostifAttr attr_type = 2;
 }
 
 message GetHostifAttributeResponse {
-  HostifAttribute attr = 1;
+  repeated HostifAttribute attr = 1;
 }
 
 message CreateHostifTableEntryRequest {
@@ -116,11 +116,49 @@ message RemoveHostifTableEntryResponse {}
 
 message GetHostifTableEntryAttributeRequest {
   uint64 oid = 1;
-  HostifTableEntryAttr attr_type = 2;
+  repeated HostifTableEntryAttr attr_type = 2;
 }
 
 message GetHostifTableEntryAttributeResponse {
-  HostifTableEntryAttribute attr = 1;
+  repeated HostifTableEntryAttribute attr = 1;
+}
+
+message CreateHostifTrapGroupRequest {
+  uint64 switch = 1;
+
+  bool admin_state = 2;
+  uint32 queue = 3;
+  uint64 policer = 4;
+}
+
+message CreateHostifTrapGroupResponse {
+  uint64 oid = 1;
+}
+
+message RemoveHostifTrapGroupRequest {
+  uint64 oid = 1;
+}
+
+message RemoveHostifTrapGroupResponse {}
+
+message SetHostifTrapGroupAttributeRequest {
+  uint64 oid = 1;
+  oneof attr {
+    bool admin_state = 2;
+    uint32 queue = 3;
+    uint64 policer = 4;
+  }
+}
+
+message SetHostifTrapGroupAttributeResponse {}
+
+message GetHostifTrapGroupAttributeRequest {
+  uint64 oid = 1;
+  repeated HostifTrapGroupAttr attr_type = 2;
+}
+
+message GetHostifTrapGroupAttributeResponse {
+  repeated HostifTrapGroupAttribute attr = 1;
 }
 
 message CreateHostifTrapRequest {
@@ -161,49 +199,11 @@ message SetHostifTrapAttributeResponse {}
 
 message GetHostifTrapAttributeRequest {
   uint64 oid = 1;
-  HostifTrapAttr attr_type = 2;
+  repeated HostifTrapAttr attr_type = 2;
 }
 
 message GetHostifTrapAttributeResponse {
-  HostifTrapAttribute attr = 1;
-}
-
-message CreateHostifTrapGroupRequest {
-  uint64 switch = 1;
-
-  bool admin_state = 2;
-  uint32 queue = 3;
-  uint64 policer = 4;
-}
-
-message CreateHostifTrapGroupResponse {
-  uint64 oid = 1;
-}
-
-message RemoveHostifTrapGroupRequest {
-  uint64 oid = 1;
-}
-
-message RemoveHostifTrapGroupResponse {}
-
-message SetHostifTrapGroupAttributeRequest {
-  uint64 oid = 1;
-  oneof attr {
-    bool admin_state = 2;
-    uint32 queue = 3;
-    uint64 policer = 4;
-  }
-}
-
-message SetHostifTrapGroupAttributeResponse {}
-
-message GetHostifTrapGroupAttributeRequest {
-  uint64 oid = 1;
-  HostifTrapGroupAttr attr_type = 2;
-}
-
-message GetHostifTrapGroupAttributeResponse {
-  HostifTrapGroupAttribute attr = 1;
+  repeated HostifTrapAttribute attr = 1;
 }
 
 message CreateHostifUserDefinedTrapRequest {
@@ -236,11 +236,11 @@ message SetHostifUserDefinedTrapAttributeResponse {}
 
 message GetHostifUserDefinedTrapAttributeRequest {
   uint64 oid = 1;
-  HostifUserDefinedTrapAttr attr_type = 2;
+  repeated HostifUserDefinedTrapAttr attr_type = 2;
 }
 
 message GetHostifUserDefinedTrapAttributeResponse {
-  HostifUserDefinedTrapAttribute attr = 1;
+  repeated HostifUserDefinedTrapAttribute attr = 1;
 }
 
 service Hostif {
@@ -256,14 +256,6 @@ service Hostif {
       returns (RemoveHostifTableEntryResponse) {}
   rpc GetHostifTableEntryAttribute(GetHostifTableEntryAttributeRequest)
       returns (GetHostifTableEntryAttributeResponse) {}
-  rpc CreateHostifTrap(CreateHostifTrapRequest)
-      returns (CreateHostifTrapResponse) {}
-  rpc RemoveHostifTrap(RemoveHostifTrapRequest)
-      returns (RemoveHostifTrapResponse) {}
-  rpc SetHostifTrapAttribute(SetHostifTrapAttributeRequest)
-      returns (SetHostifTrapAttributeResponse) {}
-  rpc GetHostifTrapAttribute(GetHostifTrapAttributeRequest)
-      returns (GetHostifTrapAttributeResponse) {}
   rpc CreateHostifTrapGroup(CreateHostifTrapGroupRequest)
       returns (CreateHostifTrapGroupResponse) {}
   rpc RemoveHostifTrapGroup(RemoveHostifTrapGroupRequest)
@@ -272,6 +264,14 @@ service Hostif {
       returns (SetHostifTrapGroupAttributeResponse) {}
   rpc GetHostifTrapGroupAttribute(GetHostifTrapGroupAttributeRequest)
       returns (GetHostifTrapGroupAttributeResponse) {}
+  rpc CreateHostifTrap(CreateHostifTrapRequest)
+      returns (CreateHostifTrapResponse) {}
+  rpc RemoveHostifTrap(RemoveHostifTrapRequest)
+      returns (RemoveHostifTrapResponse) {}
+  rpc SetHostifTrapAttribute(SetHostifTrapAttributeRequest)
+      returns (SetHostifTrapAttributeResponse) {}
+  rpc GetHostifTrapAttribute(GetHostifTrapAttributeRequest)
+      returns (GetHostifTrapAttributeResponse) {}
   rpc CreateHostifUserDefinedTrap(CreateHostifUserDefinedTrapRequest)
       returns (CreateHostifUserDefinedTrapResponse) {}
   rpc RemoveHostifUserDefinedTrap(RemoveHostifUserDefinedTrapRequest)

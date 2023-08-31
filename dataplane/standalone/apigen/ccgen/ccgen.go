@@ -57,6 +57,14 @@ func Generate(doc *docparser.SAIInfo, sai *saiast.SAIAPI) (map[string]string, er
 	return files, nil
 }
 
+func sanitizeProtoName(inName string) string {
+	name := strings.ReplaceAll(inName, "inline", "inline_") // inline is C++ keyword
+	if unicode.IsDigit(rune(name[0])) {
+		name = fmt.Sprintf("_%s", name)
+	}
+	return name
+}
+
 // createCCData returns a struct with the template data for the given function.
 func createCCData(meta *saiast.FuncMetadata, apiName string, sai *saiast.SAIAPI, info *docparser.SAIInfo, fn *saiast.TypeDecl) *templateFunc {
 	tf := &templateFunc{
@@ -83,48 +91,61 @@ func createCCData(meta *saiast.FuncMetadata, apiName string, sai *saiast.SAIAPI,
 	}
 	tf.Args = strings.Join(paramDefs, ", ")
 	tf.Vars = strings.Join(paramVars, ", ")
+	tf.Client = strcase.SnakeCase(apiName)
+	if tf.Client == "switch" { // switch is C++ keyword.
+		tf.Client = "switch_"
+	}
+	tf.RPCMethod = strcase.UpperCamelCase(meta.Name)
+	tf.SwitchScoped = meta.IsSwitchScoped
+	tf.AttrEnumType = strcase.UpperCamelCase(meta.TypeName + " attr")
+
+	// If the func has entry, then we don't use ids, instead pass the entry to the proto.
+	if meta.Entry == "" {
+		tf.OidVar = sai.Funcs[fn.Typ].Params[0].Name
+	} else {
+		entryType := strings.TrimPrefix(sai.Funcs[fn.Typ].Params[0].Typ, "const ")
+		if ua, ok := typeToUnionAccessor[entryType]; ok {
+			tf.EntryConversionFunc = ua.convertFromFunc
+			tf.EntryVar = sai.Funcs[fn.Typ].Params[0].Name
+		}
+	}
+
 	switch tf.Operation {
 	case "create":
 		tf.AttrSwitch = &AttrSwitch{
-			Var: "attr_list[i].id",
+			Var:      "attr_list[i].id",
+			ProtoVar: "req",
 		}
-		// If the func has entry, then we don't return an id, instead pass the entry to the proto.
-		if meta.Entry == "" {
-			tf.OutOid = sai.Funcs[fn.Typ].Params[0].Name
-		} else {
-			entryType := strings.TrimPrefix(sai.Funcs[fn.Typ].Params[0].Typ, "const ")
-			if ua, ok := typeToUnionAccessor[entryType]; ok {
-				tf.EntryConversionFunc = ua.converterFunc
-				tf.EntryVar = sai.Funcs[fn.Typ].Params[0].Name
-			}
-		}
-		tf.Client = strcase.SnakeCase(apiName)
-		if tf.Client == "switch" { // switch is C++ keyword.
-			tf.Client = "switch_"
-		}
-		tf.RPCMethod = strcase.UpperCamelCase(meta.Name)
-		tf.SwitchScoped = meta.IsSwitchScoped
 		for _, attr := range info.Attrs[meta.TypeName].CreateFields {
-			name := attr.MemberName
-			name = strings.ReplaceAll(name, "inline", "inline_") // inline is C++ keyword
-			if unicode.IsDigit(rune(attr.MemberName[0])) {
-				name = fmt.Sprintf("_%s", name)
-			}
+			name := sanitizeProtoName(attr.MemberName)
 			pFunc, arg, err := protoFieldSetter(attr.SaiType, name, "attr_list[i].value", info)
 			if err != nil {
 				fmt.Println("skipping due to error: ", err)
 				continue
 			}
 			tf.AttrSwitch.Attrs = append(tf.AttrSwitch.Attrs, &AttrSwitchSmt{
-				Name:      attr.EnumName,
+				EnumValue: attr.EnumName,
 				ProtoFunc: pFunc,
 				Args:      arg,
 			})
 		}
+	case "get_attribute":
+		tf.AttrSwitch = &AttrSwitch{
+			Var:      "attr_list[i].id",
+			ProtoVar: "resp.attr(i)",
+		}
+		for _, attr := range info.Attrs[meta.TypeName].ReadFields {
+			name := sanitizeProtoName(attr.MemberName)
+			smt, err := protoFieldGetter(attr.SaiType, name, "attr_list[i].value", info)
+			if err != nil {
+				fmt.Println("skipping due to error: ", err)
+				continue
+			}
+			smt.EnumValue = attr.EnumName
+			tf.AttrSwitch.Attrs = append(tf.AttrSwitch.Attrs, smt)
+		}
 	}
-
 	tf.UseCommonAPI = supportedOperation[tf.Operation]
-
 	// Function or types that don't follow standard naming.
 	if strings.Contains(tf.TypeName, "PORT_ALL") || strings.Contains(tf.TypeName, "ALL_NEIGHBOR") {
 		tf.UseCommonAPI = false
@@ -144,10 +165,11 @@ const (
 )
 
 type unionAccessor struct {
-	accessor      string
-	pointerOf     bool
-	aType         accessorType
-	converterFunc string
+	accessor        string
+	pointerOf       bool
+	aType           accessorType
+	convertFromFunc string
+	convertToFunc   string
 }
 
 var typeToUnionAccessor = map[string]*unionAccessor{
@@ -217,13 +239,15 @@ var typeToUnionAccessor = map[string]*unionAccessor{
 		aType:    scalar,
 	},
 	"sai_ip_address_t": {
-		accessor:      "ipaddr",
-		converterFunc: "convert_from_ip_address",
-		aType:         convertFunc,
+		accessor:        "ipaddr",
+		convertFromFunc: "convert_from_ip_address",
+		convertToFunc:   "convert_to_ip_address",
+		aType:           convertFunc,
 	},
 	"sai_route_entry_t": {
-		converterFunc: "convert_from_route_entry",
-		aType:         convertFunc,
+		convertFromFunc: "convert_from_route_entry",
+		convertToFunc:   "convert_to_route_entry",
+		aType:           convertFunc,
 	},
 }
 
@@ -245,7 +269,7 @@ func protoFieldSetter(saiType, protoField, varName string, info *docparser.SAIIn
 	case scalar:
 		return setFn, fmt.Sprintf("%s.%s", varName, ua.accessor), nil
 	case convertFunc:
-		return setFn, fmt.Sprintf("%s(%s.%s)", ua.converterFunc, varName, ua.accessor), nil
+		return setFn, fmt.Sprintf("%s(%s.%s)", ua.convertFromFunc, varName, ua.accessor), nil
 	case fixedSizedArray:
 		if ua.pointerOf {
 			return setFn, fmt.Sprintf("&%s.%s, sizeof(%s.%s)", varName, ua.accessor, varName, ua.accessor), nil
@@ -256,6 +280,47 @@ func protoFieldSetter(saiType, protoField, varName string, info *docparser.SAIIn
 		return setFn, fmt.Sprintf("%s.%s.list, %s.%s.list + %s.%s.count", varName, ua.accessor, varName, ua.accessor, varName, ua.accessor), nil
 	}
 	return "", "", fmt.Errorf("unknown accessor type %q", ua.aType)
+}
+
+func protoFieldGetter(saiType, protoField, varName string, info *docparser.SAIInfo) (*AttrSwitchSmt, error) {
+	smt := &AttrSwitchSmt{
+		ProtoFunc: protoField,
+	}
+	if _, ok := info.Enums[saiType]; ok {
+		smt.Var = varName + ".s32"
+		smt.ConvertFunc = fmt.Sprintf("static_cast<int>")
+		smt.ConvertFuncArgs = " - 1"
+		return smt, nil
+	}
+	ua, ok := typeToUnionAccessor[saiType]
+	if !ok {
+		return nil, fmt.Errorf("unknown sai type: %q", saiType)
+	}
+	smt.Var = fmt.Sprintf("%s.%s", varName, ua.accessor)
+	switch ua.aType {
+	case scalar:
+		if saiType == "char" {
+			smt.CopyConvertFunc = "strncpy"
+			smt.CopyConvertFuncArgs = ".data(), 32"
+		}
+		return smt, nil
+	case convertFunc:
+		smt.ConvertFunc = ua.convertToFunc
+		return smt, nil
+	case fixedSizedArray:
+		if saiType == "sai_ip4_t" {
+			smt.Var = fmt.Sprintf("&%s.%s", varName, ua.accessor)
+		}
+		smt.CopyConvertFunc = "memcpy"
+		smt.CopyConvertFuncArgs = fmt.Sprintf(".data(), sizeof(%s)", saiType)
+		return smt, nil
+	case variableSizedArray:
+		smt.CopyConvertFunc = "copy_list"
+		smt.CopyConvertFuncArgs = fmt.Sprintf(".list(), %s.count", smt.Var)
+		smt.Var += ".list"
+		return smt, nil
+	}
+	return nil, fmt.Errorf("unknown accessor type %q", saiType)
 }
 
 var supportedOperation = map[string]bool{
@@ -270,17 +335,6 @@ var supportedOperation = map[string]bool{
 	"remove_bulk":        true,
 	"set_attribute_bulk": true,
 	"get_attribute_bulk": true,
-}
-
-type AttrSwitchSmt struct {
-	Name      string
-	ProtoFunc string
-	Args      string
-}
-
-type AttrSwitch struct {
-	Var   string
-	Attrs []*AttrSwitchSmt
 }
 
 var (
@@ -314,15 +368,39 @@ extern const {{ .APIType }} l_{{ .APIName }};
 #endif  // {{ .IncludeGuard }}
 `))
 	ccTmpl = template.Must(template.New("cc").Parse(`
-{{ define "attr" }}
+{{ define "getattr" }}
+{{ $parent := . }}
 switch ({{ .Var }}) {
   {{ range .Attrs }}
-  case {{ .Name }}:
-	req.{{ .ProtoFunc }}({{ .Args }});
+  case {{ .EnumValue }}:
+	{{- if .CopyConvertFunc }}
+	{{- if .ConvertFunc }}
+	{{ .CopyConvertFunc}}({{.Var}}, {{ .ConvertFunc }}({{ $parent.ProtoVar }}.{{ .ProtoFunc }}({{ .Args }}){{ .ConvertFuncArgs }}));
+	{{- else }}
+	{{ .CopyConvertFunc}}({{.Var}}, {{ $parent.ProtoVar }}.{{ .ProtoFunc }}({{ .Args }}){{ .CopyConvertFuncArgs }});
+	{{ end -}}
+	{{ else }}
+	{{- if .ConvertFunc }}
+	{{ if .Var }} {{ .Var }} = {{ end }} {{ .ConvertFunc }}({{ $parent.ProtoVar }}.{{ .ProtoFunc }}({{ .Args }}){{ .ConvertFuncArgs }});
+	{{ else }}
+	{{ if .Var }} {{ .Var }} = {{ end }}  {{ $parent.ProtoVar }}.{{ .ProtoFunc }}({{ .Args }});
+	{{ end -}}
+	{{ end -}}
 	break;
  {{- end }}
 }
 {{ end }}
+{{ define "setattr" }}
+{{ $parent := . }}
+switch ({{ .Var }}) {
+  {{ range .Attrs }}
+  case {{ .EnumValue }}:
+	{{ $parent.ProtoVar }}.{{ .ProtoFunc }}({{ .Args }});
+	break;
+ {{- end }}
+}
+{{ end }}
+
 
 // Copyright 2023 Google LLC
 //
@@ -362,15 +440,33 @@ const {{ .APIType }} l_{{ .APIName }} = {
 	{{ if .SwitchScoped }} req.set_switch_(switch_id); {{ end }}
 	{{ if .EntryVar }} *req.mutable_entry() = {{ .EntryConversionFunc }}({{ .EntryVar }}); {{ end }}
  	for(uint32_t i = 0; i < attr_count; i++ ) {
-		{{ template "attr" .AttrSwitch }}
+		{{ template "setattr" .AttrSwitch }}
 	}
 	grpc::Status status = {{ .Client }}->{{ .RPCMethod }}(&context, req, &resp);
 	if (!status.ok()) {
 		LOG(ERROR) << status.error_message();
 		return SAI_STATUS_FAILURE;
 	}
-	{{ if .OutOid -}} {{ .OutOid }} = resp.oid(); {{ end }}
+	{{ if .OidVar -}} {{ .OidVar }} = resp.oid(); {{ end }}
 
+	{{ else if eq .Operation "get_attribute" }}
+	lemming::dataplane::sai::{{ .ReqType }} req;
+	lemming::dataplane::sai::{{ .RespType }} resp;
+	grpc::ClientContext context;
+	{{ if .EntryVar }} *req.mutable_entry() = {{ .EntryConversionFunc }}({{ .EntryVar }}); {{ end }}
+	{{ if .OidVar -}} req.set_oid({{ .OidVar }}); {{ end }}
+
+	for (uint32_t i = 0; i < attr_count; i++) {
+		req.add_attr_type(static_cast<lemming::dataplane::sai::{{ .AttrEnumType }}>(attr_list[i].id + 1));
+	}
+	grpc::Status status = {{ .Client }}->{{ .RPCMethod }}(&context, req, &resp);
+	if (!status.ok()) {
+		LOG(ERROR) << status.error_message();
+		return SAI_STATUS_FAILURE;
+	}
+	for(uint32_t i = 0; i < attr_count; i++ ) {
+		{{ template "getattr" .AttrSwitch }}
+	}
 	{{ end }}
 
 	{{- if .Entry }} {{ .Entry }} {{ end }}
@@ -382,6 +478,32 @@ const {{ .APIType }} l_{{ .APIName }} = {
 {{ end }}
 `))
 )
+
+type AttrSwitchSmt struct {
+	// EnumValue is the name of enum value string. (eg SAI_HOSTIF_ATTR_OPER_STATUS).
+	EnumValue string
+	// ProtoFunc is the name of the protobuf getter or setter (eg set_obj_id() or obj_id()).
+	ProtoFunc string
+	// Args are the arguments to pass the ProtoFunc as comma seperated values.
+	Args string
+	// Var is the name of the variable that is used for assignment.
+	Var string
+	// ConvertFunc is a name the function that is called before assignment to var.
+	ConvertFunc string
+	// ConvertFuncArgs are the extra arguments to pass the convert func, in addition to ProtoFunc.
+	ConvertFuncArgs string
+	// CopyConvertFunc is the name of func to use. If set, then this function is used instead assignment.
+	// For example, to copy a string, set this strncpy, since char arrays can't assigned be directly.
+	CopyConvertFunc string
+	// ConvertFuncArgs are the extra arguments to pass the copy convert func.
+	CopyConvertFuncArgs string
+}
+
+type AttrSwitch struct {
+	Var      string
+	Attrs    []*AttrSwitchSmt
+	ProtoVar string
+}
 
 type templateFunc struct {
 	ReturnType          string
@@ -397,7 +519,9 @@ type templateFunc struct {
 	RespType            string
 	Client              string
 	RPCMethod           string
-	OutOid              string
+	OidVar              string
+	AttrType            string
+	AttrEnumType        string
 	SwitchScoped        bool
 	EntryConversionFunc string
 	EntryVar            string

@@ -43,11 +43,11 @@ message SetIpmcEntryAttributeResponse {}
 
 message GetIpmcEntryAttributeRequest {
   IpmcEntry entry = 1;
-  IpmcEntryAttr attr_type = 2;
+  repeated IpmcEntryAttr attr_type = 2;
 }
 
 message GetIpmcEntryAttributeResponse {
-  IpmcEntryAttribute attr = 1;
+  repeated IpmcEntryAttribute attr = 1;
 }
 
 service Ipmc {

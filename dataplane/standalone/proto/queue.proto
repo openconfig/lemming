@@ -64,11 +64,11 @@ message SetQueueAttributeResponse {}
 
 message GetQueueAttributeRequest {
   uint64 oid = 1;
-  QueueAttr attr_type = 2;
+  repeated QueueAttr attr_type = 2;
 }
 
 message GetQueueAttributeResponse {
-  QueueAttribute attr = 1;
+  repeated QueueAttribute attr = 1;
 }
 
 service Queue {

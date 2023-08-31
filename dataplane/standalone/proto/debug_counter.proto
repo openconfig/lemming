@@ -47,11 +47,11 @@ message SetDebugCounterAttributeResponse {}
 
 message GetDebugCounterAttributeRequest {
   uint64 oid = 1;
-  DebugCounterAttr attr_type = 2;
+  repeated DebugCounterAttr attr_type = 2;
 }
 
 message GetDebugCounterAttributeResponse {
-  DebugCounterAttribute attr = 1;
+  repeated DebugCounterAttribute attr = 1;
 }
 
 service DebugCounter {

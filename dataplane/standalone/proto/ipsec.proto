@@ -106,11 +106,11 @@ message SetIpsecAttributeResponse {}
 
 message GetIpsecAttributeRequest {
   uint64 oid = 1;
-  IpsecAttr attr_type = 2;
+  repeated IpsecAttr attr_type = 2;
 }
 
 message GetIpsecAttributeResponse {
-  IpsecAttribute attr = 1;
+  repeated IpsecAttribute attr = 1;
 }
 
 message CreateIpsecPortRequest {
@@ -148,11 +148,11 @@ message SetIpsecPortAttributeResponse {}
 
 message GetIpsecPortAttributeRequest {
   uint64 oid = 1;
-  IpsecPortAttr attr_type = 2;
+  repeated IpsecPortAttr attr_type = 2;
 }
 
 message GetIpsecPortAttributeResponse {
-  IpsecPortAttribute attr = 1;
+  repeated IpsecPortAttribute attr = 1;
 }
 
 message CreateIpsecSaRequest {
@@ -205,11 +205,11 @@ message SetIpsecSaAttributeResponse {}
 
 message GetIpsecSaAttributeRequest {
   uint64 oid = 1;
-  IpsecSaAttr attr_type = 2;
+  repeated IpsecSaAttr attr_type = 2;
 }
 
 message GetIpsecSaAttributeResponse {
-  IpsecSaAttribute attr = 1;
+  repeated IpsecSaAttribute attr = 1;
 }
 
 service Ipsec {

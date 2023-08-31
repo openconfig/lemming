@@ -58,11 +58,11 @@ message SetFdbEntryAttributeResponse {}
 
 message GetFdbEntryAttributeRequest {
   FdbEntry entry = 1;
-  FdbEntryAttr attr_type = 2;
+  repeated FdbEntryAttr attr_type = 2;
 }
 
 message GetFdbEntryAttributeResponse {
-  FdbEntryAttribute attr = 1;
+  repeated FdbEntryAttribute attr = 1;
 }
 
 service Fdb {

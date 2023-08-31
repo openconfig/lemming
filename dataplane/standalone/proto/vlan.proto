@@ -106,11 +106,11 @@ message SetVlanAttributeResponse {}
 
 message GetVlanAttributeRequest {
   uint64 oid = 1;
-  VlanAttr attr_type = 2;
+  repeated VlanAttr attr_type = 2;
 }
 
 message GetVlanAttributeResponse {
-  VlanAttribute attr = 1;
+  repeated VlanAttribute attr = 1;
 }
 
 message CreateVlanMemberRequest {
@@ -142,11 +142,11 @@ message SetVlanMemberAttributeResponse {}
 
 message GetVlanMemberAttributeRequest {
   uint64 oid = 1;
-  VlanMemberAttr attr_type = 2;
+  repeated VlanMemberAttr attr_type = 2;
 }
 
 message GetVlanMemberAttributeResponse {
-  VlanMemberAttribute attr = 1;
+  repeated VlanMemberAttribute attr = 1;
 }
 
 service Vlan {

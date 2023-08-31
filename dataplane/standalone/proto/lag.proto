@@ -71,11 +71,11 @@ message SetLagAttributeResponse {}
 
 message GetLagAttributeRequest {
   uint64 oid = 1;
-  LagAttr attr_type = 2;
+  repeated LagAttr attr_type = 2;
 }
 
 message GetLagAttributeResponse {
-  LagAttribute attr = 1;
+  repeated LagAttribute attr = 1;
 }
 
 message CreateLagMemberRequest {
@@ -109,11 +109,11 @@ message SetLagMemberAttributeResponse {}
 
 message GetLagMemberAttributeRequest {
   uint64 oid = 1;
-  LagMemberAttr attr_type = 2;
+  repeated LagMemberAttr attr_type = 2;
 }
 
 message GetLagMemberAttributeResponse {
-  LagMemberAttribute attr = 1;
+  repeated LagMemberAttribute attr = 1;
 }
 
 service Lag {

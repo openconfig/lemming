@@ -114,11 +114,11 @@ message SetWredAttributeResponse {}
 
 message GetWredAttributeRequest {
   uint64 oid = 1;
-  WredAttr attr_type = 2;
+  repeated WredAttr attr_type = 2;
 }
 
 message GetWredAttributeResponse {
-  WredAttribute attr = 1;
+  repeated WredAttribute attr = 1;
 }
 
 service Wred {

@@ -81,11 +81,11 @@ message SetBridgeAttributeResponse {}
 
 message GetBridgeAttributeRequest {
   uint64 oid = 1;
-  BridgeAttr attr_type = 2;
+  repeated BridgeAttr attr_type = 2;
 }
 
 message GetBridgeAttributeResponse {
-  BridgeAttribute attr = 1;
+  repeated BridgeAttribute attr = 1;
 }
 
 message CreateBridgePortRequest {
@@ -136,11 +136,11 @@ message SetBridgePortAttributeResponse {}
 
 message GetBridgePortAttributeRequest {
   uint64 oid = 1;
-  BridgePortAttr attr_type = 2;
+  repeated BridgePortAttr attr_type = 2;
 }
 
 message GetBridgePortAttributeResponse {
-  BridgePortAttribute attr = 1;
+  repeated BridgePortAttribute attr = 1;
 }
 
 service Bridge {

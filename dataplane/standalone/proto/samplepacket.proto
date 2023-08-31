@@ -43,11 +43,11 @@ message SetSamplepacketAttributeResponse {}
 
 message GetSamplepacketAttributeRequest {
   uint64 oid = 1;
-  SamplepacketAttr attr_type = 2;
+  repeated SamplepacketAttr attr_type = 2;
 }
 
 message GetSamplepacketAttributeResponse {
-  SamplepacketAttribute attr = 1;
+  repeated SamplepacketAttribute attr = 1;
 }
 
 service Samplepacket {

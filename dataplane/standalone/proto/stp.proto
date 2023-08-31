@@ -37,11 +37,11 @@ message RemoveStpResponse {}
 
 message GetStpAttributeRequest {
   uint64 oid = 1;
-  StpAttr attr_type = 2;
+  repeated StpAttr attr_type = 2;
 }
 
 message GetStpAttributeResponse {
-  StpAttribute attr = 1;
+  repeated StpAttribute attr = 1;
 }
 
 message CreateStpPortRequest {
@@ -73,11 +73,11 @@ message SetStpPortAttributeResponse {}
 
 message GetStpPortAttributeRequest {
   uint64 oid = 1;
-  StpPortAttr attr_type = 2;
+  repeated StpPortAttr attr_type = 2;
 }
 
 message GetStpPortAttributeResponse {
-  StpPortAttribute attr = 1;
+  repeated StpPortAttribute attr = 1;
 }
 
 service Stp {

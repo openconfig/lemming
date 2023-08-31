@@ -37,11 +37,11 @@ message RemoveIsolationGroupResponse {}
 
 message GetIsolationGroupAttributeRequest {
   uint64 oid = 1;
-  IsolationGroupAttr attr_type = 2;
+  repeated IsolationGroupAttr attr_type = 2;
 }
 
 message GetIsolationGroupAttributeResponse {
-  IsolationGroupAttribute attr = 1;
+  repeated IsolationGroupAttribute attr = 1;
 }
 
 message CreateIsolationGroupMemberRequest {
@@ -63,11 +63,11 @@ message RemoveIsolationGroupMemberResponse {}
 
 message GetIsolationGroupMemberAttributeRequest {
   uint64 oid = 1;
-  IsolationGroupMemberAttr attr_type = 2;
+  repeated IsolationGroupMemberAttr attr_type = 2;
 }
 
 message GetIsolationGroupMemberAttributeResponse {
-  IsolationGroupMemberAttribute attr = 1;
+  repeated IsolationGroupMemberAttribute attr = 1;
 }
 
 service IsolationGroup {

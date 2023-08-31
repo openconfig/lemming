@@ -50,11 +50,11 @@ message SetRouteEntryAttributeResponse {}
 
 message GetRouteEntryAttributeRequest {
   RouteEntry entry = 1;
-  RouteEntryAttr attr_type = 2;
+  repeated RouteEntryAttr attr_type = 2;
 }
 
 message GetRouteEntryAttributeResponse {
-  RouteEntryAttribute attr = 1;
+  repeated RouteEntryAttribute attr = 1;
 }
 
 service Route {

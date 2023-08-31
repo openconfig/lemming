@@ -88,11 +88,11 @@ message SetNatEntryAttributeResponse {}
 
 message GetNatEntryAttributeRequest {
   NatEntry entry = 1;
-  NatEntryAttr attr_type = 2;
+  repeated NatEntryAttr attr_type = 2;
 }
 
 message GetNatEntryAttributeResponse {
-  NatEntryAttribute attr = 1;
+  repeated NatEntryAttribute attr = 1;
 }
 
 message CreateNatZoneCounterRequest {
@@ -133,11 +133,11 @@ message SetNatZoneCounterAttributeResponse {}
 
 message GetNatZoneCounterAttributeRequest {
   uint64 oid = 1;
-  NatZoneCounterAttr attr_type = 2;
+  repeated NatZoneCounterAttr attr_type = 2;
 }
 
 message GetNatZoneCounterAttributeResponse {
-  NatZoneCounterAttribute attr = 1;
+  repeated NatZoneCounterAttribute attr = 1;
 }
 
 service Nat {

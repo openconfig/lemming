@@ -91,11 +91,11 @@ message SetRouterInterfaceAttributeResponse {}
 
 message GetRouterInterfaceAttributeRequest {
   uint64 oid = 1;
-  RouterInterfaceAttr attr_type = 2;
+  repeated RouterInterfaceAttr attr_type = 2;
 }
 
 message GetRouterInterfaceAttributeResponse {
-  RouterInterfaceAttribute attr = 1;
+  repeated RouterInterfaceAttribute attr = 1;
 }
 
 service RouterInterface {
