@@ -246,9 +246,6 @@ func testPolicyAux(t *testing.T, testspec PolicyTestCase, installPolicyAfterRout
 		// so we need to wait for re-establishment first. To do this,
 		// we sleep for a reasonable amount of time for the sessions to
 		// be teared down.
-		//
-		// TODO(wenbli): Check if we can make the config amenable to a
-		// soft reset.
 		time.Sleep(10 * time.Second)
 		awaitSessionEstablished(t, dut2, dut1)
 		awaitSessionEstablished(t, dut2, dut5)
