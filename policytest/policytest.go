@@ -55,6 +55,13 @@ type Device struct {
 	RouterID string
 }
 
+type DevicePair struct {
+	First      *Device
+	Second     *Device
+	FirstPort  *attrs.Attributes
+	SecondPort *attrs.Attributes
+}
+
 // TestCase contains the specifications for a single policy test.
 //
 // Topology:
@@ -73,7 +80,7 @@ type Device struct {
 // https://github.com/osrg/gobgp/blob/master/docs/sources/policy.md#policy-and-soft-reset
 type TestCase struct {
 	Spec            *valpb.PolicyTestCase
-	InstallPolicies func(t *testing.T, dut1, dut2, dut3, dut4, dut5 *Device)
+	InstallPolicies func(t *testing.T, pair12, pair52, pair23 *DevicePair)
 }
 
 // TestPolicy is the helper policy integration tests can call to instantiate
@@ -180,7 +187,7 @@ var (
 	}
 )
 
-func testPropagation(t *testing.T, routeTest *valpb.RouteTestCase, pair1, pair2 devicePair, filterPoliciesInstalled bool) {
+func testPropagation(t *testing.T, routeTest *valpb.RouteTestCase, pair1, pair2 *DevicePair, filterPoliciesInstalled bool) {
 	t.Helper()
 	v4uni := BGPPath.Rib().AfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST).Ipv4Unicast()
 	expectedResult := routeTest.GetExpectedResultBeforePolicy()
@@ -188,8 +195,8 @@ func testPropagation(t *testing.T, routeTest *valpb.RouteTestCase, pair1, pair2 
 		expectedResult = routeTest.GetExpectedResult()
 	}
 
-	prevDUT, currDUT, nextDUT := pair1.first, pair1.second, pair2.second
-	port1, port21, port23, port3 := pair1.firstPort, pair1.secondPort, pair2.firstPort, pair2.secondPort
+	prevDUT, currDUT, nextDUT := pair1.First, pair1.Second, pair2.Second
+	port1, port21, port23, port3 := pair1.FirstPort, pair1.SecondPort, pair2.FirstPort, pair2.SecondPort
 
 	prefix := routeTest.GetInput().GetReachPrefix()
 	// Check propagation to AdjRibOutPre for all prefixes.
@@ -254,13 +261,6 @@ func configureDUT(t *testing.T, dut *ondatra.DUTDevice, ports map[string]*attrs.
 	}
 }
 
-type devicePair struct {
-	first      *Device
-	second     *Device
-	firstPort  *attrs.Attributes
-	secondPort *attrs.Attributes
-}
-
 func bgpWithNbr(as uint32, routerID string, nbr *oc.NetworkInstance_Protocol_Bgp_Neighbor) *oc.NetworkInstance_Protocol_Bgp {
 	bgp := &oc.NetworkInstance_Protocol_Bgp{}
 	bgp.GetOrCreateGlobal().As = ygot.Uint32(as)
@@ -278,19 +278,19 @@ func installStaticRoute(t *testing.T, dut *Device, route *oc.NetworkInstance_Pro
 	gnmi.Await(t, dut, staticp.Static(*route.Prefix).State(), 30*time.Second, route)
 }
 
-func awaitSessionEstablished(t *testing.T, dutPair devicePair) {
+func awaitSessionEstablished(t *testing.T, dutPair *DevicePair) {
 	t.Helper()
-	dut1, dut2 := dutPair.first, dutPair.second
-	port1, port2 := dutPair.firstPort, dutPair.secondPort
+	dut1, dut2 := dutPair.First, dutPair.Second
+	port1, port2 := dutPair.FirstPort, dutPair.SecondPort
 	gnmi.Await(t, dut1, BGPPath.Neighbor(port2.IPv4).SessionState().State(), awaitTimeout, oc.Bgp_Neighbor_SessionState_ESTABLISHED)
 	gnmi.Await(t, dut2, BGPPath.Neighbor(port1.IPv4).SessionState().State(), awaitTimeout, oc.Bgp_Neighbor_SessionState_ESTABLISHED)
 }
 
-func establishSessionPairs(t *testing.T, dutPairs ...devicePair) {
+func establishSessionPairs(t *testing.T, dutPairs ...*DevicePair) {
 	t.Helper()
 	for _, pair := range dutPairs {
-		dut1, dut2 := pair.first, pair.second
-		port1, port2 := pair.firstPort, pair.secondPort
+		dut1, dut2 := pair.First, pair.Second
+		port1, port2 := pair.FirstPort, pair.SecondPort
 		dutConf := bgpWithNbr(dut1.AS, dut1.RouterID, &oc.NetworkInstance_Protocol_Bgp_Neighbor{
 			PeerAs:          ygot.Uint32(dut2.AS),
 			NeighborAddress: ygot.String(port2.IPv4),
@@ -314,10 +314,10 @@ func establishSessionPairs(t *testing.T, dutPairs ...devicePair) {
 	}
 }
 
-func installDefaultAllowPolicies(t *testing.T, dutPair devicePair) {
+func installDefaultAllowPolicies(t *testing.T, dutPair *DevicePair) {
 	t.Helper()
-	dut1, dut2 := dutPair.first, dutPair.second
-	port1, port2 := dutPair.firstPort, dutPair.secondPort
+	dut1, dut2 := dutPair.First, dutPair.Second
+	port1, port2 := dutPair.FirstPort, dutPair.SecondPort
 	gnmi.Replace(t, dut1, BGPPath.Neighbor(port2.IPv4).ApplyPolicy().DefaultExportPolicy().Config(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
 	gnmi.Replace(t, dut2, BGPPath.Neighbor(port1.IPv4).ApplyPolicy().DefaultImportPolicy().Config(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
 }
@@ -368,10 +368,10 @@ func testPolicyAux(t *testing.T, testspec TestCase, installPolicyAfterRoutes boo
 	gnmi.Delete(t, dut4, RoutingPolicyPath.Config())
 	gnmi.Delete(t, dut5, RoutingPolicyPath.Config())
 
-	pair12 := devicePair{dut1, dut2, dut1Ports["port1"], dut2Ports["port1"]}
-	pair23 := devicePair{dut2, dut3, dut2Ports["port2"], dut3Ports["port1"]}
-	pair45 := devicePair{dut4, dut5, dut4Ports["port1"], dut5Ports["port1"]}
-	pair52 := devicePair{dut5, dut2, dut5Ports["port2"], dut2Ports["port3"]}
+	pair12 := &DevicePair{dut1, dut2, dut1Ports["port1"], dut2Ports["port1"]}
+	pair23 := &DevicePair{dut2, dut3, dut2Ports["port2"], dut3Ports["port1"]}
+	pair45 := &DevicePair{dut4, dut5, dut4Ports["port1"], dut5Ports["port1"]}
+	pair52 := &DevicePair{dut5, dut2, dut5Ports["port2"], dut2Ports["port3"]}
 
 	// Clear the path for routes to be propagated.
 	// DUT1 -> DUT2 -> DUT3
@@ -384,7 +384,7 @@ func testPolicyAux(t *testing.T, testspec TestCase, installPolicyAfterRoutes boo
 	installDefaultAllowPolicies(t, pair52)
 
 	if testspec.InstallPolicies != nil && !installPolicyAfterRoutes {
-		testspec.InstallPolicies(t, dut1, dut2, dut3, dut4, dut5)
+		testspec.InstallPolicies(t, pair12, pair52, pair23)
 	}
 
 	establishSessionPairs(t, pair12, pair23, pair45, pair52)
@@ -443,14 +443,12 @@ func testPolicyAux(t *testing.T, testspec TestCase, installPolicyAfterRoutes boo
 
 	if installPolicyAfterRoutes {
 		if testspec.InstallPolicies != nil {
-			testspec.InstallPolicies(t, dut1, dut2, dut3, dut4, dut5)
+			testspec.InstallPolicies(t, pair12, pair52, pair23)
 		}
-		// Changing policy currently causes a hard reset of the BGP
-		// session, which causes routes to disappear from the AdjRIBs,
-		// so we need to wait for re-establishment first. To do this,
-		// we sleep for a reasonable amount of time for the sessions to
-		// be teared down.
-		time.Sleep(10 * time.Second)
+		// Changing policy causes a reset of the BGP session. Wait some
+		// time to increase confidence that we're detecting routes from
+		// after the reset.
+		time.Sleep(5 * time.Second)
 		awaitSessionEstablished(t, pair12)
 		awaitSessionEstablished(t, pair52)
 
