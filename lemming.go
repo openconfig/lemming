@@ -194,7 +194,7 @@ func New(targetName, zapiURL string, opts ...Option) (*Device, error) {
 	recs = append(recs,
 		fakedevice.NewSystemBaseTask(),
 		fakedevice.NewBootTimeTask(),
-		bgp.NewGoBGPTaskDecl(targetName, zapiURL, resolvedOpts.bgpPort),
+		bgp.NewGoBGPTask(targetName, zapiURL, resolvedOpts.bgpPort),
 	)
 
 	log.Info("starting gNSI")

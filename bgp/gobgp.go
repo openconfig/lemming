@@ -18,7 +18,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/netip"
 	"reflect"
 	"sync"
 	"time"
@@ -35,7 +34,6 @@ import (
 	api "github.com/wenovus/gobgp/v3/api"
 	"github.com/wenovus/gobgp/v3/pkg/config"
 	"github.com/wenovus/gobgp/v3/pkg/server"
-	"github.com/wenovus/gobgp/v3/pkg/zebra"
 )
 
 const (
@@ -49,14 +47,14 @@ var (
 	RoutingPolicyStatePath = ocpath.Root().RoutingPolicy().State()
 )
 
-// NewGoBGPTaskDecl creates a new GoBGP task using the declarative configuration style.
-func NewGoBGPTaskDecl(targetName, zapiURL string, listenPort uint16) *reconciler.BuiltReconciler {
-	gobgpTask := newBgpDeclTask(targetName, zapiURL, listenPort)
-	return reconciler.NewBuilder("gobgp-decl").WithStart(gobgpTask.startGoBGPFuncDecl).WithStop(gobgpTask.stop).Build()
+// NewGoBGPTask creates a new GoBGP task using the declarative configuration style.
+func NewGoBGPTask(targetName, zapiURL string, listenPort uint16) *reconciler.BuiltReconciler {
+	gobgpTask := newBgpTask(targetName, zapiURL, listenPort)
+	return reconciler.NewBuilder("gobgp-decl").WithStart(gobgpTask.start).WithStop(gobgpTask.stop).Build()
 }
 
-// bgpDeclTask can be used to create a reconciler-compatible BGP task.
-type bgpDeclTask struct {
+// bgpTask can be used to create a reconciler-compatible BGP task.
+type bgpTask struct {
 	targetName    string
 	zapiURL       string
 	bgpServer     *server.BgpServer
@@ -73,8 +71,8 @@ type bgpDeclTask struct {
 	appliedRoutingPolicy *oc.RoutingPolicy
 }
 
-// newBgpDeclTask creates a new bgpDeclTask.
-func newBgpDeclTask(targetName, zapiURL string, listenPort uint16) *bgpDeclTask {
+// newBgpTask creates a new bgpTask.
+func newBgpTask(targetName, zapiURL string, listenPort uint16) *bgpTask {
 	appliedState := &oc.Root{}
 	// appliedBGP is the SoT for BGP applied configuration. It is maintained locally by the task.
 	appliedBGP := appliedState.GetOrCreateNetworkInstance(fakedevice.DefaultNetworkInstance).GetOrCreateProtocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, fakedevice.BGPRoutingProtocol).GetOrCreateBgp()
@@ -82,10 +80,9 @@ func newBgpDeclTask(targetName, zapiURL string, listenPort uint16) *bgpDeclTask 
 	appliedRoutingPolicy := appliedState.GetOrCreateRoutingPolicy()
 	appliedRoutingPolicy.PopulateDefaults()
 
-	return &bgpDeclTask{
+	return &bgpTask{
 		targetName: targetName,
 		zapiURL:    zapiURL,
-		bgpServer:  server.NewBgpServer(),
 		listenPort: listenPort,
 
 		appliedState:         appliedState,
@@ -94,36 +91,14 @@ func newBgpDeclTask(targetName, zapiURL string, listenPort uint16) *bgpDeclTask 
 	}
 }
 
-func updateAppliedStateHelper[T ygot.GoStruct](yclient *ygnmi.Client, path ygnmi.SingletonQuery[T], appliedState T) {
-	if _, err := gnmiclient.Replace(context.Background(), yclient, path, appliedState); err != nil {
-		log.Errorf("BGP failed to update state at path %v: %v", path, err)
-	}
-}
-
-// updateAppliedState is the ONLY function that's called when updating the appliedState.
-//
-// The input function is expected to make modifications to the applied state,
-// which then this function will use to update the central cache.
-func (t *bgpDeclTask) updateAppliedState(f func() error) error {
-	log.V(1).Infof("BGP task: updating state")
-	t.appliedStateMu.Lock()
-	defer t.appliedStateMu.Unlock()
-	if err := f(); err != nil {
-		return err
-	}
-	updateAppliedStateHelper(t.yclient, BGPStatePath, t.appliedBGP)
-	updateAppliedStateHelper(t.yclient, RoutingPolicyStatePath, t.appliedRoutingPolicy)
-	return nil
-}
-
 // stop stops the GoBGP server.
-func (t *bgpDeclTask) stop(context.Context) error {
+func (t *bgpTask) stop(context.Context) error {
 	t.bgpServer.Stop()
 	return nil
 }
 
-// startGoBGPFuncDecl starts a GoBGP server.
-func (t *bgpDeclTask) startGoBGPFuncDecl(_ context.Context, yclient *ygnmi.Client) error {
+// start starts a GoBGP server.
+func (t *bgpTask) start(_ context.Context, yclient *ygnmi.Client) error {
 	t.yclient = yclient
 
 	b := &ocpath.Batch{}
@@ -153,6 +128,110 @@ func (t *bgpDeclTask) startGoBGPFuncDecl(_ context.Context, yclient *ygnmi.Clien
 		ocpath.Root().RoutingPolicy().DefinedSets().BgpDefinedSets().AsPathSetAny().AsPathSetName().Config().PathStruct(),
 		ocpath.Root().RoutingPolicy().DefinedSets().BgpDefinedSets().AsPathSetAny().AsPathSetMember().Config().PathStruct(),
 	)
+
+	if err := t.createNewGoBGPServer(context.Background()); err != nil {
+		log.Errorf("Failed to start GoBGP server: %v", err)
+	}
+
+	// Initialize values required for reconile to be called.
+	t.currentConfig = &config.BgpConfigSet{}
+
+	// Monitor changes to BGP intended config and apply them.
+	bgpWatcher := ygnmi.Watch(
+		context.Background(),
+		yclient,
+		b.Config(),
+		func(root *ygnmi.Value[*oc.Root]) error {
+			rootVal, ok := root.Val()
+			if !ok {
+				return ygnmi.Continue
+			}
+
+			t.updateAppliedState(func() error {
+				return t.reconcile(rootVal)
+			})
+
+			return ygnmi.Continue
+		},
+	)
+
+	go func() {
+		if _, err := bgpWatcher.Await(); err != nil {
+			log.Warningf("GoBGP Task's watcher has stopped: %v", err)
+		}
+	}()
+
+	return nil
+}
+
+// reconcile examines the difference between the intended and applied
+// configuration, and makes GoBGP API calls accordingly to update the applied
+// configuration in the direction of intended configuration.
+func (t *bgpTask) reconcile(intended *oc.Root) error {
+	intendedBGP := intended.GetOrCreateNetworkInstance(fakedevice.DefaultNetworkInstance).GetOrCreateProtocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, fakedevice.BGPRoutingProtocol).GetOrCreateBgp()
+	intendedPolicy := intended.GetOrCreateRoutingPolicy()
+	newConfig := intendedToGoBGP(intendedBGP, intendedPolicy, t.zapiURL, t.listenPort)
+
+	intendedGlobal := intendedBGP.GetOrCreateGlobal()
+	bgpShouldStart := intendedGlobal.As != nil && intendedGlobal.RouterId != nil
+	switch {
+	case bgpShouldStart && !t.bgpStarted:
+		log.V(1).Info("Starting BGP")
+		var err error
+		t.currentConfig, err = config.InitialConfig(context.Background(), t.bgpServer, newConfig, gracefulRestart)
+		if err != nil {
+			return fmt.Errorf("Failed to apply initial BGP configuration %v", newConfig)
+		}
+		t.bgpStarted = true
+	case !bgpShouldStart && t.bgpStarted:
+		log.V(1).Info("Stopping BGP")
+		if err := t.bgpServer.StopBgp(context.Background(), &api.StopBgpRequest{}); err != nil {
+			return errors.New("Failed to stop BGP service")
+		}
+		t.bgpStarted = false
+		t.currentConfig = &config.BgpConfigSet{}
+		*t.appliedBGP = oc.NetworkInstance_Protocol_Bgp{}
+		t.appliedBGP.PopulateDefaults()
+	case t.bgpStarted:
+		log.V(1).Info("Updating BGP")
+		var err error
+		t.currentConfig, err = config.UpdateConfig(context.Background(), t.bgpServer, t.currentConfig, newConfig)
+		if err != nil {
+			return fmt.Errorf("Failed to update BGP service: %v", newConfig)
+		}
+	default:
+		// Waiting for BGP to be startable.
+		return nil
+	}
+
+	return nil
+}
+
+// updateAppliedState is the ONLY function that's called when updating the appliedState.
+//
+// The input function is expected to make modifications to the applied state,
+// which then this function will use to update the central cache.
+func (t *bgpTask) updateAppliedState(f func() error) error {
+	log.V(1).Infof("BGP task: updating state")
+	t.appliedStateMu.Lock()
+	defer t.appliedStateMu.Unlock()
+	if err := f(); err != nil {
+		return err
+	}
+	updateAppliedStateHelper(t.yclient, BGPStatePath, t.appliedBGP)
+	updateAppliedStateHelper(t.yclient, RoutingPolicyStatePath, t.appliedRoutingPolicy)
+	return nil
+}
+
+func updateAppliedStateHelper[T ygot.GoStruct](yclient *ygnmi.Client, path ygnmi.SingletonQuery[T], appliedState T) {
+	if _, err := gnmiclient.Replace(context.Background(), yclient, path, appliedState); err != nil {
+		log.Errorf("BGP failed to update state at path %v: %v", path, err)
+	}
+}
+
+// createNewGoBGPServer creates and starts a new GoBGP Server.
+func (t *bgpTask) createNewGoBGPServer(context.Context) error {
+	t.bgpServer = server.NewBgpServer()
 
 	if log.V(2) {
 		if err := t.bgpServer.SetLogLevel(context.Background(), &api.SetLogLevelRequest{
@@ -199,126 +278,101 @@ func (t *bgpDeclTask) startGoBGPFuncDecl(_ context.Context, yclient *ygnmi.Clien
 		return fmt.Errorf("goBgpTask failed to initialize due to error: %v", err)
 	}
 
-	// Initialize values required for reconile to be called.
-	t.currentConfig = &config.BgpConfigSet{}
-
-	// Monitor changes to BGP intended config and apply them.
-	bgpWatcher := ygnmi.Watch(
-		context.Background(),
-		yclient,
-		b.Config(),
-		func(root *ygnmi.Value[*oc.Root]) error {
-			rootVal, ok := root.Val()
-			if !ok {
-				return ygnmi.Continue
-			}
-
-			t.updateAppliedState(func() error {
-				return t.reconcile(rootVal)
-			})
-
-			return ygnmi.Continue
-		},
-	)
-
-	go func() {
-		if _, err := bgpWatcher.Await(); err != nil {
-			log.Warningf("GoBGP Task's watcher has stopped: %v", err)
-		}
-	}()
-
-	// Periodically query the BGP table and update the RIBs.
-	// TODO: Break this out into its own function.
 	go func() {
 		tick := time.NewTicker(5 * time.Second)
 		for range tick.C {
-			if err := t.bgpServer.ListPath(context.Background(), &api.ListPathRequest{
-				TableType: api.TableType_GLOBAL,
-				Family: &api.Family{
-					Afi:  api.Family_AFI_IP,
-					Safi: api.Family_SAFI_UNICAST,
-				},
-			}, func(d *api.Destination) {
-				log.V(1).Infof("%s: GoBGP global table path: %v", t.targetName, d)
-			}); err != nil {
-				if err.Error() != "bgp server hasn't started yet" {
-					log.Errorf("GoBGP ListPath call failed (global table): %v", err)
-				}
-			} else {
-				log.V(1).Info("GoBGP ListPath call completed (global table)")
-			}
-
-			t.updateAppliedState(func() error {
-				v4uni := t.appliedBGP.GetOrCreateRib().GetOrCreateAfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST).GetOrCreateIpv4Unicast()
-				rib := t.appliedBGP.GetOrCreateRib()
-				ribattrs := &ocRIBAttrIndices{}
-
-				// TODO: Support IPv6
-				t.queryTable("", "local", api.TableType_LOCAL, func(routes []*api.Destination) {
-					v4uni.LocRib = nil
-					locRib := v4uni.GetOrCreateLocRib()
-					for _, route := range routes {
-						for j, path := range route.Paths {
-							var origin oc.NetworkInstance_Protocol_Bgp_Rib_AfiSafi_Ipv4Unicast_LocRib_Route_Origin_Union
-							if path.SourceId == "" {
-								// TODO: For locally-originated routes figure out how to get the originating protocol.
-								origin = oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_UNSET
-							} else {
-								origin = oc.UnionString(path.NeighborIp)
-							}
-							// TODO: this ID should match the ID in adj-rib-in-post.
-							ribattrs.populateRIBAttrs(path, rib, locRib.GetOrCreateRoute(route.Prefix, origin, uint32(j)))
-						}
-					}
-				})
-
-				for neigh := range t.appliedBGP.Neighbor {
-					neighContainer := v4uni.GetOrCreateNeighbor(neigh)
-					neighContainer.AdjRibInPre = nil
-					neighContainer.AdjRibInPost = nil
-					neighContainer.AdjRibOutPre = nil
-					neighContainer.AdjRibOutPost = nil
-					t.queryTable(neigh, "adj-rib-in", api.TableType_ADJ_IN, func(routes []*api.Destination) {
-						for _, route := range routes {
-							for j, path := range route.Paths {
-								// TODO: this ID should be retrieved from the update message.
-								ribattrs.populateRIBAttrs(path, rib, neighContainer.GetOrCreateAdjRibInPre().GetOrCreateRoute(route.Prefix, uint32(j)))
-								if !path.Filtered {
-									ribattrs.populateRIBAttrs(path, rib, neighContainer.GetOrCreateAdjRibInPost().GetOrCreateRoute(route.Prefix, uint32(j)))
-								}
-							}
-						}
-					})
-
-					t.queryTable(neigh, "adj-rib-out", api.TableType_ADJ_OUT, func(routes []*api.Destination) {
-						for _, route := range routes {
-							for j, path := range route.Paths {
-								// Per OpenConfig the ID of this should be the ID assigned when exchanging add-path routes. However
-								// GoBGP doesn't seem to support the add-path capability and so just going to use the first path
-								// with 0 as the ID here. GoBGP does support AddPath as a gRPC call but when advertising the routes
-								// the generated UUID isn't propagated.
-								//
-								// Note that path.NeighborIp is <nil> for some reason so have to use neigh.
-								ribattrs.populateRIBAttrs(path, rib, neighContainer.GetOrCreateAdjRibOutPre().GetOrCreateRoute(route.Prefix, uint32(j)))
-								if !path.Filtered {
-									ribattrs.populateRIBAttrs(path, rib, neighContainer.GetOrCreateAdjRibOutPost().GetOrCreateRoute(route.Prefix, uint32(j)))
-								}
-							}
-						}
-					})
-				}
-				return nil
-			})
+			t.updateRIBs()
 		}
 	}()
 
 	return nil
 }
 
+// updateRIBs updates the BGP RIBs.
+func (t *bgpTask) updateRIBs() {
+	if err := t.bgpServer.ListPath(context.Background(), &api.ListPathRequest{
+		TableType: api.TableType_GLOBAL,
+		Family: &api.Family{
+			Afi:  api.Family_AFI_IP,
+			Safi: api.Family_SAFI_UNICAST,
+		},
+	}, func(d *api.Destination) {
+		log.V(1).Infof("%s: GoBGP global table path: %v", t.targetName, d)
+	}); err != nil {
+		if err.Error() != "bgp server hasn't started yet" {
+			log.Errorf("GoBGP ListPath call failed (global table): %v", err)
+		}
+	} else {
+		log.V(1).Info("GoBGP ListPath call completed (global table)")
+	}
+
+	t.updateAppliedState(func() error {
+		v4uni := t.appliedBGP.GetOrCreateRib().GetOrCreateAfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST).GetOrCreateIpv4Unicast()
+		rib := t.appliedBGP.GetOrCreateRib()
+		ribattrs := &ocRIBAttrIndices{}
+
+		// TODO: Support IPv6
+		t.queryTable("", "local", api.TableType_LOCAL, func(routes []*api.Destination) {
+			v4uni.LocRib = nil
+			locRib := v4uni.GetOrCreateLocRib()
+			for _, route := range routes {
+				for j, path := range route.Paths {
+					var origin oc.NetworkInstance_Protocol_Bgp_Rib_AfiSafi_Ipv4Unicast_LocRib_Route_Origin_Union
+					if path.SourceId == "" {
+						// TODO: For locally-originated routes figure out how to get the originating protocol.
+						origin = oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_UNSET
+					} else {
+						origin = oc.UnionString(path.NeighborIp)
+					}
+					// TODO: this ID should match the ID in adj-rib-in-post.
+					ribattrs.populateRIBAttrs(path, rib, locRib.GetOrCreateRoute(route.Prefix, origin, uint32(j)))
+				}
+			}
+		})
+
+		for neigh := range t.appliedBGP.Neighbor {
+			neighContainer := v4uni.GetOrCreateNeighbor(neigh)
+			neighContainer.AdjRibInPre = nil
+			neighContainer.AdjRibInPost = nil
+			neighContainer.AdjRibOutPre = nil
+			neighContainer.AdjRibOutPost = nil
+			t.queryTable(neigh, "adj-rib-in", api.TableType_ADJ_IN, func(routes []*api.Destination) {
+				for _, route := range routes {
+					for j, path := range route.Paths {
+						// TODO: this ID should be retrieved from the update message.
+						ribattrs.populateRIBAttrs(path, rib, neighContainer.GetOrCreateAdjRibInPre().GetOrCreateRoute(route.Prefix, uint32(j)))
+						if !path.Filtered {
+							ribattrs.populateRIBAttrs(path, rib, neighContainer.GetOrCreateAdjRibInPost().GetOrCreateRoute(route.Prefix, uint32(j)))
+						}
+					}
+				}
+			})
+
+			t.queryTable(neigh, "adj-rib-out", api.TableType_ADJ_OUT, func(routes []*api.Destination) {
+				for _, route := range routes {
+					for j, path := range route.Paths {
+						// Per OpenConfig the ID of this should be the ID assigned when exchanging add-path routes. However
+						// GoBGP doesn't seem to support the add-path capability and so just going to use the first path
+						// with 0 as the ID here. GoBGP does support AddPath as a gRPC call but when advertising the routes
+						// the generated UUID isn't propagated.
+						//
+						// Note that path.NeighborIp is <nil> for some reason so have to use neigh.
+						ribattrs.populateRIBAttrs(path, rib, neighContainer.GetOrCreateAdjRibOutPre().GetOrCreateRoute(route.Prefix, uint32(j)))
+						if !path.Filtered {
+							ribattrs.populateRIBAttrs(path, rib, neighContainer.GetOrCreateAdjRibOutPost().GetOrCreateRoute(route.Prefix, uint32(j)))
+						}
+					}
+				}
+			})
+		}
+		return nil
+	})
+}
+
 // queryTable queries for all routes stored in the specified table, applying f
 // to the routes that are queried if the query was successful or logging an
 // error otherwise.
-func (t *bgpDeclTask) queryTable(neighbor, tableName string, tableType api.TableType, f func(route []*api.Destination)) {
+func (t *bgpTask) queryTable(neighbor, tableName string, tableType api.TableType, f func(route []*api.Destination)) {
 	var routes []*api.Destination
 	if err := t.bgpServer.ListPath(context.Background(), &api.ListPathRequest{
 		Name:      neighbor,
@@ -370,224 +424,4 @@ func (ribattrs *ocRIBAttrIndices) populateRIBAttrs(path *api.Path, rib *oc.Netwo
 		}
 	}
 	r.SetCommunityIndex(ribattrs.commIndex)
-}
-
-// reconcile examines the difference between the intended and applied
-// configuration, and makes GoBGP API calls accordingly to update the applied
-// configuration in the direction of intended configuration.
-func (t *bgpDeclTask) reconcile(intended *oc.Root) error {
-	intendedBGP := intended.GetOrCreateNetworkInstance(fakedevice.DefaultNetworkInstance).GetOrCreateProtocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, fakedevice.BGPRoutingProtocol).GetOrCreateBgp()
-	intendedPolicy := intended.GetOrCreateRoutingPolicy()
-	newConfig := intendedToGoBGP(intendedBGP, intendedPolicy, t.zapiURL, t.listenPort)
-
-	intendedGlobal := intendedBGP.GetOrCreateGlobal()
-	bgpShouldStart := intendedGlobal.As != nil && intendedGlobal.RouterId != nil
-	switch {
-	case bgpShouldStart && !t.bgpStarted:
-		log.V(1).Info("Starting BGP")
-		var err error
-		t.currentConfig, err = config.InitialConfig(context.Background(), t.bgpServer, newConfig, gracefulRestart)
-		if err != nil {
-			return fmt.Errorf("Failed to apply initial BGP configuration %v", newConfig)
-		}
-		t.bgpStarted = true
-	case !bgpShouldStart && t.bgpStarted:
-		log.V(1).Info("Stopping BGP")
-		if err := t.bgpServer.StopBgp(context.Background(), &api.StopBgpRequest{}); err != nil {
-			return errors.New("Failed to stop BGP service")
-		}
-		t.bgpStarted = false
-		t.currentConfig = &config.BgpConfigSet{}
-		*t.appliedBGP = oc.NetworkInstance_Protocol_Bgp{}
-		t.appliedBGP.PopulateDefaults()
-	case t.bgpStarted:
-		log.V(1).Info("Updating BGP")
-		var err error
-		t.currentConfig, err = config.UpdateConfig(context.Background(), t.bgpServer, t.currentConfig, newConfig)
-		if err != nil {
-			return fmt.Errorf("Failed to update BGP service: %v", newConfig)
-		}
-	default:
-		// Waiting for BGP to be startable.
-		return nil
-	}
-
-	return nil
-}
-
-// intendedToGoBGP translates from OC to GoBGP intended config.
-//
-// GoBGP's notion of config vs. state does not conform to OpenConfig (see
-// https://github.com/osrg/gobgp/issues/2584)
-// Therefore, we need a compatibility layer between the two configs.
-func intendedToGoBGP(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *oc.RoutingPolicy, zapiURL string, listenPort uint16) *config.BgpConfigSet {
-	bgpConfig := &config.BgpConfigSet{}
-
-	// Global config
-	global := bgpoc.GetOrCreateGlobal()
-
-	bgpConfig.Global.Config.As = global.GetAs()
-	bgpConfig.Global.Config.RouterId = global.GetRouterId()
-	bgpConfig.Global.Config.Port = int32(listenPort)
-
-	if localAddr, err := netip.ParseAddr(global.GetRouterId()); err == nil && localAddr.IsLoopback() {
-		// Have GoBGP listen only on local address instead of all
-		// addresses when testing BGP server on localhost.
-		bgpConfig.Global.Config.LocalAddressList = []string{localAddr.String()}
-	}
-
-	for neighAddr, neigh := range bgpoc.Neighbor {
-		applyPolicy := convertNeighborApplyPolicy(neigh)
-		applyPolicy.Config.ImportPolicyList = convertPolicyNames(neighAddr, applyPolicy.Config.ImportPolicyList)
-		applyPolicy.Config.ExportPolicyList = convertPolicyNames(neighAddr, applyPolicy.Config.ExportPolicyList)
-
-		// Add neighbour config.
-		bgpConfig.Neighbors = append(bgpConfig.Neighbors, config.Neighbor{
-			Config: config.NeighborConfig{
-				PeerAs:          neigh.GetPeerAs(),
-				NeighborAddress: neighAddr,
-			},
-			// This is needed because GoBGP's configuration diffing
-			// logic may check the state value instead of the
-			// config value.
-			State: config.NeighborState{
-				PeerAs:          neigh.GetPeerAs(),
-				NeighborAddress: neighAddr,
-			},
-			Transport: config.Transport{
-				Config: config.TransportConfig{
-					LocalAddress: neigh.GetTransport().GetLocalAddress(),
-					RemotePort:   neigh.GetNeighborPort(),
-				},
-			},
-			// NOTE: From reading GoBGP's source code these are not used for filtering
-			// routes (the global ApplyPolicy list is used instead) unless the neighbour
-			// is a route server client.
-			//
-			// However, testing shows that when a REJECT policy is installed in the
-			// presence of routes, they are not withdrawn UNLESS this configuration is
-			// populated. Therefore it's possible this is a bug in GoBGP where the
-			// global apply policy list is not used for computing route withdrawals.
-			//
-			// As such this configuration is kept to get the withdraw behaviour, but how
-			// this works is not well-understood and needs more work.
-			ApplyPolicy: applyPolicy,
-		})
-	}
-
-	intendedToGoBGPPolicies(bgpoc, policyoc, bgpConfig)
-
-	bgpConfig.Zebra.Config = config.ZebraConfig{
-		Enabled: true,
-		Url:     zapiURL,
-		// TODO(wenbli): This should actually be filled with the types
-		// of routes it wants redistributed instead of getting all
-		// routes.
-		RedistributeRouteTypeList: []string{},
-		Version:                   zebra.MaxZapiVer,
-		NexthopTriggerEnable:      false,
-		SoftwareName:              "frr8.2",
-	}
-
-	return bgpConfig
-}
-
-// intendedToGoBGPPolicies populates bgpConfig's policies from the OC configuration.
-// TODO: applied state
-func intendedToGoBGPPolicies(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *oc.RoutingPolicy, bgpConfig *config.BgpConfigSet) {
-	// community sets
-	bgpConfig.DefinedSets.BgpDefinedSets.CommunitySets = convertCommunitySet(policyoc.GetOrCreateDefinedSets().GetOrCreateBgpDefinedSets().CommunitySet)
-	// Prefix sets
-	bgpConfig.DefinedSets.PrefixSets = convertPrefixSets(policyoc.GetOrCreateDefinedSets().PrefixSet)
-	// AS Path Sets
-	bgpConfig.DefinedSets.BgpDefinedSets.AsPathSets = convertASPathSets(policyoc.GetOrCreateDefinedSets().GetOrCreateBgpDefinedSets().AsPathSet)
-
-	// Neighbours, global policy definitions, and global apply policy list.
-	for neighAddr, neigh := range bgpoc.Neighbor {
-		// Ideally a simple conversion of apply-policy is sufficient, but due to GoBGP using
-		// a global set of apply-policy instead of per-neighbour policies, we need to create
-		// neighbour sets and modify input policy statements so that we retain the same
-		// per-neighbour behaviour while only using a single set of global policies.
-		//
-		// To do this, we create a neighbour set for each neighbour containing just the
-		// single neighbour address, then duplicate the policies to make a copy for each
-		// neighbour that uses it, and then concatenate the ApplyPolicy lists of every
-		// neighbour's ApplyPolicy into the global ApplyPolicy list.
-		//
-		// The resulting policies is of the following form:
-		// Neighbour sets: [neigh1, neigh2, neigh3, ...]
-		// PolicyDefinitions: [neigh1polA, neigh1polB, ..., neigh1default-import, neigh1default-export,
-		//                     neigh2polA, neigh2polB, ..., ...
-		//                     ...]
-		// Global ApplyPolicy list: [same as policy-definitions]
-		bgpConfig.DefinedSets.NeighborSets = append(bgpConfig.DefinedSets.NeighborSets, config.NeighborSet{
-			NeighborSetName:  neighAddr,
-			NeighborInfoList: []string{neighAddr},
-		})
-
-		applyPolicy := convertNeighborApplyPolicy(neigh)
-
-		// populatePolicies populates the global policy definitions and the ApplyPolicy
-		// list, and returns the list of converted policies' names.
-		policies := map[string]bool{}
-		populatePolicies := func(policyList []string) []string {
-			var applyPolicyList []string
-			for _, policyName := range policyList {
-				convertedPolicyName := convertPolicyName(neighAddr, policyName)
-				if policies[policyName] {
-					// Already processed
-					applyPolicyList = append(applyPolicyList, convertedPolicyName)
-					continue
-				}
-				// TODO(wenbli): Add unit tests for BGP policy conversion.
-				policies[policyName] = true
-				policy, ok := policyoc.PolicyDefinition[policyName]
-				if !ok {
-					log.Errorf("Neighbour policy doesn't exist in policy definitions: %q", policyName)
-					continue
-				}
-				convertedPolicy := convertPolicyDefinition(policy, neighAddr, policyoc.GetOrCreateDefinedSets().GetOrCreateBgpDefinedSets().CommunitySet)
-				bgpConfig.PolicyDefinitions = append(bgpConfig.PolicyDefinitions, convertedPolicy)
-				applyPolicyList = append(applyPolicyList, convertedPolicyName)
-			}
-			return applyPolicyList
-		}
-		bgpConfig.Global.ApplyPolicy.Config.ImportPolicyList = append(bgpConfig.Global.ApplyPolicy.Config.ImportPolicyList, populatePolicies(applyPolicy.Config.ImportPolicyList)...)
-		bgpConfig.Global.ApplyPolicy.Config.ExportPolicyList = append(bgpConfig.Global.ApplyPolicy.Config.ExportPolicyList, populatePolicies(applyPolicy.Config.ExportPolicyList)...)
-
-		// Create per-neighbour default policies.
-		defaultImportPolicyName := "default-import|" + neighAddr
-		defaultExportPolicyName := "default-export|" + neighAddr
-		bgpConfig.PolicyDefinitions = append(bgpConfig.PolicyDefinitions, config.PolicyDefinition{
-			Name: defaultImportPolicyName,
-			Statements: []config.Statement{{
-				// Use a customized name for the default policies.
-				Name: defaultImportPolicyName,
-				Conditions: config.Conditions{
-					MatchNeighborSet: config.MatchNeighborSet{
-						NeighborSet: neighAddr,
-					},
-				},
-				Actions: config.Actions{
-					RouteDisposition: defaultPolicyToRouteDisp(applyPolicy.Config.DefaultImportPolicy),
-				},
-			}},
-		}, config.PolicyDefinition{
-			Name: defaultExportPolicyName,
-			Statements: []config.Statement{{
-				// Use a customized name for the default policies.
-				Name: defaultExportPolicyName,
-				Conditions: config.Conditions{
-					MatchNeighborSet: config.MatchNeighborSet{
-						NeighborSet: neighAddr,
-					},
-				},
-				Actions: config.Actions{
-					RouteDisposition: defaultPolicyToRouteDisp(applyPolicy.Config.DefaultExportPolicy),
-				},
-			}},
-		})
-		bgpConfig.Global.ApplyPolicy.Config.ImportPolicyList = append(bgpConfig.Global.ApplyPolicy.Config.ImportPolicyList, defaultImportPolicyName)
-		bgpConfig.Global.ApplyPolicy.Config.ExportPolicyList = append(bgpConfig.Global.ApplyPolicy.Config.ExportPolicyList, defaultExportPolicyName)
-	}
 }
