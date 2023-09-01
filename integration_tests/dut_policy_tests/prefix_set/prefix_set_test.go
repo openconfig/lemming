@@ -144,7 +144,7 @@ func TestPrefixSet(t *testing.T) {
 	}
 
 	t.Run("ANY", func(t *testing.T) {
-		policytest.TestPolicy(t, policytest.PolicyTestCase{
+		policytest.TestPolicy(t, policytest.TestCase{
 			Spec: getspec(false),
 			InstallPolicies: func(t *testing.T, dut1, dut2, dut3, dut4, dut5 *policytest.Device) {
 				installPolicies(t, dut1, dut2, dut3, dut4, dut5, false)
@@ -152,7 +152,7 @@ func TestPrefixSet(t *testing.T) {
 		})
 	})
 	t.Run("INVERT", func(t *testing.T) {
-		policytest.TestPolicy(t, policytest.PolicyTestCase{
+		policytest.TestPolicy(t, policytest.TestCase{
 			Spec: getspec(true),
 			InstallPolicies: func(t *testing.T, dut1, dut2, dut3, dut4, dut5 *policytest.Device) {
 				installPolicies(t, dut1, dut2, dut3, dut4, dut5, true)

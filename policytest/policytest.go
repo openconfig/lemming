@@ -55,7 +55,7 @@ type Device struct {
 	RouterID string
 }
 
-// PolicyTestCase contains the specifications for a single policy test.
+// TestCase contains the specifications for a single policy test.
 //
 // Topology:
 //
@@ -71,14 +71,14 @@ type Device struct {
 // (export), and DUT2 (import). This is because GoBGP only withdraws routes on
 // import policy change after a soft reset:
 // https://github.com/osrg/gobgp/blob/master/docs/sources/policy.md#policy-and-soft-reset
-type PolicyTestCase struct {
+type TestCase struct {
 	Spec            *valpb.PolicyTestCase
 	InstallPolicies func(t *testing.T, dut1, dut2, dut3, dut4, dut5 *Device)
 }
 
 // TestPolicy is the helper policy integration tests can call to instantiate
 // policy tests.
-func TestPolicy(t *testing.T, testspec PolicyTestCase) {
+func TestPolicy(t *testing.T, testspec TestCase) {
 	t.Helper()
 	t.Run("installPolicyBeforeRoutes", func(t *testing.T) {
 		testPolicyAux(t, testspec, false)
@@ -322,7 +322,7 @@ func installDefaultAllowPolicies(t *testing.T, dutPair devicePair) {
 	gnmi.Replace(t, dut2, BGPPath.Neighbor(port1.IPv4).ApplyPolicy().DefaultImportPolicy().Config(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
 }
 
-func testPolicyAux(t *testing.T, testspec PolicyTestCase, installPolicyAfterRoutes bool) {
+func testPolicyAux(t *testing.T, testspec TestCase, installPolicyAfterRoutes bool) {
 	dut0 := ondatra.DUT(t, "dut0")
 	dut1 := &Device{
 		DUTDevice: ondatra.DUT(t, "dut1"),
