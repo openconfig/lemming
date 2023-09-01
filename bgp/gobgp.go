@@ -16,7 +16,6 @@ package bgp
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"reflect"
 	"sync"
@@ -183,15 +182,6 @@ func (t *bgpTask) reconcile(intended *oc.Root) error {
 			return fmt.Errorf("Failed to apply initial BGP configuration %v", newConfig)
 		}
 		t.bgpStarted = true
-	case !bgpShouldStart && t.bgpStarted:
-		log.V(1).Info("Stopping BGP")
-		if err := t.bgpServer.StopBgp(context.Background(), &api.StopBgpRequest{}); err != nil {
-			return errors.New("Failed to stop BGP service")
-		}
-		t.bgpStarted = false
-		t.currentConfig = &config.BgpConfigSet{}
-		*t.appliedBGP = oc.NetworkInstance_Protocol_Bgp{}
-		t.appliedBGP.PopulateDefaults()
 	case t.bgpStarted:
 		log.V(1).Info("Updating BGP")
 		var err error
@@ -201,7 +191,6 @@ func (t *bgpTask) reconcile(intended *oc.Root) error {
 		}
 	default:
 		// Waiting for BGP to be startable.
-		return nil
 	}
 
 	return nil
