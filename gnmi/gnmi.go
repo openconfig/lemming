@@ -127,7 +127,7 @@ func newServer(ctx context.Context, targetName string, enableSet bool, recs ...r
 		if err := ygot.PruneConfigFalse(configSchema.RootSchema(), configSchema.Root); err != nil {
 			return nil, fmt.Errorf("gnmi: %v", err)
 		}
-		if err := updateCache(c.cache, configSchema.Root, emptySchema.Root, targetName, OpenConfigOrigin, true, time.Now().UnixNano(), "", nil); err != nil {
+		if err := updateCache(c.cache, configSchema.Root, emptySchema.Root, targetName, OpenConfigOrigin, true, 0, "", nil); err != nil {
 			return nil, fmt.Errorf("gnmi newServer: %v", err)
 		}
 	}
@@ -140,7 +140,7 @@ func newServer(ctx context.Context, targetName string, enableSet bool, recs ...r
 		if err := setupSchema(stateSchema, false); err != nil {
 			return nil, err
 		}
-		if err := updateCache(c.cache, stateSchema.Root, emptySchema.Root, targetName, OpenConfigOrigin, true, time.Now().UnixNano(), "", nil); err != nil {
+		if err := updateCache(c.cache, stateSchema.Root, emptySchema.Root, targetName, OpenConfigOrigin, true, 0, "", nil); err != nil {
 			return nil, fmt.Errorf("gnmi newServer: %v", err)
 		}
 	}
@@ -193,6 +193,9 @@ func setupSchema(schema *ytypes.Schema, config bool) error {
 func updateCache(cache *cache.Cache, dirtyRoot, root ygot.GoStruct, target, origin string, preferShadowPath bool, timestamp int64, user string, auth PathAuth) error {
 	var nos []*gpb.Notification
 	if root == nil {
+		if timestamp == 0 {
+			timestamp = time.Now().UnixNano()
+		}
 		var err error
 		if nos, err = ygot.TogNMINotifications(dirtyRoot, timestamp, ygot.GNMINotificationsConfig{
 			UsePathElem: true,
@@ -200,14 +203,17 @@ func updateCache(cache *cache.Cache, dirtyRoot, root ygot.GoStruct, target, orig
 			return fmt.Errorf("gnmi: %v", err)
 		}
 	} else {
-		ns, err := ygot.DiffWithAtomic(root, dirtyRoot, &ygot.DiffPathOpt{PreferShadowPath: preferShadowPath})
-		if err != nil {
+		var err error
+		if nos, err = ygot.DiffWithAtomic(root, dirtyRoot, &ygot.DiffPathOpt{PreferShadowPath: preferShadowPath}); err != nil {
 			return fmt.Errorf("gnmi: error while creating update notification for Set: %v", err)
 		}
-		for _, n := range ns {
+		if timestamp == 0 {
+			// Set timestamp here in order to minimize latency and reduce change for "update is stale" error.
+			timestamp = time.Now().UnixNano()
+		}
+		for _, n := range nos {
 			n.Timestamp = timestamp
 		}
-		nos = append(nos, ns...)
 	}
 
 	if auth != nil && auth.IsInitialized() {
@@ -338,7 +344,7 @@ func unmarshalSetRequest(schema *ytypes.Schema, req *gpb.SetRequest, preferShado
 // set returns a gRPC error with the correct code and shouldn't be wrapped again.
 //
 // - timestamp specifies the timestamp of the values that are to be updated in
-// the gNMI cache.
+// the gNMI cache. If zero, then time.Now().UnixNano() is used.
 // - auth adds authorization to before writing vals to the cache, if set to nil, not authorization is checked.
 func set(schema *ytypes.Schema, cache *cache.Cache, target string, req *gpb.SetRequest, preferShadowPath bool, validators []func(*oc.Root) error, timestamp int64, user string, auth PathAuth) error {
 	// skip diffing and deepcopy for performance when handling state update paths.
@@ -356,6 +362,9 @@ func set(schema *ytypes.Schema, cache *cache.Cache, target string, req *gpb.SetR
 			Unmarshal:  schema.Unmarshal,
 		}
 		unmarshalSetRequest(tempSchema, req, preferShadowPath)
+		if timestamp == 0 {
+			timestamp = time.Now().UnixNano()
+		}
 		notifs, err := ygot.TogNMINotifications(tempSchema.Root, timestamp, ygot.GNMINotificationsConfig{UsePathElem: true})
 		if err != nil {
 			return err
@@ -476,7 +485,7 @@ const (
 // is to support cases where the data comes from an externally-timestamped
 // source.
 func (s *Server) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResponse, error) {
-	timestamp := time.Now().UnixNano()
+	var timestamp int64
 	// Use ConfigMode by default so that external users don't need to set metadata.
 	gnmiMode := ConfigMode
 	md, ok := metadata.FromIncomingContext(ctx)
