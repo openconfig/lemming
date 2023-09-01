@@ -56,12 +56,86 @@ type PolicyTestCase struct {
 // policy tests.
 func testPolicy(t *testing.T, testspec PolicyTestCase) {
 	t.Helper()
+	dut1, stop1 := newLemming(t, 1, 64500, []*AddIntfAction{{
+		name:    "eth0",
+		ifindex: 0,
+		enabled: true,
+		prefix:  "192.0.2.1/31",
+		niName:  "DEFAULT",
+	}})
+	defer stop1()
+	dut2, stop2 := newLemming(t, 2, 64500, nil)
+	defer stop2()
+	dut3, stop3 := newLemming(t, 3, 64501, nil)
+	defer stop3()
+	dut4, stop4 := newLemming(t, 4, 64502, []*AddIntfAction{{
+		name:    "eth0",
+		ifindex: 0,
+		enabled: true,
+		prefix:  "192.0.2.1/30",
+		niName:  "DEFAULT",
+	}})
+	defer stop4()
+	dut5, stop5 := newLemming(t, 5, 64500, []*AddIntfAction{{
+		name:    "eth0",
+		ifindex: 0,
+		enabled: true,
+		prefix:  "193.0.2.1/30",
+		niName:  "DEFAULT",
+	}})
+	defer stop5()
+
+	for _, routeTest := range testspec.spec.RouteTests {
+		// Install all regular test routes into DUT1.
+		route := &oc.NetworkInstance_Protocol_Static{
+			Prefix: ygot.String(routeTest.GetInput().GetReachPrefix()),
+			NextHop: map[string]*oc.NetworkInstance_Protocol_Static_NextHop{
+				"single": {
+					Index:   ygot.String("single"),
+					NextHop: oc.UnionString("192.0.2.1"),
+					Recurse: ygot.Bool(true),
+				},
+			},
+		}
+		installStaticRoute(t, dut1, route)
+	}
+
+	for _, routeTest := range testspec.spec.LongerPathRouteTests {
+		// Install all longer-path test routes into DUT4.
+		route := &oc.NetworkInstance_Protocol_Static{
+			Prefix: ygot.String(routeTest.GetInput().GetReachPrefix()),
+			NextHop: map[string]*oc.NetworkInstance_Protocol_Static_NextHop{
+				"single": {
+					Index:   ygot.String("single"),
+					NextHop: oc.UnionString("192.0.2.1"),
+					Recurse: ygot.Bool(true),
+				},
+			},
+		}
+		installStaticRoute(t, dut4, route)
+	}
+
+	for _, routeTest := range testspec.spec.AlternatePathRouteTests {
+		// Install all alternate-path test routes into DUT5.
+		route := &oc.NetworkInstance_Protocol_Static{
+			Prefix: ygot.String(routeTest.GetInput().GetReachPrefix()),
+			NextHop: map[string]*oc.NetworkInstance_Protocol_Static_NextHop{
+				"single": {
+					Index:   ygot.String("single"),
+					NextHop: oc.UnionString("193.0.2.1"),
+					Recurse: ygot.Bool(true),
+				},
+			},
+		}
+		installStaticRoute(t, dut5, route)
+	}
+
 	t.Run("installPolicyBeforeRoutes", func(t *testing.T) {
-		testPolicyAux(t, testspec, false)
+		testPolicyAux(t, testspec, dut1, dut2, dut3, dut4, dut5, false)
 	})
 
 	t.Run("installPolicyAfterRoutes", func(t *testing.T) {
-		testPolicyAux(t, testspec, true)
+		testPolicyAux(t, testspec, dut1, dut2, dut3, dut4, dut5, true)
 	})
 }
 
@@ -127,35 +201,21 @@ func testPropagation(t *testing.T, routeTest *valpb.RouteTestCase, prevDUT, curr
 	}
 }
 
-func testPolicyAux(t *testing.T, testspec PolicyTestCase, installPolicyAfterRoutes bool) {
-	dut1, stop1 := newLemming(t, 1, 64500, []*AddIntfAction{{
-		name:    "eth0",
-		ifindex: 0,
-		enabled: true,
-		prefix:  "192.0.2.1/31",
-		niName:  "DEFAULT",
-	}})
-	defer stop1()
-	dut2, stop2 := newLemming(t, 2, 64500, nil)
-	defer stop2()
-	dut3, stop3 := newLemming(t, 3, 64501, nil)
-	defer stop3()
-	dut4, stop4 := newLemming(t, 4, 64502, []*AddIntfAction{{
-		name:    "eth0",
-		ifindex: 0,
-		enabled: true,
-		prefix:  "192.0.2.1/30",
-		niName:  "DEFAULT",
-	}})
-	defer stop4()
-	dut5, stop5 := newLemming(t, 5, 64500, []*AddIntfAction{{
-		name:    "eth0",
-		ifindex: 0,
-		enabled: true,
-		prefix:  "193.0.2.1/30",
-		niName:  "DEFAULT",
-	}})
-	defer stop5()
+func testPolicyAux(t *testing.T, testspec PolicyTestCase, dut1, dut2, dut3, dut4, dut5 *Device, installPolicyAfterRoutes bool) {
+	// Remove any existing BGP config
+	//
+	// TODO(wenbli): Debug why sometimes this causes GoBGP to transiently
+	// report "not found policy" error.
+	Delete(t, dut1, bgp.BGPPath.Config())
+	Delete(t, dut2, bgp.BGPPath.Config())
+	Delete(t, dut3, bgp.BGPPath.Config())
+	Delete(t, dut4, bgp.BGPPath.Config())
+	Delete(t, dut5, bgp.BGPPath.Config())
+	Delete(t, dut1, bgp.RoutingPolicyPath.Config())
+	Delete(t, dut2, bgp.RoutingPolicyPath.Config())
+	Delete(t, dut3, bgp.RoutingPolicyPath.Config())
+	Delete(t, dut4, bgp.RoutingPolicyPath.Config())
+	Delete(t, dut5, bgp.RoutingPolicyPath.Config())
 
 	installDefaultPolicies := func() {
 		// Clear the path for routes to be propagated.
@@ -181,51 +241,6 @@ func testPolicyAux(t *testing.T, testspec PolicyTestCase, installPolicyAfterRout
 
 	establishSessionPairs(t, []DevicePair{{dut1, dut2}, {dut2, dut3}, {dut4, dut5}, {dut5, dut2}}...)
 
-	for _, routeTest := range testspec.spec.RouteTests {
-		// Install all regular test routes into DUT1.
-		route := &oc.NetworkInstance_Protocol_Static{
-			Prefix: ygot.String(routeTest.GetInput().GetReachPrefix()),
-			NextHop: map[string]*oc.NetworkInstance_Protocol_Static_NextHop{
-				"single": {
-					Index:   ygot.String("single"),
-					NextHop: oc.UnionString("192.0.2.1"),
-					Recurse: ygot.Bool(true),
-				},
-			},
-		}
-		installStaticRoute(t, dut1, route)
-	}
-
-	for _, routeTest := range testspec.spec.LongerPathRouteTests {
-		// Install all longer-path test routes into DUT4.
-		route := &oc.NetworkInstance_Protocol_Static{
-			Prefix: ygot.String(routeTest.GetInput().GetReachPrefix()),
-			NextHop: map[string]*oc.NetworkInstance_Protocol_Static_NextHop{
-				"single": {
-					Index:   ygot.String("single"),
-					NextHop: oc.UnionString("192.0.2.1"),
-					Recurse: ygot.Bool(true),
-				},
-			},
-		}
-		installStaticRoute(t, dut4, route)
-	}
-
-	for _, routeTest := range testspec.spec.AlternatePathRouteTests {
-		// Install all alternate-path test routes into DUT5.
-		route := &oc.NetworkInstance_Protocol_Static{
-			Prefix: ygot.String(routeTest.GetInput().GetReachPrefix()),
-			NextHop: map[string]*oc.NetworkInstance_Protocol_Static_NextHop{
-				"single": {
-					Index:   ygot.String("single"),
-					NextHop: oc.UnionString("193.0.2.1"),
-					Recurse: ygot.Bool(true),
-				},
-			},
-		}
-		installStaticRoute(t, dut5, route)
-	}
-
 	staticp := ocpath.Root().NetworkInstance(fakedevice.DefaultNetworkInstance).Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_STATIC, fakedevice.StaticRoutingProtocol)
 	v := GetAll(t, dut1, staticp.StaticAny().Config())
 	t.Logf("Installed static route on %v: %s", dut1, formatYgot(v))
@@ -241,12 +256,10 @@ func testPolicyAux(t *testing.T, testspec PolicyTestCase, installPolicyAfterRout
 		if testspec.installPolicies != nil {
 			testspec.installPolicies(t, dut1, dut2, dut3, dut4, dut5)
 		}
-		// Changing policy currently causes a hard reset of the BGP
-		// session, which causes routes to disappear from the AdjRIBs,
-		// so we need to wait for re-establishment first. To do this,
-		// we sleep for a reasonable amount of time for the sessions to
-		// be teared down.
-		time.Sleep(10 * time.Second)
+		// Changing policy causes a reset of the BGP session. Wait some
+		// time to increase confidence that we're detecting routes from
+		// after the reset.
+		time.Sleep(5 * time.Second)
 		awaitSessionEstablished(t, dut2, dut1)
 		awaitSessionEstablished(t, dut2, dut5)
 
