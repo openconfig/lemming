@@ -520,6 +520,12 @@ func testTrafficAndEncap(t *testing.T, otg *otg.OTG, startingIP string, v6Traffi
 
 	var expectedPacketCounter int
 	for i := 0; i != 20; i++ {
+		if expectedPacketCounter == 1 {
+			// Reset packet index to avoid counting other packet
+			// types that may be initially in the stream prior to
+			// the first good packet.
+			i = 1
+		}
 		pkt, err := ps.NextPacket()
 		if err != nil {
 			t.Fatalf("error reading next packet: %v", err)
