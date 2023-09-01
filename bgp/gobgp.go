@@ -185,16 +185,9 @@ func (t *bgpTask) reconcile(intended *oc.Root) error {
 		t.bgpStarted = true
 	case !bgpShouldStart && t.bgpStarted:
 		log.V(1).Info("Stopping BGP")
-		if err := t.stop(context.Background()); err != nil {
+		if err := t.bgpServer.StopBgp(context.Background(), &api.StopBgpRequest{}); err != nil {
 			return errors.New("Failed to stop BGP service")
 		}
-		// Because InitialConfig can only be applied to a pristine
-		// GoBGP server instance, we create a new one for the next time
-		// it is called.
-		if err := t.createNewGoBGPServer(context.Background()); err != nil {
-			log.Errorf("Failed to start GoBGP server: %v", err)
-		}
-
 		t.bgpStarted = false
 		t.currentConfig = &config.BgpConfigSet{}
 		*t.appliedBGP = oc.NetworkInstance_Protocol_Bgp{}
