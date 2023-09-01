@@ -35,7 +35,10 @@ func TestMain(m *testing.M) {
 }
 
 func TestCommunitySet(t *testing.T) {
-	installRejectPolicy := func(t *testing.T, dut1, dut2, _, _, _ *policytest.Device) {
+	installRejectPolicy := func(t *testing.T, pair12, pair52, pair23 *policytest.DevicePair) {
+		dut2 := pair12.Second
+		port1 := pair12.FirstPort
+
 		// Policy to reject routes with the given community set conditions
 		policyName := "community-sets"
 		policy := &oc.RoutingPolicy_PolicyDefinition_Statement_OrderedMap{}
@@ -75,7 +78,7 @@ func TestCommunitySet(t *testing.T) {
 
 		// Install policy
 		gnmi.Replace(t, dut2, policytest.RoutingPolicyPath.PolicyDefinition(policyName).Config(), &oc.RoutingPolicy_PolicyDefinition{Statement: policy})
-		gnmi.Replace(t, dut2, policytest.BGPPath.Neighbor(dut1.RouterID).ApplyPolicy().ImportPolicy().Config(), []string{policyName})
+		gnmi.Replace(t, dut2, policytest.BGPPath.Neighbor(port1.IPv4).ApplyPolicy().ImportPolicy().Config(), []string{policyName})
 	}
 
 	routeUnderTestList := []string{
@@ -87,7 +90,10 @@ func TestCommunitySet(t *testing.T) {
 		"10.5.0.0/16",
 	}
 
-	installSetPolicy := func(t *testing.T, dut1, dut2, _, _, _ *policytest.Device) {
+	installSetPolicy := func(t *testing.T, pair12, pair52, pair23 *policytest.DevicePair) {
+		dut1 := pair12.First
+		port21 := pair12.SecondPort
+
 		policyName := "set-communities"
 		policy := &oc.RoutingPolicy_PolicyDefinition_Statement_OrderedMap{}
 
@@ -169,7 +175,7 @@ func TestCommunitySet(t *testing.T) {
 		}
 		// Install policy
 		gnmi.Replace(t, dut1, policytest.RoutingPolicyPath.PolicyDefinition(policyName).Config(), &oc.RoutingPolicy_PolicyDefinition{Name: ygot.String(policyName), Statement: policy})
-		gnmi.Replace(t, dut1, policytest.BGPPath.Neighbor(dut2.RouterID).ApplyPolicy().ExportPolicy().Config(), []string{policyName})
+		gnmi.Replace(t, dut1, policytest.BGPPath.Neighbor(port21.IPv4).ApplyPolicy().ExportPolicy().Config(), []string{policyName})
 	}
 
 	policytest.TestPolicy(t, policytest.TestCase{
@@ -219,9 +225,9 @@ func TestCommunitySet(t *testing.T) {
 				ExpectedResult:             valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD,
 			}},
 		},
-		InstallPolicies: func(t *testing.T, dut1, dut2, dut3, dut4, dut5 *policytest.Device) {
-			installSetPolicy(t, dut1, dut2, dut3, dut4, dut5)
-			installRejectPolicy(t, dut1, dut2, dut3, dut4, dut5)
+		InstallPolicies: func(t *testing.T, pair12, pair52, pair23 *policytest.DevicePair) {
+			installSetPolicy(t, pair12, pair52, pair23)
+			installRejectPolicy(t, pair12, pair52, pair23)
 		},
 	})
 }
