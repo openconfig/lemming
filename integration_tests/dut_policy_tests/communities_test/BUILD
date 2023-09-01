@@ -1,7 +1,7 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_test")
 
 go_test(
-    name = "communities_test",
+    name = "communities_test_test",
     size = "enormous",
     srcs = ["communities_test.go"],
     data = ["//integration_tests/dut_policy_tests:topology_testbed"],
