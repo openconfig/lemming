@@ -1052,11 +1052,44 @@ func (e *Engine) AddInterface(ctx context.Context, req *dpb.AddInterfaceRequest)
 	defer e.ifaceToPortMu.Unlock()
 
 	switch req.GetType() {
+	case dpb.InterfaceType_INTERFACE_TYPE_AGGREGATE:
+		pcReq := &fwdpb.PortCreateRequest{
+			ContextId: &fwdpb.ContextId{Id: e.id},
+			Port: &fwdpb.PortDesc{
+				PortType: fwdpb.PortType_PORT_TYPE_AGGREGATE_PORT,
+			},
+		}
+		resp, err := e.PortCreate(ctx, pcReq)
+		e.idToNIDMu.Lock()
+		e.idToNID[req.GetId()] = resp.ObjectIndex.GetIndex()
+		e.idToNIDMu.Unlock()
+		if err != nil {
+			return nil, err
+		}
+		for _, member := range req.PortIds {
+			_, err := e.PortUpdate(ctx, &fwdpb.PortUpdateRequest{
+				PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: req.GetId()}},
+				ContextId: &fwdpb.ContextId{Id: e.id},
+				Update: &fwdpb.PortUpdateDesc{
+					Port: &fwdpb.PortUpdateDesc_AggregateAdd{
+						AggregateAdd: &fwdpb.AggregatePortAddMemberUpdateDesc{
+							PortId: &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: member}},
+						},
+					},
+				},
+			})
+			if err != nil {
+				return nil, err
+			}
+		}
 	case dpb.InterfaceType_INTERFACE_TYPE_PORT:
-		log.Infof("added interface id %s port id %s", req.GetId(), req.GetPortId())
+		if nPorts := len(req.GetPortIds()); nPorts != 1 {
+			return nil, fmt.Errorf("invalid number of ports got %v, expected 1", nPorts)
+		}
+		log.Infof("added interface id %s port id %s", req.GetId(), req.GetPortIds()[0])
 		log.Infof("added port src mac %x", req.GetMac())
-		e.ifaceToPort[req.GetId()] = req.GetPortId()
-		if err := e.UpdatePortSrcMAC(ctx, req.GetPortId(), req.GetMac()); err != nil {
+		e.ifaceToPort[req.GetId()] = req.GetPortIds()[0]
+		if err := e.UpdatePortSrcMAC(ctx, req.GetPortIds()[0], req.GetMac()); err != nil {
 			return nil, err
 		}
 	case dpb.InterfaceType_INTERFACE_TYPE_LOOPBACK: // TODO: this may need to handled differently if multiple loopbacks are created.
