@@ -33,8 +33,11 @@ func TestMain(m *testing.M) {
 }
 
 func TestPrefixSet(t *testing.T) {
-	installPolicies := func(t *testing.T, dut1, dut2, _, _, _ *policytest.Device, invert bool) {
+	installPolicies := func(t *testing.T, pair12, pair52, pair23 *policytest.DevicePair, invert bool) {
 		t.Log("Installing test policies")
+		dut2 := pair12.Second
+		port1 := pair12.FirstPort
+
 		prefix1 := "10.33.0.0/16"
 		prefix2 := "10.34.0.0/16"
 
@@ -63,7 +66,7 @@ func TestPrefixSet(t *testing.T) {
 		stmt.GetOrCreateActions().SetPolicyResult(oc.RoutingPolicy_PolicyResultType_REJECT_ROUTE)
 		// Install policy
 		gnmi.Replace(t, dut2, policytest.RoutingPolicyPath.PolicyDefinition(policyName).Config(), &oc.RoutingPolicy_PolicyDefinition{Statement: policy})
-		gnmi.Replace(t, dut2, policytest.BGPPath.Neighbor(dut1.RouterID).ApplyPolicy().ImportPolicy().Config(), []string{policyName})
+		gnmi.Replace(t, dut2, policytest.BGPPath.Neighbor(port1.IPv4).ApplyPolicy().ImportPolicy().Config(), []string{policyName})
 	}
 
 	invertResult := func(result valpb.RouteTestResult, invert bool) valpb.RouteTestResult {
@@ -146,16 +149,16 @@ func TestPrefixSet(t *testing.T) {
 	t.Run("ANY", func(t *testing.T) {
 		policytest.TestPolicy(t, policytest.TestCase{
 			Spec: getspec(false),
-			InstallPolicies: func(t *testing.T, dut1, dut2, dut3, dut4, dut5 *policytest.Device) {
-				installPolicies(t, dut1, dut2, dut3, dut4, dut5, false)
+			InstallPolicies: func(t *testing.T, pair12, pair52, pair23 *policytest.DevicePair) {
+				installPolicies(t, pair12, pair52, pair23, false)
 			},
 		})
 	})
 	t.Run("INVERT", func(t *testing.T) {
 		policytest.TestPolicy(t, policytest.TestCase{
 			Spec: getspec(true),
-			InstallPolicies: func(t *testing.T, dut1, dut2, dut3, dut4, dut5 *policytest.Device) {
-				installPolicies(t, dut1, dut2, dut3, dut4, dut5, true)
+			InstallPolicies: func(t *testing.T, pair12, pair52, pair23 *policytest.DevicePair) {
+				installPolicies(t, pair12, pair52, pair23, true)
 			},
 		})
 	})
