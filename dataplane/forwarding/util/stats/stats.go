@@ -94,6 +94,7 @@ func (s *Stats) Update(id int, value int64) error {
 func (s *Stats) GetAll() map[int]int64 {
 	r := make(map[int]int64)
 	for id, stat := range s.statMap {
+		stat := stat
 		r[id] = atomic.LoadInt64(&stat.value)
 	}
 	return r

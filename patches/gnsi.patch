@@ -13,10 +13,10 @@ index 7847882..70fc8bd 100644
  
  alias(
 diff --git a/accounting/BUILD.bazel b/accounting/BUILD.bazel
-index 2e2f26f..2165445 100644
+index 2e2f26f..496983f 100644
 --- a/accounting/BUILD.bazel
 +++ b/accounting/BUILD.bazel
-@@ -40,13 +40,10 @@ cpp_grpc_library(
+@@ -40,17 +40,14 @@ cpp_grpc_library(
  ##############################################################################
  go_proto_library(
      name = "acct_go_proto",
@@ -29,6 +29,13 @@ index 2e2f26f..2165445 100644
      proto = ":acct_proto",
 -    deps = ["//version:version_go_proto"],
 +    deps = ["//version"],
+ )
+ 
+ go_library(
+-    name = "acct",
++    name = "accounting",
+     embed = [":acct_go_proto"],
+     importpath = "github.com/openconfig/gnsi/accounting",
  )
  
  go_library(

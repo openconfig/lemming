@@ -2,12 +2,14 @@ load("@io_bazel_rules_go//go:def.bzl", "go_test")
 
 go_test(
     name = "local_tests_test",
-    size = "medium",
+    size = "large",
     srcs = [
+        "community_set_test.go",
         "policy_test.go",
         "prefix_set_test.go",
         "route_propagation_test.go",
         "session_establish_test.go",
+        "set_attributes_test.go",
         "ygnmi_test.go",
     ],
     deps = [

@@ -31,7 +31,6 @@ import (
 	"github.com/google/gopacket/layers"
 	"github.com/openconfig/gribigo/afthelper"
 	"github.com/openconfig/ygnmi/ygnmi"
-	"github.com/wenovus/gobgp/v3/pkg/zebra"
 	"golang.org/x/exp/maps"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -191,21 +190,20 @@ func (s *Server) Start(gClient gpb.GNMIClient, target, zapiURL string) error {
 
 	go grpcServer.Serve(lis)
 
-	// Start ZAPI server.
+	// BEGIN Start ZAPI server.
 	if zapiURL != "" {
 		if s.zServer, err = StartZServer(zapiURL, 0, s); err != nil {
 			return err
 		}
 	}
+	// END Start ZAPI server.
 
 	return nil
 }
 
 // Stop stops the sysrib server.
 func (s *Server) Stop() {
-	if s.zServer != nil {
-		s.zServer.Stop()
-	}
+	s.zServer.Stop()
 }
 
 // monitorConnectedIntfs starts a gothread to check for connected prefixes from
@@ -545,49 +543,6 @@ func (s *Server) programRoute(r *ResolvedRoute) error {
 	return s.dataplane.ProgramRoute(r)
 }
 
-// convertToZAPIRoute converts a route to a ZAPI route for redistributing to
-// other protocols (e.g. BGP).
-func convertToZAPIRoute(routeKey RouteKey, route *Route, rr *ResolvedRoute) (*zebra.IPRouteBody, error) {
-	if route.Connected != nil {
-		// TODO(wenbli): Connected route redistribution not supported.
-		// This is not needed right now since only need to redistribute
-		// non-connected routes. It also breaks some of the integration tests.
-		return nil, nil
-	}
-	vrfID, err := niNameToVrfID(routeKey.NIName)
-	if err != nil {
-		return nil, err
-	}
-
-	_, ipnet, err := net.ParseCIDR(rr.Prefix)
-	if err != nil {
-		return nil, fmt.Errorf("gribigo/zapi: %v", err)
-	}
-	prefixLen, _ := ipnet.Mask.Size()
-
-	var nexthops []zebra.Nexthop
-	for nh := range rr.Nexthops {
-		nexthops = append(nexthops, zebra.Nexthop{
-			VrfID:  vrfID,
-			Gate:   net.ParseIP(nh.Address),
-			Weight: uint32(nh.Weight),
-		})
-	}
-
-	return &zebra.IPRouteBody{
-		Flags:   zebra.FlagAllowRecursion,
-		Type:    zebra.RouteStatic,
-		Safi:    zebra.SafiUnicast,
-		Message: zebra.MessageNexthop,
-		Prefix: zebra.Prefix{
-			Prefix:    ipnet.IP,
-			PrefixLen: uint8(prefixLen),
-		},
-		Nexthops: nexthops,
-		Distance: route.RoutePref.AdminDistance,
-	}, nil
-}
-
 // ResolveAndProgramDiff walks through each prefix in the RIB, resolving it and
 // programs the forwarding plane.
 //
@@ -672,19 +627,7 @@ func (s *Server) resolveAndProgramDiffAux(niName string, ni *NIRIB, prefix strin
 			s.PrintProgrammedRoutes()
 		}
 		// ZAPI: If a new/updated route is programmed, redistribute it to clients.
-		// TODO(wenbli): RedistributeRouteDel
-		zrouteBody, err := convertToZAPIRoute(rr.RouteKey, route, rr)
-		if err != nil {
-			log.Warningf("failed to convert resolved route to zebra BGP route: %v", err)
-		}
-		if zrouteBody != nil && s.zServer != nil {
-			log.V(1).Info("Sending new route to ZAPI clients: ", zrouteBody)
-			s.zServer.ClientMutex.RLock()
-			for conn := range s.zServer.ClientMap {
-				serverSendMessage(conn, zebra.RedistributeRouteAdd, zrouteBody)
-			}
-			s.zServer.ClientMutex.RUnlock()
-		}
+		distributeRoute(s.zServer, rr, route)
 	default:
 		// No diff, so don't do anything.
 	}
@@ -767,41 +710,6 @@ func (s *Server) setRoute(niName string, route *Route) error {
 		return fmt.Errorf("error while resolving sysrib: %v", err)
 	}
 	return nil
-}
-
-// setZebraRoute calls setRoute after reformatting a zebra-formatted input route.
-func (s *Server) setZebraRoute(niName string, zroute *zebra.IPRouteBody) error {
-	if s == nil {
-		return fmt.Errorf("cannot add route to nil sysrib server")
-	}
-	log.V(1).Infof("setZebraRoute: %+v", *zroute)
-	route := convertZebraRoute(niName, zroute)
-	return s.setRoute(niName, route)
-}
-
-// convertZebraRoute converts a zebra route to a Sysrib route.
-func convertZebraRoute(niName string, zroute *zebra.IPRouteBody) *Route {
-	var nexthops []*afthelper.NextHopSummary
-	for _, znh := range zroute.Nexthops {
-		nexthops = append(nexthops, &afthelper.NextHopSummary{
-			Weight:          1,
-			Address:         znh.Gate.String(),
-			NetworkInstance: niName,
-		})
-	}
-	var routePref RoutePreference
-	switch zroute.Type {
-	case zebra.RouteBGP:
-		routePref.AdminDistance = AdminDistanceBGP
-	}
-	routePref.Metric = zroute.Metric
-	return &Route{
-		Prefix: fmt.Sprintf("%s/%d", zroute.Prefix.Prefix.String(), zroute.Prefix.PrefixLen),
-		// NextHops is the set of IP nexthops that the route uses if
-		// it is not a connected route.
-		NextHops:  nexthops,
-		RoutePref: routePref,
-	}
 }
 
 // addInterfacePrefix adds a prefix to the sysrib as a connected route.

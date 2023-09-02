@@ -16,6 +16,7 @@ go_library(
 
 go_test(
     name = "reconciler_test",
+    size = "small",
     srcs = ["reconciler_test.go"],
     embed = [":reconciler"],
     deps = [

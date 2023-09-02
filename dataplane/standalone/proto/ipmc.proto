@@ -1,0 +1,62 @@
+
+syntax = "proto3";
+
+package lemming.dataplane.sai;
+
+import "dataplane/standalone/proto/common.proto";
+
+option go_package = "github.com/openconfig/lemming/proto/dataplane/sai";
+
+enum IpmcEntryAttr {
+  IPMC_ENTRY_ATTR_UNSPECIFIED = 0;
+  IPMC_ENTRY_ATTR_PACKET_ACTION = 1;
+  IPMC_ENTRY_ATTR_OUTPUT_GROUP_ID = 2;
+  IPMC_ENTRY_ATTR_RPF_GROUP_ID = 3;
+}
+
+message CreateIpmcEntryRequest {
+  IpmcEntry entry = 1;
+
+  PacketAction packet_action = 2;
+  uint64 output_group_id = 3;
+  uint64 rpf_group_id = 4;
+}
+
+message CreateIpmcEntryResponse {}
+
+message RemoveIpmcEntryRequest {
+  IpmcEntry entry = 1;
+}
+
+message RemoveIpmcEntryResponse {}
+
+message SetIpmcEntryAttributeRequest {
+  IpmcEntry entry = 1;
+  oneof attr {
+    PacketAction packet_action = 2;
+    uint64 output_group_id = 3;
+    uint64 rpf_group_id = 4;
+  }
+}
+
+message SetIpmcEntryAttributeResponse {}
+
+message GetIpmcEntryAttributeRequest {
+  IpmcEntry entry = 1;
+  repeated IpmcEntryAttr attr_type = 2;
+}
+
+message GetIpmcEntryAttributeResponse {
+  repeated IpmcEntryAttribute attr = 1;
+}
+
+service Ipmc {
+  rpc CreateIpmcEntry(CreateIpmcEntryRequest)
+      returns (CreateIpmcEntryResponse) {}
+  rpc RemoveIpmcEntry(RemoveIpmcEntryRequest)
+      returns (RemoveIpmcEntryResponse) {}
+  rpc SetIpmcEntryAttribute(SetIpmcEntryAttributeRequest)
+      returns (SetIpmcEntryAttributeResponse) {}
+  rpc GetIpmcEntryAttribute(GetIpmcEntryAttributeRequest)
+      returns (GetIpmcEntryAttributeResponse) {}
+}

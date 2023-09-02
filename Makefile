@@ -11,13 +11,18 @@ load-operator:
 .PHONY: load 
 load:
 	bazel build //cmd/lemming:image-tar
-	kind load image-archive bazel-bin/cmd/lemming/image-tar/tarball.tar --name kne
+	docker load -i bazel-bin/cmd/lemming/image-tar/tarball.tar
+	kind load docker-image us-west1-docker.pkg.dev/openconfig-lemming/release/lemming:ga --name kne
 
 .PHONY: buildfile
 buildfile:
 	go mod tidy
 	bazel run //:gazelle -- update-repos -to_macro=repositories.bzl%go_repositories -from_file=go.mod
 	bazel run //:gazelle
+
+.PHONY: genprotos
+genprotos:
+	tools/genproto.sh
 
 .PHONY: load-debug
 load-debug:
@@ -27,11 +32,15 @@ load-debug:
 ## Run integration tests
 .PHONY: itest
 itest:
-	bazel test --test_output=errors --cache_test_results=no //integration_tests/...
+	bazel test --test_output=errors --cache_test_results=no $(shell bazel query 'tests("//...") except (attr(size, small, tests("//...")) + attr(size, medium, tests("//..."))) ')
 
 .PHONY: test
 test:
-	bazel test --test_output=errors $(shell bazel query 'tests("//...") except "//integration_tests/..."')
+	bazel test --test_output=errors $(shell bazel query 'attr(size, small, tests("//...")) +  attr(size, medium, tests("//..."))')
+
+.PHONY: coverage
+coverage:
+	bazel coverage --test_output=errors --combined_report=lcov  $(shell bazel query 'attr(size, small, tests("//...")) + attr(size, medium, tests("//..."))')
 
 .PHONY: test-race
 test-race:

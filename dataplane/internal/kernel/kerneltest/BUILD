@@ -5,16 +5,33 @@ go_library(
     srcs = ["kernel.go"],
     importpath = "github.com/openconfig/lemming/dataplane/internal/kernel/kerneltest",
     visibility = ["//dataplane:__subpackages__"],
-    deps = ["@com_github_vishvananda_netlink//:netlink"],
+    deps = select({
+        "@io_bazel_rules_go//go/platform:android": [
+            "@com_github_vishvananda_netlink//:netlink",
+        ],
+        "@io_bazel_rules_go//go/platform:linux": [
+            "@com_github_vishvananda_netlink//:netlink",
+        ],
+        "//conditions:default": [],
+    }),
 )
 
 go_test(
     name = "kerneltest_test",
+    size = "small",
     srcs = ["kernel_test.go"],
     embed = [":kerneltest"],
-    deps = [
-        "@com_github_google_go_cmp//cmp",
-        "@com_github_openconfig_gnmi//errdiff",
-        "@com_github_vishvananda_netlink//:netlink",
-    ],
+    deps = select({
+        "@io_bazel_rules_go//go/platform:android": [
+            "@com_github_google_go_cmp//cmp",
+            "@com_github_openconfig_gnmi//errdiff",
+            "@com_github_vishvananda_netlink//:netlink",
+        ],
+        "@io_bazel_rules_go//go/platform:linux": [
+            "@com_github_google_go_cmp//cmp",
+            "@com_github_openconfig_gnmi//errdiff",
+            "@com_github_vishvananda_netlink//:netlink",
+        ],
+        "//conditions:default": [],
+    }),
 )

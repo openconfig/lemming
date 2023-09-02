@@ -1,0 +1,58 @@
+
+syntax = "proto3";
+
+package lemming.dataplane.sai;
+
+import "dataplane/standalone/proto/common.proto";
+
+option go_package = "github.com/openconfig/lemming/proto/dataplane/sai";
+
+enum QosMapAttr {
+  QOS_MAP_ATTR_UNSPECIFIED = 0;
+  QOS_MAP_ATTR_TYPE = 1;
+  QOS_MAP_ATTR_MAP_TO_VALUE_LIST = 2;
+}
+
+message CreateQosMapRequest {
+  uint64 switch = 1;
+
+  QosMapType type = 2;
+  repeated QOSMap map_to_value_list = 3;
+}
+
+message CreateQosMapResponse {
+  uint64 oid = 1;
+}
+
+message RemoveQosMapRequest {
+  uint64 oid = 1;
+}
+
+message RemoveQosMapResponse {}
+
+message SetQosMapAttributeRequest {
+  uint64 oid = 1;
+  oneof attr {
+    QosMapList map_to_value_list = 2;
+  }
+}
+
+message SetQosMapAttributeResponse {}
+
+message GetQosMapAttributeRequest {
+  uint64 oid = 1;
+  repeated QosMapAttr attr_type = 2;
+}
+
+message GetQosMapAttributeResponse {
+  repeated QosMapAttribute attr = 1;
+}
+
+service QosMap {
+  rpc CreateQosMap(CreateQosMapRequest) returns (CreateQosMapResponse) {}
+  rpc RemoveQosMap(RemoveQosMapRequest) returns (RemoveQosMapResponse) {}
+  rpc SetQosMapAttribute(SetQosMapAttributeRequest)
+      returns (SetQosMapAttributeResponse) {}
+  rpc GetQosMapAttribute(GetQosMapAttributeRequest)
+      returns (GetQosMapAttributeResponse) {}
+}

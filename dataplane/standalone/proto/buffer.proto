@@ -1,0 +1,192 @@
+
+syntax = "proto3";
+
+package lemming.dataplane.sai;
+
+import "dataplane/standalone/proto/common.proto";
+
+option go_package = "github.com/openconfig/lemming/proto/dataplane/sai";
+
+enum BufferPoolAttr {
+  BUFFER_POOL_ATTR_UNSPECIFIED = 0;
+  BUFFER_POOL_ATTR_SHARED_SIZE = 1;
+  BUFFER_POOL_ATTR_TYPE = 2;
+  BUFFER_POOL_ATTR_SIZE = 3;
+  BUFFER_POOL_ATTR_THRESHOLD_MODE = 4;
+  BUFFER_POOL_ATTR_TAM = 5;
+  BUFFER_POOL_ATTR_XOFF_SIZE = 6;
+  BUFFER_POOL_ATTR_WRED_PROFILE_ID = 7;
+}
+
+enum IngressPriorityGroupAttr {
+  INGRESS_PRIORITY_GROUP_ATTR_UNSPECIFIED = 0;
+  INGRESS_PRIORITY_GROUP_ATTR_BUFFER_PROFILE = 1;
+  INGRESS_PRIORITY_GROUP_ATTR_PORT = 2;
+  INGRESS_PRIORITY_GROUP_ATTR_TAM = 3;
+  INGRESS_PRIORITY_GROUP_ATTR_INDEX = 4;
+}
+
+enum BufferProfileAttr {
+  BUFFER_PROFILE_ATTR_UNSPECIFIED = 0;
+  BUFFER_PROFILE_ATTR_POOL_ID = 1;
+  BUFFER_PROFILE_ATTR_RESERVED_BUFFER_SIZE = 2;
+  BUFFER_PROFILE_ATTR_THRESHOLD_MODE = 3;
+  BUFFER_PROFILE_ATTR_SHARED_DYNAMIC_TH = 4;
+  BUFFER_PROFILE_ATTR_SHARED_STATIC_TH = 5;
+  BUFFER_PROFILE_ATTR_XOFF_TH = 6;
+  BUFFER_PROFILE_ATTR_XON_TH = 7;
+  BUFFER_PROFILE_ATTR_XON_OFFSET_TH = 8;
+}
+
+message CreateBufferPoolRequest {
+  uint64 switch = 1;
+
+  BufferPoolType type = 2;
+  uint64 size = 3;
+  BufferPoolThresholdMode threshold_mode = 4;
+  repeated uint64 tam = 5;
+  uint64 xoff_size = 6;
+  uint64 wred_profile_id = 7;
+}
+
+message CreateBufferPoolResponse {
+  uint64 oid = 1;
+}
+
+message RemoveBufferPoolRequest {
+  uint64 oid = 1;
+}
+
+message RemoveBufferPoolResponse {}
+
+message SetBufferPoolAttributeRequest {
+  uint64 oid = 1;
+  oneof attr {
+    uint64 size = 2;
+    Uint64List tam = 3;
+    uint64 xoff_size = 4;
+    uint64 wred_profile_id = 5;
+  }
+}
+
+message SetBufferPoolAttributeResponse {}
+
+message GetBufferPoolAttributeRequest {
+  uint64 oid = 1;
+  repeated BufferPoolAttr attr_type = 2;
+}
+
+message GetBufferPoolAttributeResponse {
+  repeated BufferPoolAttribute attr = 1;
+}
+
+message CreateIngressPriorityGroupRequest {
+  uint64 switch = 1;
+
+  uint64 buffer_profile = 2;
+  uint64 port = 3;
+  repeated uint64 tam = 4;
+  uint32 index = 5;
+}
+
+message CreateIngressPriorityGroupResponse {
+  uint64 oid = 1;
+}
+
+message RemoveIngressPriorityGroupRequest {
+  uint64 oid = 1;
+}
+
+message RemoveIngressPriorityGroupResponse {}
+
+message SetIngressPriorityGroupAttributeRequest {
+  uint64 oid = 1;
+  oneof attr {
+    uint64 buffer_profile = 2;
+    Uint64List tam = 3;
+  }
+}
+
+message SetIngressPriorityGroupAttributeResponse {}
+
+message GetIngressPriorityGroupAttributeRequest {
+  uint64 oid = 1;
+  repeated IngressPriorityGroupAttr attr_type = 2;
+}
+
+message GetIngressPriorityGroupAttributeResponse {
+  repeated IngressPriorityGroupAttribute attr = 1;
+}
+
+message CreateBufferProfileRequest {
+  uint64 switch = 1;
+
+  uint64 pool_id = 2;
+  uint64 reserved_buffer_size = 3;
+  BufferProfileThresholdMode threshold_mode = 4;
+  int32 shared_dynamic_th = 5;
+  uint64 shared_static_th = 6;
+  uint64 xoff_th = 7;
+  uint64 xon_th = 8;
+  uint64 xon_offset_th = 9;
+}
+
+message CreateBufferProfileResponse {
+  uint64 oid = 1;
+}
+
+message RemoveBufferProfileRequest {
+  uint64 oid = 1;
+}
+
+message RemoveBufferProfileResponse {}
+
+message SetBufferProfileAttributeRequest {
+  uint64 oid = 1;
+  oneof attr {
+    uint64 reserved_buffer_size = 2;
+    int32 shared_dynamic_th = 3;
+    uint64 shared_static_th = 4;
+    uint64 xoff_th = 5;
+    uint64 xon_th = 6;
+    uint64 xon_offset_th = 7;
+  }
+}
+
+message SetBufferProfileAttributeResponse {}
+
+message GetBufferProfileAttributeRequest {
+  uint64 oid = 1;
+  repeated BufferProfileAttr attr_type = 2;
+}
+
+message GetBufferProfileAttributeResponse {
+  repeated BufferProfileAttribute attr = 1;
+}
+
+service Buffer {
+  rpc CreateBufferPool(CreateBufferPoolRequest)
+      returns (CreateBufferPoolResponse) {}
+  rpc RemoveBufferPool(RemoveBufferPoolRequest)
+      returns (RemoveBufferPoolResponse) {}
+  rpc SetBufferPoolAttribute(SetBufferPoolAttributeRequest)
+      returns (SetBufferPoolAttributeResponse) {}
+  rpc GetBufferPoolAttribute(GetBufferPoolAttributeRequest)
+      returns (GetBufferPoolAttributeResponse) {}
+  rpc CreateIngressPriorityGroup(CreateIngressPriorityGroupRequest)
+      returns (CreateIngressPriorityGroupResponse) {}
+  rpc RemoveIngressPriorityGroup(RemoveIngressPriorityGroupRequest)
+      returns (RemoveIngressPriorityGroupResponse) {}
+  rpc SetIngressPriorityGroupAttribute(SetIngressPriorityGroupAttributeRequest)
+      returns (SetIngressPriorityGroupAttributeResponse) {}
+  rpc GetIngressPriorityGroupAttribute(GetIngressPriorityGroupAttributeRequest)
+      returns (GetIngressPriorityGroupAttributeResponse) {}
+  rpc CreateBufferProfile(CreateBufferProfileRequest)
+      returns (CreateBufferProfileResponse) {}
+  rpc RemoveBufferProfile(RemoveBufferProfileRequest)
+      returns (RemoveBufferProfileResponse) {}
+  rpc SetBufferProfileAttribute(SetBufferProfileAttributeRequest)
+      returns (SetBufferProfileAttributeResponse) {}
+  rpc GetBufferProfileAttribute(GetBufferProfileAttributeRequest)
+      returns (GetBufferProfileAttributeResponse) {}
+}

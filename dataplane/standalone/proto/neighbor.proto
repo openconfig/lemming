@@ -1,0 +1,81 @@
+
+syntax = "proto3";
+
+package lemming.dataplane.sai;
+
+import "dataplane/standalone/proto/common.proto";
+
+option go_package = "github.com/openconfig/lemming/proto/dataplane/sai";
+
+enum NeighborEntryAttr {
+  NEIGHBOR_ENTRY_ATTR_UNSPECIFIED = 0;
+  NEIGHBOR_ENTRY_ATTR_DST_MAC_ADDRESS = 1;
+  NEIGHBOR_ENTRY_ATTR_PACKET_ACTION = 2;
+  NEIGHBOR_ENTRY_ATTR_USER_TRAP_ID = 3;
+  NEIGHBOR_ENTRY_ATTR_NO_HOST_ROUTE = 4;
+  NEIGHBOR_ENTRY_ATTR_META_DATA = 5;
+  NEIGHBOR_ENTRY_ATTR_COUNTER_ID = 6;
+  NEIGHBOR_ENTRY_ATTR_ENCAP_INDEX = 7;
+  NEIGHBOR_ENTRY_ATTR_ENCAP_IMPOSE_INDEX = 8;
+  NEIGHBOR_ENTRY_ATTR_IS_LOCAL = 9;
+  NEIGHBOR_ENTRY_ATTR_IP_ADDR_FAMILY = 10;
+}
+
+message CreateNeighborEntryRequest {
+  NeighborEntry entry = 1;
+
+  bytes dst_mac_address = 2;
+  PacketAction packet_action = 3;
+  uint64 user_trap_id = 4;
+  bool no_host_route = 5;
+  uint32 meta_data = 6;
+  uint64 counter_id = 7;
+  uint32 encap_index = 8;
+  bool encap_impose_index = 9;
+  bool is_local = 10;
+}
+
+message CreateNeighborEntryResponse {}
+
+message RemoveNeighborEntryRequest {
+  NeighborEntry entry = 1;
+}
+
+message RemoveNeighborEntryResponse {}
+
+message SetNeighborEntryAttributeRequest {
+  NeighborEntry entry = 1;
+  oneof attr {
+    bytes dst_mac_address = 2;
+    PacketAction packet_action = 3;
+    uint64 user_trap_id = 4;
+    bool no_host_route = 5;
+    uint32 meta_data = 6;
+    uint64 counter_id = 7;
+    uint32 encap_index = 8;
+    bool encap_impose_index = 9;
+    bool is_local = 10;
+  }
+}
+
+message SetNeighborEntryAttributeResponse {}
+
+message GetNeighborEntryAttributeRequest {
+  NeighborEntry entry = 1;
+  repeated NeighborEntryAttr attr_type = 2;
+}
+
+message GetNeighborEntryAttributeResponse {
+  repeated NeighborEntryAttribute attr = 1;
+}
+
+service Neighbor {
+  rpc CreateNeighborEntry(CreateNeighborEntryRequest)
+      returns (CreateNeighborEntryResponse) {}
+  rpc RemoveNeighborEntry(RemoveNeighborEntryRequest)
+      returns (RemoveNeighborEntryResponse) {}
+  rpc SetNeighborEntryAttribute(SetNeighborEntryAttributeRequest)
+      returns (SetNeighborEntryAttributeResponse) {}
+  rpc GetNeighborEntryAttribute(GetNeighborEntryAttributeRequest)
+      returns (GetNeighborEntryAttributeResponse) {}
+}

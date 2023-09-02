@@ -1,0 +1,64 @@
+
+syntax = "proto3";
+
+package lemming.dataplane.sai;
+
+import "dataplane/standalone/proto/common.proto";
+
+option go_package = "github.com/openconfig/lemming/proto/dataplane/sai";
+
+enum MyMacAttr {
+  MY_MAC_ATTR_UNSPECIFIED = 0;
+  MY_MAC_ATTR_PRIORITY = 1;
+  MY_MAC_ATTR_PORT_ID = 2;
+  MY_MAC_ATTR_VLAN_ID = 3;
+  MY_MAC_ATTR_MAC_ADDRESS = 4;
+  MY_MAC_ATTR_MAC_ADDRESS_MASK = 5;
+}
+
+message CreateMyMacRequest {
+  uint64 switch = 1;
+
+  uint32 priority = 2;
+  uint64 port_id = 3;
+  uint32 vlan_id = 4;
+  bytes mac_address = 5;
+  bytes mac_address_mask = 6;
+}
+
+message CreateMyMacResponse {
+  uint64 oid = 1;
+}
+
+message RemoveMyMacRequest {
+  uint64 oid = 1;
+}
+
+message RemoveMyMacResponse {}
+
+message SetMyMacAttributeRequest {
+  uint64 oid = 1;
+  oneof attr {
+    uint32 priority = 2;
+  }
+}
+
+message SetMyMacAttributeResponse {}
+
+message GetMyMacAttributeRequest {
+  uint64 oid = 1;
+  repeated MyMacAttr attr_type = 2;
+}
+
+message GetMyMacAttributeResponse {
+  repeated MyMacAttribute attr = 1;
+}
+
+service MyMac {
+  rpc CreateMyMac(CreateMyMacRequest) returns (CreateMyMacResponse) {}
+  rpc RemoveMyMac(RemoveMyMacRequest) returns (RemoveMyMacResponse) {}
+  rpc SetMyMacAttribute(SetMyMacAttributeRequest)
+      returns (SetMyMacAttributeResponse) {}
+  rpc GetMyMacAttribute(GetMyMacAttributeRequest)
+      returns (GetMyMacAttributeResponse) {}
+}

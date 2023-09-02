@@ -9,6 +9,7 @@ go_library(
 
 go_test(
     name = "frame_test",
+    size = "small",
     srcs = ["frame_test.go"],
     embed = [":frame"],
 )

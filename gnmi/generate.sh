@@ -79,6 +79,7 @@ go run github.com/openconfig/ygnmi/app/ygnmi generator \
   --trim_module_prefix=openconfig \
   --exclude_modules="${EXCLUDE_MODULES}" \
   --base_package_path=github.com/openconfig/lemming/gnmi/oc \
+  --split_package_paths="/network-instances/network-instance/protocols/protocol/isis=netinstisis,/network-instances/network-instance/protocols/protocol/bgp=netinstbgp" \
   --output_dir=oc \
   --paths=public/release/models/...,public/third_party/ietf/...,gnsi/... \
   "${YANG_FILES[@]}"

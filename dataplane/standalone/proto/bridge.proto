@@ -1,0 +1,161 @@
+
+syntax = "proto3";
+
+package lemming.dataplane.sai;
+
+import "dataplane/standalone/proto/common.proto";
+
+option go_package = "github.com/openconfig/lemming/proto/dataplane/sai";
+
+enum BridgeAttr {
+  BRIDGE_ATTR_UNSPECIFIED = 0;
+  BRIDGE_ATTR_TYPE = 1;
+  BRIDGE_ATTR_PORT_LIST = 2;
+  BRIDGE_ATTR_MAX_LEARNED_ADDRESSES = 3;
+  BRIDGE_ATTR_LEARN_DISABLE = 4;
+  BRIDGE_ATTR_UNKNOWN_UNICAST_FLOOD_CONTROL_TYPE = 5;
+  BRIDGE_ATTR_UNKNOWN_UNICAST_FLOOD_GROUP = 6;
+  BRIDGE_ATTR_UNKNOWN_MULTICAST_FLOOD_CONTROL_TYPE = 7;
+  BRIDGE_ATTR_UNKNOWN_MULTICAST_FLOOD_GROUP = 8;
+  BRIDGE_ATTR_BROADCAST_FLOOD_CONTROL_TYPE = 9;
+  BRIDGE_ATTR_BROADCAST_FLOOD_GROUP = 10;
+}
+
+enum BridgePortAttr {
+  BRIDGE_PORT_ATTR_UNSPECIFIED = 0;
+  BRIDGE_PORT_ATTR_TYPE = 1;
+  BRIDGE_PORT_ATTR_PORT_ID = 2;
+  BRIDGE_PORT_ATTR_TAGGING_MODE = 3;
+  BRIDGE_PORT_ATTR_VLAN_ID = 4;
+  BRIDGE_PORT_ATTR_RIF_ID = 5;
+  BRIDGE_PORT_ATTR_TUNNEL_ID = 6;
+  BRIDGE_PORT_ATTR_BRIDGE_ID = 7;
+  BRIDGE_PORT_ATTR_FDB_LEARNING_MODE = 8;
+  BRIDGE_PORT_ATTR_MAX_LEARNED_ADDRESSES = 9;
+  BRIDGE_PORT_ATTR_FDB_LEARNING_LIMIT_VIOLATION_PACKET_ACTION = 10;
+  BRIDGE_PORT_ATTR_ADMIN_STATE = 11;
+  BRIDGE_PORT_ATTR_INGRESS_FILTERING = 12;
+  BRIDGE_PORT_ATTR_EGRESS_FILTERING = 13;
+  BRIDGE_PORT_ATTR_ISOLATION_GROUP = 14;
+}
+
+message CreateBridgeRequest {
+  uint64 switch = 1;
+
+  BridgeType type = 2;
+  uint32 max_learned_addresses = 3;
+  bool learn_disable = 4;
+  BridgeFloodControlType unknown_unicast_flood_control_type = 5;
+  uint64 unknown_unicast_flood_group = 6;
+  BridgeFloodControlType unknown_multicast_flood_control_type = 7;
+  uint64 unknown_multicast_flood_group = 8;
+  BridgeFloodControlType broadcast_flood_control_type = 9;
+  uint64 broadcast_flood_group = 10;
+}
+
+message CreateBridgeResponse {
+  uint64 oid = 1;
+}
+
+message RemoveBridgeRequest {
+  uint64 oid = 1;
+}
+
+message RemoveBridgeResponse {}
+
+message SetBridgeAttributeRequest {
+  uint64 oid = 1;
+  oneof attr {
+    uint32 max_learned_addresses = 2;
+    bool learn_disable = 3;
+    BridgeFloodControlType unknown_unicast_flood_control_type = 4;
+    uint64 unknown_unicast_flood_group = 5;
+    BridgeFloodControlType unknown_multicast_flood_control_type = 6;
+    uint64 unknown_multicast_flood_group = 7;
+    BridgeFloodControlType broadcast_flood_control_type = 8;
+    uint64 broadcast_flood_group = 9;
+  }
+}
+
+message SetBridgeAttributeResponse {}
+
+message GetBridgeAttributeRequest {
+  uint64 oid = 1;
+  repeated BridgeAttr attr_type = 2;
+}
+
+message GetBridgeAttributeResponse {
+  repeated BridgeAttribute attr = 1;
+}
+
+message CreateBridgePortRequest {
+  uint64 switch = 1;
+
+  BridgePortType type = 2;
+  uint64 port_id = 3;
+  BridgePortTaggingMode tagging_mode = 4;
+  uint32 vlan_id = 5;
+  uint64 rif_id = 6;
+  uint64 tunnel_id = 7;
+  uint64 bridge_id = 8;
+  BridgePortFdbLearningMode fdb_learning_mode = 9;
+  uint32 max_learned_addresses = 10;
+  PacketAction fdb_learning_limit_violation_packet_action = 11;
+  bool admin_state = 12;
+  bool ingress_filtering = 13;
+  bool egress_filtering = 14;
+  uint64 isolation_group = 15;
+}
+
+message CreateBridgePortResponse {
+  uint64 oid = 1;
+}
+
+message RemoveBridgePortRequest {
+  uint64 oid = 1;
+}
+
+message RemoveBridgePortResponse {}
+
+message SetBridgePortAttributeRequest {
+  uint64 oid = 1;
+  oneof attr {
+    BridgePortTaggingMode tagging_mode = 2;
+    uint64 bridge_id = 3;
+    BridgePortFdbLearningMode fdb_learning_mode = 4;
+    uint32 max_learned_addresses = 5;
+    PacketAction fdb_learning_limit_violation_packet_action = 6;
+    bool admin_state = 7;
+    bool ingress_filtering = 8;
+    bool egress_filtering = 9;
+    uint64 isolation_group = 10;
+  }
+}
+
+message SetBridgePortAttributeResponse {}
+
+message GetBridgePortAttributeRequest {
+  uint64 oid = 1;
+  repeated BridgePortAttr attr_type = 2;
+}
+
+message GetBridgePortAttributeResponse {
+  repeated BridgePortAttribute attr = 1;
+}
+
+service Bridge {
+  rpc CreateBridge(CreateBridgeRequest) returns (CreateBridgeResponse) {}
+  rpc RemoveBridge(RemoveBridgeRequest) returns (RemoveBridgeResponse) {}
+  rpc SetBridgeAttribute(SetBridgeAttributeRequest)
+      returns (SetBridgeAttributeResponse) {}
+  rpc GetBridgeAttribute(GetBridgeAttributeRequest)
+      returns (GetBridgeAttributeResponse) {}
+  rpc CreateBridgePort(CreateBridgePortRequest)
+      returns (CreateBridgePortResponse) {}
+  rpc RemoveBridgePort(RemoveBridgePortRequest)
+      returns (RemoveBridgePortResponse) {}
+  rpc SetBridgePortAttribute(SetBridgePortAttributeRequest)
+      returns (SetBridgePortAttributeResponse) {}
+  rpc GetBridgePortAttribute(GetBridgePortAttributeRequest)
+      returns (GetBridgePortAttributeResponse) {}
+}

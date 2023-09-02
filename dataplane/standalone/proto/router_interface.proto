@@ -1,0 +1,110 @@
+
+syntax = "proto3";
+
+package lemming.dataplane.sai;
+
+import "dataplane/standalone/proto/common.proto";
+
+option go_package = "github.com/openconfig/lemming/proto/dataplane/sai";
+
+enum RouterInterfaceAttr {
+  ROUTER_INTERFACE_ATTR_UNSPECIFIED = 0;
+  ROUTER_INTERFACE_ATTR_VIRTUAL_ROUTER_ID = 1;
+  ROUTER_INTERFACE_ATTR_TYPE = 2;
+  ROUTER_INTERFACE_ATTR_PORT_ID = 3;
+  ROUTER_INTERFACE_ATTR_VLAN_ID = 4;
+  ROUTER_INTERFACE_ATTR_OUTER_VLAN_ID = 5;
+  ROUTER_INTERFACE_ATTR_INNER_VLAN_ID = 6;
+  ROUTER_INTERFACE_ATTR_BRIDGE_ID = 7;
+  ROUTER_INTERFACE_ATTR_SRC_MAC_ADDRESS = 8;
+  ROUTER_INTERFACE_ATTR_ADMIN_V4_STATE = 9;
+  ROUTER_INTERFACE_ATTR_ADMIN_V6_STATE = 10;
+  ROUTER_INTERFACE_ATTR_MTU = 11;
+  ROUTER_INTERFACE_ATTR_INGRESS_ACL = 12;
+  ROUTER_INTERFACE_ATTR_EGRESS_ACL = 13;
+  ROUTER_INTERFACE_ATTR_NEIGHBOR_MISS_PACKET_ACTION = 14;
+  ROUTER_INTERFACE_ATTR_V4_MCAST_ENABLE = 15;
+  ROUTER_INTERFACE_ATTR_V6_MCAST_ENABLE = 16;
+  ROUTER_INTERFACE_ATTR_LOOPBACK_PACKET_ACTION = 17;
+  ROUTER_INTERFACE_ATTR_IS_VIRTUAL = 18;
+  ROUTER_INTERFACE_ATTR_NAT_ZONE_ID = 19;
+  ROUTER_INTERFACE_ATTR_DISABLE_DECREMENT_TTL = 20;
+  ROUTER_INTERFACE_ATTR_ADMIN_MPLS_STATE = 21;
+}
+
+message CreateRouterInterfaceRequest {
+  uint64 switch = 1;
+
+  uint64 virtual_router_id = 2;
+  RouterInterfaceType type = 3;
+  uint64 port_id = 4;
+  uint64 vlan_id = 5;
+  uint32 outer_vlan_id = 6;
+  uint32 inner_vlan_id = 7;
+  uint64 bridge_id = 8;
+  bytes src_mac_address = 9;
+  bool admin_v4_state = 10;
+  bool admin_v6_state = 11;
+  uint32 mtu = 12;
+  uint64 ingress_acl = 13;
+  uint64 egress_acl = 14;
+  PacketAction neighbor_miss_packet_action = 15;
+  bool v4_mcast_enable = 16;
+  bool v6_mcast_enable = 17;
+  PacketAction loopback_packet_action = 18;
+  bool is_virtual = 19;
+  uint32 nat_zone_id = 20;
+  bool disable_decrement_ttl = 21;
+  bool admin_mpls_state = 22;
+}
+
+message CreateRouterInterfaceResponse {
+  uint64 oid = 1;
+}
+
+message RemoveRouterInterfaceRequest {
+  uint64 oid = 1;
+}
+
+message RemoveRouterInterfaceResponse {}
+
+message SetRouterInterfaceAttributeRequest {
+  uint64 oid = 1;
+  oneof attr {
+    bytes src_mac_address = 2;
+    bool admin_v4_state = 3;
+    bool admin_v6_state = 4;
+    uint32 mtu = 5;
+    uint64 ingress_acl = 6;
+    uint64 egress_acl = 7;
+    PacketAction neighbor_miss_packet_action = 8;
+    bool v4_mcast_enable = 9;
+    bool v6_mcast_enable = 10;
+    PacketAction loopback_packet_action = 11;
+    uint32 nat_zone_id = 12;
+    bool disable_decrement_ttl = 13;
+    bool admin_mpls_state = 14;
+  }
+}
+
+message SetRouterInterfaceAttributeResponse {}
+
+message GetRouterInterfaceAttributeRequest {
+  uint64 oid = 1;
+  repeated RouterInterfaceAttr attr_type = 2;
+}
+
+message GetRouterInterfaceAttributeResponse {
+  repeated RouterInterfaceAttribute attr = 1;
+}
+
+service RouterInterface {
+  rpc CreateRouterInterface(CreateRouterInterfaceRequest)
+      returns (CreateRouterInterfaceResponse) {}
+  rpc RemoveRouterInterface(RemoveRouterInterfaceRequest)
+      returns (RemoveRouterInterfaceResponse) {}
+  rpc SetRouterInterfaceAttribute(SetRouterInterfaceAttributeRequest)
+      returns (SetRouterInterfaceAttributeResponse) {}
+  rpc GetRouterInterfaceAttribute(GetRouterInterfaceAttributeRequest)
+      returns (GetRouterInterfaceAttributeResponse) {}
+}

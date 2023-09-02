@@ -22,11 +22,10 @@ import (
 	"github.com/openconfig/lemming/gnmi/fakedevice"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
-	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot"
 )
 
-func installStaticRoute(t *testing.T, dut *ygnmi.Client, route *oc.NetworkInstance_Protocol_Static) {
+func installStaticRoute(t *testing.T, dut *Device, route *oc.NetworkInstance_Protocol_Static) {
 	staticp := ocpath.Root().NetworkInstance(fakedevice.DefaultNetworkInstance).
 		Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_STATIC, fakedevice.StaticRoutingProtocol)
 	Replace(t, dut, staticp.Static(*route.Prefix).Config(), route)
@@ -42,7 +41,7 @@ func formatYgot(v any) string {
 }
 
 func TestRoutePropagation(t *testing.T) {
-	dut1, stop1 := newLemming(t, dut1spec, []*AddIntfAction{{
+	dut1, stop1 := newLemming(t, 1, 64500, []*AddIntfAction{{
 		name:    "eth0",
 		ifindex: 0,
 		enabled: true,
@@ -56,11 +55,11 @@ func TestRoutePropagation(t *testing.T) {
 		niName:  "DEFAULT",
 	}})
 	defer stop1()
-	dut2, stop2 := newLemming(t, dut2spec, nil)
+	dut2, stop2 := newLemming(t, 2, 64501, nil)
 	defer stop2()
-	dut3, stop3 := newLemming(t, dut3spec, nil)
+	dut3, stop3 := newLemming(t, 3, 64502, nil)
 	defer stop3()
-	dut4, stop4 := newLemming(t, dut4spec, nil)
+	dut4, stop4 := newLemming(t, 4, 64503, nil)
 	defer stop4()
 
 	installDefaultPolicies := func() {
@@ -70,18 +69,16 @@ func TestRoutePropagation(t *testing.T) {
 		// route_propagation_test.go:68: Replace(t) on ygnmi client (target: "dut1") at /network-instances/network-instance[name=DEFAULT]/protocols/protocol[identifier=BGP][name=BGP]/bgp/neighbors/neighbor[neighbor-address=127.0.0.2]/apply-policy/config/default-export-policy: Replace(t) at path origin:"openconfig" elem:{name:"network-instances"} elem:{name:"network-instance" key:{key:"name" value:"DEFAULT"}} elem:{name:"protocols"} elem:{name:"protocol" key:{key:"identifier" value:"BGP"} key:{key:"name" value:"BGP"}} elem:{name:"bgp"} elem:{name:"neighbors"} elem:{name:"neighbor" key:{key:"neighbor-address" value:"127.0.0.2"}} elem:{name:"apply-policy"} elem:{name:"config"} elem:{name:"default-export-policy"}: rpc error: code = Internal desc = update is stale, update is stale, update is stale
 		fmt.Println("Installing default policies")
 		// Clear the path for routes to be propagated.
-		Replace(t, dut1, bgp.BGPPath.Neighbor(dut2spec.RouterID).ApplyPolicy().DefaultExportPolicy().Config(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
-		Replace(t, dut2, bgp.BGPPath.Neighbor(dut1spec.RouterID).ApplyPolicy().DefaultImportPolicy().Config(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
-		Replace(t, dut2, bgp.BGPPath.Neighbor(dut3spec.RouterID).ApplyPolicy().DefaultExportPolicy().Config(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
-		Replace(t, dut3, bgp.BGPPath.Neighbor(dut2spec.RouterID).ApplyPolicy().DefaultImportPolicy().Config(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
-		Replace(t, dut3, bgp.BGPPath.Neighbor(dut4spec.RouterID).ApplyPolicy().DefaultExportPolicy().Config(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
-		Replace(t, dut4, bgp.BGPPath.Neighbor(dut3spec.RouterID).ApplyPolicy().DefaultImportPolicy().Config(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
+		Replace(t, dut1, bgp.BGPPath.Neighbor(dut2.RouterID).ApplyPolicy().DefaultExportPolicy().Config(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
+		Replace(t, dut2, bgp.BGPPath.Neighbor(dut1.RouterID).ApplyPolicy().DefaultImportPolicy().Config(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
+		Replace(t, dut2, bgp.BGPPath.Neighbor(dut3.RouterID).ApplyPolicy().DefaultExportPolicy().Config(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
+		Replace(t, dut3, bgp.BGPPath.Neighbor(dut2.RouterID).ApplyPolicy().DefaultImportPolicy().Config(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
+		Replace(t, dut3, bgp.BGPPath.Neighbor(dut4.RouterID).ApplyPolicy().DefaultExportPolicy().Config(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
+		Replace(t, dut4, bgp.BGPPath.Neighbor(dut3.RouterID).ApplyPolicy().DefaultImportPolicy().Config(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
 	}
 	installDefaultPolicies()
 
-	establishSessionPair(t, dut1, dut2, dut1spec, dut2spec)
-	establishSessionPair(t, dut2, dut3, dut2spec, dut3spec)
-	establishSessionPair(t, dut3, dut4, dut3spec, dut4spec)
+	establishSessionPairs(t, []DevicePair{{dut1, dut2}, {dut2, dut3}, {dut3, dut4}}...)
 
 	prefix := "10.10.10.0/24"
 	installStaticRoute(t, dut1, &oc.NetworkInstance_Protocol_Static{
@@ -101,17 +98,17 @@ func TestRoutePropagation(t *testing.T) {
 
 	v4uni := ocpath.Root().NetworkInstance(fakedevice.DefaultNetworkInstance).Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, fakedevice.BGPRoutingProtocol).Bgp().Rib().AfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST).Ipv4Unicast()
 	// Check route is in Adj-In of dut2.
-	Await(t, dut2, v4uni.Neighbor(dut1spec.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), prefix)
-	Await(t, dut2, v4uni.Neighbor(dut1spec.RouterID).AdjRibInPost().Route(prefix, 0).Prefix().State(), prefix)
+	Await(t, dut2, v4uni.Neighbor(dut1.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), prefix)
+	Await(t, dut2, v4uni.Neighbor(dut1.RouterID).AdjRibInPost().Route(prefix, 0).Prefix().State(), prefix)
 	// Check route is in Loc-RIB of dut2.
-	Await(t, dut2, v4uni.LocRib().Route(prefix, oc.UnionString(dut1spec.RouterID), 0).Prefix().State(), prefix)
+	Await(t, dut2, v4uni.LocRib().Route(prefix, oc.UnionString(dut1.RouterID), 0).Prefix().State(), prefix)
 	// Check route is in Adj-Out of dut2.
-	Await(t, dut2, v4uni.Neighbor(dut3spec.RouterID).AdjRibOutPre().Route(prefix, 0).Prefix().State(), prefix)
-	Await(t, dut2, v4uni.Neighbor(dut3spec.RouterID).AdjRibOutPost().Route(prefix, 0).Prefix().State(), prefix)
+	Await(t, dut2, v4uni.Neighbor(dut3.RouterID).AdjRibOutPre().Route(prefix, 0).Prefix().State(), prefix)
+	Await(t, dut2, v4uni.Neighbor(dut3.RouterID).AdjRibOutPost().Route(prefix, 0).Prefix().State(), prefix)
 
 	// Check route is in Adj-In of dut3.
-	Await(t, dut3, v4uni.Neighbor(dut2spec.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), prefix)
+	Await(t, dut3, v4uni.Neighbor(dut2.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), prefix)
 
 	// Check route is in Adj-In of dut4.
-	Await(t, dut4, v4uni.Neighbor(dut3spec.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), prefix)
+	Await(t, dut4, v4uni.Neighbor(dut3.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), prefix)
 }

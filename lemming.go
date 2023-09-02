@@ -19,7 +19,14 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"runtime"
 	"sync"
+
+	"github.com/spf13/viper"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/reflection"
+	"k8s.io/klog/v2"
 
 	"github.com/openconfig/lemming/bgp"
 	"github.com/openconfig/lemming/dataplane"
@@ -32,11 +39,6 @@ import (
 	fgribi "github.com/openconfig/lemming/gribi"
 	fp4rt "github.com/openconfig/lemming/p4rt"
 	"github.com/openconfig/lemming/sysrib"
-	"github.com/spf13/viper"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/reflection"
-	"k8s.io/klog/v2"
 
 	log "github.com/golang/glog"
 )
@@ -153,6 +155,10 @@ func New(targetName, zapiURL string, opts ...Option) (*Device, error) {
 	var recs []reconciler.Reconciler
 
 	if viper.GetBool("enable_dataplane") {
+		if runtime.GOOS != "linux" {
+			return nil, fmt.Errorf("dataplane only supported on linux, GOOS is %s", runtime.GOOS)
+		}
+
 		log.Info("enabling dataplane")
 		var err error
 		dplane, err = dataplane.New(context.Background())
@@ -188,7 +194,7 @@ func New(targetName, zapiURL string, opts ...Option) (*Device, error) {
 	recs = append(recs,
 		fakedevice.NewSystemBaseTask(),
 		fakedevice.NewBootTimeTask(),
-		bgp.NewGoBGPTaskDecl(zapiURL, resolvedOpts.bgpPort),
+		bgp.NewGoBGPTask(targetName, zapiURL, resolvedOpts.bgpPort),
 	)
 
 	log.Info("starting gNSI")
