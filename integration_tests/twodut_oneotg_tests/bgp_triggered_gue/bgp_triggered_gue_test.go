@@ -519,11 +519,13 @@ func testTrafficAndEncap(t *testing.T, otg *otg.OTG, startingIP string, v6Traffi
 	}
 
 	var expectedPacketCounter int
-	for i := 0; i != 20; i++ {
+	const wantPacketN = 20
+	for i := 0; i != wantPacketN; i++ {
 		pkt, err := ps.NextPacket()
 		if err != nil {
 			t.Fatalf("error reading next packet: %v", err)
 		}
+
 		if encapFields == nil {
 			nl := pkt.NetworkLayer()
 			if nl == nil {
@@ -537,8 +539,7 @@ func testTrafficAndEncap(t *testing.T, otg *otg.OTG, startingIP string, v6Traffi
 			// TODO(wenbli): What should NextHeader be?
 			if diff := cmp.Diff(wantNL, gotNL, cmpIgnoreOptsNL...); diff != "" {
 				t.Logf("Got unexpected network layer (-want, +got):\n%s\n%s", diff, pkt.Dump())
-			} else {
-				expectedPacketCounter += 1
+				continue
 			}
 		} else {
 			nl := pkt.NetworkLayer()
@@ -572,15 +573,22 @@ func testTrafficAndEncap(t *testing.T, otg *otg.OTG, startingIP string, v6Traffi
 			}
 			if diff := cmp.Diff(wantTL, gotTL, cmpIgnoreOptsTL...); diff != "" {
 				t.Errorf("Got unexpected transport layer (-want, +got):\n%s\n%s", diff, pkt.Dump())
-			} else {
-				expectedPacketCounter += 1
+				continue
 			}
 			// TODO: Check that lower layers is the original packet.
 		}
+
+		if expectedPacketCounter == 0 {
+			// Reset packet index to avoid counting other packet
+			// types that may be initially in the stream prior to
+			// the first good packet.
+			i = 0
+		}
+		expectedPacketCounter++
 	}
 
-	if expectedPacketCounter < 10 {
-		t.Errorf("Got less than 10 expected packets: %v", expectedPacketCounter)
+	if expectedPacketCounter < wantPacketN {
+		t.Errorf("Got less than %d expected packets: %v", wantPacketN, expectedPacketCounter)
 	} else {
 		t.Logf("Got %d expected packets.", expectedPacketCounter)
 	}
