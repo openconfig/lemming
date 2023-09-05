@@ -37,7 +37,7 @@ sai_status_t RouterInterface::create(_In_ uint32_t attr_count,
         req.set_mtu(attr.value.u32);
         break;
       case SAI_ROUTER_INTERFACE_ATTR_PORT_ID:
-        req.set_port_id(std::to_string(attr.value.oid));
+        req.add_port_ids(std::to_string(attr.value.oid));
         break;
       case SAI_ROUTER_INTERFACE_ATTR_SRC_MAC_ADDRESS:
         req.set_mac(attr.value.mac, sizeof(attr.value.mac));
