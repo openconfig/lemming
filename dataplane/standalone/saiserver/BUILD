@@ -6,7 +6,7 @@ go_library(
     importpath = "github.com/openconfig/lemming/dataplane/standalone/saiserver",
     visibility = ["//visibility:public"],
     deps = [
-        "//dataplane/standalone/proto",
+        "//dataplane/standalone/proto:sai",
         "@org_golang_google_grpc//:go_default_library",
     ],
 )
