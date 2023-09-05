@@ -24,7 +24,10 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
+
 	"github.com/openconfig/lemming/dataplane/internal/engine"
+	"github.com/openconfig/lemming/dataplane/standalone/saiserver"
 
 	log "github.com/golang/glog"
 
@@ -37,6 +40,21 @@ var fwdCtxID string
 //export getForwardCtxID
 func getForwardCtxID() *C.char {
 	return C.CString(fwdCtxID)
+}
+
+func getLogger() logging.Logger {
+	return logging.LoggerFunc(func(ctx context.Context, level logging.Level, msg string, fields ...any) {
+		switch level {
+		case logging.LevelDebug:
+			log.V(1).Info(msg, fields)
+		case logging.LevelInfo:
+			log.Info(msg, fields)
+		case logging.LevelWarn:
+			log.Warning(msg, fields)
+		case logging.LevelError:
+			log.Error(msg, fields)
+		}
+	})
 }
 
 //export initialize
@@ -53,9 +71,13 @@ func initialize(port int) {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	srv := grpc.NewServer(grpc.Creds(insecure.NewCredentials()))
+	srv := grpc.NewServer(grpc.Creds(insecure.NewCredentials()),
+		grpc.ChainUnaryInterceptor(logging.UnaryServerInterceptor(getLogger())),
+		grpc.ChainStreamInterceptor(logging.StreamServerInterceptor(getLogger())))
 	fwdpb.RegisterForwardingServer(srv, e)
 	dpb.RegisterDataplaneServer(srv, e)
+	saiserver.New(srv)
+
 	go func() {
 		if err := srv.Serve(lis); err != nil {
 			log.Fatalf("failed to serve forwarding server: %v", err)

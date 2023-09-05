@@ -5,62 +5,75 @@ package lemming.dataplane.sai;
 
 import "dataplane/standalone/proto/common.proto";
 
-option go_package = "github.com/openconfig/lemming/proto/dataplane/sai";
+option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto";
+
 
 enum DebugCounterAttr {
-  DEBUG_COUNTER_ATTR_UNSPECIFIED = 0;
-  DEBUG_COUNTER_ATTR_INDEX = 1;
-  DEBUG_COUNTER_ATTR_TYPE = 2;
-  DEBUG_COUNTER_ATTR_BIND_METHOD = 3;
-  DEBUG_COUNTER_ATTR_IN_DROP_REASON_LIST = 4;
-  DEBUG_COUNTER_ATTR_OUT_DROP_REASON_LIST = 5;
+	DEBUG_COUNTER_ATTR_UNSPECIFIED = 0;
+	DEBUG_COUNTER_ATTR_INDEX = 1;
+	DEBUG_COUNTER_ATTR_TYPE = 2;
+	DEBUG_COUNTER_ATTR_BIND_METHOD = 3;
+	DEBUG_COUNTER_ATTR_IN_DROP_REASON_LIST = 4;
+	DEBUG_COUNTER_ATTR_OUT_DROP_REASON_LIST = 5;
 }
 
 message CreateDebugCounterRequest {
-  uint64 switch = 1;
-
-  DebugCounterType type = 2;
-  DebugCounterBindMethod bind_method = 3;
-  repeated InDropReason in_drop_reason_list = 4;
-  repeated OutDropReason out_drop_reason_list = 5;
+	uint64 switch = 1;
+	
+	DebugCounterType type = 2;
+	DebugCounterBindMethod bind_method = 3;
+	repeated InDropReason in_drop_reason_list = 4;
+	repeated OutDropReason out_drop_reason_list = 5;
+	
 }
 
 message CreateDebugCounterResponse {
-  uint64 oid = 1;
+	uint64 oid = 1;
+	
+	
 }
 
 message RemoveDebugCounterRequest {
-  uint64 oid = 1;
+	uint64 oid = 1;
+	
+	
 }
 
-message RemoveDebugCounterResponse {}
+message RemoveDebugCounterResponse {
+	
+	
+}
 
 message SetDebugCounterAttributeRequest {
-  uint64 oid = 1;
-  oneof attr {
-    InDropReasonList in_drop_reason_list = 2;
-    OutDropReasonList out_drop_reason_list = 3;
-  }
+	uint64 oid = 1;
+	oneof attr {
+	InDropReasonList in_drop_reason_list = 2;
+	OutDropReasonList out_drop_reason_list = 3;
+	}
 }
 
-message SetDebugCounterAttributeResponse {}
+message SetDebugCounterAttributeResponse {
+	
+	
+}
 
 message GetDebugCounterAttributeRequest {
-  uint64 oid = 1;
-  repeated DebugCounterAttr attr_type = 2;
+	uint64 oid = 1;
+	repeated DebugCounterAttr attr_type = 2;
+	
+	
 }
 
 message GetDebugCounterAttributeResponse {
-  repeated DebugCounterAttribute attr = 1;
+	repeated DebugCounterAttribute attr = 1;
+	
+	
 }
 
+
 service DebugCounter {
-  rpc CreateDebugCounter(CreateDebugCounterRequest)
-      returns (CreateDebugCounterResponse) {}
-  rpc RemoveDebugCounter(RemoveDebugCounterRequest)
-      returns (RemoveDebugCounterResponse) {}
-  rpc SetDebugCounterAttribute(SetDebugCounterAttributeRequest)
-      returns (SetDebugCounterAttributeResponse) {}
-  rpc GetDebugCounterAttribute(GetDebugCounterAttributeRequest)
-      returns (GetDebugCounterAttributeResponse) {}
+	rpc CreateDebugCounter (CreateDebugCounterRequest) returns (CreateDebugCounterResponse) {}
+	rpc RemoveDebugCounter (RemoveDebugCounterRequest) returns (RemoveDebugCounterResponse) {}
+	rpc SetDebugCounterAttribute (SetDebugCounterAttributeRequest) returns (SetDebugCounterAttributeResponse) {}
+	rpc GetDebugCounterAttribute (GetDebugCounterAttributeRequest) returns (GetDebugCounterAttributeResponse) {}
 }

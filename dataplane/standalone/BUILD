@@ -61,6 +61,7 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":translator",
+        "//dataplane/standalone/proto:sai_cc_grpc",
         "//dataplane/standalone/sai",
         "@com_github_google_glog//:glog",
         "@com_github_grpc_grpc//:grpc++",

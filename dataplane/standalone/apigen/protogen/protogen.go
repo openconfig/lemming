@@ -92,12 +92,15 @@ func generateCommonTypes(docInfo *docparser.SAIInfo) (string, error) {
 			Values: []protoEnumValues{{Index: 0, Name: unspecifiedName}},
 		}
 		for i, val := range vals {
-			if strings.TrimPrefix(val, "SAI_") == unspecifiedName {
-				continue
+			name := strings.TrimPrefix(val, "SAI_")
+			// If the SAI name conflicts with unspecified proto name, then add SAI prefix,
+			// that way the proto enum value is always 1 greater than the c enum.
+			if name == unspecifiedName {
+				name = strings.TrimSuffix(saiast.TrimSAIName(name, false, true), "_UNSPECIFIED") + "_SAI_UNSPECIFIED"
 			}
 			enum.Values = append(enum.Values, protoEnumValues{
 				Index: i + 1,
-				Name:  strings.TrimPrefix(val, "SAI_"),
+				Name:  name,
 			})
 		}
 		if _, ok := seenEnums[protoName]; !ok {
@@ -318,7 +321,7 @@ package lemming.dataplane.sai;
 
 import "dataplane/standalone/proto/common.proto";
 
-option go_package = "github.com/openconfig/lemming/proto/dataplane/sai";
+option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto";
 
 {{ range .Enums }}
 enum {{ .Name }} {
@@ -354,7 +357,7 @@ package lemming.dataplane.sai;
 	
 import "google/protobuf/timestamp.proto";
 
-option go_package = "github.com/openconfig/lemming/proto/dataplane/sai";
+option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto";
 
 {{ range .Messages }}
 {{ . }}

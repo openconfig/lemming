@@ -8,9 +8,11 @@ go_library(
     visibility = ["//visibility:private"],
     deps = [
         "//dataplane/internal/engine",
+        "//dataplane/standalone/saiserver",
         "//proto/dataplane",
         "//proto/forwarding",
         "@com_github_golang_glog//:glog",
+        "@com_github_grpc_ecosystem_go_grpc_middleware_v2//interceptors/logging",
         "@org_golang_google_grpc//:go_default_library",
         "@org_golang_google_grpc//credentials/insecure",
     ],

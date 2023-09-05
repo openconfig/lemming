@@ -5,232 +5,271 @@ package lemming.dataplane.sai;
 
 import "dataplane/standalone/proto/common.proto";
 
-option go_package = "github.com/openconfig/lemming/proto/dataplane/sai";
+option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto";
+
 
 enum IpsecAttr {
-  IPSEC_ATTR_UNSPECIFIED = 0;
-  IPSEC_ATTR_TERM_REMOTE_IP_MATCH_SUPPORTED = 1;
-  IPSEC_ATTR_SWITCHING_MODE_CUT_THROUGH_SUPPORTED = 2;
-  IPSEC_ATTR_SWITCHING_MODE_STORE_AND_FORWARD_SUPPORTED = 3;
-  IPSEC_ATTR_STATS_MODE_READ_SUPPORTED = 4;
-  IPSEC_ATTR_STATS_MODE_READ_CLEAR_SUPPORTED = 5;
-  IPSEC_ATTR_SN_32BIT_SUPPORTED = 6;
-  IPSEC_ATTR_ESN_64BIT_SUPPORTED = 7;
-  IPSEC_ATTR_SUPPORTED_CIPHER_LIST = 8;
-  IPSEC_ATTR_SYSTEM_SIDE_MTU = 9;
-  IPSEC_ATTR_WARM_BOOT_SUPPORTED = 10;
-  IPSEC_ATTR_WARM_BOOT_ENABLE = 11;
-  IPSEC_ATTR_EXTERNAL_SA_INDEX_ENABLE = 12;
-  IPSEC_ATTR_CTAG_TPID = 13;
-  IPSEC_ATTR_STAG_TPID = 14;
-  IPSEC_ATTR_MAX_VLAN_TAGS_PARSED = 15;
-  IPSEC_ATTR_OCTET_COUNT_HIGH_WATERMARK = 16;
-  IPSEC_ATTR_OCTET_COUNT_LOW_WATERMARK = 17;
-  IPSEC_ATTR_STATS_MODE = 18;
-  IPSEC_ATTR_AVAILABLE_IPSEC_SA = 19;
-  IPSEC_ATTR_SA_LIST = 20;
+	IPSEC_ATTR_UNSPECIFIED = 0;
+	IPSEC_ATTR_TERM_REMOTE_IP_MATCH_SUPPORTED = 1;
+	IPSEC_ATTR_SWITCHING_MODE_CUT_THROUGH_SUPPORTED = 2;
+	IPSEC_ATTR_SWITCHING_MODE_STORE_AND_FORWARD_SUPPORTED = 3;
+	IPSEC_ATTR_STATS_MODE_READ_SUPPORTED = 4;
+	IPSEC_ATTR_STATS_MODE_READ_CLEAR_SUPPORTED = 5;
+	IPSEC_ATTR_SN_32BIT_SUPPORTED = 6;
+	IPSEC_ATTR_ESN_64BIT_SUPPORTED = 7;
+	IPSEC_ATTR_SUPPORTED_CIPHER_LIST = 8;
+	IPSEC_ATTR_SYSTEM_SIDE_MTU = 9;
+	IPSEC_ATTR_WARM_BOOT_SUPPORTED = 10;
+	IPSEC_ATTR_WARM_BOOT_ENABLE = 11;
+	IPSEC_ATTR_EXTERNAL_SA_INDEX_ENABLE = 12;
+	IPSEC_ATTR_CTAG_TPID = 13;
+	IPSEC_ATTR_STAG_TPID = 14;
+	IPSEC_ATTR_MAX_VLAN_TAGS_PARSED = 15;
+	IPSEC_ATTR_OCTET_COUNT_HIGH_WATERMARK = 16;
+	IPSEC_ATTR_OCTET_COUNT_LOW_WATERMARK = 17;
+	IPSEC_ATTR_STATS_MODE = 18;
+	IPSEC_ATTR_AVAILABLE_IPSEC_SA = 19;
+	IPSEC_ATTR_SA_LIST = 20;
 }
 
 enum IpsecPortAttr {
-  IPSEC_PORT_ATTR_UNSPECIFIED = 0;
-  IPSEC_PORT_ATTR_PORT_ID = 1;
-  IPSEC_PORT_ATTR_CTAG_ENABLE = 2;
-  IPSEC_PORT_ATTR_STAG_ENABLE = 3;
-  IPSEC_PORT_ATTR_NATIVE_VLAN_ID = 4;
-  IPSEC_PORT_ATTR_VRF_FROM_PACKET_VLAN_ENABLE = 5;
-  IPSEC_PORT_ATTR_SWITCH_SWITCHING_MODE = 6;
+	IPSEC_PORT_ATTR_UNSPECIFIED = 0;
+	IPSEC_PORT_ATTR_PORT_ID = 1;
+	IPSEC_PORT_ATTR_CTAG_ENABLE = 2;
+	IPSEC_PORT_ATTR_STAG_ENABLE = 3;
+	IPSEC_PORT_ATTR_NATIVE_VLAN_ID = 4;
+	IPSEC_PORT_ATTR_VRF_FROM_PACKET_VLAN_ENABLE = 5;
+	IPSEC_PORT_ATTR_SWITCH_SWITCHING_MODE = 6;
 }
 
 enum IpsecSaAttr {
-  IPSEC_SA_ATTR_UNSPECIFIED = 0;
-  IPSEC_SA_ATTR_IPSEC_DIRECTION = 1;
-  IPSEC_SA_ATTR_IPSEC_ID = 2;
-  IPSEC_SA_ATTR_OCTET_COUNT_STATUS = 3;
-  IPSEC_SA_ATTR_EXTERNAL_SA_INDEX = 4;
-  IPSEC_SA_ATTR_SA_INDEX = 5;
-  IPSEC_SA_ATTR_IPSEC_PORT_LIST = 6;
-  IPSEC_SA_ATTR_IPSEC_SPI = 7;
-  IPSEC_SA_ATTR_IPSEC_ESN_ENABLE = 8;
-  IPSEC_SA_ATTR_IPSEC_CIPHER = 9;
-  IPSEC_SA_ATTR_ENCRYPT_KEY = 10;
-  IPSEC_SA_ATTR_SALT = 11;
-  IPSEC_SA_ATTR_AUTH_KEY = 12;
-  IPSEC_SA_ATTR_IPSEC_REPLAY_PROTECTION_ENABLE = 13;
-  IPSEC_SA_ATTR_IPSEC_REPLAY_PROTECTION_WINDOW = 14;
-  IPSEC_SA_ATTR_TERM_DST_IP = 15;
-  IPSEC_SA_ATTR_TERM_VLAN_ID_ENABLE = 16;
-  IPSEC_SA_ATTR_TERM_VLAN_ID = 17;
-  IPSEC_SA_ATTR_TERM_SRC_IP_ENABLE = 18;
-  IPSEC_SA_ATTR_TERM_SRC_IP = 19;
-  IPSEC_SA_ATTR_EGRESS_ESN = 20;
-  IPSEC_SA_ATTR_MINIMUM_INGRESS_ESN = 21;
+	IPSEC_SA_ATTR_UNSPECIFIED = 0;
+	IPSEC_SA_ATTR_IPSEC_DIRECTION = 1;
+	IPSEC_SA_ATTR_IPSEC_ID = 2;
+	IPSEC_SA_ATTR_OCTET_COUNT_STATUS = 3;
+	IPSEC_SA_ATTR_EXTERNAL_SA_INDEX = 4;
+	IPSEC_SA_ATTR_SA_INDEX = 5;
+	IPSEC_SA_ATTR_IPSEC_PORT_LIST = 6;
+	IPSEC_SA_ATTR_IPSEC_SPI = 7;
+	IPSEC_SA_ATTR_IPSEC_ESN_ENABLE = 8;
+	IPSEC_SA_ATTR_IPSEC_CIPHER = 9;
+	IPSEC_SA_ATTR_ENCRYPT_KEY = 10;
+	IPSEC_SA_ATTR_SALT = 11;
+	IPSEC_SA_ATTR_AUTH_KEY = 12;
+	IPSEC_SA_ATTR_IPSEC_REPLAY_PROTECTION_ENABLE = 13;
+	IPSEC_SA_ATTR_IPSEC_REPLAY_PROTECTION_WINDOW = 14;
+	IPSEC_SA_ATTR_TERM_DST_IP = 15;
+	IPSEC_SA_ATTR_TERM_VLAN_ID_ENABLE = 16;
+	IPSEC_SA_ATTR_TERM_VLAN_ID = 17;
+	IPSEC_SA_ATTR_TERM_SRC_IP_ENABLE = 18;
+	IPSEC_SA_ATTR_TERM_SRC_IP = 19;
+	IPSEC_SA_ATTR_EGRESS_ESN = 20;
+	IPSEC_SA_ATTR_MINIMUM_INGRESS_ESN = 21;
 }
 
 message CreateIpsecRequest {
-  uint64 switch = 1;
-
-  bool warm_boot_enable = 2;
-  bool external_sa_index_enable = 3;
-  uint32 ctag_tpid = 4;
-  uint32 stag_tpid = 5;
-  uint32 max_vlan_tags_parsed = 6;
-  uint64 octet_count_high_watermark = 7;
-  uint64 octet_count_low_watermark = 8;
-  StatsMode stats_mode = 9;
+	uint64 switch = 1;
+	
+	bool warm_boot_enable = 2;
+	bool external_sa_index_enable = 3;
+	uint32 ctag_tpid = 4;
+	uint32 stag_tpid = 5;
+	uint32 max_vlan_tags_parsed = 6;
+	uint64 octet_count_high_watermark = 7;
+	uint64 octet_count_low_watermark = 8;
+	StatsMode stats_mode = 9;
+	
 }
 
 message CreateIpsecResponse {
-  uint64 oid = 1;
+	uint64 oid = 1;
+	
+	
 }
 
 message RemoveIpsecRequest {
-  uint64 oid = 1;
+	uint64 oid = 1;
+	
+	
 }
 
-message RemoveIpsecResponse {}
+message RemoveIpsecResponse {
+	
+	
+}
 
 message SetIpsecAttributeRequest {
-  uint64 oid = 1;
-  oneof attr {
-    bool warm_boot_enable = 2;
-    uint32 ctag_tpid = 3;
-    uint32 stag_tpid = 4;
-    uint32 max_vlan_tags_parsed = 5;
-    uint64 octet_count_high_watermark = 6;
-    uint64 octet_count_low_watermark = 7;
-    StatsMode stats_mode = 8;
-  }
+	uint64 oid = 1;
+	oneof attr {
+	bool warm_boot_enable = 2;
+	uint32 ctag_tpid = 3;
+	uint32 stag_tpid = 4;
+	uint32 max_vlan_tags_parsed = 5;
+	uint64 octet_count_high_watermark = 6;
+	uint64 octet_count_low_watermark = 7;
+	StatsMode stats_mode = 8;
+	}
 }
 
-message SetIpsecAttributeResponse {}
+message SetIpsecAttributeResponse {
+	
+	
+}
 
 message GetIpsecAttributeRequest {
-  uint64 oid = 1;
-  repeated IpsecAttr attr_type = 2;
+	uint64 oid = 1;
+	repeated IpsecAttr attr_type = 2;
+	
+	
 }
 
 message GetIpsecAttributeResponse {
-  repeated IpsecAttribute attr = 1;
+	repeated IpsecAttribute attr = 1;
+	
+	
 }
 
 message CreateIpsecPortRequest {
-  uint64 switch = 1;
-
-  uint64 port_id = 2;
-  bool ctag_enable = 3;
-  bool stag_enable = 4;
-  uint32 native_vlan_id = 5;
-  bool vrf_from_packet_vlan_enable = 6;
-  SwitchSwitchingMode switch_switching_mode = 7;
+	uint64 switch = 1;
+	
+	uint64 port_id = 2;
+	bool ctag_enable = 3;
+	bool stag_enable = 4;
+	uint32 native_vlan_id = 5;
+	bool vrf_from_packet_vlan_enable = 6;
+	SwitchSwitchingMode switch_switching_mode = 7;
+	
 }
 
 message CreateIpsecPortResponse {
-  uint64 oid = 1;
+	uint64 oid = 1;
+	
+	
 }
 
 message RemoveIpsecPortRequest {
-  uint64 oid = 1;
+	uint64 oid = 1;
+	
+	
 }
 
-message RemoveIpsecPortResponse {}
+message RemoveIpsecPortResponse {
+	
+	
+}
 
 message SetIpsecPortAttributeRequest {
-  uint64 oid = 1;
-  oneof attr {
-    bool ctag_enable = 2;
-    bool stag_enable = 3;
-    bool vrf_from_packet_vlan_enable = 4;
-    SwitchSwitchingMode switch_switching_mode = 5;
-  }
+	uint64 oid = 1;
+	oneof attr {
+	bool ctag_enable = 2;
+	bool stag_enable = 3;
+	bool vrf_from_packet_vlan_enable = 4;
+	SwitchSwitchingMode switch_switching_mode = 5;
+	}
 }
 
-message SetIpsecPortAttributeResponse {}
+message SetIpsecPortAttributeResponse {
+	
+	
+}
 
 message GetIpsecPortAttributeRequest {
-  uint64 oid = 1;
-  repeated IpsecPortAttr attr_type = 2;
+	uint64 oid = 1;
+	repeated IpsecPortAttr attr_type = 2;
+	
+	
 }
 
 message GetIpsecPortAttributeResponse {
-  repeated IpsecPortAttribute attr = 1;
+	repeated IpsecPortAttribute attr = 1;
+	
+	
 }
 
 message CreateIpsecSaRequest {
-  uint64 switch = 1;
-
-  IpsecDirection ipsec_direction = 2;
-  uint64 ipsec_id = 3;
-  uint32 external_sa_index = 4;
-  repeated uint64 ipsec_port_list = 5;
-  uint32 ipsec_spi = 6;
-  bool ipsec_esn_enable = 7;
-  IpsecCipher ipsec_cipher = 8;
-  bytes encrypt_key = 9;
-  uint32 salt = 10;
-  bytes auth_key = 11;
-  bool ipsec_replay_protection_enable = 12;
-  uint32 ipsec_replay_protection_window = 13;
-  bytes term_dst_ip = 14;
-  bool term_vlan_id_enable = 15;
-  uint32 term_vlan_id = 16;
-  bool term_src_ip_enable = 17;
-  bytes term_src_ip = 18;
-  uint64 egress_esn = 19;
-  uint64 minimum_ingress_esn = 20;
+	uint64 switch = 1;
+	
+	IpsecDirection ipsec_direction = 2;
+	uint64 ipsec_id = 3;
+	uint32 external_sa_index = 4;
+	repeated uint64 ipsec_port_list = 5;
+	uint32 ipsec_spi = 6;
+	bool ipsec_esn_enable = 7;
+	IpsecCipher ipsec_cipher = 8;
+	bytes encrypt_key = 9;
+	uint32 salt = 10;
+	bytes auth_key = 11;
+	bool ipsec_replay_protection_enable = 12;
+	uint32 ipsec_replay_protection_window = 13;
+	bytes term_dst_ip = 14;
+	bool term_vlan_id_enable = 15;
+	uint32 term_vlan_id = 16;
+	bool term_src_ip_enable = 17;
+	bytes term_src_ip = 18;
+	uint64 egress_esn = 19;
+	uint64 minimum_ingress_esn = 20;
+	
 }
 
 message CreateIpsecSaResponse {
-  uint64 oid = 1;
+	uint64 oid = 1;
+	
+	
 }
 
 message RemoveIpsecSaRequest {
-  uint64 oid = 1;
+	uint64 oid = 1;
+	
+	
 }
 
-message RemoveIpsecSaResponse {}
+message RemoveIpsecSaResponse {
+	
+	
+}
 
 message SetIpsecSaAttributeRequest {
-  uint64 oid = 1;
-  oneof attr {
-    uint32 external_sa_index = 2;
-    Uint64List ipsec_port_list = 3;
-    bool ipsec_replay_protection_enable = 4;
-    uint32 ipsec_replay_protection_window = 5;
-    uint64 egress_esn = 6;
-    uint64 minimum_ingress_esn = 7;
-  }
+	uint64 oid = 1;
+	oneof attr {
+	uint32 external_sa_index = 2;
+	Uint64List ipsec_port_list = 3;
+	bool ipsec_replay_protection_enable = 4;
+	uint32 ipsec_replay_protection_window = 5;
+	uint64 egress_esn = 6;
+	uint64 minimum_ingress_esn = 7;
+	}
 }
 
-message SetIpsecSaAttributeResponse {}
+message SetIpsecSaAttributeResponse {
+	
+	
+}
 
 message GetIpsecSaAttributeRequest {
-  uint64 oid = 1;
-  repeated IpsecSaAttr attr_type = 2;
+	uint64 oid = 1;
+	repeated IpsecSaAttr attr_type = 2;
+	
+	
 }
 
 message GetIpsecSaAttributeResponse {
-  repeated IpsecSaAttribute attr = 1;
+	repeated IpsecSaAttribute attr = 1;
+	
+	
 }
 
+
 service Ipsec {
-  rpc CreateIpsec(CreateIpsecRequest) returns (CreateIpsecResponse) {}
-  rpc RemoveIpsec(RemoveIpsecRequest) returns (RemoveIpsecResponse) {}
-  rpc SetIpsecAttribute(SetIpsecAttributeRequest)
-      returns (SetIpsecAttributeResponse) {}
-  rpc GetIpsecAttribute(GetIpsecAttributeRequest)
-      returns (GetIpsecAttributeResponse) {}
-  rpc CreateIpsecPort(CreateIpsecPortRequest)
-      returns (CreateIpsecPortResponse) {}
-  rpc RemoveIpsecPort(RemoveIpsecPortRequest)
-      returns (RemoveIpsecPortResponse) {}
-  rpc SetIpsecPortAttribute(SetIpsecPortAttributeRequest)
-      returns (SetIpsecPortAttributeResponse) {}
-  rpc GetIpsecPortAttribute(GetIpsecPortAttributeRequest)
-      returns (GetIpsecPortAttributeResponse) {}
-  rpc CreateIpsecSa(CreateIpsecSaRequest) returns (CreateIpsecSaResponse) {}
-  rpc RemoveIpsecSa(RemoveIpsecSaRequest) returns (RemoveIpsecSaResponse) {}
-  rpc SetIpsecSaAttribute(SetIpsecSaAttributeRequest)
-      returns (SetIpsecSaAttributeResponse) {}
-  rpc GetIpsecSaAttribute(GetIpsecSaAttributeRequest)
-      returns (GetIpsecSaAttributeResponse) {}
+	rpc CreateIpsec (CreateIpsecRequest) returns (CreateIpsecResponse) {}
+	rpc RemoveIpsec (RemoveIpsecRequest) returns (RemoveIpsecResponse) {}
+	rpc SetIpsecAttribute (SetIpsecAttributeRequest) returns (SetIpsecAttributeResponse) {}
+	rpc GetIpsecAttribute (GetIpsecAttributeRequest) returns (GetIpsecAttributeResponse) {}
+	rpc CreateIpsecPort (CreateIpsecPortRequest) returns (CreateIpsecPortResponse) {}
+	rpc RemoveIpsecPort (RemoveIpsecPortRequest) returns (RemoveIpsecPortResponse) {}
+	rpc SetIpsecPortAttribute (SetIpsecPortAttributeRequest) returns (SetIpsecPortAttributeResponse) {}
+	rpc GetIpsecPortAttribute (GetIpsecPortAttributeRequest) returns (GetIpsecPortAttributeResponse) {}
+	rpc CreateIpsecSa (CreateIpsecSaRequest) returns (CreateIpsecSaResponse) {}
+	rpc RemoveIpsecSa (RemoveIpsecSaRequest) returns (RemoveIpsecSaResponse) {}
+	rpc SetIpsecSaAttribute (SetIpsecSaAttributeRequest) returns (SetIpsecSaAttributeResponse) {}
+	rpc GetIpsecSaAttribute (GetIpsecSaAttributeRequest) returns (GetIpsecSaAttributeResponse) {}
 }

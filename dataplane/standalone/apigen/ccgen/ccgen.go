@@ -118,7 +118,7 @@ func createCCData(meta *saiast.FuncMetadata, apiName string, sai *saiast.SAIAPI,
 		}
 		for _, attr := range info.Attrs[meta.TypeName].CreateFields {
 			name := sanitizeProtoName(attr.MemberName)
-			pFunc, arg, err := protoFieldSetter(attr.SaiType, name, "attr_list[i].value", info)
+			pFunc, arg, err := protoFieldSetter(attr.SaiType, name, "attr_list[i].value", info, false)
 			if err != nil {
 				fmt.Println("skipping due to error: ", err)
 				continue
@@ -144,7 +144,26 @@ func createCCData(meta *saiast.FuncMetadata, apiName string, sai *saiast.SAIAPI,
 			smt.EnumValue = attr.EnumName
 			tf.AttrSwitch.Attrs = append(tf.AttrSwitch.Attrs, smt)
 		}
+	case "set_attribute":
+		tf.AttrSwitch = &AttrSwitch{
+			Var:      "attr->id",
+			ProtoVar: "req",
+		}
+		for _, attr := range info.Attrs[meta.TypeName].SetFields {
+			name := sanitizeProtoName(attr.MemberName)
+			pFunc, arg, err := protoFieldSetter(attr.SaiType, name, "attr->value", info, true)
+			if err != nil {
+				fmt.Println("skipping due to error: ", err)
+				continue
+			}
+			tf.AttrSwitch.Attrs = append(tf.AttrSwitch.Attrs, &AttrSwitchSmt{
+				EnumValue: attr.EnumName,
+				ProtoFunc: pFunc,
+				Args:      arg,
+			})
+		}
 	}
+
 	tf.UseCommonAPI = supportedOperation[tf.Operation]
 	// Function or types that don't follow standard naming.
 	if strings.Contains(tf.TypeName, "PORT_ALL") || strings.Contains(tf.TypeName, "ALL_NEIGHBOR") {
@@ -251,10 +270,10 @@ var typeToUnionAccessor = map[string]*unionAccessor{
 	},
 }
 
-func protoFieldSetter(saiType, protoField, varName string, info *docparser.SAIInfo) (string, string, error) {
+func protoFieldSetter(saiType, protoField, varName string, info *docparser.SAIInfo, inOneof bool) (string, string, error) {
 	setFn := fmt.Sprintf("set_%s", protoField)
 	if _, ok := info.Enums[saiType]; ok {
-		pType, _, err := protogen.SaiTypeToProtoType(saiType, info, false)
+		pType, _, err := protogen.SaiTypeToProtoType(saiType, info, inOneof)
 		if err != nil {
 			return "", "", err
 		}
@@ -277,6 +296,9 @@ func protoFieldSetter(saiType, protoField, varName string, info *docparser.SAIIn
 		return setFn, fmt.Sprintf("%s.%s, sizeof(%s.%s)", varName, ua.accessor, varName, ua.accessor), nil
 	case variableSizedArray:
 		setFn = fmt.Sprintf("mutable_%s()->Add", protoField)
+		if inOneof {
+			setFn = fmt.Sprintf("mutable_%s()->mutable_list()->Add", protoField)
+		}
 		return setFn, fmt.Sprintf("%s.%s.list, %s.%s.list + %s.%s.count", varName, ua.accessor, varName, ua.accessor, varName, ua.accessor), nil
 	}
 	return "", "", fmt.Errorf("unknown accessor type %q", ua.aType)
@@ -467,10 +489,31 @@ const {{ .APIType }} l_{{ .APIName }} = {
 	for(uint32_t i = 0; i < attr_count; i++ ) {
 		{{ template "getattr" .AttrSwitch }}
 	}
+	{{ else if and (eq .Operation "set_attribute") (ne (len .AttrSwitch.Attrs) 0) }}
+	lemming::dataplane::sai::{{ .ReqType }} req;
+	lemming::dataplane::sai::{{ .RespType }} resp;
+	grpc::ClientContext context;
+	{{ if .OidVar -}} req.set_oid({{ .OidVar }}); {{ end }}
+	{{ if .EntryVar }} *req.mutable_entry() = {{ .EntryConversionFunc }}({{ .EntryVar }}); {{ end }}
+	{{ template "setattr" .AttrSwitch }}
+	grpc::Status status = {{ .Client }}->{{ .RPCMethod }}(&context, req, &resp);
+	if (!status.ok()) {
+		LOG(ERROR) << status.error_message();
+		return SAI_STATUS_FAILURE;
+	}
+	{{ else if eq .Operation "remove" }}
+	lemming::dataplane::sai::{{ .ReqType }} req;
+	lemming::dataplane::sai::{{ .RespType }} resp;
+	grpc::ClientContext context;
+	{{ if .OidVar -}} req.set_oid({{ .OidVar }}); {{ end }}
+	{{ if .EntryVar }} *req.mutable_entry() = {{ .EntryConversionFunc }}({{ .EntryVar }}); {{ end }}
+	grpc::Status status = {{ .Client }}->{{ .RPCMethod }}(&context, req, &resp);
+	if (!status.ok()) {
+		LOG(ERROR) << status.error_message();
+		return SAI_STATUS_FAILURE;
+	}
 	{{ end }}
-
-	{{- if .Entry }} {{ .Entry }} {{ end }}
-	return translator->{{ .Operation }}(SAI_OBJECT_TYPE_{{ .TypeName }}, {{ .Vars }});
+	return SAI_STATUS_SUCCESS;
 	{{- else }}
 	return SAI_STATUS_NOT_IMPLEMENTED;
 	{{- end }}

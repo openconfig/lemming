@@ -22,6 +22,53 @@
 #include <fstream>
 
 #include "dataplane/standalone/lucius/lucius_clib.h"
+#include "dataplane/standalone/proto/acl.grpc.pb.h"
+#include "dataplane/standalone/proto/bfd.grpc.pb.h"
+#include "dataplane/standalone/proto/bridge.grpc.pb.h"
+#include "dataplane/standalone/proto/buffer.grpc.pb.h"
+#include "dataplane/standalone/proto/common.pb.h"
+#include "dataplane/standalone/proto/counter.grpc.pb.h"
+#include "dataplane/standalone/proto/debug_counter.grpc.pb.h"
+#include "dataplane/standalone/proto/dtel.grpc.pb.h"
+#include "dataplane/standalone/proto/fdb.grpc.pb.h"
+#include "dataplane/standalone/proto/hash.grpc.pb.h"
+#include "dataplane/standalone/proto/hostif.grpc.pb.h"
+#include "dataplane/standalone/proto/ipmc.grpc.pb.h"
+#include "dataplane/standalone/proto/ipmc_group.grpc.pb.h"
+#include "dataplane/standalone/proto/ipsec.grpc.pb.h"
+#include "dataplane/standalone/proto/isolation_group.grpc.pb.h"
+#include "dataplane/standalone/proto/l2mc.grpc.pb.h"
+#include "dataplane/standalone/proto/l2mc_group.grpc.pb.h"
+#include "dataplane/standalone/proto/lag.grpc.pb.h"
+#include "dataplane/standalone/proto/macsec.grpc.pb.h"
+#include "dataplane/standalone/proto/mcast_fdb.grpc.pb.h"
+#include "dataplane/standalone/proto/mirror.grpc.pb.h"
+#include "dataplane/standalone/proto/mpls.grpc.pb.h"
+#include "dataplane/standalone/proto/my_mac.grpc.pb.h"
+#include "dataplane/standalone/proto/nat.grpc.pb.h"
+#include "dataplane/standalone/proto/neighbor.grpc.pb.h"
+#include "dataplane/standalone/proto/next_hop.grpc.pb.h"
+#include "dataplane/standalone/proto/next_hop_group.grpc.pb.h"
+#include "dataplane/standalone/proto/policer.grpc.pb.h"
+#include "dataplane/standalone/proto/port.grpc.pb.h"
+#include "dataplane/standalone/proto/qos_map.grpc.pb.h"
+#include "dataplane/standalone/proto/queue.grpc.pb.h"
+#include "dataplane/standalone/proto/route.grpc.pb.h"
+#include "dataplane/standalone/proto/router_interface.grpc.pb.h"
+#include "dataplane/standalone/proto/rpf_group.grpc.pb.h"
+#include "dataplane/standalone/proto/samplepacket.grpc.pb.h"
+#include "dataplane/standalone/proto/scheduler.grpc.pb.h"
+#include "dataplane/standalone/proto/scheduler_group.grpc.pb.h"
+#include "dataplane/standalone/proto/srv6.grpc.pb.h"
+#include "dataplane/standalone/proto/stp.grpc.pb.h"
+#include "dataplane/standalone/proto/switch.grpc.pb.h"
+#include "dataplane/standalone/proto/system_port.grpc.pb.h"
+#include "dataplane/standalone/proto/tam.grpc.pb.h"
+#include "dataplane/standalone/proto/tunnel.grpc.pb.h"
+#include "dataplane/standalone/proto/udf.grpc.pb.h"
+#include "dataplane/standalone/proto/virtual_router.grpc.pb.h"
+#include "dataplane/standalone/proto/vlan.grpc.pb.h"
+#include "dataplane/standalone/proto/wred.grpc.pb.h"
 #include "dataplane/standalone/sai/acl.h"
 #include "dataplane/standalone/sai/bfd.h"
 #include "dataplane/standalone/sai/bridge.h"
@@ -75,6 +122,53 @@ extern "C" {
 }
 
 std::shared_ptr<Translator> translator;
+std::unique_ptr<lemming::dataplane::sai::Acl::Stub> acl;
+std::unique_ptr<lemming::dataplane::sai::Bfd::Stub> bfd;
+std::unique_ptr<lemming::dataplane::sai::Buffer::Stub> buffer;
+std::unique_ptr<lemming::dataplane::sai::Bridge::Stub> bridge;
+std::unique_ptr<lemming::dataplane::sai::Counter::Stub> counter;
+std::unique_ptr<lemming::dataplane::sai::DebugCounter::Stub> debug_counter;
+std::unique_ptr<lemming::dataplane::sai::Dtel::Stub> dtel;
+std::unique_ptr<lemming::dataplane::sai::Fdb::Stub> fdb;
+std::unique_ptr<lemming::dataplane::sai::Hash::Stub> hash;
+std::unique_ptr<lemming::dataplane::sai::Hostif::Stub> hostif;
+std::unique_ptr<lemming::dataplane::sai::IpmcGroup::Stub> ipmc_group;
+std::unique_ptr<lemming::dataplane::sai::Ipmc::Stub> ipmc;
+std::unique_ptr<lemming::dataplane::sai::Ipsec::Stub> ipsec;
+std::unique_ptr<lemming::dataplane::sai::IsolationGroup::Stub> isolation_group;
+std::unique_ptr<lemming::dataplane::sai::L2mcGroup::Stub> l2mc_group;
+std::unique_ptr<lemming::dataplane::sai::L2mc::Stub> l2mc;
+std::unique_ptr<lemming::dataplane::sai::Lag::Stub> lag;
+std::unique_ptr<lemming::dataplane::sai::Macsec::Stub> macsec;
+std::unique_ptr<lemming::dataplane::sai::Mirror::Stub> mirror;
+std::unique_ptr<lemming::dataplane::sai::McastFdb::Stub> mcast_fdb;
+std::unique_ptr<lemming::dataplane::sai::Mpls::Stub> mpls;
+std::unique_ptr<lemming::dataplane::sai::MyMac::Stub> my_mac;
+std::unique_ptr<lemming::dataplane::sai::Nat::Stub> nat;
+std::unique_ptr<lemming::dataplane::sai::Neighbor::Stub> neighbor;
+std::unique_ptr<lemming::dataplane::sai::NextHopGroup::Stub> next_hop_group;
+std::unique_ptr<lemming::dataplane::sai::NextHop::Stub> next_hop;
+std::unique_ptr<lemming::dataplane::sai::Policer::Stub> policer;
+std::unique_ptr<lemming::dataplane::sai::Port::Stub> port;
+std::unique_ptr<lemming::dataplane::sai::QosMap::Stub> qos_map;
+std::unique_ptr<lemming::dataplane::sai::Queue::Stub> queue;
+std::unique_ptr<lemming::dataplane::sai::Route::Stub> route;
+std::unique_ptr<lemming::dataplane::sai::RouterInterface::Stub>
+    router_interface;
+std::unique_ptr<lemming::dataplane::sai::RpfGroup::Stub> rpf_group;
+std::unique_ptr<lemming::dataplane::sai::Samplepacket::Stub> samplepacket;
+std::unique_ptr<lemming::dataplane::sai::SchedulerGroup::Stub> scheduler_group;
+std::unique_ptr<lemming::dataplane::sai::Scheduler::Stub> scheduler;
+std::unique_ptr<lemming::dataplane::sai::Srv6::Stub> srv6;
+std::unique_ptr<lemming::dataplane::sai::Stp::Stub> stp;
+std::unique_ptr<lemming::dataplane::sai::Switch::Stub> switch_;
+std::unique_ptr<lemming::dataplane::sai::SystemPort::Stub> system_port;
+std::unique_ptr<lemming::dataplane::sai::Tam::Stub> tam;
+std::unique_ptr<lemming::dataplane::sai::Tunnel::Stub> tunnel;
+std::unique_ptr<lemming::dataplane::sai::Udf::Stub> udf;
+std::unique_ptr<lemming::dataplane::sai::VirtualRouter::Stub> virtual_router;
+std::unique_ptr<lemming::dataplane::sai::Vlan::Stub> vlan;
+std::unique_ptr<lemming::dataplane::sai::Wred::Stub> wred;
 
 // TODO(dgrau): implement this without using gRPC.
 sai_status_t sai_api_initialize(
@@ -86,6 +180,61 @@ sai_status_t sai_api_initialize(
   auto chan = grpc::CreateChannel("localhost:50000",
                                   grpc::InsecureChannelCredentials());
   translator = std::make_shared<Translator>(chan);
+
+  acl = std::make_unique<lemming::dataplane::sai::Acl::Stub>(chan);
+  bfd = std::make_unique<lemming::dataplane::sai::Bfd::Stub>(chan);
+  buffer = std::make_unique<lemming::dataplane::sai::Buffer::Stub>(chan);
+  bridge = std::make_unique<lemming::dataplane::sai::Bridge::Stub>(chan);
+  counter = std::make_unique<lemming::dataplane::sai::Counter::Stub>(chan);
+  debug_counter =
+      std::make_unique<lemming::dataplane::sai::DebugCounter::Stub>(chan);
+  dtel = std::make_unique<lemming::dataplane::sai::Dtel::Stub>(chan);
+  fdb = std::make_unique<lemming::dataplane::sai::Fdb::Stub>(chan);
+  hash = std::make_unique<lemming::dataplane::sai::Hash::Stub>(chan);
+  hostif = std::make_unique<lemming::dataplane::sai::Hostif::Stub>(chan);
+  ipmc_group = std::make_unique<lemming::dataplane::sai::IpmcGroup::Stub>(chan);
+  ipmc = std::make_unique<lemming::dataplane::sai::Ipmc::Stub>(chan);
+  ipsec = std::make_unique<lemming::dataplane::sai::Ipsec::Stub>(chan);
+  isolation_group =
+      std::make_unique<lemming::dataplane::sai::IsolationGroup::Stub>(chan);
+  l2mc_group = std::make_unique<lemming::dataplane::sai::L2mcGroup::Stub>(chan);
+  l2mc = std::make_unique<lemming::dataplane::sai::L2mc::Stub>(chan);
+  lag = std::make_unique<lemming::dataplane::sai::Lag::Stub>(chan);
+  macsec = std::make_unique<lemming::dataplane::sai::Macsec::Stub>(chan);
+  mirror = std::make_unique<lemming::dataplane::sai::Mirror::Stub>(chan);
+  mcast_fdb = std::make_unique<lemming::dataplane::sai::McastFdb::Stub>(chan);
+  mpls = std::make_unique<lemming::dataplane::sai::Mpls::Stub>(chan);
+  my_mac = std::make_unique<lemming::dataplane::sai::MyMac::Stub>(chan);
+  nat = std::make_unique<lemming::dataplane::sai::Nat::Stub>(chan);
+  neighbor = std::make_unique<lemming::dataplane::sai::Neighbor::Stub>(chan);
+  next_hop_group =
+      std::make_unique<lemming::dataplane::sai::NextHopGroup::Stub>(chan);
+  next_hop = std::make_unique<lemming::dataplane::sai::NextHop::Stub>(chan);
+  policer = std::make_unique<lemming::dataplane::sai::Policer::Stub>(chan);
+  port = std::make_unique<lemming::dataplane::sai::Port::Stub>(chan);
+  qos_map = std::make_unique<lemming::dataplane::sai::QosMap::Stub>(chan);
+  queue = std::make_unique<lemming::dataplane::sai::Queue::Stub>(chan);
+  route = std::make_unique<lemming::dataplane::sai::Route::Stub>(chan);
+  router_interface =
+      std::make_unique<lemming::dataplane::sai::RouterInterface::Stub>(chan);
+  rpf_group = std::make_unique<lemming::dataplane::sai::RpfGroup::Stub>(chan);
+  samplepacket =
+      std::make_unique<lemming::dataplane::sai::Samplepacket::Stub>(chan);
+  scheduler_group =
+      std::make_unique<lemming::dataplane::sai::SchedulerGroup::Stub>(chan);
+  scheduler = std::make_unique<lemming::dataplane::sai::Scheduler::Stub>(chan);
+  srv6 = std::make_unique<lemming::dataplane::sai::Srv6::Stub>(chan);
+  stp = std::make_unique<lemming::dataplane::sai::Stp::Stub>(chan);
+  switch_ = std::make_unique<lemming::dataplane::sai::Switch::Stub>(chan);
+  system_port =
+      std::make_unique<lemming::dataplane::sai::SystemPort::Stub>(chan);
+  tam = std::make_unique<lemming::dataplane::sai::Tam::Stub>(chan);
+  tunnel = std::make_unique<lemming::dataplane::sai::Tunnel::Stub>(chan);
+  udf = std::make_unique<lemming::dataplane::sai::Udf::Stub>(chan);
+  virtual_router =
+      std::make_unique<lemming::dataplane::sai::VirtualRouter::Stub>(chan);
+  vlan = std::make_unique<lemming::dataplane::sai::Vlan::Stub>(chan);
+  wred = std::make_unique<lemming::dataplane::sai::Wred::Stub>(chan);
 
   return SAI_STATUS_SUCCESS;
 }
