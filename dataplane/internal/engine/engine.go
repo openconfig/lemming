@@ -1053,6 +1053,9 @@ func (e *Engine) AddInterface(ctx context.Context, req *dpb.AddInterfaceRequest)
 
 	switch req.GetType() {
 	case dpb.InterfaceType_INTERFACE_TYPE_AGGREGATE:
+		if nPorts := len(req.GetPortIds()); nPorts < 1 {
+			return nil, fmt.Errorf("invalid number of ports got %v, expected < 1", nPorts)
+		}
 		pcReq := &fwdpb.PortCreateRequest{
 			ContextId: &fwdpb.ContextId{Id: e.id},
 			Port: &fwdpb.PortDesc{
@@ -1060,12 +1063,12 @@ func (e *Engine) AddInterface(ctx context.Context, req *dpb.AddInterfaceRequest)
 			},
 		}
 		resp, err := e.PortCreate(ctx, pcReq)
-		e.idToNIDMu.Lock()
-		e.idToNID[req.GetId()] = resp.ObjectIndex.GetIndex()
-		e.idToNIDMu.Unlock()
 		if err != nil {
 			return nil, err
 		}
+		e.idToNIDMu.Lock()
+		e.idToNID[req.GetId()] = resp.ObjectIndex.GetIndex()
+		e.idToNIDMu.Unlock()
 		for _, member := range req.PortIds {
 			_, err := e.PortUpdate(ctx, &fwdpb.PortUpdateRequest{
 				PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: req.GetId()}},
