@@ -5,80 +5,101 @@ package lemming.dataplane.sai;
 
 import "dataplane/standalone/proto/common.proto";
 
-option go_package = "github.com/openconfig/lemming/proto/dataplane/sai";
+option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto";
+
 
 enum IpmcGroupAttr {
-  IPMC_GROUP_ATTR_UNSPECIFIED = 0;
-  IPMC_GROUP_ATTR_IPMC_OUTPUT_COUNT = 1;
-  IPMC_GROUP_ATTR_IPMC_MEMBER_LIST = 2;
+	IPMC_GROUP_ATTR_UNSPECIFIED = 0;
+	IPMC_GROUP_ATTR_IPMC_OUTPUT_COUNT = 1;
+	IPMC_GROUP_ATTR_IPMC_MEMBER_LIST = 2;
 }
 
 enum IpmcGroupMemberAttr {
-  IPMC_GROUP_MEMBER_ATTR_UNSPECIFIED = 0;
-  IPMC_GROUP_MEMBER_ATTR_IPMC_GROUP_ID = 1;
-  IPMC_GROUP_MEMBER_ATTR_IPMC_OUTPUT_ID = 2;
+	IPMC_GROUP_MEMBER_ATTR_UNSPECIFIED = 0;
+	IPMC_GROUP_MEMBER_ATTR_IPMC_GROUP_ID = 1;
+	IPMC_GROUP_MEMBER_ATTR_IPMC_OUTPUT_ID = 2;
 }
 
 message CreateIpmcGroupRequest {
-  uint64 switch = 1;
+	uint64 switch = 1;
+	
+	
 }
 
 message CreateIpmcGroupResponse {
-  uint64 oid = 1;
+	uint64 oid = 1;
+	
+	
 }
 
 message RemoveIpmcGroupRequest {
-  uint64 oid = 1;
+	uint64 oid = 1;
+	
+	
 }
 
-message RemoveIpmcGroupResponse {}
+message RemoveIpmcGroupResponse {
+	
+	
+}
 
 message GetIpmcGroupAttributeRequest {
-  uint64 oid = 1;
-  repeated IpmcGroupAttr attr_type = 2;
+	uint64 oid = 1;
+	repeated IpmcGroupAttr attr_type = 2;
+	
+	
 }
 
 message GetIpmcGroupAttributeResponse {
-  repeated IpmcGroupAttribute attr = 1;
+	repeated IpmcGroupAttribute attr = 1;
+	
+	
 }
 
 message CreateIpmcGroupMemberRequest {
-  uint64 switch = 1;
-
-  uint64 ipmc_group_id = 2;
-  uint64 ipmc_output_id = 3;
+	uint64 switch = 1;
+	
+	uint64 ipmc_group_id = 2;
+	uint64 ipmc_output_id = 3;
+	
 }
 
 message CreateIpmcGroupMemberResponse {
-  uint64 oid = 1;
+	uint64 oid = 1;
+	
+	
 }
 
 message RemoveIpmcGroupMemberRequest {
-  uint64 oid = 1;
+	uint64 oid = 1;
+	
+	
 }
 
-message RemoveIpmcGroupMemberResponse {}
+message RemoveIpmcGroupMemberResponse {
+	
+	
+}
 
 message GetIpmcGroupMemberAttributeRequest {
-  uint64 oid = 1;
-  repeated IpmcGroupMemberAttr attr_type = 2;
+	uint64 oid = 1;
+	repeated IpmcGroupMemberAttr attr_type = 2;
+	
+	
 }
 
 message GetIpmcGroupMemberAttributeResponse {
-  repeated IpmcGroupMemberAttribute attr = 1;
+	repeated IpmcGroupMemberAttribute attr = 1;
+	
+	
 }
 
+
 service IpmcGroup {
-  rpc CreateIpmcGroup(CreateIpmcGroupRequest)
-      returns (CreateIpmcGroupResponse) {}
-  rpc RemoveIpmcGroup(RemoveIpmcGroupRequest)
-      returns (RemoveIpmcGroupResponse) {}
-  rpc GetIpmcGroupAttribute(GetIpmcGroupAttributeRequest)
-      returns (GetIpmcGroupAttributeResponse) {}
-  rpc CreateIpmcGroupMember(CreateIpmcGroupMemberRequest)
-      returns (CreateIpmcGroupMemberResponse) {}
-  rpc RemoveIpmcGroupMember(RemoveIpmcGroupMemberRequest)
-      returns (RemoveIpmcGroupMemberResponse) {}
-  rpc GetIpmcGroupMemberAttribute(GetIpmcGroupMemberAttributeRequest)
-      returns (GetIpmcGroupMemberAttributeResponse) {}
+	rpc CreateIpmcGroup (CreateIpmcGroupRequest) returns (CreateIpmcGroupResponse) {}
+	rpc RemoveIpmcGroup (RemoveIpmcGroupRequest) returns (RemoveIpmcGroupResponse) {}
+	rpc GetIpmcGroupAttribute (GetIpmcGroupAttributeRequest) returns (GetIpmcGroupAttributeResponse) {}
+	rpc CreateIpmcGroupMember (CreateIpmcGroupMemberRequest) returns (CreateIpmcGroupMemberResponse) {}
+	rpc RemoveIpmcGroupMember (RemoveIpmcGroupMemberRequest) returns (RemoveIpmcGroupMemberResponse) {}
+	rpc GetIpmcGroupMemberAttribute (GetIpmcGroupMemberAttributeRequest) returns (GetIpmcGroupMemberAttributeResponse) {}
 }

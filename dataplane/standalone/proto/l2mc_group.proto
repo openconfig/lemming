@@ -5,82 +5,103 @@ package lemming.dataplane.sai;
 
 import "dataplane/standalone/proto/common.proto";
 
-option go_package = "github.com/openconfig/lemming/proto/dataplane/sai";
+option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto";
+
 
 enum L2mcGroupAttr {
-  L2MC_GROUP_ATTR_UNSPECIFIED = 0;
-  L2MC_GROUP_ATTR_L2MC_OUTPUT_COUNT = 1;
-  L2MC_GROUP_ATTR_L2MC_MEMBER_LIST = 2;
+	L2MC_GROUP_ATTR_UNSPECIFIED = 0;
+	L2MC_GROUP_ATTR_L2MC_OUTPUT_COUNT = 1;
+	L2MC_GROUP_ATTR_L2MC_MEMBER_LIST = 2;
 }
 
 enum L2mcGroupMemberAttr {
-  L2MC_GROUP_MEMBER_ATTR_UNSPECIFIED = 0;
-  L2MC_GROUP_MEMBER_ATTR_L2MC_GROUP_ID = 1;
-  L2MC_GROUP_MEMBER_ATTR_L2MC_OUTPUT_ID = 2;
-  L2MC_GROUP_MEMBER_ATTR_L2MC_ENDPOINT_IP = 3;
+	L2MC_GROUP_MEMBER_ATTR_UNSPECIFIED = 0;
+	L2MC_GROUP_MEMBER_ATTR_L2MC_GROUP_ID = 1;
+	L2MC_GROUP_MEMBER_ATTR_L2MC_OUTPUT_ID = 2;
+	L2MC_GROUP_MEMBER_ATTR_L2MC_ENDPOINT_IP = 3;
 }
 
 message CreateL2mcGroupRequest {
-  uint64 switch = 1;
+	uint64 switch = 1;
+	
+	
 }
 
 message CreateL2mcGroupResponse {
-  uint64 oid = 1;
+	uint64 oid = 1;
+	
+	
 }
 
 message RemoveL2mcGroupRequest {
-  uint64 oid = 1;
+	uint64 oid = 1;
+	
+	
 }
 
-message RemoveL2mcGroupResponse {}
+message RemoveL2mcGroupResponse {
+	
+	
+}
 
 message GetL2mcGroupAttributeRequest {
-  uint64 oid = 1;
-  repeated L2mcGroupAttr attr_type = 2;
+	uint64 oid = 1;
+	repeated L2mcGroupAttr attr_type = 2;
+	
+	
 }
 
 message GetL2mcGroupAttributeResponse {
-  repeated L2mcGroupAttribute attr = 1;
+	repeated L2mcGroupAttribute attr = 1;
+	
+	
 }
 
 message CreateL2mcGroupMemberRequest {
-  uint64 switch = 1;
-
-  uint64 l2mc_group_id = 2;
-  uint64 l2mc_output_id = 3;
-  bytes l2mc_endpoint_ip = 4;
+	uint64 switch = 1;
+	
+	uint64 l2mc_group_id = 2;
+	uint64 l2mc_output_id = 3;
+	bytes l2mc_endpoint_ip = 4;
+	
 }
 
 message CreateL2mcGroupMemberResponse {
-  uint64 oid = 1;
+	uint64 oid = 1;
+	
+	
 }
 
 message RemoveL2mcGroupMemberRequest {
-  uint64 oid = 1;
+	uint64 oid = 1;
+	
+	
 }
 
-message RemoveL2mcGroupMemberResponse {}
+message RemoveL2mcGroupMemberResponse {
+	
+	
+}
 
 message GetL2mcGroupMemberAttributeRequest {
-  uint64 oid = 1;
-  repeated L2mcGroupMemberAttr attr_type = 2;
+	uint64 oid = 1;
+	repeated L2mcGroupMemberAttr attr_type = 2;
+	
+	
 }
 
 message GetL2mcGroupMemberAttributeResponse {
-  repeated L2mcGroupMemberAttribute attr = 1;
+	repeated L2mcGroupMemberAttribute attr = 1;
+	
+	
 }
 
+
 service L2mcGroup {
-  rpc CreateL2mcGroup(CreateL2mcGroupRequest)
-      returns (CreateL2mcGroupResponse) {}
-  rpc RemoveL2mcGroup(RemoveL2mcGroupRequest)
-      returns (RemoveL2mcGroupResponse) {}
-  rpc GetL2mcGroupAttribute(GetL2mcGroupAttributeRequest)
-      returns (GetL2mcGroupAttributeResponse) {}
-  rpc CreateL2mcGroupMember(CreateL2mcGroupMemberRequest)
-      returns (CreateL2mcGroupMemberResponse) {}
-  rpc RemoveL2mcGroupMember(RemoveL2mcGroupMemberRequest)
-      returns (RemoveL2mcGroupMemberResponse) {}
-  rpc GetL2mcGroupMemberAttribute(GetL2mcGroupMemberAttributeRequest)
-      returns (GetL2mcGroupMemberAttributeResponse) {}
+	rpc CreateL2mcGroup (CreateL2mcGroupRequest) returns (CreateL2mcGroupResponse) {}
+	rpc RemoveL2mcGroup (RemoveL2mcGroupRequest) returns (RemoveL2mcGroupResponse) {}
+	rpc GetL2mcGroupAttribute (GetL2mcGroupAttributeRequest) returns (GetL2mcGroupAttributeResponse) {}
+	rpc CreateL2mcGroupMember (CreateL2mcGroupMemberRequest) returns (CreateL2mcGroupMemberResponse) {}
+	rpc RemoveL2mcGroupMember (RemoveL2mcGroupMemberRequest) returns (RemoveL2mcGroupMemberResponse) {}
+	rpc GetL2mcGroupMemberAttribute (GetL2mcGroupMemberAttributeRequest) returns (GetL2mcGroupMemberAttributeResponse) {}
 }

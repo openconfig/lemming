@@ -5,79 +5,94 @@ package lemming.dataplane.sai;
 
 import "dataplane/standalone/proto/common.proto";
 
-option go_package = "github.com/openconfig/lemming/proto/dataplane/sai";
+option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto";
+
 
 enum PolicerAttr {
-  POLICER_ATTR_UNSPECIFIED = 0;
-  POLICER_ATTR_METER_TYPE = 1;
-  POLICER_ATTR_MODE = 2;
-  POLICER_ATTR_COLOR_SOURCE = 3;
-  POLICER_ATTR_CBS = 4;
-  POLICER_ATTR_CIR = 5;
-  POLICER_ATTR_PBS = 6;
-  POLICER_ATTR_PIR = 7;
-  POLICER_ATTR_GREEN_PACKET_ACTION = 8;
-  POLICER_ATTR_YELLOW_PACKET_ACTION = 9;
-  POLICER_ATTR_RED_PACKET_ACTION = 10;
-  POLICER_ATTR_ENABLE_COUNTER_PACKET_ACTION_LIST = 11;
+	POLICER_ATTR_UNSPECIFIED = 0;
+	POLICER_ATTR_METER_TYPE = 1;
+	POLICER_ATTR_MODE = 2;
+	POLICER_ATTR_COLOR_SOURCE = 3;
+	POLICER_ATTR_CBS = 4;
+	POLICER_ATTR_CIR = 5;
+	POLICER_ATTR_PBS = 6;
+	POLICER_ATTR_PIR = 7;
+	POLICER_ATTR_GREEN_PACKET_ACTION = 8;
+	POLICER_ATTR_YELLOW_PACKET_ACTION = 9;
+	POLICER_ATTR_RED_PACKET_ACTION = 10;
+	POLICER_ATTR_ENABLE_COUNTER_PACKET_ACTION_LIST = 11;
 }
 
 message CreatePolicerRequest {
-  uint64 switch = 1;
-
-  MeterType meter_type = 2;
-  PolicerMode mode = 3;
-  PolicerColorSource color_source = 4;
-  uint64 cbs = 5;
-  uint64 cir = 6;
-  uint64 pbs = 7;
-  uint64 pir = 8;
-  PacketAction green_packet_action = 9;
-  PacketAction yellow_packet_action = 10;
-  PacketAction red_packet_action = 11;
-  repeated PacketAction enable_counter_packet_action_list = 12;
+	uint64 switch = 1;
+	
+	MeterType meter_type = 2;
+	PolicerMode mode = 3;
+	PolicerColorSource color_source = 4;
+	uint64 cbs = 5;
+	uint64 cir = 6;
+	uint64 pbs = 7;
+	uint64 pir = 8;
+	PacketAction green_packet_action = 9;
+	PacketAction yellow_packet_action = 10;
+	PacketAction red_packet_action = 11;
+	repeated PacketAction enable_counter_packet_action_list = 12;
+	
 }
 
 message CreatePolicerResponse {
-  uint64 oid = 1;
+	uint64 oid = 1;
+	
+	
 }
 
 message RemovePolicerRequest {
-  uint64 oid = 1;
+	uint64 oid = 1;
+	
+	
 }
 
-message RemovePolicerResponse {}
+message RemovePolicerResponse {
+	
+	
+}
 
 message SetPolicerAttributeRequest {
-  uint64 oid = 1;
-  oneof attr {
-    uint64 cbs = 2;
-    uint64 cir = 3;
-    uint64 pbs = 4;
-    uint64 pir = 5;
-    PacketAction green_packet_action = 6;
-    PacketAction yellow_packet_action = 7;
-    PacketAction red_packet_action = 8;
-    PacketActionList enable_counter_packet_action_list = 9;
-  }
+	uint64 oid = 1;
+	oneof attr {
+	uint64 cbs = 2;
+	uint64 cir = 3;
+	uint64 pbs = 4;
+	uint64 pir = 5;
+	PacketAction green_packet_action = 6;
+	PacketAction yellow_packet_action = 7;
+	PacketAction red_packet_action = 8;
+	PacketActionList enable_counter_packet_action_list = 9;
+	}
 }
 
-message SetPolicerAttributeResponse {}
+message SetPolicerAttributeResponse {
+	
+	
+}
 
 message GetPolicerAttributeRequest {
-  uint64 oid = 1;
-  repeated PolicerAttr attr_type = 2;
+	uint64 oid = 1;
+	repeated PolicerAttr attr_type = 2;
+	
+	
 }
 
 message GetPolicerAttributeResponse {
-  repeated PolicerAttribute attr = 1;
+	repeated PolicerAttribute attr = 1;
+	
+	
 }
 
+
 service Policer {
-  rpc CreatePolicer(CreatePolicerRequest) returns (CreatePolicerResponse) {}
-  rpc RemovePolicer(RemovePolicerRequest) returns (RemovePolicerResponse) {}
-  rpc SetPolicerAttribute(SetPolicerAttributeRequest)
-      returns (SetPolicerAttributeResponse) {}
-  rpc GetPolicerAttribute(GetPolicerAttributeRequest)
-      returns (GetPolicerAttributeResponse) {}
+	rpc CreatePolicer (CreatePolicerRequest) returns (CreatePolicerResponse) {}
+	rpc RemovePolicer (RemovePolicerRequest) returns (RemovePolicerResponse) {}
+	rpc SetPolicerAttribute (SetPolicerAttributeRequest) returns (SetPolicerAttributeResponse) {}
+	rpc GetPolicerAttribute (GetPolicerAttributeRequest) returns (GetPolicerAttributeResponse) {}
 }

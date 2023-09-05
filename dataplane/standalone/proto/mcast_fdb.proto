@@ -5,58 +5,72 @@ package lemming.dataplane.sai;
 
 import "dataplane/standalone/proto/common.proto";
 
-option go_package = "github.com/openconfig/lemming/proto/dataplane/sai";
+option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto";
+
 
 enum McastFdbEntryAttr {
-  MCAST_FDB_ENTRY_ATTR_UNSPECIFIED = 0;
-  MCAST_FDB_ENTRY_ATTR_GROUP_ID = 1;
-  MCAST_FDB_ENTRY_ATTR_PACKET_ACTION = 2;
-  MCAST_FDB_ENTRY_ATTR_META_DATA = 3;
+	MCAST_FDB_ENTRY_ATTR_UNSPECIFIED = 0;
+	MCAST_FDB_ENTRY_ATTR_GROUP_ID = 1;
+	MCAST_FDB_ENTRY_ATTR_PACKET_ACTION = 2;
+	MCAST_FDB_ENTRY_ATTR_META_DATA = 3;
 }
 
 message CreateMcastFdbEntryRequest {
-  McastFdbEntry entry = 1;
-
-  uint64 group_id = 2;
-  PacketAction packet_action = 3;
-  uint32 meta_data = 4;
+	McastFdbEntry entry = 1;
+	
+	uint64 group_id = 2;
+	PacketAction packet_action = 3;
+	uint32 meta_data = 4;
+	
 }
 
-message CreateMcastFdbEntryResponse {}
+message CreateMcastFdbEntryResponse {
+	
+	
+}
 
 message RemoveMcastFdbEntryRequest {
-  McastFdbEntry entry = 1;
+	McastFdbEntry entry = 1;
+	
+	
 }
 
-message RemoveMcastFdbEntryResponse {}
+message RemoveMcastFdbEntryResponse {
+	
+	
+}
 
 message SetMcastFdbEntryAttributeRequest {
-  McastFdbEntry entry = 1;
-  oneof attr {
-    uint64 group_id = 2;
-    PacketAction packet_action = 3;
-    uint32 meta_data = 4;
-  }
+	McastFdbEntry entry = 1;
+	oneof attr {
+	uint64 group_id = 2;
+	PacketAction packet_action = 3;
+	uint32 meta_data = 4;
+	}
 }
 
-message SetMcastFdbEntryAttributeResponse {}
+message SetMcastFdbEntryAttributeResponse {
+	
+	
+}
 
 message GetMcastFdbEntryAttributeRequest {
-  McastFdbEntry entry = 1;
-  repeated McastFdbEntryAttr attr_type = 2;
+	McastFdbEntry entry = 1;
+	repeated McastFdbEntryAttr attr_type = 2;
+	
+	
 }
 
 message GetMcastFdbEntryAttributeResponse {
-  repeated McastFdbEntryAttribute attr = 1;
+	repeated McastFdbEntryAttribute attr = 1;
+	
+	
 }
 
+
 service McastFdb {
-  rpc CreateMcastFdbEntry(CreateMcastFdbEntryRequest)
-      returns (CreateMcastFdbEntryResponse) {}
-  rpc RemoveMcastFdbEntry(RemoveMcastFdbEntryRequest)
-      returns (RemoveMcastFdbEntryResponse) {}
-  rpc SetMcastFdbEntryAttribute(SetMcastFdbEntryAttributeRequest)
-      returns (SetMcastFdbEntryAttributeResponse) {}
-  rpc GetMcastFdbEntryAttribute(GetMcastFdbEntryAttributeRequest)
-      returns (GetMcastFdbEntryAttributeResponse) {}
+	rpc CreateMcastFdbEntry (CreateMcastFdbEntryRequest) returns (CreateMcastFdbEntryResponse) {}
+	rpc RemoveMcastFdbEntry (RemoveMcastFdbEntryRequest) returns (RemoveMcastFdbEntryResponse) {}
+	rpc SetMcastFdbEntryAttribute (SetMcastFdbEntryAttributeRequest) returns (SetMcastFdbEntryAttributeResponse) {}
+	rpc GetMcastFdbEntryAttribute (GetMcastFdbEntryAttributeRequest) returns (GetMcastFdbEntryAttributeResponse) {}
 }
