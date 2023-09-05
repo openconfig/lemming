@@ -19,7 +19,53 @@
 #include <memory>
 #include <string>
 
+#include "dataplane/standalone/proto/acl.grpc.pb.h"
+#include "dataplane/standalone/proto/bfd.grpc.pb.h"
+#include "dataplane/standalone/proto/bridge.grpc.pb.h"
+#include "dataplane/standalone/proto/buffer.grpc.pb.h"
 #include "dataplane/standalone/proto/common.pb.h"
+#include "dataplane/standalone/proto/counter.grpc.pb.h"
+#include "dataplane/standalone/proto/debug_counter.grpc.pb.h"
+#include "dataplane/standalone/proto/dtel.grpc.pb.h"
+#include "dataplane/standalone/proto/fdb.grpc.pb.h"
+#include "dataplane/standalone/proto/hash.grpc.pb.h"
+#include "dataplane/standalone/proto/hostif.grpc.pb.h"
+#include "dataplane/standalone/proto/ipmc.grpc.pb.h"
+#include "dataplane/standalone/proto/ipmc_group.grpc.pb.h"
+#include "dataplane/standalone/proto/ipsec.grpc.pb.h"
+#include "dataplane/standalone/proto/isolation_group.grpc.pb.h"
+#include "dataplane/standalone/proto/l2mc.grpc.pb.h"
+#include "dataplane/standalone/proto/l2mc_group.grpc.pb.h"
+#include "dataplane/standalone/proto/lag.grpc.pb.h"
+#include "dataplane/standalone/proto/macsec.grpc.pb.h"
+#include "dataplane/standalone/proto/mcast_fdb.grpc.pb.h"
+#include "dataplane/standalone/proto/mirror.grpc.pb.h"
+#include "dataplane/standalone/proto/mpls.grpc.pb.h"
+#include "dataplane/standalone/proto/my_mac.grpc.pb.h"
+#include "dataplane/standalone/proto/nat.grpc.pb.h"
+#include "dataplane/standalone/proto/neighbor.grpc.pb.h"
+#include "dataplane/standalone/proto/next_hop.grpc.pb.h"
+#include "dataplane/standalone/proto/next_hop_group.grpc.pb.h"
+#include "dataplane/standalone/proto/policer.grpc.pb.h"
+#include "dataplane/standalone/proto/port.grpc.pb.h"
+#include "dataplane/standalone/proto/qos_map.grpc.pb.h"
+#include "dataplane/standalone/proto/queue.grpc.pb.h"
+#include "dataplane/standalone/proto/route.grpc.pb.h"
+#include "dataplane/standalone/proto/router_interface.grpc.pb.h"
+#include "dataplane/standalone/proto/rpf_group.grpc.pb.h"
+#include "dataplane/standalone/proto/samplepacket.grpc.pb.h"
+#include "dataplane/standalone/proto/scheduler.grpc.pb.h"
+#include "dataplane/standalone/proto/scheduler_group.grpc.pb.h"
+#include "dataplane/standalone/proto/srv6.grpc.pb.h"
+#include "dataplane/standalone/proto/stp.grpc.pb.h"
+#include "dataplane/standalone/proto/switch.grpc.pb.h"
+#include "dataplane/standalone/proto/system_port.grpc.pb.h"
+#include "dataplane/standalone/proto/tam.grpc.pb.h"
+#include "dataplane/standalone/proto/tunnel.grpc.pb.h"
+#include "dataplane/standalone/proto/udf.grpc.pb.h"
+#include "dataplane/standalone/proto/virtual_router.grpc.pb.h"
+#include "dataplane/standalone/proto/vlan.grpc.pb.h"
+#include "dataplane/standalone/proto/wred.grpc.pb.h"
 #include "dataplane/standalone/translator.h"
 
 extern "C" {
@@ -27,6 +73,59 @@ extern "C" {
 }
 
 extern std::shared_ptr<Translator> translator;
+extern std::unique_ptr<lemming::dataplane::sai::Acl::Stub> acl;
+extern std::unique_ptr<lemming::dataplane::sai::Bfd::Stub> bfd;
+extern std::unique_ptr<lemming::dataplane::sai::Buffer::Stub> buffer;
+extern std::unique_ptr<lemming::dataplane::sai::Bridge::Stub> bridge;
+extern std::unique_ptr<lemming::dataplane::sai::Counter::Stub> counter;
+extern std::unique_ptr<lemming::dataplane::sai::DebugCounter::Stub>
+    debug_counter;
+extern std::unique_ptr<lemming::dataplane::sai::Dtel::Stub> dtel;
+extern std::unique_ptr<lemming::dataplane::sai::Fdb::Stub> fdb;
+extern std::unique_ptr<lemming::dataplane::sai::Hash::Stub> hash;
+extern std::unique_ptr<lemming::dataplane::sai::Hostif::Stub> hostif;
+extern std::unique_ptr<lemming::dataplane::sai::IpmcGroup::Stub> ipmc_group;
+extern std::unique_ptr<lemming::dataplane::sai::Ipmc::Stub> ipmc;
+extern std::unique_ptr<lemming::dataplane::sai::Ipsec::Stub> ipsec;
+extern std::unique_ptr<lemming::dataplane::sai::IsolationGroup::Stub>
+    isolation_group;
+extern std::unique_ptr<lemming::dataplane::sai::L2mcGroup::Stub> l2mc_group;
+extern std::unique_ptr<lemming::dataplane::sai::L2mc::Stub> l2mc;
+extern std::unique_ptr<lemming::dataplane::sai::Lag::Stub> lag;
+extern std::unique_ptr<lemming::dataplane::sai::Macsec::Stub> macsec;
+extern std::unique_ptr<lemming::dataplane::sai::Mirror::Stub> mirror;
+extern std::unique_ptr<lemming::dataplane::sai::McastFdb::Stub> mcast_fdb;
+extern std::unique_ptr<lemming::dataplane::sai::Mpls::Stub> mpls;
+extern std::unique_ptr<lemming::dataplane::sai::MyMac::Stub> my_mac;
+extern std::unique_ptr<lemming::dataplane::sai::Nat::Stub> nat;
+extern std::unique_ptr<lemming::dataplane::sai::Neighbor::Stub> neighbor;
+extern std::unique_ptr<lemming::dataplane::sai::NextHopGroup::Stub>
+    next_hop_group;
+extern std::unique_ptr<lemming::dataplane::sai::NextHop::Stub> next_hop;
+extern std::unique_ptr<lemming::dataplane::sai::Policer::Stub> policer;
+extern std::unique_ptr<lemming::dataplane::sai::Port::Stub> port;
+extern std::unique_ptr<lemming::dataplane::sai::QosMap::Stub> qos_map;
+extern std::unique_ptr<lemming::dataplane::sai::Queue::Stub> queue;
+extern std::unique_ptr<lemming::dataplane::sai::Route::Stub> route;
+extern std::unique_ptr<lemming::dataplane::sai::RouterInterface::Stub>
+    router_interface;
+extern std::unique_ptr<lemming::dataplane::sai::RpfGroup::Stub> rpf_group;
+extern std::unique_ptr<lemming::dataplane::sai::Samplepacket::Stub>
+    samplepacket;
+extern std::unique_ptr<lemming::dataplane::sai::SchedulerGroup::Stub>
+    scheduler_group;
+extern std::unique_ptr<lemming::dataplane::sai::Scheduler::Stub> scheduler;
+extern std::unique_ptr<lemming::dataplane::sai::Srv6::Stub> srv6;
+extern std::unique_ptr<lemming::dataplane::sai::Stp::Stub> stp;
+extern std::unique_ptr<lemming::dataplane::sai::Switch::Stub> switch_;
+extern std::unique_ptr<lemming::dataplane::sai::SystemPort::Stub> system_port;
+extern std::unique_ptr<lemming::dataplane::sai::Tam::Stub> tam;
+extern std::unique_ptr<lemming::dataplane::sai::Tunnel::Stub> tunnel;
+extern std::unique_ptr<lemming::dataplane::sai::Udf::Stub> udf;
+extern std::unique_ptr<lemming::dataplane::sai::VirtualRouter::Stub>
+    virtual_router;
+extern std::unique_ptr<lemming::dataplane::sai::Vlan::Stub> vlan;
+extern std::unique_ptr<lemming::dataplane::sai::Wred::Stub> wred;
 
 std::string convert_from_ip_addr(sai_ip_addr_family_t addr_family,
                                  const sai_ip_addr_t &addr);

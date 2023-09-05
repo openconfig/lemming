@@ -59,17 +59,17 @@ proto_library(
 )
 
 go_proto_library(
-    name = "sai_go_proto",
+    name = "proto_go_proto",
     compilers = ["@io_bazel_rules_go//proto:go_grpc"],
-    importpath = "github.com/openconfig/lemming/proto/dataplane/sai",
+    importpath = "github.com/openconfig/lemming/dataplane/standalone/proto",
     proto = ":sai_proto",
     visibility = ["//visibility:public"],
 )
 
 go_library(
-    name = "sai",
-    embed = [":sai_go_proto"],
-    importpath = "github.com/openconfig/lemming/proto/dataplane/sai",
+    name = "proto",
+    embed = [":proto_go_proto"],
+    importpath = "github.com/openconfig/lemming/dataplane/standalone/proto",
     visibility = ["//visibility:public"],
 )
 

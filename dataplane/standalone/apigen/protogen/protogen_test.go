@@ -32,7 +32,7 @@ package lemming.dataplane.sai;
 	
 import "google/protobuf/timestamp.proto";
 
-option go_package = "github.com/openconfig/lemming/proto/dataplane/sai";
+option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto";
 
 
 message AclActionData {
@@ -304,6 +304,7 @@ enum Foo {
 			"common.proto": commonType + `
 enum Foo {
 	FOO_UNSPECIFIED = 0;
+	FOO_SAI_UNSPECIFIED = 1;
 	FOO_TWO = 2;
 }
 `,
@@ -412,7 +413,7 @@ package lemming.dataplane.sai;
 
 import "dataplane/standalone/proto/common.proto";
 
-option go_package = "github.com/openconfig/lemming/proto/dataplane/sai";
+option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto";
 
 
 enum FooAttr {
@@ -538,7 +539,7 @@ package lemming.dataplane.sai;
 
 import "dataplane/standalone/proto/common.proto";
 
-option go_package = "github.com/openconfig/lemming/proto/dataplane/sai";
+option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto";
 
 
 enum FooAttr {
