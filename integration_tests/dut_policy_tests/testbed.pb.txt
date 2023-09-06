@@ -1,0 +1,106 @@
+# proto-file: github.com/openconfig/ondatra/blob/main/proto/testbed.proto
+# proto-message: ondatra.Testbed
+
+# PolicyTestCase contains the specifications for a DUT-only policy test.
+#
+# Topology:
+#
+#	DUT1 (AS 64500) -> DUT2 (AS 64500) -> DUT3 (AS 64501)
+#	                    ^
+#	                    |
+#	DUT4 (AS 64502) -> DUT5 (AS 64500)
+#
+#       Additionally, DUT0 is present as a neighbour for DUT1, DUT4, and DUT5
+#       to allow a static route to be resolvable.
+#
+# Currently by convention, all policies are installed on DUT1 (export), DUT5
+# (export), and DUT2 (import). This is because GoBGP only withdraws routes on
+# import policy change after a soft reset:
+# https://github.com/osrg/gobgp/blob/master/docs/sources/policy.md#policy-and-soft-reset
+
+# This DUT connects to DUT1, DUT4, and DUT5 for resolving static routes.
+duts {
+  id: "dut0"
+  ports {
+    id: "port1"
+  }
+  ports {
+    id: "port2"
+  }
+  ports {
+    id: "port3"
+  }
+}
+
+duts {
+  id: "dut1"
+  ports {
+    id: "port0"
+  }
+  ports {
+    id: "port1"
+  }
+}
+
+duts {
+  id: "dut2"
+  ports {
+    id: "port1"
+  }
+  ports {
+    id: "port2"
+  }
+  ports {
+    id: "port3"
+  }
+}
+
+duts {
+  id: "dut3"
+  ports {
+    id: "port1"
+  }
+}
+
+duts {
+  id: "dut4"
+  ports {
+    id: "port0"
+  }
+  ports {
+    id: "port1"
+  }
+}
+
+duts {
+  id: "dut5"
+  ports {
+    id: "port0"
+  }
+  ports {
+    id: "port1"
+  }
+  ports {
+    id: "port2"
+  }
+}
+
+links {
+  a: "dut1:port1"
+  b: "dut2:port1"
+}
+
+links {
+  a: "dut2:port2"
+  b: "dut3:port1"
+}
+
+links {
+  a: "dut4:port1"
+  b: "dut5:port1"
+}
+
+links {
+  a: "dut5:port2"
+  b: "dut2:port3"
+}

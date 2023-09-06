@@ -1,0 +1,91 @@
+name: "policy"
+nodes: {
+    name: "lemming0"
+    vendor: OPENCONFIG
+    model: "LEMMING"
+    config: {
+        args: "--v=1"
+    }
+}
+nodes: {
+    name: "lemming1"
+    vendor: OPENCONFIG
+    model: "LEMMING"
+    config: {
+        args: "--v=1"
+    }
+}
+nodes: {
+    name: "lemming2"
+    vendor: OPENCONFIG
+    model: "LEMMING"
+    config: {
+        args: "--v=1"
+    }
+}
+nodes: {
+    name: "lemming3"
+    vendor: OPENCONFIG
+    model: "LEMMING"
+    config: {
+        args: "--v=1"
+    }
+}
+nodes: {
+    name: "lemming4"
+    vendor: OPENCONFIG
+    model: "LEMMING"
+    config: {
+        args: "--v=1"
+    }
+}
+nodes: {
+    name: "lemming5"
+    vendor: OPENCONFIG
+    model: "LEMMING"
+    config: {
+        args: "--v=1"
+    }
+}
+links: {
+    a_node: "lemming1"
+    a_int: "eth1"
+    z_node: "lemming2"
+    z_int: "eth1"
+}
+links: {
+    a_node: "lemming2"
+    a_int: "eth2"
+    z_node: "lemming3"
+    z_int: "eth1"
+}
+links: {
+    a_node: "lemming4"
+    a_int: "eth1"
+    z_node: "lemming5"
+    z_int: "eth1"
+}
+links: {
+    a_node: "lemming5"
+    a_int: "eth2"
+    z_node: "lemming2"
+    z_int: "eth3"
+}
+links: {
+    a_node: "lemming0"
+    a_int: "eth1"
+    z_node: "lemming1"
+    z_int: "eth9"
+}
+links: {
+    a_node: "lemming0"
+    a_int: "eth2"
+    z_node: "lemming4"
+    z_int: "eth9"
+}
+links: {
+    a_node: "lemming0"
+    a_int: "eth3"
+    z_node: "lemming5"
+    z_int: "eth9"
+}
