@@ -7,67 +7,50 @@ import "dataplane/standalone/proto/common.proto";
 
 option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto";
 
-
 enum L2mcEntryAttr {
-	L2MC_ENTRY_ATTR_UNSPECIFIED = 0;
-	L2MC_ENTRY_ATTR_PACKET_ACTION = 1;
-	L2MC_ENTRY_ATTR_OUTPUT_GROUP_ID = 2;
+  L2MC_ENTRY_ATTR_UNSPECIFIED = 0;
+  L2MC_ENTRY_ATTR_PACKET_ACTION = 1;
+  L2MC_ENTRY_ATTR_OUTPUT_GROUP_ID = 2;
 }
 
 message CreateL2mcEntryRequest {
-	L2mcEntry entry = 1;
-	
-	PacketAction packet_action = 2;
-	uint64 output_group_id = 3;
-	
+  L2mcEntry entry = 1;
+  optional PacketAction packet_action = 2 [(attr_enum_value) = 1];
+  optional uint64 output_group_id = 3 [(attr_enum_value) = 2];
 }
 
-message CreateL2mcEntryResponse {
-	
-	
-}
+message CreateL2mcEntryResponse {}
 
 message RemoveL2mcEntryRequest {
-	L2mcEntry entry = 1;
-	
-	
+  L2mcEntry entry = 1;
 }
 
-message RemoveL2mcEntryResponse {
-	
-	
-}
+message RemoveL2mcEntryResponse {}
 
 message SetL2mcEntryAttributeRequest {
-	L2mcEntry entry = 1;
-	oneof attr {
-	PacketAction packet_action = 2;
-	uint64 output_group_id = 3;
-	}
+  L2mcEntry entry = 1;
+  optional PacketAction packet_action = 2 [(attr_enum_value) = 1];
+  optional uint64 output_group_id = 3 [(attr_enum_value) = 2];
 }
 
-message SetL2mcEntryAttributeResponse {
-	
-	
-}
+message SetL2mcEntryAttributeResponse {}
 
 message GetL2mcEntryAttributeRequest {
-	L2mcEntry entry = 1;
-	repeated L2mcEntryAttr attr_type = 2;
-	
-	
+  L2mcEntry entry = 1;
+  repeated L2mcEntryAttr attr_type = 2;
 }
 
 message GetL2mcEntryAttributeResponse {
-	repeated L2mcEntryAttribute attr = 1;
-	
-	
+  L2mcEntryAttribute attr = 1;
 }
 
-
 service L2mc {
-	rpc CreateL2mcEntry (CreateL2mcEntryRequest) returns (CreateL2mcEntryResponse) {}
-	rpc RemoveL2mcEntry (RemoveL2mcEntryRequest) returns (RemoveL2mcEntryResponse) {}
-	rpc SetL2mcEntryAttribute (SetL2mcEntryAttributeRequest) returns (SetL2mcEntryAttributeResponse) {}
-	rpc GetL2mcEntryAttribute (GetL2mcEntryAttributeRequest) returns (GetL2mcEntryAttributeResponse) {}
+  rpc CreateL2mcEntry(CreateL2mcEntryRequest)
+      returns (CreateL2mcEntryResponse) {}
+  rpc RemoveL2mcEntry(RemoveL2mcEntryRequest)
+      returns (RemoveL2mcEntryResponse) {}
+  rpc SetL2mcEntryAttribute(SetL2mcEntryAttributeRequest)
+      returns (SetL2mcEntryAttributeResponse) {}
+  rpc GetL2mcEntryAttribute(GetL2mcEntryAttributeRequest)
+      returns (GetL2mcEntryAttributeResponse) {}
 }

@@ -7,52 +7,38 @@ import "dataplane/standalone/proto/common.proto";
 
 option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto";
 
-
 enum CounterAttr {
-	COUNTER_ATTR_UNSPECIFIED = 0;
-	COUNTER_ATTR_TYPE = 1;
+  COUNTER_ATTR_UNSPECIFIED = 0;
+  COUNTER_ATTR_TYPE = 1;
 }
 
 message CreateCounterRequest {
-	uint64 switch = 1;
-	
-	CounterType type = 2;
-	
+  uint64 switch = 1;
+  optional CounterType type = 2 [(attr_enum_value) = 1];
 }
 
 message CreateCounterResponse {
-	uint64 oid = 1;
-	
-	
+  uint64 oid = 1;
 }
 
 message RemoveCounterRequest {
-	uint64 oid = 1;
-	
-	
+  uint64 oid = 1;
 }
 
-message RemoveCounterResponse {
-	
-	
-}
+message RemoveCounterResponse {}
 
 message GetCounterAttributeRequest {
-	uint64 oid = 1;
-	repeated CounterAttr attr_type = 2;
-	
-	
+  uint64 oid = 1;
+  repeated CounterAttr attr_type = 2;
 }
 
 message GetCounterAttributeResponse {
-	repeated CounterAttribute attr = 1;
-	
-	
+  CounterAttribute attr = 1;
 }
 
-
 service Counter {
-	rpc CreateCounter (CreateCounterRequest) returns (CreateCounterResponse) {}
-	rpc RemoveCounter (RemoveCounterRequest) returns (RemoveCounterResponse) {}
-	rpc GetCounterAttribute (GetCounterAttributeRequest) returns (GetCounterAttributeResponse) {}
+  rpc CreateCounter(CreateCounterRequest) returns (CreateCounterResponse) {}
+  rpc RemoveCounter(RemoveCounterRequest) returns (RemoveCounterResponse) {}
+  rpc GetCounterAttribute(GetCounterAttributeRequest)
+      returns (GetCounterAttributeResponse) {}
 }

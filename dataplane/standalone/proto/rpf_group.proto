@@ -7,99 +7,75 @@ import "dataplane/standalone/proto/common.proto";
 
 option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto";
 
-
 enum RpfGroupAttr {
-	RPF_GROUP_ATTR_UNSPECIFIED = 0;
-	RPF_GROUP_ATTR_RPF_INTERFACE_COUNT = 1;
-	RPF_GROUP_ATTR_RPF_MEMBER_LIST = 2;
+  RPF_GROUP_ATTR_UNSPECIFIED = 0;
+  RPF_GROUP_ATTR_RPF_INTERFACE_COUNT = 1;
+  RPF_GROUP_ATTR_RPF_MEMBER_LIST = 2;
 }
 
 enum RpfGroupMemberAttr {
-	RPF_GROUP_MEMBER_ATTR_UNSPECIFIED = 0;
-	RPF_GROUP_MEMBER_ATTR_RPF_GROUP_ID = 1;
-	RPF_GROUP_MEMBER_ATTR_RPF_INTERFACE_ID = 2;
+  RPF_GROUP_MEMBER_ATTR_UNSPECIFIED = 0;
+  RPF_GROUP_MEMBER_ATTR_RPF_GROUP_ID = 1;
+  RPF_GROUP_MEMBER_ATTR_RPF_INTERFACE_ID = 2;
 }
 
 message CreateRpfGroupRequest {
-	uint64 switch = 1;
-	
-	
+  uint64 switch = 1;
 }
 
 message CreateRpfGroupResponse {
-	uint64 oid = 1;
-	
-	
+  uint64 oid = 1;
 }
 
 message RemoveRpfGroupRequest {
-	uint64 oid = 1;
-	
-	
+  uint64 oid = 1;
 }
 
-message RemoveRpfGroupResponse {
-	
-	
-}
+message RemoveRpfGroupResponse {}
 
 message GetRpfGroupAttributeRequest {
-	uint64 oid = 1;
-	repeated RpfGroupAttr attr_type = 2;
-	
-	
+  uint64 oid = 1;
+  repeated RpfGroupAttr attr_type = 2;
 }
 
 message GetRpfGroupAttributeResponse {
-	repeated RpfGroupAttribute attr = 1;
-	
-	
+  RpfGroupAttribute attr = 1;
 }
 
 message CreateRpfGroupMemberRequest {
-	uint64 switch = 1;
-	
-	uint64 rpf_group_id = 2;
-	uint64 rpf_interface_id = 3;
-	
+  uint64 switch = 1;
+  optional uint64 rpf_group_id = 2 [(attr_enum_value) = 1];
+  optional uint64 rpf_interface_id = 3 [(attr_enum_value) = 2];
 }
 
 message CreateRpfGroupMemberResponse {
-	uint64 oid = 1;
-	
-	
+  uint64 oid = 1;
 }
 
 message RemoveRpfGroupMemberRequest {
-	uint64 oid = 1;
-	
-	
+  uint64 oid = 1;
 }
 
-message RemoveRpfGroupMemberResponse {
-	
-	
-}
+message RemoveRpfGroupMemberResponse {}
 
 message GetRpfGroupMemberAttributeRequest {
-	uint64 oid = 1;
-	repeated RpfGroupMemberAttr attr_type = 2;
-	
-	
+  uint64 oid = 1;
+  repeated RpfGroupMemberAttr attr_type = 2;
 }
 
 message GetRpfGroupMemberAttributeResponse {
-	repeated RpfGroupMemberAttribute attr = 1;
-	
-	
+  RpfGroupMemberAttribute attr = 1;
 }
 
-
 service RpfGroup {
-	rpc CreateRpfGroup (CreateRpfGroupRequest) returns (CreateRpfGroupResponse) {}
-	rpc RemoveRpfGroup (RemoveRpfGroupRequest) returns (RemoveRpfGroupResponse) {}
-	rpc GetRpfGroupAttribute (GetRpfGroupAttributeRequest) returns (GetRpfGroupAttributeResponse) {}
-	rpc CreateRpfGroupMember (CreateRpfGroupMemberRequest) returns (CreateRpfGroupMemberResponse) {}
-	rpc RemoveRpfGroupMember (RemoveRpfGroupMemberRequest) returns (RemoveRpfGroupMemberResponse) {}
-	rpc GetRpfGroupMemberAttribute (GetRpfGroupMemberAttributeRequest) returns (GetRpfGroupMemberAttributeResponse) {}
+  rpc CreateRpfGroup(CreateRpfGroupRequest) returns (CreateRpfGroupResponse) {}
+  rpc RemoveRpfGroup(RemoveRpfGroupRequest) returns (RemoveRpfGroupResponse) {}
+  rpc GetRpfGroupAttribute(GetRpfGroupAttributeRequest)
+      returns (GetRpfGroupAttributeResponse) {}
+  rpc CreateRpfGroupMember(CreateRpfGroupMemberRequest)
+      returns (CreateRpfGroupMemberResponse) {}
+  rpc RemoveRpfGroupMember(RemoveRpfGroupMemberRequest)
+      returns (RemoveRpfGroupMemberResponse) {}
+  rpc GetRpfGroupMemberAttribute(GetRpfGroupMemberAttributeRequest)
+      returns (GetRpfGroupMemberAttributeResponse) {}
 }

@@ -1,3 +1,5 @@
+
+
 // Copyright 2023 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +18,8 @@
 
 #include <glog/logging.h>
 
+#include "dataplane/standalone/proto/common.pb.h"
+#include "dataplane/standalone/proto/ipmc_group.pb.h"
 #include "dataplane/standalone/sai/common.h"
 #include "dataplane/standalone/sai/entry.h"
 
@@ -34,28 +38,83 @@ sai_status_t l_create_ipmc_group(sai_object_id_t *ipmc_group_id,
                                  sai_object_id_t switch_id, uint32_t attr_count,
                                  const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-  return translator->create(SAI_OBJECT_TYPE_IPMC_GROUP, ipmc_group_id,
-                            switch_id, attr_count, attr_list);
+
+  lemming::dataplane::sai::CreateIpmcGroupRequest req;
+  lemming::dataplane::sai::CreateIpmcGroupResponse resp;
+  grpc::ClientContext context;
+  req.set_switch_(switch_id);
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {}
+  }
+  grpc::Status status = ipmc_group->CreateIpmcGroup(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  *ipmc_group_id = resp.oid();
+
+  return SAI_STATUS_SUCCESS;
 }
 
 sai_status_t l_remove_ipmc_group(sai_object_id_t ipmc_group_id) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-  return translator->remove(SAI_OBJECT_TYPE_IPMC_GROUP, ipmc_group_id);
+
+  lemming::dataplane::sai::RemoveIpmcGroupRequest req;
+  lemming::dataplane::sai::RemoveIpmcGroupResponse resp;
+  grpc::ClientContext context;
+  req.set_oid(ipmc_group_id);
+
+  grpc::Status status = ipmc_group->RemoveIpmcGroup(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+
+  return SAI_STATUS_SUCCESS;
 }
 
 sai_status_t l_set_ipmc_group_attribute(sai_object_id_t ipmc_group_id,
                                         const sai_attribute_t *attr) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-  return translator->set_attribute(SAI_OBJECT_TYPE_IPMC_GROUP, ipmc_group_id,
-                                   attr);
+
+  return SAI_STATUS_SUCCESS;
 }
 
 sai_status_t l_get_ipmc_group_attribute(sai_object_id_t ipmc_group_id,
                                         uint32_t attr_count,
                                         sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-  return translator->get_attribute(SAI_OBJECT_TYPE_IPMC_GROUP, ipmc_group_id,
-                                   attr_count, attr_list);
+
+  lemming::dataplane::sai::GetIpmcGroupAttributeRequest req;
+  lemming::dataplane::sai::GetIpmcGroupAttributeResponse resp;
+  grpc::ClientContext context;
+
+  req.set_oid(ipmc_group_id);
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    req.add_attr_type(static_cast<lemming::dataplane::sai::IpmcGroupAttr>(
+        attr_list[i].id + 1));
+  }
+  grpc::Status status = ipmc_group->GetIpmcGroupAttribute(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_IPMC_GROUP_ATTR_IPMC_OUTPUT_COUNT:
+        attr_list[i].value.u32 = resp.attr().ipmc_output_count();
+        break;
+      case SAI_IPMC_GROUP_ATTR_IPMC_MEMBER_LIST:
+        copy_list(attr_list[i].value.objlist.list,
+                  resp.attr().ipmc_member_list(),
+                  attr_list[i].value.objlist.count);
+        break;
+    }
+  }
+
+  return SAI_STATUS_SUCCESS;
 }
 
 sai_status_t l_create_ipmc_group_member(sai_object_id_t *ipmc_group_member_id,
@@ -63,28 +122,87 @@ sai_status_t l_create_ipmc_group_member(sai_object_id_t *ipmc_group_member_id,
                                         uint32_t attr_count,
                                         const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-  return translator->create(SAI_OBJECT_TYPE_IPMC_GROUP_MEMBER,
-                            ipmc_group_member_id, switch_id, attr_count,
-                            attr_list);
+
+  lemming::dataplane::sai::CreateIpmcGroupMemberRequest req;
+  lemming::dataplane::sai::CreateIpmcGroupMemberResponse resp;
+  grpc::ClientContext context;
+  req.set_switch_(switch_id);
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_IPMC_GROUP_MEMBER_ATTR_IPMC_GROUP_ID:
+        req.set_ipmc_group_id(attr_list[i].value.oid);
+        break;
+      case SAI_IPMC_GROUP_MEMBER_ATTR_IPMC_OUTPUT_ID:
+        req.set_ipmc_output_id(attr_list[i].value.oid);
+        break;
+    }
+  }
+  grpc::Status status = ipmc_group->CreateIpmcGroupMember(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  *ipmc_group_member_id = resp.oid();
+
+  return SAI_STATUS_SUCCESS;
 }
 
 sai_status_t l_remove_ipmc_group_member(sai_object_id_t ipmc_group_member_id) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-  return translator->remove(SAI_OBJECT_TYPE_IPMC_GROUP_MEMBER,
-                            ipmc_group_member_id);
+
+  lemming::dataplane::sai::RemoveIpmcGroupMemberRequest req;
+  lemming::dataplane::sai::RemoveIpmcGroupMemberResponse resp;
+  grpc::ClientContext context;
+  req.set_oid(ipmc_group_member_id);
+
+  grpc::Status status = ipmc_group->RemoveIpmcGroupMember(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+
+  return SAI_STATUS_SUCCESS;
 }
 
 sai_status_t l_set_ipmc_group_member_attribute(
     sai_object_id_t ipmc_group_member_id, const sai_attribute_t *attr) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-  return translator->set_attribute(SAI_OBJECT_TYPE_IPMC_GROUP_MEMBER,
-                                   ipmc_group_member_id, attr);
+
+  return SAI_STATUS_SUCCESS;
 }
 
 sai_status_t l_get_ipmc_group_member_attribute(
     sai_object_id_t ipmc_group_member_id, uint32_t attr_count,
     sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-  return translator->get_attribute(SAI_OBJECT_TYPE_IPMC_GROUP_MEMBER,
-                                   ipmc_group_member_id, attr_count, attr_list);
+
+  lemming::dataplane::sai::GetIpmcGroupMemberAttributeRequest req;
+  lemming::dataplane::sai::GetIpmcGroupMemberAttributeResponse resp;
+  grpc::ClientContext context;
+
+  req.set_oid(ipmc_group_member_id);
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    req.add_attr_type(static_cast<lemming::dataplane::sai::IpmcGroupMemberAttr>(
+        attr_list[i].id + 1));
+  }
+  grpc::Status status =
+      ipmc_group->GetIpmcGroupMemberAttribute(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_IPMC_GROUP_MEMBER_ATTR_IPMC_GROUP_ID:
+        attr_list[i].value.oid = resp.attr().ipmc_group_id();
+        break;
+      case SAI_IPMC_GROUP_MEMBER_ATTR_IPMC_OUTPUT_ID:
+        attr_list[i].value.oid = resp.attr().ipmc_output_id();
+        break;
+    }
+  }
+
+  return SAI_STATUS_SUCCESS;
 }

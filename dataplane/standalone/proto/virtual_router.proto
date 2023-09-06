@@ -7,83 +7,73 @@ import "dataplane/standalone/proto/common.proto";
 
 option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto";
 
-
 enum VirtualRouterAttr {
-	VIRTUAL_ROUTER_ATTR_UNSPECIFIED = 0;
-	VIRTUAL_ROUTER_ATTR_ADMIN_V4_STATE = 1;
-	VIRTUAL_ROUTER_ATTR_ADMIN_V6_STATE = 2;
-	VIRTUAL_ROUTER_ATTR_SRC_MAC_ADDRESS = 3;
-	VIRTUAL_ROUTER_ATTR_VIOLATION_TTL1_PACKET_ACTION = 4;
-	VIRTUAL_ROUTER_ATTR_VIOLATION_IP_OPTIONS_PACKET_ACTION = 5;
-	VIRTUAL_ROUTER_ATTR_UNKNOWN_L3_MULTICAST_PACKET_ACTION = 6;
-	VIRTUAL_ROUTER_ATTR_LABEL = 7;
+  VIRTUAL_ROUTER_ATTR_UNSPECIFIED = 0;
+  VIRTUAL_ROUTER_ATTR_ADMIN_V4_STATE = 1;
+  VIRTUAL_ROUTER_ATTR_ADMIN_V6_STATE = 2;
+  VIRTUAL_ROUTER_ATTR_SRC_MAC_ADDRESS = 3;
+  VIRTUAL_ROUTER_ATTR_VIOLATION_TTL1_PACKET_ACTION = 4;
+  VIRTUAL_ROUTER_ATTR_VIOLATION_IP_OPTIONS_PACKET_ACTION = 5;
+  VIRTUAL_ROUTER_ATTR_UNKNOWN_L3_MULTICAST_PACKET_ACTION = 6;
+  VIRTUAL_ROUTER_ATTR_LABEL = 7;
 }
 
 message CreateVirtualRouterRequest {
-	uint64 switch = 1;
-	
-	bool admin_v4_state = 2;
-	bool admin_v6_state = 3;
-	bytes src_mac_address = 4;
-	PacketAction violation_ttl1_packet_action = 5;
-	PacketAction violation_ip_options_packet_action = 6;
-	PacketAction unknown_l3_multicast_packet_action = 7;
-	bytes label = 8;
-	
+  uint64 switch = 1;
+  optional bool admin_v4_state = 2 [(attr_enum_value) = 1];
+  optional bool admin_v6_state = 3 [(attr_enum_value) = 2];
+  optional bytes src_mac_address = 4 [(attr_enum_value) = 3];
+  optional PacketAction violation_ttl1_packet_action = 5
+      [(attr_enum_value) = 4];
+  optional PacketAction violation_ip_options_packet_action = 6
+      [(attr_enum_value) = 5];
+  optional PacketAction unknown_l3_multicast_packet_action = 7
+      [(attr_enum_value) = 6];
+  optional bytes label = 8 [(attr_enum_value) = 7];
 }
 
 message CreateVirtualRouterResponse {
-	uint64 oid = 1;
-	
-	
+  uint64 oid = 1;
 }
 
 message RemoveVirtualRouterRequest {
-	uint64 oid = 1;
-	
-	
+  uint64 oid = 1;
 }
 
-message RemoveVirtualRouterResponse {
-	
-	
-}
+message RemoveVirtualRouterResponse {}
 
 message SetVirtualRouterAttributeRequest {
-	uint64 oid = 1;
-	oneof attr {
-	bool admin_v4_state = 2;
-	bool admin_v6_state = 3;
-	bytes src_mac_address = 4;
-	PacketAction violation_ttl1_packet_action = 5;
-	PacketAction violation_ip_options_packet_action = 6;
-	PacketAction unknown_l3_multicast_packet_action = 7;
-	bytes label = 8;
-	}
+  uint64 oid = 1;
+  optional bool admin_v4_state = 2 [(attr_enum_value) = 1];
+  optional bool admin_v6_state = 3 [(attr_enum_value) = 2];
+  optional bytes src_mac_address = 4 [(attr_enum_value) = 3];
+  optional PacketAction violation_ttl1_packet_action = 5
+      [(attr_enum_value) = 4];
+  optional PacketAction violation_ip_options_packet_action = 6
+      [(attr_enum_value) = 5];
+  optional PacketAction unknown_l3_multicast_packet_action = 7
+      [(attr_enum_value) = 6];
+  optional bytes label = 8 [(attr_enum_value) = 7];
 }
 
-message SetVirtualRouterAttributeResponse {
-	
-	
-}
+message SetVirtualRouterAttributeResponse {}
 
 message GetVirtualRouterAttributeRequest {
-	uint64 oid = 1;
-	repeated VirtualRouterAttr attr_type = 2;
-	
-	
+  uint64 oid = 1;
+  repeated VirtualRouterAttr attr_type = 2;
 }
 
 message GetVirtualRouterAttributeResponse {
-	repeated VirtualRouterAttribute attr = 1;
-	
-	
+  VirtualRouterAttribute attr = 1;
 }
 
-
 service VirtualRouter {
-	rpc CreateVirtualRouter (CreateVirtualRouterRequest) returns (CreateVirtualRouterResponse) {}
-	rpc RemoveVirtualRouter (RemoveVirtualRouterRequest) returns (RemoveVirtualRouterResponse) {}
-	rpc SetVirtualRouterAttribute (SetVirtualRouterAttributeRequest) returns (SetVirtualRouterAttributeResponse) {}
-	rpc GetVirtualRouterAttribute (GetVirtualRouterAttributeRequest) returns (GetVirtualRouterAttributeResponse) {}
+  rpc CreateVirtualRouter(CreateVirtualRouterRequest)
+      returns (CreateVirtualRouterResponse) {}
+  rpc RemoveVirtualRouter(RemoveVirtualRouterRequest)
+      returns (RemoveVirtualRouterResponse) {}
+  rpc SetVirtualRouterAttribute(SetVirtualRouterAttributeRequest)
+      returns (SetVirtualRouterAttributeResponse) {}
+  rpc GetVirtualRouterAttribute(GetVirtualRouterAttributeRequest)
+      returns (GetVirtualRouterAttributeResponse) {}
 }
