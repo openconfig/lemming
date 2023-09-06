@@ -118,7 +118,7 @@ func createCCData(meta *saiast.FuncMetadata, apiName string, sai *saiast.SAIAPI,
 		}
 		for _, attr := range info.Attrs[meta.TypeName].CreateFields {
 			name := sanitizeProtoName(attr.MemberName)
-			pFunc, arg, err := protoFieldSetter(attr.SaiType, name, "attr_list[i].value", info, false)
+			pFunc, arg, err := protoFieldSetter(attr.SaiType, name, "attr_list[i].value", info)
 			if err != nil {
 				fmt.Println("skipping due to error: ", err)
 				continue
@@ -132,7 +132,7 @@ func createCCData(meta *saiast.FuncMetadata, apiName string, sai *saiast.SAIAPI,
 	case "get_attribute":
 		tf.AttrSwitch = &AttrSwitch{
 			Var:      "attr_list[i].id",
-			ProtoVar: "resp.attr(i)",
+			ProtoVar: "resp.attr()",
 		}
 		for _, attr := range info.Attrs[meta.TypeName].ReadFields {
 			name := sanitizeProtoName(attr.MemberName)
@@ -151,7 +151,7 @@ func createCCData(meta *saiast.FuncMetadata, apiName string, sai *saiast.SAIAPI,
 		}
 		for _, attr := range info.Attrs[meta.TypeName].SetFields {
 			name := sanitizeProtoName(attr.MemberName)
-			pFunc, arg, err := protoFieldSetter(attr.SaiType, name, "attr->value", info, true)
+			pFunc, arg, err := protoFieldSetter(attr.SaiType, name, "attr->value", info)
 			if err != nil {
 				fmt.Println("skipping due to error: ", err)
 				continue
@@ -270,10 +270,10 @@ var typeToUnionAccessor = map[string]*unionAccessor{
 	},
 }
 
-func protoFieldSetter(saiType, protoField, varName string, info *docparser.SAIInfo, inOneof bool) (string, string, error) {
+func protoFieldSetter(saiType, protoField, varName string, info *docparser.SAIInfo) (string, string, error) {
 	setFn := fmt.Sprintf("set_%s", protoField)
 	if _, ok := info.Enums[saiType]; ok {
-		pType, _, err := protogen.SaiTypeToProtoType(saiType, info, inOneof)
+		pType, _, err := protogen.SaiTypeToProtoType(saiType, info)
 		if err != nil {
 			return "", "", err
 		}
@@ -296,9 +296,6 @@ func protoFieldSetter(saiType, protoField, varName string, info *docparser.SAIIn
 		return setFn, fmt.Sprintf("%s.%s, sizeof(%s.%s)", varName, ua.accessor, varName, ua.accessor), nil
 	case variableSizedArray:
 		setFn = fmt.Sprintf("mutable_%s()->Add", protoField)
-		if inOneof {
-			setFn = fmt.Sprintf("mutable_%s()->mutable_list()->Add", protoField)
-		}
 		return setFn, fmt.Sprintf("%s.%s.list, %s.%s.list + %s.%s.count", varName, ua.accessor, varName, ua.accessor, varName, ua.accessor), nil
 	}
 	return "", "", fmt.Errorf("unknown accessor type %q", ua.aType)
@@ -338,7 +335,7 @@ func protoFieldGetter(saiType, protoField, varName string, info *docparser.SAIIn
 		return smt, nil
 	case variableSizedArray:
 		smt.CopyConvertFunc = "copy_list"
-		smt.CopyConvertFuncArgs = fmt.Sprintf(".list(), %s.count", smt.Var)
+		smt.CopyConvertFuncArgs = fmt.Sprintf(", %s.count", smt.Var)
 		smt.Var += ".list"
 		return smt, nil
 	}

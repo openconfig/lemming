@@ -31,9 +31,13 @@ syntax = "proto3";
 package lemming.dataplane.sai;
 	
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/descriptor.proto";
 
 option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto";
 
+extend google.protobuf.FieldOptions {
+	optional int32 attr_enum_value = 50000;
+}
 
 message AclActionData {
 	bool enable = 1;
@@ -70,6 +74,10 @@ message AclFieldData {
 		bytes data_ip = 11;
 		Uint64List data_list = 12;
 	};
+}
+
+message Uint64List {
+	repeated uint64 list = 1;
 }
 
 message ACLResource {
@@ -310,17 +318,6 @@ enum Foo {
 `,
 		},
 	}, {
-		desc:  "common list - unknown type",
-		inAst: &saiast.SAIAPI{},
-		inInfo: &docparser.SAIInfo{
-			Attrs: map[string]*docparser.Attr{
-				"FOO": {
-					ReadFields: []*docparser.AttrTypeName{{SaiType: "foo"}},
-				},
-			},
-		},
-		wantErr: "unknown sai type: foo",
-	}, {
 		desc:  "common list and attribute",
 		inAst: &saiast.SAIAPI{},
 		inInfo: &docparser.SAIInfo{
@@ -338,13 +335,9 @@ enum Foo {
 		},
 		want: map[string]string{
 			"common.proto": commonType + `
-message Uint32List {
-	repeated uint32 list = 1;
-}
-
 message FooAttribute {
-	Uint32List sample_list = 1;
-	uint32 sample_int = 2;
+	repeated uint32 sample_list = 1 [(attr_enum_value) = 1];
+	optional uint32 sample_int = 2 [(attr_enum_value) = 2];
 }
 `,
 		},
@@ -402,8 +395,8 @@ message FooAttribute {
 		want: map[string]string{
 			"common.proto": commonType + `
 message FooAttribute {
-	int32 sample_int = 1;
-	uint32 sample_uint = 2;
+	optional int32 sample_int = 1 [(attr_enum_value) = 1];
+	optional uint32 sample_uint = 2 [(attr_enum_value) = 2];
 }
 `,
 			"sample.proto": `
@@ -423,51 +416,35 @@ enum FooAttr {
 }
 
 message CreateFooRequest {
-	
-	uint32 sample_uint = 1;
-	
+	optional uint32 sample_uint = 1;
 }
 
 message CreateFooResponse {
 	uint64 oid = 1;
-	
-	
 }
 
 message RemoveFooRequest {
 	uint64 oid = 1;
-	
-	
 }
 
 message RemoveFooResponse {
-	
-	
 }
 
 message SetFooAttributeRequest {
 	uint64 oid = 1;
-	oneof attr {
-	int32 sample_int = 2;
-	}
+	optional int32 sample_int = 2;
 }
 
 message SetFooAttributeResponse {
-	
-	
 }
 
 message GetFooAttributeRequest {
 	uint64 oid = 1;
 	repeated FooAttr attr_type = 2;
-	
-	
 }
 
 message GetFooAttributeResponse {
-	repeated FooAttribute attr = 1;
-	
-	
+	FooAttribute attr = 1;
 }
 
 
@@ -528,8 +505,8 @@ service Sample {
 		want: map[string]string{
 			"common.proto": commonType + `
 message FooAttribute {
-	int32 sample_int = 1;
-	uint32 sample_uint = 2;
+	optional int32 sample_int = 1 [(attr_enum_value) = 1];
+	optional uint32 sample_uint = 2 [(attr_enum_value) = 2];
 }
 `,
 			"sample.proto": `
@@ -550,39 +527,27 @@ enum FooAttr {
 
 message CreateFooRequest {
 	uint64 switch = 1;
-	
-	uint32 sample_uint = 2;
-	
+	optional uint32 sample_uint = 2;
 }
 
 message CreateFooResponse {
 	uint64 oid = 1;
-	
-	
 }
 
 message RemoveFooRequest {
 	uint64 oid = 1;
-	
-	
 }
 
 message RemoveFooResponse {
-	
-	
 }
 
 message GetFooAttributeRequest {
 	uint64 oid = 1;
 	repeated FooAttr attr_type = 2;
-	
-	
 }
 
 message GetFooAttributeResponse {
-	repeated FooAttribute attr = 1;
-	
-	
+	FooAttribute attr = 1;
 }
 
 

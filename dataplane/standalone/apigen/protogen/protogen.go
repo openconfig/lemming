@@ -110,43 +110,14 @@ func generateCommonTypes(docInfo *docparser.SAIInfo) (string, error) {
 		return nil
 	})
 
-	seenLists := map[string]bool{}
-	// Find all the repeated fields that appear in oneof and generate a list wrapper type.
 	err := rangeInOrder(docInfo.Attrs, func(n string, attr *docparser.Attr) error {
-		for _, f := range attr.ReadFields {
-			msgName, isRepeated, err := SaiTypeToProtoType(f.SaiType, docInfo, true)
-			if err != nil {
-				return err
-			}
-			if !isRepeated {
-				continue
-			}
-			repeatedName, _, err := SaiTypeToProtoType(f.SaiType, docInfo, false)
-			if err != nil {
-				return err
-			}
-			msg := &protoTmplMessage{
-				Name: msgName,
-				Fields: []protoTmplField{{
-					Index:     1,
-					Name:      "list",
-					ProtoType: repeatedName,
-				}},
-			}
-			if _, ok := seenLists[msgName]; !ok {
-				common.Lists = append(common.Lists, msg)
-				seenLists[msgName] = true
-			}
-		}
-		attrFields, err := createAttrs(1, docInfo, attr.ReadFields, true)
+		attrFields, err := createAttrs(1, n, docInfo, attr.ReadFields)
 		if err != nil {
 			return err
 		}
 		common.Lists = append(common.Lists, &protoTmplMessage{
-			Fields:            attrFields,
-			Name:              saiast.TrimSAIName(n, true, false) + "Attribute",
-			AttrsWrapperStart: "oneof {",
-			AttrsWrapperEnd:   "}",
+			Fields: attrFields,
+			Name:   saiast.TrimSAIName(n, true, false) + "Attribute",
 		})
 		return nil
 	})
@@ -204,11 +175,11 @@ func populateTmplDataFromFunc(apis map[string]*protoAPITmplData, docInfo *docpar
 			requestIdx++
 		}
 
-		attrs, err := createAttrs(requestIdx, docInfo, docInfo.Attrs[meta.TypeName].CreateFields, false)
+		attrs, err := createAttrs(requestIdx, meta.TypeName, docInfo, docInfo.Attrs[meta.TypeName].CreateFields)
 		if err != nil {
 			return err
 		}
-		req.Attrs = attrs
+		req.Fields = append(req.Fields, attrs...)
 		if meta.Entry == "" { // Entries don't have id.
 			resp.Fields = append(resp.Fields, idField)
 		}
@@ -218,13 +189,11 @@ func populateTmplDataFromFunc(apis map[string]*protoAPITmplData, docInfo *docpar
 			return nil
 		}
 		req.Fields = append(req.Fields, idField)
-		req.AttrsWrapperStart = "oneof attr {"
-		req.AttrsWrapperEnd = "}"
-		attrs, err := createAttrs(2, docInfo, docInfo.Attrs[meta.TypeName].SetFields, true)
+		attrs, err := createAttrs(2, meta.TypeName, docInfo, docInfo.Attrs[meta.TypeName].SetFields)
 		if err != nil {
 			return err
 		}
-		req.Attrs = attrs
+		req.Fields = append(req.Fields, attrs...)
 	case "get_attribute":
 		req.Fields = append(req.Fields, idField, protoTmplField{
 			ProtoType: "repeated " + strcase.UpperCamelCase(meta.TypeName+" attr"),
@@ -234,7 +203,7 @@ func populateTmplDataFromFunc(apis map[string]*protoAPITmplData, docInfo *docpar
 		resp.Fields = append(resp.Fields, protoTmplField{
 			Index:     1,
 			Name:      "attr",
-			ProtoType: "repeated " + strcase.UpperCamelCase(meta.TypeName+"Attribute"),
+			ProtoType: strcase.UpperCamelCase(meta.TypeName + "Attribute"),
 		})
 
 		// attrEnum is the special emun that describes the possible values can be set/get for the API.
@@ -285,7 +254,7 @@ func populateTmplDataFromFunc(apis map[string]*protoAPITmplData, docInfo *docpar
 	return nil
 }
 
-func createAttrs(startIdx int, xmlInfo *docparser.SAIInfo, attrs []*docparser.AttrTypeName, inOneof bool) ([]protoTmplField, error) {
+func createAttrs(startIdx int, typeName string, xmlInfo *docparser.SAIInfo, attrs []*docparser.AttrTypeName) ([]protoTmplField, error) {
 	fields := []protoTmplField{}
 	for _, attr := range attrs {
 		// Function pointers are implemented as streaming RPCs instead of settable attributes.
@@ -302,11 +271,19 @@ func createAttrs(startIdx int, xmlInfo *docparser.SAIInfo, attrs []*docparser.At
 			Index: startIdx,
 			Name:  name,
 		}
-		typ, _, err := SaiTypeToProtoType(attr.SaiType, xmlInfo, inOneof)
+		typ, repeated, err := SaiTypeToProtoType(attr.SaiType, xmlInfo)
 		if err != nil {
 			return nil, err
 		}
+		for i, val := range xmlInfo.Attrs[typeName].ReadFields {
+			if val == attr {
+				field.Option = fmt.Sprintf("[(attr_enum_value) = %d]", i+1)
+			}
+		}
 		field.ProtoType = typ
+		if !repeated {
+			field.ProtoType = "optional " + typ
+		}
 		fields = append(fields, field)
 		startIdx++
 	}
@@ -334,13 +311,8 @@ enum {{ .Name }} {
 {{ range .Messages }}
 message {{ .Name }} {
 	{{- range .Fields }}
-	{{ .ProtoType }} {{ .Name }} = {{ .Index }};
+	{{ .ProtoType }} {{ .Name }} = {{ .Index }} {{- if .Option -}} {{ .Option }} {{- end -}};
 	{{- end }}
-	{{ .AttrsWrapperStart -}}
-	{{- range .Attrs }}
-	{{ .ProtoType }} {{ .Name }} = {{ .Index }};
-	{{- end }}
-	{{ .AttrsWrapperEnd }}
 }
 {{ end }}
 
@@ -356,9 +328,13 @@ syntax = "proto3";
 package lemming.dataplane.sai;
 	
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/descriptor.proto";
 
 option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto";
 
+extend google.protobuf.FieldOptions {
+	optional int32 attr_enum_value = 50000;
+}
 {{ range .Messages }}
 {{ . }}
 {{ end -}}
@@ -374,7 +350,7 @@ enum {{ .Name }} {
 {{- range .Lists }}
 message {{ .Name }} {
 	{{- range .Fields }}
-	{{ .ProtoType }} {{ .Name }} = {{ .Index }};
+	{{ .ProtoType }} {{ .Name }} = {{ .Index }} {{ if .Option -}} {{ .Option }} {{- end -}};
 	{{- end }}
 }
 {{ end -}}
@@ -407,17 +383,15 @@ type protoEnumValues struct {
 }
 
 type protoTmplMessage struct {
-	Name              string
-	AttrsWrapperStart string
-	AttrsWrapperEnd   string
-	Fields            []protoTmplField
-	Attrs             []protoTmplField
+	Name   string
+	Fields []protoTmplField
 }
 
 type protoTmplField struct {
 	ProtoType string
 	Name      string
 	Index     int
+	Option    string
 }
 
 type protoRPC struct {
@@ -661,6 +635,10 @@ message QOSMap {
 		bytes data_ip = 11;
 		Uint64List data_list = 12;
 	};
+}
+
+message Uint64List {
+	repeated uint64 list = 1;
 }`,
 		},
 		"sai_acl_action_data_t": {
@@ -924,35 +902,29 @@ message FdbEventNotificationData {
 // saiTypeToProtoTypeCompound handles compound sai types (eg list of enums).
 // The map key contains the base type (eg list) and func accepts the subtype (eg an enum type)
 // and returns the full type string (eg repeated sample_enum).
-var saiTypeToProtoTypeCompound = map[string]func(subType string, xmlInfo *docparser.SAIInfo, inOneof bool) (string, bool){
-	"sai_s32_list_t": func(subType string, xmlInfo *docparser.SAIInfo, inOneof bool) (string, bool) {
+var saiTypeToProtoTypeCompound = map[string]func(subType string, xmlInfo *docparser.SAIInfo) (string, bool){
+	"sai_s32_list_t": func(subType string, xmlInfo *docparser.SAIInfo) (string, bool) {
 		if _, ok := xmlInfo.Enums[subType]; !ok {
 			return "", false
 		}
-		if inOneof {
-			return saiast.TrimSAIName(subType, true, false) + "List", true
-		}
 		return "repeated " + saiast.TrimSAIName(subType, true, false), true
 	},
-	"sai_acl_field_data_t": func(next string, xmlInfo *docparser.SAIInfo, inOneof bool) (string, bool) {
+	"sai_acl_field_data_t": func(next string, xmlInfo *docparser.SAIInfo) (string, bool) {
 		return "AclFieldData", false
 	},
-	"sai_acl_action_data_t": func(next string, xmlInfo *docparser.SAIInfo, inOneof bool) (string, bool) {
+	"sai_acl_action_data_t": func(next string, xmlInfo *docparser.SAIInfo) (string, bool) {
 		return "AclActionData", false
 	},
-	"sai_pointer_t": func(next string, xmlInfo *docparser.SAIInfo, inOneof bool) (string, bool) { return "-", false }, // Noop, these are special cases.
+	"sai_pointer_t": func(next string, xmlInfo *docparser.SAIInfo) (string, bool) { return "-", false }, // Noop, these are special cases.
 }
 
 // saiTypeToProtoType returns the protobuf type string for a SAI type.
 // example: sai_u8_list_t -> repeated uint32
-func SaiTypeToProtoType(saiType string, xmlInfo *docparser.SAIInfo, inOneof bool) (string, bool, error) {
+func SaiTypeToProtoType(saiType string, xmlInfo *docparser.SAIInfo) (string, bool, error) {
 	saiType = strings.TrimPrefix(saiType, "const ")
 
 	if pt, ok := saiTypeToProto[saiType]; ok {
 		if pt.Repeated {
-			if inOneof {
-				return strcase.UpperCamelCase(pt.ProtoType + " List"), true, nil
-			}
 			return "repeated " + pt.ProtoType, true, nil
 		}
 		return pt.ProtoType, false, nil
@@ -966,7 +938,7 @@ func SaiTypeToProtoType(saiType string, xmlInfo *docparser.SAIInfo, inOneof bool
 		if !ok {
 			return "", false, fmt.Errorf("unknown sai type: %v", saiType)
 		}
-		name, isRepeated := fn(splits[1], xmlInfo, inOneof)
+		name, isRepeated := fn(splits[1], xmlInfo)
 		return name, isRepeated, nil
 	}
 
