@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package attrmgr contains an SAI attribute key/value store.
+// Package attrmgr contains a SAI attribute key/value store.
+// Each object has a set of attributes: a map of attribute id (enum value) to value (a number of different types).
+// Attributes are set using Create and Set RPCs and retrieved using Get RPCs.
 package attrmgr
 
 import (
 	"context"
 	"fmt"
-	"regexp"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -38,6 +39,7 @@ import (
 // AttrMgr stores and retrieve the SAI attributes.
 type AttrMgr struct {
 	attrsMu sync.RWMutex
+	// attrs is a map of object id (string) to a map of attributes (key: attr id, some enum value).
 	attrs   map[string]map[int32]protoreflect.Value
 	nextOid atomic.Uint64
 }
@@ -58,11 +60,6 @@ func (mgr *AttrMgr) set(id string, attr int32, val protoreflect.Value) {
 	}
 	mgr.attrs[id][attr] = val
 }
-
-var (
-	editRPC = regexp.MustCompile("Create|Set")
-	readRPC = regexp.MustCompile("Get")
-)
 
 const protoNS = "lemming.dataplane.sai"
 
@@ -87,29 +84,38 @@ func (mgr *AttrMgr) Interceptor(ctx context.Context, req any, info *grpc.UnarySe
 		resp = pType.New().Interface()
 	}
 	respMsg := resp.(proto.Message)
-	if res := editRPC.FindString(info.FullMethod); res != "" {
+	if strings.Contains(info.FullMethod, "Create") || strings.Contains(info.FullMethod, "Set") {
 		id, err := mgr.getID(reqMsg, respMsg)
 		if err != nil {
 			return nil, err
 		}
 		mgr.storeAttributes(id, reqMsg)
-	} else if res := readRPC.FindString(info.FullMethod); res != "" {
+	} else if strings.Contains(info.FullMethod, "Get") {
 		id, err := mgr.getID(reqMsg, respMsg)
 		if err != nil {
 			return nil, err
 		}
-		mgr.populateAttributes(id, reqMsg, respMsg)
+		if err := mgr.populateAttributes(id, reqMsg, respMsg); err != nil {
+			return nil, err
+		}
 	}
 	return resp, nil
 }
 
 // populateAttributes fills the resp with the requests attributes.
-func (mgr *AttrMgr) populateAttributes(id string, req, resp proto.Message) {
+// This must called with GetFooAttributeRequest and GetFooAttributeResponse message types.
+func (mgr *AttrMgr) populateAttributes(id string, req, resp proto.Message) error {
 	mgr.attrsMu.RLock()
 	defer mgr.attrsMu.RUnlock()
 
-	attrs := resp.ProtoReflect().Mutable(resp.ProtoReflect().Descriptor().Fields().ByTextName("attr")).Message()
-	reqList := req.ProtoReflect().Get(req.ProtoReflect().Descriptor().Fields().ByTextName("attr_type")).List()
+	attrTypeFd := req.ProtoReflect().Descriptor().Fields().ByTextName("attr_type")
+	attrFd := resp.ProtoReflect().Descriptor().Fields().ByTextName("attr")
+	if attrFd == nil || attrTypeFd == nil {
+		return fmt.Errorf("req and resp didn't have required attributes")
+	}
+
+	attrs := resp.ProtoReflect().Mutable(attrFd).Message()
+	reqList := req.ProtoReflect().Get(attrTypeFd).List()
 
 	for i := 0; i < reqList.Len(); i++ {
 		enumVal := reqList.Get(0).Enum()
@@ -119,6 +125,7 @@ func (mgr *AttrMgr) populateAttributes(id string, req, resp proto.Message) {
 		}
 		attrs.Set(attrs.Descriptor().Fields().ByNumber(protowire.Number(enumVal)), val)
 	}
+	return nil
 }
 
 // storeAttributes stores all the attributes in the message.
