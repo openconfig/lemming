@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package attrmgr contains an SAI attribute key/value store.
 package attrmgr
 
 import (
@@ -140,7 +141,7 @@ func (mgr *AttrMgr) getID(req, resp proto.Message) (string, error) {
 		if fd := msg.ProtoReflect().Descriptor().Fields().ByTextName("oid"); fd != nil {
 			v := msg.ProtoReflect().Get(fd).Uint()
 			if v == 0 {
-				msg.ProtoReflect().Set(fd, protoreflect.ValueOfUint64(uint64(mgr.nextOid.Add(1))))
+				msg.ProtoReflect().Set(fd, protoreflect.ValueOfUint64(mgr.nextOid.Add(1)))
 			}
 			return fmt.Sprint(v), nil
 		}
