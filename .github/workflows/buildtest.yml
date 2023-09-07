@@ -25,28 +25,35 @@ jobs:
       - uses: actions/checkout@v3
       - name: Set up Bazel
         uses: bazelbuild/setup-bazelisk@v2
-      - name: Cache Bazel
-        uses: actions/cache@v3
+      - name: Restore Bazel Cache 
+        uses: actions/cache/restore@v3
         with:
           path: |
             ~/.cache/bazel
-          key: ${{ runner.os }}-bazel-${{ hashFiles('.bazelversion', '.bazelrc', 'WORKSPACE', 'repositories.bzl') }}
+          key: ${{ runner.os }}-bazel-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-bazel-
       - name: Build Lemming
         run: bazel build //...
+      - name: Save Bazel Cache
+        uses: actions/cache/save@v3
+        if: github.ref == 'refs/heads/main'
+        with:
+          path: |
+            ~/.cache/bazel
+          key: ${{ runner.os }}-bazel-${{ github.sha }}
   test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - name: Set up Bazel
         uses: bazelbuild/setup-bazelisk@v2
-      - name: Cache Bazel
+      - name: Restore Bazel Cache 
         uses: actions/cache/restore@v3
         with:
           path: |
             ~/.cache/bazel
-          key: ${{ runner.os }}-bazel-${{ hashFiles('.bazelversion', '.bazelrc', 'WORKSPACE', 'repositories.bzl') }}
+          key: ${{ runner.os }}-bazel-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-bazel-
       - name: Test
@@ -58,3 +65,10 @@ jobs:
           format: lcov
       - run: |
           make test-race
+      - name: Save Bazel Cache
+        uses: actions/cache/save@v3
+        if: github.ref == 'refs/heads/main'
+        with:
+          path: |
+            ~/.cache/bazel
+          key: ${{ runner.os }}-bazel-${{ github.sha }}
