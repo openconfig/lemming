@@ -1045,6 +1045,40 @@ func (e *Engine) GetCounters(ctx context.Context, name string) (*fwdpb.ObjectCou
 	})
 }
 
+// ModifyInterfacePorts adds and removes the ports from an aggregate interface.
+func (e *Engine) ModifyInterfacePorts(ctx context.Context, portID string, addPortIDs, removePortIDs []string) error {
+	upds := []*fwdpb.PortUpdateDesc{}
+	for _, id := range addPortIDs {
+		upds = append(upds, &fwdpb.PortUpdateDesc{
+			Port: &fwdpb.PortUpdateDesc_AggregateAdd{
+				AggregateAdd: &fwdpb.AggregatePortAddMemberUpdateDesc{
+					PortId: &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: id}},
+				},
+			},
+		})
+	}
+	for _, id := range removePortIDs {
+		upds = append(upds, &fwdpb.PortUpdateDesc{
+			Port: &fwdpb.PortUpdateDesc_AggregateDel{
+				AggregateDel: &fwdpb.AggregatePortRemoveMemberUpdateDesc{
+					PortId: &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: id}},
+				},
+			},
+		})
+	}
+	for _, upd := range upds {
+		_, err := e.PortUpdate(ctx, &fwdpb.PortUpdateRequest{
+			ContextId: &fwdpb.ContextId{Id: e.id},
+			PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: portID}},
+			Update:    upd,
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // AddInterface adds an interface to the dataplane.
 // TODO: Handle virtual router, mtu.
 func (e *Engine) AddInterface(ctx context.Context, req *dpb.AddInterfaceRequest) (*dpb.AddInterfaceResponse, error) {
