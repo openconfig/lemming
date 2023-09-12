@@ -7,887 +7,949 @@ import "dataplane/standalone/proto/common.proto";
 
 option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto";
 
-
 enum AclTableAttr {
-	ACL_TABLE_ATTR_UNSPECIFIED = 0;
-	ACL_TABLE_ATTR_ACL_STAGE = 1;
-	ACL_TABLE_ATTR_ACL_BIND_POINT_TYPE_LIST = 2;
-	ACL_TABLE_ATTR_SIZE = 3;
-	ACL_TABLE_ATTR_ACL_ACTION_TYPE_LIST = 4;
-	ACL_TABLE_ATTR_FIELD_SRC_IPV6 = 5;
-	ACL_TABLE_ATTR_FIELD_SRC_IPV6_WORD3 = 6;
-	ACL_TABLE_ATTR_FIELD_SRC_IPV6_WORD2 = 7;
-	ACL_TABLE_ATTR_FIELD_SRC_IPV6_WORD1 = 8;
-	ACL_TABLE_ATTR_FIELD_SRC_IPV6_WORD0 = 9;
-	ACL_TABLE_ATTR_FIELD_DST_IPV6 = 10;
-	ACL_TABLE_ATTR_FIELD_DST_IPV6_WORD3 = 11;
-	ACL_TABLE_ATTR_FIELD_DST_IPV6_WORD2 = 12;
-	ACL_TABLE_ATTR_FIELD_DST_IPV6_WORD1 = 13;
-	ACL_TABLE_ATTR_FIELD_DST_IPV6_WORD0 = 14;
-	ACL_TABLE_ATTR_FIELD_INNER_SRC_IPV6 = 15;
-	ACL_TABLE_ATTR_FIELD_INNER_DST_IPV6 = 16;
-	ACL_TABLE_ATTR_FIELD_SRC_MAC = 17;
-	ACL_TABLE_ATTR_FIELD_DST_MAC = 18;
-	ACL_TABLE_ATTR_FIELD_SRC_IP = 19;
-	ACL_TABLE_ATTR_FIELD_DST_IP = 20;
-	ACL_TABLE_ATTR_FIELD_INNER_SRC_IP = 21;
-	ACL_TABLE_ATTR_FIELD_INNER_DST_IP = 22;
-	ACL_TABLE_ATTR_FIELD_IN_PORTS = 23;
-	ACL_TABLE_ATTR_FIELD_OUT_PORTS = 24;
-	ACL_TABLE_ATTR_FIELD_IN_PORT = 25;
-	ACL_TABLE_ATTR_FIELD_OUT_PORT = 26;
-	ACL_TABLE_ATTR_FIELD_SRC_PORT = 27;
-	ACL_TABLE_ATTR_FIELD_OUTER_VLAN_ID = 28;
-	ACL_TABLE_ATTR_FIELD_OUTER_VLAN_PRI = 29;
-	ACL_TABLE_ATTR_FIELD_OUTER_VLAN_CFI = 30;
-	ACL_TABLE_ATTR_FIELD_INNER_VLAN_ID = 31;
-	ACL_TABLE_ATTR_FIELD_INNER_VLAN_PRI = 32;
-	ACL_TABLE_ATTR_FIELD_INNER_VLAN_CFI = 33;
-	ACL_TABLE_ATTR_FIELD_L4_SRC_PORT = 34;
-	ACL_TABLE_ATTR_FIELD_L4_DST_PORT = 35;
-	ACL_TABLE_ATTR_FIELD_INNER_L4_SRC_PORT = 36;
-	ACL_TABLE_ATTR_FIELD_INNER_L4_DST_PORT = 37;
-	ACL_TABLE_ATTR_FIELD_ETHER_TYPE = 38;
-	ACL_TABLE_ATTR_FIELD_INNER_ETHER_TYPE = 39;
-	ACL_TABLE_ATTR_FIELD_IP_PROTOCOL = 40;
-	ACL_TABLE_ATTR_FIELD_INNER_IP_PROTOCOL = 41;
-	ACL_TABLE_ATTR_FIELD_IP_IDENTIFICATION = 42;
-	ACL_TABLE_ATTR_FIELD_DSCP = 43;
-	ACL_TABLE_ATTR_FIELD_ECN = 44;
-	ACL_TABLE_ATTR_FIELD_TTL = 45;
-	ACL_TABLE_ATTR_FIELD_TOS = 46;
-	ACL_TABLE_ATTR_FIELD_IP_FLAGS = 47;
-	ACL_TABLE_ATTR_FIELD_TCP_FLAGS = 48;
-	ACL_TABLE_ATTR_FIELD_ACL_IP_TYPE = 49;
-	ACL_TABLE_ATTR_FIELD_ACL_IP_FRAG = 50;
-	ACL_TABLE_ATTR_FIELD_IPV6_FLOW_LABEL = 51;
-	ACL_TABLE_ATTR_FIELD_TC = 52;
-	ACL_TABLE_ATTR_FIELD_ICMP_TYPE = 53;
-	ACL_TABLE_ATTR_FIELD_ICMP_CODE = 54;
-	ACL_TABLE_ATTR_FIELD_ICMPV6_TYPE = 55;
-	ACL_TABLE_ATTR_FIELD_ICMPV6_CODE = 56;
-	ACL_TABLE_ATTR_FIELD_PACKET_VLAN = 57;
-	ACL_TABLE_ATTR_FIELD_TUNNEL_VNI = 58;
-	ACL_TABLE_ATTR_FIELD_HAS_VLAN_TAG = 59;
-	ACL_TABLE_ATTR_FIELD_MACSEC_SCI = 60;
-	ACL_TABLE_ATTR_FIELD_MPLS_LABEL0_LABEL = 61;
-	ACL_TABLE_ATTR_FIELD_MPLS_LABEL0_TTL = 62;
-	ACL_TABLE_ATTR_FIELD_MPLS_LABEL0_EXP = 63;
-	ACL_TABLE_ATTR_FIELD_MPLS_LABEL0_BOS = 64;
-	ACL_TABLE_ATTR_FIELD_MPLS_LABEL1_LABEL = 65;
-	ACL_TABLE_ATTR_FIELD_MPLS_LABEL1_TTL = 66;
-	ACL_TABLE_ATTR_FIELD_MPLS_LABEL1_EXP = 67;
-	ACL_TABLE_ATTR_FIELD_MPLS_LABEL1_BOS = 68;
-	ACL_TABLE_ATTR_FIELD_MPLS_LABEL2_LABEL = 69;
-	ACL_TABLE_ATTR_FIELD_MPLS_LABEL2_TTL = 70;
-	ACL_TABLE_ATTR_FIELD_MPLS_LABEL2_EXP = 71;
-	ACL_TABLE_ATTR_FIELD_MPLS_LABEL2_BOS = 72;
-	ACL_TABLE_ATTR_FIELD_MPLS_LABEL3_LABEL = 73;
-	ACL_TABLE_ATTR_FIELD_MPLS_LABEL3_TTL = 74;
-	ACL_TABLE_ATTR_FIELD_MPLS_LABEL3_EXP = 75;
-	ACL_TABLE_ATTR_FIELD_MPLS_LABEL3_BOS = 76;
-	ACL_TABLE_ATTR_FIELD_MPLS_LABEL4_LABEL = 77;
-	ACL_TABLE_ATTR_FIELD_MPLS_LABEL4_TTL = 78;
-	ACL_TABLE_ATTR_FIELD_MPLS_LABEL4_EXP = 79;
-	ACL_TABLE_ATTR_FIELD_MPLS_LABEL4_BOS = 80;
-	ACL_TABLE_ATTR_FIELD_FDB_DST_USER_META = 81;
-	ACL_TABLE_ATTR_FIELD_ROUTE_DST_USER_META = 82;
-	ACL_TABLE_ATTR_FIELD_NEIGHBOR_DST_USER_META = 83;
-	ACL_TABLE_ATTR_FIELD_PORT_USER_META = 84;
-	ACL_TABLE_ATTR_FIELD_VLAN_USER_META = 85;
-	ACL_TABLE_ATTR_FIELD_ACL_USER_META = 86;
-	ACL_TABLE_ATTR_FIELD_FDB_NPU_META_DST_HIT = 87;
-	ACL_TABLE_ATTR_FIELD_NEIGHBOR_NPU_META_DST_HIT = 88;
-	ACL_TABLE_ATTR_FIELD_ROUTE_NPU_META_DST_HIT = 89;
-	ACL_TABLE_ATTR_FIELD_BTH_OPCODE = 90;
-	ACL_TABLE_ATTR_FIELD_AETH_SYNDROME = 91;
-	ACL_TABLE_ATTR_USER_DEFINED_FIELD_GROUP_MIN = 92;
-	ACL_TABLE_ATTR_USER_DEFINED_FIELD_GROUP_MAX = 93;
-	ACL_TABLE_ATTR_FIELD_ACL_RANGE_TYPE = 94;
-	ACL_TABLE_ATTR_FIELD_IPV6_NEXT_HEADER = 95;
-	ACL_TABLE_ATTR_FIELD_GRE_KEY = 96;
-	ACL_TABLE_ATTR_FIELD_TAM_INT_TYPE = 97;
-	ACL_TABLE_ATTR_ENTRY_LIST = 98;
-	ACL_TABLE_ATTR_AVAILABLE_ACL_ENTRY = 99;
-	ACL_TABLE_ATTR_AVAILABLE_ACL_COUNTER = 100;
+  ACL_TABLE_ATTR_UNSPECIFIED = 0;
+  ACL_TABLE_ATTR_ACL_STAGE = 1;
+  ACL_TABLE_ATTR_ACL_BIND_POINT_TYPE_LIST = 2;
+  ACL_TABLE_ATTR_SIZE = 3;
+  ACL_TABLE_ATTR_ACL_ACTION_TYPE_LIST = 4;
+  ACL_TABLE_ATTR_FIELD_SRC_IPV6 = 5;
+  ACL_TABLE_ATTR_FIELD_SRC_IPV6_WORD3 = 6;
+  ACL_TABLE_ATTR_FIELD_SRC_IPV6_WORD2 = 7;
+  ACL_TABLE_ATTR_FIELD_SRC_IPV6_WORD1 = 8;
+  ACL_TABLE_ATTR_FIELD_SRC_IPV6_WORD0 = 9;
+  ACL_TABLE_ATTR_FIELD_DST_IPV6 = 10;
+  ACL_TABLE_ATTR_FIELD_DST_IPV6_WORD3 = 11;
+  ACL_TABLE_ATTR_FIELD_DST_IPV6_WORD2 = 12;
+  ACL_TABLE_ATTR_FIELD_DST_IPV6_WORD1 = 13;
+  ACL_TABLE_ATTR_FIELD_DST_IPV6_WORD0 = 14;
+  ACL_TABLE_ATTR_FIELD_INNER_SRC_IPV6 = 15;
+  ACL_TABLE_ATTR_FIELD_INNER_DST_IPV6 = 16;
+  ACL_TABLE_ATTR_FIELD_SRC_MAC = 17;
+  ACL_TABLE_ATTR_FIELD_DST_MAC = 18;
+  ACL_TABLE_ATTR_FIELD_SRC_IP = 19;
+  ACL_TABLE_ATTR_FIELD_DST_IP = 20;
+  ACL_TABLE_ATTR_FIELD_INNER_SRC_IP = 21;
+  ACL_TABLE_ATTR_FIELD_INNER_DST_IP = 22;
+  ACL_TABLE_ATTR_FIELD_IN_PORTS = 23;
+  ACL_TABLE_ATTR_FIELD_OUT_PORTS = 24;
+  ACL_TABLE_ATTR_FIELD_IN_PORT = 25;
+  ACL_TABLE_ATTR_FIELD_OUT_PORT = 26;
+  ACL_TABLE_ATTR_FIELD_SRC_PORT = 27;
+  ACL_TABLE_ATTR_FIELD_OUTER_VLAN_ID = 28;
+  ACL_TABLE_ATTR_FIELD_OUTER_VLAN_PRI = 29;
+  ACL_TABLE_ATTR_FIELD_OUTER_VLAN_CFI = 30;
+  ACL_TABLE_ATTR_FIELD_INNER_VLAN_ID = 31;
+  ACL_TABLE_ATTR_FIELD_INNER_VLAN_PRI = 32;
+  ACL_TABLE_ATTR_FIELD_INNER_VLAN_CFI = 33;
+  ACL_TABLE_ATTR_FIELD_L4_SRC_PORT = 34;
+  ACL_TABLE_ATTR_FIELD_L4_DST_PORT = 35;
+  ACL_TABLE_ATTR_FIELD_INNER_L4_SRC_PORT = 36;
+  ACL_TABLE_ATTR_FIELD_INNER_L4_DST_PORT = 37;
+  ACL_TABLE_ATTR_FIELD_ETHER_TYPE = 38;
+  ACL_TABLE_ATTR_FIELD_INNER_ETHER_TYPE = 39;
+  ACL_TABLE_ATTR_FIELD_IP_PROTOCOL = 40;
+  ACL_TABLE_ATTR_FIELD_INNER_IP_PROTOCOL = 41;
+  ACL_TABLE_ATTR_FIELD_IP_IDENTIFICATION = 42;
+  ACL_TABLE_ATTR_FIELD_DSCP = 43;
+  ACL_TABLE_ATTR_FIELD_ECN = 44;
+  ACL_TABLE_ATTR_FIELD_TTL = 45;
+  ACL_TABLE_ATTR_FIELD_TOS = 46;
+  ACL_TABLE_ATTR_FIELD_IP_FLAGS = 47;
+  ACL_TABLE_ATTR_FIELD_TCP_FLAGS = 48;
+  ACL_TABLE_ATTR_FIELD_ACL_IP_TYPE = 49;
+  ACL_TABLE_ATTR_FIELD_ACL_IP_FRAG = 50;
+  ACL_TABLE_ATTR_FIELD_IPV6_FLOW_LABEL = 51;
+  ACL_TABLE_ATTR_FIELD_TC = 52;
+  ACL_TABLE_ATTR_FIELD_ICMP_TYPE = 53;
+  ACL_TABLE_ATTR_FIELD_ICMP_CODE = 54;
+  ACL_TABLE_ATTR_FIELD_ICMPV6_TYPE = 55;
+  ACL_TABLE_ATTR_FIELD_ICMPV6_CODE = 56;
+  ACL_TABLE_ATTR_FIELD_PACKET_VLAN = 57;
+  ACL_TABLE_ATTR_FIELD_TUNNEL_VNI = 58;
+  ACL_TABLE_ATTR_FIELD_HAS_VLAN_TAG = 59;
+  ACL_TABLE_ATTR_FIELD_MACSEC_SCI = 60;
+  ACL_TABLE_ATTR_FIELD_MPLS_LABEL0_LABEL = 61;
+  ACL_TABLE_ATTR_FIELD_MPLS_LABEL0_TTL = 62;
+  ACL_TABLE_ATTR_FIELD_MPLS_LABEL0_EXP = 63;
+  ACL_TABLE_ATTR_FIELD_MPLS_LABEL0_BOS = 64;
+  ACL_TABLE_ATTR_FIELD_MPLS_LABEL1_LABEL = 65;
+  ACL_TABLE_ATTR_FIELD_MPLS_LABEL1_TTL = 66;
+  ACL_TABLE_ATTR_FIELD_MPLS_LABEL1_EXP = 67;
+  ACL_TABLE_ATTR_FIELD_MPLS_LABEL1_BOS = 68;
+  ACL_TABLE_ATTR_FIELD_MPLS_LABEL2_LABEL = 69;
+  ACL_TABLE_ATTR_FIELD_MPLS_LABEL2_TTL = 70;
+  ACL_TABLE_ATTR_FIELD_MPLS_LABEL2_EXP = 71;
+  ACL_TABLE_ATTR_FIELD_MPLS_LABEL2_BOS = 72;
+  ACL_TABLE_ATTR_FIELD_MPLS_LABEL3_LABEL = 73;
+  ACL_TABLE_ATTR_FIELD_MPLS_LABEL3_TTL = 74;
+  ACL_TABLE_ATTR_FIELD_MPLS_LABEL3_EXP = 75;
+  ACL_TABLE_ATTR_FIELD_MPLS_LABEL3_BOS = 76;
+  ACL_TABLE_ATTR_FIELD_MPLS_LABEL4_LABEL = 77;
+  ACL_TABLE_ATTR_FIELD_MPLS_LABEL4_TTL = 78;
+  ACL_TABLE_ATTR_FIELD_MPLS_LABEL4_EXP = 79;
+  ACL_TABLE_ATTR_FIELD_MPLS_LABEL4_BOS = 80;
+  ACL_TABLE_ATTR_FIELD_FDB_DST_USER_META = 81;
+  ACL_TABLE_ATTR_FIELD_ROUTE_DST_USER_META = 82;
+  ACL_TABLE_ATTR_FIELD_NEIGHBOR_DST_USER_META = 83;
+  ACL_TABLE_ATTR_FIELD_PORT_USER_META = 84;
+  ACL_TABLE_ATTR_FIELD_VLAN_USER_META = 85;
+  ACL_TABLE_ATTR_FIELD_ACL_USER_META = 86;
+  ACL_TABLE_ATTR_FIELD_FDB_NPU_META_DST_HIT = 87;
+  ACL_TABLE_ATTR_FIELD_NEIGHBOR_NPU_META_DST_HIT = 88;
+  ACL_TABLE_ATTR_FIELD_ROUTE_NPU_META_DST_HIT = 89;
+  ACL_TABLE_ATTR_FIELD_BTH_OPCODE = 90;
+  ACL_TABLE_ATTR_FIELD_AETH_SYNDROME = 91;
+  ACL_TABLE_ATTR_USER_DEFINED_FIELD_GROUP_MIN = 92;
+  ACL_TABLE_ATTR_USER_DEFINED_FIELD_GROUP_MAX = 93;
+  ACL_TABLE_ATTR_FIELD_ACL_RANGE_TYPE = 94;
+  ACL_TABLE_ATTR_FIELD_IPV6_NEXT_HEADER = 95;
+  ACL_TABLE_ATTR_FIELD_GRE_KEY = 96;
+  ACL_TABLE_ATTR_FIELD_TAM_INT_TYPE = 97;
+  ACL_TABLE_ATTR_ENTRY_LIST = 98;
+  ACL_TABLE_ATTR_AVAILABLE_ACL_ENTRY = 99;
+  ACL_TABLE_ATTR_AVAILABLE_ACL_COUNTER = 100;
 }
 
 enum AclEntryAttr {
-	ACL_ENTRY_ATTR_UNSPECIFIED = 0;
-	ACL_ENTRY_ATTR_TABLE_ID = 1;
-	ACL_ENTRY_ATTR_PRIORITY = 2;
-	ACL_ENTRY_ATTR_ADMIN_STATE = 3;
-	ACL_ENTRY_ATTR_FIELD_SRC_IPV6 = 4;
-	ACL_ENTRY_ATTR_FIELD_SRC_IPV6_WORD3 = 5;
-	ACL_ENTRY_ATTR_FIELD_SRC_IPV6_WORD2 = 6;
-	ACL_ENTRY_ATTR_FIELD_SRC_IPV6_WORD1 = 7;
-	ACL_ENTRY_ATTR_FIELD_SRC_IPV6_WORD0 = 8;
-	ACL_ENTRY_ATTR_FIELD_DST_IPV6 = 9;
-	ACL_ENTRY_ATTR_FIELD_DST_IPV6_WORD3 = 10;
-	ACL_ENTRY_ATTR_FIELD_DST_IPV6_WORD2 = 11;
-	ACL_ENTRY_ATTR_FIELD_DST_IPV6_WORD1 = 12;
-	ACL_ENTRY_ATTR_FIELD_DST_IPV6_WORD0 = 13;
-	ACL_ENTRY_ATTR_FIELD_INNER_SRC_IPV6 = 14;
-	ACL_ENTRY_ATTR_FIELD_INNER_DST_IPV6 = 15;
-	ACL_ENTRY_ATTR_FIELD_SRC_MAC = 16;
-	ACL_ENTRY_ATTR_FIELD_DST_MAC = 17;
-	ACL_ENTRY_ATTR_FIELD_SRC_IP = 18;
-	ACL_ENTRY_ATTR_FIELD_DST_IP = 19;
-	ACL_ENTRY_ATTR_FIELD_INNER_SRC_IP = 20;
-	ACL_ENTRY_ATTR_FIELD_INNER_DST_IP = 21;
-	ACL_ENTRY_ATTR_FIELD_IN_PORTS = 22;
-	ACL_ENTRY_ATTR_FIELD_OUT_PORTS = 23;
-	ACL_ENTRY_ATTR_FIELD_IN_PORT = 24;
-	ACL_ENTRY_ATTR_FIELD_OUT_PORT = 25;
-	ACL_ENTRY_ATTR_FIELD_SRC_PORT = 26;
-	ACL_ENTRY_ATTR_FIELD_OUTER_VLAN_ID = 27;
-	ACL_ENTRY_ATTR_FIELD_OUTER_VLAN_PRI = 28;
-	ACL_ENTRY_ATTR_FIELD_OUTER_VLAN_CFI = 29;
-	ACL_ENTRY_ATTR_FIELD_INNER_VLAN_ID = 30;
-	ACL_ENTRY_ATTR_FIELD_INNER_VLAN_PRI = 31;
-	ACL_ENTRY_ATTR_FIELD_INNER_VLAN_CFI = 32;
-	ACL_ENTRY_ATTR_FIELD_L4_SRC_PORT = 33;
-	ACL_ENTRY_ATTR_FIELD_L4_DST_PORT = 34;
-	ACL_ENTRY_ATTR_FIELD_INNER_L4_SRC_PORT = 35;
-	ACL_ENTRY_ATTR_FIELD_INNER_L4_DST_PORT = 36;
-	ACL_ENTRY_ATTR_FIELD_ETHER_TYPE = 37;
-	ACL_ENTRY_ATTR_FIELD_INNER_ETHER_TYPE = 38;
-	ACL_ENTRY_ATTR_FIELD_IP_PROTOCOL = 39;
-	ACL_ENTRY_ATTR_FIELD_INNER_IP_PROTOCOL = 40;
-	ACL_ENTRY_ATTR_FIELD_IP_IDENTIFICATION = 41;
-	ACL_ENTRY_ATTR_FIELD_DSCP = 42;
-	ACL_ENTRY_ATTR_FIELD_ECN = 43;
-	ACL_ENTRY_ATTR_FIELD_TTL = 44;
-	ACL_ENTRY_ATTR_FIELD_TOS = 45;
-	ACL_ENTRY_ATTR_FIELD_IP_FLAGS = 46;
-	ACL_ENTRY_ATTR_FIELD_TCP_FLAGS = 47;
-	ACL_ENTRY_ATTR_FIELD_ACL_IP_TYPE = 48;
-	ACL_ENTRY_ATTR_FIELD_ACL_IP_FRAG = 49;
-	ACL_ENTRY_ATTR_FIELD_IPV6_FLOW_LABEL = 50;
-	ACL_ENTRY_ATTR_FIELD_TC = 51;
-	ACL_ENTRY_ATTR_FIELD_ICMP_TYPE = 52;
-	ACL_ENTRY_ATTR_FIELD_ICMP_CODE = 53;
-	ACL_ENTRY_ATTR_FIELD_ICMPV6_TYPE = 54;
-	ACL_ENTRY_ATTR_FIELD_ICMPV6_CODE = 55;
-	ACL_ENTRY_ATTR_FIELD_PACKET_VLAN = 56;
-	ACL_ENTRY_ATTR_FIELD_TUNNEL_VNI = 57;
-	ACL_ENTRY_ATTR_FIELD_HAS_VLAN_TAG = 58;
-	ACL_ENTRY_ATTR_FIELD_MACSEC_SCI = 59;
-	ACL_ENTRY_ATTR_FIELD_MPLS_LABEL0_LABEL = 60;
-	ACL_ENTRY_ATTR_FIELD_MPLS_LABEL0_TTL = 61;
-	ACL_ENTRY_ATTR_FIELD_MPLS_LABEL0_EXP = 62;
-	ACL_ENTRY_ATTR_FIELD_MPLS_LABEL0_BOS = 63;
-	ACL_ENTRY_ATTR_FIELD_MPLS_LABEL1_LABEL = 64;
-	ACL_ENTRY_ATTR_FIELD_MPLS_LABEL1_TTL = 65;
-	ACL_ENTRY_ATTR_FIELD_MPLS_LABEL1_EXP = 66;
-	ACL_ENTRY_ATTR_FIELD_MPLS_LABEL1_BOS = 67;
-	ACL_ENTRY_ATTR_FIELD_MPLS_LABEL2_LABEL = 68;
-	ACL_ENTRY_ATTR_FIELD_MPLS_LABEL2_TTL = 69;
-	ACL_ENTRY_ATTR_FIELD_MPLS_LABEL2_EXP = 70;
-	ACL_ENTRY_ATTR_FIELD_MPLS_LABEL2_BOS = 71;
-	ACL_ENTRY_ATTR_FIELD_MPLS_LABEL3_LABEL = 72;
-	ACL_ENTRY_ATTR_FIELD_MPLS_LABEL3_TTL = 73;
-	ACL_ENTRY_ATTR_FIELD_MPLS_LABEL3_EXP = 74;
-	ACL_ENTRY_ATTR_FIELD_MPLS_LABEL3_BOS = 75;
-	ACL_ENTRY_ATTR_FIELD_MPLS_LABEL4_LABEL = 76;
-	ACL_ENTRY_ATTR_FIELD_MPLS_LABEL4_TTL = 77;
-	ACL_ENTRY_ATTR_FIELD_MPLS_LABEL4_EXP = 78;
-	ACL_ENTRY_ATTR_FIELD_MPLS_LABEL4_BOS = 79;
-	ACL_ENTRY_ATTR_FIELD_FDB_DST_USER_META = 80;
-	ACL_ENTRY_ATTR_FIELD_ROUTE_DST_USER_META = 81;
-	ACL_ENTRY_ATTR_FIELD_NEIGHBOR_DST_USER_META = 82;
-	ACL_ENTRY_ATTR_FIELD_PORT_USER_META = 83;
-	ACL_ENTRY_ATTR_FIELD_VLAN_USER_META = 84;
-	ACL_ENTRY_ATTR_FIELD_ACL_USER_META = 85;
-	ACL_ENTRY_ATTR_FIELD_FDB_NPU_META_DST_HIT = 86;
-	ACL_ENTRY_ATTR_FIELD_NEIGHBOR_NPU_META_DST_HIT = 87;
-	ACL_ENTRY_ATTR_FIELD_ROUTE_NPU_META_DST_HIT = 88;
-	ACL_ENTRY_ATTR_FIELD_BTH_OPCODE = 89;
-	ACL_ENTRY_ATTR_FIELD_AETH_SYNDROME = 90;
-	ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN = 91;
-	ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MAX = 92;
-	ACL_ENTRY_ATTR_FIELD_ACL_RANGE_TYPE = 93;
-	ACL_ENTRY_ATTR_FIELD_IPV6_NEXT_HEADER = 94;
-	ACL_ENTRY_ATTR_FIELD_GRE_KEY = 95;
-	ACL_ENTRY_ATTR_FIELD_TAM_INT_TYPE = 96;
-	ACL_ENTRY_ATTR_ACTION_REDIRECT = 97;
-	ACL_ENTRY_ATTR_ACTION_ENDPOINT_IP = 98;
-	ACL_ENTRY_ATTR_ACTION_REDIRECT_LIST = 99;
-	ACL_ENTRY_ATTR_ACTION_PACKET_ACTION = 100;
-	ACL_ENTRY_ATTR_ACTION_FLOOD = 101;
-	ACL_ENTRY_ATTR_ACTION_COUNTER = 102;
-	ACL_ENTRY_ATTR_ACTION_MIRROR_INGRESS = 103;
-	ACL_ENTRY_ATTR_ACTION_MIRROR_EGRESS = 104;
-	ACL_ENTRY_ATTR_ACTION_SET_POLICER = 105;
-	ACL_ENTRY_ATTR_ACTION_DECREMENT_TTL = 106;
-	ACL_ENTRY_ATTR_ACTION_SET_TC = 107;
-	ACL_ENTRY_ATTR_ACTION_SET_PACKET_COLOR = 108;
-	ACL_ENTRY_ATTR_ACTION_SET_INNER_VLAN_ID = 109;
-	ACL_ENTRY_ATTR_ACTION_SET_INNER_VLAN_PRI = 110;
-	ACL_ENTRY_ATTR_ACTION_SET_OUTER_VLAN_ID = 111;
-	ACL_ENTRY_ATTR_ACTION_SET_OUTER_VLAN_PRI = 112;
-	ACL_ENTRY_ATTR_ACTION_ADD_VLAN_ID = 113;
-	ACL_ENTRY_ATTR_ACTION_ADD_VLAN_PRI = 114;
-	ACL_ENTRY_ATTR_ACTION_SET_SRC_MAC = 115;
-	ACL_ENTRY_ATTR_ACTION_SET_DST_MAC = 116;
-	ACL_ENTRY_ATTR_ACTION_SET_SRC_IP = 117;
-	ACL_ENTRY_ATTR_ACTION_SET_DST_IP = 118;
-	ACL_ENTRY_ATTR_ACTION_SET_SRC_IPV6 = 119;
-	ACL_ENTRY_ATTR_ACTION_SET_DST_IPV6 = 120;
-	ACL_ENTRY_ATTR_ACTION_SET_DSCP = 121;
-	ACL_ENTRY_ATTR_ACTION_SET_ECN = 122;
-	ACL_ENTRY_ATTR_ACTION_SET_L4_SRC_PORT = 123;
-	ACL_ENTRY_ATTR_ACTION_SET_L4_DST_PORT = 124;
-	ACL_ENTRY_ATTR_ACTION_INGRESS_SAMPLEPACKET_ENABLE = 125;
-	ACL_ENTRY_ATTR_ACTION_EGRESS_SAMPLEPACKET_ENABLE = 126;
-	ACL_ENTRY_ATTR_ACTION_SET_ACL_META_DATA = 127;
-	ACL_ENTRY_ATTR_ACTION_EGRESS_BLOCK_PORT_LIST = 128;
-	ACL_ENTRY_ATTR_ACTION_SET_USER_TRAP_ID = 129;
-	ACL_ENTRY_ATTR_ACTION_SET_DO_NOT_LEARN = 130;
-	ACL_ENTRY_ATTR_ACTION_ACL_DTEL_FLOW_OP = 131;
-	ACL_ENTRY_ATTR_ACTION_DTEL_INT_SESSION = 132;
-	ACL_ENTRY_ATTR_ACTION_DTEL_DROP_REPORT_ENABLE = 133;
-	ACL_ENTRY_ATTR_ACTION_DTEL_TAIL_DROP_REPORT_ENABLE = 134;
-	ACL_ENTRY_ATTR_ACTION_DTEL_FLOW_SAMPLE_PERCENT = 135;
-	ACL_ENTRY_ATTR_ACTION_DTEL_REPORT_ALL_PACKETS = 136;
-	ACL_ENTRY_ATTR_ACTION_NO_NAT = 137;
-	ACL_ENTRY_ATTR_ACTION_INT_INSERT = 138;
-	ACL_ENTRY_ATTR_ACTION_INT_DELETE = 139;
-	ACL_ENTRY_ATTR_ACTION_INT_REPORT_FLOW = 140;
-	ACL_ENTRY_ATTR_ACTION_INT_REPORT_DROPS = 141;
-	ACL_ENTRY_ATTR_ACTION_INT_REPORT_TAIL_DROPS = 142;
-	ACL_ENTRY_ATTR_ACTION_TAM_INT_OBJECT = 143;
-	ACL_ENTRY_ATTR_ACTION_SET_ISOLATION_GROUP = 144;
-	ACL_ENTRY_ATTR_ACTION_MACSEC_FLOW = 145;
-	ACL_ENTRY_ATTR_ACTION_SET_LAG_HASH_ID = 146;
-	ACL_ENTRY_ATTR_ACTION_SET_ECMP_HASH_ID = 147;
-	ACL_ENTRY_ATTR_ACTION_SET_VRF = 148;
-	ACL_ENTRY_ATTR_ACTION_SET_FORWARDING_CLASS = 149;
+  ACL_ENTRY_ATTR_UNSPECIFIED = 0;
+  ACL_ENTRY_ATTR_TABLE_ID = 1;
+  ACL_ENTRY_ATTR_PRIORITY = 2;
+  ACL_ENTRY_ATTR_ADMIN_STATE = 3;
+  ACL_ENTRY_ATTR_FIELD_SRC_IPV6 = 4;
+  ACL_ENTRY_ATTR_FIELD_SRC_IPV6_WORD3 = 5;
+  ACL_ENTRY_ATTR_FIELD_SRC_IPV6_WORD2 = 6;
+  ACL_ENTRY_ATTR_FIELD_SRC_IPV6_WORD1 = 7;
+  ACL_ENTRY_ATTR_FIELD_SRC_IPV6_WORD0 = 8;
+  ACL_ENTRY_ATTR_FIELD_DST_IPV6 = 9;
+  ACL_ENTRY_ATTR_FIELD_DST_IPV6_WORD3 = 10;
+  ACL_ENTRY_ATTR_FIELD_DST_IPV6_WORD2 = 11;
+  ACL_ENTRY_ATTR_FIELD_DST_IPV6_WORD1 = 12;
+  ACL_ENTRY_ATTR_FIELD_DST_IPV6_WORD0 = 13;
+  ACL_ENTRY_ATTR_FIELD_INNER_SRC_IPV6 = 14;
+  ACL_ENTRY_ATTR_FIELD_INNER_DST_IPV6 = 15;
+  ACL_ENTRY_ATTR_FIELD_SRC_MAC = 16;
+  ACL_ENTRY_ATTR_FIELD_DST_MAC = 17;
+  ACL_ENTRY_ATTR_FIELD_SRC_IP = 18;
+  ACL_ENTRY_ATTR_FIELD_DST_IP = 19;
+  ACL_ENTRY_ATTR_FIELD_INNER_SRC_IP = 20;
+  ACL_ENTRY_ATTR_FIELD_INNER_DST_IP = 21;
+  ACL_ENTRY_ATTR_FIELD_IN_PORTS = 22;
+  ACL_ENTRY_ATTR_FIELD_OUT_PORTS = 23;
+  ACL_ENTRY_ATTR_FIELD_IN_PORT = 24;
+  ACL_ENTRY_ATTR_FIELD_OUT_PORT = 25;
+  ACL_ENTRY_ATTR_FIELD_SRC_PORT = 26;
+  ACL_ENTRY_ATTR_FIELD_OUTER_VLAN_ID = 27;
+  ACL_ENTRY_ATTR_FIELD_OUTER_VLAN_PRI = 28;
+  ACL_ENTRY_ATTR_FIELD_OUTER_VLAN_CFI = 29;
+  ACL_ENTRY_ATTR_FIELD_INNER_VLAN_ID = 30;
+  ACL_ENTRY_ATTR_FIELD_INNER_VLAN_PRI = 31;
+  ACL_ENTRY_ATTR_FIELD_INNER_VLAN_CFI = 32;
+  ACL_ENTRY_ATTR_FIELD_L4_SRC_PORT = 33;
+  ACL_ENTRY_ATTR_FIELD_L4_DST_PORT = 34;
+  ACL_ENTRY_ATTR_FIELD_INNER_L4_SRC_PORT = 35;
+  ACL_ENTRY_ATTR_FIELD_INNER_L4_DST_PORT = 36;
+  ACL_ENTRY_ATTR_FIELD_ETHER_TYPE = 37;
+  ACL_ENTRY_ATTR_FIELD_INNER_ETHER_TYPE = 38;
+  ACL_ENTRY_ATTR_FIELD_IP_PROTOCOL = 39;
+  ACL_ENTRY_ATTR_FIELD_INNER_IP_PROTOCOL = 40;
+  ACL_ENTRY_ATTR_FIELD_IP_IDENTIFICATION = 41;
+  ACL_ENTRY_ATTR_FIELD_DSCP = 42;
+  ACL_ENTRY_ATTR_FIELD_ECN = 43;
+  ACL_ENTRY_ATTR_FIELD_TTL = 44;
+  ACL_ENTRY_ATTR_FIELD_TOS = 45;
+  ACL_ENTRY_ATTR_FIELD_IP_FLAGS = 46;
+  ACL_ENTRY_ATTR_FIELD_TCP_FLAGS = 47;
+  ACL_ENTRY_ATTR_FIELD_ACL_IP_TYPE = 48;
+  ACL_ENTRY_ATTR_FIELD_ACL_IP_FRAG = 49;
+  ACL_ENTRY_ATTR_FIELD_IPV6_FLOW_LABEL = 50;
+  ACL_ENTRY_ATTR_FIELD_TC = 51;
+  ACL_ENTRY_ATTR_FIELD_ICMP_TYPE = 52;
+  ACL_ENTRY_ATTR_FIELD_ICMP_CODE = 53;
+  ACL_ENTRY_ATTR_FIELD_ICMPV6_TYPE = 54;
+  ACL_ENTRY_ATTR_FIELD_ICMPV6_CODE = 55;
+  ACL_ENTRY_ATTR_FIELD_PACKET_VLAN = 56;
+  ACL_ENTRY_ATTR_FIELD_TUNNEL_VNI = 57;
+  ACL_ENTRY_ATTR_FIELD_HAS_VLAN_TAG = 58;
+  ACL_ENTRY_ATTR_FIELD_MACSEC_SCI = 59;
+  ACL_ENTRY_ATTR_FIELD_MPLS_LABEL0_LABEL = 60;
+  ACL_ENTRY_ATTR_FIELD_MPLS_LABEL0_TTL = 61;
+  ACL_ENTRY_ATTR_FIELD_MPLS_LABEL0_EXP = 62;
+  ACL_ENTRY_ATTR_FIELD_MPLS_LABEL0_BOS = 63;
+  ACL_ENTRY_ATTR_FIELD_MPLS_LABEL1_LABEL = 64;
+  ACL_ENTRY_ATTR_FIELD_MPLS_LABEL1_TTL = 65;
+  ACL_ENTRY_ATTR_FIELD_MPLS_LABEL1_EXP = 66;
+  ACL_ENTRY_ATTR_FIELD_MPLS_LABEL1_BOS = 67;
+  ACL_ENTRY_ATTR_FIELD_MPLS_LABEL2_LABEL = 68;
+  ACL_ENTRY_ATTR_FIELD_MPLS_LABEL2_TTL = 69;
+  ACL_ENTRY_ATTR_FIELD_MPLS_LABEL2_EXP = 70;
+  ACL_ENTRY_ATTR_FIELD_MPLS_LABEL2_BOS = 71;
+  ACL_ENTRY_ATTR_FIELD_MPLS_LABEL3_LABEL = 72;
+  ACL_ENTRY_ATTR_FIELD_MPLS_LABEL3_TTL = 73;
+  ACL_ENTRY_ATTR_FIELD_MPLS_LABEL3_EXP = 74;
+  ACL_ENTRY_ATTR_FIELD_MPLS_LABEL3_BOS = 75;
+  ACL_ENTRY_ATTR_FIELD_MPLS_LABEL4_LABEL = 76;
+  ACL_ENTRY_ATTR_FIELD_MPLS_LABEL4_TTL = 77;
+  ACL_ENTRY_ATTR_FIELD_MPLS_LABEL4_EXP = 78;
+  ACL_ENTRY_ATTR_FIELD_MPLS_LABEL4_BOS = 79;
+  ACL_ENTRY_ATTR_FIELD_FDB_DST_USER_META = 80;
+  ACL_ENTRY_ATTR_FIELD_ROUTE_DST_USER_META = 81;
+  ACL_ENTRY_ATTR_FIELD_NEIGHBOR_DST_USER_META = 82;
+  ACL_ENTRY_ATTR_FIELD_PORT_USER_META = 83;
+  ACL_ENTRY_ATTR_FIELD_VLAN_USER_META = 84;
+  ACL_ENTRY_ATTR_FIELD_ACL_USER_META = 85;
+  ACL_ENTRY_ATTR_FIELD_FDB_NPU_META_DST_HIT = 86;
+  ACL_ENTRY_ATTR_FIELD_NEIGHBOR_NPU_META_DST_HIT = 87;
+  ACL_ENTRY_ATTR_FIELD_ROUTE_NPU_META_DST_HIT = 88;
+  ACL_ENTRY_ATTR_FIELD_BTH_OPCODE = 89;
+  ACL_ENTRY_ATTR_FIELD_AETH_SYNDROME = 90;
+  ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN = 91;
+  ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MAX = 92;
+  ACL_ENTRY_ATTR_FIELD_ACL_RANGE_TYPE = 93;
+  ACL_ENTRY_ATTR_FIELD_IPV6_NEXT_HEADER = 94;
+  ACL_ENTRY_ATTR_FIELD_GRE_KEY = 95;
+  ACL_ENTRY_ATTR_FIELD_TAM_INT_TYPE = 96;
+  ACL_ENTRY_ATTR_ACTION_REDIRECT = 97;
+  ACL_ENTRY_ATTR_ACTION_ENDPOINT_IP = 98;
+  ACL_ENTRY_ATTR_ACTION_REDIRECT_LIST = 99;
+  ACL_ENTRY_ATTR_ACTION_PACKET_ACTION = 100;
+  ACL_ENTRY_ATTR_ACTION_FLOOD = 101;
+  ACL_ENTRY_ATTR_ACTION_COUNTER = 102;
+  ACL_ENTRY_ATTR_ACTION_MIRROR_INGRESS = 103;
+  ACL_ENTRY_ATTR_ACTION_MIRROR_EGRESS = 104;
+  ACL_ENTRY_ATTR_ACTION_SET_POLICER = 105;
+  ACL_ENTRY_ATTR_ACTION_DECREMENT_TTL = 106;
+  ACL_ENTRY_ATTR_ACTION_SET_TC = 107;
+  ACL_ENTRY_ATTR_ACTION_SET_PACKET_COLOR = 108;
+  ACL_ENTRY_ATTR_ACTION_SET_INNER_VLAN_ID = 109;
+  ACL_ENTRY_ATTR_ACTION_SET_INNER_VLAN_PRI = 110;
+  ACL_ENTRY_ATTR_ACTION_SET_OUTER_VLAN_ID = 111;
+  ACL_ENTRY_ATTR_ACTION_SET_OUTER_VLAN_PRI = 112;
+  ACL_ENTRY_ATTR_ACTION_ADD_VLAN_ID = 113;
+  ACL_ENTRY_ATTR_ACTION_ADD_VLAN_PRI = 114;
+  ACL_ENTRY_ATTR_ACTION_SET_SRC_MAC = 115;
+  ACL_ENTRY_ATTR_ACTION_SET_DST_MAC = 116;
+  ACL_ENTRY_ATTR_ACTION_SET_SRC_IP = 117;
+  ACL_ENTRY_ATTR_ACTION_SET_DST_IP = 118;
+  ACL_ENTRY_ATTR_ACTION_SET_SRC_IPV6 = 119;
+  ACL_ENTRY_ATTR_ACTION_SET_DST_IPV6 = 120;
+  ACL_ENTRY_ATTR_ACTION_SET_DSCP = 121;
+  ACL_ENTRY_ATTR_ACTION_SET_ECN = 122;
+  ACL_ENTRY_ATTR_ACTION_SET_L4_SRC_PORT = 123;
+  ACL_ENTRY_ATTR_ACTION_SET_L4_DST_PORT = 124;
+  ACL_ENTRY_ATTR_ACTION_INGRESS_SAMPLEPACKET_ENABLE = 125;
+  ACL_ENTRY_ATTR_ACTION_EGRESS_SAMPLEPACKET_ENABLE = 126;
+  ACL_ENTRY_ATTR_ACTION_SET_ACL_META_DATA = 127;
+  ACL_ENTRY_ATTR_ACTION_EGRESS_BLOCK_PORT_LIST = 128;
+  ACL_ENTRY_ATTR_ACTION_SET_USER_TRAP_ID = 129;
+  ACL_ENTRY_ATTR_ACTION_SET_DO_NOT_LEARN = 130;
+  ACL_ENTRY_ATTR_ACTION_ACL_DTEL_FLOW_OP = 131;
+  ACL_ENTRY_ATTR_ACTION_DTEL_INT_SESSION = 132;
+  ACL_ENTRY_ATTR_ACTION_DTEL_DROP_REPORT_ENABLE = 133;
+  ACL_ENTRY_ATTR_ACTION_DTEL_TAIL_DROP_REPORT_ENABLE = 134;
+  ACL_ENTRY_ATTR_ACTION_DTEL_FLOW_SAMPLE_PERCENT = 135;
+  ACL_ENTRY_ATTR_ACTION_DTEL_REPORT_ALL_PACKETS = 136;
+  ACL_ENTRY_ATTR_ACTION_NO_NAT = 137;
+  ACL_ENTRY_ATTR_ACTION_INT_INSERT = 138;
+  ACL_ENTRY_ATTR_ACTION_INT_DELETE = 139;
+  ACL_ENTRY_ATTR_ACTION_INT_REPORT_FLOW = 140;
+  ACL_ENTRY_ATTR_ACTION_INT_REPORT_DROPS = 141;
+  ACL_ENTRY_ATTR_ACTION_INT_REPORT_TAIL_DROPS = 142;
+  ACL_ENTRY_ATTR_ACTION_TAM_INT_OBJECT = 143;
+  ACL_ENTRY_ATTR_ACTION_SET_ISOLATION_GROUP = 144;
+  ACL_ENTRY_ATTR_ACTION_MACSEC_FLOW = 145;
+  ACL_ENTRY_ATTR_ACTION_SET_LAG_HASH_ID = 146;
+  ACL_ENTRY_ATTR_ACTION_SET_ECMP_HASH_ID = 147;
+  ACL_ENTRY_ATTR_ACTION_SET_VRF = 148;
+  ACL_ENTRY_ATTR_ACTION_SET_FORWARDING_CLASS = 149;
 }
 
 enum AclCounterAttr {
-	ACL_COUNTER_ATTR_UNSPECIFIED = 0;
-	ACL_COUNTER_ATTR_TABLE_ID = 1;
-	ACL_COUNTER_ATTR_ENABLE_PACKET_COUNT = 2;
-	ACL_COUNTER_ATTR_ENABLE_BYTE_COUNT = 3;
-	ACL_COUNTER_ATTR_PACKETS = 4;
-	ACL_COUNTER_ATTR_BYTES = 5;
+  ACL_COUNTER_ATTR_UNSPECIFIED = 0;
+  ACL_COUNTER_ATTR_TABLE_ID = 1;
+  ACL_COUNTER_ATTR_ENABLE_PACKET_COUNT = 2;
+  ACL_COUNTER_ATTR_ENABLE_BYTE_COUNT = 3;
+  ACL_COUNTER_ATTR_PACKETS = 4;
+  ACL_COUNTER_ATTR_BYTES = 5;
 }
 
 enum AclRangeAttr {
-	ACL_RANGE_ATTR_UNSPECIFIED = 0;
-	ACL_RANGE_ATTR_TYPE = 1;
-	ACL_RANGE_ATTR_LIMIT = 2;
+  ACL_RANGE_ATTR_UNSPECIFIED = 0;
+  ACL_RANGE_ATTR_TYPE = 1;
+  ACL_RANGE_ATTR_LIMIT = 2;
 }
 
 enum AclTableGroupAttr {
-	ACL_TABLE_GROUP_ATTR_UNSPECIFIED = 0;
-	ACL_TABLE_GROUP_ATTR_ACL_STAGE = 1;
-	ACL_TABLE_GROUP_ATTR_ACL_BIND_POINT_TYPE_LIST = 2;
-	ACL_TABLE_GROUP_ATTR_TYPE = 3;
-	ACL_TABLE_GROUP_ATTR_MEMBER_LIST = 4;
+  ACL_TABLE_GROUP_ATTR_UNSPECIFIED = 0;
+  ACL_TABLE_GROUP_ATTR_ACL_STAGE = 1;
+  ACL_TABLE_GROUP_ATTR_ACL_BIND_POINT_TYPE_LIST = 2;
+  ACL_TABLE_GROUP_ATTR_TYPE = 3;
+  ACL_TABLE_GROUP_ATTR_MEMBER_LIST = 4;
 }
 
 enum AclTableGroupMemberAttr {
-	ACL_TABLE_GROUP_MEMBER_ATTR_UNSPECIFIED = 0;
-	ACL_TABLE_GROUP_MEMBER_ATTR_ACL_TABLE_GROUP_ID = 1;
-	ACL_TABLE_GROUP_MEMBER_ATTR_ACL_TABLE_ID = 2;
-	ACL_TABLE_GROUP_MEMBER_ATTR_PRIORITY = 3;
+  ACL_TABLE_GROUP_MEMBER_ATTR_UNSPECIFIED = 0;
+  ACL_TABLE_GROUP_MEMBER_ATTR_ACL_TABLE_GROUP_ID = 1;
+  ACL_TABLE_GROUP_MEMBER_ATTR_ACL_TABLE_ID = 2;
+  ACL_TABLE_GROUP_MEMBER_ATTR_PRIORITY = 3;
 }
 
 message CreateAclTableRequest {
-	option (sai_type) = OBJECT_TYPE_ACL_TABLE;
-	uint64 switch = 1;
-	optional AclStage acl_stage = 2[(attr_enum_value) = 1];
-	repeated AclBindPointType acl_bind_point_type_list = 3[(attr_enum_value) = 2];
-	optional uint32 size = 4[(attr_enum_value) = 3];
-	repeated AclActionType acl_action_type_list = 5[(attr_enum_value) = 4];
-	optional bool field_src_ipv6 = 6[(attr_enum_value) = 5];
-	optional bool field_src_ipv6_word3 = 7[(attr_enum_value) = 6];
-	optional bool field_src_ipv6_word2 = 8[(attr_enum_value) = 7];
-	optional bool field_src_ipv6_word1 = 9[(attr_enum_value) = 8];
-	optional bool field_src_ipv6_word0 = 10[(attr_enum_value) = 9];
-	optional bool field_dst_ipv6 = 11[(attr_enum_value) = 10];
-	optional bool field_dst_ipv6_word3 = 12[(attr_enum_value) = 11];
-	optional bool field_dst_ipv6_word2 = 13[(attr_enum_value) = 12];
-	optional bool field_dst_ipv6_word1 = 14[(attr_enum_value) = 13];
-	optional bool field_dst_ipv6_word0 = 15[(attr_enum_value) = 14];
-	optional bool field_inner_src_ipv6 = 16[(attr_enum_value) = 15];
-	optional bool field_inner_dst_ipv6 = 17[(attr_enum_value) = 16];
-	optional bool field_src_mac = 18[(attr_enum_value) = 17];
-	optional bool field_dst_mac = 19[(attr_enum_value) = 18];
-	optional bool field_src_ip = 20[(attr_enum_value) = 19];
-	optional bool field_dst_ip = 21[(attr_enum_value) = 20];
-	optional bool field_inner_src_ip = 22[(attr_enum_value) = 21];
-	optional bool field_inner_dst_ip = 23[(attr_enum_value) = 22];
-	optional bool field_in_ports = 24[(attr_enum_value) = 23];
-	optional bool field_out_ports = 25[(attr_enum_value) = 24];
-	optional bool field_in_port = 26[(attr_enum_value) = 25];
-	optional bool field_out_port = 27[(attr_enum_value) = 26];
-	optional bool field_src_port = 28[(attr_enum_value) = 27];
-	optional bool field_outer_vlan_id = 29[(attr_enum_value) = 28];
-	optional bool field_outer_vlan_pri = 30[(attr_enum_value) = 29];
-	optional bool field_outer_vlan_cfi = 31[(attr_enum_value) = 30];
-	optional bool field_inner_vlan_id = 32[(attr_enum_value) = 31];
-	optional bool field_inner_vlan_pri = 33[(attr_enum_value) = 32];
-	optional bool field_inner_vlan_cfi = 34[(attr_enum_value) = 33];
-	optional bool field_l4_src_port = 35[(attr_enum_value) = 34];
-	optional bool field_l4_dst_port = 36[(attr_enum_value) = 35];
-	optional bool field_inner_l4_src_port = 37[(attr_enum_value) = 36];
-	optional bool field_inner_l4_dst_port = 38[(attr_enum_value) = 37];
-	optional bool field_ether_type = 39[(attr_enum_value) = 38];
-	optional bool field_inner_ether_type = 40[(attr_enum_value) = 39];
-	optional bool field_ip_protocol = 41[(attr_enum_value) = 40];
-	optional bool field_inner_ip_protocol = 42[(attr_enum_value) = 41];
-	optional bool field_ip_identification = 43[(attr_enum_value) = 42];
-	optional bool field_dscp = 44[(attr_enum_value) = 43];
-	optional bool field_ecn = 45[(attr_enum_value) = 44];
-	optional bool field_ttl = 46[(attr_enum_value) = 45];
-	optional bool field_tos = 47[(attr_enum_value) = 46];
-	optional bool field_ip_flags = 48[(attr_enum_value) = 47];
-	optional bool field_tcp_flags = 49[(attr_enum_value) = 48];
-	optional bool field_acl_ip_type = 50[(attr_enum_value) = 49];
-	optional bool field_acl_ip_frag = 51[(attr_enum_value) = 50];
-	optional bool field_ipv6_flow_label = 52[(attr_enum_value) = 51];
-	optional bool field_tc = 53[(attr_enum_value) = 52];
-	optional bool field_icmp_type = 54[(attr_enum_value) = 53];
-	optional bool field_icmp_code = 55[(attr_enum_value) = 54];
-	optional bool field_icmpv6_type = 56[(attr_enum_value) = 55];
-	optional bool field_icmpv6_code = 57[(attr_enum_value) = 56];
-	optional bool field_packet_vlan = 58[(attr_enum_value) = 57];
-	optional bool field_tunnel_vni = 59[(attr_enum_value) = 58];
-	optional bool field_has_vlan_tag = 60[(attr_enum_value) = 59];
-	optional bool field_macsec_sci = 61[(attr_enum_value) = 60];
-	optional bool field_mpls_label0_label = 62[(attr_enum_value) = 61];
-	optional bool field_mpls_label0_ttl = 63[(attr_enum_value) = 62];
-	optional bool field_mpls_label0_exp = 64[(attr_enum_value) = 63];
-	optional bool field_mpls_label0_bos = 65[(attr_enum_value) = 64];
-	optional bool field_mpls_label1_label = 66[(attr_enum_value) = 65];
-	optional bool field_mpls_label1_ttl = 67[(attr_enum_value) = 66];
-	optional bool field_mpls_label1_exp = 68[(attr_enum_value) = 67];
-	optional bool field_mpls_label1_bos = 69[(attr_enum_value) = 68];
-	optional bool field_mpls_label2_label = 70[(attr_enum_value) = 69];
-	optional bool field_mpls_label2_ttl = 71[(attr_enum_value) = 70];
-	optional bool field_mpls_label2_exp = 72[(attr_enum_value) = 71];
-	optional bool field_mpls_label2_bos = 73[(attr_enum_value) = 72];
-	optional bool field_mpls_label3_label = 74[(attr_enum_value) = 73];
-	optional bool field_mpls_label3_ttl = 75[(attr_enum_value) = 74];
-	optional bool field_mpls_label3_exp = 76[(attr_enum_value) = 75];
-	optional bool field_mpls_label3_bos = 77[(attr_enum_value) = 76];
-	optional bool field_mpls_label4_label = 78[(attr_enum_value) = 77];
-	optional bool field_mpls_label4_ttl = 79[(attr_enum_value) = 78];
-	optional bool field_mpls_label4_exp = 80[(attr_enum_value) = 79];
-	optional bool field_mpls_label4_bos = 81[(attr_enum_value) = 80];
-	optional bool field_fdb_dst_user_meta = 82[(attr_enum_value) = 81];
-	optional bool field_route_dst_user_meta = 83[(attr_enum_value) = 82];
-	optional bool field_neighbor_dst_user_meta = 84[(attr_enum_value) = 83];
-	optional bool field_port_user_meta = 85[(attr_enum_value) = 84];
-	optional bool field_vlan_user_meta = 86[(attr_enum_value) = 85];
-	optional bool field_acl_user_meta = 87[(attr_enum_value) = 86];
-	optional bool field_fdb_npu_meta_dst_hit = 88[(attr_enum_value) = 87];
-	optional bool field_neighbor_npu_meta_dst_hit = 89[(attr_enum_value) = 88];
-	optional bool field_route_npu_meta_dst_hit = 90[(attr_enum_value) = 89];
-	optional bool field_bth_opcode = 91[(attr_enum_value) = 90];
-	optional bool field_aeth_syndrome = 92[(attr_enum_value) = 91];
-	optional uint64 user_defined_field_group_min = 93[(attr_enum_value) = 92];
-	optional uint64 user_defined_field_group_max = 94[(attr_enum_value) = 93];
-	repeated AclRangeType field_acl_range_type = 95[(attr_enum_value) = 94];
-	optional bool field_ipv6_next_header = 96[(attr_enum_value) = 95];
-	optional bool field_gre_key = 97[(attr_enum_value) = 96];
-	optional bool field_tam_int_type = 98[(attr_enum_value) = 97];
+  option (sai_type) = OBJECT_TYPE_ACL_TABLE;
+  uint64 switch = 1;
+  optional AclStage acl_stage = 2 [(attr_enum_value) = 1];
+  repeated AclBindPointType acl_bind_point_type_list = 3
+      [(attr_enum_value) = 2];
+  optional uint32 size = 4 [(attr_enum_value) = 3];
+  repeated AclActionType acl_action_type_list = 5 [(attr_enum_value) = 4];
+  optional bool field_src_ipv6 = 6 [(attr_enum_value) = 5];
+  optional bool field_src_ipv6_word3 = 7 [(attr_enum_value) = 6];
+  optional bool field_src_ipv6_word2 = 8 [(attr_enum_value) = 7];
+  optional bool field_src_ipv6_word1 = 9 [(attr_enum_value) = 8];
+  optional bool field_src_ipv6_word0 = 10 [(attr_enum_value) = 9];
+  optional bool field_dst_ipv6 = 11 [(attr_enum_value) = 10];
+  optional bool field_dst_ipv6_word3 = 12 [(attr_enum_value) = 11];
+  optional bool field_dst_ipv6_word2 = 13 [(attr_enum_value) = 12];
+  optional bool field_dst_ipv6_word1 = 14 [(attr_enum_value) = 13];
+  optional bool field_dst_ipv6_word0 = 15 [(attr_enum_value) = 14];
+  optional bool field_inner_src_ipv6 = 16 [(attr_enum_value) = 15];
+  optional bool field_inner_dst_ipv6 = 17 [(attr_enum_value) = 16];
+  optional bool field_src_mac = 18 [(attr_enum_value) = 17];
+  optional bool field_dst_mac = 19 [(attr_enum_value) = 18];
+  optional bool field_src_ip = 20 [(attr_enum_value) = 19];
+  optional bool field_dst_ip = 21 [(attr_enum_value) = 20];
+  optional bool field_inner_src_ip = 22 [(attr_enum_value) = 21];
+  optional bool field_inner_dst_ip = 23 [(attr_enum_value) = 22];
+  optional bool field_in_ports = 24 [(attr_enum_value) = 23];
+  optional bool field_out_ports = 25 [(attr_enum_value) = 24];
+  optional bool field_in_port = 26 [(attr_enum_value) = 25];
+  optional bool field_out_port = 27 [(attr_enum_value) = 26];
+  optional bool field_src_port = 28 [(attr_enum_value) = 27];
+  optional bool field_outer_vlan_id = 29 [(attr_enum_value) = 28];
+  optional bool field_outer_vlan_pri = 30 [(attr_enum_value) = 29];
+  optional bool field_outer_vlan_cfi = 31 [(attr_enum_value) = 30];
+  optional bool field_inner_vlan_id = 32 [(attr_enum_value) = 31];
+  optional bool field_inner_vlan_pri = 33 [(attr_enum_value) = 32];
+  optional bool field_inner_vlan_cfi = 34 [(attr_enum_value) = 33];
+  optional bool field_l4_src_port = 35 [(attr_enum_value) = 34];
+  optional bool field_l4_dst_port = 36 [(attr_enum_value) = 35];
+  optional bool field_inner_l4_src_port = 37 [(attr_enum_value) = 36];
+  optional bool field_inner_l4_dst_port = 38 [(attr_enum_value) = 37];
+  optional bool field_ether_type = 39 [(attr_enum_value) = 38];
+  optional bool field_inner_ether_type = 40 [(attr_enum_value) = 39];
+  optional bool field_ip_protocol = 41 [(attr_enum_value) = 40];
+  optional bool field_inner_ip_protocol = 42 [(attr_enum_value) = 41];
+  optional bool field_ip_identification = 43 [(attr_enum_value) = 42];
+  optional bool field_dscp = 44 [(attr_enum_value) = 43];
+  optional bool field_ecn = 45 [(attr_enum_value) = 44];
+  optional bool field_ttl = 46 [(attr_enum_value) = 45];
+  optional bool field_tos = 47 [(attr_enum_value) = 46];
+  optional bool field_ip_flags = 48 [(attr_enum_value) = 47];
+  optional bool field_tcp_flags = 49 [(attr_enum_value) = 48];
+  optional bool field_acl_ip_type = 50 [(attr_enum_value) = 49];
+  optional bool field_acl_ip_frag = 51 [(attr_enum_value) = 50];
+  optional bool field_ipv6_flow_label = 52 [(attr_enum_value) = 51];
+  optional bool field_tc = 53 [(attr_enum_value) = 52];
+  optional bool field_icmp_type = 54 [(attr_enum_value) = 53];
+  optional bool field_icmp_code = 55 [(attr_enum_value) = 54];
+  optional bool field_icmpv6_type = 56 [(attr_enum_value) = 55];
+  optional bool field_icmpv6_code = 57 [(attr_enum_value) = 56];
+  optional bool field_packet_vlan = 58 [(attr_enum_value) = 57];
+  optional bool field_tunnel_vni = 59 [(attr_enum_value) = 58];
+  optional bool field_has_vlan_tag = 60 [(attr_enum_value) = 59];
+  optional bool field_macsec_sci = 61 [(attr_enum_value) = 60];
+  optional bool field_mpls_label0_label = 62 [(attr_enum_value) = 61];
+  optional bool field_mpls_label0_ttl = 63 [(attr_enum_value) = 62];
+  optional bool field_mpls_label0_exp = 64 [(attr_enum_value) = 63];
+  optional bool field_mpls_label0_bos = 65 [(attr_enum_value) = 64];
+  optional bool field_mpls_label1_label = 66 [(attr_enum_value) = 65];
+  optional bool field_mpls_label1_ttl = 67 [(attr_enum_value) = 66];
+  optional bool field_mpls_label1_exp = 68 [(attr_enum_value) = 67];
+  optional bool field_mpls_label1_bos = 69 [(attr_enum_value) = 68];
+  optional bool field_mpls_label2_label = 70 [(attr_enum_value) = 69];
+  optional bool field_mpls_label2_ttl = 71 [(attr_enum_value) = 70];
+  optional bool field_mpls_label2_exp = 72 [(attr_enum_value) = 71];
+  optional bool field_mpls_label2_bos = 73 [(attr_enum_value) = 72];
+  optional bool field_mpls_label3_label = 74 [(attr_enum_value) = 73];
+  optional bool field_mpls_label3_ttl = 75 [(attr_enum_value) = 74];
+  optional bool field_mpls_label3_exp = 76 [(attr_enum_value) = 75];
+  optional bool field_mpls_label3_bos = 77 [(attr_enum_value) = 76];
+  optional bool field_mpls_label4_label = 78 [(attr_enum_value) = 77];
+  optional bool field_mpls_label4_ttl = 79 [(attr_enum_value) = 78];
+  optional bool field_mpls_label4_exp = 80 [(attr_enum_value) = 79];
+  optional bool field_mpls_label4_bos = 81 [(attr_enum_value) = 80];
+  optional bool field_fdb_dst_user_meta = 82 [(attr_enum_value) = 81];
+  optional bool field_route_dst_user_meta = 83 [(attr_enum_value) = 82];
+  optional bool field_neighbor_dst_user_meta = 84 [(attr_enum_value) = 83];
+  optional bool field_port_user_meta = 85 [(attr_enum_value) = 84];
+  optional bool field_vlan_user_meta = 86 [(attr_enum_value) = 85];
+  optional bool field_acl_user_meta = 87 [(attr_enum_value) = 86];
+  optional bool field_fdb_npu_meta_dst_hit = 88 [(attr_enum_value) = 87];
+  optional bool field_neighbor_npu_meta_dst_hit = 89 [(attr_enum_value) = 88];
+  optional bool field_route_npu_meta_dst_hit = 90 [(attr_enum_value) = 89];
+  optional bool field_bth_opcode = 91 [(attr_enum_value) = 90];
+  optional bool field_aeth_syndrome = 92 [(attr_enum_value) = 91];
+  optional uint64 user_defined_field_group_min = 93 [(attr_enum_value) = 92];
+  optional uint64 user_defined_field_group_max = 94 [(attr_enum_value) = 93];
+  repeated AclRangeType field_acl_range_type = 95 [(attr_enum_value) = 94];
+  optional bool field_ipv6_next_header = 96 [(attr_enum_value) = 95];
+  optional bool field_gre_key = 97 [(attr_enum_value) = 96];
+  optional bool field_tam_int_type = 98 [(attr_enum_value) = 97];
 }
 
 message CreateAclTableResponse {
-	uint64 oid = 1;
+  uint64 oid = 1;
 }
 
 message RemoveAclTableRequest {
-	uint64 oid = 1;
+  uint64 oid = 1;
 }
 
-message RemoveAclTableResponse {
-}
+message RemoveAclTableResponse {}
 
 message GetAclTableAttributeRequest {
-	uint64 oid = 1;
-	repeated AclTableAttr attr_type = 2;
+  uint64 oid = 1;
+  repeated AclTableAttr attr_type = 2;
 }
 
 message GetAclTableAttributeResponse {
-	AclTableAttribute attr = 1;
+  AclTableAttribute attr = 1;
 }
 
 message CreateAclEntryRequest {
-	option (sai_type) = OBJECT_TYPE_ACL_ENTRY;
-	uint64 switch = 1;
-	optional uint64 table_id = 2[(attr_enum_value) = 1];
-	optional uint32 priority = 3[(attr_enum_value) = 2];
-	optional bool admin_state = 4[(attr_enum_value) = 3];
-	optional AclFieldData field_src_ipv6 = 5[(attr_enum_value) = 4];
-	optional AclFieldData field_src_ipv6_word3 = 6[(attr_enum_value) = 5];
-	optional AclFieldData field_src_ipv6_word2 = 7[(attr_enum_value) = 6];
-	optional AclFieldData field_src_ipv6_word1 = 8[(attr_enum_value) = 7];
-	optional AclFieldData field_src_ipv6_word0 = 9[(attr_enum_value) = 8];
-	optional AclFieldData field_dst_ipv6 = 10[(attr_enum_value) = 9];
-	optional AclFieldData field_dst_ipv6_word3 = 11[(attr_enum_value) = 10];
-	optional AclFieldData field_dst_ipv6_word2 = 12[(attr_enum_value) = 11];
-	optional AclFieldData field_dst_ipv6_word1 = 13[(attr_enum_value) = 12];
-	optional AclFieldData field_dst_ipv6_word0 = 14[(attr_enum_value) = 13];
-	optional AclFieldData field_inner_src_ipv6 = 15[(attr_enum_value) = 14];
-	optional AclFieldData field_inner_dst_ipv6 = 16[(attr_enum_value) = 15];
-	optional AclFieldData field_src_mac = 17[(attr_enum_value) = 16];
-	optional AclFieldData field_dst_mac = 18[(attr_enum_value) = 17];
-	optional AclFieldData field_src_ip = 19[(attr_enum_value) = 18];
-	optional AclFieldData field_dst_ip = 20[(attr_enum_value) = 19];
-	optional AclFieldData field_inner_src_ip = 21[(attr_enum_value) = 20];
-	optional AclFieldData field_inner_dst_ip = 22[(attr_enum_value) = 21];
-	optional AclFieldData field_in_ports = 23[(attr_enum_value) = 22];
-	optional AclFieldData field_out_ports = 24[(attr_enum_value) = 23];
-	optional AclFieldData field_in_port = 25[(attr_enum_value) = 24];
-	optional AclFieldData field_out_port = 26[(attr_enum_value) = 25];
-	optional AclFieldData field_src_port = 27[(attr_enum_value) = 26];
-	optional AclFieldData field_outer_vlan_id = 28[(attr_enum_value) = 27];
-	optional AclFieldData field_outer_vlan_pri = 29[(attr_enum_value) = 28];
-	optional AclFieldData field_outer_vlan_cfi = 30[(attr_enum_value) = 29];
-	optional AclFieldData field_inner_vlan_id = 31[(attr_enum_value) = 30];
-	optional AclFieldData field_inner_vlan_pri = 32[(attr_enum_value) = 31];
-	optional AclFieldData field_inner_vlan_cfi = 33[(attr_enum_value) = 32];
-	optional AclFieldData field_l4_src_port = 34[(attr_enum_value) = 33];
-	optional AclFieldData field_l4_dst_port = 35[(attr_enum_value) = 34];
-	optional AclFieldData field_inner_l4_src_port = 36[(attr_enum_value) = 35];
-	optional AclFieldData field_inner_l4_dst_port = 37[(attr_enum_value) = 36];
-	optional AclFieldData field_ether_type = 38[(attr_enum_value) = 37];
-	optional AclFieldData field_inner_ether_type = 39[(attr_enum_value) = 38];
-	optional AclFieldData field_ip_protocol = 40[(attr_enum_value) = 39];
-	optional AclFieldData field_inner_ip_protocol = 41[(attr_enum_value) = 40];
-	optional AclFieldData field_ip_identification = 42[(attr_enum_value) = 41];
-	optional AclFieldData field_dscp = 43[(attr_enum_value) = 42];
-	optional AclFieldData field_ecn = 44[(attr_enum_value) = 43];
-	optional AclFieldData field_ttl = 45[(attr_enum_value) = 44];
-	optional AclFieldData field_tos = 46[(attr_enum_value) = 45];
-	optional AclFieldData field_ip_flags = 47[(attr_enum_value) = 46];
-	optional AclFieldData field_tcp_flags = 48[(attr_enum_value) = 47];
-	optional AclFieldData field_acl_ip_type = 49[(attr_enum_value) = 48];
-	optional AclFieldData field_acl_ip_frag = 50[(attr_enum_value) = 49];
-	optional AclFieldData field_ipv6_flow_label = 51[(attr_enum_value) = 50];
-	optional AclFieldData field_tc = 52[(attr_enum_value) = 51];
-	optional AclFieldData field_icmp_type = 53[(attr_enum_value) = 52];
-	optional AclFieldData field_icmp_code = 54[(attr_enum_value) = 53];
-	optional AclFieldData field_icmpv6_type = 55[(attr_enum_value) = 54];
-	optional AclFieldData field_icmpv6_code = 56[(attr_enum_value) = 55];
-	optional AclFieldData field_packet_vlan = 57[(attr_enum_value) = 56];
-	optional AclFieldData field_tunnel_vni = 58[(attr_enum_value) = 57];
-	optional AclFieldData field_has_vlan_tag = 59[(attr_enum_value) = 58];
-	optional AclFieldData field_macsec_sci = 60[(attr_enum_value) = 59];
-	optional AclFieldData field_mpls_label0_label = 61[(attr_enum_value) = 60];
-	optional AclFieldData field_mpls_label0_ttl = 62[(attr_enum_value) = 61];
-	optional AclFieldData field_mpls_label0_exp = 63[(attr_enum_value) = 62];
-	optional AclFieldData field_mpls_label0_bos = 64[(attr_enum_value) = 63];
-	optional AclFieldData field_mpls_label1_label = 65[(attr_enum_value) = 64];
-	optional AclFieldData field_mpls_label1_ttl = 66[(attr_enum_value) = 65];
-	optional AclFieldData field_mpls_label1_exp = 67[(attr_enum_value) = 66];
-	optional AclFieldData field_mpls_label1_bos = 68[(attr_enum_value) = 67];
-	optional AclFieldData field_mpls_label2_label = 69[(attr_enum_value) = 68];
-	optional AclFieldData field_mpls_label2_ttl = 70[(attr_enum_value) = 69];
-	optional AclFieldData field_mpls_label2_exp = 71[(attr_enum_value) = 70];
-	optional AclFieldData field_mpls_label2_bos = 72[(attr_enum_value) = 71];
-	optional AclFieldData field_mpls_label3_label = 73[(attr_enum_value) = 72];
-	optional AclFieldData field_mpls_label3_ttl = 74[(attr_enum_value) = 73];
-	optional AclFieldData field_mpls_label3_exp = 75[(attr_enum_value) = 74];
-	optional AclFieldData field_mpls_label3_bos = 76[(attr_enum_value) = 75];
-	optional AclFieldData field_mpls_label4_label = 77[(attr_enum_value) = 76];
-	optional AclFieldData field_mpls_label4_ttl = 78[(attr_enum_value) = 77];
-	optional AclFieldData field_mpls_label4_exp = 79[(attr_enum_value) = 78];
-	optional AclFieldData field_mpls_label4_bos = 80[(attr_enum_value) = 79];
-	optional AclFieldData field_fdb_dst_user_meta = 81[(attr_enum_value) = 80];
-	optional AclFieldData field_route_dst_user_meta = 82[(attr_enum_value) = 81];
-	optional AclFieldData field_neighbor_dst_user_meta = 83[(attr_enum_value) = 82];
-	optional AclFieldData field_port_user_meta = 84[(attr_enum_value) = 83];
-	optional AclFieldData field_vlan_user_meta = 85[(attr_enum_value) = 84];
-	optional AclFieldData field_acl_user_meta = 86[(attr_enum_value) = 85];
-	optional AclFieldData field_fdb_npu_meta_dst_hit = 87[(attr_enum_value) = 86];
-	optional AclFieldData field_neighbor_npu_meta_dst_hit = 88[(attr_enum_value) = 87];
-	optional AclFieldData field_route_npu_meta_dst_hit = 89[(attr_enum_value) = 88];
-	optional AclFieldData field_bth_opcode = 90[(attr_enum_value) = 89];
-	optional AclFieldData field_aeth_syndrome = 91[(attr_enum_value) = 90];
-	optional AclFieldData user_defined_field_group_min = 92[(attr_enum_value) = 91];
-	optional AclFieldData user_defined_field_group_max = 93[(attr_enum_value) = 92];
-	optional AclFieldData field_acl_range_type = 94[(attr_enum_value) = 93];
-	optional AclFieldData field_ipv6_next_header = 95[(attr_enum_value) = 94];
-	optional AclFieldData field_gre_key = 96[(attr_enum_value) = 95];
-	optional AclFieldData field_tam_int_type = 97[(attr_enum_value) = 96];
-	optional AclActionData action_redirect = 98[(attr_enum_value) = 97];
-	optional AclActionData action_endpoint_ip = 99[(attr_enum_value) = 98];
-	optional AclActionData action_redirect_list = 100[(attr_enum_value) = 99];
-	optional AclActionData action_packet_action = 101[(attr_enum_value) = 100];
-	optional AclActionData action_flood = 102[(attr_enum_value) = 101];
-	optional AclActionData action_counter = 103[(attr_enum_value) = 102];
-	optional AclActionData action_mirror_ingress = 104[(attr_enum_value) = 103];
-	optional AclActionData action_mirror_egress = 105[(attr_enum_value) = 104];
-	optional AclActionData action_set_policer = 106[(attr_enum_value) = 105];
-	optional AclActionData action_decrement_ttl = 107[(attr_enum_value) = 106];
-	optional AclActionData action_set_tc = 108[(attr_enum_value) = 107];
-	optional AclActionData action_set_packet_color = 109[(attr_enum_value) = 108];
-	optional AclActionData action_set_inner_vlan_id = 110[(attr_enum_value) = 109];
-	optional AclActionData action_set_inner_vlan_pri = 111[(attr_enum_value) = 110];
-	optional AclActionData action_set_outer_vlan_id = 112[(attr_enum_value) = 111];
-	optional AclActionData action_set_outer_vlan_pri = 113[(attr_enum_value) = 112];
-	optional AclActionData action_add_vlan_id = 114[(attr_enum_value) = 113];
-	optional AclActionData action_add_vlan_pri = 115[(attr_enum_value) = 114];
-	optional AclActionData action_set_src_mac = 116[(attr_enum_value) = 115];
-	optional AclActionData action_set_dst_mac = 117[(attr_enum_value) = 116];
-	optional AclActionData action_set_src_ip = 118[(attr_enum_value) = 117];
-	optional AclActionData action_set_dst_ip = 119[(attr_enum_value) = 118];
-	optional AclActionData action_set_src_ipv6 = 120[(attr_enum_value) = 119];
-	optional AclActionData action_set_dst_ipv6 = 121[(attr_enum_value) = 120];
-	optional AclActionData action_set_dscp = 122[(attr_enum_value) = 121];
-	optional AclActionData action_set_ecn = 123[(attr_enum_value) = 122];
-	optional AclActionData action_set_l4_src_port = 124[(attr_enum_value) = 123];
-	optional AclActionData action_set_l4_dst_port = 125[(attr_enum_value) = 124];
-	optional AclActionData action_ingress_samplepacket_enable = 126[(attr_enum_value) = 125];
-	optional AclActionData action_egress_samplepacket_enable = 127[(attr_enum_value) = 126];
-	optional AclActionData action_set_acl_meta_data = 128[(attr_enum_value) = 127];
-	optional AclActionData action_egress_block_port_list = 129[(attr_enum_value) = 128];
-	optional AclActionData action_set_user_trap_id = 130[(attr_enum_value) = 129];
-	optional AclActionData action_set_do_not_learn = 131[(attr_enum_value) = 130];
-	optional AclActionData action_acl_dtel_flow_op = 132[(attr_enum_value) = 131];
-	optional AclActionData action_dtel_int_session = 133[(attr_enum_value) = 132];
-	optional AclActionData action_dtel_drop_report_enable = 134[(attr_enum_value) = 133];
-	optional AclActionData action_dtel_tail_drop_report_enable = 135[(attr_enum_value) = 134];
-	optional AclActionData action_dtel_flow_sample_percent = 136[(attr_enum_value) = 135];
-	optional AclActionData action_dtel_report_all_packets = 137[(attr_enum_value) = 136];
-	optional AclActionData action_no_nat = 138[(attr_enum_value) = 137];
-	optional AclActionData action_int_insert = 139[(attr_enum_value) = 138];
-	optional AclActionData action_int_delete = 140[(attr_enum_value) = 139];
-	optional AclActionData action_int_report_flow = 141[(attr_enum_value) = 140];
-	optional AclActionData action_int_report_drops = 142[(attr_enum_value) = 141];
-	optional AclActionData action_int_report_tail_drops = 143[(attr_enum_value) = 142];
-	optional AclActionData action_tam_int_object = 144[(attr_enum_value) = 143];
-	optional AclActionData action_set_isolation_group = 145[(attr_enum_value) = 144];
-	optional AclActionData action_macsec_flow = 146[(attr_enum_value) = 145];
-	optional AclActionData action_set_lag_hash_id = 147[(attr_enum_value) = 146];
-	optional AclActionData action_set_ecmp_hash_id = 148[(attr_enum_value) = 147];
-	optional AclActionData action_set_vrf = 149[(attr_enum_value) = 148];
-	optional AclActionData action_set_forwarding_class = 150[(attr_enum_value) = 149];
+  option (sai_type) = OBJECT_TYPE_ACL_ENTRY;
+  uint64 switch = 1;
+  optional uint64 table_id = 2 [(attr_enum_value) = 1];
+  optional uint32 priority = 3 [(attr_enum_value) = 2];
+  optional bool admin_state = 4 [(attr_enum_value) = 3];
+  optional AclFieldData field_src_ipv6 = 5 [(attr_enum_value) = 4];
+  optional AclFieldData field_src_ipv6_word3 = 6 [(attr_enum_value) = 5];
+  optional AclFieldData field_src_ipv6_word2 = 7 [(attr_enum_value) = 6];
+  optional AclFieldData field_src_ipv6_word1 = 8 [(attr_enum_value) = 7];
+  optional AclFieldData field_src_ipv6_word0 = 9 [(attr_enum_value) = 8];
+  optional AclFieldData field_dst_ipv6 = 10 [(attr_enum_value) = 9];
+  optional AclFieldData field_dst_ipv6_word3 = 11 [(attr_enum_value) = 10];
+  optional AclFieldData field_dst_ipv6_word2 = 12 [(attr_enum_value) = 11];
+  optional AclFieldData field_dst_ipv6_word1 = 13 [(attr_enum_value) = 12];
+  optional AclFieldData field_dst_ipv6_word0 = 14 [(attr_enum_value) = 13];
+  optional AclFieldData field_inner_src_ipv6 = 15 [(attr_enum_value) = 14];
+  optional AclFieldData field_inner_dst_ipv6 = 16 [(attr_enum_value) = 15];
+  optional AclFieldData field_src_mac = 17 [(attr_enum_value) = 16];
+  optional AclFieldData field_dst_mac = 18 [(attr_enum_value) = 17];
+  optional AclFieldData field_src_ip = 19 [(attr_enum_value) = 18];
+  optional AclFieldData field_dst_ip = 20 [(attr_enum_value) = 19];
+  optional AclFieldData field_inner_src_ip = 21 [(attr_enum_value) = 20];
+  optional AclFieldData field_inner_dst_ip = 22 [(attr_enum_value) = 21];
+  optional AclFieldData field_in_ports = 23 [(attr_enum_value) = 22];
+  optional AclFieldData field_out_ports = 24 [(attr_enum_value) = 23];
+  optional AclFieldData field_in_port = 25 [(attr_enum_value) = 24];
+  optional AclFieldData field_out_port = 26 [(attr_enum_value) = 25];
+  optional AclFieldData field_src_port = 27 [(attr_enum_value) = 26];
+  optional AclFieldData field_outer_vlan_id = 28 [(attr_enum_value) = 27];
+  optional AclFieldData field_outer_vlan_pri = 29 [(attr_enum_value) = 28];
+  optional AclFieldData field_outer_vlan_cfi = 30 [(attr_enum_value) = 29];
+  optional AclFieldData field_inner_vlan_id = 31 [(attr_enum_value) = 30];
+  optional AclFieldData field_inner_vlan_pri = 32 [(attr_enum_value) = 31];
+  optional AclFieldData field_inner_vlan_cfi = 33 [(attr_enum_value) = 32];
+  optional AclFieldData field_l4_src_port = 34 [(attr_enum_value) = 33];
+  optional AclFieldData field_l4_dst_port = 35 [(attr_enum_value) = 34];
+  optional AclFieldData field_inner_l4_src_port = 36 [(attr_enum_value) = 35];
+  optional AclFieldData field_inner_l4_dst_port = 37 [(attr_enum_value) = 36];
+  optional AclFieldData field_ether_type = 38 [(attr_enum_value) = 37];
+  optional AclFieldData field_inner_ether_type = 39 [(attr_enum_value) = 38];
+  optional AclFieldData field_ip_protocol = 40 [(attr_enum_value) = 39];
+  optional AclFieldData field_inner_ip_protocol = 41 [(attr_enum_value) = 40];
+  optional AclFieldData field_ip_identification = 42 [(attr_enum_value) = 41];
+  optional AclFieldData field_dscp = 43 [(attr_enum_value) = 42];
+  optional AclFieldData field_ecn = 44 [(attr_enum_value) = 43];
+  optional AclFieldData field_ttl = 45 [(attr_enum_value) = 44];
+  optional AclFieldData field_tos = 46 [(attr_enum_value) = 45];
+  optional AclFieldData field_ip_flags = 47 [(attr_enum_value) = 46];
+  optional AclFieldData field_tcp_flags = 48 [(attr_enum_value) = 47];
+  optional AclFieldData field_acl_ip_type = 49 [(attr_enum_value) = 48];
+  optional AclFieldData field_acl_ip_frag = 50 [(attr_enum_value) = 49];
+  optional AclFieldData field_ipv6_flow_label = 51 [(attr_enum_value) = 50];
+  optional AclFieldData field_tc = 52 [(attr_enum_value) = 51];
+  optional AclFieldData field_icmp_type = 53 [(attr_enum_value) = 52];
+  optional AclFieldData field_icmp_code = 54 [(attr_enum_value) = 53];
+  optional AclFieldData field_icmpv6_type = 55 [(attr_enum_value) = 54];
+  optional AclFieldData field_icmpv6_code = 56 [(attr_enum_value) = 55];
+  optional AclFieldData field_packet_vlan = 57 [(attr_enum_value) = 56];
+  optional AclFieldData field_tunnel_vni = 58 [(attr_enum_value) = 57];
+  optional AclFieldData field_has_vlan_tag = 59 [(attr_enum_value) = 58];
+  optional AclFieldData field_macsec_sci = 60 [(attr_enum_value) = 59];
+  optional AclFieldData field_mpls_label0_label = 61 [(attr_enum_value) = 60];
+  optional AclFieldData field_mpls_label0_ttl = 62 [(attr_enum_value) = 61];
+  optional AclFieldData field_mpls_label0_exp = 63 [(attr_enum_value) = 62];
+  optional AclFieldData field_mpls_label0_bos = 64 [(attr_enum_value) = 63];
+  optional AclFieldData field_mpls_label1_label = 65 [(attr_enum_value) = 64];
+  optional AclFieldData field_mpls_label1_ttl = 66 [(attr_enum_value) = 65];
+  optional AclFieldData field_mpls_label1_exp = 67 [(attr_enum_value) = 66];
+  optional AclFieldData field_mpls_label1_bos = 68 [(attr_enum_value) = 67];
+  optional AclFieldData field_mpls_label2_label = 69 [(attr_enum_value) = 68];
+  optional AclFieldData field_mpls_label2_ttl = 70 [(attr_enum_value) = 69];
+  optional AclFieldData field_mpls_label2_exp = 71 [(attr_enum_value) = 70];
+  optional AclFieldData field_mpls_label2_bos = 72 [(attr_enum_value) = 71];
+  optional AclFieldData field_mpls_label3_label = 73 [(attr_enum_value) = 72];
+  optional AclFieldData field_mpls_label3_ttl = 74 [(attr_enum_value) = 73];
+  optional AclFieldData field_mpls_label3_exp = 75 [(attr_enum_value) = 74];
+  optional AclFieldData field_mpls_label3_bos = 76 [(attr_enum_value) = 75];
+  optional AclFieldData field_mpls_label4_label = 77 [(attr_enum_value) = 76];
+  optional AclFieldData field_mpls_label4_ttl = 78 [(attr_enum_value) = 77];
+  optional AclFieldData field_mpls_label4_exp = 79 [(attr_enum_value) = 78];
+  optional AclFieldData field_mpls_label4_bos = 80 [(attr_enum_value) = 79];
+  optional AclFieldData field_fdb_dst_user_meta = 81 [(attr_enum_value) = 80];
+  optional AclFieldData field_route_dst_user_meta = 82 [(attr_enum_value) = 81];
+  optional AclFieldData field_neighbor_dst_user_meta = 83
+      [(attr_enum_value) = 82];
+  optional AclFieldData field_port_user_meta = 84 [(attr_enum_value) = 83];
+  optional AclFieldData field_vlan_user_meta = 85 [(attr_enum_value) = 84];
+  optional AclFieldData field_acl_user_meta = 86 [(attr_enum_value) = 85];
+  optional AclFieldData field_fdb_npu_meta_dst_hit = 87
+      [(attr_enum_value) = 86];
+  optional AclFieldData field_neighbor_npu_meta_dst_hit = 88
+      [(attr_enum_value) = 87];
+  optional AclFieldData field_route_npu_meta_dst_hit = 89
+      [(attr_enum_value) = 88];
+  optional AclFieldData field_bth_opcode = 90 [(attr_enum_value) = 89];
+  optional AclFieldData field_aeth_syndrome = 91 [(attr_enum_value) = 90];
+  optional AclFieldData user_defined_field_group_min = 92
+      [(attr_enum_value) = 91];
+  optional AclFieldData user_defined_field_group_max = 93
+      [(attr_enum_value) = 92];
+  optional AclFieldData field_acl_range_type = 94 [(attr_enum_value) = 93];
+  optional AclFieldData field_ipv6_next_header = 95 [(attr_enum_value) = 94];
+  optional AclFieldData field_gre_key = 96 [(attr_enum_value) = 95];
+  optional AclFieldData field_tam_int_type = 97 [(attr_enum_value) = 96];
+  optional AclActionData action_redirect = 98 [(attr_enum_value) = 97];
+  optional AclActionData action_endpoint_ip = 99 [(attr_enum_value) = 98];
+  optional AclActionData action_redirect_list = 100 [(attr_enum_value) = 99];
+  optional AclActionData action_packet_action = 101 [(attr_enum_value) = 100];
+  optional AclActionData action_flood = 102 [(attr_enum_value) = 101];
+  optional AclActionData action_counter = 103 [(attr_enum_value) = 102];
+  optional AclActionData action_mirror_ingress = 104 [(attr_enum_value) = 103];
+  optional AclActionData action_mirror_egress = 105 [(attr_enum_value) = 104];
+  optional AclActionData action_set_policer = 106 [(attr_enum_value) = 105];
+  optional AclActionData action_decrement_ttl = 107 [(attr_enum_value) = 106];
+  optional AclActionData action_set_tc = 108 [(attr_enum_value) = 107];
+  optional AclActionData action_set_packet_color = 109
+      [(attr_enum_value) = 108];
+  optional AclActionData action_set_inner_vlan_id = 110
+      [(attr_enum_value) = 109];
+  optional AclActionData action_set_inner_vlan_pri = 111
+      [(attr_enum_value) = 110];
+  optional AclActionData action_set_outer_vlan_id = 112
+      [(attr_enum_value) = 111];
+  optional AclActionData action_set_outer_vlan_pri = 113
+      [(attr_enum_value) = 112];
+  optional AclActionData action_add_vlan_id = 114 [(attr_enum_value) = 113];
+  optional AclActionData action_add_vlan_pri = 115 [(attr_enum_value) = 114];
+  optional AclActionData action_set_src_mac = 116 [(attr_enum_value) = 115];
+  optional AclActionData action_set_dst_mac = 117 [(attr_enum_value) = 116];
+  optional AclActionData action_set_src_ip = 118 [(attr_enum_value) = 117];
+  optional AclActionData action_set_dst_ip = 119 [(attr_enum_value) = 118];
+  optional AclActionData action_set_src_ipv6 = 120 [(attr_enum_value) = 119];
+  optional AclActionData action_set_dst_ipv6 = 121 [(attr_enum_value) = 120];
+  optional AclActionData action_set_dscp = 122 [(attr_enum_value) = 121];
+  optional AclActionData action_set_ecn = 123 [(attr_enum_value) = 122];
+  optional AclActionData action_set_l4_src_port = 124 [(attr_enum_value) = 123];
+  optional AclActionData action_set_l4_dst_port = 125 [(attr_enum_value) = 124];
+  optional AclActionData action_ingress_samplepacket_enable = 126
+      [(attr_enum_value) = 125];
+  optional AclActionData action_egress_samplepacket_enable = 127
+      [(attr_enum_value) = 126];
+  optional AclActionData action_set_acl_meta_data = 128
+      [(attr_enum_value) = 127];
+  optional AclActionData action_egress_block_port_list = 129
+      [(attr_enum_value) = 128];
+  optional AclActionData action_set_user_trap_id = 130
+      [(attr_enum_value) = 129];
+  optional AclActionData action_set_do_not_learn = 131
+      [(attr_enum_value) = 130];
+  optional AclActionData action_acl_dtel_flow_op = 132
+      [(attr_enum_value) = 131];
+  optional AclActionData action_dtel_int_session = 133
+      [(attr_enum_value) = 132];
+  optional AclActionData action_dtel_drop_report_enable = 134
+      [(attr_enum_value) = 133];
+  optional AclActionData action_dtel_tail_drop_report_enable = 135
+      [(attr_enum_value) = 134];
+  optional AclActionData action_dtel_flow_sample_percent = 136
+      [(attr_enum_value) = 135];
+  optional AclActionData action_dtel_report_all_packets = 137
+      [(attr_enum_value) = 136];
+  optional AclActionData action_no_nat = 138 [(attr_enum_value) = 137];
+  optional AclActionData action_int_insert = 139 [(attr_enum_value) = 138];
+  optional AclActionData action_int_delete = 140 [(attr_enum_value) = 139];
+  optional AclActionData action_int_report_flow = 141 [(attr_enum_value) = 140];
+  optional AclActionData action_int_report_drops = 142
+      [(attr_enum_value) = 141];
+  optional AclActionData action_int_report_tail_drops = 143
+      [(attr_enum_value) = 142];
+  optional AclActionData action_tam_int_object = 144 [(attr_enum_value) = 143];
+  optional AclActionData action_set_isolation_group = 145
+      [(attr_enum_value) = 144];
+  optional AclActionData action_macsec_flow = 146 [(attr_enum_value) = 145];
+  optional AclActionData action_set_lag_hash_id = 147 [(attr_enum_value) = 146];
+  optional AclActionData action_set_ecmp_hash_id = 148
+      [(attr_enum_value) = 147];
+  optional AclActionData action_set_vrf = 149 [(attr_enum_value) = 148];
+  optional AclActionData action_set_forwarding_class = 150
+      [(attr_enum_value) = 149];
 }
 
 message CreateAclEntryResponse {
-	uint64 oid = 1;
+  uint64 oid = 1;
 }
 
 message RemoveAclEntryRequest {
-	uint64 oid = 1;
+  uint64 oid = 1;
 }
 
-message RemoveAclEntryResponse {
-}
+message RemoveAclEntryResponse {}
 
 message SetAclEntryAttributeRequest {
-	uint64 oid = 1;
-	optional uint32 priority = 2[(attr_enum_value) = 2];
-	optional bool admin_state = 3[(attr_enum_value) = 3];
-	optional AclFieldData field_src_ipv6 = 4[(attr_enum_value) = 4];
-	optional AclFieldData field_src_ipv6_word3 = 5[(attr_enum_value) = 5];
-	optional AclFieldData field_src_ipv6_word2 = 6[(attr_enum_value) = 6];
-	optional AclFieldData field_src_ipv6_word1 = 7[(attr_enum_value) = 7];
-	optional AclFieldData field_src_ipv6_word0 = 8[(attr_enum_value) = 8];
-	optional AclFieldData field_dst_ipv6 = 9[(attr_enum_value) = 9];
-	optional AclFieldData field_dst_ipv6_word3 = 10[(attr_enum_value) = 10];
-	optional AclFieldData field_dst_ipv6_word2 = 11[(attr_enum_value) = 11];
-	optional AclFieldData field_dst_ipv6_word1 = 12[(attr_enum_value) = 12];
-	optional AclFieldData field_dst_ipv6_word0 = 13[(attr_enum_value) = 13];
-	optional AclFieldData field_inner_src_ipv6 = 14[(attr_enum_value) = 14];
-	optional AclFieldData field_inner_dst_ipv6 = 15[(attr_enum_value) = 15];
-	optional AclFieldData field_src_mac = 16[(attr_enum_value) = 16];
-	optional AclFieldData field_dst_mac = 17[(attr_enum_value) = 17];
-	optional AclFieldData field_src_ip = 18[(attr_enum_value) = 18];
-	optional AclFieldData field_dst_ip = 19[(attr_enum_value) = 19];
-	optional AclFieldData field_inner_src_ip = 20[(attr_enum_value) = 20];
-	optional AclFieldData field_inner_dst_ip = 21[(attr_enum_value) = 21];
-	optional AclFieldData field_in_ports = 22[(attr_enum_value) = 22];
-	optional AclFieldData field_out_ports = 23[(attr_enum_value) = 23];
-	optional AclFieldData field_in_port = 24[(attr_enum_value) = 24];
-	optional AclFieldData field_out_port = 25[(attr_enum_value) = 25];
-	optional AclFieldData field_src_port = 26[(attr_enum_value) = 26];
-	optional AclFieldData field_outer_vlan_id = 27[(attr_enum_value) = 27];
-	optional AclFieldData field_outer_vlan_pri = 28[(attr_enum_value) = 28];
-	optional AclFieldData field_outer_vlan_cfi = 29[(attr_enum_value) = 29];
-	optional AclFieldData field_inner_vlan_id = 30[(attr_enum_value) = 30];
-	optional AclFieldData field_inner_vlan_pri = 31[(attr_enum_value) = 31];
-	optional AclFieldData field_inner_vlan_cfi = 32[(attr_enum_value) = 32];
-	optional AclFieldData field_l4_src_port = 33[(attr_enum_value) = 33];
-	optional AclFieldData field_l4_dst_port = 34[(attr_enum_value) = 34];
-	optional AclFieldData field_inner_l4_src_port = 35[(attr_enum_value) = 35];
-	optional AclFieldData field_inner_l4_dst_port = 36[(attr_enum_value) = 36];
-	optional AclFieldData field_ether_type = 37[(attr_enum_value) = 37];
-	optional AclFieldData field_inner_ether_type = 38[(attr_enum_value) = 38];
-	optional AclFieldData field_ip_protocol = 39[(attr_enum_value) = 39];
-	optional AclFieldData field_inner_ip_protocol = 40[(attr_enum_value) = 40];
-	optional AclFieldData field_ip_identification = 41[(attr_enum_value) = 41];
-	optional AclFieldData field_dscp = 42[(attr_enum_value) = 42];
-	optional AclFieldData field_ecn = 43[(attr_enum_value) = 43];
-	optional AclFieldData field_ttl = 44[(attr_enum_value) = 44];
-	optional AclFieldData field_tos = 45[(attr_enum_value) = 45];
-	optional AclFieldData field_ip_flags = 46[(attr_enum_value) = 46];
-	optional AclFieldData field_tcp_flags = 47[(attr_enum_value) = 47];
-	optional AclFieldData field_acl_ip_type = 48[(attr_enum_value) = 48];
-	optional AclFieldData field_acl_ip_frag = 49[(attr_enum_value) = 49];
-	optional AclFieldData field_ipv6_flow_label = 50[(attr_enum_value) = 50];
-	optional AclFieldData field_tc = 51[(attr_enum_value) = 51];
-	optional AclFieldData field_icmp_type = 52[(attr_enum_value) = 52];
-	optional AclFieldData field_icmp_code = 53[(attr_enum_value) = 53];
-	optional AclFieldData field_icmpv6_type = 54[(attr_enum_value) = 54];
-	optional AclFieldData field_icmpv6_code = 55[(attr_enum_value) = 55];
-	optional AclFieldData field_packet_vlan = 56[(attr_enum_value) = 56];
-	optional AclFieldData field_tunnel_vni = 57[(attr_enum_value) = 57];
-	optional AclFieldData field_has_vlan_tag = 58[(attr_enum_value) = 58];
-	optional AclFieldData field_macsec_sci = 59[(attr_enum_value) = 59];
-	optional AclFieldData field_mpls_label0_label = 60[(attr_enum_value) = 60];
-	optional AclFieldData field_mpls_label0_ttl = 61[(attr_enum_value) = 61];
-	optional AclFieldData field_mpls_label0_exp = 62[(attr_enum_value) = 62];
-	optional AclFieldData field_mpls_label0_bos = 63[(attr_enum_value) = 63];
-	optional AclFieldData field_mpls_label1_label = 64[(attr_enum_value) = 64];
-	optional AclFieldData field_mpls_label1_ttl = 65[(attr_enum_value) = 65];
-	optional AclFieldData field_mpls_label1_exp = 66[(attr_enum_value) = 66];
-	optional AclFieldData field_mpls_label1_bos = 67[(attr_enum_value) = 67];
-	optional AclFieldData field_mpls_label2_label = 68[(attr_enum_value) = 68];
-	optional AclFieldData field_mpls_label2_ttl = 69[(attr_enum_value) = 69];
-	optional AclFieldData field_mpls_label2_exp = 70[(attr_enum_value) = 70];
-	optional AclFieldData field_mpls_label2_bos = 71[(attr_enum_value) = 71];
-	optional AclFieldData field_mpls_label3_label = 72[(attr_enum_value) = 72];
-	optional AclFieldData field_mpls_label3_ttl = 73[(attr_enum_value) = 73];
-	optional AclFieldData field_mpls_label3_exp = 74[(attr_enum_value) = 74];
-	optional AclFieldData field_mpls_label3_bos = 75[(attr_enum_value) = 75];
-	optional AclFieldData field_mpls_label4_label = 76[(attr_enum_value) = 76];
-	optional AclFieldData field_mpls_label4_ttl = 77[(attr_enum_value) = 77];
-	optional AclFieldData field_mpls_label4_exp = 78[(attr_enum_value) = 78];
-	optional AclFieldData field_mpls_label4_bos = 79[(attr_enum_value) = 79];
-	optional AclFieldData field_fdb_dst_user_meta = 80[(attr_enum_value) = 80];
-	optional AclFieldData field_route_dst_user_meta = 81[(attr_enum_value) = 81];
-	optional AclFieldData field_neighbor_dst_user_meta = 82[(attr_enum_value) = 82];
-	optional AclFieldData field_port_user_meta = 83[(attr_enum_value) = 83];
-	optional AclFieldData field_vlan_user_meta = 84[(attr_enum_value) = 84];
-	optional AclFieldData field_acl_user_meta = 85[(attr_enum_value) = 85];
-	optional AclFieldData field_fdb_npu_meta_dst_hit = 86[(attr_enum_value) = 86];
-	optional AclFieldData field_neighbor_npu_meta_dst_hit = 87[(attr_enum_value) = 87];
-	optional AclFieldData field_route_npu_meta_dst_hit = 88[(attr_enum_value) = 88];
-	optional AclFieldData field_bth_opcode = 89[(attr_enum_value) = 89];
-	optional AclFieldData field_aeth_syndrome = 90[(attr_enum_value) = 90];
-	optional AclFieldData user_defined_field_group_min = 91[(attr_enum_value) = 91];
-	optional AclFieldData user_defined_field_group_max = 92[(attr_enum_value) = 92];
-	optional AclFieldData field_acl_range_type = 93[(attr_enum_value) = 93];
-	optional AclFieldData field_ipv6_next_header = 94[(attr_enum_value) = 94];
-	optional AclFieldData field_gre_key = 95[(attr_enum_value) = 95];
-	optional AclFieldData field_tam_int_type = 96[(attr_enum_value) = 96];
-	optional AclActionData action_redirect = 97[(attr_enum_value) = 97];
-	optional AclActionData action_endpoint_ip = 98[(attr_enum_value) = 98];
-	optional AclActionData action_redirect_list = 99[(attr_enum_value) = 99];
-	optional AclActionData action_packet_action = 100[(attr_enum_value) = 100];
-	optional AclActionData action_flood = 101[(attr_enum_value) = 101];
-	optional AclActionData action_counter = 102[(attr_enum_value) = 102];
-	optional AclActionData action_mirror_ingress = 103[(attr_enum_value) = 103];
-	optional AclActionData action_mirror_egress = 104[(attr_enum_value) = 104];
-	optional AclActionData action_set_policer = 105[(attr_enum_value) = 105];
-	optional AclActionData action_decrement_ttl = 106[(attr_enum_value) = 106];
-	optional AclActionData action_set_tc = 107[(attr_enum_value) = 107];
-	optional AclActionData action_set_packet_color = 108[(attr_enum_value) = 108];
-	optional AclActionData action_set_inner_vlan_id = 109[(attr_enum_value) = 109];
-	optional AclActionData action_set_inner_vlan_pri = 110[(attr_enum_value) = 110];
-	optional AclActionData action_set_outer_vlan_id = 111[(attr_enum_value) = 111];
-	optional AclActionData action_set_outer_vlan_pri = 112[(attr_enum_value) = 112];
-	optional AclActionData action_add_vlan_id = 113[(attr_enum_value) = 113];
-	optional AclActionData action_add_vlan_pri = 114[(attr_enum_value) = 114];
-	optional AclActionData action_set_src_mac = 115[(attr_enum_value) = 115];
-	optional AclActionData action_set_dst_mac = 116[(attr_enum_value) = 116];
-	optional AclActionData action_set_src_ip = 117[(attr_enum_value) = 117];
-	optional AclActionData action_set_dst_ip = 118[(attr_enum_value) = 118];
-	optional AclActionData action_set_src_ipv6 = 119[(attr_enum_value) = 119];
-	optional AclActionData action_set_dst_ipv6 = 120[(attr_enum_value) = 120];
-	optional AclActionData action_set_dscp = 121[(attr_enum_value) = 121];
-	optional AclActionData action_set_ecn = 122[(attr_enum_value) = 122];
-	optional AclActionData action_set_l4_src_port = 123[(attr_enum_value) = 123];
-	optional AclActionData action_set_l4_dst_port = 124[(attr_enum_value) = 124];
-	optional AclActionData action_ingress_samplepacket_enable = 125[(attr_enum_value) = 125];
-	optional AclActionData action_egress_samplepacket_enable = 126[(attr_enum_value) = 126];
-	optional AclActionData action_set_acl_meta_data = 127[(attr_enum_value) = 127];
-	optional AclActionData action_egress_block_port_list = 128[(attr_enum_value) = 128];
-	optional AclActionData action_set_user_trap_id = 129[(attr_enum_value) = 129];
-	optional AclActionData action_set_do_not_learn = 130[(attr_enum_value) = 130];
-	optional AclActionData action_acl_dtel_flow_op = 131[(attr_enum_value) = 131];
-	optional AclActionData action_dtel_int_session = 132[(attr_enum_value) = 132];
-	optional AclActionData action_dtel_drop_report_enable = 133[(attr_enum_value) = 133];
-	optional AclActionData action_dtel_tail_drop_report_enable = 134[(attr_enum_value) = 134];
-	optional AclActionData action_dtel_flow_sample_percent = 135[(attr_enum_value) = 135];
-	optional AclActionData action_dtel_report_all_packets = 136[(attr_enum_value) = 136];
-	optional AclActionData action_no_nat = 137[(attr_enum_value) = 137];
-	optional AclActionData action_int_insert = 138[(attr_enum_value) = 138];
-	optional AclActionData action_int_delete = 139[(attr_enum_value) = 139];
-	optional AclActionData action_int_report_flow = 140[(attr_enum_value) = 140];
-	optional AclActionData action_int_report_drops = 141[(attr_enum_value) = 141];
-	optional AclActionData action_int_report_tail_drops = 142[(attr_enum_value) = 142];
-	optional AclActionData action_tam_int_object = 143[(attr_enum_value) = 143];
-	optional AclActionData action_set_isolation_group = 144[(attr_enum_value) = 144];
-	optional AclActionData action_macsec_flow = 145[(attr_enum_value) = 145];
-	optional AclActionData action_set_lag_hash_id = 146[(attr_enum_value) = 146];
-	optional AclActionData action_set_ecmp_hash_id = 147[(attr_enum_value) = 147];
-	optional AclActionData action_set_vrf = 148[(attr_enum_value) = 148];
-	optional AclActionData action_set_forwarding_class = 149[(attr_enum_value) = 149];
+  uint64 oid = 1;
+  optional uint32 priority = 2 [(attr_enum_value) = 2];
+  optional bool admin_state = 3 [(attr_enum_value) = 3];
+  optional AclFieldData field_src_ipv6 = 4 [(attr_enum_value) = 4];
+  optional AclFieldData field_src_ipv6_word3 = 5 [(attr_enum_value) = 5];
+  optional AclFieldData field_src_ipv6_word2 = 6 [(attr_enum_value) = 6];
+  optional AclFieldData field_src_ipv6_word1 = 7 [(attr_enum_value) = 7];
+  optional AclFieldData field_src_ipv6_word0 = 8 [(attr_enum_value) = 8];
+  optional AclFieldData field_dst_ipv6 = 9 [(attr_enum_value) = 9];
+  optional AclFieldData field_dst_ipv6_word3 = 10 [(attr_enum_value) = 10];
+  optional AclFieldData field_dst_ipv6_word2 = 11 [(attr_enum_value) = 11];
+  optional AclFieldData field_dst_ipv6_word1 = 12 [(attr_enum_value) = 12];
+  optional AclFieldData field_dst_ipv6_word0 = 13 [(attr_enum_value) = 13];
+  optional AclFieldData field_inner_src_ipv6 = 14 [(attr_enum_value) = 14];
+  optional AclFieldData field_inner_dst_ipv6 = 15 [(attr_enum_value) = 15];
+  optional AclFieldData field_src_mac = 16 [(attr_enum_value) = 16];
+  optional AclFieldData field_dst_mac = 17 [(attr_enum_value) = 17];
+  optional AclFieldData field_src_ip = 18 [(attr_enum_value) = 18];
+  optional AclFieldData field_dst_ip = 19 [(attr_enum_value) = 19];
+  optional AclFieldData field_inner_src_ip = 20 [(attr_enum_value) = 20];
+  optional AclFieldData field_inner_dst_ip = 21 [(attr_enum_value) = 21];
+  optional AclFieldData field_in_ports = 22 [(attr_enum_value) = 22];
+  optional AclFieldData field_out_ports = 23 [(attr_enum_value) = 23];
+  optional AclFieldData field_in_port = 24 [(attr_enum_value) = 24];
+  optional AclFieldData field_out_port = 25 [(attr_enum_value) = 25];
+  optional AclFieldData field_src_port = 26 [(attr_enum_value) = 26];
+  optional AclFieldData field_outer_vlan_id = 27 [(attr_enum_value) = 27];
+  optional AclFieldData field_outer_vlan_pri = 28 [(attr_enum_value) = 28];
+  optional AclFieldData field_outer_vlan_cfi = 29 [(attr_enum_value) = 29];
+  optional AclFieldData field_inner_vlan_id = 30 [(attr_enum_value) = 30];
+  optional AclFieldData field_inner_vlan_pri = 31 [(attr_enum_value) = 31];
+  optional AclFieldData field_inner_vlan_cfi = 32 [(attr_enum_value) = 32];
+  optional AclFieldData field_l4_src_port = 33 [(attr_enum_value) = 33];
+  optional AclFieldData field_l4_dst_port = 34 [(attr_enum_value) = 34];
+  optional AclFieldData field_inner_l4_src_port = 35 [(attr_enum_value) = 35];
+  optional AclFieldData field_inner_l4_dst_port = 36 [(attr_enum_value) = 36];
+  optional AclFieldData field_ether_type = 37 [(attr_enum_value) = 37];
+  optional AclFieldData field_inner_ether_type = 38 [(attr_enum_value) = 38];
+  optional AclFieldData field_ip_protocol = 39 [(attr_enum_value) = 39];
+  optional AclFieldData field_inner_ip_protocol = 40 [(attr_enum_value) = 40];
+  optional AclFieldData field_ip_identification = 41 [(attr_enum_value) = 41];
+  optional AclFieldData field_dscp = 42 [(attr_enum_value) = 42];
+  optional AclFieldData field_ecn = 43 [(attr_enum_value) = 43];
+  optional AclFieldData field_ttl = 44 [(attr_enum_value) = 44];
+  optional AclFieldData field_tos = 45 [(attr_enum_value) = 45];
+  optional AclFieldData field_ip_flags = 46 [(attr_enum_value) = 46];
+  optional AclFieldData field_tcp_flags = 47 [(attr_enum_value) = 47];
+  optional AclFieldData field_acl_ip_type = 48 [(attr_enum_value) = 48];
+  optional AclFieldData field_acl_ip_frag = 49 [(attr_enum_value) = 49];
+  optional AclFieldData field_ipv6_flow_label = 50 [(attr_enum_value) = 50];
+  optional AclFieldData field_tc = 51 [(attr_enum_value) = 51];
+  optional AclFieldData field_icmp_type = 52 [(attr_enum_value) = 52];
+  optional AclFieldData field_icmp_code = 53 [(attr_enum_value) = 53];
+  optional AclFieldData field_icmpv6_type = 54 [(attr_enum_value) = 54];
+  optional AclFieldData field_icmpv6_code = 55 [(attr_enum_value) = 55];
+  optional AclFieldData field_packet_vlan = 56 [(attr_enum_value) = 56];
+  optional AclFieldData field_tunnel_vni = 57 [(attr_enum_value) = 57];
+  optional AclFieldData field_has_vlan_tag = 58 [(attr_enum_value) = 58];
+  optional AclFieldData field_macsec_sci = 59 [(attr_enum_value) = 59];
+  optional AclFieldData field_mpls_label0_label = 60 [(attr_enum_value) = 60];
+  optional AclFieldData field_mpls_label0_ttl = 61 [(attr_enum_value) = 61];
+  optional AclFieldData field_mpls_label0_exp = 62 [(attr_enum_value) = 62];
+  optional AclFieldData field_mpls_label0_bos = 63 [(attr_enum_value) = 63];
+  optional AclFieldData field_mpls_label1_label = 64 [(attr_enum_value) = 64];
+  optional AclFieldData field_mpls_label1_ttl = 65 [(attr_enum_value) = 65];
+  optional AclFieldData field_mpls_label1_exp = 66 [(attr_enum_value) = 66];
+  optional AclFieldData field_mpls_label1_bos = 67 [(attr_enum_value) = 67];
+  optional AclFieldData field_mpls_label2_label = 68 [(attr_enum_value) = 68];
+  optional AclFieldData field_mpls_label2_ttl = 69 [(attr_enum_value) = 69];
+  optional AclFieldData field_mpls_label2_exp = 70 [(attr_enum_value) = 70];
+  optional AclFieldData field_mpls_label2_bos = 71 [(attr_enum_value) = 71];
+  optional AclFieldData field_mpls_label3_label = 72 [(attr_enum_value) = 72];
+  optional AclFieldData field_mpls_label3_ttl = 73 [(attr_enum_value) = 73];
+  optional AclFieldData field_mpls_label3_exp = 74 [(attr_enum_value) = 74];
+  optional AclFieldData field_mpls_label3_bos = 75 [(attr_enum_value) = 75];
+  optional AclFieldData field_mpls_label4_label = 76 [(attr_enum_value) = 76];
+  optional AclFieldData field_mpls_label4_ttl = 77 [(attr_enum_value) = 77];
+  optional AclFieldData field_mpls_label4_exp = 78 [(attr_enum_value) = 78];
+  optional AclFieldData field_mpls_label4_bos = 79 [(attr_enum_value) = 79];
+  optional AclFieldData field_fdb_dst_user_meta = 80 [(attr_enum_value) = 80];
+  optional AclFieldData field_route_dst_user_meta = 81 [(attr_enum_value) = 81];
+  optional AclFieldData field_neighbor_dst_user_meta = 82
+      [(attr_enum_value) = 82];
+  optional AclFieldData field_port_user_meta = 83 [(attr_enum_value) = 83];
+  optional AclFieldData field_vlan_user_meta = 84 [(attr_enum_value) = 84];
+  optional AclFieldData field_acl_user_meta = 85 [(attr_enum_value) = 85];
+  optional AclFieldData field_fdb_npu_meta_dst_hit = 86
+      [(attr_enum_value) = 86];
+  optional AclFieldData field_neighbor_npu_meta_dst_hit = 87
+      [(attr_enum_value) = 87];
+  optional AclFieldData field_route_npu_meta_dst_hit = 88
+      [(attr_enum_value) = 88];
+  optional AclFieldData field_bth_opcode = 89 [(attr_enum_value) = 89];
+  optional AclFieldData field_aeth_syndrome = 90 [(attr_enum_value) = 90];
+  optional AclFieldData user_defined_field_group_min = 91
+      [(attr_enum_value) = 91];
+  optional AclFieldData user_defined_field_group_max = 92
+      [(attr_enum_value) = 92];
+  optional AclFieldData field_acl_range_type = 93 [(attr_enum_value) = 93];
+  optional AclFieldData field_ipv6_next_header = 94 [(attr_enum_value) = 94];
+  optional AclFieldData field_gre_key = 95 [(attr_enum_value) = 95];
+  optional AclFieldData field_tam_int_type = 96 [(attr_enum_value) = 96];
+  optional AclActionData action_redirect = 97 [(attr_enum_value) = 97];
+  optional AclActionData action_endpoint_ip = 98 [(attr_enum_value) = 98];
+  optional AclActionData action_redirect_list = 99 [(attr_enum_value) = 99];
+  optional AclActionData action_packet_action = 100 [(attr_enum_value) = 100];
+  optional AclActionData action_flood = 101 [(attr_enum_value) = 101];
+  optional AclActionData action_counter = 102 [(attr_enum_value) = 102];
+  optional AclActionData action_mirror_ingress = 103 [(attr_enum_value) = 103];
+  optional AclActionData action_mirror_egress = 104 [(attr_enum_value) = 104];
+  optional AclActionData action_set_policer = 105 [(attr_enum_value) = 105];
+  optional AclActionData action_decrement_ttl = 106 [(attr_enum_value) = 106];
+  optional AclActionData action_set_tc = 107 [(attr_enum_value) = 107];
+  optional AclActionData action_set_packet_color = 108
+      [(attr_enum_value) = 108];
+  optional AclActionData action_set_inner_vlan_id = 109
+      [(attr_enum_value) = 109];
+  optional AclActionData action_set_inner_vlan_pri = 110
+      [(attr_enum_value) = 110];
+  optional AclActionData action_set_outer_vlan_id = 111
+      [(attr_enum_value) = 111];
+  optional AclActionData action_set_outer_vlan_pri = 112
+      [(attr_enum_value) = 112];
+  optional AclActionData action_add_vlan_id = 113 [(attr_enum_value) = 113];
+  optional AclActionData action_add_vlan_pri = 114 [(attr_enum_value) = 114];
+  optional AclActionData action_set_src_mac = 115 [(attr_enum_value) = 115];
+  optional AclActionData action_set_dst_mac = 116 [(attr_enum_value) = 116];
+  optional AclActionData action_set_src_ip = 117 [(attr_enum_value) = 117];
+  optional AclActionData action_set_dst_ip = 118 [(attr_enum_value) = 118];
+  optional AclActionData action_set_src_ipv6 = 119 [(attr_enum_value) = 119];
+  optional AclActionData action_set_dst_ipv6 = 120 [(attr_enum_value) = 120];
+  optional AclActionData action_set_dscp = 121 [(attr_enum_value) = 121];
+  optional AclActionData action_set_ecn = 122 [(attr_enum_value) = 122];
+  optional AclActionData action_set_l4_src_port = 123 [(attr_enum_value) = 123];
+  optional AclActionData action_set_l4_dst_port = 124 [(attr_enum_value) = 124];
+  optional AclActionData action_ingress_samplepacket_enable = 125
+      [(attr_enum_value) = 125];
+  optional AclActionData action_egress_samplepacket_enable = 126
+      [(attr_enum_value) = 126];
+  optional AclActionData action_set_acl_meta_data = 127
+      [(attr_enum_value) = 127];
+  optional AclActionData action_egress_block_port_list = 128
+      [(attr_enum_value) = 128];
+  optional AclActionData action_set_user_trap_id = 129
+      [(attr_enum_value) = 129];
+  optional AclActionData action_set_do_not_learn = 130
+      [(attr_enum_value) = 130];
+  optional AclActionData action_acl_dtel_flow_op = 131
+      [(attr_enum_value) = 131];
+  optional AclActionData action_dtel_int_session = 132
+      [(attr_enum_value) = 132];
+  optional AclActionData action_dtel_drop_report_enable = 133
+      [(attr_enum_value) = 133];
+  optional AclActionData action_dtel_tail_drop_report_enable = 134
+      [(attr_enum_value) = 134];
+  optional AclActionData action_dtel_flow_sample_percent = 135
+      [(attr_enum_value) = 135];
+  optional AclActionData action_dtel_report_all_packets = 136
+      [(attr_enum_value) = 136];
+  optional AclActionData action_no_nat = 137 [(attr_enum_value) = 137];
+  optional AclActionData action_int_insert = 138 [(attr_enum_value) = 138];
+  optional AclActionData action_int_delete = 139 [(attr_enum_value) = 139];
+  optional AclActionData action_int_report_flow = 140 [(attr_enum_value) = 140];
+  optional AclActionData action_int_report_drops = 141
+      [(attr_enum_value) = 141];
+  optional AclActionData action_int_report_tail_drops = 142
+      [(attr_enum_value) = 142];
+  optional AclActionData action_tam_int_object = 143 [(attr_enum_value) = 143];
+  optional AclActionData action_set_isolation_group = 144
+      [(attr_enum_value) = 144];
+  optional AclActionData action_macsec_flow = 145 [(attr_enum_value) = 145];
+  optional AclActionData action_set_lag_hash_id = 146 [(attr_enum_value) = 146];
+  optional AclActionData action_set_ecmp_hash_id = 147
+      [(attr_enum_value) = 147];
+  optional AclActionData action_set_vrf = 148 [(attr_enum_value) = 148];
+  optional AclActionData action_set_forwarding_class = 149
+      [(attr_enum_value) = 149];
 }
 
-message SetAclEntryAttributeResponse {
-}
+message SetAclEntryAttributeResponse {}
 
 message GetAclEntryAttributeRequest {
-	uint64 oid = 1;
-	repeated AclEntryAttr attr_type = 2;
+  uint64 oid = 1;
+  repeated AclEntryAttr attr_type = 2;
 }
 
 message GetAclEntryAttributeResponse {
-	AclEntryAttribute attr = 1;
+  AclEntryAttribute attr = 1;
 }
 
 message CreateAclCounterRequest {
-	option (sai_type) = OBJECT_TYPE_ACL_COUNTER;
-	uint64 switch = 1;
-	optional uint64 table_id = 2[(attr_enum_value) = 1];
-	optional bool enable_packet_count = 3[(attr_enum_value) = 2];
-	optional bool enable_byte_count = 4[(attr_enum_value) = 3];
-	optional uint64 packets = 5[(attr_enum_value) = 4];
-	optional uint64 bytes = 6[(attr_enum_value) = 5];
+  option (sai_type) = OBJECT_TYPE_ACL_COUNTER;
+  uint64 switch = 1;
+  optional uint64 table_id = 2 [(attr_enum_value) = 1];
+  optional bool enable_packet_count = 3 [(attr_enum_value) = 2];
+  optional bool enable_byte_count = 4 [(attr_enum_value) = 3];
+  optional uint64 packets = 5 [(attr_enum_value) = 4];
+  optional uint64 bytes = 6 [(attr_enum_value) = 5];
 }
 
 message CreateAclCounterResponse {
-	uint64 oid = 1;
+  uint64 oid = 1;
 }
 
 message RemoveAclCounterRequest {
-	uint64 oid = 1;
+  uint64 oid = 1;
 }
 
-message RemoveAclCounterResponse {
-}
+message RemoveAclCounterResponse {}
 
 message SetAclCounterAttributeRequest {
-	uint64 oid = 1;
-	optional uint64 packets = 2[(attr_enum_value) = 4];
-	optional uint64 bytes = 3[(attr_enum_value) = 5];
+  uint64 oid = 1;
+  optional uint64 packets = 2 [(attr_enum_value) = 4];
+  optional uint64 bytes = 3 [(attr_enum_value) = 5];
 }
 
-message SetAclCounterAttributeResponse {
-}
+message SetAclCounterAttributeResponse {}
 
 message GetAclCounterAttributeRequest {
-	uint64 oid = 1;
-	repeated AclCounterAttr attr_type = 2;
+  uint64 oid = 1;
+  repeated AclCounterAttr attr_type = 2;
 }
 
 message GetAclCounterAttributeResponse {
-	AclCounterAttribute attr = 1;
+  AclCounterAttribute attr = 1;
 }
 
 message CreateAclRangeRequest {
-	option (sai_type) = OBJECT_TYPE_ACL_RANGE;
-	uint64 switch = 1;
-	optional AclRangeType type = 2[(attr_enum_value) = 1];
-	optional Uint32Range limit = 3[(attr_enum_value) = 2];
+  option (sai_type) = OBJECT_TYPE_ACL_RANGE;
+  uint64 switch = 1;
+  optional AclRangeType type = 2 [(attr_enum_value) = 1];
+  optional Uint32Range limit = 3 [(attr_enum_value) = 2];
 }
 
 message CreateAclRangeResponse {
-	uint64 oid = 1;
+  uint64 oid = 1;
 }
 
 message RemoveAclRangeRequest {
-	uint64 oid = 1;
+  uint64 oid = 1;
 }
 
-message RemoveAclRangeResponse {
-}
+message RemoveAclRangeResponse {}
 
 message GetAclRangeAttributeRequest {
-	uint64 oid = 1;
-	repeated AclRangeAttr attr_type = 2;
+  uint64 oid = 1;
+  repeated AclRangeAttr attr_type = 2;
 }
 
 message GetAclRangeAttributeResponse {
-	AclRangeAttribute attr = 1;
+  AclRangeAttribute attr = 1;
 }
 
 message CreateAclTableGroupRequest {
-	option (sai_type) = OBJECT_TYPE_ACL_TABLE_GROUP;
-	uint64 switch = 1;
-	optional AclStage acl_stage = 2[(attr_enum_value) = 1];
-	repeated AclBindPointType acl_bind_point_type_list = 3[(attr_enum_value) = 2];
-	optional AclTableGroupType type = 4[(attr_enum_value) = 3];
+  option (sai_type) = OBJECT_TYPE_ACL_TABLE_GROUP;
+  uint64 switch = 1;
+  optional AclStage acl_stage = 2 [(attr_enum_value) = 1];
+  repeated AclBindPointType acl_bind_point_type_list = 3
+      [(attr_enum_value) = 2];
+  optional AclTableGroupType type = 4 [(attr_enum_value) = 3];
 }
 
 message CreateAclTableGroupResponse {
-	uint64 oid = 1;
+  uint64 oid = 1;
 }
 
 message RemoveAclTableGroupRequest {
-	uint64 oid = 1;
+  uint64 oid = 1;
 }
 
-message RemoveAclTableGroupResponse {
-}
+message RemoveAclTableGroupResponse {}
 
 message GetAclTableGroupAttributeRequest {
-	uint64 oid = 1;
-	repeated AclTableGroupAttr attr_type = 2;
+  uint64 oid = 1;
+  repeated AclTableGroupAttr attr_type = 2;
 }
 
 message GetAclTableGroupAttributeResponse {
-	AclTableGroupAttribute attr = 1;
+  AclTableGroupAttribute attr = 1;
 }
 
 message CreateAclTableGroupMemberRequest {
-	option (sai_type) = OBJECT_TYPE_ACL_TABLE_GROUP_MEMBER;
-	uint64 switch = 1;
-	optional uint64 acl_table_group_id = 2[(attr_enum_value) = 1];
-	optional uint64 acl_table_id = 3[(attr_enum_value) = 2];
-	optional uint32 priority = 4[(attr_enum_value) = 3];
+  option (sai_type) = OBJECT_TYPE_ACL_TABLE_GROUP_MEMBER;
+  uint64 switch = 1;
+  optional uint64 acl_table_group_id = 2 [(attr_enum_value) = 1];
+  optional uint64 acl_table_id = 3 [(attr_enum_value) = 2];
+  optional uint32 priority = 4 [(attr_enum_value) = 3];
 }
 
 message CreateAclTableGroupMemberResponse {
-	uint64 oid = 1;
+  uint64 oid = 1;
 }
 
 message RemoveAclTableGroupMemberRequest {
-	uint64 oid = 1;
+  uint64 oid = 1;
 }
 
-message RemoveAclTableGroupMemberResponse {
-}
+message RemoveAclTableGroupMemberResponse {}
 
 message GetAclTableGroupMemberAttributeRequest {
-	uint64 oid = 1;
-	repeated AclTableGroupMemberAttr attr_type = 2;
+  uint64 oid = 1;
+  repeated AclTableGroupMemberAttr attr_type = 2;
 }
 
 message GetAclTableGroupMemberAttributeResponse {
-	AclTableGroupMemberAttribute attr = 1;
+  AclTableGroupMemberAttribute attr = 1;
 }
 
-
 service Acl {
-	rpc CreateAclTable (CreateAclTableRequest) returns (CreateAclTableResponse) {}
-	rpc RemoveAclTable (RemoveAclTableRequest) returns (RemoveAclTableResponse) {}
-	rpc GetAclTableAttribute (GetAclTableAttributeRequest) returns (GetAclTableAttributeResponse) {}
-	rpc CreateAclEntry (CreateAclEntryRequest) returns (CreateAclEntryResponse) {}
-	rpc RemoveAclEntry (RemoveAclEntryRequest) returns (RemoveAclEntryResponse) {}
-	rpc SetAclEntryAttribute (SetAclEntryAttributeRequest) returns (SetAclEntryAttributeResponse) {}
-	rpc GetAclEntryAttribute (GetAclEntryAttributeRequest) returns (GetAclEntryAttributeResponse) {}
-	rpc CreateAclCounter (CreateAclCounterRequest) returns (CreateAclCounterResponse) {}
-	rpc RemoveAclCounter (RemoveAclCounterRequest) returns (RemoveAclCounterResponse) {}
-	rpc SetAclCounterAttribute (SetAclCounterAttributeRequest) returns (SetAclCounterAttributeResponse) {}
-	rpc GetAclCounterAttribute (GetAclCounterAttributeRequest) returns (GetAclCounterAttributeResponse) {}
-	rpc CreateAclRange (CreateAclRangeRequest) returns (CreateAclRangeResponse) {}
-	rpc RemoveAclRange (RemoveAclRangeRequest) returns (RemoveAclRangeResponse) {}
-	rpc GetAclRangeAttribute (GetAclRangeAttributeRequest) returns (GetAclRangeAttributeResponse) {}
-	rpc CreateAclTableGroup (CreateAclTableGroupRequest) returns (CreateAclTableGroupResponse) {}
-	rpc RemoveAclTableGroup (RemoveAclTableGroupRequest) returns (RemoveAclTableGroupResponse) {}
-	rpc GetAclTableGroupAttribute (GetAclTableGroupAttributeRequest) returns (GetAclTableGroupAttributeResponse) {}
-	rpc CreateAclTableGroupMember (CreateAclTableGroupMemberRequest) returns (CreateAclTableGroupMemberResponse) {}
-	rpc RemoveAclTableGroupMember (RemoveAclTableGroupMemberRequest) returns (RemoveAclTableGroupMemberResponse) {}
-	rpc GetAclTableGroupMemberAttribute (GetAclTableGroupMemberAttributeRequest) returns (GetAclTableGroupMemberAttributeResponse) {}
+  rpc CreateAclTable(CreateAclTableRequest) returns (CreateAclTableResponse) {}
+  rpc RemoveAclTable(RemoveAclTableRequest) returns (RemoveAclTableResponse) {}
+  rpc GetAclTableAttribute(GetAclTableAttributeRequest)
+      returns (GetAclTableAttributeResponse) {}
+  rpc CreateAclEntry(CreateAclEntryRequest) returns (CreateAclEntryResponse) {}
+  rpc RemoveAclEntry(RemoveAclEntryRequest) returns (RemoveAclEntryResponse) {}
+  rpc SetAclEntryAttribute(SetAclEntryAttributeRequest)
+      returns (SetAclEntryAttributeResponse) {}
+  rpc GetAclEntryAttribute(GetAclEntryAttributeRequest)
+      returns (GetAclEntryAttributeResponse) {}
+  rpc CreateAclCounter(CreateAclCounterRequest)
+      returns (CreateAclCounterResponse) {}
+  rpc RemoveAclCounter(RemoveAclCounterRequest)
+      returns (RemoveAclCounterResponse) {}
+  rpc SetAclCounterAttribute(SetAclCounterAttributeRequest)
+      returns (SetAclCounterAttributeResponse) {}
+  rpc GetAclCounterAttribute(GetAclCounterAttributeRequest)
+      returns (GetAclCounterAttributeResponse) {}
+  rpc CreateAclRange(CreateAclRangeRequest) returns (CreateAclRangeResponse) {}
+  rpc RemoveAclRange(RemoveAclRangeRequest) returns (RemoveAclRangeResponse) {}
+  rpc GetAclRangeAttribute(GetAclRangeAttributeRequest)
+      returns (GetAclRangeAttributeResponse) {}
+  rpc CreateAclTableGroup(CreateAclTableGroupRequest)
+      returns (CreateAclTableGroupResponse) {}
+  rpc RemoveAclTableGroup(RemoveAclTableGroupRequest)
+      returns (RemoveAclTableGroupResponse) {}
+  rpc GetAclTableGroupAttribute(GetAclTableGroupAttributeRequest)
+      returns (GetAclTableGroupAttributeResponse) {}
+  rpc CreateAclTableGroupMember(CreateAclTableGroupMemberRequest)
+      returns (CreateAclTableGroupMemberResponse) {}
+  rpc RemoveAclTableGroupMember(RemoveAclTableGroupMemberRequest)
+      returns (RemoveAclTableGroupMemberResponse) {}
+  rpc GetAclTableGroupMemberAttribute(GetAclTableGroupMemberAttributeRequest)
+      returns (GetAclTableGroupMemberAttributeResponse) {}
 }

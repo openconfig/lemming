@@ -16,54 +16,94 @@
 #define DATAPLANE_STANDALONE_SAI_BMTOR_H_
 
 extern "C" {
-	#include "inc/sai.h"
-	#include "experimental/saiextensions.h"
+#include "inc/sai.h"
+#include "experimental/saiextensions.h"
 }
 
 extern const sai_bmtor_api_t l_bmtor;
 
+sai_status_t l_create_table_bitmap_classification_entry(
+    sai_object_id_t *table_bitmap_classification_entry_id,
+    sai_object_id_t switch_id, uint32_t attr_count,
+    const sai_attribute_t *attr_list);
 
-sai_status_t l_create_table_bitmap_classification_entry(sai_object_id_t *table_bitmap_classification_entry_id, sai_object_id_t switch_id, uint32_t attr_count, const sai_attribute_t *attr_list);
+sai_status_t l_remove_table_bitmap_classification_entry(
+    sai_object_id_t table_bitmap_classification_entry_id);
 
-sai_status_t l_remove_table_bitmap_classification_entry(sai_object_id_t table_bitmap_classification_entry_id);
+sai_status_t l_set_table_bitmap_classification_entry_attribute(
+    sai_object_id_t table_bitmap_classification_entry_id,
+    const sai_attribute_t *attr);
 
-sai_status_t l_set_table_bitmap_classification_entry_attribute(sai_object_id_t table_bitmap_classification_entry_id, const sai_attribute_t *attr);
+sai_status_t l_get_table_bitmap_classification_entry_attribute(
+    sai_object_id_t table_bitmap_classification_entry_id, uint32_t attr_count,
+    sai_attribute_t *attr_list);
 
-sai_status_t l_get_table_bitmap_classification_entry_attribute(sai_object_id_t table_bitmap_classification_entry_id, uint32_t attr_count, sai_attribute_t *attr_list);
+sai_status_t l_get_table_bitmap_classification_entry_stats(
+    sai_object_id_t table_bitmap_classification_entry_id,
+    uint32_t number_of_counters, const sai_stat_id_t *counter_ids,
+    uint64_t *counters);
 
-sai_status_t l_get_table_bitmap_classification_entry_stats(sai_object_id_t table_bitmap_classification_entry_id, uint32_t number_of_counters, const sai_stat_id_t *counter_ids, uint64_t *counters);
+sai_status_t l_get_table_bitmap_classification_entry_stats_ext(
+    sai_object_id_t table_bitmap_classification_entry_id,
+    uint32_t number_of_counters, const sai_stat_id_t *counter_ids,
+    sai_stats_mode_t mode, uint64_t *counters);
 
-sai_status_t l_get_table_bitmap_classification_entry_stats_ext(sai_object_id_t table_bitmap_classification_entry_id, uint32_t number_of_counters, const sai_stat_id_t *counter_ids, sai_stats_mode_t mode, uint64_t *counters);
+sai_status_t l_clear_table_bitmap_classification_entry_stats(
+    sai_object_id_t table_bitmap_classification_entry_id,
+    uint32_t number_of_counters, const sai_stat_id_t *counter_ids);
 
-sai_status_t l_clear_table_bitmap_classification_entry_stats(sai_object_id_t table_bitmap_classification_entry_id, uint32_t number_of_counters, const sai_stat_id_t *counter_ids);
+sai_status_t l_create_table_bitmap_router_entry(
+    sai_object_id_t *table_bitmap_router_entry_id, sai_object_id_t switch_id,
+    uint32_t attr_count, const sai_attribute_t *attr_list);
 
-sai_status_t l_create_table_bitmap_router_entry(sai_object_id_t *table_bitmap_router_entry_id, sai_object_id_t switch_id, uint32_t attr_count, const sai_attribute_t *attr_list);
+sai_status_t l_remove_table_bitmap_router_entry(
+    sai_object_id_t table_bitmap_router_entry_id);
 
-sai_status_t l_remove_table_bitmap_router_entry(sai_object_id_t table_bitmap_router_entry_id);
+sai_status_t l_set_table_bitmap_router_entry_attribute(
+    sai_object_id_t table_bitmap_router_entry_id, const sai_attribute_t *attr);
 
-sai_status_t l_set_table_bitmap_router_entry_attribute(sai_object_id_t table_bitmap_router_entry_id, const sai_attribute_t *attr);
+sai_status_t l_get_table_bitmap_router_entry_attribute(
+    sai_object_id_t table_bitmap_router_entry_id, uint32_t attr_count,
+    sai_attribute_t *attr_list);
 
-sai_status_t l_get_table_bitmap_router_entry_attribute(sai_object_id_t table_bitmap_router_entry_id, uint32_t attr_count, sai_attribute_t *attr_list);
+sai_status_t l_get_table_bitmap_router_entry_stats(
+    sai_object_id_t table_bitmap_router_entry_id, uint32_t number_of_counters,
+    const sai_stat_id_t *counter_ids, uint64_t *counters);
 
-sai_status_t l_get_table_bitmap_router_entry_stats(sai_object_id_t table_bitmap_router_entry_id, uint32_t number_of_counters, const sai_stat_id_t *counter_ids, uint64_t *counters);
+sai_status_t l_get_table_bitmap_router_entry_stats_ext(
+    sai_object_id_t table_bitmap_router_entry_id, uint32_t number_of_counters,
+    const sai_stat_id_t *counter_ids, sai_stats_mode_t mode,
+    uint64_t *counters);
 
-sai_status_t l_get_table_bitmap_router_entry_stats_ext(sai_object_id_t table_bitmap_router_entry_id, uint32_t number_of_counters, const sai_stat_id_t *counter_ids, sai_stats_mode_t mode, uint64_t *counters);
+sai_status_t l_clear_table_bitmap_router_entry_stats(
+    sai_object_id_t table_bitmap_router_entry_id, uint32_t number_of_counters,
+    const sai_stat_id_t *counter_ids);
 
-sai_status_t l_clear_table_bitmap_router_entry_stats(sai_object_id_t table_bitmap_router_entry_id, uint32_t number_of_counters, const sai_stat_id_t *counter_ids);
+sai_status_t l_create_table_meta_tunnel_entry(
+    sai_object_id_t *table_meta_tunnel_entry_id, sai_object_id_t switch_id,
+    uint32_t attr_count, const sai_attribute_t *attr_list);
 
-sai_status_t l_create_table_meta_tunnel_entry(sai_object_id_t *table_meta_tunnel_entry_id, sai_object_id_t switch_id, uint32_t attr_count, const sai_attribute_t *attr_list);
+sai_status_t l_remove_table_meta_tunnel_entry(
+    sai_object_id_t table_meta_tunnel_entry_id);
 
-sai_status_t l_remove_table_meta_tunnel_entry(sai_object_id_t table_meta_tunnel_entry_id);
+sai_status_t l_set_table_meta_tunnel_entry_attribute(
+    sai_object_id_t table_meta_tunnel_entry_id, const sai_attribute_t *attr);
 
-sai_status_t l_set_table_meta_tunnel_entry_attribute(sai_object_id_t table_meta_tunnel_entry_id, const sai_attribute_t *attr);
+sai_status_t l_get_table_meta_tunnel_entry_attribute(
+    sai_object_id_t table_meta_tunnel_entry_id, uint32_t attr_count,
+    sai_attribute_t *attr_list);
 
-sai_status_t l_get_table_meta_tunnel_entry_attribute(sai_object_id_t table_meta_tunnel_entry_id, uint32_t attr_count, sai_attribute_t *attr_list);
+sai_status_t l_get_table_meta_tunnel_entry_stats(
+    sai_object_id_t table_meta_tunnel_entry_id, uint32_t number_of_counters,
+    const sai_stat_id_t *counter_ids, uint64_t *counters);
 
-sai_status_t l_get_table_meta_tunnel_entry_stats(sai_object_id_t table_meta_tunnel_entry_id, uint32_t number_of_counters, const sai_stat_id_t *counter_ids, uint64_t *counters);
+sai_status_t l_get_table_meta_tunnel_entry_stats_ext(
+    sai_object_id_t table_meta_tunnel_entry_id, uint32_t number_of_counters,
+    const sai_stat_id_t *counter_ids, sai_stats_mode_t mode,
+    uint64_t *counters);
 
-sai_status_t l_get_table_meta_tunnel_entry_stats_ext(sai_object_id_t table_meta_tunnel_entry_id, uint32_t number_of_counters, const sai_stat_id_t *counter_ids, sai_stats_mode_t mode, uint64_t *counters);
-
-sai_status_t l_clear_table_meta_tunnel_entry_stats(sai_object_id_t table_meta_tunnel_entry_id, uint32_t number_of_counters, const sai_stat_id_t *counter_ids);
-
+sai_status_t l_clear_table_meta_tunnel_entry_stats(
+    sai_object_id_t table_meta_tunnel_entry_id, uint32_t number_of_counters,
+    const sai_stat_id_t *counter_ids);
 
 #endif  // DATAPLANE_STANDALONE_SAI_BMTOR_H_

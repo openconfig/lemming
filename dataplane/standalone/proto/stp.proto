@@ -7,89 +7,87 @@ import "dataplane/standalone/proto/common.proto";
 
 option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto";
 
-
 enum StpAttr {
-	STP_ATTR_UNSPECIFIED = 0;
-	STP_ATTR_VLAN_LIST = 1;
-	STP_ATTR_BRIDGE_ID = 2;
-	STP_ATTR_PORT_LIST = 3;
+  STP_ATTR_UNSPECIFIED = 0;
+  STP_ATTR_VLAN_LIST = 1;
+  STP_ATTR_BRIDGE_ID = 2;
+  STP_ATTR_PORT_LIST = 3;
 }
 
 enum StpPortAttr {
-	STP_PORT_ATTR_UNSPECIFIED = 0;
-	STP_PORT_ATTR_STP = 1;
-	STP_PORT_ATTR_BRIDGE_PORT = 2;
-	STP_PORT_ATTR_STATE = 3;
+  STP_PORT_ATTR_UNSPECIFIED = 0;
+  STP_PORT_ATTR_STP = 1;
+  STP_PORT_ATTR_BRIDGE_PORT = 2;
+  STP_PORT_ATTR_STATE = 3;
 }
 
 message CreateStpRequest {
-	option (sai_type) = OBJECT_TYPE_STP;
-	uint64 switch = 1;
+  option (sai_type) = OBJECT_TYPE_STP;
+  uint64 switch = 1;
 }
 
 message CreateStpResponse {
-	uint64 oid = 1;
+  uint64 oid = 1;
 }
 
 message RemoveStpRequest {
-	uint64 oid = 1;
+  uint64 oid = 1;
 }
 
-message RemoveStpResponse {
-}
+message RemoveStpResponse {}
 
 message GetStpAttributeRequest {
-	uint64 oid = 1;
-	repeated StpAttr attr_type = 2;
+  uint64 oid = 1;
+  repeated StpAttr attr_type = 2;
 }
 
 message GetStpAttributeResponse {
-	StpAttribute attr = 1;
+  StpAttribute attr = 1;
 }
 
 message CreateStpPortRequest {
-	option (sai_type) = OBJECT_TYPE_STP_PORT;
-	uint64 switch = 1;
-	optional uint64 stp = 2[(attr_enum_value) = 1];
-	optional uint64 bridge_port = 3[(attr_enum_value) = 2];
-	optional StpPortState state = 4[(attr_enum_value) = 3];
+  option (sai_type) = OBJECT_TYPE_STP_PORT;
+  uint64 switch = 1;
+  optional uint64 stp = 2 [(attr_enum_value) = 1];
+  optional uint64 bridge_port = 3 [(attr_enum_value) = 2];
+  optional StpPortState state = 4 [(attr_enum_value) = 3];
 }
 
 message CreateStpPortResponse {
-	uint64 oid = 1;
+  uint64 oid = 1;
 }
 
 message RemoveStpPortRequest {
-	uint64 oid = 1;
+  uint64 oid = 1;
 }
 
-message RemoveStpPortResponse {
-}
+message RemoveStpPortResponse {}
 
 message SetStpPortAttributeRequest {
-	uint64 oid = 1;
-	optional StpPortState state = 2[(attr_enum_value) = 3];
+  uint64 oid = 1;
+  optional StpPortState state = 2 [(attr_enum_value) = 3];
 }
 
-message SetStpPortAttributeResponse {
-}
+message SetStpPortAttributeResponse {}
 
 message GetStpPortAttributeRequest {
-	uint64 oid = 1;
-	repeated StpPortAttr attr_type = 2;
+  uint64 oid = 1;
+  repeated StpPortAttr attr_type = 2;
 }
 
 message GetStpPortAttributeResponse {
-	StpPortAttribute attr = 1;
+  StpPortAttribute attr = 1;
 }
 
-
 service Stp {
-	rpc CreateStp (CreateStpRequest) returns (CreateStpResponse) {}
-	rpc RemoveStp (RemoveStpRequest) returns (RemoveStpResponse) {}
-	rpc GetStpAttribute (GetStpAttributeRequest) returns (GetStpAttributeResponse) {}
-	rpc CreateStpPort (CreateStpPortRequest) returns (CreateStpPortResponse) {}
-	rpc RemoveStpPort (RemoveStpPortRequest) returns (RemoveStpPortResponse) {}
-	rpc SetStpPortAttribute (SetStpPortAttributeRequest) returns (SetStpPortAttributeResponse) {}
-	rpc GetStpPortAttribute (GetStpPortAttributeRequest) returns (GetStpPortAttributeResponse) {}
+  rpc CreateStp(CreateStpRequest) returns (CreateStpResponse) {}
+  rpc RemoveStp(RemoveStpRequest) returns (RemoveStpResponse) {}
+  rpc GetStpAttribute(GetStpAttributeRequest)
+      returns (GetStpAttributeResponse) {}
+  rpc CreateStpPort(CreateStpPortRequest) returns (CreateStpPortResponse) {}
+  rpc RemoveStpPort(RemoveStpPortRequest) returns (RemoveStpPortResponse) {}
+  rpc SetStpPortAttribute(SetStpPortAttributeRequest)
+      returns (SetStpPortAttributeResponse) {}
+  rpc GetStpPortAttribute(GetStpPortAttributeRequest)
+      returns (GetStpPortAttributeResponse) {}
 }
