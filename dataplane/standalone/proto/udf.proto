@@ -32,6 +32,7 @@ enum UdfGroupAttr {
 }
 
 message CreateUdfRequest {
+  option (sai_type) = OBJECT_TYPE_UDF;
   uint64 switch = 1;
   optional uint64 match_id = 2 [(attr_enum_value) = 1];
   optional uint64 group_id = 3 [(attr_enum_value) = 2];
@@ -68,6 +69,7 @@ message GetUdfAttributeResponse {
 }
 
 message CreateUdfMatchRequest {
+  option (sai_type) = OBJECT_TYPE_UDF_MATCH;
   uint64 switch = 1;
   optional AclFieldData l2_type = 2 [(attr_enum_value) = 1];
   optional AclFieldData l3_type = 3 [(attr_enum_value) = 2];
@@ -95,6 +97,7 @@ message GetUdfMatchAttributeResponse {
 }
 
 message CreateUdfGroupRequest {
+  option (sai_type) = OBJECT_TYPE_UDF_GROUP;
   uint64 switch = 1;
   optional UdfGroupType type = 2 [(attr_enum_value) = 2];
   optional uint32 length = 3 [(attr_enum_value) = 3];

@@ -162,7 +162,7 @@ sai_status_t l_get_next_hop_group_attribute(sai_object_id_t next_hop_group_id,
       case SAI_NEXT_HOP_GROUP_ATTR_NEXT_HOP_MEMBER_LIST:
         copy_list(attr_list[i].value.objlist.list,
                   resp.attr().next_hop_member_list(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_NEXT_HOP_GROUP_ATTR_TYPE:
         attr_list[i].value.s32 = static_cast<int>(resp.attr().type() - 1);

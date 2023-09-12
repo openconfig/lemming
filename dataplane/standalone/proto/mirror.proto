@@ -37,6 +37,7 @@ enum MirrorSessionAttr {
 }
 
 message CreateMirrorSessionRequest {
+  option (sai_type) = OBJECT_TYPE_MIRROR_SESSION;
   uint64 switch = 1;
   optional MirrorSessionType type = 2 [(attr_enum_value) = 1];
   optional uint64 monitor_port = 3 [(attr_enum_value) = 2];

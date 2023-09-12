@@ -12,6 +12,10 @@ extend google.protobuf.FieldOptions {
   optional int32 attr_enum_value = 50000;
 }
 
+extend google.protobuf.MessageOptions {
+  optional ObjectType sai_type = 50001;
+}
+
 message AclActionData {
   bool enable = 1;
   oneof parameter {
@@ -236,6 +240,19 @@ message TLVEntry {
 message Uint32Range {
   uint64 min = 1;
   uint64 max = 2;
+}
+
+message ObjectTypeQueryRequest {
+  uint64 object = 1;
+}
+
+message ObjectTypeQueryResponse {
+  ObjectType type = 1;
+}
+
+service Entrypoint {
+  rpc ObjectTypeQuery(ObjectTypeQueryRequest)
+      returns (ObjectTypeQueryResponse) {}
 }
 
 enum AclActionType {
@@ -1150,6 +1167,15 @@ enum NextHopType {
   NEXT_HOP_TYPE_SRV6_SIDLIST = 4;
 }
 
+enum ObjectTypeExtensions {
+  OBJECT_TYPE_EXTENSIONS_UNSPECIFIED = 0;
+  OBJECT_TYPE_EXTENSIONS_RANGE_START = 1;
+  OBJECT_TYPE_TABLE_BITMAP_CLASSIFICATION_ENTRY = 2;
+  OBJECT_TYPE_TABLE_BITMAP_ROUTER_ENTRY = 3;
+  OBJECT_TYPE_TABLE_META_TUNNEL_ENTRY = 4;
+  OBJECT_TYPE_EXTENSIONS_RANGE_END = 5;
+}
+
 enum ObjectType {
   OBJECT_TYPE_UNSPECIFIED = 0;
   OBJECT_TYPE_NULL = 1;
@@ -2015,6 +2041,45 @@ enum SystemPortType {
   SYSTEM_PORT_TYPE_UNSPECIFIED = 0;
   SYSTEM_PORT_TYPE_LOCAL = 1;
   SYSTEM_PORT_TYPE_REMOTE = 2;
+}
+
+enum TableBitmapClassificationEntryAction {
+  TABLE_BITMAP_CLASSIFICATION_ENTRY_ACTION_UNSPECIFIED = 0;
+  TABLE_BITMAP_CLASSIFICATION_ENTRY_ACTION_SET_METADATA = 1;
+  TABLE_BITMAP_CLASSIFICATION_ENTRY_ACTION_NOACTION = 2;
+}
+
+enum TableBitmapClassificationEntryStat {
+  TABLE_BITMAP_CLASSIFICATION_ENTRY_STAT_UNSPECIFIED = 0;
+  TABLE_BITMAP_CLASSIFICATION_ENTRY_STAT_HIT_PACKETS = 1;
+  TABLE_BITMAP_CLASSIFICATION_ENTRY_STAT_HIT_OCTETS = 2;
+}
+
+enum TableBitmapRouterEntryAction {
+  TABLE_BITMAP_ROUTER_ENTRY_ACTION_UNSPECIFIED = 0;
+  TABLE_BITMAP_ROUTER_ENTRY_ACTION_TO_NEXTHOP = 1;
+  TABLE_BITMAP_ROUTER_ENTRY_ACTION_TO_LOCAL = 2;
+  TABLE_BITMAP_ROUTER_ENTRY_ACTION_TO_CPU = 3;
+  TABLE_BITMAP_ROUTER_ENTRY_ACTION_DROP = 4;
+  TABLE_BITMAP_ROUTER_ENTRY_ACTION_NOACTION = 5;
+}
+
+enum TableBitmapRouterEntryStat {
+  TABLE_BITMAP_ROUTER_ENTRY_STAT_UNSPECIFIED = 0;
+  TABLE_BITMAP_ROUTER_ENTRY_STAT_HIT_PACKETS = 1;
+  TABLE_BITMAP_ROUTER_ENTRY_STAT_HIT_OCTETS = 2;
+}
+
+enum TableMetaTunnelEntryAction {
+  TABLE_META_TUNNEL_ENTRY_ACTION_UNSPECIFIED = 0;
+  TABLE_META_TUNNEL_ENTRY_ACTION_TUNNEL_ENCAP = 1;
+  TABLE_META_TUNNEL_ENTRY_ACTION_NOACTION = 2;
+}
+
+enum TableMetaTunnelEntryStat {
+  TABLE_META_TUNNEL_ENTRY_STAT_UNSPECIFIED = 0;
+  TABLE_META_TUNNEL_ENTRY_STAT_HIT_PACKETS = 1;
+  TABLE_META_TUNNEL_ENTRY_STAT_HIT_OCTETS = 2;
 }
 
 enum TamBindPointType {
@@ -3776,6 +3841,34 @@ message SystemPortAttribute {
   optional bool admin_state = 5 [(attr_enum_value) = 5];
   optional SystemPortConfig config_info = 6 [(attr_enum_value) = 6];
   optional uint64 qos_tc_to_queue_map = 7 [(attr_enum_value) = 7];
+}
+
+message TableBitmapClassificationEntryAttribute {
+  optional TableBitmapClassificationEntryAction action = 1
+      [(attr_enum_value) = 1];
+  optional uint64 router_interface_key = 2 [(attr_enum_value) = 2];
+  optional bool is_default = 3 [(attr_enum_value) = 3];
+  optional uint32 in_rif_metadata = 4 [(attr_enum_value) = 4];
+}
+
+message TableBitmapRouterEntryAttribute {
+  optional TableBitmapRouterEntryAction action = 1 [(attr_enum_value) = 1];
+  optional uint32 priority = 2 [(attr_enum_value) = 2];
+  optional uint32 in_rif_metadata_key = 3 [(attr_enum_value) = 3];
+  optional uint32 in_rif_metadata_mask = 4 [(attr_enum_value) = 4];
+  optional IpPrefix dst_ip_key = 5 [(attr_enum_value) = 5];
+  optional uint32 tunnel_index = 6 [(attr_enum_value) = 6];
+  optional uint64 next_hop = 7 [(attr_enum_value) = 7];
+  optional uint64 router_interface = 8 [(attr_enum_value) = 8];
+  optional uint64 trap_id = 9 [(attr_enum_value) = 9];
+}
+
+message TableMetaTunnelEntryAttribute {
+  optional TableMetaTunnelEntryAction action = 1 [(attr_enum_value) = 1];
+  optional uint32 metadata_key = 2 [(attr_enum_value) = 2];
+  optional bool is_default = 3 [(attr_enum_value) = 3];
+  optional uint64 tunnel_id = 4 [(attr_enum_value) = 4];
+  optional bytes underlay_dip = 5 [(attr_enum_value) = 5];
 }
 
 message TamAttribute {

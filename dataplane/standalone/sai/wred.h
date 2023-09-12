@@ -17,6 +17,7 @@
 
 extern "C" {
 #include "inc/sai.h"
+#include "experimental/saiextensions.h"
 }
 
 extern const sai_wred_api_t l_wred;

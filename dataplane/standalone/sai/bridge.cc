@@ -193,7 +193,7 @@ sai_status_t l_get_bridge_attribute(sai_object_id_t bridge_id,
         break;
       case SAI_BRIDGE_ATTR_PORT_LIST:
         copy_list(attr_list[i].value.objlist.list, resp.attr().port_list(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_BRIDGE_ATTR_MAX_LEARNED_ADDRESSES:
         attr_list[i].value.u32 = resp.attr().max_learned_addresses();

@@ -67,6 +67,7 @@ enum IpsecSaAttr {
 }
 
 message CreateIpsecRequest {
+  option (sai_type) = OBJECT_TYPE_IPSEC;
   uint64 switch = 1;
   optional bool warm_boot_enable = 2 [(attr_enum_value) = 11];
   optional bool external_sa_index_enable = 3 [(attr_enum_value) = 12];
@@ -111,6 +112,7 @@ message GetIpsecAttributeResponse {
 }
 
 message CreateIpsecPortRequest {
+  option (sai_type) = OBJECT_TYPE_IPSEC_PORT;
   uint64 switch = 1;
   optional uint64 port_id = 2 [(attr_enum_value) = 1];
   optional bool ctag_enable = 3 [(attr_enum_value) = 2];
@@ -152,6 +154,7 @@ message GetIpsecPortAttributeResponse {
 }
 
 message CreateIpsecSaRequest {
+  option (sai_type) = OBJECT_TYPE_IPSEC_SA;
   uint64 switch = 1;
   optional IpsecDirection ipsec_direction = 2 [(attr_enum_value) = 1];
   optional uint64 ipsec_id = 3 [(attr_enum_value) = 2];

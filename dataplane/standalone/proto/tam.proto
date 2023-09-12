@@ -135,6 +135,7 @@ enum TamEventAttr {
 }
 
 message CreateTamRequest {
+  option (sai_type) = OBJECT_TYPE_TAM;
   uint64 switch = 1;
   repeated uint64 telemetry_objects_list = 2 [(attr_enum_value) = 1];
   repeated uint64 event_objects_list = 3 [(attr_enum_value) = 2];
@@ -172,6 +173,7 @@ message GetTamAttributeResponse {
 }
 
 message CreateTamMathFuncRequest {
+  option (sai_type) = OBJECT_TYPE_TAM_MATH_FUNC;
   uint64 switch = 1;
   optional TamTelMathFuncType tam_tel_math_func_type = 2
       [(attr_enum_value) = 1];
@@ -205,6 +207,7 @@ message GetTamMathFuncAttributeResponse {
 }
 
 message CreateTamReportRequest {
+  option (sai_type) = OBJECT_TYPE_TAM_REPORT;
   uint64 switch = 1;
   optional TamReportType type = 2 [(attr_enum_value) = 1];
   optional uint32 histogram_number_of_bins = 3 [(attr_enum_value) = 2];
@@ -245,6 +248,7 @@ message GetTamReportAttributeResponse {
 }
 
 message CreateTamEventThresholdRequest {
+  option (sai_type) = OBJECT_TYPE_TAM_EVENT_THRESHOLD;
   uint64 switch = 1;
   optional uint32 high_watermark = 2 [(attr_enum_value) = 1];
   optional uint32 low_watermark = 3 [(attr_enum_value) = 2];
@@ -286,6 +290,7 @@ message GetTamEventThresholdAttributeResponse {
 }
 
 message CreateTamIntRequest {
+  option (sai_type) = OBJECT_TYPE_TAM_INT;
   uint64 switch = 1;
   optional TamIntType type = 2 [(attr_enum_value) = 1];
   optional uint32 device_id = 3 [(attr_enum_value) = 2];
@@ -358,6 +363,7 @@ message GetTamIntAttributeResponse {
 }
 
 message CreateTamTelTypeRequest {
+  option (sai_type) = OBJECT_TYPE_TAM_TEL_TYPE;
   uint64 switch = 1;
   optional TamTelemetryType tam_telemetry_type = 2 [(attr_enum_value) = 1];
   optional uint32 int_switch_identifier = 3 [(attr_enum_value) = 2];
@@ -419,6 +425,7 @@ message GetTamTelTypeAttributeResponse {
 }
 
 message CreateTamTransportRequest {
+  option (sai_type) = OBJECT_TYPE_TAM_TRANSPORT;
   uint64 switch = 1;
   optional TamTransportType transport_type = 2 [(attr_enum_value) = 1];
   optional uint32 src_port = 3 [(attr_enum_value) = 2];
@@ -457,6 +464,7 @@ message GetTamTransportAttributeResponse {
 }
 
 message CreateTamTelemetryRequest {
+  option (sai_type) = OBJECT_TYPE_TAM_TELEMETRY;
   uint64 switch = 1;
   repeated uint64 tam_type_list = 2 [(attr_enum_value) = 1];
   repeated uint64 collector_list = 3 [(attr_enum_value) = 2];
@@ -493,6 +501,7 @@ message GetTamTelemetryAttributeResponse {
 }
 
 message CreateTamCollectorRequest {
+  option (sai_type) = OBJECT_TYPE_TAM_COLLECTOR;
   uint64 switch = 1;
   optional bytes src_ip = 2 [(attr_enum_value) = 1];
   optional bytes dst_ip = 3 [(attr_enum_value) = 2];
@@ -536,6 +545,7 @@ message GetTamCollectorAttributeResponse {
 }
 
 message CreateTamEventActionRequest {
+  option (sai_type) = OBJECT_TYPE_TAM_EVENT_ACTION;
   uint64 switch = 1;
   optional uint64 report_type = 2 [(attr_enum_value) = 1];
   optional uint32 qos_action_type = 3 [(attr_enum_value) = 2];
@@ -569,6 +579,7 @@ message GetTamEventActionAttributeResponse {
 }
 
 message CreateTamEventRequest {
+  option (sai_type) = OBJECT_TYPE_TAM_EVENT;
   uint64 switch = 1;
   optional TamEventType type = 2 [(attr_enum_value) = 1];
   repeated uint64 action_list = 3 [(attr_enum_value) = 2];

@@ -52,6 +52,7 @@ enum BfdSessionAttr {
 }
 
 message CreateBfdSessionRequest {
+  option (sai_type) = OBJECT_TYPE_BFD_SESSION;
   uint64 switch = 1;
   optional BfdSessionType type = 2 [(attr_enum_value) = 1];
   optional bool hw_lookup_valid = 3 [(attr_enum_value) = 2];

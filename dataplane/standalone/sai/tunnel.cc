@@ -126,7 +126,7 @@ sai_status_t l_get_tunnel_map_attribute(sai_object_id_t tunnel_map_id,
         break;
       case SAI_TUNNEL_MAP_ATTR_ENTRY_LIST:
         copy_list(attr_list[i].value.objlist.list, resp.attr().entry_list(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
     }
   }
@@ -415,7 +415,7 @@ sai_status_t l_get_tunnel_attribute(sai_object_id_t tunnel_id,
         break;
       case SAI_TUNNEL_ATTR_ENCAP_MAPPERS:
         copy_list(attr_list[i].value.objlist.list, resp.attr().encap_mappers(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_TUNNEL_ATTR_DECAP_ECN_MODE:
         attr_list[i].value.s32 =
@@ -423,7 +423,7 @@ sai_status_t l_get_tunnel_attribute(sai_object_id_t tunnel_id,
         break;
       case SAI_TUNNEL_ATTR_DECAP_MAPPERS:
         copy_list(attr_list[i].value.objlist.list, resp.attr().decap_mappers(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_TUNNEL_ATTR_DECAP_TTL_MODE:
         attr_list[i].value.s32 =
@@ -436,7 +436,7 @@ sai_status_t l_get_tunnel_attribute(sai_object_id_t tunnel_id,
       case SAI_TUNNEL_ATTR_TERM_TABLE_ENTRY_LIST:
         copy_list(attr_list[i].value.objlist.list,
                   resp.attr().term_table_entry_list(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_TUNNEL_ATTR_LOOPBACK_PACKET_ACTION:
         attr_list[i].value.s32 =
@@ -458,7 +458,7 @@ sai_status_t l_get_tunnel_attribute(sai_object_id_t tunnel_id,
       case SAI_TUNNEL_ATTR_IPSEC_SA_PORT_LIST:
         copy_list(attr_list[i].value.objlist.list,
                   resp.attr().ipsec_sa_port_list(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
     }
   }

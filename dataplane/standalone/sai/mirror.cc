@@ -343,7 +343,7 @@ sai_status_t l_get_mirror_session_attribute(sai_object_id_t mirror_session_id,
       case SAI_MIRROR_SESSION_ATTR_MONITOR_PORTLIST:
         copy_list(attr_list[i].value.objlist.list,
                   resp.attr().monitor_portlist(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_MIRROR_SESSION_ATTR_POLICER:
         attr_list[i].value.oid = resp.attr().policer();

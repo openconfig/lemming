@@ -14,6 +14,7 @@ enum L2mcEntryAttr {
 }
 
 message CreateL2mcEntryRequest {
+  option (sai_type) = OBJECT_TYPE_L2MC_ENTRY;
   L2mcEntry entry = 1;
   optional PacketAction packet_action = 2 [(attr_enum_value) = 1];
   optional uint64 output_group_id = 3 [(attr_enum_value) = 2];

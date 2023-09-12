@@ -230,7 +230,7 @@ sai_status_t l_get_next_hop_attribute(sai_object_id_t next_hop_id,
         break;
       case SAI_NEXT_HOP_ATTR_LABELSTACK:
         copy_list(attr_list[i].value.u32list.list, resp.attr().labelstack(),
-                  attr_list[i].value.u32list.count);
+                  &attr_list[i].value.u32list.count);
         break;
       case SAI_NEXT_HOP_ATTR_COUNTER_ID:
         attr_list[i].value.oid = resp.attr().counter_id();

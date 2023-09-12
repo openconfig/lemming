@@ -38,6 +38,7 @@ enum NatZoneCounterAttr {
 }
 
 message CreateNatEntryRequest {
+  option (sai_type) = OBJECT_TYPE_NAT_ENTRY;
   NatEntry entry = 1;
   optional NatType nat_type = 2 [(attr_enum_value) = 1];
   optional bytes src_ip = 3 [(attr_enum_value) = 2];
@@ -93,6 +94,7 @@ message GetNatEntryAttributeResponse {
 }
 
 message CreateNatZoneCounterRequest {
+  option (sai_type) = OBJECT_TYPE_NAT_ZONE_COUNTER;
   uint64 switch = 1;
   optional NatType nat_type = 2 [(attr_enum_value) = 1];
   optional uint32 zone_id = 3 [(attr_enum_value) = 2];

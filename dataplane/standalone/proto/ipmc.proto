@@ -15,6 +15,7 @@ enum IpmcEntryAttr {
 }
 
 message CreateIpmcEntryRequest {
+  option (sai_type) = OBJECT_TYPE_IPMC_ENTRY;
   IpmcEntry entry = 1;
   optional PacketAction packet_action = 2 [(attr_enum_value) = 1];
   optional uint64 output_group_id = 3 [(attr_enum_value) = 2];

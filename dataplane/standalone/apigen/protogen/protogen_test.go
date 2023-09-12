@@ -39,6 +39,10 @@ extend google.protobuf.FieldOptions {
 	optional int32 attr_enum_value = 50000;
 }
 
+extend google.protobuf.MessageOptions {
+	optional ObjectType sai_type = 50001;
+}
+
 message AclActionData {
 	bool enable = 1;
 	oneof parameter {
@@ -266,6 +270,18 @@ message Uint32Range {
 	uint64 min = 1;
 	uint64 max = 2;
 }
+
+message ObjectTypeQueryRequest {
+	uint64 object = 1;
+}
+
+message ObjectTypeQueryResponse {
+	ObjectType type = 1;
+}
+
+service Entrypoint {
+  rpc ObjectTypeQuery(ObjectTypeQueryRequest) returns (ObjectTypeQueryResponse) {}
+}
 `
 )
 
@@ -416,6 +432,7 @@ enum FooAttr {
 }
 
 message CreateFooRequest {
+	option (sai_type) = OBJECT_TYPE_UNSPECIFIED;
 	optional uint32 sample_uint = 1;
 }
 
@@ -526,6 +543,7 @@ enum FooAttr {
 }
 
 message CreateFooRequest {
+	option (sai_type) = OBJECT_TYPE_UNSPECIFIED;
 	uint64 switch = 1;
 	optional uint32 sample_uint = 2;
 }

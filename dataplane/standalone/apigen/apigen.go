@@ -29,7 +29,7 @@ import (
 	cc "modernc.org/cc/v4"
 )
 
-func parse(header string, includePaths ...string) (*cc.AST, error) {
+func parse(headers []string, includePaths ...string) (*cc.AST, error) {
 	cfg, err := cc.NewConfig(runtime.GOOS, runtime.GOARCH)
 	if err != nil {
 		return nil, err
@@ -38,7 +38,10 @@ func parse(header string, includePaths ...string) (*cc.AST, error) {
 		cfg.SysIncludePaths = append(cfg.SysIncludePaths, p)
 	}
 
-	sources := []cc.Source{{Name: "<predefined>", Value: cfg.Predefined}, {Name: "<builtin>", Value: cc.Builtin}, {Name: header}}
+	sources := []cc.Source{{Name: "<predefined>", Value: cfg.Predefined}, {Name: "<builtin>", Value: cc.Builtin}}
+	for _, hdr := range headers {
+		sources = append(sources, cc.Source{Name: hdr})
+	}
 	ast, err := cc.Translate(cfg, sources)
 	if err != nil {
 		return nil, err
@@ -53,7 +56,11 @@ const (
 )
 
 func generate() error {
-	headerFile, err := filepath.Abs(filepath.Join(saiPath, "inc/sai.h"))
+	saiHeaderFile, err := filepath.Abs(filepath.Join(saiPath, "inc/sai.h"))
+	if err != nil {
+		return err
+	}
+	expHeaderFile, err := filepath.Abs(filepath.Join(saiPath, "experimental/saiextensions.h"))
 	if err != nil {
 		return err
 	}
@@ -65,7 +72,7 @@ func generate() error {
 	if err != nil {
 		return err
 	}
-	ast, err := parse(headerFile, incDir, experiDir)
+	ast, err := parse([]string{saiHeaderFile, expHeaderFile}, incDir, experiDir)
 	if err != nil {
 		return err
 	}

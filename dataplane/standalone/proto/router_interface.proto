@@ -33,6 +33,7 @@ enum RouterInterfaceAttr {
 }
 
 message CreateRouterInterfaceRequest {
+  option (sai_type) = OBJECT_TYPE_ROUTER_INTERFACE;
   uint64 switch = 1;
   optional uint64 virtual_router_id = 2 [(attr_enum_value) = 1];
   optional RouterInterfaceType type = 3 [(attr_enum_value) = 2];

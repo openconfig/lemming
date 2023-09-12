@@ -692,7 +692,7 @@ sai_status_t l_get_acl_table_attribute(sai_object_id_t acl_table_id,
         break;
       case SAI_ACL_TABLE_ATTR_ENTRY_LIST:
         copy_list(attr_list[i].value.objlist.list, resp.attr().entry_list(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_ACL_TABLE_ATTR_AVAILABLE_ACL_ENTRY:
         attr_list[i].value.u32 = resp.attr().available_acl_entry();
@@ -1117,7 +1117,7 @@ sai_status_t l_get_acl_table_group_attribute(sai_object_id_t acl_table_group_id,
         break;
       case SAI_ACL_TABLE_GROUP_ATTR_MEMBER_LIST:
         copy_list(attr_list[i].value.objlist.list, resp.attr().member_list(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
     }
   }

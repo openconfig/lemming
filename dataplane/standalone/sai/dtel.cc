@@ -213,7 +213,7 @@ sai_status_t l_get_dtel_attribute(sai_object_id_t dtel_id, uint32_t attr_count,
         break;
       case SAI_DTEL_ATTR_SINK_PORT_LIST:
         copy_list(attr_list[i].value.objlist.list, resp.attr().sink_port_list(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
     }
   }

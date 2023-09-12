@@ -233,6 +233,7 @@ enum SwitchTunnelAttr {
 }
 
 message CreateSwitchRequest {
+  option (sai_type) = OBJECT_TYPE_SWITCH;
   optional uint64 ingress_acl = 1 [(attr_enum_value) = 43];
   optional uint64 egress_acl = 2 [(attr_enum_value) = 44];
   optional bool restart_warm = 3 [(attr_enum_value) = 72];
@@ -492,6 +493,7 @@ message GetSwitchAttributeResponse {
 }
 
 message CreateSwitchTunnelRequest {
+  option (sai_type) = OBJECT_TYPE_SWITCH_TUNNEL;
   uint64 switch = 1;
   optional TunnelType tunnel_type = 2 [(attr_enum_value) = 1];
   optional PacketAction loopback_packet_action = 3 [(attr_enum_value) = 2];

@@ -17,6 +17,7 @@
 
 extern "C" {
 #include "inc/sai.h"
+#include "experimental/saiextensions.h"
 }
 
 extern const sai_mcast_fdb_api_t l_mcast_fdb;

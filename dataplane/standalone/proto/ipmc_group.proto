@@ -20,6 +20,7 @@ enum IpmcGroupMemberAttr {
 }
 
 message CreateIpmcGroupRequest {
+  option (sai_type) = OBJECT_TYPE_IPMC_GROUP;
   uint64 switch = 1;
 }
 
@@ -43,6 +44,7 @@ message GetIpmcGroupAttributeResponse {
 }
 
 message CreateIpmcGroupMemberRequest {
+  option (sai_type) = OBJECT_TYPE_IPMC_GROUP_MEMBER;
   uint64 switch = 1;
   optional uint64 ipmc_group_id = 2 [(attr_enum_value) = 1];
   optional uint64 ipmc_output_id = 3 [(attr_enum_value) = 2];

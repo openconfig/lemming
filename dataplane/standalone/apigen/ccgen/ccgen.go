@@ -335,7 +335,7 @@ func protoFieldGetter(saiType, protoField, varName string, info *docparser.SAIIn
 		return smt, nil
 	case variableSizedArray:
 		smt.CopyConvertFunc = "copy_list"
-		smt.CopyConvertFuncArgs = fmt.Sprintf(", %s.count", smt.Var)
+		smt.CopyConvertFuncArgs = fmt.Sprintf(", &%s.count", smt.Var)
 		smt.Var += ".list"
 		return smt, nil
 	}
@@ -376,6 +376,7 @@ var (
 
 extern "C" {
 	#include "inc/sai.h"
+	#include "experimental/saiextensions.h"
 }
 
 extern const {{ .APIType }} l_{{ .APIName }};

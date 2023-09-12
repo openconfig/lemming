@@ -27,6 +27,7 @@ enum MySidEntryAttr {
 }
 
 message CreateSrv6SidlistRequest {
+  option (sai_type) = OBJECT_TYPE_SRV6_SIDLIST;
   uint64 switch = 1;
   optional Srv6SidlistType type = 2 [(attr_enum_value) = 1];
   repeated TLVEntry tlv_list = 3 [(attr_enum_value) = 2];
@@ -61,6 +62,7 @@ message GetSrv6SidlistAttributeResponse {
 }
 
 message CreateMySidEntryRequest {
+  option (sai_type) = OBJECT_TYPE_MY_SID_ENTRY;
   MySidEntry entry = 1;
   optional MySidEntryEndpointBehavior endpoint_behavior = 2
       [(attr_enum_value) = 1];

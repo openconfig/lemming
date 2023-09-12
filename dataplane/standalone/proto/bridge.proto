@@ -40,6 +40,7 @@ enum BridgePortAttr {
 }
 
 message CreateBridgeRequest {
+  option (sai_type) = OBJECT_TYPE_BRIDGE;
   uint64 switch = 1;
   optional BridgeType type = 2 [(attr_enum_value) = 1];
   optional uint32 max_learned_addresses = 3 [(attr_enum_value) = 3];
@@ -92,6 +93,7 @@ message GetBridgeAttributeResponse {
 }
 
 message CreateBridgePortRequest {
+  option (sai_type) = OBJECT_TYPE_BRIDGE_PORT;
   uint64 switch = 1;
   optional BridgePortType type = 2 [(attr_enum_value) = 1];
   optional uint64 port_id = 3 [(attr_enum_value) = 2];

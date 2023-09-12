@@ -580,14 +580,14 @@ sai_status_t l_get_hostif_trap_attribute(sai_object_id_t hostif_trap_id,
       case SAI_HOSTIF_TRAP_ATTR_EXCLUDE_PORT_LIST:
         copy_list(attr_list[i].value.objlist.list,
                   resp.attr().exclude_port_list(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_HOSTIF_TRAP_ATTR_TRAP_GROUP:
         attr_list[i].value.oid = resp.attr().trap_group();
         break;
       case SAI_HOSTIF_TRAP_ATTR_MIRROR_SESSION:
         copy_list(attr_list[i].value.objlist.list, resp.attr().mirror_session(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_HOSTIF_TRAP_ATTR_COUNTER_ID:
         attr_list[i].value.oid = resp.attr().counter_id();

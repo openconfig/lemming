@@ -145,7 +145,7 @@ sai_status_t l_get_scheduler_group_attribute(sai_object_id_t scheduler_group_id,
         break;
       case SAI_SCHEDULER_GROUP_ATTR_CHILD_LIST:
         copy_list(attr_list[i].value.objlist.list, resp.attr().child_list(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_SCHEDULER_GROUP_ATTR_PORT_ID:
         attr_list[i].value.oid = resp.attr().port_id();

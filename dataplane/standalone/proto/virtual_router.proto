@@ -19,6 +19,7 @@ enum VirtualRouterAttr {
 }
 
 message CreateVirtualRouterRequest {
+  option (sai_type) = OBJECT_TYPE_VIRTUAL_ROUTER;
   uint64 switch = 1;
   optional bool admin_v4_state = 2 [(attr_enum_value) = 1];
   optional bool admin_v6_state = 3 [(attr_enum_value) = 2];

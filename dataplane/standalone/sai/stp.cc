@@ -109,7 +109,7 @@ sai_status_t l_get_stp_attribute(sai_object_id_t stp_id, uint32_t attr_count,
         break;
       case SAI_STP_ATTR_PORT_LIST:
         copy_list(attr_list[i].value.objlist.list, resp.attr().port_list(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
     }
   }

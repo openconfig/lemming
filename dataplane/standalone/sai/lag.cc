@@ -172,7 +172,7 @@ sai_status_t l_get_lag_attribute(sai_object_id_t lag_id, uint32_t attr_count,
     switch (attr_list[i].id) {
       case SAI_LAG_ATTR_PORT_LIST:
         copy_list(attr_list[i].value.objlist.list, resp.attr().port_list(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_LAG_ATTR_INGRESS_ACL:
         attr_list[i].value.oid = resp.attr().ingress_acl();

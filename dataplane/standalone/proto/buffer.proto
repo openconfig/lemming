@@ -39,6 +39,7 @@ enum BufferProfileAttr {
 }
 
 message CreateBufferPoolRequest {
+  option (sai_type) = OBJECT_TYPE_BUFFER_POOL;
   uint64 switch = 1;
   optional BufferPoolType type = 2 [(attr_enum_value) = 2];
   optional uint64 size = 3 [(attr_enum_value) = 3];
@@ -78,6 +79,7 @@ message GetBufferPoolAttributeResponse {
 }
 
 message CreateIngressPriorityGroupRequest {
+  option (sai_type) = OBJECT_TYPE_INGRESS_PRIORITY_GROUP;
   uint64 switch = 1;
   optional uint64 buffer_profile = 2 [(attr_enum_value) = 1];
   optional uint64 port = 3 [(attr_enum_value) = 2];
@@ -113,6 +115,7 @@ message GetIngressPriorityGroupAttributeResponse {
 }
 
 message CreateBufferProfileRequest {
+  option (sai_type) = OBJECT_TYPE_BUFFER_PROFILE;
   uint64 switch = 1;
   optional uint64 pool_id = 2 [(attr_enum_value) = 1];
   optional uint64 reserved_buffer_size = 3 [(attr_enum_value) = 2];

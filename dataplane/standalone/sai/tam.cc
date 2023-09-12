@@ -186,17 +186,17 @@ sai_status_t l_get_tam_attribute(sai_object_id_t tam_id, uint32_t attr_count,
       case SAI_TAM_ATTR_TELEMETRY_OBJECTS_LIST:
         copy_list(attr_list[i].value.objlist.list,
                   resp.attr().telemetry_objects_list(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_TAM_ATTR_EVENT_OBJECTS_LIST:
         copy_list(attr_list[i].value.objlist.list,
                   resp.attr().event_objects_list(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_TAM_ATTR_INT_OBJECTS_LIST:
         copy_list(attr_list[i].value.objlist.list,
                   resp.attr().int_objects_list(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
     }
   }
@@ -440,7 +440,7 @@ sai_status_t l_get_tam_report_attribute(sai_object_id_t tam_report_id,
       case SAI_TAM_REPORT_ATTR_HISTOGRAM_BIN_BOUNDARY:
         copy_list(attr_list[i].value.u32list.list,
                   resp.attr().histogram_bin_boundary(),
-                  attr_list[i].value.u32list.count);
+                  &attr_list[i].value.u32list.count);
         break;
       case SAI_TAM_REPORT_ATTR_QUOTA:
         attr_list[i].value.u32 = resp.attr().quota();
@@ -904,7 +904,7 @@ sai_status_t l_get_tam_int_attribute(sai_object_id_t tam_int_id,
         break;
       case SAI_TAM_INT_ATTR_COLLECTOR_LIST:
         copy_list(attr_list[i].value.objlist.list, resp.attr().collector_list(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_TAM_INT_ATTR_MATH_FUNC:
         attr_list[i].value.oid = resp.attr().math_func();
@@ -1415,11 +1415,11 @@ sai_status_t l_get_tam_telemetry_attribute(sai_object_id_t tam_telemetry_id,
     switch (attr_list[i].id) {
       case SAI_TAM_TELEMETRY_ATTR_TAM_TYPE_LIST:
         copy_list(attr_list[i].value.objlist.list, resp.attr().tam_type_list(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_TAM_TELEMETRY_ATTR_COLLECTOR_LIST:
         copy_list(attr_list[i].value.objlist.list, resp.attr().collector_list(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_TAM_TELEMETRY_ATTR_TAM_REPORTING_UNIT:
         attr_list[i].value.s32 =
@@ -1812,11 +1812,11 @@ sai_status_t l_get_tam_event_attribute(sai_object_id_t tam_event_id,
         break;
       case SAI_TAM_EVENT_ATTR_ACTION_LIST:
         copy_list(attr_list[i].value.objlist.list, resp.attr().action_list(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_TAM_EVENT_ATTR_COLLECTOR_LIST:
         copy_list(attr_list[i].value.objlist.list, resp.attr().collector_list(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_TAM_EVENT_ATTR_THRESHOLD:
         attr_list[i].value.oid = resp.attr().threshold();

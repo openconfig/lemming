@@ -1,0 +1,154 @@
+
+syntax = "proto3";
+
+package lemming.dataplane.sai;
+
+import "dataplane/standalone/proto/common.proto";
+
+option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto";
+
+enum TableBitmapClassificationEntryAttr {
+  TABLE_BITMAP_CLASSIFICATION_ENTRY_ATTR_UNSPECIFIED = 0;
+  TABLE_BITMAP_CLASSIFICATION_ENTRY_ATTR_ACTION = 1;
+  TABLE_BITMAP_CLASSIFICATION_ENTRY_ATTR_ROUTER_INTERFACE_KEY = 2;
+  TABLE_BITMAP_CLASSIFICATION_ENTRY_ATTR_IS_DEFAULT = 3;
+  TABLE_BITMAP_CLASSIFICATION_ENTRY_ATTR_IN_RIF_METADATA = 4;
+}
+
+enum TableBitmapRouterEntryAttr {
+  TABLE_BITMAP_ROUTER_ENTRY_ATTR_UNSPECIFIED = 0;
+  TABLE_BITMAP_ROUTER_ENTRY_ATTR_ACTION = 1;
+  TABLE_BITMAP_ROUTER_ENTRY_ATTR_PRIORITY = 2;
+  TABLE_BITMAP_ROUTER_ENTRY_ATTR_IN_RIF_METADATA_KEY = 3;
+  TABLE_BITMAP_ROUTER_ENTRY_ATTR_IN_RIF_METADATA_MASK = 4;
+  TABLE_BITMAP_ROUTER_ENTRY_ATTR_DST_IP_KEY = 5;
+  TABLE_BITMAP_ROUTER_ENTRY_ATTR_TUNNEL_INDEX = 6;
+  TABLE_BITMAP_ROUTER_ENTRY_ATTR_NEXT_HOP = 7;
+  TABLE_BITMAP_ROUTER_ENTRY_ATTR_ROUTER_INTERFACE = 8;
+  TABLE_BITMAP_ROUTER_ENTRY_ATTR_TRAP_ID = 9;
+}
+
+enum TableMetaTunnelEntryAttr {
+  TABLE_META_TUNNEL_ENTRY_ATTR_UNSPECIFIED = 0;
+  TABLE_META_TUNNEL_ENTRY_ATTR_ACTION = 1;
+  TABLE_META_TUNNEL_ENTRY_ATTR_METADATA_KEY = 2;
+  TABLE_META_TUNNEL_ENTRY_ATTR_IS_DEFAULT = 3;
+  TABLE_META_TUNNEL_ENTRY_ATTR_TUNNEL_ID = 4;
+  TABLE_META_TUNNEL_ENTRY_ATTR_UNDERLAY_DIP = 5;
+}
+
+message CreateTableBitmapClassificationEntryRequest {
+  option (sai_type) = OBJECT_TYPE_UNSPECIFIED;
+  uint64 switch = 1;
+  optional TableBitmapClassificationEntryAction action = 2
+      [(attr_enum_value) = 1];
+  optional uint64 router_interface_key = 3 [(attr_enum_value) = 2];
+  optional bool is_default = 4 [(attr_enum_value) = 3];
+  optional uint32 in_rif_metadata = 5 [(attr_enum_value) = 4];
+}
+
+message CreateTableBitmapClassificationEntryResponse {
+  uint64 oid = 1;
+}
+
+message RemoveTableBitmapClassificationEntryRequest {
+  uint64 oid = 1;
+}
+
+message RemoveTableBitmapClassificationEntryResponse {}
+
+message GetTableBitmapClassificationEntryAttributeRequest {
+  uint64 oid = 1;
+  repeated TableBitmapClassificationEntryAttr attr_type = 2;
+}
+
+message GetTableBitmapClassificationEntryAttributeResponse {
+  TableBitmapClassificationEntryAttribute attr = 1;
+}
+
+message CreateTableBitmapRouterEntryRequest {
+  option (sai_type) = OBJECT_TYPE_UNSPECIFIED;
+  uint64 switch = 1;
+  optional TableBitmapRouterEntryAction action = 2 [(attr_enum_value) = 1];
+  optional uint32 priority = 3 [(attr_enum_value) = 2];
+  optional uint32 in_rif_metadata_key = 4 [(attr_enum_value) = 3];
+  optional uint32 in_rif_metadata_mask = 5 [(attr_enum_value) = 4];
+  optional IpPrefix dst_ip_key = 6 [(attr_enum_value) = 5];
+  optional uint32 tunnel_index = 7 [(attr_enum_value) = 6];
+  optional uint64 next_hop = 8 [(attr_enum_value) = 7];
+  optional uint64 router_interface = 9 [(attr_enum_value) = 8];
+  optional uint64 trap_id = 10 [(attr_enum_value) = 9];
+}
+
+message CreateTableBitmapRouterEntryResponse {
+  uint64 oid = 1;
+}
+
+message RemoveTableBitmapRouterEntryRequest {
+  uint64 oid = 1;
+}
+
+message RemoveTableBitmapRouterEntryResponse {}
+
+message GetTableBitmapRouterEntryAttributeRequest {
+  uint64 oid = 1;
+  repeated TableBitmapRouterEntryAttr attr_type = 2;
+}
+
+message GetTableBitmapRouterEntryAttributeResponse {
+  TableBitmapRouterEntryAttribute attr = 1;
+}
+
+message CreateTableMetaTunnelEntryRequest {
+  option (sai_type) = OBJECT_TYPE_UNSPECIFIED;
+  uint64 switch = 1;
+  optional TableMetaTunnelEntryAction action = 2 [(attr_enum_value) = 1];
+  optional uint32 metadata_key = 3 [(attr_enum_value) = 2];
+  optional bool is_default = 4 [(attr_enum_value) = 3];
+  optional uint64 tunnel_id = 5 [(attr_enum_value) = 4];
+  optional bytes underlay_dip = 6 [(attr_enum_value) = 5];
+}
+
+message CreateTableMetaTunnelEntryResponse {
+  uint64 oid = 1;
+}
+
+message RemoveTableMetaTunnelEntryRequest {
+  uint64 oid = 1;
+}
+
+message RemoveTableMetaTunnelEntryResponse {}
+
+message GetTableMetaTunnelEntryAttributeRequest {
+  uint64 oid = 1;
+  repeated TableMetaTunnelEntryAttr attr_type = 2;
+}
+
+message GetTableMetaTunnelEntryAttributeResponse {
+  TableMetaTunnelEntryAttribute attr = 1;
+}
+
+service Bmtor {
+  rpc CreateTableBitmapClassificationEntry(
+      CreateTableBitmapClassificationEntryRequest)
+      returns (CreateTableBitmapClassificationEntryResponse) {}
+  rpc RemoveTableBitmapClassificationEntry(
+      RemoveTableBitmapClassificationEntryRequest)
+      returns (RemoveTableBitmapClassificationEntryResponse) {}
+  rpc GetTableBitmapClassificationEntryAttribute(
+      GetTableBitmapClassificationEntryAttributeRequest)
+      returns (GetTableBitmapClassificationEntryAttributeResponse) {}
+  rpc CreateTableBitmapRouterEntry(CreateTableBitmapRouterEntryRequest)
+      returns (CreateTableBitmapRouterEntryResponse) {}
+  rpc RemoveTableBitmapRouterEntry(RemoveTableBitmapRouterEntryRequest)
+      returns (RemoveTableBitmapRouterEntryResponse) {}
+  rpc GetTableBitmapRouterEntryAttribute(
+      GetTableBitmapRouterEntryAttributeRequest)
+      returns (GetTableBitmapRouterEntryAttributeResponse) {}
+  rpc CreateTableMetaTunnelEntry(CreateTableMetaTunnelEntryRequest)
+      returns (CreateTableMetaTunnelEntryResponse) {}
+  rpc RemoveTableMetaTunnelEntry(RemoveTableMetaTunnelEntryRequest)
+      returns (RemoveTableMetaTunnelEntryResponse) {}
+  rpc GetTableMetaTunnelEntryAttribute(GetTableMetaTunnelEntryAttributeRequest)
+      returns (GetTableMetaTunnelEntryAttributeResponse) {}
+}

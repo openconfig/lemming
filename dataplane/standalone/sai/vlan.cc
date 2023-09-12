@@ -274,7 +274,7 @@ sai_status_t l_get_vlan_attribute(sai_object_id_t vlan_id, uint32_t attr_count,
         break;
       case SAI_VLAN_ATTR_MEMBER_LIST:
         copy_list(attr_list[i].value.objlist.list, resp.attr().member_list(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_VLAN_ATTR_MAX_LEARNED_ADDRESSES:
         attr_list[i].value.u32 = resp.attr().max_learned_addresses();
@@ -344,7 +344,7 @@ sai_status_t l_get_vlan_attribute(sai_object_id_t vlan_id, uint32_t attr_count,
         break;
       case SAI_VLAN_ATTR_TAM_OBJECT:
         copy_list(attr_list[i].value.objlist.list, resp.attr().tam_object(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
     }
   }

@@ -220,7 +220,7 @@ sai_status_t l_get_macsec_attribute(sai_object_id_t macsec_id,
       case SAI_MACSEC_ATTR_SECTAG_OFFSETS_SUPPORTED:
         copy_list(attr_list[i].value.u8list.list,
                   resp.attr().sectag_offsets_supported(),
-                  attr_list[i].value.u8list.count);
+                  &attr_list[i].value.u8list.count);
         break;
       case SAI_MACSEC_ATTR_SYSTEM_SIDE_MTU:
         attr_list[i].value.u16 = resp.attr().system_side_mtu();
@@ -249,14 +249,14 @@ sai_status_t l_get_macsec_attribute(sai_object_id_t macsec_id,
       case SAI_MACSEC_ATTR_SUPPORTED_PORT_LIST:
         copy_list(attr_list[i].value.objlist.list,
                   resp.attr().supported_port_list(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_MACSEC_ATTR_AVAILABLE_MACSEC_FLOW:
         attr_list[i].value.u32 = resp.attr().available_macsec_flow();
         break;
       case SAI_MACSEC_ATTR_FLOW_LIST:
         copy_list(attr_list[i].value.objlist.list, resp.attr().flow_list(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_MACSEC_ATTR_AVAILABLE_MACSEC_SC:
         attr_list[i].value.u32 = resp.attr().available_macsec_sc();
@@ -517,11 +517,11 @@ sai_status_t l_get_macsec_flow_attribute(sai_object_id_t macsec_flow_id,
         break;
       case SAI_MACSEC_FLOW_ATTR_ACL_ENTRY_LIST:
         copy_list(attr_list[i].value.objlist.list, resp.attr().acl_entry_list(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_MACSEC_FLOW_ATTR_SC_LIST:
         copy_list(attr_list[i].value.objlist.list, resp.attr().sc_list(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
     }
   }
@@ -719,7 +719,7 @@ sai_status_t l_get_macsec_sc_attribute(sai_object_id_t macsec_sc_id,
         break;
       case SAI_MACSEC_SC_ATTR_SA_LIST:
         copy_list(attr_list[i].value.objlist.list, resp.attr().sa_list(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_MACSEC_SC_ATTR_MACSEC_CIPHER_SUITE:
         attr_list[i].value.s32 =

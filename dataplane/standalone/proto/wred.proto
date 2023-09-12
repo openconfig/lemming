@@ -38,6 +38,7 @@ enum WredAttr {
 }
 
 message CreateWredRequest {
+  option (sai_type) = OBJECT_TYPE_WRED;
   uint64 switch = 1;
   optional bool green_enable = 2 [(attr_enum_value) = 1];
   optional uint32 green_min_threshold = 3 [(attr_enum_value) = 2];

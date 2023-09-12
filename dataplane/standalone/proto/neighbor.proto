@@ -22,6 +22,7 @@ enum NeighborEntryAttr {
 }
 
 message CreateNeighborEntryRequest {
+  option (sai_type) = OBJECT_TYPE_NEIGHBOR_ENTRY;
   NeighborEntry entry = 1;
   optional bytes dst_mac_address = 2 [(attr_enum_value) = 1];
   optional PacketAction packet_action = 3 [(attr_enum_value) = 2];

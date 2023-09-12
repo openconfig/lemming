@@ -82,6 +82,7 @@ enum MacsecSaAttr {
 }
 
 message CreateMacsecRequest {
+  option (sai_type) = OBJECT_TYPE_MACSEC;
   uint64 switch = 1;
   optional MacsecDirection direction = 2 [(attr_enum_value) = 1];
   optional bool warm_boot_enable = 3 [(attr_enum_value) = 15];
@@ -124,6 +125,7 @@ message GetMacsecAttributeResponse {
 }
 
 message CreateMacsecPortRequest {
+  option (sai_type) = OBJECT_TYPE_MACSEC_PORT;
   uint64 switch = 1;
   optional MacsecDirection macsec_direction = 2 [(attr_enum_value) = 1];
   optional uint64 port_id = 3 [(attr_enum_value) = 2];
@@ -163,6 +165,7 @@ message GetMacsecPortAttributeResponse {
 }
 
 message CreateMacsecFlowRequest {
+  option (sai_type) = OBJECT_TYPE_MACSEC_FLOW;
   uint64 switch = 1;
   optional MacsecDirection macsec_direction = 2 [(attr_enum_value) = 1];
 }
@@ -187,6 +190,7 @@ message GetMacsecFlowAttributeResponse {
 }
 
 message CreateMacsecScRequest {
+  option (sai_type) = OBJECT_TYPE_MACSEC_SC;
   uint64 switch = 1;
   optional MacsecDirection macsec_direction = 2 [(attr_enum_value) = 1];
   optional uint64 flow_id = 3 [(attr_enum_value) = 2];
@@ -231,6 +235,7 @@ message GetMacsecScAttributeResponse {
 }
 
 message CreateMacsecSaRequest {
+  option (sai_type) = OBJECT_TYPE_MACSEC_SA;
   uint64 switch = 1;
   optional MacsecDirection macsec_direction = 2 [(attr_enum_value) = 1];
   optional uint64 sc_id = 3 [(attr_enum_value) = 2];

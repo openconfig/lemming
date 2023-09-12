@@ -17,6 +17,7 @@
 
 extern "C" {
 #include "inc/sai.h"
+#include "experimental/saiextensions.h"
 }
 
 extern const sai_isolation_group_api_t l_isolation_group;

@@ -793,7 +793,7 @@ sai_status_t l_get_port_attribute(sai_object_id_t port_id, uint32_t attr_count,
         break;
       case SAI_PORT_ATTR_QOS_QUEUE_LIST:
         copy_list(attr_list[i].value.objlist.list, resp.attr().qos_queue_list(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_PORT_ATTR_QOS_NUMBER_OF_SCHEDULER_GROUPS:
         attr_list[i].value.u32 = resp.attr().qos_number_of_scheduler_groups();
@@ -801,7 +801,7 @@ sai_status_t l_get_port_attribute(sai_object_id_t port_id, uint32_t attr_count,
       case SAI_PORT_ATTR_QOS_SCHEDULER_GROUP_LIST:
         copy_list(attr_list[i].value.objlist.list,
                   resp.attr().qos_scheduler_group_list(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_PORT_ATTR_QOS_MAXIMUM_HEADROOM_SIZE:
         attr_list[i].value.u32 = resp.attr().qos_maximum_headroom_size();
@@ -809,12 +809,12 @@ sai_status_t l_get_port_attribute(sai_object_id_t port_id, uint32_t attr_count,
       case SAI_PORT_ATTR_SUPPORTED_SPEED:
         copy_list(attr_list[i].value.u32list.list,
                   resp.attr().supported_speed(),
-                  attr_list[i].value.u32list.count);
+                  &attr_list[i].value.u32list.count);
         break;
       case SAI_PORT_ATTR_SUPPORTED_HALF_DUPLEX_SPEED:
         copy_list(attr_list[i].value.u32list.list,
                   resp.attr().supported_half_duplex_speed(),
-                  attr_list[i].value.u32list.count);
+                  &attr_list[i].value.u32list.count);
         break;
       case SAI_PORT_ATTR_SUPPORTED_AUTO_NEG_MODE:
         attr_list[i].value.booldata = resp.attr().supported_auto_neg_mode();
@@ -834,12 +834,12 @@ sai_status_t l_get_port_attribute(sai_object_id_t port_id, uint32_t attr_count,
       case SAI_PORT_ATTR_REMOTE_ADVERTISED_SPEED:
         copy_list(attr_list[i].value.u32list.list,
                   resp.attr().remote_advertised_speed(),
-                  attr_list[i].value.u32list.count);
+                  &attr_list[i].value.u32list.count);
         break;
       case SAI_PORT_ATTR_REMOTE_ADVERTISED_HALF_DUPLEX_SPEED:
         copy_list(attr_list[i].value.u32list.list,
                   resp.attr().remote_advertised_half_duplex_speed(),
-                  attr_list[i].value.u32list.count);
+                  &attr_list[i].value.u32list.count);
         break;
       case SAI_PORT_ATTR_REMOTE_ADVERTISED_AUTO_NEG_MODE:
         attr_list[i].value.booldata =
@@ -867,14 +867,14 @@ sai_status_t l_get_port_attribute(sai_object_id_t port_id, uint32_t attr_count,
       case SAI_PORT_ATTR_INGRESS_PRIORITY_GROUP_LIST:
         copy_list(attr_list[i].value.objlist.list,
                   resp.attr().ingress_priority_group_list(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_PORT_ATTR_OPER_SPEED:
         attr_list[i].value.u32 = resp.attr().oper_speed();
         break;
       case SAI_PORT_ATTR_HW_LANE_LIST:
         copy_list(attr_list[i].value.u32list.list, resp.attr().hw_lane_list(),
-                  attr_list[i].value.u32list.count);
+                  &attr_list[i].value.u32list.count);
         break;
       case SAI_PORT_ATTR_SPEED:
         attr_list[i].value.u32 = resp.attr().speed();
@@ -894,12 +894,12 @@ sai_status_t l_get_port_attribute(sai_object_id_t port_id, uint32_t attr_count,
       case SAI_PORT_ATTR_ADVERTISED_SPEED:
         copy_list(attr_list[i].value.u32list.list,
                   resp.attr().advertised_speed(),
-                  attr_list[i].value.u32list.count);
+                  &attr_list[i].value.u32list.count);
         break;
       case SAI_PORT_ATTR_ADVERTISED_HALF_DUPLEX_SPEED:
         copy_list(attr_list[i].value.u32list.list,
                   resp.attr().advertised_half_duplex_speed(),
-                  attr_list[i].value.u32list.count);
+                  &attr_list[i].value.u32list.count);
         break;
       case SAI_PORT_ATTR_ADVERTISED_AUTO_NEG_MODE:
         attr_list[i].value.booldata = resp.attr().advertised_auto_neg_mode();
@@ -981,17 +981,17 @@ sai_status_t l_get_port_attribute(sai_object_id_t port_id, uint32_t attr_count,
       case SAI_PORT_ATTR_MACSEC_PORT_LIST:
         copy_list(attr_list[i].value.objlist.list,
                   resp.attr().macsec_port_list(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_PORT_ATTR_INGRESS_MIRROR_SESSION:
         copy_list(attr_list[i].value.objlist.list,
                   resp.attr().ingress_mirror_session(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_PORT_ATTR_EGRESS_MIRROR_SESSION:
         copy_list(attr_list[i].value.objlist.list,
                   resp.attr().egress_mirror_session(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_PORT_ATTR_INGRESS_SAMPLEPACKET_ENABLE:
         attr_list[i].value.oid = resp.attr().ingress_samplepacket_enable();
@@ -1002,12 +1002,12 @@ sai_status_t l_get_port_attribute(sai_object_id_t port_id, uint32_t attr_count,
       case SAI_PORT_ATTR_INGRESS_SAMPLE_MIRROR_SESSION:
         copy_list(attr_list[i].value.objlist.list,
                   resp.attr().ingress_sample_mirror_session(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_PORT_ATTR_EGRESS_SAMPLE_MIRROR_SESSION:
         copy_list(attr_list[i].value.objlist.list,
                   resp.attr().egress_sample_mirror_session(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_PORT_ATTR_POLICER_ID:
         attr_list[i].value.oid = resp.attr().policer_id();
@@ -1052,12 +1052,12 @@ sai_status_t l_get_port_attribute(sai_object_id_t port_id, uint32_t attr_count,
       case SAI_PORT_ATTR_QOS_INGRESS_BUFFER_PROFILE_LIST:
         copy_list(attr_list[i].value.objlist.list,
                   resp.attr().qos_ingress_buffer_profile_list(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_PORT_ATTR_QOS_EGRESS_BUFFER_PROFILE_LIST:
         copy_list(attr_list[i].value.objlist.list,
                   resp.attr().qos_egress_buffer_profile_list(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_PORT_ATTR_PRIORITY_FLOW_CONTROL_MODE:
         attr_list[i].value.s32 =
@@ -1078,7 +1078,7 @@ sai_status_t l_get_port_attribute(sai_object_id_t port_id, uint32_t attr_count,
       case SAI_PORT_ATTR_EGRESS_BLOCK_PORT_LIST:
         copy_list(attr_list[i].value.objlist.list,
                   resp.attr().egress_block_port_list(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_PORT_ATTR_HW_PROFILE_ID:
         attr_list[i].value.u64 = resp.attr().hw_profile_id();
@@ -1094,7 +1094,7 @@ sai_status_t l_get_port_attribute(sai_object_id_t port_id, uint32_t attr_count,
         break;
       case SAI_PORT_ATTR_PORT_POOL_LIST:
         copy_list(attr_list[i].value.objlist.list, resp.attr().port_pool_list(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_PORT_ATTR_ISOLATION_GROUP:
         attr_list[i].value.oid = resp.attr().isolation_group();
@@ -1104,21 +1104,21 @@ sai_status_t l_get_port_attribute(sai_object_id_t port_id, uint32_t attr_count,
         break;
       case SAI_PORT_ATTR_TAM_OBJECT:
         copy_list(attr_list[i].value.objlist.list, resp.attr().tam_object(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_PORT_ATTR_SERDES_PREEMPHASIS:
         copy_list(attr_list[i].value.u32list.list,
                   resp.attr().serdes_preemphasis(),
-                  attr_list[i].value.u32list.count);
+                  &attr_list[i].value.u32list.count);
         break;
       case SAI_PORT_ATTR_SERDES_IDRIVER:
         copy_list(attr_list[i].value.u32list.list, resp.attr().serdes_idriver(),
-                  attr_list[i].value.u32list.count);
+                  &attr_list[i].value.u32list.count);
         break;
       case SAI_PORT_ATTR_SERDES_IPREDRIVER:
         copy_list(attr_list[i].value.u32list.list,
                   resp.attr().serdes_ipredriver(),
-                  attr_list[i].value.u32list.count);
+                  &attr_list[i].value.u32list.count);
         break;
       case SAI_PORT_ATTR_LINK_TRAINING_ENABLE:
         attr_list[i].value.booldata = resp.attr().link_training_enable();
@@ -1687,47 +1687,47 @@ sai_status_t l_get_port_serdes_attribute(sai_object_id_t port_serdes_id,
         break;
       case SAI_PORT_SERDES_ATTR_PREEMPHASIS:
         copy_list(attr_list[i].value.s32list.list, resp.attr().preemphasis(),
-                  attr_list[i].value.s32list.count);
+                  &attr_list[i].value.s32list.count);
         break;
       case SAI_PORT_SERDES_ATTR_IDRIVER:
         copy_list(attr_list[i].value.s32list.list, resp.attr().idriver(),
-                  attr_list[i].value.s32list.count);
+                  &attr_list[i].value.s32list.count);
         break;
       case SAI_PORT_SERDES_ATTR_IPREDRIVER:
         copy_list(attr_list[i].value.s32list.list, resp.attr().ipredriver(),
-                  attr_list[i].value.s32list.count);
+                  &attr_list[i].value.s32list.count);
         break;
       case SAI_PORT_SERDES_ATTR_TX_FIR_PRE1:
         copy_list(attr_list[i].value.s32list.list, resp.attr().tx_fir_pre1(),
-                  attr_list[i].value.s32list.count);
+                  &attr_list[i].value.s32list.count);
         break;
       case SAI_PORT_SERDES_ATTR_TX_FIR_PRE2:
         copy_list(attr_list[i].value.s32list.list, resp.attr().tx_fir_pre2(),
-                  attr_list[i].value.s32list.count);
+                  &attr_list[i].value.s32list.count);
         break;
       case SAI_PORT_SERDES_ATTR_TX_FIR_PRE3:
         copy_list(attr_list[i].value.s32list.list, resp.attr().tx_fir_pre3(),
-                  attr_list[i].value.s32list.count);
+                  &attr_list[i].value.s32list.count);
         break;
       case SAI_PORT_SERDES_ATTR_TX_FIR_MAIN:
         copy_list(attr_list[i].value.s32list.list, resp.attr().tx_fir_main(),
-                  attr_list[i].value.s32list.count);
+                  &attr_list[i].value.s32list.count);
         break;
       case SAI_PORT_SERDES_ATTR_TX_FIR_POST1:
         copy_list(attr_list[i].value.s32list.list, resp.attr().tx_fir_post1(),
-                  attr_list[i].value.s32list.count);
+                  &attr_list[i].value.s32list.count);
         break;
       case SAI_PORT_SERDES_ATTR_TX_FIR_POST2:
         copy_list(attr_list[i].value.s32list.list, resp.attr().tx_fir_post2(),
-                  attr_list[i].value.s32list.count);
+                  &attr_list[i].value.s32list.count);
         break;
       case SAI_PORT_SERDES_ATTR_TX_FIR_POST3:
         copy_list(attr_list[i].value.s32list.list, resp.attr().tx_fir_post3(),
-                  attr_list[i].value.s32list.count);
+                  &attr_list[i].value.s32list.count);
         break;
       case SAI_PORT_SERDES_ATTR_TX_FIR_ATTN:
         copy_list(attr_list[i].value.s32list.list, resp.attr().tx_fir_attn(),
-                  attr_list[i].value.s32list.count);
+                  &attr_list[i].value.s32list.count);
         break;
     }
   }

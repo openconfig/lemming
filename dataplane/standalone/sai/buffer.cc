@@ -184,7 +184,7 @@ sai_status_t l_get_buffer_pool_attribute(sai_object_id_t buffer_pool_id,
         break;
       case SAI_BUFFER_POOL_ATTR_TAM:
         copy_list(attr_list[i].value.objlist.list, resp.attr().tam(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_BUFFER_POOL_ATTR_XOFF_SIZE:
         attr_list[i].value.u64 = resp.attr().xoff_size();
@@ -345,7 +345,7 @@ sai_status_t l_get_ingress_priority_group_attribute(
         break;
       case SAI_INGRESS_PRIORITY_GROUP_ATTR_TAM:
         copy_list(attr_list[i].value.objlist.list, resp.attr().tam(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_INGRESS_PRIORITY_GROUP_ATTR_INDEX:
         attr_list[i].value.u8 = resp.attr().index();

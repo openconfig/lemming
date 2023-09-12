@@ -162,7 +162,7 @@ sai_status_t l_get_udf_attribute(sai_object_id_t udf_id, uint32_t attr_count,
         break;
       case SAI_UDF_ATTR_HASH_MASK:
         copy_list(attr_list[i].value.u8list.list, resp.attr().hash_mask(),
-                  attr_list[i].value.u8list.count);
+                  &attr_list[i].value.u8list.count);
         break;
     }
   }
@@ -331,7 +331,7 @@ sai_status_t l_get_udf_group_attribute(sai_object_id_t udf_group_id,
     switch (attr_list[i].id) {
       case SAI_UDF_GROUP_ATTR_UDF_LIST:
         copy_list(attr_list[i].value.objlist.list, resp.attr().udf_list(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_UDF_GROUP_ATTR_TYPE:
         attr_list[i].value.s32 = static_cast<int>(resp.attr().type() - 1);

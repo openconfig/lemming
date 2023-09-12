@@ -19,6 +19,7 @@ enum SchedulerAttr {
 }
 
 message CreateSchedulerRequest {
+  option (sai_type) = OBJECT_TYPE_SCHEDULER;
   uint64 switch = 1;
   optional SchedulingType scheduling_type = 2 [(attr_enum_value) = 1];
   optional uint32 scheduling_weight = 3 [(attr_enum_value) = 2];

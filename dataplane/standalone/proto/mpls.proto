@@ -23,6 +23,7 @@ enum InsegEntryAttr {
 }
 
 message CreateInsegEntryRequest {
+  option (sai_type) = OBJECT_TYPE_INSEG_ENTRY;
   InsegEntry entry = 1;
   optional uint32 num_of_pop = 2 [(attr_enum_value) = 1];
   optional PacketAction packet_action = 3 [(attr_enum_value) = 2];

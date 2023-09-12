@@ -23,6 +23,7 @@ enum FineGrainedHashFieldAttr {
 }
 
 message CreateHashRequest {
+  option (sai_type) = OBJECT_TYPE_HASH;
   uint64 switch = 1;
   repeated NativeHashField native_hash_field_list = 2 [(attr_enum_value) = 1];
   repeated uint64 udf_group_list = 3 [(attr_enum_value) = 2];
@@ -58,6 +59,7 @@ message GetHashAttributeResponse {
 }
 
 message CreateFineGrainedHashFieldRequest {
+  option (sai_type) = OBJECT_TYPE_FINE_GRAINED_HASH_FIELD;
   uint64 switch = 1;
   optional NativeHashField native_hash_field = 2 [(attr_enum_value) = 1];
   optional bytes ipv4_mask = 3 [(attr_enum_value) = 2];

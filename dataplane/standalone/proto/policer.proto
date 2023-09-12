@@ -23,6 +23,7 @@ enum PolicerAttr {
 }
 
 message CreatePolicerRequest {
+  option (sai_type) = OBJECT_TYPE_POLICER;
   uint64 switch = 1;
   optional MeterType meter_type = 2 [(attr_enum_value) = 1];
   optional PolicerMode mode = 3 [(attr_enum_value) = 2];

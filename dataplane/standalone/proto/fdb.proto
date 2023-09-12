@@ -20,6 +20,7 @@ enum FdbEntryAttr {
 }
 
 message CreateFdbEntryRequest {
+  option (sai_type) = OBJECT_TYPE_FDB_ENTRY;
   FdbEntry entry = 1;
   optional FdbEntryType type = 2 [(attr_enum_value) = 1];
   optional PacketAction packet_action = 3 [(attr_enum_value) = 2];

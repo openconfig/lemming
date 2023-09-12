@@ -109,7 +109,7 @@ sai_status_t l_get_rpf_group_attribute(sai_object_id_t rpf_group_id,
       case SAI_RPF_GROUP_ATTR_RPF_MEMBER_LIST:
         copy_list(attr_list[i].value.objlist.list,
                   resp.attr().rpf_member_list(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
     }
   }

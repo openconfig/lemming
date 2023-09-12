@@ -624,7 +624,7 @@ sai_status_t l_get_switch_attribute(sai_object_id_t switch_id,
         break;
       case SAI_SWITCH_ATTR_PORT_LIST:
         copy_list(attr_list[i].value.objlist.list, resp.attr().port_list(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_SWITCH_ATTR_PORT_MAX_MTU:
         attr_list[i].value.u32 = resp.attr().port_max_mtu();
@@ -680,7 +680,7 @@ sai_status_t l_get_switch_attribute(sai_object_id_t switch_id,
         break;
       case SAI_SWITCH_ATTR_TEMP_LIST:
         copy_list(attr_list[i].value.s32list.list, resp.attr().temp_list(),
-                  attr_list[i].value.s32list.count);
+                  &attr_list[i].value.s32list.count);
         break;
       case SAI_SWITCH_ATTR_ACL_TABLE_MINIMUM_PRIORITY:
         attr_list[i].value.u32 = resp.attr().acl_table_minimum_priority();
@@ -736,7 +736,7 @@ sai_status_t l_get_switch_attribute(sai_object_id_t switch_id,
         copy_list(attr_list[i].value.u32list.list,
                   resp.attr()
                       .qos_max_number_of_scheduler_groups_per_hierarchy_level(),
-                  attr_list[i].value.u32list.count);
+                  &attr_list[i].value.u32list.count);
         break;
       case SAI_SWITCH_ATTR_QOS_MAX_NUMBER_OF_CHILDS_PER_SCHEDULER_GROUP:
         attr_list[i].value.u32 =
@@ -944,12 +944,12 @@ sai_status_t l_get_switch_attribute(sai_object_id_t switch_id,
       case SAI_SWITCH_ATTR_SWITCH_HARDWARE_INFO:
         copy_list(attr_list[i].value.s8list.list,
                   resp.attr().switch_hardware_info(),
-                  attr_list[i].value.s8list.count);
+                  &attr_list[i].value.s8list.count);
         break;
       case SAI_SWITCH_ATTR_FIRMWARE_PATH_NAME:
         copy_list(attr_list[i].value.s8list.list,
                   resp.attr().firmware_path_name(),
-                  attr_list[i].value.s8list.count);
+                  &attr_list[i].value.s8list.count);
         break;
       case SAI_SWITCH_ATTR_INIT_SWITCH:
         attr_list[i].value.booldata = resp.attr().init_switch();
@@ -1017,7 +1017,7 @@ sai_status_t l_get_switch_attribute(sai_object_id_t switch_id,
         break;
       case SAI_SWITCH_ATTR_TAM_OBJECT_ID:
         copy_list(attr_list[i].value.objlist.list, resp.attr().tam_object_id(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_SWITCH_ATTR_PRE_SHUTDOWN:
         attr_list[i].value.booldata = resp.attr().pre_shutdown();
@@ -1068,7 +1068,7 @@ sai_status_t l_get_switch_attribute(sai_object_id_t switch_id,
       case SAI_SWITCH_ATTR_PORT_CONNECTOR_LIST:
         copy_list(attr_list[i].value.objlist.list,
                   resp.attr().port_connector_list(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_SWITCH_ATTR_PROPOGATE_PORT_STATE_FROM_LINE_TO_SYSTEM_PORT_SUPPORT:
         attr_list[i].value.booldata =
@@ -1080,7 +1080,7 @@ sai_status_t l_get_switch_attribute(sai_object_id_t switch_id,
       case SAI_SWITCH_ATTR_MACSEC_OBJECT_LIST:
         copy_list(attr_list[i].value.objlist.list,
                   resp.attr().macsec_object_list(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_SWITCH_ATTR_QOS_MPLS_EXP_TO_TC_MAP:
         attr_list[i].value.oid = resp.attr().qos_mpls_exp_to_tc_map();
@@ -1103,7 +1103,7 @@ sai_status_t l_get_switch_attribute(sai_object_id_t switch_id,
       case SAI_SWITCH_ATTR_SYSTEM_PORT_LIST:
         copy_list(attr_list[i].value.objlist.list,
                   resp.attr().system_port_list(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_SWITCH_ATTR_NUMBER_OF_FABRIC_PORTS:
         attr_list[i].value.u32 = resp.attr().number_of_fabric_ports();
@@ -1111,7 +1111,7 @@ sai_status_t l_get_switch_attribute(sai_object_id_t switch_id,
       case SAI_SWITCH_ATTR_FABRIC_PORT_LIST:
         copy_list(attr_list[i].value.objlist.list,
                   resp.attr().fabric_port_list(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_SWITCH_ATTR_PACKET_DMA_MEMORY_POOL_SIZE:
         attr_list[i].value.u32 = resp.attr().packet_dma_memory_pool_size();
@@ -1126,7 +1126,7 @@ sai_status_t l_get_switch_attribute(sai_object_id_t switch_id,
       case SAI_SWITCH_ATTR_TUNNEL_OBJECTS_LIST:
         copy_list(attr_list[i].value.objlist.list,
                   resp.attr().tunnel_objects_list(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_SWITCH_ATTR_PACKET_AVAILABLE_DMA_MEMORY_POOL_SIZE:
         attr_list[i].value.u32 =
@@ -1147,7 +1147,7 @@ sai_status_t l_get_switch_attribute(sai_object_id_t switch_id,
       case SAI_SWITCH_ATTR_SLAVE_MDIO_ADDR_LIST:
         copy_list(attr_list[i].value.u8list.list,
                   resp.attr().slave_mdio_addr_list(),
-                  attr_list[i].value.u8list.count);
+                  &attr_list[i].value.u8list.count);
         break;
       case SAI_SWITCH_ATTR_MY_MAC_TABLE_MINIMUM_PRIORITY:
         attr_list[i].value.u32 = resp.attr().my_mac_table_minimum_priority();
@@ -1157,7 +1157,7 @@ sai_status_t l_get_switch_attribute(sai_object_id_t switch_id,
         break;
       case SAI_SWITCH_ATTR_MY_MAC_LIST:
         copy_list(attr_list[i].value.objlist.list, resp.attr().my_mac_list(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_SWITCH_ATTR_INSTALLED_MY_MAC_ENTRIES:
         attr_list[i].value.u32 = resp.attr().installed_my_mac_entries();
@@ -1384,7 +1384,7 @@ sai_status_t l_get_switch_tunnel_attribute(sai_object_id_t switch_tunnel_id,
         break;
       case SAI_SWITCH_TUNNEL_ATTR_ENCAP_MAPPERS:
         copy_list(attr_list[i].value.objlist.list, resp.attr().encap_mappers(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_SWITCH_TUNNEL_ATTR_TUNNEL_DECAP_ECN_MODE:
         attr_list[i].value.s32 =
@@ -1392,7 +1392,7 @@ sai_status_t l_get_switch_tunnel_attribute(sai_object_id_t switch_tunnel_id,
         break;
       case SAI_SWITCH_TUNNEL_ATTR_DECAP_MAPPERS:
         copy_list(attr_list[i].value.objlist.list, resp.attr().decap_mappers(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_SWITCH_TUNNEL_ATTR_TUNNEL_VXLAN_UDP_SPORT_MODE:
         attr_list[i].value.s32 =

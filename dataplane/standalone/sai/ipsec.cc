@@ -235,7 +235,7 @@ sai_status_t l_get_ipsec_attribute(sai_object_id_t ipsec_id,
         break;
       case SAI_IPSEC_ATTR_SA_LIST:
         copy_list(attr_list[i].value.objlist.list, resp.attr().sa_list(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
     }
   }
@@ -593,7 +593,7 @@ sai_status_t l_get_ipsec_sa_attribute(sai_object_id_t ipsec_sa_id,
       case SAI_IPSEC_SA_ATTR_IPSEC_PORT_LIST:
         copy_list(attr_list[i].value.objlist.list,
                   resp.attr().ipsec_port_list(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_IPSEC_SA_ATTR_IPSEC_SPI:
         attr_list[i].value.u32 = resp.attr().ipsec_spi();

@@ -28,6 +28,7 @@ enum NextHopAttr {
 }
 
 message CreateNextHopRequest {
+  option (sai_type) = OBJECT_TYPE_NEXT_HOP;
   uint64 switch = 1;
   optional NextHopType type = 2 [(attr_enum_value) = 1];
   optional bytes ip = 3 [(attr_enum_value) = 2];

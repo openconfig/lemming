@@ -120,7 +120,7 @@ sai_status_t l_get_isolation_group_attribute(sai_object_id_t isolation_group_id,
       case SAI_ISOLATION_GROUP_ATTR_ISOLATION_MEMBER_LIST:
         copy_list(attr_list[i].value.objlist.list,
                   resp.attr().isolation_member_list(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
     }
   }

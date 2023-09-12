@@ -57,6 +57,7 @@ enum DtelEventAttr {
 }
 
 message CreateDtelRequest {
+  option (sai_type) = OBJECT_TYPE_DTEL;
   uint64 switch = 1;
   optional bool int_endpoint_enable = 2 [(attr_enum_value) = 1];
   optional bool int_transit_enable = 3 [(attr_enum_value) = 2];
@@ -106,6 +107,7 @@ message GetDtelAttributeResponse {
 }
 
 message CreateDtelQueueReportRequest {
+  option (sai_type) = OBJECT_TYPE_DTEL_QUEUE_REPORT;
   uint64 switch = 1;
   optional uint64 queue_id = 2 [(attr_enum_value) = 1];
   optional uint32 depth_threshold = 3 [(attr_enum_value) = 2];
@@ -144,6 +146,7 @@ message GetDtelQueueReportAttributeResponse {
 }
 
 message CreateDtelIntSessionRequest {
+  option (sai_type) = OBJECT_TYPE_DTEL_INT_SESSION;
   uint64 switch = 1;
   optional uint32 max_hop_count = 2 [(attr_enum_value) = 1];
   optional bool collect_switch_id = 3 [(attr_enum_value) = 2];
@@ -185,6 +188,7 @@ message GetDtelIntSessionAttributeResponse {
 }
 
 message CreateDtelReportSessionRequest {
+  option (sai_type) = OBJECT_TYPE_DTEL_REPORT_SESSION;
   uint64 switch = 1;
   optional bytes src_ip = 2 [(attr_enum_value) = 1];
   repeated bytes dst_ip_list = 3 [(attr_enum_value) = 2];
@@ -224,6 +228,7 @@ message GetDtelReportSessionAttributeResponse {
 }
 
 message CreateDtelEventRequest {
+  option (sai_type) = OBJECT_TYPE_DTEL_EVENT;
   uint64 switch = 1;
   optional DtelEventType type = 2 [(attr_enum_value) = 1];
   optional uint64 report_session = 3 [(attr_enum_value) = 2];

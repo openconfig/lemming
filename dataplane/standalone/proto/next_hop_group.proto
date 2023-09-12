@@ -39,6 +39,7 @@ enum NextHopGroupMapAttr {
 }
 
 message CreateNextHopGroupRequest {
+  option (sai_type) = OBJECT_TYPE_NEXT_HOP_GROUP;
   uint64 switch = 1;
   optional NextHopGroupType type = 2 [(attr_enum_value) = 3];
   optional bool set_switchover = 3 [(attr_enum_value) = 4];
@@ -76,6 +77,7 @@ message GetNextHopGroupAttributeResponse {
 }
 
 message CreateNextHopGroupMemberRequest {
+  option (sai_type) = OBJECT_TYPE_NEXT_HOP_GROUP_MEMBER;
   uint64 switch = 1;
   optional uint64 next_hop_group_id = 2 [(attr_enum_value) = 1];
   optional uint64 next_hop_id = 3 [(attr_enum_value) = 2];
@@ -119,6 +121,7 @@ message GetNextHopGroupMemberAttributeResponse {
 }
 
 message CreateNextHopGroupMapRequest {
+  option (sai_type) = OBJECT_TYPE_NEXT_HOP_GROUP_MAP;
   uint64 switch = 1;
   optional NextHopGroupMapType type = 2 [(attr_enum_value) = 1];
   repeated UintMap map_to_value_list = 3 [(attr_enum_value) = 2];

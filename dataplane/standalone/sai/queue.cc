@@ -205,7 +205,7 @@ sai_status_t l_get_queue_attribute(sai_object_id_t queue_id,
         break;
       case SAI_QUEUE_ATTR_TAM_OBJECT:
         copy_list(attr_list[i].value.objlist.list, resp.attr().tam_object(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
     }
   }

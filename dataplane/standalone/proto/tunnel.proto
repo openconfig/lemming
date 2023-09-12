@@ -77,6 +77,7 @@ enum TunnelMapEntryAttr {
 }
 
 message CreateTunnelMapRequest {
+  option (sai_type) = OBJECT_TYPE_TUNNEL_MAP;
   uint64 switch = 1;
   optional TunnelMapType type = 2 [(attr_enum_value) = 1];
 }
@@ -101,6 +102,7 @@ message GetTunnelMapAttributeResponse {
 }
 
 message CreateTunnelRequest {
+  option (sai_type) = OBJECT_TYPE_TUNNEL;
   uint64 switch = 1;
   optional TunnelType type = 2 [(attr_enum_value) = 1];
   optional uint64 underlay_interface = 3 [(attr_enum_value) = 2];
@@ -169,6 +171,7 @@ message GetTunnelAttributeResponse {
 }
 
 message CreateTunnelTermTableEntryRequest {
+  option (sai_type) = OBJECT_TYPE_TUNNEL_TERM_TABLE_ENTRY;
   uint64 switch = 1;
   optional uint64 vr_id = 2 [(attr_enum_value) = 1];
   optional TunnelTermTableEntryType type = 3 [(attr_enum_value) = 2];
@@ -208,6 +211,7 @@ message GetTunnelTermTableEntryAttributeResponse {
 }
 
 message CreateTunnelMapEntryRequest {
+  option (sai_type) = OBJECT_TYPE_TUNNEL_MAP_ENTRY;
   uint64 switch = 1;
   optional TunnelMapType tunnel_map_type = 2 [(attr_enum_value) = 1];
   optional uint64 tunnel_map = 3 [(attr_enum_value) = 2];

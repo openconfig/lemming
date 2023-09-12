@@ -141,12 +141,12 @@ sai_status_t l_get_hash_attribute(sai_object_id_t hash_id, uint32_t attr_count,
     switch (attr_list[i].id) {
       case SAI_HASH_ATTR_UDF_GROUP_LIST:
         copy_list(attr_list[i].value.objlist.list, resp.attr().udf_group_list(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
       case SAI_HASH_ATTR_FINE_GRAINED_HASH_FIELD_LIST:
         copy_list(attr_list[i].value.objlist.list,
                   resp.attr().fine_grained_hash_field_list(),
-                  attr_list[i].value.objlist.count);
+                  &attr_list[i].value.objlist.count);
         break;
     }
   }

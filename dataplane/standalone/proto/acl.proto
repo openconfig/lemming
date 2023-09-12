@@ -295,6 +295,7 @@ enum AclTableGroupMemberAttr {
 }
 
 message CreateAclTableRequest {
+  option (sai_type) = OBJECT_TYPE_ACL_TABLE;
   uint64 switch = 1;
   optional AclStage acl_stage = 2 [(attr_enum_value) = 1];
   repeated AclBindPointType acl_bind_point_type_list = 3
@@ -416,6 +417,7 @@ message GetAclTableAttributeResponse {
 }
 
 message CreateAclEntryRequest {
+  option (sai_type) = OBJECT_TYPE_ACL_ENTRY;
   uint64 switch = 1;
   optional uint64 table_id = 2 [(attr_enum_value) = 1];
   optional uint32 priority = 3 [(attr_enum_value) = 2];
@@ -798,6 +800,7 @@ message GetAclEntryAttributeResponse {
 }
 
 message CreateAclCounterRequest {
+  option (sai_type) = OBJECT_TYPE_ACL_COUNTER;
   uint64 switch = 1;
   optional uint64 table_id = 2 [(attr_enum_value) = 1];
   optional bool enable_packet_count = 3 [(attr_enum_value) = 2];
@@ -834,6 +837,7 @@ message GetAclCounterAttributeResponse {
 }
 
 message CreateAclRangeRequest {
+  option (sai_type) = OBJECT_TYPE_ACL_RANGE;
   uint64 switch = 1;
   optional AclRangeType type = 2 [(attr_enum_value) = 1];
   optional Uint32Range limit = 3 [(attr_enum_value) = 2];
@@ -859,6 +863,7 @@ message GetAclRangeAttributeResponse {
 }
 
 message CreateAclTableGroupRequest {
+  option (sai_type) = OBJECT_TYPE_ACL_TABLE_GROUP;
   uint64 switch = 1;
   optional AclStage acl_stage = 2 [(attr_enum_value) = 1];
   repeated AclBindPointType acl_bind_point_type_list = 3
@@ -886,6 +891,7 @@ message GetAclTableGroupAttributeResponse {
 }
 
 message CreateAclTableGroupMemberRequest {
+  option (sai_type) = OBJECT_TYPE_ACL_TABLE_GROUP_MEMBER;
   uint64 switch = 1;
   optional uint64 acl_table_group_id = 2 [(attr_enum_value) = 1];
   optional uint64 acl_table_id = 3 [(attr_enum_value) = 2];

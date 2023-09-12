@@ -22,6 +22,7 @@ enum StpPortAttr {
 }
 
 message CreateStpRequest {
+  option (sai_type) = OBJECT_TYPE_STP;
   uint64 switch = 1;
 }
 
@@ -45,6 +46,7 @@ message GetStpAttributeResponse {
 }
 
 message CreateStpPortRequest {
+  option (sai_type) = OBJECT_TYPE_STP_PORT;
   uint64 switch = 1;
   optional uint64 stp = 2 [(attr_enum_value) = 1];
   optional uint64 bridge_port = 3 [(attr_enum_value) = 2];

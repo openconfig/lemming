@@ -13,6 +13,7 @@ enum CounterAttr {
 }
 
 message CreateCounterRequest {
+  option (sai_type) = OBJECT_TYPE_COUNTER;
   uint64 switch = 1;
   optional CounterType type = 2 [(attr_enum_value) = 1];
 }

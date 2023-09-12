@@ -19,6 +19,7 @@ enum SystemPortAttr {
 }
 
 message CreateSystemPortRequest {
+  option (sai_type) = OBJECT_TYPE_SYSTEM_PORT;
   uint64 switch = 1;
   optional bool admin_state = 2 [(attr_enum_value) = 5];
   optional SystemPortConfig config_info = 3 [(attr_enum_value) = 6];

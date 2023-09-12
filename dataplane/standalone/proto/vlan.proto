@@ -41,6 +41,7 @@ enum VlanMemberAttr {
 }
 
 message CreateVlanRequest {
+  option (sai_type) = OBJECT_TYPE_VLAN;
   uint64 switch = 1;
   optional uint32 vlan_id = 2 [(attr_enum_value) = 1];
   optional uint32 max_learned_addresses = 3 [(attr_enum_value) = 3];
@@ -129,6 +130,7 @@ message GetVlanAttributeResponse {
 }
 
 message CreateVlanMemberRequest {
+  option (sai_type) = OBJECT_TYPE_VLAN_MEMBER;
   uint64 switch = 1;
   optional uint64 vlan_id = 2 [(attr_enum_value) = 1];
   optional uint64 bridge_port_id = 3 [(attr_enum_value) = 2];
