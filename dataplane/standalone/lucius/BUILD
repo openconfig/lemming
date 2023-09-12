@@ -9,6 +9,7 @@ go_library(
     deps = [
         "//dataplane/internal/engine",
         "//dataplane/standalone/saiserver",
+        "//dataplane/standalone/saiserver/attrmgr",
         "//proto/dataplane",
         "//proto/forwarding",
         "@com_github_golang_glog//:glog",
