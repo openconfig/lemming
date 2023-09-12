@@ -174,6 +174,14 @@ func populateTmplDataFromFunc(apis map[string]*protoAPITmplData, docInfo *docpar
 			req.Fields = append(req.Fields, idField)
 			requestIdx++
 		}
+		for _, v := range docInfo.Enums["sai_object_type_t"] {
+			if v == fmt.Sprintf("SAI_OBJECT_TYPE_%s", meta.TypeName) {
+				req.Option = fmt.Sprintf("option (sai_type) = OBJECT_TYPE_%s", meta.TypeName)
+			}
+		}
+		if req.Option == "" {
+			req.Option = "option (sai_type) = OBJECT_TYPE_UNSPECIFIED"
+		}
 
 		attrs, err := createAttrs(requestIdx, meta.TypeName, docInfo, docInfo.Attrs[meta.TypeName].CreateFields)
 		if err != nil {
@@ -310,6 +318,9 @@ enum {{ .Name }} {
 
 {{ range .Messages }}
 message {{ .Name }} {
+	{{- if .Option }}
+	{{ .Option }};
+	{{- end -}}
 	{{- range .Fields }}
 	{{ .ProtoType }} {{ .Name }} = {{ .Index }} {{- if .Option -}} {{ .Option }} {{- end -}};
 	{{- end }}
@@ -335,11 +346,25 @@ option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto";
 extend google.protobuf.FieldOptions {
 	optional int32 attr_enum_value = 50000;
 }
+
+extend google.protobuf.MessageOptions {
+	optional ObjectType sai_type = 50001;
+}
 {{ range .Messages }}
 {{ . }}
-{{ end -}}
+{{ end }}
+message ObjectTypeQueryRequest {
+	uint64 object = 1;
+}
 
-{{- range .Enums }}
+message ObjectTypeQueryResponse {
+	ObjectType type = 1;
+}
+
+service Entrypoint {
+  rpc ObjectTypeQuery(ObjectTypeQueryRequest) returns (ObjectTypeQueryResponse) {}
+}
+{{ range .Enums }}
 enum {{ .Name }} {
 	{{- range .Values }}
 	{{ .Name }} = {{ .Index }};
@@ -384,6 +409,7 @@ type protoEnumValues struct {
 
 type protoTmplMessage struct {
 	Name   string
+	Option string
 	Fields []protoTmplField
 }
 

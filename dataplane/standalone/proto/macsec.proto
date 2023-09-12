@@ -7,300 +7,301 @@ import "dataplane/standalone/proto/common.proto";
 
 option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto";
 
+
 enum MacsecAttr {
-  MACSEC_ATTR_UNSPECIFIED = 0;
-  MACSEC_ATTR_DIRECTION = 1;
-  MACSEC_ATTR_SWITCHING_MODE_CUT_THROUGH_SUPPORTED = 2;
-  MACSEC_ATTR_SWITCHING_MODE_STORE_AND_FORWARD_SUPPORTED = 3;
-  MACSEC_ATTR_STATS_MODE_READ_SUPPORTED = 4;
-  MACSEC_ATTR_STATS_MODE_READ_CLEAR_SUPPORTED = 5;
-  MACSEC_ATTR_SCI_IN_INGRESS_MACSEC_ACL = 6;
-  MACSEC_ATTR_SUPPORTED_CIPHER_SUITE_LIST = 7;
-  MACSEC_ATTR_PN_32BIT_SUPPORTED = 8;
-  MACSEC_ATTR_XPN_64BIT_SUPPORTED = 9;
-  MACSEC_ATTR_GCM_AES128_SUPPORTED = 10;
-  MACSEC_ATTR_GCM_AES256_SUPPORTED = 11;
-  MACSEC_ATTR_SECTAG_OFFSETS_SUPPORTED = 12;
-  MACSEC_ATTR_SYSTEM_SIDE_MTU = 13;
-  MACSEC_ATTR_WARM_BOOT_SUPPORTED = 14;
-  MACSEC_ATTR_WARM_BOOT_ENABLE = 15;
-  MACSEC_ATTR_CTAG_TPID = 16;
-  MACSEC_ATTR_STAG_TPID = 17;
-  MACSEC_ATTR_MAX_VLAN_TAGS_PARSED = 18;
-  MACSEC_ATTR_STATS_MODE = 19;
-  MACSEC_ATTR_PHYSICAL_BYPASS_ENABLE = 20;
-  MACSEC_ATTR_SUPPORTED_PORT_LIST = 21;
-  MACSEC_ATTR_AVAILABLE_MACSEC_FLOW = 22;
-  MACSEC_ATTR_FLOW_LIST = 23;
-  MACSEC_ATTR_AVAILABLE_MACSEC_SC = 24;
-  MACSEC_ATTR_AVAILABLE_MACSEC_SA = 25;
+	MACSEC_ATTR_UNSPECIFIED = 0;
+	MACSEC_ATTR_DIRECTION = 1;
+	MACSEC_ATTR_SWITCHING_MODE_CUT_THROUGH_SUPPORTED = 2;
+	MACSEC_ATTR_SWITCHING_MODE_STORE_AND_FORWARD_SUPPORTED = 3;
+	MACSEC_ATTR_STATS_MODE_READ_SUPPORTED = 4;
+	MACSEC_ATTR_STATS_MODE_READ_CLEAR_SUPPORTED = 5;
+	MACSEC_ATTR_SCI_IN_INGRESS_MACSEC_ACL = 6;
+	MACSEC_ATTR_SUPPORTED_CIPHER_SUITE_LIST = 7;
+	MACSEC_ATTR_PN_32BIT_SUPPORTED = 8;
+	MACSEC_ATTR_XPN_64BIT_SUPPORTED = 9;
+	MACSEC_ATTR_GCM_AES128_SUPPORTED = 10;
+	MACSEC_ATTR_GCM_AES256_SUPPORTED = 11;
+	MACSEC_ATTR_SECTAG_OFFSETS_SUPPORTED = 12;
+	MACSEC_ATTR_SYSTEM_SIDE_MTU = 13;
+	MACSEC_ATTR_WARM_BOOT_SUPPORTED = 14;
+	MACSEC_ATTR_WARM_BOOT_ENABLE = 15;
+	MACSEC_ATTR_CTAG_TPID = 16;
+	MACSEC_ATTR_STAG_TPID = 17;
+	MACSEC_ATTR_MAX_VLAN_TAGS_PARSED = 18;
+	MACSEC_ATTR_STATS_MODE = 19;
+	MACSEC_ATTR_PHYSICAL_BYPASS_ENABLE = 20;
+	MACSEC_ATTR_SUPPORTED_PORT_LIST = 21;
+	MACSEC_ATTR_AVAILABLE_MACSEC_FLOW = 22;
+	MACSEC_ATTR_FLOW_LIST = 23;
+	MACSEC_ATTR_AVAILABLE_MACSEC_SC = 24;
+	MACSEC_ATTR_AVAILABLE_MACSEC_SA = 25;
 }
 
 enum MacsecPortAttr {
-  MACSEC_PORT_ATTR_UNSPECIFIED = 0;
-  MACSEC_PORT_ATTR_MACSEC_DIRECTION = 1;
-  MACSEC_PORT_ATTR_PORT_ID = 2;
-  MACSEC_PORT_ATTR_CTAG_ENABLE = 3;
-  MACSEC_PORT_ATTR_STAG_ENABLE = 4;
-  MACSEC_PORT_ATTR_SWITCH_SWITCHING_MODE = 5;
+	MACSEC_PORT_ATTR_UNSPECIFIED = 0;
+	MACSEC_PORT_ATTR_MACSEC_DIRECTION = 1;
+	MACSEC_PORT_ATTR_PORT_ID = 2;
+	MACSEC_PORT_ATTR_CTAG_ENABLE = 3;
+	MACSEC_PORT_ATTR_STAG_ENABLE = 4;
+	MACSEC_PORT_ATTR_SWITCH_SWITCHING_MODE = 5;
 }
 
 enum MacsecFlowAttr {
-  MACSEC_FLOW_ATTR_UNSPECIFIED = 0;
-  MACSEC_FLOW_ATTR_MACSEC_DIRECTION = 1;
-  MACSEC_FLOW_ATTR_ACL_ENTRY_LIST = 2;
-  MACSEC_FLOW_ATTR_SC_LIST = 3;
+	MACSEC_FLOW_ATTR_UNSPECIFIED = 0;
+	MACSEC_FLOW_ATTR_MACSEC_DIRECTION = 1;
+	MACSEC_FLOW_ATTR_ACL_ENTRY_LIST = 2;
+	MACSEC_FLOW_ATTR_SC_LIST = 3;
 }
 
 enum MacsecScAttr {
-  MACSEC_SC_ATTR_UNSPECIFIED = 0;
-  MACSEC_SC_ATTR_MACSEC_DIRECTION = 1;
-  MACSEC_SC_ATTR_FLOW_ID = 2;
-  MACSEC_SC_ATTR_MACSEC_SCI = 3;
-  MACSEC_SC_ATTR_MACSEC_EXPLICIT_SCI_ENABLE = 4;
-  MACSEC_SC_ATTR_MACSEC_SECTAG_OFFSET = 5;
-  MACSEC_SC_ATTR_ACTIVE_EGRESS_SA_ID = 6;
-  MACSEC_SC_ATTR_MACSEC_REPLAY_PROTECTION_ENABLE = 7;
-  MACSEC_SC_ATTR_MACSEC_REPLAY_PROTECTION_WINDOW = 8;
-  MACSEC_SC_ATTR_SA_LIST = 9;
-  MACSEC_SC_ATTR_MACSEC_CIPHER_SUITE = 10;
-  MACSEC_SC_ATTR_ENCRYPTION_ENABLE = 11;
+	MACSEC_SC_ATTR_UNSPECIFIED = 0;
+	MACSEC_SC_ATTR_MACSEC_DIRECTION = 1;
+	MACSEC_SC_ATTR_FLOW_ID = 2;
+	MACSEC_SC_ATTR_MACSEC_SCI = 3;
+	MACSEC_SC_ATTR_MACSEC_EXPLICIT_SCI_ENABLE = 4;
+	MACSEC_SC_ATTR_MACSEC_SECTAG_OFFSET = 5;
+	MACSEC_SC_ATTR_ACTIVE_EGRESS_SA_ID = 6;
+	MACSEC_SC_ATTR_MACSEC_REPLAY_PROTECTION_ENABLE = 7;
+	MACSEC_SC_ATTR_MACSEC_REPLAY_PROTECTION_WINDOW = 8;
+	MACSEC_SC_ATTR_SA_LIST = 9;
+	MACSEC_SC_ATTR_MACSEC_CIPHER_SUITE = 10;
+	MACSEC_SC_ATTR_ENCRYPTION_ENABLE = 11;
 }
 
 enum MacsecSaAttr {
-  MACSEC_SA_ATTR_UNSPECIFIED = 0;
-  MACSEC_SA_ATTR_MACSEC_DIRECTION = 1;
-  MACSEC_SA_ATTR_SC_ID = 2;
-  MACSEC_SA_ATTR_AN = 3;
-  MACSEC_SA_ATTR_SAK = 4;
-  MACSEC_SA_ATTR_SALT = 5;
-  MACSEC_SA_ATTR_AUTH_KEY = 6;
-  MACSEC_SA_ATTR_CONFIGURED_EGRESS_XPN = 7;
-  MACSEC_SA_ATTR_CURRENT_XPN = 8;
-  MACSEC_SA_ATTR_MINIMUM_INGRESS_XPN = 9;
-  MACSEC_SA_ATTR_MACSEC_SSCI = 10;
+	MACSEC_SA_ATTR_UNSPECIFIED = 0;
+	MACSEC_SA_ATTR_MACSEC_DIRECTION = 1;
+	MACSEC_SA_ATTR_SC_ID = 2;
+	MACSEC_SA_ATTR_AN = 3;
+	MACSEC_SA_ATTR_SAK = 4;
+	MACSEC_SA_ATTR_SALT = 5;
+	MACSEC_SA_ATTR_AUTH_KEY = 6;
+	MACSEC_SA_ATTR_CONFIGURED_EGRESS_XPN = 7;
+	MACSEC_SA_ATTR_CURRENT_XPN = 8;
+	MACSEC_SA_ATTR_MINIMUM_INGRESS_XPN = 9;
+	MACSEC_SA_ATTR_MACSEC_SSCI = 10;
 }
 
 message CreateMacsecRequest {
-  uint64 switch = 1;
-  optional MacsecDirection direction = 2 [(attr_enum_value) = 1];
-  optional bool warm_boot_enable = 3 [(attr_enum_value) = 15];
-  optional uint32 ctag_tpid = 4 [(attr_enum_value) = 16];
-  optional uint32 stag_tpid = 5 [(attr_enum_value) = 17];
-  optional uint32 max_vlan_tags_parsed = 6 [(attr_enum_value) = 18];
-  optional StatsMode stats_mode = 7 [(attr_enum_value) = 19];
-  optional bool physical_bypass_enable = 8 [(attr_enum_value) = 20];
+	option (sai_type) = OBJECT_TYPE_MACSEC;
+	uint64 switch = 1;
+	optional MacsecDirection direction = 2[(attr_enum_value) = 1];
+	optional bool warm_boot_enable = 3[(attr_enum_value) = 15];
+	optional uint32 ctag_tpid = 4[(attr_enum_value) = 16];
+	optional uint32 stag_tpid = 5[(attr_enum_value) = 17];
+	optional uint32 max_vlan_tags_parsed = 6[(attr_enum_value) = 18];
+	optional StatsMode stats_mode = 7[(attr_enum_value) = 19];
+	optional bool physical_bypass_enable = 8[(attr_enum_value) = 20];
 }
 
 message CreateMacsecResponse {
-  uint64 oid = 1;
+	uint64 oid = 1;
 }
 
 message RemoveMacsecRequest {
-  uint64 oid = 1;
+	uint64 oid = 1;
 }
 
-message RemoveMacsecResponse {}
+message RemoveMacsecResponse {
+}
 
 message SetMacsecAttributeRequest {
-  uint64 oid = 1;
-  optional bool warm_boot_enable = 2 [(attr_enum_value) = 15];
-  optional uint32 ctag_tpid = 3 [(attr_enum_value) = 16];
-  optional uint32 stag_tpid = 4 [(attr_enum_value) = 17];
-  optional uint32 max_vlan_tags_parsed = 5 [(attr_enum_value) = 18];
-  optional StatsMode stats_mode = 6 [(attr_enum_value) = 19];
-  optional bool physical_bypass_enable = 7 [(attr_enum_value) = 20];
+	uint64 oid = 1;
+	optional bool warm_boot_enable = 2[(attr_enum_value) = 15];
+	optional uint32 ctag_tpid = 3[(attr_enum_value) = 16];
+	optional uint32 stag_tpid = 4[(attr_enum_value) = 17];
+	optional uint32 max_vlan_tags_parsed = 5[(attr_enum_value) = 18];
+	optional StatsMode stats_mode = 6[(attr_enum_value) = 19];
+	optional bool physical_bypass_enable = 7[(attr_enum_value) = 20];
 }
 
-message SetMacsecAttributeResponse {}
+message SetMacsecAttributeResponse {
+}
 
 message GetMacsecAttributeRequest {
-  uint64 oid = 1;
-  repeated MacsecAttr attr_type = 2;
+	uint64 oid = 1;
+	repeated MacsecAttr attr_type = 2;
 }
 
 message GetMacsecAttributeResponse {
-  MacsecAttribute attr = 1;
+	MacsecAttribute attr = 1;
 }
 
 message CreateMacsecPortRequest {
-  uint64 switch = 1;
-  optional MacsecDirection macsec_direction = 2 [(attr_enum_value) = 1];
-  optional uint64 port_id = 3 [(attr_enum_value) = 2];
-  optional bool ctag_enable = 4 [(attr_enum_value) = 3];
-  optional bool stag_enable = 5 [(attr_enum_value) = 4];
-  optional SwitchSwitchingMode switch_switching_mode = 6
-      [(attr_enum_value) = 5];
+	option (sai_type) = OBJECT_TYPE_MACSEC_PORT;
+	uint64 switch = 1;
+	optional MacsecDirection macsec_direction = 2[(attr_enum_value) = 1];
+	optional uint64 port_id = 3[(attr_enum_value) = 2];
+	optional bool ctag_enable = 4[(attr_enum_value) = 3];
+	optional bool stag_enable = 5[(attr_enum_value) = 4];
+	optional SwitchSwitchingMode switch_switching_mode = 6[(attr_enum_value) = 5];
 }
 
 message CreateMacsecPortResponse {
-  uint64 oid = 1;
+	uint64 oid = 1;
 }
 
 message RemoveMacsecPortRequest {
-  uint64 oid = 1;
+	uint64 oid = 1;
 }
 
-message RemoveMacsecPortResponse {}
+message RemoveMacsecPortResponse {
+}
 
 message SetMacsecPortAttributeRequest {
-  uint64 oid = 1;
-  optional bool ctag_enable = 2 [(attr_enum_value) = 3];
-  optional bool stag_enable = 3 [(attr_enum_value) = 4];
-  optional SwitchSwitchingMode switch_switching_mode = 4
-      [(attr_enum_value) = 5];
+	uint64 oid = 1;
+	optional bool ctag_enable = 2[(attr_enum_value) = 3];
+	optional bool stag_enable = 3[(attr_enum_value) = 4];
+	optional SwitchSwitchingMode switch_switching_mode = 4[(attr_enum_value) = 5];
 }
 
-message SetMacsecPortAttributeResponse {}
+message SetMacsecPortAttributeResponse {
+}
 
 message GetMacsecPortAttributeRequest {
-  uint64 oid = 1;
-  repeated MacsecPortAttr attr_type = 2;
+	uint64 oid = 1;
+	repeated MacsecPortAttr attr_type = 2;
 }
 
 message GetMacsecPortAttributeResponse {
-  MacsecPortAttribute attr = 1;
+	MacsecPortAttribute attr = 1;
 }
 
 message CreateMacsecFlowRequest {
-  uint64 switch = 1;
-  optional MacsecDirection macsec_direction = 2 [(attr_enum_value) = 1];
+	option (sai_type) = OBJECT_TYPE_MACSEC_FLOW;
+	uint64 switch = 1;
+	optional MacsecDirection macsec_direction = 2[(attr_enum_value) = 1];
 }
 
 message CreateMacsecFlowResponse {
-  uint64 oid = 1;
+	uint64 oid = 1;
 }
 
 message RemoveMacsecFlowRequest {
-  uint64 oid = 1;
+	uint64 oid = 1;
 }
 
-message RemoveMacsecFlowResponse {}
+message RemoveMacsecFlowResponse {
+}
 
 message GetMacsecFlowAttributeRequest {
-  uint64 oid = 1;
-  repeated MacsecFlowAttr attr_type = 2;
+	uint64 oid = 1;
+	repeated MacsecFlowAttr attr_type = 2;
 }
 
 message GetMacsecFlowAttributeResponse {
-  MacsecFlowAttribute attr = 1;
+	MacsecFlowAttribute attr = 1;
 }
 
 message CreateMacsecScRequest {
-  uint64 switch = 1;
-  optional MacsecDirection macsec_direction = 2 [(attr_enum_value) = 1];
-  optional uint64 flow_id = 3 [(attr_enum_value) = 2];
-  optional uint64 macsec_sci = 4 [(attr_enum_value) = 3];
-  optional bool macsec_explicit_sci_enable = 5 [(attr_enum_value) = 4];
-  optional uint32 macsec_sectag_offset = 6 [(attr_enum_value) = 5];
-  optional bool macsec_replay_protection_enable = 7 [(attr_enum_value) = 7];
-  optional uint32 macsec_replay_protection_window = 8 [(attr_enum_value) = 8];
-  optional MacsecCipherSuite macsec_cipher_suite = 9 [(attr_enum_value) = 10];
-  optional bool encryption_enable = 10 [(attr_enum_value) = 11];
+	option (sai_type) = OBJECT_TYPE_MACSEC_SC;
+	uint64 switch = 1;
+	optional MacsecDirection macsec_direction = 2[(attr_enum_value) = 1];
+	optional uint64 flow_id = 3[(attr_enum_value) = 2];
+	optional uint64 macsec_sci = 4[(attr_enum_value) = 3];
+	optional bool macsec_explicit_sci_enable = 5[(attr_enum_value) = 4];
+	optional uint32 macsec_sectag_offset = 6[(attr_enum_value) = 5];
+	optional bool macsec_replay_protection_enable = 7[(attr_enum_value) = 7];
+	optional uint32 macsec_replay_protection_window = 8[(attr_enum_value) = 8];
+	optional MacsecCipherSuite macsec_cipher_suite = 9[(attr_enum_value) = 10];
+	optional bool encryption_enable = 10[(attr_enum_value) = 11];
 }
 
 message CreateMacsecScResponse {
-  uint64 oid = 1;
+	uint64 oid = 1;
 }
 
 message RemoveMacsecScRequest {
-  uint64 oid = 1;
+	uint64 oid = 1;
 }
 
-message RemoveMacsecScResponse {}
+message RemoveMacsecScResponse {
+}
 
 message SetMacsecScAttributeRequest {
-  uint64 oid = 1;
-  optional bool macsec_explicit_sci_enable = 2 [(attr_enum_value) = 4];
-  optional uint32 macsec_sectag_offset = 3 [(attr_enum_value) = 5];
-  optional bool macsec_replay_protection_enable = 4 [(attr_enum_value) = 7];
-  optional uint32 macsec_replay_protection_window = 5 [(attr_enum_value) = 8];
-  optional MacsecCipherSuite macsec_cipher_suite = 6 [(attr_enum_value) = 10];
-  optional bool encryption_enable = 7 [(attr_enum_value) = 11];
+	uint64 oid = 1;
+	optional bool macsec_explicit_sci_enable = 2[(attr_enum_value) = 4];
+	optional uint32 macsec_sectag_offset = 3[(attr_enum_value) = 5];
+	optional bool macsec_replay_protection_enable = 4[(attr_enum_value) = 7];
+	optional uint32 macsec_replay_protection_window = 5[(attr_enum_value) = 8];
+	optional MacsecCipherSuite macsec_cipher_suite = 6[(attr_enum_value) = 10];
+	optional bool encryption_enable = 7[(attr_enum_value) = 11];
 }
 
-message SetMacsecScAttributeResponse {}
+message SetMacsecScAttributeResponse {
+}
 
 message GetMacsecScAttributeRequest {
-  uint64 oid = 1;
-  repeated MacsecScAttr attr_type = 2;
+	uint64 oid = 1;
+	repeated MacsecScAttr attr_type = 2;
 }
 
 message GetMacsecScAttributeResponse {
-  MacsecScAttribute attr = 1;
+	MacsecScAttribute attr = 1;
 }
 
 message CreateMacsecSaRequest {
-  uint64 switch = 1;
-  optional MacsecDirection macsec_direction = 2 [(attr_enum_value) = 1];
-  optional uint64 sc_id = 3 [(attr_enum_value) = 2];
-  optional uint32 an = 4 [(attr_enum_value) = 3];
-  optional bytes sak = 5 [(attr_enum_value) = 4];
-  optional bytes salt = 6 [(attr_enum_value) = 5];
-  optional bytes auth_key = 7 [(attr_enum_value) = 6];
-  optional uint64 configured_egress_xpn = 8 [(attr_enum_value) = 7];
-  optional uint64 minimum_ingress_xpn = 9 [(attr_enum_value) = 9];
-  optional uint32 macsec_ssci = 10 [(attr_enum_value) = 10];
+	option (sai_type) = OBJECT_TYPE_MACSEC_SA;
+	uint64 switch = 1;
+	optional MacsecDirection macsec_direction = 2[(attr_enum_value) = 1];
+	optional uint64 sc_id = 3[(attr_enum_value) = 2];
+	optional uint32 an = 4[(attr_enum_value) = 3];
+	optional bytes sak = 5[(attr_enum_value) = 4];
+	optional bytes salt = 6[(attr_enum_value) = 5];
+	optional bytes auth_key = 7[(attr_enum_value) = 6];
+	optional uint64 configured_egress_xpn = 8[(attr_enum_value) = 7];
+	optional uint64 minimum_ingress_xpn = 9[(attr_enum_value) = 9];
+	optional uint32 macsec_ssci = 10[(attr_enum_value) = 10];
 }
 
 message CreateMacsecSaResponse {
-  uint64 oid = 1;
+	uint64 oid = 1;
 }
 
 message RemoveMacsecSaRequest {
-  uint64 oid = 1;
+	uint64 oid = 1;
 }
 
-message RemoveMacsecSaResponse {}
+message RemoveMacsecSaResponse {
+}
 
 message SetMacsecSaAttributeRequest {
-  uint64 oid = 1;
-  optional uint64 configured_egress_xpn = 2 [(attr_enum_value) = 7];
-  optional uint64 minimum_ingress_xpn = 3 [(attr_enum_value) = 9];
+	uint64 oid = 1;
+	optional uint64 configured_egress_xpn = 2[(attr_enum_value) = 7];
+	optional uint64 minimum_ingress_xpn = 3[(attr_enum_value) = 9];
 }
 
-message SetMacsecSaAttributeResponse {}
+message SetMacsecSaAttributeResponse {
+}
 
 message GetMacsecSaAttributeRequest {
-  uint64 oid = 1;
-  repeated MacsecSaAttr attr_type = 2;
+	uint64 oid = 1;
+	repeated MacsecSaAttr attr_type = 2;
 }
 
 message GetMacsecSaAttributeResponse {
-  MacsecSaAttribute attr = 1;
+	MacsecSaAttribute attr = 1;
 }
 
+
 service Macsec {
-  rpc CreateMacsec(CreateMacsecRequest) returns (CreateMacsecResponse) {}
-  rpc RemoveMacsec(RemoveMacsecRequest) returns (RemoveMacsecResponse) {}
-  rpc SetMacsecAttribute(SetMacsecAttributeRequest)
-      returns (SetMacsecAttributeResponse) {}
-  rpc GetMacsecAttribute(GetMacsecAttributeRequest)
-      returns (GetMacsecAttributeResponse) {}
-  rpc CreateMacsecPort(CreateMacsecPortRequest)
-      returns (CreateMacsecPortResponse) {}
-  rpc RemoveMacsecPort(RemoveMacsecPortRequest)
-      returns (RemoveMacsecPortResponse) {}
-  rpc SetMacsecPortAttribute(SetMacsecPortAttributeRequest)
-      returns (SetMacsecPortAttributeResponse) {}
-  rpc GetMacsecPortAttribute(GetMacsecPortAttributeRequest)
-      returns (GetMacsecPortAttributeResponse) {}
-  rpc CreateMacsecFlow(CreateMacsecFlowRequest)
-      returns (CreateMacsecFlowResponse) {}
-  rpc RemoveMacsecFlow(RemoveMacsecFlowRequest)
-      returns (RemoveMacsecFlowResponse) {}
-  rpc GetMacsecFlowAttribute(GetMacsecFlowAttributeRequest)
-      returns (GetMacsecFlowAttributeResponse) {}
-  rpc CreateMacsecSc(CreateMacsecScRequest) returns (CreateMacsecScResponse) {}
-  rpc RemoveMacsecSc(RemoveMacsecScRequest) returns (RemoveMacsecScResponse) {}
-  rpc SetMacsecScAttribute(SetMacsecScAttributeRequest)
-      returns (SetMacsecScAttributeResponse) {}
-  rpc GetMacsecScAttribute(GetMacsecScAttributeRequest)
-      returns (GetMacsecScAttributeResponse) {}
-  rpc CreateMacsecSa(CreateMacsecSaRequest) returns (CreateMacsecSaResponse) {}
-  rpc RemoveMacsecSa(RemoveMacsecSaRequest) returns (RemoveMacsecSaResponse) {}
-  rpc SetMacsecSaAttribute(SetMacsecSaAttributeRequest)
-      returns (SetMacsecSaAttributeResponse) {}
-  rpc GetMacsecSaAttribute(GetMacsecSaAttributeRequest)
-      returns (GetMacsecSaAttributeResponse) {}
+	rpc CreateMacsec (CreateMacsecRequest) returns (CreateMacsecResponse) {}
+	rpc RemoveMacsec (RemoveMacsecRequest) returns (RemoveMacsecResponse) {}
+	rpc SetMacsecAttribute (SetMacsecAttributeRequest) returns (SetMacsecAttributeResponse) {}
+	rpc GetMacsecAttribute (GetMacsecAttributeRequest) returns (GetMacsecAttributeResponse) {}
+	rpc CreateMacsecPort (CreateMacsecPortRequest) returns (CreateMacsecPortResponse) {}
+	rpc RemoveMacsecPort (RemoveMacsecPortRequest) returns (RemoveMacsecPortResponse) {}
+	rpc SetMacsecPortAttribute (SetMacsecPortAttributeRequest) returns (SetMacsecPortAttributeResponse) {}
+	rpc GetMacsecPortAttribute (GetMacsecPortAttributeRequest) returns (GetMacsecPortAttributeResponse) {}
+	rpc CreateMacsecFlow (CreateMacsecFlowRequest) returns (CreateMacsecFlowResponse) {}
+	rpc RemoveMacsecFlow (RemoveMacsecFlowRequest) returns (RemoveMacsecFlowResponse) {}
+	rpc GetMacsecFlowAttribute (GetMacsecFlowAttributeRequest) returns (GetMacsecFlowAttributeResponse) {}
+	rpc CreateMacsecSc (CreateMacsecScRequest) returns (CreateMacsecScResponse) {}
+	rpc RemoveMacsecSc (RemoveMacsecScRequest) returns (RemoveMacsecScResponse) {}
+	rpc SetMacsecScAttribute (SetMacsecScAttributeRequest) returns (SetMacsecScAttributeResponse) {}
+	rpc GetMacsecScAttribute (GetMacsecScAttributeRequest) returns (GetMacsecScAttributeResponse) {}
+	rpc CreateMacsecSa (CreateMacsecSaRequest) returns (CreateMacsecSaResponse) {}
+	rpc RemoveMacsecSa (RemoveMacsecSaRequest) returns (RemoveMacsecSaResponse) {}
+	rpc SetMacsecSaAttribute (SetMacsecSaAttributeRequest) returns (SetMacsecSaAttributeResponse) {}
+	rpc GetMacsecSaAttribute (GetMacsecSaAttributeRequest) returns (GetMacsecSaAttributeResponse) {}
 }

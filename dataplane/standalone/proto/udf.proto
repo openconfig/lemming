@@ -7,131 +7,136 @@ import "dataplane/standalone/proto/common.proto";
 
 option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto";
 
+
 enum UdfAttr {
-  UDF_ATTR_UNSPECIFIED = 0;
-  UDF_ATTR_MATCH_ID = 1;
-  UDF_ATTR_GROUP_ID = 2;
-  UDF_ATTR_BASE = 3;
-  UDF_ATTR_OFFSET = 4;
-  UDF_ATTR_HASH_MASK = 5;
+	UDF_ATTR_UNSPECIFIED = 0;
+	UDF_ATTR_MATCH_ID = 1;
+	UDF_ATTR_GROUP_ID = 2;
+	UDF_ATTR_BASE = 3;
+	UDF_ATTR_OFFSET = 4;
+	UDF_ATTR_HASH_MASK = 5;
 }
 
 enum UdfMatchAttr {
-  UDF_MATCH_ATTR_UNSPECIFIED = 0;
-  UDF_MATCH_ATTR_L2_TYPE = 1;
-  UDF_MATCH_ATTR_L3_TYPE = 2;
-  UDF_MATCH_ATTR_GRE_TYPE = 3;
-  UDF_MATCH_ATTR_PRIORITY = 4;
+	UDF_MATCH_ATTR_UNSPECIFIED = 0;
+	UDF_MATCH_ATTR_L2_TYPE = 1;
+	UDF_MATCH_ATTR_L3_TYPE = 2;
+	UDF_MATCH_ATTR_GRE_TYPE = 3;
+	UDF_MATCH_ATTR_PRIORITY = 4;
 }
 
 enum UdfGroupAttr {
-  UDF_GROUP_ATTR_UNSPECIFIED = 0;
-  UDF_GROUP_ATTR_UDF_LIST = 1;
-  UDF_GROUP_ATTR_TYPE = 2;
-  UDF_GROUP_ATTR_LENGTH = 3;
+	UDF_GROUP_ATTR_UNSPECIFIED = 0;
+	UDF_GROUP_ATTR_UDF_LIST = 1;
+	UDF_GROUP_ATTR_TYPE = 2;
+	UDF_GROUP_ATTR_LENGTH = 3;
 }
 
 message CreateUdfRequest {
-  uint64 switch = 1;
-  optional uint64 match_id = 2 [(attr_enum_value) = 1];
-  optional uint64 group_id = 3 [(attr_enum_value) = 2];
-  optional UdfBase base = 4 [(attr_enum_value) = 3];
-  optional uint32 offset = 5 [(attr_enum_value) = 4];
-  repeated uint32 hash_mask = 6 [(attr_enum_value) = 5];
+	option (sai_type) = OBJECT_TYPE_UDF;
+	uint64 switch = 1;
+	optional uint64 match_id = 2[(attr_enum_value) = 1];
+	optional uint64 group_id = 3[(attr_enum_value) = 2];
+	optional UdfBase base = 4[(attr_enum_value) = 3];
+	optional uint32 offset = 5[(attr_enum_value) = 4];
+	repeated uint32 hash_mask = 6[(attr_enum_value) = 5];
 }
 
 message CreateUdfResponse {
-  uint64 oid = 1;
+	uint64 oid = 1;
 }
 
 message RemoveUdfRequest {
-  uint64 oid = 1;
+	uint64 oid = 1;
 }
 
-message RemoveUdfResponse {}
+message RemoveUdfResponse {
+}
 
 message SetUdfAttributeRequest {
-  uint64 oid = 1;
-  optional UdfBase base = 2 [(attr_enum_value) = 3];
-  repeated uint32 hash_mask = 3 [(attr_enum_value) = 5];
+	uint64 oid = 1;
+	optional UdfBase base = 2[(attr_enum_value) = 3];
+	repeated uint32 hash_mask = 3[(attr_enum_value) = 5];
 }
 
-message SetUdfAttributeResponse {}
+message SetUdfAttributeResponse {
+}
 
 message GetUdfAttributeRequest {
-  uint64 oid = 1;
-  repeated UdfAttr attr_type = 2;
+	uint64 oid = 1;
+	repeated UdfAttr attr_type = 2;
 }
 
 message GetUdfAttributeResponse {
-  UdfAttribute attr = 1;
+	UdfAttribute attr = 1;
 }
 
 message CreateUdfMatchRequest {
-  uint64 switch = 1;
-  optional AclFieldData l2_type = 2 [(attr_enum_value) = 1];
-  optional AclFieldData l3_type = 3 [(attr_enum_value) = 2];
-  optional AclFieldData gre_type = 4 [(attr_enum_value) = 3];
-  optional uint32 priority = 5 [(attr_enum_value) = 4];
+	option (sai_type) = OBJECT_TYPE_UDF_MATCH;
+	uint64 switch = 1;
+	optional AclFieldData l2_type = 2[(attr_enum_value) = 1];
+	optional AclFieldData l3_type = 3[(attr_enum_value) = 2];
+	optional AclFieldData gre_type = 4[(attr_enum_value) = 3];
+	optional uint32 priority = 5[(attr_enum_value) = 4];
 }
 
 message CreateUdfMatchResponse {
-  uint64 oid = 1;
+	uint64 oid = 1;
 }
 
 message RemoveUdfMatchRequest {
-  uint64 oid = 1;
+	uint64 oid = 1;
 }
 
-message RemoveUdfMatchResponse {}
+message RemoveUdfMatchResponse {
+}
 
 message GetUdfMatchAttributeRequest {
-  uint64 oid = 1;
-  repeated UdfMatchAttr attr_type = 2;
+	uint64 oid = 1;
+	repeated UdfMatchAttr attr_type = 2;
 }
 
 message GetUdfMatchAttributeResponse {
-  UdfMatchAttribute attr = 1;
+	UdfMatchAttribute attr = 1;
 }
 
 message CreateUdfGroupRequest {
-  uint64 switch = 1;
-  optional UdfGroupType type = 2 [(attr_enum_value) = 2];
-  optional uint32 length = 3 [(attr_enum_value) = 3];
+	option (sai_type) = OBJECT_TYPE_UDF_GROUP;
+	uint64 switch = 1;
+	optional UdfGroupType type = 2[(attr_enum_value) = 2];
+	optional uint32 length = 3[(attr_enum_value) = 3];
 }
 
 message CreateUdfGroupResponse {
-  uint64 oid = 1;
+	uint64 oid = 1;
 }
 
 message RemoveUdfGroupRequest {
-  uint64 oid = 1;
+	uint64 oid = 1;
 }
 
-message RemoveUdfGroupResponse {}
+message RemoveUdfGroupResponse {
+}
 
 message GetUdfGroupAttributeRequest {
-  uint64 oid = 1;
-  repeated UdfGroupAttr attr_type = 2;
+	uint64 oid = 1;
+	repeated UdfGroupAttr attr_type = 2;
 }
 
 message GetUdfGroupAttributeResponse {
-  UdfGroupAttribute attr = 1;
+	UdfGroupAttribute attr = 1;
 }
 
+
 service Udf {
-  rpc CreateUdf(CreateUdfRequest) returns (CreateUdfResponse) {}
-  rpc RemoveUdf(RemoveUdfRequest) returns (RemoveUdfResponse) {}
-  rpc SetUdfAttribute(SetUdfAttributeRequest)
-      returns (SetUdfAttributeResponse) {}
-  rpc GetUdfAttribute(GetUdfAttributeRequest)
-      returns (GetUdfAttributeResponse) {}
-  rpc CreateUdfMatch(CreateUdfMatchRequest) returns (CreateUdfMatchResponse) {}
-  rpc RemoveUdfMatch(RemoveUdfMatchRequest) returns (RemoveUdfMatchResponse) {}
-  rpc GetUdfMatchAttribute(GetUdfMatchAttributeRequest)
-      returns (GetUdfMatchAttributeResponse) {}
-  rpc CreateUdfGroup(CreateUdfGroupRequest) returns (CreateUdfGroupResponse) {}
-  rpc RemoveUdfGroup(RemoveUdfGroupRequest) returns (RemoveUdfGroupResponse) {}
-  rpc GetUdfGroupAttribute(GetUdfGroupAttributeRequest)
-      returns (GetUdfGroupAttributeResponse) {}
+	rpc CreateUdf (CreateUdfRequest) returns (CreateUdfResponse) {}
+	rpc RemoveUdf (RemoveUdfRequest) returns (RemoveUdfResponse) {}
+	rpc SetUdfAttribute (SetUdfAttributeRequest) returns (SetUdfAttributeResponse) {}
+	rpc GetUdfAttribute (GetUdfAttributeRequest) returns (GetUdfAttributeResponse) {}
+	rpc CreateUdfMatch (CreateUdfMatchRequest) returns (CreateUdfMatchResponse) {}
+	rpc RemoveUdfMatch (RemoveUdfMatchRequest) returns (RemoveUdfMatchResponse) {}
+	rpc GetUdfMatchAttribute (GetUdfMatchAttributeRequest) returns (GetUdfMatchAttributeResponse) {}
+	rpc CreateUdfGroup (CreateUdfGroupRequest) returns (CreateUdfGroupResponse) {}
+	rpc RemoveUdfGroup (RemoveUdfGroupRequest) returns (RemoveUdfGroupResponse) {}
+	rpc GetUdfGroupAttribute (GetUdfGroupAttributeRequest) returns (GetUdfGroupAttributeResponse) {}
 }

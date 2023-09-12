@@ -1,5 +1,8 @@
 
 
+
+
+
 // Copyright 2023 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,486 +18,447 @@
 // limitations under the License.
 
 #include "dataplane/standalone/sai/bridge.h"
-
 #include <glog/logging.h>
-
-#include "dataplane/standalone/proto/bridge.pb.h"
-#include "dataplane/standalone/proto/common.pb.h"
 #include "dataplane/standalone/sai/common.h"
 #include "dataplane/standalone/sai/entry.h"
+#include "dataplane/standalone/proto/common.pb.h"
+#include "dataplane/standalone/proto/bridge.pb.h"
 
 const sai_bridge_api_t l_bridge = {
-    .create_bridge = l_create_bridge,
-    .remove_bridge = l_remove_bridge,
-    .set_bridge_attribute = l_set_bridge_attribute,
-    .get_bridge_attribute = l_get_bridge_attribute,
-    .get_bridge_stats = l_get_bridge_stats,
-    .get_bridge_stats_ext = l_get_bridge_stats_ext,
-    .clear_bridge_stats = l_clear_bridge_stats,
-    .create_bridge_port = l_create_bridge_port,
-    .remove_bridge_port = l_remove_bridge_port,
-    .set_bridge_port_attribute = l_set_bridge_port_attribute,
-    .get_bridge_port_attribute = l_get_bridge_port_attribute,
-    .get_bridge_port_stats = l_get_bridge_port_stats,
-    .get_bridge_port_stats_ext = l_get_bridge_port_stats_ext,
-    .clear_bridge_port_stats = l_clear_bridge_port_stats,
+	.create_bridge = l_create_bridge,
+	.remove_bridge = l_remove_bridge,
+	.set_bridge_attribute = l_set_bridge_attribute,
+	.get_bridge_attribute = l_get_bridge_attribute,
+	.get_bridge_stats = l_get_bridge_stats,
+	.get_bridge_stats_ext = l_get_bridge_stats_ext,
+	.clear_bridge_stats = l_clear_bridge_stats,
+	.create_bridge_port = l_create_bridge_port,
+	.remove_bridge_port = l_remove_bridge_port,
+	.set_bridge_port_attribute = l_set_bridge_port_attribute,
+	.get_bridge_port_attribute = l_get_bridge_port_attribute,
+	.get_bridge_port_stats = l_get_bridge_port_stats,
+	.get_bridge_port_stats_ext = l_get_bridge_port_stats_ext,
+	.clear_bridge_port_stats = l_clear_bridge_port_stats,
 };
 
-sai_status_t l_create_bridge(sai_object_id_t *bridge_id,
-                             sai_object_id_t switch_id, uint32_t attr_count,
-                             const sai_attribute_t *attr_list) {
-  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateBridgeRequest req;
-  lemming::dataplane::sai::CreateBridgeResponse resp;
-  grpc::ClientContext context;
-  req.set_switch_(switch_id);
+sai_status_t l_create_bridge(sai_object_id_t *bridge_id, sai_object_id_t switch_id, uint32_t attr_count, const sai_attribute_t *attr_list) {
+	LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+	
+	lemming::dataplane::sai::CreateBridgeRequest req;
+	lemming::dataplane::sai::CreateBridgeResponse resp;
+	grpc::ClientContext context;
+	 req.set_switch_(switch_id); 
+	
+ 	for(uint32_t i = 0; i < attr_count; i++ ) {
+		
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_BRIDGE_ATTR_TYPE:
-        req.set_type(static_cast<lemming::dataplane::sai::BridgeType>(
-            attr_list[i].value.s32 + 1));
-        break;
-      case SAI_BRIDGE_ATTR_MAX_LEARNED_ADDRESSES:
-        req.set_max_learned_addresses(attr_list[i].value.u32);
-        break;
-      case SAI_BRIDGE_ATTR_LEARN_DISABLE:
-        req.set_learn_disable(attr_list[i].value.booldata);
-        break;
-      case SAI_BRIDGE_ATTR_UNKNOWN_UNICAST_FLOOD_CONTROL_TYPE:
-        req.set_unknown_unicast_flood_control_type(
-            static_cast<lemming::dataplane::sai::BridgeFloodControlType>(
-                attr_list[i].value.s32 + 1));
-        break;
-      case SAI_BRIDGE_ATTR_UNKNOWN_UNICAST_FLOOD_GROUP:
-        req.set_unknown_unicast_flood_group(attr_list[i].value.oid);
-        break;
-      case SAI_BRIDGE_ATTR_UNKNOWN_MULTICAST_FLOOD_CONTROL_TYPE:
-        req.set_unknown_multicast_flood_control_type(
-            static_cast<lemming::dataplane::sai::BridgeFloodControlType>(
-                attr_list[i].value.s32 + 1));
-        break;
-      case SAI_BRIDGE_ATTR_UNKNOWN_MULTICAST_FLOOD_GROUP:
-        req.set_unknown_multicast_flood_group(attr_list[i].value.oid);
-        break;
-      case SAI_BRIDGE_ATTR_BROADCAST_FLOOD_CONTROL_TYPE:
-        req.set_broadcast_flood_control_type(
-            static_cast<lemming::dataplane::sai::BridgeFloodControlType>(
-                attr_list[i].value.s32 + 1));
-        break;
-      case SAI_BRIDGE_ATTR_BROADCAST_FLOOD_GROUP:
-        req.set_broadcast_flood_group(attr_list[i].value.oid);
-        break;
-    }
-  }
-  grpc::Status status = bridge->CreateBridge(&context, req, &resp);
-  if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
-    return SAI_STATUS_FAILURE;
-  }
-  *bridge_id = resp.oid();
+switch (attr_list[i].id) {
+  
+  case SAI_BRIDGE_ATTR_TYPE:
+	req.set_type(static_cast<lemming::dataplane::sai::BridgeType>(attr_list[i].value.s32 + 1));
+	break;
+  case SAI_BRIDGE_ATTR_MAX_LEARNED_ADDRESSES:
+	req.set_max_learned_addresses(attr_list[i].value.u32);
+	break;
+  case SAI_BRIDGE_ATTR_LEARN_DISABLE:
+	req.set_learn_disable(attr_list[i].value.booldata);
+	break;
+  case SAI_BRIDGE_ATTR_UNKNOWN_UNICAST_FLOOD_CONTROL_TYPE:
+	req.set_unknown_unicast_flood_control_type(static_cast<lemming::dataplane::sai::BridgeFloodControlType>(attr_list[i].value.s32 + 1));
+	break;
+  case SAI_BRIDGE_ATTR_UNKNOWN_UNICAST_FLOOD_GROUP:
+	req.set_unknown_unicast_flood_group(attr_list[i].value.oid);
+	break;
+  case SAI_BRIDGE_ATTR_UNKNOWN_MULTICAST_FLOOD_CONTROL_TYPE:
+	req.set_unknown_multicast_flood_control_type(static_cast<lemming::dataplane::sai::BridgeFloodControlType>(attr_list[i].value.s32 + 1));
+	break;
+  case SAI_BRIDGE_ATTR_UNKNOWN_MULTICAST_FLOOD_GROUP:
+	req.set_unknown_multicast_flood_group(attr_list[i].value.oid);
+	break;
+  case SAI_BRIDGE_ATTR_BROADCAST_FLOOD_CONTROL_TYPE:
+	req.set_broadcast_flood_control_type(static_cast<lemming::dataplane::sai::BridgeFloodControlType>(attr_list[i].value.s32 + 1));
+	break;
+  case SAI_BRIDGE_ATTR_BROADCAST_FLOOD_GROUP:
+	req.set_broadcast_flood_group(attr_list[i].value.oid);
+	break;
+}
 
-  return SAI_STATUS_SUCCESS;
+	}
+	grpc::Status status = bridge->CreateBridge(&context, req, &resp);
+	if (!status.ok()) {
+		LOG(ERROR) << status.error_message();
+		return SAI_STATUS_FAILURE;
+	}
+	*bridge_id = resp.oid(); 
+
+	
+	return SAI_STATUS_SUCCESS;
 }
 
 sai_status_t l_remove_bridge(sai_object_id_t bridge_id) {
-  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-
-  lemming::dataplane::sai::RemoveBridgeRequest req;
-  lemming::dataplane::sai::RemoveBridgeResponse resp;
-  grpc::ClientContext context;
-  req.set_oid(bridge_id);
-
-  grpc::Status status = bridge->RemoveBridge(&context, req, &resp);
-  if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
-    return SAI_STATUS_FAILURE;
-  }
-
-  return SAI_STATUS_SUCCESS;
+	LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+	
+	lemming::dataplane::sai::RemoveBridgeRequest req;
+	lemming::dataplane::sai::RemoveBridgeResponse resp;
+	grpc::ClientContext context;
+	req.set_oid(bridge_id); 
+	
+	grpc::Status status = bridge->RemoveBridge(&context, req, &resp);
+	if (!status.ok()) {
+		LOG(ERROR) << status.error_message();
+		return SAI_STATUS_FAILURE;
+	}
+	
+	return SAI_STATUS_SUCCESS;
 }
 
-sai_status_t l_set_bridge_attribute(sai_object_id_t bridge_id,
-                                    const sai_attribute_t *attr) {
-  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+sai_status_t l_set_bridge_attribute(sai_object_id_t bridge_id, const sai_attribute_t *attr) {
+	LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+	
+	lemming::dataplane::sai::SetBridgeAttributeRequest req;
+	lemming::dataplane::sai::SetBridgeAttributeResponse resp;
+	grpc::ClientContext context;
+	req.set_oid(bridge_id); 
+	
+	
 
-  lemming::dataplane::sai::SetBridgeAttributeRequest req;
-  lemming::dataplane::sai::SetBridgeAttributeResponse resp;
-  grpc::ClientContext context;
-  req.set_oid(bridge_id);
-
-  switch (attr->id) {
-    case SAI_BRIDGE_ATTR_MAX_LEARNED_ADDRESSES:
-      req.set_max_learned_addresses(attr->value.u32);
-      break;
-    case SAI_BRIDGE_ATTR_LEARN_DISABLE:
-      req.set_learn_disable(attr->value.booldata);
-      break;
-    case SAI_BRIDGE_ATTR_UNKNOWN_UNICAST_FLOOD_CONTROL_TYPE:
-      req.set_unknown_unicast_flood_control_type(
-          static_cast<lemming::dataplane::sai::BridgeFloodControlType>(
-              attr->value.s32 + 1));
-      break;
-    case SAI_BRIDGE_ATTR_UNKNOWN_UNICAST_FLOOD_GROUP:
-      req.set_unknown_unicast_flood_group(attr->value.oid);
-      break;
-    case SAI_BRIDGE_ATTR_UNKNOWN_MULTICAST_FLOOD_CONTROL_TYPE:
-      req.set_unknown_multicast_flood_control_type(
-          static_cast<lemming::dataplane::sai::BridgeFloodControlType>(
-              attr->value.s32 + 1));
-      break;
-    case SAI_BRIDGE_ATTR_UNKNOWN_MULTICAST_FLOOD_GROUP:
-      req.set_unknown_multicast_flood_group(attr->value.oid);
-      break;
-    case SAI_BRIDGE_ATTR_BROADCAST_FLOOD_CONTROL_TYPE:
-      req.set_broadcast_flood_control_type(
-          static_cast<lemming::dataplane::sai::BridgeFloodControlType>(
-              attr->value.s32 + 1));
-      break;
-    case SAI_BRIDGE_ATTR_BROADCAST_FLOOD_GROUP:
-      req.set_broadcast_flood_group(attr->value.oid);
-      break;
-  }
-
-  grpc::Status status = bridge->SetBridgeAttribute(&context, req, &resp);
-  if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
-    return SAI_STATUS_FAILURE;
-  }
-
-  return SAI_STATUS_SUCCESS;
+switch (attr->id) {
+  
+  case SAI_BRIDGE_ATTR_MAX_LEARNED_ADDRESSES:
+	req.set_max_learned_addresses(attr->value.u32);
+	break;
+  case SAI_BRIDGE_ATTR_LEARN_DISABLE:
+	req.set_learn_disable(attr->value.booldata);
+	break;
+  case SAI_BRIDGE_ATTR_UNKNOWN_UNICAST_FLOOD_CONTROL_TYPE:
+	req.set_unknown_unicast_flood_control_type(static_cast<lemming::dataplane::sai::BridgeFloodControlType>(attr->value.s32 + 1));
+	break;
+  case SAI_BRIDGE_ATTR_UNKNOWN_UNICAST_FLOOD_GROUP:
+	req.set_unknown_unicast_flood_group(attr->value.oid);
+	break;
+  case SAI_BRIDGE_ATTR_UNKNOWN_MULTICAST_FLOOD_CONTROL_TYPE:
+	req.set_unknown_multicast_flood_control_type(static_cast<lemming::dataplane::sai::BridgeFloodControlType>(attr->value.s32 + 1));
+	break;
+  case SAI_BRIDGE_ATTR_UNKNOWN_MULTICAST_FLOOD_GROUP:
+	req.set_unknown_multicast_flood_group(attr->value.oid);
+	break;
+  case SAI_BRIDGE_ATTR_BROADCAST_FLOOD_CONTROL_TYPE:
+	req.set_broadcast_flood_control_type(static_cast<lemming::dataplane::sai::BridgeFloodControlType>(attr->value.s32 + 1));
+	break;
+  case SAI_BRIDGE_ATTR_BROADCAST_FLOOD_GROUP:
+	req.set_broadcast_flood_group(attr->value.oid);
+	break;
 }
 
-sai_status_t l_get_bridge_attribute(sai_object_id_t bridge_id,
-                                    uint32_t attr_count,
-                                    sai_attribute_t *attr_list) {
-  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-
-  lemming::dataplane::sai::GetBridgeAttributeRequest req;
-  lemming::dataplane::sai::GetBridgeAttributeResponse resp;
-  grpc::ClientContext context;
-
-  req.set_oid(bridge_id);
-
-  for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(
-        static_cast<lemming::dataplane::sai::BridgeAttr>(attr_list[i].id + 1));
-  }
-  grpc::Status status = bridge->GetBridgeAttribute(&context, req, &resp);
-  if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
-    return SAI_STATUS_FAILURE;
-  }
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_BRIDGE_ATTR_TYPE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().type() - 1);
-        break;
-      case SAI_BRIDGE_ATTR_PORT_LIST:
-        copy_list(attr_list[i].value.objlist.list, resp.attr().port_list(),
-                  attr_list[i].value.objlist.count);
-        break;
-      case SAI_BRIDGE_ATTR_MAX_LEARNED_ADDRESSES:
-        attr_list[i].value.u32 = resp.attr().max_learned_addresses();
-        break;
-      case SAI_BRIDGE_ATTR_LEARN_DISABLE:
-        attr_list[i].value.booldata = resp.attr().learn_disable();
-        break;
-      case SAI_BRIDGE_ATTR_UNKNOWN_UNICAST_FLOOD_CONTROL_TYPE:
-        attr_list[i].value.s32 = static_cast<int>(
-            resp.attr().unknown_unicast_flood_control_type() - 1);
-        break;
-      case SAI_BRIDGE_ATTR_UNKNOWN_UNICAST_FLOOD_GROUP:
-        attr_list[i].value.oid = resp.attr().unknown_unicast_flood_group();
-        break;
-      case SAI_BRIDGE_ATTR_UNKNOWN_MULTICAST_FLOOD_CONTROL_TYPE:
-        attr_list[i].value.s32 = static_cast<int>(
-            resp.attr().unknown_multicast_flood_control_type() - 1);
-        break;
-      case SAI_BRIDGE_ATTR_UNKNOWN_MULTICAST_FLOOD_GROUP:
-        attr_list[i].value.oid = resp.attr().unknown_multicast_flood_group();
-        break;
-      case SAI_BRIDGE_ATTR_BROADCAST_FLOOD_CONTROL_TYPE:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().broadcast_flood_control_type() - 1);
-        break;
-      case SAI_BRIDGE_ATTR_BROADCAST_FLOOD_GROUP:
-        attr_list[i].value.oid = resp.attr().broadcast_flood_group();
-        break;
-    }
-  }
-
-  return SAI_STATUS_SUCCESS;
+	grpc::Status status = bridge->SetBridgeAttribute(&context, req, &resp);
+	if (!status.ok()) {
+		LOG(ERROR) << status.error_message();
+		return SAI_STATUS_FAILURE;
+	}
+	
+	return SAI_STATUS_SUCCESS;
 }
 
-sai_status_t l_get_bridge_stats(sai_object_id_t bridge_id,
-                                uint32_t number_of_counters,
-                                const sai_stat_id_t *counter_ids,
-                                uint64_t *counters) {
-  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+sai_status_t l_get_bridge_attribute(sai_object_id_t bridge_id, uint32_t attr_count, sai_attribute_t *attr_list) {
+	LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+	
+	lemming::dataplane::sai::GetBridgeAttributeRequest req;
+	lemming::dataplane::sai::GetBridgeAttributeResponse resp;
+	grpc::ClientContext context;
+	
+	req.set_oid(bridge_id); 
 
-  return SAI_STATUS_SUCCESS;
+	for (uint32_t i = 0; i < attr_count; i++) {
+		req.add_attr_type(static_cast<lemming::dataplane::sai::BridgeAttr>(attr_list[i].id + 1));
+	}
+	grpc::Status status = bridge->GetBridgeAttribute(&context, req, &resp);
+	if (!status.ok()) {
+		LOG(ERROR) << status.error_message();
+		return SAI_STATUS_FAILURE;
+	}
+	for(uint32_t i = 0; i < attr_count; i++ ) {
+		
+
+switch (attr_list[i].id) {
+  
+  case SAI_BRIDGE_ATTR_TYPE:
+	 attr_list[i].value.s32 =  static_cast<int>(resp.attr().type() - 1);
+	break;
+  case SAI_BRIDGE_ATTR_PORT_LIST:
+	copy_list(attr_list[i].value.objlist.list, resp.attr().port_list(), &attr_list[i].value.objlist.count);
+	break;
+  case SAI_BRIDGE_ATTR_MAX_LEARNED_ADDRESSES:
+	 attr_list[i].value.u32 =   resp.attr().max_learned_addresses();
+	break;
+  case SAI_BRIDGE_ATTR_LEARN_DISABLE:
+	 attr_list[i].value.booldata =   resp.attr().learn_disable();
+	break;
+  case SAI_BRIDGE_ATTR_UNKNOWN_UNICAST_FLOOD_CONTROL_TYPE:
+	 attr_list[i].value.s32 =  static_cast<int>(resp.attr().unknown_unicast_flood_control_type() - 1);
+	break;
+  case SAI_BRIDGE_ATTR_UNKNOWN_UNICAST_FLOOD_GROUP:
+	 attr_list[i].value.oid =   resp.attr().unknown_unicast_flood_group();
+	break;
+  case SAI_BRIDGE_ATTR_UNKNOWN_MULTICAST_FLOOD_CONTROL_TYPE:
+	 attr_list[i].value.s32 =  static_cast<int>(resp.attr().unknown_multicast_flood_control_type() - 1);
+	break;
+  case SAI_BRIDGE_ATTR_UNKNOWN_MULTICAST_FLOOD_GROUP:
+	 attr_list[i].value.oid =   resp.attr().unknown_multicast_flood_group();
+	break;
+  case SAI_BRIDGE_ATTR_BROADCAST_FLOOD_CONTROL_TYPE:
+	 attr_list[i].value.s32 =  static_cast<int>(resp.attr().broadcast_flood_control_type() - 1);
+	break;
+  case SAI_BRIDGE_ATTR_BROADCAST_FLOOD_GROUP:
+	 attr_list[i].value.oid =   resp.attr().broadcast_flood_group();
+	break;
 }
 
-sai_status_t l_get_bridge_stats_ext(sai_object_id_t bridge_id,
-                                    uint32_t number_of_counters,
-                                    const sai_stat_id_t *counter_ids,
-                                    sai_stats_mode_t mode, uint64_t *counters) {
-  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-
-  return SAI_STATUS_SUCCESS;
+	}
+	
+	return SAI_STATUS_SUCCESS;
 }
 
-sai_status_t l_clear_bridge_stats(sai_object_id_t bridge_id,
-                                  uint32_t number_of_counters,
-                                  const sai_stat_id_t *counter_ids) {
-  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-
-  return SAI_STATUS_SUCCESS;
+sai_status_t l_get_bridge_stats(sai_object_id_t bridge_id, uint32_t number_of_counters, const sai_stat_id_t *counter_ids, uint64_t *counters) {
+	LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+	
+	return SAI_STATUS_SUCCESS;
 }
 
-sai_status_t l_create_bridge_port(sai_object_id_t *bridge_port_id,
-                                  sai_object_id_t switch_id,
-                                  uint32_t attr_count,
-                                  const sai_attribute_t *attr_list) {
-  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+sai_status_t l_get_bridge_stats_ext(sai_object_id_t bridge_id, uint32_t number_of_counters, const sai_stat_id_t *counter_ids, sai_stats_mode_t mode, uint64_t *counters) {
+	LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+	
+	return SAI_STATUS_SUCCESS;
+}
 
-  lemming::dataplane::sai::CreateBridgePortRequest req;
-  lemming::dataplane::sai::CreateBridgePortResponse resp;
-  grpc::ClientContext context;
-  req.set_switch_(switch_id);
+sai_status_t l_clear_bridge_stats(sai_object_id_t bridge_id, uint32_t number_of_counters, const sai_stat_id_t *counter_ids) {
+	LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+	
+	return SAI_STATUS_SUCCESS;
+}
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_BRIDGE_PORT_ATTR_TYPE:
-        req.set_type(static_cast<lemming::dataplane::sai::BridgePortType>(
-            attr_list[i].value.s32 + 1));
-        break;
-      case SAI_BRIDGE_PORT_ATTR_PORT_ID:
-        req.set_port_id(attr_list[i].value.oid);
-        break;
-      case SAI_BRIDGE_PORT_ATTR_TAGGING_MODE:
-        req.set_tagging_mode(
-            static_cast<lemming::dataplane::sai::BridgePortTaggingMode>(
-                attr_list[i].value.s32 + 1));
-        break;
-      case SAI_BRIDGE_PORT_ATTR_VLAN_ID:
-        req.set_vlan_id(attr_list[i].value.u16);
-        break;
-      case SAI_BRIDGE_PORT_ATTR_RIF_ID:
-        req.set_rif_id(attr_list[i].value.oid);
-        break;
-      case SAI_BRIDGE_PORT_ATTR_TUNNEL_ID:
-        req.set_tunnel_id(attr_list[i].value.oid);
-        break;
-      case SAI_BRIDGE_PORT_ATTR_BRIDGE_ID:
-        req.set_bridge_id(attr_list[i].value.oid);
-        break;
-      case SAI_BRIDGE_PORT_ATTR_FDB_LEARNING_MODE:
-        req.set_fdb_learning_mode(
-            static_cast<lemming::dataplane::sai::BridgePortFdbLearningMode>(
-                attr_list[i].value.s32 + 1));
-        break;
-      case SAI_BRIDGE_PORT_ATTR_MAX_LEARNED_ADDRESSES:
-        req.set_max_learned_addresses(attr_list[i].value.u32);
-        break;
-      case SAI_BRIDGE_PORT_ATTR_FDB_LEARNING_LIMIT_VIOLATION_PACKET_ACTION:
-        req.set_fdb_learning_limit_violation_packet_action(
-            static_cast<lemming::dataplane::sai::PacketAction>(
-                attr_list[i].value.s32 + 1));
-        break;
-      case SAI_BRIDGE_PORT_ATTR_ADMIN_STATE:
-        req.set_admin_state(attr_list[i].value.booldata);
-        break;
-      case SAI_BRIDGE_PORT_ATTR_INGRESS_FILTERING:
-        req.set_ingress_filtering(attr_list[i].value.booldata);
-        break;
-      case SAI_BRIDGE_PORT_ATTR_EGRESS_FILTERING:
-        req.set_egress_filtering(attr_list[i].value.booldata);
-        break;
-      case SAI_BRIDGE_PORT_ATTR_ISOLATION_GROUP:
-        req.set_isolation_group(attr_list[i].value.oid);
-        break;
-    }
-  }
-  grpc::Status status = bridge->CreateBridgePort(&context, req, &resp);
-  if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
-    return SAI_STATUS_FAILURE;
-  }
-  *bridge_port_id = resp.oid();
+sai_status_t l_create_bridge_port(sai_object_id_t *bridge_port_id, sai_object_id_t switch_id, uint32_t attr_count, const sai_attribute_t *attr_list) {
+	LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+	
+	lemming::dataplane::sai::CreateBridgePortRequest req;
+	lemming::dataplane::sai::CreateBridgePortResponse resp;
+	grpc::ClientContext context;
+	 req.set_switch_(switch_id); 
+	
+ 	for(uint32_t i = 0; i < attr_count; i++ ) {
+		
 
-  return SAI_STATUS_SUCCESS;
+switch (attr_list[i].id) {
+  
+  case SAI_BRIDGE_PORT_ATTR_TYPE:
+	req.set_type(static_cast<lemming::dataplane::sai::BridgePortType>(attr_list[i].value.s32 + 1));
+	break;
+  case SAI_BRIDGE_PORT_ATTR_PORT_ID:
+	req.set_port_id(attr_list[i].value.oid);
+	break;
+  case SAI_BRIDGE_PORT_ATTR_TAGGING_MODE:
+	req.set_tagging_mode(static_cast<lemming::dataplane::sai::BridgePortTaggingMode>(attr_list[i].value.s32 + 1));
+	break;
+  case SAI_BRIDGE_PORT_ATTR_VLAN_ID:
+	req.set_vlan_id(attr_list[i].value.u16);
+	break;
+  case SAI_BRIDGE_PORT_ATTR_RIF_ID:
+	req.set_rif_id(attr_list[i].value.oid);
+	break;
+  case SAI_BRIDGE_PORT_ATTR_TUNNEL_ID:
+	req.set_tunnel_id(attr_list[i].value.oid);
+	break;
+  case SAI_BRIDGE_PORT_ATTR_BRIDGE_ID:
+	req.set_bridge_id(attr_list[i].value.oid);
+	break;
+  case SAI_BRIDGE_PORT_ATTR_FDB_LEARNING_MODE:
+	req.set_fdb_learning_mode(static_cast<lemming::dataplane::sai::BridgePortFdbLearningMode>(attr_list[i].value.s32 + 1));
+	break;
+  case SAI_BRIDGE_PORT_ATTR_MAX_LEARNED_ADDRESSES:
+	req.set_max_learned_addresses(attr_list[i].value.u32);
+	break;
+  case SAI_BRIDGE_PORT_ATTR_FDB_LEARNING_LIMIT_VIOLATION_PACKET_ACTION:
+	req.set_fdb_learning_limit_violation_packet_action(static_cast<lemming::dataplane::sai::PacketAction>(attr_list[i].value.s32 + 1));
+	break;
+  case SAI_BRIDGE_PORT_ATTR_ADMIN_STATE:
+	req.set_admin_state(attr_list[i].value.booldata);
+	break;
+  case SAI_BRIDGE_PORT_ATTR_INGRESS_FILTERING:
+	req.set_ingress_filtering(attr_list[i].value.booldata);
+	break;
+  case SAI_BRIDGE_PORT_ATTR_EGRESS_FILTERING:
+	req.set_egress_filtering(attr_list[i].value.booldata);
+	break;
+  case SAI_BRIDGE_PORT_ATTR_ISOLATION_GROUP:
+	req.set_isolation_group(attr_list[i].value.oid);
+	break;
+}
+
+	}
+	grpc::Status status = bridge->CreateBridgePort(&context, req, &resp);
+	if (!status.ok()) {
+		LOG(ERROR) << status.error_message();
+		return SAI_STATUS_FAILURE;
+	}
+	*bridge_port_id = resp.oid(); 
+
+	
+	return SAI_STATUS_SUCCESS;
 }
 
 sai_status_t l_remove_bridge_port(sai_object_id_t bridge_port_id) {
-  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-
-  lemming::dataplane::sai::RemoveBridgePortRequest req;
-  lemming::dataplane::sai::RemoveBridgePortResponse resp;
-  grpc::ClientContext context;
-  req.set_oid(bridge_port_id);
-
-  grpc::Status status = bridge->RemoveBridgePort(&context, req, &resp);
-  if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
-    return SAI_STATUS_FAILURE;
-  }
-
-  return SAI_STATUS_SUCCESS;
+	LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+	
+	lemming::dataplane::sai::RemoveBridgePortRequest req;
+	lemming::dataplane::sai::RemoveBridgePortResponse resp;
+	grpc::ClientContext context;
+	req.set_oid(bridge_port_id); 
+	
+	grpc::Status status = bridge->RemoveBridgePort(&context, req, &resp);
+	if (!status.ok()) {
+		LOG(ERROR) << status.error_message();
+		return SAI_STATUS_FAILURE;
+	}
+	
+	return SAI_STATUS_SUCCESS;
 }
 
-sai_status_t l_set_bridge_port_attribute(sai_object_id_t bridge_port_id,
-                                         const sai_attribute_t *attr) {
-  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+sai_status_t l_set_bridge_port_attribute(sai_object_id_t bridge_port_id, const sai_attribute_t *attr) {
+	LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+	
+	lemming::dataplane::sai::SetBridgePortAttributeRequest req;
+	lemming::dataplane::sai::SetBridgePortAttributeResponse resp;
+	grpc::ClientContext context;
+	req.set_oid(bridge_port_id); 
+	
+	
 
-  lemming::dataplane::sai::SetBridgePortAttributeRequest req;
-  lemming::dataplane::sai::SetBridgePortAttributeResponse resp;
-  grpc::ClientContext context;
-  req.set_oid(bridge_port_id);
-
-  switch (attr->id) {
-    case SAI_BRIDGE_PORT_ATTR_TAGGING_MODE:
-      req.set_tagging_mode(
-          static_cast<lemming::dataplane::sai::BridgePortTaggingMode>(
-              attr->value.s32 + 1));
-      break;
-    case SAI_BRIDGE_PORT_ATTR_BRIDGE_ID:
-      req.set_bridge_id(attr->value.oid);
-      break;
-    case SAI_BRIDGE_PORT_ATTR_FDB_LEARNING_MODE:
-      req.set_fdb_learning_mode(
-          static_cast<lemming::dataplane::sai::BridgePortFdbLearningMode>(
-              attr->value.s32 + 1));
-      break;
-    case SAI_BRIDGE_PORT_ATTR_MAX_LEARNED_ADDRESSES:
-      req.set_max_learned_addresses(attr->value.u32);
-      break;
-    case SAI_BRIDGE_PORT_ATTR_FDB_LEARNING_LIMIT_VIOLATION_PACKET_ACTION:
-      req.set_fdb_learning_limit_violation_packet_action(
-          static_cast<lemming::dataplane::sai::PacketAction>(attr->value.s32 +
-                                                             1));
-      break;
-    case SAI_BRIDGE_PORT_ATTR_ADMIN_STATE:
-      req.set_admin_state(attr->value.booldata);
-      break;
-    case SAI_BRIDGE_PORT_ATTR_INGRESS_FILTERING:
-      req.set_ingress_filtering(attr->value.booldata);
-      break;
-    case SAI_BRIDGE_PORT_ATTR_EGRESS_FILTERING:
-      req.set_egress_filtering(attr->value.booldata);
-      break;
-    case SAI_BRIDGE_PORT_ATTR_ISOLATION_GROUP:
-      req.set_isolation_group(attr->value.oid);
-      break;
-  }
-
-  grpc::Status status = bridge->SetBridgePortAttribute(&context, req, &resp);
-  if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
-    return SAI_STATUS_FAILURE;
-  }
-
-  return SAI_STATUS_SUCCESS;
+switch (attr->id) {
+  
+  case SAI_BRIDGE_PORT_ATTR_TAGGING_MODE:
+	req.set_tagging_mode(static_cast<lemming::dataplane::sai::BridgePortTaggingMode>(attr->value.s32 + 1));
+	break;
+  case SAI_BRIDGE_PORT_ATTR_BRIDGE_ID:
+	req.set_bridge_id(attr->value.oid);
+	break;
+  case SAI_BRIDGE_PORT_ATTR_FDB_LEARNING_MODE:
+	req.set_fdb_learning_mode(static_cast<lemming::dataplane::sai::BridgePortFdbLearningMode>(attr->value.s32 + 1));
+	break;
+  case SAI_BRIDGE_PORT_ATTR_MAX_LEARNED_ADDRESSES:
+	req.set_max_learned_addresses(attr->value.u32);
+	break;
+  case SAI_BRIDGE_PORT_ATTR_FDB_LEARNING_LIMIT_VIOLATION_PACKET_ACTION:
+	req.set_fdb_learning_limit_violation_packet_action(static_cast<lemming::dataplane::sai::PacketAction>(attr->value.s32 + 1));
+	break;
+  case SAI_BRIDGE_PORT_ATTR_ADMIN_STATE:
+	req.set_admin_state(attr->value.booldata);
+	break;
+  case SAI_BRIDGE_PORT_ATTR_INGRESS_FILTERING:
+	req.set_ingress_filtering(attr->value.booldata);
+	break;
+  case SAI_BRIDGE_PORT_ATTR_EGRESS_FILTERING:
+	req.set_egress_filtering(attr->value.booldata);
+	break;
+  case SAI_BRIDGE_PORT_ATTR_ISOLATION_GROUP:
+	req.set_isolation_group(attr->value.oid);
+	break;
 }
 
-sai_status_t l_get_bridge_port_attribute(sai_object_id_t bridge_port_id,
-                                         uint32_t attr_count,
-                                         sai_attribute_t *attr_list) {
-  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-
-  lemming::dataplane::sai::GetBridgePortAttributeRequest req;
-  lemming::dataplane::sai::GetBridgePortAttributeResponse resp;
-  grpc::ClientContext context;
-
-  req.set_oid(bridge_port_id);
-
-  for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::BridgePortAttr>(
-        attr_list[i].id + 1));
-  }
-  grpc::Status status = bridge->GetBridgePortAttribute(&context, req, &resp);
-  if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
-    return SAI_STATUS_FAILURE;
-  }
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_BRIDGE_PORT_ATTR_TYPE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().type() - 1);
-        break;
-      case SAI_BRIDGE_PORT_ATTR_PORT_ID:
-        attr_list[i].value.oid = resp.attr().port_id();
-        break;
-      case SAI_BRIDGE_PORT_ATTR_TAGGING_MODE:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().tagging_mode() - 1);
-        break;
-      case SAI_BRIDGE_PORT_ATTR_VLAN_ID:
-        attr_list[i].value.u16 = resp.attr().vlan_id();
-        break;
-      case SAI_BRIDGE_PORT_ATTR_RIF_ID:
-        attr_list[i].value.oid = resp.attr().rif_id();
-        break;
-      case SAI_BRIDGE_PORT_ATTR_TUNNEL_ID:
-        attr_list[i].value.oid = resp.attr().tunnel_id();
-        break;
-      case SAI_BRIDGE_PORT_ATTR_BRIDGE_ID:
-        attr_list[i].value.oid = resp.attr().bridge_id();
-        break;
-      case SAI_BRIDGE_PORT_ATTR_FDB_LEARNING_MODE:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().fdb_learning_mode() - 1);
-        break;
-      case SAI_BRIDGE_PORT_ATTR_MAX_LEARNED_ADDRESSES:
-        attr_list[i].value.u32 = resp.attr().max_learned_addresses();
-        break;
-      case SAI_BRIDGE_PORT_ATTR_FDB_LEARNING_LIMIT_VIOLATION_PACKET_ACTION:
-        attr_list[i].value.s32 = static_cast<int>(
-            resp.attr().fdb_learning_limit_violation_packet_action() - 1);
-        break;
-      case SAI_BRIDGE_PORT_ATTR_ADMIN_STATE:
-        attr_list[i].value.booldata = resp.attr().admin_state();
-        break;
-      case SAI_BRIDGE_PORT_ATTR_INGRESS_FILTERING:
-        attr_list[i].value.booldata = resp.attr().ingress_filtering();
-        break;
-      case SAI_BRIDGE_PORT_ATTR_EGRESS_FILTERING:
-        attr_list[i].value.booldata = resp.attr().egress_filtering();
-        break;
-      case SAI_BRIDGE_PORT_ATTR_ISOLATION_GROUP:
-        attr_list[i].value.oid = resp.attr().isolation_group();
-        break;
-    }
-  }
-
-  return SAI_STATUS_SUCCESS;
+	grpc::Status status = bridge->SetBridgePortAttribute(&context, req, &resp);
+	if (!status.ok()) {
+		LOG(ERROR) << status.error_message();
+		return SAI_STATUS_FAILURE;
+	}
+	
+	return SAI_STATUS_SUCCESS;
 }
 
-sai_status_t l_get_bridge_port_stats(sai_object_id_t bridge_port_id,
-                                     uint32_t number_of_counters,
-                                     const sai_stat_id_t *counter_ids,
-                                     uint64_t *counters) {
-  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+sai_status_t l_get_bridge_port_attribute(sai_object_id_t bridge_port_id, uint32_t attr_count, sai_attribute_t *attr_list) {
+	LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+	
+	lemming::dataplane::sai::GetBridgePortAttributeRequest req;
+	lemming::dataplane::sai::GetBridgePortAttributeResponse resp;
+	grpc::ClientContext context;
+	
+	req.set_oid(bridge_port_id); 
 
-  return SAI_STATUS_SUCCESS;
+	for (uint32_t i = 0; i < attr_count; i++) {
+		req.add_attr_type(static_cast<lemming::dataplane::sai::BridgePortAttr>(attr_list[i].id + 1));
+	}
+	grpc::Status status = bridge->GetBridgePortAttribute(&context, req, &resp);
+	if (!status.ok()) {
+		LOG(ERROR) << status.error_message();
+		return SAI_STATUS_FAILURE;
+	}
+	for(uint32_t i = 0; i < attr_count; i++ ) {
+		
+
+switch (attr_list[i].id) {
+  
+  case SAI_BRIDGE_PORT_ATTR_TYPE:
+	 attr_list[i].value.s32 =  static_cast<int>(resp.attr().type() - 1);
+	break;
+  case SAI_BRIDGE_PORT_ATTR_PORT_ID:
+	 attr_list[i].value.oid =   resp.attr().port_id();
+	break;
+  case SAI_BRIDGE_PORT_ATTR_TAGGING_MODE:
+	 attr_list[i].value.s32 =  static_cast<int>(resp.attr().tagging_mode() - 1);
+	break;
+  case SAI_BRIDGE_PORT_ATTR_VLAN_ID:
+	 attr_list[i].value.u16 =   resp.attr().vlan_id();
+	break;
+  case SAI_BRIDGE_PORT_ATTR_RIF_ID:
+	 attr_list[i].value.oid =   resp.attr().rif_id();
+	break;
+  case SAI_BRIDGE_PORT_ATTR_TUNNEL_ID:
+	 attr_list[i].value.oid =   resp.attr().tunnel_id();
+	break;
+  case SAI_BRIDGE_PORT_ATTR_BRIDGE_ID:
+	 attr_list[i].value.oid =   resp.attr().bridge_id();
+	break;
+  case SAI_BRIDGE_PORT_ATTR_FDB_LEARNING_MODE:
+	 attr_list[i].value.s32 =  static_cast<int>(resp.attr().fdb_learning_mode() - 1);
+	break;
+  case SAI_BRIDGE_PORT_ATTR_MAX_LEARNED_ADDRESSES:
+	 attr_list[i].value.u32 =   resp.attr().max_learned_addresses();
+	break;
+  case SAI_BRIDGE_PORT_ATTR_FDB_LEARNING_LIMIT_VIOLATION_PACKET_ACTION:
+	 attr_list[i].value.s32 =  static_cast<int>(resp.attr().fdb_learning_limit_violation_packet_action() - 1);
+	break;
+  case SAI_BRIDGE_PORT_ATTR_ADMIN_STATE:
+	 attr_list[i].value.booldata =   resp.attr().admin_state();
+	break;
+  case SAI_BRIDGE_PORT_ATTR_INGRESS_FILTERING:
+	 attr_list[i].value.booldata =   resp.attr().ingress_filtering();
+	break;
+  case SAI_BRIDGE_PORT_ATTR_EGRESS_FILTERING:
+	 attr_list[i].value.booldata =   resp.attr().egress_filtering();
+	break;
+  case SAI_BRIDGE_PORT_ATTR_ISOLATION_GROUP:
+	 attr_list[i].value.oid =   resp.attr().isolation_group();
+	break;
 }
 
-sai_status_t l_get_bridge_port_stats_ext(sai_object_id_t bridge_port_id,
-                                         uint32_t number_of_counters,
-                                         const sai_stat_id_t *counter_ids,
-                                         sai_stats_mode_t mode,
-                                         uint64_t *counters) {
-  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-
-  return SAI_STATUS_SUCCESS;
+	}
+	
+	return SAI_STATUS_SUCCESS;
 }
 
-sai_status_t l_clear_bridge_port_stats(sai_object_id_t bridge_port_id,
-                                       uint32_t number_of_counters,
-                                       const sai_stat_id_t *counter_ids) {
-  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-
-  return SAI_STATUS_SUCCESS;
+sai_status_t l_get_bridge_port_stats(sai_object_id_t bridge_port_id, uint32_t number_of_counters, const sai_stat_id_t *counter_ids, uint64_t *counters) {
+	LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+	
+	return SAI_STATUS_SUCCESS;
 }
+
+sai_status_t l_get_bridge_port_stats_ext(sai_object_id_t bridge_port_id, uint32_t number_of_counters, const sai_stat_id_t *counter_ids, sai_stats_mode_t mode, uint64_t *counters) {
+	LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+	
+	return SAI_STATUS_SUCCESS;
+}
+
+sai_status_t l_clear_bridge_port_stats(sai_object_id_t bridge_port_id, uint32_t number_of_counters, const sai_stat_id_t *counter_ids) {
+	LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+	
+	return SAI_STATUS_SUCCESS;
+}
+

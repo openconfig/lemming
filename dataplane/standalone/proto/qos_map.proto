@@ -7,49 +7,52 @@ import "dataplane/standalone/proto/common.proto";
 
 option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto";
 
+
 enum QosMapAttr {
-  QOS_MAP_ATTR_UNSPECIFIED = 0;
-  QOS_MAP_ATTR_TYPE = 1;
-  QOS_MAP_ATTR_MAP_TO_VALUE_LIST = 2;
+	QOS_MAP_ATTR_UNSPECIFIED = 0;
+	QOS_MAP_ATTR_TYPE = 1;
+	QOS_MAP_ATTR_MAP_TO_VALUE_LIST = 2;
 }
 
 message CreateQosMapRequest {
-  uint64 switch = 1;
-  optional QosMapType type = 2 [(attr_enum_value) = 1];
-  repeated QOSMap map_to_value_list = 3 [(attr_enum_value) = 2];
+	option (sai_type) = OBJECT_TYPE_QOS_MAP;
+	uint64 switch = 1;
+	optional QosMapType type = 2[(attr_enum_value) = 1];
+	repeated QOSMap map_to_value_list = 3[(attr_enum_value) = 2];
 }
 
 message CreateQosMapResponse {
-  uint64 oid = 1;
+	uint64 oid = 1;
 }
 
 message RemoveQosMapRequest {
-  uint64 oid = 1;
+	uint64 oid = 1;
 }
 
-message RemoveQosMapResponse {}
+message RemoveQosMapResponse {
+}
 
 message SetQosMapAttributeRequest {
-  uint64 oid = 1;
-  repeated QOSMap map_to_value_list = 2 [(attr_enum_value) = 2];
+	uint64 oid = 1;
+	repeated QOSMap map_to_value_list = 2[(attr_enum_value) = 2];
 }
 
-message SetQosMapAttributeResponse {}
+message SetQosMapAttributeResponse {
+}
 
 message GetQosMapAttributeRequest {
-  uint64 oid = 1;
-  repeated QosMapAttr attr_type = 2;
+	uint64 oid = 1;
+	repeated QosMapAttr attr_type = 2;
 }
 
 message GetQosMapAttributeResponse {
-  QosMapAttribute attr = 1;
+	QosMapAttribute attr = 1;
 }
 
+
 service QosMap {
-  rpc CreateQosMap(CreateQosMapRequest) returns (CreateQosMapResponse) {}
-  rpc RemoveQosMap(RemoveQosMapRequest) returns (RemoveQosMapResponse) {}
-  rpc SetQosMapAttribute(SetQosMapAttributeRequest)
-      returns (SetQosMapAttributeResponse) {}
-  rpc GetQosMapAttribute(GetQosMapAttributeRequest)
-      returns (GetQosMapAttributeResponse) {}
+	rpc CreateQosMap (CreateQosMapRequest) returns (CreateQosMapResponse) {}
+	rpc RemoveQosMap (RemoveQosMapRequest) returns (RemoveQosMapResponse) {}
+	rpc SetQosMapAttribute (SetQosMapAttributeRequest) returns (SetQosMapAttributeResponse) {}
+	rpc GetQosMapAttribute (GetQosMapAttributeRequest) returns (GetQosMapAttributeResponse) {}
 }

@@ -21,6 +21,7 @@
 
 #include "dataplane/standalone/proto/acl.grpc.pb.h"
 #include "dataplane/standalone/proto/bfd.grpc.pb.h"
+#include "dataplane/standalone/proto/bmtor.grpc.pb.h"
 #include "dataplane/standalone/proto/bridge.grpc.pb.h"
 #include "dataplane/standalone/proto/buffer.grpc.pb.h"
 #include "dataplane/standalone/proto/common.pb.h"
@@ -69,6 +70,7 @@
 #include "dataplane/standalone/translator.h"
 
 extern "C" {
+#include "experimental/saiextensions.h"
 #include "inc/sai.h"
 }
 
@@ -76,6 +78,7 @@ extern std::shared_ptr<Translator> translator;
 extern std::unique_ptr<lemming::dataplane::sai::Acl::Stub> acl;
 extern std::unique_ptr<lemming::dataplane::sai::Bfd::Stub> bfd;
 extern std::unique_ptr<lemming::dataplane::sai::Buffer::Stub> buffer;
+extern std::unique_ptr<lemming::dataplane::sai::Bmtor::Stub> bmtor;
 extern std::unique_ptr<lemming::dataplane::sai::Bridge::Stub> bridge;
 extern std::unique_ptr<lemming::dataplane::sai::Counter::Stub> counter;
 extern std::unique_ptr<lemming::dataplane::sai::DebugCounter::Stub>
@@ -146,10 +149,12 @@ sai_ip_prefix_t convert_to_ip_prefix(
 // Note: It is expected that the attribute list contains preallocated memory.
 template <typename T, typename S>
 void copy_list(S *dst, const google::protobuf::RepeatedField<T> &src,
-               int attr_len) {
+               uint32_t *attr_len) {
   // It's not safe to just memcpy this because in some cases to proto types are
   // larger than the corresponding sai types.
-  for (int i = 0; i < std::min(attr_len, src.size()); i++) {
+  *attr_len =
+      static_cast<uint32_t>(std::min(static_cast<int>(*attr_len), src.size()));
+  for (uint32_t i = 0; i < *attr_len; i++) {
     dst[i] = src[i];
   }
 }

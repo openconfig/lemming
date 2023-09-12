@@ -7,173 +7,157 @@ import "dataplane/standalone/proto/common.proto";
 
 option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto";
 
+
 enum VlanAttr {
-  VLAN_ATTR_UNSPECIFIED = 0;
-  VLAN_ATTR_VLAN_ID = 1;
-  VLAN_ATTR_MEMBER_LIST = 2;
-  VLAN_ATTR_MAX_LEARNED_ADDRESSES = 3;
-  VLAN_ATTR_STP_INSTANCE = 4;
-  VLAN_ATTR_LEARN_DISABLE = 5;
-  VLAN_ATTR_IPV4_MCAST_LOOKUP_KEY_TYPE = 6;
-  VLAN_ATTR_IPV6_MCAST_LOOKUP_KEY_TYPE = 7;
-  VLAN_ATTR_UNKNOWN_NON_IP_MCAST_OUTPUT_GROUP_ID = 8;
-  VLAN_ATTR_UNKNOWN_IPV4_MCAST_OUTPUT_GROUP_ID = 9;
-  VLAN_ATTR_UNKNOWN_IPV6_MCAST_OUTPUT_GROUP_ID = 10;
-  VLAN_ATTR_UNKNOWN_LINKLOCAL_MCAST_OUTPUT_GROUP_ID = 11;
-  VLAN_ATTR_INGRESS_ACL = 12;
-  VLAN_ATTR_EGRESS_ACL = 13;
-  VLAN_ATTR_META_DATA = 14;
-  VLAN_ATTR_UNKNOWN_UNICAST_FLOOD_CONTROL_TYPE = 15;
-  VLAN_ATTR_UNKNOWN_UNICAST_FLOOD_GROUP = 16;
-  VLAN_ATTR_UNKNOWN_MULTICAST_FLOOD_CONTROL_TYPE = 17;
-  VLAN_ATTR_UNKNOWN_MULTICAST_FLOOD_GROUP = 18;
-  VLAN_ATTR_BROADCAST_FLOOD_CONTROL_TYPE = 19;
-  VLAN_ATTR_BROADCAST_FLOOD_GROUP = 20;
-  VLAN_ATTR_CUSTOM_IGMP_SNOOPING_ENABLE = 21;
-  VLAN_ATTR_TAM_OBJECT = 22;
+	VLAN_ATTR_UNSPECIFIED = 0;
+	VLAN_ATTR_VLAN_ID = 1;
+	VLAN_ATTR_MEMBER_LIST = 2;
+	VLAN_ATTR_MAX_LEARNED_ADDRESSES = 3;
+	VLAN_ATTR_STP_INSTANCE = 4;
+	VLAN_ATTR_LEARN_DISABLE = 5;
+	VLAN_ATTR_IPV4_MCAST_LOOKUP_KEY_TYPE = 6;
+	VLAN_ATTR_IPV6_MCAST_LOOKUP_KEY_TYPE = 7;
+	VLAN_ATTR_UNKNOWN_NON_IP_MCAST_OUTPUT_GROUP_ID = 8;
+	VLAN_ATTR_UNKNOWN_IPV4_MCAST_OUTPUT_GROUP_ID = 9;
+	VLAN_ATTR_UNKNOWN_IPV6_MCAST_OUTPUT_GROUP_ID = 10;
+	VLAN_ATTR_UNKNOWN_LINKLOCAL_MCAST_OUTPUT_GROUP_ID = 11;
+	VLAN_ATTR_INGRESS_ACL = 12;
+	VLAN_ATTR_EGRESS_ACL = 13;
+	VLAN_ATTR_META_DATA = 14;
+	VLAN_ATTR_UNKNOWN_UNICAST_FLOOD_CONTROL_TYPE = 15;
+	VLAN_ATTR_UNKNOWN_UNICAST_FLOOD_GROUP = 16;
+	VLAN_ATTR_UNKNOWN_MULTICAST_FLOOD_CONTROL_TYPE = 17;
+	VLAN_ATTR_UNKNOWN_MULTICAST_FLOOD_GROUP = 18;
+	VLAN_ATTR_BROADCAST_FLOOD_CONTROL_TYPE = 19;
+	VLAN_ATTR_BROADCAST_FLOOD_GROUP = 20;
+	VLAN_ATTR_CUSTOM_IGMP_SNOOPING_ENABLE = 21;
+	VLAN_ATTR_TAM_OBJECT = 22;
 }
 
 enum VlanMemberAttr {
-  VLAN_MEMBER_ATTR_UNSPECIFIED = 0;
-  VLAN_MEMBER_ATTR_VLAN_ID = 1;
-  VLAN_MEMBER_ATTR_BRIDGE_PORT_ID = 2;
-  VLAN_MEMBER_ATTR_VLAN_TAGGING_MODE = 3;
+	VLAN_MEMBER_ATTR_UNSPECIFIED = 0;
+	VLAN_MEMBER_ATTR_VLAN_ID = 1;
+	VLAN_MEMBER_ATTR_BRIDGE_PORT_ID = 2;
+	VLAN_MEMBER_ATTR_VLAN_TAGGING_MODE = 3;
 }
 
 message CreateVlanRequest {
-  uint64 switch = 1;
-  optional uint32 vlan_id = 2 [(attr_enum_value) = 1];
-  optional uint32 max_learned_addresses = 3 [(attr_enum_value) = 3];
-  optional uint64 stp_instance = 4 [(attr_enum_value) = 4];
-  optional bool learn_disable = 5 [(attr_enum_value) = 5];
-  optional VlanMcastLookupKeyType ipv4_mcast_lookup_key_type = 6
-      [(attr_enum_value) = 6];
-  optional VlanMcastLookupKeyType ipv6_mcast_lookup_key_type = 7
-      [(attr_enum_value) = 7];
-  optional uint64 unknown_non_ip_mcast_output_group_id = 8
-      [(attr_enum_value) = 8];
-  optional uint64 unknown_ipv4_mcast_output_group_id = 9
-      [(attr_enum_value) = 9];
-  optional uint64 unknown_ipv6_mcast_output_group_id = 10
-      [(attr_enum_value) = 10];
-  optional uint64 unknown_linklocal_mcast_output_group_id = 11
-      [(attr_enum_value) = 11];
-  optional uint64 ingress_acl = 12 [(attr_enum_value) = 12];
-  optional uint64 egress_acl = 13 [(attr_enum_value) = 13];
-  optional uint32 meta_data = 14 [(attr_enum_value) = 14];
-  optional VlanFloodControlType unknown_unicast_flood_control_type = 15
-      [(attr_enum_value) = 15];
-  optional uint64 unknown_unicast_flood_group = 16 [(attr_enum_value) = 16];
-  optional VlanFloodControlType unknown_multicast_flood_control_type = 17
-      [(attr_enum_value) = 17];
-  optional uint64 unknown_multicast_flood_group = 18 [(attr_enum_value) = 18];
-  optional VlanFloodControlType broadcast_flood_control_type = 19
-      [(attr_enum_value) = 19];
-  optional uint64 broadcast_flood_group = 20 [(attr_enum_value) = 20];
-  optional bool custom_igmp_snooping_enable = 21 [(attr_enum_value) = 21];
-  repeated uint64 tam_object = 22 [(attr_enum_value) = 22];
+	option (sai_type) = OBJECT_TYPE_VLAN;
+	uint64 switch = 1;
+	optional uint32 vlan_id = 2[(attr_enum_value) = 1];
+	optional uint32 max_learned_addresses = 3[(attr_enum_value) = 3];
+	optional uint64 stp_instance = 4[(attr_enum_value) = 4];
+	optional bool learn_disable = 5[(attr_enum_value) = 5];
+	optional VlanMcastLookupKeyType ipv4_mcast_lookup_key_type = 6[(attr_enum_value) = 6];
+	optional VlanMcastLookupKeyType ipv6_mcast_lookup_key_type = 7[(attr_enum_value) = 7];
+	optional uint64 unknown_non_ip_mcast_output_group_id = 8[(attr_enum_value) = 8];
+	optional uint64 unknown_ipv4_mcast_output_group_id = 9[(attr_enum_value) = 9];
+	optional uint64 unknown_ipv6_mcast_output_group_id = 10[(attr_enum_value) = 10];
+	optional uint64 unknown_linklocal_mcast_output_group_id = 11[(attr_enum_value) = 11];
+	optional uint64 ingress_acl = 12[(attr_enum_value) = 12];
+	optional uint64 egress_acl = 13[(attr_enum_value) = 13];
+	optional uint32 meta_data = 14[(attr_enum_value) = 14];
+	optional VlanFloodControlType unknown_unicast_flood_control_type = 15[(attr_enum_value) = 15];
+	optional uint64 unknown_unicast_flood_group = 16[(attr_enum_value) = 16];
+	optional VlanFloodControlType unknown_multicast_flood_control_type = 17[(attr_enum_value) = 17];
+	optional uint64 unknown_multicast_flood_group = 18[(attr_enum_value) = 18];
+	optional VlanFloodControlType broadcast_flood_control_type = 19[(attr_enum_value) = 19];
+	optional uint64 broadcast_flood_group = 20[(attr_enum_value) = 20];
+	optional bool custom_igmp_snooping_enable = 21[(attr_enum_value) = 21];
+	repeated uint64 tam_object = 22[(attr_enum_value) = 22];
 }
 
 message CreateVlanResponse {
-  uint64 oid = 1;
+	uint64 oid = 1;
 }
 
 message RemoveVlanRequest {
-  uint64 oid = 1;
+	uint64 oid = 1;
 }
 
-message RemoveVlanResponse {}
+message RemoveVlanResponse {
+}
 
 message SetVlanAttributeRequest {
-  uint64 oid = 1;
-  optional uint32 max_learned_addresses = 2 [(attr_enum_value) = 3];
-  optional uint64 stp_instance = 3 [(attr_enum_value) = 4];
-  optional bool learn_disable = 4 [(attr_enum_value) = 5];
-  optional VlanMcastLookupKeyType ipv4_mcast_lookup_key_type = 5
-      [(attr_enum_value) = 6];
-  optional VlanMcastLookupKeyType ipv6_mcast_lookup_key_type = 6
-      [(attr_enum_value) = 7];
-  optional uint64 unknown_non_ip_mcast_output_group_id = 7
-      [(attr_enum_value) = 8];
-  optional uint64 unknown_ipv4_mcast_output_group_id = 8
-      [(attr_enum_value) = 9];
-  optional uint64 unknown_ipv6_mcast_output_group_id = 9
-      [(attr_enum_value) = 10];
-  optional uint64 unknown_linklocal_mcast_output_group_id = 10
-      [(attr_enum_value) = 11];
-  optional uint64 ingress_acl = 11 [(attr_enum_value) = 12];
-  optional uint64 egress_acl = 12 [(attr_enum_value) = 13];
-  optional uint32 meta_data = 13 [(attr_enum_value) = 14];
-  optional VlanFloodControlType unknown_unicast_flood_control_type = 14
-      [(attr_enum_value) = 15];
-  optional uint64 unknown_unicast_flood_group = 15 [(attr_enum_value) = 16];
-  optional VlanFloodControlType unknown_multicast_flood_control_type = 16
-      [(attr_enum_value) = 17];
-  optional uint64 unknown_multicast_flood_group = 17 [(attr_enum_value) = 18];
-  optional VlanFloodControlType broadcast_flood_control_type = 18
-      [(attr_enum_value) = 19];
-  optional uint64 broadcast_flood_group = 19 [(attr_enum_value) = 20];
-  optional bool custom_igmp_snooping_enable = 20 [(attr_enum_value) = 21];
-  repeated uint64 tam_object = 21 [(attr_enum_value) = 22];
+	uint64 oid = 1;
+	optional uint32 max_learned_addresses = 2[(attr_enum_value) = 3];
+	optional uint64 stp_instance = 3[(attr_enum_value) = 4];
+	optional bool learn_disable = 4[(attr_enum_value) = 5];
+	optional VlanMcastLookupKeyType ipv4_mcast_lookup_key_type = 5[(attr_enum_value) = 6];
+	optional VlanMcastLookupKeyType ipv6_mcast_lookup_key_type = 6[(attr_enum_value) = 7];
+	optional uint64 unknown_non_ip_mcast_output_group_id = 7[(attr_enum_value) = 8];
+	optional uint64 unknown_ipv4_mcast_output_group_id = 8[(attr_enum_value) = 9];
+	optional uint64 unknown_ipv6_mcast_output_group_id = 9[(attr_enum_value) = 10];
+	optional uint64 unknown_linklocal_mcast_output_group_id = 10[(attr_enum_value) = 11];
+	optional uint64 ingress_acl = 11[(attr_enum_value) = 12];
+	optional uint64 egress_acl = 12[(attr_enum_value) = 13];
+	optional uint32 meta_data = 13[(attr_enum_value) = 14];
+	optional VlanFloodControlType unknown_unicast_flood_control_type = 14[(attr_enum_value) = 15];
+	optional uint64 unknown_unicast_flood_group = 15[(attr_enum_value) = 16];
+	optional VlanFloodControlType unknown_multicast_flood_control_type = 16[(attr_enum_value) = 17];
+	optional uint64 unknown_multicast_flood_group = 17[(attr_enum_value) = 18];
+	optional VlanFloodControlType broadcast_flood_control_type = 18[(attr_enum_value) = 19];
+	optional uint64 broadcast_flood_group = 19[(attr_enum_value) = 20];
+	optional bool custom_igmp_snooping_enable = 20[(attr_enum_value) = 21];
+	repeated uint64 tam_object = 21[(attr_enum_value) = 22];
 }
 
-message SetVlanAttributeResponse {}
+message SetVlanAttributeResponse {
+}
 
 message GetVlanAttributeRequest {
-  uint64 oid = 1;
-  repeated VlanAttr attr_type = 2;
+	uint64 oid = 1;
+	repeated VlanAttr attr_type = 2;
 }
 
 message GetVlanAttributeResponse {
-  VlanAttribute attr = 1;
+	VlanAttribute attr = 1;
 }
 
 message CreateVlanMemberRequest {
-  uint64 switch = 1;
-  optional uint64 vlan_id = 2 [(attr_enum_value) = 1];
-  optional uint64 bridge_port_id = 3 [(attr_enum_value) = 2];
-  optional VlanTaggingMode vlan_tagging_mode = 4 [(attr_enum_value) = 3];
+	option (sai_type) = OBJECT_TYPE_VLAN_MEMBER;
+	uint64 switch = 1;
+	optional uint64 vlan_id = 2[(attr_enum_value) = 1];
+	optional uint64 bridge_port_id = 3[(attr_enum_value) = 2];
+	optional VlanTaggingMode vlan_tagging_mode = 4[(attr_enum_value) = 3];
 }
 
 message CreateVlanMemberResponse {
-  uint64 oid = 1;
+	uint64 oid = 1;
 }
 
 message RemoveVlanMemberRequest {
-  uint64 oid = 1;
+	uint64 oid = 1;
 }
 
-message RemoveVlanMemberResponse {}
+message RemoveVlanMemberResponse {
+}
 
 message SetVlanMemberAttributeRequest {
-  uint64 oid = 1;
-  optional VlanTaggingMode vlan_tagging_mode = 2 [(attr_enum_value) = 3];
+	uint64 oid = 1;
+	optional VlanTaggingMode vlan_tagging_mode = 2[(attr_enum_value) = 3];
 }
 
-message SetVlanMemberAttributeResponse {}
+message SetVlanMemberAttributeResponse {
+}
 
 message GetVlanMemberAttributeRequest {
-  uint64 oid = 1;
-  repeated VlanMemberAttr attr_type = 2;
+	uint64 oid = 1;
+	repeated VlanMemberAttr attr_type = 2;
 }
 
 message GetVlanMemberAttributeResponse {
-  VlanMemberAttribute attr = 1;
+	VlanMemberAttribute attr = 1;
 }
 
+
 service Vlan {
-  rpc CreateVlan(CreateVlanRequest) returns (CreateVlanResponse) {}
-  rpc RemoveVlan(RemoveVlanRequest) returns (RemoveVlanResponse) {}
-  rpc SetVlanAttribute(SetVlanAttributeRequest)
-      returns (SetVlanAttributeResponse) {}
-  rpc GetVlanAttribute(GetVlanAttributeRequest)
-      returns (GetVlanAttributeResponse) {}
-  rpc CreateVlanMember(CreateVlanMemberRequest)
-      returns (CreateVlanMemberResponse) {}
-  rpc RemoveVlanMember(RemoveVlanMemberRequest)
-      returns (RemoveVlanMemberResponse) {}
-  rpc SetVlanMemberAttribute(SetVlanMemberAttributeRequest)
-      returns (SetVlanMemberAttributeResponse) {}
-  rpc GetVlanMemberAttribute(GetVlanMemberAttributeRequest)
-      returns (GetVlanMemberAttributeResponse) {}
+	rpc CreateVlan (CreateVlanRequest) returns (CreateVlanResponse) {}
+	rpc RemoveVlan (RemoveVlanRequest) returns (RemoveVlanResponse) {}
+	rpc SetVlanAttribute (SetVlanAttributeRequest) returns (SetVlanAttributeResponse) {}
+	rpc GetVlanAttribute (GetVlanAttributeRequest) returns (GetVlanAttributeResponse) {}
+	rpc CreateVlanMember (CreateVlanMemberRequest) returns (CreateVlanMemberResponse) {}
+	rpc RemoveVlanMember (RemoveVlanMemberRequest) returns (RemoveVlanMemberResponse) {}
+	rpc SetVlanMemberAttribute (SetVlanMemberAttributeRequest) returns (SetVlanMemberAttributeResponse) {}
+	rpc GetVlanMemberAttribute (GetVlanMemberAttributeRequest) returns (GetVlanMemberAttributeResponse) {}
 }
