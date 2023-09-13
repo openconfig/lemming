@@ -110,7 +110,7 @@ func newTestSwitch(t testing.TB) (saipb.SwitchClient, *attrmgr.AttrMgr, func()) 
 		t.Fatalf("failed to listen: %v", err)
 	}
 	srv := grpc.NewServer(grpc.Creds(insecure.NewCredentials()), grpc.ChainUnaryInterceptor(mgr.Interceptor))
-	newSwitch(mgr, srv)
+	newSwitch(mgr, nil, srv)
 	go func() {
 		if err := srv.Serve(lis); err != nil {
 			log.Fatalf("failed to serve forwarding server: %v", err)

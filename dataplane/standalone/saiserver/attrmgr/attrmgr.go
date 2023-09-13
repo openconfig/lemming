@@ -112,11 +112,7 @@ func (mgr *AttrMgr) Interceptor(ctx context.Context, req any, info *grpc.UnarySe
 		}
 		mgr.storeAttributes(id, reqMsg)
 	} else if strings.Contains(info.FullMethod, "Get") {
-		id, err := mgr.getID(reqMsg, respMsg)
-		if err != nil {
-			return nil, err
-		}
-		if err := mgr.PopulateAttributes(id, reqMsg, respMsg); err != nil {
+		if err := mgr.PopulateAttributes(reqMsg, respMsg); err != nil {
 			return nil, err
 		}
 	}
@@ -156,10 +152,13 @@ func (mgr *AttrMgr) getEnumToFields(message protoreflect.MessageDescriptor) map[
 
 // populateAttributes fills the resp with the requests attributes.
 // This must called with GetFooAttributeRequest and GetFooAttributeResponse message types.
-func (mgr *AttrMgr) PopulateAttributes(id string, req, resp proto.Message) error {
+func (mgr *AttrMgr) PopulateAttributes(req, resp proto.Message) error {
 	mgr.mu.Lock()
 	defer mgr.mu.Unlock()
-
+	id, err := mgr.getID(req, resp)
+	if err != nil {
+		return err
+	}
 	attrTypeFd := req.ProtoReflect().Descriptor().Fields().ByTextName("attr_type")
 	attrFd := resp.ProtoReflect().Descriptor().Fields().ByTextName("attr")
 	if attrFd == nil || attrTypeFd == nil {
