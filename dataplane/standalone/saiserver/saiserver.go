@@ -130,10 +130,6 @@ type policer struct {
 	saipb.UnimplementedPolicerServer
 }
 
-type port struct {
-	saipb.UnimplementedPortServer
-}
-
 type qosMap struct {
 	saipb.UnimplementedQosMapServer
 }

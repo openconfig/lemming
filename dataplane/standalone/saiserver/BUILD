@@ -3,6 +3,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "saiserver",
     srcs = [
+        "ports.go",
         "saiserver.go",
         "switch.go",
     ],
@@ -11,6 +12,8 @@ go_library(
     deps = [
         "//dataplane/standalone/proto:sai",
         "//dataplane/standalone/saiserver/attrmgr",
+        "//proto/dataplane",
+        "//proto/forwarding",
         "@com_github_golang_glog//:glog",
         "@org_golang_google_grpc//:go_default_library",
         "@org_golang_google_protobuf//proto",
