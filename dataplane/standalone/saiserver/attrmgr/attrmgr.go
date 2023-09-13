@@ -137,6 +137,23 @@ func createResponse(req proto.Message, resp any) (proto.Message, error) {
 	return resp.(proto.Message), nil
 }
 
+func (mgr *AttrMgr) getEnumToFields(message protoreflect.MessageDescriptor) map[int32]int {
+	name := string(message.FullName())
+
+	if enumToFields, ok := mgr.msgEnumToFieldNum[name]; ok {
+		return enumToFields
+	}
+	mgr.msgEnumToFieldNum[name] = make(map[int32]int)
+	for i := 0; i < message.Fields().Len(); i++ {
+		opt, ok := message.Fields().Get(i).Options().(*descriptorpb.FieldOptions)
+		if !ok {
+			continue
+		}
+		mgr.msgEnumToFieldNum[name][proto.GetExtension(opt, saipb.E_AttrEnumValue).(int32)] = i
+	}
+	return mgr.msgEnumToFieldNum[name]
+}
+
 // populateAttributes fills the resp with the requests attributes.
 // This must called with GetFooAttributeRequest and GetFooAttributeResponse message types.
 func (mgr *AttrMgr) PopulateAttributes(id string, req, resp proto.Message) error {
@@ -149,20 +166,7 @@ func (mgr *AttrMgr) PopulateAttributes(id string, req, resp proto.Message) error
 		return fmt.Errorf("req and resp didn't have required attributes")
 	}
 
-	// Populate the msgEnumToFieldNum if it doens't exist for this message.
-	enumToFields, ok := mgr.msgEnumToFieldNum[string(attrFd.FullName())]
-	if !ok {
-		mgr.msgEnumToFieldNum[string(attrFd.FullName())] = make(map[int32]int)
-		enumToFields = mgr.msgEnumToFieldNum[string(attrFd.FullName())]
-		for i := 0; i < attrFd.Message().Fields().Len(); i++ {
-			opt, ok := attrFd.Message().Fields().Get(i).Options().(*descriptorpb.FieldOptions)
-			if !ok {
-				continue
-			}
-			enumToFields[proto.GetExtension(opt, saipb.E_AttrEnumValue).(int32)] = i
-		}
-	}
-
+	enumToFields := mgr.getEnumToFields(attrFd.Message())
 	attrs := resp.ProtoReflect().Mutable(attrFd).Message()
 	reqList := req.ProtoReflect().Get(attrTypeFd).List()
 
@@ -183,25 +187,21 @@ func (mgr *AttrMgr) PopulateAllAttributes(id string, msg proto.Message) error {
 	mgr.mu.Lock()
 	defer mgr.mu.Unlock()
 
-	attrFd := msg.ProtoReflect().Descriptor()
-	// Populate the msgEnumToFieldNum if it doens't exist for this message.
-	enumToFields, ok := mgr.msgEnumToFieldNum[string(attrFd.FullName())]
-	if !ok {
-		mgr.msgEnumToFieldNum[string(attrFd.FullName())] = make(map[int32]int)
-		enumToFields = mgr.msgEnumToFieldNum[string(attrFd.FullName())]
-		for i := 0; i < attrFd.Fields().Len(); i++ {
-			opt, ok := attrFd.Fields().Get(i).Options().(*descriptorpb.FieldOptions)
-			if !ok {
-				continue
-			}
-			enumVal := proto.GetExtension(opt, saipb.E_AttrEnumValue).(int32)
-			enumToFields[enumVal] = i
-			val, ok := mgr.attrs[id][int32(enumVal)]
-			if !ok {
-				continue
-			}
-			msg.ProtoReflect().Set(attrFd.Fields().Get(i), val)
+	desc := msg.ProtoReflect().Descriptor()
+	for i := 0; i < desc.Fields().Len(); i++ {
+		opt, ok := desc.Fields().Get(i).Options().(*descriptorpb.FieldOptions)
+		if !ok {
+			continue
 		}
+		enumVal := proto.GetExtension(opt, saipb.E_AttrEnumValue).(int32)
+		if enumVal == 0 {
+			continue
+		}
+		val, ok := mgr.attrs[id][enumVal]
+		if !ok {
+			continue
+		}
+		msg.ProtoReflect().Set(desc.Fields().Get(i), val)
 	}
 
 	return nil

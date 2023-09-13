@@ -60,15 +60,16 @@ func newSwitch(mgr *attrmgr.AttrMgr, s *grpc.Server) *saiSwitch {
 	return sw
 }
 
-func (sw *saiSwitch) CreateSwitch(ctx context.Context, req *saipb.CreateSwitchRequest) (*saipb.CreateSwitchResponse, error) {
+// CreateSwitch a creates a new switch and populates its default values.
+func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequest) (*saipb.CreateSwitchResponse, error) {
 	swID := sw.mgr.NextID()
 
 	// TODO: The port type is not a settable attribute, figure out a pattern for this.
-	cpuPortId := sw.mgr.NextID()
+	cpuPortID := sw.mgr.NextID()
 	cpuPort := &saipb.PortAttribute{
 		Type: saipb.PortType_PORT_TYPE_CPU.Enum(),
 	}
-	sw.mgr.SetType(fmt.Sprint(cpuPortId), saipb.ObjectType_OBJECT_TYPE_PORT)
+	sw.mgr.SetType(fmt.Sprint(cpuPortID), saipb.ObjectType_OBJECT_TYPE_PORT)
 	vlanResp, err := attrmgr.InvokeAndSave(ctx, sw.mgr, sw.vlan.CreateVlan, &saipb.CreateVlanRequest{
 		Switch: swID,
 	})
@@ -108,7 +109,7 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, req *saipb.CreateSwitchRe
 
 	// These values are mostly meaningless, but clients expect these to be set.
 	attrs := &saipb.SwitchAttribute{
-		CpuPort:                          proto.Uint64(cpuPortId),
+		CpuPort:                          proto.Uint64(cpuPortID),
 		NumberOfActivePorts:              proto.Uint32(0),
 		AclEntryMinimumPriority:          proto.Uint32(1),
 		AclTableMaximumPriority:          proto.Uint32(100),
@@ -156,7 +157,7 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, req *saipb.CreateSwitchRe
 		NatZoneCounterObjectId:           proto.Uint64(0),
 	}
 	sw.mgr.StoreAttributes(swID, attrs)
-	sw.mgr.StoreAttributes(cpuPortId, cpuPort)
+	sw.mgr.StoreAttributes(cpuPortID, cpuPort)
 
 	return &saipb.CreateSwitchResponse{
 		Oid: swID,
