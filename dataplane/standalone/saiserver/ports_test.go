@@ -286,7 +286,7 @@ func (f *fakePortDataplaneAPI) ID() string {
 	return ""
 }
 
-func (f *fakePortDataplaneAPI) CreatePort(ctx context.Context, req *dpb.CreatePortRequest) (*dpb.CreatePortResponse, error) {
+func (f *fakePortDataplaneAPI) CreatePort(_ context.Context, req *dpb.CreatePortRequest) (*dpb.CreatePortResponse, error) {
 	f.gotPortCreateReq = append(f.gotPortCreateReq, req)
 	return nil, nil
 }

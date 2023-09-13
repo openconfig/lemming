@@ -62,7 +62,7 @@ var getInterface = net.InterfaceByName
 // Note: If more ports are created than eth devices, no error is returned, but the OperStatus is set to NOT_PRESENT.
 func (port *port) CreatePort(ctx context.Context, _ *saipb.CreatePortRequest) (*saipb.CreatePortResponse, error) {
 	id := port.mgr.NextID()
-	port.nextEth += 1
+	port.nextEth++
 	dev := fmt.Sprintf("eth%v", port.nextEth)
 
 	attrs := &saipb.PortAttribute{
