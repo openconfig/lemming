@@ -55,6 +55,9 @@ type port struct {
 	portToEth map[uint64]string
 }
 
+// stub for testing
+var getInterface = net.InterfaceByName
+
 // CreatePort creates a new port, mapping the port to ethX, where X is assigned sequentially from 1 to n.
 // Note: If more ports are created than eth devices, no error is returned, but the OperStatus is set to NOT_PRESENT.
 func (port *port) CreatePort(ctx context.Context, _ *saipb.CreatePortRequest) (*saipb.CreatePortResponse, error) {
@@ -73,7 +76,7 @@ func (port *port) CreatePort(ctx context.Context, _ *saipb.CreatePortRequest) (*
 	}
 
 	// For ports that don't exist, do not create dataplane ports.
-	if _, err := net.InterfaceByName(dev); err != nil {
+	if _, err := getInterface(dev); err != nil {
 		attrs.OperStatus = saipb.PortOperStatus_PORT_OPER_STATUS_NOT_PRESENT.Enum()
 		port.mgr.StoreAttributes(id, attrs)
 		return &saipb.CreatePortResponse{
