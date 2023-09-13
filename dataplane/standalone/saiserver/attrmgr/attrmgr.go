@@ -68,7 +68,7 @@ func (mgr *AttrMgr) set(id string, attr int32, val protoreflect.Value) {
 
 const protoNS = "lemming.dataplane.sai"
 
-// InvokeAndSave calls the RPC method and saves the attributes in the request.
+// InvokeAndSave calls the RPC method and saves the attributes in the request and returns the RPC response.
 // This is the same behavior as the Interceptor, except for invoking server methods directly (not using gRPC).
 func InvokeAndSave[T proto.Message, S proto.Message](ctx context.Context, mgr *AttrMgr, rpc func(context.Context, T) (S, error), req T) (S, error) {
 	resp, err := rpc(ctx, req)

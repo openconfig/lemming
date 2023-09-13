@@ -108,6 +108,8 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 	}
 
 	// These values are mostly meaningless, but clients expect these to be set.
+	// The values either the default value for the attribute (https://github.com/opencomputeproject/SAI/blob/master/inc/saiswitch.h)
+	// or for unsupported features a zero value.
 	attrs := &saipb.SwitchAttribute{
 		CpuPort:                          proto.Uint64(cpuPortID),
 		NumberOfActivePorts:              proto.Uint32(0),
