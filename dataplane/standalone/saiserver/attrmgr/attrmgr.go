@@ -120,7 +120,7 @@ func (mgr *AttrMgr) Interceptor(ctx context.Context, req any, info *grpc.UnarySe
 			return nil, err
 		}
 	}
-	return resp, nil
+	return respMsg, nil
 }
 
 func createResponse(req proto.Message, resp any) (proto.Message, error) {

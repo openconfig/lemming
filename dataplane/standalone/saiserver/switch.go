@@ -106,6 +106,7 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, req *saipb.CreateSwitchRe
 		return nil, err
 	}
 
+	// These values are mostly meaningless, but clients expect these to be set.
 	attrs := &saipb.SwitchAttribute{
 		CpuPort:                          proto.Uint64(cpuPortId),
 		NumberOfActivePorts:              proto.Uint32(0),
