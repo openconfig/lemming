@@ -4,6 +4,7 @@ go_library(
     name = "saiserver",
     srcs = [
         "ports.go",
+        "routing.go",
         "saiserver.go",
         "switch.go",
     ],

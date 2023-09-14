@@ -106,6 +106,16 @@ func (port *port) CreatePort(ctx context.Context, _ *saipb.CreatePortRequest) (*
 // SetPortAttributes sets the attributes in the request.
 func (port *port) SetPortAttribute(ctx context.Context, req *saipb.SetPortAttributeRequest) (*saipb.SetPortAttributeResponse, error) {
 	if req.AdminState != nil {
+		// Skip ports that don't exsit.
+		attrReq := &saipb.GetPortAttributeRequest{Oid: req.GetOid(), AttrType: []saipb.PortAttr{saipb.PortAttr_PORT_ATTR_OPER_STATUS}}
+		p := &saipb.GetPortAttributeResponse{}
+		if err := port.mgr.PopulateAttributes(attrReq, p); err != nil {
+			return nil, err
+		}
+		if p.GetAttr().GetOperStatus() == saipb.PortOperStatus_PORT_OPER_STATUS_NOT_PRESENT {
+			return nil, nil
+		}
+
 		stateReq := &fwdpb.PortStateRequest{
 			ContextId: &fwdpb.ContextId{Id: port.dataplane.ID()},
 			PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(req.GetOid())}},

@@ -18,10 +18,11 @@ import (
 	"context"
 	"fmt"
 
-	log "github.com/golang/glog"
+	"github.com/openconfig/lemming/dataplane/standalone/saiserver/attrmgr"
+
 	"google.golang.org/grpc"
 
-	"github.com/openconfig/lemming/dataplane/standalone/saiserver/attrmgr"
+	log "github.com/golang/glog"
 
 	saipb "github.com/openconfig/lemming/dataplane/standalone/proto"
 )
@@ -110,18 +111,6 @@ type nat struct {
 	saipb.UnimplementedNatServer
 }
 
-type neighbor struct {
-	saipb.UnimplementedNeighborServer
-}
-
-type nextHopGroup struct {
-	saipb.UnimplementedNextHopGroupServer
-}
-
-type nextHop struct {
-	saipb.UnimplementedNextHopServer
-}
-
 type policer struct {
 	saipb.UnimplementedPolicerServer
 }
@@ -132,14 +121,6 @@ type qosMap struct {
 
 type queue struct {
 	saipb.UnimplementedQueueServer
-}
-
-type route struct {
-	saipb.UnimplementedRouteServer
-}
-
-type routerInterface struct {
-	saipb.UnimplementedRouterInterfaceServer
 }
 
 type rpfGroup struct {
@@ -196,45 +177,40 @@ type wred struct {
 
 type Server struct {
 	saipb.UnimplementedEntrypointServer
-	mgr             *attrmgr.AttrMgr
-	acl             *acl
-	bfd             *bfd
-	buffer          *buffer
-	counter         *counter
-	debugCounter    *debugCounter
-	fdb             *fdb
-	ipmcGroup       *ipmcGroup
-	ipmc            *ipmc
-	ipsec           *ipsec
-	isolationGroup  *isolationGroup
-	l2mcGroup       *l2mcGroup
-	l2mc            *l2mc
-	lag             *lag
-	macsec          *macsec
-	mcastFdb        *mcastFdb
-	mirror          *mirror
-	mpls            *mpls
-	myMac           *myMac
-	nat             *nat
-	neighbor        *neighbor
-	nextHopGroup    *nextHopGroup
-	nextHop         *nextHop
-	policer         *policer
-	qosMap          *qosMap
-	queue           *queue
-	route           *route
-	routerInterface *routerInterface
-	rpfGroup        *rpfGroup
-	samplePacket    *samplePacket
-	schedulerGroup  *schedulerGroup
-	scheduler       *scheduler
-	srv6            *srv6
-	saiSwitch       *saiSwitch
-	systemPort      *systemPort
-	tam             *tam
-	tunnel          *tunnel
-	udf             *udf
-	wred            *wred
+	mgr            *attrmgr.AttrMgr
+	acl            *acl
+	bfd            *bfd
+	buffer         *buffer
+	counter        *counter
+	debugCounter   *debugCounter
+	fdb            *fdb
+	ipmcGroup      *ipmcGroup
+	ipmc           *ipmc
+	ipsec          *ipsec
+	isolationGroup *isolationGroup
+	l2mcGroup      *l2mcGroup
+	l2mc           *l2mc
+	lag            *lag
+	macsec         *macsec
+	mcastFdb       *mcastFdb
+	mirror         *mirror
+	mpls           *mpls
+	myMac          *myMac
+	nat            *nat
+	policer        *policer
+	qosMap         *qosMap
+	queue          *queue
+	rpfGroup       *rpfGroup
+	samplePacket   *samplePacket
+	schedulerGroup *schedulerGroup
+	scheduler      *scheduler
+	srv6           *srv6
+	saiSwitch      *saiSwitch
+	systemPort     *systemPort
+	tam            *tam
+	tunnel         *tunnel
+	udf            *udf
+	wred           *wred
 }
 
 func (s *Server) ObjectTypeQuery(_ context.Context, req *saipb.ObjectTypeQueryRequest) (*saipb.ObjectTypeQueryResponse, error) {
@@ -249,45 +225,40 @@ func (s *Server) ObjectTypeQuery(_ context.Context, req *saipb.ObjectTypeQueryRe
 
 func New(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server) *Server {
 	srv := &Server{
-		mgr:             mgr,
-		acl:             &acl{},
-		bfd:             &bfd{},
-		buffer:          &buffer{},
-		counter:         &counter{},
-		debugCounter:    &debugCounter{},
-		fdb:             &fdb{},
-		ipmcGroup:       &ipmcGroup{},
-		ipmc:            &ipmc{},
-		ipsec:           &ipsec{},
-		isolationGroup:  &isolationGroup{},
-		l2mcGroup:       &l2mcGroup{},
-		l2mc:            &l2mc{},
-		lag:             &lag{},
-		macsec:          &macsec{},
-		mcastFdb:        &mcastFdb{},
-		mirror:          &mirror{},
-		mpls:            &mpls{},
-		myMac:           &myMac{},
-		nat:             &nat{},
-		neighbor:        &neighbor{},
-		nextHopGroup:    &nextHopGroup{},
-		nextHop:         &nextHop{},
-		policer:         &policer{},
-		qosMap:          &qosMap{},
-		queue:           &queue{},
-		route:           &route{},
-		routerInterface: &routerInterface{},
-		rpfGroup:        &rpfGroup{},
-		samplePacket:    &samplePacket{},
-		schedulerGroup:  &schedulerGroup{},
-		scheduler:       &scheduler{},
-		srv6:            &srv6{},
-		saiSwitch:       newSwitch(mgr, engine, s),
-		systemPort:      &systemPort{},
-		tam:             &tam{},
-		tunnel:          &tunnel{},
-		udf:             &udf{},
-		wred:            &wred{},
+		mgr:            mgr,
+		acl:            &acl{},
+		bfd:            &bfd{},
+		buffer:         &buffer{},
+		counter:        &counter{},
+		debugCounter:   &debugCounter{},
+		fdb:            &fdb{},
+		ipmcGroup:      &ipmcGroup{},
+		ipmc:           &ipmc{},
+		ipsec:          &ipsec{},
+		isolationGroup: &isolationGroup{},
+		l2mcGroup:      &l2mcGroup{},
+		l2mc:           &l2mc{},
+		lag:            &lag{},
+		macsec:         &macsec{},
+		mcastFdb:       &mcastFdb{},
+		mirror:         &mirror{},
+		mpls:           &mpls{},
+		myMac:          &myMac{},
+		nat:            &nat{},
+		policer:        &policer{},
+		qosMap:         &qosMap{},
+		queue:          &queue{},
+		rpfGroup:       &rpfGroup{},
+		samplePacket:   &samplePacket{},
+		schedulerGroup: &schedulerGroup{},
+		scheduler:      &scheduler{},
+		srv6:           &srv6{},
+		saiSwitch:      newSwitch(mgr, engine, s),
+		systemPort:     &systemPort{},
+		tam:            &tam{},
+		tunnel:         &tunnel{},
+		udf:            &udf{},
+		wred:           &wred{},
 	}
 	saipb.RegisterEntrypointServer(s, srv)
 	saipb.RegisterAclServer(s, srv.acl)
@@ -308,14 +279,9 @@ func New(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server) *Serve
 	saipb.RegisterMplsServer(s, srv.mpls)
 	saipb.RegisterMyMacServer(s, srv.myMac)
 	saipb.RegisterNatServer(s, srv.nat)
-	saipb.RegisterNeighborServer(s, srv.neighbor)
-	saipb.RegisterNextHopGroupServer(s, srv.nextHopGroup)
-	saipb.RegisterNextHopServer(s, srv.nextHop)
 	saipb.RegisterPolicerServer(s, srv.policer)
 	saipb.RegisterQosMapServer(s, srv.qosMap)
 	saipb.RegisterQueueServer(s, srv.queue)
-	saipb.RegisterRouteServer(s, srv.route)
-	saipb.RegisterRouterInterfaceServer(s, srv.routerInterface)
 	saipb.RegisterRpfGroupServer(s, srv.rpfGroup)
 	saipb.RegisterSamplepacketServer(s, srv.samplePacket)
 	saipb.RegisterSchedulerGroupServer(s, srv.schedulerGroup)
