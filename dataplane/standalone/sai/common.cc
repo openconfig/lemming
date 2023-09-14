@@ -25,12 +25,9 @@
 std::string convert_from_ip_addr(sai_ip_addr_family_t addr_family,
                                  const sai_ip_addr_t& addr) {
   if (addr_family == SAI_IP_ADDR_FAMILY_IPV4) {
-    sai_ip4_t ip = addr.ip4;
-    return reinterpret_cast<char*>(&ip);
+    return std::string(&addr.ip4, &addr.ip4 + 4);
   }
-  sai_ip6_t ip;
-  std::copy(addr.ip6, addr.ip6 + sizeof(sai_ip6_t), ip);
-  return reinterpret_cast<char*>(ip);
+  return std::string(addr.ip6, addr.ip6 + 16);
 }
 
 std::string convert_from_ip_address(const sai_ip_address_t& val) {

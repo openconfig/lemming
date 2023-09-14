@@ -358,7 +358,7 @@ func prefixToPrimitives(prefix *dpb.RoutePrefix) ([]byte, []byte, bool, uint64, 
 		case net.IPv6len:
 			isIPv4 = false
 		default:
-			return ip, mask, isIPv4, vrf, fmt.Errorf("invalid ip addr length")
+			return ip, mask, isIPv4, vrf, fmt.Errorf("invalid ip addr length: ip %v, mask %v", ip, mask)
 		}
 	default:
 		return ip, mask, isIPv4, vrf, fmt.Errorf("invalid prefix type")
