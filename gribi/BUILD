@@ -17,6 +17,7 @@ go_library(
         "@com_github_openconfig_gribigo//aft",
         "@com_github_openconfig_gribigo//afthelper",
         "@com_github_openconfig_gribigo//constants",
+        "@com_github_openconfig_gribigo//rib",
         "@com_github_openconfig_gribigo//server",
         "@com_github_openconfig_ygnmi//ygnmi",
         "@com_github_openconfig_ygot//ygot",
