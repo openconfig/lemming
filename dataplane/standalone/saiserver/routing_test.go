@@ -51,11 +51,11 @@ func (f *fakeRoutingDataplaneAPI) AddNextHop(_ context.Context, req *dpb.AddNext
 	return nil, nil
 }
 
-func (f *fakeRoutingDataplaneAPI) AddIPRoute(ctx context.Context, req *dpb.AddIPRouteRequest) (*dpb.AddIPRouteResponse, error) {
+func (f *fakeRoutingDataplaneAPI) AddIPRoute(context.Context, *dpb.AddIPRouteRequest) (*dpb.AddIPRouteResponse, error) {
 	panic("not implemented") // TODO: Implement
 }
 
-func (f *fakeRoutingDataplaneAPI) AddInterface(ctx context.Context, req *dpb.AddInterfaceRequest) (*dpb.AddInterfaceResponse, error) {
+func (f *fakeRoutingDataplaneAPI) AddInterface(context.Context, *dpb.AddInterfaceRequest) (*dpb.AddInterfaceResponse, error) {
 	panic("not implemented") // TODO: Implement
 }
 
