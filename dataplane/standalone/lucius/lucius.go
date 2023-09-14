@@ -80,7 +80,7 @@ func initialize(port int) {
 		grpc.ChainStreamInterceptor(logging.StreamServerInterceptor(getLogger())))
 	fwdpb.RegisterForwardingServer(srv, e)
 	dpb.RegisterDataplaneServer(srv, e)
-	saiserver.New(mgr, srv)
+	saiserver.New(mgr, e, srv)
 
 	go func() {
 		if err := srv.Serve(lis); err != nil {

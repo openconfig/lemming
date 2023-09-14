@@ -38,24 +38,26 @@ type saiSwitch struct {
 	mgr    *attrmgr.AttrMgr
 }
 
-func newSwitch(mgr *attrmgr.AttrMgr, s *grpc.Server) *saiSwitch {
+type switchDataplaneAPI interface {
+	portDataplaneAPI
+}
+
+func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server) *saiSwitch {
 	sw := &saiSwitch{
-		port:   &port{},
+		port:   newPort(mgr, engine, s),
 		vlan:   &vlan{},
 		stp:    &stp{},
 		vr:     &virtualRouter{},
 		bridge: &bridge{},
-		hostif: &hostif{},
+		hostif: newHostif(mgr, engine, s),
 		hash:   &hash{},
 		mgr:    mgr,
 	}
 	saipb.RegisterSwitchServer(s, sw)
-	saipb.RegisterPortServer(s, sw.port)
 	saipb.RegisterVlanServer(s, sw.vlan)
 	saipb.RegisterStpServer(s, sw.stp)
 	saipb.RegisterVirtualRouterServer(s, sw.vr)
 	saipb.RegisterBridgeServer(s, sw.bridge)
-	saipb.RegisterHostifServer(s, sw.hostif)
 	saipb.RegisterHashServer(s, sw.hash)
 	return sw
 }

@@ -102,7 +102,7 @@ func TestCreateSwitch(t *testing.T) {
 	}
 }
 
-func newTestSwitch(t testing.TB) (saipb.SwitchClient, *attrmgr.AttrMgr, func()) {
+func newTestServer(t testing.TB, newSrvFn func(mgr *attrmgr.AttrMgr, srv *grpc.Server)) (grpc.ClientConnInterface, *attrmgr.AttrMgr, func()) {
 	t.Helper()
 	mgr := attrmgr.New()
 	lis, err := net.Listen("tcp", ("127.0.0.1:0"))
@@ -110,7 +110,9 @@ func newTestSwitch(t testing.TB) (saipb.SwitchClient, *attrmgr.AttrMgr, func()) 
 		t.Fatalf("failed to listen: %v", err)
 	}
 	srv := grpc.NewServer(grpc.Creds(insecure.NewCredentials()), grpc.ChainUnaryInterceptor(mgr.Interceptor))
-	newSwitch(mgr, srv)
+	if newSrvFn != nil {
+		newSrvFn(mgr, srv)
+	}
 	go func() {
 		if err := srv.Serve(lis); err != nil {
 			log.Fatalf("failed to serve forwarding server: %v", err)
@@ -120,5 +122,12 @@ func newTestSwitch(t testing.TB) (saipb.SwitchClient, *attrmgr.AttrMgr, func()) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	return saipb.NewSwitchClient(conn), mgr, srv.Stop
+	return conn, mgr, srv.Stop
+}
+
+func newTestSwitch(t testing.TB) (saipb.SwitchClient, *attrmgr.AttrMgr, func()) {
+	conn, mgr, stopFn := newTestServer(t, func(mgr *attrmgr.AttrMgr, srv *grpc.Server) {
+		newSwitch(mgr, nil, srv)
+	})
+	return saipb.NewSwitchClient(conn), mgr, stopFn
 }

@@ -58,10 +58,6 @@ type hash struct {
 	saipb.UnimplementedHashServer
 }
 
-type hostif struct {
-	saipb.UnimplementedHostifServer
-}
-
 type ipmcGroup struct {
 	saipb.UnimplementedIpmcGroupServer
 }
@@ -128,10 +124,6 @@ type nextHop struct {
 
 type policer struct {
 	saipb.UnimplementedPolicerServer
-}
-
-type port struct {
-	saipb.UnimplementedPortServer
 }
 
 type qosMap struct {
@@ -255,7 +247,7 @@ func (s *Server) ObjectTypeQuery(_ context.Context, req *saipb.ObjectTypeQueryRe
 	}, nil
 }
 
-func New(mgr *attrmgr.AttrMgr, s *grpc.Server) *Server {
+func New(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server) *Server {
 	srv := &Server{
 		mgr:             mgr,
 		acl:             &acl{},
@@ -290,7 +282,7 @@ func New(mgr *attrmgr.AttrMgr, s *grpc.Server) *Server {
 		schedulerGroup:  &schedulerGroup{},
 		scheduler:       &scheduler{},
 		srv6:            &srv6{},
-		saiSwitch:       newSwitch(mgr, s),
+		saiSwitch:       newSwitch(mgr, engine, s),
 		systemPort:      &systemPort{},
 		tam:             &tam{},
 		tunnel:          &tunnel{},
