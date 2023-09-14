@@ -23,6 +23,7 @@ import (
 	"github.com/openconfig/gribigo/aft"
 	"github.com/openconfig/gribigo/afthelper"
 	"github.com/openconfig/gribigo/constants"
+	"github.com/openconfig/gribigo/rib"
 	"github.com/openconfig/gribigo/server"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot"
@@ -110,7 +111,11 @@ func createGRIBIServer(gClient gpb.GNMIClient, target string, root *oc.Root) (*s
 		// here we just write to something that the server has access to.
 	}
 
-	ribAddfn := func(ribs map[string]*aft.RIB, optype constants.OpType, netinst, prefix string) {
+	ribAddfn := func(ribs map[string]*aft.RIB, optype constants.OpType, netinst string, aft constants.AFT, key any, _ ...rib.ResolvedDetails) {
+		prefix, ok := key.(string)
+		if aft != constants.IPv4 || !ok {
+			log.Errorf("Incompatible type of route receive, type: %s, key: %v", aft, key)
+		}
 		if optype != constants.Add {
 			// TODO(wenbli): handle replace and delete :-)
 			// For replace, just need to ensure Sysrib's gRPC supports it.

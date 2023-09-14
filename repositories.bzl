@@ -1572,8 +1572,8 @@ def go_repositories():
     go_repository(
         name = "com_github_openconfig_gribigo",
         importpath = "github.com/openconfig/gribigo",
-        sum = "h1:N+aVXDlRwVLmI55woEs7wxzKwh7JafGc6xGtlucuBl4=",
-        version = "v0.0.0-20230207233343-ef59db57c4fc",
+        sum = "h1:Hz4EEMaBnNbumV+F+4snVI6FTwUmEogjgun/fY5F7F8=",
+        version = "v0.0.0-20230902004455-c7aff9365bec",
     )
     go_repository(
         name = "com_github_openconfig_grpctunnel",
