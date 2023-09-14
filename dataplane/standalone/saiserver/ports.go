@@ -121,7 +121,7 @@ func (port *port) SetPortAttribute(ctx context.Context, req *saipb.SetPortAttrib
 			return nil, err
 		}
 	}
-	return nil, nil
+	return &saipb.SetPortAttributeResponse{}, nil
 }
 
 func newHostif(mgr *attrmgr.AttrMgr, dataplane portDataplaneAPI, s *grpc.Server) *hostif {

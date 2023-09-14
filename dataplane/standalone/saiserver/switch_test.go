@@ -110,7 +110,9 @@ func newTestServer(t testing.TB, newSrvFn func(mgr *attrmgr.AttrMgr, srv *grpc.S
 		t.Fatalf("failed to listen: %v", err)
 	}
 	srv := grpc.NewServer(grpc.Creds(insecure.NewCredentials()), grpc.ChainUnaryInterceptor(mgr.Interceptor))
-	newSrvFn(mgr, srv)
+	if newSrvFn != nil {
+		newSrvFn(mgr, srv)
+	}
 	go func() {
 		if err := srv.Serve(lis); err != nil {
 			log.Fatalf("failed to serve forwarding server: %v", err)
