@@ -24,8 +24,10 @@
 #include "dataplane/standalone/lucius/lucius_clib.h"
 #include "dataplane/standalone/proto/acl.grpc.pb.h"
 #include "dataplane/standalone/proto/bfd.grpc.pb.h"
+#include "dataplane/standalone/proto/bmtor.grpc.pb.h"
 #include "dataplane/standalone/proto/bridge.grpc.pb.h"
 #include "dataplane/standalone/proto/buffer.grpc.pb.h"
+#include "dataplane/standalone/proto/common.grpc.pb.h"
 #include "dataplane/standalone/proto/common.pb.h"
 #include "dataplane/standalone/proto/counter.grpc.pb.h"
 #include "dataplane/standalone/proto/debug_counter.grpc.pb.h"
@@ -71,6 +73,7 @@
 #include "dataplane/standalone/proto/wred.grpc.pb.h"
 #include "dataplane/standalone/sai/acl.h"
 #include "dataplane/standalone/sai/bfd.h"
+#include "dataplane/standalone/sai/bmtor.h"
 #include "dataplane/standalone/sai/bridge.h"
 #include "dataplane/standalone/sai/buffer.h"
 #include "dataplane/standalone/sai/counter.h"
@@ -118,6 +121,7 @@
 #include "dataplane/standalone/translator.h"
 
 extern "C" {
+#include "experimental/saiextensions.h"
 #include "inc/sai.h"
 }
 
@@ -125,6 +129,7 @@ std::shared_ptr<Translator> translator;
 std::unique_ptr<lemming::dataplane::sai::Acl::Stub> acl;
 std::unique_ptr<lemming::dataplane::sai::Bfd::Stub> bfd;
 std::unique_ptr<lemming::dataplane::sai::Buffer::Stub> buffer;
+std::unique_ptr<lemming::dataplane::sai::Bmtor::Stub> bmtor;
 std::unique_ptr<lemming::dataplane::sai::Bridge::Stub> bridge;
 std::unique_ptr<lemming::dataplane::sai::Counter::Stub> counter;
 std::unique_ptr<lemming::dataplane::sai::DebugCounter::Stub> debug_counter;
@@ -170,9 +175,12 @@ std::unique_ptr<lemming::dataplane::sai::VirtualRouter::Stub> virtual_router;
 std::unique_ptr<lemming::dataplane::sai::Vlan::Stub> vlan;
 std::unique_ptr<lemming::dataplane::sai::Wred::Stub> wred;
 
+std::unique_ptr<lemming::dataplane::sai::Entrypoint::Stub> entry;
+
 // TODO(dgrau): implement this without using gRPC.
 sai_status_t sai_api_initialize(
     _In_ uint64_t flags, _In_ const sai_service_method_table_t *services) {
+  FLAGS_log_dir = "/var/log/syncd";
   google::InitGoogleLogging("lucius");
   google::InstallFailureSignalHandler();
   initialize(GoInt(50000));
@@ -235,9 +243,12 @@ sai_status_t sai_api_initialize(
       std::make_unique<lemming::dataplane::sai::VirtualRouter::Stub>(chan);
   vlan = std::make_unique<lemming::dataplane::sai::Vlan::Stub>(chan);
   wred = std::make_unique<lemming::dataplane::sai::Wred::Stub>(chan);
+  entry = std::make_unique<lemming::dataplane::sai::Entrypoint::Stub>(chan);
 
   return SAI_STATUS_SUCCESS;
 }
+
+sai_status_t sai_api_uninitialize(void) { return SAI_STATUS_SUCCESS; }
 
 sai_status_t sai_api_query(_In_ sai_api_t api, _Out_ void **api_method_table) {
   switch (api) {
@@ -427,6 +438,14 @@ sai_status_t sai_api_query(_In_ sai_api_t api, _Out_ void **api_method_table) {
       *api_method_table = const_cast<sai_my_mac_api_t *>(&l_my_mac);
       break;
     }
+    case SAI_API_IPSEC: {
+      *api_method_table = const_cast<sai_ipsec_api_t *>(&l_ipsec);
+      break;
+    }
+    case SAI_API_BMTOR: {
+      *api_method_table = const_cast<sai_bmtor_api_t *>(&l_bmtor);
+      break;
+    }
     default:
       return SAI_STATUS_FAILURE;
   }
@@ -438,7 +457,18 @@ sai_status_t sai_log_set(_In_ sai_api_t api, _In_ sai_log_level_t log_level) {
 }
 
 sai_object_type_t sai_object_type_query(_In_ sai_object_id_t object_id) {
-  return translator->getObjectType(object_id);
+  lemming::dataplane::sai::ObjectTypeQueryRequest req;
+  lemming::dataplane::sai::ObjectTypeQueryResponse resp;
+  grpc::ClientContext context;
+  LOG(WARNING) << "type query " << object_id;
+  req.set_object(object_id);
+  grpc::Status status = entry->ObjectTypeQuery(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_OBJECT_TYPE_NULL;
+  }
+  LOG(WARNING) << "type query done " << resp.type();
+  return static_cast<sai_object_type_t>(resp.type() - 1);
 }
 
 sai_status_t sai_query_attribute_capability(

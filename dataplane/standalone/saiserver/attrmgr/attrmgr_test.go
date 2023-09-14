@@ -74,6 +74,18 @@ func TestInterceptor(t *testing.T) {
 			Oid: 1,
 		},
 	}, {
+		desc:  "create request unimplemented typed nil",
+		info:  &grpc.UnaryServerInfo{FullMethod: "/lemming.dataplane.sai.Switch/CreateSwitch"},
+		attrs: map[string]map[int32]protoreflect.Value{},
+		req: &saipb.CreateSwitchRequest{
+			RestartWarm: proto.Bool(true),
+		},
+		handlerResp: (*saipb.CreateSwitchResponse)(nil),
+		handlerErr:  status.Error(codes.Unimplemented, "foo"),
+		want: &saipb.CreateSwitchResponse{
+			Oid: 1,
+		},
+	}, {
 		desc:  "create request entry",
 		info:  &grpc.UnaryServerInfo{FullMethod: "/lemming.dataplane.sai.Route/CreateRoute"},
 		attrs: map[string]map[int32]protoreflect.Value{},
@@ -88,25 +100,29 @@ func TestInterceptor(t *testing.T) {
 		desc: "get request",
 		info: &grpc.UnaryServerInfo{FullMethod: "/lemming.dataplane.sai.Switch/GetSwitchAttribute"},
 		attrs: map[string]map[int32]protoreflect.Value{
-			"10": {int32(saipb.SwitchAttr_SWITCH_ATTR_CPU_PORT): protoreflect.ValueOfUint64(100)},
+			"10": {
+				int32(saipb.SwitchAttr_SWITCH_ATTR_CPU_PORT):        protoreflect.ValueOfUint64(100),
+				int32(saipb.SwitchAttr_SWITCH_ATTR_PRE_INGRESS_ACL): protoreflect.ValueOfUint64(300),
+			},
 		},
 		req: &saipb.GetSwitchAttributeRequest{
 			Oid: 10,
 			AttrType: []saipb.SwitchAttr{
 				saipb.SwitchAttr_SWITCH_ATTR_CPU_PORT,
+				saipb.SwitchAttr_SWITCH_ATTR_PRE_INGRESS_ACL,
 			},
 		},
 		want: &saipb.GetSwitchAttributeResponse{
 			Attr: &saipb.SwitchAttribute{
-				CpuPort: proto.Uint64(100),
+				CpuPort:       proto.Uint64(100),
+				PreIngressAcl: proto.Uint64(300),
 			},
 		},
 	}}
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			mgr := AttrMgr{
-				attrs: tt.attrs,
-			}
+			mgr := New()
+			mgr.attrs = tt.attrs
 			got, gotErr := mgr.Interceptor(context.TODO(), tt.req, tt.info, func(context.Context, any) (any, error) {
 				return tt.handlerResp, tt.handlerErr
 			})
@@ -116,6 +132,79 @@ func TestInterceptor(t *testing.T) {
 			if gotErr != nil {
 				return
 			}
+			if d := cmp.Diff(got, tt.want, protocmp.Transform()); d != "" {
+				t.Fatalf("Interceptor() failed: diff(-got,+want)\n:%s", d)
+			}
+		})
+	}
+}
+
+func TestInvokeAndSave(t *testing.T) {
+	tests := []struct {
+		desc      string
+		req       proto.Message
+		rpc       func(context.Context, proto.Message) (proto.Message, error)
+		wantAttrs map[string]map[int32]protoreflect.Value
+		wantErr   string
+	}{{
+		desc: "rpc error",
+		rpc: func(context.Context, proto.Message) (proto.Message, error) {
+			return nil, fmt.Errorf("foo")
+		},
+		wantErr: "foo",
+	}, {
+		desc: "success",
+		rpc: func(context.Context, proto.Message) (proto.Message, error) {
+			return nil, nil
+		},
+		req: &saipb.SetPortAttributeRequest{
+			Oid:        1,
+			AdminState: proto.Bool(true),
+		},
+		wantAttrs: map[string]map[int32]protoreflect.Value{
+			"1": {
+				int32(saipb.PortAttr_PORT_ATTR_ADMIN_STATE): protoreflect.ValueOfBool(true),
+			},
+		},
+	}}
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			mgr := New()
+			_, gotErr := InvokeAndSave(context.Background(), mgr, tt.rpc, tt.req)
+			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
+				t.Fatalf("InvokeAndSave() unexpected err: %s", diff)
+			}
+			if gotErr != nil {
+				return
+			}
+			if d := cmp.Diff(mgr.attrs, tt.wantAttrs, protocmp.Transform()); d != "" {
+				t.Fatalf("InvokeAndSave() failed: diff(-got,+want)\n:%s", d)
+			}
+		})
+	}
+}
+
+func TestGetType(t *testing.T) {
+	tests := []struct {
+		desc  string
+		types map[string]saipb.ObjectType
+		id    string
+		want  saipb.ObjectType
+	}{{
+		desc:  "unknown val",
+		types: make(map[string]saipb.ObjectType),
+		want:  saipb.ObjectType_OBJECT_TYPE_NULL,
+	}, {
+		desc:  "existing val",
+		id:    "1",
+		types: map[string]saipb.ObjectType{"1": saipb.ObjectType_OBJECT_TYPE_SWITCH},
+		want:  saipb.ObjectType_OBJECT_TYPE_SWITCH,
+	}}
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			mgr := New()
+			mgr.idToType = tt.types
+			got := mgr.GetType(tt.id)
 			if d := cmp.Diff(got, tt.want, protocmp.Transform()); d != "" {
 				t.Fatalf("Interceptor() failed: diff(-got,+want)\n:%s", d)
 			}

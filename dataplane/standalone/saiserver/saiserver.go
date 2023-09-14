@@ -15,7 +15,13 @@
 package saiserver
 
 import (
+	"context"
+	"fmt"
+
+	log "github.com/golang/glog"
 	"google.golang.org/grpc"
+
+	"github.com/openconfig/lemming/dataplane/standalone/saiserver/attrmgr"
 
 	saipb "github.com/openconfig/lemming/dataplane/standalone/proto"
 )
@@ -168,10 +174,6 @@ type stp struct {
 	saipb.UnimplementedStpServer
 }
 
-type saiSwitch struct {
-	saipb.UnimplementedSwitchServer
-}
-
 type systemPort struct {
 	saipb.UnimplementedSystemPortServer
 }
@@ -201,15 +203,14 @@ type wred struct {
 }
 
 type Server struct {
+	saipb.UnimplementedEntrypointServer
+	mgr             *attrmgr.AttrMgr
 	acl             *acl
 	bfd             *bfd
 	buffer          *buffer
-	bridge          *bridge
 	counter         *counter
 	debugCounter    *debugCounter
 	fdb             *fdb
-	hash            *hash
-	hostif          *hostif
 	ipmcGroup       *ipmcGroup
 	ipmc            *ipmc
 	ipsec           *ipsec
@@ -227,7 +228,6 @@ type Server struct {
 	nextHopGroup    *nextHopGroup
 	nextHop         *nextHop
 	policer         *policer
-	port            *port
 	qosMap          *qosMap
 	queue           *queue
 	route           *route
@@ -237,28 +237,33 @@ type Server struct {
 	schedulerGroup  *schedulerGroup
 	scheduler       *scheduler
 	srv6            *srv6
-	stp             *stp
 	saiSwitch       *saiSwitch
 	systemPort      *systemPort
 	tam             *tam
 	tunnel          *tunnel
 	udf             *udf
-	virtualRouter   *virtualRouter
-	vlan            *vlan
 	wred            *wred
 }
 
-func New(s *grpc.Server) *Server {
+func (s *Server) ObjectTypeQuery(_ context.Context, req *saipb.ObjectTypeQueryRequest) (*saipb.ObjectTypeQueryResponse, error) {
+	val := s.mgr.GetType(fmt.Sprint(req.GetObject()))
+	if val == saipb.ObjectType_OBJECT_TYPE_NULL {
+		log.Warningf("unknown object id %v, type %v", req.Object, val)
+	}
+	return &saipb.ObjectTypeQueryResponse{
+		Type: val,
+	}, nil
+}
+
+func New(mgr *attrmgr.AttrMgr, s *grpc.Server) *Server {
 	srv := &Server{
+		mgr:             mgr,
 		acl:             &acl{},
 		bfd:             &bfd{},
-		bridge:          &bridge{},
 		buffer:          &buffer{},
 		counter:         &counter{},
 		debugCounter:    &debugCounter{},
 		fdb:             &fdb{},
-		hash:            &hash{},
-		hostif:          &hostif{},
 		ipmcGroup:       &ipmcGroup{},
 		ipmc:            &ipmc{},
 		ipsec:           &ipsec{},
@@ -276,7 +281,6 @@ func New(s *grpc.Server) *Server {
 		nextHopGroup:    &nextHopGroup{},
 		nextHop:         &nextHop{},
 		policer:         &policer{},
-		port:            &port{},
 		qosMap:          &qosMap{},
 		queue:           &queue{},
 		route:           &route{},
@@ -286,24 +290,19 @@ func New(s *grpc.Server) *Server {
 		schedulerGroup:  &schedulerGroup{},
 		scheduler:       &scheduler{},
 		srv6:            &srv6{},
-		stp:             &stp{},
-		saiSwitch:       &saiSwitch{},
+		saiSwitch:       newSwitch(mgr, s),
 		systemPort:      &systemPort{},
 		tam:             &tam{},
 		tunnel:          &tunnel{},
 		udf:             &udf{},
-		virtualRouter:   &virtualRouter{},
-		vlan:            &vlan{},
 		wred:            &wred{},
 	}
+	saipb.RegisterEntrypointServer(s, srv)
 	saipb.RegisterAclServer(s, srv.acl)
 	saipb.RegisterBfdServer(s, srv.bfd)
-	saipb.RegisterBridgeServer(s, srv.bridge)
 	saipb.RegisterCounterServer(s, srv.counter)
 	saipb.RegisterDebugCounterServer(s, srv.debugCounter)
 	saipb.RegisterFdbServer(s, srv.fdb)
-	saipb.RegisterHashServer(s, srv.hash)
-	saipb.RegisterHostifServer(s, srv.hostif)
 	saipb.RegisterIpmcGroupServer(s, srv.ipmcGroup)
 	saipb.RegisterIpmcServer(s, srv.ipmc)
 	saipb.RegisterIpsecServer(s, srv.ipsec)
@@ -321,7 +320,6 @@ func New(s *grpc.Server) *Server {
 	saipb.RegisterNextHopGroupServer(s, srv.nextHopGroup)
 	saipb.RegisterNextHopServer(s, srv.nextHop)
 	saipb.RegisterPolicerServer(s, srv.policer)
-	saipb.RegisterPortServer(s, srv.port)
 	saipb.RegisterQosMapServer(s, srv.qosMap)
 	saipb.RegisterQueueServer(s, srv.queue)
 	saipb.RegisterRouteServer(s, srv.route)
@@ -331,14 +329,10 @@ func New(s *grpc.Server) *Server {
 	saipb.RegisterSchedulerGroupServer(s, srv.schedulerGroup)
 	saipb.RegisterSchedulerServer(s, srv.scheduler)
 	saipb.RegisterSrv6Server(s, srv.srv6)
-	saipb.RegisterStpServer(s, srv.stp)
-	saipb.RegisterSwitchServer(s, srv.saiSwitch)
 	saipb.RegisterSystemPortServer(s, srv.systemPort)
 	saipb.RegisterTamServer(s, srv.tam)
 	saipb.RegisterTunnelServer(s, srv.tunnel)
 	saipb.RegisterUdfServer(s, srv.udf)
-	saipb.RegisterVirtualRouterServer(s, srv.virtualRouter)
-	saipb.RegisterVlanServer(s, srv.vlan)
 	saipb.RegisterWredServer(s, srv.wred)
 
 	return srv

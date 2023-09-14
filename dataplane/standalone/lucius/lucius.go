@@ -18,16 +18,17 @@ import "C"
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"net"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
-
 	"github.com/openconfig/lemming/dataplane/internal/engine"
 	"github.com/openconfig/lemming/dataplane/standalone/saiserver"
+	"github.com/openconfig/lemming/dataplane/standalone/saiserver/attrmgr"
 
 	log "github.com/golang/glog"
 
@@ -60,6 +61,7 @@ func getLogger() logging.Logger {
 //export initialize
 func initialize(port int) {
 	log.Info("lucius initialized")
+
 	e, err := engine.New(context.Background())
 	if err != nil {
 		log.Fatalf("failed create engine: %v", err)
@@ -71,12 +73,14 @@ func initialize(port int) {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
+	mgr := attrmgr.New()
+
 	srv := grpc.NewServer(grpc.Creds(insecure.NewCredentials()),
-		grpc.ChainUnaryInterceptor(logging.UnaryServerInterceptor(getLogger())),
+		grpc.ChainUnaryInterceptor(logging.UnaryServerInterceptor(getLogger()), mgr.Interceptor),
 		grpc.ChainStreamInterceptor(logging.StreamServerInterceptor(getLogger())))
 	fwdpb.RegisterForwardingServer(srv, e)
 	dpb.RegisterDataplaneServer(srv, e)
-	saiserver.New(srv)
+	saiserver.New(mgr, srv)
 
 	go func() {
 		if err := srv.Serve(lis); err != nil {
@@ -86,4 +90,9 @@ func initialize(port int) {
 }
 
 func main() {
+}
+
+func init() {
+	// TODO: Figure a better way to config this when used standalone.
+	flag.Set("log_dir", "/var/log/syncd")
 }
