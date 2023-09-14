@@ -203,6 +203,8 @@ func (r *route) CreateRouteEntry(ctx context.Context, req *saipb.CreateRouteEntr
 		fallthrough
 	case saipb.PacketAction_PACKET_ACTION_TRANSIT:
 		rReq.Route.Action = dpb.PacketAction_PACKET_ACTION_FORWARD
+	default:
+		return nil, status.Errorf(codes.InvalidArgument, "unknown action type: %v", req.GetPacketAction())
 	}
 	nextType := r.mgr.GetType(fmt.Sprint(req.GetNextHopId()))
 
@@ -226,7 +228,7 @@ func (r *route) CreateRouteEntry(ctx context.Context, req *saipb.CreateRouteEntr
 	if err != nil {
 		return nil, err
 	}
-	return nil, nil
+	return &saipb.CreateRouteEntryResponse{}, nil
 }
 
 type routerInterface struct {
@@ -261,7 +263,7 @@ func (ri *routerInterface) CreateRouterInterface(ctx context.Context, req *saipb
 	case saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_LOOPBACK: // TODO: Support loopback interfaces
 		return &saipb.CreateRouterInterfaceResponse{Oid: id}, nil
 	default:
-		return nil, status.Errorf(codes.InvalidArgument, "unknown next hop type: %v", req.GetType())
+		return nil, status.Errorf(codes.InvalidArgument, "unknown interface type: %v", req.GetType())
 	}
 	if _, err := ri.dataplane.AddInterface(ctx, iReq); err != nil {
 		return nil, err

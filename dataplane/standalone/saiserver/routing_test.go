@@ -34,6 +34,8 @@ type fakeRoutingDataplaneAPI struct {
 	gotAddNeighborReq     []*dpb.AddNeighborRequest
 	gotAddNextHopGroupReq []*dpb.AddNextHopGroupRequest
 	gotAddNextHopReq      []*dpb.AddNextHopRequest
+	gotAddIPRouteReq      []*dpb.AddIPRouteRequest
+	gotAddInterfaceReq    []*dpb.AddInterfaceRequest
 }
 
 func (f *fakeRoutingDataplaneAPI) AddNeighbor(_ context.Context, req *dpb.AddNeighborRequest) (*dpb.AddNeighborResponse, error) {
@@ -51,12 +53,14 @@ func (f *fakeRoutingDataplaneAPI) AddNextHop(_ context.Context, req *dpb.AddNext
 	return nil, nil
 }
 
-func (f *fakeRoutingDataplaneAPI) AddIPRoute(context.Context, *dpb.AddIPRouteRequest) (*dpb.AddIPRouteResponse, error) {
-	panic("not implemented") // TODO: Implement
+func (f *fakeRoutingDataplaneAPI) AddIPRoute(_ context.Context, req *dpb.AddIPRouteRequest) (*dpb.AddIPRouteResponse, error) {
+	f.gotAddIPRouteReq = append(f.gotAddIPRouteReq, req)
+	return nil, nil
 }
 
-func (f *fakeRoutingDataplaneAPI) AddInterface(context.Context, *dpb.AddInterfaceRequest) (*dpb.AddInterfaceResponse, error) {
-	panic("not implemented") // TODO: Implement
+func (f *fakeRoutingDataplaneAPI) AddInterface(_ context.Context, req *dpb.AddInterfaceRequest) (*dpb.AddInterfaceResponse, error) {
+	f.gotAddInterfaceReq = append(f.gotAddInterfaceReq, req)
+	return nil, nil
 }
 
 func TestCreateNeighborEntry(t *testing.T) {
@@ -262,6 +266,132 @@ func TestCreateNextHop(t *testing.T) {
 	}
 }
 
+func TestCreateRouteEntry(t *testing.T) {
+	tests := []struct {
+		desc    string
+		req     *saipb.CreateRouteEntryRequest
+		wantReq *dpb.AddIPRouteRequest
+		types   map[string]saipb.ObjectType
+		wantErr string
+	}{{
+		desc:    "unknown action",
+		req:     &saipb.CreateRouteEntryRequest{},
+		wantErr: "InvalidArgument",
+	}, {
+		desc: "drop action",
+		req: &saipb.CreateRouteEntryRequest{
+			Entry: &saipb.RouteEntry{
+				Destination: &saipb.IpPrefix{
+					Addr: []byte{127, 0, 0, 1},
+					Mask: []byte{255, 255, 255, 255},
+				},
+			},
+			PacketAction: saipb.PacketAction_PACKET_ACTION_DROP.Enum(),
+		},
+		wantReq: &dpb.AddIPRouteRequest{
+			Route: &dpb.Route{
+				Prefix: &dpb.RoutePrefix{
+					Prefix: &dpb.RoutePrefix_Mask{
+						Mask: &dpb.IpMask{
+							Addr: []byte{127, 0, 0, 1},
+							Mask: []byte{255, 255, 255, 255},
+						},
+					},
+				},
+				Action: dpb.PacketAction_PACKET_ACTION_DROP,
+			},
+		},
+	}, {
+		desc:  "forward port action",
+		types: map[string]saipb.ObjectType{"100": saipb.ObjectType_OBJECT_TYPE_PORT},
+		req: &saipb.CreateRouteEntryRequest{
+			Entry: &saipb.RouteEntry{
+				Destination: &saipb.IpPrefix{
+					Addr: []byte{127, 0, 0, 1},
+					Mask: []byte{255, 255, 255, 255},
+				},
+			},
+			PacketAction: saipb.PacketAction_PACKET_ACTION_TRANSIT.Enum(),
+			NextHopId:    proto.Uint64(100),
+		},
+		wantReq: &dpb.AddIPRouteRequest{
+			Route: &dpb.Route{
+				Prefix: &dpb.RoutePrefix{
+					Prefix: &dpb.RoutePrefix_Mask{
+						Mask: &dpb.IpMask{
+							Addr: []byte{127, 0, 0, 1},
+							Mask: []byte{255, 255, 255, 255},
+						},
+					},
+				},
+				Hop:    &dpb.Route_PortId{PortId: "100"},
+				Action: dpb.PacketAction_PACKET_ACTION_FORWARD,
+			},
+		},
+	}}
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			dplane := &fakeRoutingDataplaneAPI{}
+			c, mgr, stopFn := newTestRoute(t, dplane)
+			defer stopFn()
+			for k, v := range tt.types {
+				mgr.SetType(k, v)
+			}
+			_, gotErr := c.CreateRouteEntry(context.TODO(), tt.req)
+			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
+				t.Fatalf("CreateRouteEntry() unexpected err: %s", diff)
+			}
+			if gotErr != nil {
+				return
+			}
+			if d := cmp.Diff(dplane.gotAddIPRouteReq[0], tt.wantReq, protocmp.Transform()); d != "" {
+				t.Errorf("CreateRouteEntry() failed: diff(-got,+want)\n:%s", d)
+			}
+		})
+	}
+}
+
+func TestCreateRouterInterface(t *testing.T) {
+	tests := []struct {
+		desc    string
+		req     *saipb.CreateRouterInterfaceRequest
+		wantReq *dpb.AddInterfaceRequest
+		wantErr string
+	}{{
+		desc:    "unknown type",
+		req:     &saipb.CreateRouterInterfaceRequest{},
+		wantErr: "InvalidArgument",
+	}, {
+		desc: "success port",
+		req: &saipb.CreateRouterInterfaceRequest{
+			PortId: proto.Uint64(10),
+			Type:   saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_PORT.Enum(),
+		},
+		wantReq: &dpb.AddInterfaceRequest{
+			Id:      "1",
+			PortIds: []string{"10"},
+			Type:    dpb.InterfaceType_INTERFACE_TYPE_PORT,
+		},
+	}}
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			dplane := &fakeRoutingDataplaneAPI{}
+			c, _, stopFn := newTestRouterInterface(t, dplane)
+			defer stopFn()
+			_, gotErr := c.CreateRouterInterface(context.TODO(), tt.req)
+			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
+				t.Fatalf("CreateRouterInterface() unexpected err: %s", diff)
+			}
+			if gotErr != nil {
+				return
+			}
+			if d := cmp.Diff(dplane.gotAddInterfaceReq[0], tt.wantReq, protocmp.Transform()); d != "" {
+				t.Errorf("CreateRouterInterface() failed: diff(-got,+want)\n:%s", d)
+			}
+		})
+	}
+}
+
 func newTestNeighbor(t testing.TB, api routingDataplaneAPI) (saipb.NeighborClient, *attrmgr.AttrMgr, func()) {
 	conn, mgr, stopFn := newTestServer(t, func(mgr *attrmgr.AttrMgr, srv *grpc.Server) {
 		newNeighbor(mgr, api, srv)
@@ -281,4 +411,18 @@ func newTestNextHop(t testing.TB, api routingDataplaneAPI) (saipb.NextHopClient,
 		newNextHop(mgr, api, srv)
 	})
 	return saipb.NewNextHopClient(conn), mgr, stopFn
+}
+
+func newTestRoute(t testing.TB, api routingDataplaneAPI) (saipb.RouteClient, *attrmgr.AttrMgr, func()) {
+	conn, mgr, stopFn := newTestServer(t, func(mgr *attrmgr.AttrMgr, srv *grpc.Server) {
+		newRoute(mgr, api, srv)
+	})
+	return saipb.NewRouteClient(conn), mgr, stopFn
+}
+
+func newTestRouterInterface(t testing.TB, api routingDataplaneAPI) (saipb.RouterInterfaceClient, *attrmgr.AttrMgr, func()) {
+	conn, mgr, stopFn := newTestServer(t, func(mgr *attrmgr.AttrMgr, srv *grpc.Server) {
+		newRouterInterface(mgr, api, srv)
+	})
+	return saipb.NewRouterInterfaceClient(conn), mgr, stopFn
 }
