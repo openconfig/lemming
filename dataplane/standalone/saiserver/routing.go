@@ -24,6 +24,8 @@ import (
 
 	"github.com/openconfig/lemming/dataplane/standalone/saiserver/attrmgr"
 
+	log "github.com/golang/glog"
+
 	saipb "github.com/openconfig/lemming/dataplane/standalone/proto"
 	dpb "github.com/openconfig/lemming/proto/dataplane"
 )
@@ -193,15 +195,13 @@ func (r *route) CreateRouteEntry(ctx context.Context, req *saipb.CreateRouteEntr
 
 	// TODO(dgrau): Implement CPU actions.
 	switch req.GetPacketAction() {
-	case saipb.PacketAction_PACKET_ACTION_DROP:
-		fallthrough
-	case saipb.PacketAction_PACKET_ACTION_TRAP: // COPY and DROP
-		fallthrough
-	case saipb.PacketAction_PACKET_ACTION_DENY: // COPY_CANCEL and DROP
+	case saipb.PacketAction_PACKET_ACTION_DROP,
+		saipb.PacketAction_PACKET_ACTION_TRAP, // COPY and DROP
+		saipb.PacketAction_PACKET_ACTION_DENY: // COPY_CANCEL and DROP
 		rReq.Route.Action = dpb.PacketAction_PACKET_ACTION_DROP
-	case saipb.PacketAction_PACKET_ACTION_LOG:
-		fallthrough
-	case saipb.PacketAction_PACKET_ACTION_TRANSIT:
+	case saipb.PacketAction_PACKET_ACTION_FORWARD,
+		saipb.PacketAction_PACKET_ACTION_LOG,     // COPY and FORWARD
+		saipb.PacketAction_PACKET_ACTION_TRANSIT: // COPY_CANCEL and FORWARD
 		rReq.Route.Action = dpb.PacketAction_PACKET_ACTION_FORWARD
 	default:
 		return nil, status.Errorf(codes.InvalidArgument, "unknown action type: %v", req.GetPacketAction())
@@ -261,6 +261,7 @@ func (ri *routerInterface) CreateRouterInterface(ctx context.Context, req *saipb
 		iReq.Type = dpb.InterfaceType_INTERFACE_TYPE_PORT
 
 	case saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_LOOPBACK: // TODO: Support loopback interfaces
+		log.Warning("loopback interfaces not supported")
 		return &saipb.CreateRouterInterfaceResponse{Oid: id}, nil
 	default:
 		return nil, status.Errorf(codes.InvalidArgument, "unknown interface type: %v", req.GetType())
