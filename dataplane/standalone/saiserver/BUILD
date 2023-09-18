@@ -4,6 +4,7 @@ go_library(
     name = "saiserver",
     srcs = [
         "ports.go",
+        "routing.go",
         "saiserver.go",
         "switch.go",
     ],
@@ -26,6 +27,7 @@ go_test(
     name = "saiserver_test",
     srcs = [
         "ports_test.go",
+        "routing_test.go",
         "switch_test.go",
     ],
     embed = [":saiserver"],

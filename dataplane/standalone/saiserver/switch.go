@@ -28,30 +28,41 @@ import (
 
 type saiSwitch struct {
 	saipb.UnimplementedSwitchServer
-	port   *port
-	vlan   *vlan
-	stp    *stp
-	vr     *virtualRouter
-	bridge *bridge
-	hostif *hostif
-	hash   *hash
-	mgr    *attrmgr.AttrMgr
+	port            *port
+	vlan            *vlan
+	stp             *stp
+	vr              *virtualRouter
+	bridge          *bridge
+	hostif          *hostif
+	hash            *hash
+	neighbor        *neighbor
+	nextHopGroup    *nextHopGroup
+	nextHop         *nextHop
+	route           *route
+	routerInterface *routerInterface
+	mgr             *attrmgr.AttrMgr
 }
 
 type switchDataplaneAPI interface {
 	portDataplaneAPI
+	routingDataplaneAPI
 }
 
 func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server) *saiSwitch {
 	sw := &saiSwitch{
-		port:   newPort(mgr, engine, s),
-		vlan:   &vlan{},
-		stp:    &stp{},
-		vr:     &virtualRouter{},
-		bridge: &bridge{},
-		hostif: newHostif(mgr, engine, s),
-		hash:   &hash{},
-		mgr:    mgr,
+		port:            newPort(mgr, engine, s),
+		vlan:            &vlan{},
+		stp:             &stp{},
+		vr:              &virtualRouter{},
+		bridge:          &bridge{},
+		hostif:          newHostif(mgr, engine, s),
+		hash:            &hash{},
+		neighbor:        newNeighbor(mgr, engine, s),
+		nextHopGroup:    newNextHopGroup(mgr, engine, s),
+		nextHop:         newNextHop(mgr, engine, s),
+		route:           newRoute(mgr, engine, s),
+		routerInterface: newRouterInterface(mgr, engine, s),
+		mgr:             mgr,
 	}
 	saipb.RegisterSwitchServer(s, sw)
 	saipb.RegisterVlanServer(s, sw.vlan)
