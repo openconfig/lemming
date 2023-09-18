@@ -24,6 +24,8 @@ import (
 
 	"github.com/openconfig/lemming/dataplane/standalone/saiserver/attrmgr"
 
+	log "github.com/golang/glog"
+
 	saipb "github.com/openconfig/lemming/dataplane/standalone/proto"
 	dpb "github.com/openconfig/lemming/proto/dataplane"
 )
@@ -175,6 +177,60 @@ func newRoute(mgr *attrmgr.AttrMgr, dataplane routingDataplaneAPI, s *grpc.Serve
 	return r
 }
 
+// CreateRouteEntry creates a new route entry.
+func (r *route) CreateRouteEntry(ctx context.Context, req *saipb.CreateRouteEntryRequest) (*saipb.CreateRouteEntryResponse, error) {
+	rReq := &dpb.AddIPRouteRequest{
+		Route: &dpb.Route{
+			Prefix: &dpb.RoutePrefix{
+				Prefix: &dpb.RoutePrefix_Mask{
+					Mask: &dpb.IpMask{
+						Addr: req.GetEntry().GetDestination().GetAddr(),
+						Mask: req.GetEntry().GetDestination().GetMask(),
+					},
+				},
+				VrfId: req.GetEntry().GetVrId(),
+			},
+		},
+	}
+
+	// TODO(dgrau): Implement CPU actions.
+	switch req.GetPacketAction() {
+	case saipb.PacketAction_PACKET_ACTION_DROP,
+		saipb.PacketAction_PACKET_ACTION_TRAP, // COPY and DROP
+		saipb.PacketAction_PACKET_ACTION_DENY: // COPY_CANCEL and DROP
+		rReq.Route.Action = dpb.PacketAction_PACKET_ACTION_DROP
+	case saipb.PacketAction_PACKET_ACTION_FORWARD,
+		saipb.PacketAction_PACKET_ACTION_LOG,     // COPY and FORWARD
+		saipb.PacketAction_PACKET_ACTION_TRANSIT: // COPY_CANCEL and FORWARD
+		rReq.Route.Action = dpb.PacketAction_PACKET_ACTION_FORWARD
+	default:
+		return nil, status.Errorf(codes.InvalidArgument, "unknown action type: %v", req.GetPacketAction())
+	}
+	nextType := r.mgr.GetType(fmt.Sprint(req.GetNextHopId()))
+
+	// If the packet action is drop, then next hop is optional.
+	if rReq.Route.Action == dpb.PacketAction_PACKET_ACTION_FORWARD {
+		switch nextType {
+		case saipb.ObjectType_OBJECT_TYPE_NEXT_HOP:
+			rReq.Route.Hop = &dpb.Route_NextHopId{NextHopId: req.GetNextHopId()}
+		case saipb.ObjectType_OBJECT_TYPE_NEXT_HOP_GROUP:
+			rReq.Route.Hop = &dpb.Route_NextHopGroupId{NextHopGroupId: req.GetNextHopId()}
+		case saipb.ObjectType_OBJECT_TYPE_ROUTER_INTERFACE:
+			rReq.Route.Hop = &dpb.Route_InterfaceId{InterfaceId: fmt.Sprint(req.GetNextHopId())}
+		case saipb.ObjectType_OBJECT_TYPE_PORT:
+			rReq.Route.Hop = &dpb.Route_PortId{PortId: fmt.Sprint(req.GetNextHopId())}
+		default:
+			return nil, status.Errorf(codes.InvalidArgument, "unknown next hop type: %v", nextType)
+		}
+	}
+
+	_, err := r.dataplane.AddIPRoute(ctx, rReq)
+	if err != nil {
+		return nil, err
+	}
+	return &saipb.CreateRouteEntryResponse{}, nil
+}
+
 type routerInterface struct {
 	saipb.UnimplementedRouterInterfaceServer
 	mgr       *attrmgr.AttrMgr
@@ -188,4 +244,31 @@ func newRouterInterface(mgr *attrmgr.AttrMgr, dataplane routingDataplaneAPI, s *
 	}
 	saipb.RegisterRouterInterfaceServer(s, r)
 	return r
+}
+
+// CreateRouterInterfaces creates a new router interface.
+func (ri *routerInterface) CreateRouterInterface(ctx context.Context, req *saipb.CreateRouterInterfaceRequest) (*saipb.CreateRouterInterfaceResponse, error) {
+	id := ri.mgr.NextID()
+	iReq := &dpb.AddInterfaceRequest{
+		Id:      fmt.Sprint(id),
+		VrfId:   uint32(req.GetVirtualRouterId()),
+		Mtu:     uint64(req.GetMtu()),
+		PortIds: []string{fmt.Sprint(req.GetPortId())},
+		Mac:     req.GetSrcMacAddress(),
+	}
+	switch req.GetType() {
+	case saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_PORT:
+		iReq.Type = dpb.InterfaceType_INTERFACE_TYPE_PORT
+
+	case saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_LOOPBACK: // TODO: Support loopback interfaces
+		log.Warning("loopback interfaces not supported")
+		return &saipb.CreateRouterInterfaceResponse{Oid: id}, nil
+	default:
+		return nil, status.Errorf(codes.InvalidArgument, "unknown interface type: %v", req.GetType())
+	}
+	if _, err := ri.dataplane.AddInterface(ctx, iReq); err != nil {
+		return nil, err
+	}
+
+	return &saipb.CreateRouterInterfaceResponse{Oid: id}, nil
 }
