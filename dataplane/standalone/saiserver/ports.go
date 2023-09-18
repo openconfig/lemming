@@ -42,6 +42,7 @@ func newPort(mgr *attrmgr.AttrMgr, dataplane portDataplaneAPI, s *grpc.Server) *
 		mgr:       mgr,
 		dataplane: dataplane,
 		portToEth: make(map[uint64]string),
+		nextEth:   2, // Start at eth2
 	}
 	saipb.RegisterPortServer(s, p)
 	return p
@@ -62,8 +63,9 @@ var getInterface = net.InterfaceByName
 // Note: If more ports are created than eth devices, no error is returned, but the OperStatus is set to NOT_PRESENT.
 func (port *port) CreatePort(ctx context.Context, _ *saipb.CreatePortRequest) (*saipb.CreatePortResponse, error) {
 	id := port.mgr.NextID()
-	port.nextEth++
+
 	dev := fmt.Sprintf("eth%v", port.nextEth)
+	port.nextEth++
 
 	attrs := &saipb.PortAttribute{
 		OperSpeed:                     proto.Uint32(1024),
@@ -95,12 +97,32 @@ func (port *port) CreatePort(ctx context.Context, _ *saipb.CreatePortRequest) (*
 	if err != nil {
 		return nil, err
 	}
-	attrs.OperStatus = saipb.PortOperStatus_PORT_OPER_STATUS_UP.Enum().Enum()
+	attrs.OperStatus = saipb.PortOperStatus_PORT_OPER_STATUS_UP.Enum()
 	port.mgr.StoreAttributes(id, attrs)
 
 	return &saipb.CreatePortResponse{
 		Oid: id,
 	}, nil
+}
+
+func (port *port) createCPUPort(ctx context.Context) (uint64, error) {
+	id := port.mgr.NextID()
+
+	_, err := port.dataplane.CreatePort(ctx, &dpb.CreatePortRequest{
+		Id:   fmt.Sprint(id),
+		Type: fwdpb.PortType_PORT_TYPE_CPU_PORT,
+	})
+	if err != nil {
+		return 0, err
+	}
+
+	cpuPort := &saipb.PortAttribute{
+		Type: saipb.PortType_PORT_TYPE_CPU.Enum(),
+	}
+	port.mgr.SetType(fmt.Sprint(id), saipb.ObjectType_OBJECT_TYPE_PORT)
+	port.mgr.StoreAttributes(id, cpuPort)
+
+	return id, nil
 }
 
 // SetPortAttributes sets the attributes in the request.

@@ -39,6 +39,9 @@ func Generate(doc *docparser.SAIInfo, sai *saiast.SAIAPI) (map[string]string, er
 			APIName:      apiName,
 			ProtoInclude: apiName + ".pb",
 		}
+		if apiName == "switch" {
+			ccData.Globals = append(ccData.Globals, "std::unique_ptr<PortStateReactor> port_state;")
+		}
 		for _, fn := range iface.Funcs {
 			meta := sai.GetFuncMeta(fn)
 			tf := createCCData(meta, apiName, sai, doc, fn)
@@ -118,16 +121,13 @@ func createCCData(meta *saiast.FuncMetadata, apiName string, sai *saiast.SAIAPI,
 		}
 		for _, attr := range info.Attrs[meta.TypeName].CreateFields {
 			name := sanitizeProtoName(attr.MemberName)
-			pFunc, arg, err := protoFieldSetter(attr.SaiType, name, "attr_list[i].value", info)
+			smt, err := protoFieldSetter(attr.SaiType, name, "attr_list[i].value", info)
 			if err != nil {
 				fmt.Println("skipping due to error: ", err)
 				continue
 			}
-			tf.AttrSwitch.Attrs = append(tf.AttrSwitch.Attrs, &AttrSwitchSmt{
-				EnumValue: attr.EnumName,
-				ProtoFunc: pFunc,
-				Args:      arg,
-			})
+			smt.EnumValue = attr.EnumName
+			tf.AttrSwitch.Attrs = append(tf.AttrSwitch.Attrs, smt)
 		}
 	case "get_attribute":
 		tf.AttrSwitch = &AttrSwitch{
@@ -151,16 +151,13 @@ func createCCData(meta *saiast.FuncMetadata, apiName string, sai *saiast.SAIAPI,
 		}
 		for _, attr := range info.Attrs[meta.TypeName].SetFields {
 			name := sanitizeProtoName(attr.MemberName)
-			pFunc, arg, err := protoFieldSetter(attr.SaiType, name, "attr->value", info)
+			smt, err := protoFieldSetter(attr.SaiType, name, "attr->value", info)
 			if err != nil {
 				fmt.Println("skipping due to error: ", err)
 				continue
 			}
-			tf.AttrSwitch.Attrs = append(tf.AttrSwitch.Attrs, &AttrSwitchSmt{
-				EnumValue: attr.EnumName,
-				ProtoFunc: pFunc,
-				Args:      arg,
-			})
+			smt.EnumValue = attr.EnumName
+			tf.AttrSwitch.Attrs = append(tf.AttrSwitch.Attrs, smt)
 		}
 	}
 
@@ -181,6 +178,7 @@ const (
 	fixedSizedArray
 	variableSizedArray
 	convertFunc
+	callbackRPC
 )
 
 type unionAccessor struct {
@@ -189,6 +187,7 @@ type unionAccessor struct {
 	aType           accessorType
 	convertFromFunc string
 	convertToFunc   string
+	assignmentVar   string
 }
 
 var typeToUnionAccessor = map[string]*unionAccessor{
@@ -268,37 +267,58 @@ var typeToUnionAccessor = map[string]*unionAccessor{
 		convertToFunc:   "convert_to_route_entry",
 		aType:           convertFunc,
 	},
+	"sai_neighbor_entry_t": {
+		convertFromFunc: "convert_from_neighbor_entry",
+		convertToFunc:   "convert_to_neighbor_entry",
+		aType:           convertFunc,
+	},
+	"sai_pointer_t sai_port_state_change_notification_fn": {
+		aType:         callbackRPC,
+		assignmentVar: "port_state",
+		convertToFunc: "std::make_unique<PortStateReactor>",
+	},
 }
 
-func protoFieldSetter(saiType, protoField, varName string, info *docparser.SAIInfo) (string, string, error) {
-	setFn := fmt.Sprintf("set_%s", protoField)
+func protoFieldSetter(saiType, protoField, varName string, info *docparser.SAIInfo) (*AttrSwitchSmt, error) {
+	smt := &AttrSwitchSmt{
+		ProtoFunc: fmt.Sprintf("set_%s", protoField),
+	}
+
 	if _, ok := info.Enums[saiType]; ok {
 		pType, _, err := protogen.SaiTypeToProtoType(saiType, info)
 		if err != nil {
-			return "", "", err
+			return nil, err
 		}
-		return setFn, fmt.Sprintf("static_cast<%s%s>(%s.s32 + 1)", protoNS, pType, varName), nil
+		smt.Args = fmt.Sprintf("static_cast<%s%s>(%s.s32 + 1)", protoNS, pType, varName)
+		return smt, nil
 	}
 
 	ua, ok := typeToUnionAccessor[saiType]
 	if !ok {
-		return "", "", fmt.Errorf("unknown sai type: %q", saiType)
+		return nil, fmt.Errorf("unknown sai type: %q", saiType)
 	}
 	switch ua.aType {
 	case scalar:
-		return setFn, fmt.Sprintf("%s.%s", varName, ua.accessor), nil
+		smt.Args = fmt.Sprintf("%s.%s", varName, ua.accessor)
 	case convertFunc:
-		return setFn, fmt.Sprintf("%s(%s.%s)", ua.convertFromFunc, varName, ua.accessor), nil
+		smt.Args = fmt.Sprintf("%s(%s.%s)", ua.convertFromFunc, varName, ua.accessor)
 	case fixedSizedArray:
+		smt.Args = fmt.Sprintf("%s.%s, sizeof(%s.%s)", varName, ua.accessor, varName, ua.accessor)
 		if ua.pointerOf {
-			return setFn, fmt.Sprintf("&%s.%s, sizeof(%s.%s)", varName, ua.accessor, varName, ua.accessor), nil
+			smt.Args = fmt.Sprintf("&%s.%s, sizeof(%s.%s)", varName, ua.accessor, varName, ua.accessor)
 		}
-		return setFn, fmt.Sprintf("%s.%s, sizeof(%s.%s)", varName, ua.accessor, varName, ua.accessor), nil
 	case variableSizedArray:
-		setFn = fmt.Sprintf("mutable_%s()->Add", protoField)
-		return setFn, fmt.Sprintf("%s.%s.list, %s.%s.list + %s.%s.count", varName, ua.accessor, varName, ua.accessor, varName, ua.accessor), nil
+		smt.ProtoFunc = fmt.Sprintf("mutable_%s()->Add", protoField)
+		smt.Args = fmt.Sprintf("%s.%s.list, %s.%s.list + %s.%s.count", varName, ua.accessor, varName, ua.accessor, varName, ua.accessor)
+	case callbackRPC:
+		smt.Var = ua.assignmentVar
+		smt.ConvertFunc = ua.convertToFunc
+		fnType := strings.Split(saiType, " ")[1]
+		smt.Args = fmt.Sprintf("switch_, reinterpret_cast<%s>(%s.ptr)", fnType, varName)
+	default:
+		return nil, fmt.Errorf("unknown accessor type %q", ua.aType)
 	}
-	return "", "", fmt.Errorf("unknown accessor type %q", ua.aType)
+	return smt, nil
 }
 
 func protoFieldGetter(saiType, protoField, varName string, info *docparser.SAIInfo) (*AttrSwitchSmt, error) {
@@ -415,7 +435,11 @@ switch ({{ .Var }}) {
 switch ({{ .Var }}) {
   {{ range .Attrs }}
   case {{ .EnumValue }}:
+	{{- if .Var }}
+	{{ .Var }} = {{ .ConvertFunc }}( {{.Args}} );
+	{{- else }}
 	{{ $parent.ProtoVar }}.{{ .ProtoFunc }}({{ .Args }});
+	{{- end }}
 	break;
  {{- end }}
 }
@@ -449,7 +473,11 @@ const {{ .APIType }} l_{{ .APIName }} = {
 {{- end }}
 };
 
-{{ range .Funcs }}
+{{ range .Globals }}
+	{{- . }}
+{{ end }}
+
+{{- range .Funcs }}
 {{ .ReturnType }} l_{{ .Name }}({{ .Args }}) {
 	LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 	{{- if .UseCommonAPI }}
@@ -574,5 +602,6 @@ type ccTemplateData struct {
 	ProtoInclude string
 	APIType      string
 	APIName      string
+	Globals      []string
 	Funcs        []templateFunc
 }

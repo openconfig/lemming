@@ -16,18 +16,22 @@ package saiserver
 
 import (
 	"context"
-	"fmt"
+	"strconv"
 
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"
 
+	log "github.com/golang/glog"
+
 	"github.com/openconfig/lemming/dataplane/standalone/saiserver/attrmgr"
 
 	saipb "github.com/openconfig/lemming/dataplane/standalone/proto"
+	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
 type saiSwitch struct {
 	saipb.UnimplementedSwitchServer
+	dataplane       switchDataplaneAPI
 	port            *port
 	vlan            *vlan
 	stp             *stp
@@ -46,10 +50,12 @@ type saiSwitch struct {
 type switchDataplaneAPI interface {
 	portDataplaneAPI
 	routingDataplaneAPI
+	NotifySubscribe(sub *fwdpb.NotifySubscribeRequest, srv fwdpb.Forwarding_NotifySubscribeServer) error
 }
 
 func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server) *saiSwitch {
 	sw := &saiSwitch{
+		dataplane:       engine,
 		port:            newPort(mgr, engine, s),
 		vlan:            &vlan{},
 		stp:             &stp{},
@@ -77,12 +83,11 @@ func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server) 
 func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequest) (*saipb.CreateSwitchResponse, error) {
 	swID := sw.mgr.NextID()
 
-	// TODO: The port type is not a settable attribute, figure out a pattern for this.
-	cpuPortID := sw.mgr.NextID()
-	cpuPort := &saipb.PortAttribute{
-		Type: saipb.PortType_PORT_TYPE_CPU.Enum(),
+	cpuPortID, err := sw.port.createCPUPort(ctx)
+	if err != nil {
+		return nil, err
 	}
-	sw.mgr.SetType(fmt.Sprint(cpuPortID), saipb.ObjectType_OBJECT_TYPE_PORT)
+
 	vlanResp, err := attrmgr.InvokeAndSave(ctx, sw.mgr, sw.vlan.CreateVlan, &saipb.CreateVlanRequest{
 		Switch: swID,
 	})
@@ -172,9 +177,66 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 		NatZoneCounterObjectId:           proto.Uint64(0),
 	}
 	sw.mgr.StoreAttributes(swID, attrs)
-	sw.mgr.StoreAttributes(cpuPortID, cpuPort)
 
 	return &saipb.CreateSwitchResponse{
 		Oid: swID,
 	}, nil
+}
+
+type fwdNotifServer struct {
+	fwdpb.Forwarding_NotifySubscribeServer
+	ch chan *fwdpb.EventDesc
+}
+
+func (s *fwdNotifServer) Send(ed *fwdpb.EventDesc) error {
+	s.ch <- ed
+	return nil
+}
+
+func (sw *saiSwitch) PortStateChangeNotification(_ *saipb.PortStateChangeNotificationRequest, srv saipb.Switch_PortStateChangeNotificationServer) error {
+	req := &fwdpb.NotifySubscribeRequest{
+		Context: &fwdpb.ContextId{
+			Id: sw.dataplane.ID(),
+		},
+	}
+	fwdSrv := &fwdNotifServer{
+		ch: make(chan *fwdpb.EventDesc, 1),
+	}
+	errCh := make(chan error)
+	go func() {
+		errCh <- sw.dataplane.NotifySubscribe(req, fwdSrv)
+	}()
+	for {
+		select {
+		case err := <-errCh:
+			return err
+		case ed := <-fwdSrv.ch:
+			num, err := strconv.Atoi(ed.GetPort().GetPortId().GetObjectId().GetId())
+			if err != nil {
+				log.Warningf("couldn't get numeric port id: %v", err)
+				continue
+			}
+			oType := sw.mgr.GetType(ed.GetPort().GetPortId().GetObjectId().GetId())
+			if oType != saipb.ObjectType_OBJECT_TYPE_PORT {
+				log.Infof("skipping port state event for type %v", oType)
+				continue
+			}
+			status := saipb.PortOperStatus_PORT_OPER_STATUS_UNKNOWN
+			if ed.GetPort().PortInfo.OperStatus == fwdpb.PortState_PORT_STATE_ENABLED_UP {
+				status = saipb.PortOperStatus_PORT_OPER_STATUS_UP
+			} else if ed.GetPort().PortInfo.OperStatus == fwdpb.PortState_PORT_STATE_DISABLED_DOWN {
+				status = saipb.PortOperStatus_PORT_OPER_STATUS_DOWN
+			}
+
+			err = srv.Send(&saipb.PortStateChangeNotificationResponse{
+				Data: []*saipb.PortOperStatusNotification{{
+					PortId:    uint64(num),
+					PortState: status,
+				}},
+			})
+			if err != nil {
+				return err
+			}
+		}
+	}
 }
