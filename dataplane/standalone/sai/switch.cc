@@ -39,6 +39,8 @@ const sai_switch_api_t l_switch = {
     .get_switch_tunnel_attribute = l_get_switch_tunnel_attribute,
 };
 
+std::unique_ptr<PortStateReactor> port_state;
+
 sai_status_t l_create_switch(sai_object_id_t *switch_id, uint32_t attr_count,
                              const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
@@ -188,6 +190,11 @@ sai_status_t l_create_switch(sai_object_id_t *switch_id, uint32_t attr_count,
         break;
       case SAI_SWITCH_ATTR_INIT_SWITCH:
         req.set_init_switch(attr_list[i].value.booldata);
+        break;
+      case SAI_SWITCH_ATTR_PORT_STATE_CHANGE_NOTIFY:
+        port_state = std::make_unique<PortStateReactor>(
+            switch_, reinterpret_cast<sai_port_state_change_notification_fn>(
+                         attr_list[i].value.ptr));
         break;
       case SAI_SWITCH_ATTR_FAST_API_ENABLE:
         req.set_fast_api_enable(attr_list[i].value.booldata);
@@ -484,6 +491,11 @@ sai_status_t l_set_switch_attribute(sai_object_id_t switch_id,
       break;
     case SAI_SWITCH_ATTR_SWITCH_SHELL_ENABLE:
       req.set_switch_shell_enable(attr->value.booldata);
+      break;
+    case SAI_SWITCH_ATTR_PORT_STATE_CHANGE_NOTIFY:
+      port_state = std::make_unique<PortStateReactor>(
+          switch_, reinterpret_cast<sai_port_state_change_notification_fn>(
+                       attr->value.ptr));
       break;
     case SAI_SWITCH_ATTR_FAST_API_ENABLE:
       req.set_fast_api_enable(attr->value.booldata);

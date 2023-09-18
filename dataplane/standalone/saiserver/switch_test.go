@@ -16,6 +16,7 @@ package saiserver
 
 import (
 	"context"
+	"io"
 	"log"
 	"net"
 	"testing"
@@ -27,13 +28,16 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/openconfig/gnmi/errdiff"
+
 	"github.com/openconfig/lemming/dataplane/standalone/saiserver/attrmgr"
+	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 
 	saipb "github.com/openconfig/lemming/dataplane/standalone/proto"
 )
 
 func TestCreateSwitch(t *testing.T) {
-	c, mgr, stopFn := newTestSwitch(t)
+	c, mgr, stopFn := newTestSwitch(t, &fakeSwitchDataplane{})
 	defer stopFn()
 	got, err := c.CreateSwitch(context.Background(), &saipb.CreateSwitchRequest{})
 	if err != nil {
@@ -102,6 +106,90 @@ func TestCreateSwitch(t *testing.T) {
 	}
 }
 
+func TestSwitchPortStateChangeNotification(t *testing.T) {
+	tests := []struct {
+		desc    string
+		want    []*saipb.PortStateChangeNotificationResponse
+		notifs  []*fwdpb.EventDesc
+		wantErr string
+	}{{
+		desc: "port state up",
+		notifs: []*fwdpb.EventDesc{{
+			Event: fwdpb.Event_EVENT_PORT,
+			Desc: &fwdpb.EventDesc_Port{
+				Port: &fwdpb.PortEventDesc{
+					PortId:   &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: "1"}},
+					PortInfo: &fwdpb.PortInfo{OperStatus: fwdpb.PortState_PORT_STATE_ENABLED_UP},
+				},
+			},
+		}},
+		want: []*saipb.PortStateChangeNotificationResponse{{
+			Data: []*saipb.PortOperStatusNotification{{
+				PortId:    1,
+				PortState: saipb.PortOperStatus_PORT_OPER_STATUS_UP,
+			}},
+		}},
+	}, {
+		desc: "port state down",
+		notifs: []*fwdpb.EventDesc{{
+			Event: fwdpb.Event_EVENT_PORT,
+			Desc: &fwdpb.EventDesc_Port{
+				Port: &fwdpb.PortEventDesc{
+					PortId:   &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: "1"}},
+					PortInfo: &fwdpb.PortInfo{OperStatus: fwdpb.PortState_PORT_STATE_DISABLED_DOWN},
+				},
+			},
+		}},
+		want: []*saipb.PortStateChangeNotificationResponse{{
+			Data: []*saipb.PortOperStatusNotification{{
+				PortId:    1,
+				PortState: saipb.PortOperStatus_PORT_OPER_STATUS_DOWN,
+			}},
+		}},
+	}}
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			dplane := &fakeSwitchDataplane{
+				events: tt.notifs,
+			}
+			c, mgr, stopFn := newTestSwitch(t, dplane)
+			mgr.SetType("1", saipb.ObjectType_OBJECT_TYPE_PORT)
+			defer stopFn()
+			notifs, gotErr := c.PortStateChangeNotification(context.TODO(), &saipb.PortStateChangeNotificationRequest{})
+			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
+				t.Fatalf("CreateNeighborEntry() unexpected err: %s", diff)
+			}
+			if gotErr != nil {
+				return
+			}
+			got := []*saipb.PortStateChangeNotificationResponse{}
+			for {
+				r, err := notifs.Recv()
+				if err != nil {
+					break
+				}
+				got = append(got, r)
+			}
+			if d := cmp.Diff(got, tt.want, protocmp.Transform()); d != "" {
+				t.Errorf("CreateNeighborEntry() failed: diff(-got,+want)\n:%s", d)
+			}
+		})
+	}
+}
+
+type fakeSwitchDataplane struct {
+	fakePortDataplaneAPI
+	fakeRoutingDataplaneAPI
+	events []*fwdpb.EventDesc
+}
+
+func (f *fakeSwitchDataplane) NotifySubscribe(_ *fwdpb.NotifySubscribeRequest, srv fwdpb.Forwarding_NotifySubscribeServer) error {
+	for _, e := range f.events {
+		srv.Send(e)
+	}
+	return io.EOF
+}
+
 func newTestServer(t testing.TB, newSrvFn func(mgr *attrmgr.AttrMgr, srv *grpc.Server)) (grpc.ClientConnInterface, *attrmgr.AttrMgr, func()) {
 	t.Helper()
 	mgr := attrmgr.New()
@@ -125,9 +213,9 @@ func newTestServer(t testing.TB, newSrvFn func(mgr *attrmgr.AttrMgr, srv *grpc.S
 	return conn, mgr, srv.Stop
 }
 
-func newTestSwitch(t testing.TB) (saipb.SwitchClient, *attrmgr.AttrMgr, func()) {
+func newTestSwitch(t testing.TB, dplane switchDataplaneAPI) (saipb.SwitchClient, *attrmgr.AttrMgr, func()) {
 	conn, mgr, stopFn := newTestServer(t, func(mgr *attrmgr.AttrMgr, srv *grpc.Server) {
-		newSwitch(mgr, nil, srv)
+		newSwitch(mgr, dplane, srv)
 	})
 	return saipb.NewSwitchClient(conn), mgr, stopFn
 }

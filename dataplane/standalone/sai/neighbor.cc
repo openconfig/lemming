@@ -40,6 +40,7 @@ sai_status_t l_create_neighbor_entry(const sai_neighbor_entry_t *neighbor_entry,
   lemming::dataplane::sai::CreateNeighborEntryResponse resp;
   grpc::ClientContext context;
 
+  *req.mutable_entry() = convert_from_neighbor_entry(*neighbor_entry);
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_NEIGHBOR_ENTRY_ATTR_DST_MAC_ADDRESS:
@@ -91,6 +92,7 @@ sai_status_t l_remove_neighbor_entry(
   lemming::dataplane::sai::RemoveNeighborEntryResponse resp;
   grpc::ClientContext context;
 
+  *req.mutable_entry() = convert_from_neighbor_entry(*neighbor_entry);
   grpc::Status status = neighbor->RemoveNeighborEntry(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();
@@ -107,6 +109,8 @@ sai_status_t l_set_neighbor_entry_attribute(
   lemming::dataplane::sai::SetNeighborEntryAttributeRequest req;
   lemming::dataplane::sai::SetNeighborEntryAttributeResponse resp;
   grpc::ClientContext context;
+
+  *req.mutable_entry() = convert_from_neighbor_entry(*neighbor_entry);
 
   switch (attr->id) {
     case SAI_NEIGHBOR_ENTRY_ATTR_DST_MAC_ADDRESS:
@@ -157,6 +161,7 @@ sai_status_t l_get_neighbor_entry_attribute(
   lemming::dataplane::sai::GetNeighborEntryAttributeRequest req;
   lemming::dataplane::sai::GetNeighborEntryAttributeResponse resp;
   grpc::ClientContext context;
+  *req.mutable_entry() = convert_from_neighbor_entry(*neighbor_entry);
 
   for (uint32_t i = 0; i < attr_count; i++) {
     req.add_attr_type(static_cast<lemming::dataplane::sai::NeighborEntryAttr>(

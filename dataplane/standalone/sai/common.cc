@@ -25,7 +25,7 @@
 std::string convert_from_ip_addr(sai_ip_addr_family_t addr_family,
                                  const sai_ip_addr_t& addr) {
   if (addr_family == SAI_IP_ADDR_FAMILY_IPV4) {
-    return std::string(&addr.ip4, &addr.ip4 + 4);
+    return std::string(reinterpret_cast<const char*>(&addr.ip4),reinterpret_cast<const char*>(&addr.ip4)+sizeof(sai_ip4_t));
   }
   return std::string(addr.ip6, addr.ip6 + 16);
 }
@@ -87,4 +87,36 @@ sai_ip_prefix_t convert_to_ip_prefix(
   ip.addr = convert_to_ip_addr(ip_prefix.addr());
   ip.mask = convert_to_ip_addr(ip_prefix.mask());
   return ip;
+}
+
+std::vector<sai_port_oper_status_notification_t> convert_to_oper_status(
+    const lemming::dataplane::sai::PortStateChangeNotificationResponse& resp) {
+  std::vector<sai_port_oper_status_notification_t> list;
+  for (auto d : resp.data()) {
+    list.push_back({
+        .port_id = d.port_id(),
+        .port_state = static_cast<sai_port_oper_status_t>(d.port_state() - 1),
+    });
+  }
+  return list;
+}
+
+lemming::dataplane::sai::NeighborEntry convert_from_neighbor_entry(
+    const sai_neighbor_entry_t& entry) {
+  lemming::dataplane::sai::NeighborEntry ne;
+  ne.set_switch_id(entry.switch_id);
+  ne.set_rif_id(entry.rif_id);
+  ne.set_ip_address(convert_from_ip_address(entry.ip_address));
+
+  return ne;
+}
+
+sai_neighbor_entry_t convert_to_neighbor_entry(
+    const lemming::dataplane::sai::NeighborEntry& entry) {
+  sai_neighbor_entry_t ne;
+  ne.switch_id = entry.switch_id();
+  ne.rif_id = entry.rif_id();
+  ne.ip_address = convert_to_ip_address(entry.ip_address());
+
+  return ne;
 }

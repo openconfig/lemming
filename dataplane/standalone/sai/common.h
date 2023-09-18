@@ -15,6 +15,8 @@
 #ifndef DATAPLANE_STANDALONE_SAI_COMMON_H_
 #define DATAPLANE_STANDALONE_SAI_COMMON_H_
 
+#include <glog/logging.h>
+
 #include <algorithm>
 #include <memory>
 #include <string>
@@ -120,7 +122,7 @@ extern std::unique_ptr<lemming::dataplane::sai::SchedulerGroup::Stub>
 extern std::unique_ptr<lemming::dataplane::sai::Scheduler::Stub> scheduler;
 extern std::unique_ptr<lemming::dataplane::sai::Srv6::Stub> srv6;
 extern std::unique_ptr<lemming::dataplane::sai::Stp::Stub> stp;
-extern std::unique_ptr<lemming::dataplane::sai::Switch::Stub> switch_;
+extern std::shared_ptr<lemming::dataplane::sai::Switch::Stub> switch_;
 extern std::unique_ptr<lemming::dataplane::sai::SystemPort::Stub> system_port;
 extern std::unique_ptr<lemming::dataplane::sai::Tam::Stub> tam;
 extern std::unique_ptr<lemming::dataplane::sai::Tunnel::Stub> tunnel;
@@ -144,6 +146,14 @@ sai_route_entry_t convert_to_route_entry(
     const lemming::dataplane::sai::RouteEntry &entry);
 sai_ip_prefix_t convert_to_ip_prefix(
     const lemming::dataplane::sai::IpPrefix &ip_prefix);
+std::vector<sai_port_oper_status_notification_t> convert_to_oper_status(
+    const lemming::dataplane::sai::PortStateChangeNotificationResponse &resp);
+
+lemming::dataplane::sai::NeighborEntry convert_from_neighbor_entry(
+    const sai_neighbor_entry_t &entry);
+
+sai_neighbor_entry_t convert_to_neighbor_entry(
+    const lemming::dataplane::sai::NeighborEntry &entry);
 
 // copy_list copies a scalar proto list to an attribute.
 // Note: It is expected that the attribute list contains preallocated memory.
@@ -158,5 +168,40 @@ void copy_list(S *dst, const google::protobuf::RepeatedField<T> &src,
     dst[i] = src[i];
   }
 }
+
+class PortStateReactor
+    : public grpc::ClientReadReactor<
+          lemming::dataplane::sai::PortStateChangeNotificationResponse> {
+ public:
+  PortStateReactor(std::shared_ptr<lemming::dataplane::sai::Switch::Stub> stub,
+                   sai_port_state_change_notification_fn callback) {
+    this->callback = callback;
+    lemming::dataplane::sai::PortStateChangeNotificationRequest req;
+    stub->async()->PortStateChangeNotification(&context, &req, this);
+    StartRead(&resp);
+    StartCall();
+  }
+
+  void OnReadDone(bool ok) override {
+    if (!ok) return;
+    std::vector<sai_port_oper_status_notification_t> v =
+        convert_to_oper_status(resp);
+    callback(v.size(), v.data());
+    StartRead(&resp);
+  }
+
+  void OnDone(const grpc::Status &status) override {
+    if (status.ok()) {
+      LOG(INFO) << "PortStateChangeNotification RPC succeeded.";
+    } else {
+      LOG(ERROR) << "PortStateChangeNotification RPC failed.";
+    }
+  }
+
+ private:
+  grpc::ClientContext context;
+  lemming::dataplane::sai::PortStateChangeNotificationResponse resp;
+  sai_port_state_change_notification_fn callback;
+};
 
 #endif  // DATAPLANE_STANDALONE_SAI_COMMON_H_
