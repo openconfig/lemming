@@ -21,7 +21,6 @@
 #include "dataplane/standalone/proto/common.pb.h"
 #include "dataplane/standalone/proto/l2mc_group.pb.h"
 #include "dataplane/standalone/sai/common.h"
-#include "dataplane/standalone/sai/entry.h"
 
 const sai_l2mc_group_api_t l_l2mc_group = {
     .create_l2mc_group = l_create_l2mc_group,

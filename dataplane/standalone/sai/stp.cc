@@ -21,7 +21,6 @@
 #include "dataplane/standalone/proto/common.pb.h"
 #include "dataplane/standalone/proto/stp.pb.h"
 #include "dataplane/standalone/sai/common.h"
-#include "dataplane/standalone/sai/entry.h"
 
 const sai_stp_api_t l_stp = {
     .create_stp = l_create_stp,

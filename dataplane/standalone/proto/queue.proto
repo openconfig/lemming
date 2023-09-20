@@ -20,6 +20,8 @@ enum QueueAttr {
   QUEUE_ATTR_ENABLE_PFC_DLDR = 9;
   QUEUE_ATTR_PFC_DLR_INIT = 10;
   QUEUE_ATTR_TAM_OBJECT = 11;
+  QUEUE_ATTR_PFC_DLR_PACKET_ACTION = 12;
+  QUEUE_ATTR_PFC_CONTINUOUS_DEADLOCK_STATE = 13;
 }
 
 message CreateQueueRequest {
@@ -35,6 +37,7 @@ message CreateQueueRequest {
   optional bool enable_pfc_dldr = 9 [(attr_enum_value) = 9];
   optional bool pfc_dlr_init = 10 [(attr_enum_value) = 10];
   repeated uint64 tam_object = 11 [(attr_enum_value) = 11];
+  optional PacketAction pfc_dlr_packet_action = 12 [(attr_enum_value) = 12];
 }
 
 message CreateQueueResponse {
@@ -56,6 +59,7 @@ message SetQueueAttributeRequest {
   optional bool enable_pfc_dldr = 6 [(attr_enum_value) = 9];
   optional bool pfc_dlr_init = 7 [(attr_enum_value) = 10];
   repeated uint64 tam_object = 8 [(attr_enum_value) = 11];
+  optional PacketAction pfc_dlr_packet_action = 9 [(attr_enum_value) = 12];
 }
 
 message SetQueueAttributeResponse {}

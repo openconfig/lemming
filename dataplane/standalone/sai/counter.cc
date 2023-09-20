@@ -21,7 +21,6 @@
 #include "dataplane/standalone/proto/common.pb.h"
 #include "dataplane/standalone/proto/counter.pb.h"
 #include "dataplane/standalone/sai/common.h"
-#include "dataplane/standalone/sai/entry.h"
 
 const sai_counter_api_t l_counter = {
     .create_counter = l_create_counter,
@@ -48,6 +47,9 @@ sai_status_t l_create_counter(sai_object_id_t *counter_id,
       case SAI_COUNTER_ATTR_TYPE:
         req.set_type(static_cast<lemming::dataplane::sai::CounterType>(
             attr_list[i].value.s32 + 1));
+        break;
+      case SAI_COUNTER_ATTR_LABEL:
+        req.set_label(attr_list[i].value.chardata);
         break;
     }
   }
@@ -82,6 +84,23 @@ sai_status_t l_set_counter_attribute(sai_object_id_t counter_id,
                                      const sai_attribute_t *attr) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
+  lemming::dataplane::sai::SetCounterAttributeRequest req;
+  lemming::dataplane::sai::SetCounterAttributeResponse resp;
+  grpc::ClientContext context;
+  req.set_oid(counter_id);
+
+  switch (attr->id) {
+    case SAI_COUNTER_ATTR_LABEL:
+      req.set_label(attr->value.chardata);
+      break;
+  }
+
+  grpc::Status status = counter->SetCounterAttribute(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+
   return SAI_STATUS_SUCCESS;
 }
 
@@ -109,6 +128,9 @@ sai_status_t l_get_counter_attribute(sai_object_id_t counter_id,
     switch (attr_list[i].id) {
       case SAI_COUNTER_ATTR_TYPE:
         attr_list[i].value.s32 = static_cast<int>(resp.attr().type() - 1);
+        break;
+      case SAI_COUNTER_ATTR_LABEL:
+        strncpy(attr_list[i].value.chardata, resp.attr().label().data(), 32);
         break;
     }
   }

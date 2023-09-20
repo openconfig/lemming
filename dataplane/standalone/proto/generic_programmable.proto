@@ -1,0 +1,61 @@
+
+syntax = "proto3";
+
+package lemming.dataplane.sai;
+
+import "dataplane/standalone/proto/common.proto";
+
+option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto";
+
+enum GenericProgrammableAttr {
+  GENERIC_PROGRAMMABLE_ATTR_UNSPECIFIED = 0;
+  GENERIC_PROGRAMMABLE_ATTR_OBJECT_NAME = 1;
+  GENERIC_PROGRAMMABLE_ATTR_ENTRY = 2;
+  GENERIC_PROGRAMMABLE_ATTR_COUNTER_ID = 3;
+}
+
+message CreateGenericProgrammableRequest {
+  option (sai_type) = OBJECT_TYPE_GENERIC_PROGRAMMABLE;
+  uint64 switch = 1;
+  repeated int32 object_name = 2 [(attr_enum_value) = 1];
+  optional bytes entry = 3 [(attr_enum_value) = 2];
+  optional uint64 counter_id = 4 [(attr_enum_value) = 3];
+}
+
+message CreateGenericProgrammableResponse {
+  uint64 oid = 1;
+}
+
+message RemoveGenericProgrammableRequest {
+  uint64 oid = 1;
+}
+
+message RemoveGenericProgrammableResponse {}
+
+message SetGenericProgrammableAttributeRequest {
+  uint64 oid = 1;
+  optional bytes entry = 2 [(attr_enum_value) = 2];
+  optional uint64 counter_id = 3 [(attr_enum_value) = 3];
+}
+
+message SetGenericProgrammableAttributeResponse {}
+
+message GetGenericProgrammableAttributeRequest {
+  uint64 oid = 1;
+  repeated GenericProgrammableAttr attr_type = 2;
+}
+
+message GetGenericProgrammableAttributeResponse {
+  GenericProgrammableAttribute attr = 1;
+}
+
+service GenericProgrammable {
+  rpc CreateGenericProgrammable(CreateGenericProgrammableRequest)
+      returns (CreateGenericProgrammableResponse) {}
+  rpc RemoveGenericProgrammable(RemoveGenericProgrammableRequest)
+      returns (RemoveGenericProgrammableResponse) {}
+  rpc SetGenericProgrammableAttribute(SetGenericProgrammableAttributeRequest)
+      returns (SetGenericProgrammableAttributeResponse) {}
+  rpc GetGenericProgrammableAttribute(GetGenericProgrammableAttributeRequest)
+      returns (GetGenericProgrammableAttributeResponse) {}
+}

@@ -14,8 +14,6 @@
 
 package main
 
-import "C"
-
 import (
 	"context"
 	"flag"
@@ -36,11 +34,11 @@ import (
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
-var fwdCtxID string
+var port = flag.Int("port", 50000, "Port for api server")
 
-//export getForwardCtxID
-func getForwardCtxID() *C.char {
-	return C.CString(fwdCtxID)
+func main() {
+	flag.Parse()
+	start(*port)
 }
 
 func getLogger() logging.Logger {
@@ -58,15 +56,13 @@ func getLogger() logging.Logger {
 	})
 }
 
-//export initialize
-func initialize(port int) {
+func start(port int) {
 	log.Info("lucius initialized")
 
 	e, err := engine.New(context.Background())
 	if err != nil {
 		log.Fatalf("failed create engine: %v", err)
 	}
-	fwdCtxID = e.ID()
 
 	lis, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
 	if err != nil {
@@ -82,17 +78,7 @@ func initialize(port int) {
 	dpb.RegisterDataplaneServer(srv, e)
 	saiserver.New(mgr, e, srv)
 
-	go func() {
-		if err := srv.Serve(lis); err != nil {
-			log.Fatalf("failed to serve forwarding server: %v", err)
-		}
-	}()
-}
-
-func main() {
-}
-
-func init() {
-	// TODO: Figure a better way to config this when used standalone.
-	flag.Set("log_dir", "/var/log/syncd")
+	if err := srv.Serve(lis); err != nil {
+		log.Fatalf("failed to serve forwarding server: %v", err)
+	}
 }

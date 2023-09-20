@@ -21,7 +21,6 @@
 #include "dataplane/standalone/proto/common.pb.h"
 #include "dataplane/standalone/proto/fdb.pb.h"
 #include "dataplane/standalone/sai/common.h"
-#include "dataplane/standalone/sai/entry.h"
 
 const sai_fdb_api_t l_fdb = {
     .create_fdb_entry = l_create_fdb_entry,

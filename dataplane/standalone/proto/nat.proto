@@ -23,6 +23,7 @@ enum NatEntryAttr {
   NAT_ENTRY_ATTR_BYTE_COUNT = 12;
   NAT_ENTRY_ATTR_HIT_BIT_COR = 13;
   NAT_ENTRY_ATTR_HIT_BIT = 14;
+  NAT_ENTRY_ATTR_AGING_TIME = 15;
 }
 
 enum NatZoneCounterAttr {
@@ -54,6 +55,7 @@ message CreateNatEntryRequest {
   optional uint64 byte_count = 13 [(attr_enum_value) = 12];
   optional bool hit_bit_cor = 14 [(attr_enum_value) = 13];
   optional bool hit_bit = 15 [(attr_enum_value) = 14];
+  optional uint32 aging_time = 16 [(attr_enum_value) = 15];
 }
 
 message CreateNatEntryResponse {}
@@ -80,6 +82,7 @@ message SetNatEntryAttributeRequest {
   optional uint64 byte_count = 13 [(attr_enum_value) = 12];
   optional bool hit_bit_cor = 14 [(attr_enum_value) = 13];
   optional bool hit_bit = 15 [(attr_enum_value) = 14];
+  optional uint32 aging_time = 16 [(attr_enum_value) = 15];
 }
 
 message SetNatEntryAttributeResponse {}

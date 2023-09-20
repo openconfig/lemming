@@ -45,7 +45,9 @@ func Generate(doc *docparser.SAIInfo, sai *saiast.SAIAPI) (map[string]string, er
 		for _, fn := range iface.Funcs {
 			meta := sai.GetFuncMeta(fn)
 			tf := createCCData(meta, apiName, sai, doc, fn)
-			ccData.Funcs = append(ccData.Funcs, *tf)
+			if tf != nil {
+				ccData.Funcs = append(ccData.Funcs, *tf)
+			}
 		}
 		var headerBuilder, implBuilder strings.Builder
 		if err := headerTmpl.Execute(&headerBuilder, ccData); err != nil {
@@ -70,6 +72,10 @@ func sanitizeProtoName(inName string) string {
 
 // createCCData returns a struct with the template data for the given function.
 func createCCData(meta *saiast.FuncMetadata, apiName string, sai *saiast.SAIAPI, info *docparser.SAIInfo, fn *saiast.TypeDecl) *templateFunc {
+	if info.Attrs[meta.TypeName] == nil {
+		fmt.Printf("no doc info for type: %v\n", meta.TypeName)
+		return nil
+	}
 	tf := &templateFunc{
 		ReturnType: sai.Funcs[fn.Typ].ReturnType,
 		Name:       meta.Name,
@@ -463,7 +469,6 @@ switch ({{ .Var }}) {
 #include "dataplane/standalone/sai/{{ .Header }}"
 #include <glog/logging.h>
 #include "dataplane/standalone/sai/common.h"
-#include "dataplane/standalone/sai/entry.h"
 #include "dataplane/standalone/proto/common.pb.h"
 #include "dataplane/standalone/proto/{{ .ProtoInclude }}.h"
 

@@ -20,6 +20,7 @@ enum PolicerAttr {
   POLICER_ATTR_YELLOW_PACKET_ACTION = 9;
   POLICER_ATTR_RED_PACKET_ACTION = 10;
   POLICER_ATTR_ENABLE_COUNTER_PACKET_ACTION_LIST = 11;
+  POLICER_ATTR_OBJECT_STAGE = 12;
 }
 
 message CreatePolicerRequest {
@@ -37,6 +38,7 @@ message CreatePolicerRequest {
   optional PacketAction red_packet_action = 11 [(attr_enum_value) = 10];
   repeated PacketAction enable_counter_packet_action_list = 12
       [(attr_enum_value) = 11];
+  optional ObjectStage object_stage = 13 [(attr_enum_value) = 12];
 }
 
 message CreatePolicerResponse {

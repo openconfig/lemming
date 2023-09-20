@@ -21,7 +21,6 @@
 #include "dataplane/standalone/proto/common.pb.h"
 #include "dataplane/standalone/proto/ipmc.pb.h"
 #include "dataplane/standalone/sai/common.h"
-#include "dataplane/standalone/sai/entry.h"
 
 const sai_ipmc_api_t l_ipmc = {
     .create_ipmc_entry = l_create_ipmc_entry,
@@ -51,6 +50,9 @@ sai_status_t l_create_ipmc_entry(const sai_ipmc_entry_t *ipmc_entry,
         break;
       case SAI_IPMC_ENTRY_ATTR_RPF_GROUP_ID:
         req.set_rpf_group_id(attr_list[i].value.oid);
+        break;
+      case SAI_IPMC_ENTRY_ATTR_COUNTER_ID:
+        req.set_counter_id(attr_list[i].value.oid);
         break;
     }
   }
@@ -98,6 +100,9 @@ sai_status_t l_set_ipmc_entry_attribute(const sai_ipmc_entry_t *ipmc_entry,
     case SAI_IPMC_ENTRY_ATTR_RPF_GROUP_ID:
       req.set_rpf_group_id(attr->value.oid);
       break;
+    case SAI_IPMC_ENTRY_ATTR_COUNTER_ID:
+      req.set_counter_id(attr->value.oid);
+      break;
   }
 
   grpc::Status status = ipmc->SetIpmcEntryAttribute(&context, req, &resp);
@@ -138,6 +143,9 @@ sai_status_t l_get_ipmc_entry_attribute(const sai_ipmc_entry_t *ipmc_entry,
         break;
       case SAI_IPMC_ENTRY_ATTR_RPF_GROUP_ID:
         attr_list[i].value.oid = resp.attr().rpf_group_id();
+        break;
+      case SAI_IPMC_ENTRY_ATTR_COUNTER_ID:
+        attr_list[i].value.oid = resp.attr().counter_id();
         break;
     }
   }

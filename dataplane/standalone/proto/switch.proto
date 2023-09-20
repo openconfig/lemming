@@ -217,6 +217,9 @@ enum SwitchAttr {
   SWITCH_ATTR_IPSEC_OBJECT_ID = 206;
   SWITCH_ATTR_IPSEC_SA_TAG_TPID = 207;
   SWITCH_ATTR_IPSEC_SA_STATUS_CHANGE_NOTIFY = 208;
+  SWITCH_ATTR_NAT_EVENT_NOTIFY = 209;
+  SWITCH_ATTR_MAX_ECMP_MEMBER_COUNT = 210;
+  SWITCH_ATTR_ECMP_MEMBER_COUNT = 211;
 }
 
 enum SwitchTunnelAttr {
@@ -230,6 +233,10 @@ enum SwitchTunnelAttr {
   SWITCH_TUNNEL_ATTR_TUNNEL_VXLAN_UDP_SPORT_MODE = 7;
   SWITCH_TUNNEL_ATTR_VXLAN_UDP_SPORT = 8;
   SWITCH_TUNNEL_ATTR_VXLAN_UDP_SPORT_MASK = 9;
+  SWITCH_TUNNEL_ATTR_ENCAP_QOS_TC_AND_COLOR_TO_DSCP_MAP = 10;
+  SWITCH_TUNNEL_ATTR_ENCAP_QOS_TC_TO_QUEUE_MAP = 11;
+  SWITCH_TUNNEL_ATTR_DECAP_QOS_DSCP_TO_TC_MAP = 12;
+  SWITCH_TUNNEL_ATTR_DECAP_QOS_TC_TO_PRIORITY_GROUP_MAP = 13;
 }
 
 message CreateSwitchRequest {
@@ -329,6 +336,7 @@ message CreateSwitchRequest {
       [(attr_enum_value) = 205];
   optional uint64 ipsec_object_id = 81 [(attr_enum_value) = 206];
   optional uint32 ipsec_sa_tag_tpid = 82 [(attr_enum_value) = 207];
+  optional uint32 ecmp_member_count = 83 [(attr_enum_value) = 211];
 }
 
 message CreateSwitchResponse {
@@ -420,6 +428,7 @@ message SetSwitchAttributeRequest {
       [(attr_enum_value) = 205];
   optional uint64 ipsec_object_id = 68 [(attr_enum_value) = 206];
   optional uint32 ipsec_sa_tag_tpid = 69 [(attr_enum_value) = 207];
+  optional uint32 ecmp_member_count = 70 [(attr_enum_value) = 211];
 }
 
 message SetSwitchAttributeResponse {}
@@ -505,6 +514,12 @@ message CreateSwitchTunnelRequest {
       [(attr_enum_value) = 7];
   optional uint32 vxlan_udp_sport = 9 [(attr_enum_value) = 8];
   optional uint32 vxlan_udp_sport_mask = 10 [(attr_enum_value) = 9];
+  optional uint64 encap_qos_tc_and_color_to_dscp_map = 11
+      [(attr_enum_value) = 10];
+  optional uint64 encap_qos_tc_to_queue_map = 12 [(attr_enum_value) = 11];
+  optional uint64 decap_qos_dscp_to_tc_map = 13 [(attr_enum_value) = 12];
+  optional uint64 decap_qos_tc_to_priority_group_map = 14
+      [(attr_enum_value) = 13];
 }
 
 message CreateSwitchTunnelResponse {
@@ -524,6 +539,12 @@ message SetSwitchTunnelAttributeRequest {
       [(attr_enum_value) = 7];
   optional uint32 vxlan_udp_sport = 4 [(attr_enum_value) = 8];
   optional uint32 vxlan_udp_sport_mask = 5 [(attr_enum_value) = 9];
+  optional uint64 encap_qos_tc_and_color_to_dscp_map = 6
+      [(attr_enum_value) = 10];
+  optional uint64 encap_qos_tc_to_queue_map = 7 [(attr_enum_value) = 11];
+  optional uint64 decap_qos_dscp_to_tc_map = 8 [(attr_enum_value) = 12];
+  optional uint64 decap_qos_tc_to_priority_group_map = 9
+      [(attr_enum_value) = 13];
 }
 
 message SetSwitchTunnelAttributeResponse {}

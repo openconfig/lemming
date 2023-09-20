@@ -21,7 +21,6 @@
 #include "dataplane/standalone/proto/bmtor.pb.h"
 #include "dataplane/standalone/proto/common.pb.h"
 #include "dataplane/standalone/sai/common.h"
-#include "dataplane/standalone/sai/entry.h"
 
 const sai_bmtor_api_t l_bmtor = {
     .create_table_bitmap_classification_entry =

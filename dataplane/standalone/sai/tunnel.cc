@@ -21,7 +21,6 @@
 #include "dataplane/standalone/proto/common.pb.h"
 #include "dataplane/standalone/proto/tunnel.pb.h"
 #include "dataplane/standalone/sai/common.h"
-#include "dataplane/standalone/sai/entry.h"
 
 const sai_tunnel_api_t l_tunnel = {
     .create_tunnel_map = l_create_tunnel_map,
@@ -244,6 +243,21 @@ sai_status_t l_create_tunnel(sai_object_id_t *tunnel_id,
             attr_list[i].value.objlist.list,
             attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
         break;
+      case SAI_TUNNEL_ATTR_ENCAP_QOS_TC_AND_COLOR_TO_DSCP_MAP:
+        req.set_encap_qos_tc_and_color_to_dscp_map(attr_list[i].value.oid);
+        break;
+      case SAI_TUNNEL_ATTR_ENCAP_QOS_TC_TO_QUEUE_MAP:
+        req.set_encap_qos_tc_to_queue_map(attr_list[i].value.oid);
+        break;
+      case SAI_TUNNEL_ATTR_DECAP_QOS_DSCP_TO_TC_MAP:
+        req.set_decap_qos_dscp_to_tc_map(attr_list[i].value.oid);
+        break;
+      case SAI_TUNNEL_ATTR_DECAP_QOS_TC_TO_PRIORITY_GROUP_MAP:
+        req.set_decap_qos_tc_to_priority_group_map(attr_list[i].value.oid);
+        break;
+      case SAI_TUNNEL_ATTR_VXLAN_UDP_SPORT_SECURITY:
+        req.set_vxlan_udp_sport_security(attr_list[i].value.booldata);
+        break;
     }
   }
   grpc::Status status = tunnel->CreateTunnel(&context, req, &resp);
@@ -335,6 +349,21 @@ sai_status_t l_set_tunnel_attribute(sai_object_id_t tunnel_id,
       req.mutable_ipsec_sa_port_list()->Add(
           attr->value.objlist.list,
           attr->value.objlist.list + attr->value.objlist.count);
+      break;
+    case SAI_TUNNEL_ATTR_ENCAP_QOS_TC_AND_COLOR_TO_DSCP_MAP:
+      req.set_encap_qos_tc_and_color_to_dscp_map(attr->value.oid);
+      break;
+    case SAI_TUNNEL_ATTR_ENCAP_QOS_TC_TO_QUEUE_MAP:
+      req.set_encap_qos_tc_to_queue_map(attr->value.oid);
+      break;
+    case SAI_TUNNEL_ATTR_DECAP_QOS_DSCP_TO_TC_MAP:
+      req.set_decap_qos_dscp_to_tc_map(attr->value.oid);
+      break;
+    case SAI_TUNNEL_ATTR_DECAP_QOS_TC_TO_PRIORITY_GROUP_MAP:
+      req.set_decap_qos_tc_to_priority_group_map(attr->value.oid);
+      break;
+    case SAI_TUNNEL_ATTR_VXLAN_UDP_SPORT_SECURITY:
+      req.set_vxlan_udp_sport_security(attr->value.booldata);
       break;
   }
 
@@ -459,6 +488,23 @@ sai_status_t l_get_tunnel_attribute(sai_object_id_t tunnel_id,
         copy_list(attr_list[i].value.objlist.list,
                   resp.attr().ipsec_sa_port_list(),
                   &attr_list[i].value.objlist.count);
+        break;
+      case SAI_TUNNEL_ATTR_ENCAP_QOS_TC_AND_COLOR_TO_DSCP_MAP:
+        attr_list[i].value.oid =
+            resp.attr().encap_qos_tc_and_color_to_dscp_map();
+        break;
+      case SAI_TUNNEL_ATTR_ENCAP_QOS_TC_TO_QUEUE_MAP:
+        attr_list[i].value.oid = resp.attr().encap_qos_tc_to_queue_map();
+        break;
+      case SAI_TUNNEL_ATTR_DECAP_QOS_DSCP_TO_TC_MAP:
+        attr_list[i].value.oid = resp.attr().decap_qos_dscp_to_tc_map();
+        break;
+      case SAI_TUNNEL_ATTR_DECAP_QOS_TC_TO_PRIORITY_GROUP_MAP:
+        attr_list[i].value.oid =
+            resp.attr().decap_qos_tc_to_priority_group_map();
+        break;
+      case SAI_TUNNEL_ATTR_VXLAN_UDP_SPORT_SECURITY:
+        attr_list[i].value.booldata = resp.attr().vxlan_udp_sport_security();
         break;
     }
   }

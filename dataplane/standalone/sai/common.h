@@ -31,6 +31,7 @@
 #include "dataplane/standalone/proto/debug_counter.grpc.pb.h"
 #include "dataplane/standalone/proto/dtel.grpc.pb.h"
 #include "dataplane/standalone/proto/fdb.grpc.pb.h"
+#include "dataplane/standalone/proto/generic_programmable.grpc.pb.h"
 #include "dataplane/standalone/proto/hash.grpc.pb.h"
 #include "dataplane/standalone/proto/hostif.grpc.pb.h"
 #include "dataplane/standalone/proto/ipmc.grpc.pb.h"
@@ -69,14 +70,11 @@
 #include "dataplane/standalone/proto/virtual_router.grpc.pb.h"
 #include "dataplane/standalone/proto/vlan.grpc.pb.h"
 #include "dataplane/standalone/proto/wred.grpc.pb.h"
-#include "dataplane/standalone/translator.h"
 
 extern "C" {
-#include "experimental/saiextensions.h"
 #include "inc/sai.h"
 }
 
-extern std::shared_ptr<Translator> translator;
 extern std::unique_ptr<lemming::dataplane::sai::Acl::Stub> acl;
 extern std::unique_ptr<lemming::dataplane::sai::Bfd::Stub> bfd;
 extern std::unique_ptr<lemming::dataplane::sai::Buffer::Stub> buffer;
@@ -87,6 +85,8 @@ extern std::unique_ptr<lemming::dataplane::sai::DebugCounter::Stub>
     debug_counter;
 extern std::unique_ptr<lemming::dataplane::sai::Dtel::Stub> dtel;
 extern std::unique_ptr<lemming::dataplane::sai::Fdb::Stub> fdb;
+extern std::unique_ptr<lemming::dataplane::sai::GenericProgrammable::Stub>
+    generic_programmable;
 extern std::unique_ptr<lemming::dataplane::sai::Hash::Stub> hash;
 extern std::unique_ptr<lemming::dataplane::sai::Hostif::Stub> hostif;
 extern std::unique_ptr<lemming::dataplane::sai::IpmcGroup::Stub> ipmc_group;

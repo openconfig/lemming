@@ -21,7 +21,6 @@
 #include "dataplane/standalone/proto/common.pb.h"
 #include "dataplane/standalone/proto/ipmc_group.pb.h"
 #include "dataplane/standalone/sai/common.h"
-#include "dataplane/standalone/sai/entry.h"
 
 const sai_ipmc_group_api_t l_ipmc_group = {
     .create_ipmc_group = l_create_ipmc_group,

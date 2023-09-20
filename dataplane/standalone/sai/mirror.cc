@@ -21,7 +21,6 @@
 #include "dataplane/standalone/proto/common.pb.h"
 #include "dataplane/standalone/proto/mirror.pb.h"
 #include "dataplane/standalone/sai/common.h"
-#include "dataplane/standalone/sai/entry.h"
 
 const sai_mirror_api_t l_mirror = {
     .create_mirror_session = l_create_mirror_session,
@@ -128,6 +127,9 @@ sai_status_t l_create_mirror_session(sai_object_id_t *mirror_session_id,
         break;
       case SAI_MIRROR_SESSION_ATTR_UDP_DST_PORT:
         req.set_udp_dst_port(attr_list[i].value.u16);
+        break;
+      case SAI_MIRROR_SESSION_ATTR_COUNTER_ID:
+        req.set_counter_id(attr_list[i].value.oid);
         break;
     }
   }
@@ -237,6 +239,9 @@ sai_status_t l_set_mirror_session_attribute(sai_object_id_t mirror_session_id,
       break;
     case SAI_MIRROR_SESSION_ATTR_UDP_DST_PORT:
       req.set_udp_dst_port(attr->value.u16);
+      break;
+    case SAI_MIRROR_SESSION_ATTR_COUNTER_ID:
+      req.set_counter_id(attr->value.oid);
       break;
   }
 
@@ -353,6 +358,9 @@ sai_status_t l_get_mirror_session_attribute(sai_object_id_t mirror_session_id,
         break;
       case SAI_MIRROR_SESSION_ATTR_UDP_DST_PORT:
         attr_list[i].value.u16 = resp.attr().udp_dst_port();
+        break;
+      case SAI_MIRROR_SESSION_ATTR_COUNTER_ID:
+        attr_list[i].value.oid = resp.attr().counter_id();
         break;
     }
   }

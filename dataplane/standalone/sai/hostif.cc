@@ -21,7 +21,6 @@
 #include "dataplane/standalone/proto/common.pb.h"
 #include "dataplane/standalone/proto/hostif.pb.h"
 #include "dataplane/standalone/sai/common.h"
-#include "dataplane/standalone/sai/entry.h"
 
 const sai_hostif_api_t l_hostif = {
     .create_hostif = l_create_hostif,
@@ -333,6 +332,10 @@ sai_status_t l_create_hostif_trap_group(sai_object_id_t *hostif_trap_group_id,
       case SAI_HOSTIF_TRAP_GROUP_ATTR_POLICER:
         req.set_policer(attr_list[i].value.oid);
         break;
+      case SAI_HOSTIF_TRAP_GROUP_ATTR_OBJECT_STAGE:
+        req.set_object_stage(static_cast<lemming::dataplane::sai::ObjectStage>(
+            attr_list[i].value.s32 + 1));
+        break;
     }
   }
   grpc::Status status = hostif->CreateHostifTrapGroup(&context, req, &resp);
@@ -424,6 +427,10 @@ sai_status_t l_get_hostif_trap_group_attribute(
         break;
       case SAI_HOSTIF_TRAP_GROUP_ATTR_POLICER:
         attr_list[i].value.oid = resp.attr().policer();
+        break;
+      case SAI_HOSTIF_TRAP_GROUP_ATTR_OBJECT_STAGE:
+        attr_list[i].value.s32 =
+            static_cast<int>(resp.attr().object_stage() - 1);
         break;
     }
   }

@@ -21,7 +21,6 @@
 #include "dataplane/standalone/proto/common.pb.h"
 #include "dataplane/standalone/proto/macsec.pb.h"
 #include "dataplane/standalone/sai/common.h"
-#include "dataplane/standalone/sai/entry.h"
 
 const sai_macsec_api_t l_macsec = {
     .create_macsec = l_create_macsec,
@@ -263,6 +262,10 @@ sai_status_t l_get_macsec_attribute(sai_object_id_t macsec_id,
         break;
       case SAI_MACSEC_ATTR_AVAILABLE_MACSEC_SA:
         attr_list[i].value.u32 = resp.attr().available_macsec_sa();
+        break;
+      case SAI_MACSEC_ATTR_MAX_SECURE_ASSOCIATIONS_PER_SC:
+        attr_list[i].value.s32 =
+            static_cast<int>(resp.attr().max_secure_associations_per_sc() - 1);
         break;
     }
   }

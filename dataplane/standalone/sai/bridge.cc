@@ -21,7 +21,6 @@
 #include "dataplane/standalone/proto/bridge.pb.h"
 #include "dataplane/standalone/proto/common.pb.h"
 #include "dataplane/standalone/sai/common.h"
-#include "dataplane/standalone/sai/entry.h"
 
 const sai_bridge_api_t l_bridge = {
     .create_bridge = l_create_bridge,

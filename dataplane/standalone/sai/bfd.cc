@@ -21,7 +21,6 @@
 #include "dataplane/standalone/proto/bfd.pb.h"
 #include "dataplane/standalone/proto/common.pb.h"
 #include "dataplane/standalone/sai/common.h"
-#include "dataplane/standalone/sai/entry.h"
 
 const sai_bfd_api_t l_bfd = {
     .create_bfd_session = l_create_bfd_session,

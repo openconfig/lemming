@@ -40,6 +40,11 @@ enum TunnelAttr {
   TUNNEL_ATTR_VXLAN_UDP_SPORT_MASK = 23;
   TUNNEL_ATTR_SA_INDEX = 24;
   TUNNEL_ATTR_IPSEC_SA_PORT_LIST = 25;
+  TUNNEL_ATTR_ENCAP_QOS_TC_AND_COLOR_TO_DSCP_MAP = 26;
+  TUNNEL_ATTR_ENCAP_QOS_TC_TO_QUEUE_MAP = 27;
+  TUNNEL_ATTR_DECAP_QOS_DSCP_TO_TC_MAP = 28;
+  TUNNEL_ATTR_DECAP_QOS_TC_TO_PRIORITY_GROUP_MAP = 29;
+  TUNNEL_ATTR_VXLAN_UDP_SPORT_SECURITY = 30;
 }
 
 enum TunnelTermTableEntryAttr {
@@ -129,6 +134,13 @@ message CreateTunnelRequest {
   optional uint32 vxlan_udp_sport_mask = 23 [(attr_enum_value) = 23];
   optional uint32 sa_index = 24 [(attr_enum_value) = 24];
   repeated uint64 ipsec_sa_port_list = 25 [(attr_enum_value) = 25];
+  optional uint64 encap_qos_tc_and_color_to_dscp_map = 26
+      [(attr_enum_value) = 26];
+  optional uint64 encap_qos_tc_to_queue_map = 27 [(attr_enum_value) = 27];
+  optional uint64 decap_qos_dscp_to_tc_map = 28 [(attr_enum_value) = 28];
+  optional uint64 decap_qos_tc_to_priority_group_map = 29
+      [(attr_enum_value) = 29];
+  optional bool vxlan_udp_sport_security = 30 [(attr_enum_value) = 30];
 }
 
 message CreateTunnelResponse {
@@ -157,6 +169,13 @@ message SetTunnelAttributeRequest {
   optional uint32 vxlan_udp_sport_mask = 12 [(attr_enum_value) = 23];
   optional uint32 sa_index = 13 [(attr_enum_value) = 24];
   repeated uint64 ipsec_sa_port_list = 14 [(attr_enum_value) = 25];
+  optional uint64 encap_qos_tc_and_color_to_dscp_map = 15
+      [(attr_enum_value) = 26];
+  optional uint64 encap_qos_tc_to_queue_map = 16 [(attr_enum_value) = 27];
+  optional uint64 decap_qos_dscp_to_tc_map = 17 [(attr_enum_value) = 28];
+  optional uint64 decap_qos_tc_to_priority_group_map = 18
+      [(attr_enum_value) = 29];
+  optional bool vxlan_udp_sport_security = 19 [(attr_enum_value) = 30];
 }
 
 message SetTunnelAttributeResponse {}

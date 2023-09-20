@@ -21,7 +21,6 @@
 #include "dataplane/standalone/proto/common.pb.h"
 #include "dataplane/standalone/proto/policer.pb.h"
 #include "dataplane/standalone/sai/common.h"
-#include "dataplane/standalone/sai/entry.h"
 
 const sai_policer_api_t l_policer = {
     .create_policer = l_create_policer,
@@ -84,6 +83,10 @@ sai_status_t l_create_policer(sai_object_id_t *policer_id,
         req.set_red_packet_action(
             static_cast<lemming::dataplane::sai::PacketAction>(
                 attr_list[i].value.s32 + 1));
+        break;
+      case SAI_POLICER_ATTR_OBJECT_STAGE:
+        req.set_object_stage(static_cast<lemming::dataplane::sai::ObjectStage>(
+            attr_list[i].value.s32 + 1));
         break;
     }
   }
@@ -217,6 +220,10 @@ sai_status_t l_get_policer_attribute(sai_object_id_t policer_id,
       case SAI_POLICER_ATTR_RED_PACKET_ACTION:
         attr_list[i].value.s32 =
             static_cast<int>(resp.attr().red_packet_action() - 1);
+        break;
+      case SAI_POLICER_ATTR_OBJECT_STAGE:
+        attr_list[i].value.s32 =
+            static_cast<int>(resp.attr().object_stage() - 1);
         break;
     }
   }

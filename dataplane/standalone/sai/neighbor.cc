@@ -21,14 +21,16 @@
 #include "dataplane/standalone/proto/common.pb.h"
 #include "dataplane/standalone/proto/neighbor.pb.h"
 #include "dataplane/standalone/sai/common.h"
-#include "dataplane/standalone/sai/entry.h"
 
 const sai_neighbor_api_t l_neighbor = {
     .create_neighbor_entry = l_create_neighbor_entry,
     .remove_neighbor_entry = l_remove_neighbor_entry,
     .set_neighbor_entry_attribute = l_set_neighbor_entry_attribute,
     .get_neighbor_entry_attribute = l_get_neighbor_entry_attribute,
-    .remove_all_neighbor_entries = l_remove_all_neighbor_entries,
+    .create_neighbor_entries = l_create_neighbor_entries,
+    .remove_neighbor_entries = l_remove_neighbor_entries,
+    .set_neighbor_entries_attribute = l_set_neighbor_entries_attribute,
+    .get_neighbor_entries_attribute = l_get_neighbor_entries_attribute,
 };
 
 sai_status_t l_create_neighbor_entry(const sai_neighbor_entry_t *neighbor_entry,
@@ -214,7 +216,37 @@ sai_status_t l_get_neighbor_entry_attribute(
   return SAI_STATUS_SUCCESS;
 }
 
-sai_status_t l_remove_all_neighbor_entries(sai_object_id_t switch_id) {
+sai_status_t l_create_neighbor_entries(
+    uint32_t object_count, const sai_neighbor_entry_t *neighbor_entry,
+    const uint32_t *attr_count, const sai_attribute_t **attr_list,
+    sai_bulk_op_error_mode_t mode, sai_status_t *object_statuses) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-  return SAI_STATUS_NOT_IMPLEMENTED;
+
+  return SAI_STATUS_SUCCESS;
+}
+
+sai_status_t l_remove_neighbor_entries(
+    uint32_t object_count, const sai_neighbor_entry_t *neighbor_entry,
+    sai_bulk_op_error_mode_t mode, sai_status_t *object_statuses) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  return SAI_STATUS_SUCCESS;
+}
+
+sai_status_t l_set_neighbor_entries_attribute(
+    uint32_t object_count, const sai_neighbor_entry_t *neighbor_entry,
+    const sai_attribute_t *attr_list, sai_bulk_op_error_mode_t mode,
+    sai_status_t *object_statuses) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  return SAI_STATUS_SUCCESS;
+}
+
+sai_status_t l_get_neighbor_entries_attribute(
+    uint32_t object_count, const sai_neighbor_entry_t *neighbor_entry,
+    const uint32_t *attr_count, sai_attribute_t **attr_list,
+    sai_bulk_op_error_mode_t mode, sai_status_t *object_statuses) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  return SAI_STATUS_SUCCESS;
 }

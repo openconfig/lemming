@@ -34,6 +34,7 @@ enum MirrorSessionAttr {
   MIRROR_SESSION_ATTR_POLICER = 23;
   MIRROR_SESSION_ATTR_UDP_SRC_PORT = 24;
   MIRROR_SESSION_ATTR_UDP_DST_PORT = 25;
+  MIRROR_SESSION_ATTR_COUNTER_ID = 26;
 }
 
 message CreateMirrorSessionRequest {
@@ -66,6 +67,7 @@ message CreateMirrorSessionRequest {
   optional uint64 policer = 24 [(attr_enum_value) = 23];
   optional uint32 udp_src_port = 25 [(attr_enum_value) = 24];
   optional uint32 udp_dst_port = 26 [(attr_enum_value) = 25];
+  optional uint64 counter_id = 27 [(attr_enum_value) = 26];
 }
 
 message CreateMirrorSessionResponse {
@@ -103,6 +105,7 @@ message SetMirrorSessionAttributeRequest {
   optional uint64 policer = 21 [(attr_enum_value) = 23];
   optional uint32 udp_src_port = 22 [(attr_enum_value) = 24];
   optional uint32 udp_dst_port = 23 [(attr_enum_value) = 25];
+  optional uint64 counter_id = 24 [(attr_enum_value) = 26];
 }
 
 message SetMirrorSessionAttributeResponse {}

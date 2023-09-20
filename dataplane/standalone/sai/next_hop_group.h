@@ -77,4 +77,14 @@ sai_status_t l_get_next_hop_group_map_attribute(
     sai_object_id_t next_hop_group_map_id, uint32_t attr_count,
     sai_attribute_t *attr_list);
 
+sai_status_t l_set_next_hop_group_members_attribute(
+    uint32_t object_count, const sai_object_id_t *object_id,
+    const sai_attribute_t *attr_list, sai_bulk_op_error_mode_t mode,
+    sai_status_t *object_statuses);
+
+sai_status_t l_get_next_hop_group_members_attribute(
+    uint32_t object_count, const sai_object_id_t *object_id,
+    const uint32_t *attr_count, sai_attribute_t **attr_list,
+    sai_bulk_op_error_mode_t mode, sai_status_t *object_statuses);
+
 #endif  // DATAPLANE_STANDALONE_SAI_NEXT_HOP_GROUP_H_
