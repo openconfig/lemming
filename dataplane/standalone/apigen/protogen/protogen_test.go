@@ -145,6 +145,11 @@ message L2mcEntry {
 	bytes source = 5;
 }
 
+message LatchStatus {
+	bool current_status = 1;
+	bool changed = 2;
+}
+
 message UintMap {
 	map<uint32, uint32> uintmap = 1;
 }
@@ -201,6 +206,11 @@ message PortEyeValues {
 	int32 right = 3;
 	int32 up = 4;
 	int32 down = 5;
+}
+
+message PortLaneLatchStatus {
+	uint32 lane = 1;
+	LatchStatus value = 2;
 }
 
 message PortOperStatusNotification {
