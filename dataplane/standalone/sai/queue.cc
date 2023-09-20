@@ -21,7 +21,6 @@
 #include "dataplane/standalone/proto/common.pb.h"
 #include "dataplane/standalone/proto/queue.pb.h"
 #include "dataplane/standalone/sai/common.h"
-#include "dataplane/standalone/sai/entry.h"
 
 const sai_queue_api_t l_queue = {
     .create_queue = l_create_queue,
@@ -77,6 +76,11 @@ sai_status_t l_create_queue(sai_object_id_t *queue_id,
         req.mutable_tam_object()->Add(
             attr_list[i].value.objlist.list,
             attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
+        break;
+      case SAI_QUEUE_ATTR_PFC_DLR_PACKET_ACTION:
+        req.set_pfc_dlr_packet_action(
+            static_cast<lemming::dataplane::sai::PacketAction>(
+                attr_list[i].value.s32 + 1));
         break;
     }
   }
@@ -139,6 +143,11 @@ sai_status_t l_set_queue_attribute(sai_object_id_t queue_id,
       req.mutable_tam_object()->Add(
           attr->value.objlist.list,
           attr->value.objlist.list + attr->value.objlist.count);
+      break;
+    case SAI_QUEUE_ATTR_PFC_DLR_PACKET_ACTION:
+      req.set_pfc_dlr_packet_action(
+          static_cast<lemming::dataplane::sai::PacketAction>(attr->value.s32 +
+                                                             1));
       break;
   }
 
@@ -206,6 +215,14 @@ sai_status_t l_get_queue_attribute(sai_object_id_t queue_id,
       case SAI_QUEUE_ATTR_TAM_OBJECT:
         copy_list(attr_list[i].value.objlist.list, resp.attr().tam_object(),
                   &attr_list[i].value.objlist.count);
+        break;
+      case SAI_QUEUE_ATTR_PFC_DLR_PACKET_ACTION:
+        attr_list[i].value.s32 =
+            static_cast<int>(resp.attr().pfc_dlr_packet_action() - 1);
+        break;
+      case SAI_QUEUE_ATTR_PFC_CONTINUOUS_DEADLOCK_STATE:
+        attr_list[i].value.s32 =
+            static_cast<int>(resp.attr().pfc_continuous_deadlock_state() - 1);
         break;
     }
   }

@@ -21,7 +21,6 @@
 #include "dataplane/standalone/proto/common.pb.h"
 #include "dataplane/standalone/proto/tam.pb.h"
 #include "dataplane/standalone/sai/common.h"
-#include "dataplane/standalone/sai/entry.h"
 
 const sai_tam_api_t l_tam = {
     .create_tam = l_create_tam,
@@ -346,6 +345,9 @@ sai_status_t l_create_tam_report(sai_object_id_t *tam_report_id,
       case SAI_TAM_REPORT_ATTR_ENTERPRISE_NUMBER:
         req.set_enterprise_number(attr_list[i].value.u32);
         break;
+      case SAI_TAM_REPORT_ATTR_TEMPLATE_REPORT_INTERVAL:
+        req.set_template_report_interval(attr_list[i].value.u32);
+        break;
     }
   }
   grpc::Status status = tam->CreateTamReport(&context, req, &resp);
@@ -397,6 +399,9 @@ sai_status_t l_set_tam_report_attribute(sai_object_id_t tam_report_id,
       break;
     case SAI_TAM_REPORT_ATTR_ENTERPRISE_NUMBER:
       req.set_enterprise_number(attr->value.u32);
+      break;
+    case SAI_TAM_REPORT_ATTR_TEMPLATE_REPORT_INTERVAL:
+      req.set_template_report_interval(attr->value.u32);
       break;
   }
 
@@ -454,6 +459,9 @@ sai_status_t l_get_tam_report_attribute(sai_object_id_t tam_report_id,
         break;
       case SAI_TAM_REPORT_ATTR_ENTERPRISE_NUMBER:
         attr_list[i].value.u32 = resp.attr().enterprise_number();
+        break;
+      case SAI_TAM_REPORT_ATTR_TEMPLATE_REPORT_INTERVAL:
+        attr_list[i].value.u32 = resp.attr().template_report_interval();
         break;
     }
   }

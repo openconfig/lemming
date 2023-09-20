@@ -21,7 +21,6 @@
 
 #include <fstream>
 
-#include "dataplane/standalone/lucius/lucius_clib.h"
 #include "dataplane/standalone/proto/acl.grpc.pb.h"
 #include "dataplane/standalone/proto/bfd.grpc.pb.h"
 #include "dataplane/standalone/proto/bmtor.grpc.pb.h"
@@ -33,6 +32,7 @@
 #include "dataplane/standalone/proto/debug_counter.grpc.pb.h"
 #include "dataplane/standalone/proto/dtel.grpc.pb.h"
 #include "dataplane/standalone/proto/fdb.grpc.pb.h"
+#include "dataplane/standalone/proto/generic_programmable.grpc.pb.h"
 #include "dataplane/standalone/proto/hash.grpc.pb.h"
 #include "dataplane/standalone/proto/hostif.grpc.pb.h"
 #include "dataplane/standalone/proto/ipmc.grpc.pb.h"
@@ -80,6 +80,7 @@
 #include "dataplane/standalone/sai/debug_counter.h"
 #include "dataplane/standalone/sai/dtel.h"
 #include "dataplane/standalone/sai/fdb.h"
+#include "dataplane/standalone/sai/generic_programmable.h"
 #include "dataplane/standalone/sai/hash.h"
 #include "dataplane/standalone/sai/hostif.h"
 #include "dataplane/standalone/sai/ipmc.h"
@@ -118,14 +119,12 @@
 #include "dataplane/standalone/sai/virtual_router.h"
 #include "dataplane/standalone/sai/vlan.h"
 #include "dataplane/standalone/sai/wred.h"
-#include "dataplane/standalone/translator.h"
 
 extern "C" {
 #include "experimental/saiextensions.h"
 #include "inc/sai.h"
 }
 
-std::shared_ptr<Translator> translator;
 std::unique_ptr<lemming::dataplane::sai::Acl::Stub> acl;
 std::unique_ptr<lemming::dataplane::sai::Bfd::Stub> bfd;
 std::unique_ptr<lemming::dataplane::sai::Buffer::Stub> buffer;
@@ -133,6 +132,8 @@ std::unique_ptr<lemming::dataplane::sai::Bmtor::Stub> bmtor;
 std::unique_ptr<lemming::dataplane::sai::Bridge::Stub> bridge;
 std::unique_ptr<lemming::dataplane::sai::Counter::Stub> counter;
 std::unique_ptr<lemming::dataplane::sai::DebugCounter::Stub> debug_counter;
+std::unique_ptr<lemming::dataplane::sai::GenericProgrammable::Stub>
+    generic_programmable;
 std::unique_ptr<lemming::dataplane::sai::Dtel::Stub> dtel;
 std::unique_ptr<lemming::dataplane::sai::Fdb::Stub> fdb;
 std::unique_ptr<lemming::dataplane::sai::Hash::Stub> hash;
@@ -180,14 +181,14 @@ std::unique_ptr<lemming::dataplane::sai::Entrypoint::Stub> entry;
 // TODO(dgrau): implement this without using gRPC.
 sai_status_t sai_api_initialize(
     _In_ uint64_t flags, _In_ const sai_service_method_table_t *services) {
-  FLAGS_log_dir = "/var/log/syncd";
+  FLAGS_log_dir = "/var/log";
   google::InitGoogleLogging("lucius");
   google::InstallFailureSignalHandler();
-  initialize(GoInt(50000));
 
-  auto chan = grpc::CreateChannel("localhost:50000",
-                                  grpc::InsecureChannelCredentials());
-  translator = std::make_shared<Translator>(chan);
+  LOG(WARNING) << "iniitializing";
+
+  auto chan =
+      grpc::CreateChannel("10.0.2.2:50000", grpc::InsecureChannelCredentials());
 
   acl = std::make_unique<lemming::dataplane::sai::Acl::Stub>(chan);
   bfd = std::make_unique<lemming::dataplane::sai::Bfd::Stub>(chan);
@@ -197,6 +198,9 @@ sai_status_t sai_api_initialize(
   debug_counter =
       std::make_unique<lemming::dataplane::sai::DebugCounter::Stub>(chan);
   dtel = std::make_unique<lemming::dataplane::sai::Dtel::Stub>(chan);
+  generic_programmable =
+      std::make_unique<lemming::dataplane::sai::GenericProgrammable::Stub>(
+          chan);
   fdb = std::make_unique<lemming::dataplane::sai::Fdb::Stub>(chan);
   hash = std::make_unique<lemming::dataplane::sai::Hash::Stub>(chan);
   hostif = std::make_unique<lemming::dataplane::sai::Hostif::Stub>(chan);
@@ -442,12 +446,18 @@ sai_status_t sai_api_query(_In_ sai_api_t api, _Out_ void **api_method_table) {
       *api_method_table = const_cast<sai_ipsec_api_t *>(&l_ipsec);
       break;
     }
+    case SAI_API_GENERIC_PROGRAMMABLE: {
+      *api_method_table =
+          const_cast<sai_generic_programmable_api_t *>(&l_generic_programmable);
+      break;
+    }
     case SAI_API_BMTOR: {
       *api_method_table = const_cast<sai_bmtor_api_t *>(&l_bmtor);
       break;
     }
     default:
-      return SAI_STATUS_FAILURE;
+      LOG(WARNING) << "unknown API type " << api;
+      return SAI_STATUS_NOT_IMPLEMENTED;
   }
   return SAI_STATUS_SUCCESS;
 }

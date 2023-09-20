@@ -29,6 +29,7 @@ enum TamReportAttr {
   TAM_REPORT_ATTR_REPORT_MODE = 5;
   TAM_REPORT_ATTR_REPORT_INTERVAL = 6;
   TAM_REPORT_ATTR_ENTERPRISE_NUMBER = 7;
+  TAM_REPORT_ATTR_TEMPLATE_REPORT_INTERVAL = 8;
 }
 
 enum TamEventThresholdAttr {
@@ -216,6 +217,7 @@ message CreateTamReportRequest {
   optional TamReportMode report_mode = 6 [(attr_enum_value) = 5];
   optional uint32 report_interval = 7 [(attr_enum_value) = 6];
   optional uint32 enterprise_number = 8 [(attr_enum_value) = 7];
+  optional uint32 template_report_interval = 9 [(attr_enum_value) = 8];
 }
 
 message CreateTamReportResponse {
@@ -234,6 +236,7 @@ message SetTamReportAttributeRequest {
   optional uint32 quota = 3 [(attr_enum_value) = 4];
   optional uint32 report_interval = 4 [(attr_enum_value) = 6];
   optional uint32 enterprise_number = 5 [(attr_enum_value) = 7];
+  optional uint32 template_report_interval = 6 [(attr_enum_value) = 8];
 }
 
 message SetTamReportAttributeResponse {}

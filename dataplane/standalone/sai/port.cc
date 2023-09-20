@@ -21,7 +21,6 @@
 #include "dataplane/standalone/proto/common.pb.h"
 #include "dataplane/standalone/proto/port.pb.h"
 #include "dataplane/standalone/sai/common.h"
-#include "dataplane/standalone/sai/entry.h"
 
 const sai_port_api_t l_port = {
     .create_port = l_create_port,
@@ -31,7 +30,6 @@ const sai_port_api_t l_port = {
     .get_port_stats = l_get_port_stats,
     .get_port_stats_ext = l_get_port_stats_ext,
     .clear_port_stats = l_clear_port_stats,
-    .clear_port_all_stats = l_clear_port_all_stats,
     .create_port_pool = l_create_port_pool,
     .remove_port_pool = l_remove_port_pool,
     .set_port_pool_attribute = l_set_port_pool_attribute,
@@ -47,6 +45,10 @@ const sai_port_api_t l_port = {
     .remove_port_serdes = l_remove_port_serdes,
     .set_port_serdes_attribute = l_set_port_serdes_attribute,
     .get_port_serdes_attribute = l_get_port_serdes_attribute,
+    .create_ports = l_create_ports,
+    .remove_ports = l_remove_ports,
+    .set_ports_attribute = l_set_ports_attribute,
+    .get_ports_attribute = l_get_ports_attribute,
 };
 
 sai_status_t l_create_port(sai_object_id_t *port_id, sai_object_id_t switch_id,
@@ -389,6 +391,9 @@ sai_status_t l_create_port(sai_object_id_t *port_id, sai_object_id_t switch_id,
         break;
       case SAI_PORT_ATTR_QOS_MPLS_EXP_TO_FORWARDING_CLASS_MAP:
         req.set_qos_mpls_exp_to_forwarding_class_map(attr_list[i].value.oid);
+        break;
+      case SAI_PORT_ATTR_FABRIC_ISOLATE:
+        req.set_fabric_isolate(attr_list[i].value.booldata);
         break;
     }
   }
@@ -744,6 +749,9 @@ sai_status_t l_set_port_attribute(sai_object_id_t port_id,
       break;
     case SAI_PORT_ATTR_QOS_MPLS_EXP_TO_FORWARDING_CLASS_MAP:
       req.set_qos_mpls_exp_to_forwarding_class_map(attr->value.oid);
+      break;
+    case SAI_PORT_ATTR_FABRIC_ISOLATE:
+      req.set_fabric_isolate(attr->value.booldata);
       break;
   }
 
@@ -1249,6 +1257,16 @@ sai_status_t l_get_port_attribute(sai_object_id_t port_id, uint32_t attr_count,
       case SAI_PORT_ATTR_IPSEC_PORT:
         attr_list[i].value.oid = resp.attr().ipsec_port();
         break;
+      case SAI_PORT_ATTR_SUPPORTED_LINK_TRAINING_MODE:
+        attr_list[i].value.booldata =
+            resp.attr().supported_link_training_mode();
+        break;
+      case SAI_PORT_ATTR_FABRIC_ISOLATE:
+        attr_list[i].value.booldata = resp.attr().fabric_isolate();
+        break;
+      case SAI_PORT_ATTR_MAX_FEC_SYMBOL_ERRORS_DETECTABLE:
+        attr_list[i].value.u32 = resp.attr().max_fec_symbol_errors_detectable();
+        break;
     }
   }
 
@@ -1279,11 +1297,6 @@ sai_status_t l_clear_port_stats(sai_object_id_t port_id,
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
   return SAI_STATUS_SUCCESS;
-}
-
-sai_status_t l_clear_port_all_stats(sai_object_id_t port_id) {
-  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-  return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
 sai_status_t l_create_port_pool(sai_object_id_t *port_pool_id,
@@ -1731,6 +1744,47 @@ sai_status_t l_get_port_serdes_attribute(sai_object_id_t port_serdes_id,
         break;
     }
   }
+
+  return SAI_STATUS_SUCCESS;
+}
+
+sai_status_t l_create_ports(sai_object_id_t switch_id, uint32_t object_count,
+                            const uint32_t *attr_count,
+                            const sai_attribute_t **attr_list,
+                            sai_bulk_op_error_mode_t mode,
+                            sai_object_id_t *object_id,
+                            sai_status_t *object_statuses) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  return SAI_STATUS_SUCCESS;
+}
+
+sai_status_t l_remove_ports(uint32_t object_count,
+                            const sai_object_id_t *object_id,
+                            sai_bulk_op_error_mode_t mode,
+                            sai_status_t *object_statuses) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  return SAI_STATUS_SUCCESS;
+}
+
+sai_status_t l_set_ports_attribute(uint32_t object_count,
+                                   const sai_object_id_t *object_id,
+                                   const sai_attribute_t *attr_list,
+                                   sai_bulk_op_error_mode_t mode,
+                                   sai_status_t *object_statuses) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  return SAI_STATUS_SUCCESS;
+}
+
+sai_status_t l_get_ports_attribute(uint32_t object_count,
+                                   const sai_object_id_t *object_id,
+                                   const uint32_t *attr_count,
+                                   sai_attribute_t **attr_list,
+                                   sai_bulk_op_error_mode_t mode,
+                                   sai_status_t *object_statuses) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
   return SAI_STATUS_SUCCESS;
 }

@@ -271,6 +271,7 @@ enum AclCounterAttr {
   ACL_COUNTER_ATTR_ENABLE_BYTE_COUNT = 3;
   ACL_COUNTER_ATTR_PACKETS = 4;
   ACL_COUNTER_ATTR_BYTES = 5;
+  ACL_COUNTER_ATTR_LABEL = 6;
 }
 
 enum AclRangeAttr {
@@ -807,6 +808,7 @@ message CreateAclCounterRequest {
   optional bool enable_byte_count = 4 [(attr_enum_value) = 3];
   optional uint64 packets = 5 [(attr_enum_value) = 4];
   optional uint64 bytes = 6 [(attr_enum_value) = 5];
+  optional bytes label = 7 [(attr_enum_value) = 6];
 }
 
 message CreateAclCounterResponse {
@@ -823,6 +825,7 @@ message SetAclCounterAttributeRequest {
   uint64 oid = 1;
   optional uint64 packets = 2 [(attr_enum_value) = 4];
   optional uint64 bytes = 3 [(attr_enum_value) = 5];
+  optional bytes label = 4 [(attr_enum_value) = 6];
 }
 
 message SetAclCounterAttributeResponse {}

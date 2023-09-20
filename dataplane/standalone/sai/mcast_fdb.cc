@@ -21,7 +21,6 @@
 #include "dataplane/standalone/proto/common.pb.h"
 #include "dataplane/standalone/proto/mcast_fdb.pb.h"
 #include "dataplane/standalone/sai/common.h"
-#include "dataplane/standalone/sai/entry.h"
 
 const sai_mcast_fdb_api_t l_mcast_fdb = {
     .create_mcast_fdb_entry = l_create_mcast_fdb_entry,

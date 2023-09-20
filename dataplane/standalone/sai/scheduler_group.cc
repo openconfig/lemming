@@ -21,7 +21,6 @@
 #include "dataplane/standalone/proto/common.pb.h"
 #include "dataplane/standalone/proto/scheduler_group.pb.h"
 #include "dataplane/standalone/sai/common.h"
-#include "dataplane/standalone/sai/entry.h"
 
 const sai_scheduler_group_api_t l_scheduler_group = {
     .create_scheduler_group = l_create_scheduler_group,

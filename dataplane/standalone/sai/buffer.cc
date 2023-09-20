@@ -21,7 +21,6 @@
 #include "dataplane/standalone/proto/buffer.pb.h"
 #include "dataplane/standalone/proto/common.pb.h"
 #include "dataplane/standalone/sai/common.h"
-#include "dataplane/standalone/sai/entry.h"
 
 const sai_buffer_api_t l_buffer = {
     .create_buffer_pool = l_create_buffer_pool,

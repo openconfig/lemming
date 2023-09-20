@@ -133,6 +133,11 @@ func generateCommonTypes(docInfo *docparser.SAIInfo) (string, error) {
 
 // populateTmplDataFromFunc populatsd the protobuf template struct from a SAI function call.
 func populateTmplDataFromFunc(apis map[string]*protoAPITmplData, docInfo *docparser.SAIInfo, apiName string, meta *saiast.FuncMetadata) error {
+	if docInfo.Attrs[meta.TypeName] == nil {
+		fmt.Printf("no doc info for type: %v\n", meta.TypeName)
+		return nil
+	}
+
 	if _, ok := apis[apiName]; !ok {
 		apis[apiName] = &protoAPITmplData{
 			ServiceName: saiast.TrimSAIName(apiName, true, false),
@@ -467,6 +472,9 @@ var (
 		"sai_mac_t": {
 			ProtoType: "bytes",
 		},
+		"sai_json_t": {
+			ProtoType: "bytes",
+		},
 		"sai_ip4_t": {
 			ProtoType: "bytes",
 		},
@@ -536,6 +544,21 @@ var (
 		},
 		"sai_ip_address_t": {
 			ProtoType: "bytes",
+		},
+		"sai_latch_status_t": {
+			ProtoType: "LatchStatus",
+			MessageDef: `message LatchStatus {
+	bool current_status = 1;
+	bool changed = 2;
+}`,
+		},
+		"sai_port_lane_latch_status_list_t": {
+			Repeated:  true,
+			ProtoType: "PortLaneLatchStatus",
+			MessageDef: `message PortLaneLatchStatus {
+	uint32 lane = 1;
+	LatchStatus value = 2;
+}`,
 		},
 		"sai_map_list_t": { // Wrap the map in a message because maps can't be repeated.
 			Repeated:  true,

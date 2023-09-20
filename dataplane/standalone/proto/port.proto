@@ -153,6 +153,17 @@ enum PortAttr {
   PORT_ATTR_QOS_DSCP_TO_FORWARDING_CLASS_MAP = 142;
   PORT_ATTR_QOS_MPLS_EXP_TO_FORWARDING_CLASS_MAP = 143;
   PORT_ATTR_IPSEC_PORT = 144;
+  PORT_ATTR_PFC_TC_DLD_INTERVAL_RANGE = 145;
+  PORT_ATTR_PFC_TC_DLD_INTERVAL = 146;
+  PORT_ATTR_PFC_TC_DLR_INTERVAL_RANGE = 147;
+  PORT_ATTR_PFC_TC_DLR_INTERVAL = 148;
+  PORT_ATTR_SUPPORTED_LINK_TRAINING_MODE = 149;
+  PORT_ATTR_RX_SIGNAL_DETECT = 150;
+  PORT_ATTR_RX_LOCK_STATUS = 151;
+  PORT_ATTR_PCS_RX_LINK_STATUS = 152;
+  PORT_ATTR_FEC_ALIGNMENT_LOCK = 153;
+  PORT_ATTR_FABRIC_ISOLATE = 154;
+  PORT_ATTR_MAX_FEC_SYMBOL_ERRORS_DETECTABLE = 155;
 }
 
 enum PortPoolAttr {
@@ -297,6 +308,9 @@ message CreatePortRequest {
       [(attr_enum_value) = 142];
   optional uint64 qos_mpls_exp_to_forwarding_class_map = 95
       [(attr_enum_value) = 143];
+  repeated UintMap pfc_tc_dld_interval = 96 [(attr_enum_value) = 146];
+  repeated UintMap pfc_tc_dlr_interval = 97 [(attr_enum_value) = 148];
+  optional bool fabric_isolate = 98 [(attr_enum_value) = 154];
 }
 
 message CreatePortResponse {
@@ -415,6 +429,9 @@ message SetPortAttributeRequest {
       [(attr_enum_value) = 142];
   optional uint64 qos_mpls_exp_to_forwarding_class_map = 92
       [(attr_enum_value) = 143];
+  repeated UintMap pfc_tc_dld_interval = 93 [(attr_enum_value) = 146];
+  repeated UintMap pfc_tc_dlr_interval = 94 [(attr_enum_value) = 148];
+  optional bool fabric_isolate = 95 [(attr_enum_value) = 154];
 }
 
 message SetPortAttributeResponse {}

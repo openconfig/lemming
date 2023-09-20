@@ -117,6 +117,11 @@ message L2mcEntry {
   bytes source = 5;
 }
 
+message LatchStatus {
+  bool current_status = 1;
+  bool changed = 2;
+}
+
 message UintMap {
   map<uint32, uint32> uintmap = 1;
 }
@@ -173,6 +178,11 @@ message PortEyeValues {
   int32 right = 3;
   int32 up = 4;
   int32 down = 5;
+}
+
+message PortLaneLatchStatus {
+  uint32 lane = 1;
+  LatchStatus value = 2;
 }
 
 message PortOperStatusNotification {
@@ -377,6 +387,13 @@ enum AclTableGroupType {
   ACL_TABLE_GROUP_TYPE_PARALLEL = 2;
 }
 
+enum ApiExtensions {
+  API_EXTENSIONS_UNSPECIFIED = 0;
+  API_EXTENSIONS_RANGE_START = 1;
+  API_BMTOR = 2;
+  API_EXTENSIONS_RANGE_END = 3;
+}
+
 enum Api {
   API_UNSPECIFIED = 0;
   API_SAI_UNSPECIFIED = 1;
@@ -426,7 +443,112 @@ enum Api {
   API_SYSTEM_PORT = 45;
   API_MY_MAC = 46;
   API_IPSEC = 47;
-  API_MAX = 48;
+  API_GENERIC_PROGRAMMABLE = 48;
+  API_MAX = 49;
+}
+
+enum AttrConditionType {
+  ATTR_CONDITION_TYPE_UNSPECIFIED = 0;
+  ATTR_CONDITION_TYPE_NONE = 1;
+  ATTR_CONDITION_TYPE_OR = 2;
+  ATTR_CONDITION_TYPE_AND = 3;
+  ATTR_CONDITION_TYPE_MIXED = 4;
+}
+
+enum AttrFlags {
+  ATTR_FLAGS_UNSPECIFIED = 0;
+  ATTR_FLAGS_MANDATORY_ON_CREATE = 1;
+  ATTR_FLAGS_CREATE_ONLY = 2;
+  ATTR_FLAGS_CREATE_AND_SET = 3;
+  ATTR_FLAGS_READ_ONLY = 4;
+  ATTR_FLAGS_KEY = 5;
+  ATTR_FLAGS_DYNAMIC = 6;
+  ATTR_FLAGS_SPECIAL = 7;
+}
+
+enum AttrValueType {
+  ATTR_VALUE_TYPE_UNSPECIFIED = 0;
+  ATTR_VALUE_TYPE_BOOL = 1;
+  ATTR_VALUE_TYPE_CHARDATA = 2;
+  ATTR_VALUE_TYPE_UINT8 = 3;
+  ATTR_VALUE_TYPE_INT8 = 4;
+  ATTR_VALUE_TYPE_UINT16 = 5;
+  ATTR_VALUE_TYPE_INT16 = 6;
+  ATTR_VALUE_TYPE_UINT32 = 7;
+  ATTR_VALUE_TYPE_INT32 = 8;
+  ATTR_VALUE_TYPE_UINT64 = 9;
+  ATTR_VALUE_TYPE_INT64 = 10;
+  ATTR_VALUE_TYPE_POINTER = 11;
+  ATTR_VALUE_TYPE_MAC = 12;
+  ATTR_VALUE_TYPE_IPV4 = 13;
+  ATTR_VALUE_TYPE_IPV6 = 14;
+  ATTR_VALUE_TYPE_IP_ADDRESS = 15;
+  ATTR_VALUE_TYPE_IP_PREFIX = 16;
+  ATTR_VALUE_TYPE_PRBS_RX_STATE = 17;
+  ATTR_VALUE_TYPE_OBJECT_ID = 18;
+  ATTR_VALUE_TYPE_OBJECT_LIST = 19;
+  ATTR_VALUE_TYPE_UINT8_LIST = 20;
+  ATTR_VALUE_TYPE_INT8_LIST = 21;
+  ATTR_VALUE_TYPE_UINT16_LIST = 22;
+  ATTR_VALUE_TYPE_INT16_LIST = 23;
+  ATTR_VALUE_TYPE_UINT32_LIST = 24;
+  ATTR_VALUE_TYPE_INT32_LIST = 25;
+  ATTR_VALUE_TYPE_UINT32_RANGE = 26;
+  ATTR_VALUE_TYPE_UINT16_RANGE_LIST = 27;
+  ATTR_VALUE_TYPE_INT32_RANGE = 28;
+  ATTR_VALUE_TYPE_ACL_FIELD_DATA_BOOL = 29;
+  ATTR_VALUE_TYPE_ACL_FIELD_DATA_UINT8 = 30;
+  ATTR_VALUE_TYPE_ACL_FIELD_DATA_INT8 = 31;
+  ATTR_VALUE_TYPE_ACL_FIELD_DATA_UINT16 = 32;
+  ATTR_VALUE_TYPE_ACL_FIELD_DATA_INT16 = 33;
+  ATTR_VALUE_TYPE_ACL_FIELD_DATA_UINT32 = 34;
+  ATTR_VALUE_TYPE_ACL_FIELD_DATA_INT32 = 35;
+  ATTR_VALUE_TYPE_ACL_FIELD_DATA_UINT64 = 36;
+  ATTR_VALUE_TYPE_ACL_FIELD_DATA_MAC = 37;
+  ATTR_VALUE_TYPE_ACL_FIELD_DATA_IPV4 = 38;
+  ATTR_VALUE_TYPE_ACL_FIELD_DATA_IPV6 = 39;
+  ATTR_VALUE_TYPE_ACL_FIELD_DATA_MACSEC_SCI = 40;
+  ATTR_VALUE_TYPE_ACL_FIELD_DATA_OBJECT_ID = 41;
+  ATTR_VALUE_TYPE_ACL_FIELD_DATA_OBJECT_LIST = 42;
+  ATTR_VALUE_TYPE_ACL_FIELD_DATA_UINT8_LIST = 43;
+  ATTR_VALUE_TYPE_ACL_ACTION_DATA_BOOL = 44;
+  ATTR_VALUE_TYPE_ACL_ACTION_DATA_UINT8 = 45;
+  ATTR_VALUE_TYPE_ACL_ACTION_DATA_INT8 = 46;
+  ATTR_VALUE_TYPE_ACL_ACTION_DATA_UINT16 = 47;
+  ATTR_VALUE_TYPE_ACL_ACTION_DATA_INT16 = 48;
+  ATTR_VALUE_TYPE_ACL_ACTION_DATA_UINT32 = 49;
+  ATTR_VALUE_TYPE_ACL_ACTION_DATA_INT32 = 50;
+  ATTR_VALUE_TYPE_ACL_ACTION_DATA_MAC = 51;
+  ATTR_VALUE_TYPE_ACL_ACTION_DATA_IPV4 = 52;
+  ATTR_VALUE_TYPE_ACL_ACTION_DATA_IPV6 = 53;
+  ATTR_VALUE_TYPE_ACL_ACTION_DATA_IP_ADDRESS = 54;
+  ATTR_VALUE_TYPE_ACL_ACTION_DATA_OBJECT_ID = 55;
+  ATTR_VALUE_TYPE_ACL_ACTION_DATA_OBJECT_LIST = 56;
+  ATTR_VALUE_TYPE_ACL_CAPABILITY = 57;
+  ATTR_VALUE_TYPE_ACL_RESOURCE_LIST = 58;
+  ATTR_VALUE_TYPE_MAP_LIST = 59;
+  ATTR_VALUE_TYPE_VLAN_LIST = 60;
+  ATTR_VALUE_TYPE_QOS_MAP_LIST = 61;
+  ATTR_VALUE_TYPE_TLV_LIST = 62;
+  ATTR_VALUE_TYPE_SEGMENT_LIST = 63;
+  ATTR_VALUE_TYPE_IP_ADDRESS_LIST = 64;
+  ATTR_VALUE_TYPE_PORT_EYE_VALUES_LIST = 65;
+  ATTR_VALUE_TYPE_TIMESPEC = 66;
+  ATTR_VALUE_TYPE_NAT_ENTRY_DATA = 67;
+  ATTR_VALUE_TYPE_MACSEC_SCI = 68;
+  ATTR_VALUE_TYPE_MACSEC_SSCI = 69;
+  ATTR_VALUE_TYPE_MACSEC_SAK = 70;
+  ATTR_VALUE_TYPE_MACSEC_AUTH_KEY = 71;
+  ATTR_VALUE_TYPE_MACSEC_SALT = 72;
+  ATTR_VALUE_TYPE_SYSTEM_PORT_CONFIG = 73;
+  ATTR_VALUE_TYPE_SYSTEM_PORT_CONFIG_LIST = 74;
+  ATTR_VALUE_TYPE_FABRIC_PORT_REACHABILITY = 75;
+  ATTR_VALUE_TYPE_PORT_ERR_STATUS_LIST = 76;
+  ATTR_VALUE_TYPE_ENCRYPT_KEY = 77;
+  ATTR_VALUE_TYPE_AUTH_KEY = 78;
+  ATTR_VALUE_TYPE_LATCH_STATUS = 79;
+  ATTR_VALUE_TYPE_PORT_LANE_LATCH_STATUS_LIST = 80;
+  ATTR_VALUE_TYPE_JSON = 81;
 }
 
 enum BfdEncapsulationType {
@@ -585,6 +707,16 @@ enum CommonApi {
   COMMON_API_MAX = 9;
 }
 
+enum ConditionOperator {
+  CONDITION_OPERATOR_UNSPECIFIED = 0;
+  CONDITION_OPERATOR_EQ = 1;
+  CONDITION_OPERATOR_NE = 2;
+  CONDITION_OPERATOR_LT = 3;
+  CONDITION_OPERATOR_GT = 4;
+  CONDITION_OPERATOR_LE = 5;
+  CONDITION_OPERATOR_GE = 6;
+}
+
 enum CounterStat {
   COUNTER_STAT_UNSPECIFIED = 0;
   COUNTER_STAT_PACKETS = 1;
@@ -610,6 +742,17 @@ enum DebugCounterType {
   DEBUG_COUNTER_TYPE_SWITCH_OUT_DROP_REASONS = 4;
 }
 
+enum DefaultValueType {
+  DEFAULT_VALUE_TYPE_UNSPECIFIED = 0;
+  DEFAULT_VALUE_TYPE_NONE = 1;
+  DEFAULT_VALUE_TYPE_CONST = 2;
+  DEFAULT_VALUE_TYPE_ATTR_RANGE = 3;
+  DEFAULT_VALUE_TYPE_ATTR_VALUE = 4;
+  DEFAULT_VALUE_TYPE_EMPTY_LIST = 5;
+  DEFAULT_VALUE_TYPE_VENDOR_SPECIFIC = 6;
+  DEFAULT_VALUE_TYPE_SWITCH_INTERNAL = 7;
+}
+
 enum DtelEventType {
   DTEL_EVENT_TYPE_UNSPECIFIED = 0;
   DTEL_EVENT_TYPE_FLOW_STATE = 1;
@@ -631,6 +774,15 @@ enum EcnMarkMode {
   ECN_MARK_MODE_GREEN_RED = 6;
   ECN_MARK_MODE_YELLOW_RED = 7;
   ECN_MARK_MODE_ALL = 8;
+}
+
+enum EnumFlagsType {
+  ENUM_FLAGS_TYPE_UNSPECIFIED = 0;
+  ENUM_FLAGS_TYPE_NONE = 1;
+  ENUM_FLAGS_TYPE_STRICT = 2;
+  ENUM_FLAGS_TYPE_MIXED = 3;
+  ENUM_FLAGS_TYPE_RANGES = 4;
+  ENUM_FLAGS_TYPE_FREE = 5;
 }
 
 enum ErspanEncapsulationType {
@@ -745,18 +897,22 @@ enum HostifTrapType {
   HOSTIF_TRAP_TYPE_BFD_MICRO = 52;
   HOSTIF_TRAP_TYPE_BFDV6_MICRO = 53;
   HOSTIF_TRAP_TYPE_LDP = 54;
-  HOSTIF_TRAP_TYPE_LOCAL_IP_CUSTOM_RANGE_BASE = 55;
-  HOSTIF_TRAP_TYPE_L3_MTU_ERROR = 56;
-  HOSTIF_TRAP_TYPE_TTL_ERROR = 57;
-  HOSTIF_TRAP_TYPE_STATIC_FDB_MOVE = 58;
-  HOSTIF_TRAP_TYPE_PIPELINE_DISCARD_EGRESS_BUFFER = 59;
-  HOSTIF_TRAP_TYPE_PIPELINE_DISCARD_WRED = 60;
-  HOSTIF_TRAP_TYPE_PIPELINE_DISCARD_ROUTER = 61;
-  HOSTIF_TRAP_TYPE_MPLS_TTL_ERROR = 62;
-  HOSTIF_TRAP_TYPE_MPLS_ROUTER_ALERT_LABEL = 63;
-  HOSTIF_TRAP_TYPE_MPLS_LABEL_LOOKUP_MISS = 64;
-  HOSTIF_TRAP_TYPE_CUSTOM_EXCEPTION_RANGE_BASE = 65;
-  HOSTIF_TRAP_TYPE_END = 66;
+  HOSTIF_TRAP_TYPE_GNMI = 55;
+  HOSTIF_TRAP_TYPE_P4RT = 56;
+  HOSTIF_TRAP_TYPE_NTPCLIENT = 57;
+  HOSTIF_TRAP_TYPE_NTPSERVER = 58;
+  HOSTIF_TRAP_TYPE_LOCAL_IP_CUSTOM_RANGE_BASE = 59;
+  HOSTIF_TRAP_TYPE_L3_MTU_ERROR = 60;
+  HOSTIF_TRAP_TYPE_TTL_ERROR = 61;
+  HOSTIF_TRAP_TYPE_STATIC_FDB_MOVE = 62;
+  HOSTIF_TRAP_TYPE_PIPELINE_DISCARD_EGRESS_BUFFER = 63;
+  HOSTIF_TRAP_TYPE_PIPELINE_DISCARD_WRED = 64;
+  HOSTIF_TRAP_TYPE_PIPELINE_DISCARD_ROUTER = 65;
+  HOSTIF_TRAP_TYPE_MPLS_TTL_ERROR = 66;
+  HOSTIF_TRAP_TYPE_MPLS_ROUTER_ALERT_LABEL = 67;
+  HOSTIF_TRAP_TYPE_MPLS_LABEL_LOOKUP_MISS = 68;
+  HOSTIF_TRAP_TYPE_CUSTOM_EXCEPTION_RANGE_BASE = 69;
+  HOSTIF_TRAP_TYPE_END = 70;
 }
 
 enum HostifTxType {
@@ -1004,6 +1160,12 @@ enum MacsecFlowStat {
   MACSEC_FLOW_STAT_IN_PKTS_OVERRUN = 19;
 }
 
+enum MacsecMaxSecureAssociationsPerSc {
+  MACSEC_MAX_SECURE_ASSOCIATIONS_PER_SC_UNSPECIFIED = 0;
+  MACSEC_MAX_SECURE_ASSOCIATIONS_PER_SC_TWO = 1;
+  MACSEC_MAX_SECURE_ASSOCIATIONS_PER_SC_FOUR = 2;
+}
+
 enum MacsecPortStat {
   MACSEC_PORT_STAT_UNSPECIFIED = 0;
   MACSEC_PORT_STAT_PRE_MACSEC_DROP_PKTS = 1;
@@ -1083,6 +1245,12 @@ enum MySidEntryEndpointBehavior {
   MY_SID_ENTRY_ENDPOINT_BEHAVIOR_UA = 14;
   MY_SID_ENTRY_ENDPOINT_BEHAVIOR_CUSTOM_RANGE_START = 15;
   MY_SID_ENTRY_ENDPOINT_BEHAVIOR_CUSTOM_RANGE_END = 16;
+}
+
+enum NatEvent {
+  NAT_EVENT_UNSPECIFIED = 0;
+  NAT_EVENT_NONE = 1;
+  NAT_EVENT_AGED = 2;
 }
 
 enum NatType {
@@ -1165,6 +1333,13 @@ enum NextHopType {
   NEXT_HOP_TYPE_MPLS = 2;
   NEXT_HOP_TYPE_TUNNEL_ENCAP = 3;
   NEXT_HOP_TYPE_SRV6_SIDLIST = 4;
+}
+
+enum ObjectStage {
+  OBJECT_STAGE_UNSPECIFIED = 0;
+  OBJECT_STAGE_BOTH = 1;
+  OBJECT_STAGE_INGRESS = 2;
+  OBJECT_STAGE_EGRESS = 3;
 }
 
 enum ObjectTypeExtensions {
@@ -1280,7 +1455,8 @@ enum ObjectType {
   OBJECT_TYPE_IPSEC = 100;
   OBJECT_TYPE_IPSEC_PORT = 101;
   OBJECT_TYPE_IPSEC_SA = 102;
-  OBJECT_TYPE_MAX = 103;
+  OBJECT_TYPE_GENERIC_PROGRAMMABLE = 103;
+  OBJECT_TYPE_MAX = 104;
 }
 
 enum OutDropReason {
@@ -1324,6 +1500,7 @@ enum PacketAction {
   PACKET_ACTION_LOG = 6;
   PACKET_ACTION_DENY = 7;
   PACKET_ACTION_TRANSIT = 8;
+  PACKET_ACTION_DONOTDROP = 9;
 }
 
 enum PacketColor {
@@ -1459,7 +1636,11 @@ enum PortInterfaceType {
   PORT_INTERFACE_TYPE_XAUI = 18;
   PORT_INTERFACE_TYPE_XFI = 19;
   PORT_INTERFACE_TYPE_XGMII = 20;
-  PORT_INTERFACE_TYPE_MAX = 21;
+  PORT_INTERFACE_TYPE_CR8 = 21;
+  PORT_INTERFACE_TYPE_KR8 = 22;
+  PORT_INTERFACE_TYPE_SR8 = 23;
+  PORT_INTERFACE_TYPE_LR8 = 24;
+  PORT_INTERFACE_TYPE_MAX = 25;
 }
 
 enum PortInternalLoopbackMode {
@@ -1769,26 +1950,43 @@ enum PortStat {
   PORT_STAT_IF_IN_FEC_SYMBOL_ERRORS = 181;
   PORT_STAT_IF_IN_FABRIC_DATA_UNITS = 182;
   PORT_STAT_IF_OUT_FABRIC_DATA_UNITS = 183;
-  PORT_STAT_IN_DROP_REASON_RANGE_BASE = 184;
-  PORT_STAT_IN_CONFIGURED_DROP_REASONS_0_DROPPED_PKTS = 185;
-  PORT_STAT_IN_CONFIGURED_DROP_REASONS_1_DROPPED_PKTS = 186;
-  PORT_STAT_IN_CONFIGURED_DROP_REASONS_2_DROPPED_PKTS = 187;
-  PORT_STAT_IN_CONFIGURED_DROP_REASONS_3_DROPPED_PKTS = 188;
-  PORT_STAT_IN_CONFIGURED_DROP_REASONS_4_DROPPED_PKTS = 189;
-  PORT_STAT_IN_CONFIGURED_DROP_REASONS_5_DROPPED_PKTS = 190;
-  PORT_STAT_IN_CONFIGURED_DROP_REASONS_6_DROPPED_PKTS = 191;
-  PORT_STAT_IN_CONFIGURED_DROP_REASONS_7_DROPPED_PKTS = 192;
-  PORT_STAT_IN_DROP_REASON_RANGE_END = 193;
-  PORT_STAT_OUT_DROP_REASON_RANGE_BASE = 194;
-  PORT_STAT_OUT_CONFIGURED_DROP_REASONS_0_DROPPED_PKTS = 195;
-  PORT_STAT_OUT_CONFIGURED_DROP_REASONS_1_DROPPED_PKTS = 196;
-  PORT_STAT_OUT_CONFIGURED_DROP_REASONS_2_DROPPED_PKTS = 197;
-  PORT_STAT_OUT_CONFIGURED_DROP_REASONS_3_DROPPED_PKTS = 198;
-  PORT_STAT_OUT_CONFIGURED_DROP_REASONS_4_DROPPED_PKTS = 199;
-  PORT_STAT_OUT_CONFIGURED_DROP_REASONS_5_DROPPED_PKTS = 200;
-  PORT_STAT_OUT_CONFIGURED_DROP_REASONS_6_DROPPED_PKTS = 201;
-  PORT_STAT_OUT_CONFIGURED_DROP_REASONS_7_DROPPED_PKTS = 202;
-  PORT_STAT_OUT_DROP_REASON_RANGE_END = 203;
+  PORT_STAT_IF_IN_FEC_CODEWORD_ERRORS_S0 = 184;
+  PORT_STAT_IF_IN_FEC_CODEWORD_ERRORS_S1 = 185;
+  PORT_STAT_IF_IN_FEC_CODEWORD_ERRORS_S2 = 186;
+  PORT_STAT_IF_IN_FEC_CODEWORD_ERRORS_S3 = 187;
+  PORT_STAT_IF_IN_FEC_CODEWORD_ERRORS_S4 = 188;
+  PORT_STAT_IF_IN_FEC_CODEWORD_ERRORS_S5 = 189;
+  PORT_STAT_IF_IN_FEC_CODEWORD_ERRORS_S6 = 190;
+  PORT_STAT_IF_IN_FEC_CODEWORD_ERRORS_S7 = 191;
+  PORT_STAT_IF_IN_FEC_CODEWORD_ERRORS_S8 = 192;
+  PORT_STAT_IF_IN_FEC_CODEWORD_ERRORS_S9 = 193;
+  PORT_STAT_IF_IN_FEC_CODEWORD_ERRORS_S10 = 194;
+  PORT_STAT_IF_IN_FEC_CODEWORD_ERRORS_S11 = 195;
+  PORT_STAT_IF_IN_FEC_CODEWORD_ERRORS_S12 = 196;
+  PORT_STAT_IF_IN_FEC_CODEWORD_ERRORS_S13 = 197;
+  PORT_STAT_IF_IN_FEC_CODEWORD_ERRORS_S14 = 198;
+  PORT_STAT_IF_IN_FEC_CODEWORD_ERRORS_S15 = 199;
+  PORT_STAT_IF_IN_FEC_CODEWORD_ERRORS_S16 = 200;
+  PORT_STAT_IN_DROP_REASON_RANGE_BASE = 201;
+  PORT_STAT_IN_CONFIGURED_DROP_REASONS_0_DROPPED_PKTS = 202;
+  PORT_STAT_IN_CONFIGURED_DROP_REASONS_1_DROPPED_PKTS = 203;
+  PORT_STAT_IN_CONFIGURED_DROP_REASONS_2_DROPPED_PKTS = 204;
+  PORT_STAT_IN_CONFIGURED_DROP_REASONS_3_DROPPED_PKTS = 205;
+  PORT_STAT_IN_CONFIGURED_DROP_REASONS_4_DROPPED_PKTS = 206;
+  PORT_STAT_IN_CONFIGURED_DROP_REASONS_5_DROPPED_PKTS = 207;
+  PORT_STAT_IN_CONFIGURED_DROP_REASONS_6_DROPPED_PKTS = 208;
+  PORT_STAT_IN_CONFIGURED_DROP_REASONS_7_DROPPED_PKTS = 209;
+  PORT_STAT_IN_DROP_REASON_RANGE_END = 210;
+  PORT_STAT_OUT_DROP_REASON_RANGE_BASE = 211;
+  PORT_STAT_OUT_CONFIGURED_DROP_REASONS_0_DROPPED_PKTS = 212;
+  PORT_STAT_OUT_CONFIGURED_DROP_REASONS_1_DROPPED_PKTS = 213;
+  PORT_STAT_OUT_CONFIGURED_DROP_REASONS_2_DROPPED_PKTS = 214;
+  PORT_STAT_OUT_CONFIGURED_DROP_REASONS_3_DROPPED_PKTS = 215;
+  PORT_STAT_OUT_CONFIGURED_DROP_REASONS_4_DROPPED_PKTS = 216;
+  PORT_STAT_OUT_CONFIGURED_DROP_REASONS_5_DROPPED_PKTS = 217;
+  PORT_STAT_OUT_CONFIGURED_DROP_REASONS_6_DROPPED_PKTS = 218;
+  PORT_STAT_OUT_CONFIGURED_DROP_REASONS_7_DROPPED_PKTS = 219;
+  PORT_STAT_OUT_DROP_REASON_RANGE_END = 220;
 }
 
 enum PortType {
@@ -1817,6 +2015,13 @@ enum QosMapType {
   QOS_MAP_TYPE_DSCP_TO_FORWARDING_CLASS = 14;
   QOS_MAP_TYPE_MPLS_EXP_TO_FORWARDING_CLASS = 15;
   QOS_MAP_TYPE_CUSTOM_RANGE_BASE = 16;
+}
+
+enum QueuePfcContinuousDeadlockState {
+  QUEUE_PFC_CONTINUOUS_DEADLOCK_STATE_UNSPECIFIED = 0;
+  QUEUE_PFC_CONTINUOUS_DEADLOCK_STATE_NOT_PAUSED = 1;
+  QUEUE_PFC_CONTINUOUS_DEADLOCK_STATE_PAUSED = 2;
+  QUEUE_PFC_CONTINUOUS_DEADLOCK_STATE_PAUSED_NOT_CONTINUOUS = 3;
 }
 
 enum QueuePfcDeadlockEventType {
@@ -1934,6 +2139,9 @@ enum StatsMode {
   STATS_MODE_UNSPECIFIED = 0;
   STATS_MODE_READ = 1;
   STATS_MODE_READ_AND_CLEAR = 2;
+  STATS_MODE_BULK_READ = 3;
+  STATS_MODE_BULK_CLEAR = 4;
+  STATS_MODE_BULK_READ_AND_CLEAR = 5;
 }
 
 enum StpPortState {
@@ -1941,6 +2149,12 @@ enum StpPortState {
   STP_PORT_STATE_LEARNING = 1;
   STP_PORT_STATE_FORWARDING = 2;
   STP_PORT_STATE_BLOCKING = 3;
+}
+
+enum SwitchAttrExtensions {
+  SWITCH_ATTR_EXTENSIONS_UNSPECIFIED = 0;
+  SWITCH_ATTR_EXTENSIONS_RANGE_START = 1;
+  SWITCH_ATTR_EXTENSIONS_RANGE_END = 2;
 }
 
 enum SwitchFailoverConfigMode {
@@ -2351,6 +2565,7 @@ message AclCounterAttribute {
   optional bool enable_byte_count = 3 [(attr_enum_value) = 3];
   optional uint64 packets = 4 [(attr_enum_value) = 4];
   optional uint64 bytes = 5 [(attr_enum_value) = 5];
+  optional bytes label = 6 [(attr_enum_value) = 6];
 }
 
 message AclEntryAttribute {
@@ -2759,6 +2974,7 @@ message BufferProfileAttribute {
 
 message CounterAttribute {
   optional CounterType type = 1 [(attr_enum_value) = 1];
+  optional bytes label = 2 [(attr_enum_value) = 2];
 }
 
 message DebugCounterAttribute {
@@ -2837,6 +3053,12 @@ message FineGrainedHashFieldAttribute {
   optional uint32 sequence_id = 4 [(attr_enum_value) = 4];
 }
 
+message GenericProgrammableAttribute {
+  repeated int32 object_name = 1 [(attr_enum_value) = 1];
+  optional bytes entry = 2 [(attr_enum_value) = 2];
+  optional uint64 counter_id = 3 [(attr_enum_value) = 3];
+}
+
 message HashAttribute {
   repeated NativeHashField native_hash_field_list = 1 [(attr_enum_value) = 1];
   repeated uint64 udf_group_list = 2 [(attr_enum_value) = 2];
@@ -2887,6 +3109,7 @@ message HostifTrapGroupAttribute {
   optional bool admin_state = 1 [(attr_enum_value) = 1];
   optional uint32 queue = 2 [(attr_enum_value) = 2];
   optional uint64 policer = 3 [(attr_enum_value) = 3];
+  optional ObjectStage object_stage = 4 [(attr_enum_value) = 4];
 }
 
 message HostifUserDefinedTrapAttribute {
@@ -2920,6 +3143,7 @@ message IpmcEntryAttribute {
   optional PacketAction packet_action = 1 [(attr_enum_value) = 1];
   optional uint64 output_group_id = 2 [(attr_enum_value) = 2];
   optional uint64 rpf_group_id = 3 [(attr_enum_value) = 3];
+  optional uint64 counter_id = 4 [(attr_enum_value) = 4];
 }
 
 message IpmcGroupAttribute {
@@ -3067,6 +3291,8 @@ message MacsecAttribute {
   repeated uint64 flow_list = 23 [(attr_enum_value) = 23];
   optional uint32 available_macsec_sc = 24 [(attr_enum_value) = 24];
   optional uint32 available_macsec_sa = 25 [(attr_enum_value) = 25];
+  optional MacsecMaxSecureAssociationsPerSc max_secure_associations_per_sc = 26
+      [(attr_enum_value) = 26];
 }
 
 message MacsecFlowAttribute {
@@ -3145,6 +3371,7 @@ message MirrorSessionAttribute {
   optional uint64 policer = 23 [(attr_enum_value) = 23];
   optional uint32 udp_src_port = 24 [(attr_enum_value) = 24];
   optional uint32 udp_dst_port = 25 [(attr_enum_value) = 25];
+  optional uint64 counter_id = 26 [(attr_enum_value) = 26];
 }
 
 message MyMacAttribute {
@@ -3183,6 +3410,7 @@ message NatEntryAttribute {
   optional uint64 byte_count = 12 [(attr_enum_value) = 12];
   optional bool hit_bit_cor = 13 [(attr_enum_value) = 13];
   optional bool hit_bit = 14 [(attr_enum_value) = 14];
+  optional uint32 aging_time = 15 [(attr_enum_value) = 15];
 }
 
 message NatZoneCounterAttribute {
@@ -3272,6 +3500,7 @@ message PolicerAttribute {
   optional PacketAction red_packet_action = 10 [(attr_enum_value) = 10];
   repeated PacketAction enable_counter_packet_action_list = 11
       [(attr_enum_value) = 11];
+  optional ObjectStage object_stage = 12 [(attr_enum_value) = 12];
 }
 
 message PortAttribute {
@@ -3447,6 +3676,21 @@ message PortAttribute {
   optional uint64 qos_mpls_exp_to_forwarding_class_map = 143
       [(attr_enum_value) = 143];
   optional uint64 ipsec_port = 144 [(attr_enum_value) = 144];
+  optional Uint32Range pfc_tc_dld_interval_range = 145
+      [(attr_enum_value) = 145];
+  repeated UintMap pfc_tc_dld_interval = 146 [(attr_enum_value) = 146];
+  optional Uint32Range pfc_tc_dlr_interval_range = 147
+      [(attr_enum_value) = 147];
+  repeated UintMap pfc_tc_dlr_interval = 148 [(attr_enum_value) = 148];
+  optional bool supported_link_training_mode = 149 [(attr_enum_value) = 149];
+  repeated PortLaneLatchStatus rx_signal_detect = 150 [(attr_enum_value) = 150];
+  repeated PortLaneLatchStatus rx_lock_status = 151 [(attr_enum_value) = 151];
+  optional LatchStatus pcs_rx_link_status = 152 [(attr_enum_value) = 152];
+  repeated PortLaneLatchStatus fec_alignment_lock = 153
+      [(attr_enum_value) = 153];
+  optional bool fabric_isolate = 154 [(attr_enum_value) = 154];
+  optional uint32 max_fec_symbol_errors_detectable = 155
+      [(attr_enum_value) = 155];
 }
 
 message PortConnectorAttribute {
@@ -3495,6 +3739,9 @@ message QueueAttribute {
   optional bool enable_pfc_dldr = 9 [(attr_enum_value) = 9];
   optional bool pfc_dlr_init = 10 [(attr_enum_value) = 10];
   repeated uint64 tam_object = 11 [(attr_enum_value) = 11];
+  optional PacketAction pfc_dlr_packet_action = 12 [(attr_enum_value) = 12];
+  optional QueuePfcContinuousDeadlockState pfc_continuous_deadlock_state = 13
+      [(attr_enum_value) = 13];
 }
 
 message RouterInterfaceAttribute {
@@ -3818,6 +4065,8 @@ message SwitchAttribute {
       [(attr_enum_value) = 205];
   optional uint64 ipsec_object_id = 196 [(attr_enum_value) = 206];
   optional uint32 ipsec_sa_tag_tpid = 197 [(attr_enum_value) = 207];
+  optional uint32 max_ecmp_member_count = 198 [(attr_enum_value) = 210];
+  optional uint32 ecmp_member_count = 199 [(attr_enum_value) = 211];
 }
 
 message SwitchTunnelAttribute {
@@ -3831,6 +4080,12 @@ message SwitchTunnelAttribute {
       [(attr_enum_value) = 7];
   optional uint32 vxlan_udp_sport = 8 [(attr_enum_value) = 8];
   optional uint32 vxlan_udp_sport_mask = 9 [(attr_enum_value) = 9];
+  optional uint64 encap_qos_tc_and_color_to_dscp_map = 10
+      [(attr_enum_value) = 10];
+  optional uint64 encap_qos_tc_to_queue_map = 11 [(attr_enum_value) = 11];
+  optional uint64 decap_qos_dscp_to_tc_map = 12 [(attr_enum_value) = 12];
+  optional uint64 decap_qos_tc_to_priority_group_map = 13
+      [(attr_enum_value) = 13];
 }
 
 message SystemPortAttribute {
@@ -3953,6 +4208,7 @@ message TamReportAttribute {
   optional TamReportMode report_mode = 5 [(attr_enum_value) = 5];
   optional uint32 report_interval = 6 [(attr_enum_value) = 6];
   optional uint32 enterprise_number = 7 [(attr_enum_value) = 7];
+  optional uint32 template_report_interval = 8 [(attr_enum_value) = 8];
 }
 
 message TamTelemetryAttribute {
@@ -4017,6 +4273,13 @@ message TunnelAttribute {
   optional uint32 vxlan_udp_sport_mask = 23 [(attr_enum_value) = 23];
   optional uint32 sa_index = 24 [(attr_enum_value) = 24];
   repeated uint64 ipsec_sa_port_list = 25 [(attr_enum_value) = 25];
+  optional uint64 encap_qos_tc_and_color_to_dscp_map = 26
+      [(attr_enum_value) = 26];
+  optional uint64 encap_qos_tc_to_queue_map = 27 [(attr_enum_value) = 27];
+  optional uint64 decap_qos_dscp_to_tc_map = 28 [(attr_enum_value) = 28];
+  optional uint64 decap_qos_tc_to_priority_group_map = 29
+      [(attr_enum_value) = 29];
+  optional bool vxlan_udp_sport_security = 30 [(attr_enum_value) = 30];
 }
 
 message TunnelMapAttribute {

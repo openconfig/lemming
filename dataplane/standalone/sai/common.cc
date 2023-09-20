@@ -20,12 +20,13 @@
 #include <string>
 
 #include "dataplane/standalone/proto/common.pb.h"
-#include "dataplane/standalone/sai/entry.h"
 
 std::string convert_from_ip_addr(sai_ip_addr_family_t addr_family,
                                  const sai_ip_addr_t& addr) {
   if (addr_family == SAI_IP_ADDR_FAMILY_IPV4) {
-    return std::string(reinterpret_cast<const char*>(&addr.ip4),reinterpret_cast<const char*>(&addr.ip4)+sizeof(sai_ip4_t));
+    return std::string(
+        reinterpret_cast<const char*>(&addr.ip4),
+        reinterpret_cast<const char*>(&addr.ip4) + sizeof(sai_ip4_t));
   }
   return std::string(addr.ip6, addr.ip6 + 16);
 }

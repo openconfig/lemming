@@ -48,16 +48,6 @@ sai_status_t l_clear_switch_stats(sai_object_id_t switch_id,
                                   uint32_t number_of_counters,
                                   const sai_stat_id_t *counter_ids);
 
-sai_status_t l_switch_mdio_read(sai_object_id_t switch_id, uint32_t device_addr,
-                                uint32_t start_reg_addr,
-                                uint32_t number_of_registers,
-                                uint32_t *reg_val);
-
-sai_status_t l_switch_mdio_write(sai_object_id_t switch_id,
-                                 uint32_t device_addr, uint32_t start_reg_addr,
-                                 uint32_t number_of_registers,
-                                 const uint32_t *reg_val);
-
 sai_status_t l_create_switch_tunnel(sai_object_id_t *switch_tunnel_id,
                                     sai_object_id_t switch_id,
                                     uint32_t attr_count,

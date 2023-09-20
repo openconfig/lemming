@@ -21,7 +21,6 @@
 #include "dataplane/standalone/proto/common.pb.h"
 #include "dataplane/standalone/proto/nat.pb.h"
 #include "dataplane/standalone/sai/common.h"
-#include "dataplane/standalone/sai/entry.h"
 
 const sai_nat_api_t l_nat = {
     .create_nat_entry = l_create_nat_entry,
@@ -93,6 +92,9 @@ sai_status_t l_create_nat_entry(const sai_nat_entry_t *nat_entry,
         break;
       case SAI_NAT_ENTRY_ATTR_HIT_BIT:
         req.set_hit_bit(attr_list[i].value.booldata);
+        break;
+      case SAI_NAT_ENTRY_ATTR_AGING_TIME:
+        req.set_aging_time(attr_list[i].value.u32);
         break;
     }
   }
@@ -173,6 +175,9 @@ sai_status_t l_set_nat_entry_attribute(const sai_nat_entry_t *nat_entry,
     case SAI_NAT_ENTRY_ATTR_HIT_BIT:
       req.set_hit_bit(attr->value.booldata);
       break;
+    case SAI_NAT_ENTRY_ATTR_AGING_TIME:
+      req.set_aging_time(attr->value.u32);
+      break;
   }
 
   grpc::Status status = nat->SetNatEntryAttribute(&context, req, &resp);
@@ -249,6 +254,9 @@ sai_status_t l_get_nat_entry_attribute(const sai_nat_entry_t *nat_entry,
         break;
       case SAI_NAT_ENTRY_ATTR_HIT_BIT:
         attr_list[i].value.booldata = resp.attr().hit_bit();
+        break;
+      case SAI_NAT_ENTRY_ATTR_AGING_TIME:
+        attr_list[i].value.u32 = resp.attr().aging_time();
         break;
     }
   }

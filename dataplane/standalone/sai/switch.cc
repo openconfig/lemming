@@ -21,7 +21,6 @@
 #include "dataplane/standalone/proto/common.pb.h"
 #include "dataplane/standalone/proto/switch.pb.h"
 #include "dataplane/standalone/sai/common.h"
-#include "dataplane/standalone/sai/entry.h"
 
 const sai_switch_api_t l_switch = {
     .create_switch = l_create_switch,
@@ -31,8 +30,6 @@ const sai_switch_api_t l_switch = {
     .get_switch_stats = l_get_switch_stats,
     .get_switch_stats_ext = l_get_switch_stats_ext,
     .clear_switch_stats = l_clear_switch_stats,
-    .switch_mdio_read = l_switch_mdio_read,
-    .switch_mdio_write = l_switch_mdio_write,
     .create_switch_tunnel = l_create_switch_tunnel,
     .remove_switch_tunnel = l_remove_switch_tunnel,
     .set_switch_tunnel_attribute = l_set_switch_tunnel_attribute,
@@ -330,6 +327,9 @@ sai_status_t l_create_switch(sai_object_id_t *switch_id, uint32_t attr_count,
       case SAI_SWITCH_ATTR_IPSEC_SA_TAG_TPID:
         req.set_ipsec_sa_tag_tpid(attr_list[i].value.u16);
         break;
+      case SAI_SWITCH_ATTR_ECMP_MEMBER_COUNT:
+        req.set_ecmp_member_count(attr_list[i].value.u32);
+        break;
     }
   }
   grpc::Status status = switch_->CreateSwitch(&context, req, &resp);
@@ -594,6 +594,9 @@ sai_status_t l_set_switch_attribute(sai_object_id_t switch_id,
       break;
     case SAI_SWITCH_ATTR_IPSEC_SA_TAG_TPID:
       req.set_ipsec_sa_tag_tpid(attr->value.u16);
+      break;
+    case SAI_SWITCH_ATTR_ECMP_MEMBER_COUNT:
+      req.set_ecmp_member_count(attr->value.u32);
       break;
   }
 
@@ -1193,6 +1196,12 @@ sai_status_t l_get_switch_attribute(sai_object_id_t switch_id,
       case SAI_SWITCH_ATTR_IPSEC_SA_TAG_TPID:
         attr_list[i].value.u16 = resp.attr().ipsec_sa_tag_tpid();
         break;
+      case SAI_SWITCH_ATTR_MAX_ECMP_MEMBER_COUNT:
+        attr_list[i].value.u32 = resp.attr().max_ecmp_member_count();
+        break;
+      case SAI_SWITCH_ATTR_ECMP_MEMBER_COUNT:
+        attr_list[i].value.u32 = resp.attr().ecmp_member_count();
+        break;
     }
   }
 
@@ -1223,22 +1232,6 @@ sai_status_t l_clear_switch_stats(sai_object_id_t switch_id,
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
   return SAI_STATUS_SUCCESS;
-}
-
-sai_status_t l_switch_mdio_read(sai_object_id_t switch_id, uint32_t device_addr,
-                                uint32_t start_reg_addr,
-                                uint32_t number_of_registers,
-                                uint32_t *reg_val) {
-  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-  return SAI_STATUS_NOT_IMPLEMENTED;
-}
-
-sai_status_t l_switch_mdio_write(sai_object_id_t switch_id,
-                                 uint32_t device_addr, uint32_t start_reg_addr,
-                                 uint32_t number_of_registers,
-                                 const uint32_t *reg_val) {
-  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-  return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
 sai_status_t l_create_switch_tunnel(sai_object_id_t *switch_tunnel_id,
@@ -1294,6 +1287,18 @@ sai_status_t l_create_switch_tunnel(sai_object_id_t *switch_tunnel_id,
       case SAI_SWITCH_TUNNEL_ATTR_VXLAN_UDP_SPORT_MASK:
         req.set_vxlan_udp_sport_mask(attr_list[i].value.u8);
         break;
+      case SAI_SWITCH_TUNNEL_ATTR_ENCAP_QOS_TC_AND_COLOR_TO_DSCP_MAP:
+        req.set_encap_qos_tc_and_color_to_dscp_map(attr_list[i].value.oid);
+        break;
+      case SAI_SWITCH_TUNNEL_ATTR_ENCAP_QOS_TC_TO_QUEUE_MAP:
+        req.set_encap_qos_tc_to_queue_map(attr_list[i].value.oid);
+        break;
+      case SAI_SWITCH_TUNNEL_ATTR_DECAP_QOS_DSCP_TO_TC_MAP:
+        req.set_decap_qos_dscp_to_tc_map(attr_list[i].value.oid);
+        break;
+      case SAI_SWITCH_TUNNEL_ATTR_DECAP_QOS_TC_TO_PRIORITY_GROUP_MAP:
+        req.set_decap_qos_tc_to_priority_group_map(attr_list[i].value.oid);
+        break;
     }
   }
   grpc::Status status = switch_->CreateSwitchTunnel(&context, req, &resp);
@@ -1348,6 +1353,18 @@ sai_status_t l_set_switch_tunnel_attribute(sai_object_id_t switch_tunnel_id,
       break;
     case SAI_SWITCH_TUNNEL_ATTR_VXLAN_UDP_SPORT_MASK:
       req.set_vxlan_udp_sport_mask(attr->value.u8);
+      break;
+    case SAI_SWITCH_TUNNEL_ATTR_ENCAP_QOS_TC_AND_COLOR_TO_DSCP_MAP:
+      req.set_encap_qos_tc_and_color_to_dscp_map(attr->value.oid);
+      break;
+    case SAI_SWITCH_TUNNEL_ATTR_ENCAP_QOS_TC_TO_QUEUE_MAP:
+      req.set_encap_qos_tc_to_queue_map(attr->value.oid);
+      break;
+    case SAI_SWITCH_TUNNEL_ATTR_DECAP_QOS_DSCP_TO_TC_MAP:
+      req.set_decap_qos_dscp_to_tc_map(attr->value.oid);
+      break;
+    case SAI_SWITCH_TUNNEL_ATTR_DECAP_QOS_TC_TO_PRIORITY_GROUP_MAP:
+      req.set_decap_qos_tc_to_priority_group_map(attr->value.oid);
       break;
   }
 
@@ -1415,6 +1432,20 @@ sai_status_t l_get_switch_tunnel_attribute(sai_object_id_t switch_tunnel_id,
         break;
       case SAI_SWITCH_TUNNEL_ATTR_VXLAN_UDP_SPORT_MASK:
         attr_list[i].value.u8 = resp.attr().vxlan_udp_sport_mask();
+        break;
+      case SAI_SWITCH_TUNNEL_ATTR_ENCAP_QOS_TC_AND_COLOR_TO_DSCP_MAP:
+        attr_list[i].value.oid =
+            resp.attr().encap_qos_tc_and_color_to_dscp_map();
+        break;
+      case SAI_SWITCH_TUNNEL_ATTR_ENCAP_QOS_TC_TO_QUEUE_MAP:
+        attr_list[i].value.oid = resp.attr().encap_qos_tc_to_queue_map();
+        break;
+      case SAI_SWITCH_TUNNEL_ATTR_DECAP_QOS_DSCP_TO_TC_MAP:
+        attr_list[i].value.oid = resp.attr().decap_qos_dscp_to_tc_map();
+        break;
+      case SAI_SWITCH_TUNNEL_ATTR_DECAP_QOS_TC_TO_PRIORITY_GROUP_MAP:
+        attr_list[i].value.oid =
+            resp.attr().decap_qos_tc_to_priority_group_map();
         break;
     }
   }

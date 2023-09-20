@@ -21,7 +21,6 @@
 #include "dataplane/standalone/proto/acl.pb.h"
 #include "dataplane/standalone/proto/common.pb.h"
 #include "dataplane/standalone/sai/common.h"
-#include "dataplane/standalone/sai/entry.h"
 
 const sai_acl_api_t l_acl = {
     .create_acl_table = l_create_acl_table,
@@ -848,6 +847,9 @@ sai_status_t l_create_acl_counter(sai_object_id_t *acl_counter_id,
       case SAI_ACL_COUNTER_ATTR_BYTES:
         req.set_bytes(attr_list[i].value.u64);
         break;
+      case SAI_ACL_COUNTER_ATTR_LABEL:
+        req.set_label(attr_list[i].value.chardata);
+        break;
     }
   }
   grpc::Status status = acl->CreateAclCounter(&context, req, &resp);
@@ -892,6 +894,9 @@ sai_status_t l_set_acl_counter_attribute(sai_object_id_t acl_counter_id,
       break;
     case SAI_ACL_COUNTER_ATTR_BYTES:
       req.set_bytes(attr->value.u64);
+      break;
+    case SAI_ACL_COUNTER_ATTR_LABEL:
+      req.set_label(attr->value.chardata);
       break;
   }
 
@@ -940,6 +945,9 @@ sai_status_t l_get_acl_counter_attribute(sai_object_id_t acl_counter_id,
         break;
       case SAI_ACL_COUNTER_ATTR_BYTES:
         attr_list[i].value.u64 = resp.attr().bytes();
+        break;
+      case SAI_ACL_COUNTER_ATTR_LABEL:
+        strncpy(attr_list[i].value.chardata, resp.attr().label().data(), 32);
         break;
     }
   }

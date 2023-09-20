@@ -133,26 +133,15 @@ http_archive(
     name = "com_github_opencomputeproject_sai",
     build_file_content = """
 cc_library(
-    name = "meta",
-    hdrs = ["meta/saimetadata.h", "meta/saimetadatautils.h", "meta/saiserialize.h", "meta/saimetadatalogger.h"],
-    srcs = ["meta/saimetadata.c", "meta/saimetadatautils.c", "meta/saiserialize.c"],
-    deps = ["//:sai"],
-    includes = ["inc", "experimental"],
-    visibility = ["//visibility:public"],
-)
-
-cc_library(
     name = "sai",
-    hdrs = glob(["meta/saimetadatatypes.h", "inc/*.h","experimental/*.h"]),
+    hdrs = glob(["inc/*.h","experimental/*.h"]),
     includes = ["inc", "experimental"],
     visibility = ["//visibility:public"],
 )
 """,
-    patch_args = ["-p1"],
-    patches = ["//patches:sai.patch"],
-    sha256 = "2eb547dbde2bc8d3ffd2edb1ef6fb282be4994a43cd4886a67dd8ecef002ffa7",
-    strip_prefix = "SAI-1.9.1",
-    urls = ["https://github.com/opencomputeproject/SAI/archive/refs/tags/v1.9.1.tar.gz"],
+    sha256 = "240d0211bbea2758faabfdbfa5e5488d837a47d42839bfe99b4bfbff52ab6c11",
+    strip_prefix = "SAI-1.11.0",
+    urls = ["https://github.com/opencomputeproject/SAI/archive/refs/tags/v1.11.0.tar.gz"],
 )
 
 http_archive(

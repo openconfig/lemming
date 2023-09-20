@@ -21,7 +21,6 @@
 #include "dataplane/standalone/proto/common.pb.h"
 #include "dataplane/standalone/proto/next_hop_group.pb.h"
 #include "dataplane/standalone/sai/common.h"
-#include "dataplane/standalone/sai/entry.h"
 
 const sai_next_hop_group_api_t l_next_hop_group = {
     .create_next_hop_group = l_create_next_hop_group,
@@ -40,6 +39,10 @@ const sai_next_hop_group_api_t l_next_hop_group = {
     .remove_next_hop_group_map = l_remove_next_hop_group_map,
     .set_next_hop_group_map_attribute = l_set_next_hop_group_map_attribute,
     .get_next_hop_group_map_attribute = l_get_next_hop_group_map_attribute,
+    .set_next_hop_group_members_attribute =
+        l_set_next_hop_group_members_attribute,
+    .get_next_hop_group_members_attribute =
+        l_get_next_hop_group_members_attribute,
 };
 
 sai_status_t l_create_next_hop_group(sai_object_id_t *next_hop_group_id,
@@ -460,6 +463,24 @@ sai_status_t l_get_next_hop_group_map_attribute(
         break;
     }
   }
+
+  return SAI_STATUS_SUCCESS;
+}
+
+sai_status_t l_set_next_hop_group_members_attribute(
+    uint32_t object_count, const sai_object_id_t *object_id,
+    const sai_attribute_t *attr_list, sai_bulk_op_error_mode_t mode,
+    sai_status_t *object_statuses) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  return SAI_STATUS_SUCCESS;
+}
+
+sai_status_t l_get_next_hop_group_members_attribute(
+    uint32_t object_count, const sai_object_id_t *object_id,
+    const uint32_t *attr_count, sai_attribute_t **attr_list,
+    sai_bulk_op_error_mode_t mode, sai_status_t *object_statuses) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
   return SAI_STATUS_SUCCESS;
 }
