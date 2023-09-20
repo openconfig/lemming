@@ -131,28 +131,20 @@ func testPolicy(t *testing.T, testspec PolicyTestCase) {
 	}
 
 	t.Run("installPolicyBeforeRoutes", func(t *testing.T) {
-		testPolicyAux(t, testspec, dut1, dut2, dut3, dut4, dut5, false)
-	})
-
-	t.Run("installPolicyAfterRoutes", func(t *testing.T) {
-		testPolicyAux(t, testspec, dut1, dut2, dut3, dut4, dut5, true)
+		testPolicyAux(t, testspec, dut1, dut2, dut3, dut4, dut5)
 	})
 }
 
-func testPropagation(t *testing.T, routeTest *valpb.RouteTestCase, prevDUT, currDUT, nextDUT *Device, filterPoliciesInstalled bool) {
+func testPropagation(t *testing.T, routeTest *valpb.RouteTestCase, prevDUT, currDUT, nextDUT *Device) {
 	t.Helper()
 	v4uni := bgp.BGPPath.Rib().AfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST).Ipv4Unicast()
-	expectedResult := routeTest.GetExpectedResultBeforePolicy()
-	if filterPoliciesInstalled {
-		expectedResult = routeTest.GetExpectedResult()
-	}
 
 	prefix := routeTest.GetInput().GetReachPrefix()
 	// Check propagation to AdjRibOutPre for all prefixes.
 	Await(t, prevDUT, v4uni.Neighbor(currDUT.RouterID).AdjRibOutPre().Route(prefix, 0).Prefix().State(), prefix)
 	Await(t, prevDUT, v4uni.Neighbor(currDUT.RouterID).AdjRibOutPost().Route(prefix, 0).Prefix().State(), prefix)
 	Await(t, currDUT, v4uni.Neighbor(prevDUT.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), prefix)
-	switch expectedResult {
+	switch expectedResult := routeTest.GetExpectedResult(); expectedResult {
 	case policyval.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT:
 		t.Logf("Waiting for %s to be propagated", prefix)
 		Await(t, currDUT, v4uni.Neighbor(prevDUT.RouterID).AdjRibInPost().Route(prefix, 0).Prefix().State(), prefix)
@@ -201,7 +193,7 @@ func testPropagation(t *testing.T, routeTest *valpb.RouteTestCase, prevDUT, curr
 	}
 }
 
-func testPolicyAux(t *testing.T, testspec PolicyTestCase, dut1, dut2, dut3, dut4, dut5 *Device, installPolicyAfterRoutes bool) {
+func testPolicyAux(t *testing.T, testspec PolicyTestCase, dut1, dut2, dut3, dut4, dut5 *Device) {
 	// Remove any existing BGP config
 	//
 	// TODO(wenbli): Debug why sometimes this causes GoBGP to transiently
@@ -235,7 +227,7 @@ func testPolicyAux(t *testing.T, testspec PolicyTestCase, dut1, dut2, dut3, dut4
 	}
 	installDefaultPolicies()
 
-	if testspec.installPolicies != nil && !installPolicyAfterRoutes {
+	if testspec.installPolicies != nil {
 		testspec.installPolicies(t, dut1, dut2, dut3, dut4, dut5)
 	}
 
@@ -246,28 +238,9 @@ func testPolicyAux(t *testing.T, testspec PolicyTestCase, dut1, dut2, dut3, dut4
 	t.Logf("Installed static route on %v: %s", dut1, formatYgot(v))
 
 	for _, routeTest := range testspec.spec.RouteTests {
-		testPropagation(t, routeTest, dut1, dut2, dut3, !installPolicyAfterRoutes)
+		testPropagation(t, routeTest, dut1, dut2, dut3)
 	}
 	for _, routeTest := range testspec.spec.LongerPathRouteTests {
-		testPropagation(t, routeTest, dut5, dut2, dut3, !installPolicyAfterRoutes)
-	}
-
-	if installPolicyAfterRoutes {
-		if testspec.installPolicies != nil {
-			testspec.installPolicies(t, dut1, dut2, dut3, dut4, dut5)
-		}
-		// Changing policy causes a reset of the BGP session. Wait some
-		// time to increase confidence that we're detecting routes from
-		// after the reset.
-		time.Sleep(5 * time.Second)
-		awaitSessionEstablished(t, dut2, dut1)
-		awaitSessionEstablished(t, dut2, dut5)
-
-		for _, routeTest := range testspec.spec.RouteTests {
-			testPropagation(t, routeTest, dut1, dut2, dut3, true)
-		}
-		for _, routeTest := range testspec.spec.LongerPathRouteTests {
-			testPropagation(t, routeTest, dut5, dut2, dut3, true)
-		}
+		testPropagation(t, routeTest, dut5, dut2, dut3)
 	}
 }

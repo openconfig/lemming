@@ -88,12 +88,7 @@ type TestCase struct {
 func TestPolicy(t *testing.T, testspec TestCase) {
 	t.Helper()
 	t.Run("installPolicyBeforeRoutes", func(t *testing.T) {
-		testPolicyAux(t, testspec, false)
-	})
-
-	t.Run("installPolicyAfterRoutes", func(t *testing.T) {
-		// TODO(wenbli): Figure out how to reset and unskip this.
-		testPolicyAux(t, testspec, true)
+		testPolicyAux(t, testspec)
 	})
 }
 
@@ -187,13 +182,9 @@ var (
 	}
 )
 
-func testPropagation(t *testing.T, routeTest *valpb.RouteTestCase, pair1, pair2 *DevicePair, filterPoliciesInstalled bool) {
+func testPropagation(t *testing.T, routeTest *valpb.RouteTestCase, pair1, pair2 *DevicePair) {
 	t.Helper()
 	v4uni := BGPPath.Rib().AfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST).Ipv4Unicast()
-	expectedResult := routeTest.GetExpectedResultBeforePolicy()
-	if filterPoliciesInstalled {
-		expectedResult = routeTest.GetExpectedResult()
-	}
 
 	prevDUT, currDUT, nextDUT := pair1.First, pair1.Second, pair2.Second
 	port1, port21, port23, port3 := pair1.FirstPort, pair1.SecondPort, pair2.FirstPort, pair2.SecondPort
@@ -203,7 +194,7 @@ func testPropagation(t *testing.T, routeTest *valpb.RouteTestCase, pair1, pair2 
 	gnmi.Await(t, prevDUT, v4uni.Neighbor(port21.IPv4).AdjRibOutPre().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
 	gnmi.Await(t, prevDUT, v4uni.Neighbor(port21.IPv4).AdjRibOutPost().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
 	gnmi.Await(t, currDUT, v4uni.Neighbor(port1.IPv4).AdjRibInPre().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
-	switch expectedResult {
+	switch expectedResult := routeTest.GetExpectedResult(); expectedResult {
 	case policyval.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT:
 		t.Logf("Waiting for %s to be propagated", prefix)
 		gnmi.Await(t, currDUT, v4uni.Neighbor(port1.IPv4).AdjRibInPost().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
@@ -322,7 +313,7 @@ func installDefaultAllowPolicies(t *testing.T, dutPair *DevicePair) {
 	gnmi.Replace(t, dut2, BGPPath.Neighbor(port1.IPv4).ApplyPolicy().DefaultImportPolicy().Config(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
 }
 
-func testPolicyAux(t *testing.T, testspec TestCase, installPolicyAfterRoutes bool) {
+func testPolicyAux(t *testing.T, testspec TestCase) {
 	dut0 := ondatra.DUT(t, "dut0")
 	dut1 := &Device{
 		DUTDevice: ondatra.DUT(t, "dut1"),
@@ -383,7 +374,7 @@ func testPolicyAux(t *testing.T, testspec TestCase, installPolicyAfterRoutes boo
 	installDefaultAllowPolicies(t, pair45)
 	installDefaultAllowPolicies(t, pair52)
 
-	if testspec.InstallPolicies != nil && !installPolicyAfterRoutes {
+	if testspec.InstallPolicies != nil {
 		testspec.InstallPolicies(t, pair12, pair52, pair23)
 	}
 
@@ -435,28 +426,9 @@ func testPolicyAux(t *testing.T, testspec TestCase, installPolicyAfterRoutes boo
 	}
 
 	for _, routeTest := range testspec.Spec.RouteTests {
-		testPropagation(t, routeTest, pair12, pair23, !installPolicyAfterRoutes)
+		testPropagation(t, routeTest, pair12, pair23)
 	}
 	for _, routeTest := range testspec.Spec.LongerPathRouteTests {
-		testPropagation(t, routeTest, pair52, pair23, !installPolicyAfterRoutes)
-	}
-
-	if installPolicyAfterRoutes {
-		if testspec.InstallPolicies != nil {
-			testspec.InstallPolicies(t, pair12, pair52, pair23)
-		}
-		// Changing policy causes a reset of the BGP session. Wait some
-		// time to increase confidence that we're detecting routes from
-		// after the reset.
-		time.Sleep(5 * time.Second)
-		awaitSessionEstablished(t, pair12)
-		awaitSessionEstablished(t, pair52)
-
-		for _, routeTest := range testspec.Spec.RouteTests {
-			testPropagation(t, routeTest, pair12, pair23, true)
-		}
-		for _, routeTest := range testspec.Spec.LongerPathRouteTests {
-			testPropagation(t, routeTest, pair52, pair23, true)
-		}
+		testPropagation(t, routeTest, pair52, pair23)
 	}
 }

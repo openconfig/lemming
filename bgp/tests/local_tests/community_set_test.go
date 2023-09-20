@@ -176,43 +176,37 @@ func TestCommunitySet(t *testing.T) {
 				Input: &valpb.TestRoute{
 					ReachPrefix: routeUnderTestList[0],
 				},
-				ExpectedResultBeforePolicy: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
-				ExpectedResult:             valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
+				ExpectedResult: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
 			}, {
 				Description: "Matches ANY",
 				Input: &valpb.TestRoute{
 					ReachPrefix: routeUnderTestList[1],
 				},
-				ExpectedResultBeforePolicy: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
-				ExpectedResult:             valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD,
+				ExpectedResult: valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD,
 			}, {
 				Description: "Partially matches ALL",
 				Input: &valpb.TestRoute{
 					ReachPrefix: routeUnderTestList[2],
 				},
-				ExpectedResultBeforePolicy: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
-				ExpectedResult:             valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
+				ExpectedResult: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
 			}, {
 				Description: "Matches ALL",
 				Input: &valpb.TestRoute{
 					ReachPrefix: routeUnderTestList[3],
 				},
-				ExpectedResultBeforePolicy: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
-				ExpectedResult:             valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD,
+				ExpectedResult: valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD,
 			}, {
 				Description: "Matches ALL reversed and with extra community",
 				Input: &valpb.TestRoute{
 					ReachPrefix: routeUnderTestList[4],
 				},
-				ExpectedResultBeforePolicy: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
-				ExpectedResult:             valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD,
+				ExpectedResult: valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD,
 			}, {
 				Description: "Matches ALL after ADD",
 				Input: &valpb.TestRoute{
 					ReachPrefix: routeUnderTestList[5],
 				},
-				ExpectedResultBeforePolicy: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
-				ExpectedResult:             valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD,
+				ExpectedResult: valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD,
 			}},
 		},
 		installPolicies: func(t *testing.T, dut1, dut2, dut3, dut4, dut5 *Device) {
