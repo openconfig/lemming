@@ -1,22 +1,15 @@
-name: "twodut"
+name: "twodut-sonic"
 nodes: {
-    name: "vm"
+    name: "sonic"
     vendor: HOST
     config: {
-        image: "vgpins:latest"
+        image: "sonic-vs:latest"
     }
     services:{
         key: 22
         value: {
             name: "ssh"
             inside: 22
-        }
-    }
-    services:{
-        key: 9339
-        value: {
-            name: "gnmi"
-            inside: 9339
         }
     }
 }
@@ -29,25 +22,25 @@ nodes: {
     }
 }
 links: {
-    a_node: "vm"
+    a_node: "sonic"
     a_int: "eth1"
     z_node: "lemming"
     z_int: "eth1"
 }
 links: {
-    a_node: "vm"
+    a_node: "sonic"
     a_int: "eth2"
     z_node: "lemming"
     z_int: "eth2"
 }
 links: {
-    a_node: "vm"
+    a_node: "sonic"
     a_int: "eth3"
     z_node: "lemming"
     z_int: "eth3"
 }
 links: {
-    a_node: "vm"
+    a_node: "sonic"
     a_int: "eth4"
     z_node: "lemming"
     z_int: "eth4"

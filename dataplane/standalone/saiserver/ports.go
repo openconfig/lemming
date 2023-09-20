@@ -42,7 +42,7 @@ func newPort(mgr *attrmgr.AttrMgr, dataplane portDataplaneAPI, s *grpc.Server) *
 		mgr:       mgr,
 		dataplane: dataplane,
 		portToEth: make(map[uint64]string),
-		nextEth:   2, // Start at eth2
+		nextEth:   1, // Start at eth1
 	}
 	saipb.RegisterPortServer(s, p)
 	return p

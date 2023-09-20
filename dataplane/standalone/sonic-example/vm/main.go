@@ -6,8 +6,6 @@ import (
 	"net"
 	"os"
 	"os/exec"
-
-	"github.com/vishvananda/netlink"
 )
 
 func main() {
@@ -18,15 +16,15 @@ func main() {
 		"-smp", "12", // 12 CPUs
 		"-nographic",                          // Don't launch any windows
 		"-drive", "file=/vm.img,format=qcow2", // OS disk
-		// "-device", "pci-bridge,chassis_nr=1,id=pci.1",
-		"-netdev", "bridge,id=mgmt",
+		//"-device", "pci-bridge,chassis_nr=1,id=pci.1",
+		"-netdev", "user,hostfwd=tcp::22-:22,id=mgmt",
 		"-device", "e1000,netdev=mgmt",
-		"-netdev", "user,id=mgmt2,restrict=y", // include a dummy which might be needed.
-		"-device", "e1000,netdev=mgmt2",
+		// "-netdev", "user,id=mgmt2,restrict=y", // include a dummy, for some reason a veth0 is created on the guest that needs to mapped.
+		// "-device", "e1000,netdev=mgmt2",
 	}
-	if err := setUpMgmt(); err != nil {
-		log.Fatal(err)
-	}
+	// if err := setUpMgmt(); err != nil {
+	// 	log.Fatal(err)
+	// }
 	tapsArgs, err := createTaps()
 	if err != nil {
 		log.Fatal(err)
@@ -78,19 +76,19 @@ func setUpMgmt() error {
 		return err
 	}
 
-	eth0Link, err := netlink.LinkByName("eth0")
-	if err != nil {
-		return fmt.Errorf("failed to get eth0: %v", err)
-	}
-	addrs, err := netlink.AddrList(eth0Link, netlink.FAMILY_V4)
-	if err != nil {
-		return fmt.Errorf("failed to get eth0 addresses: %v", err)
-	}
-	fmt.Println("len addrs")
+	// eth0Link, err := netlink.LinkByName("eth0")
+	// if err != nil {
+	// 	return fmt.Errorf("failed to get eth0: %v", err)
+	// }
+	// addrs, err := netlink.AddrList(eth0Link, netlink.FAMILY_V4)
+	// if err != nil {
+	// 	return fmt.Errorf("failed to get eth0 addresses: %v", err)
+	// }
+	// fmt.Println("len addrs")
 
-	if err := netlink.AddrDel(eth0Link, &addrs[0]); err != nil {
-		return fmt.Errorf("failed to get eth0 addresses: %v", err)
-	}
+	// if err := netlink.AddrDel(eth0Link, &addrs[0]); err != nil {
+	// 	return fmt.Errorf("failed to get eth0 addresses: %v", err)
+	// }
 	if out, err := exec.Command("brctl", "addif", "br0", "eth0").CombinedOutput(); err != nil {
 		return fmt.Errorf("failed to add eth0 to bridge: %v: Output:\n%s", err, out)
 	}

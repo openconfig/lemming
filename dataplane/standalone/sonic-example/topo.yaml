@@ -1,0 +1,159 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: twodut-sonic
+---
+apiVersion: networkop.co.uk/v1beta1
+kind: Topology
+metadata:
+  name: lemming
+  namespace: twodut-sonic
+spec:
+  links:
+  - local_intf: eth1
+    local_ip: ""
+    peer_intf: eth1
+    peer_ip: ""
+    peer_pod: sonic
+    uid: 0
+  - local_intf: eth2
+    local_ip: ""
+    peer_intf: eth2
+    peer_ip: ""
+    peer_pod: sonic
+    uid: 1
+  - local_intf: eth3
+    local_ip: ""
+    peer_intf: eth3
+    peer_ip: ""
+    peer_pod: sonic
+    uid: 2
+  - local_intf: eth4
+    local_ip: ""
+    peer_intf: eth4
+    peer_ip: ""
+    peer_pod: sonic
+    uid: 3
+---
+apiVersion: networkop.co.uk/v1beta1
+kind: Topology
+metadata:
+  name: sonic
+  namespace: twodut-sonic
+spec:
+  links:
+  - local_intf: eth1
+    local_ip: ""
+    peer_intf: eth1
+    peer_ip: ""
+    peer_pod: lemming
+    uid: 0
+  - local_intf: eth2
+    local_ip: ""
+    peer_intf: eth2
+    peer_ip: ""
+    peer_pod: lemming
+    uid: 1
+  - local_intf: eth3
+    local_ip: ""
+    peer_intf: eth3
+    peer_ip: ""
+    peer_pod: lemming
+    uid: 2
+  - local_intf: eth4
+    local_ip: ""
+    peer_intf: eth4
+    peer_ip: ""
+    peer_pod: lemming
+    uid: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    pod: sonic
+  name: service-sonic
+  namespace: twodut-sonic
+spec:
+  ports:
+  - name: ssh
+    port: 22
+    protocol: TCP
+    targetPort: 22
+  selector:
+    app: sonic
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: sonic
+    topo: twodut-sonic
+  name: sonic
+  namespace: twodut-sonic
+spec:
+  containers:
+  - command:
+    - /bin/sh
+    - -c
+    - sleep 2000000000000
+    image: sonic-vs:latest
+    imagePullPolicy: IfNotPresent
+    name: sonic
+    securityContext:
+      privileged: true
+  # - name: lucius
+  #   command:
+  #   - /lucius/lucius
+  #   - -alsologtostderr
+  #   image: us-west1-docker.pkg.dev/openconfig-lemming/release/lucius:ga
+  #   imagePullPolicy: IfNotPresent
+  #   securityContext:
+  #     privileged: true
+  initContainers:
+  - args:
+    - "5"
+    - "0"
+    image: us-west1-docker.pkg.dev/kne-external/kne/networkop/init-wait:ga
+    imagePullPolicy: IfNotPresent
+    name: init-sonic
+    resources: {}
+---
+apiVersion: lemming.openconfig.net/v1alpha1
+kind: Lemming
+metadata:
+  labels:
+    ondatra-role: DUT
+    vendor: OPENCONFIG
+  name: lemming
+  namespace: twodut-sonic
+spec:
+  args:
+  - --v=1
+  command: /lemming/lemming
+  image: us-west1-docker.pkg.dev/openconfig-lemming/release/lemming:ga
+  initImage: us-west1-docker.pkg.dev/kne-external/kne/networkop/init-wait:ga
+  initSleep: 0
+  interfaceCount: 5
+  ports:
+    gnmi:
+      innerPort: 9339
+      outerPort: 9339
+    gnoi:
+      innerPort: 9339
+      outerPort: 9342
+    gnsi:
+      innerPort: 9339
+      outerPort: 9341
+    gribi:
+      innerPort: 9340
+      outerPort: 9340
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+  tls:
+    selfSigned:
+      commonName: lemming
+      keySize: 2048

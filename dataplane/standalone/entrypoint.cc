@@ -21,6 +21,7 @@
 
 #include <fstream>
 
+#include "dataplane/standalone/lucius/lucius_clib.h"
 #include "dataplane/standalone/proto/acl.grpc.pb.h"
 #include "dataplane/standalone/proto/bfd.grpc.pb.h"
 #include "dataplane/standalone/proto/bmtor.grpc.pb.h"
@@ -181,14 +182,15 @@ std::unique_ptr<lemming::dataplane::sai::Entrypoint::Stub> entry;
 // TODO(dgrau): implement this without using gRPC.
 sai_status_t sai_api_initialize(
     _In_ uint64_t flags, _In_ const sai_service_method_table_t *services) {
-  FLAGS_log_dir = "/var/log";
+  FLAGS_log_dir = "/var/log/syncd";
   google::InitGoogleLogging("lucius");
   google::InstallFailureSignalHandler();
 
   LOG(WARNING) << "iniitializing";
+  startAsync(50000);
 
   auto chan =
-      grpc::CreateChannel("10.0.2.2:50000", grpc::InsecureChannelCredentials());
+      grpc::CreateChannel("localhost:50000", grpc::InsecureChannelCredentials());
 
   acl = std::make_unique<lemming::dataplane::sai::Acl::Stub>(chan);
   bfd = std::make_unique<lemming::dataplane::sai::Bfd::Stub>(chan);

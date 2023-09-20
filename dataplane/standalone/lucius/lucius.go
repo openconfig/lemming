@@ -15,6 +15,7 @@
 package main
 
 import (
+	"C"
 	"context"
 	"flag"
 	"fmt"
@@ -54,6 +55,15 @@ func getLogger() logging.Logger {
 			log.Error(msg, fields)
 		}
 	})
+}
+
+func init() {
+	flag.Set("log_dir", "/var/log/syncd")
+}
+
+//export startAsync
+func startAsync(port int) {
+	go start(port)
 }
 
 func start(port int) {
