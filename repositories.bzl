@@ -238,8 +238,8 @@ def go_repositories():
     go_repository(
         name = "com_github_burntsushi_toml",
         importpath = "github.com/BurntSushi/toml",
-        sum = "h1:9F2/+DoOYIOksmaJFPw1tGFy1eDnIJXg+UHjuD8lTak=",
-        version = "v1.2.1",
+        sum = "h1:o7IhLm0Msx3BaB+n3Ag7L8EVlByGnpq14C4YWiu/gL8=",
+        version = "v1.3.2",
     )
     go_repository(
         name = "com_github_burntsushi_xgb",
@@ -888,8 +888,8 @@ def go_repositories():
     go_repository(
         name = "com_github_google_uuid",
         importpath = "github.com/google/uuid",
-        sum = "h1:t6JiXgmwXMjEs8VusXIJk2BXHsn+wx8BZdTaoZ5fu7I=",
-        version = "v1.3.0",
+        sum = "h1:KjJaJ9iWZ3jOFZIf1Lqf4laDRCasjl0BCmnEGxkdLb4=",
+        version = "v1.3.1",
     )
     go_repository(
         name = "com_github_googleapis_enterprise_certificate_proxy",
@@ -1757,8 +1757,8 @@ def go_repositories():
     go_repository(
         name = "com_github_prometheus_client_golang",
         importpath = "github.com/prometheus/client_golang",
-        sum = "h1:nJdhIvne2eSX/XRAFV9PcvFFRbrjbcTUj0VP62TMhnw=",
-        version = "v1.14.0",
+        sum = "h1:yk/hx9hDbrGHovbci4BY+pRMfSuuat626eFsHb7tmT8=",
+        version = "v1.16.0",
     )
     go_repository(
         name = "com_github_prometheus_client_model",
@@ -1776,8 +1776,8 @@ def go_repositories():
     go_repository(
         name = "com_github_prometheus_procfs",
         importpath = "github.com/prometheus/procfs",
-        sum = "h1:wzCHvIvM5SxWqYvwgVL7yJY8Lz3PKn49KQtpgMYJfhI=",
-        version = "v0.9.0",
+        sum = "h1:kYK1Va/YMlutzCGazswoHKo//tZVlFpKYh+PymziUAg=",
+        version = "v0.10.1",
     )
     go_repository(
         name = "com_github_protocolbuffers_txtpbfmt",
@@ -1903,8 +1903,8 @@ def go_repositories():
     go_repository(
         name = "com_github_sirupsen_logrus",
         importpath = "github.com/sirupsen/logrus",
-        sum = "h1:trlNQbNUG3OdDrDil03MCb1H2o9nJ1x4/5LYw7byDE0=",
-        version = "v1.9.0",
+        sum = "h1:dueUQJ1C2q9oE3F7wvmSGAaVtTmUizReu6fjN8uqzbQ=",
+        version = "v1.9.3",
     )
     go_repository(
         name = "com_github_skeema_knownhosts",
@@ -2026,8 +2026,8 @@ def go_repositories():
         name = "com_github_wenovus_gobgp_v3",
         build_file_proto_mode = "disable",
         importpath = "github.com/wenovus/gobgp/v3",
-        sum = "h1:jse5eORjbrlTIOPzOO3cpm4feJ16ZCntxzAHSdcWuy4=",
-        version = "v3.0.0-20230831013712-6d33842cbf42",
+        sum = "h1:CTaAeRUMWmcr/m8nyRq9wx5+SFO+ymR9V4Dv1ZpFZV0=",
+        version = "v3.0.0-20230919213724-0f6fb3b45ead",
     )
     go_repository(
         name = "com_github_xanzy_ssh_agent",
@@ -2420,8 +2420,8 @@ def go_repositories():
     go_repository(
         name = "com_google_cloud_go_gaming",
         importpath = "cloud.google.com/go/gaming",
-        sum = "h1:5qZmZEWzMf8GEFgm9NeC3bjFRpt7x4S6U7oLbxaf7N8=",
-        version = "v1.10.1",
+        sum = "h1:7vEhFnZmd931Mo7sZ6pJy7uQPDxF7m7v8xtBheG08tc=",
+        version = "v1.9.0",
     )
     go_repository(
         name = "com_google_cloud_go_gkebackup",
@@ -2450,8 +2450,8 @@ def go_repositories():
     go_repository(
         name = "com_google_cloud_go_grafeas",
         importpath = "cloud.google.com/go/grafeas",
-        sum = "h1:oyTL/KjiUeBs9eYLw/40cpSZglUC+0F7X4iu/8t7NWs=",
-        version = "v0.3.0",
+        sum = "h1:CYjC+xzdPvbV65gi6Dr4YowKcmLo045pm18L0DhdELM=",
+        version = "v0.2.0",
     )
     go_repository(
         name = "com_google_cloud_go_gsuiteaddons",
@@ -3348,8 +3348,8 @@ def go_repositories():
     go_repository(
         name = "org_golang_x_tools",
         importpath = "golang.org/x/tools",
-        sum = "h1:8WMNJAz3zrtPmnYC7ISf5dEn3MT0gY7jBJfw27yrrLo=",
-        version = "v0.9.1",
+        sum = "h1:W4OVu8VVOaIO0yzWMNdepAulS7YfoS3Zabrm8DOXXU4=",
+        version = "v0.7.0",
     )
     go_repository(
         name = "org_golang_x_xerrors",

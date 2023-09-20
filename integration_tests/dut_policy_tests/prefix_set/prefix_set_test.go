@@ -90,57 +90,49 @@ func TestPrefixSet(t *testing.T) {
 				Input: &valpb.TestRoute{
 					ReachPrefix: "10.33.0.0/16",
 				},
-				ExpectedResultBeforePolicy: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
-				ExpectedResult:             invertResult(valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD, invert),
+				ExpectedResult: invertResult(valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD, invert),
 			}, {
 				Description: "Not exact match",
 				Input: &valpb.TestRoute{
 					ReachPrefix: "10.33.0.0/17",
 				},
-				ExpectedResultBeforePolicy: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
-				ExpectedResult:             invertResult(valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT, invert),
+				ExpectedResult: invertResult(valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT, invert),
 			}, {
 				Description: "No match with any prefix",
 				Input: &valpb.TestRoute{
 					ReachPrefix: "10.3.0.0/16",
 				},
-				ExpectedResultBeforePolicy: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
-				ExpectedResult:             invertResult(valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT, invert),
+				ExpectedResult: invertResult(valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT, invert),
 			}, {
 				Description: "mask length too short",
 				Input: &valpb.TestRoute{
 					ReachPrefix: "10.34.0.0/15",
 				},
-				ExpectedResultBeforePolicy: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
-				ExpectedResult:             invertResult(valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT, invert),
+				ExpectedResult: invertResult(valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT, invert),
 			}, {
 				Description: "Lower end of mask length",
 				Input: &valpb.TestRoute{
 					ReachPrefix: "10.34.0.0/16",
 				},
-				ExpectedResultBeforePolicy: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
-				ExpectedResult:             invertResult(valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD, invert),
+				ExpectedResult: invertResult(valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD, invert),
 			}, {
 				Description: "Middle of mask length",
 				Input: &valpb.TestRoute{
 					ReachPrefix: "10.34.0.0/20",
 				},
-				ExpectedResultBeforePolicy: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
-				ExpectedResult:             invertResult(valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD, invert),
+				ExpectedResult: invertResult(valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD, invert),
 			}, {
 				Description: "Upper end of mask length",
 				Input: &valpb.TestRoute{
 					ReachPrefix: "10.34.0.0/23",
 				},
-				ExpectedResultBeforePolicy: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
-				ExpectedResult:             invertResult(valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD, invert),
+				ExpectedResult: invertResult(valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD, invert),
 			}, {
 				Description: "mask length too long",
 				Input: &valpb.TestRoute{
 					ReachPrefix: "10.34.0.0/24",
 				},
-				ExpectedResultBeforePolicy: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
-				ExpectedResult:             invertResult(valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT, invert),
+				ExpectedResult: invertResult(valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT, invert),
 			}},
 		}
 		return spec

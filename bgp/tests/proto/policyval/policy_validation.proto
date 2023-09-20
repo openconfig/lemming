@@ -51,6 +51,5 @@ enum RouteTestResult {
 message RouteTestCase {
   string description = 1;
   TestRoute input = 2;
-  RouteTestResult expected_result_before_policy = 3;
-  RouteTestResult expected_result = 4;
+  RouteTestResult expected_result = 3;
 }

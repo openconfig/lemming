@@ -19,7 +19,7 @@ import (
 
 	log "github.com/golang/glog"
 	"github.com/openconfig/lemming/gnmi/oc"
-	"github.com/wenovus/gobgp/v3/pkg/config"
+	"github.com/wenovus/gobgp/v3/pkg/config/gobgp"
 	"github.com/wenovus/gobgp/v3/pkg/zebra"
 )
 
@@ -28,8 +28,8 @@ import (
 // GoBGP's notion of config vs. state does not conform to OpenConfig (see
 // https://github.com/osrg/gobgp/issues/2584)
 // Therefore, we need a compatibility layer between the two configs.
-func intendedToGoBGP(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *oc.RoutingPolicy, zapiURL string, listenPort uint16) *config.BgpConfigSet {
-	bgpConfig := &config.BgpConfigSet{}
+func intendedToGoBGP(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *oc.RoutingPolicy, zapiURL string, listenPort uint16) *gobgp.BgpConfigSet {
+	bgpConfig := &gobgp.BgpConfigSet{}
 
 	// Global config
 	global := bgpoc.GetOrCreateGlobal()
@@ -50,20 +50,20 @@ func intendedToGoBGP(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *oc.Routin
 		applyPolicy.Config.ExportPolicyList = convertPolicyNames(neighAddr, applyPolicy.Config.ExportPolicyList)
 
 		// Add neighbour config.
-		bgpConfig.Neighbors = append(bgpConfig.Neighbors, config.Neighbor{
-			Config: config.NeighborConfig{
+		bgpConfig.Neighbors = append(bgpConfig.Neighbors, gobgp.Neighbor{
+			Config: gobgp.NeighborConfig{
 				PeerAs:          neigh.GetPeerAs(),
 				NeighborAddress: neighAddr,
 			},
 			// This is needed because GoBGP's configuration diffing
 			// logic may check the state value instead of the
 			// config value.
-			State: config.NeighborState{
+			State: gobgp.NeighborState{
 				PeerAs:          neigh.GetPeerAs(),
 				NeighborAddress: neighAddr,
 			},
-			Transport: config.Transport{
-				Config: config.TransportConfig{
+			Transport: gobgp.Transport{
+				Config: gobgp.TransportConfig{
 					LocalAddress: neigh.GetTransport().GetLocalAddress(),
 					RemotePort:   neigh.GetNeighborPort(),
 				},
@@ -85,7 +85,7 @@ func intendedToGoBGP(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *oc.Routin
 
 	intendedToGoBGPPolicies(bgpoc, policyoc, bgpConfig)
 
-	bgpConfig.Zebra.Config = config.ZebraConfig{
+	bgpConfig.Zebra.Config = gobgp.ZebraConfig{
 		Enabled: true,
 		Url:     zapiURL,
 		// TODO(wenbli): This should actually be filled with the types
@@ -102,7 +102,7 @@ func intendedToGoBGP(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *oc.Routin
 
 // intendedToGoBGPPolicies populates bgpConfig's policies from the OC configuration.
 // TODO: applied state
-func intendedToGoBGPPolicies(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *oc.RoutingPolicy, bgpConfig *config.BgpConfigSet) {
+func intendedToGoBGPPolicies(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *oc.RoutingPolicy, bgpConfig *gobgp.BgpConfigSet) {
 	// community sets
 	bgpConfig.DefinedSets.BgpDefinedSets.CommunitySets = convertCommunitySet(policyoc.GetOrCreateDefinedSets().GetOrCreateBgpDefinedSets().CommunitySet)
 	// Prefix sets
@@ -128,7 +128,7 @@ func intendedToGoBGPPolicies(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *o
 		//                     neigh2polA, neigh2polB, ..., ...
 		//                     ...]
 		// Global ApplyPolicy list: [same as policy-definitions]
-		bgpConfig.DefinedSets.NeighborSets = append(bgpConfig.DefinedSets.NeighborSets, config.NeighborSet{
+		bgpConfig.DefinedSets.NeighborSets = append(bgpConfig.DefinedSets.NeighborSets, gobgp.NeighborSet{
 			NeighborSetName:  neighAddr,
 			NeighborInfoList: []string{neighAddr},
 		})
@@ -166,31 +166,31 @@ func intendedToGoBGPPolicies(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *o
 		// Create per-neighbour default policies.
 		defaultImportPolicyName := "default-import|" + neighAddr
 		defaultExportPolicyName := "default-export|" + neighAddr
-		bgpConfig.PolicyDefinitions = append(bgpConfig.PolicyDefinitions, config.PolicyDefinition{
+		bgpConfig.PolicyDefinitions = append(bgpConfig.PolicyDefinitions, gobgp.PolicyDefinition{
 			Name: defaultImportPolicyName,
-			Statements: []config.Statement{{
+			Statements: []gobgp.Statement{{
 				// Use a customized name for the default policies.
 				Name: defaultImportPolicyName,
-				Conditions: config.Conditions{
-					MatchNeighborSet: config.MatchNeighborSet{
+				Conditions: gobgp.Conditions{
+					MatchNeighborSet: gobgp.MatchNeighborSet{
 						NeighborSet: neighAddr,
 					},
 				},
-				Actions: config.Actions{
+				Actions: gobgp.Actions{
 					RouteDisposition: defaultPolicyToRouteDisp(applyPolicy.Config.DefaultImportPolicy),
 				},
 			}},
-		}, config.PolicyDefinition{
+		}, gobgp.PolicyDefinition{
 			Name: defaultExportPolicyName,
-			Statements: []config.Statement{{
+			Statements: []gobgp.Statement{{
 				// Use a customized name for the default policies.
 				Name: defaultExportPolicyName,
-				Conditions: config.Conditions{
-					MatchNeighborSet: config.MatchNeighborSet{
+				Conditions: gobgp.Conditions{
+					MatchNeighborSet: gobgp.MatchNeighborSet{
 						NeighborSet: neighAddr,
 					},
 				},
-				Actions: config.Actions{
+				Actions: gobgp.Actions{
 					RouteDisposition: defaultPolicyToRouteDisp(applyPolicy.Config.DefaultExportPolicy),
 				},
 			}},

@@ -88,86 +88,81 @@ func TestSetAttributes(t *testing.T) {
 
 	testPolicy(t, PolicyTestCase{
 		spec: &valpb.PolicyTestCase{
-			Description: "Test that one NLRI gets accepted and the otheris rejected via various attribute values.",
+			Description: "Test that one NLRI gets accepted and the other is rejected via various attribute values.",
 			RouteTests: []*valpb.RouteTestCase{{
 				Description: "Accepted route with no attributes",
 				Input: &valpb.TestRoute{
 					ReachPrefix: routesUnderTest[0],
 				},
-				ExpectedResultBeforePolicy: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
-				ExpectedResult:             valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
+				ExpectedResult: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
 			}, {
 				Description: "Accepted route with some attributes",
 				Input: &valpb.TestRoute{
 					ReachPrefix: routesUnderTest[1],
 				},
-				ExpectedResultBeforePolicy: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
-				ExpectedResult:             valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
+				ExpectedResult: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
 			}, {
 				Description: "Rejected route due to community set",
 				Input: &valpb.TestRoute{
 					ReachPrefix: routesUnderTest[2],
 				},
-				ExpectedResultBeforePolicy: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
-				ExpectedResult:             valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD,
+				ExpectedResult: valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD,
 			}, {
 				Description: "Unpreferred route due to local-pref",
 				Input: &valpb.TestRoute{
 					ReachPrefix: routesUnderTest[3],
 				},
-				ExpectedResultBeforePolicy: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
-				ExpectedResult:             valpb.RouteTestResult_ROUTE_TEST_RESULT_NOT_PREFERRED,
+				ExpectedResult: valpb.RouteTestResult_ROUTE_TEST_RESULT_NOT_PREFERRED,
 			}, {
 				Description: "Unpreferred route due to MED",
 				Input: &valpb.TestRoute{
 					ReachPrefix: routesUnderTest[4],
 				},
-				ExpectedResultBeforePolicy: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
-				ExpectedResult:             valpb.RouteTestResult_ROUTE_TEST_RESULT_NOT_PREFERRED,
+				ExpectedResult: valpb.RouteTestResult_ROUTE_TEST_RESULT_NOT_PREFERRED,
 			}, {
 				Description: "Unpreferred route due to AS path prepend",
 				Input: &valpb.TestRoute{
 					ReachPrefix: routesUnderTest[6],
 				},
-				ExpectedResultBeforePolicy: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
-				ExpectedResult:             valpb.RouteTestResult_ROUTE_TEST_RESULT_NOT_PREFERRED,
+				ExpectedResult: valpb.RouteTestResult_ROUTE_TEST_RESULT_NOT_PREFERRED,
 			}, {
 				Description: "Rejected route due to AS path match on prepended AS",
 				Input: &valpb.TestRoute{
 					ReachPrefix: routesUnderTest[7],
 				},
-				ExpectedResultBeforePolicy: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
-				ExpectedResult:             valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD,
+				ExpectedResult: valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD,
 			}},
 			LongerPathRouteTests: []*valpb.RouteTestCase{{
+				Description: "Rejected route due to longer AS Path",
+				Input: &valpb.TestRoute{
+					ReachPrefix: routesUnderTest[0],
+				},
+				ExpectedResult: valpb.RouteTestResult_ROUTE_TEST_RESULT_NOT_PREFERRED,
+			}, {
 				Description: "Accepted route due to higher local-pref",
 				Input: &valpb.TestRoute{
 					ReachPrefix: routesUnderTest[3],
 				},
-				ExpectedResultBeforePolicy: valpb.RouteTestResult_ROUTE_TEST_RESULT_NOT_PREFERRED,
-				ExpectedResult:             valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
+				ExpectedResult: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
 			}, {
 				Description: "Rejected route due to AS path match",
 				Input: &valpb.TestRoute{
 					ReachPrefix: routesUnderTest[5],
 				},
-				ExpectedResultBeforePolicy: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
-				ExpectedResult:             valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD,
+				ExpectedResult: valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD,
 			}, {
 				Description: "Accepted route due to shorter AS path after competing route's AS path prepend",
 				Input: &valpb.TestRoute{
 					ReachPrefix: routesUnderTest[6],
 				},
-				ExpectedResultBeforePolicy: valpb.RouteTestResult_ROUTE_TEST_RESULT_NOT_PREFERRED,
-				ExpectedResult:             valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
+				ExpectedResult: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
 			}},
 			AlternatePathRouteTests: []*valpb.RouteTestCase{{
 				Description: "Accepted route due to lower MED",
 				Input: &valpb.TestRoute{
 					ReachPrefix: routesUnderTest[4],
 				},
-				ExpectedResultBeforePolicy: valpb.RouteTestResult_ROUTE_TEST_RESULT_NOT_PREFERRED,
-				ExpectedResult:             valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
+				ExpectedResult: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
 			}},
 		},
 		installPolicies: func(t *testing.T, dut1, dut2, dut3, dut4, dut5 *Device) {

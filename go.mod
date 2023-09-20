@@ -8,7 +8,7 @@ require (
 	github.com/golang/glog v1.1.2
 	github.com/google/go-cmp v0.5.9
 	github.com/google/gopacket v1.1.19
-	github.com/google/uuid v1.3.0
+	github.com/google/uuid v1.3.1
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0
 	github.com/kentik/patricia v1.2.0
 	github.com/open-traffic-generator/snappi/gosnappi v0.12.1
@@ -23,13 +23,13 @@ require (
 	github.com/openconfig/ygnmi v0.8.7
 	github.com/openconfig/ygot v0.29.10
 	github.com/p4lang/p4runtime v1.4.0-rc.5.0.20220728214547-13f0d02a521e
-	github.com/sirupsen/logrus v1.9.0
+	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.16.0
 	github.com/stoewer/go-strcase v1.3.0
 	github.com/vishvananda/netlink v1.2.1-beta.2
-	github.com/wenovus/gobgp/v3 v3.0.0-20230831013712-6d33842cbf42
+	github.com/wenovus/gobgp/v3 v3.0.0-20230919213724-0f6fb3b45ead
 	go.uber.org/mock v0.2.0
 	golang.org/x/exp v0.0.0-20230801115018-d63ba01acd4b
 	golang.org/x/sys v0.11.0

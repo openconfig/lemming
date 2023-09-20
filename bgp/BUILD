@@ -21,6 +21,7 @@ go_library(
         "@com_github_openconfig_ygot//ygot",
         "@com_github_wenovus_gobgp_v3//api",
         "@com_github_wenovus_gobgp_v3//pkg/config",
+        "@com_github_wenovus_gobgp_v3//pkg/config/gobgp",
         "@com_github_wenovus_gobgp_v3//pkg/server",
         "@com_github_wenovus_gobgp_v3//pkg/zebra",
     ],
