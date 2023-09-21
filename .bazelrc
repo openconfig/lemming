@@ -1,2 +1,20 @@
 build --cxxopt=-std=c++17 --host_cxxopt=-std=c++17
 build --incompatible_strict_action_env=true
+
+build:remote --java_runtime_version=rbe_jdk
+build:remote --tool_java_runtime_version=rbe_jdk
+build:remote --extra_toolchains=//configs/rbe1804/java:all
+build:remote --extra_toolchains=//configs/rbe1804/config:cc-toolchain
+build:remote --extra_execution_platforms=//configs/rbe1804/config:platform
+build:remote --host_platform=//configs/rbe1804/config:platform
+build:remote --platforms=//configs/rbe1804/config:platform
+build:remote --crosstool_top=//configs/rbe1804/cc:toolchain
+build:remote --define=EXECUTOR=remote
+build:remote --incompatible_strict_action_env=true
+build:remote --remote_timeout=3600
+
+build:docker-sandbox --config=remote
+build:docker-sandbox --experimental_docker_image=l.gcr.io/google/rbe-ubuntu18-04:latest
+build:docker-sandbox --spawn_strategy=docker --strategy=Javac=docker --genrule_strategy=docker
+build:docker-sandbox --experimental_docker_verbose
+build:docker-sandbox --experimental_enable_docker_sandbox
