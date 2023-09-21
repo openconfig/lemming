@@ -1076,6 +1076,41 @@ func TestServer(t *testing.T) {
 			}},
 		}, {
 			SetRouteRequestAction: &SetRouteRequestAction{
+				Desc: "1st level indirect route ipv4-mapped ipv6 using IPv4-formatted address",
+				RouteReq: &pb.SetRouteRequest{
+					AdminDistance: 10,
+					Metric:        10,
+					Prefix: &pb.Prefix{
+						Family:     pb.Prefix_FAMILY_IPV6,
+						Address:    "2003::aaaa",
+						MaskLength: 49,
+					},
+					Nexthops: []*pb.Nexthop{{
+						Type:    pb.Nexthop_TYPE_IPV6,
+						Address: "192.168.2.42",
+					}},
+				},
+			},
+			ResolvedRoutes: []*ResolvedRoute{{
+				RouteKey: RouteKey{
+					Prefix: "2003::/49",
+					NIName: "DEFAULT",
+				},
+				Nexthops: map[ResolvedNexthop]bool{
+					{
+						NextHopSummary: afthelper.NextHopSummary{
+							NetworkInstance: "DEFAULT",
+							Address:         "192.168.2.42",
+						},
+						Port: Interface{
+							Name:  "eth1",
+							Index: 1,
+						},
+					}: true,
+				},
+			}},
+		}, {
+			SetRouteRequestAction: &SetRouteRequestAction{
 				Desc: "secondary 1st level indirect route that is more specific but higher admin distance",
 				RouteReq: &pb.SetRouteRequest{
 					AdminDistance: 20,
