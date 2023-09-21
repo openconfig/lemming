@@ -112,12 +112,14 @@ func TestCommunitySet(t *testing.T) {
 					Replace(t, dut1, commPath.CommunitySetName().Config(), commSetName)
 					Replace(t, dut1, commPath.CommunityMember().Config(), commUnions)
 					stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().GetOrCreateReference().SetCommunitySetRef(commSetName)
+					stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetMethod(oc.SetCommunity_Method_REFERENCE)
 				} else {
 					var commUnions []oc.RoutingPolicy_PolicyDefinition_Statement_Actions_BgpActions_SetCommunity_Inline_Communities_Union
 					for _, c := range comms {
 						commUnions = append(commUnions, c)
 					}
 					stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().GetOrCreateInline().SetCommunities(commUnions)
+					stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetMethod(oc.SetCommunity_Method_INLINE)
 				}
 			}
 
@@ -143,6 +145,7 @@ func TestCommunitySet(t *testing.T) {
 						oc.UnionString("33333:33333"),
 					},
 				)
+				stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetMethod(oc.SetCommunity_Method_INLINE)
 
 				stmt, err = policy.AppendNew(fmt.Sprintf("stmt%d-2", i))
 				if err != nil {
@@ -156,6 +159,7 @@ func TestCommunitySet(t *testing.T) {
 						oc.UnionString("44444:44444"),
 					},
 				)
+				stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetMethod(oc.SetCommunity_Method_INLINE)
 				// TODO(wenbli): Test REMOVE, it's possible GoBGP does not support it.
 			}
 			stmt.GetOrCreateActions().SetPolicyResult(oc.RoutingPolicy_PolicyResultType_ACCEPT_ROUTE)

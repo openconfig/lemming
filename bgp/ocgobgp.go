@@ -38,20 +38,24 @@ func convertPolicyNames(neighAddr string, ocPolicyNames []string) []string {
 }
 
 func convertSetCommunities(setCommunity *oc.RoutingPolicy_PolicyDefinition_Statement_Actions_BgpActions_SetCommunity, convertedCommSets []gobgp.CommunitySet, commSetIndexMap map[string]int) ([]string, error) {
-	var setCommunitiesList []string
-	for _, comm := range setCommunity.GetInline().GetCommunities() {
-		setCommunitiesList = append(setCommunitiesList, convertCommunity(comm))
-	}
-	// Merge inline and referenced communities when both are specified.
-	if commRef := setCommunity.GetReference().GetCommunitySetRef(); commRef != "" {
-		// YANG validation should ensure that the referred community set is present.
-		if index, ok := commSetIndexMap[commRef]; !ok {
-			return nil, fmt.Errorf("Referenced community set not present in index map: %q", commRef)
-		} else {
-			setCommunitiesList = append(setCommunitiesList, convertedCommSets[index].CommunityList...)
+	switch setCommunity.GetMethod() {
+	case oc.SetCommunity_Method_INLINE:
+		var setCommunitiesList []string
+		for _, comm := range setCommunity.GetInline().GetCommunities() {
+			setCommunitiesList = append(setCommunitiesList, convertCommunity(comm))
+		}
+		return setCommunitiesList, nil
+	case oc.SetCommunity_Method_REFERENCE:
+		if commRef := setCommunity.GetReference().GetCommunitySetRef(); commRef != "" {
+			// YANG validation should ensure that the referred community set is present.
+			index, ok := commSetIndexMap[commRef]
+			if !ok {
+				return nil, fmt.Errorf("Referenced community set not present in index map: %q", commRef)
+			}
+			return convertedCommSets[index].CommunityList, nil
 		}
 	}
-	return setCommunitiesList, nil
+	return nil, nil
 }
 
 // convertPolicyDefinition converts an OC policy definition to GoBGP policy definition.

@@ -221,6 +221,7 @@ func TestSetAttributes(t *testing.T) {
 							acceptedCommunitySet,
 						},
 					)
+					dut1ExportStmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetMethod(oc.SetCommunity_Method_INLINE)
 
 					dut1ExportStmt.GetOrCreateActions().GetOrCreateBgpActions().SetSetLocalPref(higherLocalPref)
 				case 2:
@@ -232,6 +233,7 @@ func TestSetAttributes(t *testing.T) {
 							rejectedCommunitySet,
 						},
 					)
+					dut1ExportStmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetMethod(oc.SetCommunity_Method_INLINE)
 
 					// Match on given list of community set members and reject it.
 					installDut1ImportStmt = true
