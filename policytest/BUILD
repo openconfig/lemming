@@ -12,6 +12,7 @@ go_library(
         "@com_github_openconfig_ondatra//:ondatra",
         "@com_github_openconfig_ondatra//gnmi",
         "@com_github_openconfig_ondatra//gnmi/oc",
+        "@com_github_openconfig_ondatra//gnmi/oc/netinstbgp",
         "@com_github_openconfig_ondatra//gnmi/oc/ocpath",
         "@com_github_openconfig_ygnmi//ygnmi",
         "@com_github_openconfig_ygot//ygot",
