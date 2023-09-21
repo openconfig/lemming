@@ -1,4 +1,4 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "bgp",
@@ -24,5 +24,15 @@ go_library(
         "@com_github_wenovus_gobgp_v3//pkg/config/gobgp",
         "@com_github_wenovus_gobgp_v3//pkg/server",
         "@com_github_wenovus_gobgp_v3//pkg/zebra",
+    ],
+)
+
+go_test(
+    name = "bgp_test",
+    srcs = ["gobgp_test.go"],
+    embed = [":bgp"],
+    deps = [
+        "//gnmi/oc",
+        "@com_github_openconfig_ygot//ygot",
     ],
 )

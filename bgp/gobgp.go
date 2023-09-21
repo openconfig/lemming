@@ -17,6 +17,7 @@ package bgp
 import (
 	"context"
 	"fmt"
+	"net/netip"
 	"reflect"
 	"sync"
 	"time"
@@ -47,10 +48,58 @@ var (
 	RoutingPolicyStatePath = ocpath.Root().RoutingPolicy().State()
 )
 
-// NewGoBGPTask creates a new GoBGP task using the declarative configuration style.
+// NewGoBGPTask creates a new GoBGP task implementing OpenConfig BGP functionalities.
 func NewGoBGPTask(targetName, zapiURL string, listenPort uint16) *reconciler.BuiltReconciler {
 	gobgpTask := newBgpTask(targetName, zapiURL, listenPort)
-	return reconciler.NewBuilder("gobgp-decl").WithStart(gobgpTask.start).WithStop(gobgpTask.stop).Build()
+	return reconciler.NewBuilder("gobgp").WithStart(gobgpTask.start).WithStop(gobgpTask.stop).WithValidator(
+		[]ygnmi.PathStruct{
+			RoutingPolicyPath.DefinedSets().PrefixSetAny().Mode().Config().PathStruct(),
+		}, validatePrefixSetMode).Build()
+}
+
+// validatePrefixSetMode check that all prefix sets have the correct mode.
+func validatePrefixSetMode(root *oc.Root) error {
+	definedSets := root.GetRoutingPolicy().GetDefinedSets()
+	if definedSets == nil {
+		return nil
+	}
+	for _, prefixSet := range definedSets.PrefixSet {
+		if len(prefixSet.Prefix) == 0 {
+			continue
+		}
+		if prefixSet.GetMode() == oc.PrefixSet_Mode_MIXED {
+			// This is always valid.
+			continue
+		}
+		var gotMode oc.E_PrefixSet_Mode
+		for _, pfx := range prefixSet.Prefix {
+			p, err := netip.ParsePrefix(pfx.GetIpPrefix())
+			if err != nil {
+				return fmt.Errorf("invalid prefix %q in prefix set %q", pfx.GetIpPrefix(), prefixSet.GetName())
+			}
+			switch gotMode {
+			case oc.PrefixSet_Mode_UNSET:
+				if p.Addr().Is4() {
+					gotMode = oc.PrefixSet_Mode_IPV4
+				} else if p.Addr().Is6() {
+					gotMode = oc.PrefixSet_Mode_IPV6
+				}
+			case oc.PrefixSet_Mode_IPV4:
+				if p.Addr().Is6() {
+					gotMode = oc.PrefixSet_Mode_MIXED
+				}
+			case oc.PrefixSet_Mode_IPV6:
+				if p.Addr().Is4() {
+					gotMode = oc.PrefixSet_Mode_MIXED
+				}
+			}
+		}
+
+		if wantMode := prefixSet.GetMode(); gotMode != wantMode {
+			return fmt.Errorf("prefix set %q has mode %s based on parsing given prefixes, but has configured mode %s", prefixSet.GetName(), gotMode, wantMode)
+		}
+	}
+	return nil
 }
 
 // bgpTask can be used to create a reconciler-compatible BGP task.

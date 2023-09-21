@@ -90,8 +90,9 @@ func TestCommunitySet(t *testing.T) {
 		for i, route := range routeUnderTestList {
 			// Create prefix set
 			prefixSetName := "accept-" + route
-			prefixPath := ocpath.Root().RoutingPolicy().DefinedSets().PrefixSet(prefixSetName).Prefix(route, "exact").IpPrefix()
-			Replace(t, dut1, prefixPath.Config(), route)
+			prefixSetPath := ocpath.Root().RoutingPolicy().DefinedSets().PrefixSet(prefixSetName)
+			Replace(t, dut1, prefixSetPath.Mode().Config(), oc.PrefixSet_Mode_IPV4)
+			Replace(t, dut1, prefixSetPath.Prefix(route, "exact").IpPrefix().Config(), route)
 
 			stmt, err := policy.AppendNew(fmt.Sprintf("stmt%d", i))
 			if err != nil {
