@@ -280,37 +280,9 @@ func (t *bgpTask) createNewGoBGPServer(context.Context) error {
 
 // updateRIBs updates the BGP RIBs.
 func (t *bgpTask) updateRIBs() {
-	if err := t.bgpServer.ListPath(context.Background(), &api.ListPathRequest{
-		TableType: api.TableType_GLOBAL,
-		Family: &api.Family{
-			Afi:  api.Family_AFI_IP,
-			Safi: api.Family_SAFI_UNICAST,
-		},
-	}, func(d *api.Destination) {
-		log.V(1).Infof("%s: IPv4 GoBGP global table path: %v", t.targetName, d)
-	}); err != nil {
-		if err.Error() != "bgp server hasn't started yet" {
-			log.Errorf("IPv4 GoBGP ListPath call failed (global table): %v", err)
-		}
-	} else {
-		log.V(1).Info("IPv4 GoBGP ListPath call completed (global table)")
-	}
-
-	if err := t.bgpServer.ListPath(context.Background(), &api.ListPathRequest{
-		TableType: api.TableType_GLOBAL,
-		Family: &api.Family{
-			Afi:  api.Family_AFI_IP6,
-			Safi: api.Family_SAFI_UNICAST,
-		},
-	}, func(d *api.Destination) {
-		log.V(1).Infof("%s: IPv6 GoBGP global table path: %v", t.targetName, d)
-	}); err != nil {
-		if err.Error() != "bgp server hasn't started yet" {
-			log.Errorf("IPv6 GoBGP ListPath call failed (global table): %v", err)
-		}
-	} else {
-		log.V(1).Info("IPv6 GoBGP ListPath call completed (global table)")
-	}
+	// Log global tables
+	t.queryTable("", "IPv4 Global", api.TableType_GLOBAL, api.Family_AFI_IP, nil)
+	t.queryTable("", "IPv6 Global", api.TableType_GLOBAL, api.Family_AFI_IP6, nil)
 
 	t.updateAppliedState(func() error {
 		v4uni := t.appliedBGP.GetOrCreateRib().GetOrCreateAfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST).GetOrCreateIpv4Unicast()
@@ -447,7 +419,9 @@ func (t *bgpTask) queryTable(neighbor, tableName string, tableType api.TableType
 		// IMPORT or EXPORT policy.
 		EnableFiltered: true,
 	}, func(d *api.Destination) {
-		routes = append(routes, d)
+		if f != nil {
+			routes = append(routes, d)
+		}
 		log.V(0).Infof("%s: GoBGP %s table path (neighbor if applicable: %q): %v", t.targetName, tableName, neighbor, d)
 	}); err != nil {
 		if err.Error() != "bgp server hasn't started yet" {
@@ -455,7 +429,9 @@ func (t *bgpTask) queryTable(neighbor, tableName string, tableType api.TableType
 		}
 	} else {
 		log.V(1).Infof("GoBGP ListPath call completed (%s, %s, %s table)", tableName, tableType, afi)
-		f(routes)
+		if f != nil {
+			f(routes)
+		}
 	}
 }
 
