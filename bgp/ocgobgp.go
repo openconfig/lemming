@@ -37,17 +37,34 @@ func convertPolicyNames(neighAddr string, ocPolicyNames []string) []string {
 	return convertedNames
 }
 
+func convertSetCommunities(setCommunity *oc.RoutingPolicy_PolicyDefinition_Statement_Actions_BgpActions_SetCommunity, convertedCommSets []gobgp.CommunitySet, commSetIndexMap map[string]int) ([]string, error) {
+	var setCommunitiesList []string
+	for _, comm := range setCommunity.GetInline().GetCommunities() {
+		setCommunitiesList = append(setCommunitiesList, convertCommunity(comm))
+	}
+	// Merge inline and referenced communities when both are specified.
+	if commRef := setCommunity.GetReference().GetCommunitySetRef(); commRef != "" {
+		// YANG validation should ensure that the referred community set is present.
+		if index, ok := commSetIndexMap[commRef]; !ok {
+			return nil, fmt.Errorf("Referenced community set not present in index map: %q", commRef)
+		} else {
+			setCommunitiesList = append(setCommunitiesList, convertedCommSets[index].CommunityList...)
+		}
+	}
+	return setCommunitiesList, nil
+}
+
 // convertPolicyDefinition converts an OC policy definition to GoBGP policy definition.
 //
 // It adds neighbour set to disambiguate it from another instance of the policy
 // for another neighbour. This is necessary since all policies will go into a
 // single apply-policy list.
-func convertPolicyDefinition(policy *oc.RoutingPolicy_PolicyDefinition, neighAddr string, occommset map[string]*oc.RoutingPolicy_DefinedSets_BgpDefinedSets_CommunitySet) gobgp.PolicyDefinition {
+func convertPolicyDefinition(policy *oc.RoutingPolicy_PolicyDefinition, neighAddr string, occommset map[string]*oc.RoutingPolicy_DefinedSets_BgpDefinedSets_CommunitySet, convertedCommSets []gobgp.CommunitySet, commSetIndexMap map[string]int) gobgp.PolicyDefinition {
 	var statements []gobgp.Statement
 	for _, statement := range policy.Statement.Values() {
-		var setCommunitiesList []string
-		for _, comm := range statement.GetActions().BgpActions.GetSetCommunity().GetInline().GetCommunities() {
-			setCommunitiesList = append(setCommunitiesList, convertCommunity(comm))
+		setCommunitiesList, err := convertSetCommunities(statement.GetActions().GetBgpActions().GetSetCommunity(), convertedCommSets, commSetIndexMap)
+		if err != nil {
+			log.Error(err)
 		}
 		setmed, err := convertMED(statement.GetActions().GetBgpActions().GetSetMed())
 		if err != nil {
@@ -193,7 +210,8 @@ func convertCommunity(community any) string {
 	return ""
 }
 
-func convertCommunitySet(occommset map[string]*oc.RoutingPolicy_DefinedSets_BgpDefinedSets_CommunitySet) []gobgp.CommunitySet {
+func convertCommunitySet(occommset map[string]*oc.RoutingPolicy_DefinedSets_BgpDefinedSets_CommunitySet) ([]gobgp.CommunitySet, map[string]int) {
+	indexMap := map[string]int{}
 	var commsets []gobgp.CommunitySet
 	for communitySetName, communitySet := range occommset {
 		var communityList []string
@@ -201,12 +219,13 @@ func convertCommunitySet(occommset map[string]*oc.RoutingPolicy_DefinedSets_BgpD
 			communityList = append(communityList, convertCommunity(community))
 		}
 
+		indexMap[communitySetName] = len(commsets)
 		commsets = append(commsets, gobgp.CommunitySet{
 			CommunitySetName: communitySetName,
 			CommunityList:    communityList,
 		})
 	}
-	return commsets
+	return commsets, indexMap
 }
 
 // convertCommunityOC converts a GoBGP community to its OC representation.

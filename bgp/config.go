@@ -103,8 +103,9 @@ func intendedToGoBGP(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *oc.Routin
 // intendedToGoBGPPolicies populates bgpConfig's policies from the OC configuration.
 // TODO: applied state
 func intendedToGoBGPPolicies(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *oc.RoutingPolicy, bgpConfig *gobgp.BgpConfigSet) {
+	var communitySetIndexMap map[string]int
 	// community sets
-	bgpConfig.DefinedSets.BgpDefinedSets.CommunitySets = convertCommunitySet(policyoc.GetOrCreateDefinedSets().GetOrCreateBgpDefinedSets().CommunitySet)
+	bgpConfig.DefinedSets.BgpDefinedSets.CommunitySets, communitySetIndexMap = convertCommunitySet(policyoc.GetOrCreateDefinedSets().GetOrCreateBgpDefinedSets().CommunitySet)
 	// Prefix sets
 	bgpConfig.DefinedSets.PrefixSets = convertPrefixSets(policyoc.GetOrCreateDefinedSets().PrefixSet)
 	// AS Path Sets
@@ -154,7 +155,7 @@ func intendedToGoBGPPolicies(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *o
 					log.Errorf("Neighbour policy doesn't exist in policy definitions: %q", policyName)
 					continue
 				}
-				convertedPolicy := convertPolicyDefinition(policy, neighAddr, policyoc.GetOrCreateDefinedSets().GetOrCreateBgpDefinedSets().CommunitySet)
+				convertedPolicy := convertPolicyDefinition(policy, neighAddr, policyoc.GetOrCreateDefinedSets().GetOrCreateBgpDefinedSets().CommunitySet, bgpConfig.DefinedSets.BgpDefinedSets.CommunitySets, communitySetIndexMap)
 				bgpConfig.PolicyDefinitions = append(bgpConfig.PolicyDefinitions, convertedPolicy)
 				applyPolicyList = append(applyPolicyList, convertedPolicyName)
 			}
