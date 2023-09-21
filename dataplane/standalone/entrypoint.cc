@@ -189,8 +189,8 @@ sai_status_t sai_api_initialize(
   LOG(WARNING) << "iniitializing";
   startAsync(50000);
 
-  auto chan =
-      grpc::CreateChannel("localhost:50000", grpc::InsecureChannelCredentials());
+  auto chan = grpc::CreateChannel("localhost:50000",
+                                  grpc::InsecureChannelCredentials());
 
   acl = std::make_unique<lemming::dataplane::sai::Acl::Stub>(chan);
   bfd = std::make_unique<lemming::dataplane::sai::Bfd::Stub>(chan);
@@ -502,6 +502,12 @@ sai_status_t sai_object_type_get_availability(
     _In_ uint32_t attr_count, _In_ const sai_attribute_t *attr_list,
     _Out_ uint64_t *count) {
   *count = 1024;
+  return SAI_STATUS_SUCCESS;
+}
+
+sai_status_t sai_query_stats_capability(
+    _In_ sai_object_id_t switch_id, _In_ sai_object_type_t object_type,
+    _Inout_ sai_stat_capability_list_t *stats_capability) {
   return SAI_STATUS_SUCCESS;
 }
 
