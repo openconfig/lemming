@@ -27,7 +27,6 @@ COPY vm.img /vm.img
 COPY go.* /
 RUN go mod download
 COPY *.go /
-COPY run.sh /
 COPY tc-tap.sh /
 
 EXPOSE 22
