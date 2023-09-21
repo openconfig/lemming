@@ -445,7 +445,34 @@ func TestEgressInterface(t *testing.T) {
 			{Name: "eth0", Subinterface: 0},
 		},
 	}, {
-		desc: "v6 recursive route onto connected v4 route",
+		desc: "v6 recursive route onto connected v4 route in IPv4 format",
+		inCfg: func() *oc.Root {
+			d := &oc.Root{}
+			d.GetOrCreateInterface("eth0").
+				GetOrCreateSubinterface(0).
+				GetOrCreateIpv4().
+				GetOrCreateAddress("192.0.2.1").
+				PrefixLength = ygot.Uint8(24)
+			d.GetOrCreateNetworkInstance("DEFAULT").
+				Type = oc.NetworkInstanceTypes_NETWORK_INSTANCE_TYPE_DEFAULT_INSTANCE
+			return d
+		}(),
+		inAddRoutes: map[string][]*Route{
+			"DEFAULT": {{
+				Prefix: "2023::2025/128",
+				NextHops: []*afthelper.NextHopSummary{{
+					Address:         "192.0.2.1",
+					NetworkInstance: "DEFAULT",
+				}},
+			}},
+		},
+		inNI: "DEFAULT",
+		inIP: mustCIDR("2023::2025/128"),
+		wantInterface: []*Interface{
+			{Name: "eth0", Subinterface: 0},
+		},
+	}, {
+		desc: "v6 recursive route onto connected v4 route in IPv4-mapped IPv6 format",
 		inCfg: func() *oc.Root {
 			d := &oc.Root{}
 			d.GetOrCreateInterface("eth0").
