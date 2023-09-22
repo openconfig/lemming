@@ -90,6 +90,17 @@ func Replace[T any](t testing.TB, dut *Device, q ygnmi.ConfigQuery[T], val T) *y
 	return res
 }
 
+// ReplaceExpectFail replaces the configuration at the given query path with
+// the val, expecting a failure.
+func ReplaceExpectFail[T any](t testing.TB, dut *Device, q ygnmi.ConfigQuery[T], val T) {
+	t.Helper()
+	c := dut.yc
+	_, err := ygnmi.Replace(context.Background(), c, q, val)
+	if err == nil {
+		t.Fatalf("Replace(t) on %v at %v: did not fail", c, q)
+	}
+}
+
 // Delete deletes the configuration at the given query path.
 func Delete[T any](t testing.TB, dut *Device, q ygnmi.ConfigQuery[T]) *ygnmi.Result {
 	t.Helper()

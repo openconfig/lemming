@@ -396,14 +396,18 @@ func set(schema *ytypes.Schema, cache *cache.Cache, target string, req *gpb.SetR
 		return err
 	}
 
+	// Only validate for configuration changes since state changes are
+	// internal and assumed to be correct. State changes in general also
+	// occur much more frequently than config changes, so also want to
+	// avoid the performance hit.
 	if preferShadowPath {
 		if err := schema.Validate(); err != nil {
 			return status.Errorf(codes.InvalidArgument, "invalid SetRequest: %v", err)
 		}
-	}
-	for _, validator := range validators {
-		if err := validator(schema.Root.(*oc.Root)); err != nil {
-			return status.Errorf(codes.InvalidArgument, "validation error: %v", err)
+		for _, validator := range validators {
+			if err := validator(schema.Root.(*oc.Root)); err != nil {
+				return status.Errorf(codes.InvalidArgument, "validation error: %v", err)
+			}
 		}
 	}
 

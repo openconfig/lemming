@@ -50,13 +50,19 @@ func TestPrefixSet(t *testing.T) {
 
 		// Create prefix set
 		prefixSetName := "reject-" + prefix1
-		prefix1Path := policytest.RoutingPolicyPath.DefinedSets().PrefixSet(prefixSetName).Prefix(prefix1, "exact").IpPrefix()
+		prefixSetPath := policytest.RoutingPolicyPath.DefinedSets().PrefixSet(prefixSetName)
+		mode := oc.PrefixSet_Mode_IPV4
+		if v6 {
+			mode = oc.PrefixSet_Mode_IPV6
+		}
+		gnmi.Replace(t, dut2, prefixSetPath.Mode().Config(), mode)
+		prefix1Path := prefixSetPath.Prefix(prefix1, "exact").IpPrefix()
 		gnmi.Replace(t, dut2, prefix1Path.Config(), prefix1)
 		maskRange := "16..23"
 		if v6 {
 			maskRange = "96..111"
 		}
-		prefix2Path := policytest.RoutingPolicyPath.DefinedSets().PrefixSet(prefixSetName).Prefix(prefix2, maskRange).IpPrefix()
+		prefix2Path := prefixSetPath.Prefix(prefix2, maskRange).IpPrefix()
 		gnmi.Replace(t, dut2, prefix2Path.Config(), prefix2)
 
 		policy := &oc.RoutingPolicy_PolicyDefinition_Statement_OrderedMap{}

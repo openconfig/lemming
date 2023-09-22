@@ -63,9 +63,13 @@ func TestSetAttributes(t *testing.T) {
 	installDefinedSets := func(t *testing.T, dut1, dut2, dut5 *Device) {
 		for _, route := range routesUnderTest {
 			// Create prefix set containing just the route under test.
+			prefixModePath := ocpath.Root().RoutingPolicy().DefinedSets().PrefixSet(singletonPrefixSetName(route)).Mode()
 			prefixPath := ocpath.Root().RoutingPolicy().DefinedSets().PrefixSet(singletonPrefixSetName(route)).Prefix(route, "exact").IpPrefix()
+			Replace(t, dut1, prefixModePath.Config(), oc.PrefixSet_Mode_IPV4)
 			Replace(t, dut1, prefixPath.Config(), route)
+			Replace(t, dut2, prefixModePath.Config(), oc.PrefixSet_Mode_IPV4)
 			Replace(t, dut2, prefixPath.Config(), route)
+			Replace(t, dut5, prefixModePath.Config(), oc.PrefixSet_Mode_IPV4)
 			Replace(t, dut5, prefixPath.Config(), route)
 		}
 
