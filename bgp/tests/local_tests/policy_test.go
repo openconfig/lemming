@@ -130,9 +130,7 @@ func testPolicy(t *testing.T, testspec PolicyTestCase) {
 		installStaticRoute(t, dut5, route)
 	}
 
-	t.Run("installPolicyBeforeRoutes", func(t *testing.T) {
-		testPolicyAux(t, testspec, dut1, dut2, dut3, dut4, dut5)
-	})
+	testPolicyAux(t, testspec, dut1, dut2, dut3, dut4, dut5)
 }
 
 func testPropagation(t *testing.T, routeTest *valpb.RouteTestCase, prevDUT, currDUT, nextDUT *Device) {
