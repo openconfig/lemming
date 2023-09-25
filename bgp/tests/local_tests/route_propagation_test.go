@@ -63,10 +63,6 @@ func TestRoutePropagation(t *testing.T) {
 	defer stop4()
 
 	installDefaultPolicies := func() {
-		// TODO: clean-up
-		// This print statement is to help with debugging a non-deterministic "update is stale" error in the gNMI cache.
-		// See https://pipelines.actions.githubusercontent.com/serviceHosts/8897a2bd-3f38-443c-8744-4fc2e0f58aae/_apis/pipelines/1/runs/2930/signedlogcontent/4?urlExpires=2023-05-22T21%3A31%3A09.1265307Z&urlSigningMethod=HMACV1&urlSignature=lYO37gwTl6Vtt%2FCc2Z%2Faeffh32zXn1cszkosj69uGSM%3D
-		// route_propagation_test.go:68: Replace(t) on ygnmi client (target: "dut1") at /network-instances/network-instance[name=DEFAULT]/protocols/protocol[identifier=BGP][name=BGP]/bgp/neighbors/neighbor[neighbor-address=127.0.0.2]/apply-policy/config/default-export-policy: Replace(t) at path origin:"openconfig" elem:{name:"network-instances"} elem:{name:"network-instance" key:{key:"name" value:"DEFAULT"}} elem:{name:"protocols"} elem:{name:"protocol" key:{key:"identifier" value:"BGP"} key:{key:"name" value:"BGP"}} elem:{name:"bgp"} elem:{name:"neighbors"} elem:{name:"neighbor" key:{key:"neighbor-address" value:"127.0.0.2"}} elem:{name:"apply-policy"} elem:{name:"config"} elem:{name:"default-export-policy"}: rpc error: code = Internal desc = update is stale, update is stale, update is stale
 		fmt.Println("Installing default policies")
 		// Clear the path for routes to be propagated.
 		Replace(t, dut1, bgp.BGPPath.Neighbor(dut2.RouterID).ApplyPolicy().DefaultExportPolicy().Config(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)

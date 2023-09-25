@@ -16,7 +16,7 @@ syntax = "proto3";
 
 package policy_validation;
 
-option go_package = "github.com/openconfig/lemming/bgp/tests/proto/policyval";
+option go_package = "github.com/openconfig/lemming/proto/policyval";
 
 // Defines a set of tests to be run against the specified policy.
 message PolicyTestCase {

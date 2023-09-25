@@ -23,7 +23,7 @@ import (
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 	"github.com/openconfig/ygot/ygot"
 
-	valpb "github.com/openconfig/lemming/bgp/tests/proto/policyval"
+	valpb "github.com/openconfig/lemming/proto/policyval"
 )
 
 func TestCommunitySet(t *testing.T) {

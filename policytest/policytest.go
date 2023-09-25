@@ -19,7 +19,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/openconfig/lemming/bgp/tests/proto/policyval"
 	"github.com/openconfig/lemming/gnmi/fakedevice"
 	"github.com/openconfig/lemming/internal/attrs"
 	"github.com/openconfig/ondatra"
@@ -30,7 +29,7 @@ import (
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot"
 
-	valpb "github.com/openconfig/lemming/bgp/tests/proto/policyval"
+	valpb "github.com/openconfig/lemming/proto/policyval"
 )
 
 // Settings for configuring the baseline testbed with the test
@@ -232,14 +231,14 @@ func testPropagationAuxV4(t *testing.T, routeTest *valpb.RouteTestCase, pair1, p
 	gnmi.Await(t, prevDUT, afiSafi.Neighbor(port21.IPv4).AdjRibOutPost().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
 	gnmi.Await(t, currDUT, afiSafi.Neighbor(port1.IPv4).AdjRibInPre().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
 	switch expectedResult := routeTest.GetExpectedResult(); expectedResult {
-	case policyval.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT:
+	case valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT:
 		t.Logf("Waiting for %s to be propagated", prefix)
 		gnmi.Await(t, currDUT, afiSafi.Neighbor(port1.IPv4).AdjRibInPost().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
 		gnmi.Await(t, currDUT, afiSafi.LocRib().Route(prefix, oc.UnionString(port1.IPv4), 0).Prefix().State(), awaitTimeout, prefix)
 		gnmi.Await(t, currDUT, afiSafi.Neighbor(port3.IPv4).AdjRibOutPre().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
 		gnmi.Await(t, currDUT, afiSafi.Neighbor(port3.IPv4).AdjRibOutPost().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
 		gnmi.Await(t, nextDUT, afiSafi.Neighbor(port23.IPv4).AdjRibInPre().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
-	case policyval.RouteTestResult_ROUTE_TEST_RESULT_DISCARD:
+	case valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD:
 		w := gnmi.Watch(t, currDUT, afiSafi.Neighbor(port1.IPv4).AdjRibInPost().Route(prefix, 0).Prefix().State(), rejectTimeout, func(val *ygnmi.Value[string]) bool {
 			_, ok := val.Val()
 			return !ok
@@ -260,7 +259,7 @@ func testPropagationAuxV4(t *testing.T, routeTest *valpb.RouteTestCase, pair1, p
 			break
 		}
 		t.Logf("prefix %q (%s) was successfully rejected from adj-rib-in-pre of %v (neighbour %v) within timeout.", prefix, routeTest.GetDescription(), nextDUT, currDUT)
-	case policyval.RouteTestResult_ROUTE_TEST_RESULT_NOT_PREFERRED:
+	case valpb.RouteTestResult_ROUTE_TEST_RESULT_NOT_PREFERRED:
 		gnmi.Await(t, currDUT, afiSafi.Neighbor(port1.IPv4).AdjRibInPost().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
 		w := gnmi.Watch(t, currDUT, afiSafi.LocRib().Route(prefix, oc.UnionString(port1.IPv4), 0).Prefix().State(), rejectTimeout, func(val *ygnmi.Value[string]) bool {
 			_, ok := val.Val()
@@ -291,14 +290,14 @@ func testPropagationAuxV6(t *testing.T, routeTest *valpb.RouteTestCase, pair1, p
 	gnmi.Await(t, prevDUT, afiSafi.Neighbor(port21.IPv6).AdjRibOutPost().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
 	gnmi.Await(t, currDUT, afiSafi.Neighbor(port1.IPv6).AdjRibInPre().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
 	switch expectedResult := routeTest.GetExpectedResult(); expectedResult {
-	case policyval.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT:
+	case valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT:
 		t.Logf("Waiting for %s to be propagated", prefix)
 		gnmi.Await(t, currDUT, afiSafi.Neighbor(port1.IPv6).AdjRibInPost().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
 		gnmi.Await(t, currDUT, afiSafi.LocRib().Route(prefix, oc.UnionString(port1.IPv6), 0).Prefix().State(), awaitTimeout, prefix)
 		gnmi.Await(t, currDUT, afiSafi.Neighbor(port3.IPv6).AdjRibOutPre().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
 		gnmi.Await(t, currDUT, afiSafi.Neighbor(port3.IPv6).AdjRibOutPost().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
 		gnmi.Await(t, nextDUT, afiSafi.Neighbor(port23.IPv6).AdjRibInPre().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
-	case policyval.RouteTestResult_ROUTE_TEST_RESULT_DISCARD:
+	case valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD:
 		w := gnmi.Watch(t, currDUT, afiSafi.Neighbor(port1.IPv6).AdjRibInPost().Route(prefix, 0).Prefix().State(), rejectTimeout, func(val *ygnmi.Value[string]) bool {
 			_, ok := val.Val()
 			return !ok
@@ -319,7 +318,7 @@ func testPropagationAuxV6(t *testing.T, routeTest *valpb.RouteTestCase, pair1, p
 			break
 		}
 		t.Logf("prefix %q (%s) was successfully rejected from adj-rib-in-pre of %v (neighbour %v) within timeout.", prefix, routeTest.GetDescription(), nextDUT, currDUT)
-	case policyval.RouteTestResult_ROUTE_TEST_RESULT_NOT_PREFERRED:
+	case valpb.RouteTestResult_ROUTE_TEST_RESULT_NOT_PREFERRED:
 		gnmi.Await(t, currDUT, afiSafi.Neighbor(port1.IPv6).AdjRibInPost().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
 		w := gnmi.Watch(t, currDUT, afiSafi.LocRib().Route(prefix, oc.UnionString(port1.IPv6), 0).Prefix().State(), rejectTimeout, func(val *ygnmi.Value[string]) bool {
 			_, ok := val.Val()
