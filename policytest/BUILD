@@ -6,9 +6,9 @@ go_library(
     importpath = "github.com/openconfig/lemming/policytest",
     visibility = ["//visibility:public"],
     deps = [
-        "//bgp/tests/proto/policyval",
         "//gnmi/fakedevice",
         "//internal/attrs",
+        "//proto/policyval",
         "@com_github_openconfig_ondatra//:ondatra",
         "@com_github_openconfig_ondatra//gnmi",
         "@com_github_openconfig_ondatra//gnmi/oc",

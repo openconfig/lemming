@@ -15,12 +15,12 @@ go_test(
     deps = [
         "//:lemming",
         "//bgp",
-        "//bgp/tests/proto/policyval",
         "//gnmi",
         "//gnmi/fakedevice",
         "//gnmi/gnmiclient",
         "//gnmi/oc",
         "//gnmi/oc/ocpath",
+        "//proto/policyval",
         "@com_github_openconfig_gnmi//proto/gnmi",
         "@com_github_openconfig_ygnmi//ygnmi",
         "@com_github_openconfig_ygot//ygot",
