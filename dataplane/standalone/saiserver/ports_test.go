@@ -123,6 +123,7 @@ func TestSetPortAttribute(t *testing.T) {
 			ContextId: &fwdpb.ContextId{},
 		},
 		wantAttr: &saipb.PortAttribute{
+			OperStatus: saipb.PortOperStatus_PORT_OPER_STATUS_DOWN.Enum(),
 			AdminState: proto.Bool(false),
 		},
 	}}
@@ -133,6 +134,9 @@ func TestSetPortAttribute(t *testing.T) {
 			}
 			dplane := &fakePortDataplaneAPI{}
 			c, mgr, stopFn := newTestPort(t, dplane)
+			mgr.StoreAttributes(1, &saipb.PortAttribute{
+				OperStatus: saipb.PortOperStatus_PORT_OPER_STATUS_DOWN.Enum(),
+			})
 			defer stopFn()
 			_, gotErr := c.SetPortAttribute(context.TODO(), tt.req)
 			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
@@ -173,13 +177,15 @@ func TestCreateHostif(t *testing.T) {
 	}, {
 		desc: "success netdev",
 		req: &saipb.CreateHostifRequest{
-			Type: saipb.HostifType_HOSTIF_TYPE_NETDEV.Enum(),
+			Type:  saipb.HostifType_HOSTIF_TYPE_NETDEV.Enum(),
+			ObjId: proto.Uint64(2),
 		},
 		want: &saipb.CreateHostifResponse{
 			Oid: 1,
 		},
 		wantAttr: &saipb.HostifAttribute{
-			Type: saipb.HostifType_HOSTIF_TYPE_NETDEV.Enum(),
+			Type:  saipb.HostifType_HOSTIF_TYPE_NETDEV.Enum(),
+			ObjId: proto.Uint64(2),
 		},
 	}}
 	for _, tt := range tests {
@@ -189,6 +195,9 @@ func TestCreateHostif(t *testing.T) {
 			}
 			dplane := &fakePortDataplaneAPI{}
 			c, mgr, stopFn := newTestHostif(t, dplane)
+			mgr.StoreAttributes(2, &saipb.PortAttribute{
+				OperStatus: saipb.PortOperStatus_PORT_OPER_STATUS_DOWN.Enum(),
+			})
 			defer stopFn()
 			got, gotErr := c.CreateHostif(context.TODO(), tt.req)
 			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
