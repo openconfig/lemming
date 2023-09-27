@@ -313,8 +313,8 @@ func TestGenerate(t *testing.T) {
 		desc:  "common enum",
 		inAst: &saiast.SAIAPI{},
 		inInfo: &docparser.SAIInfo{
-			Enums: map[string][]string{
-				"sai_foo_t": {"SAI_FOO_ONE", "SAI_FOO_TWO"},
+			Enums: map[string][]*docparser.Enum{
+				"sai_foo_t": {{Name: "SAI_FOO_ONE"}, {Name: "SAI_FOO_TWO"}},
 			},
 		},
 		want: map[string]string{
@@ -330,8 +330,8 @@ enum Foo {
 		desc:  "common enum with unspecified value",
 		inAst: &saiast.SAIAPI{},
 		inInfo: &docparser.SAIInfo{
-			Enums: map[string][]string{
-				"sai_foo_t": {"SAI_FOO_UNSPECIFIED", "SAI_FOO_TWO"},
+			Enums: map[string][]*docparser.Enum{
+				"sai_foo_t": {{Name: "SAI_FOO_UNSPECIFIED"}, {Name: "SAI_FOO_TWO"}},
 			},
 		},
 		want: map[string]string{

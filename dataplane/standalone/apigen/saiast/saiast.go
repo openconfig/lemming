@@ -126,12 +126,14 @@ func (sai *SAIAPI) GetFuncMeta(fn *TypeDecl) *FuncMetadata {
 		if strings.Contains(param.Typ, "entry") {
 			meta.Entry = TrimSAIName(strings.TrimPrefix(param.Typ, "const "), true, false)
 		}
-		if i == 1 && param.Name == "switch_id" {
+		if (i == 0 || i == 1) && param.Name == "switch_id" {
 			meta.IsSwitchScoped = true
 		}
 	}
 	// Handle plural types using the bulk API.
-	if strings.HasSuffix(meta.TypeName, "PORTS") || strings.HasSuffix(meta.TypeName, "ENTRIES") || strings.HasSuffix(meta.TypeName, "MEMBERS") || strings.HasSuffix(meta.TypeName, "LISTS") {
+	if strings.HasSuffix(meta.TypeName, "PORTS") || strings.HasSuffix(meta.TypeName, "ENTRIES") || strings.HasSuffix(meta.TypeName, "MEMBERS") ||
+		strings.HasSuffix(meta.TypeName, "LISTS") || strings.HasSuffix(meta.TypeName, "GROUPS") || strings.HasSuffix(meta.TypeName, "HOPS") ||
+		strings.HasSuffix(meta.TypeName, "TUNNELS") || strings.HasSuffix(meta.TypeName, "INTERFACES") {
 		meta.Operation += "_bulk"
 		meta.TypeName = strings.TrimSuffix(meta.TypeName, "S")
 		if strings.HasSuffix(meta.TypeName, "IE") {

@@ -42,11 +42,17 @@ func Generate(doc *docparser.SAIInfo, sai *saiast.SAIAPI) (map[string]string, er
 		if apiName == "switch" {
 			ccData.Globals = append(ccData.Globals, "std::unique_ptr<PortStateReactor> port_state;")
 		}
+		if apiName == "hostif" {
+			ccData.Globals = append(ccData.Globals, "int nextIdx = 1;")
+		}
 		for _, fn := range iface.Funcs {
 			meta := sai.GetFuncMeta(fn)
-			tf := createCCData(meta, apiName, sai, doc, fn)
-			if tf != nil {
-				ccData.Funcs = append(ccData.Funcs, *tf)
+			opFn, convertFn := createCCData(meta, apiName, sai, doc, fn)
+			if opFn != nil {
+				ccData.Funcs = append(ccData.Funcs, opFn)
+			}
+			if convertFn != nil {
+				ccData.ConvertFuncs = append(ccData.ConvertFuncs, convertFn)
 			}
 		}
 		var headerBuilder, implBuilder strings.Builder
@@ -71,18 +77,25 @@ func sanitizeProtoName(inName string) string {
 }
 
 // createCCData returns a struct with the template data for the given function.
-func createCCData(meta *saiast.FuncMetadata, apiName string, sai *saiast.SAIAPI, info *docparser.SAIInfo, fn *saiast.TypeDecl) *templateFunc {
+func createCCData(meta *saiast.FuncMetadata, apiName string, sai *saiast.SAIAPI, info *docparser.SAIInfo, fn *saiast.TypeDecl) (*templateFunc, *templateFunc) {
 	if info.Attrs[meta.TypeName] == nil {
 		fmt.Printf("no doc info for type: %v\n", meta.TypeName)
-		return nil
+		return nil, nil
 	}
-	tf := &templateFunc{
+	opFn := &templateFunc{
 		ReturnType: sai.Funcs[fn.Typ].ReturnType,
 		Name:       meta.Name,
 		Operation:  meta.Operation,
 		TypeName:   meta.TypeName,
 		ReqType:    strcase.UpperCamelCase(meta.Name + "_request"),
 		RespType:   strcase.UpperCamelCase(meta.Name + "_response"),
+	}
+	convertFn := &templateFunc{
+		Name:      "convert_" + meta.Name,
+		Operation: meta.Operation,
+		TypeName:  meta.TypeName,
+		ReqType:   strcase.UpperCamelCase(meta.Name + "_request"),
+		RespType:  strcase.UpperCamelCase(meta.Name + "_response"),
 	}
 
 	var paramDefs []string
@@ -93,38 +106,46 @@ func createCCData(meta *saiast.FuncMetadata, apiName string, sai *saiast.SAIAPI,
 		// Functions that operator on entries take some entry type instead of an object id as argument.
 		// Generate a entry union with the pointer to entry instead.
 		if strings.Contains(param.Typ, "entry") {
-			tf.Entry = fmt.Sprintf("common_entry_t entry = {.%s = %s};", name, name)
+			opFn.Entry = fmt.Sprintf("common_entry_t entry = {.%s = %s};", name, name)
 			name = "entry"
 		}
 		paramVars = append(paramVars, name)
 	}
-	tf.Args = strings.Join(paramDefs, ", ")
-	tf.Vars = strings.Join(paramVars, ", ")
-	tf.Client = strcase.SnakeCase(apiName)
-	if tf.Client == "switch" { // switch is C++ keyword.
-		tf.Client = "switch_"
+	opFn.Args = strings.Join(paramDefs, ", ")
+	opFn.Vars = strings.Join(paramVars[1:], ", ")
+	convertFn.Args = strings.Join(paramDefs[1:], ", ")
+	convertFn.Vars = strings.Join(paramVars[1:], ", ")
+	opFn.Client = strcase.SnakeCase(apiName)
+	if opFn.Client == "switch" { // switch is C++ keyword.
+		opFn.Client = "switch_"
 	}
-	tf.RPCMethod = strcase.UpperCamelCase(meta.Name)
-	tf.SwitchScoped = meta.IsSwitchScoped
-	tf.AttrEnumType = strcase.UpperCamelCase(meta.TypeName + " attr")
+	opFn.RPCMethod = strcase.UpperCamelCase(meta.Name)
+	opFn.SwitchScoped = meta.IsSwitchScoped
+	opFn.AttrEnumType = strcase.UpperCamelCase(meta.TypeName + " attr")
 
 	// If the func has entry, then we don't use ids, instead pass the entry to the proto.
 	if meta.Entry == "" {
-		tf.OidVar = sai.Funcs[fn.Typ].Params[0].Name
+		opFn.OidVar = sai.Funcs[fn.Typ].Params[0].Name
 	} else {
-		entryType := strings.TrimPrefix(sai.Funcs[fn.Typ].Params[0].Typ, "const ")
+		i := 0
+		if strings.Contains(opFn.Operation, "bulk") {
+			i = 1
+		}
+		entryType := strings.TrimPrefix(sai.Funcs[fn.Typ].Params[i].Typ, "const ")
 		if ua, ok := typeToUnionAccessor[entryType]; ok {
-			tf.EntryConversionFunc = ua.convertFromFunc
-			tf.EntryVar = sai.Funcs[fn.Typ].Params[0].Name
+			opFn.EntryConversionFunc = ua.convertFromFunc
+			opFn.EntryVar = sai.Funcs[fn.Typ].Params[i].Name
 		}
 	}
 
-	switch tf.Operation {
+	switch opFn.Operation {
 	case "create":
-		tf.AttrSwitch = &AttrSwitch{
+		convertFn.AttrSwitch = &AttrSwitch{
 			Var:      "attr_list[i].id",
-			ProtoVar: "req",
+			ProtoVar: "msg",
 		}
+		opFn.ConvertFunc = strcase.SnakeCase("convert_create " + meta.TypeName)
+		convertFn.ReturnType = opFn.ReqType
 		for _, attr := range info.Attrs[meta.TypeName].CreateFields {
 			name := sanitizeProtoName(attr.MemberName)
 			smt, err := protoFieldSetter(attr.SaiType, name, "attr_list[i].value", info)
@@ -132,14 +153,24 @@ func createCCData(meta *saiast.FuncMetadata, apiName string, sai *saiast.SAIAPI,
 				fmt.Println("skipping due to error: ", err)
 				continue
 			}
+			if meta.TypeName == "HOSTIF" && attr.EnumName == "SAI_HOSTIF_ATTR_NAME" {
+				smt.CustomText = `{
+  std::ostringstream s;
+  s << "ip link set eth" << nextIdx++ << " name "
+    << attr_list[i].value.chardata;
+  LOG(INFO) << s.str();
+  system(s.str().c_str());
+}`
+			}
 			smt.EnumValue = attr.EnumName
-			tf.AttrSwitch.Attrs = append(tf.AttrSwitch.Attrs, smt)
+			convertFn.AttrSwitch.Attrs = append(convertFn.AttrSwitch.Attrs, smt)
 		}
 	case "get_attribute":
-		tf.AttrSwitch = &AttrSwitch{
+		opFn.AttrSwitch = &AttrSwitch{
 			Var:      "attr_list[i].id",
 			ProtoVar: "resp.attr()",
 		}
+		convertFn = nil
 		for _, attr := range info.Attrs[meta.TypeName].ReadFields {
 			name := sanitizeProtoName(attr.MemberName)
 			smt, err := protoFieldGetter(attr.SaiType, name, "attr_list[i].value", info)
@@ -148,10 +179,11 @@ func createCCData(meta *saiast.FuncMetadata, apiName string, sai *saiast.SAIAPI,
 				continue
 			}
 			smt.EnumValue = attr.EnumName
-			tf.AttrSwitch.Attrs = append(tf.AttrSwitch.Attrs, smt)
+			opFn.AttrSwitch.Attrs = append(opFn.AttrSwitch.Attrs, smt)
 		}
 	case "set_attribute":
-		tf.AttrSwitch = &AttrSwitch{
+		convertFn = nil
+		opFn.AttrSwitch = &AttrSwitch{
 			Var:      "attr->id",
 			ProtoVar: "req",
 		}
@@ -163,16 +195,30 @@ func createCCData(meta *saiast.FuncMetadata, apiName string, sai *saiast.SAIAPI,
 				continue
 			}
 			smt.EnumValue = attr.EnumName
-			tf.AttrSwitch.Attrs = append(tf.AttrSwitch.Attrs, smt)
+			opFn.AttrSwitch.Attrs = append(opFn.AttrSwitch.Attrs, smt)
 		}
+	case "create_bulk":
+		convertFn = nil
+		opFn.ConvertFunc = strcase.SnakeCase("convert_create " + meta.TypeName)
+		for _, attr := range info.Attrs[meta.TypeName].CreateFields {
+			name := sanitizeProtoName(attr.MemberName)
+			smt, err := protoFieldSetter(attr.SaiType, name, "attr_list[i].value", info)
+			if err != nil {
+				fmt.Println("skipping due to error: ", err)
+				continue
+			}
+			smt.EnumValue = attr.EnumName
+		}
+	default:
+		convertFn = nil
 	}
 
-	tf.UseCommonAPI = supportedOperation[tf.Operation]
+	opFn.UseCommonAPI = supportedOperation[opFn.Operation]
 	// Function or types that don't follow standard naming.
-	if strings.Contains(tf.TypeName, "PORT_ALL") || strings.Contains(tf.TypeName, "ALL_NEIGHBOR") {
-		tf.UseCommonAPI = false
+	if strings.Contains(opFn.TypeName, "PORT_ALL") || strings.Contains(opFn.TypeName, "ALL_NEIGHBOR") {
+		opFn.UseCommonAPI = false
 	}
-	return tf
+	return opFn, convertFn
 }
 
 const protoNS = "lemming::dataplane::sai::"
@@ -193,6 +239,7 @@ type unionAccessor struct {
 	aType           accessorType
 	convertFromFunc string
 	convertToFunc   string
+	convertToCopy   bool // If there is preallocated list, need to copy elems into it.
 	assignmentVar   string
 }
 
@@ -283,6 +330,13 @@ var typeToUnionAccessor = map[string]*unionAccessor{
 		assignmentVar: "port_state",
 		convertToFunc: "std::make_unique<PortStateReactor>",
 	},
+	"sai_acl_capability_t": {
+		accessor:        "aclcapability",
+		aType:           convertFunc,
+		convertToCopy:   true,
+		convertFromFunc: "convert_from_acl_capability",
+		convertToFunc:   "convert_to_acl_capability",
+	},
 }
 
 func protoFieldSetter(saiType, protoField, varName string, info *docparser.SAIInfo) (*AttrSwitchSmt, error) {
@@ -350,7 +404,11 @@ func protoFieldGetter(saiType, protoField, varName string, info *docparser.SAIIn
 		}
 		return smt, nil
 	case convertFunc:
-		smt.ConvertFunc = ua.convertToFunc
+		if ua.convertToCopy {
+			smt.CopyConvertFunc = ua.convertToFunc
+		} else {
+			smt.ConvertFunc = ua.convertToFunc
+		}
 		return smt, nil
 	case fixedSizedArray:
 		if saiType == "sai_ip4_t" {
@@ -369,17 +427,17 @@ func protoFieldGetter(saiType, protoField, varName string, info *docparser.SAIIn
 }
 
 var supportedOperation = map[string]bool{
-	"create":             true,
-	"remove":             true,
-	"get_attribute":      true,
-	"set_attribute":      true,
-	"clear_stats":        true,
-	"get_stats":          true,
-	"get_stats_ext":      true,
-	"create_bulk":        true,
-	"remove_bulk":        true,
-	"set_attribute_bulk": true,
-	"get_attribute_bulk": true,
+	"create":        true,
+	"remove":        true,
+	"get_attribute": true,
+	"set_attribute": true,
+	"clear_stats":   true,
+	"get_stats":     true,
+	"get_stats_ext": true,
+	"create_bulk":   true,
+	// "remove_bulk":        true,
+	// "set_attribute_bulk": true,
+	// "get_attribute_bulk": true,
 }
 
 var (
@@ -441,6 +499,9 @@ switch ({{ .Var }}) {
 switch ({{ .Var }}) {
   {{ range .Attrs }}
   case {{ .EnumValue }}:
+	{{- if .CustomText }}
+	{{ .CustomText }}
+	{{- end }}
 	{{- if .Var }}
 	{{ .Var }} = {{ .ConvertFunc }}( {{.Args}} );
 	{{- else }}
@@ -482,25 +543,67 @@ const {{ .APIType }} l_{{ .APIName }} = {
 	{{- . }}
 {{ end }}
 
+{{- range .ConvertFuncs }}
+lemming::dataplane::sai::{{ .ReturnType }} {{ .Name }}({{ .Args }}) {
+{{ if eq .Operation "create" }}
+lemming::dataplane::sai::{{ .ReturnType }} msg;
+{{ if .SwitchScoped }} msg.set_switch_(switch_id); {{ end }}
+{{ if .EntryVar }} *msg.mutable_entry() = {{ .EntryConversionFunc }}({{ .EntryVar }}); {{ end }}
+ for(uint32_t i = 0; i < attr_count; i++ ) {
+	{{ template "setattr" .AttrSwitch }}
+}
+{{- else if eq .Operation "get_attribute" }}
+{{ .ReturnType }} msg;
+for(uint32_t i = 0; i < attr_count; i++ ) {
+	{{ template "getattr" .AttrSwitch }}
+}
+{{- end }}
+return msg;
+}
+{{ end }}
+
 {{- range .Funcs }}
 {{ .ReturnType }} l_{{ .Name }}({{ .Args }}) {
 	LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 	{{- if .UseCommonAPI }}
 	{{ if eq .Operation "create" }}
-	lemming::dataplane::sai::{{ .ReqType }} req;
+	lemming::dataplane::sai::{{ .ReqType }} req = {{.ConvertFunc}}({{.Vars}});
 	lemming::dataplane::sai::{{ .RespType }} resp;
 	grpc::ClientContext context;
 	{{ if .SwitchScoped }} req.set_switch_(switch_id); {{ end }}
 	{{ if .EntryVar }} *req.mutable_entry() = {{ .EntryConversionFunc }}({{ .EntryVar }}); {{ end }}
- 	for(uint32_t i = 0; i < attr_count; i++ ) {
-		{{ template "setattr" .AttrSwitch }}
-	}
 	grpc::Status status = {{ .Client }}->{{ .RPCMethod }}(&context, req, &resp);
 	if (!status.ok()) {
 		LOG(ERROR) << status.error_message();
 		return SAI_STATUS_FAILURE;
 	}
 	{{ if .OidVar -}} {{ .OidVar }} = resp.oid(); {{ end }}
+	{{ else if eq .Operation "create_bulk" }}
+	lemming::dataplane::sai::{{ .ReqType }} req;
+	lemming::dataplane::sai::{{ .RespType }} resp;
+	grpc::ClientContext context;
+
+	for (uint32_t i = 0; i < object_count; i++) {
+		{{- if .SwitchScoped }}
+		auto r = {{.ConvertFunc}}(switch_id, attr_count[i],attr_list[i]);
+		{{ else }} 
+		auto r = {{.ConvertFunc}}(attr_count[i], attr_list[i]);
+		{{ end -}}
+		{{- if .EntryVar }}
+		*r.mutable_entry() = {{ .EntryConversionFunc }}({{ .EntryVar }}); 
+		{{ end -}}
+		*req.add_reqs() = r;
+	}
+
+	grpc::Status status = {{ .Client }}->{{ .RPCMethod }}(&context, req, &resp);
+	if (!status.ok()) {
+		LOG(ERROR) << status.error_message();
+		return SAI_STATUS_FAILURE;
+	}
+	for (uint32_t i = 0; i < object_count; i++) {
+		{{ if .OidVar -}} {{ .OidVar }} = object_id[i] = resp.resps(i).oid(); {{ end }}
+		object_statuses[i] = SAI_STATUS_SUCCESS;
+	}
 
 	{{ else if eq .Operation "get_attribute" }}
 	lemming::dataplane::sai::{{ .ReqType }} req;
@@ -571,6 +674,8 @@ type AttrSwitchSmt struct {
 	CopyConvertFunc string
 	// ConvertFuncArgs are the extra arguments to pass the copy convert func.
 	CopyConvertFuncArgs string
+	// CustomText is any text to include for in the case.
+	CustomText string
 }
 
 type AttrSwitch struct {
@@ -599,6 +704,7 @@ type templateFunc struct {
 	SwitchScoped        bool
 	EntryConversionFunc string
 	EntryVar            string
+	ConvertFunc         string
 }
 
 type ccTemplateData struct {
@@ -608,5 +714,6 @@ type ccTemplateData struct {
 	APIType      string
 	APIName      string
 	Globals      []string
-	Funcs        []templateFunc
+	Funcs        []*templateFunc
+	ConvertFuncs []*templateFunc
 }
