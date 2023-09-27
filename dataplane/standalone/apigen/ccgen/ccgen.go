@@ -153,6 +153,9 @@ func createCCData(meta *saiast.FuncMetadata, apiName string, sai *saiast.SAIAPI,
 				fmt.Println("skipping due to error: ", err)
 				continue
 			}
+			// When the sai client is running in different namespace than the server,
+			// need to set the name in client namespace, not the server.
+			// TODO: Decide if this needs to ebe supported long term.
 			if meta.TypeName == "HOSTIF" && attr.EnumName == "SAI_HOSTIF_ATTR_NAME" {
 				smt.CustomText = `{
   std::ostringstream s;
@@ -427,17 +430,17 @@ func protoFieldGetter(saiType, protoField, varName string, info *docparser.SAIIn
 }
 
 var supportedOperation = map[string]bool{
-	"create":        true,
-	"remove":        true,
-	"get_attribute": true,
-	"set_attribute": true,
-	"clear_stats":   true,
-	"get_stats":     true,
-	"get_stats_ext": true,
-	"create_bulk":   true,
-	// "remove_bulk":        true,
-	// "set_attribute_bulk": true,
-	// "get_attribute_bulk": true,
+	"create":             true,
+	"remove":             true,
+	"get_attribute":      true,
+	"set_attribute":      true,
+	"clear_stats":        true,
+	"get_stats":          true,
+	"get_stats_ext":      true,
+	"create_bulk":        true,
+	"remove_bulk":        false,
+	"set_attribute_bulk": false,
+	"get_attribute_bulk": false,
 }
 
 var (

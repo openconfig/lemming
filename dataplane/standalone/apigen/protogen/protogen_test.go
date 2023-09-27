@@ -58,7 +58,7 @@ message AclActionData {
 
 message ACLCapability {
 	bool is_action_list_mandatory = 1;
-	repeated int32 action_list = 2;
+	repeated AclActionType action_list = 2;
 }
 
 message AclFieldData {
@@ -314,7 +314,7 @@ func TestGenerate(t *testing.T) {
 		inAst: &saiast.SAIAPI{},
 		inInfo: &docparser.SAIInfo{
 			Enums: map[string][]*docparser.Enum{
-				"sai_foo_t": {{Name: "SAI_FOO_ONE"}, {Name: "SAI_FOO_TWO"}},
+				"sai_foo_t": {{Name: "SAI_FOO_ONE", Value: 0}, {Name: "SAI_FOO_TWO", Value: 1}},
 			},
 		},
 		want: map[string]string{
@@ -331,7 +331,7 @@ enum Foo {
 		inAst: &saiast.SAIAPI{},
 		inInfo: &docparser.SAIInfo{
 			Enums: map[string][]*docparser.Enum{
-				"sai_foo_t": {{Name: "SAI_FOO_UNSPECIFIED"}, {Name: "SAI_FOO_TWO"}},
+				"sai_foo_t": {{Name: "SAI_FOO_UNSPECIFIED", Value: 0}, {Name: "SAI_FOO_TWO", Value: 1}},
 			},
 		},
 		want: map[string]string{
