@@ -35,30 +35,68 @@ const sai_hash_api_t l_hash = {
         l_get_fine_grained_hash_field_attribute,
 };
 
-sai_status_t l_create_hash(sai_object_id_t *hash_id, sai_object_id_t switch_id,
-                           uint32_t attr_count,
-                           const sai_attribute_t *attr_list) {
-  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-
-  lemming::dataplane::sai::CreateHashRequest req;
-  lemming::dataplane::sai::CreateHashResponse resp;
-  grpc::ClientContext context;
-  req.set_switch_(switch_id);
+lemming::dataplane::sai::CreateHashRequest convert_create_hash(
+    sai_object_id_t switch_id, uint32_t attr_count,
+    const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateHashRequest msg;
 
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_HASH_ATTR_UDF_GROUP_LIST:
-        req.mutable_udf_group_list()->Add(
+        msg.mutable_udf_group_list()->Add(
             attr_list[i].value.objlist.list,
             attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
         break;
       case SAI_HASH_ATTR_FINE_GRAINED_HASH_FIELD_LIST:
-        req.mutable_fine_grained_hash_field_list()->Add(
+        msg.mutable_fine_grained_hash_field_list()->Add(
             attr_list[i].value.objlist.list,
             attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
         break;
     }
   }
+  return msg;
+}
+
+lemming::dataplane::sai::CreateFineGrainedHashFieldRequest
+convert_create_fine_grained_hash_field(sai_object_id_t switch_id,
+                                       uint32_t attr_count,
+                                       const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateFineGrainedHashFieldRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_FINE_GRAINED_HASH_FIELD_ATTR_NATIVE_HASH_FIELD:
+        msg.set_native_hash_field(
+            static_cast<lemming::dataplane::sai::NativeHashField>(
+                attr_list[i].value.s32 + 1));
+        break;
+      case SAI_FINE_GRAINED_HASH_FIELD_ATTR_IPV4_MASK:
+        msg.set_ipv4_mask(&attr_list[i].value.ip4,
+                          sizeof(attr_list[i].value.ip4));
+        break;
+      case SAI_FINE_GRAINED_HASH_FIELD_ATTR_IPV6_MASK:
+        msg.set_ipv6_mask(attr_list[i].value.ip6,
+                          sizeof(attr_list[i].value.ip6));
+        break;
+      case SAI_FINE_GRAINED_HASH_FIELD_ATTR_SEQUENCE_ID:
+        msg.set_sequence_id(attr_list[i].value.u32);
+        break;
+    }
+  }
+  return msg;
+}
+
+sai_status_t l_create_hash(sai_object_id_t *hash_id, sai_object_id_t switch_id,
+                           uint32_t attr_count,
+                           const sai_attribute_t *attr_list) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  lemming::dataplane::sai::CreateHashRequest req =
+      convert_create_hash(switch_id, attr_count, attr_list);
+  lemming::dataplane::sai::CreateHashResponse resp;
+  grpc::ClientContext context;
+  req.set_switch_(switch_id);
+
   grpc::Status status = hash->CreateHash(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();
@@ -158,31 +196,12 @@ sai_status_t l_create_fine_grained_hash_field(
     uint32_t attr_count, const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateFineGrainedHashFieldRequest req;
+  lemming::dataplane::sai::CreateFineGrainedHashFieldRequest req =
+      convert_create_fine_grained_hash_field(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateFineGrainedHashFieldResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_FINE_GRAINED_HASH_FIELD_ATTR_NATIVE_HASH_FIELD:
-        req.set_native_hash_field(
-            static_cast<lemming::dataplane::sai::NativeHashField>(
-                attr_list[i].value.s32 + 1));
-        break;
-      case SAI_FINE_GRAINED_HASH_FIELD_ATTR_IPV4_MASK:
-        req.set_ipv4_mask(&attr_list[i].value.ip4,
-                          sizeof(attr_list[i].value.ip4));
-        break;
-      case SAI_FINE_GRAINED_HASH_FIELD_ATTR_IPV6_MASK:
-        req.set_ipv6_mask(attr_list[i].value.ip6,
-                          sizeof(attr_list[i].value.ip6));
-        break;
-      case SAI_FINE_GRAINED_HASH_FIELD_ATTR_SEQUENCE_ID:
-        req.set_sequence_id(attr_list[i].value.u32);
-        break;
-    }
-  }
   grpc::Status status = hash->CreateFineGrainedHashField(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();

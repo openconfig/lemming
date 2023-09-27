@@ -43,45 +43,154 @@ const sai_ipsec_api_t l_ipsec = {
     .clear_ipsec_sa_stats = l_clear_ipsec_sa_stats,
 };
 
+lemming::dataplane::sai::CreateIpsecRequest convert_create_ipsec(
+    sai_object_id_t switch_id, uint32_t attr_count,
+    const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateIpsecRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_IPSEC_ATTR_WARM_BOOT_ENABLE:
+        msg.set_warm_boot_enable(attr_list[i].value.booldata);
+        break;
+      case SAI_IPSEC_ATTR_EXTERNAL_SA_INDEX_ENABLE:
+        msg.set_external_sa_index_enable(attr_list[i].value.booldata);
+        break;
+      case SAI_IPSEC_ATTR_CTAG_TPID:
+        msg.set_ctag_tpid(attr_list[i].value.u16);
+        break;
+      case SAI_IPSEC_ATTR_STAG_TPID:
+        msg.set_stag_tpid(attr_list[i].value.u16);
+        break;
+      case SAI_IPSEC_ATTR_MAX_VLAN_TAGS_PARSED:
+        msg.set_max_vlan_tags_parsed(attr_list[i].value.u8);
+        break;
+      case SAI_IPSEC_ATTR_OCTET_COUNT_HIGH_WATERMARK:
+        msg.set_octet_count_high_watermark(attr_list[i].value.u64);
+        break;
+      case SAI_IPSEC_ATTR_OCTET_COUNT_LOW_WATERMARK:
+        msg.set_octet_count_low_watermark(attr_list[i].value.u64);
+        break;
+      case SAI_IPSEC_ATTR_STATS_MODE:
+        msg.set_stats_mode(static_cast<lemming::dataplane::sai::StatsMode>(
+            attr_list[i].value.s32 + 1));
+        break;
+    }
+  }
+  return msg;
+}
+
+lemming::dataplane::sai::CreateIpsecPortRequest convert_create_ipsec_port(
+    sai_object_id_t switch_id, uint32_t attr_count,
+    const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateIpsecPortRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_IPSEC_PORT_ATTR_PORT_ID:
+        msg.set_port_id(attr_list[i].value.oid);
+        break;
+      case SAI_IPSEC_PORT_ATTR_CTAG_ENABLE:
+        msg.set_ctag_enable(attr_list[i].value.booldata);
+        break;
+      case SAI_IPSEC_PORT_ATTR_STAG_ENABLE:
+        msg.set_stag_enable(attr_list[i].value.booldata);
+        break;
+      case SAI_IPSEC_PORT_ATTR_NATIVE_VLAN_ID:
+        msg.set_native_vlan_id(attr_list[i].value.u16);
+        break;
+      case SAI_IPSEC_PORT_ATTR_VRF_FROM_PACKET_VLAN_ENABLE:
+        msg.set_vrf_from_packet_vlan_enable(attr_list[i].value.booldata);
+        break;
+      case SAI_IPSEC_PORT_ATTR_SWITCH_SWITCHING_MODE:
+        msg.set_switch_switching_mode(
+            static_cast<lemming::dataplane::sai::SwitchSwitchingMode>(
+                attr_list[i].value.s32 + 1));
+        break;
+    }
+  }
+  return msg;
+}
+
+lemming::dataplane::sai::CreateIpsecSaRequest convert_create_ipsec_sa(
+    sai_object_id_t switch_id, uint32_t attr_count,
+    const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateIpsecSaRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_IPSEC_SA_ATTR_IPSEC_DIRECTION:
+        msg.set_ipsec_direction(
+            static_cast<lemming::dataplane::sai::IpsecDirection>(
+                attr_list[i].value.s32 + 1));
+        break;
+      case SAI_IPSEC_SA_ATTR_IPSEC_ID:
+        msg.set_ipsec_id(attr_list[i].value.oid);
+        break;
+      case SAI_IPSEC_SA_ATTR_EXTERNAL_SA_INDEX:
+        msg.set_external_sa_index(attr_list[i].value.u32);
+        break;
+      case SAI_IPSEC_SA_ATTR_IPSEC_PORT_LIST:
+        msg.mutable_ipsec_port_list()->Add(
+            attr_list[i].value.objlist.list,
+            attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
+        break;
+      case SAI_IPSEC_SA_ATTR_IPSEC_SPI:
+        msg.set_ipsec_spi(attr_list[i].value.u32);
+        break;
+      case SAI_IPSEC_SA_ATTR_IPSEC_ESN_ENABLE:
+        msg.set_ipsec_esn_enable(attr_list[i].value.booldata);
+        break;
+      case SAI_IPSEC_SA_ATTR_IPSEC_CIPHER:
+        msg.set_ipsec_cipher(static_cast<lemming::dataplane::sai::IpsecCipher>(
+            attr_list[i].value.s32 + 1));
+        break;
+      case SAI_IPSEC_SA_ATTR_SALT:
+        msg.set_salt(attr_list[i].value.u32);
+        break;
+      case SAI_IPSEC_SA_ATTR_IPSEC_REPLAY_PROTECTION_ENABLE:
+        msg.set_ipsec_replay_protection_enable(attr_list[i].value.booldata);
+        break;
+      case SAI_IPSEC_SA_ATTR_IPSEC_REPLAY_PROTECTION_WINDOW:
+        msg.set_ipsec_replay_protection_window(attr_list[i].value.u32);
+        break;
+      case SAI_IPSEC_SA_ATTR_TERM_DST_IP:
+        msg.set_term_dst_ip(convert_from_ip_address(attr_list[i].value.ipaddr));
+        break;
+      case SAI_IPSEC_SA_ATTR_TERM_VLAN_ID_ENABLE:
+        msg.set_term_vlan_id_enable(attr_list[i].value.booldata);
+        break;
+      case SAI_IPSEC_SA_ATTR_TERM_VLAN_ID:
+        msg.set_term_vlan_id(attr_list[i].value.u16);
+        break;
+      case SAI_IPSEC_SA_ATTR_TERM_SRC_IP_ENABLE:
+        msg.set_term_src_ip_enable(attr_list[i].value.booldata);
+        break;
+      case SAI_IPSEC_SA_ATTR_TERM_SRC_IP:
+        msg.set_term_src_ip(convert_from_ip_address(attr_list[i].value.ipaddr));
+        break;
+      case SAI_IPSEC_SA_ATTR_EGRESS_ESN:
+        msg.set_egress_esn(attr_list[i].value.u64);
+        break;
+      case SAI_IPSEC_SA_ATTR_MINIMUM_INGRESS_ESN:
+        msg.set_minimum_ingress_esn(attr_list[i].value.u64);
+        break;
+    }
+  }
+  return msg;
+}
+
 sai_status_t l_create_ipsec(sai_object_id_t *ipsec_id,
                             sai_object_id_t switch_id, uint32_t attr_count,
                             const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateIpsecRequest req;
+  lemming::dataplane::sai::CreateIpsecRequest req =
+      convert_create_ipsec(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateIpsecResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_IPSEC_ATTR_WARM_BOOT_ENABLE:
-        req.set_warm_boot_enable(attr_list[i].value.booldata);
-        break;
-      case SAI_IPSEC_ATTR_EXTERNAL_SA_INDEX_ENABLE:
-        req.set_external_sa_index_enable(attr_list[i].value.booldata);
-        break;
-      case SAI_IPSEC_ATTR_CTAG_TPID:
-        req.set_ctag_tpid(attr_list[i].value.u16);
-        break;
-      case SAI_IPSEC_ATTR_STAG_TPID:
-        req.set_stag_tpid(attr_list[i].value.u16);
-        break;
-      case SAI_IPSEC_ATTR_MAX_VLAN_TAGS_PARSED:
-        req.set_max_vlan_tags_parsed(attr_list[i].value.u8);
-        break;
-      case SAI_IPSEC_ATTR_OCTET_COUNT_HIGH_WATERMARK:
-        req.set_octet_count_high_watermark(attr_list[i].value.u64);
-        break;
-      case SAI_IPSEC_ATTR_OCTET_COUNT_LOW_WATERMARK:
-        req.set_octet_count_low_watermark(attr_list[i].value.u64);
-        break;
-      case SAI_IPSEC_ATTR_STATS_MODE:
-        req.set_stats_mode(static_cast<lemming::dataplane::sai::StatsMode>(
-            attr_list[i].value.s32 + 1));
-        break;
-    }
-  }
   grpc::Status status = ipsec->CreateIpsec(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();
@@ -247,35 +356,12 @@ sai_status_t l_create_ipsec_port(sai_object_id_t *ipsec_port_id,
                                  const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateIpsecPortRequest req;
+  lemming::dataplane::sai::CreateIpsecPortRequest req =
+      convert_create_ipsec_port(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateIpsecPortResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_IPSEC_PORT_ATTR_PORT_ID:
-        req.set_port_id(attr_list[i].value.oid);
-        break;
-      case SAI_IPSEC_PORT_ATTR_CTAG_ENABLE:
-        req.set_ctag_enable(attr_list[i].value.booldata);
-        break;
-      case SAI_IPSEC_PORT_ATTR_STAG_ENABLE:
-        req.set_stag_enable(attr_list[i].value.booldata);
-        break;
-      case SAI_IPSEC_PORT_ATTR_NATIVE_VLAN_ID:
-        req.set_native_vlan_id(attr_list[i].value.u16);
-        break;
-      case SAI_IPSEC_PORT_ATTR_VRF_FROM_PACKET_VLAN_ENABLE:
-        req.set_vrf_from_packet_vlan_enable(attr_list[i].value.booldata);
-        break;
-      case SAI_IPSEC_PORT_ATTR_SWITCH_SWITCHING_MODE:
-        req.set_switch_switching_mode(
-            static_cast<lemming::dataplane::sai::SwitchSwitchingMode>(
-                attr_list[i].value.s32 + 1));
-        break;
-    }
-  }
   grpc::Status status = ipsec->CreateIpsecPort(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();
@@ -417,71 +503,12 @@ sai_status_t l_create_ipsec_sa(sai_object_id_t *ipsec_sa_id,
                                const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateIpsecSaRequest req;
+  lemming::dataplane::sai::CreateIpsecSaRequest req =
+      convert_create_ipsec_sa(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateIpsecSaResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_IPSEC_SA_ATTR_IPSEC_DIRECTION:
-        req.set_ipsec_direction(
-            static_cast<lemming::dataplane::sai::IpsecDirection>(
-                attr_list[i].value.s32 + 1));
-        break;
-      case SAI_IPSEC_SA_ATTR_IPSEC_ID:
-        req.set_ipsec_id(attr_list[i].value.oid);
-        break;
-      case SAI_IPSEC_SA_ATTR_EXTERNAL_SA_INDEX:
-        req.set_external_sa_index(attr_list[i].value.u32);
-        break;
-      case SAI_IPSEC_SA_ATTR_IPSEC_PORT_LIST:
-        req.mutable_ipsec_port_list()->Add(
-            attr_list[i].value.objlist.list,
-            attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
-        break;
-      case SAI_IPSEC_SA_ATTR_IPSEC_SPI:
-        req.set_ipsec_spi(attr_list[i].value.u32);
-        break;
-      case SAI_IPSEC_SA_ATTR_IPSEC_ESN_ENABLE:
-        req.set_ipsec_esn_enable(attr_list[i].value.booldata);
-        break;
-      case SAI_IPSEC_SA_ATTR_IPSEC_CIPHER:
-        req.set_ipsec_cipher(static_cast<lemming::dataplane::sai::IpsecCipher>(
-            attr_list[i].value.s32 + 1));
-        break;
-      case SAI_IPSEC_SA_ATTR_SALT:
-        req.set_salt(attr_list[i].value.u32);
-        break;
-      case SAI_IPSEC_SA_ATTR_IPSEC_REPLAY_PROTECTION_ENABLE:
-        req.set_ipsec_replay_protection_enable(attr_list[i].value.booldata);
-        break;
-      case SAI_IPSEC_SA_ATTR_IPSEC_REPLAY_PROTECTION_WINDOW:
-        req.set_ipsec_replay_protection_window(attr_list[i].value.u32);
-        break;
-      case SAI_IPSEC_SA_ATTR_TERM_DST_IP:
-        req.set_term_dst_ip(convert_from_ip_address(attr_list[i].value.ipaddr));
-        break;
-      case SAI_IPSEC_SA_ATTR_TERM_VLAN_ID_ENABLE:
-        req.set_term_vlan_id_enable(attr_list[i].value.booldata);
-        break;
-      case SAI_IPSEC_SA_ATTR_TERM_VLAN_ID:
-        req.set_term_vlan_id(attr_list[i].value.u16);
-        break;
-      case SAI_IPSEC_SA_ATTR_TERM_SRC_IP_ENABLE:
-        req.set_term_src_ip_enable(attr_list[i].value.booldata);
-        break;
-      case SAI_IPSEC_SA_ATTR_TERM_SRC_IP:
-        req.set_term_src_ip(convert_from_ip_address(attr_list[i].value.ipaddr));
-        break;
-      case SAI_IPSEC_SA_ATTR_EGRESS_ESN:
-        req.set_egress_esn(attr_list[i].value.u64);
-        break;
-      case SAI_IPSEC_SA_ATTR_MINIMUM_INGRESS_ESN:
-        req.set_minimum_ingress_esn(attr_list[i].value.u64);
-        break;
-    }
-  }
   grpc::Status status = ipsec->CreateIpsecSa(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();

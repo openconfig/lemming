@@ -1068,6 +1068,100 @@ func (x *GetLagMemberAttributeResponse) GetAttr() *LagMemberAttribute {
 	return nil
 }
 
+type CreateLagMembersRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Reqs []*CreateLagMemberRequest `protobuf:"bytes,1,rep,name=reqs,proto3" json:"reqs,omitempty"`
+}
+
+func (x *CreateLagMembersRequest) Reset() {
+	*x = CreateLagMembersRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_dataplane_standalone_proto_lag_proto_msgTypes[16]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *CreateLagMembersRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateLagMembersRequest) ProtoMessage() {}
+
+func (x *CreateLagMembersRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_dataplane_standalone_proto_lag_proto_msgTypes[16]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateLagMembersRequest.ProtoReflect.Descriptor instead.
+func (*CreateLagMembersRequest) Descriptor() ([]byte, []int) {
+	return file_dataplane_standalone_proto_lag_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *CreateLagMembersRequest) GetReqs() []*CreateLagMemberRequest {
+	if x != nil {
+		return x.Reqs
+	}
+	return nil
+}
+
+type CreateLagMembersResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Resps []*CreateLagMemberResponse `protobuf:"bytes,1,rep,name=resps,proto3" json:"resps,omitempty"`
+}
+
+func (x *CreateLagMembersResponse) Reset() {
+	*x = CreateLagMembersResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_dataplane_standalone_proto_lag_proto_msgTypes[17]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *CreateLagMembersResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateLagMembersResponse) ProtoMessage() {}
+
+func (x *CreateLagMembersResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_dataplane_standalone_proto_lag_proto_msgTypes[17]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateLagMembersResponse.ProtoReflect.Descriptor instead.
+func (*CreateLagMembersResponse) Descriptor() ([]byte, []int) {
+	return file_dataplane_standalone_proto_lag_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *CreateLagMembersResponse) GetResps() []*CreateLagMemberResponse {
+	if x != nil {
+		return x.Resps
+	}
+	return nil
+}
+
 var File_dataplane_standalone_proto_lag_proto protoreflect.FileDescriptor
 
 var file_dataplane_standalone_proto_lag_proto_rawDesc = []byte{
@@ -1221,7 +1315,19 @@ var file_dataplane_standalone_proto_lag_proto_rawDesc = []byte{
 	0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x29, 0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e,
 	0x67, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x73, 0x61, 0x69, 0x2e,
 	0x4c, 0x61, 0x67, 0x4d, 0x65, 0x6d, 0x62, 0x65, 0x72, 0x41, 0x74, 0x74, 0x72, 0x69, 0x62, 0x75,
-	0x74, 0x65, 0x52, 0x04, 0x61, 0x74, 0x74, 0x72, 0x2a, 0xb1, 0x02, 0x0a, 0x07, 0x4c, 0x61, 0x67,
+	0x74, 0x65, 0x52, 0x04, 0x61, 0x74, 0x74, 0x72, 0x22, 0x5c, 0x0a, 0x17, 0x43, 0x72, 0x65, 0x61,
+	0x74, 0x65, 0x4c, 0x61, 0x67, 0x4d, 0x65, 0x6d, 0x62, 0x65, 0x72, 0x73, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x12, 0x41, 0x0a, 0x04, 0x72, 0x65, 0x71, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28,
+	0x0b, 0x32, 0x2d, 0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61, 0x74, 0x61,
+	0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x73, 0x61, 0x69, 0x2e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65,
+	0x4c, 0x61, 0x67, 0x4d, 0x65, 0x6d, 0x62, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x52, 0x04, 0x72, 0x65, 0x71, 0x73, 0x22, 0x60, 0x0a, 0x18, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65,
+	0x4c, 0x61, 0x67, 0x4d, 0x65, 0x6d, 0x62, 0x65, 0x72, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
+	0x73, 0x65, 0x12, 0x44, 0x0a, 0x05, 0x72, 0x65, 0x73, 0x70, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28,
+	0x0b, 0x32, 0x2e, 0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61, 0x74, 0x61,
+	0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x73, 0x61, 0x69, 0x2e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65,
+	0x4c, 0x61, 0x67, 0x4d, 0x65, 0x6d, 0x62, 0x65, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x52, 0x05, 0x72, 0x65, 0x73, 0x70, 0x73, 0x2a, 0xb1, 0x02, 0x0a, 0x07, 0x4c, 0x61, 0x67,
 	0x41, 0x74, 0x74, 0x72, 0x12, 0x18, 0x0a, 0x14, 0x4c, 0x41, 0x47, 0x5f, 0x41, 0x54, 0x54, 0x52,
 	0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45, 0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x16,
 	0x0a, 0x12, 0x4c, 0x41, 0x47, 0x5f, 0x41, 0x54, 0x54, 0x52, 0x5f, 0x50, 0x4f, 0x52, 0x54, 0x5f,
@@ -1252,7 +1358,7 @@ var file_dataplane_standalone_proto_lag_proto_rawDesc = []byte{
 	0x53, 0x53, 0x5f, 0x44, 0x49, 0x53, 0x41, 0x42, 0x4c, 0x45, 0x10, 0x03, 0x12, 0x23, 0x0a, 0x1f,
 	0x4c, 0x41, 0x47, 0x5f, 0x4d, 0x45, 0x4d, 0x42, 0x45, 0x52, 0x5f, 0x41, 0x54, 0x54, 0x52, 0x5f,
 	0x49, 0x4e, 0x47, 0x52, 0x45, 0x53, 0x53, 0x5f, 0x44, 0x49, 0x53, 0x41, 0x42, 0x4c, 0x45, 0x10,
-	0x04, 0x32, 0xa7, 0x07, 0x0a, 0x03, 0x4c, 0x61, 0x67, 0x12, 0x60, 0x0a, 0x09, 0x43, 0x72, 0x65,
+	0x04, 0x32, 0x9e, 0x08, 0x0a, 0x03, 0x4c, 0x61, 0x67, 0x12, 0x60, 0x0a, 0x09, 0x43, 0x72, 0x65,
 	0x61, 0x74, 0x65, 0x4c, 0x61, 0x67, 0x12, 0x27, 0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67,
 	0x2e, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x73, 0x61, 0x69, 0x2e, 0x43,
 	0x72, 0x65, 0x61, 0x74, 0x65, 0x4c, 0x61, 0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
@@ -1310,11 +1416,19 @@ var file_dataplane_standalone_proto_lag_proto_rawDesc = []byte{
 	0x65, 0x73, 0x74, 0x1a, 0x34, 0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61,
 	0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x73, 0x61, 0x69, 0x2e, 0x47, 0x65, 0x74, 0x4c,
 	0x61, 0x67, 0x4d, 0x65, 0x6d, 0x62, 0x65, 0x72, 0x41, 0x74, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74,
-	0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x42, 0x3a, 0x5a, 0x38, 0x67,
-	0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6f, 0x70, 0x65, 0x6e, 0x63, 0x6f,
-	0x6e, 0x66, 0x69, 0x67, 0x2f, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2f, 0x64, 0x61, 0x74,
-	0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2f, 0x73, 0x74, 0x61, 0x6e, 0x64, 0x61, 0x6c, 0x6f, 0x6e,
-	0x65, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x75, 0x0a, 0x10, 0x43,
+	0x72, 0x65, 0x61, 0x74, 0x65, 0x4c, 0x61, 0x67, 0x4d, 0x65, 0x6d, 0x62, 0x65, 0x72, 0x73, 0x12,
+	0x2e, 0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c,
+	0x61, 0x6e, 0x65, 0x2e, 0x73, 0x61, 0x69, 0x2e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x4c, 0x61,
+	0x67, 0x4d, 0x65, 0x6d, 0x62, 0x65, 0x72, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
+	0x2f, 0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c,
+	0x61, 0x6e, 0x65, 0x2e, 0x73, 0x61, 0x69, 0x2e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x4c, 0x61,
+	0x67, 0x4d, 0x65, 0x6d, 0x62, 0x65, 0x72, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x22, 0x00, 0x42, 0x3a, 0x5a, 0x38, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d,
+	0x2f, 0x6f, 0x70, 0x65, 0x6e, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2f, 0x6c, 0x65, 0x6d, 0x6d,
+	0x69, 0x6e, 0x67, 0x2f, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2f, 0x73, 0x74,
+	0x61, 0x6e, 0x64, 0x61, 0x6c, 0x6f, 0x6e, 0x65, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x06,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1330,7 +1444,7 @@ func file_dataplane_standalone_proto_lag_proto_rawDescGZIP() []byte {
 }
 
 var file_dataplane_standalone_proto_lag_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_dataplane_standalone_proto_lag_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
+var file_dataplane_standalone_proto_lag_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
 var file_dataplane_standalone_proto_lag_proto_goTypes = []interface{}{
 	(LagAttr)(0),                          // 0: lemming.dataplane.sai.LagAttr
 	(LagMemberAttr)(0),                    // 1: lemming.dataplane.sai.LagMemberAttr
@@ -1350,35 +1464,41 @@ var file_dataplane_standalone_proto_lag_proto_goTypes = []interface{}{
 	(*SetLagMemberAttributeResponse)(nil), // 15: lemming.dataplane.sai.SetLagMemberAttributeResponse
 	(*GetLagMemberAttributeRequest)(nil),  // 16: lemming.dataplane.sai.GetLagMemberAttributeRequest
 	(*GetLagMemberAttributeResponse)(nil), // 17: lemming.dataplane.sai.GetLagMemberAttributeResponse
-	(*LagAttribute)(nil),                  // 18: lemming.dataplane.sai.LagAttribute
-	(*LagMemberAttribute)(nil),            // 19: lemming.dataplane.sai.LagMemberAttribute
+	(*CreateLagMembersRequest)(nil),       // 18: lemming.dataplane.sai.CreateLagMembersRequest
+	(*CreateLagMembersResponse)(nil),      // 19: lemming.dataplane.sai.CreateLagMembersResponse
+	(*LagAttribute)(nil),                  // 20: lemming.dataplane.sai.LagAttribute
+	(*LagMemberAttribute)(nil),            // 21: lemming.dataplane.sai.LagMemberAttribute
 }
 var file_dataplane_standalone_proto_lag_proto_depIdxs = []int32{
 	0,  // 0: lemming.dataplane.sai.GetLagAttributeRequest.attr_type:type_name -> lemming.dataplane.sai.LagAttr
-	18, // 1: lemming.dataplane.sai.GetLagAttributeResponse.attr:type_name -> lemming.dataplane.sai.LagAttribute
+	20, // 1: lemming.dataplane.sai.GetLagAttributeResponse.attr:type_name -> lemming.dataplane.sai.LagAttribute
 	1,  // 2: lemming.dataplane.sai.GetLagMemberAttributeRequest.attr_type:type_name -> lemming.dataplane.sai.LagMemberAttr
-	19, // 3: lemming.dataplane.sai.GetLagMemberAttributeResponse.attr:type_name -> lemming.dataplane.sai.LagMemberAttribute
-	2,  // 4: lemming.dataplane.sai.Lag.CreateLag:input_type -> lemming.dataplane.sai.CreateLagRequest
-	4,  // 5: lemming.dataplane.sai.Lag.RemoveLag:input_type -> lemming.dataplane.sai.RemoveLagRequest
-	6,  // 6: lemming.dataplane.sai.Lag.SetLagAttribute:input_type -> lemming.dataplane.sai.SetLagAttributeRequest
-	8,  // 7: lemming.dataplane.sai.Lag.GetLagAttribute:input_type -> lemming.dataplane.sai.GetLagAttributeRequest
-	10, // 8: lemming.dataplane.sai.Lag.CreateLagMember:input_type -> lemming.dataplane.sai.CreateLagMemberRequest
-	12, // 9: lemming.dataplane.sai.Lag.RemoveLagMember:input_type -> lemming.dataplane.sai.RemoveLagMemberRequest
-	14, // 10: lemming.dataplane.sai.Lag.SetLagMemberAttribute:input_type -> lemming.dataplane.sai.SetLagMemberAttributeRequest
-	16, // 11: lemming.dataplane.sai.Lag.GetLagMemberAttribute:input_type -> lemming.dataplane.sai.GetLagMemberAttributeRequest
-	3,  // 12: lemming.dataplane.sai.Lag.CreateLag:output_type -> lemming.dataplane.sai.CreateLagResponse
-	5,  // 13: lemming.dataplane.sai.Lag.RemoveLag:output_type -> lemming.dataplane.sai.RemoveLagResponse
-	7,  // 14: lemming.dataplane.sai.Lag.SetLagAttribute:output_type -> lemming.dataplane.sai.SetLagAttributeResponse
-	9,  // 15: lemming.dataplane.sai.Lag.GetLagAttribute:output_type -> lemming.dataplane.sai.GetLagAttributeResponse
-	11, // 16: lemming.dataplane.sai.Lag.CreateLagMember:output_type -> lemming.dataplane.sai.CreateLagMemberResponse
-	13, // 17: lemming.dataplane.sai.Lag.RemoveLagMember:output_type -> lemming.dataplane.sai.RemoveLagMemberResponse
-	15, // 18: lemming.dataplane.sai.Lag.SetLagMemberAttribute:output_type -> lemming.dataplane.sai.SetLagMemberAttributeResponse
-	17, // 19: lemming.dataplane.sai.Lag.GetLagMemberAttribute:output_type -> lemming.dataplane.sai.GetLagMemberAttributeResponse
-	12, // [12:20] is the sub-list for method output_type
-	4,  // [4:12] is the sub-list for method input_type
-	4,  // [4:4] is the sub-list for extension type_name
-	4,  // [4:4] is the sub-list for extension extendee
-	0,  // [0:4] is the sub-list for field type_name
+	21, // 3: lemming.dataplane.sai.GetLagMemberAttributeResponse.attr:type_name -> lemming.dataplane.sai.LagMemberAttribute
+	10, // 4: lemming.dataplane.sai.CreateLagMembersRequest.reqs:type_name -> lemming.dataplane.sai.CreateLagMemberRequest
+	11, // 5: lemming.dataplane.sai.CreateLagMembersResponse.resps:type_name -> lemming.dataplane.sai.CreateLagMemberResponse
+	2,  // 6: lemming.dataplane.sai.Lag.CreateLag:input_type -> lemming.dataplane.sai.CreateLagRequest
+	4,  // 7: lemming.dataplane.sai.Lag.RemoveLag:input_type -> lemming.dataplane.sai.RemoveLagRequest
+	6,  // 8: lemming.dataplane.sai.Lag.SetLagAttribute:input_type -> lemming.dataplane.sai.SetLagAttributeRequest
+	8,  // 9: lemming.dataplane.sai.Lag.GetLagAttribute:input_type -> lemming.dataplane.sai.GetLagAttributeRequest
+	10, // 10: lemming.dataplane.sai.Lag.CreateLagMember:input_type -> lemming.dataplane.sai.CreateLagMemberRequest
+	12, // 11: lemming.dataplane.sai.Lag.RemoveLagMember:input_type -> lemming.dataplane.sai.RemoveLagMemberRequest
+	14, // 12: lemming.dataplane.sai.Lag.SetLagMemberAttribute:input_type -> lemming.dataplane.sai.SetLagMemberAttributeRequest
+	16, // 13: lemming.dataplane.sai.Lag.GetLagMemberAttribute:input_type -> lemming.dataplane.sai.GetLagMemberAttributeRequest
+	18, // 14: lemming.dataplane.sai.Lag.CreateLagMembers:input_type -> lemming.dataplane.sai.CreateLagMembersRequest
+	3,  // 15: lemming.dataplane.sai.Lag.CreateLag:output_type -> lemming.dataplane.sai.CreateLagResponse
+	5,  // 16: lemming.dataplane.sai.Lag.RemoveLag:output_type -> lemming.dataplane.sai.RemoveLagResponse
+	7,  // 17: lemming.dataplane.sai.Lag.SetLagAttribute:output_type -> lemming.dataplane.sai.SetLagAttributeResponse
+	9,  // 18: lemming.dataplane.sai.Lag.GetLagAttribute:output_type -> lemming.dataplane.sai.GetLagAttributeResponse
+	11, // 19: lemming.dataplane.sai.Lag.CreateLagMember:output_type -> lemming.dataplane.sai.CreateLagMemberResponse
+	13, // 20: lemming.dataplane.sai.Lag.RemoveLagMember:output_type -> lemming.dataplane.sai.RemoveLagMemberResponse
+	15, // 21: lemming.dataplane.sai.Lag.SetLagMemberAttribute:output_type -> lemming.dataplane.sai.SetLagMemberAttributeResponse
+	17, // 22: lemming.dataplane.sai.Lag.GetLagMemberAttribute:output_type -> lemming.dataplane.sai.GetLagMemberAttributeResponse
+	19, // 23: lemming.dataplane.sai.Lag.CreateLagMembers:output_type -> lemming.dataplane.sai.CreateLagMembersResponse
+	15, // [15:24] is the sub-list for method output_type
+	6,  // [6:15] is the sub-list for method input_type
+	6,  // [6:6] is the sub-list for extension type_name
+	6,  // [6:6] is the sub-list for extension extendee
+	0,  // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_dataplane_standalone_proto_lag_proto_init() }
@@ -1580,6 +1700,30 @@ func file_dataplane_standalone_proto_lag_proto_init() {
 				return nil
 			}
 		}
+		file_dataplane_standalone_proto_lag_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*CreateLagMembersRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_dataplane_standalone_proto_lag_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*CreateLagMembersResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	file_dataplane_standalone_proto_lag_proto_msgTypes[0].OneofWrappers = []interface{}{}
 	file_dataplane_standalone_proto_lag_proto_msgTypes[4].OneofWrappers = []interface{}{}
@@ -1591,7 +1735,7 @@ func file_dataplane_standalone_proto_lag_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_dataplane_standalone_proto_lag_proto_rawDesc,
 			NumEnums:      2,
-			NumMessages:   16,
+			NumMessages:   18,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
@@ -1626,6 +1770,7 @@ type LagClient interface {
 	RemoveLagMember(ctx context.Context, in *RemoveLagMemberRequest, opts ...grpc.CallOption) (*RemoveLagMemberResponse, error)
 	SetLagMemberAttribute(ctx context.Context, in *SetLagMemberAttributeRequest, opts ...grpc.CallOption) (*SetLagMemberAttributeResponse, error)
 	GetLagMemberAttribute(ctx context.Context, in *GetLagMemberAttributeRequest, opts ...grpc.CallOption) (*GetLagMemberAttributeResponse, error)
+	CreateLagMembers(ctx context.Context, in *CreateLagMembersRequest, opts ...grpc.CallOption) (*CreateLagMembersResponse, error)
 }
 
 type lagClient struct {
@@ -1708,6 +1853,15 @@ func (c *lagClient) GetLagMemberAttribute(ctx context.Context, in *GetLagMemberA
 	return out, nil
 }
 
+func (c *lagClient) CreateLagMembers(ctx context.Context, in *CreateLagMembersRequest, opts ...grpc.CallOption) (*CreateLagMembersResponse, error) {
+	out := new(CreateLagMembersResponse)
+	err := c.cc.Invoke(ctx, "/lemming.dataplane.sai.Lag/CreateLagMembers", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // LagServer is the server API for Lag service.
 type LagServer interface {
 	CreateLag(context.Context, *CreateLagRequest) (*CreateLagResponse, error)
@@ -1718,6 +1872,7 @@ type LagServer interface {
 	RemoveLagMember(context.Context, *RemoveLagMemberRequest) (*RemoveLagMemberResponse, error)
 	SetLagMemberAttribute(context.Context, *SetLagMemberAttributeRequest) (*SetLagMemberAttributeResponse, error)
 	GetLagMemberAttribute(context.Context, *GetLagMemberAttributeRequest) (*GetLagMemberAttributeResponse, error)
+	CreateLagMembers(context.Context, *CreateLagMembersRequest) (*CreateLagMembersResponse, error)
 }
 
 // UnimplementedLagServer can be embedded to have forward compatible implementations.
@@ -1747,6 +1902,9 @@ func (*UnimplementedLagServer) SetLagMemberAttribute(context.Context, *SetLagMem
 }
 func (*UnimplementedLagServer) GetLagMemberAttribute(context.Context, *GetLagMemberAttributeRequest) (*GetLagMemberAttributeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetLagMemberAttribute not implemented")
+}
+func (*UnimplementedLagServer) CreateLagMembers(context.Context, *CreateLagMembersRequest) (*CreateLagMembersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateLagMembers not implemented")
 }
 
 func RegisterLagServer(s *grpc.Server, srv LagServer) {
@@ -1897,6 +2055,24 @@ func _Lag_GetLagMemberAttribute_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Lag_CreateLagMembers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateLagMembersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LagServer).CreateLagMembers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/lemming.dataplane.sai.Lag/CreateLagMembers",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LagServer).CreateLagMembers(ctx, req.(*CreateLagMembersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _Lag_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "lemming.dataplane.sai.Lag",
 	HandlerType: (*LagServer)(nil),
@@ -1932,6 +2108,10 @@ var _Lag_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetLagMemberAttribute",
 			Handler:    _Lag_GetLagMemberAttribute_Handler,
+		},
+		{
+			MethodName: "CreateLagMembers",
+			Handler:    _Lag_CreateLagMembers_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -5,7 +5,7 @@ package lemming.dataplane.sai;
 
 import "dataplane/standalone/proto/common.proto";
 
-option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto";
+option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto;sai";
 
 enum InsegEntryAttr {
   INSEG_ENTRY_ATTR_UNSPECIFIED = 0;
@@ -72,6 +72,14 @@ message GetInsegEntryAttributeResponse {
   InsegEntryAttribute attr = 1;
 }
 
+message CreateInsegEntriesRequest {
+  repeated CreateInsegEntryRequest reqs = 1;
+}
+
+message CreateInsegEntriesResponse {
+  repeated CreateInsegEntryResponse resps = 1;
+}
+
 service Mpls {
   rpc CreateInsegEntry(CreateInsegEntryRequest)
       returns (CreateInsegEntryResponse) {}
@@ -81,4 +89,6 @@ service Mpls {
       returns (SetInsegEntryAttributeResponse) {}
   rpc GetInsegEntryAttribute(GetInsegEntryAttributeRequest)
       returns (GetInsegEntryAttributeResponse) {}
+  rpc CreateInsegEntries(CreateInsegEntriesRequest)
+      returns (CreateInsegEntriesResponse) {}
 }

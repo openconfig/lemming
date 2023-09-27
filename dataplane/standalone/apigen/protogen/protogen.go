@@ -326,7 +326,7 @@ package lemming.dataplane.sai;
 
 import "dataplane/standalone/proto/common.proto";
 
-option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto";
+option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto;sai";
 
 {{ range .Enums }}
 enum {{ .Name }} {
@@ -361,7 +361,7 @@ package lemming.dataplane.sai;
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/descriptor.proto";
 
-option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto";
+option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto;sai";
 
 extend google.protobuf.FieldOptions {
 	optional int32 attr_enum_value = 50000;

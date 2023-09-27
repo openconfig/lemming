@@ -37,67 +37,112 @@ const sai_nat_api_t l_nat = {
     .get_nat_zone_counter_attribute = l_get_nat_zone_counter_attribute,
 };
 
+lemming::dataplane::sai::CreateNatEntryRequest convert_create_nat_entry(
+    uint32_t attr_count, const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateNatEntryRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_NAT_ENTRY_ATTR_NAT_TYPE:
+        msg.set_nat_type(static_cast<lemming::dataplane::sai::NatType>(
+            attr_list[i].value.s32 + 1));
+        break;
+      case SAI_NAT_ENTRY_ATTR_SRC_IP:
+        msg.set_src_ip(&attr_list[i].value.ip4, sizeof(attr_list[i].value.ip4));
+        break;
+      case SAI_NAT_ENTRY_ATTR_SRC_IP_MASK:
+        msg.set_src_ip_mask(&attr_list[i].value.ip4,
+                            sizeof(attr_list[i].value.ip4));
+        break;
+      case SAI_NAT_ENTRY_ATTR_VR_ID:
+        msg.set_vr_id(attr_list[i].value.oid);
+        break;
+      case SAI_NAT_ENTRY_ATTR_DST_IP:
+        msg.set_dst_ip(&attr_list[i].value.ip4, sizeof(attr_list[i].value.ip4));
+        break;
+      case SAI_NAT_ENTRY_ATTR_DST_IP_MASK:
+        msg.set_dst_ip_mask(&attr_list[i].value.ip4,
+                            sizeof(attr_list[i].value.ip4));
+        break;
+      case SAI_NAT_ENTRY_ATTR_L4_SRC_PORT:
+        msg.set_l4_src_port(attr_list[i].value.u16);
+        break;
+      case SAI_NAT_ENTRY_ATTR_L4_DST_PORT:
+        msg.set_l4_dst_port(attr_list[i].value.u16);
+        break;
+      case SAI_NAT_ENTRY_ATTR_ENABLE_PACKET_COUNT:
+        msg.set_enable_packet_count(attr_list[i].value.booldata);
+        break;
+      case SAI_NAT_ENTRY_ATTR_PACKET_COUNT:
+        msg.set_packet_count(attr_list[i].value.u64);
+        break;
+      case SAI_NAT_ENTRY_ATTR_ENABLE_BYTE_COUNT:
+        msg.set_enable_byte_count(attr_list[i].value.booldata);
+        break;
+      case SAI_NAT_ENTRY_ATTR_BYTE_COUNT:
+        msg.set_byte_count(attr_list[i].value.u64);
+        break;
+      case SAI_NAT_ENTRY_ATTR_HIT_BIT_COR:
+        msg.set_hit_bit_cor(attr_list[i].value.booldata);
+        break;
+      case SAI_NAT_ENTRY_ATTR_HIT_BIT:
+        msg.set_hit_bit(attr_list[i].value.booldata);
+        break;
+      case SAI_NAT_ENTRY_ATTR_AGING_TIME:
+        msg.set_aging_time(attr_list[i].value.u32);
+        break;
+    }
+  }
+  return msg;
+}
+
+lemming::dataplane::sai::CreateNatZoneCounterRequest
+convert_create_nat_zone_counter(sai_object_id_t switch_id, uint32_t attr_count,
+                                const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateNatZoneCounterRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_NAT_ZONE_COUNTER_ATTR_NAT_TYPE:
+        msg.set_nat_type(static_cast<lemming::dataplane::sai::NatType>(
+            attr_list[i].value.s32 + 1));
+        break;
+      case SAI_NAT_ZONE_COUNTER_ATTR_ZONE_ID:
+        msg.set_zone_id(attr_list[i].value.u8);
+        break;
+      case SAI_NAT_ZONE_COUNTER_ATTR_ENABLE_DISCARD:
+        msg.set_enable_discard(attr_list[i].value.booldata);
+        break;
+      case SAI_NAT_ZONE_COUNTER_ATTR_DISCARD_PACKET_COUNT:
+        msg.set_discard_packet_count(attr_list[i].value.u64);
+        break;
+      case SAI_NAT_ZONE_COUNTER_ATTR_ENABLE_TRANSLATION_NEEDED:
+        msg.set_enable_translation_needed(attr_list[i].value.booldata);
+        break;
+      case SAI_NAT_ZONE_COUNTER_ATTR_TRANSLATION_NEEDED_PACKET_COUNT:
+        msg.set_translation_needed_packet_count(attr_list[i].value.u64);
+        break;
+      case SAI_NAT_ZONE_COUNTER_ATTR_ENABLE_TRANSLATIONS:
+        msg.set_enable_translations(attr_list[i].value.booldata);
+        break;
+      case SAI_NAT_ZONE_COUNTER_ATTR_TRANSLATIONS_PACKET_COUNT:
+        msg.set_translations_packet_count(attr_list[i].value.u64);
+        break;
+    }
+  }
+  return msg;
+}
+
 sai_status_t l_create_nat_entry(const sai_nat_entry_t *nat_entry,
                                 uint32_t attr_count,
                                 const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateNatEntryRequest req;
+  lemming::dataplane::sai::CreateNatEntryRequest req =
+      convert_create_nat_entry(attr_count, attr_list);
   lemming::dataplane::sai::CreateNatEntryResponse resp;
   grpc::ClientContext context;
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_NAT_ENTRY_ATTR_NAT_TYPE:
-        req.set_nat_type(static_cast<lemming::dataplane::sai::NatType>(
-            attr_list[i].value.s32 + 1));
-        break;
-      case SAI_NAT_ENTRY_ATTR_SRC_IP:
-        req.set_src_ip(&attr_list[i].value.ip4, sizeof(attr_list[i].value.ip4));
-        break;
-      case SAI_NAT_ENTRY_ATTR_SRC_IP_MASK:
-        req.set_src_ip_mask(&attr_list[i].value.ip4,
-                            sizeof(attr_list[i].value.ip4));
-        break;
-      case SAI_NAT_ENTRY_ATTR_VR_ID:
-        req.set_vr_id(attr_list[i].value.oid);
-        break;
-      case SAI_NAT_ENTRY_ATTR_DST_IP:
-        req.set_dst_ip(&attr_list[i].value.ip4, sizeof(attr_list[i].value.ip4));
-        break;
-      case SAI_NAT_ENTRY_ATTR_DST_IP_MASK:
-        req.set_dst_ip_mask(&attr_list[i].value.ip4,
-                            sizeof(attr_list[i].value.ip4));
-        break;
-      case SAI_NAT_ENTRY_ATTR_L4_SRC_PORT:
-        req.set_l4_src_port(attr_list[i].value.u16);
-        break;
-      case SAI_NAT_ENTRY_ATTR_L4_DST_PORT:
-        req.set_l4_dst_port(attr_list[i].value.u16);
-        break;
-      case SAI_NAT_ENTRY_ATTR_ENABLE_PACKET_COUNT:
-        req.set_enable_packet_count(attr_list[i].value.booldata);
-        break;
-      case SAI_NAT_ENTRY_ATTR_PACKET_COUNT:
-        req.set_packet_count(attr_list[i].value.u64);
-        break;
-      case SAI_NAT_ENTRY_ATTR_ENABLE_BYTE_COUNT:
-        req.set_enable_byte_count(attr_list[i].value.booldata);
-        break;
-      case SAI_NAT_ENTRY_ATTR_BYTE_COUNT:
-        req.set_byte_count(attr_list[i].value.u64);
-        break;
-      case SAI_NAT_ENTRY_ATTR_HIT_BIT_COR:
-        req.set_hit_bit_cor(attr_list[i].value.booldata);
-        break;
-      case SAI_NAT_ENTRY_ATTR_HIT_BIT:
-        req.set_hit_bit(attr_list[i].value.booldata);
-        break;
-      case SAI_NAT_ENTRY_ATTR_AGING_TIME:
-        req.set_aging_time(attr_list[i].value.u32);
-        break;
-    }
-  }
   grpc::Status status = nat->CreateNatEntry(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();
@@ -272,6 +317,24 @@ sai_status_t l_create_nat_entries(uint32_t object_count,
                                   sai_status_t *object_statuses) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
+  lemming::dataplane::sai::CreateNatEntriesRequest req;
+  lemming::dataplane::sai::CreateNatEntriesResponse resp;
+  grpc::ClientContext context;
+
+  for (uint32_t i = 0; i < object_count; i++) {
+    auto r = convert_create_nat_entry(attr_count[i], attr_list[i]);
+    *req.add_reqs() = r;
+  }
+
+  grpc::Status status = nat->CreateNatEntries(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  for (uint32_t i = 0; i < object_count; i++) {
+    object_statuses[i] = SAI_STATUS_SUCCESS;
+  }
+
   return SAI_STATUS_SUCCESS;
 }
 
@@ -280,8 +343,7 @@ sai_status_t l_remove_nat_entries(uint32_t object_count,
                                   sai_bulk_op_error_mode_t mode,
                                   sai_status_t *object_statuses) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-
-  return SAI_STATUS_SUCCESS;
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
 sai_status_t l_set_nat_entries_attribute(uint32_t object_count,
@@ -290,8 +352,7 @@ sai_status_t l_set_nat_entries_attribute(uint32_t object_count,
                                          sai_bulk_op_error_mode_t mode,
                                          sai_status_t *object_statuses) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-
-  return SAI_STATUS_SUCCESS;
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
 sai_status_t l_get_nat_entries_attribute(uint32_t object_count,
@@ -301,8 +362,7 @@ sai_status_t l_get_nat_entries_attribute(uint32_t object_count,
                                          sai_bulk_op_error_mode_t mode,
                                          sai_status_t *object_statuses) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-
-  return SAI_STATUS_SUCCESS;
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
 sai_status_t l_create_nat_zone_counter(sai_object_id_t *nat_zone_counter_id,
@@ -311,40 +371,12 @@ sai_status_t l_create_nat_zone_counter(sai_object_id_t *nat_zone_counter_id,
                                        const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateNatZoneCounterRequest req;
+  lemming::dataplane::sai::CreateNatZoneCounterRequest req =
+      convert_create_nat_zone_counter(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateNatZoneCounterResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_NAT_ZONE_COUNTER_ATTR_NAT_TYPE:
-        req.set_nat_type(static_cast<lemming::dataplane::sai::NatType>(
-            attr_list[i].value.s32 + 1));
-        break;
-      case SAI_NAT_ZONE_COUNTER_ATTR_ZONE_ID:
-        req.set_zone_id(attr_list[i].value.u8);
-        break;
-      case SAI_NAT_ZONE_COUNTER_ATTR_ENABLE_DISCARD:
-        req.set_enable_discard(attr_list[i].value.booldata);
-        break;
-      case SAI_NAT_ZONE_COUNTER_ATTR_DISCARD_PACKET_COUNT:
-        req.set_discard_packet_count(attr_list[i].value.u64);
-        break;
-      case SAI_NAT_ZONE_COUNTER_ATTR_ENABLE_TRANSLATION_NEEDED:
-        req.set_enable_translation_needed(attr_list[i].value.booldata);
-        break;
-      case SAI_NAT_ZONE_COUNTER_ATTR_TRANSLATION_NEEDED_PACKET_COUNT:
-        req.set_translation_needed_packet_count(attr_list[i].value.u64);
-        break;
-      case SAI_NAT_ZONE_COUNTER_ATTR_ENABLE_TRANSLATIONS:
-        req.set_enable_translations(attr_list[i].value.booldata);
-        break;
-      case SAI_NAT_ZONE_COUNTER_ATTR_TRANSLATIONS_PACKET_COUNT:
-        req.set_translations_packet_count(attr_list[i].value.u64);
-        break;
-    }
-  }
   grpc::Status status = nat->CreateNatZoneCounter(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();

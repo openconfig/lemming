@@ -51,303 +51,421 @@ const sai_acl_api_t l_acl = {
         l_get_acl_table_group_member_attribute,
 };
 
+lemming::dataplane::sai::CreateAclTableRequest convert_create_acl_table(
+    sai_object_id_t switch_id, uint32_t attr_count,
+    const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateAclTableRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_ACL_TABLE_ATTR_ACL_STAGE:
+        msg.set_acl_stage(static_cast<lemming::dataplane::sai::AclStage>(
+            attr_list[i].value.s32 + 1));
+        break;
+      case SAI_ACL_TABLE_ATTR_SIZE:
+        msg.set_size(attr_list[i].value.u32);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_SRC_IPV6:
+        msg.set_field_src_ipv6(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_SRC_IPV6_WORD3:
+        msg.set_field_src_ipv6_word3(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_SRC_IPV6_WORD2:
+        msg.set_field_src_ipv6_word2(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_SRC_IPV6_WORD1:
+        msg.set_field_src_ipv6_word1(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_SRC_IPV6_WORD0:
+        msg.set_field_src_ipv6_word0(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_DST_IPV6:
+        msg.set_field_dst_ipv6(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_DST_IPV6_WORD3:
+        msg.set_field_dst_ipv6_word3(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_DST_IPV6_WORD2:
+        msg.set_field_dst_ipv6_word2(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_DST_IPV6_WORD1:
+        msg.set_field_dst_ipv6_word1(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_DST_IPV6_WORD0:
+        msg.set_field_dst_ipv6_word0(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_INNER_SRC_IPV6:
+        msg.set_field_inner_src_ipv6(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_INNER_DST_IPV6:
+        msg.set_field_inner_dst_ipv6(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_SRC_MAC:
+        msg.set_field_src_mac(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_DST_MAC:
+        msg.set_field_dst_mac(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_SRC_IP:
+        msg.set_field_src_ip(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_DST_IP:
+        msg.set_field_dst_ip(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_INNER_SRC_IP:
+        msg.set_field_inner_src_ip(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_INNER_DST_IP:
+        msg.set_field_inner_dst_ip(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_IN_PORTS:
+        msg.set_field_in_ports(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_OUT_PORTS:
+        msg.set_field_out_ports(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_IN_PORT:
+        msg.set_field_in_port(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_OUT_PORT:
+        msg.set_field_out_port(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_SRC_PORT:
+        msg.set_field_src_port(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_OUTER_VLAN_ID:
+        msg.set_field_outer_vlan_id(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_OUTER_VLAN_PRI:
+        msg.set_field_outer_vlan_pri(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_OUTER_VLAN_CFI:
+        msg.set_field_outer_vlan_cfi(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_INNER_VLAN_ID:
+        msg.set_field_inner_vlan_id(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_INNER_VLAN_PRI:
+        msg.set_field_inner_vlan_pri(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_INNER_VLAN_CFI:
+        msg.set_field_inner_vlan_cfi(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_L4_SRC_PORT:
+        msg.set_field_l4_src_port(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_L4_DST_PORT:
+        msg.set_field_l4_dst_port(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_INNER_L4_SRC_PORT:
+        msg.set_field_inner_l4_src_port(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_INNER_L4_DST_PORT:
+        msg.set_field_inner_l4_dst_port(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_ETHER_TYPE:
+        msg.set_field_ether_type(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_INNER_ETHER_TYPE:
+        msg.set_field_inner_ether_type(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_IP_PROTOCOL:
+        msg.set_field_ip_protocol(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_INNER_IP_PROTOCOL:
+        msg.set_field_inner_ip_protocol(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_IP_IDENTIFICATION:
+        msg.set_field_ip_identification(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_DSCP:
+        msg.set_field_dscp(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_ECN:
+        msg.set_field_ecn(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_TTL:
+        msg.set_field_ttl(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_TOS:
+        msg.set_field_tos(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_IP_FLAGS:
+        msg.set_field_ip_flags(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_TCP_FLAGS:
+        msg.set_field_tcp_flags(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_ACL_IP_TYPE:
+        msg.set_field_acl_ip_type(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_ACL_IP_FRAG:
+        msg.set_field_acl_ip_frag(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_IPV6_FLOW_LABEL:
+        msg.set_field_ipv6_flow_label(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_TC:
+        msg.set_field_tc(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_ICMP_TYPE:
+        msg.set_field_icmp_type(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_ICMP_CODE:
+        msg.set_field_icmp_code(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_ICMPV6_TYPE:
+        msg.set_field_icmpv6_type(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_ICMPV6_CODE:
+        msg.set_field_icmpv6_code(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_PACKET_VLAN:
+        msg.set_field_packet_vlan(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_TUNNEL_VNI:
+        msg.set_field_tunnel_vni(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_HAS_VLAN_TAG:
+        msg.set_field_has_vlan_tag(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_MACSEC_SCI:
+        msg.set_field_macsec_sci(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_MPLS_LABEL0_LABEL:
+        msg.set_field_mpls_label0_label(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_MPLS_LABEL0_TTL:
+        msg.set_field_mpls_label0_ttl(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_MPLS_LABEL0_EXP:
+        msg.set_field_mpls_label0_exp(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_MPLS_LABEL0_BOS:
+        msg.set_field_mpls_label0_bos(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_MPLS_LABEL1_LABEL:
+        msg.set_field_mpls_label1_label(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_MPLS_LABEL1_TTL:
+        msg.set_field_mpls_label1_ttl(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_MPLS_LABEL1_EXP:
+        msg.set_field_mpls_label1_exp(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_MPLS_LABEL1_BOS:
+        msg.set_field_mpls_label1_bos(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_MPLS_LABEL2_LABEL:
+        msg.set_field_mpls_label2_label(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_MPLS_LABEL2_TTL:
+        msg.set_field_mpls_label2_ttl(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_MPLS_LABEL2_EXP:
+        msg.set_field_mpls_label2_exp(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_MPLS_LABEL2_BOS:
+        msg.set_field_mpls_label2_bos(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_MPLS_LABEL3_LABEL:
+        msg.set_field_mpls_label3_label(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_MPLS_LABEL3_TTL:
+        msg.set_field_mpls_label3_ttl(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_MPLS_LABEL3_EXP:
+        msg.set_field_mpls_label3_exp(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_MPLS_LABEL3_BOS:
+        msg.set_field_mpls_label3_bos(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_MPLS_LABEL4_LABEL:
+        msg.set_field_mpls_label4_label(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_MPLS_LABEL4_TTL:
+        msg.set_field_mpls_label4_ttl(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_MPLS_LABEL4_EXP:
+        msg.set_field_mpls_label4_exp(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_MPLS_LABEL4_BOS:
+        msg.set_field_mpls_label4_bos(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_FDB_DST_USER_META:
+        msg.set_field_fdb_dst_user_meta(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_ROUTE_DST_USER_META:
+        msg.set_field_route_dst_user_meta(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_NEIGHBOR_DST_USER_META:
+        msg.set_field_neighbor_dst_user_meta(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_PORT_USER_META:
+        msg.set_field_port_user_meta(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_VLAN_USER_META:
+        msg.set_field_vlan_user_meta(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_ACL_USER_META:
+        msg.set_field_acl_user_meta(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_FDB_NPU_META_DST_HIT:
+        msg.set_field_fdb_npu_meta_dst_hit(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_NEIGHBOR_NPU_META_DST_HIT:
+        msg.set_field_neighbor_npu_meta_dst_hit(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_ROUTE_NPU_META_DST_HIT:
+        msg.set_field_route_npu_meta_dst_hit(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_BTH_OPCODE:
+        msg.set_field_bth_opcode(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_AETH_SYNDROME:
+        msg.set_field_aeth_syndrome(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_USER_DEFINED_FIELD_GROUP_MIN:
+        msg.set_user_defined_field_group_min(attr_list[i].value.oid);
+        break;
+      case SAI_ACL_TABLE_ATTR_USER_DEFINED_FIELD_GROUP_MAX:
+        msg.set_user_defined_field_group_max(attr_list[i].value.oid);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_IPV6_NEXT_HEADER:
+        msg.set_field_ipv6_next_header(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_GRE_KEY:
+        msg.set_field_gre_key(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_TAM_INT_TYPE:
+        msg.set_field_tam_int_type(attr_list[i].value.booldata);
+        break;
+    }
+  }
+  return msg;
+}
+
+lemming::dataplane::sai::CreateAclEntryRequest convert_create_acl_entry(
+    sai_object_id_t switch_id, uint32_t attr_count,
+    const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateAclEntryRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_ACL_ENTRY_ATTR_TABLE_ID:
+        msg.set_table_id(attr_list[i].value.oid);
+        break;
+      case SAI_ACL_ENTRY_ATTR_PRIORITY:
+        msg.set_priority(attr_list[i].value.u32);
+        break;
+      case SAI_ACL_ENTRY_ATTR_ADMIN_STATE:
+        msg.set_admin_state(attr_list[i].value.booldata);
+        break;
+    }
+  }
+  return msg;
+}
+
+lemming::dataplane::sai::CreateAclCounterRequest convert_create_acl_counter(
+    sai_object_id_t switch_id, uint32_t attr_count,
+    const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateAclCounterRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_ACL_COUNTER_ATTR_TABLE_ID:
+        msg.set_table_id(attr_list[i].value.oid);
+        break;
+      case SAI_ACL_COUNTER_ATTR_ENABLE_PACKET_COUNT:
+        msg.set_enable_packet_count(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_COUNTER_ATTR_ENABLE_BYTE_COUNT:
+        msg.set_enable_byte_count(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_COUNTER_ATTR_PACKETS:
+        msg.set_packets(attr_list[i].value.u64);
+        break;
+      case SAI_ACL_COUNTER_ATTR_BYTES:
+        msg.set_bytes(attr_list[i].value.u64);
+        break;
+      case SAI_ACL_COUNTER_ATTR_LABEL:
+        msg.set_label(attr_list[i].value.chardata);
+        break;
+    }
+  }
+  return msg;
+}
+
+lemming::dataplane::sai::CreateAclRangeRequest convert_create_acl_range(
+    sai_object_id_t switch_id, uint32_t attr_count,
+    const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateAclRangeRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_ACL_RANGE_ATTR_TYPE:
+        msg.set_type(static_cast<lemming::dataplane::sai::AclRangeType>(
+            attr_list[i].value.s32 + 1));
+        break;
+    }
+  }
+  return msg;
+}
+
+lemming::dataplane::sai::CreateAclTableGroupRequest
+convert_create_acl_table_group(sai_object_id_t switch_id, uint32_t attr_count,
+                               const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateAclTableGroupRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_ACL_TABLE_GROUP_ATTR_ACL_STAGE:
+        msg.set_acl_stage(static_cast<lemming::dataplane::sai::AclStage>(
+            attr_list[i].value.s32 + 1));
+        break;
+      case SAI_ACL_TABLE_GROUP_ATTR_TYPE:
+        msg.set_type(static_cast<lemming::dataplane::sai::AclTableGroupType>(
+            attr_list[i].value.s32 + 1));
+        break;
+    }
+  }
+  return msg;
+}
+
+lemming::dataplane::sai::CreateAclTableGroupMemberRequest
+convert_create_acl_table_group_member(sai_object_id_t switch_id,
+                                      uint32_t attr_count,
+                                      const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateAclTableGroupMemberRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_ACL_TABLE_GROUP_MEMBER_ATTR_ACL_TABLE_GROUP_ID:
+        msg.set_acl_table_group_id(attr_list[i].value.oid);
+        break;
+      case SAI_ACL_TABLE_GROUP_MEMBER_ATTR_ACL_TABLE_ID:
+        msg.set_acl_table_id(attr_list[i].value.oid);
+        break;
+      case SAI_ACL_TABLE_GROUP_MEMBER_ATTR_PRIORITY:
+        msg.set_priority(attr_list[i].value.u32);
+        break;
+    }
+  }
+  return msg;
+}
+
 sai_status_t l_create_acl_table(sai_object_id_t *acl_table_id,
                                 sai_object_id_t switch_id, uint32_t attr_count,
                                 const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateAclTableRequest req;
+  lemming::dataplane::sai::CreateAclTableRequest req =
+      convert_create_acl_table(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateAclTableResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_ACL_TABLE_ATTR_ACL_STAGE:
-        req.set_acl_stage(static_cast<lemming::dataplane::sai::AclStage>(
-            attr_list[i].value.s32 + 1));
-        break;
-      case SAI_ACL_TABLE_ATTR_SIZE:
-        req.set_size(attr_list[i].value.u32);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_SRC_IPV6:
-        req.set_field_src_ipv6(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_SRC_IPV6_WORD3:
-        req.set_field_src_ipv6_word3(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_SRC_IPV6_WORD2:
-        req.set_field_src_ipv6_word2(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_SRC_IPV6_WORD1:
-        req.set_field_src_ipv6_word1(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_SRC_IPV6_WORD0:
-        req.set_field_src_ipv6_word0(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_DST_IPV6:
-        req.set_field_dst_ipv6(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_DST_IPV6_WORD3:
-        req.set_field_dst_ipv6_word3(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_DST_IPV6_WORD2:
-        req.set_field_dst_ipv6_word2(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_DST_IPV6_WORD1:
-        req.set_field_dst_ipv6_word1(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_DST_IPV6_WORD0:
-        req.set_field_dst_ipv6_word0(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_INNER_SRC_IPV6:
-        req.set_field_inner_src_ipv6(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_INNER_DST_IPV6:
-        req.set_field_inner_dst_ipv6(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_SRC_MAC:
-        req.set_field_src_mac(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_DST_MAC:
-        req.set_field_dst_mac(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_SRC_IP:
-        req.set_field_src_ip(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_DST_IP:
-        req.set_field_dst_ip(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_INNER_SRC_IP:
-        req.set_field_inner_src_ip(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_INNER_DST_IP:
-        req.set_field_inner_dst_ip(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_IN_PORTS:
-        req.set_field_in_ports(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_OUT_PORTS:
-        req.set_field_out_ports(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_IN_PORT:
-        req.set_field_in_port(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_OUT_PORT:
-        req.set_field_out_port(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_SRC_PORT:
-        req.set_field_src_port(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_OUTER_VLAN_ID:
-        req.set_field_outer_vlan_id(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_OUTER_VLAN_PRI:
-        req.set_field_outer_vlan_pri(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_OUTER_VLAN_CFI:
-        req.set_field_outer_vlan_cfi(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_INNER_VLAN_ID:
-        req.set_field_inner_vlan_id(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_INNER_VLAN_PRI:
-        req.set_field_inner_vlan_pri(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_INNER_VLAN_CFI:
-        req.set_field_inner_vlan_cfi(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_L4_SRC_PORT:
-        req.set_field_l4_src_port(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_L4_DST_PORT:
-        req.set_field_l4_dst_port(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_INNER_L4_SRC_PORT:
-        req.set_field_inner_l4_src_port(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_INNER_L4_DST_PORT:
-        req.set_field_inner_l4_dst_port(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_ETHER_TYPE:
-        req.set_field_ether_type(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_INNER_ETHER_TYPE:
-        req.set_field_inner_ether_type(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_IP_PROTOCOL:
-        req.set_field_ip_protocol(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_INNER_IP_PROTOCOL:
-        req.set_field_inner_ip_protocol(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_IP_IDENTIFICATION:
-        req.set_field_ip_identification(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_DSCP:
-        req.set_field_dscp(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_ECN:
-        req.set_field_ecn(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_TTL:
-        req.set_field_ttl(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_TOS:
-        req.set_field_tos(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_IP_FLAGS:
-        req.set_field_ip_flags(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_TCP_FLAGS:
-        req.set_field_tcp_flags(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_ACL_IP_TYPE:
-        req.set_field_acl_ip_type(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_ACL_IP_FRAG:
-        req.set_field_acl_ip_frag(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_IPV6_FLOW_LABEL:
-        req.set_field_ipv6_flow_label(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_TC:
-        req.set_field_tc(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_ICMP_TYPE:
-        req.set_field_icmp_type(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_ICMP_CODE:
-        req.set_field_icmp_code(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_ICMPV6_TYPE:
-        req.set_field_icmpv6_type(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_ICMPV6_CODE:
-        req.set_field_icmpv6_code(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_PACKET_VLAN:
-        req.set_field_packet_vlan(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_TUNNEL_VNI:
-        req.set_field_tunnel_vni(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_HAS_VLAN_TAG:
-        req.set_field_has_vlan_tag(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_MACSEC_SCI:
-        req.set_field_macsec_sci(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_MPLS_LABEL0_LABEL:
-        req.set_field_mpls_label0_label(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_MPLS_LABEL0_TTL:
-        req.set_field_mpls_label0_ttl(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_MPLS_LABEL0_EXP:
-        req.set_field_mpls_label0_exp(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_MPLS_LABEL0_BOS:
-        req.set_field_mpls_label0_bos(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_MPLS_LABEL1_LABEL:
-        req.set_field_mpls_label1_label(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_MPLS_LABEL1_TTL:
-        req.set_field_mpls_label1_ttl(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_MPLS_LABEL1_EXP:
-        req.set_field_mpls_label1_exp(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_MPLS_LABEL1_BOS:
-        req.set_field_mpls_label1_bos(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_MPLS_LABEL2_LABEL:
-        req.set_field_mpls_label2_label(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_MPLS_LABEL2_TTL:
-        req.set_field_mpls_label2_ttl(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_MPLS_LABEL2_EXP:
-        req.set_field_mpls_label2_exp(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_MPLS_LABEL2_BOS:
-        req.set_field_mpls_label2_bos(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_MPLS_LABEL3_LABEL:
-        req.set_field_mpls_label3_label(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_MPLS_LABEL3_TTL:
-        req.set_field_mpls_label3_ttl(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_MPLS_LABEL3_EXP:
-        req.set_field_mpls_label3_exp(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_MPLS_LABEL3_BOS:
-        req.set_field_mpls_label3_bos(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_MPLS_LABEL4_LABEL:
-        req.set_field_mpls_label4_label(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_MPLS_LABEL4_TTL:
-        req.set_field_mpls_label4_ttl(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_MPLS_LABEL4_EXP:
-        req.set_field_mpls_label4_exp(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_MPLS_LABEL4_BOS:
-        req.set_field_mpls_label4_bos(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_FDB_DST_USER_META:
-        req.set_field_fdb_dst_user_meta(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_ROUTE_DST_USER_META:
-        req.set_field_route_dst_user_meta(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_NEIGHBOR_DST_USER_META:
-        req.set_field_neighbor_dst_user_meta(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_PORT_USER_META:
-        req.set_field_port_user_meta(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_VLAN_USER_META:
-        req.set_field_vlan_user_meta(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_ACL_USER_META:
-        req.set_field_acl_user_meta(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_FDB_NPU_META_DST_HIT:
-        req.set_field_fdb_npu_meta_dst_hit(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_NEIGHBOR_NPU_META_DST_HIT:
-        req.set_field_neighbor_npu_meta_dst_hit(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_ROUTE_NPU_META_DST_HIT:
-        req.set_field_route_npu_meta_dst_hit(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_BTH_OPCODE:
-        req.set_field_bth_opcode(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_AETH_SYNDROME:
-        req.set_field_aeth_syndrome(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_USER_DEFINED_FIELD_GROUP_MIN:
-        req.set_user_defined_field_group_min(attr_list[i].value.oid);
-        break;
-      case SAI_ACL_TABLE_ATTR_USER_DEFINED_FIELD_GROUP_MAX:
-        req.set_user_defined_field_group_max(attr_list[i].value.oid);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_IPV6_NEXT_HEADER:
-        req.set_field_ipv6_next_header(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_GRE_KEY:
-        req.set_field_gre_key(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_TABLE_ATTR_FIELD_TAM_INT_TYPE:
-        req.set_field_tam_int_type(attr_list[i].value.booldata);
-        break;
-    }
-  }
   grpc::Status status = acl->CreateAclTable(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();
@@ -710,24 +828,12 @@ sai_status_t l_create_acl_entry(sai_object_id_t *acl_entry_id,
                                 const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateAclEntryRequest req;
+  lemming::dataplane::sai::CreateAclEntryRequest req =
+      convert_create_acl_entry(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateAclEntryResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_ACL_ENTRY_ATTR_TABLE_ID:
-        req.set_table_id(attr_list[i].value.oid);
-        break;
-      case SAI_ACL_ENTRY_ATTR_PRIORITY:
-        req.set_priority(attr_list[i].value.u32);
-        break;
-      case SAI_ACL_ENTRY_ATTR_ADMIN_STATE:
-        req.set_admin_state(attr_list[i].value.booldata);
-        break;
-    }
-  }
   grpc::Status status = acl->CreateAclEntry(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();
@@ -825,33 +931,12 @@ sai_status_t l_create_acl_counter(sai_object_id_t *acl_counter_id,
                                   const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateAclCounterRequest req;
+  lemming::dataplane::sai::CreateAclCounterRequest req =
+      convert_create_acl_counter(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateAclCounterResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_ACL_COUNTER_ATTR_TABLE_ID:
-        req.set_table_id(attr_list[i].value.oid);
-        break;
-      case SAI_ACL_COUNTER_ATTR_ENABLE_PACKET_COUNT:
-        req.set_enable_packet_count(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_COUNTER_ATTR_ENABLE_BYTE_COUNT:
-        req.set_enable_byte_count(attr_list[i].value.booldata);
-        break;
-      case SAI_ACL_COUNTER_ATTR_PACKETS:
-        req.set_packets(attr_list[i].value.u64);
-        break;
-      case SAI_ACL_COUNTER_ATTR_BYTES:
-        req.set_bytes(attr_list[i].value.u64);
-        break;
-      case SAI_ACL_COUNTER_ATTR_LABEL:
-        req.set_label(attr_list[i].value.chardata);
-        break;
-    }
-  }
   grpc::Status status = acl->CreateAclCounter(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();
@@ -960,19 +1045,12 @@ sai_status_t l_create_acl_range(sai_object_id_t *acl_range_id,
                                 const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateAclRangeRequest req;
+  lemming::dataplane::sai::CreateAclRangeRequest req =
+      convert_create_acl_range(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateAclRangeResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_ACL_RANGE_ATTR_TYPE:
-        req.set_type(static_cast<lemming::dataplane::sai::AclRangeType>(
-            attr_list[i].value.s32 + 1));
-        break;
-    }
-  }
   grpc::Status status = acl->CreateAclRange(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();
@@ -1044,23 +1122,12 @@ sai_status_t l_create_acl_table_group(sai_object_id_t *acl_table_group_id,
                                       const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateAclTableGroupRequest req;
+  lemming::dataplane::sai::CreateAclTableGroupRequest req =
+      convert_create_acl_table_group(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateAclTableGroupResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_ACL_TABLE_GROUP_ATTR_ACL_STAGE:
-        req.set_acl_stage(static_cast<lemming::dataplane::sai::AclStage>(
-            attr_list[i].value.s32 + 1));
-        break;
-      case SAI_ACL_TABLE_GROUP_ATTR_TYPE:
-        req.set_type(static_cast<lemming::dataplane::sai::AclTableGroupType>(
-            attr_list[i].value.s32 + 1));
-        break;
-    }
-  }
   grpc::Status status = acl->CreateAclTableGroup(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();
@@ -1138,24 +1205,12 @@ sai_status_t l_create_acl_table_group_member(
     uint32_t attr_count, const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateAclTableGroupMemberRequest req;
+  lemming::dataplane::sai::CreateAclTableGroupMemberRequest req =
+      convert_create_acl_table_group_member(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateAclTableGroupMemberResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_ACL_TABLE_GROUP_MEMBER_ATTR_ACL_TABLE_GROUP_ID:
-        req.set_acl_table_group_id(attr_list[i].value.oid);
-        break;
-      case SAI_ACL_TABLE_GROUP_MEMBER_ATTR_ACL_TABLE_ID:
-        req.set_acl_table_id(attr_list[i].value.oid);
-        break;
-      case SAI_ACL_TABLE_GROUP_MEMBER_ATTR_PRIORITY:
-        req.set_priority(attr_list[i].value.u32);
-        break;
-    }
-  }
   grpc::Status status = acl->CreateAclTableGroupMember(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();

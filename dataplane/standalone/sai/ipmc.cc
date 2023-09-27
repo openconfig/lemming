@@ -29,33 +29,41 @@ const sai_ipmc_api_t l_ipmc = {
     .get_ipmc_entry_attribute = l_get_ipmc_entry_attribute,
 };
 
+lemming::dataplane::sai::CreateIpmcEntryRequest convert_create_ipmc_entry(
+    uint32_t attr_count, const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateIpmcEntryRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_IPMC_ENTRY_ATTR_PACKET_ACTION:
+        msg.set_packet_action(
+            static_cast<lemming::dataplane::sai::PacketAction>(
+                attr_list[i].value.s32 + 1));
+        break;
+      case SAI_IPMC_ENTRY_ATTR_OUTPUT_GROUP_ID:
+        msg.set_output_group_id(attr_list[i].value.oid);
+        break;
+      case SAI_IPMC_ENTRY_ATTR_RPF_GROUP_ID:
+        msg.set_rpf_group_id(attr_list[i].value.oid);
+        break;
+      case SAI_IPMC_ENTRY_ATTR_COUNTER_ID:
+        msg.set_counter_id(attr_list[i].value.oid);
+        break;
+    }
+  }
+  return msg;
+}
+
 sai_status_t l_create_ipmc_entry(const sai_ipmc_entry_t *ipmc_entry,
                                  uint32_t attr_count,
                                  const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateIpmcEntryRequest req;
+  lemming::dataplane::sai::CreateIpmcEntryRequest req =
+      convert_create_ipmc_entry(attr_count, attr_list);
   lemming::dataplane::sai::CreateIpmcEntryResponse resp;
   grpc::ClientContext context;
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_IPMC_ENTRY_ATTR_PACKET_ACTION:
-        req.set_packet_action(
-            static_cast<lemming::dataplane::sai::PacketAction>(
-                attr_list[i].value.s32 + 1));
-        break;
-      case SAI_IPMC_ENTRY_ATTR_OUTPUT_GROUP_ID:
-        req.set_output_group_id(attr_list[i].value.oid);
-        break;
-      case SAI_IPMC_ENTRY_ATTR_RPF_GROUP_ID:
-        req.set_rpf_group_id(attr_list[i].value.oid);
-        break;
-      case SAI_IPMC_ENTRY_ATTR_COUNTER_ID:
-        req.set_counter_id(attr_list[i].value.oid);
-        break;
-    }
-  }
   grpc::Status status = ipmc->CreateIpmcEntry(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();

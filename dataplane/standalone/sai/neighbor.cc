@@ -33,50 +33,59 @@ const sai_neighbor_api_t l_neighbor = {
     .get_neighbor_entries_attribute = l_get_neighbor_entries_attribute,
 };
 
+lemming::dataplane::sai::CreateNeighborEntryRequest
+convert_create_neighbor_entry(uint32_t attr_count,
+                              const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateNeighborEntryRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_NEIGHBOR_ENTRY_ATTR_DST_MAC_ADDRESS:
+        msg.set_dst_mac_address(attr_list[i].value.mac,
+                                sizeof(attr_list[i].value.mac));
+        break;
+      case SAI_NEIGHBOR_ENTRY_ATTR_PACKET_ACTION:
+        msg.set_packet_action(
+            static_cast<lemming::dataplane::sai::PacketAction>(
+                attr_list[i].value.s32 + 1));
+        break;
+      case SAI_NEIGHBOR_ENTRY_ATTR_USER_TRAP_ID:
+        msg.set_user_trap_id(attr_list[i].value.oid);
+        break;
+      case SAI_NEIGHBOR_ENTRY_ATTR_NO_HOST_ROUTE:
+        msg.set_no_host_route(attr_list[i].value.booldata);
+        break;
+      case SAI_NEIGHBOR_ENTRY_ATTR_META_DATA:
+        msg.set_meta_data(attr_list[i].value.u32);
+        break;
+      case SAI_NEIGHBOR_ENTRY_ATTR_COUNTER_ID:
+        msg.set_counter_id(attr_list[i].value.oid);
+        break;
+      case SAI_NEIGHBOR_ENTRY_ATTR_ENCAP_INDEX:
+        msg.set_encap_index(attr_list[i].value.u32);
+        break;
+      case SAI_NEIGHBOR_ENTRY_ATTR_ENCAP_IMPOSE_INDEX:
+        msg.set_encap_impose_index(attr_list[i].value.booldata);
+        break;
+      case SAI_NEIGHBOR_ENTRY_ATTR_IS_LOCAL:
+        msg.set_is_local(attr_list[i].value.booldata);
+        break;
+    }
+  }
+  return msg;
+}
+
 sai_status_t l_create_neighbor_entry(const sai_neighbor_entry_t *neighbor_entry,
                                      uint32_t attr_count,
                                      const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateNeighborEntryRequest req;
+  lemming::dataplane::sai::CreateNeighborEntryRequest req =
+      convert_create_neighbor_entry(attr_count, attr_list);
   lemming::dataplane::sai::CreateNeighborEntryResponse resp;
   grpc::ClientContext context;
 
   *req.mutable_entry() = convert_from_neighbor_entry(*neighbor_entry);
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_NEIGHBOR_ENTRY_ATTR_DST_MAC_ADDRESS:
-        req.set_dst_mac_address(attr_list[i].value.mac,
-                                sizeof(attr_list[i].value.mac));
-        break;
-      case SAI_NEIGHBOR_ENTRY_ATTR_PACKET_ACTION:
-        req.set_packet_action(
-            static_cast<lemming::dataplane::sai::PacketAction>(
-                attr_list[i].value.s32 + 1));
-        break;
-      case SAI_NEIGHBOR_ENTRY_ATTR_USER_TRAP_ID:
-        req.set_user_trap_id(attr_list[i].value.oid);
-        break;
-      case SAI_NEIGHBOR_ENTRY_ATTR_NO_HOST_ROUTE:
-        req.set_no_host_route(attr_list[i].value.booldata);
-        break;
-      case SAI_NEIGHBOR_ENTRY_ATTR_META_DATA:
-        req.set_meta_data(attr_list[i].value.u32);
-        break;
-      case SAI_NEIGHBOR_ENTRY_ATTR_COUNTER_ID:
-        req.set_counter_id(attr_list[i].value.oid);
-        break;
-      case SAI_NEIGHBOR_ENTRY_ATTR_ENCAP_INDEX:
-        req.set_encap_index(attr_list[i].value.u32);
-        break;
-      case SAI_NEIGHBOR_ENTRY_ATTR_ENCAP_IMPOSE_INDEX:
-        req.set_encap_impose_index(attr_list[i].value.booldata);
-        break;
-      case SAI_NEIGHBOR_ENTRY_ATTR_IS_LOCAL:
-        req.set_is_local(attr_list[i].value.booldata);
-        break;
-    }
-  }
   grpc::Status status = neighbor->CreateNeighborEntry(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();
@@ -222,6 +231,26 @@ sai_status_t l_create_neighbor_entries(
     sai_bulk_op_error_mode_t mode, sai_status_t *object_statuses) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
+  lemming::dataplane::sai::CreateNeighborEntriesRequest req;
+  lemming::dataplane::sai::CreateNeighborEntriesResponse resp;
+  grpc::ClientContext context;
+
+  for (uint32_t i = 0; i < object_count; i++) {
+    auto r = convert_create_neighbor_entry(attr_count[i], attr_list[i]);
+
+    *r.mutable_entry() = convert_from_neighbor_entry(*neighbor_entry);
+    *req.add_reqs() = r;
+  }
+
+  grpc::Status status = neighbor->CreateNeighborEntries(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  for (uint32_t i = 0; i < object_count; i++) {
+    object_statuses[i] = SAI_STATUS_SUCCESS;
+  }
+
   return SAI_STATUS_SUCCESS;
 }
 
@@ -229,8 +258,7 @@ sai_status_t l_remove_neighbor_entries(
     uint32_t object_count, const sai_neighbor_entry_t *neighbor_entry,
     sai_bulk_op_error_mode_t mode, sai_status_t *object_statuses) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-
-  return SAI_STATUS_SUCCESS;
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
 sai_status_t l_set_neighbor_entries_attribute(
@@ -238,8 +266,7 @@ sai_status_t l_set_neighbor_entries_attribute(
     const sai_attribute_t *attr_list, sai_bulk_op_error_mode_t mode,
     sai_status_t *object_statuses) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-
-  return SAI_STATUS_SUCCESS;
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
 sai_status_t l_get_neighbor_entries_attribute(
@@ -247,6 +274,5 @@ sai_status_t l_get_neighbor_entries_attribute(
     const uint32_t *attr_count, sai_attribute_t **attr_list,
     sai_bulk_op_error_mode_t mode, sai_status_t *object_statuses) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-
-  return SAI_STATUS_SUCCESS;
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }

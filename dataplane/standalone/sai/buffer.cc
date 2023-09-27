@@ -46,44 +46,118 @@ const sai_buffer_api_t l_buffer = {
     .get_buffer_profile_attribute = l_get_buffer_profile_attribute,
 };
 
+lemming::dataplane::sai::CreateBufferPoolRequest convert_create_buffer_pool(
+    sai_object_id_t switch_id, uint32_t attr_count,
+    const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateBufferPoolRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_BUFFER_POOL_ATTR_TYPE:
+        msg.set_type(static_cast<lemming::dataplane::sai::BufferPoolType>(
+            attr_list[i].value.s32 + 1));
+        break;
+      case SAI_BUFFER_POOL_ATTR_SIZE:
+        msg.set_size(attr_list[i].value.u64);
+        break;
+      case SAI_BUFFER_POOL_ATTR_THRESHOLD_MODE:
+        msg.set_threshold_mode(
+            static_cast<lemming::dataplane::sai::BufferPoolThresholdMode>(
+                attr_list[i].value.s32 + 1));
+        break;
+      case SAI_BUFFER_POOL_ATTR_TAM:
+        msg.mutable_tam()->Add(
+            attr_list[i].value.objlist.list,
+            attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
+        break;
+      case SAI_BUFFER_POOL_ATTR_XOFF_SIZE:
+        msg.set_xoff_size(attr_list[i].value.u64);
+        break;
+      case SAI_BUFFER_POOL_ATTR_WRED_PROFILE_ID:
+        msg.set_wred_profile_id(attr_list[i].value.oid);
+        break;
+    }
+  }
+  return msg;
+}
+
+lemming::dataplane::sai::CreateIngressPriorityGroupRequest
+convert_create_ingress_priority_group(sai_object_id_t switch_id,
+                                      uint32_t attr_count,
+                                      const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateIngressPriorityGroupRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_INGRESS_PRIORITY_GROUP_ATTR_BUFFER_PROFILE:
+        msg.set_buffer_profile(attr_list[i].value.oid);
+        break;
+      case SAI_INGRESS_PRIORITY_GROUP_ATTR_PORT:
+        msg.set_port(attr_list[i].value.oid);
+        break;
+      case SAI_INGRESS_PRIORITY_GROUP_ATTR_TAM:
+        msg.mutable_tam()->Add(
+            attr_list[i].value.objlist.list,
+            attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
+        break;
+      case SAI_INGRESS_PRIORITY_GROUP_ATTR_INDEX:
+        msg.set_index(attr_list[i].value.u8);
+        break;
+    }
+  }
+  return msg;
+}
+
+lemming::dataplane::sai::CreateBufferProfileRequest
+convert_create_buffer_profile(sai_object_id_t switch_id, uint32_t attr_count,
+                              const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateBufferProfileRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_BUFFER_PROFILE_ATTR_POOL_ID:
+        msg.set_pool_id(attr_list[i].value.oid);
+        break;
+      case SAI_BUFFER_PROFILE_ATTR_RESERVED_BUFFER_SIZE:
+        msg.set_reserved_buffer_size(attr_list[i].value.u64);
+        break;
+      case SAI_BUFFER_PROFILE_ATTR_THRESHOLD_MODE:
+        msg.set_threshold_mode(
+            static_cast<lemming::dataplane::sai::BufferProfileThresholdMode>(
+                attr_list[i].value.s32 + 1));
+        break;
+      case SAI_BUFFER_PROFILE_ATTR_SHARED_DYNAMIC_TH:
+        msg.set_shared_dynamic_th(attr_list[i].value.s8);
+        break;
+      case SAI_BUFFER_PROFILE_ATTR_SHARED_STATIC_TH:
+        msg.set_shared_static_th(attr_list[i].value.u64);
+        break;
+      case SAI_BUFFER_PROFILE_ATTR_XOFF_TH:
+        msg.set_xoff_th(attr_list[i].value.u64);
+        break;
+      case SAI_BUFFER_PROFILE_ATTR_XON_TH:
+        msg.set_xon_th(attr_list[i].value.u64);
+        break;
+      case SAI_BUFFER_PROFILE_ATTR_XON_OFFSET_TH:
+        msg.set_xon_offset_th(attr_list[i].value.u64);
+        break;
+    }
+  }
+  return msg;
+}
+
 sai_status_t l_create_buffer_pool(sai_object_id_t *buffer_pool_id,
                                   sai_object_id_t switch_id,
                                   uint32_t attr_count,
                                   const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateBufferPoolRequest req;
+  lemming::dataplane::sai::CreateBufferPoolRequest req =
+      convert_create_buffer_pool(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateBufferPoolResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_BUFFER_POOL_ATTR_TYPE:
-        req.set_type(static_cast<lemming::dataplane::sai::BufferPoolType>(
-            attr_list[i].value.s32 + 1));
-        break;
-      case SAI_BUFFER_POOL_ATTR_SIZE:
-        req.set_size(attr_list[i].value.u64);
-        break;
-      case SAI_BUFFER_POOL_ATTR_THRESHOLD_MODE:
-        req.set_threshold_mode(
-            static_cast<lemming::dataplane::sai::BufferPoolThresholdMode>(
-                attr_list[i].value.s32 + 1));
-        break;
-      case SAI_BUFFER_POOL_ATTR_TAM:
-        req.mutable_tam()->Add(
-            attr_list[i].value.objlist.list,
-            attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
-        break;
-      case SAI_BUFFER_POOL_ATTR_XOFF_SIZE:
-        req.set_xoff_size(attr_list[i].value.u64);
-        break;
-      case SAI_BUFFER_POOL_ATTR_WRED_PROFILE_ID:
-        req.set_wred_profile_id(attr_list[i].value.oid);
-        break;
-    }
-  }
   grpc::Status status = buffer->CreateBufferPool(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();
@@ -229,29 +303,12 @@ sai_status_t l_create_ingress_priority_group(
     uint32_t attr_count, const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateIngressPriorityGroupRequest req;
+  lemming::dataplane::sai::CreateIngressPriorityGroupRequest req =
+      convert_create_ingress_priority_group(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateIngressPriorityGroupResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_INGRESS_PRIORITY_GROUP_ATTR_BUFFER_PROFILE:
-        req.set_buffer_profile(attr_list[i].value.oid);
-        break;
-      case SAI_INGRESS_PRIORITY_GROUP_ATTR_PORT:
-        req.set_port(attr_list[i].value.oid);
-        break;
-      case SAI_INGRESS_PRIORITY_GROUP_ATTR_TAM:
-        req.mutable_tam()->Add(
-            attr_list[i].value.objlist.list,
-            attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
-        break;
-      case SAI_INGRESS_PRIORITY_GROUP_ATTR_INDEX:
-        req.set_index(attr_list[i].value.u8);
-        break;
-    }
-  }
   grpc::Status status =
       buffer->CreateIngressPriorityGroup(&context, req, &resp);
   if (!status.ok()) {
@@ -386,41 +443,12 @@ sai_status_t l_create_buffer_profile(sai_object_id_t *buffer_profile_id,
                                      const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateBufferProfileRequest req;
+  lemming::dataplane::sai::CreateBufferProfileRequest req =
+      convert_create_buffer_profile(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateBufferProfileResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_BUFFER_PROFILE_ATTR_POOL_ID:
-        req.set_pool_id(attr_list[i].value.oid);
-        break;
-      case SAI_BUFFER_PROFILE_ATTR_RESERVED_BUFFER_SIZE:
-        req.set_reserved_buffer_size(attr_list[i].value.u64);
-        break;
-      case SAI_BUFFER_PROFILE_ATTR_THRESHOLD_MODE:
-        req.set_threshold_mode(
-            static_cast<lemming::dataplane::sai::BufferProfileThresholdMode>(
-                attr_list[i].value.s32 + 1));
-        break;
-      case SAI_BUFFER_PROFILE_ATTR_SHARED_DYNAMIC_TH:
-        req.set_shared_dynamic_th(attr_list[i].value.s8);
-        break;
-      case SAI_BUFFER_PROFILE_ATTR_SHARED_STATIC_TH:
-        req.set_shared_static_th(attr_list[i].value.u64);
-        break;
-      case SAI_BUFFER_PROFILE_ATTR_XOFF_TH:
-        req.set_xoff_th(attr_list[i].value.u64);
-        break;
-      case SAI_BUFFER_PROFILE_ATTR_XON_TH:
-        req.set_xon_th(attr_list[i].value.u64);
-        break;
-      case SAI_BUFFER_PROFILE_ATTR_XON_OFFSET_TH:
-        req.set_xon_offset_th(attr_list[i].value.u64);
-        break;
-    }
-  }
   grpc::Status status = buffer->CreateBufferProfile(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();

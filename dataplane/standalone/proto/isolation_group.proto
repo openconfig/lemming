@@ -5,7 +5,7 @@ package lemming.dataplane.sai;
 
 import "dataplane/standalone/proto/common.proto";
 
-option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto";
+option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto;sai";
 
 enum IsolationGroupAttr {
   ISOLATION_GROUP_ATTR_UNSPECIFIED = 0;

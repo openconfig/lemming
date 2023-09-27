@@ -5,7 +5,7 @@ package lemming.dataplane.sai;
 
 import "dataplane/standalone/proto/common.proto";
 
-option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto";
+option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto;sai";
 
 enum PortAttr {
   PORT_ATTR_UNSPECIFIED = 0;
@@ -551,6 +551,14 @@ message GetPortSerdesAttributeResponse {
   PortSerdesAttribute attr = 1;
 }
 
+message CreatePortsRequest {
+  repeated CreatePortRequest reqs = 1;
+}
+
+message CreatePortsResponse {
+  repeated CreatePortResponse resps = 1;
+}
+
 service Port {
   rpc CreatePort(CreatePortRequest) returns (CreatePortResponse) {}
   rpc RemovePort(RemovePortRequest) returns (RemovePortResponse) {}
@@ -578,4 +586,5 @@ service Port {
       returns (RemovePortSerdesResponse) {}
   rpc GetPortSerdesAttribute(GetPortSerdesAttributeRequest)
       returns (GetPortSerdesAttributeResponse) {}
+  rpc CreatePorts(CreatePortsRequest) returns (CreatePortsResponse) {}
 }

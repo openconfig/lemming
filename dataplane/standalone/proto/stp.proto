@@ -5,7 +5,7 @@ package lemming.dataplane.sai;
 
 import "dataplane/standalone/proto/common.proto";
 
-option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto";
+option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto;sai";
 
 enum StpAttr {
   STP_ATTR_UNSPECIFIED = 0;
@@ -79,6 +79,14 @@ message GetStpPortAttributeResponse {
   StpPortAttribute attr = 1;
 }
 
+message CreateStpPortsRequest {
+  repeated CreateStpPortRequest reqs = 1;
+}
+
+message CreateStpPortsResponse {
+  repeated CreateStpPortResponse resps = 1;
+}
+
 service Stp {
   rpc CreateStp(CreateStpRequest) returns (CreateStpResponse) {}
   rpc RemoveStp(RemoveStpRequest) returns (RemoveStpResponse) {}
@@ -90,4 +98,5 @@ service Stp {
       returns (SetStpPortAttributeResponse) {}
   rpc GetStpPortAttribute(GetStpPortAttributeRequest)
       returns (GetStpPortAttributeResponse) {}
+  rpc CreateStpPorts(CreateStpPortsRequest) returns (CreateStpPortsResponse) {}
 }

@@ -29,27 +29,36 @@ const sai_system_port_api_t l_system_port = {
     .get_system_port_attribute = l_get_system_port_attribute,
 };
 
+lemming::dataplane::sai::CreateSystemPortRequest convert_create_system_port(
+    sai_object_id_t switch_id, uint32_t attr_count,
+    const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateSystemPortRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_SYSTEM_PORT_ATTR_ADMIN_STATE:
+        msg.set_admin_state(attr_list[i].value.booldata);
+        break;
+      case SAI_SYSTEM_PORT_ATTR_QOS_TC_TO_QUEUE_MAP:
+        msg.set_qos_tc_to_queue_map(attr_list[i].value.oid);
+        break;
+    }
+  }
+  return msg;
+}
+
 sai_status_t l_create_system_port(sai_object_id_t *system_port_id,
                                   sai_object_id_t switch_id,
                                   uint32_t attr_count,
                                   const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateSystemPortRequest req;
+  lemming::dataplane::sai::CreateSystemPortRequest req =
+      convert_create_system_port(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateSystemPortResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_SYSTEM_PORT_ATTR_ADMIN_STATE:
-        req.set_admin_state(attr_list[i].value.booldata);
-        break;
-      case SAI_SYSTEM_PORT_ATTR_QOS_TC_TO_QUEUE_MAP:
-        req.set_qos_tc_to_queue_map(attr_list[i].value.oid);
-        break;
-    }
-  }
   grpc::Status status = system_port->CreateSystemPort(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();
