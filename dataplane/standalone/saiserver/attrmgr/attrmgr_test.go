@@ -31,11 +31,15 @@ import (
 	saipb "github.com/openconfig/lemming/dataplane/standalone/proto"
 )
 
+func ptrToValue(v protoreflect.Value) *protoreflect.Value {
+	return &v
+}
+
 func TestInterceptor(t *testing.T) {
 	tests := []struct {
 		desc        string
 		req         any
-		attrs       map[string]map[int32]protoreflect.Value
+		attrs       map[string]map[int32]*protoreflect.Value
 		handlerResp any
 		handlerErr  error
 		info        *grpc.UnaryServerInfo
@@ -44,17 +48,17 @@ func TestInterceptor(t *testing.T) {
 	}{{
 		desc:  "not sai",
 		info:  &grpc.UnaryServerInfo{FullMethod: "foo"},
-		attrs: map[string]map[int32]protoreflect.Value{},
+		attrs: map[string]map[int32]*protoreflect.Value{},
 	}, {
 		desc:       "handler error",
 		info:       &grpc.UnaryServerInfo{FullMethod: "/lemming.dataplane.sai.Switch/CreateSwitch"},
-		attrs:      map[string]map[int32]protoreflect.Value{},
+		attrs:      map[string]map[int32]*protoreflect.Value{},
 		handlerErr: fmt.Errorf("foo"),
 		wantErr:    "foo",
 	}, {
 		desc:  "create request",
 		info:  &grpc.UnaryServerInfo{FullMethod: "/lemming.dataplane.sai.Switch/CreateSwitch"},
-		attrs: map[string]map[int32]protoreflect.Value{},
+		attrs: map[string]map[int32]*protoreflect.Value{},
 		req: &saipb.CreateSwitchRequest{
 			RestartWarm: proto.Bool(true),
 		},
@@ -65,7 +69,7 @@ func TestInterceptor(t *testing.T) {
 	}, {
 		desc:  "create request unimplemented",
 		info:  &grpc.UnaryServerInfo{FullMethod: "/lemming.dataplane.sai.Switch/CreateSwitch"},
-		attrs: map[string]map[int32]protoreflect.Value{},
+		attrs: map[string]map[int32]*protoreflect.Value{},
 		req: &saipb.CreateSwitchRequest{
 			RestartWarm: proto.Bool(true),
 		},
@@ -76,7 +80,7 @@ func TestInterceptor(t *testing.T) {
 	}, {
 		desc:  "create request unimplemented typed nil",
 		info:  &grpc.UnaryServerInfo{FullMethod: "/lemming.dataplane.sai.Switch/CreateSwitch"},
-		attrs: map[string]map[int32]protoreflect.Value{},
+		attrs: map[string]map[int32]*protoreflect.Value{},
 		req: &saipb.CreateSwitchRequest{
 			RestartWarm: proto.Bool(true),
 		},
@@ -88,7 +92,7 @@ func TestInterceptor(t *testing.T) {
 	}, {
 		desc:  "create request entry",
 		info:  &grpc.UnaryServerInfo{FullMethod: "/lemming.dataplane.sai.Route/CreateRoute"},
-		attrs: map[string]map[int32]protoreflect.Value{},
+		attrs: map[string]map[int32]*protoreflect.Value{},
 		req: &saipb.CreateRouteEntryRequest{
 			Entry: &saipb.RouteEntry{
 				SwitchId: 12,
@@ -99,10 +103,10 @@ func TestInterceptor(t *testing.T) {
 	}, {
 		desc: "get request",
 		info: &grpc.UnaryServerInfo{FullMethod: "/lemming.dataplane.sai.Switch/GetSwitchAttribute"},
-		attrs: map[string]map[int32]protoreflect.Value{
+		attrs: map[string]map[int32]*protoreflect.Value{
 			"10": {
-				int32(saipb.SwitchAttr_SWITCH_ATTR_CPU_PORT):        protoreflect.ValueOfUint64(100),
-				int32(saipb.SwitchAttr_SWITCH_ATTR_PRE_INGRESS_ACL): protoreflect.ValueOfUint64(300),
+				int32(saipb.SwitchAttr_SWITCH_ATTR_CPU_PORT):        ptrToValue(protoreflect.ValueOfUint64(100)),
+				int32(saipb.SwitchAttr_SWITCH_ATTR_PRE_INGRESS_ACL): ptrToValue(protoreflect.ValueOfUint64(300)),
 			},
 		},
 		req: &saipb.GetSwitchAttributeRequest{
@@ -144,7 +148,7 @@ func TestInvokeAndSave(t *testing.T) {
 		desc      string
 		req       proto.Message
 		rpc       func(context.Context, proto.Message) (proto.Message, error)
-		wantAttrs map[string]map[int32]protoreflect.Value
+		wantAttrs map[string]map[int32]*protoreflect.Value
 		wantErr   string
 	}{{
 		desc: "rpc error",
@@ -158,12 +162,14 @@ func TestInvokeAndSave(t *testing.T) {
 			return nil, nil
 		},
 		req: &saipb.SetPortAttributeRequest{
-			Oid:        1,
-			AdminState: proto.Bool(true),
+			Oid:             1,
+			AdminState:      proto.Bool(true),
+			AdvertisedSpeed: []uint32{},
 		},
-		wantAttrs: map[string]map[int32]protoreflect.Value{
+		wantAttrs: map[string]map[int32]*protoreflect.Value{
 			"1": {
-				int32(saipb.PortAttr_PORT_ATTR_ADMIN_STATE): protoreflect.ValueOfBool(true),
+				int32(saipb.PortAttr_PORT_ATTR_ADMIN_STATE):      ptrToValue(protoreflect.ValueOfBool(true)),
+				int32(saipb.PortAttr_PORT_ATTR_ADVERTISED_SPEED): nil,
 			},
 		},
 	}}

@@ -25,6 +25,7 @@ import (
 	"sync"
 	"sync/atomic"
 
+	log "github.com/golang/glog"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -40,7 +41,7 @@ import (
 type AttrMgr struct {
 	mu sync.Mutex
 	// attrs is a map of object id (string) to a map of attributes (key: attr id, some enum value).
-	attrs   map[string]map[int32]protoreflect.Value
+	attrs   map[string]map[int32]*protoreflect.Value
 	nextOid atomic.Uint64
 	// idToType maps an object id to its SAI type.
 	idToType map[string]saipb.ObjectType
@@ -52,16 +53,16 @@ type AttrMgr struct {
 // New returns a new AttrMgr.
 func New() *AttrMgr {
 	mgr := &AttrMgr{
-		attrs:             make(map[string]map[int32]protoreflect.Value),
+		attrs:             make(map[string]map[int32]*protoreflect.Value),
 		idToType:          make(map[string]saipb.ObjectType),
 		msgEnumToFieldNum: make(map[string]map[int32]int),
 	}
 	return mgr
 }
 
-func (mgr *AttrMgr) set(id string, attr int32, val protoreflect.Value) {
+func (mgr *AttrMgr) set(id string, attr int32, val *protoreflect.Value) {
 	if _, ok := mgr.attrs[id]; !ok {
-		mgr.attrs[id] = make(map[int32]protoreflect.Value)
+		mgr.attrs[id] = make(map[int32]*protoreflect.Value)
 	}
 	mgr.attrs[id][attr] = val
 }
@@ -108,7 +109,8 @@ func (mgr *AttrMgr) Interceptor(ctx context.Context, req any, info *grpc.UnarySe
 	if strings.Contains(info.FullMethod, "Create") || strings.Contains(info.FullMethod, "Set") {
 		id, err := mgr.getID(reqMsg, respMsg)
 		if err != nil {
-			return nil, err
+			log.Warningf("failed to get id %v", err)
+			return respMsg, nil
 		}
 		mgr.storeAttributes(id, reqMsg)
 	} else if strings.Contains(info.FullMethod, "Get") {
@@ -173,9 +175,14 @@ func (mgr *AttrMgr) PopulateAttributes(req, resp proto.Message) error {
 		enumVal := reqList.Get(i).Enum()
 		val, ok := mgr.attrs[id][int32(enumVal)]
 		if !ok {
-			continue
+			// log.Errorf("requested attribute not set: id %v, obj type %v, enum %v", id, mgr.GetType(id), reqList.Get(i))
+			// continue
+			return fmt.Errorf("requested attribute not set: %v", reqList.Get(i))
 		}
-		attrs.Set(attrs.Descriptor().Fields().Get(enumToFields[int32(enumVal)]), val)
+		// Empty lists exist so they are not errors, but are not settable.
+		if val != nil {
+			attrs.Set(attrs.Descriptor().Fields().Get(enumToFields[int32(enumVal)]), *val)
+		}
 	}
 	return nil
 }
@@ -197,12 +204,11 @@ func (mgr *AttrMgr) PopulateAllAttributes(id string, msg proto.Message) error {
 			continue
 		}
 		val, ok := mgr.attrs[id][enumVal]
-		if !ok {
+		if !ok || val == nil {
 			continue
 		}
-		msg.ProtoReflect().Set(desc.Fields().Get(i), val)
+		msg.ProtoReflect().Set(desc.Fields().Get(i), *val)
 	}
-
 	return nil
 }
 
@@ -235,17 +241,36 @@ func (mgr *AttrMgr) storeAttributes(id string, msg proto.Message) {
 		mgr.SetType(id, ty)
 	}
 
-	msg.ProtoReflect().Range(func(fd protoreflect.FieldDescriptor, v protoreflect.Value) bool {
+	// Protoreflect treats nil lists and empty lists as the same. However We want to store the value of empty lists, but not nil lists.
+	// So use regular go reflect for that case.
+	rv := reflect.ValueOf(msg).Elem()
+	rt := reflect.TypeOf(msg).Elem()
+	for i := 0; i < rt.NumField(); i++ {
+		tag := rt.Field(i).Tag.Get("protobuf")
+		if tag == "" {
+			continue
+		}
+		var fName string
+		for _, v := range strings.Split(tag, ",") {
+			if strings.HasPrefix(v, "name=") {
+				fName = strings.TrimPrefix(v, "name=")
+			}
+		}
+		fd := msg.ProtoReflect().Descriptor().Fields().ByTextName(fName)
 		opt, ok := fd.Options().(*descriptorpb.FieldOptions)
 		if !ok {
-			return true
+			continue
 		}
 		enumValue := proto.GetExtension(opt, saipb.E_AttrEnumValue).(int32)
-		if enumValue != 0 {
-			mgr.set(id, enumValue, v)
+		if enumValue == 0 {
+			continue
 		}
-		return true
-	})
+		if v := msg.ProtoReflect().Get(fd); msg.ProtoReflect().Has(fd) {
+			mgr.set(id, enumValue, &v)
+		} else if fd.IsList() && !rv.Field(i).IsNil() {
+			mgr.set(id, enumValue, nil)
+		}
+	}
 }
 
 // NextID returns the next available object id.
@@ -267,7 +292,11 @@ func (mgr *AttrMgr) getID(req, resp proto.Message) (string, error) {
 			return fmt.Sprint(v), nil
 		}
 	}
-	entry := req.ProtoReflect().Get(req.ProtoReflect().Descriptor().Fields().ByTextName("entry")).Message().Interface()
+	fd := req.ProtoReflect().Descriptor().Fields().ByTextName("entry")
+	if fd == nil {
+		return "", fmt.Errorf("no id found in message")
+	}
+	entry := req.ProtoReflect().Get(fd).Message().Interface()
 	pBytes, err := proto.Marshal(entry)
 	if err != nil {
 		return "", err
