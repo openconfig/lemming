@@ -21,14 +21,12 @@ import (
 	"net"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/openconfig/gnmi/errdiff"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/testing/protocmp"
-
-	"github.com/google/go-cmp/cmp"
-
-	"github.com/openconfig/gnmi/errdiff"
 
 	"github.com/openconfig/lemming/dataplane/standalone/saiserver/attrmgr"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
