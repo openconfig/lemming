@@ -39,10 +39,10 @@ func Generate(doc *docparser.SAIInfo, sai *saiast.SAIAPI) (map[string]string, er
 			APIName:      apiName,
 			ProtoInclude: apiName + ".pb",
 		}
-		if apiName == "switch" {
+		switch apiName {
+		case "switch":
 			ccData.Globals = append(ccData.Globals, "std::unique_ptr<PortStateReactor> port_state;")
-		}
-		if apiName == "hostif" {
+		case "hostif":
 			ccData.Globals = append(ccData.Globals, "int nextIdx = 1;")
 		}
 		for _, fn := range iface.Funcs {
@@ -76,7 +76,9 @@ func sanitizeProtoName(inName string) string {
 	return name
 }
 
-// createCCData returns a struct with the template data for the given function.
+// createCCData returns a two structs with the template data for the given function.
+// The first is the implementation of the API: CreateFoo.
+// The second is the a conversion func from attribute list to the proto message. covert_create_foo.
 func createCCData(meta *saiast.FuncMetadata, apiName string, sai *saiast.SAIAPI, info *docparser.SAIInfo, fn *saiast.TypeDecl) (*templateFunc, *templateFunc) {
 	if info.Attrs[meta.TypeName] == nil {
 		fmt.Printf("no doc info for type: %v\n", meta.TypeName)

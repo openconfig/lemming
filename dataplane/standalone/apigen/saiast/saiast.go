@@ -126,6 +126,7 @@ func (sai *SAIAPI) GetFuncMeta(fn *TypeDecl) *FuncMetadata {
 		if strings.Contains(param.Typ, "entry") {
 			meta.Entry = TrimSAIName(strings.TrimPrefix(param.Typ, "const "), true, false)
 		}
+		// The switch_id is either the first or second arguments to function.
 		if (i == 0 || i == 1) && param.Name == "switch_id" {
 			meta.IsSwitchScoped = true
 		}

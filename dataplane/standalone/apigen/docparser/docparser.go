@@ -27,9 +27,9 @@ import (
 
 // SAIInfo contains all the info parsed from the doxygen.
 type SAIInfo struct {
-	// attrs is a map from sai type (sai_port_t) to its attributes.
+	// Attrs is a map from sai type (sai_port_t) to its attributes.
 	Attrs map[string]*Attr
-	// attrs is a map from enum name (sai_port_media_type_t) to the values of the enum.
+	// Enums is a map from enum name (sai_port_media_type_t) to the values of the enum.
 	Enums map[string][]*Enum
 }
 
@@ -173,7 +173,7 @@ func memberToAttrInfo(enum MemberDef) *Attr {
 
 func memberToEnumValueStrings(enum MemberDef) []*Enum {
 	res := []*Enum{}
-	prev := -1
+	prev := -1 // Since enum values may repeat, store previous enum value. If the enum value isn't an assignment, then it is prev + 1.
 	for i, value := range enum.EnumValues {
 		val := prev + 1
 		value.Initializer = strings.TrimPrefix(value.Initializer, "= ")
