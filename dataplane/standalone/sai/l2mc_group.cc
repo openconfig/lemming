@@ -33,19 +33,50 @@ const sai_l2mc_group_api_t l_l2mc_group = {
     .get_l2mc_group_member_attribute = l_get_l2mc_group_member_attribute,
 };
 
+lemming::dataplane::sai::CreateL2mcGroupRequest convert_create_l2mc_group(
+    sai_object_id_t switch_id, uint32_t attr_count,
+    const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateL2mcGroupRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {}
+  }
+  return msg;
+}
+
+lemming::dataplane::sai::CreateL2mcGroupMemberRequest
+convert_create_l2mc_group_member(sai_object_id_t switch_id, uint32_t attr_count,
+                                 const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateL2mcGroupMemberRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_L2MC_GROUP_MEMBER_ATTR_L2MC_GROUP_ID:
+        msg.set_l2mc_group_id(attr_list[i].value.oid);
+        break;
+      case SAI_L2MC_GROUP_MEMBER_ATTR_L2MC_OUTPUT_ID:
+        msg.set_l2mc_output_id(attr_list[i].value.oid);
+        break;
+      case SAI_L2MC_GROUP_MEMBER_ATTR_L2MC_ENDPOINT_IP:
+        msg.set_l2mc_endpoint_ip(
+            convert_from_ip_address(attr_list[i].value.ipaddr));
+        break;
+    }
+  }
+  return msg;
+}
+
 sai_status_t l_create_l2mc_group(sai_object_id_t *l2mc_group_id,
                                  sai_object_id_t switch_id, uint32_t attr_count,
                                  const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateL2mcGroupRequest req;
+  lemming::dataplane::sai::CreateL2mcGroupRequest req =
+      convert_create_l2mc_group(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateL2mcGroupResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {}
-  }
   grpc::Status status = l2mc_group->CreateL2mcGroup(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();
@@ -122,25 +153,12 @@ sai_status_t l_create_l2mc_group_member(sai_object_id_t *l2mc_group_member_id,
                                         const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateL2mcGroupMemberRequest req;
+  lemming::dataplane::sai::CreateL2mcGroupMemberRequest req =
+      convert_create_l2mc_group_member(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateL2mcGroupMemberResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_L2MC_GROUP_MEMBER_ATTR_L2MC_GROUP_ID:
-        req.set_l2mc_group_id(attr_list[i].value.oid);
-        break;
-      case SAI_L2MC_GROUP_MEMBER_ATTR_L2MC_OUTPUT_ID:
-        req.set_l2mc_output_id(attr_list[i].value.oid);
-        break;
-      case SAI_L2MC_GROUP_MEMBER_ATTR_L2MC_ENDPOINT_IP:
-        req.set_l2mc_endpoint_ip(
-            convert_from_ip_address(attr_list[i].value.ipaddr));
-        break;
-    }
-  }
   grpc::Status status = l2mc_group->CreateL2mcGroupMember(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();

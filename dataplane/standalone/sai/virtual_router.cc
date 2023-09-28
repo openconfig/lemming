@@ -29,49 +29,58 @@ const sai_virtual_router_api_t l_virtual_router = {
     .get_virtual_router_attribute = l_get_virtual_router_attribute,
 };
 
+lemming::dataplane::sai::CreateVirtualRouterRequest
+convert_create_virtual_router(sai_object_id_t switch_id, uint32_t attr_count,
+                              const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateVirtualRouterRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_VIRTUAL_ROUTER_ATTR_ADMIN_V4_STATE:
+        msg.set_admin_v4_state(attr_list[i].value.booldata);
+        break;
+      case SAI_VIRTUAL_ROUTER_ATTR_ADMIN_V6_STATE:
+        msg.set_admin_v6_state(attr_list[i].value.booldata);
+        break;
+      case SAI_VIRTUAL_ROUTER_ATTR_SRC_MAC_ADDRESS:
+        msg.set_src_mac_address(attr_list[i].value.mac,
+                                sizeof(attr_list[i].value.mac));
+        break;
+      case SAI_VIRTUAL_ROUTER_ATTR_VIOLATION_TTL1_PACKET_ACTION:
+        msg.set_violation_ttl1_packet_action(
+            static_cast<lemming::dataplane::sai::PacketAction>(
+                attr_list[i].value.s32 + 1));
+        break;
+      case SAI_VIRTUAL_ROUTER_ATTR_VIOLATION_IP_OPTIONS_PACKET_ACTION:
+        msg.set_violation_ip_options_packet_action(
+            static_cast<lemming::dataplane::sai::PacketAction>(
+                attr_list[i].value.s32 + 1));
+        break;
+      case SAI_VIRTUAL_ROUTER_ATTR_UNKNOWN_L3_MULTICAST_PACKET_ACTION:
+        msg.set_unknown_l3_multicast_packet_action(
+            static_cast<lemming::dataplane::sai::PacketAction>(
+                attr_list[i].value.s32 + 1));
+        break;
+      case SAI_VIRTUAL_ROUTER_ATTR_LABEL:
+        msg.set_label(attr_list[i].value.chardata);
+        break;
+    }
+  }
+  return msg;
+}
+
 sai_status_t l_create_virtual_router(sai_object_id_t *virtual_router_id,
                                      sai_object_id_t switch_id,
                                      uint32_t attr_count,
                                      const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateVirtualRouterRequest req;
+  lemming::dataplane::sai::CreateVirtualRouterRequest req =
+      convert_create_virtual_router(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateVirtualRouterResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_VIRTUAL_ROUTER_ATTR_ADMIN_V4_STATE:
-        req.set_admin_v4_state(attr_list[i].value.booldata);
-        break;
-      case SAI_VIRTUAL_ROUTER_ATTR_ADMIN_V6_STATE:
-        req.set_admin_v6_state(attr_list[i].value.booldata);
-        break;
-      case SAI_VIRTUAL_ROUTER_ATTR_SRC_MAC_ADDRESS:
-        req.set_src_mac_address(attr_list[i].value.mac,
-                                sizeof(attr_list[i].value.mac));
-        break;
-      case SAI_VIRTUAL_ROUTER_ATTR_VIOLATION_TTL1_PACKET_ACTION:
-        req.set_violation_ttl1_packet_action(
-            static_cast<lemming::dataplane::sai::PacketAction>(
-                attr_list[i].value.s32 + 1));
-        break;
-      case SAI_VIRTUAL_ROUTER_ATTR_VIOLATION_IP_OPTIONS_PACKET_ACTION:
-        req.set_violation_ip_options_packet_action(
-            static_cast<lemming::dataplane::sai::PacketAction>(
-                attr_list[i].value.s32 + 1));
-        break;
-      case SAI_VIRTUAL_ROUTER_ATTR_UNKNOWN_L3_MULTICAST_PACKET_ACTION:
-        req.set_unknown_l3_multicast_packet_action(
-            static_cast<lemming::dataplane::sai::PacketAction>(
-                attr_list[i].value.s32 + 1));
-        break;
-      case SAI_VIRTUAL_ROUTER_ATTR_LABEL:
-        req.set_label(attr_list[i].value.chardata);
-        break;
-    }
-  }
   grpc::Status status =
       virtual_router->CreateVirtualRouter(&context, req, &resp);
   if (!status.ok()) {

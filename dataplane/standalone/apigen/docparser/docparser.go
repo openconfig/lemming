@@ -21,15 +21,21 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
 // SAIInfo contains all the info parsed from the doxygen.
 type SAIInfo struct {
-	// attrs is a map from sai type (sai_port_t) to its attributes.
+	// Attrs is a map from sai type (sai_port_t) to its attributes.
 	Attrs map[string]*Attr
-	// attrs is a map from enum name (sai_port_media_type_t) to the values of the enum.
-	Enums map[string][]string
+	// Enums is a map from enum name (sai_port_media_type_t) to the values of the enum.
+	Enums map[string][]*Enum
+}
+
+type Enum struct {
+	Name  string
+	Value int
 }
 
 // attrInfo holds values and types for an attribute enum.
@@ -100,7 +106,7 @@ const xmlPath = "dataplane/standalone/apigen/xml"
 func ParseSAIXMLDir() (*SAIInfo, error) {
 	i := &SAIInfo{
 		Attrs: make(map[string]*Attr),
-		Enums: make(map[string][]string),
+		Enums: make(map[string][]*Enum),
 	}
 	files, err := os.ReadDir(xmlPath)
 	if err != nil {
@@ -165,10 +171,30 @@ func memberToAttrInfo(enum MemberDef) *Attr {
 	return info
 }
 
-func memberToEnumValueStrings(enum MemberDef) []string {
-	res := []string{}
-	for _, value := range enum.EnumValues {
-		res = append(res, value.Name)
+func memberToEnumValueStrings(enum MemberDef) []*Enum {
+	res := []*Enum{}
+	prev := -1 // Since enum values may repeat, store previous enum value. If the enum value isn't an assignment, then it is prev + 1.
+	for i, value := range enum.EnumValues {
+		val := prev + 1
+		value.Initializer = strings.TrimPrefix(value.Initializer, "= ")
+		if value.Initializer != "" {
+			if strings.HasPrefix(value.Initializer, "0x") {
+				if v, err := strconv.ParseInt(value.Initializer, 16, 64); err == nil {
+					val = int(v)
+				}
+			}
+			for j := 0; j < i; j++ {
+				if value.Initializer == enum.EnumValues[j].Name {
+					val = res[j].Value
+					break
+				}
+			}
+		}
+		res = append(res, &Enum{
+			Name:  value.Name,
+			Value: val,
+		})
+		prev = val
 	}
 	return res
 }

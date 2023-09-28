@@ -5,7 +5,7 @@ package lemming.dataplane.sai;
 
 import "dataplane/standalone/proto/common.proto";
 
-option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto";
+option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto;sai";
 
 enum NeighborEntryAttr {
   NEIGHBOR_ENTRY_ATTR_UNSPECIFIED = 0;
@@ -67,6 +67,14 @@ message GetNeighborEntryAttributeResponse {
   NeighborEntryAttribute attr = 1;
 }
 
+message CreateNeighborEntriesRequest {
+  repeated CreateNeighborEntryRequest reqs = 1;
+}
+
+message CreateNeighborEntriesResponse {
+  repeated CreateNeighborEntryResponse resps = 1;
+}
+
 service Neighbor {
   rpc CreateNeighborEntry(CreateNeighborEntryRequest)
       returns (CreateNeighborEntryResponse) {}
@@ -76,4 +84,6 @@ service Neighbor {
       returns (SetNeighborEntryAttributeResponse) {}
   rpc GetNeighborEntryAttribute(GetNeighborEntryAttributeRequest)
       returns (GetNeighborEntryAttributeResponse) {}
+  rpc CreateNeighborEntries(CreateNeighborEntriesRequest)
+      returns (CreateNeighborEntriesResponse) {}
 }

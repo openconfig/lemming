@@ -32,90 +32,99 @@ const sai_router_interface_api_t l_router_interface = {
     .clear_router_interface_stats = l_clear_router_interface_stats,
 };
 
+lemming::dataplane::sai::CreateRouterInterfaceRequest
+convert_create_router_interface(sai_object_id_t switch_id, uint32_t attr_count,
+                                const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateRouterInterfaceRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_ROUTER_INTERFACE_ATTR_VIRTUAL_ROUTER_ID:
+        msg.set_virtual_router_id(attr_list[i].value.oid);
+        break;
+      case SAI_ROUTER_INTERFACE_ATTR_TYPE:
+        msg.set_type(static_cast<lemming::dataplane::sai::RouterInterfaceType>(
+            attr_list[i].value.s32 + 1));
+        break;
+      case SAI_ROUTER_INTERFACE_ATTR_PORT_ID:
+        msg.set_port_id(attr_list[i].value.oid);
+        break;
+      case SAI_ROUTER_INTERFACE_ATTR_VLAN_ID:
+        msg.set_vlan_id(attr_list[i].value.oid);
+        break;
+      case SAI_ROUTER_INTERFACE_ATTR_OUTER_VLAN_ID:
+        msg.set_outer_vlan_id(attr_list[i].value.u16);
+        break;
+      case SAI_ROUTER_INTERFACE_ATTR_INNER_VLAN_ID:
+        msg.set_inner_vlan_id(attr_list[i].value.u16);
+        break;
+      case SAI_ROUTER_INTERFACE_ATTR_BRIDGE_ID:
+        msg.set_bridge_id(attr_list[i].value.oid);
+        break;
+      case SAI_ROUTER_INTERFACE_ATTR_SRC_MAC_ADDRESS:
+        msg.set_src_mac_address(attr_list[i].value.mac,
+                                sizeof(attr_list[i].value.mac));
+        break;
+      case SAI_ROUTER_INTERFACE_ATTR_ADMIN_V4_STATE:
+        msg.set_admin_v4_state(attr_list[i].value.booldata);
+        break;
+      case SAI_ROUTER_INTERFACE_ATTR_ADMIN_V6_STATE:
+        msg.set_admin_v6_state(attr_list[i].value.booldata);
+        break;
+      case SAI_ROUTER_INTERFACE_ATTR_MTU:
+        msg.set_mtu(attr_list[i].value.u32);
+        break;
+      case SAI_ROUTER_INTERFACE_ATTR_INGRESS_ACL:
+        msg.set_ingress_acl(attr_list[i].value.oid);
+        break;
+      case SAI_ROUTER_INTERFACE_ATTR_EGRESS_ACL:
+        msg.set_egress_acl(attr_list[i].value.oid);
+        break;
+      case SAI_ROUTER_INTERFACE_ATTR_NEIGHBOR_MISS_PACKET_ACTION:
+        msg.set_neighbor_miss_packet_action(
+            static_cast<lemming::dataplane::sai::PacketAction>(
+                attr_list[i].value.s32 + 1));
+        break;
+      case SAI_ROUTER_INTERFACE_ATTR_V4_MCAST_ENABLE:
+        msg.set_v4_mcast_enable(attr_list[i].value.booldata);
+        break;
+      case SAI_ROUTER_INTERFACE_ATTR_V6_MCAST_ENABLE:
+        msg.set_v6_mcast_enable(attr_list[i].value.booldata);
+        break;
+      case SAI_ROUTER_INTERFACE_ATTR_LOOPBACK_PACKET_ACTION:
+        msg.set_loopback_packet_action(
+            static_cast<lemming::dataplane::sai::PacketAction>(
+                attr_list[i].value.s32 + 1));
+        break;
+      case SAI_ROUTER_INTERFACE_ATTR_IS_VIRTUAL:
+        msg.set_is_virtual(attr_list[i].value.booldata);
+        break;
+      case SAI_ROUTER_INTERFACE_ATTR_NAT_ZONE_ID:
+        msg.set_nat_zone_id(attr_list[i].value.u8);
+        break;
+      case SAI_ROUTER_INTERFACE_ATTR_DISABLE_DECREMENT_TTL:
+        msg.set_disable_decrement_ttl(attr_list[i].value.booldata);
+        break;
+      case SAI_ROUTER_INTERFACE_ATTR_ADMIN_MPLS_STATE:
+        msg.set_admin_mpls_state(attr_list[i].value.booldata);
+        break;
+    }
+  }
+  return msg;
+}
+
 sai_status_t l_create_router_interface(sai_object_id_t *router_interface_id,
                                        sai_object_id_t switch_id,
                                        uint32_t attr_count,
                                        const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateRouterInterfaceRequest req;
+  lemming::dataplane::sai::CreateRouterInterfaceRequest req =
+      convert_create_router_interface(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateRouterInterfaceResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_ROUTER_INTERFACE_ATTR_VIRTUAL_ROUTER_ID:
-        req.set_virtual_router_id(attr_list[i].value.oid);
-        break;
-      case SAI_ROUTER_INTERFACE_ATTR_TYPE:
-        req.set_type(static_cast<lemming::dataplane::sai::RouterInterfaceType>(
-            attr_list[i].value.s32 + 1));
-        break;
-      case SAI_ROUTER_INTERFACE_ATTR_PORT_ID:
-        req.set_port_id(attr_list[i].value.oid);
-        break;
-      case SAI_ROUTER_INTERFACE_ATTR_VLAN_ID:
-        req.set_vlan_id(attr_list[i].value.oid);
-        break;
-      case SAI_ROUTER_INTERFACE_ATTR_OUTER_VLAN_ID:
-        req.set_outer_vlan_id(attr_list[i].value.u16);
-        break;
-      case SAI_ROUTER_INTERFACE_ATTR_INNER_VLAN_ID:
-        req.set_inner_vlan_id(attr_list[i].value.u16);
-        break;
-      case SAI_ROUTER_INTERFACE_ATTR_BRIDGE_ID:
-        req.set_bridge_id(attr_list[i].value.oid);
-        break;
-      case SAI_ROUTER_INTERFACE_ATTR_SRC_MAC_ADDRESS:
-        req.set_src_mac_address(attr_list[i].value.mac,
-                                sizeof(attr_list[i].value.mac));
-        break;
-      case SAI_ROUTER_INTERFACE_ATTR_ADMIN_V4_STATE:
-        req.set_admin_v4_state(attr_list[i].value.booldata);
-        break;
-      case SAI_ROUTER_INTERFACE_ATTR_ADMIN_V6_STATE:
-        req.set_admin_v6_state(attr_list[i].value.booldata);
-        break;
-      case SAI_ROUTER_INTERFACE_ATTR_MTU:
-        req.set_mtu(attr_list[i].value.u32);
-        break;
-      case SAI_ROUTER_INTERFACE_ATTR_INGRESS_ACL:
-        req.set_ingress_acl(attr_list[i].value.oid);
-        break;
-      case SAI_ROUTER_INTERFACE_ATTR_EGRESS_ACL:
-        req.set_egress_acl(attr_list[i].value.oid);
-        break;
-      case SAI_ROUTER_INTERFACE_ATTR_NEIGHBOR_MISS_PACKET_ACTION:
-        req.set_neighbor_miss_packet_action(
-            static_cast<lemming::dataplane::sai::PacketAction>(
-                attr_list[i].value.s32 + 1));
-        break;
-      case SAI_ROUTER_INTERFACE_ATTR_V4_MCAST_ENABLE:
-        req.set_v4_mcast_enable(attr_list[i].value.booldata);
-        break;
-      case SAI_ROUTER_INTERFACE_ATTR_V6_MCAST_ENABLE:
-        req.set_v6_mcast_enable(attr_list[i].value.booldata);
-        break;
-      case SAI_ROUTER_INTERFACE_ATTR_LOOPBACK_PACKET_ACTION:
-        req.set_loopback_packet_action(
-            static_cast<lemming::dataplane::sai::PacketAction>(
-                attr_list[i].value.s32 + 1));
-        break;
-      case SAI_ROUTER_INTERFACE_ATTR_IS_VIRTUAL:
-        req.set_is_virtual(attr_list[i].value.booldata);
-        break;
-      case SAI_ROUTER_INTERFACE_ATTR_NAT_ZONE_ID:
-        req.set_nat_zone_id(attr_list[i].value.u8);
-        break;
-      case SAI_ROUTER_INTERFACE_ATTR_DISABLE_DECREMENT_TTL:
-        req.set_disable_decrement_ttl(attr_list[i].value.booldata);
-        break;
-      case SAI_ROUTER_INTERFACE_ATTR_ADMIN_MPLS_STATE:
-        req.set_admin_mpls_state(attr_list[i].value.booldata);
-        break;
-    }
-  }
   grpc::Status status =
       router_interface->CreateRouterInterface(&context, req, &resp);
   if (!status.ok()) {

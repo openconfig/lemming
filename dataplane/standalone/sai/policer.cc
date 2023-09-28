@@ -32,64 +32,73 @@ const sai_policer_api_t l_policer = {
     .clear_policer_stats = l_clear_policer_stats,
 };
 
+lemming::dataplane::sai::CreatePolicerRequest convert_create_policer(
+    sai_object_id_t switch_id, uint32_t attr_count,
+    const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreatePolicerRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_POLICER_ATTR_METER_TYPE:
+        msg.set_meter_type(static_cast<lemming::dataplane::sai::MeterType>(
+            attr_list[i].value.s32 + 1));
+        break;
+      case SAI_POLICER_ATTR_MODE:
+        msg.set_mode(static_cast<lemming::dataplane::sai::PolicerMode>(
+            attr_list[i].value.s32 + 1));
+        break;
+      case SAI_POLICER_ATTR_COLOR_SOURCE:
+        msg.set_color_source(
+            static_cast<lemming::dataplane::sai::PolicerColorSource>(
+                attr_list[i].value.s32 + 1));
+        break;
+      case SAI_POLICER_ATTR_CBS:
+        msg.set_cbs(attr_list[i].value.u64);
+        break;
+      case SAI_POLICER_ATTR_CIR:
+        msg.set_cir(attr_list[i].value.u64);
+        break;
+      case SAI_POLICER_ATTR_PBS:
+        msg.set_pbs(attr_list[i].value.u64);
+        break;
+      case SAI_POLICER_ATTR_PIR:
+        msg.set_pir(attr_list[i].value.u64);
+        break;
+      case SAI_POLICER_ATTR_GREEN_PACKET_ACTION:
+        msg.set_green_packet_action(
+            static_cast<lemming::dataplane::sai::PacketAction>(
+                attr_list[i].value.s32 + 1));
+        break;
+      case SAI_POLICER_ATTR_YELLOW_PACKET_ACTION:
+        msg.set_yellow_packet_action(
+            static_cast<lemming::dataplane::sai::PacketAction>(
+                attr_list[i].value.s32 + 1));
+        break;
+      case SAI_POLICER_ATTR_RED_PACKET_ACTION:
+        msg.set_red_packet_action(
+            static_cast<lemming::dataplane::sai::PacketAction>(
+                attr_list[i].value.s32 + 1));
+        break;
+      case SAI_POLICER_ATTR_OBJECT_STAGE:
+        msg.set_object_stage(static_cast<lemming::dataplane::sai::ObjectStage>(
+            attr_list[i].value.s32 + 1));
+        break;
+    }
+  }
+  return msg;
+}
+
 sai_status_t l_create_policer(sai_object_id_t *policer_id,
                               sai_object_id_t switch_id, uint32_t attr_count,
                               const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreatePolicerRequest req;
+  lemming::dataplane::sai::CreatePolicerRequest req =
+      convert_create_policer(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreatePolicerResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_POLICER_ATTR_METER_TYPE:
-        req.set_meter_type(static_cast<lemming::dataplane::sai::MeterType>(
-            attr_list[i].value.s32 + 1));
-        break;
-      case SAI_POLICER_ATTR_MODE:
-        req.set_mode(static_cast<lemming::dataplane::sai::PolicerMode>(
-            attr_list[i].value.s32 + 1));
-        break;
-      case SAI_POLICER_ATTR_COLOR_SOURCE:
-        req.set_color_source(
-            static_cast<lemming::dataplane::sai::PolicerColorSource>(
-                attr_list[i].value.s32 + 1));
-        break;
-      case SAI_POLICER_ATTR_CBS:
-        req.set_cbs(attr_list[i].value.u64);
-        break;
-      case SAI_POLICER_ATTR_CIR:
-        req.set_cir(attr_list[i].value.u64);
-        break;
-      case SAI_POLICER_ATTR_PBS:
-        req.set_pbs(attr_list[i].value.u64);
-        break;
-      case SAI_POLICER_ATTR_PIR:
-        req.set_pir(attr_list[i].value.u64);
-        break;
-      case SAI_POLICER_ATTR_GREEN_PACKET_ACTION:
-        req.set_green_packet_action(
-            static_cast<lemming::dataplane::sai::PacketAction>(
-                attr_list[i].value.s32 + 1));
-        break;
-      case SAI_POLICER_ATTR_YELLOW_PACKET_ACTION:
-        req.set_yellow_packet_action(
-            static_cast<lemming::dataplane::sai::PacketAction>(
-                attr_list[i].value.s32 + 1));
-        break;
-      case SAI_POLICER_ATTR_RED_PACKET_ACTION:
-        req.set_red_packet_action(
-            static_cast<lemming::dataplane::sai::PacketAction>(
-                attr_list[i].value.s32 + 1));
-        break;
-      case SAI_POLICER_ATTR_OBJECT_STAGE:
-        req.set_object_stage(static_cast<lemming::dataplane::sai::ObjectStage>(
-            attr_list[i].value.s32 + 1));
-        break;
-    }
-  }
   grpc::Status status = policer->CreatePolicer(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();

@@ -32,27 +32,36 @@ const sai_counter_api_t l_counter = {
     .clear_counter_stats = l_clear_counter_stats,
 };
 
+lemming::dataplane::sai::CreateCounterRequest convert_create_counter(
+    sai_object_id_t switch_id, uint32_t attr_count,
+    const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateCounterRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_COUNTER_ATTR_TYPE:
+        msg.set_type(static_cast<lemming::dataplane::sai::CounterType>(
+            attr_list[i].value.s32 + 1));
+        break;
+      case SAI_COUNTER_ATTR_LABEL:
+        msg.set_label(attr_list[i].value.chardata);
+        break;
+    }
+  }
+  return msg;
+}
+
 sai_status_t l_create_counter(sai_object_id_t *counter_id,
                               sai_object_id_t switch_id, uint32_t attr_count,
                               const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateCounterRequest req;
+  lemming::dataplane::sai::CreateCounterRequest req =
+      convert_create_counter(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateCounterResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_COUNTER_ATTR_TYPE:
-        req.set_type(static_cast<lemming::dataplane::sai::CounterType>(
-            attr_list[i].value.s32 + 1));
-        break;
-      case SAI_COUNTER_ATTR_LABEL:
-        req.set_label(attr_list[i].value.chardata);
-        break;
-    }
-  }
   grpc::Status status = counter->CreateCounter(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();

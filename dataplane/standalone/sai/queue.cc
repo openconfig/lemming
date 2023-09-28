@@ -32,58 +32,67 @@ const sai_queue_api_t l_queue = {
     .clear_queue_stats = l_clear_queue_stats,
 };
 
-sai_status_t l_create_queue(sai_object_id_t *queue_id,
-                            sai_object_id_t switch_id, uint32_t attr_count,
-                            const sai_attribute_t *attr_list) {
-  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-
-  lemming::dataplane::sai::CreateQueueRequest req;
-  lemming::dataplane::sai::CreateQueueResponse resp;
-  grpc::ClientContext context;
-  req.set_switch_(switch_id);
+lemming::dataplane::sai::CreateQueueRequest convert_create_queue(
+    sai_object_id_t switch_id, uint32_t attr_count,
+    const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateQueueRequest msg;
 
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_QUEUE_ATTR_TYPE:
-        req.set_type(static_cast<lemming::dataplane::sai::QueueType>(
+        msg.set_type(static_cast<lemming::dataplane::sai::QueueType>(
             attr_list[i].value.s32 + 1));
         break;
       case SAI_QUEUE_ATTR_PORT:
-        req.set_port(attr_list[i].value.oid);
+        msg.set_port(attr_list[i].value.oid);
         break;
       case SAI_QUEUE_ATTR_INDEX:
-        req.set_index(attr_list[i].value.u8);
+        msg.set_index(attr_list[i].value.u8);
         break;
       case SAI_QUEUE_ATTR_PARENT_SCHEDULER_NODE:
-        req.set_parent_scheduler_node(attr_list[i].value.oid);
+        msg.set_parent_scheduler_node(attr_list[i].value.oid);
         break;
       case SAI_QUEUE_ATTR_WRED_PROFILE_ID:
-        req.set_wred_profile_id(attr_list[i].value.oid);
+        msg.set_wred_profile_id(attr_list[i].value.oid);
         break;
       case SAI_QUEUE_ATTR_BUFFER_PROFILE_ID:
-        req.set_buffer_profile_id(attr_list[i].value.oid);
+        msg.set_buffer_profile_id(attr_list[i].value.oid);
         break;
       case SAI_QUEUE_ATTR_SCHEDULER_PROFILE_ID:
-        req.set_scheduler_profile_id(attr_list[i].value.oid);
+        msg.set_scheduler_profile_id(attr_list[i].value.oid);
         break;
       case SAI_QUEUE_ATTR_ENABLE_PFC_DLDR:
-        req.set_enable_pfc_dldr(attr_list[i].value.booldata);
+        msg.set_enable_pfc_dldr(attr_list[i].value.booldata);
         break;
       case SAI_QUEUE_ATTR_PFC_DLR_INIT:
-        req.set_pfc_dlr_init(attr_list[i].value.booldata);
+        msg.set_pfc_dlr_init(attr_list[i].value.booldata);
         break;
       case SAI_QUEUE_ATTR_TAM_OBJECT:
-        req.mutable_tam_object()->Add(
+        msg.mutable_tam_object()->Add(
             attr_list[i].value.objlist.list,
             attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
         break;
       case SAI_QUEUE_ATTR_PFC_DLR_PACKET_ACTION:
-        req.set_pfc_dlr_packet_action(
+        msg.set_pfc_dlr_packet_action(
             static_cast<lemming::dataplane::sai::PacketAction>(
                 attr_list[i].value.s32 + 1));
         break;
     }
   }
+  return msg;
+}
+
+sai_status_t l_create_queue(sai_object_id_t *queue_id,
+                            sai_object_id_t switch_id, uint32_t attr_count,
+                            const sai_attribute_t *attr_list) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  lemming::dataplane::sai::CreateQueueRequest req =
+      convert_create_queue(switch_id, attr_count, attr_list);
+  lemming::dataplane::sai::CreateQueueResponse resp;
+  grpc::ClientContext context;
+  req.set_switch_(switch_id);
+
   grpc::Status status = queue->CreateQueue(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();

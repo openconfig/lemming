@@ -29,24 +29,33 @@ const sai_qos_map_api_t l_qos_map = {
     .get_qos_map_attribute = l_get_qos_map_attribute,
 };
 
+lemming::dataplane::sai::CreateQosMapRequest convert_create_qos_map(
+    sai_object_id_t switch_id, uint32_t attr_count,
+    const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateQosMapRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_QOS_MAP_ATTR_TYPE:
+        msg.set_type(static_cast<lemming::dataplane::sai::QosMapType>(
+            attr_list[i].value.s32 + 1));
+        break;
+    }
+  }
+  return msg;
+}
+
 sai_status_t l_create_qos_map(sai_object_id_t *qos_map_id,
                               sai_object_id_t switch_id, uint32_t attr_count,
                               const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateQosMapRequest req;
+  lemming::dataplane::sai::CreateQosMapRequest req =
+      convert_create_qos_map(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateQosMapResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_QOS_MAP_ATTR_TYPE:
-        req.set_type(static_cast<lemming::dataplane::sai::QosMapType>(
-            attr_list[i].value.s32 + 1));
-        break;
-    }
-  }
   grpc::Status status = qos_map->CreateQosMap(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();

@@ -5,7 +5,7 @@ package lemming.dataplane.sai;
 
 import "dataplane/standalone/proto/common.proto";
 
-option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto";
+option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto;sai";
 
 enum NextHopGroupAttr {
   NEXT_HOP_GROUP_ATTR_UNSPECIFIED = 0;
@@ -120,6 +120,14 @@ message GetNextHopGroupMemberAttributeResponse {
   NextHopGroupMemberAttribute attr = 1;
 }
 
+message CreateNextHopGroupMembersRequest {
+  repeated CreateNextHopGroupMemberRequest reqs = 1;
+}
+
+message CreateNextHopGroupMembersResponse {
+  repeated CreateNextHopGroupMemberResponse resps = 1;
+}
+
 message CreateNextHopGroupMapRequest {
   option (sai_type) = OBJECT_TYPE_NEXT_HOP_GROUP_MAP;
   uint64 switch = 1;
@@ -170,6 +178,8 @@ service NextHopGroup {
       returns (SetNextHopGroupMemberAttributeResponse) {}
   rpc GetNextHopGroupMemberAttribute(GetNextHopGroupMemberAttributeRequest)
       returns (GetNextHopGroupMemberAttributeResponse) {}
+  rpc CreateNextHopGroupMembers(CreateNextHopGroupMembersRequest)
+      returns (CreateNextHopGroupMembersResponse) {}
   rpc CreateNextHopGroupMap(CreateNextHopGroupMapRequest)
       returns (CreateNextHopGroupMapResponse) {}
   rpc RemoveNextHopGroupMap(RemoveNextHopGroupMapRequest)

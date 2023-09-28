@@ -29,37 +29,46 @@ const sai_my_mac_api_t l_my_mac = {
     .get_my_mac_attribute = l_get_my_mac_attribute,
 };
 
+lemming::dataplane::sai::CreateMyMacRequest convert_create_my_mac(
+    sai_object_id_t switch_id, uint32_t attr_count,
+    const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateMyMacRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_MY_MAC_ATTR_PRIORITY:
+        msg.set_priority(attr_list[i].value.u32);
+        break;
+      case SAI_MY_MAC_ATTR_PORT_ID:
+        msg.set_port_id(attr_list[i].value.oid);
+        break;
+      case SAI_MY_MAC_ATTR_VLAN_ID:
+        msg.set_vlan_id(attr_list[i].value.u16);
+        break;
+      case SAI_MY_MAC_ATTR_MAC_ADDRESS:
+        msg.set_mac_address(attr_list[i].value.mac,
+                            sizeof(attr_list[i].value.mac));
+        break;
+      case SAI_MY_MAC_ATTR_MAC_ADDRESS_MASK:
+        msg.set_mac_address_mask(attr_list[i].value.mac,
+                                 sizeof(attr_list[i].value.mac));
+        break;
+    }
+  }
+  return msg;
+}
+
 sai_status_t l_create_my_mac(sai_object_id_t *my_mac_id,
                              sai_object_id_t switch_id, uint32_t attr_count,
                              const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateMyMacRequest req;
+  lemming::dataplane::sai::CreateMyMacRequest req =
+      convert_create_my_mac(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateMyMacResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_MY_MAC_ATTR_PRIORITY:
-        req.set_priority(attr_list[i].value.u32);
-        break;
-      case SAI_MY_MAC_ATTR_PORT_ID:
-        req.set_port_id(attr_list[i].value.oid);
-        break;
-      case SAI_MY_MAC_ATTR_VLAN_ID:
-        req.set_vlan_id(attr_list[i].value.u16);
-        break;
-      case SAI_MY_MAC_ATTR_MAC_ADDRESS:
-        req.set_mac_address(attr_list[i].value.mac,
-                            sizeof(attr_list[i].value.mac));
-        break;
-      case SAI_MY_MAC_ATTR_MAC_ADDRESS_MASK:
-        req.set_mac_address_mask(attr_list[i].value.mac,
-                                 sizeof(attr_list[i].value.mac));
-        break;
-    }
-  }
   grpc::Status status = my_mac->CreateMyMac(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();

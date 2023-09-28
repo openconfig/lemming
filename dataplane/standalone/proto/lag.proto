@@ -5,7 +5,7 @@ package lemming.dataplane.sai;
 
 import "dataplane/standalone/proto/common.proto";
 
-option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto";
+option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto;sai";
 
 enum LagAttr {
   LAG_ATTR_UNSPECIFIED = 0;
@@ -112,6 +112,14 @@ message GetLagMemberAttributeResponse {
   LagMemberAttribute attr = 1;
 }
 
+message CreateLagMembersRequest {
+  repeated CreateLagMemberRequest reqs = 1;
+}
+
+message CreateLagMembersResponse {
+  repeated CreateLagMemberResponse resps = 1;
+}
+
 service Lag {
   rpc CreateLag(CreateLagRequest) returns (CreateLagResponse) {}
   rpc RemoveLag(RemoveLagRequest) returns (RemoveLagResponse) {}
@@ -127,4 +135,6 @@ service Lag {
       returns (SetLagMemberAttributeResponse) {}
   rpc GetLagMemberAttribute(GetLagMemberAttributeRequest)
       returns (GetLagMemberAttributeResponse) {}
+  rpc CreateLagMembers(CreateLagMembersRequest)
+      returns (CreateLagMembersResponse) {}
 }
