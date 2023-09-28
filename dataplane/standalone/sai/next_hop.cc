@@ -27,6 +27,10 @@ const sai_next_hop_api_t l_next_hop = {
     .remove_next_hop = l_remove_next_hop,
     .set_next_hop_attribute = l_set_next_hop_attribute,
     .get_next_hop_attribute = l_get_next_hop_attribute,
+    .create_next_hops = l_create_next_hops,
+    .remove_next_hops = l_remove_next_hops,
+    .set_next_hops_attribute = l_set_next_hops_attribute,
+    .get_next_hops_attribute = l_get_next_hops_attribute,
 };
 
 lemming::dataplane::sai::CreateNextHopRequest convert_create_next_hop(
@@ -271,4 +275,62 @@ sai_status_t l_get_next_hop_attribute(sai_object_id_t next_hop_id,
   }
 
   return SAI_STATUS_SUCCESS;
+}
+
+sai_status_t l_create_next_hops(sai_object_id_t switch_id,
+                                uint32_t object_count,
+                                const uint32_t *attr_count,
+                                const sai_attribute_t **attr_list,
+                                sai_bulk_op_error_mode_t mode,
+                                sai_object_id_t *object_id,
+                                sai_status_t *object_statuses) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  lemming::dataplane::sai::CreateNextHopsRequest req;
+  lemming::dataplane::sai::CreateNextHopsResponse resp;
+  grpc::ClientContext context;
+
+  for (uint32_t i = 0; i < object_count; i++) {
+    auto r = convert_create_next_hop(switch_id, attr_count[i], attr_list[i]);
+    *req.add_reqs() = r;
+  }
+
+  grpc::Status status = next_hop->CreateNextHops(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  for (uint32_t i = 0; i < object_count; i++) {
+    switch_id = object_id[i] = resp.resps(i).oid();
+    object_statuses[i] = SAI_STATUS_SUCCESS;
+  }
+
+  return SAI_STATUS_SUCCESS;
+}
+
+sai_status_t l_remove_next_hops(uint32_t object_count,
+                                const sai_object_id_t *object_id,
+                                sai_bulk_op_error_mode_t mode,
+                                sai_status_t *object_statuses) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return SAI_STATUS_NOT_IMPLEMENTED;
+}
+
+sai_status_t l_set_next_hops_attribute(uint32_t object_count,
+                                       const sai_object_id_t *object_id,
+                                       const sai_attribute_t *attr_list,
+                                       sai_bulk_op_error_mode_t mode,
+                                       sai_status_t *object_statuses) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return SAI_STATUS_NOT_IMPLEMENTED;
+}
+
+sai_status_t l_get_next_hops_attribute(uint32_t object_count,
+                                       const sai_object_id_t *object_id,
+                                       const uint32_t *attr_count,
+                                       sai_attribute_t **attr_list,
+                                       sai_bulk_op_error_mode_t mode,
+                                       sai_status_t *object_statuses) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }

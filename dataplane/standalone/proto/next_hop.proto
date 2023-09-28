@@ -85,6 +85,14 @@ message GetNextHopAttributeResponse {
   NextHopAttribute attr = 1;
 }
 
+message CreateNextHopsRequest {
+  repeated CreateNextHopRequest reqs = 1;
+}
+
+message CreateNextHopsResponse {
+  repeated CreateNextHopResponse resps = 1;
+}
+
 service NextHop {
   rpc CreateNextHop(CreateNextHopRequest) returns (CreateNextHopResponse) {}
   rpc RemoveNextHop(RemoveNextHopRequest) returns (RemoveNextHopResponse) {}
@@ -92,4 +100,5 @@ service NextHop {
       returns (SetNextHopAttributeResponse) {}
   rpc GetNextHopAttribute(GetNextHopAttributeRequest)
       returns (GetNextHopAttributeResponse) {}
+  rpc CreateNextHops(CreateNextHopsRequest) returns (CreateNextHopsResponse) {}
 }

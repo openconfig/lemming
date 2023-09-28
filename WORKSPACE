@@ -131,6 +131,8 @@ http_archive(
 
 http_archive(
     name = "com_github_opencomputeproject_sai",
+    patch_args = ["-p1"],
+    patches = ["//patches:sai.patch"],
     build_file_content = """
 cc_library(
     name = "sai",
