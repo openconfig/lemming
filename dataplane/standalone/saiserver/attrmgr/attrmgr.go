@@ -175,8 +175,6 @@ func (mgr *AttrMgr) PopulateAttributes(req, resp proto.Message) error {
 		enumVal := reqList.Get(i).Enum()
 		val, ok := mgr.attrs[id][int32(enumVal)]
 		if !ok {
-			// log.Errorf("requested attribute not set: id %v, obj type %v, enum %v", id, mgr.GetType(id), reqList.Get(i))
-			// continue
 			return fmt.Errorf("requested attribute not set: %v", reqList.Get(i))
 		}
 		// Empty lists exist so they are not errors, but are not settable.
@@ -212,7 +210,9 @@ func (mgr *AttrMgr) PopulateAllAttributes(id string, msg proto.Message) error {
 	return nil
 }
 
-// storeAttributes stores all the attributes in the message.
+// StoreAttributes stores all the attributes in the message.
+// Note: for lists, a nil lists is an unset attribute, but a non-nil empty list is set.
+// so querying a nil list returns an error, even though they look the same on the wire.
 func (mgr *AttrMgr) StoreAttributes(id uint64, msg proto.Message) {
 	mgr.storeAttributes(fmt.Sprint(id), msg)
 }
