@@ -29,28 +29,38 @@ const sai_generic_programmable_api_t l_generic_programmable = {
     .get_generic_programmable_attribute = l_get_generic_programmable_attribute,
 };
 
+lemming::dataplane::sai::CreateGenericProgrammableRequest
+convert_create_generic_programmable(sai_object_id_t switch_id,
+                                    uint32_t attr_count,
+                                    const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateGenericProgrammableRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_GENERIC_PROGRAMMABLE_ATTR_OBJECT_NAME:
+        msg.mutable_object_name()->Add(
+            attr_list[i].value.s8list.list,
+            attr_list[i].value.s8list.list + attr_list[i].value.s8list.count);
+        break;
+      case SAI_GENERIC_PROGRAMMABLE_ATTR_COUNTER_ID:
+        msg.set_counter_id(attr_list[i].value.oid);
+        break;
+    }
+  }
+  return msg;
+}
+
 sai_status_t l_create_generic_programmable(
     sai_object_id_t *generic_programmable_id, sai_object_id_t switch_id,
     uint32_t attr_count, const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateGenericProgrammableRequest req;
+  lemming::dataplane::sai::CreateGenericProgrammableRequest req =
+      convert_create_generic_programmable(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateGenericProgrammableResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_GENERIC_PROGRAMMABLE_ATTR_OBJECT_NAME:
-        req.mutable_object_name()->Add(
-            attr_list[i].value.s8list.list,
-            attr_list[i].value.s8list.list + attr_list[i].value.s8list.count);
-        break;
-      case SAI_GENERIC_PROGRAMMABLE_ATTR_COUNTER_ID:
-        req.set_counter_id(attr_list[i].value.oid);
-        break;
-    }
-  }
   grpc::Status status =
       generic_programmable->CreateGenericProgrammable(&context, req, &resp);
   if (!status.ok()) {

@@ -29,30 +29,39 @@ const sai_mcast_fdb_api_t l_mcast_fdb = {
     .get_mcast_fdb_entry_attribute = l_get_mcast_fdb_entry_attribute,
 };
 
+lemming::dataplane::sai::CreateMcastFdbEntryRequest
+convert_create_mcast_fdb_entry(uint32_t attr_count,
+                               const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateMcastFdbEntryRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_MCAST_FDB_ENTRY_ATTR_GROUP_ID:
+        msg.set_group_id(attr_list[i].value.oid);
+        break;
+      case SAI_MCAST_FDB_ENTRY_ATTR_PACKET_ACTION:
+        msg.set_packet_action(
+            static_cast<lemming::dataplane::sai::PacketAction>(
+                attr_list[i].value.s32 + 1));
+        break;
+      case SAI_MCAST_FDB_ENTRY_ATTR_META_DATA:
+        msg.set_meta_data(attr_list[i].value.u32);
+        break;
+    }
+  }
+  return msg;
+}
+
 sai_status_t l_create_mcast_fdb_entry(
     const sai_mcast_fdb_entry_t *mcast_fdb_entry, uint32_t attr_count,
     const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateMcastFdbEntryRequest req;
+  lemming::dataplane::sai::CreateMcastFdbEntryRequest req =
+      convert_create_mcast_fdb_entry(attr_count, attr_list);
   lemming::dataplane::sai::CreateMcastFdbEntryResponse resp;
   grpc::ClientContext context;
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_MCAST_FDB_ENTRY_ATTR_GROUP_ID:
-        req.set_group_id(attr_list[i].value.oid);
-        break;
-      case SAI_MCAST_FDB_ENTRY_ATTR_PACKET_ACTION:
-        req.set_packet_action(
-            static_cast<lemming::dataplane::sai::PacketAction>(
-                attr_list[i].value.s32 + 1));
-        break;
-      case SAI_MCAST_FDB_ENTRY_ATTR_META_DATA:
-        req.set_meta_data(attr_list[i].value.u32);
-        break;
-    }
-  }
   grpc::Status status = mcast_fdb->CreateMcastFdbEntry(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();

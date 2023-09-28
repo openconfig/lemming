@@ -5,7 +5,7 @@ package lemming.dataplane.sai;
 
 import "dataplane/standalone/proto/common.proto";
 
-option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto";
+option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto;sai";
 
 enum FdbEntryAttr {
   FDB_ENTRY_ATTR_UNSPECIFIED = 0;
@@ -63,6 +63,14 @@ message GetFdbEntryAttributeResponse {
   FdbEntryAttribute attr = 1;
 }
 
+message CreateFdbEntriesRequest {
+  repeated CreateFdbEntryRequest reqs = 1;
+}
+
+message CreateFdbEntriesResponse {
+  repeated CreateFdbEntryResponse resps = 1;
+}
+
 service Fdb {
   rpc CreateFdbEntry(CreateFdbEntryRequest) returns (CreateFdbEntryResponse) {}
   rpc RemoveFdbEntry(RemoveFdbEntryRequest) returns (RemoveFdbEntryResponse) {}
@@ -70,4 +78,6 @@ service Fdb {
       returns (SetFdbEntryAttributeResponse) {}
   rpc GetFdbEntryAttribute(GetFdbEntryAttributeRequest)
       returns (GetFdbEntryAttributeResponse) {}
+  rpc CreateFdbEntries(CreateFdbEntriesRequest)
+      returns (CreateFdbEntriesResponse) {}
 }

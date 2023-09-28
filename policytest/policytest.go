@@ -42,7 +42,7 @@ const (
 	ipv4PrefixLen = 24
 	ipv6PrefixLen = 112
 
-	awaitTimeout  = 15 * time.Second
+	awaitTimeout  = 60 * time.Second
 	rejectTimeout = 20 * time.Second
 )
 

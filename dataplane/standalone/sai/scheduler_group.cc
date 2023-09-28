@@ -29,36 +29,45 @@ const sai_scheduler_group_api_t l_scheduler_group = {
     .get_scheduler_group_attribute = l_get_scheduler_group_attribute,
 };
 
+lemming::dataplane::sai::CreateSchedulerGroupRequest
+convert_create_scheduler_group(sai_object_id_t switch_id, uint32_t attr_count,
+                               const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateSchedulerGroupRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_SCHEDULER_GROUP_ATTR_PORT_ID:
+        msg.set_port_id(attr_list[i].value.oid);
+        break;
+      case SAI_SCHEDULER_GROUP_ATTR_LEVEL:
+        msg.set_level(attr_list[i].value.u8);
+        break;
+      case SAI_SCHEDULER_GROUP_ATTR_MAX_CHILDS:
+        msg.set_max_childs(attr_list[i].value.u8);
+        break;
+      case SAI_SCHEDULER_GROUP_ATTR_SCHEDULER_PROFILE_ID:
+        msg.set_scheduler_profile_id(attr_list[i].value.oid);
+        break;
+      case SAI_SCHEDULER_GROUP_ATTR_PARENT_NODE:
+        msg.set_parent_node(attr_list[i].value.oid);
+        break;
+    }
+  }
+  return msg;
+}
+
 sai_status_t l_create_scheduler_group(sai_object_id_t *scheduler_group_id,
                                       sai_object_id_t switch_id,
                                       uint32_t attr_count,
                                       const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateSchedulerGroupRequest req;
+  lemming::dataplane::sai::CreateSchedulerGroupRequest req =
+      convert_create_scheduler_group(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateSchedulerGroupResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_SCHEDULER_GROUP_ATTR_PORT_ID:
-        req.set_port_id(attr_list[i].value.oid);
-        break;
-      case SAI_SCHEDULER_GROUP_ATTR_LEVEL:
-        req.set_level(attr_list[i].value.u8);
-        break;
-      case SAI_SCHEDULER_GROUP_ATTR_MAX_CHILDS:
-        req.set_max_childs(attr_list[i].value.u8);
-        break;
-      case SAI_SCHEDULER_GROUP_ATTR_SCHEDULER_PROFILE_ID:
-        req.set_scheduler_profile_id(attr_list[i].value.oid);
-        break;
-      case SAI_SCHEDULER_GROUP_ATTR_PARENT_NODE:
-        req.set_parent_node(attr_list[i].value.oid);
-        break;
-    }
-  }
   grpc::Status status =
       scheduler_group->CreateSchedulerGroup(&context, req, &resp);
   if (!status.ok()) {

@@ -69,35 +69,436 @@ const sai_tam_api_t l_tam = {
     .get_tam_event_attribute = l_get_tam_event_attribute,
 };
 
-sai_status_t l_create_tam(sai_object_id_t *tam_id, sai_object_id_t switch_id,
-                          uint32_t attr_count,
-                          const sai_attribute_t *attr_list) {
-  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-
-  lemming::dataplane::sai::CreateTamRequest req;
-  lemming::dataplane::sai::CreateTamResponse resp;
-  grpc::ClientContext context;
-  req.set_switch_(switch_id);
+lemming::dataplane::sai::CreateTamRequest convert_create_tam(
+    sai_object_id_t switch_id, uint32_t attr_count,
+    const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateTamRequest msg;
 
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_TAM_ATTR_TELEMETRY_OBJECTS_LIST:
-        req.mutable_telemetry_objects_list()->Add(
+        msg.mutable_telemetry_objects_list()->Add(
             attr_list[i].value.objlist.list,
             attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
         break;
       case SAI_TAM_ATTR_EVENT_OBJECTS_LIST:
-        req.mutable_event_objects_list()->Add(
+        msg.mutable_event_objects_list()->Add(
             attr_list[i].value.objlist.list,
             attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
         break;
       case SAI_TAM_ATTR_INT_OBJECTS_LIST:
-        req.mutable_int_objects_list()->Add(
+        msg.mutable_int_objects_list()->Add(
             attr_list[i].value.objlist.list,
             attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
         break;
     }
   }
+  return msg;
+}
+
+lemming::dataplane::sai::CreateTamMathFuncRequest convert_create_tam_math_func(
+    sai_object_id_t switch_id, uint32_t attr_count,
+    const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateTamMathFuncRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_TAM_MATH_FUNC_ATTR_TAM_TEL_MATH_FUNC_TYPE:
+        msg.set_tam_tel_math_func_type(
+            static_cast<lemming::dataplane::sai::TamTelMathFuncType>(
+                attr_list[i].value.s32 + 1));
+        break;
+    }
+  }
+  return msg;
+}
+
+lemming::dataplane::sai::CreateTamReportRequest convert_create_tam_report(
+    sai_object_id_t switch_id, uint32_t attr_count,
+    const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateTamReportRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_TAM_REPORT_ATTR_TYPE:
+        msg.set_type(static_cast<lemming::dataplane::sai::TamReportType>(
+            attr_list[i].value.s32 + 1));
+        break;
+      case SAI_TAM_REPORT_ATTR_HISTOGRAM_NUMBER_OF_BINS:
+        msg.set_histogram_number_of_bins(attr_list[i].value.u32);
+        break;
+      case SAI_TAM_REPORT_ATTR_HISTOGRAM_BIN_BOUNDARY:
+        msg.mutable_histogram_bin_boundary()->Add(
+            attr_list[i].value.u32list.list,
+            attr_list[i].value.u32list.list + attr_list[i].value.u32list.count);
+        break;
+      case SAI_TAM_REPORT_ATTR_QUOTA:
+        msg.set_quota(attr_list[i].value.u32);
+        break;
+      case SAI_TAM_REPORT_ATTR_REPORT_MODE:
+        msg.set_report_mode(static_cast<lemming::dataplane::sai::TamReportMode>(
+            attr_list[i].value.s32 + 1));
+        break;
+      case SAI_TAM_REPORT_ATTR_REPORT_INTERVAL:
+        msg.set_report_interval(attr_list[i].value.u32);
+        break;
+      case SAI_TAM_REPORT_ATTR_ENTERPRISE_NUMBER:
+        msg.set_enterprise_number(attr_list[i].value.u32);
+        break;
+      case SAI_TAM_REPORT_ATTR_TEMPLATE_REPORT_INTERVAL:
+        msg.set_template_report_interval(attr_list[i].value.u32);
+        break;
+    }
+  }
+  return msg;
+}
+
+lemming::dataplane::sai::CreateTamEventThresholdRequest
+convert_create_tam_event_threshold(sai_object_id_t switch_id,
+                                   uint32_t attr_count,
+                                   const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateTamEventThresholdRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_TAM_EVENT_THRESHOLD_ATTR_HIGH_WATERMARK:
+        msg.set_high_watermark(attr_list[i].value.u32);
+        break;
+      case SAI_TAM_EVENT_THRESHOLD_ATTR_LOW_WATERMARK:
+        msg.set_low_watermark(attr_list[i].value.u32);
+        break;
+      case SAI_TAM_EVENT_THRESHOLD_ATTR_LATENCY:
+        msg.set_latency(attr_list[i].value.u32);
+        break;
+      case SAI_TAM_EVENT_THRESHOLD_ATTR_RATE:
+        msg.set_rate(attr_list[i].value.u32);
+        break;
+      case SAI_TAM_EVENT_THRESHOLD_ATTR_ABS_VALUE:
+        msg.set_abs_value(attr_list[i].value.u32);
+        break;
+      case SAI_TAM_EVENT_THRESHOLD_ATTR_UNIT:
+        msg.set_unit(
+            static_cast<lemming::dataplane::sai::TamEventThresholdUnit>(
+                attr_list[i].value.s32 + 1));
+        break;
+    }
+  }
+  return msg;
+}
+
+lemming::dataplane::sai::CreateTamIntRequest convert_create_tam_int(
+    sai_object_id_t switch_id, uint32_t attr_count,
+    const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateTamIntRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_TAM_INT_ATTR_TYPE:
+        msg.set_type(static_cast<lemming::dataplane::sai::TamIntType>(
+            attr_list[i].value.s32 + 1));
+        break;
+      case SAI_TAM_INT_ATTR_DEVICE_ID:
+        msg.set_device_id(attr_list[i].value.u32);
+        break;
+      case SAI_TAM_INT_ATTR_IOAM_TRACE_TYPE:
+        msg.set_ioam_trace_type(attr_list[i].value.u32);
+        break;
+      case SAI_TAM_INT_ATTR_INT_PRESENCE_TYPE:
+        msg.set_int_presence_type(
+            static_cast<lemming::dataplane::sai::TamIntPresenceType>(
+                attr_list[i].value.s32 + 1));
+        break;
+      case SAI_TAM_INT_ATTR_INT_PRESENCE_PB1:
+        msg.set_int_presence_pb1(attr_list[i].value.u32);
+        break;
+      case SAI_TAM_INT_ATTR_INT_PRESENCE_PB2:
+        msg.set_int_presence_pb2(attr_list[i].value.u32);
+        break;
+      case SAI_TAM_INT_ATTR_INT_PRESENCE_DSCP_VALUE:
+        msg.set_int_presence_dscp_value(attr_list[i].value.u8);
+        break;
+      case SAI_TAM_INT_ATTR_INLINE:
+        msg.set_inline_(attr_list[i].value.booldata);
+        break;
+      case SAI_TAM_INT_ATTR_INT_PRESENCE_L3_PROTOCOL:
+        msg.set_int_presence_l3_protocol(attr_list[i].value.u8);
+        break;
+      case SAI_TAM_INT_ATTR_TRACE_VECTOR:
+        msg.set_trace_vector(attr_list[i].value.u16);
+        break;
+      case SAI_TAM_INT_ATTR_ACTION_VECTOR:
+        msg.set_action_vector(attr_list[i].value.u16);
+        break;
+      case SAI_TAM_INT_ATTR_P4_INT_INSTRUCTION_BITMAP:
+        msg.set_p4_int_instruction_bitmap(attr_list[i].value.u16);
+        break;
+      case SAI_TAM_INT_ATTR_METADATA_FRAGMENT_ENABLE:
+        msg.set_metadata_fragment_enable(attr_list[i].value.booldata);
+        break;
+      case SAI_TAM_INT_ATTR_METADATA_CHECKSUM_ENABLE:
+        msg.set_metadata_checksum_enable(attr_list[i].value.booldata);
+        break;
+      case SAI_TAM_INT_ATTR_REPORT_ALL_PACKETS:
+        msg.set_report_all_packets(attr_list[i].value.booldata);
+        break;
+      case SAI_TAM_INT_ATTR_FLOW_LIVENESS_PERIOD:
+        msg.set_flow_liveness_period(attr_list[i].value.u16);
+        break;
+      case SAI_TAM_INT_ATTR_LATENCY_SENSITIVITY:
+        msg.set_latency_sensitivity(attr_list[i].value.u8);
+        break;
+      case SAI_TAM_INT_ATTR_ACL_GROUP:
+        msg.set_acl_group(attr_list[i].value.oid);
+        break;
+      case SAI_TAM_INT_ATTR_MAX_HOP_COUNT:
+        msg.set_max_hop_count(attr_list[i].value.u8);
+        break;
+      case SAI_TAM_INT_ATTR_MAX_LENGTH:
+        msg.set_max_length(attr_list[i].value.u8);
+        break;
+      case SAI_TAM_INT_ATTR_NAME_SPACE_ID:
+        msg.set_name_space_id(attr_list[i].value.u8);
+        break;
+      case SAI_TAM_INT_ATTR_NAME_SPACE_ID_GLOBAL:
+        msg.set_name_space_id_global(attr_list[i].value.booldata);
+        break;
+      case SAI_TAM_INT_ATTR_INGRESS_SAMPLEPACKET_ENABLE:
+        msg.set_ingress_samplepacket_enable(attr_list[i].value.oid);
+        break;
+      case SAI_TAM_INT_ATTR_COLLECTOR_LIST:
+        msg.mutable_collector_list()->Add(
+            attr_list[i].value.objlist.list,
+            attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
+        break;
+      case SAI_TAM_INT_ATTR_MATH_FUNC:
+        msg.set_math_func(attr_list[i].value.oid);
+        break;
+      case SAI_TAM_INT_ATTR_REPORT_ID:
+        msg.set_report_id(attr_list[i].value.oid);
+        break;
+    }
+  }
+  return msg;
+}
+
+lemming::dataplane::sai::CreateTamTelTypeRequest convert_create_tam_tel_type(
+    sai_object_id_t switch_id, uint32_t attr_count,
+    const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateTamTelTypeRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_TAM_TEL_TYPE_ATTR_TAM_TELEMETRY_TYPE:
+        msg.set_tam_telemetry_type(
+            static_cast<lemming::dataplane::sai::TamTelemetryType>(
+                attr_list[i].value.s32 + 1));
+        break;
+      case SAI_TAM_TEL_TYPE_ATTR_INT_SWITCH_IDENTIFIER:
+        msg.set_int_switch_identifier(attr_list[i].value.u32);
+        break;
+      case SAI_TAM_TEL_TYPE_ATTR_SWITCH_ENABLE_PORT_STATS:
+        msg.set_switch_enable_port_stats(attr_list[i].value.booldata);
+        break;
+      case SAI_TAM_TEL_TYPE_ATTR_SWITCH_ENABLE_PORT_STATS_INGRESS:
+        msg.set_switch_enable_port_stats_ingress(attr_list[i].value.booldata);
+        break;
+      case SAI_TAM_TEL_TYPE_ATTR_SWITCH_ENABLE_PORT_STATS_EGRESS:
+        msg.set_switch_enable_port_stats_egress(attr_list[i].value.booldata);
+        break;
+      case SAI_TAM_TEL_TYPE_ATTR_SWITCH_ENABLE_VIRTUAL_QUEUE_STATS:
+        msg.set_switch_enable_virtual_queue_stats(attr_list[i].value.booldata);
+        break;
+      case SAI_TAM_TEL_TYPE_ATTR_SWITCH_ENABLE_OUTPUT_QUEUE_STATS:
+        msg.set_switch_enable_output_queue_stats(attr_list[i].value.booldata);
+        break;
+      case SAI_TAM_TEL_TYPE_ATTR_SWITCH_ENABLE_MMU_STATS:
+        msg.set_switch_enable_mmu_stats(attr_list[i].value.booldata);
+        break;
+      case SAI_TAM_TEL_TYPE_ATTR_SWITCH_ENABLE_FABRIC_STATS:
+        msg.set_switch_enable_fabric_stats(attr_list[i].value.booldata);
+        break;
+      case SAI_TAM_TEL_TYPE_ATTR_SWITCH_ENABLE_FILTER_STATS:
+        msg.set_switch_enable_filter_stats(attr_list[i].value.booldata);
+        break;
+      case SAI_TAM_TEL_TYPE_ATTR_SWITCH_ENABLE_RESOURCE_UTILIZATION_STATS:
+        msg.set_switch_enable_resource_utilization_stats(
+            attr_list[i].value.booldata);
+        break;
+      case SAI_TAM_TEL_TYPE_ATTR_FABRIC_Q:
+        msg.set_fabric_q(attr_list[i].value.booldata);
+        break;
+      case SAI_TAM_TEL_TYPE_ATTR_NE_ENABLE:
+        msg.set_ne_enable(attr_list[i].value.booldata);
+        break;
+      case SAI_TAM_TEL_TYPE_ATTR_DSCP_VALUE:
+        msg.set_dscp_value(attr_list[i].value.u8);
+        break;
+      case SAI_TAM_TEL_TYPE_ATTR_MATH_FUNC:
+        msg.set_math_func(attr_list[i].value.oid);
+        break;
+      case SAI_TAM_TEL_TYPE_ATTR_REPORT_ID:
+        msg.set_report_id(attr_list[i].value.oid);
+        break;
+    }
+  }
+  return msg;
+}
+
+lemming::dataplane::sai::CreateTamTransportRequest convert_create_tam_transport(
+    sai_object_id_t switch_id, uint32_t attr_count,
+    const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateTamTransportRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_TAM_TRANSPORT_ATTR_TRANSPORT_TYPE:
+        msg.set_transport_type(
+            static_cast<lemming::dataplane::sai::TamTransportType>(
+                attr_list[i].value.s32 + 1));
+        break;
+      case SAI_TAM_TRANSPORT_ATTR_SRC_PORT:
+        msg.set_src_port(attr_list[i].value.u32);
+        break;
+      case SAI_TAM_TRANSPORT_ATTR_DST_PORT:
+        msg.set_dst_port(attr_list[i].value.u32);
+        break;
+      case SAI_TAM_TRANSPORT_ATTR_TRANSPORT_AUTH_TYPE:
+        msg.set_transport_auth_type(
+            static_cast<lemming::dataplane::sai::TamTransportAuthType>(
+                attr_list[i].value.s32 + 1));
+        break;
+      case SAI_TAM_TRANSPORT_ATTR_MTU:
+        msg.set_mtu(attr_list[i].value.u32);
+        break;
+    }
+  }
+  return msg;
+}
+
+lemming::dataplane::sai::CreateTamTelemetryRequest convert_create_tam_telemetry(
+    sai_object_id_t switch_id, uint32_t attr_count,
+    const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateTamTelemetryRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_TAM_TELEMETRY_ATTR_TAM_TYPE_LIST:
+        msg.mutable_tam_type_list()->Add(
+            attr_list[i].value.objlist.list,
+            attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
+        break;
+      case SAI_TAM_TELEMETRY_ATTR_COLLECTOR_LIST:
+        msg.mutable_collector_list()->Add(
+            attr_list[i].value.objlist.list,
+            attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
+        break;
+      case SAI_TAM_TELEMETRY_ATTR_TAM_REPORTING_UNIT:
+        msg.set_tam_reporting_unit(
+            static_cast<lemming::dataplane::sai::TamReportingUnit>(
+                attr_list[i].value.s32 + 1));
+        break;
+      case SAI_TAM_TELEMETRY_ATTR_REPORTING_INTERVAL:
+        msg.set_reporting_interval(attr_list[i].value.u32);
+        break;
+    }
+  }
+  return msg;
+}
+
+lemming::dataplane::sai::CreateTamCollectorRequest convert_create_tam_collector(
+    sai_object_id_t switch_id, uint32_t attr_count,
+    const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateTamCollectorRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_TAM_COLLECTOR_ATTR_SRC_IP:
+        msg.set_src_ip(convert_from_ip_address(attr_list[i].value.ipaddr));
+        break;
+      case SAI_TAM_COLLECTOR_ATTR_DST_IP:
+        msg.set_dst_ip(convert_from_ip_address(attr_list[i].value.ipaddr));
+        break;
+      case SAI_TAM_COLLECTOR_ATTR_LOCALHOST:
+        msg.set_localhost(attr_list[i].value.booldata);
+        break;
+      case SAI_TAM_COLLECTOR_ATTR_VIRTUAL_ROUTER_ID:
+        msg.set_virtual_router_id(attr_list[i].value.oid);
+        break;
+      case SAI_TAM_COLLECTOR_ATTR_TRUNCATE_SIZE:
+        msg.set_truncate_size(attr_list[i].value.u16);
+        break;
+      case SAI_TAM_COLLECTOR_ATTR_TRANSPORT:
+        msg.set_transport(attr_list[i].value.oid);
+        break;
+      case SAI_TAM_COLLECTOR_ATTR_DSCP_VALUE:
+        msg.set_dscp_value(attr_list[i].value.u8);
+        break;
+    }
+  }
+  return msg;
+}
+
+lemming::dataplane::sai::CreateTamEventActionRequest
+convert_create_tam_event_action(sai_object_id_t switch_id, uint32_t attr_count,
+                                const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateTamEventActionRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_TAM_EVENT_ACTION_ATTR_REPORT_TYPE:
+        msg.set_report_type(attr_list[i].value.oid);
+        break;
+      case SAI_TAM_EVENT_ACTION_ATTR_QOS_ACTION_TYPE:
+        msg.set_qos_action_type(attr_list[i].value.u32);
+        break;
+    }
+  }
+  return msg;
+}
+
+lemming::dataplane::sai::CreateTamEventRequest convert_create_tam_event(
+    sai_object_id_t switch_id, uint32_t attr_count,
+    const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateTamEventRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_TAM_EVENT_ATTR_TYPE:
+        msg.set_type(static_cast<lemming::dataplane::sai::TamEventType>(
+            attr_list[i].value.s32 + 1));
+        break;
+      case SAI_TAM_EVENT_ATTR_ACTION_LIST:
+        msg.mutable_action_list()->Add(
+            attr_list[i].value.objlist.list,
+            attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
+        break;
+      case SAI_TAM_EVENT_ATTR_COLLECTOR_LIST:
+        msg.mutable_collector_list()->Add(
+            attr_list[i].value.objlist.list,
+            attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
+        break;
+      case SAI_TAM_EVENT_ATTR_THRESHOLD:
+        msg.set_threshold(attr_list[i].value.oid);
+        break;
+      case SAI_TAM_EVENT_ATTR_DSCP_VALUE:
+        msg.set_dscp_value(attr_list[i].value.u8);
+        break;
+    }
+  }
+  return msg;
+}
+
+sai_status_t l_create_tam(sai_object_id_t *tam_id, sai_object_id_t switch_id,
+                          uint32_t attr_count,
+                          const sai_attribute_t *attr_list) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  lemming::dataplane::sai::CreateTamRequest req =
+      convert_create_tam(switch_id, attr_count, attr_list);
+  lemming::dataplane::sai::CreateTamResponse resp;
+  grpc::ClientContext context;
+  req.set_switch_(switch_id);
+
   grpc::Status status = tam->CreateTam(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();
@@ -209,20 +610,12 @@ sai_status_t l_create_tam_math_func(sai_object_id_t *tam_math_func_id,
                                     const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateTamMathFuncRequest req;
+  lemming::dataplane::sai::CreateTamMathFuncRequest req =
+      convert_create_tam_math_func(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateTamMathFuncResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_TAM_MATH_FUNC_ATTR_TAM_TEL_MATH_FUNC_TYPE:
-        req.set_tam_tel_math_func_type(
-            static_cast<lemming::dataplane::sai::TamTelMathFuncType>(
-                attr_list[i].value.s32 + 1));
-        break;
-    }
-  }
   grpc::Status status = tam->CreateTamMathFunc(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();
@@ -313,43 +706,12 @@ sai_status_t l_create_tam_report(sai_object_id_t *tam_report_id,
                                  const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateTamReportRequest req;
+  lemming::dataplane::sai::CreateTamReportRequest req =
+      convert_create_tam_report(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateTamReportResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_TAM_REPORT_ATTR_TYPE:
-        req.set_type(static_cast<lemming::dataplane::sai::TamReportType>(
-            attr_list[i].value.s32 + 1));
-        break;
-      case SAI_TAM_REPORT_ATTR_HISTOGRAM_NUMBER_OF_BINS:
-        req.set_histogram_number_of_bins(attr_list[i].value.u32);
-        break;
-      case SAI_TAM_REPORT_ATTR_HISTOGRAM_BIN_BOUNDARY:
-        req.mutable_histogram_bin_boundary()->Add(
-            attr_list[i].value.u32list.list,
-            attr_list[i].value.u32list.list + attr_list[i].value.u32list.count);
-        break;
-      case SAI_TAM_REPORT_ATTR_QUOTA:
-        req.set_quota(attr_list[i].value.u32);
-        break;
-      case SAI_TAM_REPORT_ATTR_REPORT_MODE:
-        req.set_report_mode(static_cast<lemming::dataplane::sai::TamReportMode>(
-            attr_list[i].value.s32 + 1));
-        break;
-      case SAI_TAM_REPORT_ATTR_REPORT_INTERVAL:
-        req.set_report_interval(attr_list[i].value.u32);
-        break;
-      case SAI_TAM_REPORT_ATTR_ENTERPRISE_NUMBER:
-        req.set_enterprise_number(attr_list[i].value.u32);
-        break;
-      case SAI_TAM_REPORT_ATTR_TEMPLATE_REPORT_INTERVAL:
-        req.set_template_report_interval(attr_list[i].value.u32);
-        break;
-    }
-  }
   grpc::Status status = tam->CreateTamReport(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();
@@ -474,35 +836,12 @@ sai_status_t l_create_tam_event_threshold(
     uint32_t attr_count, const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateTamEventThresholdRequest req;
+  lemming::dataplane::sai::CreateTamEventThresholdRequest req =
+      convert_create_tam_event_threshold(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateTamEventThresholdResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_TAM_EVENT_THRESHOLD_ATTR_HIGH_WATERMARK:
-        req.set_high_watermark(attr_list[i].value.u32);
-        break;
-      case SAI_TAM_EVENT_THRESHOLD_ATTR_LOW_WATERMARK:
-        req.set_low_watermark(attr_list[i].value.u32);
-        break;
-      case SAI_TAM_EVENT_THRESHOLD_ATTR_LATENCY:
-        req.set_latency(attr_list[i].value.u32);
-        break;
-      case SAI_TAM_EVENT_THRESHOLD_ATTR_RATE:
-        req.set_rate(attr_list[i].value.u32);
-        break;
-      case SAI_TAM_EVENT_THRESHOLD_ATTR_ABS_VALUE:
-        req.set_abs_value(attr_list[i].value.u32);
-        break;
-      case SAI_TAM_EVENT_THRESHOLD_ATTR_UNIT:
-        req.set_unit(
-            static_cast<lemming::dataplane::sai::TamEventThresholdUnit>(
-                attr_list[i].value.s32 + 1));
-        break;
-    }
-  }
   grpc::Status status = tam->CreateTamEventThreshold(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();
@@ -625,98 +964,12 @@ sai_status_t l_create_tam_int(sai_object_id_t *tam_int_id,
                               const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateTamIntRequest req;
+  lemming::dataplane::sai::CreateTamIntRequest req =
+      convert_create_tam_int(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateTamIntResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_TAM_INT_ATTR_TYPE:
-        req.set_type(static_cast<lemming::dataplane::sai::TamIntType>(
-            attr_list[i].value.s32 + 1));
-        break;
-      case SAI_TAM_INT_ATTR_DEVICE_ID:
-        req.set_device_id(attr_list[i].value.u32);
-        break;
-      case SAI_TAM_INT_ATTR_IOAM_TRACE_TYPE:
-        req.set_ioam_trace_type(attr_list[i].value.u32);
-        break;
-      case SAI_TAM_INT_ATTR_INT_PRESENCE_TYPE:
-        req.set_int_presence_type(
-            static_cast<lemming::dataplane::sai::TamIntPresenceType>(
-                attr_list[i].value.s32 + 1));
-        break;
-      case SAI_TAM_INT_ATTR_INT_PRESENCE_PB1:
-        req.set_int_presence_pb1(attr_list[i].value.u32);
-        break;
-      case SAI_TAM_INT_ATTR_INT_PRESENCE_PB2:
-        req.set_int_presence_pb2(attr_list[i].value.u32);
-        break;
-      case SAI_TAM_INT_ATTR_INT_PRESENCE_DSCP_VALUE:
-        req.set_int_presence_dscp_value(attr_list[i].value.u8);
-        break;
-      case SAI_TAM_INT_ATTR_INLINE:
-        req.set_inline_(attr_list[i].value.booldata);
-        break;
-      case SAI_TAM_INT_ATTR_INT_PRESENCE_L3_PROTOCOL:
-        req.set_int_presence_l3_protocol(attr_list[i].value.u8);
-        break;
-      case SAI_TAM_INT_ATTR_TRACE_VECTOR:
-        req.set_trace_vector(attr_list[i].value.u16);
-        break;
-      case SAI_TAM_INT_ATTR_ACTION_VECTOR:
-        req.set_action_vector(attr_list[i].value.u16);
-        break;
-      case SAI_TAM_INT_ATTR_P4_INT_INSTRUCTION_BITMAP:
-        req.set_p4_int_instruction_bitmap(attr_list[i].value.u16);
-        break;
-      case SAI_TAM_INT_ATTR_METADATA_FRAGMENT_ENABLE:
-        req.set_metadata_fragment_enable(attr_list[i].value.booldata);
-        break;
-      case SAI_TAM_INT_ATTR_METADATA_CHECKSUM_ENABLE:
-        req.set_metadata_checksum_enable(attr_list[i].value.booldata);
-        break;
-      case SAI_TAM_INT_ATTR_REPORT_ALL_PACKETS:
-        req.set_report_all_packets(attr_list[i].value.booldata);
-        break;
-      case SAI_TAM_INT_ATTR_FLOW_LIVENESS_PERIOD:
-        req.set_flow_liveness_period(attr_list[i].value.u16);
-        break;
-      case SAI_TAM_INT_ATTR_LATENCY_SENSITIVITY:
-        req.set_latency_sensitivity(attr_list[i].value.u8);
-        break;
-      case SAI_TAM_INT_ATTR_ACL_GROUP:
-        req.set_acl_group(attr_list[i].value.oid);
-        break;
-      case SAI_TAM_INT_ATTR_MAX_HOP_COUNT:
-        req.set_max_hop_count(attr_list[i].value.u8);
-        break;
-      case SAI_TAM_INT_ATTR_MAX_LENGTH:
-        req.set_max_length(attr_list[i].value.u8);
-        break;
-      case SAI_TAM_INT_ATTR_NAME_SPACE_ID:
-        req.set_name_space_id(attr_list[i].value.u8);
-        break;
-      case SAI_TAM_INT_ATTR_NAME_SPACE_ID_GLOBAL:
-        req.set_name_space_id_global(attr_list[i].value.booldata);
-        break;
-      case SAI_TAM_INT_ATTR_INGRESS_SAMPLEPACKET_ENABLE:
-        req.set_ingress_samplepacket_enable(attr_list[i].value.oid);
-        break;
-      case SAI_TAM_INT_ATTR_COLLECTOR_LIST:
-        req.mutable_collector_list()->Add(
-            attr_list[i].value.objlist.list,
-            attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
-        break;
-      case SAI_TAM_INT_ATTR_MATH_FUNC:
-        req.set_math_func(attr_list[i].value.oid);
-        break;
-      case SAI_TAM_INT_ATTR_REPORT_ID:
-        req.set_report_id(attr_list[i].value.oid);
-        break;
-    }
-  }
   grpc::Status status = tam->CreateTamInt(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();
@@ -932,66 +1185,12 @@ sai_status_t l_create_tam_tel_type(sai_object_id_t *tam_tel_type_id,
                                    const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateTamTelTypeRequest req;
+  lemming::dataplane::sai::CreateTamTelTypeRequest req =
+      convert_create_tam_tel_type(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateTamTelTypeResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_TAM_TEL_TYPE_ATTR_TAM_TELEMETRY_TYPE:
-        req.set_tam_telemetry_type(
-            static_cast<lemming::dataplane::sai::TamTelemetryType>(
-                attr_list[i].value.s32 + 1));
-        break;
-      case SAI_TAM_TEL_TYPE_ATTR_INT_SWITCH_IDENTIFIER:
-        req.set_int_switch_identifier(attr_list[i].value.u32);
-        break;
-      case SAI_TAM_TEL_TYPE_ATTR_SWITCH_ENABLE_PORT_STATS:
-        req.set_switch_enable_port_stats(attr_list[i].value.booldata);
-        break;
-      case SAI_TAM_TEL_TYPE_ATTR_SWITCH_ENABLE_PORT_STATS_INGRESS:
-        req.set_switch_enable_port_stats_ingress(attr_list[i].value.booldata);
-        break;
-      case SAI_TAM_TEL_TYPE_ATTR_SWITCH_ENABLE_PORT_STATS_EGRESS:
-        req.set_switch_enable_port_stats_egress(attr_list[i].value.booldata);
-        break;
-      case SAI_TAM_TEL_TYPE_ATTR_SWITCH_ENABLE_VIRTUAL_QUEUE_STATS:
-        req.set_switch_enable_virtual_queue_stats(attr_list[i].value.booldata);
-        break;
-      case SAI_TAM_TEL_TYPE_ATTR_SWITCH_ENABLE_OUTPUT_QUEUE_STATS:
-        req.set_switch_enable_output_queue_stats(attr_list[i].value.booldata);
-        break;
-      case SAI_TAM_TEL_TYPE_ATTR_SWITCH_ENABLE_MMU_STATS:
-        req.set_switch_enable_mmu_stats(attr_list[i].value.booldata);
-        break;
-      case SAI_TAM_TEL_TYPE_ATTR_SWITCH_ENABLE_FABRIC_STATS:
-        req.set_switch_enable_fabric_stats(attr_list[i].value.booldata);
-        break;
-      case SAI_TAM_TEL_TYPE_ATTR_SWITCH_ENABLE_FILTER_STATS:
-        req.set_switch_enable_filter_stats(attr_list[i].value.booldata);
-        break;
-      case SAI_TAM_TEL_TYPE_ATTR_SWITCH_ENABLE_RESOURCE_UTILIZATION_STATS:
-        req.set_switch_enable_resource_utilization_stats(
-            attr_list[i].value.booldata);
-        break;
-      case SAI_TAM_TEL_TYPE_ATTR_FABRIC_Q:
-        req.set_fabric_q(attr_list[i].value.booldata);
-        break;
-      case SAI_TAM_TEL_TYPE_ATTR_NE_ENABLE:
-        req.set_ne_enable(attr_list[i].value.booldata);
-        break;
-      case SAI_TAM_TEL_TYPE_ATTR_DSCP_VALUE:
-        req.set_dscp_value(attr_list[i].value.u8);
-        break;
-      case SAI_TAM_TEL_TYPE_ATTR_MATH_FUNC:
-        req.set_math_func(attr_list[i].value.oid);
-        break;
-      case SAI_TAM_TEL_TYPE_ATTR_REPORT_ID:
-        req.set_report_id(attr_list[i].value.oid);
-        break;
-    }
-  }
   grpc::Status status = tam->CreateTamTelType(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();
@@ -1170,34 +1369,12 @@ sai_status_t l_create_tam_transport(sai_object_id_t *tam_transport_id,
                                     const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateTamTransportRequest req;
+  lemming::dataplane::sai::CreateTamTransportRequest req =
+      convert_create_tam_transport(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateTamTransportResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_TAM_TRANSPORT_ATTR_TRANSPORT_TYPE:
-        req.set_transport_type(
-            static_cast<lemming::dataplane::sai::TamTransportType>(
-                attr_list[i].value.s32 + 1));
-        break;
-      case SAI_TAM_TRANSPORT_ATTR_SRC_PORT:
-        req.set_src_port(attr_list[i].value.u32);
-        break;
-      case SAI_TAM_TRANSPORT_ATTR_DST_PORT:
-        req.set_dst_port(attr_list[i].value.u32);
-        break;
-      case SAI_TAM_TRANSPORT_ATTR_TRANSPORT_AUTH_TYPE:
-        req.set_transport_auth_type(
-            static_cast<lemming::dataplane::sai::TamTransportAuthType>(
-                attr_list[i].value.s32 + 1));
-        break;
-      case SAI_TAM_TRANSPORT_ATTR_MTU:
-        req.set_mtu(attr_list[i].value.u32);
-        break;
-    }
-  }
   grpc::Status status = tam->CreateTamTransport(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();
@@ -1311,33 +1488,12 @@ sai_status_t l_create_tam_telemetry(sai_object_id_t *tam_telemetry_id,
                                     const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateTamTelemetryRequest req;
+  lemming::dataplane::sai::CreateTamTelemetryRequest req =
+      convert_create_tam_telemetry(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateTamTelemetryResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_TAM_TELEMETRY_ATTR_TAM_TYPE_LIST:
-        req.mutable_tam_type_list()->Add(
-            attr_list[i].value.objlist.list,
-            attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
-        break;
-      case SAI_TAM_TELEMETRY_ATTR_COLLECTOR_LIST:
-        req.mutable_collector_list()->Add(
-            attr_list[i].value.objlist.list,
-            attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
-        break;
-      case SAI_TAM_TELEMETRY_ATTR_TAM_REPORTING_UNIT:
-        req.set_tam_reporting_unit(
-            static_cast<lemming::dataplane::sai::TamReportingUnit>(
-                attr_list[i].value.s32 + 1));
-        break;
-      case SAI_TAM_TELEMETRY_ATTR_REPORTING_INTERVAL:
-        req.set_reporting_interval(attr_list[i].value.u32);
-        break;
-    }
-  }
   grpc::Status status = tam->CreateTamTelemetry(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();
@@ -1448,36 +1604,12 @@ sai_status_t l_create_tam_collector(sai_object_id_t *tam_collector_id,
                                     const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateTamCollectorRequest req;
+  lemming::dataplane::sai::CreateTamCollectorRequest req =
+      convert_create_tam_collector(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateTamCollectorResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_TAM_COLLECTOR_ATTR_SRC_IP:
-        req.set_src_ip(convert_from_ip_address(attr_list[i].value.ipaddr));
-        break;
-      case SAI_TAM_COLLECTOR_ATTR_DST_IP:
-        req.set_dst_ip(convert_from_ip_address(attr_list[i].value.ipaddr));
-        break;
-      case SAI_TAM_COLLECTOR_ATTR_LOCALHOST:
-        req.set_localhost(attr_list[i].value.booldata);
-        break;
-      case SAI_TAM_COLLECTOR_ATTR_VIRTUAL_ROUTER_ID:
-        req.set_virtual_router_id(attr_list[i].value.oid);
-        break;
-      case SAI_TAM_COLLECTOR_ATTR_TRUNCATE_SIZE:
-        req.set_truncate_size(attr_list[i].value.u16);
-        break;
-      case SAI_TAM_COLLECTOR_ATTR_TRANSPORT:
-        req.set_transport(attr_list[i].value.oid);
-        break;
-      case SAI_TAM_COLLECTOR_ATTR_DSCP_VALUE:
-        req.set_dscp_value(attr_list[i].value.u8);
-        break;
-    }
-  }
   grpc::Status status = tam->CreateTamCollector(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();
@@ -1602,21 +1734,12 @@ sai_status_t l_create_tam_event_action(sai_object_id_t *tam_event_action_id,
                                        const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateTamEventActionRequest req;
+  lemming::dataplane::sai::CreateTamEventActionRequest req =
+      convert_create_tam_event_action(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateTamEventActionResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_TAM_EVENT_ACTION_ATTR_REPORT_TYPE:
-        req.set_report_type(attr_list[i].value.oid);
-        break;
-      case SAI_TAM_EVENT_ACTION_ATTR_QOS_ACTION_TYPE:
-        req.set_qos_action_type(attr_list[i].value.u32);
-        break;
-    }
-  }
   grpc::Status status = tam->CreateTamEventAction(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();
@@ -1710,35 +1833,12 @@ sai_status_t l_create_tam_event(sai_object_id_t *tam_event_id,
                                 const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateTamEventRequest req;
+  lemming::dataplane::sai::CreateTamEventRequest req =
+      convert_create_tam_event(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateTamEventResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_TAM_EVENT_ATTR_TYPE:
-        req.set_type(static_cast<lemming::dataplane::sai::TamEventType>(
-            attr_list[i].value.s32 + 1));
-        break;
-      case SAI_TAM_EVENT_ATTR_ACTION_LIST:
-        req.mutable_action_list()->Add(
-            attr_list[i].value.objlist.list,
-            attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
-        break;
-      case SAI_TAM_EVENT_ATTR_COLLECTOR_LIST:
-        req.mutable_collector_list()->Add(
-            attr_list[i].value.objlist.list,
-            attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
-        break;
-      case SAI_TAM_EVENT_ATTR_THRESHOLD:
-        req.set_threshold(attr_list[i].value.oid);
-        break;
-      case SAI_TAM_EVENT_ATTR_DSCP_VALUE:
-        req.set_dscp_value(attr_list[i].value.u8);
-        break;
-    }
-  }
   grpc::Status status = tam->CreateTamEvent(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();

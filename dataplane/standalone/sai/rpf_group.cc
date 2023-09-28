@@ -33,19 +33,46 @@ const sai_rpf_group_api_t l_rpf_group = {
     .get_rpf_group_member_attribute = l_get_rpf_group_member_attribute,
 };
 
+lemming::dataplane::sai::CreateRpfGroupRequest convert_create_rpf_group(
+    sai_object_id_t switch_id, uint32_t attr_count,
+    const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateRpfGroupRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {}
+  }
+  return msg;
+}
+
+lemming::dataplane::sai::CreateRpfGroupMemberRequest
+convert_create_rpf_group_member(sai_object_id_t switch_id, uint32_t attr_count,
+                                const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateRpfGroupMemberRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_RPF_GROUP_MEMBER_ATTR_RPF_GROUP_ID:
+        msg.set_rpf_group_id(attr_list[i].value.oid);
+        break;
+      case SAI_RPF_GROUP_MEMBER_ATTR_RPF_INTERFACE_ID:
+        msg.set_rpf_interface_id(attr_list[i].value.oid);
+        break;
+    }
+  }
+  return msg;
+}
+
 sai_status_t l_create_rpf_group(sai_object_id_t *rpf_group_id,
                                 sai_object_id_t switch_id, uint32_t attr_count,
                                 const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateRpfGroupRequest req;
+  lemming::dataplane::sai::CreateRpfGroupRequest req =
+      convert_create_rpf_group(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateRpfGroupResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {}
-  }
   grpc::Status status = rpf_group->CreateRpfGroup(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();
@@ -122,21 +149,12 @@ sai_status_t l_create_rpf_group_member(sai_object_id_t *rpf_group_member_id,
                                        const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateRpfGroupMemberRequest req;
+  lemming::dataplane::sai::CreateRpfGroupMemberRequest req =
+      convert_create_rpf_group_member(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateRpfGroupMemberResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_RPF_GROUP_MEMBER_ATTR_RPF_GROUP_ID:
-        req.set_rpf_group_id(attr_list[i].value.oid);
-        break;
-      case SAI_RPF_GROUP_MEMBER_ATTR_RPF_INTERFACE_ID:
-        req.set_rpf_interface_id(attr_list[i].value.oid);
-        break;
-    }
-  }
   grpc::Status status = rpf_group->CreateRpfGroupMember(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();

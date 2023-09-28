@@ -5,7 +5,7 @@ package lemming.dataplane.sai;
 
 import "dataplane/standalone/proto/common.proto";
 
-option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto";
+option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto;sai";
 
 enum RouteEntryAttr {
   ROUTE_ENTRY_ATTR_UNSPECIFIED = 0;
@@ -55,6 +55,14 @@ message GetRouteEntryAttributeResponse {
   RouteEntryAttribute attr = 1;
 }
 
+message CreateRouteEntriesRequest {
+  repeated CreateRouteEntryRequest reqs = 1;
+}
+
+message CreateRouteEntriesResponse {
+  repeated CreateRouteEntryResponse resps = 1;
+}
+
 service Route {
   rpc CreateRouteEntry(CreateRouteEntryRequest)
       returns (CreateRouteEntryResponse) {}
@@ -64,4 +72,6 @@ service Route {
       returns (SetRouteEntryAttributeResponse) {}
   rpc GetRouteEntryAttribute(GetRouteEntryAttributeRequest)
       returns (GetRouteEntryAttributeResponse) {}
+  rpc CreateRouteEntries(CreateRouteEntriesRequest)
+      returns (CreateRouteEntriesResponse) {}
 }
