@@ -39,16 +39,16 @@ type buffer struct {
 	saipb.UnimplementedBufferServer
 }
 
-type bridge struct {
-	saipb.UnimplementedBridgeServer
-}
-
 type counter struct {
 	saipb.UnimplementedCounterServer
 }
 
 type debugCounter struct {
 	saipb.UnimplementedDebugCounterServer
+}
+
+type dtel struct {
+	saipb.UnimplementedDtelServer
 }
 
 type fdb struct {
@@ -167,10 +167,6 @@ type virtualRouter struct {
 	saipb.UnimplementedVirtualRouterServer
 }
 
-type vlan struct {
-	saipb.UnimplementedVlanServer
-}
-
 type wred struct {
 	saipb.UnimplementedWredServer
 }
@@ -183,6 +179,7 @@ type Server struct {
 	buffer         *buffer
 	counter        *counter
 	debugCounter   *debugCounter
+	dtel           *dtel
 	fdb            *fdb
 	ipmcGroup      *ipmcGroup
 	ipmc           *ipmc
@@ -231,6 +228,7 @@ func New(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server) *Serve
 		buffer:         &buffer{},
 		counter:        &counter{},
 		debugCounter:   &debugCounter{},
+		dtel:           &dtel{},
 		fdb:            &fdb{},
 		ipmcGroup:      &ipmcGroup{},
 		ipmc:           &ipmc{},
@@ -265,6 +263,7 @@ func New(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server) *Serve
 	saipb.RegisterBfdServer(s, srv.bfd)
 	saipb.RegisterCounterServer(s, srv.counter)
 	saipb.RegisterDebugCounterServer(s, srv.debugCounter)
+	saipb.RegisterDtelServer(s, srv.dtel)
 	saipb.RegisterFdbServer(s, srv.fdb)
 	saipb.RegisterIpmcGroupServer(s, srv.ipmcGroup)
 	saipb.RegisterIpmcServer(s, srv.ipmc)
