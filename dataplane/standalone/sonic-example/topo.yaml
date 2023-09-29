@@ -95,22 +95,22 @@ metadata:
 spec:
   containers:
   - command:
-    - /bin/sh
-    - -c
-    - sleep 2000000000000
-    image: sonic-vs:latest
+    - go
+    - run
+    - main.go
+    image: gpins-bc:latest
     imagePullPolicy: IfNotPresent
     name: sonic
     securityContext:
       privileged: true
-  # - name: lucius
-  #   command:
-  #   - /lucius/lucius
-  #   - -alsologtostderr
-  #   image: us-west1-docker.pkg.dev/openconfig-lemming/release/lucius:ga
-  #   imagePullPolicy: IfNotPresent
-  #   securityContext:
-  #     privileged: true
+  - name: lucius
+    command:
+    - /lucius/lucius
+    - -alsologtostderr
+    image: us-west1-docker.pkg.dev/openconfig-lemming/release/lucius:ga
+    imagePullPolicy: IfNotPresent
+    securityContext:
+      privileged: true
   initContainers:
   - args:
     - "5"
