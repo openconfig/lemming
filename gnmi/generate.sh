@@ -80,6 +80,8 @@ go run github.com/openconfig/ygnmi/app/ygnmi generator \
   --exclude_modules="${EXCLUDE_MODULES}" \
   --base_package_path=github.com/openconfig/lemming/gnmi/oc \
   --split_package_paths="/network-instances/network-instance/protocols/protocol/isis=netinstisis,/network-instances/network-instance/protocols/protocol/bgp=netinstbgp" \
+  --structs_split_files_count=8 \
+  --pathstructs_split_files_count=8 \
   --output_dir=oc \
   --paths=public/release/models/...,public/third_party/ietf/...,gnsi/... \
   "${YANG_FILES[@]}"
