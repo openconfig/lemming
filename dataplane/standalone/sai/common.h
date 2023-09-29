@@ -155,7 +155,8 @@ lemming::dataplane::sai::NeighborEntry convert_from_neighbor_entry(
 sai_neighbor_entry_t convert_to_neighbor_entry(
     const lemming::dataplane::sai::NeighborEntry &entry);
 
-void convert_to_acl_capability(sai_acl_capability_t &out,
+void convert_to_acl_capability(
+    sai_acl_capability_t &out,
     const lemming::dataplane::sai::ACLCapability &in);
 
 // copy_list copies a scalar proto list to an attribute.

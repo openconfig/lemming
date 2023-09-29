@@ -21,6 +21,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/openconfig/lemming/dataplane/standalone/saiserver/attrmgr"
 
@@ -162,6 +163,18 @@ func (nh *nextHop) CreateNextHop(ctx context.Context, req *saipb.CreateNextHopRe
 	}, nil
 }
 
+func (nh *nextHop) CreateNextHops(ctx context.Context, r *saipb.CreateNextHopsRequest) (*saipb.CreateNextHopsResponse, error) {
+	resp := &saipb.CreateNextHopsResponse{}
+	for _, req := range r.GetReqs() {
+		res, err := attrmgr.InvokeAndSave(ctx, nh.mgr, nh.CreateNextHop, req)
+		if err != nil {
+			return nil, err
+		}
+		resp.Resps = append(resp.Resps, res)
+	}
+	return resp, nil
+}
+
 type route struct {
 	saipb.UnimplementedRouteServer
 	mgr       *attrmgr.AttrMgr
@@ -203,6 +216,8 @@ func (r *route) CreateRouteEntry(ctx context.Context, req *saipb.CreateRouteEntr
 		saipb.PacketAction_PACKET_ACTION_LOG,     // COPY and FORWARD
 		saipb.PacketAction_PACKET_ACTION_TRANSIT: // COPY_CANCEL and FORWARD
 		rReq.Route.Action = dpb.PacketAction_PACKET_ACTION_FORWARD
+	case saipb.PacketAction_PACKET_ACTION_UNSPECIFIED: // Default action is forward.
+		rReq.Route.Action = dpb.PacketAction_PACKET_ACTION_FORWARD
 	default:
 		return nil, status.Errorf(codes.InvalidArgument, "unknown action type: %v", req.GetPacketAction())
 	}
@@ -229,6 +244,18 @@ func (r *route) CreateRouteEntry(ctx context.Context, req *saipb.CreateRouteEntr
 		return nil, err
 	}
 	return &saipb.CreateRouteEntryResponse{}, nil
+}
+
+func (r *route) CreateRouteEntries(ctx context.Context, re *saipb.CreateRouteEntriesRequest) (*saipb.CreateRouteEntriesResponse, error) {
+	resp := &saipb.CreateRouteEntriesResponse{}
+	for _, req := range re.GetReqs() {
+		res, err := attrmgr.InvokeAndSave(ctx, r.mgr, r.CreateRouteEntry, req)
+		if err != nil {
+			return nil, err
+		}
+		resp.Resps = append(resp.Resps, res)
+	}
+	return resp, nil
 }
 
 type routerInterface struct {
@@ -271,4 +298,78 @@ func (ri *routerInterface) CreateRouterInterface(ctx context.Context, req *saipb
 	}
 
 	return &saipb.CreateRouterInterfaceResponse{Oid: id}, nil
+}
+
+type vlan struct {
+	saipb.UnimplementedVlanServer
+	mgr       *attrmgr.AttrMgr
+	dataplane routingDataplaneAPI
+}
+
+func newVlan(mgr *attrmgr.AttrMgr, dataplane routingDataplaneAPI, s *grpc.Server) *vlan {
+	v := &vlan{
+		mgr:       mgr,
+		dataplane: dataplane,
+	}
+	saipb.RegisterVlanServer(s, v)
+	return v
+}
+
+func (vlan *vlan) CreateVlan(context.Context, *saipb.CreateVlanRequest) (*saipb.CreateVlanResponse, error) {
+	id := vlan.mgr.NextID()
+
+	req := &saipb.GetSwitchAttributeRequest{Oid: 1, AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_DEFAULT_STP_INST_ID}}
+	resp := &saipb.GetSwitchAttributeResponse{}
+
+	if err := vlan.mgr.PopulateAttributes(req, resp); err != nil {
+		return nil, err
+	}
+
+	attrs := &saipb.VlanAttribute{
+		MemberList:                         []uint64{},
+		StpInstance:                        resp.Attr.DefaultStpInstId,
+		UnknownNonIpMcastOutputGroupId:     proto.Uint64(0),
+		UnknownIpv4McastOutputGroupId:      proto.Uint64(0),
+		UnknownIpv6McastOutputGroupId:      proto.Uint64(0),
+		UnknownLinklocalMcastOutputGroupId: proto.Uint64(0),
+		IngressAcl:                         proto.Uint64(0),
+		EgressAcl:                          proto.Uint64(0),
+		UnknownUnicastFloodGroup:           proto.Uint64(0),
+		UnknownMulticastFloodGroup:         proto.Uint64(0),
+		BroadcastFloodGroup:                proto.Uint64(0),
+		TamObject:                          []uint64{},
+	}
+	vlan.mgr.StoreAttributes(id, attrs)
+	return &saipb.CreateVlanResponse{
+		Oid: id,
+	}, nil
+}
+
+type bridge struct {
+	saipb.UnimplementedBridgeServer
+	mgr       *attrmgr.AttrMgr
+	dataplane routingDataplaneAPI
+}
+
+func newBridge(mgr *attrmgr.AttrMgr, dataplane routingDataplaneAPI, s *grpc.Server) *bridge {
+	b := &bridge{
+		mgr:       mgr,
+		dataplane: dataplane,
+	}
+	saipb.RegisterBridgeServer(s, b)
+	return b
+}
+
+func (br *bridge) CreateBridge(context.Context, *saipb.CreateBridgeRequest) (*saipb.CreateBridgeResponse, error) {
+	id := br.mgr.NextID()
+	attrs := &saipb.BridgeAttribute{
+		PortList:                   []uint64{},
+		UnknownUnicastFloodGroup:   proto.Uint64(0),
+		UnknownMulticastFloodGroup: proto.Uint64(0),
+		BroadcastFloodGroup:        proto.Uint64(0),
+	}
+	br.mgr.StoreAttributes(id, attrs)
+	return &saipb.CreateBridgeResponse{
+		Oid: id,
+	}, nil
 }
