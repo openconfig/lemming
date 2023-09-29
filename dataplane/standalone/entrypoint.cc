@@ -21,7 +21,6 @@
 
 #include <fstream>
 
-#include "dataplane/standalone/lucius/lucius_clib.h"
 #include "dataplane/standalone/proto/acl.grpc.pb.h"
 #include "dataplane/standalone/proto/bfd.grpc.pb.h"
 #include "dataplane/standalone/proto/bmtor.grpc.pb.h"
@@ -187,10 +186,9 @@ sai_status_t sai_api_initialize(
   google::InstallFailureSignalHandler();
 
   LOG(WARNING) << "iniitializing";
-  startAsync(50000);
 
-  auto chan = grpc::CreateChannel("localhost:50000",
-                                  grpc::InsecureChannelCredentials());
+  auto chan =
+      grpc::CreateChannel("10.0.2.2:50000", grpc::InsecureChannelCredentials());
 
   acl = std::make_unique<lemming::dataplane::sai::Acl::Stub>(chan);
   bfd = std::make_unique<lemming::dataplane::sai::Bfd::Stub>(chan);
