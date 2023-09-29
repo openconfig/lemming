@@ -30,8 +30,9 @@ jobs:
         with:
           path: |
             ~/.cache/bazel
-          key: ${{ runner.os }}-bazel-${{ github.sha }}
+          key: ${{ runner.os }}-bazel-build-${{ github.sha }}
           restore-keys: |
+            ${{ runner.os }}-bazel-build-
             ${{ runner.os }}-bazel-
       - name: Build Lemming
         run: bazel build //...
@@ -41,7 +42,7 @@ jobs:
         with:
           path: |
             ~/.cache/bazel
-          key: ${{ runner.os }}-bazel-${{ github.sha }}
+          key: ${{ runner.os }}-bazel-build-${{ github.sha }}
   test:
     runs-on: ubuntu-latest
     steps:
@@ -53,8 +54,9 @@ jobs:
         with:
           path: |
             ~/.cache/bazel
-          key: ${{ runner.os }}-bazel-${{ github.sha }}
+          key: ${{ runner.os }}-bazel-test-${{ github.sha }}
           restore-keys: |
+            ${{ runner.os }}-bazel-test-
             ${{ runner.os }}-bazel-
       - name: Test
         run: make coverage
@@ -71,4 +73,4 @@ jobs:
         with:
           path: |
             ~/.cache/bazel
-          key: ${{ runner.os }}-bazel-${{ github.sha }}
+          key: ${{ runner.os }}-bazel-test-${{ github.sha }}
