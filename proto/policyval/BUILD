@@ -10,7 +10,7 @@ proto_library(
 
 go_proto_library(
     name = "policyval_go_proto",
-    importpath = "github.com/openconfig/lemming/bgp/tests/proto/policyval",
+    importpath = "github.com/openconfig/lemming/proto/policyval",
     proto = ":policyval_proto",
     visibility = ["//visibility:public"],
 )
@@ -18,6 +18,6 @@ go_proto_library(
 go_library(
     name = "policyval",
     embed = [":policyval_go_proto"],
-    importpath = "github.com/openconfig/lemming/bgp/tests/proto/policyval",
+    importpath = "github.com/openconfig/lemming/proto/policyval",
     visibility = ["//visibility:public"],
 )

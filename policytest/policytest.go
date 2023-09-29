@@ -15,20 +15,21 @@
 package policytest
 
 import (
+	"net/netip"
 	"testing"
 	"time"
 
-	"github.com/openconfig/lemming/bgp/tests/proto/policyval"
 	"github.com/openconfig/lemming/gnmi/fakedevice"
 	"github.com/openconfig/lemming/internal/attrs"
 	"github.com/openconfig/ondatra"
 	"github.com/openconfig/ondatra/gnmi"
 	"github.com/openconfig/ondatra/gnmi/oc"
+	"github.com/openconfig/ondatra/gnmi/oc/netinstbgp"
 	"github.com/openconfig/ondatra/gnmi/oc/ocpath"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot"
 
-	valpb "github.com/openconfig/lemming/bgp/tests/proto/policyval"
+	valpb "github.com/openconfig/lemming/proto/policyval"
 )
 
 // Settings for configuring the baseline testbed with the test
@@ -39,8 +40,9 @@ import (
 //   - dut:port1 -> dut2:port1 subnet 192.0.2.0/30
 const (
 	ipv4PrefixLen = 24
+	ipv6PrefixLen = 112
 
-	awaitTimeout  = 30 * time.Second
+	awaitTimeout  = 60 * time.Second
 	rejectTimeout = 20 * time.Second
 )
 
@@ -87,9 +89,7 @@ type TestCase struct {
 // policy tests.
 func TestPolicy(t *testing.T, testspec TestCase) {
 	t.Helper()
-	t.Run("installPolicyBeforeRoutes", func(t *testing.T) {
-		testPolicyAux(t, testspec)
-	})
+	testPolicyAux(t, testspec)
 }
 
 var (
@@ -98,16 +98,22 @@ var (
 			Desc:    "dut0Port1",
 			IPv4:    "192.0.1.0",
 			IPv4Len: ipv4PrefixLen,
+			IPv6:    "2001::1:0",
+			IPv6Len: ipv6PrefixLen,
 		},
 		"port2": {
 			Desc:    "dut0Port2",
 			IPv4:    "192.0.4.0",
 			IPv4Len: ipv4PrefixLen,
+			IPv6:    "2001::4:0",
+			IPv6Len: ipv6PrefixLen,
 		},
 		"port3": {
 			Desc:    "dut0Port3",
 			IPv4:    "192.0.5.0",
 			IPv4Len: ipv4PrefixLen,
+			IPv6:    "2001::5:0",
+			IPv6Len: ipv6PrefixLen,
 		},
 	}
 
@@ -116,11 +122,15 @@ var (
 			Desc:    "dut1Port1",
 			IPv4:    "192.0.1.1",
 			IPv4Len: ipv4PrefixLen,
+			IPv6:    "2001::1:1",
+			IPv6Len: ipv6PrefixLen,
 		},
 		"port1": {
 			Desc:    "dut1Port1",
 			IPv4:    "192.1.0.1",
 			IPv4Len: ipv4PrefixLen,
+			IPv6:    "2001::1:0:1",
+			IPv6Len: ipv6PrefixLen,
 		},
 	}
 
@@ -129,16 +139,22 @@ var (
 			Desc:    "dut2Port1",
 			IPv4:    "192.1.0.2",
 			IPv4Len: ipv4PrefixLen,
+			IPv6:    "2001::1:0:2",
+			IPv6Len: ipv6PrefixLen,
 		},
 		"port2": {
 			Desc:    "dut2Port2",
 			IPv4:    "192.2.0.2",
 			IPv4Len: ipv4PrefixLen,
+			IPv6:    "2001::2:0:2",
+			IPv6Len: ipv6PrefixLen,
 		},
 		"port3": {
 			Desc:    "dut2Port3",
 			IPv4:    "192.3.0.2",
 			IPv4Len: ipv4PrefixLen,
+			IPv6:    "2001::3:0:2",
+			IPv6Len: ipv6PrefixLen,
 		},
 	}
 
@@ -147,6 +163,8 @@ var (
 			Desc:    "dut3Port1",
 			IPv4:    "192.2.0.3",
 			IPv4Len: ipv4PrefixLen,
+			IPv6:    "2001::2:0:3",
+			IPv6Len: ipv6PrefixLen,
 		},
 	}
 
@@ -155,11 +173,15 @@ var (
 			Desc:    "dut1Port1",
 			IPv4:    "192.0.4.4",
 			IPv4Len: ipv4PrefixLen,
+			IPv6:    "2001::4:4",
+			IPv6Len: ipv6PrefixLen,
 		},
 		"port1": {
 			Desc:    "dut4Port1",
 			IPv4:    "192.4.0.4",
 			IPv4Len: ipv4PrefixLen,
+			IPv6:    "2001::4:0:4",
+			IPv6Len: ipv6PrefixLen,
 		},
 	}
 
@@ -168,42 +190,56 @@ var (
 			Desc:    "dut1Port1",
 			IPv4:    "192.0.5.5",
 			IPv4Len: ipv4PrefixLen,
+			IPv6:    "2001::5:5",
+			IPv6Len: ipv6PrefixLen,
 		},
 		"port1": {
 			Desc:    "dut5Port1",
 			IPv4:    "192.4.0.5",
 			IPv4Len: ipv4PrefixLen,
+			IPv6:    "2001::4:0:5",
+			IPv6Len: ipv6PrefixLen,
 		},
 		"port2": {
 			Desc:    "dut5Port2",
 			IPv4:    "192.3.0.5",
 			IPv4Len: ipv4PrefixLen,
+			IPv6:    "2001::3:0:5",
+			IPv6Len: ipv6PrefixLen,
 		},
 	}
 )
 
 func testPropagation(t *testing.T, routeTest *valpb.RouteTestCase, pair1, pair2 *DevicePair) {
 	t.Helper()
-	v4uni := BGPPath.Rib().AfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST).Ipv4Unicast()
+	prefix := routeTest.GetInput().GetReachPrefix()
+	if pfx, err := netip.ParsePrefix(prefix); err == nil && pfx.Addr().Is6() {
+		testPropagationAuxV6(t, routeTest, pair1, pair2, BGPPath.Rib().AfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV6_UNICAST).Ipv6Unicast())
+	} else {
+		testPropagationAuxV4(t, routeTest, pair1, pair2, BGPPath.Rib().AfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST).Ipv4Unicast())
+	}
+}
 
+func testPropagationAuxV4(t *testing.T, routeTest *valpb.RouteTestCase, pair1, pair2 *DevicePair, afiSafi *netinstbgp.NetworkInstance_Protocol_Bgp_Rib_AfiSafi_Ipv4UnicastPath) {
+	t.Helper()
 	prevDUT, currDUT, nextDUT := pair1.First, pair1.Second, pair2.Second
 	port1, port21, port23, port3 := pair1.FirstPort, pair1.SecondPort, pair2.FirstPort, pair2.SecondPort
 
 	prefix := routeTest.GetInput().GetReachPrefix()
 	// Check propagation to AdjRibOutPre for all prefixes.
-	gnmi.Await(t, prevDUT, v4uni.Neighbor(port21.IPv4).AdjRibOutPre().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
-	gnmi.Await(t, prevDUT, v4uni.Neighbor(port21.IPv4).AdjRibOutPost().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
-	gnmi.Await(t, currDUT, v4uni.Neighbor(port1.IPv4).AdjRibInPre().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
+	gnmi.Await(t, prevDUT, afiSafi.Neighbor(port21.IPv4).AdjRibOutPre().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
+	gnmi.Await(t, prevDUT, afiSafi.Neighbor(port21.IPv4).AdjRibOutPost().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
+	gnmi.Await(t, currDUT, afiSafi.Neighbor(port1.IPv4).AdjRibInPre().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
 	switch expectedResult := routeTest.GetExpectedResult(); expectedResult {
-	case policyval.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT:
+	case valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT:
 		t.Logf("Waiting for %s to be propagated", prefix)
-		gnmi.Await(t, currDUT, v4uni.Neighbor(port1.IPv4).AdjRibInPost().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
-		gnmi.Await(t, currDUT, v4uni.LocRib().Route(prefix, oc.UnionString(port1.IPv4), 0).Prefix().State(), awaitTimeout, prefix)
-		gnmi.Await(t, currDUT, v4uni.Neighbor(port3.IPv4).AdjRibOutPre().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
-		gnmi.Await(t, currDUT, v4uni.Neighbor(port3.IPv4).AdjRibOutPost().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
-		gnmi.Await(t, nextDUT, v4uni.Neighbor(port23.IPv4).AdjRibInPre().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
-	case policyval.RouteTestResult_ROUTE_TEST_RESULT_DISCARD:
-		w := gnmi.Watch(t, currDUT, v4uni.Neighbor(port1.IPv4).AdjRibInPost().Route(prefix, 0).Prefix().State(), rejectTimeout, func(val *ygnmi.Value[string]) bool {
+		gnmi.Await(t, currDUT, afiSafi.Neighbor(port1.IPv4).AdjRibInPost().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
+		gnmi.Await(t, currDUT, afiSafi.LocRib().Route(prefix, oc.UnionString(port1.IPv4), 0).Prefix().State(), awaitTimeout, prefix)
+		gnmi.Await(t, currDUT, afiSafi.Neighbor(port3.IPv4).AdjRibOutPre().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
+		gnmi.Await(t, currDUT, afiSafi.Neighbor(port3.IPv4).AdjRibOutPost().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
+		gnmi.Await(t, nextDUT, afiSafi.Neighbor(port23.IPv4).AdjRibInPre().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
+	case valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD:
+		w := gnmi.Watch(t, currDUT, afiSafi.Neighbor(port1.IPv4).AdjRibInPost().Route(prefix, 0).Prefix().State(), rejectTimeout, func(val *ygnmi.Value[string]) bool {
 			_, ok := val.Val()
 			return !ok
 		})
@@ -214,7 +250,7 @@ func testPropagation(t *testing.T, routeTest *valpb.RouteTestCase, pair1, pair2 
 		t.Logf("prefix %q (%s) was successfully rejected from adj-rib-in-post of %v (neighbour %v) within timeout.", prefix, routeTest.GetDescription(), currDUT, prevDUT)
 
 		// Test withdrawal in the case of InstallPolicyAfterRoutes.
-		w = gnmi.Watch(t, nextDUT, v4uni.Neighbor(port23.IPv4).AdjRibInPre().Route(prefix, 0).Prefix().State(), rejectTimeout, func(val *ygnmi.Value[string]) bool {
+		w = gnmi.Watch(t, nextDUT, afiSafi.Neighbor(port23.IPv4).AdjRibInPre().Route(prefix, 0).Prefix().State(), rejectTimeout, func(val *ygnmi.Value[string]) bool {
 			_, ok := val.Val()
 			return !ok
 		})
@@ -223,9 +259,9 @@ func testPropagation(t *testing.T, routeTest *valpb.RouteTestCase, pair1, pair2 
 			break
 		}
 		t.Logf("prefix %q (%s) was successfully rejected from adj-rib-in-pre of %v (neighbour %v) within timeout.", prefix, routeTest.GetDescription(), nextDUT, currDUT)
-	case policyval.RouteTestResult_ROUTE_TEST_RESULT_NOT_PREFERRED:
-		gnmi.Await(t, currDUT, v4uni.Neighbor(port1.IPv4).AdjRibInPost().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
-		w := gnmi.Watch(t, currDUT, v4uni.LocRib().Route(prefix, oc.UnionString(port1.IPv4), 0).Prefix().State(), rejectTimeout, func(val *ygnmi.Value[string]) bool {
+	case valpb.RouteTestResult_ROUTE_TEST_RESULT_NOT_PREFERRED:
+		gnmi.Await(t, currDUT, afiSafi.Neighbor(port1.IPv4).AdjRibInPost().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
+		w := gnmi.Watch(t, currDUT, afiSafi.LocRib().Route(prefix, oc.UnionString(port1.IPv4), 0).Prefix().State(), rejectTimeout, func(val *ygnmi.Value[string]) bool {
 			_, ok := val.Val()
 			return !ok
 		})
@@ -235,9 +271,68 @@ func testPropagation(t *testing.T, routeTest *valpb.RouteTestCase, pair1, pair2 
 		}
 		t.Logf("prefix %q with origin %q (%s) was successfully not selected into loc-rib of %v within timeout.", prefix, prevDUT, routeTest.GetDescription(), currDUT)
 
-		gnmi.Await(t, currDUT, v4uni.Neighbor(port3.IPv4).AdjRibOutPre().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
-		gnmi.Await(t, currDUT, v4uni.Neighbor(port3.IPv4).AdjRibOutPost().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
-		gnmi.Await(t, nextDUT, v4uni.Neighbor(port23.IPv4).AdjRibInPre().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
+		gnmi.Await(t, currDUT, afiSafi.Neighbor(port3.IPv4).AdjRibOutPre().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
+		gnmi.Await(t, currDUT, afiSafi.Neighbor(port3.IPv4).AdjRibOutPost().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
+		gnmi.Await(t, nextDUT, afiSafi.Neighbor(port23.IPv4).AdjRibInPre().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
+	default:
+		t.Fatalf("Invalid or unhandled policy result: %v", expectedResult)
+	}
+}
+
+func testPropagationAuxV6(t *testing.T, routeTest *valpb.RouteTestCase, pair1, pair2 *DevicePair, afiSafi *netinstbgp.NetworkInstance_Protocol_Bgp_Rib_AfiSafi_Ipv6UnicastPath) {
+	t.Helper()
+	prevDUT, currDUT, nextDUT := pair1.First, pair1.Second, pair2.Second
+	port1, port21, port23, port3 := pair1.FirstPort, pair1.SecondPort, pair2.FirstPort, pair2.SecondPort
+
+	prefix := routeTest.GetInput().GetReachPrefix()
+	// Check propagation to AdjRibOutPre for all prefixes.
+	gnmi.Await(t, prevDUT, afiSafi.Neighbor(port21.IPv6).AdjRibOutPre().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
+	gnmi.Await(t, prevDUT, afiSafi.Neighbor(port21.IPv6).AdjRibOutPost().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
+	gnmi.Await(t, currDUT, afiSafi.Neighbor(port1.IPv6).AdjRibInPre().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
+	switch expectedResult := routeTest.GetExpectedResult(); expectedResult {
+	case valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT:
+		t.Logf("Waiting for %s to be propagated", prefix)
+		gnmi.Await(t, currDUT, afiSafi.Neighbor(port1.IPv6).AdjRibInPost().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
+		gnmi.Await(t, currDUT, afiSafi.LocRib().Route(prefix, oc.UnionString(port1.IPv6), 0).Prefix().State(), awaitTimeout, prefix)
+		gnmi.Await(t, currDUT, afiSafi.Neighbor(port3.IPv6).AdjRibOutPre().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
+		gnmi.Await(t, currDUT, afiSafi.Neighbor(port3.IPv6).AdjRibOutPost().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
+		gnmi.Await(t, nextDUT, afiSafi.Neighbor(port23.IPv6).AdjRibInPre().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
+	case valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD:
+		w := gnmi.Watch(t, currDUT, afiSafi.Neighbor(port1.IPv6).AdjRibInPost().Route(prefix, 0).Prefix().State(), rejectTimeout, func(val *ygnmi.Value[string]) bool {
+			_, ok := val.Val()
+			return !ok
+		})
+		if _, ok := w.Await(t); !ok {
+			t.Errorf("prefix %q (%s) was not rejected from adj-rib-in-post of %v (neighbour %v) within timeout.", prefix, routeTest.GetDescription(), currDUT, prevDUT)
+			break
+		}
+		t.Logf("prefix %q (%s) was successfully rejected from adj-rib-in-post of %v (neighbour %v) within timeout.", prefix, routeTest.GetDescription(), currDUT, prevDUT)
+
+		// Test withdrawal in the case of InstallPolicyAfterRoutes.
+		w = gnmi.Watch(t, nextDUT, afiSafi.Neighbor(port23.IPv6).AdjRibInPre().Route(prefix, 0).Prefix().State(), rejectTimeout, func(val *ygnmi.Value[string]) bool {
+			_, ok := val.Val()
+			return !ok
+		})
+		if _, ok := w.Await(t); !ok {
+			t.Errorf("prefix %q (%s) was not rejected from adj-rib-in-pre of %v (neighbour %v) within timeout.", prefix, routeTest.GetDescription(), nextDUT, currDUT)
+			break
+		}
+		t.Logf("prefix %q (%s) was successfully rejected from adj-rib-in-pre of %v (neighbour %v) within timeout.", prefix, routeTest.GetDescription(), nextDUT, currDUT)
+	case valpb.RouteTestResult_ROUTE_TEST_RESULT_NOT_PREFERRED:
+		gnmi.Await(t, currDUT, afiSafi.Neighbor(port1.IPv6).AdjRibInPost().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
+		w := gnmi.Watch(t, currDUT, afiSafi.LocRib().Route(prefix, oc.UnionString(port1.IPv6), 0).Prefix().State(), rejectTimeout, func(val *ygnmi.Value[string]) bool {
+			_, ok := val.Val()
+			return !ok
+		})
+		if _, ok := w.Await(t); !ok {
+			t.Errorf("prefix %q with origin %q (%s) was selected into loc-rib of %v.", prefix, prevDUT, routeTest.GetDescription(), currDUT)
+			break
+		}
+		t.Logf("prefix %q with origin %q (%s) was successfully not selected into loc-rib of %v within timeout.", prefix, prevDUT, routeTest.GetDescription(), currDUT)
+
+		gnmi.Await(t, currDUT, afiSafi.Neighbor(port3.IPv6).AdjRibOutPre().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
+		gnmi.Await(t, currDUT, afiSafi.Neighbor(port3.IPv6).AdjRibOutPost().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
+		gnmi.Await(t, nextDUT, afiSafi.Neighbor(port23.IPv6).AdjRibInPre().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
 	default:
 		t.Fatalf("Invalid or unhandled policy result: %v", expectedResult)
 	}
@@ -249,16 +344,19 @@ func configureDUT(t *testing.T, dut *ondatra.DUTDevice, ports map[string]*attrs.
 		p := dut.Port(t, portName)
 		gnmi.Replace(t, dut, gnmi.OC().Interface(p.Name()).Config(), attr.NewOCInterface(p.Name(), dut))
 		gnmi.Await(t, dut, gnmi.OC().Interface(p.Name()).Subinterface(0).Ipv4().Address(attr.IPv4).Ip().State(), awaitTimeout, attr.IPv4)
+		gnmi.Await(t, dut, gnmi.OC().Interface(p.Name()).Subinterface(0).Ipv6().Address(attr.IPv6).Ip().State(), awaitTimeout, attr.IPv6)
 	}
 }
 
-func bgpWithNbr(as uint32, routerID string, nbr *oc.NetworkInstance_Protocol_Bgp_Neighbor) *oc.NetworkInstance_Protocol_Bgp {
+func bgpWithNbr(as uint32, routerID string, nbrs ...*oc.NetworkInstance_Protocol_Bgp_Neighbor) *oc.NetworkInstance_Protocol_Bgp {
 	bgp := &oc.NetworkInstance_Protocol_Bgp{}
 	bgp.GetOrCreateGlobal().As = ygot.Uint32(as)
 	if routerID != "" {
 		bgp.Global.RouterId = ygot.String(routerID)
 	}
-	bgp.AppendNeighbor(nbr)
+	for _, nbr := range nbrs {
+		bgp.AppendNeighbor(nbr)
+	}
 	return bgp
 }
 
@@ -275,6 +373,8 @@ func awaitSessionEstablished(t *testing.T, dutPair *DevicePair) {
 	port1, port2 := dutPair.FirstPort, dutPair.SecondPort
 	gnmi.Await(t, dut1, BGPPath.Neighbor(port2.IPv4).SessionState().State(), awaitTimeout, oc.Bgp_Neighbor_SessionState_ESTABLISHED)
 	gnmi.Await(t, dut2, BGPPath.Neighbor(port1.IPv4).SessionState().State(), awaitTimeout, oc.Bgp_Neighbor_SessionState_ESTABLISHED)
+	gnmi.Await(t, dut1, BGPPath.Neighbor(port2.IPv6).SessionState().State(), awaitTimeout, oc.Bgp_Neighbor_SessionState_ESTABLISHED)
+	gnmi.Await(t, dut2, BGPPath.Neighbor(port1.IPv6).SessionState().State(), awaitTimeout, oc.Bgp_Neighbor_SessionState_ESTABLISHED)
 }
 
 func establishSessionPairs(t *testing.T, dutPairs ...*DevicePair) {
@@ -288,12 +388,24 @@ func establishSessionPairs(t *testing.T, dutPairs ...*DevicePair) {
 			Transport: &oc.NetworkInstance_Protocol_Bgp_Neighbor_Transport{
 				LocalAddress: ygot.String(port1.IPv4),
 			},
+		}, &oc.NetworkInstance_Protocol_Bgp_Neighbor{
+			PeerAs:          ygot.Uint32(dut2.AS),
+			NeighborAddress: ygot.String(port2.IPv6),
+			Transport: &oc.NetworkInstance_Protocol_Bgp_Neighbor_Transport{
+				LocalAddress: ygot.String(port1.IPv6),
+			},
 		})
 		dut2Conf := bgpWithNbr(dut2.AS, dut2.RouterID, &oc.NetworkInstance_Protocol_Bgp_Neighbor{
 			PeerAs:          ygot.Uint32(dut1.AS),
 			NeighborAddress: ygot.String(port1.IPv4),
 			Transport: &oc.NetworkInstance_Protocol_Bgp_Neighbor_Transport{
 				LocalAddress: ygot.String(port2.IPv4),
+			},
+		}, &oc.NetworkInstance_Protocol_Bgp_Neighbor{
+			PeerAs:          ygot.Uint32(dut1.AS),
+			NeighborAddress: ygot.String(port1.IPv6),
+			Transport: &oc.NetworkInstance_Protocol_Bgp_Neighbor_Transport{
+				LocalAddress: ygot.String(port2.IPv6),
 			},
 		})
 		gnmi.Update(t, dut1, BGPPath.Config(), dutConf)
@@ -311,6 +423,8 @@ func installDefaultAllowPolicies(t *testing.T, dutPair *DevicePair) {
 	port1, port2 := dutPair.FirstPort, dutPair.SecondPort
 	gnmi.Replace(t, dut1, BGPPath.Neighbor(port2.IPv4).ApplyPolicy().DefaultExportPolicy().Config(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
 	gnmi.Replace(t, dut2, BGPPath.Neighbor(port1.IPv4).ApplyPolicy().DefaultImportPolicy().Config(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
+	gnmi.Replace(t, dut1, BGPPath.Neighbor(port2.IPv6).ApplyPolicy().DefaultExportPolicy().Config(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
+	gnmi.Replace(t, dut2, BGPPath.Neighbor(port1.IPv6).ApplyPolicy().DefaultImportPolicy().Config(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
 }
 
 func testPolicyAux(t *testing.T, testspec TestCase) {

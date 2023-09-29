@@ -17,6 +17,7 @@ package bgp
 import (
 	"context"
 	"fmt"
+	"net/netip"
 	"reflect"
 	"sync"
 	"time"
@@ -47,10 +48,58 @@ var (
 	RoutingPolicyStatePath = ocpath.Root().RoutingPolicy().State()
 )
 
-// NewGoBGPTask creates a new GoBGP task using the declarative configuration style.
+// NewGoBGPTask creates a new GoBGP task implementing OpenConfig BGP functionalities.
 func NewGoBGPTask(targetName, zapiURL string, listenPort uint16) *reconciler.BuiltReconciler {
 	gobgpTask := newBgpTask(targetName, zapiURL, listenPort)
-	return reconciler.NewBuilder("gobgp-decl").WithStart(gobgpTask.start).WithStop(gobgpTask.stop).Build()
+	return reconciler.NewBuilder("gobgp").WithStart(gobgpTask.start).WithStop(gobgpTask.stop).WithValidator(
+		[]ygnmi.PathStruct{
+			RoutingPolicyPath.DefinedSets().PrefixSetAny().Mode().Config().PathStruct(),
+		}, validatePrefixSetMode).Build()
+}
+
+// validatePrefixSetMode check that all prefix sets have the correct mode.
+func validatePrefixSetMode(root *oc.Root) error {
+	definedSets := root.GetRoutingPolicy().GetDefinedSets()
+	if definedSets == nil {
+		return nil
+	}
+	for _, prefixSet := range definedSets.PrefixSet {
+		if len(prefixSet.Prefix) == 0 {
+			continue
+		}
+		if prefixSet.GetMode() == oc.PrefixSet_Mode_MIXED {
+			// This is always valid.
+			continue
+		}
+		var gotMode oc.E_PrefixSet_Mode
+		for _, pfx := range prefixSet.Prefix {
+			p, err := netip.ParsePrefix(pfx.GetIpPrefix())
+			if err != nil {
+				return fmt.Errorf("invalid prefix %q in prefix set %q", pfx.GetIpPrefix(), prefixSet.GetName())
+			}
+			switch gotMode {
+			case oc.PrefixSet_Mode_UNSET:
+				if p.Addr().Is4() {
+					gotMode = oc.PrefixSet_Mode_IPV4
+				} else if p.Addr().Is6() {
+					gotMode = oc.PrefixSet_Mode_IPV6
+				}
+			case oc.PrefixSet_Mode_IPV4:
+				if p.Addr().Is6() {
+					gotMode = oc.PrefixSet_Mode_MIXED
+				}
+			case oc.PrefixSet_Mode_IPV6:
+				if p.Addr().Is4() {
+					gotMode = oc.PrefixSet_Mode_MIXED
+				}
+			}
+		}
+
+		if wantMode := prefixSet.GetMode(); gotMode != wantMode {
+			return fmt.Errorf("prefix set %q has mode %s based on parsing given prefixes, but has configured mode %s", prefixSet.GetName(), gotMode, wantMode)
+		}
+	}
+	return nil
 }
 
 // bgpTask can be used to create a reconciler-compatible BGP task.
@@ -280,33 +329,23 @@ func (t *bgpTask) createNewGoBGPServer(context.Context) error {
 
 // updateRIBs updates the BGP RIBs.
 func (t *bgpTask) updateRIBs() {
-	if err := t.bgpServer.ListPath(context.Background(), &api.ListPathRequest{
-		TableType: api.TableType_GLOBAL,
-		Family: &api.Family{
-			Afi:  api.Family_AFI_IP,
-			Safi: api.Family_SAFI_UNICAST,
-		},
-	}, func(d *api.Destination) {
-		log.V(1).Infof("%s: GoBGP global table path: %v", t.targetName, d)
-	}); err != nil {
-		if err.Error() != "bgp server hasn't started yet" {
-			log.Errorf("GoBGP ListPath call failed (global table): %v", err)
-		}
-	} else {
-		log.V(1).Info("GoBGP ListPath call completed (global table)")
-	}
+	// Log global tables
+	t.queryTable("", "IPv4 Global", api.TableType_GLOBAL, api.Family_AFI_IP, nil)
+	t.queryTable("", "IPv6 Global", api.TableType_GLOBAL, api.Family_AFI_IP6, nil)
 
 	t.updateAppliedState(func() error {
 		v4uni := t.appliedBGP.GetOrCreateRib().GetOrCreateAfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST).GetOrCreateIpv4Unicast()
-		rib := t.appliedBGP.GetOrCreateRib()
+		v4rib := t.appliedBGP.GetOrCreateRib()
 		ribattrs := &ocRIBAttrIndices{}
 
-		// TODO: Support IPv6
-		t.queryTable("", "local", api.TableType_LOCAL, func(routes []*api.Destination) {
+		v6uni := t.appliedBGP.GetOrCreateRib().GetOrCreateAfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV6_UNICAST).GetOrCreateIpv6Unicast()
+		v6rib := t.appliedBGP.GetOrCreateRib()
+
+		t.queryTable("", "local-v4", api.TableType_LOCAL, api.Family_AFI_IP, func(routes []*api.Destination) {
 			v4uni.LocRib = nil
 			locRib := v4uni.GetOrCreateLocRib()
 			for _, route := range routes {
-				for j, path := range route.Paths {
+				for i, path := range route.Paths {
 					var origin oc.NetworkInstance_Protocol_Bgp_Rib_AfiSafi_Ipv4Unicast_LocRib_Route_Origin_Union
 					if path.SourceId == "" {
 						// TODO: For locally-originated routes figure out how to get the originating protocol.
@@ -315,7 +354,24 @@ func (t *bgpTask) updateRIBs() {
 						origin = oc.UnionString(path.NeighborIp)
 					}
 					// TODO: this ID should match the ID in adj-rib-in-post.
-					ribattrs.populateRIBAttrs(path, rib, locRib.GetOrCreateRoute(route.Prefix, origin, uint32(j)))
+					ribattrs.populateRIBAttrs(path, v4rib, locRib.GetOrCreateRoute(route.Prefix, origin, uint32(i)))
+				}
+			}
+		})
+		t.queryTable("", "local-v6", api.TableType_LOCAL, api.Family_AFI_IP6, func(routes []*api.Destination) {
+			v6uni.LocRib = nil
+			locRib := v6uni.GetOrCreateLocRib()
+			for _, route := range routes {
+				for i, path := range route.Paths {
+					var origin oc.NetworkInstance_Protocol_Bgp_Rib_AfiSafi_Ipv6Unicast_LocRib_Route_Origin_Union
+					if path.SourceId == "" {
+						// TODO: For locally-originated routes figure out how to get the originating protocol.
+						origin = oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_UNSET
+					} else {
+						origin = oc.UnionString(path.NeighborIp)
+					}
+					// TODO: this ID should match the ID in adj-rib-in-post.
+					ribattrs.populateRIBAttrs(path, v6rib, locRib.GetOrCreateRoute(route.Prefix, origin, uint32(i)))
 				}
 			}
 		})
@@ -326,30 +382,66 @@ func (t *bgpTask) updateRIBs() {
 			neighContainer.AdjRibInPost = nil
 			neighContainer.AdjRibOutPre = nil
 			neighContainer.AdjRibOutPost = nil
-			t.queryTable(neigh, "adj-rib-in", api.TableType_ADJ_IN, func(routes []*api.Destination) {
+			t.queryTable(neigh, "adj-rib-in-v4", api.TableType_ADJ_IN, api.Family_AFI_IP, func(routes []*api.Destination) {
 				for _, route := range routes {
-					for j, path := range route.Paths {
+					for i, path := range route.Paths {
 						// TODO: this ID should be retrieved from the update message.
-						ribattrs.populateRIBAttrs(path, rib, neighContainer.GetOrCreateAdjRibInPre().GetOrCreateRoute(route.Prefix, uint32(j)))
+						ribattrs.populateRIBAttrs(path, v4rib, neighContainer.GetOrCreateAdjRibInPre().GetOrCreateRoute(route.Prefix, uint32(i)))
 						if !path.Filtered {
-							ribattrs.populateRIBAttrs(path, rib, neighContainer.GetOrCreateAdjRibInPost().GetOrCreateRoute(route.Prefix, uint32(j)))
+							ribattrs.populateRIBAttrs(path, v4rib, neighContainer.GetOrCreateAdjRibInPost().GetOrCreateRoute(route.Prefix, uint32(i)))
 						}
 					}
 				}
 			})
 
-			t.queryTable(neigh, "adj-rib-out", api.TableType_ADJ_OUT, func(routes []*api.Destination) {
+			t.queryTable(neigh, "adj-rib-out-v4", api.TableType_ADJ_OUT, api.Family_AFI_IP, func(routes []*api.Destination) {
 				for _, route := range routes {
-					for j, path := range route.Paths {
+					for i, path := range route.Paths {
 						// Per OpenConfig the ID of this should be the ID assigned when exchanging add-path routes. However
 						// GoBGP doesn't seem to support the add-path capability and so just going to use the first path
 						// with 0 as the ID here. GoBGP does support AddPath as a gRPC call but when advertising the routes
 						// the generated UUID isn't propagated.
 						//
 						// Note that path.NeighborIp is <nil> for some reason so have to use neigh.
-						ribattrs.populateRIBAttrs(path, rib, neighContainer.GetOrCreateAdjRibOutPre().GetOrCreateRoute(route.Prefix, uint32(j)))
+						ribattrs.populateRIBAttrs(path, v4rib, neighContainer.GetOrCreateAdjRibOutPre().GetOrCreateRoute(route.Prefix, uint32(i)))
 						if !path.Filtered {
-							ribattrs.populateRIBAttrs(path, rib, neighContainer.GetOrCreateAdjRibOutPost().GetOrCreateRoute(route.Prefix, uint32(j)))
+							ribattrs.populateRIBAttrs(path, v4rib, neighContainer.GetOrCreateAdjRibOutPost().GetOrCreateRoute(route.Prefix, uint32(i)))
+						}
+					}
+				}
+			})
+		}
+
+		for neigh := range t.appliedBGP.Neighbor {
+			neighContainer := v6uni.GetOrCreateNeighbor(neigh)
+			neighContainer.AdjRibInPre = nil
+			neighContainer.AdjRibInPost = nil
+			neighContainer.AdjRibOutPre = nil
+			neighContainer.AdjRibOutPost = nil
+			t.queryTable(neigh, "adj-rib-in-v6", api.TableType_ADJ_IN, api.Family_AFI_IP6, func(routes []*api.Destination) {
+				for _, route := range routes {
+					for i, path := range route.Paths {
+						// TODO: this ID should be retrieved from the update message.
+						ribattrs.populateRIBAttrs(path, v6rib, neighContainer.GetOrCreateAdjRibInPre().GetOrCreateRoute(route.Prefix, uint32(i)))
+						if !path.Filtered {
+							ribattrs.populateRIBAttrs(path, v6rib, neighContainer.GetOrCreateAdjRibInPost().GetOrCreateRoute(route.Prefix, uint32(i)))
+						}
+					}
+				}
+			})
+
+			t.queryTable(neigh, "adj-rib-out-v6", api.TableType_ADJ_OUT, api.Family_AFI_IP6, func(routes []*api.Destination) {
+				for _, route := range routes {
+					for i, path := range route.Paths {
+						// Per OpenConfig the ID of this should be the ID assigned when exchanging add-path routes. However
+						// GoBGP doesn't seem to support the add-path capability and so just going to use the first path
+						// with 0 as the ID here. GoBGP does support AddPath as a gRPC call but when advertising the routes
+						// the generated UUID isn't propagated.
+						//
+						// Note that path.NeighborIp is <nil> for some reason so have to use neigh.
+						ribattrs.populateRIBAttrs(path, v6rib, neighContainer.GetOrCreateAdjRibOutPre().GetOrCreateRoute(route.Prefix, uint32(i)))
+						if !path.Filtered {
+							ribattrs.populateRIBAttrs(path, v6rib, neighContainer.GetOrCreateAdjRibOutPost().GetOrCreateRoute(route.Prefix, uint32(i)))
 						}
 					}
 				}
@@ -362,13 +454,13 @@ func (t *bgpTask) updateRIBs() {
 // queryTable queries for all routes stored in the specified table, applying f
 // to the routes that are queried if the query was successful or logging an
 // error otherwise.
-func (t *bgpTask) queryTable(neighbor, tableName string, tableType api.TableType, f func(route []*api.Destination)) {
+func (t *bgpTask) queryTable(neighbor, tableName string, tableType api.TableType, afi api.Family_Afi, f func(route []*api.Destination)) {
 	var routes []*api.Destination
 	if err := t.bgpServer.ListPath(context.Background(), &api.ListPathRequest{
 		Name:      neighbor,
 		TableType: tableType,
 		Family: &api.Family{
-			Afi:  api.Family_AFI_IP,
+			Afi:  afi,
 			Safi: api.Family_SAFI_UNICAST,
 		},
 		// This is always set to true since GoBGP doesn't actually
@@ -376,15 +468,19 @@ func (t *bgpTask) queryTable(neighbor, tableName string, tableType api.TableType
 		// IMPORT or EXPORT policy.
 		EnableFiltered: true,
 	}, func(d *api.Destination) {
-		routes = append(routes, d)
+		if f != nil {
+			routes = append(routes, d)
+		}
 		log.V(0).Infof("%s: GoBGP %s table path (neighbor if applicable: %q): %v", t.targetName, tableName, neighbor, d)
 	}); err != nil {
 		if err.Error() != "bgp server hasn't started yet" {
-			log.Errorf("GoBGP ListPath call failed (%s table): %v", tableType, err)
+			log.Errorf("GoBGP ListPath call failed (%s, %s, %s table): %v", tableName, tableType, afi, err)
 		}
 	} else {
-		log.V(1).Info("GoBGP ListPath call completed (%s table)", tableName)
-		f(routes)
+		log.V(1).Infof("GoBGP ListPath call completed (%s, %s, %s table)", tableName, tableType, afi)
+		if f != nil {
+			f(routes)
+		}
 	}
 }
 

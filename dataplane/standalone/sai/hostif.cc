@@ -51,43 +51,180 @@ const sai_hostif_api_t l_hostif = {
     .free_hostif_packet = l_free_hostif_packet,
 };
 
+int nextIdx = 1;
+
+lemming::dataplane::sai::CreateHostifRequest convert_create_hostif(
+    sai_object_id_t switch_id, uint32_t attr_count,
+    const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateHostifRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_HOSTIF_ATTR_TYPE:
+        msg.set_type(static_cast<lemming::dataplane::sai::HostifType>(
+            attr_list[i].value.s32 + 1));
+        break;
+      case SAI_HOSTIF_ATTR_OBJ_ID:
+        msg.set_obj_id(attr_list[i].value.oid);
+        break;
+      case SAI_HOSTIF_ATTR_NAME: {
+        std::ostringstream s;
+        s << "ip link set eth" << nextIdx++ << " name "
+          << attr_list[i].value.chardata;
+        LOG(INFO) << s.str();
+        system(s.str().c_str());
+      }
+        msg.set_name(attr_list[i].value.chardata);
+        break;
+      case SAI_HOSTIF_ATTR_OPER_STATUS:
+        msg.set_oper_status(attr_list[i].value.booldata);
+        break;
+      case SAI_HOSTIF_ATTR_QUEUE:
+        msg.set_queue(attr_list[i].value.u32);
+        break;
+      case SAI_HOSTIF_ATTR_VLAN_TAG:
+        msg.set_vlan_tag(static_cast<lemming::dataplane::sai::HostifVlanTag>(
+            attr_list[i].value.s32 + 1));
+        break;
+      case SAI_HOSTIF_ATTR_GENETLINK_MCGRP_NAME:
+        msg.set_genetlink_mcgrp_name(attr_list[i].value.chardata);
+        break;
+    }
+  }
+  return msg;
+}
+
+lemming::dataplane::sai::CreateHostifTableEntryRequest
+convert_create_hostif_table_entry(sai_object_id_t switch_id,
+                                  uint32_t attr_count,
+                                  const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateHostifTableEntryRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_HOSTIF_TABLE_ENTRY_ATTR_TYPE:
+        msg.set_type(static_cast<lemming::dataplane::sai::HostifTableEntryType>(
+            attr_list[i].value.s32 + 1));
+        break;
+      case SAI_HOSTIF_TABLE_ENTRY_ATTR_OBJ_ID:
+        msg.set_obj_id(attr_list[i].value.oid);
+        break;
+      case SAI_HOSTIF_TABLE_ENTRY_ATTR_TRAP_ID:
+        msg.set_trap_id(attr_list[i].value.oid);
+        break;
+      case SAI_HOSTIF_TABLE_ENTRY_ATTR_CHANNEL_TYPE:
+        msg.set_channel_type(
+            static_cast<lemming::dataplane::sai::HostifTableEntryChannelType>(
+                attr_list[i].value.s32 + 1));
+        break;
+      case SAI_HOSTIF_TABLE_ENTRY_ATTR_HOST_IF:
+        msg.set_host_if(attr_list[i].value.oid);
+        break;
+    }
+  }
+  return msg;
+}
+
+lemming::dataplane::sai::CreateHostifTrapGroupRequest
+convert_create_hostif_trap_group(sai_object_id_t switch_id, uint32_t attr_count,
+                                 const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateHostifTrapGroupRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_HOSTIF_TRAP_GROUP_ATTR_ADMIN_STATE:
+        msg.set_admin_state(attr_list[i].value.booldata);
+        break;
+      case SAI_HOSTIF_TRAP_GROUP_ATTR_QUEUE:
+        msg.set_queue(attr_list[i].value.u32);
+        break;
+      case SAI_HOSTIF_TRAP_GROUP_ATTR_POLICER:
+        msg.set_policer(attr_list[i].value.oid);
+        break;
+      case SAI_HOSTIF_TRAP_GROUP_ATTR_OBJECT_STAGE:
+        msg.set_object_stage(static_cast<lemming::dataplane::sai::ObjectStage>(
+            attr_list[i].value.s32 + 1));
+        break;
+    }
+  }
+  return msg;
+}
+
+lemming::dataplane::sai::CreateHostifTrapRequest convert_create_hostif_trap(
+    sai_object_id_t switch_id, uint32_t attr_count,
+    const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateHostifTrapRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_HOSTIF_TRAP_ATTR_TRAP_TYPE:
+        msg.set_trap_type(static_cast<lemming::dataplane::sai::HostifTrapType>(
+            attr_list[i].value.s32 + 1));
+        break;
+      case SAI_HOSTIF_TRAP_ATTR_PACKET_ACTION:
+        msg.set_packet_action(
+            static_cast<lemming::dataplane::sai::PacketAction>(
+                attr_list[i].value.s32 + 1));
+        break;
+      case SAI_HOSTIF_TRAP_ATTR_TRAP_PRIORITY:
+        msg.set_trap_priority(attr_list[i].value.u32);
+        break;
+      case SAI_HOSTIF_TRAP_ATTR_EXCLUDE_PORT_LIST:
+        msg.mutable_exclude_port_list()->Add(
+            attr_list[i].value.objlist.list,
+            attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
+        break;
+      case SAI_HOSTIF_TRAP_ATTR_TRAP_GROUP:
+        msg.set_trap_group(attr_list[i].value.oid);
+        break;
+      case SAI_HOSTIF_TRAP_ATTR_MIRROR_SESSION:
+        msg.mutable_mirror_session()->Add(
+            attr_list[i].value.objlist.list,
+            attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
+        break;
+      case SAI_HOSTIF_TRAP_ATTR_COUNTER_ID:
+        msg.set_counter_id(attr_list[i].value.oid);
+        break;
+    }
+  }
+  return msg;
+}
+
+lemming::dataplane::sai::CreateHostifUserDefinedTrapRequest
+convert_create_hostif_user_defined_trap(sai_object_id_t switch_id,
+                                        uint32_t attr_count,
+                                        const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateHostifUserDefinedTrapRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_HOSTIF_USER_DEFINED_TRAP_ATTR_TYPE:
+        msg.set_type(
+            static_cast<lemming::dataplane::sai::HostifUserDefinedTrapType>(
+                attr_list[i].value.s32 + 1));
+        break;
+      case SAI_HOSTIF_USER_DEFINED_TRAP_ATTR_TRAP_PRIORITY:
+        msg.set_trap_priority(attr_list[i].value.u32);
+        break;
+      case SAI_HOSTIF_USER_DEFINED_TRAP_ATTR_TRAP_GROUP:
+        msg.set_trap_group(attr_list[i].value.oid);
+        break;
+    }
+  }
+  return msg;
+}
+
 sai_status_t l_create_hostif(sai_object_id_t *hostif_id,
                              sai_object_id_t switch_id, uint32_t attr_count,
                              const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateHostifRequest req;
+  lemming::dataplane::sai::CreateHostifRequest req =
+      convert_create_hostif(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateHostifResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_HOSTIF_ATTR_TYPE:
-        req.set_type(static_cast<lemming::dataplane::sai::HostifType>(
-            attr_list[i].value.s32 + 1));
-        break;
-      case SAI_HOSTIF_ATTR_OBJ_ID:
-        req.set_obj_id(attr_list[i].value.oid);
-        break;
-      case SAI_HOSTIF_ATTR_NAME:
-        req.set_name(attr_list[i].value.chardata);
-        break;
-      case SAI_HOSTIF_ATTR_OPER_STATUS:
-        req.set_oper_status(attr_list[i].value.booldata);
-        break;
-      case SAI_HOSTIF_ATTR_QUEUE:
-        req.set_queue(attr_list[i].value.u32);
-        break;
-      case SAI_HOSTIF_ATTR_VLAN_TAG:
-        req.set_vlan_tag(static_cast<lemming::dataplane::sai::HostifVlanTag>(
-            attr_list[i].value.s32 + 1));
-        break;
-      case SAI_HOSTIF_ATTR_GENETLINK_MCGRP_NAME:
-        req.set_genetlink_mcgrp_name(attr_list[i].value.chardata);
-        break;
-    }
-  }
   grpc::Status status = hostif->CreateHostif(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();
@@ -202,33 +339,12 @@ sai_status_t l_create_hostif_table_entry(sai_object_id_t *hostif_table_entry_id,
                                          const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateHostifTableEntryRequest req;
+  lemming::dataplane::sai::CreateHostifTableEntryRequest req =
+      convert_create_hostif_table_entry(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateHostifTableEntryResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_HOSTIF_TABLE_ENTRY_ATTR_TYPE:
-        req.set_type(static_cast<lemming::dataplane::sai::HostifTableEntryType>(
-            attr_list[i].value.s32 + 1));
-        break;
-      case SAI_HOSTIF_TABLE_ENTRY_ATTR_OBJ_ID:
-        req.set_obj_id(attr_list[i].value.oid);
-        break;
-      case SAI_HOSTIF_TABLE_ENTRY_ATTR_TRAP_ID:
-        req.set_trap_id(attr_list[i].value.oid);
-        break;
-      case SAI_HOSTIF_TABLE_ENTRY_ATTR_CHANNEL_TYPE:
-        req.set_channel_type(
-            static_cast<lemming::dataplane::sai::HostifTableEntryChannelType>(
-                attr_list[i].value.s32 + 1));
-        break;
-      case SAI_HOSTIF_TABLE_ENTRY_ATTR_HOST_IF:
-        req.set_host_if(attr_list[i].value.oid);
-        break;
-    }
-  }
   grpc::Status status = hostif->CreateHostifTableEntry(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();
@@ -316,28 +432,12 @@ sai_status_t l_create_hostif_trap_group(sai_object_id_t *hostif_trap_group_id,
                                         const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateHostifTrapGroupRequest req;
+  lemming::dataplane::sai::CreateHostifTrapGroupRequest req =
+      convert_create_hostif_trap_group(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateHostifTrapGroupResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_HOSTIF_TRAP_GROUP_ATTR_ADMIN_STATE:
-        req.set_admin_state(attr_list[i].value.booldata);
-        break;
-      case SAI_HOSTIF_TRAP_GROUP_ATTR_QUEUE:
-        req.set_queue(attr_list[i].value.u32);
-        break;
-      case SAI_HOSTIF_TRAP_GROUP_ATTR_POLICER:
-        req.set_policer(attr_list[i].value.oid);
-        break;
-      case SAI_HOSTIF_TRAP_GROUP_ATTR_OBJECT_STAGE:
-        req.set_object_stage(static_cast<lemming::dataplane::sai::ObjectStage>(
-            attr_list[i].value.s32 + 1));
-        break;
-    }
-  }
   grpc::Status status = hostif->CreateHostifTrapGroup(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();
@@ -444,43 +544,12 @@ sai_status_t l_create_hostif_trap(sai_object_id_t *hostif_trap_id,
                                   const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateHostifTrapRequest req;
+  lemming::dataplane::sai::CreateHostifTrapRequest req =
+      convert_create_hostif_trap(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateHostifTrapResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_HOSTIF_TRAP_ATTR_TRAP_TYPE:
-        req.set_trap_type(static_cast<lemming::dataplane::sai::HostifTrapType>(
-            attr_list[i].value.s32 + 1));
-        break;
-      case SAI_HOSTIF_TRAP_ATTR_PACKET_ACTION:
-        req.set_packet_action(
-            static_cast<lemming::dataplane::sai::PacketAction>(
-                attr_list[i].value.s32 + 1));
-        break;
-      case SAI_HOSTIF_TRAP_ATTR_TRAP_PRIORITY:
-        req.set_trap_priority(attr_list[i].value.u32);
-        break;
-      case SAI_HOSTIF_TRAP_ATTR_EXCLUDE_PORT_LIST:
-        req.mutable_exclude_port_list()->Add(
-            attr_list[i].value.objlist.list,
-            attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
-        break;
-      case SAI_HOSTIF_TRAP_ATTR_TRAP_GROUP:
-        req.set_trap_group(attr_list[i].value.oid);
-        break;
-      case SAI_HOSTIF_TRAP_ATTR_MIRROR_SESSION:
-        req.mutable_mirror_session()->Add(
-            attr_list[i].value.objlist.list,
-            attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
-        break;
-      case SAI_HOSTIF_TRAP_ATTR_COUNTER_ID:
-        req.set_counter_id(attr_list[i].value.oid);
-        break;
-    }
-  }
   grpc::Status status = hostif->CreateHostifTrap(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();
@@ -610,26 +679,12 @@ sai_status_t l_create_hostif_user_defined_trap(
     uint32_t attr_count, const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateHostifUserDefinedTrapRequest req;
+  lemming::dataplane::sai::CreateHostifUserDefinedTrapRequest req =
+      convert_create_hostif_user_defined_trap(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateHostifUserDefinedTrapResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_HOSTIF_USER_DEFINED_TRAP_ATTR_TYPE:
-        req.set_type(
-            static_cast<lemming::dataplane::sai::HostifUserDefinedTrapType>(
-                attr_list[i].value.s32 + 1));
-        break;
-      case SAI_HOSTIF_USER_DEFINED_TRAP_ATTR_TRAP_PRIORITY:
-        req.set_trap_priority(attr_list[i].value.u32);
-        break;
-      case SAI_HOSTIF_USER_DEFINED_TRAP_ATTR_TRAP_GROUP:
-        req.set_trap_group(attr_list[i].value.oid);
-        break;
-    }
-  }
   grpc::Status status =
       hostif->CreateHostifUserDefinedTrap(&context, req, &resp);
   if (!status.ok()) {

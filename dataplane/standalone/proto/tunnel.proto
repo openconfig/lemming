@@ -5,7 +5,7 @@ package lemming.dataplane.sai;
 
 import "dataplane/standalone/proto/common.proto";
 
-option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto";
+option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto;sai";
 
 enum TunnelMapAttr {
   TUNNEL_MAP_ATTR_UNSPECIFIED = 0;
@@ -269,6 +269,14 @@ message GetTunnelMapEntryAttributeResponse {
   TunnelMapEntryAttribute attr = 1;
 }
 
+message CreateTunnelsRequest {
+  repeated CreateTunnelRequest reqs = 1;
+}
+
+message CreateTunnelsResponse {
+  repeated CreateTunnelResponse resps = 1;
+}
+
 service Tunnel {
   rpc CreateTunnelMap(CreateTunnelMapRequest)
       returns (CreateTunnelMapResponse) {}
@@ -296,4 +304,5 @@ service Tunnel {
       returns (RemoveTunnelMapEntryResponse) {}
   rpc GetTunnelMapEntryAttribute(GetTunnelMapEntryAttributeRequest)
       returns (GetTunnelMapEntryAttributeResponse) {}
+  rpc CreateTunnels(CreateTunnelsRequest) returns (CreateTunnelsResponse) {}
 }

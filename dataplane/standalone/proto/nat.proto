@@ -5,7 +5,7 @@ package lemming.dataplane.sai;
 
 import "dataplane/standalone/proto/common.proto";
 
-option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto";
+option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto;sai";
 
 enum NatEntryAttr {
   NAT_ENTRY_ATTR_UNSPECIFIED = 0;
@@ -96,6 +96,14 @@ message GetNatEntryAttributeResponse {
   NatEntryAttribute attr = 1;
 }
 
+message CreateNatEntriesRequest {
+  repeated CreateNatEntryRequest reqs = 1;
+}
+
+message CreateNatEntriesResponse {
+  repeated CreateNatEntryResponse resps = 1;
+}
+
 message CreateNatZoneCounterRequest {
   option (sai_type) = OBJECT_TYPE_NAT_ZONE_COUNTER;
   uint64 switch = 1;
@@ -146,6 +154,8 @@ service Nat {
       returns (SetNatEntryAttributeResponse) {}
   rpc GetNatEntryAttribute(GetNatEntryAttributeRequest)
       returns (GetNatEntryAttributeResponse) {}
+  rpc CreateNatEntries(CreateNatEntriesRequest)
+      returns (CreateNatEntriesResponse) {}
   rpc CreateNatZoneCounter(CreateNatZoneCounterRequest)
       returns (CreateNatZoneCounterResponse) {}
   rpc RemoveNatZoneCounter(RemoveNatZoneCounterRequest)

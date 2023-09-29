@@ -29,44 +29,53 @@ const sai_scheduler_api_t l_scheduler = {
     .get_scheduler_attribute = l_get_scheduler_attribute,
 };
 
+lemming::dataplane::sai::CreateSchedulerRequest convert_create_scheduler(
+    sai_object_id_t switch_id, uint32_t attr_count,
+    const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateSchedulerRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_SCHEDULER_ATTR_SCHEDULING_TYPE:
+        msg.set_scheduling_type(
+            static_cast<lemming::dataplane::sai::SchedulingType>(
+                attr_list[i].value.s32 + 1));
+        break;
+      case SAI_SCHEDULER_ATTR_SCHEDULING_WEIGHT:
+        msg.set_scheduling_weight(attr_list[i].value.u8);
+        break;
+      case SAI_SCHEDULER_ATTR_METER_TYPE:
+        msg.set_meter_type(static_cast<lemming::dataplane::sai::MeterType>(
+            attr_list[i].value.s32 + 1));
+        break;
+      case SAI_SCHEDULER_ATTR_MIN_BANDWIDTH_RATE:
+        msg.set_min_bandwidth_rate(attr_list[i].value.u64);
+        break;
+      case SAI_SCHEDULER_ATTR_MIN_BANDWIDTH_BURST_RATE:
+        msg.set_min_bandwidth_burst_rate(attr_list[i].value.u64);
+        break;
+      case SAI_SCHEDULER_ATTR_MAX_BANDWIDTH_RATE:
+        msg.set_max_bandwidth_rate(attr_list[i].value.u64);
+        break;
+      case SAI_SCHEDULER_ATTR_MAX_BANDWIDTH_BURST_RATE:
+        msg.set_max_bandwidth_burst_rate(attr_list[i].value.u64);
+        break;
+    }
+  }
+  return msg;
+}
+
 sai_status_t l_create_scheduler(sai_object_id_t *scheduler_id,
                                 sai_object_id_t switch_id, uint32_t attr_count,
                                 const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateSchedulerRequest req;
+  lemming::dataplane::sai::CreateSchedulerRequest req =
+      convert_create_scheduler(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateSchedulerResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_SCHEDULER_ATTR_SCHEDULING_TYPE:
-        req.set_scheduling_type(
-            static_cast<lemming::dataplane::sai::SchedulingType>(
-                attr_list[i].value.s32 + 1));
-        break;
-      case SAI_SCHEDULER_ATTR_SCHEDULING_WEIGHT:
-        req.set_scheduling_weight(attr_list[i].value.u8);
-        break;
-      case SAI_SCHEDULER_ATTR_METER_TYPE:
-        req.set_meter_type(static_cast<lemming::dataplane::sai::MeterType>(
-            attr_list[i].value.s32 + 1));
-        break;
-      case SAI_SCHEDULER_ATTR_MIN_BANDWIDTH_RATE:
-        req.set_min_bandwidth_rate(attr_list[i].value.u64);
-        break;
-      case SAI_SCHEDULER_ATTR_MIN_BANDWIDTH_BURST_RATE:
-        req.set_min_bandwidth_burst_rate(attr_list[i].value.u64);
-        break;
-      case SAI_SCHEDULER_ATTR_MAX_BANDWIDTH_RATE:
-        req.set_max_bandwidth_rate(attr_list[i].value.u64);
-        break;
-      case SAI_SCHEDULER_ATTR_MAX_BANDWIDTH_BURST_RATE:
-        req.set_max_bandwidth_burst_rate(attr_list[i].value.u64);
-        break;
-    }
-  }
   grpc::Status status = scheduler->CreateScheduler(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();

@@ -33,7 +33,7 @@ package lemming.dataplane.sai;
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/descriptor.proto";
 
-option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto";
+option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto;sai";
 
 extend google.protobuf.FieldOptions {
 	optional int32 attr_enum_value = 50000;
@@ -58,7 +58,7 @@ message AclActionData {
 
 message ACLCapability {
 	bool is_action_list_mandatory = 1;
-	repeated int32 action_list = 2;
+	repeated AclActionType action_list = 2;
 }
 
 message AclFieldData {
@@ -313,8 +313,8 @@ func TestGenerate(t *testing.T) {
 		desc:  "common enum",
 		inAst: &saiast.SAIAPI{},
 		inInfo: &docparser.SAIInfo{
-			Enums: map[string][]string{
-				"sai_foo_t": {"SAI_FOO_ONE", "SAI_FOO_TWO"},
+			Enums: map[string][]*docparser.Enum{
+				"sai_foo_t": {{Name: "SAI_FOO_ONE", Value: 0}, {Name: "SAI_FOO_TWO", Value: 1}},
 			},
 		},
 		want: map[string]string{
@@ -330,8 +330,8 @@ enum Foo {
 		desc:  "common enum with unspecified value",
 		inAst: &saiast.SAIAPI{},
 		inInfo: &docparser.SAIInfo{
-			Enums: map[string][]string{
-				"sai_foo_t": {"SAI_FOO_UNSPECIFIED", "SAI_FOO_TWO"},
+			Enums: map[string][]*docparser.Enum{
+				"sai_foo_t": {{Name: "SAI_FOO_UNSPECIFIED", Value: 0}, {Name: "SAI_FOO_TWO", Value: 1}},
 			},
 		},
 		want: map[string]string{
@@ -432,7 +432,7 @@ package lemming.dataplane.sai;
 
 import "dataplane/standalone/proto/common.proto";
 
-option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto";
+option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto;sai";
 
 
 enum FooAttr {
@@ -543,7 +543,7 @@ package lemming.dataplane.sai;
 
 import "dataplane/standalone/proto/common.proto";
 
-option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto";
+option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto;sai";
 
 
 enum FooAttr {

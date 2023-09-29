@@ -22,8 +22,31 @@ import (
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 
-	valpb "github.com/openconfig/lemming/bgp/tests/proto/policyval"
+	valpb "github.com/openconfig/lemming/proto/policyval"
 )
+
+func TestPrefixSetMode(t *testing.T) {
+	dut1, stop1 := newLemming(t, 1, 64500, []*AddIntfAction{{
+		name:    "eth0",
+		ifindex: 0,
+		enabled: true,
+		prefix:  "192.0.2.1/31",
+		niName:  "DEFAULT",
+	}})
+	defer stop1()
+
+	prefix1 := "10.33.0.0/16"
+	prefix2 := "10.34.0.0/16"
+	prefix2v6 := "10::34/16"
+
+	// Create prefix set
+	prefixSetName := "reject-" + prefix1
+	prefixSetPath := ocpath.Root().RoutingPolicy().DefinedSets().PrefixSet(prefixSetName)
+	Replace(t, dut1, prefixSetPath.Mode().Config(), oc.PrefixSet_Mode_IPV4)
+	Replace(t, dut1, prefixSetPath.Prefix(prefix1, "exact").IpPrefix().Config(), prefix1)
+	ReplaceExpectFail(t, dut1, prefixSetPath.Prefix(prefix2v6, "exact").IpPrefix().Config(), prefix2v6)
+	Replace(t, dut1, prefixSetPath.Prefix(prefix2, "exact").IpPrefix().Config(), prefix2)
+}
 
 func TestPrefixSet(t *testing.T) {
 	installPolicies := func(t *testing.T, dut1, dut2, _, _, _ *Device, invert bool) {
@@ -38,9 +61,11 @@ func TestPrefixSet(t *testing.T) {
 
 		// Create prefix set
 		prefixSetName := "reject-" + prefix1
-		prefix1Path := ocpath.Root().RoutingPolicy().DefinedSets().PrefixSet(prefixSetName).Prefix(prefix1, "exact").IpPrefix()
+		prefixSetPath := ocpath.Root().RoutingPolicy().DefinedSets().PrefixSet(prefixSetName)
+		Replace(t, dut2, prefixSetPath.Mode().Config(), oc.PrefixSet_Mode_IPV4)
+		prefix1Path := prefixSetPath.Prefix(prefix1, "exact").IpPrefix()
 		Replace(t, dut2, prefix1Path.Config(), prefix1)
-		prefix2Path := ocpath.Root().RoutingPolicy().DefinedSets().PrefixSet(prefixSetName).Prefix(prefix2, "16..23").IpPrefix()
+		prefix2Path := prefixSetPath.Prefix(prefix2, "16..23").IpPrefix()
 		Replace(t, dut2, prefix2Path.Config(), prefix2)
 
 		policy := &oc.RoutingPolicy_PolicyDefinition_Statement_OrderedMap{}

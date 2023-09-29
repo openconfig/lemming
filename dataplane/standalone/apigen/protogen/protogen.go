@@ -84,7 +84,7 @@ func generateCommonTypes(docInfo *docparser.SAIInfo) (string, error) {
 
 	seenEnums := map[string]bool{}
 	// Generate non-attribute enums.
-	rangeInOrder(docInfo.Enums, func(name string, vals []string) error {
+	rangeInOrder(docInfo.Enums, func(name string, vals []*docparser.Enum) error {
 		protoName := saiast.TrimSAIName(name, true, false)
 		unspecifiedName := saiast.TrimSAIName(name, false, true) + "_UNSPECIFIED"
 		enum := &protoEnum{
@@ -92,14 +92,17 @@ func generateCommonTypes(docInfo *docparser.SAIInfo) (string, error) {
 			Values: []protoEnumValues{{Index: 0, Name: unspecifiedName}},
 		}
 		for i, val := range vals {
-			name := strings.TrimPrefix(val, "SAI_")
+			name := strings.TrimPrefix(val.Name, "SAI_")
 			// If the SAI name conflicts with unspecified proto name, then add SAI prefix,
 			// that way the proto enum value is always 1 greater than the c enum.
 			if name == unspecifiedName {
 				name = strings.TrimSuffix(saiast.TrimSAIName(name, false, true), "_UNSPECIFIED") + "_SAI_UNSPECIFIED"
 			}
+			if i != val.Value {
+				enum.Alias = true
+			}
 			enum.Values = append(enum.Values, protoEnumValues{
-				Index: i + 1,
+				Index: val.Value + 1,
 				Name:  name,
 			})
 		}
@@ -141,6 +144,7 @@ func populateTmplDataFromFunc(apis map[string]*protoAPITmplData, docInfo *docpar
 	if _, ok := apis[apiName]; !ok {
 		apis[apiName] = &protoAPITmplData{
 			ServiceName: saiast.TrimSAIName(apiName, true, false),
+			Enums:       []protoEnum{},
 		}
 	}
 
@@ -180,7 +184,7 @@ func populateTmplDataFromFunc(apis map[string]*protoAPITmplData, docInfo *docpar
 			requestIdx++
 		}
 		for _, v := range docInfo.Enums["sai_object_type_t"] {
-			if v == fmt.Sprintf("SAI_OBJECT_TYPE_%s", meta.TypeName) {
+			if v.Name == fmt.Sprintf("SAI_OBJECT_TYPE_%s", meta.TypeName) {
 				req.Option = fmt.Sprintf("option (sai_type) = OBJECT_TYPE_%s", meta.TypeName)
 			}
 		}
@@ -255,6 +259,17 @@ func populateTmplDataFromFunc(apis map[string]*protoAPITmplData, docInfo *docpar
 		apis[apiName].Enums = append(apis[apiName].Enums, attrEnum)
 	case "remove":
 		req.Fields = append(req.Fields, idField)
+	case "create_bulk":
+		req.Fields = append(req.Fields, protoTmplField{
+			Name:      "reqs",
+			ProtoType: "repeated " + strcase.UpperCamelCase("Create "+meta.TypeName+"Request"),
+			Index:     1,
+		})
+		resp.Fields = append(resp.Fields, protoTmplField{
+			Name:      "resps",
+			ProtoType: "repeated " + strcase.UpperCamelCase("Create "+meta.TypeName+"Response"),
+			Index:     1,
+		})
 	default:
 		return nil
 	}
@@ -304,14 +319,14 @@ func createAttrs(startIdx int, typeName string, xmlInfo *docparser.SAIInfo, attr
 }
 
 var (
-	protoTmpl = template.Must(template.New("cc").Parse(`
+	protoTmpl = template.Must(template.New("proto").Parse(`
 syntax = "proto3";
 
 package lemming.dataplane.sai;
 
 import "dataplane/standalone/proto/common.proto";
 
-option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto";
+option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto;sai";
 
 {{ range .Enums }}
 enum {{ .Name }} {
@@ -346,7 +361,7 @@ package lemming.dataplane.sai;
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/descriptor.proto";
 
-option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto";
+option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto;sai";
 
 extend google.protobuf.FieldOptions {
 	optional int32 attr_enum_value = 50000;
@@ -371,6 +386,9 @@ service Entrypoint {
 }
 {{ range .Enums }}
 enum {{ .Name }} {
+	{{- if .Alias }}
+	option allow_alias = true;
+	{{- end }}
 	{{- range .Values }}
 	{{ .Name }} = {{ .Index }};
 	{{- end}}
@@ -405,6 +423,7 @@ type protoCommonTmplData struct {
 type protoEnum struct {
 	Name   string
 	Values []protoEnumValues
+	Alias  bool
 }
 
 type protoEnumValues struct {
@@ -662,7 +681,7 @@ message QOSMap {
 			ProtoType: "ACLCapability",
 			MessageDef: `message ACLCapability {
 	bool is_action_list_mandatory = 1;
-	repeated int32 action_list = 2;
+	repeated AclActionType action_list = 2;
 }`,
 		},
 		"sai_acl_field_data_t": {

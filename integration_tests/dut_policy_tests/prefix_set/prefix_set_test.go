@@ -25,7 +25,7 @@ import (
 	"github.com/openconfig/ondatra/gnmi"
 	"github.com/openconfig/ondatra/gnmi/oc"
 
-	valpb "github.com/openconfig/lemming/bgp/tests/proto/policyval"
+	valpb "github.com/openconfig/lemming/proto/policyval"
 )
 
 func TestMain(m *testing.M) {
@@ -33,22 +33,36 @@ func TestMain(m *testing.M) {
 }
 
 func TestPrefixSet(t *testing.T) {
-	installPolicies := func(t *testing.T, pair12, pair52, pair23 *policytest.DevicePair, invert bool) {
+	installPolicies := func(t *testing.T, pair12, pair52, pair23 *policytest.DevicePair, v6 bool, invert bool) {
 		t.Log("Installing test policies")
 		dut2 := pair12.Second
 		port1 := pair12.FirstPort
 
 		prefix1 := "10.33.0.0/16"
 		prefix2 := "10.34.0.0/16"
+		if v6 {
+			prefix1 = "2001::33:0:0/96"
+			prefix2 = "2001::34:0:0/96"
+		}
 
 		// Policy to reject routes with the given prefix set
 		policyName := "def1"
 
 		// Create prefix set
 		prefixSetName := "reject-" + prefix1
-		prefix1Path := policytest.RoutingPolicyPath.DefinedSets().PrefixSet(prefixSetName).Prefix(prefix1, "exact").IpPrefix()
+		prefixSetPath := policytest.RoutingPolicyPath.DefinedSets().PrefixSet(prefixSetName)
+		mode := oc.PrefixSet_Mode_IPV4
+		if v6 {
+			mode = oc.PrefixSet_Mode_IPV6
+		}
+		gnmi.Replace(t, dut2, prefixSetPath.Mode().Config(), mode)
+		prefix1Path := prefixSetPath.Prefix(prefix1, "exact").IpPrefix()
 		gnmi.Replace(t, dut2, prefix1Path.Config(), prefix1)
-		prefix2Path := policytest.RoutingPolicyPath.DefinedSets().PrefixSet(prefixSetName).Prefix(prefix2, "16..23").IpPrefix()
+		maskRange := "16..23"
+		if v6 {
+			maskRange = "96..111"
+		}
+		prefix2Path := prefixSetPath.Prefix(prefix2, maskRange).IpPrefix()
 		gnmi.Replace(t, dut2, prefix2Path.Config(), prefix2)
 
 		policy := &oc.RoutingPolicy_PolicyDefinition_Statement_OrderedMap{}
@@ -66,7 +80,11 @@ func TestPrefixSet(t *testing.T) {
 		stmt.GetOrCreateActions().SetPolicyResult(oc.RoutingPolicy_PolicyResultType_REJECT_ROUTE)
 		// Install policy
 		gnmi.Replace(t, dut2, policytest.RoutingPolicyPath.PolicyDefinition(policyName).Config(), &oc.RoutingPolicy_PolicyDefinition{Statement: policy})
-		gnmi.Replace(t, dut2, policytest.BGPPath.Neighbor(port1.IPv4).ApplyPolicy().ImportPolicy().Config(), []string{policyName})
+		neighIP := port1.IPv4
+		if v6 {
+			neighIP = port1.IPv6
+		}
+		gnmi.Replace(t, dut2, policytest.BGPPath.Neighbor(neighIP).ApplyPolicy().ImportPolicy().Config(), []string{policyName})
 	}
 
 	invertResult := func(result valpb.RouteTestResult, invert bool) valpb.RouteTestResult {
@@ -82,7 +100,7 @@ func TestPrefixSet(t *testing.T) {
 		return result
 	}
 
-	getspec := func(invert bool) *valpb.PolicyTestCase {
+	getspecv4 := func(invert bool) *valpb.PolicyTestCase {
 		spec := &valpb.PolicyTestCase{
 			Description: "Test that one prefix gets accepted and the other rejected via an ANY prefix-set.",
 			RouteTests: []*valpb.RouteTestCase{{
@@ -138,19 +156,92 @@ func TestPrefixSet(t *testing.T) {
 		return spec
 	}
 
-	t.Run("ANY", func(t *testing.T) {
+	t.Run("ANY/v4", func(t *testing.T) {
 		policytest.TestPolicy(t, policytest.TestCase{
-			Spec: getspec(false),
+			Spec: getspecv4(false),
 			InstallPolicies: func(t *testing.T, pair12, pair52, pair23 *policytest.DevicePair) {
-				installPolicies(t, pair12, pair52, pair23, false)
+				installPolicies(t, pair12, pair52, pair23, false, false)
 			},
 		})
 	})
-	t.Run("INVERT", func(t *testing.T) {
+	t.Run("INVERT/v4", func(t *testing.T) {
 		policytest.TestPolicy(t, policytest.TestCase{
-			Spec: getspec(true),
+			Spec: getspecv4(true),
 			InstallPolicies: func(t *testing.T, pair12, pair52, pair23 *policytest.DevicePair) {
-				installPolicies(t, pair12, pair52, pair23, true)
+				installPolicies(t, pair12, pair52, pair23, false, true)
+			},
+		})
+	})
+
+	getspecv6 := func(invert bool) *valpb.PolicyTestCase {
+		spec := &valpb.PolicyTestCase{
+			Description: "Test that one prefix gets accepted and the other rejected via an ANY prefix-set.",
+			RouteTests: []*valpb.RouteTestCase{{
+				Description: "Exact match",
+				Input: &valpb.TestRoute{
+					ReachPrefix: "2001::33:0:0/96",
+				},
+				ExpectedResult: invertResult(valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD, invert),
+			}, {
+				Description: "Not exact match",
+				Input: &valpb.TestRoute{
+					ReachPrefix: "2001::33:0:0/97",
+				},
+				ExpectedResult: invertResult(valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT, invert),
+			}, {
+				Description: "No match with any prefix",
+				Input: &valpb.TestRoute{
+					ReachPrefix: "2001::3:0:0/96",
+				},
+				ExpectedResult: invertResult(valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT, invert),
+			}, {
+				Description: "mask length too short",
+				Input: &valpb.TestRoute{
+					ReachPrefix: "2001::34:0:0/95",
+				},
+				ExpectedResult: invertResult(valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT, invert),
+			}, {
+				Description: "Lower end of mask length",
+				Input: &valpb.TestRoute{
+					ReachPrefix: "2001::34:0:0/96",
+				},
+				ExpectedResult: invertResult(valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD, invert),
+			}, {
+				Description: "Middle of mask length",
+				Input: &valpb.TestRoute{
+					ReachPrefix: "2001::34:0:0/104",
+				},
+				ExpectedResult: invertResult(valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD, invert),
+			}, {
+				Description: "Upper end of mask length",
+				Input: &valpb.TestRoute{
+					ReachPrefix: "2001::34:0:0/111",
+				},
+				ExpectedResult: invertResult(valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD, invert),
+			}, {
+				Description: "mask length too long",
+				Input: &valpb.TestRoute{
+					ReachPrefix: "2001::34:0:0/112",
+				},
+				ExpectedResult: invertResult(valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT, invert),
+			}},
+		}
+		return spec
+	}
+
+	t.Run("ANY/v6", func(t *testing.T) {
+		policytest.TestPolicy(t, policytest.TestCase{
+			Spec: getspecv6(false),
+			InstallPolicies: func(t *testing.T, pair12, pair52, pair23 *policytest.DevicePair) {
+				installPolicies(t, pair12, pair52, pair23, true, false)
+			},
+		})
+	})
+	t.Run("INVERT/v6", func(t *testing.T) {
+		policytest.TestPolicy(t, policytest.TestCase{
+			Spec: getspecv6(true),
+			InstallPolicies: func(t *testing.T, pair12, pair52, pair23 *policytest.DevicePair) {
+				installPolicies(t, pair12, pair52, pair23, true, true)
 			},
 		})
 	})

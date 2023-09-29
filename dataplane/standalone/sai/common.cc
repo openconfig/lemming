@@ -121,3 +121,13 @@ sai_neighbor_entry_t convert_to_neighbor_entry(
 
   return ne;
 }
+
+void convert_to_acl_capability(
+    sai_acl_capability_t& out,
+    const lemming::dataplane::sai::ACLCapability& in) {
+  out.is_action_list_mandatory = in.is_action_list_mandatory();
+  for (int i = 0; i < in.action_list().size(); i++) {
+    out.action_list.list[0] = in.action_list(i) - 1;
+  }
+  out.action_list.count = in.action_list().size();
+}

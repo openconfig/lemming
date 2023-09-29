@@ -39,25 +39,76 @@ const sai_srv6_api_t l_srv6 = {
     .get_my_sid_entries_attribute = l_get_my_sid_entries_attribute,
 };
 
+lemming::dataplane::sai::CreateSrv6SidlistRequest convert_create_srv6_sidlist(
+    sai_object_id_t switch_id, uint32_t attr_count,
+    const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateSrv6SidlistRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_SRV6_SIDLIST_ATTR_TYPE:
+        msg.set_type(static_cast<lemming::dataplane::sai::Srv6SidlistType>(
+            attr_list[i].value.s32 + 1));
+        break;
+    }
+  }
+  return msg;
+}
+
+lemming::dataplane::sai::CreateMySidEntryRequest convert_create_my_sid_entry(
+    uint32_t attr_count, const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateMySidEntryRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_MY_SID_ENTRY_ATTR_ENDPOINT_BEHAVIOR:
+        msg.set_endpoint_behavior(
+            static_cast<lemming::dataplane::sai::MySidEntryEndpointBehavior>(
+                attr_list[i].value.s32 + 1));
+        break;
+      case SAI_MY_SID_ENTRY_ATTR_ENDPOINT_BEHAVIOR_FLAVOR:
+        msg.set_endpoint_behavior_flavor(
+            static_cast<
+                lemming::dataplane::sai::MySidEntryEndpointBehaviorFlavor>(
+                attr_list[i].value.s32 + 1));
+        break;
+      case SAI_MY_SID_ENTRY_ATTR_PACKET_ACTION:
+        msg.set_packet_action(
+            static_cast<lemming::dataplane::sai::PacketAction>(
+                attr_list[i].value.s32 + 1));
+        break;
+      case SAI_MY_SID_ENTRY_ATTR_TRAP_PRIORITY:
+        msg.set_trap_priority(attr_list[i].value.u8);
+        break;
+      case SAI_MY_SID_ENTRY_ATTR_NEXT_HOP_ID:
+        msg.set_next_hop_id(attr_list[i].value.oid);
+        break;
+      case SAI_MY_SID_ENTRY_ATTR_TUNNEL_ID:
+        msg.set_tunnel_id(attr_list[i].value.oid);
+        break;
+      case SAI_MY_SID_ENTRY_ATTR_VRF:
+        msg.set_vrf(attr_list[i].value.oid);
+        break;
+      case SAI_MY_SID_ENTRY_ATTR_COUNTER_ID:
+        msg.set_counter_id(attr_list[i].value.oid);
+        break;
+    }
+  }
+  return msg;
+}
+
 sai_status_t l_create_srv6_sidlist(sai_object_id_t *srv6_sidlist_id,
                                    sai_object_id_t switch_id,
                                    uint32_t attr_count,
                                    const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateSrv6SidlistRequest req;
+  lemming::dataplane::sai::CreateSrv6SidlistRequest req =
+      convert_create_srv6_sidlist(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateSrv6SidlistResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_SRV6_SIDLIST_ATTR_TYPE:
-        req.set_type(static_cast<lemming::dataplane::sai::Srv6SidlistType>(
-            attr_list[i].value.s32 + 1));
-        break;
-    }
-  }
   grpc::Status status = srv6->CreateSrv6Sidlist(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();
@@ -132,6 +183,26 @@ sai_status_t l_create_srv6_sidlists(sai_object_id_t switch_id,
                                     sai_status_t *object_statuses) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
+  lemming::dataplane::sai::CreateSrv6SidlistsRequest req;
+  lemming::dataplane::sai::CreateSrv6SidlistsResponse resp;
+  grpc::ClientContext context;
+
+  for (uint32_t i = 0; i < object_count; i++) {
+    auto r =
+        convert_create_srv6_sidlist(switch_id, attr_count[i], attr_list[i]);
+    *req.add_reqs() = r;
+  }
+
+  grpc::Status status = srv6->CreateSrv6Sidlists(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  for (uint32_t i = 0; i < object_count; i++) {
+    switch_id = object_id[i] = resp.resps(i).oid();
+    object_statuses[i] = SAI_STATUS_SUCCESS;
+  }
+
   return SAI_STATUS_SUCCESS;
 }
 
@@ -140,8 +211,7 @@ sai_status_t l_remove_srv6_sidlists(uint32_t object_count,
                                     sai_bulk_op_error_mode_t mode,
                                     sai_status_t *object_statuses) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-
-  return SAI_STATUS_SUCCESS;
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
 sai_status_t l_create_my_sid_entry(const sai_my_sid_entry_t *my_sid_entry,
@@ -149,45 +219,11 @@ sai_status_t l_create_my_sid_entry(const sai_my_sid_entry_t *my_sid_entry,
                                    const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateMySidEntryRequest req;
+  lemming::dataplane::sai::CreateMySidEntryRequest req =
+      convert_create_my_sid_entry(attr_count, attr_list);
   lemming::dataplane::sai::CreateMySidEntryResponse resp;
   grpc::ClientContext context;
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_MY_SID_ENTRY_ATTR_ENDPOINT_BEHAVIOR:
-        req.set_endpoint_behavior(
-            static_cast<lemming::dataplane::sai::MySidEntryEndpointBehavior>(
-                attr_list[i].value.s32 + 1));
-        break;
-      case SAI_MY_SID_ENTRY_ATTR_ENDPOINT_BEHAVIOR_FLAVOR:
-        req.set_endpoint_behavior_flavor(
-            static_cast<
-                lemming::dataplane::sai::MySidEntryEndpointBehaviorFlavor>(
-                attr_list[i].value.s32 + 1));
-        break;
-      case SAI_MY_SID_ENTRY_ATTR_PACKET_ACTION:
-        req.set_packet_action(
-            static_cast<lemming::dataplane::sai::PacketAction>(
-                attr_list[i].value.s32 + 1));
-        break;
-      case SAI_MY_SID_ENTRY_ATTR_TRAP_PRIORITY:
-        req.set_trap_priority(attr_list[i].value.u8);
-        break;
-      case SAI_MY_SID_ENTRY_ATTR_NEXT_HOP_ID:
-        req.set_next_hop_id(attr_list[i].value.oid);
-        break;
-      case SAI_MY_SID_ENTRY_ATTR_TUNNEL_ID:
-        req.set_tunnel_id(attr_list[i].value.oid);
-        break;
-      case SAI_MY_SID_ENTRY_ATTR_VRF:
-        req.set_vrf(attr_list[i].value.oid);
-        break;
-      case SAI_MY_SID_ENTRY_ATTR_COUNTER_ID:
-        req.set_counter_id(attr_list[i].value.oid);
-        break;
-    }
-  }
   grpc::Status status = srv6->CreateMySidEntry(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();
@@ -324,6 +360,24 @@ sai_status_t l_create_my_sid_entries(uint32_t object_count,
                                      sai_status_t *object_statuses) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
+  lemming::dataplane::sai::CreateMySidEntriesRequest req;
+  lemming::dataplane::sai::CreateMySidEntriesResponse resp;
+  grpc::ClientContext context;
+
+  for (uint32_t i = 0; i < object_count; i++) {
+    auto r = convert_create_my_sid_entry(attr_count[i], attr_list[i]);
+    *req.add_reqs() = r;
+  }
+
+  grpc::Status status = srv6->CreateMySidEntries(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  for (uint32_t i = 0; i < object_count; i++) {
+    object_statuses[i] = SAI_STATUS_SUCCESS;
+  }
+
   return SAI_STATUS_SUCCESS;
 }
 
@@ -332,8 +386,7 @@ sai_status_t l_remove_my_sid_entries(uint32_t object_count,
                                      sai_bulk_op_error_mode_t mode,
                                      sai_status_t *object_statuses) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-
-  return SAI_STATUS_SUCCESS;
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
 sai_status_t l_set_my_sid_entries_attribute(
@@ -341,8 +394,7 @@ sai_status_t l_set_my_sid_entries_attribute(
     const sai_attribute_t *attr_list, sai_bulk_op_error_mode_t mode,
     sai_status_t *object_statuses) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-
-  return SAI_STATUS_SUCCESS;
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
 sai_status_t l_get_my_sid_entries_attribute(
@@ -350,6 +402,5 @@ sai_status_t l_get_my_sid_entries_attribute(
     const uint32_t *attr_count, sai_attribute_t **attr_list,
     sai_bulk_op_error_mode_t mode, sai_status_t *object_statuses) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-
-  return SAI_STATUS_SUCCESS;
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }

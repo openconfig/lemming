@@ -33,60 +33,68 @@ const sai_mpls_api_t l_mpls = {
     .get_inseg_entries_attribute = l_get_inseg_entries_attribute,
 };
 
+lemming::dataplane::sai::CreateInsegEntryRequest convert_create_inseg_entry(
+    uint32_t attr_count, const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateInsegEntryRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_INSEG_ENTRY_ATTR_NUM_OF_POP:
+        msg.set_num_of_pop(attr_list[i].value.u8);
+        break;
+      case SAI_INSEG_ENTRY_ATTR_PACKET_ACTION:
+        msg.set_packet_action(
+            static_cast<lemming::dataplane::sai::PacketAction>(
+                attr_list[i].value.s32 + 1));
+        break;
+      case SAI_INSEG_ENTRY_ATTR_TRAP_PRIORITY:
+        msg.set_trap_priority(attr_list[i].value.u8);
+        break;
+      case SAI_INSEG_ENTRY_ATTR_NEXT_HOP_ID:
+        msg.set_next_hop_id(attr_list[i].value.oid);
+        break;
+      case SAI_INSEG_ENTRY_ATTR_PSC_TYPE:
+        msg.set_psc_type(
+            static_cast<lemming::dataplane::sai::InsegEntryPscType>(
+                attr_list[i].value.s32 + 1));
+        break;
+      case SAI_INSEG_ENTRY_ATTR_QOS_TC:
+        msg.set_qos_tc(attr_list[i].value.u8);
+        break;
+      case SAI_INSEG_ENTRY_ATTR_MPLS_EXP_TO_TC_MAP:
+        msg.set_mpls_exp_to_tc_map(attr_list[i].value.oid);
+        break;
+      case SAI_INSEG_ENTRY_ATTR_MPLS_EXP_TO_COLOR_MAP:
+        msg.set_mpls_exp_to_color_map(attr_list[i].value.oid);
+        break;
+      case SAI_INSEG_ENTRY_ATTR_POP_TTL_MODE:
+        msg.set_pop_ttl_mode(
+            static_cast<lemming::dataplane::sai::InsegEntryPopTtlMode>(
+                attr_list[i].value.s32 + 1));
+        break;
+      case SAI_INSEG_ENTRY_ATTR_POP_QOS_MODE:
+        msg.set_pop_qos_mode(
+            static_cast<lemming::dataplane::sai::InsegEntryPopQosMode>(
+                attr_list[i].value.s32 + 1));
+        break;
+      case SAI_INSEG_ENTRY_ATTR_COUNTER_ID:
+        msg.set_counter_id(attr_list[i].value.oid);
+        break;
+    }
+  }
+  return msg;
+}
+
 sai_status_t l_create_inseg_entry(const sai_inseg_entry_t *inseg_entry,
                                   uint32_t attr_count,
                                   const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateInsegEntryRequest req;
+  lemming::dataplane::sai::CreateInsegEntryRequest req =
+      convert_create_inseg_entry(attr_count, attr_list);
   lemming::dataplane::sai::CreateInsegEntryResponse resp;
   grpc::ClientContext context;
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_INSEG_ENTRY_ATTR_NUM_OF_POP:
-        req.set_num_of_pop(attr_list[i].value.u8);
-        break;
-      case SAI_INSEG_ENTRY_ATTR_PACKET_ACTION:
-        req.set_packet_action(
-            static_cast<lemming::dataplane::sai::PacketAction>(
-                attr_list[i].value.s32 + 1));
-        break;
-      case SAI_INSEG_ENTRY_ATTR_TRAP_PRIORITY:
-        req.set_trap_priority(attr_list[i].value.u8);
-        break;
-      case SAI_INSEG_ENTRY_ATTR_NEXT_HOP_ID:
-        req.set_next_hop_id(attr_list[i].value.oid);
-        break;
-      case SAI_INSEG_ENTRY_ATTR_PSC_TYPE:
-        req.set_psc_type(
-            static_cast<lemming::dataplane::sai::InsegEntryPscType>(
-                attr_list[i].value.s32 + 1));
-        break;
-      case SAI_INSEG_ENTRY_ATTR_QOS_TC:
-        req.set_qos_tc(attr_list[i].value.u8);
-        break;
-      case SAI_INSEG_ENTRY_ATTR_MPLS_EXP_TO_TC_MAP:
-        req.set_mpls_exp_to_tc_map(attr_list[i].value.oid);
-        break;
-      case SAI_INSEG_ENTRY_ATTR_MPLS_EXP_TO_COLOR_MAP:
-        req.set_mpls_exp_to_color_map(attr_list[i].value.oid);
-        break;
-      case SAI_INSEG_ENTRY_ATTR_POP_TTL_MODE:
-        req.set_pop_ttl_mode(
-            static_cast<lemming::dataplane::sai::InsegEntryPopTtlMode>(
-                attr_list[i].value.s32 + 1));
-        break;
-      case SAI_INSEG_ENTRY_ATTR_POP_QOS_MODE:
-        req.set_pop_qos_mode(
-            static_cast<lemming::dataplane::sai::InsegEntryPopQosMode>(
-                attr_list[i].value.s32 + 1));
-        break;
-      case SAI_INSEG_ENTRY_ATTR_COUNTER_ID:
-        req.set_counter_id(attr_list[i].value.oid);
-        break;
-    }
-  }
   grpc::Status status = mpls->CreateInsegEntry(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();
@@ -241,6 +249,24 @@ sai_status_t l_create_inseg_entries(uint32_t object_count,
                                     sai_status_t *object_statuses) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
+  lemming::dataplane::sai::CreateInsegEntriesRequest req;
+  lemming::dataplane::sai::CreateInsegEntriesResponse resp;
+  grpc::ClientContext context;
+
+  for (uint32_t i = 0; i < object_count; i++) {
+    auto r = convert_create_inseg_entry(attr_count[i], attr_list[i]);
+    *req.add_reqs() = r;
+  }
+
+  grpc::Status status = mpls->CreateInsegEntries(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  for (uint32_t i = 0; i < object_count; i++) {
+    object_statuses[i] = SAI_STATUS_SUCCESS;
+  }
+
   return SAI_STATUS_SUCCESS;
 }
 
@@ -249,8 +275,7 @@ sai_status_t l_remove_inseg_entries(uint32_t object_count,
                                     sai_bulk_op_error_mode_t mode,
                                     sai_status_t *object_statuses) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-
-  return SAI_STATUS_SUCCESS;
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
 sai_status_t l_set_inseg_entries_attribute(uint32_t object_count,
@@ -259,8 +284,7 @@ sai_status_t l_set_inseg_entries_attribute(uint32_t object_count,
                                            sai_bulk_op_error_mode_t mode,
                                            sai_status_t *object_statuses) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-
-  return SAI_STATUS_SUCCESS;
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
 sai_status_t l_get_inseg_entries_attribute(uint32_t object_count,
@@ -270,6 +294,5 @@ sai_status_t l_get_inseg_entries_attribute(uint32_t object_count,
                                            sai_bulk_op_error_mode_t mode,
                                            sai_status_t *object_statuses) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-
-  return SAI_STATUS_SUCCESS;
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }

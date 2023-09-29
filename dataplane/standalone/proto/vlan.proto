@@ -5,7 +5,7 @@ package lemming.dataplane.sai;
 
 import "dataplane/standalone/proto/common.proto";
 
-option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto";
+option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto;sai";
 
 enum VlanAttr {
   VLAN_ATTR_UNSPECIFIED = 0;
@@ -163,6 +163,14 @@ message GetVlanMemberAttributeResponse {
   VlanMemberAttribute attr = 1;
 }
 
+message CreateVlanMembersRequest {
+  repeated CreateVlanMemberRequest reqs = 1;
+}
+
+message CreateVlanMembersResponse {
+  repeated CreateVlanMemberResponse resps = 1;
+}
+
 service Vlan {
   rpc CreateVlan(CreateVlanRequest) returns (CreateVlanResponse) {}
   rpc RemoveVlan(RemoveVlanRequest) returns (RemoveVlanResponse) {}
@@ -178,4 +186,6 @@ service Vlan {
       returns (SetVlanMemberAttributeResponse) {}
   rpc GetVlanMemberAttribute(GetVlanMemberAttributeRequest)
       returns (GetVlanMemberAttributeResponse) {}
+  rpc CreateVlanMembers(CreateVlanMembersRequest)
+      returns (CreateVlanMembersResponse) {}
 }

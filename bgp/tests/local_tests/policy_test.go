@@ -19,14 +19,13 @@ import (
 	"time"
 
 	"github.com/openconfig/lemming/bgp"
-	"github.com/openconfig/lemming/bgp/tests/proto/policyval"
 	"github.com/openconfig/lemming/gnmi/fakedevice"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot"
 
-	valpb "github.com/openconfig/lemming/bgp/tests/proto/policyval"
+	valpb "github.com/openconfig/lemming/proto/policyval"
 )
 
 const (
@@ -130,9 +129,7 @@ func testPolicy(t *testing.T, testspec PolicyTestCase) {
 		installStaticRoute(t, dut5, route)
 	}
 
-	t.Run("installPolicyBeforeRoutes", func(t *testing.T) {
-		testPolicyAux(t, testspec, dut1, dut2, dut3, dut4, dut5)
-	})
+	testPolicyAux(t, testspec, dut1, dut2, dut3, dut4, dut5)
 }
 
 func testPropagation(t *testing.T, routeTest *valpb.RouteTestCase, prevDUT, currDUT, nextDUT *Device) {
@@ -145,14 +142,14 @@ func testPropagation(t *testing.T, routeTest *valpb.RouteTestCase, prevDUT, curr
 	Await(t, prevDUT, v4uni.Neighbor(currDUT.RouterID).AdjRibOutPost().Route(prefix, 0).Prefix().State(), prefix)
 	Await(t, currDUT, v4uni.Neighbor(prevDUT.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), prefix)
 	switch expectedResult := routeTest.GetExpectedResult(); expectedResult {
-	case policyval.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT:
+	case valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT:
 		t.Logf("Waiting for %s to be propagated", prefix)
 		Await(t, currDUT, v4uni.Neighbor(prevDUT.RouterID).AdjRibInPost().Route(prefix, 0).Prefix().State(), prefix)
 		Await(t, currDUT, v4uni.LocRib().Route(prefix, oc.UnionString(prevDUT.RouterID), 0).Prefix().State(), prefix)
 		Await(t, currDUT, v4uni.Neighbor(nextDUT.RouterID).AdjRibOutPre().Route(prefix, 0).Prefix().State(), prefix)
 		Await(t, currDUT, v4uni.Neighbor(nextDUT.RouterID).AdjRibOutPost().Route(prefix, 0).Prefix().State(), prefix)
 		Await(t, nextDUT, v4uni.Neighbor(currDUT.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), prefix)
-	case policyval.RouteTestResult_ROUTE_TEST_RESULT_DISCARD:
+	case valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD:
 		w := Watch(t, currDUT, v4uni.Neighbor(prevDUT.RouterID).AdjRibInPost().Route(prefix, 0).Prefix().State(), rejectTimeout, func(val *ygnmi.Value[string]) bool {
 			_, ok := val.Val()
 			return !ok
@@ -173,7 +170,7 @@ func testPropagation(t *testing.T, routeTest *valpb.RouteTestCase, prevDUT, curr
 			break
 		}
 		t.Logf("prefix %q (%s) was successfully rejected from adj-rib-in-pre of %v (neighbour %v) within timeout.", prefix, routeTest.GetDescription(), nextDUT, currDUT.ID)
-	case policyval.RouteTestResult_ROUTE_TEST_RESULT_NOT_PREFERRED:
+	case valpb.RouteTestResult_ROUTE_TEST_RESULT_NOT_PREFERRED:
 		Await(t, currDUT, v4uni.Neighbor(prevDUT.RouterID).AdjRibInPost().Route(prefix, 0).Prefix().State(), prefix)
 		w := Watch(t, currDUT, v4uni.LocRib().Route(prefix, oc.UnionString(prevDUT.RouterID), 0).Prefix().State(), rejectTimeout, func(val *ygnmi.Value[string]) bool {
 			_, ok := val.Val()

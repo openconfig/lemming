@@ -34,46 +34,54 @@ const sai_fdb_api_t l_fdb = {
     .get_fdb_entries_attribute = l_get_fdb_entries_attribute,
 };
 
+lemming::dataplane::sai::CreateFdbEntryRequest convert_create_fdb_entry(
+    uint32_t attr_count, const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateFdbEntryRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_FDB_ENTRY_ATTR_TYPE:
+        msg.set_type(static_cast<lemming::dataplane::sai::FdbEntryType>(
+            attr_list[i].value.s32 + 1));
+        break;
+      case SAI_FDB_ENTRY_ATTR_PACKET_ACTION:
+        msg.set_packet_action(
+            static_cast<lemming::dataplane::sai::PacketAction>(
+                attr_list[i].value.s32 + 1));
+        break;
+      case SAI_FDB_ENTRY_ATTR_USER_TRAP_ID:
+        msg.set_user_trap_id(attr_list[i].value.oid);
+        break;
+      case SAI_FDB_ENTRY_ATTR_BRIDGE_PORT_ID:
+        msg.set_bridge_port_id(attr_list[i].value.oid);
+        break;
+      case SAI_FDB_ENTRY_ATTR_META_DATA:
+        msg.set_meta_data(attr_list[i].value.u32);
+        break;
+      case SAI_FDB_ENTRY_ATTR_ENDPOINT_IP:
+        msg.set_endpoint_ip(convert_from_ip_address(attr_list[i].value.ipaddr));
+        break;
+      case SAI_FDB_ENTRY_ATTR_COUNTER_ID:
+        msg.set_counter_id(attr_list[i].value.oid);
+        break;
+      case SAI_FDB_ENTRY_ATTR_ALLOW_MAC_MOVE:
+        msg.set_allow_mac_move(attr_list[i].value.booldata);
+        break;
+    }
+  }
+  return msg;
+}
+
 sai_status_t l_create_fdb_entry(const sai_fdb_entry_t *fdb_entry,
                                 uint32_t attr_count,
                                 const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateFdbEntryRequest req;
+  lemming::dataplane::sai::CreateFdbEntryRequest req =
+      convert_create_fdb_entry(attr_count, attr_list);
   lemming::dataplane::sai::CreateFdbEntryResponse resp;
   grpc::ClientContext context;
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_FDB_ENTRY_ATTR_TYPE:
-        req.set_type(static_cast<lemming::dataplane::sai::FdbEntryType>(
-            attr_list[i].value.s32 + 1));
-        break;
-      case SAI_FDB_ENTRY_ATTR_PACKET_ACTION:
-        req.set_packet_action(
-            static_cast<lemming::dataplane::sai::PacketAction>(
-                attr_list[i].value.s32 + 1));
-        break;
-      case SAI_FDB_ENTRY_ATTR_USER_TRAP_ID:
-        req.set_user_trap_id(attr_list[i].value.oid);
-        break;
-      case SAI_FDB_ENTRY_ATTR_BRIDGE_PORT_ID:
-        req.set_bridge_port_id(attr_list[i].value.oid);
-        break;
-      case SAI_FDB_ENTRY_ATTR_META_DATA:
-        req.set_meta_data(attr_list[i].value.u32);
-        break;
-      case SAI_FDB_ENTRY_ATTR_ENDPOINT_IP:
-        req.set_endpoint_ip(convert_from_ip_address(attr_list[i].value.ipaddr));
-        break;
-      case SAI_FDB_ENTRY_ATTR_COUNTER_ID:
-        req.set_counter_id(attr_list[i].value.oid);
-        break;
-      case SAI_FDB_ENTRY_ATTR_ALLOW_MAC_MOVE:
-        req.set_allow_mac_move(attr_list[i].value.booldata);
-        break;
-    }
-  }
   grpc::Status status = fdb->CreateFdbEntry(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();
@@ -211,6 +219,24 @@ sai_status_t l_create_fdb_entries(uint32_t object_count,
                                   sai_status_t *object_statuses) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
+  lemming::dataplane::sai::CreateFdbEntriesRequest req;
+  lemming::dataplane::sai::CreateFdbEntriesResponse resp;
+  grpc::ClientContext context;
+
+  for (uint32_t i = 0; i < object_count; i++) {
+    auto r = convert_create_fdb_entry(attr_count[i], attr_list[i]);
+    *req.add_reqs() = r;
+  }
+
+  grpc::Status status = fdb->CreateFdbEntries(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  for (uint32_t i = 0; i < object_count; i++) {
+    object_statuses[i] = SAI_STATUS_SUCCESS;
+  }
+
   return SAI_STATUS_SUCCESS;
 }
 
@@ -219,8 +245,7 @@ sai_status_t l_remove_fdb_entries(uint32_t object_count,
                                   sai_bulk_op_error_mode_t mode,
                                   sai_status_t *object_statuses) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-
-  return SAI_STATUS_SUCCESS;
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
 sai_status_t l_set_fdb_entries_attribute(uint32_t object_count,
@@ -229,8 +254,7 @@ sai_status_t l_set_fdb_entries_attribute(uint32_t object_count,
                                          sai_bulk_op_error_mode_t mode,
                                          sai_status_t *object_statuses) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-
-  return SAI_STATUS_SUCCESS;
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
 sai_status_t l_get_fdb_entries_attribute(uint32_t object_count,
@@ -240,6 +264,5 @@ sai_status_t l_get_fdb_entries_attribute(uint32_t object_count,
                                          sai_bulk_op_error_mode_t mode,
                                          sai_status_t *object_statuses) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-
-  return SAI_STATUS_SUCCESS;
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }

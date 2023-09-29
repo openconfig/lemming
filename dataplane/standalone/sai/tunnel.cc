@@ -44,26 +44,269 @@ const sai_tunnel_api_t l_tunnel = {
     .remove_tunnel_map_entry = l_remove_tunnel_map_entry,
     .set_tunnel_map_entry_attribute = l_set_tunnel_map_entry_attribute,
     .get_tunnel_map_entry_attribute = l_get_tunnel_map_entry_attribute,
+    .create_tunnels = l_create_tunnels,
+    .remove_tunnels = l_remove_tunnels,
+    .set_tunnels_attribute = l_set_tunnels_attribute,
+    .get_tunnels_attribute = l_get_tunnels_attribute,
 };
+
+lemming::dataplane::sai::CreateTunnelMapRequest convert_create_tunnel_map(
+    sai_object_id_t switch_id, uint32_t attr_count,
+    const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateTunnelMapRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_TUNNEL_MAP_ATTR_TYPE:
+        msg.set_type(static_cast<lemming::dataplane::sai::TunnelMapType>(
+            attr_list[i].value.s32 + 1));
+        break;
+    }
+  }
+  return msg;
+}
+
+lemming::dataplane::sai::CreateTunnelRequest convert_create_tunnel(
+    sai_object_id_t switch_id, uint32_t attr_count,
+    const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateTunnelRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_TUNNEL_ATTR_TYPE:
+        msg.set_type(static_cast<lemming::dataplane::sai::TunnelType>(
+            attr_list[i].value.s32 + 1));
+        break;
+      case SAI_TUNNEL_ATTR_UNDERLAY_INTERFACE:
+        msg.set_underlay_interface(attr_list[i].value.oid);
+        break;
+      case SAI_TUNNEL_ATTR_OVERLAY_INTERFACE:
+        msg.set_overlay_interface(attr_list[i].value.oid);
+        break;
+      case SAI_TUNNEL_ATTR_PEER_MODE:
+        msg.set_peer_mode(static_cast<lemming::dataplane::sai::TunnelPeerMode>(
+            attr_list[i].value.s32 + 1));
+        break;
+      case SAI_TUNNEL_ATTR_ENCAP_SRC_IP:
+        msg.set_encap_src_ip(
+            convert_from_ip_address(attr_list[i].value.ipaddr));
+        break;
+      case SAI_TUNNEL_ATTR_ENCAP_DST_IP:
+        msg.set_encap_dst_ip(
+            convert_from_ip_address(attr_list[i].value.ipaddr));
+        break;
+      case SAI_TUNNEL_ATTR_ENCAP_TTL_MODE:
+        msg.set_encap_ttl_mode(
+            static_cast<lemming::dataplane::sai::TunnelTtlMode>(
+                attr_list[i].value.s32 + 1));
+        break;
+      case SAI_TUNNEL_ATTR_ENCAP_TTL_VAL:
+        msg.set_encap_ttl_val(attr_list[i].value.u8);
+        break;
+      case SAI_TUNNEL_ATTR_ENCAP_DSCP_MODE:
+        msg.set_encap_dscp_mode(
+            static_cast<lemming::dataplane::sai::TunnelDscpMode>(
+                attr_list[i].value.s32 + 1));
+        break;
+      case SAI_TUNNEL_ATTR_ENCAP_DSCP_VAL:
+        msg.set_encap_dscp_val(attr_list[i].value.u8);
+        break;
+      case SAI_TUNNEL_ATTR_ENCAP_GRE_KEY_VALID:
+        msg.set_encap_gre_key_valid(attr_list[i].value.booldata);
+        break;
+      case SAI_TUNNEL_ATTR_ENCAP_GRE_KEY:
+        msg.set_encap_gre_key(attr_list[i].value.u32);
+        break;
+      case SAI_TUNNEL_ATTR_ENCAP_ECN_MODE:
+        msg.set_encap_ecn_mode(
+            static_cast<lemming::dataplane::sai::TunnelEncapEcnMode>(
+                attr_list[i].value.s32 + 1));
+        break;
+      case SAI_TUNNEL_ATTR_ENCAP_MAPPERS:
+        msg.mutable_encap_mappers()->Add(
+            attr_list[i].value.objlist.list,
+            attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
+        break;
+      case SAI_TUNNEL_ATTR_DECAP_ECN_MODE:
+        msg.set_decap_ecn_mode(
+            static_cast<lemming::dataplane::sai::TunnelDecapEcnMode>(
+                attr_list[i].value.s32 + 1));
+        break;
+      case SAI_TUNNEL_ATTR_DECAP_MAPPERS:
+        msg.mutable_decap_mappers()->Add(
+            attr_list[i].value.objlist.list,
+            attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
+        break;
+      case SAI_TUNNEL_ATTR_DECAP_TTL_MODE:
+        msg.set_decap_ttl_mode(
+            static_cast<lemming::dataplane::sai::TunnelTtlMode>(
+                attr_list[i].value.s32 + 1));
+        break;
+      case SAI_TUNNEL_ATTR_DECAP_DSCP_MODE:
+        msg.set_decap_dscp_mode(
+            static_cast<lemming::dataplane::sai::TunnelDscpMode>(
+                attr_list[i].value.s32 + 1));
+        break;
+      case SAI_TUNNEL_ATTR_LOOPBACK_PACKET_ACTION:
+        msg.set_loopback_packet_action(
+            static_cast<lemming::dataplane::sai::PacketAction>(
+                attr_list[i].value.s32 + 1));
+        break;
+      case SAI_TUNNEL_ATTR_VXLAN_UDP_SPORT_MODE:
+        msg.set_vxlan_udp_sport_mode(
+            static_cast<lemming::dataplane::sai::TunnelVxlanUdpSportMode>(
+                attr_list[i].value.s32 + 1));
+        break;
+      case SAI_TUNNEL_ATTR_VXLAN_UDP_SPORT:
+        msg.set_vxlan_udp_sport(attr_list[i].value.u16);
+        break;
+      case SAI_TUNNEL_ATTR_VXLAN_UDP_SPORT_MASK:
+        msg.set_vxlan_udp_sport_mask(attr_list[i].value.u8);
+        break;
+      case SAI_TUNNEL_ATTR_SA_INDEX:
+        msg.set_sa_index(attr_list[i].value.u32);
+        break;
+      case SAI_TUNNEL_ATTR_IPSEC_SA_PORT_LIST:
+        msg.mutable_ipsec_sa_port_list()->Add(
+            attr_list[i].value.objlist.list,
+            attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
+        break;
+      case SAI_TUNNEL_ATTR_ENCAP_QOS_TC_AND_COLOR_TO_DSCP_MAP:
+        msg.set_encap_qos_tc_and_color_to_dscp_map(attr_list[i].value.oid);
+        break;
+      case SAI_TUNNEL_ATTR_ENCAP_QOS_TC_TO_QUEUE_MAP:
+        msg.set_encap_qos_tc_to_queue_map(attr_list[i].value.oid);
+        break;
+      case SAI_TUNNEL_ATTR_DECAP_QOS_DSCP_TO_TC_MAP:
+        msg.set_decap_qos_dscp_to_tc_map(attr_list[i].value.oid);
+        break;
+      case SAI_TUNNEL_ATTR_DECAP_QOS_TC_TO_PRIORITY_GROUP_MAP:
+        msg.set_decap_qos_tc_to_priority_group_map(attr_list[i].value.oid);
+        break;
+      case SAI_TUNNEL_ATTR_VXLAN_UDP_SPORT_SECURITY:
+        msg.set_vxlan_udp_sport_security(attr_list[i].value.booldata);
+        break;
+    }
+  }
+  return msg;
+}
+
+lemming::dataplane::sai::CreateTunnelTermTableEntryRequest
+convert_create_tunnel_term_table_entry(sai_object_id_t switch_id,
+                                       uint32_t attr_count,
+                                       const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateTunnelTermTableEntryRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_TUNNEL_TERM_TABLE_ENTRY_ATTR_VR_ID:
+        msg.set_vr_id(attr_list[i].value.oid);
+        break;
+      case SAI_TUNNEL_TERM_TABLE_ENTRY_ATTR_TYPE:
+        msg.set_type(
+            static_cast<lemming::dataplane::sai::TunnelTermTableEntryType>(
+                attr_list[i].value.s32 + 1));
+        break;
+      case SAI_TUNNEL_TERM_TABLE_ENTRY_ATTR_DST_IP:
+        msg.set_dst_ip(convert_from_ip_address(attr_list[i].value.ipaddr));
+        break;
+      case SAI_TUNNEL_TERM_TABLE_ENTRY_ATTR_DST_IP_MASK:
+        msg.set_dst_ip_mask(convert_from_ip_address(attr_list[i].value.ipaddr));
+        break;
+      case SAI_TUNNEL_TERM_TABLE_ENTRY_ATTR_SRC_IP:
+        msg.set_src_ip(convert_from_ip_address(attr_list[i].value.ipaddr));
+        break;
+      case SAI_TUNNEL_TERM_TABLE_ENTRY_ATTR_SRC_IP_MASK:
+        msg.set_src_ip_mask(convert_from_ip_address(attr_list[i].value.ipaddr));
+        break;
+      case SAI_TUNNEL_TERM_TABLE_ENTRY_ATTR_TUNNEL_TYPE:
+        msg.set_tunnel_type(static_cast<lemming::dataplane::sai::TunnelType>(
+            attr_list[i].value.s32 + 1));
+        break;
+      case SAI_TUNNEL_TERM_TABLE_ENTRY_ATTR_ACTION_TUNNEL_ID:
+        msg.set_action_tunnel_id(attr_list[i].value.oid);
+        break;
+      case SAI_TUNNEL_TERM_TABLE_ENTRY_ATTR_IPSEC_VERIFIED:
+        msg.set_ipsec_verified(attr_list[i].value.booldata);
+        break;
+    }
+  }
+  return msg;
+}
+
+lemming::dataplane::sai::CreateTunnelMapEntryRequest
+convert_create_tunnel_map_entry(sai_object_id_t switch_id, uint32_t attr_count,
+                                const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateTunnelMapEntryRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_TUNNEL_MAP_ENTRY_ATTR_TUNNEL_MAP_TYPE:
+        msg.set_tunnel_map_type(
+            static_cast<lemming::dataplane::sai::TunnelMapType>(
+                attr_list[i].value.s32 + 1));
+        break;
+      case SAI_TUNNEL_MAP_ENTRY_ATTR_TUNNEL_MAP:
+        msg.set_tunnel_map(attr_list[i].value.oid);
+        break;
+      case SAI_TUNNEL_MAP_ENTRY_ATTR_OECN_KEY:
+        msg.set_oecn_key(attr_list[i].value.u8);
+        break;
+      case SAI_TUNNEL_MAP_ENTRY_ATTR_OECN_VALUE:
+        msg.set_oecn_value(attr_list[i].value.u8);
+        break;
+      case SAI_TUNNEL_MAP_ENTRY_ATTR_UECN_KEY:
+        msg.set_uecn_key(attr_list[i].value.u8);
+        break;
+      case SAI_TUNNEL_MAP_ENTRY_ATTR_UECN_VALUE:
+        msg.set_uecn_value(attr_list[i].value.u8);
+        break;
+      case SAI_TUNNEL_MAP_ENTRY_ATTR_VLAN_ID_KEY:
+        msg.set_vlan_id_key(attr_list[i].value.u16);
+        break;
+      case SAI_TUNNEL_MAP_ENTRY_ATTR_VLAN_ID_VALUE:
+        msg.set_vlan_id_value(attr_list[i].value.u16);
+        break;
+      case SAI_TUNNEL_MAP_ENTRY_ATTR_VNI_ID_KEY:
+        msg.set_vni_id_key(attr_list[i].value.u32);
+        break;
+      case SAI_TUNNEL_MAP_ENTRY_ATTR_VNI_ID_VALUE:
+        msg.set_vni_id_value(attr_list[i].value.u32);
+        break;
+      case SAI_TUNNEL_MAP_ENTRY_ATTR_BRIDGE_ID_KEY:
+        msg.set_bridge_id_key(attr_list[i].value.oid);
+        break;
+      case SAI_TUNNEL_MAP_ENTRY_ATTR_BRIDGE_ID_VALUE:
+        msg.set_bridge_id_value(attr_list[i].value.oid);
+        break;
+      case SAI_TUNNEL_MAP_ENTRY_ATTR_VIRTUAL_ROUTER_ID_KEY:
+        msg.set_virtual_router_id_key(attr_list[i].value.oid);
+        break;
+      case SAI_TUNNEL_MAP_ENTRY_ATTR_VIRTUAL_ROUTER_ID_VALUE:
+        msg.set_virtual_router_id_value(attr_list[i].value.oid);
+        break;
+      case SAI_TUNNEL_MAP_ENTRY_ATTR_VSID_ID_KEY:
+        msg.set_vsid_id_key(attr_list[i].value.u32);
+        break;
+      case SAI_TUNNEL_MAP_ENTRY_ATTR_VSID_ID_VALUE:
+        msg.set_vsid_id_value(attr_list[i].value.u32);
+        break;
+    }
+  }
+  return msg;
+}
 
 sai_status_t l_create_tunnel_map(sai_object_id_t *tunnel_map_id,
                                  sai_object_id_t switch_id, uint32_t attr_count,
                                  const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateTunnelMapRequest req;
+  lemming::dataplane::sai::CreateTunnelMapRequest req =
+      convert_create_tunnel_map(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateTunnelMapResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_TUNNEL_MAP_ATTR_TYPE:
-        req.set_type(static_cast<lemming::dataplane::sai::TunnelMapType>(
-            attr_list[i].value.s32 + 1));
-        break;
-    }
-  }
   grpc::Status status = tunnel->CreateTunnelMap(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();
@@ -138,128 +381,12 @@ sai_status_t l_create_tunnel(sai_object_id_t *tunnel_id,
                              const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateTunnelRequest req;
+  lemming::dataplane::sai::CreateTunnelRequest req =
+      convert_create_tunnel(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateTunnelResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_TUNNEL_ATTR_TYPE:
-        req.set_type(static_cast<lemming::dataplane::sai::TunnelType>(
-            attr_list[i].value.s32 + 1));
-        break;
-      case SAI_TUNNEL_ATTR_UNDERLAY_INTERFACE:
-        req.set_underlay_interface(attr_list[i].value.oid);
-        break;
-      case SAI_TUNNEL_ATTR_OVERLAY_INTERFACE:
-        req.set_overlay_interface(attr_list[i].value.oid);
-        break;
-      case SAI_TUNNEL_ATTR_PEER_MODE:
-        req.set_peer_mode(static_cast<lemming::dataplane::sai::TunnelPeerMode>(
-            attr_list[i].value.s32 + 1));
-        break;
-      case SAI_TUNNEL_ATTR_ENCAP_SRC_IP:
-        req.set_encap_src_ip(
-            convert_from_ip_address(attr_list[i].value.ipaddr));
-        break;
-      case SAI_TUNNEL_ATTR_ENCAP_DST_IP:
-        req.set_encap_dst_ip(
-            convert_from_ip_address(attr_list[i].value.ipaddr));
-        break;
-      case SAI_TUNNEL_ATTR_ENCAP_TTL_MODE:
-        req.set_encap_ttl_mode(
-            static_cast<lemming::dataplane::sai::TunnelTtlMode>(
-                attr_list[i].value.s32 + 1));
-        break;
-      case SAI_TUNNEL_ATTR_ENCAP_TTL_VAL:
-        req.set_encap_ttl_val(attr_list[i].value.u8);
-        break;
-      case SAI_TUNNEL_ATTR_ENCAP_DSCP_MODE:
-        req.set_encap_dscp_mode(
-            static_cast<lemming::dataplane::sai::TunnelDscpMode>(
-                attr_list[i].value.s32 + 1));
-        break;
-      case SAI_TUNNEL_ATTR_ENCAP_DSCP_VAL:
-        req.set_encap_dscp_val(attr_list[i].value.u8);
-        break;
-      case SAI_TUNNEL_ATTR_ENCAP_GRE_KEY_VALID:
-        req.set_encap_gre_key_valid(attr_list[i].value.booldata);
-        break;
-      case SAI_TUNNEL_ATTR_ENCAP_GRE_KEY:
-        req.set_encap_gre_key(attr_list[i].value.u32);
-        break;
-      case SAI_TUNNEL_ATTR_ENCAP_ECN_MODE:
-        req.set_encap_ecn_mode(
-            static_cast<lemming::dataplane::sai::TunnelEncapEcnMode>(
-                attr_list[i].value.s32 + 1));
-        break;
-      case SAI_TUNNEL_ATTR_ENCAP_MAPPERS:
-        req.mutable_encap_mappers()->Add(
-            attr_list[i].value.objlist.list,
-            attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
-        break;
-      case SAI_TUNNEL_ATTR_DECAP_ECN_MODE:
-        req.set_decap_ecn_mode(
-            static_cast<lemming::dataplane::sai::TunnelDecapEcnMode>(
-                attr_list[i].value.s32 + 1));
-        break;
-      case SAI_TUNNEL_ATTR_DECAP_MAPPERS:
-        req.mutable_decap_mappers()->Add(
-            attr_list[i].value.objlist.list,
-            attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
-        break;
-      case SAI_TUNNEL_ATTR_DECAP_TTL_MODE:
-        req.set_decap_ttl_mode(
-            static_cast<lemming::dataplane::sai::TunnelTtlMode>(
-                attr_list[i].value.s32 + 1));
-        break;
-      case SAI_TUNNEL_ATTR_DECAP_DSCP_MODE:
-        req.set_decap_dscp_mode(
-            static_cast<lemming::dataplane::sai::TunnelDscpMode>(
-                attr_list[i].value.s32 + 1));
-        break;
-      case SAI_TUNNEL_ATTR_LOOPBACK_PACKET_ACTION:
-        req.set_loopback_packet_action(
-            static_cast<lemming::dataplane::sai::PacketAction>(
-                attr_list[i].value.s32 + 1));
-        break;
-      case SAI_TUNNEL_ATTR_VXLAN_UDP_SPORT_MODE:
-        req.set_vxlan_udp_sport_mode(
-            static_cast<lemming::dataplane::sai::TunnelVxlanUdpSportMode>(
-                attr_list[i].value.s32 + 1));
-        break;
-      case SAI_TUNNEL_ATTR_VXLAN_UDP_SPORT:
-        req.set_vxlan_udp_sport(attr_list[i].value.u16);
-        break;
-      case SAI_TUNNEL_ATTR_VXLAN_UDP_SPORT_MASK:
-        req.set_vxlan_udp_sport_mask(attr_list[i].value.u8);
-        break;
-      case SAI_TUNNEL_ATTR_SA_INDEX:
-        req.set_sa_index(attr_list[i].value.u32);
-        break;
-      case SAI_TUNNEL_ATTR_IPSEC_SA_PORT_LIST:
-        req.mutable_ipsec_sa_port_list()->Add(
-            attr_list[i].value.objlist.list,
-            attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
-        break;
-      case SAI_TUNNEL_ATTR_ENCAP_QOS_TC_AND_COLOR_TO_DSCP_MAP:
-        req.set_encap_qos_tc_and_color_to_dscp_map(attr_list[i].value.oid);
-        break;
-      case SAI_TUNNEL_ATTR_ENCAP_QOS_TC_TO_QUEUE_MAP:
-        req.set_encap_qos_tc_to_queue_map(attr_list[i].value.oid);
-        break;
-      case SAI_TUNNEL_ATTR_DECAP_QOS_DSCP_TO_TC_MAP:
-        req.set_decap_qos_dscp_to_tc_map(attr_list[i].value.oid);
-        break;
-      case SAI_TUNNEL_ATTR_DECAP_QOS_TC_TO_PRIORITY_GROUP_MAP:
-        req.set_decap_qos_tc_to_priority_group_map(attr_list[i].value.oid);
-        break;
-      case SAI_TUNNEL_ATTR_VXLAN_UDP_SPORT_SECURITY:
-        req.set_vxlan_udp_sport_security(attr_list[i].value.booldata);
-        break;
-    }
-  }
   grpc::Status status = tunnel->CreateTunnel(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();
@@ -543,45 +670,12 @@ sai_status_t l_create_tunnel_term_table_entry(
     uint32_t attr_count, const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateTunnelTermTableEntryRequest req;
+  lemming::dataplane::sai::CreateTunnelTermTableEntryRequest req =
+      convert_create_tunnel_term_table_entry(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateTunnelTermTableEntryResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_TUNNEL_TERM_TABLE_ENTRY_ATTR_VR_ID:
-        req.set_vr_id(attr_list[i].value.oid);
-        break;
-      case SAI_TUNNEL_TERM_TABLE_ENTRY_ATTR_TYPE:
-        req.set_type(
-            static_cast<lemming::dataplane::sai::TunnelTermTableEntryType>(
-                attr_list[i].value.s32 + 1));
-        break;
-      case SAI_TUNNEL_TERM_TABLE_ENTRY_ATTR_DST_IP:
-        req.set_dst_ip(convert_from_ip_address(attr_list[i].value.ipaddr));
-        break;
-      case SAI_TUNNEL_TERM_TABLE_ENTRY_ATTR_DST_IP_MASK:
-        req.set_dst_ip_mask(convert_from_ip_address(attr_list[i].value.ipaddr));
-        break;
-      case SAI_TUNNEL_TERM_TABLE_ENTRY_ATTR_SRC_IP:
-        req.set_src_ip(convert_from_ip_address(attr_list[i].value.ipaddr));
-        break;
-      case SAI_TUNNEL_TERM_TABLE_ENTRY_ATTR_SRC_IP_MASK:
-        req.set_src_ip_mask(convert_from_ip_address(attr_list[i].value.ipaddr));
-        break;
-      case SAI_TUNNEL_TERM_TABLE_ENTRY_ATTR_TUNNEL_TYPE:
-        req.set_tunnel_type(static_cast<lemming::dataplane::sai::TunnelType>(
-            attr_list[i].value.s32 + 1));
-        break;
-      case SAI_TUNNEL_TERM_TABLE_ENTRY_ATTR_ACTION_TUNNEL_ID:
-        req.set_action_tunnel_id(attr_list[i].value.oid);
-        break;
-      case SAI_TUNNEL_TERM_TABLE_ENTRY_ATTR_IPSEC_VERIFIED:
-        req.set_ipsec_verified(attr_list[i].value.booldata);
-        break;
-    }
-  }
   grpc::Status status =
       tunnel->CreateTunnelTermTableEntry(&context, req, &resp);
   if (!status.ok()) {
@@ -707,65 +801,12 @@ sai_status_t l_create_tunnel_map_entry(sai_object_id_t *tunnel_map_entry_id,
                                        const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateTunnelMapEntryRequest req;
+  lemming::dataplane::sai::CreateTunnelMapEntryRequest req =
+      convert_create_tunnel_map_entry(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateTunnelMapEntryResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_TUNNEL_MAP_ENTRY_ATTR_TUNNEL_MAP_TYPE:
-        req.set_tunnel_map_type(
-            static_cast<lemming::dataplane::sai::TunnelMapType>(
-                attr_list[i].value.s32 + 1));
-        break;
-      case SAI_TUNNEL_MAP_ENTRY_ATTR_TUNNEL_MAP:
-        req.set_tunnel_map(attr_list[i].value.oid);
-        break;
-      case SAI_TUNNEL_MAP_ENTRY_ATTR_OECN_KEY:
-        req.set_oecn_key(attr_list[i].value.u8);
-        break;
-      case SAI_TUNNEL_MAP_ENTRY_ATTR_OECN_VALUE:
-        req.set_oecn_value(attr_list[i].value.u8);
-        break;
-      case SAI_TUNNEL_MAP_ENTRY_ATTR_UECN_KEY:
-        req.set_uecn_key(attr_list[i].value.u8);
-        break;
-      case SAI_TUNNEL_MAP_ENTRY_ATTR_UECN_VALUE:
-        req.set_uecn_value(attr_list[i].value.u8);
-        break;
-      case SAI_TUNNEL_MAP_ENTRY_ATTR_VLAN_ID_KEY:
-        req.set_vlan_id_key(attr_list[i].value.u16);
-        break;
-      case SAI_TUNNEL_MAP_ENTRY_ATTR_VLAN_ID_VALUE:
-        req.set_vlan_id_value(attr_list[i].value.u16);
-        break;
-      case SAI_TUNNEL_MAP_ENTRY_ATTR_VNI_ID_KEY:
-        req.set_vni_id_key(attr_list[i].value.u32);
-        break;
-      case SAI_TUNNEL_MAP_ENTRY_ATTR_VNI_ID_VALUE:
-        req.set_vni_id_value(attr_list[i].value.u32);
-        break;
-      case SAI_TUNNEL_MAP_ENTRY_ATTR_BRIDGE_ID_KEY:
-        req.set_bridge_id_key(attr_list[i].value.oid);
-        break;
-      case SAI_TUNNEL_MAP_ENTRY_ATTR_BRIDGE_ID_VALUE:
-        req.set_bridge_id_value(attr_list[i].value.oid);
-        break;
-      case SAI_TUNNEL_MAP_ENTRY_ATTR_VIRTUAL_ROUTER_ID_KEY:
-        req.set_virtual_router_id_key(attr_list[i].value.oid);
-        break;
-      case SAI_TUNNEL_MAP_ENTRY_ATTR_VIRTUAL_ROUTER_ID_VALUE:
-        req.set_virtual_router_id_value(attr_list[i].value.oid);
-        break;
-      case SAI_TUNNEL_MAP_ENTRY_ATTR_VSID_ID_KEY:
-        req.set_vsid_id_key(attr_list[i].value.u32);
-        break;
-      case SAI_TUNNEL_MAP_ENTRY_ATTR_VSID_ID_VALUE:
-        req.set_vsid_id_value(attr_list[i].value.u32);
-        break;
-    }
-  }
   grpc::Status status = tunnel->CreateTunnelMapEntry(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();
@@ -876,4 +917,61 @@ sai_status_t l_get_tunnel_map_entry_attribute(
   }
 
   return SAI_STATUS_SUCCESS;
+}
+
+sai_status_t l_create_tunnels(sai_object_id_t switch_id, uint32_t object_count,
+                              const uint32_t *attr_count,
+                              const sai_attribute_t **attr_list,
+                              sai_bulk_op_error_mode_t mode,
+                              sai_object_id_t *object_id,
+                              sai_status_t *object_statuses) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  lemming::dataplane::sai::CreateTunnelsRequest req;
+  lemming::dataplane::sai::CreateTunnelsResponse resp;
+  grpc::ClientContext context;
+
+  for (uint32_t i = 0; i < object_count; i++) {
+    auto r = convert_create_tunnel(switch_id, attr_count[i], attr_list[i]);
+    *req.add_reqs() = r;
+  }
+
+  grpc::Status status = tunnel->CreateTunnels(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  for (uint32_t i = 0; i < object_count; i++) {
+    switch_id = object_id[i] = resp.resps(i).oid();
+    object_statuses[i] = SAI_STATUS_SUCCESS;
+  }
+
+  return SAI_STATUS_SUCCESS;
+}
+
+sai_status_t l_remove_tunnels(uint32_t object_count,
+                              const sai_object_id_t *object_id,
+                              sai_bulk_op_error_mode_t mode,
+                              sai_status_t *object_statuses) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return SAI_STATUS_NOT_IMPLEMENTED;
+}
+
+sai_status_t l_set_tunnels_attribute(uint32_t object_count,
+                                     const sai_object_id_t *object_id,
+                                     const sai_attribute_t *attr_list,
+                                     sai_bulk_op_error_mode_t mode,
+                                     sai_status_t *object_statuses) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return SAI_STATUS_NOT_IMPLEMENTED;
+}
+
+sai_status_t l_get_tunnels_attribute(uint32_t object_count,
+                                     const sai_object_id_t *object_id,
+                                     const uint32_t *attr_count,
+                                     sai_attribute_t **attr_list,
+                                     sai_bulk_op_error_mode_t mode,
+                                     sai_status_t *object_statuses) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }

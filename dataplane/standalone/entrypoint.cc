@@ -494,7 +494,8 @@ sai_status_t sai_query_attribute_enum_values_capability(
     _In_ sai_object_id_t switch_id, _In_ sai_object_type_t object_type,
     _In_ sai_attr_id_t attr_id,
     _Inout_ sai_s32_list_t *enum_values_capability) {
-  return SAI_STATUS_SUCCESS;
+
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
 sai_status_t sai_object_type_get_availability(
@@ -502,7 +503,66 @@ sai_status_t sai_object_type_get_availability(
     _In_ uint32_t attr_count, _In_ const sai_attribute_t *attr_list,
     _Out_ uint64_t *count) {
   *count = 1024;
-  return SAI_STATUS_SUCCESS;
+  return SAI_STATUS_NOT_IMPLEMENTED;
+}
+
+sai_status_t sai_query_stats_capability(
+    _In_ sai_object_id_t switch_id, _In_ sai_object_type_t object_type,
+    _Inout_ sai_stat_capability_list_t *stats_capability) {
+  return SAI_STATUS_NOT_IMPLEMENTED;
+}
+
+sai_status_t sai_get_maximum_attribute_count(_In_ sai_object_id_t switch_id,
+                                             _In_ sai_object_type_t object_type,
+                                             _Out_ uint32_t *count) {
+  return SAI_STATUS_NOT_IMPLEMENTED;
+}
+sai_status_t sai_get_object_count(_In_ sai_object_id_t switch_id,
+                                  _In_ sai_object_type_t object_type,
+                                  _Out_ uint32_t *count) {
+  return SAI_STATUS_NOT_IMPLEMENTED;
+}
+
+sai_status_t sai_get_object_key(_In_ sai_object_id_t switch_id,
+                                _In_ sai_object_type_t object_type,
+                                _Inout_ uint32_t *object_count,
+                                _Inout_ sai_object_key_t *object_list) {
+  return SAI_STATUS_NOT_IMPLEMENTED;
+}
+
+sai_status_t sai_bulk_get_attribute(_In_ sai_object_id_t switch_id,
+                                    _In_ sai_object_type_t object_type,
+                                    _In_ uint32_t object_count,
+                                    _In_ const sai_object_key_t *object_key,
+                                    _Inout_ uint32_t *attr_count,
+                                    _Inout_ sai_attribute_t **attr_list,
+                                    _Inout_ sai_status_t *object_statuses) {
+  return SAI_STATUS_NOT_IMPLEMENTED;
+}
+
+sai_status_t sai_bulk_object_get_stats(
+    _In_ sai_object_id_t switch_id, _In_ sai_object_type_t object_type,
+    _In_ uint32_t object_count, _In_ const sai_object_key_t *object_key,
+    _In_ uint32_t number_of_counters, _In_ const sai_stat_id_t *counter_ids,
+    _In_ sai_stats_mode_t mode, _Inout_ sai_status_t *object_statuses,
+    _Out_ uint64_t *counters) {
+  return SAI_STATUS_NOT_IMPLEMENTED;
+}
+
+sai_status_t sai_bulk_object_clear_stats(
+    _In_ sai_object_id_t switch_id, _In_ sai_object_type_t object_type,
+    _In_ uint32_t object_count, _In_ const sai_object_key_t *object_key,
+    _In_ uint32_t number_of_counters, _In_ const sai_stat_id_t *counter_ids,
+    _In_ sai_stats_mode_t mode, _Inout_ sai_status_t *object_statuses) {
+  return SAI_STATUS_NOT_IMPLEMENTED;
+}
+
+sai_status_t sai_query_object_stage(_In_ sai_object_id_t switch_id,
+                                    _In_ sai_object_type_t object_type,
+                                    _In_ uint32_t attr_count,
+                                    _In_ const sai_attribute_t *attr_list,
+                                    _Out_ sai_object_stage_t *stage) {
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
 sai_status_t sai_query_stats_capability(

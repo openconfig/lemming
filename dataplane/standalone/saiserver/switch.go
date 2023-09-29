@@ -57,10 +57,10 @@ func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server) 
 	sw := &saiSwitch{
 		dataplane:       engine,
 		port:            newPort(mgr, engine, s),
-		vlan:            &vlan{},
+		vlan:            newVlan(mgr, engine, s),
 		stp:             &stp{},
 		vr:              &virtualRouter{},
-		bridge:          &bridge{},
+		bridge:          newBridge(mgr, engine, s),
 		hostif:          newHostif(mgr, engine, s),
 		hash:            &hash{},
 		neighbor:        newNeighbor(mgr, engine, s),
@@ -71,10 +71,8 @@ func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server) 
 		mgr:             mgr,
 	}
 	saipb.RegisterSwitchServer(s, sw)
-	saipb.RegisterVlanServer(s, sw.vlan)
 	saipb.RegisterStpServer(s, sw.stp)
 	saipb.RegisterVirtualRouterServer(s, sw.vr)
-	saipb.RegisterBridgeServer(s, sw.bridge)
 	saipb.RegisterHashServer(s, sw.hash)
 	return sw
 }
@@ -88,18 +86,21 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 		return nil, err
 	}
 
-	vlanResp, err := attrmgr.InvokeAndSave(ctx, sw.mgr, sw.vlan.CreateVlan, &saipb.CreateVlanRequest{
-		Switch: swID,
-	})
-	if err != nil {
-		return nil, err
-	}
 	stpResp, err := attrmgr.InvokeAndSave(ctx, sw.mgr, sw.stp.CreateStp, &saipb.CreateStpRequest{
 		Switch: swID,
 	})
 	if err != nil {
 		return nil, err
 	}
+	sw.mgr.StoreAttributes(swID, &saipb.SwitchAttribute{DefaultStpInstId: &stpResp.Oid})
+
+	vlanResp, err := attrmgr.InvokeAndSave(ctx, sw.mgr, sw.vlan.CreateVlan, &saipb.CreateVlanRequest{
+		Switch: swID,
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	vrResp, err := attrmgr.InvokeAndSave(ctx, sw.mgr, sw.vr.CreateVirtualRouter, &saipb.CreateVirtualRouterRequest{
 		Switch: swID,
 	})
@@ -132,19 +133,21 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 		CpuPort:                          proto.Uint64(cpuPortID),
 		NumberOfActivePorts:              proto.Uint32(0),
 		AclEntryMinimumPriority:          proto.Uint32(1),
+		AclEntryMaximumPriority:          proto.Uint32(100),
+		AclTableMinimumPriority:          proto.Uint32(1),
 		AclTableMaximumPriority:          proto.Uint32(100),
 		MaxAclActionCount:                proto.Uint32(50),
 		NumberOfEcmpGroups:               proto.Uint32(1024),
+		PortList:                         []uint64{cpuPortID},
+		SwitchHardwareInfo:               []int32{},
 		DefaultVlanId:                    &vlanResp.Oid,
-		DefaultStpInstId:                 &stpResp.Oid,
 		DefaultVirtualRouterId:           &vrResp.Oid,
 		DefaultOverrideVirtualRouterId:   &vrResp.Oid,
 		Default_1QBridgeId:               &brResp.Oid,
 		DefaultTrapGroup:                 &trGroupResp.Oid,
 		IngressAcl:                       proto.Uint64(0),
 		EgressAcl:                        proto.Uint64(0),
-		QosMaxNumberOfTrafficClasses:     proto.Uint32(0),
-		TotalBufferSize:                  proto.Uint64(1024 * 1024),
+		PreIngressAcl:                    proto.Uint64(0),
 		AvailableIpv4RouteEntry:          proto.Uint32(1024),
 		AvailableIpv6RouteEntry:          proto.Uint32(1024),
 		AvailableIpv4NexthopEntry:        proto.Uint32(1024),
@@ -158,23 +161,54 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 		AvailableIpmcEntry:               proto.Uint32(1024),
 		AvailableSnatEntry:               proto.Uint32(1024),
 		AvailableDnatEntry:               proto.Uint32(1024),
-		EcmpHash:                         &hashResp.Oid,
-		LagHash:                          &hashResp.Oid,
-		RestartWarm:                      proto.Bool(false),
-		WarmRecover:                      proto.Bool(false),
-		LagDefaultHashAlgorithm:          saipb.HashAlgorithm_HASH_ALGORITHM_CRC.Enum(),
-		LagDefaultHashSeed:               proto.Uint32(0),
-		LagDefaultSymmetricHash:          proto.Bool(false),
-		QosDefaultTc:                     proto.Uint32(0),
-		QosDot1PToTcMap:                  proto.Uint64(0),
-		QosDot1PToColorMap:               proto.Uint64(0),
-		QosTcToQueueMap:                  proto.Uint64(0),
-		QosTcAndColorToDot1PMap:          proto.Uint64(0),
-		QosTcAndColorToDscpMap:           proto.Uint64(0),
-		QosTcAndColorToMplsExpMap:        proto.Uint64(0),
-		SwitchShellEnable:                proto.Bool(false),
-		SwitchProfileId:                  proto.Uint32(0),
-		NatZoneCounterObjectId:           proto.Uint64(0),
+		MaxAclRangeCount:                 proto.Uint32(10),
+		AclStageIngress: &saipb.ACLCapability{
+			IsActionListMandatory: false,
+			ActionList:            []saipb.AclActionType{saipb.AclActionType_ACL_ACTION_TYPE_PACKET_ACTION, saipb.AclActionType_ACL_ACTION_TYPE_MIRROR_INGRESS, saipb.AclActionType_ACL_ACTION_TYPE_NO_NAT},
+		},
+		AclStageEgress: &saipb.ACLCapability{
+			IsActionListMandatory: false,
+			ActionList:            []saipb.AclActionType{saipb.AclActionType_ACL_ACTION_TYPE_PACKET_ACTION},
+		},
+		EcmpHash:                       &hashResp.Oid,
+		LagHash:                        &hashResp.Oid,
+		EcmpHashIpv4:                   &hashResp.Oid,
+		EcmpHashIpv4InIpv4:             &hashResp.Oid,
+		EcmpHashIpv6:                   &hashResp.Oid,
+		LagHashIpv4:                    &hashResp.Oid,
+		LagHashIpv4InIpv4:              &hashResp.Oid,
+		LagHashIpv6:                    &hashResp.Oid,
+		RestartWarm:                    proto.Bool(false),
+		WarmRecover:                    proto.Bool(false),
+		LagDefaultHashAlgorithm:        saipb.HashAlgorithm_HASH_ALGORITHM_CRC.Enum(),
+		LagDefaultHashSeed:             proto.Uint32(0),
+		LagDefaultSymmetricHash:        proto.Bool(false),
+		QosDefaultTc:                   proto.Uint32(0),
+		QosDot1PToTcMap:                proto.Uint64(0),
+		QosDot1PToColorMap:             proto.Uint64(0),
+		QosTcToQueueMap:                proto.Uint64(0),
+		QosTcAndColorToDot1PMap:        proto.Uint64(0),
+		QosTcAndColorToDscpMap:         proto.Uint64(0),
+		QosTcAndColorToMplsExpMap:      proto.Uint64(0),
+		QosDscpToTcMap:                 proto.Uint64(0),
+		QosDscpToColorMap:              proto.Uint64(0),
+		QosMplsExpToTcMap:              proto.Uint64(0),
+		QosMplsExpToColorMap:           proto.Uint64(0),
+		QosDscpToForwardingClassMap:    proto.Uint64(0),
+		QosMplsExpToForwardingClassMap: proto.Uint64(0),
+		IpsecObjectId:                  proto.Uint64(0),
+		TamObjectId:                    []uint64{},
+		PortConnectorList:              []uint64{},
+		MacsecObjectList:               []uint64{},
+		SystemPortList:                 []uint64{},
+		FabricPortList:                 []uint64{},
+		TunnelObjectsList:              []uint64{},
+		MyMacList:                      []uint64{},
+		Type:                           saipb.SwitchType_SWITCH_TYPE_NPU.Enum(),
+		NumberOfSystemPorts:            proto.Uint32(0),
+		SwitchShellEnable:              proto.Bool(false),
+		SwitchProfileId:                proto.Uint32(0),
+		NatZoneCounterObjectId:         proto.Uint64(0),
 	}
 	sw.mgr.StoreAttributes(swID, attrs)
 

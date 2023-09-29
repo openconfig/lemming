@@ -23,7 +23,7 @@ import (
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 	"github.com/openconfig/ygot/ygot"
 
-	valpb "github.com/openconfig/lemming/bgp/tests/proto/policyval"
+	valpb "github.com/openconfig/lemming/proto/policyval"
 )
 
 const (
@@ -63,9 +63,13 @@ func TestSetAttributes(t *testing.T) {
 	installDefinedSets := func(t *testing.T, dut1, dut2, dut5 *Device) {
 		for _, route := range routesUnderTest {
 			// Create prefix set containing just the route under test.
+			prefixModePath := ocpath.Root().RoutingPolicy().DefinedSets().PrefixSet(singletonPrefixSetName(route)).Mode()
 			prefixPath := ocpath.Root().RoutingPolicy().DefinedSets().PrefixSet(singletonPrefixSetName(route)).Prefix(route, "exact").IpPrefix()
+			Replace(t, dut1, prefixModePath.Config(), oc.PrefixSet_Mode_IPV4)
 			Replace(t, dut1, prefixPath.Config(), route)
+			Replace(t, dut2, prefixModePath.Config(), oc.PrefixSet_Mode_IPV4)
 			Replace(t, dut2, prefixPath.Config(), route)
+			Replace(t, dut5, prefixModePath.Config(), oc.PrefixSet_Mode_IPV4)
 			Replace(t, dut5, prefixPath.Config(), route)
 		}
 
@@ -221,6 +225,7 @@ func TestSetAttributes(t *testing.T) {
 							acceptedCommunitySet,
 						},
 					)
+					dut1ExportStmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetMethod(oc.SetCommunity_Method_INLINE)
 
 					dut1ExportStmt.GetOrCreateActions().GetOrCreateBgpActions().SetSetLocalPref(higherLocalPref)
 				case 2:
@@ -232,6 +237,7 @@ func TestSetAttributes(t *testing.T) {
 							rejectedCommunitySet,
 						},
 					)
+					dut1ExportStmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetMethod(oc.SetCommunity_Method_INLINE)
 
 					// Match on given list of community set members and reject it.
 					installDut1ImportStmt = true

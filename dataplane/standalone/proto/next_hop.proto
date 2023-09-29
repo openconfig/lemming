@@ -5,7 +5,7 @@ package lemming.dataplane.sai;
 
 import "dataplane/standalone/proto/common.proto";
 
-option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto";
+option go_package = "github.com/openconfig/lemming/dataplane/standalone/proto;sai";
 
 enum NextHopAttr {
   NEXT_HOP_ATTR_UNSPECIFIED = 0;
@@ -85,6 +85,14 @@ message GetNextHopAttributeResponse {
   NextHopAttribute attr = 1;
 }
 
+message CreateNextHopsRequest {
+  repeated CreateNextHopRequest reqs = 1;
+}
+
+message CreateNextHopsResponse {
+  repeated CreateNextHopResponse resps = 1;
+}
+
 service NextHop {
   rpc CreateNextHop(CreateNextHopRequest) returns (CreateNextHopResponse) {}
   rpc RemoveNextHop(RemoveNextHopRequest) returns (RemoveNextHopResponse) {}
@@ -92,4 +100,5 @@ service NextHop {
       returns (SetNextHopAttributeResponse) {}
   rpc GetNextHopAttribute(GetNextHopAttributeRequest)
       returns (GetNextHopAttributeResponse) {}
+  rpc CreateNextHops(CreateNextHopsRequest) returns (CreateNextHopsResponse) {}
 }

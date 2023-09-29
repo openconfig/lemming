@@ -29,32 +29,41 @@ const sai_samplepacket_api_t l_samplepacket = {
     .get_samplepacket_attribute = l_get_samplepacket_attribute,
 };
 
+lemming::dataplane::sai::CreateSamplepacketRequest convert_create_samplepacket(
+    sai_object_id_t switch_id, uint32_t attr_count,
+    const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateSamplepacketRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_SAMPLEPACKET_ATTR_SAMPLE_RATE:
+        msg.set_sample_rate(attr_list[i].value.u32);
+        break;
+      case SAI_SAMPLEPACKET_ATTR_TYPE:
+        msg.set_type(static_cast<lemming::dataplane::sai::SamplepacketType>(
+            attr_list[i].value.s32 + 1));
+        break;
+      case SAI_SAMPLEPACKET_ATTR_MODE:
+        msg.set_mode(static_cast<lemming::dataplane::sai::SamplepacketMode>(
+            attr_list[i].value.s32 + 1));
+        break;
+    }
+  }
+  return msg;
+}
+
 sai_status_t l_create_samplepacket(sai_object_id_t *samplepacket_id,
                                    sai_object_id_t switch_id,
                                    uint32_t attr_count,
                                    const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateSamplepacketRequest req;
+  lemming::dataplane::sai::CreateSamplepacketRequest req =
+      convert_create_samplepacket(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateSamplepacketResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_SAMPLEPACKET_ATTR_SAMPLE_RATE:
-        req.set_sample_rate(attr_list[i].value.u32);
-        break;
-      case SAI_SAMPLEPACKET_ATTR_TYPE:
-        req.set_type(static_cast<lemming::dataplane::sai::SamplepacketType>(
-            attr_list[i].value.s32 + 1));
-        break;
-      case SAI_SAMPLEPACKET_ATTR_MODE:
-        req.set_mode(static_cast<lemming::dataplane::sai::SamplepacketMode>(
-            attr_list[i].value.s32 + 1));
-        break;
-    }
-  }
   grpc::Status status = samplepacket->CreateSamplepacket(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();

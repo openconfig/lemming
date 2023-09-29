@@ -35,25 +35,53 @@ const sai_isolation_group_api_t l_isolation_group = {
         l_get_isolation_group_member_attribute,
 };
 
+lemming::dataplane::sai::CreateIsolationGroupRequest
+convert_create_isolation_group(sai_object_id_t switch_id, uint32_t attr_count,
+                               const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateIsolationGroupRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_ISOLATION_GROUP_ATTR_TYPE:
+        msg.set_type(static_cast<lemming::dataplane::sai::IsolationGroupType>(
+            attr_list[i].value.s32 + 1));
+        break;
+    }
+  }
+  return msg;
+}
+
+lemming::dataplane::sai::CreateIsolationGroupMemberRequest
+convert_create_isolation_group_member(sai_object_id_t switch_id,
+                                      uint32_t attr_count,
+                                      const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateIsolationGroupMemberRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_ISOLATION_GROUP_MEMBER_ATTR_ISOLATION_GROUP_ID:
+        msg.set_isolation_group_id(attr_list[i].value.oid);
+        break;
+      case SAI_ISOLATION_GROUP_MEMBER_ATTR_ISOLATION_OBJECT:
+        msg.set_isolation_object(attr_list[i].value.oid);
+        break;
+    }
+  }
+  return msg;
+}
+
 sai_status_t l_create_isolation_group(sai_object_id_t *isolation_group_id,
                                       sai_object_id_t switch_id,
                                       uint32_t attr_count,
                                       const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateIsolationGroupRequest req;
+  lemming::dataplane::sai::CreateIsolationGroupRequest req =
+      convert_create_isolation_group(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateIsolationGroupResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_ISOLATION_GROUP_ATTR_TYPE:
-        req.set_type(static_cast<lemming::dataplane::sai::IsolationGroupType>(
-            attr_list[i].value.s32 + 1));
-        break;
-    }
-  }
   grpc::Status status =
       isolation_group->CreateIsolationGroup(&context, req, &resp);
   if (!status.ok()) {
@@ -132,21 +160,12 @@ sai_status_t l_create_isolation_group_member(
     uint32_t attr_count, const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateIsolationGroupMemberRequest req;
+  lemming::dataplane::sai::CreateIsolationGroupMemberRequest req =
+      convert_create_isolation_group_member(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateIsolationGroupMemberResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_ISOLATION_GROUP_MEMBER_ATTR_ISOLATION_GROUP_ID:
-        req.set_isolation_group_id(attr_list[i].value.oid);
-        break;
-      case SAI_ISOLATION_GROUP_MEMBER_ATTR_ISOLATION_OBJECT:
-        req.set_isolation_object(attr_list[i].value.oid);
-        break;
-    }
-  }
   grpc::Status status =
       isolation_group->CreateIsolationGroupMember(&context, req, &resp);
   if (!status.ok()) {

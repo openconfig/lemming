@@ -39,10 +39,6 @@ type buffer struct {
 	saipb.UnimplementedBufferServer
 }
 
-type bridge struct {
-	saipb.UnimplementedBridgeServer
-}
-
 type counter struct {
 	saipb.UnimplementedCounterServer
 }
@@ -169,10 +165,6 @@ type udf struct {
 
 type virtualRouter struct {
 	saipb.UnimplementedVirtualRouterServer
-}
-
-type vlan struct {
-	saipb.UnimplementedVlanServer
 }
 
 type wred struct {

@@ -29,30 +29,39 @@ const sai_debug_counter_api_t l_debug_counter = {
     .get_debug_counter_attribute = l_get_debug_counter_attribute,
 };
 
+lemming::dataplane::sai::CreateDebugCounterRequest convert_create_debug_counter(
+    sai_object_id_t switch_id, uint32_t attr_count,
+    const sai_attribute_t *attr_list) {
+  lemming::dataplane::sai::CreateDebugCounterRequest msg;
+
+  for (uint32_t i = 0; i < attr_count; i++) {
+    switch (attr_list[i].id) {
+      case SAI_DEBUG_COUNTER_ATTR_TYPE:
+        msg.set_type(static_cast<lemming::dataplane::sai::DebugCounterType>(
+            attr_list[i].value.s32 + 1));
+        break;
+      case SAI_DEBUG_COUNTER_ATTR_BIND_METHOD:
+        msg.set_bind_method(
+            static_cast<lemming::dataplane::sai::DebugCounterBindMethod>(
+                attr_list[i].value.s32 + 1));
+        break;
+    }
+  }
+  return msg;
+}
+
 sai_status_t l_create_debug_counter(sai_object_id_t *debug_counter_id,
                                     sai_object_id_t switch_id,
                                     uint32_t attr_count,
                                     const sai_attribute_t *attr_list) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
-  lemming::dataplane::sai::CreateDebugCounterRequest req;
+  lemming::dataplane::sai::CreateDebugCounterRequest req =
+      convert_create_debug_counter(switch_id, attr_count, attr_list);
   lemming::dataplane::sai::CreateDebugCounterResponse resp;
   grpc::ClientContext context;
   req.set_switch_(switch_id);
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_DEBUG_COUNTER_ATTR_TYPE:
-        req.set_type(static_cast<lemming::dataplane::sai::DebugCounterType>(
-            attr_list[i].value.s32 + 1));
-        break;
-      case SAI_DEBUG_COUNTER_ATTR_BIND_METHOD:
-        req.set_bind_method(
-            static_cast<lemming::dataplane::sai::DebugCounterBindMethod>(
-                attr_list[i].value.s32 + 1));
-        break;
-    }
-  }
   grpc::Status status = debug_counter->CreateDebugCounter(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();
