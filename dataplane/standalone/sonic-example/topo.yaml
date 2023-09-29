@@ -98,7 +98,7 @@ spec:
     - go
     - run
     - main.go
-    image: gpins-bc:latest
+    image: sonic-vs:latest
     imagePullPolicy: IfNotPresent
     name: sonic
     securityContext:
