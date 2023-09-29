@@ -565,10 +565,4 @@ sai_status_t sai_query_object_stage(_In_ sai_object_id_t switch_id,
   return SAI_STATUS_NOT_IMPLEMENTED;
 }
 
-sai_status_t sai_query_stats_capability(
-    _In_ sai_object_id_t switch_id, _In_ sai_object_type_t object_type,
-    _Inout_ sai_stat_capability_list_t *stats_capability) {
-  return SAI_STATUS_SUCCESS;
-}
-
 int main() {}
