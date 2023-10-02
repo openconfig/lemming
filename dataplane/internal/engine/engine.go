@@ -274,10 +274,7 @@ func (e *Engine) setupTables(ctx context.Context) error {
 	if err := createLayer2PuntTable(ctx, e.id, e.Server); err != nil {
 		return err
 	}
-	if err := createLayer3PuntTable(ctx, e.id, e.Server); err != nil {
-		return err
-	}
-	return nil
+	return createLayer3PuntTable(ctx, e.id, e.Server)
 }
 
 // ID returns the engine's forwarding context id.
