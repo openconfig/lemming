@@ -75,6 +75,7 @@ type Engine struct {
 	internalToExternalIDMu sync.Mutex
 	// internalToExternalID is a map from the internal port id to it's corresponding external port.
 	internalToExternalID map[string]string
+	cancelFn             func()
 }
 
 // New creates a new engine and sets up the forwarding tables.
@@ -90,15 +91,51 @@ func New(ctx context.Context) (*Engine, error) {
 		internalToExternalID: map[string]string{},
 	}
 
-	e.handleIPUpdates()
+	ctx, e.cancelFn = context.WithCancel(ctx)
+	e.handleIPUpdates(ctx)
 
-	_, err := e.Server.ContextCreate(context.Background(), &fwdpb.ContextCreateRequest{
+	_, err := e.Server.ContextCreate(ctx, &fwdpb.ContextCreateRequest{
 		ContextId: &fwdpb.ContextId{Id: e.id},
 	})
 	if err != nil {
 		return nil, err
 	}
+	e.setupTables(ctx)
 
+	return e, nil
+}
+
+func (e *Engine) Reset(ctx context.Context) error {
+	e.cancelFn()
+	_, err := e.Server.ContextDelete(ctx, &fwdpb.ContextDeleteRequest{
+		ContextId: &fwdpb.ContextId{Id: e.id},
+	})
+	if err != nil {
+		return err
+	}
+
+	e.idToNID = map[string]uint64{}
+	e.nextHopGroups = map[uint64]*dpb.NextHopIDList{}
+	e.ifaceToPort = map[string]string{}
+	e.ipToDevName = map[string]string{}
+	e.devNameToPortID = map[string]string{}
+	e.internalToExternalID = map[string]string{}
+	e.nextNHGID.Store(0)
+	e.nextNHID.Store(0)
+
+	_, err = e.Server.ContextCreate(ctx, &fwdpb.ContextCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: e.id},
+	})
+	if err != nil {
+		return err
+	}
+
+	ctx, e.cancelFn = context.WithCancel(ctx)
+	e.setupTables(ctx)
+	return nil
+}
+
+func (e *Engine) setupTables(ctx context.Context) error {
 	v4FIB := &fwdpb.TableCreateRequest{
 		ContextId: &fwdpb.ContextId{Id: e.id},
 		Desc: &fwdpb.TableDesc{
@@ -121,7 +158,7 @@ func New(ctx context.Context) (*Engine, error) {
 		},
 	}
 	if _, err := e.Server.TableCreate(ctx, v4FIB); err != nil {
-		return nil, err
+		return err
 	}
 	v6FIB := &fwdpb.TableCreateRequest{
 		ContextId: &fwdpb.ContextId{Id: e.id},
@@ -145,7 +182,7 @@ func New(ctx context.Context) (*Engine, error) {
 		},
 	}
 	if _, err := e.Server.TableCreate(ctx, v6FIB); err != nil {
-		return nil, err
+		return err
 	}
 	portMAC := &fwdpb.TableCreateRequest{
 		ContextId: &fwdpb.ContextId{Id: e.id},
@@ -165,7 +202,7 @@ func New(ctx context.Context) (*Engine, error) {
 		},
 	}
 	if _, err := e.Server.TableCreate(ctx, portMAC); err != nil {
-		return nil, err
+		return err
 	}
 	neighbor := &fwdpb.TableCreateRequest{
 		ContextId: &fwdpb.ContextId{Id: e.id},
@@ -189,7 +226,7 @@ func New(ctx context.Context) (*Engine, error) {
 		},
 	}
 	if _, err := e.Server.TableCreate(ctx, neighbor); err != nil {
-		return nil, err
+		return err
 	}
 	nh := &fwdpb.TableCreateRequest{
 		ContextId: &fwdpb.ContextId{Id: e.id},
@@ -209,7 +246,7 @@ func New(ctx context.Context) (*Engine, error) {
 		},
 	}
 	if _, err := e.Server.TableCreate(ctx, nh); err != nil {
-		return nil, err
+		return err
 	}
 	nhg := &fwdpb.TableCreateRequest{
 		ContextId: &fwdpb.ContextId{Id: e.id},
@@ -229,18 +266,18 @@ func New(ctx context.Context) (*Engine, error) {
 		},
 	}
 	if _, err := e.Server.TableCreate(ctx, nhg); err != nil {
-		return nil, err
+		return err
 	}
 	if err := createFIBSelector(ctx, e.id, e.Server); err != nil {
-		return nil, err
+		return err
 	}
 	if err := createLayer2PuntTable(ctx, e.id, e.Server); err != nil {
-		return nil, err
+		return err
 	}
 	if err := createLayer3PuntTable(ctx, e.id, e.Server); err != nil {
-		return nil, err
+		return err
 	}
-	return e, nil
+	return nil
 }
 
 // ID returns the engine's forwarding context id.

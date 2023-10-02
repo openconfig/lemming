@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/openconfig/lemming/dataplane/internal/engine"
 	"github.com/openconfig/lemming/dataplane/standalone/saiserver/attrmgr"
 
 	"google.golang.org/grpc"
@@ -25,6 +26,8 @@ import (
 	log "github.com/golang/glog"
 
 	saipb "github.com/openconfig/lemming/dataplane/standalone/proto"
+	dpb "github.com/openconfig/lemming/proto/dataplane"
+	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
 type acl struct {
@@ -174,6 +177,7 @@ type wred struct {
 type Server struct {
 	saipb.UnimplementedEntrypointServer
 	mgr            *attrmgr.AttrMgr
+	engine         *engine.Engine
 	acl            *acl
 	bfd            *bfd
 	buffer         *buffer
@@ -220,9 +224,24 @@ func (s *Server) ObjectTypeQuery(_ context.Context, req *saipb.ObjectTypeQueryRe
 	}, nil
 }
 
-func New(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server) *Server {
+func (s *Server) Initialize(ctx context.Context, _ *saipb.InitializeRequest) (*saipb.InitializeResponse, error) {
+	s.mgr.Reset()
+	if err := s.engine.Reset(ctx); err != nil {
+		return nil, err
+	}
+
+	return &saipb.InitializeResponse{}, nil
+}
+
+func New(mgr *attrmgr.AttrMgr, s *grpc.Server) (*Server, error) {
+	e, err := engine.New(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("failed create engine: %v", err)
+	}
+
 	srv := &Server{
 		mgr:            mgr,
+		engine:         e,
 		acl:            &acl{},
 		bfd:            &bfd{},
 		buffer:         &buffer{},
@@ -251,13 +270,15 @@ func New(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server) *Serve
 		schedulerGroup: &schedulerGroup{},
 		scheduler:      &scheduler{},
 		srv6:           &srv6{},
-		saiSwitch:      newSwitch(mgr, engine, s),
+		saiSwitch:      newSwitch(mgr, e, s),
 		systemPort:     &systemPort{},
 		tam:            &tam{},
 		tunnel:         &tunnel{},
 		udf:            &udf{},
 		wred:           &wred{},
 	}
+	fwdpb.RegisterForwardingServer(s, e)
+	dpb.RegisterDataplaneServer(s, e)
 	saipb.RegisterEntrypointServer(s, srv)
 	saipb.RegisterAclServer(s, srv.acl)
 	saipb.RegisterBfdServer(s, srv.bfd)
@@ -292,5 +313,5 @@ func New(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server) *Serve
 	saipb.RegisterUdfServer(s, srv.udf)
 	saipb.RegisterWredServer(s, srv.wred)
 
-	return srv
+	return srv, nil
 }

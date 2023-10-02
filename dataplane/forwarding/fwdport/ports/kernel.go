@@ -19,10 +19,10 @@ package ports
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/afpacket"
-	"github.com/google/gopacket/layers"
 	"github.com/vishvananda/netlink"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
@@ -50,7 +50,7 @@ type kernelPort struct {
 	output       fwdaction.Actions
 	ctx          *fwdcontext.Context // Forwarding context containing the port
 	handle       packetHandle
-	linkDoneCh   chan struct{}
+	doneCh       chan struct{}
 	linkUpdateCh chan netlink.LinkUpdate
 	ifaceMgr     kernel.Interfaces
 }
@@ -72,8 +72,7 @@ func (p *kernelPort) String() string {
 func (p *kernelPort) Cleanup() {
 	p.input.Cleanup()
 	p.output.Cleanup()
-	p.handle.Close()
-	close(p.linkDoneCh)
+	close(p.doneCh)
 	p.input = nil
 	p.output = nil
 }
@@ -102,21 +101,28 @@ func (p *kernelPort) Update(upd *fwdpb.PortUpdateDesc) error {
 }
 
 func (p *kernelPort) process() {
-	startStateWatch(p.linkUpdateCh, p.devName, p, p.ctx)
-	src := gopacket.NewPacketSource(p.handle, layers.LinkTypeEthernet)
+	startStateWatch(p.linkUpdateCh, p.doneCh, p.devName, p, p.ctx)
 	go func() {
 		for {
 			select {
-			case pkt, ok := <-src.Packets():
-				if !ok {
-					log.Warning("src chan closed")
-					return
+			case <-p.doneCh:
+				log.Warningf("src chan closed: %v", p.devName)
+				p.handle.Close()
+				return
+			default:
+				d, _, err := p.handle.ReadPacketData()
+				if err == afpacket.ErrTimeout { // Don't log this error as it is very spammy.
+					continue
 				}
-				fwdPkt, err := fwdpacket.New(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET, pkt.Data())
+				if err != nil {
+					log.Warningf("err reading packet data for %v: %v", p.devName, err)
+					continue
+				}
+				fwdPkt, err := fwdpacket.New(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET, d)
 				if err != nil {
 					log.Warningf("failed to create new packet: %v", err)
-					log.V(1).Info(pkt.Dump())
-					fwdport.Increment(p, len(pkt.Data()), fwdpb.CounterId_COUNTER_ID_RX_BAD_PACKETS, fwdpb.CounterId_COUNTER_ID_RX_BAD_OCTETS)
+					log.V(1).Info(d)
+					fwdport.Increment(p, len(d), fwdpb.CounterId_COUNTER_ID_RX_BAD_PACKETS, fwdpb.CounterId_COUNTER_ID_RX_BAD_OCTETS)
 					continue
 				}
 				fwdPkt.Debug(debug.ExternalPortPacketTrace)
@@ -177,7 +183,7 @@ func (kernelBuilder) Build(portDesc *fwdpb.PortDesc, ctx *fwdcontext.Context) (f
 	}
 
 	// TODO: configure MTU
-	handle, err := afpacket.NewTPacket(afpacket.OptInterface(kp.Kernel.GetDeviceName()), afpacket.OptPollTimeout(-1))
+	handle, err := afpacket.NewTPacket(afpacket.OptInterface(kp.Kernel.GetDeviceName()), afpacket.OptPollTimeout(time.Second))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create afpacket: %v", err)
 	}
@@ -185,14 +191,14 @@ func (kernelBuilder) Build(portDesc *fwdpb.PortDesc, ctx *fwdcontext.Context) (f
 		ctx:          ctx,
 		handle:       handle,
 		devName:      kp.Kernel.DeviceName,
-		linkDoneCh:   make(chan struct{}),
+		doneCh:       make(chan struct{}),
 		linkUpdateCh: make(chan netlink.LinkUpdate),
 	}
 	list := append(fwdport.CounterList, fwdaction.CounterList...)
 	if err := p.InitCounters("", list...); err != nil {
 		return nil, err
 	}
-	if err := p.ifaceMgr.LinkSubscribe(p.linkUpdateCh, p.linkDoneCh); err != nil {
+	if err := p.ifaceMgr.LinkSubscribe(p.linkUpdateCh, p.doneCh); err != nil {
 		return nil, err
 	}
 
