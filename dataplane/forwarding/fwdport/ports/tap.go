@@ -17,9 +17,11 @@
 package ports
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"os"
+	"time"
 
 	"github.com/vishvananda/netlink"
 	"golang.org/x/sys/unix"
@@ -51,7 +53,7 @@ type tapPort struct {
 	ctx          *fwdcontext.Context // Forwarding context containing the port
 	fd           int
 	devName      string
-	linkDoneCh   chan struct{}
+	doneCh       chan struct{}
 	linkUpdateCh chan netlink.LinkUpdate
 	file         *os.File
 	ifaceMgr     kernel.Interfaces
@@ -68,8 +70,7 @@ func (p *tapPort) String() string {
 func (p *tapPort) Cleanup() {
 	p.input.Cleanup()
 	p.output.Cleanup()
-	p.file.Close()
-	close(p.linkDoneCh)
+	close(p.doneCh)
 	p.input = nil
 	p.output = nil
 }
@@ -99,23 +100,35 @@ func (p *tapPort) Update(upd *fwdpb.PortUpdateDesc) error {
 }
 
 func (p *tapPort) process() {
-	startStateWatch(p.linkUpdateCh, p.devName, p, p.ctx)
+	startStateWatch(p.linkUpdateCh, p.doneCh, p.devName, p, p.ctx)
 	go func() {
 		buf := make([]byte, 1500) // TODO: MTU
 		for {
-			n, err := p.file.Read(buf)
-			if err != nil {
-				log.Warningf("failed to read packet: %v", err)
+			select {
+			case <-p.doneCh:
+				log.Warningf("stopping readding tap packet to read packet: %v", p.devName)
+				p.file.Close()
+				return
+			default:
+				p.file.SetReadDeadline(time.Now().Add(time.Second))
+				n, err := p.file.Read(buf)
+				if errors.Is(err, os.ErrDeadlineExceeded) { // Don't log this error as it is very spammy.
+					continue
+				}
+				if err != nil {
+					log.Warningf("failed to read packet: %v", err)
+					continue
+				}
+				fwdPkt, err := fwdpacket.New(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET, buf[0:n])
+				if err != nil {
+					log.Warningf("failed to create new packet: %v", err)
+					fwdport.Increment(p, n, fwdpb.CounterId_COUNTER_ID_RX_BAD_PACKETS, fwdpb.CounterId_COUNTER_ID_RX_BAD_OCTETS)
+					continue
+				}
+				fwdPkt.Debug(debug.TAPPortPacketTrace)
+				fwdPkt.Log().V(2).Info("input packet", "device", p.devName, "port", p.ID(), "frame", fwdpacket.IncludeFrameInLog)
+				fwdport.Process(p, fwdPkt, fwdpb.PortAction_PORT_ACTION_INPUT, p.ctx, "TAP")
 			}
-			fwdPkt, err := fwdpacket.New(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET, buf[0:n])
-			if err != nil {
-				log.Warningf("failed to create new packet: %v", err)
-				fwdport.Increment(p, n, fwdpb.CounterId_COUNTER_ID_RX_BAD_PACKETS, fwdpb.CounterId_COUNTER_ID_RX_BAD_OCTETS)
-				continue
-			}
-			fwdPkt.Debug(debug.TAPPortPacketTrace)
-			fwdPkt.Log().V(2).Info("input packet", "device", p.devName, "port", p.ID(), "frame", fwdpacket.IncludeFrameInLog)
-			fwdport.Process(p, fwdPkt, fwdpb.PortAction_PORT_ACTION_INPUT, p.ctx, "TAP")
 		}
 	}()
 }
@@ -197,31 +210,37 @@ func getAndSetState(name string, ifMgr *kernel.Interfaces, pi *fwdpb.PortInfo) (
 	return reply, err
 }
 
-func startStateWatch(updCh chan netlink.LinkUpdate, devName string, port fwdport.Port, ctx *fwdcontext.Context) {
+func startStateWatch(updCh chan netlink.LinkUpdate, doneCh chan struct{}, devName string, port fwdport.Port, ctx *fwdcontext.Context) {
 	go func() {
 		for {
-			upd, ok := <-updCh
-			if !ok {
+			select {
+			case <-doneCh:
+				log.Warningf("state watch stopping for dev: %v", devName)
 				return
-			}
-			if upd.Attrs().Name != devName {
-				continue
-			}
-			admin, oper := stateFromAttrs(upd.Attrs())
-			log.V(1).Infof("dataplane receive link update: port %q, admin %v, oper %v", devName, admin.String(), oper.String())
-			ctx.Notify(&fwdpb.EventDesc{
-				Event: fwdpb.Event_EVENT_PORT,
-				Desc: &fwdpb.EventDesc_Port{
-					Port: &fwdpb.PortEventDesc{
-						Context: &fwdpb.ContextId{Id: ctx.ID},
-						PortId:  &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: string(port.ID())}},
-						PortInfo: &fwdpb.PortInfo{
-							AdminStatus: admin,
-							OperStatus:  oper,
+			case upd, ok := <-updCh:
+				if !ok {
+					log.Info("update chan close for dev: %v", devName)
+					return
+				}
+				if upd.Attrs() == nil || upd.Attrs().Name != devName {
+					continue
+				}
+				admin, oper := stateFromAttrs(upd.Attrs())
+				log.V(1).Infof("dataplane receive link update: port %q, admin %v, oper %v", devName, admin.String(), oper.String())
+				ctx.Notify(&fwdpb.EventDesc{
+					Event: fwdpb.Event_EVENT_PORT,
+					Desc: &fwdpb.EventDesc_Port{
+						Port: &fwdpb.PortEventDesc{
+							Context: &fwdpb.ContextId{Id: ctx.ID},
+							PortId:  &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: string(port.ID())}},
+							PortInfo: &fwdpb.PortInfo{
+								AdminStatus: admin,
+								OperStatus:  oper,
+							},
 						},
 					},
-				},
-			})
+				})
+			}
 		}
 	}()
 }
@@ -254,14 +273,14 @@ func (tp tapBuilder) Build(portDesc *fwdpb.PortDesc, ctx *fwdcontext.Context) (f
 		file:         file,
 		fd:           fd,
 		devName:      kp.Tap.GetDeviceName(),
-		linkDoneCh:   make(chan struct{}),
+		doneCh:       make(chan struct{}),
 		linkUpdateCh: make(chan netlink.LinkUpdate),
 	}
 	list := append(fwdport.CounterList, fwdaction.CounterList...)
 	if err := p.InitCounters("", list...); err != nil {
 		return nil, err
 	}
-	if err := tp.ifaceMgr.LinkSubscribe(p.linkUpdateCh, p.linkDoneCh); err != nil {
+	if err := tp.ifaceMgr.LinkSubscribe(p.linkUpdateCh, p.doneCh); err != nil {
 		return nil, err
 	}
 

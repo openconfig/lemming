@@ -24,14 +24,10 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	"github.com/openconfig/lemming/dataplane/internal/engine"
 	"github.com/openconfig/lemming/dataplane/standalone/saiserver"
 	"github.com/openconfig/lemming/dataplane/standalone/saiserver/attrmgr"
 
 	log "github.com/golang/glog"
-
-	dpb "github.com/openconfig/lemming/proto/dataplane"
-	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
 var port = flag.Int("port", 50000, "Port for api server")
@@ -59,11 +55,6 @@ func getLogger() logging.Logger {
 func start(port int) {
 	log.Info("lucius initialized")
 
-	e, err := engine.New(context.Background())
-	if err != nil {
-		log.Fatalf("failed create engine: %v", err)
-	}
-
 	lis, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
@@ -74,9 +65,10 @@ func start(port int) {
 	srv := grpc.NewServer(grpc.Creds(insecure.NewCredentials()),
 		grpc.ChainUnaryInterceptor(logging.UnaryServerInterceptor(getLogger()), mgr.Interceptor),
 		grpc.ChainStreamInterceptor(logging.StreamServerInterceptor(getLogger())))
-	fwdpb.RegisterForwardingServer(srv, e)
-	dpb.RegisterDataplaneServer(srv, e)
-	saiserver.New(mgr, e, srv)
+
+	if _, err := saiserver.New(mgr, srv); err != nil {
+		log.Fatalf("failed to create server: %v", err)
+	}
 
 	if err := srv.Serve(lis); err != nil {
 		log.Fatalf("failed to serve forwarding server: %v", err)

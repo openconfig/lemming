@@ -17,31 +17,38 @@
 package engine
 
 import (
+	"context"
+
 	"github.com/vishvananda/netlink"
 
 	log "github.com/golang/glog"
 )
 
-func (e *Engine) handleIPUpdates() {
+func (e *Engine) handleIPUpdates(ctx context.Context) {
 	updCh := make(chan netlink.AddrUpdate)
 	doneCh := make(chan struct{})
 
 	go func() {
 		for {
-			upd := <-updCh
-			l, err := netlink.LinkByIndex(upd.LinkIndex)
-			if err != nil {
-				log.Warningf("failed to get link: %v", err)
-				continue
+			select {
+			case upd := <-updCh:
+				l, err := netlink.LinkByIndex(upd.LinkIndex)
+				if err != nil {
+					log.Warningf("failed to get link: %v", err)
+					continue
+				}
+				e.ipToDevNameMu.Lock()
+				if upd.NewAddr {
+					log.Infof("added new ip %s to device %s", upd.LinkAddress.IP.String(), l.Attrs().Name)
+					e.ipToDevName[upd.LinkAddress.IP.String()] = l.Attrs().Name
+				} else {
+					delete(e.ipToDevName, upd.LinkAddress.IP.String())
+				}
+				e.ipToDevNameMu.Unlock()
+			case <-ctx.Done():
+				close(doneCh)
+				return
 			}
-			e.ipToDevNameMu.Lock()
-			if upd.NewAddr {
-				log.Infof("added new ip %s to device %s", upd.LinkAddress.IP.String(), l.Attrs().Name)
-				e.ipToDevName[upd.LinkAddress.IP.String()] = l.Attrs().Name
-			} else {
-				delete(e.ipToDevName, upd.LinkAddress.IP.String())
-			}
-			e.ipToDevNameMu.Unlock()
 		}
 	}()
 

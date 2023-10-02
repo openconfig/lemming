@@ -121,6 +121,16 @@ func (mgr *AttrMgr) Interceptor(ctx context.Context, req any, info *grpc.UnarySe
 	return respMsg, nil
 }
 
+// Reset resets all fields attributes in the manager.
+func (mgr *AttrMgr) Reset() {
+	mgr.mu.Lock()
+	defer mgr.mu.Unlock()
+	mgr.attrs = make(map[string]map[int32]*protoreflect.Value)
+	mgr.idToType = make(map[string]saipb.ObjectType)
+	mgr.msgEnumToFieldNum = make(map[string]map[int32]int)
+	mgr.nextOid.Store(0)
+}
+
 func createResponse(req proto.Message, resp any) (proto.Message, error) {
 	if resp == nil {
 		respName := strings.ReplaceAll(string(req.ProtoReflect().Descriptor().FullName()), "Request", "Response")
