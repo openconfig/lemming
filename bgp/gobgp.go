@@ -125,9 +125,7 @@ func newBgpTask(targetName, zapiURL string, listenPort uint16) *bgpTask {
 	appliedState := &oc.Root{}
 	// appliedBGP is the SoT for BGP applied configuration. It is maintained locally by the task.
 	appliedBGP := appliedState.GetOrCreateNetworkInstance(fakedevice.DefaultNetworkInstance).GetOrCreateProtocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, fakedevice.BGPRoutingProtocol).GetOrCreateBgp()
-	appliedBGP.PopulateDefaults()
 	appliedRoutingPolicy := appliedState.GetOrCreateRoutingPolicy()
-	appliedRoutingPolicy.PopulateDefaults()
 
 	return &bgpTask{
 		targetName: targetName,
@@ -241,9 +239,16 @@ func (t *bgpTask) reconcile(intended *oc.Root) error {
 		}
 	default:
 		// Waiting for BGP to be startable.
+		return nil
 	}
 
-	return nil
+	err := ygot.MergeStructInto(t.appliedBGP, intendedBGP, &ygot.MergeOverwriteExistingFields{})
+	// TODO(wenbli): Since policy definitions is an atomic node,
+	// unsupported policy leaves will be merged as well. Therefore omitting
+	// them from the applied state until we find a way to to prune out
+	// unsupported paths prior to merge.
+	t.appliedRoutingPolicy.PolicyDefinition = nil
+	return err
 }
 
 // updateAppliedState is the ONLY function that's called when updating the appliedState.
