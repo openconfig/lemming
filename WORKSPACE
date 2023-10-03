@@ -131,8 +131,6 @@ http_archive(
 
 http_archive(
     name = "com_github_opencomputeproject_sai",
-    patch_args = ["-p1"],
-    patches = ["//patches:sai.patch"],
     build_file_content = """
 cc_library(
     name = "sai",
@@ -141,6 +139,8 @@ cc_library(
     visibility = ["//visibility:public"],
 )
 """,
+    patch_args = ["-p1"],
+    patches = ["//patches:sai.patch"],
     sha256 = "240d0211bbea2758faabfdbfa5e5488d837a47d42839bfe99b4bfbff52ab6c11",
     strip_prefix = "SAI-1.11.0",
     urls = ["https://github.com/opencomputeproject/SAI/archive/refs/tags/v1.11.0.tar.gz"],

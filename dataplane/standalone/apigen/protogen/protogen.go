@@ -381,8 +381,22 @@ message ObjectTypeQueryResponse {
 	ObjectType type = 1;
 }
 
+message InitializeRequest {
+}
+
+message InitializeResponse {
+}
+
+message UninitializeRequest {
+}
+
+message UninitializeResponse {
+}
+
 service Entrypoint {
   rpc ObjectTypeQuery(ObjectTypeQueryRequest) returns (ObjectTypeQueryResponse) {}
+  rpc Initialize(InitializeRequest) returns (InitializeResponse) {}
+  rpc Uninitialize(UninitializeRequest) returns (UninitializeResponse) {}
 }
 {{ range .Enums }}
 enum {{ .Name }} {

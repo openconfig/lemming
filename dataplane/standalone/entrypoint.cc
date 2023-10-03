@@ -249,6 +249,15 @@ sai_status_t sai_api_initialize(
   wred = std::make_unique<lemming::dataplane::sai::Wred::Stub>(chan);
   entry = std::make_unique<lemming::dataplane::sai::Entrypoint::Stub>(chan);
 
+  lemming::dataplane::sai::InitializeRequest req;
+  lemming::dataplane::sai::InitializeResponse resp;
+  grpc::ClientContext context;
+  grpc::Status status = entry->Initialize(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+
   return SAI_STATUS_SUCCESS;
 }
 
@@ -492,7 +501,6 @@ sai_status_t sai_query_attribute_enum_values_capability(
     _In_ sai_object_id_t switch_id, _In_ sai_object_type_t object_type,
     _In_ sai_attr_id_t attr_id,
     _Inout_ sai_s32_list_t *enum_values_capability) {
-
   return SAI_STATUS_NOT_IMPLEMENTED;
 }
 

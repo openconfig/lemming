@@ -16,4 +16,6 @@
 
 package engine
 
-func (e *Engine) handleIPUpdates() {}
+import "context"
+
+func (e *Engine) handleIPUpdates(ctx context.Context) {}
