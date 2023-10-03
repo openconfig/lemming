@@ -84,51 +84,6 @@ func testPolicy(t *testing.T, testspec PolicyTestCase) {
 	}})
 	defer stop5()
 
-	for _, routeTest := range testspec.spec.RouteTests {
-		// Install all regular test routes into DUT1.
-		route := &oc.NetworkInstance_Protocol_Static{
-			Prefix: ygot.String(routeTest.GetInput().GetReachPrefix()),
-			NextHop: map[string]*oc.NetworkInstance_Protocol_Static_NextHop{
-				"single": {
-					Index:   ygot.String("single"),
-					NextHop: oc.UnionString("192.0.2.1"),
-					Recurse: ygot.Bool(true),
-				},
-			},
-		}
-		installStaticRoute(t, dut1, route)
-	}
-
-	for _, routeTest := range testspec.spec.LongerPathRouteTests {
-		// Install all longer-path test routes into DUT4.
-		route := &oc.NetworkInstance_Protocol_Static{
-			Prefix: ygot.String(routeTest.GetInput().GetReachPrefix()),
-			NextHop: map[string]*oc.NetworkInstance_Protocol_Static_NextHop{
-				"single": {
-					Index:   ygot.String("single"),
-					NextHop: oc.UnionString("192.0.2.1"),
-					Recurse: ygot.Bool(true),
-				},
-			},
-		}
-		installStaticRoute(t, dut4, route)
-	}
-
-	for _, routeTest := range testspec.spec.AlternatePathRouteTests {
-		// Install all alternate-path test routes into DUT5.
-		route := &oc.NetworkInstance_Protocol_Static{
-			Prefix: ygot.String(routeTest.GetInput().GetReachPrefix()),
-			NextHop: map[string]*oc.NetworkInstance_Protocol_Static_NextHop{
-				"single": {
-					Index:   ygot.String("single"),
-					NextHop: oc.UnionString("193.0.2.1"),
-					Recurse: ygot.Bool(true),
-				},
-			},
-		}
-		installStaticRoute(t, dut5, route)
-	}
-
 	testPolicyAux(t, testspec, dut1, dut2, dut3, dut4, dut5)
 }
 
@@ -206,6 +161,8 @@ func testPolicyAux(t *testing.T, testspec PolicyTestCase, dut1, dut2, dut3, dut4
 	Delete(t, dut4, bgp.RoutingPolicyPath.Config())
 	Delete(t, dut5, bgp.RoutingPolicyPath.Config())
 
+	establishSessionPairs(t, []DevicePair{{dut1, dut2}, {dut2, dut3}, {dut4, dut5}, {dut5, dut2}}...)
+
 	installDefaultPolicies := func() {
 		// Clear the path for routes to be propagated.
 		// DUT1 -> DUT2 -> DUT3
@@ -221,6 +178,17 @@ func testPolicyAux(t *testing.T, testspec PolicyTestCase, dut1, dut2, dut3, dut4
 		Replace(t, dut5, bgp.BGPPath.Neighbor(dut4.RouterID).ApplyPolicy().DefaultImportPolicy().Config(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
 		Replace(t, dut5, bgp.BGPPath.Neighbor(dut2.RouterID).ApplyPolicy().DefaultExportPolicy().Config(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
 		Replace(t, dut2, bgp.BGPPath.Neighbor(dut5.RouterID).ApplyPolicy().DefaultImportPolicy().Config(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
+
+		// Wait until policies are installed.
+		Await(t, dut1, bgp.BGPPath.Neighbor(dut2.RouterID).ApplyPolicy().DefaultExportPolicy().State(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
+		Await(t, dut2, bgp.BGPPath.Neighbor(dut1.RouterID).ApplyPolicy().DefaultImportPolicy().State(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
+		Await(t, dut2, bgp.BGPPath.Neighbor(dut3.RouterID).ApplyPolicy().DefaultExportPolicy().State(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
+		Await(t, dut3, bgp.BGPPath.Neighbor(dut2.RouterID).ApplyPolicy().DefaultImportPolicy().State(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
+
+		Await(t, dut4, bgp.BGPPath.Neighbor(dut5.RouterID).ApplyPolicy().DefaultExportPolicy().State(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
+		Await(t, dut5, bgp.BGPPath.Neighbor(dut4.RouterID).ApplyPolicy().DefaultImportPolicy().State(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
+		Await(t, dut5, bgp.BGPPath.Neighbor(dut2.RouterID).ApplyPolicy().DefaultExportPolicy().State(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
+		Await(t, dut2, bgp.BGPPath.Neighbor(dut5.RouterID).ApplyPolicy().DefaultImportPolicy().State(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
 	}
 	installDefaultPolicies()
 
@@ -228,7 +196,50 @@ func testPolicyAux(t *testing.T, testspec PolicyTestCase, dut1, dut2, dut3, dut4
 		testspec.installPolicies(t, dut1, dut2, dut3, dut4, dut5)
 	}
 
-	establishSessionPairs(t, []DevicePair{{dut1, dut2}, {dut2, dut3}, {dut4, dut5}, {dut5, dut2}}...)
+	for _, routeTest := range testspec.spec.RouteTests {
+		// Install all regular test routes into DUT1.
+		route := &oc.NetworkInstance_Protocol_Static{
+			Prefix: ygot.String(routeTest.GetInput().GetReachPrefix()),
+			NextHop: map[string]*oc.NetworkInstance_Protocol_Static_NextHop{
+				"single": {
+					Index:   ygot.String("single"),
+					NextHop: oc.UnionString("192.0.2.1"),
+					Recurse: ygot.Bool(true),
+				},
+			},
+		}
+		installStaticRoute(t, dut1, route)
+	}
+
+	for _, routeTest := range testspec.spec.LongerPathRouteTests {
+		// Install all longer-path test routes into DUT4.
+		route := &oc.NetworkInstance_Protocol_Static{
+			Prefix: ygot.String(routeTest.GetInput().GetReachPrefix()),
+			NextHop: map[string]*oc.NetworkInstance_Protocol_Static_NextHop{
+				"single": {
+					Index:   ygot.String("single"),
+					NextHop: oc.UnionString("192.0.2.1"),
+					Recurse: ygot.Bool(true),
+				},
+			},
+		}
+		installStaticRoute(t, dut4, route)
+	}
+
+	for _, routeTest := range testspec.spec.AlternatePathRouteTests {
+		// Install all alternate-path test routes into DUT5.
+		route := &oc.NetworkInstance_Protocol_Static{
+			Prefix: ygot.String(routeTest.GetInput().GetReachPrefix()),
+			NextHop: map[string]*oc.NetworkInstance_Protocol_Static_NextHop{
+				"single": {
+					Index:   ygot.String("single"),
+					NextHop: oc.UnionString("193.0.2.1"),
+					Recurse: ygot.Bool(true),
+				},
+			},
+		}
+		installStaticRoute(t, dut5, route)
+	}
 
 	staticp := ocpath.Root().NetworkInstance(fakedevice.DefaultNetworkInstance).Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_STATIC, fakedevice.StaticRoutingProtocol)
 	v := GetAll(t, dut1, staticp.StaticAny().Config())

@@ -84,6 +84,7 @@ func TestPrefixSet(t *testing.T) {
 		// Install policy
 		Replace(t, dut2, ocpath.Root().RoutingPolicy().PolicyDefinition(policyName).Config(), &oc.RoutingPolicy_PolicyDefinition{Statement: policy})
 		Replace(t, dut2, bgp.BGPPath.Neighbor(dut1.RouterID).ApplyPolicy().ImportPolicy().Config(), []string{policyName})
+		Await(t, dut2, bgp.BGPPath.Neighbor(dut1.RouterID).ApplyPolicy().ImportPolicy().State(), []string{policyName})
 	}
 
 	invertResult := func(result valpb.RouteTestResult, invert bool) valpb.RouteTestResult {
