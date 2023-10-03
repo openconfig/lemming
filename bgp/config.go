@@ -17,6 +17,9 @@ package bgp
 import (
 	"net/netip"
 
+	"golang.org/x/exp/maps"
+	"golang.org/x/exp/slices"
+
 	log "github.com/golang/glog"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/wenovus/gobgp/v3/pkg/config/gobgp"
@@ -45,10 +48,6 @@ func intendedToGoBGP(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *oc.Routin
 	}
 
 	for neighAddr, neigh := range bgpoc.Neighbor {
-		applyPolicy := convertNeighborApplyPolicy(neigh)
-		applyPolicy.Config.ImportPolicyList = convertPolicyNames(neighAddr, applyPolicy.Config.ImportPolicyList)
-		applyPolicy.Config.ExportPolicyList = convertPolicyNames(neighAddr, applyPolicy.Config.ExportPolicyList)
-
 		// Add neighbour config.
 		bgpConfig.Neighbors = append(bgpConfig.Neighbors, gobgp.Neighbor{
 			Config: gobgp.NeighborConfig{
@@ -68,18 +67,6 @@ func intendedToGoBGP(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *oc.Routin
 					RemotePort:   neigh.GetNeighborPort(),
 				},
 			},
-			// NOTE: From reading GoBGP's source code these are not used for filtering
-			// routes (the global ApplyPolicy list is used instead) unless the neighbour
-			// is a route server client.
-			//
-			// However, testing shows that when a REJECT policy is installed in the
-			// presence of routes, they are not withdrawn UNLESS this configuration is
-			// populated. Therefore it's possible this is a bug in GoBGP where the
-			// global apply policy list is not used for computing route withdrawals.
-			//
-			// As such this configuration is kept to get the withdraw behaviour, but how
-			// this works is not well-understood and needs more work.
-			ApplyPolicy: applyPolicy,
 		})
 	}
 
@@ -101,7 +88,6 @@ func intendedToGoBGP(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *oc.Routin
 }
 
 // intendedToGoBGPPolicies populates bgpConfig's policies from the OC configuration.
-// TODO: applied state
 func intendedToGoBGPPolicies(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *oc.RoutingPolicy, bgpConfig *gobgp.BgpConfigSet) {
 	var communitySetIndexMap map[string]int
 	// community sets
@@ -111,8 +97,11 @@ func intendedToGoBGPPolicies(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *o
 	// AS Path Sets
 	bgpConfig.DefinedSets.BgpDefinedSets.AsPathSets = convertASPathSets(policyoc.GetOrCreateDefinedSets().GetOrCreateBgpDefinedSets().AsPathSet)
 
+	neighAddrs := maps.Keys(bgpoc.Neighbor)
+	slices.Sort(neighAddrs)
+
 	// Neighbours, global policy definitions, and global apply policy list.
-	for neighAddr, neigh := range bgpoc.Neighbor {
+	for _, neighAddr := range neighAddrs {
 		// Ideally a simple conversion of apply-policy is sufficient, but due to GoBGP using
 		// a global set of apply-policy instead of per-neighbour policies, we need to create
 		// neighbour sets and modify input policy statements so that we retain the same
@@ -134,7 +123,7 @@ func intendedToGoBGPPolicies(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *o
 			NeighborInfoList: []string{neighAddr},
 		})
 
-		applyPolicy := convertNeighborApplyPolicy(neigh)
+		applyPolicy := convertNeighborApplyPolicy(bgpoc.Neighbor[neighAddr])
 
 		// populatePolicies populates the global policy definitions and the ApplyPolicy
 		// list, and returns the list of converted policies' names.
@@ -148,7 +137,6 @@ func intendedToGoBGPPolicies(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *o
 					applyPolicyList = append(applyPolicyList, convertedPolicyName)
 					continue
 				}
-				// TODO(wenbli): Add unit tests for BGP policy conversion.
 				policies[policyName] = true
 				policy, ok := policyoc.PolicyDefinition[policyName]
 				if !ok {

@@ -33,6 +33,7 @@ func convertStaticRoute(sroute *oc.NetworkInstance_Protocol_Static) *Route {
 		// TODO(wenbli): Implement recurse option.
 		snh.SetRecurse(true)
 		switch nh := snh.NextHop.(type) {
+		case nil:
 		case oc.UnionString:
 			nexthops = append(nexthops, &afthelper.NextHopSummary{
 				Weight:          1,
