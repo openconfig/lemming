@@ -32,14 +32,6 @@ func convertPolicyName(neighAddr, ocPolicyName string) string {
 	return neighAddr + "|" + ocPolicyName
 }
 
-func convertPolicyNames(neighAddr string, ocPolicyNames []string) []string {
-	var convertedNames []string
-	for _, n := range ocPolicyNames {
-		convertedNames = append(convertedNames, convertPolicyName(neighAddr, n))
-	}
-	return convertedNames
-}
-
 func convertSetCommunities(setCommunity *oc.RoutingPolicy_PolicyDefinition_Statement_Actions_BgpActions_SetCommunity, convertedCommSets []gobgp.CommunitySet, commSetIndexMap map[string]int) ([]string, error) {
 	switch setCommunity.GetMethod() {
 	case oc.SetCommunity_Method_INLINE:
