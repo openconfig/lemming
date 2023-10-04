@@ -60,6 +60,7 @@ func convertSetCommunities(setCommunity *oc.RoutingPolicy_PolicyDefinition_State
 // for another neighbour. This is necessary since all policies will go into a
 // single apply-policy list.
 func convertPolicyDefinition(policy *oc.RoutingPolicy_PolicyDefinition, neighAddr string, occommset map[string]*oc.RoutingPolicy_DefinedSets_BgpDefinedSets_CommunitySet, convertedCommSets []gobgp.CommunitySet, commSetIndexMap map[string]int) gobgp.PolicyDefinition {
+	convertedPolicyName := convertPolicyName(neighAddr, policy.GetName())
 	var statements []gobgp.Statement
 	for _, statement := range policy.Statement.Values() {
 		setCommunitiesList, err := convertSetCommunities(statement.GetActions().GetBgpActions().GetSetCommunity(), convertedCommSets, commSetIndexMap)
@@ -71,7 +72,9 @@ func convertPolicyDefinition(policy *oc.RoutingPolicy_PolicyDefinition, neighAdd
 			log.Errorf("MED value not supported: %v", err)
 		}
 		statements = append(statements, gobgp.Statement{
-			Name: statement.GetName(),
+			// In GoBGP, statements must have globally-unique names.
+			// Ensure uniqueness by qualifying each one with the name of the converted policy.
+			Name: convertedPolicyName + ":" + statement.GetName(),
 			Conditions: gobgp.Conditions{
 				MatchPrefixSet: gobgp.MatchPrefixSet{
 					PrefixSet:       statement.GetConditions().GetMatchPrefixSet().GetPrefixSet(),
@@ -113,7 +116,7 @@ func convertPolicyDefinition(policy *oc.RoutingPolicy_PolicyDefinition, neighAdd
 	}
 
 	return gobgp.PolicyDefinition{
-		Name:       convertPolicyName(neighAddr, policy.GetName()),
+		Name:       convertedPolicyName,
 		Statements: statements,
 	}
 }

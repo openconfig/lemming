@@ -139,7 +139,7 @@ func TestIntendedToGoBGPPolicies(t *testing.T) {
 			PolicyDefinitions: []gobgp.PolicyDefinition{{
 				Name: "1.1.1.1|foo",
 				Statements: []gobgp.Statement{{
-					Name: "foo-1",
+					Name: "1.1.1.1|foo:foo-1",
 					Conditions: gobgp.Conditions{
 						CallPolicy:       "",
 						MatchPrefixSet:   gobgp.MatchPrefixSet{PrefixSet: "V4-1", MatchSetOptions: "any"},
@@ -185,7 +185,7 @@ func TestIntendedToGoBGPPolicies(t *testing.T) {
 						},
 					},
 				}, {
-					Name: "foo-2",
+					Name: "1.1.1.1|foo:foo-2",
 					Conditions: gobgp.Conditions{
 						CallPolicy:       "",
 						MatchPrefixSet:   gobgp.MatchPrefixSet{PrefixSet: "V4-2", MatchSetOptions: "any"},
@@ -256,7 +256,7 @@ func TestIntendedToGoBGPPolicies(t *testing.T) {
 			}, {
 				Name: "2.2.2.2|foo",
 				Statements: []gobgp.Statement{{
-					Name: "foo-1",
+					Name: "2.2.2.2|foo:foo-1",
 					Conditions: gobgp.Conditions{
 						CallPolicy:       "",
 						MatchPrefixSet:   gobgp.MatchPrefixSet{PrefixSet: "V4-1", MatchSetOptions: "any"},
@@ -302,7 +302,7 @@ func TestIntendedToGoBGPPolicies(t *testing.T) {
 						},
 					},
 				}, {
-					Name: "foo-2",
+					Name: "2.2.2.2|foo:foo-2",
 					Conditions: gobgp.Conditions{
 						CallPolicy:       "",
 						MatchPrefixSet:   gobgp.MatchPrefixSet{PrefixSet: "V4-2", MatchSetOptions: "any"},
@@ -339,6 +339,255 @@ func TestIntendedToGoBGPPolicies(t *testing.T) {
 						IgpActions:       gobgp.IgpActions{SetTag: ""},
 						BgpActions: gobgp.BgpActions{SetAsPathPrepend: gobgp.SetAsPathPrepend{RepeatN: 0x0, As: "0"},
 							SetCommunity:      gobgp.SetCommunity{SetCommunityMethod: gobgp.SetCommunityMethod{CommunitiesList: []string(nil), CommunitySetRef: ""}, Options: "replace"},
+							SetExtCommunity:   gobgp.SetExtCommunity{SetExtCommunityMethod: gobgp.SetExtCommunityMethod{CommunitiesList: []string(nil), ExtCommunitySetRef: ""}, Options: ""},
+							SetRouteOrigin:    "",
+							SetLocalPref:      0x0,
+							SetNextHop:        "",
+							SetMed:            "",
+							SetLargeCommunity: gobgp.SetLargeCommunity{SetLargeCommunityMethod: gobgp.SetLargeCommunityMethod{CommunitiesList: []string(nil)}, Options: ""},
+						},
+					},
+				}},
+			}, {
+				Name: "default-import|2.2.2.2",
+				Statements: []gobgp.Statement{{
+					Name: "default-import|2.2.2.2",
+					Conditions: gobgp.Conditions{
+						MatchNeighborSet: gobgp.MatchNeighborSet{NeighborSet: "2.2.2.2", MatchSetOptions: ""},
+					},
+					Actions: gobgp.Actions{
+						RouteDisposition: "reject-route",
+					},
+				}},
+			}, {
+				Name: "default-export|2.2.2.2",
+				Statements: []gobgp.Statement{{
+					Name: "default-export|2.2.2.2",
+					Conditions: gobgp.Conditions{
+						MatchNeighborSet: gobgp.MatchNeighborSet{NeighborSet: "2.2.2.2", MatchSetOptions: ""},
+					},
+					Actions: gobgp.Actions{
+						RouteDisposition: "reject-route",
+					},
+				}},
+			}},
+		},
+	}, {
+		desc: "remove-community-set-two-statements",
+		inOC: func() *oc.Root {
+			root := &oc.Root{}
+			bgpoc := root.GetOrCreateNetworkInstance(fakedevice.DefaultNetworkInstance).GetOrCreateProtocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, fakedevice.BGPRoutingProtocol).GetOrCreateBgp()
+			policyoc := root.GetOrCreateRoutingPolicy()
+
+			// Create prefix set
+			prefixSetName := "prefixset-foo"
+			prefixSet := root.GetOrCreateRoutingPolicy().GetOrCreateDefinedSets().GetOrCreatePrefixSet(prefixSetName)
+			prefixSet.SetMode(oc.PrefixSet_Mode_IPV4)
+			prefixSet.GetOrCreatePrefix("10.0.0.0/10", "8..32")
+
+			// DEFINED SETS
+			commsetName := "COMM1"
+			root.GetOrCreateRoutingPolicy().GetOrCreateDefinedSets().GetOrCreateBgpDefinedSets().GetOrCreateCommunitySet(commsetName).SetCommunityMember(
+				[]oc.RoutingPolicy_DefinedSets_BgpDefinedSets_CommunitySet_CommunityMember_Union{
+					oc.UnionString("[0-9]+:[0-9]+"),
+				},
+			)
+
+			// POLICY
+			stmtName := "stmt"
+			policy1 := &oc.RoutingPolicy_PolicyDefinition_Statement_OrderedMap{}
+			policy1Name := "foo"
+			policyoc.GetOrCreatePolicyDefinition(policy1Name).Statement = policy1
+
+			stmt, err := policy1.AppendNew(stmtName)
+			if err != nil {
+				t.Fatalf("Cannot append new BGP policy statement: %v", err)
+			}
+			stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetPrefixSet(prefixSetName)
+			stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.RoutingPolicy_MatchSetOptionsRestrictedType_ANY)
+
+			stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetOptions(oc.BgpPolicy_BgpSetCommunityOptionType_ADD)
+			stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().GetOrCreateInline().SetCommunities(
+				[]oc.RoutingPolicy_PolicyDefinition_Statement_Actions_BgpActions_SetCommunity_Inline_Communities_Union{
+					oc.UnionString("11111:11111"),
+					oc.UnionString("22222:22222"),
+				},
+			)
+			stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetMethod(oc.SetCommunity_Method_INLINE)
+
+			policy2 := &oc.RoutingPolicy_PolicyDefinition_Statement_OrderedMap{}
+			policy2Name := "bar"
+			policyoc.GetOrCreatePolicyDefinition(policy2Name).Statement = policy2
+
+			stmt, err = policy2.AppendNew(stmtName)
+			if err != nil {
+				t.Fatalf("Cannot append new BGP policy statement: %v", err)
+			}
+			stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetPrefixSet(prefixSetName)
+			stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.RoutingPolicy_MatchSetOptionsRestrictedType_ANY)
+			stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetOptions(oc.BgpPolicy_BgpSetCommunityOptionType_REMOVE)
+			stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().GetOrCreateReference().SetCommunitySetRef(commsetName)
+			stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetMethod(oc.SetCommunity_Method_REFERENCE)
+			stmt.GetOrCreateActions().SetPolicyResult(oc.RoutingPolicy_PolicyResultType_ACCEPT_ROUTE)
+
+			bgpoc.GetOrCreateNeighbor("1.1.1.1").GetOrCreateApplyPolicy().SetExportPolicy([]string{policy1Name})
+			bgpoc.GetOrCreateNeighbor("2.2.2.2").GetOrCreateApplyPolicy().SetExportPolicy([]string{policy2Name})
+			return root
+		}(),
+		wantBGPConfig: &gobgp.BgpConfigSet{
+			Global: gobgp.Global{
+				ApplyPolicy: gobgp.ApplyPolicy{
+					Config: gobgp.ApplyPolicyConfig{
+						ImportPolicyList: []string{
+							"default-import|1.1.1.1",
+							"default-import|2.2.2.2",
+						},
+						DefaultImportPolicy: "",
+						ExportPolicyList: []string{
+							"1.1.1.1|foo",
+							"default-export|1.1.1.1",
+							"2.2.2.2|bar",
+							"default-export|2.2.2.2",
+						},
+						DefaultExportPolicy: "",
+						InPolicyList:        []string(nil),
+						DefaultInPolicy:     "",
+					},
+				},
+			},
+			DefinedSets: gobgp.DefinedSets{
+				PrefixSets: []gobgp.PrefixSet{{
+					PrefixSetName: "prefixset-foo",
+					PrefixList: []gobgp.Prefix{{
+						IpPrefix:        "10.0.0.0/10",
+						MasklengthRange: "8..32",
+					}},
+				}},
+				NeighborSets: []gobgp.NeighborSet{{
+					NeighborSetName:  "1.1.1.1",
+					NeighborInfoList: []string{"1.1.1.1"},
+				}, {
+					NeighborSetName:  "2.2.2.2",
+					NeighborInfoList: []string{"2.2.2.2"},
+				}},
+				BgpDefinedSets: gobgp.BgpDefinedSets{
+					CommunitySets: []gobgp.CommunitySet{{
+						CommunitySetName: "COMM1",
+						CommunityList:    []string{"[0-9]+:[0-9]+"},
+					}},
+				},
+			},
+			PolicyDefinitions: []gobgp.PolicyDefinition{{
+				Name: "1.1.1.1|foo",
+				Statements: []gobgp.Statement{{
+					Name: "1.1.1.1|foo:stmt",
+					Conditions: gobgp.Conditions{
+						CallPolicy:       "",
+						MatchPrefixSet:   gobgp.MatchPrefixSet{PrefixSet: "prefixset-foo", MatchSetOptions: "any"},
+						MatchNeighborSet: gobgp.MatchNeighborSet{NeighborSet: "1.1.1.1", MatchSetOptions: ""}, MatchTagSet: gobgp.MatchTagSet{TagSet: "", MatchSetOptions: ""},
+						InstallProtocolEq: "", IgpConditions: gobgp.IgpConditions{}, BgpConditions: gobgp.BgpConditions{
+							MatchCommunitySet: gobgp.MatchCommunitySet{
+								CommunitySet:    "",
+								MatchSetOptions: "any",
+							},
+							MatchExtCommunitySet: gobgp.MatchExtCommunitySet{
+								ExtCommunitySet: "",
+								MatchSetOptions: "",
+							},
+							MatchAsPathSet: gobgp.MatchAsPathSet{
+								AsPathSet: "", MatchSetOptions: "any",
+							},
+							MedEq:                0x0,
+							OriginEq:             "",
+							NextHopInList:        []string(nil),
+							AfiSafiInList:        []gobgp.AfiSafiType(nil),
+							LocalPrefEq:          0x0,
+							CommunityCount:       gobgp.CommunityCount{Operator: "", Value: 0x0},
+							AsPathLength:         gobgp.AsPathLength{Operator: "", Value: 0x0},
+							RouteType:            "",
+							RpkiValidationResult: "",
+							MatchLargeCommunitySet: gobgp.MatchLargeCommunitySet{
+								LargeCommunitySet: "",
+								MatchSetOptions:   "",
+							},
+						},
+					},
+					Actions: gobgp.Actions{
+						RouteDisposition: "none",
+						IgpActions:       gobgp.IgpActions{SetTag: ""},
+						BgpActions: gobgp.BgpActions{SetAsPathPrepend: gobgp.SetAsPathPrepend{RepeatN: 0x0, As: "0"},
+							SetCommunity:      gobgp.SetCommunity{SetCommunityMethod: gobgp.SetCommunityMethod{CommunitiesList: []string{"11111:11111", "22222:22222"}, CommunitySetRef: ""}, Options: "add"},
+							SetExtCommunity:   gobgp.SetExtCommunity{SetExtCommunityMethod: gobgp.SetExtCommunityMethod{CommunitiesList: []string(nil), ExtCommunitySetRef: ""}, Options: ""},
+							SetRouteOrigin:    "",
+							SetLocalPref:      0x0,
+							SetNextHop:        "",
+							SetMed:            "",
+							SetLargeCommunity: gobgp.SetLargeCommunity{SetLargeCommunityMethod: gobgp.SetLargeCommunityMethod{CommunitiesList: []string(nil)}, Options: ""},
+						},
+					},
+				}},
+			}, {
+				Name: "default-import|1.1.1.1",
+				Statements: []gobgp.Statement{{
+					Name: "default-import|1.1.1.1",
+					Conditions: gobgp.Conditions{
+						MatchNeighborSet: gobgp.MatchNeighborSet{NeighborSet: "1.1.1.1", MatchSetOptions: ""},
+					},
+					Actions: gobgp.Actions{
+						RouteDisposition: "reject-route",
+					},
+				}},
+			}, {
+				Name: "default-export|1.1.1.1",
+				Statements: []gobgp.Statement{{
+					Name: "default-export|1.1.1.1",
+					Conditions: gobgp.Conditions{
+						MatchNeighborSet: gobgp.MatchNeighborSet{NeighborSet: "1.1.1.1", MatchSetOptions: ""},
+					},
+					Actions: gobgp.Actions{
+						RouteDisposition: "reject-route",
+					},
+				}},
+			}, {
+				Name: "2.2.2.2|bar",
+				Statements: []gobgp.Statement{{
+					Name: "2.2.2.2|bar:stmt",
+					Conditions: gobgp.Conditions{
+						CallPolicy:       "",
+						MatchPrefixSet:   gobgp.MatchPrefixSet{PrefixSet: "prefixset-foo", MatchSetOptions: "any"},
+						MatchNeighborSet: gobgp.MatchNeighborSet{NeighborSet: "2.2.2.2", MatchSetOptions: ""}, MatchTagSet: gobgp.MatchTagSet{TagSet: "", MatchSetOptions: ""},
+						InstallProtocolEq: "", IgpConditions: gobgp.IgpConditions{}, BgpConditions: gobgp.BgpConditions{
+							MatchCommunitySet: gobgp.MatchCommunitySet{
+								CommunitySet:    "",
+								MatchSetOptions: "any",
+							},
+							MatchExtCommunitySet: gobgp.MatchExtCommunitySet{
+								ExtCommunitySet: "",
+								MatchSetOptions: "",
+							},
+							MatchAsPathSet: gobgp.MatchAsPathSet{
+								AsPathSet: "", MatchSetOptions: "any",
+							},
+							MedEq:                0x0,
+							OriginEq:             "",
+							NextHopInList:        []string(nil),
+							AfiSafiInList:        []gobgp.AfiSafiType(nil),
+							LocalPrefEq:          0x0,
+							CommunityCount:       gobgp.CommunityCount{Operator: "", Value: 0x0},
+							AsPathLength:         gobgp.AsPathLength{Operator: "", Value: 0x0},
+							RouteType:            "",
+							RpkiValidationResult: "",
+							MatchLargeCommunitySet: gobgp.MatchLargeCommunitySet{
+								LargeCommunitySet: "",
+								MatchSetOptions:   "",
+							},
+						},
+					},
+					Actions: gobgp.Actions{
+						RouteDisposition: "accept-route",
+						IgpActions:       gobgp.IgpActions{SetTag: ""},
+						BgpActions: gobgp.BgpActions{SetAsPathPrepend: gobgp.SetAsPathPrepend{RepeatN: 0x0, As: "0"},
+							SetCommunity:      gobgp.SetCommunity{SetCommunityMethod: gobgp.SetCommunityMethod{CommunitiesList: []string{"[0-9]+:[0-9]+"}, CommunitySetRef: ""}, Options: "remove"},
 							SetExtCommunity:   gobgp.SetExtCommunity{SetExtCommunityMethod: gobgp.SetExtCommunityMethod{CommunitiesList: []string(nil), ExtCommunitySetRef: ""}, Options: ""},
 							SetRouteOrigin:    "",
 							SetLocalPref:      0x0,
