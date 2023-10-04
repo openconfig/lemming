@@ -32,6 +32,13 @@ func TestCommunitySet(t *testing.T) {
 		policyName := "community-sets"
 		policy := &oc.RoutingPolicy_PolicyDefinition_Statement_OrderedMap{}
 
+		// Create prefix set for ANY/ALL policy
+		prefixSetName := "tenRoutes"
+		tenRoutes := "10.0.0.0/8"
+		prefixSetPath := ocpath.Root().RoutingPolicy().DefinedSets().PrefixSet(prefixSetName)
+		Replace(t, dut2, prefixSetPath.Mode().Config(), oc.PrefixSet_Mode_IPV4)
+		Replace(t, dut2, prefixSetPath.Prefix(tenRoutes, "8..32").IpPrefix().Config(), tenRoutes)
+
 		// Create ANY community set
 		anyCommSetName := "ANY-community-set"
 		anyCommMemberPath := ocpath.Root().RoutingPolicy().DefinedSets().BgpDefinedSets().CommunitySet(anyCommSetName).CommunityMember()
@@ -50,11 +57,22 @@ func TestCommunitySet(t *testing.T) {
 		})
 		Replace(t, dut2, ocpath.Root().RoutingPolicy().DefinedSets().BgpDefinedSets().CommunitySet(allCommSetName).MatchSetOptions().Config(), oc.RoutingPolicy_MatchSetOptionsType_ALL)
 
+		// Create INVERT community set
+		invertCommSetName := "INVERT-community-set"
+		invertCommMemberPath := ocpath.Root().RoutingPolicy().DefinedSets().BgpDefinedSets().CommunitySet(invertCommSetName).CommunityMember()
+		Replace(t, dut2, invertCommMemberPath.Config(), []oc.RoutingPolicy_DefinedSets_BgpDefinedSets_CommunitySet_CommunityMember_Union{
+			oc.UnionString("11111:11111"),
+			oc.UnionString("22222:22222"),
+		})
+		Replace(t, dut2, ocpath.Root().RoutingPolicy().DefinedSets().BgpDefinedSets().CommunitySet(invertCommSetName).MatchSetOptions().Config(), oc.RoutingPolicy_MatchSetOptionsType_INVERT)
+
 		// Match on given list of community set members and reject them.
 		stmt, err := policy.AppendNew("reject-any-community-sets")
 		if err != nil {
 			t.Fatalf("Cannot append new BGP policy statement: %v", err)
 		}
+		stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetPrefixSet(prefixSetName)
+		stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.RoutingPolicy_MatchSetOptionsRestrictedType_ANY)
 		stmt.GetOrCreateConditions().GetOrCreateBgpConditions().SetCommunitySet(anyCommSetName)
 		stmt.GetOrCreateActions().SetPolicyResult(oc.RoutingPolicy_PolicyResultType_REJECT_ROUTE)
 
@@ -62,7 +80,25 @@ func TestCommunitySet(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Cannot append new BGP policy statement: %v", err)
 		}
+		stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetPrefixSet(prefixSetName)
+		stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.RoutingPolicy_MatchSetOptionsRestrictedType_ANY)
 		stmt.GetOrCreateConditions().GetOrCreateBgpConditions().SetCommunitySet(allCommSetName)
+		stmt.GetOrCreateActions().SetPolicyResult(oc.RoutingPolicy_PolicyResultType_REJECT_ROUTE)
+
+		// Create prefix set for INVERT policy
+		prefixSetName = "twentyRoutes"
+		twentyRoutes := "20.0.0.0/8"
+		prefixSetPath = ocpath.Root().RoutingPolicy().DefinedSets().PrefixSet(prefixSetName)
+		Replace(t, dut2, prefixSetPath.Mode().Config(), oc.PrefixSet_Mode_IPV4)
+		Replace(t, dut2, prefixSetPath.Prefix(twentyRoutes, "8..32").IpPrefix().Config(), twentyRoutes)
+
+		stmt, err = policy.AppendNew("reject-invert-community-sets")
+		if err != nil {
+			t.Fatalf("Cannot append new BGP policy statement: %v", err)
+		}
+		stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetPrefixSet(prefixSetName)
+		stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.RoutingPolicy_MatchSetOptionsRestrictedType_ANY)
+		stmt.GetOrCreateConditions().GetOrCreateBgpConditions().SetCommunitySet(invertCommSetName)
 		stmt.GetOrCreateActions().SetPolicyResult(oc.RoutingPolicy_PolicyResultType_REJECT_ROUTE)
 
 		// Install policy
@@ -72,12 +108,17 @@ func TestCommunitySet(t *testing.T) {
 	}
 
 	routeUnderTestList := []string{
+		"10.0.0.0/10",
+		"10.0.0.0/11",
+		"10.0.0.0/12",
+		"10.0.0.0/13",
+		"10.0.0.0/14",
+		"10.0.0.0/15",
 		"10.0.0.0/16",
-		"10.1.0.0/16",
-		"10.2.0.0/16",
-		"10.3.0.0/16",
-		"10.4.0.0/16",
-		"10.5.0.0/16",
+		"10.0.0.0/17",
+		"20.0.0.0/18",
+		"20.0.0.0/19",
+		"20.0.0.0/20",
 	}
 
 	installSetPolicy := func(t *testing.T, dut1, dut2, _, _, _ *Device, testRef bool) {
@@ -162,7 +203,68 @@ func TestCommunitySet(t *testing.T) {
 					},
 				)
 				stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetMethod(oc.SetCommunity_Method_INLINE)
-				// TODO(wenbli): Test REMOVE, it's possible GoBGP does not support it.
+			case 6:
+				stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetOptions(oc.BgpPolicy_BgpSetCommunityOptionType_ADD)
+				stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().GetOrCreateInline().SetCommunities(
+					[]oc.RoutingPolicy_PolicyDefinition_Statement_Actions_BgpActions_SetCommunity_Inline_Communities_Union{
+						oc.UnionString("11111:11111"),
+						oc.UnionString("22222:22222"),
+					},
+				)
+				stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetMethod(oc.SetCommunity_Method_INLINE)
+
+				stmt, err = policy.AppendNew(fmt.Sprintf("stmt%d-2", i))
+				if err != nil {
+					t.Fatalf("Cannot append new BGP policy statement: %v", err)
+				}
+				stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetPrefixSet(prefixSetName)
+				stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.RoutingPolicy_MatchSetOptionsRestrictedType_ANY)
+
+				stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetOptions(oc.BgpPolicy_BgpSetCommunityOptionType_REMOVE)
+				commSetName := fmt.Sprintf("ref-set-%d", i)
+				commPath := ocpath.Root().RoutingPolicy().DefinedSets().BgpDefinedSets().CommunitySet(commSetName)
+				commUnions := []oc.RoutingPolicy_DefinedSets_BgpDefinedSets_CommunitySet_CommunityMember_Union{
+					oc.UnionString("11111:11111"),
+					oc.UnionString("22222:22222"),
+					oc.UnionString("33333:33333"),
+				}
+				Replace(t, dut1, commPath.CommunitySetName().Config(), commSetName)
+				Replace(t, dut1, commPath.CommunityMember().Config(), commUnions)
+				stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().GetOrCreateReference().SetCommunitySetRef(commSetName)
+				stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetMethod(oc.SetCommunity_Method_REFERENCE)
+			case 7:
+				stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetOptions(oc.BgpPolicy_BgpSetCommunityOptionType_ADD)
+				stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().GetOrCreateInline().SetCommunities(
+					[]oc.RoutingPolicy_PolicyDefinition_Statement_Actions_BgpActions_SetCommunity_Inline_Communities_Union{
+						oc.UnionString("11111:11111"),
+						oc.UnionString("22222:22222"),
+					},
+				)
+				stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetMethod(oc.SetCommunity_Method_INLINE)
+
+				stmt, err = policy.AppendNew(fmt.Sprintf("stmt%d-2", i))
+				if err != nil {
+					t.Fatalf("Cannot append new BGP policy statement: %v", err)
+				}
+				stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetPrefixSet(prefixSetName)
+				stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.RoutingPolicy_MatchSetOptionsRestrictedType_ANY)
+
+				stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetOptions(oc.BgpPolicy_BgpSetCommunityOptionType_REMOVE)
+				commSetName := fmt.Sprintf("ref-set-%d", i)
+				commPath := ocpath.Root().RoutingPolicy().DefinedSets().BgpDefinedSets().CommunitySet(commSetName)
+				commUnions := []oc.RoutingPolicy_DefinedSets_BgpDefinedSets_CommunitySet_CommunityMember_Union{
+					oc.UnionString("[0-9]+:[0-9]+"),
+				}
+				Replace(t, dut1, commPath.CommunitySetName().Config(), commSetName)
+				Replace(t, dut1, commPath.CommunityMember().Config(), commUnions)
+				stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().GetOrCreateReference().SetCommunitySetRef(commSetName)
+				stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetMethod(oc.SetCommunity_Method_REFERENCE)
+			case 8:
+				installSetCommunityPolicy(oc.UnionString("10000:10000"))
+			case 9:
+				installSetCommunityPolicy(oc.UnionString("11111:11111"))
+			case 10:
+				installSetCommunityPolicy(oc.UnionString("22222:22222"))
 			}
 			stmt.GetOrCreateActions().SetPolicyResult(oc.RoutingPolicy_PolicyResultType_ACCEPT_ROUTE)
 		}
@@ -217,6 +319,36 @@ func TestCommunitySet(t *testing.T) {
 							ReachPrefix: routeUnderTestList[5],
 						},
 						ExpectedResult: valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD,
+					}, {
+						Description: "REMOVE",
+						Input: &valpb.TestRoute{
+							ReachPrefix: routeUnderTestList[6],
+						},
+						ExpectedResult: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
+					}, {
+						Description: "REMOVE-ALL",
+						Input: &valpb.TestRoute{
+							ReachPrefix: routeUnderTestList[7],
+						},
+						ExpectedResult: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
+					}, {
+						Description: "matches-invert",
+						Input: &valpb.TestRoute{
+							ReachPrefix: routeUnderTestList[8],
+						},
+						ExpectedResult: valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD,
+					}, {
+						Description: "no-match-invert",
+						Input: &valpb.TestRoute{
+							ReachPrefix: routeUnderTestList[9],
+						},
+						ExpectedResult: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
+					}, {
+						Description: "no-match-invert-2",
+						Input: &valpb.TestRoute{
+							ReachPrefix: routeUnderTestList[10],
+						},
+						ExpectedResult: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
 					}},
 				},
 				installPolicies: func(t *testing.T, dut1, dut2, dut3, dut4, dut5 *Device) {
