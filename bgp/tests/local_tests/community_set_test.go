@@ -27,7 +27,7 @@ import (
 )
 
 func TestCommunitySet(t *testing.T) {
-	installRejectPolicy := func(t *testing.T, dut1, dut2, _, _, _ *Device) {
+	installRejectPolicy := func(t *testing.T, dut1, dut2, dut3, _, _ *Device) {
 		// Policy to reject routes with the given community set conditions
 		policyName := "community-sets"
 		policy := &oc.RoutingPolicy_PolicyDefinition_Statement_OrderedMap{}
@@ -101,10 +101,30 @@ func TestCommunitySet(t *testing.T) {
 		stmt.GetOrCreateConditions().GetOrCreateBgpConditions().SetCommunitySet(invertCommSetName)
 		stmt.GetOrCreateActions().SetPolicyResult(oc.RoutingPolicy_PolicyResultType_REJECT_ROUTE)
 
+		// Policy to reject routes with the given community set conditions
+		uselessPolicyName := "useless"
+		uselessPolicy := &oc.RoutingPolicy_PolicyDefinition_Statement_OrderedMap{}
+		stmt, err = uselessPolicy.AppendNew("reject-any-community-sets")
+		if err != nil {
+			t.Fatalf("Cannot append new BGP policy statement: %v", err)
+		}
+		stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetPrefixSet(prefixSetName)
+		stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.RoutingPolicy_MatchSetOptionsRestrictedType_ANY)
+		stmt.GetOrCreateConditions().GetOrCreateBgpConditions().SetCommunitySet(anyCommSetName)
+		stmt.GetOrCreateActions().SetPolicyResult(oc.RoutingPolicy_PolicyResultType_REJECT_ROUTE)
+
 		// Install policy
 		Replace(t, dut2, ocpath.Root().RoutingPolicy().PolicyDefinition(policyName).Config(), &oc.RoutingPolicy_PolicyDefinition{Statement: policy})
 		Replace(t, dut2, bgp.BGPPath.Neighbor(dut1.RouterID).ApplyPolicy().ImportPolicy().Config(), []string{policyName})
+		// This apply-policy is a no-op because everything is rejected
+		// in the reverse direction anyways: its purpose is to check
+		// that statements across different policies can have the same
+		// name (GoBGP requires all statement names to be unique).
+		Replace(t, dut2, ocpath.Root().RoutingPolicy().PolicyDefinition(uselessPolicyName).Config(), &oc.RoutingPolicy_PolicyDefinition{Statement: uselessPolicy})
+		Replace(t, dut2, bgp.BGPPath.Neighbor(dut3.RouterID).ApplyPolicy().ImportPolicy().Config(), []string{uselessPolicyName})
+
 		Await(t, dut2, bgp.BGPPath.Neighbor(dut1.RouterID).ApplyPolicy().ImportPolicy().State(), []string{policyName})
+		Await(t, dut2, bgp.BGPPath.Neighbor(dut3.RouterID).ApplyPolicy().ImportPolicy().State(), []string{uselessPolicyName})
 	}
 
 	routeUnderTestList := []string{
