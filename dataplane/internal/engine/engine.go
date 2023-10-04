@@ -284,12 +284,12 @@ func (e *Engine) ID() string {
 
 func (e *Engine) CreatePort(ctx context.Context, req *dpb.CreatePortRequest) (*dpb.CreatePortResponse, error) {
 	var err error
-	switch req.Type {
-	case fwdpb.PortType_PORT_TYPE_KERNEL:
-		err = e.CreateExternalPort(ctx, req.GetId(), req.GetKernelDev())
-	case fwdpb.PortType_PORT_TYPE_TAP:
-		err = e.CreateInternalPort(ctx, req.GetId(), req.GetKernelDev(), req.GetExternalPort())
-	case fwdpb.PortType_PORT_TYPE_CPU_PORT:
+	switch req.Location {
+	case dpb.PortLocation_PORT_LOCATION_EXTERNAL:
+		err = e.CreateExternalPort(ctx, req.GetType(), req.GetId(), req.GetKernelDev())
+	case dpb.PortLocation_PORT_LOCATION_INTERNAL:
+		err = e.CreateInternalPort(ctx, req.GetType(), req.GetId(), req.GetKernelDev(), req.GetExternalPort())
+	case dpb.PortLocation_PORT_LOCATION_CPU:
 		e.cpuPortID = req.GetId()
 		req := &fwdpb.PortCreateRequest{
 			ContextId: &fwdpb.ContextId{Id: e.id},
@@ -303,7 +303,7 @@ func (e *Engine) CreatePort(ctx context.Context, req *dpb.CreatePortRequest) (*d
 		}
 		_, err = e.PortCreate(ctx, req)
 	default:
-		return nil, fmt.Errorf("invalid port type")
+		return nil, fmt.Errorf("invalid port location: %v", req.Location)
 	}
 	return &dpb.CreatePortResponse{}, err
 }
@@ -923,9 +923,9 @@ func (e *Engine) UpdatePortSrcMAC(ctx context.Context, portID string, mac []byte
 }
 
 // CreateExternalPort creates an external port (connected to other devices).
-func (e *Engine) CreateExternalPort(ctx context.Context, id, devName string) error {
+func (e *Engine) CreateExternalPort(ctx context.Context, t fwdpb.PortType, id, devName string) error {
 	log.Infof("added external id %s, dev %s", id, devName)
-	nid, err := createKernelPort(ctx, e.id, e.Server, id, devName)
+	nid, err := createPortAndEntries(ctx, e.id, e.Server, t, id, devName)
 	if err != nil {
 		return err
 	}
@@ -1003,9 +1003,9 @@ func (e *Engine) CreateExternalPort(ctx context.Context, id, devName string) err
 }
 
 // CreateInternalPort creates an local (ie TAP) port for the given linux device name.
-func (e *Engine) CreateInternalPort(ctx context.Context, id, devName, externalID string) error {
+func (e *Engine) CreateInternalPort(ctx context.Context, t fwdpb.PortType, id, devName, externalID string) error {
 	log.Infof("added internal id %s, dev %s, external %s", id, devName, externalID)
-	nid, err := createTapPort(ctx, e.id, e.Server, id, devName)
+	nid, err := createPortAndEntries(ctx, e.id, e.Server, t, id, devName)
 	if err != nil {
 		return err
 	}
@@ -1165,7 +1165,7 @@ func (e *Engine) AddInterface(ctx context.Context, req *dpb.AddInterfaceRequest)
 		}
 	case dpb.InterfaceType_INTERFACE_TYPE_LOOPBACK: // TODO: this may need to handled differently if multiple loopbacks are created.
 		portID := fmt.Sprintf("%s-port", req.GetId())
-		if err := e.CreateExternalPort(ctx, portID, "lo"); err != nil {
+		if err := e.CreateExternalPort(ctx, fwdpb.PortType_PORT_TYPE_KERNEL, portID, "lo"); err != nil {
 			return nil, err
 		}
 		e.ifaceToPort[req.GetId()] = portID

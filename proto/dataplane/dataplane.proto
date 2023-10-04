@@ -68,6 +68,14 @@ message Route {
   }
 }
 
+enum PortLocation {
+  PORT_LOCATION_UNSPECIFIED = 0;
+  PORT_LOCATION_INTERNAL = 1;
+  PORT_LOCATION_EXTERNAL = 2;
+  PORT_LOCATION_CPU = 3;
+}
+
+
 message CreatePortRequest {
   forwarding.PortType type = 1;
   string id = 2;
@@ -78,6 +86,7 @@ message CreatePortRequest {
   // For internal ports (TAP interface),
   // the id of the corresponding port for punt rules.
   string external_port = 4;
+  PortLocation location = 5;
 }
 
 message CreatePortResponse {
