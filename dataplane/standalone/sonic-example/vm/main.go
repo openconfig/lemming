@@ -36,12 +36,12 @@ func main() {
 func createTaps() ([]string, error) {
 	var ifaceArgs []string
 	ifaceArgs = append(ifaceArgs, "-device", "pci-bridge,chassis_nr=1,id=pci.1")
-	for i := 1; i <= 32; i++ {
+	for i := 0; i < 32; i++ {
 		ifaceArgs = append(ifaceArgs,
 			"-netdev",
-			fmt.Sprintf("tap,id=dataport%d,ifname=tap%d,script=no,downscript=no", i, i),
+			fmt.Sprintf("tap,id=dataport%d,ifname=Ethernet%d,script=no,downscript=no", i, i*4),
 			"-device",
-			fmt.Sprintf("e1000,netdev=dataport%d,bus=pci.1,addr=0x%x", i, i-1),
+			fmt.Sprintf("e1000,netdev=dataport%d,bus=pci.1,addr=0x%x", i, i),
 		)
 	}
 	return ifaceArgs, nil
