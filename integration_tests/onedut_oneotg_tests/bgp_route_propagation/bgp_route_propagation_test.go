@@ -52,12 +52,16 @@ var (
 		Desc:    "To ATE",
 		IPv4:    "192.0.2.1",
 		IPv4Len: 30,
+		IPv6:    "2001:db8::1",
+		IPv6Len: 126,
 	}
 	dutPort2 = attrs.Attributes{
 		Name:    "port2",
 		Desc:    "To ATE",
 		IPv4:    "192.0.2.5",
 		IPv4Len: 30,
+		IPv6:    "2001:db8::5",
+		IPv6Len: 126,
 	}
 	dutAS = uint32(65537)
 
@@ -65,9 +69,13 @@ var (
 	ateAS2 = uint32(65538)
 )
 
+const (
+	rplPermitAll = "PERMIT-ALL"
+)
+
 type otgPortDetails struct {
 	mac, routerId string
-	pathId        uint32
+	pathId        int32
 }
 
 var (
@@ -118,9 +126,8 @@ func (ad *ateData) ConfigureOTG(t *testing.T, otg *otg.OTG, ateList []string) go
 		dev := config.Devices().Add().SetName(devName)
 		ateIndex++
 
-		eth := dev.Ethernets().Add().SetName(devName + ".Eth")
+		eth := dev.Ethernets().Add().SetName(devName + ".Eth").SetMac(v.iface.mac)
 		eth.Connection().SetChoice(gosnappi.EthernetConnectionChoice.PORT_NAME).SetPortName(port.Name())
-		eth.SetMac(v.iface.mac)
 		bgp := dev.Bgp().SetRouterId(v.iface.routerId)
 		if v.ip.v4 != "" {
 			address := strings.Split(v.ip.v4, "/")[0]
@@ -158,7 +165,7 @@ func (ad *ateData) ConfigureOTG(t *testing.T, otg *otg.OTG, ateList []string) go
 			firstAdvPrefix, _ := strconv.Atoi(strings.Split(ad.prefixesStart.v4, "/")[1])
 			bgp4PeerRoutes := bgpPeer.V4Routes().Add().SetName(bgpName + ".rr4").SetNextHopIpv4Address(ip.Address()).SetNextHopAddressType(gosnappi.BgpV4RouteRangeNextHopAddressType.IPV4).SetNextHopMode(gosnappi.BgpV4RouteRangeNextHopMode.MANUAL)
 			bgp4PeerRoutes.Addresses().Add().SetAddress(firstAdvAddr).SetPrefix(uint32(firstAdvPrefix)).SetCount(uint32(ad.prefixesCount))
-			bgp4PeerRoutes.AddPath().SetPathId(otgPort1Details.pathId)
+			bgp4PeerRoutes.AddPath().SetPathId(uint32(otgPort1Details.pathId))
 
 		} else {
 			bgpName := ateList[0] + ".dev.BGP6.peer"
@@ -167,7 +174,7 @@ func (ad *ateData) ConfigureOTG(t *testing.T, otg *otg.OTG, ateList []string) go
 			firstAdvPrefix, _ := strconv.Atoi(strings.Split(ad.prefixesStart.v4, "/")[1])
 			bgp4PeerRoutes := bgpPeer.V4Routes().Add().SetName(bgpName + ".rr4")
 			bgp4PeerRoutes.Addresses().Add().SetAddress(firstAdvAddr).SetPrefix(uint32(firstAdvPrefix)).SetCount(uint32(ad.prefixesCount))
-			bgp4PeerRoutes.AddPath().SetPathId(otgPort1Details.pathId)
+			bgp4PeerRoutes.AddPath().SetPathId(uint32(otgPort1Details.pathId))
 		}
 	}
 	if ad.prefixesStart.v6 != "" {
@@ -177,7 +184,7 @@ func (ad *ateData) ConfigureOTG(t *testing.T, otg *otg.OTG, ateList []string) go
 		firstAdvPrefix, _ := strconv.Atoi(strings.Split(ad.prefixesStart.v6, "/")[1])
 		bgp6PeerRoutes := bgp6Peer.V6Routes().Add().SetName(bgp6Name + ".rr6")
 		bgp6PeerRoutes.Addresses().Add().SetAddress(firstAdvAddr).SetPrefix(uint32(firstAdvPrefix)).SetCount(uint32(ad.prefixesCount))
-		bgp6PeerRoutes.AddPath().SetPathId(otgPort1Details.pathId)
+		bgp6PeerRoutes.AddPath().SetPathId(uint32(otgPort1Details.pathId))
 	}
 
 	t.Logf("Pushing config to ATE and starting protocols...")
@@ -190,11 +197,28 @@ type dutData struct {
 	bgpOC *oc.NetworkInstance_Protocol_Bgp
 }
 
+func configureRoutingPolicy(d *oc.Root) (*oc.RoutingPolicy, error) {
+	rp := d.GetOrCreateRoutingPolicy()
+	pdef := rp.GetOrCreatePolicyDefinition(rplPermitAll)
+	stmt, err := pdef.AppendNewStatement("20")
+	if err != nil {
+		return nil, err
+	}
+	stmt.GetOrCreateActions().PolicyResult = oc.RoutingPolicy_PolicyResultType_ACCEPT_ROUTE
+	return rp, nil
+}
+
 func (d *dutData) Configure(t *testing.T, dut *ondatra.DUTDevice) {
 	for _, a := range []attrs.Attributes{dutPort1, dutPort2} {
 		ocName := dut.Port(t, a.Name).Name()
 		gnmi.Replace(t, dut, gnmi.OC().Interface(ocName).Config(), a.NewOCInterface(ocName, dut))
 	}
+	rpl, err := configureRoutingPolicy(&oc.Root{})
+	if err != nil {
+		t.Fatalf("Failed to configure routing policy: %v", err)
+	}
+	gnmi.Replace(t, dut, gnmi.OC().RoutingPolicy().Config(), rpl)
+
 	dutBGP := gnmi.OC().NetworkInstance(fakedevice.DefaultNetworkInstance).
 		Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").Bgp()
 	gnmi.Replace(t, dut, dutBGP.Config(), d.bgpOC)
@@ -206,7 +230,7 @@ func (d *dutData) AwaitBGPEstablished(t *testing.T, dut *ondatra.DUTDevice) {
 			Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").
 			Bgp().
 			Neighbor(neighbor).
-			SessionState().State(), time.Second*15, oc.Bgp_Neighbor_SessionState_ESTABLISHED)
+			SessionState().State(), time.Second*30, oc.Bgp_Neighbor_SessionState_ESTABLISHED)
 	}
 	t.Log("BGP sessions established")
 }
@@ -248,76 +272,58 @@ type OTGBGPPrefix struct {
 	PrefixLength uint32
 }
 
-// TODO: Use this function below after is fixed in OTG https://github.com/open-traffic-generator/ixia-c-gnmi-server/issues/29
-
-// func verifyOTGBGP4Prefix(t *testing.T, otg *otg.OTG, config gosnappi.Config, expectedOTGBGPPrefix OTGBGPPrefix) {
-// 	lastValue, ok := otg.Telemetry().BgpPeer(expectedOTGBGPPrefix.PeerName).UnicastIpv4PrefixAny().Watch(
-// 		t,
-// 		10*time.Second,
-// 		func(bgpPrefix *otgtelemetry.QualifiedBgpPeer_UnicastIpv4Prefix) bool {
-// 			if !bgpPrefix.IsPresent() {
-// 				t.Log("Any peer not present")
-// 				return false
-// 			}
-// 			val := bgpPrefix.Val(t)
-// 			addr, plen := val.GetAddress(), val.GetPrefixLength()
-// 			t.Logf("Any peer got: %s/%d", addr, plen)
-// 			return addr == expectedOTGBGPPrefix.Address && plen == expectedOTGBGPPrefix.PrefixLength
-// 		}).Await(t)
-
-// 	if !ok {
-// 		t.Logf("Last value was: %v", lastValue)
-// 		actPrefixes := otg.Telemetry().BgpPeer(expectedOTGBGPPrefix.PeerName).UnicastIpv4PrefixAny().Get(t)
-// 		for _, actPrefix := range actPrefixes {
-// 			t.Logf("Peer: %v, Address: %v, Prefix Length: %v", expectedOTGBGPPrefix.PeerName, actPrefix.GetAddress(), actPrefix.GetPrefixLength())
-// 		}
-// 		t.Errorf("Given BGP IPv4 Prefix is not formed %v", expectedOTGBGPPrefix)
-// 	}
-// }
-
 func checkOTGBGP4Prefix(t *testing.T, otg *otg.OTG, config gosnappi.Config, expectedOTGBGPPrefix OTGBGPPrefix) bool {
-	bgpPrefixes := gnmi.GetAll(t, otg, gnmi.OTG().BgpPeer(expectedOTGBGPPrefix.PeerName).UnicastIpv4PrefixAny().State())
+	t.Helper()
+	_, ok := gnmi.WatchAll(t,
+		otg,
+		gnmi.OTG().BgpPeer(expectedOTGBGPPrefix.PeerName).UnicastIpv4PrefixAny().State(),
+		time.Minute,
+		func(v *ygnmi.Value[*otgtelemetry.BgpPeer_UnicastIpv4Prefix]) bool {
+			_, present := v.Val()
+			return present
+		}).Await(t)
+
 	found := false
-	for _, bgpPrefix := range bgpPrefixes {
-		if bgpPrefix.Address != nil && bgpPrefix.GetAddress() == expectedOTGBGPPrefix.Address &&
-			bgpPrefix.PrefixLength != nil && bgpPrefix.GetPrefixLength() == expectedOTGBGPPrefix.PrefixLength {
-			found = true
-			break
+	if ok {
+		bgpPrefixes := gnmi.GetAll(t, otg, gnmi.OTG().BgpPeer(expectedOTGBGPPrefix.PeerName).UnicastIpv4PrefixAny().State())
+		for _, bgpPrefix := range bgpPrefixes {
+			if bgpPrefix.Address != nil && bgpPrefix.GetAddress() == expectedOTGBGPPrefix.Address &&
+				bgpPrefix.PrefixLength != nil && bgpPrefix.GetPrefixLength() == expectedOTGBGPPrefix.PrefixLength {
+				found = true
+				break
+			}
 		}
 	}
 	return found
 }
 
 func checkOTGBGP6Prefix(t *testing.T, otg *otg.OTG, config gosnappi.Config, expectedOTGBGPPrefix OTGBGPPrefix) bool {
-	bgpPrefixes := gnmi.GetAll(t, otg, gnmi.OTG().BgpPeer(expectedOTGBGPPrefix.PeerName).UnicastIpv6PrefixAny().State())
+	t.Helper()
+	_, ok := gnmi.WatchAll(t,
+		otg,
+		gnmi.OTG().BgpPeer(expectedOTGBGPPrefix.PeerName).UnicastIpv6PrefixAny().State(),
+		time.Minute,
+		func(v *ygnmi.Value[*otgtelemetry.BgpPeer_UnicastIpv6Prefix]) bool {
+			_, present := v.Val()
+			return present
+		}).Await(t)
+
 	found := false
-	for _, bgpPrefix := range bgpPrefixes {
-		if bgpPrefix.Address != nil && bgpPrefix.GetAddress() == expectedOTGBGPPrefix.Address &&
-			bgpPrefix.PrefixLength != nil && bgpPrefix.GetPrefixLength() == expectedOTGBGPPrefix.PrefixLength {
-			found = true
-			break
+	if ok {
+		bgpPrefixes := gnmi.GetAll(t, otg, gnmi.OTG().BgpPeer(expectedOTGBGPPrefix.PeerName).UnicastIpv6PrefixAny().State())
+		for _, bgpPrefix := range bgpPrefixes {
+			if bgpPrefix.Address != nil && bgpPrefix.GetAddress() == expectedOTGBGPPrefix.Address &&
+				bgpPrefix.PrefixLength != nil && bgpPrefix.GetPrefixLength() == expectedOTGBGPPrefix.PrefixLength {
+				found = true
+				break
+			}
 		}
 	}
 	return found
 }
 
-func waitFor(fn func() bool, t testing.TB) {
-	start := time.Now()
-	for {
-		done := fn()
-		if done {
-			t.Logf("Expected BGP Prefix received")
-			break
-		}
-		if time.Since(start) > time.Minute {
-			t.Errorf("Timeout while waiting for expected stats...")
-			break
-		}
-		time.Sleep(500 * time.Millisecond)
-	}
-}
-
 func TestBGP(t *testing.T) {
+	dut := ondatra.DUT(t, "dut")
 	tests := []struct {
 		desc, fullDesc string
 		skipReason     string
@@ -331,24 +337,44 @@ func TestBGP(t *testing.T) {
 			Global: &oc.NetworkInstance_Protocol_Bgp_Global{
 				As:       ygot.Uint32(dutAS),
 				RouterId: ygot.String(dutPort2.IPv4),
+				AfiSafi: map[oc.E_BgpTypes_AFI_SAFI_TYPE]*oc.NetworkInstance_Protocol_Bgp_Global_AfiSafi{
+					oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST: {
+						AfiSafiName: oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST,
+						Enabled:     ygot.Bool(true),
+					},
+				},
 			},
 			Neighbor: map[string]*oc.NetworkInstance_Protocol_Bgp_Neighbor{
 				"192.0.2.2": {
 					PeerAs:          ygot.Uint32(ateAS1),
 					NeighborAddress: ygot.String("192.0.2.2"),
-					// PeerGroup:       ygot.String("BGP-PEER-GROUP1"),
+					// TODO: Support peer-groups in lemming.
+					//PeerGroup:       ygot.String("BGP-PEER-GROUP1"),
+					AfiSafi: map[oc.E_BgpTypes_AFI_SAFI_TYPE]*oc.NetworkInstance_Protocol_Bgp_Neighbor_AfiSafi{
+						oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST: {
+							AfiSafiName: oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST,
+							Enabled:     ygot.Bool(true),
+						},
+					},
+					// TODO: Remove this when peer-groups are supported.
 					ApplyPolicy: &oc.NetworkInstance_Protocol_Bgp_Neighbor_ApplyPolicy{
-						DefaultImportPolicy: oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE,
-						DefaultExportPolicy: oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE,
+						ExportPolicy: []string{rplPermitAll},
+						ImportPolicy: []string{rplPermitAll},
 					},
 				},
 				"192.0.2.6": {
 					PeerAs:          ygot.Uint32(ateAS2),
 					NeighborAddress: ygot.String("192.0.2.6"),
-					// PeerGroup:       ygot.String("BGP-PEER-GROUP2"),
+					//PeerGroup:       ygot.String("BGP-PEER-GROUP2"),
+					AfiSafi: map[oc.E_BgpTypes_AFI_SAFI_TYPE]*oc.NetworkInstance_Protocol_Bgp_Neighbor_AfiSafi{
+						oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST: {
+							AfiSafiName: oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST,
+							Enabled:     ygot.Bool(true),
+						},
+					},
 					ApplyPolicy: &oc.NetworkInstance_Protocol_Bgp_Neighbor_ApplyPolicy{
-						DefaultImportPolicy: oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE,
-						DefaultExportPolicy: oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE,
+						ExportPolicy: []string{rplPermitAll},
+						ImportPolicy: []string{rplPermitAll},
 					},
 				},
 			},
@@ -368,18 +394,23 @@ func TestBGP(t *testing.T) {
 			{v4: "198.51.100.3/32"},
 		},
 	}, {
-		desc:       "propagate IPv6 over IPv6",
-		skipReason: "TODO: lemming does not yet support IPv6",
-		fullDesc:   "Advertise IPv6 prefixes from ATE port1, observe received prefixes at ATE port2",
+		desc:     "propagate IPv6 over IPv6",
+		fullDesc: "Advertise IPv6 prefixes from ATE port1, observe received prefixes at ATE port2",
 		dut: dutData{&oc.NetworkInstance_Protocol_Bgp{
 			Global: &oc.NetworkInstance_Protocol_Bgp_Global{
 				As:       ygot.Uint32(dutAS),
 				RouterId: ygot.String(dutPort2.IPv4),
+				AfiSafi: map[oc.E_BgpTypes_AFI_SAFI_TYPE]*oc.NetworkInstance_Protocol_Bgp_Global_AfiSafi{
+					oc.BgpTypes_AFI_SAFI_TYPE_IPV6_UNICAST: {
+						AfiSafiName: oc.BgpTypes_AFI_SAFI_TYPE_IPV6_UNICAST,
+						Enabled:     ygot.Bool(true),
+					},
+				},
 			},
 			Neighbor: map[string]*oc.NetworkInstance_Protocol_Bgp_Neighbor{
 				"2001:db8::2": {
-					PeerAs:          ygot.Uint32(ateAS1),
-					PeerGroup:       ygot.String("BGP-PEER-GROUP1"),
+					PeerAs: ygot.Uint32(ateAS1),
+					//PeerGroup:       ygot.String("BGP-PEER-GROUP1"),
 					NeighborAddress: ygot.String("2001:db8::2"),
 					AfiSafi: map[oc.E_BgpTypes_AFI_SAFI_TYPE]*oc.NetworkInstance_Protocol_Bgp_Neighbor_AfiSafi{
 						oc.BgpTypes_AFI_SAFI_TYPE_IPV6_UNICAST: {
@@ -387,16 +418,24 @@ func TestBGP(t *testing.T) {
 							Enabled:     ygot.Bool(true),
 						},
 					},
+					ApplyPolicy: &oc.NetworkInstance_Protocol_Bgp_Neighbor_ApplyPolicy{
+						ExportPolicy: []string{rplPermitAll},
+						ImportPolicy: []string{rplPermitAll},
+					},
 				},
 				"2001:db8::6": {
-					PeerAs:          ygot.Uint32(ateAS2),
-					PeerGroup:       ygot.String("BGP-PEER-GROUP2"),
+					PeerAs: ygot.Uint32(ateAS2),
+					//PeerGroup:       ygot.String("BGP-PEER-GROUP2"),
 					NeighborAddress: ygot.String("2001:db8::6"),
 					AfiSafi: map[oc.E_BgpTypes_AFI_SAFI_TYPE]*oc.NetworkInstance_Protocol_Bgp_Neighbor_AfiSafi{
 						oc.BgpTypes_AFI_SAFI_TYPE_IPV6_UNICAST: {
 							AfiSafiName: oc.BgpTypes_AFI_SAFI_TYPE_IPV6_UNICAST,
 							Enabled:     ygot.Bool(true),
 						},
+					},
+					ApplyPolicy: &oc.NetworkInstance_Protocol_Bgp_Neighbor_ApplyPolicy{
+						ExportPolicy: []string{rplPermitAll},
+						ImportPolicy: []string{rplPermitAll},
 					},
 				},
 			},
@@ -421,7 +460,14 @@ func TestBGP(t *testing.T) {
 		fullDesc:   "IPv4 routes with an IPv6 next-hop when negotiating RFC5549 - validating that routes are accepted and advertised with the specified values.",
 		dut: dutData{&oc.NetworkInstance_Protocol_Bgp{
 			Global: &oc.NetworkInstance_Protocol_Bgp_Global{
-				As: ygot.Uint32(dutAS),
+				As:       ygot.Uint32(dutAS),
+				RouterId: ygot.String(dutPort2.IPv4),
+				AfiSafi: map[oc.E_BgpTypes_AFI_SAFI_TYPE]*oc.NetworkInstance_Protocol_Bgp_Global_AfiSafi{
+					oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST: {
+						AfiSafiName: oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST,
+						Enabled:     ygot.Bool(true),
+					},
+				},
 			},
 			Neighbor: map[string]*oc.NetworkInstance_Protocol_Bgp_Neighbor{
 				"2001:db8::2": {
@@ -431,10 +477,6 @@ func TestBGP(t *testing.T) {
 					AfiSafi: map[oc.E_BgpTypes_AFI_SAFI_TYPE]*oc.NetworkInstance_Protocol_Bgp_Neighbor_AfiSafi{
 						oc.BgpTypes_AFI_SAFI_TYPE_IPV6_UNICAST: {
 							AfiSafiName: oc.BgpTypes_AFI_SAFI_TYPE_IPV6_UNICAST,
-							Enabled:     ygot.Bool(true),
-						},
-						oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST: {
-							AfiSafiName: oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST,
 							Enabled:     ygot.Bool(true),
 						},
 					},
@@ -475,11 +517,6 @@ func TestBGP(t *testing.T) {
 				t.Skip(tc.skipReason)
 			}
 
-			dut := ondatra.DUT(t, "dut")
-			t.Log("Configure Network Instance")
-			dutConfNIPath := gnmi.OC().NetworkInstance(fakedevice.DefaultNetworkInstance)
-			gnmi.Replace(t, dut, dutConfNIPath.Type().Config(), oc.NetworkInstanceTypes_NETWORK_INSTANCE_TYPE_DEFAULT_INSTANCE)
-
 			tc.dut.Configure(t, dut)
 
 			ate := ondatra.ATE(t, "ate")
@@ -504,15 +541,18 @@ func TestBGP(t *testing.T) {
 					} else {
 						expectedOTGBGPPrefix = OTGBGPPrefix{PeerName: "port2.dev.BGP6.peer", Address: addr, PrefixLength: uint32(prefixLen)}
 					}
-					waitFor(func() bool { return checkOTGBGP4Prefix(t, otg, otgConfig, expectedOTGBGPPrefix) }, t)
-					// verifyOTGBGP4Prefix(t, otg, otgConfig, expectedOTGBGPPrefix)
+					if !checkOTGBGP4Prefix(t, otg, otgConfig, expectedOTGBGPPrefix) {
+						t.Errorf("Prefix %v is not being learned", expectedOTGBGPPrefix.Address)
+					}
 				}
 				if prefix.v6 != "" {
 					t.Logf("Checking for BGP Prefix %v", prefix.v6)
 					addr := strings.Split(prefix.v6, "/")[0]
 					prefixLen, _ := strconv.Atoi(strings.Split(prefix.v6, "/")[1])
 					expectedOTGBGPPrefix = OTGBGPPrefix{PeerName: "port2.dev.BGP6.peer", Address: addr, PrefixLength: uint32(prefixLen)}
-					waitFor(func() bool { return checkOTGBGP6Prefix(t, otg, otgConfig, expectedOTGBGPPrefix) }, t)
+					if !checkOTGBGP6Prefix(t, otg, otgConfig, expectedOTGBGPPrefix) {
+						t.Errorf("Prefix %v is not being learned", expectedOTGBGPPrefix.Address)
+					}
 				}
 			}
 		})
