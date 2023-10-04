@@ -178,10 +178,9 @@ std::unique_ptr<lemming::dataplane::sai::Wred::Stub> wred;
 
 std::unique_ptr<lemming::dataplane::sai::Entrypoint::Stub> entry;
 
-// TODO(dgrau): implement this without using gRPC.
 sai_status_t sai_api_initialize(
     _In_ uint64_t flags, _In_ const sai_service_method_table_t *services) {
-  FLAGS_log_dir = "/var/log/syncd";
+  FLAGS_log_dir = "/var/log";
   google::InitGoogleLogging("lucius");
   google::InstallFailureSignalHandler();
 

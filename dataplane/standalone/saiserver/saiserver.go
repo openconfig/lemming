@@ -178,6 +178,7 @@ type Server struct {
 	saipb.UnimplementedEntrypointServer
 	mgr            *attrmgr.AttrMgr
 	engine         *engine.Engine
+	initialized    bool
 	acl            *acl
 	bfd            *bfd
 	buffer         *buffer
@@ -225,10 +226,14 @@ func (s *Server) ObjectTypeQuery(_ context.Context, req *saipb.ObjectTypeQueryRe
 }
 
 func (s *Server) Initialize(ctx context.Context, _ *saipb.InitializeRequest) (*saipb.InitializeResponse, error) {
-	s.mgr.Reset()
-	if err := s.engine.Reset(ctx); err != nil {
-		return nil, err
+	if s.initialized {
+		s.mgr.Reset()
+		s.saiSwitch.Reset()
+		if err := s.engine.Reset(ctx); err != nil {
+			return nil, err
+		}
 	}
+	s.initialized = true
 
 	return &saipb.InitializeResponse{}, nil
 }

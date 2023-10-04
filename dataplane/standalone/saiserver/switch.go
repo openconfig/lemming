@@ -269,8 +269,12 @@ func (sw *saiSwitch) PortStateChangeNotification(_ *saipb.PortStateChangeNotific
 				}},
 			})
 			if err != nil {
-				return err
+				log.Warningf("failed to send port event %v", err)
 			}
 		}
 	}
+}
+
+func (sw saiSwitch) Reset() {
+	sw.port.Reset()
 }

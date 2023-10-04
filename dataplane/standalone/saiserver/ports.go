@@ -113,13 +113,13 @@ func (port *port) CreatePort(ctx context.Context, _ *saipb.CreatePortRequest) (*
 		QosDscpToForwardingClassMap:      proto.Uint64(0),
 		QosMplsExpToForwardingClassMap:   proto.Uint64(0),
 		IpsecPort:                        proto.Uint64(0),
-		SupportedSpeed:                   []uint32{1024},
-		OperSpeed:                        proto.Uint32(1024),
+		SupportedSpeed:                   []uint32{1000, 10000, 40000},
+		OperSpeed:                        proto.Uint32(40000),
 		SupportedFecMode:                 []saipb.PortFecMode{saipb.PortFecMode_PORT_FEC_MODE_NONE},
 		NumberOfIngressPriorityGroups:    proto.Uint32(0),
 		QosMaximumHeadroomSize:           proto.Uint32(0),
 		AdminState:                       proto.Bool(true),
-		AutoNegMode:                      proto.Bool(false),
+		AutoNegMode:                      proto.Bool(true),
 		Mtu:                              proto.Uint32(1514),
 	}
 
@@ -139,6 +139,7 @@ func (port *port) CreatePort(ctx context.Context, _ *saipb.CreatePortRequest) (*
 		Src: &dpb.CreatePortRequest_KernelDev{
 			KernelDev: dev,
 		},
+		Location: dpb.PortLocation_PORT_LOCATION_EXTERNAL,
 	})
 	if err != nil {
 		return nil, err
@@ -155,8 +156,9 @@ func (port *port) createCPUPort(ctx context.Context) (uint64, error) {
 	id := port.mgr.NextID()
 
 	_, err := port.dataplane.CreatePort(ctx, &dpb.CreatePortRequest{
-		Id:   fmt.Sprint(id),
-		Type: fwdpb.PortType_PORT_TYPE_CPU_PORT,
+		Id:       fmt.Sprint(id),
+		Type:     fwdpb.PortType_PORT_TYPE_CPU_PORT,
+		Location: dpb.PortLocation_PORT_LOCATION_CPU,
 	})
 	if err != nil {
 		return 0, err
@@ -255,6 +257,11 @@ func (port *port) SetPortAttribute(ctx context.Context, req *saipb.SetPortAttrib
 	return &saipb.SetPortAttributeResponse{}, nil
 }
 
+func (port *port) Reset() {
+	port.portToEth = make(map[uint64]string)
+	port.nextEth = 1
+}
+
 func newHostif(mgr *attrmgr.AttrMgr, dataplane portDataplaneAPI, s *grpc.Server) *hostif {
 	p := &hostif{
 		mgr:       mgr,
@@ -280,10 +287,11 @@ func (hostif *hostif) CreateHostif(ctx context.Context, req *saipb.CreateHostifR
 	case saipb.HostifType_HOSTIF_TYPE_NETDEV:
 		portReq := &dpb.CreatePortRequest{
 			Id:   fmt.Sprint(id),
-			Type: fwdpb.PortType_PORT_TYPE_TAP,
+			Type: fwdpb.PortType_PORT_TYPE_KERNEL,
 			Src: &dpb.CreatePortRequest_KernelDev{
 				KernelDev: string(req.GetName()),
 			},
+			Location: dpb.PortLocation_PORT_LOCATION_INTERNAL,
 		}
 		attrReq := &saipb.GetPortAttributeRequest{Oid: req.GetObjId(), AttrType: []saipb.PortAttr{saipb.PortAttr_PORT_ATTR_OPER_STATUS}}
 		p := &saipb.GetPortAttributeResponse{}
@@ -298,6 +306,10 @@ func (hostif *hostif) CreateHostif(ctx context.Context, req *saipb.CreateHostifR
 				return nil, err
 			}
 		}
+		attr := &saipb.HostifAttribute{
+			OperStatus: proto.Bool(true),
+		}
+		hostif.mgr.StoreAttributes(id, attr)
 	default:
 		return nil, status.Errorf(codes.InvalidArgument, "unknown type %v", req.GetType())
 	}
