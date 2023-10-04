@@ -18,6 +18,9 @@ import (
 	"fmt"
 	"strconv"
 
+	"golang.org/x/exp/maps"
+	"golang.org/x/exp/slices"
+
 	log "github.com/golang/glog"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/wenovus/gobgp/v3/pkg/config/gobgp"
@@ -27,14 +30,6 @@ import (
 // policy name in order to put all the policies into a global list.
 func convertPolicyName(neighAddr, ocPolicyName string) string {
 	return neighAddr + "|" + ocPolicyName
-}
-
-func convertPolicyNames(neighAddr string, ocPolicyNames []string) []string {
-	var convertedNames []string
-	for _, n := range ocPolicyNames {
-		convertedNames = append(convertedNames, convertPolicyName(neighAddr, n))
-	}
-	return convertedNames
 }
 
 func convertSetCommunities(setCommunity *oc.RoutingPolicy_PolicyDefinition_Statement_Actions_BgpActions_SetCommunity, convertedCommSets []gobgp.CommunitySet, commSetIndexMap map[string]int) ([]string, error) {
@@ -217,9 +212,11 @@ func convertCommunity(community any) string {
 func convertCommunitySet(occommset map[string]*oc.RoutingPolicy_DefinedSets_BgpDefinedSets_CommunitySet) ([]gobgp.CommunitySet, map[string]int) {
 	indexMap := map[string]int{}
 	var commsets []gobgp.CommunitySet
-	for communitySetName, communitySet := range occommset {
+	commNames := maps.Keys(occommset)
+	slices.Sort(commNames)
+	for _, communitySetName := range commNames {
 		var communityList []string
-		for _, community := range communitySet.CommunityMember {
+		for _, community := range occommset[communitySetName].CommunityMember {
 			communityList = append(communityList, convertCommunity(community))
 		}
 
@@ -251,9 +248,11 @@ func communitiesToOC(communities []uint32) []oc.NetworkInstance_Protocol_Bgp_Rib
 
 func convertPrefixSets(ocprefixsets map[string]*oc.RoutingPolicy_DefinedSets_PrefixSet) []gobgp.PrefixSet {
 	var prefixSets []gobgp.PrefixSet
-	for prefixSetName, prefixSet := range ocprefixsets {
+	prefixSetNames := maps.Keys(ocprefixsets)
+	slices.Sort(prefixSetNames)
+	for _, prefixSetName := range prefixSetNames {
 		var prefixList []gobgp.Prefix
-		for _, prefix := range prefixSet.Prefix {
+		for _, prefix := range ocprefixsets[prefixSetName].Prefix {
 			r := prefix.GetMasklengthRange()
 			if r == "exact" {
 				// GoBGP recognizes "" instead of "exact"

@@ -21,7 +21,7 @@ require (
 	github.com/openconfig/kne v0.1.14
 	github.com/openconfig/ondatra v0.2.7
 	github.com/openconfig/ygnmi v0.8.7
-	github.com/openconfig/ygot v0.29.10
+	github.com/openconfig/ygot v0.29.11
 	github.com/p4lang/p4runtime v1.4.0-rc.5.0.20220728214547-13f0d02a521e
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.7.0

@@ -24,15 +24,23 @@ go_library(
         "@com_github_wenovus_gobgp_v3//pkg/config/gobgp",
         "@com_github_wenovus_gobgp_v3//pkg/server",
         "@com_github_wenovus_gobgp_v3//pkg/zebra",
+        "@org_golang_x_exp//maps",
+        "@org_golang_x_exp//slices",
     ],
 )
 
 go_test(
     name = "bgp_test",
-    srcs = ["gobgp_test.go"],
+    srcs = [
+        "config_test.go",
+        "gobgp_test.go",
+    ],
     embed = [":bgp"],
     deps = [
+        "//gnmi/fakedevice",
         "//gnmi/oc",
+        "@com_github_google_go_cmp//cmp",
         "@com_github_openconfig_ygot//ygot",
+        "@com_github_wenovus_gobgp_v3//pkg/config/gobgp",
     ],
 )
