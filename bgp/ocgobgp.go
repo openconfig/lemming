@@ -17,6 +17,7 @@ package bgp
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
@@ -98,7 +99,7 @@ func convertPolicyDefinition(policy *oc.RoutingPolicy_PolicyDefinition, neighAdd
 						SetCommunityMethod: gobgp.SetCommunityMethod{
 							CommunitiesList: setCommunitiesList,
 						},
-						Options: statement.GetActions().GetBgpActions().GetSetCommunity().GetOptions().String(),
+						Options: strings.ToLower(statement.GetActions().GetBgpActions().GetSetCommunity().GetOptions().String()),
 					},
 					SetLocalPref: statement.GetActions().GetBgpActions().GetSetLocalPref(),
 					SetMed:       gobgp.BgpSetMedType(setmed),
