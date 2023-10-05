@@ -269,7 +269,7 @@ func (sw *saiSwitch) PortStateChangeNotification(_ *saipb.PortStateChangeNotific
 				}},
 			})
 			if err != nil {
-				log.Warningf("failed to send port event %v", err)
+				return err
 			}
 		}
 	}
