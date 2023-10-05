@@ -111,7 +111,7 @@ func (p *kernelPort) process() {
 				return
 			default:
 				d, _, err := p.handle.ReadPacketData()
-				if err == afpacket.ErrTimeout { // Don't log this error as it is very spammy.
+				if err == afpacket.ErrTimeout || err == afpacket.ErrPoll { // Don't log this error as it is very spammy.
 					continue
 				}
 				if err != nil {

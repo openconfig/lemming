@@ -573,6 +573,7 @@ func (ni *Interface) setupPorts(ctx context.Context) error {
 			Src: &dpb.CreatePortRequest_KernelDev{
 				KernelDev: i.Name,
 			},
+			Location: dpb.PortLocation_PORT_LOCATION_EXTERNAL,
 		})
 		if err != nil {
 			return fmt.Errorf("failed to create kernel interface %q: %w", i.Name, err)
@@ -588,6 +589,7 @@ func (ni *Interface) setupPorts(ctx context.Context) error {
 				KernelDev: ni.externalToInternalPort[i.Name],
 			},
 			ExternalPort: i.Name,
+			Location:     dpb.PortLocation_PORT_LOCATION_INTERNAL,
 		})
 		if err != nil {
 			return fmt.Errorf("failed to create tap interface %q: %w", ni.externalToInternalPort[i.Name], err)

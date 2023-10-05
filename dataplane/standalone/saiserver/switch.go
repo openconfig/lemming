@@ -274,3 +274,7 @@ func (sw *saiSwitch) PortStateChangeNotification(_ *saipb.PortStateChangeNotific
 		}
 	}
 }
+
+func (sw saiSwitch) Reset() {
+	sw.port.Reset()
+}

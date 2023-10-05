@@ -281,12 +281,12 @@ func createLayer3PuntTable(ctx context.Context, ctxID string, c fwdpb.Forwarding
 	return nil
 }
 
-// createKernelPort creates a port using the "Kernel" dataplane type (socket API).
-func createKernelPort(ctx context.Context, ctxID string, c fwdpb.ForwardingServer, id, devName string) (uint64, error) {
+// createPortAndEntries creates a port and sets up the punt rules
+func createPortAndEntries(ctx context.Context, ctxID string, c fwdpb.ForwardingServer, t fwdpb.PortType, id, devName string) (uint64, error) {
 	port := &fwdpb.PortCreateRequest{
 		ContextId: &fwdpb.ContextId{Id: ctxID},
 		Port: &fwdpb.PortDesc{
-			PortType: fwdpb.PortType_PORT_TYPE_KERNEL,
+			PortType: t,
 			PortId: &fwdpb.PortId{
 				ObjectId: &fwdpb.ObjectId{Id: id},
 			},
@@ -297,37 +297,12 @@ func createKernelPort(ctx context.Context, ctxID string, c fwdpb.ForwardingServe
 			},
 		},
 	}
-	portID, err := c.PortCreate(ctx, port)
-	if err != nil {
-		return 0, err
-	}
-	if err := addLayer2PuntRule(ctx, ctxID, c, portID.GetObjectIndex().GetIndex(), etherBroadcast, etherBroadcastMask); err != nil {
-		return 0, err
-	}
-	if err := addLayer2PuntRule(ctx, ctxID, c, portID.GetObjectIndex().GetIndex(), etherMulticast, etherMulticastMask); err != nil {
-		return 0, err
-	}
-	if err := addLayer2PuntRule(ctx, ctxID, c, portID.GetObjectIndex().GetIndex(), etherIPV6Multi, etherIPV6MultiMask); err != nil {
-		return 0, err
-	}
-	return portID.GetObjectIndex().GetIndex(), nil
-}
-
-// createKernelPort creates a port using the "TAP" dataplane type (tap file API) and returns the fd to read/write from.
-func createTapPort(ctx context.Context, ctxID string, c fwdpb.ForwardingServer, id, devName string) (uint64, error) {
-	port := &fwdpb.PortCreateRequest{
-		ContextId: &fwdpb.ContextId{Id: ctxID},
-		Port: &fwdpb.PortDesc{
-			PortType: fwdpb.PortType_PORT_TYPE_TAP,
-			PortId: &fwdpb.PortId{
-				ObjectId: &fwdpb.ObjectId{Id: id},
+	if t == fwdpb.PortType_PORT_TYPE_TAP {
+		port.Port.Port = &fwdpb.PortDesc_Tap{
+			Tap: &fwdpb.TAPPortDesc{
+				DeviceName: devName,
 			},
-			Port: &fwdpb.PortDesc_Tap{
-				Tap: &fwdpb.TAPPortDesc{
-					DeviceName: devName,
-				},
-			},
-		},
+		}
 	}
 	portID, err := c.PortCreate(ctx, port)
 	if err != nil {
@@ -342,6 +317,5 @@ func createTapPort(ctx context.Context, ctxID string, c fwdpb.ForwardingServer, 
 	if err := addLayer2PuntRule(ctx, ctxID, c, portID.GetObjectIndex().GetIndex(), etherIPV6Multi, etherIPV6MultiMask); err != nil {
 		return 0, err
 	}
-
 	return portID.GetObjectIndex().GetIndex(), nil
 }
