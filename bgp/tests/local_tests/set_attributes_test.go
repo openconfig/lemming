@@ -304,13 +304,17 @@ func TestSetAttributes(t *testing.T) {
 			// Install export policies
 			Replace(t, dut1, ocpath.Root().RoutingPolicy().PolicyDefinition(dut1ExportPolicyName).Config(), &oc.RoutingPolicy_PolicyDefinition{Name: ygot.String(dut1ExportPolicyName), Statement: dut1ExportPolicy})
 			Replace(t, dut1, bgp.BGPPath.Neighbor(dut2.RouterID).ApplyPolicy().ExportPolicy().Config(), []string{dut1ExportPolicyName})
+			Await(t, dut1, bgp.BGPPath.Neighbor(dut2.RouterID).ApplyPolicy().ExportPolicy().State(), []string{dut1ExportPolicyName})
 			Replace(t, dut5, ocpath.Root().RoutingPolicy().PolicyDefinition(dut5ExportPolicyName).Config(), &oc.RoutingPolicy_PolicyDefinition{Name: ygot.String(dut5ExportPolicyName), Statement: dut5ExportPolicy})
 			Replace(t, dut5, bgp.BGPPath.Neighbor(dut2.RouterID).ApplyPolicy().ExportPolicy().Config(), []string{dut5ExportPolicyName})
+			Await(t, dut5, bgp.BGPPath.Neighbor(dut2.RouterID).ApplyPolicy().ExportPolicy().State(), []string{dut5ExportPolicyName})
 			// Install import policies
 			Replace(t, dut2, ocpath.Root().RoutingPolicy().PolicyDefinition(dut1ImportPolicyName).Config(), &oc.RoutingPolicy_PolicyDefinition{Name: ygot.String(dut1ImportPolicyName), Statement: dut1ImportPolicy})
 			Replace(t, dut2, bgp.BGPPath.Neighbor(dut1.RouterID).ApplyPolicy().ImportPolicy().Config(), []string{dut1ImportPolicyName})
+			Await(t, dut2, bgp.BGPPath.Neighbor(dut1.RouterID).ApplyPolicy().ImportPolicy().State(), []string{dut1ImportPolicyName})
 			Replace(t, dut2, ocpath.Root().RoutingPolicy().PolicyDefinition(dut5ImportPolicyName).Config(), &oc.RoutingPolicy_PolicyDefinition{Name: ygot.String(dut5ImportPolicyName), Statement: dut5ImportPolicy})
 			Replace(t, dut2, bgp.BGPPath.Neighbor(dut5.RouterID).ApplyPolicy().ImportPolicy().Config(), []string{dut5ImportPolicyName})
+			Await(t, dut2, bgp.BGPPath.Neighbor(dut5.RouterID).ApplyPolicy().ImportPolicy().State(), []string{dut5ImportPolicyName})
 		},
 	})
 }

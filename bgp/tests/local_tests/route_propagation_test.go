@@ -76,6 +76,16 @@ func TestRoutePropagation(t *testing.T) {
 
 	establishSessionPairs(t, []DevicePair{{dut1, dut2}, {dut2, dut3}, {dut3, dut4}}...)
 
+	awaitDefaultPolicies := func() {
+		Await(t, dut1, bgp.BGPPath.Neighbor(dut2.RouterID).ApplyPolicy().DefaultExportPolicy().State(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
+		Await(t, dut2, bgp.BGPPath.Neighbor(dut1.RouterID).ApplyPolicy().DefaultImportPolicy().State(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
+		Await(t, dut2, bgp.BGPPath.Neighbor(dut3.RouterID).ApplyPolicy().DefaultExportPolicy().State(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
+		Await(t, dut3, bgp.BGPPath.Neighbor(dut2.RouterID).ApplyPolicy().DefaultImportPolicy().State(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
+		Await(t, dut3, bgp.BGPPath.Neighbor(dut4.RouterID).ApplyPolicy().DefaultExportPolicy().State(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
+		Await(t, dut4, bgp.BGPPath.Neighbor(dut3.RouterID).ApplyPolicy().DefaultImportPolicy().State(), oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
+	}
+	awaitDefaultPolicies()
+
 	prefix := "10.10.10.0/24"
 	installStaticRoute(t, dut1, &oc.NetworkInstance_Protocol_Static{
 		Prefix: ygot.String(prefix),

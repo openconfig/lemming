@@ -166,9 +166,12 @@ func (t *bgpTask) start(_ context.Context, yclient *ygnmi.Client) error {
 		BGPPath.NeighborAny().ApplyPolicy().ExportPolicy().Config().PathStruct(),
 		// BGP defined sets
 		// -- prefix sets
+		RoutingPolicyPath.DefinedSets().PrefixSetAny().Name().Config().PathStruct(),
+		RoutingPolicyPath.DefinedSets().PrefixSetAny().Mode().Config().PathStruct(),
 		RoutingPolicyPath.DefinedSets().PrefixSetAny().PrefixAny().IpPrefix().Config().PathStruct(),
 		RoutingPolicyPath.DefinedSets().PrefixSetAny().PrefixAny().MasklengthRange().Config().PathStruct(),
 		// -- community sets
+		ocpath.Root().RoutingPolicy().DefinedSets().BgpDefinedSets().CommunitySetAny().CommunitySetName().Config().PathStruct(),
 		ocpath.Root().RoutingPolicy().DefinedSets().BgpDefinedSets().CommunitySetAny().CommunityMember().Config().PathStruct(),
 		ocpath.Root().RoutingPolicy().DefinedSets().BgpDefinedSets().CommunitySetAny().MatchSetOptions().Config().PathStruct(),
 		// -- AS path sets
