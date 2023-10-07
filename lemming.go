@@ -188,6 +188,7 @@ func New(targetName, zapiURL string, opts ...Option) (*Device, error) {
 	if creds != nil {
 		grpcOpts = append(grpcOpts, grpc.Creds(creds))
 	}
+	grpcOpts = append(grpcOpts, grpc.StreamInterceptor(fgnmi.NewStreamInterceptorFn(targetName)))
 
 	s := grpc.NewServer(grpcOpts...)
 

@@ -25,7 +25,6 @@ import (
 	"time"
 
 	log "github.com/golang/glog"
-	"github.com/openconfig/gnmi/cache"
 	"github.com/openconfig/gnmi/subscribe"
 	"github.com/openconfig/ygot/util"
 	"github.com/openconfig/ygot/ygot"
@@ -127,7 +126,7 @@ func newServer(ctx context.Context, targetName string, enableSet bool, recs ...r
 		if err := ygot.PruneConfigFalse(configSchema.RootSchema(), configSchema.Root); err != nil {
 			return nil, fmt.Errorf("gnmi: %v", err)
 		}
-		if err := updateCache(c.cache, configSchema.Root, emptySchema.Root, targetName, OpenConfigOrigin, true, 0, "", nil); err != nil {
+		if err := updateCache(c, configSchema.Root, emptySchema.Root, OpenConfigOrigin, true, 0, "", nil); err != nil {
 			return nil, fmt.Errorf("gnmi newServer: %v", err)
 		}
 	}
@@ -140,7 +139,7 @@ func newServer(ctx context.Context, targetName string, enableSet bool, recs ...r
 		if err := setupSchema(stateSchema, false); err != nil {
 			return nil, err
 		}
-		if err := updateCache(c.cache, stateSchema.Root, emptySchema.Root, targetName, OpenConfigOrigin, true, 0, "", nil); err != nil {
+		if err := updateCache(c, stateSchema.Root, emptySchema.Root, OpenConfigOrigin, true, 0, "", nil); err != nil {
 			return nil, fmt.Errorf("gnmi newServer: %v", err)
 		}
 	}
@@ -190,7 +189,7 @@ func setupSchema(schema *ytypes.Schema, config bool) error {
 // If root is nil, then it is assumed the cache is empty, and the entirety of
 // the dirtyRoot is put into the cache.
 // - auth adds authorization to before writing vals to the cache, if set to nil, not authorization is checked.
-func updateCache(cache *cache.Cache, dirtyRoot, root ygot.GoStruct, target, origin string, preferShadowPath bool, timestamp int64, user string, auth PathAuth) error {
+func updateCache(collector *Collector, dirtyRoot, root ygot.GoStruct, origin string, preferShadowPath bool, timestamp int64, user string, auth PathAuth) error {
 	var nos []*gpb.Notification
 	if root == nil {
 		if timestamp == 0 {
@@ -227,7 +226,7 @@ func updateCache(cache *cache.Cache, dirtyRoot, root ygot.GoStruct, target, orig
 		}
 	}
 
-	return updateCacheNotifs(cache, nos, target, origin)
+	return updateCacheNotifs(collector, nos, origin)
 }
 
 func checkWritePermission(auth PathAuth, user string, nos ...*gpb.Notification) (bool, error) {
@@ -256,15 +255,13 @@ func checkWritePermission(auth PathAuth, user string, nos ...*gpb.Notification) 
 	return true, nil
 }
 
-// updateCacheNotifs updates the target cache with the given notifications.
-func updateCacheNotifs(ca *cache.Cache, nos []*gpb.Notification, target, origin string) error {
-	cacheTarget := ca.GetTarget(target)
+// updateCacheNotifs updates the cache with the given notifications.
+func updateCacheNotifs(c *Collector, nos []*gpb.Notification, origin string) error {
 	for _, n := range nos {
 		if n.Prefix == nil {
 			n.Prefix = &gpb.Path{}
 		}
 		n.Prefix.Origin = origin
-		n.Prefix.Target = target
 		if n.Prefix.Origin == "" {
 			n.Prefix.Origin = OpenConfigOrigin
 		}
@@ -284,7 +281,7 @@ func updateCacheNotifs(ca *cache.Cache, nos []*gpb.Notification, target, origin 
 			log.V(1).Infof("datastore: deleting the following paths: %+v", pathsForDelete)
 		}
 		log.V(1).Infof("datastore: calling GnmiUpdate with the following notification:\n%s", prototext.Format(n))
-		if err := cacheTarget.GnmiUpdate(n); err != nil {
+		if err := c.GnmiUpdate(n); err != nil {
 			return fmt.Errorf("%w: notification:\n%s\n%s", err, prototext.Format(n), string(debug.Stack()))
 		}
 		if enableDebugLog && (len(n.Delete) != 0 || len(n.Update) != 0) {
@@ -346,7 +343,7 @@ func unmarshalSetRequest(schema *ytypes.Schema, req *gpb.SetRequest, preferShado
 // - timestamp specifies the timestamp of the values that are to be updated in
 // the gNMI cache. If zero, then time.Now().UnixNano() is used.
 // - auth adds authorization to before writing vals to the cache, if set to nil, not authorization is checked.
-func set(schema *ytypes.Schema, cache *cache.Cache, target string, req *gpb.SetRequest, preferShadowPath bool, validators []func(*oc.Root) error, timestamp int64, user string, auth PathAuth) error {
+func set(schema *ytypes.Schema, c *Collector, req *gpb.SetRequest, preferShadowPath bool, validators []func(*oc.Root) error, timestamp int64, user string, auth PathAuth) error {
 	// skip diffing and deepcopy for performance when handling state update paths.
 	// Currently this is not possible for replace/delete paths, since
 	// without doing a diff, it is not possible to compute what was
@@ -370,7 +367,7 @@ func set(schema *ytypes.Schema, cache *cache.Cache, target string, req *gpb.SetR
 			return err
 		}
 
-		if err := updateCacheNotifs(cache, notifs, target, req.Prefix.Origin); err != nil {
+		if err := updateCacheNotifs(c, notifs, req.Prefix.Origin); err != nil {
 			return err
 		}
 
@@ -411,7 +408,7 @@ func set(schema *ytypes.Schema, cache *cache.Cache, target string, req *gpb.SetR
 		}
 	}
 
-	if err := updateCache(cache, schema.Root, prevRoot, target, req.Prefix.Origin, preferShadowPath, timestamp, user, auth); err != nil {
+	if err := updateCache(c, schema.Root, prevRoot, req.Prefix.Origin, preferShadowPath, timestamp, user, auth); err != nil {
 		return status.Error(codes.Internal, err.Error())
 	}
 	success = true
@@ -426,6 +423,9 @@ const (
 
 // handleInternalOrigin handles SetRequests whose path has schemaless values.
 func (s *Server) handleInternalOrigin(req *gpb.SetRequest) (bool, error) {
+	if req.Prefix == nil {
+		req.Prefix = &gpb.Path{}
+	}
 	notif := &gpb.Notification{
 		Prefix: &gpb.Path{
 			Origin: InternalOrigin,
@@ -443,7 +443,7 @@ func (s *Server) handleInternalOrigin(req *gpb.SetRequest) (bool, error) {
 		}
 	}
 	if hasInternal {
-		if err := s.c.cache.GnmiUpdate(notif); err != nil {
+		if err := s.c.GnmiUpdate(notif); err != nil {
 			return true, err
 		}
 	}
@@ -465,7 +465,7 @@ func (s *Server) handleInternalOrigin(req *gpb.SetRequest) (bool, error) {
 	}
 	log.V(2).Infof("internal origin notification: %v", notif)
 	if hasInternal {
-		return true, s.c.cache.GnmiUpdate(notif)
+		return true, s.c.GnmiUpdate(notif)
 	}
 	return false, nil
 }
@@ -537,7 +537,7 @@ func (s *Server) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResponse
 
 		// TODO(wenbli): Reject paths that try to modify read-only values.
 		// TODO(wenbli): Question: what to do if there are operational-state values in a container that is specified to be replaced or deleted?
-		err := set(s.configSchema, s.c.cache, s.c.name, req, true, s.validators, timestamp, user, s.pathAuth)
+		err := set(s.configSchema, s.c, req, true, s.validators, timestamp, user, s.pathAuth)
 
 		// TODO(wenbli): Currently the SetResponse is not filled.
 		return &gpb.SetResponse{
@@ -553,7 +553,7 @@ func (s *Server) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResponse
 		}
 		// TODO(wenbli): Reject values that modify config values. We only allow modifying state in this mode.
 		// Don't authorize setting state since only internal reconcilers do that.
-		if err := set(s.stateSchema, s.c.cache, s.c.name, req, false, nil, timestamp, user, nil); err != nil {
+		if err := set(s.stateSchema, s.c, req, false, nil, timestamp, user, nil); err != nil {
 			return &gpb.SetResponse{}, err
 		}
 
@@ -590,6 +590,57 @@ type PathAuth interface {
 	CheckPermit(path *gpb.Path, user string, write bool) bool
 	// IsInitialized returns if the authorized has been initialized, if not authorization is not checked.
 	IsInitialized() bool
+}
+
+// wrappedStream wraps around the embedded grpc.ServerStream, and intercepts the RecvMsg and
+// SendMsg method call.
+type wrappedStream struct {
+	grpc.ServerStream
+	target string
+}
+
+func (w *wrappedStream) RecvMsg(m any) error {
+	if err := w.ServerStream.RecvMsg(m); err != nil {
+		return err
+	}
+	if req, ok := m.(*gpb.SubscribeRequest); ok {
+		sub := req.GetSubscribe()
+		if sub != nil {
+			if sub.Prefix == nil {
+				sub.Prefix = &gpb.Path{}
+			}
+			if sub.Prefix.Target == "" {
+				sub.Prefix.Target = w.target
+			}
+		}
+	}
+	return nil
+}
+
+func (w *wrappedStream) SendMsg(m any) error {
+	// TODO(wenbli): Remove prefix if not provided in request.
+	//fmt.Printf("Send a message (Type: %T) at %v\n", m, time.Now().Format(time.RFC3339))
+	//if resp, ok := m.(*gpb.SubscribeResponse); ok {
+	//	fmt.Println("<10>", prototext.Format(resp), "--end", resp)
+	//}
+	return w.ServerStream.SendMsg(m)
+}
+
+func newWrappedStream(s grpc.ServerStream, target string) grpc.ServerStream {
+	return &wrappedStream{
+		ServerStream: s,
+		target:       target,
+	}
+}
+
+func NewStreamInterceptorFn(target string) func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	return func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		err := handler(srv, newWrappedStream(ss, target))
+		if err != nil {
+			fmt.Printf("ERROR in interceptor stream: %v\n", err)
+		}
+		return err
+	}
 }
 
 type subscribeWithAuth struct {

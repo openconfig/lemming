@@ -161,7 +161,7 @@ func toUpd(r *gpb.SubscribeResponse) []*upd {
 // errors encounted whilst setting it up.
 func startServer(s *Server) (string, error) {
 	// Start gNMI server.
-	srv := grpc.NewServer()
+	srv := grpc.NewServer(grpc.StreamInterceptor(NewStreamInterceptorFn("local")))
 	gpb.RegisterGNMIServer(srv, s)
 	// Forward streaming updates to clients.
 	// Register listening port and start serving.
@@ -181,33 +181,54 @@ func startServer(s *Server) (string, error) {
 	return lis.Addr().String(), nil
 }
 
-// TestONCE tests the subscribe mode of gnmit.
-func TestONCE(t *testing.T) {
-	testGNMI(t, "/hello", false, false, false)
+func TestSetAndSubscribeOnce(t *testing.T) {
+	tests := []struct {
+		desc     string
+		pathStr  string
+		useSet   bool
+		config   bool
+		internal bool
+	}{{
+		desc:     "subscribe-once",
+		pathStr:  "/hello",
+		useSet:   false,
+		config:   false,
+		internal: false,
+	}, {
+		desc:     "set-config",
+		pathStr:  "/interfaces/interface[name=foo]/config/description",
+		useSet:   true,
+		config:   true,
+		internal: false,
+	}, {
+		desc:     "set-state",
+		pathStr:  "/interfaces/interface[name=foo]/state/description",
+		useSet:   true,
+		config:   false,
+		internal: false,
+	}, {
+		desc:     "set-internal",
+		pathStr:  "/test/foo",
+		useSet:   true,
+		config:   true,
+		internal: true,
+	}}
+
+	for _, tt := range tests {
+		t.Run(tt.desc+"-with-target", func(t *testing.T) {
+			testSetSub(t, tt.pathStr, tt.useSet, tt.config, tt.internal, true)
+		})
+		t.Run(tt.desc+"-no-target", func(t *testing.T) {
+			testSetSub(t, tt.pathStr, tt.useSet, tt.config, tt.internal, false)
+		})
+	}
 }
 
-// TestSetConfig tests gnmi.Set on a config value.
+// testSetSub tests gnmi.Set and/or gnmi.Subscribe/ONCE on a config or state value.
 //
 // It purposely avoids using ygnmi in order to test lower-level details
 // (e.g. timestamp metadata)
-func TestSetConfig(t *testing.T) {
-	testGNMI(t, "/interfaces/interface[name=foo]/config/description", true, true, false)
-}
-
-// TestSetState tests gnmi.Set on a state value.
-//
-// It purposely avoids using ygnmi in order to test lower-level details
-// (e.g. timestamp metadata)
-func TestSetState(t *testing.T) {
-	testGNMI(t, "/interfaces/interface[name=foo]/state/description", true, false, false)
-}
-
-// TestSetInternal tests that the server is able to handle schemaless queries.
-func TestSetInternal(t *testing.T) {
-	testGNMI(t, "/test/foo", true, true, true)
-}
-
-func testGNMI(t *testing.T, pathStr string, useSet, config, internal bool) {
+func testSetSub(t *testing.T, pathStr string, useSet, config, internal, withTarget bool) {
 	ctx := context.Background()
 	gnmiServer, err := newServer(ctx, "local", useSet)
 	if err != nil {
@@ -222,7 +243,11 @@ func testGNMI(t *testing.T, pathStr string, useSet, config, internal bool) {
 	if internal {
 		path.Origin = InternalOrigin
 	}
-	prefix := mustTargetPath("local", "", useSet && !internal)
+	var target string
+	if withTarget {
+		target = "local"
+	}
+	prefix := mustTargetPath(target, "", useSet && !internal)
 
 	if !useSet {
 		gnmiServer.c.TargetUpdate(&gpb.SubscribeResponse{

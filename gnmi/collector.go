@@ -104,18 +104,34 @@ func (c *Collector) Stop() {
 // handleUpdate handles an input gNMI SubscribeResponse that is received by
 // the target.
 func (c *Collector) handleUpdate(resp *gpb.SubscribeResponse) error {
-	t := c.cache.GetTarget(c.name)
 	switch v := resp.Response.(type) {
 	case *gpb.SubscribeResponse_Update:
-		return t.GnmiUpdate(v.Update)
+		return c.GnmiUpdate(v.Update)
 	case *gpb.SubscribeResponse_SyncResponse:
-		t.Sync()
+		c.cache.GetTarget(c.name).Sync()
 	case *gpb.SubscribeResponse_Error:
 		return fmt.Errorf("error in response: %s", v)
 	default:
 		return fmt.Errorf("unknown response %T: %s", v, v)
 	}
 	return nil
+}
+
+// GnmiUpdate sends a pb.Notification into the target cache.
+//
+// It simply forwards it to the gNMI cache implementation, populating the
+// target (without copying the message) if empty.
+func (c *Collector) GnmiUpdate(n *gpb.Notification) error {
+	t := c.cache.GetTarget(c.name)
+	// If target is not specified, then set it to the initialized
+	// value.
+	if n.Prefix == nil {
+		n.Prefix = &gpb.Path{}
+	}
+	if n.Prefix.Target == "" {
+		n.Prefix.Target = c.name
+	}
+	return t.GnmiUpdate(n)
 }
 
 // periodic runs the function fn every period.
