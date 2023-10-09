@@ -22,6 +22,7 @@ import (
 	"github.com/openconfig/gnmi/cache"
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 	"github.com/openconfig/gnmi/subscribe"
+	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -125,10 +126,12 @@ func (c *Collector) GnmiUpdate(n *gpb.Notification) error {
 	t := c.cache.GetTarget(c.name)
 	// If target is not specified, then set it to the initialized
 	// value.
-	if n.Prefix == nil {
-		n.Prefix = &gpb.Path{}
-	}
-	if n.Prefix.Target == "" {
+	if n.GetPrefix().GetTarget() == "" {
+		if n.Prefix == nil {
+			n.Prefix = &gpb.Path{}
+		} else {
+			n.Prefix = proto.Clone(n.Prefix).(*gpb.Path)
+		}
 		n.Prefix.Target = c.name
 	}
 	return t.GnmiUpdate(n)

@@ -592,20 +592,27 @@ type PathAuth interface {
 	IsInitialized() bool
 }
 
-// wrappedStream wraps around the embedded grpc.ServerStream, and intercepts the RecvMsg and
-// SendMsg method call.
-type wrappedStream struct {
+// subscribeTargetUpdateStream wraps around the embedded grpc.ServerStream, and
+// intercepts the RecvMsg and SendMsg method call to populate gNMI Subscribe's
+// target if it's not populated in the SubscribeRequest.
+type subscribeTargetUpdateStream struct {
 	grpc.ServerStream
+	// target is the target of the gNMI collector used by the lemming
+	// instance.
 	target string
+	// subscribeTarget stores the target field value of the last
+	// SubscribeRequest in the stream.
+	subscribeTarget string
 }
 
-func (w *wrappedStream) RecvMsg(m any) error {
+func (w *subscribeTargetUpdateStream) RecvMsg(m any) error {
 	if err := w.ServerStream.RecvMsg(m); err != nil {
 		return err
 	}
 	if req, ok := m.(*gpb.SubscribeRequest); ok {
 		sub := req.GetSubscribe()
 		if sub != nil {
+			w.subscribeTarget = sub.GetPrefix().GetTarget()
 			if sub.Prefix == nil {
 				sub.Prefix = &gpb.Path{}
 			}
@@ -617,25 +624,32 @@ func (w *wrappedStream) RecvMsg(m any) error {
 	return nil
 }
 
-func (w *wrappedStream) SendMsg(m any) error {
-	// TODO(wenbli): Remove prefix if not provided in request.
-	//fmt.Printf("Send a message (Type: %T) at %v\n", m, time.Now().Format(time.RFC3339))
-	//if resp, ok := m.(*gpb.SubscribeResponse); ok {
-	//	fmt.Println("<10>", prototext.Format(resp), "--end", resp)
-	//}
+func (w *subscribeTargetUpdateStream) SendMsg(m any) error {
+	// Clear target if it's not specified in the original SubscribeRequest:
+	// https://www.openconfig.net/docs/gnmi/gnmi-specification/#2221-path-target
+	if resp, ok := m.(*gpb.SubscribeResponse); w.subscribeTarget == "" && ok {
+		if pfx := resp.GetUpdate().GetPrefix(); pfx != nil {
+			pfx.Target = ""
+		}
+	}
 	return w.ServerStream.SendMsg(m)
 }
 
-func newWrappedStream(s grpc.ServerStream, target string) grpc.ServerStream {
-	return &wrappedStream{
+func newSubscribeTargetUpdateStream(s grpc.ServerStream, target string) grpc.ServerStream {
+	return &subscribeTargetUpdateStream{
 		ServerStream: s,
 		target:       target,
 	}
 }
 
-func NewStreamInterceptorFn(target string) func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+// NewSubscribeTargetUpdateInterceptor returns a stream interceptor to populate
+// gNMI Subscribe's target if it's not populated in the SubscribeRequest
+// message in order to retrieve the device's data.
+//
+// ref: https://www.openconfig.net/docs/gnmi/gnmi-specification/#2221-path-target
+func NewSubscribeTargetUpdateInterceptor(target string) func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 	return func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-		err := handler(srv, newWrappedStream(ss, target))
+		err := handler(srv, newSubscribeTargetUpdateStream(ss, target))
 		if err != nil {
 			fmt.Printf("ERROR in interceptor stream: %v\n", err)
 		}
