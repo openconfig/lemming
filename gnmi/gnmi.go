@@ -36,6 +36,7 @@ import (
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/prototext"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/reconciler"
@@ -613,10 +614,10 @@ func (w *subscribeTargetUpdateStream) RecvMsg(m any) error {
 		sub := req.GetSubscribe()
 		if sub != nil {
 			w.subscribeTarget = sub.GetPrefix().GetTarget()
-			if sub.Prefix == nil {
-				sub.Prefix = &gpb.Path{}
-			}
-			if sub.Prefix.Target == "" {
+			if sub.GetPrefix().GetTarget() == "" {
+				if sub.Prefix == nil {
+					sub.Prefix = &gpb.Path{}
+				}
 				sub.Prefix.Target = w.target
 			}
 		}
@@ -628,8 +629,16 @@ func (w *subscribeTargetUpdateStream) SendMsg(m any) error {
 	// Clear target if it's not specified in the original SubscribeRequest:
 	// https://www.openconfig.net/docs/gnmi/gnmi-specification/#2221-path-target
 	if resp, ok := m.(*gpb.SubscribeResponse); w.subscribeTarget == "" && ok {
-		if pfx := resp.GetUpdate().GetPrefix(); pfx != nil {
-			pfx.Target = ""
+		if notif := resp.GetUpdate(); notif != nil && notif.GetPrefix().GetTarget() != "" {
+			// A clone of the entire notification is
+			// required; otherwise the notification in the
+			// collector cache is also altered.
+			//
+			// TODO(wenbli): We should use a shallow-copy of the
+			// proto here for better performance:
+			// https://github.com/golang/protobuf/issues/1155
+			resp.Response = &gpb.SubscribeResponse_Update{Update: proto.Clone(notif).(*gpb.Notification)}
+			resp.GetUpdate().Prefix.Target = ""
 		}
 	}
 	return w.ServerStream.SendMsg(m)
