@@ -43,6 +43,10 @@ import (
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 )
 
+const (
+	targetName = "local"
+)
+
 func mustPath(s string) *gpb.Path {
 	p, err := ygot.StringToStructuredPath(s)
 	if err != nil {
@@ -99,10 +103,11 @@ const (
 )
 
 type upd struct {
-	T    updateType
-	TS   int64
-	Path string
-	Val  interface{}
+	T      updateType
+	TS     int64
+	Target string
+	Path   string
+	Val    interface{}
 }
 
 func (u *upd) String() string {
@@ -110,7 +115,7 @@ func (u *upd) String() string {
 	b.WriteString("<")
 	switch u.T {
 	case VAL:
-		b.WriteString(fmt.Sprintf("value, @%d %s=%v", u.TS, u.Path, u.Val))
+		b.WriteString(fmt.Sprintf("value, @%d (%s) %s=%v", u.TS, u.Target, u.Path, u.Val))
 	case METACONNECTED:
 		b.WriteString("meta/connected=true")
 	case METASYNC:
@@ -142,10 +147,11 @@ func toUpd(r *gpb.SubscribeResponse) []*upd {
 				})
 			default:
 				ret = append(ret, &upd{
-					T:    VAL,
-					TS:   v.Update.GetTimestamp(),
-					Path: mustPathToString(u.Path),
-					Val:  mustToScalar(u.Val),
+					T:      VAL,
+					TS:     v.Update.GetTimestamp(),
+					Target: v.Update.GetPrefix().GetTarget(),
+					Path:   mustPathToString(u.Path),
+					Val:    mustToScalar(u.Val),
 				})
 			}
 		}
@@ -161,7 +167,7 @@ func toUpd(r *gpb.SubscribeResponse) []*upd {
 // errors encounted whilst setting it up.
 func startServer(s *Server) (string, error) {
 	// Start gNMI server.
-	srv := grpc.NewServer()
+	srv := grpc.NewServer(grpc.StreamInterceptor(NewSubscribeTargetUpdateInterceptor(targetName)))
 	gpb.RegisterGNMIServer(srv, s)
 	// Forward streaming updates to clients.
 	// Register listening port and start serving.
@@ -181,35 +187,70 @@ func startServer(s *Server) (string, error) {
 	return lis.Addr().String(), nil
 }
 
-// TestONCE tests the subscribe mode of gnmit.
-func TestONCE(t *testing.T) {
-	testGNMI(t, "/hello", false, false, false)
+func TestSetAndSubscribeOnce(t *testing.T) {
+	tests := []struct {
+		desc     string
+		pathStr  string
+		useSet   bool
+		config   bool
+		internal bool
+	}{{
+		desc:     "subscribe-once",
+		pathStr:  "/hello",
+		useSet:   false,
+		config:   false,
+		internal: false,
+	}, {
+		desc:     "set-config",
+		pathStr:  "/interfaces/interface[name=foo]/config/description",
+		useSet:   true,
+		config:   true,
+		internal: false,
+	}, {
+		desc:     "set-state",
+		pathStr:  "/interfaces/interface[name=foo]/state/description",
+		useSet:   true,
+		config:   false,
+		internal: false,
+	}, {
+		desc:     "set-internal",
+		pathStr:  "/test/foo",
+		useSet:   true,
+		config:   true,
+		internal: true,
+	}}
+
+	for _, tt := range tests {
+		path := mustPath(tt.pathStr)
+		if tt.internal {
+			path.Origin = InternalOrigin
+		}
+		client, cleanup := testSetSubSetup(t, mustTargetPath(targetName, "", tt.useSet && !tt.internal), path, tt.useSet, tt.config)
+		defer cleanup()
+		t.Run(tt.desc+"-with-target", func(t *testing.T) {
+			testSetSub(t, client, path, tt.config, targetName, tt.useSet, tt.internal)
+		})
+		t.Run(tt.desc+"-no-target", func(t *testing.T) {
+			testSetSub(t, client, path, tt.config, "", tt.useSet, tt.internal)
+		})
+		// Run this again for repeatability (e.g. make sure Target in
+		// the notification didn't get overwritten).
+		t.Run(tt.desc+"-with-target-2", func(t *testing.T) {
+			testSetSub(t, client, path, tt.config, targetName, tt.useSet, tt.internal)
+		})
+		t.Run(tt.desc+"-no-target-2", func(t *testing.T) {
+			testSetSub(t, client, path, tt.config, "", tt.useSet, tt.internal)
+		})
+	}
 }
 
-// TestSetConfig tests gnmi.Set on a config value.
+// testSetSubSetup tests gnmi.Set and/or gnmi.Subscribe/ONCE on a config or state value.
 //
 // It purposely avoids using ygnmi in order to test lower-level details
 // (e.g. timestamp metadata)
-func TestSetConfig(t *testing.T) {
-	testGNMI(t, "/interfaces/interface[name=foo]/config/description", true, true, false)
-}
-
-// TestSetState tests gnmi.Set on a state value.
-//
-// It purposely avoids using ygnmi in order to test lower-level details
-// (e.g. timestamp metadata)
-func TestSetState(t *testing.T) {
-	testGNMI(t, "/interfaces/interface[name=foo]/state/description", true, false, false)
-}
-
-// TestSetInternal tests that the server is able to handle schemaless queries.
-func TestSetInternal(t *testing.T) {
-	testGNMI(t, "/test/foo", true, true, true)
-}
-
-func testGNMI(t *testing.T, pathStr string, useSet, config, internal bool) {
+func testSetSubSetup(t *testing.T, prefix, path *gpb.Path, useSet, config bool) (gpb.GNMIClient, func()) {
 	ctx := context.Background()
-	gnmiServer, err := newServer(ctx, "local", useSet)
+	gnmiServer, err := newServer(ctx, targetName, useSet)
 	if err != nil {
 		t.Fatalf("cannot create server, got err: %v", err)
 	}
@@ -218,13 +259,27 @@ func testGNMI(t *testing.T, pathStr string, useSet, config, internal bool) {
 		t.Fatalf("cannot start server, got err: %v", err)
 	}
 
-	path := mustPath(pathStr)
-	if internal {
-		path.Origin = InternalOrigin
+	conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(local.NewCredentials()))
+	if err != nil {
+		t.Fatalf("cannot dial gNMI server, %v", err)
 	}
-	prefix := mustTargetPath("local", "", useSet && !internal)
 
-	if !useSet {
+	client := gpb.NewGNMIClient(conn)
+
+	if useSet {
+		if !config {
+			ctx = metadata.AppendToOutgoingContext(ctx, GNMIModeMetadataKey, string(StateMode))
+		}
+		if _, err := client.Set(metadata.AppendToOutgoingContext(ctx, TimestampMetadataKey, strconv.FormatInt(42, 10)), &gpb.SetRequest{
+			Prefix: prefix,
+			Replace: []*gpb.Update{{
+				Path: path,
+				Val:  mustTypedValue("world"),
+			}},
+		}); err != nil {
+			t.Fatalf("set request failed: %v", err)
+		}
+	} else {
 		gnmiServer.c.TargetUpdate(&gpb.SubscribeResponse{
 			Response: &gpb.SubscribeResponse_Update{
 				Update: &gpb.Notification{
@@ -244,35 +299,24 @@ func testGNMI(t *testing.T, pathStr string, useSet, config, internal bool) {
 		})
 	}
 
+	return client, func() {
+		gnmiServer.c.Stop()
+	}
+}
+
+// testSetSub tests gnmi.Set and/or gnmi.Subscribe/ONCE on a config or state value.
+//
+// It purposely avoids using ygnmi in order to test lower-level details
+// (e.g. timestamp metadata)
+func testSetSub(t *testing.T, client gpb.GNMIClient, path *gpb.Path, config bool, wantTarget string, useSet, internal bool) {
+	prefix := mustTargetPath(wantTarget, "", useSet && !internal)
+	pathStr := mustPathToString(path)
+
 	got := []*upd{}
 	clientCtx, cancel := context.WithCancel(context.Background())
 	var sendErr, recvErr error
 	go func(ctx context.Context) {
 		defer cancel()
-		conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(local.NewCredentials()))
-		if err != nil {
-			sendErr = fmt.Errorf("cannot dial gNMI server, %v", err)
-			return
-		}
-
-		client := gpb.NewGNMIClient(conn)
-
-		if useSet {
-			if !config {
-				ctx = metadata.AppendToOutgoingContext(ctx, GNMIModeMetadataKey, string(StateMode))
-			}
-			if _, err := client.Set(metadata.AppendToOutgoingContext(ctx, TimestampMetadataKey, strconv.FormatInt(42, 10)), &gpb.SetRequest{
-				Prefix: prefix,
-				Replace: []*gpb.Update{{
-					Path: path,
-					Val:  mustTypedValue("world"),
-				}},
-			}); err != nil {
-				sendErr = fmt.Errorf("set request failed: %v", err)
-				return
-			}
-		}
-
 		subc, err := client.Subscribe(ctx)
 		if err != nil {
 			sendErr = err
@@ -310,8 +354,6 @@ func testGNMI(t *testing.T, pathStr string, useSet, config, internal bool) {
 
 	<-clientCtx.Done()
 
-	gnmiServer.c.Stop()
-
 	if sendErr != nil {
 		t.Errorf("got unexpected send error, %v", sendErr)
 	}
@@ -326,10 +368,11 @@ func testGNMI(t *testing.T, pathStr string, useSet, config, internal bool) {
 	}
 
 	if diff := cmp.Diff(got, []*upd{{
-		T:    VAL,
-		TS:   42,
-		Path: pathStr,
-		Val:  "world",
+		T:      VAL,
+		TS:     42,
+		Target: wantTarget,
+		Path:   pathStr,
+		Val:    "world",
 	}, {
 		T: SYNC,
 	}}, cmpOptions...); diff != "" {
@@ -339,10 +382,11 @@ func testGNMI(t *testing.T, pathStr string, useSet, config, internal bool) {
 	if config {
 		// Test that timestamp is not 42: we don't want the timestamp metadata to affect config values.
 		if cmp.Equal(got, []*upd{{
-			T:    VAL,
-			TS:   42,
-			Path: pathStr,
-			Val:  "world",
+			T:      VAL,
+			TS:     42,
+			Target: wantTarget,
+			Path:   pathStr,
+			Val:    "world",
 		}, {
 			T: SYNC,
 		}}) {
@@ -646,7 +690,7 @@ func TestSetYGNMI(t *testing.T) {
 		wantErr: `"24" does not match regular expression pattern`,
 	}}
 
-	gnmiServer, err := newServer(context.Background(), "local", true)
+	gnmiServer, err := newServer(context.Background(), targetName, true)
 	if err != nil {
 		t.Fatalf("cannot create server, got err: %v", err)
 	}
@@ -660,11 +704,11 @@ func TestSetYGNMI(t *testing.T) {
 	if err != nil {
 		t.Fatalf("cannot dial gNMI server, %v", err)
 	}
-	configClient, err := ygnmi.NewClient(gpb.NewGNMIClient(conn), ygnmi.WithTarget("local"))
+	configClient, err := ygnmi.NewClient(gpb.NewGNMIClient(conn), ygnmi.WithTarget(targetName))
 	if err != nil {
 		t.Fatalf("failed to create client: %v", err)
 	}
-	stateClient, err := ygnmi.NewClient(gnmiServer.LocalClient(), ygnmi.WithTarget("local"))
+	stateClient, err := ygnmi.NewClient(gnmiServer.LocalClient(), ygnmi.WithTarget(targetName))
 	if err != nil {
 		t.Fatalf("failed to create client: %v", err)
 	}
@@ -735,7 +779,7 @@ func TestSetWithAuth(t *testing.T) {
 	}}
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			gnmiServer, err := newServer(context.Background(), "local", true)
+			gnmiServer, err := newServer(context.Background(), targetName, true)
 			if err != nil {
 				t.Fatalf("cannot create server, got err: %v", err)
 			}
@@ -749,7 +793,7 @@ func TestSetWithAuth(t *testing.T) {
 			if err != nil {
 				t.Fatalf("cannot dial gNMI server, %v", err)
 			}
-			c, err := ygnmi.NewClient(gpb.NewGNMIClient(conn), ygnmi.WithTarget("local"))
+			c, err := ygnmi.NewClient(gpb.NewGNMIClient(conn), ygnmi.WithTarget(targetName))
 			if err != nil {
 				t.Fatalf("failed to create client: %v", err)
 			}
@@ -768,7 +812,7 @@ func TestSetWithAuth(t *testing.T) {
 // TestSTREAM tests the STREAM mode of gnmit.
 func TestSTREAM(t *testing.T) {
 	ctx := context.Background()
-	gnmiServer, err := newServer(ctx, "local", false)
+	gnmiServer, err := newServer(ctx, targetName, false)
 	if err != nil {
 		t.Fatalf("cannot create server, got err: %v", err)
 	}
@@ -780,7 +824,7 @@ func TestSTREAM(t *testing.T) {
 	gnmiServer.c.TargetUpdate(&gpb.SubscribeResponse{
 		Response: &gpb.SubscribeResponse_Update{
 			Update: &gpb.Notification{
-				Prefix:    mustTargetPath("local", "", false),
+				Prefix:    mustTargetPath(targetName, "", false),
 				Timestamp: 42,
 				Update: []*gpb.Update{{
 					Path: mustPath("/hello"),
@@ -827,7 +871,7 @@ func TestSTREAM(t *testing.T) {
 		sr := &gpb.SubscribeRequest{
 			Request: &gpb.SubscribeRequest_Subscribe{
 				Subscribe: &gpb.SubscriptionList{
-					Prefix: mustTargetPath("local", "", false),
+					Prefix: mustTargetPath(targetName, "", false),
 					Mode:   gpb.SubscriptionList_STREAM,
 					Subscription: []*gpb.Subscription{{
 						Path: mustPath("/"),
@@ -871,7 +915,7 @@ func TestSTREAM(t *testing.T) {
 			gnmiServer.c.TargetUpdate(&gpb.SubscribeResponse{
 				Response: &gpb.SubscribeResponse_Update{
 					Update: &gpb.Notification{
-						Prefix:    mustTargetPath("local", "", false),
+						Prefix:    mustTargetPath(targetName, "", false),
 						Timestamp: int64(42 + 1 + i),
 						Update: []*gpb.Update{{
 							Path: mustPath("/hello"),
@@ -921,32 +965,37 @@ func TestSTREAM(t *testing.T) {
 	}, {
 		T: METASYNC,
 	}, {
-		T:    VAL,
-		TS:   42,
-		Path: "/hello",
-		Val:  "world",
+		T:      VAL,
+		TS:     42,
+		Target: targetName,
+		Path:   "/hello",
+		Val:    "world",
 	}, {
 		T: SYNC,
 	}, {
-		T:    VAL,
-		TS:   43,
-		Path: "/hello",
-		Val:  "mercury",
+		T:      VAL,
+		TS:     43,
+		Target: targetName,
+		Path:   "/hello",
+		Val:    "mercury",
 	}, {
-		T:    VAL,
-		TS:   44,
-		Path: "/hello",
-		Val:  "venus",
+		T:      VAL,
+		TS:     44,
+		Target: targetName,
+		Path:   "/hello",
+		Val:    "venus",
 	}, {
-		T:    VAL,
-		TS:   45,
-		Path: "/hello",
-		Val:  "earth",
+		T:      VAL,
+		TS:     45,
+		Target: targetName,
+		Path:   "/hello",
+		Val:    "earth",
 	}, {
-		T:    VAL,
-		TS:   46,
-		Path: "/hello",
-		Val:  "mars",
+		T:      VAL,
+		TS:     46,
+		Target: targetName,
+		Path:   "/hello",
+		Val:    "mars",
 	}}, cmpopts.SortSlices(func(a, b *upd) bool {
 		if a.T != b.T {
 			return a.T < b.T
@@ -1002,7 +1051,7 @@ func TestSubscribeWithAuth(t *testing.T) {
 	}}
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			gnmiServer, err := newServer(context.Background(), "local", false)
+			gnmiServer, err := newServer(context.Background(), targetName, false)
 			if err != nil {
 				t.Fatalf("cannot create server, got err: %v", err)
 			}
@@ -1014,7 +1063,7 @@ func TestSubscribeWithAuth(t *testing.T) {
 			gnmiServer.c.TargetUpdate(&gpb.SubscribeResponse{
 				Response: &gpb.SubscribeResponse_Update{
 					Update: &gpb.Notification{
-						Prefix:    mustTargetPath("local", "", true),
+						Prefix:    mustTargetPath(targetName, "", true),
 						Timestamp: 1,
 						Update: []*gpb.Update{{
 							Path: mustPath("/interfaces/interface[name=eth0]/state/oper-status"),
@@ -1028,7 +1077,7 @@ func TestSubscribeWithAuth(t *testing.T) {
 			if err != nil {
 				t.Fatalf("cannot dial gNMI server, %v", err)
 			}
-			c, err := ygnmi.NewClient(gpb.NewGNMIClient(conn), ygnmi.WithTarget("local"))
+			c, err := ygnmi.NewClient(gpb.NewGNMIClient(conn), ygnmi.WithTarget(targetName))
 			if err != nil {
 				t.Fatalf("failed to create client: %v", err)
 			}
