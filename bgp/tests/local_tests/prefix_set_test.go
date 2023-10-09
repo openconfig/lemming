@@ -55,6 +55,7 @@ func TestPrefixSet(t *testing.T) {
 		}
 		prefix1 := "10.33.0.0/16"
 		prefix2 := "10.34.0.0/16"
+		prefix3 := "10.0.6.0/24"
 
 		// Policy to reject routes with the given prefix set
 		policyName := "def1"
@@ -67,6 +68,8 @@ func TestPrefixSet(t *testing.T) {
 		Replace(t, dut2, prefix1Path.Config(), prefix1)
 		prefix2Path := prefixSetPath.Prefix(prefix2, "16..23").IpPrefix()
 		Replace(t, dut2, prefix2Path.Config(), prefix2)
+		prefix3Path := prefixSetPath.Prefix(prefix3, "28..28").IpPrefix()
+		Replace(t, dut2, prefix3Path.Config(), prefix3)
 
 		policy := &oc.RoutingPolicy_PolicyDefinition_Statement_OrderedMap{}
 		stmt, err := policy.AppendNew("stmt1")
@@ -140,9 +143,21 @@ func TestPrefixSet(t *testing.T) {
 				},
 				ExpectedResult: invertResult(valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD, invert),
 			}, {
+				Description: "Middle of mask length -- different prefix",
+				Input: &valpb.TestRoute{
+					ReachPrefix: "10.34.240.0/20",
+				},
+				ExpectedResult: invertResult(valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD, invert),
+			}, {
 				Description: "Upper end of mask length",
 				Input: &valpb.TestRoute{
 					ReachPrefix: "10.34.0.0/23",
+				},
+				ExpectedResult: invertResult(valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD, invert),
+			}, {
+				Description: "Upper end of mask length -- different prefix",
+				Input: &valpb.TestRoute{
+					ReachPrefix: "10.34.254.0/23",
 				},
 				ExpectedResult: invertResult(valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD, invert),
 			}, {
@@ -151,6 +166,30 @@ func TestPrefixSet(t *testing.T) {
 					ReachPrefix: "10.34.0.0/24",
 				},
 				ExpectedResult: invertResult(valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT, invert),
+			}, {
+				Description: "eq-prefix-lowest",
+				Input: &valpb.TestRoute{
+					ReachPrefix: "10.0.6.0/28",
+				},
+				ExpectedResult: invertResult(valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD, invert),
+			}, {
+				Description: "eq-prefix-middle",
+				Input: &valpb.TestRoute{
+					ReachPrefix: "10.0.6.192/28", // 192 = 0xc0
+				},
+				ExpectedResult: invertResult(valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD, invert),
+			}, {
+				Description: "eq-prefix-no-match",
+				Input: &valpb.TestRoute{
+					ReachPrefix: "10.0.7.192/28", // 192 = 0xc0
+				},
+				ExpectedResult: invertResult(valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT, invert),
+			}, {
+				Description: "eq-prefix-highest",
+				Input: &valpb.TestRoute{
+					ReachPrefix: "10.0.6.240/28", // 240 = 0xf0
+				},
+				ExpectedResult: invertResult(valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD, invert),
 			}},
 		}
 		return spec
