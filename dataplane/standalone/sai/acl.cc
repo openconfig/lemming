@@ -362,6 +362,94 @@ lemming::dataplane::sai::CreateAclEntryRequest convert_create_acl_entry(
       case SAI_ACL_ENTRY_ATTR_ADMIN_STATE:
         msg.set_admin_state(attr_list[i].value.booldata);
         break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_SRC_IP:
+        *msg.mutable_field_src_ip() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.ip4,
+            attr_list[i].value.aclfield.mask.ip4);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_DST_IP:
+        *msg.mutable_field_dst_ip() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.ip4,
+            attr_list[i].value.aclfield.mask.ip4);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_INNER_SRC_IP:
+        *msg.mutable_field_inner_src_ip() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.ip4,
+            attr_list[i].value.aclfield.mask.ip4);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_INNER_DST_IP:
+        *msg.mutable_field_inner_dst_ip() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.ip4,
+            attr_list[i].value.aclfield.mask.ip4);
+        break;
+      case SAI_ACL_ENTRY_ATTR_ACTION_REDIRECT:
+        *msg.mutable_action_redirect() = convert_from_acl_action_data(
+            attr_list[i].value.aclaction,
+            attr_list[i].value.aclaction.parameter.oid);
+        break;
+      case SAI_ACL_ENTRY_ATTR_ACTION_COUNTER:
+        *msg.mutable_action_counter() = convert_from_acl_action_data(
+            attr_list[i].value.aclaction,
+            attr_list[i].value.aclaction.parameter.oid);
+        break;
+      case SAI_ACL_ENTRY_ATTR_ACTION_SET_POLICER:
+        *msg.mutable_action_set_policer() = convert_from_acl_action_data(
+            attr_list[i].value.aclaction,
+            attr_list[i].value.aclaction.parameter.oid);
+        break;
+      case SAI_ACL_ENTRY_ATTR_ACTION_INGRESS_SAMPLEPACKET_ENABLE:
+        *msg.mutable_action_ingress_samplepacket_enable() =
+            convert_from_acl_action_data(
+                attr_list[i].value.aclaction,
+                attr_list[i].value.aclaction.parameter.oid);
+        break;
+      case SAI_ACL_ENTRY_ATTR_ACTION_EGRESS_SAMPLEPACKET_ENABLE:
+        *msg.mutable_action_egress_samplepacket_enable() =
+            convert_from_acl_action_data(
+                attr_list[i].value.aclaction,
+                attr_list[i].value.aclaction.parameter.oid);
+        break;
+      case SAI_ACL_ENTRY_ATTR_ACTION_SET_USER_TRAP_ID:
+        *msg.mutable_action_set_user_trap_id() = convert_from_acl_action_data(
+            attr_list[i].value.aclaction,
+            attr_list[i].value.aclaction.parameter.oid);
+        break;
+      case SAI_ACL_ENTRY_ATTR_ACTION_DTEL_INT_SESSION:
+        *msg.mutable_action_dtel_int_session() = convert_from_acl_action_data(
+            attr_list[i].value.aclaction,
+            attr_list[i].value.aclaction.parameter.oid);
+        break;
+      case SAI_ACL_ENTRY_ATTR_ACTION_TAM_INT_OBJECT:
+        *msg.mutable_action_tam_int_object() = convert_from_acl_action_data(
+            attr_list[i].value.aclaction,
+            attr_list[i].value.aclaction.parameter.oid);
+        break;
+      case SAI_ACL_ENTRY_ATTR_ACTION_SET_ISOLATION_GROUP:
+        *msg.mutable_action_set_isolation_group() =
+            convert_from_acl_action_data(
+                attr_list[i].value.aclaction,
+                attr_list[i].value.aclaction.parameter.oid);
+        break;
+      case SAI_ACL_ENTRY_ATTR_ACTION_MACSEC_FLOW:
+        *msg.mutable_action_macsec_flow() = convert_from_acl_action_data(
+            attr_list[i].value.aclaction,
+            attr_list[i].value.aclaction.parameter.oid);
+        break;
+      case SAI_ACL_ENTRY_ATTR_ACTION_SET_LAG_HASH_ID:
+        *msg.mutable_action_set_lag_hash_id() = convert_from_acl_action_data(
+            attr_list[i].value.aclaction,
+            attr_list[i].value.aclaction.parameter.oid);
+        break;
+      case SAI_ACL_ENTRY_ATTR_ACTION_SET_ECMP_HASH_ID:
+        *msg.mutable_action_set_ecmp_hash_id() = convert_from_acl_action_data(
+            attr_list[i].value.aclaction,
+            attr_list[i].value.aclaction.parameter.oid);
+        break;
+      case SAI_ACL_ENTRY_ATTR_ACTION_SET_VRF:
+        *msg.mutable_action_set_vrf() = convert_from_acl_action_data(
+            attr_list[i].value.aclaction,
+            attr_list[i].value.aclaction.parameter.oid);
+        break;
     }
   }
   return msg;
@@ -876,6 +964,80 @@ sai_status_t l_set_acl_entry_attribute(sai_object_id_t acl_entry_id,
       break;
     case SAI_ACL_ENTRY_ATTR_ADMIN_STATE:
       req.set_admin_state(attr->value.booldata);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_SRC_IP:
+      *req.mutable_field_src_ip() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.ip4,
+          attr->value.aclfield.mask.ip4);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_DST_IP:
+      *req.mutable_field_dst_ip() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.ip4,
+          attr->value.aclfield.mask.ip4);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_INNER_SRC_IP:
+      *req.mutable_field_inner_src_ip() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.ip4,
+          attr->value.aclfield.mask.ip4);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_INNER_DST_IP:
+      *req.mutable_field_inner_dst_ip() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.ip4,
+          attr->value.aclfield.mask.ip4);
+      break;
+    case SAI_ACL_ENTRY_ATTR_ACTION_REDIRECT:
+      *req.mutable_action_redirect() = convert_from_acl_action_data(
+          attr->value.aclaction, attr->value.aclaction.parameter.oid);
+      break;
+    case SAI_ACL_ENTRY_ATTR_ACTION_COUNTER:
+      *req.mutable_action_counter() = convert_from_acl_action_data(
+          attr->value.aclaction, attr->value.aclaction.parameter.oid);
+      break;
+    case SAI_ACL_ENTRY_ATTR_ACTION_SET_POLICER:
+      *req.mutable_action_set_policer() = convert_from_acl_action_data(
+          attr->value.aclaction, attr->value.aclaction.parameter.oid);
+      break;
+    case SAI_ACL_ENTRY_ATTR_ACTION_INGRESS_SAMPLEPACKET_ENABLE:
+      *req.mutable_action_ingress_samplepacket_enable() =
+          convert_from_acl_action_data(attr->value.aclaction,
+                                       attr->value.aclaction.parameter.oid);
+      break;
+    case SAI_ACL_ENTRY_ATTR_ACTION_EGRESS_SAMPLEPACKET_ENABLE:
+      *req.mutable_action_egress_samplepacket_enable() =
+          convert_from_acl_action_data(attr->value.aclaction,
+                                       attr->value.aclaction.parameter.oid);
+      break;
+    case SAI_ACL_ENTRY_ATTR_ACTION_SET_USER_TRAP_ID:
+      *req.mutable_action_set_user_trap_id() = convert_from_acl_action_data(
+          attr->value.aclaction, attr->value.aclaction.parameter.oid);
+      break;
+    case SAI_ACL_ENTRY_ATTR_ACTION_DTEL_INT_SESSION:
+      *req.mutable_action_dtel_int_session() = convert_from_acl_action_data(
+          attr->value.aclaction, attr->value.aclaction.parameter.oid);
+      break;
+    case SAI_ACL_ENTRY_ATTR_ACTION_TAM_INT_OBJECT:
+      *req.mutable_action_tam_int_object() = convert_from_acl_action_data(
+          attr->value.aclaction, attr->value.aclaction.parameter.oid);
+      break;
+    case SAI_ACL_ENTRY_ATTR_ACTION_SET_ISOLATION_GROUP:
+      *req.mutable_action_set_isolation_group() = convert_from_acl_action_data(
+          attr->value.aclaction, attr->value.aclaction.parameter.oid);
+      break;
+    case SAI_ACL_ENTRY_ATTR_ACTION_MACSEC_FLOW:
+      *req.mutable_action_macsec_flow() = convert_from_acl_action_data(
+          attr->value.aclaction, attr->value.aclaction.parameter.oid);
+      break;
+    case SAI_ACL_ENTRY_ATTR_ACTION_SET_LAG_HASH_ID:
+      *req.mutable_action_set_lag_hash_id() = convert_from_acl_action_data(
+          attr->value.aclaction, attr->value.aclaction.parameter.oid);
+      break;
+    case SAI_ACL_ENTRY_ATTR_ACTION_SET_ECMP_HASH_ID:
+      *req.mutable_action_set_ecmp_hash_id() = convert_from_acl_action_data(
+          attr->value.aclaction, attr->value.aclaction.parameter.oid);
+      break;
+    case SAI_ACL_ENTRY_ATTR_ACTION_SET_VRF:
+      *req.mutable_action_set_vrf() = convert_from_acl_action_data(
+          attr->value.aclaction, attr->value.aclaction.parameter.oid);
       break;
   }
 

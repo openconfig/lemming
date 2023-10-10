@@ -131,3 +131,20 @@ void convert_to_acl_capability(
   }
   out.action_list.count = in.action_list().size();
 }
+
+lemming::dataplane::sai::AclActionData convert_from_acl_action_data(
+    const sai_acl_action_data_t& in, sai_object_id_t id) {
+  lemming::dataplane::sai::AclActionData out;
+  out.set_enable(in.enable);
+  out.set_oid(id);
+  return out;
+}
+
+lemming::dataplane::sai::AclFieldData convert_from_acl_field_data(
+    const sai_acl_field_data_t& in, sai_ip4_t data, sai_ip4_t mask) {
+  lemming::dataplane::sai::AclFieldData out;
+  out.set_enable(in.enable);
+  *out.mutable_data_ip() =
+      std::string(reinterpret_cast<const char*>(&data), sizeof(sai_ip4_t));
+  return out;
+}
