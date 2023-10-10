@@ -16,6 +16,7 @@ package saiserver
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log"
 	"net"
@@ -220,6 +221,14 @@ func (f *fakeSwitchDataplane) NotifySubscribe(_ *fwdpb.NotifySubscribeRequest, s
 		srv.Send(e)
 	}
 	return io.EOF
+}
+
+func (f *fakeSwitchDataplane) TableCreate(context.Context, *fwdpb.TableCreateRequest) (*fwdpb.TableCreateReply, error) {
+	return nil, fmt.Errorf("unimplemented")
+}
+
+func (f *fakeSwitchDataplane) TableEntryAdd(context.Context, *fwdpb.TableEntryAddRequest) (*fwdpb.TableEntryAddReply, error) {
+	return nil, fmt.Errorf("unimplemented")
 }
 
 func newTestServer(t testing.TB, newSrvFn func(mgr *attrmgr.AttrMgr, srv *grpc.Server)) (grpc.ClientConnInterface, *attrmgr.AttrMgr, func()) {

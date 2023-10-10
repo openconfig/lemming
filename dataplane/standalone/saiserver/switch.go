@@ -51,12 +51,14 @@ type saiSwitch struct {
 type switchDataplaneAPI interface {
 	portDataplaneAPI
 	routingDataplaneAPI
+	aclDataplaneAPI
 	NotifySubscribe(sub *fwdpb.NotifySubscribeRequest, srv fwdpb.Forwarding_NotifySubscribeServer) error
 }
 
 func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server) *saiSwitch {
 	sw := &saiSwitch{
 		dataplane:       engine,
+		acl:             newACL(mgr, engine, s),
 		port:            newPort(mgr, engine, s),
 		vlan:            newVlan(mgr, engine, s),
 		stp:             &stp{},
