@@ -101,15 +101,15 @@ func (a *acl) CreateAclTableGroup(ctx context.Context, req *saipb.CreateAclTable
 }
 
 // CreateAclTableGroupMember stores the acl table id to its corresponding lucius flow table and bank.
-func (a *acl) CreateAclTableGroupMember(ctx context.Context, req *saipb.CreateAclTableGroupMemberRequest) (*saipb.CreateAclTableGroupMemberResponse, error) {
-	groupId := req.GetAclTableGroupId()
-	tableId := req.GetAclTableId()
+func (a *acl) CreateAclTableGroupMember(_ context.Context, req *saipb.CreateAclTableGroupMemberRequest) (*saipb.CreateAclTableGroupMemberResponse, error) {
+	groupID := req.GetAclTableGroupId()
+	tableID := req.GetAclTableId()
 	memberID := a.mgr.NextID()
 
-	bank := a.groupNextFreeBank[groupId]
-	a.groupNextFreeBank[groupId] = bank + 1
-	a.tableToBank[tableId] = groupBank{
-		groupID:  fmt.Sprint(groupId),
+	bank := a.groupNextFreeBank[groupID]
+	a.groupNextFreeBank[groupID] = bank + 1
+	a.tableToBank[tableID] = groupBank{
+		groupID:  fmt.Sprint(groupID),
 		bank:     bank,
 		memberID: memberID,
 	}
@@ -119,13 +119,13 @@ func (a *acl) CreateAclTableGroupMember(ctx context.Context, req *saipb.CreateAc
 
 // CreateAclTable is noop as the table is already created in the group.
 // TODO: Do we need to support tables that aren't in groups.
-func (a *acl) CreateAclTable(ctx context.Context, req *saipb.CreateAclTableRequest) (*saipb.CreateAclTableResponse, error) {
+func (a *acl) CreateAclTable(_ context.Context, req *saipb.CreateAclTableRequest) (*saipb.CreateAclTableResponse, error) {
 	id := a.mgr.NextID()
 	return &saipb.CreateAclTableResponse{Oid: id}, nil
 }
 
 // CreateAclEntry adds an entry in the a bank.
-func (a *acl) CreateAclEntry(ctx context.Context, req *saipb.CreateAclEntryRequest) (*saipb.CreateAclEntryResponse, error) {
+func (a *acl) CreateAclEntry(_ context.Context, req *saipb.CreateAclEntryRequest) (*saipb.CreateAclEntryResponse, error) {
 	id := a.mgr.NextID()
 	gb, ok := a.tableToBank[req.GetTableId()]
 	if !ok {
