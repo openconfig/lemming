@@ -32,6 +32,7 @@ import (
 type saiSwitch struct {
 	saipb.UnimplementedSwitchServer
 	dataplane       switchDataplaneAPI
+	acl             *acl
 	port            *port
 	vlan            *vlan
 	stp             *stp
