@@ -150,7 +150,7 @@ func createCCData(meta *saiast.FuncMetadata, apiName string, sai *saiast.SAIAPI,
 		convertFn.ReturnType = opFn.ReqType
 		for _, attr := range info.Attrs[meta.TypeName].CreateFields {
 			name := sanitizeProtoName(attr.MemberName)
-			smt, err := protoFieldSetter(attr.SaiType, name, "attr_list[i].value", info)
+			smt, err := protoFieldSetter(attr.SaiType, convertFn.AttrSwitch.ProtoVar, name, "attr_list[i].value", info)
 			if err != nil {
 				fmt.Println("skipping due to error: ", err)
 				continue
@@ -194,7 +194,7 @@ func createCCData(meta *saiast.FuncMetadata, apiName string, sai *saiast.SAIAPI,
 		}
 		for _, attr := range info.Attrs[meta.TypeName].SetFields {
 			name := sanitizeProtoName(attr.MemberName)
-			smt, err := protoFieldSetter(attr.SaiType, name, "attr->value", info)
+			smt, err := protoFieldSetter(attr.SaiType, opFn.AttrSwitch.ProtoVar, name, "attr->value", info)
 			if err != nil {
 				fmt.Println("skipping due to error: ", err)
 				continue
@@ -207,7 +207,7 @@ func createCCData(meta *saiast.FuncMetadata, apiName string, sai *saiast.SAIAPI,
 		opFn.ConvertFunc = strcase.SnakeCase("convert_create " + meta.TypeName)
 		for _, attr := range info.Attrs[meta.TypeName].CreateFields {
 			name := sanitizeProtoName(attr.MemberName)
-			smt, err := protoFieldSetter(attr.SaiType, name, "attr_list[i].value", info)
+			smt, err := protoFieldSetter(attr.SaiType, "", name, "attr_list[i].value", info)
 			if err != nil {
 				fmt.Println("skipping due to error: ", err)
 				continue
@@ -236,6 +236,7 @@ const (
 	variableSizedArray
 	convertFunc
 	callbackRPC
+	acl
 )
 
 type unionAccessor struct {
@@ -342,9 +343,17 @@ var typeToUnionAccessor = map[string]*unionAccessor{
 		convertFromFunc: "convert_from_acl_capability",
 		convertToFunc:   "convert_to_acl_capability",
 	},
+	"sai_acl_field_data_t sai_ip4_t": {
+		accessor: "ip4",
+		aType:    acl,
+	},
+	"sai_acl_action_data_t sai_object_id_t": {
+		accessor: "oid",
+		aType:    acl,
+	},
 }
 
-func protoFieldSetter(saiType, protoField, varName string, info *docparser.SAIInfo) (*AttrSwitchSmt, error) {
+func protoFieldSetter(saiType, protoVar, protoField, varName string, info *docparser.SAIInfo) (*AttrSwitchSmt, error) {
 	smt := &AttrSwitchSmt{
 		ProtoFunc: fmt.Sprintf("set_%s", protoField),
 	}
@@ -380,6 +389,16 @@ func protoFieldSetter(saiType, protoField, varName string, info *docparser.SAIIn
 		smt.ConvertFunc = ua.convertToFunc
 		fnType := strings.Split(saiType, " ")[1]
 		smt.Args = fmt.Sprintf("switch_, reinterpret_cast<%s>(%s.ptr)", fnType, varName)
+	case acl:
+		smt.Var = fmt.Sprintf("*%s.mutable_%s()", protoVar, protoField)
+		smt.ConvertFunc = "convert_from_acl_action_data"
+		access := "aclaction"
+		smt.Args = fmt.Sprintf("%s.%s, %s.%s.parameter.%s", varName, access, varName, access, ua.accessor)
+		if strings.Contains(saiType, "sai_acl_field_data_t") {
+			access = "aclfield"
+			smt.ConvertFunc = "convert_from_acl_field_data"
+			smt.Args = fmt.Sprintf("%s.%s, %s.%s.data.%s, %s.%s.mask.%s", varName, access, varName, access, ua.accessor, varName, access, ua.accessor)
+		}
 	default:
 		return nil, fmt.Errorf("unknown accessor type %q", ua.aType)
 	}

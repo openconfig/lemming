@@ -159,6 +159,12 @@ void convert_to_acl_capability(
     sai_acl_capability_t &out,
     const lemming::dataplane::sai::ACLCapability &in);
 
+lemming::dataplane::sai::AclActionData convert_from_acl_action_data(
+    const sai_acl_action_data_t &in, sai_object_id_t id);
+
+lemming::dataplane::sai::AclFieldData convert_from_acl_field_data(
+    const sai_acl_field_data_t &in, sai_ip4_t data, sai_ip4_t mask);
+
 // copy_list copies a scalar proto list to an attribute.
 // Note: It is expected that the attribute list contains preallocated memory.
 template <typename T, typename S>
