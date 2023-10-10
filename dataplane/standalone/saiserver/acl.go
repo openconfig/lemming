@@ -125,7 +125,7 @@ func (a *acl) CreateAclTable(_ context.Context, req *saipb.CreateAclTableRequest
 }
 
 // CreateAclEntry adds an entry in the a bank.
-func (a *acl) CreateAclEntry(_ context.Context, req *saipb.CreateAclEntryRequest) (*saipb.CreateAclEntryResponse, error) {
+func (a *acl) CreateAclEntry(ctx context.Context, req *saipb.CreateAclEntryRequest) (*saipb.CreateAclEntryResponse, error) {
 	id := a.mgr.NextID()
 	gb, ok := a.tableToBank[req.GetTableId()]
 	if !ok {
