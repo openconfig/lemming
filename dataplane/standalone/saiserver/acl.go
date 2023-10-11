@@ -17,6 +17,7 @@ package saiserver
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
 	"github.com/openconfig/lemming/dataplane/standalone/saiserver/attrmgr"
@@ -35,7 +36,8 @@ type aclDataplaneAPI interface {
 	TableEntryAdd(context.Context, *fwdpb.TableEntryAddRequest) (*fwdpb.TableEntryAddReply, error)
 }
 
-type groupBank struct {
+// tableLocation indentifies the location of an acl table by the group, bank, member id.
+type tableLocation struct {
 	groupID  string
 	bank     int
 	memberID uint64
@@ -45,8 +47,9 @@ type acl struct {
 	saipb.UnimplementedAclServer
 	mgr       *attrmgr.AttrMgr
 	dataplane aclDataplaneAPI
-	// tableToBank maps the acl table id to the lucius flow table and bank.
-	tableToBank map[uint64]groupBank
+	// tableToLocation maps the acl table id to the lucius flow table and bank.
+	tableToLocation     map[uint64]tableLocation
+	groupNextFreeBankMu sync.Mutex
 	// groupNextFreeBank contains the next free bank for a group.
 	groupNextFreeBank map[uint64]int
 }
@@ -106,9 +109,11 @@ func (a *acl) CreateAclTableGroupMember(_ context.Context, req *saipb.CreateAclT
 	tableID := req.GetAclTableId()
 	memberID := a.mgr.NextID()
 
+	a.groupNextFreeBankMu.Lock()
 	bank := a.groupNextFreeBank[groupID]
 	a.groupNextFreeBank[groupID] = bank + 1
-	a.tableToBank[tableID] = groupBank{
+	a.groupNextFreeBankMu.Unlock()
+	a.tableToLocation[tableID] = tableLocation{
 		groupID:  fmt.Sprint(groupID),
 		bank:     bank,
 		memberID: memberID,
@@ -127,7 +132,7 @@ func (a *acl) CreateAclTable(_ context.Context, req *saipb.CreateAclTableRequest
 // CreateAclEntry adds an entry in the a bank.
 func (a *acl) CreateAclEntry(ctx context.Context, req *saipb.CreateAclEntryRequest) (*saipb.CreateAclEntryResponse, error) {
 	id := a.mgr.NextID()
-	gb, ok := a.tableToBank[req.GetTableId()]
+	gb, ok := a.tableToLocation[req.GetTableId()]
 	if !ok {
 		return nil, status.Errorf(codes.FailedPrecondition, "table is not member of a group")
 	}
