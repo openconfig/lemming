@@ -189,7 +189,11 @@ func (t *Table) AddEntry(ed *fwdpb.EntryDesc, ad []*fwdpb.ActionDesc) error {
 	}
 	bankID := fl.Flow.GetBank()
 	if int(bankID) >= len(t.banks) {
-		return fmt.Errorf("flow: AddEntry failed, invalid bankID %v", bankID)
+		for i := len(t.banks) - 1; i < int(bankID); i++ {
+			t.banks = append(t.banks, &flowBank{
+				levels: make(map[uint32]*level),
+			})
+		}
 	}
 	bank := t.banks[bankID]
 	desc, err := NewDesc(t.ctx, fl.Flow.GetFields(), fl.Flow.GetQualifiers())
