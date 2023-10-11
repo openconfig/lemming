@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//nolint:revive // Acl is incorrect, but it comes from generated code.
 package saiserver
 
 import (
@@ -123,8 +124,7 @@ func (a *acl) CreateAclTableGroupMember(_ context.Context, req *saipb.CreateAclT
 }
 
 // CreateAclTable is noop as the table is already created in the group.
-// TODO: Do we need to support tables that aren't in groups.
-func (a *acl) CreateAclTable(_ context.Context, req *saipb.CreateAclTableRequest) (*saipb.CreateAclTableResponse, error) {
+func (a *acl) CreateAclTable(context.Context, *saipb.CreateAclTableRequest) (*saipb.CreateAclTableResponse, error) {
 	id := a.mgr.NextID()
 	return &saipb.CreateAclTableResponse{Oid: id}, nil
 }
