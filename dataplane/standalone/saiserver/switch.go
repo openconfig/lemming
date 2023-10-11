@@ -220,6 +220,16 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 	}, nil
 }
 
+func (sw *saiSwitch) SetSwitchAttribute(ctx context.Context, req *saipb.SetSwitchAttributeRequest) (*saipb.SetSwitchAttributeResponse, error) {
+	switch {
+	case req.PreIngressAcl != nil:
+
+	case req.IngressAcl != nil:
+	case req.EgressAcl != nil:
+	}
+	return &saipb.SetSwitchAttributeResponse{}, nil
+}
+
 type fwdNotifServer struct {
 	fwdpb.Forwarding_NotifySubscribeServer
 	ch chan *fwdpb.EventDesc
