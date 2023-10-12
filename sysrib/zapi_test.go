@@ -31,6 +31,7 @@ package sysrib
 import (
 	"context"
 	"net"
+	"sync"
 	"syscall"
 	"testing"
 	"time"
@@ -171,6 +172,35 @@ func testRouteAdd(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TODO(wenbli): Remove
+type FakeDataplane struct {
+	mu             sync.Mutex
+	incomingRoutes []*ResolvedRoute
+}
+
+func (dp *FakeDataplane) ProgramRoute(r *ResolvedRoute) error {
+	dp.mu.Lock()
+	defer dp.mu.Unlock()
+	dp.incomingRoutes = append(dp.incomingRoutes, r)
+	return nil
+}
+
+func (dp *FakeDataplane) GetRoutes() []*ResolvedRoute {
+	dp.mu.Lock()
+	defer dp.mu.Unlock()
+	return dp.incomingRoutes
+}
+
+func (dp *FakeDataplane) ClearQueue() {
+	dp.mu.Lock()
+	defer dp.mu.Unlock()
+	dp.incomingRoutes = []*ResolvedRoute{}
+}
+
+func NewFakeDataplane() *FakeDataplane {
+	return &FakeDataplane{}
 }
 
 // testRouteRedistribution tests that a route redistribution is sent by the

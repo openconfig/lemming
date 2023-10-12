@@ -109,17 +109,13 @@ type dataplaneAPI interface {
 	ProgramRoute(*ResolvedRoute) error
 }
 
-// Dataplane is a wrapper around dpb.HALClient to enable testing before
-// resolved route translation.
-//
-// TODO(wenbli): This is a temporary workaround due to the instability of the
-// API. Once the dataplane API is stable, then we'll want to test at the API
-// layer instead.
+// Dataplane represents the dataplane API accessible to sysrib for programming
+// routes.
 type Dataplane struct {
 	Client *ygnmi.Client
 }
 
-// programRoute programs the route in the dataplane, returning an error on failure.
+// ProgramRoute programs the route in the dataplane, returning an error on failure.
 func (d *Dataplane) ProgramRoute(r *ResolvedRoute) error {
 	log.V(1).Infof("sysrib: programming resolved route: %+v", r)
 	rr, err := resolvedRouteToRouteRequest(r)
@@ -515,14 +511,17 @@ func resolvedRouteToRouteRequest(r *ResolvedRoute) (*dpb.Route, error) {
 				return nil, fmt.Errorf("error retrieving GUE actions: %v", err)
 			}
 		}
-		nexthops = append(nexthops, &dpb.NextHop{
+		dnh := &dpb.NextHop{
 			Dev: &dpb.NextHop_Port{
 				Port: nh.Port.Name,
 			},
-			Ip:                 &dpb.NextHop_IpStr{IpStr: nh.Address},
 			Weight:             nh.Weight,
 			PreTransmitActions: actions,
-		})
+		}
+		if nh.Address != "" {
+			dnh.Ip = &dpb.NextHop_IpStr{IpStr: nh.Address}
+		}
+		nexthops = append(nexthops, dnh)
 	}
 
 	return &dpb.Route{
