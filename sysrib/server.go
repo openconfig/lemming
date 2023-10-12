@@ -109,7 +109,7 @@ type dataplaneAPI interface {
 	ProgramRoute(*ResolvedRoute) error
 }
 
-// dataplane represents the dataplane API accessible to sysrib for programming
+// dplane represents the dataplane API accessible to sysrib for programming
 // routes.
 type dplane struct {
 	Client *ygnmi.Client
