@@ -257,7 +257,6 @@ func (s *Server) monitorConnectedIntfs(yclient *ygnmi.Client) error {
 		},
 	)
 
-	// TODO(wenbli): Ideally, this is implemented by watching more fine-grained paths.
 	// TODO(wenbli): Support interface removal.
 	go func() {
 		if _, err := interfaceWatcher.Await(); err != nil {
@@ -701,7 +700,7 @@ func (s *Server) SetRoute(_ context.Context, req *sysribpb.SetRouteRequest) (*sy
 
 // setRoute adds/deletes a route from the RIB manager.
 func (s *Server) setRoute(niName string, route *Route) error {
-	if _, err := s.rib.AddRoute(niName, route); err != nil {
+	if err := s.rib.AddRoute(niName, route); err != nil {
 		return fmt.Errorf("error while adding route to sysrib: %v", err)
 	}
 
@@ -714,7 +713,7 @@ func (s *Server) setRoute(niName string, route *Route) error {
 // addInterfacePrefix adds a prefix to the sysrib as a connected route.
 func (s *Server) addInterfacePrefix(name string, ifindex int32, prefix string, niName string) error {
 	log.V(1).Infof("Adding interface prefix: intf %s, idx %d, prefix %s, ni %s", name, ifindex, prefix, niName)
-	connectedRoute := &Route{
+	return s.setRoute(niName, &Route{
 		Prefix: prefix,
 		Connected: &Interface{
 			Name:  name,
@@ -724,12 +723,7 @@ func (s *Server) addInterfacePrefix(name string, ifindex int32, prefix string, n
 			// Connected routes have admin-distance of 0.
 			AdminDistance: 0,
 		},
-	}
-
-	if _, err := s.rib.AddRoute(niName, connectedRoute); err != nil {
-		return fmt.Errorf("failed to add route to Sysrib: %v", err)
-	}
-	return s.ResolveAndProgramDiff()
+	})
 }
 
 // setInterface responds to INTERFACE_UP/INTERFACE_DOWN messages from the dataplane.

@@ -564,7 +564,7 @@ func TestServer(t *testing.T) {
 				}},
 			},
 		}, {
-			Desc: "same route that resolves over up interface with higher admin distance",
+			Desc: "ECMP route that resolves over up interface with higher admin distance",
 			RouteReq: &pb.SetRouteRequest{
 				AdminDistance: 20,
 				Metric:        10,
@@ -576,19 +576,7 @@ func TestServer(t *testing.T) {
 				Nexthops: []*pb.Nexthop{{
 					Type:    pb.Nexthop_TYPE_IPV4,
 					Address: "192.168.2.42",
-				}},
-			},
-		}, {
-			Desc: "ECMP",
-			RouteReq: &pb.SetRouteRequest{
-				AdminDistance: 20,
-				Metric:        10,
-				Prefix: &pb.Prefix{
-					Family:     pb.Prefix_FAMILY_IPV4,
-					Address:    "10.0.0.0",
-					MaskLength: 8,
-				},
-				Nexthops: []*pb.Nexthop{{
+				}, {
 					Type:    pb.Nexthop_TYPE_IPV4,
 					Address: "192.168.3.42",
 				}},

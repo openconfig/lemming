@@ -616,7 +616,7 @@ func TestEgressInterface(t *testing.T) {
 			}
 			for ni, routes := range tt.inAddRoutes {
 				for _, rt := range routes {
-					if _, err := r.AddRoute(ni, rt); err != nil {
+					if err := r.AddRoute(ni, rt); err != nil {
 						t.Fatalf("cannot add route %s to NI %s, err: %v", rt.Prefix, ni, err)
 					}
 				}
@@ -642,184 +642,453 @@ func baseCfg() *oc.Root {
 	return d
 }
 
-// TODO(wenbli): test that a new route with the same prefix and route
-// preference overwrites the existing route or errors out (depending on which
-// behaviour we want).
-func TestAddRoute(t *testing.T) {
-	tests := []struct {
-		desc              string
-		inCfg             *oc.Root
-		inNetworkInstance string
-		inRoute           *Route
-		wantErr           bool
+func TestAddAndDeleteRouteSequences(t *testing.T) {
+	tests := [][]struct {
+		desc         string
+		inRoute      *Route
+		inDelete     bool
+		wantDeletedN int
+		wantV4Routes []*Route
+		wantV6Routes []*Route
 	}{{
-		desc:              "v4 connected route, default NI",
-		inCfg:             baseCfg(),
-		inNetworkInstance: fakedevice.DefaultNetworkInstance,
-		inRoute: &Route{
-			Prefix: "8.8.8.8/32",
-			Connected: &Interface{
-				Name:         "eth0",
-				Subinterface: 0,
+		{
+			desc: "v4",
+			inRoute: &Route{
+				Prefix: "8.8.8.8/32",
+				Connected: &Interface{
+					Name:         "eth0",
+					Subinterface: 0,
+				},
 			},
-		},
-	}, {
-		desc:              "v4 next-hop route, default NI",
-		inCfg:             baseCfg(),
-		inNetworkInstance: fakedevice.DefaultNetworkInstance,
-		inRoute: &Route{
-			Prefix: "2.0.0.0/8",
-			NextHops: []*afthelper.NextHopSummary{{
-				Weight:          32,
-				Address:         "1.1.1.1",
-				NetworkInstance: fakedevice.DefaultNetworkInstance,
-			}, {
-				Weight:          32,
-				Address:         "3.3.3.3",
-				NetworkInstance: fakedevice.DefaultNetworkInstance,
+			wantV4Routes: []*Route{{
+				Prefix: "8.8.8.8/32",
+				Connected: &Interface{
+					Name:         "eth0",
+					Subinterface: 0,
+				},
 			}},
-		},
-	}, {
-		desc:              "v6 connected route, default NI",
-		inCfg:             baseCfg(),
-		inNetworkInstance: fakedevice.DefaultNetworkInstance,
-		inRoute: &Route{
-			Prefix: "2001::ab:cd:ef/42",
-			Connected: &Interface{
-				Name:         "eth0",
-				Subinterface: 0,
+		}, {
+			desc: "v4-idempotent",
+			inRoute: &Route{
+				Prefix: "8.8.8.8/32",
+				Connected: &Interface{
+					Name:         "eth0",
+					Subinterface: 0,
+				},
 			},
+			wantV4Routes: []*Route{{
+				Prefix: "8.8.8.8/32",
+				Connected: &Interface{
+					Name:         "eth0",
+					Subinterface: 0,
+				},
+			}},
+		}, {
+			desc: "v4-delete",
+			inRoute: &Route{
+				Prefix: "8.8.8.8/32",
+				Connected: &Interface{
+					Name:         "eth0",
+					Subinterface: 0,
+				},
+			},
+			inDelete:     true,
+			wantDeletedN: 1,
+		}, {
+			desc: "v4-delete-idempotent",
+			inRoute: &Route{
+				Prefix: "8.8.8.8/32",
+				Connected: &Interface{
+					Name:         "eth0",
+					Subinterface: 0,
+				},
+			},
+			inDelete:     true,
+			wantDeletedN: 0,
 		},
 	}, {
-		desc:              "v4 next-hop route, default NI",
-		inCfg:             baseCfg(),
-		inNetworkInstance: fakedevice.DefaultNetworkInstance,
-		inRoute: &Route{
-			Prefix: "2.0.0.0/8",
-			NextHops: []*afthelper.NextHopSummary{{
-				Weight:          32,
-				Address:         "1.1.1.1",
-				NetworkInstance: fakedevice.DefaultNetworkInstance,
+		{
+			desc: "v4-noncanonical",
+			inRoute: &Route{
+				Prefix: "8.8.8.8/24",
+				Connected: &Interface{
+					Name:         "eth0",
+					Subinterface: 0,
+				},
+			},
+			wantV4Routes: []*Route{{
+				Prefix: "8.8.8.8/24",
+				Connected: &Interface{
+					Name:         "eth0",
+					Subinterface: 0,
+				},
+			}},
+		}, {
+			desc: "v4-non-canonical-delete",
+			inRoute: &Route{
+				Prefix: "8.8.8.8/24",
+				Connected: &Interface{
+					Name:         "eth0",
+					Subinterface: 0,
+				},
+			},
+			inDelete:     true,
+			wantDeletedN: 1,
+		},
+	}, {
+		{
+			desc: "v4-noncanonical-2",
+			inRoute: &Route{
+				Prefix: "8.8.8.8/24",
+				Connected: &Interface{
+					Name:         "eth0",
+					Subinterface: 0,
+				},
+			},
+			wantV4Routes: []*Route{{
+				Prefix: "8.8.8.8/24",
+				Connected: &Interface{
+					Name:         "eth0",
+					Subinterface: 0,
+				},
+			}},
+		}, {
+			desc: "v4-non-canonical-2-delete-canonical",
+			inRoute: &Route{
+				Prefix: "8.8.8.0/24",
+				Connected: &Interface{
+					Name:         "eth0",
+					Subinterface: 0,
+				},
+			},
+			inDelete:     true,
+			wantDeletedN: 1,
+		},
+	}, {
+		{
+			desc: "v4-metric-test",
+			inRoute: &Route{
+				Prefix: "8.8.8.8/24",
+				Connected: &Interface{
+					Name:         "eth0",
+					Subinterface: 0,
+				},
+				RoutePref: RoutePreference{
+					AdminDistance: 0,
+					Metric:        0,
+				},
+			},
+			wantV4Routes: []*Route{{
+				Prefix: "8.8.8.8/24",
+				Connected: &Interface{
+					Name:         "eth0",
+					Subinterface: 0,
+				},
+				RoutePref: RoutePreference{
+					AdminDistance: 0,
+					Metric:        0,
+				},
+			}},
+		}, {
+			desc: "v4-metric-test-add-diff-metric",
+			inRoute: &Route{
+				Prefix: "8.8.8.8/24",
+				Connected: &Interface{
+					Name:         "eth0",
+					Subinterface: 0,
+				},
+				RoutePref: RoutePreference{
+					AdminDistance: 0,
+					Metric:        100,
+				},
+			},
+			wantV4Routes: []*Route{{
+				Prefix: "8.8.8.8/24",
+				Connected: &Interface{
+					Name:         "eth0",
+					Subinterface: 0,
+				},
+				RoutePref: RoutePreference{
+					AdminDistance: 0,
+					Metric:        100,
+				},
+			}},
+		}, {
+			desc: "v4-metric-test-delete-same-metric",
+			inRoute: &Route{
+				Prefix: "8.8.8.8/24",
+				Connected: &Interface{
+					Name:         "eth0",
+					Subinterface: 0,
+				},
+				RoutePref: RoutePreference{
+					AdminDistance: 0,
+					Metric:        0,
+				},
+			},
+			inDelete:     true,
+			wantDeletedN: 1,
+		},
+	}, {
+		{
+			desc: "add-v4-admin-test",
+			inRoute: &Route{
+				Prefix: "8.8.8.8/24",
+				Connected: &Interface{
+					Name:         "eth0",
+					Subinterface: 0,
+				},
+				RoutePref: RoutePreference{
+					AdminDistance: 0,
+					Metric:        0,
+				},
+			},
+			wantV4Routes: []*Route{{
+				Prefix: "8.8.8.8/24",
+				Connected: &Interface{
+					Name:         "eth0",
+					Subinterface: 0,
+				},
+				RoutePref: RoutePreference{
+					AdminDistance: 0,
+					Metric:        0,
+				},
+			}},
+		}, {
+			desc: "add-v4-diff-admin",
+			inRoute: &Route{
+				Prefix: "8.8.8.8/24",
+				Connected: &Interface{
+					Name:         "eth0",
+					Subinterface: 0,
+				},
+				RoutePref: RoutePreference{
+					AdminDistance: 100,
+					Metric:        0,
+				},
+			},
+			wantV4Routes: []*Route{{
+				Prefix: "8.8.8.8/24",
+				Connected: &Interface{
+					Name:         "eth0",
+					Subinterface: 0,
+				},
+				RoutePref: RoutePreference{
+					AdminDistance: 0,
+					Metric:        0,
+				},
 			}, {
-				Weight:          32,
-				Address:         "3.3.3.3",
-				NetworkInstance: fakedevice.DefaultNetworkInstance,
+				Prefix: "8.8.8.8/24",
+				Connected: &Interface{
+					Name:         "eth0",
+					Subinterface: 0,
+				},
+				RoutePref: RoutePreference{
+					AdminDistance: 100,
+					Metric:        0,
+				},
+			}},
+		}, {
+			desc: "v4-delete-admin",
+			inRoute: &Route{
+				Prefix: "8.8.8.8/24",
+				Connected: &Interface{
+					Name:         "eth0",
+					Subinterface: 0,
+				},
+				RoutePref: RoutePreference{
+					AdminDistance: 0,
+					Metric:        0,
+				},
+			},
+			inDelete: true,
+			wantV4Routes: []*Route{{
+				Prefix: "8.8.8.8/24",
+				Connected: &Interface{
+					Name:         "eth0",
+					Subinterface: 0,
+				},
+				RoutePref: RoutePreference{
+					AdminDistance: 100,
+					Metric:        0,
+				},
+			}},
+			wantDeletedN: 1,
+		}, {
+			desc: "v4-delete-admin-again",
+			inRoute: &Route{
+				Prefix: "8.8.8.8/24",
+				Connected: &Interface{
+					Name:         "eth0",
+					Subinterface: 0,
+				},
+				RoutePref: RoutePreference{
+					AdminDistance: 0,
+					Metric:        0,
+				},
+			},
+			inDelete: true,
+			wantV4Routes: []*Route{{
+				Prefix: "8.8.8.8/24",
+				Connected: &Interface{
+					Name:         "eth0",
+					Subinterface: 0,
+				},
+				RoutePref: RoutePreference{
+					AdminDistance: 100,
+					Metric:        0,
+				},
+			}},
+			wantDeletedN: 0,
+		}, {
+			desc: "v4-delete-diff-admin",
+			inRoute: &Route{
+				Prefix: "8.8.8.8/24",
+				Connected: &Interface{
+					Name:         "eth0",
+					Subinterface: 0,
+				},
+				RoutePref: RoutePreference{
+					AdminDistance: 100,
+					Metric:        0,
+				},
+			},
+			inDelete:     true,
+			wantDeletedN: 1,
+		},
+	}, {
+		{
+			desc: "v6",
+			inRoute: &Route{
+				Prefix: "2001::ab:cd:ef/42",
+				Connected: &Interface{
+					Name:         "eth0",
+					Subinterface: 0,
+				},
+			},
+			wantV6Routes: []*Route{{
+				Prefix: "2001::ab:cd:ef/42",
+				Connected: &Interface{
+					Name:         "eth0",
+					Subinterface: 0,
+				},
+			}},
+		}, {
+			desc: "v6-2",
+			inRoute: &Route{
+				Prefix: "2023::ab:cd:ef/42",
+				Connected: &Interface{
+					Name:         "eth0",
+					Subinterface: 0,
+				},
+			},
+			wantV6Routes: []*Route{{
+				Prefix: "2001::ab:cd:ef/42",
+				Connected: &Interface{
+					Name:         "eth0",
+					Subinterface: 0,
+				},
+			}, {
+				Prefix: "2023::ab:cd:ef/42",
+				Connected: &Interface{
+					Name:         "eth0",
+					Subinterface: 0,
+				},
 			}},
 		},
 	}, {
-		desc:              "v6 next-hop route, default NI",
-		inCfg:             baseCfg(),
-		inNetworkInstance: fakedevice.DefaultNetworkInstance,
-		inRoute: &Route{
-			Prefix: "2023::ab:cd:ef/42",
-			NextHops: []*afthelper.NextHopSummary{{
-				Weight:          32,
-				Address:         "2222::ab:cd:ef/42",
-				NetworkInstance: fakedevice.DefaultNetworkInstance,
-			}, {
-				Weight:          32,
-				Address:         "2223::ab:cd:ef/42",
-				NetworkInstance: fakedevice.DefaultNetworkInstance,
+		{
+			desc: "v6-noncanonical",
+			inRoute: &Route{
+				Prefix: "2001::ab:cd:ef/42",
+				Connected: &Interface{
+					Name:         "eth0",
+					Subinterface: 0,
+				},
+			},
+			wantV6Routes: []*Route{{
+				Prefix: "2001::ab:cd:ef/42",
+				Connected: &Interface{
+					Name:         "eth0",
+					Subinterface: 0,
+				},
 			}},
+		}, {
+			desc: "v6-non-canonical-delete",
+			inRoute: &Route{
+				Prefix: "2001::ab:0/42",
+				Connected: &Interface{
+					Name:         "eth0",
+					Subinterface: 0,
+				},
+			},
+			inDelete:     true,
+			wantDeletedN: 1,
+		}, {
+			desc: "v6-non-canonical-delete-idempotent",
+			inRoute: &Route{
+				Prefix: "2001::ab:cd:ef/42",
+				Connected: &Interface{
+					Name:         "eth0",
+					Subinterface: 0,
+				},
+			},
+			inDelete:     true,
+			wantDeletedN: 0,
 		},
 	}}
 
-	for _, tt := range tests {
-		t.Run(tt.desc, func(t *testing.T) {
-			s, err := NewSysRIB(tt.inCfg)
-			if err != nil {
-				t.Fatalf("cannot create new system RIB, got err: %v", err)
-			}
+	for _, ttt := range tests {
+		s, err := NewSysRIB(baseCfg())
+		if err != nil {
+			t.Fatalf("cannot create new system RIB, got err: %v", err)
+		}
+		for _, tt := range ttt {
+			t.Run(tt.desc, func(t *testing.T) {
+				if tt.inDelete {
+					// Delete first route
+					if deletedN, err := s.DeleteRoute(fakedevice.DefaultNetworkInstance, tt.inRoute); err != nil {
+						t.Error(err)
+					} else if deletedN != tt.wantDeletedN {
+						t.Errorf("got deletedN %v, want deletedN %v", deletedN, tt.wantDeletedN)
+					}
+				} else {
+					// Add a new route
+					if err := s.AddRoute(fakedevice.DefaultNetworkInstance, tt.inRoute); err != nil {
+						t.Error(err)
+					}
+				}
 
-			if _, err := s.AddRoute(tt.inNetworkInstance, tt.inRoute); (err != nil) != tt.wantErr {
-				t.Fatalf("did not get expected error status, got: %v, wantErr? %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
-func TestAddAndDeleteRoute(t *testing.T) {
-	tests := []struct {
-		desc    string
-		prefix1 string
-		prefix2 string
-		v4      bool
-	}{{
-		desc:    "v4",
-		prefix1: "8.8.8.8/32",
-		prefix2: "8.8.8.9/32",
-		v4:      true,
-	}, {
-		desc:    "v6",
-		prefix1: "2001::ab:cd:ef/42",
-		prefix2: "2023::ab:cd:ef/42",
-		v4:      false,
-	}}
-
-	for _, tt := range tests {
-		t.Run(tt.desc, func(t *testing.T) {
-			s, err := NewSysRIB(baseCfg())
-			if err != nil {
-				t.Fatalf("cannot create new system RIB, got err: %v", err)
-			}
-
-			// Add a new route
-			if added, err := s.AddRoute(fakedevice.DefaultNetworkInstance, &Route{
-				Prefix: tt.prefix1,
-				Connected: &Interface{
-					Name:         "eth0",
-					Subinterface: 0,
-				},
-			}); err != nil {
-				t.Fatal(err)
-			} else if !added {
-				t.Fatalf("Route was not added")
-			}
-
-			// Add a duplicate route
-			if added, err := s.AddRoute(fakedevice.DefaultNetworkInstance, &Route{
-				Prefix: tt.prefix1,
-				Connected: &Interface{
-					Name:         "eth0",
-					Subinterface: 0,
-				},
-			}); err != nil {
-				t.Fatal(err)
-			} else if added {
-				t.Fatalf("Route was added, but should already be there")
-			}
-
-			var gotTags int
-			if tt.v4 {
-				gotTags = s.NI[fakedevice.DefaultNetworkInstance].IPV4.CountTags()
-			} else {
-				gotTags = s.NI[fakedevice.DefaultNetworkInstance].IPV6.CountTags()
-			}
-			if got, want := gotTags, 1; got != want {
-				t.Errorf("got %d tags, want %d", got, want)
-			}
-
-			// Add a new route
-			if added, err := s.AddRoute(fakedevice.DefaultNetworkInstance, &Route{
-				Prefix: tt.prefix2,
-				Connected: &Interface{
-					Name:         "eth0",
-					Subinterface: 0,
-				},
-			}); err != nil {
-				t.Fatal(err)
-			} else if !added {
-				t.Fatalf("Route was not added")
-			}
-
-			if tt.v4 {
-				gotTags = s.NI[fakedevice.DefaultNetworkInstance].IPV4.CountTags()
-			} else {
-				gotTags = s.NI[fakedevice.DefaultNetworkInstance].IPV6.CountTags()
-			}
-			if got, want := gotTags, 2; got != want {
-				t.Errorf("got %d tags, want %d", got, want)
-			}
-		})
+				var gotV4Routes, gotV6Routes []*Route
+				for _, ni := range s.NI {
+					for it := ni.IPV4.Iterate(); it.Next(); {
+						gotV4Routes = append(gotV4Routes, it.Tags()...)
+					}
+					for it := ni.IPV6.Iterate(); it.Next(); {
+						gotV6Routes = append(gotV6Routes, it.Tags()...)
+					}
+				}
+				if diff := cmp.Diff(tt.wantV4Routes, gotV4Routes, cmpopts.SortSlices(func(a, b *Route) bool {
+					if a.Prefix < b.Prefix {
+						return true
+					} else if a.Prefix > b.Prefix {
+						return false
+					}
+					return a.RoutePref.AdminDistance < b.RoutePref.AdminDistance
+				})); diff != "" {
+					t.Errorf("v4Routes (-want, +got):\n%s", diff)
+				}
+				if diff := cmp.Diff(tt.wantV6Routes, gotV6Routes, cmpopts.SortSlices(func(a, b *Route) bool {
+					if a.Prefix < b.Prefix {
+						return true
+					} else if a.Prefix > b.Prefix {
+						return false
+					}
+					return a.RoutePref.AdminDistance < b.RoutePref.AdminDistance
+				})); diff != "" {
+					t.Errorf("v6Routes (-want, +got):\n%s", diff)
+				}
+			})
+		}
 	}
 }
