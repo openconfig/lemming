@@ -64,39 +64,6 @@ type SetRouteRequestAction struct {
 	RouteReq *pb.SetRouteRequest
 }
 
-// routeSliceToMap converts a slice of ResolvedRoute to a map keyed by their
-// RouteKeys. It returns an error if any of the routes were nil or if there is
-// a duplicate.
-func routeSliceToMap(rs []*ResolvedRoute) (map[RouteKey]*ResolvedRoute, error) {
-	ret := map[RouteKey]*ResolvedRoute{}
-	for _, rr := range rs {
-		if rr == nil {
-			return nil, fmt.Errorf("Got nil route in ResolvedRoute slice")
-		}
-		if existing, ok := ret[rr.RouteKey]; ok {
-			return nil, fmt.Errorf("Got duplicate route key:\nFirst: %+v\nDuplicate: %+v", existing, rr)
-		}
-		ret[rr.RouteKey] = rr
-	}
-	return ret, nil
-}
-
-func checkResolvedRoutesEqual(got, want []*ResolvedRoute) error {
-	gotRoutes, err := routeSliceToMap(got)
-	if err != nil {
-		return err
-	}
-	wantRoutes, err := routeSliceToMap(want)
-	if err != nil {
-		return err
-	}
-
-	if diff := cmp.Diff(gotRoutes, wantRoutes); diff != "" {
-		return fmt.Errorf("Resolved routes are not equal: (-got, +want):\n%s", diff)
-	}
-	return nil
-}
-
 func configureInterface(t *testing.T, intf *AddIntfAction, yclient *ygnmi.Client) {
 	t.Helper()
 
@@ -131,18 +98,6 @@ func mapPolicyTo6(h GUEPolicy) GUEPolicy {
 	}
 	zero.dstPortv6 = h.dstPortv4
 	zero.srcIP6 = mapAddressTo6Bytes(h.srcIP4)
-	return zero
-}
-
-func mapPolicyHeadersTo6(h GUEHeaders) GUEHeaders {
-	zero := GUEHeaders{}
-	if h == zero {
-		return h
-	}
-	zero.dstPortv6 = h.dstPortv4
-	zero.srcIP6 = mapAddressTo6Bytes(h.srcIP4)
-	zero.dstIP6 = mapAddressTo6Bytes(h.dstIP4)
-	zero.isV6 = true
 	return zero
 }
 
