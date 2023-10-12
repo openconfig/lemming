@@ -31,12 +31,12 @@ package sysrib
 import (
 	"context"
 	"net"
-	"sync"
 	"syscall"
 	"testing"
 	"time"
 
 	"github.com/openconfig/lemming/gnmi"
+	dpb "github.com/openconfig/lemming/proto/dataplane"
 	pb "github.com/openconfig/lemming/proto/sysrib"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/wenovus/gobgp/v3/pkg/zebra"
@@ -174,35 +174,6 @@ func testRouteAdd(t *testing.T) {
 	}
 }
 
-// TODO(wenbli): Remove
-type FakeDataplane struct {
-	mu             sync.Mutex
-	incomingRoutes []*ResolvedRoute
-}
-
-func (dp *FakeDataplane) ProgramRoute(r *ResolvedRoute) error {
-	dp.mu.Lock()
-	defer dp.mu.Unlock()
-	dp.incomingRoutes = append(dp.incomingRoutes, r)
-	return nil
-}
-
-func (dp *FakeDataplane) GetRoutes() []*ResolvedRoute {
-	dp.mu.Lock()
-	defer dp.mu.Unlock()
-	return dp.incomingRoutes
-}
-
-func (dp *FakeDataplane) ClearQueue() {
-	dp.mu.Lock()
-	defer dp.mu.Unlock()
-	dp.incomingRoutes = []*ResolvedRoute{}
-}
-
-func NewFakeDataplane() *FakeDataplane {
-	return &FakeDataplane{}
-}
-
 // testRouteRedistribution tests that a route redistribution is sent by the
 // ZAPI server when a new route is added to sysrib, or when a new client ZAPI
 // connection is added where there already exists routes in the sysrib.
@@ -210,6 +181,7 @@ func NewFakeDataplane() *FakeDataplane {
 // - routeReadyBeforeDial specifies whether to make the route ready before the
 // client dials to the ZAPI server.
 func testRouteRedistribution(t *testing.T, routeReadyBeforeDial bool) {
+	routesQuery := programmedRoutesQuery(t)
 	tests := []struct {
 		desc              string
 		inAddIntfAction   *AddIntfAction
@@ -264,7 +236,6 @@ func testRouteRedistribution(t *testing.T, routeReadyBeforeDial bool) {
 
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			dp := NewFakeDataplane()
 			s, err := New(nil)
 			if err != nil {
 				t.Fatal(err)
@@ -279,7 +250,6 @@ func testRouteRedistribution(t *testing.T, routeReadyBeforeDial bool) {
 			if err := s.Start(client, "local", "unix:/tmp/zserv.api"); err != nil {
 				t.Fatalf("cannot start sysrib server, %v", err)
 			}
-			s.dataplane = dp
 			defer s.Stop()
 
 			c, err := ygnmi.NewClient(client, ygnmi.WithTarget("local"))
@@ -292,13 +262,15 @@ func testRouteRedistribution(t *testing.T, routeReadyBeforeDial bool) {
 				if _, err := s.SetRoute(context.Background(), tt.inSetRouteRequest); err != nil {
 					t.Fatalf("Got unexpected error during call to SetRoute: %v", err)
 				}
+				var routes []*dpb.Route
 				for i := 0; i != maxGNMIWaitQuanta; i++ {
-					if len(dp.GetRoutes()) != 0 {
+					var err error
+					if routes, err = ygnmi.GetAll(context.Background(), c, routesQuery); err != nil && len(routes) != 0 {
 						break
 					}
 					time.Sleep(100 * time.Millisecond)
 				}
-				if len(dp.GetRoutes()) == 0 {
+				if len(routes) == 0 {
 					t.Fatalf("Route not resolved in time limit.")
 				}
 			}

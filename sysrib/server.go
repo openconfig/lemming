@@ -109,14 +109,14 @@ type dataplaneAPI interface {
 	ProgramRoute(*ResolvedRoute) error
 }
 
-// Dataplane represents the dataplane API accessible to sysrib for programming
+// dataplane represents the dataplane API accessible to sysrib for programming
 // routes.
-type Dataplane struct {
+type dplane struct {
 	Client *ygnmi.Client
 }
 
 // ProgramRoute programs the route in the dataplane, returning an error on failure.
-func (d *Dataplane) ProgramRoute(r *ResolvedRoute) error {
+func (d *dplane) ProgramRoute(r *ResolvedRoute) error {
 	log.V(1).Infof("sysrib: programming resolved route: %+v", r)
 	rr, err := resolvedRouteToRouteRequest(r)
 	if err != nil {
@@ -159,7 +159,7 @@ func (s *Server) Start(gClient gpb.GNMIClient, target, zapiURL string) error {
 	if err != nil {
 		return err
 	}
-	s.dataplane = &Dataplane{Client: yclient}
+	s.dataplane = &dplane{Client: yclient}
 
 	if err := s.monitorConnectedIntfs(yclient); err != nil {
 		return err
