@@ -146,7 +146,7 @@ lemming::dataplane::sai::AclActionData convert_from_acl_action_data_action(
   out.set_enable(in.enable);
   out.set_packet_action(
       static_cast<lemming::dataplane::sai::PacketAction>(val + 1));
-      return out;
+  return out;
 }
 
 lemming::dataplane::sai::AclFieldData convert_from_acl_field_data(
@@ -178,8 +178,17 @@ lemming::dataplane::sai::AclFieldData convert_from_acl_field_data(
   return out;
 }
 
+lemming::dataplane::sai::AclFieldData convert_from_acl_field_data(
+    const sai_acl_field_data_t& in, sai_object_id_t data) {
+  lemming::dataplane::sai::AclFieldData out;
+  out.set_enable(in.enable);
+  out.set_data_oid(data);
+  return out;
+}
+
 lemming::dataplane::sai::AclFieldData convert_from_acl_field_data_ip6(
-    const sai_acl_field_data_t& in, const sai_ip6_t data,const sai_ip6_t mask) {
+    const sai_acl_field_data_t& in, const sai_ip6_t data,
+    const sai_ip6_t mask) {
   lemming::dataplane::sai::AclFieldData out;
   out.set_enable(in.enable);
   *out.mutable_data_ip() =
@@ -190,7 +199,8 @@ lemming::dataplane::sai::AclFieldData convert_from_acl_field_data_ip6(
 }
 
 lemming::dataplane::sai::AclFieldData convert_from_acl_field_data_mac(
-    const sai_acl_field_data_t& in, const sai_mac_t data, const sai_mac_t mask) {
+    const sai_acl_field_data_t& in, const sai_mac_t data,
+    const sai_mac_t mask) {
   lemming::dataplane::sai::AclFieldData out;
   out.set_enable(in.enable);
   *out.mutable_data_mac() =
@@ -204,7 +214,7 @@ lemming::dataplane::sai::AclFieldData convert_from_acl_field_data_ip_type(
     const sai_acl_field_data_t& in, sai_int32_t type, sai_int32_t mask) {
   lemming::dataplane::sai::AclFieldData out;
   out.set_enable(in.enable);
-  out.set_ip_type(static_cast<lemming::dataplane::sai::AclIpType>(type + 1));
+  out.set_data_ip_type(static_cast<lemming::dataplane::sai::AclIpType>(type + 1));
   out.set_mask_int(mask);
   return out;
 }

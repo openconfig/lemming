@@ -17,7 +17,9 @@ package saiserver
 
 import (
 	"context"
+	"encoding/binary"
 	"fmt"
+	"math"
 	"sync"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
@@ -35,6 +37,7 @@ type aclDataplaneAPI interface {
 	ID() string
 	TableCreate(context.Context, *fwdpb.TableCreateRequest) (*fwdpb.TableCreateReply, error)
 	TableEntryAdd(context.Context, *fwdpb.TableEntryAddRequest) (*fwdpb.TableEntryAddReply, error)
+	PortIDToNID(port string) (uint64, bool)
 }
 
 // tableLocation indentifies the location of an acl table by the group, bank, member id.
@@ -154,6 +157,16 @@ func (a *acl) CreateAclEntry(ctx context.Context, req *saipb.CreateAclEntryReque
 			FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST}},
 			Bytes:   req.GetFieldDstIp().GetDataIp(),
 			Masks:   req.GetFieldDstIp().GetMaskIp(),
+		})
+	case req.GetFieldInPort() != nil:
+		nid, ok := a.dataplane.PortIDToNID(fmt.Sprint(req.FieldInPort.GetDataOid()))
+		if !ok {
+			return nil, fmt.Errorf("unknown port with id: %v", req.FieldInPort.GetDataOid())
+		}
+		aReq.EntryDesc.GetFlow().Fields = append(aReq.EntryDesc.GetFlow().Fields, &fwdpb.PacketFieldMaskedBytes{
+			FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT}},
+			Bytes:   binary.BigEndian.AppendUint64(nil, nid),
+			Masks:   binary.BigEndian.AppendUint64(nil, math.MaxUint64),
 		})
 	}
 	switch {

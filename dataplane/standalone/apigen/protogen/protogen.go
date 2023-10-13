@@ -716,7 +716,8 @@ message QOSMap {
 		bytes data_mac = 10;
 		bytes data_ip = 11;
 		Uint64List data_list = 12;
-		AclIpType ip_type = 13;
+		AclIpType data_ip_type = 13;
+		uint64 data_oid = 14;
 	};
 }
 

@@ -1163,3 +1163,11 @@ func (e *Engine) AddInterface(ctx context.Context, req *dpb.AddInterfaceRequest)
 	}
 	return &dpb.AddInterfaceResponse{}, nil
 }
+
+// PortIDToNID returns the NID to for a given port id.
+func (e *Engine) PortIDToNID(port string) (uint64, bool) {
+	e.idToNIDMu.Lock()
+	e.idToNIDMu.Unlock()
+	nid, ok := e.idToNID[port]
+	return nid, ok
+}

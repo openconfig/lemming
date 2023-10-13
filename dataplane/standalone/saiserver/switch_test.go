@@ -231,6 +231,10 @@ func (f *fakeSwitchDataplane) TableEntryAdd(context.Context, *fwdpb.TableEntryAd
 	return nil, fmt.Errorf("unimplemented")
 }
 
+func (f *fakeSwitchDataplane) PortIDToNID(port string) (uint64, bool) {
+	return 0, false
+}
+
 func newTestServer(t testing.TB, newSrvFn func(mgr *attrmgr.AttrMgr, srv *grpc.Server)) (grpc.ClientConnInterface, *attrmgr.AttrMgr, func()) {
 	t.Helper()
 	mgr := attrmgr.New()

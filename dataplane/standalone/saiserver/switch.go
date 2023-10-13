@@ -226,22 +226,22 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 func (sw *saiSwitch) SetSwitchAttribute(ctx context.Context, req *saipb.SetSwitchAttributeRequest) (*saipb.SetSwitchAttributeResponse, error) {
 	switch {
 	case req.PreIngressAcl != nil:
-		if err := sw.bindAclTable(ctx, fmt.Sprint(req.GetPreIngressAcl()), engine.PreIngressActionTable); err != nil {
+		if err := sw.bindACLTable(ctx, fmt.Sprint(req.GetPreIngressAcl()), engine.PreIngressActionTable); err != nil {
 			return nil, err
 		}
 	case req.IngressAcl != nil:
-		if err := sw.bindAclTable(ctx, fmt.Sprint(req.GetIngressAcl()), engine.IngressActionTable); err != nil {
+		if err := sw.bindACLTable(ctx, fmt.Sprint(req.GetIngressAcl()), engine.IngressActionTable); err != nil {
 			return nil, err
 		}
 	case req.EgressAcl != nil:
-		if err := sw.bindAclTable(ctx, fmt.Sprint(req.GetEgressAcl()), engine.EgressActionTable); err != nil {
+		if err := sw.bindACLTable(ctx, fmt.Sprint(req.GetEgressAcl()), engine.EgressActionTable); err != nil {
 			return nil, err
 		}
 	}
 	return &saipb.SetSwitchAttributeResponse{}, nil
 }
 
-func (sw *saiSwitch) bindAclTable(ctx context.Context, aclTableID, stageID string) error {
+func (sw *saiSwitch) bindACLTable(ctx context.Context, aclTableID, stageID string) error {
 	_, err := sw.dataplane.TableEntryAdd(ctx, &fwdpb.TableEntryAddRequest{
 		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
 		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: stageID}},

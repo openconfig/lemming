@@ -383,6 +383,11 @@ var typeToUnionAccessor = map[string]*unionAccessor{
 		convertFromFunc: "convert_from_acl_field_data_mac",
 		aType:           acl,
 	},
+	"sai_acl_field_data_t sai_object_id_t": {
+		accessor:        "oid",
+		convertFromFunc: "convert_from_acl_field_data",
+		aType:           acl,
+	},
 }
 
 func protoFieldSetter(saiType, protoVar, protoField, varName string, info *docparser.SAIInfo) (*AttrSwitchSmt, error) {
@@ -429,6 +434,9 @@ func protoFieldSetter(saiType, protoVar, protoField, varName string, info *docpa
 		if strings.Contains(saiType, "sai_acl_field_data_t") {
 			access = "aclfield"
 			smt.Args = fmt.Sprintf("%s.%s, %s.%s.data.%s, %s.%s.mask.%s", varName, access, varName, access, ua.accessor, varName, access, ua.accessor)
+			if strings.Contains(saiType, "sai_object_id_t") {
+				smt.Args = fmt.Sprintf("%s.%s, %s.%s.data.%s", varName, access, varName, access, ua.accessor)
+			}
 		}
 	default:
 		return nil, fmt.Errorf("unknown accessor type %q", ua.aType)

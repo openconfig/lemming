@@ -452,6 +452,18 @@ lemming::dataplane::sai::CreateAclEntryRequest convert_create_acl_entry(
             attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.ip4,
             attr_list[i].value.aclfield.mask.ip4);
         break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_IN_PORT:
+        *msg.mutable_field_in_port() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.oid);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_OUT_PORT:
+        *msg.mutable_field_out_port() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.oid);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_SRC_PORT:
+        *msg.mutable_field_src_port() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.oid);
+        break;
       case SAI_ACL_ENTRY_ATTR_FIELD_OUTER_VLAN_ID:
         *msg.mutable_field_outer_vlan_id() = convert_from_acl_field_data(
             attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u16,
@@ -1330,6 +1342,18 @@ sai_status_t l_set_acl_entry_attribute(sai_object_id_t acl_entry_id,
       *req.mutable_field_inner_dst_ip() = convert_from_acl_field_data(
           attr->value.aclfield, attr->value.aclfield.data.ip4,
           attr->value.aclfield.mask.ip4);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_IN_PORT:
+      *req.mutable_field_in_port() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.oid);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_OUT_PORT:
+      *req.mutable_field_out_port() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.oid);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_SRC_PORT:
+      *req.mutable_field_src_port() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.oid);
       break;
     case SAI_ACL_ENTRY_ATTR_FIELD_OUTER_VLAN_ID:
       *req.mutable_field_outer_vlan_id() = convert_from_acl_field_data(
