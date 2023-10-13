@@ -31,6 +31,8 @@ var (
 	_ actionDescBuilder = &UpdateActionBuilder{}
 	_ actionDescBuilder = &TransmitActionBuilder{}
 	_ actionDescBuilder = &LookupActionBuilder{}
+	_ actionDescBuilder = &EncapActionBuilder{}
+	_ actionDescBuilder = &DecapActionBuilder{}
 )
 
 // ActionBuilder is a builder for forward action types.
@@ -198,4 +200,66 @@ func (u *LookupActionBuilder) set(ad *fwdpb.ActionDesc) {
 
 func (u *LookupActionBuilder) actionType() fwdpb.ActionType {
 	return fwdpb.ActionType_ACTION_TYPE_LOOKUP
+}
+
+// EncapActionBuilder is a builder for a lookup action.
+type EncapActionBuilder struct {
+	header fwdpb.PacketHeaderId
+}
+
+// LookupAction returns a new lookup action builder.
+func EncapAction(header fwdpb.PacketHeaderId) *EncapActionBuilder {
+	return &EncapActionBuilder{
+		header: header,
+	}
+}
+
+// WithHeaderId sets the header id.
+func (u *EncapActionBuilder) WithHeaderId(header fwdpb.PacketHeaderId) *EncapActionBuilder {
+	u.header = header
+	return u
+}
+
+func (u *EncapActionBuilder) set(ad *fwdpb.ActionDesc) {
+	upd := &fwdpb.ActionDesc_Encap{
+		Encap: &fwdpb.EncapActionDesc{
+			HeaderId: u.header,
+		},
+	}
+	ad.Action = upd
+}
+
+func (u *EncapActionBuilder) actionType() fwdpb.ActionType {
+	return fwdpb.ActionType_ACTION_TYPE_ENCAP
+}
+
+// DecapActionBuilder is a builder for a lookup action.
+type DecapActionBuilder struct {
+	header fwdpb.PacketHeaderId
+}
+
+// LookupAction returns a new lookup action builder.
+func DecapAction(header fwdpb.PacketHeaderId) *DecapActionBuilder {
+	return &DecapActionBuilder{
+		header: header,
+	}
+}
+
+// WithHeaderId sets the header id.
+func (u *DecapActionBuilder) WithHeaderId(header fwdpb.PacketHeaderId) *DecapActionBuilder {
+	u.header = header
+	return u
+}
+
+func (u *DecapActionBuilder) set(ad *fwdpb.ActionDesc) {
+	upd := &fwdpb.ActionDesc_Decap{
+		Decap: &fwdpb.DecapActionDesc{
+			HeaderId: u.header,
+		},
+	}
+	ad.Action = upd
+}
+
+func (u *DecapActionBuilder) actionType() fwdpb.ActionType {
+	return fwdpb.ActionType_ACTION_TYPE_DECAP
 }

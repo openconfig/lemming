@@ -74,6 +74,21 @@ lemming::dataplane::sai::CreateUdfMatchRequest convert_create_udf_match(
 
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
+      case SAI_UDF_MATCH_ATTR_L2_TYPE:
+        *msg.mutable_l2_type() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u16,
+            attr_list[i].value.aclfield.mask.u16);
+        break;
+      case SAI_UDF_MATCH_ATTR_L3_TYPE:
+        *msg.mutable_l3_type() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u8,
+            attr_list[i].value.aclfield.mask.u8);
+        break;
+      case SAI_UDF_MATCH_ATTR_GRE_TYPE:
+        *msg.mutable_gre_type() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u16,
+            attr_list[i].value.aclfield.mask.u16);
+        break;
       case SAI_UDF_MATCH_ATTR_PRIORITY:
         msg.set_priority(attr_list[i].value.u8);
         break;

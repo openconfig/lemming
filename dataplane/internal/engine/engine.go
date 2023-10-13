@@ -37,16 +37,19 @@ import (
 )
 
 const (
-	fibV4Table       = "fib-v4"
-	fibV6Table       = "fib-v6"
-	SRCMACTable      = "port-mac"
-	fibSelectorTable = "fib-selector"
-	neighborTable    = "neighbor"
-	nhgTable         = "nhg-table"
-	nhTable          = "nh-table"
-	layer2PuntTable  = "layer2-punt"
-	layer3PuntTable  = "layer3-punt"
-	arpPuntTable     = "arp-punt"
+	fibV4Table            = "fib-v4"
+	fibV6Table            = "fib-v6"
+	SRCMACTable           = "port-mac"
+	fibSelectorTable      = "fib-selector"
+	neighborTable         = "neighbor"
+	nhgTable              = "nhg-table"
+	nhTable               = "nh-table"
+	layer2PuntTable       = "layer2-punt"
+	layer3PuntTable       = "layer3-punt"
+	arpPuntTable          = "arp-punt"
+	PreIngressActionTable = "preingress-table"
+	IngressActionTable    = "ingress-table"
+	EgressActionTable     = "egress-action-table"
 )
 
 // Engine contains a routing context and methods to manage it.
@@ -268,6 +271,29 @@ func (e *Engine) setupTables(ctx context.Context) error {
 	if _, err := e.Server.TableCreate(ctx, nhg); err != nil {
 		return err
 	}
+	action := &fwdpb.TableCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: e.id},
+		Desc: &fwdpb.TableDesc{
+			TableType: fwdpb.TableType_TABLE_TYPE_ACTION,
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: PreIngressActionTable}},
+			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_CONTINUE}},
+			Table: &fwdpb.TableDesc_Action{
+				Action: &fwdpb.ActionTableDesc{},
+			},
+		},
+	}
+	if _, err := e.Server.TableCreate(ctx, action); err != nil {
+		return err
+	}
+	action.Desc.TableId.ObjectId.Id = IngressActionTable
+	if _, err := e.Server.TableCreate(ctx, action); err != nil {
+		return err
+	}
+	action.Desc.TableId.ObjectId.Id = EgressActionTable
+	if _, err := e.Server.TableCreate(ctx, action); err != nil {
+		return err
+	}
+
 	if err := createFIBSelector(ctx, e.id, e.Server); err != nil {
 		return err
 	}
@@ -939,59 +965,22 @@ func (e *Engine) CreateExternalPort(ctx context.Context, t fwdpb.PortType, id, d
 		Update: &fwdpb.PortUpdateDesc{
 			Port: &fwdpb.PortUpdateDesc_Kernel{
 				Kernel: &fwdpb.KernelPortUpdateDesc{
-					Inputs: []*fwdpb.ActionDesc{{ // Lookup in layer 2 table.
-						ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
-						Action: &fwdpb.ActionDesc_Lookup{
-							Lookup: &fwdpb.LookupActionDesc{
-								TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: layer2PuntTable}},
-							},
+					Inputs: []*fwdpb.ActionDesc{
+						fwdconfig.Action(fwdconfig.LookupAction(layer2PuntTable)).Build(), // Lookup in layer 2 table.
+						fwdconfig.Action(fwdconfig.LookupAction(layer3PuntTable)).Build(), // Lookup in layer 3 table.
+						fwdconfig.Action(fwdconfig.LookupAction(PreIngressActionTable)).Build(),
+						fwdconfig.Action(fwdconfig.DecapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET)).Build(), // Decap L2 header.
+						fwdconfig.Action(fwdconfig.LookupAction(IngressActionTable)).Build(),
+						fwdconfig.Action(fwdconfig.LookupAction(fibSelectorTable)).Build(),                              // Lookup in FIB.
+						fwdconfig.Action(fwdconfig.EncapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET)).Build(), // Decap L2 header.
+						fwdconfig.Action(fwdconfig.LookupAction(neighborTable)).Build(),                                 // Lookup in the neighbor table.
+						fwdconfig.Action(fwdconfig.LookupAction(EgressActionTable)).Build(),
+						{
+							ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
 						},
-					}, { // Lookup in layer 3 table.
-						ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
-						Action: &fwdpb.ActionDesc_Lookup{
-							Lookup: &fwdpb.LookupActionDesc{
-								TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: layer3PuntTable}},
-							},
-						},
-					}, { // Decap L2 header.
-						ActionType: fwdpb.ActionType_ACTION_TYPE_DECAP,
-						Action: &fwdpb.ActionDesc_Decap{
-							Decap: &fwdpb.DecapActionDesc{
-								HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET,
-							},
-						},
-					}, { // Lookup in FIB.
-						ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
-						Action: &fwdpb.ActionDesc_Lookup{
-							Lookup: &fwdpb.LookupActionDesc{
-								TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: fibSelectorTable}},
-							},
-						},
-					}, { // Encap a L2 header.
-						ActionType: fwdpb.ActionType_ACTION_TYPE_ENCAP,
-						Action: &fwdpb.ActionDesc_Encap{
-							Encap: &fwdpb.EncapActionDesc{
-								HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET,
-							},
-						},
-					}, { // Lookup in the neighbor table.
-						ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
-						Action: &fwdpb.ActionDesc_Lookup{
-							Lookup: &fwdpb.LookupActionDesc{
-								TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: neighborTable}},
-							},
-						},
-					}, {
-						ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
-					}},
-					Outputs: []*fwdpb.ActionDesc{{ // update the src mac address with the configured port's mac address.
-						ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
-						Action: &fwdpb.ActionDesc_Lookup{
-							Lookup: &fwdpb.LookupActionDesc{
-								TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: SRCMACTable}},
-							},
-						},
-					}},
+					},
+					// update the src mac address with the configured port's mac address.
+					Outputs: []*fwdpb.ActionDesc{fwdconfig.Action(fwdconfig.LookupAction(SRCMACTable)).Build()},
 				},
 			},
 		},

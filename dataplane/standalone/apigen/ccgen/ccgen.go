@@ -332,9 +332,9 @@ var typeToUnionAccessor = map[string]*unionAccessor{
 		aType:           convertFunc,
 	},
 	"sai_pointer_t sai_port_state_change_notification_fn": {
-		aType:         callbackRPC,
-		assignmentVar: "port_state",
-		convertToFunc: "std::make_unique<PortStateReactor>",
+		aType:           callbackRPC,
+		assignmentVar:   "port_state",
+		convertFromFunc: "std::make_unique<PortStateReactor>",
 	},
 	"sai_acl_capability_t": {
 		accessor:        "aclcapability",
@@ -344,12 +344,44 @@ var typeToUnionAccessor = map[string]*unionAccessor{
 		convertToFunc:   "convert_to_acl_capability",
 	},
 	"sai_acl_field_data_t sai_ip4_t": {
-		accessor: "ip4",
-		aType:    acl,
+		accessor:        "ip4",
+		convertFromFunc: "convert_from_acl_field_data",
+		aType:           acl,
 	},
 	"sai_acl_action_data_t sai_object_id_t": {
-		accessor: "oid",
-		aType:    acl,
+		accessor:        "oid",
+		convertFromFunc: "convert_from_acl_action_data",
+		aType:           acl,
+	},
+	"sai_acl_action_data_t sai_packet_action_t": {
+		accessor:        "s32",
+		convertFromFunc: "convert_from_acl_action_data_action",
+		aType:           acl,
+	},
+	"sai_acl_field_data_t sai_acl_ip_type_t": {
+		accessor:        "s32",
+		convertFromFunc: "convert_from_acl_field_data_ip_type",
+		aType:           acl,
+	},
+	"sai_acl_field_data_t sai_uint8_t": {
+		accessor:        "u8",
+		convertFromFunc: "convert_from_acl_field_data",
+		aType:           acl,
+	},
+	"sai_acl_field_data_t sai_uint16_t": {
+		accessor:        "u16",
+		convertFromFunc: "convert_from_acl_field_data",
+		aType:           acl,
+	},
+	"sai_acl_field_data_t sai_ip6_t": {
+		accessor:        "ip6",
+		convertFromFunc: "convert_from_acl_field_data_ip6",
+		aType:           acl,
+	},
+	"sai_acl_field_data_t sai_mac_t": {
+		accessor:        "mac",
+		convertFromFunc: "convert_from_acl_field_data_mac",
+		aType:           acl,
 	},
 }
 
@@ -386,17 +418,16 @@ func protoFieldSetter(saiType, protoVar, protoField, varName string, info *docpa
 		smt.Args = fmt.Sprintf("%s.%s.list, %s.%s.list + %s.%s.count", varName, ua.accessor, varName, ua.accessor, varName, ua.accessor)
 	case callbackRPC:
 		smt.Var = ua.assignmentVar
-		smt.ConvertFunc = ua.convertToFunc
+		smt.ConvertFunc = ua.convertFromFunc
 		fnType := strings.Split(saiType, " ")[1]
 		smt.Args = fmt.Sprintf("switch_, reinterpret_cast<%s>(%s.ptr)", fnType, varName)
 	case acl:
 		smt.Var = fmt.Sprintf("*%s.mutable_%s()", protoVar, protoField)
-		smt.ConvertFunc = "convert_from_acl_action_data"
+		smt.ConvertFunc = ua.convertFromFunc
 		access := "aclaction"
 		smt.Args = fmt.Sprintf("%s.%s, %s.%s.parameter.%s", varName, access, varName, access, ua.accessor)
 		if strings.Contains(saiType, "sai_acl_field_data_t") {
 			access = "aclfield"
-			smt.ConvertFunc = "convert_from_acl_field_data"
 			smt.Args = fmt.Sprintf("%s.%s, %s.%s.data.%s, %s.%s.mask.%s", varName, access, varName, access, ua.accessor, varName, access, ua.accessor)
 		}
 	default:

@@ -57,8 +57,10 @@ type acl struct {
 
 func newACL(mgr *attrmgr.AttrMgr, dataplane aclDataplaneAPI, s *grpc.Server) *acl {
 	a := &acl{
-		mgr:       mgr,
-		dataplane: dataplane,
+		mgr:               mgr,
+		dataplane:         dataplane,
+		tableToBank:       make(map[uint64]groupBank),
+		groupNextFreeBank: make(map[uint64]int),
 	}
 	saipb.RegisterAclServer(s, a)
 	return a
@@ -70,15 +72,11 @@ func (a *acl) CreateAclTableGroup(ctx context.Context, req *saipb.CreateAclTable
 
 	stage := req.GetAclStage()
 	typ := req.GetType()
-	bind := req.GetAclBindPointTypeList()
 	if stage != saipb.AclStage_ACL_STAGE_EGRESS && stage != saipb.AclStage_ACL_STAGE_PRE_INGRESS && stage != saipb.AclStage_ACL_STAGE_INGRESS {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid stage type: %v", stage)
 	}
 	if typ != saipb.AclTableGroupType_ACL_TABLE_GROUP_TYPE_PARALLEL {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid type: %v", typ)
-	}
-	if len(bind) != 1 && bind[0] == saipb.AclBindPointType_ACL_BIND_POINT_TYPE_SWITCH {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid bind configuration: %v", typ)
 	}
 
 	tReq := &fwdpb.TableCreateRequest{
@@ -101,7 +99,7 @@ func (a *acl) CreateAclTableGroup(ctx context.Context, req *saipb.CreateAclTable
 		return nil, err
 	}
 
-	return &saipb.CreateAclTableGroupResponse{Oid: 1}, nil
+	return &saipb.CreateAclTableGroupResponse{Oid: id}, nil
 }
 
 // CreateAclTableGroupMember stores the acl table id to its corresponding lucius flow table and bank.
@@ -163,6 +161,8 @@ func (a *acl) CreateAclEntry(ctx context.Context, req *saipb.CreateAclEntryReque
 		aReq.Actions = append(aReq.Actions,
 			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF).
 				WithUint64Value(req.GetActionSetVrf().GetOid())).Build())
+	case req.ActionPacketAction != nil:
+		req.GetActionPacketAction().GetInt()
 	}
 	if _, err := a.dataplane.TableEntryAdd(ctx, aReq); err != nil {
 		return nil, err
