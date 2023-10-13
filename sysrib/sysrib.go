@@ -266,10 +266,18 @@ func guePolicyUnconditionalMatch(_ GUEPolicy, _ GUEPolicy) bool {
 	return true
 }
 
-// AddRoute adds a route, r, to the network instance, ni, in the sysRIB.
-// It returns true if the route was added, and false if not. If the route
-// already exists, it returns (false, nil)
+// AddRoute adds a route r, to network instance ni, in the sysRIB.
 func (sr *SysRIB) AddRoute(ni string, r *Route) error {
+	return sr.setRoute(ni, r, false)
+}
+
+// DeleteRoute deletes a route r, from network instance ni, in the sysRIB.
+func (sr *SysRIB) DeleteRoute(ni string, r *Route) error {
+	return sr.setRoute(ni, r, true)
+}
+
+// setRoute adds or deletes a route r, to network instance ni, in the sysRIB.
+func (sr *SysRIB) setRoute(ni string, r *Route, isDelete bool) error {
 	sr.mu.Lock()
 	defer sr.mu.Unlock()
 	if _, ok := sr.NI[ni]; !ok {
@@ -286,45 +294,18 @@ func (sr *SysRIB) AddRoute(ni string, r *Route) error {
 	switch {
 	case addr4 != nil:
 		sr.NI[ni].IPV4.Delete(*addr4, routeKeyMatches, r)
-		sr.NI[ni].IPV4.Add(*addr4, r, routeKeyMatches)
+		if !isDelete {
+			sr.NI[ni].IPV4.Add(*addr4, r, routeKeyMatches)
+		}
 		return nil
 	case addr6 != nil:
 		sr.NI[ni].IPV6.Delete(*addr6, routeKeyMatches, r)
-		sr.NI[ni].IPV6.Add(*addr6, r, routeKeyMatches)
+		if !isDelete {
+			sr.NI[ni].IPV6.Add(*addr6, r, routeKeyMatches)
+		}
 		return nil
 	default:
 		return fmt.Errorf("route prefix is neither v4 or v6: %v", r.Prefix)
-	}
-}
-
-// DeleteRoute deletes a route associated with the network instance, ni, in the sysRIB.
-// It returns true if the route was added, and false if not. If the route
-// already exists, it returns (false, nil)
-func (sr *SysRIB) DeleteRoute(ni string, r *Route) (int, error) {
-	sr.mu.Lock()
-	defer sr.mu.Unlock()
-	if _, ok := sr.NI[ni]; !ok {
-		return 0, fmt.Errorf("cannot find network instance %s", ni)
-	}
-	prefix, err := canonicalPrefix(r.Prefix)
-	if err != nil {
-		return 0, fmt.Errorf("sysrib: prefix cannot be parsed: %v", err)
-	}
-	addr4, addr6, err := patricia.ParseIPFromString(prefix.String())
-	if err != nil {
-		return 0, fmt.Errorf("cannot create prefix for %s, %v", r.Prefix, err)
-	}
-	switch {
-	case addr4 != nil:
-		deletedN := sr.NI[ni].IPV4.Delete(*addr4, routeKeyMatches, r)
-		log.V(1).Infof("DeleteRoute attempt: %v, %v, result: %v", *addr4, r, deletedN)
-		return deletedN, nil
-	case addr6 != nil:
-		deletedN := sr.NI[ni].IPV6.Delete(*addr6, routeKeyMatches, r)
-		log.V(1).Infof("DeleteRoute attempt: %v, %v, result: %v", *addr6, r, deletedN)
-		return deletedN, nil
-	default:
-		return 0, fmt.Errorf("route prefix is neither v4 or v6: %v", r.Prefix)
 	}
 }
 

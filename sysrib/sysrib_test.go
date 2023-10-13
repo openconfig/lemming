@@ -647,7 +647,6 @@ func TestAddAndDeleteRouteSequences(t *testing.T) {
 		desc         string
 		inRoute      *Route
 		inDelete     bool
-		wantDeletedN int
 		wantV4Routes []*Route
 		wantV6Routes []*Route
 	}{{
@@ -692,8 +691,7 @@ func TestAddAndDeleteRouteSequences(t *testing.T) {
 					Subinterface: 0,
 				},
 			},
-			inDelete:     true,
-			wantDeletedN: 1,
+			inDelete: true,
 		}, {
 			desc: "v4-delete-idempotent",
 			inRoute: &Route{
@@ -703,8 +701,7 @@ func TestAddAndDeleteRouteSequences(t *testing.T) {
 					Subinterface: 0,
 				},
 			},
-			inDelete:     true,
-			wantDeletedN: 0,
+			inDelete: true,
 		},
 	}, {
 		{
@@ -732,8 +729,7 @@ func TestAddAndDeleteRouteSequences(t *testing.T) {
 					Subinterface: 0,
 				},
 			},
-			inDelete:     true,
-			wantDeletedN: 1,
+			inDelete: true,
 		},
 	}, {
 		{
@@ -761,8 +757,7 @@ func TestAddAndDeleteRouteSequences(t *testing.T) {
 					Subinterface: 0,
 				},
 			},
-			inDelete:     true,
-			wantDeletedN: 1,
+			inDelete: true,
 		},
 	}, {
 		{
@@ -826,8 +821,7 @@ func TestAddAndDeleteRouteSequences(t *testing.T) {
 					Metric:        0,
 				},
 			},
-			inDelete:     true,
-			wantDeletedN: 1,
+			inDelete: true,
 		},
 	}, {
 		{
@@ -913,7 +907,6 @@ func TestAddAndDeleteRouteSequences(t *testing.T) {
 					Metric:        0,
 				},
 			}},
-			wantDeletedN: 1,
 		}, {
 			desc: "v4-delete-admin-again",
 			inRoute: &Route{
@@ -939,7 +932,6 @@ func TestAddAndDeleteRouteSequences(t *testing.T) {
 					Metric:        0,
 				},
 			}},
-			wantDeletedN: 0,
 		}, {
 			desc: "v4-delete-diff-admin",
 			inRoute: &Route{
@@ -953,8 +945,7 @@ func TestAddAndDeleteRouteSequences(t *testing.T) {
 					Metric:        0,
 				},
 			},
-			inDelete:     true,
-			wantDeletedN: 1,
+			inDelete: true,
 		},
 	}, {
 		{
@@ -1022,8 +1013,7 @@ func TestAddAndDeleteRouteSequences(t *testing.T) {
 					Subinterface: 0,
 				},
 			},
-			inDelete:     true,
-			wantDeletedN: 1,
+			inDelete: true,
 		}, {
 			desc: "v6-non-canonical-delete-idempotent",
 			inRoute: &Route{
@@ -1033,8 +1023,7 @@ func TestAddAndDeleteRouteSequences(t *testing.T) {
 					Subinterface: 0,
 				},
 			},
-			inDelete:     true,
-			wantDeletedN: 0,
+			inDelete: true,
 		},
 	}}
 
@@ -1047,10 +1036,8 @@ func TestAddAndDeleteRouteSequences(t *testing.T) {
 			t.Run(tt.desc, func(t *testing.T) {
 				if tt.inDelete {
 					// Delete first route
-					if deletedN, err := s.DeleteRoute(fakedevice.DefaultNetworkInstance, tt.inRoute); err != nil {
+					if err := s.DeleteRoute(fakedevice.DefaultNetworkInstance, tt.inRoute); err != nil {
 						t.Error(err)
-					} else if deletedN != tt.wantDeletedN {
-						t.Errorf("got deletedN %v, want deletedN %v", deletedN, tt.wantDeletedN)
 					}
 				} else {
 					// Add a new route
