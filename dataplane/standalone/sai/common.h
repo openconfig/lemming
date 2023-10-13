@@ -178,7 +178,7 @@ lemming::dataplane::sai::AclFieldData convert_from_acl_field_data(
     const sai_acl_field_data_t &in, sai_uint16_t data, sai_uint16_t mask);
 
 lemming::dataplane::sai::AclFieldData convert_from_acl_field_data(
-    const sai_acl_field_data_t &in, sai_uint16_t data);
+    const sai_acl_field_data_t &in, sai_object_id_t data);
 
 lemming::dataplane::sai::AclFieldData convert_from_acl_field_data_ip6(
     const sai_acl_field_data_t &in, const sai_ip6_t data, const sai_ip6_t mask);
