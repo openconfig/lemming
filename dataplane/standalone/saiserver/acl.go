@@ -59,7 +59,7 @@ func newACL(mgr *attrmgr.AttrMgr, dataplane aclDataplaneAPI, s *grpc.Server) *ac
 	a := &acl{
 		mgr:               mgr,
 		dataplane:         dataplane,
-		tableToBank:       make(map[uint64]groupBank),
+		tableToLocation:   make(map[uint64]tableLocation),
 		groupNextFreeBank: make(map[uint64]int),
 	}
 	saipb.RegisterAclServer(s, a)
