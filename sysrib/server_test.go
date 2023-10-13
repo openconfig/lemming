@@ -346,7 +346,6 @@ func TestServer(t *testing.T) {
 		wantRoutes         []*dpb.Route
 		wantErr            bool
 	}{{
-		// TODO(wenbli): test route deletion in this test case once it's implemented.
 		desc: "Route Additions",
 		inSetRouteRequests: []*SetRouteRequestAction{{
 			Desc: "1st level indirect route",
@@ -512,6 +511,110 @@ func TestServer(t *testing.T) {
 			},
 		}},
 	}, {
+		desc: "Route Deletions",
+		inSetRouteRequests: []*SetRouteRequestAction{{
+			Desc: "1st level indirect route",
+			RouteReq: &pb.SetRouteRequest{
+				AdminDistance: 10,
+				Metric:        10,
+				Prefix: &pb.Prefix{
+					Family:     pb.Prefix_FAMILY_IPV4,
+					Address:    "10.0.0.0",
+					MaskLength: 8,
+				},
+				Nexthops: []*pb.Nexthop{{
+					Type:    pb.Nexthop_TYPE_IPV4,
+					Address: "192.168.1.42",
+					Weight:  1,
+				}},
+			},
+		}, {
+			Desc: "2nd level indirect route",
+			RouteReq: &pb.SetRouteRequest{
+				AdminDistance: 10,
+				Metric:        10,
+				Prefix: &pb.Prefix{
+					Family:     pb.Prefix_FAMILY_IPV4,
+					Address:    "20.0.0.0",
+					MaskLength: 8,
+				},
+				Nexthops: []*pb.Nexthop{{
+					Type:    pb.Nexthop_TYPE_IPV4,
+					Address: "10.10.10.10",
+				}},
+			},
+		}, {
+			Desc: "3rd level indirect route",
+			RouteReq: &pb.SetRouteRequest{
+				AdminDistance: 10,
+				Metric:        10,
+				Prefix: &pb.Prefix{
+					Family:     pb.Prefix_FAMILY_IPV4,
+					Address:    "30.0.0.0",
+					MaskLength: 8,
+				},
+				Nexthops: []*pb.Nexthop{{
+					Type:    pb.Nexthop_TYPE_IPV4,
+					Address: "20.10.10.10",
+				}},
+			},
+		}, {
+			Desc: "delete 2nd-level indirect route",
+			RouteReq: &pb.SetRouteRequest{
+				Delete:        true,
+				AdminDistance: 10,
+				Metric:        10,
+				Prefix: &pb.Prefix{
+					Family:     pb.Prefix_FAMILY_IPV4,
+					Address:    "20.0.0.0",
+					MaskLength: 8,
+				},
+			},
+		}, {
+			Desc: "delete 3rd-level indirect route",
+			RouteReq: &pb.SetRouteRequest{
+				Delete:        true,
+				AdminDistance: 10,
+				Metric:        10,
+				Prefix: &pb.Prefix{
+					Family:     pb.Prefix_FAMILY_IPV4,
+					Address:    "30.0.0.0",
+					MaskLength: 8,
+				},
+			},
+		}, {
+			Desc: "delete 3rd-level indirect route again",
+			RouteReq: &pb.SetRouteRequest{
+				Delete:        true,
+				AdminDistance: 10,
+				Metric:        10,
+				Prefix: &pb.Prefix{
+					Family:     pb.Prefix_FAMILY_IPV4,
+					Address:    "30.0.0.0",
+					MaskLength: 8,
+				},
+			},
+		}},
+		wantRoutes: []*dpb.Route{{
+			Prefix: &dpb.RoutePrefix{
+				VrfId: uint64(0),
+				Prefix: &dpb.RoutePrefix_Cidr{
+					Cidr: "10.0.0.0/8",
+				},
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Hops: []*dpb.NextHop{{
+						Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+						Dev: &dpb.NextHop_Port{
+							Port: "eth0",
+						},
+						Weight: 0,
+					}},
+				},
+			},
+		}},
+	}, {
 		desc:    "Invalid Route",
 		noV6:    true,
 		wantErr: true,
@@ -610,7 +713,6 @@ func TestServer(t *testing.T) {
 	}, {
 		desc: "IPv4-mapped IPv6",
 		noV6: true,
-		// TODO(wenbli): Test when a more specific route is not resolvable --> route is deleted.
 		inSetRouteRequests: []*SetRouteRequestAction{{
 			Desc: "1st level indirect route",
 			RouteReq: &pb.SetRouteRequest{
@@ -658,19 +760,80 @@ func TestServer(t *testing.T) {
 					Address: "::ffff:20.10.10.10",
 				}},
 			},
+		}},
+		wantRoutes: []*dpb.Route{{
+			Prefix: &dpb.RoutePrefix{
+				VrfId: uint64(0),
+				Prefix: &dpb.RoutePrefix_Cidr{
+					Cidr: "10.0.0.0/8",
+				},
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Hops: []*dpb.NextHop{{
+						Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+						Dev: &dpb.NextHop_Port{
+							Port: "eth0",
+						},
+						Weight: 0,
+					}},
+				},
+			},
 		}, {
-			Desc: "1st level indirect route ipv4-mapped ipv6 using IPv4-formatted address",
+			Prefix: &dpb.RoutePrefix{
+				VrfId: uint64(0),
+				Prefix: &dpb.RoutePrefix_Cidr{
+					Cidr: "20.0.0.0/8",
+				},
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Hops: []*dpb.NextHop{{
+						Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+						Dev: &dpb.NextHop_Port{
+							Port: "eth0",
+						},
+						Weight: 0,
+					}},
+				},
+			},
+		}, {
+			Prefix: &dpb.RoutePrefix{
+				VrfId: uint64(0),
+				Prefix: &dpb.RoutePrefix_Cidr{
+					Cidr: "2002::/49",
+				},
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Hops: []*dpb.NextHop{{
+						Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+						Dev: &dpb.NextHop_Port{
+							Port: "eth0",
+						},
+						Weight: 0,
+					}},
+				},
+			},
+		}},
+	}, {
+		desc: "IPv4-mapped IPv6 in IPv4 format",
+		noV6: true,
+		inSetRouteRequests: []*SetRouteRequestAction{{
+			Desc: "1st level indirect route",
 			RouteReq: &pb.SetRouteRequest{
 				AdminDistance: 10,
 				Metric:        10,
 				Prefix: &pb.Prefix{
-					Family:     pb.Prefix_FAMILY_IPV6,
-					Address:    "2003::aaaa",
-					MaskLength: 49,
+					Family:     pb.Prefix_FAMILY_IPV4,
+					Address:    "10.0.0.0",
+					MaskLength: 8,
 				},
 				Nexthops: []*pb.Nexthop{{
-					Type:    pb.Nexthop_TYPE_IPV6,
-					Address: "192.168.2.42",
+					Type:    pb.Nexthop_TYPE_IPV4,
+					Address: "192.168.1.42",
+					// TODO(wenbli): Implement WCMP, for all route requests in this test.
+					Weight: 1,
 				}},
 			},
 		}, {
@@ -686,6 +849,21 @@ func TestServer(t *testing.T) {
 				Nexthops: []*pb.Nexthop{{
 					Type:    pb.Nexthop_TYPE_IPV4,
 					Address: "192.168.2.42",
+				}},
+			},
+		}, {
+			Desc: "1st level indirect route ipv4-mapped ipv6 using IPv4-formatted address",
+			RouteReq: &pb.SetRouteRequest{
+				AdminDistance: 10,
+				Metric:        10,
+				Prefix: &pb.Prefix{
+					Family:     pb.Prefix_FAMILY_IPV6,
+					Address:    "2003::aaaa",
+					MaskLength: 49,
+				},
+				Nexthops: []*pb.Nexthop{{
+					Type:    pb.Nexthop_TYPE_IPV6,
+					Address: "10.10.10.10",
 				}},
 			},
 		}},
@@ -729,42 +907,6 @@ func TestServer(t *testing.T) {
 			Prefix: &dpb.RoutePrefix{
 				VrfId: uint64(0),
 				Prefix: &dpb.RoutePrefix_Cidr{
-					Cidr: "20.0.0.0/8",
-				},
-			},
-			Hop: &dpb.Route_NextHops{
-				NextHops: &dpb.NextHopList{
-					Hops: []*dpb.NextHop{{
-						Ip: &dpb.NextHop_IpStr{IpStr: "192.168.2.42"},
-						Dev: &dpb.NextHop_Port{
-							Port: "eth1",
-						},
-						Weight: 0,
-					}},
-				},
-			},
-		}, {
-			Prefix: &dpb.RoutePrefix{
-				VrfId: uint64(0),
-				Prefix: &dpb.RoutePrefix_Cidr{
-					Cidr: "2002::/49",
-				},
-			},
-			Hop: &dpb.Route_NextHops{
-				NextHops: &dpb.NextHopList{
-					Hops: []*dpb.NextHop{{
-						Ip: &dpb.NextHop_IpStr{IpStr: "192.168.2.42"},
-						Dev: &dpb.NextHop_Port{
-							Port: "eth1",
-						},
-						Weight: 0,
-					}},
-				},
-			},
-		}, {
-			Prefix: &dpb.RoutePrefix{
-				VrfId: uint64(0),
-				Prefix: &dpb.RoutePrefix_Cidr{
 					Cidr: "2003::/49",
 				},
 			},
@@ -774,6 +916,76 @@ func TestServer(t *testing.T) {
 						Ip: &dpb.NextHop_IpStr{IpStr: "192.168.2.42"},
 						Dev: &dpb.NextHop_Port{
 							Port: "eth1",
+						},
+						Weight: 0,
+					}},
+				},
+			},
+		}},
+	}, {
+		desc: "IPv4-mapped IPv6 route deleted due to specific route not resolvable",
+		noV6: true,
+		inSetRouteRequests: []*SetRouteRequestAction{{
+			Desc: "1st level indirect route",
+			RouteReq: &pb.SetRouteRequest{
+				AdminDistance: 10,
+				Metric:        10,
+				Prefix: &pb.Prefix{
+					Family:     pb.Prefix_FAMILY_IPV4,
+					Address:    "10.0.0.0",
+					MaskLength: 8,
+				},
+				Nexthops: []*pb.Nexthop{{
+					Type:    pb.Nexthop_TYPE_IPV4,
+					Address: "192.168.1.42",
+					// TODO(wenbli): Implement WCMP, for all route requests in this test.
+					Weight: 1,
+				}},
+			},
+		}, {
+			Desc: "secondary 1st level indirect route that is more specific but higher admin distance and unresolvable",
+			RouteReq: &pb.SetRouteRequest{
+				AdminDistance: 20,
+				Metric:        10,
+				Prefix: &pb.Prefix{
+					Family:     pb.Prefix_FAMILY_IPV4,
+					Address:    "10.10.0.0",
+					MaskLength: 16,
+				},
+				Nexthops: []*pb.Nexthop{{
+					Type:    pb.Nexthop_TYPE_IPV4,
+					Address: "192.168.6.42",
+				}},
+			},
+		}, {
+			Desc: "1st level indirect route ipv4-mapped ipv6 using IPv4-formatted address",
+			RouteReq: &pb.SetRouteRequest{
+				AdminDistance: 10,
+				Metric:        10,
+				Prefix: &pb.Prefix{
+					Family:     pb.Prefix_FAMILY_IPV6,
+					Address:    "2003::aaaa",
+					MaskLength: 49,
+				},
+				Nexthops: []*pb.Nexthop{{
+					Type:    pb.Nexthop_TYPE_IPV6,
+					Address: "10.10.10.10",
+				}},
+			},
+		}},
+		wantRoutes: []*dpb.Route{{
+			Prefix: &dpb.RoutePrefix{
+				VrfId: uint64(0),
+				Prefix: &dpb.RoutePrefix_Cidr{
+					Cidr: "10.0.0.0/8",
+				},
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Hops: []*dpb.NextHop{{
+						Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+						Dev: &dpb.NextHop_Port{
+							Port: "eth0",
 						},
 						Weight: 0,
 					}},
