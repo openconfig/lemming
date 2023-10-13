@@ -214,8 +214,8 @@ func EncapAction(header fwdpb.PacketHeaderId) *EncapActionBuilder {
 	}
 }
 
-// WithHeaderId sets the header id.
-func (u *EncapActionBuilder) WithHeaderId(header fwdpb.PacketHeaderId) *EncapActionBuilder {
+// WithHeaderID sets the header id.
+func (u *EncapActionBuilder) WithHeaderID(header fwdpb.PacketHeaderId) *EncapActionBuilder {
 	u.header = header
 	return u
 }
@@ -245,8 +245,8 @@ func DecapAction(header fwdpb.PacketHeaderId) *DecapActionBuilder {
 	}
 }
 
-// WithHeaderId sets the header id.
-func (u *DecapActionBuilder) WithHeaderId(header fwdpb.PacketHeaderId) *DecapActionBuilder {
+// WithHeaderID sets the header id.
+func (u *DecapActionBuilder) WithHeaderID(header fwdpb.PacketHeaderId) *DecapActionBuilder {
 	u.header = header
 	return u
 }

@@ -104,7 +104,7 @@ func (t *Table) Clear() {
 	t.entries = make(map[string]*entry)
 }
 
-func (t *Table) Process(packet fwdpacket.Packet, _ fwdobject.Counters) (fwdaction.Actions, fwdaction.State) {
+func (t *Table) Process(fwdpacket.Packet, fwdobject.Counters) (fwdaction.Actions, fwdaction.State) {
 	if len(t.actions) == 0 {
 		return t.defaultActions, fwdaction.CONTINUE
 	}
