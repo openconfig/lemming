@@ -64,6 +64,15 @@ type SetRouteRequestAction struct {
 	RouteReq *pb.SetRouteRequest
 }
 
+func programmedRoutesQuery(t *testing.T) ygnmi.WildcardQuery[*dpb.Route] {
+	t.Helper()
+	q, err := schemaless.NewWildcard[*dpb.Route]("/dataplane/routes/route[prefix=*][vrf=*]", gnmi.InternalOrigin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return q
+}
+
 func configureInterface(t *testing.T, intf *AddIntfAction, yclient *ygnmi.Client) {
 	t.Helper()
 
@@ -318,6 +327,7 @@ func getConnectedIntfSetupVars() ([]*AddIntfAction, []*dpb.Route) {
 }
 
 func TestServer(t *testing.T) {
+	routesQuery := programmedRoutesQuery(t)
 	inInterfaces, wantConnectedRoutes := getConnectedIntfSetupVars()
 	inInterface6s, wantConnectedRoute6s := getConnectedIntfSetupVars()
 	for _, intf := range inInterface6s {
@@ -848,15 +858,10 @@ func TestServer(t *testing.T) {
 						configureInterface(t, intf, c)
 					}
 
-					q, err := schemaless.NewWildcard[*dpb.Route]("/dataplane/routes/route[prefix=*][vrf=*]", gnmi.InternalOrigin)
-					if err != nil {
-						t.Fatal(err)
-					}
-
 					// Wait for Sysrib to pick up the connected prefixes.
 					for i := 0; i != maxGNMIWaitQuanta; i++ {
 						var routes []*dpb.Route
-						routes, err = ygnmi.GetAll(context.Background(), c, q)
+						routes, err = ygnmi.GetAll(context.Background(), c, routesQuery)
 						if err == nil {
 							if diff := cmp.Diff(wantConnectedRoutes, routes, protocmp.Transform(), protocmp.SortRepeatedFields(new(dpb.NextHopList), "hops")); diff != "" {
 								err = fmt.Errorf("routes not equal to wantConnectedRoutes (-want, +got):\n%s", diff)
@@ -879,7 +884,7 @@ func TestServer(t *testing.T) {
 						}
 					}
 
-					routes, err := ygnmi.GetAll(context.Background(), c, q)
+					routes, err := ygnmi.GetAll(context.Background(), c, routesQuery)
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -903,6 +908,7 @@ func gueHeader(t *testing.T, layers ...gopacket.SerializableLayer) []byte {
 }
 
 func TestBGPGUEPolicy(t *testing.T) {
+	routesQuery := programmedRoutesQuery(t)
 	inInterfaces, wantConnectedRoutes := getConnectedIntfSetupVars()
 	inInterface6s, wantConnectedRoute6s := getConnectedIntfSetupVars()
 	for _, intf := range inInterface6s {
@@ -2265,15 +2271,10 @@ func TestBGPGUEPolicy(t *testing.T) {
 				configureInterface(t, intf, c)
 			}
 
-			q, err := schemaless.NewWildcard[*dpb.Route]("/dataplane/routes/route[prefix=*][vrf=*]", gnmi.InternalOrigin)
-			if err != nil {
-				t.Fatal(err)
-			}
-
 			// Wait for Sysrib to pick up the connected prefixes.
 			for i := 0; i != maxGNMIWaitQuanta; i++ {
 				var routes []*dpb.Route
-				routes, err = ygnmi.GetAll(context.Background(), c, q)
+				routes, err = ygnmi.GetAll(context.Background(), c, routesQuery)
 				if err == nil {
 					if diff := cmp.Diff(wantConnectedRoutes, routes, protocmp.Transform(), protocmp.SortRepeatedFields(new(dpb.NextHopList), "hops")); diff != "" {
 						err = fmt.Errorf("routes not equal to wantConnectedRoutes (-want, +got):\n%s", diff)
@@ -2334,7 +2335,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 						s.deleteGUEPolicy(prefix)
 					}
 
-					routes, err := ygnmi.GetAll(context.Background(), c, q)
+					routes, err := ygnmi.GetAll(context.Background(), c, routesQuery)
 					if err != nil {
 						t.Fatal(err)
 					}
