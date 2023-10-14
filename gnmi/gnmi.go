@@ -359,7 +359,9 @@ func set(schema *ytypes.Schema, c *Collector, req *gpb.SetRequest, preferShadowP
 			SchemaTree: schema.SchemaTree,
 			Unmarshal:  schema.Unmarshal,
 		}
-		unmarshalSetRequest(tempSchema, req, preferShadowPath)
+		if err := unmarshalSetRequest(tempSchema, req, preferShadowPath); err != nil {
+			return fmt.Errorf("error while unmarshalling SetRequest: %v", err)
+		}
 		if timestamp == 0 {
 			timestamp = time.Now().UnixNano()
 		}
@@ -422,7 +424,11 @@ const (
 	InternalOrigin = "lemming-internal"
 )
 
-// handleInternalOrigin handles SetRequests whose path has schemaless values.
+// handleInternalOrigin handles SetRequests whose paths contain schemaless
+// values.
+//
+// An error is returned if the request doesn't purely contain schemaless
+// values.
 func (s *Server) handleInternalOrigin(req *gpb.SetRequest) (bool, error) {
 	if req.Prefix == nil {
 		req.Prefix = &gpb.Path{}
@@ -436,11 +442,14 @@ func (s *Server) handleInternalOrigin(req *gpb.SetRequest) (bool, error) {
 		Timestamp: time.Now().UnixNano(),
 	}
 	var hasInternal bool
+	var hasExternal bool
 
 	for _, del := range req.Delete {
 		if del.Origin == InternalOrigin {
 			hasInternal = true
 			notif.Delete = append(notif.Delete, del)
+		} else {
+			hasExternal = true
 		}
 	}
 	if hasInternal {
@@ -450,25 +459,35 @@ func (s *Server) handleInternalOrigin(req *gpb.SetRequest) (bool, error) {
 	}
 
 	notif.Delete = nil
-	hasInternal = false
 
 	for _, replace := range req.Replace {
 		if replace.Path.Origin == InternalOrigin {
 			hasInternal = true
 			notif.Update = append(notif.Update, replace)
+		} else {
+			hasExternal = true
 		}
 	}
 	for _, update := range req.Update {
 		if update.Path.Origin == InternalOrigin {
 			hasInternal = true
 			notif.Update = append(notif.Update, update)
+		} else {
+			hasExternal = true
 		}
 	}
 	log.V(2).Infof("internal origin notification: %v", notif)
 	if hasInternal {
-		return true, s.c.GnmiUpdate(notif)
+		if err := s.c.GnmiUpdate(notif); err != nil {
+			return true, err
+		}
 	}
-	return false, nil
+
+	if hasInternal && hasExternal {
+		return true, fmt.Errorf("error: SetRequest contained both internal and external origins: %v", prototext.Format(req))
+	}
+
+	return hasInternal, nil
 }
 
 const (
