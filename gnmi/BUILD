@@ -49,6 +49,7 @@ go_test(
         "@com_github_openconfig_gnmi//errdiff",
         "@com_github_openconfig_gnmi//proto/gnmi",
         "@com_github_openconfig_gnmi//value",
+        "@com_github_openconfig_ygnmi//schemaless",
         "@com_github_openconfig_ygnmi//ygnmi",
         "@com_github_openconfig_ygot//ygot",
         "@org_golang_google_grpc//:go_default_library",
