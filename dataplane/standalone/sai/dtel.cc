@@ -81,6 +81,11 @@ lemming::dataplane::sai::CreateDtelRequest convert_create_dtel(
             attr_list[i].value.objlist.list,
             attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
         break;
+      case SAI_DTEL_ATTR_INT_L4_DSCP:
+        *msg.mutable_int_l4_dscp() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u8,
+            attr_list[i].value.aclfield.mask.u8);
+        break;
     }
   }
   return msg;
@@ -266,6 +271,11 @@ sai_status_t l_set_dtel_attribute(sai_object_id_t dtel_id,
       req.mutable_sink_port_list()->Add(
           attr->value.objlist.list,
           attr->value.objlist.list + attr->value.objlist.count);
+      break;
+    case SAI_DTEL_ATTR_INT_L4_DSCP:
+      *req.mutable_int_l4_dscp() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u8,
+          attr->value.aclfield.mask.u8);
       break;
   }
 

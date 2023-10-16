@@ -3,6 +3,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "saiserver",
     srcs = [
+        "acl.go",
         "ports.go",
         "routing.go",
         "saiserver.go",
@@ -11,6 +12,7 @@ go_library(
     importpath = "github.com/openconfig/lemming/dataplane/standalone/saiserver",
     visibility = ["//visibility:public"],
     deps = [
+        "//dataplane/forwarding/fwdconfig",
         "//dataplane/internal/engine",
         "//dataplane/standalone/proto:sai",
         "//dataplane/standalone/saiserver/attrmgr",

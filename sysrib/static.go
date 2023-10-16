@@ -87,7 +87,7 @@ func (s *Server) monitorStaticRoutes(yclient *ygnmi.Client) error {
 					continue
 				}
 				if route := convertStaticRoute(sroute); route != nil {
-					if err := s.setRoute(fakedevice.DefaultNetworkInstance, route); err != nil {
+					if err := s.setRoute(fakedevice.DefaultNetworkInstance, route, false); err != nil {
 						log.Warningf("Failed to add static route: %v", err)
 					} else {
 						gnmiclient.Replace(context.Background(), yclient, staticroot.Static(sroute.GetPrefix()).State(), sroute)

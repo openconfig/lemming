@@ -30,10 +30,6 @@ import (
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
-type acl struct {
-	saipb.UnimplementedAclServer
-}
-
 type bfd struct {
 	saipb.UnimplementedBfdServer
 }
@@ -179,7 +175,6 @@ type Server struct {
 	mgr            *attrmgr.AttrMgr
 	engine         *engine.Engine
 	initialized    bool
-	acl            *acl
 	bfd            *bfd
 	buffer         *buffer
 	counter        *counter
@@ -247,7 +242,6 @@ func New(mgr *attrmgr.AttrMgr, s *grpc.Server) (*Server, error) {
 	srv := &Server{
 		mgr:            mgr,
 		engine:         e,
-		acl:            &acl{},
 		bfd:            &bfd{},
 		buffer:         &buffer{},
 		counter:        &counter{},
@@ -285,7 +279,6 @@ func New(mgr *attrmgr.AttrMgr, s *grpc.Server) (*Server, error) {
 	fwdpb.RegisterForwardingServer(s, e)
 	dpb.RegisterDataplaneServer(s, e)
 	saipb.RegisterEntrypointServer(s, srv)
-	saipb.RegisterAclServer(s, srv.acl)
 	saipb.RegisterBfdServer(s, srv.bfd)
 	saipb.RegisterCounterServer(s, srv.counter)
 	saipb.RegisterDebugCounterServer(s, srv.debugCounter)

@@ -71,6 +71,19 @@ func (n *neighbor) CreateNeighborEntry(ctx context.Context, req *saipb.CreateNei
 	return &saipb.CreateNeighborEntryResponse{}, nil
 }
 
+// CreateNeighborEntries adds multiple neighbors to the neighbor table.
+func (n *neighbor) CreateNeighborEntries(ctx context.Context, re *saipb.CreateNeighborEntriesRequest) (*saipb.CreateNeighborEntriesResponse, error) {
+	resp := &saipb.CreateNeighborEntriesResponse{}
+	for _, req := range re.GetReqs() {
+		res, err := attrmgr.InvokeAndSave(ctx, n.mgr, n.CreateNeighborEntry, req)
+		if err != nil {
+			return nil, err
+		}
+		resp.Resps = append(resp.Resps, res)
+	}
+	return resp, nil
+}
+
 type nextHopGroup struct {
 	saipb.UnimplementedNextHopGroupServer
 	mgr       *attrmgr.AttrMgr

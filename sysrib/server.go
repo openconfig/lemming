@@ -100,33 +100,36 @@ type Server struct {
 	// have been resolved.
 	resolvedRoutes map[RouteKey]*Route
 
-	dataplane dataplaneAPI
+	dataplane dplane
 
 	zServer *ZServer
 }
 
-type dataplaneAPI interface {
-	ProgramRoute(*ResolvedRoute) error
-}
-
-// Dataplane is a wrapper around dpb.HALClient to enable testing before
-// resolved route translation.
-//
-// TODO(wenbli): This is a temporary workaround due to the instability of the
-// API. Once the dataplane API is stable, then we'll want to test at the API
-// layer instead.
-type Dataplane struct {
+// dplane represents the dataplane API accessible to sysrib for programming
+// routes.
+type dplane struct {
 	Client *ygnmi.Client
 }
 
 // programRoute programs the route in the dataplane, returning an error on failure.
-func (d *Dataplane) ProgramRoute(r *ResolvedRoute) error {
+func (d *dplane) programRoute(r *ResolvedRoute) error {
 	log.V(1).Infof("sysrib: programming resolved route: %+v", r)
 	rr, err := resolvedRouteToRouteRequest(r)
 	if err != nil {
 		return err
 	}
 	_, err = ygnmi.Replace(context.TODO(), d.Client, handlers.RouteQuery(rr.GetPrefix().GetVrfId(), rr.GetPrefix().GetCidr()), rr, ygnmi.WithSetFallbackEncoding())
+	return err
+}
+
+// deprogramRoute de-programs the route in the dataplane, returning an error on failure.
+func (d *dplane) deprogramRoute(r *ResolvedRoute) error {
+	log.V(1).Infof("sysrib: deprogramming newly unresolved route: %+v", r)
+	rr, err := resolvedRouteToRouteRequest(r)
+	if err != nil {
+		return err
+	}
+	_, err = ygnmi.Delete(context.TODO(), d.Client, handlers.RouteQuery(rr.GetPrefix().GetVrfId(), rr.GetPrefix().GetCidr()))
 	return err
 }
 
@@ -163,7 +166,7 @@ func (s *Server) Start(gClient gpb.GNMIClient, target, zapiURL string) error {
 	if err != nil {
 		return err
 	}
-	s.dataplane = &Dataplane{Client: yclient}
+	s.dataplane = dplane{Client: yclient}
 
 	if err := s.monitorConnectedIntfs(yclient); err != nil {
 		return err
@@ -261,7 +264,6 @@ func (s *Server) monitorConnectedIntfs(yclient *ygnmi.Client) error {
 		},
 	)
 
-	// TODO(wenbli): Ideally, this is implemented by watching more fine-grained paths.
 	// TODO(wenbli): Support interface removal.
 	go func() {
 		if _, err := interfaceWatcher.Await(); err != nil {
@@ -515,14 +517,17 @@ func resolvedRouteToRouteRequest(r *ResolvedRoute) (*dpb.Route, error) {
 				return nil, fmt.Errorf("error retrieving GUE actions: %v", err)
 			}
 		}
-		nexthops = append(nexthops, &dpb.NextHop{
+		dnh := &dpb.NextHop{
 			Dev: &dpb.NextHop_Port{
 				Port: nh.Port.Name,
 			},
-			Ip:                 &dpb.NextHop_IpStr{IpStr: nh.Address},
 			Weight:             nh.Weight,
 			PreTransmitActions: actions,
-		})
+		}
+		if nh.Address != "" {
+			dnh.Ip = &dpb.NextHop_IpStr{IpStr: nh.Address}
+		}
+		nexthops = append(nexthops, dnh)
 	}
 
 	return &dpb.Route{
@@ -538,15 +543,8 @@ func resolvedRouteToRouteRequest(r *ResolvedRoute) (*dpb.Route, error) {
 	}, nil
 }
 
-// programRoute programs the route in the dataplane, returning an error on failure.
-func (s *Server) programRoute(r *ResolvedRoute) error {
-	return s.dataplane.ProgramRoute(r)
-}
-
 // ResolveAndProgramDiff walks through each prefix in the RIB, resolving it and
 // programs the forwarding plane.
-//
-// TODO(wenbli): handle route deletion.
 func (s *Server) ResolveAndProgramDiff() error {
 	log.Info("Recalculating resolved RIB")
 	if debugRIB {
@@ -554,8 +552,8 @@ func (s *Server) ResolveAndProgramDiff() error {
 	}
 	s.rib.mu.RLock()
 	defer s.rib.mu.RUnlock()
-	// newResolvedRoutes keeps track of the new set of top-level resolved
-	// routes after re-processing.
+
+	// Program new/changed resolved routes.
 	newResolvedRoutes := map[RouteKey]*Route{}
 	for niName, ni := range s.rib.NI {
 		for it := ni.IPV4.Iterate(); it.Next(); {
@@ -565,6 +563,25 @@ func (s *Server) ResolveAndProgramDiff() error {
 			s.resolveAndProgramDiffAux(niName, ni, it.Address().String(), newResolvedRoutes)
 		}
 	}
+
+	// Deprogram newly unresolved routes.
+	for routeKey, rr := range s.ProgrammedRoutes() {
+		if _, ok := newResolvedRoutes[routeKey]; !ok {
+			log.V(1).Infof("Deleting route %s", rr.RouteKey)
+			if err := s.dataplane.deprogramRoute(rr); err != nil {
+				log.Warningf("failed to deprogram route %+v: %v", rr, err)
+				continue
+			}
+			s.programmedRoutesMu.Lock()
+			delete(s.programmedRoutes, rr.RouteKey)
+			s.programmedRoutesMu.Unlock()
+			// TODO(wenbli): Add ZAPI-handling for sending a route deletion message.
+		}
+	}
+	if debugRIB {
+		s.PrintProgrammedRoutes()
+	}
+
 	s.resolvedRoutesMu.Lock()
 	s.resolvedRoutes = newResolvedRoutes
 	s.resolvedRoutesMu.Unlock()
@@ -609,14 +626,12 @@ func (s *Server) resolveAndProgramDiffAux(niName string, ni *NIRIB, prefix strin
 	}
 
 	s.programmedRoutesMu.Lock()
-	currentRoute, ok := s.programmedRoutes[rr.RouteKey]
+	currentRoute, _ := s.programmedRoutes[rr.RouteKey]
 	s.programmedRoutesMu.Unlock()
 	switch {
-	case !ok && routeIsResolved, ok && !reflect.DeepEqual(currentRoute, rr):
-		// TODO(wenbli): A route becoming unresolved here may trigger a nil-pointer exception.
-		// This should be unit-tested and resolved when route deletion is supported.
+	case routeIsResolved && !reflect.DeepEqual(currentRoute, rr):
 		log.V(1).Infof("(-currentRoute, +resolvedRoute):\n%s", cmp.Diff(currentRoute, rr))
-		if err := s.programRoute(rr); err != nil {
+		if err := s.dataplane.programRoute(rr); err != nil {
 			log.Warningf("failed to program route %+v: %v", rr, err)
 			return
 		}
@@ -628,8 +643,6 @@ func (s *Server) resolveAndProgramDiffAux(niName string, ni *NIRIB, prefix strin
 		}
 		// ZAPI: If a new/updated route is programmed, redistribute it to clients.
 		distributeRoute(s.zServer, rr, route)
-	default:
-		// No diff, so don't do anything.
 	}
 }
 
@@ -651,11 +664,6 @@ func (s *Server) ProgrammedRoutes() map[RouteKey]*ResolvedRoute {
 
 // SetRoute implements ROUTE_ADD and ROUTE_DELETE
 func (s *Server) SetRoute(_ context.Context, req *sysribpb.SetRouteRequest) (*sysribpb.SetRouteResponse, error) {
-	// TODO(wenbli): Handle route deletion.
-	if req.Delete {
-		return nil, status.Errorf(codes.Unimplemented, "route delete not yet supported")
-	}
-
 	pfx, err := prefixString(req.Prefix)
 	if err != nil {
 		return nil, err
@@ -684,7 +692,7 @@ func (s *Server) SetRoute(_ context.Context, req *sysribpb.SetRouteRequest) (*sy
 			AdminDistance: uint8(req.GetAdminDistance()),
 			Metric:        req.GetMetric(),
 		},
-	}); err != nil {
+	}, req.Delete); err != nil {
 		return nil, status.Error(codes.Aborted, fmt.Sprint(err))
 	}
 
@@ -701,8 +709,8 @@ func (s *Server) SetRoute(_ context.Context, req *sysribpb.SetRouteRequest) (*sy
 }
 
 // setRoute adds/deletes a route from the RIB manager.
-func (s *Server) setRoute(niName string, route *Route) error {
-	if _, err := s.rib.AddRoute(niName, route); err != nil {
+func (s *Server) setRoute(niName string, route *Route, isDelete bool) error {
+	if err := s.rib.setRoute(niName, route, isDelete); err != nil {
 		return fmt.Errorf("error while adding route to sysrib: %v", err)
 	}
 
@@ -715,7 +723,7 @@ func (s *Server) setRoute(niName string, route *Route) error {
 // addInterfacePrefix adds a prefix to the sysrib as a connected route.
 func (s *Server) addInterfacePrefix(name string, ifindex int32, prefix string, niName string) error {
 	log.V(1).Infof("Adding interface prefix: intf %s, idx %d, prefix %s, ni %s", name, ifindex, prefix, niName)
-	connectedRoute := &Route{
+	return s.setRoute(niName, &Route{
 		Prefix: prefix,
 		Connected: &Interface{
 			Name:  name,
@@ -725,12 +733,7 @@ func (s *Server) addInterfacePrefix(name string, ifindex int32, prefix string, n
 			// Connected routes have admin-distance of 0.
 			AdminDistance: 0,
 		},
-	}
-
-	if _, err := s.rib.AddRoute(niName, connectedRoute); err != nil {
-		return fmt.Errorf("failed to add route to Sysrib: %v", err)
-	}
-	return s.ResolveAndProgramDiff()
+	}, false)
 }
 
 // setInterface responds to INTERFACE_UP/INTERFACE_DOWN messages from the dataplane.

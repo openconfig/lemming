@@ -220,7 +220,7 @@ func NewSysRIB(initialCfg *oc.Root) (*SysRIB, error) {
 				sr.defaultNI = ni
 			}
 			for _, r := range niR.Rts {
-				if _, err := sr.AddRoute(ni, r); err != nil {
+				if err := sr.AddRoute(ni, r); err != nil {
 					return nil, err
 				}
 			}
@@ -236,15 +236,28 @@ func NewSysRIB(initialCfg *oc.Root) (*SysRIB, error) {
 	return sr, nil
 }
 
-// routeMatches return if two routes are equal.
-func routeMatches(a *Route, b *Route) bool {
+// routeKeyMatches return if two routes have the same key.
+//
+// Criteria:
+// * canonical prefixes match; AND
+// * admin-distance equal; AND
+// * connected interfaces are equal (i.e. allow multi-homing).
+func routeKeyMatches(a *Route, b *Route) bool {
 	if a == b {
 		return true
 	}
 	if a == nil || b == nil {
 		return false
 	}
-	return reflect.DeepEqual(*a, *b)
+	prefixA, err := canonicalPrefix(a.Prefix)
+	if err != nil {
+		return false
+	}
+	prefixB, err := canonicalPrefix(b.Prefix)
+	if err != nil {
+		return false
+	}
+	return prefixA.Addr() == prefixB.Addr() && prefixA.Bits() == prefixB.Bits() && a.RoutePref.AdminDistance == b.RoutePref.AdminDistance && reflect.DeepEqual(a.Connected, b.Connected)
 }
 
 // guePolicyUnconditionalMatch always returns true. It is intended to be used
@@ -253,34 +266,46 @@ func guePolicyUnconditionalMatch(_ GUEPolicy, _ GUEPolicy) bool {
 	return true
 }
 
-// AddRoute adds a route, r, to the network instance, ni, in the sysRIB.
-// It returns true if the route was added, and false if not. If the route
-// already exists, it returns (false, nil)
-func (sr *SysRIB) AddRoute(ni string, r *Route) (bool, error) {
+// AddRoute adds a route r, to network instance ni, in the sysRIB.
+func (sr *SysRIB) AddRoute(ni string, r *Route) error {
+	return sr.setRoute(ni, r, false)
+}
+
+// DeleteRoute deletes a route r, from network instance ni, in the sysRIB.
+func (sr *SysRIB) DeleteRoute(ni string, r *Route) error {
+	return sr.setRoute(ni, r, true)
+}
+
+// setRoute adds or deletes a route r, to network instance ni, in the sysRIB.
+func (sr *SysRIB) setRoute(ni string, r *Route, isDelete bool) error {
 	sr.mu.Lock()
 	defer sr.mu.Unlock()
 	if _, ok := sr.NI[ni]; !ok {
-		return false, fmt.Errorf("cannot find network instance %s", ni)
+		return fmt.Errorf("cannot find network instance %s", ni)
 	}
 	prefix, err := canonicalPrefix(r.Prefix)
 	if err != nil {
-		return false, fmt.Errorf("sysrib: prefix cannot be parsed: %v", err)
+		return fmt.Errorf("sysrib: prefix cannot be parsed: %v", err)
 	}
 	addr4, addr6, err := patricia.ParseIPFromString(prefix.String())
 	if err != nil {
-		return false, fmt.Errorf("cannot create prefix for %s, %v", r.Prefix, err)
+		return fmt.Errorf("cannot create prefix for %s, %v", r.Prefix, err)
 	}
 	switch {
 	case addr4 != nil:
-		added, _ := sr.NI[ni].IPV4.Add(*addr4, r, routeMatches)
-		log.V(1).Infof("AddRoute attempt: %v, %v, result: %v", *addr4, r, added)
-		return added, nil
+		sr.NI[ni].IPV4.Delete(*addr4, routeKeyMatches, r)
+		if !isDelete {
+			sr.NI[ni].IPV4.Add(*addr4, r, routeKeyMatches)
+		}
+		return nil
 	case addr6 != nil:
-		added, _ := sr.NI[ni].IPV6.Add(*addr6, r, routeMatches)
-		log.V(1).Infof("AddRoute attempt: %v, %v, result: %v", *addr6, r, added)
-		return added, nil
+		sr.NI[ni].IPV6.Delete(*addr6, routeKeyMatches, r)
+		if !isDelete {
+			sr.NI[ni].IPV6.Add(*addr6, r, routeKeyMatches)
+		}
+		return nil
 	default:
-		return false, fmt.Errorf("route prefix is neither v4 or v6: %v", r.Prefix)
+		return fmt.Errorf("route prefix is neither v4 or v6: %v", r.Prefix)
 	}
 }
 

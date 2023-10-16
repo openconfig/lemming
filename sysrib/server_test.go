@@ -19,22 +19,26 @@ import (
 	"fmt"
 	"net"
 	"net/netip"
-	"reflect"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/openconfig/gribigo/afthelper"
+	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/google/gopacket"
+	"github.com/google/gopacket/layers"
 	"github.com/openconfig/lemming/gnmi"
 	"github.com/openconfig/lemming/gnmi/gnmiclient"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
+	"github.com/openconfig/ygnmi/schemaless"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/testing/protocmp"
 
+	dpb "github.com/openconfig/lemming/proto/dataplane"
+	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 	pb "github.com/openconfig/lemming/proto/sysrib"
 )
 
@@ -45,16 +49,6 @@ const (
 	// slice into which to start copying the 4 bytes of the IPv4 address
 	// for conversion.
 	v4v6ConversionStartPos = 8
-)
-
-var (
-	// failedRoutesMu avoids any races on the failedRoutes in
-	// TestBGPGUEPolicy. The test passes in the pointer to the failed
-	// routes to a concurrently-running sysrib server, and also modifies
-	// the IP addresses/port numbers for v6 testing, so this is necessary
-	// to avoid `go test -race` from reporting a race (which it does so
-	// intermittently).
-	failedRoutesMu sync.Mutex
 )
 
 type AddIntfAction struct {
@@ -70,82 +64,13 @@ type SetRouteRequestAction struct {
 	RouteReq *pb.SetRouteRequest
 }
 
-type FakeDataplane struct {
-	mu             sync.Mutex
-	incomingRoutes []*ResolvedRoute
-
-	// failRoutes are routes that the fake dataplane will choose to fail to
-	// program.
-	failRoutes []*ResolvedRoute
-}
-
-func (dp *FakeDataplane) ProgramRoute(r *ResolvedRoute) error {
-	dp.mu.Lock()
-	failedRoutesMu.Lock()
-	defer failedRoutesMu.Unlock()
-	defer dp.mu.Unlock()
-	// Intentionally fail to program failRoutes.
-	for _, failroute := range dp.failRoutes {
-		if reflect.DeepEqual(r, failroute) {
-			return fmt.Errorf("route failed to program: %v", r)
-		}
-	}
-	dp.incomingRoutes = append(dp.incomingRoutes, r)
-	return nil
-}
-
-// SetupFailRoutes sets routes that will fail to program.
-func (dp *FakeDataplane) SetupFailRoutes(failRoutes []*ResolvedRoute) {
-	dp.failRoutes = failRoutes
-}
-
-func (dp *FakeDataplane) GetRoutes() []*ResolvedRoute {
-	dp.mu.Lock()
-	defer dp.mu.Unlock()
-	return dp.incomingRoutes
-}
-
-func (dp *FakeDataplane) ClearQueue() {
-	dp.mu.Lock()
-	defer dp.mu.Unlock()
-	dp.incomingRoutes = []*ResolvedRoute{}
-}
-
-func NewFakeDataplane() *FakeDataplane {
-	return &FakeDataplane{}
-}
-
-// routeSliceToMap converts a slice of ResolvedRoute to a map keyed by their
-// RouteKeys. It returns an error if any of the routes were nil or if there is
-// a duplicate.
-func routeSliceToMap(rs []*ResolvedRoute) (map[RouteKey]*ResolvedRoute, error) {
-	ret := map[RouteKey]*ResolvedRoute{}
-	for _, rr := range rs {
-		if rr == nil {
-			return nil, fmt.Errorf("Got nil route in ResolvedRoute slice")
-		}
-		if existing, ok := ret[rr.RouteKey]; ok {
-			return nil, fmt.Errorf("Got duplicate route key:\nFirst: %+v\nDuplicate: %+v", existing, rr)
-		}
-		ret[rr.RouteKey] = rr
-	}
-	return ret, nil
-}
-
-func checkResolvedRoutesEqual(got, want []*ResolvedRoute) error {
-	gotRoutes, err := routeSliceToMap(got)
+func programmedRoutesQuery(t *testing.T) ygnmi.WildcardQuery[*dpb.Route] {
+	t.Helper()
+	q, err := schemaless.NewWildcard[*dpb.Route]("/dataplane/routes/route[prefix=*][vrf=*]", gnmi.InternalOrigin)
 	if err != nil {
-		return err
+		t.Fatal(err)
 	}
-	wantRoutes, err := routeSliceToMap(want)
-	if err != nil {
-		return err
-	}
-
-	if diff := cmp.Diff(gotRoutes, wantRoutes); diff != "" {
-		return fmt.Errorf("Resolved routes are not equal: (-got, +want):\n%s", diff)
-	}
-	return nil
+	return q
 }
 
 func configureInterface(t *testing.T, intf *AddIntfAction, yclient *ygnmi.Client) {
@@ -185,28 +110,22 @@ func mapPolicyTo6(h GUEPolicy) GUEPolicy {
 	return zero
 }
 
-func mapPolicyHeadersTo6(h GUEHeaders) GUEHeaders {
-	zero := GUEHeaders{}
-	if h == zero {
-		return h
-	}
-	zero.dstPortv6 = h.dstPortv4
-	zero.srcIP6 = mapAddressTo6Bytes(h.srcIP4)
-	zero.dstIP6 = mapAddressTo6Bytes(h.dstIP4)
-	zero.isV6 = true
-	return zero
-}
-
 func mapAddressTo6Bytes(v4Address [4]byte) [16]byte {
 	ipv6Bytes := [16]byte{0x20, 0x01, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 	copy(ipv6Bytes[v4v6ConversionStartPos:], v4Address[:])
 	return ipv6Bytes
 }
 
+func mapAddressTo6BytesSlice(v4Address [4]byte) []byte {
+	r := mapAddressTo6Bytes(v4Address)
+	return r[:]
+}
+
 // mapAddressTo6 converts an input address to an IPv6 address that is *not* an
 // IPv4-mapped IPv6 address. This allows running the same test cases except
 // with IPv6 addresses.
 func mapAddressTo6(t *testing.T, addrStr string) string {
+	t.Helper()
 	if addrStr == "" {
 		return ""
 	}
@@ -244,16 +163,29 @@ func mapAddressTo6(t *testing.T, addrStr string) string {
 	return newAddrStr
 }
 
-func mapResolvedRouteTo6(t *testing.T, route *ResolvedRoute) {
-	route.Prefix = mapAddressTo6(t, route.Prefix)
-	// Since this is not a pointer need to overwrite.
-	nexthops := map[ResolvedNexthop]bool{}
-	for nh, v := range route.Nexthops {
-		nh.Address = mapAddressTo6(t, nh.Address)
-		nh.GUEHeaders = mapPolicyHeadersTo6(nh.GUEHeaders)
-		nexthops[nh] = v
+func mapResolvedRouteTo6(t *testing.T, route *dpb.Route) {
+	route.Prefix.Prefix = &dpb.RoutePrefix_Cidr{Cidr: mapAddressTo6(t, route.Prefix.GetCidr())}
+	for _, nh := range route.GetNextHops().GetHops() {
+		if nh.GetIpStr() != "" {
+			nh.Ip = &dpb.NextHop_IpStr{IpStr: mapAddressTo6(t, nh.GetIpStr())}
+		}
+		for _, pta := range nh.PreTransmitActions {
+			if pta.GetReparse().GetHeaderId() == fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4 {
+				pta.GetReparse().HeaderId = fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP6
+			}
+		}
 	}
-	route.Nexthops = nexthops
+}
+
+func selectGUEHeaders(t *testing.T, v4 bool, layers ...gopacket.SerializableLayer) []gopacket.SerializableLayer {
+	layerN := len(layers)
+	if layerN == 0 || layerN%2 != 0 {
+		t.Fatalf("Input layers is not even and non-zero: %v", layerN)
+	}
+	if v4 {
+		return layers[:layerN/2]
+	}
+	return layers[layerN/2:]
 }
 
 func mapPrefixTo6(t *testing.T, prefix *pb.Prefix) {
@@ -269,19 +201,8 @@ type SetAndProgramPair struct {
 	ResolvedRoutes        []*ResolvedRoute
 }
 
-func TestServer(t *testing.T) {
-	tests := []struct {
-		desc string
-		// noV6 indicates whether the test should be run again after converting all
-		// IPv4 addresses to IPv6.
-		noV6                       bool
-		inInterfaces               []*AddIntfAction
-		wantInitialConnectedRoutes []*ResolvedRoute
-		inSetAndProgramPairs       []*SetAndProgramPair
-		inFailRoutes               []*ResolvedRoute
-	}{{
-		desc: "Route Additions", // TODO(wenbli): test route deletion in this test case once it's implemented.
-		inInterfaces: []*AddIntfAction{{
+func getConnectedIntfSetupVars() ([]*AddIntfAction, []*dpb.Route) {
+	return []*AddIntfAction{{
 			name:    "eth0",
 			ifindex: 0,
 			enabled: true,
@@ -311,878 +232,772 @@ func TestServer(t *testing.T) {
 			enabled: true,
 			prefix:  "192.168.5.1/24",
 			niName:  "DEFAULT",
+		}, {
+			name:    "eth5",
+			ifindex: 5,
+			enabled: true,
+			prefix:  "192.168.6.1/24",
+			niName:  "DEFAULT",
+		}}, []*dpb.Route{{
+			Prefix: &dpb.RoutePrefix{
+				VrfId: uint64(0),
+				Prefix: &dpb.RoutePrefix_Cidr{
+					Cidr: "192.168.1.0/24",
+				},
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Hops: []*dpb.NextHop{{
+						Dev: &dpb.NextHop_Port{
+							Port: "eth0",
+						},
+						Weight: 0,
+					}},
+				},
+			},
+		}, {
+			Prefix: &dpb.RoutePrefix{
+				VrfId: uint64(0),
+				Prefix: &dpb.RoutePrefix_Cidr{
+					Cidr: "192.168.2.0/24",
+				},
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Hops: []*dpb.NextHop{{
+						Dev: &dpb.NextHop_Port{
+							Port: "eth1",
+						},
+						Weight: 0,
+					}},
+				},
+			},
+		}, {
+			Prefix: &dpb.RoutePrefix{
+				VrfId: uint64(0),
+				Prefix: &dpb.RoutePrefix_Cidr{
+					Cidr: "192.168.3.0/24",
+				},
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Hops: []*dpb.NextHop{{
+						Dev: &dpb.NextHop_Port{
+							Port: "eth2",
+						},
+						Weight: 0,
+					}},
+				},
+			},
+		}, {
+			Prefix: &dpb.RoutePrefix{
+				VrfId: uint64(0),
+				Prefix: &dpb.RoutePrefix_Cidr{
+					Cidr: "192.168.4.0/24",
+				},
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Hops: []*dpb.NextHop{{
+						Dev: &dpb.NextHop_Port{
+							Port: "eth3",
+						},
+						Weight: 0,
+					}},
+				},
+			},
+		}, {
+			Prefix: &dpb.RoutePrefix{
+				VrfId: uint64(0),
+				Prefix: &dpb.RoutePrefix_Cidr{
+					Cidr: "192.168.5.0/24",
+				},
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Hops: []*dpb.NextHop{{
+						Dev: &dpb.NextHop_Port{
+							Port: "eth4",
+						},
+						Weight: 0,
+					}},
+				},
+			},
+		}}
+}
+
+func TestServer(t *testing.T) {
+	routesQuery := programmedRoutesQuery(t)
+	inInterfaces, wantConnectedRoutes := getConnectedIntfSetupVars()
+	inInterface6s, wantConnectedRoute6s := getConnectedIntfSetupVars()
+	for _, intf := range inInterface6s {
+		intf.prefix = mapAddressTo6(t, intf.prefix)
+	}
+	for _, route := range wantConnectedRoute6s {
+		mapResolvedRouteTo6(t, route)
+	}
+
+	tests := []struct {
+		desc string
+		// noV6 indicates whether the test should be run again after converting all
+		// IPv4 addresses to IPv6.
+		noV6               bool
+		inSetRouteRequests []*SetRouteRequestAction
+		wantRoutes         []*dpb.Route
+		wantErr            bool
+	}{{
+		desc: "Route Additions",
+		inSetRouteRequests: []*SetRouteRequestAction{{
+			Desc: "1st level indirect route",
+			RouteReq: &pb.SetRouteRequest{
+				AdminDistance: 10,
+				Metric:        10,
+				Prefix: &pb.Prefix{
+					Family:     pb.Prefix_FAMILY_IPV4,
+					Address:    "10.0.0.0",
+					MaskLength: 8,
+				},
+				Nexthops: []*pb.Nexthop{{
+					Type:    pb.Nexthop_TYPE_IPV4,
+					Address: "192.168.1.42",
+					// TODO(wenbli): Implement WCMP, for all route requests in this test.
+					Weight: 1,
+				}},
+			},
+		}, {
+			Desc: "2nd level indirect route",
+			RouteReq: &pb.SetRouteRequest{
+				AdminDistance: 10,
+				Metric:        10,
+				Prefix: &pb.Prefix{
+					Family:     pb.Prefix_FAMILY_IPV4,
+					Address:    "20.0.0.0",
+					MaskLength: 8,
+				},
+				Nexthops: []*pb.Nexthop{{
+					Type:    pb.Nexthop_TYPE_IPV4,
+					Address: "10.10.10.10",
+				}},
+			},
+		}, {
+			Desc: "3rd level indirect route",
+			RouteReq: &pb.SetRouteRequest{
+				AdminDistance: 10,
+				Metric:        10,
+				Prefix: &pb.Prefix{
+					Family:     pb.Prefix_FAMILY_IPV4,
+					Address:    "30.0.0.0",
+					MaskLength: 8,
+				},
+				Nexthops: []*pb.Nexthop{{
+					Type:    pb.Nexthop_TYPE_IPV4,
+					Address: "20.10.10.10",
+				}},
+			},
+		}, {
+			Desc: "secondary 1st level indirect route that has higher admin distance",
+			RouteReq: &pb.SetRouteRequest{
+				AdminDistance: 20,
+				Metric:        10,
+				Prefix: &pb.Prefix{
+					Family:     pb.Prefix_FAMILY_IPV4,
+					Address:    "10.0.0.0",
+					MaskLength: 8,
+				},
+				Nexthops: []*pb.Nexthop{{
+					Type:    pb.Nexthop_TYPE_IPV4,
+					Address: "192.168.2.42",
+				}},
+			},
+		}, {
+			Desc: "secondary 1st level indirect route that has lower admin distance",
+			RouteReq: &pb.SetRouteRequest{
+				AdminDistance: 5,
+				Metric:        10,
+				Prefix: &pb.Prefix{
+					Family:     pb.Prefix_FAMILY_IPV4,
+					Address:    "10.0.0.0",
+					MaskLength: 8,
+				},
+				Nexthops: []*pb.Nexthop{{
+					Type:    pb.Nexthop_TYPE_IPV4,
+					Address: "192.168.3.42",
+				}},
+			},
+		}, {
+			Desc: "secondary 1st level indirect route that has higher metric",
+			RouteReq: &pb.SetRouteRequest{
+				AdminDistance: 5,
+				Metric:        999,
+				Prefix: &pb.Prefix{
+					Family:     pb.Prefix_FAMILY_IPV4,
+					Address:    "10.0.0.0",
+					MaskLength: 8,
+				},
+				Nexthops: []*pb.Nexthop{{
+					Type:    pb.Nexthop_TYPE_IPV4,
+					Address: "192.168.4.42",
+				}},
+			},
+		}, {
+			Desc: "secondary 1st level indirect route that has lower metric",
+			RouteReq: &pb.SetRouteRequest{
+				AdminDistance: 5,
+				Metric:        5,
+				Prefix: &pb.Prefix{
+					Family:     pb.Prefix_FAMILY_IPV4,
+					Address:    "10.0.0.0",
+					MaskLength: 8,
+				},
+				Nexthops: []*pb.Nexthop{{
+					Type:    pb.Nexthop_TYPE_IPV4,
+					Address: "192.168.5.42",
+				}},
+			},
 		}},
-		wantInitialConnectedRoutes: []*ResolvedRoute{{
-			RouteKey: RouteKey{
-				Prefix: "192.168.1.0/24",
-				NIName: "DEFAULT",
+		wantRoutes: []*dpb.Route{{
+			Prefix: &dpb.RoutePrefix{
+				VrfId: uint64(0),
+				Prefix: &dpb.RoutePrefix_Cidr{
+					Cidr: "10.0.0.0/8",
+				},
 			},
-			Nexthops: map[ResolvedNexthop]bool{
-				{
-					NextHopSummary: afthelper.NextHopSummary{
-						NetworkInstance: "DEFAULT",
-					},
-					Port: Interface{
-						Name:  "eth0",
-						Index: 0,
-					},
-				}: true,
-			},
-		}, {
-			RouteKey: RouteKey{
-				Prefix: "192.168.2.0/24",
-				NIName: "DEFAULT",
-			},
-			Nexthops: map[ResolvedNexthop]bool{
-				{
-					NextHopSummary: afthelper.NextHopSummary{
-						NetworkInstance: "DEFAULT",
-					},
-					Port: Interface{
-						Name:  "eth1",
-						Index: 1,
-					},
-				}: true,
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Hops: []*dpb.NextHop{{
+						Ip: &dpb.NextHop_IpStr{IpStr: "192.168.5.42"},
+						Dev: &dpb.NextHop_Port{
+							Port: "eth4",
+						},
+						Weight: 0,
+					}},
+				},
 			},
 		}, {
-			RouteKey: RouteKey{
-				Prefix: "192.168.3.0/24",
-				NIName: "DEFAULT",
+			Prefix: &dpb.RoutePrefix{
+				VrfId: uint64(0),
+				Prefix: &dpb.RoutePrefix_Cidr{
+					Cidr: "20.0.0.0/8",
+				},
 			},
-			Nexthops: map[ResolvedNexthop]bool{
-				{
-					NextHopSummary: afthelper.NextHopSummary{
-						NetworkInstance: "DEFAULT",
-					},
-					Port: Interface{
-						Name:  "eth2",
-						Index: 2,
-					},
-				}: true,
-			},
-		}, {
-			RouteKey: RouteKey{
-				Prefix: "192.168.4.0/24",
-				NIName: "DEFAULT",
-			},
-			Nexthops: map[ResolvedNexthop]bool{
-				{
-					NextHopSummary: afthelper.NextHopSummary{
-						NetworkInstance: "DEFAULT",
-					},
-					Port: Interface{
-						Name:  "eth3",
-						Index: 3,
-					},
-				}: true,
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Hops: []*dpb.NextHop{{
+						Ip: &dpb.NextHop_IpStr{IpStr: "192.168.5.42"},
+						Dev: &dpb.NextHop_Port{
+							Port: "eth4",
+						},
+						Weight: 0,
+					}},
+				},
 			},
 		}, {
-			RouteKey: RouteKey{
-				Prefix: "192.168.5.0/24",
-				NIName: "DEFAULT",
+			Prefix: &dpb.RoutePrefix{
+				VrfId: uint64(0),
+				Prefix: &dpb.RoutePrefix_Cidr{
+					Cidr: "30.0.0.0/8",
+				},
 			},
-			Nexthops: map[ResolvedNexthop]bool{
-				{
-					NextHopSummary: afthelper.NextHopSummary{
-						NetworkInstance: "DEFAULT",
-					},
-					Port: Interface{
-						Name:  "eth4",
-						Index: 4,
-					},
-				}: true,
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Hops: []*dpb.NextHop{{
+						Ip: &dpb.NextHop_IpStr{IpStr: "192.168.5.42"},
+						Dev: &dpb.NextHop_Port{
+							Port: "eth4",
+						},
+						Weight: 0,
+					}},
+				},
 			},
 		}},
-		inSetAndProgramPairs: []*SetAndProgramPair{{
-			SetRouteRequestAction: &SetRouteRequestAction{
-				Desc: "1st level indirect route",
-				RouteReq: &pb.SetRouteRequest{
-					AdminDistance: 10,
-					Metric:        10,
-					Prefix: &pb.Prefix{
-						Family:     pb.Prefix_FAMILY_IPV4,
-						Address:    "10.0.0.0",
-						MaskLength: 8,
-					},
-					Nexthops: []*pb.Nexthop{{
-						Type:    pb.Nexthop_TYPE_IPV4,
-						Address: "192.168.1.42",
-						// TODO(wenbli): Implement WCMP, for all route requests in this test.
-						Weight: 1,
-					}},
+	}, {
+		desc: "Route Deletions",
+		inSetRouteRequests: []*SetRouteRequestAction{{
+			Desc: "1st level indirect route",
+			RouteReq: &pb.SetRouteRequest{
+				AdminDistance: 10,
+				Metric:        10,
+				Prefix: &pb.Prefix{
+					Family:     pb.Prefix_FAMILY_IPV4,
+					Address:    "10.0.0.0",
+					MaskLength: 8,
 				},
+				Nexthops: []*pb.Nexthop{{
+					Type:    pb.Nexthop_TYPE_IPV4,
+					Address: "192.168.1.42",
+					Weight:  1,
+				}},
 			},
-			ResolvedRoutes: []*ResolvedRoute{{
-				RouteKey: RouteKey{
-					Prefix: "10.0.0.0/8",
-					NIName: "DEFAULT",
-				},
-				Nexthops: map[ResolvedNexthop]bool{
-					{
-						NextHopSummary: afthelper.NextHopSummary{
-							NetworkInstance: "DEFAULT",
-							Address:         "192.168.1.42",
-						},
-						Port: Interface{
-							Name:  "eth0",
-							Index: 0,
-						},
-					}: true,
-				},
-			}},
 		}, {
-			SetRouteRequestAction: &SetRouteRequestAction{
-				Desc: "2nd level indirect route",
-				RouteReq: &pb.SetRouteRequest{
-					AdminDistance: 10,
-					Metric:        10,
-					Prefix: &pb.Prefix{
-						Family:     pb.Prefix_FAMILY_IPV4,
-						Address:    "20.0.0.0",
-						MaskLength: 8,
-					},
-					Nexthops: []*pb.Nexthop{{
-						Type:    pb.Nexthop_TYPE_IPV4,
-						Address: "10.10.10.10",
-					}},
+			Desc: "2nd level indirect route",
+			RouteReq: &pb.SetRouteRequest{
+				AdminDistance: 10,
+				Metric:        10,
+				Prefix: &pb.Prefix{
+					Family:     pb.Prefix_FAMILY_IPV4,
+					Address:    "20.0.0.0",
+					MaskLength: 8,
 				},
+				Nexthops: []*pb.Nexthop{{
+					Type:    pb.Nexthop_TYPE_IPV4,
+					Address: "10.10.10.10",
+				}},
 			},
-			ResolvedRoutes: []*ResolvedRoute{{
-				RouteKey: RouteKey{
-					Prefix: "20.0.0.0/8",
-					NIName: "DEFAULT",
-				},
-				Nexthops: map[ResolvedNexthop]bool{
-					{
-						NextHopSummary: afthelper.NextHopSummary{
-							NetworkInstance: "DEFAULT",
-							Address:         "192.168.1.42",
-						},
-						Port: Interface{
-							Name:  "eth0",
-							Index: 0,
-						},
-					}: true,
-				},
-			}},
 		}, {
-			SetRouteRequestAction: &SetRouteRequestAction{
-				Desc: "3rd level indirect route",
-				RouteReq: &pb.SetRouteRequest{
-					AdminDistance: 10,
-					Metric:        10,
-					Prefix: &pb.Prefix{
-						Family:     pb.Prefix_FAMILY_IPV4,
-						Address:    "30.0.0.0",
-						MaskLength: 8,
-					},
-					Nexthops: []*pb.Nexthop{{
-						Type:    pb.Nexthop_TYPE_IPV4,
-						Address: "20.10.10.10",
-					}},
+			Desc: "3rd level indirect route",
+			RouteReq: &pb.SetRouteRequest{
+				AdminDistance: 10,
+				Metric:        10,
+				Prefix: &pb.Prefix{
+					Family:     pb.Prefix_FAMILY_IPV4,
+					Address:    "30.0.0.0",
+					MaskLength: 8,
 				},
+				Nexthops: []*pb.Nexthop{{
+					Type:    pb.Nexthop_TYPE_IPV4,
+					Address: "20.10.10.10",
+				}},
 			},
-			ResolvedRoutes: []*ResolvedRoute{{
-				RouteKey: RouteKey{
-					Prefix: "30.0.0.0/8",
-					NIName: "DEFAULT",
-				},
-				Nexthops: map[ResolvedNexthop]bool{
-					{
-						NextHopSummary: afthelper.NextHopSummary{
-							NetworkInstance: "DEFAULT",
-							Address:         "192.168.1.42",
-						},
-						Port: Interface{
-							Name:  "eth0",
-							Index: 0,
-						},
-					}: true,
-				},
-			}},
 		}, {
-			SetRouteRequestAction: &SetRouteRequestAction{
-				Desc: "secondary 1st level indirect route that has higher admin distance",
-				RouteReq: &pb.SetRouteRequest{
-					AdminDistance: 20,
-					Metric:        10,
-					Prefix: &pb.Prefix{
-						Family:     pb.Prefix_FAMILY_IPV4,
-						Address:    "10.0.0.0",
-						MaskLength: 8,
-					},
-					Nexthops: []*pb.Nexthop{{
-						Type:    pb.Nexthop_TYPE_IPV4,
-						Address: "192.168.2.42",
-					}},
+			Desc: "delete 2nd-level indirect route",
+			RouteReq: &pb.SetRouteRequest{
+				Delete:        true,
+				AdminDistance: 10,
+				Metric:        10,
+				Prefix: &pb.Prefix{
+					Family:     pb.Prefix_FAMILY_IPV4,
+					Address:    "20.0.0.0",
+					MaskLength: 8,
 				},
 			},
-			ResolvedRoutes: []*ResolvedRoute{},
 		}, {
-			SetRouteRequestAction: &SetRouteRequestAction{
-				Desc: "secondary 1st level indirect route that has lower admin distance",
-				RouteReq: &pb.SetRouteRequest{
-					AdminDistance: 5,
-					Metric:        10,
-					Prefix: &pb.Prefix{
-						Family:     pb.Prefix_FAMILY_IPV4,
-						Address:    "10.0.0.0",
-						MaskLength: 8,
-					},
-					Nexthops: []*pb.Nexthop{{
-						Type:    pb.Nexthop_TYPE_IPV4,
-						Address: "192.168.3.42",
-					}},
+			Desc: "delete 3rd-level indirect route",
+			RouteReq: &pb.SetRouteRequest{
+				Delete:        true,
+				AdminDistance: 10,
+				Metric:        10,
+				Prefix: &pb.Prefix{
+					Family:     pb.Prefix_FAMILY_IPV4,
+					Address:    "30.0.0.0",
+					MaskLength: 8,
 				},
 			},
-			ResolvedRoutes: []*ResolvedRoute{{
-				RouteKey: RouteKey{
-					Prefix: "10.0.0.0/8",
-					NIName: "DEFAULT",
-				},
-				Nexthops: map[ResolvedNexthop]bool{
-					{
-						NextHopSummary: afthelper.NextHopSummary{
-							NetworkInstance: "DEFAULT",
-							Address:         "192.168.3.42",
-						},
-						Port: Interface{
-							Name:  "eth2",
-							Index: 2,
-						},
-					}: true,
-				},
-			}, {
-				RouteKey: RouteKey{
-					Prefix: "20.0.0.0/8",
-					NIName: "DEFAULT",
-				},
-				Nexthops: map[ResolvedNexthop]bool{
-					{
-						NextHopSummary: afthelper.NextHopSummary{
-							NetworkInstance: "DEFAULT",
-							Address:         "192.168.3.42",
-						},
-						Port: Interface{
-							Name:  "eth2",
-							Index: 2,
-						},
-					}: true,
-				},
-			}, {
-				RouteKey: RouteKey{
-					Prefix: "30.0.0.0/8",
-					NIName: "DEFAULT",
-				},
-				Nexthops: map[ResolvedNexthop]bool{
-					{
-						NextHopSummary: afthelper.NextHopSummary{
-							NetworkInstance: "DEFAULT",
-							Address:         "192.168.3.42",
-						},
-						Port: Interface{
-							Name:  "eth2",
-							Index: 2,
-						},
-					}: true,
-				},
-			}},
 		}, {
-			SetRouteRequestAction: &SetRouteRequestAction{
-				Desc: "secondary 1st level indirect route that has higher metric",
-				RouteReq: &pb.SetRouteRequest{
-					AdminDistance: 5,
-					Metric:        999,
-					Prefix: &pb.Prefix{
-						Family:     pb.Prefix_FAMILY_IPV4,
-						Address:    "10.0.0.0",
-						MaskLength: 8,
-					},
-					Nexthops: []*pb.Nexthop{{
-						Type:    pb.Nexthop_TYPE_IPV4,
-						Address: "192.168.4.42",
+			Desc: "delete 3rd-level indirect route again",
+			RouteReq: &pb.SetRouteRequest{
+				Delete:        true,
+				AdminDistance: 10,
+				Metric:        10,
+				Prefix: &pb.Prefix{
+					Family:     pb.Prefix_FAMILY_IPV4,
+					Address:    "30.0.0.0",
+					MaskLength: 8,
+				},
+			},
+		}},
+		wantRoutes: []*dpb.Route{{
+			Prefix: &dpb.RoutePrefix{
+				VrfId: uint64(0),
+				Prefix: &dpb.RoutePrefix_Cidr{
+					Cidr: "10.0.0.0/8",
+				},
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Hops: []*dpb.NextHop{{
+						Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+						Dev: &dpb.NextHop_Port{
+							Port: "eth0",
+						},
+						Weight: 0,
 					}},
 				},
 			},
-			ResolvedRoutes: []*ResolvedRoute{},
-		}, {
-			SetRouteRequestAction: &SetRouteRequestAction{
-				Desc: "secondary 1st level indirect route that has lower metric",
-				RouteReq: &pb.SetRouteRequest{
-					AdminDistance: 5,
-					Metric:        5,
-					Prefix: &pb.Prefix{
-						Family:     pb.Prefix_FAMILY_IPV4,
-						Address:    "10.0.0.0",
-						MaskLength: 8,
-					},
-					Nexthops: []*pb.Nexthop{{
-						Type:    pb.Nexthop_TYPE_IPV4,
-						Address: "192.168.5.42",
-					}},
+		}},
+	}, {
+		desc:    "Invalid Route",
+		noV6:    true,
+		wantErr: true,
+		inSetRouteRequests: []*SetRouteRequestAction{{
+			Desc: "invalid route",
+			RouteReq: &pb.SetRouteRequest{
+				AdminDistance: 20,
+				Metric:        10,
+				Prefix: &pb.Prefix{
+					Family:     pb.Prefix_FAMILY_IPV4,
+					Address:    "10.0.0.0.256",
+					MaskLength: 8,
 				},
+				Nexthops: []*pb.Nexthop{{
+					Type:    pb.Nexthop_TYPE_IPV4,
+					Address: "192.168.2.42",
+				}},
 			},
-			ResolvedRoutes: []*ResolvedRoute{{
-				RouteKey: RouteKey{
-					Prefix: "10.0.0.0/8",
-					NIName: "DEFAULT",
-				},
-				Nexthops: map[ResolvedNexthop]bool{
-					{
-						NextHopSummary: afthelper.NextHopSummary{
-							NetworkInstance: "DEFAULT",
-							Address:         "192.168.5.42",
-						},
-						Port: Interface{
-							Name:  "eth4",
-							Index: 4,
-						},
-					}: true,
-				},
-			}, {
-				RouteKey: RouteKey{
-					Prefix: "20.0.0.0/8",
-					NIName: "DEFAULT",
-				},
-				Nexthops: map[ResolvedNexthop]bool{
-					{
-						NextHopSummary: afthelper.NextHopSummary{
-							NetworkInstance: "DEFAULT",
-							Address:         "192.168.5.42",
-						},
-						Port: Interface{
-							Name:  "eth4",
-							Index: 4,
-						},
-					}: true,
-				},
-			}, {
-				RouteKey: RouteKey{
-					Prefix: "30.0.0.0/8",
-					NIName: "DEFAULT",
-				},
-				Nexthops: map[ResolvedNexthop]bool{
-					{
-						NextHopSummary: afthelper.NextHopSummary{
-							NetworkInstance: "DEFAULT",
-							Address:         "192.168.5.42",
-						},
-						Port: Interface{
-							Name:  "eth4",
-							Index: 4,
-						},
-					}: true,
-				},
-			}},
 		}},
 	}, {
 		desc: "Unresolvable and ECMP",
-		inInterfaces: []*AddIntfAction{{
-			name:    "eth0",
-			ifindex: 0,
-			enabled: false,
-			prefix:  "192.168.1.1/24",
-			niName:  "DEFAULT",
-		}, {
-			name:    "eth1",
-			ifindex: 1,
-			enabled: true,
-			prefix:  "192.168.2.1/24",
-			niName:  "DEFAULT",
-		}, {
-			name:    "eth2",
-			ifindex: 2,
-			enabled: true,
-			prefix:  "192.168.3.1/24",
-			niName:  "DEFAULT",
-		}},
-		wantInitialConnectedRoutes: []*ResolvedRoute{{
-			RouteKey: RouteKey{
-				Prefix: "192.168.2.0/24",
-				NIName: "DEFAULT",
-			},
-			Nexthops: map[ResolvedNexthop]bool{
-				{
-					NextHopSummary: afthelper.NextHopSummary{
-						NetworkInstance: "DEFAULT",
-					},
-					Port: Interface{
-						Name:  "eth1",
-						Index: 1,
-					},
-				}: true,
+		inSetRouteRequests: []*SetRouteRequestAction{{
+			Desc: "unresolvable route",
+			RouteReq: &pb.SetRouteRequest{
+				AdminDistance: 10,
+				Metric:        10,
+				Prefix: &pb.Prefix{
+					Family:     pb.Prefix_FAMILY_IPV4,
+					Address:    "15.0.0.0",
+					MaskLength: 8,
+				},
+				Nexthops: []*pb.Nexthop{{
+					Type:    pb.Nexthop_TYPE_IPV4,
+					Address: "11.10.10.10",
+				}},
 			},
 		}, {
-			RouteKey: RouteKey{
-				Prefix: "192.168.3.0/24",
-				NIName: "DEFAULT",
+			Desc: "route that resolves over down interface",
+			RouteReq: &pb.SetRouteRequest{
+				AdminDistance: 10,
+				Metric:        10,
+				Prefix: &pb.Prefix{
+					Family:     pb.Prefix_FAMILY_IPV4,
+					Address:    "10.0.0.0",
+					MaskLength: 8,
+				},
+				Nexthops: []*pb.Nexthop{{
+					Type:    pb.Nexthop_TYPE_IPV4,
+					Address: "192.168.6.42",
+				}},
 			},
-			Nexthops: map[ResolvedNexthop]bool{
-				{
-					NextHopSummary: afthelper.NextHopSummary{
-						NetworkInstance: "DEFAULT",
-					},
-					Port: Interface{
-						Name:  "eth2",
-						Index: 2,
-					},
-				}: true,
+		}, {
+			Desc: "ECMP route that resolves over up interface with higher admin distance",
+			RouteReq: &pb.SetRouteRequest{
+				AdminDistance: 20,
+				Metric:        10,
+				Prefix: &pb.Prefix{
+					Family:     pb.Prefix_FAMILY_IPV4,
+					Address:    "10.0.0.0",
+					MaskLength: 8,
+				},
+				Nexthops: []*pb.Nexthop{{
+					Type:    pb.Nexthop_TYPE_IPV4,
+					Address: "192.168.2.42",
+				}, {
+					Type:    pb.Nexthop_TYPE_IPV4,
+					Address: "192.168.3.42",
+				}},
 			},
 		}},
-		inSetAndProgramPairs: []*SetAndProgramPair{{
-			SetRouteRequestAction: &SetRouteRequestAction{
-				Desc: "unresolvable route",
-				RouteReq: &pb.SetRouteRequest{
-					AdminDistance: 10,
-					Metric:        10,
-					Prefix: &pb.Prefix{
-						Family:     pb.Prefix_FAMILY_IPV4,
-						Address:    "15.0.0.0",
-						MaskLength: 8,
-					},
-					Nexthops: []*pb.Nexthop{{
-						Type:    pb.Nexthop_TYPE_IPV4,
-						Address: "11.10.10.10",
+		wantRoutes: []*dpb.Route{{
+			Prefix: &dpb.RoutePrefix{
+				VrfId: uint64(0),
+				Prefix: &dpb.RoutePrefix_Cidr{
+					Cidr: "10.0.0.0/8",
+				},
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Hops: []*dpb.NextHop{{
+						Ip: &dpb.NextHop_IpStr{IpStr: "192.168.2.42"},
+						Dev: &dpb.NextHop_Port{
+							Port: "eth1",
+						},
+						Weight: 0,
+					}, {
+						Ip: &dpb.NextHop_IpStr{IpStr: "192.168.3.42"},
+						Dev: &dpb.NextHop_Port{
+							Port: "eth2",
+						},
+						Weight: 0,
 					}},
 				},
-			},
-			ResolvedRoutes: []*ResolvedRoute{},
-		}, {
-			SetRouteRequestAction: &SetRouteRequestAction{
-				Desc: "route that resolves over down interface",
-				RouteReq: &pb.SetRouteRequest{
-					AdminDistance: 10,
-					Metric:        10,
-					Prefix: &pb.Prefix{
-						Family:     pb.Prefix_FAMILY_IPV4,
-						Address:    "10.0.0.0",
-						MaskLength: 8,
-					},
-					Nexthops: []*pb.Nexthop{{
-						Type:    pb.Nexthop_TYPE_IPV4,
-						Address: "192.168.1.42",
-					}},
-				},
-			},
-			ResolvedRoutes: []*ResolvedRoute{},
-		}, {
-			SetRouteRequestAction: &SetRouteRequestAction{
-				Desc: "same route that resolves over up interface with higher admin distance",
-				RouteReq: &pb.SetRouteRequest{
-					AdminDistance: 20,
-					Metric:        10,
-					Prefix: &pb.Prefix{
-						Family:     pb.Prefix_FAMILY_IPV4,
-						Address:    "10.0.0.0",
-						MaskLength: 8,
-					},
-					Nexthops: []*pb.Nexthop{{
-						Type:    pb.Nexthop_TYPE_IPV4,
-						Address: "192.168.2.42",
-					}},
-				},
-			},
-			ResolvedRoutes: []*ResolvedRoute{{
-				RouteKey: RouteKey{
-					Prefix: "10.0.0.0/8",
-					NIName: "DEFAULT",
-				},
-				Nexthops: map[ResolvedNexthop]bool{
-					{
-						NextHopSummary: afthelper.NextHopSummary{
-							NetworkInstance: "DEFAULT",
-							Address:         "192.168.2.42",
-						},
-						Port: Interface{
-							Name:  "eth1",
-							Index: 1,
-						},
-					}: true,
-				},
-			}},
-		}, {
-			SetRouteRequestAction: &SetRouteRequestAction{
-				Desc: "ECMP",
-				RouteReq: &pb.SetRouteRequest{
-					AdminDistance: 20,
-					Metric:        10,
-					Prefix: &pb.Prefix{
-						Family:     pb.Prefix_FAMILY_IPV4,
-						Address:    "10.0.0.0",
-						MaskLength: 8,
-					},
-					Nexthops: []*pb.Nexthop{{
-						Type:    pb.Nexthop_TYPE_IPV4,
-						Address: "192.168.3.42",
-					}},
-				},
-			},
-			ResolvedRoutes: []*ResolvedRoute{{
-				RouteKey: RouteKey{
-					Prefix: "10.0.0.0/8",
-					NIName: "DEFAULT",
-				},
-				Nexthops: map[ResolvedNexthop]bool{
-					{
-						NextHopSummary: afthelper.NextHopSummary{
-							NetworkInstance: "DEFAULT",
-							Address:         "192.168.2.42",
-						},
-						Port: Interface{
-							Name:  "eth1",
-							Index: 1,
-						},
-					}: true,
-					{
-						NextHopSummary: afthelper.NextHopSummary{
-							NetworkInstance: "DEFAULT",
-							Address:         "192.168.3.42",
-						},
-						Port: Interface{
-							Name:  "eth2",
-							Index: 2,
-						},
-					}: true,
-				},
-			}},
-		}},
-	}, {
-		desc: "test route program failures",
-		inInterfaces: []*AddIntfAction{{
-			name:    "eth1",
-			ifindex: 3,
-			enabled: true,
-			prefix:  "192.0.2.1/30",
-			niName:  "DEFAULT",
-		}, {
-			name:    "eth2",
-			ifindex: 4,
-			enabled: true,
-			prefix:  "192.0.2.5/30",
-			niName:  "DEFAULT",
-		}, {
-			name:    "eth3",
-			ifindex: 5,
-			enabled: true,
-			prefix:  "192.0.2.9/30",
-			niName:  "DEFAULT",
-		}},
-		inFailRoutes: []*ResolvedRoute{{
-			RouteKey: RouteKey{
-				Prefix: "192.0.2.0/30",
-				NIName: "DEFAULT",
-			},
-			Nexthops: map[ResolvedNexthop]bool{
-				{
-					NextHopSummary: afthelper.NextHopSummary{
-						NetworkInstance: "DEFAULT",
-					},
-					Port: Interface{
-						Name:  "eth1",
-						Index: 3,
-					},
-				}: true,
-			},
-		}},
-		wantInitialConnectedRoutes: []*ResolvedRoute{{
-			RouteKey: RouteKey{
-				Prefix: "192.0.2.4/30",
-				NIName: "DEFAULT",
-			},
-			Nexthops: map[ResolvedNexthop]bool{
-				{
-					NextHopSummary: afthelper.NextHopSummary{
-						NetworkInstance: "DEFAULT",
-					},
-					Port: Interface{
-						Name:  "eth2",
-						Index: 4,
-					},
-				}: true,
-			},
-		}, {
-			RouteKey: RouteKey{
-				Prefix: "192.0.2.8/30",
-				NIName: "DEFAULT",
-			},
-			Nexthops: map[ResolvedNexthop]bool{
-				{
-					NextHopSummary: afthelper.NextHopSummary{
-						NetworkInstance: "DEFAULT",
-					},
-					Port: Interface{
-						Name:  "eth3",
-						Index: 5,
-					},
-				}: true,
 			},
 		}},
 	}, {
 		desc: "IPv4-mapped IPv6",
 		noV6: true,
-		inInterfaces: []*AddIntfAction{{
-			name:    "eth0",
-			ifindex: 0,
-			enabled: true,
-			prefix:  "192.168.1.1/24",
-			niName:  "DEFAULT",
+		inSetRouteRequests: []*SetRouteRequestAction{{
+			Desc: "1st level indirect route",
+			RouteReq: &pb.SetRouteRequest{
+				AdminDistance: 10,
+				Metric:        10,
+				Prefix: &pb.Prefix{
+					Family:     pb.Prefix_FAMILY_IPV4,
+					Address:    "10.0.0.0",
+					MaskLength: 8,
+				},
+				Nexthops: []*pb.Nexthop{{
+					Type:    pb.Nexthop_TYPE_IPV4,
+					Address: "192.168.1.42",
+					// TODO(wenbli): Implement WCMP, for all route requests in this test.
+					Weight: 1,
+				}},
+			},
 		}, {
-			name:    "eth1",
-			ifindex: 1,
-			enabled: true,
-			prefix:  "192.168.2.1/24",
-			niName:  "DEFAULT",
+			Desc: "2nd level indirect route",
+			RouteReq: &pb.SetRouteRequest{
+				AdminDistance: 10,
+				Metric:        10,
+				Prefix: &pb.Prefix{
+					Family:     pb.Prefix_FAMILY_IPV4,
+					Address:    "20.0.0.0",
+					MaskLength: 8,
+				},
+				Nexthops: []*pb.Nexthop{{
+					Type:    pb.Nexthop_TYPE_IPV4,
+					Address: "10.10.10.10",
+				}},
+			},
+		}, {
+			Desc: "3rd level indirect route ipv4-mapped ipv6",
+			RouteReq: &pb.SetRouteRequest{
+				AdminDistance: 10,
+				Metric:        10,
+				Prefix: &pb.Prefix{
+					Family:     pb.Prefix_FAMILY_IPV6,
+					Address:    "2002::aaaa",
+					MaskLength: 49,
+				},
+				Nexthops: []*pb.Nexthop{{
+					Type:    pb.Nexthop_TYPE_IPV6,
+					Address: "::ffff:20.10.10.10",
+				}},
+			},
 		}},
-		wantInitialConnectedRoutes: []*ResolvedRoute{{
-			RouteKey: RouteKey{
-				Prefix: "192.168.1.0/24",
-				NIName: "DEFAULT",
+		wantRoutes: []*dpb.Route{{
+			Prefix: &dpb.RoutePrefix{
+				VrfId: uint64(0),
+				Prefix: &dpb.RoutePrefix_Cidr{
+					Cidr: "10.0.0.0/8",
+				},
 			},
-			Nexthops: map[ResolvedNexthop]bool{
-				{
-					NextHopSummary: afthelper.NextHopSummary{
-						NetworkInstance: "DEFAULT",
-					},
-					Port: Interface{
-						Name:  "eth0",
-						Index: 0,
-					},
-				}: true,
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Hops: []*dpb.NextHop{{
+						Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+						Dev: &dpb.NextHop_Port{
+							Port: "eth0",
+						},
+						Weight: 0,
+					}},
+				},
 			},
 		}, {
-			RouteKey: RouteKey{
-				Prefix: "192.168.2.0/24",
-				NIName: "DEFAULT",
+			Prefix: &dpb.RoutePrefix{
+				VrfId: uint64(0),
+				Prefix: &dpb.RoutePrefix_Cidr{
+					Cidr: "20.0.0.0/8",
+				},
 			},
-			Nexthops: map[ResolvedNexthop]bool{
-				{
-					NextHopSummary: afthelper.NextHopSummary{
-						NetworkInstance: "DEFAULT",
-					},
-					Port: Interface{
-						Name:  "eth1",
-						Index: 1,
-					},
-				}: true,
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Hops: []*dpb.NextHop{{
+						Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+						Dev: &dpb.NextHop_Port{
+							Port: "eth0",
+						},
+						Weight: 0,
+					}},
+				},
+			},
+		}, {
+			Prefix: &dpb.RoutePrefix{
+				VrfId: uint64(0),
+				Prefix: &dpb.RoutePrefix_Cidr{
+					Cidr: "2002::/49",
+				},
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Hops: []*dpb.NextHop{{
+						Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+						Dev: &dpb.NextHop_Port{
+							Port: "eth0",
+						},
+						Weight: 0,
+					}},
+				},
 			},
 		}},
-		// TODO(wenbli): Test when a more specific route is not resolvable --> route is deleted.
-		inSetAndProgramPairs: []*SetAndProgramPair{{
-			SetRouteRequestAction: &SetRouteRequestAction{
-				Desc: "1st level indirect route",
-				RouteReq: &pb.SetRouteRequest{
-					AdminDistance: 10,
-					Metric:        10,
-					Prefix: &pb.Prefix{
-						Family:     pb.Prefix_FAMILY_IPV4,
-						Address:    "10.0.0.0",
-						MaskLength: 8,
-					},
-					Nexthops: []*pb.Nexthop{{
-						Type:    pb.Nexthop_TYPE_IPV4,
-						Address: "192.168.1.42",
-						// TODO(wenbli): Implement WCMP, for all route requests in this test.
-						Weight: 1,
-					}},
+	}, {
+		desc: "IPv4-mapped IPv6 in IPv4 format",
+		noV6: true,
+		inSetRouteRequests: []*SetRouteRequestAction{{
+			Desc: "1st level indirect route",
+			RouteReq: &pb.SetRouteRequest{
+				AdminDistance: 10,
+				Metric:        10,
+				Prefix: &pb.Prefix{
+					Family:     pb.Prefix_FAMILY_IPV4,
+					Address:    "10.0.0.0",
+					MaskLength: 8,
 				},
+				Nexthops: []*pb.Nexthop{{
+					Type:    pb.Nexthop_TYPE_IPV4,
+					Address: "192.168.1.42",
+					// TODO(wenbli): Implement WCMP, for all route requests in this test.
+					Weight: 1,
+				}},
 			},
-			ResolvedRoutes: []*ResolvedRoute{{
-				RouteKey: RouteKey{
-					Prefix: "10.0.0.0/8",
-					NIName: "DEFAULT",
-				},
-				Nexthops: map[ResolvedNexthop]bool{
-					{
-						NextHopSummary: afthelper.NextHopSummary{
-							NetworkInstance: "DEFAULT",
-							Address:         "192.168.1.42",
-						},
-						Port: Interface{
-							Name:  "eth0",
-							Index: 0,
-						},
-					}: true,
-				},
-			}},
 		}, {
-			SetRouteRequestAction: &SetRouteRequestAction{
-				Desc: "2nd level indirect route",
-				RouteReq: &pb.SetRouteRequest{
-					AdminDistance: 10,
-					Metric:        10,
-					Prefix: &pb.Prefix{
-						Family:     pb.Prefix_FAMILY_IPV4,
-						Address:    "20.0.0.0",
-						MaskLength: 8,
-					},
-					Nexthops: []*pb.Nexthop{{
-						Type:    pb.Nexthop_TYPE_IPV4,
-						Address: "10.10.10.10",
-					}},
+			Desc: "secondary 1st level indirect route that is more specific but higher admin distance",
+			RouteReq: &pb.SetRouteRequest{
+				AdminDistance: 20,
+				Metric:        10,
+				Prefix: &pb.Prefix{
+					Family:     pb.Prefix_FAMILY_IPV4,
+					Address:    "10.10.0.0",
+					MaskLength: 16,
 				},
+				Nexthops: []*pb.Nexthop{{
+					Type:    pb.Nexthop_TYPE_IPV4,
+					Address: "192.168.2.42",
+				}},
 			},
-			ResolvedRoutes: []*ResolvedRoute{{
-				RouteKey: RouteKey{
-					Prefix: "20.0.0.0/8",
-					NIName: "DEFAULT",
-				},
-				Nexthops: map[ResolvedNexthop]bool{
-					{
-						NextHopSummary: afthelper.NextHopSummary{
-							NetworkInstance: "DEFAULT",
-							Address:         "192.168.1.42",
-						},
-						Port: Interface{
-							Name:  "eth0",
-							Index: 0,
-						},
-					}: true,
-				},
-			}},
 		}, {
-			SetRouteRequestAction: &SetRouteRequestAction{
-				Desc: "3rd level indirect route ipv4-mapped ipv6",
-				RouteReq: &pb.SetRouteRequest{
-					AdminDistance: 10,
-					Metric:        10,
-					Prefix: &pb.Prefix{
-						Family:     pb.Prefix_FAMILY_IPV6,
-						Address:    "2002::aaaa",
-						MaskLength: 49,
-					},
-					Nexthops: []*pb.Nexthop{{
-						Type:    pb.Nexthop_TYPE_IPV6,
-						Address: "::ffff:20.10.10.10",
+			Desc: "1st level indirect route ipv4-mapped ipv6 using IPv4-formatted address",
+			RouteReq: &pb.SetRouteRequest{
+				AdminDistance: 10,
+				Metric:        10,
+				Prefix: &pb.Prefix{
+					Family:     pb.Prefix_FAMILY_IPV6,
+					Address:    "2003::aaaa",
+					MaskLength: 49,
+				},
+				Nexthops: []*pb.Nexthop{{
+					Type:    pb.Nexthop_TYPE_IPV6,
+					Address: "10.10.10.10",
+				}},
+			},
+		}},
+		wantRoutes: []*dpb.Route{{
+			Prefix: &dpb.RoutePrefix{
+				VrfId: uint64(0),
+				Prefix: &dpb.RoutePrefix_Cidr{
+					Cidr: "10.0.0.0/8",
+				},
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Hops: []*dpb.NextHop{{
+						Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+						Dev: &dpb.NextHop_Port{
+							Port: "eth0",
+						},
+						Weight: 0,
 					}},
 				},
 			},
-			ResolvedRoutes: []*ResolvedRoute{{
-				RouteKey: RouteKey{
-					Prefix: "2002::/49",
-					NIName: "DEFAULT",
-				},
-				Nexthops: map[ResolvedNexthop]bool{
-					{
-						NextHopSummary: afthelper.NextHopSummary{
-							NetworkInstance: "DEFAULT",
-							Address:         "192.168.1.42",
-						},
-						Port: Interface{
-							Name:  "eth0",
-							Index: 0,
-						},
-					}: true,
-				},
-			}},
 		}, {
-			SetRouteRequestAction: &SetRouteRequestAction{
-				Desc: "1st level indirect route ipv4-mapped ipv6 using IPv4-formatted address",
-				RouteReq: &pb.SetRouteRequest{
-					AdminDistance: 10,
-					Metric:        10,
-					Prefix: &pb.Prefix{
-						Family:     pb.Prefix_FAMILY_IPV6,
-						Address:    "2003::aaaa",
-						MaskLength: 49,
-					},
-					Nexthops: []*pb.Nexthop{{
-						Type:    pb.Nexthop_TYPE_IPV6,
-						Address: "192.168.2.42",
+			Prefix: &dpb.RoutePrefix{
+				VrfId: uint64(0),
+				Prefix: &dpb.RoutePrefix_Cidr{
+					Cidr: "10.10.0.0/16",
+				},
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Hops: []*dpb.NextHop{{
+						Ip: &dpb.NextHop_IpStr{IpStr: "192.168.2.42"},
+						Dev: &dpb.NextHop_Port{
+							Port: "eth1",
+						},
+						Weight: 0,
 					}},
 				},
 			},
-			ResolvedRoutes: []*ResolvedRoute{{
-				RouteKey: RouteKey{
-					Prefix: "2003::/49",
-					NIName: "DEFAULT",
-				},
-				Nexthops: map[ResolvedNexthop]bool{
-					{
-						NextHopSummary: afthelper.NextHopSummary{
-							NetworkInstance: "DEFAULT",
-							Address:         "192.168.2.42",
-						},
-						Port: Interface{
-							Name:  "eth1",
-							Index: 1,
-						},
-					}: true,
-				},
-			}},
 		}, {
-			SetRouteRequestAction: &SetRouteRequestAction{
-				Desc: "secondary 1st level indirect route that is more specific but higher admin distance",
-				RouteReq: &pb.SetRouteRequest{
-					AdminDistance: 20,
-					Metric:        10,
-					Prefix: &pb.Prefix{
-						Family:     pb.Prefix_FAMILY_IPV4,
-						Address:    "10.10.0.0",
-						MaskLength: 16,
-					},
-					Nexthops: []*pb.Nexthop{{
-						Type:    pb.Nexthop_TYPE_IPV4,
-						Address: "192.168.2.42",
+			Prefix: &dpb.RoutePrefix{
+				VrfId: uint64(0),
+				Prefix: &dpb.RoutePrefix_Cidr{
+					Cidr: "2003::/49",
+				},
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Hops: []*dpb.NextHop{{
+						Ip: &dpb.NextHop_IpStr{IpStr: "192.168.2.42"},
+						Dev: &dpb.NextHop_Port{
+							Port: "eth1",
+						},
+						Weight: 0,
 					}},
 				},
 			},
-			ResolvedRoutes: []*ResolvedRoute{{
-				RouteKey: RouteKey{
-					Prefix: "10.10.0.0/16",
-					NIName: "DEFAULT",
+		}},
+	}, {
+		desc: "IPv4-mapped IPv6 route deleted due to specific route not resolvable",
+		noV6: true,
+		inSetRouteRequests: []*SetRouteRequestAction{{
+			Desc: "1st level indirect route",
+			RouteReq: &pb.SetRouteRequest{
+				AdminDistance: 10,
+				Metric:        10,
+				Prefix: &pb.Prefix{
+					Family:     pb.Prefix_FAMILY_IPV4,
+					Address:    "10.0.0.0",
+					MaskLength: 8,
 				},
-				Nexthops: map[ResolvedNexthop]bool{
-					{
-						NextHopSummary: afthelper.NextHopSummary{
-							NetworkInstance: "DEFAULT",
-							Address:         "192.168.2.42",
-						},
-						Port: Interface{
-							Name:  "eth1",
-							Index: 1,
-						},
-					}: true,
+				Nexthops: []*pb.Nexthop{{
+					Type:    pb.Nexthop_TYPE_IPV4,
+					Address: "192.168.1.42",
+					// TODO(wenbli): Implement WCMP, for all route requests in this test.
+					Weight: 1,
+				}},
+			},
+		}, {
+			Desc: "secondary 1st level indirect route that is more specific but higher admin distance and unresolvable",
+			RouteReq: &pb.SetRouteRequest{
+				AdminDistance: 20,
+				Metric:        10,
+				Prefix: &pb.Prefix{
+					Family:     pb.Prefix_FAMILY_IPV4,
+					Address:    "10.10.0.0",
+					MaskLength: 16,
 				},
-			}, {
-				RouteKey: RouteKey{
-					Prefix: "20.0.0.0/8",
-					NIName: "DEFAULT",
+				Nexthops: []*pb.Nexthop{{
+					Type:    pb.Nexthop_TYPE_IPV4,
+					Address: "192.168.6.42",
+				}},
+			},
+		}, {
+			Desc: "1st level indirect route ipv4-mapped ipv6 using IPv4-formatted address",
+			RouteReq: &pb.SetRouteRequest{
+				AdminDistance: 10,
+				Metric:        10,
+				Prefix: &pb.Prefix{
+					Family:     pb.Prefix_FAMILY_IPV6,
+					Address:    "2003::aaaa",
+					MaskLength: 49,
 				},
-				Nexthops: map[ResolvedNexthop]bool{
-					{
-						NextHopSummary: afthelper.NextHopSummary{
-							NetworkInstance: "DEFAULT",
-							Address:         "192.168.2.42",
-						},
-						Port: Interface{
-							Name:  "eth1",
-							Index: 1,
-						},
-					}: true,
+				Nexthops: []*pb.Nexthop{{
+					Type:    pb.Nexthop_TYPE_IPV6,
+					Address: "10.10.10.10",
+				}},
+			},
+		}},
+		wantRoutes: []*dpb.Route{{
+			Prefix: &dpb.RoutePrefix{
+				VrfId: uint64(0),
+				Prefix: &dpb.RoutePrefix_Cidr{
+					Cidr: "10.0.0.0/8",
 				},
-			}, {
-				RouteKey: RouteKey{
-					Prefix: "2002::/49",
-					NIName: "DEFAULT",
-				},
-				Nexthops: map[ResolvedNexthop]bool{
-					{
-						NextHopSummary: afthelper.NextHopSummary{
-							NetworkInstance: "DEFAULT",
-							Address:         "192.168.2.42",
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Hops: []*dpb.NextHop{{
+						Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+						Dev: &dpb.NextHop_Port{
+							Port: "eth0",
 						},
-						Port: Interface{
-							Name:  "eth1",
-							Index: 1,
-						},
-					}: true,
+						Weight: 0,
+					}},
 				},
-			}},
+			},
 		}},
 	}}
 
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
+			inInterfaces := inInterfaces
+			wantConnectedRoutes := wantConnectedRoutes
 			for _, v4 := range []bool{true, false} {
 				desc := "v4"
 				if !v4 {
@@ -1191,29 +1006,20 @@ func TestServer(t *testing.T) {
 					}
 					desc = "v6"
 					// Convert all v4 addresses to v6.
-					for _, intf := range tt.inInterfaces {
-						intf.prefix = mapAddressTo6(t, intf.prefix)
-					}
-					for _, pair := range tt.inSetAndProgramPairs {
-						mapPrefixTo6(t, pair.SetRouteRequestAction.RouteReq.Prefix)
-						for _, nh := range pair.SetRouteRequestAction.RouteReq.Nexthops {
+					inInterfaces = inInterface6s
+					wantConnectedRoutes = wantConnectedRoute6s
+					for _, req := range tt.inSetRouteRequests {
+						mapPrefixTo6(t, req.RouteReq.Prefix)
+						for _, nh := range req.RouteReq.Nexthops {
 							if nh.Type == pb.Nexthop_TYPE_IPV4 {
 								nh.Type = pb.Nexthop_TYPE_IPV6
 							}
 							nh.Address = mapAddressTo6(t, nh.Address)
 						}
-						for _, route := range pair.ResolvedRoutes {
-							mapResolvedRouteTo6(t, route)
-						}
 					}
-					for _, route := range tt.wantInitialConnectedRoutes {
+					for _, route := range tt.wantRoutes {
 						mapResolvedRouteTo6(t, route)
 					}
-					failedRoutesMu.Lock()
-					for _, route := range tt.inFailRoutes {
-						mapResolvedRouteTo6(t, route)
-					}
-					failedRoutesMu.Unlock()
 				}
 
 				t.Run(desc, func(t *testing.T) {
@@ -1231,10 +1037,6 @@ func TestServer(t *testing.T) {
 						grpcServer.Serve(lis)
 					}()
 
-					dp := NewFakeDataplane()
-					failedRoutesMu.Lock()
-					dp.SetupFailRoutes(tt.inFailRoutes)
-					failedRoutesMu.Unlock()
 					s, err := New(nil)
 					if err != nil {
 						t.Fatal(err)
@@ -1245,38 +1047,51 @@ func TestServer(t *testing.T) {
 					if err := s.Start(client, "local", ""); err != nil {
 						t.Fatalf("cannot start sysrib server, %v", err)
 					}
-					s.dataplane = dp
 					defer s.Stop()
 
 					c, err := ygnmi.NewClient(client, ygnmi.WithTarget("local"))
 					if err != nil {
 						t.Fatalf("cannot create ygnmi client: %v", err)
 					}
-					for _, intf := range tt.inInterfaces {
+
+					for _, intf := range inInterfaces {
 						configureInterface(t, intf, c)
 					}
 
 					// Wait for Sysrib to pick up the connected prefixes.
 					for i := 0; i != maxGNMIWaitQuanta; i++ {
-						if err = checkResolvedRoutesEqual(dp.GetRoutes(), tt.wantInitialConnectedRoutes); err == nil {
-							break
+						var routes []*dpb.Route
+						routes, err = ygnmi.GetAll(context.Background(), c, routesQuery)
+						if err == nil {
+							if diff := cmp.Diff(wantConnectedRoutes, routes, protocmp.Transform(), protocmp.SortRepeatedFields(new(dpb.NextHopList), "hops")); diff != "" {
+								err = fmt.Errorf("routes not equal to wantConnectedRoutes (-want, +got):\n%s", diff)
+							} else {
+								break
+							}
 						}
 						time.Sleep(100 * time.Millisecond)
 					}
 					if err != nil {
 						t.Fatalf("After initial interface operations: %v", err)
 					}
-					dp.ClearQueue()
 
-					for _, pair := range tt.inSetAndProgramPairs {
+					for _, req := range tt.inSetRouteRequests {
 						// TODO(wenbli): Test SetRouteResponse
-						if _, err := s.SetRoute(context.Background(), pair.SetRouteRequestAction.RouteReq); err != nil {
-							t.Fatalf("%s: Got unexpected error during call to SetRoute: %v", pair.SetRouteRequestAction.Desc, err)
+						_, err := s.SetRoute(context.Background(), req.RouteReq)
+						hasErr := err != nil
+						if hasErr != tt.wantErr {
+							t.Fatalf("%s: got error during call to SetRoute: %v, wantErr: %v", req.Desc, err, tt.wantErr)
 						}
-						if err := checkResolvedRoutesEqual(dp.GetRoutes(), pair.ResolvedRoutes); err != nil {
-							t.Fatalf("%s: %v", pair.SetRouteRequestAction.Desc, err)
-						}
-						dp.ClearQueue()
+					}
+
+					routes, err := ygnmi.GetAll(context.Background(), c, routesQuery)
+					if err != nil {
+						t.Fatal(err)
+					}
+					if diff := cmp.Diff(append(append([]*dpb.Route{}, wantConnectedRoutes...), tt.wantRoutes...), routes, protocmp.Transform(), protocmp.SortRepeatedFields(new(dpb.NextHopList), "hops"), cmpopts.SortSlices(func(a, b *dpb.Route) bool {
+						return a.GetPrefix().GetCidr() < b.GetPrefix().GetCidr()
+					})); diff != "" {
+						t.Errorf("routes not equal to wantRoutes (-want, +got):\n%s", diff)
 					}
 				})
 			}
@@ -1284,120 +1099,24 @@ func TestServer(t *testing.T) {
 	}
 }
 
-func TestBGPGUEPolicy(t *testing.T) {
-	intfs := []*AddIntfAction{{
-		name:    "eth0",
-		ifindex: 0,
-		enabled: true,
-		prefix:  "192.168.1.1/24",
-		niName:  "DEFAULT",
-	}, {
-		name:    "eth1",
-		ifindex: 1,
-		enabled: true,
-		prefix:  "192.168.2.1/24",
-		niName:  "DEFAULT",
-	}, {
-		name:    "eth2",
-		ifindex: 2,
-		enabled: true,
-		prefix:  "192.168.3.1/24",
-		niName:  "DEFAULT",
-	}, {
-		name:    "eth3",
-		ifindex: 3,
-		enabled: true,
-		prefix:  "192.168.4.1/24",
-		niName:  "DEFAULT",
-	}, {
-		name:    "eth4",
-		ifindex: 4,
-		enabled: true,
-		prefix:  "192.168.5.1/24",
-		niName:  "DEFAULT",
-	}}
+func gueHeader(t *testing.T, layers ...gopacket.SerializableLayer) []byte {
+	buf := gopacket.NewSerializeBuffer()
+	if err := gopacket.SerializeLayers(buf, gopacket.SerializeOptions{}, layers...); err != nil {
+		t.Fatalf("failed to serialize GUE headers: %v", err)
+	}
+	return buf.Bytes()
+}
 
-	wantConnectedRoutes := []*ResolvedRoute{{
-		RouteKey: RouteKey{
-			Prefix: "192.168.1.0/24",
-			NIName: "DEFAULT",
-		},
-		Nexthops: map[ResolvedNexthop]bool{
-			{
-				NextHopSummary: afthelper.NextHopSummary{
-					NetworkInstance: "DEFAULT",
-				},
-				Port: Interface{
-					Name:  "eth0",
-					Index: 0,
-				},
-			}: true,
-		},
-	}, {
-		RouteKey: RouteKey{
-			Prefix: "192.168.2.0/24",
-			NIName: "DEFAULT",
-		},
-		Nexthops: map[ResolvedNexthop]bool{
-			{
-				NextHopSummary: afthelper.NextHopSummary{
-					NetworkInstance: "DEFAULT",
-				},
-				Port: Interface{
-					Name:  "eth1",
-					Index: 1,
-				},
-			}: true,
-		},
-	}, {
-		RouteKey: RouteKey{
-			Prefix: "192.168.3.0/24",
-			NIName: "DEFAULT",
-		},
-		Nexthops: map[ResolvedNexthop]bool{
-			{
-				NextHopSummary: afthelper.NextHopSummary{
-					NetworkInstance: "DEFAULT",
-				},
-				Port: Interface{
-					Name:  "eth2",
-					Index: 2,
-				},
-			}: true,
-		},
-	}, {
-		RouteKey: RouteKey{
-			Prefix: "192.168.4.0/24",
-			NIName: "DEFAULT",
-		},
-		Nexthops: map[ResolvedNexthop]bool{
-			{
-				NextHopSummary: afthelper.NextHopSummary{
-					NetworkInstance: "DEFAULT",
-				},
-				Port: Interface{
-					Name:  "eth3",
-					Index: 3,
-				},
-			}: true,
-		},
-	}, {
-		RouteKey: RouteKey{
-			Prefix: "192.168.5.0/24",
-			NIName: "DEFAULT",
-		},
-		Nexthops: map[ResolvedNexthop]bool{
-			{
-				NextHopSummary: afthelper.NextHopSummary{
-					NetworkInstance: "DEFAULT",
-				},
-				Port: Interface{
-					Name:  "eth4",
-					Index: 4,
-				},
-			}: true,
-		},
-	}}
+func TestBGPGUEPolicy(t *testing.T) {
+	routesQuery := programmedRoutesQuery(t)
+	inInterfaces, wantConnectedRoutes := getConnectedIntfSetupVars()
+	inInterface6s, wantConnectedRoute6s := getConnectedIntfSetupVars()
+	for _, intf := range inInterface6s {
+		intf.prefix = mapAddressTo6(t, intf.prefix)
+	}
+	for _, route := range wantConnectedRoute6s {
+		mapResolvedRouteTo6(t, route)
+	}
 
 	// Note: This is a sequential test -- each test case depends on the previous one.
 	tests := []struct {
@@ -1409,7 +1128,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 		inSetRouteRequests []*pb.SetRouteRequest
 		inAddPolicies      map[string]GUEPolicy
 		inDeletePolicies   []string
-		wantResolvedRoutes []*ResolvedRoute
+		wantRoutes         func(v4 bool) []*dpb.Route
 	}{{
 		desc: "Add static and BGP routes",
 		inSetRouteRequests: []*pb.SetRouteRequest{{
@@ -1437,41 +1156,45 @@ func TestBGPGUEPolicy(t *testing.T) {
 				Address: "192.168.1.42",
 			}},
 		}},
-		wantResolvedRoutes: []*ResolvedRoute{{
-			RouteKey: RouteKey{
-				Prefix: "10.0.0.0/8",
-				NIName: "DEFAULT",
-			},
-			Nexthops: map[ResolvedNexthop]bool{
-				{
-					NextHopSummary: afthelper.NextHopSummary{
-						NetworkInstance: "DEFAULT",
-						Address:         "192.168.1.42",
+		wantRoutes: func(v4 bool) []*dpb.Route {
+			return []*dpb.Route{{
+				Prefix: &dpb.RoutePrefix{
+					VrfId: uint64(0),
+					Prefix: &dpb.RoutePrefix_Cidr{
+						Cidr: "10.0.0.0/8",
 					},
-					Port: Interface{
-						Name:  "eth0",
-						Index: 0,
+				},
+				Hop: &dpb.Route_NextHops{
+					NextHops: &dpb.NextHopList{
+						Hops: []*dpb.NextHop{{
+							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+							Dev: &dpb.NextHop_Port{
+								Port: "eth0",
+							},
+							Weight: 0,
+						}},
 					},
-				}: true,
-			},
-		}, {
-			RouteKey: RouteKey{
-				Prefix: "20.0.0.0/8",
-				NIName: "DEFAULT",
-			},
-			Nexthops: map[ResolvedNexthop]bool{
-				{
-					NextHopSummary: afthelper.NextHopSummary{
-						NetworkInstance: "DEFAULT",
-						Address:         "192.168.1.42",
+				},
+			}, {
+				Prefix: &dpb.RoutePrefix{
+					VrfId: uint64(0),
+					Prefix: &dpb.RoutePrefix_Cidr{
+						Cidr: "20.0.0.0/8",
 					},
-					Port: Interface{
-						Name:  "eth0",
-						Index: 0,
+				},
+				Hop: &dpb.Route_NextHops{
+					NextHops: &dpb.NextHopList{
+						Hops: []*dpb.NextHop{{
+							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+							Dev: &dpb.NextHop_Port{
+								Port: "eth0",
+							},
+							Weight: 0,
+						}},
 					},
-				}: true,
-			},
-		}},
+				},
+			}}
+		},
 	}, {
 		desc: "Add Policy",
 		inAddPolicies: map[string]GUEPolicy{
@@ -1482,53 +1205,123 @@ func TestBGPGUEPolicy(t *testing.T) {
 				srcIP6:    [16]byte{42, 42, 42, 42, 42},
 			},
 		},
-		wantResolvedRoutes: []*ResolvedRoute{{
-			RouteKey: RouteKey{
-				Prefix: "20.0.0.0/8",
-				NIName: "DEFAULT",
-			},
-			Nexthops: map[ResolvedNexthop]bool{
-				{
-					NextHopSummary: afthelper.NextHopSummary{
-						NetworkInstance: "DEFAULT",
-						Address:         "192.168.1.42",
+		wantRoutes: func(v4 bool) []*dpb.Route {
+			return []*dpb.Route{{
+				Prefix: &dpb.RoutePrefix{
+					VrfId: uint64(0),
+					Prefix: &dpb.RoutePrefix_Cidr{
+						Cidr: "10.0.0.0/8",
 					},
-					Port: Interface{
-						Name:  "eth0",
-						Index: 0,
+				},
+				Hop: &dpb.Route_NextHops{
+					NextHops: &dpb.NextHopList{
+						Hops: []*dpb.NextHop{{
+							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+							Dev: &dpb.NextHop_Port{
+								Port: "eth0",
+							},
+							Weight: 0,
+						}},
 					},
-					GUEHeaders: GUEHeaders{
-						GUEPolicy: GUEPolicy{
-							dstPortv4: 8,
-							srcIP4:    [4]byte{42, 42, 42, 42},
-						},
-						dstIP4: [4]byte{192, 168, 1, 42},
-						isV6:   false,
+				},
+			}, {
+				Prefix: &dpb.RoutePrefix{
+					VrfId: uint64(0),
+					Prefix: &dpb.RoutePrefix_Cidr{
+						Cidr: "20.0.0.0/8",
 					},
-				}: true,
-			},
-		}},
+				},
+				Hop: &dpb.Route_NextHops{
+					NextHops: &dpb.NextHopList{
+						Hops: []*dpb.NextHop{{
+							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+							Dev: &dpb.NextHop_Port{
+								Port: "eth0",
+							},
+							Weight: 0,
+							PreTransmitActions: []*fwdpb.ActionDesc{{
+								ActionType: fwdpb.ActionType_ACTION_TYPE_REPARSE,
+								Action: &fwdpb.ActionDesc_Reparse{
+									Reparse: &fwdpb.ReparseActionDesc{
+										HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4,
+										FieldIds: []*fwdpb.PacketFieldId{
+											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP}},
+											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT}},
+											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT}},
+										},
+										Prepend: gueHeader(t, selectGUEHeaders(t, v4,
+											&layers.IPv4{
+												Version:  4,
+												IHL:      5,
+												Protocol: layers.IPProtocolUDP,
+												SrcIP:    net.IPv4(42, 42, 42, 42),
+												DstIP:    net.IPv4(192, 168, 1, 42),
+											}, &layers.UDP{
+												DstPort: layers.UDPPort(8),
+												SrcPort: 0,
+												Length:  34,
+											},
+											&layers.IPv6{
+												Version:    6,
+												NextHeader: layers.IPProtocolUDP,
+												SrcIP:      mapAddressTo6BytesSlice([4]byte{42, 42, 42, 42}),
+												DstIP:      net.ParseIP(mapAddressTo6(t, "192.168.1.42")),
+											}, &layers.UDP{
+												DstPort: layers.UDPPort(8),
+												SrcPort: 0,
+												Length:  34,
+											},
+										)...),
+									},
+								},
+							}},
+						}},
+					},
+				},
+			}}
+		},
 	}, {
 		desc:             "Remove Policy",
 		inDeletePolicies: []string{"192.168.0.0/16"},
-		wantResolvedRoutes: []*ResolvedRoute{{
-			RouteKey: RouteKey{
-				Prefix: "20.0.0.0/8",
-				NIName: "DEFAULT",
-			},
-			Nexthops: map[ResolvedNexthop]bool{
-				{
-					NextHopSummary: afthelper.NextHopSummary{
-						NetworkInstance: "DEFAULT",
-						Address:         "192.168.1.42",
+		wantRoutes: func(v4 bool) []*dpb.Route {
+			return []*dpb.Route{{
+				Prefix: &dpb.RoutePrefix{
+					VrfId: uint64(0),
+					Prefix: &dpb.RoutePrefix_Cidr{
+						Cidr: "10.0.0.0/8",
 					},
-					Port: Interface{
-						Name:  "eth0",
-						Index: 0,
+				},
+				Hop: &dpb.Route_NextHops{
+					NextHops: &dpb.NextHopList{
+						Hops: []*dpb.NextHop{{
+							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+							Dev: &dpb.NextHop_Port{
+								Port: "eth0",
+							},
+							Weight: 0,
+						}},
 					},
-				}: true,
-			},
-		}},
+				},
+			}, {
+				Prefix: &dpb.RoutePrefix{
+					VrfId: uint64(0),
+					Prefix: &dpb.RoutePrefix_Cidr{
+						Cidr: "20.0.0.0/8",
+					},
+				},
+				Hop: &dpb.Route_NextHops{
+					NextHops: &dpb.NextHopList{
+						Hops: []*dpb.NextHop{{
+							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+							Dev: &dpb.NextHop_Port{
+								Port: "eth0",
+							},
+							Weight: 0,
+						}},
+					},
+				},
+			}}
+		},
 	}, {
 		desc: "Add BGP route that resolves over the static route",
 		inSetRouteRequests: []*pb.SetRouteRequest{{
@@ -1544,24 +1337,63 @@ func TestBGPGUEPolicy(t *testing.T) {
 				Address: "10.10.10.10",
 			}},
 		}},
-		wantResolvedRoutes: []*ResolvedRoute{{
-			RouteKey: RouteKey{
-				Prefix: "30.0.0.0/8",
-				NIName: "DEFAULT",
-			},
-			Nexthops: map[ResolvedNexthop]bool{
-				{
-					NextHopSummary: afthelper.NextHopSummary{
-						NetworkInstance: "DEFAULT",
-						Address:         "192.168.1.42",
+		wantRoutes: func(v4 bool) []*dpb.Route {
+			return []*dpb.Route{{
+				Prefix: &dpb.RoutePrefix{
+					VrfId: uint64(0),
+					Prefix: &dpb.RoutePrefix_Cidr{
+						Cidr: "10.0.0.0/8",
 					},
-					Port: Interface{
-						Name:  "eth0",
-						Index: 0,
+				},
+				Hop: &dpb.Route_NextHops{
+					NextHops: &dpb.NextHopList{
+						Hops: []*dpb.NextHop{{
+							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+							Dev: &dpb.NextHop_Port{
+								Port: "eth0",
+							},
+							Weight: 0,
+						}},
 					},
-				}: true,
-			},
-		}},
+				},
+			}, {
+				Prefix: &dpb.RoutePrefix{
+					VrfId: uint64(0),
+					Prefix: &dpb.RoutePrefix_Cidr{
+						Cidr: "20.0.0.0/8",
+					},
+				},
+				Hop: &dpb.Route_NextHops{
+					NextHops: &dpb.NextHopList{
+						Hops: []*dpb.NextHop{{
+							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+							Dev: &dpb.NextHop_Port{
+								Port: "eth0",
+							},
+							Weight: 0,
+						}},
+					},
+				},
+			}, {
+				Prefix: &dpb.RoutePrefix{
+					VrfId: uint64(0),
+					Prefix: &dpb.RoutePrefix_Cidr{
+						Cidr: "30.0.0.0/8",
+					},
+				},
+				Hop: &dpb.Route_NextHops{
+					NextHops: &dpb.NextHopList{
+						Hops: []*dpb.NextHop{{
+							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+							Dev: &dpb.NextHop_Port{
+								Port: "eth0",
+							},
+							Weight: 0,
+						}},
+					},
+				},
+			}}
+		},
 	}, {
 		desc: "Add Policy for second BGP route",
 		inAddPolicies: map[string]GUEPolicy{
@@ -1572,53 +1404,159 @@ func TestBGPGUEPolicy(t *testing.T) {
 				srcIP6:    [16]byte{43, 43, 43, 43, 43},
 			},
 		},
-		wantResolvedRoutes: []*ResolvedRoute{{
-			RouteKey: RouteKey{
-				Prefix: "30.0.0.0/8",
-				NIName: "DEFAULT",
-			},
-			Nexthops: map[ResolvedNexthop]bool{
-				{
-					NextHopSummary: afthelper.NextHopSummary{
-						NetworkInstance: "DEFAULT",
-						Address:         "192.168.1.42",
+		wantRoutes: func(v4 bool) []*dpb.Route {
+			return []*dpb.Route{{
+				Prefix: &dpb.RoutePrefix{
+					VrfId: uint64(0),
+					Prefix: &dpb.RoutePrefix_Cidr{
+						Cidr: "10.0.0.0/8",
 					},
-					Port: Interface{
-						Name:  "eth0",
-						Index: 0,
+				},
+				Hop: &dpb.Route_NextHops{
+					NextHops: &dpb.NextHopList{
+						Hops: []*dpb.NextHop{{
+							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+							Dev: &dpb.NextHop_Port{
+								Port: "eth0",
+							},
+							Weight: 0,
+						}},
 					},
-					GUEHeaders: GUEHeaders{
-						GUEPolicy: GUEPolicy{
-							dstPortv4: 9,
-							srcIP4:    [4]byte{43, 43, 43, 43},
-						},
-						dstIP4: [4]byte{10, 10, 10, 10},
-						isV6:   false,
+				},
+			}, {
+				Prefix: &dpb.RoutePrefix{
+					VrfId: uint64(0),
+					Prefix: &dpb.RoutePrefix_Cidr{
+						Cidr: "20.0.0.0/8",
 					},
-				}: true,
-			},
-		}},
+				},
+				Hop: &dpb.Route_NextHops{
+					NextHops: &dpb.NextHopList{
+						Hops: []*dpb.NextHop{{
+							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+							Dev: &dpb.NextHop_Port{
+								Port: "eth0",
+							},
+							Weight: 0,
+						}},
+					},
+				},
+			}, {
+				Prefix: &dpb.RoutePrefix{
+					VrfId: uint64(0),
+					Prefix: &dpb.RoutePrefix_Cidr{
+						Cidr: "30.0.0.0/8",
+					},
+				},
+				Hop: &dpb.Route_NextHops{
+					NextHops: &dpb.NextHopList{
+						Hops: []*dpb.NextHop{{
+							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+							Dev: &dpb.NextHop_Port{
+								Port: "eth0",
+							},
+							Weight: 0,
+							PreTransmitActions: []*fwdpb.ActionDesc{{
+								ActionType: fwdpb.ActionType_ACTION_TYPE_REPARSE,
+								Action: &fwdpb.ActionDesc_Reparse{
+									Reparse: &fwdpb.ReparseActionDesc{
+										HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4,
+										FieldIds: []*fwdpb.PacketFieldId{
+											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP}},
+											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT}},
+											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT}},
+										},
+										Prepend: gueHeader(t, selectGUEHeaders(t, v4,
+											&layers.IPv4{
+												Version:  4,
+												IHL:      5,
+												Protocol: layers.IPProtocolUDP,
+												SrcIP:    net.IPv4(43, 43, 43, 43),
+												DstIP:    net.IPv4(10, 10, 10, 10),
+											}, &layers.UDP{
+												DstPort: layers.UDPPort(9),
+												SrcPort: 0,
+												Length:  34,
+											},
+											&layers.IPv6{
+												Version:    6,
+												NextHeader: layers.IPProtocolUDP,
+												SrcIP:      mapAddressTo6BytesSlice([4]byte{43, 43, 43, 43}),
+												DstIP:      net.ParseIP(mapAddressTo6(t, "10.10.10.10")),
+											}, &layers.UDP{
+												DstPort: layers.UDPPort(9),
+												SrcPort: 0,
+												Length:  34,
+											},
+										)...),
+									},
+								},
+							}},
+						}},
+					},
+				},
+			}}
+		},
 	}, {
 		desc:             "Remove Policy for second BGP route",
 		inDeletePolicies: []string{"10.10.0.0/16"},
-		wantResolvedRoutes: []*ResolvedRoute{{
-			RouteKey: RouteKey{
-				Prefix: "30.0.0.0/8",
-				NIName: "DEFAULT",
-			},
-			Nexthops: map[ResolvedNexthop]bool{
-				{
-					NextHopSummary: afthelper.NextHopSummary{
-						NetworkInstance: "DEFAULT",
-						Address:         "192.168.1.42",
+		wantRoutes: func(v4 bool) []*dpb.Route {
+			return []*dpb.Route{{
+				Prefix: &dpb.RoutePrefix{
+					VrfId: uint64(0),
+					Prefix: &dpb.RoutePrefix_Cidr{
+						Cidr: "10.0.0.0/8",
 					},
-					Port: Interface{
-						Name:  "eth0",
-						Index: 0,
+				},
+				Hop: &dpb.Route_NextHops{
+					NextHops: &dpb.NextHopList{
+						Hops: []*dpb.NextHop{{
+							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+							Dev: &dpb.NextHop_Port{
+								Port: "eth0",
+							},
+							Weight: 0,
+						}},
 					},
-				}: true,
-			},
-		}},
+				},
+			}, {
+				Prefix: &dpb.RoutePrefix{
+					VrfId: uint64(0),
+					Prefix: &dpb.RoutePrefix_Cidr{
+						Cidr: "20.0.0.0/8",
+					},
+				},
+				Hop: &dpb.Route_NextHops{
+					NextHops: &dpb.NextHopList{
+						Hops: []*dpb.NextHop{{
+							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+							Dev: &dpb.NextHop_Port{
+								Port: "eth0",
+							},
+							Weight: 0,
+						}},
+					},
+				},
+			}, {
+				Prefix: &dpb.RoutePrefix{
+					VrfId: uint64(0),
+					Prefix: &dpb.RoutePrefix_Cidr{
+						Cidr: "30.0.0.0/8",
+					},
+				},
+				Hop: &dpb.Route_NextHops{
+					NextHops: &dpb.NextHopList{
+						Hops: []*dpb.NextHop{{
+							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+							Dev: &dpb.NextHop_Port{
+								Port: "eth0",
+							},
+							Weight: 0,
+						}},
+					},
+				},
+			}}
+		},
 	}, {
 		desc: "Add another BGP route that resolves over the static route",
 		inSetRouteRequests: []*pb.SetRouteRequest{{
@@ -1634,24 +1572,81 @@ func TestBGPGUEPolicy(t *testing.T) {
 				Address: "10.10.20.20",
 			}},
 		}},
-		wantResolvedRoutes: []*ResolvedRoute{{
-			RouteKey: RouteKey{
-				Prefix: "40.0.0.0/8",
-				NIName: "DEFAULT",
-			},
-			Nexthops: map[ResolvedNexthop]bool{
-				{
-					NextHopSummary: afthelper.NextHopSummary{
-						NetworkInstance: "DEFAULT",
-						Address:         "192.168.1.42",
+		wantRoutes: func(v4 bool) []*dpb.Route {
+			return []*dpb.Route{{
+				Prefix: &dpb.RoutePrefix{
+					VrfId: uint64(0),
+					Prefix: &dpb.RoutePrefix_Cidr{
+						Cidr: "10.0.0.0/8",
 					},
-					Port: Interface{
-						Name:  "eth0",
-						Index: 0,
+				},
+				Hop: &dpb.Route_NextHops{
+					NextHops: &dpb.NextHopList{
+						Hops: []*dpb.NextHop{{
+							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+							Dev: &dpb.NextHop_Port{
+								Port: "eth0",
+							},
+							Weight: 0,
+						}},
 					},
-				}: true,
-			},
-		}},
+				},
+			}, {
+				Prefix: &dpb.RoutePrefix{
+					VrfId: uint64(0),
+					Prefix: &dpb.RoutePrefix_Cidr{
+						Cidr: "20.0.0.0/8",
+					},
+				},
+				Hop: &dpb.Route_NextHops{
+					NextHops: &dpb.NextHopList{
+						Hops: []*dpb.NextHop{{
+							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+							Dev: &dpb.NextHop_Port{
+								Port: "eth0",
+							},
+							Weight: 0,
+						}},
+					},
+				},
+			}, {
+				Prefix: &dpb.RoutePrefix{
+					VrfId: uint64(0),
+					Prefix: &dpb.RoutePrefix_Cidr{
+						Cidr: "30.0.0.0/8",
+					},
+				},
+				Hop: &dpb.Route_NextHops{
+					NextHops: &dpb.NextHopList{
+						Hops: []*dpb.NextHop{{
+							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+							Dev: &dpb.NextHop_Port{
+								Port: "eth0",
+							},
+							Weight: 0,
+						}},
+					},
+				},
+			}, {
+				Prefix: &dpb.RoutePrefix{
+					VrfId: uint64(0),
+					Prefix: &dpb.RoutePrefix_Cidr{
+						Cidr: "40.0.0.0/8",
+					},
+				},
+				Hop: &dpb.Route_NextHops{
+					NextHops: &dpb.NextHopList{
+						Hops: []*dpb.NextHop{{
+							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+							Dev: &dpb.NextHop_Port{
+								Port: "eth0",
+							},
+							Weight: 0,
+						}},
+					},
+				},
+			}}
+		},
 	}, {
 		desc: "Add a policy that applies to two BGP routes",
 		inAddPolicies: map[string]GUEPolicy{
@@ -1662,57 +1657,153 @@ func TestBGPGUEPolicy(t *testing.T) {
 				srcIP6:    [16]byte{8, 8, 8, 8, 8},
 			},
 		},
-		wantResolvedRoutes: []*ResolvedRoute{{
-			RouteKey: RouteKey{
-				Prefix: "30.0.0.0/8",
-				NIName: "DEFAULT",
-			},
-			Nexthops: map[ResolvedNexthop]bool{
-				{
-					NextHopSummary: afthelper.NextHopSummary{
-						NetworkInstance: "DEFAULT",
-						Address:         "192.168.1.42",
+		wantRoutes: func(v4 bool) []*dpb.Route {
+			return []*dpb.Route{{
+				Prefix: &dpb.RoutePrefix{
+					VrfId: uint64(0),
+					Prefix: &dpb.RoutePrefix_Cidr{
+						Cidr: "10.0.0.0/8",
 					},
-					Port: Interface{
-						Name:  "eth0",
-						Index: 0,
+				},
+				Hop: &dpb.Route_NextHops{
+					NextHops: &dpb.NextHopList{
+						Hops: []*dpb.NextHop{{
+							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+							Dev: &dpb.NextHop_Port{
+								Port: "eth0",
+							},
+							Weight: 0,
+						}},
 					},
-					GUEHeaders: GUEHeaders{
-						GUEPolicy: GUEPolicy{
-							dstPortv4: 8,
-							srcIP4:    [4]byte{8, 8, 8, 8},
-						},
-						dstIP4: [4]byte{10, 10, 10, 10},
-						isV6:   false,
+				},
+			}, {
+				Prefix: &dpb.RoutePrefix{
+					VrfId: uint64(0),
+					Prefix: &dpb.RoutePrefix_Cidr{
+						Cidr: "20.0.0.0/8",
 					},
-				}: true,
-			},
-		}, {
-			RouteKey: RouteKey{
-				Prefix: "40.0.0.0/8",
-				NIName: "DEFAULT",
-			},
-			Nexthops: map[ResolvedNexthop]bool{
-				{
-					NextHopSummary: afthelper.NextHopSummary{
-						NetworkInstance: "DEFAULT",
-						Address:         "192.168.1.42",
+				},
+				Hop: &dpb.Route_NextHops{
+					NextHops: &dpb.NextHopList{
+						Hops: []*dpb.NextHop{{
+							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+							Dev: &dpb.NextHop_Port{
+								Port: "eth0",
+							},
+							Weight: 0,
+						}},
 					},
-					Port: Interface{
-						Name:  "eth0",
-						Index: 0,
+				},
+			}, {
+				Prefix: &dpb.RoutePrefix{
+					VrfId: uint64(0),
+					Prefix: &dpb.RoutePrefix_Cidr{
+						Cidr: "30.0.0.0/8",
 					},
-					GUEHeaders: GUEHeaders{
-						GUEPolicy: GUEPolicy{
-							dstPortv4: 8,
-							srcIP4:    [4]byte{8, 8, 8, 8},
-						},
-						dstIP4: [4]byte{10, 10, 20, 20},
-						isV6:   false,
+				},
+				Hop: &dpb.Route_NextHops{
+					NextHops: &dpb.NextHopList{
+						Hops: []*dpb.NextHop{{
+							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+							Dev: &dpb.NextHop_Port{
+								Port: "eth0",
+							},
+							Weight: 0,
+							PreTransmitActions: []*fwdpb.ActionDesc{{
+								ActionType: fwdpb.ActionType_ACTION_TYPE_REPARSE,
+								Action: &fwdpb.ActionDesc_Reparse{
+									Reparse: &fwdpb.ReparseActionDesc{
+										HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4,
+										FieldIds: []*fwdpb.PacketFieldId{
+											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP}},
+											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT}},
+											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT}},
+										},
+										Prepend: gueHeader(t, selectGUEHeaders(t, v4,
+											&layers.IPv4{
+												Version:  4,
+												IHL:      5,
+												Protocol: layers.IPProtocolUDP,
+												SrcIP:    net.IPv4(8, 8, 8, 8),
+												DstIP:    net.IPv4(10, 10, 10, 10),
+											}, &layers.UDP{
+												DstPort: layers.UDPPort(8),
+												SrcPort: 0,
+												Length:  34,
+											},
+											&layers.IPv6{
+												Version:    6,
+												NextHeader: layers.IPProtocolUDP,
+												SrcIP:      mapAddressTo6BytesSlice([4]byte{8, 8, 8, 8}),
+												DstIP:      net.ParseIP(mapAddressTo6(t, "10.10.10.10")),
+											}, &layers.UDP{
+												DstPort: layers.UDPPort(8),
+												SrcPort: 0,
+												Length:  34,
+											},
+										)...),
+									},
+								},
+							}},
+						}},
 					},
-				}: true,
-			},
-		}},
+				},
+			}, {
+				Prefix: &dpb.RoutePrefix{
+					VrfId: uint64(0),
+					Prefix: &dpb.RoutePrefix_Cidr{
+						Cidr: "40.0.0.0/8",
+					},
+				},
+				Hop: &dpb.Route_NextHops{
+					NextHops: &dpb.NextHopList{
+						Hops: []*dpb.NextHop{{
+							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+							Dev: &dpb.NextHop_Port{
+								Port: "eth0",
+							},
+							Weight: 0,
+							PreTransmitActions: []*fwdpb.ActionDesc{{
+								ActionType: fwdpb.ActionType_ACTION_TYPE_REPARSE,
+								Action: &fwdpb.ActionDesc_Reparse{
+									Reparse: &fwdpb.ReparseActionDesc{
+										HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4,
+										FieldIds: []*fwdpb.PacketFieldId{
+											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP}},
+											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT}},
+											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT}},
+										},
+										Prepend: gueHeader(t, selectGUEHeaders(t, v4,
+											&layers.IPv4{
+												Version:  4,
+												IHL:      5,
+												Protocol: layers.IPProtocolUDP,
+												SrcIP:    net.IPv4(8, 8, 8, 8),
+												DstIP:    net.IPv4(10, 10, 20, 20),
+											}, &layers.UDP{
+												DstPort: layers.UDPPort(8),
+												SrcPort: 0,
+												Length:  34,
+											},
+											&layers.IPv6{
+												Version:    6,
+												NextHeader: layers.IPProtocolUDP,
+												SrcIP:      mapAddressTo6BytesSlice([4]byte{8, 8, 8, 8}),
+												DstIP:      net.ParseIP(mapAddressTo6(t, "10.10.20.20")),
+											}, &layers.UDP{
+												DstPort: layers.UDPPort(8),
+												SrcPort: 0,
+												Length:  34,
+											},
+										)...),
+									},
+								},
+							}},
+						}},
+					},
+				},
+			}}
+		},
 	}, {
 		desc: "Add a more specific policy that applies to a BGP route",
 		inAddPolicies: map[string]GUEPolicy{
@@ -1723,32 +1814,267 @@ func TestBGPGUEPolicy(t *testing.T) {
 				srcIP6:    [16]byte{16, 16, 16, 16, 16},
 			},
 		},
-		wantResolvedRoutes: []*ResolvedRoute{{
-			RouteKey: RouteKey{
-				Prefix: "40.0.0.0/8",
-				NIName: "DEFAULT",
-			},
-			Nexthops: map[ResolvedNexthop]bool{
-				{
-					NextHopSummary: afthelper.NextHopSummary{
-						NetworkInstance: "DEFAULT",
-						Address:         "192.168.1.42",
+		wantRoutes: func(v4 bool) []*dpb.Route {
+			return []*dpb.Route{{
+				Prefix: &dpb.RoutePrefix{
+					VrfId: uint64(0),
+					Prefix: &dpb.RoutePrefix_Cidr{
+						Cidr: "10.0.0.0/8",
 					},
-					Port: Interface{
-						Name:  "eth0",
-						Index: 0,
+				},
+				Hop: &dpb.Route_NextHops{
+					NextHops: &dpb.NextHopList{
+						Hops: []*dpb.NextHop{{
+							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+							Dev: &dpb.NextHop_Port{
+								Port: "eth0",
+							},
+							Weight: 0,
+						}},
 					},
-					GUEHeaders: GUEHeaders{
-						GUEPolicy: GUEPolicy{
-							dstPortv4: 16,
-							srcIP4:    [4]byte{16, 16, 16, 16},
-						},
-						dstIP4: [4]byte{10, 10, 20, 20},
-						isV6:   false,
+				},
+			}, {
+				Prefix: &dpb.RoutePrefix{
+					VrfId: uint64(0),
+					Prefix: &dpb.RoutePrefix_Cidr{
+						Cidr: "20.0.0.0/8",
 					},
-				}: true,
-			},
-		}},
+				},
+				Hop: &dpb.Route_NextHops{
+					NextHops: &dpb.NextHopList{
+						Hops: []*dpb.NextHop{{
+							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+							Dev: &dpb.NextHop_Port{
+								Port: "eth0",
+							},
+							Weight: 0,
+						}},
+					},
+				},
+			}, {
+				Prefix: &dpb.RoutePrefix{
+					VrfId: uint64(0),
+					Prefix: &dpb.RoutePrefix_Cidr{
+						Cidr: "30.0.0.0/8",
+					},
+				},
+				Hop: &dpb.Route_NextHops{
+					NextHops: &dpb.NextHopList{
+						Hops: []*dpb.NextHop{{
+							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+							Dev: &dpb.NextHop_Port{
+								Port: "eth0",
+							},
+							Weight: 0,
+							PreTransmitActions: []*fwdpb.ActionDesc{{
+								ActionType: fwdpb.ActionType_ACTION_TYPE_REPARSE,
+								Action: &fwdpb.ActionDesc_Reparse{
+									Reparse: &fwdpb.ReparseActionDesc{
+										HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4,
+										FieldIds: []*fwdpb.PacketFieldId{
+											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP}},
+											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT}},
+											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT}},
+										},
+										Prepend: gueHeader(t, selectGUEHeaders(t, v4,
+											&layers.IPv4{
+												Version:  4,
+												IHL:      5,
+												Protocol: layers.IPProtocolUDP,
+												SrcIP:    net.IPv4(8, 8, 8, 8),
+												DstIP:    net.IPv4(10, 10, 10, 10),
+											}, &layers.UDP{
+												DstPort: layers.UDPPort(8),
+												SrcPort: 0,
+												Length:  34,
+											},
+											&layers.IPv6{
+												Version:    6,
+												NextHeader: layers.IPProtocolUDP,
+												SrcIP:      mapAddressTo6BytesSlice([4]byte{8, 8, 8, 8}),
+												DstIP:      net.ParseIP(mapAddressTo6(t, "10.10.10.10")),
+											}, &layers.UDP{
+												DstPort: layers.UDPPort(8),
+												SrcPort: 0,
+												Length:  34,
+											},
+										)...),
+									},
+								},
+							}},
+						}},
+					},
+				},
+			}, {
+				Prefix: &dpb.RoutePrefix{
+					VrfId: uint64(0),
+					Prefix: &dpb.RoutePrefix_Cidr{
+						Cidr: "40.0.0.0/8",
+					},
+				},
+				Hop: &dpb.Route_NextHops{
+					NextHops: &dpb.NextHopList{
+						Hops: []*dpb.NextHop{{
+							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+							Dev: &dpb.NextHop_Port{
+								Port: "eth0",
+							},
+							Weight: 0,
+							PreTransmitActions: []*fwdpb.ActionDesc{{
+								ActionType: fwdpb.ActionType_ACTION_TYPE_REPARSE,
+								Action: &fwdpb.ActionDesc_Reparse{
+									Reparse: &fwdpb.ReparseActionDesc{
+										HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4,
+										FieldIds: []*fwdpb.PacketFieldId{
+											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP}},
+											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT}},
+											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT}},
+										},
+										Prepend: gueHeader(t, selectGUEHeaders(t, v4,
+											&layers.IPv4{
+												Version:  4,
+												IHL:      5,
+												Protocol: layers.IPProtocolUDP,
+												SrcIP:    net.IPv4(16, 16, 16, 16),
+												DstIP:    net.IPv4(10, 10, 20, 20),
+											}, &layers.UDP{
+												DstPort: layers.UDPPort(16),
+												SrcPort: 0,
+												Length:  34,
+											},
+											&layers.IPv6{
+												Version:    6,
+												NextHeader: layers.IPProtocolUDP,
+												SrcIP:      mapAddressTo6BytesSlice([4]byte{16, 16, 16, 16}),
+												DstIP:      net.ParseIP(mapAddressTo6(t, "10.10.20.20")),
+											}, &layers.UDP{
+												DstPort: layers.UDPPort(16),
+												SrcPort: 0,
+												Length:  34,
+											},
+										)...),
+									},
+								},
+							}},
+						}},
+					},
+				},
+			}}
+		},
+	}, {
+		desc:             "Remove the less-specific policy",
+		inDeletePolicies: []string{"10.0.0.0/8"},
+		wantRoutes: func(v4 bool) []*dpb.Route {
+			return []*dpb.Route{{
+				Prefix: &dpb.RoutePrefix{
+					VrfId: uint64(0),
+					Prefix: &dpb.RoutePrefix_Cidr{
+						Cidr: "10.0.0.0/8",
+					},
+				},
+				Hop: &dpb.Route_NextHops{
+					NextHops: &dpb.NextHopList{
+						Hops: []*dpb.NextHop{{
+							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+							Dev: &dpb.NextHop_Port{
+								Port: "eth0",
+							},
+							Weight: 0,
+						}},
+					},
+				},
+			}, {
+				Prefix: &dpb.RoutePrefix{
+					VrfId: uint64(0),
+					Prefix: &dpb.RoutePrefix_Cidr{
+						Cidr: "20.0.0.0/8",
+					},
+				},
+				Hop: &dpb.Route_NextHops{
+					NextHops: &dpb.NextHopList{
+						Hops: []*dpb.NextHop{{
+							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+							Dev: &dpb.NextHop_Port{
+								Port: "eth0",
+							},
+							Weight: 0,
+						}},
+					},
+				},
+			}, {
+				Prefix: &dpb.RoutePrefix{
+					VrfId: uint64(0),
+					Prefix: &dpb.RoutePrefix_Cidr{
+						Cidr: "30.0.0.0/8",
+					},
+				},
+				Hop: &dpb.Route_NextHops{
+					NextHops: &dpb.NextHopList{
+						Hops: []*dpb.NextHop{{
+							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+							Dev: &dpb.NextHop_Port{
+								Port: "eth0",
+							},
+							Weight: 0,
+						}},
+					},
+				},
+			}, {
+				Prefix: &dpb.RoutePrefix{
+					VrfId: uint64(0),
+					Prefix: &dpb.RoutePrefix_Cidr{
+						Cidr: "40.0.0.0/8",
+					},
+				},
+				Hop: &dpb.Route_NextHops{
+					NextHops: &dpb.NextHopList{
+						Hops: []*dpb.NextHop{{
+							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+							Dev: &dpb.NextHop_Port{
+								Port: "eth0",
+							},
+							Weight: 0,
+							PreTransmitActions: []*fwdpb.ActionDesc{{
+								ActionType: fwdpb.ActionType_ACTION_TYPE_REPARSE,
+								Action: &fwdpb.ActionDesc_Reparse{
+									Reparse: &fwdpb.ReparseActionDesc{
+										HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4,
+										FieldIds: []*fwdpb.PacketFieldId{
+											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP}},
+											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT}},
+											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT}},
+										},
+										Prepend: gueHeader(t, selectGUEHeaders(t, v4,
+											&layers.IPv4{
+												Version:  4,
+												IHL:      5,
+												Protocol: layers.IPProtocolUDP,
+												SrcIP:    net.IPv4(16, 16, 16, 16),
+												DstIP:    net.IPv4(10, 10, 20, 20),
+											}, &layers.UDP{
+												DstPort: layers.UDPPort(16),
+												SrcPort: 0,
+												Length:  34,
+											},
+											&layers.IPv6{
+												Version:    6,
+												NextHeader: layers.IPProtocolUDP,
+												SrcIP:      mapAddressTo6BytesSlice([4]byte{16, 16, 16, 16}),
+												DstIP:      net.ParseIP(mapAddressTo6(t, "10.10.20.20")),
+											}, &layers.UDP{
+												DstPort: layers.UDPPort(16),
+												SrcPort: 0,
+												Length:  34,
+											},
+										)...),
+									},
+								},
+							}},
+						}},
+					},
+				},
+			}}
+		},
 	}, {
 		desc:   "Add an IPv4-mapped IPv6 BGP route over the more specific policy",
 		skipV6: true,
@@ -1765,127 +2091,349 @@ func TestBGPGUEPolicy(t *testing.T) {
 				Address: "::ffff:10.10.20.30",
 			}},
 		}},
-		wantResolvedRoutes: []*ResolvedRoute{{
-			RouteKey: RouteKey{
-				Prefix: "4242::/42",
-				NIName: "DEFAULT",
-			},
-			Nexthops: map[ResolvedNexthop]bool{
-				{
-					NextHopSummary: afthelper.NextHopSummary{
-						NetworkInstance: "DEFAULT",
-						Address:         "192.168.1.42",
+		wantRoutes: func(v4 bool) []*dpb.Route {
+			return []*dpb.Route{{
+				Prefix: &dpb.RoutePrefix{
+					VrfId: uint64(0),
+					Prefix: &dpb.RoutePrefix_Cidr{
+						Cidr: "10.0.0.0/8",
 					},
-					Port: Interface{
-						Name:  "eth0",
-						Index: 0,
+				},
+				Hop: &dpb.Route_NextHops{
+					NextHops: &dpb.NextHopList{
+						Hops: []*dpb.NextHop{{
+							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+							Dev: &dpb.NextHop_Port{
+								Port: "eth0",
+							},
+							Weight: 0,
+						}},
 					},
-					GUEHeaders: GUEHeaders{
-						GUEPolicy: GUEPolicy{
-							dstPortv6: 32,
-							srcIP4:    [4]byte{16, 16, 16, 16},
-						},
-						dstIP4: [4]byte{10, 10, 20, 30},
-						isV6:   false,
+				},
+			}, {
+				Prefix: &dpb.RoutePrefix{
+					VrfId: uint64(0),
+					Prefix: &dpb.RoutePrefix_Cidr{
+						Cidr: "20.0.0.0/8",
 					},
-				}: true,
-			},
-		}},
-	}, {
-		desc:             "Remove the less-specific policy",
-		inDeletePolicies: []string{"10.0.0.0/8"},
-		wantResolvedRoutes: []*ResolvedRoute{{
-			RouteKey: RouteKey{
-				Prefix: "30.0.0.0/8",
-				NIName: "DEFAULT",
-			},
-			Nexthops: map[ResolvedNexthop]bool{
-				{
-					NextHopSummary: afthelper.NextHopSummary{
-						NetworkInstance: "DEFAULT",
-						Address:         "192.168.1.42",
+				},
+				Hop: &dpb.Route_NextHops{
+					NextHops: &dpb.NextHopList{
+						Hops: []*dpb.NextHop{{
+							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+							Dev: &dpb.NextHop_Port{
+								Port: "eth0",
+							},
+							Weight: 0,
+						}},
 					},
-					Port: Interface{
-						Name:  "eth0",
-						Index: 0,
+				},
+			}, {
+				Prefix: &dpb.RoutePrefix{
+					VrfId: uint64(0),
+					Prefix: &dpb.RoutePrefix_Cidr{
+						Cidr: "30.0.0.0/8",
 					},
-				}: true,
-			},
-		}},
+				},
+				Hop: &dpb.Route_NextHops{
+					NextHops: &dpb.NextHopList{
+						Hops: []*dpb.NextHop{{
+							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+							Dev: &dpb.NextHop_Port{
+								Port: "eth0",
+							},
+							Weight: 0,
+						}},
+					},
+				},
+			}, {
+				Prefix: &dpb.RoutePrefix{
+					VrfId: uint64(0),
+					Prefix: &dpb.RoutePrefix_Cidr{
+						Cidr: "40.0.0.0/8",
+					},
+				},
+				Hop: &dpb.Route_NextHops{
+					NextHops: &dpb.NextHopList{
+						Hops: []*dpb.NextHop{{
+							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+							Dev: &dpb.NextHop_Port{
+								Port: "eth0",
+							},
+							Weight: 0,
+							PreTransmitActions: []*fwdpb.ActionDesc{{
+								ActionType: fwdpb.ActionType_ACTION_TYPE_REPARSE,
+								Action: &fwdpb.ActionDesc_Reparse{
+									Reparse: &fwdpb.ReparseActionDesc{
+										HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4,
+										FieldIds: []*fwdpb.PacketFieldId{
+											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP}},
+											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT}},
+											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT}},
+										},
+										Prepend: gueHeader(t, selectGUEHeaders(t, v4,
+											&layers.IPv4{
+												Version:  4,
+												IHL:      5,
+												Protocol: layers.IPProtocolUDP,
+												SrcIP:    net.IPv4(16, 16, 16, 16),
+												DstIP:    net.IPv4(10, 10, 20, 20),
+											}, &layers.UDP{
+												DstPort: layers.UDPPort(16),
+												SrcPort: 0,
+												Length:  34,
+											},
+											&layers.IPv6{
+												Version:    6,
+												NextHeader: layers.IPProtocolUDP,
+												SrcIP:      mapAddressTo6BytesSlice([4]byte{16, 16, 16, 16}),
+												DstIP:      net.ParseIP(mapAddressTo6(t, "10.10.20.20")),
+											}, &layers.UDP{
+												DstPort: layers.UDPPort(16),
+												SrcPort: 0,
+												Length:  34,
+											},
+										)...),
+									},
+								},
+							}},
+						}},
+					},
+				},
+			}, {
+				Prefix: &dpb.RoutePrefix{
+					VrfId: uint64(0),
+					Prefix: &dpb.RoutePrefix_Cidr{
+						Cidr: "4242::/42",
+					},
+				},
+				Hop: &dpb.Route_NextHops{
+					NextHops: &dpb.NextHopList{
+						Hops: []*dpb.NextHop{{
+							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+							Dev: &dpb.NextHop_Port{
+								Port: "eth0",
+							},
+							Weight: 0,
+							PreTransmitActions: []*fwdpb.ActionDesc{{
+								ActionType: fwdpb.ActionType_ACTION_TYPE_REPARSE,
+								Action: &fwdpb.ActionDesc_Reparse{
+									Reparse: &fwdpb.ReparseActionDesc{
+										HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4,
+										FieldIds: []*fwdpb.PacketFieldId{
+											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP}},
+											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT}},
+											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT}},
+										},
+										Prepend: gueHeader(t, selectGUEHeaders(t, v4,
+											&layers.IPv4{
+												Version:  4,
+												IHL:      5,
+												Protocol: layers.IPProtocolUDP,
+												SrcIP:    net.IPv4(16, 16, 16, 16),
+												DstIP:    net.IPv4(10, 10, 20, 30),
+											}, &layers.UDP{
+												DstPort: layers.UDPPort(32),
+												SrcPort: 0,
+												Length:  34,
+											},
+											&layers.IPv6{}, &layers.UDP{},
+										)...),
+									},
+								},
+							}},
+						}},
+					},
+				},
+			}}
+		},
 	}, {
 		desc:             "Remove the more-specific policy",
 		skipV4:           true,
 		inDeletePolicies: []string{"10.10.20.0/24"},
-		wantResolvedRoutes: []*ResolvedRoute{{
-			RouteKey: RouteKey{
-				Prefix: "40.0.0.0/8",
-				NIName: "DEFAULT",
-			},
-			Nexthops: map[ResolvedNexthop]bool{
-				{
-					NextHopSummary: afthelper.NextHopSummary{
-						NetworkInstance: "DEFAULT",
-						Address:         "192.168.1.42",
+		wantRoutes: func(v4 bool) []*dpb.Route {
+			return []*dpb.Route{{
+				Prefix: &dpb.RoutePrefix{
+					VrfId: uint64(0),
+					Prefix: &dpb.RoutePrefix_Cidr{
+						Cidr: "10.0.0.0/8",
 					},
-					Port: Interface{
-						Name:  "eth0",
-						Index: 0,
+				},
+				Hop: &dpb.Route_NextHops{
+					NextHops: &dpb.NextHopList{
+						Hops: []*dpb.NextHop{{
+							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+							Dev: &dpb.NextHop_Port{
+								Port: "eth0",
+							},
+							Weight: 0,
+						}},
 					},
-				}: true,
-			},
-		}},
+				},
+			}, {
+				Prefix: &dpb.RoutePrefix{
+					VrfId: uint64(0),
+					Prefix: &dpb.RoutePrefix_Cidr{
+						Cidr: "20.0.0.0/8",
+					},
+				},
+				Hop: &dpb.Route_NextHops{
+					NextHops: &dpb.NextHopList{
+						Hops: []*dpb.NextHop{{
+							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+							Dev: &dpb.NextHop_Port{
+								Port: "eth0",
+							},
+							Weight: 0,
+						}},
+					},
+				},
+			}, {
+				Prefix: &dpb.RoutePrefix{
+					VrfId: uint64(0),
+					Prefix: &dpb.RoutePrefix_Cidr{
+						Cidr: "30.0.0.0/8",
+					},
+				},
+				Hop: &dpb.Route_NextHops{
+					NextHops: &dpb.NextHopList{
+						Hops: []*dpb.NextHop{{
+							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+							Dev: &dpb.NextHop_Port{
+								Port: "eth0",
+							},
+							Weight: 0,
+						}},
+					},
+				},
+			}, {
+				Prefix: &dpb.RoutePrefix{
+					VrfId: uint64(0),
+					Prefix: &dpb.RoutePrefix_Cidr{
+						Cidr: "40.0.0.0/8",
+					},
+				},
+				Hop: &dpb.Route_NextHops{
+					NextHops: &dpb.NextHopList{
+						Hops: []*dpb.NextHop{{
+							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+							Dev: &dpb.NextHop_Port{
+								Port: "eth0",
+							},
+							Weight: 0,
+						}},
+					},
+				},
+			}}
+		},
 	}, {
 		desc:             "Remove the more-specific policy",
 		skipV6:           true,
 		inDeletePolicies: []string{"10.10.20.0/24"},
-		wantResolvedRoutes: []*ResolvedRoute{{
-			RouteKey: RouteKey{
-				Prefix: "40.0.0.0/8",
-				NIName: "DEFAULT",
-			},
-			Nexthops: map[ResolvedNexthop]bool{
-				{
-					NextHopSummary: afthelper.NextHopSummary{
-						NetworkInstance: "DEFAULT",
-						Address:         "192.168.1.42",
+		wantRoutes: func(v4 bool) []*dpb.Route {
+			return []*dpb.Route{{
+				Prefix: &dpb.RoutePrefix{
+					VrfId: uint64(0),
+					Prefix: &dpb.RoutePrefix_Cidr{
+						Cidr: "10.0.0.0/8",
 					},
-					Port: Interface{
-						Name:  "eth0",
-						Index: 0,
+				},
+				Hop: &dpb.Route_NextHops{
+					NextHops: &dpb.NextHopList{
+						Hops: []*dpb.NextHop{{
+							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+							Dev: &dpb.NextHop_Port{
+								Port: "eth0",
+							},
+							Weight: 0,
+						}},
 					},
-				}: true,
-			},
-		}, {
-			RouteKey: RouteKey{
-				Prefix: "4242::/42",
-				NIName: "DEFAULT",
-			},
-			Nexthops: map[ResolvedNexthop]bool{
-				{
-					NextHopSummary: afthelper.NextHopSummary{
-						NetworkInstance: "DEFAULT",
-						Address:         "192.168.1.42",
+				},
+			}, {
+				Prefix: &dpb.RoutePrefix{
+					VrfId: uint64(0),
+					Prefix: &dpb.RoutePrefix_Cidr{
+						Cidr: "20.0.0.0/8",
 					},
-					Port: Interface{
-						Name:  "eth0",
-						Index: 0,
+				},
+				Hop: &dpb.Route_NextHops{
+					NextHops: &dpb.NextHopList{
+						Hops: []*dpb.NextHop{{
+							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+							Dev: &dpb.NextHop_Port{
+								Port: "eth0",
+							},
+							Weight: 0,
+						}},
 					},
-				}: true,
-			},
-		}},
+				},
+			}, {
+				Prefix: &dpb.RoutePrefix{
+					VrfId: uint64(0),
+					Prefix: &dpb.RoutePrefix_Cidr{
+						Cidr: "30.0.0.0/8",
+					},
+				},
+				Hop: &dpb.Route_NextHops{
+					NextHops: &dpb.NextHopList{
+						Hops: []*dpb.NextHop{{
+							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+							Dev: &dpb.NextHop_Port{
+								Port: "eth0",
+							},
+							Weight: 0,
+						}},
+					},
+				},
+			}, {
+				Prefix: &dpb.RoutePrefix{
+					VrfId: uint64(0),
+					Prefix: &dpb.RoutePrefix_Cidr{
+						Cidr: "40.0.0.0/8",
+					},
+				},
+				Hop: &dpb.Route_NextHops{
+					NextHops: &dpb.NextHopList{
+						Hops: []*dpb.NextHop{{
+							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+							Dev: &dpb.NextHop_Port{
+								Port: "eth0",
+							},
+							Weight: 0,
+						}},
+					},
+				},
+			}, {
+				Prefix: &dpb.RoutePrefix{
+					VrfId: uint64(0),
+					Prefix: &dpb.RoutePrefix_Cidr{
+						Cidr: "4242::/42",
+					},
+				},
+				Hop: &dpb.Route_NextHops{
+					NextHops: &dpb.NextHopList{
+						Hops: []*dpb.NextHop{{
+							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+							Dev: &dpb.NextHop_Port{
+								Port: "eth0",
+							},
+							Weight: 0,
+						}},
+					},
+				},
+			}}
+		},
 	}}
 
 	for _, v4 := range []bool{true, false} {
+		inInterfaces := inInterfaces
+		wantConnectedRoutes := wantConnectedRoutes
 		desc := "v4"
 		if !v4 {
 			desc = "v6"
 			// Convert all v4 addresses to v6.
-			for _, intf := range intfs {
-				intf.prefix = mapAddressTo6(t, intf.prefix)
-			}
-			for _, route := range wantConnectedRoutes {
-				mapResolvedRouteTo6(t, route)
-			}
+			inInterfaces = inInterface6s
+			wantConnectedRoutes = wantConnectedRoute6s
 		}
 
 		t.Run(desc, func(t *testing.T) {
@@ -1902,7 +2450,6 @@ func TestBGPGUEPolicy(t *testing.T) {
 				grpcServer.Serve(lis)
 			}()
 
-			dp := NewFakeDataplane()
 			s, err := New(nil)
 			if err != nil {
 				t.Fatal(err)
@@ -1913,7 +2460,6 @@ func TestBGPGUEPolicy(t *testing.T) {
 			if err := s.Start(client, "local", ""); err != nil {
 				t.Fatalf("cannot start sysrib server, %v", err)
 			}
-			s.dataplane = dp
 			defer s.Stop()
 
 			c, err := ygnmi.NewClient(client, ygnmi.WithTarget("local"))
@@ -1921,20 +2467,26 @@ func TestBGPGUEPolicy(t *testing.T) {
 				t.Fatalf("cannot create ygnmi client: %v", err)
 			}
 
-			for _, intf := range intfs {
+			for _, intf := range inInterfaces {
 				configureInterface(t, intf, c)
 			}
+
 			// Wait for Sysrib to pick up the connected prefixes.
 			for i := 0; i != maxGNMIWaitQuanta; i++ {
-				if err = checkResolvedRoutesEqual(dp.GetRoutes(), wantConnectedRoutes); err == nil {
-					break
+				var routes []*dpb.Route
+				routes, err = ygnmi.GetAll(context.Background(), c, routesQuery)
+				if err == nil {
+					if diff := cmp.Diff(wantConnectedRoutes, routes, protocmp.Transform(), protocmp.SortRepeatedFields(new(dpb.NextHopList), "hops")); diff != "" {
+						err = fmt.Errorf("routes not equal to wantConnectedRoutes (-want, +got):\n%s", diff)
+					} else {
+						break
+					}
 				}
 				time.Sleep(100 * time.Millisecond)
 			}
 			if err != nil {
 				t.Fatalf("After initial interface operations: %v", err)
 			}
-			dp.ClearQueue()
 
 			for _, tt := range tests {
 				if v4 && tt.skipV4 {
@@ -1944,6 +2496,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 					continue
 				}
 
+				wantRoutes := tt.wantRoutes(v4)
 				if !v4 { // Convert v4 to v6.
 					for _, req := range tt.inSetRouteRequests {
 						mapPrefixTo6(t, req.Prefix)
@@ -1954,9 +2507,6 @@ func TestBGPGUEPolicy(t *testing.T) {
 							nh.Address = mapAddressTo6(t, nh.Address)
 						}
 					}
-					for _, route := range tt.wantResolvedRoutes {
-						mapResolvedRouteTo6(t, route)
-					}
 					inAddPolicies := map[string]GUEPolicy{}
 					for prefix, gueHeaders := range tt.inAddPolicies {
 						inAddPolicies[mapAddressTo6(t, prefix)] = mapPolicyTo6(gueHeaders)
@@ -1964,6 +2514,11 @@ func TestBGPGUEPolicy(t *testing.T) {
 					tt.inAddPolicies = inAddPolicies
 					for i := range tt.inDeletePolicies {
 						tt.inDeletePolicies[i] = mapAddressTo6(t, tt.inDeletePolicies[i])
+					}
+					if !v4 {
+						for _, route := range wantRoutes {
+							mapResolvedRouteTo6(t, route)
+						}
 					}
 				}
 
@@ -1979,12 +2534,16 @@ func TestBGPGUEPolicy(t *testing.T) {
 					for _, prefix := range tt.inDeletePolicies {
 						s.deleteGUEPolicy(prefix)
 					}
-					if err := checkResolvedRoutesEqual(dp.GetRoutes(), tt.wantResolvedRoutes); err != nil {
-						fmt.Println("debug", tt.desc)
-						s.rib.PrintRIB()
-						t.Fatalf("%v", err)
+
+					routes, err := ygnmi.GetAll(context.Background(), c, routesQuery)
+					if err != nil {
+						t.Fatal(err)
 					}
-					dp.ClearQueue()
+					if diff := cmp.Diff(append(append([]*dpb.Route{}, wantConnectedRoutes...), wantRoutes...), routes, protocmp.Transform(), protocmp.SortRepeatedFields(new(dpb.NextHopList), "hops"), cmpopts.SortSlices(func(a, b *dpb.Route) bool {
+						return a.GetPrefix().GetCidr() < b.GetPrefix().GetCidr()
+					})); diff != "" {
+						t.Errorf("routes not equal to wantRoutes (-want, +got):\n%s", diff)
+					}
 				})
 			}
 		})

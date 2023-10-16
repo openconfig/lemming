@@ -362,6 +362,382 @@ lemming::dataplane::sai::CreateAclEntryRequest convert_create_acl_entry(
       case SAI_ACL_ENTRY_ATTR_ADMIN_STATE:
         msg.set_admin_state(attr_list[i].value.booldata);
         break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_SRC_IPV6:
+        *msg.mutable_field_src_ipv6() = convert_from_acl_field_data_ip6(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.ip6,
+            attr_list[i].value.aclfield.mask.ip6);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_SRC_IPV6_WORD3:
+        *msg.mutable_field_src_ipv6_word3() = convert_from_acl_field_data_ip6(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.ip6,
+            attr_list[i].value.aclfield.mask.ip6);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_SRC_IPV6_WORD2:
+        *msg.mutable_field_src_ipv6_word2() = convert_from_acl_field_data_ip6(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.ip6,
+            attr_list[i].value.aclfield.mask.ip6);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_SRC_IPV6_WORD1:
+        *msg.mutable_field_src_ipv6_word1() = convert_from_acl_field_data_ip6(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.ip6,
+            attr_list[i].value.aclfield.mask.ip6);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_SRC_IPV6_WORD0:
+        *msg.mutable_field_src_ipv6_word0() = convert_from_acl_field_data_ip6(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.ip6,
+            attr_list[i].value.aclfield.mask.ip6);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_DST_IPV6:
+        *msg.mutable_field_dst_ipv6() = convert_from_acl_field_data_ip6(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.ip6,
+            attr_list[i].value.aclfield.mask.ip6);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_DST_IPV6_WORD3:
+        *msg.mutable_field_dst_ipv6_word3() = convert_from_acl_field_data_ip6(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.ip6,
+            attr_list[i].value.aclfield.mask.ip6);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_DST_IPV6_WORD2:
+        *msg.mutable_field_dst_ipv6_word2() = convert_from_acl_field_data_ip6(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.ip6,
+            attr_list[i].value.aclfield.mask.ip6);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_DST_IPV6_WORD1:
+        *msg.mutable_field_dst_ipv6_word1() = convert_from_acl_field_data_ip6(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.ip6,
+            attr_list[i].value.aclfield.mask.ip6);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_DST_IPV6_WORD0:
+        *msg.mutable_field_dst_ipv6_word0() = convert_from_acl_field_data_ip6(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.ip6,
+            attr_list[i].value.aclfield.mask.ip6);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_INNER_SRC_IPV6:
+        *msg.mutable_field_inner_src_ipv6() = convert_from_acl_field_data_ip6(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.ip6,
+            attr_list[i].value.aclfield.mask.ip6);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_INNER_DST_IPV6:
+        *msg.mutable_field_inner_dst_ipv6() = convert_from_acl_field_data_ip6(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.ip6,
+            attr_list[i].value.aclfield.mask.ip6);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_SRC_MAC:
+        *msg.mutable_field_src_mac() = convert_from_acl_field_data_mac(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.mac,
+            attr_list[i].value.aclfield.mask.mac);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_DST_MAC:
+        *msg.mutable_field_dst_mac() = convert_from_acl_field_data_mac(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.mac,
+            attr_list[i].value.aclfield.mask.mac);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_SRC_IP:
+        *msg.mutable_field_src_ip() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.ip4,
+            attr_list[i].value.aclfield.mask.ip4);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_DST_IP:
+        *msg.mutable_field_dst_ip() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.ip4,
+            attr_list[i].value.aclfield.mask.ip4);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_INNER_SRC_IP:
+        *msg.mutable_field_inner_src_ip() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.ip4,
+            attr_list[i].value.aclfield.mask.ip4);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_INNER_DST_IP:
+        *msg.mutable_field_inner_dst_ip() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.ip4,
+            attr_list[i].value.aclfield.mask.ip4);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_IN_PORT:
+        *msg.mutable_field_in_port() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.oid);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_OUT_PORT:
+        *msg.mutable_field_out_port() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.oid);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_SRC_PORT:
+        *msg.mutable_field_src_port() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.oid);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_OUTER_VLAN_ID:
+        *msg.mutable_field_outer_vlan_id() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u16,
+            attr_list[i].value.aclfield.mask.u16);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_OUTER_VLAN_PRI:
+        *msg.mutable_field_outer_vlan_pri() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u8,
+            attr_list[i].value.aclfield.mask.u8);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_OUTER_VLAN_CFI:
+        *msg.mutable_field_outer_vlan_cfi() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u8,
+            attr_list[i].value.aclfield.mask.u8);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_INNER_VLAN_ID:
+        *msg.mutable_field_inner_vlan_id() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u16,
+            attr_list[i].value.aclfield.mask.u16);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_INNER_VLAN_PRI:
+        *msg.mutable_field_inner_vlan_pri() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u8,
+            attr_list[i].value.aclfield.mask.u8);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_INNER_VLAN_CFI:
+        *msg.mutable_field_inner_vlan_cfi() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u8,
+            attr_list[i].value.aclfield.mask.u8);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_L4_SRC_PORT:
+        *msg.mutable_field_l4_src_port() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u16,
+            attr_list[i].value.aclfield.mask.u16);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_L4_DST_PORT:
+        *msg.mutable_field_l4_dst_port() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u16,
+            attr_list[i].value.aclfield.mask.u16);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_INNER_L4_SRC_PORT:
+        *msg.mutable_field_inner_l4_src_port() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u16,
+            attr_list[i].value.aclfield.mask.u16);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_INNER_L4_DST_PORT:
+        *msg.mutable_field_inner_l4_dst_port() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u16,
+            attr_list[i].value.aclfield.mask.u16);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_ETHER_TYPE:
+        *msg.mutable_field_ether_type() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u16,
+            attr_list[i].value.aclfield.mask.u16);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_INNER_ETHER_TYPE:
+        *msg.mutable_field_inner_ether_type() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u16,
+            attr_list[i].value.aclfield.mask.u16);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_IP_PROTOCOL:
+        *msg.mutable_field_ip_protocol() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u8,
+            attr_list[i].value.aclfield.mask.u8);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_INNER_IP_PROTOCOL:
+        *msg.mutable_field_inner_ip_protocol() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u8,
+            attr_list[i].value.aclfield.mask.u8);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_IP_IDENTIFICATION:
+        *msg.mutable_field_ip_identification() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u16,
+            attr_list[i].value.aclfield.mask.u16);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_DSCP:
+        *msg.mutable_field_dscp() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u8,
+            attr_list[i].value.aclfield.mask.u8);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_ECN:
+        *msg.mutable_field_ecn() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u8,
+            attr_list[i].value.aclfield.mask.u8);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_TTL:
+        *msg.mutable_field_ttl() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u8,
+            attr_list[i].value.aclfield.mask.u8);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_TOS:
+        *msg.mutable_field_tos() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u8,
+            attr_list[i].value.aclfield.mask.u8);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_IP_FLAGS:
+        *msg.mutable_field_ip_flags() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u8,
+            attr_list[i].value.aclfield.mask.u8);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_TCP_FLAGS:
+        *msg.mutable_field_tcp_flags() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u8,
+            attr_list[i].value.aclfield.mask.u8);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_ACL_IP_TYPE:
+        *msg.mutable_field_acl_ip_type() = convert_from_acl_field_data_ip_type(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.s32,
+            attr_list[i].value.aclfield.mask.s32);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_TC:
+        *msg.mutable_field_tc() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u8,
+            attr_list[i].value.aclfield.mask.u8);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_ICMP_TYPE:
+        *msg.mutable_field_icmp_type() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u8,
+            attr_list[i].value.aclfield.mask.u8);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_ICMP_CODE:
+        *msg.mutable_field_icmp_code() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u8,
+            attr_list[i].value.aclfield.mask.u8);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_ICMPV6_TYPE:
+        *msg.mutable_field_icmpv6_type() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u8,
+            attr_list[i].value.aclfield.mask.u8);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_ICMPV6_CODE:
+        *msg.mutable_field_icmpv6_code() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u8,
+            attr_list[i].value.aclfield.mask.u8);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL0_TTL:
+        *msg.mutable_field_mpls_label0_ttl() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u8,
+            attr_list[i].value.aclfield.mask.u8);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL0_EXP:
+        *msg.mutable_field_mpls_label0_exp() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u8,
+            attr_list[i].value.aclfield.mask.u8);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL1_TTL:
+        *msg.mutable_field_mpls_label1_ttl() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u8,
+            attr_list[i].value.aclfield.mask.u8);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL1_EXP:
+        *msg.mutable_field_mpls_label1_exp() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u8,
+            attr_list[i].value.aclfield.mask.u8);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL2_TTL:
+        *msg.mutable_field_mpls_label2_ttl() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u8,
+            attr_list[i].value.aclfield.mask.u8);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL2_EXP:
+        *msg.mutable_field_mpls_label2_exp() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u8,
+            attr_list[i].value.aclfield.mask.u8);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL3_TTL:
+        *msg.mutable_field_mpls_label3_ttl() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u8,
+            attr_list[i].value.aclfield.mask.u8);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL3_EXP:
+        *msg.mutable_field_mpls_label3_exp() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u8,
+            attr_list[i].value.aclfield.mask.u8);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL4_TTL:
+        *msg.mutable_field_mpls_label4_ttl() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u8,
+            attr_list[i].value.aclfield.mask.u8);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL4_EXP:
+        *msg.mutable_field_mpls_label4_exp() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u8,
+            attr_list[i].value.aclfield.mask.u8);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_BTH_OPCODE:
+        *msg.mutable_field_bth_opcode() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u8,
+            attr_list[i].value.aclfield.mask.u8);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_AETH_SYNDROME:
+        *msg.mutable_field_aeth_syndrome() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u8,
+            attr_list[i].value.aclfield.mask.u8);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_IPV6_NEXT_HEADER:
+        *msg.mutable_field_ipv6_next_header() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u8,
+            attr_list[i].value.aclfield.mask.u8);
+        break;
+      case SAI_ACL_ENTRY_ATTR_ACTION_REDIRECT:
+        *msg.mutable_action_redirect() = convert_from_acl_action_data(
+            attr_list[i].value.aclaction,
+            attr_list[i].value.aclaction.parameter.oid);
+        break;
+      case SAI_ACL_ENTRY_ATTR_ACTION_PACKET_ACTION:
+        *msg.mutable_action_packet_action() =
+            convert_from_acl_action_data_action(
+                attr_list[i].value.aclaction,
+                attr_list[i].value.aclaction.parameter.s32);
+        break;
+      case SAI_ACL_ENTRY_ATTR_ACTION_COUNTER:
+        *msg.mutable_action_counter() = convert_from_acl_action_data(
+            attr_list[i].value.aclaction,
+            attr_list[i].value.aclaction.parameter.oid);
+        break;
+      case SAI_ACL_ENTRY_ATTR_ACTION_SET_POLICER:
+        *msg.mutable_action_set_policer() = convert_from_acl_action_data(
+            attr_list[i].value.aclaction,
+            attr_list[i].value.aclaction.parameter.oid);
+        break;
+      case SAI_ACL_ENTRY_ATTR_ACTION_INGRESS_SAMPLEPACKET_ENABLE:
+        *msg.mutable_action_ingress_samplepacket_enable() =
+            convert_from_acl_action_data(
+                attr_list[i].value.aclaction,
+                attr_list[i].value.aclaction.parameter.oid);
+        break;
+      case SAI_ACL_ENTRY_ATTR_ACTION_EGRESS_SAMPLEPACKET_ENABLE:
+        *msg.mutable_action_egress_samplepacket_enable() =
+            convert_from_acl_action_data(
+                attr_list[i].value.aclaction,
+                attr_list[i].value.aclaction.parameter.oid);
+        break;
+      case SAI_ACL_ENTRY_ATTR_ACTION_SET_USER_TRAP_ID:
+        *msg.mutable_action_set_user_trap_id() = convert_from_acl_action_data(
+            attr_list[i].value.aclaction,
+            attr_list[i].value.aclaction.parameter.oid);
+        break;
+      case SAI_ACL_ENTRY_ATTR_ACTION_DTEL_INT_SESSION:
+        *msg.mutable_action_dtel_int_session() = convert_from_acl_action_data(
+            attr_list[i].value.aclaction,
+            attr_list[i].value.aclaction.parameter.oid);
+        break;
+      case SAI_ACL_ENTRY_ATTR_ACTION_TAM_INT_OBJECT:
+        *msg.mutable_action_tam_int_object() = convert_from_acl_action_data(
+            attr_list[i].value.aclaction,
+            attr_list[i].value.aclaction.parameter.oid);
+        break;
+      case SAI_ACL_ENTRY_ATTR_ACTION_SET_ISOLATION_GROUP:
+        *msg.mutable_action_set_isolation_group() =
+            convert_from_acl_action_data(
+                attr_list[i].value.aclaction,
+                attr_list[i].value.aclaction.parameter.oid);
+        break;
+      case SAI_ACL_ENTRY_ATTR_ACTION_MACSEC_FLOW:
+        *msg.mutable_action_macsec_flow() = convert_from_acl_action_data(
+            attr_list[i].value.aclaction,
+            attr_list[i].value.aclaction.parameter.oid);
+        break;
+      case SAI_ACL_ENTRY_ATTR_ACTION_SET_LAG_HASH_ID:
+        *msg.mutable_action_set_lag_hash_id() = convert_from_acl_action_data(
+            attr_list[i].value.aclaction,
+            attr_list[i].value.aclaction.parameter.oid);
+        break;
+      case SAI_ACL_ENTRY_ATTR_ACTION_SET_ECMP_HASH_ID:
+        *msg.mutable_action_set_ecmp_hash_id() = convert_from_acl_action_data(
+            attr_list[i].value.aclaction,
+            attr_list[i].value.aclaction.parameter.oid);
+        break;
+      case SAI_ACL_ENTRY_ATTR_ACTION_SET_VRF:
+        *msg.mutable_action_set_vrf() = convert_from_acl_action_data(
+            attr_list[i].value.aclaction,
+            attr_list[i].value.aclaction.parameter.oid);
+        break;
     }
   }
   return msg;
@@ -876,6 +1252,366 @@ sai_status_t l_set_acl_entry_attribute(sai_object_id_t acl_entry_id,
       break;
     case SAI_ACL_ENTRY_ATTR_ADMIN_STATE:
       req.set_admin_state(attr->value.booldata);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_SRC_IPV6:
+      *req.mutable_field_src_ipv6() = convert_from_acl_field_data_ip6(
+          attr->value.aclfield, attr->value.aclfield.data.ip6,
+          attr->value.aclfield.mask.ip6);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_SRC_IPV6_WORD3:
+      *req.mutable_field_src_ipv6_word3() = convert_from_acl_field_data_ip6(
+          attr->value.aclfield, attr->value.aclfield.data.ip6,
+          attr->value.aclfield.mask.ip6);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_SRC_IPV6_WORD2:
+      *req.mutable_field_src_ipv6_word2() = convert_from_acl_field_data_ip6(
+          attr->value.aclfield, attr->value.aclfield.data.ip6,
+          attr->value.aclfield.mask.ip6);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_SRC_IPV6_WORD1:
+      *req.mutable_field_src_ipv6_word1() = convert_from_acl_field_data_ip6(
+          attr->value.aclfield, attr->value.aclfield.data.ip6,
+          attr->value.aclfield.mask.ip6);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_SRC_IPV6_WORD0:
+      *req.mutable_field_src_ipv6_word0() = convert_from_acl_field_data_ip6(
+          attr->value.aclfield, attr->value.aclfield.data.ip6,
+          attr->value.aclfield.mask.ip6);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_DST_IPV6:
+      *req.mutable_field_dst_ipv6() = convert_from_acl_field_data_ip6(
+          attr->value.aclfield, attr->value.aclfield.data.ip6,
+          attr->value.aclfield.mask.ip6);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_DST_IPV6_WORD3:
+      *req.mutable_field_dst_ipv6_word3() = convert_from_acl_field_data_ip6(
+          attr->value.aclfield, attr->value.aclfield.data.ip6,
+          attr->value.aclfield.mask.ip6);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_DST_IPV6_WORD2:
+      *req.mutable_field_dst_ipv6_word2() = convert_from_acl_field_data_ip6(
+          attr->value.aclfield, attr->value.aclfield.data.ip6,
+          attr->value.aclfield.mask.ip6);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_DST_IPV6_WORD1:
+      *req.mutable_field_dst_ipv6_word1() = convert_from_acl_field_data_ip6(
+          attr->value.aclfield, attr->value.aclfield.data.ip6,
+          attr->value.aclfield.mask.ip6);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_DST_IPV6_WORD0:
+      *req.mutable_field_dst_ipv6_word0() = convert_from_acl_field_data_ip6(
+          attr->value.aclfield, attr->value.aclfield.data.ip6,
+          attr->value.aclfield.mask.ip6);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_INNER_SRC_IPV6:
+      *req.mutable_field_inner_src_ipv6() = convert_from_acl_field_data_ip6(
+          attr->value.aclfield, attr->value.aclfield.data.ip6,
+          attr->value.aclfield.mask.ip6);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_INNER_DST_IPV6:
+      *req.mutable_field_inner_dst_ipv6() = convert_from_acl_field_data_ip6(
+          attr->value.aclfield, attr->value.aclfield.data.ip6,
+          attr->value.aclfield.mask.ip6);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_SRC_MAC:
+      *req.mutable_field_src_mac() = convert_from_acl_field_data_mac(
+          attr->value.aclfield, attr->value.aclfield.data.mac,
+          attr->value.aclfield.mask.mac);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_DST_MAC:
+      *req.mutable_field_dst_mac() = convert_from_acl_field_data_mac(
+          attr->value.aclfield, attr->value.aclfield.data.mac,
+          attr->value.aclfield.mask.mac);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_SRC_IP:
+      *req.mutable_field_src_ip() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.ip4,
+          attr->value.aclfield.mask.ip4);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_DST_IP:
+      *req.mutable_field_dst_ip() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.ip4,
+          attr->value.aclfield.mask.ip4);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_INNER_SRC_IP:
+      *req.mutable_field_inner_src_ip() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.ip4,
+          attr->value.aclfield.mask.ip4);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_INNER_DST_IP:
+      *req.mutable_field_inner_dst_ip() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.ip4,
+          attr->value.aclfield.mask.ip4);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_IN_PORT:
+      *req.mutable_field_in_port() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.oid);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_OUT_PORT:
+      *req.mutable_field_out_port() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.oid);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_SRC_PORT:
+      *req.mutable_field_src_port() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.oid);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_OUTER_VLAN_ID:
+      *req.mutable_field_outer_vlan_id() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u16,
+          attr->value.aclfield.mask.u16);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_OUTER_VLAN_PRI:
+      *req.mutable_field_outer_vlan_pri() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u8,
+          attr->value.aclfield.mask.u8);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_OUTER_VLAN_CFI:
+      *req.mutable_field_outer_vlan_cfi() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u8,
+          attr->value.aclfield.mask.u8);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_INNER_VLAN_ID:
+      *req.mutable_field_inner_vlan_id() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u16,
+          attr->value.aclfield.mask.u16);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_INNER_VLAN_PRI:
+      *req.mutable_field_inner_vlan_pri() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u8,
+          attr->value.aclfield.mask.u8);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_INNER_VLAN_CFI:
+      *req.mutable_field_inner_vlan_cfi() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u8,
+          attr->value.aclfield.mask.u8);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_L4_SRC_PORT:
+      *req.mutable_field_l4_src_port() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u16,
+          attr->value.aclfield.mask.u16);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_L4_DST_PORT:
+      *req.mutable_field_l4_dst_port() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u16,
+          attr->value.aclfield.mask.u16);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_INNER_L4_SRC_PORT:
+      *req.mutable_field_inner_l4_src_port() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u16,
+          attr->value.aclfield.mask.u16);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_INNER_L4_DST_PORT:
+      *req.mutable_field_inner_l4_dst_port() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u16,
+          attr->value.aclfield.mask.u16);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_ETHER_TYPE:
+      *req.mutable_field_ether_type() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u16,
+          attr->value.aclfield.mask.u16);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_INNER_ETHER_TYPE:
+      *req.mutable_field_inner_ether_type() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u16,
+          attr->value.aclfield.mask.u16);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_IP_PROTOCOL:
+      *req.mutable_field_ip_protocol() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u8,
+          attr->value.aclfield.mask.u8);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_INNER_IP_PROTOCOL:
+      *req.mutable_field_inner_ip_protocol() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u8,
+          attr->value.aclfield.mask.u8);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_IP_IDENTIFICATION:
+      *req.mutable_field_ip_identification() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u16,
+          attr->value.aclfield.mask.u16);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_DSCP:
+      *req.mutable_field_dscp() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u8,
+          attr->value.aclfield.mask.u8);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_ECN:
+      *req.mutable_field_ecn() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u8,
+          attr->value.aclfield.mask.u8);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_TTL:
+      *req.mutable_field_ttl() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u8,
+          attr->value.aclfield.mask.u8);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_TOS:
+      *req.mutable_field_tos() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u8,
+          attr->value.aclfield.mask.u8);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_IP_FLAGS:
+      *req.mutable_field_ip_flags() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u8,
+          attr->value.aclfield.mask.u8);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_TCP_FLAGS:
+      *req.mutable_field_tcp_flags() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u8,
+          attr->value.aclfield.mask.u8);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_ACL_IP_TYPE:
+      *req.mutable_field_acl_ip_type() = convert_from_acl_field_data_ip_type(
+          attr->value.aclfield, attr->value.aclfield.data.s32,
+          attr->value.aclfield.mask.s32);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_TC:
+      *req.mutable_field_tc() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u8,
+          attr->value.aclfield.mask.u8);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_ICMP_TYPE:
+      *req.mutable_field_icmp_type() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u8,
+          attr->value.aclfield.mask.u8);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_ICMP_CODE:
+      *req.mutable_field_icmp_code() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u8,
+          attr->value.aclfield.mask.u8);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_ICMPV6_TYPE:
+      *req.mutable_field_icmpv6_type() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u8,
+          attr->value.aclfield.mask.u8);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_ICMPV6_CODE:
+      *req.mutable_field_icmpv6_code() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u8,
+          attr->value.aclfield.mask.u8);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL0_TTL:
+      *req.mutable_field_mpls_label0_ttl() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u8,
+          attr->value.aclfield.mask.u8);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL0_EXP:
+      *req.mutable_field_mpls_label0_exp() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u8,
+          attr->value.aclfield.mask.u8);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL1_TTL:
+      *req.mutable_field_mpls_label1_ttl() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u8,
+          attr->value.aclfield.mask.u8);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL1_EXP:
+      *req.mutable_field_mpls_label1_exp() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u8,
+          attr->value.aclfield.mask.u8);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL2_TTL:
+      *req.mutable_field_mpls_label2_ttl() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u8,
+          attr->value.aclfield.mask.u8);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL2_EXP:
+      *req.mutable_field_mpls_label2_exp() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u8,
+          attr->value.aclfield.mask.u8);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL3_TTL:
+      *req.mutable_field_mpls_label3_ttl() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u8,
+          attr->value.aclfield.mask.u8);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL3_EXP:
+      *req.mutable_field_mpls_label3_exp() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u8,
+          attr->value.aclfield.mask.u8);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL4_TTL:
+      *req.mutable_field_mpls_label4_ttl() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u8,
+          attr->value.aclfield.mask.u8);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL4_EXP:
+      *req.mutable_field_mpls_label4_exp() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u8,
+          attr->value.aclfield.mask.u8);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_BTH_OPCODE:
+      *req.mutable_field_bth_opcode() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u8,
+          attr->value.aclfield.mask.u8);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_AETH_SYNDROME:
+      *req.mutable_field_aeth_syndrome() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u8,
+          attr->value.aclfield.mask.u8);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_IPV6_NEXT_HEADER:
+      *req.mutable_field_ipv6_next_header() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u8,
+          attr->value.aclfield.mask.u8);
+      break;
+    case SAI_ACL_ENTRY_ATTR_ACTION_REDIRECT:
+      *req.mutable_action_redirect() = convert_from_acl_action_data(
+          attr->value.aclaction, attr->value.aclaction.parameter.oid);
+      break;
+    case SAI_ACL_ENTRY_ATTR_ACTION_PACKET_ACTION:
+      *req.mutable_action_packet_action() = convert_from_acl_action_data_action(
+          attr->value.aclaction, attr->value.aclaction.parameter.s32);
+      break;
+    case SAI_ACL_ENTRY_ATTR_ACTION_COUNTER:
+      *req.mutable_action_counter() = convert_from_acl_action_data(
+          attr->value.aclaction, attr->value.aclaction.parameter.oid);
+      break;
+    case SAI_ACL_ENTRY_ATTR_ACTION_SET_POLICER:
+      *req.mutable_action_set_policer() = convert_from_acl_action_data(
+          attr->value.aclaction, attr->value.aclaction.parameter.oid);
+      break;
+    case SAI_ACL_ENTRY_ATTR_ACTION_INGRESS_SAMPLEPACKET_ENABLE:
+      *req.mutable_action_ingress_samplepacket_enable() =
+          convert_from_acl_action_data(attr->value.aclaction,
+                                       attr->value.aclaction.parameter.oid);
+      break;
+    case SAI_ACL_ENTRY_ATTR_ACTION_EGRESS_SAMPLEPACKET_ENABLE:
+      *req.mutable_action_egress_samplepacket_enable() =
+          convert_from_acl_action_data(attr->value.aclaction,
+                                       attr->value.aclaction.parameter.oid);
+      break;
+    case SAI_ACL_ENTRY_ATTR_ACTION_SET_USER_TRAP_ID:
+      *req.mutable_action_set_user_trap_id() = convert_from_acl_action_data(
+          attr->value.aclaction, attr->value.aclaction.parameter.oid);
+      break;
+    case SAI_ACL_ENTRY_ATTR_ACTION_DTEL_INT_SESSION:
+      *req.mutable_action_dtel_int_session() = convert_from_acl_action_data(
+          attr->value.aclaction, attr->value.aclaction.parameter.oid);
+      break;
+    case SAI_ACL_ENTRY_ATTR_ACTION_TAM_INT_OBJECT:
+      *req.mutable_action_tam_int_object() = convert_from_acl_action_data(
+          attr->value.aclaction, attr->value.aclaction.parameter.oid);
+      break;
+    case SAI_ACL_ENTRY_ATTR_ACTION_SET_ISOLATION_GROUP:
+      *req.mutable_action_set_isolation_group() = convert_from_acl_action_data(
+          attr->value.aclaction, attr->value.aclaction.parameter.oid);
+      break;
+    case SAI_ACL_ENTRY_ATTR_ACTION_MACSEC_FLOW:
+      *req.mutable_action_macsec_flow() = convert_from_acl_action_data(
+          attr->value.aclaction, attr->value.aclaction.parameter.oid);
+      break;
+    case SAI_ACL_ENTRY_ATTR_ACTION_SET_LAG_HASH_ID:
+      *req.mutable_action_set_lag_hash_id() = convert_from_acl_action_data(
+          attr->value.aclaction, attr->value.aclaction.parameter.oid);
+      break;
+    case SAI_ACL_ENTRY_ATTR_ACTION_SET_ECMP_HASH_ID:
+      *req.mutable_action_set_ecmp_hash_id() = convert_from_acl_action_data(
+          attr->value.aclaction, attr->value.aclaction.parameter.oid);
+      break;
+    case SAI_ACL_ENTRY_ATTR_ACTION_SET_VRF:
+      *req.mutable_action_set_vrf() = convert_from_acl_action_data(
+          attr->value.aclaction, attr->value.aclaction.parameter.oid);
       break;
   }
 
