@@ -162,8 +162,29 @@ void convert_to_acl_capability(
 lemming::dataplane::sai::AclActionData convert_from_acl_action_data(
     const sai_acl_action_data_t &in, sai_object_id_t id);
 
+lemming::dataplane::sai::AclActionData convert_from_acl_action_data_action(
+    const sai_acl_action_data_t &in, sai_int32_t id);
+
+lemming::dataplane::sai::AclFieldData convert_from_acl_field_data_ip_type(
+    const sai_acl_field_data_t &in, sai_int32_t type, sai_int32_t mask);
+
 lemming::dataplane::sai::AclFieldData convert_from_acl_field_data(
     const sai_acl_field_data_t &in, sai_ip4_t data, sai_ip4_t mask);
+
+lemming::dataplane::sai::AclFieldData convert_from_acl_field_data(
+    const sai_acl_field_data_t &in, sai_uint8_t data, sai_uint8_t mask);
+
+lemming::dataplane::sai::AclFieldData convert_from_acl_field_data(
+    const sai_acl_field_data_t &in, sai_uint16_t data, sai_uint16_t mask);
+
+lemming::dataplane::sai::AclFieldData convert_from_acl_field_data(
+    const sai_acl_field_data_t &in, sai_object_id_t data);
+
+lemming::dataplane::sai::AclFieldData convert_from_acl_field_data_ip6(
+    const sai_acl_field_data_t &in, const sai_ip6_t data, const sai_ip6_t mask);
+
+lemming::dataplane::sai::AclFieldData convert_from_acl_field_data_mac(
+    const sai_acl_field_data_t &in, const sai_mac_t data, const sai_mac_t mask);
 
 // copy_list copies a scalar proto list to an attribute.
 // Note: It is expected that the attribute list contains preallocated memory.

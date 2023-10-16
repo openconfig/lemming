@@ -47,12 +47,16 @@ option go_package = "github.com/openconfig/lemming/proto/forwarding";
 //    - It adds transient entries using the source mac of processed packets.
 //    - The table may be configured to remove transient entries that are not
 //      used for a configured amount of time.
+// ACTION_TABLE
+//    - This table doesn't match any fields,
+//      it is a collection to actions to be applied to packets.
 enum TableType {
   TABLE_TYPE_UNSPECIFIED = 0;
   TABLE_TYPE_EXACT = 1;
   TABLE_TYPE_PREFIX = 2;
   TABLE_TYPE_FLOW = 3;
   TABLE_TYPE_BRIDGE = 4;
+  TABLE_TYPE_ACTION = 5;
 }
 
 // A TableDesc descibes a table type and its default actions.
@@ -73,6 +77,7 @@ message TableDesc {
     PrefixTableDesc prefix = 5;
     FlowTableDesc flow = 6;
     BridgeTableDesc bridge = 7;
+    ActionTableDesc action = 8;
   }
 }
 
@@ -83,6 +88,7 @@ message EntryDesc {
     PrefixEntryDesc prefix = 2;
     FlowEntryDesc flow = 3;
     BridgeTableDesc bridge = 4;
+    ActionEntryDesc action = 5;
   }
 }
 
@@ -173,6 +179,22 @@ message BridgeTableDesc {
   //  timeout value for entries. If no timeout is specified, entries are
   // never timed out.
   uint32 transient_timeout = 1;
+}
+
+message ActionTableDesc {
+}
+
+// ActionEntryDesc is an entry in the action table, the actions can be 
+// be prepended or appended to the action. The id is used to delete the actions 
+// and must unique per table.
+message ActionEntryDesc {
+  enum InsertMethod {
+    INSERT_METHOD_UNSPECIFIED = 0;
+    INSERT_METHOD_PREPEND = 1;
+    INSERT_METHOD_APPEND = 2;
+  }
+  string id = 1;
+  InsertMethod insert_method = 2;
 }
 
 // A TableCreateRequest is a request to create a table.

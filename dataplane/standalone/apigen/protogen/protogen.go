@@ -704,7 +704,7 @@ message QOSMap {
 	bool enable = 1;
 	oneof mask {
 		uint64 mask_uint = 2;
-		uint64 mask_int = 3;
+		int64 mask_int = 3;
 		bytes mask_mac = 4;
 		bytes mask_ip = 5;
 		Uint64List mask_list = 6;
@@ -716,6 +716,8 @@ message QOSMap {
 		bytes data_mac = 10;
 		bytes data_ip = 11;
 		Uint64List data_list = 12;
+		AclIpType data_ip_type = 13;
+		uint64 data_oid = 14;
 	};
 }
 
@@ -735,6 +737,7 @@ message Uint64List {
 		uint64 oid = 6;
 		Uint64List objlist = 7;
 		bytes ipaddr = 8;
+		PacketAction packet_action = 9;
 	};
 }`,
 		},
