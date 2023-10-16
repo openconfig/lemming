@@ -29,6 +29,7 @@
 package sysrib
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"os"
@@ -260,7 +261,7 @@ func (c *Client) HandleRequest(conn net.Conn, vrfID uint32) {
 					"Topic":   "Sysrib",
 					"Message": m,
 				})
-			if err := c.zServer.sysrib.setZebraRoute(vrfIDToNiName(vrfID), m.Body.(*zebra.IPRouteBody)); err != nil {
+			if err := c.zServer.sysrib.setZebraRoute(context.Background(), vrfIDToNiName(vrfID), m.Body.(*zebra.IPRouteBody)); err != nil {
 				topicLogger.Warn(fmt.Sprintf("Could not add route to sysrib: %v", err),
 					bgplog.Fields{
 						"Topic":   "Sysrib",

@@ -2529,10 +2529,10 @@ func TestBGPGUEPolicy(t *testing.T) {
 						}
 					}
 					for prefix, policy := range tt.inAddPolicies {
-						s.setGUEPolicy(prefix, policy)
+						s.setGUEPolicy(context.Background(), prefix, policy)
 					}
 					for _, prefix := range tt.inDeletePolicies {
-						s.deleteGUEPolicy(prefix)
+						s.deleteGUEPolicy(context.Background(), prefix)
 					}
 
 					routes, err := ygnmi.GetAll(context.Background(), c, routesQuery)

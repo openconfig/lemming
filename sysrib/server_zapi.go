@@ -15,6 +15,7 @@
 package sysrib
 
 import (
+	"context"
 	"fmt"
 	"net"
 
@@ -83,13 +84,13 @@ func convertToZAPIRoute(routeKey RouteKey, route *Route, rr *ResolvedRoute) (*ze
 }
 
 // setZebraRoute calls setRoute after reformatting a zebra-formatted input route.
-func (s *Server) setZebraRoute(niName string, zroute *zebra.IPRouteBody) error {
+func (s *Server) setZebraRoute(ctx context.Context, niName string, zroute *zebra.IPRouteBody) error {
 	if s == nil {
 		return fmt.Errorf("cannot add route to nil sysrib server")
 	}
 	log.V(1).Infof("setZebraRoute: %+v", *zroute)
 	route := convertZebraRoute(niName, zroute)
-	return s.setRoute(niName, route, false)
+	return s.setRoute(ctx, niName, route, false)
 }
 
 // convertZebraRoute converts a zebra route to a Sysrib route.

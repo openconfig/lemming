@@ -44,9 +44,6 @@ func convertStaticRoute(sroute *oc.NetworkInstance_Protocol_Static) *Route {
 			log.Warningf("sysrib: Unhandled static route nexthop type (%T): %v", nh, nh)
 		}
 	}
-	if len(nexthops) == 0 {
-		return nil
-	}
 	return &Route{
 		Prefix:   *sroute.Prefix,
 		NextHops: nexthops,
@@ -60,9 +57,11 @@ func convertStaticRoute(sroute *oc.NetworkInstance_Protocol_Static) *Route {
 // configuration changes.
 // It returns an error if there is an error before monitoring can begin.
 func (s *Server) monitorStaticRoutes(yclient *ygnmi.Client) error {
-	b := &ocpath.Batch{}
 	staticroot := ocpath.Root().NetworkInstance(fakedevice.DefaultNetworkInstance).Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_STATIC, fakedevice.StaticRoutingProtocol)
 	staticpath := staticroot.StaticAny()
+	staticpathMap := staticroot.StaticMap()
+
+	b := ygnmi.NewBatch[map[string]*oc.NetworkInstance_Protocol_Static](staticpathMap.Config())
 	b.AddPaths(
 		staticpath.NextHopAny().NextHop().Config().PathStruct(),
 		// TODO(wenbli): Handle these paths.
@@ -75,19 +74,18 @@ func (s *Server) monitorStaticRoutes(yclient *ygnmi.Client) error {
 	staticRouteWatcher := ygnmi.Watch(
 		context.Background(),
 		yclient,
-		b.Config(),
-		func(root *ygnmi.Value[*oc.Root]) error {
-			rootVal, ok := root.Val()
+		b.Query(),
+		func(static *ygnmi.Value[map[string]*oc.NetworkInstance_Protocol_Static]) error {
+			staticMap, ok := static.Val()
 			if !ok {
 				return ygnmi.Continue
 			}
-			staticp := rootVal.GetOrCreateNetworkInstance(fakedevice.DefaultNetworkInstance).GetOrCreateProtocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_STATIC, fakedevice.StaticRoutingProtocol)
-			for _, sroute := range staticp.Static {
+			for _, sroute := range staticMap {
 				if sroute == nil || sroute.Prefix == nil {
 					continue
 				}
 				if route := convertStaticRoute(sroute); route != nil {
-					if err := s.setRoute(fakedevice.DefaultNetworkInstance, route, false); err != nil {
+					if err := s.setRoute(context.Background(), fakedevice.DefaultNetworkInstance, route, false); err != nil {
 						log.Warningf("Failed to add static route: %v", err)
 					} else {
 						gnmiclient.Replace(context.Background(), yclient, staticroot.Static(sroute.GetPrefix()).State(), sroute)

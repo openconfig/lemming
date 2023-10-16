@@ -140,3 +140,5 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
+
+replace github.com/openconfig/ygnmi => github.com/openconfig/ygnmi v0.8.11-0.20231014030955-f6f81681135b

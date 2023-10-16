@@ -112,24 +112,24 @@ type dplane struct {
 }
 
 // programRoute programs the route in the dataplane, returning an error on failure.
-func (d *dplane) programRoute(r *ResolvedRoute) error {
+func (d *dplane) programRoute(ctx context.Context, r *ResolvedRoute) error {
 	log.V(1).Infof("sysrib: programming resolved route: %+v", r)
 	rr, err := resolvedRouteToRouteRequest(r)
 	if err != nil {
 		return err
 	}
-	_, err = ygnmi.Replace(context.TODO(), d.Client, handlers.RouteQuery(rr.GetPrefix().GetVrfId(), rr.GetPrefix().GetCidr()), rr, ygnmi.WithSetFallbackEncoding())
+	_, err = ygnmi.Replace(ctx, d.Client, handlers.RouteQuery(rr.GetPrefix().GetVrfId(), rr.GetPrefix().GetCidr()), rr, ygnmi.WithSetFallbackEncoding())
 	return err
 }
 
 // deprogramRoute de-programs the route in the dataplane, returning an error on failure.
-func (d *dplane) deprogramRoute(r *ResolvedRoute) error {
+func (d *dplane) deprogramRoute(ctx context.Context, r *ResolvedRoute) error {
 	log.V(1).Infof("sysrib: deprogramming newly unresolved route: %+v", r)
 	rr, err := resolvedRouteToRouteRequest(r)
 	if err != nil {
 		return err
 	}
-	_, err = ygnmi.Delete(context.TODO(), d.Client, handlers.RouteQuery(rr.GetPrefix().GetVrfId(), rr.GetPrefix().GetCidr()))
+	_, err = ygnmi.Delete(ctx, d.Client, handlers.RouteQuery(rr.GetPrefix().GetVrfId(), rr.GetPrefix().GetCidr()))
 	return err
 }
 
@@ -239,19 +239,19 @@ func (s *Server) monitorConnectedIntfs(yclient *ygnmi.Client) error {
 				if intf.Enabled != nil {
 					if intf.Ifindex != nil {
 						ifindex := intf.GetIfindex()
-						s.setInterface(name, int32(ifindex), intf.GetEnabled())
+						s.setInterface(context.Background(), name, int32(ifindex), intf.GetEnabled())
 						// TODO(wenbli): Support other VRFs.
 						if subintf := intf.GetSubinterface(0); subintf != nil {
 							for _, addr := range subintf.GetOrCreateIpv4().Address {
 								if addr.Ip != nil && addr.PrefixLength != nil {
-									if err := s.addInterfacePrefix(name, int32(ifindex), fmt.Sprintf("%s/%d", addr.GetIp(), addr.GetPrefixLength()), fakedevice.DefaultNetworkInstance); err != nil {
+									if err := s.addInterfacePrefix(context.Background(), name, int32(ifindex), fmt.Sprintf("%s/%d", addr.GetIp(), addr.GetPrefixLength()), fakedevice.DefaultNetworkInstance); err != nil {
 										log.Warningf("adding interface prefix failed: %v", err)
 									}
 								}
 							}
 							for _, addr := range subintf.GetOrCreateIpv6().Address {
 								if addr.Ip != nil && addr.PrefixLength != nil {
-									if err := s.addInterfacePrefix(name, int32(ifindex), fmt.Sprintf("%s/%d", addr.GetIp(), addr.GetPrefixLength()), fakedevice.DefaultNetworkInstance); err != nil {
+									if err := s.addInterfacePrefix(context.Background(), name, int32(ifindex), fmt.Sprintf("%s/%d", addr.GetIp(), addr.GetPrefixLength()), fakedevice.DefaultNetworkInstance); err != nil {
 										log.Warningf("adding interface prefix failed: %v", err)
 									}
 								}
@@ -303,7 +303,7 @@ func (s *Server) monitorBGPGUEPolicies(yclient *ygnmi.Client) error {
 				policiesFound[prefix] = true
 				if existingPolicy := s.bgpGUEPolicies[prefix]; policy != existingPolicy {
 					log.V(1).Infof("Adding new/updated BGP GUE policy: %s: %v", prefix, policy)
-					if err := s.setGUEPolicy(prefix, policy); err != nil {
+					if err := s.setGUEPolicy(context.Background(), prefix, policy); err != nil {
 						log.Errorf("Failed while setting BGP GUE Policy: %v", err)
 					} else {
 						s.bgpGUEPolicies[prefix] = policy
@@ -360,7 +360,7 @@ func (s *Server) monitorBGPGUEPolicies(yclient *ygnmi.Client) error {
 			for prefix := range s.bgpGUEPolicies {
 				if _, ok := policiesFound[prefix]; !ok {
 					log.Infof("Deleting incomplete/non-existent policy: %s", prefix)
-					if err := s.deleteGUEPolicy(prefix); err != nil {
+					if err := s.deleteGUEPolicy(context.Background(), prefix); err != nil {
 						log.Errorf("Failed while deleting BGP GUE Policy: %v", err)
 					} else {
 						delete(s.bgpGUEPolicies, prefix)
@@ -545,7 +545,7 @@ func resolvedRouteToRouteRequest(r *ResolvedRoute) (*dpb.Route, error) {
 
 // ResolveAndProgramDiff walks through each prefix in the RIB, resolving it and
 // programs the forwarding plane.
-func (s *Server) ResolveAndProgramDiff() error {
+func (s *Server) ResolveAndProgramDiff(ctx context.Context) error {
 	log.Info("Recalculating resolved RIB")
 	if debugRIB {
 		defer s.rib.PrintRIB()
@@ -557,10 +557,10 @@ func (s *Server) ResolveAndProgramDiff() error {
 	newResolvedRoutes := map[RouteKey]*Route{}
 	for niName, ni := range s.rib.NI {
 		for it := ni.IPV4.Iterate(); it.Next(); {
-			s.resolveAndProgramDiffAux(niName, ni, it.Address().String(), newResolvedRoutes)
+			s.resolveAndProgramDiffAux(ctx, niName, ni, it.Address().String(), newResolvedRoutes)
 		}
 		for it := ni.IPV6.Iterate(); it.Next(); {
-			s.resolveAndProgramDiffAux(niName, ni, it.Address().String(), newResolvedRoutes)
+			s.resolveAndProgramDiffAux(ctx, niName, ni, it.Address().String(), newResolvedRoutes)
 		}
 	}
 
@@ -568,7 +568,7 @@ func (s *Server) ResolveAndProgramDiff() error {
 	for routeKey, rr := range s.ProgrammedRoutes() {
 		if _, ok := newResolvedRoutes[routeKey]; !ok {
 			log.V(1).Infof("Deleting route %s", rr.RouteKey)
-			if err := s.dataplane.deprogramRoute(rr); err != nil {
+			if err := s.dataplane.deprogramRoute(ctx, rr); err != nil {
 				log.Warningf("failed to deprogram route %+v: %v", rr, err)
 				continue
 			}
@@ -593,7 +593,7 @@ func (s *Server) ResolveAndProgramDiff() error {
 // It carries out the following functionalities:
 // - Resolve a single route specified by prefix and program if it's different.
 // - Populate the resolved route into newResolvedRoutes.
-func (s *Server) resolveAndProgramDiffAux(niName string, ni *NIRIB, prefix string, newResolvedRoutes map[RouteKey]*Route) {
+func (s *Server) resolveAndProgramDiffAux(ctx context.Context, niName string, ni *NIRIB, prefix string, newResolvedRoutes map[RouteKey]*Route) {
 	log.V(1).Infof("Iterating at prefix %v (v4 has %d tags) (v6 has %d tags)", prefix, ni.IPV4.CountTags(), ni.IPV6.CountTags())
 	_, pfx, err := net.ParseCIDR(prefix)
 	if err != nil {
@@ -631,7 +631,7 @@ func (s *Server) resolveAndProgramDiffAux(niName string, ni *NIRIB, prefix strin
 	switch {
 	case routeIsResolved && !reflect.DeepEqual(currentRoute, rr):
 		log.V(1).Infof("(-currentRoute, +resolvedRoute):\n%s", cmp.Diff(currentRoute, rr))
-		if err := s.dataplane.programRoute(rr); err != nil {
+		if err := s.dataplane.programRoute(ctx, rr); err != nil {
 			log.Warningf("failed to program route %+v: %v", rr, err)
 			return
 		}
@@ -663,7 +663,7 @@ func (s *Server) ProgrammedRoutes() map[RouteKey]*ResolvedRoute {
 }
 
 // SetRoute implements ROUTE_ADD and ROUTE_DELETE
-func (s *Server) SetRoute(_ context.Context, req *sysribpb.SetRouteRequest) (*sysribpb.SetRouteResponse, error) {
+func (s *Server) SetRoute(ctx context.Context, req *sysribpb.SetRouteRequest) (*sysribpb.SetRouteResponse, error) {
 	pfx, err := prefixString(req.Prefix)
 	if err != nil {
 		return nil, err
@@ -684,7 +684,7 @@ func (s *Server) SetRoute(_ context.Context, req *sysribpb.SetRouteRequest) (*sy
 	// TODO(wenbli): Check if recursive resolution is an infinite recursion. This happens if there is a cycle.
 
 	niName := vrfIDToNiName(req.GetVrfId())
-	if err := s.setRoute(niName, &Route{
+	if err := s.setRoute(ctx, niName, &Route{
 		// TODO(wenbli): check if pfx has to be canonical or does it tolerate it: i.e. 1.1.1.0/24 instead of 1.1.1.1/24
 		Prefix:   pfx,
 		NextHops: nexthops,
@@ -709,21 +709,21 @@ func (s *Server) SetRoute(_ context.Context, req *sysribpb.SetRouteRequest) (*sy
 }
 
 // setRoute adds/deletes a route from the RIB manager.
-func (s *Server) setRoute(niName string, route *Route, isDelete bool) error {
+func (s *Server) setRoute(ctx context.Context, niName string, route *Route, isDelete bool) error {
 	if err := s.rib.setRoute(niName, route, isDelete); err != nil {
 		return fmt.Errorf("error while adding route to sysrib: %v", err)
 	}
 
-	if err := s.ResolveAndProgramDiff(); err != nil {
+	if err := s.ResolveAndProgramDiff(ctx); err != nil {
 		return fmt.Errorf("error while resolving sysrib: %v", err)
 	}
 	return nil
 }
 
 // addInterfacePrefix adds a prefix to the sysrib as a connected route.
-func (s *Server) addInterfacePrefix(name string, ifindex int32, prefix string, niName string) error {
+func (s *Server) addInterfacePrefix(ctx context.Context, name string, ifindex int32, prefix string, niName string) error {
 	log.V(1).Infof("Adding interface prefix: intf %s, idx %d, prefix %s, ni %s", name, ifindex, prefix, niName)
-	return s.setRoute(niName, &Route{
+	return s.setRoute(ctx, niName, &Route{
 		Prefix: prefix,
 		Connected: &Interface{
 			Name:  name,
@@ -737,7 +737,7 @@ func (s *Server) addInterfacePrefix(name string, ifindex int32, prefix string, n
 }
 
 // setInterface responds to INTERFACE_UP/INTERFACE_DOWN messages from the dataplane.
-func (s *Server) setInterface(name string, ifindex int32, enabled bool) error {
+func (s *Server) setInterface(ctx context.Context, name string, ifindex int32, enabled bool) error {
 	log.V(1).Infof("Setting interface %q(%d) to enabled=%v", name, ifindex, enabled)
 	s.interfacesMu.Lock()
 	s.interfaces[Interface{
@@ -746,7 +746,7 @@ func (s *Server) setInterface(name string, ifindex int32, enabled bool) error {
 	}] = enabled
 	s.interfacesMu.Unlock()
 
-	return s.ResolveAndProgramDiff()
+	return s.ResolveAndProgramDiff(ctx)
 }
 
 // TODO(wenbli): Do we need to handle interface deletion?
@@ -754,12 +754,12 @@ func (s *Server) setInterface(name string, ifindex int32, enabled bool) error {
 
 // setGUEPolicy adds a new GUE policy and triggers resolved route
 // computation and programming.
-func (s *Server) setGUEPolicy(prefix string, policy GUEPolicy) error {
+func (s *Server) setGUEPolicy(ctx context.Context, prefix string, policy GUEPolicy) error {
 	if err := s.rib.SetGUEPolicy(prefix, policy); err != nil {
 		return fmt.Errorf("error while adding route to sysrib: %v", err)
 	}
 
-	if err := s.ResolveAndProgramDiff(); err != nil {
+	if err := s.ResolveAndProgramDiff(ctx); err != nil {
 		return fmt.Errorf("error while resolving sysrib: %v", err)
 	}
 	return nil
@@ -767,12 +767,12 @@ func (s *Server) setGUEPolicy(prefix string, policy GUEPolicy) error {
 
 // deleteGUEPolicy adds a new GUE policy and triggers resolved route
 // computation and programming.
-func (s *Server) deleteGUEPolicy(prefix string) error {
+func (s *Server) deleteGUEPolicy(ctx context.Context, prefix string) error {
 	if _, err := s.rib.DeleteGUEPolicy(prefix); err != nil {
 		return fmt.Errorf("error while adding route to sysrib: %v", err)
 	}
 
-	if err := s.ResolveAndProgramDiff(); err != nil {
+	if err := s.ResolveAndProgramDiff(ctx); err != nil {
 		return fmt.Errorf("error while resolving sysrib: %v", err)
 	}
 	return nil

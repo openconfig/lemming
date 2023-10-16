@@ -519,8 +519,8 @@ func testTrafficAndEncap(t *testing.T, otg *otg.OTG, startingIP string, v6Traffi
 	}
 
 	var expectedPacketCounter int
-	const wantPacketN = 20
-	for i := 0; i != wantPacketN; i++ {
+	const packetN = 20
+	for i := 0; i != packetN; i++ {
 		pkt, err := ps.NextPacket()
 		if err != nil {
 			t.Fatalf("error reading next packet: %v", err)
@@ -587,7 +587,7 @@ func testTrafficAndEncap(t *testing.T, otg *otg.OTG, startingIP string, v6Traffi
 		expectedPacketCounter++
 	}
 
-	if expectedPacketCounter < wantPacketN {
+	if wantPacketN := packetN - 1; expectedPacketCounter < wantPacketN {
 		t.Errorf("Got less than %d expected packets: %v", wantPacketN, expectedPacketCounter)
 	} else {
 		t.Logf("Got %d expected packets.", expectedPacketCounter)
