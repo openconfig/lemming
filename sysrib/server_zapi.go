@@ -89,7 +89,7 @@ func (s *Server) setZebraRoute(niName string, zroute *zebra.IPRouteBody) error {
 	}
 	log.V(1).Infof("setZebraRoute: %+v", *zroute)
 	route := convertZebraRoute(niName, zroute)
-	return s.setRoute(niName, route)
+	return s.setRoute(niName, route, false)
 }
 
 // convertZebraRoute converts a zebra route to a Sysrib route.
