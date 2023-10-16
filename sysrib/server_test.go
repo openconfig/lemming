@@ -235,7 +235,7 @@ func getConnectedIntfSetupVars() ([]*AddIntfAction, []*dpb.Route) {
 		}, {
 			name:    "eth5",
 			ifindex: 5,
-			enabled: true,
+			enabled: false,
 			prefix:  "192.168.6.1/24",
 			niName:  "DEFAULT",
 		}}, []*dpb.Route{{
