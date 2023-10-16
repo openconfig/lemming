@@ -17,7 +17,9 @@ package saiserver
 
 import (
 	"context"
+	"encoding/binary"
 	"fmt"
+	"math"
 	"sync"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
@@ -35,6 +37,7 @@ type aclDataplaneAPI interface {
 	ID() string
 	TableCreate(context.Context, *fwdpb.TableCreateRequest) (*fwdpb.TableCreateReply, error)
 	TableEntryAdd(context.Context, *fwdpb.TableEntryAddRequest) (*fwdpb.TableEntryAddReply, error)
+	PortIDToNID(port string) (uint64, bool)
 }
 
 // tableLocation indentifies the location of an acl table by the group, bank, member id.
@@ -57,8 +60,10 @@ type acl struct {
 
 func newACL(mgr *attrmgr.AttrMgr, dataplane aclDataplaneAPI, s *grpc.Server) *acl {
 	a := &acl{
-		mgr:       mgr,
-		dataplane: dataplane,
+		mgr:               mgr,
+		dataplane:         dataplane,
+		tableToLocation:   make(map[uint64]tableLocation),
+		groupNextFreeBank: make(map[uint64]int),
 	}
 	saipb.RegisterAclServer(s, a)
 	return a
@@ -70,15 +75,11 @@ func (a *acl) CreateAclTableGroup(ctx context.Context, req *saipb.CreateAclTable
 
 	stage := req.GetAclStage()
 	typ := req.GetType()
-	bind := req.GetAclBindPointTypeList()
 	if stage != saipb.AclStage_ACL_STAGE_EGRESS && stage != saipb.AclStage_ACL_STAGE_PRE_INGRESS && stage != saipb.AclStage_ACL_STAGE_INGRESS {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid stage type: %v", stage)
 	}
 	if typ != saipb.AclTableGroupType_ACL_TABLE_GROUP_TYPE_PARALLEL {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid type: %v", typ)
-	}
-	if len(bind) != 1 && bind[0] == saipb.AclBindPointType_ACL_BIND_POINT_TYPE_SWITCH {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid bind configuration: %v", typ)
 	}
 
 	tReq := &fwdpb.TableCreateRequest{
@@ -101,7 +102,7 @@ func (a *acl) CreateAclTableGroup(ctx context.Context, req *saipb.CreateAclTable
 		return nil, err
 	}
 
-	return &saipb.CreateAclTableGroupResponse{Oid: 1}, nil
+	return &saipb.CreateAclTableGroupResponse{Oid: id}, nil
 }
 
 // CreateAclTableGroupMember stores the acl table id to its corresponding lucius flow table and bank.
@@ -157,12 +158,24 @@ func (a *acl) CreateAclEntry(ctx context.Context, req *saipb.CreateAclEntryReque
 			Bytes:   req.GetFieldDstIp().GetDataIp(),
 			Masks:   req.GetFieldDstIp().GetMaskIp(),
 		})
+	case req.GetFieldInPort() != nil:
+		nid, ok := a.dataplane.PortIDToNID(fmt.Sprint(req.FieldInPort.GetDataOid()))
+		if !ok {
+			return nil, fmt.Errorf("unknown port with id: %v", req.FieldInPort.GetDataOid())
+		}
+		aReq.EntryDesc.GetFlow().Fields = append(aReq.EntryDesc.GetFlow().Fields, &fwdpb.PacketFieldMaskedBytes{
+			FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT}},
+			Bytes:   binary.BigEndian.AppendUint64(nil, nid),
+			Masks:   binary.BigEndian.AppendUint64(nil, math.MaxUint64),
+		})
 	}
 	switch {
 	case req.ActionSetVrf != nil:
 		aReq.Actions = append(aReq.Actions,
 			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF).
 				WithUint64Value(req.GetActionSetVrf().GetOid())).Build())
+	case req.ActionPacketAction != nil:
+		req.GetActionPacketAction().GetInt()
 	}
 	if _, err := a.dataplane.TableEntryAdd(ctx, aReq); err != nil {
 		return nil, err

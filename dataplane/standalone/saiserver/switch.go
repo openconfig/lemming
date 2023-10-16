@@ -16,6 +16,7 @@ package saiserver
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 
 	"google.golang.org/grpc"
@@ -23,6 +24,8 @@ import (
 
 	log "github.com/golang/glog"
 
+	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
+	"github.com/openconfig/lemming/dataplane/internal/engine"
 	"github.com/openconfig/lemming/dataplane/standalone/saiserver/attrmgr"
 
 	saipb "github.com/openconfig/lemming/dataplane/standalone/proto"
@@ -218,6 +221,34 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 	return &saipb.CreateSwitchResponse{
 		Oid: swID,
 	}, nil
+}
+
+func (sw *saiSwitch) SetSwitchAttribute(ctx context.Context, req *saipb.SetSwitchAttributeRequest) (*saipb.SetSwitchAttributeResponse, error) {
+	switch {
+	case req.PreIngressAcl != nil:
+		if err := sw.bindACLTable(ctx, fmt.Sprint(req.GetPreIngressAcl()), engine.PreIngressActionTable); err != nil {
+			return nil, err
+		}
+	case req.IngressAcl != nil:
+		if err := sw.bindACLTable(ctx, fmt.Sprint(req.GetIngressAcl()), engine.IngressActionTable); err != nil {
+			return nil, err
+		}
+	case req.EgressAcl != nil:
+		if err := sw.bindACLTable(ctx, fmt.Sprint(req.GetEgressAcl()), engine.EgressActionTable); err != nil {
+			return nil, err
+		}
+	}
+	return &saipb.SetSwitchAttributeResponse{}, nil
+}
+
+func (sw *saiSwitch) bindACLTable(ctx context.Context, aclTableID, stageID string) error {
+	_, err := sw.dataplane.TableEntryAdd(ctx, &fwdpb.TableEntryAddRequest{
+		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
+		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: stageID}},
+		Actions:   []*fwdpb.ActionDesc{fwdconfig.Action(fwdconfig.LookupAction(aclTableID)).Build()},
+		EntryDesc: &fwdpb.EntryDesc{Entry: &fwdpb.EntryDesc_Action{Action: &fwdpb.ActionEntryDesc{Id: "acl", InsertMethod: fwdpb.ActionEntryDesc_INSERT_METHOD_APPEND}}},
+	})
+	return err
 }
 
 type fwdNotifServer struct {
