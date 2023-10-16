@@ -57,7 +57,7 @@ func (t *Table) AddEntry(ed *fwdpb.EntryDesc, ad []*fwdpb.ActionDesc) error {
 	e := &entry{
 		numActions: len(ad),
 	}
-	switch act.Action.InsertType {
+	switch act.Action.InsertMethod {
 	case fwdpb.ActionEntryDesc_TYPE_PREPEND:
 		for _, entry := range t.entries {
 			entry.start += len(ad)
@@ -67,7 +67,7 @@ func (t *Table) AddEntry(ed *fwdpb.EntryDesc, ad []*fwdpb.ActionDesc) error {
 		e.start = len(ad)
 		t.actions = append(t.actions, a...)
 	default:
-		return fmt.Errorf("unknown insert type: %v", act.Action.InsertType)
+		return fmt.Errorf("unknown insert type: %v", act.Action.InsertMethod)
 	}
 	t.entries[act.Action.GetId()] = e
 	return nil

@@ -188,13 +188,13 @@ message ActionTableDesc {
 // be prepended or appended to the action. The id is used to delete the actions 
 // and must unique per table.
 message ActionEntryDesc {
-  enum Type {
+  enum InsertMethod {
     TYPE_UNSPECIFIED = 0;
     TYPE_PREPEND = 1;
     TYPE_APPEND = 2;
   }
   string id = 1;
-  Type insert_type = 2;
+  InsertMethod insert_method = 2;
 }
 
 // A TableCreateRequest is a request to create a table.
