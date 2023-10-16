@@ -33,6 +33,7 @@ import (
 	"github.com/openconfig/lemming/gnmi/gnmiclient"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
+	"github.com/openconfig/ygnmi/schemaless"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot"
 	"google.golang.org/grpc"
@@ -435,6 +436,11 @@ func TestSetYGNMI(t *testing.T) {
 	policy := &oc.RoutingPolicy_PolicyDefinition{Name: ygot.String(policyName), Statement: policyStmts}
 	policy.PopulateDefaults()
 
+	schemalessQuery, err := schemaless.NewConfig[string](fmt.Sprintf("/dataplane/routes/route[prefix=%s][vrf=%d]", "1", 2), InternalOrigin)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	passingTests := []testSpec{{
 		desc: "leaf config update",
 		inOp: func(c *ygnmi.Client) error {
@@ -475,6 +481,51 @@ func TestSetYGNMI(t *testing.T) {
 		wantValue: nil,
 		getOp: func(t *testing.T, c *ygnmi.Client) (interface{}, bool) {
 			v, err := ygnmi.Lookup[string](context.Background(), c, ocpath.Root().System().Hostname().Config())
+			if err != nil {
+				t.Fatal(err)
+			}
+			return v.Val()
+		},
+	}, {
+		desc: "leaf config update internal",
+		inOp: func(c *ygnmi.Client) error {
+			_, err = ygnmi.Update(context.Background(), c, schemalessQuery, "foo")
+			return err
+		},
+		wantValue: "foo",
+		getOp: func(t *testing.T, c *ygnmi.Client) (interface{}, bool) {
+			v, err := ygnmi.Lookup[string](context.Background(), c, schemalessQuery)
+			if err != nil {
+				t.Fatal(err)
+			}
+			return v.Val()
+		},
+	}, {
+		desc: "leaf config replace internal",
+		inOp: func(c *ygnmi.Client) error {
+			_, err = ygnmi.Replace(context.Background(), c, schemalessQuery, "foo")
+			return err
+		},
+		wantValue: "foo",
+		getOp: func(t *testing.T, c *ygnmi.Client) (interface{}, bool) {
+			v, err := ygnmi.Lookup[string](context.Background(), c, schemalessQuery)
+			if err != nil {
+				t.Fatal(err)
+			}
+			return v.Val()
+		},
+	}, {
+		desc: "leaf config delete internal",
+		inOp: func(c *ygnmi.Client) error {
+			if _, err := ygnmi.Update(context.Background(), c, schemalessQuery, "foo"); err != nil {
+				return err
+			}
+			_, err = ygnmi.Delete(context.Background(), c, schemalessQuery)
+			return err
+		},
+		wantValue: nil,
+		getOp: func(t *testing.T, c *ygnmi.Client) (interface{}, bool) {
+			v, err := ygnmi.Lookup[string](context.Background(), c, schemalessQuery)
 			if err != nil {
 				t.Fatal(err)
 			}
