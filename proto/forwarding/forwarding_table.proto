@@ -184,6 +184,9 @@ message BridgeTableDesc {
 message ActionTableDesc {
 }
 
+// ActionEntryDesc is an entry in the action table, the actions can be 
+// be prepended or appended to the action. The id is used to delete the actions 
+// and must unique per table.
 message ActionEntryDesc {
   enum Type {
     TYPE_UNSPECIFIED = 0;
