@@ -231,7 +231,7 @@ func (f *fakeSwitchDataplane) TableEntryAdd(context.Context, *fwdpb.TableEntryAd
 	return nil, fmt.Errorf("unimplemented")
 }
 
-func (f *fakeSwitchDataplane) PortIDToNID(port string) (uint64, bool) {
+func (f *fakeSwitchDataplane) PortIDToNID(string) (uint64, bool) {
 	return 0, false
 }
 
