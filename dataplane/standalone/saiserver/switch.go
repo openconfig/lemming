@@ -246,7 +246,7 @@ func (sw *saiSwitch) bindACLTable(ctx context.Context, aclTableID, stageID strin
 		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
 		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: stageID}},
 		Actions:   []*fwdpb.ActionDesc{fwdconfig.Action(fwdconfig.LookupAction(aclTableID)).Build()},
-		EntryDesc: &fwdpb.EntryDesc{Entry: &fwdpb.EntryDesc_Action{Action: &fwdpb.ActionEntryDesc{Id: "acl", InsertMethod: fwdpb.ActionEntryDesc_TYPE_APPEND}}},
+		EntryDesc: &fwdpb.EntryDesc{Entry: &fwdpb.EntryDesc_Action{Action: &fwdpb.ActionEntryDesc{Id: "acl", InsertMethod: fwdpb.ActionEntryDesc_INSERT_METHOD_APPEND}}},
 	})
 	return err
 }

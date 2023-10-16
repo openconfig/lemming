@@ -189,9 +189,9 @@ message ActionTableDesc {
 // and must unique per table.
 message ActionEntryDesc {
   enum InsertMethod {
-    TYPE_UNSPECIFIED = 0;
-    TYPE_PREPEND = 1;
-    TYPE_APPEND = 2;
+    INSERT_METHOD_UNSPECIFIED = 0;
+    INSERT_METHOD_PREPEND = 1;
+    INSERT_METHOD_APPEND = 2;
   }
   string id = 1;
   InsertMethod insert_method = 2;

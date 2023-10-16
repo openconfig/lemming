@@ -58,12 +58,12 @@ func (t *Table) AddEntry(ed *fwdpb.EntryDesc, ad []*fwdpb.ActionDesc) error {
 		numActions: len(ad),
 	}
 	switch act.Action.InsertMethod {
-	case fwdpb.ActionEntryDesc_TYPE_PREPEND:
+	case fwdpb.ActionEntryDesc_INSERT_METHOD_PREPEND:
 		for _, entry := range t.entries {
 			entry.start += len(ad)
 		}
 		t.actions = append(a, t.actions...)
-	case fwdpb.ActionEntryDesc_TYPE_APPEND:
+	case fwdpb.ActionEntryDesc_INSERT_METHOD_APPEND:
 		e.start = len(ad)
 		t.actions = append(t.actions, a...)
 	default:
