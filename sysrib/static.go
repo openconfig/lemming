@@ -56,7 +56,7 @@ func convertStaticRoute(sroute *oc.NetworkInstance_Protocol_Static) *Route {
 // monitorStaticRoutes starts a gothread to check for static route
 // configuration changes.
 // It returns an error if there is an error before monitoring can begin.
-func (s *Server) monitorStaticRoutes(yclient *ygnmi.Client) error {
+func (s *Server) monitorStaticRoutes(ctx context.Context, yclient *ygnmi.Client) error {
 	staticroot := ocpath.Root().NetworkInstance(fakedevice.DefaultNetworkInstance).Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_STATIC, fakedevice.StaticRoutingProtocol)
 	staticpath := staticroot.StaticAny()
 	staticpathMap := staticroot.StaticMap()
@@ -72,7 +72,7 @@ func (s *Server) monitorStaticRoutes(yclient *ygnmi.Client) error {
 	)
 
 	staticRouteWatcher := ygnmi.Watch(
-		context.Background(),
+		ctx,
 		yclient,
 		b.Query(),
 		func(static *ygnmi.Value[map[string]*oc.NetworkInstance_Protocol_Static]) error {
@@ -85,10 +85,10 @@ func (s *Server) monitorStaticRoutes(yclient *ygnmi.Client) error {
 					continue
 				}
 				if route := convertStaticRoute(sroute); route != nil {
-					if err := s.setRoute(context.Background(), fakedevice.DefaultNetworkInstance, route, false); err != nil {
+					if err := s.setRoute(ctx, fakedevice.DefaultNetworkInstance, route, false); err != nil {
 						log.Warningf("Failed to add static route: %v", err)
 					} else {
-						gnmiclient.Replace(context.Background(), yclient, staticroot.Static(sroute.GetPrefix()).State(), sroute)
+						gnmiclient.Replace(ctx, yclient, staticroot.Static(sroute.GetPrefix()).State(), sroute)
 					}
 				}
 			}

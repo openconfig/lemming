@@ -157,7 +157,7 @@ func New(cfg *oc.Root) (*Server, error) {
 // sysrib during their initialization.
 //
 // - If zapiURL is not specified, then the ZAPI server will not be started.
-func (s *Server) Start(gClient gpb.GNMIClient, target, zapiURL string) error {
+func (s *Server) Start(ctx context.Context, gClient gpb.GNMIClient, target, zapiURL string) error {
 	if s == nil {
 		return errors.New("cannot start nil sysrib server")
 	}
@@ -168,15 +168,15 @@ func (s *Server) Start(gClient gpb.GNMIClient, target, zapiURL string) error {
 	}
 	s.dataplane = dplane{Client: yclient}
 
-	if err := s.monitorConnectedIntfs(yclient); err != nil {
+	if err := s.monitorConnectedIntfs(ctx, yclient); err != nil {
 		return err
 	}
 
-	if err := s.monitorBGPGUEPolicies(yclient); err != nil {
+	if err := s.monitorBGPGUEPolicies(ctx, yclient); err != nil {
 		return err
 	}
 
-	if err := s.monitorStaticRoutes(yclient); err != nil {
+	if err := s.monitorStaticRoutes(ctx, yclient); err != nil {
 		return err
 	}
 
@@ -215,7 +215,7 @@ func (s *Server) Stop() {
 //
 // - gnmiServerAddr is the address of the central gNMI datastore.
 // - target is the name of the gNMI target.
-func (s *Server) monitorConnectedIntfs(yclient *ygnmi.Client) error {
+func (s *Server) monitorConnectedIntfs(ctx context.Context, yclient *ygnmi.Client) error {
 	b := &ocpath.Batch{}
 	b.AddPaths(
 		ocpath.Root().InterfaceAny().Enabled().State().PathStruct(),
@@ -227,7 +227,7 @@ func (s *Server) monitorConnectedIntfs(yclient *ygnmi.Client) error {
 	)
 
 	interfaceWatcher := ygnmi.Watch(
-		context.Background(),
+		ctx,
 		yclient,
 		b.State(),
 		func(root *ygnmi.Value[*oc.Root]) error {
@@ -239,19 +239,19 @@ func (s *Server) monitorConnectedIntfs(yclient *ygnmi.Client) error {
 				if intf.Enabled != nil {
 					if intf.Ifindex != nil {
 						ifindex := intf.GetIfindex()
-						s.setInterface(context.Background(), name, int32(ifindex), intf.GetEnabled())
+						s.setInterface(ctx, name, int32(ifindex), intf.GetEnabled())
 						// TODO(wenbli): Support other VRFs.
 						if subintf := intf.GetSubinterface(0); subintf != nil {
 							for _, addr := range subintf.GetOrCreateIpv4().Address {
 								if addr.Ip != nil && addr.PrefixLength != nil {
-									if err := s.addInterfacePrefix(context.Background(), name, int32(ifindex), fmt.Sprintf("%s/%d", addr.GetIp(), addr.GetPrefixLength()), fakedevice.DefaultNetworkInstance); err != nil {
+									if err := s.addInterfacePrefix(ctx, name, int32(ifindex), fmt.Sprintf("%s/%d", addr.GetIp(), addr.GetPrefixLength()), fakedevice.DefaultNetworkInstance); err != nil {
 										log.Warningf("adding interface prefix failed: %v", err)
 									}
 								}
 							}
 							for _, addr := range subintf.GetOrCreateIpv6().Address {
 								if addr.Ip != nil && addr.PrefixLength != nil {
-									if err := s.addInterfacePrefix(context.Background(), name, int32(ifindex), fmt.Sprintf("%s/%d", addr.GetIp(), addr.GetPrefixLength()), fakedevice.DefaultNetworkInstance); err != nil {
+									if err := s.addInterfacePrefix(ctx, name, int32(ifindex), fmt.Sprintf("%s/%d", addr.GetIp(), addr.GetPrefixLength()), fakedevice.DefaultNetworkInstance); err != nil {
 										log.Warningf("adding interface prefix failed: %v", err)
 									}
 								}
@@ -276,7 +276,7 @@ func (s *Server) monitorConnectedIntfs(yclient *ygnmi.Client) error {
 // monitorBGPGUEPolicies starts a gothread to check for BGP GUE policies being
 // added or deleted from the config, and informs the sysrib server accordingly
 // to update programmed routes.
-func (s *Server) monitorBGPGUEPolicies(yclient *ygnmi.Client) error {
+func (s *Server) monitorBGPGUEPolicies(ctx context.Context, yclient *ygnmi.Client) error {
 	b := &ocpath.Batch{}
 	b.AddPaths(
 		ocpath.Root().BgpGueIpv4GlobalPolicyAny().Prefix().Config().PathStruct(),
@@ -289,7 +289,7 @@ func (s *Server) monitorBGPGUEPolicies(yclient *ygnmi.Client) error {
 	)
 
 	bgpGUEPolicyWatcher := ygnmi.Watch(
-		context.Background(),
+		ctx,
 		yclient,
 		b.Config(),
 		func(root *ygnmi.Value[*oc.Root]) error {
@@ -303,7 +303,7 @@ func (s *Server) monitorBGPGUEPolicies(yclient *ygnmi.Client) error {
 				policiesFound[prefix] = true
 				if existingPolicy := s.bgpGUEPolicies[prefix]; policy != existingPolicy {
 					log.V(1).Infof("Adding new/updated BGP GUE policy: %s: %v", prefix, policy)
-					if err := s.setGUEPolicy(context.Background(), prefix, policy); err != nil {
+					if err := s.setGUEPolicy(ctx, prefix, policy); err != nil {
 						log.Errorf("Failed while setting BGP GUE Policy: %v", err)
 					} else {
 						s.bgpGUEPolicies[prefix] = policy
@@ -360,7 +360,7 @@ func (s *Server) monitorBGPGUEPolicies(yclient *ygnmi.Client) error {
 			for prefix := range s.bgpGUEPolicies {
 				if _, ok := policiesFound[prefix]; !ok {
 					log.Infof("Deleting incomplete/non-existent policy: %s", prefix)
-					if err := s.deleteGUEPolicy(context.Background(), prefix); err != nil {
+					if err := s.deleteGUEPolicy(ctx, prefix); err != nil {
 						log.Errorf("Failed while deleting BGP GUE Policy: %v", err)
 					} else {
 						delete(s.bgpGUEPolicies, prefix)
