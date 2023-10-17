@@ -358,20 +358,26 @@ func TestIPv4Entry(t *testing.T) {
 			// Send some traffic to make sure neighbor cache is warmed up on the dut.
 			testTrafficFn(t, otg, atePort1, atePort2, tc.startAddress, 1*time.Second)
 
-			loss := testTrafficFn(t, otg, atePort1, atePort2, tc.startAddress, 10*time.Second)
+			loss := testTrafficFn(t, otg, atePort1, atePort2, tc.startAddress, 5*time.Second)
 			if loss > 1 {
 				t.Errorf("Loss: got %g, want <= 1", loss)
 			}
 
 			// Delete routes and test that there is no more traffic.
-			// TODO: Test this when sysrib supports route deletions.
-			//for _, route := range tc.routes {
-			//	gnmi.Delete(t, dut, staticp.Static(*route.Prefix).Config())
-			//}
-			//loss = testTraffic(t, ate, ateTop, atePort1, atePort2, 5*time.Second)
-			//if loss != 100 {
-			//	t.Errorf("Loss: got %g, want 100", loss)
-			//}
+			for _, route := range tc.routes {
+				gnmi.Delete(t, dut, staticp.Static(*route.Prefix).Config())
+				gnmi.Watch(t, dut, staticp.Static(*route.Prefix).State(), 30*time.Second, func(val *ygnmi.Value[*oc.NetworkInstance_Protocol_Static]) bool {
+					_, ok := val.Val()
+					return !ok
+				})
+			}
+			// Send some traffic to make sure neighbor cache is warmed up on the dut.
+			testTrafficFn(t, otg, atePort1, atePort2, tc.startAddress, 1*time.Second)
+
+			loss = testTrafficFn(t, otg, atePort1, atePort2, tc.startAddress, 3*time.Second)
+			if loss != 100 {
+				t.Errorf("Loss: got %g, want 100", loss)
+			}
 		})
 	}
 }

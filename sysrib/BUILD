@@ -3,6 +3,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "sysrib",
     srcs = [
+        "connected.go",
         "logger.go",
         "server.go",
         "server_zapi.go",
@@ -47,6 +48,7 @@ go_test(
     size = "medium",
     srcs = [
         "server_test.go",
+        "static_connected_test.go",
         "sysrib_test.go",
         "zapi_test.go",
     ],
@@ -64,12 +66,14 @@ go_test(
         "@com_github_google_go_cmp//cmp/cmpopts",
         "@com_github_google_gopacket//:gopacket",
         "@com_github_google_gopacket//layers",
+        "@com_github_openconfig_gnmi//proto/gnmi",
         "@com_github_openconfig_gribigo//afthelper",
         "@com_github_openconfig_ygnmi//schemaless",
         "@com_github_openconfig_ygnmi//ygnmi",
         "@com_github_openconfig_ygot//ygot",
         "@com_github_wenovus_gobgp_v3//pkg/zebra",
         "@org_golang_google_grpc//:go_default_library",
+        "@org_golang_google_grpc//credentials/local",
         "@org_golang_google_protobuf//testing/protocmp",
     ],
 )
