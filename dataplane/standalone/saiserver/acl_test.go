@@ -229,6 +229,6 @@ func (f *fakeACLDataplaneAPI) TableEntryAdd(_ context.Context, req *fwdpb.TableE
 	return nil, nil
 }
 
-func (f fakeACLDataplaneAPI) PortIDToNID(port string) (uint64, bool) {
+func (f fakeACLDataplaneAPI) PortIDToNID(string) (uint64, bool) {
 	return 1, true
 }
