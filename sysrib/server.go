@@ -195,7 +195,7 @@ func (s *Server) Start(ctx context.Context, gClient gpb.GNMIClient, target, zapi
 
 	// BEGIN Start ZAPI server.
 	if zapiURL != "" {
-		if s.zServer, err = StartZServer(zapiURL, 0, s); err != nil {
+		if s.zServer, err = StartZServer(ctx, zapiURL, 0, s); err != nil {
 			return err
 		}
 	}

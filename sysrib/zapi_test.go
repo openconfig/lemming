@@ -77,7 +77,7 @@ func ZAPIServerStart(t *testing.T) *ZServer {
 		t.Fatal(err)
 	}
 
-	s, err := StartZServer("unix:/tmp/zserv.api", 0, sysribServer)
+	s, err := StartZServer(context.Background(), "unix:/tmp/zserv.api", 0, sysribServer)
 	if err != nil {
 		t.Fatal(err)
 	}

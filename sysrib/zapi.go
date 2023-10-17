@@ -76,7 +76,7 @@ type ZServer struct {
 // redistributed routes.
 //
 // TODO: vrfID is not well-integrated with the sysrib.
-func StartZServer(address string, vrfID uint32, sysrib *Server) (*ZServer, error) {
+func StartZServer(ctx context.Context, address string, vrfID uint32, sysrib *Server) (*ZServer, error) {
 	l := strings.SplitN(address, ":", 2)
 	if len(l) != 2 {
 		return nil, fmt.Errorf("unsupported ZAPI url, has to be \"protocol:address\", got: %s", address)
@@ -129,7 +129,7 @@ func StartZServer(address string, vrfID uint32, sysrib *Server) (*ZServer, error
 			client.zServer = zServer
 
 			// Handle connections in a new go routine.
-			go client.HandleRequest(conn, vrfID)
+			go client.HandleRequest(ctx, conn, vrfID)
 		}
 	}()
 
@@ -210,7 +210,7 @@ func (c *Client) RedistributeResolvedRoutes(conn net.Conn) {
 }
 
 // HandleRequest handles an incoming ZAPI client connection.
-func (c *Client) HandleRequest(conn net.Conn, vrfID uint32) {
+func (c *Client) HandleRequest(ctx context.Context, conn net.Conn, vrfID uint32) {
 	version := zebra.MaxZapiVer
 	software := zebra.MaxSoftware
 	defer func() {
@@ -261,7 +261,7 @@ func (c *Client) HandleRequest(conn net.Conn, vrfID uint32) {
 					"Topic":   "Sysrib",
 					"Message": m,
 				})
-			if err := c.zServer.sysrib.setZebraRoute(context.Background(), vrfIDToNiName(vrfID), m.Body.(*zebra.IPRouteBody)); err != nil {
+			if err := c.zServer.sysrib.setZebraRoute(ctx, vrfIDToNiName(vrfID), m.Body.(*zebra.IPRouteBody)); err != nil {
 				topicLogger.Warn(fmt.Sprintf("Could not add route to sysrib: %v", err),
 					bgplog.Fields{
 						"Topic":   "Sysrib",
