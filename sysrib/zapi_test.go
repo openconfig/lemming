@@ -77,7 +77,7 @@ func ZAPIServerStart(t *testing.T) *ZServer {
 		t.Fatal(err)
 	}
 
-	s, err := StartZServer("unix:/tmp/zserv.api", 0, sysribServer)
+	s, err := StartZServer(context.Background(), "unix:/tmp/zserv.api", 0, sysribServer)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -247,7 +247,7 @@ func testRouteRedistribution(t *testing.T, routeReadyBeforeDial bool) {
 				t.Fatal(err)
 			}
 			client := gnmiServer.LocalClient()
-			if err := s.Start(client, "local", "unix:/tmp/zserv.api"); err != nil {
+			if err := s.Start(context.Background(), client, "local", "unix:/tmp/zserv.api"); err != nil {
 				t.Fatalf("cannot start sysrib server, %v", err)
 			}
 			defer s.Stop()
