@@ -201,7 +201,7 @@ type SetAndProgramPair struct {
 	ResolvedRoutes        []*ResolvedRoute
 }
 
-func getConnectedIntfSetupVars() ([]*AddIntfAction, []*dpb.Route) {
+func getConnectedIntfSetupVarsV4() ([]*AddIntfAction, []*dpb.Route) {
 	return []*AddIntfAction{{
 			name:    "eth0",
 			ifindex: 0,
@@ -326,16 +326,23 @@ func getConnectedIntfSetupVars() ([]*AddIntfAction, []*dpb.Route) {
 		}}
 }
 
-func TestServer(t *testing.T) {
-	routesQuery := programmedRoutesQuery(t)
-	inInterfaces, wantConnectedRoutes := getConnectedIntfSetupVars()
-	inInterface6s, wantConnectedRoute6s := getConnectedIntfSetupVars()
+func getConnectedIntfSetupVars(t *testing.T) ([]*AddIntfAction, []*dpb.Route) {
+	inInterfaces, wantConnectedRoutes := getConnectedIntfSetupVarsV4()
+	inInterface6s, wantConnectedRoute6s := getConnectedIntfSetupVarsV4()
 	for _, intf := range inInterface6s {
 		intf.prefix = mapAddressTo6(t, intf.prefix)
 	}
 	for _, route := range wantConnectedRoute6s {
 		mapResolvedRouteTo6(t, route)
 	}
+	inInterfaces = append(inInterfaces, inInterface6s...)
+	wantConnectedRoutes = append(wantConnectedRoutes, wantConnectedRoute6s...)
+	return inInterfaces, wantConnectedRoutes
+}
+
+func TestServer(t *testing.T) {
+	routesQuery := programmedRoutesQuery(t)
+	inInterfaces, wantConnectedRoutes := getConnectedIntfSetupVars(t)
 
 	tests := []struct {
 		desc string
@@ -994,10 +1001,59 @@ func TestServer(t *testing.T) {
 		}},
 	}}
 
+	grpcServer := grpc.NewServer()
+	gnmiServer, err := gnmi.New(grpcServer, "local", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	lis, err := net.Listen("tcp", "localhost:0")
+	if err != nil {
+		t.Fatalf("Failed to start listener: %v", err)
+	}
+	go func() {
+		grpcServer.Serve(lis)
+	}()
+
+	s, err := New(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Update the interface configuration on the gNMI server.
+	client := gnmiServer.LocalClient()
+	if err := s.Start(client, "local", ""); err != nil {
+		t.Fatalf("cannot start sysrib server, %v", err)
+	}
+	defer s.Stop()
+
+	c, err := ygnmi.NewClient(client, ygnmi.WithTarget("local"))
+	if err != nil {
+		t.Fatalf("cannot create ygnmi client: %v", err)
+	}
+
+	for _, intf := range inInterfaces {
+		configureInterface(t, intf, c)
+	}
+
+	// Wait for Sysrib to pick up the connected prefixes.
+	for i := 0; i != maxGNMIWaitQuanta; i++ {
+		var routes []*dpb.Route
+		routes, err = ygnmi.GetAll(context.Background(), c, routesQuery)
+		if err == nil {
+			if diff := cmp.Diff(wantConnectedRoutes, routes, protocmp.Transform(), protocmp.SortRepeatedFields(new(dpb.NextHopList), "hops")); diff != "" {
+				err = fmt.Errorf("routes not equal to wantConnectedRoutes (-want, +got):\n%s", diff)
+			} else {
+				break
+			}
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	if err != nil {
+		t.Fatalf("After initial interface operations: %v", err)
+	}
+
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			inInterfaces := inInterfaces
-			wantConnectedRoutes := wantConnectedRoutes
 			for _, v4 := range []bool{true, false} {
 				desc := "v4"
 				if !v4 {
@@ -1006,8 +1062,6 @@ func TestServer(t *testing.T) {
 					}
 					desc = "v6"
 					// Convert all v4 addresses to v6.
-					inInterfaces = inInterface6s
-					wantConnectedRoutes = wantConnectedRoute6s
 					for _, req := range tt.inSetRouteRequests {
 						mapPrefixTo6(t, req.RouteReq.Prefix)
 						for _, nh := range req.RouteReq.Nexthops {
@@ -1023,58 +1077,6 @@ func TestServer(t *testing.T) {
 				}
 
 				t.Run(desc, func(t *testing.T) {
-					// TODO(wenbli): Don't re-create gNMI server, simply erase it and then reconnect to it afterwards.
-					grpcServer := grpc.NewServer()
-					gnmiServer, err := gnmi.New(grpcServer, "local", nil)
-					if err != nil {
-						t.Fatal(err)
-					}
-					lis, err := net.Listen("tcp", "localhost:0")
-					if err != nil {
-						t.Fatalf("Failed to start listener: %v", err)
-					}
-					go func() {
-						grpcServer.Serve(lis)
-					}()
-
-					s, err := New(nil)
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					// Update the interface configuration on the gNMI server.
-					client := gnmiServer.LocalClient()
-					if err := s.Start(client, "local", ""); err != nil {
-						t.Fatalf("cannot start sysrib server, %v", err)
-					}
-					defer s.Stop()
-
-					c, err := ygnmi.NewClient(client, ygnmi.WithTarget("local"))
-					if err != nil {
-						t.Fatalf("cannot create ygnmi client: %v", err)
-					}
-
-					for _, intf := range inInterfaces {
-						configureInterface(t, intf, c)
-					}
-
-					// Wait for Sysrib to pick up the connected prefixes.
-					for i := 0; i != maxGNMIWaitQuanta; i++ {
-						var routes []*dpb.Route
-						routes, err = ygnmi.GetAll(context.Background(), c, routesQuery)
-						if err == nil {
-							if diff := cmp.Diff(wantConnectedRoutes, routes, protocmp.Transform(), protocmp.SortRepeatedFields(new(dpb.NextHopList), "hops")); diff != "" {
-								err = fmt.Errorf("routes not equal to wantConnectedRoutes (-want, +got):\n%s", diff)
-							} else {
-								break
-							}
-						}
-						time.Sleep(100 * time.Millisecond)
-					}
-					if err != nil {
-						t.Fatalf("After initial interface operations: %v", err)
-					}
-
 					for _, req := range tt.inSetRouteRequests {
 						// TODO(wenbli): Test SetRouteResponse
 						_, err := s.SetRoute(context.Background(), req.RouteReq)
@@ -1093,6 +1095,25 @@ func TestServer(t *testing.T) {
 					})); diff != "" {
 						t.Errorf("routes not equal to wantRoutes (-want, +got):\n%s", diff)
 					}
+
+					// Clean-up
+					for _, req := range tt.inSetRouteRequests {
+						isDelete := req.RouteReq.Delete
+						req.RouteReq.Delete = true
+						_, err := s.SetRoute(context.Background(), req.RouteReq)
+						req.RouteReq.Delete = isDelete
+						hasErr := err != nil
+						if hasErr != tt.wantErr {
+							t.Fatalf("%s: got error during call to SetRoute: %v, wantErr: %v", req.Desc, err, tt.wantErr)
+						}
+					}
+
+					if routes, err = ygnmi.GetAll(context.Background(), c, routesQuery); err != nil {
+						t.Fatal(err)
+					}
+					if diff := cmp.Diff(wantConnectedRoutes, routes, protocmp.Transform(), protocmp.SortRepeatedFields(new(dpb.NextHopList), "hops")); diff != "" {
+						t.Errorf("routes not equal to wantConnectedRoutes (-want, +got):\n%s", diff)
+					}
 				})
 			}
 		})
@@ -1109,14 +1130,7 @@ func gueHeader(t *testing.T, layers ...gopacket.SerializableLayer) []byte {
 
 func TestBGPGUEPolicy(t *testing.T) {
 	routesQuery := programmedRoutesQuery(t)
-	inInterfaces, wantConnectedRoutes := getConnectedIntfSetupVars()
-	inInterface6s, wantConnectedRoute6s := getConnectedIntfSetupVars()
-	for _, intf := range inInterface6s {
-		intf.prefix = mapAddressTo6(t, intf.prefix)
-	}
-	for _, route := range wantConnectedRoute6s {
-		mapResolvedRouteTo6(t, route)
-	}
+	inInterfaces, wantConnectedRoutes := getConnectedIntfSetupVars(t)
 
 	// Note: This is a sequential test -- each test case depends on the previous one.
 	tests := []struct {
@@ -2426,68 +2440,63 @@ func TestBGPGUEPolicy(t *testing.T) {
 	}}
 
 	for _, v4 := range []bool{true, false} {
-		inInterfaces := inInterfaces
-		wantConnectedRoutes := wantConnectedRoutes
 		desc := "v4"
 		if !v4 {
 			desc = "v6"
-			// Convert all v4 addresses to v6.
-			inInterfaces = inInterface6s
-			wantConnectedRoutes = wantConnectedRoute6s
+		}
+
+		grpcServer := grpc.NewServer()
+		gnmiServer, err := gnmi.New(grpcServer, "local", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		lis, err := net.Listen("tcp", "localhost:0")
+		if err != nil {
+			t.Fatalf("Failed to start listener: %v", err)
+		}
+		go func() {
+			grpcServer.Serve(lis)
+		}()
+
+		s, err := New(nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Update the interface configuration on the gNMI server.
+		client := gnmiServer.LocalClient()
+		if err := s.Start(client, "local", ""); err != nil {
+			t.Fatalf("cannot start sysrib server, %v", err)
+		}
+		defer s.Stop()
+
+		c, err := ygnmi.NewClient(client, ygnmi.WithTarget("local"))
+		if err != nil {
+			t.Fatalf("cannot create ygnmi client: %v", err)
+		}
+
+		for _, intf := range inInterfaces {
+			configureInterface(t, intf, c)
+		}
+
+		// Wait for Sysrib to pick up the connected prefixes.
+		for i := 0; i != maxGNMIWaitQuanta; i++ {
+			var routes []*dpb.Route
+			routes, err = ygnmi.GetAll(context.Background(), c, routesQuery)
+			if err == nil {
+				if diff := cmp.Diff(wantConnectedRoutes, routes, protocmp.Transform(), protocmp.SortRepeatedFields(new(dpb.NextHopList), "hops")); diff != "" {
+					err = fmt.Errorf("routes not equal to wantConnectedRoutes (-want, +got):\n%s", diff)
+				} else {
+					break
+				}
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+		if err != nil {
+			t.Fatalf("After initial interface operations: %v", err)
 		}
 
 		t.Run(desc, func(t *testing.T) {
-			grpcServer := grpc.NewServer()
-			gnmiServer, err := gnmi.New(grpcServer, "local", nil)
-			if err != nil {
-				t.Fatal(err)
-			}
-			lis, err := net.Listen("tcp", "localhost:0")
-			if err != nil {
-				t.Fatalf("Failed to start listener: %v", err)
-			}
-			go func() {
-				grpcServer.Serve(lis)
-			}()
-
-			s, err := New(nil)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			// Update the interface configuration on the gNMI server.
-			client := gnmiServer.LocalClient()
-			if err := s.Start(client, "local", ""); err != nil {
-				t.Fatalf("cannot start sysrib server, %v", err)
-			}
-			defer s.Stop()
-
-			c, err := ygnmi.NewClient(client, ygnmi.WithTarget("local"))
-			if err != nil {
-				t.Fatalf("cannot create ygnmi client: %v", err)
-			}
-
-			for _, intf := range inInterfaces {
-				configureInterface(t, intf, c)
-			}
-
-			// Wait for Sysrib to pick up the connected prefixes.
-			for i := 0; i != maxGNMIWaitQuanta; i++ {
-				var routes []*dpb.Route
-				routes, err = ygnmi.GetAll(context.Background(), c, routesQuery)
-				if err == nil {
-					if diff := cmp.Diff(wantConnectedRoutes, routes, protocmp.Transform(), protocmp.SortRepeatedFields(new(dpb.NextHopList), "hops")); diff != "" {
-						err = fmt.Errorf("routes not equal to wantConnectedRoutes (-want, +got):\n%s", diff)
-					} else {
-						break
-					}
-				}
-				time.Sleep(100 * time.Millisecond)
-			}
-			if err != nil {
-				t.Fatalf("After initial interface operations: %v", err)
-			}
-
 			for _, tt := range tests {
 				if v4 && tt.skipV4 {
 					continue
