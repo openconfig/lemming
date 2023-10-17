@@ -193,9 +193,6 @@ func setupSchema(schema *ytypes.Schema, config bool) error {
 func updateCache(collector *Collector, dirtyRoot, root ygot.GoStruct, origin string, preferShadowPath bool, timestamp int64, user string, auth PathAuth) error {
 	var nos []*gpb.Notification
 	if root == nil {
-		if timestamp == 0 {
-			timestamp = time.Now().UnixNano()
-		}
 		var err error
 		if nos, err = ygot.TogNMINotifications(dirtyRoot, timestamp, ygot.GNMINotificationsConfig{
 			UsePathElem: true,
@@ -206,10 +203,6 @@ func updateCache(collector *Collector, dirtyRoot, root ygot.GoStruct, origin str
 		var err error
 		if nos, err = ygot.DiffWithAtomic(root, dirtyRoot, &ygot.DiffPathOpt{PreferShadowPath: preferShadowPath}); err != nil {
 			return fmt.Errorf("gnmi: error while creating update notification for Set: %v", err)
-		}
-		if timestamp == 0 {
-			// Set timestamp here in order to minimize latency and reduce change for "update is stale" error.
-			timestamp = time.Now().UnixNano()
 		}
 		for _, n := range nos {
 			n.Timestamp = timestamp
@@ -361,9 +354,6 @@ func set(schema *ytypes.Schema, c *Collector, req *gpb.SetRequest, preferShadowP
 		}
 		if err := unmarshalSetRequest(tempSchema, req, preferShadowPath); err != nil {
 			return fmt.Errorf("error while unmarshalling SetRequest: %v", err)
-		}
-		if timestamp == 0 {
-			timestamp = time.Now().UnixNano()
 		}
 		notifs, err := ygot.TogNMINotifications(tempSchema.Root, timestamp, ygot.GNMINotificationsConfig{UsePathElem: true})
 		if err != nil {

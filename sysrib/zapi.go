@@ -31,6 +31,7 @@ package sysrib
 import (
 	"context"
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"strings"
@@ -228,10 +229,14 @@ func (c *Client) HandleRequest(ctx context.Context, conn net.Conn, vrfID uint32)
 
 	for {
 		m, err := zebra.ReceiveSingleMsg(topicLogger, conn, version, software, "Sysrib")
-		if err != nil {
+		switch {
+		case err == io.EOF:
+			log.Warningf("ZAPI server stopping after receiving EOF")
+			return
+		case err != nil:
 			log.Errorf("ZAPI server stopping, HandleRequest error: %v", err)
 			return
-		} else if m == nil {
+		case m == nil:
 			continue
 		}
 
