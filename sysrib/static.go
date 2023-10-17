@@ -27,25 +27,27 @@ import (
 )
 
 // convertStaticRoute converts an OC static route to a sysrib Route
-func convertStaticRoute(sroute *oc.NetworkInstance_Protocol_Static) *Route {
+func convertStaticRoute(prefix string, sroute *oc.NetworkInstance_Protocol_Static) *Route {
 	var nexthops []*afthelper.NextHopSummary
-	for _, snh := range sroute.NextHop {
-		// TODO(wenbli): Implement recurse option.
-		snh.SetRecurse(true)
-		switch nh := snh.NextHop.(type) {
-		case nil:
-		case oc.UnionString:
-			nexthops = append(nexthops, &afthelper.NextHopSummary{
-				Weight:          1,
-				Address:         string(nh),
-				NetworkInstance: fakedevice.DefaultNetworkInstance,
-			})
-		default:
-			log.Warningf("sysrib: Unhandled static route nexthop type (%T): %v", nh, nh)
+	if sroute != nil {
+		for _, snh := range sroute.NextHop {
+			// TODO(wenbli): Implement recurse option.
+			snh.SetRecurse(true)
+			switch nh := snh.NextHop.(type) {
+			case nil:
+			case oc.UnionString:
+				nexthops = append(nexthops, &afthelper.NextHopSummary{
+					Weight:          1,
+					Address:         string(nh),
+					NetworkInstance: fakedevice.DefaultNetworkInstance,
+				})
+			default:
+				log.Warningf("sysrib: Unhandled static route nexthop type (%T): %v", nh, nh)
+			}
 		}
 	}
 	return &Route{
-		Prefix:   *sroute.Prefix,
+		Prefix:   prefix,
 		NextHops: nexthops,
 		RoutePref: RoutePreference{
 			AdminDistance: 1,
@@ -71,32 +73,46 @@ func (s *Server) monitorStaticRoutes(ctx context.Context, yclient *ygnmi.Client)
 		staticpath.Prefix().Config().PathStruct(),
 	)
 
+	prevIntfs := map[string]struct{}{}
+
 	staticRouteWatcher := ygnmi.Watch(
 		ctx,
 		yclient,
 		b.Query(),
 		func(static *ygnmi.Value[map[string]*oc.NetworkInstance_Protocol_Static]) error {
 			staticMap, ok := static.Val()
-			if !ok {
-				return ygnmi.Continue
-			}
-			for _, sroute := range staticMap {
-				if sroute == nil || sroute.Prefix == nil {
-					continue
-				}
-				if route := convertStaticRoute(sroute); route != nil {
-					if err := s.setRoute(ctx, fakedevice.DefaultNetworkInstance, route, false); err != nil {
-						log.Warningf("Failed to add static route: %v", err)
-					} else {
-						gnmiclient.Replace(ctx, yclient, staticroot.Static(sroute.GetPrefix()).State(), sroute)
+			currentIntfs := map[string]struct{}{}
+			if ok {
+				for prefix, sroute := range staticMap {
+					if sroute == nil || sroute.Prefix == nil {
+						continue
+					}
+					if route := convertStaticRoute(prefix, sroute); route != nil {
+						currentIntfs[prefix] = struct{}{}
+						if err := s.setRoute(ctx, fakedevice.DefaultNetworkInstance, route, false); err != nil {
+							log.Warningf("Failed to add static route: %v", err)
+						} else {
+							gnmiclient.Replace(ctx, yclient, staticroot.Static(sroute.GetPrefix()).State(), sroute)
+						}
 					}
 				}
 			}
+			for prefix := range prevIntfs {
+				if _, ok := currentIntfs[prefix]; !ok {
+					if route := convertStaticRoute(prefix, nil); route != nil {
+						if err := s.setRoute(ctx, fakedevice.DefaultNetworkInstance, route, true); err != nil {
+							log.Warningf("Failed to delete static route: %v", err)
+						} else {
+							gnmiclient.Delete(ctx, yclient, staticroot.Static(prefix).State())
+						}
+					}
+				}
+			}
+			prevIntfs = currentIntfs
 			return ygnmi.Continue
 		},
 	)
 
-	// TODO(wenbli): Support static route removal.
 	go func() {
 		if _, err := staticRouteWatcher.Await(); err != nil {
 			log.Warningf("Static route watcher has stopped: %v", err)
