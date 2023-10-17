@@ -47,6 +47,8 @@ const (
 	ip4DstBytes    = ip4AddrBytes // Number of bytes in the dest IP address
 	ip4DstPos      = 16           // Offset in bytes of the dest IP address
 	ip6to4Offset   = 2            // Offset in bytes of the encoded ip4 address
+	dscpPos        = 1            // Offset in bytes of the DSCP
+	dcspBits       = 6            // Number of bits in the DSCP
 )
 
 // Constants defined for various 6to4 tunnels
@@ -89,6 +91,9 @@ func (ip *IP4) field(id fwdpacket.FieldID) frame.Field {
 
 	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_QOS:
 		return ip.header.Field(ip4TosPos, ip4TosBytes)
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_DSCP:
+		f := ip.header.Field(dscpPos, 1)
+		return f.BitField(0, 6)
 
 	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION:
 		return ipVersion(ip.header)

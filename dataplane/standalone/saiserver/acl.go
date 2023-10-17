@@ -151,14 +151,14 @@ func (a *acl) CreateAclEntry(ctx context.Context, req *saipb.CreateAclEntryReque
 			},
 		},
 	}
-	switch {
-	case req.GetFieldDstIp() != nil:
+	if req.GetFieldDstIp() != nil {
 		aReq.EntryDesc.GetFlow().Fields = append(aReq.EntryDesc.GetFlow().Fields, &fwdpb.PacketFieldMaskedBytes{
 			FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST}},
 			Bytes:   req.GetFieldDstIp().GetDataIp(),
 			Masks:   req.GetFieldDstIp().GetMaskIp(),
 		})
-	case req.GetFieldInPort() != nil:
+	}
+	if req.GetFieldInPort() != nil {
 		nid, ok := a.dataplane.PortIDToNID(fmt.Sprint(req.FieldInPort.GetDataOid()))
 		if !ok {
 			return nil, fmt.Errorf("unknown port with id: %v", req.FieldInPort.GetDataOid())
@@ -168,6 +168,99 @@ func (a *acl) CreateAclEntry(ctx context.Context, req *saipb.CreateAclEntryReque
 			Bytes:   binary.BigEndian.AppendUint64(nil, nid),
 			Masks:   binary.BigEndian.AppendUint64(nil, math.MaxUint64),
 		})
+	}
+	if req.GetFieldAclIpType() != nil {
+		fieldMask := &fwdpb.PacketFieldMaskedBytes{
+			FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_TYPE}},
+			Bytes:   binary.BigEndian.AppendUint16(nil, 0x0000),
+			Masks:   binary.BigEndian.AppendUint16(nil, 0xFFFF),
+		}
+		switch t := req.GetFieldAclIpType().GetDataIpType(); t {
+		case saipb.AclIpType_ACL_IP_TYPE_ANY:
+			fieldMask.Masks = binary.BigEndian.AppendUint16(nil, 0x0000)
+		case saipb.AclIpType_ACL_IP_TYPE_IPV4ANY:
+			fieldMask.Bytes = binary.BigEndian.AppendUint16(nil, 0x0800)
+		case saipb.AclIpType_ACL_IP_TYPE_IPV6ANY:
+			fieldMask.Bytes = binary.BigEndian.AppendUint16(nil, 0x86DD)
+		case saipb.AclIpType_ACL_IP_TYPE_ARP:
+			fieldMask.Bytes = binary.BigEndian.AppendUint16(nil, 0x0806)
+		default:
+			return nil, status.Errorf(codes.InvalidArgument, "unspporrted ACL_IP_TYPE: %v", t)
+		}
+		aReq.EntryDesc.GetFlow().Fields = append(aReq.EntryDesc.GetFlow().Fields, fieldMask)
+	}
+	if req.GetFieldDscp() != nil {
+		aReq.EntryDesc.GetFlow().Fields = append(aReq.EntryDesc.GetFlow().Fields, &fwdpb.PacketFieldMaskedBytes{
+			FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_DSCP}},
+			Bytes:   []byte{byte(req.GetFieldDscp().GetDataUint())},
+			Masks:   []byte{byte(req.GetFieldDscp().GetMaskUint())},
+		})
+	}
+	if req.GetFieldDstIpv6Word3() != nil { // Word3 is supposed to match the 127:96 bits of the IP, assume the caller is masking this correctly put the whole IP in the table.
+		aReq.EntryDesc.GetFlow().Fields = append(aReq.EntryDesc.GetFlow().Fields, &fwdpb.PacketFieldMaskedBytes{
+			FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST}},
+			Bytes:   req.GetFieldDstIpv6Word3().GetDataIp(),
+			Masks:   req.GetFieldDstIpv6Word3().GetMaskIp(),
+		})
+	}
+	if req.GetFieldDstIpv6Word2() != nil { // Word2 is supposed to match the  95:64 bits of the IP, assume the caller is masking this correctly put the whole IP in the table.
+		aReq.EntryDesc.GetFlow().Fields = append(aReq.EntryDesc.GetFlow().Fields, &fwdpb.PacketFieldMaskedBytes{
+			FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST}},
+			Bytes:   req.GetFieldDstIpv6Word2().GetDataIp(),
+			Masks:   req.GetFieldDstIpv6Word2().GetMaskIp(),
+		})
+	}
+	if req.GetFieldDstMac() != nil {
+		aReq.EntryDesc.GetFlow().Fields = append(aReq.EntryDesc.GetFlow().Fields, &fwdpb.PacketFieldMaskedBytes{
+			FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST}},
+			Bytes:   req.GetFieldDstMac().GetDataMac(),
+			Masks:   req.GetFieldDstMac().GetMaskMac(),
+		})
+	}
+	if req.GetFieldEtherType() != nil {
+		aReq.EntryDesc.GetFlow().Fields = append(aReq.EntryDesc.GetFlow().Fields, &fwdpb.PacketFieldMaskedBytes{
+			FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_TYPE}},
+			Bytes:   binary.BigEndian.AppendUint16(nil, uint16(req.GetFieldEtherType().GetDataUint())),
+			Masks:   binary.BigEndian.AppendUint16(nil, uint16(req.GetFieldEtherType().GetMaskUint())),
+		})
+	}
+	if req.GetFieldIcmpv6Type() != nil {
+		aReq.EntryDesc.GetFlow().Fields = append(aReq.EntryDesc.GetFlow().Fields, &fwdpb.PacketFieldMaskedBytes{
+			FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP_TYPE}},
+			Bytes:   []byte{byte(req.GetFieldIcmpv6Type().GetDataUint())},
+			Masks:   []byte{byte(req.GetFieldIcmpv6Type().GetMaskUint())},
+		})
+	}
+	if req.GetFieldIpProtocol() != nil {
+		aReq.EntryDesc.GetFlow().Fields = append(aReq.EntryDesc.GetFlow().Fields, &fwdpb.PacketFieldMaskedBytes{
+			FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO}},
+			Bytes:   []byte{byte(req.GetFieldIpProtocol().GetDataUint())},
+			Masks:   []byte{byte(req.GetFieldIpProtocol().GetMaskUint())},
+		})
+	}
+	if req.GetFieldL4DstPort() != nil {
+		aReq.EntryDesc.GetFlow().Fields = append(aReq.EntryDesc.GetFlow().Fields, &fwdpb.PacketFieldMaskedBytes{
+			FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST}},
+			Bytes:   binary.BigEndian.AppendUint16(nil, uint16(req.GetFieldL4DstPort().GetDataUint())),
+			Masks:   binary.BigEndian.AppendUint16(nil, uint16(req.GetFieldL4DstPort().GetMaskUint())),
+		})
+	}
+	if req.GetFieldSrcMac() != nil {
+		aReq.EntryDesc.GetFlow().Fields = append(aReq.EntryDesc.GetFlow().Fields, &fwdpb.PacketFieldMaskedBytes{
+			FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC}},
+			Bytes:   req.GetFieldSrcMac().GetDataMac(),
+			Masks:   req.GetFieldSrcMac().GetMaskMac(),
+		})
+	}
+	if req.GetFieldTtl() != nil {
+		aReq.EntryDesc.GetFlow().Fields = append(aReq.EntryDesc.GetFlow().Fields, &fwdpb.PacketFieldMaskedBytes{
+			FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP}},
+			Bytes:   []byte{byte(req.GetFieldTtl().GetDataUint())},
+			Masks:   []byte{byte(req.GetFieldTtl().GetMaskUint())},
+		})
+	}
+	if len(aReq.EntryDesc.GetFlow().Fields) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "either no fields or not unsupports fields in entry req")
 	}
 	switch {
 	case req.ActionSetVrf != nil:

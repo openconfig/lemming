@@ -31,55 +31,46 @@ import (
 var ip4 = []byte{0x45, 0x01, 0x00, 0x16, 0x00, 0x00, 0x00, 0x00, 0x08, 0xff, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04, 0x0a, 0x0b, 0x0c, 0x0d, 0x00, 0x00}
 
 func TestIP4(t *testing.T) {
-	queries := []packettestutil.FieldQuery{
-		{
-			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION, 0),
-			Result: []byte{0x04},
-		},
-		{
-			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC, 0),
-			Result: []byte{0x01, 0x02, 0x03, 0x04},
-		},
-		{
-			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST, 0),
-			Result: []byte{0x0a, 0x0b, 0x0c, 0x0d},
-		},
-		{
-			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_QOS, 0),
-			Result: []byte{0x01},
-		},
-		{
-			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP, 0),
-			Result: []byte{0x08},
-		},
-		{
-			ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO, 0),
-			Result: []byte{0xff},
-		},
-	}
+	queries := []packettestutil.FieldQuery{{
+		ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION, 0),
+		Result: []byte{0x04},
+	}, {
+		ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC, 0),
+		Result: []byte{0x01, 0x02, 0x03, 0x04},
+	}, {
+		ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST, 0),
+		Result: []byte{0x0a, 0x0b, 0x0c, 0x0d},
+	}, {
+		ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_QOS, 0),
+		Result: []byte{0x01},
+	}, {
+		ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP, 0),
+		Result: []byte{0x08},
+	}, {
+		ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO, 0),
+		Result: []byte{0xff},
+	}, {
+		ID:     fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_DSCP, 0),
+		Result: []byte{0x01},
+	}}
 
-	updates := []packettestutil.FieldUpdate{
-		{
-			ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC, 0),
-			Arg: []byte{0x11, 0x12, 0x13, 0x14},
-			Op:  fwdpacket.OpSet,
-		},
-		{
-			ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST, 0),
-			Arg: []byte{0x1a, 0x1b, 0x1c, 0x1d},
-			Op:  fwdpacket.OpSet,
-		},
-		{
-			ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_QOS, 0),
-			Arg: []byte{0x0d},
-			Op:  fwdpacket.OpSet,
-		},
-		{
-			ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP, 0),
-			Arg: []byte{0x01},
-			Op:  fwdpacket.OpDec,
-		},
-	}
+	updates := []packettestutil.FieldUpdate{{
+		ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC, 0),
+		Arg: []byte{0x11, 0x12, 0x13, 0x14},
+		Op:  fwdpacket.OpSet,
+	}, {
+		ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST, 0),
+		Arg: []byte{0x1a, 0x1b, 0x1c, 0x1d},
+		Op:  fwdpacket.OpSet,
+	}, {
+		ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_QOS, 0),
+		Arg: []byte{0x0d},
+		Op:  fwdpacket.OpSet,
+	}, {
+		ID:  fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP, 0),
+		Arg: []byte{0x01},
+		Op:  fwdpacket.OpDec,
+	}}
 
 	ipFinal := []byte{0x45, 0x0d, 0x00, 0x16, 0x00, 0x00, 0x00, 0x00, 0x07, 0xff, 0x58, 0x7f, 0x11, 0x12, 0x13, 0x14, 0x1a, 0x1b, 0x1c, 0x1d, 0x00, 0x00}
 
