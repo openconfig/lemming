@@ -95,7 +95,7 @@ func configureInterface(t *testing.T, intf *AddIntfAction, yclient *ygnmi.Client
 		t.Fatalf("Prefix is neither IPv4 nor IPv6: %q", intf.prefix)
 	}
 
-	if _, err := gnmiclient.Replace(context.Background(), yclient, ocpath.Root().Interface(intf.name).State(), ocintf); err != nil {
+	if _, err := gnmiclient.Update(context.Background(), yclient, ocpath.Root().Interface(intf.name).State(), ocintf); err != nil {
 		t.Fatalf("Cannot configure interface: %v", err)
 	}
 }
@@ -119,6 +119,10 @@ func mapAddressTo6Bytes(v4Address [4]byte) [16]byte {
 func mapAddressTo6BytesSlice(v4Address [4]byte) []byte {
 	r := mapAddressTo6Bytes(v4Address)
 	return r[:]
+}
+
+func mapPrefixLenTo6(pfxLen int) int {
+	return pfxLen + v4v6ConversionStartPos*8
 }
 
 // mapAddressTo6 converts an input address to an IPv6 address that is *not* an
@@ -155,7 +159,7 @@ func mapAddressTo6(t *testing.T, addrStr string) string {
 
 	var newAddrStr string
 	if isPrefix {
-		newAddrStr = netip.PrefixFrom(netip.AddrFrom16(ipv6Bytes), pfxLen+v4v6ConversionStartPos*8).String()
+		newAddrStr = netip.PrefixFrom(netip.AddrFrom16(ipv6Bytes), mapPrefixLenTo6(pfxLen)).String()
 	} else {
 		newAddrStr = netip.AddrFrom16(ipv6Bytes).String()
 	}
@@ -191,7 +195,7 @@ func selectGUEHeaders(t *testing.T, v4 bool, layers ...gopacket.SerializableLaye
 func mapPrefixTo6(t *testing.T, prefix *pb.Prefix) {
 	if prefix.Family == pb.Prefix_FAMILY_IPV4 {
 		prefix.Family = pb.Prefix_FAMILY_IPV6
-		prefix.MaskLength += v4v6ConversionStartPos * 8
+		prefix.MaskLength = uint32(mapPrefixLenTo6(int(prefix.MaskLength)))
 	}
 	prefix.Address = mapAddressTo6(t, prefix.Address)
 }

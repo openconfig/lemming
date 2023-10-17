@@ -28,11 +28,8 @@ import (
 // monitorConnectedIntfs starts a gothread to check for connected prefixes from
 // connected interfaces and adds them to the sysrib. It returns an error if
 // there is an error before monitoring can begin.
-//
-// - gnmiServerAddr is the address of the central gNMI datastore.
-// - target is the name of the gNMI target.
 func (s *Server) monitorConnectedIntfs(ctx context.Context, yclient *ygnmi.Client) error {
-	b := &ocpath.Batch{}
+	b := ygnmi.NewBatch[map[string]*oc.Interface](ocpath.Root().InterfaceMap().State())
 	b.AddPaths(
 		ocpath.Root().InterfaceAny().Enabled().State().PathStruct(),
 		ocpath.Root().InterfaceAny().Ifindex().State().PathStruct(),
@@ -42,33 +39,49 @@ func (s *Server) monitorConnectedIntfs(ctx context.Context, yclient *ygnmi.Clien
 		ocpath.Root().InterfaceAny().Subinterface(0).Ipv6().AddressAny().PrefixLength().State().PathStruct(),
 	)
 
+	prevIntfs := map[connectedRoute]struct{}{}
+
 	interfaceWatcher := ygnmi.Watch(
 		ctx,
 		yclient,
-		b.State(),
-		func(root *ygnmi.Value[*oc.Root]) error {
-			rootVal, ok := root.Val()
-			if !ok {
-				return ygnmi.Continue
-			}
-			for name, intf := range rootVal.Interface {
-				if intf.Enabled != nil {
-					if intf.Ifindex != nil {
+		b.Query(),
+		func(intfs *ygnmi.Value[map[string]*oc.Interface]) error {
+			interfaceMap, ok := intfs.Val()
+			currentIntfs := map[connectedRoute]struct{}{}
+			if ok {
+				for name, intf := range interfaceMap {
+					if intf.Enabled != nil && intf.Ifindex != nil {
 						ifindex := intf.GetIfindex()
 						s.setInterface(ctx, name, int32(ifindex), intf.GetEnabled())
 						// TODO(wenbli): Support other VRFs.
 						if subintf := intf.GetSubinterface(0); subintf != nil {
 							for _, addr := range subintf.GetOrCreateIpv4().Address {
 								if addr.Ip != nil && addr.PrefixLength != nil {
-									if err := s.addInterfacePrefix(ctx, name, int32(ifindex), fmt.Sprintf("%s/%d", addr.GetIp(), addr.GetPrefixLength()), fakedevice.DefaultNetworkInstance); err != nil {
-										log.Warningf("adding interface prefix failed: %v", err)
+									connected := connectedRoute{
+										name:    name,
+										ifindex: int32(ifindex),
+										prefix:  fmt.Sprintf("%s/%d", addr.GetIp(), addr.GetPrefixLength()),
+										niName:  fakedevice.DefaultNetworkInstance,
+									}
+									if err := s.setConnectedRoute(ctx, connected, false); err != nil {
+										log.Warningf("adding connected route failed: %v", err)
+									} else {
+										currentIntfs[connected] = struct{}{}
 									}
 								}
 							}
 							for _, addr := range subintf.GetOrCreateIpv6().Address {
 								if addr.Ip != nil && addr.PrefixLength != nil {
-									if err := s.addInterfacePrefix(ctx, name, int32(ifindex), fmt.Sprintf("%s/%d", addr.GetIp(), addr.GetPrefixLength()), fakedevice.DefaultNetworkInstance); err != nil {
-										log.Warningf("adding interface prefix failed: %v", err)
+									connected := connectedRoute{
+										name:    name,
+										ifindex: int32(ifindex),
+										prefix:  fmt.Sprintf("%s/%d", addr.GetIp(), addr.GetPrefixLength()),
+										niName:  fakedevice.DefaultNetworkInstance,
+									}
+									if err := s.setConnectedRoute(ctx, connected, false); err != nil {
+										log.Warningf("adding connected route failed: %v", err)
+									} else {
+										currentIntfs[connected] = struct{}{}
 									}
 								}
 							}
@@ -76,11 +89,19 @@ func (s *Server) monitorConnectedIntfs(ctx context.Context, yclient *ygnmi.Clien
 					}
 				}
 			}
+			for connected := range prevIntfs {
+				if _, ok := currentIntfs[connected]; !ok {
+					if err := s.setConnectedRoute(ctx, connected, true); err != nil {
+						log.Warningf("deleting connected route failed: %v", err)
+					}
+				}
+			}
+			prevIntfs = currentIntfs
+
 			return ygnmi.Continue
 		},
 	)
 
-	// TODO(wenbli): Support interface removal.
 	go func() {
 		if _, err := interfaceWatcher.Await(); err != nil {
 			log.Warningf("Sysrib interface watcher has stopped: %v", err)

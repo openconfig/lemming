@@ -69,7 +69,7 @@ const (
 //
 // API:
 // - SetRoute
-// - addInterfacePrefix
+// - setConnectedRoute
 // - setInterface
 type Server struct {
 	sysribpb.UnimplementedSysribServer // For forward-compatibility
@@ -656,20 +656,27 @@ func (s *Server) setRoute(ctx context.Context, niName string, route *Route, isDe
 	return nil
 }
 
-// addInterfacePrefix adds a prefix to the sysrib as a connected route.
-func (s *Server) addInterfacePrefix(ctx context.Context, name string, ifindex int32, prefix string, niName string) error {
-	log.V(1).Infof("Adding interface prefix: intf %s, idx %d, prefix %s, ni %s", name, ifindex, prefix, niName)
-	return s.setRoute(ctx, niName, &Route{
-		Prefix: prefix,
+type connectedRoute struct {
+	name    string
+	ifindex int32
+	prefix  string
+	niName  string
+}
+
+// setConnectedRoute adds a prefix to the sysrib as a connected route.
+func (s *Server) setConnectedRoute(ctx context.Context, connected connectedRoute, isDelete bool) error {
+	log.V(1).Infof("setConnectedRoute: %+v, %v", connected, isDelete)
+	return s.setRoute(ctx, connected.niName, &Route{
+		Prefix: connected.prefix,
 		Connected: &Interface{
-			Name:  name,
-			Index: ifindex,
+			Name:  connected.name,
+			Index: connected.ifindex,
 		},
 		RoutePref: RoutePreference{
 			// Connected routes have admin-distance of 0.
 			AdminDistance: 0,
 		},
-	}, false)
+	}, isDelete)
 }
 
 // setInterface responds to INTERFACE_UP/INTERFACE_DOWN messages from the dataplane.
@@ -684,9 +691,6 @@ func (s *Server) setInterface(ctx context.Context, name string, ifindex int32, e
 
 	return s.ResolveAndProgramDiff(ctx)
 }
-
-// TODO(wenbli): Do we need to handle interface deletion?
-// This is not required in the MVP since basic tests will just need to enable/disable interfaces.
 
 // setGUEPolicy adds a new GUE policy and triggers resolved route
 // computation and programming.
