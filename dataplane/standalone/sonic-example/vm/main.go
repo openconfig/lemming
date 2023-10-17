@@ -15,7 +15,7 @@ func main() {
 		"-smp", "12", // 12 CPUs
 		"-nographic",                          // Don't launch any windows
 		"-drive", "file=/vm.img,format=qcow2", // OS disk
-		"-netdev", "user,hostfwd=tcp::22-:22,id=mgmt",
+		"-netdev", "user,hostfwd=tcp::22-:22,hostfwd=tcp::9339-:9339,hostfwd=tcp::9559-:9559,id=mgmt",
 		"-device", "e1000,netdev=mgmt",
 	}
 	tapsArgs, err := createTaps()
