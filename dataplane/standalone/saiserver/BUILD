@@ -29,6 +29,7 @@ go_library(
 go_test(
     name = "saiserver_test",
     srcs = [
+        "acl_test.go",
         "ports_test.go",
         "routing_test.go",
         "switch_test.go",
