@@ -136,7 +136,7 @@ func TestCreateAclEntry(t *testing.T) {
 							Bytes:   binary.BigEndian.AppendUint64(nil, 1),
 							Masks:   binary.BigEndian.AppendUint64(nil, math.MaxUint64),
 						}, {
-							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_DSCP}},
+							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_QOS}},
 							Bytes:   []byte{10},
 							Masks:   []byte{255},
 						}, {

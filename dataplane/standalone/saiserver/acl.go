@@ -169,7 +169,7 @@ func (a *acl) CreateAclEntry(ctx context.Context, req *saipb.CreateAclEntryReque
 			Masks:   binary.BigEndian.AppendUint64(nil, math.MaxUint64),
 		})
 	}
-	if req.GetFieldAclIpType() != nil {
+	if req.GetFieldAclIpType() != nil { // Use the EtherType header to match against specific protocols.
 		fieldMask := &fwdpb.PacketFieldMaskedBytes{
 			FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_TYPE}},
 			Bytes:   binary.BigEndian.AppendUint16(nil, 0x0000),
@@ -177,13 +177,13 @@ func (a *acl) CreateAclEntry(ctx context.Context, req *saipb.CreateAclEntryReque
 		}
 		switch t := req.GetFieldAclIpType().GetDataIpType(); t {
 		case saipb.AclIpType_ACL_IP_TYPE_ANY:
-			fieldMask.Masks = binary.BigEndian.AppendUint16(nil, 0x0000)
+			fieldMask.Masks = binary.BigEndian.AppendUint16(nil, 0x0000) // Match any EtherType.
 		case saipb.AclIpType_ACL_IP_TYPE_IPV4ANY:
-			fieldMask.Bytes = binary.BigEndian.AppendUint16(nil, 0x0800)
+			fieldMask.Bytes = binary.BigEndian.AppendUint16(nil, 0x0800) // Match IPv4.
 		case saipb.AclIpType_ACL_IP_TYPE_IPV6ANY:
-			fieldMask.Bytes = binary.BigEndian.AppendUint16(nil, 0x86DD)
+			fieldMask.Bytes = binary.BigEndian.AppendUint16(nil, 0x86DD) // Match IPv6.
 		case saipb.AclIpType_ACL_IP_TYPE_ARP:
-			fieldMask.Bytes = binary.BigEndian.AppendUint16(nil, 0x0806)
+			fieldMask.Bytes = binary.BigEndian.AppendUint16(nil, 0x0806) // Match ARP.
 		default:
 			return nil, status.Errorf(codes.InvalidArgument, "unspporrted ACL_IP_TYPE: %v", t)
 		}
@@ -191,7 +191,7 @@ func (a *acl) CreateAclEntry(ctx context.Context, req *saipb.CreateAclEntryReque
 	}
 	if req.GetFieldDscp() != nil {
 		aReq.EntryDesc.GetFlow().Fields = append(aReq.EntryDesc.GetFlow().Fields, &fwdpb.PacketFieldMaskedBytes{
-			FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_DSCP}},
+			FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_QOS}},
 			Bytes:   []byte{byte(req.GetFieldDscp().GetDataUint())},
 			Masks:   []byte{byte(req.GetFieldDscp().GetMaskUint())},
 		})

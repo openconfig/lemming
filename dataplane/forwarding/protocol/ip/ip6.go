@@ -86,9 +86,7 @@ func (ip *IP6) field(id fwdpacket.FieldID) frame.Field {
 
 	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_QOS, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP6_FLOW:
 		return ip.header.Field(ip6DescPos, ip6DescBytes)
-	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_DSCP:
-		f := ip.header.Field(dscpPos, 1)
-		return f.BitField(0, 6)
+
 	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION:
 		return ipVersion(ip.header)
 

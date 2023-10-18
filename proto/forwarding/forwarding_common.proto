@@ -171,7 +171,6 @@ enum PacketFieldNum {
   PACKET_FIELD_NUM_NEXT_HOP_IP = 56; // Next hop ip (metadata).
   PACKET_FIELD_NUM_NEXT_HOP_GROUP_ID = 57; // Next hop group id (metadata).
   PACKET_FIELD_NUM_NEXT_HOP_ID = 58; // Next hop id (metadata).
-  PACKET_FIELD_NUM_DSCP = 59; // IP DSCP header.
   PACKET_FIELD_NUM_COUNT = 1000;
 }
 
