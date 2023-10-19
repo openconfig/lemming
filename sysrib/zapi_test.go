@@ -63,7 +63,7 @@ func SendMessage(t *testing.T, conn net.Conn, msg *zebra.Message) error {
 }
 
 func Dial() (net.Conn, error) {
-	conn, err := net.Dial("unix", "/tmp/zserv.api")
+	conn, err := net.DialTimeout("unix", "/tmp/zserv.api", 10*time.Second)
 	if err != nil {
 		return nil, err
 	}

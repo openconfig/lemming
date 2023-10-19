@@ -25,6 +25,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/openconfig/lemming/gnmi"
 	"github.com/openconfig/lemming/gnmi/fakedevice"
+	"github.com/openconfig/lemming/gnmi/gnmiclient"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 	"github.com/openconfig/ygnmi/ygnmi"
@@ -58,15 +59,16 @@ func installStaticRoute(t *testing.T, c *ygnmi.Client, route *oc.NetworkInstance
 	}
 }
 
-func TestStaticRoute(t *testing.T) {
+// TestStaticRouteAndIntfs tests static and interface route addition/deletion.
+func TestStaticRouteAndIntfs(t *testing.T) {
 	routesQuery := programmedRoutesQuery(t)
-	inInterfaces, wantConnectedRoutes := getConnectedIntfSetupVars(t)
 
 	// Note: This is a sequential test -- each test case depends on the previous one.
 	tests := []struct {
-		desc            string
-		inStaticRouteOp func(t *testing.T, c *ygnmi.Client)
-		wantRoutes      []*dpb.Route
+		desc               string
+		inStaticRouteOp    func(t *testing.T, c *ygnmi.Client)
+		inConnectedRouteOp func(t *testing.T, c *ygnmi.Client)
+		wantRoutes         []*dpb.Route
 	}{{
 		desc: "Add static route v4",
 		inStaticRouteOp: func(t *testing.T, c *ygnmi.Client) {
@@ -81,7 +83,46 @@ func TestStaticRoute(t *testing.T) {
 				},
 			})
 		},
+		inConnectedRouteOp: func(t *testing.T, c *ygnmi.Client) {
+			if _, err := gnmiclient.Replace(context.Background(), c, ocpath.Root().Interface("eth0").State(), &oc.Interface{
+				Name:    ygot.String("eth0"),
+				Enabled: ygot.Bool(true),
+				Ifindex: ygot.Uint32(1),
+				Subinterface: map[uint32]*oc.Interface_Subinterface{
+					0: {
+						Index: ygot.Uint32(0),
+						Ipv4: &oc.Interface_Subinterface_Ipv4{
+							Address: map[string]*oc.Interface_Subinterface_Ipv4_Address{
+								"192.168.1.1": {
+									Ip:           ygot.String("192.168.1.1"),
+									PrefixLength: ygot.Uint8(24),
+								},
+							},
+						},
+					},
+				},
+			}); err != nil {
+				t.Fatalf("Cannot configure interface: %v", err)
+			}
+		},
 		wantRoutes: []*dpb.Route{{
+			Prefix: &dpb.RoutePrefix{
+				VrfId: uint64(0),
+				Prefix: &dpb.RoutePrefix_Cidr{
+					Cidr: "192.168.1.0/24",
+				},
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Hops: []*dpb.NextHop{{
+						Dev: &dpb.NextHop_Port{
+							Port: "eth0",
+						},
+						Weight: 0,
+					}},
+				},
+			},
+		}, {
 			Prefix: &dpb.RoutePrefix{
 				VrfId: uint64(0),
 				Prefix: &dpb.RoutePrefix_Cidr{
@@ -114,7 +155,46 @@ func TestStaticRoute(t *testing.T) {
 				},
 			})
 		},
+		inConnectedRouteOp: func(t *testing.T, c *ygnmi.Client) {
+			if _, err := gnmiclient.Update(context.Background(), c, ocpath.Root().Interface("eth0").State(), &oc.Interface{
+				Name:    ygot.String("eth0"),
+				Enabled: ygot.Bool(true),
+				Ifindex: ygot.Uint32(1),
+				Subinterface: map[uint32]*oc.Interface_Subinterface{
+					0: {
+						Index: ygot.Uint32(0),
+						Ipv6: &oc.Interface_Subinterface_Ipv6{
+							Address: map[string]*oc.Interface_Subinterface_Ipv6_Address{
+								mapAddressTo6(t, "192.168.1.1"): {
+									Ip:           ygot.String(mapAddressTo6(t, "192.168.1.1")),
+									PrefixLength: ygot.Uint8(uint8(mapPrefixLenTo6(24))),
+								},
+							},
+						},
+					},
+				},
+			}); err != nil {
+				t.Fatalf("Cannot configure interface: %v", err)
+			}
+		},
 		wantRoutes: []*dpb.Route{{
+			Prefix: &dpb.RoutePrefix{
+				VrfId: uint64(0),
+				Prefix: &dpb.RoutePrefix_Cidr{
+					Cidr: "192.168.1.0/24",
+				},
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Hops: []*dpb.NextHop{{
+						Dev: &dpb.NextHop_Port{
+							Port: "eth0",
+						},
+						Weight: 0,
+					}},
+				},
+			},
+		}, {
 			Prefix: &dpb.RoutePrefix{
 				VrfId: uint64(0),
 				Prefix: &dpb.RoutePrefix_Cidr{
@@ -125,6 +205,23 @@ func TestStaticRoute(t *testing.T) {
 				NextHops: &dpb.NextHopList{
 					Hops: []*dpb.NextHop{{
 						Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+						Dev: &dpb.NextHop_Port{
+							Port: "eth0",
+						},
+						Weight: 0,
+					}},
+				},
+			},
+		}, {
+			Prefix: &dpb.RoutePrefix{
+				VrfId: uint64(0),
+				Prefix: &dpb.RoutePrefix_Cidr{
+					Cidr: mapAddressTo6(t, "192.168.1.0/24"),
+				},
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Hops: []*dpb.NextHop{{
 						Dev: &dpb.NextHop_Port{
 							Port: "eth0",
 						},
@@ -162,6 +259,40 @@ func TestStaticRoute(t *testing.T) {
 			Prefix: &dpb.RoutePrefix{
 				VrfId: uint64(0),
 				Prefix: &dpb.RoutePrefix_Cidr{
+					Cidr: "192.168.1.0/24",
+				},
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Hops: []*dpb.NextHop{{
+						Dev: &dpb.NextHop_Port{
+							Port: "eth0",
+						},
+						Weight: 0,
+					}},
+				},
+			},
+		}, {
+			Prefix: &dpb.RoutePrefix{
+				VrfId: uint64(0),
+				Prefix: &dpb.RoutePrefix_Cidr{
+					Cidr: mapAddressTo6(t, "192.168.1.0/24"),
+				},
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Hops: []*dpb.NextHop{{
+						Dev: &dpb.NextHop_Port{
+							Port: "eth0",
+						},
+						Weight: 0,
+					}},
+				},
+			},
+		}, {
+			Prefix: &dpb.RoutePrefix{
+				VrfId: uint64(0),
+				Prefix: &dpb.RoutePrefix_Cidr{
 					Cidr: mapAddressTo6(t, "10.0.0.0/8"),
 				},
 			},
@@ -181,6 +312,53 @@ func TestStaticRoute(t *testing.T) {
 		desc: "Delete static route v6",
 		inStaticRouteOp: func(t *testing.T, c *ygnmi.Client) {
 			if _, err := ygnmi.Delete[*oc.NetworkInstance_Protocol_Static](context.Background(), c, staticp.Static(mapAddressTo6(t, "10.0.0.0/8")).Config()); err != nil {
+				t.Fatal(err)
+			}
+		},
+		wantRoutes: []*dpb.Route{{
+			Prefix: &dpb.RoutePrefix{
+				VrfId: uint64(0),
+				Prefix: &dpb.RoutePrefix_Cidr{
+					Cidr: "192.168.1.0/24",
+				},
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Hops: []*dpb.NextHop{{
+						Dev: &dpb.NextHop_Port{
+							Port: "eth0",
+						},
+						Weight: 0,
+					}},
+				},
+			},
+		}, {
+			Prefix: &dpb.RoutePrefix{
+				VrfId: uint64(0),
+				Prefix: &dpb.RoutePrefix_Cidr{
+					Cidr: mapAddressTo6(t, "192.168.1.0/24"),
+				},
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Hops: []*dpb.NextHop{{
+						Dev: &dpb.NextHop_Port{
+							Port: "eth0",
+						},
+						Weight: 0,
+					}},
+				},
+			},
+		}},
+	}, {
+		desc: "Delete connected interface",
+		inStaticRouteOp: func(t *testing.T, c *ygnmi.Client) {
+			if _, err := ygnmi.Delete[*oc.NetworkInstance_Protocol_Static](context.Background(), c, staticp.Static(mapAddressTo6(t, "10.0.0.0/8")).Config()); err != nil {
+				t.Fatal(err)
+			}
+		},
+		inConnectedRouteOp: func(t *testing.T, c *ygnmi.Client) {
+			if _, err := gnmiclient.Delete(context.Background(), c, ocpath.Root().Interface("eth0").State()); err != nil {
 				t.Fatal(err)
 			}
 		},
@@ -225,43 +403,35 @@ func TestStaticRoute(t *testing.T) {
 		t.Fatalf("cannot create ygnmi client: %v", err)
 	}
 
-	for _, intf := range inInterfaces {
-		configureInterface(t, intf, stateC)
-	}
-
-	// Wait for Sysrib to pick up the connected prefixes.
-	for i := 0; i != maxGNMIWaitQuanta; i++ {
-		var routes []*dpb.Route
-		routes, err = ygnmi.GetAll(context.Background(), configC, routesQuery)
-		if err == nil {
-			if diff := cmp.Diff(wantConnectedRoutes, routes, protocmp.Transform(), protocmp.SortRepeatedFields(new(dpb.NextHopList), "hops")); diff != "" {
-				err = fmt.Errorf("routes not equal to wantConnectedRoutes (-want, +got):\n%s", diff)
-			} else {
-				break
-			}
-		}
-		time.Sleep(100 * time.Millisecond)
-	}
-	if err != nil {
-		t.Fatalf("After initial interface operations: %v", err)
-	}
-
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			tt.inStaticRouteOp(t, configC)
+			if tt.inStaticRouteOp != nil {
+				tt.inStaticRouteOp(t, configC)
+			}
+			if tt.inConnectedRouteOp != nil {
+				tt.inConnectedRouteOp(t, stateC)
+			}
 
 			var err error
 			for i := 0; i != maxGNMIWaitQuanta; i++ {
-				var routes []*dpb.Route
-				routes, err = ygnmi.GetAll(context.Background(), configC, routesQuery)
-				if err != nil {
-					t.Fatal(err)
+				var routesVal []*ygnmi.Value[*dpb.Route]
+				if routesVal, err = ygnmi.LookupAll(context.Background(), configC, routesQuery); err == nil {
+					var routes []*dpb.Route
+					for _, v := range routesVal {
+						r, ok := v.Val()
+						if ok {
+							routes = append(routes, r)
+						}
+					}
+					if diff := cmp.Diff(tt.wantRoutes, routes, protocmp.Transform(), protocmp.SortRepeatedFields(new(dpb.NextHopList), "hops"), cmpopts.SortSlices(func(a, b *dpb.Route) bool {
+						return a.GetPrefix().GetCidr() < b.GetPrefix().GetCidr()
+					})); diff != "" {
+						err = fmt.Errorf("routes not equal to wantRoutes (-want, +got):\n%s", diff)
+					} else {
+						break
+					}
 				}
-				if diff := cmp.Diff(append(append([]*dpb.Route{}, wantConnectedRoutes...), tt.wantRoutes...), routes, protocmp.Transform(), protocmp.SortRepeatedFields(new(dpb.NextHopList), "hops"), cmpopts.SortSlices(func(a, b *dpb.Route) bool {
-					return a.GetPrefix().GetCidr() < b.GetPrefix().GetCidr()
-				})); diff != "" {
-					err = fmt.Errorf("routes not equal to wantRoutes (-want, +got):\n%s", diff)
-				}
+				time.Sleep(100 * time.Millisecond)
 			}
 			if err != nil {
 				t.Fatalf("After static route operation: %v", err)
