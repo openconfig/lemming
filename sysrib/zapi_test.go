@@ -30,21 +30,24 @@ package sysrib
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"syscall"
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/openconfig/lemming/gnmi"
 	dpb "github.com/openconfig/lemming/proto/dataplane"
 	pb "github.com/openconfig/lemming/proto/sysrib"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/wenovus/gobgp/v3/pkg/zebra"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/testing/protocmp"
 )
 
 func TestZServer(t *testing.T) {
-	// Need to test these serially since they all use the same UDS address.
 	t.Run("hello", testHello)
 	t.Run("RouteAdd", testRouteAdd)
 	t.Run("RouteRedistribution-routeReadyBeforeDial", func(t *testing.T) { testRouteRedistribution(t, true) })
@@ -186,6 +189,7 @@ func testRouteRedistribution(t *testing.T, routeReadyBeforeDial bool) {
 		desc              string
 		inAddIntfAction   *AddIntfAction
 		inSetRouteRequest *pb.SetRouteRequest
+		wantRoutes        []*dpb.Route
 	}{{
 		desc: "IPv4",
 		inAddIntfAction: &AddIntfAction{
@@ -209,6 +213,42 @@ func testRouteRedistribution(t *testing.T, routeReadyBeforeDial bool) {
 				Weight:  1,
 			}},
 		},
+		wantRoutes: []*dpb.Route{{
+			Prefix: &dpb.RoutePrefix{
+				VrfId: uint64(0),
+				Prefix: &dpb.RoutePrefix_Cidr{
+					Cidr: "10.0.0.0/8",
+				},
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Hops: []*dpb.NextHop{{
+						Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+						Dev: &dpb.NextHop_Port{
+							Port: "eth0",
+						},
+						Weight: 0,
+					}},
+				},
+			},
+		}, {
+			Prefix: &dpb.RoutePrefix{
+				VrfId: uint64(0),
+				Prefix: &dpb.RoutePrefix_Cidr{
+					Cidr: "192.168.1.0/24",
+				},
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Hops: []*dpb.NextHop{{
+						Dev: &dpb.NextHop_Port{
+							Port: "eth0",
+						},
+						Weight: 0,
+					}},
+				},
+			},
+		}},
 	}, {
 		desc: "IPv6",
 		inAddIntfAction: &AddIntfAction{
@@ -232,6 +272,42 @@ func testRouteRedistribution(t *testing.T, routeReadyBeforeDial bool) {
 				Weight:  1,
 			}},
 		},
+		wantRoutes: []*dpb.Route{{
+			Prefix: &dpb.RoutePrefix{
+				VrfId: uint64(0),
+				Prefix: &dpb.RoutePrefix_Cidr{
+					Cidr: "4242::/42",
+				},
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Hops: []*dpb.NextHop{{
+						Ip: &dpb.NextHop_IpStr{IpStr: "2001::ffff"},
+						Dev: &dpb.NextHop_Port{
+							Port: "eth0",
+						},
+						Weight: 0,
+					}},
+				},
+			},
+		}, {
+			Prefix: &dpb.RoutePrefix{
+				VrfId: uint64(0),
+				Prefix: &dpb.RoutePrefix_Cidr{
+					Cidr: "2001::/42",
+				},
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Hops: []*dpb.NextHop{{
+						Dev: &dpb.NextHop_Port{
+							Port: "eth0",
+						},
+						Weight: 0,
+					}},
+				},
+			},
+		}},
 	}}
 
 	for _, tt := range tests {
@@ -256,22 +332,30 @@ func testRouteRedistribution(t *testing.T, routeReadyBeforeDial bool) {
 			if err != nil {
 				t.Fatalf("cannot create ygnmi client: %v", err)
 			}
+
 			configureInterface(t, tt.inAddIntfAction, c)
 
 			if routeReadyBeforeDial {
 				if _, err := s.SetRoute(context.Background(), tt.inSetRouteRequest); err != nil {
 					t.Fatalf("Got unexpected error during call to SetRoute: %v", err)
 				}
-				var routes []*dpb.Route
+
+				var err error
 				for i := 0; i != maxGNMIWaitQuanta; i++ {
-					var err error
-					if routes, err = ygnmi.GetAll(context.Background(), c, routesQuery); err != nil && len(routes) != 0 {
-						break
+					var routes []*dpb.Route
+					if routes, err = ygnmi.GetAll(context.Background(), c, routesQuery); err == nil {
+						if diff := cmp.Diff(tt.wantRoutes, routes, protocmp.Transform(), protocmp.SortRepeatedFields(new(dpb.NextHopList), "hops"), cmpopts.SortSlices(func(a, b *dpb.Route) bool {
+							return a.GetPrefix().GetCidr() < b.GetPrefix().GetCidr()
+						})); diff != "" {
+							err = fmt.Errorf("routes not equal to wantRoutes (-want, +got):\n%s", diff)
+						} else {
+							break
+						}
 					}
 					time.Sleep(100 * time.Millisecond)
 				}
-				if len(routes) == 0 {
-					t.Fatalf("Route not resolved in time limit.")
+				if err != nil {
+					t.Fatalf("Routes not resolved in time limit: %v", err)
 				}
 			}
 
