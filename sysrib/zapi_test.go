@@ -50,8 +50,8 @@ import (
 func TestZServer(t *testing.T) {
 	t.Run("hello", testHello)
 	t.Run("RouteAdd", testRouteAddDelete)
-	t.Run("RouteRedistribution-routeReadyBeforeDial", func(t *testing.T) { testRouteRedistribution(t, true) })
-	t.Run("RouteRedistribution-routeNotReadyBeforeDial", func(t *testing.T) { testRouteRedistribution(t, false) })
+	t.Run("RouteRedistribution/routeReadyBeforeDial", func(t *testing.T) { testRouteRedistribution(t, true) })
+	t.Run("RouteRedistribution/routeNotReadyBeforeDial", func(t *testing.T) { testRouteRedistribution(t, false) })
 }
 
 // SendMessage sends a zebra message to the given connection.
@@ -505,6 +505,7 @@ func testRouteAddDelete(t *testing.T) {
 // client dials to the ZAPI server.
 func testRouteRedistribution(t *testing.T, routeReadyBeforeDial bool) {
 	routesQuery := programmedRoutesQuery(t)
+	// Sequential test
 	tests := []struct {
 		desc              string
 		inAddIntfAction   *AddIntfAction
@@ -718,6 +719,20 @@ func testRouteRedistribution(t *testing.T, routeReadyBeforeDial bool) {
 				t.Fatal("got empty message")
 			}
 			if got, want := m.Header.Command.ToCommon(version, software), zebra.RedistributeRouteAdd; got != want {
+				t.Errorf("Got message %s, want %s", got, want)
+			}
+
+			tt.inSetRouteRequest.Delete = true
+			if _, err := s.SetRoute(context.Background(), tt.inSetRouteRequest); err != nil {
+				t.Fatalf("Got unexpected error during call to SetRoute: %v", err)
+			}
+			m, err = zebra.ReceiveSingleMsg(topicLogger, conn, version, software, "test-client")
+			if err != nil {
+				t.Fatal(err)
+			} else if m == nil {
+				t.Fatal("got empty message")
+			}
+			if got, want := m.Header.Command.ToCommon(version, software), zebra.RedistributeRouteDel; got != want {
 				t.Errorf("Got message %s, want %s", got, want)
 			}
 		})

@@ -24,8 +24,11 @@ import (
 	"github.com/wenovus/gobgp/v3/pkg/zebra"
 )
 
-func distributeRoute(s *ZServer, rr *ResolvedRoute, route *Route) {
-	// TODO(wenbli): RedistributeRouteDel
+func distributeRoute(s *ZServer, rr *ResolvedRoute, route *Route, isDelete bool) {
+	msgType := zebra.RedistributeRouteAdd
+	if isDelete {
+		msgType = zebra.RedistributeRouteDel
+	}
 	zrouteBody, err := convertToZAPIRoute(rr.RouteKey, route, rr)
 	if err != nil {
 		log.Warningf("failed to convert resolved route to zebra BGP route: %v", err)
@@ -34,7 +37,7 @@ func distributeRoute(s *ZServer, rr *ResolvedRoute, route *Route) {
 		log.V(1).Info("Sending new route to ZAPI clients: ", zrouteBody)
 		s.ClientMutex.RLock()
 		for conn := range s.ClientMap {
-			serverSendMessage(conn, zebra.RedistributeRouteAdd, zrouteBody)
+			serverSendMessage(conn, msgType, zrouteBody)
 		}
 		s.ClientMutex.RUnlock()
 	}
