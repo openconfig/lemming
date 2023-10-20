@@ -22,6 +22,7 @@ import (
 	"github.com/openconfig/lemming/gnmi/fakedevice"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
+	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot"
 )
 
@@ -38,6 +39,16 @@ func formatYgot(v any) string {
 		return fmt.Sprint(v)
 	}
 	return string(str)
+}
+
+func awaitNotPresent[T any](t *testing.T, d *Device, q ygnmi.SingletonQuery[T]) {
+	w := Watch(t, d, q, rejectTimeout, func(val *ygnmi.Value[T]) bool {
+		_, ok := val.Val()
+		return !ok
+	})
+	if _, ok := w.Await(t); !ok {
+		t.Fatalf("prefix (%v) was not rejected within timeout.", d)
+	}
 }
 
 func TestRoutePropagation(t *testing.T) {
@@ -117,4 +128,22 @@ func TestRoutePropagation(t *testing.T) {
 
 	// Check route is in Adj-In of dut4.
 	Await(t, dut4, v4uni.Neighbor(dut3.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), prefix)
+
+	// -------------- Test deletion ----------------
+	Delete[*oc.NetworkInstance_Protocol_Static](t, dut1, staticp.Static(prefix).Config())
+
+	// Check route is not in Adj-In of dut2.
+	awaitNotPresent(t, dut2, v4uni.Neighbor(dut1.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State())
+	awaitNotPresent(t, dut2, v4uni.Neighbor(dut1.RouterID).AdjRibInPost().Route(prefix, 0).Prefix().State())
+	// Check route is not in Loc-RIB of dut2.
+	awaitNotPresent(t, dut2, v4uni.LocRib().Route(prefix, oc.UnionString(dut1.RouterID), 0).Prefix().State())
+	// Check route is not in Adj-Out of dut2.
+	awaitNotPresent(t, dut2, v4uni.Neighbor(dut3.RouterID).AdjRibOutPre().Route(prefix, 0).Prefix().State())
+	awaitNotPresent(t, dut2, v4uni.Neighbor(dut3.RouterID).AdjRibOutPost().Route(prefix, 0).Prefix().State())
+
+	// Check route is not in Adj-In of dut3.
+	awaitNotPresent(t, dut3, v4uni.Neighbor(dut2.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State())
+
+	// Check route is not in Adj-In of dut4.
+	awaitNotPresent(t, dut4, v4uni.Neighbor(dut3.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State())
 }
