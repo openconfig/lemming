@@ -165,6 +165,15 @@ message GetMacsecPortAttributeResponse {
   MacsecPortAttribute attr = 1;
 }
 
+message GetMacsecPortStatsRequest {
+  uint64 oid = 1;
+  repeated MacsecPortStat counter_ids = 2;
+}
+
+message GetMacsecPortStatsResponse {
+  uint64 values = 1;
+}
+
 message CreateMacsecFlowRequest {
   option (sai_type) = OBJECT_TYPE_MACSEC_FLOW;
   uint64 switch = 1;
@@ -188,6 +197,15 @@ message GetMacsecFlowAttributeRequest {
 
 message GetMacsecFlowAttributeResponse {
   MacsecFlowAttribute attr = 1;
+}
+
+message GetMacsecFlowStatsRequest {
+  uint64 oid = 1;
+  repeated MacsecFlowStat counter_ids = 2;
+}
+
+message GetMacsecFlowStatsResponse {
+  uint64 values = 1;
 }
 
 message CreateMacsecScRequest {
@@ -235,6 +253,15 @@ message GetMacsecScAttributeResponse {
   MacsecScAttribute attr = 1;
 }
 
+message GetMacsecScStatsRequest {
+  uint64 oid = 1;
+  repeated MacsecScStat counter_ids = 2;
+}
+
+message GetMacsecScStatsResponse {
+  uint64 values = 1;
+}
+
 message CreateMacsecSaRequest {
   option (sai_type) = OBJECT_TYPE_MACSEC_SA;
   uint64 switch = 1;
@@ -276,6 +303,15 @@ message GetMacsecSaAttributeResponse {
   MacsecSaAttribute attr = 1;
 }
 
+message GetMacsecSaStatsRequest {
+  uint64 oid = 1;
+  repeated MacsecSaStat counter_ids = 2;
+}
+
+message GetMacsecSaStatsResponse {
+  uint64 values = 1;
+}
+
 service Macsec {
   rpc CreateMacsec(CreateMacsecRequest) returns (CreateMacsecResponse) {}
   rpc RemoveMacsec(RemoveMacsecRequest) returns (RemoveMacsecResponse) {}
@@ -291,22 +327,30 @@ service Macsec {
       returns (SetMacsecPortAttributeResponse) {}
   rpc GetMacsecPortAttribute(GetMacsecPortAttributeRequest)
       returns (GetMacsecPortAttributeResponse) {}
+  rpc GetMacsecPortStats(GetMacsecPortStatsRequest)
+      returns (GetMacsecPortStatsResponse) {}
   rpc CreateMacsecFlow(CreateMacsecFlowRequest)
       returns (CreateMacsecFlowResponse) {}
   rpc RemoveMacsecFlow(RemoveMacsecFlowRequest)
       returns (RemoveMacsecFlowResponse) {}
   rpc GetMacsecFlowAttribute(GetMacsecFlowAttributeRequest)
       returns (GetMacsecFlowAttributeResponse) {}
+  rpc GetMacsecFlowStats(GetMacsecFlowStatsRequest)
+      returns (GetMacsecFlowStatsResponse) {}
   rpc CreateMacsecSc(CreateMacsecScRequest) returns (CreateMacsecScResponse) {}
   rpc RemoveMacsecSc(RemoveMacsecScRequest) returns (RemoveMacsecScResponse) {}
   rpc SetMacsecScAttribute(SetMacsecScAttributeRequest)
       returns (SetMacsecScAttributeResponse) {}
   rpc GetMacsecScAttribute(GetMacsecScAttributeRequest)
       returns (GetMacsecScAttributeResponse) {}
+  rpc GetMacsecScStats(GetMacsecScStatsRequest)
+      returns (GetMacsecScStatsResponse) {}
   rpc CreateMacsecSa(CreateMacsecSaRequest) returns (CreateMacsecSaResponse) {}
   rpc RemoveMacsecSa(RemoveMacsecSaRequest) returns (RemoveMacsecSaResponse) {}
   rpc SetMacsecSaAttribute(SetMacsecSaAttributeRequest)
       returns (SetMacsecSaAttributeResponse) {}
   rpc GetMacsecSaAttribute(GetMacsecSaAttributeRequest)
       returns (GetMacsecSaAttributeResponse) {}
+  rpc GetMacsecSaStats(GetMacsecSaStatsRequest)
+      returns (GetMacsecSaStatsResponse) {}
 }

@@ -46,6 +46,15 @@ message GetCounterAttributeResponse {
   CounterAttribute attr = 1;
 }
 
+message GetCounterStatsRequest {
+  uint64 oid = 1;
+  repeated CounterStat counter_ids = 2;
+}
+
+message GetCounterStatsResponse {
+  uint64 values = 1;
+}
+
 service Counter {
   rpc CreateCounter(CreateCounterRequest) returns (CreateCounterResponse) {}
   rpc RemoveCounter(RemoveCounterRequest) returns (RemoveCounterResponse) {}
@@ -53,4 +62,6 @@ service Counter {
       returns (SetCounterAttributeResponse) {}
   rpc GetCounterAttribute(GetCounterAttributeRequest)
       returns (GetCounterAttributeResponse) {}
+  rpc GetCounterStats(GetCounterStatsRequest)
+      returns (GetCounterStatsResponse) {}
 }

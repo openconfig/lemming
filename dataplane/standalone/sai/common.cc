@@ -214,7 +214,8 @@ lemming::dataplane::sai::AclFieldData convert_from_acl_field_data_ip_type(
     const sai_acl_field_data_t& in, sai_int32_t type, sai_int32_t mask) {
   lemming::dataplane::sai::AclFieldData out;
   out.set_enable(in.enable);
-  out.set_data_ip_type(static_cast<lemming::dataplane::sai::AclIpType>(type + 1));
+  out.set_data_ip_type(
+      static_cast<lemming::dataplane::sai::AclIpType>(type + 1));
   out.set_mask_int(mask);
   return out;
 }
