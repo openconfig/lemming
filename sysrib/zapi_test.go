@@ -505,7 +505,6 @@ func testRouteAddDelete(t *testing.T) {
 // client dials to the ZAPI server.
 func testRouteRedistribution(t *testing.T, routeReadyBeforeDial bool) {
 	routesQuery := programmedRoutesQuery(t)
-	// Sequential test
 	tests := []struct {
 		desc              string
 		inAddIntfAction   *AddIntfAction
