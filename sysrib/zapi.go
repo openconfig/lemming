@@ -266,7 +266,7 @@ func (c *Client) HandleRequest(ctx context.Context, conn net.Conn, vrfID uint32)
 					"Topic":   "Sysrib",
 					"Message": m,
 				})
-			if err := c.zServer.sysrib.setZebraRoute(ctx, vrfIDToNiName(vrfID), m.Body.(*zebra.IPRouteBody)); err != nil {
+			if err := c.zServer.sysrib.setZebraRoute(ctx, vrfIDToNiName(vrfID), m.Body.(*zebra.IPRouteBody), false); err != nil {
 				topicLogger.Warn(fmt.Sprintf("Could not add route to sysrib: %v", err),
 					bgplog.Fields{
 						"Topic":   "Sysrib",
@@ -274,12 +274,18 @@ func (c *Client) HandleRequest(ctx context.Context, conn net.Conn, vrfID uint32)
 					})
 			}
 		case zebra.RouteDelete:
-			// TODO(wenbli): Implement RouteDelete.
-			topicLogger.Warn("Received Zebra RouteDelete from client which is not handled:",
+			topicLogger.Info("Received Zebra RouteDelete from client:",
 				bgplog.Fields{
 					"Topic":   "Sysrib",
 					"Message": m,
 				})
+			if err := c.zServer.sysrib.setZebraRoute(ctx, vrfIDToNiName(vrfID), m.Body.(*zebra.IPRouteBody), true); err != nil {
+				topicLogger.Warn(fmt.Sprintf("Could not delete route from sysrib: %v", err),
+					bgplog.Fields{
+						"Topic":   "Sysrib",
+						"Message": m,
+					})
+			}
 		default:
 			topicLogger.Warn(fmt.Sprintf("Received unhandled Zebra message %v from client:", command),
 				bgplog.Fields{
