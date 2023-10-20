@@ -262,13 +262,25 @@ func (a *acl) CreateAclEntry(ctx context.Context, req *saipb.CreateAclEntryReque
 	if len(aReq.EntryDesc.GetFlow().Fields) == 0 {
 		return nil, status.Error(codes.InvalidArgument, "either no fields or not unsupports fields in entry req")
 	}
-	switch {
-	case req.ActionSetVrf != nil:
+
+	if req.ActionSetVrf != nil {
 		aReq.Actions = append(aReq.Actions,
 			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF).
 				WithUint64Value(req.GetActionSetVrf().GetOid())).Build())
-	case req.ActionPacketAction != nil:
-		req.GetActionPacketAction().GetInt()
+	}
+	if req.ActionPacketAction != nil {
+		switch req.GetActionPacketAction().GetPacketAction() {
+		case saipb.PacketAction_PACKET_ACTION_DROP,
+			saipb.PacketAction_PACKET_ACTION_TRAP, // COPY and DROP
+			saipb.PacketAction_PACKET_ACTION_DENY: // COPY_CANCEL and DROP
+			aReq.Actions = append(aReq.Actions, &fwdpb.ActionDesc{ActionType: fwdpb.ActionType_ACTION_TYPE_DROP})
+		case saipb.PacketAction_PACKET_ACTION_FORWARD,
+			saipb.PacketAction_PACKET_ACTION_LOG,     // COPY and FORWARD
+			saipb.PacketAction_PACKET_ACTION_TRANSIT: // COPY_CANCEL and FORWARD
+			aReq.Actions = append(aReq.Actions, &fwdpb.ActionDesc{ActionType: fwdpb.ActionType_ACTION_TYPE_CONTINUE}) // Packets are forwarded by default so continue.
+		default:
+			return nil, status.Errorf(codes.InvalidArgument, "unknown packet action type: %v", req.GetActionPacketAction().GetPacketAction())
+		}
 	}
 	if _, err := a.dataplane.TableEntryAdd(ctx, aReq); err != nil {
 		return nil, err

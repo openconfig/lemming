@@ -180,6 +180,129 @@ func TestCreateAclEntry(t *testing.T) {
 				},
 			},
 		},
+	}, {
+		desc: "vrf action",
+		req: &saipb.CreateAclEntryRequest{
+			TableId: proto.Uint64(1),
+			FieldDstIp: &saipb.AclFieldData{
+				Data: &saipb.AclFieldData_DataIp{
+					DataIp: []byte{127, 0, 0, 1},
+				},
+				Mask: &saipb.AclFieldData_MaskIp{
+					MaskIp: []byte{255, 255, 255, 0},
+				},
+			},
+			ActionSetVrf: &saipb.AclActionData{
+				Parameter: &saipb.AclActionData_Oid{
+					Oid: 1,
+				},
+			},
+		},
+		want: &fwdpb.TableEntryAddRequest{
+			ContextId: &fwdpb.ContextId{Id: "foo"},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: "1"}},
+			EntryDesc: &fwdpb.EntryDesc{
+				Entry: &fwdpb.EntryDesc_Flow{
+					Flow: &fwdpb.FlowEntryDesc{
+						Id: 1,
+						Fields: []*fwdpb.PacketFieldMaskedBytes{{
+							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST}},
+							Bytes:   []byte{127, 0, 0, 1},
+							Masks:   []byte{255, 255, 255, 0},
+						}},
+					},
+				},
+			},
+			Actions: []*fwdpb.ActionDesc{{
+				ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
+				Action: &fwdpb.ActionDesc_Update{
+					Update: &fwdpb.UpdateActionDesc{
+						FieldId: &fwdpb.PacketFieldId{
+							Field: &fwdpb.PacketField{
+								FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF,
+							},
+						},
+						Field: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{}},
+						Type:  fwdpb.UpdateType_UPDATE_TYPE_SET,
+						Value: binary.BigEndian.AppendUint64(nil, 1),
+					},
+				},
+			}},
+		},
+	}, {
+		desc: "drop action",
+		req: &saipb.CreateAclEntryRequest{
+			TableId: proto.Uint64(1),
+			FieldDstIp: &saipb.AclFieldData{
+				Data: &saipb.AclFieldData_DataIp{
+					DataIp: []byte{127, 0, 0, 1},
+				},
+				Mask: &saipb.AclFieldData_MaskIp{
+					MaskIp: []byte{255, 255, 255, 0},
+				},
+			},
+			ActionPacketAction: &saipb.AclActionData{
+				Parameter: &saipb.AclActionData_PacketAction{
+					PacketAction: saipb.PacketAction_PACKET_ACTION_DROP,
+				},
+			},
+		},
+		want: &fwdpb.TableEntryAddRequest{
+			ContextId: &fwdpb.ContextId{Id: "foo"},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: "1"}},
+			EntryDesc: &fwdpb.EntryDesc{
+				Entry: &fwdpb.EntryDesc_Flow{
+					Flow: &fwdpb.FlowEntryDesc{
+						Id: 1,
+						Fields: []*fwdpb.PacketFieldMaskedBytes{{
+							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST}},
+							Bytes:   []byte{127, 0, 0, 1},
+							Masks:   []byte{255, 255, 255, 0},
+						}},
+					},
+				},
+			},
+			Actions: []*fwdpb.ActionDesc{{
+				ActionType: fwdpb.ActionType_ACTION_TYPE_DROP,
+			}},
+		},
+	}, {
+		desc: "forward action",
+		req: &saipb.CreateAclEntryRequest{
+			TableId: proto.Uint64(1),
+			FieldDstIp: &saipb.AclFieldData{
+				Data: &saipb.AclFieldData_DataIp{
+					DataIp: []byte{127, 0, 0, 1},
+				},
+				Mask: &saipb.AclFieldData_MaskIp{
+					MaskIp: []byte{255, 255, 255, 0},
+				},
+			},
+			ActionPacketAction: &saipb.AclActionData{
+				Parameter: &saipb.AclActionData_PacketAction{
+					PacketAction: saipb.PacketAction_PACKET_ACTION_FORWARD,
+				},
+			},
+		},
+		want: &fwdpb.TableEntryAddRequest{
+			ContextId: &fwdpb.ContextId{Id: "foo"},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: "1"}},
+			EntryDesc: &fwdpb.EntryDesc{
+				Entry: &fwdpb.EntryDesc_Flow{
+					Flow: &fwdpb.FlowEntryDesc{
+						Id: 1,
+						Fields: []*fwdpb.PacketFieldMaskedBytes{{
+							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST}},
+							Bytes:   []byte{127, 0, 0, 1},
+							Masks:   []byte{255, 255, 255, 0},
+						}},
+					},
+				},
+			},
+			Actions: []*fwdpb.ActionDesc{{
+				ActionType: fwdpb.ActionType_ACTION_TYPE_CONTINUE,
+			}},
+		},
 	}}
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
