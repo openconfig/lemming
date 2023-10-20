@@ -273,7 +273,7 @@ func populateTmplDataFromFunc(apis map[string]*protoAPITmplData, docInfo *docpar
 	case "get_stats":
 		req.Fields = append(req.Fields, idField, protoTmplField{
 			Name:      "counter_ids",
-			ProtoType: "repeated " + strcase.UpperCamelCase(meta.TypeName+" stat"),
+			ProtoType: fmt.Sprintf("repeated %s", strcase.UpperCamelCase(meta.TypeName+" stat")),
 			Index:     2,
 		})
 		resp.Fields = append(resp.Fields, protoTmplField{
