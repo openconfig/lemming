@@ -134,6 +134,8 @@ func generateCommonTypes(docInfo *docparser.SAIInfo) (string, error) {
 	return builder.String(), nil
 }
 
+const repeatedType = "repeated "
+
 // populateTmplDataFromFunc populatsd the protobuf template struct from a SAI function call.
 func populateTmplDataFromFunc(apis map[string]*protoAPITmplData, docInfo *docparser.SAIInfo, apiName string, meta *saiast.FuncMetadata) error {
 	if docInfo.Attrs[meta.TypeName] == nil {
@@ -213,7 +215,7 @@ func populateTmplDataFromFunc(apis map[string]*protoAPITmplData, docInfo *docpar
 		req.Fields = append(req.Fields, attrs...)
 	case "get_attribute":
 		req.Fields = append(req.Fields, idField, protoTmplField{
-			ProtoType: "repeated " + strcase.UpperCamelCase(meta.TypeName+" attr"),
+			ProtoType: repeatedType + strcase.UpperCamelCase(meta.TypeName+" attr"),
 			Index:     2,
 			Name:      "attr_type",
 		})
@@ -262,12 +264,12 @@ func populateTmplDataFromFunc(apis map[string]*protoAPITmplData, docInfo *docpar
 	case "create_bulk":
 		req.Fields = append(req.Fields, protoTmplField{
 			Name:      "reqs",
-			ProtoType: "repeated " + strcase.UpperCamelCase("Create "+meta.TypeName+"Request"),
+			ProtoType: repeatedType + strcase.UpperCamelCase("Create "+meta.TypeName+"Request"),
 			Index:     1,
 		})
 		resp.Fields = append(resp.Fields, protoTmplField{
 			Name:      "resps",
-			ProtoType: "repeated " + strcase.UpperCamelCase("Create "+meta.TypeName+"Response"),
+			ProtoType: repeatedType + strcase.UpperCamelCase("Create "+meta.TypeName+"Response"),
 			Index:     1,
 		})
 	case "get_stats":
