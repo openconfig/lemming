@@ -131,6 +131,15 @@ message GetBfdSessionAttributeResponse {
   BfdSessionAttribute attr = 1;
 }
 
+message GetBfdSessionStatsRequest {
+  uint64 oid = 1;
+  repeated BfdSessionStat counter_ids = 2;
+}
+
+message GetBfdSessionStatsResponse {
+  uint64 values = 1;
+}
+
 service Bfd {
   rpc CreateBfdSession(CreateBfdSessionRequest)
       returns (CreateBfdSessionResponse) {}
@@ -140,4 +149,6 @@ service Bfd {
       returns (SetBfdSessionAttributeResponse) {}
   rpc GetBfdSessionAttribute(GetBfdSessionAttributeRequest)
       returns (GetBfdSessionAttributeResponse) {}
+  rpc GetBfdSessionStats(GetBfdSessionStatsRequest)
+      returns (GetBfdSessionStatsResponse) {}
 }

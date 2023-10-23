@@ -517,6 +517,9 @@ service Sample {
 				}, {
 					Name: "get_foo_attribute",
 					Typ:  "sai_get_foo_attribute_t",
+				}, {
+					Name: "get_foo_stats",
+					Typ:  "sai_get_foo_stats_t",
 				}},
 			}},
 			Funcs: map[string]*saiast.SAIFunc{
@@ -524,6 +527,7 @@ service Sample {
 				"sai_remove_foo_t":        {},
 				"sai_set_foo_attribute_t": {},
 				"sai_get_foo_attribute_t": {},
+				"sai_get_foo_stats_t":     {},
 			},
 		},
 		inInfo: &docparser.SAIInfo{
@@ -595,11 +599,21 @@ message GetFooAttributeResponse {
 	FooAttribute attr = 1;
 }
 
+message GetFooStatsRequest {
+	uint64 oid = 1;
+	repeated FooStat counter_ids = 2;
+}
+
+message GetFooStatsResponse {
+	uint64 values = 1;
+}
+
 
 service Sample {
 	rpc CreateFoo (CreateFooRequest) returns (CreateFooResponse) {}
 	rpc RemoveFoo (RemoveFooRequest) returns (RemoveFooResponse) {}
 	rpc GetFooAttribute (GetFooAttributeRequest) returns (GetFooAttributeResponse) {}
+	rpc GetFooStats (GetFooStatsRequest) returns (GetFooStatsResponse) {}
 }
 `,
 		},

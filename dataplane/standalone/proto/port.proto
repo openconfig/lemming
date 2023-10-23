@@ -445,6 +445,15 @@ message GetPortAttributeResponse {
   PortAttribute attr = 1;
 }
 
+message GetPortStatsRequest {
+  uint64 oid = 1;
+  repeated PortStat counter_ids = 2;
+}
+
+message GetPortStatsResponse {
+  uint64 values = 1;
+}
+
 message CreatePortPoolRequest {
   option (sai_type) = OBJECT_TYPE_PORT_POOL;
   uint64 switch = 1;
@@ -477,6 +486,15 @@ message GetPortPoolAttributeRequest {
 
 message GetPortPoolAttributeResponse {
   PortPoolAttribute attr = 1;
+}
+
+message GetPortPoolStatsRequest {
+  uint64 oid = 1;
+  repeated PortPoolStat counter_ids = 2;
+}
+
+message GetPortPoolStatsResponse {
+  uint64 values = 1;
 }
 
 message CreatePortConnectorRequest {
@@ -566,12 +584,15 @@ service Port {
       returns (SetPortAttributeResponse) {}
   rpc GetPortAttribute(GetPortAttributeRequest)
       returns (GetPortAttributeResponse) {}
+  rpc GetPortStats(GetPortStatsRequest) returns (GetPortStatsResponse) {}
   rpc CreatePortPool(CreatePortPoolRequest) returns (CreatePortPoolResponse) {}
   rpc RemovePortPool(RemovePortPoolRequest) returns (RemovePortPoolResponse) {}
   rpc SetPortPoolAttribute(SetPortPoolAttributeRequest)
       returns (SetPortPoolAttributeResponse) {}
   rpc GetPortPoolAttribute(GetPortPoolAttributeRequest)
       returns (GetPortPoolAttributeResponse) {}
+  rpc GetPortPoolStats(GetPortPoolStatsRequest)
+      returns (GetPortPoolStatsResponse) {}
   rpc CreatePortConnector(CreatePortConnectorRequest)
       returns (CreatePortConnectorResponse) {}
   rpc RemovePortConnector(RemovePortConnectorRequest)

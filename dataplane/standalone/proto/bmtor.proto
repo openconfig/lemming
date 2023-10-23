@@ -66,6 +66,15 @@ message GetTableBitmapClassificationEntryAttributeResponse {
   TableBitmapClassificationEntryAttribute attr = 1;
 }
 
+message GetTableBitmapClassificationEntryStatsRequest {
+  uint64 oid = 1;
+  repeated TableBitmapClassificationEntryStat counter_ids = 2;
+}
+
+message GetTableBitmapClassificationEntryStatsResponse {
+  uint64 values = 1;
+}
+
 message CreateTableBitmapRouterEntryRequest {
   option (sai_type) = OBJECT_TYPE_UNSPECIFIED;
   uint64 switch = 1;
@@ -99,6 +108,15 @@ message GetTableBitmapRouterEntryAttributeResponse {
   TableBitmapRouterEntryAttribute attr = 1;
 }
 
+message GetTableBitmapRouterEntryStatsRequest {
+  uint64 oid = 1;
+  repeated TableBitmapRouterEntryStat counter_ids = 2;
+}
+
+message GetTableBitmapRouterEntryStatsResponse {
+  uint64 values = 1;
+}
+
 message CreateTableMetaTunnelEntryRequest {
   option (sai_type) = OBJECT_TYPE_UNSPECIFIED;
   uint64 switch = 1;
@@ -128,6 +146,15 @@ message GetTableMetaTunnelEntryAttributeResponse {
   TableMetaTunnelEntryAttribute attr = 1;
 }
 
+message GetTableMetaTunnelEntryStatsRequest {
+  uint64 oid = 1;
+  repeated TableMetaTunnelEntryStat counter_ids = 2;
+}
+
+message GetTableMetaTunnelEntryStatsResponse {
+  uint64 values = 1;
+}
+
 service Bmtor {
   rpc CreateTableBitmapClassificationEntry(
       CreateTableBitmapClassificationEntryRequest)
@@ -138,6 +165,9 @@ service Bmtor {
   rpc GetTableBitmapClassificationEntryAttribute(
       GetTableBitmapClassificationEntryAttributeRequest)
       returns (GetTableBitmapClassificationEntryAttributeResponse) {}
+  rpc GetTableBitmapClassificationEntryStats(
+      GetTableBitmapClassificationEntryStatsRequest)
+      returns (GetTableBitmapClassificationEntryStatsResponse) {}
   rpc CreateTableBitmapRouterEntry(CreateTableBitmapRouterEntryRequest)
       returns (CreateTableBitmapRouterEntryResponse) {}
   rpc RemoveTableBitmapRouterEntry(RemoveTableBitmapRouterEntryRequest)
@@ -145,10 +175,14 @@ service Bmtor {
   rpc GetTableBitmapRouterEntryAttribute(
       GetTableBitmapRouterEntryAttributeRequest)
       returns (GetTableBitmapRouterEntryAttributeResponse) {}
+  rpc GetTableBitmapRouterEntryStats(GetTableBitmapRouterEntryStatsRequest)
+      returns (GetTableBitmapRouterEntryStatsResponse) {}
   rpc CreateTableMetaTunnelEntry(CreateTableMetaTunnelEntryRequest)
       returns (CreateTableMetaTunnelEntryResponse) {}
   rpc RemoveTableMetaTunnelEntry(RemoveTableMetaTunnelEntryRequest)
       returns (RemoveTableMetaTunnelEntryResponse) {}
   rpc GetTableMetaTunnelEntryAttribute(GetTableMetaTunnelEntryAttributeRequest)
       returns (GetTableMetaTunnelEntryAttributeResponse) {}
+  rpc GetTableMetaTunnelEntryStats(GetTableMetaTunnelEntryStatsRequest)
+      returns (GetTableMetaTunnelEntryStatsResponse) {}
 }

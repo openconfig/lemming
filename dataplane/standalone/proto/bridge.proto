@@ -92,6 +92,15 @@ message GetBridgeAttributeResponse {
   BridgeAttribute attr = 1;
 }
 
+message GetBridgeStatsRequest {
+  uint64 oid = 1;
+  repeated BridgeStat counter_ids = 2;
+}
+
+message GetBridgeStatsResponse {
+  uint64 values = 1;
+}
+
 message CreateBridgePortRequest {
   option (sai_type) = OBJECT_TYPE_BRIDGE_PORT;
   uint64 switch = 1;
@@ -149,6 +158,15 @@ message GetBridgePortAttributeResponse {
   BridgePortAttribute attr = 1;
 }
 
+message GetBridgePortStatsRequest {
+  uint64 oid = 1;
+  repeated BridgePortStat counter_ids = 2;
+}
+
+message GetBridgePortStatsResponse {
+  uint64 values = 1;
+}
+
 service Bridge {
   rpc CreateBridge(CreateBridgeRequest) returns (CreateBridgeResponse) {}
   rpc RemoveBridge(RemoveBridgeRequest) returns (RemoveBridgeResponse) {}
@@ -156,6 +174,7 @@ service Bridge {
       returns (SetBridgeAttributeResponse) {}
   rpc GetBridgeAttribute(GetBridgeAttributeRequest)
       returns (GetBridgeAttributeResponse) {}
+  rpc GetBridgeStats(GetBridgeStatsRequest) returns (GetBridgeStatsResponse) {}
   rpc CreateBridgePort(CreateBridgePortRequest)
       returns (CreateBridgePortResponse) {}
   rpc RemoveBridgePort(RemoveBridgePortRequest)
@@ -164,4 +183,6 @@ service Bridge {
       returns (SetBridgePortAttributeResponse) {}
   rpc GetBridgePortAttribute(GetBridgePortAttributeRequest)
       returns (GetBridgePortAttributeResponse) {}
+  rpc GetBridgePortStats(GetBridgePortStatsRequest)
+      returns (GetBridgePortStatsResponse) {}
 }
