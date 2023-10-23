@@ -72,7 +72,7 @@ message GetTableBitmapClassificationEntryStatsRequest {
 }
 
 message GetTableBitmapClassificationEntryStatsResponse {
-  uint64 values = 1;
+  repeated uint64 values = 1;
 }
 
 message CreateTableBitmapRouterEntryRequest {
@@ -114,7 +114,7 @@ message GetTableBitmapRouterEntryStatsRequest {
 }
 
 message GetTableBitmapRouterEntryStatsResponse {
-  uint64 values = 1;
+  repeated uint64 values = 1;
 }
 
 message CreateTableMetaTunnelEntryRequest {
@@ -152,7 +152,7 @@ message GetTableMetaTunnelEntryStatsRequest {
 }
 
 message GetTableMetaTunnelEntryStatsResponse {
-  uint64 values = 1;
+  repeated uint64 values = 1;
 }
 
 service Bmtor {

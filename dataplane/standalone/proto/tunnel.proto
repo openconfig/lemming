@@ -195,7 +195,7 @@ message GetTunnelStatsRequest {
 }
 
 message GetTunnelStatsResponse {
-  uint64 values = 1;
+  repeated uint64 values = 1;
 }
 
 message CreateTunnelTermTableEntryRequest {

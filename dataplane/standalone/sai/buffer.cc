@@ -277,6 +277,24 @@ sai_status_t l_get_buffer_pool_stats(sai_object_id_t buffer_pool_id,
                                      uint64_t *counters) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
+  lemming::dataplane::sai::GetBufferPoolStatsRequest req;
+  lemming::dataplane::sai::GetBufferPoolStatsResponse resp;
+  grpc::ClientContext context;
+  req.set_oid(buffer_pool_id);
+
+  for (uint32_t i = 0; i < number_of_counters; i++) {
+    req.add_counter_ids(static_cast<lemming::dataplane::sai::BufferPoolStat>(
+        counter_ids[i] + 1));
+  }
+  grpc::Status status = buffer->GetBufferPoolStats(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  for (uint32_t i = 0; i < number_of_counters; i++) {
+    counters[i] = resp.values(i);
+  }
+
   return SAI_STATUS_SUCCESS;
 }
 
@@ -416,6 +434,26 @@ sai_status_t l_get_ingress_priority_group_stats(
     sai_object_id_t ingress_priority_group_id, uint32_t number_of_counters,
     const sai_stat_id_t *counter_ids, uint64_t *counters) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  lemming::dataplane::sai::GetIngressPriorityGroupStatsRequest req;
+  lemming::dataplane::sai::GetIngressPriorityGroupStatsResponse resp;
+  grpc::ClientContext context;
+  req.set_oid(ingress_priority_group_id);
+
+  for (uint32_t i = 0; i < number_of_counters; i++) {
+    req.add_counter_ids(
+        static_cast<lemming::dataplane::sai::IngressPriorityGroupStat>(
+            counter_ids[i] + 1));
+  }
+  grpc::Status status =
+      buffer->GetIngressPriorityGroupStats(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  for (uint32_t i = 0; i < number_of_counters; i++) {
+    counters[i] = resp.values(i);
+  }
 
   return SAI_STATUS_SUCCESS;
 }

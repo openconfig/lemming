@@ -171,7 +171,7 @@ message GetMacsecPortStatsRequest {
 }
 
 message GetMacsecPortStatsResponse {
-  uint64 values = 1;
+  repeated uint64 values = 1;
 }
 
 message CreateMacsecFlowRequest {
@@ -205,7 +205,7 @@ message GetMacsecFlowStatsRequest {
 }
 
 message GetMacsecFlowStatsResponse {
-  uint64 values = 1;
+  repeated uint64 values = 1;
 }
 
 message CreateMacsecScRequest {
@@ -259,7 +259,7 @@ message GetMacsecScStatsRequest {
 }
 
 message GetMacsecScStatsResponse {
-  uint64 values = 1;
+  repeated uint64 values = 1;
 }
 
 message CreateMacsecSaRequest {
@@ -309,7 +309,7 @@ message GetMacsecSaStatsRequest {
 }
 
 message GetMacsecSaStatsResponse {
-  uint64 values = 1;
+  repeated uint64 values = 1;
 }
 
 service Macsec {

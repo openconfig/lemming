@@ -477,6 +477,24 @@ sai_status_t l_get_ipsec_port_stats(sai_object_id_t ipsec_port_id,
                                     uint64_t *counters) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
+  lemming::dataplane::sai::GetIpsecPortStatsRequest req;
+  lemming::dataplane::sai::GetIpsecPortStatsResponse resp;
+  grpc::ClientContext context;
+  req.set_oid(ipsec_port_id);
+
+  for (uint32_t i = 0; i < number_of_counters; i++) {
+    req.add_counter_ids(static_cast<lemming::dataplane::sai::IpsecPortStat>(
+        counter_ids[i] + 1));
+  }
+  grpc::Status status = ipsec->GetIpsecPortStats(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  for (uint32_t i = 0; i < number_of_counters; i++) {
+    counters[i] = resp.values(i);
+  }
+
   return SAI_STATUS_SUCCESS;
 }
 
@@ -675,6 +693,24 @@ sai_status_t l_get_ipsec_sa_stats(sai_object_id_t ipsec_sa_id,
                                   const sai_stat_id_t *counter_ids,
                                   uint64_t *counters) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  lemming::dataplane::sai::GetIpsecSaStatsRequest req;
+  lemming::dataplane::sai::GetIpsecSaStatsResponse resp;
+  grpc::ClientContext context;
+  req.set_oid(ipsec_sa_id);
+
+  for (uint32_t i = 0; i < number_of_counters; i++) {
+    req.add_counter_ids(
+        static_cast<lemming::dataplane::sai::IpsecSaStat>(counter_ids[i] + 1));
+  }
+  grpc::Status status = ipsec->GetIpsecSaStats(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  for (uint32_t i = 0; i < number_of_counters; i++) {
+    counters[i] = resp.values(i);
+  }
 
   return SAI_STATUS_SUCCESS;
 }

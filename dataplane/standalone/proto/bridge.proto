@@ -98,7 +98,7 @@ message GetBridgeStatsRequest {
 }
 
 message GetBridgeStatsResponse {
-  uint64 values = 1;
+  repeated uint64 values = 1;
 }
 
 message CreateBridgePortRequest {
@@ -164,7 +164,7 @@ message GetBridgePortStatsRequest {
 }
 
 message GetBridgePortStatsResponse {
-  uint64 values = 1;
+  repeated uint64 values = 1;
 }
 
 service Bridge {

@@ -245,6 +245,24 @@ sai_status_t l_get_queue_stats(sai_object_id_t queue_id,
                                uint64_t *counters) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
+  lemming::dataplane::sai::GetQueueStatsRequest req;
+  lemming::dataplane::sai::GetQueueStatsResponse resp;
+  grpc::ClientContext context;
+  req.set_oid(queue_id);
+
+  for (uint32_t i = 0; i < number_of_counters; i++) {
+    req.add_counter_ids(
+        static_cast<lemming::dataplane::sai::QueueStat>(counter_ids[i] + 1));
+  }
+  grpc::Status status = queue->GetQueueStats(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  for (uint32_t i = 0; i < number_of_counters; i++) {
+    counters[i] = resp.values(i);
+  }
+
   return SAI_STATUS_SUCCESS;
 }
 

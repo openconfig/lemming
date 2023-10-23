@@ -137,7 +137,7 @@ message GetBfdSessionStatsRequest {
 }
 
 message GetBfdSessionStatsResponse {
-  uint64 values = 1;
+  repeated uint64 values = 1;
 }
 
 service Bfd {

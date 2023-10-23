@@ -159,7 +159,7 @@ message GetIpsecPortStatsRequest {
 }
 
 message GetIpsecPortStatsResponse {
-  uint64 values = 1;
+  repeated uint64 values = 1;
 }
 
 message CreateIpsecSaRequest {
@@ -223,7 +223,7 @@ message GetIpsecSaStatsRequest {
 }
 
 message GetIpsecSaStatsResponse {
-  uint64 values = 1;
+  repeated uint64 values = 1;
 }
 
 service Ipsec {

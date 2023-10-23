@@ -531,6 +531,24 @@ sai_status_t l_get_vlan_stats(sai_object_id_t vlan_id,
                               uint64_t *counters) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
+  lemming::dataplane::sai::GetVlanStatsRequest req;
+  lemming::dataplane::sai::GetVlanStatsResponse resp;
+  grpc::ClientContext context;
+  req.set_oid(vlan_id);
+
+  for (uint32_t i = 0; i < number_of_counters; i++) {
+    req.add_counter_ids(
+        static_cast<lemming::dataplane::sai::VlanStat>(counter_ids[i] + 1));
+  }
+  grpc::Status status = vlan->GetVlanStats(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  for (uint32_t i = 0; i < number_of_counters; i++) {
+    counters[i] = resp.values(i);
+  }
+
   return SAI_STATUS_SUCCESS;
 }
 

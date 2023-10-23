@@ -280,7 +280,7 @@ func populateTmplDataFromFunc(apis map[string]*protoAPITmplData, docInfo *docpar
 		})
 		resp.Fields = append(resp.Fields, protoTmplField{
 			Name:      "values",
-			ProtoType: "uint64",
+			ProtoType: "repeated uint64",
 			Index:     1,
 		})
 	default:
