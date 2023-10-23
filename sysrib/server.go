@@ -500,6 +500,9 @@ func (s *Server) ResolveAndProgramDiff(ctx context.Context) error {
 		}
 	}
 
+	s.resolvedRoutesMu.Lock()
+	defer s.resolvedRoutesMu.Unlock()
+
 	// Deprogram newly unresolved routes.
 	for routeKey, rr := range s.ProgrammedRoutes() {
 		if _, ok := newResolvedRoutes[routeKey]; !ok {
@@ -511,16 +514,15 @@ func (s *Server) ResolveAndProgramDiff(ctx context.Context) error {
 			s.programmedRoutesMu.Lock()
 			delete(s.programmedRoutes, rr.RouteKey)
 			s.programmedRoutesMu.Unlock()
-			// TODO(wenbli): Add ZAPI-handling for sending a route deletion message.
+			// ZAPI: If a new/updated route is deprogrammed, redistribute it to clients.
+			distributeRoute(s.zServer, rr, s.resolvedRoutes[routeKey], true)
 		}
 	}
 	if debugRIB {
 		s.PrintProgrammedRoutes()
 	}
 
-	s.resolvedRoutesMu.Lock()
 	s.resolvedRoutes = newResolvedRoutes
-	s.resolvedRoutesMu.Unlock()
 	return nil
 }
 
@@ -578,7 +580,7 @@ func (s *Server) resolveAndProgramDiffAux(ctx context.Context, niName string, ni
 			s.PrintProgrammedRoutes()
 		}
 		// ZAPI: If a new/updated route is programmed, redistribute it to clients.
-		distributeRoute(s.zServer, rr, route)
+		distributeRoute(s.zServer, rr, route, false)
 	}
 }
 

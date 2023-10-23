@@ -24,8 +24,11 @@ import (
 	"github.com/wenovus/gobgp/v3/pkg/zebra"
 )
 
-func distributeRoute(s *ZServer, rr *ResolvedRoute, route *Route) {
-	// TODO(wenbli): RedistributeRouteDel
+func distributeRoute(s *ZServer, rr *ResolvedRoute, route *Route, isDelete bool) {
+	msgType := zebra.RedistributeRouteAdd
+	if isDelete {
+		msgType = zebra.RedistributeRouteDel
+	}
 	zrouteBody, err := convertToZAPIRoute(rr.RouteKey, route, rr)
 	if err != nil {
 		log.Warningf("failed to convert resolved route to zebra BGP route: %v", err)
@@ -34,7 +37,7 @@ func distributeRoute(s *ZServer, rr *ResolvedRoute, route *Route) {
 		log.V(1).Info("Sending new route to ZAPI clients: ", zrouteBody)
 		s.ClientMutex.RLock()
 		for conn := range s.ClientMap {
-			serverSendMessage(conn, zebra.RedistributeRouteAdd, zrouteBody)
+			serverSendMessage(conn, msgType, zrouteBody)
 		}
 		s.ClientMutex.RUnlock()
 	}
@@ -84,13 +87,13 @@ func convertToZAPIRoute(routeKey RouteKey, route *Route, rr *ResolvedRoute) (*ze
 }
 
 // setZebraRoute calls setRoute after reformatting a zebra-formatted input route.
-func (s *Server) setZebraRoute(ctx context.Context, niName string, zroute *zebra.IPRouteBody) error {
+func (s *Server) setZebraRoute(ctx context.Context, niName string, zroute *zebra.IPRouteBody, isDelete bool) error {
 	if s == nil {
 		return fmt.Errorf("cannot add route to nil sysrib server")
 	}
 	log.V(1).Infof("setZebraRoute: %+v", *zroute)
 	route := convertZebraRoute(niName, zroute)
-	return s.setRoute(ctx, niName, route, false)
+	return s.setRoute(ctx, niName, route, isDelete)
 }
 
 // convertZebraRoute converts a zebra route to a Sysrib route.
