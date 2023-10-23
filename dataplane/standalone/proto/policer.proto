@@ -81,7 +81,7 @@ message GetPolicerStatsRequest {
 }
 
 message GetPolicerStatsResponse {
-  uint64 values = 1;
+  repeated uint64 values = 1;
 }
 
 service Policer {

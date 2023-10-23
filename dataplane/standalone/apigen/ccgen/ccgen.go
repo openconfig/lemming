@@ -214,6 +214,9 @@ func createCCData(meta *saiast.FuncMetadata, apiName string, sai *saiast.SAIAPI,
 			}
 			smt.EnumValue = attr.EnumName
 		}
+	case "get_stats":
+		convertFn = nil
+		opFn.AttrEnumType = strcase.UpperCamelCase(meta.TypeName + " stat")
 	default:
 		convertFn = nil
 	}
@@ -708,6 +711,23 @@ return msg;
 	if (!status.ok()) {
 		LOG(ERROR) << status.error_message();
 		return SAI_STATUS_FAILURE;
+	}
+	{{ else if eq .Operation "get_stats" }}
+	lemming::dataplane::sai::{{ .ReqType }} req;
+	lemming::dataplane::sai::{{ .RespType }} resp;
+	grpc::ClientContext context;
+	{{ if .OidVar -}} req.set_oid({{ .OidVar }}); {{ end }}
+	{{ if .EntryVar }} *req.mutable_entry() = {{ .EntryConversionFunc }}({{ .EntryVar }}); {{ end }}
+	for (uint32_t i = 0; i < number_of_counters; i++) {
+		req.add_counter_ids(static_cast<lemming::dataplane::sai::{{ .AttrEnumType }}>(counter_ids[i] + 1));
+	}
+	grpc::Status status = {{ .Client }}->{{ .RPCMethod }}(&context, req, &resp);
+	if (!status.ok()) {
+		LOG(ERROR) << status.error_message();
+		return SAI_STATUS_FAILURE;
+	}
+	for(uint32_t i = 0; i < number_of_counters; i++ ) {
+		counters[i] = resp.values(i);
 	}
 	{{ end }}
 	return SAI_STATUS_SUCCESS;

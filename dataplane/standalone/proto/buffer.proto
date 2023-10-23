@@ -84,7 +84,7 @@ message GetBufferPoolStatsRequest {
 }
 
 message GetBufferPoolStatsResponse {
-  uint64 values = 1;
+  repeated uint64 values = 1;
 }
 
 message CreateIngressPriorityGroupRequest {
@@ -129,7 +129,7 @@ message GetIngressPriorityGroupStatsRequest {
 }
 
 message GetIngressPriorityGroupStatsResponse {
-  uint64 values = 1;
+  repeated uint64 values = 1;
 }
 
 message CreateBufferProfileRequest {

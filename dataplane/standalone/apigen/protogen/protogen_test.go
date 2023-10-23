@@ -605,7 +605,7 @@ message GetFooStatsRequest {
 }
 
 message GetFooStatsResponse {
-	uint64 values = 1;
+	repeated uint64 values = 1;
 }
 
 

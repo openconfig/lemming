@@ -52,7 +52,7 @@ message GetCounterStatsRequest {
 }
 
 message GetCounterStatsResponse {
-  uint64 values = 1;
+  repeated uint64 values = 1;
 }
 
 service Counter {

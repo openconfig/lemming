@@ -262,6 +262,27 @@ sai_status_t l_get_table_bitmap_classification_entry_stats(
     uint64_t *counters) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
+  lemming::dataplane::sai::GetTableBitmapClassificationEntryStatsRequest req;
+  lemming::dataplane::sai::GetTableBitmapClassificationEntryStatsResponse resp;
+  grpc::ClientContext context;
+  req.set_oid(table_bitmap_classification_entry_id);
+
+  for (uint32_t i = 0; i < number_of_counters; i++) {
+    req.add_counter_ids(
+        static_cast<
+            lemming::dataplane::sai::TableBitmapClassificationEntryStat>(
+            counter_ids[i] + 1));
+  }
+  grpc::Status status =
+      bmtor->GetTableBitmapClassificationEntryStats(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  for (uint32_t i = 0; i < number_of_counters; i++) {
+    counters[i] = resp.values(i);
+  }
+
   return SAI_STATUS_SUCCESS;
 }
 
@@ -390,6 +411,26 @@ sai_status_t l_get_table_bitmap_router_entry_stats(
     const sai_stat_id_t *counter_ids, uint64_t *counters) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
+  lemming::dataplane::sai::GetTableBitmapRouterEntryStatsRequest req;
+  lemming::dataplane::sai::GetTableBitmapRouterEntryStatsResponse resp;
+  grpc::ClientContext context;
+  req.set_oid(table_bitmap_router_entry_id);
+
+  for (uint32_t i = 0; i < number_of_counters; i++) {
+    req.add_counter_ids(
+        static_cast<lemming::dataplane::sai::TableBitmapRouterEntryStat>(
+            counter_ids[i] + 1));
+  }
+  grpc::Status status =
+      bmtor->GetTableBitmapRouterEntryStats(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  for (uint32_t i = 0; i < number_of_counters; i++) {
+    counters[i] = resp.values(i);
+  }
+
   return SAI_STATUS_SUCCESS;
 }
 
@@ -506,6 +547,26 @@ sai_status_t l_get_table_meta_tunnel_entry_stats(
     sai_object_id_t table_meta_tunnel_entry_id, uint32_t number_of_counters,
     const sai_stat_id_t *counter_ids, uint64_t *counters) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  lemming::dataplane::sai::GetTableMetaTunnelEntryStatsRequest req;
+  lemming::dataplane::sai::GetTableMetaTunnelEntryStatsResponse resp;
+  grpc::ClientContext context;
+  req.set_oid(table_meta_tunnel_entry_id);
+
+  for (uint32_t i = 0; i < number_of_counters; i++) {
+    req.add_counter_ids(
+        static_cast<lemming::dataplane::sai::TableMetaTunnelEntryStat>(
+            counter_ids[i] + 1));
+  }
+  grpc::Status status =
+      bmtor->GetTableMetaTunnelEntryStats(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  for (uint32_t i = 0; i < number_of_counters; i++) {
+    counters[i] = resp.values(i);
+  }
 
   return SAI_STATUS_SUCCESS;
 }

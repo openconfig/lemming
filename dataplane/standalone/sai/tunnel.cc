@@ -645,6 +645,24 @@ sai_status_t l_get_tunnel_stats(sai_object_id_t tunnel_id,
                                 uint64_t *counters) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
+  lemming::dataplane::sai::GetTunnelStatsRequest req;
+  lemming::dataplane::sai::GetTunnelStatsResponse resp;
+  grpc::ClientContext context;
+  req.set_oid(tunnel_id);
+
+  for (uint32_t i = 0; i < number_of_counters; i++) {
+    req.add_counter_ids(
+        static_cast<lemming::dataplane::sai::TunnelStat>(counter_ids[i] + 1));
+  }
+  grpc::Status status = tunnel->GetTunnelStats(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  for (uint32_t i = 0; i < number_of_counters; i++) {
+    counters[i] = resp.values(i);
+  }
+
   return SAI_STATUS_SUCCESS;
 }
 

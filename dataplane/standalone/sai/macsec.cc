@@ -527,6 +527,24 @@ sai_status_t l_get_macsec_port_stats(sai_object_id_t macsec_port_id,
                                      uint64_t *counters) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
+  lemming::dataplane::sai::GetMacsecPortStatsRequest req;
+  lemming::dataplane::sai::GetMacsecPortStatsResponse resp;
+  grpc::ClientContext context;
+  req.set_oid(macsec_port_id);
+
+  for (uint32_t i = 0; i < number_of_counters; i++) {
+    req.add_counter_ids(static_cast<lemming::dataplane::sai::MacsecPortStat>(
+        counter_ids[i] + 1));
+  }
+  grpc::Status status = macsec->GetMacsecPortStats(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  for (uint32_t i = 0; i < number_of_counters; i++) {
+    counters[i] = resp.values(i);
+  }
+
   return SAI_STATUS_SUCCESS;
 }
 
@@ -639,6 +657,24 @@ sai_status_t l_get_macsec_flow_stats(sai_object_id_t macsec_flow_id,
                                      const sai_stat_id_t *counter_ids,
                                      uint64_t *counters) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  lemming::dataplane::sai::GetMacsecFlowStatsRequest req;
+  lemming::dataplane::sai::GetMacsecFlowStatsResponse resp;
+  grpc::ClientContext context;
+  req.set_oid(macsec_flow_id);
+
+  for (uint32_t i = 0; i < number_of_counters; i++) {
+    req.add_counter_ids(static_cast<lemming::dataplane::sai::MacsecFlowStat>(
+        counter_ids[i] + 1));
+  }
+  grpc::Status status = macsec->GetMacsecFlowStats(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  for (uint32_t i = 0; i < number_of_counters; i++) {
+    counters[i] = resp.values(i);
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -811,6 +847,24 @@ sai_status_t l_get_macsec_sc_stats(sai_object_id_t macsec_sc_id,
                                    uint64_t *counters) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
+  lemming::dataplane::sai::GetMacsecScStatsRequest req;
+  lemming::dataplane::sai::GetMacsecScStatsResponse resp;
+  grpc::ClientContext context;
+  req.set_oid(macsec_sc_id);
+
+  for (uint32_t i = 0; i < number_of_counters; i++) {
+    req.add_counter_ids(
+        static_cast<lemming::dataplane::sai::MacsecScStat>(counter_ids[i] + 1));
+  }
+  grpc::Status status = macsec->GetMacsecScStats(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  for (uint32_t i = 0; i < number_of_counters; i++) {
+    counters[i] = resp.values(i);
+  }
+
   return SAI_STATUS_SUCCESS;
 }
 
@@ -952,6 +1006,24 @@ sai_status_t l_get_macsec_sa_stats(sai_object_id_t macsec_sa_id,
                                    const sai_stat_id_t *counter_ids,
                                    uint64_t *counters) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  lemming::dataplane::sai::GetMacsecSaStatsRequest req;
+  lemming::dataplane::sai::GetMacsecSaStatsResponse resp;
+  grpc::ClientContext context;
+  req.set_oid(macsec_sa_id);
+
+  for (uint32_t i = 0; i < number_of_counters; i++) {
+    req.add_counter_ids(
+        static_cast<lemming::dataplane::sai::MacsecSaStat>(counter_ids[i] + 1));
+  }
+  grpc::Status status = macsec->GetMacsecSaStats(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  for (uint32_t i = 0; i < number_of_counters; i++) {
+    counters[i] = resp.values(i);
+  }
 
   return SAI_STATUS_SUCCESS;
 }

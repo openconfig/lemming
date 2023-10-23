@@ -451,7 +451,7 @@ message GetPortStatsRequest {
 }
 
 message GetPortStatsResponse {
-  uint64 values = 1;
+  repeated uint64 values = 1;
 }
 
 message CreatePortPoolRequest {
@@ -494,7 +494,7 @@ message GetPortPoolStatsRequest {
 }
 
 message GetPortPoolStatsResponse {
-  uint64 values = 1;
+  repeated uint64 values = 1;
 }
 
 message CreatePortConnectorRequest {

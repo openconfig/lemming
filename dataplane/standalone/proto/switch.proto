@@ -507,7 +507,7 @@ message GetSwitchStatsRequest {
 }
 
 message GetSwitchStatsResponse {
-  uint64 values = 1;
+  repeated uint64 values = 1;
 }
 
 message CreateSwitchTunnelRequest {

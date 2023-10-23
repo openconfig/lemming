@@ -303,6 +303,24 @@ sai_status_t l_get_bridge_stats(sai_object_id_t bridge_id,
                                 uint64_t *counters) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
+  lemming::dataplane::sai::GetBridgeStatsRequest req;
+  lemming::dataplane::sai::GetBridgeStatsResponse resp;
+  grpc::ClientContext context;
+  req.set_oid(bridge_id);
+
+  for (uint32_t i = 0; i < number_of_counters; i++) {
+    req.add_counter_ids(
+        static_cast<lemming::dataplane::sai::BridgeStat>(counter_ids[i] + 1));
+  }
+  grpc::Status status = bridge->GetBridgeStats(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  for (uint32_t i = 0; i < number_of_counters; i++) {
+    counters[i] = resp.values(i);
+  }
+
   return SAI_STATUS_SUCCESS;
 }
 
@@ -494,6 +512,24 @@ sai_status_t l_get_bridge_port_stats(sai_object_id_t bridge_port_id,
                                      const sai_stat_id_t *counter_ids,
                                      uint64_t *counters) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  lemming::dataplane::sai::GetBridgePortStatsRequest req;
+  lemming::dataplane::sai::GetBridgePortStatsResponse resp;
+  grpc::ClientContext context;
+  req.set_oid(bridge_port_id);
+
+  for (uint32_t i = 0; i < number_of_counters; i++) {
+    req.add_counter_ids(static_cast<lemming::dataplane::sai::BridgePortStat>(
+        counter_ids[i] + 1));
+  }
+  grpc::Status status = bridge->GetBridgePortStats(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  for (uint32_t i = 0; i < number_of_counters; i++) {
+    counters[i] = resp.values(i);
+  }
 
   return SAI_STATUS_SUCCESS;
 }
