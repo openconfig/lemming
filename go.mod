@@ -29,7 +29,7 @@ require (
 	github.com/spf13/viper v1.16.0
 	github.com/stoewer/go-strcase v1.3.0
 	github.com/vishvananda/netlink v1.2.1-beta.2
-	github.com/wenovus/gobgp/v3 v3.0.0-20230919213724-0f6fb3b45ead
+	github.com/wenovus/gobgp/v3 v3.0.0-20231024172553-6f8061a337a8
 	go.uber.org/mock v0.2.0
 	golang.org/x/exp v0.0.0-20230801115018-d63ba01acd4b
 	golang.org/x/sys v0.13.0

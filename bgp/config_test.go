@@ -20,14 +20,14 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/openconfig/lemming/gnmi/fakedevice"
 	"github.com/openconfig/lemming/gnmi/oc"
-	"github.com/wenovus/gobgp/v3/pkg/config/gobgp"
+	gobgpoc "github.com/wenovus/gobgp/v3/pkg/config/oc"
 )
 
 func TestIntendedToGoBGPPolicies(t *testing.T) {
 	tests := []struct {
 		desc          string
 		inOC          *oc.Root
-		wantBGPConfig *gobgp.BgpConfigSet
+		wantBGPConfig *gobgpoc.BgpConfigSet
 	}{{
 		desc: "big-test",
 		inOC: func() *oc.Root {
@@ -86,10 +86,10 @@ func TestIntendedToGoBGPPolicies(t *testing.T) {
 			bgpoc.GetOrCreateNeighbor("2.2.2.2").GetOrCreateApplyPolicy().SetExportPolicy([]string{policyName})
 			return root
 		}(),
-		wantBGPConfig: &gobgp.BgpConfigSet{
-			Global: gobgp.Global{
-				ApplyPolicy: gobgp.ApplyPolicy{
-					Config: gobgp.ApplyPolicyConfig{
+		wantBGPConfig: &gobgpoc.BgpConfigSet{
+			Global: gobgpoc.Global{
+				ApplyPolicy: gobgpoc.ApplyPolicy{
+					Config: gobgpoc.ApplyPolicyConfig{
 						ImportPolicyList: []string{
 							"1.1.1.1|foo",
 							"default-import|1.1.1.1",
@@ -108,265 +108,265 @@ func TestIntendedToGoBGPPolicies(t *testing.T) {
 					},
 				},
 			},
-			DefinedSets: gobgp.DefinedSets{
-				PrefixSets: []gobgp.PrefixSet{{
+			DefinedSets: gobgpoc.DefinedSets{
+				PrefixSets: []gobgpoc.PrefixSet{{
 					PrefixSetName: "V4-1",
-					PrefixList: []gobgp.Prefix{{
+					PrefixList: []gobgpoc.Prefix{{
 						IpPrefix:        "10.10.10.0/27",
 						MasklengthRange: "",
 					}},
 				}, {
 					PrefixSetName: "V4-2",
-					PrefixList: []gobgp.Prefix{{
+					PrefixList: []gobgpoc.Prefix{{
 						IpPrefix:        "10.20.0.0/16",
 						MasklengthRange: "29..29",
 					}},
 				}},
-				NeighborSets: []gobgp.NeighborSet{{
+				NeighborSets: []gobgpoc.NeighborSet{{
 					NeighborSetName:  "1.1.1.1",
 					NeighborInfoList: []string{"1.1.1.1"},
 				}, {
 					NeighborSetName:  "2.2.2.2",
 					NeighborInfoList: []string{"2.2.2.2"},
 				}},
-				BgpDefinedSets: gobgp.BgpDefinedSets{
-					CommunitySets: []gobgp.CommunitySet{{
+				BgpDefinedSets: gobgpoc.BgpDefinedSets{
+					CommunitySets: []gobgpoc.CommunitySet{{
 						CommunitySetName: "COMM1",
 						CommunityList:    []string{"12345:54321"},
 					}},
 				},
 			},
-			PolicyDefinitions: []gobgp.PolicyDefinition{{
+			PolicyDefinitions: []gobgpoc.PolicyDefinition{{
 				Name: "1.1.1.1|foo",
-				Statements: []gobgp.Statement{{
+				Statements: []gobgpoc.Statement{{
 					Name: "1.1.1.1|foo:foo-1",
-					Conditions: gobgp.Conditions{
+					Conditions: gobgpoc.Conditions{
 						CallPolicy:       "",
-						MatchPrefixSet:   gobgp.MatchPrefixSet{PrefixSet: "V4-1", MatchSetOptions: "any"},
-						MatchNeighborSet: gobgp.MatchNeighborSet{NeighborSet: "1.1.1.1", MatchSetOptions: ""}, MatchTagSet: gobgp.MatchTagSet{TagSet: "", MatchSetOptions: ""},
-						InstallProtocolEq: "", IgpConditions: gobgp.IgpConditions{}, BgpConditions: gobgp.BgpConditions{
-							MatchCommunitySet: gobgp.MatchCommunitySet{
+						MatchPrefixSet:   gobgpoc.MatchPrefixSet{PrefixSet: "V4-1", MatchSetOptions: "any"},
+						MatchNeighborSet: gobgpoc.MatchNeighborSet{NeighborSet: "1.1.1.1", MatchSetOptions: ""}, MatchTagSet: gobgpoc.MatchTagSet{TagSet: "", MatchSetOptions: ""},
+						InstallProtocolEq: "", IgpConditions: gobgpoc.IgpConditions{}, BgpConditions: gobgpoc.BgpConditions{
+							MatchCommunitySet: gobgpoc.MatchCommunitySet{
 								CommunitySet:    "",
 								MatchSetOptions: "any",
 							},
-							MatchExtCommunitySet: gobgp.MatchExtCommunitySet{
+							MatchExtCommunitySet: gobgpoc.MatchExtCommunitySet{
 								ExtCommunitySet: "",
 								MatchSetOptions: "",
 							},
-							MatchAsPathSet: gobgp.MatchAsPathSet{
+							MatchAsPathSet: gobgpoc.MatchAsPathSet{
 								AsPathSet: "", MatchSetOptions: "any",
 							},
 							MedEq:                0x0,
 							OriginEq:             "",
 							NextHopInList:        []string(nil),
-							AfiSafiInList:        []gobgp.AfiSafiType(nil),
+							AfiSafiInList:        []gobgpoc.AfiSafiType(nil),
 							LocalPrefEq:          0x0,
-							CommunityCount:       gobgp.CommunityCount{Operator: "", Value: 0x0},
-							AsPathLength:         gobgp.AsPathLength{Operator: "", Value: 0x0},
+							CommunityCount:       gobgpoc.CommunityCount{Operator: "", Value: 0x0},
+							AsPathLength:         gobgpoc.AsPathLength{Operator: "", Value: 0x0},
 							RouteType:            "",
 							RpkiValidationResult: "",
-							MatchLargeCommunitySet: gobgp.MatchLargeCommunitySet{
+							MatchLargeCommunitySet: gobgpoc.MatchLargeCommunitySet{
 								LargeCommunitySet: "",
 								MatchSetOptions:   "",
 							},
 						},
 					},
-					Actions: gobgp.Actions{
+					Actions: gobgpoc.Actions{
 						RouteDisposition: "none",
-						IgpActions:       gobgp.IgpActions{SetTag: ""},
-						BgpActions: gobgp.BgpActions{SetAsPathPrepend: gobgp.SetAsPathPrepend{RepeatN: 0x0, As: "0"},
-							SetCommunity:      gobgp.SetCommunity{SetCommunityMethod: gobgp.SetCommunityMethod{CommunitiesList: []string{"12345:54321"}, CommunitySetRef: ""}, Options: "add"},
-							SetExtCommunity:   gobgp.SetExtCommunity{SetExtCommunityMethod: gobgp.SetExtCommunityMethod{CommunitiesList: []string(nil), ExtCommunitySetRef: ""}, Options: ""},
+						IgpActions:       gobgpoc.IgpActions{SetTag: ""},
+						BgpActions: gobgpoc.BgpActions{SetAsPathPrepend: gobgpoc.SetAsPathPrepend{RepeatN: 0x0, As: "0"},
+							SetCommunity:      gobgpoc.SetCommunity{SetCommunityMethod: gobgpoc.SetCommunityMethod{CommunitiesList: []string{"12345:54321"}, CommunitySetRef: ""}, Options: "add"},
+							SetExtCommunity:   gobgpoc.SetExtCommunity{SetExtCommunityMethod: gobgpoc.SetExtCommunityMethod{CommunitiesList: []string(nil), ExtCommunitySetRef: ""}, Options: ""},
 							SetRouteOrigin:    "",
 							SetLocalPref:      0x0,
 							SetNextHop:        "",
 							SetMed:            "",
-							SetLargeCommunity: gobgp.SetLargeCommunity{SetLargeCommunityMethod: gobgp.SetLargeCommunityMethod{CommunitiesList: []string(nil)}, Options: ""},
+							SetLargeCommunity: gobgpoc.SetLargeCommunity{SetLargeCommunityMethod: gobgpoc.SetLargeCommunityMethod{CommunitiesList: []string(nil)}, Options: ""},
 						},
 					},
 				}, {
 					Name: "1.1.1.1|foo:foo-2",
-					Conditions: gobgp.Conditions{
+					Conditions: gobgpoc.Conditions{
 						CallPolicy:       "",
-						MatchPrefixSet:   gobgp.MatchPrefixSet{PrefixSet: "V4-2", MatchSetOptions: "any"},
-						MatchNeighborSet: gobgp.MatchNeighborSet{NeighborSet: "1.1.1.1", MatchSetOptions: ""}, MatchTagSet: gobgp.MatchTagSet{TagSet: "", MatchSetOptions: ""},
-						InstallProtocolEq: "", IgpConditions: gobgp.IgpConditions{}, BgpConditions: gobgp.BgpConditions{
-							MatchCommunitySet: gobgp.MatchCommunitySet{
+						MatchPrefixSet:   gobgpoc.MatchPrefixSet{PrefixSet: "V4-2", MatchSetOptions: "any"},
+						MatchNeighborSet: gobgpoc.MatchNeighborSet{NeighborSet: "1.1.1.1", MatchSetOptions: ""}, MatchTagSet: gobgpoc.MatchTagSet{TagSet: "", MatchSetOptions: ""},
+						InstallProtocolEq: "", IgpConditions: gobgpoc.IgpConditions{}, BgpConditions: gobgpoc.BgpConditions{
+							MatchCommunitySet: gobgpoc.MatchCommunitySet{
 								CommunitySet:    "",
 								MatchSetOptions: "any",
 							},
-							MatchExtCommunitySet: gobgp.MatchExtCommunitySet{
+							MatchExtCommunitySet: gobgpoc.MatchExtCommunitySet{
 								ExtCommunitySet: "",
 								MatchSetOptions: "",
 							},
-							MatchAsPathSet: gobgp.MatchAsPathSet{
+							MatchAsPathSet: gobgpoc.MatchAsPathSet{
 								AsPathSet: "", MatchSetOptions: "any",
 							},
 							MedEq:                0x0,
 							OriginEq:             "",
 							NextHopInList:        []string(nil),
-							AfiSafiInList:        []gobgp.AfiSafiType(nil),
+							AfiSafiInList:        []gobgpoc.AfiSafiType(nil),
 							LocalPrefEq:          0x0,
-							CommunityCount:       gobgp.CommunityCount{Operator: "", Value: 0x0},
-							AsPathLength:         gobgp.AsPathLength{Operator: "", Value: 0x0},
+							CommunityCount:       gobgpoc.CommunityCount{Operator: "", Value: 0x0},
+							AsPathLength:         gobgpoc.AsPathLength{Operator: "", Value: 0x0},
 							RouteType:            "",
 							RpkiValidationResult: "",
-							MatchLargeCommunitySet: gobgp.MatchLargeCommunitySet{
+							MatchLargeCommunitySet: gobgpoc.MatchLargeCommunitySet{
 								LargeCommunitySet: "",
 								MatchSetOptions:   "",
 							},
 						},
 					},
-					Actions: gobgp.Actions{
+					Actions: gobgpoc.Actions{
 						RouteDisposition: "accept-route",
-						IgpActions:       gobgp.IgpActions{SetTag: ""},
-						BgpActions: gobgp.BgpActions{SetAsPathPrepend: gobgp.SetAsPathPrepend{RepeatN: 0x0, As: "0"},
-							SetCommunity:      gobgp.SetCommunity{SetCommunityMethod: gobgp.SetCommunityMethod{CommunitiesList: []string(nil), CommunitySetRef: ""}, Options: "replace"},
-							SetExtCommunity:   gobgp.SetExtCommunity{SetExtCommunityMethod: gobgp.SetExtCommunityMethod{CommunitiesList: []string(nil), ExtCommunitySetRef: ""}, Options: ""},
+						IgpActions:       gobgpoc.IgpActions{SetTag: ""},
+						BgpActions: gobgpoc.BgpActions{SetAsPathPrepend: gobgpoc.SetAsPathPrepend{RepeatN: 0x0, As: "0"},
+							SetCommunity:      gobgpoc.SetCommunity{SetCommunityMethod: gobgpoc.SetCommunityMethod{CommunitiesList: []string(nil), CommunitySetRef: ""}, Options: "replace"},
+							SetExtCommunity:   gobgpoc.SetExtCommunity{SetExtCommunityMethod: gobgpoc.SetExtCommunityMethod{CommunitiesList: []string(nil), ExtCommunitySetRef: ""}, Options: ""},
 							SetRouteOrigin:    "",
 							SetLocalPref:      0x0,
 							SetNextHop:        "",
 							SetMed:            "",
-							SetLargeCommunity: gobgp.SetLargeCommunity{SetLargeCommunityMethod: gobgp.SetLargeCommunityMethod{CommunitiesList: []string(nil)}, Options: ""},
+							SetLargeCommunity: gobgpoc.SetLargeCommunity{SetLargeCommunityMethod: gobgpoc.SetLargeCommunityMethod{CommunitiesList: []string(nil)}, Options: ""},
 						},
 					},
 				}},
 			}, {
 				Name: "default-import|1.1.1.1",
-				Statements: []gobgp.Statement{{
+				Statements: []gobgpoc.Statement{{
 					Name: "default-import|1.1.1.1",
-					Conditions: gobgp.Conditions{
-						MatchNeighborSet: gobgp.MatchNeighborSet{NeighborSet: "1.1.1.1", MatchSetOptions: ""},
+					Conditions: gobgpoc.Conditions{
+						MatchNeighborSet: gobgpoc.MatchNeighborSet{NeighborSet: "1.1.1.1", MatchSetOptions: ""},
 					},
-					Actions: gobgp.Actions{
+					Actions: gobgpoc.Actions{
 						RouteDisposition: "accept-route",
 					},
 				}},
 			}, {
 				Name: "default-export|1.1.1.1",
-				Statements: []gobgp.Statement{{
+				Statements: []gobgpoc.Statement{{
 					Name: "default-export|1.1.1.1",
-					Conditions: gobgp.Conditions{
-						MatchNeighborSet: gobgp.MatchNeighborSet{NeighborSet: "1.1.1.1", MatchSetOptions: ""},
+					Conditions: gobgpoc.Conditions{
+						MatchNeighborSet: gobgpoc.MatchNeighborSet{NeighborSet: "1.1.1.1", MatchSetOptions: ""},
 					},
-					Actions: gobgp.Actions{
+					Actions: gobgpoc.Actions{
 						RouteDisposition: "reject-route",
 					},
 				}},
 			}, {
 				Name: "2.2.2.2|foo",
-				Statements: []gobgp.Statement{{
+				Statements: []gobgpoc.Statement{{
 					Name: "2.2.2.2|foo:foo-1",
-					Conditions: gobgp.Conditions{
+					Conditions: gobgpoc.Conditions{
 						CallPolicy:       "",
-						MatchPrefixSet:   gobgp.MatchPrefixSet{PrefixSet: "V4-1", MatchSetOptions: "any"},
-						MatchNeighborSet: gobgp.MatchNeighborSet{NeighborSet: "2.2.2.2", MatchSetOptions: ""}, MatchTagSet: gobgp.MatchTagSet{TagSet: "", MatchSetOptions: ""},
-						InstallProtocolEq: "", IgpConditions: gobgp.IgpConditions{}, BgpConditions: gobgp.BgpConditions{
-							MatchCommunitySet: gobgp.MatchCommunitySet{
+						MatchPrefixSet:   gobgpoc.MatchPrefixSet{PrefixSet: "V4-1", MatchSetOptions: "any"},
+						MatchNeighborSet: gobgpoc.MatchNeighborSet{NeighborSet: "2.2.2.2", MatchSetOptions: ""}, MatchTagSet: gobgpoc.MatchTagSet{TagSet: "", MatchSetOptions: ""},
+						InstallProtocolEq: "", IgpConditions: gobgpoc.IgpConditions{}, BgpConditions: gobgpoc.BgpConditions{
+							MatchCommunitySet: gobgpoc.MatchCommunitySet{
 								CommunitySet:    "",
 								MatchSetOptions: "any",
 							},
-							MatchExtCommunitySet: gobgp.MatchExtCommunitySet{
+							MatchExtCommunitySet: gobgpoc.MatchExtCommunitySet{
 								ExtCommunitySet: "",
 								MatchSetOptions: "",
 							},
-							MatchAsPathSet: gobgp.MatchAsPathSet{
+							MatchAsPathSet: gobgpoc.MatchAsPathSet{
 								AsPathSet: "", MatchSetOptions: "any",
 							},
 							MedEq:                0x0,
 							OriginEq:             "",
 							NextHopInList:        []string(nil),
-							AfiSafiInList:        []gobgp.AfiSafiType(nil),
+							AfiSafiInList:        []gobgpoc.AfiSafiType(nil),
 							LocalPrefEq:          0x0,
-							CommunityCount:       gobgp.CommunityCount{Operator: "", Value: 0x0},
-							AsPathLength:         gobgp.AsPathLength{Operator: "", Value: 0x0},
+							CommunityCount:       gobgpoc.CommunityCount{Operator: "", Value: 0x0},
+							AsPathLength:         gobgpoc.AsPathLength{Operator: "", Value: 0x0},
 							RouteType:            "",
 							RpkiValidationResult: "",
-							MatchLargeCommunitySet: gobgp.MatchLargeCommunitySet{
+							MatchLargeCommunitySet: gobgpoc.MatchLargeCommunitySet{
 								LargeCommunitySet: "",
 								MatchSetOptions:   "",
 							},
 						},
 					},
-					Actions: gobgp.Actions{
+					Actions: gobgpoc.Actions{
 						RouteDisposition: "none",
-						IgpActions:       gobgp.IgpActions{SetTag: ""},
-						BgpActions: gobgp.BgpActions{SetAsPathPrepend: gobgp.SetAsPathPrepend{RepeatN: 0x0, As: "0"},
-							SetCommunity:      gobgp.SetCommunity{SetCommunityMethod: gobgp.SetCommunityMethod{CommunitiesList: []string{"12345:54321"}, CommunitySetRef: ""}, Options: "add"},
-							SetExtCommunity:   gobgp.SetExtCommunity{SetExtCommunityMethod: gobgp.SetExtCommunityMethod{CommunitiesList: []string(nil), ExtCommunitySetRef: ""}, Options: ""},
+						IgpActions:       gobgpoc.IgpActions{SetTag: ""},
+						BgpActions: gobgpoc.BgpActions{SetAsPathPrepend: gobgpoc.SetAsPathPrepend{RepeatN: 0x0, As: "0"},
+							SetCommunity:      gobgpoc.SetCommunity{SetCommunityMethod: gobgpoc.SetCommunityMethod{CommunitiesList: []string{"12345:54321"}, CommunitySetRef: ""}, Options: "add"},
+							SetExtCommunity:   gobgpoc.SetExtCommunity{SetExtCommunityMethod: gobgpoc.SetExtCommunityMethod{CommunitiesList: []string(nil), ExtCommunitySetRef: ""}, Options: ""},
 							SetRouteOrigin:    "",
 							SetLocalPref:      0x0,
 							SetNextHop:        "",
 							SetMed:            "",
-							SetLargeCommunity: gobgp.SetLargeCommunity{SetLargeCommunityMethod: gobgp.SetLargeCommunityMethod{CommunitiesList: []string(nil)}, Options: ""},
+							SetLargeCommunity: gobgpoc.SetLargeCommunity{SetLargeCommunityMethod: gobgpoc.SetLargeCommunityMethod{CommunitiesList: []string(nil)}, Options: ""},
 						},
 					},
 				}, {
 					Name: "2.2.2.2|foo:foo-2",
-					Conditions: gobgp.Conditions{
+					Conditions: gobgpoc.Conditions{
 						CallPolicy:       "",
-						MatchPrefixSet:   gobgp.MatchPrefixSet{PrefixSet: "V4-2", MatchSetOptions: "any"},
-						MatchNeighborSet: gobgp.MatchNeighborSet{NeighborSet: "2.2.2.2", MatchSetOptions: ""}, MatchTagSet: gobgp.MatchTagSet{TagSet: "", MatchSetOptions: ""},
-						InstallProtocolEq: "", IgpConditions: gobgp.IgpConditions{}, BgpConditions: gobgp.BgpConditions{
-							MatchCommunitySet: gobgp.MatchCommunitySet{
+						MatchPrefixSet:   gobgpoc.MatchPrefixSet{PrefixSet: "V4-2", MatchSetOptions: "any"},
+						MatchNeighborSet: gobgpoc.MatchNeighborSet{NeighborSet: "2.2.2.2", MatchSetOptions: ""}, MatchTagSet: gobgpoc.MatchTagSet{TagSet: "", MatchSetOptions: ""},
+						InstallProtocolEq: "", IgpConditions: gobgpoc.IgpConditions{}, BgpConditions: gobgpoc.BgpConditions{
+							MatchCommunitySet: gobgpoc.MatchCommunitySet{
 								CommunitySet:    "",
 								MatchSetOptions: "any",
 							},
-							MatchExtCommunitySet: gobgp.MatchExtCommunitySet{
+							MatchExtCommunitySet: gobgpoc.MatchExtCommunitySet{
 								ExtCommunitySet: "",
 								MatchSetOptions: "",
 							},
-							MatchAsPathSet: gobgp.MatchAsPathSet{
+							MatchAsPathSet: gobgpoc.MatchAsPathSet{
 								AsPathSet: "", MatchSetOptions: "any",
 							},
 							MedEq:                0x0,
 							OriginEq:             "",
 							NextHopInList:        []string(nil),
-							AfiSafiInList:        []gobgp.AfiSafiType(nil),
+							AfiSafiInList:        []gobgpoc.AfiSafiType(nil),
 							LocalPrefEq:          0x0,
-							CommunityCount:       gobgp.CommunityCount{Operator: "", Value: 0x0},
-							AsPathLength:         gobgp.AsPathLength{Operator: "", Value: 0x0},
+							CommunityCount:       gobgpoc.CommunityCount{Operator: "", Value: 0x0},
+							AsPathLength:         gobgpoc.AsPathLength{Operator: "", Value: 0x0},
 							RouteType:            "",
 							RpkiValidationResult: "",
-							MatchLargeCommunitySet: gobgp.MatchLargeCommunitySet{
+							MatchLargeCommunitySet: gobgpoc.MatchLargeCommunitySet{
 								LargeCommunitySet: "",
 								MatchSetOptions:   "",
 							},
 						},
 					},
-					Actions: gobgp.Actions{
+					Actions: gobgpoc.Actions{
 						RouteDisposition: "accept-route",
-						IgpActions:       gobgp.IgpActions{SetTag: ""},
-						BgpActions: gobgp.BgpActions{SetAsPathPrepend: gobgp.SetAsPathPrepend{RepeatN: 0x0, As: "0"},
-							SetCommunity:      gobgp.SetCommunity{SetCommunityMethod: gobgp.SetCommunityMethod{CommunitiesList: []string(nil), CommunitySetRef: ""}, Options: "replace"},
-							SetExtCommunity:   gobgp.SetExtCommunity{SetExtCommunityMethod: gobgp.SetExtCommunityMethod{CommunitiesList: []string(nil), ExtCommunitySetRef: ""}, Options: ""},
+						IgpActions:       gobgpoc.IgpActions{SetTag: ""},
+						BgpActions: gobgpoc.BgpActions{SetAsPathPrepend: gobgpoc.SetAsPathPrepend{RepeatN: 0x0, As: "0"},
+							SetCommunity:      gobgpoc.SetCommunity{SetCommunityMethod: gobgpoc.SetCommunityMethod{CommunitiesList: []string(nil), CommunitySetRef: ""}, Options: "replace"},
+							SetExtCommunity:   gobgpoc.SetExtCommunity{SetExtCommunityMethod: gobgpoc.SetExtCommunityMethod{CommunitiesList: []string(nil), ExtCommunitySetRef: ""}, Options: ""},
 							SetRouteOrigin:    "",
 							SetLocalPref:      0x0,
 							SetNextHop:        "",
 							SetMed:            "",
-							SetLargeCommunity: gobgp.SetLargeCommunity{SetLargeCommunityMethod: gobgp.SetLargeCommunityMethod{CommunitiesList: []string(nil)}, Options: ""},
+							SetLargeCommunity: gobgpoc.SetLargeCommunity{SetLargeCommunityMethod: gobgpoc.SetLargeCommunityMethod{CommunitiesList: []string(nil)}, Options: ""},
 						},
 					},
 				}},
 			}, {
 				Name: "default-import|2.2.2.2",
-				Statements: []gobgp.Statement{{
+				Statements: []gobgpoc.Statement{{
 					Name: "default-import|2.2.2.2",
-					Conditions: gobgp.Conditions{
-						MatchNeighborSet: gobgp.MatchNeighborSet{NeighborSet: "2.2.2.2", MatchSetOptions: ""},
+					Conditions: gobgpoc.Conditions{
+						MatchNeighborSet: gobgpoc.MatchNeighborSet{NeighborSet: "2.2.2.2", MatchSetOptions: ""},
 					},
-					Actions: gobgp.Actions{
+					Actions: gobgpoc.Actions{
 						RouteDisposition: "reject-route",
 					},
 				}},
 			}, {
 				Name: "default-export|2.2.2.2",
-				Statements: []gobgp.Statement{{
+				Statements: []gobgpoc.Statement{{
 					Name: "default-export|2.2.2.2",
-					Conditions: gobgp.Conditions{
-						MatchNeighborSet: gobgp.MatchNeighborSet{NeighborSet: "2.2.2.2", MatchSetOptions: ""},
+					Conditions: gobgpoc.Conditions{
+						MatchNeighborSet: gobgpoc.MatchNeighborSet{NeighborSet: "2.2.2.2", MatchSetOptions: ""},
 					},
-					Actions: gobgp.Actions{
+					Actions: gobgpoc.Actions{
 						RouteDisposition: "reject-route",
 					},
 				}},
@@ -434,10 +434,10 @@ func TestIntendedToGoBGPPolicies(t *testing.T) {
 			bgpoc.GetOrCreateNeighbor("2.2.2.2").GetOrCreateApplyPolicy().SetExportPolicy([]string{policy2Name})
 			return root
 		}(),
-		wantBGPConfig: &gobgp.BgpConfigSet{
-			Global: gobgp.Global{
-				ApplyPolicy: gobgp.ApplyPolicy{
-					Config: gobgp.ApplyPolicyConfig{
+		wantBGPConfig: &gobgpoc.BgpConfigSet{
+			Global: gobgpoc.Global{
+				ApplyPolicy: gobgpoc.ApplyPolicy{
+					Config: gobgpoc.ApplyPolicyConfig{
 						ImportPolicyList: []string{
 							"default-import|1.1.1.1",
 							"default-import|2.2.2.2",
@@ -455,167 +455,167 @@ func TestIntendedToGoBGPPolicies(t *testing.T) {
 					},
 				},
 			},
-			DefinedSets: gobgp.DefinedSets{
-				PrefixSets: []gobgp.PrefixSet{{
+			DefinedSets: gobgpoc.DefinedSets{
+				PrefixSets: []gobgpoc.PrefixSet{{
 					PrefixSetName: "prefixset-foo",
-					PrefixList: []gobgp.Prefix{{
+					PrefixList: []gobgpoc.Prefix{{
 						IpPrefix:        "10.0.0.0/10",
 						MasklengthRange: "8..32",
 					}},
 				}},
-				NeighborSets: []gobgp.NeighborSet{{
+				NeighborSets: []gobgpoc.NeighborSet{{
 					NeighborSetName:  "1.1.1.1",
 					NeighborInfoList: []string{"1.1.1.1"},
 				}, {
 					NeighborSetName:  "2.2.2.2",
 					NeighborInfoList: []string{"2.2.2.2"},
 				}},
-				BgpDefinedSets: gobgp.BgpDefinedSets{
-					CommunitySets: []gobgp.CommunitySet{{
+				BgpDefinedSets: gobgpoc.BgpDefinedSets{
+					CommunitySets: []gobgpoc.CommunitySet{{
 						CommunitySetName: "COMM1",
 						CommunityList:    []string{"[0-9]+:[0-9]+"},
 					}},
 				},
 			},
-			PolicyDefinitions: []gobgp.PolicyDefinition{{
+			PolicyDefinitions: []gobgpoc.PolicyDefinition{{
 				Name: "1.1.1.1|foo",
-				Statements: []gobgp.Statement{{
+				Statements: []gobgpoc.Statement{{
 					Name: "1.1.1.1|foo:stmt",
-					Conditions: gobgp.Conditions{
+					Conditions: gobgpoc.Conditions{
 						CallPolicy:       "",
-						MatchPrefixSet:   gobgp.MatchPrefixSet{PrefixSet: "prefixset-foo", MatchSetOptions: "any"},
-						MatchNeighborSet: gobgp.MatchNeighborSet{NeighborSet: "1.1.1.1", MatchSetOptions: ""}, MatchTagSet: gobgp.MatchTagSet{TagSet: "", MatchSetOptions: ""},
-						InstallProtocolEq: "", IgpConditions: gobgp.IgpConditions{}, BgpConditions: gobgp.BgpConditions{
-							MatchCommunitySet: gobgp.MatchCommunitySet{
+						MatchPrefixSet:   gobgpoc.MatchPrefixSet{PrefixSet: "prefixset-foo", MatchSetOptions: "any"},
+						MatchNeighborSet: gobgpoc.MatchNeighborSet{NeighborSet: "1.1.1.1", MatchSetOptions: ""}, MatchTagSet: gobgpoc.MatchTagSet{TagSet: "", MatchSetOptions: ""},
+						InstallProtocolEq: "", IgpConditions: gobgpoc.IgpConditions{}, BgpConditions: gobgpoc.BgpConditions{
+							MatchCommunitySet: gobgpoc.MatchCommunitySet{
 								CommunitySet:    "",
 								MatchSetOptions: "any",
 							},
-							MatchExtCommunitySet: gobgp.MatchExtCommunitySet{
+							MatchExtCommunitySet: gobgpoc.MatchExtCommunitySet{
 								ExtCommunitySet: "",
 								MatchSetOptions: "",
 							},
-							MatchAsPathSet: gobgp.MatchAsPathSet{
+							MatchAsPathSet: gobgpoc.MatchAsPathSet{
 								AsPathSet: "", MatchSetOptions: "any",
 							},
 							MedEq:                0x0,
 							OriginEq:             "",
 							NextHopInList:        []string(nil),
-							AfiSafiInList:        []gobgp.AfiSafiType(nil),
+							AfiSafiInList:        []gobgpoc.AfiSafiType(nil),
 							LocalPrefEq:          0x0,
-							CommunityCount:       gobgp.CommunityCount{Operator: "", Value: 0x0},
-							AsPathLength:         gobgp.AsPathLength{Operator: "", Value: 0x0},
+							CommunityCount:       gobgpoc.CommunityCount{Operator: "", Value: 0x0},
+							AsPathLength:         gobgpoc.AsPathLength{Operator: "", Value: 0x0},
 							RouteType:            "",
 							RpkiValidationResult: "",
-							MatchLargeCommunitySet: gobgp.MatchLargeCommunitySet{
+							MatchLargeCommunitySet: gobgpoc.MatchLargeCommunitySet{
 								LargeCommunitySet: "",
 								MatchSetOptions:   "",
 							},
 						},
 					},
-					Actions: gobgp.Actions{
+					Actions: gobgpoc.Actions{
 						RouteDisposition: "none",
-						IgpActions:       gobgp.IgpActions{SetTag: ""},
-						BgpActions: gobgp.BgpActions{SetAsPathPrepend: gobgp.SetAsPathPrepend{RepeatN: 0x0, As: "0"},
-							SetCommunity:      gobgp.SetCommunity{SetCommunityMethod: gobgp.SetCommunityMethod{CommunitiesList: []string{"11111:11111", "22222:22222"}, CommunitySetRef: ""}, Options: "add"},
-							SetExtCommunity:   gobgp.SetExtCommunity{SetExtCommunityMethod: gobgp.SetExtCommunityMethod{CommunitiesList: []string(nil), ExtCommunitySetRef: ""}, Options: ""},
+						IgpActions:       gobgpoc.IgpActions{SetTag: ""},
+						BgpActions: gobgpoc.BgpActions{SetAsPathPrepend: gobgpoc.SetAsPathPrepend{RepeatN: 0x0, As: "0"},
+							SetCommunity:      gobgpoc.SetCommunity{SetCommunityMethod: gobgpoc.SetCommunityMethod{CommunitiesList: []string{"11111:11111", "22222:22222"}, CommunitySetRef: ""}, Options: "add"},
+							SetExtCommunity:   gobgpoc.SetExtCommunity{SetExtCommunityMethod: gobgpoc.SetExtCommunityMethod{CommunitiesList: []string(nil), ExtCommunitySetRef: ""}, Options: ""},
 							SetRouteOrigin:    "",
 							SetLocalPref:      0x0,
 							SetNextHop:        "",
 							SetMed:            "",
-							SetLargeCommunity: gobgp.SetLargeCommunity{SetLargeCommunityMethod: gobgp.SetLargeCommunityMethod{CommunitiesList: []string(nil)}, Options: ""},
+							SetLargeCommunity: gobgpoc.SetLargeCommunity{SetLargeCommunityMethod: gobgpoc.SetLargeCommunityMethod{CommunitiesList: []string(nil)}, Options: ""},
 						},
 					},
 				}},
 			}, {
 				Name: "default-import|1.1.1.1",
-				Statements: []gobgp.Statement{{
+				Statements: []gobgpoc.Statement{{
 					Name: "default-import|1.1.1.1",
-					Conditions: gobgp.Conditions{
-						MatchNeighborSet: gobgp.MatchNeighborSet{NeighborSet: "1.1.1.1", MatchSetOptions: ""},
+					Conditions: gobgpoc.Conditions{
+						MatchNeighborSet: gobgpoc.MatchNeighborSet{NeighborSet: "1.1.1.1", MatchSetOptions: ""},
 					},
-					Actions: gobgp.Actions{
+					Actions: gobgpoc.Actions{
 						RouteDisposition: "reject-route",
 					},
 				}},
 			}, {
 				Name: "default-export|1.1.1.1",
-				Statements: []gobgp.Statement{{
+				Statements: []gobgpoc.Statement{{
 					Name: "default-export|1.1.1.1",
-					Conditions: gobgp.Conditions{
-						MatchNeighborSet: gobgp.MatchNeighborSet{NeighborSet: "1.1.1.1", MatchSetOptions: ""},
+					Conditions: gobgpoc.Conditions{
+						MatchNeighborSet: gobgpoc.MatchNeighborSet{NeighborSet: "1.1.1.1", MatchSetOptions: ""},
 					},
-					Actions: gobgp.Actions{
+					Actions: gobgpoc.Actions{
 						RouteDisposition: "reject-route",
 					},
 				}},
 			}, {
 				Name: "2.2.2.2|bar",
-				Statements: []gobgp.Statement{{
+				Statements: []gobgpoc.Statement{{
 					Name: "2.2.2.2|bar:stmt",
-					Conditions: gobgp.Conditions{
+					Conditions: gobgpoc.Conditions{
 						CallPolicy:       "",
-						MatchPrefixSet:   gobgp.MatchPrefixSet{PrefixSet: "prefixset-foo", MatchSetOptions: "any"},
-						MatchNeighborSet: gobgp.MatchNeighborSet{NeighborSet: "2.2.2.2", MatchSetOptions: ""}, MatchTagSet: gobgp.MatchTagSet{TagSet: "", MatchSetOptions: ""},
-						InstallProtocolEq: "", IgpConditions: gobgp.IgpConditions{}, BgpConditions: gobgp.BgpConditions{
-							MatchCommunitySet: gobgp.MatchCommunitySet{
+						MatchPrefixSet:   gobgpoc.MatchPrefixSet{PrefixSet: "prefixset-foo", MatchSetOptions: "any"},
+						MatchNeighborSet: gobgpoc.MatchNeighborSet{NeighborSet: "2.2.2.2", MatchSetOptions: ""}, MatchTagSet: gobgpoc.MatchTagSet{TagSet: "", MatchSetOptions: ""},
+						InstallProtocolEq: "", IgpConditions: gobgpoc.IgpConditions{}, BgpConditions: gobgpoc.BgpConditions{
+							MatchCommunitySet: gobgpoc.MatchCommunitySet{
 								CommunitySet:    "",
 								MatchSetOptions: "any",
 							},
-							MatchExtCommunitySet: gobgp.MatchExtCommunitySet{
+							MatchExtCommunitySet: gobgpoc.MatchExtCommunitySet{
 								ExtCommunitySet: "",
 								MatchSetOptions: "",
 							},
-							MatchAsPathSet: gobgp.MatchAsPathSet{
+							MatchAsPathSet: gobgpoc.MatchAsPathSet{
 								AsPathSet: "", MatchSetOptions: "any",
 							},
 							MedEq:                0x0,
 							OriginEq:             "",
 							NextHopInList:        []string(nil),
-							AfiSafiInList:        []gobgp.AfiSafiType(nil),
+							AfiSafiInList:        []gobgpoc.AfiSafiType(nil),
 							LocalPrefEq:          0x0,
-							CommunityCount:       gobgp.CommunityCount{Operator: "", Value: 0x0},
-							AsPathLength:         gobgp.AsPathLength{Operator: "", Value: 0x0},
+							CommunityCount:       gobgpoc.CommunityCount{Operator: "", Value: 0x0},
+							AsPathLength:         gobgpoc.AsPathLength{Operator: "", Value: 0x0},
 							RouteType:            "",
 							RpkiValidationResult: "",
-							MatchLargeCommunitySet: gobgp.MatchLargeCommunitySet{
+							MatchLargeCommunitySet: gobgpoc.MatchLargeCommunitySet{
 								LargeCommunitySet: "",
 								MatchSetOptions:   "",
 							},
 						},
 					},
-					Actions: gobgp.Actions{
+					Actions: gobgpoc.Actions{
 						RouteDisposition: "accept-route",
-						IgpActions:       gobgp.IgpActions{SetTag: ""},
-						BgpActions: gobgp.BgpActions{SetAsPathPrepend: gobgp.SetAsPathPrepend{RepeatN: 0x0, As: "0"},
-							SetCommunity:      gobgp.SetCommunity{SetCommunityMethod: gobgp.SetCommunityMethod{CommunitiesList: []string{"[0-9]+:[0-9]+"}, CommunitySetRef: ""}, Options: "remove"},
-							SetExtCommunity:   gobgp.SetExtCommunity{SetExtCommunityMethod: gobgp.SetExtCommunityMethod{CommunitiesList: []string(nil), ExtCommunitySetRef: ""}, Options: ""},
+						IgpActions:       gobgpoc.IgpActions{SetTag: ""},
+						BgpActions: gobgpoc.BgpActions{SetAsPathPrepend: gobgpoc.SetAsPathPrepend{RepeatN: 0x0, As: "0"},
+							SetCommunity:      gobgpoc.SetCommunity{SetCommunityMethod: gobgpoc.SetCommunityMethod{CommunitiesList: []string{"[0-9]+:[0-9]+"}, CommunitySetRef: ""}, Options: "remove"},
+							SetExtCommunity:   gobgpoc.SetExtCommunity{SetExtCommunityMethod: gobgpoc.SetExtCommunityMethod{CommunitiesList: []string(nil), ExtCommunitySetRef: ""}, Options: ""},
 							SetRouteOrigin:    "",
 							SetLocalPref:      0x0,
 							SetNextHop:        "",
 							SetMed:            "",
-							SetLargeCommunity: gobgp.SetLargeCommunity{SetLargeCommunityMethod: gobgp.SetLargeCommunityMethod{CommunitiesList: []string(nil)}, Options: ""},
+							SetLargeCommunity: gobgpoc.SetLargeCommunity{SetLargeCommunityMethod: gobgpoc.SetLargeCommunityMethod{CommunitiesList: []string(nil)}, Options: ""},
 						},
 					},
 				}},
 			}, {
 				Name: "default-import|2.2.2.2",
-				Statements: []gobgp.Statement{{
+				Statements: []gobgpoc.Statement{{
 					Name: "default-import|2.2.2.2",
-					Conditions: gobgp.Conditions{
-						MatchNeighborSet: gobgp.MatchNeighborSet{NeighborSet: "2.2.2.2", MatchSetOptions: ""},
+					Conditions: gobgpoc.Conditions{
+						MatchNeighborSet: gobgpoc.MatchNeighborSet{NeighborSet: "2.2.2.2", MatchSetOptions: ""},
 					},
-					Actions: gobgp.Actions{
+					Actions: gobgpoc.Actions{
 						RouteDisposition: "reject-route",
 					},
 				}},
 			}, {
 				Name: "default-export|2.2.2.2",
-				Statements: []gobgp.Statement{{
+				Statements: []gobgpoc.Statement{{
 					Name: "default-export|2.2.2.2",
-					Conditions: gobgp.Conditions{
-						MatchNeighborSet: gobgp.MatchNeighborSet{NeighborSet: "2.2.2.2", MatchSetOptions: ""},
+					Conditions: gobgpoc.Conditions{
+						MatchNeighborSet: gobgpoc.MatchNeighborSet{NeighborSet: "2.2.2.2", MatchSetOptions: ""},
 					},
-					Actions: gobgp.Actions{
+					Actions: gobgpoc.Actions{
 						RouteDisposition: "reject-route",
 					},
 				}},
@@ -625,7 +625,7 @@ func TestIntendedToGoBGPPolicies(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			gotBGPConfig := &gobgp.BgpConfigSet{}
+			gotBGPConfig := &gobgpoc.BgpConfigSet{}
 			intendedToGoBGPPolicies(
 				tt.inOC.GetOrCreateNetworkInstance(fakedevice.DefaultNetworkInstance).GetOrCreateProtocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, fakedevice.BGPRoutingProtocol).GetOrCreateBgp(),
 				tt.inOC.GetOrCreateRoutingPolicy(),

@@ -21,7 +21,7 @@ go_library(
         "@com_github_openconfig_ygot//ygot",
         "@com_github_wenovus_gobgp_v3//api",
         "@com_github_wenovus_gobgp_v3//pkg/config",
-        "@com_github_wenovus_gobgp_v3//pkg/config/gobgp",
+        "@com_github_wenovus_gobgp_v3//pkg/config/oc",
         "@com_github_wenovus_gobgp_v3//pkg/server",
         "@com_github_wenovus_gobgp_v3//pkg/zebra",
         "@org_golang_x_exp//maps",
@@ -41,6 +41,6 @@ go_test(
         "//gnmi/oc",
         "@com_github_google_go_cmp//cmp",
         "@com_github_openconfig_ygot//ygot",
-        "@com_github_wenovus_gobgp_v3//pkg/config/gobgp",
+        "@com_github_wenovus_gobgp_v3//pkg/config/oc",
     ],
 )
