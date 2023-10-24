@@ -955,8 +955,8 @@ github.com/openconfig/goyang v1.4.1/go.mod h1:vX61x01Q46AzbZUzG617vWqh/cB+aisc+R
 github.com/openconfig/gribi v0.1.1-0.20210423184541-ce37eb4ba92f/go.mod h1:OoH46A2kV42cIXGyviYmAlGmn6cHjGduyC2+I9d/iVs=
 github.com/openconfig/gribi v1.0.0 h1:xMwEg0mBD+21mOxuFOw0d9dBKuIPwJEhMUUeUulZdLg=
 github.com/openconfig/gribi v1.0.0/go.mod h1:VFqGH2ZPFIfnKTimP4/AQB4OK0eySW5muJNFxXAwP6k=
-github.com/openconfig/gribigo v0.0.0-20230902004455-c7aff9365bec h1:Hz4EEMaBnNbumV+F+4snVI6FTwUmEogjgun/fY5F7F8=
-github.com/openconfig/gribigo v0.0.0-20230902004455-c7aff9365bec/go.mod h1:WLkZH98faNiIzeIIjCH9zaa41JOPXar+afoD7uUsRys=
+github.com/openconfig/gribigo v0.0.0-20231018021145-a1124db3ca83 h1:4H2eDRDWGYvbX8+cfHiEnB4tu0jhjZql7OSfLTXRdFY=
+github.com/openconfig/gribigo v0.0.0-20231018021145-a1124db3ca83/go.mod h1:D/+hEFq2bJzbn/T6WVjQfsIHMfKNOp24Yfg/VZc3nwI=
 github.com/openconfig/grpctunnel v0.0.0-20220819142823-6f5422b8ca70 h1:t6SvvdfWCMlw0XPlsdxO8EgO+q/fXnTevDjdYREKFwU=
 github.com/openconfig/kne v0.1.14 h1:3xHy2bP+rr+2/2uFqliWXGjMPR7umO6mvFXh/TA2aJE=
 github.com/openconfig/kne v0.1.14/go.mod h1:gMhrUKk6aveDaLSo2yi/25tDm9pSlmgRkG8IP45CGqs=

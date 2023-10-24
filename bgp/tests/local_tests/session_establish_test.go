@@ -24,6 +24,7 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"github.com/openconfig/gribigo/fluent"
 	"github.com/openconfig/lemming"
 	"github.com/openconfig/lemming/bgp"
 	"github.com/openconfig/lemming/gnmi"
@@ -37,12 +38,14 @@ import (
 	"google.golang.org/grpc/credentials/local"
 
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
+	spb "github.com/openconfig/gribi/v1/proto/service"
 )
 
 // TODO: Consolidate test helper code with integration and other unit tests.
 
 type Device struct {
 	yc       *ygnmi.Client
+	gribic   *fluent.GRIBIClient
 	ID       uint
 	AS       uint32
 	bgpPort  uint16
@@ -142,13 +145,29 @@ func newLemming(t *testing.T, id uint, as uint32, connectedIntfs []*AddIntfActio
 		configureInterface(t, intf, l.GNMI())
 	}
 
+	conn, err := grpc.Dial(gribiTarget, grpc.WithTransportCredentials(local.NewCredentials()))
+	if err != nil {
+		t.Fatalf("cannot dial gNMI server, %v", err)
+	}
+	gribistub := spb.NewGRIBIClient(conn)
+
+	c := fluent.NewClient()
+	c.Connection().WithStub(gribistub).
+		WithRedundancyMode(fluent.ElectedPrimaryClient).
+		WithPersistence().
+		WithFIBACK().
+		WithInitialElectionID(1, 0)
+	c.Start(context.Background(), t)
+	c.StartSending(context.Background(), t)
+
 	return &Device{
 		yc:       ygnmiClient(t, target, gnmiTarget),
+		gribic:   c,
 		ID:       id,
 		AS:       as,
 		bgpPort:  1111,
 		RouterID: routerID,
-	}, func() { l.Stop() }
+	}, func() { l.Stop(); c.Stop(t) }
 }
 
 type DevicePair struct {

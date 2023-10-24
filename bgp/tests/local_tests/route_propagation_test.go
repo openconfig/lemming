@@ -15,9 +15,15 @@
 package local_test
 
 import (
+	"context"
 	"fmt"
 	"testing"
+	"time"
 
+	"github.com/openconfig/gribigo/chk"
+	"github.com/openconfig/gribigo/client"
+	"github.com/openconfig/gribigo/constants"
+	"github.com/openconfig/gribigo/fluent"
 	"github.com/openconfig/lemming/bgp"
 	"github.com/openconfig/lemming/gnmi/fakedevice"
 	"github.com/openconfig/lemming/gnmi/oc"
@@ -33,6 +39,32 @@ func installStaticRoute(t *testing.T, dut *Device, route *oc.NetworkInstance_Pro
 	Await(t, dut, staticp.Static(*route.Prefix).State(), route)
 }
 
+// awaitTimeout calls a fluent client Await, adding a timeout to the context.
+func awaitTimeout(ctx context.Context, c *fluent.GRIBIClient, t testing.TB, timeout time.Duration) error {
+	subctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+	return c.Await(subctx, t)
+}
+
+func installGRIBIRoutes(ctx context.Context, t *testing.T, dut *Device, entries []fluent.GRIBIEntry, results []*client.OpResult, isDelete bool) {
+	if err := awaitTimeout(ctx, dut.gribic, t, time.Minute); err != nil {
+		t.Fatalf("Await got error during session negotiation: %v", err)
+	}
+
+	if !isDelete {
+		dut.gribic.Modify().AddEntry(t, entries...)
+	} else {
+		dut.gribic.Modify().DeleteEntry(t, entries...)
+	}
+	if err := awaitTimeout(ctx, dut.gribic, t, time.Minute); err != nil {
+		t.Fatalf("Await got error for entries: %v", err)
+	}
+
+	for _, wantResult := range results {
+		chk.HasResult(t, dut.gribic.Results(t), wantResult, chk.IgnoreOperationID())
+	}
+}
+
 func formatYgot(v any) string {
 	str, err := ygot.Marshal7951(v, ygot.JSONIndent("  "))
 	if err != nil {
@@ -42,12 +74,13 @@ func formatYgot(v any) string {
 }
 
 func awaitNotPresent[T any](t *testing.T, d *Device, q ygnmi.SingletonQuery[T]) {
+	t.Helper()
 	w := Watch(t, d, q, rejectTimeout, func(val *ygnmi.Value[T]) bool {
 		_, ok := val.Val()
 		return !ok
 	})
 	if _, ok := w.Await(t); !ok {
-		t.Fatalf("prefix (%v) was not rejected within timeout.", d)
+		t.Fatalf("prefix was not rejected within timeout at %v.", d)
 	}
 }
 
@@ -97,53 +130,122 @@ func TestRoutePropagation(t *testing.T) {
 	}
 	awaitDefaultPolicies()
 
-	prefix := "10.10.10.0/24"
-	installStaticRoute(t, dut1, &oc.NetworkInstance_Protocol_Static{
-		Prefix: ygot.String(prefix),
-		NextHop: map[string]*oc.NetworkInstance_Protocol_Static_NextHop{
-			"single": {
-				Index:   ygot.String("single"),
-				NextHop: oc.UnionString("192.0.2.1"),
-				Recurse: ygot.Bool(true),
-			},
-		},
-	})
-
 	staticp := ocpath.Root().NetworkInstance(fakedevice.DefaultNetworkInstance).Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_STATIC, fakedevice.StaticRoutingProtocol)
-	v := GetAll(t, dut1, staticp.StaticAny().Config())
-	t.Logf("Installed static route: %s", formatYgot(v))
 
-	v4uni := ocpath.Root().NetworkInstance(fakedevice.DefaultNetworkInstance).Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, fakedevice.BGPRoutingProtocol).Bgp().Rib().AfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST).Ipv4Unicast()
-	// Check route is in Adj-In of dut2.
-	Await(t, dut2, v4uni.Neighbor(dut1.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), prefix)
-	Await(t, dut2, v4uni.Neighbor(dut1.RouterID).AdjRibInPost().Route(prefix, 0).Prefix().State(), prefix)
-	// Check route is in Loc-RIB of dut2.
-	Await(t, dut2, v4uni.LocRib().Route(prefix, oc.UnionString(dut1.RouterID), 0).Prefix().State(), prefix)
-	// Check route is in Adj-Out of dut2.
-	Await(t, dut2, v4uni.Neighbor(dut3.RouterID).AdjRibOutPre().Route(prefix, 0).Prefix().State(), prefix)
-	Await(t, dut2, v4uni.Neighbor(dut3.RouterID).AdjRibOutPost().Route(prefix, 0).Prefix().State(), prefix)
+	checkpath := func(t *testing.T, prefix string, static bool) {
+		if static {
+			installStaticRoute(t, dut1, &oc.NetworkInstance_Protocol_Static{
+				Prefix: ygot.String(prefix),
+				NextHop: map[string]*oc.NetworkInstance_Protocol_Static_NextHop{
+					"single": {
+						Index:   ygot.String("single"),
+						NextHop: oc.UnionString("192.0.2.1"),
+						Recurse: ygot.Bool(true),
+					},
+				},
+			})
 
-	// Check route is in Adj-In of dut3.
-	Await(t, dut3, v4uni.Neighbor(dut2.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), prefix)
+			v := GetAll(t, dut1, staticp.StaticAny().Config())
+			t.Logf("Installed static route: %s", formatYgot(v))
+		} else {
+			installGRIBIRoutes(context.Background(), t, dut1,
+				[]fluent.GRIBIEntry{
+					fluent.NextHopEntry().WithNetworkInstance(fakedevice.DefaultNetworkInstance).
+						WithIndex(42).WithIPAddress("192.0.2.1"),
+					fluent.NextHopGroupEntry().WithNetworkInstance(fakedevice.DefaultNetworkInstance).
+						WithID(10).AddNextHop(42, 1),
+					fluent.IPv4Entry().WithNetworkInstance(fakedevice.DefaultNetworkInstance).
+						WithPrefix(prefix).WithNextHopGroup(10),
+				}, []*client.OpResult{
+					fluent.OperationResult().
+						WithNextHopOperation(42).
+						WithProgrammingResult(fluent.InstalledInFIB).
+						WithOperationType(constants.Add).
+						AsResult(),
+					fluent.OperationResult().
+						WithNextHopGroupOperation(10).
+						WithProgrammingResult(fluent.InstalledInFIB).
+						WithOperationType(constants.Add).
+						AsResult(),
+					fluent.OperationResult().
+						WithIPv4Operation(prefix).
+						WithProgrammingResult(fluent.InstalledInFIB).
+						WithOperationType(constants.Add).
+						AsResult(),
+				},
+				false,
+			)
+		}
 
-	// Check route is in Adj-In of dut4.
-	Await(t, dut4, v4uni.Neighbor(dut3.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), prefix)
+		v4uni := ocpath.Root().NetworkInstance(fakedevice.DefaultNetworkInstance).Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, fakedevice.BGPRoutingProtocol).Bgp().Rib().AfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST).Ipv4Unicast()
+		// Check route is in Adj-In of dut2.
+		Await(t, dut2, v4uni.Neighbor(dut1.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), prefix)
+		Await(t, dut2, v4uni.Neighbor(dut1.RouterID).AdjRibInPost().Route(prefix, 0).Prefix().State(), prefix)
+		// Check route is in Loc-RIB of dut2.
+		Await(t, dut2, v4uni.LocRib().Route(prefix, oc.UnionString(dut1.RouterID), 0).Prefix().State(), prefix)
+		// Check route is in Adj-Out of dut2.
+		Await(t, dut2, v4uni.Neighbor(dut3.RouterID).AdjRibOutPre().Route(prefix, 0).Prefix().State(), prefix)
+		Await(t, dut2, v4uni.Neighbor(dut3.RouterID).AdjRibOutPost().Route(prefix, 0).Prefix().State(), prefix)
 
-	// -------------- Test deletion ----------------
-	Delete[*oc.NetworkInstance_Protocol_Static](t, dut1, staticp.Static(prefix).Config())
+		// Check route is in Adj-In of dut3.
+		Await(t, dut3, v4uni.Neighbor(dut2.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), prefix)
 
-	// Check route is not in Adj-In of dut2.
-	awaitNotPresent(t, dut2, v4uni.Neighbor(dut1.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State())
-	awaitNotPresent(t, dut2, v4uni.Neighbor(dut1.RouterID).AdjRibInPost().Route(prefix, 0).Prefix().State())
-	// Check route is not in Loc-RIB of dut2.
-	awaitNotPresent(t, dut2, v4uni.LocRib().Route(prefix, oc.UnionString(dut1.RouterID), 0).Prefix().State())
-	// Check route is not in Adj-Out of dut2.
-	awaitNotPresent(t, dut2, v4uni.Neighbor(dut3.RouterID).AdjRibOutPre().Route(prefix, 0).Prefix().State())
-	awaitNotPresent(t, dut2, v4uni.Neighbor(dut3.RouterID).AdjRibOutPost().Route(prefix, 0).Prefix().State())
+		// Check route is in Adj-In of dut4.
+		Await(t, dut4, v4uni.Neighbor(dut3.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), prefix)
 
-	// Check route is not in Adj-In of dut3.
-	awaitNotPresent(t, dut3, v4uni.Neighbor(dut2.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State())
+		// -------------- Test deletion ----------------
+		if static {
+			Delete[*oc.NetworkInstance_Protocol_Static](t, dut1, staticp.Static(prefix).Config())
+		} else {
+			installGRIBIRoutes(context.Background(), t, dut1,
+				[]fluent.GRIBIEntry{
+					fluent.IPv4Entry().WithNetworkInstance(fakedevice.DefaultNetworkInstance).
+						WithPrefix(prefix).WithNextHopGroup(10),
+					fluent.NextHopGroupEntry().WithNetworkInstance(fakedevice.DefaultNetworkInstance).
+						WithID(10).AddNextHop(42, 1),
+					fluent.NextHopEntry().WithNetworkInstance(fakedevice.DefaultNetworkInstance).
+						WithIndex(42).WithIPAddress("192.0.2.1"),
+				}, []*client.OpResult{
+					fluent.OperationResult().
+						WithNextHopOperation(42).
+						WithProgrammingResult(fluent.InstalledInFIB).
+						WithOperationType(constants.Delete).
+						AsResult(),
+					fluent.OperationResult().
+						WithNextHopGroupOperation(10).
+						WithProgrammingResult(fluent.InstalledInFIB).
+						WithOperationType(constants.Delete).
+						AsResult(),
+					fluent.OperationResult().
+						WithIPv4Operation(prefix).
+						WithProgrammingResult(fluent.InstalledInFIB).
+						WithOperationType(constants.Delete).
+						AsResult(),
+				},
+				true,
+			)
+		}
 
-	// Check route is not in Adj-In of dut4.
-	awaitNotPresent(t, dut4, v4uni.Neighbor(dut3.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State())
+		// Check route is not in Adj-In of dut2.
+		awaitNotPresent(t, dut2, v4uni.Neighbor(dut1.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State())
+		awaitNotPresent(t, dut2, v4uni.Neighbor(dut1.RouterID).AdjRibInPost().Route(prefix, 0).Prefix().State())
+		// Check route is not in Loc-RIB of dut2.
+		awaitNotPresent(t, dut2, v4uni.LocRib().Route(prefix, oc.UnionString(dut1.RouterID), 0).Prefix().State())
+		// Check route is not in Adj-Out of dut2.
+		awaitNotPresent(t, dut2, v4uni.Neighbor(dut3.RouterID).AdjRibOutPre().Route(prefix, 0).Prefix().State())
+		awaitNotPresent(t, dut2, v4uni.Neighbor(dut3.RouterID).AdjRibOutPost().Route(prefix, 0).Prefix().State())
+
+		// Check route is not in Adj-In of dut3.
+		awaitNotPresent(t, dut3, v4uni.Neighbor(dut2.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State())
+
+		// Check route is not in Adj-In of dut4.
+		awaitNotPresent(t, dut4, v4uni.Neighbor(dut3.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State())
+	}
+
+	t.Run("static", func(t *testing.T) {
+		checkpath(t, "10.10.10.0/24", true)
+	})
+	t.Run("gribi", func(t *testing.T) {
+		checkpath(t, "20.20.20.0/24", false)
+	})
 }
