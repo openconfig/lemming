@@ -51,8 +51,8 @@ func installGRIBIRoutes(ctx context.Context, t *testing.T, dut *Device, entries 
 		t.Fatalf("Await got error during session negotiation: %v", err)
 	}
 
-	dut.gribic.Modify().AddEntry(t, entries...)
 	if !isDelete {
+		dut.gribic.Modify().AddEntry(t, entries...)
 	} else {
 		dut.gribic.Modify().DeleteEntry(t, entries...)
 	}
