@@ -116,24 +116,28 @@ func createGRIBIServer(gClient gpb.GNMIClient, target string, root *oc.Root) (*s
 		if aft != constants.IPv4 || !ok {
 			log.Errorf("Incompatible type of route receive, type: %s, key: %v", aft, key)
 		}
-		if optype != constants.Add {
-			// TODO(wenbli): handle replace and delete :-)
-			// For replace, just need to ensure Sysrib's gRPC supports it.
-			return
-		}
-		nhs, err := afthelper.NextHopAddrsForPrefix(ribs, netinst, prefix)
-		if err != nil {
-			log.Errorf("cannot add netinst:prefix %s:%s to the RIB, %v", netinst, prefix, err)
-			return
-		}
 		nhSum := []*afthelper.NextHopSummary{}
-		for _, nh := range nhs {
-			nhSum = append(nhSum, nh)
+		switch optype {
+		case constants.Add, constants.Replace:
+			nhs, err := afthelper.NextHopAddrsForPrefix(ribs, netinst, prefix)
+			if err != nil {
+				log.Errorf("cannot add netinst:prefix %s:%s to the RIB, %v", netinst, prefix, err)
+				return
+			}
+			for _, nh := range nhs {
+				nhSum = append(nhSum, nh)
+			}
+		case constants.Delete:
+		default:
+			return
 		}
 
 		routeReq, err := createSetRouteRequest(prefix, nhSum)
 		if err != nil {
 			log.Errorf("Cannot create SetRouteRequest: %v", err)
+		}
+		if optype == constants.Delete {
+			routeReq.Delete = true
 		}
 
 		resp, err := gzebraClient.SetRoute(context.Background(), routeReq)

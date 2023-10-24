@@ -28,6 +28,7 @@ import (
 	"github.com/openconfig/ondatra/gnmi"
 	"github.com/openconfig/ondatra/gnmi/otg/otgpath"
 	"github.com/openconfig/ygnmi/ygnmi"
+	"golang.org/x/exp/slices"
 
 	"github.com/openconfig/lemming/internal/attrs"
 	"github.com/openconfig/lemming/internal/binding"
@@ -198,11 +199,12 @@ func TestIPv4Entry(t *testing.T) {
 	ate.OTG().PushConfig(t, ateTop)
 
 	cases := []struct {
-		desc                 string
-		entries              []fluent.GRIBIEntry
-		wantOperationResults []*client.OpResult
+		desc                    string
+		entries                 []fluent.GRIBIEntry
+		wantAddOperationResults []*client.OpResult
+		wantDelOperationResults []*client.OpResult
 	}{{
-		desc: "Single next-hop",
+		desc: "single-next-hop",
 		entries: []fluent.GRIBIEntry{
 			fluent.NextHopEntry().WithNetworkInstance(defaultNetworkInstance).
 				WithIndex(nhIndex).WithIPAddress(atePort2.IPv4),
@@ -211,7 +213,7 @@ func TestIPv4Entry(t *testing.T) {
 			fluent.IPv4Entry().WithNetworkInstance(defaultNetworkInstance).
 				WithPrefix(ateDstNetCIDR).WithNextHopGroup(nhgIndex),
 		},
-		wantOperationResults: []*client.OpResult{
+		wantAddOperationResults: []*client.OpResult{
 			fluent.OperationResult().
 				WithNextHopOperation(nhIndex).
 				WithProgrammingResult(fluent.InstalledInFIB).
@@ -228,8 +230,25 @@ func TestIPv4Entry(t *testing.T) {
 				WithOperationType(constants.Add).
 				AsResult(),
 		},
+		wantDelOperationResults: []*client.OpResult{
+			fluent.OperationResult().
+				WithIPv4Operation(ateDstNetCIDR).
+				WithProgrammingResult(fluent.InstalledInFIB).
+				WithOperationType(constants.Delete).
+				AsResult(),
+			fluent.OperationResult().
+				WithNextHopGroupOperation(nhgIndex).
+				WithProgrammingResult(fluent.InstalledInFIB).
+				WithOperationType(constants.Delete).
+				AsResult(),
+			fluent.OperationResult().
+				WithNextHopOperation(nhIndex).
+				WithProgrammingResult(fluent.InstalledInFIB).
+				WithOperationType(constants.Delete).
+				AsResult(),
+		},
 	}, {
-		desc: "Recursive next-hop",
+		desc: "recursive-next-hop",
 		entries: []fluent.GRIBIEntry{
 			// Add an IPv4Entry for 198.51.100.0/24 pointing to 203.0.113.1/32.
 			fluent.NextHopEntry().WithNetworkInstance(defaultNetworkInstance).
@@ -246,7 +265,7 @@ func TestIPv4Entry(t *testing.T) {
 			fluent.IPv4Entry().WithNetworkInstance(defaultNetworkInstance).
 				WithPrefix(ateIndirectNHCIDR).WithNextHopGroup(nhgIndex2),
 		},
-		wantOperationResults: []*client.OpResult{
+		wantAddOperationResults: []*client.OpResult{
 			fluent.OperationResult().
 				WithNextHopOperation(nhIndex3).
 				WithProgrammingResult(fluent.InstalledInFIB).
@@ -278,6 +297,38 @@ func TestIPv4Entry(t *testing.T) {
 				WithOperationType(constants.Add).
 				AsResult(),
 		},
+		wantDelOperationResults: []*client.OpResult{
+			fluent.OperationResult().
+				WithNextHopOperation(nhIndex3).
+				WithProgrammingResult(fluent.InstalledInFIB).
+				WithOperationType(constants.Delete).
+				AsResult(),
+			fluent.OperationResult().
+				WithNextHopGroupOperation(nhgIndex3).
+				WithProgrammingResult(fluent.InstalledInFIB).
+				WithOperationType(constants.Delete).
+				AsResult(),
+			fluent.OperationResult().
+				WithIPv4Operation(ateDstNetCIDR).
+				WithProgrammingResult(fluent.InstalledInFIB).
+				WithOperationType(constants.Delete).
+				AsResult(),
+			fluent.OperationResult().
+				WithNextHopOperation(nhIndex2).
+				WithProgrammingResult(fluent.InstalledInFIB).
+				WithOperationType(constants.Delete).
+				AsResult(),
+			fluent.OperationResult().
+				WithNextHopGroupOperation(nhgIndex2).
+				WithProgrammingResult(fluent.InstalledInFIB).
+				WithOperationType(constants.Delete).
+				AsResult(),
+			fluent.OperationResult().
+				WithIPv4Operation(ateIndirectNHCIDR).
+				WithProgrammingResult(fluent.InstalledInFIB).
+				WithOperationType(constants.Delete).
+				AsResult(),
+		},
 	}}
 	for _, tc := range cases {
 		var txPkts, rxPkts uint64
@@ -300,22 +351,15 @@ func TestIPv4Entry(t *testing.T) {
 			if err := awaitTimeout(ctx, c, t, time.Minute); err != nil {
 				t.Fatalf("Await got error for entries: %v", err)
 			}
-			defer func() {
-				c.Modify().DeleteEntry(t, tc.entries...)
-				if err := awaitTimeout(ctx, c, t, time.Minute); err != nil {
-					t.Fatalf("Await got error for entries: %v", err)
-				}
-			}()
 
-			for _, wantResult := range tc.wantOperationResults {
+			for _, wantResult := range tc.wantAddOperationResults {
 				chk.HasResult(t, c.Results(t), wantResult, chk.IgnoreOperationID())
 			}
 
 			// Send some traffic to make sure neighbor cache is warmed up on the dut.
 			testTraffic(t, ate, ateTop, atePort1, atePort2, 1*time.Second)
 
-			loss := testTraffic(t, ate, ateTop, atePort1, atePort2, 10*time.Second)
-			if loss > 1 {
+			if loss := testTraffic(t, ate, ateTop, atePort1, atePort2, 5*time.Second); loss > 1 {
 				t.Errorf("Loss: got %g, want <= 1", loss)
 			}
 
@@ -325,10 +369,27 @@ func TestIPv4Entry(t *testing.T) {
 			rxPkts += gnmi.Get(t, otg, gnmi.OTG().Flow("Flow").Counters().InPkts().State())
 			testCounters(t, dut, txPkts, rxPkts)
 
+			slices.Reverse(tc.entries)
+			c.Modify().DeleteEntry(t, tc.entries...)
+			if err := awaitTimeout(ctx, c, t, time.Minute); err != nil {
+				t.Fatalf("Await got error for entries: %v", err)
+			}
+
+			// Send some traffic to make sure neighbor cache is warmed up on the dut.
+			testTraffic(t, ate, ateTop, atePort1, atePort2, 1*time.Second)
+
+			for _, wantResult := range tc.wantDelOperationResults {
+				chk.HasResult(t, c.Results(t), wantResult, chk.IgnoreOperationID())
+			}
+
+			if loss := testTraffic(t, ate, ateTop, atePort1, atePort2, 5*time.Second); loss != 100 {
+				t.Errorf("Loss: got %g, want 100", loss)
+			}
+
+			// TODO: Test flush once it's implemented.
 			gribic.Flush(context.Background(), &gribipb.FlushRequest{
 				NetworkInstance: &gribipb.FlushRequest_All{All: &gribipb.Empty{}},
 			})
-			// TODO: Test that entries are deleted and that there is no more traffic.
 		})
 	}
 }
