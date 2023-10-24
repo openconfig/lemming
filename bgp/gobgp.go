@@ -33,7 +33,7 @@ import (
 	"github.com/openconfig/ygot/ygot"
 	api "github.com/wenovus/gobgp/v3/api"
 	"github.com/wenovus/gobgp/v3/pkg/config"
-	"github.com/wenovus/gobgp/v3/pkg/config/gobgp"
+	gobgpoc "github.com/wenovus/gobgp/v3/pkg/config/oc"
 	"github.com/wenovus/gobgp/v3/pkg/server"
 )
 
@@ -107,7 +107,7 @@ type bgpTask struct {
 	targetName    string
 	zapiURL       string
 	bgpServer     *server.BgpServer
-	currentConfig *gobgp.BgpConfigSet
+	currentConfig *gobgpoc.BgpConfigSet
 	listenPort    uint16
 
 	bgpStarted bool
@@ -184,7 +184,7 @@ func (t *bgpTask) start(_ context.Context, yclient *ygnmi.Client) error {
 	}
 
 	// Initialize values required for reconile to be called.
-	t.currentConfig = &gobgp.BgpConfigSet{}
+	t.currentConfig = &gobgpoc.BgpConfigSet{}
 
 	// Monitor changes to BGP intended config and apply them.
 	bgpWatcher := ygnmi.Watch(

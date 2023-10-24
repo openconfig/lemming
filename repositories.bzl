@@ -2026,8 +2026,8 @@ def go_repositories():
         name = "com_github_wenovus_gobgp_v3",
         build_file_proto_mode = "disable",
         importpath = "github.com/wenovus/gobgp/v3",
-        sum = "h1:CTaAeRUMWmcr/m8nyRq9wx5+SFO+ymR9V4Dv1ZpFZV0=",
-        version = "v3.0.0-20230919213724-0f6fb3b45ead",
+        sum = "h1:Cy3PTEuyD9zcf2Fav9SphOOkrEYXIhhzKpuRWfbLVvo=",
+        version = "v3.0.0-20231024172553-6f8061a337a8",
     )
     go_repository(
         name = "com_github_xanzy_ssh_agent",
