@@ -313,27 +313,6 @@ func (ri *routerInterface) CreateRouterInterface(ctx context.Context, req *saipb
 	return &saipb.CreateRouterInterfaceResponse{Oid: id}, nil
 }
 
-// GetPortStats returns the stats for a port.
-func (ri *routerInterface) GetRouterInterfaceStats(ctx context.Context, req *saipb.GetRouterInterfaceStatsRequest) (*saipb.GetRouterInterfaceStatsResponse, error) {
-	resp := &saipb.GetRouterInterfaceStatsResponse{}
-	for _, id := range req.GetCounterIds() {
-		switch id {
-		case saipb.RouterInterfaceStat_ROUTER_INTERFACE_STAT_IN_OCTETS:
-			resp.Values = append(resp.Values, 1)
-		case saipb.RouterInterfaceStat_ROUTER_INTERFACE_STAT_IN_PACKETS:
-			resp.Values = append(resp.Values, 2)
-		case saipb.RouterInterfaceStat_ROUTER_INTERFACE_STAT_OUT_PACKETS:
-			resp.Values = append(resp.Values, 3)
-		case saipb.RouterInterfaceStat_ROUTER_INTERFACE_STAT_OUT_OCTETS:
-			resp.Values = append(resp.Values, 4)
-		default:
-			resp.Values = append(resp.Values, 0)
-			log.Infof("unknown rif stat: %v", id)
-		}
-	}
-	return resp, nil
-}
-
 type vlan struct {
 	saipb.UnimplementedVlanServer
 	mgr       *attrmgr.AttrMgr
