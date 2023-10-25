@@ -24,8 +24,6 @@ go_library(
         "@com_github_wenovus_gobgp_v3//pkg/config/oc",
         "@com_github_wenovus_gobgp_v3//pkg/server",
         "@com_github_wenovus_gobgp_v3//pkg/zebra",
-        "@org_golang_x_exp//maps",
-        "@org_golang_x_exp//slices",
     ],
 )
 

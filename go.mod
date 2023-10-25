@@ -1,6 +1,6 @@
 module github.com/openconfig/lemming
 
-go 1.20
+go 1.21
 
 require (
 	cloud.google.com/go/cloudbuild v1.13.0
@@ -31,7 +31,6 @@ require (
 	github.com/vishvananda/netlink v1.2.1-beta.2
 	github.com/wenovus/gobgp/v3 v3.0.0-20231024172553-6f8061a337a8
 	go.uber.org/mock v0.2.0
-	golang.org/x/exp v0.0.0-20230801115018-d63ba01acd4b
 	golang.org/x/sys v0.13.0
 	google.golang.org/api v0.126.0
 	google.golang.org/grpc v1.58.0-dev
@@ -113,6 +112,7 @@ require (
 	go.opencensus.io v0.24.0 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
 	golang.org/x/crypto v0.14.0 // indirect
+	golang.org/x/exp v0.0.0-20230801115018-d63ba01acd4b // indirect
 	golang.org/x/net v0.17.0 // indirect
 	golang.org/x/oauth2 v0.8.0 // indirect
 	golang.org/x/sync v0.3.0 // indirect

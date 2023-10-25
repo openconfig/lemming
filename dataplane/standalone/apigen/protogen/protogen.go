@@ -17,12 +17,11 @@ package protogen
 
 import (
 	"fmt"
+	"maps"
+	"slices"
 	"strings"
 	"text/template"
 	"unicode"
-
-	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
 
 	"github.com/openconfig/lemming/dataplane/standalone/apigen/docparser"
 	"github.com/openconfig/lemming/dataplane/standalone/apigen/saiast"

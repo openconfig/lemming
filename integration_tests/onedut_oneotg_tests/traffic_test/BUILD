@@ -21,6 +21,5 @@ go_test(
         "@com_github_openconfig_ondatra//gnmi",
         "@com_github_openconfig_ondatra//gnmi/otg/otgpath",
         "@com_github_openconfig_ygnmi//ygnmi",
-        "@org_golang_x_exp//slices",
     ],
 )

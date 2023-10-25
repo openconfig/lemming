@@ -477,10 +477,10 @@ index 459deb3..f05cc21 100644
  option go_package = "github.com/openconfig/gnoi/otdr";
  
 diff --git a/packet_link_qualification/BUILD.bazel b/packet_link_qualification/BUILD.bazel
-index 249bc3a..86892a3 100644
+index 249bc3a..3a8b2b9 100644
 --- a/packet_link_qualification/BUILD.bazel
 +++ b/packet_link_qualification/BUILD.bazel
-@@ -5,6 +5,7 @@ load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+@@ -5,23 +5,31 @@ load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
  proto_library(
      name = "linkqual_proto",
      srcs = ["packet_link_qualification.proto"],
@@ -488,9 +488,13 @@ index 249bc3a..86892a3 100644
      visibility = ["//visibility:public"],
      deps = [
          "//types:types_proto",
-@@ -15,13 +16,20 @@ proto_library(
+         "@com_google_protobuf//:duration_proto",
+         "@com_google_protobuf//:timestamp_proto",
+-        "@go_googleapis//google/rpc:status_proto",
++        "@googleapis//google/rpc:status_proto",
+     ],
  )
- 
+
  go_proto_library(
 -    name = "linkqual_go_proto",
 +    name = "packet_link_qualification_go_proto",
@@ -501,8 +505,9 @@ index 249bc3a..86892a3 100644
      visibility = ["//visibility:public"],
      deps = [
 -        "//types:types_go_proto",
+-        "@go_googleapis//google/rpc:status_go_proto",
 +        "//types",
-         "@go_googleapis//google/rpc:status_go_proto",
++        "@googleapis//google/rpc:status_proto",
      ],
  )
 +

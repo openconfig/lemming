@@ -16,11 +16,10 @@ package bgp
 
 import (
 	"fmt"
+	"maps"
+	"slices"
 	"strconv"
 	"strings"
-
-	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
 
 	log "github.com/golang/glog"
 	"github.com/openconfig/lemming/gnmi/oc"

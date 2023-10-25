@@ -7,7 +7,7 @@ index ff79e62..335d3f2 100644
          ":p4data_proto",
          "@com_google_protobuf//:any_proto",
 -        "@com_google_googleapis//google/rpc:status_proto"
-+        "@go_googleapis//google/rpc:status_proto",
++        "@googleapis//google/rpc:status_proto",
      ],
      # TODO(github.com/grpc/grpc/issues/20675): strip_import_prefix brakes
      # cc_grpc_library. Make proto folder the Bazel root folder as a workaround.
@@ -24,7 +24,7 @@ index ff79e62..335d3f2 100644
      deps = [
          ":p4info_go_proto",
 -        "@com_google_googleapis//google/rpc:status_go_proto",
-+        "@go_googleapis//google/rpc:status_go_proto",
++        "@googleapis//google/rpc:status_proto",
      ],
  )
  

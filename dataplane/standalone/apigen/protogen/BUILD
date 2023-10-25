@@ -10,8 +10,6 @@ go_library(
         "//dataplane/standalone/apigen/saiast",
         "@com_github_golang_glog//:glog",
         "@com_github_stoewer_go_strcase//:go-strcase",
-        "@org_golang_x_exp//maps",
-        "@org_golang_x_exp//slices",
     ],
 )
 

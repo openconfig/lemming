@@ -15,10 +15,9 @@
 package bgp
 
 import (
+	"maps"
 	"net/netip"
-
-	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
+	"slices"
 
 	log "github.com/golang/glog"
 	"github.com/openconfig/lemming/gnmi/oc"
