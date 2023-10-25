@@ -122,6 +122,18 @@ func TestInterceptor(t *testing.T) {
 				PreIngressAcl: proto.Uint64(300),
 			},
 		},
+	}, {
+		desc: "stats request",
+		info: &grpc.UnaryServerInfo{FullMethod: "/lemming.dataplane.sai.Port/GetPortStats"},
+		attrs: map[string]map[int32]*protoreflect.Value{
+			"10": {
+				int32(saipb.SwitchAttr_SWITCH_ATTR_CPU_PORT): ptrToValue(protoreflect.ValueOfUint64(100)),
+			},
+		},
+		req: &saipb.GetPortStatsRequest{
+			Oid: 10,
+		},
+		want: &saipb.GetPortStatsResponse{},
 	}}
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
