@@ -113,7 +113,7 @@ func (mgr *AttrMgr) Interceptor(ctx context.Context, req any, info *grpc.UnarySe
 			return respMsg, nil
 		}
 		mgr.storeAttributes(id, reqMsg)
-	} else if strings.Contains(info.FullMethod, "Get") {
+	} else if strings.Contains(info.FullMethod, "Get") && strings.Contains(info.FullMethod, "Attribute") {
 		if err := mgr.PopulateAttributes(reqMsg, respMsg); err != nil {
 			return nil, err
 		}
