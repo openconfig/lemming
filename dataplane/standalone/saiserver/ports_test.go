@@ -17,6 +17,7 @@ package saiserver
 import (
 	"context"
 	"fmt"
+	"io"
 	"net"
 	"testing"
 
@@ -251,6 +252,88 @@ func TestSetPortAttribute(t *testing.T) {
 	}
 }
 
+func TestGetPortStats(t *testing.T) {
+	tests := []struct {
+		desc         string
+		req          *saipb.GetPortStatsRequest
+		counterReply *fwdpb.ObjectCountersReply
+		want         *saipb.GetPortStatsResponse
+		wantErr      string
+	}{{
+		desc: "all stats",
+		req: &saipb.GetPortStatsRequest{
+			Oid: 1,
+			CounterIds: []saipb.PortStat{
+				saipb.PortStat_PORT_STAT_IF_IN_UCAST_PKTS,
+				saipb.PortStat_PORT_STAT_IF_IN_NON_UCAST_PKTS,
+				saipb.PortStat_PORT_STAT_IF_IN_ERRORS,
+				saipb.PortStat_PORT_STAT_IF_OUT_UCAST_PKTS,
+				saipb.PortStat_PORT_STAT_IF_OUT_NON_UCAST_PKTS,
+				saipb.PortStat_PORT_STAT_IF_OUT_ERRORS,
+				saipb.PortStat_PORT_STAT_IF_IN_OCTETS,
+				saipb.PortStat_PORT_STAT_IF_OUT_OCTETS,
+				saipb.PortStat_PORT_STAT_IF_IN_DISCARDS,
+				saipb.PortStat_PORT_STAT_IF_OUT_DISCARDS,
+			},
+		},
+		counterReply: &fwdpb.ObjectCountersReply{
+			Counters: []*fwdpb.Counter{{
+				Id:    fwdpb.CounterId_COUNTER_ID_TX_DROP_PACKETS,
+				Value: 1,
+			}, {
+				Id:    fwdpb.CounterId_COUNTER_ID_RX_DROP_PACKETS,
+				Value: 2,
+			}, {
+				Id:    fwdpb.CounterId_COUNTER_ID_TX_OCTETS,
+				Value: 3,
+			}, {
+				Id:    fwdpb.CounterId_COUNTER_ID_RX_OCTETS,
+				Value: 4,
+			}, {
+				Id:    fwdpb.CounterId_COUNTER_ID_TX_ERROR_PACKETS,
+				Value: 5,
+			}, {
+				Id:    fwdpb.CounterId_COUNTER_ID_TX_NON_UCAST_PACKETS,
+				Value: 6,
+			}, {
+				Id:    fwdpb.CounterId_COUNTER_ID_TX_UCAST_PACKETS,
+				Value: 7,
+			}, {
+				Id:    fwdpb.CounterId_COUNTER_ID_RX_ERROR_PACKETS,
+				Value: 8,
+			}, {
+				Id:    fwdpb.CounterId_COUNTER_ID_RX_NON_UCAST_PACKETS,
+				Value: 9,
+			}, {
+				Id:    fwdpb.CounterId_COUNTER_ID_RX_UCAST_PACKETS,
+				Value: 10,
+			}},
+		},
+		want: &saipb.GetPortStatsResponse{
+			Values: []uint64{10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+		},
+	}}
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			dplane := &fakePortDataplaneAPI{
+				counterReplies: []*fwdpb.ObjectCountersReply{tt.counterReply},
+			}
+			c, _, stopFn := newTestPort(t, dplane)
+			defer stopFn()
+			got, gotErr := c.GetPortStats(context.TODO(), tt.req)
+			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
+				t.Fatalf("SetPortAttribute() unexpected err: %s", diff)
+			}
+			if gotErr != nil {
+				return
+			}
+			if d := cmp.Diff(got, tt.want, protocmp.Transform()); d != "" {
+				t.Errorf("SetPortAttribute() failed: diff(-got,+want)\n:%s", d)
+			}
+		})
+	}
+}
+
 func TestCreateHostif(t *testing.T) {
 	tests := []struct {
 		desc            string
@@ -380,8 +463,10 @@ func newTestHostif(t testing.TB, api portDataplaneAPI) (saipb.HostifClient, *att
 }
 
 type fakePortDataplaneAPI struct {
-	gotPortStateReq  []*fwdpb.PortStateRequest
-	gotPortCreateReq []*dpb.CreatePortRequest
+	gotPortStateReq   []*fwdpb.PortStateRequest
+	gotPortCreateReq  []*dpb.CreatePortRequest
+	counterReplies    []*fwdpb.ObjectCountersReply
+	counterRepliesIdx int
 }
 
 func (f *fakePortDataplaneAPI) ID() string {
@@ -396,4 +481,13 @@ func (f *fakePortDataplaneAPI) CreatePort(_ context.Context, req *dpb.CreatePort
 func (f *fakePortDataplaneAPI) PortState(_ context.Context, req *fwdpb.PortStateRequest) (*fwdpb.PortStateReply, error) {
 	f.gotPortStateReq = append(f.gotPortStateReq, req)
 	return nil, nil
+}
+
+func (f *fakePortDataplaneAPI) ObjectCounters(context.Context, *fwdpb.ObjectCountersRequest) (*fwdpb.ObjectCountersReply, error) {
+	if f.counterRepliesIdx > len(f.counterReplies) {
+		return nil, io.EOF
+	}
+	r := f.counterReplies[f.counterRepliesIdx]
+	f.counterRepliesIdx++
+	return r, nil
 }

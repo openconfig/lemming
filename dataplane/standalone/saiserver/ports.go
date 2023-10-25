@@ -26,6 +26,8 @@ import (
 
 	"github.com/openconfig/lemming/dataplane/standalone/saiserver/attrmgr"
 
+	log "github.com/golang/glog"
+
 	saipb "github.com/openconfig/lemming/dataplane/standalone/proto"
 	dpb "github.com/openconfig/lemming/proto/dataplane"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
@@ -35,6 +37,7 @@ type portDataplaneAPI interface {
 	ID() string
 	CreatePort(ctx context.Context, req *dpb.CreatePortRequest) (*dpb.CreatePortResponse, error)
 	PortState(ctx context.Context, req *fwdpb.PortStateRequest) (*fwdpb.PortStateReply, error)
+	ObjectCounters(context.Context, *fwdpb.ObjectCountersRequest) (*fwdpb.ObjectCountersReply, error)
 }
 
 func newPort(mgr *attrmgr.AttrMgr, dataplane portDataplaneAPI, s *grpc.Server) *port {
@@ -255,6 +258,51 @@ func (port *port) SetPortAttribute(ctx context.Context, req *saipb.SetPortAttrib
 		}
 	}
 	return &saipb.SetPortAttributeResponse{}, nil
+}
+
+// GetPortStats returns the stats for a port.
+func (port *port) GetPortStats(ctx context.Context, req *saipb.GetPortStatsRequest) (*saipb.GetPortStatsResponse, error) {
+	resp := &saipb.GetPortStatsResponse{}
+	counters, err := port.dataplane.ObjectCounters(ctx, &fwdpb.ObjectCountersRequest{
+		ContextId: &fwdpb.ContextId{Id: port.dataplane.ID()},
+		ObjectId:  &fwdpb.ObjectId{Id: fmt.Sprint(req.GetOid())},
+	})
+	if err != nil {
+		return nil, err
+	}
+	counterMap := map[fwdpb.CounterId]uint64{}
+	for _, c := range counters.GetCounters() {
+		counterMap[c.GetId()] = c.GetValue()
+	}
+
+	for _, id := range req.GetCounterIds() {
+		switch id {
+		case saipb.PortStat_PORT_STAT_IF_IN_UCAST_PKTS:
+			resp.Values = append(resp.Values, counterMap[fwdpb.CounterId_COUNTER_ID_RX_UCAST_PACKETS])
+		case saipb.PortStat_PORT_STAT_IF_IN_NON_UCAST_PKTS:
+			resp.Values = append(resp.Values, counterMap[fwdpb.CounterId_COUNTER_ID_RX_NON_UCAST_PACKETS])
+		case saipb.PortStat_PORT_STAT_IF_IN_ERRORS:
+			resp.Values = append(resp.Values, counterMap[fwdpb.CounterId_COUNTER_ID_RX_ERROR_PACKETS])
+		case saipb.PortStat_PORT_STAT_IF_OUT_UCAST_PKTS:
+			resp.Values = append(resp.Values, counterMap[fwdpb.CounterId_COUNTER_ID_TX_UCAST_PACKETS])
+		case saipb.PortStat_PORT_STAT_IF_OUT_NON_UCAST_PKTS:
+			resp.Values = append(resp.Values, counterMap[fwdpb.CounterId_COUNTER_ID_TX_NON_UCAST_PACKETS])
+		case saipb.PortStat_PORT_STAT_IF_OUT_ERRORS:
+			resp.Values = append(resp.Values, counterMap[fwdpb.CounterId_COUNTER_ID_TX_ERROR_PACKETS])
+		case saipb.PortStat_PORT_STAT_IF_IN_OCTETS:
+			resp.Values = append(resp.Values, counterMap[fwdpb.CounterId_COUNTER_ID_RX_OCTETS])
+		case saipb.PortStat_PORT_STAT_IF_OUT_OCTETS:
+			resp.Values = append(resp.Values, counterMap[fwdpb.CounterId_COUNTER_ID_TX_OCTETS])
+		case saipb.PortStat_PORT_STAT_IF_IN_DISCARDS:
+			resp.Values = append(resp.Values, counterMap[fwdpb.CounterId_COUNTER_ID_RX_DROP_PACKETS])
+		case saipb.PortStat_PORT_STAT_IF_OUT_DISCARDS:
+			resp.Values = append(resp.Values, counterMap[fwdpb.CounterId_COUNTER_ID_TX_DROP_PACKETS])
+		default:
+			resp.Values = append(resp.Values, 0)
+			log.Infof("unknown port stat: %v", id)
+		}
+	}
+	return resp, nil
 }
 
 func (port *port) Reset() {

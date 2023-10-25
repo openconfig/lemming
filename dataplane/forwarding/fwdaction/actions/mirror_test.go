@@ -197,6 +197,7 @@ func TestMirror(t *testing.T) {
 		mirrored.EXPECT().Attributes().Return(nil).AnyTimes()
 		mirrored.EXPECT().Log().Return(testr.New(t)).AnyTimes()
 		mirrored.EXPECT().LogMsgs().Return(nil).AnyTimes()
+		mirrored.EXPECT().Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC, 0)).Return([]byte{0}, nil).AnyTimes()
 		mirrored.EXPECT().Update(opFID, fwdpacket.OpSet, gomock.Any()).Return(nil).AnyTimes()
 		mirrored.EXPECT().Update(inFID, fwdpacket.OpSet, gomock.Any()).Return(nil).AnyTimes()
 		mirrored.EXPECT().Update(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST, 0),
@@ -210,6 +211,7 @@ func TestMirror(t *testing.T) {
 		original.EXPECT().Mirror(fields).Return(mirrored, nil).AnyTimes()
 		original.EXPECT().Attributes().Return(nil).AnyTimes()
 		original.EXPECT().Log().Return(testr.New(t)).AnyTimes()
+		original.EXPECT().Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC, 0)).Return([]byte{0}, nil).AnyTimes()
 		original.EXPECT().Field(opFID).Return(make([]byte, protocol.SizeUint64), nil).AnyTimes()
 		original.EXPECT().Field(inFID).Return(make([]byte, protocol.SizeUint64), nil).AnyTimes()
 
