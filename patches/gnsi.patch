@@ -1,50 +1,172 @@
 diff --git a/BUILD.bazel b/BUILD.bazel
-index 7847882..70fc8bd 100644
+index 7847882..d62310a 100644
 --- a/BUILD.bazel
 +++ b/BUILD.bazel
-@@ -1,6 +1,9 @@
+@@ -1,49 +1,9 @@
  load("@bazel_gazelle//:def.bzl", "gazelle")
  
  # gazelle:prefix github.com/openconfig/gnsi
 +# gazelle:proto_import_prefix github.com/openconfig/gnsi
 +# gazelle:resolve proto github.com/openconfig/gnmi/proto/gnmi/gnmi.proto @com_github_openconfig_gnmi//proto/gnmi:gnmi_proto
++# gazelle:resolve proto go github.com/openconfig/gnmi/proto/gnmi/gnmi.proto @com_github_openconfig_gnmi//proto/gnmi
 +# gazelle:resolve proto github.com/openconfig/gnoi/types/types.proto @com_github_openconfig_gnoi//types:types_proto
++# gazelle:resolve proto go github.com/openconfig/gnoi/types/types.proto @com_github_openconfig_gnoi//types:types
  gazelle(name = "gazelle")
+-
+-alias(
+-    name = "yang",
+-    actual = "//yang:ocbinds",
+-)
+-
+-alias(
+-    name = "authz_go",
+-    actual = "//authz:authz",
+-)
+-
+-alias(
+-    name = "authz_cc",
+-    actual = "//authz:authz_cc_proto",
+-)
+-
+-alias(
+-    name = "certz_cc",
+-    actual = "//certz:certz_cc_proto",
+-)
+-
+-alias(
+-    name = "certz_go",
+-    actual = "//certz:certz",
+-)
+-
+-alias(
+-    name = "credentialz_go",
+-    actual = "//credentialz:credentialz",
+-)
+-
+-alias(
+-    name = "credentialz_cc",
+-    actual = "//credentialz:credentialz_cc_proto",
+-)
+-
+-alias(
+-    name = "pathz_go",
+-    actual = "//pathz:pathz_go_proto",
+-)
+-
+-alias(
+-    name = "pathz_cc",
+-    actual = "//pathz:pathz_cc_proto",
+-)
+diff --git a/acctz/BUILD.bazel b/acctz/BUILD.bazel
+index ad7c541..3a6208c 100644
+--- a/acctz/BUILD.bazel
++++ b/acctz/BUILD.bazel
+@@ -1,22 +1,12 @@
++load("@rules_proto//proto:defs.bzl", "proto_library")
+ load("@io_bazel_rules_go//go:def.bzl", "go_library")
+ load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+-load("@rules_proto//proto:defs.bzl", "proto_library")
+-load("@rules_proto_grpc//cpp:defs.bzl", "cpp_grpc_library")
+-load("//:common.bzl", "use_new_compilers")
+-
+-use_new_compilers()
+-
+-package(default_visibility = ["//visibility:public"])
+-
+-filegroup(
+-    name = "yang",
+-    srcs = glob(["*.yang"]),
+-)
  
- alias(
-diff --git a/accounting/BUILD.bazel b/accounting/BUILD.bazel
-index 2e2f26f..496983f 100644
---- a/accounting/BUILD.bazel
-+++ b/accounting/BUILD.bazel
-@@ -40,17 +40,14 @@ cpp_grpc_library(
- ##############################################################################
+ proto_library(
+     name = "acctz_proto",
+     srcs = ["acctz.proto"],
+     import_prefix = "github.com/openconfig/gnsi",
++    visibility = ["//visibility:public"],
+     deps = [
+         "//version:version_proto",
+         "@com_google_protobuf//:any_proto",
+@@ -24,33 +14,18 @@ proto_library(
+     ],
+ )
+ 
+-##############################################################################
+-# C++
+-##############################################################################
+-cpp_grpc_library(
+-    name = "acctz_cc_proto",
+-    protos = [
+-        ":acctz_proto",
+-    ],
+-    deps = ["//version:version_cc_proto"],
+-)
+-
+-##############################################################################
+-# Go
+-##############################################################################
  go_proto_library(
-     name = "acct_go_proto",
+     name = "acctz_go_proto",
 -    compilers = [
 -        "go_protoc_gen_go",
 -        "go_protoc_gen_go_grpc",
 -    ],
 +    compilers = ["@io_bazel_rules_go//proto:go_grpc"],
-     importpath = "github.com/openconfig/gnsi/accounting",
-     proto = ":acct_proto",
+     importpath = "github.com/openconfig/gnsi/acctz",
+     proto = ":acctz_proto",
 -    deps = ["//version:version_go_proto"],
++    visibility = ["//visibility:public"],
 +    deps = ["//version"],
  )
  
  go_library(
--    name = "acct",
-+    name = "accounting",
-     embed = [":acct_go_proto"],
-     importpath = "github.com/openconfig/gnsi/accounting",
+     name = "acctz",
+     embed = [":acctz_go_proto"],
+     importpath = "github.com/openconfig/gnsi/acctz",
++    visibility = ["//visibility:public"],
  )
- 
- go_library(
 diff --git a/authz/BUILD.bazel b/authz/BUILD.bazel
-index 5615a73..d910c82 100644
+index 5615a73..f7f5b9e 100644
 --- a/authz/BUILD.bazel
 +++ b/authz/BUILD.bazel
-@@ -36,13 +36,10 @@ cpp_grpc_library(
- ##############################################################################
+@@ -1,52 +1,27 @@
++load("@rules_proto//proto:defs.bzl", "proto_library")
+ load("@io_bazel_rules_go//go:def.bzl", "go_library")
+ load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+-load("@rules_proto//proto:defs.bzl", "proto_library")
+-load("@rules_proto_grpc//cpp:defs.bzl", "cpp_grpc_library")
+-load("//:common.bzl", "use_new_compilers")
+-
+-use_new_compilers()
+-
+-package(default_visibility = ["//visibility:public"])
+-
+-filegroup(
+-    name = "yang",
+-    srcs = glob(["*.yang"]),
+-)
+ 
+ proto_library(
+     name = "authz_proto",
+     srcs = ["authz.proto"],
+     import_prefix = "github.com/openconfig/gnsi",
++    visibility = ["//visibility:public"],
+     deps = ["//version:version_proto"],
+ )
+ 
+-##############################################################################
+-# C++
+-##############################################################################
+-cpp_grpc_library(
+-    name = "authz_cc_proto",
+-    protos = [
+-        ":authz_proto",
+-    ],
+-    deps = ["//version:version_cc_proto"],
+-)
+-
+-##############################################################################
+-# Go
+-##############################################################################
  go_proto_library(
      name = "authz_go_proto",
 -    compilers = [
@@ -55,47 +177,149 @@ index 5615a73..d910c82 100644
      importpath = "github.com/openconfig/gnsi/authz",
      proto = ":authz_proto",
 -    deps = ["//version:version_go_proto"],
++    visibility = ["//visibility:public"],
 +    deps = ["//version"],
  )
  
  go_library(
+     name = "authz",
+     embed = [":authz_go_proto"],
+     importpath = "github.com/openconfig/gnsi/authz",
++    visibility = ["//visibility:public"],
+ )
 diff --git a/certz/BUILD.bazel b/certz/BUILD.bazel
-index c4af0e1..839329d 100644
+index ae1dca9..966f58a 100644
 --- a/certz/BUILD.bazel
 +++ b/certz/BUILD.bazel
-@@ -48,7 +48,7 @@ go_proto_library(
+@@ -1,59 +1,30 @@
++load("@rules_proto//proto:defs.bzl", "proto_library")
+ load("@io_bazel_rules_go//go:def.bzl", "go_library")
+ load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+-load("@rules_proto//proto:defs.bzl", "proto_library")
+-load("@rules_proto_grpc//cpp:defs.bzl", "cpp_grpc_library")
+-load("//:common.bzl", "use_new_compilers")
+-
+-use_new_compilers()
+-
+-package(default_visibility = ["//visibility:public"])
+-
+-filegroup(
+-    name = "yang",
+-    srcs = glob(["*.yang"]),
+-)
+ 
+ proto_library(
+-    name = "certz_proto",
++    name = "cert_proto",
+     srcs = ["certz.proto"],
+     import_prefix = "github.com/openconfig/gnsi",
++    visibility = ["//visibility:public"],
+     deps = [
+         "//version:version_proto",
+         "@com_google_protobuf//:any_proto",
      ],
+ )
+ 
+-##############################################################################
+-# C++
+-##############################################################################
+-
+-cpp_grpc_library(
+-    name = "certz_cc_proto",
+-    protos = [
+-        ":certz_proto",
+-    ],
+-    deps = [
+-        "//version:version_cc_proto",
+-    ],
+-)
+-
+-##############################################################################
+-# Go
+-##############################################################################
+-
+ go_proto_library(
+     name = "certz_go_proto",
+-    compilers = [
+-        "go_protoc_gen_go",
+-        "go_protoc_gen_go_grpc",
+-    ],
++    compilers = ["@io_bazel_rules_go//proto:go_grpc"],
      importpath = "github.com/openconfig/gnsi/certz",
-     proto = ":certz_proto",
+-    proto = ":certz_proto",
 -    deps = ["//version:version_go_proto"],
-+    deps = ["//version:version"],
++    proto = ":cert_proto",
++    visibility = ["//visibility:public"],
++    deps = ["//version"],
  )
  
  go_library(
-@@ -56,3 +56,17 @@ go_library(
+     name = "certz",
      embed = [":certz_go_proto"],
      importpath = "github.com/openconfig/gnsi/certz",
++    visibility = ["//visibility:public"],
  )
-+
-+go_proto_library(
-+    name = "cert_go_proto",
-+    compilers = ["@io_bazel_rules_go//proto:go_grpc"],
-+    importpath = "github.com/openconfig/gnsi/cert",
-+    proto = ":certz_proto",
-+    deps = ["//version"],
-+)
-+
-+go_library(
-+    name = "cert",
-+    embed = [":cert_go_proto"],
-+    importpath = "github.com/openconfig/gnsi/cert",
-+)
+diff --git a/certz/certz.proto b/certz/certz.proto
+index db882d9..2683ada 100644
+--- a/certz/certz.proto
++++ b/certz/certz.proto
+@@ -22,7 +22,7 @@ package gnsi.certz.v1;
+ import "github.com/openconfig/gnsi/version/version.proto";
+ import "google/protobuf/any.proto";
+ 
+-option go_package = "github.com/openconfig/gnsi/cert";
++option go_package = "github.com/openconfig/gnsi/certz";
+ 
+ // The Certificate Management Service exported by targets.
+ //
 diff --git a/credentialz/BUILD.bazel b/credentialz/BUILD.bazel
-index 92cff71..c0d9d83 100644
+index 92cff71..d769bc1 100644
 --- a/credentialz/BUILD.bazel
 +++ b/credentialz/BUILD.bazel
-@@ -41,13 +41,10 @@ cpp_grpc_library(
+@@ -1,57 +1,27 @@
++load("@rules_proto//proto:defs.bzl", "proto_library")
+ load("@io_bazel_rules_go//go:def.bzl", "go_library")
+ load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+-load("@rules_proto//proto:defs.bzl", "proto_library")
+-load("@rules_proto_grpc//cpp:defs.bzl", "cpp_grpc_library")
+-load("//:common.bzl", "use_new_compilers")
+-
+-use_new_compilers()
+-
+-package(default_visibility = ["//visibility:public"])
+-
+-filegroup(
+-    name = "yang",
+-    srcs = glob(["*.yang"]),
+-)
  
+ proto_library(
+     name = "credentialz_proto",
+     srcs = ["credentialz.proto"],
+     import_prefix = "github.com/openconfig/gnsi",
++    visibility = ["//visibility:public"],
+     deps = ["//version:version_proto"],
+ )
+ 
+-##############################################################################
+-# C++
+-##############################################################################
+-
+-cpp_grpc_library(
+-    name = "credentialz_cc_proto",
+-    protos = [
+-        ":credentialz_proto",
+-        "@go_googleapis//google/rpc:status_proto",
+-    ],
+-    deps = [
+-        "//version:version_cc_proto",
+-    ],
+-)
+-
+-##############################################################################
+-# Go
+-##############################################################################
+-
  go_proto_library(
      name = "credentialz_go_proto",
 -    compilers = [
@@ -106,93 +330,285 @@ index 92cff71..c0d9d83 100644
      importpath = "github.com/openconfig/gnsi/credentialz",
      proto = ":credentialz_proto",
 -    deps = ["//version:version_go_proto"],
++    visibility = ["//visibility:public"],
 +    deps = ["//version"],
  )
  
  go_library(
+     name = "credentialz",
+     embed = [":credentialz_go_proto"],
+     importpath = "github.com/openconfig/gnsi/credentialz",
++    visibility = ["//visibility:public"],
+ )
 diff --git a/pathz/BUILD.bazel b/pathz/BUILD.bazel
-index 2e423cc..fbcafb5 100644
+index 2e423cc..d75686e 100644
 --- a/pathz/BUILD.bazel
 +++ b/pathz/BUILD.bazel
-@@ -45,14 +45,17 @@ cpp_grpc_library(
- ##############################################################################
- go_proto_library(
-     name = "pathz_go_proto",
+@@ -1,58 +1,45 @@
++load("@rules_proto//proto:defs.bzl", "proto_library")
+ load("@io_bazel_rules_go//go:def.bzl", "go_library")
+ load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+-load("@rules_proto//proto:defs.bzl", "proto_library")
+-load("@rules_proto_grpc//cpp:defs.bzl", "cpp_grpc_library")
+-load("//:common.bzl", "use_new_compilers")
+-
+-use_new_compilers()
+-
+-package(default_visibility = ["//visibility:public"])
+-
+-filegroup(
+-    name = "yang",
+-    srcs = glob(["*.yang"]),
+-)
+ 
+ proto_library(
+     name = "pathz_proto",
+-    srcs = [
+-        "authorization.proto",
+-        "pathz.proto",
+-    ],
++    srcs = ["authorization.proto"],
+     import_prefix = "github.com/openconfig/gnsi",
++    visibility = ["//visibility:public"],
+     deps = [
+         "//version:version_proto",
+         "@com_github_openconfig_gnmi//proto/gnmi:gnmi_proto",
+     ],
+ )
+ 
+-##############################################################################
+-# C++
+-##############################################################################
+-cpp_grpc_library(
+-    name = "pathz_cc_proto",
+-    protos = [
+-        ":pathz_proto",
+-    ],
++go_proto_library(
++    name = "pathz_go_proto",
++    importpath = "github.com/openconfig/gnsi/pathz",
++    proto = ":pathz_proto",
++    visibility = ["//visibility:public"],
+     deps = [
+-        "//version:version_cc_proto",
+-        "@com_github_openconfig_gnmi//proto/gnmi:gnmi_cc_proto",
++        "//version",
++        "@com_github_openconfig_gnmi//proto/gnmi",
+     ],
+ )
+ 
+-##############################################################################
+-# Go
+-##############################################################################
+-go_proto_library(
+-    name = "pathz_go_proto",
 -    compilers = [
 -        "go_protoc_gen_go",
 -        "go_protoc_gen_go_grpc",
--    ],
-+    compilers = ["@io_bazel_rules_go//proto:go_grpc"],
++go_library(
++    name = "pathz",
++    srcs = [
++        "pathz.pb.go",
++        "pathz_grpc.pb.go",
+     ],
++    embed = [":pathz_go_proto"],
      importpath = "github.com/openconfig/gnsi/pathz",
-     proto = ":pathz_proto",
+-    proto = ":pathz_proto",
++    visibility = ["//visibility:public"],
      deps = [
 -        "//version:version_go_proto",
 -        "@com_github_openconfig_gnmi//proto/gnmi:gnmi_go_proto",
 +        "//version",
-+        "@com_github_openconfig_gnmi//proto/gnmi:gnmi",
++        "@com_github_openconfig_gnmi//proto/gnmi",
++        "@org_golang_google_grpc//:go_default_library",
++        "@org_golang_google_grpc//codes:go_default_library",
++        "@org_golang_google_grpc//status:go_default_library",
++        "@org_golang_google_protobuf//reflect/protoreflect:go_default_library",
++        "@org_golang_google_protobuf//runtime/protoimpl:go_default_library",
      ],
  )
-+
-+go_library(
-+    name = "pathz",
-+    embed = [":pathz_go_proto"],
-+    importpath = "github.com/openconfig/gnsi/pathz",
-+)
-diff --git a/pathz/authorization.proto b/pathz/authorization.proto
-index 4362ad3..09a6d97 100644
---- a/pathz/authorization.proto
-+++ b/pathz/authorization.proto
-@@ -37,7 +37,7 @@
- //
- syntax = "proto3";
- 
--package gnsi.pathz;
-+package gnsi.pathz.v1;
- 
- import "github.com/openconfig/gnmi/proto/gnmi/gnmi.proto";
- import "github.com/openconfig/gnsi/version/version.proto";
 diff --git a/version/BUILD.bazel b/version/BUILD.bazel
-index e047013..321f740 100644
+index e047013..89fbfdb 100644
 --- a/version/BUILD.bazel
 +++ b/version/BUILD.bazel
-@@ -1,7 +1,9 @@
-+load("@io_bazel_rules_go//go:def.bzl", "go_library")
- load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+@@ -1,36 +1,26 @@
+-load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
  load("@rules_proto//proto:defs.bzl", "proto_library")
- load("@rules_proto_grpc//cpp:defs.bzl", "cpp_proto_library")
- load("//:common.bzl", "use_new_compilers")
-+
- use_new_compilers()
+-load("@rules_proto_grpc//cpp:defs.bzl", "cpp_proto_library")
+-load("//:common.bzl", "use_new_compilers")
+-use_new_compilers()
+-
+-package(default_visibility = ["//visibility:public"])
++load("@io_bazel_rules_go//go:def.bzl", "go_library")
++load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
  
- package(default_visibility = ["//visibility:public"])
-@@ -11,9 +13,9 @@ proto_library(
-     srcs = [
-         "version.proto",
-     ],
+ proto_library(
+     name = "version_proto",
+-    srcs = [
+-        "version.proto",
+-    ],
 -    deps = ["@com_github_openconfig_gnoi//types:types_proto"],
++    srcs = ["version.proto"],
      import_prefix = "github.com/openconfig/gnsi",
      visibility = ["//visibility:public"],
+-)
+-
+-cpp_proto_library(
+-    name = "version_cc_proto",
+-    protos = [
+-        ":version_proto",
+-        "@com_github_openconfig_gnoi//types:types_proto",
+-    ],
 +    deps = ["@com_github_openconfig_gnoi//types:types_proto"],
  )
- 
- cpp_proto_library(
-@@ -26,11 +28,16 @@ cpp_proto_library(
  
  go_proto_library(
      name = "version_go_proto",
 -    compilers = ["go_protoc_gen_go"],
      importpath = "github.com/openconfig/gnsi/version",
      proto = ":version_proto",
-+    visibility = ["//visibility:public"],
-     deps = [
+-    deps = [
 -        "@com_github_openconfig_gnoi//types:types_go_proto",
-+        "@com_github_openconfig_gnoi//types:types",
-     ],
--    visibility = ["//visibility:public"],
+-    ],
++    visibility = ["//visibility:public"],
++    deps = ["@com_github_openconfig_gnoi//types"],
 +)
 +
 +go_library(
 +    name = "version",
 +    embed = [":version_go_proto"],
 +    importpath = "github.com/openconfig/gnsi/version",
+     visibility = ["//visibility:public"],
  )
+diff --git a/yang/BUILD.bazel b/yang/BUILD.bazel
+deleted file mode 100644
+index e558d8d..0000000
+--- a/yang/BUILD.bazel
++++ /dev/null
+@@ -1,125 +0,0 @@
+-load("@io_bazel_rules_go//go:def.bzl", "go_library")
+-
+-go_library(
+-    name = "ocbinds",
+-    srcs = [":oc_go"],
+-    importpath = "github.com/openconfig/gnsi/ocbinds",
+-    deps = [
+-        "@com_github_openconfig_ygot//ygot",
+-        "@com_github_openconfig_ygot//ytypes",
+-        "@com_github_openconfig_goyang//pkg/yang",
+-    ],
+-    visibility = ["//visibility:public"],
+-)
+-
+-genrule(
+-    name = "oc_go",
+-    srcs = [
+-        "//authz:yang",
+-        "//certz:yang",
+-        "//credentialz:yang",
+-        "//pathz:yang",
+-        "@github_openconfig_yang//:release/models/acl/openconfig-acl.yang",
+-        "@github_openconfig_yang//:release/models/acl/openconfig-packet-match-types.yang",
+-        "@github_openconfig_yang//:release/models/acl/openconfig-packet-match.yang",
+-        "@github_openconfig_yang//:release/models/aft/openconfig-aft-common.yang",
+-        "@github_openconfig_yang//:release/models/aft/openconfig-aft-ethernet.yang",
+-        "@github_openconfig_yang//:release/models/aft/openconfig-aft-ipv4.yang",
+-        "@github_openconfig_yang//:release/models/aft/openconfig-aft-ipv6.yang",
+-        "@github_openconfig_yang//:release/models/aft/openconfig-aft-mpls.yang",
+-        "@github_openconfig_yang//:release/models/aft/openconfig-aft-pf.yang",
+-        "@github_openconfig_yang//:release/models/aft/openconfig-aft-types.yang",
+-        "@github_openconfig_yang//:release/models/aft/openconfig-aft.yang",
+-        "@github_openconfig_yang//:release/models/bfd/openconfig-bfd.yang",
+-        "@github_openconfig_yang//:release/models/bgp/openconfig-bgp-common-multiprotocol.yang",
+-        "@github_openconfig_yang//:release/models/bgp/openconfig-bgp-common-structure.yang",
+-        "@github_openconfig_yang//:release/models/bgp/openconfig-bgp-common.yang",
+-        "@github_openconfig_yang//:release/models/bgp/openconfig-bgp-errors.yang",
+-        "@github_openconfig_yang//:release/models/bgp/openconfig-bgp-global.yang",
+-        "@github_openconfig_yang//:release/models/bgp/openconfig-bgp-neighbor.yang",
+-        "@github_openconfig_yang//:release/models/bgp/openconfig-bgp-peer-group.yang",
+-        "@github_openconfig_yang//:release/models/bgp/openconfig-bgp-types.yang",
+-        "@github_openconfig_yang//:release/models/bgp/openconfig-bgp.yang",
+-        "@github_openconfig_yang//:release/models/interfaces/openconfig-if-aggregate.yang",
+-        "@github_openconfig_yang//:release/models/interfaces/openconfig-if-ethernet.yang",
+-        "@github_openconfig_yang//:release/models/interfaces/openconfig-if-types.yang",
+-        "@github_openconfig_yang//:release/models/interfaces/openconfig-interfaces.yang",
+-        "@github_openconfig_yang//:release/models/isis/openconfig-isis-lsdb-types.yang",
+-        "@github_openconfig_yang//:release/models/isis/openconfig-isis-lsp.yang",
+-        "@github_openconfig_yang//:release/models/isis/openconfig-isis-routing.yang",
+-        "@github_openconfig_yang//:release/models/isis/openconfig-isis-types.yang",
+-        "@github_openconfig_yang//:release/models/isis/openconfig-isis.yang",
+-        "@github_openconfig_yang//:release/models/keychain/openconfig-keychain-types.yang",
+-        "@github_openconfig_yang//:release/models/keychain/openconfig-keychain.yang",
+-        "@github_openconfig_yang//:release/models/local-routing/openconfig-local-routing.yang",
+-        "@github_openconfig_yang//:release/models/mpls/openconfig-mpls-igp.yang",
+-        "@github_openconfig_yang//:release/models/mpls/openconfig-mpls-ldp.yang",
+-        "@github_openconfig_yang//:release/models/mpls/openconfig-mpls-rsvp.yang",
+-        "@github_openconfig_yang//:release/models/mpls/openconfig-mpls-sr.yang",
+-        "@github_openconfig_yang//:release/models/mpls/openconfig-mpls-static.yang",
+-        "@github_openconfig_yang//:release/models/mpls/openconfig-mpls-te.yang",
+-        "@github_openconfig_yang//:release/models/mpls/openconfig-mpls-types.yang",
+-        "@github_openconfig_yang//:release/models/mpls/openconfig-mpls.yang",
+-        "@github_openconfig_yang//:release/models/multicast/openconfig-igmp-types.yang",
+-        "@github_openconfig_yang//:release/models/multicast/openconfig-igmp.yang",
+-        "@github_openconfig_yang//:release/models/multicast/openconfig-pim-types.yang",
+-        "@github_openconfig_yang//:release/models/multicast/openconfig-pim.yang",
+-        "@github_openconfig_yang//:release/models/network-instance/openconfig-evpn-types.yang",
+-        "@github_openconfig_yang//:release/models/network-instance/openconfig-evpn.yang",
+-        "@github_openconfig_yang//:release/models/network-instance/openconfig-network-instance-l2.yang",
+-        "@github_openconfig_yang//:release/models/network-instance/openconfig-network-instance-l3.yang",
+-        "@github_openconfig_yang//:release/models/network-instance/openconfig-network-instance-types.yang",
+-        "@github_openconfig_yang//:release/models/network-instance/openconfig-network-instance.yang",
+-        "@github_openconfig_yang//:release/models/openconfig-extensions.yang",
+-        "@github_openconfig_yang//:release/models/ospf/openconfig-ospf-types.yang",
+-        "@github_openconfig_yang//:release/models/ospf/openconfig-ospfv2-area-interface.yang",
+-        "@github_openconfig_yang//:release/models/ospf/openconfig-ospfv2-area.yang",
+-        "@github_openconfig_yang//:release/models/ospf/openconfig-ospfv2-common.yang",
+-        "@github_openconfig_yang//:release/models/ospf/openconfig-ospfv2-global.yang",
+-        "@github_openconfig_yang//:release/models/ospf/openconfig-ospfv2-lsdb.yang",
+-        "@github_openconfig_yang//:release/models/ospf/openconfig-ospfv2.yang",
+-        "@github_openconfig_yang//:release/models/platform/openconfig-platform-types.yang",
+-        "@github_openconfig_yang//:release/models/platform/openconfig-platform.yang",
+-        "@github_openconfig_yang//:release/models/policy-forwarding/openconfig-pf-forwarding-policies.yang",
+-        "@github_openconfig_yang//:release/models/policy-forwarding/openconfig-pf-interfaces.yang",
+-        "@github_openconfig_yang//:release/models/policy-forwarding/openconfig-pf-path-groups.yang",
+-        "@github_openconfig_yang//:release/models/policy-forwarding/openconfig-policy-forwarding.yang",
+-        "@github_openconfig_yang//:release/models/policy/openconfig-policy-types.yang",
+-        "@github_openconfig_yang//:release/models/policy/openconfig-routing-policy.yang",
+-        "@github_openconfig_yang//:release/models/rib/openconfig-rib-bgp-attributes.yang",
+-        "@github_openconfig_yang//:release/models/rib/openconfig-rib-bgp-shared-attributes.yang",
+-        "@github_openconfig_yang//:release/models/rib/openconfig-rib-bgp-table-attributes.yang",
+-        "@github_openconfig_yang//:release/models/rib/openconfig-rib-bgp-tables.yang",
+-        "@github_openconfig_yang//:release/models/rib/openconfig-rib-bgp-types.yang",
+-        "@github_openconfig_yang//:release/models/rib/openconfig-rib-bgp.yang",
+-        "@github_openconfig_yang//:release/models/segment-routing/openconfig-segment-routing-types.yang",
+-        "@github_openconfig_yang//:release/models/segment-routing/openconfig-segment-routing.yang",
+-        "@github_openconfig_yang//:release/models/segment-routing/openconfig-srte-policy.yang",
+-        "@github_openconfig_yang//:release/models/system/openconfig-aaa-radius.yang",
+-        "@github_openconfig_yang//:release/models/system/openconfig-aaa-tacacs.yang",
+-        "@github_openconfig_yang//:release/models/system/openconfig-aaa-types.yang",
+-        "@github_openconfig_yang//:release/models/system/openconfig-aaa.yang",
+-        "@github_openconfig_yang//:release/models/system/openconfig-alarm-types.yang",
+-        "@github_openconfig_yang//:release/models/system/openconfig-alarms.yang",
+-        "@github_openconfig_yang//:release/models/system/openconfig-license.yang",
+-        "@github_openconfig_yang//:release/models/system/openconfig-messages.yang",
+-        "@github_openconfig_yang//:release/models/system/openconfig-procmon.yang",
+-        "@github_openconfig_yang//:release/models/system/openconfig-system-grpc.yang",
+-        "@github_openconfig_yang//:release/models/system/openconfig-system-logging.yang",
+-        "@github_openconfig_yang//:release/models/system/openconfig-system-terminal.yang",
+-        "@github_openconfig_yang//:release/models/system/openconfig-system.yang",
+-        "@github_openconfig_yang//:release/models/types/openconfig-inet-types.yang",
+-        "@github_openconfig_yang//:release/models/types/openconfig-types.yang",
+-        "@github_openconfig_yang//:release/models/types/openconfig-yang-types.yang",
+-        "@github_openconfig_yang//:release/models/vlan/openconfig-vlan-types.yang",
+-        "@github_openconfig_yang//:release/models/vlan/openconfig-vlan.yang",
+-        "@github_yang//:standard/iana/iana-if-type@2021-06-21.yang",
+-        "@github_yang//:standard/ietf/RFC/ietf-inet-types.yang",
+-        "@github_yang//:standard/ietf/RFC/ietf-interfaces.yang",
+-        "@github_yang//:standard/ietf/RFC/ietf-yang-metadata.yang",
+-        "@github_yang//:standard/ietf/RFC/ietf-yang-types.yang",
+-    ],
+-    cmd = "./$(location @com_github_openconfig_ygot//generator) -generate_fakeroot -output_file $@ -package_name ocbinds -generate_fakeroot -fakeroot_name=device -compress_paths=false -exclude_modules ietf-interfaces -path . $(SRCS)",
+-    outs = ["oc.go"],
+-    tools =  ["@com_github_openconfig_ygot//generator"],
+-)
+\ No newline at end of file

@@ -1,12 +1,14 @@
 diff --git a/BUILD.bazel b/BUILD.bazel
-index 56bcda8..b6326e2 100644
+index 577aeaf..de6df58 100644
 --- a/BUILD.bazel
 +++ b/BUILD.bazel
-@@ -23,4 +23,5 @@ package(
+@@ -23,4 +23,7 @@ package(
  exports_files(["LICENSE"])
  
  # gazelle:prefix github.com/openconfig/gnoi
 +# gazelle:proto_import_prefix github.com/openconfig/gnoi
++# gazelle:resolve proto proto google/rpc/status.proto @googleapis//google/rpc:status_proto
++# gazelle:resolve proto go google/rpc/status.proto  @org_golang_google_genproto//googleapis/rpc/status
  gazelle(name = "gazelle")
 diff --git a/bgp/BUILD.bazel b/bgp/BUILD.bazel
 index 25118f8..5476ce6 100644
@@ -110,7 +112,7 @@ index 9b79c47..262880a 100644
 +    importpath = "github.com/openconfig/gnoi/common",
  )
 diff --git a/common/common.proto b/common/common.proto
-index 8d8a2e7..d462cb2 100644
+index 913c9fc..c62f37a 100644
 --- a/common/common.proto
 +++ b/common/common.proto
 @@ -18,7 +18,7 @@ syntax = "proto3";
@@ -122,29 +124,58 @@ index 8d8a2e7..d462cb2 100644
  
  option go_package = "github.com/openconfig/gnoi/common";
  
-diff --git a/compile_protos.sh b/compile_protos.sh
-index ddf9a98..8596ca6 100755
---- a/compile_protos.sh
-+++ b/compile_protos.sh
-@@ -1,10 +1,17 @@
- #!/bin/bash
- set -euo pipefail
+diff --git a/containerz/BUILD.bazel b/containerz/BUILD.bazel
+index ca7168e..4474db5 100644
+--- a/containerz/BUILD.bazel
++++ b/containerz/BUILD.bazel
+@@ -27,10 +27,11 @@ package(
+ proto_library(
+     name = "containerz_proto",
+     srcs = ["containerz.proto"],
++    import_prefix = "github.com/openconfig/gnoi",
+     deps = [
+-        "@go_googleapis//google/rpc:status_proto",
++        "//common:common_proto",
+         "//types:types_proto",
+-        "//common:common_proto"
++        "@googleapis//google/rpc:status_proto",
+     ],
+ )
  
-+if [ ! -z "${GOPATH:-}"]; then
- proto_imports=".:${GOPATH}/src/github.com/google/protobuf/src:${GOPATH}/src/github.com/googleapis/googleapis:${GOPATH}/src:."
-+else 
-+go get github.com/googleapis/googleapis
-+genproto=$(go list -m -f '{{.Dir}}' github.com/googleapis/googleapis)
-+proto_imports=".:${genproto}"
-+fi
+@@ -52,8 +53,14 @@ go_proto_library(
+     importpath = "github.com/openconfig/gnoi/containerz",
+     proto = ":containerz_proto",
+     deps = [
+-        "@go_googleapis//google/rpc:status_go_proto",
+-        "//types:types_go_proto",
+-        "//common:common_go_proto"
++        "//common",
++        "//types",
++        "@org_golang_google_genproto//googleapis/rpc/status",
+     ],
+ )
++
++go_library(
++    name = "containerz",
++    embed = [":containerz_go_proto"],
++    importpath = "github.com/openconfig/gnoi/containerz",
++)
+diff --git a/containerz/containerz.proto b/containerz/containerz.proto
+index 0539a5b..7098670 100644
+--- a/containerz/containerz.proto
++++ b/containerz/containerz.proto
+@@ -21,9 +21,9 @@ syntax = "proto3";
  
- # Go
- for p in types common diag bgp cert factory_reset file healthz layer2 mpls system os otdr wavelength_router packet_link_qualification; do
-   protoc -I="${proto_imports}" --go-grpc_out=. --go-grpc_opt=paths=source_relative --go_out=. --go_opt=paths=source_relative $p/$p.proto
- done
+ package gnoi.containerz;
  
-+go mod tidy
-\ No newline at end of file
+-import "common/common.proto";
++import "github.com/openconfig/gnoi/common/common.proto";
+ import "google/rpc/status.proto";
+-import "types/types.proto";
++import "github.com/openconfig/gnoi/types/types.proto";
+ 
+ option go_package = "github.com/openconfig/gnoi/containerz";
+ option (types.gnoi_version) = "0.1.1";
 diff --git a/diag/BUILD.bazel b/diag/BUILD.bazel
 index 074348d..82020f7 100644
 --- a/diag/BUILD.bazel
@@ -260,21 +291,15 @@ index b5d64d1..16c975e 100644
  option go_package = "github.com/openconfig/gnoi/file";
  
 diff --git a/healthz/BUILD.bazel b/healthz/BUILD.bazel
-index 039f3b5..220166e 100644
+index 039f3b5..248fa20 100644
 --- a/healthz/BUILD.bazel
 +++ b/healthz/BUILD.bazel
-@@ -1,5 +1,6 @@
- load("@rules_proto//proto:defs.bzl", "proto_library")
- load("@io_bazel_rules_go//go:def.bzl", "go_library")
-+load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
- 
- #Copyright 2021 Google LLC
- #
-@@ -16,7 +17,6 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
+@@ -16,7 +16,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
  # limitations under the License.
  #
  load("@com_github_grpc_grpc//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 -load("@rules_proto_grpc//go:defs.bzl", "go_grpc_library", "go_proto_library")
++load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
  
  package(
      default_visibility = ["//visibility:public"],
@@ -289,28 +314,25 @@ index 039f3b5..220166e 100644
          "@com_google_protobuf//:any_proto",
          "@com_google_protobuf//:timestamp_proto",
      ],
-@@ -38,9 +38,9 @@ go_proto_library(
+@@ -38,10 +38,14 @@ go_proto_library(
      name = "healthz_go_proto",
      compilers = ["@io_bazel_rules_go//proto:go_grpc"],
      importpath = "github.com/openconfig/gnoi/healthz",
 -    protos = [":healthz_proto"],
-+    proto = ":healthz_proto",
-     deps = [
+-    deps = [
 -        "//types:types_go_proto",
-+        "//types",
-     ],
- )
- 
-@@ -55,3 +55,9 @@ cc_grpc_library(
-     grpc_only = True,
-     deps = [":healthz_cc_proto"],
- )
+-    ],
++    proto = ":healthz_proto",
++    deps = ["//types"],
++)
 +
 +go_library(
 +    name = "healthz",
 +    embed = [":healthz_go_proto"],
 +    importpath = "github.com/openconfig/gnoi/healthz",
-+)
+ )
+ 
+ cc_proto_library(
 diff --git a/healthz/healthz.proto b/healthz/healthz.proto
 index 7800063..5b4e296 100644
 --- a/healthz/healthz.proto
@@ -476,8 +498,21 @@ index 459deb3..f05cc21 100644
  
  option go_package = "github.com/openconfig/gnoi/otdr";
  
+diff --git a/packet_capture/packet_capture.proto b/packet_capture/packet_capture.proto
+index 29354c2..2da334d 100644
+--- a/packet_capture/packet_capture.proto
++++ b/packet_capture/packet_capture.proto
+@@ -2,7 +2,7 @@ syntax = "proto3";
+ 
+ package gnoi.pcap;
+ 
+-option go_package = "github.com/openconfig/gnoi/pcap";
++option go_package = "github.com/openconfig/gnoi/packet_capture;pcap";
+ 
+ // The PacketCapture service exported by targets.
+ service PacketCapture {
 diff --git a/packet_link_qualification/BUILD.bazel b/packet_link_qualification/BUILD.bazel
-index 249bc3a..3a8b2b9 100644
+index 249bc3a..3b44a38 100644
 --- a/packet_link_qualification/BUILD.bazel
 +++ b/packet_link_qualification/BUILD.bazel
 @@ -5,23 +5,31 @@ load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
@@ -494,10 +529,9 @@ index 249bc3a..3a8b2b9 100644
 +        "@googleapis//google/rpc:status_proto",
      ],
  )
-
+ 
  go_proto_library(
--    name = "linkqual_go_proto",
-+    name = "packet_link_qualification_go_proto",
+     name = "linkqual_go_proto",
      compilers = ["@io_bazel_rules_go//proto:go_grpc"],
 -    importpath = "github.com/openconfig/gnoi/linkqual",
 +    importpath = "github.com/openconfig/gnoi/packet_link_qualification",
@@ -507,21 +541,21 @@ index 249bc3a..3a8b2b9 100644
 -        "//types:types_go_proto",
 -        "@go_googleapis//google/rpc:status_go_proto",
 +        "//types",
-+        "@googleapis//google/rpc:status_proto",
++        "@org_golang_google_genproto//googleapis/rpc/status",
      ],
  )
 +
 +go_library(
 +    name = "packet_link_qualification",
-+    embed = [":packet_link_qualification_go_proto"],
++    embed = [":linkqual_go_proto"],
 +    importpath = "github.com/openconfig/gnoi/packet_link_qualification",
 +    visibility = ["//visibility:public"],
 +)
 diff --git a/packet_link_qualification/packet_link_qualification.proto b/packet_link_qualification/packet_link_qualification.proto
-index 8687642..586418a 100644
+index 8687642..43c27cb 100644
 --- a/packet_link_qualification/packet_link_qualification.proto
 +++ b/packet_link_qualification/packet_link_qualification.proto
-@@ -8,9 +8,10 @@ package gnoi.packet_link_qualification;
+@@ -8,9 +8,9 @@ package gnoi.packet_link_qualification;
  import "google/protobuf/duration.proto";
  import "google/protobuf/timestamp.proto";
  import "google/rpc/status.proto";
@@ -529,7 +563,6 @@ index 8687642..586418a 100644
 +import "github.com/openconfig/gnoi/types/types.proto";
  
 -option go_package = "github.com/openconfig/gnoi/linkqual";
-+// protolint:disable MAX_LINE_LENGTH
 +option go_package = "github.com/openconfig/gnoi/packet_link_qualification;linkqual";
  
  option (types.gnoi_version) = "1.1.0";
@@ -566,7 +599,7 @@ index e1d0d09..5ac726e 100644
 +    importpath = "github.com/openconfig/gnoi/system",
 +)
 diff --git a/system/system.proto b/system/system.proto
-index 99d868c..61cae91 100644
+index 5c5bda2..73c549d 100644
 --- a/system/system.proto
 +++ b/system/system.proto
 @@ -24,8 +24,8 @@ syntax = "proto3";

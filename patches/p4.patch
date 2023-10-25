@@ -24,7 +24,7 @@ index ff79e62..335d3f2 100644
      deps = [
          ":p4info_go_proto",
 -        "@com_google_googleapis//google/rpc:status_go_proto",
-+        "@googleapis//google/rpc:status_proto",
++        "@org_golang_google_genproto//googleapis/rpc/status",
      ],
  )
  

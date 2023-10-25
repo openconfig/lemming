@@ -10,14 +10,6 @@ gazelle(
     name = "gazelle",
 )
 
-gazelle(
-    name = "gazelle-golang-org-x-exp",
-    args = [
-        "golang.org/x/exp@v0.0.0-20230801115018-d63ba01acd4b",
-    ],
-    command = "update-repos",
-)
-
 go_library(
     name = "lemming",
     srcs = ["lemming.go"],
