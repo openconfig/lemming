@@ -31,12 +31,12 @@ import (
 func (s *Server) monitorConnectedIntfs(ctx context.Context, yclient *ygnmi.Client) error {
 	b := ygnmi.NewBatch[map[string]*oc.Interface](ocpath.Root().InterfaceMap().State())
 	b.AddPaths(
-		ocpath.Root().InterfaceAny().Enabled().State().PathStruct(),
-		ocpath.Root().InterfaceAny().Ifindex().State().PathStruct(),
-		ocpath.Root().InterfaceAny().Subinterface(0).Ipv4().AddressAny().Ip().State().PathStruct(),
-		ocpath.Root().InterfaceAny().Subinterface(0).Ipv4().AddressAny().PrefixLength().State().PathStruct(),
-		ocpath.Root().InterfaceAny().Subinterface(0).Ipv6().AddressAny().Ip().State().PathStruct(),
-		ocpath.Root().InterfaceAny().Subinterface(0).Ipv6().AddressAny().PrefixLength().State().PathStruct(),
+		ocpath.Root().InterfaceAny().Enabled().State(),
+		ocpath.Root().InterfaceAny().Ifindex().State(),
+		ocpath.Root().InterfaceAny().Subinterface(0).Ipv4().AddressAny().Ip().State(),
+		ocpath.Root().InterfaceAny().Subinterface(0).Ipv4().AddressAny().PrefixLength().State(),
+		ocpath.Root().InterfaceAny().Subinterface(0).Ipv6().AddressAny().Ip().State(),
+		ocpath.Root().InterfaceAny().Subinterface(0).Ipv6().AddressAny().PrefixLength().State(),
 	)
 
 	prevIntfs := map[connectedRoute]struct{}{}

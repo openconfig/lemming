@@ -1576,13 +1576,13 @@ def go_repositories():
     )
     go_repository(
         name = "com_github_openconfig_gnoi",
-        patch_args = ["-p1"],
-        patches = ["//patches:gnoi.patch"],
-        importpath = "github.com/openconfig/gnoi",
         build_directives = [
             "gazelle:resolve proto proto google/rpc/status.proto @googleapis//google/rpc:status_proto",
-            "gazelle:resolve proto go google/rpc/status.proto  @org_golang_google_genproto//googleapis/rpc/status",
+            "gazelle:resolve proto go google/rpc/status.proto  @org_golang_google_genproto_googleapis_rpc//status",
         ],
+        importpath = "github.com/openconfig/gnoi",
+        patch_args = ["-p1"],
+        patches = ["//patches:gnoi.patch"],
         sum = "h1:tgSlaBDbWiCwfrKk2OWUuZkW2b8BHN8jBFA7XvdSnFA=",
         version = "v0.2.0",
     )
@@ -1596,9 +1596,9 @@ def go_repositories():
     go_repository(
         name = "com_github_openconfig_gnsi",
         importpath = "github.com/openconfig/gnsi",
-        sum = "h1:Y/fBMQOn5xqdo9xuT7AK2YHSRejx/ws4sDOMBCHQG6w=",
         patch_args = ["-p1"],
         patches = ["//patches:gnsi.patch"],
+        sum = "h1:Y/fBMQOn5xqdo9xuT7AK2YHSRejx/ws4sDOMBCHQG6w=",
         version = "v1.2.3",
     )
     go_repository(

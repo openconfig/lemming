@@ -16,6 +16,7 @@ go_library(
         "//gnmi/oc",
         "//gnmi/oc/ocpath",
         "//gnmi/reconciler",
+        "//internal/lemmingutil",
         "@com_github_golang_glog//:glog",
         "@com_github_openconfig_ygnmi//ygnmi",
         "@com_github_openconfig_ygot//ygot",

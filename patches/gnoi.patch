@@ -8,7 +8,7 @@ index 577aeaf..de6df58 100644
  # gazelle:prefix github.com/openconfig/gnoi
 +# gazelle:proto_import_prefix github.com/openconfig/gnoi
 +# gazelle:resolve proto proto google/rpc/status.proto @googleapis//google/rpc:status_proto
-+# gazelle:resolve proto go google/rpc/status.proto  @org_golang_google_genproto//googleapis/rpc/status
++# gazelle:resolve proto go google/rpc/status.proto @org_golang_google_genproto_googleapis_rpc//status
  gazelle(name = "gazelle")
 diff --git a/bgp/BUILD.bazel b/bgp/BUILD.bazel
 index 25118f8..5476ce6 100644
@@ -151,7 +151,7 @@ index ca7168e..4474db5 100644
 -        "//common:common_go_proto"
 +        "//common",
 +        "//types",
-+        "@org_golang_google_genproto//googleapis/rpc/status",
++        "@org_golang_google_genproto_googleapis_rpc//status",
      ],
  )
 +
@@ -541,7 +541,7 @@ index 249bc3a..3b44a38 100644
 -        "//types:types_go_proto",
 -        "@go_googleapis//google/rpc:status_go_proto",
 +        "//types",
-+        "@org_golang_google_genproto//googleapis/rpc/status",
++        "@org_golang_google_genproto_googleapis_rpc//status",
      ],
  )
 +
