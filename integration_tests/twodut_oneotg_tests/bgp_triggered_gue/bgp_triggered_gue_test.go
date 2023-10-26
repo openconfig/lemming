@@ -179,8 +179,7 @@ var (
 // configureOTG configures ports and other configurations on the OTG device.
 func configureOTG(t *testing.T, ate *ondatra.ATEDevice) gosnappi.Config {
 	t.Helper()
-	otg := ate.OTG()
-	top := otg.NewConfig(t)
+	top := gosnappi.NewConfig()
 
 	p1 := ate.Port(t, "port1")
 	p2 := ate.Port(t, "port2")
@@ -650,7 +649,7 @@ func verifyOTGBGPTelemetry(t *testing.T, otg *otg.OTG, c gosnappi.Config, state 
 
 func configureGRIBIEntry(t *testing.T, dut *ondatra.DUTDevice, entries []fluent.GRIBIEntry) *fluent.GRIBIClient {
 	t.Helper()
-	gribic := dut.RawAPIs().GRIBI().Default(t)
+	gribic := dut.RawAPIs().GRIBI(t)
 	c := fluent.NewClient()
 	c.Connection().WithStub(gribic).
 		WithRedundancyMode(fluent.ElectedPrimaryClient).
@@ -1019,7 +1018,7 @@ func TestBGPTriggeredGUE(t *testing.T) {
 		})
 	}
 
-	dut2.RawAPIs().GRIBI().Default(t).Flush(context.Background(), &gribipb.FlushRequest{
+	dut2.RawAPIs().GRIBI(t).Flush(context.Background(), &gribipb.FlushRequest{
 		NetworkInstance: &gribipb.FlushRequest_All{All: &gribipb.Empty{}},
 	})
 	// TODO: Test that entries are deleted and that there is no more traffic.

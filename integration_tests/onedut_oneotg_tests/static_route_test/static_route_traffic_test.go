@@ -98,7 +98,7 @@ var (
 
 // configureOTG configures port1 and port2 on the ATE.
 func configureOTG(t *testing.T, ate *ondatra.ATEDevice) gosnappi.Config {
-	top := ate.OTG().NewConfig(t)
+	top := gosnappi.NewConfig()
 
 	p1 := ate.Port(t, "port1")
 	p2 := ate.Port(t, "port2")
