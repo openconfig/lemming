@@ -93,8 +93,7 @@ var (
 
 // configureATE configures port1 and port2 on the ATE.
 func configureATE(t *testing.T, ate *ondatra.ATEDevice) gosnappi.Config {
-	otg := ate.OTG()
-	top := otg.NewConfig(t)
+	top := gosnappi.NewConfig()
 
 	p1 := ate.Port(t, "port1")
 	p2 := ate.Port(t, "port2")
@@ -334,7 +333,7 @@ func TestIPv4Entry(t *testing.T) {
 	for _, tc := range cases {
 		var txPkts, rxPkts uint64
 		t.Run(tc.desc, func(t *testing.T) {
-			gribic := dut.RawAPIs().GRIBI().Default(t)
+			gribic := dut.RawAPIs().GRIBI(t)
 			c := fluent.NewClient()
 			c.Connection().WithStub(gribic).
 				WithRedundancyMode(fluent.ElectedPrimaryClient).

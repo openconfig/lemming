@@ -151,8 +151,7 @@ var (
 
 func configureOTG(t *testing.T, ate *ondatra.ATEDevice) gosnappi.Config {
 	t.Helper()
-	otg := ate.OTG()
-	top := otg.NewConfig(t)
+	top := gosnappi.NewConfig()
 
 	p1 := ate.Port(t, "port1")
 	p2 := ate.Port(t, "port2")
@@ -315,7 +314,7 @@ func bgpWithNbr(as uint32, routerID string, nbrs ...*oc.NetworkInstance_Protocol
 
 func configureGRIBIEntry(t *testing.T, dut *ondatra.DUTDevice, entries []fluent.GRIBIEntry) *fluent.GRIBIClient {
 	t.Helper()
-	gribic := dut.RawAPIs().GRIBI().Default(t)
+	gribic := dut.RawAPIs().GRIBI(t)
 	c := fluent.NewClient()
 	c.Connection().WithStub(gribic).
 		WithRedundancyMode(fluent.ElectedPrimaryClient).
@@ -491,10 +490,10 @@ func TestBGPRouteAdvertisement(t *testing.T) {
 		t.Errorf("Loss: got %g, want <= %d", loss, lossTolerance)
 	}
 
-	dut.RawAPIs().GRIBI().Default(t).Flush(context.Background(), &gribipb.FlushRequest{
+	dut.RawAPIs().GRIBI(t).Flush(context.Background(), &gribipb.FlushRequest{
 		NetworkInstance: &gribipb.FlushRequest_All{All: &gribipb.Empty{}},
 	})
-	dut2.RawAPIs().GRIBI().Default(t).Flush(context.Background(), &gribipb.FlushRequest{
+	dut2.RawAPIs().GRIBI(t).Flush(context.Background(), &gribipb.FlushRequest{
 		NetworkInstance: &gribipb.FlushRequest_All{All: &gribipb.Empty{}},
 	})
 	// TODO: Test that entries are deleted and that there is no more traffic.

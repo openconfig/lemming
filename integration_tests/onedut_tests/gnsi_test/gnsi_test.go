@@ -16,8 +16,6 @@ package gnsi_test
 
 import (
 	"context"
-	"crypto/tls"
-	"fmt"
 	"testing"
 
 	"github.com/openconfig/gnmi/errdiff"
@@ -25,16 +23,12 @@ import (
 	"github.com/openconfig/ondatra"
 	"github.com/openconfig/ondatra/gnmi"
 	"github.com/openconfig/ondatra/gnmi/oc"
-	"github.com/openconfig/ondatra/knebind/solver"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
 
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 	pathzpb "github.com/openconfig/gnsi/pathz"
-	tpb "github.com/openconfig/kne/proto/topo"
 )
 
 func TestMain(m *testing.M) {
@@ -42,8 +36,9 @@ func TestMain(m *testing.M) {
 }
 
 func TestPathz(t *testing.T) {
+	t.Skip("Ondatra/KNEbind no longer supports dialing gNSI")
 	dut := ondatra.DUT(t, "dut")
-	yc, err := ygnmi.NewClient(dut.RawAPIs().GNMI().Default(t), ygnmi.WithTarget(dut.Name()))
+	yc, err := ygnmi.NewClient(dut.RawAPIs().GNMI(t), ygnmi.WithTarget(dut.Name()))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -271,13 +266,5 @@ func installPolicy(t testing.TB, pathzClient pathzpb.PathzClient, req *pathzpb.A
 // TODO: remove once Ondatra supports gNSI.
 func fetchGNSI(t testing.TB, dut *ondatra.DUTDevice) pathzpb.PathzClient {
 	t.Helper()
-	m := dut.CustomData(solver.KNEServiceMapKey).(map[string]*tpb.Service)
-	addr := fmt.Sprintf("%s:%d", m["gnsi"].OutsideIp, m["gnsi"].Outside)
-	conn, err := grpc.Dial(addr,
-		grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{InsecureSkipVerify: true})),
-	)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return pathzpb.NewPathzClient(conn)
+	return dut.RawAPIs().GNSI(t).Pathz()
 }
