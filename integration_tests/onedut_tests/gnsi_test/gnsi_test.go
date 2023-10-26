@@ -19,13 +19,14 @@ import (
 	"testing"
 
 	"github.com/openconfig/gnmi/errdiff"
-	"github.com/openconfig/lemming/internal/binding"
 	"github.com/openconfig/ondatra"
 	"github.com/openconfig/ondatra/gnmi"
 	"github.com/openconfig/ondatra/gnmi/oc"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot"
 	"google.golang.org/grpc/metadata"
+
+	"github.com/openconfig/lemming/internal/binding"
 
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 	pathzpb "github.com/openconfig/gnsi/pathz"
@@ -36,7 +37,6 @@ func TestMain(m *testing.M) {
 }
 
 func TestPathz(t *testing.T) {
-	t.Skip("Ondatra/KNEbind no longer supports dialing gNSI")
 	dut := ondatra.DUT(t, "dut")
 	yc, err := ygnmi.NewClient(dut.RawAPIs().GNMI(t), ygnmi.WithTarget(dut.Name()))
 	if err != nil {
@@ -185,7 +185,7 @@ func TestPathz(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
 			reset(t, dut)
-			installPolicy(t, fetchGNSI(t, dut), tt.policy)
+			installPolicy(t, dut.RawAPIs().GNSI(t).Pathz(), tt.policy)
 
 			_, err := tt.op(ctx, yc)
 			if d := errdiff.Check(err, tt.wantOpErr); d != "" {
@@ -215,7 +215,7 @@ func mustPath(t testing.TB, s string) *gpb.Path {
 
 func reset(t testing.TB, dut *ondatra.DUTDevice) {
 	t.Helper()
-	installPolicy(t, fetchGNSI(t, dut), &pathzpb.AuthorizationPolicy{
+	installPolicy(t, dut.RawAPIs().GNSI(t).Pathz(), &pathzpb.AuthorizationPolicy{
 		Rules: []*pathzpb.AuthorizationRule{{
 			Path:      mustPath(t, "/"),
 			Principal: &pathzpb.AuthorizationRule_User{User: "testuser"},
@@ -233,7 +233,6 @@ func reset(t testing.TB, dut *ondatra.DUTDevice) {
 		DomainName: ygot.String("lemming.example.com"),
 		Hostname:   ygot.String("lemming"),
 	})
-
 }
 
 func installPolicy(t testing.TB, pathzClient pathzpb.PathzClient, req *pathzpb.AuthorizationPolicy) {
@@ -261,10 +260,4 @@ func installPolicy(t testing.TB, pathzClient pathzpb.PathzClient, req *pathzpb.A
 	if _, err := rc.Recv(); err != nil {
 		t.Fatalf("failed to recv finalize resp: %v", err)
 	}
-}
-
-// TODO: remove once Ondatra supports gNSI.
-func fetchGNSI(t testing.TB, dut *ondatra.DUTDevice) pathzpb.PathzClient {
-	t.Helper()
-	return dut.RawAPIs().GNSI(t).Pathz()
 }
