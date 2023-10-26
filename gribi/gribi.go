@@ -135,6 +135,7 @@ func createGRIBIServer(gClient gpb.GNMIClient, target string, root *oc.Root) (*s
 		routeReq, err := createSetRouteRequest(prefix, nhSum)
 		if err != nil {
 			log.Errorf("Cannot create SetRouteRequest: %v", err)
+			return
 		}
 		if optype == constants.Delete {
 			routeReq.Delete = true
@@ -143,6 +144,7 @@ func createGRIBIServer(gClient gpb.GNMIClient, target string, root *oc.Root) (*s
 		resp, err := gzebraClient.SetRoute(context.Background(), routeReq)
 		if err != nil {
 			log.Errorf("Error sending route to sysrib: %v", err)
+			return
 		}
 		log.Infof("Sent route %v with response %v", routeReq, resp)
 	}
