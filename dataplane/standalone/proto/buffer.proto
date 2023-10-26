@@ -78,6 +78,15 @@ message GetBufferPoolAttributeResponse {
   BufferPoolAttribute attr = 1;
 }
 
+message GetBufferPoolStatsRequest {
+  uint64 oid = 1;
+  repeated BufferPoolStat counter_ids = 2;
+}
+
+message GetBufferPoolStatsResponse {
+  repeated uint64 values = 1;
+}
+
 message CreateIngressPriorityGroupRequest {
   option (sai_type) = OBJECT_TYPE_INGRESS_PRIORITY_GROUP;
   uint64 switch = 1;
@@ -112,6 +121,15 @@ message GetIngressPriorityGroupAttributeRequest {
 
 message GetIngressPriorityGroupAttributeResponse {
   IngressPriorityGroupAttribute attr = 1;
+}
+
+message GetIngressPriorityGroupStatsRequest {
+  uint64 oid = 1;
+  repeated IngressPriorityGroupStat counter_ids = 2;
+}
+
+message GetIngressPriorityGroupStatsResponse {
+  repeated uint64 values = 1;
 }
 
 message CreateBufferProfileRequest {
@@ -168,6 +186,8 @@ service Buffer {
       returns (SetBufferPoolAttributeResponse) {}
   rpc GetBufferPoolAttribute(GetBufferPoolAttributeRequest)
       returns (GetBufferPoolAttributeResponse) {}
+  rpc GetBufferPoolStats(GetBufferPoolStatsRequest)
+      returns (GetBufferPoolStatsResponse) {}
   rpc CreateIngressPriorityGroup(CreateIngressPriorityGroupRequest)
       returns (CreateIngressPriorityGroupResponse) {}
   rpc RemoveIngressPriorityGroup(RemoveIngressPriorityGroupRequest)
@@ -176,6 +196,8 @@ service Buffer {
       returns (SetIngressPriorityGroupAttributeResponse) {}
   rpc GetIngressPriorityGroupAttribute(GetIngressPriorityGroupAttributeRequest)
       returns (GetIngressPriorityGroupAttributeResponse) {}
+  rpc GetIngressPriorityGroupStats(GetIngressPriorityGroupStatsRequest)
+      returns (GetIngressPriorityGroupStatsResponse) {}
   rpc CreateBufferProfile(CreateBufferProfileRequest)
       returns (CreateBufferProfileResponse) {}
   rpc RemoveBufferProfile(RemoveBufferProfileRequest)

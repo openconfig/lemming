@@ -17,10 +17,10 @@ require (
 	github.com/openconfig/gnsi v1.2.2
 	github.com/openconfig/goyang v1.4.1
 	github.com/openconfig/gribi v1.0.0
-	github.com/openconfig/gribigo v0.0.0-20230902004455-c7aff9365bec
+	github.com/openconfig/gribigo v0.0.0-20231018021145-a1124db3ca83
 	github.com/openconfig/kne v0.1.14
 	github.com/openconfig/ondatra v0.2.7
-	github.com/openconfig/ygnmi v0.8.7
+	github.com/openconfig/ygnmi v0.8.11
 	github.com/openconfig/ygot v0.29.11
 	github.com/p4lang/p4runtime v1.4.0-rc.5.0.20220728214547-13f0d02a521e
 	github.com/sirupsen/logrus v1.9.3
@@ -29,7 +29,7 @@ require (
 	github.com/spf13/viper v1.16.0
 	github.com/stoewer/go-strcase v1.3.0
 	github.com/vishvananda/netlink v1.2.1-beta.2
-	github.com/wenovus/gobgp/v3 v3.0.0-20230919213724-0f6fb3b45ead
+	github.com/wenovus/gobgp/v3 v3.0.0-20231024172553-6f8061a337a8
 	go.uber.org/mock v0.2.0
 	golang.org/x/exp v0.0.0-20230801115018-d63ba01acd4b
 	golang.org/x/sys v0.13.0

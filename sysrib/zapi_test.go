@@ -30,25 +30,28 @@ package sysrib
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"syscall"
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/openconfig/lemming/gnmi"
 	dpb "github.com/openconfig/lemming/proto/dataplane"
 	pb "github.com/openconfig/lemming/proto/sysrib"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/wenovus/gobgp/v3/pkg/zebra"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/testing/protocmp"
 )
 
 func TestZServer(t *testing.T) {
-	// Need to test these serially since they all use the same UDS address.
 	t.Run("hello", testHello)
-	t.Run("RouteAdd", testRouteAdd)
-	t.Run("RouteRedistribution-routeReadyBeforeDial", func(t *testing.T) { testRouteRedistribution(t, true) })
-	t.Run("RouteRedistribution-routeNotReadyBeforeDial", func(t *testing.T) { testRouteRedistribution(t, false) })
+	t.Run("RouteAdd", testRouteAddDelete)
+	t.Run("RouteRedistribution/routeReadyBeforeDial", func(t *testing.T) { testRouteRedistribution(t, true) })
+	t.Run("RouteRedistribution/routeNotReadyBeforeDial", func(t *testing.T) { testRouteRedistribution(t, false) })
 }
 
 // SendMessage sends a zebra message to the given connection.
@@ -63,7 +66,7 @@ func SendMessage(t *testing.T, conn net.Conn, msg *zebra.Message) error {
 }
 
 func Dial() (net.Conn, error) {
-	conn, err := net.Dial("unix", "/tmp/zserv.api")
+	conn, err := net.DialTimeout("unix", "/tmp/zserv.api", 10*time.Second)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +80,7 @@ func ZAPIServerStart(t *testing.T) *ZServer {
 		t.Fatal(err)
 	}
 
-	s, err := StartZServer("unix:/tmp/zserv.api", 0, sysribServer)
+	s, err := StartZServer(context.Background(), "unix:/tmp/zserv.api", 0, sysribServer)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -111,37 +114,335 @@ func testHello(t *testing.T) {
 	}
 }
 
-func testRouteAdd(t *testing.T) {
+func testRouteAddDelete(t *testing.T) {
+	routesQuery := programmedRoutesQuery(t)
+	// Sequential test
 	tests := []struct {
-		desc   string
-		inBody *zebra.IPRouteBody
+		desc            string
+		inBody          *zebra.IPRouteBody
+		inAddIntfAction *AddIntfAction
+		inDelete        bool
+		wantRoutes      []*dpb.Route
 	}{{
 		desc: "IPv4",
-		inBody: &zebra.IPRouteBody{Prefix: zebra.Prefix{
-			Family:    syscall.AF_INET,
-			PrefixLen: 24,
-			Prefix:    net.IPv4(10, 0, 0, 0),
+		inBody: &zebra.IPRouteBody{
+			Type: zebra.RouteBGP,
+			Prefix: zebra.Prefix{
+				Family:    syscall.AF_INET,
+				PrefixLen: 8,
+				// TODO(wenbli): This is probably a bug in GoBGP's zebra library.
+				//Prefix:    net.ParseIP("10.0.0.0"),
+				Prefix: net.ParseIP("0a0a::"),
+			},
+			Nexthops: []zebra.Nexthop{{
+				VrfID:  0,
+				Gate:   net.ParseIP("192.168.1.42"),
+				Weight: 1,
+			}},
+			Flags:   zebra.FlagAllowRecursion,
+			Safi:    zebra.SafiUnicast,
+			Message: zebra.MessageNexthop,
+		},
+		inAddIntfAction: &AddIntfAction{
+			name:    "eth0",
+			ifindex: 0,
+			enabled: true,
+			prefix:  "192.168.1.1/24",
+			niName:  "DEFAULT",
+		},
+		wantRoutes: []*dpb.Route{{
+			Prefix: &dpb.RoutePrefix{
+				VrfId: uint64(0),
+				Prefix: &dpb.RoutePrefix_Cidr{
+					Cidr: "10.0.0.0/8",
+				},
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Hops: []*dpb.NextHop{{
+						Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+						Dev: &dpb.NextHop_Port{
+							Port: "eth0",
+						},
+						Weight: 0,
+					}},
+				},
+			},
+		}, {
+			Prefix: &dpb.RoutePrefix{
+				VrfId: uint64(0),
+				Prefix: &dpb.RoutePrefix_Cidr{
+					Cidr: "192.168.1.0/24",
+				},
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Hops: []*dpb.NextHop{{
+						Dev: &dpb.NextHop_Port{
+							Port: "eth0",
+						},
+						Weight: 0,
+					}},
+				},
+			},
 		}},
 	}, {
 		desc: "IPv6",
-		inBody: &zebra.IPRouteBody{Prefix: zebra.Prefix{
-			Family:    syscall.AF_INET6,
-			PrefixLen: 49,
-			Prefix:    net.ParseIP("2001:aaaa:bbbb::"),
+		inBody: &zebra.IPRouteBody{
+			Type: zebra.RouteBGP,
+			Prefix: zebra.Prefix{
+				Family:    syscall.AF_INET6,
+				PrefixLen: 42,
+				Prefix:    net.ParseIP("4242::"),
+			},
+			Nexthops: []zebra.Nexthop{{
+				VrfID:  0,
+				Gate:   net.ParseIP("2001::ffff"),
+				Weight: 1,
+			}},
+			Flags:   zebra.FlagAllowRecursion,
+			Safi:    zebra.SafiUnicast,
+			Message: zebra.MessageNexthop,
+		},
+		inAddIntfAction: &AddIntfAction{
+			name:    "eth0",
+			ifindex: 0,
+			enabled: true,
+			prefix:  "2001::aaaa/42",
+			niName:  "DEFAULT",
+		},
+		wantRoutes: []*dpb.Route{{
+			Prefix: &dpb.RoutePrefix{
+				VrfId: uint64(0),
+				Prefix: &dpb.RoutePrefix_Cidr{
+					Cidr: "10.0.0.0/8",
+				},
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Hops: []*dpb.NextHop{{
+						Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+						Dev: &dpb.NextHop_Port{
+							Port: "eth0",
+						},
+						Weight: 0,
+					}},
+				},
+			},
+		}, {
+			Prefix: &dpb.RoutePrefix{
+				VrfId: uint64(0),
+				Prefix: &dpb.RoutePrefix_Cidr{
+					Cidr: "192.168.1.0/24",
+				},
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Hops: []*dpb.NextHop{{
+						Dev: &dpb.NextHop_Port{
+							Port: "eth0",
+						},
+						Weight: 0,
+					}},
+				},
+			},
+		}, {
+			Prefix: &dpb.RoutePrefix{
+				VrfId: uint64(0),
+				Prefix: &dpb.RoutePrefix_Cidr{
+					Cidr: "4242::/42",
+				},
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Hops: []*dpb.NextHop{{
+						Ip: &dpb.NextHop_IpStr{IpStr: "2001::ffff"},
+						Dev: &dpb.NextHop_Port{
+							Port: "eth0",
+						},
+						Weight: 0,
+					}},
+				},
+			},
+		}, {
+			Prefix: &dpb.RoutePrefix{
+				VrfId: uint64(0),
+				Prefix: &dpb.RoutePrefix_Cidr{
+					Cidr: "2001::/42",
+				},
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Hops: []*dpb.NextHop{{
+						Dev: &dpb.NextHop_Port{
+							Port: "eth0",
+						},
+						Weight: 0,
+					}},
+				},
+			},
+		}},
+	}, {
+		desc: "IPv4-delete",
+		inBody: &zebra.IPRouteBody{
+			Type: zebra.RouteBGP,
+			Prefix: zebra.Prefix{
+				Family:    syscall.AF_INET,
+				PrefixLen: 8,
+				// TODO(wenbli): This is probably a bug in GoBGP's zebra library.
+				//Prefix:    net.ParseIP("10.0.0.0"),
+				Prefix: net.ParseIP("0a0a::"),
+			},
+			Nexthops: []zebra.Nexthop{{
+				VrfID:  0,
+				Gate:   net.ParseIP("192.168.1.42"),
+				Weight: 1,
+			}},
+			Flags:   zebra.FlagAllowRecursion,
+			Safi:    zebra.SafiUnicast,
+			Message: zebra.MessageNexthop,
+		},
+		inDelete: true,
+		wantRoutes: []*dpb.Route{{
+			Prefix: &dpb.RoutePrefix{
+				VrfId: uint64(0),
+				Prefix: &dpb.RoutePrefix_Cidr{
+					Cidr: "192.168.1.0/24",
+				},
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Hops: []*dpb.NextHop{{
+						Dev: &dpb.NextHop_Port{
+							Port: "eth0",
+						},
+						Weight: 0,
+					}},
+				},
+			},
+		}, {
+			Prefix: &dpb.RoutePrefix{
+				VrfId: uint64(0),
+				Prefix: &dpb.RoutePrefix_Cidr{
+					Cidr: "4242::/42",
+				},
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Hops: []*dpb.NextHop{{
+						Ip: &dpb.NextHop_IpStr{IpStr: "2001::ffff"},
+						Dev: &dpb.NextHop_Port{
+							Port: "eth0",
+						},
+						Weight: 0,
+					}},
+				},
+			},
+		}, {
+			Prefix: &dpb.RoutePrefix{
+				VrfId: uint64(0),
+				Prefix: &dpb.RoutePrefix_Cidr{
+					Cidr: "2001::/42",
+				},
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Hops: []*dpb.NextHop{{
+						Dev: &dpb.NextHop_Port{
+							Port: "eth0",
+						},
+						Weight: 0,
+					}},
+				},
+			},
+		}},
+	}, {
+		desc: "IPv6-delete",
+		inBody: &zebra.IPRouteBody{
+			Type: zebra.RouteBGP,
+			Prefix: zebra.Prefix{
+				Family:    syscall.AF_INET6,
+				PrefixLen: 42,
+				Prefix:    net.ParseIP("4242::"),
+			},
+			Nexthops: []zebra.Nexthop{{
+				VrfID:  0,
+				Gate:   net.ParseIP("2001::ffff"),
+				Weight: 1,
+			}},
+			Flags:   zebra.FlagAllowRecursion,
+			Safi:    zebra.SafiUnicast,
+			Message: zebra.MessageNexthop,
+		},
+		inDelete: true,
+		wantRoutes: []*dpb.Route{{
+			Prefix: &dpb.RoutePrefix{
+				VrfId: uint64(0),
+				Prefix: &dpb.RoutePrefix_Cidr{
+					Cidr: "192.168.1.0/24",
+				},
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Hops: []*dpb.NextHop{{
+						Dev: &dpb.NextHop_Port{
+							Port: "eth0",
+						},
+						Weight: 0,
+					}},
+				},
+			},
+		}, {
+			Prefix: &dpb.RoutePrefix{
+				VrfId: uint64(0),
+				Prefix: &dpb.RoutePrefix_Cidr{
+					Cidr: "2001::/42",
+				},
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Hops: []*dpb.NextHop{{
+						Dev: &dpb.NextHop_Port{
+							Port: "eth0",
+						},
+						Weight: 0,
+					}},
+				},
+			},
 		}},
 	}}
 
+	s := ZAPIServerStart(t)
+	defer s.Stop()
+
+	conn, err := Dial()
+	if err != nil {
+		t.Errorf("Dial failed %v\n", err)
+		return
+	}
+	defer conn.Close()
+
+	grpcServer := grpc.NewServer()
+	gnmiServer, err := gnmi.New(grpcServer, "local", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	client := gnmiServer.LocalClient()
+	if err := s.sysrib.Start(context.Background(), client, "local", "unix:/tmp/zserv.api"); err != nil {
+		t.Fatalf("cannot start sysrib server, %v", err)
+	}
+	defer s.sysrib.Stop()
+
+	c, err := ygnmi.NewClient(client, ygnmi.WithTarget("local"))
+	if err != nil {
+		t.Fatalf("cannot create ygnmi client: %v", err)
+	}
+
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			s := ZAPIServerStart(t)
-			defer s.Stop()
-
-			conn, err := Dial()
-			if err != nil {
-				t.Errorf("Dial failed %v\n", err)
-				return
+			if tt.inAddIntfAction != nil {
+				configureInterface(t, tt.inAddIntfAction, c)
 			}
-			defer conn.Close()
 
 			serverVersion := zebra.MaxZapiVer
 			serverSoftware := zebra.MaxSoftware
@@ -150,6 +451,7 @@ func testRouteAdd(t *testing.T) {
 					Len:     zebra.HeaderSize(serverVersion),
 					Marker:  zebra.HeaderMarker(serverVersion),
 					Version: serverVersion,
+					VrfID:   zebra.DefaultVrf,
 					Command: zebra.Hello.ToEach(serverVersion, serverSoftware),
 				},
 				Body: &zebra.HelloBody{},
@@ -163,12 +465,33 @@ func testRouteAdd(t *testing.T) {
 					Len:     zebra.HeaderSize(serverVersion),
 					Marker:  zebra.HeaderMarker(serverVersion),
 					Version: serverVersion,
+					VrfID:   zebra.DefaultVrf,
 					Command: zebra.RouteAdd.ToEach(serverVersion, serverSoftware),
 				},
 				Body: tt.inBody,
 			}
+			if tt.inDelete {
+				msg.Header.Command = zebra.RouteDelete.ToEach(serverVersion, serverSoftware)
+			}
 			if err := SendMessage(t, conn, &msg); err != nil {
 				t.Error(err)
+			}
+
+			for i := 0; i != maxGNMIWaitQuanta; i++ {
+				var routes []*dpb.Route
+				if routes, err = ygnmi.GetAll(context.Background(), c, routesQuery); err == nil {
+					if diff := cmp.Diff(tt.wantRoutes, routes, protocmp.Transform(), protocmp.SortRepeatedFields(new(dpb.NextHopList), "hops"), cmpopts.SortSlices(func(a, b *dpb.Route) bool {
+						return a.GetPrefix().GetCidr() < b.GetPrefix().GetCidr()
+					})); diff != "" {
+						err = fmt.Errorf("routes not equal to wantRoutes (-want, +got):\n%s", diff)
+					} else {
+						break
+					}
+				}
+				time.Sleep(100 * time.Millisecond)
+			}
+			if err != nil {
+				t.Fatalf("Routes not resolved in time limit: %v", err)
 			}
 		})
 	}
@@ -186,6 +509,7 @@ func testRouteRedistribution(t *testing.T, routeReadyBeforeDial bool) {
 		desc              string
 		inAddIntfAction   *AddIntfAction
 		inSetRouteRequest *pb.SetRouteRequest
+		wantRoutes        []*dpb.Route
 	}{{
 		desc: "IPv4",
 		inAddIntfAction: &AddIntfAction{
@@ -209,6 +533,42 @@ func testRouteRedistribution(t *testing.T, routeReadyBeforeDial bool) {
 				Weight:  1,
 			}},
 		},
+		wantRoutes: []*dpb.Route{{
+			Prefix: &dpb.RoutePrefix{
+				VrfId: uint64(0),
+				Prefix: &dpb.RoutePrefix_Cidr{
+					Cidr: "10.0.0.0/8",
+				},
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Hops: []*dpb.NextHop{{
+						Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
+						Dev: &dpb.NextHop_Port{
+							Port: "eth0",
+						},
+						Weight: 0,
+					}},
+				},
+			},
+		}, {
+			Prefix: &dpb.RoutePrefix{
+				VrfId: uint64(0),
+				Prefix: &dpb.RoutePrefix_Cidr{
+					Cidr: "192.168.1.0/24",
+				},
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Hops: []*dpb.NextHop{{
+						Dev: &dpb.NextHop_Port{
+							Port: "eth0",
+						},
+						Weight: 0,
+					}},
+				},
+			},
+		}},
 	}, {
 		desc: "IPv6",
 		inAddIntfAction: &AddIntfAction{
@@ -232,6 +592,42 @@ func testRouteRedistribution(t *testing.T, routeReadyBeforeDial bool) {
 				Weight:  1,
 			}},
 		},
+		wantRoutes: []*dpb.Route{{
+			Prefix: &dpb.RoutePrefix{
+				VrfId: uint64(0),
+				Prefix: &dpb.RoutePrefix_Cidr{
+					Cidr: "4242::/42",
+				},
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Hops: []*dpb.NextHop{{
+						Ip: &dpb.NextHop_IpStr{IpStr: "2001::ffff"},
+						Dev: &dpb.NextHop_Port{
+							Port: "eth0",
+						},
+						Weight: 0,
+					}},
+				},
+			},
+		}, {
+			Prefix: &dpb.RoutePrefix{
+				VrfId: uint64(0),
+				Prefix: &dpb.RoutePrefix_Cidr{
+					Cidr: "2001::/42",
+				},
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Hops: []*dpb.NextHop{{
+						Dev: &dpb.NextHop_Port{
+							Port: "eth0",
+						},
+						Weight: 0,
+					}},
+				},
+			},
+		}},
 	}}
 
 	for _, tt := range tests {
@@ -247,7 +643,7 @@ func testRouteRedistribution(t *testing.T, routeReadyBeforeDial bool) {
 				t.Fatal(err)
 			}
 			client := gnmiServer.LocalClient()
-			if err := s.Start(client, "local", "unix:/tmp/zserv.api"); err != nil {
+			if err := s.Start(context.Background(), client, "local", "unix:/tmp/zserv.api"); err != nil {
 				t.Fatalf("cannot start sysrib server, %v", err)
 			}
 			defer s.Stop()
@@ -256,22 +652,30 @@ func testRouteRedistribution(t *testing.T, routeReadyBeforeDial bool) {
 			if err != nil {
 				t.Fatalf("cannot create ygnmi client: %v", err)
 			}
+
 			configureInterface(t, tt.inAddIntfAction, c)
 
 			if routeReadyBeforeDial {
 				if _, err := s.SetRoute(context.Background(), tt.inSetRouteRequest); err != nil {
 					t.Fatalf("Got unexpected error during call to SetRoute: %v", err)
 				}
-				var routes []*dpb.Route
+
+				var err error
 				for i := 0; i != maxGNMIWaitQuanta; i++ {
-					var err error
-					if routes, err = ygnmi.GetAll(context.Background(), c, routesQuery); err != nil && len(routes) != 0 {
-						break
+					var routes []*dpb.Route
+					if routes, err = ygnmi.GetAll(context.Background(), c, routesQuery); err == nil {
+						if diff := cmp.Diff(tt.wantRoutes, routes, protocmp.Transform(), protocmp.SortRepeatedFields(new(dpb.NextHopList), "hops"), cmpopts.SortSlices(func(a, b *dpb.Route) bool {
+							return a.GetPrefix().GetCidr() < b.GetPrefix().GetCidr()
+						})); diff != "" {
+							err = fmt.Errorf("routes not equal to wantRoutes (-want, +got):\n%s", diff)
+						} else {
+							break
+						}
 					}
 					time.Sleep(100 * time.Millisecond)
 				}
-				if len(routes) == 0 {
-					t.Fatalf("Route not resolved in time limit.")
+				if err != nil {
+					t.Fatalf("Routes not resolved in time limit: %v", err)
 				}
 			}
 
@@ -314,6 +718,20 @@ func testRouteRedistribution(t *testing.T, routeReadyBeforeDial bool) {
 				t.Fatal("got empty message")
 			}
 			if got, want := m.Header.Command.ToCommon(version, software), zebra.RedistributeRouteAdd; got != want {
+				t.Errorf("Got message %s, want %s", got, want)
+			}
+
+			tt.inSetRouteRequest.Delete = true
+			if _, err := s.SetRoute(context.Background(), tt.inSetRouteRequest); err != nil {
+				t.Fatalf("Got unexpected error during call to SetRoute: %v", err)
+			}
+			m, err = zebra.ReceiveSingleMsg(topicLogger, conn, version, software, "test-client")
+			if err != nil {
+				t.Fatal(err)
+			} else if m == nil {
+				t.Fatal("got empty message")
+			}
+			if got, want := m.Header.Command.ToCommon(version, software), zebra.RedistributeRouteDel; got != want {
 				t.Errorf("Got message %s, want %s", got, want)
 			}
 		})

@@ -501,6 +501,15 @@ message GetSwitchAttributeResponse {
   SwitchAttribute attr = 1;
 }
 
+message GetSwitchStatsRequest {
+  uint64 oid = 1;
+  repeated SwitchStat counter_ids = 2;
+}
+
+message GetSwitchStatsResponse {
+  repeated uint64 values = 1;
+}
+
 message CreateSwitchTunnelRequest {
   option (sai_type) = OBJECT_TYPE_SWITCH_TUNNEL;
   uint64 switch = 1;
@@ -585,6 +594,7 @@ service Switch {
       returns (stream IpsecSaStatusNotificationDataResponse) {}
   rpc GetSwitchAttribute(GetSwitchAttributeRequest)
       returns (GetSwitchAttributeResponse) {}
+  rpc GetSwitchStats(GetSwitchStatsRequest) returns (GetSwitchStatsResponse) {}
   rpc CreateSwitchTunnel(CreateSwitchTunnelRequest)
       returns (CreateSwitchTunnelResponse) {}
   rpc RemoveSwitchTunnel(RemoveSwitchTunnelRequest)

@@ -153,6 +153,15 @@ message GetIpsecPortAttributeResponse {
   IpsecPortAttribute attr = 1;
 }
 
+message GetIpsecPortStatsRequest {
+  uint64 oid = 1;
+  repeated IpsecPortStat counter_ids = 2;
+}
+
+message GetIpsecPortStatsResponse {
+  repeated uint64 values = 1;
+}
+
 message CreateIpsecSaRequest {
   option (sai_type) = OBJECT_TYPE_IPSEC_SA;
   uint64 switch = 1;
@@ -208,6 +217,15 @@ message GetIpsecSaAttributeResponse {
   IpsecSaAttribute attr = 1;
 }
 
+message GetIpsecSaStatsRequest {
+  uint64 oid = 1;
+  repeated IpsecSaStat counter_ids = 2;
+}
+
+message GetIpsecSaStatsResponse {
+  repeated uint64 values = 1;
+}
+
 service Ipsec {
   rpc CreateIpsec(CreateIpsecRequest) returns (CreateIpsecResponse) {}
   rpc RemoveIpsec(RemoveIpsecRequest) returns (RemoveIpsecResponse) {}
@@ -223,10 +241,14 @@ service Ipsec {
       returns (SetIpsecPortAttributeResponse) {}
   rpc GetIpsecPortAttribute(GetIpsecPortAttributeRequest)
       returns (GetIpsecPortAttributeResponse) {}
+  rpc GetIpsecPortStats(GetIpsecPortStatsRequest)
+      returns (GetIpsecPortStatsResponse) {}
   rpc CreateIpsecSa(CreateIpsecSaRequest) returns (CreateIpsecSaResponse) {}
   rpc RemoveIpsecSa(RemoveIpsecSaRequest) returns (RemoveIpsecSaResponse) {}
   rpc SetIpsecSaAttribute(SetIpsecSaAttributeRequest)
       returns (SetIpsecSaAttributeResponse) {}
   rpc GetIpsecSaAttribute(GetIpsecSaAttributeRequest)
       returns (GetIpsecSaAttributeResponse) {}
+  rpc GetIpsecSaStats(GetIpsecSaStatsRequest)
+      returns (GetIpsecSaStatsResponse) {}
 }

@@ -171,6 +171,15 @@ message CreateVlanMembersResponse {
   repeated CreateVlanMemberResponse resps = 1;
 }
 
+message GetVlanStatsRequest {
+  uint64 oid = 1;
+  repeated VlanStat counter_ids = 2;
+}
+
+message GetVlanStatsResponse {
+  repeated uint64 values = 1;
+}
+
 service Vlan {
   rpc CreateVlan(CreateVlanRequest) returns (CreateVlanResponse) {}
   rpc RemoveVlan(RemoveVlanRequest) returns (RemoveVlanResponse) {}
@@ -188,4 +197,5 @@ service Vlan {
       returns (GetVlanMemberAttributeResponse) {}
   rpc CreateVlanMembers(CreateVlanMembersRequest)
       returns (CreateVlanMembersResponse) {}
+  rpc GetVlanStats(GetVlanStatsRequest) returns (GetVlanStatsResponse) {}
 }

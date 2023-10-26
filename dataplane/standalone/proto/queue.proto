@@ -73,6 +73,15 @@ message GetQueueAttributeResponse {
   QueueAttribute attr = 1;
 }
 
+message GetQueueStatsRequest {
+  uint64 oid = 1;
+  repeated QueueStat counter_ids = 2;
+}
+
+message GetQueueStatsResponse {
+  repeated uint64 values = 1;
+}
+
 service Queue {
   rpc CreateQueue(CreateQueueRequest) returns (CreateQueueResponse) {}
   rpc RemoveQueue(RemoveQueueRequest) returns (RemoveQueueResponse) {}
@@ -80,4 +89,5 @@ service Queue {
       returns (SetQueueAttributeResponse) {}
   rpc GetQueueAttribute(GetQueueAttributeRequest)
       returns (GetQueueAttributeResponse) {}
+  rpc GetQueueStats(GetQueueStatsRequest) returns (GetQueueStatsResponse) {}
 }

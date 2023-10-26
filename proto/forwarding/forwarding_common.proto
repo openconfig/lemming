@@ -269,6 +269,10 @@ enum CounterId {
       35;  // Number of packet debugged after receiving.
   COUNTER_ID_RX_DEBUG_OCTETS =
       36;                // Number of octets debugged after receiving.
+  COUNTER_ID_RX_UCAST_PACKETS = 37;
+  COUNTER_ID_RX_NON_UCAST_PACKETS = 38;
+  COUNTER_ID_TX_UCAST_PACKETS = 39;
+  COUNTER_ID_TX_NON_UCAST_PACKETS = 40;
   COUNTER_ID_MAX = 255;  // Maximum counter id.
 }
 

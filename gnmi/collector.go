@@ -16,9 +16,12 @@ package gnmi
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"runtime/debug"
 	"time"
 
+	log "github.com/golang/glog"
 	"github.com/openconfig/gnmi/cache"
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 	"github.com/openconfig/gnmi/subscribe"
@@ -134,7 +137,16 @@ func (c *Collector) GnmiUpdate(n *gpb.Notification) error {
 		}
 		n.Prefix.Target = c.name
 	}
-	return t.GnmiUpdate(n)
+	if n.Timestamp == 0 {
+		// Set timestamp here in order to minimize latency and reduce chance for "update is stale" error.
+		n.Timestamp = time.Now().UnixNano()
+	}
+	err := t.GnmiUpdate(n)
+	if errors.Is(err, cache.ErrStale) {
+		log.Errorf("Unexpected stale update while updating cache: %v, (current time: %v, notif time: %v): %v\n\n%v", err, time.Now().UnixNano(), n.Timestamp, string(debug.Stack()), compactNotifString(n))
+		return nil
+	}
+	return err
 }
 
 // periodic runs the function fn every period.

@@ -424,6 +424,24 @@ sai_status_t l_get_bfd_session_stats(sai_object_id_t bfd_session_id,
                                      uint64_t *counters) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
+  lemming::dataplane::sai::GetBfdSessionStatsRequest req;
+  lemming::dataplane::sai::GetBfdSessionStatsResponse resp;
+  grpc::ClientContext context;
+  req.set_oid(bfd_session_id);
+
+  for (uint32_t i = 0; i < number_of_counters; i++) {
+    req.add_counter_ids(static_cast<lemming::dataplane::sai::BfdSessionStat>(
+        counter_ids[i] + 1));
+  }
+  grpc::Status status = bfd->GetBfdSessionStats(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  for (uint32_t i = 0; i < number_of_counters; i++) {
+    counters[i] = resp.values(i);
+  }
+
   return SAI_STATUS_SUCCESS;
 }
 

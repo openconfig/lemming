@@ -213,7 +213,7 @@ func New(targetName, zapiURL string, opts ...Option) (*Device, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := sysribServer.Start(cacheClient, targetName, zapiURL); err != nil {
+	if err := sysribServer.Start(context.Background(), cacheClient, targetName, zapiURL); err != nil {
 		return nil, fmt.Errorf("sysribServer failed to start: %v", err)
 	}
 

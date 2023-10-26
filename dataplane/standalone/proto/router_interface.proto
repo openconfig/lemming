@@ -98,6 +98,15 @@ message GetRouterInterfaceAttributeResponse {
   RouterInterfaceAttribute attr = 1;
 }
 
+message GetRouterInterfaceStatsRequest {
+  uint64 oid = 1;
+  repeated RouterInterfaceStat counter_ids = 2;
+}
+
+message GetRouterInterfaceStatsResponse {
+  repeated uint64 values = 1;
+}
+
 service RouterInterface {
   rpc CreateRouterInterface(CreateRouterInterfaceRequest)
       returns (CreateRouterInterfaceResponse) {}
@@ -107,4 +116,6 @@ service RouterInterface {
       returns (SetRouterInterfaceAttributeResponse) {}
   rpc GetRouterInterfaceAttribute(GetRouterInterfaceAttributeRequest)
       returns (GetRouterInterfaceAttributeResponse) {}
+  rpc GetRouterInterfaceStats(GetRouterInterfaceStatsRequest)
+      returns (GetRouterInterfaceStatsResponse) {}
 }

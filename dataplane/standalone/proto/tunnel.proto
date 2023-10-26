@@ -189,6 +189,15 @@ message GetTunnelAttributeResponse {
   TunnelAttribute attr = 1;
 }
 
+message GetTunnelStatsRequest {
+  uint64 oid = 1;
+  repeated TunnelStat counter_ids = 2;
+}
+
+message GetTunnelStatsResponse {
+  repeated uint64 values = 1;
+}
+
 message CreateTunnelTermTableEntryRequest {
   option (sai_type) = OBJECT_TYPE_TUNNEL_TERM_TABLE_ENTRY;
   uint64 switch = 1;
@@ -290,6 +299,7 @@ service Tunnel {
       returns (SetTunnelAttributeResponse) {}
   rpc GetTunnelAttribute(GetTunnelAttributeRequest)
       returns (GetTunnelAttributeResponse) {}
+  rpc GetTunnelStats(GetTunnelStatsRequest) returns (GetTunnelStatsResponse) {}
   rpc CreateTunnelTermTableEntry(CreateTunnelTermTableEntryRequest)
       returns (CreateTunnelTermTableEntryResponse) {}
   rpc RemoveTunnelTermTableEntry(RemoveTunnelTermTableEntryRequest)

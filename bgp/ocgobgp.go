@@ -24,7 +24,7 @@ import (
 
 	log "github.com/golang/glog"
 	"github.com/openconfig/lemming/gnmi/oc"
-	"github.com/wenovus/gobgp/v3/pkg/config/gobgp"
+	gobgpoc "github.com/wenovus/gobgp/v3/pkg/config/oc"
 )
 
 // convertPolicyName converts from OC policy name to a neighbour-qualified
@@ -33,7 +33,7 @@ func convertPolicyName(neighAddr, ocPolicyName string) string {
 	return neighAddr + "|" + ocPolicyName
 }
 
-func convertSetCommunities(setCommunity *oc.RoutingPolicy_PolicyDefinition_Statement_Actions_BgpActions_SetCommunity, convertedCommSets []gobgp.CommunitySet, commSetIndexMap map[string]int) ([]string, error) {
+func convertSetCommunities(setCommunity *oc.RoutingPolicy_PolicyDefinition_Statement_Actions_BgpActions_SetCommunity, convertedCommSets []gobgpoc.CommunitySet, commSetIndexMap map[string]int) ([]string, error) {
 	switch setCommunity.GetMethod() {
 	case oc.SetCommunity_Method_INLINE:
 		var setCommunitiesList []string
@@ -59,9 +59,9 @@ func convertSetCommunities(setCommunity *oc.RoutingPolicy_PolicyDefinition_State
 // It adds neighbour set to disambiguate it from another instance of the policy
 // for another neighbour. This is necessary since all policies will go into a
 // single apply-policy list.
-func convertPolicyDefinition(policy *oc.RoutingPolicy_PolicyDefinition, neighAddr string, occommset map[string]*oc.RoutingPolicy_DefinedSets_BgpDefinedSets_CommunitySet, convertedCommSets []gobgp.CommunitySet, commSetIndexMap map[string]int) gobgp.PolicyDefinition {
+func convertPolicyDefinition(policy *oc.RoutingPolicy_PolicyDefinition, neighAddr string, occommset map[string]*oc.RoutingPolicy_DefinedSets_BgpDefinedSets_CommunitySet, convertedCommSets []gobgpoc.CommunitySet, commSetIndexMap map[string]int) gobgpoc.PolicyDefinition {
 	convertedPolicyName := convertPolicyName(neighAddr, policy.GetName())
-	var statements []gobgp.Statement
+	var statements []gobgpoc.Statement
 	for _, statement := range policy.Statement.Values() {
 		setCommunitiesList, err := convertSetCommunities(statement.GetActions().GetBgpActions().GetSetCommunity(), convertedCommSets, commSetIndexMap)
 		if err != nil {
@@ -71,42 +71,42 @@ func convertPolicyDefinition(policy *oc.RoutingPolicy_PolicyDefinition, neighAdd
 		if err != nil {
 			log.Errorf("MED value not supported: %v", err)
 		}
-		statements = append(statements, gobgp.Statement{
+		statements = append(statements, gobgpoc.Statement{
 			// In GoBGP, statements must have globally-unique names.
 			// Ensure uniqueness by qualifying each one with the name of the converted policy.
 			Name: convertedPolicyName + ":" + statement.GetName(),
-			Conditions: gobgp.Conditions{
-				MatchPrefixSet: gobgp.MatchPrefixSet{
+			Conditions: gobgpoc.Conditions{
+				MatchPrefixSet: gobgpoc.MatchPrefixSet{
 					PrefixSet:       statement.GetConditions().GetMatchPrefixSet().GetPrefixSet(),
 					MatchSetOptions: convertMatchSetOptionsRestrictedType(statement.GetConditions().GetMatchPrefixSet().GetMatchSetOptions()),
 				},
-				MatchNeighborSet: gobgp.MatchNeighborSet{
+				MatchNeighborSet: gobgpoc.MatchNeighborSet{
 					// Name the neighbor set as the policy so that the policy only applies to referring neighbours.
 					NeighborSet: neighAddr,
 				},
-				BgpConditions: gobgp.BgpConditions{
-					MatchCommunitySet: gobgp.MatchCommunitySet{
+				BgpConditions: gobgpoc.BgpConditions{
+					MatchCommunitySet: gobgpoc.MatchCommunitySet{
 						CommunitySet:    statement.Conditions.GetBgpConditions().GetCommunitySet(),
 						MatchSetOptions: convertMatchSetOptionsType(occommset[statement.GetConditions().GetBgpConditions().GetCommunitySet()].GetMatchSetOptions()),
 					},
-					MatchAsPathSet: gobgp.MatchAsPathSet{
+					MatchAsPathSet: gobgpoc.MatchAsPathSet{
 						AsPathSet:       statement.Conditions.GetBgpConditions().GetMatchAsPathSet().GetAsPathSet(),
 						MatchSetOptions: convertMatchSetOptionsType(statement.GetConditions().GetBgpConditions().GetMatchAsPathSet().GetMatchSetOptions()),
 					},
 				},
 			},
-			Actions: gobgp.Actions{
+			Actions: gobgpoc.Actions{
 				RouteDisposition: convertRouteDisposition(statement.GetActions().GetPolicyResult()),
-				BgpActions: gobgp.BgpActions{
-					SetCommunity: gobgp.SetCommunity{
-						SetCommunityMethod: gobgp.SetCommunityMethod{
+				BgpActions: gobgpoc.BgpActions{
+					SetCommunity: gobgpoc.SetCommunity{
+						SetCommunityMethod: gobgpoc.SetCommunityMethod{
 							CommunitiesList: setCommunitiesList,
 						},
 						Options: strings.ToLower(statement.GetActions().GetBgpActions().GetSetCommunity().GetOptions().String()),
 					},
 					SetLocalPref: statement.GetActions().GetBgpActions().GetSetLocalPref(),
-					SetMed:       gobgp.BgpSetMedType(setmed),
-					SetAsPathPrepend: gobgp.SetAsPathPrepend{
+					SetMed:       gobgpoc.BgpSetMedType(setmed),
+					SetAsPathPrepend: gobgpoc.SetAsPathPrepend{
 						RepeatN: statement.GetActions().GetBgpActions().GetSetAsPathPrepend().GetRepeatN(),
 						As:      strconv.FormatUint(uint64(statement.GetActions().GetBgpActions().GetSetAsPathPrepend().GetAsn()), 10),
 					},
@@ -115,15 +115,15 @@ func convertPolicyDefinition(policy *oc.RoutingPolicy_PolicyDefinition, neighAdd
 		})
 	}
 
-	return gobgp.PolicyDefinition{
+	return gobgpoc.PolicyDefinition{
 		Name:       convertedPolicyName,
 		Statements: statements,
 	}
 }
 
-func convertNeighborApplyPolicy(neigh *oc.NetworkInstance_Protocol_Bgp_Neighbor) gobgp.ApplyPolicy {
-	return gobgp.ApplyPolicy{
-		Config: gobgp.ApplyPolicyConfig{
+func convertNeighborApplyPolicy(neigh *oc.NetworkInstance_Protocol_Bgp_Neighbor) gobgpoc.ApplyPolicy {
+	return gobgpoc.ApplyPolicy{
+		Config: gobgpoc.ApplyPolicyConfig{
 			DefaultImportPolicy: convertDefaultPolicy(neigh.GetApplyPolicy().GetDefaultImportPolicy()),
 			DefaultExportPolicy: convertDefaultPolicy(neigh.GetApplyPolicy().GetDefaultExportPolicy()),
 			ImportPolicyList:    neigh.GetApplyPolicy().GetImportPolicy(),
@@ -134,60 +134,60 @@ func convertNeighborApplyPolicy(neigh *oc.NetworkInstance_Protocol_Bgp_Neighbor)
 
 // TODO(wenbli): Add unit tests for these conversion functions.
 
-func convertDefaultPolicy(ocpolicy oc.E_RoutingPolicy_DefaultPolicyType) gobgp.DefaultPolicyType {
+func convertDefaultPolicy(ocpolicy oc.E_RoutingPolicy_DefaultPolicyType) gobgpoc.DefaultPolicyType {
 	switch ocpolicy {
 	case oc.RoutingPolicy_DefaultPolicyType_REJECT_ROUTE:
-		return gobgp.DEFAULT_POLICY_TYPE_REJECT_ROUTE
+		return gobgpoc.DEFAULT_POLICY_TYPE_REJECT_ROUTE
 	case oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE:
-		return gobgp.DEFAULT_POLICY_TYPE_ACCEPT_ROUTE
+		return gobgpoc.DEFAULT_POLICY_TYPE_ACCEPT_ROUTE
 	default:
-		return gobgp.DEFAULT_POLICY_TYPE_REJECT_ROUTE
+		return gobgpoc.DEFAULT_POLICY_TYPE_REJECT_ROUTE
 	}
 }
 
-func convertMatchSetOptionsType(ocMatchSetOpts oc.E_RoutingPolicy_MatchSetOptionsType) gobgp.MatchSetOptionsType {
+func convertMatchSetOptionsType(ocMatchSetOpts oc.E_RoutingPolicy_MatchSetOptionsType) gobgpoc.MatchSetOptionsType {
 	switch ocMatchSetOpts {
 	case oc.RoutingPolicy_MatchSetOptionsType_INVERT:
-		return gobgp.MATCH_SET_OPTIONS_TYPE_INVERT
+		return gobgpoc.MATCH_SET_OPTIONS_TYPE_INVERT
 	case oc.RoutingPolicy_MatchSetOptionsType_ANY:
-		return gobgp.MATCH_SET_OPTIONS_TYPE_ANY
+		return gobgpoc.MATCH_SET_OPTIONS_TYPE_ANY
 	case oc.RoutingPolicy_MatchSetOptionsType_ALL:
-		return gobgp.MATCH_SET_OPTIONS_TYPE_ALL
+		return gobgpoc.MATCH_SET_OPTIONS_TYPE_ALL
 	default:
-		return gobgp.MATCH_SET_OPTIONS_TYPE_ANY
+		return gobgpoc.MATCH_SET_OPTIONS_TYPE_ANY
 	}
 }
 
-func convertMatchSetOptionsRestrictedType(ocrestrictedMatchSetOpts oc.E_RoutingPolicy_MatchSetOptionsRestrictedType) gobgp.MatchSetOptionsRestrictedType {
+func convertMatchSetOptionsRestrictedType(ocrestrictedMatchSetOpts oc.E_RoutingPolicy_MatchSetOptionsRestrictedType) gobgpoc.MatchSetOptionsRestrictedType {
 	switch ocrestrictedMatchSetOpts {
 	case oc.RoutingPolicy_MatchSetOptionsRestrictedType_INVERT:
-		return gobgp.MATCH_SET_OPTIONS_RESTRICTED_TYPE_INVERT
+		return gobgpoc.MATCH_SET_OPTIONS_RESTRICTED_TYPE_INVERT
 	case oc.RoutingPolicy_MatchSetOptionsRestrictedType_ANY:
-		return gobgp.MATCH_SET_OPTIONS_RESTRICTED_TYPE_ANY
+		return gobgpoc.MATCH_SET_OPTIONS_RESTRICTED_TYPE_ANY
 	default:
-		return gobgp.MATCH_SET_OPTIONS_RESTRICTED_TYPE_ANY
+		return gobgpoc.MATCH_SET_OPTIONS_RESTRICTED_TYPE_ANY
 	}
 }
 
-func convertRouteDisposition(ocpolicyresult oc.E_RoutingPolicy_PolicyResultType) gobgp.RouteDisposition {
+func convertRouteDisposition(ocpolicyresult oc.E_RoutingPolicy_PolicyResultType) gobgpoc.RouteDisposition {
 	switch ocpolicyresult {
 	case oc.RoutingPolicy_PolicyResultType_REJECT_ROUTE:
-		return gobgp.ROUTE_DISPOSITION_REJECT_ROUTE
+		return gobgpoc.ROUTE_DISPOSITION_REJECT_ROUTE
 	case oc.RoutingPolicy_PolicyResultType_ACCEPT_ROUTE:
-		return gobgp.ROUTE_DISPOSITION_ACCEPT_ROUTE
+		return gobgpoc.ROUTE_DISPOSITION_ACCEPT_ROUTE
 	default:
-		return gobgp.ROUTE_DISPOSITION_NONE
+		return gobgpoc.ROUTE_DISPOSITION_NONE
 	}
 }
 
-func defaultPolicyToRouteDisp(gobgpdefaultpolicy gobgp.DefaultPolicyType) gobgp.RouteDisposition {
+func defaultPolicyToRouteDisp(gobgpdefaultpolicy gobgpoc.DefaultPolicyType) gobgpoc.RouteDisposition {
 	switch gobgpdefaultpolicy {
-	case gobgp.DEFAULT_POLICY_TYPE_REJECT_ROUTE:
-		return gobgp.ROUTE_DISPOSITION_REJECT_ROUTE
-	case gobgp.DEFAULT_POLICY_TYPE_ACCEPT_ROUTE:
-		return gobgp.ROUTE_DISPOSITION_ACCEPT_ROUTE
+	case gobgpoc.DEFAULT_POLICY_TYPE_REJECT_ROUTE:
+		return gobgpoc.ROUTE_DISPOSITION_REJECT_ROUTE
+	case gobgpoc.DEFAULT_POLICY_TYPE_ACCEPT_ROUTE:
+		return gobgpoc.ROUTE_DISPOSITION_ACCEPT_ROUTE
 	default:
-		return gobgp.ROUTE_DISPOSITION_REJECT_ROUTE
+		return gobgpoc.ROUTE_DISPOSITION_REJECT_ROUTE
 	}
 }
 
@@ -213,9 +213,9 @@ func convertCommunity(community any) string {
 	return ""
 }
 
-func convertCommunitySet(occommset map[string]*oc.RoutingPolicy_DefinedSets_BgpDefinedSets_CommunitySet) ([]gobgp.CommunitySet, map[string]int) {
+func convertCommunitySet(occommset map[string]*oc.RoutingPolicy_DefinedSets_BgpDefinedSets_CommunitySet) ([]gobgpoc.CommunitySet, map[string]int) {
 	indexMap := map[string]int{}
-	var commsets []gobgp.CommunitySet
+	var commsets []gobgpoc.CommunitySet
 	commNames := maps.Keys(occommset)
 	slices.Sort(commNames)
 	for _, communitySetName := range commNames {
@@ -225,7 +225,7 @@ func convertCommunitySet(occommset map[string]*oc.RoutingPolicy_DefinedSets_BgpD
 		}
 
 		indexMap[communitySetName] = len(commsets)
-		commsets = append(commsets, gobgp.CommunitySet{
+		commsets = append(commsets, gobgpoc.CommunitySet{
 			CommunitySetName: communitySetName,
 			CommunityList:    communityList,
 		})
@@ -250,25 +250,25 @@ func communitiesToOC(communities []uint32) []oc.NetworkInstance_Protocol_Bgp_Rib
 	return occomms
 }
 
-func convertPrefixSets(ocprefixsets map[string]*oc.RoutingPolicy_DefinedSets_PrefixSet) []gobgp.PrefixSet {
-	var prefixSets []gobgp.PrefixSet
+func convertPrefixSets(ocprefixsets map[string]*oc.RoutingPolicy_DefinedSets_PrefixSet) []gobgpoc.PrefixSet {
+	var prefixSets []gobgpoc.PrefixSet
 	prefixSetNames := maps.Keys(ocprefixsets)
 	slices.Sort(prefixSetNames)
 	for _, prefixSetName := range prefixSetNames {
-		var prefixList []gobgp.Prefix
+		var prefixList []gobgpoc.Prefix
 		for _, prefix := range ocprefixsets[prefixSetName].Prefix {
 			r := prefix.GetMasklengthRange()
 			if r == "exact" {
 				// GoBGP recognizes "" instead of "exact"
 				r = ""
 			}
-			prefixList = append(prefixList, gobgp.Prefix{
+			prefixList = append(prefixList, gobgpoc.Prefix{
 				IpPrefix:        prefix.GetIpPrefix(),
 				MasklengthRange: r,
 			})
 		}
 
-		prefixSets = append(prefixSets, gobgp.PrefixSet{
+		prefixSets = append(prefixSets, gobgpoc.PrefixSet{
 			PrefixSetName: prefixSetName,
 			PrefixList:    prefixList,
 		})
@@ -276,10 +276,10 @@ func convertPrefixSets(ocprefixsets map[string]*oc.RoutingPolicy_DefinedSets_Pre
 	return prefixSets
 }
 
-func convertASPathSets(ocpathset map[string]*oc.RoutingPolicy_DefinedSets_BgpDefinedSets_AsPathSet) []gobgp.AsPathSet {
-	var pathsets []gobgp.AsPathSet
+func convertASPathSets(ocpathset map[string]*oc.RoutingPolicy_DefinedSets_BgpDefinedSets_AsPathSet) []gobgpoc.AsPathSet {
+	var pathsets []gobgpoc.AsPathSet
 	for pathsetName, pathset := range ocpathset {
-		pathsets = append(pathsets, gobgp.AsPathSet{
+		pathsets = append(pathsets, gobgpoc.AsPathSet{
 			AsPathSetName: pathsetName,
 			AsPathList:    pathset.AsPathSetMember,
 		})

@@ -63,6 +63,10 @@ var CounterList = []fwdpb.CounterId{
 	fwdpb.CounterId_COUNTER_ID_TX_DROP_OCTETS,
 	fwdpb.CounterId_COUNTER_ID_TX_ADMIN_DROP_PACKETS,
 	fwdpb.CounterId_COUNTER_ID_TX_ADMIN_DROP_OCTETS,
+	fwdpb.CounterId_COUNTER_ID_TX_UCAST_PACKETS,
+	fwdpb.CounterId_COUNTER_ID_TX_NON_UCAST_PACKETS,
+	fwdpb.CounterId_COUNTER_ID_RX_UCAST_PACKETS,
+	fwdpb.CounterId_COUNTER_ID_RX_NON_UCAST_PACKETS,
 }
 
 // A Port is an entry or exit point within the forwarding plane. Each port
@@ -236,6 +240,16 @@ func Input(port Port, packet fwdpacket.Packet, dir fwdpb.PortAction, ctx *fwdcon
 
 	Increment(port, packet.Length(), fwdpb.CounterId_COUNTER_ID_RX_PACKETS, fwdpb.CounterId_COUNTER_ID_RX_OCTETS)
 	SetInputPort(packet, port)
+	mac, err := packet.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST, 0))
+	if err != nil {
+		Increment(port, packet.Length(), fwdpb.CounterId_COUNTER_ID_RX_ERROR_PACKETS, fwdpb.CounterId_COUNTER_ID_RX_ERROR_OCTETS)
+		return err
+	}
+	if mac[0]%2 == 0 { // Unicast address is when is least significant bit of the 1st octet is 0.
+		port.Increment(fwdpb.CounterId_COUNTER_ID_RX_UCAST_PACKETS, 1)
+	} else {
+		port.Increment(fwdpb.CounterId_COUNTER_ID_RX_NON_UCAST_PACKETS, 1)
+	}
 
 	packet.Log().V(3).Info("input packet", "port", port.ID(), "frame", fwdpacket.IncludeFrameInLog)
 	state, err := fwdaction.ProcessPacket(packet, port.Actions(dir), port)
@@ -279,6 +293,16 @@ func Output(port Port, packet fwdpacket.Packet, dir fwdpb.PortAction, _ *fwdcont
 	}()
 	Increment(port, packet.Length(), fwdpb.CounterId_COUNTER_ID_TX_PACKETS, fwdpb.CounterId_COUNTER_ID_TX_OCTETS)
 	SetOutputPort(packet, port)
+	mac, err := packet.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC, 0))
+	if err != nil {
+		Increment(port, packet.Length(), fwdpb.CounterId_COUNTER_ID_TX_ERROR_PACKETS, fwdpb.CounterId_COUNTER_ID_TX_ERROR_OCTETS)
+		return err
+	}
+	if mac[0]%2 == 0 { // Unicast address is when is least significant bit of the 1st octet is 0.
+		port.Increment(fwdpb.CounterId_COUNTER_ID_TX_UCAST_PACKETS, 1)
+	} else {
+		port.Increment(fwdpb.CounterId_COUNTER_ID_TX_NON_UCAST_PACKETS, 1)
+	}
 
 	packet.Log().V(3).Info("output packet", "frame", fwdpacket.IncludeFrameInLog)
 	state, err := fwdaction.ProcessPacket(packet, port.Actions(dir), port)

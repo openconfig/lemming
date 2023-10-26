@@ -29,7 +29,9 @@
 package sysrib
 
 import (
+	"context"
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"strings"
@@ -75,7 +77,7 @@ type ZServer struct {
 // redistributed routes.
 //
 // TODO: vrfID is not well-integrated with the sysrib.
-func StartZServer(address string, vrfID uint32, sysrib *Server) (*ZServer, error) {
+func StartZServer(ctx context.Context, address string, vrfID uint32, sysrib *Server) (*ZServer, error) {
 	l := strings.SplitN(address, ":", 2)
 	if len(l) != 2 {
 		return nil, fmt.Errorf("unsupported ZAPI url, has to be \"protocol:address\", got: %s", address)
@@ -128,7 +130,7 @@ func StartZServer(address string, vrfID uint32, sysrib *Server) (*ZServer, error
 			client.zServer = zServer
 
 			// Handle connections in a new go routine.
-			go client.HandleRequest(conn, vrfID)
+			go client.HandleRequest(ctx, conn, vrfID)
 		}
 	}()
 
@@ -209,7 +211,7 @@ func (c *Client) RedistributeResolvedRoutes(conn net.Conn) {
 }
 
 // HandleRequest handles an incoming ZAPI client connection.
-func (c *Client) HandleRequest(conn net.Conn, vrfID uint32) {
+func (c *Client) HandleRequest(ctx context.Context, conn net.Conn, vrfID uint32) {
 	version := zebra.MaxZapiVer
 	software := zebra.MaxSoftware
 	defer func() {
@@ -227,10 +229,14 @@ func (c *Client) HandleRequest(conn net.Conn, vrfID uint32) {
 
 	for {
 		m, err := zebra.ReceiveSingleMsg(topicLogger, conn, version, software, "Sysrib")
-		if err != nil {
+		switch {
+		case err == io.EOF:
+			log.Warningf("ZAPI server stopping after receiving EOF")
+			return
+		case err != nil:
 			log.Errorf("ZAPI server stopping, HandleRequest error: %v", err)
 			return
-		} else if m == nil {
+		case m == nil:
 			continue
 		}
 
@@ -260,7 +266,7 @@ func (c *Client) HandleRequest(conn net.Conn, vrfID uint32) {
 					"Topic":   "Sysrib",
 					"Message": m,
 				})
-			if err := c.zServer.sysrib.setZebraRoute(vrfIDToNiName(vrfID), m.Body.(*zebra.IPRouteBody)); err != nil {
+			if err := c.zServer.sysrib.setZebraRoute(ctx, vrfIDToNiName(vrfID), m.Body.(*zebra.IPRouteBody), false); err != nil {
 				topicLogger.Warn(fmt.Sprintf("Could not add route to sysrib: %v", err),
 					bgplog.Fields{
 						"Topic":   "Sysrib",
@@ -268,12 +274,18 @@ func (c *Client) HandleRequest(conn net.Conn, vrfID uint32) {
 					})
 			}
 		case zebra.RouteDelete:
-			// TODO(wenbli): Implement RouteDelete.
-			topicLogger.Warn("Received Zebra RouteDelete from client which is not handled:",
+			topicLogger.Info("Received Zebra RouteDelete from client:",
 				bgplog.Fields{
 					"Topic":   "Sysrib",
 					"Message": m,
 				})
+			if err := c.zServer.sysrib.setZebraRoute(ctx, vrfIDToNiName(vrfID), m.Body.(*zebra.IPRouteBody), true); err != nil {
+				topicLogger.Warn(fmt.Sprintf("Could not delete route from sysrib: %v", err),
+					bgplog.Fields{
+						"Topic":   "Sysrib",
+						"Message": m,
+					})
+			}
 		default:
 			topicLogger.Warn(fmt.Sprintf("Received unhandled Zebra message %v from client:", command),
 				bgplog.Fields{

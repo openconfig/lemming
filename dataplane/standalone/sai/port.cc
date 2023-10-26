@@ -1408,6 +1408,24 @@ sai_status_t l_get_port_stats(sai_object_id_t port_id,
                               uint64_t *counters) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
+  lemming::dataplane::sai::GetPortStatsRequest req;
+  lemming::dataplane::sai::GetPortStatsResponse resp;
+  grpc::ClientContext context;
+  req.set_oid(port_id);
+
+  for (uint32_t i = 0; i < number_of_counters; i++) {
+    req.add_counter_ids(
+        static_cast<lemming::dataplane::sai::PortStat>(counter_ids[i] + 1));
+  }
+  grpc::Status status = port->GetPortStats(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  for (uint32_t i = 0; i < number_of_counters; i++) {
+    counters[i] = resp.values(i);
+  }
+
   return SAI_STATUS_SUCCESS;
 }
 
@@ -1532,6 +1550,24 @@ sai_status_t l_get_port_pool_stats(sai_object_id_t port_pool_id,
                                    const sai_stat_id_t *counter_ids,
                                    uint64_t *counters) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  lemming::dataplane::sai::GetPortPoolStatsRequest req;
+  lemming::dataplane::sai::GetPortPoolStatsResponse resp;
+  grpc::ClientContext context;
+  req.set_oid(port_pool_id);
+
+  for (uint32_t i = 0; i < number_of_counters; i++) {
+    req.add_counter_ids(
+        static_cast<lemming::dataplane::sai::PortPoolStat>(counter_ids[i] + 1));
+  }
+  grpc::Status status = port->GetPortPoolStats(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  for (uint32_t i = 0; i < number_of_counters; i++) {
+    counters[i] = resp.values(i);
+  }
 
   return SAI_STATUS_SUCCESS;
 }

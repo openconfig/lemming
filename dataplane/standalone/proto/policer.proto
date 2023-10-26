@@ -75,6 +75,15 @@ message GetPolicerAttributeResponse {
   PolicerAttribute attr = 1;
 }
 
+message GetPolicerStatsRequest {
+  uint64 oid = 1;
+  repeated PolicerStat counter_ids = 2;
+}
+
+message GetPolicerStatsResponse {
+  repeated uint64 values = 1;
+}
+
 service Policer {
   rpc CreatePolicer(CreatePolicerRequest) returns (CreatePolicerResponse) {}
   rpc RemovePolicer(RemovePolicerRequest) returns (RemovePolicerResponse) {}
@@ -82,4 +91,6 @@ service Policer {
       returns (SetPolicerAttributeResponse) {}
   rpc GetPolicerAttribute(GetPolicerAttributeRequest)
       returns (GetPolicerAttributeResponse) {}
+  rpc GetPolicerStats(GetPolicerStatsRequest)
+      returns (GetPolicerStatsResponse) {}
 }

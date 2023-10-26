@@ -1572,8 +1572,8 @@ def go_repositories():
     go_repository(
         name = "com_github_openconfig_gribigo",
         importpath = "github.com/openconfig/gribigo",
-        sum = "h1:Hz4EEMaBnNbumV+F+4snVI6FTwUmEogjgun/fY5F7F8=",
-        version = "v0.0.0-20230902004455-c7aff9365bec",
+        sum = "h1:4H2eDRDWGYvbX8+cfHiEnB4tu0jhjZql7OSfLTXRdFY=",
+        version = "v0.0.0-20231018021145-a1124db3ca83",
     )
     go_repository(
         name = "com_github_openconfig_grpctunnel",
@@ -1611,8 +1611,8 @@ def go_repositories():
     go_repository(
         name = "com_github_openconfig_ygnmi",
         importpath = "github.com/openconfig/ygnmi",
-        sum = "h1:8K87+VztXhHqsU6/OYRnY/l/bGqFk+qU61mhhdxMCYo=",
-        version = "v0.8.7",
+        sum = "h1:CCx2xl1jTwXeMh9G6B59k0BlRrKoz+K6eLTnowKQ6Vw=",
+        version = "v0.8.11",
     )
     go_repository(
         name = "com_github_openconfig_ygot",
@@ -2026,8 +2026,8 @@ def go_repositories():
         name = "com_github_wenovus_gobgp_v3",
         build_file_proto_mode = "disable",
         importpath = "github.com/wenovus/gobgp/v3",
-        sum = "h1:CTaAeRUMWmcr/m8nyRq9wx5+SFO+ymR9V4Dv1ZpFZV0=",
-        version = "v3.0.0-20230919213724-0f6fb3b45ead",
+        sum = "h1:Cy3PTEuyD9zcf2Fav9SphOOkrEYXIhhzKpuRWfbLVvo=",
+        version = "v3.0.0-20231024172553-6f8061a337a8",
     )
     go_repository(
         name = "com_github_xanzy_ssh_agent",
