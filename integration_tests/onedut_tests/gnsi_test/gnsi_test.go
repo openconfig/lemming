@@ -37,6 +37,8 @@ func TestMain(m *testing.M) {
 }
 
 func TestPathz(t *testing.T) {
+	// TODO: Remove when KNEbind supports DialGNSI.
+	t.Skip("Ondatra/KNEbind currently doesn't support dialing gNSI")
 	dut := ondatra.DUT(t, "dut")
 	yc, err := ygnmi.NewClient(dut.RawAPIs().GNMI(t), ygnmi.WithTarget(dut.Name()))
 	if err != nil {
