@@ -40,7 +40,7 @@ message PacketInjectResponse {
   
 }
 
-// PackePacketSinkRequesttData is a request to receive packets from the CPU port.
+// PacketSinkRequest is a request to receive packets from the CPU port.
 message PacketSinkRequest {
   ContextId context_id = 1;  // Context containing the port
 }

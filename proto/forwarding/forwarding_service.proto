@@ -112,7 +112,8 @@ service Forwarding {
   rpc PacketInject(stream PacketInjectRequest) returns (PacketInjectResponse) {}
 
   // PacketSinkSubscribe is a subscription to receive packets from the CPU port.
-  rpc PacketSinkSubscribe(PacketSinkRequest) returns (stream PacketSinkResponse) {}
+  rpc PacketSinkSubscribe(PacketSinkRequest) 
+      returns (stream PacketSinkResponse) {}
 }
 
 // Info provides access to various information elements.
