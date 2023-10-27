@@ -749,9 +749,9 @@ func (e *Server) PacketInject(srv fwdpb.Forwarding_PacketInjectServer) error {
 }
 
 // PacketEject sets the packet sink for a context and stream packets to the client.
-func (e *Server) PacketEject(req *fwdpb.PacketEjectRequest, srv fwdpb.Forwarding_PacketEjectServer) error {
+func (e *Server) PacketSinkSubscribe(req *fwdpb.PacketSinkRequest, srv fwdpb.Forwarding_PacketSinkSubscribeServer) error {
 	errCh := make(chan error)
-	f := func(r *fwdpb.PacketEjectResponse) error {
+	f := func(r *fwdpb.PacketSinkResponse) error {
 		if err := srv.Send(r); err != nil {
 			errCh <- err
 		}

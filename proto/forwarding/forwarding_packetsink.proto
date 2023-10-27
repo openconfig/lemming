@@ -40,12 +40,12 @@ message PacketInjectResponse {
   
 }
 
-// PacketData is a request to inject frames into the port.
-message PacketEjectRequest {
+// PackePacketSinkRequesttData is a request to receive packets from the CPU port.
+message PacketSinkRequest {
   ContextId context_id = 1;  // Context containing the port
 }
 
-message PacketEjectResponse {
+message PacketSinkResponse {
   bytes bytes = 1;           // Bytes in the L2 frame
   PortId port_id = 2;        // Port used to process the packet
   PortId ingress = 3;  // Identifies the ingress of the packet

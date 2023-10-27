@@ -121,7 +121,7 @@ func (p *cpuPort) punt(v interface{}) {
 			Bytes:   value,
 		})
 	}
-	request := &fwdpb.PacketEjectResponse{
+	response := &fwdpb.PacketSinkResponse{
 		PortId:       fwdport.GetID(p),
 		Egress:       egressPID,
 		Ingress:      ingressPID,
@@ -133,12 +133,12 @@ func (p *cpuPort) punt(v interface{}) {
 	p.ctx.RUnlock()
 	if ps != nil {
 		timer := deadlock.NewTimer(deadlock.Timeout, fmt.Sprintf("Punting packet from port %v", p))
-		err := ps(request)
+		err := ps(response)
 		timer.Stop()
 		if err == nil {
 			return
 		}
-		log.Errorf("ports: Unable to punt packet, request %+v, err %v.", request, err)
+		log.Errorf("ports: Unable to punt packet, request %+v, err %v.", response, err)
 	}
 	fwdport.Increment(p, packet.Length(), fwdpb.CounterId_COUNTER_ID_TX_ERROR_PACKETS, fwdpb.CounterId_COUNTER_ID_TX_ERROR_OCTETS)
 }

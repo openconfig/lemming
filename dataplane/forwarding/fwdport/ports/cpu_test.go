@@ -35,11 +35,11 @@ import (
 // notification on its channel.
 type RecordPacketSink struct {
 	notify     chan bool
-	lastPacket *fwdpb.PacketEjectResponse
+	lastPacket *fwdpb.PacketSinkResponse
 }
 
 // PacketSink records the inject packet request and generates a notification.
-func (p *RecordPacketSink) PacketSink(resp *fwdpb.PacketEjectResponse) error {
+func (p *RecordPacketSink) PacketSink(resp *fwdpb.PacketSinkResponse) error {
 	p.lastPacket = resp
 	p.notify <- true
 	return nil
