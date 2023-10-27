@@ -541,7 +541,8 @@ sai_status_t l_get_macsec_port_stats(sai_object_id_t macsec_port_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  for (uint32_t i = 0; i < number_of_counters; i++) {
+  for (uint32_t i = 0;
+       i < number_of_counters && i < uint32_t(resp.values_size()); i++) {
     counters[i] = resp.values(i);
   }
 
@@ -672,7 +673,8 @@ sai_status_t l_get_macsec_flow_stats(sai_object_id_t macsec_flow_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  for (uint32_t i = 0; i < number_of_counters; i++) {
+  for (uint32_t i = 0;
+       i < number_of_counters && i < uint32_t(resp.values_size()); i++) {
     counters[i] = resp.values(i);
   }
 
@@ -861,7 +863,8 @@ sai_status_t l_get_macsec_sc_stats(sai_object_id_t macsec_sc_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  for (uint32_t i = 0; i < number_of_counters; i++) {
+  for (uint32_t i = 0;
+       i < number_of_counters && i < uint32_t(resp.values_size()); i++) {
     counters[i] = resp.values(i);
   }
 
@@ -1021,7 +1024,8 @@ sai_status_t l_get_macsec_sa_stats(sai_object_id_t macsec_sa_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  for (uint32_t i = 0; i < number_of_counters; i++) {
+  for (uint32_t i = 0;
+       i < number_of_counters && i < uint32_t(resp.values_size()); i++) {
     counters[i] = resp.values(i);
   }
 
