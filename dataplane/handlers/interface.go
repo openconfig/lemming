@@ -139,7 +139,7 @@ func (ni *Interface) start(ctx context.Context, client *ygnmi.Client) error {
 		return fmt.Errorf("failed to sub to neighbor: %v", err)
 	}
 	// TODO: Decide if this needs another layer of abstraction. Currently, one notification callback is allowed.
-	if err := ni.e.Server.UpdateNotification(&fwdpb.ContextId{Id: ni.e.ID()}, func(ed *fwdpb.EventDesc) { ni.handleDataplaneEvent(ctx, ed) }, "local"); err != nil {
+	if err := ni.e.Server.UpdateNotification(&fwdpb.ContextId{Id: ni.e.ID()}, func(ed *fwdpb.EventDesc) { ni.handleDataplaneEvent(ctx, ed) }); err != nil {
 		return fmt.Errorf("failed  to sub to dataplane: %v", err)
 	}
 

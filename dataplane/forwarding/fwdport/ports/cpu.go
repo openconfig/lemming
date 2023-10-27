@@ -121,13 +121,11 @@ func (p *cpuPort) punt(v interface{}) {
 			Bytes:   value,
 		})
 	}
-	request := &fwdpb.PacketInjectRequest{
-		ContextId:    &fwdpb.ContextId{Id: p.ctx.ID},
+	request := &fwdpb.PacketEjectResponse{
 		PortId:       fwdport.GetID(p),
 		Egress:       egressPID,
 		Ingress:      ingressPID,
 		Bytes:        packet.Frame(),
-		Action:       fwdpb.PortAction_PORT_ACTION_OUTPUT,
 		ParsedFields: parsed,
 	}
 
@@ -135,7 +133,7 @@ func (p *cpuPort) punt(v interface{}) {
 	p.ctx.RUnlock()
 	if ps != nil {
 		timer := deadlock.NewTimer(deadlock.Timeout, fmt.Sprintf("Punting packet from port %v", p))
-		_, err := ps(request)
+		err := ps(request)
 		timer.Stop()
 		if err == nil {
 			return
