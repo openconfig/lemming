@@ -31,7 +31,7 @@ import (
 
 // A PacketCallback transmits packets to a packet sink as specified by the
 // injection request.
-type PacketCallback func(*fwdpb.PacketEjectResponse) ( error)
+type PacketCallback func(*fwdpb.PacketEjectResponse) error
 
 // An NotificationCallback generates events to a notification service.
 type NotificationCallback func(*fwdpb.EventDesc)
