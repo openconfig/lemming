@@ -65,12 +65,12 @@ func (s *Server) monitorStaticRoutes(ctx context.Context, yclient *ygnmi.Client)
 
 	b := ygnmi.NewBatch[map[string]*oc.NetworkInstance_Protocol_Static](staticpathMap.Config())
 	b.AddPaths(
-		staticpath.NextHopAny().NextHop().Config().PathStruct(),
+		staticpath.NextHopAny().NextHop().Config(),
 		// TODO(wenbli): Handle these paths.
-		// staticpath.NextHopAny().Preference().Config().PathStruct(),
-		// staticpath.NextHopAny().Metric().Config().PathStruct(),
-		staticpath.NextHopAny().Recurse().Config().PathStruct(),
-		staticpath.Prefix().Config().PathStruct(),
+		// staticpath.NextHopAny().Preference().Config(),
+		// staticpath.NextHopAny().Metric().Config(),
+		staticpath.NextHopAny().Recurse().Config(),
+		staticpath.Prefix().Config(),
 	)
 
 	prevIntfs := map[string]struct{}{}

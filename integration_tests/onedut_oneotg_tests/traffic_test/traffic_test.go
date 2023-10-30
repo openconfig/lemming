@@ -19,6 +19,8 @@ import (
 	"testing"
 	"time"
 
+	"slices"
+
 	"github.com/open-traffic-generator/snappi/gosnappi"
 	"github.com/openconfig/gribigo/chk"
 	"github.com/openconfig/gribigo/client"
@@ -28,7 +30,6 @@ import (
 	"github.com/openconfig/ondatra/gnmi"
 	"github.com/openconfig/ondatra/gnmi/otg/otgpath"
 	"github.com/openconfig/ygnmi/ygnmi"
-	"golang.org/x/exp/slices"
 
 	"github.com/openconfig/lemming/internal/attrs"
 	"github.com/openconfig/lemming/internal/binding"
@@ -92,8 +93,7 @@ var (
 
 // configureATE configures port1 and port2 on the ATE.
 func configureATE(t *testing.T, ate *ondatra.ATEDevice) gosnappi.Config {
-	otg := ate.OTG()
-	top := otg.NewConfig(t)
+	top := gosnappi.NewConfig()
 
 	p1 := ate.Port(t, "port1")
 	p2 := ate.Port(t, "port2")
@@ -333,7 +333,7 @@ func TestIPv4Entry(t *testing.T) {
 	for _, tc := range cases {
 		var txPkts, rxPkts uint64
 		t.Run(tc.desc, func(t *testing.T) {
-			gribic := dut.RawAPIs().GRIBI().Default(t)
+			gribic := dut.RawAPIs().GRIBI(t)
 			c := fluent.NewClient()
 			c.Connection().WithStub(gribic).
 				WithRedundancyMode(fluent.ElectedPrimaryClient).

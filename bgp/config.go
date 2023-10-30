@@ -16,12 +16,11 @@ package bgp
 
 import (
 	"net/netip"
-
-	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
+	"slices"
 
 	log "github.com/golang/glog"
 	"github.com/openconfig/lemming/gnmi/oc"
+	"github.com/openconfig/lemming/internal/lemmingutil"
 	gobgpoc "github.com/wenovus/gobgp/v3/pkg/config/oc"
 	"github.com/wenovus/gobgp/v3/pkg/zebra"
 )
@@ -97,7 +96,7 @@ func intendedToGoBGPPolicies(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *o
 	// AS Path Sets
 	bgpConfig.DefinedSets.BgpDefinedSets.AsPathSets = convertASPathSets(policyoc.GetOrCreateDefinedSets().GetOrCreateBgpDefinedSets().AsPathSet)
 
-	neighAddrs := maps.Keys(bgpoc.Neighbor)
+	neighAddrs := lemmingutil.Mapkeys(bgpoc.Neighbor)
 	slices.Sort(neighAddrs)
 
 	// Neighbours, global policy definitions, and global apply policy list.

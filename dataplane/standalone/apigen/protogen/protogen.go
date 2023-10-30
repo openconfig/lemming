@@ -17,15 +17,14 @@ package protogen
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"text/template"
 	"unicode"
 
-	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
-
 	"github.com/openconfig/lemming/dataplane/standalone/apigen/docparser"
 	"github.com/openconfig/lemming/dataplane/standalone/apigen/saiast"
+	"github.com/openconfig/lemming/internal/lemmingutil"
 
 	log "github.com/golang/glog"
 	strcase "github.com/stoewer/go-strcase"
@@ -59,7 +58,7 @@ func Generate(doc *docparser.SAIInfo, sai *saiast.SAIAPI) (map[string]string, er
 }
 
 func rangeInOrder[T any](m map[string]T, pred func(key string, val T) error) error {
-	keys := maps.Keys(m)
+	keys := lemmingutil.Mapkeys(m)
 	slices.Sort(keys)
 	for _, key := range keys {
 		if err := pred(key, m[key]); err != nil {

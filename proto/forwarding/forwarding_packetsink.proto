@@ -30,14 +30,26 @@ message PacketInjectRequest {
   PortAction action = 4;     // Select a set of actions on the port
   repeated ActionDesc preprocesses =
       7;               // Actions used to preprocess the packet
-  PortId ingress = 8;  // Identifies the ingress of the packet
-  PortId egress = 9;   // Identifies the egress of the packet
   PacketHeaderId start_header = 10;
   repeated PacketFieldBytes parsed_fields =
       11;           // List of fields describing the L2 frame
   bool debug = 12;  // Whether to turn on debug messages.
 }
 
-message PacketInjectReply {
+message PacketInjectResponse {
   
+}
+
+// PacketSinkRequest is a request to receive packets from the CPU port.
+message PacketSinkRequest {
+  ContextId context_id = 1;  // Context containing the port
+}
+
+message PacketSinkResponse {
+  bytes bytes = 1;           // Bytes in the L2 frame
+  PortId port_id = 2;        // Port used to process the packet
+  PortId ingress = 3;  // Identifies the ingress of the packet
+  PortId egress = 4;   // Identifies the egress of the packet
+  repeated PacketFieldBytes parsed_fields =
+      5;           // List of fields describing the L2 frame
 }

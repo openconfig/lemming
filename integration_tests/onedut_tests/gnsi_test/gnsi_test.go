@@ -16,25 +16,20 @@ package gnsi_test
 
 import (
 	"context"
-	"crypto/tls"
-	"fmt"
 	"testing"
 
 	"github.com/openconfig/gnmi/errdiff"
-	"github.com/openconfig/lemming/internal/binding"
 	"github.com/openconfig/ondatra"
 	"github.com/openconfig/ondatra/gnmi"
 	"github.com/openconfig/ondatra/gnmi/oc"
-	"github.com/openconfig/ondatra/knebind/solver"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
+
+	"github.com/openconfig/lemming/internal/binding"
 
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 	pathzpb "github.com/openconfig/gnsi/pathz"
-	tpb "github.com/openconfig/kne/proto/topo"
 )
 
 func TestMain(m *testing.M) {
@@ -42,8 +37,10 @@ func TestMain(m *testing.M) {
 }
 
 func TestPathz(t *testing.T) {
+	// TODO: Remove when KNEbind supports DialGNSI.
+	t.Skip("Ondatra/KNEbind currently doesn't support dialing gNSI")
 	dut := ondatra.DUT(t, "dut")
-	yc, err := ygnmi.NewClient(dut.RawAPIs().GNMI().Default(t), ygnmi.WithTarget(dut.Name()))
+	yc, err := ygnmi.NewClient(dut.RawAPIs().GNMI(t), ygnmi.WithTarget(dut.Name()))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -190,7 +187,7 @@ func TestPathz(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
 			reset(t, dut)
-			installPolicy(t, fetchGNSI(t, dut), tt.policy)
+			installPolicy(t, dut.RawAPIs().GNSI(t).Pathz(), tt.policy)
 
 			_, err := tt.op(ctx, yc)
 			if d := errdiff.Check(err, tt.wantOpErr); d != "" {
@@ -220,7 +217,7 @@ func mustPath(t testing.TB, s string) *gpb.Path {
 
 func reset(t testing.TB, dut *ondatra.DUTDevice) {
 	t.Helper()
-	installPolicy(t, fetchGNSI(t, dut), &pathzpb.AuthorizationPolicy{
+	installPolicy(t, dut.RawAPIs().GNSI(t).Pathz(), &pathzpb.AuthorizationPolicy{
 		Rules: []*pathzpb.AuthorizationRule{{
 			Path:      mustPath(t, "/"),
 			Principal: &pathzpb.AuthorizationRule_User{User: "testuser"},
@@ -238,7 +235,6 @@ func reset(t testing.TB, dut *ondatra.DUTDevice) {
 		DomainName: ygot.String("lemming.example.com"),
 		Hostname:   ygot.String("lemming"),
 	})
-
 }
 
 func installPolicy(t testing.TB, pathzClient pathzpb.PathzClient, req *pathzpb.AuthorizationPolicy) {
@@ -266,18 +262,4 @@ func installPolicy(t testing.TB, pathzClient pathzpb.PathzClient, req *pathzpb.A
 	if _, err := rc.Recv(); err != nil {
 		t.Fatalf("failed to recv finalize resp: %v", err)
 	}
-}
-
-// TODO: remove once Ondatra supports gNSI.
-func fetchGNSI(t testing.TB, dut *ondatra.DUTDevice) pathzpb.PathzClient {
-	t.Helper()
-	m := dut.CustomData(solver.KNEServiceMapKey).(map[string]*tpb.Service)
-	addr := fmt.Sprintf("%s:%d", m["gnsi"].OutsideIp, m["gnsi"].Outside)
-	conn, err := grpc.Dial(addr,
-		grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{InsecureSkipVerify: true})),
-	)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return pathzpb.NewPathzClient(conn)
 }

@@ -336,7 +336,8 @@ sai_status_t l_get_router_interface_stats(sai_object_id_t router_interface_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  for (uint32_t i = 0; i < number_of_counters; i++) {
+  for (uint32_t i = 0;
+       i < number_of_counters && i < uint32_t(resp.values_size()); i++) {
     counters[i] = resp.values(i);
   }
 

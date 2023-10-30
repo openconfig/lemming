@@ -16,14 +16,13 @@ package bgp
 
 import (
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 
-	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
-
 	log "github.com/golang/glog"
 	"github.com/openconfig/lemming/gnmi/oc"
+	"github.com/openconfig/lemming/internal/lemmingutil"
 	gobgpoc "github.com/wenovus/gobgp/v3/pkg/config/oc"
 )
 
@@ -216,7 +215,7 @@ func convertCommunity(community any) string {
 func convertCommunitySet(occommset map[string]*oc.RoutingPolicy_DefinedSets_BgpDefinedSets_CommunitySet) ([]gobgpoc.CommunitySet, map[string]int) {
 	indexMap := map[string]int{}
 	var commsets []gobgpoc.CommunitySet
-	commNames := maps.Keys(occommset)
+	commNames := lemmingutil.Mapkeys(occommset)
 	slices.Sort(commNames)
 	for _, communitySetName := range commNames {
 		var communityList []string
@@ -252,7 +251,7 @@ func communitiesToOC(communities []uint32) []oc.NetworkInstance_Protocol_Bgp_Rib
 
 func convertPrefixSets(ocprefixsets map[string]*oc.RoutingPolicy_DefinedSets_PrefixSet) []gobgpoc.PrefixSet {
 	var prefixSets []gobgpoc.PrefixSet
-	prefixSetNames := maps.Keys(ocprefixsets)
+	prefixSetNames := lemmingutil.Mapkeys(ocprefixsets)
 	slices.Sort(prefixSetNames)
 	for _, prefixSetName := range prefixSetNames {
 		var prefixList []gobgpoc.Prefix
