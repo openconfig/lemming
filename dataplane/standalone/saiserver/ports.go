@@ -307,4 +307,3 @@ func (port *port) Reset() {
 	port.portToEth = make(map[uint64]string)
 	port.nextEth = 1
 }
-

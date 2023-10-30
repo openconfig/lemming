@@ -211,7 +211,6 @@ func TestSwitchPortStateChangeNotification(t *testing.T) {
 }
 
 type fakeSwitchDataplane struct {
-	switchDataplaneAPI
 	events                []*fwdpb.EventDesc
 	gotAddNeighborReq     []*dpb.AddNeighborRequest
 	gotAddNextHopGroupReq []*dpb.AddNextHopGroupRequest
