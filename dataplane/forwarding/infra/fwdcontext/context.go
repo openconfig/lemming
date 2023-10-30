@@ -21,6 +21,7 @@ import (
 	"sync"
 
 	log "github.com/golang/glog"
+
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/deadlock"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdattribute"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdobject"
@@ -30,7 +31,7 @@ import (
 
 // A PacketCallback transmits packets to a packet sink as specified by the
 // injection request.
-type PacketCallback func(*fwdpb.PacketInjectRequest) (*fwdpb.PacketInjectReply, error)
+type PacketCallback func(*fwdpb.PacketSinkResponse) error
 
 // An NotificationCallback generates events to a notification service.
 type NotificationCallback func(*fwdpb.EventDesc)
@@ -49,14 +50,12 @@ type NotificationCallback func(*fwdpb.EventDesc)
 // queue. Punt is a blocking call, and the caller is responsible for ordering
 // and blocking guarantees.
 type Context struct {
-	sync.RWMutex                         // Synchronization between provisioning and forwarding
-	Objects             *fwdobject.Table // Set of all visible forwarding objects
-	packets             PacketCallback   // Packet service
-	ID                  string           // ID of the context
-	Instance            string           // Name of the forwarding engine instance
-	PacketAddress       string           // Address of the packet service in host:port format
-	NotificationAddress string           // Address of the notification service in host:port format
-	Attributes          fwdattribute.Set
+	sync.RWMutex                  // Synchronization between provisioning and forwarding
+	Objects      *fwdobject.Table // Set of all visible forwarding objects
+	packets      PacketCallback   // Packet service
+	ID           string           // ID of the context
+	Instance     string           // Name of the forwarding engine instance
+	Attributes   fwdattribute.Set
 
 	notifyMu sync.Mutex   // Mutex protecting notification queue
 	notify   *queue.Queue // Notification service
@@ -80,7 +79,7 @@ func New(id, instance string) *Context {
 
 // String returns a formatted string representing the context.
 func (ctx *Context) String() string {
-	str := fmt.Sprintf("Ctx=%v;Instance=%v;PacketAddress=%v;NotificationAddress=%v;NextEvent=%v", ctx.ID, ctx.Instance, ctx.PacketAddress, ctx.NotificationAddress, ctx.nextEventID)
+	str := fmt.Sprintf("Ctx=%v;Instance=%v;NextEvent=%v", ctx.ID, ctx.Instance, ctx.nextEventID)
 	if ctx.GetNotificationQueue() != nil {
 		str += fmt.Sprintf("<Queue=%v>;", ctx.GetNotificationQueue())
 	}
@@ -95,21 +94,20 @@ func (ctx *Context) GetNotificationQueue() *queue.Queue {
 }
 
 // SetNotificationQueue sets the notification queue.
-func (ctx *Context) SetNotificationQueue(val *queue.Queue, address string) {
+func (ctx *Context) SetNotificationQueue(val *queue.Queue) {
 	ctx.notifyMu.Lock()
 	defer ctx.notifyMu.Unlock()
-	ctx.NotificationAddress = address
 	ctx.notify = val
 }
 
 // SetNotification sets the notification service for the context. If the
 // notification service is set to nil, notifications are disabled for the context.
-func (ctx *Context) SetNotification(call NotificationCallback, address string) error {
+func (ctx *Context) SetNotification(call NotificationCallback) error {
 	if call == nil {
 		if nq := ctx.GetNotificationQueue(); nq != nil {
 			nq.Close()
 		}
-		ctx.SetNotificationQueue(nil, "")
+		ctx.SetNotificationQueue(nil)
 		return nil
 	}
 
@@ -122,7 +120,7 @@ func (ctx *Context) SetNotification(call NotificationCallback, address string) e
 	if err != nil {
 		return err
 	}
-	ctx.SetNotificationQueue(n, address)
+	ctx.SetNotificationQueue(n)
 	n.Run()
 	go func() {
 		for {
@@ -158,9 +156,8 @@ func (ctx *Context) Notify(event *fwdpb.EventDesc) error {
 
 // SetPacketSink sets the packet sink service for the context. If the packet
 // sink service is not set to nil, packets are dropped.
-func (ctx *Context) SetPacketSink(call PacketCallback, address string) error {
+func (ctx *Context) SetPacketSink(call PacketCallback) error {
 	ctx.packets = call
-	ctx.PacketAddress = address
 	return nil
 }
 
@@ -174,8 +171,8 @@ func (ctx *Context) PacketSink() PacketCallback {
 // Then it unblocks the caller by sending a message on the channel.
 // Then it cleans up the rest of the objects.
 func (ctx *Context) Cleanup(ch chan bool, isPort func(*fwdpb.ObjectId) bool) {
-	ctx.SetPacketSink(nil, "")
-	ctx.SetNotification(nil, "")
+	ctx.SetPacketSink(nil)
+	ctx.SetNotification(nil)
 
 	ids := ctx.Objects.IDs()
 

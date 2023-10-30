@@ -36,6 +36,5 @@ go_library(
         "//dataplane/forwarding/protocol/udp",
         "//proto/forwarding",
         "@com_github_golang_glog//:glog",
-        "@org_golang_google_grpc//:go_default_library",
     ],
 )

@@ -36,9 +36,6 @@ service Forwarding {
   // ContextCreate creates a forwarding context.
   rpc ContextCreate(ContextCreateRequest) returns (ContextCreateReply) {}
 
-  // ContextUpdate updates a forwarding context.
-  rpc ContextUpdate(ContextUpdateRequest) returns (ContextUpdateReply) {}
-
   // ContextDelete deletes a forwarding context.
   rpc ContextDelete(ContextDeleteRequest) returns (ContextDeleteReply) {}
 
@@ -110,12 +107,13 @@ service Forwarding {
 
   // NotifySubscribe subscribes to notifications.
   rpc NotifySubscribe(NotifySubscribeRequest) returns (stream EventDesc) {}
-}
 
-// PacketSink is a service that processes packets on the specified port.
-service PacketSink {
-  // PacketInject injects a packet into the specified port.
-  rpc PacketInject(PacketInjectRequest) returns (PacketInjectReply) {}
+  // PacketInject injects of packets into any port in the context.
+  rpc PacketInject(stream PacketInjectRequest) returns (PacketInjectResponse) {}
+
+  // PacketSinkSubscribe is a subscription to receive packets from the CPU port.
+  rpc PacketSinkSubscribe(PacketSinkRequest) 
+      returns (stream PacketSinkResponse) {}
 }
 
 // Info provides access to various information elements.

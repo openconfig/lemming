@@ -21,10 +21,8 @@ import (
 	"fmt"
 	"io"
 	"sync"
-	"time"
 
 	log "github.com/golang/glog"
-	"google.golang.org/grpc"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdport"
@@ -63,15 +61,12 @@ import (
 type Server struct {
 	fwdpb.UnimplementedForwardingServer
 	fwdpb.UnimplementedInfoServer
-	fwdpb.UnimplementedPacketSinkServer
 
 	mu  sync.Mutex
 	ctx map[string]*fwdcontext.Context // forwarding contexts indexed by name
 
-	name   string                               // name of the forwarding engine
-	info   *InfoList                            // list of info elements that can be queried
-	conn   map[string]*grpc.ClientConn          // client connections indexed by address
-	packet map[string]fwdcontext.PacketCallback // packet callback indexed by address
+	name string    // name of the forwarding engine
+	info *InfoList // list of info elements that can be queried
 }
 
 // New creates a new forwarding instance using the specified name.
@@ -83,54 +78,11 @@ func New(name string) *Server {
 	}
 }
 
-// client returns a gRPC client connected to the specified address.
-// It is assumed that clients are looked up while the service is locked.
-func (e *Server) client(addr string) (*grpc.ClientConn, error) {
-	if c, ok := e.conn[addr]; ok {
-		return c, nil
-	}
-	c, err := grpc.Dial(addr)
-	if err != nil {
-		return nil, fmt.Errorf("service: dial to %v failed, err %v", addr, err)
-	}
-	e.conn[addr] = c
-	return c, nil
-}
-
-// GetPacketSinkCallback returns a callback that posts packets to a packet sink
-// service at the specified address. If the address is "", the packet sink
-// service is disabled for the context.
-func (e *Server) GetPacketSinkCallback(address string) (fwdcontext.PacketCallback, error) {
-	if address == "" {
-		return nil, nil
-	}
-
-	e.mu.Lock()
-	defer e.mu.Unlock()
-
-	if h, ok := e.packet[address]; ok {
-		return h, nil
-	}
-	c, err := e.client(address)
-	if err != nil {
-		return nil, fmt.Errorf("service: connection to packet service failed, err %v", err)
-	}
-	client := fwdpb.NewPacketSinkClient(c)
-	h := func(p *fwdpb.PacketInjectRequest) (*fwdpb.PacketInjectReply, error) {
-		// Execute the RPC with a 1 min timeout.
-		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
-		defer cancel()
-		return client.PacketInject(ctx, p)
-	}
-	e.packet[address] = h
-	return h, nil
-}
-
 // UpdateNotification updates the notification service for a context. If the
 // notification is set to nil, no notifications are generated for the context.
 // The address is the address of the notification service (used in queries)
 // in the host:port format.
-func (e *Server) UpdateNotification(contextID *fwdpb.ContextId, notification fwdcontext.NotificationCallback, address string) error {
+func (e *Server) UpdateNotification(contextID *fwdpb.ContextId, notification fwdcontext.NotificationCallback) error {
 	if contextID == nil {
 		return errors.New("fwd: UpdateNotification failed, No context ID")
 	}
@@ -141,7 +93,7 @@ func (e *Server) UpdateNotification(contextID *fwdpb.ContextId, notification fwd
 	}
 
 	ctx.Lock()
-	ctx.SetNotification(notification, address)
+	ctx.SetNotification(notification)
 	ctx.Unlock()
 	return nil
 }
@@ -150,7 +102,7 @@ func (e *Server) UpdateNotification(contextID *fwdpb.ContextId, notification fwd
 // service is set to nil, no packets are delivered externally for the context.
 // The address is the address of the packet service (used in queries)
 // in the host:port format.
-func (e *Server) UpdatePacketSink(contextID *fwdpb.ContextId, packet fwdcontext.PacketCallback, address string) error {
+func (e *Server) UpdatePacketSink(contextID *fwdpb.ContextId, packet fwdcontext.PacketCallback) error {
 	if contextID == nil {
 		return errors.New("fwd: UpdatePacketSink failed, No context ID")
 	}
@@ -162,7 +114,7 @@ func (e *Server) UpdatePacketSink(contextID *fwdpb.ContextId, packet fwdcontext.
 
 	ctx.Lock()
 	defer ctx.Unlock()
-	ctx.SetPacketSink(packet, address)
+	ctx.SetPacketSink(packet)
 	return nil
 }
 
@@ -170,40 +122,11 @@ func (e *Server) UpdatePacketSink(contextID *fwdpb.ContextId, packet fwdcontext.
 // notification services are specified but not reachable, the context creation
 // fails.
 func (e *Server) ContextCreate(_ context.Context, request *fwdpb.ContextCreateRequest) (*fwdpb.ContextCreateReply, error) {
-	paddr := request.GetPacketAddress()
-
-	ps, err := e.GetPacketSinkCallback(paddr)
-	if err != nil {
-		return nil, err
-	}
-
 	cid := request.GetContextId()
 	if err := e.contextCreateByID(cid); err != nil {
 		return nil, err
 	}
-	return &fwdpb.ContextCreateReply{}, e.UpdatePacketSink(cid, ps, paddr)
-}
-
-// ContextUpdate updates a forwarding context. Note that if the packet sink and/or
-// notification services are specified but not reachable, the context update
-// fails.
-func (e *Server) ContextUpdate(_ context.Context, request *fwdpb.ContextUpdateRequest) (*fwdpb.ContextUpdateReply, error) {
-	paddr := request.GetPacketAddress()
-	cid := request.GetContextId()
-
-	for _, op := range request.GetOperations() {
-		switch op {
-		case fwdpb.ContextUpdateRequest_OPERATION_UPDATE_PACKET_ADDRESS:
-			ps, err := e.GetPacketSinkCallback(paddr)
-			if err != nil {
-				return nil, err
-			}
-			if err = e.UpdatePacketSink(cid, ps, paddr); err != nil {
-				return nil, err
-			}
-		}
-	}
-	return &fwdpb.ContextUpdateReply{}, nil
+	return &fwdpb.ContextCreateReply{}, nil
 }
 
 // contextCreateByID creates a new context with the given ID, erroring if it already exists.
@@ -278,8 +201,6 @@ func (e *Server) ContextList(_ context.Context, request *fwdpb.ContextListReques
 			ContextId: &fwdpb.ContextId{
 				Id: ctx.ID,
 			},
-			PacketAddress:       ctx.PacketAddress,
-			NotificationAddress: ctx.NotificationAddress,
 		})
 	}
 	return reply, nil
@@ -752,74 +673,94 @@ func (e *Server) FlowCounterQuery(_ context.Context, request *fwdpb.FlowCounterQ
 }
 
 // PacketInject injects a packet in the specified forwarding context and port.
-func (e *Server) PacketInject(_ context.Context, request *fwdpb.PacketInjectRequest) (*fwdpb.PacketInjectReply, error) {
-	timer := deadlock.NewTimer(deadlock.Timeout, fmt.Sprintf("Processing %+v", request))
-	defer timer.Stop()
-
-	ctx, err := e.FindContext(request.GetContextId())
-	if err != nil {
-		return nil, fmt.Errorf("fwd: PacketInject failed, err %v", err)
-	}
-
-	// In a goroutine, acquire a RWLock on the context, create the preprocessing
-	// actions and process the packet. The RPC does not wait for the complete
-	// packet processing. It returns once it has validated the input parameters.
-	status := make(chan error)
-
-	go func() {
-		ctx.RLock()
-		defer ctx.RUnlock()
-
-		port, err := fwdport.Find(request.GetPortId(), ctx)
+func (e *Server) PacketInject(srv fwdpb.Forwarding_PacketInjectServer) error {
+	for {
+		request, err := srv.Recv()
 		if err != nil {
-			status <- fmt.Errorf("fwd: PortInject failed, err %v", err)
-			return
+			return err
+		}
+		timer := deadlock.NewTimer(deadlock.Timeout, fmt.Sprintf("Processing %+v", request))
+		defer timer.Stop()
+
+		ctx, err := e.FindContext(request.GetContextId())
+		if err != nil {
+			return fmt.Errorf("fwd: PacketInject failed, err %v", err)
 		}
 
-		packet, err := fwdpacket.New(request.GetStartHeader(), request.GetBytes())
-		if err != nil {
-			status <- fmt.Errorf("fwd: PortInject failed, err %v", err)
-			return
-		}
+		// In a goroutine, acquire a RWLock on the context, create the preprocessing
+		// actions and process the packet. The RPC does not wait for the complete
+		// packet processing. It returns once it has validated the input parameters.
+		status := make(chan error)
 
-		pre, err := fwdaction.NewActions(request.GetPreprocesses(), ctx)
-		if err != nil {
-			status <- fmt.Errorf("fwd: PortInject failed to create preprocessing actions %v, err %v", request.GetPreprocesses(), err)
-			return
-		}
+		go func() {
+			ctx.RLock()
+			defer ctx.RUnlock()
 
-		// Apply the preprocessing actions on the packet and inject it into the
-		// port while holding the context's RLock. After packet processing,
-		// cleanup the port and actions. Publish a "no error" on the status
-		// channel so that the RPC can return. Note that this also serializes
-		// the packets arriving from the CPU.
-		status <- nil
-
-		func() {
-			defer func() {
-				if pre != nil {
-					pre.Cleanup()
-				}
-			}()
-
-			packet.Debug(request.GetDebug())
-			if len(pre) != 0 {
-				packet.Log().WithValues("context", ctx.ID, "port", port.ID())
-				state, err := fwdaction.ProcessPacket(packet, pre, port)
-				if state != fwdaction.CONTINUE || err != nil {
-					log.Errorf("%v: preprocessing failed, state %v, err %v", port.ID(), state, err)
-					return
-				}
-				packet.Log().V(1).Info("injecting packet", "frame", fwdpacket.IncludeFrameInLog)
+			port, err := fwdport.Find(request.GetPortId(), ctx)
+			if err != nil {
+				status <- fmt.Errorf("fwd: PortInject failed, err %v", err)
+				return
 			}
-			fwdport.Process(port, packet, request.GetAction(), ctx, "Control")
-		}()
-	}()
 
-	if err = <-status; err != nil {
-		return nil, fmt.Errorf("fwd: PacketInject failed, err %v", err)
+			packet, err := fwdpacket.New(request.GetStartHeader(), request.GetBytes())
+			if err != nil {
+				status <- fmt.Errorf("fwd: PortInject failed, err %v", err)
+				return
+			}
+
+			pre, err := fwdaction.NewActions(request.GetPreprocesses(), ctx)
+			if err != nil {
+				status <- fmt.Errorf("fwd: PortInject failed to create preprocessing actions %v, err %v", request.GetPreprocesses(), err)
+				return
+			}
+
+			// Apply the preprocessing actions on the packet and inject it into the
+			// port while holding the context's RLock. After packet processing,
+			// cleanup the port and actions. Publish a "no error" on the status
+			// channel so that the RPC can return. Note that this also serializes
+			// the packets arriving from the CPU.
+			status <- nil
+
+			func() {
+				defer func() {
+					if pre != nil {
+						pre.Cleanup()
+					}
+				}()
+
+				packet.Debug(request.GetDebug())
+				if len(pre) != 0 {
+					packet.Log().WithValues("context", ctx.ID, "port", port.ID())
+					state, err := fwdaction.ProcessPacket(packet, pre, port)
+					if state != fwdaction.CONTINUE || err != nil {
+						log.Errorf("%v: preprocessing failed, state %v, err %v", port.ID(), state, err)
+						return
+					}
+					packet.Log().V(1).Info("injecting packet", "frame", fwdpacket.IncludeFrameInLog)
+				}
+				fwdport.Process(port, packet, request.GetAction(), ctx, "Control")
+			}()
+		}()
+
+		if err = <-status; err != nil {
+			return fmt.Errorf("fwd: PacketInject failed, err %v", err)
+		}
 	}
-	return &fwdpb.PacketInjectReply{}, nil
+}
+
+// PacketEject sets the packet sink for a context and stream packets to the client.
+func (e *Server) PacketSinkSubscribe(req *fwdpb.PacketSinkRequest, srv fwdpb.Forwarding_PacketSinkSubscribeServer) error {
+	errCh := make(chan error)
+	f := func(r *fwdpb.PacketSinkResponse) error {
+		if err := srv.Send(r); err != nil {
+			errCh <- err
+		}
+		return nil
+	}
+	if err := e.UpdatePacketSink(req.GetContextId(), f); err != nil {
+		return err
+	}
+	return <-errCh
 }
 
 // InfoList retrieves a list of all information elements.
@@ -887,8 +828,7 @@ func (e *Server) NotifySubscribe(sub *fwdpb.NotifySubscribeRequest, srv fwdpb.Fo
 		eventCh <- ed
 	}
 
-	// TODO: Remove unused address field.
-	if err := e.UpdateNotification(sub.GetContext(), fn, "callback"); err != nil {
+	if err := e.UpdateNotification(sub.GetContext(), fn); err != nil {
 		return err
 	}
 

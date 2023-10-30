@@ -309,34 +309,9 @@ message ObjectListReply {
 // ID.
 message ContextCreateRequest {
   ContextId context_id = 1;
-  string packet_address = 2;  // Address of the context's packet service.
 }
 
 message ContextCreateReply {
-
-}
-
-// A ContextUpdateRequest is a request to update a context with the specified
-// ID. For a given attribute, specifying an operation without specifying a
-// value, effectively unsets the attribute. Note that only the specified
-// operations are performed by the update. If an operation is not specified,
-// the corresponding attribute value is ignored.
-message ContextUpdateRequest {
-  enum Operation {
-    OPERATION_UNSPECIFIED = 0;
-    OPERATION_UPDATE_PACKET_ADDRESS =
-        1;  // Update the packet sink service address.
-    OPERATION_UPDATE_NOTIFICATION_ADDRESS =
-        2;  // Update the notification service address.
-  }
-  ContextId context_id = 1;
-  string packet_address = 2;  // Address of the context's packet service.
-  string notification_address =
-      3;  // Address of the context's notification service.
-  repeated Operation operations = 4;  // List of update operations.
-}
-
-message ContextUpdateReply {
 
 }
 
@@ -352,8 +327,6 @@ message ContextDeleteReply {
 // A ContextAttr contains the attributes of a forwarding context.
 message ContextAttr {
   ContextId context_id = 1;
-  string packet_address = 2;        // Address of the packet service
-  string notification_address = 3;  // Address of the notification service
 }
 
 // A ContextListRequest is a request to list all the contexts.

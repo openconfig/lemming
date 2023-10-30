@@ -291,7 +291,8 @@ sai_status_t l_get_buffer_pool_stats(sai_object_id_t buffer_pool_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  for (uint32_t i = 0; i < number_of_counters; i++) {
+  for (uint32_t i = 0;
+       i < number_of_counters && i < uint32_t(resp.values_size()); i++) {
     counters[i] = resp.values(i);
   }
 
@@ -451,7 +452,8 @@ sai_status_t l_get_ingress_priority_group_stats(
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  for (uint32_t i = 0; i < number_of_counters; i++) {
+  for (uint32_t i = 0;
+       i < number_of_counters && i < uint32_t(resp.values_size()); i++) {
     counters[i] = resp.values(i);
   }
 
