@@ -306,7 +306,9 @@ func TestCreateAclEntry(t *testing.T) {
 	}}
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			dplane := &fakeACLDataplaneAPI{}
+			dplane := &fakeSwitchDataplane{
+				portIDToNID: map[string]uint64{"1": 1},
+			}
 			c, a, stopFn := newTestACL(t, dplane)
 			a.tableToLocation[1] = tableLocation{
 				groupID: "1",
@@ -327,31 +329,10 @@ func TestCreateAclEntry(t *testing.T) {
 	}
 }
 
-func newTestACL(t testing.TB, api aclDataplaneAPI) (saipb.AclClient, *acl, func()) {
+func newTestACL(t testing.TB, api switchDataplaneAPI) (saipb.AclClient, *acl, func()) {
 	var a *acl
 	conn, _, stopFn := newTestServer(t, func(mgr *attrmgr.AttrMgr, srv *grpc.Server) {
 		a = newACL(mgr, api, srv)
 	})
 	return saipb.NewAclClient(conn), a, stopFn
-}
-
-type fakeACLDataplaneAPI struct {
-	gotEntryAddReqs []*fwdpb.TableEntryAddRequest
-}
-
-func (f fakeACLDataplaneAPI) ID() string {
-	return "foo"
-}
-
-func (f fakeACLDataplaneAPI) TableCreate(context.Context, *fwdpb.TableCreateRequest) (*fwdpb.TableCreateReply, error) {
-	return nil, nil
-}
-
-func (f *fakeACLDataplaneAPI) TableEntryAdd(_ context.Context, req *fwdpb.TableEntryAddRequest) (*fwdpb.TableEntryAddReply, error) {
-	f.gotEntryAddReqs = append(f.gotEntryAddReqs, req)
-	return nil, nil
-}
-
-func (f fakeACLDataplaneAPI) PortIDToNID(string) (uint64, bool) {
-	return 1, true
 }

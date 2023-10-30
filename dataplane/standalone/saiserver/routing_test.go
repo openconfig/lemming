@@ -30,39 +30,6 @@ import (
 	dpb "github.com/openconfig/lemming/proto/dataplane"
 )
 
-type fakeRoutingDataplaneAPI struct {
-	gotAddNeighborReq     []*dpb.AddNeighborRequest
-	gotAddNextHopGroupReq []*dpb.AddNextHopGroupRequest
-	gotAddNextHopReq      []*dpb.AddNextHopRequest
-	gotAddIPRouteReq      []*dpb.AddIPRouteRequest
-	gotAddInterfaceReq    []*dpb.AddInterfaceRequest
-}
-
-func (f *fakeRoutingDataplaneAPI) AddNeighbor(_ context.Context, req *dpb.AddNeighborRequest) (*dpb.AddNeighborResponse, error) {
-	f.gotAddNeighborReq = append(f.gotAddNeighborReq, req)
-	return nil, nil
-}
-
-func (f *fakeRoutingDataplaneAPI) AddNextHopGroup(_ context.Context, req *dpb.AddNextHopGroupRequest) (*dpb.AddNextHopGroupResponse, error) {
-	f.gotAddNextHopGroupReq = append(f.gotAddNextHopGroupReq, req)
-	return nil, nil
-}
-
-func (f *fakeRoutingDataplaneAPI) AddNextHop(_ context.Context, req *dpb.AddNextHopRequest) (*dpb.AddNextHopResponse, error) {
-	f.gotAddNextHopReq = append(f.gotAddNextHopReq, req)
-	return nil, nil
-}
-
-func (f *fakeRoutingDataplaneAPI) AddIPRoute(_ context.Context, req *dpb.AddIPRouteRequest) (*dpb.AddIPRouteResponse, error) {
-	f.gotAddIPRouteReq = append(f.gotAddIPRouteReq, req)
-	return nil, nil
-}
-
-func (f *fakeRoutingDataplaneAPI) AddInterface(_ context.Context, req *dpb.AddInterfaceRequest) (*dpb.AddInterfaceResponse, error) {
-	f.gotAddInterfaceReq = append(f.gotAddInterfaceReq, req)
-	return nil, nil
-}
-
 func TestCreateNeighborEntry(t *testing.T) {
 	tests := []struct {
 		desc     string
@@ -78,7 +45,7 @@ func TestCreateNeighborEntry(t *testing.T) {
 	}}
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			dplane := &fakeRoutingDataplaneAPI{}
+			dplane := &fakeSwitchDataplane{}
 			c, mgr, stopFn := newTestNeighbor(t, dplane)
 			defer stopFn()
 			got, gotErr := c.CreateNeighborEntry(context.TODO(), tt.req)
@@ -127,7 +94,7 @@ func TestCreateNextHopGroup(t *testing.T) {
 	}}
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			dplane := &fakeRoutingDataplaneAPI{}
+			dplane := &fakeSwitchDataplane{}
 			c, mgr, stopFn := newTestNextHopGroup(t, dplane)
 			defer stopFn()
 			_, gotErr := c.CreateNextHopGroup(context.TODO(), tt.req)
@@ -181,7 +148,7 @@ func TestCreateNextHopGroupMember(t *testing.T) {
 	}}
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			dplane := &fakeRoutingDataplaneAPI{}
+			dplane := &fakeSwitchDataplane{}
 			c, mgr, stopFn := newTestNextHopGroup(t, dplane)
 			defer stopFn()
 			_, gotErr := c.CreateNextHopGroupMember(context.TODO(), tt.req)
@@ -242,7 +209,7 @@ func TestCreateNextHop(t *testing.T) {
 	}}
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			dplane := &fakeRoutingDataplaneAPI{}
+			dplane := &fakeSwitchDataplane{}
 			c, mgr, stopFn := newTestNextHop(t, dplane)
 			defer stopFn()
 			_, gotErr := c.CreateNextHop(context.TODO(), tt.req)
@@ -331,7 +298,7 @@ func TestCreateRouteEntry(t *testing.T) {
 	}}
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			dplane := &fakeRoutingDataplaneAPI{}
+			dplane := &fakeSwitchDataplane{}
 			c, mgr, stopFn := newTestRoute(t, dplane)
 			defer stopFn()
 			for k, v := range tt.types {
@@ -375,7 +342,7 @@ func TestCreateRouterInterface(t *testing.T) {
 	}}
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			dplane := &fakeRoutingDataplaneAPI{}
+			dplane := &fakeSwitchDataplane{}
 			c, _, stopFn := newTestRouterInterface(t, dplane)
 			defer stopFn()
 			_, gotErr := c.CreateRouterInterface(context.TODO(), tt.req)
