@@ -16,7 +16,6 @@ package saiserver
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"log"
 	"net"
@@ -30,6 +29,7 @@ import (
 	"google.golang.org/protobuf/testing/protocmp"
 
 	"github.com/openconfig/lemming/dataplane/standalone/saiserver/attrmgr"
+	dpb "github.com/openconfig/lemming/proto/dataplane"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 
 	saipb "github.com/openconfig/lemming/dataplane/standalone/proto"
@@ -211,9 +211,18 @@ func TestSwitchPortStateChangeNotification(t *testing.T) {
 }
 
 type fakeSwitchDataplane struct {
-	fakePortDataplaneAPI
-	fakeRoutingDataplaneAPI
-	events []*fwdpb.EventDesc
+	events                []*fwdpb.EventDesc
+	gotAddNeighborReq     []*dpb.AddNeighborRequest
+	gotAddNextHopGroupReq []*dpb.AddNextHopGroupRequest
+	gotAddNextHopReq      []*dpb.AddNextHopRequest
+	gotAddIPRouteReq      []*dpb.AddIPRouteRequest
+	gotAddInterfaceReq    []*dpb.AddInterfaceRequest
+	gotEntryAddReqs       []*fwdpb.TableEntryAddRequest
+	gotPortStateReq       []*fwdpb.PortStateRequest
+	gotPortCreateReq      []*dpb.CreatePortRequest
+	counterReplies        []*fwdpb.ObjectCountersReply
+	portIDToNID           map[string]uint64
+	counterRepliesIdx     int
 }
 
 func (f *fakeSwitchDataplane) NotifySubscribe(_ *fwdpb.NotifySubscribeRequest, srv fwdpb.Forwarding_NotifySubscribeServer) error {
@@ -224,15 +233,65 @@ func (f *fakeSwitchDataplane) NotifySubscribe(_ *fwdpb.NotifySubscribeRequest, s
 }
 
 func (f *fakeSwitchDataplane) TableCreate(context.Context, *fwdpb.TableCreateRequest) (*fwdpb.TableCreateReply, error) {
-	return nil, fmt.Errorf("unimplemented")
+	return nil, nil
 }
 
-func (f *fakeSwitchDataplane) TableEntryAdd(context.Context, *fwdpb.TableEntryAddRequest) (*fwdpb.TableEntryAddReply, error) {
-	return nil, fmt.Errorf("unimplemented")
+func (f *fakeSwitchDataplane) TableEntryAdd(_ context.Context, req *fwdpb.TableEntryAddRequest) (*fwdpb.TableEntryAddReply, error) {
+	f.gotEntryAddReqs = append(f.gotEntryAddReqs, req)
+	return nil, nil
 }
 
-func (f *fakeSwitchDataplane) PortIDToNID(string) (uint64, bool) {
-	return 0, false
+func (f *fakeSwitchDataplane) PortIDToNID(id string) (uint64, bool) {
+	nid, ok := f.portIDToNID[id]
+	return nid, ok
+}
+
+func (f *fakeSwitchDataplane) AddNeighbor(_ context.Context, req *dpb.AddNeighborRequest) (*dpb.AddNeighborResponse, error) {
+	f.gotAddNeighborReq = append(f.gotAddNeighborReq, req)
+	return nil, nil
+}
+
+func (f *fakeSwitchDataplane) AddNextHopGroup(_ context.Context, req *dpb.AddNextHopGroupRequest) (*dpb.AddNextHopGroupResponse, error) {
+	f.gotAddNextHopGroupReq = append(f.gotAddNextHopGroupReq, req)
+	return nil, nil
+}
+
+func (f *fakeSwitchDataplane) AddNextHop(_ context.Context, req *dpb.AddNextHopRequest) (*dpb.AddNextHopResponse, error) {
+	f.gotAddNextHopReq = append(f.gotAddNextHopReq, req)
+	return nil, nil
+}
+
+func (f *fakeSwitchDataplane) AddIPRoute(_ context.Context, req *dpb.AddIPRouteRequest) (*dpb.AddIPRouteResponse, error) {
+	f.gotAddIPRouteReq = append(f.gotAddIPRouteReq, req)
+	return nil, nil
+}
+
+func (f *fakeSwitchDataplane) AddInterface(_ context.Context, req *dpb.AddInterfaceRequest) (*dpb.AddInterfaceResponse, error) {
+	f.gotAddInterfaceReq = append(f.gotAddInterfaceReq, req)
+	return nil, nil
+}
+
+func (f *fakeSwitchDataplane) CreatePort(_ context.Context, req *dpb.CreatePortRequest) (*dpb.CreatePortResponse, error) {
+	f.gotPortCreateReq = append(f.gotPortCreateReq, req)
+	return nil, nil
+}
+
+func (f *fakeSwitchDataplane) PortState(_ context.Context, req *fwdpb.PortStateRequest) (*fwdpb.PortStateReply, error) {
+	f.gotPortStateReq = append(f.gotPortStateReq, req)
+	return nil, nil
+}
+
+func (f *fakeSwitchDataplane) ObjectCounters(context.Context, *fwdpb.ObjectCountersRequest) (*fwdpb.ObjectCountersReply, error) {
+	if f.counterRepliesIdx > len(f.counterReplies) {
+		return nil, io.EOF
+	}
+	r := f.counterReplies[f.counterRepliesIdx]
+	f.counterRepliesIdx++
+	return r, nil
+}
+
+func (f *fakeSwitchDataplane) ID() string {
+	return "foo"
 }
 
 func newTestServer(t testing.TB, newSrvFn func(mgr *attrmgr.AttrMgr, srv *grpc.Server)) (grpc.ClientConnInterface, *attrmgr.AttrMgr, func()) {
