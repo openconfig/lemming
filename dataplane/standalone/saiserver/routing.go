@@ -23,29 +23,23 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
 	"github.com/openconfig/lemming/dataplane/standalone/saiserver/attrmgr"
 
 	log "github.com/golang/glog"
 
 	saipb "github.com/openconfig/lemming/dataplane/standalone/proto"
 	dpb "github.com/openconfig/lemming/proto/dataplane"
+	"github.com/openconfig/lemming/proto/forwarding"
 )
-
-type routingDataplaneAPI interface {
-	AddNeighbor(ctx context.Context, req *dpb.AddNeighborRequest) (*dpb.AddNeighborResponse, error)
-	AddNextHopGroup(ctx context.Context, req *dpb.AddNextHopGroupRequest) (*dpb.AddNextHopGroupResponse, error)
-	AddNextHop(ctx context.Context, req *dpb.AddNextHopRequest) (*dpb.AddNextHopResponse, error)
-	AddIPRoute(ctx context.Context, req *dpb.AddIPRouteRequest) (*dpb.AddIPRouteResponse, error)
-	AddInterface(ctx context.Context, req *dpb.AddInterfaceRequest) (*dpb.AddInterfaceResponse, error)
-}
 
 type neighbor struct {
 	saipb.UnimplementedNeighborServer
 	mgr       *attrmgr.AttrMgr
-	dataplane routingDataplaneAPI
+	dataplane switchDataplaneAPI
 }
 
-func newNeighbor(mgr *attrmgr.AttrMgr, dataplane routingDataplaneAPI, s *grpc.Server) *neighbor {
+func newNeighbor(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server) *neighbor {
 	n := &neighbor{
 		mgr:       mgr,
 		dataplane: dataplane,
@@ -87,10 +81,10 @@ func (n *neighbor) CreateNeighborEntries(ctx context.Context, re *saipb.CreateNe
 type nextHopGroup struct {
 	saipb.UnimplementedNextHopGroupServer
 	mgr       *attrmgr.AttrMgr
-	dataplane routingDataplaneAPI
+	dataplane switchDataplaneAPI
 }
 
-func newNextHopGroup(mgr *attrmgr.AttrMgr, dataplane routingDataplaneAPI, s *grpc.Server) *nextHopGroup {
+func newNextHopGroup(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server) *nextHopGroup {
 	n := &nextHopGroup{
 		mgr:       mgr,
 		dataplane: dataplane,
@@ -137,10 +131,10 @@ func (nhg *nextHopGroup) CreateNextHopGroupMember(ctx context.Context, req *saip
 type nextHop struct {
 	saipb.UnimplementedNextHopServer
 	mgr       *attrmgr.AttrMgr
-	dataplane routingDataplaneAPI
+	dataplane switchDataplaneAPI
 }
 
-func newNextHop(mgr *attrmgr.AttrMgr, dataplane routingDataplaneAPI, s *grpc.Server) *nextHop {
+func newNextHop(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server) *nextHop {
 	n := &nextHop{
 		mgr:       mgr,
 		dataplane: dataplane,
@@ -191,10 +185,10 @@ func (nh *nextHop) CreateNextHops(ctx context.Context, r *saipb.CreateNextHopsRe
 type route struct {
 	saipb.UnimplementedRouteServer
 	mgr       *attrmgr.AttrMgr
-	dataplane routingDataplaneAPI
+	dataplane switchDataplaneAPI
 }
 
-func newRoute(mgr *attrmgr.AttrMgr, dataplane routingDataplaneAPI, s *grpc.Server) *route {
+func newRoute(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server) *route {
 	r := &route{
 		mgr:       mgr,
 		dataplane: dataplane,
@@ -202,6 +196,8 @@ func newRoute(mgr *attrmgr.AttrMgr, dataplane routingDataplaneAPI, s *grpc.Serve
 	saipb.RegisterRouteServer(s, r)
 	return r
 }
+
+const ip2meTableID = "ip2metable"
 
 // CreateRouteEntry creates a new route entry.
 func (r *route) CreateRouteEntry(ctx context.Context, req *saipb.CreateRouteEntryRequest) (*saipb.CreateRouteEntryResponse, error) {
@@ -235,6 +231,23 @@ func (r *route) CreateRouteEntry(ctx context.Context, req *saipb.CreateRouteEntr
 		return nil, status.Errorf(codes.InvalidArgument, "unknown action type: %v", req.GetPacketAction())
 	}
 	nextType := r.mgr.GetType(fmt.Sprint(req.GetNextHopId()))
+
+	swReq := &saipb.GetSwitchAttributeRequest{
+		Oid:      req.GetEntry().GetSwitchId(),
+		AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_CPU_PORT},
+	}
+	swAttr := &saipb.GetSwitchAttributeResponse{}
+	if err := r.mgr.PopulateAttributes(swReq, swAttr); err != nil {
+		return nil, err
+	}
+
+	// Handle "IP2ME" routes specially.
+	if nextType == saipb.ObjectType_OBJECT_TYPE_PORT && req.GetNextHopId() == swAttr.GetAttr().GetCpuPort() {
+		ipReq := fwdconfig.TableEntryAddRequest(r.dataplane.ID(), ip2meTableID).AppendEntry(
+			fwdconfig.EntryDesc(fwdconfig.ExtactEntry(fwdconfig.PacketFieldBytes(forwarding.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).
+				WithBytes(req.GetEntry().Destination.GetAddr()))),
+			fwdconfig.Action(f))
+	}
 
 	// If the packet action is drop, then next hop is optional.
 	if rReq.Route.Action == dpb.PacketAction_PACKET_ACTION_FORWARD {
@@ -274,10 +287,10 @@ func (r *route) CreateRouteEntries(ctx context.Context, re *saipb.CreateRouteEnt
 type routerInterface struct {
 	saipb.UnimplementedRouterInterfaceServer
 	mgr       *attrmgr.AttrMgr
-	dataplane routingDataplaneAPI
+	dataplane switchDataplaneAPI
 }
 
-func newRouterInterface(mgr *attrmgr.AttrMgr, dataplane routingDataplaneAPI, s *grpc.Server) *routerInterface {
+func newRouterInterface(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server) *routerInterface {
 	r := &routerInterface{
 		mgr:       mgr,
 		dataplane: dataplane,
@@ -316,10 +329,10 @@ func (ri *routerInterface) CreateRouterInterface(ctx context.Context, req *saipb
 type vlan struct {
 	saipb.UnimplementedVlanServer
 	mgr       *attrmgr.AttrMgr
-	dataplane routingDataplaneAPI
+	dataplane switchDataplaneAPI
 }
 
-func newVlan(mgr *attrmgr.AttrMgr, dataplane routingDataplaneAPI, s *grpc.Server) *vlan {
+func newVlan(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server) *vlan {
 	v := &vlan{
 		mgr:       mgr,
 		dataplane: dataplane,
@@ -361,10 +374,10 @@ func (vlan *vlan) CreateVlan(context.Context, *saipb.CreateVlanRequest) (*saipb.
 type bridge struct {
 	saipb.UnimplementedBridgeServer
 	mgr       *attrmgr.AttrMgr
-	dataplane routingDataplaneAPI
+	dataplane switchDataplaneAPI
 }
 
-func newBridge(mgr *attrmgr.AttrMgr, dataplane routingDataplaneAPI, s *grpc.Server) *bridge {
+func newBridge(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server) *bridge {
 	b := &bridge{
 		mgr:       mgr,
 		dataplane: dataplane,

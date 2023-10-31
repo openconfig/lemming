@@ -16,7 +16,9 @@ package saiserver
 
 import (
 	"context"
+	"encoding/binary"
 	"fmt"
+	"math"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -101,5 +103,116 @@ func (hostif *hostif) SetHostifAttribute(ctx context.Context, req *saipb.SetHost
 			return nil, err
 		}
 	}
+	return nil, nil
+}
+
+var (
+	etherTypeARP  = []byte{0x08, 0x06}
+	bgpPort       = binary.BigEndian.AppendUint16(nil, 179)
+	udldDstMAC    = []byte{0x01, 0x00, 0x0C, 0xCC, 0xCC, 0xCC}
+	etherTypeLLDP = []byte{0x88, 0xcc}
+	ndDstMAC      = []byte{0x33, 0x33, 0x00, 0x00, 0x00, 0x00} // ND is generic IPv6 multicast MAC.
+	ndDstMACMask  = []byte{0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00}
+	lacpDstMAC    = []byte{0x01, 0x80, 0xC2, 0x00, 0x00, 0x02}
+)
+
+func (hostif *hostif) CreateHostifTrap(_ context.Context, req *saipb.CreateHostifTrapRequest) (*saipb.CreateHostifTrapResponse, error) {
+	id := hostif.mgr.NextID()
+
+	fwdReq := fwdpb.TableEntryAddRequest{
+		EntryDesc: &fwdpb.EntryDesc{
+			Entry: &fwdpb.EntryDesc_Flow{
+				Flow: &fwdpb.FlowEntryDesc{
+					Priority: req.GetTrapPriority(),
+					Id:       uint32(id),
+				},
+			},
+		},
+	}
+	switch tType := req.GetTrapType(); tType {
+	case saipb.HostifTrapType_HOSTIF_TRAP_TYPE_ARP_REQUEST, saipb.HostifTrapType_HOSTIF_TRAP_TYPE_ARP_RESPONSE:
+		fwdReq.EntryDesc.GetFlow().Fields = append(fwdReq.EntryDesc.GetFlow().Fields, &fwdpb.PacketFieldMaskedBytes{
+			FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_TYPE}},
+			Bytes:   etherTypeARP,
+			Masks:   []byte{0xFF, 0xFF},
+		})
+	case saipb.HostifTrapType_HOSTIF_TRAP_TYPE_UDLD:
+		fwdReq.EntryDesc.GetFlow().Fields = append(fwdReq.EntryDesc.GetFlow().Fields, &fwdpb.PacketFieldMaskedBytes{
+			FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST}},
+			Bytes:   udldDstMAC,
+			Masks:   []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
+		})
+	case saipb.HostifTrapType_HOSTIF_TRAP_TYPE_LLDP:
+		fwdReq.EntryDesc.GetFlow().Fields = append(fwdReq.EntryDesc.GetFlow().Fields, &fwdpb.PacketFieldMaskedBytes{
+			FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_TYPE}},
+			Bytes:   etherTypeLLDP,
+			Masks:   []byte{0xFF, 0xFF},
+		})
+	case saipb.HostifTrapType_HOSTIF_TRAP_TYPE_IPV6_NEIGHBOR_DISCOVERY:
+		fwdReq.EntryDesc.GetFlow().Fields = append(fwdReq.EntryDesc.GetFlow().Fields, &fwdpb.PacketFieldMaskedBytes{
+			FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST}},
+			Bytes:   ndDstMAC,
+			Masks:   ndDstMACMask,
+		})
+	case saipb.HostifTrapType_HOSTIF_TRAP_TYPE_LACP:
+		fwdReq.EntryDesc.GetFlow().Fields = append(fwdReq.EntryDesc.GetFlow().Fields, &fwdpb.PacketFieldMaskedBytes{
+			FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST}},
+			Bytes:   lacpDstMAC,
+			Masks:   []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
+		})
+	case saipb.HostifTrapType_HOSTIF_TRAP_TYPE_IP2ME:
+	case saipb.HostifTrapType_HOSTIF_TRAP_TYPE_BGP, saipb.HostifTrapType_HOSTIF_TRAP_TYPE_BGPV6:
+		fwdReq.EntryDesc = nil
+		fwdReq.Entries = append(fwdReq.Entries, &fwdpb.TableEntryAddRequest_Entry{
+			EntryDesc: &fwdpb.EntryDesc{
+				Entry: &fwdpb.EntryDesc_Flow{
+					Flow: &fwdpb.FlowEntryDesc{
+						Priority: req.GetTrapPriority(),
+						Id:       uint32(id),
+						Fields: []*fwdpb.PacketFieldMaskedBytes{{
+							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_SRC}},
+							Bytes:   bgpPort,
+							Masks:   binary.BigEndian.AppendUint16(nil, math.MaxUint16),
+						}},
+					},
+				},
+			},
+		}, &fwdpb.TableEntryAddRequest_Entry{
+			EntryDesc: &fwdpb.EntryDesc{
+				Entry: &fwdpb.EntryDesc_Flow{
+					Flow: &fwdpb.FlowEntryDesc{
+						Priority: req.GetTrapPriority(),
+						Id:       uint32(id),
+						Fields: []*fwdpb.PacketFieldMaskedBytes{{
+							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST}},
+							Bytes:   bgpPort,
+							Masks:   binary.BigEndian.AppendUint16(nil, math.MaxUint16),
+						}},
+					},
+				},
+			},
+		})
+	default:
+		return nil, status.Errorf(codes.InvalidArgument, "unknown trap type: %v", tType)
+	}
+	switch act := req.GetPacketAction(); act {
+	default:
+		return nil, status.Errorf(codes.InvalidArgument, "unknown action type: %v", act)
+	}
+	// group := req.GetTrapGroup()
+	return &saipb.CreateHostifTrapResponse{
+		Oid: id,
+	}, nil
+}
+
+func (hostif *hostif) CreateHostifTrapGroup(context.Context, *saipb.CreateHostifTrapGroupRequest) (*saipb.CreateHostifTrapGroupResponse, error) {
+	return nil, nil
+}
+
+func (hostif *hostif) CreateHostifUserDefinedTrap(context.Context, *saipb.CreateHostifUserDefinedTrapRequest) (*saipb.CreateHostifUserDefinedTrapResponse, error) {
+	return nil, nil
+}
+
+func (hostif *hostif) CreateHostifTableEntry(context.Context, *saipb.CreateHostifTableEntryRequest) (*saipb.CreateHostifTableEntryResponse, error) {
 	return nil, nil
 }
