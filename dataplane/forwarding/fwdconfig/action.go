@@ -263,3 +263,34 @@ func (u *DecapActionBuilder) set(ad *fwdpb.ActionDesc) {
 func (u *DecapActionBuilder) actionType() fwdpb.ActionType {
 	return fwdpb.ActionType_ACTION_TYPE_DECAP
 }
+
+// // DecapActionBuilder is a builder for a lookup action.
+// type DecapActionBuilder struct {
+// 	header fwdpb.PacketHeaderId
+// }
+
+// // LookupAction returns a new lookup action builder.
+// func DecapAction(header fwdpb.PacketHeaderId) *DecapActionBuilder {
+// 	return &DecapActionBuilder{
+// 		header: header,
+// 	}
+// }
+
+// // WithHeaderID sets the header id.
+// func (u *DecapActionBuilder) WithHeaderID(header fwdpb.PacketHeaderId) *DecapActionBuilder {
+// 	u.header = header
+// 	return u
+// }
+
+// func (u *DecapActionBuilder) set(ad *fwdpb.ActionDesc) {
+// 	upd := &fwdpb.ActionDesc_Decap{
+// 		Decap: &fwdpb.DecapActionDesc{
+// 			HeaderId: u.header,
+// 		},
+// 	}
+// 	ad.Action = upd
+// }
+
+// func (u *DecapActionBuilder) actionType() fwdpb.ActionType {
+// 	return fwdpb.ActionType_ACTION_TYPE_DECAP
+// }

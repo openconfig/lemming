@@ -33,9 +33,15 @@ func TableEntryAddRequest(ctxID, tableID string) *TableEntryAddRequestBuilder {
 }
 
 // AppendEntry adds an entry and the actions to the requests.
-func (b *TableEntryAddRequestBuilder) AppendEntry(entry *EntryDescBuilder, acts ...*ActionBuilder) *TableEntryAddRequestBuilder {
-	b.actions = append(b.actions, acts)
+func (b *TableEntryAddRequestBuilder) AppendEntry(entry *EntryDescBuilder, actions ...*ActionBuilder) *TableEntryAddRequestBuilder {
 	b.entries = append(b.entries, entry)
+	b.actions = append(b.actions, actions)
+	return b
+}
+
+// AppendEntry adds the actions to the requests.
+func (b *TableEntryAddRequestBuilder) AppendActions(actions ...*ActionBuilder) *TableEntryAddRequestBuilder {
+	b.actions = append(b.actions, actions)
 	return b
 }
 
@@ -82,7 +88,7 @@ func (edb EntryDescBuilder) Build() *fwdpb.EntryDesc {
 	return entry
 }
 
-// ExactEntryBuild builds exact table entries.
+// ExactEntryBuilder builds exact table entries.
 type ExactEntryBuilder struct {
 	fields []*PacketFieldBytesBuilder
 }
@@ -102,5 +108,28 @@ func (eeb ExactEntryBuilder) set(ed *fwdpb.EntryDesc) {
 
 	ed.Entry = &fwdpb.EntryDesc_Exact{
 		Exact: exact,
+	}
+}
+
+// FlowEntryBuilder builds flow table entries.
+type FlowEntryBuilder struct {
+	fields []*PacketFieldMaskedBytesBuilder
+}
+
+// FlowEntry creates a new flow entry builder.
+func FlowEntry(fields ...*PacketFieldMaskedBytesBuilder) *FlowEntryBuilder {
+	return &FlowEntryBuilder{
+		fields: fields,
+	}
+}
+
+func (eeb FlowEntryBuilder) set(ed *fwdpb.EntryDesc) {
+	flow := &fwdpb.FlowEntryDesc{}
+	for _, b := range eeb.fields {
+		flow.Fields = append(flow.Fields, b.Build())
+	}
+
+	ed.Entry = &fwdpb.EntryDesc_Flow{
+		Flow: flow,
 	}
 }

@@ -16,6 +16,7 @@ package fwdconfig
 
 import (
 	"encoding/binary"
+	"math"
 
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
@@ -64,6 +65,63 @@ func (pfb *PacketFieldBytesBuilder) Build() *fwdpb.PacketFieldBytes {
 			Field: &fwdpb.PacketField{
 				FieldNum: pfb.field,
 				Instance: pfb.instance,
+			},
+		},
+	}
+}
+
+// PacketFieldMaskedBytesBuilder is a builder for PacketFieldBytes.
+type PacketFieldMaskedBytesBuilder struct {
+	bytes    []byte
+	mask     []byte
+	field    fwdpb.PacketFieldNum
+	instance uint32
+}
+
+// PacketFieldMaskedBytes creates a new PacketFieldBytesBuilder
+func PacketFieldMaskedBytes(field fwdpb.PacketFieldNum) *PacketFieldMaskedBytesBuilder {
+	return &PacketFieldMaskedBytesBuilder{
+		field: field,
+	}
+}
+
+// WithBytes sets the bytes and mask value.
+func (b *PacketFieldMaskedBytesBuilder) WithBytes(bytes, mask []byte) *PacketFieldMaskedBytesBuilder {
+	b.bytes = bytes
+	b.mask = mask
+	return b
+}
+
+// WithUint64 sets the bytes value with big endian encoded uint and the mask to an exact match.
+func (b *PacketFieldMaskedBytesBuilder) WithUint64(d uint64) *PacketFieldMaskedBytesBuilder {
+	b.bytes = binary.BigEndian.AppendUint64(nil, d)
+	b.mask = binary.BigEndian.AppendUint64(nil, math.MaxUint64)
+	return b
+}
+
+// WithUint32 sets the bytes value with big endian encoded uint and the mask to an exact match.
+func (b *PacketFieldMaskedBytesBuilder) WithUint32(d uint32) *PacketFieldMaskedBytesBuilder {
+	b.bytes = binary.BigEndian.AppendUint32(nil, d)
+	b.mask = binary.BigEndian.AppendUint32(nil, math.MaxUint32)
+	return b
+}
+
+// WithUint16 sets the bytes value with big endian encoded uint and the mask to an exact match.
+func (b *PacketFieldMaskedBytesBuilder) WithUint16(d uint16) *PacketFieldMaskedBytesBuilder {
+	b.bytes = binary.BigEndian.AppendUint16(nil, d)
+	b.mask = binary.BigEndian.AppendUint16(nil, math.MaxUint16)
+	return b
+}
+
+// Build returns a new PacketFieldMaskedBytes.
+func (b *PacketFieldMaskedBytesBuilder) Build() *fwdpb.PacketFieldMaskedBytes {
+	return &fwdpb.PacketFieldMaskedBytes{
+		Bytes: b.bytes,
+		Masks: b.mask,
+		FieldId: &fwdpb.PacketFieldId{
+			Field: &fwdpb.PacketField{
+				FieldNum: b.field,
+				Instance: b.instance,
 			},
 		},
 	}

@@ -23,14 +23,12 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
 	"github.com/openconfig/lemming/dataplane/standalone/saiserver/attrmgr"
 
 	log "github.com/golang/glog"
 
 	saipb "github.com/openconfig/lemming/dataplane/standalone/proto"
 	dpb "github.com/openconfig/lemming/proto/dataplane"
-	"github.com/openconfig/lemming/proto/forwarding"
 )
 
 type neighbor struct {
@@ -239,14 +237,6 @@ func (r *route) CreateRouteEntry(ctx context.Context, req *saipb.CreateRouteEntr
 	swAttr := &saipb.GetSwitchAttributeResponse{}
 	if err := r.mgr.PopulateAttributes(swReq, swAttr); err != nil {
 		return nil, err
-	}
-
-	// Handle "IP2ME" routes specially.
-	if nextType == saipb.ObjectType_OBJECT_TYPE_PORT && req.GetNextHopId() == swAttr.GetAttr().GetCpuPort() {
-		ipReq := fwdconfig.TableEntryAddRequest(r.dataplane.ID(), ip2meTableID).AppendEntry(
-			fwdconfig.EntryDesc(fwdconfig.ExtactEntry(fwdconfig.PacketFieldBytes(forwarding.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).
-				WithBytes(req.GetEntry().Destination.GetAddr()))),
-			fwdconfig.Action(f))
 	}
 
 	// If the packet action is drop, then next hop is optional.

@@ -359,35 +359,35 @@ func TestCreateRouterInterface(t *testing.T) {
 	}
 }
 
-func newTestNeighbor(t testing.TB, api routingDataplaneAPI) (saipb.NeighborClient, *attrmgr.AttrMgr, func()) {
+func newTestNeighbor(t testing.TB, api switchDataplaneAPI) (saipb.NeighborClient, *attrmgr.AttrMgr, func()) {
 	conn, mgr, stopFn := newTestServer(t, func(mgr *attrmgr.AttrMgr, srv *grpc.Server) {
 		newNeighbor(mgr, api, srv)
 	})
 	return saipb.NewNeighborClient(conn), mgr, stopFn
 }
 
-func newTestNextHopGroup(t testing.TB, api routingDataplaneAPI) (saipb.NextHopGroupClient, *attrmgr.AttrMgr, func()) {
+func newTestNextHopGroup(t testing.TB, api switchDataplaneAPI) (saipb.NextHopGroupClient, *attrmgr.AttrMgr, func()) {
 	conn, mgr, stopFn := newTestServer(t, func(mgr *attrmgr.AttrMgr, srv *grpc.Server) {
 		newNextHopGroup(mgr, api, srv)
 	})
 	return saipb.NewNextHopGroupClient(conn), mgr, stopFn
 }
 
-func newTestNextHop(t testing.TB, api routingDataplaneAPI) (saipb.NextHopClient, *attrmgr.AttrMgr, func()) {
+func newTestNextHop(t testing.TB, api switchDataplaneAPI) (saipb.NextHopClient, *attrmgr.AttrMgr, func()) {
 	conn, mgr, stopFn := newTestServer(t, func(mgr *attrmgr.AttrMgr, srv *grpc.Server) {
 		newNextHop(mgr, api, srv)
 	})
 	return saipb.NewNextHopClient(conn), mgr, stopFn
 }
 
-func newTestRoute(t testing.TB, api routingDataplaneAPI) (saipb.RouteClient, *attrmgr.AttrMgr, func()) {
+func newTestRoute(t testing.TB, api switchDataplaneAPI) (saipb.RouteClient, *attrmgr.AttrMgr, func()) {
 	conn, mgr, stopFn := newTestServer(t, func(mgr *attrmgr.AttrMgr, srv *grpc.Server) {
 		newRoute(mgr, api, srv)
 	})
 	return saipb.NewRouteClient(conn), mgr, stopFn
 }
 
-func newTestRouterInterface(t testing.TB, api routingDataplaneAPI) (saipb.RouterInterfaceClient, *attrmgr.AttrMgr, func()) {
+func newTestRouterInterface(t testing.TB, api switchDataplaneAPI) (saipb.RouterInterfaceClient, *attrmgr.AttrMgr, func()) {
 	conn, mgr, stopFn := newTestServer(t, func(mgr *attrmgr.AttrMgr, srv *grpc.Server) {
 		newRouterInterface(mgr, api, srv)
 	})
