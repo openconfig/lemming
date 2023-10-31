@@ -4,6 +4,7 @@ go_library(
     name = "saiserver",
     srcs = [
         "acl.go",
+        "hostif.go",
         "ports.go",
         "routing.go",
         "saiserver.go",
@@ -30,6 +31,7 @@ go_test(
     name = "saiserver_test",
     srcs = [
         "acl_test.go",
+        "hostif_test.go",
         "ports_test.go",
         "routing_test.go",
         "switch_test.go",

@@ -33,13 +33,6 @@ import (
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
-type aclDataplaneAPI interface {
-	ID() string
-	TableCreate(context.Context, *fwdpb.TableCreateRequest) (*fwdpb.TableCreateReply, error)
-	TableEntryAdd(context.Context, *fwdpb.TableEntryAddRequest) (*fwdpb.TableEntryAddReply, error)
-	PortIDToNID(port string) (uint64, bool)
-}
-
 // tableLocation indentifies the location of an acl table by the group, bank, member id.
 type tableLocation struct {
 	groupID  string
@@ -50,7 +43,7 @@ type tableLocation struct {
 type acl struct {
 	saipb.UnimplementedAclServer
 	mgr       *attrmgr.AttrMgr
-	dataplane aclDataplaneAPI
+	dataplane switchDataplaneAPI
 	// tableToLocation maps the acl table id to the lucius flow table and bank.
 	tableToLocation     map[uint64]tableLocation
 	groupNextFreeBankMu sync.Mutex
@@ -58,7 +51,7 @@ type acl struct {
 	groupNextFreeBank map[uint64]int
 }
 
-func newACL(mgr *attrmgr.AttrMgr, dataplane aclDataplaneAPI, s *grpc.Server) *acl {
+func newACL(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server) *acl {
 	a := &acl{
 		mgr:               mgr,
 		dataplane:         dataplane,
