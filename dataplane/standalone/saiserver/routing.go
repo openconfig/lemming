@@ -195,8 +195,6 @@ func newRoute(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server
 	return r
 }
 
-const ip2meTableID = "ip2metable"
-
 // CreateRouteEntry creates a new route entry.
 func (r *route) CreateRouteEntry(ctx context.Context, req *saipb.CreateRouteEntryRequest) (*saipb.CreateRouteEntryResponse, error) {
 	rReq := &dpb.AddIPRouteRequest{
@@ -229,15 +227,6 @@ func (r *route) CreateRouteEntry(ctx context.Context, req *saipb.CreateRouteEntr
 		return nil, status.Errorf(codes.InvalidArgument, "unknown action type: %v", req.GetPacketAction())
 	}
 	nextType := r.mgr.GetType(fmt.Sprint(req.GetNextHopId()))
-
-	swReq := &saipb.GetSwitchAttributeRequest{
-		Oid:      req.GetEntry().GetSwitchId(),
-		AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_CPU_PORT},
-	}
-	swAttr := &saipb.GetSwitchAttributeResponse{}
-	if err := r.mgr.PopulateAttributes(swReq, swAttr); err != nil {
-		return nil, err
-	}
 
 	// If the packet action is drop, then next hop is optional.
 	if rReq.Route.Action == dpb.PacketAction_PACKET_ACTION_FORWARD {

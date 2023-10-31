@@ -30,7 +30,9 @@ type PacketFieldBytesBuilder struct {
 
 // PacketFieldBytes creates a new PacketFieldBytesBuilder
 func PacketFieldBytes(field fwdpb.PacketFieldNum) *PacketFieldBytesBuilder {
-	return &PacketFieldBytesBuilder{}
+	return &PacketFieldBytesBuilder{
+		field: field,
+	}
 }
 
 // WithBytes sets the bytes value.

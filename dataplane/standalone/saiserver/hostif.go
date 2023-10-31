@@ -120,10 +120,19 @@ const (
 	trapTableID = "trap-table"
 )
 
-func (hostif *hostif) CreateHostifTrap(_ context.Context, req *saipb.CreateHostifTrapRequest) (*saipb.CreateHostifTrapResponse, error) {
+func (hostif *hostif) CreateHostifTrap(ctx context.Context, req *saipb.CreateHostifTrapRequest) (*saipb.CreateHostifTrapResponse, error) {
 	id := hostif.mgr.NextID()
 	fwdReq := fwdconfig.TableEntryAddRequest(hostif.dataplane.ID(), trapTableID)
 
+	swReq := &saipb.GetSwitchAttributeRequest{
+		Oid:      req.GetSwitch(),
+		AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_CPU_PORT},
+	}
+	swAttr := &saipb.GetSwitchAttributeResponse{}
+	if err := hostif.mgr.PopulateAttributes(swReq, swAttr); err != nil {
+		return nil, err
+	}
+	entriesAdded := 1
 	switch tType := req.GetTrapType(); tType {
 	case saipb.HostifTrapType_HOSTIF_TRAP_TYPE_ARP_REQUEST, saipb.HostifTrapType_HOSTIF_TRAP_TYPE_ARP_RESPONSE:
 		fwdReq.AppendEntry(fwdconfig.EntryDesc(fwdconfig.FlowEntry(
@@ -160,18 +169,21 @@ func (hostif *hostif) CreateHostifTrap(_ context.Context, req *saipb.CreateHosti
 			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST).
 				WithUint16(bgpPort))),
 		)
+		entriesAdded = 2
 	default:
 		return nil, status.Errorf(codes.InvalidArgument, "unknown trap type: %v", tType)
 	}
+
 	switch act := req.GetPacketAction(); act {
-	case saipb.PacketAction_PACKET_ACTION_TRAP:
-		desc := fwdpb.ActionDesc{
-			ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
-			Action: &f,
+	case saipb.PacketAction_PACKET_ACTION_TRAP: // TRAP means COPY to CPU and DROP, just transmit immediately, which interrupts any pending actions.
+		for i := 0; i < entriesAdded; i++ {
+			fwdReq.AppendActions(fwdconfig.Action(fwdconfig.TransmitAction(fmt.Sprint(swAttr.GetAttr().GetCpuPort())).WithImmediate(true)))
 		}
-		fwdReq.AppendActions(fwdconfig.Action(adb fwdconfig.actionDescBuilder))
 	default:
 		return nil, status.Errorf(codes.InvalidArgument, "unknown action type: %v", act)
+	}
+	if _, err := hostif.dataplane.TableEntryAdd(ctx, fwdReq.Build()); err != nil {
+		return nil, err
 	}
 	// group := req.GetTrapGroup()
 	return &saipb.CreateHostifTrapResponse{

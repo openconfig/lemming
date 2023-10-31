@@ -134,7 +134,8 @@ func (u *UpdateActionBuilder) actionType() fwdpb.ActionType {
 
 // TransmitActionBuilder is a builder for a transmit action.
 type TransmitActionBuilder struct {
-	portID string
+	portID    string
+	immediate bool
 }
 
 // TransmitAction returns a new update action builder.
@@ -144,9 +145,15 @@ func TransmitAction(portID string) *TransmitActionBuilder {
 	}
 }
 
-// WithFieldIDNum sets thje port id value.
+// WithFieldIDNum sets the port id value.
 func (u *TransmitActionBuilder) WithPortID(id string) *TransmitActionBuilder {
 	u.portID = id
+	return u
+}
+
+// WithImmediate sets immediate option value.
+func (u *TransmitActionBuilder) WithImmediate(immediate bool) *TransmitActionBuilder {
+	u.immediate = immediate
 	return u
 }
 
@@ -158,6 +165,7 @@ func (u *TransmitActionBuilder) set(ad *fwdpb.ActionDesc) {
 					Id: u.portID,
 				},
 			},
+			Immediate: u.immediate,
 		},
 	}
 	ad.Action = upd
@@ -263,34 +271,3 @@ func (u *DecapActionBuilder) set(ad *fwdpb.ActionDesc) {
 func (u *DecapActionBuilder) actionType() fwdpb.ActionType {
 	return fwdpb.ActionType_ACTION_TYPE_DECAP
 }
-
-// // DecapActionBuilder is a builder for a lookup action.
-// type DecapActionBuilder struct {
-// 	header fwdpb.PacketHeaderId
-// }
-
-// // LookupAction returns a new lookup action builder.
-// func DecapAction(header fwdpb.PacketHeaderId) *DecapActionBuilder {
-// 	return &DecapActionBuilder{
-// 		header: header,
-// 	}
-// }
-
-// // WithHeaderID sets the header id.
-// func (u *DecapActionBuilder) WithHeaderID(header fwdpb.PacketHeaderId) *DecapActionBuilder {
-// 	u.header = header
-// 	return u
-// }
-
-// func (u *DecapActionBuilder) set(ad *fwdpb.ActionDesc) {
-// 	upd := &fwdpb.ActionDesc_Decap{
-// 		Decap: &fwdpb.DecapActionDesc{
-// 			HeaderId: u.header,
-// 		},
-// 	}
-// 	ad.Action = upd
-// }
-
-// func (u *DecapActionBuilder) actionType() fwdpb.ActionType {
-// 	return fwdpb.ActionType_ACTION_TYPE_DECAP
-// }
