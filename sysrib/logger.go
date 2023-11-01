@@ -1,8 +1,8 @@
 package sysrib
 
 import (
-	"github.com/sirupsen/logrus"
 	"github.com/osrg/gobgp/v3/pkg/log"
+	"github.com/sirupsen/logrus"
 )
 
 // newLogger creates a new logger that is compatible with GoBGP's logger
