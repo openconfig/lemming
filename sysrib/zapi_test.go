@@ -42,7 +42,7 @@ import (
 	dpb "github.com/openconfig/lemming/proto/dataplane"
 	pb "github.com/openconfig/lemming/proto/sysrib"
 	"github.com/openconfig/ygnmi/ygnmi"
-	"github.com/wenovus/gobgp/v3/pkg/zebra"
+	"github.com/osrg/gobgp/v3/pkg/zebra"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/testing/protocmp"
 )

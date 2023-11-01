@@ -2,7 +2,7 @@ package sysrib
 
 import (
 	"github.com/sirupsen/logrus"
-	"github.com/wenovus/gobgp/v3/pkg/log"
+	"github.com/osrg/gobgp/v3/pkg/log"
 )
 
 // newLogger creates a new logger that is compatible with GoBGP's logger
@@ -11,7 +11,7 @@ var (
 	topicLogger = &myLogger{logger: logrus.New()}
 )
 
-// myLogger implements the github.com/wenovus/gobgp/v3/pkg/log/Logger interface
+// myLogger implements the github.com/osrg/gobgp/v3/pkg/log/Logger interface
 type myLogger struct {
 	logger *logrus.Logger
 }
