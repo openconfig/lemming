@@ -31,21 +31,13 @@ import (
 	dpb "github.com/openconfig/lemming/proto/dataplane"
 )
 
-type routingDataplaneAPI interface {
-	AddNeighbor(ctx context.Context, req *dpb.AddNeighborRequest) (*dpb.AddNeighborResponse, error)
-	AddNextHopGroup(ctx context.Context, req *dpb.AddNextHopGroupRequest) (*dpb.AddNextHopGroupResponse, error)
-	AddNextHop(ctx context.Context, req *dpb.AddNextHopRequest) (*dpb.AddNextHopResponse, error)
-	AddIPRoute(ctx context.Context, req *dpb.AddIPRouteRequest) (*dpb.AddIPRouteResponse, error)
-	AddInterface(ctx context.Context, req *dpb.AddInterfaceRequest) (*dpb.AddInterfaceResponse, error)
-}
-
 type neighbor struct {
 	saipb.UnimplementedNeighborServer
 	mgr       *attrmgr.AttrMgr
-	dataplane routingDataplaneAPI
+	dataplane switchDataplaneAPI
 }
 
-func newNeighbor(mgr *attrmgr.AttrMgr, dataplane routingDataplaneAPI, s *grpc.Server) *neighbor {
+func newNeighbor(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server) *neighbor {
 	n := &neighbor{
 		mgr:       mgr,
 		dataplane: dataplane,
@@ -87,10 +79,10 @@ func (n *neighbor) CreateNeighborEntries(ctx context.Context, re *saipb.CreateNe
 type nextHopGroup struct {
 	saipb.UnimplementedNextHopGroupServer
 	mgr       *attrmgr.AttrMgr
-	dataplane routingDataplaneAPI
+	dataplane switchDataplaneAPI
 }
 
-func newNextHopGroup(mgr *attrmgr.AttrMgr, dataplane routingDataplaneAPI, s *grpc.Server) *nextHopGroup {
+func newNextHopGroup(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server) *nextHopGroup {
 	n := &nextHopGroup{
 		mgr:       mgr,
 		dataplane: dataplane,
@@ -137,10 +129,10 @@ func (nhg *nextHopGroup) CreateNextHopGroupMember(ctx context.Context, req *saip
 type nextHop struct {
 	saipb.UnimplementedNextHopServer
 	mgr       *attrmgr.AttrMgr
-	dataplane routingDataplaneAPI
+	dataplane switchDataplaneAPI
 }
 
-func newNextHop(mgr *attrmgr.AttrMgr, dataplane routingDataplaneAPI, s *grpc.Server) *nextHop {
+func newNextHop(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server) *nextHop {
 	n := &nextHop{
 		mgr:       mgr,
 		dataplane: dataplane,
@@ -191,10 +183,10 @@ func (nh *nextHop) CreateNextHops(ctx context.Context, r *saipb.CreateNextHopsRe
 type route struct {
 	saipb.UnimplementedRouteServer
 	mgr       *attrmgr.AttrMgr
-	dataplane routingDataplaneAPI
+	dataplane switchDataplaneAPI
 }
 
-func newRoute(mgr *attrmgr.AttrMgr, dataplane routingDataplaneAPI, s *grpc.Server) *route {
+func newRoute(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server) *route {
 	r := &route{
 		mgr:       mgr,
 		dataplane: dataplane,
@@ -274,10 +266,10 @@ func (r *route) CreateRouteEntries(ctx context.Context, re *saipb.CreateRouteEnt
 type routerInterface struct {
 	saipb.UnimplementedRouterInterfaceServer
 	mgr       *attrmgr.AttrMgr
-	dataplane routingDataplaneAPI
+	dataplane switchDataplaneAPI
 }
 
-func newRouterInterface(mgr *attrmgr.AttrMgr, dataplane routingDataplaneAPI, s *grpc.Server) *routerInterface {
+func newRouterInterface(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server) *routerInterface {
 	r := &routerInterface{
 		mgr:       mgr,
 		dataplane: dataplane,
@@ -316,10 +308,10 @@ func (ri *routerInterface) CreateRouterInterface(ctx context.Context, req *saipb
 type vlan struct {
 	saipb.UnimplementedVlanServer
 	mgr       *attrmgr.AttrMgr
-	dataplane routingDataplaneAPI
+	dataplane switchDataplaneAPI
 }
 
-func newVlan(mgr *attrmgr.AttrMgr, dataplane routingDataplaneAPI, s *grpc.Server) *vlan {
+func newVlan(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server) *vlan {
 	v := &vlan{
 		mgr:       mgr,
 		dataplane: dataplane,
@@ -361,10 +353,10 @@ func (vlan *vlan) CreateVlan(context.Context, *saipb.CreateVlanRequest) (*saipb.
 type bridge struct {
 	saipb.UnimplementedBridgeServer
 	mgr       *attrmgr.AttrMgr
-	dataplane routingDataplaneAPI
+	dataplane switchDataplaneAPI
 }
 
-func newBridge(mgr *attrmgr.AttrMgr, dataplane routingDataplaneAPI, s *grpc.Server) *bridge {
+func newBridge(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server) *bridge {
 	b := &bridge{
 		mgr:       mgr,
 		dataplane: dataplane,

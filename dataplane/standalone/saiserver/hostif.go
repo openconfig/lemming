@@ -23,6 +23,7 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
 	saipb "github.com/openconfig/lemming/dataplane/standalone/proto"
 	"github.com/openconfig/lemming/dataplane/standalone/saiserver/attrmgr"
 	dpb "github.com/openconfig/lemming/proto/dataplane"
@@ -101,5 +102,103 @@ func (hostif *hostif) SetHostifAttribute(ctx context.Context, req *saipb.SetHost
 			return nil, err
 		}
 	}
+	return nil, nil
+}
+
+var (
+	etherTypeARP = []byte{0x08, 0x06}
+
+	udldDstMAC    = []byte{0x01, 0x00, 0x0C, 0xCC, 0xCC, 0xCC}
+	etherTypeLLDP = []byte{0x88, 0xcc}
+	ndDstMAC      = []byte{0x33, 0x33, 0x00, 0x00, 0x00, 0x00} // ND is generic IPv6 multicast MAC.
+	ndDstMACMask  = []byte{0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00}
+	lacpDstMAC    = []byte{0x01, 0x80, 0xC2, 0x00, 0x00, 0x02}
+)
+
+const (
+	bgpPort     = 179
+	trapTableID = "trap-table"
+)
+
+func (hostif *hostif) CreateHostifTrap(ctx context.Context, req *saipb.CreateHostifTrapRequest) (*saipb.CreateHostifTrapResponse, error) {
+	id := hostif.mgr.NextID()
+	fwdReq := fwdconfig.TableEntryAddRequest(hostif.dataplane.ID(), trapTableID)
+
+	swReq := &saipb.GetSwitchAttributeRequest{
+		Oid:      req.GetSwitch(),
+		AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_CPU_PORT},
+	}
+	swAttr := &saipb.GetSwitchAttributeResponse{}
+	if err := hostif.mgr.PopulateAttributes(swReq, swAttr); err != nil {
+		return nil, err
+	}
+	entriesAdded := 1
+	switch tType := req.GetTrapType(); tType {
+	case saipb.HostifTrapType_HOSTIF_TRAP_TYPE_ARP_REQUEST, saipb.HostifTrapType_HOSTIF_TRAP_TYPE_ARP_RESPONSE:
+		fwdReq.AppendEntry(fwdconfig.EntryDesc(fwdconfig.FlowEntry(
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_TYPE).
+				WithBytes(etherTypeARP, []byte{0xFF, 0xFF}))))
+	case saipb.HostifTrapType_HOSTIF_TRAP_TYPE_UDLD:
+		fwdReq.AppendEntry(fwdconfig.EntryDesc(fwdconfig.FlowEntry(
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST).
+				WithBytes(udldDstMAC, []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}))))
+	case saipb.HostifTrapType_HOSTIF_TRAP_TYPE_LLDP:
+		fwdReq.AppendEntry(fwdconfig.EntryDesc(fwdconfig.FlowEntry(
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_TYPE).
+				WithBytes(etherTypeLLDP, []byte{0xFF, 0xFF}))))
+	case saipb.HostifTrapType_HOSTIF_TRAP_TYPE_IPV6_NEIGHBOR_DISCOVERY:
+		fwdReq.AppendEntry(fwdconfig.EntryDesc(fwdconfig.FlowEntry(
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST).
+				WithBytes(ndDstMAC, ndDstMACMask))))
+	case saipb.HostifTrapType_HOSTIF_TRAP_TYPE_LACP:
+		fwdReq.AppendEntry(fwdconfig.EntryDesc(fwdconfig.FlowEntry(
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST).
+				WithBytes(lacpDstMAC, []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}))))
+	case saipb.HostifTrapType_HOSTIF_TRAP_TYPE_IP2ME:
+		// IP2ME routes are added to the FIB, do nothing here.
+		return &saipb.CreateHostifTrapResponse{
+			Oid: id,
+		}, nil
+	case saipb.HostifTrapType_HOSTIF_TRAP_TYPE_BGP, saipb.HostifTrapType_HOSTIF_TRAP_TYPE_BGPV6:
+		// TODO: This should only match for packets destined to the management IP.
+		fwdReq.AppendEntry(fwdconfig.EntryDesc(fwdconfig.FlowEntry(
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_SRC).
+				WithUint16(bgpPort))),
+		)
+		fwdReq.AppendEntry(fwdconfig.EntryDesc(fwdconfig.FlowEntry(
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST).
+				WithUint16(bgpPort))),
+		)
+		entriesAdded = 2
+	default:
+		return nil, status.Errorf(codes.InvalidArgument, "unknown trap type: %v", tType)
+	}
+
+	switch act := req.GetPacketAction(); act {
+	case saipb.PacketAction_PACKET_ACTION_TRAP: // TRAP means COPY to CPU and DROP, just transmit immediately, which interrupts any pending actions.
+		for i := 0; i < entriesAdded; i++ {
+			fwdReq.AppendActions(fwdconfig.Action(fwdconfig.TransmitAction(fmt.Sprint(swAttr.GetAttr().GetCpuPort())).WithImmediate(true)))
+		}
+	default:
+		return nil, status.Errorf(codes.InvalidArgument, "unknown action type: %v", act)
+	}
+	if _, err := hostif.dataplane.TableEntryAdd(ctx, fwdReq.Build()); err != nil {
+		return nil, err
+	}
+	// group := req.GetTrapGroup()
+	return &saipb.CreateHostifTrapResponse{
+		Oid: id,
+	}, nil
+}
+
+func (hostif *hostif) CreateHostifTrapGroup(context.Context, *saipb.CreateHostifTrapGroupRequest) (*saipb.CreateHostifTrapGroupResponse, error) {
+	return nil, nil
+}
+
+func (hostif *hostif) CreateHostifUserDefinedTrap(context.Context, *saipb.CreateHostifUserDefinedTrapRequest) (*saipb.CreateHostifUserDefinedTrapResponse, error) {
+	return nil, nil
+}
+
+func (hostif *hostif) CreateHostifTableEntry(context.Context, *saipb.CreateHostifTableEntryRequest) (*saipb.CreateHostifTableEntryResponse, error) {
 	return nil, nil
 }
