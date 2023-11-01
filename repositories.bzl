@@ -1690,13 +1690,14 @@ def go_repositories():
         sum = "h1:pWlfV3Bxv7k65HYwkikxat0+s3pV4bsqf19k25Ur8rU=",
         version = "v1.1.0",
     )
-
     go_repository(
         name = "com_github_osrg_gobgp_v3",
+        build_file_proto_mode = "disable",
         importpath = "github.com/osrg/gobgp/v3",
-        sum = "h1:zfXhM8+QSfAPUkzWYTbH8pMkvxkcUfvQEKnBU7ikk4g=",
-        version = "v3.14.0",
+        sum = "h1:U0dhaAo0QHscQQ+vTrnX2Rak9vaKnJ3aQDM5mAEeIEw=",
+        version = "v3.20.0",
     )
+
     go_repository(
         name = "com_github_pascaldekloe_goe",
         importpath = "github.com/pascaldekloe/goe",
@@ -2095,11 +2096,11 @@ def go_repositories():
     )
     go_repository(
         name = "com_github_wenovus_gobgp_v3",
-        build_file_proto_mode = "disable",
         importpath = "github.com/wenovus/gobgp/v3",
-        sum = "h1:Cy3PTEuyD9zcf2Fav9SphOOkrEYXIhhzKpuRWfbLVvo=",
-        version = "v3.0.0-20231024172553-6f8061a337a8",
+        sum = "h1:jse5eORjbrlTIOPzOO3cpm4feJ16ZCntxzAHSdcWuy4=",
+        version = "v3.0.0-20230831013712-6d33842cbf42",
     )
+
     go_repository(
         name = "com_github_xanzy_ssh_agent",
         importpath = "github.com/xanzy/ssh-agent",
