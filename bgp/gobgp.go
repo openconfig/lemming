@@ -23,6 +23,9 @@ import (
 	"time"
 
 	log "github.com/golang/glog"
+	"google.golang.org/protobuf/encoding/prototext"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/anypb"
 
 	"github.com/openconfig/lemming/gnmi/fakedevice"
 	"github.com/openconfig/lemming/gnmi/gnmiclient"
@@ -329,8 +332,98 @@ func (t *bgpTask) createNewGoBGPServer(ctx context.Context) error {
 		tick := time.NewTicker(5 * time.Second)
 		for range tick.C {
 			t.updateRIBs(ctx)
+			if err := t.updateRIBs2(ctx); err != nil {
+				log.Errorf("Error while updating RIB: %v", err)
+			}
 		}
 	}()
+
+	return nil
+}
+
+// updateRIBs updates the BGP RIBs.
+func (t *bgpTask) updateRIBs2(ctx context.Context) error {
+	v4uni := t.appliedBGP.GetOrCreateRib().GetOrCreateAfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST).GetOrCreateIpv4Unicast()
+	v6uni := t.appliedBGP.GetOrCreateRib().GetOrCreateAfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV6_UNICAST).GetOrCreateIpv6Unicast()
+
+	//bgpRIB := t.appliedBGP.GetOrCreateRib()
+	//ribattrs := &ocRIBAttrIndices{}
+
+	if err := t.bgpServer.WatchEvent(ctx, &api.WatchEventRequest{
+		Table: &api.WatchEventRequest_Table{
+			Filters: []*api.WatchEventRequest_Table_Filter{{
+				Type: api.WatchEventRequest_Table_Filter_BEST,
+				Init: true,
+			}, {
+				Type: api.WatchEventRequest_Table_Filter_ADJIN,
+				Init: true,
+			}, {
+				Type: api.WatchEventRequest_Table_Filter_POST_POLICY,
+				Init: true,
+			}},
+		},
+	}, func(resp *api.WatchEventResponse) {
+		t.updateAppliedState(ctx, func() error {
+			for _, path := range resp.GetTable().GetPaths() {
+				nlri, err := anypb.UnmarshalNew(path.GetNlri(), proto.UnmarshalOptions{})
+				if err != nil {
+					log.Errorf("Error while unmarshalling NLRI: %v", err)
+				}
+				switch nlri := nlri.(type) {
+				case *api.IPAddressPrefix:
+					pfx, pfxlen := nlri.GetPrefix(), nlri.GetPrefixLen()
+					prefix := fmt.Sprintf("%s/%d", pfx, pfxlen)
+					ppfx, err := netip.ParsePrefix(prefix)
+					if err != nil {
+						log.Errorf("Error while parsing NLRI prefix %q: %v", prefix, err)
+						continue
+					}
+					if ppfx.Addr().Is4() {
+						locRib := v4uni.GetOrCreateLocRib()
+						var origin oc.NetworkInstance_Protocol_Bgp_Rib_AfiSafi_Ipv4Unicast_LocRib_Route_Origin_Union
+						if path.SourceId == "" {
+							// TODO: For locally-originated routes figure out how to get the originating protocol.
+							origin = oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_UNSET
+						} else {
+							origin = oc.UnionString(path.NeighborIp)
+						}
+						if path.GetIsWithdraw() {
+							delete(locRib.Route, oc.NetworkInstance_Protocol_Bgp_Rib_AfiSafi_Ipv4Unicast_LocRib_Route_Key{
+								Prefix: prefix,
+								Origin: origin,
+								PathId: 0, // TODO: Support Path-ID, it should match the ID in adj-rib-in-post.
+							})
+						} else {
+							locRib.GetOrCreateRoute(prefix, origin, 0)
+						}
+					} else {
+						locRib := v6uni.GetOrCreateLocRib()
+						var origin oc.NetworkInstance_Protocol_Bgp_Rib_AfiSafi_Ipv6Unicast_LocRib_Route_Origin_Union
+						if path.SourceId == "" {
+							// TODO: For locally-originated routes figure out how to get the originating protocol.
+							origin = oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_UNSET
+						} else {
+							origin = oc.UnionString(path.NeighborIp)
+						}
+						if path.GetIsWithdraw() || !path.GetBest() {
+							delete(locRib.Route, oc.NetworkInstance_Protocol_Bgp_Rib_AfiSafi_Ipv6Unicast_LocRib_Route_Key{
+								Prefix: prefix,
+								Origin: origin,
+								PathId: 0, // TODO: Support Path-ID, it should match the ID in adj-rib-in-post.
+							})
+						} else {
+							locRib.GetOrCreateRoute(prefix, origin, 0)
+						}
+					}
+				default:
+					log.Warningf("Update BGP RIB: unrecognized NLRI:", prototext.Format(nlri))
+				}
+			}
+			return nil
+		})
+	}); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -348,40 +441,40 @@ func (t *bgpTask) updateRIBs(ctx context.Context) {
 
 		v6uni := t.appliedBGP.GetOrCreateRib().GetOrCreateAfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV6_UNICAST).GetOrCreateIpv6Unicast()
 
-		t.queryTable(ctx, "", "local-v4", api.TableType_LOCAL, api.Family_AFI_IP, func(routes []*api.Destination) {
-			v4uni.LocRib = nil
-			locRib := v4uni.GetOrCreateLocRib()
-			for _, route := range routes {
-				for i, path := range route.Paths {
-					var origin oc.NetworkInstance_Protocol_Bgp_Rib_AfiSafi_Ipv4Unicast_LocRib_Route_Origin_Union
-					if path.SourceId == "" {
-						// TODO: For locally-originated routes figure out how to get the originating protocol.
-						origin = oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_UNSET
-					} else {
-						origin = oc.UnionString(path.NeighborIp)
-					}
-					// TODO: this ID should match the ID in adj-rib-in-post.
-					ribattrs.populateRIBAttrs(path, bgpRIB, locRib.GetOrCreateRoute(route.Prefix, origin, uint32(i)))
-				}
-			}
-		})
-		t.queryTable(ctx, "", "local-v6", api.TableType_LOCAL, api.Family_AFI_IP6, func(routes []*api.Destination) {
-			v6uni.LocRib = nil
-			locRib := v6uni.GetOrCreateLocRib()
-			for _, route := range routes {
-				for i, path := range route.Paths {
-					var origin oc.NetworkInstance_Protocol_Bgp_Rib_AfiSafi_Ipv6Unicast_LocRib_Route_Origin_Union
-					if path.SourceId == "" {
-						// TODO: For locally-originated routes figure out how to get the originating protocol.
-						origin = oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_UNSET
-					} else {
-						origin = oc.UnionString(path.NeighborIp)
-					}
-					// TODO: this ID should match the ID in adj-rib-in-post.
-					ribattrs.populateRIBAttrs(path, bgpRIB, locRib.GetOrCreateRoute(route.Prefix, origin, uint32(i)))
-				}
-			}
-		})
+		//t.queryTable(ctx, "", "local-v4", api.TableType_LOCAL, api.Family_AFI_IP, func(routes []*api.Destination) {
+		//	v4uni.LocRib = nil
+		//	locRib := v4uni.GetOrCreateLocRib()
+		//	for _, route := range routes {
+		//		for i, path := range route.Paths {
+		//			var origin oc.NetworkInstance_Protocol_Bgp_Rib_AfiSafi_Ipv4Unicast_LocRib_Route_Origin_Union
+		//			if path.SourceId == "" {
+		//				// TODO: For locally-originated routes figure out how to get the originating protocol.
+		//				origin = oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_UNSET
+		//			} else {
+		//				origin = oc.UnionString(path.NeighborIp)
+		//			}
+		//			// TODO: this ID should match the ID in adj-rib-in-post.
+		//			ribattrs.populateRIBAttrs(path, bgpRIB, locRib.GetOrCreateRoute(route.Prefix, origin, uint32(i)))
+		//		}
+		//	}
+		//})
+		//t.queryTable(ctx, "", "local-v6", api.TableType_LOCAL, api.Family_AFI_IP6, func(routes []*api.Destination) {
+		//	v6uni.LocRib = nil
+		//	locRib := v6uni.GetOrCreateLocRib()
+		//	for _, route := range routes {
+		//		for i, path := range route.Paths {
+		//			var origin oc.NetworkInstance_Protocol_Bgp_Rib_AfiSafi_Ipv6Unicast_LocRib_Route_Origin_Union
+		//			if path.SourceId == "" {
+		//				// TODO: For locally-originated routes figure out how to get the originating protocol.
+		//				origin = oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_UNSET
+		//			} else {
+		//				origin = oc.UnionString(path.NeighborIp)
+		//			}
+		//			// TODO: this ID should match the ID in adj-rib-in-post.
+		//			ribattrs.populateRIBAttrs(path, bgpRIB, locRib.GetOrCreateRoute(route.Prefix, origin, uint32(i)))
+		//		}
+		//	}
+		//})
 
 		for neigh := range t.appliedBGP.Neighbor {
 			neighContainer := v4uni.GetOrCreateNeighbor(neigh)
