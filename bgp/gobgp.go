@@ -145,7 +145,7 @@ func (t *bgpTask) stop(context.Context) error {
 }
 
 // start starts a GoBGP server.
-func (t *bgpTask) start(_ context.Context, yclient *ygnmi.Client) error {
+func (t *bgpTask) start(ctx context.Context, yclient *ygnmi.Client) error {
 	t.yclient = yclient
 
 	b := &ocpath.Batch{}
@@ -179,7 +179,7 @@ func (t *bgpTask) start(_ context.Context, yclient *ygnmi.Client) error {
 		ocpath.Root().RoutingPolicy().DefinedSets().BgpDefinedSets().AsPathSetAny().AsPathSetMember().Config().PathStruct(),
 	)
 
-	if err := t.createNewGoBGPServer(context.Background()); err != nil {
+	if err := t.createNewGoBGPServer(ctx); err != nil {
 		log.Errorf("Failed to start GoBGP server: %v", err)
 	}
 
@@ -188,7 +188,7 @@ func (t *bgpTask) start(_ context.Context, yclient *ygnmi.Client) error {
 
 	// Monitor changes to BGP intended config and apply them.
 	bgpWatcher := ygnmi.Watch(
-		context.Background(),
+		ctx,
 		yclient,
 		b.Config(),
 		func(root *ygnmi.Value[*oc.Root]) error {
@@ -197,8 +197,8 @@ func (t *bgpTask) start(_ context.Context, yclient *ygnmi.Client) error {
 				return ygnmi.Continue
 			}
 
-			t.updateAppliedState(func() error {
-				return t.reconcile(rootVal)
+			t.updateAppliedState(ctx, func() error {
+				return t.reconcile(ctx, rootVal)
 			})
 
 			return ygnmi.Continue
@@ -217,7 +217,7 @@ func (t *bgpTask) start(_ context.Context, yclient *ygnmi.Client) error {
 // reconcile examines the difference between the intended and applied
 // configuration, and makes GoBGP API calls accordingly to update the applied
 // configuration in the direction of intended configuration.
-func (t *bgpTask) reconcile(intended *oc.Root) error {
+func (t *bgpTask) reconcile(ctx context.Context, intended *oc.Root) error {
 	intendedBGP := intended.GetOrCreateNetworkInstance(fakedevice.DefaultNetworkInstance).GetOrCreateProtocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, fakedevice.BGPRoutingProtocol).GetOrCreateBgp()
 	intendedPolicy := intended.GetOrCreateRoutingPolicy()
 	newConfig := intendedToGoBGP(intendedBGP, intendedPolicy, t.zapiURL, t.listenPort)
@@ -228,7 +228,7 @@ func (t *bgpTask) reconcile(intended *oc.Root) error {
 	case bgpShouldStart && !t.bgpStarted:
 		log.V(1).Info("Starting BGP")
 		var err error
-		t.currentConfig, err = config.InitialConfig(context.Background(), t.bgpServer, newConfig, gracefulRestart)
+		t.currentConfig, err = config.InitialConfig(ctx, t.bgpServer, newConfig, gracefulRestart)
 		if err != nil {
 			return fmt.Errorf("Failed to apply initial BGP configuration %v", newConfig)
 		}
@@ -236,7 +236,7 @@ func (t *bgpTask) reconcile(intended *oc.Root) error {
 	case t.bgpStarted:
 		log.V(1).Info("Updating BGP")
 		var err error
-		t.currentConfig, err = config.UpdateConfig(context.Background(), t.bgpServer, t.currentConfig, newConfig)
+		t.currentConfig, err = config.UpdateConfig(ctx, t.bgpServer, t.currentConfig, newConfig)
 		if err != nil {
 			return fmt.Errorf("Failed to update BGP service: %v", newConfig)
 		}
@@ -258,30 +258,30 @@ func (t *bgpTask) reconcile(intended *oc.Root) error {
 //
 // The input function is expected to make modifications to the applied state,
 // which then this function will use to update the central cache.
-func (t *bgpTask) updateAppliedState(f func() error) error {
+func (t *bgpTask) updateAppliedState(ctx context.Context, f func() error) error {
 	log.V(1).Infof("BGP task: updating state")
 	t.appliedStateMu.Lock()
 	defer t.appliedStateMu.Unlock()
 	if err := f(); err != nil {
 		return err
 	}
-	updateAppliedStateHelper(t.yclient, BGPStatePath, t.appliedBGP)
-	updateAppliedStateHelper(t.yclient, RoutingPolicyStatePath, t.appliedRoutingPolicy)
+	updateAppliedStateHelper(ctx, t.yclient, BGPStatePath, t.appliedBGP)
+	updateAppliedStateHelper(ctx, t.yclient, RoutingPolicyStatePath, t.appliedRoutingPolicy)
 	return nil
 }
 
-func updateAppliedStateHelper[T ygot.GoStruct](yclient *ygnmi.Client, path ygnmi.SingletonQuery[T], appliedState T) {
-	if _, err := gnmiclient.Replace(context.Background(), yclient, path, appliedState); err != nil {
+func updateAppliedStateHelper[T ygot.GoStruct](ctx context.Context, yclient *ygnmi.Client, path ygnmi.SingletonQuery[T], appliedState T) {
+	if _, err := gnmiclient.Replace(ctx, yclient, path, appliedState); err != nil {
 		log.Errorf("BGP failed to update state at path %v: %v", path, err)
 	}
 }
 
 // createNewGoBGPServer creates and starts a new GoBGP Server.
-func (t *bgpTask) createNewGoBGPServer(context.Context) error {
+func (t *bgpTask) createNewGoBGPServer(ctx context.Context) error {
 	t.bgpServer = server.NewBgpServer()
 
 	if log.V(2) {
-		if err := t.bgpServer.SetLogLevel(context.Background(), &api.SetLogLevelRequest{
+		if err := t.bgpServer.SetLogLevel(ctx, &api.SetLogLevelRequest{
 			Level: api.SetLogLevelRequest_DEBUG,
 		}); err != nil {
 			log.Errorf("Error setting GoBGP log level: %v", err)
@@ -290,12 +290,12 @@ func (t *bgpTask) createNewGoBGPServer(context.Context) error {
 	go t.bgpServer.Serve()
 
 	// monitor the change of the peer state
-	if err := t.bgpServer.WatchEvent(context.Background(), &api.WatchEventRequest{Peer: &api.WatchEventRequest_Peer{}}, func(r *api.WatchEventResponse) {
+	if err := t.bgpServer.WatchEvent(ctx, &api.WatchEventRequest{Peer: &api.WatchEventRequest_Peer{}}, func(r *api.WatchEventResponse) {
 		if p := r.GetPeer(); p != nil && p.Type == api.WatchEventResponse_PeerEvent_STATE {
 			log.V(1).Info("Got peer event update:", p)
 			ps := p.GetPeer().State
 
-			t.updateAppliedState(func() error {
+			t.updateAppliedState(ctx, func() error {
 				neigh := t.appliedBGP.GetOrCreateNeighbor(ps.NeighborAddress)
 
 				found := false
@@ -328,7 +328,7 @@ func (t *bgpTask) createNewGoBGPServer(context.Context) error {
 	go func() {
 		tick := time.NewTicker(5 * time.Second)
 		for range tick.C {
-			t.updateRIBs()
+			t.updateRIBs(ctx)
 		}
 	}()
 
@@ -336,20 +336,19 @@ func (t *bgpTask) createNewGoBGPServer(context.Context) error {
 }
 
 // updateRIBs updates the BGP RIBs.
-func (t *bgpTask) updateRIBs() {
+func (t *bgpTask) updateRIBs(ctx context.Context) {
 	// Log global tables
-	t.queryTable("", "IPv4 Global", api.TableType_GLOBAL, api.Family_AFI_IP, nil)
-	t.queryTable("", "IPv6 Global", api.TableType_GLOBAL, api.Family_AFI_IP6, nil)
+	t.queryTable(ctx, "", "IPv4 Global", api.TableType_GLOBAL, api.Family_AFI_IP, nil)
+	t.queryTable(ctx, "", "IPv6 Global", api.TableType_GLOBAL, api.Family_AFI_IP6, nil)
 
-	t.updateAppliedState(func() error {
+	t.updateAppliedState(ctx, func() error {
 		v4uni := t.appliedBGP.GetOrCreateRib().GetOrCreateAfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST).GetOrCreateIpv4Unicast()
-		v4rib := t.appliedBGP.GetOrCreateRib()
+		bgpRIB := t.appliedBGP.GetOrCreateRib()
 		ribattrs := &ocRIBAttrIndices{}
 
 		v6uni := t.appliedBGP.GetOrCreateRib().GetOrCreateAfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV6_UNICAST).GetOrCreateIpv6Unicast()
-		v6rib := t.appliedBGP.GetOrCreateRib()
 
-		t.queryTable("", "local-v4", api.TableType_LOCAL, api.Family_AFI_IP, func(routes []*api.Destination) {
+		t.queryTable(ctx, "", "local-v4", api.TableType_LOCAL, api.Family_AFI_IP, func(routes []*api.Destination) {
 			v4uni.LocRib = nil
 			locRib := v4uni.GetOrCreateLocRib()
 			for _, route := range routes {
@@ -362,11 +361,11 @@ func (t *bgpTask) updateRIBs() {
 						origin = oc.UnionString(path.NeighborIp)
 					}
 					// TODO: this ID should match the ID in adj-rib-in-post.
-					ribattrs.populateRIBAttrs(path, v4rib, locRib.GetOrCreateRoute(route.Prefix, origin, uint32(i)))
+					ribattrs.populateRIBAttrs(path, bgpRIB, locRib.GetOrCreateRoute(route.Prefix, origin, uint32(i)))
 				}
 			}
 		})
-		t.queryTable("", "local-v6", api.TableType_LOCAL, api.Family_AFI_IP6, func(routes []*api.Destination) {
+		t.queryTable(ctx, "", "local-v6", api.TableType_LOCAL, api.Family_AFI_IP6, func(routes []*api.Destination) {
 			v6uni.LocRib = nil
 			locRib := v6uni.GetOrCreateLocRib()
 			for _, route := range routes {
@@ -379,7 +378,7 @@ func (t *bgpTask) updateRIBs() {
 						origin = oc.UnionString(path.NeighborIp)
 					}
 					// TODO: this ID should match the ID in adj-rib-in-post.
-					ribattrs.populateRIBAttrs(path, v6rib, locRib.GetOrCreateRoute(route.Prefix, origin, uint32(i)))
+					ribattrs.populateRIBAttrs(path, bgpRIB, locRib.GetOrCreateRoute(route.Prefix, origin, uint32(i)))
 				}
 			}
 		})
@@ -390,19 +389,19 @@ func (t *bgpTask) updateRIBs() {
 			neighContainer.AdjRibInPost = nil
 			neighContainer.AdjRibOutPre = nil
 			neighContainer.AdjRibOutPost = nil
-			t.queryTable(neigh, "adj-rib-in-v4", api.TableType_ADJ_IN, api.Family_AFI_IP, func(routes []*api.Destination) {
+			t.queryTable(ctx, neigh, "adj-rib-in-v4", api.TableType_ADJ_IN, api.Family_AFI_IP, func(routes []*api.Destination) {
 				for _, route := range routes {
 					for i, path := range route.Paths {
 						// TODO: this ID should be retrieved from the update message.
-						ribattrs.populateRIBAttrs(path, v4rib, neighContainer.GetOrCreateAdjRibInPre().GetOrCreateRoute(route.Prefix, uint32(i)))
+						ribattrs.populateRIBAttrs(path, bgpRIB, neighContainer.GetOrCreateAdjRibInPre().GetOrCreateRoute(route.Prefix, uint32(i)))
 						if !path.Filtered {
-							ribattrs.populateRIBAttrs(path, v4rib, neighContainer.GetOrCreateAdjRibInPost().GetOrCreateRoute(route.Prefix, uint32(i)))
+							ribattrs.populateRIBAttrs(path, bgpRIB, neighContainer.GetOrCreateAdjRibInPost().GetOrCreateRoute(route.Prefix, uint32(i)))
 						}
 					}
 				}
 			})
 
-			t.queryTable(neigh, "adj-rib-out-v4", api.TableType_ADJ_OUT, api.Family_AFI_IP, func(routes []*api.Destination) {
+			t.queryTable(ctx, neigh, "adj-rib-out-v4", api.TableType_ADJ_OUT, api.Family_AFI_IP, func(routes []*api.Destination) {
 				for _, route := range routes {
 					for i, path := range route.Paths {
 						// Per OpenConfig the ID of this should be the ID assigned when exchanging add-path routes. However
@@ -411,9 +410,9 @@ func (t *bgpTask) updateRIBs() {
 						// the generated UUID isn't propagated.
 						//
 						// Note that path.NeighborIp is <nil> for some reason so have to use neigh.
-						ribattrs.populateRIBAttrs(path, v4rib, neighContainer.GetOrCreateAdjRibOutPre().GetOrCreateRoute(route.Prefix, uint32(i)))
+						ribattrs.populateRIBAttrs(path, bgpRIB, neighContainer.GetOrCreateAdjRibOutPre().GetOrCreateRoute(route.Prefix, uint32(i)))
 						if !path.Filtered {
-							ribattrs.populateRIBAttrs(path, v4rib, neighContainer.GetOrCreateAdjRibOutPost().GetOrCreateRoute(route.Prefix, uint32(i)))
+							ribattrs.populateRIBAttrs(path, bgpRIB, neighContainer.GetOrCreateAdjRibOutPost().GetOrCreateRoute(route.Prefix, uint32(i)))
 						}
 					}
 				}
@@ -426,19 +425,19 @@ func (t *bgpTask) updateRIBs() {
 			neighContainer.AdjRibInPost = nil
 			neighContainer.AdjRibOutPre = nil
 			neighContainer.AdjRibOutPost = nil
-			t.queryTable(neigh, "adj-rib-in-v6", api.TableType_ADJ_IN, api.Family_AFI_IP6, func(routes []*api.Destination) {
+			t.queryTable(ctx, neigh, "adj-rib-in-v6", api.TableType_ADJ_IN, api.Family_AFI_IP6, func(routes []*api.Destination) {
 				for _, route := range routes {
 					for i, path := range route.Paths {
 						// TODO: this ID should be retrieved from the update message.
-						ribattrs.populateRIBAttrs(path, v6rib, neighContainer.GetOrCreateAdjRibInPre().GetOrCreateRoute(route.Prefix, uint32(i)))
+						ribattrs.populateRIBAttrs(path, bgpRIB, neighContainer.GetOrCreateAdjRibInPre().GetOrCreateRoute(route.Prefix, uint32(i)))
 						if !path.Filtered {
-							ribattrs.populateRIBAttrs(path, v6rib, neighContainer.GetOrCreateAdjRibInPost().GetOrCreateRoute(route.Prefix, uint32(i)))
+							ribattrs.populateRIBAttrs(path, bgpRIB, neighContainer.GetOrCreateAdjRibInPost().GetOrCreateRoute(route.Prefix, uint32(i)))
 						}
 					}
 				}
 			})
 
-			t.queryTable(neigh, "adj-rib-out-v6", api.TableType_ADJ_OUT, api.Family_AFI_IP6, func(routes []*api.Destination) {
+			t.queryTable(ctx, neigh, "adj-rib-out-v6", api.TableType_ADJ_OUT, api.Family_AFI_IP6, func(routes []*api.Destination) {
 				for _, route := range routes {
 					for i, path := range route.Paths {
 						// Per OpenConfig the ID of this should be the ID assigned when exchanging add-path routes. However
@@ -447,9 +446,9 @@ func (t *bgpTask) updateRIBs() {
 						// the generated UUID isn't propagated.
 						//
 						// Note that path.NeighborIp is <nil> for some reason so have to use neigh.
-						ribattrs.populateRIBAttrs(path, v6rib, neighContainer.GetOrCreateAdjRibOutPre().GetOrCreateRoute(route.Prefix, uint32(i)))
+						ribattrs.populateRIBAttrs(path, bgpRIB, neighContainer.GetOrCreateAdjRibOutPre().GetOrCreateRoute(route.Prefix, uint32(i)))
 						if !path.Filtered {
-							ribattrs.populateRIBAttrs(path, v6rib, neighContainer.GetOrCreateAdjRibOutPost().GetOrCreateRoute(route.Prefix, uint32(i)))
+							ribattrs.populateRIBAttrs(path, bgpRIB, neighContainer.GetOrCreateAdjRibOutPost().GetOrCreateRoute(route.Prefix, uint32(i)))
 						}
 					}
 				}
@@ -462,9 +461,9 @@ func (t *bgpTask) updateRIBs() {
 // queryTable queries for all routes stored in the specified table, applying f
 // to the routes that are queried if the query was successful or logging an
 // error otherwise.
-func (t *bgpTask) queryTable(neighbor, tableName string, tableType api.TableType, afi api.Family_Afi, f func(route []*api.Destination)) {
+func (t *bgpTask) queryTable(ctx context.Context, neighbor, tableName string, tableType api.TableType, afi api.Family_Afi, f func(route []*api.Destination)) {
 	var routes []*api.Destination
-	if err := t.bgpServer.ListPath(context.Background(), &api.ListPathRequest{
+	if err := t.bgpServer.ListPath(ctx, &api.ListPathRequest{
 		Name:      neighbor,
 		TableType: tableType,
 		Family: &api.Family{
