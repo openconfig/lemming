@@ -564,8 +564,10 @@ func (r *ocRIBAttrIndices) getOrAllocIndex(comms []uint32) uint64 {
 		log.Fatal("Way too many communities")
 	}
 	r.lastCommIndex++
+	//revive:disable:empty-block while loop usage.
 	for _, ok := r.commIndiciesInUse[r.lastCommIndex]; ok; r.lastCommIndex++ {
 	}
+	//revive:enable:empty-block
 	i = r.lastCommIndex
 
 	r.commAllocs[commStr] = i
