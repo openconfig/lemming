@@ -51,8 +51,6 @@ const sai_hostif_api_t l_hostif = {
     .free_hostif_packet = l_free_hostif_packet,
 };
 
-int nextIdx = 1;
-
 lemming::dataplane::sai::CreateHostifRequest convert_create_hostif(
     sai_object_id_t switch_id, uint32_t attr_count,
     const sai_attribute_t *attr_list) {
@@ -68,11 +66,15 @@ lemming::dataplane::sai::CreateHostifRequest convert_create_hostif(
         msg.set_obj_id(attr_list[i].value.oid);
         break;
       case SAI_HOSTIF_ATTR_NAME: {
-        std::ostringstream s;
-        s << "ip link set eth" << nextIdx++ << " name "
-          << attr_list[i].value.chardata;
-        LOG(INFO) << s.str();
-        system(s.str().c_str());
+        int idx;
+        int count = sscanf(attr_list[i].value.chardata, "Ethernet%d", &idx);
+        if (count == 1) {
+          std::ostringstream s;
+          s << "ip link set eth" << idx / 4 << " name "
+            << attr_list[i].value.chardata;
+          LOG(INFO) << s.str();
+          system(s.str().c_str());
+        }
       }
         msg.set_name(attr_list[i].value.chardata);
         break;
