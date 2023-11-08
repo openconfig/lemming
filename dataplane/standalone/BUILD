@@ -5,6 +5,7 @@ cc_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
+        "//dataplane/standalone/cpusink",
         "//dataplane/standalone/proto:sai_cc_grpc",
         "//dataplane/standalone/sai",
         "@com_github_google_glog//:glog",

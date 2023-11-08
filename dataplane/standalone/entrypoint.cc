@@ -119,6 +119,7 @@
 #include "dataplane/standalone/sai/virtual_router.h"
 #include "dataplane/standalone/sai/vlan.h"
 #include "dataplane/standalone/sai/wred.h"
+#include "dataplane/standalone/cpusink/cpusink.h"
 
 extern "C" {
 #include "experimental/saiextensions.h"
@@ -256,6 +257,7 @@ sai_status_t sai_api_initialize(
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
+  StartSink();
 
   return SAI_STATUS_SUCCESS;
 }

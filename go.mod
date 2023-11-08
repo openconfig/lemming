@@ -11,6 +11,8 @@ require (
 	github.com/google/uuid v1.3.1
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0
 	github.com/kentik/patricia v1.2.0
+	github.com/mdlayher/genetlink v1.3.2
+	github.com/mdlayher/netlink v1.7.2
 	github.com/open-traffic-generator/snappi/gosnappi v0.13.0
 	github.com/openconfig/gnmi v0.10.0
 	github.com/openconfig/gnoi v0.2.0
@@ -76,6 +78,7 @@ require (
 	github.com/imdario/mergo v0.3.15 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
+	github.com/josharian/native v1.1.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/jstemmer/go-junit-report/v2 v2.1.0 // indirect
 	github.com/k-sone/critbitgo v1.4.0 // indirect
@@ -84,6 +87,7 @@ require (
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
+	github.com/mdlayher/socket v0.4.1 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/moby/spdystream v0.2.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect

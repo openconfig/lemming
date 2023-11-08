@@ -68,11 +68,8 @@ type Engine struct {
 	ifaceToPortMu   sync.Mutex
 	// ifaceToPort is a map from interface id to port. For now, assume a 1:1 mapping.
 	// TODO: Clean up all the map and mutexes
-	ifaceToPort   map[string]string
-	cpuPortID     string
-	ipToDevNameMu sync.Mutex
-	// ipToDevName is a map from IPs to kernel device name.
-	ipToDevName       map[string]string
+	ifaceToPort       map[string]string
+	cpuPortID         string
 	devNameToPortIDMu sync.Mutex
 	// devNameToPortID is a map from kernel device name to lucius port id.
 	devNameToPortID        map[string]string
@@ -85,18 +82,14 @@ type Engine struct {
 // New creates a new engine and sets up the forwarding tables.
 func New(ctx context.Context) (*Engine, error) {
 	e := &Engine{
-		id:                   "lucius",
-		Server:               forwarding.New("engine"),
-		idToNID:              map[string]uint64{},
-		nextHopGroups:        map[uint64]*dpb.NextHopIDList{},
-		ifaceToPort:          map[string]string{},
-		ipToDevName:          map[string]string{},
-		devNameToPortID:      map[string]string{},
-		internalToExternalID: map[string]string{},
+		id:            "lucius",
+		Server:        forwarding.New("engine"),
+		idToNID:       map[string]uint64{},
+		nextHopGroups: map[uint64]*dpb.NextHopIDList{},
+		ifaceToPort:   map[string]string{},
 	}
 
 	ctx, e.cancelFn = context.WithCancel(ctx)
-	e.handleIPUpdates(ctx)
 
 	_, err := e.Server.ContextCreate(ctx, &fwdpb.ContextCreateRequest{
 		ContextId: &fwdpb.ContextId{Id: e.id},
@@ -121,7 +114,6 @@ func (e *Engine) Reset(ctx context.Context) error {
 	e.idToNID = map[string]uint64{}
 	e.nextHopGroups = map[uint64]*dpb.NextHopIDList{}
 	e.ifaceToPort = map[string]string{}
-	e.ipToDevName = map[string]string{}
 	e.devNameToPortID = map[string]string{}
 	e.internalToExternalID = map[string]string{}
 	e.nextNHGID.Store(0)
@@ -702,31 +694,6 @@ func (e *Engine) AddIPRoute(ctx context.Context, req *dpb.AddIPRouteRequest) (*d
 	fib := fibV6Table
 	if isIPv4 {
 		fib = fibV4Table
-	}
-
-	//  SAI creates these are special routes for the IPs assigned to the interfaces.
-	if req.GetRoute().GetPortId() != "" && req.GetRoute().GetPortId() == e.cpuPortID {
-		addr, ok := netip.AddrFromSlice(ip)
-		if !ok {
-			return nil, fmt.Errorf("invalid ip addr")
-		}
-		e.ipToDevNameMu.Lock()
-		devName := e.ipToDevName[addr.String()]
-		e.ipToDevNameMu.Unlock()
-
-		e.devNameToPortIDMu.Lock()
-		internalPortID := e.devNameToPortID[devName]
-		e.devNameToPortIDMu.Unlock()
-
-		e.internalToExternalIDMu.Lock()
-		portID := e.internalToExternalID[internalPortID]
-		e.internalToExternalIDMu.Unlock()
-
-		log.Infof("adding ip to me route: ip %s, devname %s, internalPortID %s, externalPortID %s", addr.String(), devName, internalPortID, portID)
-		if err := e.AddLayer3PuntRule(ctx, portID, ip); err != nil {
-			return nil, err
-		}
-		return &dpb.AddIPRouteResponse{}, nil
 	}
 
 	entry := &fwdpb.TableEntryAddRequest{
