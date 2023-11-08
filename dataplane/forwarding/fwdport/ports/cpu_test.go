@@ -106,7 +106,7 @@ func TestCpuWrite(t *testing.T) {
 
 	// Verify that the packet was received and the parsed fields only have
 	// the ETHER_TYPE set to ARP.
-	list := ps.lastPacket.GetParsedFields()
+	list := ps.lastPacket.GetPacket().GetParsedFields()
 	if len(list) != 1 {
 		t.Fatalf("Write failed to get parsed fields, got %v, want 1.", len(list))
 	}

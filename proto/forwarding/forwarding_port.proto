@@ -30,6 +30,7 @@ enum PortType {
   PORT_TYPE_KERNEL = 3;          // Port that is kernel network interface.
   PORT_TYPE_TAP = 4; // Port that is kernel TAP interface.
   PORT_TYPE_FAKE = 5; // Fake port type that uses files for packet io.
+  PORT_TYPE_GENETLINK = 6; // Port that use genetlink.
 }
 
 // A PortDesc describes a forwarding port. It is assumed that the descriptor
@@ -43,6 +44,7 @@ message PortDesc {
     KernelPortDesc kernel = 4;
     TAPPortDesc tap = 5;
     FakePortDesc fake = 6;
+    GenetlinkPortDesc genetlink = 7;
   }
 }
 
@@ -69,6 +71,12 @@ message FakePortDesc {
   string out_file = 2;
 }
 
+message GenetlinkPortDesc {
+  string family_name = 1;
+  string group_name = 2;
+}
+
+
 // A PortCreateRequest is a request to create a port.
 message PortCreateRequest {
   PortDesc port = 1;
@@ -87,6 +95,7 @@ message PortUpdateDesc {
     AggregatePortRemoveMemberUpdateDesc aggregate_del = 4;
     AggregatePortAlgorithmUpdateDesc aggregate_algo = 5;
     KernelPortUpdateDesc kernel = 6;
+    GenetlinkPortUpdateDesc genetlink = 7;
   }
 }
 
@@ -109,6 +118,12 @@ message CPUPortUpdateDesc {
 
 // A KernelPortUpdateDesc updates the kernel port's input and output actions.
 message KernelPortUpdateDesc {
+  repeated ActionDesc inputs = 1;
+  repeated ActionDesc outputs = 2;
+}
+
+// A GenetlinkPortUpdateDesc updates the Genetlink port's input and output actions.
+message GenetlinkPortUpdateDesc {
   repeated ActionDesc inputs = 1;
   repeated ActionDesc outputs = 2;
 }

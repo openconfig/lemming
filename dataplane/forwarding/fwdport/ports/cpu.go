@@ -122,11 +122,15 @@ func (p *cpuPort) punt(v interface{}) {
 		})
 	}
 	response := &fwdpb.PacketSinkResponse{
-		PortId:       fwdport.GetID(p),
-		Egress:       egressPID,
-		Ingress:      ingressPID,
-		Bytes:        packet.Frame(),
-		ParsedFields: parsed,
+		Resp: &fwdpb.PacketSinkResponse_Packet{
+			Packet: &fwdpb.PacketSinkPacketInfo{
+				PortId:       fwdport.GetID(p),
+				Egress:       egressPID,
+				Ingress:      ingressPID,
+				Bytes:        packet.Frame(),
+				ParsedFields: parsed,
+			},
+		},
 	}
 
 	ps := p.ctx.PacketSink()

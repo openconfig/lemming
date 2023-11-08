@@ -19,6 +19,7 @@ package forwarding;
 
 import "proto/forwarding/forwarding_action.proto";
 import "proto/forwarding/forwarding_common.proto";
+import "proto/forwarding/forwarding_port.proto";
 
 option go_package = "github.com/openconfig/lemming/proto/forwarding";
 
@@ -45,11 +46,23 @@ message PacketSinkRequest {
   ContextId context_id = 1;  // Context containing the port
 }
 
-message PacketSinkResponse {
+message PacketSinkPacketInfo {
   bytes bytes = 1;           // Bytes in the L2 frame
   PortId port_id = 2;        // Port used to process the packet
   PortId ingress = 3;  // Identifies the ingress of the packet
   PortId egress = 4;   // Identifies the egress of the packet
   repeated PacketFieldBytes parsed_fields =
       5;           // List of fields describing the L2 frame
+}
+
+message PacketSinkPortInfo {
+  PortDesc port = 1;
+}
+
+// PacketSinkResponse is either the description of the port or a packet.
+message PacketSinkResponse {
+  oneof resp {
+    PacketSinkPacketInfo packet = 1;
+    PacketSinkPortInfo port = 2;
+  }
 }

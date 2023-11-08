@@ -32,8 +32,10 @@ import (
 
 func newHostif(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server) *hostif {
 	p := &hostif{
-		mgr:       mgr,
-		dataplane: dataplane,
+		mgr:              mgr,
+		dataplane:        dataplane,
+		trapIDToHostifID: map[uint64]uint64{},
+		groupIDToQueue:   map[uint64]uint32{},
 	}
 	saipb.RegisterHostifServer(s, p)
 	return p
@@ -41,8 +43,10 @@ func newHostif(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Serve
 
 type hostif struct {
 	saipb.UnimplementedHostifServer
-	mgr       *attrmgr.AttrMgr
-	dataplane switchDataplaneAPI
+	mgr              *attrmgr.AttrMgr
+	dataplane        switchDataplaneAPI
+	trapIDToHostifID map[uint64]uint64
+	groupIDToQueue   map[uint64]uint32
 }
 
 // CreateHostif creates a hostif interface (usually a tap interface).
@@ -50,7 +54,41 @@ func (hostif *hostif) CreateHostif(ctx context.Context, req *saipb.CreateHostifR
 	id := hostif.mgr.NextID()
 
 	switch req.GetType() {
-	case saipb.HostifType_HOSTIF_TYPE_GENETLINK: // TODO: support this type
+	case saipb.HostifType_HOSTIF_TYPE_GENETLINK: // For genetlink device, pass the port description to the cpu sink.
+		// First, create the port in the dataplane: this port is "virtual", it doesn't do any packet io.
+		// It ensures that the packet metadata is correct.
+		portReq := &fwdpb.PortCreateRequest{
+			ContextId: &fwdpb.ContextId{Id: hostif.dataplane.ID()},
+			Port: &fwdpb.PortDesc{
+				PortId:   &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)}},
+				PortType: fwdpb.PortType_PORT_TYPE_GENETLINK,
+				Port: &fwdpb.PortDesc_Genetlink{
+					Genetlink: &fwdpb.GenetlinkPortDesc{
+						FamilyName: string(req.GetName()),
+						GroupName:  string(req.GetGenetlinkMcgrpName()),
+					},
+				},
+			},
+		}
+		if _, err := hostif.dataplane.PortCreate(ctx, portReq); err != nil {
+			return nil, err
+		}
+		// Notify the cpu sink about these port types.
+		fwdCtx, err := hostif.dataplane.Context()
+		if err != nil {
+			return nil, err
+		}
+		fwdCtx.RLock()
+		ps := fwdCtx.PacketSink()
+		fwdCtx.RUnlock()
+		ps(&fwdpb.PacketSinkResponse{
+			Resp: &fwdpb.PacketSinkResponse_Port{
+				Port: &fwdpb.PacketSinkPortInfo{
+					Port: portReq.Port,
+				},
+			},
+		})
+
 		return &saipb.CreateHostifResponse{Oid: id}, nil
 	case saipb.HostifType_HOSTIF_TYPE_NETDEV:
 		portReq := &dpb.CreatePortRequest{
@@ -106,8 +144,7 @@ func (hostif *hostif) SetHostifAttribute(ctx context.Context, req *saipb.SetHost
 }
 
 var (
-	etherTypeARP = []byte{0x08, 0x06}
-
+	etherTypeARP  = []byte{0x08, 0x06}
 	udldDstMAC    = []byte{0x01, 0x00, 0x0C, 0xCC, 0xCC, 0xCC}
 	etherTypeLLDP = []byte{0x88, 0xcc}
 	ndDstMAC      = []byte{0x33, 0x33, 0x00, 0x00, 0x00, 0x00} // ND is generic IPv6 multicast MAC.
@@ -116,8 +153,9 @@ var (
 )
 
 const (
-	bgpPort     = 179
-	trapTableID = "trap-table"
+	bgpPort        = 179
+	trapTableID    = "trap-table"
+	wildcardPortID = 0
 )
 
 func (hostif *hostif) CreateHostifTrap(ctx context.Context, req *saipb.CreateHostifTrapRequest) (*saipb.CreateHostifTrapResponse, error) {
@@ -185,20 +223,34 @@ func (hostif *hostif) CreateHostifTrap(ctx context.Context, req *saipb.CreateHos
 	if _, err := hostif.dataplane.TableEntryAdd(ctx, fwdReq.Build()); err != nil {
 		return nil, err
 	}
-	// group := req.GetTrapGroup()
+	// TODO: Support multiple queues, by using the group ID.
 	return &saipb.CreateHostifTrapResponse{
 		Oid: id,
 	}, nil
 }
 
-func (hostif *hostif) CreateHostifTrapGroup(context.Context, *saipb.CreateHostifTrapGroupRequest) (*saipb.CreateHostifTrapGroupResponse, error) {
-	return nil, nil
+func (hostif *hostif) CreateHostifTrapGroup(_ context.Context, req *saipb.CreateHostifTrapGroupRequest) (*saipb.CreateHostifTrapGroupResponse, error) {
+	id := hostif.mgr.NextID()
+	hostif.groupIDToQueue[id] = req.GetQueue()
+	return &saipb.CreateHostifTrapGroupResponse{Oid: id}, nil
 }
 
-func (hostif *hostif) CreateHostifUserDefinedTrap(context.Context, *saipb.CreateHostifUserDefinedTrapRequest) (*saipb.CreateHostifUserDefinedTrapResponse, error) {
-	return nil, nil
+func (hostif *hostif) CreateHostifUserDefinedTrap(_ context.Context, req *saipb.CreateHostifUserDefinedTrapRequest) (*saipb.CreateHostifUserDefinedTrapResponse, error) {
+	if req.GetType() != saipb.HostifUserDefinedTrapType_HOSTIF_USER_DEFINED_TRAP_TYPE_ACL {
+		return nil, status.Errorf(codes.InvalidArgument, "unsupported trap type: %v", req.GetType())
+	}
+	return &saipb.CreateHostifUserDefinedTrapResponse{Oid: hostif.mgr.NextID()}, nil
 }
 
-func (hostif *hostif) CreateHostifTableEntry(context.Context, *saipb.CreateHostifTableEntryRequest) (*saipb.CreateHostifTableEntryResponse, error) {
+func (hostif *hostif) CreateHostifTableEntry(ctx context.Context, req *saipb.CreateHostifTableEntryRequest) (*saipb.CreateHostifTableEntryResponse, error) {
+	switch entryType := req.GetType(); entryType {
+	case saipb.HostifTableEntryType_HOSTIF_TABLE_ENTRY_TYPE_TRAP_ID:
+		hostif.trapIDToHostifID[req.GetTrapId()] = req.GetHostIf()
+	case saipb.HostifTableEntryType_HOSTIF_TABLE_ENTRY_TYPE_WILDCARD:
+		hostif.trapIDToHostifID[req.GetTrapId()] = wildcardPortID
+	default:
+		return nil, status.Errorf(codes.InvalidArgument, "unsupported entry type: %v", entryType)
+	}
+
 	return nil, nil
 }
