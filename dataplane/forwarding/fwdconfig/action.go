@@ -134,7 +134,8 @@ func (u *UpdateActionBuilder) actionType() fwdpb.ActionType {
 
 // TransmitActionBuilder is a builder for a transmit action.
 type TransmitActionBuilder struct {
-	portID string
+	portID    string
+	immediate bool
 }
 
 // TransmitAction returns a new update action builder.
@@ -144,9 +145,15 @@ func TransmitAction(portID string) *TransmitActionBuilder {
 	}
 }
 
-// WithFieldIDNum sets thje port id value.
+// WithFieldIDNum sets the port id value.
 func (u *TransmitActionBuilder) WithPortID(id string) *TransmitActionBuilder {
 	u.portID = id
+	return u
+}
+
+// WithImmediate sets immediate option value.
+func (u *TransmitActionBuilder) WithImmediate(immediate bool) *TransmitActionBuilder {
+	u.immediate = immediate
 	return u
 }
 
@@ -158,6 +165,7 @@ func (u *TransmitActionBuilder) set(ad *fwdpb.ActionDesc) {
 					Id: u.portID,
 				},
 			},
+			Immediate: u.immediate,
 		},
 	}
 	ad.Action = upd

@@ -129,6 +129,23 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 	if err != nil {
 		return nil, err
 	}
+
+	_, err = sw.dataplane.TableCreate(ctx, &fwdpb.TableCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
+		Desc: &fwdpb.TableDesc{
+			TableType: fwdpb.TableType_TABLE_TYPE_FLOW,
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: trapTableID}},
+			Table: &fwdpb.TableDesc_Flow{
+				Flow: &fwdpb.FlowTableDesc{
+					BankCount: 1,
+				},
+			},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	trGroupResp, err := attrmgr.InvokeAndSave(ctx, sw.mgr, sw.hostif.CreateHostifTrapGroup, &saipb.CreateHostifTrapGroupRequest{
 		Switch: swID,
 	})

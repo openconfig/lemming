@@ -37,10 +37,10 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/wenovus/gobgp/v3/pkg/zebra"
+	"github.com/osrg/gobgp/v3/pkg/zebra"
 
 	log "github.com/golang/glog"
-	bgplog "github.com/wenovus/gobgp/v3/pkg/log"
+	bgplog "github.com/osrg/gobgp/v3/pkg/log"
 )
 
 // Part of this file was adapted from

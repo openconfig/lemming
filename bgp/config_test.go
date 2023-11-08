@@ -20,7 +20,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/openconfig/lemming/gnmi/fakedevice"
 	"github.com/openconfig/lemming/gnmi/oc"
-	gobgpoc "github.com/wenovus/gobgp/v3/pkg/config/oc"
+	gobgpoc "github.com/osrg/gobgp/v3/pkg/config/oc"
 )
 
 func TestIntendedToGoBGPPolicies(t *testing.T) {

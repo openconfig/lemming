@@ -20,11 +20,11 @@ go_library(
         "@com_github_golang_glog//:glog",
         "@com_github_openconfig_ygnmi//ygnmi",
         "@com_github_openconfig_ygot//ygot",
-        "@com_github_wenovus_gobgp_v3//api",
-        "@com_github_wenovus_gobgp_v3//pkg/config",
-        "@com_github_wenovus_gobgp_v3//pkg/config/oc",
-        "@com_github_wenovus_gobgp_v3//pkg/server",
-        "@com_github_wenovus_gobgp_v3//pkg/zebra",
+        "@com_github_osrg_gobgp_v3//api",
+        "@com_github_osrg_gobgp_v3//pkg/config",
+        "@com_github_osrg_gobgp_v3//pkg/config/oc",
+        "@com_github_osrg_gobgp_v3//pkg/server",
+        "@com_github_osrg_gobgp_v3//pkg/zebra",
     ],
 )
 
@@ -40,6 +40,6 @@ go_test(
         "//gnmi/oc",
         "@com_github_google_go_cmp//cmp",
         "@com_github_openconfig_ygot//ygot",
-        "@com_github_wenovus_gobgp_v3//pkg/config/oc",
+        "@com_github_osrg_gobgp_v3//pkg/config/oc",
     ],
 )

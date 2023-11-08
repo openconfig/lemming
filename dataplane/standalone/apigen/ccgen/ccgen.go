@@ -42,8 +42,6 @@ func Generate(doc *docparser.SAIInfo, sai *saiast.SAIAPI) (map[string]string, er
 		switch apiName {
 		case "switch":
 			ccData.Globals = append(ccData.Globals, "std::unique_ptr<PortStateReactor> port_state;")
-		case "hostif":
-			ccData.Globals = append(ccData.Globals, "int nextIdx = 1;")
 		}
 		for _, fn := range iface.Funcs {
 			meta := sai.GetFuncMeta(fn)
@@ -160,11 +158,15 @@ func createCCData(meta *saiast.FuncMetadata, apiName string, sai *saiast.SAIAPI,
 			// TODO: Decide if this needs to ebe supported long term.
 			if meta.TypeName == "HOSTIF" && attr.EnumName == "SAI_HOSTIF_ATTR_NAME" {
 				smt.CustomText = `{
+int idx;
+int count = sscanf( attr_list[i].value.chardata, "Ethernet%d", &idx);
+if (count == 1) {
   std::ostringstream s;
-  s << "ip link set eth" << nextIdx++ << " name "
-    << attr_list[i].value.chardata;
+  s << "ip link set eth" << idx/4 << " name "
+	<< attr_list[i].value.chardata;
   LOG(INFO) << s.str();
   system(s.str().c_str());
+}
 }`
 			}
 			smt.EnumValue = attr.EnumName
