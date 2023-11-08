@@ -162,7 +162,7 @@ int idx;
 int count = sscanf( attr_list[i].value.chardata, "Ethernet%d", &idx);
 if (count == 1) {
   std::ostringstream s;
-  s << "ip link set eth" << idx/4 << " name "
+  s << "ip link set eth" << idx/4+1 << " name "
 	<< attr_list[i].value.chardata;
   LOG(INFO) << s.str();
   system(s.str().c_str());
