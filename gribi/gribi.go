@@ -240,7 +240,7 @@ func updateAft(yclient *ygnmi.Client, _ constants.OpType, ni string, e ygot.GoSt
 		var dstLabel oc.NetworkInstance_Afts_LabelEntry_Label_Union
 		switch l := t.GetLabel().(type) {
 		case aft.E_MplsTypes_MplsLabel_Enum:
-			dstLabel = oc.E_LabelEntry_Label(l)
+			dstLabel = oc.E_MplsTypes_MplsLabel_Enum(l)
 		case aft.UnionUint32:
 			dstLabel = oc.UnionUint32(l)
 		default:

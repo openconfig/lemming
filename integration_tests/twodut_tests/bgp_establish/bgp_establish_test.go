@@ -24,9 +24,9 @@ import (
 	"github.com/openconfig/ondatra/gnmi"
 	"github.com/openconfig/ygot/ygot"
 
-	"github.com/openconfig/ondatra/gnmi/oc"
-
 	"github.com/openconfig/lemming/gnmi/fakedevice"
+	"github.com/openconfig/lemming/gnmi/oc"
+	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 	"github.com/openconfig/lemming/internal/attrs"
 	"github.com/openconfig/lemming/internal/binding"
 )
@@ -67,9 +67,9 @@ var (
 // configureDUT configures port1 on the DUT.
 func configureDUT(t *testing.T, dut *ondatra.DUTDevice, attr attrs.Attributes) {
 	p1 := dut.Port(t, "port1")
-	gnmi.Replace(t, dut, gnmi.OC().Interface(p1.Name()).Config(), attr.NewOCInterface(p1.Name(), dut))
+	gnmi.Replace(t, dut, ocpath.Root().Interface(p1.Name()).Config(), attr.NewOCInterface(p1.Name(), dut))
 
-	gnmi.Await(t, dut, gnmi.OC().Interface(p1.Name()).Subinterface(0).Ipv4().Address(attr.IPv4).Ip().State(), time.Minute, attr.IPv4)
+	gnmi.Await(t, dut, ocpath.Root().Interface(p1.Name()).Subinterface(0).Ipv4().Address(attr.IPv4).Ip().State(), time.Minute, attr.IPv4)
 }
 
 func bgpWithNbr(as uint32, routerID string, nbr *oc.NetworkInstance_Protocol_Bgp_Neighbor) *oc.NetworkInstance_Protocol_Bgp {
@@ -88,7 +88,7 @@ func TestEstablish(t *testing.T) {
 	dut2 := ondatra.DUT(t, "dut2")
 	configureDUT(t, dut2, dut2Port1)
 
-	bgpPath := gnmi.OC().NetworkInstance(fakedevice.DefaultNetworkInstance).Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").Bgp()
+	bgpPath := ocpath.Root().NetworkInstance(fakedevice.DefaultNetworkInstance).Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").Bgp()
 
 	// Remove any existing BGP config
 	gnmi.Delete(t, dut, bgpPath.Config())

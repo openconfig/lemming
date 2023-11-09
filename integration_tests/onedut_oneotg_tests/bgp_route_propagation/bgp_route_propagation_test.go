@@ -24,13 +24,14 @@ import (
 	"github.com/open-traffic-generator/snappi/gosnappi"
 	"github.com/openconfig/ondatra"
 	"github.com/openconfig/ondatra/gnmi"
-	"github.com/openconfig/ondatra/gnmi/oc"
 	otgtelemetry "github.com/openconfig/ondatra/gnmi/otg"
 	otg "github.com/openconfig/ondatra/otg"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot"
 
 	"github.com/openconfig/lemming/gnmi/fakedevice"
+	"github.com/openconfig/lemming/gnmi/oc"
+	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 	"github.com/openconfig/lemming/internal/attrs"
 	"github.com/openconfig/lemming/internal/binding"
 )
@@ -211,22 +212,22 @@ func configureRoutingPolicy(d *oc.Root) (*oc.RoutingPolicy, error) {
 func (d *dutData) Configure(t *testing.T, dut *ondatra.DUTDevice) {
 	for _, a := range []attrs.Attributes{dutPort1, dutPort2} {
 		ocName := dut.Port(t, a.Name).Name()
-		gnmi.Replace(t, dut, gnmi.OC().Interface(ocName).Config(), a.NewOCInterface(ocName, dut))
+		gnmi.Replace(t, dut, ocpath.Root().Interface(ocName).Config(), a.NewOCInterface(ocName, dut))
 	}
 	rpl, err := configureRoutingPolicy(&oc.Root{})
 	if err != nil {
 		t.Fatalf("Failed to configure routing policy: %v", err)
 	}
-	gnmi.Replace(t, dut, gnmi.OC().RoutingPolicy().Config(), rpl)
+	gnmi.Replace(t, dut, ocpath.Root().RoutingPolicy().Config(), rpl)
 
-	dutBGP := gnmi.OC().NetworkInstance(fakedevice.DefaultNetworkInstance).
+	dutBGP := ocpath.Root().NetworkInstance(fakedevice.DefaultNetworkInstance).
 		Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").Bgp()
 	gnmi.Replace(t, dut, dutBGP.Config(), d.bgpOC)
 }
 
 func (d *dutData) AwaitBGPEstablished(t *testing.T, dut *ondatra.DUTDevice) {
 	for neighbor := range d.bgpOC.Neighbor {
-		gnmi.Await(t, dut, gnmi.OC().NetworkInstance(fakedevice.DefaultNetworkInstance).
+		gnmi.Await(t, dut, ocpath.Root().NetworkInstance(fakedevice.DefaultNetworkInstance).
 			Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").
 			Bgp().
 			Neighbor(neighbor).

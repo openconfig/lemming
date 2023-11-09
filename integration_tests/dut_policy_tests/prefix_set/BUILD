@@ -9,11 +9,11 @@ go_test(
         "exclusive",
     ],
     deps = [
+        "//gnmi/oc",
         "//internal/binding",
         "//policytest",
         "//proto/policyval",
         "@com_github_openconfig_ondatra//:ondatra",
         "@com_github_openconfig_ondatra//gnmi",
-        "@com_github_openconfig_ondatra//gnmi/oc",
     ],
 )

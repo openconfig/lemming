@@ -10,12 +10,12 @@ go_test(
     ],
     deps = [
         "//gnmi/fakedevice",
+        "//gnmi/oc",
         "//internal/attrs",
         "//internal/binding",
         "@com_github_open_traffic_generator_snappi_gosnappi//:gosnappi",
         "@com_github_openconfig_ondatra//:ondatra",
         "@com_github_openconfig_ondatra//gnmi",
-        "@com_github_openconfig_ondatra//gnmi/oc",
         "@com_github_openconfig_ondatra//gnmi/otg",
         "@com_github_openconfig_ondatra//otg",
         "@com_github_openconfig_ygnmi//ygnmi",

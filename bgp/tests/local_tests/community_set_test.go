@@ -46,7 +46,7 @@ func TestCommunitySet(t *testing.T) {
 			oc.UnionString("11111:11111"),
 			oc.UnionString("22222:22222"),
 		})
-		Replace(t, dut2, ocpath.Root().RoutingPolicy().DefinedSets().BgpDefinedSets().CommunitySet(anyCommSetName).MatchSetOptions().Config(), oc.RoutingPolicy_MatchSetOptionsType_ANY)
+		Replace(t, dut2, ocpath.Root().RoutingPolicy().DefinedSets().BgpDefinedSets().CommunitySet(anyCommSetName).MatchSetOptions().Config(), oc.PolicyTypes_MatchSetOptionsType_ANY)
 
 		// Create ALL community set
 		allCommSetName := "ALL-community-set"
@@ -55,7 +55,7 @@ func TestCommunitySet(t *testing.T) {
 			oc.UnionString("33333:33333"),
 			oc.UnionString("44444:44444"),
 		})
-		Replace(t, dut2, ocpath.Root().RoutingPolicy().DefinedSets().BgpDefinedSets().CommunitySet(allCommSetName).MatchSetOptions().Config(), oc.RoutingPolicy_MatchSetOptionsType_ALL)
+		Replace(t, dut2, ocpath.Root().RoutingPolicy().DefinedSets().BgpDefinedSets().CommunitySet(allCommSetName).MatchSetOptions().Config(), oc.PolicyTypes_MatchSetOptionsType_ALL)
 
 		// Create INVERT community set
 		invertCommSetName := "INVERT-community-set"
@@ -64,7 +64,7 @@ func TestCommunitySet(t *testing.T) {
 			oc.UnionString("11111:11111"),
 			oc.UnionString("22222:22222"),
 		})
-		Replace(t, dut2, ocpath.Root().RoutingPolicy().DefinedSets().BgpDefinedSets().CommunitySet(invertCommSetName).MatchSetOptions().Config(), oc.RoutingPolicy_MatchSetOptionsType_INVERT)
+		Replace(t, dut2, ocpath.Root().RoutingPolicy().DefinedSets().BgpDefinedSets().CommunitySet(invertCommSetName).MatchSetOptions().Config(), oc.PolicyTypes_MatchSetOptionsType_INVERT)
 
 		// Match on given list of community set members and reject them.
 		stmt, err := policy.AppendNew("reject-any-community-sets")
@@ -72,7 +72,7 @@ func TestCommunitySet(t *testing.T) {
 			t.Fatalf("Cannot append new BGP policy statement: %v", err)
 		}
 		stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetPrefixSet(prefixSetName)
-		stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.RoutingPolicy_MatchSetOptionsRestrictedType_ANY)
+		stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.PolicyTypes_MatchSetOptionsRestrictedType_ANY)
 		stmt.GetOrCreateConditions().GetOrCreateBgpConditions().SetCommunitySet(anyCommSetName)
 		stmt.GetOrCreateActions().SetPolicyResult(oc.RoutingPolicy_PolicyResultType_REJECT_ROUTE)
 
@@ -81,7 +81,7 @@ func TestCommunitySet(t *testing.T) {
 			t.Fatalf("Cannot append new BGP policy statement: %v", err)
 		}
 		stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetPrefixSet(prefixSetName)
-		stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.RoutingPolicy_MatchSetOptionsRestrictedType_ANY)
+		stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.PolicyTypes_MatchSetOptionsRestrictedType_ANY)
 		stmt.GetOrCreateConditions().GetOrCreateBgpConditions().SetCommunitySet(allCommSetName)
 		stmt.GetOrCreateActions().SetPolicyResult(oc.RoutingPolicy_PolicyResultType_REJECT_ROUTE)
 
@@ -97,7 +97,7 @@ func TestCommunitySet(t *testing.T) {
 			t.Fatalf("Cannot append new BGP policy statement: %v", err)
 		}
 		stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetPrefixSet(prefixSetName)
-		stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.RoutingPolicy_MatchSetOptionsRestrictedType_ANY)
+		stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.PolicyTypes_MatchSetOptionsRestrictedType_ANY)
 		stmt.GetOrCreateConditions().GetOrCreateBgpConditions().SetCommunitySet(invertCommSetName)
 		stmt.GetOrCreateActions().SetPolicyResult(oc.RoutingPolicy_PolicyResultType_REJECT_ROUTE)
 
@@ -109,7 +109,7 @@ func TestCommunitySet(t *testing.T) {
 			t.Fatalf("Cannot append new BGP policy statement: %v", err)
 		}
 		stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetPrefixSet(prefixSetName)
-		stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.RoutingPolicy_MatchSetOptionsRestrictedType_ANY)
+		stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.PolicyTypes_MatchSetOptionsRestrictedType_ANY)
 		stmt.GetOrCreateConditions().GetOrCreateBgpConditions().SetCommunitySet(anyCommSetName)
 		stmt.GetOrCreateActions().SetPolicyResult(oc.RoutingPolicy_PolicyResultType_REJECT_ROUTE)
 
@@ -161,7 +161,7 @@ func TestCommunitySet(t *testing.T) {
 				t.Fatalf("Cannot append new BGP policy statement: %v", err)
 			}
 			stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetPrefixSet(prefixSetName)
-			stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.RoutingPolicy_MatchSetOptionsRestrictedType_ANY)
+			stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.PolicyTypes_MatchSetOptionsRestrictedType_ANY)
 
 			installSetCommunityPolicy := func(comms ...oc.UnionString) {
 				stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetOptions(oc.BgpPolicy_BgpSetCommunityOptionType_REPLACE)
@@ -174,7 +174,7 @@ func TestCommunitySet(t *testing.T) {
 					}
 					Replace(t, dut1, commPath.CommunitySetName().Config(), commSetName)
 					Replace(t, dut1, commPath.CommunityMember().Config(), commUnions)
-					stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().GetOrCreateReference().SetCommunitySetRef(commSetName)
+					stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().GetOrCreateReference().SetCommunitySetRefs([]string{commSetName})
 					stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetMethod(oc.SetCommunity_Method_REFERENCE)
 				} else {
 					var commUnions []oc.RoutingPolicy_PolicyDefinition_Statement_Actions_BgpActions_SetCommunity_Inline_Communities_Union
@@ -215,7 +215,7 @@ func TestCommunitySet(t *testing.T) {
 					t.Fatalf("Cannot append new BGP policy statement: %v", err)
 				}
 				stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetPrefixSet(prefixSetName)
-				stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.RoutingPolicy_MatchSetOptionsRestrictedType_ANY)
+				stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.PolicyTypes_MatchSetOptionsRestrictedType_ANY)
 				stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetOptions(oc.BgpPolicy_BgpSetCommunityOptionType_ADD)
 				stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().GetOrCreateInline().SetCommunities(
 					[]oc.RoutingPolicy_PolicyDefinition_Statement_Actions_BgpActions_SetCommunity_Inline_Communities_Union{
@@ -238,19 +238,25 @@ func TestCommunitySet(t *testing.T) {
 					t.Fatalf("Cannot append new BGP policy statement: %v", err)
 				}
 				stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetPrefixSet(prefixSetName)
-				stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.RoutingPolicy_MatchSetOptionsRestrictedType_ANY)
+				stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.PolicyTypes_MatchSetOptionsRestrictedType_ANY)
 
 				stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetOptions(oc.BgpPolicy_BgpSetCommunityOptionType_REMOVE)
 				commSetName := fmt.Sprintf("ref-set-%d", i)
 				commPath := ocpath.Root().RoutingPolicy().DefinedSets().BgpDefinedSets().CommunitySet(commSetName)
 				commUnions := []oc.RoutingPolicy_DefinedSets_BgpDefinedSets_CommunitySet_CommunityMember_Union{
 					oc.UnionString("11111:11111"),
-					oc.UnionString("22222:22222"),
-					oc.UnionString("33333:33333"),
 				}
 				Replace(t, dut1, commPath.CommunitySetName().Config(), commSetName)
 				Replace(t, dut1, commPath.CommunityMember().Config(), commUnions)
-				stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().GetOrCreateReference().SetCommunitySetRef(commSetName)
+				commSetName2 := fmt.Sprintf("ref-set-%d-2", i)
+				commPath2 := ocpath.Root().RoutingPolicy().DefinedSets().BgpDefinedSets().CommunitySet(commSetName2)
+				commUnions2 := []oc.RoutingPolicy_DefinedSets_BgpDefinedSets_CommunitySet_CommunityMember_Union{
+					oc.UnionString("22222:22222"),
+					oc.UnionString("33333:33333"),
+				}
+				Replace(t, dut1, commPath2.CommunitySetName().Config(), commSetName2)
+				Replace(t, dut1, commPath2.CommunityMember().Config(), commUnions2)
+				stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().GetOrCreateReference().SetCommunitySetRefs([]string{commSetName, commSetName2})
 				stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetMethod(oc.SetCommunity_Method_REFERENCE)
 			case 7:
 				stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetOptions(oc.BgpPolicy_BgpSetCommunityOptionType_ADD)
@@ -267,7 +273,7 @@ func TestCommunitySet(t *testing.T) {
 					t.Fatalf("Cannot append new BGP policy statement: %v", err)
 				}
 				stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetPrefixSet(prefixSetName)
-				stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.RoutingPolicy_MatchSetOptionsRestrictedType_ANY)
+				stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.PolicyTypes_MatchSetOptionsRestrictedType_ANY)
 
 				stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetOptions(oc.BgpPolicy_BgpSetCommunityOptionType_REMOVE)
 				commSetName := fmt.Sprintf("ref-set-%d", i)
@@ -277,7 +283,7 @@ func TestCommunitySet(t *testing.T) {
 				}
 				Replace(t, dut1, commPath.CommunitySetName().Config(), commSetName)
 				Replace(t, dut1, commPath.CommunityMember().Config(), commUnions)
-				stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().GetOrCreateReference().SetCommunitySetRef(commSetName)
+				stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().GetOrCreateReference().SetCommunitySetRefs([]string{commSetName})
 				stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetMethod(oc.SetCommunity_Method_REFERENCE)
 			case 8:
 				installSetCommunityPolicy(oc.UnionString("10000:10000"))

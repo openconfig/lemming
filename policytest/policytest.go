@@ -20,12 +20,12 @@ import (
 	"time"
 
 	"github.com/openconfig/lemming/gnmi/fakedevice"
+	"github.com/openconfig/lemming/gnmi/oc"
+	"github.com/openconfig/lemming/gnmi/oc/netinstbgp"
+	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 	"github.com/openconfig/lemming/internal/attrs"
 	"github.com/openconfig/ondatra"
 	"github.com/openconfig/ondatra/gnmi"
-	"github.com/openconfig/ondatra/gnmi/oc"
-	"github.com/openconfig/ondatra/gnmi/oc/netinstbgp"
-	"github.com/openconfig/ondatra/gnmi/oc/ocpath"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot"
 
@@ -342,9 +342,9 @@ func testPropagationAuxV6(t *testing.T, routeTest *valpb.RouteTestCase, pair1, p
 func configureDUT(t *testing.T, dut *ondatra.DUTDevice, ports map[string]*attrs.Attributes) {
 	for portName, attr := range ports {
 		p := dut.Port(t, portName)
-		gnmi.Replace(t, dut, gnmi.OC().Interface(p.Name()).Config(), attr.NewOCInterface(p.Name(), dut))
-		gnmi.Await(t, dut, gnmi.OC().Interface(p.Name()).Subinterface(0).Ipv4().Address(attr.IPv4).Ip().State(), awaitTimeout, attr.IPv4)
-		gnmi.Await(t, dut, gnmi.OC().Interface(p.Name()).Subinterface(0).Ipv6().Address(attr.IPv6).Ip().State(), awaitTimeout, attr.IPv6)
+		gnmi.Replace(t, dut, ocpath.Root().Interface(p.Name()).Config(), attr.NewOCInterface(p.Name(), dut))
+		gnmi.Await(t, dut, ocpath.Root().Interface(p.Name()).Subinterface(0).Ipv4().Address(attr.IPv4).Ip().State(), awaitTimeout, attr.IPv4)
+		gnmi.Await(t, dut, ocpath.Root().Interface(p.Name()).Subinterface(0).Ipv6().Address(attr.IPv6).Ip().State(), awaitTimeout, attr.IPv6)
 	}
 }
 
@@ -361,7 +361,7 @@ func bgpWithNbr(as uint32, routerID string, nbrs ...*oc.NetworkInstance_Protocol
 }
 
 func installStaticRoute(t *testing.T, dut *Device, route *oc.NetworkInstance_Protocol_Static) {
-	staticp := gnmi.OC().NetworkInstance(fakedevice.DefaultNetworkInstance).
+	staticp := ocpath.Root().NetworkInstance(fakedevice.DefaultNetworkInstance).
 		Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_STATIC, fakedevice.StaticRoutingProtocol)
 	gnmi.Replace(t, dut, staticp.Static(*route.Prefix).Config(), route)
 	gnmi.Await(t, dut, staticp.Static(*route.Prefix).State(), 30*time.Second, route)
