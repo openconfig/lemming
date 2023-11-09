@@ -9,6 +9,7 @@ go_test(
         "exclusive",
     ],
     deps = [
+        "//gnmi/oc/ocpath",
         "//internal/attrs",
         "//internal/binding",
         "@com_github_open_traffic_generator_snappi_gosnappi//:gosnappi",

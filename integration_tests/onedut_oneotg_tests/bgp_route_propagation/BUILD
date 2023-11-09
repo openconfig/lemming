@@ -11,6 +11,7 @@ go_test(
     deps = [
         "//gnmi/fakedevice",
         "//gnmi/oc",
+        "//gnmi/oc/ocpath",
         "//internal/attrs",
         "//internal/binding",
         "@com_github_open_traffic_generator_snappi_gosnappi//:gosnappi",
