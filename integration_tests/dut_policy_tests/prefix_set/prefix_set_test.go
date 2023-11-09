@@ -19,11 +19,11 @@ package integration_test
 import (
 	"testing"
 
+	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/internal/binding"
 	"github.com/openconfig/lemming/policytest"
 	"github.com/openconfig/ondatra"
 	"github.com/openconfig/ondatra/gnmi"
-	"github.com/openconfig/ondatra/gnmi/oc"
 
 	valpb "github.com/openconfig/lemming/proto/policyval"
 )
@@ -73,9 +73,9 @@ func TestPrefixSet(t *testing.T) {
 		// Match on prefix set & reject route
 		stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetPrefixSet(prefixSetName)
 		if invert {
-			stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.RoutingPolicy_MatchSetOptionsRestrictedType_INVERT)
+			stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.PolicyTypes_MatchSetOptionsRestrictedType_INVERT)
 		} else {
-			stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.RoutingPolicy_MatchSetOptionsRestrictedType_ANY)
+			stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.PolicyTypes_MatchSetOptionsRestrictedType_ANY)
 		}
 		stmt.GetOrCreateActions().SetPolicyResult(oc.RoutingPolicy_PolicyResultType_REJECT_ROUTE)
 		// Install policy

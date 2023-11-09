@@ -57,7 +57,7 @@ func BenchmarkGNMISet(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.RoutingPolicy_MatchSetOptionsRestrictedType_ANY)
+	stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.PolicyTypes_MatchSetOptionsRestrictedType_ANY)
 	stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetOptions(oc.BgpPolicy_BgpSetCommunityOptionType_REPLACE)
 	stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().GetOrCreateInline().SetCommunities(
 		[]oc.RoutingPolicy_PolicyDefinition_Statement_Actions_BgpActions_SetCommunity_Inline_Communities_Union{
@@ -79,7 +79,7 @@ func BenchmarkGNMISet(b *testing.B) {
 					Enabled:      ygot.Bool(true),
 					Type:         oc.IETFInterfaces_InterfaceType_fast,
 					Mtu:          ygot.Uint16(42),
-					LoopbackMode: oc.Interfaces_LoopbackModeType_FACILITY,
+					LoopbackMode: oc.TransportTypes_LoopbackModeType_FACILITY,
 					Tpid:         oc.VlanTypes_TPID_TYPES_TPID_0X8100,
 				},
 			)
@@ -94,7 +94,7 @@ func BenchmarkGNMISet(b *testing.B) {
 					Enabled:      ygot.Bool(true),
 					Type:         oc.IETFInterfaces_InterfaceType_fast,
 					Mtu:          ygot.Uint16(42),
-					LoopbackMode: oc.Interfaces_LoopbackModeType_FACILITY,
+					LoopbackMode: oc.TransportTypes_LoopbackModeType_FACILITY,
 					Tpid:         oc.VlanTypes_TPID_TYPES_TPID_0X8100,
 				},
 			)
@@ -115,7 +115,7 @@ func BenchmarkGNMISet(b *testing.B) {
 			if _, err := gnmiclient.Update[uint16](context.Background(), configClient, ocpath.Root().Interface(name).Mtu().Config(), 42); err != nil {
 				return err
 			}
-			if _, err := gnmiclient.Update[oc.E_Interfaces_LoopbackModeType](context.Background(), configClient, ocpath.Root().Interface(name).LoopbackMode().Config(), oc.Interfaces_LoopbackModeType_FACILITY); err != nil {
+			if _, err := gnmiclient.Update[oc.E_TransportTypes_LoopbackModeType](context.Background(), configClient, ocpath.Root().Interface(name).LoopbackMode().Config(), oc.TransportTypes_LoopbackModeType_FACILITY); err != nil {
 				return err
 			}
 			if _, err := gnmiclient.Update[oc.E_VlanTypes_TPID_TYPES](context.Background(), configClient, ocpath.Root().Interface(name).Tpid().Config(), oc.VlanTypes_TPID_TYPES_TPID_0X8100); err != nil {
@@ -138,7 +138,7 @@ func BenchmarkGNMISet(b *testing.B) {
 			if _, err := gnmiclient.Update(context.Background(), stateClient, ocpath.Root().Interface(name).Mtu().State(), 42); err != nil {
 				return err
 			}
-			if _, err := gnmiclient.Update(context.Background(), stateClient, ocpath.Root().Interface(name).LoopbackMode().State(), oc.Interfaces_LoopbackModeType_FACILITY); err != nil {
+			if _, err := gnmiclient.Update(context.Background(), stateClient, ocpath.Root().Interface(name).LoopbackMode().State(), oc.TransportTypes_LoopbackModeType_FACILITY); err != nil {
 				return err
 			}
 			if _, err := gnmiclient.Update(context.Background(), stateClient, ocpath.Root().Interface(name).Tpid().State(), oc.VlanTypes_TPID_TYPES_TPID_0X8100); err != nil {

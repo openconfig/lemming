@@ -41,6 +41,19 @@ func convertSetCommunities(setCommunity *oc.RoutingPolicy_PolicyDefinition_State
 		}
 		return setCommunitiesList, nil
 	case oc.SetCommunity_Method_REFERENCE:
+		if len(setCommunity.GetReference().GetCommunitySetRefs()) > 0 {
+			var comms []string
+			for _, commRef := range setCommunity.GetReference().GetCommunitySetRefs() {
+				// YANG validation should ensure that the referred community set is present.
+				index, ok := commSetIndexMap[commRef]
+				if !ok {
+					return nil, fmt.Errorf("Referenced community set not present in index map: %q", commRef)
+				}
+				comms = append(comms, convertedCommSets[index].CommunityList...)
+			}
+			return comms, nil
+		}
+		// NOTE: This leaf is deprecated, but use it if the new leaf isn't.
 		if commRef := setCommunity.GetReference().GetCommunitySetRef(); commRef != "" {
 			// YANG validation should ensure that the referred community set is present.
 			index, ok := commSetIndexMap[commRef]
@@ -144,24 +157,24 @@ func convertDefaultPolicy(ocpolicy oc.E_RoutingPolicy_DefaultPolicyType) gobgpoc
 	}
 }
 
-func convertMatchSetOptionsType(ocMatchSetOpts oc.E_RoutingPolicy_MatchSetOptionsType) gobgpoc.MatchSetOptionsType {
+func convertMatchSetOptionsType(ocMatchSetOpts oc.E_PolicyTypes_MatchSetOptionsType) gobgpoc.MatchSetOptionsType {
 	switch ocMatchSetOpts {
-	case oc.RoutingPolicy_MatchSetOptionsType_INVERT:
+	case oc.PolicyTypes_MatchSetOptionsType_INVERT:
 		return gobgpoc.MATCH_SET_OPTIONS_TYPE_INVERT
-	case oc.RoutingPolicy_MatchSetOptionsType_ANY:
+	case oc.PolicyTypes_MatchSetOptionsType_ANY:
 		return gobgpoc.MATCH_SET_OPTIONS_TYPE_ANY
-	case oc.RoutingPolicy_MatchSetOptionsType_ALL:
+	case oc.PolicyTypes_MatchSetOptionsType_ALL:
 		return gobgpoc.MATCH_SET_OPTIONS_TYPE_ALL
 	default:
 		return gobgpoc.MATCH_SET_OPTIONS_TYPE_ANY
 	}
 }
 
-func convertMatchSetOptionsRestrictedType(ocrestrictedMatchSetOpts oc.E_RoutingPolicy_MatchSetOptionsRestrictedType) gobgpoc.MatchSetOptionsRestrictedType {
+func convertMatchSetOptionsRestrictedType(ocrestrictedMatchSetOpts oc.E_PolicyTypes_MatchSetOptionsRestrictedType) gobgpoc.MatchSetOptionsRestrictedType {
 	switch ocrestrictedMatchSetOpts {
-	case oc.RoutingPolicy_MatchSetOptionsRestrictedType_INVERT:
+	case oc.PolicyTypes_MatchSetOptionsRestrictedType_INVERT:
 		return gobgpoc.MATCH_SET_OPTIONS_RESTRICTED_TYPE_INVERT
-	case oc.RoutingPolicy_MatchSetOptionsRestrictedType_ANY:
+	case oc.PolicyTypes_MatchSetOptionsRestrictedType_ANY:
 		return gobgpoc.MATCH_SET_OPTIONS_RESTRICTED_TYPE_ANY
 	default:
 		return gobgpoc.MATCH_SET_OPTIONS_RESTRICTED_TYPE_ANY
@@ -295,9 +308,9 @@ func convertMED(med oc.RoutingPolicy_PolicyDefinition_Statement_Actions_BgpActio
 		return string(c), nil
 	case oc.UnionUint32:
 		return strconv.FormatUint(uint64(c), 10), nil
-	case oc.E_BgpActions_SetMed:
+	case oc.E_BgpPolicy_BgpSetMedType_Enum:
 		switch c {
-		case oc.BgpActions_SetMed_IGP:
+		case oc.BgpPolicy_BgpSetMedType_Enum_IGP:
 			// TODO(wenbli): Find IGP cost to return.
 		}
 		return "", fmt.Errorf("unsupported value for MED: (%T, %v)", med, med)

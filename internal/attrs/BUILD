@@ -6,9 +6,9 @@ go_library(
     importpath = "github.com/openconfig/lemming/internal/attrs",
     visibility = ["//:__subpackages__"],
     deps = [
+        "//gnmi/oc",
         "@com_github_open_traffic_generator_snappi_gosnappi//:gosnappi",
         "@com_github_openconfig_ondatra//:ondatra",
-        "@com_github_openconfig_ondatra//gnmi/oc",
         "@com_github_openconfig_ygot//ygot",
     ],
 )

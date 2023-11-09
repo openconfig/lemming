@@ -20,7 +20,7 @@ require (
 	github.com/openconfig/gribigo v0.0.0-20231018021145-a1124db3ca83
 	github.com/openconfig/kne v0.1.14
 	github.com/openconfig/ondatra v0.4.0
-	github.com/openconfig/ygnmi v0.9.0
+	github.com/openconfig/ygnmi v0.10.0
 	github.com/openconfig/ygot v0.29.12
 	github.com/osrg/gobgp/v3 v3.20.0
 	github.com/p4lang/p4runtime v1.4.0-rc.5.0.20220728214547-13f0d02a521e
@@ -144,3 +144,5 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
+
+replace github.com/openconfig/ondatra => github.com/wenovus/ondatra v0.0.0-20231109025424-4b0726b8db61

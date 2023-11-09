@@ -51,7 +51,7 @@ func TestIntendedToGoBGPPolicies(t *testing.T) {
 			commsetName := "COMM1"
 			root.GetOrCreateRoutingPolicy().GetOrCreateDefinedSets().GetOrCreateBgpDefinedSets().GetOrCreateCommunitySet(commsetName).SetCommunityMember(
 				[]oc.RoutingPolicy_DefinedSets_BgpDefinedSets_CommunitySet_CommunityMember_Union{
-					oc.UnionString("12345:54321"),
+					oc.UnionString("[0-9]+:[0-9]+"),
 				},
 			)
 
@@ -65,7 +65,7 @@ func TestIntendedToGoBGPPolicies(t *testing.T) {
 				t.Fatal(err)
 			}
 			v4Stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetPrefixSet(prefixSet1Name)
-			v4Stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.RoutingPolicy_MatchSetOptionsRestrictedType_ANY)
+			v4Stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.PolicyTypes_MatchSetOptionsRestrictedType_ANY)
 			v4Stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().GetOrCreateReference().SetCommunitySetRef(commsetName)
 			v4Stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetMethod(oc.SetCommunity_Method_REFERENCE)
 			v4Stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetOptions(oc.BgpPolicy_BgpSetCommunityOptionType_ADD)
@@ -74,7 +74,7 @@ func TestIntendedToGoBGPPolicies(t *testing.T) {
 				t.Fatal(err)
 			}
 			v4Stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetPrefixSet(prefixSet2Name)
-			v4Stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.RoutingPolicy_MatchSetOptionsRestrictedType_ANY)
+			v4Stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.PolicyTypes_MatchSetOptionsRestrictedType_ANY)
 			v4Stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetMethod(oc.SetCommunity_Method_REFERENCE)
 			v4Stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetOptions(oc.BgpPolicy_BgpSetCommunityOptionType_REPLACE)
 			v4Stmt.GetOrCreateActions().SetPolicyResult(oc.RoutingPolicy_PolicyResultType_ACCEPT_ROUTE)
@@ -132,7 +132,7 @@ func TestIntendedToGoBGPPolicies(t *testing.T) {
 				BgpDefinedSets: gobgpoc.BgpDefinedSets{
 					CommunitySets: []gobgpoc.CommunitySet{{
 						CommunitySetName: "COMM1",
-						CommunityList:    []string{"12345:54321"},
+						CommunityList:    []string{"[0-9]+:[0-9]+"},
 					}},
 				},
 			},
@@ -175,7 +175,7 @@ func TestIntendedToGoBGPPolicies(t *testing.T) {
 						RouteDisposition: "none",
 						IgpActions:       gobgpoc.IgpActions{SetTag: ""},
 						BgpActions: gobgpoc.BgpActions{SetAsPathPrepend: gobgpoc.SetAsPathPrepend{RepeatN: 0x0, As: "0"},
-							SetCommunity:      gobgpoc.SetCommunity{SetCommunityMethod: gobgpoc.SetCommunityMethod{CommunitiesList: []string{"12345:54321"}, CommunitySetRef: ""}, Options: "add"},
+							SetCommunity:      gobgpoc.SetCommunity{SetCommunityMethod: gobgpoc.SetCommunityMethod{CommunitiesList: []string{"[0-9]+:[0-9]+"}, CommunitySetRef: ""}, Options: "add"},
 							SetExtCommunity:   gobgpoc.SetExtCommunity{SetExtCommunityMethod: gobgpoc.SetExtCommunityMethod{CommunitiesList: []string(nil), ExtCommunitySetRef: ""}, Options: ""},
 							SetRouteOrigin:    "",
 							SetLocalPref:      0x0,
@@ -292,7 +292,7 @@ func TestIntendedToGoBGPPolicies(t *testing.T) {
 						RouteDisposition: "none",
 						IgpActions:       gobgpoc.IgpActions{SetTag: ""},
 						BgpActions: gobgpoc.BgpActions{SetAsPathPrepend: gobgpoc.SetAsPathPrepend{RepeatN: 0x0, As: "0"},
-							SetCommunity:      gobgpoc.SetCommunity{SetCommunityMethod: gobgpoc.SetCommunityMethod{CommunitiesList: []string{"12345:54321"}, CommunitySetRef: ""}, Options: "add"},
+							SetCommunity:      gobgpoc.SetCommunity{SetCommunityMethod: gobgpoc.SetCommunityMethod{CommunitiesList: []string{"[0-9]+:[0-9]+"}, CommunitySetRef: ""}, Options: "add"},
 							SetExtCommunity:   gobgpoc.SetExtCommunity{SetExtCommunityMethod: gobgpoc.SetExtCommunityMethod{CommunitiesList: []string(nil), ExtCommunitySetRef: ""}, Options: ""},
 							SetRouteOrigin:    "",
 							SetLocalPref:      0x0,
@@ -389,7 +389,14 @@ func TestIntendedToGoBGPPolicies(t *testing.T) {
 			commsetName := "COMM1"
 			root.GetOrCreateRoutingPolicy().GetOrCreateDefinedSets().GetOrCreateBgpDefinedSets().GetOrCreateCommunitySet(commsetName).SetCommunityMember(
 				[]oc.RoutingPolicy_DefinedSets_BgpDefinedSets_CommunitySet_CommunityMember_Union{
-					oc.UnionString("[0-9]+:[0-9]+"),
+					oc.UnionString("54321:54321"),
+				},
+			)
+
+			commsetName2 := "COMM2"
+			root.GetOrCreateRoutingPolicy().GetOrCreateDefinedSets().GetOrCreateBgpDefinedSets().GetOrCreateCommunitySet(commsetName2).SetCommunityMember(
+				[]oc.RoutingPolicy_DefinedSets_BgpDefinedSets_CommunitySet_CommunityMember_Union{
+					oc.UnionString("12345:12345"),
 				},
 			)
 
@@ -404,7 +411,7 @@ func TestIntendedToGoBGPPolicies(t *testing.T) {
 				t.Fatalf("Cannot append new BGP policy statement: %v", err)
 			}
 			stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetPrefixSet(prefixSetName)
-			stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.RoutingPolicy_MatchSetOptionsRestrictedType_ANY)
+			stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.PolicyTypes_MatchSetOptionsRestrictedType_ANY)
 
 			stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetOptions(oc.BgpPolicy_BgpSetCommunityOptionType_ADD)
 			stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().GetOrCreateInline().SetCommunities(
@@ -424,9 +431,9 @@ func TestIntendedToGoBGPPolicies(t *testing.T) {
 				t.Fatalf("Cannot append new BGP policy statement: %v", err)
 			}
 			stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetPrefixSet(prefixSetName)
-			stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.RoutingPolicy_MatchSetOptionsRestrictedType_ANY)
+			stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.PolicyTypes_MatchSetOptionsRestrictedType_ANY)
 			stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetOptions(oc.BgpPolicy_BgpSetCommunityOptionType_REMOVE)
-			stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().GetOrCreateReference().SetCommunitySetRef(commsetName)
+			stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().GetOrCreateReference().SetCommunitySetRefs([]string{commsetName, commsetName2})
 			stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetMethod(oc.SetCommunity_Method_REFERENCE)
 			stmt.GetOrCreateActions().SetPolicyResult(oc.RoutingPolicy_PolicyResultType_ACCEPT_ROUTE)
 
@@ -473,7 +480,10 @@ func TestIntendedToGoBGPPolicies(t *testing.T) {
 				BgpDefinedSets: gobgpoc.BgpDefinedSets{
 					CommunitySets: []gobgpoc.CommunitySet{{
 						CommunitySetName: "COMM1",
-						CommunityList:    []string{"[0-9]+:[0-9]+"},
+						CommunityList:    []string{"54321:54321"},
+					}, {
+						CommunitySetName: "COMM2",
+						CommunityList:    []string{"12345:12345"},
 					}},
 				},
 			},
@@ -587,7 +597,7 @@ func TestIntendedToGoBGPPolicies(t *testing.T) {
 						RouteDisposition: "accept-route",
 						IgpActions:       gobgpoc.IgpActions{SetTag: ""},
 						BgpActions: gobgpoc.BgpActions{SetAsPathPrepend: gobgpoc.SetAsPathPrepend{RepeatN: 0x0, As: "0"},
-							SetCommunity:      gobgpoc.SetCommunity{SetCommunityMethod: gobgpoc.SetCommunityMethod{CommunitiesList: []string{"[0-9]+:[0-9]+"}, CommunitySetRef: ""}, Options: "remove"},
+							SetCommunity:      gobgpoc.SetCommunity{SetCommunityMethod: gobgpoc.SetCommunityMethod{CommunitiesList: []string{"54321:54321", "12345:12345"}, CommunitySetRef: ""}, Options: "remove"},
 							SetExtCommunity:   gobgpoc.SetExtCommunity{SetExtCommunityMethod: gobgpoc.SetExtCommunityMethod{CommunitiesList: []string(nil), ExtCommunitySetRef: ""}, Options: ""},
 							SetRouteOrigin:    "",
 							SetLocalPref:      0x0,
