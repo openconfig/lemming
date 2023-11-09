@@ -82,11 +82,13 @@ type Engine struct {
 // New creates a new engine and sets up the forwarding tables.
 func New(ctx context.Context) (*Engine, error) {
 	e := &Engine{
-		id:            "lucius",
-		Server:        forwarding.New("engine"),
-		idToNID:       map[string]uint64{},
-		nextHopGroups: map[uint64]*dpb.NextHopIDList{},
-		ifaceToPort:   map[string]string{},
+		id:                   "lucius",
+		Server:               forwarding.New("engine"),
+		idToNID:              map[string]uint64{},
+		nextHopGroups:        map[uint64]*dpb.NextHopIDList{},
+		ifaceToPort:          map[string]string{},
+		devNameToPortID:      map[string]string{},
+		internalToExternalID: map[string]string{},
 	}
 
 	ctx, e.cancelFn = context.WithCancel(ctx)
