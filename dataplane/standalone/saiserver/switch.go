@@ -25,6 +25,7 @@ import (
 	log "github.com/golang/glog"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
+	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
 	"github.com/openconfig/lemming/dataplane/internal/engine"
 	"github.com/openconfig/lemming/dataplane/standalone/saiserver/attrmgr"
 
@@ -66,6 +67,8 @@ type switchDataplaneAPI interface {
 	CreatePort(ctx context.Context, req *dpb.CreatePortRequest) (*dpb.CreatePortResponse, error)
 	PortState(ctx context.Context, req *fwdpb.PortStateRequest) (*fwdpb.PortStateReply, error)
 	ObjectCounters(context.Context, *fwdpb.ObjectCountersRequest) (*fwdpb.ObjectCountersReply, error)
+	Context() (*fwdcontext.Context, error)
+	PortCreate(context.Context, *fwdpb.PortCreateRequest) (*fwdpb.PortCreateReply, error)
 }
 
 func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server) *saiSwitch {

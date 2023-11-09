@@ -14,6 +14,7 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//dataplane/forwarding/fwdconfig",
+        "//dataplane/forwarding/infra/fwdcontext",
         "//dataplane/internal/engine",
         "//dataplane/standalone/proto:sai",
         "//dataplane/standalone/saiserver/attrmgr",
@@ -38,6 +39,7 @@ go_test(
     ],
     embed = [":saiserver"],
     deps = [
+        "//dataplane/forwarding/infra/fwdcontext",
         "//dataplane/standalone/proto:sai",
         "//dataplane/standalone/saiserver/attrmgr",
         "//proto/dataplane",

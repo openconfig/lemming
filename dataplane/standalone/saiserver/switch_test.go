@@ -28,6 +28,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/testing/protocmp"
 
+	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
 	"github.com/openconfig/lemming/dataplane/standalone/saiserver/attrmgr"
 	dpb "github.com/openconfig/lemming/proto/dataplane"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
@@ -292,6 +293,14 @@ func (f *fakeSwitchDataplane) ObjectCounters(context.Context, *fwdpb.ObjectCount
 
 func (f *fakeSwitchDataplane) ID() string {
 	return "foo"
+}
+
+func (f *fakeSwitchDataplane) Context() (*fwdcontext.Context, error) {
+	return nil, nil
+}
+
+func (f *fakeSwitchDataplane) PortCreate(context.Context, *fwdpb.PortCreateRequest) (*fwdpb.PortCreateReply, error) {
+	return nil, nil
 }
 
 func newTestServer(t testing.TB, newSrvFn func(mgr *attrmgr.AttrMgr, srv *grpc.Server)) (grpc.ClientConnInterface, *attrmgr.AttrMgr, func()) {

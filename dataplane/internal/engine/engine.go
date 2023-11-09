@@ -29,6 +29,7 @@ import (
 	"github.com/openconfig/lemming/dataplane/forwarding"
 	"github.com/openconfig/lemming/dataplane/forwarding/attributes"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
+	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
 
 	log "github.com/golang/glog"
 
@@ -136,6 +137,11 @@ func (e *Engine) Reset(ctx context.Context) error {
 	ctx, e.cancelFn = context.WithCancel(ctx)
 	e.setupTables(ctx)
 	return nil
+}
+
+// Context returns the forward context assoicated with the engine.
+func (e *Engine) Context() (*fwdcontext.Context, error) {
+	return e.Server.FindContext(&fwdpb.ContextId{Id: e.ID()})
 }
 
 func (e *Engine) setupTables(ctx context.Context) error {

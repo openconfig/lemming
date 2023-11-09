@@ -34,13 +34,13 @@ import (
 // A RecordPacketSink records the last injected packet and generates a
 // notification on its channel.
 type RecordPacketSink struct {
-	notify     chan bool
-	lastPacket *fwdpb.PacketSinkResponse
+	notify       chan bool
+	lastResponse *fwdpb.PacketSinkResponse
 }
 
 // PacketSink records the inject packet request and generates a notification.
 func (p *RecordPacketSink) PacketSink(resp *fwdpb.PacketSinkResponse) error {
-	p.lastPacket = resp
+	p.lastResponse = resp
 	p.notify <- true
 	return nil
 }
@@ -102,11 +102,11 @@ func TestCpuWrite(t *testing.T) {
 		t.Fatalf("Write failed, err %v.", err)
 	}
 	<-ps.notify
-	t.Logf("Got request %+v", ps.lastPacket)
+	t.Logf("Got request %+v", ps.lastResponse)
 
 	// Verify that the packet was received and the parsed fields only have
 	// the ETHER_TYPE set to ARP.
-	list := ps.lastPacket.GetParsedFields()
+	list := ps.lastResponse.GetPacket().GetParsedFields()
 	if len(list) != 1 {
 		t.Fatalf("Write failed to get parsed fields, got %v, want 1.", len(list))
 	}
