@@ -242,7 +242,7 @@ func (hostif *hostif) CreateHostifUserDefinedTrap(_ context.Context, req *saipb.
 	return &saipb.CreateHostifUserDefinedTrapResponse{Oid: hostif.mgr.NextID()}, nil
 }
 
-func (hostif *hostif) CreateHostifTableEntry(ctx context.Context, req *saipb.CreateHostifTableEntryRequest) (*saipb.CreateHostifTableEntryResponse, error) {
+func (hostif *hostif) CreateHostifTableEntry(_ context.Context, req *saipb.CreateHostifTableEntryRequest) (*saipb.CreateHostifTableEntryResponse, error) {
 	switch entryType := req.GetType(); entryType {
 	case saipb.HostifTableEntryType_HOSTIF_TABLE_ENTRY_TYPE_TRAP_ID:
 		hostif.trapIDToHostifID[req.GetTrapId()] = req.GetHostIf()

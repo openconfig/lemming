@@ -14,6 +14,7 @@ go_library(
         "//dataplane/forwarding",
         "//dataplane/forwarding/attributes",
         "//dataplane/forwarding/fwdconfig",
+        "//dataplane/forwarding/infra/fwdcontext",
         "//proto/dataplane",
         "//proto/forwarding",
         "@com_github_golang_glog//:glog",

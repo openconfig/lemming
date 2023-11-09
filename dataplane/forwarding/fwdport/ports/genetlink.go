@@ -79,7 +79,7 @@ func (p *genetlinkPort) Update(upd *fwdpb.PortUpdateDesc) error {
 
 // Write writes a packet out. If successful, the port returns
 // fwdaction.CONSUME.
-func (p *genetlinkPort) Write(packet fwdpacket.Packet) (fwdaction.State, error) {
+func (p *genetlinkPort) Write(fwdpacket.Packet) (fwdaction.State, error) {
 	return fwdaction.CONSUME, nil
 }
 
@@ -107,6 +107,8 @@ func (p *genetlinkPort) State(*fwdpb.PortInfo) (*fwdpb.PortStateReply, error) {
 type genetlinkBuilder struct{}
 
 // Build creates a new port.
-func (genetlinkBuilder) Build(portDesc *fwdpb.PortDesc, ctx *fwdcontext.Context) (fwdport.Port, error) {
-	return &genetlinkPort{}, nil
+func (genetlinkBuilder) Build(_ *fwdpb.PortDesc, ctx *fwdcontext.Context) (fwdport.Port, error) {
+	return &genetlinkPort{
+		ctx: ctx,
+	}, nil
 }

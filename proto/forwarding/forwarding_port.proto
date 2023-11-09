@@ -122,7 +122,8 @@ message KernelPortUpdateDesc {
   repeated ActionDesc outputs = 2;
 }
 
-// A GenetlinkPortUpdateDesc updates the Genetlink port's input and output actions.
+// A GenetlinkPortUpdateDesc updates the Genetlink port's 
+// input and output actions.
 message GenetlinkPortUpdateDesc {
   repeated ActionDesc inputs = 1;
   repeated ActionDesc outputs = 2;
