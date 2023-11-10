@@ -23,7 +23,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	"github.com/openconfig/lemming/dataplane/standalone/cpusink/sink"
+	"github.com/openconfig/lemming/dataplane/standalone/packetio/cpusink"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
@@ -35,7 +35,7 @@ func StartSink() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	sink := sink.New(fwdpb.NewForwardingClient(conn))
+	sink := cpusink.New(fwdpb.NewForwardingClient(conn))
 	if err := sink.HandleIPUpdates(context.Background()); err != nil {
 		log.Fatal(err)
 	}

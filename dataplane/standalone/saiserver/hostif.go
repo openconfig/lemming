@@ -25,7 +25,7 @@ import (
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
 	"github.com/openconfig/lemming/dataplane/internal/engine"
-	"github.com/openconfig/lemming/dataplane/standalone/cpusink/sink"
+	"github.com/openconfig/lemming/dataplane/standalone/packetio/cpusink"
 	"github.com/openconfig/lemming/dataplane/standalone/saiserver/attrmgr"
 
 	saipb "github.com/openconfig/lemming/dataplane/standalone/proto"
@@ -44,12 +44,12 @@ func newHostif(ctx context.Context, mgr *attrmgr.AttrMgr, dataplane switchDatapl
 	// Setup the packet io tables. A packet is punted by setting the output port to the CPU port.
 	// There a two places where packets can be punted:
 	//   1. pre-fib: the trap table contains rules that may punt the packets.
-	//   2. fib: "IP2ME" routes, the fib contains routes for the IPs assigned to the interface, these routes have the next hop as the CPU port.
-	// Once a packet is sent to the CPU port, it must be matches to a host interfaces:
+	//   2. fib: "IP2ME" routes, the fib contains routes for the IPs assigned to the hostif, these routes have the next hop as the CPU port.
+	// Once a packet is sent to the CPU port, it must be matched to a hostif:
 	//   1. ip2me: a table maps IP DST to hostif port. (populated by the CPU port).
-	//   2. hostif table: a table the maps TRAP IP to hostif port. (trap id is set by the ACL actions).
+	//   2. hostif table: a table the maps TRAP IP to the hostif. (trap id is set by the ACL actions).
 	//   3. default/wildcard: each hostif is created with a corresponding port, use that mapping to determine correct hostif.
-	// Once the output port is determined, based on the port type:
+	// Once the output port is determined, based on the hostif type:
 	//   1. For genetlink: send the packets using the CPU port gRPC connection.
 	//   2. For netdev (lucius kernel/tap): write the packets directly to the hostif.
 
@@ -84,7 +84,7 @@ func newHostif(ctx context.Context, mgr *attrmgr.AttrMgr, dataplane switchDatapl
 	_, err = hostif.dataplane.TableCreate(ctx, &fwdpb.TableCreateRequest{
 		ContextId: &fwdpb.ContextId{Id: hostif.dataplane.ID()},
 		Desc: &fwdpb.TableDesc{
-			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: sink.IP2MeTable}},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: cpusink.IP2MeTable}},
 			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
 			Table: &fwdpb.TableDesc_Exact{
 				Exact: &fwdpb.ExactTableDesc{

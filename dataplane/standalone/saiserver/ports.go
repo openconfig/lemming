@@ -23,7 +23,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
-	"github.com/openconfig/lemming/dataplane/standalone/cpusink/sink"
+	"github.com/openconfig/lemming/dataplane/standalone/packetio/cpusink"
 	"github.com/openconfig/lemming/dataplane/standalone/saiserver/attrmgr"
 
 	log "github.com/golang/glog"
@@ -171,7 +171,7 @@ func (port *port) createCPUPort(ctx context.Context) (uint64, error) {
 			Port: &fwdpb.PortUpdateDesc_Cpu{
 				Cpu: &fwdpb.CPUPortUpdateDesc{
 					Outputs: []*fwdpb.ActionDesc{
-						fwdconfig.Action(fwdconfig.LookupAction(sink.IP2MeTable)).Build(),
+						fwdconfig.Action(fwdconfig.LookupAction(cpusink.IP2MeTable)).Build(),
 						fwdconfig.Action(fwdconfig.LookupAction(hostifTable)).Build(),
 					},
 				},

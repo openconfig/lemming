@@ -1,9 +1,9 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
-    name = "sink",
+    name = "cpusink",
     srcs = ["cpusink.go"],
-    importpath = "github.com/openconfig/lemming/dataplane/standalone/cpusink/sink",
+    importpath = "github.com/openconfig/lemming/dataplane/standalone/packetio/cpusink",
     visibility = ["//visibility:public"],
     deps = [
         "//dataplane/forwarding/fwdconfig",

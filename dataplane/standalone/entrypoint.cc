@@ -119,7 +119,7 @@
 #include "dataplane/standalone/sai/virtual_router.h"
 #include "dataplane/standalone/sai/vlan.h"
 #include "dataplane/standalone/sai/wred.h"
-#include "dataplane/standalone/cpusink/cpusink.h"
+#include "dataplane/standalone/packetio/packetio.h"
 
 extern "C" {
 #include "experimental/saiextensions.h"

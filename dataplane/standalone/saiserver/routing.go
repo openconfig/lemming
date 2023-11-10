@@ -25,7 +25,7 @@ import (
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
 	"github.com/openconfig/lemming/dataplane/internal/engine"
-	"github.com/openconfig/lemming/dataplane/standalone/cpusink/sink"
+	"github.com/openconfig/lemming/dataplane/standalone/packetio/cpusink"
 	"github.com/openconfig/lemming/dataplane/standalone/saiserver/attrmgr"
 
 	log "github.com/golang/glog"
@@ -263,8 +263,9 @@ func (r *route) CreateRouteEntry(ctx context.Context, req *saipb.CreateRouteEntr
 								req.GetEntry().GetDestination().GetMask()),
 						)),
 						fwdconfig.Action(fwdconfig.TransmitAction(fmt.Sprint(req.GetNextHopId()))),
-						fwdconfig.Action(fwdconfig.LookupAction(sink.IP2MeTable))).
+						fwdconfig.Action(fwdconfig.LookupAction(cpusink.IP2MeTable))).
 					Build())
+				return &saipb.CreateRouteEntryResponse{}, nil
 			}
 
 			rReq.Route.Hop = &dpb.Route_PortId{PortId: fmt.Sprint(req.GetNextHopId())}

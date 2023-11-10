@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// The sink package subscribes to a forwarding context and writes packets to genetlink interfaces.
+// The cpusink package subscribes to a forwarding context and writes packets to genetlink interfaces.
 // It also configures the forwarding context with the IPs assigned to specific netdev interfaces.
-package sink
+package cpusink
 
 import (
 	"context"
@@ -34,22 +34,22 @@ const (
 	IP2MeTable = "ip2me"
 )
 
-// CPUSink is a CPU port client for a forwarding context.
-type CPUSink struct {
+// Sink is a CPU port client for a forwarding context.
+type Sink struct {
 	client       fwdpb.ForwardingClient
 	ethDevToPort map[string]string
 }
 
-func New(client fwdpb.ForwardingClient) *CPUSink {
-	return &CPUSink{
+func New(client fwdpb.ForwardingClient) *Sink {
+	return &Sink{
 		client:       client,
 		ethDevToPort: make(map[string]string),
 	}
 }
 
 // ReceivePackets from packets from the CPU port and sends them to the correct ports.
-func (cpuSink *CPUSink) ReceivePackets(ctx context.Context) error {
-	subClient, err := cpuSink.client.PacketSinkSubscribe(ctx, &fwdpb.PacketSinkRequest{ContextId: &fwdpb.ContextId{Id: contextID}})
+func (sink *Sink) ReceivePackets(ctx context.Context) error {
+	subClient, err := sink.client.PacketSinkSubscribe(ctx, &fwdpb.PacketSinkRequest{ContextId: &fwdpb.ContextId{Id: contextID}})
 	if err != nil {
 		return err
 	}
@@ -75,7 +75,7 @@ func (cpuSink *CPUSink) ReceivePackets(ctx context.Context) error {
 				if name == "" {
 					name = desc.GetTap().GetDeviceName()
 				}
-				cpuSink.ethDevToPort[name] = desc.PortId.ObjectId.Id
+				sink.ethDevToPort[name] = desc.PortId.ObjectId.Id
 			}
 
 		case *fwdpb.PacketSinkResponse_Packet:
@@ -92,7 +92,7 @@ func (cpuSink *CPUSink) ReceivePackets(ctx context.Context) error {
 
 // HandleIPUpdates subscribe to netlink to get the IP address of the interfaces
 // and updates the forwarding context with the addresses in the ip2me table.
-func (cpuSink *CPUSink) HandleIPUpdates(ctx context.Context) error {
+func (sink *Sink) HandleIPUpdates(ctx context.Context) error {
 	updCh := make(chan netlink.AddrUpdate)
 	doneCh := make(chan struct{})
 
@@ -111,7 +111,7 @@ func (cpuSink *CPUSink) HandleIPUpdates(ctx context.Context) error {
 				if ip == nil {
 					ip = upd.LinkAddress.IP.To16()
 				}
-				if _, ok := cpuSink.ethDevToPort[l.Attrs().Name]; !ok {
+				if _, ok := sink.ethDevToPort[l.Attrs().Name]; !ok {
 					continue
 				}
 				entry := fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(ip)))
@@ -120,14 +120,14 @@ func (cpuSink *CPUSink) HandleIPUpdates(ctx context.Context) error {
 					log.Infof("added new ip %s to device %s", upd.LinkAddress.IP.String(), l.Attrs().Name)
 					ipToDevName[upd.LinkAddress.IP.String()] = l.Attrs().Name
 
-					_, err := cpuSink.client.TableEntryAdd(ctx, fwdconfig.TableEntryAddRequest(contextID, IP2MeTable).
-						AppendEntry(entry, fwdconfig.Action(fwdconfig.TransmitAction(cpuSink.ethDevToPort[l.Attrs().Name]))).Build())
+					_, err := sink.client.TableEntryAdd(ctx, fwdconfig.TableEntryAddRequest(contextID, IP2MeTable).
+						AppendEntry(entry, fwdconfig.Action(fwdconfig.TransmitAction(sink.ethDevToPort[l.Attrs().Name]))).Build())
 					if err != nil {
 						log.Warningf("failed to get link: %v", err)
 						continue
 					}
 				} else {
-					_, err := cpuSink.client.TableEntryRemove(ctx, &fwdpb.TableEntryRemoveRequest{
+					_, err := sink.client.TableEntryRemove(ctx, &fwdpb.TableEntryRemoveRequest{
 						ContextId: &fwdpb.ContextId{Id: contextID},
 						TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: IP2MeTable}},
 						EntryDesc: entry.Build(),
