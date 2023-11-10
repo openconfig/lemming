@@ -211,7 +211,7 @@ func TestSetPortAttribute(t *testing.T) {
 		wantReq: &fwdpb.PortStateRequest{
 			PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: "1"}},
 			Operation: &fwdpb.PortInfo{AdminStatus: fwdpb.PortState_PORT_STATE_DISABLED_DOWN},
-			ContextId: &fwdpb.ContextId{},
+			ContextId: &fwdpb.ContextId{Id: "foo"},
 		},
 		wantAttr: &saipb.PortAttribute{
 			OperStatus: saipb.PortOperStatus_PORT_OPER_STATUS_DOWN.Enum(),
