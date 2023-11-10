@@ -21,7 +21,7 @@ require (
 	github.com/openconfig/gribi v1.0.0
 	github.com/openconfig/gribigo v0.0.0-20231018021145-a1124db3ca83
 	github.com/openconfig/kne v0.1.14
-	github.com/openconfig/ondatra v0.4.0
+	github.com/openconfig/ondatra v0.4.3
 	github.com/openconfig/ygnmi v0.10.0
 	github.com/openconfig/ygot v0.29.12
 	github.com/osrg/gobgp/v3 v3.20.0
