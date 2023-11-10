@@ -24,21 +24,110 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
-	saipb "github.com/openconfig/lemming/dataplane/standalone/proto"
+	"github.com/openconfig/lemming/dataplane/internal/engine"
+	"github.com/openconfig/lemming/dataplane/standalone/cpusink/sink"
 	"github.com/openconfig/lemming/dataplane/standalone/saiserver/attrmgr"
+
+	saipb "github.com/openconfig/lemming/dataplane/standalone/proto"
 	dpb "github.com/openconfig/lemming/proto/dataplane"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
-func newHostif(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server) *hostif {
-	p := &hostif{
+func newHostif(ctx context.Context, mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server) (*hostif, error) {
+	hostif := &hostif{
 		mgr:              mgr,
 		dataplane:        dataplane,
 		trapIDToHostifID: map[uint64]uint64{},
 		groupIDToQueue:   map[uint64]uint32{},
 	}
-	saipb.RegisterHostifServer(s, p)
-	return p
+
+	// Setup the packet io tables. A packet is punted by setting the output port to the CPU port.
+	// There a two places where packets can be punted:
+	//   1. pre-fib: the trap table contains rules that may punt the packets.
+	//   2. fib: "IP2ME" routes, the fib contains routes for the IPs assigned to the interface, these routes have the next hop as the CPU port.
+	// Once a packet is sent to the CPU port, it must be matches to a host interfaces:
+	//   1. ip2me: a table maps IP DST to hostif port. (populated by the CPU port).
+	//   2. hostif table: a table the maps TRAP IP to hostif port. (trap id is set by the ACL actions).
+	//   3. default/wildcard: each hostif is created with a corresponding port, use that mapping to determine correct hostif.
+	// Once the output port is determined, based on the port type:
+	//   1. For genetlink: send the packets using the CPU port gRPC connection.
+	//   2. For netdev (lucius kernel/tap): write the packets directly to the hostif.
+
+	// Create the trap table and add it to the end of ingress stage.
+	_, err := hostif.dataplane.TableCreate(ctx, &fwdpb.TableCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: hostif.dataplane.ID()},
+		Desc: &fwdpb.TableDesc{
+			TableType: fwdpb.TableType_TABLE_TYPE_FLOW,
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: trapTableID}},
+			Table: &fwdpb.TableDesc_Flow{
+				Flow: &fwdpb.FlowTableDesc{
+					BankCount: 1,
+				},
+			},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	_, err = hostif.dataplane.TableEntryAdd(ctx, fwdconfig.TableEntryAddRequest(hostif.dataplane.ID(), engine.IngressActionTable).
+		AppendEntry(
+			fwdconfig.EntryDesc(fwdconfig.ActionEntry("trap", fwdpb.ActionEntryDesc_INSERT_METHOD_APPEND)),
+			fwdconfig.Action(fwdconfig.LookupAction(trapTableID))).
+		Build(),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create the IP2MeTable and hostif tables, these map the packet to real hostif port.
+	// These tables are set as output actions of the CPU port.
+	_, err = hostif.dataplane.TableCreate(ctx, &fwdpb.TableCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: hostif.dataplane.ID()},
+		Desc: &fwdpb.TableDesc{
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: sink.IP2MeTable}},
+			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
+			Table: &fwdpb.TableDesc_Exact{
+				Exact: &fwdpb.ExactTableDesc{
+					FieldIds: []*fwdpb.PacketFieldId{{
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST,
+						},
+					}},
+				},
+			},
+			Actions: []*fwdpb.ActionDesc{{
+				ActionType: fwdpb.ActionType_ACTION_TYPE_CONTINUE,
+			}},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = hostif.dataplane.TableCreate(ctx, &fwdpb.TableCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: hostif.dataplane.ID()},
+		Desc: &fwdpb.TableDesc{
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: hostifTable}},
+			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
+			Table: &fwdpb.TableDesc_Exact{
+				Exact: &fwdpb.ExactTableDesc{
+					FieldIds: []*fwdpb.PacketFieldId{{
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TRAP_ID,
+						},
+					}},
+				},
+			},
+			Actions: []*fwdpb.ActionDesc{{
+				ActionType: fwdpb.ActionType_ACTION_TYPE_SWAP_OUTPUT_INTERNAL_EXTERNAL,
+			}},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	saipb.RegisterHostifServer(s, hostif)
+	return hostif, nil
 }
 
 type hostif struct {
@@ -242,10 +331,23 @@ func (hostif *hostif) CreateHostifUserDefinedTrap(_ context.Context, req *saipb.
 	return &saipb.CreateHostifUserDefinedTrapResponse{Oid: hostif.mgr.NextID()}, nil
 }
 
-func (hostif *hostif) CreateHostifTableEntry(_ context.Context, req *saipb.CreateHostifTableEntryRequest) (*saipb.CreateHostifTableEntryResponse, error) {
+const (
+	hostifTable = "hostiftable"
+)
+
+func (hostif *hostif) CreateHostifTableEntry(ctx context.Context, req *saipb.CreateHostifTableEntryRequest) (*saipb.CreateHostifTableEntryResponse, error) {
 	switch entryType := req.GetType(); entryType {
 	case saipb.HostifTableEntryType_HOSTIF_TABLE_ENTRY_TYPE_TRAP_ID:
 		hostif.trapIDToHostifID[req.GetTrapId()] = req.GetHostIf()
+		_, err := hostif.dataplane.TableEntryAdd(ctx, fwdconfig.TableEntryAddRequest(hostif.dataplane.ID(), hostifTable).
+			AppendEntry(
+				fwdconfig.EntryDesc(fwdconfig.ExactEntry(
+					fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TRAP_ID).WithUint64(req.GetTrapId()))),
+				fwdconfig.Action(fwdconfig.TransmitAction(fmt.Sprint(req.GetHostIf())))).
+			Build())
+		if err != nil {
+			return nil, err
+		}
 	case saipb.HostifTableEntryType_HOSTIF_TABLE_ENTRY_TYPE_WILDCARD:
 		hostif.trapIDToHostifID[req.GetTrapId()] = wildcardPortID
 	default:

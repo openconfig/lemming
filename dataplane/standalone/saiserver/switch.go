@@ -69,9 +69,15 @@ type switchDataplaneAPI interface {
 	ObjectCounters(context.Context, *fwdpb.ObjectCountersRequest) (*fwdpb.ObjectCountersReply, error)
 	Context() (*fwdcontext.Context, error)
 	PortCreate(context.Context, *fwdpb.PortCreateRequest) (*fwdpb.PortCreateReply, error)
+	PortUpdate(context.Context, *fwdpb.PortUpdateRequest) (*fwdpb.PortUpdateReply, error)
 }
 
-func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server) *saiSwitch {
+func newSwitch(ctx context.Context, mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server) (*saiSwitch, error) {
+	hostif, err := newHostif(ctx, mgr, engine, s)
+	if err != nil {
+		return nil, err
+	}
+
 	sw := &saiSwitch{
 		dataplane:       engine,
 		acl:             newACL(mgr, engine, s),
@@ -80,7 +86,7 @@ func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server) 
 		stp:             &stp{},
 		vr:              &virtualRouter{},
 		bridge:          newBridge(mgr, engine, s),
-		hostif:          newHostif(mgr, engine, s),
+		hostif:          hostif,
 		hash:            &hash{},
 		neighbor:        newNeighbor(mgr, engine, s),
 		nextHopGroup:    newNextHopGroup(mgr, engine, s),
@@ -93,7 +99,7 @@ func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server) 
 	saipb.RegisterStpServer(s, sw.stp)
 	saipb.RegisterVirtualRouterServer(s, sw.vr)
 	saipb.RegisterHashServer(s, sw.hash)
-	return sw
+	return sw, nil
 }
 
 // CreateSwitch a creates a new switch and populates its default values.
@@ -128,22 +134,6 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 	}
 	brResp, err := attrmgr.InvokeAndSave(ctx, sw.mgr, sw.bridge.CreateBridge, &saipb.CreateBridgeRequest{
 		Switch: swID,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	_, err = sw.dataplane.TableCreate(ctx, &fwdpb.TableCreateRequest{
-		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
-		Desc: &fwdpb.TableDesc{
-			TableType: fwdpb.TableType_TABLE_TYPE_FLOW,
-			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: trapTableID}},
-			Table: &fwdpb.TableDesc_Flow{
-				Flow: &fwdpb.FlowTableDesc{
-					BankCount: 1,
-				},
-			},
-		},
 	})
 	if err != nil {
 		return nil, err

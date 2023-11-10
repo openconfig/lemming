@@ -234,9 +234,15 @@ func (s *Server) Initialize(ctx context.Context, _ *saipb.InitializeRequest) (*s
 }
 
 func New(mgr *attrmgr.AttrMgr, s *grpc.Server) (*Server, error) {
-	e, err := engine.New(context.Background())
+	ctx := context.Background()
+	e, err := engine.New(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed create engine: %v", err)
+	}
+
+	sw, err := newSwitch(ctx, mgr, e, s)
+	if err != nil {
+		return nil, err
 	}
 
 	srv := &Server{
@@ -269,7 +275,7 @@ func New(mgr *attrmgr.AttrMgr, s *grpc.Server) (*Server, error) {
 		schedulerGroup: &schedulerGroup{},
 		scheduler:      &scheduler{},
 		srv6:           &srv6{},
-		saiSwitch:      newSwitch(mgr, e, s),
+		saiSwitch:      sw,
 		systemPort:     &systemPort{},
 		tam:            &tam{},
 		tunnel:         &tunnel{},

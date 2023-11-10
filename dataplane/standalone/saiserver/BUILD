@@ -16,6 +16,7 @@ go_library(
         "//dataplane/forwarding/fwdconfig",
         "//dataplane/forwarding/infra/fwdcontext",
         "//dataplane/internal/engine",
+        "//dataplane/standalone/cpusink/sink",
         "//dataplane/standalone/proto:sai",
         "//dataplane/standalone/saiserver/attrmgr",
         "//proto/dataplane",

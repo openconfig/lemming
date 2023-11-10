@@ -93,8 +93,8 @@ type ExactEntryBuilder struct {
 	fields []*PacketFieldBytesBuilder
 }
 
-// ExtactEntry creates a new exact entry builder.
-func ExtactEntry(fields ...*PacketFieldBytesBuilder) *ExactEntryBuilder {
+// ExactEntry creates a new exact entry builder.
+func ExactEntry(fields ...*PacketFieldBytesBuilder) *ExactEntryBuilder {
 	return &ExactEntryBuilder{
 		fields: fields,
 	}
@@ -108,6 +108,54 @@ func (eeb ExactEntryBuilder) set(ed *fwdpb.EntryDesc) {
 
 	ed.Entry = &fwdpb.EntryDesc_Exact{
 		Exact: exact,
+	}
+}
+
+// PrefixEntryBuilder builds prefix table entries.
+type PrefixEntryBuilder struct {
+	fields []*PacketFieldMaskedBytesBuilder
+}
+
+// PrefixEntry creates a new prefix entry builder.
+func PrefixEntry(fields ...*PacketFieldMaskedBytesBuilder) *PrefixEntryBuilder {
+	return &PrefixEntryBuilder{
+		fields: fields,
+	}
+}
+
+func (eeb PrefixEntryBuilder) set(ed *fwdpb.EntryDesc) {
+	prefix := &fwdpb.PrefixEntryDesc{}
+	for _, b := range eeb.fields {
+		prefix.Fields = append(prefix.Fields, b.Build())
+	}
+
+	ed.Entry = &fwdpb.EntryDesc_Prefix{
+		Prefix: prefix,
+	}
+}
+
+// ActionEntryBuilder builds action table entries.
+type ActionEntryBuilder struct {
+	id           string
+	insertMethod fwdpb.ActionEntryDesc_InsertMethod
+}
+
+// ActionEntry creates a new action entry builder.
+func ActionEntry(id string, insertMethod fwdpb.ActionEntryDesc_InsertMethod) *ActionEntryBuilder {
+	return &ActionEntryBuilder{
+		id:           id,
+		insertMethod: insertMethod,
+	}
+}
+
+func (b ActionEntryBuilder) set(ed *fwdpb.EntryDesc) {
+	action := &fwdpb.ActionEntryDesc{
+		Id:           b.id,
+		InsertMethod: b.insertMethod,
+	}
+
+	ed.Entry = &fwdpb.EntryDesc_Action{
+		Action: action,
 	}
 }
 
