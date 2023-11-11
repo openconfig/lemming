@@ -23,12 +23,16 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
+	"github.com/openconfig/lemming/dataplane/internal/engine"
+	"github.com/openconfig/lemming/dataplane/standalone/packetio/cpusink"
 	"github.com/openconfig/lemming/dataplane/standalone/saiserver/attrmgr"
 
 	log "github.com/golang/glog"
 
 	saipb "github.com/openconfig/lemming/dataplane/standalone/proto"
 	dpb "github.com/openconfig/lemming/proto/dataplane"
+	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
 type neighbor struct {
@@ -238,6 +242,32 @@ func (r *route) CreateRouteEntry(ctx context.Context, req *saipb.CreateRouteEntr
 		case saipb.ObjectType_OBJECT_TYPE_ROUTER_INTERFACE:
 			rReq.Route.Hop = &dpb.Route_InterfaceId{InterfaceId: fmt.Sprint(req.GetNextHopId())}
 		case saipb.ObjectType_OBJECT_TYPE_PORT:
+			attrReq := &saipb.GetSwitchAttributeRequest{
+				Oid:      req.GetEntry().GetSwitchId(),
+				AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_CPU_PORT},
+			}
+			resp := &saipb.GetSwitchAttributeResponse{}
+			if err := r.mgr.PopulateAttributes(attrReq, resp); err != nil {
+				return nil, err
+			}
+			if req.GetNextHopId() == *resp.Attr.CpuPort {
+				tableID := engine.FIBV6Table
+				if len(req.GetEntry().GetDestination().GetAddr()) == 4 {
+					tableID = engine.FIBV4Table
+				}
+				r.dataplane.TableEntryAdd(ctx, fwdconfig.TableEntryAddRequest(r.dataplane.ID(), tableID).
+					AppendEntry(
+						fwdconfig.EntryDesc(fwdconfig.PrefixEntry(
+							fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(
+								req.GetEntry().GetDestination().GetAddr(),
+								req.GetEntry().GetDestination().GetMask()),
+						)),
+						fwdconfig.Action(fwdconfig.TransmitAction(fmt.Sprint(req.GetNextHopId()))),
+						fwdconfig.Action(fwdconfig.LookupAction(cpusink.IP2MeTable))).
+					Build())
+				return &saipb.CreateRouteEntryResponse{}, nil
+			}
+
 			rReq.Route.Hop = &dpb.Route_PortId{PortId: fmt.Sprint(req.GetNextHopId())}
 		default:
 			return nil, status.Errorf(codes.InvalidArgument, "unknown next hop type: %v", nextType)

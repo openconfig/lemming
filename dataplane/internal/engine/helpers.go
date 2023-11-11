@@ -85,7 +85,7 @@ func createFIBSelector(ctx context.Context, id string, c fwdpb.ForwardingServer)
 				ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
 				Action: &fwdpb.ActionDesc_Lookup{
 					Lookup: &fwdpb.LookupActionDesc{
-						TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: fibV4Table}},
+						TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: FIBV4Table}},
 					},
 				},
 			}},
@@ -104,7 +104,7 @@ func createFIBSelector(ctx context.Context, id string, c fwdpb.ForwardingServer)
 				ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
 				Action: &fwdpb.ActionDesc_Lookup{
 					Lookup: &fwdpb.LookupActionDesc{
-						TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: fibV6Table}},
+						TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: FIBV6Table}},
 					},
 				},
 			}},

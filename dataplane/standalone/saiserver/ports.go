@@ -22,6 +22,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
+	"github.com/openconfig/lemming/dataplane/standalone/packetio/cpusink"
 	"github.com/openconfig/lemming/dataplane/standalone/saiserver/attrmgr"
 
 	log "github.com/golang/glog"
@@ -31,14 +33,7 @@ import (
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
-type portDataplaneAPI interface {
-	ID() string
-	CreatePort(ctx context.Context, req *dpb.CreatePortRequest) (*dpb.CreatePortResponse, error)
-	PortState(ctx context.Context, req *fwdpb.PortStateRequest) (*fwdpb.PortStateReply, error)
-	ObjectCounters(context.Context, *fwdpb.ObjectCountersRequest) (*fwdpb.ObjectCountersReply, error)
-}
-
-func newPort(mgr *attrmgr.AttrMgr, dataplane portDataplaneAPI, s *grpc.Server) *port {
+func newPort(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server) *port {
 	p := &port{
 		mgr:       mgr,
 		dataplane: dataplane,
@@ -52,7 +47,7 @@ func newPort(mgr *attrmgr.AttrMgr, dataplane portDataplaneAPI, s *grpc.Server) *
 type port struct {
 	saipb.UnimplementedPortServer
 	mgr       *attrmgr.AttrMgr
-	dataplane portDataplaneAPI
+	dataplane switchDataplaneAPI
 	nextEth   int
 	portToEth map[uint64]string
 }
@@ -156,10 +151,32 @@ func (port *port) CreatePort(ctx context.Context, _ *saipb.CreatePortRequest) (*
 func (port *port) createCPUPort(ctx context.Context) (uint64, error) {
 	id := port.mgr.NextID()
 
-	_, err := port.dataplane.CreatePort(ctx, &dpb.CreatePortRequest{
-		Id:       fmt.Sprint(id),
-		Type:     fwdpb.PortType_PORT_TYPE_CPU_PORT,
-		Location: dpb.PortLocation_PORT_LOCATION_CPU,
+	_, err := port.dataplane.PortCreate(ctx, &fwdpb.PortCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: port.dataplane.ID()},
+		Port: &fwdpb.PortDesc{
+			PortType: fwdpb.PortType_PORT_TYPE_CPU_PORT,
+			PortId:   &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)}},
+			Port: &fwdpb.PortDesc_Cpu{
+				Cpu: &fwdpb.CPUPortDesc{},
+			},
+		},
+	})
+	if err != nil {
+		return 0, err
+	}
+	_, err = port.dataplane.PortUpdate(ctx, &fwdpb.PortUpdateRequest{
+		ContextId: &fwdpb.ContextId{Id: port.dataplane.ID()},
+		PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)}},
+		Update: &fwdpb.PortUpdateDesc{
+			Port: &fwdpb.PortUpdateDesc_Cpu{
+				Cpu: &fwdpb.CPUPortUpdateDesc{
+					Outputs: []*fwdpb.ActionDesc{
+						fwdconfig.Action(fwdconfig.LookupAction(cpusink.IP2MeTable)).Build(),
+						fwdconfig.Action(fwdconfig.LookupAction(hostifTable)).Build(),
+					},
+				},
+			},
+		},
 	})
 	if err != nil {
 		return 0, err

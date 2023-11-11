@@ -41,6 +41,7 @@ type Metadata struct {
 	nextHopIP      []byte
 	nextHopID      []byte         // ID of the next hop.
 	nextHopGroupID []byte         // ID of the next hop group.
+	trapID         []byte         // ID of the trap rule that was applies to this packet.
 	desc           *protocol.Desc // Protocol descriptor.
 }
 
@@ -111,6 +112,8 @@ func (m *Metadata) Field(id fwdpacket.FieldID) ([]byte, error) {
 		return m.nextHopGroupID, nil
 	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_ID:
 		return m.nextHopID, nil
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TRAP_ID:
+		return m.trapID, nil
 
 	default:
 		return nil, fmt.Errorf("metadata: Field %v failed, unsupported field", id)
@@ -201,6 +204,9 @@ func (m *Metadata) updateSet(id fwdpacket.FieldID, arg []byte) (bool, error) {
 		return true, nil
 	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_GROUP_ID:
 		m.nextHopGroupID = arg
+		return true, nil
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TRAP_ID:
+		m.trapID = arg
 		return true, nil
 	default:
 		return false, fmt.Errorf("metadata: UpdateField failed, set unsupported for field %v", id)

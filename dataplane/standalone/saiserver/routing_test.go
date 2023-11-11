@@ -252,6 +252,7 @@ func TestCreateRouteEntry(t *testing.T) {
 					Addr: []byte{127, 0, 0, 1},
 					Mask: []byte{255, 255, 255, 255},
 				},
+				SwitchId: 1,
 			},
 			PacketAction: saipb.PacketAction_PACKET_ACTION_DROP.Enum(),
 		},
@@ -277,6 +278,7 @@ func TestCreateRouteEntry(t *testing.T) {
 					Addr: []byte{127, 0, 0, 1},
 					Mask: []byte{255, 255, 255, 255},
 				},
+				SwitchId: 1,
 			},
 			PacketAction: saipb.PacketAction_PACKET_ACTION_TRANSIT.Enum(),
 			NextHopId:    proto.Uint64(100),
@@ -304,6 +306,9 @@ func TestCreateRouteEntry(t *testing.T) {
 			for k, v := range tt.types {
 				mgr.SetType(k, v)
 			}
+			mgr.StoreAttributes(1, &saipb.SwitchAttribute{
+				CpuPort: proto.Uint64(10),
+			})
 			_, gotErr := c.CreateRouteEntry(context.TODO(), tt.req)
 			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
 				t.Fatalf("CreateRouteEntry() unexpected err: %s", diff)

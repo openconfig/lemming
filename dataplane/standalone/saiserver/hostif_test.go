@@ -146,7 +146,7 @@ func TestSetHostifAttribute(t *testing.T) {
 
 func newTestHostif(t testing.TB, api switchDataplaneAPI) (saipb.HostifClient, *attrmgr.AttrMgr, func()) {
 	conn, mgr, stopFn := newTestServer(t, func(mgr *attrmgr.AttrMgr, srv *grpc.Server) {
-		newHostif(mgr, api, srv)
+		newHostif(context.Background(), mgr, api, srv)
 	})
 	return saipb.NewHostifClient(conn), mgr, stopFn
 }

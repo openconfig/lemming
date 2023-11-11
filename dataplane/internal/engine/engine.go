@@ -38,8 +38,8 @@ import (
 )
 
 const (
-	fibV4Table            = "fib-v4"
-	fibV6Table            = "fib-v6"
+	FIBV4Table            = "fib-v4"
+	FIBV6Table            = "fib-v6"
 	SRCMACTable           = "port-mac"
 	fibSelectorTable      = "fib-selector"
 	neighborTable         = "neighbor"
@@ -143,7 +143,7 @@ func (e *Engine) setupTables(ctx context.Context) error {
 		ContextId: &fwdpb.ContextId{Id: e.id},
 		Desc: &fwdpb.TableDesc{
 			TableType: fwdpb.TableType_TABLE_TYPE_PREFIX,
-			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: fibV4Table}},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: FIBV4Table}},
 			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_DROP}},
 			Table: &fwdpb.TableDesc_Prefix{
 				Prefix: &fwdpb.PrefixTableDesc{
@@ -167,7 +167,7 @@ func (e *Engine) setupTables(ctx context.Context) error {
 		ContextId: &fwdpb.ContextId{Id: e.id},
 		Desc: &fwdpb.TableDesc{
 			TableType: fwdpb.TableType_TABLE_TYPE_PREFIX,
-			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: fibV6Table}},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: FIBV6Table}},
 			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_DROP}},
 			Table: &fwdpb.TableDesc_Prefix{
 				Prefix: &fwdpb.PrefixTableDesc{
@@ -693,9 +693,9 @@ func (e *Engine) AddIPRoute(ctx context.Context, req *dpb.AddIPRouteRequest) (*d
 	if err != nil {
 		return nil, err
 	}
-	fib := fibV6Table
+	fib := FIBV6Table
 	if isIPv4 {
-		fib = fibV4Table
+		fib = FIBV4Table
 	}
 
 	entry := &fwdpb.TableEntryAddRequest{
@@ -736,9 +736,9 @@ func (e *Engine) RemoveIPRoute(ctx context.Context, req *dpb.RemoveIPRouteReques
 	if err != nil {
 		return nil, err
 	}
-	fib := fibV6Table
+	fib := FIBV6Table
 	if isIPv4 {
-		fib = fibV4Table
+		fib = FIBV4Table
 	}
 	entry := &fwdpb.TableEntryRemoveRequest{
 		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: fib}},

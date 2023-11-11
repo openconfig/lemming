@@ -303,6 +303,10 @@ func (f *fakeSwitchDataplane) PortCreate(context.Context, *fwdpb.PortCreateReque
 	return nil, nil
 }
 
+func (f *fakeSwitchDataplane) PortUpdate(context.Context, *fwdpb.PortUpdateRequest) (*fwdpb.PortUpdateReply, error) {
+	return nil, nil
+}
+
 func newTestServer(t testing.TB, newSrvFn func(mgr *attrmgr.AttrMgr, srv *grpc.Server)) (grpc.ClientConnInterface, *attrmgr.AttrMgr, func()) {
 	t.Helper()
 	mgr := attrmgr.New()
@@ -328,7 +332,7 @@ func newTestServer(t testing.TB, newSrvFn func(mgr *attrmgr.AttrMgr, srv *grpc.S
 
 func newTestSwitch(t testing.TB, dplane switchDataplaneAPI) (saipb.SwitchClient, *attrmgr.AttrMgr, func()) {
 	conn, mgr, stopFn := newTestServer(t, func(mgr *attrmgr.AttrMgr, srv *grpc.Server) {
-		newSwitch(mgr, dplane, srv)
+		newSwitch(context.Background(), mgr, dplane, srv)
 	})
 	return saipb.NewSwitchClient(conn), mgr, stopFn
 }
