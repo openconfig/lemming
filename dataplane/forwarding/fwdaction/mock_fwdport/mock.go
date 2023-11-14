@@ -189,6 +189,20 @@ func (mr *MockPortMockRecorder) String() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "String", reflect.TypeOf((*MockPort)(nil).String))
 }
 
+// Type mocks base method.
+func (m *MockPort) Type() forwarding.PortType {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Type")
+	ret0, _ := ret[0].(forwarding.PortType)
+	return ret0
+}
+
+// Type indicates an expected call of Type.
+func (mr *MockPortMockRecorder) Type() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Type", reflect.TypeOf((*MockPort)(nil).Type))
+}
+
 // Update mocks base method.
 func (m *MockPort) Update(arg0 *forwarding.PortUpdateDesc) error {
 	m.ctrl.T.Helper()

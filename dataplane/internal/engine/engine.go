@@ -41,6 +41,7 @@ const (
 	FIBV4Table            = "fib-v4"
 	FIBV6Table            = "fib-v6"
 	SRCMACTable           = "port-mac"
+	IngressVRFTable       = "ingress-vrf"
 	fibSelectorTable      = "fib-selector"
 	neighborTable         = "neighbor"
 	nhgTable              = "nhg-table"
@@ -291,6 +292,27 @@ func (e *Engine) setupTables(ctx context.Context) error {
 	}
 	action.Desc.TableId.ObjectId.Id = EgressActionTable
 	if _, err := e.Server.TableCreate(ctx, action); err != nil {
+		return err
+	}
+
+	ingressVRF := &fwdpb.TableCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: e.id},
+		Desc: &fwdpb.TableDesc{
+			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: IngressVRFTable}},
+			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_CONTINUE}}, // TODO: Should this be drop?
+			Table: &fwdpb.TableDesc_Exact{
+				Exact: &fwdpb.ExactTableDesc{
+					FieldIds: []*fwdpb.PacketFieldId{{
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT,
+						},
+					}},
+				},
+			},
+		},
+	}
+	if _, err := e.Server.TableCreate(ctx, ingressVRF); err != nil {
 		return err
 	}
 
@@ -943,6 +965,7 @@ func (e *Engine) CreateExternalPort(ctx context.Context, t fwdpb.PortType, id, d
 					Inputs: []*fwdpb.ActionDesc{
 						fwdconfig.Action(fwdconfig.LookupAction(layer2PuntTable)).Build(), // Lookup in layer 2 table.
 						fwdconfig.Action(fwdconfig.LookupAction(layer3PuntTable)).Build(), // Lookup in layer 3 table.
+						fwdconfig.Action(fwdconfig.LookupAction(IngressVRFTable)).Build(),
 						fwdconfig.Action(fwdconfig.LookupAction(PreIngressActionTable)).Build(),
 						fwdconfig.Action(fwdconfig.DecapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET)).Build(), // Decap L2 header.
 						fwdconfig.Action(fwdconfig.LookupAction(IngressActionTable)).Build(),
@@ -1083,6 +1106,7 @@ func (e *Engine) AddInterface(ctx context.Context, req *dpb.AddInterfaceRequest)
 	e.ifaceToPortMu.Lock()
 	defer e.ifaceToPortMu.Unlock()
 
+	var portID string
 	switch req.GetType() {
 	case dpb.InterfaceType_INTERFACE_TYPE_AGGREGATE:
 		if nPorts := len(req.GetPortIds()); nPorts < 1 {
@@ -1117,25 +1141,41 @@ func (e *Engine) AddInterface(ctx context.Context, req *dpb.AddInterfaceRequest)
 				return nil, err
 			}
 		}
+		portID = req.GetId()
 	case dpb.InterfaceType_INTERFACE_TYPE_PORT:
 		if nPorts := len(req.GetPortIds()); nPorts != 1 {
 			return nil, fmt.Errorf("invalid number of ports got %v, expected 1", nPorts)
 		}
+		portID = req.GetPortIds()[0]
 		log.Infof("added interface id %s port id %s", req.GetId(), req.GetPortIds()[0])
 		log.Infof("added port src mac %x", req.GetMac())
 		e.ifaceToPort[req.GetId()] = req.GetPortIds()[0]
-		if err := e.UpdatePortSrcMAC(ctx, req.GetPortIds()[0], req.GetMac()); err != nil {
-			return nil, err
-		}
+
 	case dpb.InterfaceType_INTERFACE_TYPE_LOOPBACK: // TODO: this may need to handled differently if multiple loopbacks are created.
 		portID := fmt.Sprintf("%s-port", req.GetId())
 		if err := e.CreateExternalPort(ctx, fwdpb.PortType_PORT_TYPE_KERNEL, portID, "lo"); err != nil {
 			return nil, err
 		}
 		e.ifaceToPort[req.GetId()] = portID
+		return &dpb.AddInterfaceResponse{}, nil
 	default:
 		return nil, status.Errorf(codes.InvalidArgument, "interface type %T unrecongnized", req.GetType())
 	}
+
+	if err := e.UpdatePortSrcMAC(ctx, portID, req.GetMac()); err != nil {
+		return nil, err
+	}
+	e.idToNIDMu.RLock()
+	defer e.idToNIDMu.RUnlock()
+	_, err := e.TableEntryAdd(ctx, fwdconfig.TableEntryAddRequest(e.ID(), IngressVRFTable).
+		AppendEntry(
+			fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT).WithUint64(e.idToNID[portID]))),
+			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF).WithUint64Value(uint64(req.GetVrfId()))),
+		).Build())
+	if err != nil {
+		return nil, err
+	}
+
 	return &dpb.AddInterfaceResponse{}, nil
 }
 

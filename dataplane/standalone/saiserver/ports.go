@@ -171,8 +171,8 @@ func (port *port) createCPUPort(ctx context.Context) (uint64, error) {
 			Port: &fwdpb.PortUpdateDesc_Cpu{
 				Cpu: &fwdpb.CPUPortUpdateDesc{
 					Outputs: []*fwdpb.ActionDesc{
-						fwdconfig.Action(fwdconfig.LookupAction(cpusink.IP2MeTable)).Build(),
 						fwdconfig.Action(fwdconfig.LookupAction(hostifTable)).Build(),
+						fwdconfig.Action(fwdconfig.LookupAction(cpusink.IP2MeTable)).Build(),
 					},
 				},
 			},

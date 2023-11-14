@@ -240,11 +240,6 @@ func New(mgr *attrmgr.AttrMgr, s *grpc.Server) (*Server, error) {
 		return nil, fmt.Errorf("failed create engine: %v", err)
 	}
 
-	sw, err := newSwitch(ctx, mgr, e, s)
-	if err != nil {
-		return nil, err
-	}
-
 	srv := &Server{
 		mgr:            mgr,
 		engine:         e,
@@ -275,7 +270,7 @@ func New(mgr *attrmgr.AttrMgr, s *grpc.Server) (*Server, error) {
 		schedulerGroup: &schedulerGroup{},
 		scheduler:      &scheduler{},
 		srv6:           &srv6{},
-		saiSwitch:      sw,
+		saiSwitch:      newSwitch(mgr, e, s),
 		systemPort:     &systemPort{},
 		tam:            &tam{},
 		tunnel:         &tunnel{},

@@ -56,6 +56,10 @@ func (p *fakePort) String() string {
 	return desc
 }
 
+func (p *fakePort) Type() fwdpb.PortType {
+	return fwdpb.PortType_PORT_TYPE_FAKE
+}
+
 func (p *fakePort) Cleanup() {
 	p.input.Cleanup()
 	p.output.Cleanup()

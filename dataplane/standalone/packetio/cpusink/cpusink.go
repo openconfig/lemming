@@ -70,12 +70,14 @@ func (sink *Sink) ReceivePackets(ctx context.Context) error {
 					log.Errorf("failed to create port: %v", err)
 				}
 				ports[resp.Port.Port.PortId.ObjectId.Id] = p
+				log.Infof("add to new genetlink port: %v %v", portDesc.FamilyName, portDesc.GroupName)
 			case fwdpb.PortType_PORT_TYPE_KERNEL, fwdpb.PortType_PORT_TYPE_TAP:
 				name := desc.GetKernel().GetDeviceName()
 				if name == "" {
 					name = desc.GetTap().GetDeviceName()
 				}
 				sink.ethDevToPort[name] = desc.PortId.ObjectId.Id
+				log.Infof("add to new netdev port: %v", name)
 			}
 
 		case *fwdpb.PacketSinkResponse_Packet:
@@ -112,6 +114,7 @@ func (sink *Sink) HandleIPUpdates(ctx context.Context) error {
 					ip = upd.LinkAddress.IP.To16()
 				}
 				if _, ok := sink.ethDevToPort[l.Attrs().Name]; !ok {
+					log.Infof("skipping unknown port", l.Attrs().Name)
 					continue
 				}
 				entry := fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(ip)))
@@ -123,7 +126,7 @@ func (sink *Sink) HandleIPUpdates(ctx context.Context) error {
 					_, err := sink.client.TableEntryAdd(ctx, fwdconfig.TableEntryAddRequest(contextID, IP2MeTable).
 						AppendEntry(entry, fwdconfig.Action(fwdconfig.TransmitAction(sink.ethDevToPort[l.Attrs().Name]))).Build())
 					if err != nil {
-						log.Warningf("failed to get link: %v", err)
+						log.Warningf("failed to add route: %v", err)
 						continue
 					}
 				} else {
@@ -133,7 +136,7 @@ func (sink *Sink) HandleIPUpdates(ctx context.Context) error {
 						EntryDesc: entry.Build(),
 					})
 					if err != nil {
-						log.Warningf("failed to get link: %v", err)
+						log.Warningf("failed to remove route: %v", err)
 						continue
 					}
 					delete(ipToDevName, upd.LinkAddress.IP.String())

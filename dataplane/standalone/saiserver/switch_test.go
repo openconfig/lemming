@@ -296,7 +296,9 @@ func (f *fakeSwitchDataplane) ID() string {
 }
 
 func (f *fakeSwitchDataplane) Context() (*fwdcontext.Context, error) {
-	return nil, nil
+	ctx := fwdcontext.New("foo", "foo")
+	ctx.SetPacketSink(func(*fwdpb.PacketSinkResponse) error { return nil })
+	return ctx, nil
 }
 
 func (f *fakeSwitchDataplane) PortCreate(context.Context, *fwdpb.PortCreateRequest) (*fwdpb.PortCreateReply, error) {
@@ -332,7 +334,7 @@ func newTestServer(t testing.TB, newSrvFn func(mgr *attrmgr.AttrMgr, srv *grpc.S
 
 func newTestSwitch(t testing.TB, dplane switchDataplaneAPI) (saipb.SwitchClient, *attrmgr.AttrMgr, func()) {
 	conn, mgr, stopFn := newTestServer(t, func(mgr *attrmgr.AttrMgr, srv *grpc.Server) {
-		newSwitch(context.Background(), mgr, dplane, srv)
+		newSwitch(mgr, dplane, srv)
 	})
 	return saipb.NewSwitchClient(conn), mgr, stopFn
 }
