@@ -51,7 +51,7 @@ func createFIBSelector(ctx context.Context, id string, c fwdpb.ForwardingServer)
 		ContextId: &fwdpb.ContextId{Id: id},
 		Desc: &fwdpb.TableDesc{
 			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
-			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: fibSelectorTable}},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: FIBSelectorTable}},
 			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_DROP}},
 			Table: &fwdpb.TableDesc_Exact{
 				Exact: &fwdpb.ExactTableDesc{
@@ -67,7 +67,7 @@ func createFIBSelector(ctx context.Context, id string, c fwdpb.ForwardingServer)
 		ContextId: &fwdpb.ContextId{Id: id},
 		TableId: &fwdpb.TableId{
 			ObjectId: &fwdpb.ObjectId{
-				Id: fibSelectorTable,
+				Id: FIBSelectorTable,
 			},
 		},
 		Entries: []*fwdpb.TableEntryAddRequest_Entry{{

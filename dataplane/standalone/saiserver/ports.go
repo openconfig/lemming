@@ -23,13 +23,13 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
+	"github.com/openconfig/lemming/dataplane/internal/engine"
 	"github.com/openconfig/lemming/dataplane/standalone/packetio/cpusink"
 	"github.com/openconfig/lemming/dataplane/standalone/saiserver/attrmgr"
 
 	log "github.com/golang/glog"
 
 	saipb "github.com/openconfig/lemming/dataplane/standalone/proto"
-	dpb "github.com/openconfig/lemming/proto/dataplane"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
@@ -129,15 +129,50 @@ func (port *port) CreatePort(ctx context.Context, _ *saipb.CreatePortRequest) (*
 	}
 	port.portToEth[id] = dev
 
-	_, err := port.dataplane.CreatePort(ctx, &dpb.CreatePortRequest{
-		Id:   fmt.Sprint(id),
-		Type: fwdpb.PortType_PORT_TYPE_KERNEL,
-		Src: &dpb.CreatePortRequest_KernelDev{
-			KernelDev: dev,
+	fwdPort := &fwdpb.PortCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: port.dataplane.ID()},
+		Port: &fwdpb.PortDesc{
+			PortType: fwdpb.PortType_PORT_TYPE_KERNEL,
+			PortId: &fwdpb.PortId{
+				ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)},
+			},
+			Port: &fwdpb.PortDesc_Kernel{
+				Kernel: &fwdpb.KernelPortDesc{
+					DeviceName: dev,
+				},
+			},
 		},
-		Location: dpb.PortLocation_PORT_LOCATION_EXTERNAL,
-	})
+	}
+	_, err := port.dataplane.PortCreate(ctx, fwdPort)
 	if err != nil {
+		return nil, err
+	}
+	update := &fwdpb.PortUpdateRequest{
+		ContextId: &fwdpb.ContextId{Id: port.dataplane.ID()},
+		PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)}},
+		Update: &fwdpb.PortUpdateDesc{
+			Port: &fwdpb.PortUpdateDesc_Kernel{
+				Kernel: &fwdpb.KernelPortUpdateDesc{
+					Inputs: []*fwdpb.ActionDesc{
+						fwdconfig.Action(fwdconfig.LookupAction(engine.IngressVRFTable)).Build(),
+						fwdconfig.Action(fwdconfig.LookupAction(engine.PreIngressActionTable)).Build(),
+						fwdconfig.Action(fwdconfig.DecapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET)).Build(), // Decap L2 header.
+						fwdconfig.Action(fwdconfig.LookupAction(engine.IngressActionTable)).Build(),
+						fwdconfig.Action(fwdconfig.LookupAction(engine.FIBSelectorTable)).Build(),                       // Lookup in FIB.
+						fwdconfig.Action(fwdconfig.EncapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET)).Build(), // Decap L2 header.
+						fwdconfig.Action(fwdconfig.LookupAction(engine.NeighborTable)).Build(),                          // Lookup in the neighbor table.
+						fwdconfig.Action(fwdconfig.LookupAction(engine.EgressActionTable)).Build(),
+						{
+							ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
+						},
+					},
+					// update the src mac address with the configured port's mac address.
+					Outputs: []*fwdpb.ActionDesc{fwdconfig.Action(fwdconfig.LookupAction(engine.SRCMACTable)).Build()},
+				},
+			},
+		},
+	}
+	if _, err := port.dataplane.PortUpdate(ctx, update); err != nil {
 		return nil, err
 	}
 	attrs.OperStatus = saipb.PortOperStatus_PORT_OPER_STATUS_UP.Enum()

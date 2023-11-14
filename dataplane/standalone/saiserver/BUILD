@@ -13,6 +13,7 @@ go_library(
     importpath = "github.com/openconfig/lemming/dataplane/standalone/saiserver",
     visibility = ["//visibility:public"],
     deps = [
+        "//dataplane/forwarding/attributes",
         "//dataplane/forwarding/fwdconfig",
         "//dataplane/forwarding/infra/fwdcontext",
         "//dataplane/internal/engine",
@@ -42,6 +43,8 @@ go_test(
     embed = [":saiserver"],
     deps = [
         "//dataplane/forwarding/infra/fwdcontext",
+        "//dataplane/forwarding/infra/fwdobject",
+        "//dataplane/internal/engine",
         "//dataplane/standalone/proto:sai",
         "//dataplane/standalone/saiserver/attrmgr",
         "//proto/dataplane",

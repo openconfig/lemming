@@ -35,7 +35,9 @@ func TableEntryAddRequest(ctxID, tableID string) *TableEntryAddRequestBuilder {
 // AppendEntry adds an entry and the actions to the requests.
 func (b *TableEntryAddRequestBuilder) AppendEntry(entry *EntryDescBuilder, actions ...*ActionBuilder) *TableEntryAddRequestBuilder {
 	b.entries = append(b.entries, entry)
-	b.actions = append(b.actions, actions)
+	if len(actions) != 0 {
+		b.actions = append(b.actions, actions)
+	}
 	return b
 }
 
