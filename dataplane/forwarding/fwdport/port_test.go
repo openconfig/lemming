@@ -41,6 +41,9 @@ func (port *testPort) String() string {
 	return fmt.Sprintf("ID=%v, cleaned=%v, allocated=%v, ", port.id, port.cleaned, port.allocated)
 }
 
+// Type returns the type.
+func (testPort) Type() fwdpb.PortType { return fwdpb.PortType_PORT_TYPE_UNSPECIFIED }
+
 // Cleanup releases all held references (satisfies interface Composite).
 func (port *testPort) Cleanup() {
 	port.cleaned = true

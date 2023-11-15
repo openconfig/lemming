@@ -23,9 +23,9 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/openconfig/gnmi/errlist"
+
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
-	"github.com/openconfig/lemming/dataplane/internal/engine"
-	"github.com/openconfig/lemming/dataplane/standalone/packetio/cpusink"
 	"github.com/openconfig/lemming/dataplane/standalone/saiserver/attrmgr"
 
 	log "github.com/golang/glog"
@@ -251,20 +251,18 @@ func (r *route) CreateRouteEntry(ctx context.Context, req *saipb.CreateRouteEntr
 				return nil, err
 			}
 			if req.GetNextHopId() == *resp.Attr.CpuPort {
-				tableID := engine.FIBV6Table
-				if len(req.GetEntry().GetDestination().GetAddr()) == 4 {
-					tableID = engine.FIBV4Table
-				}
-				r.dataplane.TableEntryAdd(ctx, fwdconfig.TableEntryAddRequest(r.dataplane.ID(), tableID).
+				_, err := r.dataplane.TableEntryAdd(ctx, fwdconfig.TableEntryAddRequest(r.dataplane.ID(), trapTableID).
 					AppendEntry(
-						fwdconfig.EntryDesc(fwdconfig.PrefixEntry(
+						fwdconfig.EntryDesc(fwdconfig.FlowEntry(
 							fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(
 								req.GetEntry().GetDestination().GetAddr(),
 								req.GetEntry().GetDestination().GetMask()),
-						)),
-						fwdconfig.Action(fwdconfig.TransmitAction(fmt.Sprint(req.GetNextHopId()))),
-						fwdconfig.Action(fwdconfig.LookupAction(cpusink.IP2MeTable))).
+							fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF).WithUint64(req.GetEntry().GetVrId()))),
+						fwdconfig.Action(fwdconfig.TransmitAction(fmt.Sprint(req.GetNextHopId())).WithImmediate(true))).
 					Build())
+				if err != nil {
+					return nil, status.Errorf(codes.Internal, "failed to add next IP2ME route: %v", nextType)
+				}
 				return &saipb.CreateRouteEntryResponse{}, nil
 			}
 
@@ -282,15 +280,14 @@ func (r *route) CreateRouteEntry(ctx context.Context, req *saipb.CreateRouteEntr
 }
 
 func (r *route) CreateRouteEntries(ctx context.Context, re *saipb.CreateRouteEntriesRequest) (*saipb.CreateRouteEntriesResponse, error) {
+	var errs errlist.List
 	resp := &saipb.CreateRouteEntriesResponse{}
 	for _, req := range re.GetReqs() {
 		res, err := attrmgr.InvokeAndSave(ctx, r.mgr, r.CreateRouteEntry, req)
-		if err != nil {
-			return nil, err
-		}
+		errs.Add(err)
 		resp.Resps = append(resp.Resps, res)
 	}
-	return resp, nil
+	return resp, errs.Err()
 }
 
 type routerInterface struct {

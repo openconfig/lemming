@@ -67,6 +67,10 @@ func (p *tapPort) String() string {
 	return desc
 }
 
+func (p *tapPort) Type() fwdpb.PortType {
+	return fwdpb.PortType_PORT_TYPE_TAP
+}
+
 func (p *tapPort) Cleanup() {
 	p.input.Cleanup()
 	p.output.Cleanup()

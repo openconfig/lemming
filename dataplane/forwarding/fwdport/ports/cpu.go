@@ -49,6 +49,10 @@ func (p *cpuPort) String() string {
 	return desc
 }
 
+func (p *cpuPort) Type() fwdpb.PortType {
+	return fwdpb.PortType_PORT_TYPE_CPU_PORT
+}
+
 // Cleanup releases references held by the table and its entries.
 func (p *cpuPort) Cleanup() {
 	p.input.Cleanup()
@@ -84,9 +88,25 @@ func (p *cpuPort) Update(upd *fwdpb.PortUpdateDesc) error {
 
 // Write applies output actions and writes a packet to the cable.
 func (p *cpuPort) Write(packet fwdpacket.Packet) (fwdaction.State, error) {
-	if err := p.queue.Write(packet); err != nil {
+	// After the CPU packet is processed, the output port may change. Rerun the out
+
+	outPort, err := fwdport.OutputPort(packet, p.ctx)
+	if err != nil {
 		return fwdaction.DROP, err
 	}
+
+	// TODO: The types of ports are sent over gRPC should be probably be configurable.
+	if outPort.Type() == fwdpb.PortType_PORT_TYPE_GENETLINK || outPort.Type() == fwdpb.PortType_PORT_TYPE_CPU_PORT {
+		if err := p.queue.Write(packet); err != nil {
+			return fwdaction.DROP, err
+		}
+		return fwdaction.CONSUME, nil
+	}
+
+	if err := fwdport.Output(outPort, packet, fwdpb.PortAction_PORT_ACTION_OUTPUT, p.ctx); err != nil {
+		return fwdaction.DROP, err
+	}
+
 	return fwdaction.CONSUME, nil
 }
 

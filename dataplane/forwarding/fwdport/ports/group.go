@@ -117,6 +117,10 @@ func (p *portGroup) String() string {
 	return desc
 }
 
+func (p *portGroup) Type() fwdpb.PortType {
+	return fwdpb.PortType_PORT_TYPE_AGGREGATE_PORT
+}
+
 // Cleanup releases references held by the ports and its entries.
 func (p *portGroup) Cleanup() {
 	for _, m := range p.memberMap {

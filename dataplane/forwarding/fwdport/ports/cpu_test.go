@@ -95,6 +95,7 @@ func TestCpuWrite(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Unable to create ARP packet, err %v.", err)
 	}
+	fwdport.SetOutputPort(packet, port)
 
 	// Write the packet out of the cpu port and wait for it to be received
 	// by the packet sink.

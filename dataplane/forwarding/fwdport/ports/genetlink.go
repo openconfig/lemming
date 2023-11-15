@@ -47,6 +47,10 @@ func (p *genetlinkPort) String() string {
 	return desc
 }
 
+func (p *genetlinkPort) Type() fwdpb.PortType {
+	return fwdpb.PortType_PORT_TYPE_GENETLINK
+}
+
 func (p *genetlinkPort) Cleanup() {
 	p.input.Cleanup()
 	p.output.Cleanup()

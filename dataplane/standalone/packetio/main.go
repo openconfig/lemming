@@ -44,6 +44,7 @@ func StartSink() {
 			log.Fatal(err)
 		}
 	}()
+	log.Info("started sink")
 }
 
 func main() {
