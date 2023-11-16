@@ -17,17 +17,17 @@ require (
 	github.com/openconfig/gnmi v0.10.0
 	github.com/openconfig/gnoi v0.2.0
 	github.com/openconfig/gnsi v1.2.3
-	github.com/openconfig/goyang v1.4.2
+	github.com/openconfig/goyang v1.4.3
 	github.com/openconfig/gribi v1.0.0
-	github.com/openconfig/gribigo v0.0.0-20231018021145-a1124db3ca83
-	github.com/openconfig/kne v0.1.14
+	github.com/openconfig/gribigo v0.0.0-20231116195824-d8605fda9f33
+	github.com/openconfig/kne v0.1.15
 	github.com/openconfig/ondatra v0.4.3
-	github.com/openconfig/ygnmi v0.10.0
-	github.com/openconfig/ygot v0.29.12
+	github.com/openconfig/ygnmi v0.10.1
+	github.com/openconfig/ygot v0.29.16
 	github.com/osrg/gobgp/v3 v3.20.0
 	github.com/p4lang/p4runtime v1.4.0-rc.5.0.20220728214547-13f0d02a521e
 	github.com/sirupsen/logrus v1.9.3
-	github.com/spf13/cobra v1.7.0
+	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.17.0
 	github.com/stoewer/go-strcase v1.3.0
@@ -39,7 +39,7 @@ require (
 	google.golang.org/protobuf v1.31.0
 	k8s.io/apimachinery v0.26.3
 	k8s.io/client-go v0.26.3
-	k8s.io/klog/v2 v2.90.1
+	k8s.io/klog/v2 v2.100.1
 	modernc.org/cc/v4 v4.1.3
 )
 
@@ -94,7 +94,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/networkop/meshnet-cni v0.3.1-0.20230525201116-d7c306c635cf // indirect
-	github.com/open-traffic-generator/ixia-c-operator v0.3.4 // indirect
+	github.com/open-traffic-generator/ixia-c-operator v0.3.6 // indirect
 	github.com/openconfig/gnoigo v0.0.0-20231025173800-d65570111f09 // indirect
 	github.com/openconfig/gocloser v0.0.0-20220310182203-c6c950ed3b0b // indirect
 	github.com/openconfig/lemming/operator v0.2.0 // indirect
@@ -106,7 +106,7 @@ require (
 	github.com/rogpeppe/go-internal v1.9.0 // indirect
 	github.com/sagikazarmark/locafero v0.3.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
-	github.com/scrapli/scrapligo v1.1.7 // indirect
+	github.com/scrapli/scrapligo v1.1.11 // indirect
 	github.com/scrapli/scrapligocfg v1.0.0 // indirect
 	github.com/sirikothe/gotextfsm v1.0.1-0.20200816110946-6aa2cfd355e4 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
