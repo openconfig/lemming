@@ -380,8 +380,8 @@ def go_repositories():
     go_repository(
         name = "com_github_cpuguy83_go_md2man_v2",
         importpath = "github.com/cpuguy83/go-md2man/v2",
-        sum = "h1:p1EgwI/C7NhT0JmVkwCD2ZBK8j4aeHQX2pMHHBfMQ6w=",
-        version = "v2.0.2",
+        sum = "h1:qMCsGGgs+MAzDFyp9LpAe1Lqy/fY/qCovCm0qnXZOBM=",
+        version = "v2.0.3",
     )
     go_repository(
         name = "com_github_creack_pty",
@@ -1575,8 +1575,8 @@ def go_repositories():
     go_repository(
         name = "com_github_open_traffic_generator_ixia_c_operator",
         importpath = "github.com/open-traffic-generator/ixia-c-operator",
-        sum = "h1:xH0hLVWf2wuVUT9ovFdh/WwwBf1oGkBu5YEWD61igck=",
-        version = "v0.3.4",
+        sum = "h1:dablUs6FAToVDFaoIo2M+Z9UCa93KAwlj7HJqNwLwTQ=",
+        version = "v0.3.6",
     )
     go_repository(
         name = "com_github_open_traffic_generator_snappi_gosnappi",
@@ -1636,8 +1636,8 @@ def go_repositories():
     go_repository(
         name = "com_github_openconfig_goyang",
         importpath = "github.com/openconfig/goyang",
-        sum = "h1:inJe/BwVSBIhDN003MVKPUNeLDlLPJrvNV+ZsXdKNxc=",
-        version = "v1.4.2",
+        sum = "h1:9sr+l1vRbON0cMZxmogMhI8JiNqIf1uJoN8o4OdNqxI=",
+        version = "v1.4.3",
     )
     go_repository(
         name = "com_github_openconfig_gribi",
@@ -1649,8 +1649,8 @@ def go_repositories():
     go_repository(
         name = "com_github_openconfig_gribigo",
         importpath = "github.com/openconfig/gribigo",
-        sum = "h1:4H2eDRDWGYvbX8+cfHiEnB4tu0jhjZql7OSfLTXRdFY=",
-        version = "v0.0.0-20231018021145-a1124db3ca83",
+        sum = "h1:OW+MkCY7V8n29uAcmSg+gv9PI2Y+lebKoeT+VDyRAnk=",
+        version = "v0.0.0-20231116195824-d8605fda9f33",
     )
     go_repository(
         name = "com_github_openconfig_grpctunnel",
@@ -1661,8 +1661,8 @@ def go_repositories():
     go_repository(
         name = "com_github_openconfig_kne",
         importpath = "github.com/openconfig/kne",
-        sum = "h1:3xHy2bP+rr+2/2uFqliWXGjMPR7umO6mvFXh/TA2aJE=",
-        version = "v0.1.14",
+        sum = "h1:3ADQpUasGv23V53KlkLdaJrMWM6yyJ4EGtJvFyVzCUA=",
+        version = "v0.1.15",
     )
     go_repository(
         name = "com_github_openconfig_lemming_operator",
@@ -1688,15 +1688,15 @@ def go_repositories():
     go_repository(
         name = "com_github_openconfig_ygnmi",
         importpath = "github.com/openconfig/ygnmi",
-        sum = "h1:KZGbdfC8ErNL3nTj9mzmizbc0QlsZUAK60/UxyShv8M=",
-        version = "v0.10.0",
+        sum = "h1:Rdl3AglEUPdl+MGBRuHeaYbMFPUGpolkOJ/vAQhsZz4=",
+        version = "v0.10.1",
     )
     go_repository(
         name = "com_github_openconfig_ygot",
         build_file_proto_mode = "disable",
         importpath = "github.com/openconfig/ygot",
-        sum = "h1:LjjeaRGdGEOWhldSm0fr8YarPlTgy2fCAaCvY+3pO3Y=",
-        version = "v0.29.12",
+        sum = "h1:nqSHTEHm2TtsoXVYM6BrgBilnxxFcOYF5Q19w7e6CmA=",
+        version = "v0.29.16",
     )
     go_repository(
         name = "com_github_opencontainers_go_digest",
@@ -1963,8 +1963,8 @@ def go_repositories():
     go_repository(
         name = "com_github_scrapli_scrapligo",
         importpath = "github.com/scrapli/scrapligo",
-        sum = "h1:xc0/bTDT+BfLkjJ3B4X6/8lxuzW7tgB8BMg8Tzn1yHQ=",
-        version = "v1.1.7",
+        sum = "h1:ATvpF2LDoxnd/HlfSj5A0IiJDro75D6nuCx8m6S44vU=",
+        version = "v1.1.11",
     )
     go_repository(
         name = "com_github_scrapli_scrapligocfg",
@@ -2038,8 +2038,8 @@ def go_repositories():
     go_repository(
         name = "com_github_spf13_cobra",
         importpath = "github.com/spf13/cobra",
-        sum = "h1:hyqWnYt1ZQShIddO5kBpj3vu05/++x6tJ6dg8EC572I=",
-        version = "v1.7.0",
+        sum = "h1:7aJaZx1B85qltLMc546zn58BxxfZdR/W22ej9CFoEf0=",
+        version = "v1.8.0",
     )
     go_repository(
         name = "com_github_spf13_jwalterweatherman",
@@ -3151,8 +3151,8 @@ def go_repositories():
     go_repository(
         name = "io_k8s_klog_v2",
         importpath = "k8s.io/klog/v2",
-        sum = "h1:m4bYOKall2MmOiRaR1J+We67Do7vm9KiQVlT96lnHUw=",
-        version = "v2.90.1",
+        sum = "h1:7WCHKK6K8fNhTqfBhISHQ97KrnJNFZMcQvKp7gP/tmg=",
+        version = "v2.100.1",
     )
     go_repository(
         name = "io_k8s_kms",
