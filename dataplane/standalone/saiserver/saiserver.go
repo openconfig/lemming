@@ -235,7 +235,7 @@ func (s *Server) Initialize(ctx context.Context, _ *saipb.InitializeRequest) (*s
 
 func New(mgr *attrmgr.AttrMgr, s *grpc.Server) (*Server, error) {
 	ctx := context.Background()
-	e, err := engine.New(ctx)
+	e, err := engine.New(ctx, false)
 	if err != nil {
 		return nil, fmt.Errorf("failed create engine: %v", err)
 	}

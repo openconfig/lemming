@@ -23,13 +23,13 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
+	"github.com/openconfig/lemming/dataplane/internal/engine"
 	"github.com/openconfig/lemming/dataplane/standalone/packetio/cpusink"
 	"github.com/openconfig/lemming/dataplane/standalone/saiserver/attrmgr"
 
 	log "github.com/golang/glog"
 
 	saipb "github.com/openconfig/lemming/dataplane/standalone/proto"
-	dpb "github.com/openconfig/lemming/proto/dataplane"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
@@ -123,21 +123,74 @@ func (port *port) CreatePort(ctx context.Context, _ *saipb.CreatePortRequest) (*
 	if _, err := getInterface(dev); err != nil {
 		attrs.OperStatus = saipb.PortOperStatus_PORT_OPER_STATUS_NOT_PRESENT.Enum()
 		port.mgr.StoreAttributes(id, attrs)
+		// TODO: This should be a real error, improve once we a correct config solution.
+		// For now, create dummy port with no actions so we don't get a bunch error for a nonexistant port.
+		fwdPort := &fwdpb.PortCreateRequest{
+			ContextId: &fwdpb.ContextId{Id: port.dataplane.ID()},
+			Port: &fwdpb.PortDesc{
+				PortType: fwdpb.PortType_PORT_TYPE_GENETLINK,
+				PortId: &fwdpb.PortId{
+					ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)},
+				},
+			},
+		}
+		_, err := port.dataplane.PortCreate(ctx, fwdPort)
+		if err != nil {
+			return nil, err
+		}
 		return &saipb.CreatePortResponse{
 			Oid: id,
 		}, nil
 	}
 	port.portToEth[id] = dev
 
-	_, err := port.dataplane.CreatePort(ctx, &dpb.CreatePortRequest{
-		Id:   fmt.Sprint(id),
-		Type: fwdpb.PortType_PORT_TYPE_KERNEL,
-		Src: &dpb.CreatePortRequest_KernelDev{
-			KernelDev: dev,
+	fwdPort := &fwdpb.PortCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: port.dataplane.ID()},
+		Port: &fwdpb.PortDesc{
+			PortType: fwdpb.PortType_PORT_TYPE_KERNEL,
+			PortId: &fwdpb.PortId{
+				ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)},
+			},
+			Port: &fwdpb.PortDesc_Kernel{
+				Kernel: &fwdpb.KernelPortDesc{
+					DeviceName: dev,
+				},
+			},
 		},
-		Location: dpb.PortLocation_PORT_LOCATION_EXTERNAL,
-	})
+	}
+	_, err := port.dataplane.PortCreate(ctx, fwdPort)
 	if err != nil {
+		return nil, err
+	}
+	update := &fwdpb.PortUpdateRequest{
+		ContextId: &fwdpb.ContextId{Id: port.dataplane.ID()},
+		PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)}},
+		Update: &fwdpb.PortUpdateDesc{
+			Port: &fwdpb.PortUpdateDesc_Kernel{
+				Kernel: &fwdpb.KernelPortUpdateDesc{
+					Inputs: []*fwdpb.ActionDesc{
+						fwdconfig.Action(fwdconfig.LookupAction(inputIfaceTable)).Build(),                               // Match packet to interface.
+						fwdconfig.Action(fwdconfig.LookupAction(IngressVRFTable)).Build(),                               /// Match interface to VRF.
+						fwdconfig.Action(fwdconfig.LookupAction(engine.PreIngressActionTable)).Build(),                  // Run pre-ingress actions.
+						fwdconfig.Action(fwdconfig.DecapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET)).Build(), // Decap L2 header.
+						fwdconfig.Action(fwdconfig.LookupAction(engine.IngressActionTable)).Build(),                     // Run ingress action.
+						fwdconfig.Action(fwdconfig.LookupAction(engine.FIBSelectorTable)).Build(),                       // Lookup in FIB.
+						fwdconfig.Action(fwdconfig.EncapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET)).Build(), // Encap L2 header.
+						fwdconfig.Action(fwdconfig.LookupAction(outputIfaceTable)).Build(),                              // Match interface to port
+						fwdconfig.Action(fwdconfig.LookupAction(engine.NeighborTable)).Build(),                          // Lookup in the neighbor table.
+						fwdconfig.Action(fwdconfig.LookupAction(engine.EgressActionTable)).Build(),                      // Run egress actions
+						fwdconfig.Action(fwdconfig.LookupAction(engine.SRCMACTable)).Build(),                            // Lookup interface's MAC addr.
+						{
+							ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
+						},
+					},
+					// update the src mac address with the configured port's mac address.
+					Outputs: []*fwdpb.ActionDesc{},
+				},
+			},
+		},
+	}
+	if _, err := port.dataplane.PortUpdate(ctx, update); err != nil {
 		return nil, err
 	}
 	attrs.OperStatus = saipb.PortOperStatus_PORT_OPER_STATUS_UP.Enum()

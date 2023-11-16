@@ -25,6 +25,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/testing/protocmp"
 
+	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
 	saipb "github.com/openconfig/lemming/dataplane/standalone/proto"
 	"github.com/openconfig/lemming/dataplane/standalone/saiserver/attrmgr"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
@@ -65,7 +66,10 @@ func TestCreateHostif(t *testing.T) {
 			getInterface = func(name string) (*net.Interface, error) {
 				return nil, tt.getInterfaceErr
 			}
-			dplane := &fakeSwitchDataplane{}
+			dplane := &fakeSwitchDataplane{
+				ctx: fwdcontext.New("foo", "foo"),
+			}
+			dplane.ctx.SetPacketSink(func(*fwdpb.PacketSinkResponse) error { return nil })
 			c, mgr, stopFn := newTestHostif(t, dplane)
 			mgr.StoreAttributes(2, &saipb.PortAttribute{
 				OperStatus: saipb.PortOperStatus_PORT_OPER_STATUS_DOWN.Enum(),

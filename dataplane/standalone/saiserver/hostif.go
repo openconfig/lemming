@@ -23,11 +23,11 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/openconfig/lemming/dataplane/forwarding/attributes"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
 	"github.com/openconfig/lemming/dataplane/standalone/saiserver/attrmgr"
 
 	saipb "github.com/openconfig/lemming/dataplane/standalone/proto"
-	dpb "github.com/openconfig/lemming/proto/dataplane"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
@@ -93,27 +93,71 @@ func (hostif *hostif) CreateHostif(ctx context.Context, req *saipb.CreateHostifR
 
 		return &saipb.CreateHostifResponse{Oid: id}, nil
 	case saipb.HostifType_HOSTIF_TYPE_NETDEV:
-		portReq := &dpb.CreatePortRequest{
-			Id:   fmt.Sprint(id),
-			Type: fwdpb.PortType_PORT_TYPE_KERNEL,
-			Src: &dpb.CreatePortRequest_KernelDev{
-				KernelDev: string(req.GetName()),
+		port := &fwdpb.PortCreateRequest{
+			ContextId: &fwdpb.ContextId{Id: hostif.dataplane.ID()},
+			Port: &fwdpb.PortDesc{
+				PortType: fwdpb.PortType_PORT_TYPE_KERNEL,
+				PortId: &fwdpb.PortId{
+					ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)},
+				},
+				Port: &fwdpb.PortDesc_Kernel{
+					Kernel: &fwdpb.KernelPortDesc{
+						DeviceName: string(req.GetName()),
+					},
+				},
 			},
-			Location: dpb.PortLocation_PORT_LOCATION_INTERNAL,
 		}
+		if _, err := hostif.dataplane.PortCreate(ctx, port); err != nil {
+			if err != nil {
+				return nil, err
+			}
+		}
+
 		attrReq := &saipb.GetPortAttributeRequest{Oid: req.GetObjId(), AttrType: []saipb.PortAttr{saipb.PortAttr_PORT_ATTR_OPER_STATUS}}
 		p := &saipb.GetPortAttributeResponse{}
 		if err := hostif.mgr.PopulateAttributes(attrReq, p); err != nil {
 			return nil, err
 		}
+		// If there is a corresponding port for the hostif, update the attributes
 		if p.GetAttr().GetOperStatus() != saipb.PortOperStatus_PORT_OPER_STATUS_NOT_PRESENT {
-			portReq.ExternalPort = fmt.Sprint(req.GetObjId())
-		}
-		if _, err := hostif.dataplane.CreatePort(ctx, portReq); err != nil {
+			_, err := hostif.dataplane.AttributeUpdate(ctx, &fwdpb.AttributeUpdateRequest{
+				ContextId: &fwdpb.ContextId{Id: hostif.dataplane.ID()},
+				ObjectId:  &fwdpb.ObjectId{Id: fmt.Sprint(id)},
+				AttrId:    attributes.SwapActionRelatedPort,
+				AttrValue: fmt.Sprint(req.GetObjId()),
+			})
+			if err != nil {
+				return nil, err
+			}
+			_, err = hostif.dataplane.AttributeUpdate(ctx, &fwdpb.AttributeUpdateRequest{
+				ContextId: &fwdpb.ContextId{Id: hostif.dataplane.ID()},
+				ObjectId:  &fwdpb.ObjectId{Id: fmt.Sprint(req.GetObjId())},
+				AttrId:    attributes.SwapActionRelatedPort,
+				AttrValue: fmt.Sprint(id),
+			})
 			if err != nil {
 				return nil, err
 			}
 		}
+		update := &fwdpb.PortUpdateRequest{
+			ContextId: &fwdpb.ContextId{Id: hostif.dataplane.ID()},
+			PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)}},
+			Update: &fwdpb.PortUpdateDesc{
+				Port: &fwdpb.PortUpdateDesc_Kernel{
+					Kernel: &fwdpb.KernelPortUpdateDesc{
+						Inputs: []*fwdpb.ActionDesc{{ // Assume that the packet's originating from the device are sent to correct port.
+							ActionType: fwdpb.ActionType_ACTION_TYPE_SWAP_OUTPUT_INTERNAL_EXTERNAL,
+						}, {
+							ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
+						}},
+					},
+				},
+			},
+		}
+		if _, err := hostif.dataplane.PortUpdate(ctx, update); err != nil {
+			return nil, err
+		}
+
 		attr := &saipb.HostifAttribute{
 			OperStatus: proto.Bool(true),
 		}
@@ -236,8 +280,8 @@ func (hostif *hostif) CreateHostifTrap(ctx context.Context, req *saipb.CreateHos
 		return nil, status.Errorf(codes.InvalidArgument, "unknown trap type: %v", tType)
 	}
 
-	switch act := req.GetPacketAction(); act {
-	case saipb.PacketAction_PACKET_ACTION_TRAP: // TRAP means COPY to CPU and DROP, just transmit immediately, which interrupts any pending actions.
+	switch act := req.GetPacketAction(); act { // TODO: Support copy
+	case saipb.PacketAction_PACKET_ACTION_TRAP, saipb.PacketAction_PACKET_ACTION_COPY: // TRAP means COPY to CPU and DROP, just transmit immediately, which interrupts any pending actions.
 		for i := 0; i < entriesAdded; i++ {
 			fwdReq.AppendActions(fwdconfig.Action(fwdconfig.TransmitAction(fmt.Sprint(swAttr.GetAttr().GetCpuPort())).WithImmediate(true)))
 		}

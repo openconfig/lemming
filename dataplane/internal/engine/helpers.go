@@ -39,8 +39,13 @@ func mustParseHex(hexStr string) []byte {
 	return b
 }
 
-// createFIBSelector creates a table that controls which forwarding table is used.
-func createFIBSelector(ctx context.Context, id string, c fwdpb.ForwardingServer) error {
+type tableModifier interface {
+	TableCreate(context.Context, *fwdpb.TableCreateRequest) (*fwdpb.TableCreateReply, error)
+	TableEntryAdd(context.Context, *fwdpb.TableEntryAddRequest) (*fwdpb.TableEntryAddReply, error)
+}
+
+// CreateFIBSelector creates a table that controls which forwarding table is used.
+func CreateFIBSelector(ctx context.Context, id string, c tableModifier) error {
 	fieldID := &fwdpb.PacketFieldId{
 		Field: &fwdpb.PacketField{
 			FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION,
@@ -51,7 +56,7 @@ func createFIBSelector(ctx context.Context, id string, c fwdpb.ForwardingServer)
 		ContextId: &fwdpb.ContextId{Id: id},
 		Desc: &fwdpb.TableDesc{
 			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
-			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: fibSelectorTable}},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: FIBSelectorTable}},
 			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_DROP}},
 			Table: &fwdpb.TableDesc_Exact{
 				Exact: &fwdpb.ExactTableDesc{
@@ -67,7 +72,7 @@ func createFIBSelector(ctx context.Context, id string, c fwdpb.ForwardingServer)
 		ContextId: &fwdpb.ContextId{Id: id},
 		TableId: &fwdpb.TableId{
 			ObjectId: &fwdpb.ObjectId{
-				Id: fibSelectorTable,
+				Id: FIBSelectorTable,
 			},
 		},
 		Entries: []*fwdpb.TableEntryAddRequest_Entry{{

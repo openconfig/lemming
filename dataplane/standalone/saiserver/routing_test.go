@@ -24,10 +24,13 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/testing/protocmp"
 
+	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
+	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdobject"
+	"github.com/openconfig/lemming/dataplane/internal/engine"
 	"github.com/openconfig/lemming/dataplane/standalone/saiserver/attrmgr"
 
 	saipb "github.com/openconfig/lemming/dataplane/standalone/proto"
-	dpb "github.com/openconfig/lemming/proto/dataplane"
+	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
 func TestCreateNeighborEntry(t *testing.T) {
@@ -74,7 +77,6 @@ func TestCreateNextHopGroup(t *testing.T) {
 		desc     string
 		req      *saipb.CreateNextHopGroupRequest
 		wantAttr *saipb.NextHopGroupAttribute
-		wantReq  *dpb.AddNextHopGroupRequest
 		wantErr  string
 	}{{
 		desc:    "unspeficied type",
@@ -88,9 +90,6 @@ func TestCreateNextHopGroup(t *testing.T) {
 		wantAttr: &saipb.NextHopGroupAttribute{
 			Type: saipb.NextHopGroupType_NEXT_HOP_GROUP_TYPE_DYNAMIC_UNORDERED_ECMP.Enum(),
 		},
-		wantReq: &dpb.AddNextHopGroupRequest{
-			Id: 1,
-		},
 	}}
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
@@ -103,9 +102,6 @@ func TestCreateNextHopGroup(t *testing.T) {
 			}
 			if gotErr != nil {
 				return
-			}
-			if d := cmp.Diff(dplane.gotAddNextHopGroupReq[0], tt.wantReq, protocmp.Transform()); d != "" {
-				t.Errorf("CreateNextHopGroup() failed: diff(-got,+want)\n:%s", d)
 			}
 			attr := &saipb.NextHopGroupAttribute{}
 			if err := mgr.PopulateAllAttributes("1", attr); err != nil {
@@ -123,7 +119,7 @@ func TestCreateNextHopGroupMember(t *testing.T) {
 		desc     string
 		req      *saipb.CreateNextHopGroupMemberRequest
 		wantAttr *saipb.NextHopGroupMemberAttribute
-		wantReq  *dpb.AddNextHopGroupRequest
+		wantReq  *fwdpb.TableEntryAddRequest
 		wantErr  string
 	}{{
 		desc: "success",
@@ -132,13 +128,59 @@ func TestCreateNextHopGroupMember(t *testing.T) {
 			NextHopId:      proto.Uint64(2),
 			Weight:         proto.Uint32(3),
 		},
-		wantReq: &dpb.AddNextHopGroupRequest{
-			Id: 1,
-			List: &dpb.NextHopIDList{
-				Hops:    []uint64{2},
-				Weights: []uint64{3},
-			},
-			Mode: dpb.GroupUpdateMode_GROUP_UPDATE_MODE_APPEND,
+		wantReq: &fwdpb.TableEntryAddRequest{
+			ContextId: &fwdpb.ContextId{Id: "foo"},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: engine.NHGTable}},
+			Entries: []*fwdpb.TableEntryAddRequest_Entry{{
+				EntryDesc: &fwdpb.EntryDesc{
+					Entry: &fwdpb.EntryDesc_Exact{
+						Exact: &fwdpb.ExactEntryDesc{
+							Fields: []*fwdpb.PacketFieldBytes{{
+								FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{
+									FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_GROUP_ID,
+								}},
+								Bytes: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+							}},
+						},
+					},
+				},
+				Actions: []*fwdpb.ActionDesc{{
+					ActionType: fwdpb.ActionType_ACTION_TYPE_SELECT_ACTION_LIST,
+					Action: &fwdpb.ActionDesc_Select{
+						Select: &fwdpb.SelectActionListActionDesc{
+							SelectAlgorithm: fwdpb.SelectActionListActionDesc_SELECT_ALGORITHM_CRC32,
+							FieldIds: []*fwdpb.PacketFieldId{
+								{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO}},
+								{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC}},
+								{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST}},
+								{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_SRC}},
+								{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST}},
+							},
+							ActionLists: []*fwdpb.ActionList{{
+								Weight: 3,
+								Actions: []*fwdpb.ActionDesc{{
+									ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
+									Action: &fwdpb.ActionDesc_Update{
+										Update: &fwdpb.UpdateActionDesc{
+											FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_ID}},
+											Type:    fwdpb.UpdateType_UPDATE_TYPE_SET,
+											Field:   &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{}},
+											Value:   []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
+										},
+									},
+								}},
+							}},
+						},
+					},
+				}, {
+					ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
+					Action: &fwdpb.ActionDesc_Lookup{
+						Lookup: &fwdpb.LookupActionDesc{
+							TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: engine.NHTable}},
+						},
+					},
+				}},
+			}},
 		},
 		wantAttr: &saipb.NextHopGroupMemberAttribute{
 			NextHopGroupId: proto.Uint64(1),
@@ -150,6 +192,10 @@ func TestCreateNextHopGroupMember(t *testing.T) {
 		t.Run(tt.desc, func(t *testing.T) {
 			dplane := &fakeSwitchDataplane{}
 			c, mgr, stopFn := newTestNextHopGroup(t, dplane)
+			_, err := c.CreateNextHopGroup(context.Background(), &saipb.CreateNextHopGroupRequest{Type: saipb.NextHopGroupType_NEXT_HOP_GROUP_TYPE_DYNAMIC_UNORDERED_ECMP.Enum()})
+			if err != nil {
+				t.Fatal(err)
+			}
 			defer stopFn()
 			_, gotErr := c.CreateNextHopGroupMember(context.TODO(), tt.req)
 			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
@@ -158,11 +204,11 @@ func TestCreateNextHopGroupMember(t *testing.T) {
 			if gotErr != nil {
 				return
 			}
-			if d := cmp.Diff(dplane.gotAddNextHopGroupReq[0], tt.wantReq, protocmp.Transform()); d != "" {
+			if d := cmp.Diff(dplane.gotEntryAddReqs[0], tt.wantReq, protocmp.Transform()); d != "" {
 				t.Errorf("CreateNextHopGroupMember() failed: diff(-got,+want)\n:%s", d)
 			}
 			attr := &saipb.NextHopGroupMemberAttribute{}
-			if err := mgr.PopulateAllAttributes("1", attr); err != nil {
+			if err := mgr.PopulateAllAttributes("2", attr); err != nil {
 				t.Fatal(err)
 			}
 			if d := cmp.Diff(attr, tt.wantAttr, protocmp.Transform()); d != "" {
@@ -177,7 +223,7 @@ func TestCreateNextHop(t *testing.T) {
 		desc     string
 		req      *saipb.CreateNextHopRequest
 		wantAttr *saipb.NextHopAttribute
-		wantReq  *dpb.AddNextHopRequest
+		wantReq  *fwdpb.TableEntryAddRequest
 		wantErr  string
 	}{{
 		desc:    "unknown type",
@@ -195,16 +241,53 @@ func TestCreateNextHop(t *testing.T) {
 			RouterInterfaceId: proto.Uint64(10),
 			Ip:                []byte{127, 0, 0, 1},
 		},
-		wantReq: &dpb.AddNextHopRequest{
-			Id: 1,
-			NextHop: &dpb.NextHop{
-				Dev: &dpb.NextHop_Interface{
-					Interface: "10",
+		wantReq: &fwdpb.TableEntryAddRequest{
+			ContextId: &fwdpb.ContextId{Id: "foo"},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: engine.NHTable}},
+			Entries: []*fwdpb.TableEntryAddRequest_Entry{{
+				Actions: []*fwdpb.ActionDesc{{
+					ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
+					Action: &fwdpb.ActionDesc_Update{
+						Update: &fwdpb.UpdateActionDesc{
+							Type: fwdpb.UpdateType_UPDATE_TYPE_SET,
+							FieldId: &fwdpb.PacketFieldId{
+								Field: &fwdpb.PacketField{
+									FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE,
+								},
+							},
+							Field: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{}},
+							Value: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0a},
+						},
+					},
+				}, {
+					ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
+					Action: &fwdpb.ActionDesc_Update{
+						Update: &fwdpb.UpdateActionDesc{
+							Type: fwdpb.UpdateType_UPDATE_TYPE_SET,
+							FieldId: &fwdpb.PacketFieldId{
+								Field: &fwdpb.PacketField{
+									FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP,
+								},
+							},
+							Field: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{}},
+							Value: []byte{0x7f, 0x00, 0x00, 0x01},
+						},
+					},
+				}},
+				EntryDesc: &fwdpb.EntryDesc{
+					Entry: &fwdpb.EntryDesc_Exact{
+						Exact: &fwdpb.ExactEntryDesc{
+							Fields: []*fwdpb.PacketFieldBytes{{
+								FieldId: &fwdpb.PacketFieldId{
+									Field: &fwdpb.PacketField{
+										FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_ID,
+									},
+								},
+							}},
+						},
+					},
 				},
-				Ip: &dpb.NextHop_IpBytes{
-					IpBytes: []byte{127, 0, 0, 1},
-				},
-			},
+			}},
 		},
 	}}
 	for _, tt := range tests {
@@ -219,7 +302,7 @@ func TestCreateNextHop(t *testing.T) {
 			if gotErr != nil {
 				return
 			}
-			if d := cmp.Diff(dplane.gotAddNextHopReq[0], tt.wantReq, protocmp.Transform()); d != "" {
+			if d := cmp.Diff(dplane.gotEntryAddReqs[0], tt.wantReq, protocmp.Transform()); d != "" {
 				t.Errorf("CreateNextHop() failed: diff(-got,+want)\n:%s", d)
 			}
 			attr := &saipb.NextHopAttribute{}
@@ -237,7 +320,7 @@ func TestCreateRouteEntry(t *testing.T) {
 	tests := []struct {
 		desc    string
 		req     *saipb.CreateRouteEntryRequest
-		wantReq *dpb.AddIPRouteRequest
+		wantReq *fwdpb.TableEntryAddRequest
 		types   map[string]saipb.ObjectType
 		wantErr string
 	}{{
@@ -256,18 +339,31 @@ func TestCreateRouteEntry(t *testing.T) {
 			},
 			PacketAction: saipb.PacketAction_PACKET_ACTION_DROP.Enum(),
 		},
-		wantReq: &dpb.AddIPRouteRequest{
-			Route: &dpb.Route{
-				Prefix: &dpb.RoutePrefix{
-					Prefix: &dpb.RoutePrefix_Mask{
-						Mask: &dpb.IpMask{
-							Addr: []byte{127, 0, 0, 1},
-							Mask: []byte{255, 255, 255, 255},
+		wantReq: &fwdpb.TableEntryAddRequest{
+			ContextId: &fwdpb.ContextId{Id: "foo"},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: engine.FIBV4Table}},
+			Entries: []*fwdpb.TableEntryAddRequest_Entry{{
+				Actions: []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_DROP}},
+				EntryDesc: &fwdpb.EntryDesc{
+					Entry: &fwdpb.EntryDesc_Prefix{
+						Prefix: &fwdpb.PrefixEntryDesc{
+							Fields: []*fwdpb.PacketFieldMaskedBytes{{
+								FieldId: &fwdpb.PacketFieldId{
+									Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF},
+								},
+								Bytes: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+								Masks: []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
+							}, {
+								FieldId: &fwdpb.PacketFieldId{
+									Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST},
+								},
+								Bytes: []byte{0x7f, 0x00, 0x00, 0x01},
+								Masks: []byte{0xff, 0xff, 0xff, 0xff},
+							}},
 						},
 					},
 				},
-				Action: dpb.PacketAction_PACKET_ACTION_DROP,
-			},
+			}},
 		},
 	}, {
 		desc:  "forward port action",
@@ -283,19 +379,51 @@ func TestCreateRouteEntry(t *testing.T) {
 			PacketAction: saipb.PacketAction_PACKET_ACTION_TRANSIT.Enum(),
 			NextHopId:    proto.Uint64(100),
 		},
-		wantReq: &dpb.AddIPRouteRequest{
-			Route: &dpb.Route{
-				Prefix: &dpb.RoutePrefix{
-					Prefix: &dpb.RoutePrefix_Mask{
-						Mask: &dpb.IpMask{
-							Addr: []byte{127, 0, 0, 1},
-							Mask: []byte{255, 255, 255, 255},
+		wantReq: &fwdpb.TableEntryAddRequest{
+			ContextId: &fwdpb.ContextId{Id: "foo"},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: engine.FIBV4Table}},
+			Entries: []*fwdpb.TableEntryAddRequest_Entry{{
+				Actions: []*fwdpb.ActionDesc{{
+					ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
+					Action: &fwdpb.ActionDesc_Update{
+						Update: &fwdpb.UpdateActionDesc{
+							Type: fwdpb.UpdateType_UPDATE_TYPE_COPY,
+							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{
+								FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP,
+							}},
+							Field: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{
+								FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST,
+							}},
+						},
+					},
+				}, {
+					ActionType: fwdpb.ActionType_ACTION_TYPE_TRANSMIT,
+					Action: &fwdpb.ActionDesc_Transmit{
+						Transmit: &fwdpb.TransmitActionDesc{
+							PortId: &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: "100"}},
+						},
+					},
+				}},
+				EntryDesc: &fwdpb.EntryDesc{
+					Entry: &fwdpb.EntryDesc_Prefix{
+						Prefix: &fwdpb.PrefixEntryDesc{
+							Fields: []*fwdpb.PacketFieldMaskedBytes{{
+								FieldId: &fwdpb.PacketFieldId{
+									Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF},
+								},
+								Bytes: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+								Masks: []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
+							}, {
+								FieldId: &fwdpb.PacketFieldId{
+									Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST},
+								},
+								Bytes: []byte{0x7f, 0x00, 0x00, 0x01},
+								Masks: []byte{0xff, 0xff, 0xff, 0xff},
+							}},
 						},
 					},
 				},
-				Hop:    &dpb.Route_PortId{PortId: "100"},
-				Action: dpb.PacketAction_PACKET_ACTION_FORWARD,
-			},
+			}},
 		},
 	}}
 	for _, tt := range tests {
@@ -316,7 +444,7 @@ func TestCreateRouteEntry(t *testing.T) {
 			if gotErr != nil {
 				return
 			}
-			if d := cmp.Diff(dplane.gotAddIPRouteReq[0], tt.wantReq, protocmp.Transform()); d != "" {
+			if d := cmp.Diff(dplane.gotEntryAddReqs[0], tt.wantReq, protocmp.Transform()); d != "" {
 				t.Errorf("CreateRouteEntry() failed: diff(-got,+want)\n:%s", d)
 			}
 		})
@@ -327,7 +455,7 @@ func TestCreateRouterInterface(t *testing.T) {
 	tests := []struct {
 		desc    string
 		req     *saipb.CreateRouterInterfaceRequest
-		wantReq *dpb.AddInterfaceRequest
+		wantReq *fwdpb.TableEntryAddRequest
 		wantErr string
 	}{{
 		desc:    "unknown type",
@@ -339,15 +467,42 @@ func TestCreateRouterInterface(t *testing.T) {
 			PortId: proto.Uint64(10),
 			Type:   saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_PORT.Enum(),
 		},
-		wantReq: &dpb.AddInterfaceRequest{
-			Id:      "1",
-			PortIds: []string{"10"},
-			Type:    dpb.InterfaceType_INTERFACE_TYPE_PORT,
+		wantReq: &fwdpb.TableEntryAddRequest{
+			ContextId: &fwdpb.ContextId{Id: "foo"},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: inputIfaceTable}},
+			Entries: []*fwdpb.TableEntryAddRequest_Entry{{
+				EntryDesc: &fwdpb.EntryDesc{Entry: &fwdpb.EntryDesc_Exact{
+					Exact: &fwdpb.ExactEntryDesc{
+						Fields: []*fwdpb.PacketFieldBytes{{
+							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{
+								FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT,
+							}},
+							Bytes: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+						}},
+					},
+				}},
+				Actions: []*fwdpb.ActionDesc{{
+					ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
+					Action: &fwdpb.ActionDesc_Update{
+						Update: &fwdpb.UpdateActionDesc{
+							Type: fwdpb.UpdateType_UPDATE_TYPE_SET,
+							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{
+								FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_INPUT_IFACE,
+							}},
+							Field: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{}},
+							Value: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+						},
+					},
+				}},
+			}},
 		},
 	}}
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			dplane := &fakeSwitchDataplane{}
+			dplane := &fakeSwitchDataplane{
+				ctx: fwdcontext.New("foo", "foo"),
+			}
+			dplane.ctx.Objects.Insert(&fwdobject.Base{}, &fwdpb.ObjectId{Id: "10"})
 			c, _, stopFn := newTestRouterInterface(t, dplane)
 			defer stopFn()
 			_, gotErr := c.CreateRouterInterface(context.TODO(), tt.req)
@@ -357,7 +512,7 @@ func TestCreateRouterInterface(t *testing.T) {
 			if gotErr != nil {
 				return
 			}
-			if d := cmp.Diff(dplane.gotAddInterfaceReq[0], tt.wantReq, protocmp.Transform()); d != "" {
+			if d := cmp.Diff(dplane.gotEntryAddReqs[0], tt.wantReq, protocmp.Transform()); d != "" {
 				t.Errorf("CreateRouterInterface() failed: diff(-got,+want)\n:%s", d)
 			}
 		})

@@ -16,6 +16,7 @@ package saiserver
 
 import (
 	"context"
+	"encoding/binary"
 	"fmt"
 
 	"google.golang.org/grpc"
@@ -26,6 +27,7 @@ import (
 	"github.com/openconfig/gnmi/errlist"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
+	"github.com/openconfig/lemming/dataplane/internal/engine"
 	"github.com/openconfig/lemming/dataplane/standalone/saiserver/attrmgr"
 
 	log "github.com/golang/glog"
@@ -52,16 +54,13 @@ func newNeighbor(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Ser
 
 // CreateNeighborEntry adds a neighbor to the neighbor table.
 func (n *neighbor) CreateNeighborEntry(ctx context.Context, req *saipb.CreateNeighborEntryRequest) (*saipb.CreateNeighborEntryResponse, error) {
-	_, err := n.dataplane.AddNeighbor(ctx, &dpb.AddNeighborRequest{
-		Dev: &dpb.AddNeighborRequest_InterfaceId{
-			InterfaceId: fmt.Sprint(req.GetEntry().GetRifId()),
-		},
-		Mac: req.GetDstMacAddress(),
-		Ip: &dpb.AddNeighborRequest_IpBytes{
-			IpBytes: req.GetEntry().GetIpAddress(),
-		},
-	})
-	if err != nil {
+	entry := fwdconfig.TableEntryAddRequest(n.dataplane.ID(), engine.NeighborTable).AppendEntry(fwdconfig.EntryDesc(fwdconfig.ExactEntry(
+		fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE).WithUint64(req.GetEntry().GetRifId()),
+		fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(req.GetEntry().GetIpAddress()),
+	)), fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST).WithValue(req.GetDstMacAddress())),
+	).Build()
+
+	if _, err := n.dataplane.TableEntryAdd(ctx, entry); err != nil {
 		return nil, err
 	}
 	return &saipb.CreateNeighborEntryResponse{}, nil
@@ -80,35 +79,37 @@ func (n *neighbor) CreateNeighborEntries(ctx context.Context, re *saipb.CreateNe
 	return resp, nil
 }
 
+type groupMember struct {
+	nextHop uint64 // ID of the next hop
+	weight  uint32
+}
+
 type nextHopGroup struct {
 	saipb.UnimplementedNextHopGroupServer
 	mgr       *attrmgr.AttrMgr
 	dataplane switchDataplaneAPI
+	groups    map[uint64]map[uint64]*groupMember // groups is map of next hop groups to a map of next hops
 }
 
 func newNextHopGroup(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server) *nextHopGroup {
 	n := &nextHopGroup{
 		mgr:       mgr,
 		dataplane: dataplane,
+		groups:    map[uint64]map[uint64]*groupMember{},
 	}
 	saipb.RegisterNextHopGroupServer(s, n)
 	return n
 }
 
 // CreateNextHopGroupMember creates a next hop group.
-func (nhg *nextHopGroup) CreateNextHopGroup(ctx context.Context, req *saipb.CreateNextHopGroupRequest) (*saipb.CreateNextHopGroupResponse, error) {
+func (nhg *nextHopGroup) CreateNextHopGroup(_ context.Context, req *saipb.CreateNextHopGroupRequest) (*saipb.CreateNextHopGroupResponse, error) {
 	id := nhg.mgr.NextID()
 
 	if req.GetType() != saipb.NextHopGroupType_NEXT_HOP_GROUP_TYPE_DYNAMIC_UNORDERED_ECMP {
 		return nil, status.Errorf(codes.InvalidArgument, "unsupported req type: %v", req.GetType())
 	}
 
-	_, err := nhg.dataplane.AddNextHopGroup(ctx, &dpb.AddNextHopGroupRequest{
-		Id: id,
-	})
-	if err != nil {
-		return nil, err
-	}
+	nhg.groups[id] = map[uint64]*groupMember{}
 	return &saipb.CreateNextHopGroupResponse{
 		Oid: id,
 	}, nil
@@ -116,18 +117,83 @@ func (nhg *nextHopGroup) CreateNextHopGroup(ctx context.Context, req *saipb.Crea
 
 // CreateNextHopGroupMember adds a next hop to a next hop group.
 func (nhg *nextHopGroup) CreateNextHopGroupMember(ctx context.Context, req *saipb.CreateNextHopGroupMemberRequest) (*saipb.CreateNextHopGroupMemberResponse, error) {
-	_, err := nhg.dataplane.AddNextHopGroup(ctx, &dpb.AddNextHopGroupRequest{
-		Id: req.GetNextHopGroupId(),
-		List: &dpb.NextHopIDList{
-			Hops:    []uint64{req.GetNextHopId()},
-			Weights: []uint64{uint64(req.GetWeight())},
+	memberID := nhg.mgr.NextID()
+	group := nhg.groups[req.GetNextHopGroupId()]
+	if group == nil {
+		return nil, status.Errorf(codes.FailedPrecondition, "group %v does not exist", req.GetNextHopGroupId())
+	}
+	group[memberID] = &groupMember{
+		nextHop: req.GetNextHopId(),
+		weight:  req.GetWeight(),
+	}
+	var actLists []*fwdpb.ActionList
+	for _, member := range group {
+		action := fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_ID).WithUint64Value(member.nextHop))
+		actLists = append(actLists, &fwdpb.ActionList{
+			Weight:  uint64(member.weight),
+			Actions: []*fwdpb.ActionDesc{action.Build()},
+		})
+	}
+	actions := []*fwdpb.ActionDesc{{
+		ActionType: fwdpb.ActionType_ACTION_TYPE_SELECT_ACTION_LIST,
+		Action: &fwdpb.ActionDesc_Select{
+			Select: &fwdpb.SelectActionListActionDesc{
+				SelectAlgorithm: fwdpb.SelectActionListActionDesc_SELECT_ALGORITHM_CRC32, // TODO: should algo + hash be configurable?
+				FieldIds: []*fwdpb.PacketFieldId{{Field: &fwdpb.PacketField{ // Hash the traffic flow, identified, IP protocol, L3 SRC, DST address, and L4 ports (if present).
+					FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO,
+				}}, {Field: &fwdpb.PacketField{
+					FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC,
+				}}, {Field: &fwdpb.PacketField{
+					FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST,
+				}}, {Field: &fwdpb.PacketField{
+					FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_SRC,
+				}}, {Field: &fwdpb.PacketField{
+					FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST,
+				}}},
+				ActionLists: actLists,
+			},
 		},
-		Mode: dpb.GroupUpdateMode_GROUP_UPDATE_MODE_APPEND,
-	})
-	if err != nil {
+	}, {
+		ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
+		Action: &fwdpb.ActionDesc_Lookup{
+			Lookup: &fwdpb.LookupActionDesc{
+				TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{
+					Id: engine.NHTable,
+				}},
+			},
+		},
+	}}
+
+	entries := &fwdpb.TableEntryAddRequest{
+		ContextId: &fwdpb.ContextId{Id: nhg.dataplane.ID()},
+		TableId: &fwdpb.TableId{
+			ObjectId: &fwdpb.ObjectId{
+				Id: engine.NHGTable,
+			},
+		},
+		Entries: []*fwdpb.TableEntryAddRequest_Entry{{
+			EntryDesc: &fwdpb.EntryDesc{
+				Entry: &fwdpb.EntryDesc_Exact{
+					Exact: &fwdpb.ExactEntryDesc{
+						Fields: []*fwdpb.PacketFieldBytes{{
+							Bytes: binary.BigEndian.AppendUint64(nil, req.GetNextHopGroupId()),
+							FieldId: &fwdpb.PacketFieldId{
+								Field: &fwdpb.PacketField{
+									FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_GROUP_ID,
+								},
+							},
+						}},
+					},
+				},
+			},
+			Actions: actions,
+		}},
+	}
+	if _, err := nhg.dataplane.TableEntryAdd(ctx, entries); err != nil {
 		return nil, err
 	}
-	return nil, nil
+
+	return &saipb.CreateNextHopGroupMemberResponse{Oid: memberID}, nil
 }
 
 type nextHop struct {
@@ -153,18 +219,13 @@ func (nh *nextHop) CreateNextHop(ctx context.Context, req *saipb.CreateNextHopRe
 		return nil, status.Errorf(codes.InvalidArgument, "unsupported req type: %v", req.GetType())
 	}
 
-	_, err := nh.dataplane.AddNextHop(ctx, &dpb.AddNextHopRequest{
-		Id: id,
-		NextHop: &dpb.NextHop{
-			Dev: &dpb.NextHop_Interface{
-				Interface: fmt.Sprint(req.GetRouterInterfaceId()),
-			},
-			Ip: &dpb.NextHop_IpBytes{
-				IpBytes: req.GetIp(),
-			},
-		},
-	})
-	if err != nil {
+	nhReq := fwdconfig.TableEntryAddRequest(nh.dataplane.ID(), engine.NHTable).AppendEntry(
+		fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_ID))),
+		fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE).WithUint64Value(req.GetRouterInterfaceId())),
+		fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP).WithValue(req.GetIp())),
+	)
+
+	if _, err := nh.dataplane.TableEntryAdd(ctx, nhReq.Build()); err != nil {
 		return nil, err
 	}
 	return &saipb.CreateNextHopResponse{
@@ -201,46 +262,49 @@ func newRoute(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server
 
 // CreateRouteEntry creates a new route entry.
 func (r *route) CreateRouteEntry(ctx context.Context, req *saipb.CreateRouteEntryRequest) (*saipb.CreateRouteEntryResponse, error) {
-	rReq := &dpb.AddIPRouteRequest{
-		Route: &dpb.Route{
-			Prefix: &dpb.RoutePrefix{
-				Prefix: &dpb.RoutePrefix_Mask{
-					Mask: &dpb.IpMask{
-						Addr: req.GetEntry().GetDestination().GetAddr(),
-						Mask: req.GetEntry().GetDestination().GetMask(),
-					},
-				},
-				VrfId: req.GetEntry().GetVrId(),
-			},
-		},
+	fib := engine.FIBV6Table
+	if len(req.GetEntry().GetDestination().GetAddr()) == 4 {
+		fib = engine.FIBV4Table
 	}
 
-	// TODO(dgrau): Implement CPU actions.
-	switch req.GetPacketAction() {
-	case saipb.PacketAction_PACKET_ACTION_DROP,
-		saipb.PacketAction_PACKET_ACTION_TRAP, // COPY and DROP
-		saipb.PacketAction_PACKET_ACTION_DENY: // COPY_CANCEL and DROP
-		rReq.Route.Action = dpb.PacketAction_PACKET_ACTION_DROP
-	case saipb.PacketAction_PACKET_ACTION_FORWARD,
-		saipb.PacketAction_PACKET_ACTION_LOG,     // COPY and FORWARD
-		saipb.PacketAction_PACKET_ACTION_TRANSIT: // COPY_CANCEL and FORWARD
-		rReq.Route.Action = dpb.PacketAction_PACKET_ACTION_FORWARD
-	case saipb.PacketAction_PACKET_ACTION_UNSPECIFIED: // Default action is forward.
-		rReq.Route.Action = dpb.PacketAction_PACKET_ACTION_FORWARD
-	default:
-		return nil, status.Errorf(codes.InvalidArgument, "unknown action type: %v", req.GetPacketAction())
+	entry := fwdconfig.TableEntryAddRequest(r.dataplane.ID(), fib).AppendEntry(fwdconfig.EntryDesc(
+		fwdconfig.PrefixEntry(
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF).WithUint64(req.GetEntry().GetVrId()),
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(
+				req.GetEntry().GetDestination().GetAddr(),
+				req.GetEntry().GetDestination().GetMask(),
+			),
+		),
+	))
+
+	forward := true
+	if req.GetPacketAction() == saipb.PacketAction_PACKET_ACTION_DROP ||
+		req.GetPacketAction() == saipb.PacketAction_PACKET_ACTION_TRAP ||
+		req.GetPacketAction() == saipb.PacketAction_PACKET_ACTION_DENY {
+		forward = false
 	}
 	nextType := r.mgr.GetType(fmt.Sprint(req.GetNextHopId()))
 
 	// If the packet action is drop, then next hop is optional.
-	if rReq.Route.Action == dpb.PacketAction_PACKET_ACTION_FORWARD {
+	if forward {
 		switch nextType {
 		case saipb.ObjectType_OBJECT_TYPE_NEXT_HOP:
-			rReq.Route.Hop = &dpb.Route_NextHopId{NextHopId: req.GetNextHopId()}
+			entry.AppendActions(fwdconfig.Action(
+				fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_ID).WithUint64Value(req.GetNextHopId())),
+				fwdconfig.Action(fwdconfig.LookupAction(engine.NHTable)),
+			)
 		case saipb.ObjectType_OBJECT_TYPE_NEXT_HOP_GROUP:
-			rReq.Route.Hop = &dpb.Route_NextHopGroupId{NextHopGroupId: req.GetNextHopId()}
+			entry.AppendActions(fwdconfig.Action(
+				fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_GROUP_ID).WithUint64Value(req.GetNextHopId())),
+				fwdconfig.Action(fwdconfig.LookupAction(engine.NHGTable)),
+			)
 		case saipb.ObjectType_OBJECT_TYPE_ROUTER_INTERFACE:
-			rReq.Route.Hop = &dpb.Route_InterfaceId{InterfaceId: fmt.Sprint(req.GetNextHopId())}
+			entry.AppendActions(
+				// Set the next hop IP in the packet's metadata.
+				fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_COPY, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP).WithFieldSrc(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST)),
+				// Set the output iface.
+				fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE).WithUint64Value(req.GetNextHopId())),
+			)
 		case saipb.ObjectType_OBJECT_TYPE_PORT:
 			attrReq := &saipb.GetSwitchAttributeRequest{
 				Oid:      req.GetEntry().GetSwitchId(),
@@ -265,14 +329,20 @@ func (r *route) CreateRouteEntry(ctx context.Context, req *saipb.CreateRouteEntr
 				}
 				return &saipb.CreateRouteEntryResponse{}, nil
 			}
-
-			rReq.Route.Hop = &dpb.Route_PortId{PortId: fmt.Sprint(req.GetNextHopId())}
+			entry.AppendActions(
+				// Set the next hop IP in the packet's metadata.
+				fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_COPY, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP).WithFieldSrc(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST)),
+				// Set the output port.
+				fwdconfig.Action(fwdconfig.TransmitAction(fmt.Sprint(req.GetNextHopId()))),
+			)
 		default:
 			return nil, status.Errorf(codes.InvalidArgument, "unknown next hop type: %v", nextType)
 		}
+	} else {
+		entry.AppendActions(fwdconfig.Action(fwdconfig.DropAction()))
 	}
 
-	_, err := r.dataplane.AddIPRoute(ctx, rReq)
+	_, err := r.dataplane.TableEntryAdd(ctx, entry.Build())
 	if err != nil {
 		return nil, err
 	}
@@ -325,7 +395,50 @@ func (ri *routerInterface) CreateRouterInterface(ctx context.Context, req *saipb
 	default:
 		return nil, status.Errorf(codes.InvalidArgument, "unknown interface type: %v", req.GetType())
 	}
-	if _, err := ri.dataplane.AddInterface(ctx, iReq); err != nil {
+	fwdCtx, err := ri.dataplane.Context()
+	if err != nil {
+		return nil, err
+	}
+	obj, err := fwdCtx.Objects.FindID(&fwdpb.ObjectId{Id: fmt.Sprint(req.GetPortId())})
+	if err != nil {
+		return nil, err
+	}
+
+	// Link the port to the interface.
+	_, err = ri.dataplane.TableEntryAdd(ctx, fwdconfig.TableEntryAddRequest(ri.dataplane.ID(), inputIfaceTable).
+		AppendEntry(
+			fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT).WithUint64(uint64(obj.NID())))),
+			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_INPUT_IFACE).WithUint64Value(id)),
+		).Build())
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = ri.dataplane.TableEntryAdd(ctx, fwdconfig.TableEntryAddRequest(ri.dataplane.ID(), outputIfaceTable).
+		AppendEntry(
+			fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE).WithUint64(uint64(obj.NID())))),
+			fwdconfig.Action(fwdconfig.TransmitAction(fmt.Sprint(req.GetPortId()))),
+		).Build())
+	if err != nil {
+		return nil, err
+	}
+
+	// Link the interface to a VRF.
+	_, err = ri.dataplane.TableEntryAdd(ctx, fwdconfig.TableEntryAddRequest(ri.dataplane.ID(), IngressVRFTable).
+		AppendEntry(
+			fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_INPUT_IFACE).WithUint64(id))),
+			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF).WithUint64Value(req.GetVirtualRouterId())),
+		).Build())
+	if err != nil {
+		return nil, err
+	}
+
+	// Give the interface a SMAC.
+	_, err = ri.dataplane.TableEntryAdd(ctx, fwdconfig.TableEntryAddRequest(ri.dataplane.ID(), engine.SRCMACTable).AppendEntry(
+		fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE).WithUint64(id))),
+		fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC).WithValue(req.GetSrcMacAddress())),
+	).Build())
+	if err != nil {
 		return nil, err
 	}
 

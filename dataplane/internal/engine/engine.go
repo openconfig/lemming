@@ -41,11 +41,10 @@ const (
 	FIBV4Table            = "fib-v4"
 	FIBV6Table            = "fib-v6"
 	SRCMACTable           = "port-mac"
-	IngressVRFTable       = "ingress-vrf"
-	fibSelectorTable      = "fib-selector"
-	neighborTable         = "neighbor"
-	nhgTable              = "nhg-table"
-	nhTable               = "nh-table"
+	FIBSelectorTable      = "fib-selector"
+	NeighborTable         = "neighbor"
+	NHGTable              = "nhg-table"
+	NHTable               = "nh-table"
 	layer2PuntTable       = "layer2-punt"
 	layer3PuntTable       = "layer3-punt"
 	arpPuntTable          = "arp-punt"
@@ -78,10 +77,13 @@ type Engine struct {
 	// internalToExternalID is a map from the internal port id to it's corresponding external port.
 	internalToExternalID map[string]string
 	cancelFn             func()
+	createTables         bool
 }
 
 // New creates a new engine and sets up the forwarding tables.
-func New(ctx context.Context) (*Engine, error) {
+// Disable table creating to use a custom forwarding pipeline.
+// TODO: Delete this file.
+func New(ctx context.Context, createTables bool) (*Engine, error) {
 	e := &Engine{
 		id:                   "lucius",
 		Server:               forwarding.New("engine"),
@@ -90,6 +92,7 @@ func New(ctx context.Context) (*Engine, error) {
 		ifaceToPort:          map[string]string{},
 		devNameToPortID:      map[string]string{},
 		internalToExternalID: map[string]string{},
+		createTables:         createTables,
 	}
 
 	ctx, e.cancelFn = context.WithCancel(ctx)
@@ -100,7 +103,12 @@ func New(ctx context.Context) (*Engine, error) {
 	if err != nil {
 		return nil, err
 	}
-	e.setupTables(ctx)
+	if createTables {
+		log.Info("setting up tables")
+		if err := e.setupTables(ctx); err != nil {
+			return nil, err
+		}
+	}
 
 	return e, nil
 }
@@ -130,7 +138,11 @@ func (e *Engine) Reset(ctx context.Context) error {
 	}
 
 	ctx, e.cancelFn = context.WithCancel(ctx)
-	e.setupTables(ctx)
+	if e.createTables {
+		if err := e.setupTables(ctx); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -212,7 +224,7 @@ func (e *Engine) setupTables(ctx context.Context) error {
 		ContextId: &fwdpb.ContextId{Id: e.id},
 		Desc: &fwdpb.TableDesc{
 			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
-			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: neighborTable}},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: NeighborTable}},
 			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_DROP}},
 			Table: &fwdpb.TableDesc_Exact{
 				Exact: &fwdpb.ExactTableDesc{
@@ -236,7 +248,7 @@ func (e *Engine) setupTables(ctx context.Context) error {
 		ContextId: &fwdpb.ContextId{Id: e.id},
 		Desc: &fwdpb.TableDesc{
 			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
-			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: nhTable}},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: NHTable}},
 			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_DROP}},
 			Table: &fwdpb.TableDesc_Exact{
 				Exact: &fwdpb.ExactTableDesc{
@@ -256,7 +268,7 @@ func (e *Engine) setupTables(ctx context.Context) error {
 		ContextId: &fwdpb.ContextId{Id: e.id},
 		Desc: &fwdpb.TableDesc{
 			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
-			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: nhgTable}},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: NHGTable}},
 			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_DROP}},
 			Table: &fwdpb.TableDesc_Exact{
 				Exact: &fwdpb.ExactTableDesc{
@@ -295,28 +307,7 @@ func (e *Engine) setupTables(ctx context.Context) error {
 		return err
 	}
 
-	ingressVRF := &fwdpb.TableCreateRequest{
-		ContextId: &fwdpb.ContextId{Id: e.id},
-		Desc: &fwdpb.TableDesc{
-			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
-			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: IngressVRFTable}},
-			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_CONTINUE}}, // TODO: Should this be drop?
-			Table: &fwdpb.TableDesc_Exact{
-				Exact: &fwdpb.ExactTableDesc{
-					FieldIds: []*fwdpb.PacketFieldId{{
-						Field: &fwdpb.PacketField{
-							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT,
-						},
-					}},
-				},
-			},
-		},
-	}
-	if _, err := e.Server.TableCreate(ctx, ingressVRF); err != nil {
-		return err
-	}
-
-	if err := createFIBSelector(ctx, e.id, e.Server); err != nil {
+	if err := CreateFIBSelector(ctx, e.id, e.Server); err != nil {
 		return err
 	}
 	if err := createLayer2PuntTable(ctx, e.id, e.Server); err != nil {
@@ -457,7 +448,7 @@ func (e *Engine) addNextHopList(ctx context.Context, nhg *dpb.NextHopList, mode 
 		}
 		return []*fwdpb.ActionDesc{
 			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_ID).WithUint64Value(nhID)).Build(),
-			fwdconfig.Action(fwdconfig.LookupAction(nhTable)).Build(),
+			fwdconfig.Action(fwdconfig.LookupAction(NHTable)).Build(),
 		}, nil
 	}
 
@@ -476,7 +467,7 @@ func (e *Engine) addNextHopList(ctx context.Context, nhg *dpb.NextHopList, mode 
 	}
 	return []*fwdpb.ActionDesc{
 		fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_GROUP_ID).WithUint64Value(nhgID)).Build(),
-		fwdconfig.Action(fwdconfig.LookupAction(nhgTable)).Build(),
+		fwdconfig.Action(fwdconfig.LookupAction(NHGTable)).Build(),
 	}, nil
 }
 
@@ -537,7 +528,7 @@ func (e *Engine) addNextHopGroupIDList(ctx context.Context, id uint64, nhg *dpb.
 		Action: &fwdpb.ActionDesc_Lookup{
 			Lookup: &fwdpb.LookupActionDesc{
 				TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{
-					Id: nhTable,
+					Id: NHTable,
 				}},
 			},
 		},
@@ -547,7 +538,7 @@ func (e *Engine) addNextHopGroupIDList(ctx context.Context, id uint64, nhg *dpb.
 		ContextId: &fwdpb.ContextId{Id: e.id},
 		TableId: &fwdpb.TableId{
 			ObjectId: &fwdpb.ObjectId{
-				Id: nhgTable,
+				Id: NHGTable,
 			},
 		},
 		Entries: []*fwdpb.TableEntryAddRequest_Entry{{
@@ -632,7 +623,7 @@ func (e *Engine) addNextHop(ctx context.Context, id uint64, nh *dpb.NextHop) err
 		ContextId: &fwdpb.ContextId{Id: e.id},
 		TableId: &fwdpb.TableId{
 			ObjectId: &fwdpb.ObjectId{
-				Id: nhTable,
+				Id: NHTable,
 			},
 		},
 		Entries: []*fwdpb.TableEntryAddRequest_Entry{{
@@ -689,12 +680,12 @@ func (e *Engine) actionsFromRoute(ctx context.Context, route *dpb.Route) ([]*fwd
 	case *dpb.Route_NextHopId:
 		actions = []*fwdpb.ActionDesc{ // Set the next hop ID in the packet's metadata.
 			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_ID).WithUint64Value(hop.NextHopId)).Build(),
-			fwdconfig.Action(fwdconfig.LookupAction(nhTable)).Build(),
+			fwdconfig.Action(fwdconfig.LookupAction(NHTable)).Build(),
 		}
 	case *dpb.Route_NextHopGroupId:
 		actions = []*fwdpb.ActionDesc{ // Set the next hop group ID in the packet's metadata.
 			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_GROUP_ID).WithUint64Value(hop.NextHopGroupId)).Build(),
-			fwdconfig.Action(fwdconfig.LookupAction(nhgTable)).Build(),
+			fwdconfig.Action(fwdconfig.LookupAction(NHGTable)).Build(),
 		}
 	case *dpb.Route_NextHops:
 		var err error
@@ -858,7 +849,7 @@ func (e *Engine) AddNeighbor(ctx context.Context, req *dpb.AddNeighborRequest) (
 	}
 
 	entry := &fwdpb.TableEntryAddRequest{
-		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: neighborTable}},
+		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: NeighborTable}},
 		ContextId: &fwdpb.ContextId{Id: e.id},
 		EntryDesc: entryDesc,
 		Actions: []*fwdpb.ActionDesc{{ // Set the dst MAC.
@@ -892,7 +883,7 @@ func (e *Engine) RemoveNeighbor(ctx context.Context, req *dpb.RemoveNeighborRequ
 	}
 
 	entry := &fwdpb.TableEntryRemoveRequest{
-		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: neighborTable}},
+		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: NeighborTable}},
 		ContextId: &fwdpb.ContextId{Id: e.id},
 		EntryDesc: entryDesc,
 	}
@@ -965,13 +956,12 @@ func (e *Engine) CreateExternalPort(ctx context.Context, t fwdpb.PortType, id, d
 					Inputs: []*fwdpb.ActionDesc{
 						fwdconfig.Action(fwdconfig.LookupAction(layer2PuntTable)).Build(), // Lookup in layer 2 table.
 						fwdconfig.Action(fwdconfig.LookupAction(layer3PuntTable)).Build(), // Lookup in layer 3 table.
-						fwdconfig.Action(fwdconfig.LookupAction(IngressVRFTable)).Build(),
 						fwdconfig.Action(fwdconfig.LookupAction(PreIngressActionTable)).Build(),
 						fwdconfig.Action(fwdconfig.DecapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET)).Build(), // Decap L2 header.
 						fwdconfig.Action(fwdconfig.LookupAction(IngressActionTable)).Build(),
-						fwdconfig.Action(fwdconfig.LookupAction(fibSelectorTable)).Build(),                              // Lookup in FIB.
+						fwdconfig.Action(fwdconfig.LookupAction(FIBSelectorTable)).Build(),                              // Lookup in FIB.
 						fwdconfig.Action(fwdconfig.EncapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET)).Build(), // Decap L2 header.
-						fwdconfig.Action(fwdconfig.LookupAction(neighborTable)).Build(),                                 // Lookup in the neighbor table.
+						fwdconfig.Action(fwdconfig.LookupAction(NeighborTable)).Build(),                                 // Lookup in the neighbor table.
 						fwdconfig.Action(fwdconfig.LookupAction(EgressActionTable)).Build(),
 						{
 							ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
@@ -1163,16 +1153,6 @@ func (e *Engine) AddInterface(ctx context.Context, req *dpb.AddInterfaceRequest)
 	}
 
 	if err := e.UpdatePortSrcMAC(ctx, portID, req.GetMac()); err != nil {
-		return nil, err
-	}
-	e.idToNIDMu.RLock()
-	defer e.idToNIDMu.RUnlock()
-	_, err := e.TableEntryAdd(ctx, fwdconfig.TableEntryAddRequest(e.ID(), IngressVRFTable).
-		AppendEntry(
-			fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT).WithUint64(e.idToNID[portID]))),
-			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF).WithUint64Value(uint64(req.GetVrfId()))),
-		).Build())
-	if err != nil {
 		return nil, err
 	}
 
