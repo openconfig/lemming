@@ -261,6 +261,11 @@ func (a *acl) CreateAclEntry(ctx context.Context, req *saipb.CreateAclEntryReque
 			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF).
 				WithUint64Value(req.GetActionSetVrf().GetOid())).Build())
 	}
+	if req.ActionSetUserTrapId != nil {
+		aReq.Actions = append(aReq.Actions,
+			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TRAP_ID).
+				WithUint64Value(req.GetActionSetUserTrapId().GetOid())).Build())
+	}
 	if req.ActionPacketAction != nil {
 		switch req.GetActionPacketAction().GetPacketAction() {
 		case saipb.PacketAction_PACKET_ACTION_DROP,
@@ -275,6 +280,7 @@ func (a *acl) CreateAclEntry(ctx context.Context, req *saipb.CreateAclEntryReque
 			return nil, status.Errorf(codes.InvalidArgument, "unknown packet action type: %v", req.GetActionPacketAction().GetPacketAction())
 		}
 	}
+
 	if _, err := a.dataplane.TableEntryAdd(ctx, aReq); err != nil {
 		return nil, err
 	}
