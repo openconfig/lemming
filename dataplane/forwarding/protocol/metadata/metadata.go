@@ -42,6 +42,8 @@ type Metadata struct {
 	nextHopID      []byte         // ID of the next hop.
 	nextHopGroupID []byte         // ID of the next hop group.
 	trapID         []byte         // ID of the trap rule that was applies to this packet.
+	inputIface     []byte         // L3 input interface id.
+	outputIface    []byte         // L3 output interface id.
 	desc           *protocol.Desc // Protocol descriptor.
 }
 
@@ -112,8 +114,10 @@ func (m *Metadata) Field(id fwdpacket.FieldID) ([]byte, error) {
 		return m.nextHopGroupID, nil
 	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_ID:
 		return m.nextHopID, nil
-	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TRAP_ID:
-		return m.trapID, nil
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_INPUT_IFACE:
+		return m.inputIface, nil
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE:
+		return m.outputIface, nil
 
 	default:
 		return nil, fmt.Errorf("metadata: Field %v failed, unsupported field", id)
@@ -208,6 +212,12 @@ func (m *Metadata) updateSet(id fwdpacket.FieldID, arg []byte) (bool, error) {
 	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TRAP_ID:
 		m.trapID = arg
 		return true, nil
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_INPUT_IFACE:
+		m.inputIface = arg
+		return true, nil
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE:
+		m.outputIface = arg
+		return true, nil
 	default:
 		return false, fmt.Errorf("metadata: UpdateField failed, set unsupported for field %v", id)
 	}
@@ -259,6 +269,8 @@ func parse(frame *frame.Frame, desc *protocol.Desc) (protocol.Handler, fwdpb.Pac
 		inputPort:   make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT].DefaultSize),
 		outputPort:  make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT].DefaultSize),
 		nextHopIP:   make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP].DefaultSize),
+		inputIface:  make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_INPUT_IFACE].DefaultSize),
+		outputIface: make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE].DefaultSize),
 		attribute32: make(map[uint8][]byte),
 		attribute24: make(map[uint8][]byte),
 		attribute16: make(map[uint8][]byte),

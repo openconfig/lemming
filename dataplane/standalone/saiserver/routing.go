@@ -102,7 +102,7 @@ func newNextHopGroup(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc
 }
 
 // CreateNextHopGroupMember creates a next hop group.
-func (nhg *nextHopGroup) CreateNextHopGroup(ctx context.Context, req *saipb.CreateNextHopGroupRequest) (*saipb.CreateNextHopGroupResponse, error) {
+func (nhg *nextHopGroup) CreateNextHopGroup(_ context.Context, req *saipb.CreateNextHopGroupRequest) (*saipb.CreateNextHopGroupResponse, error) {
 	id := nhg.mgr.NextID()
 
 	if req.GetType() != saipb.NextHopGroupType_NEXT_HOP_GROUP_TYPE_DYNAMIC_UNORDERED_ECMP {
@@ -279,7 +279,7 @@ func (r *route) CreateRouteEntry(ctx context.Context, req *saipb.CreateRouteEntr
 
 	forward := true
 	if req.GetPacketAction() == saipb.PacketAction_PACKET_ACTION_DROP ||
-		req.GetPacketAction() == saipb.PacketAction_PACKET_ACTION_DROP ||
+		req.GetPacketAction() == saipb.PacketAction_PACKET_ACTION_TRAP ||
 		req.GetPacketAction() == saipb.PacketAction_PACKET_ACTION_DENY {
 		forward = false
 	}
@@ -416,7 +416,7 @@ func (ri *routerInterface) CreateRouterInterface(ctx context.Context, req *saipb
 
 	_, err = ri.dataplane.TableEntryAdd(ctx, fwdconfig.TableEntryAddRequest(ri.dataplane.ID(), outputIfaceTable).
 		AppendEntry(
-			fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT).WithUint64(uint64(obj.NID())))),
+			fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE).WithUint64(uint64(obj.NID())))),
 			fwdconfig.Action(fwdconfig.TransmitAction(fmt.Sprint(req.GetPortId()))),
 		).Build())
 	if err != nil {
@@ -424,10 +424,10 @@ func (ri *routerInterface) CreateRouterInterface(ctx context.Context, req *saipb
 	}
 
 	// Link the interface to a VRF.
-	_, err = ri.dataplane.TableEntryAdd(ctx, fwdconfig.TableEntryAddRequest(ri.dataplane.ID(), engine.IngressVRFTable).
+	_, err = ri.dataplane.TableEntryAdd(ctx, fwdconfig.TableEntryAddRequest(ri.dataplane.ID(), IngressVRFTable).
 		AppendEntry(
 			fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_INPUT_IFACE).WithUint64(id))),
-			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF).WithUint64Value(uint64(req.GetVirtualRouterId()))),
+			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF).WithUint64Value(req.GetVirtualRouterId())),
 		).Build())
 	if err != nil {
 		return nil, err

@@ -47,7 +47,7 @@ type Dataplane struct {
 func New(ctx context.Context) (*Dataplane, error) {
 	data := &Dataplane{}
 
-	e, err := engine.New(ctx)
+	e, err := engine.New(ctx, true)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create engine: %w", err)
 	}

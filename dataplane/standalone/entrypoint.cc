@@ -21,6 +21,7 @@
 
 #include <fstream>
 
+#include "dataplane/standalone/packetio/packetio.h"
 #include "dataplane/standalone/proto/acl.grpc.pb.h"
 #include "dataplane/standalone/proto/bfd.grpc.pb.h"
 #include "dataplane/standalone/proto/bmtor.grpc.pb.h"
@@ -119,7 +120,6 @@
 #include "dataplane/standalone/sai/virtual_router.h"
 #include "dataplane/standalone/sai/vlan.h"
 #include "dataplane/standalone/sai/wred.h"
-#include "dataplane/standalone/packetio/packetio.h"
 
 extern "C" {
 #include "experimental/saiextensions.h"

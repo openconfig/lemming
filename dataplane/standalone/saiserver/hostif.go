@@ -280,8 +280,8 @@ func (hostif *hostif) CreateHostifTrap(ctx context.Context, req *saipb.CreateHos
 		return nil, status.Errorf(codes.InvalidArgument, "unknown trap type: %v", tType)
 	}
 
-	switch act := req.GetPacketAction(); act {
-	case saipb.PacketAction_PACKET_ACTION_TRAP: // TRAP means COPY to CPU and DROP, just transmit immediately, which interrupts any pending actions.
+	switch act := req.GetPacketAction(); act { // TODO: Support copy
+	case saipb.PacketAction_PACKET_ACTION_TRAP, saipb.PacketAction_PACKET_ACTION_COPY: // TRAP means COPY to CPU and DROP, just transmit immediately, which interrupts any pending actions.
 		for i := 0; i < entriesAdded; i++ {
 			fwdReq.AppendActions(fwdconfig.Action(fwdconfig.TransmitAction(fmt.Sprint(swAttr.GetAttr().GetCpuPort())).WithImmediate(true)))
 		}

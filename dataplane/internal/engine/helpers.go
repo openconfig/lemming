@@ -39,8 +39,13 @@ func mustParseHex(hexStr string) []byte {
 	return b
 }
 
-// createFIBSelector creates a table that controls which forwarding table is used.
-func createFIBSelector(ctx context.Context, id string, c fwdpb.ForwardingServer) error {
+type tableModifier interface {
+	TableCreate(context.Context, *fwdpb.TableCreateRequest) (*fwdpb.TableCreateReply, error)
+	TableEntryAdd(context.Context, *fwdpb.TableEntryAddRequest) (*fwdpb.TableEntryAddReply, error)
+}
+
+// CreateFIBSelector creates a table that controls which forwarding table is used.
+func CreateFIBSelector(ctx context.Context, id string, c tableModifier) error {
 	fieldID := &fwdpb.PacketFieldId{
 		Field: &fwdpb.PacketField{
 			FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION,
