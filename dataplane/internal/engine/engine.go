@@ -81,6 +81,8 @@ type Engine struct {
 }
 
 // New creates a new engine and sets up the forwarding tables.
+// Disable table creating to use a custom forwarding pipeline.
+// TODO: Delete this file.
 func New(ctx context.Context, createTables bool) (*Engine, error) {
 	e := &Engine{
 		id:                   "lucius",
