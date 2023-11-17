@@ -25,11 +25,12 @@ import (
 	log "github.com/golang/glog"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
+	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
 	"github.com/openconfig/lemming/dataplane/internal/engine"
+	"github.com/openconfig/lemming/dataplane/standalone/packetio/cpusink"
 	"github.com/openconfig/lemming/dataplane/standalone/saiserver/attrmgr"
 
 	saipb "github.com/openconfig/lemming/dataplane/standalone/proto"
-	dpb "github.com/openconfig/lemming/proto/dataplane"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
@@ -57,15 +58,13 @@ type switchDataplaneAPI interface {
 	TableCreate(context.Context, *fwdpb.TableCreateRequest) (*fwdpb.TableCreateReply, error)
 	TableEntryAdd(context.Context, *fwdpb.TableEntryAddRequest) (*fwdpb.TableEntryAddReply, error)
 	PortIDToNID(port string) (uint64, bool)
-	AddNeighbor(ctx context.Context, req *dpb.AddNeighborRequest) (*dpb.AddNeighborResponse, error)
-	AddNextHopGroup(ctx context.Context, req *dpb.AddNextHopGroupRequest) (*dpb.AddNextHopGroupResponse, error)
-	AddNextHop(ctx context.Context, req *dpb.AddNextHopRequest) (*dpb.AddNextHopResponse, error)
-	AddIPRoute(ctx context.Context, req *dpb.AddIPRouteRequest) (*dpb.AddIPRouteResponse, error)
-	AddInterface(ctx context.Context, req *dpb.AddInterfaceRequest) (*dpb.AddInterfaceResponse, error)
 	ID() string
-	CreatePort(ctx context.Context, req *dpb.CreatePortRequest) (*dpb.CreatePortResponse, error)
 	PortState(ctx context.Context, req *fwdpb.PortStateRequest) (*fwdpb.PortStateReply, error)
 	ObjectCounters(context.Context, *fwdpb.ObjectCountersRequest) (*fwdpb.ObjectCountersReply, error)
+	Context() (*fwdcontext.Context, error)
+	PortCreate(context.Context, *fwdpb.PortCreateRequest) (*fwdpb.PortCreateReply, error)
+	PortUpdate(context.Context, *fwdpb.PortUpdateRequest) (*fwdpb.PortUpdateReply, error)
+	AttributeUpdate(context.Context, *fwdpb.AttributeUpdateRequest) (*fwdpb.AttributeUpdateReply, error)
 }
 
 func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server) *saiSwitch {
@@ -93,9 +92,320 @@ func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server) 
 	return sw
 }
 
+const (
+	inputIfaceTable  = "input-iface"
+	outputIfaceTable = "output-iface"
+	IngressVRFTable  = "ingress-vrf"
+)
+
 // CreateSwitch a creates a new switch and populates its default values.
 func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequest) (*saipb.CreateSwitchResponse, error) {
 	swID := sw.mgr.NextID()
+
+	// Setup forwarding tables.
+	ingressVRF := &fwdpb.TableCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
+		Desc: &fwdpb.TableDesc{
+			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: IngressVRFTable}},
+			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_CONTINUE}}, // TODO: Should this be drop?
+			Table: &fwdpb.TableDesc_Exact{
+				Exact: &fwdpb.ExactTableDesc{
+					FieldIds: []*fwdpb.PacketFieldId{{
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_INPUT_IFACE,
+						},
+					}},
+				},
+			},
+		},
+	}
+	if _, err := sw.dataplane.TableCreate(ctx, ingressVRF); err != nil {
+		return nil, err
+	}
+
+	v4FIB := &fwdpb.TableCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
+		Desc: &fwdpb.TableDesc{
+			TableType: fwdpb.TableType_TABLE_TYPE_PREFIX,
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: engine.FIBV4Table}},
+			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_DROP}},
+			Table: &fwdpb.TableDesc_Prefix{
+				Prefix: &fwdpb.PrefixTableDesc{
+					FieldIds: []*fwdpb.PacketFieldId{{
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF,
+						},
+					}, {
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST,
+						},
+					}},
+				},
+			},
+		},
+	}
+	if _, err := sw.dataplane.TableCreate(ctx, v4FIB); err != nil {
+		return nil, err
+	}
+	v6FIB := &fwdpb.TableCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
+		Desc: &fwdpb.TableDesc{
+			TableType: fwdpb.TableType_TABLE_TYPE_PREFIX,
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: engine.FIBV6Table}},
+			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_DROP}},
+			Table: &fwdpb.TableDesc_Prefix{
+				Prefix: &fwdpb.PrefixTableDesc{
+					FieldIds: []*fwdpb.PacketFieldId{{
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF,
+						},
+					}, {
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST,
+						},
+					}},
+				},
+			},
+		},
+	}
+	if _, err := sw.dataplane.TableCreate(ctx, v6FIB); err != nil {
+		return nil, err
+	}
+	portMAC := &fwdpb.TableCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
+		Desc: &fwdpb.TableDesc{
+			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: engine.SRCMACTable}},
+			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_DROP}},
+			Table: &fwdpb.TableDesc_Exact{
+				Exact: &fwdpb.ExactTableDesc{
+					FieldIds: []*fwdpb.PacketFieldId{{
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE,
+						},
+					}},
+				},
+			},
+		},
+	}
+	if _, err := sw.dataplane.TableCreate(ctx, portMAC); err != nil {
+		return nil, err
+	}
+	neighbor := &fwdpb.TableCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
+		Desc: &fwdpb.TableDesc{
+			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: engine.NeighborTable}},
+			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_DROP}},
+			Table: &fwdpb.TableDesc_Exact{
+				Exact: &fwdpb.ExactTableDesc{
+					FieldIds: []*fwdpb.PacketFieldId{{
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE,
+						},
+					}, {
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP,
+						},
+					}},
+				},
+			},
+		},
+	}
+	if _, err := sw.dataplane.TableCreate(ctx, neighbor); err != nil {
+		return nil, err
+	}
+	nh := &fwdpb.TableCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
+		Desc: &fwdpb.TableDesc{
+			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: engine.NHTable}},
+			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_DROP}},
+			Table: &fwdpb.TableDesc_Exact{
+				Exact: &fwdpb.ExactTableDesc{
+					FieldIds: []*fwdpb.PacketFieldId{{
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_ID,
+						},
+					}},
+				},
+			},
+		},
+	}
+	if _, err := sw.dataplane.TableCreate(ctx, nh); err != nil {
+		return nil, err
+	}
+	nhg := &fwdpb.TableCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
+		Desc: &fwdpb.TableDesc{
+			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: engine.NHGTable}},
+			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_DROP}},
+			Table: &fwdpb.TableDesc_Exact{
+				Exact: &fwdpb.ExactTableDesc{
+					FieldIds: []*fwdpb.PacketFieldId{{
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_GROUP_ID,
+						},
+					}},
+				},
+			},
+		},
+	}
+	if _, err := sw.dataplane.TableCreate(ctx, nhg); err != nil {
+		return nil, err
+	}
+	engine.CreateFIBSelector(ctx, sw.dataplane.ID(), sw.dataplane)
+
+	action := &fwdpb.TableCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
+		Desc: &fwdpb.TableDesc{
+			TableType: fwdpb.TableType_TABLE_TYPE_ACTION,
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: engine.PreIngressActionTable}},
+			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_CONTINUE}},
+			Table: &fwdpb.TableDesc_Action{
+				Action: &fwdpb.ActionTableDesc{},
+			},
+		},
+	}
+	if _, err := sw.dataplane.TableCreate(ctx, action); err != nil {
+		return nil, err
+	}
+	action.Desc.TableId.ObjectId.Id = engine.IngressActionTable
+	if _, err := sw.dataplane.TableCreate(ctx, action); err != nil {
+		return nil, err
+	}
+	action.Desc.TableId.ObjectId.Id = engine.EgressActionTable
+	if _, err := sw.dataplane.TableCreate(ctx, action); err != nil {
+		return nil, err
+	}
+
+	// Setup the packet io tables. A packet is punted by setting the output port to the CPU port.
+	// There a two places where packets can be punted:
+	//   1. pre-fib: the trap table contains rules that may punt the packets.
+	// Once a packet is sent to the CPU port, it must be matched to a hostif:
+	//   1. ip2me: a table maps IP DST to hostif port. (populated by the CPU port).
+	//   2. hostif table: a table the maps TRAP IP to the hostif. (trap id is set by the ACL actions).
+	//   3. default/wildcard: each hostif is created with a corresponding port, use that mapping to determine correct hostif.
+	// Once the output port is determined, based on the hostif type:
+	//   1. For genetlink: send the packets using the CPU port gRPC connection.
+	//   2. For netdev (lucius kernel/tap): write the packets directly to the hostif.
+
+	// Create the trap table and add it to the end of ingress stage.
+	_, err := sw.dataplane.TableCreate(ctx, &fwdpb.TableCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
+		Desc: &fwdpb.TableDesc{
+			TableType: fwdpb.TableType_TABLE_TYPE_FLOW,
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: trapTableID}},
+			Table: &fwdpb.TableDesc_Flow{
+				Flow: &fwdpb.FlowTableDesc{
+					BankCount: 1,
+				},
+			},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	// Add at the end of the pre-ingress table, since this need to happen before the layer 2 header is decapped.
+	_, err = sw.dataplane.TableEntryAdd(ctx, fwdconfig.TableEntryAddRequest(sw.dataplane.ID(), engine.PreIngressActionTable).
+		AppendEntry(
+			fwdconfig.EntryDesc(fwdconfig.ActionEntry("trap", fwdpb.ActionEntryDesc_INSERT_METHOD_APPEND)),
+			fwdconfig.Action(fwdconfig.LookupAction(trapTableID))).
+		Build(),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create the IP2MeTable and hostif tables, these map the packet to real hostif port.
+	// These tables are set as output actions of the CPU port.
+	_, err = sw.dataplane.TableCreate(ctx, &fwdpb.TableCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
+		Desc: &fwdpb.TableDesc{
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: cpusink.IP2MeTable}},
+			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
+			Table: &fwdpb.TableDesc_Exact{
+				Exact: &fwdpb.ExactTableDesc{
+					FieldIds: []*fwdpb.PacketFieldId{{
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST,
+						},
+					}},
+				},
+			},
+			Actions: []*fwdpb.ActionDesc{{
+				ActionType: fwdpb.ActionType_ACTION_TYPE_CONTINUE,
+			}},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = sw.dataplane.TableCreate(ctx, &fwdpb.TableCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
+		Desc: &fwdpb.TableDesc{
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: hostifTable}},
+			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
+			Table: &fwdpb.TableDesc_Exact{
+				Exact: &fwdpb.ExactTableDesc{
+					FieldIds: []*fwdpb.PacketFieldId{{
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TRAP_ID,
+						},
+					}},
+				},
+			},
+			Actions: []*fwdpb.ActionDesc{{
+				ActionType: fwdpb.ActionType_ACTION_TYPE_SWAP_OUTPUT_INTERNAL_EXTERNAL,
+			}},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = sw.dataplane.TableCreate(ctx, &fwdpb.TableCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
+		Desc: &fwdpb.TableDesc{
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: inputIfaceTable}},
+			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
+			Table: &fwdpb.TableDesc_Exact{
+				Exact: &fwdpb.ExactTableDesc{
+					FieldIds: []*fwdpb.PacketFieldId{{
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT, // TODO: Figure out all the ways ports can be mapped to interfaces.
+						},
+					}},
+				},
+			},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = sw.dataplane.TableCreate(ctx, &fwdpb.TableCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
+		Desc: &fwdpb.TableDesc{
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: outputIfaceTable}},
+			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
+			Table: &fwdpb.TableDesc_Exact{
+				Exact: &fwdpb.ExactTableDesc{
+					FieldIds: []*fwdpb.PacketFieldId{{
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE,
+						},
+					}},
+				},
+			},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
 
 	cpuPortID, err := sw.port.createCPUPort(ctx)
 	if err != nil {
@@ -125,22 +435,6 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 	}
 	brResp, err := attrmgr.InvokeAndSave(ctx, sw.mgr, sw.bridge.CreateBridge, &saipb.CreateBridgeRequest{
 		Switch: swID,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	_, err = sw.dataplane.TableCreate(ctx, &fwdpb.TableCreateRequest{
-		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
-		Desc: &fwdpb.TableDesc{
-			TableType: fwdpb.TableType_TABLE_TYPE_FLOW,
-			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: trapTableID}},
-			Table: &fwdpb.TableDesc_Flow{
-				Flow: &fwdpb.FlowTableDesc{
-					BankCount: 1,
-				},
-			},
-		},
 	})
 	if err != nil {
 		return nil, err
@@ -273,7 +567,7 @@ func (sw *saiSwitch) bindACLTable(ctx context.Context, aclTableID, stageID strin
 		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
 		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: stageID}},
 		Actions:   []*fwdpb.ActionDesc{fwdconfig.Action(fwdconfig.LookupAction(aclTableID)).Build()},
-		EntryDesc: &fwdpb.EntryDesc{Entry: &fwdpb.EntryDesc_Action{Action: &fwdpb.ActionEntryDesc{Id: "acl", InsertMethod: fwdpb.ActionEntryDesc_INSERT_METHOD_APPEND}}},
+		EntryDesc: &fwdpb.EntryDesc{Entry: &fwdpb.EntryDesc_Action{Action: &fwdpb.ActionEntryDesc{Id: "acl", InsertMethod: fwdpb.ActionEntryDesc_INSERT_METHOD_PREPEND}}},
 	})
 	return err
 }

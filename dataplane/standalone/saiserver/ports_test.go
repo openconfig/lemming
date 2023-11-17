@@ -17,7 +17,6 @@ package saiserver
 import (
 	"context"
 	"fmt"
-	"io"
 	"net"
 	"testing"
 
@@ -29,7 +28,6 @@ import (
 
 	saipb "github.com/openconfig/lemming/dataplane/standalone/proto"
 	"github.com/openconfig/lemming/dataplane/standalone/saiserver/attrmgr"
-	dpb "github.com/openconfig/lemming/proto/dataplane"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
@@ -172,7 +170,7 @@ func TestCreatePort(t *testing.T) {
 			getInterface = func(name string) (*net.Interface, error) {
 				return nil, tt.getInterfaceErr
 			}
-			dplane := &fakePortDataplaneAPI{}
+			dplane := &fakeSwitchDataplane{}
 			c, mgr, stopFn := newTestPort(t, dplane)
 			defer stopFn()
 			got, gotErr := c.CreatePort(context.TODO(), tt.req)
@@ -213,7 +211,7 @@ func TestSetPortAttribute(t *testing.T) {
 		wantReq: &fwdpb.PortStateRequest{
 			PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: "1"}},
 			Operation: &fwdpb.PortInfo{AdminStatus: fwdpb.PortState_PORT_STATE_DISABLED_DOWN},
-			ContextId: &fwdpb.ContextId{},
+			ContextId: &fwdpb.ContextId{Id: "foo"},
 		},
 		wantAttr: &saipb.PortAttribute{
 			OperStatus: saipb.PortOperStatus_PORT_OPER_STATUS_DOWN.Enum(),
@@ -225,7 +223,7 @@ func TestSetPortAttribute(t *testing.T) {
 			getInterface = func(name string) (*net.Interface, error) {
 				return nil, tt.getInterfaceErr
 			}
-			dplane := &fakePortDataplaneAPI{}
+			dplane := &fakeSwitchDataplane{}
 			c, mgr, stopFn := newTestPort(t, dplane)
 			mgr.StoreAttributes(1, &saipb.PortAttribute{
 				OperStatus: saipb.PortOperStatus_PORT_OPER_STATUS_DOWN.Enum(),
@@ -315,7 +313,7 @@ func TestGetPortStats(t *testing.T) {
 	}}
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			dplane := &fakePortDataplaneAPI{
+			dplane := &fakeSwitchDataplane{
 				counterReplies: []*fwdpb.ObjectCountersReply{tt.counterReply},
 			}
 			c, _, stopFn := newTestPort(t, dplane)
@@ -334,39 +332,9 @@ func TestGetPortStats(t *testing.T) {
 	}
 }
 
-func newTestPort(t testing.TB, api portDataplaneAPI) (saipb.PortClient, *attrmgr.AttrMgr, func()) {
+func newTestPort(t testing.TB, api switchDataplaneAPI) (saipb.PortClient, *attrmgr.AttrMgr, func()) {
 	conn, mgr, stopFn := newTestServer(t, func(mgr *attrmgr.AttrMgr, srv *grpc.Server) {
 		newPort(mgr, api, srv)
 	})
 	return saipb.NewPortClient(conn), mgr, stopFn
-}
-
-type fakePortDataplaneAPI struct {
-	gotPortStateReq   []*fwdpb.PortStateRequest
-	gotPortCreateReq  []*dpb.CreatePortRequest
-	counterReplies    []*fwdpb.ObjectCountersReply
-	counterRepliesIdx int
-}
-
-func (f *fakePortDataplaneAPI) ID() string {
-	return ""
-}
-
-func (f *fakePortDataplaneAPI) CreatePort(_ context.Context, req *dpb.CreatePortRequest) (*dpb.CreatePortResponse, error) {
-	f.gotPortCreateReq = append(f.gotPortCreateReq, req)
-	return nil, nil
-}
-
-func (f *fakePortDataplaneAPI) PortState(_ context.Context, req *fwdpb.PortStateRequest) (*fwdpb.PortStateReply, error) {
-	f.gotPortStateReq = append(f.gotPortStateReq, req)
-	return nil, nil
-}
-
-func (f *fakePortDataplaneAPI) ObjectCounters(context.Context, *fwdpb.ObjectCountersRequest) (*fwdpb.ObjectCountersReply, error) {
-	if f.counterRepliesIdx > len(f.counterReplies) {
-		return nil, io.EOF
-	}
-	r := f.counterReplies[f.counterRepliesIdx]
-	f.counterRepliesIdx++
-	return r, nil
 }

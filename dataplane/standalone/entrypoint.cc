@@ -21,6 +21,7 @@
 
 #include <fstream>
 
+#include "dataplane/standalone/packetio/packetio.h"
 #include "dataplane/standalone/proto/acl.grpc.pb.h"
 #include "dataplane/standalone/proto/bfd.grpc.pb.h"
 #include "dataplane/standalone/proto/bmtor.grpc.pb.h"
@@ -256,6 +257,7 @@ sai_status_t sai_api_initialize(
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
+  StartSink();
 
   return SAI_STATUS_SUCCESS;
 }

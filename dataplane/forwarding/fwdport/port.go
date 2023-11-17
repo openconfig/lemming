@@ -88,6 +88,9 @@ type Port interface {
 
 	// State manages the state of the port.
 	State(op *fwdpb.PortInfo) (*fwdpb.PortStateReply, error)
+
+	// Type returns the port type.
+	Type() fwdpb.PortType
 }
 
 // A Builder can build Ports of the specified type.

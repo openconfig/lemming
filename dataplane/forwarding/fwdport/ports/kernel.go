@@ -69,6 +69,10 @@ func (p *kernelPort) String() string {
 	return desc
 }
 
+func (p *kernelPort) Type() fwdpb.PortType {
+	return fwdpb.PortType_PORT_TYPE_KERNEL
+}
+
 func (p *kernelPort) Cleanup() {
 	p.input.Cleanup()
 	p.output.Cleanup()

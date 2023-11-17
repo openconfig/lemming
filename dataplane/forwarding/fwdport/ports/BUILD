@@ -6,6 +6,7 @@ go_library(
         "cpu.go",
         "doc.go",
         "fake.go",
+        "genetlink.go",
         "group.go",
         "kernel.go",
         "tap.go",

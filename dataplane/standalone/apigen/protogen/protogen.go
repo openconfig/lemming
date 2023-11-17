@@ -90,16 +90,19 @@ func generateCommonTypes(docInfo *docparser.SAIInfo) (string, error) {
 			Name:   protoName,
 			Values: []protoEnumValues{{Index: 0, Name: unspecifiedName}},
 		}
-		for i, val := range vals {
+		seenValues := map[int]struct{}{}
+		for _, val := range vals {
 			name := strings.TrimPrefix(val.Name, "SAI_")
 			// If the SAI name conflicts with unspecified proto name, then add SAI prefix,
 			// that way the proto enum value is always 1 greater than the c enum.
 			if name == unspecifiedName {
 				name = strings.TrimSuffix(saiast.TrimSAIName(name, false, true), "_UNSPECIFIED") + "_SAI_UNSPECIFIED"
 			}
-			if i != val.Value {
+
+			if _, ok := seenValues[val.Value]; ok {
 				enum.Alias = true
 			}
+			seenValues[val.Value] = struct{}{}
 			enum.Values = append(enum.Values, protoEnumValues{
 				Index: val.Value + 1,
 				Name:  name,

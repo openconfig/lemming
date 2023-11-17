@@ -23,26 +23,32 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/openconfig/lemming/dataplane/forwarding/attributes"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
-	saipb "github.com/openconfig/lemming/dataplane/standalone/proto"
 	"github.com/openconfig/lemming/dataplane/standalone/saiserver/attrmgr"
-	dpb "github.com/openconfig/lemming/proto/dataplane"
+
+	saipb "github.com/openconfig/lemming/dataplane/standalone/proto"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
 func newHostif(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server) *hostif {
-	p := &hostif{
-		mgr:       mgr,
-		dataplane: dataplane,
+	hostif := &hostif{
+		mgr:              mgr,
+		dataplane:        dataplane,
+		trapIDToHostifID: map[uint64]uint64{},
+		groupIDToQueue:   map[uint64]uint32{},
 	}
-	saipb.RegisterHostifServer(s, p)
-	return p
+
+	saipb.RegisterHostifServer(s, hostif)
+	return hostif
 }
 
 type hostif struct {
 	saipb.UnimplementedHostifServer
-	mgr       *attrmgr.AttrMgr
-	dataplane switchDataplaneAPI
+	mgr              *attrmgr.AttrMgr
+	dataplane        switchDataplaneAPI
+	trapIDToHostifID map[uint64]uint64
+	groupIDToQueue   map[uint64]uint32
 }
 
 // CreateHostif creates a hostif interface (usually a tap interface).
@@ -50,34 +56,134 @@ func (hostif *hostif) CreateHostif(ctx context.Context, req *saipb.CreateHostifR
 	id := hostif.mgr.NextID()
 
 	switch req.GetType() {
-	case saipb.HostifType_HOSTIF_TYPE_GENETLINK: // TODO: support this type
+	case saipb.HostifType_HOSTIF_TYPE_GENETLINK: // For genetlink device, pass the port description to the cpu sink.
+		// First, create the port in the dataplane: this port is "virtual", it doesn't do any packet io.
+		// It ensures that the packet metadata is correct.
+		portReq := &fwdpb.PortCreateRequest{
+			ContextId: &fwdpb.ContextId{Id: hostif.dataplane.ID()},
+			Port: &fwdpb.PortDesc{
+				PortId:   &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)}},
+				PortType: fwdpb.PortType_PORT_TYPE_GENETLINK,
+				Port: &fwdpb.PortDesc_Genetlink{
+					Genetlink: &fwdpb.GenetlinkPortDesc{
+						FamilyName: string(req.GetName()),
+						GroupName:  string(req.GetGenetlinkMcgrpName()),
+					},
+				},
+			},
+		}
+		if _, err := hostif.dataplane.PortCreate(ctx, portReq); err != nil {
+			return nil, err
+		}
+		// Notify the cpu sink about these port types.
+		fwdCtx, err := hostif.dataplane.Context()
+		if err != nil {
+			return nil, err
+		}
+		fwdCtx.RLock()
+		ps := fwdCtx.PacketSink()
+		fwdCtx.RUnlock()
+		ps(&fwdpb.PacketSinkResponse{
+			Resp: &fwdpb.PacketSinkResponse_Port{
+				Port: &fwdpb.PacketSinkPortInfo{
+					Port: portReq.Port,
+				},
+			},
+		})
+
 		return &saipb.CreateHostifResponse{Oid: id}, nil
 	case saipb.HostifType_HOSTIF_TYPE_NETDEV:
-		portReq := &dpb.CreatePortRequest{
-			Id:   fmt.Sprint(id),
-			Type: fwdpb.PortType_PORT_TYPE_KERNEL,
-			Src: &dpb.CreatePortRequest_KernelDev{
-				KernelDev: string(req.GetName()),
+		port := &fwdpb.PortCreateRequest{
+			ContextId: &fwdpb.ContextId{Id: hostif.dataplane.ID()},
+			Port: &fwdpb.PortDesc{
+				PortType: fwdpb.PortType_PORT_TYPE_KERNEL,
+				PortId: &fwdpb.PortId{
+					ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)},
+				},
+				Port: &fwdpb.PortDesc_Kernel{
+					Kernel: &fwdpb.KernelPortDesc{
+						DeviceName: string(req.GetName()),
+					},
+				},
 			},
-			Location: dpb.PortLocation_PORT_LOCATION_INTERNAL,
 		}
+		if _, err := hostif.dataplane.PortCreate(ctx, port); err != nil {
+			if err != nil {
+				return nil, err
+			}
+		}
+
 		attrReq := &saipb.GetPortAttributeRequest{Oid: req.GetObjId(), AttrType: []saipb.PortAttr{saipb.PortAttr_PORT_ATTR_OPER_STATUS}}
 		p := &saipb.GetPortAttributeResponse{}
 		if err := hostif.mgr.PopulateAttributes(attrReq, p); err != nil {
 			return nil, err
 		}
+		// If there is a corresponding port for the hostif, update the attributes
 		if p.GetAttr().GetOperStatus() != saipb.PortOperStatus_PORT_OPER_STATUS_NOT_PRESENT {
-			portReq.ExternalPort = fmt.Sprint(req.GetObjId())
-		}
-		if _, err := hostif.dataplane.CreatePort(ctx, portReq); err != nil {
+			_, err := hostif.dataplane.AttributeUpdate(ctx, &fwdpb.AttributeUpdateRequest{
+				ContextId: &fwdpb.ContextId{Id: hostif.dataplane.ID()},
+				ObjectId:  &fwdpb.ObjectId{Id: fmt.Sprint(id)},
+				AttrId:    attributes.SwapActionRelatedPort,
+				AttrValue: fmt.Sprint(req.GetObjId()),
+			})
+			if err != nil {
+				return nil, err
+			}
+			_, err = hostif.dataplane.AttributeUpdate(ctx, &fwdpb.AttributeUpdateRequest{
+				ContextId: &fwdpb.ContextId{Id: hostif.dataplane.ID()},
+				ObjectId:  &fwdpb.ObjectId{Id: fmt.Sprint(req.GetObjId())},
+				AttrId:    attributes.SwapActionRelatedPort,
+				AttrValue: fmt.Sprint(id),
+			})
 			if err != nil {
 				return nil, err
 			}
 		}
+		update := &fwdpb.PortUpdateRequest{
+			ContextId: &fwdpb.ContextId{Id: hostif.dataplane.ID()},
+			PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)}},
+			Update: &fwdpb.PortUpdateDesc{
+				Port: &fwdpb.PortUpdateDesc_Kernel{
+					Kernel: &fwdpb.KernelPortUpdateDesc{
+						Inputs: []*fwdpb.ActionDesc{{ // Assume that the packet's originating from the device are sent to correct port.
+							ActionType: fwdpb.ActionType_ACTION_TYPE_SWAP_OUTPUT_INTERNAL_EXTERNAL,
+						}, {
+							ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
+						}},
+					},
+				},
+			},
+		}
+		if _, err := hostif.dataplane.PortUpdate(ctx, update); err != nil {
+			return nil, err
+		}
+
 		attr := &saipb.HostifAttribute{
 			OperStatus: proto.Bool(true),
 		}
 		hostif.mgr.StoreAttributes(id, attr)
+
+		// Notify the cpu sink about these port types.
+		fwdCtx, err := hostif.dataplane.Context()
+		if err != nil {
+			return nil, err
+		}
+		fwdCtx.RLock()
+		ps := fwdCtx.PacketSink()
+		fwdCtx.RUnlock()
+		ps(&fwdpb.PacketSinkResponse{
+			Resp: &fwdpb.PacketSinkResponse_Port{
+				Port: &fwdpb.PacketSinkPortInfo{
+					Port: &fwdpb.PortDesc{
+						PortType: fwdpb.PortType_PORT_TYPE_KERNEL,
+						PortId:   &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)}},
+						Port: &fwdpb.PortDesc_Kernel{
+							Kernel: &fwdpb.KernelPortDesc{DeviceName: string(req.GetName())},
+						},
+					},
+				},
+			},
+		})
 	default:
 		return nil, status.Errorf(codes.InvalidArgument, "unknown type %v", req.GetType())
 	}
@@ -106,8 +212,7 @@ func (hostif *hostif) SetHostifAttribute(ctx context.Context, req *saipb.SetHost
 }
 
 var (
-	etherTypeARP = []byte{0x08, 0x06}
-
+	etherTypeARP  = []byte{0x08, 0x06}
 	udldDstMAC    = []byte{0x01, 0x00, 0x0C, 0xCC, 0xCC, 0xCC}
 	etherTypeLLDP = []byte{0x88, 0xcc}
 	ndDstMAC      = []byte{0x33, 0x33, 0x00, 0x00, 0x00, 0x00} // ND is generic IPv6 multicast MAC.
@@ -116,8 +221,9 @@ var (
 )
 
 const (
-	bgpPort     = 179
-	trapTableID = "trap-table"
+	bgpPort        = 179
+	trapTableID    = "trap-table"
+	wildcardPortID = 0
 )
 
 func (hostif *hostif) CreateHostifTrap(ctx context.Context, req *saipb.CreateHostifTrapRequest) (*saipb.CreateHostifTrapResponse, error) {
@@ -174,8 +280,8 @@ func (hostif *hostif) CreateHostifTrap(ctx context.Context, req *saipb.CreateHos
 		return nil, status.Errorf(codes.InvalidArgument, "unknown trap type: %v", tType)
 	}
 
-	switch act := req.GetPacketAction(); act {
-	case saipb.PacketAction_PACKET_ACTION_TRAP: // TRAP means COPY to CPU and DROP, just transmit immediately, which interrupts any pending actions.
+	switch act := req.GetPacketAction(); act { // TODO: Support copy
+	case saipb.PacketAction_PACKET_ACTION_TRAP, saipb.PacketAction_PACKET_ACTION_COPY: // TRAP means COPY to CPU and DROP, just transmit immediately, which interrupts any pending actions.
 		for i := 0; i < entriesAdded; i++ {
 			fwdReq.AppendActions(fwdconfig.Action(fwdconfig.TransmitAction(fmt.Sprint(swAttr.GetAttr().GetCpuPort())).WithImmediate(true)))
 		}
@@ -185,20 +291,47 @@ func (hostif *hostif) CreateHostifTrap(ctx context.Context, req *saipb.CreateHos
 	if _, err := hostif.dataplane.TableEntryAdd(ctx, fwdReq.Build()); err != nil {
 		return nil, err
 	}
-	// group := req.GetTrapGroup()
+	// TODO: Support multiple queues, by using the group ID.
 	return &saipb.CreateHostifTrapResponse{
 		Oid: id,
 	}, nil
 }
 
-func (hostif *hostif) CreateHostifTrapGroup(context.Context, *saipb.CreateHostifTrapGroupRequest) (*saipb.CreateHostifTrapGroupResponse, error) {
-	return nil, nil
+func (hostif *hostif) CreateHostifTrapGroup(_ context.Context, req *saipb.CreateHostifTrapGroupRequest) (*saipb.CreateHostifTrapGroupResponse, error) {
+	id := hostif.mgr.NextID()
+	hostif.groupIDToQueue[id] = req.GetQueue()
+	return &saipb.CreateHostifTrapGroupResponse{Oid: id}, nil
 }
 
-func (hostif *hostif) CreateHostifUserDefinedTrap(context.Context, *saipb.CreateHostifUserDefinedTrapRequest) (*saipb.CreateHostifUserDefinedTrapResponse, error) {
-	return nil, nil
+func (hostif *hostif) CreateHostifUserDefinedTrap(_ context.Context, req *saipb.CreateHostifUserDefinedTrapRequest) (*saipb.CreateHostifUserDefinedTrapResponse, error) {
+	if req.GetType() != saipb.HostifUserDefinedTrapType_HOSTIF_USER_DEFINED_TRAP_TYPE_ACL {
+		return nil, status.Errorf(codes.InvalidArgument, "unsupported trap type: %v", req.GetType())
+	}
+	return &saipb.CreateHostifUserDefinedTrapResponse{Oid: hostif.mgr.NextID()}, nil
 }
 
-func (hostif *hostif) CreateHostifTableEntry(context.Context, *saipb.CreateHostifTableEntryRequest) (*saipb.CreateHostifTableEntryResponse, error) {
+const (
+	hostifTable = "hostiftable"
+)
+
+func (hostif *hostif) CreateHostifTableEntry(ctx context.Context, req *saipb.CreateHostifTableEntryRequest) (*saipb.CreateHostifTableEntryResponse, error) {
+	switch entryType := req.GetType(); entryType {
+	case saipb.HostifTableEntryType_HOSTIF_TABLE_ENTRY_TYPE_TRAP_ID:
+		hostif.trapIDToHostifID[req.GetTrapId()] = req.GetHostIf()
+		_, err := hostif.dataplane.TableEntryAdd(ctx, fwdconfig.TableEntryAddRequest(hostif.dataplane.ID(), hostifTable).
+			AppendEntry(
+				fwdconfig.EntryDesc(fwdconfig.ExactEntry(
+					fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TRAP_ID).WithUint64(req.GetTrapId()))),
+				fwdconfig.Action(fwdconfig.TransmitAction(fmt.Sprint(req.GetHostIf())))).
+			Build())
+		if err != nil {
+			return nil, err
+		}
+	case saipb.HostifTableEntryType_HOSTIF_TABLE_ENTRY_TYPE_WILDCARD:
+		hostif.trapIDToHostifID[req.GetTrapId()] = wildcardPortID
+	default:
+		return nil, status.Errorf(codes.InvalidArgument, "unsupported entry type: %v", entryType)
+	}
+
 	return nil, nil
 }

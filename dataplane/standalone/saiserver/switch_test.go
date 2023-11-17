@@ -28,6 +28,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/testing/protocmp"
 
+	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
 	"github.com/openconfig/lemming/dataplane/standalone/saiserver/attrmgr"
 	dpb "github.com/openconfig/lemming/proto/dataplane"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
@@ -211,18 +212,14 @@ func TestSwitchPortStateChangeNotification(t *testing.T) {
 }
 
 type fakeSwitchDataplane struct {
-	events                []*fwdpb.EventDesc
-	gotAddNeighborReq     []*dpb.AddNeighborRequest
-	gotAddNextHopGroupReq []*dpb.AddNextHopGroupRequest
-	gotAddNextHopReq      []*dpb.AddNextHopRequest
-	gotAddIPRouteReq      []*dpb.AddIPRouteRequest
-	gotAddInterfaceReq    []*dpb.AddInterfaceRequest
-	gotEntryAddReqs       []*fwdpb.TableEntryAddRequest
-	gotPortStateReq       []*fwdpb.PortStateRequest
-	gotPortCreateReq      []*dpb.CreatePortRequest
-	counterReplies        []*fwdpb.ObjectCountersReply
-	portIDToNID           map[string]uint64
-	counterRepliesIdx     int
+	events            []*fwdpb.EventDesc
+	gotEntryAddReqs   []*fwdpb.TableEntryAddRequest
+	gotPortStateReq   []*fwdpb.PortStateRequest
+	gotPortCreateReq  []*dpb.CreatePortRequest
+	counterReplies    []*fwdpb.ObjectCountersReply
+	portIDToNID       map[string]uint64
+	counterRepliesIdx int
+	ctx               *fwdcontext.Context
 }
 
 func (f *fakeSwitchDataplane) NotifySubscribe(_ *fwdpb.NotifySubscribeRequest, srv fwdpb.Forwarding_NotifySubscribeServer) error {
@@ -246,31 +243,6 @@ func (f *fakeSwitchDataplane) PortIDToNID(id string) (uint64, bool) {
 	return nid, ok
 }
 
-func (f *fakeSwitchDataplane) AddNeighbor(_ context.Context, req *dpb.AddNeighborRequest) (*dpb.AddNeighborResponse, error) {
-	f.gotAddNeighborReq = append(f.gotAddNeighborReq, req)
-	return nil, nil
-}
-
-func (f *fakeSwitchDataplane) AddNextHopGroup(_ context.Context, req *dpb.AddNextHopGroupRequest) (*dpb.AddNextHopGroupResponse, error) {
-	f.gotAddNextHopGroupReq = append(f.gotAddNextHopGroupReq, req)
-	return nil, nil
-}
-
-func (f *fakeSwitchDataplane) AddNextHop(_ context.Context, req *dpb.AddNextHopRequest) (*dpb.AddNextHopResponse, error) {
-	f.gotAddNextHopReq = append(f.gotAddNextHopReq, req)
-	return nil, nil
-}
-
-func (f *fakeSwitchDataplane) AddIPRoute(_ context.Context, req *dpb.AddIPRouteRequest) (*dpb.AddIPRouteResponse, error) {
-	f.gotAddIPRouteReq = append(f.gotAddIPRouteReq, req)
-	return nil, nil
-}
-
-func (f *fakeSwitchDataplane) AddInterface(_ context.Context, req *dpb.AddInterfaceRequest) (*dpb.AddInterfaceResponse, error) {
-	f.gotAddInterfaceReq = append(f.gotAddInterfaceReq, req)
-	return nil, nil
-}
-
 func (f *fakeSwitchDataplane) CreatePort(_ context.Context, req *dpb.CreatePortRequest) (*dpb.CreatePortResponse, error) {
 	f.gotPortCreateReq = append(f.gotPortCreateReq, req)
 	return nil, nil
@@ -292,6 +264,22 @@ func (f *fakeSwitchDataplane) ObjectCounters(context.Context, *fwdpb.ObjectCount
 
 func (f *fakeSwitchDataplane) ID() string {
 	return "foo"
+}
+
+func (f *fakeSwitchDataplane) Context() (*fwdcontext.Context, error) {
+	return f.ctx, nil
+}
+
+func (f *fakeSwitchDataplane) PortCreate(context.Context, *fwdpb.PortCreateRequest) (*fwdpb.PortCreateReply, error) {
+	return nil, nil
+}
+
+func (f *fakeSwitchDataplane) PortUpdate(context.Context, *fwdpb.PortUpdateRequest) (*fwdpb.PortUpdateReply, error) {
+	return nil, nil
+}
+
+func (f *fakeSwitchDataplane) AttributeUpdate(context.Context, *fwdpb.AttributeUpdateRequest) (*fwdpb.AttributeUpdateReply, error) {
+	return nil, nil
 }
 
 func newTestServer(t testing.TB, newSrvFn func(mgr *attrmgr.AttrMgr, srv *grpc.Server)) (grpc.ClientConnInterface, *attrmgr.AttrMgr, func()) {

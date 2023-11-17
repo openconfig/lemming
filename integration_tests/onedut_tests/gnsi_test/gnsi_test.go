@@ -21,11 +21,12 @@ import (
 	"github.com/openconfig/gnmi/errdiff"
 	"github.com/openconfig/ondatra"
 	"github.com/openconfig/ondatra/gnmi"
-	"github.com/openconfig/ondatra/gnmi/oc"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot"
 	"google.golang.org/grpc/metadata"
 
+	"github.com/openconfig/lemming/gnmi/oc"
+	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 	"github.com/openconfig/lemming/internal/binding"
 
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
@@ -69,7 +70,7 @@ func TestPathz(t *testing.T) {
 			}},
 		},
 		op: func(ctx context.Context, c *ygnmi.Client) (*ygnmi.Result, error) {
-			return ygnmi.Update(ctx, c, gnmi.OC().System().Config(), &oc.System{Hostname: ygot.String("test")})
+			return ygnmi.Update(ctx, c, ocpath.Root().System().Config(), &oc.System{Hostname: ygot.String("test")})
 		},
 		want: &oc.System{
 			Hostname:   ygot.String("test"),
@@ -96,7 +97,7 @@ func TestPathz(t *testing.T) {
 			}},
 		},
 		op: func(ctx context.Context, c *ygnmi.Client) (*ygnmi.Result, error) {
-			return ygnmi.Update(ctx, c, gnmi.OC().System().Config(), &oc.System{Hostname: ygot.String("test")})
+			return ygnmi.Update(ctx, c, ocpath.Root().System().Config(), &oc.System{Hostname: ygot.String("test")})
 		},
 		want: &oc.System{
 			Hostname:   ygot.String("lemming"),
@@ -124,7 +125,7 @@ func TestPathz(t *testing.T) {
 			}},
 		},
 		op: func(ctx context.Context, c *ygnmi.Client) (*ygnmi.Result, error) {
-			return ygnmi.Replace(ctx, c, gnmi.OC().System().Config(), &oc.System{Hostname: ygot.String("test")})
+			return ygnmi.Replace(ctx, c, ocpath.Root().System().Config(), &oc.System{Hostname: ygot.String("test")})
 		},
 		want: &oc.System{
 			Hostname:   ygot.String("lemming"),
@@ -147,7 +148,7 @@ func TestPathz(t *testing.T) {
 			}},
 		},
 		op: func(ctx context.Context, c *ygnmi.Client) (*ygnmi.Result, error) {
-			return ygnmi.Replace(ctx, c, gnmi.OC().System().Config(), &oc.System{Hostname: ygot.String("test")})
+			return ygnmi.Replace(ctx, c, ocpath.Root().System().Config(), &oc.System{Hostname: ygot.String("test")})
 		},
 		want: &oc.System{
 			Hostname:   ygot.String("lemming"),
@@ -175,7 +176,7 @@ func TestPathz(t *testing.T) {
 			}},
 		},
 		op: func(ctx context.Context, c *ygnmi.Client) (*ygnmi.Result, error) {
-			return ygnmi.Update(ctx, c, gnmi.OC().System().Config(), &oc.System{Hostname: ygot.String("test")})
+			return ygnmi.Update(ctx, c, ocpath.Root().System().Config(), &oc.System{Hostname: ygot.String("test")})
 		},
 		want: &oc.System{
 			DomainName: ygot.String("lemming.example.com"),
@@ -193,7 +194,7 @@ func TestPathz(t *testing.T) {
 			if d := errdiff.Check(err, tt.wantOpErr); d != "" {
 				t.Errorf("Replace() unexpected err: %s", d)
 			}
-			got, err := ygnmi.Get[*oc.System](ctx, yc, gnmi.OC().System().Config())
+			got, err := ygnmi.Get[*oc.System](ctx, yc, ocpath.Root().System().Config())
 			if d := errdiff.Check(err, tt.wantGetErr); d != "" {
 				t.Errorf("Get() unexpected err: %s", d)
 			}
@@ -231,7 +232,7 @@ func reset(t testing.TB, dut *ondatra.DUTDevice) {
 		}},
 	})
 
-	gnmi.Update(t, dut.GNMIOpts().WithMetadata(metadata.Pairs("username", "testuser")), gnmi.OC().System().Config(), &oc.System{
+	gnmi.Update(t, dut.GNMIOpts().WithMetadata(metadata.Pairs("username", "testuser")), ocpath.Root().System().Config(), &oc.System{
 		DomainName: ygot.String("lemming.example.com"),
 		Hostname:   ygot.String("lemming"),
 	})

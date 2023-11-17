@@ -54,6 +54,7 @@ import (
 	"strings"
 
 	log "github.com/golang/glog"
+
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdattribute"
 	"github.com/openconfig/lemming/dataplane/forwarding/util/stats"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
@@ -252,3 +253,6 @@ func (b *Base) Increment(id fwdpb.CounterId, delta uint32) {
 		log.Errorf("%v: missing counter-id %s %v", b, id, int(id))
 	}
 }
+
+// String returns an empty string.
+func (b *Base) String() string { return "" }

@@ -56,6 +56,9 @@ func (r *recordPort) Write(packet fwdpacket.Packet) (fwdaction.State, error) {
 // String returns an empty string.
 func (recordPort) String() string { return "" }
 
+// Type returns the type.
+func (recordPort) Type() fwdpb.PortType { return fwdpb.PortType_PORT_TYPE_UNSPECIFIED }
+
 // Actions returns the port actions as nil.
 func (recordPort) Actions(fwdpb.PortAction) fwdaction.Actions { return nil }
 

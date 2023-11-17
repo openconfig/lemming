@@ -176,12 +176,10 @@ func memberToEnumValueStrings(enum MemberDef) []*Enum {
 	prev := -1 // Since enum values may repeat, store previous enum value. If the enum value isn't an assignment, then it is prev + 1.
 	for i, value := range enum.EnumValues {
 		val := prev + 1
-		value.Initializer = strings.TrimPrefix(value.Initializer, "= ")
+		value.Initializer = strings.TrimSpace(strings.TrimPrefix(value.Initializer, "= "))
 		if value.Initializer != "" {
-			if strings.HasPrefix(value.Initializer, "0x") {
-				if v, err := strconv.ParseInt(value.Initializer, 16, 64); err == nil {
-					val = int(v)
-				}
+			if v, err := strconv.ParseUint(value.Initializer, 0, 64); err == nil {
+				val = int(v)
 			}
 			for j := 0; j < i; j++ {
 				if value.Initializer == enum.EnumValues[j].Name {

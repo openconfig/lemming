@@ -27,7 +27,6 @@ go_test(
         "@com_github_openconfig_gribigo//fluent",
         "@com_github_openconfig_ondatra//:ondatra",
         "@com_github_openconfig_ondatra//gnmi",
-        "@com_github_openconfig_ondatra//gnmi/oc",
         "@com_github_openconfig_ondatra//gnmi/otg",
         "@com_github_openconfig_ondatra//gnmi/otg/otgpath",
         "@com_github_openconfig_ondatra//otg",

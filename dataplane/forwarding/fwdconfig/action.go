@@ -33,6 +33,7 @@ var (
 	_ actionDescBuilder = &LookupActionBuilder{}
 	_ actionDescBuilder = &EncapActionBuilder{}
 	_ actionDescBuilder = &DecapActionBuilder{}
+	_ actionDescBuilder = &DropActionBuilder{}
 )
 
 // ActionBuilder is a builder for forward action types.
@@ -270,4 +271,19 @@ func (u *DecapActionBuilder) set(ad *fwdpb.ActionDesc) {
 
 func (u *DecapActionBuilder) actionType() fwdpb.ActionType {
 	return fwdpb.ActionType_ACTION_TYPE_DECAP
+}
+
+// DropActionBuilder is a builder for a drop action.
+type DropActionBuilder struct{}
+
+// LookupAction returns a new drop action builder.
+func DropAction() *DropActionBuilder {
+	return &DropActionBuilder{}
+}
+
+func (u *DropActionBuilder) set(*fwdpb.ActionDesc) {
+}
+
+func (u *DropActionBuilder) actionType() fwdpb.ActionType {
+	return fwdpb.ActionType_ACTION_TYPE_DROP
 }

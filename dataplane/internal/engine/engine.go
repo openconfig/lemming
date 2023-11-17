@@ -29,6 +29,7 @@ import (
 	"github.com/openconfig/lemming/dataplane/forwarding"
 	"github.com/openconfig/lemming/dataplane/forwarding/attributes"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
+	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
 
 	log "github.com/golang/glog"
 
@@ -37,13 +38,13 @@ import (
 )
 
 const (
-	fibV4Table            = "fib-v4"
-	fibV6Table            = "fib-v6"
+	FIBV4Table            = "fib-v4"
+	FIBV6Table            = "fib-v6"
 	SRCMACTable           = "port-mac"
-	fibSelectorTable      = "fib-selector"
-	neighborTable         = "neighbor"
-	nhgTable              = "nhg-table"
-	nhTable               = "nh-table"
+	FIBSelectorTable      = "fib-selector"
+	NeighborTable         = "neighbor"
+	NHGTable              = "nhg-table"
+	NHTable               = "nh-table"
 	layer2PuntTable       = "layer2-punt"
 	layer3PuntTable       = "layer3-punt"
 	arpPuntTable          = "arp-punt"
@@ -67,11 +68,8 @@ type Engine struct {
 	ifaceToPortMu   sync.Mutex
 	// ifaceToPort is a map from interface id to port. For now, assume a 1:1 mapping.
 	// TODO: Clean up all the map and mutexes
-	ifaceToPort   map[string]string
-	cpuPortID     string
-	ipToDevNameMu sync.Mutex
-	// ipToDevName is a map from IPs to kernel device name.
-	ipToDevName       map[string]string
+	ifaceToPort       map[string]string
+	cpuPortID         string
 	devNameToPortIDMu sync.Mutex
 	// devNameToPortID is a map from kernel device name to lucius port id.
 	devNameToPortID        map[string]string
@@ -79,23 +77,25 @@ type Engine struct {
 	// internalToExternalID is a map from the internal port id to it's corresponding external port.
 	internalToExternalID map[string]string
 	cancelFn             func()
+	createTables         bool
 }
 
 // New creates a new engine and sets up the forwarding tables.
-func New(ctx context.Context) (*Engine, error) {
+// Disable table creating to use a custom forwarding pipeline.
+// TODO: Delete this file.
+func New(ctx context.Context, createTables bool) (*Engine, error) {
 	e := &Engine{
 		id:                   "lucius",
 		Server:               forwarding.New("engine"),
 		idToNID:              map[string]uint64{},
 		nextHopGroups:        map[uint64]*dpb.NextHopIDList{},
 		ifaceToPort:          map[string]string{},
-		ipToDevName:          map[string]string{},
 		devNameToPortID:      map[string]string{},
 		internalToExternalID: map[string]string{},
+		createTables:         createTables,
 	}
 
 	ctx, e.cancelFn = context.WithCancel(ctx)
-	e.handleIPUpdates(ctx)
 
 	_, err := e.Server.ContextCreate(ctx, &fwdpb.ContextCreateRequest{
 		ContextId: &fwdpb.ContextId{Id: e.id},
@@ -103,7 +103,12 @@ func New(ctx context.Context) (*Engine, error) {
 	if err != nil {
 		return nil, err
 	}
-	e.setupTables(ctx)
+	if createTables {
+		log.Info("setting up tables")
+		if err := e.setupTables(ctx); err != nil {
+			return nil, err
+		}
+	}
 
 	return e, nil
 }
@@ -120,7 +125,6 @@ func (e *Engine) Reset(ctx context.Context) error {
 	e.idToNID = map[string]uint64{}
 	e.nextHopGroups = map[uint64]*dpb.NextHopIDList{}
 	e.ifaceToPort = map[string]string{}
-	e.ipToDevName = map[string]string{}
 	e.devNameToPortID = map[string]string{}
 	e.internalToExternalID = map[string]string{}
 	e.nextNHGID.Store(0)
@@ -134,8 +138,17 @@ func (e *Engine) Reset(ctx context.Context) error {
 	}
 
 	ctx, e.cancelFn = context.WithCancel(ctx)
-	e.setupTables(ctx)
+	if e.createTables {
+		if err := e.setupTables(ctx); err != nil {
+			return err
+		}
+	}
 	return nil
+}
+
+// Context returns the forward context assoicated with the engine.
+func (e *Engine) Context() (*fwdcontext.Context, error) {
+	return e.Server.FindContext(&fwdpb.ContextId{Id: e.ID()})
 }
 
 func (e *Engine) setupTables(ctx context.Context) error {
@@ -143,7 +156,7 @@ func (e *Engine) setupTables(ctx context.Context) error {
 		ContextId: &fwdpb.ContextId{Id: e.id},
 		Desc: &fwdpb.TableDesc{
 			TableType: fwdpb.TableType_TABLE_TYPE_PREFIX,
-			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: fibV4Table}},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: FIBV4Table}},
 			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_DROP}},
 			Table: &fwdpb.TableDesc_Prefix{
 				Prefix: &fwdpb.PrefixTableDesc{
@@ -167,7 +180,7 @@ func (e *Engine) setupTables(ctx context.Context) error {
 		ContextId: &fwdpb.ContextId{Id: e.id},
 		Desc: &fwdpb.TableDesc{
 			TableType: fwdpb.TableType_TABLE_TYPE_PREFIX,
-			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: fibV6Table}},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: FIBV6Table}},
 			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_DROP}},
 			Table: &fwdpb.TableDesc_Prefix{
 				Prefix: &fwdpb.PrefixTableDesc{
@@ -211,7 +224,7 @@ func (e *Engine) setupTables(ctx context.Context) error {
 		ContextId: &fwdpb.ContextId{Id: e.id},
 		Desc: &fwdpb.TableDesc{
 			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
-			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: neighborTable}},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: NeighborTable}},
 			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_DROP}},
 			Table: &fwdpb.TableDesc_Exact{
 				Exact: &fwdpb.ExactTableDesc{
@@ -235,7 +248,7 @@ func (e *Engine) setupTables(ctx context.Context) error {
 		ContextId: &fwdpb.ContextId{Id: e.id},
 		Desc: &fwdpb.TableDesc{
 			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
-			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: nhTable}},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: NHTable}},
 			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_DROP}},
 			Table: &fwdpb.TableDesc_Exact{
 				Exact: &fwdpb.ExactTableDesc{
@@ -255,7 +268,7 @@ func (e *Engine) setupTables(ctx context.Context) error {
 		ContextId: &fwdpb.ContextId{Id: e.id},
 		Desc: &fwdpb.TableDesc{
 			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
-			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: nhgTable}},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: NHGTable}},
 			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_DROP}},
 			Table: &fwdpb.TableDesc_Exact{
 				Exact: &fwdpb.ExactTableDesc{
@@ -294,7 +307,7 @@ func (e *Engine) setupTables(ctx context.Context) error {
 		return err
 	}
 
-	if err := createFIBSelector(ctx, e.id, e.Server); err != nil {
+	if err := CreateFIBSelector(ctx, e.id, e.Server); err != nil {
 		return err
 	}
 	if err := createLayer2PuntTable(ctx, e.id, e.Server); err != nil {
@@ -435,7 +448,7 @@ func (e *Engine) addNextHopList(ctx context.Context, nhg *dpb.NextHopList, mode 
 		}
 		return []*fwdpb.ActionDesc{
 			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_ID).WithUint64Value(nhID)).Build(),
-			fwdconfig.Action(fwdconfig.LookupAction(nhTable)).Build(),
+			fwdconfig.Action(fwdconfig.LookupAction(NHTable)).Build(),
 		}, nil
 	}
 
@@ -454,7 +467,7 @@ func (e *Engine) addNextHopList(ctx context.Context, nhg *dpb.NextHopList, mode 
 	}
 	return []*fwdpb.ActionDesc{
 		fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_GROUP_ID).WithUint64Value(nhgID)).Build(),
-		fwdconfig.Action(fwdconfig.LookupAction(nhgTable)).Build(),
+		fwdconfig.Action(fwdconfig.LookupAction(NHGTable)).Build(),
 	}, nil
 }
 
@@ -515,7 +528,7 @@ func (e *Engine) addNextHopGroupIDList(ctx context.Context, id uint64, nhg *dpb.
 		Action: &fwdpb.ActionDesc_Lookup{
 			Lookup: &fwdpb.LookupActionDesc{
 				TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{
-					Id: nhTable,
+					Id: NHTable,
 				}},
 			},
 		},
@@ -525,7 +538,7 @@ func (e *Engine) addNextHopGroupIDList(ctx context.Context, id uint64, nhg *dpb.
 		ContextId: &fwdpb.ContextId{Id: e.id},
 		TableId: &fwdpb.TableId{
 			ObjectId: &fwdpb.ObjectId{
-				Id: nhgTable,
+				Id: NHGTable,
 			},
 		},
 		Entries: []*fwdpb.TableEntryAddRequest_Entry{{
@@ -610,7 +623,7 @@ func (e *Engine) addNextHop(ctx context.Context, id uint64, nh *dpb.NextHop) err
 		ContextId: &fwdpb.ContextId{Id: e.id},
 		TableId: &fwdpb.TableId{
 			ObjectId: &fwdpb.ObjectId{
-				Id: nhTable,
+				Id: NHTable,
 			},
 		},
 		Entries: []*fwdpb.TableEntryAddRequest_Entry{{
@@ -667,12 +680,12 @@ func (e *Engine) actionsFromRoute(ctx context.Context, route *dpb.Route) ([]*fwd
 	case *dpb.Route_NextHopId:
 		actions = []*fwdpb.ActionDesc{ // Set the next hop ID in the packet's metadata.
 			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_ID).WithUint64Value(hop.NextHopId)).Build(),
-			fwdconfig.Action(fwdconfig.LookupAction(nhTable)).Build(),
+			fwdconfig.Action(fwdconfig.LookupAction(NHTable)).Build(),
 		}
 	case *dpb.Route_NextHopGroupId:
 		actions = []*fwdpb.ActionDesc{ // Set the next hop group ID in the packet's metadata.
 			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_GROUP_ID).WithUint64Value(hop.NextHopGroupId)).Build(),
-			fwdconfig.Action(fwdconfig.LookupAction(nhgTable)).Build(),
+			fwdconfig.Action(fwdconfig.LookupAction(NHGTable)).Build(),
 		}
 	case *dpb.Route_NextHops:
 		var err error
@@ -693,34 +706,9 @@ func (e *Engine) AddIPRoute(ctx context.Context, req *dpb.AddIPRouteRequest) (*d
 	if err != nil {
 		return nil, err
 	}
-	fib := fibV6Table
+	fib := FIBV6Table
 	if isIPv4 {
-		fib = fibV4Table
-	}
-
-	//  SAI creates these are special routes for the IPs assigned to the interfaces.
-	if req.GetRoute().GetPortId() != "" && req.GetRoute().GetPortId() == e.cpuPortID {
-		addr, ok := netip.AddrFromSlice(ip)
-		if !ok {
-			return nil, fmt.Errorf("invalid ip addr")
-		}
-		e.ipToDevNameMu.Lock()
-		devName := e.ipToDevName[addr.String()]
-		e.ipToDevNameMu.Unlock()
-
-		e.devNameToPortIDMu.Lock()
-		internalPortID := e.devNameToPortID[devName]
-		e.devNameToPortIDMu.Unlock()
-
-		e.internalToExternalIDMu.Lock()
-		portID := e.internalToExternalID[internalPortID]
-		e.internalToExternalIDMu.Unlock()
-
-		log.Infof("adding ip to me route: ip %s, devname %s, internalPortID %s, externalPortID %s", addr.String(), devName, internalPortID, portID)
-		if err := e.AddLayer3PuntRule(ctx, portID, ip); err != nil {
-			return nil, err
-		}
-		return &dpb.AddIPRouteResponse{}, nil
+		fib = FIBV4Table
 	}
 
 	entry := &fwdpb.TableEntryAddRequest{
@@ -761,9 +749,9 @@ func (e *Engine) RemoveIPRoute(ctx context.Context, req *dpb.RemoveIPRouteReques
 	if err != nil {
 		return nil, err
 	}
-	fib := fibV6Table
+	fib := FIBV6Table
 	if isIPv4 {
-		fib = fibV4Table
+		fib = FIBV4Table
 	}
 	entry := &fwdpb.TableEntryRemoveRequest{
 		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: fib}},
@@ -861,7 +849,7 @@ func (e *Engine) AddNeighbor(ctx context.Context, req *dpb.AddNeighborRequest) (
 	}
 
 	entry := &fwdpb.TableEntryAddRequest{
-		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: neighborTable}},
+		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: NeighborTable}},
 		ContextId: &fwdpb.ContextId{Id: e.id},
 		EntryDesc: entryDesc,
 		Actions: []*fwdpb.ActionDesc{{ // Set the dst MAC.
@@ -895,7 +883,7 @@ func (e *Engine) RemoveNeighbor(ctx context.Context, req *dpb.RemoveNeighborRequ
 	}
 
 	entry := &fwdpb.TableEntryRemoveRequest{
-		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: neighborTable}},
+		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: NeighborTable}},
 		ContextId: &fwdpb.ContextId{Id: e.id},
 		EntryDesc: entryDesc,
 	}
@@ -971,9 +959,9 @@ func (e *Engine) CreateExternalPort(ctx context.Context, t fwdpb.PortType, id, d
 						fwdconfig.Action(fwdconfig.LookupAction(PreIngressActionTable)).Build(),
 						fwdconfig.Action(fwdconfig.DecapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET)).Build(), // Decap L2 header.
 						fwdconfig.Action(fwdconfig.LookupAction(IngressActionTable)).Build(),
-						fwdconfig.Action(fwdconfig.LookupAction(fibSelectorTable)).Build(),                              // Lookup in FIB.
+						fwdconfig.Action(fwdconfig.LookupAction(FIBSelectorTable)).Build(),                              // Lookup in FIB.
 						fwdconfig.Action(fwdconfig.EncapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET)).Build(), // Decap L2 header.
-						fwdconfig.Action(fwdconfig.LookupAction(neighborTable)).Build(),                                 // Lookup in the neighbor table.
+						fwdconfig.Action(fwdconfig.LookupAction(NeighborTable)).Build(),                                 // Lookup in the neighbor table.
 						fwdconfig.Action(fwdconfig.LookupAction(EgressActionTable)).Build(),
 						{
 							ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
@@ -1108,6 +1096,7 @@ func (e *Engine) AddInterface(ctx context.Context, req *dpb.AddInterfaceRequest)
 	e.ifaceToPortMu.Lock()
 	defer e.ifaceToPortMu.Unlock()
 
+	var portID string
 	switch req.GetType() {
 	case dpb.InterfaceType_INTERFACE_TYPE_AGGREGATE:
 		if nPorts := len(req.GetPortIds()); nPorts < 1 {
@@ -1142,25 +1131,31 @@ func (e *Engine) AddInterface(ctx context.Context, req *dpb.AddInterfaceRequest)
 				return nil, err
 			}
 		}
+		portID = req.GetId()
 	case dpb.InterfaceType_INTERFACE_TYPE_PORT:
 		if nPorts := len(req.GetPortIds()); nPorts != 1 {
 			return nil, fmt.Errorf("invalid number of ports got %v, expected 1", nPorts)
 		}
+		portID = req.GetPortIds()[0]
 		log.Infof("added interface id %s port id %s", req.GetId(), req.GetPortIds()[0])
 		log.Infof("added port src mac %x", req.GetMac())
 		e.ifaceToPort[req.GetId()] = req.GetPortIds()[0]
-		if err := e.UpdatePortSrcMAC(ctx, req.GetPortIds()[0], req.GetMac()); err != nil {
-			return nil, err
-		}
+
 	case dpb.InterfaceType_INTERFACE_TYPE_LOOPBACK: // TODO: this may need to handled differently if multiple loopbacks are created.
 		portID := fmt.Sprintf("%s-port", req.GetId())
 		if err := e.CreateExternalPort(ctx, fwdpb.PortType_PORT_TYPE_KERNEL, portID, "lo"); err != nil {
 			return nil, err
 		}
 		e.ifaceToPort[req.GetId()] = portID
+		return &dpb.AddInterfaceResponse{}, nil
 	default:
 		return nil, status.Errorf(codes.InvalidArgument, "interface type %T unrecongnized", req.GetType())
 	}
+
+	if err := e.UpdatePortSrcMAC(ctx, portID, req.GetMac()); err != nil {
+		return nil, err
+	}
+
 	return &dpb.AddInterfaceResponse{}, nil
 }
 
