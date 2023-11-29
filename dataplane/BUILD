@@ -15,7 +15,6 @@ go_library(
         "//dataplane/standalone/saiserver/attrmgr",
         "//gnmi/oc",
         "//gnmi/reconciler",
-        "//proto/forwarding",
         "@com_github_openconfig_gnmi//proto/gnmi",
         "@com_github_openconfig_ygnmi//ygnmi",
         "@org_golang_google_grpc//:go_default_library",

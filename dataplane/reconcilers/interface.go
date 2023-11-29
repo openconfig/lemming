@@ -507,8 +507,10 @@ func (ni *Reconciler) handleAddrUpdate(ctx context.Context, au *netlink.AddrUpda
 
 	ip := au.LinkAddress.IP.String()
 	ipBytes := au.LinkAddress.IP.To4()
+	mask := net.CIDRMask(32, 32)
 	if ipBytes == nil {
 		ipBytes = au.LinkAddress.IP.To16()
+		mask = net.CIDRMask(128, 128)
 	}
 	pl, _ := au.LinkAddress.Mask.Size()
 	isV4 := au.LinkAddress.IP.To4() != nil
@@ -533,6 +535,19 @@ func (ni *Reconciler) handleAddrUpdate(ctx context.Context, au *netlink.AddrUpda
 			log.Warningf("failed to add route: %v", err)
 			return
 		}
+		_, err = ni.routeClient.CreateRouteEntry(ctx, &saipb.CreateRouteEntryRequest{
+			Entry: &saipb.RouteEntry{
+				SwitchId:    ni.switchID,
+				VrId:        0,
+				Destination: &saipb.IpPrefix{Addr: ipBytes, Mask: mask},
+			},
+			NextHopId:    proto.Uint64(ni.cpuPortID),
+			PacketAction: saipb.PacketAction_PACKET_ACTION_FORWARD.Enum(),
+		})
+		if err != nil {
+			log.Warningf("failed to add route: %v", err)
+			return
+		}
 	} else {
 		if isV4 {
 			sub.GetOrCreateIpv4().DeleteAddress(ip)
@@ -547,7 +562,18 @@ func (ni *Reconciler) handleAddrUpdate(ctx context.Context, au *netlink.AddrUpda
 			EntryDesc: entry.Build(),
 		})
 		if err != nil {
-			log.Warningf("failed to add route: %v", err)
+			log.Warningf("failed to remove route: %v", err)
+			return
+		}
+		_, err = ni.routeClient.RemoveRouteEntry(ctx, &saipb.RemoveRouteEntryRequest{
+			Entry: &saipb.RouteEntry{
+				SwitchId:    ni.switchID,
+				VrId:        0,
+				Destination: &saipb.IpPrefix{Addr: ipBytes, Mask: mask},
+			},
+		})
+		if err != nil {
+			log.Warningf("failed to remove route: %v", err)
 			return
 		}
 	}
