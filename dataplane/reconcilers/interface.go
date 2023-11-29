@@ -82,16 +82,17 @@ func (d interfaceMap) findByPortID(portID uint64) (ocInterface, *interfaceData) 
 type Reconciler struct {
 	c *ygnmi.Client
 	// closers functions should all be invoked when the interface handler stops running.
-	closers        []func()
-	hostifClient   saipb.HostifClient
-	portClient     saipb.PortClient
-	switchClient   saipb.SwitchClient
-	ifaceClient    saipb.RouterInterfaceClient
-	neighborClient saipb.NeighborClient
-	routeClient    saipb.RouteClient
-	nextHopClient  saipb.NextHopClient
-	fwdClient      fwdpb.ForwardingClient
-	stateMu        sync.RWMutex
+	closers            []func()
+	hostifClient       saipb.HostifClient
+	portClient         saipb.PortClient
+	switchClient       saipb.SwitchClient
+	ifaceClient        saipb.RouterInterfaceClient
+	neighborClient     saipb.NeighborClient
+	routeClient        saipb.RouteClient
+	nextHopClient      saipb.NextHopClient
+	fwdClient          fwdpb.ForwardingClient
+	nextHopGroupClient saipb.NextHopGroupClient
+	stateMu            sync.RWMutex
 	// state keeps track of the applied state of the device's interfaces so that we do not issue duplicate configuration commands to the device's interfaces.
 	state           map[string]*oc.Interface
 	switchID        uint64
@@ -117,20 +118,21 @@ type interfaceManager interface {
 // New creates a new interface handler.
 func New(conn grpc.ClientConnInterface, switchID, cpuPortID uint64, contextID string) *Reconciler {
 	r := &Reconciler{
-		state:           map[string]*oc.Interface{},
-		ifaceMgr:        &kernel.Interfaces{},
-		switchID:        switchID,
-		cpuPortID:       cpuPortID,
-		contextID:       contextID,
-		ocInterfaceData: interfaceMap{},
-		hostifClient:    saipb.NewHostifClient(conn),
-		portClient:      saipb.NewPortClient(conn),
-		switchClient:    saipb.NewSwitchClient(conn),
-		ifaceClient:     saipb.NewRouterInterfaceClient(conn),
-		neighborClient:  saipb.NewNeighborClient(conn),
-		routeClient:     saipb.NewRouteClient(conn),
-		nextHopClient:   saipb.NewNextHopClient(conn),
-		fwdClient:       fwdpb.NewForwardingClient(conn),
+		state:              map[string]*oc.Interface{},
+		ifaceMgr:           &kernel.Interfaces{},
+		switchID:           switchID,
+		cpuPortID:          cpuPortID,
+		contextID:          contextID,
+		ocInterfaceData:    interfaceMap{},
+		hostifClient:       saipb.NewHostifClient(conn),
+		portClient:         saipb.NewPortClient(conn),
+		switchClient:       saipb.NewSwitchClient(conn),
+		ifaceClient:        saipb.NewRouterInterfaceClient(conn),
+		neighborClient:     saipb.NewNeighborClient(conn),
+		routeClient:        saipb.NewRouteClient(conn),
+		nextHopClient:      saipb.NewNextHopClient(conn),
+		nextHopGroupClient: saipb.NewNextHopGroupClient(conn),
+		fwdClient:          fwdpb.NewForwardingClient(conn),
 	}
 	return r
 }
@@ -253,15 +255,15 @@ func (ni *Reconciler) startCounterUpdates(ctx context.Context) {
 		// anyways, it may be fine for counter values to be polled.
 		for range tick.C {
 			ni.stateMu.RLock()
-			var intfNames []string
+			var intfNames []ocInterface
 			for intfName := range ni.state {
 				// TODO(wenbli): Support interface state deletion when interface is deleted.
-				intfNames = append(intfNames, intfName)
+				intfNames = append(intfNames, ocInterface{name: intfName})
 			}
 			ni.stateMu.RUnlock()
 			for _, intfName := range intfNames {
 				stats, err := ni.portClient.GetPortStats(ctx, &saipb.GetPortStatsRequest{
-					Oid: ni.cpuPortID,
+					Oid: ni.ocInterfaceData[intfName].portID,
 					CounterIds: []saipb.PortStat{
 						saipb.PortStat_PORT_STAT_IF_IN_UCAST_PKTS,
 						saipb.PortStat_PORT_STAT_IF_IN_NON_UCAST_PKTS,
@@ -274,10 +276,10 @@ func (ni *Reconciler) startCounterUpdates(ctx context.Context) {
 					log.Errorf("interface handler: could not retrieve counter for interface %q", intfName)
 					continue
 				}
-				if _, err := gnmiclient.Replace(ctx, ni.c, ocpath.Root().Interface(intfName).Counters().InPkts().State(), stats.Values[0]+stats.Values[1]); err != nil {
+				if _, err := gnmiclient.Replace(ctx, ni.c, ocpath.Root().Interface(intfName.name).Counters().InPkts().State(), stats.Values[0]+stats.Values[1]); err != nil {
 					log.Errorf("interface handler: %v", err)
 				}
-				if _, err := gnmiclient.Replace(ctx, ni.c, ocpath.Root().Interface(intfName).Counters().OutPkts().State(), stats.Values[2]+stats.Values[2]); err != nil {
+				if _, err := gnmiclient.Replace(ctx, ni.c, ocpath.Root().Interface(intfName.name).Counters().OutPkts().State(), stats.Values[2]+stats.Values[2]); err != nil {
 					log.Errorf("interface handler: %v", err)
 				}
 			}
@@ -346,7 +348,6 @@ func (ni *Reconciler) reconcile(ctx context.Context, config *oc.Interface) {
 			if _, err := sb.Set(ctx, ni.c); err != nil {
 				log.Warningf("failed to set link status: %v", err)
 			}
-
 		}
 	}
 

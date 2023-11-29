@@ -117,7 +117,7 @@ func mapAddressTo6Bytes(v4Address [4]byte) [16]byte {
 
 func mapAddressSliceTo6BytesSlice(v4Address []byte) []byte {
 	ipv6Bytes := []byte{0x20, 0x01, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-	copy(ipv6Bytes[v4v6ConversionStartPos:], v4Address[:])
+	copy(ipv6Bytes[v4v6ConversionStartPos:], v4Address)
 	return ipv6Bytes
 }
 

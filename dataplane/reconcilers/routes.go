@@ -53,42 +53,35 @@ func (ni *Reconciler) StartRoute(ctx context.Context, client *ygnmi.Client) erro
 
 	w := ygnmi.WatchAll(ctx, client, routesQuery, func(v *ygnmi.Value[*dpb.Route]) error {
 		route, present := v.Val()
-		// prefix := v.Path.Elem[2].Key["prefix"]
-		// ni := v.Path.Elem[2].Key["vrf"]
-
-		if !present {
-			// if _, err := r.e.RemoveIPRoute(ctx, &dpb.RemoveIPRouteRequest{Prefix: &dpb.RoutePrefix{Prefix: &dpb.RoutePrefix_Cidr{Cidr: prefix}, VrfId: vrf}}); err != nil {
-			// 	log.Warningf("failed to delete route: %v", err)
-			// 	return ygnmi.Continue
-			// }
-			// return ygnmi.Continue
-		}
-		if len(route.GetNextHops().GetHops()) == 0 {
-			log.Warningf("no next hops for route insert or update")
-			return ygnmi.Continue
-		}
-		prefix, err := netip.ParsePrefix(route.Prefix.Cidr)
+		prefix, err := netip.ParsePrefix(v.Path.Elem[2].Key["prefix"])
 		if err != nil {
 			log.Warningf("failed to parse cidr: %v", err)
 			return ygnmi.Continue
 		}
-
 		ipBytes := prefix.Masked().Addr().AsSlice()
-		if addr := prefix.Masked().Addr(); addr.Is4() || addr.Is4In6() {
-			ip := addr.As4()
-			ipBytes = ip[:]
-		}
 		mask := net.CIDRMask(prefix.Bits(), len(ipBytes)*8)
 
-		rReq := saipb.CreateRouteEntryRequest{
-			Entry: &saipb.RouteEntry{
-				SwitchId: ni.switchID,
-				VrId:     0, // TODO: support vrf-ids other than 0.
-				Destination: &saipb.IpPrefix{
-					Addr: ipBytes,
-					Mask: mask,
-				},
+		entry := &saipb.RouteEntry{
+			SwitchId: ni.switchID,
+			VrId:     0, // TODO: support vrf-ids other than 0.
+			Destination: &saipb.IpPrefix{
+				Addr: ipBytes,
+				Mask: mask,
 			},
+		}
+
+		if !present {
+			_, err := ni.routeClient.RemoveRouteEntry(ctx, &saipb.RemoveRouteEntryRequest{
+				Entry: entry,
+			})
+			if err != nil {
+				log.Warningf("failed to delete route: %v", err)
+			}
+			return ygnmi.Continue
+		}
+
+		rReq := saipb.CreateRouteEntryRequest{
+			Entry:        entry,
 			PacketAction: saipb.PacketAction_PACKET_ACTION_FORWARD.Enum(),
 		}
 
@@ -99,15 +92,42 @@ func (ni *Reconciler) StartRoute(ctx context.Context, client *ygnmi.Client) erro
 
 			if _, err := ni.routeClient.CreateRouteEntry(ctx, &rReq); err != nil {
 				log.Warningf("failed to create route: %v", err)
-				return ygnmi.Continue
 			}
+			return ygnmi.Continue
 		}
 		var hopID uint64
-		if len(route.GetNextHops().Hops) == 1 {
+		if len(route.GetNextHops().GetHops()) == 1 {
 			hopID, err = ni.createNextHop(ctx, route.GetNextHops().Hops[0])
 			if err != nil {
-				log.Warningf("failed to create next hopy : %v", err)
+				log.Warningf("failed to create next hop: %v", err)
 				return ygnmi.Continue
+			}
+		} else {
+			group, err := ni.nextHopGroupClient.CreateNextHopGroup(ctx, &saipb.CreateNextHopGroupRequest{
+				Switch: ni.switchID,
+				Type:   saipb.NextHopGroupType_NEXT_HOP_GROUP_TYPE_DYNAMIC_UNORDERED_ECMP.Enum(),
+			})
+			hopID = group.Oid
+			if err != nil {
+				log.Warningf("failed to create next hop group: %v", err)
+				return ygnmi.Continue
+			}
+			for i, nh := range route.GetNextHops().GetHops() {
+				hopID, err = ni.createNextHop(ctx, nh)
+				if err != nil {
+					log.Warningf("failed to create next hop: %v", err)
+					return ygnmi.Continue
+				}
+				_, err = ni.nextHopGroupClient.CreateNextHopGroupMember(ctx, &saipb.CreateNextHopGroupMemberRequest{
+					Switch:         ni.switchID,
+					NextHopGroupId: &group.Oid,
+					NextHopId:      &hopID,
+					Weight:         proto.Uint32(uint32(route.GetNextHops().Weight[i])),
+				})
+				if err != nil {
+					log.Warningf("failed to create next group member: %v", err)
+					return ygnmi.Continue
+				}
 			}
 		}
 		rReq.NextHopId = proto.Uint64(hopID)

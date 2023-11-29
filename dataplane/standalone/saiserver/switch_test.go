@@ -236,6 +236,10 @@ func (f *fakeSwitchDataplane) TableEntryAdd(_ context.Context, req *fwdpb.TableE
 	return nil, nil
 }
 
+func (f *fakeSwitchDataplane) TableEntryRemove(_ context.Context, req *fwdpb.TableEntryRemoveRequest) (*fwdpb.TableEntryRemoveReply, error) {
+	return nil, nil
+}
+
 func (f *fakeSwitchDataplane) PortIDToNID(id string) (uint64, bool) {
 	nid, ok := f.portIDToNID[id]
 	return nid, ok

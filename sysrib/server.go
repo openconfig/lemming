@@ -439,6 +439,26 @@ func resolvedRouteToRouteRequest(r *ResolvedRoute) (*dpb.Route, error) {
 		log.Errorf("Route prefix cannot be parsed: %v", err)
 		return nil, err
 	}
+	// Connected routes are routes with a single next hop with no address.
+	// TODO: Include a better signal for this.
+	if len(r.Nexthops) == 1 {
+		for nh := range r.Nexthops {
+			if nh.Address == "" {
+				return &dpb.Route{
+					Prefix: &dpb.RoutePrefix{
+						NetworkInstance: r.NIName,
+						Cidr:            r.Prefix,
+					},
+					Hop: &dpb.Route_Interface{
+						Interface: &dpb.OCInterface{
+							Interface:    nh.Port.Name,
+							Subinterface: nh.Port.Subinterface,
+						},
+					},
+				}, nil
+			}
+		}
+	}
 
 	nexthops := &dpb.NextHopList{}
 	for nh := range r.Nexthops {
