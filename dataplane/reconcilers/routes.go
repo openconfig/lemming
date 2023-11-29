@@ -122,7 +122,7 @@ func (ni *Reconciler) StartRoute(ctx context.Context, client *ygnmi.Client) erro
 					Switch:         ni.switchID,
 					NextHopGroupId: &group.Oid,
 					NextHopId:      &hopID,
-					Weight:         proto.Uint32(uint32(route.GetNextHops().Weight[i])),
+					Weight:         proto.Uint32(uint32(route.GetNextHops().Weights[i])),
 				})
 				if err != nil {
 					log.Warningf("failed to create next group member: %v", err)

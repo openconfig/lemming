@@ -39,7 +39,7 @@ message NextHop {
 
 message NextHopList {
   repeated NextHop hops = 1;
-  repeated uint64 weight = 2;
+  repeated uint64 weights = 2;
 }
 
 message RoutePrefix {

@@ -430,7 +430,7 @@ func resolvedRouteToRouteRequest(r *ResolvedRoute) (*dpb.Route, error) {
 			dnh.NextHopIp = nh.Address
 		}
 		nexthops.Hops = append(nexthops.Hops, dnh)
-		nexthops.Weight = append(nexthops.Weight, nh.Weight)
+		nexthops.Weights = append(nexthops.Weights, nh.Weight)
 	}
 
 	return &dpb.Route{

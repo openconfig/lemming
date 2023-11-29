@@ -273,11 +273,19 @@ func TestCreateNextHop(t *testing.T) {
 							Value: []byte{0x7f, 0x00, 0x00, 0x01},
 						},
 					},
+				}, {
+					ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
+					Action: &fwdpb.ActionDesc_Lookup{
+						Lookup: &fwdpb.LookupActionDesc{
+							TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: engine.NHActionTable}},
+						},
+					},
 				}},
 				EntryDesc: &fwdpb.EntryDesc{
 					Entry: &fwdpb.EntryDesc_Exact{
 						Exact: &fwdpb.ExactEntryDesc{
 							Fields: []*fwdpb.PacketFieldBytes{{
+								Bytes: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
 								FieldId: &fwdpb.PacketFieldId{
 									Field: &fwdpb.PacketField{
 										FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_ID,

@@ -110,14 +110,9 @@ func TestStaticRouteAndIntfs(t *testing.T) {
 				NetworkInstance: "DEFAULT",
 				Cidr:            "192.168.1.0/24",
 			},
-			Hop: &dpb.Route_NextHops{
-				NextHops: &dpb.NextHopList{
-					Weight: []uint64{0},
-					Hops: []*dpb.NextHop{{
-						Interface: &dpb.OCInterface{
-							Interface: "eth0",
-						},
-					}},
+			Hop: &dpb.Route_Interface{
+				Interface: &dpb.OCInterface{
+					Interface: "eth0",
 				},
 			},
 		}, {
@@ -127,7 +122,7 @@ func TestStaticRouteAndIntfs(t *testing.T) {
 			},
 			Hop: &dpb.Route_NextHops{
 				NextHops: &dpb.NextHopList{
-					Weight: []uint64{0},
+					Weights: []uint64{0},
 					Hops: []*dpb.NextHop{{
 						NextHopIp: "192.168.1.42",
 						Interface: &dpb.OCInterface{
@@ -178,14 +173,9 @@ func TestStaticRouteAndIntfs(t *testing.T) {
 				NetworkInstance: "DEFAULT",
 				Cidr:            "192.168.1.0/24",
 			},
-			Hop: &dpb.Route_NextHops{
-				NextHops: &dpb.NextHopList{
-					Weight: []uint64{0},
-					Hops: []*dpb.NextHop{{
-						Interface: &dpb.OCInterface{
-							Interface: "eth0",
-						},
-					}},
+			Hop: &dpb.Route_Interface{
+				Interface: &dpb.OCInterface{
+					Interface: "eth0",
 				},
 			},
 		}, {
@@ -195,7 +185,7 @@ func TestStaticRouteAndIntfs(t *testing.T) {
 			},
 			Hop: &dpb.Route_NextHops{
 				NextHops: &dpb.NextHopList{
-					Weight: []uint64{0},
+					Weights: []uint64{0},
 					Hops: []*dpb.NextHop{{
 						NextHopIp: "192.168.1.42",
 						Interface: &dpb.OCInterface{
@@ -209,14 +199,9 @@ func TestStaticRouteAndIntfs(t *testing.T) {
 				NetworkInstance: "DEFAULT",
 				Cidr:            mapAddressTo6(t, "192.168.1.0/24"),
 			},
-			Hop: &dpb.Route_NextHops{
-				NextHops: &dpb.NextHopList{
-					Weight: []uint64{0},
-					Hops: []*dpb.NextHop{{
-						Interface: &dpb.OCInterface{
-							Interface: "eth0",
-						},
-					}},
+			Hop: &dpb.Route_Interface{
+				Interface: &dpb.OCInterface{
+					Interface: "eth0",
 				},
 			},
 		}, {
@@ -226,7 +211,7 @@ func TestStaticRouteAndIntfs(t *testing.T) {
 			},
 			Hop: &dpb.Route_NextHops{
 				NextHops: &dpb.NextHopList{
-					Weight: []uint64{0},
+					Weights: []uint64{0},
 					Hops: []*dpb.NextHop{{
 						NextHopIp: mapAddressTo6(t, "192.168.1.42"),
 						Interface: &dpb.OCInterface{
@@ -248,14 +233,9 @@ func TestStaticRouteAndIntfs(t *testing.T) {
 				NetworkInstance: "DEFAULT",
 				Cidr:            "192.168.1.0/24",
 			},
-			Hop: &dpb.Route_NextHops{
-				NextHops: &dpb.NextHopList{
-					Weight: []uint64{0},
-					Hops: []*dpb.NextHop{{
-						Interface: &dpb.OCInterface{
-							Interface: "eth0",
-						},
-					}},
+			Hop: &dpb.Route_Interface{
+				Interface: &dpb.OCInterface{
+					Interface: "eth0",
 				},
 			},
 		}, {
@@ -263,14 +243,9 @@ func TestStaticRouteAndIntfs(t *testing.T) {
 				NetworkInstance: "DEFAULT",
 				Cidr:            mapAddressTo6(t, "192.168.1.0/24"),
 			},
-			Hop: &dpb.Route_NextHops{
-				NextHops: &dpb.NextHopList{
-					Weight: []uint64{0},
-					Hops: []*dpb.NextHop{{
-						Interface: &dpb.OCInterface{
-							Interface: "eth0",
-						},
-					}},
+			Hop: &dpb.Route_Interface{
+				Interface: &dpb.OCInterface{
+					Interface: "eth0",
 				},
 			},
 		}, {
@@ -280,7 +255,7 @@ func TestStaticRouteAndIntfs(t *testing.T) {
 			},
 			Hop: &dpb.Route_NextHops{
 				NextHops: &dpb.NextHopList{
-					Weight: []uint64{0},
+					Weights: []uint64{0},
 					Hops: []*dpb.NextHop{{
 						NextHopIp: mapAddressTo6(t, "192.168.1.42"),
 						Interface: &dpb.OCInterface{
@@ -302,14 +277,9 @@ func TestStaticRouteAndIntfs(t *testing.T) {
 				NetworkInstance: "DEFAULT",
 				Cidr:            "192.168.1.0/24",
 			},
-			Hop: &dpb.Route_NextHops{
-				NextHops: &dpb.NextHopList{
-					Weight: []uint64{0},
-					Hops: []*dpb.NextHop{{
-						Interface: &dpb.OCInterface{
-							Interface: "eth0",
-						},
-					}},
+			Hop: &dpb.Route_Interface{
+				Interface: &dpb.OCInterface{
+					Interface: "eth0",
 				},
 			},
 		}, {
@@ -317,14 +287,9 @@ func TestStaticRouteAndIntfs(t *testing.T) {
 				NetworkInstance: "DEFAULT",
 				Cidr:            mapAddressTo6(t, "192.168.1.0/24"),
 			},
-			Hop: &dpb.Route_NextHops{
-				NextHops: &dpb.NextHopList{
-					Weight: []uint64{0},
-					Hops: []*dpb.NextHop{{
-						Interface: &dpb.OCInterface{
-							Interface: "eth0",
-						},
-					}},
+			Hop: &dpb.Route_Interface{
+				Interface: &dpb.OCInterface{
+					Interface: "eth0",
 				},
 			},
 		}},

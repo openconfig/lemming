@@ -9,6 +9,8 @@ go_library(
     visibility = ["//visibility:private"],
     deps = [
         "//:lemming",
+        "//dataplane/config",
+        "//proto/forwarding",
         "//sysrib",
         "@com_github_golang_glog//:glog",
         "@com_github_spf13_pflag//:pflag",

@@ -234,14 +234,9 @@ func getConnectedIntfSetupVarsV4() ([]*AddIntfAction, []*dpb.Route) {
 				NetworkInstance: "DEFAULT",
 				Cidr:            "192.168.1.0/24",
 			},
-			Hop: &dpb.Route_NextHops{
-				NextHops: &dpb.NextHopList{
-					Weight: []uint64{0},
-					Hops: []*dpb.NextHop{{
-						Interface: &dpb.OCInterface{
-							Interface: "eth0",
-						},
-					}},
+			Hop: &dpb.Route_Interface{
+				Interface: &dpb.OCInterface{
+					Interface: "eth0",
 				},
 			},
 		}, {
@@ -249,14 +244,9 @@ func getConnectedIntfSetupVarsV4() ([]*AddIntfAction, []*dpb.Route) {
 				NetworkInstance: "DEFAULT",
 				Cidr:            "192.168.2.0/24",
 			},
-			Hop: &dpb.Route_NextHops{
-				NextHops: &dpb.NextHopList{
-					Weight: []uint64{0},
-					Hops: []*dpb.NextHop{{
-						Interface: &dpb.OCInterface{
-							Interface: "eth1",
-						},
-					}},
+			Hop: &dpb.Route_Interface{
+				Interface: &dpb.OCInterface{
+					Interface: "eth1",
 				},
 			},
 		}, {
@@ -264,14 +254,9 @@ func getConnectedIntfSetupVarsV4() ([]*AddIntfAction, []*dpb.Route) {
 				NetworkInstance: "DEFAULT",
 				Cidr:            "192.168.3.0/24",
 			},
-			Hop: &dpb.Route_NextHops{
-				NextHops: &dpb.NextHopList{
-					Weight: []uint64{0},
-					Hops: []*dpb.NextHop{{
-						Interface: &dpb.OCInterface{
-							Interface: "eth2",
-						},
-					}},
+			Hop: &dpb.Route_Interface{
+				Interface: &dpb.OCInterface{
+					Interface: "eth2",
 				},
 			},
 		}, {
@@ -279,14 +264,9 @@ func getConnectedIntfSetupVarsV4() ([]*AddIntfAction, []*dpb.Route) {
 				NetworkInstance: "DEFAULT",
 				Cidr:            "192.168.4.0/24",
 			},
-			Hop: &dpb.Route_NextHops{
-				NextHops: &dpb.NextHopList{
-					Weight: []uint64{0},
-					Hops: []*dpb.NextHop{{
-						Interface: &dpb.OCInterface{
-							Interface: "eth3",
-						},
-					}},
+			Hop: &dpb.Route_Interface{
+				Interface: &dpb.OCInterface{
+					Interface: "eth3",
 				},
 			},
 		}, {
@@ -294,14 +274,9 @@ func getConnectedIntfSetupVarsV4() ([]*AddIntfAction, []*dpb.Route) {
 				NetworkInstance: "DEFAULT",
 				Cidr:            "192.168.5.0/24",
 			},
-			Hop: &dpb.Route_NextHops{
-				NextHops: &dpb.NextHopList{
-					Weight: []uint64{0},
-					Hops: []*dpb.NextHop{{
-						Interface: &dpb.OCInterface{
-							Interface: "eth4",
-						},
-					}},
+			Hop: &dpb.Route_Interface{
+				Interface: &dpb.OCInterface{
+					Interface: "eth4",
 				},
 			},
 		}}
@@ -450,7 +425,7 @@ func TestServer(t *testing.T) {
 			},
 			Hop: &dpb.Route_NextHops{
 				NextHops: &dpb.NextHopList{
-					Weight: []uint64{0},
+					Weights: []uint64{0},
 					Hops: []*dpb.NextHop{{
 						NextHopIp: "192.168.5.42",
 						Interface: &dpb.OCInterface{
@@ -466,7 +441,7 @@ func TestServer(t *testing.T) {
 			},
 			Hop: &dpb.Route_NextHops{
 				NextHops: &dpb.NextHopList{
-					Weight: []uint64{0},
+					Weights: []uint64{0},
 					Hops: []*dpb.NextHop{{
 						NextHopIp: "192.168.5.42",
 						Interface: &dpb.OCInterface{
@@ -482,7 +457,7 @@ func TestServer(t *testing.T) {
 			},
 			Hop: &dpb.Route_NextHops{
 				NextHops: &dpb.NextHopList{
-					Weight: []uint64{0},
+					Weights: []uint64{0},
 					Hops: []*dpb.NextHop{{
 						NextHopIp: "192.168.5.42",
 						Interface: &dpb.OCInterface{
@@ -584,7 +559,7 @@ func TestServer(t *testing.T) {
 			},
 			Hop: &dpb.Route_NextHops{
 				NextHops: &dpb.NextHopList{
-					Weight: []uint64{0},
+					Weights: []uint64{0},
 					Hops: []*dpb.NextHop{{
 						NextHopIp: "192.168.1.42",
 						Interface: &dpb.OCInterface{
@@ -672,7 +647,7 @@ func TestServer(t *testing.T) {
 			},
 			Hop: &dpb.Route_NextHops{
 				NextHops: &dpb.NextHopList{
-					Weight: []uint64{0, 0},
+					Weights: []uint64{0, 0},
 					Hops: []*dpb.NextHop{{
 						NextHopIp: "192.168.2.42",
 						Interface: &dpb.OCInterface{
@@ -745,7 +720,7 @@ func TestServer(t *testing.T) {
 			},
 			Hop: &dpb.Route_NextHops{
 				NextHops: &dpb.NextHopList{
-					Weight: []uint64{0},
+					Weights: []uint64{0},
 					Hops: []*dpb.NextHop{{
 						NextHopIp: "192.168.1.42",
 						Interface: &dpb.OCInterface{
@@ -761,7 +736,7 @@ func TestServer(t *testing.T) {
 			},
 			Hop: &dpb.Route_NextHops{
 				NextHops: &dpb.NextHopList{
-					Weight: []uint64{0},
+					Weights: []uint64{0},
 					Hops: []*dpb.NextHop{{
 						NextHopIp: "192.168.1.42",
 						Interface: &dpb.OCInterface{
@@ -777,7 +752,7 @@ func TestServer(t *testing.T) {
 			},
 			Hop: &dpb.Route_NextHops{
 				NextHops: &dpb.NextHopList{
-					Weight: []uint64{0},
+					Weights: []uint64{0},
 					Hops: []*dpb.NextHop{{
 						NextHopIp: "192.168.1.42",
 						Interface: &dpb.OCInterface{
@@ -845,7 +820,7 @@ func TestServer(t *testing.T) {
 			},
 			Hop: &dpb.Route_NextHops{
 				NextHops: &dpb.NextHopList{
-					Weight: []uint64{0},
+					Weights: []uint64{0},
 					Hops: []*dpb.NextHop{{
 						NextHopIp: "192.168.1.42",
 						Interface: &dpb.OCInterface{
@@ -861,7 +836,7 @@ func TestServer(t *testing.T) {
 			},
 			Hop: &dpb.Route_NextHops{
 				NextHops: &dpb.NextHopList{
-					Weight: []uint64{0},
+					Weights: []uint64{0},
 					Hops: []*dpb.NextHop{{
 						NextHopIp: "192.168.2.42",
 						Interface: &dpb.OCInterface{
@@ -877,7 +852,7 @@ func TestServer(t *testing.T) {
 			},
 			Hop: &dpb.Route_NextHops{
 				NextHops: &dpb.NextHopList{
-					Weight: []uint64{0},
+					Weights: []uint64{0},
 					Hops: []*dpb.NextHop{{
 						NextHopIp: "192.168.2.42",
 						Interface: &dpb.OCInterface{
@@ -945,7 +920,7 @@ func TestServer(t *testing.T) {
 			},
 			Hop: &dpb.Route_NextHops{
 				NextHops: &dpb.NextHopList{
-					Weight: []uint64{0},
+					Weights: []uint64{0},
 					Hops: []*dpb.NextHop{{
 						NextHopIp: "192.168.1.42",
 						Interface: &dpb.OCInterface{
@@ -1126,7 +1101,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
-						Weight: []uint64{0},
+						Weights: []uint64{0},
 						Hops: []*dpb.NextHop{{
 							NextHopIp: "192.168.1.42",
 							Interface: &dpb.OCInterface{
@@ -1142,7 +1117,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
-						Weight: []uint64{0},
+						Weights: []uint64{0},
 						Hops: []*dpb.NextHop{{
 							NextHopIp: "192.168.1.42",
 							Interface: &dpb.OCInterface{
@@ -1171,7 +1146,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
-						Weight: []uint64{0},
+						Weights: []uint64{0},
 						Hops: []*dpb.NextHop{{
 							NextHopIp: "192.168.1.42",
 							Interface: &dpb.OCInterface{
@@ -1187,7 +1162,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
-						Weight: []uint64{0},
+						Weights: []uint64{0},
 						Hops: []*dpb.NextHop{{
 							NextHopIp: "192.168.1.42",
 							Interface: &dpb.OCInterface{
@@ -1216,7 +1191,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
-						Weight: []uint64{0},
+						Weights: []uint64{0},
 						Hops: []*dpb.NextHop{{
 							NextHopIp: "192.168.1.42",
 							Interface: &dpb.OCInterface{
@@ -1232,7 +1207,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
-						Weight: []uint64{0},
+						Weights: []uint64{0},
 						Hops: []*dpb.NextHop{{
 							NextHopIp: "192.168.1.42",
 							Interface: &dpb.OCInterface{
@@ -1266,7 +1241,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
-						Weight: []uint64{0},
+						Weights: []uint64{0},
 						Hops: []*dpb.NextHop{{
 							NextHopIp: "192.168.1.42",
 							Interface: &dpb.OCInterface{
@@ -1282,7 +1257,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
-						Weight: []uint64{0},
+						Weights: []uint64{0},
 						Hops: []*dpb.NextHop{{
 							NextHopIp: "192.168.1.42",
 							Interface: &dpb.OCInterface{
@@ -1298,7 +1273,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
-						Weight: []uint64{0},
+						Weights: []uint64{0},
 						Hops: []*dpb.NextHop{{
 							NextHopIp: "192.168.1.42",
 							Interface: &dpb.OCInterface{
@@ -1327,7 +1302,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
-						Weight: []uint64{0},
+						Weights: []uint64{0},
 						Hops: []*dpb.NextHop{{
 							NextHopIp: "192.168.1.42",
 							Interface: &dpb.OCInterface{
@@ -1343,7 +1318,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
-						Weight: []uint64{0},
+						Weights: []uint64{0},
 						Hops: []*dpb.NextHop{{
 							NextHopIp: "192.168.1.42",
 							Interface: &dpb.OCInterface{
@@ -1359,7 +1334,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
-						Weight: []uint64{0},
+						Weights: []uint64{0},
 						Hops: []*dpb.NextHop{{
 							NextHopIp: "192.168.1.42",
 							Interface: &dpb.OCInterface{
@@ -1388,7 +1363,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
-						Weight: []uint64{0},
+						Weights: []uint64{0},
 						Hops: []*dpb.NextHop{{
 							NextHopIp: "192.168.1.42",
 							Interface: &dpb.OCInterface{
@@ -1404,7 +1379,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
-						Weight: []uint64{0},
+						Weights: []uint64{0},
 						Hops: []*dpb.NextHop{{
 							NextHopIp: "192.168.1.42",
 							Interface: &dpb.OCInterface{
@@ -1420,7 +1395,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
-						Weight: []uint64{0},
+						Weights: []uint64{0},
 						Hops: []*dpb.NextHop{{
 							NextHopIp: "192.168.1.42",
 							Interface: &dpb.OCInterface{
@@ -1454,7 +1429,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
-						Weight: []uint64{0},
+						Weights: []uint64{0},
 						Hops: []*dpb.NextHop{{
 							NextHopIp: "192.168.1.42",
 							Interface: &dpb.OCInterface{
@@ -1470,7 +1445,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
-						Weight: []uint64{0},
+						Weights: []uint64{0},
 						Hops: []*dpb.NextHop{{
 							NextHopIp: "192.168.1.42",
 							Interface: &dpb.OCInterface{
@@ -1486,7 +1461,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
-						Weight: []uint64{0},
+						Weights: []uint64{0},
 						Hops: []*dpb.NextHop{{
 							NextHopIp: "192.168.1.42",
 							Interface: &dpb.OCInterface{
@@ -1502,7 +1477,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
-						Weight: []uint64{0},
+						Weights: []uint64{0},
 						Hops: []*dpb.NextHop{{
 							NextHopIp: "192.168.1.42",
 							Interface: &dpb.OCInterface{
@@ -1531,7 +1506,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
-						Weight: []uint64{0},
+						Weights: []uint64{0},
 						Hops: []*dpb.NextHop{{
 							NextHopIp: "192.168.1.42",
 							Interface: &dpb.OCInterface{
@@ -1547,7 +1522,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
-						Weight: []uint64{0},
+						Weights: []uint64{0},
 						Hops: []*dpb.NextHop{{
 							NextHopIp: "192.168.1.42",
 							Interface: &dpb.OCInterface{
@@ -1563,7 +1538,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
-						Weight: []uint64{0},
+						Weights: []uint64{0},
 						Hops: []*dpb.NextHop{{
 							NextHopIp: "192.168.1.42",
 							Interface: &dpb.OCInterface{
@@ -1586,7 +1561,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
-						Weight: []uint64{0},
+						Weights: []uint64{0},
 						Hops: []*dpb.NextHop{{
 							NextHopIp: "192.168.1.42",
 							Interface: &dpb.OCInterface{
@@ -1622,7 +1597,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
-						Weight: []uint64{0},
+						Weights: []uint64{0},
 						Hops: []*dpb.NextHop{{
 							NextHopIp: "192.168.1.42",
 							Interface: &dpb.OCInterface{
@@ -1638,7 +1613,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
-						Weight: []uint64{0},
+						Weights: []uint64{0},
 						Hops: []*dpb.NextHop{{
 							NextHopIp: "192.168.1.42",
 							Interface: &dpb.OCInterface{
@@ -1654,7 +1629,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
-						Weight: []uint64{0},
+						Weights: []uint64{0},
 						Hops: []*dpb.NextHop{{
 							NextHopIp: "192.168.1.42",
 							Interface: &dpb.OCInterface{
@@ -1677,7 +1652,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
-						Weight: []uint64{0},
+						Weights: []uint64{0},
 						Hops: []*dpb.NextHop{{
 							NextHopIp: "192.168.1.42",
 							Interface: &dpb.OCInterface{
@@ -1706,7 +1681,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
-						Weight: []uint64{0},
+						Weights: []uint64{0},
 						Hops: []*dpb.NextHop{{
 							NextHopIp: "192.168.1.42",
 							Interface: &dpb.OCInterface{
@@ -1722,7 +1697,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
-						Weight: []uint64{0},
+						Weights: []uint64{0},
 						Hops: []*dpb.NextHop{{
 							NextHopIp: "192.168.1.42",
 							Interface: &dpb.OCInterface{
@@ -1738,7 +1713,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
-						Weight: []uint64{0},
+						Weights: []uint64{0},
 						Hops: []*dpb.NextHop{{
 							NextHopIp: "192.168.1.42",
 							Interface: &dpb.OCInterface{
@@ -1754,7 +1729,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
-						Weight: []uint64{0},
+						Weights: []uint64{0},
 						Hops: []*dpb.NextHop{{
 							NextHopIp: "192.168.1.42",
 							Interface: &dpb.OCInterface{
@@ -1796,7 +1771,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
-						Weight: []uint64{0},
+						Weights: []uint64{0},
 						Hops: []*dpb.NextHop{{
 							NextHopIp: "192.168.1.42",
 							Interface: &dpb.OCInterface{
@@ -1812,7 +1787,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
-						Weight: []uint64{0},
+						Weights: []uint64{0},
 						Hops: []*dpb.NextHop{{
 							NextHopIp: "192.168.1.42",
 							Interface: &dpb.OCInterface{
@@ -1828,7 +1803,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
-						Weight: []uint64{0},
+						Weights: []uint64{0},
 						Hops: []*dpb.NextHop{{
 							NextHopIp: "192.168.1.42",
 							Interface: &dpb.OCInterface{
@@ -1844,7 +1819,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
-						Weight: []uint64{0},
+						Weights: []uint64{0},
 						Hops: []*dpb.NextHop{{
 							NextHopIp: "192.168.1.42",
 							Interface: &dpb.OCInterface{
@@ -1867,7 +1842,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
-						Weight: []uint64{0},
+						Weights: []uint64{0},
 						Hops: []*dpb.NextHop{{
 							NextHopIp: "192.168.1.42",
 							Interface: &dpb.OCInterface{
@@ -1897,7 +1872,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
-						Weight: []uint64{0},
+						Weights: []uint64{0},
 						Hops: []*dpb.NextHop{{
 							NextHopIp: "192.168.1.42",
 							Interface: &dpb.OCInterface{
@@ -1913,7 +1888,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
-						Weight: []uint64{0},
+						Weights: []uint64{0},
 						Hops: []*dpb.NextHop{{
 							NextHopIp: "192.168.1.42",
 							Interface: &dpb.OCInterface{
@@ -1929,7 +1904,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
-						Weight: []uint64{0},
+						Weights: []uint64{0},
 						Hops: []*dpb.NextHop{{
 							NextHopIp: "192.168.1.42",
 							Interface: &dpb.OCInterface{
@@ -1945,7 +1920,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
-						Weight: []uint64{0},
+						Weights: []uint64{0},
 						Hops: []*dpb.NextHop{{
 							NextHopIp: "192.168.1.42",
 							Interface: &dpb.OCInterface{
@@ -1968,7 +1943,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
-						Weight: []uint64{0},
+						Weights: []uint64{0},
 						Hops: []*dpb.NextHop{{
 							NextHopIp: "192.168.1.42",
 							Interface: &dpb.OCInterface{
@@ -1984,7 +1959,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
-						Weight: []uint64{0},
+						Weights: []uint64{0},
 						Hops: []*dpb.NextHop{{
 							NextHopIp: "192.168.1.42",
 							Interface: &dpb.OCInterface{
@@ -2000,7 +1975,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
-						Weight: []uint64{0},
+						Weights: []uint64{0},
 						Hops: []*dpb.NextHop{{
 							NextHopIp: "192.168.1.42",
 							Interface: &dpb.OCInterface{
@@ -2016,7 +1991,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
-						Weight: []uint64{0},
+						Weights: []uint64{0},
 						Hops: []*dpb.NextHop{{
 							NextHopIp: "192.168.1.42",
 							Interface: &dpb.OCInterface{
@@ -2032,7 +2007,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
-						Weight: []uint64{0},
+						Weights: []uint64{0},
 						Hops: []*dpb.NextHop{{
 							NextHopIp: "192.168.1.42",
 							Interface: &dpb.OCInterface{
