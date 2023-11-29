@@ -27,6 +27,8 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/testing/protocmp"
 
+	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
+	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdobject"
 	saipb "github.com/openconfig/lemming/dataplane/standalone/proto"
 	"github.com/openconfig/lemming/dataplane/standalone/saiserver/attrmgr"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
@@ -356,8 +358,9 @@ func TestCreateAclEntry(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
 			dplane := &fakeSwitchDataplane{
-				portIDToNID: map[string]uint64{"1": 1},
+				ctx: fwdcontext.New("foo", "foo"),
 			}
+			dplane.ctx.Objects.Insert(&fwdobject.Base{}, &fwdpb.ObjectId{Id: "1"})
 			c, a, stopFn := newTestACL(t, dplane)
 			a.tableToLocation[1] = tableLocation{
 				groupID: "1",

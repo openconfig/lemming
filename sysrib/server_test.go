@@ -26,19 +26,18 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/gopacket"
-	"github.com/google/gopacket/layers"
-	"github.com/openconfig/lemming/gnmi"
-	"github.com/openconfig/lemming/gnmi/gnmiclient"
-	"github.com/openconfig/lemming/gnmi/oc"
-	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 	"github.com/openconfig/ygnmi/schemaless"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/testing/protocmp"
 
+	"github.com/openconfig/lemming/gnmi"
+	"github.com/openconfig/lemming/gnmi/gnmiclient"
+	"github.com/openconfig/lemming/gnmi/oc"
+	"github.com/openconfig/lemming/gnmi/oc/ocpath"
+
 	dpb "github.com/openconfig/lemming/proto/dataplane"
-	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 	pb "github.com/openconfig/lemming/proto/sysrib"
 )
 
@@ -116,6 +115,12 @@ func mapAddressTo6Bytes(v4Address [4]byte) [16]byte {
 	return ipv6Bytes
 }
 
+func mapAddressSliceTo6BytesSlice(v4Address []byte) []byte {
+	ipv6Bytes := []byte{0x20, 0x01, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	copy(ipv6Bytes[v4v6ConversionStartPos:], v4Address[:])
+	return ipv6Bytes
+}
+
 func mapAddressTo6BytesSlice(v4Address [4]byte) []byte {
 	r := mapAddressTo6Bytes(v4Address)
 	return r[:]
@@ -168,15 +173,14 @@ func mapAddressTo6(t *testing.T, addrStr string) string {
 }
 
 func mapResolvedRouteTo6(t *testing.T, route *dpb.Route) {
-	route.Prefix.Prefix = &dpb.RoutePrefix_Cidr{Cidr: mapAddressTo6(t, route.Prefix.GetCidr())}
+	route.Prefix.Cidr = mapAddressTo6(t, route.Prefix.GetCidr())
 	for _, nh := range route.GetNextHops().GetHops() {
-		if nh.GetIpStr() != "" {
-			nh.Ip = &dpb.NextHop_IpStr{IpStr: mapAddressTo6(t, nh.GetIpStr())}
+		if nh.GetNextHopIp() != "" {
+			nh.NextHopIp = mapAddressTo6(t, nh.GetNextHopIp())
 		}
-		for _, pta := range nh.PreTransmitActions {
-			if pta.GetReparse().GetHeaderId() == fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4 {
-				pta.GetReparse().HeaderId = fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP6
-			}
+		if nh.GetGue() != nil {
+			nh.GetGue().DstIp = mapAddressSliceTo6BytesSlice(nh.GetGue().DstIp)
+			nh.GetGue().SrcIp = mapAddressSliceTo6BytesSlice(nh.GetGue().SrcIp)
 		}
 	}
 }
@@ -244,86 +248,76 @@ func getConnectedIntfSetupVarsV4() ([]*AddIntfAction, []*dpb.Route) {
 			niName:  "DEFAULT",
 		}}, []*dpb.Route{{
 			Prefix: &dpb.RoutePrefix{
-				VrfId: uint64(0),
-				Prefix: &dpb.RoutePrefix_Cidr{
-					Cidr: "192.168.1.0/24",
-				},
+				NetworkInstance: "DEFAULT",
+				Cidr:            "192.168.1.0/24",
 			},
 			Hop: &dpb.Route_NextHops{
 				NextHops: &dpb.NextHopList{
+					Weight: []uint64{0},
 					Hops: []*dpb.NextHop{{
-						Dev: &dpb.NextHop_Port{
-							Port: "eth0",
+						Interface: &dpb.OCInterface{
+							Interface: "eth0",
 						},
-						Weight: 0,
 					}},
 				},
 			},
 		}, {
 			Prefix: &dpb.RoutePrefix{
-				VrfId: uint64(0),
-				Prefix: &dpb.RoutePrefix_Cidr{
-					Cidr: "192.168.2.0/24",
-				},
+				NetworkInstance: "DEFAULT",
+				Cidr:            "192.168.2.0/24",
 			},
 			Hop: &dpb.Route_NextHops{
 				NextHops: &dpb.NextHopList{
+					Weight: []uint64{0},
 					Hops: []*dpb.NextHop{{
-						Dev: &dpb.NextHop_Port{
-							Port: "eth1",
+						Interface: &dpb.OCInterface{
+							Interface: "eth1",
 						},
-						Weight: 0,
 					}},
 				},
 			},
 		}, {
 			Prefix: &dpb.RoutePrefix{
-				VrfId: uint64(0),
-				Prefix: &dpb.RoutePrefix_Cidr{
-					Cidr: "192.168.3.0/24",
-				},
+				NetworkInstance: "DEFAULT",
+				Cidr:            "192.168.3.0/24",
 			},
 			Hop: &dpb.Route_NextHops{
 				NextHops: &dpb.NextHopList{
+					Weight: []uint64{0},
 					Hops: []*dpb.NextHop{{
-						Dev: &dpb.NextHop_Port{
-							Port: "eth2",
+						Interface: &dpb.OCInterface{
+							Interface: "eth2",
 						},
-						Weight: 0,
 					}},
 				},
 			},
 		}, {
 			Prefix: &dpb.RoutePrefix{
-				VrfId: uint64(0),
-				Prefix: &dpb.RoutePrefix_Cidr{
-					Cidr: "192.168.4.0/24",
-				},
+				NetworkInstance: "DEFAULT",
+				Cidr:            "192.168.4.0/24",
 			},
 			Hop: &dpb.Route_NextHops{
 				NextHops: &dpb.NextHopList{
+					Weight: []uint64{0},
 					Hops: []*dpb.NextHop{{
-						Dev: &dpb.NextHop_Port{
-							Port: "eth3",
+						Interface: &dpb.OCInterface{
+							Interface: "eth3",
 						},
-						Weight: 0,
 					}},
 				},
 			},
 		}, {
 			Prefix: &dpb.RoutePrefix{
-				VrfId: uint64(0),
-				Prefix: &dpb.RoutePrefix_Cidr{
-					Cidr: "192.168.5.0/24",
-				},
+				NetworkInstance: "DEFAULT",
+				Cidr:            "192.168.5.0/24",
 			},
 			Hop: &dpb.Route_NextHops{
 				NextHops: &dpb.NextHopList{
+					Weight: []uint64{0},
 					Hops: []*dpb.NextHop{{
-						Dev: &dpb.NextHop_Port{
-							Port: "eth4",
+						Interface: &dpb.OCInterface{
+							Interface: "eth4",
 						},
-						Weight: 0,
 					}},
 				},
 			},
@@ -468,55 +462,49 @@ func TestServer(t *testing.T) {
 		}},
 		wantRoutes: []*dpb.Route{{
 			Prefix: &dpb.RoutePrefix{
-				VrfId: uint64(0),
-				Prefix: &dpb.RoutePrefix_Cidr{
-					Cidr: "10.0.0.0/8",
-				},
+				NetworkInstance: "DEFAULT",
+				Cidr:            "10.0.0.0/8",
 			},
 			Hop: &dpb.Route_NextHops{
 				NextHops: &dpb.NextHopList{
+					Weight: []uint64{0},
 					Hops: []*dpb.NextHop{{
-						Ip: &dpb.NextHop_IpStr{IpStr: "192.168.5.42"},
-						Dev: &dpb.NextHop_Port{
-							Port: "eth4",
+						NextHopIp: "192.168.5.42",
+						Interface: &dpb.OCInterface{
+							Interface: "eth4",
 						},
-						Weight: 0,
 					}},
 				},
 			},
 		}, {
 			Prefix: &dpb.RoutePrefix{
-				VrfId: uint64(0),
-				Prefix: &dpb.RoutePrefix_Cidr{
-					Cidr: "20.0.0.0/8",
-				},
+				NetworkInstance: "DEFAULT",
+				Cidr:            "20.0.0.0/8",
 			},
 			Hop: &dpb.Route_NextHops{
 				NextHops: &dpb.NextHopList{
+					Weight: []uint64{0},
 					Hops: []*dpb.NextHop{{
-						Ip: &dpb.NextHop_IpStr{IpStr: "192.168.5.42"},
-						Dev: &dpb.NextHop_Port{
-							Port: "eth4",
+						NextHopIp: "192.168.5.42",
+						Interface: &dpb.OCInterface{
+							Interface: "eth4",
 						},
-						Weight: 0,
 					}},
 				},
 			},
 		}, {
 			Prefix: &dpb.RoutePrefix{
-				VrfId: uint64(0),
-				Prefix: &dpb.RoutePrefix_Cidr{
-					Cidr: "30.0.0.0/8",
-				},
+				NetworkInstance: "DEFAULT",
+				Cidr:            "30.0.0.0/8",
 			},
 			Hop: &dpb.Route_NextHops{
 				NextHops: &dpb.NextHopList{
+					Weight: []uint64{0},
 					Hops: []*dpb.NextHop{{
-						Ip: &dpb.NextHop_IpStr{IpStr: "192.168.5.42"},
-						Dev: &dpb.NextHop_Port{
-							Port: "eth4",
+						NextHopIp: "192.168.5.42",
+						Interface: &dpb.OCInterface{
+							Interface: "eth4",
 						},
-						Weight: 0,
 					}},
 				},
 			},
@@ -608,19 +596,17 @@ func TestServer(t *testing.T) {
 		}},
 		wantRoutes: []*dpb.Route{{
 			Prefix: &dpb.RoutePrefix{
-				VrfId: uint64(0),
-				Prefix: &dpb.RoutePrefix_Cidr{
-					Cidr: "10.0.0.0/8",
-				},
+				NetworkInstance: "DEFAULT",
+				Cidr:            "10.0.0.0/8",
 			},
 			Hop: &dpb.Route_NextHops{
 				NextHops: &dpb.NextHopList{
+					Weight: []uint64{0},
 					Hops: []*dpb.NextHop{{
-						Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-						Dev: &dpb.NextHop_Port{
-							Port: "eth0",
+						NextHopIp: "192.168.1.42",
+						Interface: &dpb.OCInterface{
+							Interface: "eth0",
 						},
-						Weight: 0,
 					}},
 				},
 			},
@@ -698,25 +684,22 @@ func TestServer(t *testing.T) {
 		}},
 		wantRoutes: []*dpb.Route{{
 			Prefix: &dpb.RoutePrefix{
-				VrfId: uint64(0),
-				Prefix: &dpb.RoutePrefix_Cidr{
-					Cidr: "10.0.0.0/8",
-				},
+				NetworkInstance: "DEFAULT",
+				Cidr:            "10.0.0.0/8",
 			},
 			Hop: &dpb.Route_NextHops{
 				NextHops: &dpb.NextHopList{
+					Weight: []uint64{0, 0},
 					Hops: []*dpb.NextHop{{
-						Ip: &dpb.NextHop_IpStr{IpStr: "192.168.2.42"},
-						Dev: &dpb.NextHop_Port{
-							Port: "eth1",
+						NextHopIp: "192.168.2.42",
+						Interface: &dpb.OCInterface{
+							Interface: "eth1",
 						},
-						Weight: 0,
 					}, {
-						Ip: &dpb.NextHop_IpStr{IpStr: "192.168.3.42"},
-						Dev: &dpb.NextHop_Port{
-							Port: "eth2",
+						NextHopIp: "192.168.3.42",
+						Interface: &dpb.OCInterface{
+							Interface: "eth2",
 						},
-						Weight: 0,
 					}},
 				},
 			},
@@ -774,55 +757,49 @@ func TestServer(t *testing.T) {
 		}},
 		wantRoutes: []*dpb.Route{{
 			Prefix: &dpb.RoutePrefix{
-				VrfId: uint64(0),
-				Prefix: &dpb.RoutePrefix_Cidr{
-					Cidr: "10.0.0.0/8",
-				},
+				NetworkInstance: "DEFAULT",
+				Cidr:            "10.0.0.0/8",
 			},
 			Hop: &dpb.Route_NextHops{
 				NextHops: &dpb.NextHopList{
+					Weight: []uint64{0},
 					Hops: []*dpb.NextHop{{
-						Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-						Dev: &dpb.NextHop_Port{
-							Port: "eth0",
+						NextHopIp: "192.168.1.42",
+						Interface: &dpb.OCInterface{
+							Interface: "eth0",
 						},
-						Weight: 0,
 					}},
 				},
 			},
 		}, {
 			Prefix: &dpb.RoutePrefix{
-				VrfId: uint64(0),
-				Prefix: &dpb.RoutePrefix_Cidr{
-					Cidr: "20.0.0.0/8",
-				},
+				NetworkInstance: "DEFAULT",
+				Cidr:            "20.0.0.0/8",
 			},
 			Hop: &dpb.Route_NextHops{
 				NextHops: &dpb.NextHopList{
+					Weight: []uint64{0},
 					Hops: []*dpb.NextHop{{
-						Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-						Dev: &dpb.NextHop_Port{
-							Port: "eth0",
+						NextHopIp: "192.168.1.42",
+						Interface: &dpb.OCInterface{
+							Interface: "eth0",
 						},
-						Weight: 0,
 					}},
 				},
 			},
 		}, {
 			Prefix: &dpb.RoutePrefix{
-				VrfId: uint64(0),
-				Prefix: &dpb.RoutePrefix_Cidr{
-					Cidr: "2002::/49",
-				},
+				NetworkInstance: "DEFAULT",
+				Cidr:            "2002::/49",
 			},
 			Hop: &dpb.Route_NextHops{
 				NextHops: &dpb.NextHopList{
+					Weight: []uint64{0},
 					Hops: []*dpb.NextHop{{
-						Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-						Dev: &dpb.NextHop_Port{
-							Port: "eth0",
+						NextHopIp: "192.168.1.42",
+						Interface: &dpb.OCInterface{
+							Interface: "eth0",
 						},
-						Weight: 0,
 					}},
 				},
 			},
@@ -880,55 +857,49 @@ func TestServer(t *testing.T) {
 		}},
 		wantRoutes: []*dpb.Route{{
 			Prefix: &dpb.RoutePrefix{
-				VrfId: uint64(0),
-				Prefix: &dpb.RoutePrefix_Cidr{
-					Cidr: "10.0.0.0/8",
-				},
+				NetworkInstance: "DEFAULT",
+				Cidr:            "10.0.0.0/8",
 			},
 			Hop: &dpb.Route_NextHops{
 				NextHops: &dpb.NextHopList{
+					Weight: []uint64{0},
 					Hops: []*dpb.NextHop{{
-						Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-						Dev: &dpb.NextHop_Port{
-							Port: "eth0",
+						NextHopIp: "192.168.1.42",
+						Interface: &dpb.OCInterface{
+							Interface: "eth0",
 						},
-						Weight: 0,
 					}},
 				},
 			},
 		}, {
 			Prefix: &dpb.RoutePrefix{
-				VrfId: uint64(0),
-				Prefix: &dpb.RoutePrefix_Cidr{
-					Cidr: "10.10.0.0/16",
-				},
+				NetworkInstance: "DEFAULT",
+				Cidr:            "10.10.0.0/16",
 			},
 			Hop: &dpb.Route_NextHops{
 				NextHops: &dpb.NextHopList{
+					Weight: []uint64{0},
 					Hops: []*dpb.NextHop{{
-						Ip: &dpb.NextHop_IpStr{IpStr: "192.168.2.42"},
-						Dev: &dpb.NextHop_Port{
-							Port: "eth1",
+						NextHopIp: "192.168.2.42",
+						Interface: &dpb.OCInterface{
+							Interface: "eth1",
 						},
-						Weight: 0,
 					}},
 				},
 			},
 		}, {
 			Prefix: &dpb.RoutePrefix{
-				VrfId: uint64(0),
-				Prefix: &dpb.RoutePrefix_Cidr{
-					Cidr: "2003::/49",
-				},
+				NetworkInstance: "DEFAULT",
+				Cidr:            "2003::/49",
 			},
 			Hop: &dpb.Route_NextHops{
 				NextHops: &dpb.NextHopList{
+					Weight: []uint64{0},
 					Hops: []*dpb.NextHop{{
-						Ip: &dpb.NextHop_IpStr{IpStr: "192.168.2.42"},
-						Dev: &dpb.NextHop_Port{
-							Port: "eth1",
+						NextHopIp: "192.168.2.42",
+						Interface: &dpb.OCInterface{
+							Interface: "eth1",
 						},
-						Weight: 0,
 					}},
 				},
 			},
@@ -986,19 +957,17 @@ func TestServer(t *testing.T) {
 		}},
 		wantRoutes: []*dpb.Route{{
 			Prefix: &dpb.RoutePrefix{
-				VrfId: uint64(0),
-				Prefix: &dpb.RoutePrefix_Cidr{
-					Cidr: "10.0.0.0/8",
-				},
+				NetworkInstance: "DEFAULT",
+				Cidr:            "10.0.0.0/8",
 			},
 			Hop: &dpb.Route_NextHops{
 				NextHops: &dpb.NextHopList{
+					Weight: []uint64{0},
 					Hops: []*dpb.NextHop{{
-						Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-						Dev: &dpb.NextHop_Port{
-							Port: "eth0",
+						NextHopIp: "192.168.1.42",
+						Interface: &dpb.OCInterface{
+							Interface: "eth0",
 						},
-						Weight: 0,
 					}},
 				},
 			},
@@ -1132,6 +1101,18 @@ func gueHeader(t *testing.T, layers ...gopacket.SerializableLayer) []byte {
 	return buf.Bytes()
 }
 
+func addrToBytes(t testing.TB, isV4 bool, v4 string) []byte {
+	t.Helper()
+	addr, err := netip.ParseAddr(v4)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if isV4 {
+		return addr.AsSlice()
+	}
+	return append(addr.AsSlice(), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+}
+
 func TestBGPGUEPolicy(t *testing.T) {
 	routesQuery := programmedRoutesQuery(t)
 	inInterfaces, wantConnectedRoutes := getConnectedIntfSetupVars(t)
@@ -1177,37 +1158,33 @@ func TestBGPGUEPolicy(t *testing.T) {
 		wantRoutes: func(v4 bool) []*dpb.Route {
 			return []*dpb.Route{{
 				Prefix: &dpb.RoutePrefix{
-					VrfId: uint64(0),
-					Prefix: &dpb.RoutePrefix_Cidr{
-						Cidr: "10.0.0.0/8",
-					},
+					NetworkInstance: "DEFAULT",
+					Cidr:            "10.0.0.0/8",
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
+						Weight: []uint64{0},
 						Hops: []*dpb.NextHop{{
-							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-							Dev: &dpb.NextHop_Port{
-								Port: "eth0",
+							NextHopIp: "192.168.1.42",
+							Interface: &dpb.OCInterface{
+								Interface: "eth0",
 							},
-							Weight: 0,
 						}},
 					},
 				},
 			}, {
 				Prefix: &dpb.RoutePrefix{
-					VrfId: uint64(0),
-					Prefix: &dpb.RoutePrefix_Cidr{
-						Cidr: "20.0.0.0/8",
-					},
+					NetworkInstance: "DEFAULT",
+					Cidr:            "20.0.0.0/8",
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
+						Weight: []uint64{0},
 						Hops: []*dpb.NextHop{{
-							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-							Dev: &dpb.NextHop_Port{
-								Port: "eth0",
+							NextHopIp: "192.168.1.42",
+							Interface: &dpb.OCInterface{
+								Interface: "eth0",
 							},
-							Weight: 0,
 						}},
 					},
 				},
@@ -1226,73 +1203,40 @@ func TestBGPGUEPolicy(t *testing.T) {
 		wantRoutes: func(v4 bool) []*dpb.Route {
 			return []*dpb.Route{{
 				Prefix: &dpb.RoutePrefix{
-					VrfId: uint64(0),
-					Prefix: &dpb.RoutePrefix_Cidr{
-						Cidr: "10.0.0.0/8",
-					},
+					NetworkInstance: "DEFAULT",
+					Cidr:            "10.0.0.0/8",
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
+						Weight: []uint64{0},
 						Hops: []*dpb.NextHop{{
-							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-							Dev: &dpb.NextHop_Port{
-								Port: "eth0",
+							NextHopIp: "192.168.1.42",
+							Interface: &dpb.OCInterface{
+								Interface: "eth0",
 							},
-							Weight: 0,
 						}},
 					},
 				},
 			}, {
 				Prefix: &dpb.RoutePrefix{
-					VrfId: uint64(0),
-					Prefix: &dpb.RoutePrefix_Cidr{
-						Cidr: "20.0.0.0/8",
-					},
+					NetworkInstance: "DEFAULT",
+					Cidr:            "20.0.0.0/8",
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
+						Weight: []uint64{0},
 						Hops: []*dpb.NextHop{{
-							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-							Dev: &dpb.NextHop_Port{
-								Port: "eth0",
+							NextHopIp: "192.168.1.42",
+							Interface: &dpb.OCInterface{
+								Interface: "eth0",
 							},
-							Weight: 0,
-							PreTransmitActions: []*fwdpb.ActionDesc{{
-								ActionType: fwdpb.ActionType_ACTION_TYPE_REPARSE,
-								Action: &fwdpb.ActionDesc_Reparse{
-									Reparse: &fwdpb.ReparseActionDesc{
-										HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4,
-										FieldIds: []*fwdpb.PacketFieldId{
-											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP}},
-											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT}},
-											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT}},
-										},
-										Prepend: gueHeader(t, selectGUEHeaders(t, v4,
-											&layers.IPv4{
-												Version:  4,
-												IHL:      5,
-												Protocol: layers.IPProtocolUDP,
-												SrcIP:    net.IPv4(42, 42, 42, 42),
-												DstIP:    net.IPv4(192, 168, 1, 42),
-											}, &layers.UDP{
-												DstPort: layers.UDPPort(8),
-												SrcPort: 0,
-												Length:  34,
-											},
-											&layers.IPv6{
-												Version:    6,
-												NextHeader: layers.IPProtocolUDP,
-												SrcIP:      mapAddressTo6BytesSlice([4]byte{42, 42, 42, 42}),
-												DstIP:      net.ParseIP(mapAddressTo6(t, "192.168.1.42")),
-											}, &layers.UDP{
-												DstPort: layers.UDPPort(8),
-												SrcPort: 0,
-												Length:  34,
-											},
-										)...),
-									},
+							Encap: &dpb.NextHop_Gue{
+								Gue: &dpb.GUE{
+									SrcIp:   []byte{42, 42, 42, 42},
+									DstIp:   []byte{192, 168, 1, 42},
+									DstPort: 8,
 								},
-							}},
+							},
 						}},
 					},
 				},
@@ -1304,37 +1248,33 @@ func TestBGPGUEPolicy(t *testing.T) {
 		wantRoutes: func(v4 bool) []*dpb.Route {
 			return []*dpb.Route{{
 				Prefix: &dpb.RoutePrefix{
-					VrfId: uint64(0),
-					Prefix: &dpb.RoutePrefix_Cidr{
-						Cidr: "10.0.0.0/8",
-					},
+					NetworkInstance: "DEFAULT",
+					Cidr:            "10.0.0.0/8",
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
+						Weight: []uint64{0},
 						Hops: []*dpb.NextHop{{
-							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-							Dev: &dpb.NextHop_Port{
-								Port: "eth0",
+							NextHopIp: "192.168.1.42",
+							Interface: &dpb.OCInterface{
+								Interface: "eth0",
 							},
-							Weight: 0,
 						}},
 					},
 				},
 			}, {
 				Prefix: &dpb.RoutePrefix{
-					VrfId: uint64(0),
-					Prefix: &dpb.RoutePrefix_Cidr{
-						Cidr: "20.0.0.0/8",
-					},
+					NetworkInstance: "DEFAULT",
+					Cidr:            "20.0.0.0/8",
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
+						Weight: []uint64{0},
 						Hops: []*dpb.NextHop{{
-							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-							Dev: &dpb.NextHop_Port{
-								Port: "eth0",
+							NextHopIp: "192.168.1.42",
+							Interface: &dpb.OCInterface{
+								Interface: "eth0",
 							},
-							Weight: 0,
 						}},
 					},
 				},
@@ -1358,55 +1298,49 @@ func TestBGPGUEPolicy(t *testing.T) {
 		wantRoutes: func(v4 bool) []*dpb.Route {
 			return []*dpb.Route{{
 				Prefix: &dpb.RoutePrefix{
-					VrfId: uint64(0),
-					Prefix: &dpb.RoutePrefix_Cidr{
-						Cidr: "10.0.0.0/8",
-					},
+					NetworkInstance: "DEFAULT",
+					Cidr:            "10.0.0.0/8",
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
+						Weight: []uint64{0},
 						Hops: []*dpb.NextHop{{
-							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-							Dev: &dpb.NextHop_Port{
-								Port: "eth0",
+							NextHopIp: "192.168.1.42",
+							Interface: &dpb.OCInterface{
+								Interface: "eth0",
 							},
-							Weight: 0,
 						}},
 					},
 				},
 			}, {
 				Prefix: &dpb.RoutePrefix{
-					VrfId: uint64(0),
-					Prefix: &dpb.RoutePrefix_Cidr{
-						Cidr: "20.0.0.0/8",
-					},
+					NetworkInstance: "DEFAULT",
+					Cidr:            "20.0.0.0/8",
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
+						Weight: []uint64{0},
 						Hops: []*dpb.NextHop{{
-							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-							Dev: &dpb.NextHop_Port{
-								Port: "eth0",
+							NextHopIp: "192.168.1.42",
+							Interface: &dpb.OCInterface{
+								Interface: "eth0",
 							},
-							Weight: 0,
 						}},
 					},
 				},
 			}, {
 				Prefix: &dpb.RoutePrefix{
-					VrfId: uint64(0),
-					Prefix: &dpb.RoutePrefix_Cidr{
-						Cidr: "30.0.0.0/8",
-					},
+					NetworkInstance: "DEFAULT",
+					Cidr:            "30.0.0.0/8",
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
+						Weight: []uint64{0},
 						Hops: []*dpb.NextHop{{
-							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-							Dev: &dpb.NextHop_Port{
-								Port: "eth0",
+							NextHopIp: "192.168.1.42",
+							Interface: &dpb.OCInterface{
+								Interface: "eth0",
 							},
-							Weight: 0,
 						}},
 					},
 				},
@@ -1425,91 +1359,56 @@ func TestBGPGUEPolicy(t *testing.T) {
 		wantRoutes: func(v4 bool) []*dpb.Route {
 			return []*dpb.Route{{
 				Prefix: &dpb.RoutePrefix{
-					VrfId: uint64(0),
-					Prefix: &dpb.RoutePrefix_Cidr{
-						Cidr: "10.0.0.0/8",
-					},
+					NetworkInstance: "DEFAULT",
+					Cidr:            "10.0.0.0/8",
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
+						Weight: []uint64{0},
 						Hops: []*dpb.NextHop{{
-							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-							Dev: &dpb.NextHop_Port{
-								Port: "eth0",
+							NextHopIp: "192.168.1.42",
+							Interface: &dpb.OCInterface{
+								Interface: "eth0",
 							},
-							Weight: 0,
 						}},
 					},
 				},
 			}, {
 				Prefix: &dpb.RoutePrefix{
-					VrfId: uint64(0),
-					Prefix: &dpb.RoutePrefix_Cidr{
-						Cidr: "20.0.0.0/8",
-					},
+					NetworkInstance: "DEFAULT",
+					Cidr:            "20.0.0.0/8",
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
+						Weight: []uint64{0},
 						Hops: []*dpb.NextHop{{
-							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-							Dev: &dpb.NextHop_Port{
-								Port: "eth0",
+							NextHopIp: "192.168.1.42",
+							Interface: &dpb.OCInterface{
+								Interface: "eth0",
 							},
-							Weight: 0,
 						}},
 					},
 				},
 			}, {
 				Prefix: &dpb.RoutePrefix{
-					VrfId: uint64(0),
-					Prefix: &dpb.RoutePrefix_Cidr{
-						Cidr: "30.0.0.0/8",
-					},
+					NetworkInstance: "DEFAULT",
+					Cidr:            "30.0.0.0/8",
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
+						Weight: []uint64{0},
 						Hops: []*dpb.NextHop{{
-							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-							Dev: &dpb.NextHop_Port{
-								Port: "eth0",
+							NextHopIp: "192.168.1.42",
+							Interface: &dpb.OCInterface{
+								Interface: "eth0",
 							},
-							Weight: 0,
-							PreTransmitActions: []*fwdpb.ActionDesc{{
-								ActionType: fwdpb.ActionType_ACTION_TYPE_REPARSE,
-								Action: &fwdpb.ActionDesc_Reparse{
-									Reparse: &fwdpb.ReparseActionDesc{
-										HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4,
-										FieldIds: []*fwdpb.PacketFieldId{
-											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP}},
-											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT}},
-											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT}},
-										},
-										Prepend: gueHeader(t, selectGUEHeaders(t, v4,
-											&layers.IPv4{
-												Version:  4,
-												IHL:      5,
-												Protocol: layers.IPProtocolUDP,
-												SrcIP:    net.IPv4(43, 43, 43, 43),
-												DstIP:    net.IPv4(10, 10, 10, 10),
-											}, &layers.UDP{
-												DstPort: layers.UDPPort(9),
-												SrcPort: 0,
-												Length:  34,
-											},
-											&layers.IPv6{
-												Version:    6,
-												NextHeader: layers.IPProtocolUDP,
-												SrcIP:      mapAddressTo6BytesSlice([4]byte{43, 43, 43, 43}),
-												DstIP:      net.ParseIP(mapAddressTo6(t, "10.10.10.10")),
-											}, &layers.UDP{
-												DstPort: layers.UDPPort(9),
-												SrcPort: 0,
-												Length:  34,
-											},
-										)...),
-									},
+							Encap: &dpb.NextHop_Gue{
+								Gue: &dpb.GUE{
+									SrcIp:   []byte{43, 43, 43, 43},
+									DstIp:   []byte{10, 10, 10, 10},
+									DstPort: 9,
 								},
-							}},
+							},
 						}},
 					},
 				},
@@ -1521,55 +1420,49 @@ func TestBGPGUEPolicy(t *testing.T) {
 		wantRoutes: func(v4 bool) []*dpb.Route {
 			return []*dpb.Route{{
 				Prefix: &dpb.RoutePrefix{
-					VrfId: uint64(0),
-					Prefix: &dpb.RoutePrefix_Cidr{
-						Cidr: "10.0.0.0/8",
-					},
+					NetworkInstance: "DEFAULT",
+					Cidr:            "10.0.0.0/8",
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
+						Weight: []uint64{0},
 						Hops: []*dpb.NextHop{{
-							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-							Dev: &dpb.NextHop_Port{
-								Port: "eth0",
+							NextHopIp: "192.168.1.42",
+							Interface: &dpb.OCInterface{
+								Interface: "eth0",
 							},
-							Weight: 0,
 						}},
 					},
 				},
 			}, {
 				Prefix: &dpb.RoutePrefix{
-					VrfId: uint64(0),
-					Prefix: &dpb.RoutePrefix_Cidr{
-						Cidr: "20.0.0.0/8",
-					},
+					NetworkInstance: "DEFAULT",
+					Cidr:            "20.0.0.0/8",
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
+						Weight: []uint64{0},
 						Hops: []*dpb.NextHop{{
-							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-							Dev: &dpb.NextHop_Port{
-								Port: "eth0",
+							NextHopIp: "192.168.1.42",
+							Interface: &dpb.OCInterface{
+								Interface: "eth0",
 							},
-							Weight: 0,
 						}},
 					},
 				},
 			}, {
 				Prefix: &dpb.RoutePrefix{
-					VrfId: uint64(0),
-					Prefix: &dpb.RoutePrefix_Cidr{
-						Cidr: "30.0.0.0/8",
-					},
+					NetworkInstance: "DEFAULT",
+					Cidr:            "30.0.0.0/8",
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
+						Weight: []uint64{0},
 						Hops: []*dpb.NextHop{{
-							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-							Dev: &dpb.NextHop_Port{
-								Port: "eth0",
+							NextHopIp: "192.168.1.42",
+							Interface: &dpb.OCInterface{
+								Interface: "eth0",
 							},
-							Weight: 0,
 						}},
 					},
 				},
@@ -1593,73 +1486,65 @@ func TestBGPGUEPolicy(t *testing.T) {
 		wantRoutes: func(v4 bool) []*dpb.Route {
 			return []*dpb.Route{{
 				Prefix: &dpb.RoutePrefix{
-					VrfId: uint64(0),
-					Prefix: &dpb.RoutePrefix_Cidr{
-						Cidr: "10.0.0.0/8",
-					},
+					NetworkInstance: "DEFAULT",
+					Cidr:            "10.0.0.0/8",
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
+						Weight: []uint64{0},
 						Hops: []*dpb.NextHop{{
-							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-							Dev: &dpb.NextHop_Port{
-								Port: "eth0",
+							NextHopIp: "192.168.1.42",
+							Interface: &dpb.OCInterface{
+								Interface: "eth0",
 							},
-							Weight: 0,
 						}},
 					},
 				},
 			}, {
 				Prefix: &dpb.RoutePrefix{
-					VrfId: uint64(0),
-					Prefix: &dpb.RoutePrefix_Cidr{
-						Cidr: "20.0.0.0/8",
-					},
+					NetworkInstance: "DEFAULT",
+					Cidr:            "20.0.0.0/8",
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
+						Weight: []uint64{0},
 						Hops: []*dpb.NextHop{{
-							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-							Dev: &dpb.NextHop_Port{
-								Port: "eth0",
+							NextHopIp: "192.168.1.42",
+							Interface: &dpb.OCInterface{
+								Interface: "eth0",
 							},
-							Weight: 0,
 						}},
 					},
 				},
 			}, {
 				Prefix: &dpb.RoutePrefix{
-					VrfId: uint64(0),
-					Prefix: &dpb.RoutePrefix_Cidr{
-						Cidr: "30.0.0.0/8",
-					},
+					NetworkInstance: "DEFAULT",
+					Cidr:            "30.0.0.0/8",
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
+						Weight: []uint64{0},
 						Hops: []*dpb.NextHop{{
-							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-							Dev: &dpb.NextHop_Port{
-								Port: "eth0",
+							NextHopIp: "192.168.1.42",
+							Interface: &dpb.OCInterface{
+								Interface: "eth0",
 							},
-							Weight: 0,
 						}},
 					},
 				},
 			}, {
 				Prefix: &dpb.RoutePrefix{
-					VrfId: uint64(0),
-					Prefix: &dpb.RoutePrefix_Cidr{
-						Cidr: "40.0.0.0/8",
-					},
+					NetworkInstance: "DEFAULT",
+					Cidr:            "40.0.0.0/8",
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
+						Weight: []uint64{0},
 						Hops: []*dpb.NextHop{{
-							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-							Dev: &dpb.NextHop_Port{
-								Port: "eth0",
+							NextHopIp: "192.168.1.42",
+							Interface: &dpb.OCInterface{
+								Interface: "eth0",
 							},
-							Weight: 0,
 						}},
 					},
 				},
@@ -1678,145 +1563,79 @@ func TestBGPGUEPolicy(t *testing.T) {
 		wantRoutes: func(v4 bool) []*dpb.Route {
 			return []*dpb.Route{{
 				Prefix: &dpb.RoutePrefix{
-					VrfId: uint64(0),
-					Prefix: &dpb.RoutePrefix_Cidr{
-						Cidr: "10.0.0.0/8",
-					},
+					NetworkInstance: "DEFAULT",
+					Cidr:            "10.0.0.0/8",
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
+						Weight: []uint64{0},
 						Hops: []*dpb.NextHop{{
-							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-							Dev: &dpb.NextHop_Port{
-								Port: "eth0",
+							NextHopIp: "192.168.1.42",
+							Interface: &dpb.OCInterface{
+								Interface: "eth0",
 							},
-							Weight: 0,
 						}},
 					},
 				},
 			}, {
 				Prefix: &dpb.RoutePrefix{
-					VrfId: uint64(0),
-					Prefix: &dpb.RoutePrefix_Cidr{
-						Cidr: "20.0.0.0/8",
-					},
+					NetworkInstance: "DEFAULT",
+					Cidr:            "20.0.0.0/8",
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
+						Weight: []uint64{0},
 						Hops: []*dpb.NextHop{{
-							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-							Dev: &dpb.NextHop_Port{
-								Port: "eth0",
+							NextHopIp: "192.168.1.42",
+							Interface: &dpb.OCInterface{
+								Interface: "eth0",
 							},
-							Weight: 0,
 						}},
 					},
 				},
 			}, {
 				Prefix: &dpb.RoutePrefix{
-					VrfId: uint64(0),
-					Prefix: &dpb.RoutePrefix_Cidr{
-						Cidr: "30.0.0.0/8",
-					},
+					NetworkInstance: "DEFAULT",
+					Cidr:            "30.0.0.0/8",
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
+						Weight: []uint64{0},
 						Hops: []*dpb.NextHop{{
-							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-							Dev: &dpb.NextHop_Port{
-								Port: "eth0",
+							NextHopIp: "192.168.1.42",
+							Interface: &dpb.OCInterface{
+								Interface: "eth0",
 							},
-							Weight: 0,
-							PreTransmitActions: []*fwdpb.ActionDesc{{
-								ActionType: fwdpb.ActionType_ACTION_TYPE_REPARSE,
-								Action: &fwdpb.ActionDesc_Reparse{
-									Reparse: &fwdpb.ReparseActionDesc{
-										HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4,
-										FieldIds: []*fwdpb.PacketFieldId{
-											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP}},
-											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT}},
-											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT}},
-										},
-										Prepend: gueHeader(t, selectGUEHeaders(t, v4,
-											&layers.IPv4{
-												Version:  4,
-												IHL:      5,
-												Protocol: layers.IPProtocolUDP,
-												SrcIP:    net.IPv4(8, 8, 8, 8),
-												DstIP:    net.IPv4(10, 10, 10, 10),
-											}, &layers.UDP{
-												DstPort: layers.UDPPort(8),
-												SrcPort: 0,
-												Length:  34,
-											},
-											&layers.IPv6{
-												Version:    6,
-												NextHeader: layers.IPProtocolUDP,
-												SrcIP:      mapAddressTo6BytesSlice([4]byte{8, 8, 8, 8}),
-												DstIP:      net.ParseIP(mapAddressTo6(t, "10.10.10.10")),
-											}, &layers.UDP{
-												DstPort: layers.UDPPort(8),
-												SrcPort: 0,
-												Length:  34,
-											},
-										)...),
-									},
+							Encap: &dpb.NextHop_Gue{
+								Gue: &dpb.GUE{
+									SrcIp:   []byte{8, 8, 8, 8},
+									DstIp:   []byte{10, 10, 10, 10},
+									DstPort: 8,
 								},
-							}},
+							},
 						}},
 					},
 				},
 			}, {
 				Prefix: &dpb.RoutePrefix{
-					VrfId: uint64(0),
-					Prefix: &dpb.RoutePrefix_Cidr{
-						Cidr: "40.0.0.0/8",
-					},
+					NetworkInstance: "DEFAULT",
+					Cidr:            "40.0.0.0/8",
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
+						Weight: []uint64{0},
 						Hops: []*dpb.NextHop{{
-							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-							Dev: &dpb.NextHop_Port{
-								Port: "eth0",
+							NextHopIp: "192.168.1.42",
+							Interface: &dpb.OCInterface{
+								Interface: "eth0",
 							},
-							Weight: 0,
-							PreTransmitActions: []*fwdpb.ActionDesc{{
-								ActionType: fwdpb.ActionType_ACTION_TYPE_REPARSE,
-								Action: &fwdpb.ActionDesc_Reparse{
-									Reparse: &fwdpb.ReparseActionDesc{
-										HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4,
-										FieldIds: []*fwdpb.PacketFieldId{
-											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP}},
-											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT}},
-											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT}},
-										},
-										Prepend: gueHeader(t, selectGUEHeaders(t, v4,
-											&layers.IPv4{
-												Version:  4,
-												IHL:      5,
-												Protocol: layers.IPProtocolUDP,
-												SrcIP:    net.IPv4(8, 8, 8, 8),
-												DstIP:    net.IPv4(10, 10, 20, 20),
-											}, &layers.UDP{
-												DstPort: layers.UDPPort(8),
-												SrcPort: 0,
-												Length:  34,
-											},
-											&layers.IPv6{
-												Version:    6,
-												NextHeader: layers.IPProtocolUDP,
-												SrcIP:      mapAddressTo6BytesSlice([4]byte{8, 8, 8, 8}),
-												DstIP:      net.ParseIP(mapAddressTo6(t, "10.10.20.20")),
-											}, &layers.UDP{
-												DstPort: layers.UDPPort(8),
-												SrcPort: 0,
-												Length:  34,
-											},
-										)...),
-									},
+							Encap: &dpb.NextHop_Gue{
+								Gue: &dpb.GUE{
+									SrcIp:   []byte{8, 8, 8, 8},
+									DstIp:   []byte{10, 10, 20, 20},
+									DstPort: 8,
 								},
-							}},
+							},
 						}},
 					},
 				},
@@ -1835,145 +1654,79 @@ func TestBGPGUEPolicy(t *testing.T) {
 		wantRoutes: func(v4 bool) []*dpb.Route {
 			return []*dpb.Route{{
 				Prefix: &dpb.RoutePrefix{
-					VrfId: uint64(0),
-					Prefix: &dpb.RoutePrefix_Cidr{
-						Cidr: "10.0.0.0/8",
-					},
+					NetworkInstance: "DEFAULT",
+					Cidr:            "10.0.0.0/8",
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
+						Weight: []uint64{0},
 						Hops: []*dpb.NextHop{{
-							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-							Dev: &dpb.NextHop_Port{
-								Port: "eth0",
+							NextHopIp: "192.168.1.42",
+							Interface: &dpb.OCInterface{
+								Interface: "eth0",
 							},
-							Weight: 0,
 						}},
 					},
 				},
 			}, {
 				Prefix: &dpb.RoutePrefix{
-					VrfId: uint64(0),
-					Prefix: &dpb.RoutePrefix_Cidr{
-						Cidr: "20.0.0.0/8",
-					},
+					NetworkInstance: "DEFAULT",
+					Cidr:            "20.0.0.0/8",
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
+						Weight: []uint64{0},
 						Hops: []*dpb.NextHop{{
-							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-							Dev: &dpb.NextHop_Port{
-								Port: "eth0",
+							NextHopIp: "192.168.1.42",
+							Interface: &dpb.OCInterface{
+								Interface: "eth0",
 							},
-							Weight: 0,
 						}},
 					},
 				},
 			}, {
 				Prefix: &dpb.RoutePrefix{
-					VrfId: uint64(0),
-					Prefix: &dpb.RoutePrefix_Cidr{
-						Cidr: "30.0.0.0/8",
-					},
+					NetworkInstance: "DEFAULT",
+					Cidr:            "30.0.0.0/8",
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
+						Weight: []uint64{0},
 						Hops: []*dpb.NextHop{{
-							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-							Dev: &dpb.NextHop_Port{
-								Port: "eth0",
+							NextHopIp: "192.168.1.42",
+							Interface: &dpb.OCInterface{
+								Interface: "eth0",
 							},
-							Weight: 0,
-							PreTransmitActions: []*fwdpb.ActionDesc{{
-								ActionType: fwdpb.ActionType_ACTION_TYPE_REPARSE,
-								Action: &fwdpb.ActionDesc_Reparse{
-									Reparse: &fwdpb.ReparseActionDesc{
-										HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4,
-										FieldIds: []*fwdpb.PacketFieldId{
-											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP}},
-											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT}},
-											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT}},
-										},
-										Prepend: gueHeader(t, selectGUEHeaders(t, v4,
-											&layers.IPv4{
-												Version:  4,
-												IHL:      5,
-												Protocol: layers.IPProtocolUDP,
-												SrcIP:    net.IPv4(8, 8, 8, 8),
-												DstIP:    net.IPv4(10, 10, 10, 10),
-											}, &layers.UDP{
-												DstPort: layers.UDPPort(8),
-												SrcPort: 0,
-												Length:  34,
-											},
-											&layers.IPv6{
-												Version:    6,
-												NextHeader: layers.IPProtocolUDP,
-												SrcIP:      mapAddressTo6BytesSlice([4]byte{8, 8, 8, 8}),
-												DstIP:      net.ParseIP(mapAddressTo6(t, "10.10.10.10")),
-											}, &layers.UDP{
-												DstPort: layers.UDPPort(8),
-												SrcPort: 0,
-												Length:  34,
-											},
-										)...),
-									},
+							Encap: &dpb.NextHop_Gue{
+								Gue: &dpb.GUE{
+									SrcIp:   []byte{8, 8, 8, 8},
+									DstIp:   []byte{10, 10, 10, 10},
+									DstPort: 8,
 								},
-							}},
+							},
 						}},
 					},
 				},
 			}, {
 				Prefix: &dpb.RoutePrefix{
-					VrfId: uint64(0),
-					Prefix: &dpb.RoutePrefix_Cidr{
-						Cidr: "40.0.0.0/8",
-					},
+					NetworkInstance: "DEFAULT",
+					Cidr:            "40.0.0.0/8",
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
+						Weight: []uint64{0},
 						Hops: []*dpb.NextHop{{
-							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-							Dev: &dpb.NextHop_Port{
-								Port: "eth0",
+							NextHopIp: "192.168.1.42",
+							Interface: &dpb.OCInterface{
+								Interface: "eth0",
 							},
-							Weight: 0,
-							PreTransmitActions: []*fwdpb.ActionDesc{{
-								ActionType: fwdpb.ActionType_ACTION_TYPE_REPARSE,
-								Action: &fwdpb.ActionDesc_Reparse{
-									Reparse: &fwdpb.ReparseActionDesc{
-										HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4,
-										FieldIds: []*fwdpb.PacketFieldId{
-											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP}},
-											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT}},
-											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT}},
-										},
-										Prepend: gueHeader(t, selectGUEHeaders(t, v4,
-											&layers.IPv4{
-												Version:  4,
-												IHL:      5,
-												Protocol: layers.IPProtocolUDP,
-												SrcIP:    net.IPv4(16, 16, 16, 16),
-												DstIP:    net.IPv4(10, 10, 20, 20),
-											}, &layers.UDP{
-												DstPort: layers.UDPPort(16),
-												SrcPort: 0,
-												Length:  34,
-											},
-											&layers.IPv6{
-												Version:    6,
-												NextHeader: layers.IPProtocolUDP,
-												SrcIP:      mapAddressTo6BytesSlice([4]byte{16, 16, 16, 16}),
-												DstIP:      net.ParseIP(mapAddressTo6(t, "10.10.20.20")),
-											}, &layers.UDP{
-												DstPort: layers.UDPPort(16),
-												SrcPort: 0,
-												Length:  34,
-											},
-										)...),
-									},
+							Encap: &dpb.NextHop_Gue{
+								Gue: &dpb.GUE{
+									SrcIp:   []byte{16, 16, 16, 16},
+									DstIp:   []byte{10, 10, 20, 20},
+									DstPort: 16,
 								},
-							}},
+							},
 						}},
 					},
 				},
@@ -1985,109 +1738,72 @@ func TestBGPGUEPolicy(t *testing.T) {
 		wantRoutes: func(v4 bool) []*dpb.Route {
 			return []*dpb.Route{{
 				Prefix: &dpb.RoutePrefix{
-					VrfId: uint64(0),
-					Prefix: &dpb.RoutePrefix_Cidr{
-						Cidr: "10.0.0.0/8",
-					},
+					NetworkInstance: "DEFAULT",
+					Cidr:            "10.0.0.0/8",
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
+						Weight: []uint64{0},
 						Hops: []*dpb.NextHop{{
-							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-							Dev: &dpb.NextHop_Port{
-								Port: "eth0",
+							NextHopIp: "192.168.1.42",
+							Interface: &dpb.OCInterface{
+								Interface: "eth0",
 							},
-							Weight: 0,
 						}},
 					},
 				},
 			}, {
 				Prefix: &dpb.RoutePrefix{
-					VrfId: uint64(0),
-					Prefix: &dpb.RoutePrefix_Cidr{
-						Cidr: "20.0.0.0/8",
-					},
+					NetworkInstance: "DEFAULT",
+					Cidr:            "20.0.0.0/8",
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
+						Weight: []uint64{0},
 						Hops: []*dpb.NextHop{{
-							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-							Dev: &dpb.NextHop_Port{
-								Port: "eth0",
+							NextHopIp: "192.168.1.42",
+							Interface: &dpb.OCInterface{
+								Interface: "eth0",
 							},
-							Weight: 0,
 						}},
 					},
 				},
 			}, {
 				Prefix: &dpb.RoutePrefix{
-					VrfId: uint64(0),
-					Prefix: &dpb.RoutePrefix_Cidr{
-						Cidr: "30.0.0.0/8",
-					},
+					NetworkInstance: "DEFAULT",
+					Cidr:            "30.0.0.0/8",
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
+						Weight: []uint64{0},
 						Hops: []*dpb.NextHop{{
-							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-							Dev: &dpb.NextHop_Port{
-								Port: "eth0",
+							NextHopIp: "192.168.1.42",
+							Interface: &dpb.OCInterface{
+								Interface: "eth0",
 							},
-							Weight: 0,
 						}},
 					},
 				},
 			}, {
 				Prefix: &dpb.RoutePrefix{
-					VrfId: uint64(0),
-					Prefix: &dpb.RoutePrefix_Cidr{
-						Cidr: "40.0.0.0/8",
-					},
+					NetworkInstance: "DEFAULT",
+					Cidr:            "40.0.0.0/8",
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
+						Weight: []uint64{0},
 						Hops: []*dpb.NextHop{{
-							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-							Dev: &dpb.NextHop_Port{
-								Port: "eth0",
+							NextHopIp: "192.168.1.42",
+							Interface: &dpb.OCInterface{
+								Interface: "eth0",
 							},
-							Weight: 0,
-							PreTransmitActions: []*fwdpb.ActionDesc{{
-								ActionType: fwdpb.ActionType_ACTION_TYPE_REPARSE,
-								Action: &fwdpb.ActionDesc_Reparse{
-									Reparse: &fwdpb.ReparseActionDesc{
-										HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4,
-										FieldIds: []*fwdpb.PacketFieldId{
-											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP}},
-											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT}},
-											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT}},
-										},
-										Prepend: gueHeader(t, selectGUEHeaders(t, v4,
-											&layers.IPv4{
-												Version:  4,
-												IHL:      5,
-												Protocol: layers.IPProtocolUDP,
-												SrcIP:    net.IPv4(16, 16, 16, 16),
-												DstIP:    net.IPv4(10, 10, 20, 20),
-											}, &layers.UDP{
-												DstPort: layers.UDPPort(16),
-												SrcPort: 0,
-												Length:  34,
-											},
-											&layers.IPv6{
-												Version:    6,
-												NextHeader: layers.IPProtocolUDP,
-												SrcIP:      mapAddressTo6BytesSlice([4]byte{16, 16, 16, 16}),
-												DstIP:      net.ParseIP(mapAddressTo6(t, "10.10.20.20")),
-											}, &layers.UDP{
-												DstPort: layers.UDPPort(16),
-												SrcPort: 0,
-												Length:  34,
-											},
-										)...),
-									},
+							Encap: &dpb.NextHop_Gue{
+								Gue: &dpb.GUE{
+									SrcIp:   []byte{16, 16, 16, 16},
+									DstIp:   []byte{10, 10, 20, 20},
+									DstPort: 16,
 								},
-							}},
+							},
 						}},
 					},
 				},
@@ -2112,154 +1828,95 @@ func TestBGPGUEPolicy(t *testing.T) {
 		wantRoutes: func(v4 bool) []*dpb.Route {
 			return []*dpb.Route{{
 				Prefix: &dpb.RoutePrefix{
-					VrfId: uint64(0),
-					Prefix: &dpb.RoutePrefix_Cidr{
-						Cidr: "10.0.0.0/8",
-					},
+					NetworkInstance: "DEFAULT",
+					Cidr:            "10.0.0.0/8",
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
+						Weight: []uint64{0},
 						Hops: []*dpb.NextHop{{
-							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-							Dev: &dpb.NextHop_Port{
-								Port: "eth0",
+							NextHopIp: "192.168.1.42",
+							Interface: &dpb.OCInterface{
+								Interface: "eth0",
 							},
-							Weight: 0,
 						}},
 					},
 				},
 			}, {
 				Prefix: &dpb.RoutePrefix{
-					VrfId: uint64(0),
-					Prefix: &dpb.RoutePrefix_Cidr{
-						Cidr: "20.0.0.0/8",
-					},
+					NetworkInstance: "DEFAULT",
+					Cidr:            "20.0.0.0/8",
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
+						Weight: []uint64{0},
 						Hops: []*dpb.NextHop{{
-							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-							Dev: &dpb.NextHop_Port{
-								Port: "eth0",
+							NextHopIp: "192.168.1.42",
+							Interface: &dpb.OCInterface{
+								Interface: "eth0",
 							},
-							Weight: 0,
 						}},
 					},
 				},
 			}, {
 				Prefix: &dpb.RoutePrefix{
-					VrfId: uint64(0),
-					Prefix: &dpb.RoutePrefix_Cidr{
-						Cidr: "30.0.0.0/8",
-					},
+					NetworkInstance: "DEFAULT",
+					Cidr:            "30.0.0.0/8",
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
+						Weight: []uint64{0},
 						Hops: []*dpb.NextHop{{
-							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-							Dev: &dpb.NextHop_Port{
-								Port: "eth0",
+							NextHopIp: "192.168.1.42",
+							Interface: &dpb.OCInterface{
+								Interface: "eth0",
 							},
-							Weight: 0,
 						}},
 					},
 				},
 			}, {
 				Prefix: &dpb.RoutePrefix{
-					VrfId: uint64(0),
-					Prefix: &dpb.RoutePrefix_Cidr{
-						Cidr: "40.0.0.0/8",
-					},
+					NetworkInstance: "DEFAULT",
+					Cidr:            "40.0.0.0/8",
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
+						Weight: []uint64{0},
 						Hops: []*dpb.NextHop{{
-							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-							Dev: &dpb.NextHop_Port{
-								Port: "eth0",
+							NextHopIp: "192.168.1.42",
+							Interface: &dpb.OCInterface{
+								Interface: "eth0",
 							},
-							Weight: 0,
-							PreTransmitActions: []*fwdpb.ActionDesc{{
-								ActionType: fwdpb.ActionType_ACTION_TYPE_REPARSE,
-								Action: &fwdpb.ActionDesc_Reparse{
-									Reparse: &fwdpb.ReparseActionDesc{
-										HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4,
-										FieldIds: []*fwdpb.PacketFieldId{
-											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP}},
-											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT}},
-											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT}},
-										},
-										Prepend: gueHeader(t, selectGUEHeaders(t, v4,
-											&layers.IPv4{
-												Version:  4,
-												IHL:      5,
-												Protocol: layers.IPProtocolUDP,
-												SrcIP:    net.IPv4(16, 16, 16, 16),
-												DstIP:    net.IPv4(10, 10, 20, 20),
-											}, &layers.UDP{
-												DstPort: layers.UDPPort(16),
-												SrcPort: 0,
-												Length:  34,
-											},
-											&layers.IPv6{
-												Version:    6,
-												NextHeader: layers.IPProtocolUDP,
-												SrcIP:      mapAddressTo6BytesSlice([4]byte{16, 16, 16, 16}),
-												DstIP:      net.ParseIP(mapAddressTo6(t, "10.10.20.20")),
-											}, &layers.UDP{
-												DstPort: layers.UDPPort(16),
-												SrcPort: 0,
-												Length:  34,
-											},
-										)...),
-									},
+							Encap: &dpb.NextHop_Gue{
+								Gue: &dpb.GUE{
+									SrcIp:   []byte{16, 16, 16, 16},
+									DstIp:   []byte{10, 10, 20, 20},
+									DstPort: 16,
 								},
-							}},
+							},
 						}},
 					},
 				},
 			}, {
 				Prefix: &dpb.RoutePrefix{
-					VrfId: uint64(0),
-					Prefix: &dpb.RoutePrefix_Cidr{
-						Cidr: "4242::/42",
-					},
+					NetworkInstance: "DEFAULT",
+					Cidr:            "4242::/42",
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
+						Weight: []uint64{0},
 						Hops: []*dpb.NextHop{{
-							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-							Dev: &dpb.NextHop_Port{
-								Port: "eth0",
+							NextHopIp: "192.168.1.42",
+							Interface: &dpb.OCInterface{
+								Interface: "eth0",
 							},
-							Weight: 0,
-							PreTransmitActions: []*fwdpb.ActionDesc{{
-								ActionType: fwdpb.ActionType_ACTION_TYPE_REPARSE,
-								Action: &fwdpb.ActionDesc_Reparse{
-									Reparse: &fwdpb.ReparseActionDesc{
-										HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4,
-										FieldIds: []*fwdpb.PacketFieldId{
-											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP}},
-											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT}},
-											{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT}},
-										},
-										Prepend: gueHeader(t, selectGUEHeaders(t, v4,
-											&layers.IPv4{
-												Version:  4,
-												IHL:      5,
-												Protocol: layers.IPProtocolUDP,
-												SrcIP:    net.IPv4(16, 16, 16, 16),
-												DstIP:    net.IPv4(10, 10, 20, 30),
-											}, &layers.UDP{
-												DstPort: layers.UDPPort(32),
-												SrcPort: 0,
-												Length:  34,
-											},
-											&layers.IPv6{}, &layers.UDP{},
-										)...),
-									},
+							Encap: &dpb.NextHop_Gue{
+								Gue: &dpb.GUE{
+									SrcIp:   []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+									DstIp:   []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+									DstPort: 32,
 								},
-							}},
+							},
 						}},
 					},
 				},
@@ -2272,73 +1929,65 @@ func TestBGPGUEPolicy(t *testing.T) {
 		wantRoutes: func(v4 bool) []*dpb.Route {
 			return []*dpb.Route{{
 				Prefix: &dpb.RoutePrefix{
-					VrfId: uint64(0),
-					Prefix: &dpb.RoutePrefix_Cidr{
-						Cidr: "10.0.0.0/8",
-					},
+					NetworkInstance: "DEFAULT",
+					Cidr:            "10.0.0.0/8",
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
+						Weight: []uint64{0},
 						Hops: []*dpb.NextHop{{
-							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-							Dev: &dpb.NextHop_Port{
-								Port: "eth0",
+							NextHopIp: "192.168.1.42",
+							Interface: &dpb.OCInterface{
+								Interface: "eth0",
 							},
-							Weight: 0,
 						}},
 					},
 				},
 			}, {
 				Prefix: &dpb.RoutePrefix{
-					VrfId: uint64(0),
-					Prefix: &dpb.RoutePrefix_Cidr{
-						Cidr: "20.0.0.0/8",
-					},
+					NetworkInstance: "DEFAULT",
+					Cidr:            "20.0.0.0/8",
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
+						Weight: []uint64{0},
 						Hops: []*dpb.NextHop{{
-							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-							Dev: &dpb.NextHop_Port{
-								Port: "eth0",
+							NextHopIp: "192.168.1.42",
+							Interface: &dpb.OCInterface{
+								Interface: "eth0",
 							},
-							Weight: 0,
 						}},
 					},
 				},
 			}, {
 				Prefix: &dpb.RoutePrefix{
-					VrfId: uint64(0),
-					Prefix: &dpb.RoutePrefix_Cidr{
-						Cidr: "30.0.0.0/8",
-					},
+					NetworkInstance: "DEFAULT",
+					Cidr:            "30.0.0.0/8",
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
+						Weight: []uint64{0},
 						Hops: []*dpb.NextHop{{
-							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-							Dev: &dpb.NextHop_Port{
-								Port: "eth0",
+							NextHopIp: "192.168.1.42",
+							Interface: &dpb.OCInterface{
+								Interface: "eth0",
 							},
-							Weight: 0,
 						}},
 					},
 				},
 			}, {
 				Prefix: &dpb.RoutePrefix{
-					VrfId: uint64(0),
-					Prefix: &dpb.RoutePrefix_Cidr{
-						Cidr: "40.0.0.0/8",
-					},
+					NetworkInstance: "DEFAULT",
+					Cidr:            "40.0.0.0/8",
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
+						Weight: []uint64{0},
 						Hops: []*dpb.NextHop{{
-							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-							Dev: &dpb.NextHop_Port{
-								Port: "eth0",
+							NextHopIp: "192.168.1.42",
+							Interface: &dpb.OCInterface{
+								Interface: "eth0",
 							},
-							Weight: 0,
 						}},
 					},
 				},
@@ -2351,91 +2000,81 @@ func TestBGPGUEPolicy(t *testing.T) {
 		wantRoutes: func(v4 bool) []*dpb.Route {
 			return []*dpb.Route{{
 				Prefix: &dpb.RoutePrefix{
-					VrfId: uint64(0),
-					Prefix: &dpb.RoutePrefix_Cidr{
-						Cidr: "10.0.0.0/8",
-					},
+					NetworkInstance: "DEFAULT",
+					Cidr:            "10.0.0.0/8",
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
+						Weight: []uint64{0},
 						Hops: []*dpb.NextHop{{
-							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-							Dev: &dpb.NextHop_Port{
-								Port: "eth0",
+							NextHopIp: "192.168.1.42",
+							Interface: &dpb.OCInterface{
+								Interface: "eth0",
 							},
-							Weight: 0,
 						}},
 					},
 				},
 			}, {
 				Prefix: &dpb.RoutePrefix{
-					VrfId: uint64(0),
-					Prefix: &dpb.RoutePrefix_Cidr{
-						Cidr: "20.0.0.0/8",
-					},
+					NetworkInstance: "DEFAULT",
+					Cidr:            "20.0.0.0/8",
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
+						Weight: []uint64{0},
 						Hops: []*dpb.NextHop{{
-							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-							Dev: &dpb.NextHop_Port{
-								Port: "eth0",
+							NextHopIp: "192.168.1.42",
+							Interface: &dpb.OCInterface{
+								Interface: "eth0",
 							},
-							Weight: 0,
 						}},
 					},
 				},
 			}, {
 				Prefix: &dpb.RoutePrefix{
-					VrfId: uint64(0),
-					Prefix: &dpb.RoutePrefix_Cidr{
-						Cidr: "30.0.0.0/8",
-					},
+					NetworkInstance: "DEFAULT",
+					Cidr:            "30.0.0.0/8",
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
+						Weight: []uint64{0},
 						Hops: []*dpb.NextHop{{
-							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-							Dev: &dpb.NextHop_Port{
-								Port: "eth0",
+							NextHopIp: "192.168.1.42",
+							Interface: &dpb.OCInterface{
+								Interface: "eth0",
 							},
-							Weight: 0,
 						}},
 					},
 				},
 			}, {
 				Prefix: &dpb.RoutePrefix{
-					VrfId: uint64(0),
-					Prefix: &dpb.RoutePrefix_Cidr{
-						Cidr: "40.0.0.0/8",
-					},
+					NetworkInstance: "DEFAULT",
+					Cidr:            "40.0.0.0/8",
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
+						Weight: []uint64{0},
 						Hops: []*dpb.NextHop{{
-							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-							Dev: &dpb.NextHop_Port{
-								Port: "eth0",
+							NextHopIp: "192.168.1.42",
+							Interface: &dpb.OCInterface{
+								Interface: "eth0",
 							},
-							Weight: 0,
 						}},
 					},
 				},
 			}, {
 				Prefix: &dpb.RoutePrefix{
-					VrfId: uint64(0),
-					Prefix: &dpb.RoutePrefix_Cidr{
-						Cidr: "4242::/42",
-					},
+					NetworkInstance: "DEFAULT",
+					Cidr:            "4242::/42",
 				},
 				Hop: &dpb.Route_NextHops{
 					NextHops: &dpb.NextHopList{
+						Weight: []uint64{0},
 						Hops: []*dpb.NextHop{{
-							Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-							Dev: &dpb.NextHop_Port{
-								Port: "eth0",
+							NextHopIp: "192.168.1.42",
+							Interface: &dpb.OCInterface{
+								Interface: "eth0",
 							},
-							Weight: 0,
 						}},
 					},
 				},

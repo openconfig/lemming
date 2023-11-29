@@ -36,7 +36,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/openconfig/lemming/dataplane/handlers"
+	"github.com/openconfig/lemming/dataplane/reconcilers"
 	"github.com/openconfig/lemming/gnmi/fakedevice"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
@@ -118,7 +118,7 @@ func (d *dplane) programRoute(ctx context.Context, r *ResolvedRoute) error {
 	if err != nil {
 		return err
 	}
-	_, err = ygnmi.Replace(ctx, d.Client, handlers.RouteQuery(rr.GetPrefix().GetVrfId(), rr.GetPrefix().GetCidr()), rr, ygnmi.WithSetFallbackEncoding())
+	_, err = ygnmi.Replace(ctx, d.Client, reconcilers.RouteQuery(rr.GetPrefix().GetNetworkInstance(), r.Prefix), rr, ygnmi.WithSetFallbackEncoding())
 	return err
 }
 
@@ -129,7 +129,7 @@ func (d *dplane) deprogramRoute(ctx context.Context, r *ResolvedRoute) error {
 	if err != nil {
 		return err
 	}
-	_, err = ygnmi.Delete(ctx, d.Client, handlers.RouteQuery(rr.GetPrefix().GetVrfId(), rr.GetPrefix().GetCidr()))
+	_, err = ygnmi.Delete(ctx, d.Client, reconcilers.RouteQuery(rr.GetPrefix().GetNetworkInstance(), r.Prefix))
 	return err
 }
 
@@ -434,47 +434,53 @@ func gueActions(isRouteV4 bool, gueHeaders GUEHeaders) ([]*fwdpb.ActionDesc, err
 }
 
 func resolvedRouteToRouteRequest(r *ResolvedRoute) (*dpb.Route, error) {
-	vrfID, err := niNameToVrfID(r.NIName)
-	if err != nil {
-		return nil, err
-	}
-
 	pfx, err := netip.ParsePrefix(r.Prefix)
 	if err != nil {
 		log.Errorf("Route prefix cannot be parsed: %v", err)
 		return nil, err
 	}
 
-	var nexthops []*dpb.NextHop
+	nexthops := &dpb.NextHopList{}
 	for nh := range r.Nexthops {
-		var actions []*fwdpb.ActionDesc
+		dnh := &dpb.NextHop{
+			Interface: &dpb.OCInterface{
+				Interface:    nh.Port.Name,
+				Subinterface: nh.Port.Subinterface,
+			},
+		}
 		if nh.HasGUE() {
-			if actions, err = gueActions(pfx.Addr().Is4() || pfx.Addr().Is4In6(), nh.GUEHeaders); err != nil {
-				return nil, fmt.Errorf("error retrieving GUE actions: %v", err)
+			if pfx.Addr().Is4() || pfx.Addr().Is4In6() {
+				dnh.Encap = &dpb.NextHop_Gue{
+					Gue: &dpb.GUE{
+						SrcIp:   nh.GUEHeaders.srcIP4[:],
+						DstIp:   nh.GUEHeaders.dstIP4[:],
+						DstPort: uint32(nh.GUEHeaders.dstPortv4),
+					},
+				}
+			} else {
+				dnh.Encap = &dpb.NextHop_Gue{
+					Gue: &dpb.GUE{
+						SrcIp:   nh.GUEHeaders.srcIP6[:],
+						DstIp:   nh.GUEHeaders.dstIP6[:],
+						DstPort: uint32(nh.GUEHeaders.dstPortv6),
+					},
+				}
 			}
 		}
-		dnh := &dpb.NextHop{
-			Dev: &dpb.NextHop_Port{
-				Port: nh.Port.Name,
-			},
-			Weight:             nh.Weight,
-			PreTransmitActions: actions,
-		}
 		if nh.Address != "" {
-			dnh.Ip = &dpb.NextHop_IpStr{IpStr: nh.Address}
+			dnh.NextHopIp = nh.Address
 		}
-		nexthops = append(nexthops, dnh)
+		nexthops.Hops = append(nexthops.Hops, dnh)
+		nexthops.Weight = append(nexthops.Weight, nh.Weight)
 	}
 
 	return &dpb.Route{
 		Prefix: &dpb.RoutePrefix{
-			VrfId: uint64(vrfID),
-			Prefix: &dpb.RoutePrefix_Cidr{
-				Cidr: r.Prefix,
-			},
+			NetworkInstance: r.NIName,
+			Cidr:            r.Prefix,
 		},
 		Hop: &dpb.Route_NextHops{
-			NextHops: &dpb.NextHopList{Hops: nexthops},
+			NextHops: nexthops,
 		},
 	}, nil
 }

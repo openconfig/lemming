@@ -57,7 +57,6 @@ type switchDataplaneAPI interface {
 	NotifySubscribe(sub *fwdpb.NotifySubscribeRequest, srv fwdpb.Forwarding_NotifySubscribeServer) error
 	TableCreate(context.Context, *fwdpb.TableCreateRequest) (*fwdpb.TableCreateReply, error)
 	TableEntryAdd(context.Context, *fwdpb.TableEntryAddRequest) (*fwdpb.TableEntryAddReply, error)
-	PortIDToNID(port string) (uint64, bool)
 	ID() string
 	PortState(ctx context.Context, req *fwdpb.PortStateRequest) (*fwdpb.PortStateReply, error)
 	ObjectCounters(context.Context, *fwdpb.ObjectCountersRequest) (*fwdpb.ObjectCountersReply, error)
@@ -278,6 +277,26 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 	}
 	action.Desc.TableId.ObjectId.Id = engine.EgressActionTable
 	if _, err := sw.dataplane.TableCreate(ctx, action); err != nil {
+		return nil, err
+	}
+	nexthopAction := &fwdpb.TableCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
+		Desc: &fwdpb.TableDesc{
+			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: engine.NHActionTable}},
+			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_CONTINUE}},
+			Table: &fwdpb.TableDesc_Exact{
+				Exact: &fwdpb.ExactTableDesc{
+					FieldIds: []*fwdpb.PacketFieldId{{
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_ID,
+						},
+					}},
+				},
+			},
+		},
+	}
+	if _, err := sw.dataplane.TableCreate(ctx, nexthopAction); err != nil {
 		return nil, err
 	}
 

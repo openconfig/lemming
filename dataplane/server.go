@@ -24,19 +24,20 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/local"
 
-	"github.com/openconfig/lemming/dataplane/internal/engine"
+	"github.com/openconfig/lemming/dataplane/standalone/saiserver"
+	"github.com/openconfig/lemming/dataplane/standalone/saiserver/attrmgr"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/reconciler"
 
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 
-	dpb "github.com/openconfig/lemming/proto/dataplane"
+	saipb "github.com/openconfig/lemming/dataplane/standalone/proto"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
 // Dataplane is an implementation of Dataplane HAL API.
 type Dataplane struct {
-	e           *engine.Engine
+	saiserv     *saiserver.Server
 	srv         *grpc.Server
 	lis         net.Listener
 	fwd         fwdpb.ForwardingClient
@@ -47,21 +48,21 @@ type Dataplane struct {
 func New(ctx context.Context) (*Dataplane, error) {
 	data := &Dataplane{}
 
-	e, err := engine.New(ctx, true)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create engine: %w", err)
-	}
-	data.e = e
-
 	lis, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		return nil, fmt.Errorf("failed to listen: %w", err)
 	}
 
+	mgr := attrmgr.New()
+	srv := grpc.NewServer(grpc.Creds(local.NewCredentials()), grpc.ChainUnaryInterceptor(mgr.Interceptor))
+
+	saiserv, err := saiserver.New(mgr, srv)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create: %w", err)
+	}
+	data.saiserv = saiserv
 	data.lis = lis
-	srv := grpc.NewServer(grpc.Creds(local.NewCredentials()))
-	fwdpb.RegisterForwardingServer(srv, data.e)
-	dpb.RegisterDataplaneServer(srv, data.e)
+
 	go srv.Serve(data.lis)
 
 	return data, nil
@@ -78,12 +79,45 @@ func (d *Dataplane) Start(ctx context.Context, c gpb.GNMIClient, target string) 
 		return fmt.Errorf("dataplane already started")
 	}
 
-	fc, err := d.FwdClient()
+	conn, err := d.Conn()
 	if err != nil {
 		return err
 	}
-	d.fwd = fc
-	d.reconcilers = append(d.reconcilers, getReconcilers(d.e)...)
+	sw := saipb.NewSwitchClient(conn)
+	hostif := saipb.NewHostifClient(conn)
+	swResp, err := sw.CreateSwitch(ctx, &saipb.CreateSwitchRequest{})
+	if err != nil {
+		return err
+	}
+	swAttrs, err := sw.GetSwitchAttribute(ctx, &saipb.GetSwitchAttributeRequest{
+		Oid: swResp.Oid,
+		AttrType: []saipb.SwitchAttr{
+			saipb.SwitchAttr_SWITCH_ATTR_CPU_PORT,
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	_, err = hostif.CreateHostifTrap(ctx, &saipb.CreateHostifTrapRequest{
+		Switch:       swResp.Oid,
+		TrapType:     saipb.HostifTrapType_HOSTIF_TRAP_TYPE_ARP_REQUEST.Enum(),
+		PacketAction: saipb.PacketAction_PACKET_ACTION_TRAP.Enum(),
+	})
+	if err != nil {
+		return err
+	}
+	_, err = hostif.CreateHostifTrap(ctx, &saipb.CreateHostifTrapRequest{
+		Switch:       swResp.Oid,
+		TrapType:     saipb.HostifTrapType_HOSTIF_TRAP_TYPE_IPV6_NEIGHBOR_DISCOVERY.Enum(),
+		PacketAction: saipb.PacketAction_PACKET_ACTION_TRAP.Enum(),
+	})
+	if err != nil {
+		return err
+	}
+
+	// TODO: Completely remove engine and don't hardcode context ID.
+	d.reconcilers = append(d.reconcilers, getReconcilers(conn, swResp.Oid, *swAttrs.GetAttr().CpuPort, "lucius")...)
 
 	for _, rec := range d.reconcilers {
 		if err := rec.Start(ctx, c, target); err != nil {
@@ -95,12 +129,12 @@ func (d *Dataplane) Start(ctx context.Context, c gpb.GNMIClient, target string) 
 }
 
 // FwdClient gets a gRPC client to the packet forwarding engine.
-func (d *Dataplane) FwdClient() (fwdpb.ForwardingClient, error) {
+func (d *Dataplane) Conn() (grpc.ClientConnInterface, error) {
 	conn, err := grpc.Dial(d.lis.Addr().String(), grpc.WithTransportCredentials(local.NewCredentials()))
 	if err != nil {
 		return nil, fmt.Errorf("failed to dial server: %w", err)
 	}
-	return fwdpb.NewForwardingClient(conn), nil
+	return conn, nil
 }
 
 // Stop gracefully stops the server.

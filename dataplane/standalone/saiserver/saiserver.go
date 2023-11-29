@@ -26,7 +26,6 @@ import (
 	log "github.com/golang/glog"
 
 	saipb "github.com/openconfig/lemming/dataplane/standalone/proto"
-	dpb "github.com/openconfig/lemming/proto/dataplane"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
@@ -278,7 +277,6 @@ func New(mgr *attrmgr.AttrMgr, s *grpc.Server) (*Server, error) {
 		wred:           &wred{},
 	}
 	fwdpb.RegisterForwardingServer(s, e)
-	dpb.RegisterDataplaneServer(s, e)
 	saipb.RegisterEntrypointServer(s, srv)
 	saipb.RegisterBfdServer(s, srv.bfd)
 	saipb.RegisterCounterServer(s, srv.counter)

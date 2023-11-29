@@ -14,8 +14,8 @@
 
 //go:build linux
 
-// Package handlers contains gNMI task handlers.
-package handlers
+// Package reconcilers contains gNMI task handlers.
+package reconcilers
 
 import (
 	"context"
@@ -29,33 +29,76 @@ import (
 	"github.com/openconfig/ygot/ygot"
 	"github.com/vishvananda/netlink"
 	"golang.org/x/sys/unix"
+	"google.golang.org/grpc"
+	"google.golang.org/protobuf/proto"
 
-	"github.com/openconfig/lemming/dataplane/internal/engine"
+	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
 	"github.com/openconfig/lemming/dataplane/internal/kernel"
+	"github.com/openconfig/lemming/dataplane/standalone/packetio/cpusink"
 	"github.com/openconfig/lemming/gnmi/gnmiclient"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
-	"github.com/openconfig/lemming/gnmi/reconciler"
 
 	log "github.com/golang/glog"
 
-	dpb "github.com/openconfig/lemming/proto/dataplane"
+	saipb "github.com/openconfig/lemming/dataplane/standalone/proto"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
-// Interface handles config updates to the /interfaces/... paths.
-type Interface struct {
+type ocInterface struct {
+	name    string
+	subintf uint32
+}
+
+type interfaceData struct {
+	portID        uint64
+	hostifID      uint64
+	hostifIfIndex int
+	hostifDevName string
+	rifID         uint64
+}
+
+type interfaceMap map[ocInterface]*interfaceData
+
+func (d interfaceMap) findByIfIndex(ifIndex int) (ocInterface, *interfaceData) {
+	for k, v := range d {
+		if v.hostifIfIndex == ifIndex {
+			return k, v
+		}
+	}
+	return ocInterface{}, nil
+}
+
+func (d interfaceMap) findByPortID(portID uint64) (ocInterface, *interfaceData) {
+	for k, v := range d {
+		if v.portID == portID {
+			return k, v
+		}
+	}
+	return ocInterface{}, nil
+}
+
+// Reconciler handles config updates to the paths.
+type Reconciler struct {
 	c *ygnmi.Client
 	// closers functions should all be invoked when the interface handler stops running.
-	closers []func()
-	e       *engine.Engine
-	stateMu sync.RWMutex
+	closers        []func()
+	hostifClient   saipb.HostifClient
+	portClient     saipb.PortClient
+	switchClient   saipb.SwitchClient
+	ifaceClient    saipb.RouterInterfaceClient
+	neighborClient saipb.NeighborClient
+	routeClient    saipb.RouteClient
+	nextHopClient  saipb.NextHopClient
+	fwdClient      fwdpb.ForwardingClient
+	stateMu        sync.RWMutex
 	// state keeps track of the applied state of the device's interfaces so that we do not issue duplicate configuration commands to the device's interfaces.
-	state                  map[string]*oc.Interface
-	idxToName              map[int]string
-	internalToExternalPort map[string]string
-	externalToInternalPort map[string]string
-	ifaceMgr               interfaceManager
+	state           map[string]*oc.Interface
+	switchID        uint64
+	ifaceMgr        interfaceManager
+	ocInterfaceData interfaceMap
+	cpuPortID       uint64
+	contextID       string
 }
 
 type interfaceManager interface {
@@ -71,21 +114,29 @@ type interfaceManager interface {
 	NeighSubscribe(ch chan<- netlink.NeighUpdate, done <-chan struct{}) error
 }
 
-// NewInterface creates a new interface handler.
-func NewInterface(e *engine.Engine) *reconciler.BuiltReconciler {
-	i := &Interface{
-		e:                      e,
-		idxToName:              map[int]string{},
-		state:                  map[string]*oc.Interface{},
-		ifaceMgr:               &kernel.Interfaces{},
-		internalToExternalPort: map[string]string{},
-		externalToInternalPort: map[string]string{},
+// New creates a new interface handler.
+func New(conn grpc.ClientConnInterface, switchID, cpuPortID uint64, contextID string) *Reconciler {
+	r := &Reconciler{
+		state:           map[string]*oc.Interface{},
+		ifaceMgr:        &kernel.Interfaces{},
+		switchID:        switchID,
+		cpuPortID:       cpuPortID,
+		contextID:       contextID,
+		ocInterfaceData: interfaceMap{},
+		hostifClient:    saipb.NewHostifClient(conn),
+		portClient:      saipb.NewPortClient(conn),
+		switchClient:    saipb.NewSwitchClient(conn),
+		ifaceClient:     saipb.NewRouterInterfaceClient(conn),
+		neighborClient:  saipb.NewNeighborClient(conn),
+		routeClient:     saipb.NewRouteClient(conn),
+		nextHopClient:   saipb.NewNextHopClient(conn),
+		fwdClient:       fwdpb.NewForwardingClient(conn),
 	}
-	return reconciler.NewBuilder("interface").WithStart(i.start).WithStop(i.stop).Build()
+	return r
 }
 
 // Start starts running the handler, watching the cache and the kernel interfaces.
-func (ni *Interface) start(ctx context.Context, client *ygnmi.Client) error {
+func (ni *Reconciler) StartInterface(ctx context.Context, client *ygnmi.Client) error {
 	log.Info("starting interface handler")
 	b := &ocpath.Batch{}
 	ni.c = client
@@ -112,7 +163,7 @@ func (ni *Interface) start(ctx context.Context, client *ygnmi.Client) error {
 			return ygnmi.Continue
 		}
 		for _, i := range root.Interface {
-			ni.reconcile(i)
+			ni.reconcile(cancelCtx, i)
 		}
 		return ygnmi.Continue
 	})
@@ -138,10 +189,19 @@ func (ni *Interface) start(ctx context.Context, client *ygnmi.Client) error {
 	if err := ni.ifaceMgr.NeighSubscribe(neighUpdateCh, addrDoneCh); err != nil {
 		return fmt.Errorf("failed to sub to neighbor: %v", err)
 	}
-	// TODO: Decide if this needs another layer of abstraction. Currently, one notification callback is allowed.
-	if err := ni.e.Server.UpdateNotification(&fwdpb.ContextId{Id: ni.e.ID()}, func(ed *fwdpb.EventDesc) { ni.handleDataplaneEvent(ctx, ed) }); err != nil {
-		return fmt.Errorf("failed  to sub to dataplane: %v", err)
+	notifClient, err := ni.switchClient.PortStateChangeNotification(cancelCtx, &saipb.PortStateChangeNotificationRequest{})
+	if err != nil {
+		return err
 	}
+	go func() {
+		for {
+			n, err := notifClient.Recv()
+			if err != nil {
+				return
+			}
+			ni.handleDataplaneEvent(ctx, n)
+		}
+	}()
 
 	go func() {
 		for {
@@ -169,7 +229,7 @@ func (ni *Interface) start(ctx context.Context, client *ygnmi.Client) error {
 }
 
 // Stop stops all watchers.
-func (ni *Interface) stop(context.Context) error {
+func (ni *Reconciler) stop(context.Context) error {
 	// TODO: prevent stopping more than once.
 	for _, closeFn := range ni.closers {
 		closeFn()
@@ -179,7 +239,7 @@ func (ni *Interface) stop(context.Context) error {
 
 // startCounterUpdates starts a goroutine for updating counters for configured
 // interfaces.
-func (ni *Interface) startCounterUpdates(ctx context.Context) {
+func (ni *Reconciler) startCounterUpdates(ctx context.Context) {
 	tick := time.NewTicker(time.Second)
 	ni.closers = append(ni.closers, tick.Stop)
 	go func() {
@@ -200,24 +260,25 @@ func (ni *Interface) startCounterUpdates(ctx context.Context) {
 			}
 			ni.stateMu.RUnlock()
 			for _, intfName := range intfNames {
-				countersReply, err := ni.e.GetCounters(ctx, intfName)
-				log.V(2).Infof("querying counters for interface %q, got %v", intfName, countersReply)
+				stats, err := ni.portClient.GetPortStats(ctx, &saipb.GetPortStatsRequest{
+					Oid: ni.cpuPortID,
+					CounterIds: []saipb.PortStat{
+						saipb.PortStat_PORT_STAT_IF_IN_UCAST_PKTS,
+						saipb.PortStat_PORT_STAT_IF_IN_NON_UCAST_PKTS,
+						saipb.PortStat_PORT_STAT_IF_OUT_UCAST_PKTS,
+						saipb.PortStat_PORT_STAT_IF_OUT_NON_UCAST_PKTS,
+					},
+				})
+				log.V(2).Infof("querying counters for interface %q, got %v", intfName, stats)
 				if err != nil {
 					log.Errorf("interface handler: could not retrieve counter for interface %q", intfName)
 					continue
 				}
-				for _, counter := range countersReply.Counters {
-					switch counter.Id {
-					case fwdpb.CounterId_COUNTER_ID_RX_PACKETS:
-						// TODO(wenbli): Perhaps should make a logging version of ygnmi.
-						if _, err := gnmiclient.Replace(ctx, ni.c, ocpath.Root().Interface(intfName).Counters().InPkts().State(), counter.Value); err != nil {
-							log.Errorf("interface handler: %v", err)
-						}
-					case fwdpb.CounterId_COUNTER_ID_TX_PACKETS:
-						if _, err := gnmiclient.Replace(ctx, ni.c, ocpath.Root().Interface(intfName).Counters().OutPkts().State(), counter.Value); err != nil {
-							log.Errorf("interface handler: %v", err)
-						}
-					}
+				if _, err := gnmiclient.Replace(ctx, ni.c, ocpath.Root().Interface(intfName).Counters().InPkts().State(), stats.Values[0]+stats.Values[1]); err != nil {
+					log.Errorf("interface handler: %v", err)
+				}
+				if _, err := gnmiclient.Replace(ctx, ni.c, ocpath.Root().Interface(intfName).Counters().OutPkts().State(), stats.Values[2]+stats.Values[2]); err != nil {
+					log.Errorf("interface handler: %v", err)
 				}
 			}
 		}
@@ -225,16 +286,20 @@ func (ni *Interface) startCounterUpdates(ctx context.Context) {
 }
 
 // reconcile compares the interface config with state and modifies state to match config.
-func (ni *Interface) reconcile(config *oc.Interface) {
+func (ni *Reconciler) reconcile(ctx context.Context, config *oc.Interface) {
 	ni.stateMu.RLock()
 	defer ni.stateMu.RUnlock()
 
-	tapName := ni.externalToInternalPort[config.GetName()]
+	intf := ocInterface{name: config.GetName(), subintf: 0}
+	data := ni.ocInterfaceData[intf]
+	if data == nil {
+		return
+	}
 	state := ni.getOrCreateInterface(config.GetName())
 
 	if config.GetOrCreateEthernet().MacAddress != nil {
 		if config.GetEthernet().GetMacAddress() != state.GetEthernet().GetMacAddress() {
-			log.V(1).Infof("setting interface %s hw-addr %q", tapName, config.GetEthernet().GetMacAddress())
+			log.V(1).Infof("setting interface %s hw-addr %q", data.hostifDevName, config.GetEthernet().GetMacAddress())
 			if err := ni.ifaceMgr.SetHWAddr(config.GetName(), config.GetEthernet().GetMacAddress()); err != nil {
 				log.Warningf("Failed to set mac address of port: %v", err)
 			}
@@ -243,28 +308,45 @@ func (ni *Interface) reconcile(config *oc.Interface) {
 		// Deleting the configured MAC address means it should be the system-assigned MAC address, as detailed in the OpenConfig schema.
 		// https://openconfig.net/projects/models/schemadocs/yangdoc/openconfig-interfaces.html#interfaces-interface-ethernet-state-mac-address
 		if state.GetEthernet().GetHwMacAddress() != state.GetEthernet().GetMacAddress() {
-			log.V(1).Infof("resetting interface %s hw-addr %q", tapName, state.GetEthernet().GetHwMacAddress())
+			log.V(1).Infof("resetting interface %s hw-addr %q", data.hostifDevName, state.GetEthernet().GetHwMacAddress())
 			if err := ni.ifaceMgr.SetHWAddr(config.GetName(), state.GetEthernet().GetHwMacAddress()); err != nil {
 				log.Warningf("Failed to set mac address of port: %v", err)
 			}
 		}
 	}
 
-	if config.GetOrCreateSubinterface(0).Enabled != nil {
-		if state.GetOrCreateSubinterface(0).Enabled == nil || config.GetSubinterface(0).GetEnabled() != state.GetSubinterface(0).GetEnabled() {
-			log.V(1).Infof("setting interface %s enabled %t", tapName, config.GetSubinterface(0).GetEnabled())
-			state := fwdpb.PortState_PORT_STATE_DISABLED_DOWN
-			if config.GetSubinterface(0).GetEnabled() {
-				state = fwdpb.PortState_PORT_STATE_ENABLED_UP
+	if config.GetOrCreateSubinterface(intf.subintf).Enabled != nil {
+		if state.GetOrCreateSubinterface(intf.subintf).Enabled == nil || config.GetSubinterface(intf.subintf).GetEnabled() != state.GetSubinterface(intf.subintf).GetEnabled() {
+			log.V(1).Infof("setting interface %s enabled %t", data.hostifDevName, config.GetSubinterface(intf.subintf).GetEnabled())
+			_, err := ni.hostifClient.SetHostifAttribute(ctx, &saipb.SetHostifAttributeRequest{
+				Oid:        data.hostifID,
+				OperStatus: proto.Bool(config.GetSubinterface(0).GetEnabled()),
+			})
+			if err != nil {
+				log.Warningf("Failed to set state address of hostif: %v", err)
 			}
-			_, err := ni.e.PortState(context.Background(), &fwdpb.PortStateRequest{
-				ContextId: &fwdpb.ContextId{Id: ni.e.ID()},
-				PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: tapName}},
-				Operation: &fwdpb.PortInfo{AdminStatus: state},
+			_, err = ni.portClient.SetPortAttribute(ctx, &saipb.SetPortAttributeRequest{
+				Oid:        data.portID,
+				AdminState: proto.Bool(config.GetSubinterface(0).GetEnabled()),
 			})
 			if err != nil {
 				log.Warningf("Failed to set state address of port: %v", err)
 			}
+			sb := &ygnmi.SetBatch{}
+			enabled := config.GetSubinterface(intf.subintf).GetEnabled() && config.GetEnabled()
+			adminStatus := oc.Interface_AdminStatus_DOWN
+			if enabled {
+				adminStatus = oc.Interface_AdminStatus_UP
+			}
+			// TODO: Right now treating subinterface 0 and interface as the same.
+			gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(intf.name).Enabled().State(), enabled)
+			gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(intf.name).AdminStatus().State(), adminStatus)
+			gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(intf.name).Subinterface(intf.subintf).Enabled().State(), enabled)
+			gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(intf.name).Subinterface(intf.subintf).AdminStatus().State(), adminStatus)
+			if _, err := sb.Set(ctx, ni.c); err != nil {
+				log.Warningf("failed to set link status: %v", err)
+			}
+
 		}
 	}
 
@@ -326,16 +408,16 @@ func (ni *Interface) reconcile(config *oc.Interface) {
 		// If an IP exists in state, but not in config, remove the IP.
 		if (pair.stateIP != nil && pair.statePL != nil) && (pair.cfgIP == nil && pair.cfgPL == nil) {
 			log.V(1).Infof("Delete Config IP: %v, Config PL: %v. State IP: %v, State PL: %v", pair.cfgIP, pair.cfgPL, *pair.stateIP, *pair.statePL)
-			log.V(2).Infof("deleting interface %s ip %s/%d", tapName, *pair.stateIP, *pair.statePL)
-			if err := ni.ifaceMgr.DeleteIP(tapName, *pair.stateIP, int(*pair.statePL)); err != nil {
+			log.V(2).Infof("deleting interface %s ip %s/%d", data.hostifDevName, *pair.stateIP, *pair.statePL)
+			if err := ni.ifaceMgr.DeleteIP(data.hostifDevName, *pair.stateIP, int(*pair.statePL)); err != nil {
 				log.Warningf("Failed to set ip address of port: %v", err)
 			}
 		}
 		// If an IP exists in config, but not in state (or state is different) add the IP.
 		if (pair.cfgIP != nil && pair.cfgPL != nil) && (pair.stateIP == nil || *pair.statePL != *pair.cfgPL) {
 			log.V(1).Infof("Set Config IP: %v, Config PL: %v. State IP: %v, State PL: %v", *pair.cfgIP, *pair.cfgPL, pair.stateIP, pair.statePL)
-			log.V(2).Infof("setting interface %s ip %s/%d", tapName, *pair.cfgIP, *pair.cfgPL)
-			if err := ni.ifaceMgr.ReplaceIP(tapName, *pair.cfgIP, int(*pair.cfgPL)); err != nil {
+			log.V(2).Infof("setting interface %s ip %s/%d", data.hostifDevName, *pair.cfgIP, *pair.cfgPL)
+			if err := ni.ifaceMgr.ReplaceIP(data.hostifDevName, *pair.cfgIP, int(*pair.cfgPL)); err != nil {
 				log.Warningf("Failed to set ip address of port: %v", err)
 			}
 		}
@@ -343,7 +425,7 @@ func (ni *Interface) reconcile(config *oc.Interface) {
 }
 
 // getOrCreateInterface returns the state interface from the cache.
-func (ni *Interface) getOrCreateInterface(iface string) *oc.Interface {
+func (ni *Reconciler) getOrCreateInterface(iface string) *oc.Interface {
 	if _, ok := ni.state[iface]; !ok {
 		ni.state[iface] = &oc.Interface{
 			Name: &iface,
@@ -352,57 +434,48 @@ func (ni *Interface) getOrCreateInterface(iface string) *oc.Interface {
 	return ni.state[iface]
 }
 
-func (ni *Interface) handleDataplaneEvent(ctx context.Context, ed *fwdpb.EventDesc) {
-	if ed.Event != fwdpb.Event_EVENT_PORT {
-		return
-	}
-	desc := ed.Desc.(*fwdpb.EventDesc_Port).Port
-	log.V(1).Infof("handling dataplane update on: %q", desc.GetPortId().GetObjectId().GetId())
-	modelName, ok := ni.internalToExternalPort[desc.GetPortId().GetObjectId().GetId()]
-	if !ok {
-		return
-	}
-	operStatus := oc.Interface_OperStatus_UNKNOWN
-	enabled := false
-	adminStatus := oc.Interface_AdminStatus_UNSET
-	switch desc.PortInfo.OperStatus {
-	case fwdpb.PortState_PORT_STATE_ENABLED_UP:
-		operStatus = oc.Interface_OperStatus_UP
-	case fwdpb.PortState_PORT_STATE_DISABLED_DOWN:
-		operStatus = oc.Interface_OperStatus_DOWN
-	}
-	switch desc.PortInfo.AdminStatus {
-	case fwdpb.PortState_PORT_STATE_ENABLED_UP:
-		enabled = true
-		adminStatus = oc.Interface_AdminStatus_UP
-	case fwdpb.PortState_PORT_STATE_DISABLED_DOWN:
-		adminStatus = oc.Interface_AdminStatus_DOWN
-	}
+func (ni *Reconciler) handleDataplaneEvent(ctx context.Context, resp *saipb.PortStateChangeNotificationResponse) {
+	for _, event := range resp.Data {
+		log.V(1).Infof("handling dataplane update on: %q", event.String())
+		intf, data := ni.ocInterfaceData.findByPortID(event.GetPortId())
+		if data == nil {
+			return
+		}
+		operStatus := oc.Interface_OperStatus_UNKNOWN
+		switch event.PortState {
+		case saipb.PortOperStatus_PORT_OPER_STATUS_DOWN:
+			operStatus = oc.Interface_OperStatus_DOWN
+		case saipb.PortOperStatus_PORT_OPER_STATUS_UP:
+			operStatus = oc.Interface_OperStatus_UP
+		}
 
-	sb := &ygnmi.SetBatch{}
-	gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(modelName).Enabled().State(), enabled)
-	gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(modelName).OperStatus().State(), operStatus)
-	gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(modelName).AdminStatus().State(), adminStatus)
+		sb := &ygnmi.SetBatch{}
+		gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(intf.name).OperStatus().State(), operStatus)
 
-	if _, err := sb.Set(ctx, ni.c); err != nil {
-		log.Warningf("failed to set link status: %v", err)
+		if _, err := sb.Set(ctx, ni.c); err != nil {
+			log.Warningf("failed to set link status: %v", err)
+		}
 	}
 }
 
 // handleLinkUpdate modifies the state based on changes to link state.
-func (ni *Interface) handleLinkUpdate(ctx context.Context, lu *netlink.LinkUpdate) {
+func (ni *Reconciler) handleLinkUpdate(ctx context.Context, lu *netlink.LinkUpdate) {
 	ni.stateMu.Lock()
 	defer ni.stateMu.Unlock()
 
 	log.V(1).Infof("handling link update for %s", lu.Attrs().Name)
 
-	modelName, ok := ni.internalToExternalPort[lu.Attrs().Name]
-	if !ok {
+	intf, data := ni.ocInterfaceData.findByIfIndex(lu.Attrs().Index)
+	if data == nil {
 		return
 	}
 
-	iface := ni.getOrCreateInterface(modelName)
-	if err := ni.e.UpdatePortSrcMAC(ctx, modelName, lu.Attrs().HardwareAddr); err != nil {
+	iface := ni.getOrCreateInterface(intf.name)
+	_, err := ni.ifaceClient.SetRouterInterfaceAttribute(ctx, &saipb.SetRouterInterfaceAttributeRequest{
+		Oid:           data.rifID,
+		SrcMacAddress: lu.Attrs().HardwareAddr,
+	})
+	if err != nil {
 		log.Warningf("failed to update src mac: %v", err)
 	}
 	iface.GetOrCreateEthernet().MacAddress = ygot.String(lu.Attrs().HardwareAddr.String())
@@ -410,55 +483,71 @@ func (ni *Interface) handleLinkUpdate(ctx context.Context, lu *netlink.LinkUpdat
 	iface.Ifindex = ygot.Uint32(uint32(lu.Attrs().Index))
 	sb := &ygnmi.SetBatch{}
 
-	gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(modelName).Ethernet().MacAddress().State(), *iface.Ethernet.MacAddress)
-	gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(modelName).Ifindex().State(), *iface.Ifindex)
+	gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(intf.name).Ethernet().MacAddress().State(), *iface.Ethernet.MacAddress)
+	gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(intf.name).Ifindex().State(), *iface.Ifindex)
+	gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(intf.name).Subinterface(intf.subintf).Ifindex().State(), *iface.Ifindex)
 	if _, err := sb.Set(ctx, ni.c); err != nil {
 		log.Warningf("failed to set link status: %v", err)
 	}
 }
 
 // handleAddrUpdate modifies the state based on changes to addresses.
-func (ni *Interface) handleAddrUpdate(ctx context.Context, au *netlink.AddrUpdate) {
+func (ni *Reconciler) handleAddrUpdate(ctx context.Context, au *netlink.AddrUpdate) {
 	ni.stateMu.Lock()
 	defer ni.stateMu.Unlock()
-	name := ni.idxToName[au.LinkIndex]
 
-	modelName, ok := ni.internalToExternalPort[name]
-	if !ok || name == "" {
+	intf, data := ni.ocInterfaceData.findByIfIndex(au.LinkIndex)
+	if data == nil {
 		return
 	}
 
 	sb := &ygnmi.SetBatch{}
-	sub := ni.getOrCreateInterface(modelName).GetOrCreateSubinterface(0)
+	sub := ni.getOrCreateInterface(intf.name).GetOrCreateSubinterface(intf.subintf)
 
 	ip := au.LinkAddress.IP.String()
+	ipBytes := au.LinkAddress.IP.To4()
+	if ipBytes == nil {
+		ipBytes = au.LinkAddress.IP.To16()
+	}
 	pl, _ := au.LinkAddress.Mask.Size()
 	isV4 := au.LinkAddress.IP.To4() != nil
-	log.V(1).Infof("handling addr update for %s ip %v pl %v", name, ip, pl)
+
+	entry := fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(ipBytes)))
+
+	log.V(1).Infof("handling addr update for %s ip %v pl %v", data.hostifDevName, ip, pl)
+	// The dataplane does not monitor the local interface's IP addr, they must set externally.
 	if au.NewAddr {
-		var ipBytes []byte
 		if isV4 {
-			ipBytes = au.LinkAddress.IP.To4()
 			sub.GetOrCreateIpv4().GetOrCreateAddress(ip).PrefixLength = ygot.Uint8(uint8(pl))
-			gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv4().Address(ip).Ip().State(), au.LinkAddress.IP.String())
-			gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv4().Address(ip).PrefixLength().State(), uint8(pl))
+			gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(intf.name).Subinterface(intf.subintf).Ipv4().Address(ip).Ip().State(), au.LinkAddress.IP.String())
+			gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(intf.name).Subinterface(intf.subintf).Ipv4().Address(ip).PrefixLength().State(), uint8(pl))
 		} else {
-			ipBytes = au.LinkAddress.IP.To16()
 			sub.GetOrCreateIpv6().GetOrCreateAddress(ip).PrefixLength = ygot.Uint8(uint8(pl))
-			gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv6().Address(ip).Ip().State(), au.LinkAddress.IP.String())
-			gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv6().Address(ip).PrefixLength().State(), uint8(pl))
+			gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(intf.name).Subinterface(intf.subintf).Ipv6().Address(ip).Ip().State(), au.LinkAddress.IP.String())
+			gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(intf.name).Subinterface(intf.subintf).Ipv6().Address(ip).PrefixLength().State(), uint8(pl))
 		}
-		// Forward all packets destined to this interface to the corresponding TAP interface.
-		if err := ni.e.AddLayer3PuntRule(ctx, modelName, ipBytes); err != nil {
-			log.Warningf("failed to add layer3 punt rule: %v", err)
+		_, err := ni.fwdClient.TableEntryAdd(ctx, fwdconfig.TableEntryAddRequest(ni.contextID, cpusink.IP2MeTable).
+			AppendEntry(entry, fwdconfig.Action(fwdconfig.TransmitAction(fmt.Sprint(data.hostifID)))).Build())
+		if err != nil {
+			log.Warningf("failed to add route: %v", err)
+			return
 		}
 	} else {
 		if isV4 {
 			sub.GetOrCreateIpv4().DeleteAddress(ip)
-			gnmiclient.BatchDelete(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv4().Address(ip).State())
+			gnmiclient.BatchDelete(sb, ocpath.Root().Interface(intf.name).Subinterface(intf.subintf).Ipv4().Address(ip).State())
 		} else {
 			sub.GetOrCreateIpv6().DeleteAddress(ip)
-			gnmiclient.BatchDelete(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv6().Address(ip).State())
+			gnmiclient.BatchDelete(sb, ocpath.Root().Interface(intf.name).Subinterface(intf.subintf).Ipv6().Address(ip).State())
+		}
+		_, err := ni.fwdClient.TableEntryRemove(ctx, &fwdpb.TableEntryRemoveRequest{
+			ContextId: &fwdpb.ContextId{Id: ni.contextID},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: cpusink.IP2MeTable}},
+			EntryDesc: entry.Build(),
+		})
+		if err != nil {
+			log.Warningf("failed to add route: %v", err)
+			return
 		}
 	}
 	if _, err := sb.Set(ctx, ni.c); err != nil {
@@ -467,58 +556,54 @@ func (ni *Interface) handleAddrUpdate(ctx context.Context, au *netlink.AddrUpdat
 }
 
 // handleNeighborUpdate modifies the state based on changes to the neighbor.
-func (ni *Interface) handleNeighborUpdate(ctx context.Context, nu *netlink.NeighUpdate) {
+func (ni *Reconciler) handleNeighborUpdate(ctx context.Context, nu *netlink.NeighUpdate) {
 	ni.stateMu.Lock()
 	defer ni.stateMu.Unlock()
 	log.V(1).Infof("handling neighbor update for %s on %d", nu.IP.String(), nu.LinkIndex)
 
-	name := ni.idxToName[nu.LinkIndex]
-	modelName, ok := ni.internalToExternalPort[name]
-	if name == "" || !ok {
+	intf, data := ni.ocInterfaceData.findByIfIndex(nu.LinkIndex)
+	if data == nil {
 		return
 	}
 
 	sb := &ygnmi.SetBatch{}
-	sub := ni.getOrCreateInterface(modelName).GetOrCreateSubinterface(0)
+	sub := ni.getOrCreateInterface(intf.name).GetOrCreateSubinterface(intf.subintf)
 
 	switch nu.Type {
 	case unix.RTM_DELNEIGH:
-		req := &dpb.RemoveNeighborRequest{
-			Dev: &dpb.RemoveNeighborRequest_PortId{
-				PortId: ni.internalToExternalPort[ni.idxToName[nu.LinkIndex]],
+		_, err := ni.neighborClient.RemoveNeighborEntry(ctx, &saipb.RemoveNeighborEntryRequest{
+			Entry: &saipb.NeighborEntry{
+				SwitchId:  ni.switchID,
+				RifId:     data.rifID,
+				IpAddress: ipToBytes(nu.IP),
 			},
-			Ip: &dpb.RemoveNeighborRequest_IpBytes{
-				IpBytes: ipToBytes(nu.IP),
-			},
-		}
-		if _, err := ni.e.RemoveNeighbor(ctx, req); err != nil {
+		})
+		if err != nil {
 			log.Warningf("failed to remove neighbor to dataplane: %v", err)
 			return
 		}
 		if nu.Family == unix.AF_INET6 {
 			sub.GetOrCreateIpv6().DeleteNeighbor(nu.IP.String())
-			gnmiclient.BatchDelete(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv6().Neighbor(nu.IP.String()).State())
+			gnmiclient.BatchDelete(sb, ocpath.Root().Interface(intf.name).Subinterface(intf.subintf).Ipv6().Neighbor(nu.IP.String()).State())
 		} else {
 			sub.GetOrCreateIpv4().DeleteNeighbor(nu.IP.String())
-			gnmiclient.BatchDelete(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv4().Neighbor(nu.IP.String()).State())
+			gnmiclient.BatchDelete(sb, ocpath.Root().Interface(intf.name).Subinterface(intf.subintf).Ipv4().Neighbor(nu.IP.String()).State())
 		}
 	case unix.RTM_NEWNEIGH:
 		if len(nu.HardwareAddr) == 0 {
 			log.Info("skipping neighbor update with no hwaddr")
 			return
 		}
-		req := &dpb.AddNeighborRequest{
-			Dev: &dpb.AddNeighborRequest_PortId{
-				PortId: ni.internalToExternalPort[ni.idxToName[nu.LinkIndex]],
+		_, err := ni.neighborClient.CreateNeighborEntry(ctx, &saipb.CreateNeighborEntryRequest{
+			Entry: &saipb.NeighborEntry{
+				SwitchId:  ni.switchID,
+				RifId:     data.rifID,
+				IpAddress: ipToBytes(nu.IP),
 			},
-			Mac: nu.HardwareAddr,
-			Ip: &dpb.AddNeighborRequest_IpBytes{
-				IpBytes: ipToBytes(nu.IP),
-			},
-		}
-		if _, err := ni.e.AddNeighbor(ctx, req); err != nil {
-			log.Warningf("failed to add neighbor to dataplane: %v", err)
-			return
+			DstMacAddress: nu.HardwareAddr,
+		})
+		if err != nil {
+			log.Warningf("failed to create neighbor entry: %v", err)
 		}
 		if nu.Family == unix.AF_INET6 {
 			neigh := sub.GetOrCreateIpv6().GetOrCreateNeighbor(nu.IP.String())
@@ -528,9 +613,9 @@ func (ni *Interface) handleNeighborUpdate(ctx context.Context, nu *netlink.Neigh
 			} else {
 				neigh.Origin = oc.IfIp_NeighborOrigin_DYNAMIC
 			}
-			gnmiclient.BatchReplace(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv6().Neighbor(nu.IP.String()).Ip().State(), neigh.GetIp())
-			gnmiclient.BatchReplace(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv6().Neighbor(nu.IP.String()).LinkLayerAddress().State(), neigh.GetLinkLayerAddress())
-			gnmiclient.BatchReplace(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv6().Neighbor(nu.IP.String()).Origin().State(), neigh.GetOrigin())
+			gnmiclient.BatchReplace(sb, ocpath.Root().Interface(intf.name).Subinterface(intf.subintf).Ipv6().Neighbor(nu.IP.String()).Ip().State(), neigh.GetIp())
+			gnmiclient.BatchReplace(sb, ocpath.Root().Interface(intf.name).Subinterface(intf.subintf).Ipv6().Neighbor(nu.IP.String()).LinkLayerAddress().State(), neigh.GetLinkLayerAddress())
+			gnmiclient.BatchReplace(sb, ocpath.Root().Interface(intf.name).Subinterface(intf.subintf).Ipv6().Neighbor(nu.IP.String()).Origin().State(), neigh.GetOrigin())
 		} else {
 			neigh := sub.GetOrCreateIpv4().GetOrCreateNeighbor(nu.IP.String())
 			neigh.LinkLayerAddress = ygot.String(nu.HardwareAddr.String())
@@ -539,9 +624,9 @@ func (ni *Interface) handleNeighborUpdate(ctx context.Context, nu *netlink.Neigh
 			} else {
 				neigh.Origin = oc.IfIp_NeighborOrigin_DYNAMIC
 			}
-			gnmiclient.BatchReplace(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv4().Neighbor(nu.IP.String()).Ip().State(), neigh.GetIp())
-			gnmiclient.BatchReplace(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv4().Neighbor(nu.IP.String()).LinkLayerAddress().State(), neigh.GetLinkLayerAddress())
-			gnmiclient.BatchReplace(sb, ocpath.Root().Interface(modelName).Subinterface(0).Ipv4().Neighbor(nu.IP.String()).Origin().State(), neigh.GetOrigin())
+			gnmiclient.BatchReplace(sb, ocpath.Root().Interface(intf.name).Subinterface(intf.subintf).Ipv4().Neighbor(nu.IP.String()).Ip().State(), neigh.GetIp())
+			gnmiclient.BatchReplace(sb, ocpath.Root().Interface(intf.name).Subinterface(intf.subintf).Ipv4().Neighbor(nu.IP.String()).LinkLayerAddress().State(), neigh.GetLinkLayerAddress())
+			gnmiclient.BatchReplace(sb, ocpath.Root().Interface(intf.name).Subinterface(intf.subintf).Ipv4().Neighbor(nu.IP.String()).Origin().State(), neigh.GetOrigin())
 		}
 	default:
 		log.Warningf("unknown neigh update type: %v", nu.Type)
@@ -557,54 +642,62 @@ const (
 )
 
 // setupPorts creates the dataplane ports and TAP interfaces for all interfaces on the device.
-func (ni *Interface) setupPorts(ctx context.Context) error {
+func (ni *Reconciler) setupPorts(ctx context.Context) error {
 	ifs, err := ni.ifaceMgr.GetAll()
 	if err != nil {
 		return err
 	}
+
 	for _, i := range ifs {
 		// Skip loopback, k8s pod interface, and tap interfaces.
 		if i.Name == "lo" || i.Name == "eth0" || strings.HasSuffix(i.Name, internalSuffix) {
 			continue
 		}
-		_, err = ni.e.CreatePort(ctx, &dpb.CreatePortRequest{
-			Id:   i.Name,
-			Type: fwdpb.PortType_PORT_TYPE_KERNEL,
-			Src: &dpb.CreatePortRequest_KernelDev{
-				KernelDev: i.Name,
-			},
-			Location: dpb.PortLocation_PORT_LOCATION_EXTERNAL,
+		ocIntf := ocInterface{
+			name:    i.Name,
+			subintf: 0,
+		}
+		data := &interfaceData{}
+
+		portResp, err := ni.portClient.CreatePort(ctx, &saipb.CreatePortRequest{
+			Switch: ni.switchID,
 		})
 		if err != nil {
-			return fmt.Errorf("failed to create kernel interface %q: %w", i.Name, err)
+			return fmt.Errorf("failed to create port %q: %w", i.Name, err)
 		}
+		data.portID = portResp.Oid
 
-		ni.externalToInternalPort[i.Name] = i.Name + internalSuffix
-		ni.internalToExternalPort[i.Name+internalSuffix] = i.Name
-
-		_, err := ni.e.CreatePort(ctx, &dpb.CreatePortRequest{
-			Id:   ni.externalToInternalPort[i.Name],
-			Type: fwdpb.PortType_PORT_TYPE_TAP,
-			Src: &dpb.CreatePortRequest_KernelDev{
-				KernelDev: ni.externalToInternalPort[i.Name],
-			},
-			ExternalPort: i.Name,
-			Location:     dpb.PortLocation_PORT_LOCATION_INTERNAL,
+		hostifName := i.Name + internalSuffix
+		hostifResp, err := ni.hostifClient.CreateHostif(ctx, &saipb.CreateHostifRequest{
+			Switch:     ni.switchID,
+			Type:       saipb.HostifType_HOSTIF_TYPE_NETDEV.Enum(),
+			ObjId:      &portResp.Oid,
+			Name:       []byte(hostifName),
+			OperStatus: proto.Bool(true),
 		})
 		if err != nil {
-			return fmt.Errorf("failed to create tap interface %q: %w", ni.externalToInternalPort[i.Name], err)
+			return fmt.Errorf("failed to create host interface %q: %w", hostifName, err)
 		}
+		data.hostifID = hostifResp.Oid
+		data.hostifDevName = hostifName
 
-		tap, err := ni.ifaceMgr.GetByName(ni.externalToInternalPort[i.Name])
+		tap, err := ni.ifaceMgr.GetByName(hostifName)
 		if err != nil {
-			return fmt.Errorf("failed to find tap interface %q: %w", ni.externalToInternalPort[i.Name], err)
+			return fmt.Errorf("failed to find tap interface %q: %w", hostifName, err)
 		}
-		ni.idxToName[i.Index] = i.Name
-		ni.idxToName[tap.Index] = tap.Name
+		data.hostifIfIndex = tap.Index
 
-		if err := ni.e.UpdatePortSrcMAC(ctx, i.Name, tap.HardwareAddr); err != nil {
-			return fmt.Errorf("failed to update MAC address for port %q: %w", i.Name, err)
+		rifResp, err := ni.ifaceClient.CreateRouterInterface(ctx, &saipb.CreateRouterInterfaceRequest{
+			Switch:          ni.switchID,
+			Type:            saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_PORT.Enum(),
+			PortId:          &portResp.Oid,
+			SrcMacAddress:   tap.HardwareAddr,
+			VirtualRouterId: proto.Uint64(0),
+		})
+		if err != nil {
+			return fmt.Errorf("failed to update MAC address for interface %q: %w", i.Name, err)
 		}
+		data.rifID = rifResp.Oid
 		ni.getOrCreateInterface(i.Name).GetOrCreateEthernet().SetHwMacAddress(tap.HardwareAddr.String())
 		ni.getOrCreateInterface(i.Name).GetOrCreateEthernet().SetMacAddress(tap.HardwareAddr.String())
 		if _, err := gnmiclient.Update(ctx, ni.c, ocpath.Root().Interface(i.Name).Ethernet().HwMacAddress().State(), tap.HardwareAddr.String()); err != nil {
@@ -613,6 +706,7 @@ func (ni *Interface) setupPorts(ctx context.Context) error {
 		if _, err := gnmiclient.Update(ctx, ni.c, ocpath.Root().Interface(i.Name).Ethernet().MacAddress().State(), tap.HardwareAddr.String()); err != nil {
 			return fmt.Errorf("failed to set hw addr of interface %q: %v", tap.Name, err)
 		}
+		ni.ocInterfaceData[ocIntf] = data
 	}
 	return nil
 }

@@ -10,10 +10,11 @@ go_library(
     importpath = "github.com/openconfig/lemming/dataplane",
     visibility = ["//visibility:public"],
     deps = [
-        "//dataplane/internal/engine",
+        "//dataplane/standalone/proto:sai",
+        "//dataplane/standalone/saiserver",
+        "//dataplane/standalone/saiserver/attrmgr",
         "//gnmi/oc",
         "//gnmi/reconciler",
-        "//proto/dataplane",
         "//proto/forwarding",
         "@com_github_openconfig_gnmi//proto/gnmi",
         "@com_github_openconfig_ygnmi//ygnmi",
@@ -21,46 +22,46 @@ go_library(
         "@org_golang_google_grpc//credentials/local",
     ] + select({
         "@io_bazel_rules_go//go/platform:aix": [
-            "//dataplane/handlers",
+            "//dataplane/reconcilers:handlers",
         ],
         "@io_bazel_rules_go//go/platform:android": [
-            "//dataplane/handlers",
+            "//dataplane/reconcilers:handlers",
         ],
         "@io_bazel_rules_go//go/platform:darwin": [
-            "//dataplane/handlers",
+            "//dataplane/reconcilers:handlers",
         ],
         "@io_bazel_rules_go//go/platform:dragonfly": [
-            "//dataplane/handlers",
+            "//dataplane/reconcilers:handlers",
         ],
         "@io_bazel_rules_go//go/platform:freebsd": [
-            "//dataplane/handlers",
+            "//dataplane/reconcilers:handlers",
         ],
         "@io_bazel_rules_go//go/platform:illumos": [
-            "//dataplane/handlers",
+            "//dataplane/reconcilers:handlers",
         ],
         "@io_bazel_rules_go//go/platform:ios": [
-            "//dataplane/handlers",
+            "//dataplane/reconcilers:handlers",
         ],
         "@io_bazel_rules_go//go/platform:js": [
-            "//dataplane/handlers",
+            "//dataplane/reconcilers:handlers",
         ],
         "@io_bazel_rules_go//go/platform:linux": [
-            "//dataplane/handlers",
+            "//dataplane/reconcilers:handlers",
         ],
         "@io_bazel_rules_go//go/platform:netbsd": [
-            "//dataplane/handlers",
+            "//dataplane/reconcilers:handlers",
         ],
         "@io_bazel_rules_go//go/platform:openbsd": [
-            "//dataplane/handlers",
+            "//dataplane/reconcilers:handlers",
         ],
         "@io_bazel_rules_go//go/platform:plan9": [
-            "//dataplane/handlers",
+            "//dataplane/reconcilers:handlers",
         ],
         "@io_bazel_rules_go//go/platform:solaris": [
-            "//dataplane/handlers",
+            "//dataplane/reconcilers:handlers",
         ],
         "@io_bazel_rules_go//go/platform:windows": [
-            "//dataplane/handlers",
+            "//dataplane/reconcilers:handlers",
         ],
         "//conditions:default": [],
     }),

@@ -33,7 +33,6 @@ import (
 	log "github.com/golang/glog"
 
 	saipb "github.com/openconfig/lemming/dataplane/standalone/proto"
-	dpb "github.com/openconfig/lemming/proto/dataplane"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
@@ -56,7 +55,7 @@ func newNeighbor(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Ser
 func (n *neighbor) CreateNeighborEntry(ctx context.Context, req *saipb.CreateNeighborEntryRequest) (*saipb.CreateNeighborEntryResponse, error) {
 	entry := fwdconfig.TableEntryAddRequest(n.dataplane.ID(), engine.NeighborTable).AppendEntry(fwdconfig.EntryDesc(fwdconfig.ExactEntry(
 		fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE).WithUint64(req.GetEntry().GetRifId()),
-		fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(req.GetEntry().GetIpAddress()),
+		fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP).WithBytes(req.GetEntry().GetIpAddress()),
 	)), fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST).WithValue(req.GetDstMacAddress())),
 	).Build()
 
@@ -223,6 +222,7 @@ func (nh *nextHop) CreateNextHop(ctx context.Context, req *saipb.CreateNextHopRe
 		fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_ID))),
 		fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE).WithUint64Value(req.GetRouterInterfaceId())),
 		fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP).WithValue(req.GetIp())),
+		fwdconfig.Action(fwdconfig.LookupAction(engine.NHActionTable)),
 	)
 
 	if _, err := nh.dataplane.TableEntryAdd(ctx, nhReq.Build()); err != nil {
@@ -378,17 +378,8 @@ func newRouterInterface(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *g
 // CreateRouterInterfaces creates a new router interface.
 func (ri *routerInterface) CreateRouterInterface(ctx context.Context, req *saipb.CreateRouterInterfaceRequest) (*saipb.CreateRouterInterfaceResponse, error) {
 	id := ri.mgr.NextID()
-	iReq := &dpb.AddInterfaceRequest{
-		Id:      fmt.Sprint(id),
-		VrfId:   uint32(req.GetVirtualRouterId()),
-		Mtu:     uint64(req.GetMtu()),
-		PortIds: []string{fmt.Sprint(req.GetPortId())},
-		Mac:     req.GetSrcMacAddress(),
-	}
 	switch req.GetType() {
 	case saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_PORT:
-		iReq.Type = dpb.InterfaceType_INTERFACE_TYPE_PORT
-
 	case saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_LOOPBACK: // TODO: Support loopback interfaces
 		log.Warning("loopback interfaces not supported")
 		return &saipb.CreateRouterInterfaceResponse{Oid: id}, nil

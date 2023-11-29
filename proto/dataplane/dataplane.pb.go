@@ -7,11 +7,6 @@
 package dataplane
 
 import (
-	context "context"
-	forwarding "github.com/openconfig/lemming/proto/forwarding"
-	grpc "google.golang.org/grpc"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -126,108 +121,122 @@ func (PacketAction) EnumDescriptor() ([]byte, []int) {
 	return file_proto_dataplane_dataplane_proto_rawDescGZIP(), []int{1}
 }
 
-type GroupUpdateMode int32
+type OCInterface struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
 
-const (
-	GroupUpdateMode_GROUP_UPDATE_MODE_UNSPECIFIED       GroupUpdateMode = 0
-	GroupUpdateMode_GROUP_UPDATE_MODE_ERROR_ON_CONFLICT GroupUpdateMode = 1
-	GroupUpdateMode_GROUP_UPDATE_MODE_APPEND            GroupUpdateMode = 2
-	GroupUpdateMode_GROUP_UPDATE_MODE_REPLACE           GroupUpdateMode = 3
-)
+	Interface    string `protobuf:"bytes,1,opt,name=interface,proto3" json:"interface,omitempty"`
+	Subinterface uint32 `protobuf:"varint,2,opt,name=subinterface,proto3" json:"subinterface,omitempty"`
+}
 
-// Enum value maps for GroupUpdateMode.
-var (
-	GroupUpdateMode_name = map[int32]string{
-		0: "GROUP_UPDATE_MODE_UNSPECIFIED",
-		1: "GROUP_UPDATE_MODE_ERROR_ON_CONFLICT",
-		2: "GROUP_UPDATE_MODE_APPEND",
-		3: "GROUP_UPDATE_MODE_REPLACE",
+func (x *OCInterface) Reset() {
+	*x = OCInterface{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_proto_dataplane_dataplane_proto_msgTypes[0]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
 	}
-	GroupUpdateMode_value = map[string]int32{
-		"GROUP_UPDATE_MODE_UNSPECIFIED":       0,
-		"GROUP_UPDATE_MODE_ERROR_ON_CONFLICT": 1,
-		"GROUP_UPDATE_MODE_APPEND":            2,
-		"GROUP_UPDATE_MODE_REPLACE":           3,
+}
+
+func (x *OCInterface) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OCInterface) ProtoMessage() {}
+
+func (x *OCInterface) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_dataplane_dataplane_proto_msgTypes[0]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
 	}
-)
-
-func (x GroupUpdateMode) Enum() *GroupUpdateMode {
-	p := new(GroupUpdateMode)
-	*p = x
-	return p
+	return mi.MessageOf(x)
 }
 
-func (x GroupUpdateMode) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+// Deprecated: Use OCInterface.ProtoReflect.Descriptor instead.
+func (*OCInterface) Descriptor() ([]byte, []int) {
+	return file_proto_dataplane_dataplane_proto_rawDescGZIP(), []int{0}
 }
 
-func (GroupUpdateMode) Descriptor() protoreflect.EnumDescriptor {
-	return file_proto_dataplane_dataplane_proto_enumTypes[2].Descriptor()
-}
-
-func (GroupUpdateMode) Type() protoreflect.EnumType {
-	return &file_proto_dataplane_dataplane_proto_enumTypes[2]
-}
-
-func (x GroupUpdateMode) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use GroupUpdateMode.Descriptor instead.
-func (GroupUpdateMode) EnumDescriptor() ([]byte, []int) {
-	return file_proto_dataplane_dataplane_proto_rawDescGZIP(), []int{2}
-}
-
-type InterfaceType int32
-
-const (
-	InterfaceType_INTERFACE_TYPE_UNSPECIFIED InterfaceType = 0
-	InterfaceType_INTERFACE_TYPE_PORT        InterfaceType = 1
-	InterfaceType_INTERFACE_TYPE_LOOPBACK    InterfaceType = 2
-	InterfaceType_INTERFACE_TYPE_AGGREGATE   InterfaceType = 3
-)
-
-// Enum value maps for InterfaceType.
-var (
-	InterfaceType_name = map[int32]string{
-		0: "INTERFACE_TYPE_UNSPECIFIED",
-		1: "INTERFACE_TYPE_PORT",
-		2: "INTERFACE_TYPE_LOOPBACK",
-		3: "INTERFACE_TYPE_AGGREGATE",
+func (x *OCInterface) GetInterface() string {
+	if x != nil {
+		return x.Interface
 	}
-	InterfaceType_value = map[string]int32{
-		"INTERFACE_TYPE_UNSPECIFIED": 0,
-		"INTERFACE_TYPE_PORT":        1,
-		"INTERFACE_TYPE_LOOPBACK":    2,
-		"INTERFACE_TYPE_AGGREGATE":   3,
+	return ""
+}
+
+func (x *OCInterface) GetSubinterface() uint32 {
+	if x != nil {
+		return x.Subinterface
 	}
-)
-
-func (x InterfaceType) Enum() *InterfaceType {
-	p := new(InterfaceType)
-	*p = x
-	return p
+	return 0
 }
 
-func (x InterfaceType) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+type GUE struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	SrcIp   []byte `protobuf:"bytes,1,opt,name=src_ip,json=srcIp,proto3" json:"src_ip,omitempty"`
+	DstIp   []byte `protobuf:"bytes,2,opt,name=dst_ip,json=dstIp,proto3" json:"dst_ip,omitempty"`
+	DstPort uint32 `protobuf:"varint,3,opt,name=dst_port,json=dstPort,proto3" json:"dst_port,omitempty"`
 }
 
-func (InterfaceType) Descriptor() protoreflect.EnumDescriptor {
-	return file_proto_dataplane_dataplane_proto_enumTypes[3].Descriptor()
+func (x *GUE) Reset() {
+	*x = GUE{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_proto_dataplane_dataplane_proto_msgTypes[1]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
 }
 
-func (InterfaceType) Type() protoreflect.EnumType {
-	return &file_proto_dataplane_dataplane_proto_enumTypes[3]
+func (x *GUE) String() string {
+	return protoimpl.X.MessageStringOf(x)
 }
 
-func (x InterfaceType) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
+func (*GUE) ProtoMessage() {}
+
+func (x *GUE) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_dataplane_dataplane_proto_msgTypes[1]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
 }
 
-// Deprecated: Use InterfaceType.Descriptor instead.
-func (InterfaceType) EnumDescriptor() ([]byte, []int) {
-	return file_proto_dataplane_dataplane_proto_rawDescGZIP(), []int{3}
+// Deprecated: Use GUE.ProtoReflect.Descriptor instead.
+func (*GUE) Descriptor() ([]byte, []int) {
+	return file_proto_dataplane_dataplane_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *GUE) GetSrcIp() []byte {
+	if x != nil {
+		return x.SrcIp
+	}
+	return nil
+}
+
+func (x *GUE) GetDstIp() []byte {
+	if x != nil {
+		return x.DstIp
+	}
+	return nil
+}
+
+func (x *GUE) GetDstPort() uint32 {
+	if x != nil {
+		return x.DstPort
+	}
+	return 0
 }
 
 type NextHop struct {
@@ -235,24 +244,18 @@ type NextHop struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Types that are assignable to Dev:
+	Interface *OCInterface `protobuf:"bytes,1,opt,name=interface,proto3" json:"interface,omitempty"`
+	NextHopIp string       `protobuf:"bytes,2,opt,name=next_hop_ip,json=nextHopIp,proto3" json:"next_hop_ip,omitempty"`
+	// Types that are assignable to Encap:
 	//
-	//	*NextHop_Port
-	//	*NextHop_Interface
-	Dev isNextHop_Dev `protobuf_oneof:"dev"`
-	// Types that are assignable to Ip:
-	//
-	//	*NextHop_IpStr
-	//	*NextHop_IpBytes
-	Ip                 isNextHop_Ip             `protobuf_oneof:"ip"`
-	Weight             uint64                   `protobuf:"varint,5,opt,name=weight,proto3" json:"weight,omitempty"`
-	PreTransmitActions []*forwarding.ActionDesc `protobuf:"bytes,6,rep,name=pre_transmit_actions,json=preTransmitActions,proto3" json:"pre_transmit_actions,omitempty"`
+	//	*NextHop_Gue
+	Encap isNextHop_Encap `protobuf_oneof:"encap"`
 }
 
 func (x *NextHop) Reset() {
 	*x = NextHop{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_proto_dataplane_dataplane_proto_msgTypes[0]
+		mi := &file_proto_dataplane_dataplane_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -265,7 +268,7 @@ func (x *NextHop) String() string {
 func (*NextHop) ProtoMessage() {}
 
 func (x *NextHop) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_dataplane_dataplane_proto_msgTypes[0]
+	mi := &file_proto_dataplane_dataplane_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -278,109 +281,60 @@ func (x *NextHop) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NextHop.ProtoReflect.Descriptor instead.
 func (*NextHop) Descriptor() ([]byte, []int) {
-	return file_proto_dataplane_dataplane_proto_rawDescGZIP(), []int{0}
+	return file_proto_dataplane_dataplane_proto_rawDescGZIP(), []int{2}
 }
 
-func (m *NextHop) GetDev() isNextHop_Dev {
-	if m != nil {
-		return m.Dev
-	}
-	return nil
-}
-
-func (x *NextHop) GetPort() string {
-	if x, ok := x.GetDev().(*NextHop_Port); ok {
-		return x.Port
-	}
-	return ""
-}
-
-func (x *NextHop) GetInterface() string {
-	if x, ok := x.GetDev().(*NextHop_Interface); ok {
+func (x *NextHop) GetInterface() *OCInterface {
+	if x != nil {
 		return x.Interface
 	}
+	return nil
+}
+
+func (x *NextHop) GetNextHopIp() string {
+	if x != nil {
+		return x.NextHopIp
+	}
 	return ""
 }
 
-func (m *NextHop) GetIp() isNextHop_Ip {
+func (m *NextHop) GetEncap() isNextHop_Encap {
 	if m != nil {
-		return m.Ip
+		return m.Encap
 	}
 	return nil
 }
 
-func (x *NextHop) GetIpStr() string {
-	if x, ok := x.GetIp().(*NextHop_IpStr); ok {
-		return x.IpStr
-	}
-	return ""
-}
-
-func (x *NextHop) GetIpBytes() []byte {
-	if x, ok := x.GetIp().(*NextHop_IpBytes); ok {
-		return x.IpBytes
+func (x *NextHop) GetGue() *GUE {
+	if x, ok := x.GetEncap().(*NextHop_Gue); ok {
+		return x.Gue
 	}
 	return nil
 }
 
-func (x *NextHop) GetWeight() uint64 {
-	if x != nil {
-		return x.Weight
-	}
-	return 0
+type isNextHop_Encap interface {
+	isNextHop_Encap()
 }
 
-func (x *NextHop) GetPreTransmitActions() []*forwarding.ActionDesc {
-	if x != nil {
-		return x.PreTransmitActions
-	}
-	return nil
+type NextHop_Gue struct {
+	Gue *GUE `protobuf:"bytes,3,opt,name=gue,proto3,oneof"`
 }
 
-type isNextHop_Dev interface {
-	isNextHop_Dev()
-}
-
-type NextHop_Port struct {
-	Port string `protobuf:"bytes,1,opt,name=port,proto3,oneof"`
-}
-
-type NextHop_Interface struct {
-	Interface string `protobuf:"bytes,2,opt,name=interface,proto3,oneof"`
-}
-
-func (*NextHop_Port) isNextHop_Dev() {}
-
-func (*NextHop_Interface) isNextHop_Dev() {}
-
-type isNextHop_Ip interface {
-	isNextHop_Ip()
-}
-
-type NextHop_IpStr struct {
-	IpStr string `protobuf:"bytes,3,opt,name=ip_str,json=ipStr,proto3,oneof"`
-}
-
-type NextHop_IpBytes struct {
-	IpBytes []byte `protobuf:"bytes,4,opt,name=ip_bytes,json=ipBytes,proto3,oneof"`
-}
-
-func (*NextHop_IpStr) isNextHop_Ip() {}
-
-func (*NextHop_IpBytes) isNextHop_Ip() {}
+func (*NextHop_Gue) isNextHop_Encap() {}
 
 type NextHopList struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Hops []*NextHop `protobuf:"bytes,1,rep,name=hops,proto3" json:"hops,omitempty"`
+	Hops   []*NextHop `protobuf:"bytes,1,rep,name=hops,proto3" json:"hops,omitempty"`
+	Weight []uint64   `protobuf:"varint,2,rep,packed,name=weight,proto3" json:"weight,omitempty"`
 }
 
 func (x *NextHopList) Reset() {
 	*x = NextHopList{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_proto_dataplane_dataplane_proto_msgTypes[1]
+		mi := &file_proto_dataplane_dataplane_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -393,7 +347,7 @@ func (x *NextHopList) String() string {
 func (*NextHopList) ProtoMessage() {}
 
 func (x *NextHopList) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_dataplane_dataplane_proto_msgTypes[1]
+	mi := &file_proto_dataplane_dataplane_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -406,7 +360,7 @@ func (x *NextHopList) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NextHopList.ProtoReflect.Descriptor instead.
 func (*NextHopList) Descriptor() ([]byte, []int) {
-	return file_proto_dataplane_dataplane_proto_rawDescGZIP(), []int{1}
+	return file_proto_dataplane_dataplane_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *NextHopList) GetHops() []*NextHop {
@@ -416,57 +370,9 @@ func (x *NextHopList) GetHops() []*NextHop {
 	return nil
 }
 
-type NextHopIDList struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Hops    []uint64 `protobuf:"varint,1,rep,packed,name=hops,proto3" json:"hops,omitempty"`
-	Weights []uint64 `protobuf:"varint,2,rep,packed,name=weights,proto3" json:"weights,omitempty"`
-}
-
-func (x *NextHopIDList) Reset() {
-	*x = NextHopIDList{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_proto_dataplane_dataplane_proto_msgTypes[2]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *NextHopIDList) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*NextHopIDList) ProtoMessage() {}
-
-func (x *NextHopIDList) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_dataplane_dataplane_proto_msgTypes[2]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use NextHopIDList.ProtoReflect.Descriptor instead.
-func (*NextHopIDList) Descriptor() ([]byte, []int) {
-	return file_proto_dataplane_dataplane_proto_rawDescGZIP(), []int{2}
-}
-
-func (x *NextHopIDList) GetHops() []uint64 {
+func (x *NextHopList) GetWeight() []uint64 {
 	if x != nil {
-		return x.Hops
-	}
-	return nil
-}
-
-func (x *NextHopIDList) GetWeights() []uint64 {
-	if x != nil {
-		return x.Weights
+		return x.Weight
 	}
 	return nil
 }
@@ -476,18 +382,14 @@ type RoutePrefix struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Types that are assignable to Prefix:
-	//
-	//	*RoutePrefix_Cidr
-	//	*RoutePrefix_Mask
-	Prefix isRoutePrefix_Prefix `protobuf_oneof:"prefix"`
-	VrfId  uint64               `protobuf:"varint,3,opt,name=vrf_id,json=vrfId,proto3" json:"vrf_id,omitempty"`
+	Cidr            string `protobuf:"bytes,1,opt,name=cidr,proto3" json:"cidr,omitempty"`
+	NetworkInstance string `protobuf:"bytes,2,opt,name=network_instance,json=networkInstance,proto3" json:"network_instance,omitempty"`
 }
 
 func (x *RoutePrefix) Reset() {
 	*x = RoutePrefix{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_proto_dataplane_dataplane_proto_msgTypes[3]
+		mi := &file_proto_dataplane_dataplane_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -500,7 +402,7 @@ func (x *RoutePrefix) String() string {
 func (*RoutePrefix) ProtoMessage() {}
 
 func (x *RoutePrefix) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_dataplane_dataplane_proto_msgTypes[3]
+	mi := &file_proto_dataplane_dataplane_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -513,52 +415,22 @@ func (x *RoutePrefix) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RoutePrefix.ProtoReflect.Descriptor instead.
 func (*RoutePrefix) Descriptor() ([]byte, []int) {
-	return file_proto_dataplane_dataplane_proto_rawDescGZIP(), []int{3}
-}
-
-func (m *RoutePrefix) GetPrefix() isRoutePrefix_Prefix {
-	if m != nil {
-		return m.Prefix
-	}
-	return nil
+	return file_proto_dataplane_dataplane_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *RoutePrefix) GetCidr() string {
-	if x, ok := x.GetPrefix().(*RoutePrefix_Cidr); ok {
+	if x != nil {
 		return x.Cidr
 	}
 	return ""
 }
 
-func (x *RoutePrefix) GetMask() *IpMask {
-	if x, ok := x.GetPrefix().(*RoutePrefix_Mask); ok {
-		return x.Mask
-	}
-	return nil
-}
-
-func (x *RoutePrefix) GetVrfId() uint64 {
+func (x *RoutePrefix) GetNetworkInstance() string {
 	if x != nil {
-		return x.VrfId
+		return x.NetworkInstance
 	}
-	return 0
+	return ""
 }
-
-type isRoutePrefix_Prefix interface {
-	isRoutePrefix_Prefix()
-}
-
-type RoutePrefix_Cidr struct {
-	Cidr string `protobuf:"bytes,1,opt,name=cidr,proto3,oneof"`
-}
-
-type RoutePrefix_Mask struct {
-	Mask *IpMask `protobuf:"bytes,2,opt,name=mask,proto3,oneof"`
-}
-
-func (*RoutePrefix_Cidr) isRoutePrefix_Prefix() {}
-
-func (*RoutePrefix_Mask) isRoutePrefix_Prefix() {}
 
 type Route struct {
 	state         protoimpl.MessageState
@@ -569,18 +441,15 @@ type Route struct {
 	Action PacketAction `protobuf:"varint,2,opt,name=action,proto3,enum=lemming.dataplane.PacketAction" json:"action,omitempty"`
 	// Types that are assignable to Hop:
 	//
-	//	*Route_PortId
-	//	*Route_NextHopId
-	//	*Route_NextHopGroupId
 	//	*Route_NextHops
-	//	*Route_InterfaceId
+	//	*Route_Interface
 	Hop isRoute_Hop `protobuf_oneof:"hop"`
 }
 
 func (x *Route) Reset() {
 	*x = Route{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_proto_dataplane_dataplane_proto_msgTypes[4]
+		mi := &file_proto_dataplane_dataplane_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -593,7 +462,7 @@ func (x *Route) String() string {
 func (*Route) ProtoMessage() {}
 
 func (x *Route) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_dataplane_dataplane_proto_msgTypes[4]
+	mi := &file_proto_dataplane_dataplane_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -606,7 +475,7 @@ func (x *Route) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Route.ProtoReflect.Descriptor instead.
 func (*Route) Descriptor() ([]byte, []int) {
-	return file_proto_dataplane_dataplane_proto_rawDescGZIP(), []int{4}
+	return file_proto_dataplane_dataplane_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *Route) GetPrefix() *RoutePrefix {
@@ -630,27 +499,6 @@ func (m *Route) GetHop() isRoute_Hop {
 	return nil
 }
 
-func (x *Route) GetPortId() string {
-	if x, ok := x.GetHop().(*Route_PortId); ok {
-		return x.PortId
-	}
-	return ""
-}
-
-func (x *Route) GetNextHopId() uint64 {
-	if x, ok := x.GetHop().(*Route_NextHopId); ok {
-		return x.NextHopId
-	}
-	return 0
-}
-
-func (x *Route) GetNextHopGroupId() uint64 {
-	if x, ok := x.GetHop().(*Route_NextHopGroupId); ok {
-		return x.NextHopGroupId
-	}
-	return 0
-}
-
 func (x *Route) GetNextHops() *NextHopList {
 	if x, ok := x.GetHop().(*Route_NextHops); ok {
 		return x.NextHops
@@ -658,1057 +506,28 @@ func (x *Route) GetNextHops() *NextHopList {
 	return nil
 }
 
-func (x *Route) GetInterfaceId() string {
-	if x, ok := x.GetHop().(*Route_InterfaceId); ok {
-		return x.InterfaceId
+func (x *Route) GetInterface() *OCInterface {
+	if x, ok := x.GetHop().(*Route_Interface); ok {
+		return x.Interface
 	}
-	return ""
+	return nil
 }
 
 type isRoute_Hop interface {
 	isRoute_Hop()
 }
 
-type Route_PortId struct {
-	PortId string `protobuf:"bytes,3,opt,name=port_id,json=portId,proto3,oneof"`
-}
-
-type Route_NextHopId struct {
-	NextHopId uint64 `protobuf:"varint,4,opt,name=next_hop_id,json=nextHopId,proto3,oneof"`
-}
-
-type Route_NextHopGroupId struct {
-	NextHopGroupId uint64 `protobuf:"varint,5,opt,name=next_hop_group_id,json=nextHopGroupId,proto3,oneof"`
-}
-
 type Route_NextHops struct {
-	NextHops *NextHopList `protobuf:"bytes,6,opt,name=next_hops,json=nextHops,proto3,oneof"`
+	NextHops *NextHopList `protobuf:"bytes,3,opt,name=next_hops,json=nextHops,proto3,oneof"`
 }
 
-type Route_InterfaceId struct {
-	InterfaceId string `protobuf:"bytes,7,opt,name=interface_id,json=interfaceId,proto3,oneof"`
+type Route_Interface struct {
+	Interface *OCInterface `protobuf:"bytes,4,opt,name=interface,proto3,oneof"`
 }
-
-func (*Route_PortId) isRoute_Hop() {}
-
-func (*Route_NextHopId) isRoute_Hop() {}
-
-func (*Route_NextHopGroupId) isRoute_Hop() {}
 
 func (*Route_NextHops) isRoute_Hop() {}
 
-func (*Route_InterfaceId) isRoute_Hop() {}
-
-type CreatePortRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Type forwarding.PortType `protobuf:"varint,1,opt,name=type,proto3,enum=forwarding.PortType" json:"type,omitempty"`
-	Id   string              `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
-	// Types that are assignable to Src:
-	//
-	//	*CreatePortRequest_KernelDev
-	Src          isCreatePortRequest_Src `protobuf_oneof:"src"`
-	ExternalPort string                  `protobuf:"bytes,4,opt,name=external_port,json=externalPort,proto3" json:"external_port,omitempty"`
-	Location     PortLocation            `protobuf:"varint,5,opt,name=location,proto3,enum=lemming.dataplane.PortLocation" json:"location,omitempty"`
-}
-
-func (x *CreatePortRequest) Reset() {
-	*x = CreatePortRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_proto_dataplane_dataplane_proto_msgTypes[5]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *CreatePortRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*CreatePortRequest) ProtoMessage() {}
-
-func (x *CreatePortRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_dataplane_dataplane_proto_msgTypes[5]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use CreatePortRequest.ProtoReflect.Descriptor instead.
-func (*CreatePortRequest) Descriptor() ([]byte, []int) {
-	return file_proto_dataplane_dataplane_proto_rawDescGZIP(), []int{5}
-}
-
-func (x *CreatePortRequest) GetType() forwarding.PortType {
-	if x != nil {
-		return x.Type
-	}
-	return forwarding.PortType(0)
-}
-
-func (x *CreatePortRequest) GetId() string {
-	if x != nil {
-		return x.Id
-	}
-	return ""
-}
-
-func (m *CreatePortRequest) GetSrc() isCreatePortRequest_Src {
-	if m != nil {
-		return m.Src
-	}
-	return nil
-}
-
-func (x *CreatePortRequest) GetKernelDev() string {
-	if x, ok := x.GetSrc().(*CreatePortRequest_KernelDev); ok {
-		return x.KernelDev
-	}
-	return ""
-}
-
-func (x *CreatePortRequest) GetExternalPort() string {
-	if x != nil {
-		return x.ExternalPort
-	}
-	return ""
-}
-
-func (x *CreatePortRequest) GetLocation() PortLocation {
-	if x != nil {
-		return x.Location
-	}
-	return PortLocation_PORT_LOCATION_UNSPECIFIED
-}
-
-type isCreatePortRequest_Src interface {
-	isCreatePortRequest_Src()
-}
-
-type CreatePortRequest_KernelDev struct {
-	KernelDev string `protobuf:"bytes,3,opt,name=kernel_dev,json=kernelDev,proto3,oneof"`
-}
-
-func (*CreatePortRequest_KernelDev) isCreatePortRequest_Src() {}
-
-type CreatePortResponse struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-}
-
-func (x *CreatePortResponse) Reset() {
-	*x = CreatePortResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_proto_dataplane_dataplane_proto_msgTypes[6]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *CreatePortResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*CreatePortResponse) ProtoMessage() {}
-
-func (x *CreatePortResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_dataplane_dataplane_proto_msgTypes[6]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use CreatePortResponse.ProtoReflect.Descriptor instead.
-func (*CreatePortResponse) Descriptor() ([]byte, []int) {
-	return file_proto_dataplane_dataplane_proto_rawDescGZIP(), []int{6}
-}
-
-type IpMask struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Addr []byte `protobuf:"bytes,1,opt,name=addr,proto3" json:"addr,omitempty"`
-	Mask []byte `protobuf:"bytes,2,opt,name=mask,proto3" json:"mask,omitempty"`
-}
-
-func (x *IpMask) Reset() {
-	*x = IpMask{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_proto_dataplane_dataplane_proto_msgTypes[7]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *IpMask) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*IpMask) ProtoMessage() {}
-
-func (x *IpMask) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_dataplane_dataplane_proto_msgTypes[7]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use IpMask.ProtoReflect.Descriptor instead.
-func (*IpMask) Descriptor() ([]byte, []int) {
-	return file_proto_dataplane_dataplane_proto_rawDescGZIP(), []int{7}
-}
-
-func (x *IpMask) GetAddr() []byte {
-	if x != nil {
-		return x.Addr
-	}
-	return nil
-}
-
-func (x *IpMask) GetMask() []byte {
-	if x != nil {
-		return x.Mask
-	}
-	return nil
-}
-
-type AddIPRouteRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Route *Route `protobuf:"bytes,1,opt,name=route,proto3" json:"route,omitempty"`
-}
-
-func (x *AddIPRouteRequest) Reset() {
-	*x = AddIPRouteRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_proto_dataplane_dataplane_proto_msgTypes[8]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *AddIPRouteRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*AddIPRouteRequest) ProtoMessage() {}
-
-func (x *AddIPRouteRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_dataplane_dataplane_proto_msgTypes[8]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use AddIPRouteRequest.ProtoReflect.Descriptor instead.
-func (*AddIPRouteRequest) Descriptor() ([]byte, []int) {
-	return file_proto_dataplane_dataplane_proto_rawDescGZIP(), []int{8}
-}
-
-func (x *AddIPRouteRequest) GetRoute() *Route {
-	if x != nil {
-		return x.Route
-	}
-	return nil
-}
-
-type AddIPRouteResponse struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-}
-
-func (x *AddIPRouteResponse) Reset() {
-	*x = AddIPRouteResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_proto_dataplane_dataplane_proto_msgTypes[9]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *AddIPRouteResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*AddIPRouteResponse) ProtoMessage() {}
-
-func (x *AddIPRouteResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_dataplane_dataplane_proto_msgTypes[9]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use AddIPRouteResponse.ProtoReflect.Descriptor instead.
-func (*AddIPRouteResponse) Descriptor() ([]byte, []int) {
-	return file_proto_dataplane_dataplane_proto_rawDescGZIP(), []int{9}
-}
-
-type RemoveIPRouteRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Prefix *RoutePrefix `protobuf:"bytes,1,opt,name=prefix,proto3" json:"prefix,omitempty"`
-}
-
-func (x *RemoveIPRouteRequest) Reset() {
-	*x = RemoveIPRouteRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_proto_dataplane_dataplane_proto_msgTypes[10]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *RemoveIPRouteRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*RemoveIPRouteRequest) ProtoMessage() {}
-
-func (x *RemoveIPRouteRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_dataplane_dataplane_proto_msgTypes[10]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use RemoveIPRouteRequest.ProtoReflect.Descriptor instead.
-func (*RemoveIPRouteRequest) Descriptor() ([]byte, []int) {
-	return file_proto_dataplane_dataplane_proto_rawDescGZIP(), []int{10}
-}
-
-func (x *RemoveIPRouteRequest) GetPrefix() *RoutePrefix {
-	if x != nil {
-		return x.Prefix
-	}
-	return nil
-}
-
-type RemoveIPRouteResponse struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-}
-
-func (x *RemoveIPRouteResponse) Reset() {
-	*x = RemoveIPRouteResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_proto_dataplane_dataplane_proto_msgTypes[11]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *RemoveIPRouteResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*RemoveIPRouteResponse) ProtoMessage() {}
-
-func (x *RemoveIPRouteResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_dataplane_dataplane_proto_msgTypes[11]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use RemoveIPRouteResponse.ProtoReflect.Descriptor instead.
-func (*RemoveIPRouteResponse) Descriptor() ([]byte, []int) {
-	return file_proto_dataplane_dataplane_proto_rawDescGZIP(), []int{11}
-}
-
-type AddNextHopRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Id      uint64   `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	NextHop *NextHop `protobuf:"bytes,2,opt,name=next_hop,json=nextHop,proto3" json:"next_hop,omitempty"`
-}
-
-func (x *AddNextHopRequest) Reset() {
-	*x = AddNextHopRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_proto_dataplane_dataplane_proto_msgTypes[12]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *AddNextHopRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*AddNextHopRequest) ProtoMessage() {}
-
-func (x *AddNextHopRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_dataplane_dataplane_proto_msgTypes[12]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use AddNextHopRequest.ProtoReflect.Descriptor instead.
-func (*AddNextHopRequest) Descriptor() ([]byte, []int) {
-	return file_proto_dataplane_dataplane_proto_rawDescGZIP(), []int{12}
-}
-
-func (x *AddNextHopRequest) GetId() uint64 {
-	if x != nil {
-		return x.Id
-	}
-	return 0
-}
-
-func (x *AddNextHopRequest) GetNextHop() *NextHop {
-	if x != nil {
-		return x.NextHop
-	}
-	return nil
-}
-
-type AddNextHopResponse struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-}
-
-func (x *AddNextHopResponse) Reset() {
-	*x = AddNextHopResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_proto_dataplane_dataplane_proto_msgTypes[13]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *AddNextHopResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*AddNextHopResponse) ProtoMessage() {}
-
-func (x *AddNextHopResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_dataplane_dataplane_proto_msgTypes[13]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use AddNextHopResponse.ProtoReflect.Descriptor instead.
-func (*AddNextHopResponse) Descriptor() ([]byte, []int) {
-	return file_proto_dataplane_dataplane_proto_rawDescGZIP(), []int{13}
-}
-
-type AddNextHopGroupRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Id   uint64          `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	List *NextHopIDList  `protobuf:"bytes,2,opt,name=list,proto3" json:"list,omitempty"`
-	Mode GroupUpdateMode `protobuf:"varint,3,opt,name=mode,proto3,enum=lemming.dataplane.GroupUpdateMode" json:"mode,omitempty"`
-}
-
-func (x *AddNextHopGroupRequest) Reset() {
-	*x = AddNextHopGroupRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_proto_dataplane_dataplane_proto_msgTypes[14]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *AddNextHopGroupRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*AddNextHopGroupRequest) ProtoMessage() {}
-
-func (x *AddNextHopGroupRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_dataplane_dataplane_proto_msgTypes[14]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use AddNextHopGroupRequest.ProtoReflect.Descriptor instead.
-func (*AddNextHopGroupRequest) Descriptor() ([]byte, []int) {
-	return file_proto_dataplane_dataplane_proto_rawDescGZIP(), []int{14}
-}
-
-func (x *AddNextHopGroupRequest) GetId() uint64 {
-	if x != nil {
-		return x.Id
-	}
-	return 0
-}
-
-func (x *AddNextHopGroupRequest) GetList() *NextHopIDList {
-	if x != nil {
-		return x.List
-	}
-	return nil
-}
-
-func (x *AddNextHopGroupRequest) GetMode() GroupUpdateMode {
-	if x != nil {
-		return x.Mode
-	}
-	return GroupUpdateMode_GROUP_UPDATE_MODE_UNSPECIFIED
-}
-
-type AddNextHopGroupResponse struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-}
-
-func (x *AddNextHopGroupResponse) Reset() {
-	*x = AddNextHopGroupResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_proto_dataplane_dataplane_proto_msgTypes[15]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *AddNextHopGroupResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*AddNextHopGroupResponse) ProtoMessage() {}
-
-func (x *AddNextHopGroupResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_dataplane_dataplane_proto_msgTypes[15]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use AddNextHopGroupResponse.ProtoReflect.Descriptor instead.
-func (*AddNextHopGroupResponse) Descriptor() ([]byte, []int) {
-	return file_proto_dataplane_dataplane_proto_rawDescGZIP(), []int{15}
-}
-
-type AddNeighborRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	// Types that are assignable to Dev:
-	//
-	//	*AddNeighborRequest_PortId
-	//	*AddNeighborRequest_InterfaceId
-	Dev isAddNeighborRequest_Dev `protobuf_oneof:"dev"`
-	// Types that are assignable to Ip:
-	//
-	//	*AddNeighborRequest_IpStr
-	//	*AddNeighborRequest_IpBytes
-	Ip  isAddNeighborRequest_Ip `protobuf_oneof:"ip"`
-	Mac []byte                  `protobuf:"bytes,4,opt,name=mac,proto3" json:"mac,omitempty"`
-}
-
-func (x *AddNeighborRequest) Reset() {
-	*x = AddNeighborRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_proto_dataplane_dataplane_proto_msgTypes[16]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *AddNeighborRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*AddNeighborRequest) ProtoMessage() {}
-
-func (x *AddNeighborRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_dataplane_dataplane_proto_msgTypes[16]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use AddNeighborRequest.ProtoReflect.Descriptor instead.
-func (*AddNeighborRequest) Descriptor() ([]byte, []int) {
-	return file_proto_dataplane_dataplane_proto_rawDescGZIP(), []int{16}
-}
-
-func (m *AddNeighborRequest) GetDev() isAddNeighborRequest_Dev {
-	if m != nil {
-		return m.Dev
-	}
-	return nil
-}
-
-func (x *AddNeighborRequest) GetPortId() string {
-	if x, ok := x.GetDev().(*AddNeighborRequest_PortId); ok {
-		return x.PortId
-	}
-	return ""
-}
-
-func (x *AddNeighborRequest) GetInterfaceId() string {
-	if x, ok := x.GetDev().(*AddNeighborRequest_InterfaceId); ok {
-		return x.InterfaceId
-	}
-	return ""
-}
-
-func (m *AddNeighborRequest) GetIp() isAddNeighborRequest_Ip {
-	if m != nil {
-		return m.Ip
-	}
-	return nil
-}
-
-func (x *AddNeighborRequest) GetIpStr() string {
-	if x, ok := x.GetIp().(*AddNeighborRequest_IpStr); ok {
-		return x.IpStr
-	}
-	return ""
-}
-
-func (x *AddNeighborRequest) GetIpBytes() []byte {
-	if x, ok := x.GetIp().(*AddNeighborRequest_IpBytes); ok {
-		return x.IpBytes
-	}
-	return nil
-}
-
-func (x *AddNeighborRequest) GetMac() []byte {
-	if x != nil {
-		return x.Mac
-	}
-	return nil
-}
-
-type isAddNeighborRequest_Dev interface {
-	isAddNeighborRequest_Dev()
-}
-
-type AddNeighborRequest_PortId struct {
-	PortId string `protobuf:"bytes,1,opt,name=port_id,json=portId,proto3,oneof"`
-}
-
-type AddNeighborRequest_InterfaceId struct {
-	InterfaceId string `protobuf:"bytes,5,opt,name=interface_id,json=interfaceId,proto3,oneof"`
-}
-
-func (*AddNeighborRequest_PortId) isAddNeighborRequest_Dev() {}
-
-func (*AddNeighborRequest_InterfaceId) isAddNeighborRequest_Dev() {}
-
-type isAddNeighborRequest_Ip interface {
-	isAddNeighborRequest_Ip()
-}
-
-type AddNeighborRequest_IpStr struct {
-	IpStr string `protobuf:"bytes,2,opt,name=ip_str,json=ipStr,proto3,oneof"`
-}
-
-type AddNeighborRequest_IpBytes struct {
-	IpBytes []byte `protobuf:"bytes,3,opt,name=ip_bytes,json=ipBytes,proto3,oneof"`
-}
-
-func (*AddNeighborRequest_IpStr) isAddNeighborRequest_Ip() {}
-
-func (*AddNeighborRequest_IpBytes) isAddNeighborRequest_Ip() {}
-
-type AddNeighborResponse struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-}
-
-func (x *AddNeighborResponse) Reset() {
-	*x = AddNeighborResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_proto_dataplane_dataplane_proto_msgTypes[17]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *AddNeighborResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*AddNeighborResponse) ProtoMessage() {}
-
-func (x *AddNeighborResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_dataplane_dataplane_proto_msgTypes[17]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use AddNeighborResponse.ProtoReflect.Descriptor instead.
-func (*AddNeighborResponse) Descriptor() ([]byte, []int) {
-	return file_proto_dataplane_dataplane_proto_rawDescGZIP(), []int{17}
-}
-
-type RemoveNeighborRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	// Types that are assignable to Dev:
-	//
-	//	*RemoveNeighborRequest_PortId
-	//	*RemoveNeighborRequest_InterfaceId
-	Dev isRemoveNeighborRequest_Dev `protobuf_oneof:"dev"`
-	// Types that are assignable to Ip:
-	//
-	//	*RemoveNeighborRequest_IpStr
-	//	*RemoveNeighborRequest_IpBytes
-	Ip isRemoveNeighborRequest_Ip `protobuf_oneof:"ip"`
-}
-
-func (x *RemoveNeighborRequest) Reset() {
-	*x = RemoveNeighborRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_proto_dataplane_dataplane_proto_msgTypes[18]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *RemoveNeighborRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*RemoveNeighborRequest) ProtoMessage() {}
-
-func (x *RemoveNeighborRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_dataplane_dataplane_proto_msgTypes[18]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use RemoveNeighborRequest.ProtoReflect.Descriptor instead.
-func (*RemoveNeighborRequest) Descriptor() ([]byte, []int) {
-	return file_proto_dataplane_dataplane_proto_rawDescGZIP(), []int{18}
-}
-
-func (m *RemoveNeighborRequest) GetDev() isRemoveNeighborRequest_Dev {
-	if m != nil {
-		return m.Dev
-	}
-	return nil
-}
-
-func (x *RemoveNeighborRequest) GetPortId() string {
-	if x, ok := x.GetDev().(*RemoveNeighborRequest_PortId); ok {
-		return x.PortId
-	}
-	return ""
-}
-
-func (x *RemoveNeighborRequest) GetInterfaceId() string {
-	if x, ok := x.GetDev().(*RemoveNeighborRequest_InterfaceId); ok {
-		return x.InterfaceId
-	}
-	return ""
-}
-
-func (m *RemoveNeighborRequest) GetIp() isRemoveNeighborRequest_Ip {
-	if m != nil {
-		return m.Ip
-	}
-	return nil
-}
-
-func (x *RemoveNeighborRequest) GetIpStr() string {
-	if x, ok := x.GetIp().(*RemoveNeighborRequest_IpStr); ok {
-		return x.IpStr
-	}
-	return ""
-}
-
-func (x *RemoveNeighborRequest) GetIpBytes() []byte {
-	if x, ok := x.GetIp().(*RemoveNeighborRequest_IpBytes); ok {
-		return x.IpBytes
-	}
-	return nil
-}
-
-type isRemoveNeighborRequest_Dev interface {
-	isRemoveNeighborRequest_Dev()
-}
-
-type RemoveNeighborRequest_PortId struct {
-	PortId string `protobuf:"bytes,1,opt,name=port_id,json=portId,proto3,oneof"`
-}
-
-type RemoveNeighborRequest_InterfaceId struct {
-	InterfaceId string `protobuf:"bytes,4,opt,name=interface_id,json=interfaceId,proto3,oneof"`
-}
-
-func (*RemoveNeighborRequest_PortId) isRemoveNeighborRequest_Dev() {}
-
-func (*RemoveNeighborRequest_InterfaceId) isRemoveNeighborRequest_Dev() {}
-
-type isRemoveNeighborRequest_Ip interface {
-	isRemoveNeighborRequest_Ip()
-}
-
-type RemoveNeighborRequest_IpStr struct {
-	IpStr string `protobuf:"bytes,2,opt,name=ip_str,json=ipStr,proto3,oneof"`
-}
-
-type RemoveNeighborRequest_IpBytes struct {
-	IpBytes []byte `protobuf:"bytes,3,opt,name=ip_bytes,json=ipBytes,proto3,oneof"`
-}
-
-func (*RemoveNeighborRequest_IpStr) isRemoveNeighborRequest_Ip() {}
-
-func (*RemoveNeighborRequest_IpBytes) isRemoveNeighborRequest_Ip() {}
-
-type RemoveNeighborResponse struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-}
-
-func (x *RemoveNeighborResponse) Reset() {
-	*x = RemoveNeighborResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_proto_dataplane_dataplane_proto_msgTypes[19]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *RemoveNeighborResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*RemoveNeighborResponse) ProtoMessage() {}
-
-func (x *RemoveNeighborResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_dataplane_dataplane_proto_msgTypes[19]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use RemoveNeighborResponse.ProtoReflect.Descriptor instead.
-func (*RemoveNeighborResponse) Descriptor() ([]byte, []int) {
-	return file_proto_dataplane_dataplane_proto_rawDescGZIP(), []int{19}
-}
-
-type AddInterfaceRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Id      string        `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	VrfId   uint32        `protobuf:"varint,2,opt,name=vrf_id,json=vrfId,proto3" json:"vrf_id,omitempty"`
-	Mac     []byte        `protobuf:"bytes,3,opt,name=mac,proto3" json:"mac,omitempty"`
-	Type    InterfaceType `protobuf:"varint,4,opt,name=type,proto3,enum=lemming.dataplane.InterfaceType" json:"type,omitempty"`
-	PortIds []string      `protobuf:"bytes,5,rep,name=port_ids,json=portIds,proto3" json:"port_ids,omitempty"`
-	Mtu     uint64        `protobuf:"varint,6,opt,name=mtu,proto3" json:"mtu,omitempty"`
-}
-
-func (x *AddInterfaceRequest) Reset() {
-	*x = AddInterfaceRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_proto_dataplane_dataplane_proto_msgTypes[20]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *AddInterfaceRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*AddInterfaceRequest) ProtoMessage() {}
-
-func (x *AddInterfaceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_dataplane_dataplane_proto_msgTypes[20]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use AddInterfaceRequest.ProtoReflect.Descriptor instead.
-func (*AddInterfaceRequest) Descriptor() ([]byte, []int) {
-	return file_proto_dataplane_dataplane_proto_rawDescGZIP(), []int{20}
-}
-
-func (x *AddInterfaceRequest) GetId() string {
-	if x != nil {
-		return x.Id
-	}
-	return ""
-}
-
-func (x *AddInterfaceRequest) GetVrfId() uint32 {
-	if x != nil {
-		return x.VrfId
-	}
-	return 0
-}
-
-func (x *AddInterfaceRequest) GetMac() []byte {
-	if x != nil {
-		return x.Mac
-	}
-	return nil
-}
-
-func (x *AddInterfaceRequest) GetType() InterfaceType {
-	if x != nil {
-		return x.Type
-	}
-	return InterfaceType_INTERFACE_TYPE_UNSPECIFIED
-}
-
-func (x *AddInterfaceRequest) GetPortIds() []string {
-	if x != nil {
-		return x.PortIds
-	}
-	return nil
-}
-
-func (x *AddInterfaceRequest) GetMtu() uint64 {
-	if x != nil {
-		return x.Mtu
-	}
-	return 0
-}
-
-type AddInterfaceResponse struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-}
-
-func (x *AddInterfaceResponse) Reset() {
-	*x = AddInterfaceResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_proto_dataplane_dataplane_proto_msgTypes[21]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *AddInterfaceResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*AddInterfaceResponse) ProtoMessage() {}
-
-func (x *AddInterfaceResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_dataplane_dataplane_proto_msgTypes[21]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use AddInterfaceResponse.ProtoReflect.Descriptor instead.
-func (*AddInterfaceResponse) Descriptor() ([]byte, []int) {
-	return file_proto_dataplane_dataplane_proto_rawDescGZIP(), []int{21}
-}
+func (*Route_Interface) isRoute_Hop() {}
 
 var File_proto_dataplane_dataplane_proto protoreflect.FileDescriptor
 
@@ -1716,230 +535,67 @@ var file_proto_dataplane_dataplane_proto_rawDesc = []byte{
 	0x0a, 0x1f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e,
 	0x65, 0x2f, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74,
 	0x6f, 0x12, 0x11, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x70,
-	0x6c, 0x61, 0x6e, 0x65, 0x1a, 0x28, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x66, 0x6f, 0x72, 0x77,
-	0x61, 0x72, 0x64, 0x69, 0x6e, 0x67, 0x2f, 0x66, 0x6f, 0x72, 0x77, 0x61, 0x72, 0x64, 0x69, 0x6e,
-	0x67, 0x5f, 0x61, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x26,
-	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x66, 0x6f, 0x72, 0x77, 0x61, 0x72, 0x64, 0x69, 0x6e, 0x67,
-	0x2f, 0x66, 0x6f, 0x72, 0x77, 0x61, 0x72, 0x64, 0x69, 0x6e, 0x67, 0x5f, 0x70, 0x6f, 0x72, 0x74,
-	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xe4, 0x01, 0x0a, 0x07, 0x4e, 0x65, 0x78, 0x74, 0x48,
-	0x6f, 0x70, 0x12, 0x14, 0x0a, 0x04, 0x70, 0x6f, 0x72, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
-	0x48, 0x00, 0x52, 0x04, 0x70, 0x6f, 0x72, 0x74, 0x12, 0x1e, 0x0a, 0x09, 0x69, 0x6e, 0x74, 0x65,
-	0x72, 0x66, 0x61, 0x63, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x48, 0x00, 0x52, 0x09, 0x69,
-	0x6e, 0x74, 0x65, 0x72, 0x66, 0x61, 0x63, 0x65, 0x12, 0x17, 0x0a, 0x06, 0x69, 0x70, 0x5f, 0x73,
-	0x74, 0x72, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x48, 0x01, 0x52, 0x05, 0x69, 0x70, 0x53, 0x74,
-	0x72, 0x12, 0x1b, 0x0a, 0x08, 0x69, 0x70, 0x5f, 0x62, 0x79, 0x74, 0x65, 0x73, 0x18, 0x04, 0x20,
-	0x01, 0x28, 0x0c, 0x48, 0x01, 0x52, 0x07, 0x69, 0x70, 0x42, 0x79, 0x74, 0x65, 0x73, 0x12, 0x16,
-	0x0a, 0x06, 0x77, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x05, 0x20, 0x01, 0x28, 0x04, 0x52, 0x06,
-	0x77, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x48, 0x0a, 0x14, 0x70, 0x72, 0x65, 0x5f, 0x74, 0x72,
-	0x61, 0x6e, 0x73, 0x6d, 0x69, 0x74, 0x5f, 0x61, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x18, 0x06,
-	0x20, 0x03, 0x28, 0x0b, 0x32, 0x16, 0x2e, 0x66, 0x6f, 0x72, 0x77, 0x61, 0x72, 0x64, 0x69, 0x6e,
-	0x67, 0x2e, 0x41, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x44, 0x65, 0x73, 0x63, 0x52, 0x12, 0x70, 0x72,
-	0x65, 0x54, 0x72, 0x61, 0x6e, 0x73, 0x6d, 0x69, 0x74, 0x41, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x73,
-	0x42, 0x05, 0x0a, 0x03, 0x64, 0x65, 0x76, 0x42, 0x04, 0x0a, 0x02, 0x69, 0x70, 0x22, 0x3d, 0x0a,
-	0x0b, 0x4e, 0x65, 0x78, 0x74, 0x48, 0x6f, 0x70, 0x4c, 0x69, 0x73, 0x74, 0x12, 0x2e, 0x0a, 0x04,
-	0x68, 0x6f, 0x70, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x6c, 0x65, 0x6d,
-	0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x4e,
-	0x65, 0x78, 0x74, 0x48, 0x6f, 0x70, 0x52, 0x04, 0x68, 0x6f, 0x70, 0x73, 0x22, 0x3d, 0x0a, 0x0d,
-	0x4e, 0x65, 0x78, 0x74, 0x48, 0x6f, 0x70, 0x49, 0x44, 0x4c, 0x69, 0x73, 0x74, 0x12, 0x12, 0x0a,
-	0x04, 0x68, 0x6f, 0x70, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x04, 0x52, 0x04, 0x68, 0x6f, 0x70,
-	0x73, 0x12, 0x18, 0x0a, 0x07, 0x77, 0x65, 0x69, 0x67, 0x68, 0x74, 0x73, 0x18, 0x02, 0x20, 0x03,
-	0x28, 0x04, 0x52, 0x07, 0x77, 0x65, 0x69, 0x67, 0x68, 0x74, 0x73, 0x22, 0x75, 0x0a, 0x0b, 0x52,
-	0x6f, 0x75, 0x74, 0x65, 0x50, 0x72, 0x65, 0x66, 0x69, 0x78, 0x12, 0x14, 0x0a, 0x04, 0x63, 0x69,
-	0x64, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x48, 0x00, 0x52, 0x04, 0x63, 0x69, 0x64, 0x72,
-	0x12, 0x2f, 0x0a, 0x04, 0x6d, 0x61, 0x73, 0x6b, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19,
-	0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c, 0x61,
-	0x6e, 0x65, 0x2e, 0x49, 0x70, 0x4d, 0x61, 0x73, 0x6b, 0x48, 0x00, 0x52, 0x04, 0x6d, 0x61, 0x73,
-	0x6b, 0x12, 0x15, 0x0a, 0x06, 0x76, 0x72, 0x66, 0x5f, 0x69, 0x64, 0x18, 0x03, 0x20, 0x01, 0x28,
-	0x04, 0x52, 0x05, 0x76, 0x72, 0x66, 0x49, 0x64, 0x42, 0x08, 0x0a, 0x06, 0x70, 0x72, 0x65, 0x66,
-	0x69, 0x78, 0x22, 0xcd, 0x02, 0x0a, 0x05, 0x52, 0x6f, 0x75, 0x74, 0x65, 0x12, 0x36, 0x0a, 0x06,
-	0x70, 0x72, 0x65, 0x66, 0x69, 0x78, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1e, 0x2e, 0x6c,
+	0x6c, 0x61, 0x6e, 0x65, 0x22, 0x4f, 0x0a, 0x0b, 0x4f, 0x43, 0x49, 0x6e, 0x74, 0x65, 0x72, 0x66,
+	0x61, 0x63, 0x65, 0x12, 0x1c, 0x0a, 0x09, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x66, 0x61, 0x63, 0x65,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x66, 0x61, 0x63,
+	0x65, 0x12, 0x22, 0x0a, 0x0c, 0x73, 0x75, 0x62, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x66, 0x61, 0x63,
+	0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x0c, 0x73, 0x75, 0x62, 0x69, 0x6e, 0x74, 0x65,
+	0x72, 0x66, 0x61, 0x63, 0x65, 0x22, 0x4e, 0x0a, 0x03, 0x47, 0x55, 0x45, 0x12, 0x15, 0x0a, 0x06,
+	0x73, 0x72, 0x63, 0x5f, 0x69, 0x70, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x05, 0x73, 0x72,
+	0x63, 0x49, 0x70, 0x12, 0x15, 0x0a, 0x06, 0x64, 0x73, 0x74, 0x5f, 0x69, 0x70, 0x18, 0x02, 0x20,
+	0x01, 0x28, 0x0c, 0x52, 0x05, 0x64, 0x73, 0x74, 0x49, 0x70, 0x12, 0x19, 0x0a, 0x08, 0x64, 0x73,
+	0x74, 0x5f, 0x70, 0x6f, 0x72, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x07, 0x64, 0x73,
+	0x74, 0x50, 0x6f, 0x72, 0x74, 0x22, 0x9c, 0x01, 0x0a, 0x07, 0x4e, 0x65, 0x78, 0x74, 0x48, 0x6f,
+	0x70, 0x12, 0x3c, 0x0a, 0x09, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x66, 0x61, 0x63, 0x65, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x0b, 0x32, 0x1e, 0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64,
+	0x61, 0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x4f, 0x43, 0x49, 0x6e, 0x74, 0x65, 0x72,
+	0x66, 0x61, 0x63, 0x65, 0x52, 0x09, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x66, 0x61, 0x63, 0x65, 0x12,
+	0x1e, 0x0a, 0x0b, 0x6e, 0x65, 0x78, 0x74, 0x5f, 0x68, 0x6f, 0x70, 0x5f, 0x69, 0x70, 0x18, 0x02,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x6e, 0x65, 0x78, 0x74, 0x48, 0x6f, 0x70, 0x49, 0x70, 0x12,
+	0x2a, 0x0a, 0x03, 0x67, 0x75, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x16, 0x2e, 0x6c,
 	0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65,
-	0x2e, 0x52, 0x6f, 0x75, 0x74, 0x65, 0x50, 0x72, 0x65, 0x66, 0x69, 0x78, 0x52, 0x06, 0x70, 0x72,
-	0x65, 0x66, 0x69, 0x78, 0x12, 0x37, 0x0a, 0x06, 0x61, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x02,
-	0x20, 0x01, 0x28, 0x0e, 0x32, 0x1f, 0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64,
-	0x61, 0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x50, 0x61, 0x63, 0x6b, 0x65, 0x74, 0x41,
-	0x63, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x06, 0x61, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x19, 0x0a,
-	0x07, 0x70, 0x6f, 0x72, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x48, 0x00,
-	0x52, 0x06, 0x70, 0x6f, 0x72, 0x74, 0x49, 0x64, 0x12, 0x20, 0x0a, 0x0b, 0x6e, 0x65, 0x78, 0x74,
-	0x5f, 0x68, 0x6f, 0x70, 0x5f, 0x69, 0x64, 0x18, 0x04, 0x20, 0x01, 0x28, 0x04, 0x48, 0x00, 0x52,
-	0x09, 0x6e, 0x65, 0x78, 0x74, 0x48, 0x6f, 0x70, 0x49, 0x64, 0x12, 0x2b, 0x0a, 0x11, 0x6e, 0x65,
-	0x78, 0x74, 0x5f, 0x68, 0x6f, 0x70, 0x5f, 0x67, 0x72, 0x6f, 0x75, 0x70, 0x5f, 0x69, 0x64, 0x18,
-	0x05, 0x20, 0x01, 0x28, 0x04, 0x48, 0x00, 0x52, 0x0e, 0x6e, 0x65, 0x78, 0x74, 0x48, 0x6f, 0x70,
-	0x47, 0x72, 0x6f, 0x75, 0x70, 0x49, 0x64, 0x12, 0x3d, 0x0a, 0x09, 0x6e, 0x65, 0x78, 0x74, 0x5f,
-	0x68, 0x6f, 0x70, 0x73, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1e, 0x2e, 0x6c, 0x65, 0x6d,
-	0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x4e,
-	0x65, 0x78, 0x74, 0x48, 0x6f, 0x70, 0x4c, 0x69, 0x73, 0x74, 0x48, 0x00, 0x52, 0x08, 0x6e, 0x65,
-	0x78, 0x74, 0x48, 0x6f, 0x70, 0x73, 0x12, 0x23, 0x0a, 0x0c, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x66,
-	0x61, 0x63, 0x65, 0x5f, 0x69, 0x64, 0x18, 0x07, 0x20, 0x01, 0x28, 0x09, 0x48, 0x00, 0x52, 0x0b,
-	0x69, 0x6e, 0x74, 0x65, 0x72, 0x66, 0x61, 0x63, 0x65, 0x49, 0x64, 0x42, 0x05, 0x0a, 0x03, 0x68,
-	0x6f, 0x70, 0x22, 0xd7, 0x01, 0x0a, 0x11, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x50, 0x6f, 0x72,
-	0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x28, 0x0a, 0x04, 0x74, 0x79, 0x70, 0x65,
-	0x18, 0x01, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x14, 0x2e, 0x66, 0x6f, 0x72, 0x77, 0x61, 0x72, 0x64,
-	0x69, 0x6e, 0x67, 0x2e, 0x50, 0x6f, 0x72, 0x74, 0x54, 0x79, 0x70, 0x65, 0x52, 0x04, 0x74, 0x79,
-	0x70, 0x65, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02,
-	0x69, 0x64, 0x12, 0x1f, 0x0a, 0x0a, 0x6b, 0x65, 0x72, 0x6e, 0x65, 0x6c, 0x5f, 0x64, 0x65, 0x76,
-	0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x48, 0x00, 0x52, 0x09, 0x6b, 0x65, 0x72, 0x6e, 0x65, 0x6c,
-	0x44, 0x65, 0x76, 0x12, 0x23, 0x0a, 0x0d, 0x65, 0x78, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x5f,
-	0x70, 0x6f, 0x72, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0c, 0x65, 0x78, 0x74, 0x65,
-	0x72, 0x6e, 0x61, 0x6c, 0x50, 0x6f, 0x72, 0x74, 0x12, 0x3b, 0x0a, 0x08, 0x6c, 0x6f, 0x63, 0x61,
-	0x74, 0x69, 0x6f, 0x6e, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x1f, 0x2e, 0x6c, 0x65, 0x6d,
-	0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x50,
-	0x6f, 0x72, 0x74, 0x4c, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x08, 0x6c, 0x6f, 0x63,
-	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x05, 0x0a, 0x03, 0x73, 0x72, 0x63, 0x22, 0x14, 0x0a, 0x12,
-	0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x50, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
-	0x73, 0x65, 0x22, 0x30, 0x0a, 0x06, 0x49, 0x70, 0x4d, 0x61, 0x73, 0x6b, 0x12, 0x12, 0x0a, 0x04,
-	0x61, 0x64, 0x64, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x04, 0x61, 0x64, 0x64, 0x72,
-	0x12, 0x12, 0x0a, 0x04, 0x6d, 0x61, 0x73, 0x6b, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x04,
-	0x6d, 0x61, 0x73, 0x6b, 0x22, 0x43, 0x0a, 0x11, 0x41, 0x64, 0x64, 0x49, 0x50, 0x52, 0x6f, 0x75,
-	0x74, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x2e, 0x0a, 0x05, 0x72, 0x6f, 0x75,
-	0x74, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x18, 0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69,
-	0x6e, 0x67, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x52, 0x6f, 0x75,
-	0x74, 0x65, 0x52, 0x05, 0x72, 0x6f, 0x75, 0x74, 0x65, 0x22, 0x14, 0x0a, 0x12, 0x41, 0x64, 0x64,
-	0x49, 0x50, 0x52, 0x6f, 0x75, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22,
-	0x4e, 0x0a, 0x14, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x49, 0x50, 0x52, 0x6f, 0x75, 0x74, 0x65,
-	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x36, 0x0a, 0x06, 0x70, 0x72, 0x65, 0x66, 0x69,
-	0x78, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1e, 0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e,
-	0x67, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x52, 0x6f, 0x75, 0x74,
-	0x65, 0x50, 0x72, 0x65, 0x66, 0x69, 0x78, 0x52, 0x06, 0x70, 0x72, 0x65, 0x66, 0x69, 0x78, 0x22,
-	0x17, 0x0a, 0x15, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x49, 0x50, 0x52, 0x6f, 0x75, 0x74, 0x65,
-	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x5a, 0x0a, 0x11, 0x41, 0x64, 0x64, 0x4e,
-	0x65, 0x78, 0x74, 0x48, 0x6f, 0x70, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x0e, 0x0a,
-	0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x02, 0x69, 0x64, 0x12, 0x35, 0x0a,
-	0x08, 0x6e, 0x65, 0x78, 0x74, 0x5f, 0x68, 0x6f, 0x70, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32,
-	0x1a, 0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c,
-	0x61, 0x6e, 0x65, 0x2e, 0x4e, 0x65, 0x78, 0x74, 0x48, 0x6f, 0x70, 0x52, 0x07, 0x6e, 0x65, 0x78,
-	0x74, 0x48, 0x6f, 0x70, 0x22, 0x14, 0x0a, 0x12, 0x41, 0x64, 0x64, 0x4e, 0x65, 0x78, 0x74, 0x48,
-	0x6f, 0x70, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x96, 0x01, 0x0a, 0x16, 0x41,
-	0x64, 0x64, 0x4e, 0x65, 0x78, 0x74, 0x48, 0x6f, 0x70, 0x47, 0x72, 0x6f, 0x75, 0x70, 0x52, 0x65,
-	0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28,
-	0x04, 0x52, 0x02, 0x69, 0x64, 0x12, 0x34, 0x0a, 0x04, 0x6c, 0x69, 0x73, 0x74, 0x18, 0x02, 0x20,
-	0x01, 0x28, 0x0b, 0x32, 0x20, 0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61,
-	0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x4e, 0x65, 0x78, 0x74, 0x48, 0x6f, 0x70, 0x49,
-	0x44, 0x4c, 0x69, 0x73, 0x74, 0x52, 0x04, 0x6c, 0x69, 0x73, 0x74, 0x12, 0x36, 0x0a, 0x04, 0x6d,
-	0x6f, 0x64, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x22, 0x2e, 0x6c, 0x65, 0x6d, 0x6d,
-	0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x47, 0x72,
-	0x6f, 0x75, 0x70, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x4d, 0x6f, 0x64, 0x65, 0x52, 0x04, 0x6d,
-	0x6f, 0x64, 0x65, 0x22, 0x19, 0x0a, 0x17, 0x41, 0x64, 0x64, 0x4e, 0x65, 0x78, 0x74, 0x48, 0x6f,
-	0x70, 0x47, 0x72, 0x6f, 0x75, 0x70, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0xa9,
-	0x01, 0x0a, 0x12, 0x41, 0x64, 0x64, 0x4e, 0x65, 0x69, 0x67, 0x68, 0x62, 0x6f, 0x72, 0x52, 0x65,
-	0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x19, 0x0a, 0x07, 0x70, 0x6f, 0x72, 0x74, 0x5f, 0x69, 0x64,
-	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x48, 0x00, 0x52, 0x06, 0x70, 0x6f, 0x72, 0x74, 0x49, 0x64,
-	0x12, 0x23, 0x0a, 0x0c, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x66, 0x61, 0x63, 0x65, 0x5f, 0x69, 0x64,
-	0x18, 0x05, 0x20, 0x01, 0x28, 0x09, 0x48, 0x00, 0x52, 0x0b, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x66,
-	0x61, 0x63, 0x65, 0x49, 0x64, 0x12, 0x17, 0x0a, 0x06, 0x69, 0x70, 0x5f, 0x73, 0x74, 0x72, 0x18,
-	0x02, 0x20, 0x01, 0x28, 0x09, 0x48, 0x01, 0x52, 0x05, 0x69, 0x70, 0x53, 0x74, 0x72, 0x12, 0x1b,
-	0x0a, 0x08, 0x69, 0x70, 0x5f, 0x62, 0x79, 0x74, 0x65, 0x73, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0c,
-	0x48, 0x01, 0x52, 0x07, 0x69, 0x70, 0x42, 0x79, 0x74, 0x65, 0x73, 0x12, 0x10, 0x0a, 0x03, 0x6d,
-	0x61, 0x63, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x03, 0x6d, 0x61, 0x63, 0x42, 0x05, 0x0a,
-	0x03, 0x64, 0x65, 0x76, 0x42, 0x04, 0x0a, 0x02, 0x69, 0x70, 0x22, 0x15, 0x0a, 0x13, 0x41, 0x64,
-	0x64, 0x4e, 0x65, 0x69, 0x67, 0x68, 0x62, 0x6f, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x22, 0x9a, 0x01, 0x0a, 0x15, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x4e, 0x65, 0x69, 0x67,
-	0x68, 0x62, 0x6f, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x19, 0x0a, 0x07, 0x70,
-	0x6f, 0x72, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x48, 0x00, 0x52, 0x06,
-	0x70, 0x6f, 0x72, 0x74, 0x49, 0x64, 0x12, 0x23, 0x0a, 0x0c, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x66,
-	0x61, 0x63, 0x65, 0x5f, 0x69, 0x64, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x48, 0x00, 0x52, 0x0b,
-	0x69, 0x6e, 0x74, 0x65, 0x72, 0x66, 0x61, 0x63, 0x65, 0x49, 0x64, 0x12, 0x17, 0x0a, 0x06, 0x69,
-	0x70, 0x5f, 0x73, 0x74, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x48, 0x01, 0x52, 0x05, 0x69,
-	0x70, 0x53, 0x74, 0x72, 0x12, 0x1b, 0x0a, 0x08, 0x69, 0x70, 0x5f, 0x62, 0x79, 0x74, 0x65, 0x73,
-	0x18, 0x03, 0x20, 0x01, 0x28, 0x0c, 0x48, 0x01, 0x52, 0x07, 0x69, 0x70, 0x42, 0x79, 0x74, 0x65,
-	0x73, 0x42, 0x05, 0x0a, 0x03, 0x64, 0x65, 0x76, 0x42, 0x04, 0x0a, 0x02, 0x69, 0x70, 0x22, 0x18,
-	0x0a, 0x16, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x4e, 0x65, 0x69, 0x67, 0x68, 0x62, 0x6f, 0x72,
-	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0xb1, 0x01, 0x0a, 0x13, 0x41, 0x64, 0x64,
-	0x49, 0x6e, 0x74, 0x65, 0x72, 0x66, 0x61, 0x63, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
-	0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x69, 0x64,
-	0x12, 0x15, 0x0a, 0x06, 0x76, 0x72, 0x66, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d,
-	0x52, 0x05, 0x76, 0x72, 0x66, 0x49, 0x64, 0x12, 0x10, 0x0a, 0x03, 0x6d, 0x61, 0x63, 0x18, 0x03,
-	0x20, 0x01, 0x28, 0x0c, 0x52, 0x03, 0x6d, 0x61, 0x63, 0x12, 0x34, 0x0a, 0x04, 0x74, 0x79, 0x70,
-	0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x20, 0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e,
-	0x67, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x49, 0x6e, 0x74, 0x65,
-	0x72, 0x66, 0x61, 0x63, 0x65, 0x54, 0x79, 0x70, 0x65, 0x52, 0x04, 0x74, 0x79, 0x70, 0x65, 0x12,
-	0x19, 0x0a, 0x08, 0x70, 0x6f, 0x72, 0x74, 0x5f, 0x69, 0x64, 0x73, 0x18, 0x05, 0x20, 0x03, 0x28,
-	0x09, 0x52, 0x07, 0x70, 0x6f, 0x72, 0x74, 0x49, 0x64, 0x73, 0x12, 0x10, 0x0a, 0x03, 0x6d, 0x74,
-	0x75, 0x18, 0x06, 0x20, 0x01, 0x28, 0x04, 0x52, 0x03, 0x6d, 0x74, 0x75, 0x22, 0x16, 0x0a, 0x14,
-	0x41, 0x64, 0x64, 0x49, 0x6e, 0x74, 0x65, 0x72, 0x66, 0x61, 0x63, 0x65, 0x52, 0x65, 0x73, 0x70,
-	0x6f, 0x6e, 0x73, 0x65, 0x2a, 0x7c, 0x0a, 0x0c, 0x50, 0x6f, 0x72, 0x74, 0x4c, 0x6f, 0x63, 0x61,
-	0x74, 0x69, 0x6f, 0x6e, 0x12, 0x1d, 0x0a, 0x19, 0x50, 0x4f, 0x52, 0x54, 0x5f, 0x4c, 0x4f, 0x43,
-	0x41, 0x54, 0x49, 0x4f, 0x4e, 0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45, 0x43, 0x49, 0x46, 0x49, 0x45,
-	0x44, 0x10, 0x00, 0x12, 0x1a, 0x0a, 0x16, 0x50, 0x4f, 0x52, 0x54, 0x5f, 0x4c, 0x4f, 0x43, 0x41,
-	0x54, 0x49, 0x4f, 0x4e, 0x5f, 0x49, 0x4e, 0x54, 0x45, 0x52, 0x4e, 0x41, 0x4c, 0x10, 0x01, 0x12,
-	0x1a, 0x0a, 0x16, 0x50, 0x4f, 0x52, 0x54, 0x5f, 0x4c, 0x4f, 0x43, 0x41, 0x54, 0x49, 0x4f, 0x4e,
-	0x5f, 0x45, 0x58, 0x54, 0x45, 0x52, 0x4e, 0x41, 0x4c, 0x10, 0x02, 0x12, 0x15, 0x0a, 0x11, 0x50,
-	0x4f, 0x52, 0x54, 0x5f, 0x4c, 0x4f, 0x43, 0x41, 0x54, 0x49, 0x4f, 0x4e, 0x5f, 0x43, 0x50, 0x55,
-	0x10, 0x03, 0x2a, 0x60, 0x0a, 0x0c, 0x50, 0x61, 0x63, 0x6b, 0x65, 0x74, 0x41, 0x63, 0x74, 0x69,
-	0x6f, 0x6e, 0x12, 0x1d, 0x0a, 0x19, 0x50, 0x41, 0x43, 0x4b, 0x45, 0x54, 0x5f, 0x41, 0x43, 0x54,
-	0x49, 0x4f, 0x4e, 0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45, 0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10,
-	0x00, 0x12, 0x16, 0x0a, 0x12, 0x50, 0x41, 0x43, 0x4b, 0x45, 0x54, 0x5f, 0x41, 0x43, 0x54, 0x49,
-	0x4f, 0x4e, 0x5f, 0x44, 0x52, 0x4f, 0x50, 0x10, 0x01, 0x12, 0x19, 0x0a, 0x15, 0x50, 0x41, 0x43,
-	0x4b, 0x45, 0x54, 0x5f, 0x41, 0x43, 0x54, 0x49, 0x4f, 0x4e, 0x5f, 0x46, 0x4f, 0x52, 0x57, 0x41,
-	0x52, 0x44, 0x10, 0x02, 0x2a, 0x9a, 0x01, 0x0a, 0x0f, 0x47, 0x72, 0x6f, 0x75, 0x70, 0x55, 0x70,
-	0x64, 0x61, 0x74, 0x65, 0x4d, 0x6f, 0x64, 0x65, 0x12, 0x21, 0x0a, 0x1d, 0x47, 0x52, 0x4f, 0x55,
-	0x50, 0x5f, 0x55, 0x50, 0x44, 0x41, 0x54, 0x45, 0x5f, 0x4d, 0x4f, 0x44, 0x45, 0x5f, 0x55, 0x4e,
-	0x53, 0x50, 0x45, 0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x27, 0x0a, 0x23, 0x47,
-	0x52, 0x4f, 0x55, 0x50, 0x5f, 0x55, 0x50, 0x44, 0x41, 0x54, 0x45, 0x5f, 0x4d, 0x4f, 0x44, 0x45,
-	0x5f, 0x45, 0x52, 0x52, 0x4f, 0x52, 0x5f, 0x4f, 0x4e, 0x5f, 0x43, 0x4f, 0x4e, 0x46, 0x4c, 0x49,
-	0x43, 0x54, 0x10, 0x01, 0x12, 0x1c, 0x0a, 0x18, 0x47, 0x52, 0x4f, 0x55, 0x50, 0x5f, 0x55, 0x50,
-	0x44, 0x41, 0x54, 0x45, 0x5f, 0x4d, 0x4f, 0x44, 0x45, 0x5f, 0x41, 0x50, 0x50, 0x45, 0x4e, 0x44,
-	0x10, 0x02, 0x12, 0x1d, 0x0a, 0x19, 0x47, 0x52, 0x4f, 0x55, 0x50, 0x5f, 0x55, 0x50, 0x44, 0x41,
-	0x54, 0x45, 0x5f, 0x4d, 0x4f, 0x44, 0x45, 0x5f, 0x52, 0x45, 0x50, 0x4c, 0x41, 0x43, 0x45, 0x10,
-	0x03, 0x2a, 0x83, 0x01, 0x0a, 0x0d, 0x49, 0x6e, 0x74, 0x65, 0x72, 0x66, 0x61, 0x63, 0x65, 0x54,
-	0x79, 0x70, 0x65, 0x12, 0x1e, 0x0a, 0x1a, 0x49, 0x4e, 0x54, 0x45, 0x52, 0x46, 0x41, 0x43, 0x45,
-	0x5f, 0x54, 0x59, 0x50, 0x45, 0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45, 0x43, 0x49, 0x46, 0x49, 0x45,
-	0x44, 0x10, 0x00, 0x12, 0x17, 0x0a, 0x13, 0x49, 0x4e, 0x54, 0x45, 0x52, 0x46, 0x41, 0x43, 0x45,
-	0x5f, 0x54, 0x59, 0x50, 0x45, 0x5f, 0x50, 0x4f, 0x52, 0x54, 0x10, 0x01, 0x12, 0x1b, 0x0a, 0x17,
-	0x49, 0x4e, 0x54, 0x45, 0x52, 0x46, 0x41, 0x43, 0x45, 0x5f, 0x54, 0x59, 0x50, 0x45, 0x5f, 0x4c,
-	0x4f, 0x4f, 0x50, 0x42, 0x41, 0x43, 0x4b, 0x10, 0x02, 0x12, 0x1c, 0x0a, 0x18, 0x49, 0x4e, 0x54,
-	0x45, 0x52, 0x46, 0x41, 0x43, 0x45, 0x5f, 0x54, 0x59, 0x50, 0x45, 0x5f, 0x41, 0x47, 0x47, 0x52,
-	0x45, 0x47, 0x41, 0x54, 0x45, 0x10, 0x03, 0x32, 0xa0, 0x06, 0x0a, 0x09, 0x44, 0x61, 0x74, 0x61,
-	0x70, 0x6c, 0x61, 0x6e, 0x65, 0x12, 0x5b, 0x0a, 0x0a, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x50,
-	0x6f, 0x72, 0x74, 0x12, 0x24, 0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61,
-	0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x50, 0x6f,
-	0x72, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x25, 0x2e, 0x6c, 0x65, 0x6d, 0x6d,
-	0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x43, 0x72,
-	0x65, 0x61, 0x74, 0x65, 0x50, 0x6f, 0x72, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
-	0x22, 0x00, 0x12, 0x5b, 0x0a, 0x0a, 0x41, 0x64, 0x64, 0x49, 0x50, 0x52, 0x6f, 0x75, 0x74, 0x65,
-	0x12, 0x24, 0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x70,
-	0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x41, 0x64, 0x64, 0x49, 0x50, 0x52, 0x6f, 0x75, 0x74, 0x65, 0x52,
-	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x25, 0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67,
-	0x2e, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x41, 0x64, 0x64, 0x49, 0x50,
-	0x52, 0x6f, 0x75, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12,
-	0x64, 0x0a, 0x0d, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x49, 0x50, 0x52, 0x6f, 0x75, 0x74, 0x65,
-	0x12, 0x27, 0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x70,
-	0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x49, 0x50, 0x52, 0x6f, 0x75,
-	0x74, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x28, 0x2e, 0x6c, 0x65, 0x6d, 0x6d,
-	0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x52, 0x65,
-	0x6d, 0x6f, 0x76, 0x65, 0x49, 0x50, 0x52, 0x6f, 0x75, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f,
-	0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x5b, 0x0a, 0x0a, 0x41, 0x64, 0x64, 0x4e, 0x65, 0x78, 0x74,
-	0x48, 0x6f, 0x70, 0x12, 0x24, 0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61,
-	0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x41, 0x64, 0x64, 0x4e, 0x65, 0x78, 0x74, 0x48,
-	0x6f, 0x70, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x25, 0x2e, 0x6c, 0x65, 0x6d, 0x6d,
-	0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x41, 0x64,
-	0x64, 0x4e, 0x65, 0x78, 0x74, 0x48, 0x6f, 0x70, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
-	0x22, 0x00, 0x12, 0x6a, 0x0a, 0x0f, 0x41, 0x64, 0x64, 0x4e, 0x65, 0x78, 0x74, 0x48, 0x6f, 0x70,
-	0x47, 0x72, 0x6f, 0x75, 0x70, 0x12, 0x29, 0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2e,
-	0x64, 0x61, 0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x41, 0x64, 0x64, 0x4e, 0x65, 0x78,
-	0x74, 0x48, 0x6f, 0x70, 0x47, 0x72, 0x6f, 0x75, 0x70, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
-	0x1a, 0x2a, 0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x70,
-	0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x41, 0x64, 0x64, 0x4e, 0x65, 0x78, 0x74, 0x48, 0x6f, 0x70, 0x47,
-	0x72, 0x6f, 0x75, 0x70, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x5e,
-	0x0a, 0x0b, 0x41, 0x64, 0x64, 0x4e, 0x65, 0x69, 0x67, 0x68, 0x62, 0x6f, 0x72, 0x12, 0x25, 0x2e,
-	0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e,
-	0x65, 0x2e, 0x41, 0x64, 0x64, 0x4e, 0x65, 0x69, 0x67, 0x68, 0x62, 0x6f, 0x72, 0x52, 0x65, 0x71,
-	0x75, 0x65, 0x73, 0x74, 0x1a, 0x26, 0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64,
-	0x61, 0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x41, 0x64, 0x64, 0x4e, 0x65, 0x69, 0x67,
-	0x68, 0x62, 0x6f, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x67,
-	0x0a, 0x0e, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x4e, 0x65, 0x69, 0x67, 0x68, 0x62, 0x6f, 0x72,
-	0x12, 0x28, 0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x70,
-	0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x4e, 0x65, 0x69, 0x67, 0x68,
-	0x62, 0x6f, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x29, 0x2e, 0x6c, 0x65, 0x6d,
-	0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x52,
-	0x65, 0x6d, 0x6f, 0x76, 0x65, 0x4e, 0x65, 0x69, 0x67, 0x68, 0x62, 0x6f, 0x72, 0x52, 0x65, 0x73,
-	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x61, 0x0a, 0x0c, 0x41, 0x64, 0x64, 0x49, 0x6e,
-	0x74, 0x65, 0x72, 0x66, 0x61, 0x63, 0x65, 0x12, 0x26, 0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e,
-	0x67, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x41, 0x64, 0x64, 0x49,
-	0x6e, 0x74, 0x65, 0x72, 0x66, 0x61, 0x63, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
-	0x27, 0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c,
-	0x61, 0x6e, 0x65, 0x2e, 0x41, 0x64, 0x64, 0x49, 0x6e, 0x74, 0x65, 0x72, 0x66, 0x61, 0x63, 0x65,
-	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x42, 0x2f, 0x5a, 0x2d, 0x67, 0x69,
+	0x2e, 0x47, 0x55, 0x45, 0x48, 0x00, 0x52, 0x03, 0x67, 0x75, 0x65, 0x42, 0x07, 0x0a, 0x05, 0x65,
+	0x6e, 0x63, 0x61, 0x70, 0x22, 0x55, 0x0a, 0x0b, 0x4e, 0x65, 0x78, 0x74, 0x48, 0x6f, 0x70, 0x4c,
+	0x69, 0x73, 0x74, 0x12, 0x2e, 0x0a, 0x04, 0x68, 0x6f, 0x70, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28,
+	0x0b, 0x32, 0x1a, 0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61, 0x74, 0x61,
+	0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x4e, 0x65, 0x78, 0x74, 0x48, 0x6f, 0x70, 0x52, 0x04, 0x68,
+	0x6f, 0x70, 0x73, 0x12, 0x16, 0x0a, 0x06, 0x77, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x02, 0x20,
+	0x03, 0x28, 0x04, 0x52, 0x06, 0x77, 0x65, 0x69, 0x67, 0x68, 0x74, 0x22, 0x4c, 0x0a, 0x0b, 0x52,
+	0x6f, 0x75, 0x74, 0x65, 0x50, 0x72, 0x65, 0x66, 0x69, 0x78, 0x12, 0x12, 0x0a, 0x04, 0x63, 0x69,
+	0x64, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x63, 0x69, 0x64, 0x72, 0x12, 0x29,
+	0x0a, 0x10, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x5f, 0x69, 0x6e, 0x73, 0x74, 0x61, 0x6e,
+	0x63, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0f, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72,
+	0x6b, 0x49, 0x6e, 0x73, 0x74, 0x61, 0x6e, 0x63, 0x65, 0x22, 0xfe, 0x01, 0x0a, 0x05, 0x52, 0x6f,
+	0x75, 0x74, 0x65, 0x12, 0x36, 0x0a, 0x06, 0x70, 0x72, 0x65, 0x66, 0x69, 0x78, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x1e, 0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61,
+	0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x52, 0x6f, 0x75, 0x74, 0x65, 0x50, 0x72, 0x65,
+	0x66, 0x69, 0x78, 0x52, 0x06, 0x70, 0x72, 0x65, 0x66, 0x69, 0x78, 0x12, 0x37, 0x0a, 0x06, 0x61,
+	0x63, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x1f, 0x2e, 0x6c, 0x65,
+	0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e,
+	0x50, 0x61, 0x63, 0x6b, 0x65, 0x74, 0x41, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x06, 0x61, 0x63,
+	0x74, 0x69, 0x6f, 0x6e, 0x12, 0x3d, 0x0a, 0x09, 0x6e, 0x65, 0x78, 0x74, 0x5f, 0x68, 0x6f, 0x70,
+	0x73, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1e, 0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e,
+	0x67, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x4e, 0x65, 0x78, 0x74,
+	0x48, 0x6f, 0x70, 0x4c, 0x69, 0x73, 0x74, 0x48, 0x00, 0x52, 0x08, 0x6e, 0x65, 0x78, 0x74, 0x48,
+	0x6f, 0x70, 0x73, 0x12, 0x3e, 0x0a, 0x09, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x66, 0x61, 0x63, 0x65,
+	0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1e, 0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67,
+	0x2e, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x4f, 0x43, 0x49, 0x6e, 0x74,
+	0x65, 0x72, 0x66, 0x61, 0x63, 0x65, 0x48, 0x00, 0x52, 0x09, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x66,
+	0x61, 0x63, 0x65, 0x42, 0x05, 0x0a, 0x03, 0x68, 0x6f, 0x70, 0x2a, 0x7c, 0x0a, 0x0c, 0x50, 0x6f,
+	0x72, 0x74, 0x4c, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x1d, 0x0a, 0x19, 0x50, 0x4f,
+	0x52, 0x54, 0x5f, 0x4c, 0x4f, 0x43, 0x41, 0x54, 0x49, 0x4f, 0x4e, 0x5f, 0x55, 0x4e, 0x53, 0x50,
+	0x45, 0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x1a, 0x0a, 0x16, 0x50, 0x4f, 0x52,
+	0x54, 0x5f, 0x4c, 0x4f, 0x43, 0x41, 0x54, 0x49, 0x4f, 0x4e, 0x5f, 0x49, 0x4e, 0x54, 0x45, 0x52,
+	0x4e, 0x41, 0x4c, 0x10, 0x01, 0x12, 0x1a, 0x0a, 0x16, 0x50, 0x4f, 0x52, 0x54, 0x5f, 0x4c, 0x4f,
+	0x43, 0x41, 0x54, 0x49, 0x4f, 0x4e, 0x5f, 0x45, 0x58, 0x54, 0x45, 0x52, 0x4e, 0x41, 0x4c, 0x10,
+	0x02, 0x12, 0x15, 0x0a, 0x11, 0x50, 0x4f, 0x52, 0x54, 0x5f, 0x4c, 0x4f, 0x43, 0x41, 0x54, 0x49,
+	0x4f, 0x4e, 0x5f, 0x43, 0x50, 0x55, 0x10, 0x03, 0x2a, 0x60, 0x0a, 0x0c, 0x50, 0x61, 0x63, 0x6b,
+	0x65, 0x74, 0x41, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x1d, 0x0a, 0x19, 0x50, 0x41, 0x43, 0x4b,
+	0x45, 0x54, 0x5f, 0x41, 0x43, 0x54, 0x49, 0x4f, 0x4e, 0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45, 0x43,
+	0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x16, 0x0a, 0x12, 0x50, 0x41, 0x43, 0x4b, 0x45,
+	0x54, 0x5f, 0x41, 0x43, 0x54, 0x49, 0x4f, 0x4e, 0x5f, 0x44, 0x52, 0x4f, 0x50, 0x10, 0x01, 0x12,
+	0x19, 0x0a, 0x15, 0x50, 0x41, 0x43, 0x4b, 0x45, 0x54, 0x5f, 0x41, 0x43, 0x54, 0x49, 0x4f, 0x4e,
+	0x5f, 0x46, 0x4f, 0x52, 0x57, 0x41, 0x52, 0x44, 0x10, 0x02, 0x42, 0x2f, 0x5a, 0x2d, 0x67, 0x69,
 	0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6f, 0x70, 0x65, 0x6e, 0x63, 0x6f, 0x6e,
 	0x66, 0x69, 0x67, 0x2f, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2f, 0x70, 0x72, 0x6f, 0x74,
 	0x6f, 0x2f, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f,
@@ -1958,74 +614,31 @@ func file_proto_dataplane_dataplane_proto_rawDescGZIP() []byte {
 	return file_proto_dataplane_dataplane_proto_rawDescData
 }
 
-var file_proto_dataplane_dataplane_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
-var file_proto_dataplane_dataplane_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
+var file_proto_dataplane_dataplane_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_proto_dataplane_dataplane_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_proto_dataplane_dataplane_proto_goTypes = []interface{}{
-	(PortLocation)(0),               // 0: lemming.dataplane.PortLocation
-	(PacketAction)(0),               // 1: lemming.dataplane.PacketAction
-	(GroupUpdateMode)(0),            // 2: lemming.dataplane.GroupUpdateMode
-	(InterfaceType)(0),              // 3: lemming.dataplane.InterfaceType
-	(*NextHop)(nil),                 // 4: lemming.dataplane.NextHop
-	(*NextHopList)(nil),             // 5: lemming.dataplane.NextHopList
-	(*NextHopIDList)(nil),           // 6: lemming.dataplane.NextHopIDList
-	(*RoutePrefix)(nil),             // 7: lemming.dataplane.RoutePrefix
-	(*Route)(nil),                   // 8: lemming.dataplane.Route
-	(*CreatePortRequest)(nil),       // 9: lemming.dataplane.CreatePortRequest
-	(*CreatePortResponse)(nil),      // 10: lemming.dataplane.CreatePortResponse
-	(*IpMask)(nil),                  // 11: lemming.dataplane.IpMask
-	(*AddIPRouteRequest)(nil),       // 12: lemming.dataplane.AddIPRouteRequest
-	(*AddIPRouteResponse)(nil),      // 13: lemming.dataplane.AddIPRouteResponse
-	(*RemoveIPRouteRequest)(nil),    // 14: lemming.dataplane.RemoveIPRouteRequest
-	(*RemoveIPRouteResponse)(nil),   // 15: lemming.dataplane.RemoveIPRouteResponse
-	(*AddNextHopRequest)(nil),       // 16: lemming.dataplane.AddNextHopRequest
-	(*AddNextHopResponse)(nil),      // 17: lemming.dataplane.AddNextHopResponse
-	(*AddNextHopGroupRequest)(nil),  // 18: lemming.dataplane.AddNextHopGroupRequest
-	(*AddNextHopGroupResponse)(nil), // 19: lemming.dataplane.AddNextHopGroupResponse
-	(*AddNeighborRequest)(nil),      // 20: lemming.dataplane.AddNeighborRequest
-	(*AddNeighborResponse)(nil),     // 21: lemming.dataplane.AddNeighborResponse
-	(*RemoveNeighborRequest)(nil),   // 22: lemming.dataplane.RemoveNeighborRequest
-	(*RemoveNeighborResponse)(nil),  // 23: lemming.dataplane.RemoveNeighborResponse
-	(*AddInterfaceRequest)(nil),     // 24: lemming.dataplane.AddInterfaceRequest
-	(*AddInterfaceResponse)(nil),    // 25: lemming.dataplane.AddInterfaceResponse
-	(*forwarding.ActionDesc)(nil),   // 26: forwarding.ActionDesc
-	(forwarding.PortType)(0),        // 27: forwarding.PortType
+	(PortLocation)(0),   // 0: lemming.dataplane.PortLocation
+	(PacketAction)(0),   // 1: lemming.dataplane.PacketAction
+	(*OCInterface)(nil), // 2: lemming.dataplane.OCInterface
+	(*GUE)(nil),         // 3: lemming.dataplane.GUE
+	(*NextHop)(nil),     // 4: lemming.dataplane.NextHop
+	(*NextHopList)(nil), // 5: lemming.dataplane.NextHopList
+	(*RoutePrefix)(nil), // 6: lemming.dataplane.RoutePrefix
+	(*Route)(nil),       // 7: lemming.dataplane.Route
 }
 var file_proto_dataplane_dataplane_proto_depIdxs = []int32{
-	26, // 0: lemming.dataplane.NextHop.pre_transmit_actions:type_name -> forwarding.ActionDesc
-	4,  // 1: lemming.dataplane.NextHopList.hops:type_name -> lemming.dataplane.NextHop
-	11, // 2: lemming.dataplane.RoutePrefix.mask:type_name -> lemming.dataplane.IpMask
-	7,  // 3: lemming.dataplane.Route.prefix:type_name -> lemming.dataplane.RoutePrefix
-	1,  // 4: lemming.dataplane.Route.action:type_name -> lemming.dataplane.PacketAction
-	5,  // 5: lemming.dataplane.Route.next_hops:type_name -> lemming.dataplane.NextHopList
-	27, // 6: lemming.dataplane.CreatePortRequest.type:type_name -> forwarding.PortType
-	0,  // 7: lemming.dataplane.CreatePortRequest.location:type_name -> lemming.dataplane.PortLocation
-	8,  // 8: lemming.dataplane.AddIPRouteRequest.route:type_name -> lemming.dataplane.Route
-	7,  // 9: lemming.dataplane.RemoveIPRouteRequest.prefix:type_name -> lemming.dataplane.RoutePrefix
-	4,  // 10: lemming.dataplane.AddNextHopRequest.next_hop:type_name -> lemming.dataplane.NextHop
-	6,  // 11: lemming.dataplane.AddNextHopGroupRequest.list:type_name -> lemming.dataplane.NextHopIDList
-	2,  // 12: lemming.dataplane.AddNextHopGroupRequest.mode:type_name -> lemming.dataplane.GroupUpdateMode
-	3,  // 13: lemming.dataplane.AddInterfaceRequest.type:type_name -> lemming.dataplane.InterfaceType
-	9,  // 14: lemming.dataplane.Dataplane.CreatePort:input_type -> lemming.dataplane.CreatePortRequest
-	12, // 15: lemming.dataplane.Dataplane.AddIPRoute:input_type -> lemming.dataplane.AddIPRouteRequest
-	14, // 16: lemming.dataplane.Dataplane.RemoveIPRoute:input_type -> lemming.dataplane.RemoveIPRouteRequest
-	16, // 17: lemming.dataplane.Dataplane.AddNextHop:input_type -> lemming.dataplane.AddNextHopRequest
-	18, // 18: lemming.dataplane.Dataplane.AddNextHopGroup:input_type -> lemming.dataplane.AddNextHopGroupRequest
-	20, // 19: lemming.dataplane.Dataplane.AddNeighbor:input_type -> lemming.dataplane.AddNeighborRequest
-	22, // 20: lemming.dataplane.Dataplane.RemoveNeighbor:input_type -> lemming.dataplane.RemoveNeighborRequest
-	24, // 21: lemming.dataplane.Dataplane.AddInterface:input_type -> lemming.dataplane.AddInterfaceRequest
-	10, // 22: lemming.dataplane.Dataplane.CreatePort:output_type -> lemming.dataplane.CreatePortResponse
-	13, // 23: lemming.dataplane.Dataplane.AddIPRoute:output_type -> lemming.dataplane.AddIPRouteResponse
-	15, // 24: lemming.dataplane.Dataplane.RemoveIPRoute:output_type -> lemming.dataplane.RemoveIPRouteResponse
-	17, // 25: lemming.dataplane.Dataplane.AddNextHop:output_type -> lemming.dataplane.AddNextHopResponse
-	19, // 26: lemming.dataplane.Dataplane.AddNextHopGroup:output_type -> lemming.dataplane.AddNextHopGroupResponse
-	21, // 27: lemming.dataplane.Dataplane.AddNeighbor:output_type -> lemming.dataplane.AddNeighborResponse
-	23, // 28: lemming.dataplane.Dataplane.RemoveNeighbor:output_type -> lemming.dataplane.RemoveNeighborResponse
-	25, // 29: lemming.dataplane.Dataplane.AddInterface:output_type -> lemming.dataplane.AddInterfaceResponse
-	22, // [22:30] is the sub-list for method output_type
-	14, // [14:22] is the sub-list for method input_type
-	14, // [14:14] is the sub-list for extension type_name
-	14, // [14:14] is the sub-list for extension extendee
-	0,  // [0:14] is the sub-list for field type_name
+	2, // 0: lemming.dataplane.NextHop.interface:type_name -> lemming.dataplane.OCInterface
+	3, // 1: lemming.dataplane.NextHop.gue:type_name -> lemming.dataplane.GUE
+	4, // 2: lemming.dataplane.NextHopList.hops:type_name -> lemming.dataplane.NextHop
+	6, // 3: lemming.dataplane.Route.prefix:type_name -> lemming.dataplane.RoutePrefix
+	1, // 4: lemming.dataplane.Route.action:type_name -> lemming.dataplane.PacketAction
+	5, // 5: lemming.dataplane.Route.next_hops:type_name -> lemming.dataplane.NextHopList
+	2, // 6: lemming.dataplane.Route.interface:type_name -> lemming.dataplane.OCInterface
+	7, // [7:7] is the sub-list for method output_type
+	7, // [7:7] is the sub-list for method input_type
+	7, // [7:7] is the sub-list for extension type_name
+	7, // [7:7] is the sub-list for extension extendee
+	0, // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_proto_dataplane_dataplane_proto_init() }
@@ -2035,7 +648,7 @@ func file_proto_dataplane_dataplane_proto_init() {
 	}
 	if !protoimpl.UnsafeEnabled {
 		file_proto_dataplane_dataplane_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*NextHop); i {
+			switch v := v.(*OCInterface); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2047,7 +660,7 @@ func file_proto_dataplane_dataplane_proto_init() {
 			}
 		}
 		file_proto_dataplane_dataplane_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*NextHopList); i {
+			switch v := v.(*GUE); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2059,7 +672,7 @@ func file_proto_dataplane_dataplane_proto_init() {
 			}
 		}
 		file_proto_dataplane_dataplane_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*NextHopIDList); i {
+			switch v := v.(*NextHop); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2071,7 +684,7 @@ func file_proto_dataplane_dataplane_proto_init() {
 			}
 		}
 		file_proto_dataplane_dataplane_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RoutePrefix); i {
+			switch v := v.(*NextHopList); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2083,7 +696,7 @@ func file_proto_dataplane_dataplane_proto_init() {
 			}
 		}
 		file_proto_dataplane_dataplane_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Route); i {
+			switch v := v.(*RoutePrefix); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2095,199 +708,7 @@ func file_proto_dataplane_dataplane_proto_init() {
 			}
 		}
 		file_proto_dataplane_dataplane_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*CreatePortRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_proto_dataplane_dataplane_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*CreatePortResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_proto_dataplane_dataplane_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*IpMask); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_proto_dataplane_dataplane_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AddIPRouteRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_proto_dataplane_dataplane_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AddIPRouteResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_proto_dataplane_dataplane_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RemoveIPRouteRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_proto_dataplane_dataplane_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RemoveIPRouteResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_proto_dataplane_dataplane_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AddNextHopRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_proto_dataplane_dataplane_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AddNextHopResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_proto_dataplane_dataplane_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AddNextHopGroupRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_proto_dataplane_dataplane_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AddNextHopGroupResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_proto_dataplane_dataplane_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AddNeighborRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_proto_dataplane_dataplane_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AddNeighborResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_proto_dataplane_dataplane_proto_msgTypes[18].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RemoveNeighborRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_proto_dataplane_dataplane_proto_msgTypes[19].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RemoveNeighborResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_proto_dataplane_dataplane_proto_msgTypes[20].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AddInterfaceRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_proto_dataplane_dataplane_proto_msgTypes[21].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AddInterfaceResponse); i {
+			switch v := v.(*Route); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2299,47 +720,22 @@ func file_proto_dataplane_dataplane_proto_init() {
 			}
 		}
 	}
-	file_proto_dataplane_dataplane_proto_msgTypes[0].OneofWrappers = []interface{}{
-		(*NextHop_Port)(nil),
-		(*NextHop_Interface)(nil),
-		(*NextHop_IpStr)(nil),
-		(*NextHop_IpBytes)(nil),
-	}
-	file_proto_dataplane_dataplane_proto_msgTypes[3].OneofWrappers = []interface{}{
-		(*RoutePrefix_Cidr)(nil),
-		(*RoutePrefix_Mask)(nil),
-	}
-	file_proto_dataplane_dataplane_proto_msgTypes[4].OneofWrappers = []interface{}{
-		(*Route_PortId)(nil),
-		(*Route_NextHopId)(nil),
-		(*Route_NextHopGroupId)(nil),
-		(*Route_NextHops)(nil),
-		(*Route_InterfaceId)(nil),
+	file_proto_dataplane_dataplane_proto_msgTypes[2].OneofWrappers = []interface{}{
+		(*NextHop_Gue)(nil),
 	}
 	file_proto_dataplane_dataplane_proto_msgTypes[5].OneofWrappers = []interface{}{
-		(*CreatePortRequest_KernelDev)(nil),
-	}
-	file_proto_dataplane_dataplane_proto_msgTypes[16].OneofWrappers = []interface{}{
-		(*AddNeighborRequest_PortId)(nil),
-		(*AddNeighborRequest_InterfaceId)(nil),
-		(*AddNeighborRequest_IpStr)(nil),
-		(*AddNeighborRequest_IpBytes)(nil),
-	}
-	file_proto_dataplane_dataplane_proto_msgTypes[18].OneofWrappers = []interface{}{
-		(*RemoveNeighborRequest_PortId)(nil),
-		(*RemoveNeighborRequest_InterfaceId)(nil),
-		(*RemoveNeighborRequest_IpStr)(nil),
-		(*RemoveNeighborRequest_IpBytes)(nil),
+		(*Route_NextHops)(nil),
+		(*Route_Interface)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_proto_dataplane_dataplane_proto_rawDesc,
-			NumEnums:      4,
-			NumMessages:   22,
+			NumEnums:      2,
+			NumMessages:   6,
 			NumExtensions: 0,
-			NumServices:   1,
+			NumServices:   0,
 		},
 		GoTypes:           file_proto_dataplane_dataplane_proto_goTypes,
 		DependencyIndexes: file_proto_dataplane_dataplane_proto_depIdxs,
@@ -2350,336 +746,4 @@ func file_proto_dataplane_dataplane_proto_init() {
 	file_proto_dataplane_dataplane_proto_rawDesc = nil
 	file_proto_dataplane_dataplane_proto_goTypes = nil
 	file_proto_dataplane_dataplane_proto_depIdxs = nil
-}
-
-// Reference imports to suppress errors if they are not otherwise used.
-var _ context.Context
-var _ grpc.ClientConnInterface
-
-// This is a compile-time assertion to ensure that this generated file
-// is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion6
-
-// DataplaneClient is the client API for Dataplane service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
-type DataplaneClient interface {
-	CreatePort(ctx context.Context, in *CreatePortRequest, opts ...grpc.CallOption) (*CreatePortResponse, error)
-	AddIPRoute(ctx context.Context, in *AddIPRouteRequest, opts ...grpc.CallOption) (*AddIPRouteResponse, error)
-	RemoveIPRoute(ctx context.Context, in *RemoveIPRouteRequest, opts ...grpc.CallOption) (*RemoveIPRouteResponse, error)
-	AddNextHop(ctx context.Context, in *AddNextHopRequest, opts ...grpc.CallOption) (*AddNextHopResponse, error)
-	AddNextHopGroup(ctx context.Context, in *AddNextHopGroupRequest, opts ...grpc.CallOption) (*AddNextHopGroupResponse, error)
-	AddNeighbor(ctx context.Context, in *AddNeighborRequest, opts ...grpc.CallOption) (*AddNeighborResponse, error)
-	RemoveNeighbor(ctx context.Context, in *RemoveNeighborRequest, opts ...grpc.CallOption) (*RemoveNeighborResponse, error)
-	AddInterface(ctx context.Context, in *AddInterfaceRequest, opts ...grpc.CallOption) (*AddInterfaceResponse, error)
-}
-
-type dataplaneClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewDataplaneClient(cc grpc.ClientConnInterface) DataplaneClient {
-	return &dataplaneClient{cc}
-}
-
-func (c *dataplaneClient) CreatePort(ctx context.Context, in *CreatePortRequest, opts ...grpc.CallOption) (*CreatePortResponse, error) {
-	out := new(CreatePortResponse)
-	err := c.cc.Invoke(ctx, "/lemming.dataplane.Dataplane/CreatePort", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *dataplaneClient) AddIPRoute(ctx context.Context, in *AddIPRouteRequest, opts ...grpc.CallOption) (*AddIPRouteResponse, error) {
-	out := new(AddIPRouteResponse)
-	err := c.cc.Invoke(ctx, "/lemming.dataplane.Dataplane/AddIPRoute", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *dataplaneClient) RemoveIPRoute(ctx context.Context, in *RemoveIPRouteRequest, opts ...grpc.CallOption) (*RemoveIPRouteResponse, error) {
-	out := new(RemoveIPRouteResponse)
-	err := c.cc.Invoke(ctx, "/lemming.dataplane.Dataplane/RemoveIPRoute", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *dataplaneClient) AddNextHop(ctx context.Context, in *AddNextHopRequest, opts ...grpc.CallOption) (*AddNextHopResponse, error) {
-	out := new(AddNextHopResponse)
-	err := c.cc.Invoke(ctx, "/lemming.dataplane.Dataplane/AddNextHop", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *dataplaneClient) AddNextHopGroup(ctx context.Context, in *AddNextHopGroupRequest, opts ...grpc.CallOption) (*AddNextHopGroupResponse, error) {
-	out := new(AddNextHopGroupResponse)
-	err := c.cc.Invoke(ctx, "/lemming.dataplane.Dataplane/AddNextHopGroup", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *dataplaneClient) AddNeighbor(ctx context.Context, in *AddNeighborRequest, opts ...grpc.CallOption) (*AddNeighborResponse, error) {
-	out := new(AddNeighborResponse)
-	err := c.cc.Invoke(ctx, "/lemming.dataplane.Dataplane/AddNeighbor", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *dataplaneClient) RemoveNeighbor(ctx context.Context, in *RemoveNeighborRequest, opts ...grpc.CallOption) (*RemoveNeighborResponse, error) {
-	out := new(RemoveNeighborResponse)
-	err := c.cc.Invoke(ctx, "/lemming.dataplane.Dataplane/RemoveNeighbor", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *dataplaneClient) AddInterface(ctx context.Context, in *AddInterfaceRequest, opts ...grpc.CallOption) (*AddInterfaceResponse, error) {
-	out := new(AddInterfaceResponse)
-	err := c.cc.Invoke(ctx, "/lemming.dataplane.Dataplane/AddInterface", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// DataplaneServer is the server API for Dataplane service.
-type DataplaneServer interface {
-	CreatePort(context.Context, *CreatePortRequest) (*CreatePortResponse, error)
-	AddIPRoute(context.Context, *AddIPRouteRequest) (*AddIPRouteResponse, error)
-	RemoveIPRoute(context.Context, *RemoveIPRouteRequest) (*RemoveIPRouteResponse, error)
-	AddNextHop(context.Context, *AddNextHopRequest) (*AddNextHopResponse, error)
-	AddNextHopGroup(context.Context, *AddNextHopGroupRequest) (*AddNextHopGroupResponse, error)
-	AddNeighbor(context.Context, *AddNeighborRequest) (*AddNeighborResponse, error)
-	RemoveNeighbor(context.Context, *RemoveNeighborRequest) (*RemoveNeighborResponse, error)
-	AddInterface(context.Context, *AddInterfaceRequest) (*AddInterfaceResponse, error)
-}
-
-// UnimplementedDataplaneServer can be embedded to have forward compatible implementations.
-type UnimplementedDataplaneServer struct {
-}
-
-func (*UnimplementedDataplaneServer) CreatePort(context.Context, *CreatePortRequest) (*CreatePortResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CreatePort not implemented")
-}
-func (*UnimplementedDataplaneServer) AddIPRoute(context.Context, *AddIPRouteRequest) (*AddIPRouteResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AddIPRoute not implemented")
-}
-func (*UnimplementedDataplaneServer) RemoveIPRoute(context.Context, *RemoveIPRouteRequest) (*RemoveIPRouteResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RemoveIPRoute not implemented")
-}
-func (*UnimplementedDataplaneServer) AddNextHop(context.Context, *AddNextHopRequest) (*AddNextHopResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AddNextHop not implemented")
-}
-func (*UnimplementedDataplaneServer) AddNextHopGroup(context.Context, *AddNextHopGroupRequest) (*AddNextHopGroupResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AddNextHopGroup not implemented")
-}
-func (*UnimplementedDataplaneServer) AddNeighbor(context.Context, *AddNeighborRequest) (*AddNeighborResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AddNeighbor not implemented")
-}
-func (*UnimplementedDataplaneServer) RemoveNeighbor(context.Context, *RemoveNeighborRequest) (*RemoveNeighborResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RemoveNeighbor not implemented")
-}
-func (*UnimplementedDataplaneServer) AddInterface(context.Context, *AddInterfaceRequest) (*AddInterfaceResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AddInterface not implemented")
-}
-
-func RegisterDataplaneServer(s *grpc.Server, srv DataplaneServer) {
-	s.RegisterService(&_Dataplane_serviceDesc, srv)
-}
-
-func _Dataplane_CreatePort_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreatePortRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DataplaneServer).CreatePort(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/lemming.dataplane.Dataplane/CreatePort",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DataplaneServer).CreatePort(ctx, req.(*CreatePortRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Dataplane_AddIPRoute_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AddIPRouteRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DataplaneServer).AddIPRoute(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/lemming.dataplane.Dataplane/AddIPRoute",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DataplaneServer).AddIPRoute(ctx, req.(*AddIPRouteRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Dataplane_RemoveIPRoute_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RemoveIPRouteRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DataplaneServer).RemoveIPRoute(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/lemming.dataplane.Dataplane/RemoveIPRoute",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DataplaneServer).RemoveIPRoute(ctx, req.(*RemoveIPRouteRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Dataplane_AddNextHop_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AddNextHopRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DataplaneServer).AddNextHop(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/lemming.dataplane.Dataplane/AddNextHop",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DataplaneServer).AddNextHop(ctx, req.(*AddNextHopRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Dataplane_AddNextHopGroup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AddNextHopGroupRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DataplaneServer).AddNextHopGroup(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/lemming.dataplane.Dataplane/AddNextHopGroup",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DataplaneServer).AddNextHopGroup(ctx, req.(*AddNextHopGroupRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Dataplane_AddNeighbor_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AddNeighborRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DataplaneServer).AddNeighbor(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/lemming.dataplane.Dataplane/AddNeighbor",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DataplaneServer).AddNeighbor(ctx, req.(*AddNeighborRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Dataplane_RemoveNeighbor_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RemoveNeighborRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DataplaneServer).RemoveNeighbor(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/lemming.dataplane.Dataplane/RemoveNeighbor",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DataplaneServer).RemoveNeighbor(ctx, req.(*RemoveNeighborRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Dataplane_AddInterface_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AddInterfaceRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DataplaneServer).AddInterface(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/lemming.dataplane.Dataplane/AddInterface",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DataplaneServer).AddInterface(ctx, req.(*AddInterfaceRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-var _Dataplane_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "lemming.dataplane.Dataplane",
-	HandlerType: (*DataplaneServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "CreatePort",
-			Handler:    _Dataplane_CreatePort_Handler,
-		},
-		{
-			MethodName: "AddIPRoute",
-			Handler:    _Dataplane_AddIPRoute_Handler,
-		},
-		{
-			MethodName: "RemoveIPRoute",
-			Handler:    _Dataplane_RemoveIPRoute_Handler,
-		},
-		{
-			MethodName: "AddNextHop",
-			Handler:    _Dataplane_AddNextHop_Handler,
-		},
-		{
-			MethodName: "AddNextHopGroup",
-			Handler:    _Dataplane_AddNextHopGroup_Handler,
-		},
-		{
-			MethodName: "AddNeighbor",
-			Handler:    _Dataplane_AddNeighbor_Handler,
-		},
-		{
-			MethodName: "RemoveNeighbor",
-			Handler:    _Dataplane_RemoveNeighbor_Handler,
-		},
-		{
-			MethodName: "AddInterface",
-			Handler:    _Dataplane_AddInterface_Handler,
-		},
-	},
-	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto/dataplane/dataplane.proto",
 }

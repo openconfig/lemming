@@ -18,11 +18,17 @@
 package dataplane
 
 import (
-	"github.com/openconfig/lemming/dataplane/handlers"
-	"github.com/openconfig/lemming/dataplane/internal/engine"
+	"google.golang.org/grpc"
+
+	"github.com/openconfig/lemming/dataplane/reconcilers"
 	"github.com/openconfig/lemming/gnmi/reconciler"
 )
 
-func getReconcilers(e *engine.Engine) []reconciler.Reconciler {
-	return []reconciler.Reconciler{handlers.NewInterface(e), handlers.NewRoute(e)}
+func getReconcilers(conn grpc.ClientConnInterface, switchID uint64, cpuPortID uint64, contextID string) []reconciler.Reconciler {
+	r := reconcilers.New(conn, switchID, cpuPortID, contextID)
+
+	return []reconciler.Reconciler{
+		reconciler.NewBuilder("inferface").WithStart(r.StartInterface).Build(),
+		reconciler.NewBuilder("routes").WithStart(r.StartRoute).Build(),
+	}
 }
