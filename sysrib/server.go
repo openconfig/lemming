@@ -28,8 +28,6 @@ import (
 
 	log "github.com/golang/glog"
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/gopacket"
-	"github.com/google/gopacket/layers"
 	"github.com/openconfig/gribigo/afthelper"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"google.golang.org/grpc"
@@ -44,7 +42,6 @@ import (
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 
 	dpb "github.com/openconfig/lemming/proto/dataplane"
-	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 	sysribpb "github.com/openconfig/lemming/proto/sysrib"
 )
 
@@ -373,64 +370,6 @@ func prefixString(prefix *sysribpb.Prefix) (string, error) {
 	default:
 		return "", fmt.Errorf("unrecognized prefix family: %v", fam)
 	}
-}
-
-// gueActions generates the forwarding actions that encapsulates a packet with
-// a UDP and then an IP header using the information from gueHeaders.
-//
-// - isRouteV4 indicates whether the route is a v4/v6-mapped v4 route or a v6 route.
-func gueActions(isRouteV4 bool, gueHeaders GUEHeaders) ([]*fwdpb.ActionDesc, error) {
-	var ip gopacket.SerializableLayer
-	var headerID fwdpb.PacketHeaderId
-	if !gueHeaders.isV6 {
-		ip = &layers.IPv4{
-			Version:  4,
-			IHL:      5,
-			Protocol: layers.IPProtocolUDP,
-			SrcIP:    gueHeaders.srcIP4[:],
-			DstIP:    gueHeaders.dstIP4[:],
-		}
-		headerID = fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4
-	} else {
-		ip = &layers.IPv6{
-			Version:    6,
-			NextHeader: layers.IPProtocolUDP,
-			SrcIP:      gueHeaders.srcIP6[:],
-			DstIP:      gueHeaders.dstIP6[:],
-		}
-		headerID = fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP6
-	}
-
-	udp := &layers.UDP{
-		SrcPort: 0,  // TODO(wenbli): Implement hashing for srcPort.
-		Length:  34, // TODO(wenbli): Figure out how to not make this hardcoded.
-	}
-	if isRouteV4 {
-		udp.DstPort = layers.UDPPort(gueHeaders.dstPortv4)
-	} else {
-		udp.DstPort = layers.UDPPort(gueHeaders.dstPortv6)
-	}
-
-	buf := gopacket.NewSerializeBuffer()
-	if err := gopacket.SerializeLayers(buf, gopacket.SerializeOptions{}, ip, udp); err != nil {
-		return nil, fmt.Errorf("failed to serialize GUE headers: %v", err)
-	}
-
-	return []*fwdpb.ActionDesc{{
-		ActionType: fwdpb.ActionType_ACTION_TYPE_REPARSE,
-		Action: &fwdpb.ActionDesc_Reparse{
-			Reparse: &fwdpb.ReparseActionDesc{
-				HeaderId: headerID,
-				FieldIds: []*fwdpb.PacketFieldId{
-					{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP}},
-					{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT}},
-					{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT}},
-				},
-				// After the UDP header, the rest of the packet (original packet) will be classified as payload.
-				Prepend: buf.Bytes(),
-			},
-		},
-	}}, nil
 }
 
 func resolvedRouteToRouteRequest(r *ResolvedRoute) (*dpb.Route, error) {

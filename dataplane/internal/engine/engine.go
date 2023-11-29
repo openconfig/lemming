@@ -43,15 +43,12 @@ const (
 // Engine contains a routing context and methods to manage it.
 type Engine struct {
 	*forwarding.Server
-	id           string
-	cancelFn     func()
-	createTables bool
+	id       string
+	cancelFn func()
 }
 
 // New creates a new engine and sets up the forwarding tables.
-// Disable table creating to use a custom forwarding pipeline.
-// TODO: Delete this file.
-func New(ctx context.Context, createTables bool) (*Engine, error) {
+func New(ctx context.Context) (*Engine, error) {
 	e := &Engine{
 		id:     "lucius",
 		Server: forwarding.New("engine"),
@@ -85,7 +82,7 @@ func (e *Engine) Reset(ctx context.Context) error {
 		return err
 	}
 
-	ctx, e.cancelFn = context.WithCancel(ctx)
+	_, e.cancelFn = context.WithCancel(ctx)
 	return nil
 }
 

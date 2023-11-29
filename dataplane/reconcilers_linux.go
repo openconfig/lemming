@@ -29,6 +29,6 @@ func getReconcilers(conn grpc.ClientConnInterface, switchID uint64, cpuPortID ui
 
 	return []reconciler.Reconciler{
 		reconciler.NewBuilder("inferface").WithStart(r.StartInterface).Build(),
-		reconciler.NewBuilder("routes").WithStart(r.StartRoute).Build(),
+		reconciler.NewBuilder("routes").WithStart(r.StartRoute).WithStop(r.Stop).Build(),
 	}
 }

@@ -25,7 +25,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/google/gopacket"
 	"github.com/openconfig/ygnmi/schemaless"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot"
@@ -121,11 +120,6 @@ func mapAddressSliceTo6BytesSlice(v4Address []byte) []byte {
 	return ipv6Bytes
 }
 
-func mapAddressTo6BytesSlice(v4Address [4]byte) []byte {
-	r := mapAddressTo6Bytes(v4Address)
-	return r[:]
-}
-
 func mapPrefixLenTo6(pfxLen int) int {
 	return pfxLen + v4v6ConversionStartPos*8
 }
@@ -183,17 +177,6 @@ func mapResolvedRouteTo6(t *testing.T, route *dpb.Route) {
 			nh.GetGue().SrcIp = mapAddressSliceTo6BytesSlice(nh.GetGue().SrcIp)
 		}
 	}
-}
-
-func selectGUEHeaders(t *testing.T, v4 bool, layers ...gopacket.SerializableLayer) []gopacket.SerializableLayer {
-	layerN := len(layers)
-	if layerN == 0 || layerN%2 != 0 {
-		t.Fatalf("Input layers is not even and non-zero: %v", layerN)
-	}
-	if v4 {
-		return layers[:layerN/2]
-	}
-	return layers[layerN/2:]
 }
 
 func mapPrefixTo6(t *testing.T, prefix *pb.Prefix) {
@@ -1091,26 +1074,6 @@ func TestServer(t *testing.T) {
 			}
 		})
 	}
-}
-
-func gueHeader(t *testing.T, layers ...gopacket.SerializableLayer) []byte {
-	buf := gopacket.NewSerializeBuffer()
-	if err := gopacket.SerializeLayers(buf, gopacket.SerializeOptions{}, layers...); err != nil {
-		t.Fatalf("failed to serialize GUE headers: %v", err)
-	}
-	return buf.Bytes()
-}
-
-func addrToBytes(t testing.TB, isV4 bool, v4 string) []byte {
-	t.Helper()
-	addr, err := netip.ParseAddr(v4)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if isV4 {
-		return addr.AsSlice()
-	}
-	return append(addr.AsSlice(), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 }
 
 func TestBGPGUEPolicy(t *testing.T) {

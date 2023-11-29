@@ -236,7 +236,7 @@ func (f *fakeSwitchDataplane) TableEntryAdd(_ context.Context, req *fwdpb.TableE
 	return nil, nil
 }
 
-func (f *fakeSwitchDataplane) TableEntryRemove(_ context.Context, req *fwdpb.TableEntryRemoveRequest) (*fwdpb.TableEntryRemoveReply, error) {
+func (f *fakeSwitchDataplane) TableEntryRemove(context.Context, *fwdpb.TableEntryRemoveRequest) (*fwdpb.TableEntryRemoveReply, error) {
 	return nil, nil
 }
 

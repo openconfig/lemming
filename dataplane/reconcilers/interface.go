@@ -231,7 +231,7 @@ func (ni *Reconciler) StartInterface(ctx context.Context, client *ygnmi.Client) 
 }
 
 // Stop stops all watchers.
-func (ni *Reconciler) stop(context.Context) error {
+func (ni *Reconciler) Stop(context.Context) error {
 	// TODO: prevent stopping more than once.
 	for _, closeFn := range ni.closers {
 		closeFn()

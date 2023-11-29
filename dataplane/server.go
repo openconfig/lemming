@@ -32,7 +32,6 @@ import (
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 
 	saipb "github.com/openconfig/lemming/dataplane/standalone/proto"
-	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
 // Dataplane is an implementation of Dataplane HAL API.
@@ -40,7 +39,6 @@ type Dataplane struct {
 	saiserv     *saiserver.Server
 	srv         *grpc.Server
 	lis         net.Listener
-	fwd         fwdpb.ForwardingClient
 	reconcilers []reconciler.Reconciler
 }
 
@@ -48,7 +46,7 @@ type Dataplane struct {
 func New(ctx context.Context) (*Dataplane, error) {
 	data := &Dataplane{}
 
-	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	lis, err := (&net.ListenConfig{}).Listen(ctx, "tcp", "127.0.0.1:0")
 	if err != nil {
 		return nil, fmt.Errorf("failed to listen: %w", err)
 	}
