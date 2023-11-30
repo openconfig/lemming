@@ -21,6 +21,7 @@ import (
 )
 
 const (
+	// NetDevForwardingType configures the forwarding type of a SAI netdev hostif. Options are (KERNEL and TAP).
 	NetDevForwardingType = "dataplane.netDevType"
 )
 

@@ -15,7 +15,7 @@ go_library(
     importpath = "github.com/openconfig/lemming/sysrib",
     visibility = ["//visibility:public"],
     deps = [
-        "//dataplane/reconcilers:handlers",
+        "//dataplane/dplanerc",
         "//gnmi/fakedevice",
         "//gnmi/gnmiclient",
         "//gnmi/oc",

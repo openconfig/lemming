@@ -1,12 +1,12 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
-    name = "handlers",
+    name = "dplanerc",
     srcs = [
         "interface.go",
         "routes.go",
     ],
-    importpath = "github.com/openconfig/lemming/dataplane/reconcilers",
+    importpath = "github.com/openconfig/lemming/dataplane/dplanerc",
     visibility = ["//visibility:public"],
     deps = [
         "//dataplane/internal/engine",

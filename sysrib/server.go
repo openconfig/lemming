@@ -34,7 +34,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/openconfig/lemming/dataplane/reconcilers"
+	"github.com/openconfig/lemming/dataplane/dplanerc"
 	"github.com/openconfig/lemming/gnmi/fakedevice"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
@@ -115,7 +115,7 @@ func (d *dplane) programRoute(ctx context.Context, r *ResolvedRoute) error {
 	if err != nil {
 		return err
 	}
-	_, err = ygnmi.Replace(ctx, d.Client, reconcilers.RouteQuery(rr.GetPrefix().GetNetworkInstance(), r.Prefix), rr, ygnmi.WithSetFallbackEncoding())
+	_, err = ygnmi.Replace(ctx, d.Client, dplanerc.RouteQuery(rr.GetPrefix().GetNetworkInstance(), r.Prefix), rr, ygnmi.WithSetFallbackEncoding())
 	return err
 }
 
@@ -126,7 +126,7 @@ func (d *dplane) deprogramRoute(ctx context.Context, r *ResolvedRoute) error {
 	if err != nil {
 		return err
 	}
-	_, err = ygnmi.Delete(ctx, d.Client, reconcilers.RouteQuery(rr.GetPrefix().GetNetworkInstance(), r.Prefix))
+	_, err = ygnmi.Delete(ctx, d.Client, dplanerc.RouteQuery(rr.GetPrefix().GetNetworkInstance(), r.Prefix))
 	return err
 }
 
@@ -406,6 +406,7 @@ func resolvedRouteToRouteRequest(r *ResolvedRoute) (*dpb.Route, error) {
 				Interface:    nh.Port.Name,
 				Subinterface: nh.Port.Subinterface,
 			},
+			NextHopIp: nh.Address,
 		}
 		if nh.HasGUE() {
 			if pfx.Addr().Is4() || pfx.Addr().Is4In6() {
@@ -425,9 +426,6 @@ func resolvedRouteToRouteRequest(r *ResolvedRoute) (*dpb.Route, error) {
 					},
 				}
 			}
-		}
-		if nh.Address != "" {
-			dnh.NextHopIp = nh.Address
 		}
 		nexthops.Hops = append(nexthops.Hops, dnh)
 		nexthops.Weights = append(nexthops.Weights, nh.Weight)

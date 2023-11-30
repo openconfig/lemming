@@ -14,8 +14,8 @@
 
 //go:build linux
 
-// Package reconcilers contains gNMI task handlers.
-package reconcilers
+// Package dplanerc contains gNMI task handlers.
+package dplanerc
 
 import (
 	"context"
@@ -150,7 +150,7 @@ func (ni *Reconciler) StartInterface(ctx context.Context, client *ygnmi.Client) 
 	b.AddPaths(
 		ocpath.Root().InterfaceAny().Name().Config().PathStruct(),
 		ocpath.Root().InterfaceAny().Ethernet().MacAddress().Config().PathStruct(),
-		ocpath.Root().InterfaceAny().Subinterface(0).Enabled().Config().PathStruct(), // TODO: Do we need enable at root interface level?
+		ocpath.Root().InterfaceAny().Subinterface(0).Enabled().Config().PathStruct(), // TODO: Support the parent interface config/enabled controling the subinterface state.
 		ocpath.Root().InterfaceAny().Subinterface(0).Ipv4().AddressAny().Ip().Config().PathStruct(),
 		ocpath.Root().InterfaceAny().Subinterface(0).Ipv4().AddressAny().PrefixLength().Config().PathStruct(),
 		ocpath.Root().InterfaceAny().Subinterface(0).Ipv6().AddressAny().Ip().Config().PathStruct(),

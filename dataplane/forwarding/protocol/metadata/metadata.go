@@ -118,6 +118,8 @@ func (m *Metadata) Field(id fwdpacket.FieldID) ([]byte, error) {
 		return m.inputIface, nil
 	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE:
 		return m.outputIface, nil
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TRAP_ID:
+		return m.trapID, nil
 
 	default:
 		return nil, fmt.Errorf("metadata: Field %v failed, unsupported field", id)

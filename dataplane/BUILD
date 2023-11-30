@@ -21,46 +21,46 @@ go_library(
         "@org_golang_google_grpc//credentials/local",
     ] + select({
         "@io_bazel_rules_go//go/platform:aix": [
-            "//dataplane/reconcilers:handlers",
+            "//dataplane/dplanerc",
         ],
         "@io_bazel_rules_go//go/platform:android": [
-            "//dataplane/reconcilers:handlers",
+            "//dataplane/dplanerc",
         ],
         "@io_bazel_rules_go//go/platform:darwin": [
-            "//dataplane/reconcilers:handlers",
+            "//dataplane/dplanerc",
         ],
         "@io_bazel_rules_go//go/platform:dragonfly": [
-            "//dataplane/reconcilers:handlers",
+            "//dataplane/dplanerc",
         ],
         "@io_bazel_rules_go//go/platform:freebsd": [
-            "//dataplane/reconcilers:handlers",
+            "//dataplane/dplanerc",
         ],
         "@io_bazel_rules_go//go/platform:illumos": [
-            "//dataplane/reconcilers:handlers",
+            "//dataplane/dplanerc",
         ],
         "@io_bazel_rules_go//go/platform:ios": [
-            "//dataplane/reconcilers:handlers",
+            "//dataplane/dplanerc",
         ],
         "@io_bazel_rules_go//go/platform:js": [
-            "//dataplane/reconcilers:handlers",
+            "//dataplane/dplanerc",
         ],
         "@io_bazel_rules_go//go/platform:linux": [
-            "//dataplane/reconcilers:handlers",
+            "//dataplane/dplanerc",
         ],
         "@io_bazel_rules_go//go/platform:netbsd": [
-            "//dataplane/reconcilers:handlers",
+            "//dataplane/dplanerc",
         ],
         "@io_bazel_rules_go//go/platform:openbsd": [
-            "//dataplane/reconcilers:handlers",
+            "//dataplane/dplanerc",
         ],
         "@io_bazel_rules_go//go/platform:plan9": [
-            "//dataplane/reconcilers:handlers",
+            "//dataplane/dplanerc",
         ],
         "@io_bazel_rules_go//go/platform:solaris": [
-            "//dataplane/reconcilers:handlers",
+            "//dataplane/dplanerc",
         ],
         "@io_bazel_rules_go//go/platform:windows": [
-            "//dataplane/reconcilers:handlers",
+            "//dataplane/dplanerc",
         ],
         "//conditions:default": [],
     }),

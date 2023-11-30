@@ -179,7 +179,7 @@ func (hostif *hostif) CreateHostif(ctx context.Context, req *saipb.CreateHostifR
 		}
 		hostif.mgr.StoreAttributes(id, attr)
 
-		// Notify the cpu sink about these port types.
+		// Notify the cpu sink about these port types, if there is one configured.
 		fwdCtx, err := hostif.dataplane.Context()
 		if err != nil {
 			return nil, err

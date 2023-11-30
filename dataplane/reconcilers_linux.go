@@ -20,12 +20,12 @@ package dataplane
 import (
 	"google.golang.org/grpc"
 
-	"github.com/openconfig/lemming/dataplane/reconcilers"
+	"github.com/openconfig/lemming/dataplane/dplanerc"
 	"github.com/openconfig/lemming/gnmi/reconciler"
 )
 
 func getReconcilers(conn grpc.ClientConnInterface, switchID uint64, cpuPortID uint64, contextID string) []reconciler.Reconciler {
-	r := reconcilers.New(conn, switchID, cpuPortID, contextID)
+	r := dplanerc.New(conn, switchID, cpuPortID, contextID)
 
 	return []reconciler.Reconciler{
 		reconciler.NewBuilder("inferface").WithStart(r.StartInterface).Build(),

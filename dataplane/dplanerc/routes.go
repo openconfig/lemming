@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package reconcilers
+package dplanerc
 
 import (
 	"context"
@@ -46,12 +46,19 @@ func RouteQuery(ni string, prefix string) ygnmi.ConfigQuery[*dpb.Route] {
 	return q
 }
 
-var routesQuery ygnmi.WildcardQuery[*dpb.Route]
+// MustWildcardQuery returns a wildcard card query for all routes.
+func MustWildcardQuery() ygnmi.WildcardQuery[*dpb.Route] {
+	q, err := schemaless.NewWildcard[*dpb.Route]("/dataplane/routes/route[prefix=*][vrf=*]", gnmi.InternalOrigin)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return q
+}
 
 func (ni *Reconciler) StartRoute(ctx context.Context, client *ygnmi.Client) error {
 	ctx, cancelFn := context.WithCancel(ctx)
 
-	w := ygnmi.WatchAll(ctx, client, routesQuery, func(v *ygnmi.Value[*dpb.Route]) error {
+	w := ygnmi.WatchAll(ctx, client, MustWildcardQuery(), func(v *ygnmi.Value[*dpb.Route]) error {
 		route, present := v.Val()
 		prefix, err := netip.ParsePrefix(v.Path.Elem[2].Key["prefix"])
 		if err != nil {
@@ -244,12 +251,4 @@ func gueActions(gueHeaders *dpb.GUE) ([]*fwdpb.ActionDesc, error) {
 			},
 		},
 	}}, nil
-}
-
-func init() {
-	q, err := schemaless.NewWildcard[*dpb.Route]("/dataplane/routes/route[prefix=*][vrf=*]", gnmi.InternalOrigin)
-	if err != nil {
-		log.Fatal(err)
-	}
-	routesQuery = q
 }
