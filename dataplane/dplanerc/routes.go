@@ -64,7 +64,6 @@ func (ni *Reconciler) StartRoute(ctx context.Context, client *ygnmi.Client) erro
 			log.Warningf("failed to parse cidr: %v", err)
 			return ygnmi.Continue
 		}
-		log.Infof("got route update entry: %v", prefix)
 		ipBytes := prefix.Masked().Addr().AsSlice()
 		mask := net.CIDRMask(prefix.Bits(), len(ipBytes)*8)
 
@@ -87,7 +86,6 @@ func (ni *Reconciler) StartRoute(ctx context.Context, client *ygnmi.Client) erro
 			}
 			return ygnmi.Continue
 		}
-		log.Infof("starting route add: %v", prefix)
 		rReq := saipb.CreateRouteEntryRequest{
 			Entry:        entry,
 			PacketAction: saipb.PacketAction_PACKET_ACTION_FORWARD.Enum(),
@@ -101,7 +99,7 @@ func (ni *Reconciler) StartRoute(ctx context.Context, client *ygnmi.Client) erro
 			if _, err := ni.routeClient.CreateRouteEntry(ctx, &rReq); err != nil {
 				log.Warningf("failed to create route: %v", err)
 			}
-			log.Infof("done connected route add: %v", &rReq)
+			log.Infof("added connected route: %v", &rReq)
 			return ygnmi.Continue
 		}
 		var hopID uint64
@@ -174,7 +172,7 @@ func (ni *Reconciler) createNextHop(ctx context.Context, hop *dpb.NextHop) (uint
 	if err != nil {
 		return 0, err
 	}
-	log.Infof("created next hop add: %v", &hopReq)
+	log.Infof("created next hop: %v", &hopReq)
 	if hop.GetGue() != nil {
 		acts, err := gueActions(hop.GetGue())
 		if err != nil {
@@ -198,7 +196,7 @@ func (ni *Reconciler) createNextHop(ctx context.Context, hop *dpb.NextHop) (uint
 		if err != nil {
 			return 0, err
 		}
-		log.Infof("created gue actions add: %v", actReq)
+		log.Infof("created gue actions: %v", actReq)
 	}
 	return resp.Oid, nil
 }
