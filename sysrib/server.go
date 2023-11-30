@@ -409,22 +409,27 @@ func resolvedRouteToRouteRequest(r *ResolvedRoute) (*dpb.Route, error) {
 			NextHopIp: nh.Address,
 		}
 		if nh.HasGUE() {
-			if pfx.Addr().Is4() || pfx.Addr().Is4In6() {
+			if !nh.GUEHeaders.isV6 {
 				dnh.Encap = &dpb.NextHop_Gue{
 					Gue: &dpb.GUE{
-						SrcIp:   nh.GUEHeaders.srcIP4[:],
-						DstIp:   nh.GUEHeaders.dstIP4[:],
-						DstPort: uint32(nh.GUEHeaders.dstPortv4),
+						SrcIp: nh.GUEHeaders.srcIP4[:],
+						DstIp: nh.GUEHeaders.dstIP4[:],
+						IsV6:  nh.GUEHeaders.isV6,
 					},
 				}
 			} else {
 				dnh.Encap = &dpb.NextHop_Gue{
 					Gue: &dpb.GUE{
-						SrcIp:   nh.GUEHeaders.srcIP6[:],
-						DstIp:   nh.GUEHeaders.dstIP6[:],
-						DstPort: uint32(nh.GUEHeaders.dstPortv6),
+						SrcIp: nh.GUEHeaders.srcIP6[:],
+						DstIp: nh.GUEHeaders.dstIP6[:],
+						IsV6:  nh.GUEHeaders.isV6,
 					},
 				}
+			}
+			if pfx.Addr().Is4() || pfx.Addr().Is4In6() {
+				dnh.GetGue().DstPort = uint32(nh.GUEHeaders.dstPortv4)
+			} else {
+				dnh.GetGue().DstPort = uint32(nh.GUEHeaders.dstPortv6)
 			}
 		}
 		nexthops.Hops = append(nexthops.Hops, dnh)

@@ -680,6 +680,7 @@ func (ni *Reconciler) setupPorts(ctx context.Context) error {
 		if i.Name == "lo" || i.Name == "eth0" || strings.HasSuffix(i.Name, internalSuffix) {
 			continue
 		}
+		log.Info("creating interfaces for %v", i.Name)
 		ocIntf := ocInterface{
 			name:    i.Name,
 			subintf: 0,

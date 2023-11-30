@@ -57,7 +57,6 @@ func MustWildcardQuery() ygnmi.WildcardQuery[*dpb.Route] {
 
 func (ni *Reconciler) StartRoute(ctx context.Context, client *ygnmi.Client) error {
 	ctx, cancelFn := context.WithCancel(ctx)
-
 	w := ygnmi.WatchAll(ctx, client, MustWildcardQuery(), func(v *ygnmi.Value[*dpb.Route]) error {
 		route, present := v.Val()
 		prefix, err := netip.ParsePrefix(v.Path.Elem[2].Key["prefix"])
@@ -65,6 +64,7 @@ func (ni *Reconciler) StartRoute(ctx context.Context, client *ygnmi.Client) erro
 			log.Warningf("failed to parse cidr: %v", err)
 			return ygnmi.Continue
 		}
+		log.Infof("got route update entry: %v", prefix)
 		ipBytes := prefix.Masked().Addr().AsSlice()
 		mask := net.CIDRMask(prefix.Bits(), len(ipBytes)*8)
 
@@ -78,6 +78,7 @@ func (ni *Reconciler) StartRoute(ctx context.Context, client *ygnmi.Client) erro
 		}
 
 		if !present {
+			log.Infof("removing route: %v", prefix)
 			_, err := ni.routeClient.RemoveRouteEntry(ctx, &saipb.RemoveRouteEntryRequest{
 				Entry: entry,
 			})
@@ -86,7 +87,7 @@ func (ni *Reconciler) StartRoute(ctx context.Context, client *ygnmi.Client) erro
 			}
 			return ygnmi.Continue
 		}
-
+		log.Infof("starting route add: %v", prefix)
 		rReq := saipb.CreateRouteEntryRequest{
 			Entry:        entry,
 			PacketAction: saipb.PacketAction_PACKET_ACTION_FORWARD.Enum(),
@@ -100,6 +101,7 @@ func (ni *Reconciler) StartRoute(ctx context.Context, client *ygnmi.Client) erro
 			if _, err := ni.routeClient.CreateRouteEntry(ctx, &rReq); err != nil {
 				log.Warningf("failed to create route: %v", err)
 			}
+			log.Infof("done connected route add: %v", &rReq)
 			return ygnmi.Continue
 		}
 		var hopID uint64
@@ -172,13 +174,13 @@ func (ni *Reconciler) createNextHop(ctx context.Context, hop *dpb.NextHop) (uint
 	if err != nil {
 		return 0, err
 	}
+	log.Infof("created next hop add: %v", &hopReq)
 	if hop.GetGue() != nil {
 		acts, err := gueActions(hop.GetGue())
 		if err != nil {
 			return 0, err
 		}
-		// TODO: Ideally, this would use the SAI tunnel, but it's not currently supported.
-		_, err = ni.fwdClient.TableEntryAdd(ctx, &fwdpb.TableEntryAddRequest{
+		actReq := &fwdpb.TableEntryAddRequest{
 			ContextId: &fwdpb.ContextId{Id: ni.contextID},
 			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: engine.NHActionTable}},
 			EntryDesc: &fwdpb.EntryDesc{Entry: &fwdpb.EntryDesc_Exact{
@@ -190,10 +192,13 @@ func (ni *Reconciler) createNextHop(ctx context.Context, hop *dpb.NextHop) (uint
 				},
 			}},
 			Actions: acts,
-		})
+		}
+		// TODO: Ideally, this would use the SAI tunnel, but it's not currently supported.
+		_, err = ni.fwdClient.TableEntryAdd(ctx, actReq)
 		if err != nil {
 			return 0, err
 		}
+		log.Infof("created gue actions add: %v", actReq)
 	}
 	return resp.Oid, nil
 }
@@ -201,7 +206,7 @@ func (ni *Reconciler) createNextHop(ctx context.Context, hop *dpb.NextHop) (uint
 func gueActions(gueHeaders *dpb.GUE) ([]*fwdpb.ActionDesc, error) {
 	var ip gopacket.SerializableLayer
 	var headerID fwdpb.PacketHeaderId
-	if len(gueHeaders.SrcIp) == 4 {
+	if !gueHeaders.IsV6 {
 		ip = &layers.IPv4{
 			Version:  4,
 			IHL:      5,

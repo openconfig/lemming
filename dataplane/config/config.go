@@ -14,17 +14,11 @@
 
 package config
 
-import (
-	"github.com/spf13/viper"
-
-	fwdpb "github.com/openconfig/lemming/proto/forwarding"
-)
-
 const (
 	// NetDevForwardingType configures the forwarding type of a SAI netdev hostif. Options are (KERNEL and TAP).
 	NetDevForwardingType = "dataplane.netDevType"
 )
 
-func init() {
-	viper.Set(NetDevForwardingType, fwdpb.PortType_name[int32(fwdpb.PortType_PORT_TYPE_KERNEL)])
-}
+// func init() {
+// 	viper.Set(NetDevForwardingType, fwdpb.PortType_name[int32(fwdpb.PortType_PORT_TYPE_KERNEL)])
+// }

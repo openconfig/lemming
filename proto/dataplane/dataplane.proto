@@ -27,6 +27,7 @@ message GUE {
   bytes src_ip = 1;
   bytes dst_ip = 2;
   uint32 dst_port = 3;
+  bool is_v6 = 4;
 }
 
 message NextHop {

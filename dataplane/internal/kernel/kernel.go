@@ -20,6 +20,7 @@ package kernel
 import (
 	"fmt"
 	"net"
+	"sort"
 
 	"github.com/vishvananda/netlink"
 	"golang.org/x/sys/unix"
@@ -117,7 +118,14 @@ func (k *Interfaces) CreateTAP(name string) (int, error) {
 
 // GetAll returns all interfaces.
 func (k *Interfaces) GetAll() ([]net.Interface, error) {
-	return net.Interfaces()
+	ifaces, err := net.Interfaces()
+	if err != nil {
+		return nil, err
+	}
+	sort.Slice(ifaces, func(i, j int) bool {
+		return ifaces[i].Name < ifaces[j].Name
+	})
+	return ifaces, nil
 }
 
 // GetByName returns all interfaces.
