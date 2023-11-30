@@ -30,7 +30,6 @@ import (
 
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
 	"github.com/openconfig/lemming/dataplane/standalone/saiserver/attrmgr"
-	dpb "github.com/openconfig/lemming/proto/dataplane"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 
 	saipb "github.com/openconfig/lemming/dataplane/standalone/proto"
@@ -215,7 +214,6 @@ type fakeSwitchDataplane struct {
 	events            []*fwdpb.EventDesc
 	gotEntryAddReqs   []*fwdpb.TableEntryAddRequest
 	gotPortStateReq   []*fwdpb.PortStateRequest
-	gotPortCreateReq  []*dpb.CreatePortRequest
 	counterReplies    []*fwdpb.ObjectCountersReply
 	portIDToNID       map[string]uint64
 	counterRepliesIdx int
@@ -238,14 +236,13 @@ func (f *fakeSwitchDataplane) TableEntryAdd(_ context.Context, req *fwdpb.TableE
 	return nil, nil
 }
 
+func (f *fakeSwitchDataplane) TableEntryRemove(context.Context, *fwdpb.TableEntryRemoveRequest) (*fwdpb.TableEntryRemoveReply, error) {
+	return nil, nil
+}
+
 func (f *fakeSwitchDataplane) PortIDToNID(id string) (uint64, bool) {
 	nid, ok := f.portIDToNID[id]
 	return nid, ok
-}
-
-func (f *fakeSwitchDataplane) CreatePort(_ context.Context, req *dpb.CreatePortRequest) (*dpb.CreatePortResponse, error) {
-	f.gotPortCreateReq = append(f.gotPortCreateReq, req)
-	return nil, nil
 }
 
 func (f *fakeSwitchDataplane) PortState(_ context.Context, req *fwdpb.PortStateRequest) (*fwdpb.PortStateReply, error) {

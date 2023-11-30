@@ -23,6 +23,9 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/spf13/viper"
+
+	"github.com/openconfig/lemming/dataplane/config"
 	"github.com/openconfig/lemming/dataplane/forwarding/attributes"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
 	"github.com/openconfig/lemming/dataplane/standalone/saiserver/attrmgr"
@@ -93,20 +96,33 @@ func (hostif *hostif) CreateHostif(ctx context.Context, req *saipb.CreateHostifR
 
 		return &saipb.CreateHostifResponse{Oid: id}, nil
 	case saipb.HostifType_HOSTIF_TYPE_NETDEV:
+		portType := fwdpb.PortType(fwdpb.PortType_value[viper.GetString(config.NetDevForwardingType)])
 		port := &fwdpb.PortCreateRequest{
 			ContextId: &fwdpb.ContextId{Id: hostif.dataplane.ID()},
 			Port: &fwdpb.PortDesc{
-				PortType: fwdpb.PortType_PORT_TYPE_KERNEL,
+				PortType: portType,
 				PortId: &fwdpb.PortId{
 					ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)},
 				},
-				Port: &fwdpb.PortDesc_Kernel{
-					Kernel: &fwdpb.KernelPortDesc{
-						DeviceName: string(req.GetName()),
-					},
-				},
 			},
 		}
+		switch portType {
+		case fwdpb.PortType_PORT_TYPE_KERNEL:
+			port.Port.Port = &fwdpb.PortDesc_Kernel{
+				Kernel: &fwdpb.KernelPortDesc{
+					DeviceName: string(req.GetName()),
+				},
+			}
+		case fwdpb.PortType_PORT_TYPE_TAP:
+			port.Port.Port = &fwdpb.PortDesc_Tap{
+				Tap: &fwdpb.TAPPortDesc{
+					DeviceName: string(req.GetName()),
+				},
+			}
+		default:
+			return nil, fmt.Errorf("unkown port type: %v", portType)
+		}
+
 		if _, err := hostif.dataplane.PortCreate(ctx, port); err != nil {
 			if err != nil {
 				return nil, err
@@ -163,7 +179,7 @@ func (hostif *hostif) CreateHostif(ctx context.Context, req *saipb.CreateHostifR
 		}
 		hostif.mgr.StoreAttributes(id, attr)
 
-		// Notify the cpu sink about these port types.
+		// Notify the cpu sink about these port types, if there is one configured.
 		fwdCtx, err := hostif.dataplane.Context()
 		if err != nil {
 			return nil, err
@@ -171,19 +187,21 @@ func (hostif *hostif) CreateHostif(ctx context.Context, req *saipb.CreateHostifR
 		fwdCtx.RLock()
 		ps := fwdCtx.PacketSink()
 		fwdCtx.RUnlock()
-		ps(&fwdpb.PacketSinkResponse{
-			Resp: &fwdpb.PacketSinkResponse_Port{
-				Port: &fwdpb.PacketSinkPortInfo{
-					Port: &fwdpb.PortDesc{
-						PortType: fwdpb.PortType_PORT_TYPE_KERNEL,
-						PortId:   &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)}},
-						Port: &fwdpb.PortDesc_Kernel{
-							Kernel: &fwdpb.KernelPortDesc{DeviceName: string(req.GetName())},
+		if ps != nil {
+			ps(&fwdpb.PacketSinkResponse{
+				Resp: &fwdpb.PacketSinkResponse_Port{
+					Port: &fwdpb.PacketSinkPortInfo{
+						Port: &fwdpb.PortDesc{
+							PortType: fwdpb.PortType_PORT_TYPE_KERNEL,
+							PortId:   &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)}},
+							Port: &fwdpb.PortDesc_Kernel{
+								Kernel: &fwdpb.KernelPortDesc{DeviceName: string(req.GetName())},
+							},
 						},
 					},
 				},
-			},
-		})
+			})
+		}
 	default:
 		return nil, status.Errorf(codes.InvalidArgument, "unknown type %v", req.GetType())
 	}

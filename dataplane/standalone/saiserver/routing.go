@@ -33,7 +33,6 @@ import (
 	log "github.com/golang/glog"
 
 	saipb "github.com/openconfig/lemming/dataplane/standalone/proto"
-	dpb "github.com/openconfig/lemming/proto/dataplane"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
@@ -56,7 +55,7 @@ func newNeighbor(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Ser
 func (n *neighbor) CreateNeighborEntry(ctx context.Context, req *saipb.CreateNeighborEntryRequest) (*saipb.CreateNeighborEntryResponse, error) {
 	entry := fwdconfig.TableEntryAddRequest(n.dataplane.ID(), engine.NeighborTable).AppendEntry(fwdconfig.EntryDesc(fwdconfig.ExactEntry(
 		fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE).WithUint64(req.GetEntry().GetRifId()),
-		fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(req.GetEntry().GetIpAddress()),
+		fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP).WithBytes(req.GetEntry().GetIpAddress()),
 	)), fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST).WithValue(req.GetDstMacAddress())),
 	).Build()
 
@@ -64,6 +63,23 @@ func (n *neighbor) CreateNeighborEntry(ctx context.Context, req *saipb.CreateNei
 		return nil, err
 	}
 	return &saipb.CreateNeighborEntryResponse{}, nil
+}
+
+// CreateNeighborEntry adds a neighbor to the neighbor table.
+func (n *neighbor) RemoveNeighborEntry(ctx context.Context, req *saipb.RemoveNeighborEntryRequest) (*saipb.RemoveNeighborEntryResponse, error) {
+	entry := fwdconfig.EntryDesc(fwdconfig.ExactEntry(
+		fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE).WithUint64(req.GetEntry().GetRifId()),
+		fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP).WithBytes(req.GetEntry().GetIpAddress()),
+	)).Build()
+
+	if _, err := n.dataplane.TableEntryRemove(ctx, &fwdpb.TableEntryRemoveRequest{
+		ContextId: &fwdpb.ContextId{Id: n.dataplane.ID()},
+		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: engine.NeighborTable}},
+		EntryDesc: entry,
+	}); err != nil {
+		return nil, err
+	}
+	return &saipb.RemoveNeighborEntryResponse{}, nil
 }
 
 // CreateNeighborEntries adds multiple neighbors to the neighbor table.
@@ -220,9 +236,10 @@ func (nh *nextHop) CreateNextHop(ctx context.Context, req *saipb.CreateNextHopRe
 	}
 
 	nhReq := fwdconfig.TableEntryAddRequest(nh.dataplane.ID(), engine.NHTable).AppendEntry(
-		fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_ID))),
+		fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_ID).WithUint64(id))),
 		fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE).WithUint64Value(req.GetRouterInterfaceId())),
 		fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP).WithValue(req.GetIp())),
+		fwdconfig.Action(fwdconfig.LookupAction(engine.NHActionTable)),
 	)
 
 	if _, err := nh.dataplane.TableEntryAdd(ctx, nhReq.Build()); err != nil {
@@ -360,6 +377,28 @@ func (r *route) CreateRouteEntries(ctx context.Context, re *saipb.CreateRouteEnt
 	return resp, errs.Err()
 }
 
+func (r *route) RemoveRouteEntry(ctx context.Context, req *saipb.RemoveRouteEntryRequest) (*saipb.RemoveRouteEntryResponse, error) {
+	fib := engine.FIBV6Table
+	if len(req.GetEntry().GetDestination().GetAddr()) == 4 {
+		fib = engine.FIBV4Table
+	}
+
+	_, err := r.dataplane.TableEntryRemove(ctx, &fwdpb.TableEntryRemoveRequest{
+		ContextId: &fwdpb.ContextId{Id: r.dataplane.ID()},
+		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: fib}},
+		EntryDesc: fwdconfig.EntryDesc(
+			fwdconfig.PrefixEntry(
+				fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF).WithUint64(req.GetEntry().GetVrId()),
+				fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(
+					req.GetEntry().GetDestination().GetAddr(),
+					req.GetEntry().GetDestination().GetMask(),
+				),
+			),
+		).Build(),
+	})
+	return &saipb.RemoveRouteEntryResponse{}, err
+}
+
 type routerInterface struct {
 	saipb.UnimplementedRouterInterfaceServer
 	mgr       *attrmgr.AttrMgr
@@ -378,17 +417,8 @@ func newRouterInterface(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *g
 // CreateRouterInterfaces creates a new router interface.
 func (ri *routerInterface) CreateRouterInterface(ctx context.Context, req *saipb.CreateRouterInterfaceRequest) (*saipb.CreateRouterInterfaceResponse, error) {
 	id := ri.mgr.NextID()
-	iReq := &dpb.AddInterfaceRequest{
-		Id:      fmt.Sprint(id),
-		VrfId:   uint32(req.GetVirtualRouterId()),
-		Mtu:     uint64(req.GetMtu()),
-		PortIds: []string{fmt.Sprint(req.GetPortId())},
-		Mac:     req.GetSrcMacAddress(),
-	}
 	switch req.GetType() {
 	case saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_PORT:
-		iReq.Type = dpb.InterfaceType_INTERFACE_TYPE_PORT
-
 	case saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_LOOPBACK: // TODO: Support loopback interfaces
 		log.Warning("loopback interfaces not supported")
 		return &saipb.CreateRouterInterfaceResponse{Oid: id}, nil
@@ -416,7 +446,7 @@ func (ri *routerInterface) CreateRouterInterface(ctx context.Context, req *saipb
 
 	_, err = ri.dataplane.TableEntryAdd(ctx, fwdconfig.TableEntryAddRequest(ri.dataplane.ID(), outputIfaceTable).
 		AppendEntry(
-			fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE).WithUint64(uint64(obj.NID())))),
+			fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE).WithUint64(id))),
 			fwdconfig.Action(fwdconfig.TransmitAction(fmt.Sprint(req.GetPortId()))),
 		).Build())
 	if err != nil {

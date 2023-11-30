@@ -152,13 +152,18 @@ func (a *acl) CreateAclEntry(ctx context.Context, req *saipb.CreateAclEntryReque
 		})
 	}
 	if req.GetFieldInPort() != nil {
-		nid, ok := a.dataplane.PortIDToNID(fmt.Sprint(req.FieldInPort.GetDataOid()))
-		if !ok {
-			return nil, fmt.Errorf("unknown port with id: %v", req.FieldInPort.GetDataOid())
+		fwdCtx, err := a.dataplane.Context()
+		if err != nil {
+			return nil, err
 		}
+		obj, err := fwdCtx.Objects.FindID(&fwdpb.ObjectId{Id: fmt.Sprint(req.FieldInPort.GetDataOid())})
+		if err != nil {
+			return nil, err
+		}
+		nid := obj.NID()
 		aReq.EntryDesc.GetFlow().Fields = append(aReq.EntryDesc.GetFlow().Fields, &fwdpb.PacketFieldMaskedBytes{
 			FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT}},
-			Bytes:   binary.BigEndian.AppendUint64(nil, nid),
+			Bytes:   binary.BigEndian.AppendUint64(nil, uint64(nid)),
 			Masks:   binary.BigEndian.AppendUint64(nil, math.MaxUint64),
 		})
 	}

@@ -12,22 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build !linux
-
-// Package dataplane is an implementation of the dataplane HAL API.
-package dataplane
+package config
 
 import (
-	"google.golang.org/grpc"
+	"github.com/spf13/viper"
 
-	"github.com/openconfig/lemming/dataplane/dplanerc"
-	"github.com/openconfig/lemming/gnmi/reconciler"
+	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
-func getReconcilers(conn grpc.ClientConnInterface, switchID uint64, cpuPortID uint64, contextID string) []reconciler.Reconciler {
-	r := dplanerc.New(conn, switchID, cpuPortID, contextID)
+const (
+	// NetDevForwardingType configures the forwarding type of a SAI netdev hostif. Options are (KERNEL and TAP).
+	NetDevForwardingType = "dataplane.netDevType"
+)
 
-	return []reconciler.Reconciler{
-		reconciler.NewBuilder("inferface").WithStart(r.StartInterface).Build(),
-	}
+func init() {
+	viper.Set(NetDevForwardingType, fwdpb.PortType_name[int32(fwdpb.PortType_PORT_TYPE_KERNEL)])
 }

@@ -23,25 +23,25 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/openconfig/lemming/gnmi"
-	"github.com/openconfig/lemming/gnmi/fakedevice"
-	"github.com/openconfig/lemming/gnmi/gnmiclient"
-	"github.com/openconfig/lemming/gnmi/oc"
-	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/local"
 	"google.golang.org/protobuf/testing/protocmp"
 
+	"github.com/openconfig/lemming/gnmi"
+	"github.com/openconfig/lemming/gnmi/fakedevice"
+	"github.com/openconfig/lemming/gnmi/gnmiclient"
+	"github.com/openconfig/lemming/gnmi/oc"
+	"github.com/openconfig/lemming/gnmi/oc/ocpath"
+
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
+
 	dpb "github.com/openconfig/lemming/proto/dataplane"
 )
 
-var (
-	staticp = ocpath.Root().NetworkInstance(fakedevice.DefaultNetworkInstance).
-		Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_STATIC, fakedevice.StaticRoutingProtocol)
-)
+var staticp = ocpath.Root().NetworkInstance(fakedevice.DefaultNetworkInstance).
+	Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_STATIC, fakedevice.StaticRoutingProtocol)
 
 func installStaticRoute(t *testing.T, c *ygnmi.Client, route *oc.NetworkInstance_Protocol_Static) {
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(50*time.Second))
@@ -107,36 +107,27 @@ func TestStaticRouteAndIntfs(t *testing.T) {
 		},
 		wantRoutes: []*dpb.Route{{
 			Prefix: &dpb.RoutePrefix{
-				VrfId: uint64(0),
-				Prefix: &dpb.RoutePrefix_Cidr{
-					Cidr: "192.168.1.0/24",
-				},
+				NetworkInstance: "DEFAULT",
+				Cidr:            "192.168.1.0/24",
 			},
-			Hop: &dpb.Route_NextHops{
-				NextHops: &dpb.NextHopList{
-					Hops: []*dpb.NextHop{{
-						Dev: &dpb.NextHop_Port{
-							Port: "eth0",
-						},
-						Weight: 0,
-					}},
+			Hop: &dpb.Route_Interface{
+				Interface: &dpb.OCInterface{
+					Interface: "eth0",
 				},
 			},
 		}, {
 			Prefix: &dpb.RoutePrefix{
-				VrfId: uint64(0),
-				Prefix: &dpb.RoutePrefix_Cidr{
-					Cidr: "10.0.0.0/8",
-				},
+				NetworkInstance: "DEFAULT",
+				Cidr:            "10.0.0.0/8",
 			},
 			Hop: &dpb.Route_NextHops{
 				NextHops: &dpb.NextHopList{
+					Weights: []uint64{0},
 					Hops: []*dpb.NextHop{{
-						Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-						Dev: &dpb.NextHop_Port{
-							Port: "eth0",
+						NextHopIp: "192.168.1.42",
+						Interface: &dpb.OCInterface{
+							Interface: "eth0",
 						},
-						Weight: 0,
 					}},
 				},
 			},
@@ -179,71 +170,53 @@ func TestStaticRouteAndIntfs(t *testing.T) {
 		},
 		wantRoutes: []*dpb.Route{{
 			Prefix: &dpb.RoutePrefix{
-				VrfId: uint64(0),
-				Prefix: &dpb.RoutePrefix_Cidr{
-					Cidr: "192.168.1.0/24",
+				NetworkInstance: "DEFAULT",
+				Cidr:            "192.168.1.0/24",
+			},
+			Hop: &dpb.Route_Interface{
+				Interface: &dpb.OCInterface{
+					Interface: "eth0",
 				},
+			},
+		}, {
+			Prefix: &dpb.RoutePrefix{
+				NetworkInstance: "DEFAULT",
+				Cidr:            "10.0.0.0/8",
 			},
 			Hop: &dpb.Route_NextHops{
 				NextHops: &dpb.NextHopList{
+					Weights: []uint64{0},
 					Hops: []*dpb.NextHop{{
-						Dev: &dpb.NextHop_Port{
-							Port: "eth0",
+						NextHopIp: "192.168.1.42",
+						Interface: &dpb.OCInterface{
+							Interface: "eth0",
 						},
-						Weight: 0,
 					}},
 				},
 			},
 		}, {
 			Prefix: &dpb.RoutePrefix{
-				VrfId: uint64(0),
-				Prefix: &dpb.RoutePrefix_Cidr{
-					Cidr: "10.0.0.0/8",
-				},
+				NetworkInstance: "DEFAULT",
+				Cidr:            mapAddressTo6(t, "192.168.1.0/24"),
 			},
-			Hop: &dpb.Route_NextHops{
-				NextHops: &dpb.NextHopList{
-					Hops: []*dpb.NextHop{{
-						Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-						Dev: &dpb.NextHop_Port{
-							Port: "eth0",
-						},
-						Weight: 0,
-					}},
+			Hop: &dpb.Route_Interface{
+				Interface: &dpb.OCInterface{
+					Interface: "eth0",
 				},
 			},
 		}, {
 			Prefix: &dpb.RoutePrefix{
-				VrfId: uint64(0),
-				Prefix: &dpb.RoutePrefix_Cidr{
-					Cidr: mapAddressTo6(t, "192.168.1.0/24"),
-				},
+				NetworkInstance: "DEFAULT",
+				Cidr:            mapAddressTo6(t, "10.0.0.0/8"),
 			},
 			Hop: &dpb.Route_NextHops{
 				NextHops: &dpb.NextHopList{
+					Weights: []uint64{0},
 					Hops: []*dpb.NextHop{{
-						Dev: &dpb.NextHop_Port{
-							Port: "eth0",
+						NextHopIp: mapAddressTo6(t, "192.168.1.42"),
+						Interface: &dpb.OCInterface{
+							Interface: "eth0",
 						},
-						Weight: 0,
-					}},
-				},
-			},
-		}, {
-			Prefix: &dpb.RoutePrefix{
-				VrfId: uint64(0),
-				Prefix: &dpb.RoutePrefix_Cidr{
-					Cidr: mapAddressTo6(t, "10.0.0.0/8"),
-				},
-			},
-			Hop: &dpb.Route_NextHops{
-				NextHops: &dpb.NextHopList{
-					Hops: []*dpb.NextHop{{
-						Ip: &dpb.NextHop_IpStr{IpStr: mapAddressTo6(t, "192.168.1.42")},
-						Dev: &dpb.NextHop_Port{
-							Port: "eth0",
-						},
-						Weight: 0,
 					}},
 				},
 			},
@@ -257,53 +230,37 @@ func TestStaticRouteAndIntfs(t *testing.T) {
 		},
 		wantRoutes: []*dpb.Route{{
 			Prefix: &dpb.RoutePrefix{
-				VrfId: uint64(0),
-				Prefix: &dpb.RoutePrefix_Cidr{
-					Cidr: "192.168.1.0/24",
-				},
+				NetworkInstance: "DEFAULT",
+				Cidr:            "192.168.1.0/24",
 			},
-			Hop: &dpb.Route_NextHops{
-				NextHops: &dpb.NextHopList{
-					Hops: []*dpb.NextHop{{
-						Dev: &dpb.NextHop_Port{
-							Port: "eth0",
-						},
-						Weight: 0,
-					}},
+			Hop: &dpb.Route_Interface{
+				Interface: &dpb.OCInterface{
+					Interface: "eth0",
 				},
 			},
 		}, {
 			Prefix: &dpb.RoutePrefix{
-				VrfId: uint64(0),
-				Prefix: &dpb.RoutePrefix_Cidr{
-					Cidr: mapAddressTo6(t, "192.168.1.0/24"),
-				},
+				NetworkInstance: "DEFAULT",
+				Cidr:            mapAddressTo6(t, "192.168.1.0/24"),
 			},
-			Hop: &dpb.Route_NextHops{
-				NextHops: &dpb.NextHopList{
-					Hops: []*dpb.NextHop{{
-						Dev: &dpb.NextHop_Port{
-							Port: "eth0",
-						},
-						Weight: 0,
-					}},
+			Hop: &dpb.Route_Interface{
+				Interface: &dpb.OCInterface{
+					Interface: "eth0",
 				},
 			},
 		}, {
 			Prefix: &dpb.RoutePrefix{
-				VrfId: uint64(0),
-				Prefix: &dpb.RoutePrefix_Cidr{
-					Cidr: mapAddressTo6(t, "10.0.0.0/8"),
-				},
+				NetworkInstance: "DEFAULT",
+				Cidr:            mapAddressTo6(t, "10.0.0.0/8"),
 			},
 			Hop: &dpb.Route_NextHops{
 				NextHops: &dpb.NextHopList{
+					Weights: []uint64{0},
 					Hops: []*dpb.NextHop{{
-						Ip: &dpb.NextHop_IpStr{IpStr: mapAddressTo6(t, "192.168.1.42")},
-						Dev: &dpb.NextHop_Port{
-							Port: "eth0",
+						NextHopIp: mapAddressTo6(t, "192.168.1.42"),
+						Interface: &dpb.OCInterface{
+							Interface: "eth0",
 						},
-						Weight: 0,
 					}},
 				},
 			},
@@ -317,36 +274,22 @@ func TestStaticRouteAndIntfs(t *testing.T) {
 		},
 		wantRoutes: []*dpb.Route{{
 			Prefix: &dpb.RoutePrefix{
-				VrfId: uint64(0),
-				Prefix: &dpb.RoutePrefix_Cidr{
-					Cidr: "192.168.1.0/24",
-				},
+				NetworkInstance: "DEFAULT",
+				Cidr:            "192.168.1.0/24",
 			},
-			Hop: &dpb.Route_NextHops{
-				NextHops: &dpb.NextHopList{
-					Hops: []*dpb.NextHop{{
-						Dev: &dpb.NextHop_Port{
-							Port: "eth0",
-						},
-						Weight: 0,
-					}},
+			Hop: &dpb.Route_Interface{
+				Interface: &dpb.OCInterface{
+					Interface: "eth0",
 				},
 			},
 		}, {
 			Prefix: &dpb.RoutePrefix{
-				VrfId: uint64(0),
-				Prefix: &dpb.RoutePrefix_Cidr{
-					Cidr: mapAddressTo6(t, "192.168.1.0/24"),
-				},
+				NetworkInstance: "DEFAULT",
+				Cidr:            mapAddressTo6(t, "192.168.1.0/24"),
 			},
-			Hop: &dpb.Route_NextHops{
-				NextHops: &dpb.NextHopList{
-					Hops: []*dpb.NextHop{{
-						Dev: &dpb.NextHop_Port{
-							Port: "eth0",
-						},
-						Weight: 0,
-					}},
+			Hop: &dpb.Route_Interface{
+				Interface: &dpb.OCInterface{
+					Interface: "eth0",
 				},
 			},
 		}},
