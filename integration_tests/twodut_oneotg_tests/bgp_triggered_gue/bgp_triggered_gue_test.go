@@ -829,6 +829,52 @@ func TestBGPTriggeredGUE(t *testing.T) {
 
 	installv6Routes()
 
+	installPolicy := func(one, two, v4 bool) {
+		policyOnePfx4 := "203.0.113.0/30"
+		policyOnePfx6 := "2002::/64"
+		policyTwoPfx4 := "203.0.113.0/29"
+		policyTwoPfx6 := "2002::/48"
+
+		if v4 && one {
+			gnmi.Replace(t, dut, ocpath.Root().BgpGueIpv4GlobalPolicy(policyOnePfx4).Config(), &oc.BgpGueIpv4GlobalPolicy{
+				DstPortIpv4: ygot.Uint16(42),
+				DstPortIpv6: ygot.Uint16(142),
+				Prefix:      ygot.String(policyOnePfx4),
+				SrcIp:       ygot.String("42.42.42.42"),
+			})
+		} else {
+			gnmi.Delete(t, dut, ocpath.Root().BgpGueIpv4GlobalPolicy(policyOnePfx4).Config())
+		}
+		if v4 && two {
+			gnmi.Replace(t, dut, ocpath.Root().BgpGueIpv4GlobalPolicy(policyTwoPfx4).Config(), &oc.BgpGueIpv4GlobalPolicy{
+				DstPortIpv4: ygot.Uint16(84),
+				DstPortIpv6: ygot.Uint16(184),
+				Prefix:      ygot.String(policyTwoPfx4),
+				SrcIp:       ygot.String("84.84.84.84"),
+			})
+		} else {
+			gnmi.Delete(t, dut, ocpath.Root().BgpGueIpv4GlobalPolicy(policyTwoPfx4).Config())
+		}
+		if !v4 && one {
+			gnmi.Replace(t, dut, ocpath.Root().BgpGueIpv6GlobalPolicy(policyOnePfx6).Config(), &oc.BgpGueIpv6GlobalPolicy{
+				DstPortIpv6: ygot.Uint16(142),
+				Prefix:      ygot.String(policyOnePfx6),
+				SrcIp:       ygot.String("4242:4242::"),
+			})
+		} else {
+			gnmi.Delete(t, dut, ocpath.Root().BgpGueIpv6GlobalPolicy(policyOnePfx6).Config())
+		}
+		if !v4 && two {
+			gnmi.Replace(t, dut, ocpath.Root().BgpGueIpv6GlobalPolicy(policyTwoPfx6).Config(), &oc.BgpGueIpv6GlobalPolicy{
+				DstPortIpv6: ygot.Uint16(184),
+				Prefix:      ygot.String(policyTwoPfx6),
+				SrcIp:       ygot.String("8484:8484::"),
+			})
+		} else {
+			gnmi.Delete(t, dut, ocpath.Root().BgpGueIpv6GlobalPolicy(policyTwoPfx6).Config())
+		}
+	}
+
 	tests := []struct {
 		desc             string
 		gnmiOp           func()
@@ -838,22 +884,20 @@ func TestBGPTriggeredGUE(t *testing.T) {
 		v6Traffic        bool
 		skip             bool
 	}{{
-		desc:   "IPv4 without policy",
-		gnmiOp: func() {},
+		desc: "IPv4 without policy",
+		gnmiOp: func() {
+			installPolicy(false, false, true)
+		},
 	}, {
-		desc:      "IPv6 without policy",
-		gnmiOp:    func() {},
+		desc: "IPv6 without policy",
+		gnmiOp: func() {
+			installPolicy(false, false, false)
+		},
 		v6Traffic: true,
 	}, {
 		desc: "with single IPv4 policy",
 		gnmiOp: func() {
-			policy2Pfx := "203.0.113.0/29"
-			gnmi.Replace(t, dut, ocpath.Root().BgpGueIpv4GlobalPolicy(policy2Pfx).Config(), &oc.BgpGueIpv4GlobalPolicy{
-				DstPortIpv4: ygot.Uint16(84),
-				DstPortIpv6: ygot.Uint16(184),
-				Prefix:      ygot.String(policy2Pfx),
-				SrcIp:       ygot.String("84.84.84.84"),
-			})
+			installPolicy(false, true, true)
 		},
 		wantEncapFields1: &EncapFields{
 			srcIP:   net.IP{84, 84, 84, 84},
@@ -868,12 +912,7 @@ func TestBGPTriggeredGUE(t *testing.T) {
 	}, {
 		desc: "with single IPv6 policy",
 		gnmiOp: func() {
-			policy2Pfx := "2002::/48"
-			gnmi.Replace(t, dut, ocpath.Root().BgpGueIpv6GlobalPolicy(policy2Pfx).Config(), &oc.BgpGueIpv6GlobalPolicy{
-				DstPortIpv6: ygot.Uint16(184),
-				Prefix:      ygot.String(policy2Pfx),
-				SrcIp:       ygot.String("8484:8484::"),
-			})
+			installPolicy(false, true, false)
 		},
 		wantEncapFields1: &EncapFields{
 			srcIP:   net.IP{0x84, 0x84, 0x84, 0x84, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
@@ -889,13 +928,7 @@ func TestBGPTriggeredGUE(t *testing.T) {
 	}, {
 		desc: "with two overlapping IPv4 policies",
 		gnmiOp: func() {
-			policy1Pfx := "203.0.113.0/30"
-			gnmi.Replace(t, dut, ocpath.Root().BgpGueIpv4GlobalPolicy(policy1Pfx).Config(), &oc.BgpGueIpv4GlobalPolicy{
-				DstPortIpv4: ygot.Uint16(42),
-				DstPortIpv6: ygot.Uint16(142),
-				Prefix:      ygot.String(policy1Pfx),
-				SrcIp:       ygot.String("42.42.42.42"),
-			})
+			installPolicy(true, true, true)
 		},
 		wantEncapFields1: &EncapFields{
 			srcIP:   net.IP{42, 42, 42, 42},
@@ -910,12 +943,7 @@ func TestBGPTriggeredGUE(t *testing.T) {
 	}, {
 		desc: "with two overlapping IPv6 policies",
 		gnmiOp: func() {
-			policy1Pfx := "2002::/64"
-			gnmi.Replace(t, dut, ocpath.Root().BgpGueIpv6GlobalPolicy(policy1Pfx).Config(), &oc.BgpGueIpv6GlobalPolicy{
-				DstPortIpv6: ygot.Uint16(142),
-				Prefix:      ygot.String(policy1Pfx),
-				SrcIp:       ygot.String("4242:4242::"),
-			})
+			installPolicy(true, true, false)
 		},
 		wantEncapFields1: &EncapFields{
 			srcIP:   net.IP{0x42, 0x42, 0x42, 0x42, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
@@ -931,6 +959,7 @@ func TestBGPTriggeredGUE(t *testing.T) {
 	}, {
 		desc: "IPv4 policy but with IPv6 traffic via IPv4-mapped IPv6 route",
 		gnmiOp: func() {
+			installPolicy(true, true, true)
 			// Overwrite route with IPv4 nexthop.
 			installStaticRoute(t, dut2, &oc.NetworkInstance_Protocol_Static{
 				Prefix: ygot.String(ateDstNetCIDR1v6MS), // This is less specific than the pure IPv6 routes.
