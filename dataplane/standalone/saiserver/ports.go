@@ -377,3 +377,83 @@ func (port *port) Reset() {
 	port.portToEth = make(map[uint64]string)
 	port.nextEth = 1
 }
+
+type lagMember struct {
+	lagID  uint64
+	portID uint64
+}
+
+type lag struct {
+	saipb.UnimplementedLagServer
+	mgr         *attrmgr.AttrMgr
+	dataplane   switchDataplaneAPI
+	memberships map[uint64]*lagMember
+}
+
+func newLAG(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server) *lag {
+	l := &lag{
+		mgr:         mgr,
+		dataplane:   dataplane,
+		memberships: map[uint64]*lagMember{},
+	}
+	saipb.RegisterLagServer(s, l)
+	return l
+}
+
+func (l *lag) Reset() {
+	l.memberships = make(map[uint64]*lagMember)
+}
+
+func (l *lag) CreateLag(ctx context.Context, _ *saipb.CreateLagRequest) (*saipb.CreateLagResponse, error) {
+	id := l.mgr.NextID()
+
+	pReq := &fwdpb.PortCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: l.dataplane.ID()},
+		Port: &fwdpb.PortDesc{
+			PortType: fwdpb.PortType_PORT_TYPE_AGGREGATE_PORT,
+			PortId:   &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)}},
+		},
+	}
+	_, err := l.dataplane.PortCreate(ctx, pReq)
+	return &saipb.CreateLagResponse{Oid: id}, err
+}
+
+func (l *lag) CreateLagMember(ctx context.Context, req *saipb.CreateLagMemberRequest) (*saipb.CreateLagMemberResponse, error) {
+	id := l.mgr.NextID()
+
+	pReq := &fwdpb.PortUpdateRequest{
+		ContextId: &fwdpb.ContextId{Id: l.dataplane.ID()},
+		PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(req.GetLagId())}},
+		Update: &fwdpb.PortUpdateDesc{
+			Port: &fwdpb.PortUpdateDesc_AggregateAdd{
+				AggregateAdd: &fwdpb.AggregatePortAddMemberUpdateDesc{
+					PortId: &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(req.GetPortId())}},
+				},
+			},
+		},
+	}
+	_, err := l.dataplane.PortUpdate(ctx, pReq)
+	if err != nil {
+		return nil, err
+	}
+	l.memberships[id] = &lagMember{lagID: req.GetLagId(), portID: req.GetPortId()}
+	return &saipb.CreateLagMemberResponse{Oid: id}, err
+}
+
+func (l *lag) RemoveLagMember(ctx context.Context, req *saipb.RemoveLagMemberRequest) (*saipb.RemoveLagMemberResponse, error) {
+	member := l.memberships[req.GetOid()]
+
+	pReq := &fwdpb.PortUpdateRequest{
+		ContextId: &fwdpb.ContextId{Id: l.dataplane.ID()},
+		PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(member.lagID)}},
+		Update: &fwdpb.PortUpdateDesc{
+			Port: &fwdpb.PortUpdateDesc_AggregateDel{
+				AggregateDel: &fwdpb.AggregatePortRemoveMemberUpdateDesc{
+					PortId: &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(member.portID)}},
+				},
+			},
+		},
+	}
+	_, err := l.dataplane.PortUpdate(ctx, pReq)
+	return &saipb.RemoveLagMemberResponse{}, err
+}
