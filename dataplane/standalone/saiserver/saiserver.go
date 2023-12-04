@@ -81,10 +81,6 @@ type l2mc struct {
 	saipb.UnimplementedL2McServer
 }
 
-type lag struct {
-	saipb.UnimplementedLagServer
-}
-
 type macsec struct {
 	saipb.UnimplementedMacsecServer
 }
@@ -186,7 +182,6 @@ type Server struct {
 	isolationGroup *isolationGroup
 	l2mcGroup      *l2mcGroup
 	l2mc           *l2mc
-	lag            *lag
 	macsec         *macsec
 	mcastFdb       *mcastFdb
 	mirror         *mirror
@@ -254,7 +249,6 @@ func New(mgr *attrmgr.AttrMgr, s *grpc.Server) (*Server, error) {
 		isolationGroup: &isolationGroup{},
 		l2mcGroup:      &l2mcGroup{},
 		l2mc:           &l2mc{},
-		lag:            &lag{},
 		macsec:         &macsec{},
 		mcastFdb:       &mcastFdb{},
 		mirror:         &mirror{},
@@ -289,7 +283,6 @@ func New(mgr *attrmgr.AttrMgr, s *grpc.Server) (*Server, error) {
 	saipb.RegisterIsolationGroupServer(s, srv.isolationGroup)
 	saipb.RegisterL2McGroupServer(s, srv.l2mcGroup)
 	saipb.RegisterL2McServer(s, srv.l2mc)
-	saipb.RegisterLagServer(s, srv.lag)
 	saipb.RegisterMacsecServer(s, srv.macsec)
 	saipb.RegisterMcastFdbServer(s, srv.mcastFdb)
 	saipb.RegisterMirrorServer(s, srv.mirror)

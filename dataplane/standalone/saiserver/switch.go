@@ -49,6 +49,7 @@ type saiSwitch struct {
 	nextHopGroup    *nextHopGroup
 	nextHop         *nextHop
 	route           *route
+	lag             *lag
 	routerInterface *routerInterface
 	mgr             *attrmgr.AttrMgr
 }
@@ -83,6 +84,7 @@ func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server) 
 		nextHop:         newNextHop(mgr, engine, s),
 		route:           newRoute(mgr, engine, s),
 		routerInterface: newRouterInterface(mgr, engine, s),
+		lag:             newLAG(mgr, engine, s),
 		mgr:             mgr,
 	}
 	saipb.RegisterSwitchServer(s, sw)

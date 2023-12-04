@@ -215,6 +215,8 @@ type fakeSwitchDataplane struct {
 	gotEntryAddReqs   []*fwdpb.TableEntryAddRequest
 	gotPortStateReq   []*fwdpb.PortStateRequest
 	counterReplies    []*fwdpb.ObjectCountersReply
+	gotPortCreateReqs []*fwdpb.PortCreateRequest
+	gotPortUpdateReqs []*fwdpb.PortUpdateRequest
 	portIDToNID       map[string]uint64
 	counterRepliesIdx int
 	ctx               *fwdcontext.Context
@@ -267,11 +269,13 @@ func (f *fakeSwitchDataplane) Context() (*fwdcontext.Context, error) {
 	return f.ctx, nil
 }
 
-func (f *fakeSwitchDataplane) PortCreate(context.Context, *fwdpb.PortCreateRequest) (*fwdpb.PortCreateReply, error) {
+func (f *fakeSwitchDataplane) PortCreate(_ context.Context, req *fwdpb.PortCreateRequest) (*fwdpb.PortCreateReply, error) {
+	f.gotPortCreateReqs = append(f.gotPortCreateReqs, req)
 	return nil, nil
 }
 
-func (f *fakeSwitchDataplane) PortUpdate(context.Context, *fwdpb.PortUpdateRequest) (*fwdpb.PortUpdateReply, error) {
+func (f *fakeSwitchDataplane) PortUpdate(_ context.Context, req *fwdpb.PortUpdateRequest) (*fwdpb.PortUpdateReply, error) {
+	f.gotPortUpdateReqs = append(f.gotPortUpdateReqs, req)
 	return nil, nil
 }
 

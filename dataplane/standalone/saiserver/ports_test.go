@@ -338,3 +338,96 @@ func newTestPort(t testing.TB, api switchDataplaneAPI) (saipb.PortClient, *attrm
 	})
 	return saipb.NewPortClient(conn), mgr, stopFn
 }
+
+func newTestLAG(t testing.TB, api switchDataplaneAPI) (saipb.LagClient, func()) {
+	conn, _, stopFn := newTestServer(t, func(mgr *attrmgr.AttrMgr, srv *grpc.Server) {
+		newLAG(mgr, api, srv)
+	})
+	return saipb.NewLagClient(conn), stopFn
+}
+
+func TestCreateLag(t *testing.T) {
+	tests := []struct {
+		desc            string
+		req             *saipb.CreateLagRequest
+		getInterfaceErr error
+		want            *fwdpb.PortCreateRequest
+		wantErr         string
+	}{{
+		desc: "success",
+		req:  &saipb.CreateLagRequest{},
+		want: &fwdpb.PortCreateRequest{
+			ContextId: &fwdpb.ContextId{Id: "foo"},
+			Port: &fwdpb.PortDesc{
+				PortType: fwdpb.PortType_PORT_TYPE_AGGREGATE_PORT,
+				PortId:   &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: "1"}},
+			},
+		},
+	}}
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			dplane := &fakeSwitchDataplane{}
+			c, stopFn := newTestLAG(t, dplane)
+			defer stopFn()
+			_, gotErr := c.CreateLag(context.Background(), tt.req)
+			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
+				t.Fatalf("CreateLag() unexpected err: %s", diff)
+			}
+			if gotErr != nil {
+				return
+			}
+			if d := cmp.Diff(dplane.gotPortCreateReqs[0], tt.want, protocmp.Transform()); d != "" {
+				t.Errorf("CreateLag() failed: diff(-got,+want)\n:%s", d)
+			}
+		})
+	}
+}
+
+func TestLagMember(t *testing.T) {
+	dplane := &fakeSwitchDataplane{}
+	c, stopFn := newTestLAG(t, dplane)
+	defer stopFn()
+
+	createResp, err := c.CreateLagMember(context.Background(), &saipb.CreateLagMemberRequest{
+		LagId:  proto.Uint64(1),
+		PortId: proto.Uint64(2),
+	})
+	if err != nil {
+		t.Fatalf("CreateLagMember() unexpected err: %v", err)
+	}
+	want := &fwdpb.PortUpdateRequest{
+		ContextId: &fwdpb.ContextId{Id: "foo"},
+		PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: "1"}},
+		Update: &fwdpb.PortUpdateDesc{
+			Port: &fwdpb.PortUpdateDesc_AggregateAdd{
+				AggregateAdd: &fwdpb.AggregatePortAddMemberUpdateDesc{
+					PortId: &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: "2"}},
+				},
+			},
+		},
+	}
+	if d := cmp.Diff(dplane.gotPortUpdateReqs[0], want, protocmp.Transform()); d != "" {
+		t.Errorf("CreateLagMember() failed: diff(-got,+want)\n:%s", d)
+	}
+
+	_, err = c.RemoveLagMember(context.Background(), &saipb.RemoveLagMemberRequest{
+		Oid: createResp.Oid,
+	})
+	if err != nil {
+		t.Fatalf("RemoveLagMember() unexpected err: %v", err)
+	}
+	want = &fwdpb.PortUpdateRequest{
+		ContextId: &fwdpb.ContextId{Id: "foo"},
+		PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: "1"}},
+		Update: &fwdpb.PortUpdateDesc{
+			Port: &fwdpb.PortUpdateDesc_AggregateDel{
+				AggregateDel: &fwdpb.AggregatePortRemoveMemberUpdateDesc{
+					PortId: &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: "2"}},
+				},
+			},
+		},
+	}
+	if d := cmp.Diff(dplane.gotPortUpdateReqs[1], want, protocmp.Transform()); d != "" {
+		t.Errorf("RemoveLagMember() failed: diff(-got,+want)\n:%s", d)
+	}
+}
