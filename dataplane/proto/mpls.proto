@@ -1,0 +1,94 @@
+
+syntax = "proto3";
+
+package lemming.dataplane.sai;
+
+import "dataplane/proto/common.proto";
+
+option go_package = "github.com/openconfig/lemming/dataplane/proto;sai";
+
+enum InsegEntryAttr {
+  INSEG_ENTRY_ATTR_UNSPECIFIED = 0;
+  INSEG_ENTRY_ATTR_NUM_OF_POP = 1;
+  INSEG_ENTRY_ATTR_PACKET_ACTION = 2;
+  INSEG_ENTRY_ATTR_TRAP_PRIORITY = 3;
+  INSEG_ENTRY_ATTR_NEXT_HOP_ID = 4;
+  INSEG_ENTRY_ATTR_PSC_TYPE = 5;
+  INSEG_ENTRY_ATTR_QOS_TC = 6;
+  INSEG_ENTRY_ATTR_MPLS_EXP_TO_TC_MAP = 7;
+  INSEG_ENTRY_ATTR_MPLS_EXP_TO_COLOR_MAP = 8;
+  INSEG_ENTRY_ATTR_POP_TTL_MODE = 9;
+  INSEG_ENTRY_ATTR_POP_QOS_MODE = 10;
+  INSEG_ENTRY_ATTR_COUNTER_ID = 11;
+}
+
+message CreateInsegEntryRequest {
+  option (sai_type) = OBJECT_TYPE_INSEG_ENTRY;
+  InsegEntry entry = 1;
+  optional uint32 num_of_pop = 2 [(attr_enum_value) = 1];
+  optional PacketAction packet_action = 3 [(attr_enum_value) = 2];
+  optional uint32 trap_priority = 4 [(attr_enum_value) = 3];
+  optional uint64 next_hop_id = 5 [(attr_enum_value) = 4];
+  optional InsegEntryPscType psc_type = 6 [(attr_enum_value) = 5];
+  optional uint32 qos_tc = 7 [(attr_enum_value) = 6];
+  optional uint64 mpls_exp_to_tc_map = 8 [(attr_enum_value) = 7];
+  optional uint64 mpls_exp_to_color_map = 9 [(attr_enum_value) = 8];
+  optional InsegEntryPopTtlMode pop_ttl_mode = 10 [(attr_enum_value) = 9];
+  optional InsegEntryPopQosMode pop_qos_mode = 11 [(attr_enum_value) = 10];
+  optional uint64 counter_id = 12 [(attr_enum_value) = 11];
+}
+
+message CreateInsegEntryResponse {}
+
+message RemoveInsegEntryRequest {
+  InsegEntry entry = 1;
+}
+
+message RemoveInsegEntryResponse {}
+
+message SetInsegEntryAttributeRequest {
+  InsegEntry entry = 1;
+  optional uint32 num_of_pop = 2 [(attr_enum_value) = 1];
+  optional PacketAction packet_action = 3 [(attr_enum_value) = 2];
+  optional uint32 trap_priority = 4 [(attr_enum_value) = 3];
+  optional uint64 next_hop_id = 5 [(attr_enum_value) = 4];
+  optional InsegEntryPscType psc_type = 6 [(attr_enum_value) = 5];
+  optional uint32 qos_tc = 7 [(attr_enum_value) = 6];
+  optional uint64 mpls_exp_to_tc_map = 8 [(attr_enum_value) = 7];
+  optional uint64 mpls_exp_to_color_map = 9 [(attr_enum_value) = 8];
+  optional InsegEntryPopTtlMode pop_ttl_mode = 10 [(attr_enum_value) = 9];
+  optional InsegEntryPopQosMode pop_qos_mode = 11 [(attr_enum_value) = 10];
+  optional uint64 counter_id = 12 [(attr_enum_value) = 11];
+}
+
+message SetInsegEntryAttributeResponse {}
+
+message GetInsegEntryAttributeRequest {
+  InsegEntry entry = 1;
+  repeated InsegEntryAttr attr_type = 2;
+}
+
+message GetInsegEntryAttributeResponse {
+  InsegEntryAttribute attr = 1;
+}
+
+message CreateInsegEntriesRequest {
+  repeated CreateInsegEntryRequest reqs = 1;
+}
+
+message CreateInsegEntriesResponse {
+  repeated CreateInsegEntryResponse resps = 1;
+}
+
+service Mpls {
+  rpc CreateInsegEntry(CreateInsegEntryRequest)
+      returns (CreateInsegEntryResponse) {}
+  rpc RemoveInsegEntry(RemoveInsegEntryRequest)
+      returns (RemoveInsegEntryResponse) {}
+  rpc SetInsegEntryAttribute(SetInsegEntryAttributeRequest)
+      returns (SetInsegEntryAttributeResponse) {}
+  rpc GetInsegEntryAttribute(GetInsegEntryAttributeRequest)
+      returns (GetInsegEntryAttributeResponse) {}
+  rpc CreateInsegEntries(CreateInsegEntriesRequest)
+      returns (CreateInsegEntriesResponse) {}
+}

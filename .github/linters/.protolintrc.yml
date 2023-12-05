@@ -2,4 +2,4 @@ lint:
   directories:
     # The SAI generated proto doesn't follow all the proto naming conventions.
     exclude:
-      - dataplane/standalone/proto
+      - dataplane/proto

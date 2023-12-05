@@ -18,8 +18,8 @@
 
 #include <glog/logging.h>
 
-#include "dataplane/standalone/proto/common.pb.h"
-#include "dataplane/standalone/proto/ipmc.pb.h"
+#include "dataplane/proto/common.pb.h"
+#include "dataplane/proto/ipmc.pb.h"
 #include "dataplane/standalone/sai/common.h"
 
 const sai_ipmc_api_t l_ipmc = {

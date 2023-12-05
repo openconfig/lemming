@@ -10,9 +10,9 @@ go_library(
     importpath = "github.com/openconfig/lemming/dataplane",
     visibility = ["//visibility:public"],
     deps = [
-        "//dataplane/standalone/proto:sai",
-        "//dataplane/standalone/saiserver",
-        "//dataplane/standalone/saiserver/attrmgr",
+        "//dataplane/proto:sai",
+        "//dataplane/saiserver",
+        "//dataplane/saiserver/attrmgr",
         "//gnmi/oc",
         "//gnmi/reconciler",
         "@com_github_openconfig_gnmi//proto/gnmi",

@@ -24,14 +24,14 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/local"
 
-	"github.com/openconfig/lemming/dataplane/standalone/saiserver"
-	"github.com/openconfig/lemming/dataplane/standalone/saiserver/attrmgr"
+	"github.com/openconfig/lemming/dataplane/saiserver"
+	"github.com/openconfig/lemming/dataplane/saiserver/attrmgr"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/reconciler"
 
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 
-	saipb "github.com/openconfig/lemming/dataplane/standalone/proto"
+	saipb "github.com/openconfig/lemming/dataplane/proto"
 )
 
 // Dataplane is an implementation of Dataplane HAL API.
@@ -54,7 +54,7 @@ func New(ctx context.Context) (*Dataplane, error) {
 	mgr := attrmgr.New()
 	srv := grpc.NewServer(grpc.Creds(local.NewCredentials()), grpc.ChainUnaryInterceptor(mgr.Interceptor))
 
-	saiserv, err := saiserver.New(mgr, srv)
+	saiserv, err := saiserver.New(ctx, mgr, srv)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create: %w", err)
 	}

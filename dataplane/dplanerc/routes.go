@@ -31,8 +31,8 @@ import (
 
 	log "github.com/golang/glog"
 
-	"github.com/openconfig/lemming/dataplane/internal/engine"
-	saipb "github.com/openconfig/lemming/dataplane/standalone/proto"
+	saipb "github.com/openconfig/lemming/dataplane/proto"
+	"github.com/openconfig/lemming/dataplane/saiserver"
 	dpb "github.com/openconfig/lemming/proto/dataplane"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
@@ -180,7 +180,7 @@ func (ni *Reconciler) createNextHop(ctx context.Context, hop *dpb.NextHop) (uint
 		}
 		actReq := &fwdpb.TableEntryAddRequest{
 			ContextId: &fwdpb.ContextId{Id: ni.contextID},
-			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: engine.NHActionTable}},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: saiserver.NHActionTable}},
 			EntryDesc: &fwdpb.EntryDesc{Entry: &fwdpb.EntryDesc_Exact{
 				Exact: &fwdpb.ExactEntryDesc{
 					Fields: []*fwdpb.PacketFieldBytes{{

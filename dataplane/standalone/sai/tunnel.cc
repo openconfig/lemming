@@ -18,8 +18,8 @@
 
 #include <glog/logging.h>
 
-#include "dataplane/standalone/proto/common.pb.h"
-#include "dataplane/standalone/proto/tunnel.pb.h"
+#include "dataplane/proto/common.pb.h"
+#include "dataplane/proto/tunnel.pb.h"
 #include "dataplane/standalone/sai/common.h"
 
 const sai_tunnel_api_t l_tunnel = {

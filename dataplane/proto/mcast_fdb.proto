@@ -1,0 +1,60 @@
+
+syntax = "proto3";
+
+package lemming.dataplane.sai;
+
+import "dataplane/proto/common.proto";
+
+option go_package = "github.com/openconfig/lemming/dataplane/proto;sai";
+
+enum McastFdbEntryAttr {
+  MCAST_FDB_ENTRY_ATTR_UNSPECIFIED = 0;
+  MCAST_FDB_ENTRY_ATTR_GROUP_ID = 1;
+  MCAST_FDB_ENTRY_ATTR_PACKET_ACTION = 2;
+  MCAST_FDB_ENTRY_ATTR_META_DATA = 3;
+}
+
+message CreateMcastFdbEntryRequest {
+  option (sai_type) = OBJECT_TYPE_MCAST_FDB_ENTRY;
+  McastFdbEntry entry = 1;
+  optional uint64 group_id = 2 [(attr_enum_value) = 1];
+  optional PacketAction packet_action = 3 [(attr_enum_value) = 2];
+  optional uint32 meta_data = 4 [(attr_enum_value) = 3];
+}
+
+message CreateMcastFdbEntryResponse {}
+
+message RemoveMcastFdbEntryRequest {
+  McastFdbEntry entry = 1;
+}
+
+message RemoveMcastFdbEntryResponse {}
+
+message SetMcastFdbEntryAttributeRequest {
+  McastFdbEntry entry = 1;
+  optional uint64 group_id = 2 [(attr_enum_value) = 1];
+  optional PacketAction packet_action = 3 [(attr_enum_value) = 2];
+  optional uint32 meta_data = 4 [(attr_enum_value) = 3];
+}
+
+message SetMcastFdbEntryAttributeResponse {}
+
+message GetMcastFdbEntryAttributeRequest {
+  McastFdbEntry entry = 1;
+  repeated McastFdbEntryAttr attr_type = 2;
+}
+
+message GetMcastFdbEntryAttributeResponse {
+  McastFdbEntryAttribute attr = 1;
+}
+
+service McastFdb {
+  rpc CreateMcastFdbEntry(CreateMcastFdbEntryRequest)
+      returns (CreateMcastFdbEntryResponse) {}
+  rpc RemoveMcastFdbEntry(RemoveMcastFdbEntryRequest)
+      returns (RemoveMcastFdbEntryResponse) {}
+  rpc SetMcastFdbEntryAttribute(SetMcastFdbEntryAttributeRequest)
+      returns (SetMcastFdbEntryAttributeResponse) {}
+  rpc GetMcastFdbEntryAttribute(GetMcastFdbEntryAttributeRequest)
+      returns (GetMcastFdbEntryAttributeResponse) {}
+}
