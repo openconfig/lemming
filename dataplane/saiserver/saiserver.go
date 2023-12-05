@@ -236,16 +236,16 @@ func (s *Server) Initialize(ctx context.Context, _ *saipb.InitializeRequest) (*s
 	return &saipb.InitializeResponse{}, nil
 }
 
-func (srv *Server) Reset(ctx context.Context) error {
-	_, err := srv.forwardingContext.ContextDelete(ctx, &fwdpb.ContextDeleteRequest{
-		ContextId: &fwdpb.ContextId{Id: srv.forwardingContext.id},
+func (s *Server) Reset(ctx context.Context) error {
+	_, err := s.forwardingContext.ContextDelete(ctx, &fwdpb.ContextDeleteRequest{
+		ContextId: &fwdpb.ContextId{Id: s.forwardingContext.id},
 	})
 	if err != nil {
 		return err
 	}
 
-	_, err = srv.forwardingContext.ContextCreate(ctx, &fwdpb.ContextCreateRequest{
-		ContextId: &fwdpb.ContextId{Id: srv.forwardingContext.id},
+	_, err = s.forwardingContext.ContextCreate(ctx, &fwdpb.ContextCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: s.forwardingContext.id},
 	})
 	if err != nil {
 		return err

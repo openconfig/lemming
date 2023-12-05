@@ -447,7 +447,7 @@ syntax = "proto3";
 
 package lemming.dataplane.sai;
 
-import "dataplane/protocommon.proto";
+import "dataplane/proto/common.proto";
 
 option go_package = "github.com/openconfig/lemming/dataplane/proto;sai";
 
@@ -562,7 +562,7 @@ syntax = "proto3";
 
 package lemming.dataplane.sai;
 
-import "dataplane/protocommon.proto";
+import "dataplane/proto/common.proto";
 
 option go_package = "github.com/openconfig/lemming/dataplane/proto;sai";
 
