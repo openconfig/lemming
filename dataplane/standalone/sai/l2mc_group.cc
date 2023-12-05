@@ -18,8 +18,8 @@
 
 #include <glog/logging.h>
 
-#include "dataplane/standalone/proto/common.pb.h"
-#include "dataplane/standalone/proto/l2mc_group.pb.h"
+#include "dataplane/proto/common.pb.h"
+#include "dataplane/proto/l2mc_group.pb.h"
 #include "dataplane/standalone/sai/common.h"
 
 const sai_l2mc_group_api_t l_l2mc_group = {

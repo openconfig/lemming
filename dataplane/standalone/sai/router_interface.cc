@@ -18,8 +18,8 @@
 
 #include <glog/logging.h>
 
-#include "dataplane/standalone/proto/common.pb.h"
-#include "dataplane/standalone/proto/router_interface.pb.h"
+#include "dataplane/proto/common.pb.h"
+#include "dataplane/proto/router_interface.pb.h"
 #include "dataplane/standalone/sai/common.h"
 
 const sai_router_interface_api_t l_router_interface = {

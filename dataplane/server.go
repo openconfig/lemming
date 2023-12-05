@@ -24,14 +24,14 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/local"
 
-	"github.com/openconfig/lemming/dataplane/standalone/saiserver"
-	"github.com/openconfig/lemming/dataplane/standalone/saiserver/attrmgr"
+	"github.com/openconfig/lemming/dataplane/saiserver"
+	"github.com/openconfig/lemming/dataplane/saiserver/attrmgr"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/reconciler"
 
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 
-	saipb "github.com/openconfig/lemming/dataplane/standalone/proto"
+	saipb "github.com/openconfig/lemming/dataplane/proto"
 )
 
 // Dataplane is an implementation of Dataplane HAL API.

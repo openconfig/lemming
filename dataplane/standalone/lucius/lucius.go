@@ -24,8 +24,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	"github.com/openconfig/lemming/dataplane/standalone/saiserver"
-	"github.com/openconfig/lemming/dataplane/standalone/saiserver/attrmgr"
+	"github.com/openconfig/lemming/dataplane/saiserver"
+	"github.com/openconfig/lemming/dataplane/saiserver/attrmgr"
 
 	log "github.com/golang/glog"
 )

@@ -18,8 +18,8 @@
 
 #include <glog/logging.h>
 
-#include "dataplane/standalone/proto/common.pb.h"
-#include "dataplane/standalone/proto/switch.pb.h"
+#include "dataplane/proto/common.pb.h"
+#include "dataplane/proto/switch.pb.h"
 #include "dataplane/standalone/sai/common.h"
 
 const sai_switch_api_t l_switch = {
