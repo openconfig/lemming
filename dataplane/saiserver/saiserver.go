@@ -254,8 +254,14 @@ func (s *Server) Reset(ctx context.Context) error {
 	return nil
 }
 
-func New(mgr *attrmgr.AttrMgr, s *grpc.Server) (*Server, error) {
+func New(ctx context.Context, mgr *attrmgr.AttrMgr, s *grpc.Server) (*Server, error) {
 	fwdCtx := &forwardingContext{Server: forwarding.New("engine"), id: "lucius"}
+	_, err := fwdCtx.ContextCreate(ctx, &fwdpb.ContextCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: fwdCtx.id},
+	})
+	if err != nil {
+		return nil, err
+	}
 
 	srv := &Server{
 		mgr:               mgr,

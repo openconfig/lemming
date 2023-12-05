@@ -54,7 +54,7 @@ func New(ctx context.Context) (*Dataplane, error) {
 	mgr := attrmgr.New()
 	srv := grpc.NewServer(grpc.Creds(local.NewCredentials()), grpc.ChainUnaryInterceptor(mgr.Interceptor))
 
-	saiserv, err := saiserver.New(mgr, srv)
+	saiserv, err := saiserver.New(ctx, mgr, srv)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create: %w", err)
 	}
