@@ -137,36 +137,131 @@ func New(conn grpc.ClientConnInterface, switchID, cpuPortID uint64, contextID st
 	return r
 }
 
+func (ni *Reconciler) macReactor(v *ygnmi.Value[*oc.Interface]) error {
+	config, _ := v.Val()
+	state := ni.getOrCreateInterface(config.GetName())
+	intf := ocInterface{name: config.GetName(), subintf: 0}
+	data := ni.ocInterfaceData[intf]
+	if data == nil {
+		return nil
+	}
+
+	if config.GetOrCreateEthernet().MacAddress != nil {
+		if config.GetEthernet().GetMacAddress() != state.GetEthernet().GetMacAddress() {
+			log.V(1).Infof("setting interface %s hw-addr %q", data.hostifDevName, config.GetEthernet().GetMacAddress())
+			if err := ni.ifaceMgr.SetHWAddr(config.GetName(), config.GetEthernet().GetMacAddress()); err != nil {
+				log.Warningf("Failed to set mac address of port: %v", err)
+			}
+		}
+	} else {
+		// Deleting the configured MAC address means it should be the system-assigned MAC address, as detailed in the OpenConfig schema.
+		// https://openconfig.net/projects/models/schemadocs/yangdoc/openconfig-interfaces.html#interfaces-interface-ethernet-state-mac-address
+		if state.GetEthernet().GetHwMacAddress() != state.GetEthernet().GetMacAddress() {
+			log.V(1).Infof("resetting interface %s hw-addr %q", data.hostifDevName, state.GetEthernet().GetHwMacAddress())
+			if err := ni.ifaceMgr.SetHWAddr(config.GetName(), state.GetEthernet().GetHwMacAddress()); err != nil {
+				log.Warningf("Failed to set mac address of port: %v", err)
+			}
+		}
+	}
+	return nil
+}
+
+type prefixPair struct {
+	cfgIP, stateIP *string
+	cfgPL, statePL *uint8
+}
+
+func (ni *Reconciler) addrV4Reactor(v *ygnmi.Value[*oc.Interface]) error {
+	log.V(1).Infof("ipv4 reactor")
+	config, _ := v.Val()
+	state := ni.getOrCreateInterface(config.GetName())
+	intf := ocInterface{name: config.GetName(), subintf: 0}
+	data := ni.ocInterfaceData[intf]
+	if data == nil {
+		log.V(1).Infof("ipv4 reactor 3: %v, path %v, config %+v, subint %+v", config.GetName(), v.Path, config, config.GetSubinterface(0))
+		return nil
+	}
+	log.V(1).Infof("ipv4 reactor 2")
+
+	changedIP := v.Path.Elem[6].Key["ip"]
+	configIP := config.GetOrCreateSubinterface(0).GetOrCreateIpv4().GetAddress(changedIP)
+	stateIP := state.GetOrCreateSubinterface(0).GetOrCreateIpv4().GetAddress(changedIP)
+
+	if configIP == nil && stateIP != nil {
+		log.V(1).Infof("Deleting IP interface %s: IP: %v, PL: %v", data.hostifDevName, stateIP.GetIp(), stateIP.GetPrefixLength())
+		if err := ni.ifaceMgr.DeleteIP(data.hostifDevName, stateIP.GetIp(), int(stateIP.GetPrefixLength())); err != nil {
+			log.Warningf("Failed to set ip address of port: %v", err)
+		}
+		return nil
+	}
+
+	log.V(1).Infof("Adding IP interface %s: IP: %v, PL: %v", data.hostifDevName, configIP.GetIp(), configIP.GetPrefixLength())
+	if err := ni.ifaceMgr.ReplaceIP(data.hostifDevName, configIP.GetIp(), int(configIP.GetPrefixLength())); err != nil {
+		log.Warningf("Failed to set ip address of port: %v", err)
+	}
+
+	return nil
+}
+
+func (ni *Reconciler) addrV6Reactor(v *ygnmi.Value[*oc.Interface]) error {
+	config, _ := v.Val()
+	state := ni.getOrCreateInterface(config.GetName())
+	intf := ocInterface{name: config.GetName(), subintf: 0}
+	data := ni.ocInterfaceData[intf]
+	if data == nil {
+		return nil
+	}
+
+	changedIP := v.Path.Elem[6].Key["ip"]
+	configIP := config.GetOrCreateSubinterface(0).GetOrCreateIpv6().GetAddress(changedIP)
+	stateIP := state.GetOrCreateSubinterface(0).GetOrCreateIpv6().GetAddress(changedIP)
+
+	if configIP == nil && stateIP != nil {
+		log.V(1).Infof("Deleting IP interface %s: IP: %v, State PL: %v", data.hostifDevName, stateIP.GetIp(), stateIP.GetPrefixLength())
+		if err := ni.ifaceMgr.DeleteIP(data.hostifDevName, stateIP.GetIp(), int(stateIP.GetPrefixLength())); err != nil {
+			log.Warningf("Failed to set ip address of port: %v", err)
+		}
+		return nil
+	}
+
+	log.V(1).Infof("Adding IP interface %s: IP: %v, State PL: %v", data.hostifDevName, configIP.GetIp(), configIP.GetPrefixLength())
+	if err := ni.ifaceMgr.ReplaceIP(data.hostifDevName, configIP.GetIp(), int(configIP.GetPrefixLength())); err != nil {
+		log.Warningf("Failed to set ip address of port: %v", err)
+	}
+
+	return nil
+}
+
 // Start starts running the handler, watching the cache and the kernel interfaces.
 func (ni *Reconciler) StartInterface(ctx context.Context, client *ygnmi.Client) error {
 	log.Info("starting interface handler")
-	b := &ocpath.Batch{}
 	ni.c = client
 
 	if err := ni.setupPorts(ctx); err != nil {
 		return fmt.Errorf("failed to setup ports: %v", err)
 	}
 
+	b := ygnmi.NewWildcardBatch(ocpath.Root().InterfaceAny().Config())
+	b.AddReactor(ocpath.Root().InterfaceAny().Ethernet().MacAddress().Config(), ni.macReactor)
+	b.AddReactor(ocpath.Root().InterfaceAny().Subinterface(0).Ipv4().AddressAny().Ip().Config(), ni.addrV4Reactor)
+	b.AddReactor(ocpath.Root().InterfaceAny().Subinterface(0).Ipv6().AddressAny().Ip().Config(), ni.addrV6Reactor)
+	b.AddReactor(ocpath.Root().InterfaceAny().Subinterface(0).Ipv4().AddressAny().PrefixLength().Config(), ni.addrV4Reactor)
+	b.AddReactor(ocpath.Root().InterfaceAny().Subinterface(0).Ipv6().AddressAny().PrefixLength().Config(), ni.addrV6Reactor)
+
 	b.AddPaths(
-		ocpath.Root().InterfaceAny().Name().Config().PathStruct(),
-		ocpath.Root().InterfaceAny().Ethernet().MacAddress().Config().PathStruct(),
-		ocpath.Root().InterfaceAny().Subinterface(0).Enabled().Config().PathStruct(), // TODO: Support the parent interface config/enabled controling the subinterface state.
-		ocpath.Root().InterfaceAny().Subinterface(0).Ipv4().AddressAny().Ip().Config().PathStruct(),
-		ocpath.Root().InterfaceAny().Subinterface(0).Ipv4().AddressAny().PrefixLength().Config().PathStruct(),
-		ocpath.Root().InterfaceAny().Subinterface(0).Ipv6().AddressAny().Ip().Config().PathStruct(),
-		ocpath.Root().InterfaceAny().Subinterface(0).Ipv6().AddressAny().PrefixLength().Config().PathStruct(),
+		ocpath.Root().InterfaceAny().Name().Config(),
+		ocpath.Root().InterfaceAny().Ethernet().MacAddress().Config(),
+		ocpath.Root().InterfaceAny().Subinterface(0).Enabled().Config(), // TODO: Support the parent interface config/enabled controling the subinterface state.
 	)
 	cancelCtx, cancelFn := context.WithCancel(ctx)
 
-	watcher := ygnmi.Watch(cancelCtx, ni.c, b.Config(), func(val *ygnmi.Value[*oc.Root]) error {
+	watcher := ygnmi.WatchAll(cancelCtx, ni.c, b.Query(), func(val *ygnmi.Value[*oc.Interface]) error {
 		log.V(2).Info("reconciling interfaces")
-		root, ok := val.Val()
-		if !ok || root.Interface == nil {
+		i, ok := val.Val()
+		if !ok {
 			return ygnmi.Continue
 		}
-		for _, i := range root.Interface {
-			ni.reconcile(cancelCtx, i)
-		}
+		ni.reconcile(cancelCtx, i)
 		return ygnmi.Continue
 	})
 
@@ -262,8 +357,12 @@ func (ni *Reconciler) startCounterUpdates(ctx context.Context) {
 			}
 			ni.stateMu.RUnlock()
 			for _, intfName := range intfNames {
+				data, ok := ni.ocInterfaceData[intfName]
+				if !ok {
+					continue
+				}
 				stats, err := ni.portClient.GetPortStats(ctx, &saipb.GetPortStatsRequest{
-					Oid: ni.ocInterfaceData[intfName].portID,
+					Oid: data.portID,
 					CounterIds: []saipb.PortStat{
 						saipb.PortStat_PORT_STAT_IF_IN_UCAST_PKTS,
 						saipb.PortStat_PORT_STAT_IF_IN_NON_UCAST_PKTS,
@@ -299,24 +398,6 @@ func (ni *Reconciler) reconcile(ctx context.Context, config *oc.Interface) {
 	}
 	state := ni.getOrCreateInterface(config.GetName())
 
-	if config.GetOrCreateEthernet().MacAddress != nil {
-		if config.GetEthernet().GetMacAddress() != state.GetEthernet().GetMacAddress() {
-			log.V(1).Infof("setting interface %s hw-addr %q", data.hostifDevName, config.GetEthernet().GetMacAddress())
-			if err := ni.ifaceMgr.SetHWAddr(config.GetName(), config.GetEthernet().GetMacAddress()); err != nil {
-				log.Warningf("Failed to set mac address of port: %v", err)
-			}
-		}
-	} else {
-		// Deleting the configured MAC address means it should be the system-assigned MAC address, as detailed in the OpenConfig schema.
-		// https://openconfig.net/projects/models/schemadocs/yangdoc/openconfig-interfaces.html#interfaces-interface-ethernet-state-mac-address
-		if state.GetEthernet().GetHwMacAddress() != state.GetEthernet().GetMacAddress() {
-			log.V(1).Infof("resetting interface %s hw-addr %q", data.hostifDevName, state.GetEthernet().GetHwMacAddress())
-			if err := ni.ifaceMgr.SetHWAddr(config.GetName(), state.GetEthernet().GetHwMacAddress()); err != nil {
-				log.Warningf("Failed to set mac address of port: %v", err)
-			}
-		}
-	}
-
 	if config.GetOrCreateSubinterface(intf.subintf).Enabled != nil {
 		if state.GetOrCreateSubinterface(intf.subintf).Enabled == nil || config.GetSubinterface(intf.subintf).GetEnabled() != state.GetSubinterface(intf.subintf).GetEnabled() {
 			log.V(1).Infof("setting interface %s enabled %t", data.hostifDevName, config.GetSubinterface(intf.subintf).GetEnabled())
@@ -347,79 +428,6 @@ func (ni *Reconciler) reconcile(ctx context.Context, config *oc.Interface) {
 			gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(intf.name).Subinterface(intf.subintf).AdminStatus().State(), adminStatus)
 			if _, err := sb.Set(ctx, ni.c); err != nil {
 				log.Warningf("failed to set link status: %v", err)
-			}
-		}
-	}
-
-	type prefixPair struct {
-		cfgIP, stateIP *string
-		cfgPL, statePL *uint8
-	}
-
-	// Get all state IPs and their corresponding config IPs (if they exist).
-	var interfacePairs []*prefixPair
-	for _, addr := range state.GetOrCreateSubinterface(0).GetOrCreateIpv4().Address {
-		pair := &prefixPair{
-			stateIP: addr.Ip,
-			statePL: addr.PrefixLength,
-		}
-		if pairAddr := config.GetSubinterface(0).GetIpv4().GetAddress(addr.GetIp()); pairAddr != nil {
-			pair.cfgIP = pairAddr.Ip
-			pair.cfgPL = pairAddr.PrefixLength
-		}
-		interfacePairs = append(interfacePairs, pair)
-	}
-	for _, addr := range state.GetOrCreateSubinterface(0).GetOrCreateIpv6().Address {
-		pair := &prefixPair{
-			stateIP: addr.Ip,
-			statePL: addr.PrefixLength,
-		}
-		if pairAddr := config.GetSubinterface(0).GetIpv6().GetAddress(addr.GetIp()); pairAddr != nil {
-			pair.cfgIP = pairAddr.Ip
-			pair.cfgPL = pairAddr.PrefixLength
-		}
-		interfacePairs = append(interfacePairs, pair)
-	}
-
-	// Get all config IPs and their corresponding state IPs (if they exist).
-	for _, addr := range config.GetOrCreateSubinterface(0).GetOrCreateIpv4().Address {
-		pair := &prefixPair{
-			cfgIP: addr.Ip,
-			cfgPL: addr.PrefixLength,
-		}
-		if pairAddr := state.GetSubinterface(0).GetIpv4().GetAddress(addr.GetIp()); pairAddr != nil {
-			pair.stateIP = pairAddr.Ip
-			pair.statePL = pairAddr.PrefixLength
-		}
-		interfacePairs = append(interfacePairs, pair)
-	}
-	for _, addr := range config.GetOrCreateSubinterface(0).GetOrCreateIpv6().Address {
-		pair := &prefixPair{
-			cfgIP: addr.Ip,
-			cfgPL: addr.PrefixLength,
-		}
-		if pairAddr := state.GetSubinterface(0).GetIpv6().GetAddress(addr.GetIp()); pairAddr != nil {
-			pair.stateIP = pairAddr.Ip
-			pair.statePL = pairAddr.PrefixLength
-		}
-		interfacePairs = append(interfacePairs, pair)
-	}
-
-	for _, pair := range interfacePairs {
-		// If an IP exists in state, but not in config, remove the IP.
-		if (pair.stateIP != nil && pair.statePL != nil) && (pair.cfgIP == nil && pair.cfgPL == nil) {
-			log.V(1).Infof("Delete Config IP: %v, Config PL: %v. State IP: %v, State PL: %v", pair.cfgIP, pair.cfgPL, *pair.stateIP, *pair.statePL)
-			log.V(2).Infof("deleting interface %s ip %s/%d", data.hostifDevName, *pair.stateIP, *pair.statePL)
-			if err := ni.ifaceMgr.DeleteIP(data.hostifDevName, *pair.stateIP, int(*pair.statePL)); err != nil {
-				log.Warningf("Failed to set ip address of port: %v", err)
-			}
-		}
-		// If an IP exists in config, but not in state (or state is different) add the IP.
-		if (pair.cfgIP != nil && pair.cfgPL != nil) && (pair.stateIP == nil || *pair.statePL != *pair.cfgPL) {
-			log.V(1).Infof("Set Config IP: %v, Config PL: %v. State IP: %v, State PL: %v", *pair.cfgIP, *pair.cfgPL, pair.stateIP, pair.statePL)
-			log.V(2).Infof("setting interface %s ip %s/%d", data.hostifDevName, *pair.cfgIP, *pair.cfgPL)
-			if err := ni.ifaceMgr.ReplaceIP(data.hostifDevName, *pair.cfgIP, int(*pair.cfgPL)); err != nil {
-				log.Warningf("Failed to set ip address of port: %v", err)
 			}
 		}
 	}
@@ -680,7 +688,7 @@ func (ni *Reconciler) setupPorts(ctx context.Context) error {
 		if i.Name == "lo" || i.Name == "eth0" || strings.HasSuffix(i.Name, internalSuffix) {
 			continue
 		}
-		log.Info("creating interfaces for %v", i.Name)
+		log.Infof("creating interfaces for %v", i.Name)
 		ocIntf := ocInterface{
 			name:    i.Name,
 			subintf: 0,

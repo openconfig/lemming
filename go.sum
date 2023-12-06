@@ -1133,8 +1133,8 @@ github.com/openconfig/ondatra v0.4.3 h1:M6moqZRuA87aXNbHkZgj/U+Jj4WOjzgTC/EM1ARq
 github.com/openconfig/ondatra v0.4.3/go.mod h1:WEZ0twDTtctPYDJ6D0zeyKwdXfEHRpKV7At0xPHMrBs=
 github.com/openconfig/testt v0.0.0-20220311054427-efbb1a32ec07 h1:X631iD/B0ximGFb5P9LY5wHju4SiedxUhc5UZEo7VSw=
 github.com/openconfig/testt v0.0.0-20220311054427-efbb1a32ec07/go.mod h1:bmpU0kIsCiXuncozViVuQx1HqolC3C94H7lD9KKmoTo=
-github.com/openconfig/ygnmi v0.10.1 h1:Rdl3AglEUPdl+MGBRuHeaYbMFPUGpolkOJ/vAQhsZz4=
-github.com/openconfig/ygnmi v0.10.1/go.mod h1:JKQ8HVkxH27Q8hHQHrb5uRj2uoyZp2CmJ6JbivXtD3g=
+github.com/openconfig/ygnmi v0.10.3-0.20231206202950-b0c82a63c12e h1:TN13TezEZ6Vptv2lrB9GyMMetNV8rPxvOh6oz0RdvPo=
+github.com/openconfig/ygnmi v0.10.3-0.20231206202950-b0c82a63c12e/go.mod h1:DWK7RTgfhrBNXQhA7+CnkNY986LxsoVShWsd0s9CeQY=
 github.com/openconfig/ygot v0.6.0/go.mod h1:o30svNf7O0xK+R35tlx95odkDmZWS9JyWWQSmIhqwAs=
 github.com/openconfig/ygot v0.10.4/go.mod h1:oCQNdXnv7dWc8scTDgoFkauv1wwplJn5HspHcjlxSAQ=
 github.com/openconfig/ygot v0.13.2/go.mod h1:kJN0yCXIH07dOXvNBEFm3XxXdnDD5NI6K99tnD5x49c=

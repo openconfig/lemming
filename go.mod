@@ -22,7 +22,7 @@ require (
 	github.com/openconfig/gribigo v0.0.0-20231116195824-d8605fda9f33
 	github.com/openconfig/kne v0.1.15
 	github.com/openconfig/ondatra v0.4.3
-	github.com/openconfig/ygnmi v0.10.1
+	github.com/openconfig/ygnmi v0.10.3-0.20231206202950-b0c82a63c12e
 	github.com/openconfig/ygot v0.29.16
 	github.com/osrg/gobgp/v3 v3.20.0
 	github.com/p4lang/p4runtime v1.4.0-rc.5.0.20220728214547-13f0d02a521e
