@@ -58,7 +58,7 @@ Implementation: [fwdport](forwarding/fwdport/ports)
 Tables match against packet headers and perform actions. Each table has a default action list, and list of entries. An entry defines a set of field and values to match against
 and a list of the corresponding actions.
 
-Note: After a packet is looked up in a table, the new actions are processed before any pending actions.
+>Note: After a packet is looked up in a table, the new actions are processed before any pending actions.
 
 Example table types:
 
@@ -69,7 +69,7 @@ Implementation: [fwdport](forwarding/fwdtable)
 
 ### saiserver
 
-The saiserver is a gRPC API generated from the [SAI api](https://github.com/opencomputeproject/SAI). It provides a simpler API for programming the dataplane.
+The saiserver is a gRPC API generated from the [SAI API](https://github.com/opencomputeproject/SAI). It provides a simpler API for programming the dataplane.
 The saiserver package implements the API by calling the corresponding forwarding API. This package also configures the forwarding pipeline, by setting up the
 required tables.
 
@@ -78,7 +78,7 @@ A simple example: the CreateRouteEntry RPC adds a entry to the FIB. This looks s
 1. Compute forwarding actions
      1. Update the next hop ip metadata field.
      2. If the next hop is port: transmit action.
-     3. If next hop is next hop: update packet metadata next hop id, lookup next-hop table.
+     3. If next hop is next hop: update packet metadata next hop ID, lookup next-hop table.
      4. If next hop is a group: update packet metadata next hop group, lookup next-hop-group table.
 2. Figure out the address family of the prefix.
 3. Add forwarding table entry to correct fib: prefix entry with fields vrf and next hop ip and above action.
@@ -88,7 +88,7 @@ A simple example: the CreateRouteEntry RPC adds a entry to the FIB. This looks s
 The dplanerc implements a gNMI reconciler based on [reconciler package](../gnmi/reconciler/reconciler.go). These reconcilers convert from OpenConfig to
 saiserver proto messages to support configuring the dataplane from gNMI.
 
-Note: The fib uses a custom, simple proto message because OpenConfig does not model configured forwarding tables (only state).
+>Note: The fib uses a custom, simple proto message because OpenConfig does not model configured forwarding tables (only state).
 
 ### standalone
 
@@ -156,9 +156,7 @@ Let's assume we want to implement the CreateFoo and RemoveFoo RPCs.
       2. Make sure that we add randomization action to the entry.
    2. In RemoveFoo, we need to do mostly the same.
 
->Note: A new feature may just require supporting an additional attribute in already implemented.
-
->Note: If the feature is not in SAI API, then it can be configured using the forwarding API directly or by patching the generated protos.
+>Note: A new feature may just require supporting an additional attribute in already implemented. If the feature is not in SAI API, then it can be configured using the forwarding API directly or by patching the generated protos.
 
 ### gNMI reconcilation
 
@@ -166,7 +164,7 @@ Not done yet! Now that the feature is available via the saiserver API, we may al
 
 1. In dplanerc, let's add a new [reconciler](../gnmi/reconciler/reconciler.go).
    1. First, we need to determine which OpenConfig are needed to configure this feature.
-      1. The [OpenConfig website](https://openconfig.net/projects/models/paths/index.html) is the best reference.
+      1. The [OpenConfig site](https://openconfig.net/projects/models/paths/index.html) is the best reference.
    2. gNMI and Lemming use an eventual consistency model, so in the reconciler we need to subscribe to the config paths for our feature.
       1. Generally, using ygnmi.Watch and a batch subscription is useful.
    3. If the config does not equal the state, we need to reconcile the differences.
