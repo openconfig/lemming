@@ -21,10 +21,10 @@ There are two ways to run the dataplane. The first as part of Lemming, using the
 The forwarding directory contains packet processing actions, tables, and ports. These are the building blocks of the dataplane: they can be combined to create the
 packet processing pipeline. The forwarding behavior is configured using the [gRPC API](../proto/forwarding/forwarding_service.proto).
 
-Generally, external users should not program the dataplane using this API directly. It is too flexible and low-table. Instead, the saiserver API should be used instead.
+Generally, external users should not program the dataplane using this API directly. It is too flexible and low-level. Instead, the saiserver API should be used instead.
 
-Each port has a stack of input and output actions. The forwarding server processes an incoming packet using the input actions of the output.
-If after processing all the actions, there is an output port, then the server processes the output actions of the output port.
+Each port has a stack of input and output actions. The forwarding server processes an incoming packet using the input actions of the input port.
+If after processing all the actions, if there is an output port, then the server processes the output actions of the output port.
 
 The following sections describe the key parts of the forwarding server. The relevant packages and protobuf files contain more complete documentation.
 
@@ -32,11 +32,11 @@ The following sections describe the key parts of the forwarding server. The rele
 
 Actions can modify the contents of the packet, output the packet etc...
 
-Some the important actions include:
+Some of the important actions include:
 
 * Update: Set packet headers values
 * Transmit: Set the output port
-* Lookup: Lookup in a table
+* Lookup: Lookup in a table and process the resulting action. Read more in the [Tables section](#tables).
 
 Implementation: [fwdport](forwarding/fwdaction/actions)
 
@@ -69,7 +69,8 @@ Implementation: [fwdport](forwarding/fwdtable)
 
 ### saiserver
 
-The saiserver is a gRPC API generated from the [SAI API](https://github.com/opencomputeproject/SAI). It provides a simpler API for programming the dataplane.
+The saiserver is a gRPC API generated from the [SAI API](https://github.com/opencomputeproject/SAI). It is the recommended API for programming the dataplane.
+It is simpler than the forwarding API, can be call from a variety of languages, and is compatible with software already using the SAI API (eg SONiC).
 The saiserver package implements the API by calling the corresponding forwarding API. This package also configures the forwarding pipeline, by setting up the
 required tables.
 
@@ -109,7 +110,7 @@ These packages generate the protobuf and C++ source and headers based on the SAI
 
 This section describes how to add a new feature to the dataplane using a hypothetical and very contrived example (and just about the worst case).
 
-Let's implement a new feature: based on the `foo` packet header, do a shortest prefix match on dst ip and on match randomize the payload bytes.
+Let's implement a new feature: based on the hypothetical `foo` protocol packet header, do a shortest prefix match on dst ip and on match randomize the payload bytes.
 
 ### Forwarding support for feature
 
@@ -163,14 +164,14 @@ Let's assume we want to implement the CreateFoo and RemoveFoo RPCs.
 Not done yet! Now that the feature is available via the saiserver API, we may also want to configure it using gNMI.
 
 1. In dplanerc, let's add a new [reconciler](../gnmi/reconciler/reconciler.go).
-   1. First, we need to determine which OpenConfig are needed to configure this feature.
+   1. First, we need to determine which OpenConfig paths reference this feature (if any). Make sure the relevant YANG file is added in [generate script](../gnmi/generate.sh).
       1. The [OpenConfig site](https://openconfig.net/projects/models/paths/index.html) is the best reference.
-   2. gNMI and Lemming use an eventual consistency model, so in the reconciler we need to subscribe to the config paths for our feature.
+   2. gNMI and Lemming use an eventual consistency, pub-sub model, so in the reconciler we need to subscribe to the config paths for our feature.
       1. Generally, using ygnmi.Watch and a batch subscription is useful.
    3. If the config does not equal the state, we need to reconcile the differences.
       1. This usually looks like, if config != state, call saiserver RPC to fix (Create or Remove)
       2. If the call was successful, then update the state.
-      3. Note: Lemming has a special `gnmiclient` client that always ygnmi.Set on state paths.
+      3. Note: Lemming has a special `gnmiclient` client that allows ygnmi.Set on state paths in order to have internal state managers/agents reflect the correct operational state of the virtual device.
       4. Note: For performance reasons: it is best to use BatchUpdate (not replace) individual leaves.
 
 Almost there! Now write tests.
