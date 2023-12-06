@@ -1,6 +1,6 @@
 # The Lemming Dataplane
 
-The lemming reads and writes packets from ports and the forwards packets between them.
+The dataplane reads and writes packets from ports and the forwards packets between them.
 
 ## Overview
 
@@ -156,8 +156,9 @@ Let's assume we want to implement the CreateFoo and RemoveFoo RPCs.
       2. Make sure that we add randomization action to the entry.
    2. In RemoveFoo, we need to do mostly the same.
 
-Note: A new feature may just require supporting an additional attribute in already implemented.
-Note: If the feature is not in SAI API, then it can be configured using the forwarding API directly or by patching the generated protos.
+>Note: A new feature may just require supporting an additional attribute in already implemented.
+
+>Note: If the feature is not in SAI API, then it can be configured using the forwarding API directly or by patching the generated protos.
 
 ### gNMI reconcilation
 
