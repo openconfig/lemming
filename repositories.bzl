@@ -1688,8 +1688,8 @@ def go_repositories():
     go_repository(
         name = "com_github_openconfig_ygnmi",
         importpath = "github.com/openconfig/ygnmi",
-        sum = "h1:Rdl3AglEUPdl+MGBRuHeaYbMFPUGpolkOJ/vAQhsZz4=",
-        version = "v0.10.1",
+        sum = "h1:TN13TezEZ6Vptv2lrB9GyMMetNV8rPxvOh6oz0RdvPo=",
+        version = "v0.10.3-0.20231206202950-b0c82a63c12e",
     )
     go_repository(
         name = "com_github_openconfig_ygot",
