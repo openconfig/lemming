@@ -18,8 +18,8 @@
 
 #include <glog/logging.h>
 
-#include "dataplane/standalone/proto/common.pb.h"
-#include "dataplane/standalone/proto/udf.pb.h"
+#include "dataplane/proto/common.pb.h"
+#include "dataplane/proto/udf.pb.h"
 #include "dataplane/standalone/sai/common.h"
 
 const sai_udf_api_t l_udf = {

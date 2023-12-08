@@ -19,10 +19,11 @@ import (
 	"fmt"
 
 	log "github.com/golang/glog"
+	"github.com/openconfig/ygnmi/ygnmi"
+
 	"github.com/openconfig/lemming/gnmi/fakedevice"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
-	"github.com/openconfig/ygnmi/ygnmi"
 )
 
 // monitorConnectedIntfs starts a gothread to check for connected prefixes from
@@ -37,10 +38,12 @@ func (s *Server) monitorConnectedIntfs(ctx context.Context, yclient *ygnmi.Clien
 		ocpath.Root().InterfaceAny().Subinterface(0).Ipv4().AddressAny().PrefixLength().State(),
 		ocpath.Root().InterfaceAny().Subinterface(0).Ipv6().AddressAny().Ip().State(),
 		ocpath.Root().InterfaceAny().Subinterface(0).Ipv6().AddressAny().PrefixLength().State(),
+		ocpath.Root().InterfaceAny().Subinterface(0).Ifindex().State(),
+		ocpath.Root().InterfaceAny().Subinterface(0).Enabled().State(),
 	)
 
 	prevIntfs := map[connectedRoute]struct{}{}
-
+	log.Infof("starting connected route watcher")
 	interfaceWatcher := ygnmi.Watch(
 		ctx,
 		yclient,
@@ -50,6 +53,7 @@ func (s *Server) monitorConnectedIntfs(ctx context.Context, yclient *ygnmi.Clien
 			currentIntfs := map[connectedRoute]struct{}{}
 			if ok {
 				for name, intf := range interfaceMap {
+					log.Infof("got interface update: %v intf.Enabled %v,  intf.Ifindex %v", name, intf.Enabled, intf.Ifindex)
 					if intf.Enabled != nil && intf.Ifindex != nil {
 						ifindex := intf.GetIfindex()
 						s.setInterface(ctx, name, int32(ifindex), intf.GetEnabled())

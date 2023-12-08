@@ -18,8 +18,8 @@
 
 #include <glog/logging.h>
 
-#include "dataplane/standalone/proto/common.pb.h"
-#include "dataplane/standalone/proto/ipsec.pb.h"
+#include "dataplane/proto/common.pb.h"
+#include "dataplane/proto/ipsec.pb.h"
 #include "dataplane/standalone/sai/common.h"
 
 const sai_ipsec_api_t l_ipsec = {

@@ -38,13 +38,14 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/openconfig/lemming/gnmi"
-	dpb "github.com/openconfig/lemming/proto/dataplane"
-	pb "github.com/openconfig/lemming/proto/sysrib"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/osrg/gobgp/v3/pkg/zebra"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/testing/protocmp"
+
+	"github.com/openconfig/lemming/gnmi"
+	dpb "github.com/openconfig/lemming/proto/dataplane"
+	pb "github.com/openconfig/lemming/proto/sysrib"
 )
 
 func TestZServer(t *testing.T) {
@@ -131,7 +132,7 @@ func testRouteAddDelete(t *testing.T) {
 				Family:    syscall.AF_INET,
 				PrefixLen: 8,
 				// TODO(wenbli): This is probably a bug in GoBGP's zebra library.
-				//Prefix:    net.ParseIP("10.0.0.0"),
+				// Prefix:    net.ParseIP("10.0.0.0"),
 				Prefix: net.ParseIP("0a0a::"),
 			},
 			Nexthops: []zebra.Nexthop{{
@@ -152,37 +153,28 @@ func testRouteAddDelete(t *testing.T) {
 		},
 		wantRoutes: []*dpb.Route{{
 			Prefix: &dpb.RoutePrefix{
-				VrfId: uint64(0),
-				Prefix: &dpb.RoutePrefix_Cidr{
-					Cidr: "10.0.0.0/8",
-				},
+				NetworkInstance: "DEFAULT",
+				Cidr:            "10.0.0.0/8",
 			},
 			Hop: &dpb.Route_NextHops{
 				NextHops: &dpb.NextHopList{
+					Weights: []uint64{0},
 					Hops: []*dpb.NextHop{{
-						Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-						Dev: &dpb.NextHop_Port{
-							Port: "eth0",
+						NextHopIp: "192.168.1.42",
+						Interface: &dpb.OCInterface{
+							Interface: "eth0",
 						},
-						Weight: 0,
 					}},
 				},
 			},
 		}, {
 			Prefix: &dpb.RoutePrefix{
-				VrfId: uint64(0),
-				Prefix: &dpb.RoutePrefix_Cidr{
-					Cidr: "192.168.1.0/24",
-				},
+				NetworkInstance: "DEFAULT",
+				Cidr:            "192.168.1.0/24",
 			},
-			Hop: &dpb.Route_NextHops{
-				NextHops: &dpb.NextHopList{
-					Hops: []*dpb.NextHop{{
-						Dev: &dpb.NextHop_Port{
-							Port: "eth0",
-						},
-						Weight: 0,
-					}},
+			Hop: &dpb.Route_Interface{
+				Interface: &dpb.OCInterface{
+					Interface: "eth0",
 				},
 			},
 		}},
@@ -213,72 +205,54 @@ func testRouteAddDelete(t *testing.T) {
 		},
 		wantRoutes: []*dpb.Route{{
 			Prefix: &dpb.RoutePrefix{
-				VrfId: uint64(0),
-				Prefix: &dpb.RoutePrefix_Cidr{
-					Cidr: "10.0.0.0/8",
-				},
+				NetworkInstance: "DEFAULT",
+				Cidr:            "10.0.0.0/8",
 			},
 			Hop: &dpb.Route_NextHops{
 				NextHops: &dpb.NextHopList{
+					Weights: []uint64{0},
 					Hops: []*dpb.NextHop{{
-						Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-						Dev: &dpb.NextHop_Port{
-							Port: "eth0",
+						NextHopIp: "192.168.1.42",
+						Interface: &dpb.OCInterface{
+							Interface: "eth0",
 						},
-						Weight: 0,
 					}},
 				},
 			},
 		}, {
 			Prefix: &dpb.RoutePrefix{
-				VrfId: uint64(0),
-				Prefix: &dpb.RoutePrefix_Cidr{
-					Cidr: "192.168.1.0/24",
+				NetworkInstance: "DEFAULT",
+				Cidr:            "192.168.1.0/24",
+			},
+			Hop: &dpb.Route_Interface{
+				Interface: &dpb.OCInterface{
+					Interface: "eth0",
 				},
+			},
+		}, {
+			Prefix: &dpb.RoutePrefix{
+				NetworkInstance: "DEFAULT",
+				Cidr:            "4242::/42",
 			},
 			Hop: &dpb.Route_NextHops{
 				NextHops: &dpb.NextHopList{
+					Weights: []uint64{0},
 					Hops: []*dpb.NextHop{{
-						Dev: &dpb.NextHop_Port{
-							Port: "eth0",
+						NextHopIp: "2001::ffff",
+						Interface: &dpb.OCInterface{
+							Interface: "eth0",
 						},
-						Weight: 0,
 					}},
 				},
 			},
 		}, {
 			Prefix: &dpb.RoutePrefix{
-				VrfId: uint64(0),
-				Prefix: &dpb.RoutePrefix_Cidr{
-					Cidr: "4242::/42",
-				},
+				NetworkInstance: "DEFAULT",
+				Cidr:            "2001::/42",
 			},
-			Hop: &dpb.Route_NextHops{
-				NextHops: &dpb.NextHopList{
-					Hops: []*dpb.NextHop{{
-						Ip: &dpb.NextHop_IpStr{IpStr: "2001::ffff"},
-						Dev: &dpb.NextHop_Port{
-							Port: "eth0",
-						},
-						Weight: 0,
-					}},
-				},
-			},
-		}, {
-			Prefix: &dpb.RoutePrefix{
-				VrfId: uint64(0),
-				Prefix: &dpb.RoutePrefix_Cidr{
-					Cidr: "2001::/42",
-				},
-			},
-			Hop: &dpb.Route_NextHops{
-				NextHops: &dpb.NextHopList{
-					Hops: []*dpb.NextHop{{
-						Dev: &dpb.NextHop_Port{
-							Port: "eth0",
-						},
-						Weight: 0,
-					}},
+			Hop: &dpb.Route_Interface{
+				Interface: &dpb.OCInterface{
+					Interface: "eth0",
 				},
 			},
 		}},
@@ -290,7 +264,7 @@ func testRouteAddDelete(t *testing.T) {
 				Family:    syscall.AF_INET,
 				PrefixLen: 8,
 				// TODO(wenbli): This is probably a bug in GoBGP's zebra library.
-				//Prefix:    net.ParseIP("10.0.0.0"),
+				// Prefix:    net.ParseIP("10.0.0.0"),
 				Prefix: net.ParseIP("0a0a::"),
 			},
 			Nexthops: []zebra.Nexthop{{
@@ -305,54 +279,38 @@ func testRouteAddDelete(t *testing.T) {
 		inDelete: true,
 		wantRoutes: []*dpb.Route{{
 			Prefix: &dpb.RoutePrefix{
-				VrfId: uint64(0),
-				Prefix: &dpb.RoutePrefix_Cidr{
-					Cidr: "192.168.1.0/24",
+				NetworkInstance: "DEFAULT",
+				Cidr:            "192.168.1.0/24",
+			},
+			Hop: &dpb.Route_Interface{
+				Interface: &dpb.OCInterface{
+					Interface: "eth0",
 				},
+			},
+		}, {
+			Prefix: &dpb.RoutePrefix{
+				NetworkInstance: "DEFAULT",
+				Cidr:            "4242::/42",
 			},
 			Hop: &dpb.Route_NextHops{
 				NextHops: &dpb.NextHopList{
+					Weights: []uint64{0},
 					Hops: []*dpb.NextHop{{
-						Dev: &dpb.NextHop_Port{
-							Port: "eth0",
+						NextHopIp: "2001::ffff",
+						Interface: &dpb.OCInterface{
+							Interface: "eth0",
 						},
-						Weight: 0,
 					}},
 				},
 			},
 		}, {
 			Prefix: &dpb.RoutePrefix{
-				VrfId: uint64(0),
-				Prefix: &dpb.RoutePrefix_Cidr{
-					Cidr: "4242::/42",
-				},
+				NetworkInstance: "DEFAULT",
+				Cidr:            "2001::/42",
 			},
-			Hop: &dpb.Route_NextHops{
-				NextHops: &dpb.NextHopList{
-					Hops: []*dpb.NextHop{{
-						Ip: &dpb.NextHop_IpStr{IpStr: "2001::ffff"},
-						Dev: &dpb.NextHop_Port{
-							Port: "eth0",
-						},
-						Weight: 0,
-					}},
-				},
-			},
-		}, {
-			Prefix: &dpb.RoutePrefix{
-				VrfId: uint64(0),
-				Prefix: &dpb.RoutePrefix_Cidr{
-					Cidr: "2001::/42",
-				},
-			},
-			Hop: &dpb.Route_NextHops{
-				NextHops: &dpb.NextHopList{
-					Hops: []*dpb.NextHop{{
-						Dev: &dpb.NextHop_Port{
-							Port: "eth0",
-						},
-						Weight: 0,
-					}},
+			Hop: &dpb.Route_Interface{
+				Interface: &dpb.OCInterface{
+					Interface: "eth0",
 				},
 			},
 		}},
@@ -377,36 +335,22 @@ func testRouteAddDelete(t *testing.T) {
 		inDelete: true,
 		wantRoutes: []*dpb.Route{{
 			Prefix: &dpb.RoutePrefix{
-				VrfId: uint64(0),
-				Prefix: &dpb.RoutePrefix_Cidr{
-					Cidr: "192.168.1.0/24",
-				},
+				NetworkInstance: "DEFAULT",
+				Cidr:            "192.168.1.0/24",
 			},
-			Hop: &dpb.Route_NextHops{
-				NextHops: &dpb.NextHopList{
-					Hops: []*dpb.NextHop{{
-						Dev: &dpb.NextHop_Port{
-							Port: "eth0",
-						},
-						Weight: 0,
-					}},
+			Hop: &dpb.Route_Interface{
+				Interface: &dpb.OCInterface{
+					Interface: "eth0",
 				},
 			},
 		}, {
 			Prefix: &dpb.RoutePrefix{
-				VrfId: uint64(0),
-				Prefix: &dpb.RoutePrefix_Cidr{
-					Cidr: "2001::/42",
-				},
+				NetworkInstance: "DEFAULT",
+				Cidr:            "2001::/42",
 			},
-			Hop: &dpb.Route_NextHops{
-				NextHops: &dpb.NextHopList{
-					Hops: []*dpb.NextHop{{
-						Dev: &dpb.NextHop_Port{
-							Port: "eth0",
-						},
-						Weight: 0,
-					}},
+			Hop: &dpb.Route_Interface{
+				Interface: &dpb.OCInterface{
+					Interface: "eth0",
 				},
 			},
 		}},
@@ -535,37 +479,28 @@ func testRouteRedistribution(t *testing.T, routeReadyBeforeDial bool) {
 		},
 		wantRoutes: []*dpb.Route{{
 			Prefix: &dpb.RoutePrefix{
-				VrfId: uint64(0),
-				Prefix: &dpb.RoutePrefix_Cidr{
-					Cidr: "10.0.0.0/8",
-				},
+				NetworkInstance: "DEFAULT",
+				Cidr:            "10.0.0.0/8",
 			},
 			Hop: &dpb.Route_NextHops{
 				NextHops: &dpb.NextHopList{
+					Weights: []uint64{0},
 					Hops: []*dpb.NextHop{{
-						Ip: &dpb.NextHop_IpStr{IpStr: "192.168.1.42"},
-						Dev: &dpb.NextHop_Port{
-							Port: "eth0",
+						NextHopIp: "192.168.1.42",
+						Interface: &dpb.OCInterface{
+							Interface: "eth0",
 						},
-						Weight: 0,
 					}},
 				},
 			},
 		}, {
 			Prefix: &dpb.RoutePrefix{
-				VrfId: uint64(0),
-				Prefix: &dpb.RoutePrefix_Cidr{
-					Cidr: "192.168.1.0/24",
-				},
+				NetworkInstance: "DEFAULT",
+				Cidr:            "192.168.1.0/24",
 			},
-			Hop: &dpb.Route_NextHops{
-				NextHops: &dpb.NextHopList{
-					Hops: []*dpb.NextHop{{
-						Dev: &dpb.NextHop_Port{
-							Port: "eth0",
-						},
-						Weight: 0,
-					}},
+			Hop: &dpb.Route_Interface{
+				Interface: &dpb.OCInterface{
+					Interface: "eth0",
 				},
 			},
 		}},
@@ -594,37 +529,28 @@ func testRouteRedistribution(t *testing.T, routeReadyBeforeDial bool) {
 		},
 		wantRoutes: []*dpb.Route{{
 			Prefix: &dpb.RoutePrefix{
-				VrfId: uint64(0),
-				Prefix: &dpb.RoutePrefix_Cidr{
-					Cidr: "4242::/42",
-				},
+				NetworkInstance: "DEFAULT",
+				Cidr:            "4242::/42",
 			},
 			Hop: &dpb.Route_NextHops{
 				NextHops: &dpb.NextHopList{
+					Weights: []uint64{0},
 					Hops: []*dpb.NextHop{{
-						Ip: &dpb.NextHop_IpStr{IpStr: "2001::ffff"},
-						Dev: &dpb.NextHop_Port{
-							Port: "eth0",
+						NextHopIp: "2001::ffff",
+						Interface: &dpb.OCInterface{
+							Interface: "eth0",
 						},
-						Weight: 0,
 					}},
 				},
 			},
 		}, {
 			Prefix: &dpb.RoutePrefix{
-				VrfId: uint64(0),
-				Prefix: &dpb.RoutePrefix_Cidr{
-					Cidr: "2001::/42",
-				},
+				NetworkInstance: "DEFAULT",
+				Cidr:            "2001::/42",
 			},
-			Hop: &dpb.Route_NextHops{
-				NextHops: &dpb.NextHopList{
-					Hops: []*dpb.NextHop{{
-						Dev: &dpb.NextHop_Port{
-							Port: "eth0",
-						},
-						Weight: 0,
-					}},
+			Hop: &dpb.Route_Interface{
+				Interface: &dpb.OCInterface{
+					Interface: "eth0",
 				},
 			},
 		}},

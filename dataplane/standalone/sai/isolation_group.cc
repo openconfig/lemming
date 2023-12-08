@@ -18,8 +18,8 @@
 
 #include <glog/logging.h>
 
-#include "dataplane/standalone/proto/common.pb.h"
-#include "dataplane/standalone/proto/isolation_group.pb.h"
+#include "dataplane/proto/common.pb.h"
+#include "dataplane/proto/isolation_group.pb.h"
 #include "dataplane/standalone/sai/common.h"
 
 const sai_isolation_group_api_t l_isolation_group = {

@@ -18,8 +18,8 @@
 
 #include <glog/logging.h>
 
-#include "dataplane/standalone/proto/common.pb.h"
-#include "dataplane/standalone/proto/qos_map.pb.h"
+#include "dataplane/proto/common.pb.h"
+#include "dataplane/proto/qos_map.pb.h"
 #include "dataplane/standalone/sai/common.h"
 
 const sai_qos_map_api_t l_qos_map = {

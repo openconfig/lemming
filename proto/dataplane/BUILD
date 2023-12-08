@@ -7,16 +7,13 @@ proto_library(
     name = "dataplane_proto",
     srcs = ["dataplane.proto"],
     visibility = ["//visibility:public"],
-    deps = ["//proto/forwarding:forwarding_proto"],
 )
 
 go_proto_library(
     name = "dataplane_go_proto",
-    compilers = ["@io_bazel_rules_go//proto:go_grpc"],
     importpath = "github.com/openconfig/lemming/proto/dataplane",
     proto = ":dataplane_proto",
     visibility = ["//visibility:public"],
-    deps = ["//proto/forwarding"],
 )
 
 go_library(

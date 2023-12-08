@@ -1,0 +1,121 @@
+
+syntax = "proto3";
+
+package lemming.dataplane.sai;
+
+import "dataplane/proto/common.proto";
+
+option go_package = "github.com/openconfig/lemming/dataplane/proto;sai";
+
+enum RouterInterfaceAttr {
+  ROUTER_INTERFACE_ATTR_UNSPECIFIED = 0;
+  ROUTER_INTERFACE_ATTR_VIRTUAL_ROUTER_ID = 1;
+  ROUTER_INTERFACE_ATTR_TYPE = 2;
+  ROUTER_INTERFACE_ATTR_PORT_ID = 3;
+  ROUTER_INTERFACE_ATTR_VLAN_ID = 4;
+  ROUTER_INTERFACE_ATTR_OUTER_VLAN_ID = 5;
+  ROUTER_INTERFACE_ATTR_INNER_VLAN_ID = 6;
+  ROUTER_INTERFACE_ATTR_BRIDGE_ID = 7;
+  ROUTER_INTERFACE_ATTR_SRC_MAC_ADDRESS = 8;
+  ROUTER_INTERFACE_ATTR_ADMIN_V4_STATE = 9;
+  ROUTER_INTERFACE_ATTR_ADMIN_V6_STATE = 10;
+  ROUTER_INTERFACE_ATTR_MTU = 11;
+  ROUTER_INTERFACE_ATTR_INGRESS_ACL = 12;
+  ROUTER_INTERFACE_ATTR_EGRESS_ACL = 13;
+  ROUTER_INTERFACE_ATTR_NEIGHBOR_MISS_PACKET_ACTION = 14;
+  ROUTER_INTERFACE_ATTR_V4_MCAST_ENABLE = 15;
+  ROUTER_INTERFACE_ATTR_V6_MCAST_ENABLE = 16;
+  ROUTER_INTERFACE_ATTR_LOOPBACK_PACKET_ACTION = 17;
+  ROUTER_INTERFACE_ATTR_IS_VIRTUAL = 18;
+  ROUTER_INTERFACE_ATTR_NAT_ZONE_ID = 19;
+  ROUTER_INTERFACE_ATTR_DISABLE_DECREMENT_TTL = 20;
+  ROUTER_INTERFACE_ATTR_ADMIN_MPLS_STATE = 21;
+}
+
+message CreateRouterInterfaceRequest {
+  option (sai_type) = OBJECT_TYPE_ROUTER_INTERFACE;
+  uint64 switch = 1;
+  optional uint64 virtual_router_id = 2 [(attr_enum_value) = 1];
+  optional RouterInterfaceType type = 3 [(attr_enum_value) = 2];
+  optional uint64 port_id = 4 [(attr_enum_value) = 3];
+  optional uint64 vlan_id = 5 [(attr_enum_value) = 4];
+  optional uint32 outer_vlan_id = 6 [(attr_enum_value) = 5];
+  optional uint32 inner_vlan_id = 7 [(attr_enum_value) = 6];
+  optional uint64 bridge_id = 8 [(attr_enum_value) = 7];
+  optional bytes src_mac_address = 9 [(attr_enum_value) = 8];
+  optional bool admin_v4_state = 10 [(attr_enum_value) = 9];
+  optional bool admin_v6_state = 11 [(attr_enum_value) = 10];
+  optional uint32 mtu = 12 [(attr_enum_value) = 11];
+  optional uint64 ingress_acl = 13 [(attr_enum_value) = 12];
+  optional uint64 egress_acl = 14 [(attr_enum_value) = 13];
+  optional PacketAction neighbor_miss_packet_action = 15
+      [(attr_enum_value) = 14];
+  optional bool v4_mcast_enable = 16 [(attr_enum_value) = 15];
+  optional bool v6_mcast_enable = 17 [(attr_enum_value) = 16];
+  optional PacketAction loopback_packet_action = 18 [(attr_enum_value) = 17];
+  optional bool is_virtual = 19 [(attr_enum_value) = 18];
+  optional uint32 nat_zone_id = 20 [(attr_enum_value) = 19];
+  optional bool disable_decrement_ttl = 21 [(attr_enum_value) = 20];
+  optional bool admin_mpls_state = 22 [(attr_enum_value) = 21];
+}
+
+message CreateRouterInterfaceResponse {
+  uint64 oid = 1;
+}
+
+message RemoveRouterInterfaceRequest {
+  uint64 oid = 1;
+}
+
+message RemoveRouterInterfaceResponse {}
+
+message SetRouterInterfaceAttributeRequest {
+  uint64 oid = 1;
+  optional bytes src_mac_address = 2 [(attr_enum_value) = 8];
+  optional bool admin_v4_state = 3 [(attr_enum_value) = 9];
+  optional bool admin_v6_state = 4 [(attr_enum_value) = 10];
+  optional uint32 mtu = 5 [(attr_enum_value) = 11];
+  optional uint64 ingress_acl = 6 [(attr_enum_value) = 12];
+  optional uint64 egress_acl = 7 [(attr_enum_value) = 13];
+  optional PacketAction neighbor_miss_packet_action = 8
+      [(attr_enum_value) = 14];
+  optional bool v4_mcast_enable = 9 [(attr_enum_value) = 15];
+  optional bool v6_mcast_enable = 10 [(attr_enum_value) = 16];
+  optional PacketAction loopback_packet_action = 11 [(attr_enum_value) = 17];
+  optional uint32 nat_zone_id = 12 [(attr_enum_value) = 19];
+  optional bool disable_decrement_ttl = 13 [(attr_enum_value) = 20];
+  optional bool admin_mpls_state = 14 [(attr_enum_value) = 21];
+}
+
+message SetRouterInterfaceAttributeResponse {}
+
+message GetRouterInterfaceAttributeRequest {
+  uint64 oid = 1;
+  repeated RouterInterfaceAttr attr_type = 2;
+}
+
+message GetRouterInterfaceAttributeResponse {
+  RouterInterfaceAttribute attr = 1;
+}
+
+message GetRouterInterfaceStatsRequest {
+  uint64 oid = 1;
+  repeated RouterInterfaceStat counter_ids = 2;
+}
+
+message GetRouterInterfaceStatsResponse {
+  repeated uint64 values = 1;
+}
+
+service RouterInterface {
+  rpc CreateRouterInterface(CreateRouterInterfaceRequest)
+      returns (CreateRouterInterfaceResponse) {}
+  rpc RemoveRouterInterface(RemoveRouterInterfaceRequest)
+      returns (RemoveRouterInterfaceResponse) {}
+  rpc SetRouterInterfaceAttribute(SetRouterInterfaceAttributeRequest)
+      returns (SetRouterInterfaceAttributeResponse) {}
+  rpc GetRouterInterfaceAttribute(GetRouterInterfaceAttributeRequest)
+      returns (GetRouterInterfaceAttributeResponse) {}
+  rpc GetRouterInterfaceStats(GetRouterInterfaceStatsRequest)
+      returns (GetRouterInterfaceStatsResponse) {}
+}

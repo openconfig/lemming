@@ -16,55 +16,44 @@ syntax = "proto3";
 
 package lemming.dataplane;
 
-import "proto/forwarding/forwarding_action.proto";
-import "proto/forwarding/forwarding_port.proto";
-
 option go_package = "github.com/openconfig/lemming/proto/dataplane";
 
+message OCInterface {
+  string interface = 1;
+  uint32 subinterface = 2;
+}
+
+message GUE {
+  bytes src_ip = 1;
+  bytes dst_ip = 2;
+  uint32 dst_port = 3;
+  bool is_v6 = 4;
+}
+
 message NextHop {
-  oneof dev {
-    string port = 1;
-    string interface = 2;
+  OCInterface interface = 1;
+  string next_hop_ip = 2;
+  oneof encap {
+    GUE gue = 3;
   }
-
-  oneof ip {
-    string ip_str = 3;
-    bytes ip_bytes = 4;
-  }
-
-  uint64 weight = 5;
-  // pre_transmit_actions are extra actions that are applied just prior to
-  // transmitting the packet to the output port (at which time the output
-  // actions are applied).
-  repeated forwarding.ActionDesc pre_transmit_actions = 6;
 }
 
 message NextHopList {
   repeated NextHop hops = 1;
-}
-
-message NextHopIDList {
-  repeated uint64 hops = 1;
   repeated uint64 weights = 2;
 }
 
 message RoutePrefix {
-  oneof prefix {  // Specify either cidr string or ip and mask bytes.
-    string cidr = 1;
-    IpMask mask = 2;
-  }
-  uint64 vrf_id = 3;
+  string cidr = 1;
+  string network_instance = 2;
 }
 
 message Route {
   RoutePrefix prefix = 1;
   PacketAction action = 2;
   oneof hop {
-    string port_id = 3;            // Id of the output port.
-    uint64 next_hop_id = 4;        // Id of the next hop.
-    uint64 next_hop_group_id = 5;  // Id of the next hop group
-    NextHopList next_hops = 6;  // Implicitly create next hop, next hop groups.
-    string interface_id = 7;
+    NextHopList next_hops = 3; // Implicitly create next hop, next hop groups.
+    OCInterface interface = 4; // For connected routes.
   }
 }
 
@@ -75,138 +64,8 @@ enum PortLocation {
   PORT_LOCATION_CPU = 3;
 }
 
-
-message CreatePortRequest {
-  forwarding.PortType type = 1;
-  string id = 2;
-  oneof src {
-    // Name of the linux kernel device to use for the port (eg eth0).
-    string kernel_dev = 3;
-  }
-  // For internal ports (TAP interface),
-  // the id of the corresponding port for punt rules.
-  string external_port = 4;
-  PortLocation location = 5;
-}
-
-message CreatePortResponse {
-
-}
-
-message IpMask {
-  bytes addr = 1;
-  bytes mask = 2;
-}
-
 enum PacketAction {
   PACKET_ACTION_UNSPECIFIED = 0;
   PACKET_ACTION_DROP = 1;
   PACKET_ACTION_FORWARD = 2;
-}
-
-message AddIPRouteRequest {
-  Route route = 1;
-}
-
-message AddIPRouteResponse {
-
-}
-
-message RemoveIPRouteRequest {
-  RoutePrefix prefix = 1;
-}
-
-message RemoveIPRouteResponse {
-
-}
-
-message AddNextHopRequest {
-  uint64 id = 1;
-  NextHop next_hop = 2;
-
-}
-
-message AddNextHopResponse {
-
-}
-
-enum GroupUpdateMode {
-  GROUP_UPDATE_MODE_UNSPECIFIED = 0;
-  GROUP_UPDATE_MODE_ERROR_ON_CONFLICT = 1;
-  GROUP_UPDATE_MODE_APPEND = 2;
-  GROUP_UPDATE_MODE_REPLACE = 3;
-}
-
-
-message AddNextHopGroupRequest {
-  uint64 id = 1;
-  NextHopIDList list = 2;
-  GroupUpdateMode mode = 3;
-}
-
-message AddNextHopGroupResponse {
-  
-}
-
-message AddNeighborRequest {
-  oneof dev {
-    string port_id = 1;
-    string interface_id = 5;
-  }
-  oneof ip {
-    string ip_str = 2;
-    bytes ip_bytes = 3;
-  }
-  bytes mac = 4;
-}
-
-message AddNeighborResponse {
-  
-}
-
-message RemoveNeighborRequest {
-  oneof dev {
-    string port_id = 1;
-    string interface_id = 4;
-  }
-  oneof ip {
-    string ip_str = 2;
-    bytes ip_bytes = 3;
-  }
-}
-
-message RemoveNeighborResponse {
-  
-}
-
-enum InterfaceType {
-  INTERFACE_TYPE_UNSPECIFIED = 0;
-  INTERFACE_TYPE_PORT = 1;
-  INTERFACE_TYPE_LOOPBACK = 2;
-  INTERFACE_TYPE_AGGREGATE = 3;
-}
-
-message AddInterfaceRequest {
-  string id = 1;
-  uint32 vrf_id = 2;
-  bytes mac = 3;
-  InterfaceType type = 4;
-  repeated string port_ids = 5;
-  uint64 mtu = 6;
-}
-
-message AddInterfaceResponse {
-
-}
-
-service Dataplane {
-  rpc CreatePort(CreatePortRequest) returns (CreatePortResponse) {}
-  rpc AddIPRoute(AddIPRouteRequest) returns (AddIPRouteResponse) {}
-  rpc RemoveIPRoute(RemoveIPRouteRequest) returns (RemoveIPRouteResponse) {}
-  rpc AddNextHop(AddNextHopRequest) returns (AddNextHopResponse) {}
-  rpc AddNextHopGroup(AddNextHopGroupRequest)
-      returns (AddNextHopGroupResponse) {}
-  rpc AddNeighbor(AddNeighborRequest) returns (AddNeighborResponse) {}
-  rpc RemoveNeighbor(RemoveNeighborRequest) returns (RemoveNeighborResponse) {}
-  rpc AddInterface(AddInterfaceRequest) returns (AddInterfaceResponse) {}
 }

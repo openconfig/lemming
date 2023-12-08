@@ -24,8 +24,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	"github.com/openconfig/lemming/dataplane/standalone/saiserver"
-	"github.com/openconfig/lemming/dataplane/standalone/saiserver/attrmgr"
+	"github.com/openconfig/lemming/dataplane/saiserver"
+	"github.com/openconfig/lemming/dataplane/saiserver/attrmgr"
 
 	log "github.com/golang/glog"
 )
@@ -66,7 +66,7 @@ func start(port int) {
 		grpc.ChainUnaryInterceptor(logging.UnaryServerInterceptor(getLogger()), mgr.Interceptor),
 		grpc.ChainStreamInterceptor(logging.StreamServerInterceptor(getLogger())))
 
-	if _, err := saiserver.New(mgr, srv); err != nil {
+	if _, err := saiserver.New(context.Background(), mgr, srv); err != nil {
 		log.Fatalf("failed to create server: %v", err)
 	}
 

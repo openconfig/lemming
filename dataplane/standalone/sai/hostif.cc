@@ -18,8 +18,8 @@
 
 #include <glog/logging.h>
 
-#include "dataplane/standalone/proto/common.pb.h"
-#include "dataplane/standalone/proto/hostif.pb.h"
+#include "dataplane/proto/common.pb.h"
+#include "dataplane/proto/hostif.pb.h"
 #include "dataplane/standalone/sai/common.h"
 
 const sai_hostif_api_t l_hostif = {
