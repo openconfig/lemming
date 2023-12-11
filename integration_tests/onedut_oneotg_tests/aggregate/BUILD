@@ -2,8 +2,12 @@ load("@io_bazel_rules_go//go:def.bzl", "go_test")
 
 go_test(
     name = "aggregate_test",
+    size = "enormous",
     srcs = ["aggregate_test.go"],
-    data = ["testbed.pb.txt","topology.pb.txt"],
+    data = [
+        "testbed.pb.txt",
+        "topology.pb.txt",
+    ],
     tags = [
         "exclusive",
     ],
@@ -15,7 +19,6 @@ go_test(
         "@com_github_openconfig_ondatra//gnmi",
         "@com_github_openconfig_ondatra//gnmi/oc",
         "@com_github_openconfig_ondatra//gnmi/otg",
-        "@com_github_openconfig_ondatra//netutil",
         "@com_github_openconfig_ygnmi//ygnmi",
         "@com_github_openconfig_ygot//ygot",
     ],
