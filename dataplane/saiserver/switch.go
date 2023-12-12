@@ -646,7 +646,11 @@ func (sw *saiSwitch) PortStateChangeNotification(_ *saipb.PortStateChangeNotific
 				continue
 			}
 			oType := sw.mgr.GetType(ed.GetPort().GetPortId().GetObjectId().GetId())
-			if oType != saipb.ObjectType_OBJECT_TYPE_PORT {
+			switch oType {
+			case saipb.ObjectType_OBJECT_TYPE_PORT:
+			case saipb.ObjectType_OBJECT_TYPE_BRIDGE_PORT:
+			case saipb.ObjectType_OBJECT_TYPE_LAG:
+			default:
 				log.Infof("skipping port state event for type %v", oType)
 				continue
 			}
