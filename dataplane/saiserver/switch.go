@@ -370,6 +370,10 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 				Exact: &fwdpb.ExactTableDesc{
 					FieldIds: []*fwdpb.PacketFieldId{{
 						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT,
+						},
+					}, {
+						Field: &fwdpb.PacketField{
 							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST,
 						},
 					}},

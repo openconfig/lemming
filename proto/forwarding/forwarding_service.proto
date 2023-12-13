@@ -55,6 +55,9 @@ service Forwarding {
   // AttributeUpdate updates an attribute.
   rpc AttributeUpdate(AttributeUpdateRequest) returns (AttributeUpdateReply) {}
 
+  // AttributeQuery query an attribute.
+  rpc AttributeQuery(AttributeQueryRequest) returns (AttributeQueryReply) {}
+
   // Operations on objects.
   // ObjectDelete deletes an object.
   rpc ObjectDelete(ObjectDeleteRequest) returns (ObjectDeleteReply) {}
@@ -114,6 +117,9 @@ service Forwarding {
   // PacketSinkSubscribe is a subscription to receive packets from the CPU port.
   rpc PacketSinkSubscribe(PacketSinkRequest) 
       returns (stream PacketSinkResponse) {}
+
+  // ObjectNID returns the numeric ID for a given string object id.
+  rpc ObjectNID(ObjectNIDRequest) returns (ObjectNIDReply) {}
 }
 
 // Info provides access to various information elements.

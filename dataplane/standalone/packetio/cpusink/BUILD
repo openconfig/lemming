@@ -6,6 +6,7 @@ go_library(
     importpath = "github.com/openconfig/lemming/dataplane/standalone/packetio/cpusink",
     visibility = ["//visibility:public"],
     deps = [
+        "//dataplane/forwarding/attributes",
         "//dataplane/forwarding/fwdconfig",
         "//dataplane/internal/kernel",
         "//proto/forwarding",

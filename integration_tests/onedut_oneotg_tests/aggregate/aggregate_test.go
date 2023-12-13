@@ -12,18 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package rt_5_2_aggregate_test
+package aggregate_test
 
 import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"math/rand"
 	"net"
 	"sort"
 	"strconv"
+	"strings"
 	"testing"
+	"text/tabwriter"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/open-traffic-generator/snappi/gosnappi"
 	"github.com/openconfig/ondatra"
 	"github.com/openconfig/ondatra/gnmi"
@@ -202,9 +207,6 @@ func (tc *testCase) configureDUT(t *testing.T) {
 	if tc.lagType == lagTypeLACP {
 		gnmi.Replace(t, tc.dut, lacpPath.Config(), lacp)
 	}
-
-	// TODO - to remove this sleep later
-	time.Sleep(5 * time.Second)
 
 	agg := &oc.Interface{Name: ygot.String(tc.aggID)}
 	tc.configDstAggregateDUT(agg, &dutDst)
@@ -467,6 +469,161 @@ func (tc *testCase) verifyMinLinks(t *testing.T) {
 	}
 }
 
+func (tc *testCase) getCounters(t *testing.T, when string) map[string]*oc.Interface_Counters {
+	results := make(map[string]*oc.Interface_Counters)
+	b := &strings.Builder{}
+	w := tabwriter.NewWriter(b, 0, 0, 1, ' ', 0)
+
+	fmt.Fprint(w, "Raw Interface Counters\n\n")
+	fmt.Fprint(w, "Name\tInUnicastPkts\tInOctets\tOutUnicastPkts\tOutOctets\n")
+	for _, port := range tc.dutPorts[1:] {
+		counters := gnmi.Get(t, tc.dut, gnmi.OC().Interface(port.Name()).Counters().State())
+		results[port.Name()] = counters
+		fmt.Fprintf(w, "%s\t%d\t%d\t%d\t%d\n",
+			port.Name(),
+			counters.GetInUnicastPkts(), counters.GetInOctets(),
+			counters.GetOutUnicastPkts(), counters.GetOutOctets())
+	}
+	w.Flush()
+
+	t.Log(b)
+
+	return results
+}
+
+// generates a list of random tcp ports values
+func generateRandomPortList(count uint) []uint32 {
+	a := make([]uint32, count)
+	for index := range a {
+		a[index] = uint32(rand.Intn(65536-1) + 1)
+	}
+	return a
+}
+
+// normalize normalizes the input values so that the output values sum
+// to 1.0 but reflect the proportions of the input.  For example,
+// input [1, 2, 3, 4] is normalized to [0.1, 0.2, 0.3, 0.4].
+func normalize(xs []uint64) (ys []float64, sum uint64) {
+	for _, x := range xs {
+		sum += x
+	}
+	ys = make([]float64, len(xs))
+	for i, x := range xs {
+		ys[i] = float64(x) / float64(sum)
+	}
+	return ys, sum
+}
+
+var approxOpt = cmpopts.EquateApprox(0 /* frac */, 0.01 /* absolute */)
+
+// portWants converts the nextHop wanted weights to per-port wanted
+// weights listed in the same order as atePorts.
+func (tc *testCase) portWants() []float64 {
+	numPorts := len(tc.dutPorts[1:])
+	weights := []float64{}
+	for i := 0; i < numPorts; i++ {
+		weights = append(weights, 1/float64(numPorts))
+	}
+	return weights
+}
+
+func (tc *testCase) verifyCounterDiff(t *testing.T, before, after map[string]*oc.Interface_Counters) {
+	b := &strings.Builder{}
+	w := tabwriter.NewWriter(b, 0, 0, 1, ' ', 0)
+
+	fmt.Fprint(w, "Interface Counter Deltas\n\n")
+	fmt.Fprint(w, "Name\tInPkts\tInOctets\tOutPkts\tOutOctets\n")
+	allInPkts := []uint64{}
+	allOutPkts := []uint64{}
+
+	for port := range before {
+		inPkts := after[port].GetInUnicastPkts() - before[port].GetInUnicastPkts()
+		allInPkts = append(allInPkts, inPkts)
+		inOctets := after[port].GetInOctets() - before[port].GetInOctets()
+		outPkts := after[port].GetOutUnicastPkts() - before[port].GetOutUnicastPkts()
+		allOutPkts = append(allOutPkts, outPkts)
+		outOctets := after[port].GetOutOctets() - before[port].GetOutOctets()
+
+		fmt.Fprintf(w, "%s\t%d\t%d\t%d\t%d\n",
+			port,
+			inPkts, inOctets,
+			outPkts, outOctets)
+	}
+	got, outSum := normalize(allOutPkts)
+	want := tc.portWants()
+	t.Logf("outPkts normalized got: %v", got)
+	t.Logf("want: %v", want)
+	t.Run("Ratio", func(t *testing.T) {
+		if diff := cmp.Diff(want, got, approxOpt); diff != "" {
+			t.Errorf("Packet distribution ratios -want,+got:\n%s", diff)
+		}
+	})
+	t.Run("Loss", func(t *testing.T) {
+		if allInPkts[0] > outSum {
+			t.Errorf("Traffic flow received %d packets, sent only %d",
+				allOutPkts[0], outSum)
+		}
+	})
+	w.Flush()
+
+	t.Log(b)
+}
+
+type headerType string
+
+const (
+	ipv4Header headerType = "ipv4"
+	ipv6Header headerType = "ipv6"
+)
+
+func (tc *testCase) testFlow(t *testing.T, l3header headerType) {
+	i1 := ateSrc.Name
+	i2 := ateDst.Name
+
+	tc.top.Flows().Clear().Items()
+	flow := tc.top.Flows().Add().SetName(string(l3header))
+	flow.Metrics().SetEnable(true)
+	flow.Size().SetFixed(128)
+	flow.Packet().Add().Ethernet().Src().SetValue(ateSrc.MAC)
+
+	switch l3header {
+	case ipv4Header:
+		flow.TxRx().Device().SetTxNames([]string{i1 + ".IPv4"}).SetRxNames([]string{i2 + ".IPv4"})
+		v4 := flow.Packet().Add().Ipv4()
+		v4.Src().SetValue(ateSrc.IPv4)
+		v4.Dst().SetValue(ateDst.IPv4)
+	case ipv6Header:
+		flow.TxRx().Device().SetTxNames([]string{i1 + ".IPv6"}).SetRxNames([]string{i2 + ".IPv6"})
+		v6 := flow.Packet().Add().Ipv6()
+		v6.Src().SetValue(ateSrc.IPv6)
+		v6.Dst().SetValue(ateDst.IPv6)
+	}
+
+	tcp := flow.Packet().Add().Tcp()
+	tcp.SrcPort().SetValues(generateRandomPortList(65534))
+	tcp.DstPort().SetValues(generateRandomPortList(65534))
+	tc.ate.OTG().PushConfig(t, tc.top)
+	tc.ate.OTG().StartProtocols(t)
+
+	tc.verifyDUT(t)
+	tc.verifyATE(t)
+
+	beforeTrafficCounters := tc.getCounters(t, "before")
+
+	tc.ate.OTG().StartTraffic(t)
+	time.Sleep(15 * time.Second)
+	tc.ate.OTG().StopTraffic(t)
+
+	recvMetric := gnmi.Get(t, tc.ate.OTG(), gnmi.OTG().Flow(flow.Name()).State())
+	pkts := recvMetric.GetCounters().GetOutPkts()
+
+	if pkts == 0 {
+		t.Errorf("Flow sent packets: got %v, want non zero", pkts)
+	}
+	afterTrafficCounters := tc.getCounters(t, "after")
+	tc.verifyCounterDiff(t, beforeTrafficCounters, afterTrafficCounters)
+}
+
 func TestNegotiation(t *testing.T) {
 	dut := ondatra.DUT(t, "dut")
 	ate := ondatra.ATE(t, "ate")
@@ -496,6 +653,13 @@ func TestNegotiation(t *testing.T) {
 
 			tc.configureATE(t)
 			t.Run("VerifyATE", tc.verifyATE)
+
+			for _, flow := range []headerType{ipv4Header} {
+				t.Run(fmt.Sprint("TestFlow ", flow), func(t *testing.T) {
+					tc.testFlow(t, flow)
+				})
+			}
+
 			if lagType == lagTypeLACP { // The Linux kernel bond driver only supports min_links for LACP.
 				t.Run("MinLinks", tc.verifyMinLinks)
 			}

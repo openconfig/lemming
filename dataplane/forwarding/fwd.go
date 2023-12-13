@@ -354,6 +354,56 @@ func (e *Server) AttributeUpdate(_ context.Context, request *fwdpb.AttributeUpda
 	return &fwdpb.AttributeUpdateReply{}, nil
 }
 
+// AttributeQuery queries attributes in a forwarding context.
+func (e *Server) AttributeQuery(_ context.Context, request *fwdpb.AttributeQueryRequest) (*fwdpb.AttributeQueryReply, error) {
+	timer := deadlock.NewTimer(deadlock.Timeout, fmt.Sprintf("Processing %+v", request))
+	defer timer.Stop()
+
+	// Find the attributes
+	attributes, err := func() (fwdattribute.Set, error) {
+		cid := request.GetContextId()
+		if cid == nil {
+			return fwdattribute.Global, nil
+		}
+
+		ctx, err := e.FindContext(request.GetContextId())
+		if err != nil {
+			return nil, fmt.Errorf("fwd: AttributeQuery failed, err %v", err)
+		}
+
+		ctx.Lock()
+		defer ctx.Unlock()
+
+		if request.ObjectId == nil {
+			return ctx.Attributes, nil
+		}
+
+		object, err := ctx.Objects.FindID(request.GetObjectId())
+		if err != nil {
+			return nil, fmt.Errorf("fwd: AttributeQuery failed, err %v", err)
+		}
+		return object.Attributes(), nil
+	}()
+	if err != nil {
+		return nil, err
+	}
+	if attributes == nil {
+		return nil, errors.New("fwd: AttributeQuery failed, no attribute on object")
+	}
+
+	// Set a value if it is specified, else unset it.
+	if request.AttrId == "" {
+		return nil, errors.New("fwd: AttributeQuery failed, no attribute specified")
+	}
+	val, ok := attributes.Get(fwdattribute.ID(request.AttrId))
+	if !ok {
+		return nil, errors.New("fwd: AttributeQuery failed, attribute not set")
+	}
+	return &fwdpb.AttributeQueryReply{
+		AttrValue: val,
+	}, nil
+}
+
 // PortCreate creates a port.
 func (e *Server) PortCreate(_ context.Context, request *fwdpb.PortCreateRequest) (*fwdpb.PortCreateReply, error) {
 	timer := deadlock.NewTimer(deadlock.Timeout, fmt.Sprintf("Processing %+v", request))
@@ -838,4 +888,23 @@ func (e *Server) NotifySubscribe(sub *fwdpb.NotifySubscribeRequest, srv fwdpb.Fo
 			return err
 		}
 	}
+}
+
+// ObjectNID returns the numeric id for the object id if it exists.
+func (e *Server) ObjectNID(_ context.Context, request *fwdpb.ObjectNIDRequest) (*fwdpb.ObjectNIDReply, error) {
+	timer := deadlock.NewTimer(deadlock.Timeout, fmt.Sprintf("Processing %+v", request))
+	defer timer.Stop()
+
+	ctx, err := e.FindContext(request.GetContextId())
+	if err != nil {
+		return nil, fmt.Errorf("fwd: ObjectNID failed, err %v", err)
+	}
+
+	ctx.Lock()
+	defer ctx.Unlock()
+	obj, err := ctx.Objects.FindID(request.GetObjectId())
+	if err != nil {
+		return nil, fmt.Errorf("fwd: ObjectNID failed, err %v", err)
+	}
+	return &fwdpb.ObjectNIDReply{Nid: uint64(obj.NID())}, nil
 }

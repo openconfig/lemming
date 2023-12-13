@@ -52,11 +52,13 @@ type ocInterface struct {
 
 type interfaceData struct {
 	portID          uint64
+	portNID         uint64
 	hostifID        uint64
 	hostifIfIndex   int
 	hostifDevName   string
 	rifID           uint64
 	lagMembershipID uint64
+	isAggregate     bool
 }
 
 type interfaceMap map[ocInterface]*interfaceData
@@ -273,10 +275,12 @@ func (ni *Reconciler) startCounterUpdates(ctx context.Context) {
 				stats, err := ni.portClient.GetPortStats(ctx, &saipb.GetPortStatsRequest{
 					Oid: intf.portID,
 					CounterIds: []saipb.PortStat{
-						saipb.PortStat_PORT_STAT_IF_IN_UCAST_PKTS,
-						saipb.PortStat_PORT_STAT_IF_IN_NON_UCAST_PKTS,
-						saipb.PortStat_PORT_STAT_IF_OUT_UCAST_PKTS,
-						saipb.PortStat_PORT_STAT_IF_OUT_NON_UCAST_PKTS,
+						saipb.PortStat_PORT_STAT_IF_IN_UCAST_PKTS,      // 0
+						saipb.PortStat_PORT_STAT_IF_IN_NON_UCAST_PKTS,  // 1
+						saipb.PortStat_PORT_STAT_IF_OUT_UCAST_PKTS,     // 2
+						saipb.PortStat_PORT_STAT_IF_OUT_NON_UCAST_PKTS, // 3
+						saipb.PortStat_PORT_STAT_IF_IN_OCTETS,          // 4
+						saipb.PortStat_PORT_STAT_IF_OUT_OCTETS,         // 5
 					},
 				})
 				log.V(2).Infof("querying counters for interface %q, got %v", intfName, stats)
@@ -284,10 +288,15 @@ func (ni *Reconciler) startCounterUpdates(ctx context.Context) {
 					log.Errorf("interface handler: could not retrieve counter for interface %q", intfName)
 					continue
 				}
-				if _, err := gnmiclient.Replace(ctx, ni.c, ocpath.Root().Interface(intfName.name).Counters().InPkts().State(), stats.Values[0]+stats.Values[1]); err != nil {
-					log.Errorf("interface handler: %v", err)
-				}
-				if _, err := gnmiclient.Replace(ctx, ni.c, ocpath.Root().Interface(intfName.name).Counters().OutPkts().State(), stats.Values[2]+stats.Values[2]); err != nil {
+				sb := &ygnmi.SetBatch{}
+				gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(intfName.name).Counters().InPkts().State(), stats.Values[0]+stats.Values[1])
+				gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(intfName.name).Counters().OutPkts().State(), stats.Values[2]+stats.Values[2])
+				gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(intfName.name).Counters().InUnicastPkts().State(), stats.Values[0])
+				gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(intfName.name).Counters().OutUnicastPkts().State(), stats.Values[2])
+				gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(intfName.name).Counters().InOctets().State(), stats.Values[4])
+				gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(intfName.name).Counters().OutOctets().State(), stats.Values[5])
+
+				if _, err := sb.Set(ctx, ni.c); err != nil {
 					log.Errorf("interface handler: %v", err)
 				}
 			}
@@ -327,6 +336,7 @@ func (ni *Reconciler) createLAG(ctx context.Context, intf ocInterface, lagType o
 		rifID:         rifResp.Oid,
 		hostifIfIndex: bond.Index,
 		hostifDevName: intf.name,
+		isAggregate:   true,
 	}
 
 	ni.getOrCreateInterface(intf.name).GetOrCreateEthernet().SetHwMacAddress(l.Attrs().HardwareAddr.String())
@@ -386,12 +396,15 @@ func (ni *Reconciler) addLAGMember(ctx context.Context, intf ocInterface, member
 	if err != nil {
 		return fmt.Errorf("failed to create lag member: %v", err)
 	}
+	ni.getOrCreateInterface(intf.name).GetOrCreateEthernet().AggregateId = &aggID
+	ni.getOrCreateInterface(aggID).GetAggregation().Member = append(ni.getOrCreateInterface(aggID).GetAggregation().Member, intf.name)
 	sb := &ygnmi.SetBatch{}
 	gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(intf.name).Ethernet().AggregateId().State(), aggID)
+	gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(aggID).Aggregation().Member().State(), ni.getOrCreateInterface(aggID).GetAggregation().Member)
 	if _, err := sb.Set(ctx, ni.c); err != nil {
 		return fmt.Errorf("failed to update agg state: %v", err)
 	}
-	ni.getOrCreateInterface(intf.name).GetOrCreateEthernet().AggregateId = &aggID
+
 	memberData.lagMembershipID = resp.Oid
 	return nil
 }
@@ -411,7 +424,20 @@ func (ni *Reconciler) removeLAGMember(ctx context.Context, intf ocInterface, mem
 		return fmt.Errorf("failed to remove lag member: %v", err)
 	}
 	sb := &ygnmi.SetBatch{}
+	aggID := ni.getOrCreateInterface(intf.name).GetOrCreateEthernet().GetAggregateId()
 	ni.getOrCreateInterface(intf.name).GetOrCreateEthernet().AggregateId = nil
+	idx := -1
+	for i, member := range ni.getOrCreateInterface(aggID).GetOrCreateAggregation().Member {
+		if member == intf.name {
+			idx = i
+			break
+		}
+	}
+	if idx != -1 {
+		ni.getOrCreateInterface(aggID).GetOrCreateAggregation().Member = append(ni.getOrCreateInterface(aggID).GetOrCreateAggregation().Member[:idx],
+			ni.getOrCreateInterface(aggID).GetOrCreateAggregation().Member[idx+1:]...)
+	}
+	gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(aggID).Aggregation().Member().State(), ni.getOrCreateInterface(aggID).GetOrCreateAggregation().Member)
 	gnmiclient.BatchDelete(sb, ocpath.Root().Interface(intf.name).Ethernet().AggregateId().State())
 	if _, err := sb.Set(ctx, ni.c); err != nil {
 		return fmt.Errorf("failed to update agg state: %v", err)
@@ -505,16 +531,19 @@ func (ni *Reconciler) reconcile(ctx context.Context, config *oc.Interface) {
 					OperStatus: proto.Bool(config.GetSubinterface(0).GetEnabled()),
 				})
 				if err != nil {
-					log.Warningf("Failed to set state address of hostif: %v", err)
+					log.Warningf("Failed to set oper status of hostif: %v", err)
 				}
 			}
-			_, err := ni.portClient.SetPortAttribute(ctx, &saipb.SetPortAttributeRequest{
-				Oid:        data.portID,
-				AdminState: proto.Bool(config.GetSubinterface(0).GetEnabled()),
-			})
-			if err != nil {
-				log.Warningf("Failed to set state address of port: %v", err)
+			if !data.isAggregate {
+				_, err := ni.portClient.SetPortAttribute(ctx, &saipb.SetPortAttributeRequest{
+					Oid:        data.portID,
+					AdminState: proto.Bool(config.GetSubinterface(0).GetEnabled()),
+				})
+				if err != nil {
+					log.Warningf("Failed to set admin state of port: %v", err)
+				}
 			}
+
 			sb := &ygnmi.SetBatch{}
 			enabled := config.GetSubinterface(intf.subintf).GetEnabled() && config.GetEnabled()
 			adminStatus := oc.Interface_AdminStatus_DOWN
@@ -696,7 +725,10 @@ func (ni *Reconciler) handleAddrUpdate(ctx context.Context, au *netlink.AddrUpda
 	pl, _ := au.LinkAddress.Mask.Size()
 	isV4 := au.LinkAddress.IP.To4() != nil
 
-	entry := fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(ipBytes)))
+	entry := fwdconfig.EntryDesc(fwdconfig.ExactEntry(
+		fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT).WithUint64(data.portNID),
+		fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(ipBytes),
+	))
 
 	log.V(1).Infof("handling addr update for %s ip %v pl %v", data.hostifDevName, ip, pl)
 	// The dataplane does not monitor the local interface's IP addr, they must set externally.
@@ -710,13 +742,31 @@ func (ni *Reconciler) handleAddrUpdate(ctx context.Context, au *netlink.AddrUpda
 			gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(intf.name).Subinterface(intf.subintf).Ipv6().Address(ip).Ip().State(), au.LinkAddress.IP.String())
 			gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(intf.name).Subinterface(intf.subintf).Ipv6().Address(ip).PrefixLength().State(), uint8(pl))
 		}
-		_, err := ni.fwdClient.TableEntryAdd(ctx, fwdconfig.TableEntryAddRequest(ni.contextID, cpusink.IP2MeTable).
-			AppendEntry(entry, fwdconfig.Action(fwdconfig.TransmitAction(fmt.Sprint(data.hostifID)))).Build())
-		if err != nil {
-			log.Warningf("failed to add route: %v", err)
-			return
+		// For an aggregate interface, add an IP2ME route for all of it's members.
+		// TODO: As interfaces are added and removed from aggregate update their IP2MEs.
+		if data.isAggregate {
+			for _, memberName := range ni.state[intf.name].GetOrCreateAggregation().GetMember() {
+				memberData := ni.ocInterfaceData[ocInterface{name: memberName}]
+				entry := fwdconfig.EntryDesc(fwdconfig.ExactEntry(
+					fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT).WithUint64(memberData.portNID),
+					fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(ipBytes),
+				))
+				_, err := ni.fwdClient.TableEntryAdd(ctx, fwdconfig.TableEntryAddRequest(ni.contextID, cpusink.IP2MeTable).
+					AppendEntry(entry, fwdconfig.Action(fwdconfig.TransmitAction(fmt.Sprint(memberData.hostifID)))).Build())
+				if err != nil {
+					log.Warningf("failed to add route: %v", err)
+					return
+				}
+			}
+		} else {
+			_, err := ni.fwdClient.TableEntryAdd(ctx, fwdconfig.TableEntryAddRequest(ni.contextID, cpusink.IP2MeTable).
+				AppendEntry(entry, fwdconfig.Action(fwdconfig.TransmitAction(fmt.Sprint(data.hostifID)))).Build())
+			if err != nil {
+				log.Warningf("failed to add route: %v", err)
+				return
+			}
 		}
-		_, err = ni.routeClient.CreateRouteEntry(ctx, &saipb.CreateRouteEntryRequest{
+		_, err := ni.routeClient.CreateRouteEntry(ctx, &saipb.CreateRouteEntryRequest{
 			Entry: &saipb.RouteEntry{
 				SwitchId:    ni.switchID,
 				VrId:        0,
@@ -726,7 +776,7 @@ func (ni *Reconciler) handleAddrUpdate(ctx context.Context, au *netlink.AddrUpda
 			PacketAction: saipb.PacketAction_PACKET_ACTION_FORWARD.Enum(),
 		})
 		if err != nil {
-			log.Warningf("failed to add route: %v", err)
+			log.Warningf("failed to add connected on intf %v route: %v", intf.name, err)
 			return
 		}
 	} else {
@@ -737,16 +787,37 @@ func (ni *Reconciler) handleAddrUpdate(ctx context.Context, au *netlink.AddrUpda
 			sub.GetOrCreateIpv6().DeleteAddress(ip)
 			gnmiclient.BatchDelete(sb, ocpath.Root().Interface(intf.name).Subinterface(intf.subintf).Ipv6().Address(ip).State())
 		}
-		_, err := ni.fwdClient.TableEntryRemove(ctx, &fwdpb.TableEntryRemoveRequest{
-			ContextId: &fwdpb.ContextId{Id: ni.contextID},
-			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: cpusink.IP2MeTable}},
-			EntryDesc: entry.Build(),
-		})
-		if err != nil {
-			log.Warningf("failed to remove route: %v", err)
-			return
+		// For an aggregate interface, add an IP2ME route for all of it's members.
+		if data.isAggregate {
+			for _, memberName := range ni.state[intf.name].GetOrCreateAggregation().GetMember() {
+				memberData := ni.ocInterfaceData[ocInterface{name: memberName}]
+				entry := fwdconfig.EntryDesc(fwdconfig.ExactEntry(
+					fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT).WithUint64(memberData.portNID),
+					fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(ipBytes),
+				))
+				_, err := ni.fwdClient.TableEntryRemove(ctx, &fwdpb.TableEntryRemoveRequest{
+					ContextId: &fwdpb.ContextId{Id: ni.contextID},
+					TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: cpusink.IP2MeTable}},
+					EntryDesc: entry.Build(),
+				})
+				if err != nil {
+					log.Warningf("failed to remove ip2me route: %v", err)
+					return
+				}
+			}
+		} else {
+			_, err := ni.fwdClient.TableEntryRemove(ctx, &fwdpb.TableEntryRemoveRequest{
+				ContextId: &fwdpb.ContextId{Id: ni.contextID},
+				TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: cpusink.IP2MeTable}},
+				EntryDesc: entry.Build(),
+			})
+			if err != nil {
+				log.Warningf("failed to remove ip2me route: %v", err)
+				return
+			}
 		}
-		_, err = ni.routeClient.RemoveRouteEntry(ctx, &saipb.RemoveRouteEntryRequest{
+
+		_, err := ni.routeClient.RemoveRouteEntry(ctx, &saipb.RemoveRouteEntryRequest{
 			Entry: &saipb.RouteEntry{
 				SwitchId:    ni.switchID,
 				VrId:        0,
@@ -754,12 +825,12 @@ func (ni *Reconciler) handleAddrUpdate(ctx context.Context, au *netlink.AddrUpda
 			},
 		})
 		if err != nil {
-			log.Warningf("failed to remove route: %v", err)
+			log.Warningf("failed to remove connected route on intf %v: %v", intf.name, err)
 			return
 		}
 	}
 	if _, err := sb.Set(ctx, ni.c); err != nil {
-		log.Warningf("failed to set link status: %v", err)
+		log.Warningf("failed to set link ip address: %v", err)
 	}
 }
 
@@ -875,6 +946,14 @@ func (ni *Reconciler) setupPorts(ctx context.Context) error {
 			return fmt.Errorf("failed to create port %q: %w", i.Name, err)
 		}
 		data.portID = portResp.Oid
+		nid, err := ni.fwdClient.ObjectNID(ctx, &fwdpb.ObjectNIDRequest{
+			ContextId: &fwdpb.ContextId{Id: ni.contextID},
+			ObjectId:  &fwdpb.ObjectId{Id: fmt.Sprint(portResp.Oid)},
+		})
+		if err != nil {
+			return fmt.Errorf("failed to get port %q nid: %w", i.Name, err)
+		}
+		data.portNID = nid.Nid
 
 		hostifName := i.Name + internalSuffix
 		hostifResp, err := ni.hostifClient.CreateHostif(ctx, &saipb.CreateHostifRequest{
