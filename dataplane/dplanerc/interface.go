@@ -543,6 +543,9 @@ func (ni *Reconciler) reconcile(ctx context.Context, config *oc.Interface) {
 					log.Warningf("Failed to set admin state of port: %v", err)
 				}
 			}
+			if err := ni.ifaceMgr.SetState(data.hostifDevName, config.GetSubinterface(intf.subintf).GetEnabled()); err != nil {
+				log.Warningf("Failed to set admin state of hostif: %v", err)
+			}
 
 			sb := &ygnmi.SetBatch{}
 			enabled := config.GetSubinterface(intf.subintf).GetEnabled() && config.GetEnabled()
