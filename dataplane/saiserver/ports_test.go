@@ -401,7 +401,8 @@ func TestLagMember(t *testing.T) {
 		Update: &fwdpb.PortUpdateDesc{
 			Port: &fwdpb.PortUpdateDesc_AggregateAdd{
 				AggregateAdd: &fwdpb.AggregatePortAddMemberUpdateDesc{
-					PortId: &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: "2"}},
+					InstanceCount: 1,
+					PortId:        &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: "2"}},
 				},
 			},
 		},

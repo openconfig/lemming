@@ -414,6 +414,34 @@ func (l *lag) CreateLag(ctx context.Context, _ *saipb.CreateLagRequest) (*saipb.
 		},
 	}
 	_, err := l.dataplane.PortCreate(ctx, pReq)
+	if err != nil {
+		return nil, err
+	}
+
+	upd := &fwdpb.PortUpdateRequest{
+		ContextId: &fwdpb.ContextId{Id: l.dataplane.ID()},
+		PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)}},
+		Update: &fwdpb.PortUpdateDesc{
+			Port: &fwdpb.PortUpdateDesc_AggregateAlgo{
+				AggregateAlgo: &fwdpb.AggregatePortAlgorithmUpdateDesc{
+					Hash: fwdpb.AggregateHashAlgorithm_AGGREGATE_HASH_ALGORITHM_CRC32,
+					FieldIds: []*fwdpb.PacketFieldId{
+						{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC}},
+						{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST}},
+						{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC}},
+						{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST}},
+						{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_SRC}},
+						{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST}},
+					},
+				},
+			},
+		},
+	}
+	_, err = l.dataplane.PortUpdate(ctx, upd)
+	if err != nil {
+		return nil, err
+	}
+
 	return &saipb.CreateLagResponse{Oid: id}, err
 }
 
@@ -426,7 +454,8 @@ func (l *lag) CreateLagMember(ctx context.Context, req *saipb.CreateLagMemberReq
 		Update: &fwdpb.PortUpdateDesc{
 			Port: &fwdpb.PortUpdateDesc_AggregateAdd{
 				AggregateAdd: &fwdpb.AggregatePortAddMemberUpdateDesc{
-					PortId: &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(req.GetPortId())}},
+					InstanceCount: 1,
+					PortId:        &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(req.GetPortId())}},
 				},
 			},
 		},

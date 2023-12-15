@@ -55,3 +55,13 @@ message AttributeUpdateRequest {
 message AttributeUpdateReply {
   
 }
+
+message AttributeQueryRequest {
+  ContextId context_id = 1;
+  ObjectId object_id = 2;
+  string attr_id = 3;
+}
+
+message AttributeQueryReply {
+  string attr_value = 1;
+}

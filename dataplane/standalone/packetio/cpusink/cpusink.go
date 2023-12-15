@@ -21,6 +21,7 @@ import (
 
 	"github.com/vishvananda/netlink"
 
+	"github.com/openconfig/lemming/dataplane/forwarding/attributes"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
 	"github.com/openconfig/lemming/dataplane/internal/kernel"
 
@@ -36,14 +37,16 @@ const (
 
 // Sink is a CPU port client for a forwarding context.
 type Sink struct {
-	client       fwdpb.ForwardingClient
-	ethDevToPort map[string]string
+	client          fwdpb.ForwardingClient
+	ethDevToPort    map[string]string
+	ethDevToPortNID map[string]uint64
 }
 
 func New(client fwdpb.ForwardingClient) *Sink {
 	return &Sink{
-		client:       client,
-		ethDevToPort: make(map[string]string),
+		client:          client,
+		ethDevToPort:    make(map[string]string),
+		ethDevToPortNID: make(map[string]uint64),
 	}
 }
 
@@ -68,6 +71,7 @@ func (sink *Sink) ReceivePackets(ctx context.Context) error {
 				p, err := kernel.NewGenetlinkPort(portDesc.FamilyName, portDesc.GroupName)
 				if err != nil {
 					log.Errorf("failed to create port: %v", err)
+					continue
 				}
 				ports[resp.Port.Port.PortId.ObjectId.Id] = p
 				log.Infof("add to new genetlink port: %v %v", portDesc.FamilyName, portDesc.GroupName)
@@ -76,6 +80,25 @@ func (sink *Sink) ReceivePackets(ctx context.Context) error {
 				if name == "" {
 					name = desc.GetTap().GetDeviceName()
 				}
+				// Get the port ID for this hostif.
+				attr, err := sink.client.AttributeQuery(ctx, &fwdpb.AttributeQueryRequest{
+					ContextId: &fwdpb.ContextId{Id: contextID},
+					ObjectId:  desc.PortId.ObjectId,
+					AttrId:    attributes.SwapActionRelatedPort,
+				})
+				if err != nil {
+					log.Errorf("failed to get related port attr: %v", err)
+					continue
+				}
+				nid, err := sink.client.ObjectNID(ctx, &fwdpb.ObjectNIDRequest{
+					ContextId: &fwdpb.ContextId{Id: contextID},
+					ObjectId:  &fwdpb.ObjectId{Id: attr.AttrValue},
+				})
+				if err != nil {
+					log.Errorf("failed to get related port nid: %v", err)
+					continue
+				}
+				sink.ethDevToPortNID[name] = nid.Nid
 				sink.ethDevToPort[name] = desc.PortId.ObjectId.Id
 				log.Infof("add to new netdev port: %v", name)
 			}
@@ -94,6 +117,7 @@ func (sink *Sink) ReceivePackets(ctx context.Context) error {
 
 // HandleIPUpdates subscribe to netlink to get the IP address of the interfaces
 // and updates the forwarding context with the addresses in the ip2me table.
+// TODO: Add support for aggregate interfaces.
 func (sink *Sink) HandleIPUpdates(ctx context.Context) error {
 	updCh := make(chan netlink.AddrUpdate)
 	doneCh := make(chan struct{})
@@ -117,7 +141,10 @@ func (sink *Sink) HandleIPUpdates(ctx context.Context) error {
 					log.Infof("skipping unknown port", l.Attrs().Name)
 					continue
 				}
-				entry := fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(ip)))
+				entry := fwdconfig.EntryDesc(fwdconfig.ExactEntry(
+					fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT).WithUint64(sink.ethDevToPortNID[l.Attrs().Name]),
+					fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(ip),
+				))
 
 				if upd.NewAddr {
 					log.Infof("added new ip %s to device %s", upd.LinkAddress.IP.String(), l.Attrs().Name)

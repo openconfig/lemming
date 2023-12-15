@@ -394,3 +394,12 @@ message FlowCounterQueryRequest {
 message FlowCounterQueryReply {
   repeated FlowCounter counters = 1;
 }
+
+message ObjectNIDRequest {
+  ContextId context_id = 1;
+  ObjectId object_id = 2;
+}
+
+message ObjectNIDReply {
+  uint64 nid = 1;
+}
