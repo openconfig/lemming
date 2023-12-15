@@ -433,7 +433,7 @@ func (ni *Reconciler) removeLAGMember(ctx context.Context, intf ocInterface, mem
 			break
 		}
 	}
-	if idx != -1 {
+	if isAggregateMember := idx != -1; isAggregateMember {
 		ni.getOrCreateInterface(aggID).GetOrCreateAggregation().Member = append(ni.getOrCreateInterface(aggID).GetOrCreateAggregation().Member[:idx],
 			ni.getOrCreateInterface(aggID).GetOrCreateAggregation().Member[idx+1:]...)
 	}
@@ -745,7 +745,7 @@ func (ni *Reconciler) handleAddrUpdate(ctx context.Context, au *netlink.AddrUpda
 			gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(intf.name).Subinterface(intf.subintf).Ipv6().Address(ip).Ip().State(), au.LinkAddress.IP.String())
 			gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(intf.name).Subinterface(intf.subintf).Ipv6().Address(ip).PrefixLength().State(), uint8(pl))
 		}
-		// For an aggregate interface, add an IP2ME route for all of it's members.
+		// For an aggregate interface, add an IP2ME route for all of its members.
 		// TODO: As interfaces are added and removed from aggregate update their IP2MEs.
 		if data.isAggregate {
 			for _, memberName := range ni.state[intf.name].GetOrCreateAggregation().GetMember() {
