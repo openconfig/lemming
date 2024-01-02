@@ -78,7 +78,7 @@ type Server struct {
 // To avoid having to specify the Target field in gNMI requests in order to comply
 // with https://www.openconfig.net/docs/gnmi/gnmi-specification/#2221-path-target,
 // register the gRPC interceptor
-// grpc.StreamInterceptor(fgnmi.NewSubscribeTargetUpdateInterceptor(targetName))
+// grpc.StreamInterceptor(gnmi.NewSubscribeTargetUpdateInterceptor(targetName))
 // when creating your grpc.Server object.
 //
 // - targetName is the gNMI target name of the datastore.
