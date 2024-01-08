@@ -39,7 +39,7 @@ var (
 	tlsKeyFile  = pflag.String("tls_key_file", "", "Controls whether to enable TLS for gNXI services. If unspecified, insecure credentials are used.")
 	tlsCertFile = pflag.String("tls_cert_file", "", "Controls whether to enable TLS for gNXI services. If unspecified, insecure credentials are used.")
 	zapiAddr    = pflag.String("zapi_addr", sysrib.ZAPIAddr, "Custom ZAPI address: use unix:/tmp/zserv.api for a temp.")
-	_           = pflag.Bool("enable_dataplane", false, "Controls whether to enable dataplane")
+	dplane      = pflag.Bool("enable_dataplane", false, "Controls whether to enable dataplane")
 )
 
 func main() {
@@ -58,7 +58,12 @@ func main() {
 		}
 	}
 
-	f, err := lemming.New(*target, *zapiAddr, lemming.WithTransportCreds(creds), lemming.WithGRIBIAddr(*gribiAddr), lemming.WithGNMIAddr(*gnmiAddr), lemming.WithBGPPort(uint16(*bgpPort)))
+	f, err := lemming.New(*target, *zapiAddr, lemming.WithTransportCreds(creds),
+		lemming.WithGRIBIAddr(*gribiAddr),
+		lemming.WithGNMIAddr(*gnmiAddr),
+		lemming.WithBGPPort(uint16(*bgpPort)),
+		lemming.WithDataplane(*dplane),
+	)
 	if err != nil {
 		log.Fatalf("Failed to start lemming: %v", err)
 	}

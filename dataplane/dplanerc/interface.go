@@ -111,12 +111,18 @@ type interfaceManager interface {
 	SetState(name string, up bool) error
 	ReplaceIP(name string, ip string, prefixLen int) error
 	DeleteIP(name string, ip string, prefixLen int) error
-	GetAll() ([]net.Interface, error)
-	GetByName(name string) (*net.Interface, error)
-	CreateTAP(name string) (int, error)
 	LinkSubscribe(ch chan<- netlink.LinkUpdate, done <-chan struct{}) error
 	AddrSubscribe(ch chan<- netlink.AddrUpdate, done <-chan struct{}) error
 	NeighSubscribe(ch chan<- netlink.NeighUpdate, done <-chan struct{}) error
+	LinkList() ([]netlink.Link, error)
+	LinkAdd(link netlink.Link) error
+	LinkByName(name string) (netlink.Link, error)
+	LinkByIndex(idx int) (netlink.Link, error)
+	LinkSetDown(link netlink.Link) error
+	LinkSetUp(link netlink.Link) error
+	LinkSetMaster(member netlink.Link, link netlink.Link) error
+	LinkSetNoMaster(link netlink.Link) error
+	LinkModify(link netlink.Link) error
 }
 
 // New creates a new interface handler.
@@ -308,7 +314,7 @@ func (ni *Reconciler) createLAG(ctx context.Context, intf ocInterface, lagType o
 	bond := netlink.NewLinkBond(netlink.NewLinkAttrs())
 	bond.Name = intf.name
 	bond.Mode = netlink.BOND_MODE_BALANCE_XOR
-	if err := netlink.LinkAdd(bond); err != nil {
+	if err := ni.ifaceMgr.LinkAdd(bond); err != nil {
 		return fmt.Errorf("failed to create kernel lag interface: %v", err)
 	}
 	lagResp, err := ni.lagClient.CreateLag(ctx, &saipb.CreateLagRequest{
@@ -317,7 +323,7 @@ func (ni *Reconciler) createLAG(ctx context.Context, intf ocInterface, lagType o
 	if err != nil {
 		return fmt.Errorf("failed to create router interface %q: %v", intf.name, err)
 	}
-	l, err := netlink.LinkByName(intf.name)
+	l, err := ni.ifaceMgr.LinkByName(intf.name)
 	if err != nil {
 		return fmt.Errorf("failed to get bond intf %q: %v", intf.name, err)
 	}
@@ -363,11 +369,11 @@ func (ni *Reconciler) addLAGMember(ctx context.Context, intf ocInterface, member
 	if !ok {
 		return fmt.Errorf("unknown aggregate id %q", aggID)
 	}
-	bondLink, err := netlink.LinkByIndex(agg.hostifIfIndex)
+	bondLink, err := ni.ifaceMgr.LinkByIndex(agg.hostifIfIndex)
 	if err != nil {
 		return fmt.Errorf("failed to find bond link: %v", err)
 	}
-	memberLink, err := netlink.LinkByIndex(memberData.hostifIfIndex)
+	memberLink, err := ni.ifaceMgr.LinkByIndex(memberData.hostifIfIndex)
 	if err != nil {
 		return fmt.Errorf("failed to find member link: %v", err)
 	}
@@ -375,17 +381,17 @@ func (ni *Reconciler) addLAGMember(ctx context.Context, intf ocInterface, member
 	// Can only add links to a bond interface when it's down.
 	if memberLink.Attrs().OperState != netlink.OperDown {
 		log.Infof("aggregate link %v oper status %v, setting to down", intf.name, bondLink.Attrs().OperState)
-		if err := netlink.LinkSetDown(memberLink); err != nil {
+		if err := ni.ifaceMgr.LinkSetDown(memberLink); err != nil {
 			log.Warningf("failed to set link %v down: %v", intf.name, err)
 		}
 		defer func() {
-			if err := netlink.LinkSetUp(memberLink); err != nil {
+			if err := ni.ifaceMgr.LinkSetUp(memberLink); err != nil {
 				log.Warningf("failed to set link %v up: %v", intf.name, err)
 			}
 		}()
 	}
 
-	if err := netlink.LinkSetMaster(memberLink, bondLink); err != nil {
+	if err := ni.ifaceMgr.LinkSetMaster(memberLink, bondLink); err != nil {
 		return fmt.Errorf("failed to add bond member: %v", err)
 	}
 	resp, err := ni.lagClient.CreateLagMember(ctx, &saipb.CreateLagMemberRequest{
@@ -410,11 +416,11 @@ func (ni *Reconciler) addLAGMember(ctx context.Context, intf ocInterface, member
 }
 
 func (ni *Reconciler) removeLAGMember(ctx context.Context, intf ocInterface, memberData *interfaceData) error {
-	memberLink, err := netlink.LinkByIndex(memberData.hostifIfIndex)
+	memberLink, err := ni.ifaceMgr.LinkByIndex(memberData.hostifIfIndex)
 	if err != nil {
 		return fmt.Errorf("failed to find member link: %v", err)
 	}
-	if err := netlink.LinkSetNoMaster(memberLink); err != nil {
+	if err := ni.ifaceMgr.LinkSetNoMaster(memberLink); err != nil {
 		return fmt.Errorf("failed to remove bond: %v", err)
 	}
 	_, err = ni.lagClient.RemoveLagMember(ctx, &saipb.RemoveLagMemberRequest{
@@ -447,7 +453,7 @@ func (ni *Reconciler) removeLAGMember(ctx context.Context, intf ocInterface, mem
 }
 
 func (ni *Reconciler) setMinLinks(intf ocInterface, data *interfaceData, minLink uint16) error {
-	link, err := netlink.LinkByIndex(data.hostifIfIndex)
+	link, err := ni.ifaceMgr.LinkByIndex(data.hostifIfIndex)
 	if err != nil {
 		return fmt.Errorf("failed to find link: %v", err)
 	}
@@ -456,7 +462,7 @@ func (ni *Reconciler) setMinLinks(intf ocInterface, data *interfaceData, minLink
 		return fmt.Errorf("link %s is not a bond interface", intf.name)
 	}
 	bond.MinLinks = int(minLink)
-	if err := netlink.LinkModify(bond); err != nil {
+	if err := ni.ifaceMgr.LinkModify(bond); err != nil {
 		return fmt.Errorf("failed to modify link %s: %v", intf.name, err)
 	}
 	ni.getOrCreateInterface(intf.name).GetOrCreateAggregation().SetMinLinks(minLink)
@@ -925,19 +931,19 @@ const (
 
 // setupPorts creates the dataplane ports and TAP interfaces for all interfaces on the device.
 func (ni *Reconciler) setupPorts(ctx context.Context) error {
-	ifs, err := ni.ifaceMgr.GetAll()
+	ifs, err := ni.ifaceMgr.LinkList()
 	if err != nil {
 		return err
 	}
 
 	for _, i := range ifs {
 		// Skip loopback, k8s pod interface, and tap interfaces.
-		if i.Name == "lo" || i.Name == "eth0" || strings.HasSuffix(i.Name, internalSuffix) {
+		if i.Attrs().Name == "lo" || i.Attrs().Name == "eth0" || strings.HasSuffix(i.Attrs().Name, internalSuffix) {
 			continue
 		}
-		log.Info("creating interfaces for %v", i.Name)
+		log.Info("creating interfaces for %v", i.Attrs().Name)
 		ocIntf := ocInterface{
-			name:    i.Name,
+			name:    i.Attrs().Name,
 			subintf: 0,
 		}
 		data := &interfaceData{}
@@ -946,7 +952,7 @@ func (ni *Reconciler) setupPorts(ctx context.Context) error {
 			Switch: ni.switchID,
 		})
 		if err != nil {
-			return fmt.Errorf("failed to create port %q: %w", i.Name, err)
+			return fmt.Errorf("failed to create port %q: %w", i.Attrs().Name, err)
 		}
 		data.portID = portResp.Oid
 		nid, err := ni.fwdClient.ObjectNID(ctx, &fwdpb.ObjectNIDRequest{
@@ -954,11 +960,11 @@ func (ni *Reconciler) setupPorts(ctx context.Context) error {
 			ObjectId:  &fwdpb.ObjectId{Id: fmt.Sprint(portResp.Oid)},
 		})
 		if err != nil {
-			return fmt.Errorf("failed to get port %q nid: %w", i.Name, err)
+			return fmt.Errorf("failed to get port %q nid: %w", i.Attrs().Name, err)
 		}
 		data.portNID = nid.Nid
 
-		hostifName := i.Name + internalSuffix
+		hostifName := i.Attrs().Name + internalSuffix
 		hostifResp, err := ni.hostifClient.CreateHostif(ctx, &saipb.CreateHostifRequest{
 			Switch:     ni.switchID,
 			Type:       saipb.HostifType_HOSTIF_TYPE_NETDEV.Enum(),
@@ -972,33 +978,33 @@ func (ni *Reconciler) setupPorts(ctx context.Context) error {
 		data.hostifID = hostifResp.Oid
 		data.hostifDevName = hostifName
 
-		tap, err := ni.ifaceMgr.GetByName(hostifName)
+		tap, err := ni.ifaceMgr.LinkByName(hostifName)
 		if err != nil {
 			return fmt.Errorf("failed to find tap interface %q: %w", hostifName, err)
 		}
-		data.hostifIfIndex = tap.Index
+		data.hostifIfIndex = tap.Attrs().Index
 
 		rifResp, err := ni.ifaceClient.CreateRouterInterface(ctx, &saipb.CreateRouterInterfaceRequest{
 			Switch:          ni.switchID,
 			Type:            saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_PORT.Enum(),
 			PortId:          &portResp.Oid,
-			SrcMacAddress:   tap.HardwareAddr,
+			SrcMacAddress:   tap.Attrs().HardwareAddr,
 			VirtualRouterId: proto.Uint64(0),
 		})
 		if err != nil {
-			return fmt.Errorf("failed to update MAC address for interface %q: %w", i.Name, err)
+			return fmt.Errorf("failed to update MAC address for interface %q: %w", i.Attrs().Name, err)
 		}
 		data.rifID = rifResp.Oid
 
-		ni.getOrCreateInterface(i.Name).GetOrCreateEthernet().SetHwMacAddress(tap.HardwareAddr.String())
-		ni.getOrCreateInterface(i.Name).GetOrCreateEthernet().SetMacAddress(tap.HardwareAddr.String())
+		ni.getOrCreateInterface(i.Attrs().Name).GetOrCreateEthernet().SetHwMacAddress(tap.Attrs().HardwareAddr.String())
+		ni.getOrCreateInterface(i.Attrs().Name).GetOrCreateEthernet().SetMacAddress(tap.Attrs().HardwareAddr.String())
 
 		sb := &ygnmi.SetBatch{}
-		gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(i.Name).Ethernet().HwMacAddress().State(), tap.HardwareAddr.String())
-		gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(i.Name).Ethernet().MacAddress().State(), tap.HardwareAddr.String())
-		gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(i.Name).OperStatus().State(), oc.Interface_OperStatus_UP)
-		gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(i.Name).AdminStatus().State(), oc.Interface_AdminStatus_UP)
-		gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(i.Name).Subinterface(0).AdminStatus().State(), oc.Interface_AdminStatus_UP)
+		gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(i.Attrs().Name).Ethernet().HwMacAddress().State(), tap.Attrs().HardwareAddr.String())
+		gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(i.Attrs().Name).Ethernet().MacAddress().State(), tap.Attrs().HardwareAddr.String())
+		gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(i.Attrs().Name).OperStatus().State(), oc.Interface_OperStatus_UP)
+		gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(i.Attrs().Name).AdminStatus().State(), oc.Interface_AdminStatus_UP)
+		gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(i.Attrs().Name).Subinterface(0).AdminStatus().State(), oc.Interface_AdminStatus_UP)
 		if _, err := sb.Set(ctx, ni.c); err != nil {
 			log.Warningf("failed to set link status: %v", err)
 		}

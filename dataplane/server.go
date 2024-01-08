@@ -34,19 +34,57 @@ import (
 	saipb "github.com/openconfig/lemming/dataplane/proto"
 )
 
+type options struct {
+	addr          string
+	reconcilation bool
+}
+
+type Option func(*options)
+
+// WithAddress sets the address of the dataplane gRPC server
+// Default: 127.0.0.1:0
+func WithAddress(addr string) Option {
+	return func(o *options) {
+		o.addr = addr
+	}
+}
+
+// WithReconcilation enables the gNMI reconcilation.
+// Default: true
+func WithReconcilation(rec bool) Option {
+	return func(o *options) {
+		o.reconcilation = rec
+	}
+}
+
+func resolveOpts(opts ...Option) *options {
+	resolved := &options{
+		addr:          "127.0.0.1:0",
+		reconcilation: true,
+	}
+
+	for _, opt := range opts {
+		opt(resolved)
+	}
+	return resolved
+}
+
 // Dataplane is an implementation of Dataplane HAL API.
 type Dataplane struct {
 	saiserv     *saiserver.Server
 	srv         *grpc.Server
 	lis         net.Listener
 	reconcilers []reconciler.Reconciler
+	opt         *options
 }
 
 // New create a new dataplane instance.
-func New(ctx context.Context) (*Dataplane, error) {
-	data := &Dataplane{}
+func New(ctx context.Context, opts ...Option) (*Dataplane, error) {
+	data := &Dataplane{
+		opt: resolveOpts(opts...),
+	}
 
-	lis, err := (&net.ListenConfig{}).Listen(ctx, "tcp", "127.0.0.1:0")
+	lis, err := (&net.ListenConfig{}).Listen(ctx, "tcp", data.opt.addr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to listen: %w", err)
 	}
@@ -114,12 +152,13 @@ func (d *Dataplane) Start(ctx context.Context, c gpb.GNMIClient, target string) 
 		return err
 	}
 
-	// TODO: Completely remove engine and don't hardcode context ID.
-	d.reconcilers = append(d.reconcilers, getReconcilers(conn, swResp.Oid, *swAttrs.GetAttr().CpuPort, "lucius")...)
+	if d.opt.reconcilation {
+		d.reconcilers = append(d.reconcilers, getReconcilers(conn, swResp.Oid, *swAttrs.GetAttr().CpuPort, "lucius")...)
 
-	for _, rec := range d.reconcilers {
-		if err := rec.Start(ctx, c, target); err != nil {
-			return fmt.Errorf("failed to stop handler %q: %v", rec.ID(), err)
+		for _, rec := range d.reconcilers {
+			if err := rec.Start(ctx, c, target); err != nil {
+				return fmt.Errorf("failed to stop handler %q: %v", rec.ID(), err)
+			}
 		}
 	}
 

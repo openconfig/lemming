@@ -20,7 +20,6 @@ package kernel
 import (
 	"fmt"
 	"net"
-	"sort"
 
 	"github.com/vishvananda/netlink"
 	"golang.org/x/sys/unix"
@@ -116,23 +115,6 @@ func (k *Interfaces) CreateTAP(name string) (int, error) {
 	return fd, nil
 }
 
-// GetAll returns all interfaces.
-func (k *Interfaces) GetAll() ([]net.Interface, error) {
-	ifaces, err := net.Interfaces()
-	if err != nil {
-		return nil, err
-	}
-	sort.Slice(ifaces, func(i, j int) bool {
-		return ifaces[i].Name < ifaces[j].Name
-	})
-	return ifaces, nil
-}
-
-// GetByName returns all interfaces.
-func (k *Interfaces) GetByName(name string) (*net.Interface, error) {
-	return net.InterfaceByName(name)
-}
-
 // LinkByName returns a network interface by name.
 func (k *Interfaces) LinkByName(name string) (netlink.Link, error) {
 	return netlink.LinkByName(name)
@@ -151,4 +133,36 @@ func (k *Interfaces) AddrSubscribe(ch chan<- netlink.AddrUpdate, done <-chan str
 // NeighSubscribe subscribes to neighbor table updates.
 func (k *Interfaces) NeighSubscribe(ch chan<- netlink.NeighUpdate, done <-chan struct{}) error {
 	return netlink.NeighSubscribe(ch, done)
+}
+
+func (k *Interfaces) LinkList() ([]netlink.Link, error) {
+	return netlink.LinkList()
+}
+
+func (k *Interfaces) LinkAdd(link netlink.Link) error {
+	return netlink.LinkAdd(link)
+}
+
+func (k *Interfaces) LinkByIndex(idx int) (netlink.Link, error) {
+	return netlink.LinkByIndex(idx)
+}
+
+func (k *Interfaces) LinkSetDown(link netlink.Link) error {
+	return netlink.LinkSetDown(link)
+}
+
+func (k *Interfaces) LinkSetUp(link netlink.Link) error {
+	return netlink.LinkSetUp(link)
+}
+
+func (k *Interfaces) LinkSetMaster(member netlink.Link, link netlink.Link) error {
+	return netlink.LinkSetMaster(member, link)
+}
+
+func (k *Interfaces) LinkSetNoMaster(link netlink.Link) error {
+	return netlink.LinkSetNoMaster(link)
+}
+
+func (k *Interfaces) LinkModify(link netlink.Link) error {
+	return netlink.LinkModify(link)
 }
