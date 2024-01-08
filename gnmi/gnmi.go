@@ -75,6 +75,12 @@ type Server struct {
 
 // New creates and registers a reference gNMI server on the given gRPC server.
 //
+// To avoid having to specify the Target field in gNMI requests in order to comply
+// with https://www.openconfig.net/docs/gnmi/gnmi-specification/#2221-path-target,
+// register the gRPC interceptor
+// grpc.StreamInterceptor(gnmi.NewSubscribeTargetUpdateInterceptor(targetName))
+// when creating your grpc.Server object.
+//
 // - targetName is the gNMI target name of the datastore.
 // - pa is an optional PathAuth instance used for authorization gNMI requests, set to nil for no authorization.
 func New(srv *grpc.Server, targetName string, pa PathAuth, recs ...reconciler.Reconciler) (*Server, error) {
