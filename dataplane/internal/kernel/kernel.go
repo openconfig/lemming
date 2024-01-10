@@ -20,6 +20,7 @@ package kernel
 import (
 	"fmt"
 	"net"
+	"sort"
 
 	"github.com/vishvananda/netlink"
 	"golang.org/x/sys/unix"
@@ -136,7 +137,15 @@ func (k *Interfaces) NeighSubscribe(ch chan<- netlink.NeighUpdate, done <-chan s
 }
 
 func (k *Interfaces) LinkList() ([]netlink.Link, error) {
-	return netlink.LinkList()
+	links, err := netlink.LinkList()
+	if err != nil {
+		return nil, err
+	}
+
+	sort.Slice(links, func(i, j int) bool {
+		return links[i].Attrs().Name < links[j].Attrs().Name
+	})
+	return links, err
 }
 
 func (k *Interfaces) LinkAdd(link netlink.Link) error {
