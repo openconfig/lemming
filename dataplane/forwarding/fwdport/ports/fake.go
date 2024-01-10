@@ -212,13 +212,16 @@ func (fakeBuilder) Build(portDesc *fwdpb.PortDesc, ctx *fwdcontext.Context) (fwd
 		return nil, fmt.Errorf("invalid port type in proto, got %T, expected *fwdpb.PortDesc_Fake", portDesc.Port)
 	}
 
-	mgr := ctx.FakePortManager
+	var mgr fwdcontext.FakePortManager
+	if ctx != nil {
+		mgr = ctx.FakePortManager
+	}
 	if mgr == nil {
 		mgr = &pcapManager{
 			desc: fp.Fake,
 		}
 	}
-	port, err := mgr.CreatePort(portDesc.PortId.ObjectId.Id)
+	port, err := mgr.CreatePort(portDesc.GetPortId().GetObjectId().GetId())
 	if err != nil {
 		return nil, err
 	}
