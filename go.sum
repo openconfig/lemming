@@ -1129,8 +1129,6 @@ github.com/openconfig/kne v0.1.15 h1:3ADQpUasGv23V53KlkLdaJrMWM6yyJ4EGtJvFyVzCUA
 github.com/openconfig/kne v0.1.15/go.mod h1:4rV0EbqxQec3BRvvkcrsponO6XLlMYFuNynkPAWjaMw=
 github.com/openconfig/lemming/operator v0.2.0 h1:dovZnR6lQkOHXcODli1NDOr/GVYrBY05KS5X11jxVbw=
 github.com/openconfig/lemming/operator v0.2.0/go.mod h1:LKgEXSR5VK2CAeh2uKijKAXFj42uQuwakrCHVPF0iII=
-github.com/openconfig/magna v0.0.0-20231227222122-d72edfd5fba9 h1:euQlk2dcqH+7u6RFomFY+jPPSG9uHgw1Cvo51z6GsXY=
-github.com/openconfig/magna v0.0.0-20231227222122-d72edfd5fba9/go.mod h1:YozVNJsAY+Wcd2L2kRARURcK+y1PxMpwKyxMnCdKwhg=
 github.com/openconfig/ondatra v0.4.3 h1:M6moqZRuA87aXNbHkZgj/U+Jj4WOjzgTC/EM1ARqt+E=
 github.com/openconfig/ondatra v0.4.3/go.mod h1:WEZ0twDTtctPYDJ6D0zeyKwdXfEHRpKV7At0xPHMrBs=
 github.com/openconfig/testt v0.0.0-20220311054427-efbb1a32ec07 h1:X631iD/B0ximGFb5P9LY5wHju4SiedxUhc5UZEo7VSw=

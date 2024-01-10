@@ -18,7 +18,6 @@ go_library(
         "@com_github_google_gopacket//:gopacket",
         "@com_github_google_uuid//:uuid",
         "@com_github_openconfig_kne//topo",
-        "@com_github_openconfig_magna//lwotg",
         "@com_github_openconfig_ondatra//:ondatra",
         "@com_github_openconfig_ondatra//binding",
         "@com_github_openconfig_ondatra//eventlis",

@@ -21,7 +21,6 @@ require (
 	github.com/openconfig/gribi v1.0.0
 	github.com/openconfig/gribigo v0.0.0-20231116195824-d8605fda9f33
 	github.com/openconfig/kne v0.1.15
-	github.com/openconfig/magna v0.0.0-20231227222122-d72edfd5fba9
 	github.com/openconfig/ondatra v0.4.3
 	github.com/openconfig/ygnmi v0.10.1
 	github.com/openconfig/ygot v0.29.16
