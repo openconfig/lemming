@@ -25,7 +25,11 @@ import (
 
 	"github.com/google/gopacket"
 	"github.com/google/uuid"
+	"github.com/openconfig/gnmi/proto/gnmi"
+	"github.com/openconfig/gnoigo"
+
 	"github.com/openconfig/ondatra/binding"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/local"
 
 	"github.com/openconfig/lemming"
@@ -33,6 +37,12 @@ import (
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
 	"github.com/openconfig/lemming/dataplane/forwarding/util/queue"
 
+	acctzpb "github.com/openconfig/gnsi/acctz"
+	authzpb "github.com/openconfig/gnsi/authz"
+	certzpb "github.com/openconfig/gnsi/certz"
+	credzpb "github.com/openconfig/gnsi/credentialz"
+	pathzpb "github.com/openconfig/gnsi/pathz"
+	grpb "github.com/openconfig/gribi/v1/proto/service"
 	opb "github.com/openconfig/ondatra/proto"
 
 	saipb "github.com/openconfig/lemming/dataplane/proto"
@@ -59,6 +69,52 @@ type localLemming struct {
 	binding.AbstractDUT
 	l     *lemming.Device
 	dutID string
+	addr  string
+}
+
+type gnsiClient struct {
+	binding.AbstractGNSIClients
+	conn grpc.ClientConnInterface
+}
+
+func (c *gnsiClient) Acctz() acctzpb.AcctzClient { return acctzpb.NewAcctzClient(c.conn) }
+func (c *gnsiClient) Authz() authzpb.AuthzClient { return authzpb.NewAuthzClient(c.conn) }
+func (c *gnsiClient) Certz() certzpb.CertzClient { return certzpb.NewCertzClient(c.conn) }
+func (c *gnsiClient) Credentialz() credzpb.CredentialzClient {
+	return credzpb.NewCredentialzClient(c.conn)
+}
+func (c *gnsiClient) Pathz() pathzpb.PathzClient { return pathzpb.NewPathzClient(c.conn) }
+
+func (l *localLemming) DialGNMI(ctx context.Context, opts ...grpc.DialOption) (gnmi.GNMIClient, error) {
+	conn, err := grpc.DialContext(ctx, net.JoinHostPort(l.addr, fmt.Sprint(gnmiPort)), opts...)
+	if err != nil {
+		return nil, err
+	}
+	return gnmi.NewGNMIClient(conn), nil
+}
+
+func (l *localLemming) DialGNOI(ctx context.Context, opts ...grpc.DialOption) (gnoigo.Clients, error) {
+	conn, err := grpc.DialContext(ctx, net.JoinHostPort(l.addr, fmt.Sprint(gnmiPort)), opts...)
+	if err != nil {
+		return nil, err
+	}
+	return gnoigo.NewClients(conn), nil
+}
+
+func (l *localLemming) DialGNSI(ctx context.Context, opts ...grpc.DialOption) (binding.GNSIClients, error) {
+	conn, err := grpc.DialContext(ctx, net.JoinHostPort(l.addr, fmt.Sprint(gnmiPort)), opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &gnsiClient{conn: conn}, nil
+}
+
+func (l *localLemming) DialGRIBI(ctx context.Context, opts ...grpc.DialOption) (grpb.GRIBIClient, error) {
+	conn, err := grpc.DialContext(ctx, net.JoinHostPort(l.addr, fmt.Sprint(gribiPort)), opts...)
+	if err != nil {
+		return nil, err
+	}
+	return grpb.NewGRIBIClient(conn), nil
 }
 
 const (
@@ -79,6 +135,9 @@ func (lb *LocalBind) Reserve(ctx context.Context, tb *opb.Testbed, _, _ time.Dur
 	portMgr := &portMgr{
 		ports: map[string]*chanPort{},
 	}
+
+	// for _, ate := range tb.Ates {
+	// }
 
 	for _, dut := range tb.Duts {
 		addr, err := findAvailableLoopbackIP()

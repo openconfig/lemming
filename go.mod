@@ -16,6 +16,8 @@ require (
 	github.com/open-traffic-generator/snappi/gosnappi v0.13.0
 	github.com/openconfig/gnmi v0.10.0
 	github.com/openconfig/gnoi v0.3.0
+	github.com/openconfig/gnoi v0.2.0
+	github.com/openconfig/gnoigo v0.0.0-20231025173800-d65570111f09
 	github.com/openconfig/gnsi v1.2.3
 	github.com/openconfig/goyang v1.4.5
 	github.com/openconfig/gribi v1.0.0
