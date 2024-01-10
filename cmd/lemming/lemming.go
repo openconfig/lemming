@@ -23,12 +23,9 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/openconfig/lemming"
-	"github.com/openconfig/lemming/dataplane/config"
 	"github.com/openconfig/lemming/sysrib"
 
 	log "github.com/golang/glog"
-
-	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
 var (
@@ -46,8 +43,6 @@ func main() {
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
 	pflag.Parse()
 	viper.BindPFlags(pflag.CommandLine)
-	// TODO: A better way to config, this doesn't need to a be a flag.
-	viper.Set(config.NetDevForwardingType, fwdpb.PortType_name[int32(fwdpb.PortType_PORT_TYPE_TAP)])
 
 	creds := insecure.NewCredentials()
 	if *tlsCertFile != "" && *tlsKeyFile != "" {

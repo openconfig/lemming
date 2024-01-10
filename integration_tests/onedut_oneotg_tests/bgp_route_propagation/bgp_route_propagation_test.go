@@ -37,7 +37,7 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	ondatra.RunTests(m, binding.Get(".."))
+	ondatra.RunTests(m, binding.KNE(".."))
 }
 
 // This test topology connects the DUT and ATE over two ports.
@@ -350,7 +350,7 @@ func TestBGP(t *testing.T) {
 					PeerAs:          ygot.Uint32(ateAS1),
 					NeighborAddress: ygot.String("192.0.2.2"),
 					// TODO: Support peer-groups in lemming.
-					//PeerGroup:       ygot.String("BGP-PEER-GROUP1"),
+					// PeerGroup:       ygot.String("BGP-PEER-GROUP1"),
 					AfiSafi: map[oc.E_BgpTypes_AFI_SAFI_TYPE]*oc.NetworkInstance_Protocol_Bgp_Neighbor_AfiSafi{
 						oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST: {
 							AfiSafiName: oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST,
@@ -366,7 +366,7 @@ func TestBGP(t *testing.T) {
 				"192.0.2.6": {
 					PeerAs:          ygot.Uint32(ateAS2),
 					NeighborAddress: ygot.String("192.0.2.6"),
-					//PeerGroup:       ygot.String("BGP-PEER-GROUP2"),
+					// PeerGroup:       ygot.String("BGP-PEER-GROUP2"),
 					AfiSafi: map[oc.E_BgpTypes_AFI_SAFI_TYPE]*oc.NetworkInstance_Protocol_Bgp_Neighbor_AfiSafi{
 						oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST: {
 							AfiSafiName: oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST,
@@ -411,7 +411,7 @@ func TestBGP(t *testing.T) {
 			Neighbor: map[string]*oc.NetworkInstance_Protocol_Bgp_Neighbor{
 				"2001:db8::2": {
 					PeerAs: ygot.Uint32(ateAS1),
-					//PeerGroup:       ygot.String("BGP-PEER-GROUP1"),
+					// PeerGroup:       ygot.String("BGP-PEER-GROUP1"),
 					NeighborAddress: ygot.String("2001:db8::2"),
 					AfiSafi: map[oc.E_BgpTypes_AFI_SAFI_TYPE]*oc.NetworkInstance_Protocol_Bgp_Neighbor_AfiSafi{
 						oc.BgpTypes_AFI_SAFI_TYPE_IPV6_UNICAST: {
@@ -426,7 +426,7 @@ func TestBGP(t *testing.T) {
 				},
 				"2001:db8::6": {
 					PeerAs: ygot.Uint32(ateAS2),
-					//PeerGroup:       ygot.String("BGP-PEER-GROUP2"),
+					// PeerGroup:       ygot.String("BGP-PEER-GROUP2"),
 					NeighborAddress: ygot.String("2001:db8::6"),
 					AfiSafi: map[oc.E_BgpTypes_AFI_SAFI_TYPE]*oc.NetworkInstance_Protocol_Bgp_Neighbor_AfiSafi{
 						oc.BgpTypes_AFI_SAFI_TYPE_IPV6_UNICAST: {

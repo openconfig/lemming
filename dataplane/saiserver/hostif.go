@@ -23,9 +23,7 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/spf13/viper"
-
-	"github.com/openconfig/lemming/dataplane/config"
+	"github.com/openconfig/lemming/dataplane/dplaneopts"
 	"github.com/openconfig/lemming/dataplane/forwarding/attributes"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
 	"github.com/openconfig/lemming/dataplane/saiserver/attrmgr"
@@ -34,12 +32,13 @@ import (
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
-func newHostif(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server) *hostif {
+func newHostif(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server, opts *dplaneopts.Options) *hostif {
 	hostif := &hostif{
 		mgr:              mgr,
 		dataplane:        dataplane,
 		trapIDToHostifID: map[uint64]uint64{},
 		groupIDToQueue:   map[uint64]uint32{},
+		opts:             opts,
 	}
 
 	saipb.RegisterHostifServer(s, hostif)
@@ -52,6 +51,7 @@ type hostif struct {
 	dataplane        switchDataplaneAPI
 	trapIDToHostifID map[uint64]uint64
 	groupIDToQueue   map[uint64]uint32
+	opts             *dplaneopts.Options
 }
 
 // CreateHostif creates a hostif interface (usually a tap interface).
@@ -96,7 +96,7 @@ func (hostif *hostif) CreateHostif(ctx context.Context, req *saipb.CreateHostifR
 
 		return &saipb.CreateHostifResponse{Oid: id}, nil
 	case saipb.HostifType_HOSTIF_TYPE_NETDEV:
-		portType := fwdpb.PortType(fwdpb.PortType_value[viper.GetString(config.NetDevForwardingType)])
+		portType := hostif.opts.HostifNetDevType
 		port := &fwdpb.PortCreateRequest{
 			ContextId: &fwdpb.ContextId{Id: hostif.dataplane.ID()},
 			Port: &fwdpb.PortDesc{

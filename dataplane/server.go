@@ -24,6 +24,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/local"
 
+	"github.com/openconfig/lemming/dataplane/dplaneopts"
 	"github.com/openconfig/lemming/dataplane/saiserver"
 	"github.com/openconfig/lemming/dataplane/saiserver/attrmgr"
 	"github.com/openconfig/lemming/gnmi/oc"
@@ -34,57 +35,22 @@ import (
 	saipb "github.com/openconfig/lemming/dataplane/proto"
 )
 
-type options struct {
-	addr          string
-	reconcilation bool
-}
-
-type Option func(*options)
-
-// WithAddress sets the address of the dataplane gRPC server
-// Default: 127.0.0.1:0
-func WithAddress(addr string) Option {
-	return func(o *options) {
-		o.addr = addr
-	}
-}
-
-// WithReconcilation enables the gNMI reconcilation.
-// Default: true
-func WithReconcilation(rec bool) Option {
-	return func(o *options) {
-		o.reconcilation = rec
-	}
-}
-
-func resolveOpts(opts ...Option) *options {
-	resolved := &options{
-		addr:          "127.0.0.1:0",
-		reconcilation: true,
-	}
-
-	for _, opt := range opts {
-		opt(resolved)
-	}
-	return resolved
-}
-
 // Dataplane is an implementation of Dataplane HAL API.
 type Dataplane struct {
 	saiserv     *saiserver.Server
 	srv         *grpc.Server
 	lis         net.Listener
 	reconcilers []reconciler.Reconciler
-	opt         *options
+	opt         *dplaneopts.Options
 }
 
 // New create a new dataplane instance.
-func New(ctx context.Context, opts ...Option) (*Dataplane, error) {
+func New(ctx context.Context, opts ...dplaneopts.Option) (*Dataplane, error) {
 	data := &Dataplane{
-		opt: resolveOpts(opts...),
+		opt: dplaneopts.ResolveOpts(opts...),
 	}
 
-	lis, err := (&net.ListenConfig{}).Listen(ctx, "tcp", data.opt.addr)
+	lis, err := (&net.ListenConfig{}).Listen(ctx, "tcp", data.opt.Addr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to listen: %w", err)
 	}
@@ -92,7 +58,7 @@ func New(ctx context.Context, opts ...Option) (*Dataplane, error) {
 	mgr := attrmgr.New()
 	srv := grpc.NewServer(grpc.Creds(local.NewCredentials()), grpc.ChainUnaryInterceptor(mgr.Interceptor))
 
-	saiserv, err := saiserver.New(ctx, mgr, srv)
+	saiserv, err := saiserver.New(ctx, mgr, srv, data.opt)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create: %w", err)
 	}
@@ -152,7 +118,7 @@ func (d *Dataplane) Start(ctx context.Context, c gpb.GNMIClient, target string) 
 		return err
 	}
 
-	if d.opt.reconcilation {
+	if d.opt.Reconcilation {
 		d.reconcilers = append(d.reconcilers, getReconcilers(conn, swResp.Oid, *swAttrs.GetAttr().CpuPort, "lucius")...)
 
 		for _, rec := range d.reconcilers {
@@ -172,6 +138,10 @@ func (d *Dataplane) Conn() (grpc.ClientConnInterface, error) {
 		return nil, fmt.Errorf("failed to dial server: %w", err)
 	}
 	return conn, nil
+}
+
+func (d *Dataplane) SaiServer() *saiserver.Server {
+	return d.saiserv
 }
 
 // Stop gracefully stops the server.

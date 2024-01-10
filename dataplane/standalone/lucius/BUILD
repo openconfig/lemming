@@ -8,8 +8,10 @@ go_library(
     importpath = "github.com/openconfig/lemming/dataplane/standalone/lucius",
     visibility = ["//visibility:private"],
     deps = [
+        "//dataplane/dplaneopts",
         "//dataplane/saiserver",
         "//dataplane/saiserver/attrmgr",
+        "//proto/forwarding",
         "@com_github_golang_glog//:glog",
         "@com_github_grpc_ecosystem_go_grpc_middleware_v2//interceptors/logging",
         "@org_golang_google_grpc//:go_default_library",

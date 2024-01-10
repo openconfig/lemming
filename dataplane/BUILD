@@ -10,6 +10,7 @@ go_library(
     importpath = "github.com/openconfig/lemming/dataplane",
     visibility = ["//visibility:public"],
     deps = [
+        "//dataplane/dplaneopts",
         "//dataplane/proto:sai",
         "//dataplane/saiserver",
         "//dataplane/saiserver/attrmgr",

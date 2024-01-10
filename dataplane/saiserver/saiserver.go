@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/openconfig/lemming/dataplane/dplaneopts"
 	"github.com/openconfig/lemming/dataplane/forwarding"
 	"github.com/openconfig/lemming/dataplane/saiserver/attrmgr"
 
@@ -254,7 +255,7 @@ func (s *Server) Reset(ctx context.Context) error {
 	return nil
 }
 
-func New(ctx context.Context, mgr *attrmgr.AttrMgr, s *grpc.Server) (*Server, error) {
+func New(ctx context.Context, mgr *attrmgr.AttrMgr, s *grpc.Server, opts *dplaneopts.Options) (*Server, error) {
 	fwdCtx := &forwardingContext{Server: forwarding.New("engine"), id: "lucius"}
 	_, err := fwdCtx.ContextCreate(ctx, &fwdpb.ContextCreateRequest{
 		ContextId: &fwdpb.ContextId{Id: fwdCtx.id},
@@ -292,7 +293,7 @@ func New(ctx context.Context, mgr *attrmgr.AttrMgr, s *grpc.Server) (*Server, er
 		schedulerGroup:    &schedulerGroup{},
 		scheduler:         &scheduler{},
 		srv6:              &srv6{},
-		saiSwitch:         newSwitch(mgr, fwdCtx, s),
+		saiSwitch:         newSwitch(mgr, fwdCtx, s, opts),
 		systemPort:        &systemPort{},
 		tam:               &tam{},
 		tunnel:            &tunnel{},

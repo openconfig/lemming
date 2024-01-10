@@ -41,11 +41,10 @@ func init() {
 // fakePort is a ports that receives from and writes a linux network device.
 type fakePort struct {
 	fwdobject.Base
-	packetSrc *pcapgo.NgReader
-	packetDst *pcapgo.NgWriter
-	input     fwdaction.Actions
-	output    fwdaction.Actions
-	ctx       *fwdcontext.Context // Forwarding context containing the port
+	port   fwdcontext.Port
+	input  fwdaction.Actions
+	output fwdaction.Actions
+	ctx    *fwdcontext.Context // Forwarding context containing the port
 }
 
 func (p *fakePort) String() string {
@@ -91,7 +90,7 @@ func (p *fakePort) Update(upd *fwdpb.PortUpdateDesc) error {
 }
 
 func (p *fakePort) process() {
-	src := gopacket.NewPacketSource(p.packetSrc, layers.LinkTypeEthernet)
+	src := gopacket.NewPacketSource(p.port, layers.LinkTypeEthernet)
 	go func() {
 		for {
 			select {
@@ -130,11 +129,7 @@ var (
 // Write writes a packet out. If successful, the port returns
 // fwdaction.CONSUME.
 func (p *fakePort) Write(packet fwdpacket.Packet) (fwdaction.State, error) {
-	if err := p.packetDst.WritePacket(gopacket.CaptureInfo{
-		Timestamp:     timeNow(),
-		CaptureLength: packet.Length(),
-		Length:        packet.Length(),
-	}, packet.Frame()); err != nil {
+	if err := p.port.WritePacketData(packet.Frame()); err != nil {
 		return fwdaction.DROP, fmt.Errorf("failed to write eth packet: %v", err)
 	}
 	return fwdaction.CONSUME, nil
@@ -161,16 +156,12 @@ func (p *fakePort) State(*fwdpb.PortInfo) (*fwdpb.PortStateReply, error) {
 	}, nil
 }
 
-type fakeBuilder struct{}
+type pcapManager struct {
+	desc *fwdpb.FakePortDesc
+}
 
-// Build creates a new port.
-func (fakeBuilder) Build(portDesc *fwdpb.PortDesc, ctx *fwdcontext.Context) (fwdport.Port, error) {
-	fp, ok := portDesc.Port.(*fwdpb.PortDesc_Fake)
-	if !ok {
-		return nil, fmt.Errorf("invalid port type in proto, got %T, expected *fwdpb.PortDesc_Fake", portDesc.Port)
-	}
-
-	inFile, err := openFile(fp.Fake.InFile)
+func (mgr *pcapManager) CreatePort(string) (fwdcontext.Port, error) {
+	inFile, err := openFile(mgr.desc.InFile)
 	if err != nil {
 		return nil, err
 	}
@@ -180,7 +171,7 @@ func (fakeBuilder) Build(portDesc *fwdpb.PortDesc, ctx *fwdcontext.Context) (fwd
 		return nil, err
 	}
 
-	outFile, err := createFile(fp.Fake.OutFile)
+	outFile, err := createFile(mgr.desc.OutFile)
 	if err != nil {
 		return nil, err
 	}
@@ -189,11 +180,52 @@ func (fakeBuilder) Build(portDesc *fwdpb.PortDesc, ctx *fwdcontext.Context) (fwd
 	if err != nil {
 		return nil, err
 	}
+	return &pcapPort{
+		reader: r,
+		writer: w,
+	}, nil
+}
+
+type pcapPort struct {
+	writer *pcapgo.NgWriter
+	reader *pcapgo.NgReader
+}
+
+func (p *pcapPort) WritePacketData(data []byte) error {
+	return p.writer.WritePacket(gopacket.CaptureInfo{
+		Timestamp:     timeNow(),
+		CaptureLength: len(data),
+		Length:        len(data),
+	}, data)
+}
+
+func (p *pcapPort) ReadPacketData() ([]byte, gopacket.CaptureInfo, error) {
+	return p.reader.ReadPacketData()
+}
+
+type fakeBuilder struct{}
+
+// Build creates a new port.
+func (fakeBuilder) Build(portDesc *fwdpb.PortDesc, ctx *fwdcontext.Context) (fwdport.Port, error) {
+	fp, ok := portDesc.Port.(*fwdpb.PortDesc_Fake)
+	if !ok {
+		return nil, fmt.Errorf("invalid port type in proto, got %T, expected *fwdpb.PortDesc_Fake", portDesc.Port)
+	}
+
+	mgr := ctx.FakePortManager
+	if mgr == nil {
+		mgr = &pcapManager{
+			desc: fp.Fake,
+		}
+	}
+	port, err := mgr.CreatePort(portDesc.PortId.ObjectId.Id)
+	if err != nil {
+		return nil, err
+	}
 
 	p := &fakePort{
-		ctx:       ctx,
-		packetSrc: r,
-		packetDst: w,
+		ctx:  ctx,
+		port: port,
 	}
 	list := append(fwdport.CounterList, fwdaction.CounterList...)
 	if err := p.InitCounters("", list...); err != nil {

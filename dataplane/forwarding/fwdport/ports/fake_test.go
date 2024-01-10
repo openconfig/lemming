@@ -131,7 +131,9 @@ func TestFakeWrite(t *testing.T) {
 				t.Fatal(err)
 			}
 			fp := &fakePort{
-				packetDst: w,
+				port: &pcapPort{
+					writer: w,
+				},
 			}
 			timeNow = func() time.Time { return time.Unix(1, 0) }
 			_, err = fp.Write(createEthPacket(t))

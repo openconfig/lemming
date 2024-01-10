@@ -21,6 +21,7 @@ import (
 	"sync"
 
 	log "github.com/golang/glog"
+	"github.com/google/gopacket"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/deadlock"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdattribute"
@@ -35,6 +36,15 @@ type PacketCallback func(*fwdpb.PacketSinkResponse) error
 
 // An NotificationCallback generates events to a notification service.
 type NotificationCallback func(*fwdpb.EventDesc)
+
+type Port interface {
+	gopacket.PacketDataSource
+	WritePacketData(data []byte) error
+}
+
+type FakePortManager interface {
+	CreatePort(string) (Port, error)
+}
 
 // A Context encapsulates the state of an instance of the forwarding engine.
 //
@@ -62,6 +72,8 @@ type Context struct {
 
 	eventMu     sync.Mutex // Mutex protecting the event notification
 	nextEventID uint64     // Id of the next event id
+
+	FakePortManager FakePortManager
 }
 
 // New creates a new forwarding context with the specified id and fwd engine

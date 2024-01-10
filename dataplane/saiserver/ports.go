@@ -22,6 +22,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/openconfig/lemming/dataplane/dplaneopts"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
 	"github.com/openconfig/lemming/dataplane/saiserver/attrmgr"
 	"github.com/openconfig/lemming/dataplane/standalone/packetio/cpusink"
@@ -32,12 +33,13 @@ import (
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
-func newPort(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server) *port {
+func newPort(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server, opts *dplaneopts.Options) *port {
 	p := &port{
 		mgr:       mgr,
 		dataplane: dataplane,
 		portToEth: make(map[uint64]string),
 		nextEth:   1, // Start at eth1
+		opts:      opts,
 	}
 	saipb.RegisterPortServer(s, p)
 	return p
@@ -49,6 +51,7 @@ type port struct {
 	dataplane switchDataplaneAPI
 	nextEth   int
 	portToEth map[uint64]string
+	opts      *dplaneopts.Options
 }
 
 // stub for testing
@@ -118,45 +121,56 @@ func (port *port) CreatePort(ctx context.Context, _ *saipb.CreatePortRequest) (*
 		Mtu:                              proto.Uint32(1514),
 	}
 
-	// For ports that don't exist, do not create dataplane ports.
-	if _, err := getInterface(dev); err != nil {
-		attrs.OperStatus = saipb.PortOperStatus_PORT_OPER_STATUS_NOT_PRESENT.Enum()
-		port.mgr.StoreAttributes(id, attrs)
-		// TODO: This should be a real error, improve once we a correct config solution.
-		// For now, create dummy port with no actions so we don't get a bunch error for a nonexistant port.
-		fwdPort := &fwdpb.PortCreateRequest{
-			ContextId: &fwdpb.ContextId{Id: port.dataplane.ID()},
-			Port: &fwdpb.PortDesc{
-				PortType: fwdpb.PortType_PORT_TYPE_GENETLINK,
-				PortId: &fwdpb.PortId{
-					ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)},
-				},
-			},
-		}
-		_, err := port.dataplane.PortCreate(ctx, fwdPort)
-		if err != nil {
-			return nil, err
-		}
-		return &saipb.CreatePortResponse{
-			Oid: id,
-		}, nil
-	}
-	port.portToEth[id] = dev
-
 	fwdPort := &fwdpb.PortCreateRequest{
 		ContextId: &fwdpb.ContextId{Id: port.dataplane.ID()},
 		Port: &fwdpb.PortDesc{
-			PortType: fwdpb.PortType_PORT_TYPE_KERNEL,
 			PortId: &fwdpb.PortId{
 				ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)},
 			},
-			Port: &fwdpb.PortDesc_Kernel{
-				Kernel: &fwdpb.KernelPortDesc{
-					DeviceName: dev,
-				},
-			},
 		},
 	}
+
+	switch port.opts.PortType {
+	case fwdpb.PortType_PORT_TYPE_KERNEL:
+		fwdPort.Port.Port = &fwdpb.PortDesc_Kernel{
+			Kernel: &fwdpb.KernelPortDesc{
+				DeviceName: dev,
+			},
+		}
+		// For ports that don't exist, do not create dataplane ports.
+		if _, err := getInterface(dev); err != nil {
+			attrs.OperStatus = saipb.PortOperStatus_PORT_OPER_STATUS_NOT_PRESENT.Enum()
+			port.mgr.StoreAttributes(id, attrs)
+			// TODO: This should be a real error, improve once we a correct config solution.
+			// For now, create dummy port with no actions so we don't get a bunch error for a nonexistant port.
+			fwdPort := &fwdpb.PortCreateRequest{
+				ContextId: &fwdpb.ContextId{Id: port.dataplane.ID()},
+				Port: &fwdpb.PortDesc{
+					PortType: fwdpb.PortType_PORT_TYPE_GENETLINK,
+					PortId: &fwdpb.PortId{
+						ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)},
+					},
+				},
+			}
+			_, err := port.dataplane.PortCreate(ctx, fwdPort)
+			if err != nil {
+				return nil, err
+			}
+			return &saipb.CreatePortResponse{
+				Oid: id,
+			}, nil
+		}
+		port.portToEth[id] = dev
+
+	case fwdpb.PortType_PORT_TYPE_FAKE:
+		fwdPort.Port.Port = &fwdpb.PortDesc_Fake{
+			Fake: &fwdpb.FakePortDesc{},
+		}
+	default:
+		return nil, fmt.Errorf("unsupported port type: %v", port.opts.PortType)
+	}
+	fwdPort.Port.PortType = port.opts.PortType
+
 	_, err := port.dataplane.PortCreate(ctx, fwdPort)
 	if err != nil {
 		return nil, err
@@ -183,7 +197,6 @@ func (port *port) CreatePort(ctx context.Context, _ *saipb.CreatePortRequest) (*
 							ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
 						},
 					},
-					// update the src mac address with the configured port's mac address.
 					Outputs: []*fwdpb.ActionDesc{},
 				},
 			},

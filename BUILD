@@ -18,6 +18,7 @@ go_library(
     deps = [
         "//bgp",
         "//dataplane",
+        "//dataplane/dplaneopts",
         "//gnmi",
         "//gnmi/fakedevice",
         "//gnmi/oc",

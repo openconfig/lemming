@@ -24,10 +24,13 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
+	"github.com/openconfig/lemming/dataplane/dplaneopts"
 	"github.com/openconfig/lemming/dataplane/saiserver"
 	"github.com/openconfig/lemming/dataplane/saiserver/attrmgr"
 
 	log "github.com/golang/glog"
+
+	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
 var port = flag.Int("port", 50000, "Port for api server")
@@ -66,7 +69,9 @@ func start(port int) {
 		grpc.ChainUnaryInterceptor(logging.UnaryServerInterceptor(getLogger()), mgr.Interceptor),
 		grpc.ChainStreamInterceptor(logging.StreamServerInterceptor(getLogger())))
 
-	if _, err := saiserver.New(context.Background(), mgr, srv); err != nil {
+	opts := dplaneopts.ResolveOpts(dplaneopts.WithHostifNetDevPortType(fwdpb.PortType_PORT_TYPE_KERNEL))
+
+	if _, err := saiserver.New(context.Background(), mgr, srv, opts); err != nil {
 		log.Fatalf("failed to create server: %v", err)
 	}
 

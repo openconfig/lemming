@@ -1,4 +1,4 @@
-// Copyright 2022 Google LLC
+// Copyright 2023 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,102 +16,211 @@ package binding
 
 import (
 	"context"
+	"flag"
 	"fmt"
-	"io"
-	"strings"
+	"net"
+	"net/netip"
+	"path/filepath"
 	"time"
 
-	"github.com/openconfig/magna/lwotg"
+	"github.com/google/gopacket"
+	"github.com/google/uuid"
 	"github.com/openconfig/ondatra/binding"
+	"google.golang.org/grpc/credentials/local"
 
 	"github.com/openconfig/lemming"
+	"github.com/openconfig/lemming/dataplane/dplaneopts"
+	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
+	"github.com/openconfig/lemming/dataplane/forwarding/util/queue"
 
 	opb "github.com/openconfig/ondatra/proto"
 
 	saipb "github.com/openconfig/lemming/dataplane/proto"
+	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
 type LocalBind struct {
 	binding.Binding
 }
 
+// Local is a local (in-process) binding for lemming and magna.
+func Local(topoDir string) func() (binding.Binding, error) {
+	dir, _ := filepath.Abs(topoDir)
+	testbedFile := filepath.Join(dir, "testbed.pb.txt")
+
+	flag.Set("testbed", testbedFile)
+	return func() (binding.Binding, error) {
+		return &LocalBind{}, nil
+	}
+}
+
 type localLemming struct {
 	binding.AbstractDUT
-	l *lemming.Device
+	l     *lemming.Device
+	dutID string
 }
 
-type localMagna struct {
-	binding.AbstractATE
-	l *lwotg.Server
-}
-
-type linkMgr struct{}
-
-type port interface {
-	io.Reader
-	io.Writer
-}
+const (
+	gnmiPort      = 9339
+	gribiPort     = 9559
+	bgpPort       = 1179
+	dataplanePort = 9999
+)
 
 // Reserve creates a new local binding.
-func (lb *LocalBind) Reserve(ctx context.Context, tb *opb.Testbed, runTime, waitTime time.Duration, partial map[string]string) (*binding.Reservation, error) {
-	resv := binding.Reservation{}
+func (lb *LocalBind) Reserve(ctx context.Context, tb *opb.Testbed, _, _ time.Duration, _ map[string]string) (*binding.Reservation, error) {
+	resv := binding.Reservation{
+		ID:   uuid.New().String(),
+		DUTs: make(map[string]binding.DUT),
+		ATEs: make(map[string]binding.ATE),
+	}
+
+	portMgr := &portMgr{
+		ports: map[string]*chanPort{},
+	}
+
 	for _, dut := range tb.Duts {
-		l, err := lemming.New(dut.Id, "")
+		addr, err := findAvailableLoopbackIP()
+		if err != nil {
+			return nil, err
+		}
+		dutID := uuid.New().String()
+
+		l, err := lemming.New(dut.Id, fmt.Sprintf("unix:/tmp/zserv-test%s.api", dutID),
+			lemming.WithBGPPort(bgpPort),
+			lemming.WithGNMIAddr(net.JoinHostPort(addr, fmt.Sprint(gnmiPort))),
+			lemming.WithGRIBIAddr(net.JoinHostPort(addr, fmt.Sprint(gribiPort))),
+			lemming.WithTransportCreds(local.NewCredentials()),
+			lemming.WithDataplane(true),
+			lemming.WithDataplaneOpts(
+				dplaneopts.WithAddress(net.JoinHostPort(addr, fmt.Sprint(dataplanePort))),
+				dplaneopts.WithReconcilation(false),
+				dplaneopts.WithPortType(fwdpb.PortType_PORT_TYPE_FAKE),
+			),
+		)
 		if err != nil {
 			return nil, err
 		}
 		boundLemming := &localLemming{
-			l: l,
+			l:     l,
+			dutID: dutID,
 			AbstractDUT: binding.AbstractDUT{
 				Dims: &binding.Dims{
 					Name:          dut.Id,
 					Vendor:        opb.Device_OPENCONFIG,
 					HardwareModel: "LEMMING",
+					Ports:         make(map[string]*binding.Port),
 				},
 			},
 		}
 
-		dplane, err := boundLemming.l.Dataplane().Conn()
-		pc := saipb.NewPortClient(dplane)
-		for _, port := range dut.Ports {
-			pc.CreatePort(ctx, &saipb.CreatePortRequest{})
+		fwdCtx, err := boundLemming.l.Dataplane().SaiServer().FindContext(&fwdpb.ContextId{Id: "lucius"})
+		if err != nil {
+			return nil, err
+		}
 
+		// In the dut, use the portMgr to create ports.
+		// Ondatra Port ID: Value from the topology textproto.
+		// Ondatra Port Name: Dataplane port id.
+		fwdCtx.FakePortManager = portMgr
+		dplaneConn, err := boundLemming.l.Dataplane().Conn()
+		if err != nil {
+			return nil, err
+		}
+		pc := saipb.NewPortClient(dplaneConn)
+		// For each port on the topology textproto.
+		// Create a saipb port and accociate the ondatra dut ID and port ID with the saipb OID.
+		for _, port := range dut.Ports {
+			resp, err := pc.CreatePort(ctx, &saipb.CreatePortRequest{})
+			if err != nil {
+				return nil, err
+			}
+			portMgr.ports[fmt.Sprintf("%s:%s", dut.Id, port.Id)] = portMgr.lastCreatedPort
 			boundLemming.AbstractDUT.Dims.Ports[port.Id] = &binding.Port{
-				Name: "1",
+				Name: fmt.Sprint(resp.Oid),
 			}
 		}
 		resv.DUTs[dut.Id] = boundLemming
 	}
-	// for _, ate := range tb.Ates {
-	// 	otgSrv := lwotg.New()
-	// 	resv.ATEs[ate.Id] = &localMagna{
-	// 		l: otgSrv,
-	// 	}
-	// }
-	// for _, l := range tb.Links {
-	// 	aDev, aPort, err := lb.checkLink(l.A)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// 	bDev, bPort, err := lb.checkLink(l.B)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// }
 
-	return nil, nil
-}
-
-func (lb *LocalBind) checkLink(link string) (string, string, error) {
-	split := strings.Split(link, ":")
-	if len(split) != 2 {
-		return "", "", fmt.Errorf("invalid link format %q, expected dut:port", link)
+	for _, l := range tb.Links {
+		if err := portMgr.linkPorts(l.A, l.B); err != nil {
+			return nil, err
+		}
 	}
 
-	return split[0], split[1], nil
+	return &resv, nil
 }
 
 // Release releases the reserved testbed.
-func (lb *LocalBind) Release(ctx context.Context) error {
+func (lb *LocalBind) Release(context.Context) error {
+	return nil
+}
+
+// findAvailableLoopbackIP finds an unused loopback IP by attempting to open a tcp socket on the gNMI port.
+func findAvailableLoopbackIP() (string, error) {
+	var addr string
+	for i := byte(2); i < 254; i++ {
+		addr = netip.AddrFrom4([4]byte{127, 0, 0, i}).String()
+		ln, err := net.Listen("tcp", net.JoinHostPort(addr, fmt.Sprint(gnmiPort)))
+		if err == nil {
+			ln.Close()
+			break
+		}
+	}
+	if addr == "" {
+		return "", fmt.Errorf("failed to find available ip")
+	}
+	return addr, nil
+}
+
+type chanPort struct {
+	txQueue *queue.Queue
+	rxQueue *queue.Queue
+}
+
+func (p *chanPort) WritePacketData(data []byte) error {
+	return p.txQueue.Write(data)
+}
+
+func (p *chanPort) ReadPacketData() ([]byte, gopacket.CaptureInfo, error) {
+	if p.rxQueue == nil {
+		return nil, gopacket.CaptureInfo{}, nil
+	}
+	data := (<-p.rxQueue.Receive()).([]byte)
+	return data, gopacket.CaptureInfo{
+		Timestamp:     time.Now(),
+		CaptureLength: len(data),
+		Length:        len(data),
+	}, nil
+}
+
+type portMgr struct {
+	ports           map[string]*chanPort
+	lastCreatedPort *chanPort
+}
+
+func (lm *portMgr) CreatePort(name string) (fwdcontext.Port, error) {
+	q, err := queue.NewUnbounded(fmt.Sprintf("%s-tx", name))
+	if err != nil {
+		return nil, err
+	}
+	p := &chanPort{
+		txQueue: q,
+	}
+	lm.lastCreatedPort = p
+	q.Run()
+	return p, nil
+}
+
+func (lm *portMgr) linkPorts(a, b string) error {
+	aPort := lm.ports[a]
+	bPort := lm.ports[b]
+	if aPort == nil || bPort == nil {
+		return fmt.Errorf("ports do not exist")
+	}
+	aPort.rxQueue = bPort.txQueue
+	bPort.rxQueue = aPort.txQueue
+
 	return nil
 }

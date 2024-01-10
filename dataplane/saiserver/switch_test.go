@@ -28,6 +28,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/testing/protocmp"
 
+	"github.com/openconfig/lemming/dataplane/dplaneopts"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
 	"github.com/openconfig/lemming/dataplane/saiserver/attrmgr"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
@@ -308,7 +309,7 @@ func newTestServer(t testing.TB, newSrvFn func(mgr *attrmgr.AttrMgr, srv *grpc.S
 
 func newTestSwitch(t testing.TB, dplane switchDataplaneAPI) (saipb.SwitchClient, *attrmgr.AttrMgr, func()) {
 	conn, mgr, stopFn := newTestServer(t, func(mgr *attrmgr.AttrMgr, srv *grpc.Server) {
-		newSwitch(mgr, dplane, srv)
+		newSwitch(mgr, dplane, srv, &dplaneopts.Options{})
 	})
 	return saipb.NewSwitchClient(conn), mgr, stopFn
 }

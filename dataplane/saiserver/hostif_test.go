@@ -25,6 +25,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/testing/protocmp"
 
+	"github.com/openconfig/lemming/dataplane/dplaneopts"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
 	saipb "github.com/openconfig/lemming/dataplane/proto"
 	"github.com/openconfig/lemming/dataplane/saiserver/attrmgr"
@@ -150,7 +151,7 @@ func TestSetHostifAttribute(t *testing.T) {
 
 func newTestHostif(t testing.TB, api switchDataplaneAPI) (saipb.HostifClient, *attrmgr.AttrMgr, func()) {
 	conn, mgr, stopFn := newTestServer(t, func(mgr *attrmgr.AttrMgr, srv *grpc.Server) {
-		newHostif(mgr, api, srv)
+		newHostif(mgr, api, srv, &dplaneopts.Options{HostifNetDevType: fwdpb.PortType_PORT_TYPE_KERNEL})
 	})
 	return saipb.NewHostifClient(conn), mgr, stopFn
 }

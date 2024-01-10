@@ -26,6 +26,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/testing/protocmp"
 
+	"github.com/openconfig/lemming/dataplane/dplaneopts"
 	saipb "github.com/openconfig/lemming/dataplane/proto"
 	"github.com/openconfig/lemming/dataplane/saiserver/attrmgr"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
@@ -334,7 +335,7 @@ func TestGetPortStats(t *testing.T) {
 
 func newTestPort(t testing.TB, api switchDataplaneAPI) (saipb.PortClient, *attrmgr.AttrMgr, func()) {
 	conn, mgr, stopFn := newTestServer(t, func(mgr *attrmgr.AttrMgr, srv *grpc.Server) {
-		newPort(mgr, api, srv)
+		newPort(mgr, api, srv, &dplaneopts.Options{PortType: fwdpb.PortType_PORT_TYPE_KERNEL})
 	})
 	return saipb.NewPortClient(conn), mgr, stopFn
 }

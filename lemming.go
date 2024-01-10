@@ -29,6 +29,7 @@ import (
 
 	"github.com/openconfig/lemming/bgp"
 	"github.com/openconfig/lemming/dataplane"
+	"github.com/openconfig/lemming/dataplane/dplaneopts"
 	fgnmi "github.com/openconfig/lemming/gnmi"
 	"github.com/openconfig/lemming/gnmi/fakedevice"
 	"github.com/openconfig/lemming/gnmi/oc"
@@ -82,6 +83,7 @@ type opt struct {
 	p4rtAddr       string
 	bgpPort        uint16
 	dataplane      bool
+	dataplaneOpts  []dplaneopts.Option
 }
 
 // resolveOpts applies all the options and returns a struct containing the result.
@@ -157,6 +159,12 @@ func WithDataplane(enable bool) Option {
 	}
 }
 
+func WithDataplaneOpts(opts ...dplaneopts.Option) Option {
+	return func(o *opt) {
+		o.dataplaneOpts = opts
+	}
+}
+
 // New returns a new initialized device.
 func New(targetName, zapiURL string, opts ...Option) (*Device, error) {
 	var dplane *dataplane.Dataplane
@@ -171,7 +179,7 @@ func New(targetName, zapiURL string, opts ...Option) (*Device, error) {
 
 		log.Info("enabling dataplane")
 		var err error
-		dplane, err = dataplane.New(context.Background())
+		dplane, err = dataplane.New(context.Background(), resolvedOpts.dataplaneOpts...)
 		if err != nil {
 			return nil, err
 		}
@@ -269,11 +277,12 @@ func New(targetName, zapiURL string, opts ...Option) (*Device, error) {
 			lis:     lp4rt,
 			stopped: make(chan struct{}),
 		},
-		gnmiServer:  gnmiServer,
-		gnoiServer:  fgnoi.New(s),
-		gribiServer: gribiServer,
-		gnsiServer:  gnsiServer,
-		p4rtServer:  fp4rt.New(P4RTs),
+		gnmiServer:   gnmiServer,
+		gnoiServer:   fgnoi.New(s),
+		gribiServer:  gribiServer,
+		gnsiServer:   gnsiServer,
+		p4rtServer:   fp4rt.New(P4RTs),
+		dplaneServer: dplane,
 	}
 	reflection.Register(s)
 	d.startServer()

@@ -19,17 +19,18 @@ package integration_test
 import (
 	"testing"
 
+	"github.com/openconfig/ondatra"
+	"github.com/openconfig/ondatra/gnmi"
+
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/internal/binding"
 	"github.com/openconfig/lemming/policytest"
-	"github.com/openconfig/ondatra"
-	"github.com/openconfig/ondatra/gnmi"
 
 	valpb "github.com/openconfig/lemming/proto/policyval"
 )
 
 func TestMain(m *testing.M) {
-	ondatra.RunTests(m, binding.Get(".."))
+	ondatra.RunTests(m, binding.KNE(".."))
 }
 
 func TestPrefixSet(t *testing.T) {

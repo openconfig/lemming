@@ -34,7 +34,7 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	ondatra.RunTests(m, binding.Get(".."))
+	ondatra.RunTests(m, binding.KNE(".."))
 }
 
 func TestPathz(t *testing.T) {
