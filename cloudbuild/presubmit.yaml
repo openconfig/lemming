@@ -26,6 +26,7 @@ steps:
 
 timeout: 3600s
 
+logsBucket: 'gs://lemming-test-logs'
 options:
   pool:
     name: 'projects/openconfig-lemming/locations/us-central1/workerPools/lemming-workerpool'
