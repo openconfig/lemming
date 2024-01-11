@@ -37,11 +37,13 @@ type PacketCallback func(*fwdpb.PacketSinkResponse) error
 // An NotificationCallback generates events to a notification service.
 type NotificationCallback func(*fwdpb.EventDesc)
 
+// Port is an interface for reading and writing to a port.
 type Port interface {
 	gopacket.PacketDataSource
 	WritePacketData(data []byte) error
 }
 
+// FakePortManager is an interface for creating custom ports for fwdpb FakePort.
 type FakePortManager interface {
 	CreatePort(string) (Port, error)
 }

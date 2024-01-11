@@ -39,6 +39,7 @@ import (
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
+// LocalBind is an Ondatra binding for in-process testbed. Only Lemming and Magna are supported.
 type LocalBind struct {
 	binding.Binding
 }
@@ -62,9 +63,9 @@ type localLemming struct {
 
 const (
 	gnmiPort      = 9339
-	gribiPort     = 9559
+	gribiPort     = 9340
 	bgpPort       = 1179
-	dataplanePort = 9999
+	dataplanePort = 50000
 )
 
 // Reserve creates a new local binding.
@@ -93,7 +94,7 @@ func (lb *LocalBind) Reserve(ctx context.Context, tb *opb.Testbed, _, _ time.Dur
 			lemming.WithTransportCreds(local.NewCredentials()),
 			lemming.WithDataplane(true),
 			lemming.WithDataplaneOpts(
-				dplaneopts.WithAddress(net.JoinHostPort(addr, fmt.Sprint(dataplanePort))),
+				dplaneopts.WithAddrPort(net.JoinHostPort(addr, fmt.Sprint(dataplanePort))),
 				dplaneopts.WithReconcilation(false),
 				dplaneopts.WithPortType(fwdpb.PortType_PORT_TYPE_FAKE),
 			),

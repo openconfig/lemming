@@ -18,17 +18,22 @@ import fwdpb "github.com/openconfig/lemming/proto/forwarding"
 
 // Options configures the dataplane
 type Options struct {
-	Addr             string
-	Reconcilation    bool
+	// Addr is the address of the gRPC server.
+	Addr string
+	// Reconcilation enabes gNMI reconcilation.
+	Reconcilation bool
+	// HostifNetDevType is the fwdpb type for the saipb hostif netdev types.
 	HostifNetDevType fwdpb.PortType
-	PortType         fwdpb.PortType
+	// PortType is the fwdpb type for the port type.
+	PortType fwdpb.PortType
 }
 
+// Option exposes additional configuration for the dataplane.
 type Option func(*Options)
 
-// WithAddress sets the address of the dataplane gRPC server
+// WithAddrPort sets the address of the dataplane gRPC server
 // Default: 127.0.0.1:0
-func WithAddress(addr string) Option {
+func WithAddrPort(addr string) Option {
 	return func(o *Options) {
 		o.Addr = addr
 	}

@@ -136,6 +136,7 @@ func (k *Interfaces) NeighSubscribe(ch chan<- netlink.NeighUpdate, done <-chan s
 	return netlink.NeighSubscribe(ch, done)
 }
 
+// LinkList lists all Linux network interfaces.
 func (k *Interfaces) LinkList() ([]netlink.Link, error) {
 	links, err := netlink.LinkList()
 	if err != nil {
@@ -148,30 +149,37 @@ func (k *Interfaces) LinkList() ([]netlink.Link, error) {
 	return links, err
 }
 
+// LinkAdd adds a new network interface.
 func (k *Interfaces) LinkAdd(link netlink.Link) error {
 	return netlink.LinkAdd(link)
 }
 
+// LinkByIndex finds a link by its index.
 func (k *Interfaces) LinkByIndex(idx int) (netlink.Link, error) {
 	return netlink.LinkByIndex(idx)
 }
 
+// LinkSetDown sets the admin state to down.
 func (k *Interfaces) LinkSetDown(link netlink.Link) error {
 	return netlink.LinkSetDown(link)
 }
 
+// LinkSetDown sets the admin state to up.
 func (k *Interfaces) LinkSetUp(link netlink.Link) error {
 	return netlink.LinkSetUp(link)
 }
 
+// LinkSetMaster sets the member link's master to the other link.
 func (k *Interfaces) LinkSetMaster(member netlink.Link, link netlink.Link) error {
 	return netlink.LinkSetMaster(member, link)
 }
 
+// LinkSetNoMaster removes the master from the link.
 func (k *Interfaces) LinkSetNoMaster(link netlink.Link) error {
 	return netlink.LinkSetNoMaster(link)
 }
 
+// LinkModify modifies the link.
 func (k *Interfaces) LinkModify(link netlink.Link) error {
 	return netlink.LinkModify(link)
 }
