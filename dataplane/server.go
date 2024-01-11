@@ -50,7 +50,7 @@ func New(ctx context.Context, opts ...dplaneopts.Option) (*Dataplane, error) {
 		opt: dplaneopts.ResolveOpts(opts...),
 	}
 
-	lis, err := (&net.ListenConfig{}).Listen(ctx, "tcp", data.opt.Addr)
+	lis, err := (&net.ListenConfig{}).Listen(ctx, "tcp", data.opt.AddrPort)
 	if err != nil {
 		return nil, fmt.Errorf("failed to listen: %w", err)
 	}

@@ -75,6 +75,7 @@ type Context struct {
 	eventMu     sync.Mutex // Mutex protecting the event notification
 	nextEventID uint64     // Id of the next event id
 
+	// FakePortManager is the implementation of the port creator for the Fake port type.
 	FakePortManager FakePortManager
 }
 
