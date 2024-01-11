@@ -16,10 +16,9 @@ package integration_test
 
 import (
 	"context"
+	"slices"
 	"testing"
 	"time"
-
-	"slices"
 
 	"github.com/open-traffic-generator/snappi/gosnappi"
 	"github.com/openconfig/gribigo/chk"
@@ -39,7 +38,7 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	ondatra.RunTests(m, binding.Get(".."))
+	ondatra.RunTests(m, binding.KNE(".."))
 }
 
 // Settings for configuring the baseline testbed with the test

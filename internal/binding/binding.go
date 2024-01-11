@@ -48,9 +48,9 @@ var (
 	clusterLogPath = flag.String("cluser-log-path", "/tmp/cluster-log", "Path to directory to dump cluster logs on test failure. Set to \"\" to disable.")
 )
 
-// Get returns the custom lemming binding. The topoDir is the relative path to a
+// KNE returns the custom lemming binding. The topoDir is the relative path to a
 // directory containing the Ondatra testbed and KNE topology pb.txt files.
-func Get(topoDir string) func() (binding.Binding, error) {
+func KNE(topoDir string) func() (binding.Binding, error) {
 	dir, _ := filepath.Abs(topoDir)
 	testbedFile := filepath.Join(dir, "testbed.pb.txt")
 	topoFile := filepath.Join(dir, "topology.pb.txt")

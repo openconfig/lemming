@@ -24,6 +24,7 @@ import (
 
 	log "github.com/golang/glog"
 
+	"github.com/openconfig/lemming/dataplane/dplaneopts"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
 	"github.com/openconfig/lemming/dataplane/saiserver/attrmgr"
@@ -84,16 +85,16 @@ const (
 	NHActionTable         = "nh-action"
 )
 
-func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server) *saiSwitch {
+func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server, opts *dplaneopts.Options) *saiSwitch {
 	sw := &saiSwitch{
 		dataplane:       engine,
 		acl:             newACL(mgr, engine, s),
-		port:            newPort(mgr, engine, s),
+		port:            newPort(mgr, engine, s, opts),
 		vlan:            newVlan(mgr, engine, s),
 		stp:             &stp{},
 		vr:              &virtualRouter{},
 		bridge:          newBridge(mgr, engine, s),
-		hostif:          newHostif(mgr, engine, s),
+		hostif:          newHostif(mgr, engine, s, opts),
 		hash:            &hash{},
 		neighbor:        newNeighbor(mgr, engine, s),
 		nextHopGroup:    newNextHopGroup(mgr, engine, s),

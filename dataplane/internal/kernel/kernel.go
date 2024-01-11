@@ -116,23 +116,6 @@ func (k *Interfaces) CreateTAP(name string) (int, error) {
 	return fd, nil
 }
 
-// GetAll returns all interfaces.
-func (k *Interfaces) GetAll() ([]net.Interface, error) {
-	ifaces, err := net.Interfaces()
-	if err != nil {
-		return nil, err
-	}
-	sort.Slice(ifaces, func(i, j int) bool {
-		return ifaces[i].Name < ifaces[j].Name
-	})
-	return ifaces, nil
-}
-
-// GetByName returns all interfaces.
-func (k *Interfaces) GetByName(name string) (*net.Interface, error) {
-	return net.InterfaceByName(name)
-}
-
 // LinkByName returns a network interface by name.
 func (k *Interfaces) LinkByName(name string) (netlink.Link, error) {
 	return netlink.LinkByName(name)
@@ -151,4 +134,52 @@ func (k *Interfaces) AddrSubscribe(ch chan<- netlink.AddrUpdate, done <-chan str
 // NeighSubscribe subscribes to neighbor table updates.
 func (k *Interfaces) NeighSubscribe(ch chan<- netlink.NeighUpdate, done <-chan struct{}) error {
 	return netlink.NeighSubscribe(ch, done)
+}
+
+// LinkList lists all Linux network interfaces.
+func (k *Interfaces) LinkList() ([]netlink.Link, error) {
+	links, err := netlink.LinkList()
+	if err != nil {
+		return nil, err
+	}
+
+	sort.Slice(links, func(i, j int) bool {
+		return links[i].Attrs().Name < links[j].Attrs().Name
+	})
+	return links, err
+}
+
+// LinkAdd adds a new network interface.
+func (k *Interfaces) LinkAdd(link netlink.Link) error {
+	return netlink.LinkAdd(link)
+}
+
+// LinkByIndex finds a link by its index.
+func (k *Interfaces) LinkByIndex(idx int) (netlink.Link, error) {
+	return netlink.LinkByIndex(idx)
+}
+
+// LinkSetDown sets the admin state to down.
+func (k *Interfaces) LinkSetDown(link netlink.Link) error {
+	return netlink.LinkSetDown(link)
+}
+
+// LinkSetDown sets the admin state to up.
+func (k *Interfaces) LinkSetUp(link netlink.Link) error {
+	return netlink.LinkSetUp(link)
+}
+
+// LinkSetMaster sets the member link's master to the other link.
+func (k *Interfaces) LinkSetMaster(member netlink.Link, link netlink.Link) error {
+	return netlink.LinkSetMaster(member, link)
+}
+
+// LinkSetNoMaster removes the master from the link.
+func (k *Interfaces) LinkSetNoMaster(link netlink.Link) error {
+	return netlink.LinkSetNoMaster(link)
+}
+
+// LinkModify modifies the link.
+func (k *Interfaces) LinkModify(link netlink.Link) error {
+	return netlink.LinkModify(link)
 }

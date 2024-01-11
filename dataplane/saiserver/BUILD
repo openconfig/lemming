@@ -13,7 +13,7 @@ go_library(
     importpath = "github.com/openconfig/lemming/dataplane/saiserver",
     visibility = ["//visibility:public"],
     deps = [
-        "//dataplane/config",
+        "//dataplane/dplaneopts",
         "//dataplane/forwarding",
         "//dataplane/forwarding/attributes",
         "//dataplane/forwarding/fwdconfig",
@@ -24,7 +24,6 @@ go_library(
         "//proto/forwarding",
         "@com_github_golang_glog//:glog",
         "@com_github_openconfig_gnmi//errlist",
-        "@com_github_spf13_viper//:viper",
         "@org_golang_google_grpc//:go_default_library",
         "@org_golang_google_grpc//codes",
         "@org_golang_google_grpc//status",
@@ -43,6 +42,7 @@ go_test(
     ],
     embed = [":saiserver"],
     deps = [
+        "//dataplane/dplaneopts",
         "//dataplane/forwarding/infra/fwdcontext",
         "//dataplane/forwarding/infra/fwdobject",
         "//dataplane/proto:sai",

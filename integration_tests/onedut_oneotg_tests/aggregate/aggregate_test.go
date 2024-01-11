@@ -42,7 +42,7 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	ondatra.RunTests(m, binding.Get("."))
+	ondatra.RunTests(m, binding.KNE("."))
 }
 
 // Settings for configuring the aggregate testbed with the test

@@ -22,7 +22,6 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/reflection"
@@ -30,6 +29,7 @@ import (
 
 	"github.com/openconfig/lemming/bgp"
 	"github.com/openconfig/lemming/dataplane"
+	"github.com/openconfig/lemming/dataplane/dplaneopts"
 	fgnmi "github.com/openconfig/lemming/gnmi"
 	"github.com/openconfig/lemming/gnmi/fakedevice"
 	"github.com/openconfig/lemming/gnmi/oc"
@@ -56,11 +56,13 @@ type Device struct {
 	p4rtService         *gRPCService
 	stop                func()
 
-	gnmiServer  *fgnmi.Server
-	gnoiServer  *fgnoi.Server
-	gribiServer *fgribi.Server
-	gnsiServer  *fgnsi.Server
-	p4rtServer  *fp4rt.Server
+	gnmiServer   *fgnmi.Server
+	gnoiServer   *fgnoi.Server
+	gribiServer  *fgribi.Server
+	gnsiServer   *fgnsi.Server
+	p4rtServer   *fp4rt.Server
+	dplaneServer *dataplane.Dataplane
+
 	// Stores the errors if the server fails will be returned on call to stop.
 	errsMu sync.Mutex
 	errs   []error
@@ -80,6 +82,8 @@ type opt struct {
 	gnmiAddr       string
 	p4rtAddr       string
 	bgpPort        uint16
+	dataplane      bool
+	dataplaneOpts  []dplaneopts.Option
 }
 
 // resolveOpts applies all the options and returns a struct containing the result.
@@ -149,19 +153,33 @@ func WithTransportCreds(c credentials.TransportCredentials) Option {
 	}
 }
 
+func WithDataplane(enable bool) Option {
+	return func(o *opt) {
+		o.dataplane = enable
+	}
+}
+
+func WithDataplaneOpts(opts ...dplaneopts.Option) Option {
+	return func(o *opt) {
+		o.dataplaneOpts = opts
+	}
+}
+
 // New returns a new initialized device.
 func New(targetName, zapiURL string, opts ...Option) (*Device, error) {
 	var dplane *dataplane.Dataplane
 	var recs []reconciler.Reconciler
 
-	if viper.GetBool("enable_dataplane") {
+	resolvedOpts := resolveOpts(opts)
+
+	if resolvedOpts.dataplane {
 		if runtime.GOOS != "linux" {
 			return nil, fmt.Errorf("dataplane only supported on linux, GOOS is %s", runtime.GOOS)
 		}
 
 		log.Info("enabling dataplane")
 		var err error
-		dplane, err = dataplane.New(context.Background())
+		dplane, err = dataplane.New(context.Background(), resolvedOpts.dataplaneOpts...)
 		if err != nil {
 			return nil, err
 		}
@@ -169,8 +187,6 @@ func New(targetName, zapiURL string, opts ...Option) (*Device, error) {
 	}
 
 	log.Info("starting gNMI")
-
-	resolvedOpts := resolveOpts(opts)
 
 	root := &oc.Root{}
 	if jcfg := resolvedOpts.deviceConfigJSON; jcfg != nil {
@@ -261,11 +277,12 @@ func New(targetName, zapiURL string, opts ...Option) (*Device, error) {
 			lis:     lp4rt,
 			stopped: make(chan struct{}),
 		},
-		gnmiServer:  gnmiServer,
-		gnoiServer:  fgnoi.New(s),
-		gribiServer: gribiServer,
-		gnsiServer:  gnsiServer,
-		p4rtServer:  fp4rt.New(P4RTs),
+		gnmiServer:   gnmiServer,
+		gnoiServer:   fgnoi.New(s),
+		gribiServer:  gribiServer,
+		gnsiServer:   gnsiServer,
+		p4rtServer:   fp4rt.New(P4RTs),
+		dplaneServer: dplane,
 	}
 	reflection.Register(s)
 	d.startServer()
@@ -338,6 +355,11 @@ func (d *Device) GNMI() *fgnmi.Server {
 // GNSI returns the gNSI server implementation.
 func (d *Device) GNSI() *fgnsi.Server {
 	return d.gnsiServer
+}
+
+// Dataplane returns the dataplane server implementation.
+func (d *Device) Dataplane() *dataplane.Dataplane {
+	return d.dplaneServer
 }
 
 func (d *Device) startServer() {

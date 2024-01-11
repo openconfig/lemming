@@ -24,6 +24,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/local"
 
+	"github.com/openconfig/lemming/dataplane/dplaneopts"
 	"github.com/openconfig/lemming/dataplane/saiserver"
 	"github.com/openconfig/lemming/dataplane/saiserver/attrmgr"
 	"github.com/openconfig/lemming/gnmi/oc"
@@ -40,13 +41,16 @@ type Dataplane struct {
 	srv         *grpc.Server
 	lis         net.Listener
 	reconcilers []reconciler.Reconciler
+	opt         *dplaneopts.Options
 }
 
 // New create a new dataplane instance.
-func New(ctx context.Context) (*Dataplane, error) {
-	data := &Dataplane{}
+func New(ctx context.Context, opts ...dplaneopts.Option) (*Dataplane, error) {
+	data := &Dataplane{
+		opt: dplaneopts.ResolveOpts(opts...),
+	}
 
-	lis, err := (&net.ListenConfig{}).Listen(ctx, "tcp", "127.0.0.1:0")
+	lis, err := (&net.ListenConfig{}).Listen(ctx, "tcp", data.opt.AddrPort)
 	if err != nil {
 		return nil, fmt.Errorf("failed to listen: %w", err)
 	}
@@ -54,7 +58,7 @@ func New(ctx context.Context) (*Dataplane, error) {
 	mgr := attrmgr.New()
 	srv := grpc.NewServer(grpc.Creds(local.NewCredentials()), grpc.ChainUnaryInterceptor(mgr.Interceptor))
 
-	saiserv, err := saiserver.New(ctx, mgr, srv)
+	saiserv, err := saiserver.New(ctx, mgr, srv, data.opt)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create: %w", err)
 	}
@@ -114,12 +118,13 @@ func (d *Dataplane) Start(ctx context.Context, c gpb.GNMIClient, target string) 
 		return err
 	}
 
-	// TODO: Completely remove engine and don't hardcode context ID.
-	d.reconcilers = append(d.reconcilers, getReconcilers(conn, swResp.Oid, *swAttrs.GetAttr().CpuPort, "lucius")...)
+	if d.opt.Reconcilation {
+		d.reconcilers = append(d.reconcilers, getReconcilers(conn, swResp.Oid, *swAttrs.GetAttr().CpuPort, "lucius")...)
 
-	for _, rec := range d.reconcilers {
-		if err := rec.Start(ctx, c, target); err != nil {
-			return fmt.Errorf("failed to stop handler %q: %v", rec.ID(), err)
+		for _, rec := range d.reconcilers {
+			if err := rec.Start(ctx, c, target); err != nil {
+				return fmt.Errorf("failed to stop handler %q: %v", rec.ID(), err)
+			}
 		}
 	}
 
@@ -133,6 +138,10 @@ func (d *Dataplane) Conn() (grpc.ClientConnInterface, error) {
 		return nil, fmt.Errorf("failed to dial server: %w", err)
 	}
 	return conn, nil
+}
+
+func (d *Dataplane) SaiServer() *saiserver.Server {
+	return d.saiserv
 }
 
 // Stop gracefully stops the server.
