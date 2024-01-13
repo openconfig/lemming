@@ -28,8 +28,10 @@ import (
 	"github.com/openconfig/ondatra"
 	"github.com/openconfig/ondatra/gnmi"
 	"github.com/openconfig/ondatra/gnmi/otg/otgpath"
+	"github.com/openconfig/ondatra/otg"
 	"github.com/openconfig/ygnmi/ygnmi"
 
+	"github.com/openconfig/lemming/gnmi/fakedevice"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 	"github.com/openconfig/lemming/internal/attrs"
 	"github.com/openconfig/lemming/internal/binding"
@@ -50,17 +52,28 @@ func TestMain(m *testing.M) {
 //   - ate:port1 -> dut:port1 subnet 192.0.2.0/30
 //   - ate:port2 -> dut:port2 subnet 192.0.2.4/30
 const (
-	ipv4PrefixLen          = 30
-	ateDstNetCIDR          = "198.51.100.0/24"
-	ateIndirectNH          = "203.0.113.1"
-	ateIndirectNHCIDR      = ateIndirectNH + "/32"
-	nhIndex                = 1
-	nhgIndex               = 42
-	nhIndex2               = 2
-	nhgIndex2              = 52
-	nhIndex3               = 3
-	nhgIndex3              = 62
-	defaultNetworkInstance = "DEFAULT"
+	// IPv4
+	ipv4PrefixLen     = 30
+	ateDstNetCIDR     = "198.51.100.0/24"
+	ateIndirectNH     = "203.0.113.1"
+	ateIndirectNHCIDR = ateIndirectNH + "/32"
+	nhIndex           = 1
+	nhgIndex          = 42
+	nhIndex2          = 2
+	nhgIndex2         = 52
+	nhIndex3          = 3
+	nhgIndex3         = 62
+	// IPv6
+	ipv6PrefixLen       = 99
+	ateDstNetCIDRv6     = "2003::/48"
+	ateIndirectNHv6     = "2002::"
+	ateIndirectNHCIDRv6 = ateIndirectNHv6 + "/48"
+	nhIndexv6           = 10
+	nhgIndexv6          = 420
+	nhIndex2v6          = 20
+	nhgIndex2v6         = 520
+	nhIndex3v6          = 30
+	nhgIndex3v6         = 620
 )
 
 var (
@@ -68,6 +81,8 @@ var (
 		Desc:    "dutPort1",
 		IPv4:    "192.0.2.1",
 		IPv4Len: ipv4PrefixLen,
+		IPv6:    "2001::aaaa:bbbb:aa",
+		IPv6Len: ipv6PrefixLen,
 	}
 
 	atePort1 = attrs.Attributes{
@@ -75,12 +90,16 @@ var (
 		MAC:     "02:00:01:01:01:01",
 		IPv4:    "192.0.2.2",
 		IPv4Len: ipv4PrefixLen,
+		IPv6:    "2001::aaaa:bbbb:bb",
+		IPv6Len: ipv6PrefixLen,
 	}
 
 	dutPort2 = attrs.Attributes{
 		Desc:    "dutPort2",
 		IPv4:    "192.0.2.5",
 		IPv4Len: ipv4PrefixLen,
+		IPv6:    "2001::aaab:bbbb:aa",
+		IPv6Len: ipv6PrefixLen,
 	}
 
 	atePort2 = attrs.Attributes{
@@ -88,11 +107,13 @@ var (
 		MAC:     "02:00:02:01:01:01",
 		IPv4:    "192.0.2.6",
 		IPv4Len: ipv4PrefixLen,
+		IPv6:    "2001::aaab:bbbb:bb",
+		IPv6Len: ipv6PrefixLen,
 	}
 )
 
-// configureATE configures port1 and port2 on the ATE.
-func configureATE(t *testing.T, ate *ondatra.ATEDevice) gosnappi.Config {
+// configureOTG configures port1 and port2 on the ATE.
+func configureOTG(t *testing.T, ate *ondatra.ATEDevice) gosnappi.Config {
 	top := gosnappi.NewConfig()
 
 	p1 := ate.Port(t, "port1")
@@ -100,6 +121,7 @@ func configureATE(t *testing.T, ate *ondatra.ATEDevice) gosnappi.Config {
 
 	atePort1.AddToOTG(top, p1, &dutPort1)
 	atePort2.AddToOTG(top, p2, &dutPort2)
+
 	return top
 }
 
@@ -118,6 +140,8 @@ func configureDUT(t *testing.T, dut *ondatra.DUTDevice) {
 
 	gnmi.Await(t, dut, ocpath.Root().Interface(dut.Port(t, "port1").Name()).Subinterface(0).Ipv4().Address(dutPort1.IPv4).Ip().State(), time.Minute, dutPort1.IPv4)
 	gnmi.Await(t, dut, ocpath.Root().Interface(dut.Port(t, "port2").Name()).Subinterface(0).Ipv4().Address(dutPort2.IPv4).Ip().State(), time.Minute, dutPort2.IPv4)
+	gnmi.Await(t, dut, ocpath.Root().Interface(dut.Port(t, "port1").Name()).Subinterface(0).Ipv6().Address(dutPort1.IPv6).Ip().State(), time.Minute, dutPort1.IPv6)
+	gnmi.Await(t, dut, ocpath.Root().Interface(dut.Port(t, "port2").Name()).Subinterface(0).Ipv6().Address(dutPort2.IPv6).Ip().State(), time.Minute, dutPort2.IPv6)
 }
 
 func waitOTGARPEntry(t *testing.T) {
@@ -131,14 +155,23 @@ func waitOTGARPEntry(t *testing.T) {
 	}
 	lla, _ := val.Val()
 	t.Logf("Neighbor %v", lla)
+
+	val, ok = gnmi.WatchAll(t, ate.OTG(), otgpath.Root().InterfaceAny().Ipv6NeighborAny().LinkLayerAddress().State(), time.Minute, func(v *ygnmi.Value[string]) bool {
+		return v.IsPresent()
+	}).Await(t)
+	if !ok {
+		t.Fatal("failed to get neighbor")
+	}
+	lla, _ = val.Val()
+	t.Logf("Neighbor %v", lla)
 }
 
 // testTraffic generates traffic flow from source network to
 // destination network via srcEndPoint to dstEndPoint and checks for
 // packet loss and returns loss percentage as float.
-func testTraffic(t *testing.T, ate *ondatra.ATEDevice, top gosnappi.Config, srcEndPoint, dstEndPoint attrs.Attributes, dur time.Duration) float32 {
-	otg := ate.OTG()
+func testTraffic(t *testing.T, otg *otg.OTG, srcEndPoint, dstEndPoint attrs.Attributes, startAddress string, dur time.Duration) float32 {
 	waitOTGARPEntry(t)
+	top := otg.FetchConfig(t)
 	top.Flows().Clear().Items()
 	flowipv4 := top.Flows().Add().SetName("Flow")
 	flowipv4.Metrics().SetEnable(true)
@@ -165,6 +198,38 @@ func testTraffic(t *testing.T, ate *ondatra.ATEDevice, top gosnappi.Config, srcE
 	return float32(lossPct)
 }
 
+// testTrafficv6 generates traffic flow from source network to
+// destination network via srcEndPoint to dstEndPoint and checks for
+// packet loss and returns loss percentage as float.
+func testTrafficv6(t *testing.T, otg *otg.OTG, srcEndPoint, dstEndPoint attrs.Attributes, startAddress string, dur time.Duration) float32 {
+	waitOTGARPEntry(t)
+	top := otg.FetchConfig(t)
+	top.Flows().Clear().Items()
+	flowipv6 := top.Flows().Add().SetName("Flow2")
+	flowipv6.Metrics().SetEnable(true)
+	flowipv6.TxRx().Device().
+		SetTxNames([]string{srcEndPoint.Name + ".IPv6"}).
+		SetRxNames([]string{dstEndPoint.Name + ".IPv6"})
+	flowipv6.Duration().SetChoice("continuous")
+	flowipv6.Packet().Add().Ethernet()
+	v6 := flowipv6.Packet().Add().Ipv6()
+	v6.Src().SetValue(srcEndPoint.IPv6)
+	v6.Dst().Increment().SetStart(startAddress).SetCount(250)
+	otg.PushConfig(t, top)
+
+	otg.StartTraffic(t)
+	time.Sleep(dur)
+	t.Logf("Stop traffic")
+	otg.StopTraffic(t)
+
+	time.Sleep(5 * time.Second)
+
+	txPkts := gnmi.Get(t, otg, gnmi.OTG().Flow("Flow2").Counters().OutPkts().State())
+	rxPkts := gnmi.Get(t, otg, gnmi.OTG().Flow("Flow2").Counters().InPkts().State())
+	lossPct := (txPkts - rxPkts) * 100 / txPkts
+	return float32(lossPct)
+}
+
 // awaitTimeout calls a fluent client Await, adding a timeout to the context.
 func awaitTimeout(ctx context.Context, c *fluent.GRIBIClient, t testing.TB, timeout time.Duration) error {
 	subctx, cancel := context.WithTimeout(ctx, timeout)
@@ -187,149 +252,187 @@ func testCounters(t *testing.T, dut *ondatra.DUTDevice, wantTxPkts, wantRxPkts u
 	}
 }
 
-// TestIPv4Entry tests a single IPv4Entry forwarding entry.
-func TestIPv4Entry(t *testing.T) {
-	ctx := context.Background()
+type testCase struct {
+	desc                    string
+	entries                 []fluent.GRIBIEntry
+	wantAddOperationResults []*client.OpResult
+	wantDelOperationResults []*client.OpResult
+	startAddress            string
+	v6Traffic               bool
+}
 
+func newTestCase(desc string, startAddress string, v6 bool, recursive bool) testCase {
+	var (
+		ateIndirectNH        = ateIndirectNH
+		ateDstNetCIDR        = ateDstNetCIDR
+		nhIndex       uint64 = nhIndex
+		nhgIndex      uint64 = nhgIndex
+		nhIndex2      uint64 = nhIndex2
+		nhgIndex2     uint64 = nhgIndex2
+		nhIndex3      uint64 = nhIndex3
+		nhgIndex3     uint64 = nhgIndex3
+		destIP               = atePort2.IPv4
+	)
+	if v6 {
+		ateIndirectNH = ateIndirectNHv6
+		ateDstNetCIDR = ateDstNetCIDRv6
+		nhIndex = nhIndexv6
+		nhgIndex = nhgIndexv6
+		nhIndex2 = nhIndex2v6
+		nhgIndex2 = nhgIndex2v6
+		nhIndex3 = nhIndex3v6
+		nhgIndex3 = nhgIndex3v6
+		destIP = atePort2.IPv6
+	}
+
+	fluentEntry := func(prefix string, nhgIndex uint64) fluent.GRIBIEntry {
+		if !v6 {
+			return fluent.IPv4Entry().WithNetworkInstance(fakedevice.DefaultNetworkInstance).
+				WithPrefix(prefix).WithNextHopGroup(nhgIndex)
+		} else {
+			return fluent.IPv6Entry().WithNetworkInstance(fakedevice.DefaultNetworkInstance).
+				WithPrefix(prefix).WithNextHopGroup(nhgIndex)
+		}
+	}
+
+	routeInstallResult := func(prefix string, c constants.OpType) *client.OpResult {
+		if !v6 {
+			return fluent.OperationResult().
+				WithIPv4Operation(prefix).
+				WithProgrammingResult(fluent.InstalledInFIB).
+				WithOperationType(c).
+				AsResult()
+		} else {
+			return fluent.OperationResult().
+				WithIPv6Operation(prefix).
+				WithProgrammingResult(fluent.InstalledInFIB).
+				WithOperationType(c).
+				AsResult()
+		}
+	}
+
+	if !recursive {
+		return testCase{
+			desc: desc,
+			entries: []fluent.GRIBIEntry{
+				fluent.NextHopEntry().WithNetworkInstance(fakedevice.DefaultNetworkInstance).
+					WithIndex(nhIndex).WithIPAddress(destIP),
+				fluent.NextHopGroupEntry().WithNetworkInstance(fakedevice.DefaultNetworkInstance).
+					WithID(nhgIndex).AddNextHop(nhIndex, 1),
+				fluentEntry(ateDstNetCIDR, nhgIndex),
+			},
+			wantAddOperationResults: []*client.OpResult{
+				fluent.OperationResult().
+					WithNextHopOperation(nhIndex).
+					WithProgrammingResult(fluent.InstalledInFIB).
+					WithOperationType(constants.Add).
+					AsResult(),
+				fluent.OperationResult().
+					WithNextHopGroupOperation(nhgIndex).
+					WithProgrammingResult(fluent.InstalledInFIB).
+					WithOperationType(constants.Add).
+					AsResult(),
+				routeInstallResult(ateDstNetCIDR, constants.Add),
+			},
+			wantDelOperationResults: []*client.OpResult{
+				routeInstallResult(ateDstNetCIDR, constants.Delete),
+				fluent.OperationResult().
+					WithNextHopGroupOperation(nhgIndex).
+					WithProgrammingResult(fluent.InstalledInFIB).
+					WithOperationType(constants.Delete).
+					AsResult(),
+				fluent.OperationResult().
+					WithNextHopOperation(nhIndex).
+					WithProgrammingResult(fluent.InstalledInFIB).
+					WithOperationType(constants.Delete).
+					AsResult(),
+			},
+			startAddress: startAddress,
+			v6Traffic:    v6,
+		}
+	} else {
+		return testCase{
+			desc: desc,
+			entries: []fluent.GRIBIEntry{
+				fluent.NextHopEntry().WithNetworkInstance(fakedevice.DefaultNetworkInstance).
+					WithIndex(nhIndex3).WithIPAddress(ateIndirectNH),
+				fluent.NextHopGroupEntry().WithNetworkInstance(fakedevice.DefaultNetworkInstance).
+					WithID(nhgIndex3).AddNextHop(nhIndex3, 1),
+				fluentEntry(ateDstNetCIDR, nhgIndex3),
+				fluent.NextHopEntry().WithNetworkInstance(fakedevice.DefaultNetworkInstance).
+					WithIndex(nhIndex2).WithIPAddress(destIP),
+				fluent.NextHopGroupEntry().WithNetworkInstance(fakedevice.DefaultNetworkInstance).
+					WithID(nhgIndex2).AddNextHop(nhIndex2, 1),
+				fluentEntry(ateIndirectNHCIDR, nhgIndex2),
+			},
+			wantAddOperationResults: []*client.OpResult{
+				fluent.OperationResult().
+					WithNextHopOperation(nhIndex3).
+					WithProgrammingResult(fluent.InstalledInFIB).
+					WithOperationType(constants.Add).
+					AsResult(),
+				fluent.OperationResult().
+					WithNextHopGroupOperation(nhgIndex3).
+					WithProgrammingResult(fluent.InstalledInFIB).
+					WithOperationType(constants.Add).
+					AsResult(),
+				routeInstallResult(ateDstNetCIDR, constants.Add),
+				fluent.OperationResult().
+					WithNextHopOperation(nhIndex2).
+					WithProgrammingResult(fluent.InstalledInFIB).
+					WithOperationType(constants.Add).
+					AsResult(),
+				fluent.OperationResult().
+					WithNextHopGroupOperation(nhgIndex2).
+					WithProgrammingResult(fluent.InstalledInFIB).
+					WithOperationType(constants.Add).
+					AsResult(),
+				routeInstallResult(ateIndirectNHCIDR, constants.Add),
+			},
+			wantDelOperationResults: []*client.OpResult{
+				fluent.OperationResult().
+					WithNextHopOperation(nhIndex3).
+					WithProgrammingResult(fluent.InstalledInFIB).
+					WithOperationType(constants.Delete).
+					AsResult(),
+				fluent.OperationResult().
+					WithNextHopGroupOperation(nhgIndex3).
+					WithProgrammingResult(fluent.InstalledInFIB).
+					WithOperationType(constants.Delete).
+					AsResult(),
+				routeInstallResult(ateDstNetCIDR, constants.Delete),
+				fluent.OperationResult().
+					WithNextHopOperation(nhIndex2).
+					WithProgrammingResult(fluent.InstalledInFIB).
+					WithOperationType(constants.Delete).
+					AsResult(),
+				fluent.OperationResult().
+					WithNextHopGroupOperation(nhgIndex2).
+					WithProgrammingResult(fluent.InstalledInFIB).
+					WithOperationType(constants.Delete).
+					AsResult(),
+				routeInstallResult(ateIndirectNHCIDR, constants.Delete),
+			},
+			startAddress: startAddress,
+			v6Traffic:    v6,
+		}
+	}
+}
+
+// TestGRIBIEntry tests single IPv4 and IPv6 gRIBI forwarding entries.
+func TestGRIBIEntry(t *testing.T) {
 	dut := ondatra.DUT(t, "dut")
 	configureDUT(t, dut)
 
 	ate := ondatra.ATE(t, "ate")
-	ateTop := configureATE(t, ate)
-	ate.OTG().PushConfig(t, ateTop)
+	otg := ate.OTG()
+	otgConfig := configureOTG(t, ate)
+	otg.PushConfig(t, otgConfig)
 
-	cases := []struct {
-		desc                    string
-		entries                 []fluent.GRIBIEntry
-		wantAddOperationResults []*client.OpResult
-		wantDelOperationResults []*client.OpResult
-	}{{
-		desc: "single-next-hop",
-		entries: []fluent.GRIBIEntry{
-			fluent.NextHopEntry().WithNetworkInstance(defaultNetworkInstance).
-				WithIndex(nhIndex).WithIPAddress(atePort2.IPv4),
-			fluent.NextHopGroupEntry().WithNetworkInstance(defaultNetworkInstance).
-				WithID(nhgIndex).AddNextHop(nhIndex, 1),
-			fluent.IPv4Entry().WithNetworkInstance(defaultNetworkInstance).
-				WithPrefix(ateDstNetCIDR).WithNextHopGroup(nhgIndex),
-		},
-		wantAddOperationResults: []*client.OpResult{
-			fluent.OperationResult().
-				WithNextHopOperation(nhIndex).
-				WithProgrammingResult(fluent.InstalledInFIB).
-				WithOperationType(constants.Add).
-				AsResult(),
-			fluent.OperationResult().
-				WithNextHopGroupOperation(nhgIndex).
-				WithProgrammingResult(fluent.InstalledInFIB).
-				WithOperationType(constants.Add).
-				AsResult(),
-			fluent.OperationResult().
-				WithIPv4Operation(ateDstNetCIDR).
-				WithProgrammingResult(fluent.InstalledInFIB).
-				WithOperationType(constants.Add).
-				AsResult(),
-		},
-		wantDelOperationResults: []*client.OpResult{
-			fluent.OperationResult().
-				WithIPv4Operation(ateDstNetCIDR).
-				WithProgrammingResult(fluent.InstalledInFIB).
-				WithOperationType(constants.Delete).
-				AsResult(),
-			fluent.OperationResult().
-				WithNextHopGroupOperation(nhgIndex).
-				WithProgrammingResult(fluent.InstalledInFIB).
-				WithOperationType(constants.Delete).
-				AsResult(),
-			fluent.OperationResult().
-				WithNextHopOperation(nhIndex).
-				WithProgrammingResult(fluent.InstalledInFIB).
-				WithOperationType(constants.Delete).
-				AsResult(),
-		},
-	}, {
-		desc: "recursive-next-hop",
-		entries: []fluent.GRIBIEntry{
-			// Add an IPv4Entry for 198.51.100.0/24 pointing to 203.0.113.1/32.
-			fluent.NextHopEntry().WithNetworkInstance(defaultNetworkInstance).
-				WithIndex(nhIndex3).WithIPAddress(ateIndirectNH),
-			fluent.NextHopGroupEntry().WithNetworkInstance(defaultNetworkInstance).
-				WithID(nhgIndex3).AddNextHop(nhIndex3, 1),
-			fluent.IPv4Entry().WithNetworkInstance(defaultNetworkInstance).
-				WithPrefix(ateDstNetCIDR).WithNextHopGroup(nhgIndex3),
-			// Add an IPv4Entry for 203.0.113.1/32 pointing to 192.0.2.6.
-			fluent.NextHopEntry().WithNetworkInstance(defaultNetworkInstance).
-				WithIndex(nhIndex2).WithIPAddress(atePort2.IPv4),
-			fluent.NextHopGroupEntry().WithNetworkInstance(defaultNetworkInstance).
-				WithID(nhgIndex2).AddNextHop(nhIndex2, 1),
-			fluent.IPv4Entry().WithNetworkInstance(defaultNetworkInstance).
-				WithPrefix(ateIndirectNHCIDR).WithNextHopGroup(nhgIndex2),
-		},
-		wantAddOperationResults: []*client.OpResult{
-			fluent.OperationResult().
-				WithNextHopOperation(nhIndex3).
-				WithProgrammingResult(fluent.InstalledInFIB).
-				WithOperationType(constants.Add).
-				AsResult(),
-			fluent.OperationResult().
-				WithNextHopGroupOperation(nhgIndex3).
-				WithProgrammingResult(fluent.InstalledInFIB).
-				WithOperationType(constants.Add).
-				AsResult(),
-			fluent.OperationResult().
-				WithIPv4Operation(ateDstNetCIDR).
-				WithProgrammingResult(fluent.InstalledInFIB).
-				WithOperationType(constants.Add).
-				AsResult(),
-			fluent.OperationResult().
-				WithNextHopOperation(nhIndex2).
-				WithProgrammingResult(fluent.InstalledInFIB).
-				WithOperationType(constants.Add).
-				AsResult(),
-			fluent.OperationResult().
-				WithNextHopGroupOperation(nhgIndex2).
-				WithProgrammingResult(fluent.InstalledInFIB).
-				WithOperationType(constants.Add).
-				AsResult(),
-			fluent.OperationResult().
-				WithIPv4Operation(ateIndirectNHCIDR).
-				WithProgrammingResult(fluent.InstalledInFIB).
-				WithOperationType(constants.Add).
-				AsResult(),
-		},
-		wantDelOperationResults: []*client.OpResult{
-			fluent.OperationResult().
-				WithNextHopOperation(nhIndex3).
-				WithProgrammingResult(fluent.InstalledInFIB).
-				WithOperationType(constants.Delete).
-				AsResult(),
-			fluent.OperationResult().
-				WithNextHopGroupOperation(nhgIndex3).
-				WithProgrammingResult(fluent.InstalledInFIB).
-				WithOperationType(constants.Delete).
-				AsResult(),
-			fluent.OperationResult().
-				WithIPv4Operation(ateDstNetCIDR).
-				WithProgrammingResult(fluent.InstalledInFIB).
-				WithOperationType(constants.Delete).
-				AsResult(),
-			fluent.OperationResult().
-				WithNextHopOperation(nhIndex2).
-				WithProgrammingResult(fluent.InstalledInFIB).
-				WithOperationType(constants.Delete).
-				AsResult(),
-			fluent.OperationResult().
-				WithNextHopGroupOperation(nhgIndex2).
-				WithProgrammingResult(fluent.InstalledInFIB).
-				WithOperationType(constants.Delete).
-				AsResult(),
-			fluent.OperationResult().
-				WithIPv4Operation(ateIndirectNHCIDR).
-				WithProgrammingResult(fluent.InstalledInFIB).
-				WithOperationType(constants.Delete).
-				AsResult(),
-		},
-	}}
+	cases := []testCase{
+		newTestCase("single-next-hop", "198.51.100.0", false, false),
+		newTestCase("recursive-next-hop", "198.51.100.0", false, true),
+	}
 	for _, tc := range cases {
 		var txPkts, rxPkts uint64
 		t.Run(tc.desc, func(t *testing.T) {
@@ -340,6 +443,7 @@ func TestIPv4Entry(t *testing.T) {
 				WithPersistence().
 				WithFIBACK().
 				WithInitialElectionID(1, 0)
+			ctx := context.Background()
 			c.Start(ctx, t)
 			defer c.Stop(t)
 			c.StartSending(ctx, t)
@@ -356,14 +460,18 @@ func TestIPv4Entry(t *testing.T) {
 				chk.HasResult(t, c.Results(t), wantResult, chk.IgnoreOperationID())
 			}
 
-			// Send some traffic to make sure neighbor cache is warmed up on the dut.
-			testTraffic(t, ate, ateTop, atePort1, atePort2, 1*time.Second)
+			testTrafficFn := testTraffic
+			if tc.v6Traffic {
+				testTrafficFn = testTrafficv6
+			}
 
-			if loss := testTraffic(t, ate, ateTop, atePort1, atePort2, 5*time.Second); loss > 1 {
+			// Send some traffic to make sure neighbor cache is warmed up on the dut.
+			testTrafficFn(t, otg, atePort1, atePort2, tc.startAddress, 1*time.Second)
+
+			if loss := testTrafficFn(t, otg, atePort1, atePort2, tc.startAddress, 5*time.Second); loss > 1 {
 				t.Errorf("Loss: got %g, want <= 1", loss)
 			}
 
-			otg := ate.OTG()
 			// counters are not erased, so have to accumulate the packets from previous subtests.
 			txPkts += gnmi.Get(t, otg, gnmi.OTG().Flow("Flow").Counters().OutPkts().State())
 			rxPkts += gnmi.Get(t, otg, gnmi.OTG().Flow("Flow").Counters().InPkts().State())
@@ -376,13 +484,13 @@ func TestIPv4Entry(t *testing.T) {
 			}
 
 			// Send some traffic to make sure neighbor cache is warmed up on the dut.
-			testTraffic(t, ate, ateTop, atePort1, atePort2, 1*time.Second)
+			testTrafficFn(t, otg, atePort1, atePort2, tc.startAddress, 1*time.Second)
 
 			for _, wantResult := range tc.wantDelOperationResults {
 				chk.HasResult(t, c.Results(t), wantResult, chk.IgnoreOperationID())
 			}
 
-			if loss := testTraffic(t, ate, ateTop, atePort1, atePort2, 5*time.Second); loss != 100 {
+			if loss := testTrafficFn(t, otg, atePort1, atePort2, tc.startAddress, 5*time.Second); loss != 100 {
 				t.Errorf("Loss: got %g, want 100", loss)
 			}
 
