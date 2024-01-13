@@ -430,8 +430,10 @@ func TestGRIBIEntry(t *testing.T) {
 	otg.PushConfig(t, otgConfig)
 
 	cases := []testCase{
-		newTestCase("single-next-hop", "198.51.100.0", false, false),
-		newTestCase("recursive-next-hop", "198.51.100.0", false, true),
+		newTestCase("single-next-hop-IPv4", "198.51.100.0", false, false),
+		newTestCase("recursive-next-hop-IPv4", "198.51.100.0", false, true),
+		newTestCase("single-next-hop-IPv6", "2003::", true, false),
+		newTestCase("recursive-next-hop-IPv6", "2003:bbbb::", true, true),
 	}
 	for _, tc := range cases {
 		var txPkts, rxPkts uint64
