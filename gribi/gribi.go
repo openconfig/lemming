@@ -17,7 +17,7 @@ package gribi
 import (
 	"context"
 	"fmt"
-	"net"
+	"net/netip"
 
 	log "github.com/golang/glog"
 	"github.com/openconfig/gribigo/aft"
@@ -124,7 +124,6 @@ func createGRIBIServer(gClient gpb.GNMIClient, target string, root *oc.Root) (*s
 		nhSum := []*afthelper.NextHopSummary{}
 		switch optype {
 		case constants.Add, constants.Replace:
-			// FIXME(wenbli): Support IPv4 for this function.
 			nhs, err := afthelper.NextHopAddrsForPrefix(ribs, netinst, prefix)
 			if err != nil {
 				log.Errorf("cannot add netinst:prefix %s:%s to the RIB, %v", netinst, prefix, err)
@@ -164,8 +163,7 @@ func createGRIBIServer(gClient gpb.GNMIClient, target string, root *oc.Root) (*s
 
 // createSetRouteRequest converts a Route to a sysrib SetRouteRequest
 func createSetRouteRequest(prefix string, nexthops []*afthelper.NextHopSummary) (*sysribpb.SetRouteRequest, error) {
-	// FIXME(wenbli): support IPv6.
-	ip, ipnet, err := net.ParseCIDR(prefix)
+	pfx, err := netip.ParsePrefix(prefix)
 	if err != nil {
 		log.Errorf("Cannot parse prefix %q as CIDR for calling sysrib", prefix)
 	}
@@ -173,7 +171,6 @@ func createSetRouteRequest(prefix string, nexthops []*afthelper.NextHopSummary) 
 	if err != nil {
 		return nil, fmt.Errorf("gribigo/sysrib: %v", err)
 	}
-	maskLength, _ := ipnet.Mask.Size()
 
 	var zNexthops []*sysribpb.Nexthop
 	for _, nhs := range nexthops {
@@ -184,14 +181,19 @@ func createSetRouteRequest(prefix string, nexthops []*afthelper.NextHopSummary) 
 		})
 	}
 
+	family := sysribpb.Prefix_FAMILY_IPV4
+	if pfx.Addr().Is6() {
+		family = sysribpb.Prefix_FAMILY_IPV6
+	}
+
 	return &sysribpb.SetRouteRequest{
 		AdminDistance: 5,
 		ProtocolName:  "gRIBI",
 		Safi:          sysribpb.SetRouteRequest_SAFI_UNICAST,
 		Prefix: &sysribpb.Prefix{
-			Family:     sysribpb.Prefix_FAMILY_IPV4,
-			Address:    ip.String(),
-			MaskLength: uint32(maskLength),
+			Family:     family,
+			Address:    pfx.Addr().String(),
+			MaskLength: uint32(pfx.Bits()),
 		},
 		Nexthops: zNexthops,
 	}, nil

@@ -16,6 +16,7 @@ package integration_test
 
 import (
 	"context"
+	"net/netip"
 	"slices"
 	"testing"
 	"time"
@@ -52,28 +53,8 @@ func TestMain(m *testing.M) {
 //   - ate:port1 -> dut:port1 subnet 192.0.2.0/30
 //   - ate:port2 -> dut:port2 subnet 192.0.2.4/30
 const (
-	// IPv4
-	ipv4PrefixLen     = 30
-	ateDstNetCIDR     = "198.51.100.0/24"
-	ateIndirectNH     = "203.0.113.1"
-	ateIndirectNHCIDR = ateIndirectNH + "/32"
-	nhIndex           = 1
-	nhgIndex          = 42
-	nhIndex2          = 2
-	nhgIndex2         = 52
-	nhIndex3          = 3
-	nhgIndex3         = 62
-	// IPv6
-	ipv6PrefixLen       = 99
-	ateDstNetCIDRv6     = "2003::/48"
-	ateIndirectNHv6     = "2002::"
-	ateIndirectNHCIDRv6 = ateIndirectNHv6 + "/48"
-	nhIndexv6           = 10
-	nhgIndexv6          = 420
-	nhIndex2v6          = 20
-	nhgIndex2v6         = 520
-	nhIndex3v6          = 30
-	nhgIndex3v6         = 620
+	ipv4PrefixLen = 30
+	ipv6PrefixLen = 99
 )
 
 var (
@@ -182,7 +163,7 @@ func testTraffic(t *testing.T, otg *otg.OTG, srcEndPoint, dstEndPoint attrs.Attr
 	flowipv4.Packet().Add().Ethernet()
 	v4 := flowipv4.Packet().Add().Ipv4()
 	v4.Src().SetValue(srcEndPoint.IPv4)
-	v4.Dst().Increment().SetStart("198.51.100.0").SetCount(250)
+	v4.Dst().Increment().SetStart(startAddress).SetCount(24)
 	otg.PushConfig(t, top)
 
 	otg.StartTraffic(t)
@@ -214,7 +195,7 @@ func testTrafficv6(t *testing.T, otg *otg.OTG, srcEndPoint, dstEndPoint attrs.At
 	flowipv6.Packet().Add().Ethernet()
 	v6 := flowipv6.Packet().Add().Ipv6()
 	v6.Src().SetValue(srcEndPoint.IPv6)
-	v6.Dst().Increment().SetStart(startAddress).SetCount(250)
+	v6.Dst().Increment().SetStart(startAddress).SetCount(24)
 	otg.PushConfig(t, top)
 
 	otg.StartTraffic(t)
@@ -261,32 +242,73 @@ type testCase struct {
 	v6Traffic               bool
 }
 
-func newTestCase(desc string, startAddress string, v6 bool, recursive bool) testCase {
-	var (
-		ateIndirectNH        = ateIndirectNH
-		ateDstNetCIDR        = ateDstNetCIDR
-		nhIndex       uint64 = nhIndex
-		nhgIndex      uint64 = nhgIndex
-		nhIndex2      uint64 = nhIndex2
-		nhgIndex2     uint64 = nhgIndex2
-		nhIndex3      uint64 = nhIndex3
-		nhgIndex3     uint64 = nhgIndex3
-		destIP               = atePort2.IPv4
+type RouteType int
+
+const (
+	IPv4 RouteType = iota
+	IPv6
+	IPv4MappedIPv6
+)
+
+func newTestCase(t *testing.T, desc string, startAddress string, routeType RouteType, recursive bool) testCase {
+	const (
+		// IPv4
+		ateDstNetCIDRv4     = "198.51.100.0/24"
+		ateIndirectNHv4     = "203.0.113.1"
+		ateIndirectNHCIDRv4 = ateIndirectNHv4 + "/32"
+		// IPv6
+		ateDstNetCIDRv6     = "2003::/48"
+		ateIndirectNHv6     = "2002::"
+		ateIndirectNHCIDRv6 = ateIndirectNHv6 + "/48"
+		// Common attributes
+		nhIndex   = 1
+		nhgIndex  = 42
+		nhIndex2  = 2
+		nhgIndex2 = 52
+		nhIndex3  = 3
+		nhgIndex3 = 62
 	)
-	if v6 {
+
+	var (
+		ateIndirectNH     = ateIndirectNHv4
+		ateDstNetCIDR     = ateDstNetCIDRv4
+		ateIndirectNHCIDR = ateIndirectNHCIDRv4
+		destIP            = atePort2.IPv4
+	)
+	switch routeType {
+	case IPv4:
+	case IPv6:
+		destIP = atePort2.IPv6
 		ateIndirectNH = ateIndirectNHv6
 		ateDstNetCIDR = ateDstNetCIDRv6
-		nhIndex = nhIndexv6
-		nhgIndex = nhgIndexv6
-		nhIndex2 = nhIndex2v6
-		nhgIndex2 = nhgIndex2v6
-		nhIndex3 = nhIndex3v6
-		nhgIndex3 = nhgIndex3v6
-		destIP = atePort2.IPv6
+		ateIndirectNHCIDR = ateIndirectNHCIDRv6
+	case IPv4MappedIPv6:
+		if recursive {
+			ateIndirectNHCIDR = ateIndirectNHCIDR
+			destIP = atePort2.IPv4
+
+			ateDstNetCIDR = ateDstNetCIDRv6
+			mappedAddr, err := netip.ParseAddr("::ffff:" + ateIndirectNH)
+			if err != nil {
+				t.Fatal(err)
+			}
+			ateIndirectNH = mappedAddr.StringExpanded()
+		} else {
+			ateDstNetCIDR = ateDstNetCIDRv6
+			mappedDestIP, err := netip.ParseAddr("::ffff:" + atePort2.IPv4)
+			if err != nil {
+				t.Fatal(err)
+			}
+			destIP = mappedDestIP.StringExpanded()
+		}
 	}
 
 	fluentEntry := func(prefix string, nhgIndex uint64) fluent.GRIBIEntry {
-		if !v6 {
+		pfx, err := netip.ParsePrefix(prefix)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if pfx.Addr().Is4() {
 			return fluent.IPv4Entry().WithNetworkInstance(fakedevice.DefaultNetworkInstance).
 				WithPrefix(prefix).WithNextHopGroup(nhgIndex)
 		} else {
@@ -296,7 +318,11 @@ func newTestCase(desc string, startAddress string, v6 bool, recursive bool) test
 	}
 
 	routeInstallResult := func(prefix string, c constants.OpType) *client.OpResult {
-		if !v6 {
+		pfx, err := netip.ParsePrefix(prefix)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if pfx.Addr().Is4() {
 			return fluent.OperationResult().
 				WithIPv4Operation(prefix).
 				WithProgrammingResult(fluent.InstalledInFIB).
@@ -348,7 +374,7 @@ func newTestCase(desc string, startAddress string, v6 bool, recursive bool) test
 					AsResult(),
 			},
 			startAddress: startAddress,
-			v6Traffic:    v6,
+			v6Traffic:    routeType != IPv4,
 		}
 	} else {
 		return testCase{
@@ -414,7 +440,7 @@ func newTestCase(desc string, startAddress string, v6 bool, recursive bool) test
 				routeInstallResult(ateIndirectNHCIDR, constants.Delete),
 			},
 			startAddress: startAddress,
-			v6Traffic:    v6,
+			v6Traffic:    routeType != IPv4,
 		}
 	}
 }
@@ -430,10 +456,13 @@ func TestGRIBIEntry(t *testing.T) {
 	otg.PushConfig(t, otgConfig)
 
 	cases := []testCase{
-		newTestCase("single-next-hop-IPv4", "198.51.100.0", false, false),
-		newTestCase("recursive-next-hop-IPv4", "198.51.100.0", false, true),
-		newTestCase("single-next-hop-IPv6", "2003::", true, false),
-		newTestCase("recursive-next-hop-IPv6", "2003:bbbb::", true, true),
+		newTestCase(t, "single-next-hop-IPv4", "198.51.100.0", IPv4, false),
+		newTestCase(t, "recursive-next-hop-IPv4", "198.51.100.64", IPv4, true),
+		newTestCase(t, "single-next-hop-IPv6", "2003::6464", IPv6, false),
+		newTestCase(t, "recursive-next-hop-IPv6", "2003::", IPv6, true),
+		newTestCase(t, "single-next-hop-IPv4-mapped-IPv6", "2003::3232", IPv4MappedIPv6, false),
+		// TODO(wenbli): This test case currently doesn't work. Packets get dropped.
+		newTestCase(t, "recursive-next-hop-IPv4-mapped-IPv6", "2003::2424", IPv4MappedIPv6, true),
 	}
 	for _, tc := range cases {
 		var txPkts, rxPkts uint64
@@ -463,8 +492,10 @@ func TestGRIBIEntry(t *testing.T) {
 			}
 
 			testTrafficFn := testTraffic
+			flowName := "Flow"
 			if tc.v6Traffic {
 				testTrafficFn = testTrafficv6
+				flowName = "Flow2"
 			}
 
 			// Send some traffic to make sure neighbor cache is warmed up on the dut.
@@ -475,8 +506,8 @@ func TestGRIBIEntry(t *testing.T) {
 			}
 
 			// counters are not erased, so have to accumulate the packets from previous subtests.
-			txPkts += gnmi.Get(t, otg, gnmi.OTG().Flow("Flow").Counters().OutPkts().State())
-			rxPkts += gnmi.Get(t, otg, gnmi.OTG().Flow("Flow").Counters().InPkts().State())
+			txPkts += gnmi.Get(t, otg, gnmi.OTG().Flow(flowName).Counters().OutPkts().State())
+			rxPkts += gnmi.Get(t, otg, gnmi.OTG().Flow(flowName).Counters().InPkts().State())
 			testCounters(t, dut, txPkts, rxPkts)
 
 			slices.Reverse(tc.entries)

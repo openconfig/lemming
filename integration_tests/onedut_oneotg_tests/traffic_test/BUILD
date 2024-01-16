@@ -9,6 +9,7 @@ go_test(
         "exclusive",
     ],
     deps = [
+        "//gnmi/fakedevice",
         "//gnmi/oc/ocpath",
         "//internal/attrs",
         "//internal/binding",
@@ -21,6 +22,7 @@ go_test(
         "@com_github_openconfig_ondatra//:ondatra",
         "@com_github_openconfig_ondatra//gnmi",
         "@com_github_openconfig_ondatra//gnmi/otg/otgpath",
+        "@com_github_openconfig_ondatra//otg",
         "@com_github_openconfig_ygnmi//ygnmi",
     ],
 )
