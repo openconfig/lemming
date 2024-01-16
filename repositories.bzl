@@ -1413,8 +1413,8 @@ def go_repositories():
     go_repository(
         name = "com_github_microsoft_go_winio",
         importpath = "github.com/Microsoft/go-winio",
-        sum = "h1:a9IhgEQBCUEk6QCdml9CiJGhAws+YwffDHEMp1VMrpA=",
-        version = "v0.5.2",
+        sum = "h1:9/kr64B9VUZrLm5YYwbGtUJnMgqWVOdUAXu6Migciow=",
+        version = "v0.6.1",
     )
     go_repository(
         name = "com_github_miekg_dns",
@@ -1705,8 +1705,9 @@ def go_repositories():
     go_repository(
         name = "com_github_openconfig_magna",
         importpath = "github.com/openconfig/magna",
-        sum = "h1:euQlk2dcqH+7u6RFomFY+jPPSG9uHgw1Cvo51z6GsXY=",
-        version = "v0.0.0-20231227222122-d72edfd5fba9",
+        replace = "github.com/DanG100/magna",
+        sum = "h1:IRi3bdHDdTqz0ienfigsgnnKo+uKr+a28E6nIZLDb9w=",
+        version = "v0.0.0-20240111225500-69715eccc875",
     )
 
     go_repository(
