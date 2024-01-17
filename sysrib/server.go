@@ -362,11 +362,18 @@ func niNameToVrfID(niName string) (uint32, error) {
 	}
 }
 
+// prefixString returns the *canonical* string form of the input prefix type.
+//
+// e.g. 1.1.1.1/24 -> "1.1.1.0/24"
 func prefixString(prefix *sysribpb.Prefix) (string, error) {
+	pfxStr := fmt.Sprintf("%s/%d", prefix.GetAddress(), prefix.GetMaskLength())
+	pfx, err := netip.ParsePrefix(pfxStr)
+	if err != nil {
+		return "", fmt.Errorf("sysrib: invalid prefix %q: %v", pfxStr, err)
+	}
 	switch fam := prefix.GetFamily(); fam {
 	case sysribpb.Prefix_FAMILY_IPV4, sysribpb.Prefix_FAMILY_IPV6:
-		// TODO(wenbli): Handle invalid input values.
-		return fmt.Sprintf("%s/%d", prefix.GetAddress(), prefix.GetMaskLength()), nil
+		return pfx.Masked().String(), nil
 	default:
 		return "", fmt.Errorf("unrecognized prefix family: %v", fam)
 	}
@@ -591,7 +598,6 @@ func (s *Server) SetRoute(ctx context.Context, req *sysribpb.SetRouteRequest) (*
 
 	niName := vrfIDToNiName(req.GetVrfId())
 	if err := s.setRoute(ctx, niName, &Route{
-		// TODO(wenbli): check if pfx has to be canonical or does it tolerate it: i.e. 1.1.1.0/24 instead of 1.1.1.1/24
 		Prefix:   pfx,
 		NextHops: nexthops,
 		RoutePref: RoutePreference{

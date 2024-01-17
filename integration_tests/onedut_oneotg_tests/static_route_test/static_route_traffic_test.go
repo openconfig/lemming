@@ -237,8 +237,8 @@ func testCounters(t *testing.T, dut *ondatra.DUTDevice, wantTxPkts, wantRxPkts u
 	}
 }
 
-// TestIPv4Entry tests a single IPv4Entry forwarding entry.
-func TestIPv4Entry(t *testing.T) {
+// TestStaticRoute tests a single IPv4 or IPv6 static route.
+func TestStaticRoute(t *testing.T) {
 	dut := ondatra.DUT(t, "dut")
 	configureDUT(t, dut)
 

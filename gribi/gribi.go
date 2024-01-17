@@ -17,7 +17,7 @@ package gribi
 import (
 	"context"
 	"fmt"
-	"net"
+	"net/netip"
 
 	log "github.com/golang/glog"
 	"github.com/openconfig/gribigo/aft"
@@ -113,7 +113,12 @@ func createGRIBIServer(gClient gpb.GNMIClient, target string, root *oc.Root) (*s
 
 	ribAddfn := func(ribs map[string]*aft.RIB, optype constants.OpType, netinst string, aft constants.AFT, key any, _ ...rib.ResolvedDetails) {
 		prefix, ok := key.(string)
-		if aft != constants.IPv4 || !ok {
+		if !ok {
+			log.Errorf("Key is not a string type: (%T, %v)", key, key)
+		}
+		switch aft {
+		case constants.IPv4, constants.IPv6:
+		default:
 			log.Errorf("Incompatible type of route receive, type: %s, key: %v", aft, key)
 		}
 		nhSum := []*afthelper.NextHopSummary{}
@@ -158,7 +163,7 @@ func createGRIBIServer(gClient gpb.GNMIClient, target string, root *oc.Root) (*s
 
 // createSetRouteRequest converts a Route to a sysrib SetRouteRequest
 func createSetRouteRequest(prefix string, nexthops []*afthelper.NextHopSummary) (*sysribpb.SetRouteRequest, error) {
-	ip, ipnet, err := net.ParseCIDR(prefix)
+	pfx, err := netip.ParsePrefix(prefix)
 	if err != nil {
 		log.Errorf("Cannot parse prefix %q as CIDR for calling sysrib", prefix)
 	}
@@ -166,7 +171,6 @@ func createSetRouteRequest(prefix string, nexthops []*afthelper.NextHopSummary) 
 	if err != nil {
 		return nil, fmt.Errorf("gribigo/sysrib: %v", err)
 	}
-	maskLength, _ := ipnet.Mask.Size()
 
 	var zNexthops []*sysribpb.Nexthop
 	for _, nhs := range nexthops {
@@ -177,14 +181,19 @@ func createSetRouteRequest(prefix string, nexthops []*afthelper.NextHopSummary) 
 		})
 	}
 
+	family := sysribpb.Prefix_FAMILY_IPV4
+	if pfx.Addr().Is6() {
+		family = sysribpb.Prefix_FAMILY_IPV6
+	}
+
 	return &sysribpb.SetRouteRequest{
 		AdminDistance: 5,
 		ProtocolName:  "gRIBI",
 		Safi:          sysribpb.SetRouteRequest_SAFI_UNICAST,
 		Prefix: &sysribpb.Prefix{
-			Family:     sysribpb.Prefix_FAMILY_IPV4,
-			Address:    ip.String(),
-			MaskLength: uint32(maskLength),
+			Family:     family,
+			Address:    pfx.Addr().String(),
+			MaskLength: uint32(pfx.Bits()),
 		},
 		Nexthops: zNexthops,
 	}, nil
@@ -211,6 +220,15 @@ func updateAft(yclient *ygnmi.Client, _ constants.OpType, ni string, e ygot.GoSt
 			break
 		}
 		path := ocpath.Root().NetworkInstance(ni).Afts().Ipv4Entry(t.GetPrefix()).State()
+		if _, err := gnmiclient.Update(context.Background(), yclient, path, dst); err != nil {
+			log.Warningf("unable to update gRIBI data: %v", err)
+		}
+	case *aft.Afts_Ipv6Entry:
+		dst := &oc.NetworkInstance_Afts_Ipv6Entry{}
+		if err = convertGoStruct(t, dst, oc.Unmarshal); err != nil {
+			break
+		}
+		path := ocpath.Root().NetworkInstance(ni).Afts().Ipv6Entry(t.GetPrefix()).State()
 		if _, err := gnmiclient.Update(context.Background(), yclient, path, dst); err != nil {
 			log.Warningf("unable to update gRIBI data: %v", err)
 		}
