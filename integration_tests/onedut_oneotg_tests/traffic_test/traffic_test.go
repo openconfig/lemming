@@ -461,7 +461,6 @@ func TestGRIBIEntry(t *testing.T) {
 		newTestCase(t, "single-next-hop-IPv6", "2003::6464", IPv6, false),
 		newTestCase(t, "recursive-next-hop-IPv6", "2003::", IPv6, true),
 		newTestCase(t, "single-next-hop-IPv4-mapped-IPv6", "2003::3232", IPv4MappedIPv6, false),
-		// TODO(wenbli): This test case currently doesn't work. Packets get dropped.
 		newTestCase(t, "recursive-next-hop-IPv4-mapped-IPv6", "2003::2424", IPv4MappedIPv6, true),
 	}
 	for _, tc := range cases {
