@@ -33,7 +33,7 @@ package lemming.dataplane.sai;
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/descriptor.proto";
 
-option go_package = "github.com/openconfig/lemming/dataplane/proto;sai";
+option go_package = "github.com/openconfig/lemming/dataplane/proto/sai";
 
 extend google.protobuf.FieldOptions {
 	optional int32 attr_enum_value = 50000;
@@ -447,9 +447,9 @@ syntax = "proto3";
 
 package lemming.dataplane.sai;
 
-import "dataplane/proto/common.proto";
+import "dataplane/proto/sai/common.proto";
 
-option go_package = "github.com/openconfig/lemming/dataplane/proto;sai";
+option go_package = "github.com/openconfig/lemming/dataplane/proto/sai";
 
 
 enum FooAttr {
@@ -562,9 +562,9 @@ syntax = "proto3";
 
 package lemming.dataplane.sai;
 
-import "dataplane/proto/common.proto";
+import "dataplane/proto/sai/common.proto";
 
-option go_package = "github.com/openconfig/lemming/dataplane/proto;sai";
+option go_package = "github.com/openconfig/lemming/dataplane/proto/sai";
 
 
 enum FooAttr {

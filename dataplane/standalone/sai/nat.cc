@@ -18,8 +18,8 @@
 
 #include <glog/logging.h>
 
-#include "dataplane/proto/common.pb.h"
-#include "dataplane/proto/nat.pb.h"
+#include "dataplane/proto/sai/common.pb.h"
+#include "dataplane/proto/sai/nat.pb.h"
 #include "dataplane/standalone/sai/common.h"
 
 const sai_nat_api_t l_nat = {

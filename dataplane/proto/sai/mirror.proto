@@ -1,0 +1,131 @@
+
+syntax = "proto3";
+
+package lemming.dataplane.sai;
+
+import "dataplane/proto/sai/common.proto";
+
+option go_package = "github.com/openconfig/lemming/dataplane/proto/sai";
+
+enum MirrorSessionAttr {
+  MIRROR_SESSION_ATTR_UNSPECIFIED = 0;
+  MIRROR_SESSION_ATTR_TYPE = 1;
+  MIRROR_SESSION_ATTR_MONITOR_PORT = 2;
+  MIRROR_SESSION_ATTR_TRUNCATE_SIZE = 3;
+  MIRROR_SESSION_ATTR_SAMPLE_RATE = 4;
+  MIRROR_SESSION_ATTR_CONGESTION_MODE = 5;
+  MIRROR_SESSION_ATTR_TC = 6;
+  MIRROR_SESSION_ATTR_VLAN_TPID = 7;
+  MIRROR_SESSION_ATTR_VLAN_ID = 8;
+  MIRROR_SESSION_ATTR_VLAN_PRI = 9;
+  MIRROR_SESSION_ATTR_VLAN_CFI = 10;
+  MIRROR_SESSION_ATTR_VLAN_HEADER_VALID = 11;
+  MIRROR_SESSION_ATTR_ERSPAN_ENCAPSULATION_TYPE = 12;
+  MIRROR_SESSION_ATTR_IPHDR_VERSION = 13;
+  MIRROR_SESSION_ATTR_TOS = 14;
+  MIRROR_SESSION_ATTR_TTL = 15;
+  MIRROR_SESSION_ATTR_SRC_IP_ADDRESS = 16;
+  MIRROR_SESSION_ATTR_DST_IP_ADDRESS = 17;
+  MIRROR_SESSION_ATTR_SRC_MAC_ADDRESS = 18;
+  MIRROR_SESSION_ATTR_DST_MAC_ADDRESS = 19;
+  MIRROR_SESSION_ATTR_GRE_PROTOCOL_TYPE = 20;
+  MIRROR_SESSION_ATTR_MONITOR_PORTLIST_VALID = 21;
+  MIRROR_SESSION_ATTR_MONITOR_PORTLIST = 22;
+  MIRROR_SESSION_ATTR_POLICER = 23;
+  MIRROR_SESSION_ATTR_UDP_SRC_PORT = 24;
+  MIRROR_SESSION_ATTR_UDP_DST_PORT = 25;
+  MIRROR_SESSION_ATTR_COUNTER_ID = 26;
+}
+
+message CreateMirrorSessionRequest {
+  option (sai_type) = OBJECT_TYPE_MIRROR_SESSION;
+  uint64 switch = 1;
+  optional MirrorSessionType type = 2 [(attr_enum_value) = 1];
+  optional uint64 monitor_port = 3 [(attr_enum_value) = 2];
+  optional uint32 truncate_size = 4 [(attr_enum_value) = 3];
+  optional uint32 sample_rate = 5 [(attr_enum_value) = 4];
+  optional MirrorSessionCongestionMode congestion_mode = 6
+      [(attr_enum_value) = 5];
+  optional uint32 tc = 7 [(attr_enum_value) = 6];
+  optional uint32 vlan_tpid = 8 [(attr_enum_value) = 7];
+  optional uint32 vlan_id = 9 [(attr_enum_value) = 8];
+  optional uint32 vlan_pri = 10 [(attr_enum_value) = 9];
+  optional uint32 vlan_cfi = 11 [(attr_enum_value) = 10];
+  optional bool vlan_header_valid = 12 [(attr_enum_value) = 11];
+  optional ErspanEncapsulationType erspan_encapsulation_type = 13
+      [(attr_enum_value) = 12];
+  optional uint32 iphdr_version = 14 [(attr_enum_value) = 13];
+  optional uint32 tos = 15 [(attr_enum_value) = 14];
+  optional uint32 ttl = 16 [(attr_enum_value) = 15];
+  optional bytes src_ip_address = 17 [(attr_enum_value) = 16];
+  optional bytes dst_ip_address = 18 [(attr_enum_value) = 17];
+  optional bytes src_mac_address = 19 [(attr_enum_value) = 18];
+  optional bytes dst_mac_address = 20 [(attr_enum_value) = 19];
+  optional uint32 gre_protocol_type = 21 [(attr_enum_value) = 20];
+  optional bool monitor_portlist_valid = 22 [(attr_enum_value) = 21];
+  repeated uint64 monitor_portlist = 23 [(attr_enum_value) = 22];
+  optional uint64 policer = 24 [(attr_enum_value) = 23];
+  optional uint32 udp_src_port = 25 [(attr_enum_value) = 24];
+  optional uint32 udp_dst_port = 26 [(attr_enum_value) = 25];
+  optional uint64 counter_id = 27 [(attr_enum_value) = 26];
+}
+
+message CreateMirrorSessionResponse {
+  uint64 oid = 1;
+}
+
+message RemoveMirrorSessionRequest {
+  uint64 oid = 1;
+}
+
+message RemoveMirrorSessionResponse {}
+
+message SetMirrorSessionAttributeRequest {
+  uint64 oid = 1;
+  optional uint64 monitor_port = 2 [(attr_enum_value) = 2];
+  optional uint32 truncate_size = 3 [(attr_enum_value) = 3];
+  optional uint32 sample_rate = 4 [(attr_enum_value) = 4];
+  optional MirrorSessionCongestionMode congestion_mode = 5
+      [(attr_enum_value) = 5];
+  optional uint32 tc = 6 [(attr_enum_value) = 6];
+  optional uint32 vlan_tpid = 7 [(attr_enum_value) = 7];
+  optional uint32 vlan_id = 8 [(attr_enum_value) = 8];
+  optional uint32 vlan_pri = 9 [(attr_enum_value) = 9];
+  optional uint32 vlan_cfi = 10 [(attr_enum_value) = 10];
+  optional bool vlan_header_valid = 11 [(attr_enum_value) = 11];
+  optional uint32 iphdr_version = 12 [(attr_enum_value) = 13];
+  optional uint32 tos = 13 [(attr_enum_value) = 14];
+  optional uint32 ttl = 14 [(attr_enum_value) = 15];
+  optional bytes src_ip_address = 15 [(attr_enum_value) = 16];
+  optional bytes dst_ip_address = 16 [(attr_enum_value) = 17];
+  optional bytes src_mac_address = 17 [(attr_enum_value) = 18];
+  optional bytes dst_mac_address = 18 [(attr_enum_value) = 19];
+  optional uint32 gre_protocol_type = 19 [(attr_enum_value) = 20];
+  repeated uint64 monitor_portlist = 20 [(attr_enum_value) = 22];
+  optional uint64 policer = 21 [(attr_enum_value) = 23];
+  optional uint32 udp_src_port = 22 [(attr_enum_value) = 24];
+  optional uint32 udp_dst_port = 23 [(attr_enum_value) = 25];
+  optional uint64 counter_id = 24 [(attr_enum_value) = 26];
+}
+
+message SetMirrorSessionAttributeResponse {}
+
+message GetMirrorSessionAttributeRequest {
+  uint64 oid = 1;
+  repeated MirrorSessionAttr attr_type = 2;
+}
+
+message GetMirrorSessionAttributeResponse {
+  MirrorSessionAttribute attr = 1;
+}
+
+service Mirror {
+  rpc CreateMirrorSession(CreateMirrorSessionRequest)
+      returns (CreateMirrorSessionResponse) {}
+  rpc RemoveMirrorSession(RemoveMirrorSessionRequest)
+      returns (RemoveMirrorSessionResponse) {}
+  rpc SetMirrorSessionAttribute(SetMirrorSessionAttributeRequest)
+      returns (SetMirrorSessionAttributeResponse) {}
+  rpc GetMirrorSessionAttribute(GetMirrorSessionAttributeRequest)
+      returns (GetMirrorSessionAttributeResponse) {}
+}

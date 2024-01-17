@@ -18,8 +18,8 @@
 
 #include <glog/logging.h>
 
-#include "dataplane/proto/common.pb.h"
-#include "dataplane/proto/system_port.pb.h"
+#include "dataplane/proto/sai/common.pb.h"
+#include "dataplane/proto/sai/system_port.pb.h"
 #include "dataplane/standalone/sai/common.h"
 
 const sai_system_port_api_t l_system_port = {

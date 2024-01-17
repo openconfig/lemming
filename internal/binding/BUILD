@@ -13,7 +13,7 @@ go_library(
         "//dataplane/dplaneopts",
         "//dataplane/forwarding/infra/fwdcontext",
         "//dataplane/forwarding/util/queue",
-        "//dataplane/proto:sai",
+        "//dataplane/proto/sai",
         "//proto/forwarding",
         "@com_github_google_gopacket//:gopacket",
         "@com_github_google_uuid//:uuid",

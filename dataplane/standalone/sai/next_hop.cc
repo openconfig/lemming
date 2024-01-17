@@ -18,8 +18,8 @@
 
 #include <glog/logging.h>
 
-#include "dataplane/proto/common.pb.h"
-#include "dataplane/proto/next_hop.pb.h"
+#include "dataplane/proto/sai/common.pb.h"
+#include "dataplane/proto/sai/next_hop.pb.h"
 #include "dataplane/standalone/sai/common.h"
 
 const sai_next_hop_api_t l_next_hop = {

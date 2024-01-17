@@ -1,0 +1,167 @@
+
+syntax = "proto3";
+
+package lemming.dataplane.sai;
+
+import "dataplane/proto/sai/common.proto";
+
+option go_package = "github.com/openconfig/lemming/dataplane/proto/sai";
+
+enum NatEntryAttr {
+  NAT_ENTRY_ATTR_UNSPECIFIED = 0;
+  NAT_ENTRY_ATTR_NAT_TYPE = 1;
+  NAT_ENTRY_ATTR_SRC_IP = 2;
+  NAT_ENTRY_ATTR_SRC_IP_MASK = 3;
+  NAT_ENTRY_ATTR_VR_ID = 4;
+  NAT_ENTRY_ATTR_DST_IP = 5;
+  NAT_ENTRY_ATTR_DST_IP_MASK = 6;
+  NAT_ENTRY_ATTR_L4_SRC_PORT = 7;
+  NAT_ENTRY_ATTR_L4_DST_PORT = 8;
+  NAT_ENTRY_ATTR_ENABLE_PACKET_COUNT = 9;
+  NAT_ENTRY_ATTR_PACKET_COUNT = 10;
+  NAT_ENTRY_ATTR_ENABLE_BYTE_COUNT = 11;
+  NAT_ENTRY_ATTR_BYTE_COUNT = 12;
+  NAT_ENTRY_ATTR_HIT_BIT_COR = 13;
+  NAT_ENTRY_ATTR_HIT_BIT = 14;
+  NAT_ENTRY_ATTR_AGING_TIME = 15;
+}
+
+enum NatZoneCounterAttr {
+  NAT_ZONE_COUNTER_ATTR_UNSPECIFIED = 0;
+  NAT_ZONE_COUNTER_ATTR_NAT_TYPE = 1;
+  NAT_ZONE_COUNTER_ATTR_ZONE_ID = 2;
+  NAT_ZONE_COUNTER_ATTR_ENABLE_DISCARD = 3;
+  NAT_ZONE_COUNTER_ATTR_DISCARD_PACKET_COUNT = 4;
+  NAT_ZONE_COUNTER_ATTR_ENABLE_TRANSLATION_NEEDED = 5;
+  NAT_ZONE_COUNTER_ATTR_TRANSLATION_NEEDED_PACKET_COUNT = 6;
+  NAT_ZONE_COUNTER_ATTR_ENABLE_TRANSLATIONS = 7;
+  NAT_ZONE_COUNTER_ATTR_TRANSLATIONS_PACKET_COUNT = 8;
+}
+
+message CreateNatEntryRequest {
+  option (sai_type) = OBJECT_TYPE_NAT_ENTRY;
+  NatEntry entry = 1;
+  optional NatType nat_type = 2 [(attr_enum_value) = 1];
+  optional bytes src_ip = 3 [(attr_enum_value) = 2];
+  optional bytes src_ip_mask = 4 [(attr_enum_value) = 3];
+  optional uint64 vr_id = 5 [(attr_enum_value) = 4];
+  optional bytes dst_ip = 6 [(attr_enum_value) = 5];
+  optional bytes dst_ip_mask = 7 [(attr_enum_value) = 6];
+  optional uint32 l4_src_port = 8 [(attr_enum_value) = 7];
+  optional uint32 l4_dst_port = 9 [(attr_enum_value) = 8];
+  optional bool enable_packet_count = 10 [(attr_enum_value) = 9];
+  optional uint64 packet_count = 11 [(attr_enum_value) = 10];
+  optional bool enable_byte_count = 12 [(attr_enum_value) = 11];
+  optional uint64 byte_count = 13 [(attr_enum_value) = 12];
+  optional bool hit_bit_cor = 14 [(attr_enum_value) = 13];
+  optional bool hit_bit = 15 [(attr_enum_value) = 14];
+  optional uint32 aging_time = 16 [(attr_enum_value) = 15];
+}
+
+message CreateNatEntryResponse {}
+
+message RemoveNatEntryRequest {
+  NatEntry entry = 1;
+}
+
+message RemoveNatEntryResponse {}
+
+message SetNatEntryAttributeRequest {
+  NatEntry entry = 1;
+  optional NatType nat_type = 2 [(attr_enum_value) = 1];
+  optional bytes src_ip = 3 [(attr_enum_value) = 2];
+  optional bytes src_ip_mask = 4 [(attr_enum_value) = 3];
+  optional uint64 vr_id = 5 [(attr_enum_value) = 4];
+  optional bytes dst_ip = 6 [(attr_enum_value) = 5];
+  optional bytes dst_ip_mask = 7 [(attr_enum_value) = 6];
+  optional uint32 l4_src_port = 8 [(attr_enum_value) = 7];
+  optional uint32 l4_dst_port = 9 [(attr_enum_value) = 8];
+  optional bool enable_packet_count = 10 [(attr_enum_value) = 9];
+  optional uint64 packet_count = 11 [(attr_enum_value) = 10];
+  optional bool enable_byte_count = 12 [(attr_enum_value) = 11];
+  optional uint64 byte_count = 13 [(attr_enum_value) = 12];
+  optional bool hit_bit_cor = 14 [(attr_enum_value) = 13];
+  optional bool hit_bit = 15 [(attr_enum_value) = 14];
+  optional uint32 aging_time = 16 [(attr_enum_value) = 15];
+}
+
+message SetNatEntryAttributeResponse {}
+
+message GetNatEntryAttributeRequest {
+  NatEntry entry = 1;
+  repeated NatEntryAttr attr_type = 2;
+}
+
+message GetNatEntryAttributeResponse {
+  NatEntryAttribute attr = 1;
+}
+
+message CreateNatEntriesRequest {
+  repeated CreateNatEntryRequest reqs = 1;
+}
+
+message CreateNatEntriesResponse {
+  repeated CreateNatEntryResponse resps = 1;
+}
+
+message CreateNatZoneCounterRequest {
+  option (sai_type) = OBJECT_TYPE_NAT_ZONE_COUNTER;
+  uint64 switch = 1;
+  optional NatType nat_type = 2 [(attr_enum_value) = 1];
+  optional uint32 zone_id = 3 [(attr_enum_value) = 2];
+  optional bool enable_discard = 4 [(attr_enum_value) = 3];
+  optional uint64 discard_packet_count = 5 [(attr_enum_value) = 4];
+  optional bool enable_translation_needed = 6 [(attr_enum_value) = 5];
+  optional uint64 translation_needed_packet_count = 7 [(attr_enum_value) = 6];
+  optional bool enable_translations = 8 [(attr_enum_value) = 7];
+  optional uint64 translations_packet_count = 9 [(attr_enum_value) = 8];
+}
+
+message CreateNatZoneCounterResponse {
+  uint64 oid = 1;
+}
+
+message RemoveNatZoneCounterRequest {
+  uint64 oid = 1;
+}
+
+message RemoveNatZoneCounterResponse {}
+
+message SetNatZoneCounterAttributeRequest {
+  uint64 oid = 1;
+  optional NatType nat_type = 2 [(attr_enum_value) = 1];
+  optional uint32 zone_id = 3 [(attr_enum_value) = 2];
+  optional uint64 discard_packet_count = 4 [(attr_enum_value) = 4];
+  optional uint64 translation_needed_packet_count = 5 [(attr_enum_value) = 6];
+  optional uint64 translations_packet_count = 6 [(attr_enum_value) = 8];
+}
+
+message SetNatZoneCounterAttributeResponse {}
+
+message GetNatZoneCounterAttributeRequest {
+  uint64 oid = 1;
+  repeated NatZoneCounterAttr attr_type = 2;
+}
+
+message GetNatZoneCounterAttributeResponse {
+  NatZoneCounterAttribute attr = 1;
+}
+
+service Nat {
+  rpc CreateNatEntry(CreateNatEntryRequest) returns (CreateNatEntryResponse) {}
+  rpc RemoveNatEntry(RemoveNatEntryRequest) returns (RemoveNatEntryResponse) {}
+  rpc SetNatEntryAttribute(SetNatEntryAttributeRequest)
+      returns (SetNatEntryAttributeResponse) {}
+  rpc GetNatEntryAttribute(GetNatEntryAttributeRequest)
+      returns (GetNatEntryAttributeResponse) {}
+  rpc CreateNatEntries(CreateNatEntriesRequest)
+      returns (CreateNatEntriesResponse) {}
+  rpc CreateNatZoneCounter(CreateNatZoneCounterRequest)
+      returns (CreateNatZoneCounterResponse) {}
+  rpc RemoveNatZoneCounter(RemoveNatZoneCounterRequest)
+      returns (RemoveNatZoneCounterResponse) {}
+  rpc SetNatZoneCounterAttribute(SetNatZoneCounterAttributeRequest)
+      returns (SetNatZoneCounterAttributeResponse) {}
+  rpc GetNatZoneCounterAttribute(GetNatZoneCounterAttributeRequest)
+      returns (GetNatZoneCounterAttributeResponse) {}
+}

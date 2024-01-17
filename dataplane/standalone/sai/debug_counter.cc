@@ -18,8 +18,8 @@
 
 #include <glog/logging.h>
 
-#include "dataplane/proto/common.pb.h"
-#include "dataplane/proto/debug_counter.pb.h"
+#include "dataplane/proto/sai/common.pb.h"
+#include "dataplane/proto/sai/debug_counter.pb.h"
 #include "dataplane/standalone/sai/common.h"
 
 const sai_debug_counter_api_t l_debug_counter = {

@@ -18,8 +18,8 @@
 
 #include <glog/logging.h>
 
-#include "dataplane/proto/common.pb.h"
-#include "dataplane/proto/mcast_fdb.pb.h"
+#include "dataplane/proto/sai/common.pb.h"
+#include "dataplane/proto/sai/mcast_fdb.pb.h"
 #include "dataplane/standalone/sai/common.h"
 
 const sai_mcast_fdb_api_t l_mcast_fdb = {

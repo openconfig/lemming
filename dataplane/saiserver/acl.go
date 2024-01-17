@@ -29,7 +29,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	saipb "github.com/openconfig/lemming/dataplane/proto"
+	saipb "github.com/openconfig/lemming/dataplane/proto/sai"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 

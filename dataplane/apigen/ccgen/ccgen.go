@@ -598,8 +598,8 @@ switch ({{ .Var }}) {
 #include "dataplane/standalone/sai/{{ .Header }}"
 #include <glog/logging.h>
 #include "dataplane/standalone/sai/common.h"
-#include "dataplane/proto/common.pb.h"
-#include "dataplane/proto/{{ .ProtoInclude }}.h"
+#include "dataplane/proto/sai/common.pb.h"
+#include "dataplane/proto/sai/{{ .ProtoInclude }}.h"
 
 const {{ .APIType }} l_{{ .APIName }} = {
 {{- range .Funcs }}

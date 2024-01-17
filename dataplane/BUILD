@@ -11,7 +11,7 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//dataplane/dplaneopts",
-        "//dataplane/proto:sai",
+        "//dataplane/proto/sai",
         "//dataplane/saiserver",
         "//dataplane/saiserver/attrmgr",
         "//gnmi/oc",

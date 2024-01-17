@@ -18,8 +18,8 @@
 
 #include <glog/logging.h>
 
-#include "dataplane/proto/common.pb.h"
-#include "dataplane/proto/scheduler.pb.h"
+#include "dataplane/proto/sai/common.pb.h"
+#include "dataplane/proto/sai/scheduler.pb.h"
 #include "dataplane/standalone/sai/common.h"
 
 const sai_scheduler_api_t l_scheduler = {

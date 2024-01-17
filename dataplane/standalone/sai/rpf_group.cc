@@ -18,8 +18,8 @@
 
 #include <glog/logging.h>
 
-#include "dataplane/proto/common.pb.h"
-#include "dataplane/proto/rpf_group.pb.h"
+#include "dataplane/proto/sai/common.pb.h"
+#include "dataplane/proto/sai/rpf_group.pb.h"
 #include "dataplane/standalone/sai/common.h"
 
 const sai_rpf_group_api_t l_rpf_group = {

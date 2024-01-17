@@ -29,7 +29,7 @@ import (
 
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdobject"
-	saipb "github.com/openconfig/lemming/dataplane/proto"
+	saipb "github.com/openconfig/lemming/dataplane/proto/sai"
 	"github.com/openconfig/lemming/dataplane/saiserver/attrmgr"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )

@@ -19,7 +19,7 @@
 #include <algorithm>
 #include <string>
 
-#include "dataplane/proto/common.pb.h"
+#include "dataplane/proto/sai/common.pb.h"
 
 std::string convert_from_ip_addr(sai_ip_addr_family_t addr_family,
                                  const sai_ip_addr_t& addr) {
