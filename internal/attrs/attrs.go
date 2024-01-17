@@ -23,10 +23,9 @@ import (
 	"fmt"
 
 	"github.com/open-traffic-generator/snappi/gosnappi"
+	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/ondatra"
 	"github.com/openconfig/ygot/ygot"
-
-	"github.com/openconfig/lemming/gnmi/oc"
 )
 
 // Attributes bundles some common attributes for devices and/or interfaces.
