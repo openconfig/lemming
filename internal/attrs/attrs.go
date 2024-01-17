@@ -23,9 +23,10 @@ import (
 	"fmt"
 
 	"github.com/open-traffic-generator/snappi/gosnappi"
-	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/ondatra"
 	"github.com/openconfig/ygot/ygot"
+
+	"github.com/openconfig/lemming/gnmi/oc"
 )
 
 // Attributes bundles some common attributes for devices and/or interfaces.
@@ -106,7 +107,7 @@ func (a *Attributes) AddToOTG(top gosnappi.Config, ap *ondatra.Port, peer *Attri
 	top.Ports().Add().SetName(ap.ID())
 	dev := top.Devices().Add().SetName(a.Name)
 	eth := dev.Ethernets().Add().SetName(a.Name + ".Eth").SetMac(a.MAC)
-	eth.Connection().SetChoice(gosnappi.EthernetConnectionChoice.PORT_NAME).SetPortName(ap.ID())
+	eth.Connection().SetPortName(ap.ID())
 
 	if a.MTU > 0 {
 		eth.SetMtu(uint32(a.MTU))
