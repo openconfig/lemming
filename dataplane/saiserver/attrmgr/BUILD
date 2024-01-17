@@ -6,7 +6,7 @@ go_library(
     importpath = "github.com/openconfig/lemming/dataplane/saiserver/attrmgr",
     visibility = ["//visibility:public"],
     deps = [
-        "//dataplane/proto:sai",
+        "//dataplane/proto/sai",
         "@com_github_golang_glog//:glog",
         "@org_golang_google_grpc//:go_default_library",
         "@org_golang_google_grpc//codes",
@@ -23,7 +23,7 @@ go_test(
     srcs = ["attrmgr_test.go"],
     embed = [":attrmgr"],
     deps = [
-        "//dataplane/proto:sai",
+        "//dataplane/proto/sai",
         "@com_github_google_go_cmp//cmp",
         "@com_github_openconfig_gnmi//errdiff",
         "@org_golang_google_grpc//:go_default_library",

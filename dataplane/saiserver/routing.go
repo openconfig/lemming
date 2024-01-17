@@ -31,7 +31,7 @@ import (
 
 	log "github.com/golang/glog"
 
-	saipb "github.com/openconfig/lemming/dataplane/proto"
+	saipb "github.com/openconfig/lemming/dataplane/proto/sai"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 

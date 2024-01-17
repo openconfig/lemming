@@ -18,8 +18,8 @@
 
 #include <glog/logging.h>
 
-#include "dataplane/proto/common.pb.h"
-#include "dataplane/proto/virtual_router.pb.h"
+#include "dataplane/proto/sai/common.pb.h"
+#include "dataplane/proto/sai/virtual_router.pb.h"
 #include "dataplane/standalone/sai/common.h"
 
 const sai_virtual_router_api_t l_virtual_router = {

@@ -1,0 +1,67 @@
+
+syntax = "proto3";
+
+package lemming.dataplane.sai;
+
+import "dataplane/proto/sai/common.proto";
+
+option go_package = "github.com/openconfig/lemming/dataplane/proto/sai";
+
+enum CounterAttr {
+  COUNTER_ATTR_UNSPECIFIED = 0;
+  COUNTER_ATTR_TYPE = 1;
+  COUNTER_ATTR_LABEL = 2;
+}
+
+message CreateCounterRequest {
+  option (sai_type) = OBJECT_TYPE_COUNTER;
+  uint64 switch = 1;
+  optional CounterType type = 2 [(attr_enum_value) = 1];
+  optional bytes label = 3 [(attr_enum_value) = 2];
+}
+
+message CreateCounterResponse {
+  uint64 oid = 1;
+}
+
+message RemoveCounterRequest {
+  uint64 oid = 1;
+}
+
+message RemoveCounterResponse {}
+
+message SetCounterAttributeRequest {
+  uint64 oid = 1;
+  optional bytes label = 2 [(attr_enum_value) = 2];
+}
+
+message SetCounterAttributeResponse {}
+
+message GetCounterAttributeRequest {
+  uint64 oid = 1;
+  repeated CounterAttr attr_type = 2;
+}
+
+message GetCounterAttributeResponse {
+  CounterAttribute attr = 1;
+}
+
+message GetCounterStatsRequest {
+  uint64 oid = 1;
+  repeated CounterStat counter_ids = 2;
+}
+
+message GetCounterStatsResponse {
+  repeated uint64 values = 1;
+}
+
+service Counter {
+  rpc CreateCounter(CreateCounterRequest) returns (CreateCounterResponse) {}
+  rpc RemoveCounter(RemoveCounterRequest) returns (RemoveCounterResponse) {}
+  rpc SetCounterAttribute(SetCounterAttributeRequest)
+      returns (SetCounterAttributeResponse) {}
+  rpc GetCounterAttribute(GetCounterAttributeRequest)
+      returns (GetCounterAttributeResponse) {}
+  rpc GetCounterStats(GetCounterStatsRequest)
+      returns (GetCounterStatsResponse) {}
+}

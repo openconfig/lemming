@@ -32,7 +32,7 @@ import (
 
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 
-	saipb "github.com/openconfig/lemming/dataplane/proto"
+	saipb "github.com/openconfig/lemming/dataplane/proto/sai"
 )
 
 // Dataplane is an implementation of Dataplane HAL API.

@@ -18,8 +18,8 @@
 
 #include <glog/logging.h>
 
-#include "dataplane/proto/common.pb.h"
-#include "dataplane/proto/hash.pb.h"
+#include "dataplane/proto/sai/common.pb.h"
+#include "dataplane/proto/sai/hash.pb.h"
 #include "dataplane/standalone/sai/common.h"
 
 const sai_hash_api_t l_hash = {

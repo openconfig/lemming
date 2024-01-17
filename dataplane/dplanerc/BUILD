@@ -9,7 +9,7 @@ go_library(
     importpath = "github.com/openconfig/lemming/dataplane/dplanerc",
     visibility = ["//visibility:public"],
     deps = [
-        "//dataplane/proto:sai",
+        "//dataplane/proto/sai",
         "//dataplane/saiserver",
         "//gnmi",
         "//proto/dataplane",
@@ -22,9 +22,9 @@ go_library(
         "@org_golang_google_protobuf//proto",
     ] + select({
         "@io_bazel_rules_go//go/platform:android": [
+            "//dataplane/cpusink",
             "//dataplane/forwarding/fwdconfig",
             "//dataplane/internal/kernel",
-            "//dataplane/standalone/packetio/cpusink",
             "//gnmi/gnmiclient",
             "//gnmi/oc",
             "//gnmi/oc/ocpath",
@@ -34,9 +34,9 @@ go_library(
             "@org_golang_x_sys//unix",
         ],
         "@io_bazel_rules_go//go/platform:linux": [
+            "//dataplane/cpusink",
             "//dataplane/forwarding/fwdconfig",
             "//dataplane/internal/kernel",
-            "//dataplane/standalone/packetio/cpusink",
             "//gnmi/gnmiclient",
             "//gnmi/oc",
             "//gnmi/oc/ocpath",

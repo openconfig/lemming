@@ -18,8 +18,8 @@
 
 #include <glog/logging.h>
 
-#include "dataplane/proto/common.pb.h"
-#include "dataplane/proto/macsec.pb.h"
+#include "dataplane/proto/sai/common.pb.h"
+#include "dataplane/proto/sai/macsec.pb.h"
 #include "dataplane/standalone/sai/common.h"
 
 const sai_macsec_api_t l_macsec = {

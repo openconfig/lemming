@@ -1,0 +1,149 @@
+
+syntax = "proto3";
+
+package lemming.dataplane.sai;
+
+import "dataplane/proto/sai/common.proto";
+
+option go_package = "github.com/openconfig/lemming/dataplane/proto/sai";
+
+enum Srv6SidlistAttr {
+  SRV6_SIDLIST_ATTR_UNSPECIFIED = 0;
+  SRV6_SIDLIST_ATTR_TYPE = 1;
+  SRV6_SIDLIST_ATTR_TLV_LIST = 2;
+  SRV6_SIDLIST_ATTR_SEGMENT_LIST = 3;
+}
+
+enum MySidEntryAttr {
+  MY_SID_ENTRY_ATTR_UNSPECIFIED = 0;
+  MY_SID_ENTRY_ATTR_ENDPOINT_BEHAVIOR = 1;
+  MY_SID_ENTRY_ATTR_ENDPOINT_BEHAVIOR_FLAVOR = 2;
+  MY_SID_ENTRY_ATTR_PACKET_ACTION = 3;
+  MY_SID_ENTRY_ATTR_TRAP_PRIORITY = 4;
+  MY_SID_ENTRY_ATTR_NEXT_HOP_ID = 5;
+  MY_SID_ENTRY_ATTR_TUNNEL_ID = 6;
+  MY_SID_ENTRY_ATTR_VRF = 7;
+  MY_SID_ENTRY_ATTR_COUNTER_ID = 8;
+}
+
+message CreateSrv6SidlistRequest {
+  option (sai_type) = OBJECT_TYPE_SRV6_SIDLIST;
+  uint64 switch = 1;
+  optional Srv6SidlistType type = 2 [(attr_enum_value) = 1];
+  repeated TLVEntry tlv_list = 3 [(attr_enum_value) = 2];
+  repeated bytes segment_list = 4 [(attr_enum_value) = 3];
+}
+
+message CreateSrv6SidlistResponse {
+  uint64 oid = 1;
+}
+
+message RemoveSrv6SidlistRequest {
+  uint64 oid = 1;
+}
+
+message RemoveSrv6SidlistResponse {}
+
+message SetSrv6SidlistAttributeRequest {
+  uint64 oid = 1;
+  repeated TLVEntry tlv_list = 2 [(attr_enum_value) = 2];
+  repeated bytes segment_list = 3 [(attr_enum_value) = 3];
+}
+
+message SetSrv6SidlistAttributeResponse {}
+
+message GetSrv6SidlistAttributeRequest {
+  uint64 oid = 1;
+  repeated Srv6SidlistAttr attr_type = 2;
+}
+
+message GetSrv6SidlistAttributeResponse {
+  Srv6SidlistAttribute attr = 1;
+}
+
+message CreateSrv6SidlistsRequest {
+  repeated CreateSrv6SidlistRequest reqs = 1;
+}
+
+message CreateSrv6SidlistsResponse {
+  repeated CreateSrv6SidlistResponse resps = 1;
+}
+
+message CreateMySidEntryRequest {
+  option (sai_type) = OBJECT_TYPE_MY_SID_ENTRY;
+  MySidEntry entry = 1;
+  optional MySidEntryEndpointBehavior endpoint_behavior = 2
+      [(attr_enum_value) = 1];
+  optional MySidEntryEndpointBehaviorFlavor endpoint_behavior_flavor = 3
+      [(attr_enum_value) = 2];
+  optional PacketAction packet_action = 4 [(attr_enum_value) = 3];
+  optional uint32 trap_priority = 5 [(attr_enum_value) = 4];
+  optional uint64 next_hop_id = 6 [(attr_enum_value) = 5];
+  optional uint64 tunnel_id = 7 [(attr_enum_value) = 6];
+  optional uint64 vrf = 8 [(attr_enum_value) = 7];
+  optional uint64 counter_id = 9 [(attr_enum_value) = 8];
+}
+
+message CreateMySidEntryResponse {}
+
+message RemoveMySidEntryRequest {
+  MySidEntry entry = 1;
+}
+
+message RemoveMySidEntryResponse {}
+
+message SetMySidEntryAttributeRequest {
+  MySidEntry entry = 1;
+  optional MySidEntryEndpointBehavior endpoint_behavior = 2
+      [(attr_enum_value) = 1];
+  optional MySidEntryEndpointBehaviorFlavor endpoint_behavior_flavor = 3
+      [(attr_enum_value) = 2];
+  optional PacketAction packet_action = 4 [(attr_enum_value) = 3];
+  optional uint32 trap_priority = 5 [(attr_enum_value) = 4];
+  optional uint64 next_hop_id = 6 [(attr_enum_value) = 5];
+  optional uint64 tunnel_id = 7 [(attr_enum_value) = 6];
+  optional uint64 vrf = 8 [(attr_enum_value) = 7];
+  optional uint64 counter_id = 9 [(attr_enum_value) = 8];
+}
+
+message SetMySidEntryAttributeResponse {}
+
+message GetMySidEntryAttributeRequest {
+  MySidEntry entry = 1;
+  repeated MySidEntryAttr attr_type = 2;
+}
+
+message GetMySidEntryAttributeResponse {
+  MySidEntryAttribute attr = 1;
+}
+
+message CreateMySidEntriesRequest {
+  repeated CreateMySidEntryRequest reqs = 1;
+}
+
+message CreateMySidEntriesResponse {
+  repeated CreateMySidEntryResponse resps = 1;
+}
+
+service Srv6 {
+  rpc CreateSrv6Sidlist(CreateSrv6SidlistRequest)
+      returns (CreateSrv6SidlistResponse) {}
+  rpc RemoveSrv6Sidlist(RemoveSrv6SidlistRequest)
+      returns (RemoveSrv6SidlistResponse) {}
+  rpc SetSrv6SidlistAttribute(SetSrv6SidlistAttributeRequest)
+      returns (SetSrv6SidlistAttributeResponse) {}
+  rpc GetSrv6SidlistAttribute(GetSrv6SidlistAttributeRequest)
+      returns (GetSrv6SidlistAttributeResponse) {}
+  rpc CreateSrv6Sidlists(CreateSrv6SidlistsRequest)
+      returns (CreateSrv6SidlistsResponse) {}
+  rpc CreateMySidEntry(CreateMySidEntryRequest)
+      returns (CreateMySidEntryResponse) {}
+  rpc RemoveMySidEntry(RemoveMySidEntryRequest)
+      returns (RemoveMySidEntryResponse) {}
+  rpc SetMySidEntryAttribute(SetMySidEntryAttributeRequest)
+      returns (SetMySidEntryAttributeResponse) {}
+  rpc GetMySidEntryAttribute(GetMySidEntryAttributeRequest)
+      returns (GetMySidEntryAttributeResponse) {}
+  rpc CreateMySidEntries(CreateMySidEntriesRequest)
+      returns (CreateMySidEntriesResponse) {}
+}

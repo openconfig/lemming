@@ -14,7 +14,7 @@ go_library(
     importpath = "github.com/openconfig/lemming/dataplane/standalone/packetio",
     visibility = ["//visibility:private"],
     deps = [
-        "//dataplane/standalone/packetio/cpusink",
+        "//dataplane/cpusink",
         "//proto/forwarding",
         "@com_github_golang_glog//:glog",
         "@org_golang_google_grpc//:go_default_library",

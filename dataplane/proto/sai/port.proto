@@ -1,0 +1,611 @@
+
+syntax = "proto3";
+
+package lemming.dataplane.sai;
+
+import "dataplane/proto/sai/common.proto";
+
+option go_package = "github.com/openconfig/lemming/dataplane/proto/sai";
+
+enum PortAttr {
+  PORT_ATTR_UNSPECIFIED = 0;
+  PORT_ATTR_TYPE = 1;
+  PORT_ATTR_OPER_STATUS = 2;
+  PORT_ATTR_SUPPORTED_BREAKOUT_MODE_TYPE = 3;
+  PORT_ATTR_CURRENT_BREAKOUT_MODE_TYPE = 4;
+  PORT_ATTR_QOS_NUMBER_OF_QUEUES = 5;
+  PORT_ATTR_QOS_QUEUE_LIST = 6;
+  PORT_ATTR_QOS_NUMBER_OF_SCHEDULER_GROUPS = 7;
+  PORT_ATTR_QOS_SCHEDULER_GROUP_LIST = 8;
+  PORT_ATTR_QOS_MAXIMUM_HEADROOM_SIZE = 9;
+  PORT_ATTR_SUPPORTED_SPEED = 10;
+  PORT_ATTR_SUPPORTED_FEC_MODE = 11;
+  PORT_ATTR_SUPPORTED_FEC_MODE_EXTENDED = 12;
+  PORT_ATTR_SUPPORTED_HALF_DUPLEX_SPEED = 13;
+  PORT_ATTR_SUPPORTED_AUTO_NEG_MODE = 14;
+  PORT_ATTR_SUPPORTED_FLOW_CONTROL_MODE = 15;
+  PORT_ATTR_SUPPORTED_ASYMMETRIC_PAUSE_MODE = 16;
+  PORT_ATTR_SUPPORTED_MEDIA_TYPE = 17;
+  PORT_ATTR_REMOTE_ADVERTISED_SPEED = 18;
+  PORT_ATTR_REMOTE_ADVERTISED_FEC_MODE = 19;
+  PORT_ATTR_REMOTE_ADVERTISED_FEC_MODE_EXTENDED = 20;
+  PORT_ATTR_REMOTE_ADVERTISED_HALF_DUPLEX_SPEED = 21;
+  PORT_ATTR_REMOTE_ADVERTISED_AUTO_NEG_MODE = 22;
+  PORT_ATTR_REMOTE_ADVERTISED_FLOW_CONTROL_MODE = 23;
+  PORT_ATTR_REMOTE_ADVERTISED_ASYMMETRIC_PAUSE_MODE = 24;
+  PORT_ATTR_REMOTE_ADVERTISED_MEDIA_TYPE = 25;
+  PORT_ATTR_REMOTE_ADVERTISED_OUI_CODE = 26;
+  PORT_ATTR_NUMBER_OF_INGRESS_PRIORITY_GROUPS = 27;
+  PORT_ATTR_INGRESS_PRIORITY_GROUP_LIST = 28;
+  PORT_ATTR_EYE_VALUES = 29;
+  PORT_ATTR_OPER_SPEED = 30;
+  PORT_ATTR_HW_LANE_LIST = 31;
+  PORT_ATTR_SPEED = 32;
+  PORT_ATTR_FULL_DUPLEX_MODE = 33;
+  PORT_ATTR_AUTO_NEG_MODE = 34;
+  PORT_ATTR_ADMIN_STATE = 35;
+  PORT_ATTR_MEDIA_TYPE = 36;
+  PORT_ATTR_ADVERTISED_SPEED = 37;
+  PORT_ATTR_ADVERTISED_FEC_MODE = 38;
+  PORT_ATTR_ADVERTISED_FEC_MODE_EXTENDED = 39;
+  PORT_ATTR_ADVERTISED_HALF_DUPLEX_SPEED = 40;
+  PORT_ATTR_ADVERTISED_AUTO_NEG_MODE = 41;
+  PORT_ATTR_ADVERTISED_FLOW_CONTROL_MODE = 42;
+  PORT_ATTR_ADVERTISED_ASYMMETRIC_PAUSE_MODE = 43;
+  PORT_ATTR_ADVERTISED_MEDIA_TYPE = 44;
+  PORT_ATTR_ADVERTISED_OUI_CODE = 45;
+  PORT_ATTR_PORT_VLAN_ID = 46;
+  PORT_ATTR_DEFAULT_VLAN_PRIORITY = 47;
+  PORT_ATTR_DROP_UNTAGGED = 48;
+  PORT_ATTR_DROP_TAGGED = 49;
+  PORT_ATTR_INTERNAL_LOOPBACK_MODE = 50;
+  PORT_ATTR_USE_EXTENDED_FEC = 51;
+  PORT_ATTR_FEC_MODE = 52;
+  PORT_ATTR_FEC_MODE_EXTENDED = 53;
+  PORT_ATTR_UPDATE_DSCP = 54;
+  PORT_ATTR_MTU = 55;
+  PORT_ATTR_FLOOD_STORM_CONTROL_POLICER_ID = 56;
+  PORT_ATTR_BROADCAST_STORM_CONTROL_POLICER_ID = 57;
+  PORT_ATTR_MULTICAST_STORM_CONTROL_POLICER_ID = 58;
+  PORT_ATTR_GLOBAL_FLOW_CONTROL_MODE = 59;
+  PORT_ATTR_INGRESS_ACL = 60;
+  PORT_ATTR_EGRESS_ACL = 61;
+  PORT_ATTR_INGRESS_MACSEC_ACL = 62;
+  PORT_ATTR_EGRESS_MACSEC_ACL = 63;
+  PORT_ATTR_MACSEC_PORT_LIST = 64;
+  PORT_ATTR_INGRESS_MIRROR_SESSION = 65;
+  PORT_ATTR_EGRESS_MIRROR_SESSION = 66;
+  PORT_ATTR_INGRESS_SAMPLEPACKET_ENABLE = 67;
+  PORT_ATTR_EGRESS_SAMPLEPACKET_ENABLE = 68;
+  PORT_ATTR_INGRESS_SAMPLE_MIRROR_SESSION = 69;
+  PORT_ATTR_EGRESS_SAMPLE_MIRROR_SESSION = 70;
+  PORT_ATTR_POLICER_ID = 71;
+  PORT_ATTR_QOS_DEFAULT_TC = 72;
+  PORT_ATTR_QOS_DOT1P_TO_TC_MAP = 73;
+  PORT_ATTR_QOS_DOT1P_TO_COLOR_MAP = 74;
+  PORT_ATTR_QOS_DSCP_TO_TC_MAP = 75;
+  PORT_ATTR_QOS_DSCP_TO_COLOR_MAP = 76;
+  PORT_ATTR_QOS_TC_TO_QUEUE_MAP = 77;
+  PORT_ATTR_QOS_TC_AND_COLOR_TO_DOT1P_MAP = 78;
+  PORT_ATTR_QOS_TC_AND_COLOR_TO_DSCP_MAP = 79;
+  PORT_ATTR_QOS_TC_TO_PRIORITY_GROUP_MAP = 80;
+  PORT_ATTR_QOS_PFC_PRIORITY_TO_PRIORITY_GROUP_MAP = 81;
+  PORT_ATTR_QOS_PFC_PRIORITY_TO_QUEUE_MAP = 82;
+  PORT_ATTR_QOS_SCHEDULER_PROFILE_ID = 83;
+  PORT_ATTR_QOS_INGRESS_BUFFER_PROFILE_LIST = 84;
+  PORT_ATTR_QOS_EGRESS_BUFFER_PROFILE_LIST = 85;
+  PORT_ATTR_PRIORITY_FLOW_CONTROL_MODE = 86;
+  PORT_ATTR_PRIORITY_FLOW_CONTROL = 87;
+  PORT_ATTR_PRIORITY_FLOW_CONTROL_RX = 88;
+  PORT_ATTR_PRIORITY_FLOW_CONTROL_TX = 89;
+  PORT_ATTR_META_DATA = 90;
+  PORT_ATTR_EGRESS_BLOCK_PORT_LIST = 91;
+  PORT_ATTR_HW_PROFILE_ID = 92;
+  PORT_ATTR_EEE_ENABLE = 93;
+  PORT_ATTR_EEE_IDLE_TIME = 94;
+  PORT_ATTR_EEE_WAKE_TIME = 95;
+  PORT_ATTR_PORT_POOL_LIST = 96;
+  PORT_ATTR_ISOLATION_GROUP = 97;
+  PORT_ATTR_PKT_TX_ENABLE = 98;
+  PORT_ATTR_TAM_OBJECT = 99;
+  PORT_ATTR_SERDES_PREEMPHASIS = 100;
+  PORT_ATTR_SERDES_IDRIVER = 101;
+  PORT_ATTR_SERDES_IPREDRIVER = 102;
+  PORT_ATTR_LINK_TRAINING_ENABLE = 103;
+  PORT_ATTR_PTP_MODE = 104;
+  PORT_ATTR_INTERFACE_TYPE = 105;
+  PORT_ATTR_ADVERTISED_INTERFACE_TYPE = 106;
+  PORT_ATTR_REFERENCE_CLOCK = 107;
+  PORT_ATTR_PRBS_POLYNOMIAL = 108;
+  PORT_ATTR_PORT_SERDES_ID = 109;
+  PORT_ATTR_LINK_TRAINING_FAILURE_STATUS = 110;
+  PORT_ATTR_LINK_TRAINING_RX_STATUS = 111;
+  PORT_ATTR_PRBS_CONFIG = 112;
+  PORT_ATTR_PRBS_LOCK_STATUS = 113;
+  PORT_ATTR_PRBS_LOCK_LOSS_STATUS = 114;
+  PORT_ATTR_PRBS_RX_STATUS = 115;
+  PORT_ATTR_PRBS_RX_STATE = 116;
+  PORT_ATTR_AUTO_NEG_STATUS = 117;
+  PORT_ATTR_DISABLE_DECREMENT_TTL = 118;
+  PORT_ATTR_QOS_MPLS_EXP_TO_TC_MAP = 119;
+  PORT_ATTR_QOS_MPLS_EXP_TO_COLOR_MAP = 120;
+  PORT_ATTR_QOS_TC_AND_COLOR_TO_MPLS_EXP_MAP = 121;
+  PORT_ATTR_TPID = 122;
+  PORT_ATTR_ERR_STATUS_LIST = 123;
+  PORT_ATTR_FABRIC_ATTACHED = 124;
+  PORT_ATTR_FABRIC_ATTACHED_SWITCH_TYPE = 125;
+  PORT_ATTR_FABRIC_ATTACHED_SWITCH_ID = 126;
+  PORT_ATTR_FABRIC_ATTACHED_PORT_INDEX = 127;
+  PORT_ATTR_FABRIC_REACHABILITY = 128;
+  PORT_ATTR_SYSTEM_PORT = 129;
+  PORT_ATTR_AUTO_NEG_FEC_MODE_OVERRIDE = 130;
+  PORT_ATTR_LOOPBACK_MODE = 131;
+  PORT_ATTR_MDIX_MODE_STATUS = 132;
+  PORT_ATTR_MDIX_MODE_CONFIG = 133;
+  PORT_ATTR_AUTO_NEG_CONFIG_MODE = 134;
+  PORT_ATTR_1000X_SGMII_SLAVE_AUTODETECT = 135;
+  PORT_ATTR_MODULE_TYPE = 136;
+  PORT_ATTR_DUAL_MEDIA = 137;
+  PORT_ATTR_AUTO_NEG_FEC_MODE_EXTENDED = 138;
+  PORT_ATTR_IPG = 139;
+  PORT_ATTR_GLOBAL_FLOW_CONTROL_FORWARD = 140;
+  PORT_ATTR_PRIORITY_FLOW_CONTROL_FORWARD = 141;
+  PORT_ATTR_QOS_DSCP_TO_FORWARDING_CLASS_MAP = 142;
+  PORT_ATTR_QOS_MPLS_EXP_TO_FORWARDING_CLASS_MAP = 143;
+  PORT_ATTR_IPSEC_PORT = 144;
+  PORT_ATTR_PFC_TC_DLD_INTERVAL_RANGE = 145;
+  PORT_ATTR_PFC_TC_DLD_INTERVAL = 146;
+  PORT_ATTR_PFC_TC_DLR_INTERVAL_RANGE = 147;
+  PORT_ATTR_PFC_TC_DLR_INTERVAL = 148;
+  PORT_ATTR_SUPPORTED_LINK_TRAINING_MODE = 149;
+  PORT_ATTR_RX_SIGNAL_DETECT = 150;
+  PORT_ATTR_RX_LOCK_STATUS = 151;
+  PORT_ATTR_PCS_RX_LINK_STATUS = 152;
+  PORT_ATTR_FEC_ALIGNMENT_LOCK = 153;
+  PORT_ATTR_FABRIC_ISOLATE = 154;
+  PORT_ATTR_MAX_FEC_SYMBOL_ERRORS_DETECTABLE = 155;
+}
+
+enum PortPoolAttr {
+  PORT_POOL_ATTR_UNSPECIFIED = 0;
+  PORT_POOL_ATTR_PORT_ID = 1;
+  PORT_POOL_ATTR_BUFFER_POOL_ID = 2;
+  PORT_POOL_ATTR_QOS_WRED_PROFILE_ID = 3;
+}
+
+enum PortConnectorAttr {
+  PORT_CONNECTOR_ATTR_UNSPECIFIED = 0;
+  PORT_CONNECTOR_ATTR_SYSTEM_SIDE_PORT_ID = 1;
+  PORT_CONNECTOR_ATTR_LINE_SIDE_PORT_ID = 2;
+  PORT_CONNECTOR_ATTR_SYSTEM_SIDE_FAILOVER_PORT_ID = 3;
+  PORT_CONNECTOR_ATTR_LINE_SIDE_FAILOVER_PORT_ID = 4;
+  PORT_CONNECTOR_ATTR_FAILOVER_MODE = 5;
+}
+
+enum PortSerdesAttr {
+  PORT_SERDES_ATTR_UNSPECIFIED = 0;
+  PORT_SERDES_ATTR_PORT_ID = 1;
+  PORT_SERDES_ATTR_PREEMPHASIS = 2;
+  PORT_SERDES_ATTR_IDRIVER = 3;
+  PORT_SERDES_ATTR_IPREDRIVER = 4;
+  PORT_SERDES_ATTR_TX_FIR_PRE1 = 5;
+  PORT_SERDES_ATTR_TX_FIR_PRE2 = 6;
+  PORT_SERDES_ATTR_TX_FIR_PRE3 = 7;
+  PORT_SERDES_ATTR_TX_FIR_MAIN = 8;
+  PORT_SERDES_ATTR_TX_FIR_POST1 = 9;
+  PORT_SERDES_ATTR_TX_FIR_POST2 = 10;
+  PORT_SERDES_ATTR_TX_FIR_POST3 = 11;
+  PORT_SERDES_ATTR_TX_FIR_ATTN = 12;
+}
+
+message CreatePortRequest {
+  option (sai_type) = OBJECT_TYPE_PORT;
+  uint64 switch = 1;
+  repeated uint32 hw_lane_list = 2 [(attr_enum_value) = 31];
+  optional uint32 speed = 3 [(attr_enum_value) = 32];
+  optional bool full_duplex_mode = 4 [(attr_enum_value) = 33];
+  optional bool auto_neg_mode = 5 [(attr_enum_value) = 34];
+  optional bool admin_state = 6 [(attr_enum_value) = 35];
+  optional PortMediaType media_type = 7 [(attr_enum_value) = 36];
+  repeated uint32 advertised_speed = 8 [(attr_enum_value) = 37];
+  repeated PortFecMode advertised_fec_mode = 9 [(attr_enum_value) = 38];
+  repeated PortFecModeExtended advertised_fec_mode_extended = 10
+      [(attr_enum_value) = 39];
+  repeated uint32 advertised_half_duplex_speed = 11 [(attr_enum_value) = 40];
+  optional bool advertised_auto_neg_mode = 12 [(attr_enum_value) = 41];
+  optional PortFlowControlMode advertised_flow_control_mode = 13
+      [(attr_enum_value) = 42];
+  optional bool advertised_asymmetric_pause_mode = 14 [(attr_enum_value) = 43];
+  optional PortMediaType advertised_media_type = 15 [(attr_enum_value) = 44];
+  optional uint32 advertised_oui_code = 16 [(attr_enum_value) = 45];
+  optional uint32 port_vlan_id = 17 [(attr_enum_value) = 46];
+  optional uint32 default_vlan_priority = 18 [(attr_enum_value) = 47];
+  optional bool drop_untagged = 19 [(attr_enum_value) = 48];
+  optional bool drop_tagged = 20 [(attr_enum_value) = 49];
+  optional PortInternalLoopbackMode internal_loopback_mode = 21
+      [(attr_enum_value) = 50];
+  optional bool use_extended_fec = 22 [(attr_enum_value) = 51];
+  optional PortFecMode fec_mode = 23 [(attr_enum_value) = 52];
+  optional PortFecModeExtended fec_mode_extended = 24 [(attr_enum_value) = 53];
+  optional bool update_dscp = 25 [(attr_enum_value) = 54];
+  optional uint32 mtu = 26 [(attr_enum_value) = 55];
+  optional uint64 flood_storm_control_policer_id = 27 [(attr_enum_value) = 56];
+  optional uint64 broadcast_storm_control_policer_id = 28
+      [(attr_enum_value) = 57];
+  optional uint64 multicast_storm_control_policer_id = 29
+      [(attr_enum_value) = 58];
+  optional PortFlowControlMode global_flow_control_mode = 30
+      [(attr_enum_value) = 59];
+  optional uint64 ingress_acl = 31 [(attr_enum_value) = 60];
+  optional uint64 egress_acl = 32 [(attr_enum_value) = 61];
+  optional uint64 ingress_macsec_acl = 33 [(attr_enum_value) = 62];
+  optional uint64 egress_macsec_acl = 34 [(attr_enum_value) = 63];
+  repeated uint64 ingress_mirror_session = 35 [(attr_enum_value) = 65];
+  repeated uint64 egress_mirror_session = 36 [(attr_enum_value) = 66];
+  optional uint64 ingress_samplepacket_enable = 37 [(attr_enum_value) = 67];
+  optional uint64 egress_samplepacket_enable = 38 [(attr_enum_value) = 68];
+  repeated uint64 ingress_sample_mirror_session = 39 [(attr_enum_value) = 69];
+  repeated uint64 egress_sample_mirror_session = 40 [(attr_enum_value) = 70];
+  optional uint64 policer_id = 41 [(attr_enum_value) = 71];
+  optional uint32 qos_default_tc = 42 [(attr_enum_value) = 72];
+  optional uint64 qos_dot1p_to_tc_map = 43 [(attr_enum_value) = 73];
+  optional uint64 qos_dot1p_to_color_map = 44 [(attr_enum_value) = 74];
+  optional uint64 qos_dscp_to_tc_map = 45 [(attr_enum_value) = 75];
+  optional uint64 qos_dscp_to_color_map = 46 [(attr_enum_value) = 76];
+  optional uint64 qos_tc_to_queue_map = 47 [(attr_enum_value) = 77];
+  optional uint64 qos_tc_and_color_to_dot1p_map = 48 [(attr_enum_value) = 78];
+  optional uint64 qos_tc_and_color_to_dscp_map = 49 [(attr_enum_value) = 79];
+  optional uint64 qos_tc_to_priority_group_map = 50 [(attr_enum_value) = 80];
+  optional uint64 qos_pfc_priority_to_priority_group_map = 51
+      [(attr_enum_value) = 81];
+  optional uint64 qos_pfc_priority_to_queue_map = 52 [(attr_enum_value) = 82];
+  optional uint64 qos_scheduler_profile_id = 53 [(attr_enum_value) = 83];
+  repeated uint64 qos_ingress_buffer_profile_list = 54 [(attr_enum_value) = 84];
+  repeated uint64 qos_egress_buffer_profile_list = 55 [(attr_enum_value) = 85];
+  optional PortPriorityFlowControlMode priority_flow_control_mode = 56
+      [(attr_enum_value) = 86];
+  optional uint32 priority_flow_control = 57 [(attr_enum_value) = 87];
+  optional uint32 priority_flow_control_rx = 58 [(attr_enum_value) = 88];
+  optional uint32 priority_flow_control_tx = 59 [(attr_enum_value) = 89];
+  optional uint32 meta_data = 60 [(attr_enum_value) = 90];
+  repeated uint64 egress_block_port_list = 61 [(attr_enum_value) = 91];
+  optional uint64 hw_profile_id = 62 [(attr_enum_value) = 92];
+  optional bool eee_enable = 63 [(attr_enum_value) = 93];
+  optional uint32 eee_idle_time = 64 [(attr_enum_value) = 94];
+  optional uint32 eee_wake_time = 65 [(attr_enum_value) = 95];
+  optional uint64 isolation_group = 66 [(attr_enum_value) = 97];
+  optional bool pkt_tx_enable = 67 [(attr_enum_value) = 98];
+  repeated uint64 tam_object = 68 [(attr_enum_value) = 99];
+  repeated uint32 serdes_preemphasis = 69 [(attr_enum_value) = 100];
+  repeated uint32 serdes_idriver = 70 [(attr_enum_value) = 101];
+  repeated uint32 serdes_ipredriver = 71 [(attr_enum_value) = 102];
+  optional bool link_training_enable = 72 [(attr_enum_value) = 103];
+  optional PortPtpMode ptp_mode = 73 [(attr_enum_value) = 104];
+  optional PortInterfaceType interface_type = 74 [(attr_enum_value) = 105];
+  repeated PortInterfaceType advertised_interface_type = 75
+      [(attr_enum_value) = 106];
+  optional uint64 reference_clock = 76 [(attr_enum_value) = 107];
+  optional uint32 prbs_polynomial = 77 [(attr_enum_value) = 108];
+  optional PortPrbsConfig prbs_config = 78 [(attr_enum_value) = 112];
+  optional bool disable_decrement_ttl = 79 [(attr_enum_value) = 118];
+  optional uint64 qos_mpls_exp_to_tc_map = 80 [(attr_enum_value) = 119];
+  optional uint64 qos_mpls_exp_to_color_map = 81 [(attr_enum_value) = 120];
+  optional uint64 qos_tc_and_color_to_mpls_exp_map = 82
+      [(attr_enum_value) = 121];
+  optional uint32 tpid = 83 [(attr_enum_value) = 122];
+  optional bool auto_neg_fec_mode_override = 84 [(attr_enum_value) = 130];
+  optional PortLoopbackMode loopback_mode = 85 [(attr_enum_value) = 131];
+  optional PortMdixModeConfig mdix_mode_config = 86 [(attr_enum_value) = 133];
+  optional PortAutoNegConfigMode auto_neg_config_mode = 87
+      [(attr_enum_value) = 134];
+  optional bool _1000x_sgmii_slave_autodetect = 88 [(attr_enum_value) = 135];
+  optional PortModuleType module_type = 89 [(attr_enum_value) = 136];
+  optional PortDualMedia dual_media = 90 [(attr_enum_value) = 137];
+  optional uint32 ipg = 91 [(attr_enum_value) = 139];
+  optional bool global_flow_control_forward = 92 [(attr_enum_value) = 140];
+  optional bool priority_flow_control_forward = 93 [(attr_enum_value) = 141];
+  optional uint64 qos_dscp_to_forwarding_class_map = 94
+      [(attr_enum_value) = 142];
+  optional uint64 qos_mpls_exp_to_forwarding_class_map = 95
+      [(attr_enum_value) = 143];
+  repeated UintMap pfc_tc_dld_interval = 96 [(attr_enum_value) = 146];
+  repeated UintMap pfc_tc_dlr_interval = 97 [(attr_enum_value) = 148];
+  optional bool fabric_isolate = 98 [(attr_enum_value) = 154];
+}
+
+message CreatePortResponse {
+  uint64 oid = 1;
+}
+
+message RemovePortRequest {
+  uint64 oid = 1;
+}
+
+message RemovePortResponse {}
+
+message SetPortAttributeRequest {
+  uint64 oid = 1;
+  optional uint32 speed = 2 [(attr_enum_value) = 32];
+  optional bool auto_neg_mode = 3 [(attr_enum_value) = 34];
+  optional bool admin_state = 4 [(attr_enum_value) = 35];
+  optional PortMediaType media_type = 5 [(attr_enum_value) = 36];
+  repeated uint32 advertised_speed = 6 [(attr_enum_value) = 37];
+  repeated PortFecMode advertised_fec_mode = 7 [(attr_enum_value) = 38];
+  repeated PortFecModeExtended advertised_fec_mode_extended = 8
+      [(attr_enum_value) = 39];
+  repeated uint32 advertised_half_duplex_speed = 9 [(attr_enum_value) = 40];
+  optional bool advertised_auto_neg_mode = 10 [(attr_enum_value) = 41];
+  optional PortFlowControlMode advertised_flow_control_mode = 11
+      [(attr_enum_value) = 42];
+  optional bool advertised_asymmetric_pause_mode = 12 [(attr_enum_value) = 43];
+  optional PortMediaType advertised_media_type = 13 [(attr_enum_value) = 44];
+  optional uint32 advertised_oui_code = 14 [(attr_enum_value) = 45];
+  optional uint32 port_vlan_id = 15 [(attr_enum_value) = 46];
+  optional uint32 default_vlan_priority = 16 [(attr_enum_value) = 47];
+  optional bool drop_untagged = 17 [(attr_enum_value) = 48];
+  optional bool drop_tagged = 18 [(attr_enum_value) = 49];
+  optional PortInternalLoopbackMode internal_loopback_mode = 19
+      [(attr_enum_value) = 50];
+  optional bool use_extended_fec = 20 [(attr_enum_value) = 51];
+  optional PortFecMode fec_mode = 21 [(attr_enum_value) = 52];
+  optional PortFecModeExtended fec_mode_extended = 22 [(attr_enum_value) = 53];
+  optional bool update_dscp = 23 [(attr_enum_value) = 54];
+  optional uint32 mtu = 24 [(attr_enum_value) = 55];
+  optional uint64 flood_storm_control_policer_id = 25 [(attr_enum_value) = 56];
+  optional uint64 broadcast_storm_control_policer_id = 26
+      [(attr_enum_value) = 57];
+  optional uint64 multicast_storm_control_policer_id = 27
+      [(attr_enum_value) = 58];
+  optional PortFlowControlMode global_flow_control_mode = 28
+      [(attr_enum_value) = 59];
+  optional uint64 ingress_acl = 29 [(attr_enum_value) = 60];
+  optional uint64 egress_acl = 30 [(attr_enum_value) = 61];
+  optional uint64 ingress_macsec_acl = 31 [(attr_enum_value) = 62];
+  optional uint64 egress_macsec_acl = 32 [(attr_enum_value) = 63];
+  repeated uint64 ingress_mirror_session = 33 [(attr_enum_value) = 65];
+  repeated uint64 egress_mirror_session = 34 [(attr_enum_value) = 66];
+  optional uint64 ingress_samplepacket_enable = 35 [(attr_enum_value) = 67];
+  optional uint64 egress_samplepacket_enable = 36 [(attr_enum_value) = 68];
+  repeated uint64 ingress_sample_mirror_session = 37 [(attr_enum_value) = 69];
+  repeated uint64 egress_sample_mirror_session = 38 [(attr_enum_value) = 70];
+  optional uint64 policer_id = 39 [(attr_enum_value) = 71];
+  optional uint32 qos_default_tc = 40 [(attr_enum_value) = 72];
+  optional uint64 qos_dot1p_to_tc_map = 41 [(attr_enum_value) = 73];
+  optional uint64 qos_dot1p_to_color_map = 42 [(attr_enum_value) = 74];
+  optional uint64 qos_dscp_to_tc_map = 43 [(attr_enum_value) = 75];
+  optional uint64 qos_dscp_to_color_map = 44 [(attr_enum_value) = 76];
+  optional uint64 qos_tc_to_queue_map = 45 [(attr_enum_value) = 77];
+  optional uint64 qos_tc_and_color_to_dot1p_map = 46 [(attr_enum_value) = 78];
+  optional uint64 qos_tc_and_color_to_dscp_map = 47 [(attr_enum_value) = 79];
+  optional uint64 qos_tc_to_priority_group_map = 48 [(attr_enum_value) = 80];
+  optional uint64 qos_pfc_priority_to_priority_group_map = 49
+      [(attr_enum_value) = 81];
+  optional uint64 qos_pfc_priority_to_queue_map = 50 [(attr_enum_value) = 82];
+  optional uint64 qos_scheduler_profile_id = 51 [(attr_enum_value) = 83];
+  repeated uint64 qos_ingress_buffer_profile_list = 52 [(attr_enum_value) = 84];
+  repeated uint64 qos_egress_buffer_profile_list = 53 [(attr_enum_value) = 85];
+  optional PortPriorityFlowControlMode priority_flow_control_mode = 54
+      [(attr_enum_value) = 86];
+  optional uint32 priority_flow_control = 55 [(attr_enum_value) = 87];
+  optional uint32 priority_flow_control_rx = 56 [(attr_enum_value) = 88];
+  optional uint32 priority_flow_control_tx = 57 [(attr_enum_value) = 89];
+  optional uint32 meta_data = 58 [(attr_enum_value) = 90];
+  repeated uint64 egress_block_port_list = 59 [(attr_enum_value) = 91];
+  optional uint64 hw_profile_id = 60 [(attr_enum_value) = 92];
+  optional bool eee_enable = 61 [(attr_enum_value) = 93];
+  optional uint32 eee_idle_time = 62 [(attr_enum_value) = 94];
+  optional uint32 eee_wake_time = 63 [(attr_enum_value) = 95];
+  optional uint64 isolation_group = 64 [(attr_enum_value) = 97];
+  optional bool pkt_tx_enable = 65 [(attr_enum_value) = 98];
+  repeated uint64 tam_object = 66 [(attr_enum_value) = 99];
+  repeated uint32 serdes_preemphasis = 67 [(attr_enum_value) = 100];
+  repeated uint32 serdes_idriver = 68 [(attr_enum_value) = 101];
+  repeated uint32 serdes_ipredriver = 69 [(attr_enum_value) = 102];
+  optional bool link_training_enable = 70 [(attr_enum_value) = 103];
+  optional PortPtpMode ptp_mode = 71 [(attr_enum_value) = 104];
+  optional PortInterfaceType interface_type = 72 [(attr_enum_value) = 105];
+  repeated PortInterfaceType advertised_interface_type = 73
+      [(attr_enum_value) = 106];
+  optional uint32 prbs_polynomial = 74 [(attr_enum_value) = 108];
+  optional PortPrbsConfig prbs_config = 75 [(attr_enum_value) = 112];
+  optional bool disable_decrement_ttl = 76 [(attr_enum_value) = 118];
+  optional uint64 qos_mpls_exp_to_tc_map = 77 [(attr_enum_value) = 119];
+  optional uint64 qos_mpls_exp_to_color_map = 78 [(attr_enum_value) = 120];
+  optional uint64 qos_tc_and_color_to_mpls_exp_map = 79
+      [(attr_enum_value) = 121];
+  optional uint32 tpid = 80 [(attr_enum_value) = 122];
+  optional bool auto_neg_fec_mode_override = 81 [(attr_enum_value) = 130];
+  optional PortLoopbackMode loopback_mode = 82 [(attr_enum_value) = 131];
+  optional PortMdixModeConfig mdix_mode_config = 83 [(attr_enum_value) = 133];
+  optional PortAutoNegConfigMode auto_neg_config_mode = 84
+      [(attr_enum_value) = 134];
+  optional bool _1000x_sgmii_slave_autodetect = 85 [(attr_enum_value) = 135];
+  optional PortModuleType module_type = 86 [(attr_enum_value) = 136];
+  optional PortDualMedia dual_media = 87 [(attr_enum_value) = 137];
+  optional uint32 ipg = 88 [(attr_enum_value) = 139];
+  optional bool global_flow_control_forward = 89 [(attr_enum_value) = 140];
+  optional bool priority_flow_control_forward = 90 [(attr_enum_value) = 141];
+  optional uint64 qos_dscp_to_forwarding_class_map = 91
+      [(attr_enum_value) = 142];
+  optional uint64 qos_mpls_exp_to_forwarding_class_map = 92
+      [(attr_enum_value) = 143];
+  repeated UintMap pfc_tc_dld_interval = 93 [(attr_enum_value) = 146];
+  repeated UintMap pfc_tc_dlr_interval = 94 [(attr_enum_value) = 148];
+  optional bool fabric_isolate = 95 [(attr_enum_value) = 154];
+}
+
+message SetPortAttributeResponse {}
+
+message GetPortAttributeRequest {
+  uint64 oid = 1;
+  repeated PortAttr attr_type = 2;
+}
+
+message GetPortAttributeResponse {
+  PortAttribute attr = 1;
+}
+
+message GetPortStatsRequest {
+  uint64 oid = 1;
+  repeated PortStat counter_ids = 2;
+}
+
+message GetPortStatsResponse {
+  repeated uint64 values = 1;
+}
+
+message CreatePortPoolRequest {
+  option (sai_type) = OBJECT_TYPE_PORT_POOL;
+  uint64 switch = 1;
+  optional uint64 port_id = 2 [(attr_enum_value) = 1];
+  optional uint64 buffer_pool_id = 3 [(attr_enum_value) = 2];
+  optional uint64 qos_wred_profile_id = 4 [(attr_enum_value) = 3];
+}
+
+message CreatePortPoolResponse {
+  uint64 oid = 1;
+}
+
+message RemovePortPoolRequest {
+  uint64 oid = 1;
+}
+
+message RemovePortPoolResponse {}
+
+message SetPortPoolAttributeRequest {
+  uint64 oid = 1;
+  optional uint64 qos_wred_profile_id = 2 [(attr_enum_value) = 3];
+}
+
+message SetPortPoolAttributeResponse {}
+
+message GetPortPoolAttributeRequest {
+  uint64 oid = 1;
+  repeated PortPoolAttr attr_type = 2;
+}
+
+message GetPortPoolAttributeResponse {
+  PortPoolAttribute attr = 1;
+}
+
+message GetPortPoolStatsRequest {
+  uint64 oid = 1;
+  repeated PortPoolStat counter_ids = 2;
+}
+
+message GetPortPoolStatsResponse {
+  repeated uint64 values = 1;
+}
+
+message CreatePortConnectorRequest {
+  option (sai_type) = OBJECT_TYPE_PORT_CONNECTOR;
+  uint64 switch = 1;
+  optional uint64 system_side_port_id = 2 [(attr_enum_value) = 1];
+  optional uint64 line_side_port_id = 3 [(attr_enum_value) = 2];
+  optional uint64 system_side_failover_port_id = 4 [(attr_enum_value) = 3];
+  optional uint64 line_side_failover_port_id = 5 [(attr_enum_value) = 4];
+  optional PortConnectorFailoverMode failover_mode = 6 [(attr_enum_value) = 5];
+}
+
+message CreatePortConnectorResponse {
+  uint64 oid = 1;
+}
+
+message RemovePortConnectorRequest {
+  uint64 oid = 1;
+}
+
+message RemovePortConnectorResponse {}
+
+message SetPortConnectorAttributeRequest {
+  uint64 oid = 1;
+  optional PortConnectorFailoverMode failover_mode = 2 [(attr_enum_value) = 5];
+}
+
+message SetPortConnectorAttributeResponse {}
+
+message GetPortConnectorAttributeRequest {
+  uint64 oid = 1;
+  repeated PortConnectorAttr attr_type = 2;
+}
+
+message GetPortConnectorAttributeResponse {
+  PortConnectorAttribute attr = 1;
+}
+
+message CreatePortSerdesRequest {
+  option (sai_type) = OBJECT_TYPE_PORT_SERDES;
+  uint64 switch = 1;
+  optional uint64 port_id = 2 [(attr_enum_value) = 1];
+  repeated int32 preemphasis = 3 [(attr_enum_value) = 2];
+  repeated int32 idriver = 4 [(attr_enum_value) = 3];
+  repeated int32 ipredriver = 5 [(attr_enum_value) = 4];
+  repeated int32 tx_fir_pre1 = 6 [(attr_enum_value) = 5];
+  repeated int32 tx_fir_pre2 = 7 [(attr_enum_value) = 6];
+  repeated int32 tx_fir_pre3 = 8 [(attr_enum_value) = 7];
+  repeated int32 tx_fir_main = 9 [(attr_enum_value) = 8];
+  repeated int32 tx_fir_post1 = 10 [(attr_enum_value) = 9];
+  repeated int32 tx_fir_post2 = 11 [(attr_enum_value) = 10];
+  repeated int32 tx_fir_post3 = 12 [(attr_enum_value) = 11];
+  repeated int32 tx_fir_attn = 13 [(attr_enum_value) = 12];
+}
+
+message CreatePortSerdesResponse {
+  uint64 oid = 1;
+}
+
+message RemovePortSerdesRequest {
+  uint64 oid = 1;
+}
+
+message RemovePortSerdesResponse {}
+
+message GetPortSerdesAttributeRequest {
+  uint64 oid = 1;
+  repeated PortSerdesAttr attr_type = 2;
+}
+
+message GetPortSerdesAttributeResponse {
+  PortSerdesAttribute attr = 1;
+}
+
+message CreatePortsRequest {
+  repeated CreatePortRequest reqs = 1;
+}
+
+message CreatePortsResponse {
+  repeated CreatePortResponse resps = 1;
+}
+
+service Port {
+  rpc CreatePort(CreatePortRequest) returns (CreatePortResponse) {}
+  rpc RemovePort(RemovePortRequest) returns (RemovePortResponse) {}
+  rpc SetPortAttribute(SetPortAttributeRequest)
+      returns (SetPortAttributeResponse) {}
+  rpc GetPortAttribute(GetPortAttributeRequest)
+      returns (GetPortAttributeResponse) {}
+  rpc GetPortStats(GetPortStatsRequest) returns (GetPortStatsResponse) {}
+  rpc CreatePortPool(CreatePortPoolRequest) returns (CreatePortPoolResponse) {}
+  rpc RemovePortPool(RemovePortPoolRequest) returns (RemovePortPoolResponse) {}
+  rpc SetPortPoolAttribute(SetPortPoolAttributeRequest)
+      returns (SetPortPoolAttributeResponse) {}
+  rpc GetPortPoolAttribute(GetPortPoolAttributeRequest)
+      returns (GetPortPoolAttributeResponse) {}
+  rpc GetPortPoolStats(GetPortPoolStatsRequest)
+      returns (GetPortPoolStatsResponse) {}
+  rpc CreatePortConnector(CreatePortConnectorRequest)
+      returns (CreatePortConnectorResponse) {}
+  rpc RemovePortConnector(RemovePortConnectorRequest)
+      returns (RemovePortConnectorResponse) {}
+  rpc SetPortConnectorAttribute(SetPortConnectorAttributeRequest)
+      returns (SetPortConnectorAttributeResponse) {}
+  rpc GetPortConnectorAttribute(GetPortConnectorAttributeRequest)
+      returns (GetPortConnectorAttributeResponse) {}
+  rpc CreatePortSerdes(CreatePortSerdesRequest)
+      returns (CreatePortSerdesResponse) {}
+  rpc RemovePortSerdes(RemovePortSerdesRequest)
+      returns (RemovePortSerdesResponse) {}
+  rpc GetPortSerdesAttribute(GetPortSerdesAttributeRequest)
+      returns (GetPortSerdesAttributeResponse) {}
+  rpc CreatePorts(CreatePortsRequest) returns (CreatePortsResponse) {}
+}
