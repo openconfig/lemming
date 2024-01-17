@@ -23,7 +23,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	"github.com/openconfig/lemming/dataplane/standalone/packetio/cpusink"
+	"github.com/openconfig/lemming/dataplane/cpusink"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 

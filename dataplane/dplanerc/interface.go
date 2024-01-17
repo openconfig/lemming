@@ -34,7 +34,7 @@ import (
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
 	"github.com/openconfig/lemming/dataplane/internal/kernel"
-	"github.com/openconfig/lemming/dataplane/standalone/packetio/cpusink"
+	"github.com/openconfig/lemming/dataplane/cpusink"
 	"github.com/openconfig/lemming/gnmi/gnmiclient"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"

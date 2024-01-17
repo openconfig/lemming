@@ -3,7 +3,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "cpusink",
     srcs = ["cpusink.go"],
-    importpath = "github.com/openconfig/lemming/dataplane/standalone/packetio/cpusink",
+    importpath = "github.com/openconfig/lemming/dataplane/cpusink",
     visibility = ["//visibility:public"],
     deps = [
         "//dataplane/forwarding/attributes",

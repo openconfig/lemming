@@ -28,7 +28,7 @@ import (
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
 	"github.com/openconfig/lemming/dataplane/saiserver/attrmgr"
-	"github.com/openconfig/lemming/dataplane/standalone/packetio/cpusink"
+	"github.com/openconfig/lemming/dataplane/cpusink"
 
 	saipb "github.com/openconfig/lemming/dataplane/proto"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"

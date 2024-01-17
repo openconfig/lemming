@@ -13,6 +13,7 @@ go_library(
     importpath = "github.com/openconfig/lemming/dataplane/saiserver",
     visibility = ["//visibility:public"],
     deps = [
+        "//dataplane/cpusink",
         "//dataplane/dplaneopts",
         "//dataplane/forwarding",
         "//dataplane/forwarding/attributes",
@@ -20,7 +21,6 @@ go_library(
         "//dataplane/forwarding/infra/fwdcontext",
         "//dataplane/proto:sai",
         "//dataplane/saiserver/attrmgr",
-        "//dataplane/standalone/packetio/cpusink",
         "//proto/forwarding",
         "@com_github_golang_glog//:glog",
         "@com_github_openconfig_gnmi//errlist",
