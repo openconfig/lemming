@@ -159,7 +159,7 @@ func testTraffic(t *testing.T, otg *otg.OTG, srcEndPoint, dstEndPoint attrs.Attr
 	flowipv4.TxRx().Device().
 		SetTxNames([]string{srcEndPoint.Name + ".IPv4"}).
 		SetRxNames([]string{dstEndPoint.Name + ".IPv4"})
-	flowipv4.Duration().SetChoice("continuous")
+	flowipv4.Duration().Continuous()
 	flowipv4.Packet().Add().Ethernet()
 	v4 := flowipv4.Packet().Add().Ipv4()
 	v4.Src().SetValue(srcEndPoint.IPv4)

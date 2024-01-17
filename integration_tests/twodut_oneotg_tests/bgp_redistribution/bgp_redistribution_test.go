@@ -238,7 +238,7 @@ func testTraffic(t *testing.T, otg *otg.OTG, srcEndPoint, dstEndPoint attrs.Attr
 	flowipv4.TxRx().Device().
 		SetTxNames([]string{srcEndPoint.Name + ".IPv4"}).
 		SetRxNames([]string{dstEndPoint.Name + ".IPv4"})
-	flowipv4.Duration().SetChoice("continuous")
+	flowipv4.Duration().Continuous()
 	flowipv4.Packet().Add().Ethernet()
 	v4 := flowipv4.Packet().Add().Ipv4()
 	v4.Src().SetValue(srcEndPoint.IPv4)
@@ -270,7 +270,7 @@ func testTrafficv6(t *testing.T, otg *otg.OTG, srcEndPoint, dstEndPoint attrs.At
 	flowipv6.TxRx().Device().
 		SetTxNames([]string{srcEndPoint.Name + ".IPv6"}).
 		SetRxNames([]string{dstEndPoint.Name + ".IPv6"})
-	flowipv6.Duration().SetChoice("continuous")
+	flowipv6.Duration().Continuous()
 	flowipv6.Packet().Add().Ethernet()
 	v6 := flowipv6.Packet().Add().Ipv6()
 	v6.Src().SetValue(srcEndPoint.IPv6)
