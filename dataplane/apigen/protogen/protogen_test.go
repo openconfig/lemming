@@ -36,11 +36,11 @@ import "google/protobuf/descriptor.proto";
 option go_package = "github.com/openconfig/lemming/dataplane/proto/sai";
 
 extend google.protobuf.FieldOptions {
-	optional int32 attr_enum_value = 50000;
+	optional int32 attr_enum_value = 515153358;
 }
 
 extend google.protobuf.MessageOptions {
-	optional ObjectType sai_type = 50001;
+	optional ObjectType sai_type = 515146388;
 }
 
 message AclActionData {
