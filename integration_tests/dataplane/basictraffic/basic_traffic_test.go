@@ -16,15 +16,23 @@
 package basictraffic
 
 import (
+	"context"
+	"strconv"
 	"testing"
 	"time"
 
 	"github.com/open-traffic-generator/snappi/gosnappi"
 	"github.com/openconfig/ondatra"
 	"github.com/openconfig/ondatra/gnmi"
+	"google.golang.org/grpc"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/openconfig/lemming/internal/attrs"
 	"github.com/openconfig/lemming/internal/binding"
+
+	obind "github.com/openconfig/ondatra/binding"
+
+	saipb "github.com/openconfig/lemming/dataplane/proto"
 )
 
 const (
@@ -73,15 +81,93 @@ func TestMain(m *testing.M) {
 	ondatra.RunTests(m, binding.Local("."))
 }
 
-func TestTraffic(t *testing.T) {
-	ondatra.DUT(t, "dut")
+func dataplaneConn(t testing.TB, dut *ondatra.DUTDevice) *grpc.ClientConn {
+	t.Helper()
+	var lemming interface {
+		DataplaneConn(ctx context.Context, opts ...grpc.DialOption) (*grpc.ClientConn, error)
+	}
+	if err := obind.DUTAs(dut.RawAPIs().BindingDUT(), &lemming); err != nil {
+		t.Fatalf("failed to get lemming dut: %v", err)
+	}
+	conn, err := lemming.DataplaneConn(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	return conn
+}
 
+func configureDUT(t testing.TB, dut *ondatra.DUTDevice) {
+	t.Helper()
+	conn := dataplaneConn(t, dut)
+	ric := saipb.NewRouterInterfaceClient(conn)
+	port1ID, err := strconv.ParseUint(dut.Port(t, "port1").Name(), 10, 64)
+	if err != nil {
+		t.Fatal(err)
+	}
+	port2ID, err := strconv.ParseUint(dut.Port(t, "port2").Name(), 10, 64)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = ric.CreateRouterInterface(context.Background(), &saipb.CreateRouterInterfaceRequest{
+		Switch:        1,
+		PortId:        proto.Uint64(port1ID),
+		Type:          saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_PORT.Enum(),
+		SrcMacAddress: []byte{10, 10, 10, 10, 10, 10},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	rif2Resp, err := ric.CreateRouterInterface(context.Background(), &saipb.CreateRouterInterfaceRequest{
+		Switch:        1,
+		PortId:        proto.Uint64(port2ID),
+		Type:          saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_PORT.Enum(),
+		SrcMacAddress: []byte{10, 10, 10, 10, 10, 11},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rc := saipb.NewRouteClient(conn)
+	_, err = rc.CreateRouteEntry(context.Background(), &saipb.CreateRouteEntryRequest{
+		Entry: &saipb.RouteEntry{
+			SwitchId: 1,
+			VrId:     0,
+			Destination: &saipb.IpPrefix{
+				Addr: []byte{192, 0, 2, 6},
+				Mask: []byte{255, 255, 255, 255},
+			},
+		},
+		PacketAction: saipb.PacketAction_PACKET_ACTION_FORWARD.Enum(),
+		NextHopId:    &rif2Resp.Oid,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	nc := saipb.NewNeighborClient(conn)
+	_, err = nc.CreateNeighborEntry(context.Background(), &saipb.CreateNeighborEntryRequest{
+		Entry: &saipb.NeighborEntry{
+			SwitchId:  1,
+			RifId:     rif2Resp.Oid,
+			IpAddress: []byte{192, 0, 2, 6},
+		},
+		DstMacAddress: []byte{02, 00, 02, 01, 01, 01},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestTraffic(t *testing.T) {
 	ate := ondatra.ATE(t, "ate")
 	ateTop := configureATE(t, ate)
 	ate.OTG().PushConfig(t, ateTop)
 	ate.OTG().StartProtocols(t)
 
-	// Send some traffic to make sure neighbor cache is warmed up on the dut.
+	dut := ondatra.DUT(t, "dut")
+	configureDUT(t, dut)
+
 	loss := testTraffic(t, ate, ateTop, atePort1, atePort2, 10*time.Second)
 	if loss > 1 {
 		t.Errorf("loss %f, greater than 1", loss)
@@ -111,7 +197,7 @@ func testTraffic(t *testing.T, ate *ondatra.ATEDevice, top gosnappi.Config, srcE
 	ipFLow.Metrics().SetEnable(true)
 	ipFLow.TxRx().Port().SetTxName(srcEndPoint.Name).SetRxNames([]string{dstEndPoint.Name})
 
-	ipFLow.Rate().SetChoice("pps").SetPps(10)
+	ipFLow.Rate().SetPps(10)
 
 	// OTG specifies that the order of the <flow>.Packet().Add() calls determines
 	// the stack of headers that are to be used, starting at the outer-most and
@@ -119,13 +205,13 @@ func testTraffic(t *testing.T, ate *ondatra.ATEDevice, top gosnappi.Config, srcE
 
 	// Set up ethernet layer.
 	eth := ipFLow.Packet().Add().Ethernet()
-	eth.Src().SetChoice("value").SetValue(srcEndPoint.MAC)
-	eth.Dst().SetChoice("value").SetValue(dstEndPoint.MAC)
+	eth.Src().SetValue(srcEndPoint.MAC)
+	eth.Dst().SetValue(dstEndPoint.MAC)
 
 	ip4 := ipFLow.Packet().Add().Ipv4()
-	ip4.Src().SetChoice("value").SetValue(srcEndPoint.IPv4)
-	ip4.Dst().SetChoice("value").SetValue(dstEndPoint.IPv4)
-	ip4.Version().SetChoice("value").SetValue(4)
+	ip4.Src().SetValue(srcEndPoint.IPv4)
+	ip4.Dst().SetValue(dstEndPoint.IPv4)
+	ip4.Version().SetValue(4)
 
 	otg.PushConfig(t, top)
 
