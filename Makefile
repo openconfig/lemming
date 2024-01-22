@@ -49,3 +49,41 @@ test-race:
 	# command without conflicting with the running server in another
 	# thread.(e.g. TestRoutePropagation)
 	bazel test --@io_bazel_rules_go//go/config:race --test_output=errors $(shell bazel query 'tests("//...") except "//integration_tests/..." except "//dataplane/..." except "//gnmi/..." except "//bgp/tests/local_tests/..."')
+
+PROTOS = $(wildcard dataplane/proto/sai/*.proto)
+PROTO_SRC = $(patsubst dataplane/proto/sai/%.proto, dataplane/proto/sai/%.pb.cc, $(PROTOS))
+PROTO_GRPC_SRC = $(patsubst dataplane/proto/sai/%.proto, dataplane/proto/sai/%.grpc.pb.cc, $(PROTOS))
+PROTO_OBJ = $(patsubst dataplane/proto/sai/%.proto, dataplane/proto/sai/%.pb.o, $(PROTOS))
+GRPC_OBJ = $(patsubst dataplane/proto/sai/%.proto, dataplane/proto/sai/%.grpc.pb.o, $(PROTOS))
+SAI_SRC = $(wildcard dataplane/standalone/sai/*.cc)
+SAI_OBJ = $(patsubst dataplane/standalone/sai/%.cc, dataplane/standalone/sai/%.o, $(SAI_SRC))
+
+.PHONY: sai-clean
+sai-clean:
+	rm dataplane/proto/sai/*.cc dataplane/proto/sai/*.h dataplane/proto/sai/*.o
+	rm dataplane/standalone/sai/*.o
+	rm dataplane/standalone/packetio/packetio.a dataplane/standalone/packetio/packetio.h
+	rm -f libsai.so
+
+$(PROTO_SRC) $(PROTO_GRPC_SRC) &:
+	protoc dataplane/proto/sai/*.proto --cpp_out=. --grpc_out=. --plugin=protoc-gen-grpc=`which grpc_cpp_plugin` --experimental_allow_proto3_optional
+	
+dataplane/proto/sai/%.pb.o: dataplane/proto/sai/%.pb.cc
+	g++ -fPIC -c $< -I . -lprotobuf -lgrpc -o $@
+
+dataplane/proto/sai/%.grpc.pb.o:  dataplane/proto/sai/%.grpc.pb.cc
+	g++ -fPIC -c $< -I . -lprotobuf -lgrpc -o $@
+
+dataplane/standalone/sai/%.o: dataplane/standalone/sai/%.cc $(PROTO_SRC)
+	g++ -fPIC -c $< -o $@ -I . -lglog -I external/com_github_opencomputeproject_sai -I external/com_github_opencomputeproject_sai/inc  -I external/com_github_opencomputeproject_sai/experimental
+
+packetio:
+	go build -o dataplane/standalone/packetio/packetio.a -buildmode=c-archive ./dataplane/standalone/packetio 
+
+libsai.so: $(PROTO_OBJ) $(GRPC_OBJ) $(SAI_OBJ) packetio
+	g++ -o libsai.so -shared dataplane/standalone/entrypoint.cc  -fPIC dataplane/proto/sai/*.o dataplane/standalone/sai/*.o dataplane/standalone/packetio/packetio.a -I . -I external/com_github_opencomputeproject_sai -I external/com_github_opencomputeproject_sai/inc -I external/com_github_opencomputeproject_sai/experimental
+
+libsai-lucius:libsai.so 
+	mkdir -p pkg/lucius-libsai/DEBIAN
+	mkdir -p pkg/lucius-libsai/usr/local/lib/
+	cp libsai.so  
