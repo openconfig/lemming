@@ -1,0 +1,27 @@
+FROM debian:bullseye
+WORKDIR /build
+
+RUN apt-get update && apt-get install -y build-essential wget protobuf-compiler protobuf-compiler-grpc libgrpc++-dev libgoogle-glog-dev git
+
+RUN wget -q https://go.dev/dl/go1.21.6.linux-amd64.tar.gz
+RUN rm -rf /usr/local/go && tar -C /usr/local -xzf go1.21.6.linux-amd64.tar.gz
+RUN rm go1.21.6.linux-amd64.tar.gz
+ENV PATH="$PATH:/usr/local/go/bin"
+RUN wget -q https://github.com/opencomputeproject/SAI/archive/refs/tags/v1.11.0.tar.gz && tar xzf v1.11.0.tar.gz 
+RUN mkdir external && mv SAI-1.11.0 external/com_github_opencomputeproject_sai
+ADD Makefile .
+COPY go.mod .
+COPY go.sum .
+COPY patches/sai.patch external/com_github_opencomputeproject_sai/sai.patch
+RUN cd external/com_github_opencomputeproject_sai && patch -p1 < sai.patch
+COPY dataplane/proto/sai/*.proto dataplane/proto/sai/
+COPY dataplane/forwarding dataplane/forwarding/
+COPY dataplane/standalone/sai/*.cc dataplane/standalone/sai/
+COPY dataplane/standalone/sai/*.h dataplane/standalone/sai/
+COPY dataplane/internal dataplane/internal/
+COPY dataplane/cpusink dataplane/cpusink/
+COPY dataplane/standalone/packetio/*.go dataplane/standalone/packetio/
+COPY dataplane/standalone/*.cc dataplane/standalone/
+COPY proto/forwarding/*.go proto/forwarding/
+
+RUN make libsai-lucius -j 40

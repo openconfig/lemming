@@ -62,28 +62,42 @@ SAI_OBJ = $(patsubst dataplane/standalone/sai/%.cc, dataplane/standalone/sai/%.o
 sai-clean:
 	rm dataplane/proto/sai/*.cc dataplane/proto/sai/*.h dataplane/proto/sai/*.o
 	rm dataplane/standalone/sai/*.o
-	rm dataplane/standalone/packetio/packetio.a dataplane/standalone/packetio/packetio.h
-	rm -f libsai.so
+	rm -rf dataplane/standalone/packetio/packetio.a dataplane/standalone/packetio/packetio.h libsai.so pkg
 
 $(PROTO_SRC) $(PROTO_GRPC_SRC) &:
 	protoc dataplane/proto/sai/*.proto --cpp_out=. --grpc_out=. --plugin=protoc-gen-grpc=`which grpc_cpp_plugin` --experimental_allow_proto3_optional
 	
 dataplane/proto/sai/%.pb.o: dataplane/proto/sai/%.pb.cc
-	g++ -fPIC -c $< -I . -lprotobuf -lgrpc -o $@
+	g++ -fPIC -c $< -I . -o $@
 
 dataplane/proto/sai/%.grpc.pb.o:  dataplane/proto/sai/%.grpc.pb.cc
-	g++ -fPIC -c $< -I . -lprotobuf -lgrpc -o $@
+	g++ -fPIC -c $< -I . -o $@
 
 dataplane/standalone/sai/%.o: dataplane/standalone/sai/%.cc $(PROTO_SRC)
-	g++ -fPIC -c $< -o $@ -I . -lglog -I external/com_github_opencomputeproject_sai -I external/com_github_opencomputeproject_sai/inc  -I external/com_github_opencomputeproject_sai/experimental
+	g++ -fPIC -c $< -o $@ -I . -I external/com_github_opencomputeproject_sai -I external/com_github_opencomputeproject_sai/inc  -I external/com_github_opencomputeproject_sai/experimental
 
 packetio:
 	go build -o dataplane/standalone/packetio/packetio.a -buildmode=c-archive ./dataplane/standalone/packetio 
 
 libsai.so: $(PROTO_OBJ) $(GRPC_OBJ) $(SAI_OBJ) packetio
-	g++ -o libsai.so -shared dataplane/standalone/entrypoint.cc  -fPIC dataplane/proto/sai/*.o dataplane/standalone/sai/*.o dataplane/standalone/packetio/packetio.a -I . -I external/com_github_opencomputeproject_sai -I external/com_github_opencomputeproject_sai/inc -I external/com_github_opencomputeproject_sai/experimental
+	g++ -fPIC -o libsai.so -shared dataplane/standalone/entrypoint.cc dataplane/proto/sai/*.o dataplane/standalone/sai/*.o dataplane/standalone/packetio/packetio.a -lglog -lprotobuf -lgrpc++ -I . -I external/com_github_opencomputeproject_sai -I external/com_github_opencomputeproject_sai/inc -I external/com_github_opencomputeproject_sai/experimental
 
-libsai-lucius:libsai.so 
+define DEB_CONTROL =
+Package: lucius-libsai
+Version: 1.0-3
+Maintainer: OpenConfig
+Architecture: amd64
+Description: SAI implementation for lucius
+endef
+export DEB_CONTROL
+
+libsai-lucius: libsai.so 
+	rm -rf pkg/
 	mkdir -p pkg/lucius-libsai/DEBIAN
-	mkdir -p pkg/lucius-libsai/usr/local/lib/
-	cp libsai.so  
+	chmod 0755 pkg/lucius-libsai/DEBIAN
+	mkdir -p pkg/lucius-libsai/usr/lib/x86_64-linux-gnu
+	cp libsai.so pkg/lucius-libsai/usr/lib/x86_64-linux-gnu/libsaivs.so.0.0.0
+	cd pkg/lucius-libsai/usr/lib/x86_64-linux-gnu && ln -s libsaivs.so.0.0.0 libsaivs.so.0
+	echo "$$DEB_CONTROL" > pkg/lucius-libsai/DEBIAN/control
+	dpkg-deb --build pkg/lucius-libsai
+
