@@ -104,4 +104,4 @@ The current design runs the dataplane separately from the NOS and all communicat
 
 ### apigen
 
-These packages generate the protobuf and C++ source and headers based on the SAI headers.
+These packages generate the protobuf and C++ source and headers based on the [SAI](https://github.com/opencomputeproject/SAI/tree/master/inc) headers.

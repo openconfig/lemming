@@ -9,12 +9,15 @@ Let's implement a new feature: based on the hypothetical `foo` protocol packet h
 The first step is to check if the forwarding supports everything we need. The answer is usually yes, but not in this case.
 
 1. There is no shortest prefix forwarding table, so let's add it.
-   1. Add a new value to the `TableTable` enum in the [forwarding_table](../proto/forwarding/forwarding_table.proto).
+   1. Add a new value to the `TableType` enum in the [forwarding_table](../proto/forwarding/forwarding_table.proto).
    2. Add a new entry desc proto message for the new table and it to the `oneof entry` in `EntryDesc`.
    3. Implement the table in a new package in the [fwdtable](forwarding/fwdtable/).
-   4. Tables must implement an interface and register a builder. (see other packages for examples).
+   4. Tables must implement the `fwdtable.Table` interface and register a builder (`fwdtable.Builder`). (see other packages for examples).
 2. There is no randomized payload action, so let's add it.
-   1. Follow similar steps as the table.
+   1. Add a new value to the `ActionType` enum in the [forwarding_action](../proto/forwarding/forwarding_action.proto).
+   2. Add a new action desc proto message for the new action and it to the `oneof action` in `ActionDesc`.
+   3. Implement the action in a new file in the [fwdaction](forwarding/fwdactions/actions).
+   4. Tables must implement the `fwdaction.Action` interface and register a builder (`fwdaction.Builder`). (see other packages for examples).
 3. There is no `foo` header parser, so let's add it.
    1. Add a new enum value to the PacketFieldNum [forwarding_common](../proto/forwarding/forwarding_common.proto).
    2. Update the forwarding/protocol package with the logic to parse this new header.
@@ -55,7 +58,7 @@ Let's assume we want to implement the CreateFoo and RemoveFoo RPCs.
 
 Not done yet! Now that the feature is available via the saiserver API, we may also want to configure it using gNMI.
 
-1. In dplanerc, let's add a new [reconciler](../gnmi/reconciler/reconciler.go).
+1. In dplanerc package, let's add a new [reconciler](../gnmi/reconciler/reconciler.go).
    1. First, we need to determine which OpenConfig paths reference this feature (if any). Make sure the relevant YANG file is added in [generate script](../gnmi/generate.sh).
       1. The [OpenConfig site](https://openconfig.net/projects/models/paths/index.html) is the best reference.
    2. gNMI and Lemming use an eventual consistency, pub-sub model, so in the reconciler we need to subscribe to the config paths for our feature.

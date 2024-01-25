@@ -25,8 +25,10 @@
 
 ## Terms
 
-* Port: a l2 "physical" port that usually connected to another device
+* Port: a l2 "physical" port that usually connected to another device.
+  * In the diagram, eth1 is a port.
 * Hostif: a "logical" network device (linux TAP) that corresponds a port
+  * In the diagram, tap1 is a hostif.
 * CPU Port: the connection between the physical port and the hostifs.
 
 As the dataplane is a software, this structure only exists to model a real hardware device.
@@ -60,7 +62,8 @@ As the dataplane is a software, this structure only exists to model a real hardw
       5. CPU port
 2. CPU Port
    1. Once a packet is sent the CPU port is matched in two a hostif by:
-      1. an IP2ME route: the exact IP assigned to a hostif.
+      1. an IP2ME (IP address that belongs to host) the exact IP assigned to a hostif.
+         1. Example: if eth1 is configured with 192.168.1.2/24, than the IP2ME route is 192.168.1.2/32 -> CPU Port
       2. the default map: the corresponding hostif for the input port.
 
 ## Egress
