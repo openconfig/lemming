@@ -32,7 +32,7 @@ import (
 
 	obind "github.com/openconfig/ondatra/binding"
 
-	saipb "github.com/openconfig/lemming/dataplane/proto"
+	saipb "github.com/openconfig/lemming/dataplane/proto/sai"
 )
 
 const (
@@ -152,7 +152,7 @@ func configureDUT(t testing.TB, dut *ondatra.DUTDevice) {
 			RifId:     rif2Resp.Oid,
 			IpAddress: []byte{192, 0, 2, 6},
 		},
-		DstMacAddress: []byte{02, 00, 02, 01, 01, 01},
+		DstMacAddress: []byte{0o2, 0o0, 0o2, 0o1, 0o1, 0o1},
 	})
 	if err != nil {
 		t.Fatal(err)
