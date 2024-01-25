@@ -227,7 +227,7 @@ func (lb *LocalBind) Reserve(ctx context.Context, tb *opb.Testbed, _, _ time.Dur
 	}
 
 	intf.OverrideAccessor(&accessor{})
-	common.OverridePortCreator(portMgr.ate)
+	common.OverrideHandleCreator(portMgr.ate)
 
 	for _, ate := range tb.Ates {
 		magna, err := lb.createATE(ctx, ate, portMgr.ate)
@@ -348,7 +348,6 @@ func (lb *LocalBind) createATE(_ context.Context, ate *opb.Device, portMgr *ateP
 
 	hintCh := make(chan lwotg.Hint, 100)
 	otgSrv.SetHintChannel(hintCh)
-	// otgSrv.SetProtocolHandler(gatewayPinger)
 	telemSrv.SetHintChannel(context.Background(), hintCh)
 
 	telemSrv.AddTask(arp.New(context.Background(), telemSrv.GetHints, time.Now().UnixNano))
@@ -389,7 +388,7 @@ func (lb *LocalBind) createATE(_ context.Context, ate *opb.Device, portMgr *ateP
 	}
 	for _, port := range ate.Ports {
 		name := fmt.Sprintf("%s:%s", ate.Id, port.Id)
-		_, err := portMgr.CreatePort(name)
+		_, err := portMgr.CreateHandle(name)
 		if err != nil {
 			return nil, err
 		}
@@ -474,7 +473,7 @@ type dutPortMgr struct {
 	lastCreatedPort *chanPort
 }
 
-func (lm *dutPortMgr) CreatePort(name string) (fwdcontext.Port, error) {
+func (mgr *dutPortMgr) CreatePort(name string) (fwdcontext.Port, error) {
 	q, err := queue.NewUnbounded(fmt.Sprintf("%s-tx", name))
 	if err != nil {
 		return nil, err
@@ -482,7 +481,7 @@ func (lm *dutPortMgr) CreatePort(name string) (fwdcontext.Port, error) {
 	p := &chanPort{
 		txQueue: q,
 	}
-	lm.lastCreatedPort = p
+	mgr.lastCreatedPort = p
 	q.Run()
 	return p, nil
 }
@@ -493,8 +492,8 @@ type atePortMgr struct {
 	ports map[string]*chanPort
 }
 
-func (lm *atePortMgr) CreatePort(name string) (common.Port, error) {
-	if p, ok := lm.ports[name]; ok {
+func (mgr *atePortMgr) CreateHandle(name string) (common.Port, error) {
+	if p, ok := mgr.ports[name]; ok {
 		return p, nil
 	}
 	q, err := queue.NewUnbounded(fmt.Sprintf("%s-tx", name))
@@ -506,18 +505,18 @@ func (lm *atePortMgr) CreatePort(name string) (common.Port, error) {
 	}
 	q.Run()
 	fmt.Printf("create port %q", name)
-	lm.ports[name] = p
+	mgr.ports[name] = p
 	return p, nil
 }
 
-func (lm *portMgr) linkPorts(a, b string) error {
-	aPort := lm.dut.ports[a]
+func (mgr *portMgr) linkPorts(a, b string) error {
+	aPort := mgr.dut.ports[a]
 	if aPort == nil {
-		aPort = lm.ate.ports[a]
+		aPort = mgr.ate.ports[a]
 	}
-	bPort := lm.dut.ports[b]
+	bPort := mgr.dut.ports[b]
 	if bPort == nil {
-		bPort = lm.ate.ports[b]
+		bPort = mgr.ate.ports[b]
 	}
 
 	if aPort == nil || bPort == nil {

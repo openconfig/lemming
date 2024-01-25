@@ -736,8 +736,6 @@ gioui.org v0.0.0-20210308172011-57750fc8a0a6/go.mod h1:RSH6KIUZ0p2xy5zHDxgAM4zum
 git.sr.ht/~sbinet/gg v0.3.1/go.mod h1:KGYtlADtqsqANL9ueOFkWymvzUvLMQllU5Ixo+8v3pc=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
-github.com/DanG100/magna v0.0.0-20240111225500-69715eccc875 h1:IRi3bdHDdTqz0ienfigsgnnKo+uKr+a28E6nIZLDb9w=
-github.com/DanG100/magna v0.0.0-20240111225500-69715eccc875/go.mod h1:YozVNJsAY+Wcd2L2kRARURcK+y1PxMpwKyxMnCdKwhg=
 github.com/JohnCGriffin/overflow v0.0.0-20211019200055-46fa312c352c/go.mod h1:X0CRv0ky0k6m906ixxpzmDRLvX58TFUKS2eePweuyxk=
 github.com/Masterminds/semver/v3 v3.2.1 h1:RN9w6+7QoMeJVGyfmbcgs28Br8cvmnucEXnY0rYXWg0=
 github.com/Masterminds/semver/v3 v3.2.1/go.mod h1:qvl/7zhW3nngYb5+80sSMF+FG2BjYrf8m9wsX0PNOMQ=
@@ -1137,6 +1135,8 @@ github.com/openconfig/kne v0.1.15 h1:3ADQpUasGv23V53KlkLdaJrMWM6yyJ4EGtJvFyVzCUA
 github.com/openconfig/kne v0.1.15/go.mod h1:4rV0EbqxQec3BRvvkcrsponO6XLlMYFuNynkPAWjaMw=
 github.com/openconfig/lemming/operator v0.2.0 h1:dovZnR6lQkOHXcODli1NDOr/GVYrBY05KS5X11jxVbw=
 github.com/openconfig/lemming/operator v0.2.0/go.mod h1:LKgEXSR5VK2CAeh2uKijKAXFj42uQuwakrCHVPF0iII=
+github.com/openconfig/magna v0.0.0-20240125181018-b59ccfe781f8 h1:Li3oruOjubVSr+7UAc6ohpWeD0FKk+7t7SzEkMN66Qk=
+github.com/openconfig/magna v0.0.0-20240125181018-b59ccfe781f8/go.mod h1:3B8JDwmq2vuR0J1JB4+XtpxC+FrVvtZa1129LJ+7AIw=
 github.com/openconfig/ondatra v0.4.8 h1:EnjtLMF4eiULquNVWHJulysV3VVKhAPeuQ0f+BxBBWs=
 github.com/openconfig/ondatra v0.4.8/go.mod h1:KH97HqpgW6wv7Y0QSpqr5tjUruzJOhryP+YCQKRa57c=
 github.com/openconfig/testt v0.0.0-20220311054427-efbb1a32ec07 h1:X631iD/B0ximGFb5P9LY5wHju4SiedxUhc5UZEo7VSw=

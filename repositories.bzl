@@ -336,8 +336,8 @@ def go_repositories():
     go_repository(
         name = "com_github_cloudflare_circl",
         importpath = "github.com/cloudflare/circl",
-        sum = "h1:fE/Qz0QdIGqeWfnwq0RE0R7MI51s0M2E4Ga9kq5AEMs=",
-        version = "v1.3.3",
+        sum = "h1:qlCDlTPz2n9fu58M0Nh1J/JzcFpfgkFHHX3O35r5vcU=",
+        version = "v1.3.7",
     )
 
     go_repository(
@@ -1705,9 +1705,8 @@ def go_repositories():
     go_repository(
         name = "com_github_openconfig_magna",
         importpath = "github.com/openconfig/magna",
-        replace = "github.com/DanG100/magna",
-        sum = "h1:IRi3bdHDdTqz0ienfigsgnnKo+uKr+a28E6nIZLDb9w=",
-        version = "v0.0.0-20240111225500-69715eccc875",
+        sum = "h1:Li3oruOjubVSr+7UAc6ohpWeD0FKk+7t7SzEkMN66Qk=",
+        version = "v0.0.0-20240125181018-b59ccfe781f8",
     )
 
     go_repository(

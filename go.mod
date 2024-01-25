@@ -22,7 +22,7 @@ require (
 	github.com/openconfig/gribi v1.0.0
 	github.com/openconfig/gribigo v0.0.0-20231116195824-d8605fda9f33
 	github.com/openconfig/kne v0.1.15
-	github.com/openconfig/magna v0.0.0-20231227222122-d72edfd5fba9
+	github.com/openconfig/magna v0.0.0-20240125181018-b59ccfe781f8
 	github.com/openconfig/ondatra v0.4.8
 	github.com/openconfig/ygnmi v0.11.1
 	github.com/openconfig/ygot v0.29.17
@@ -150,5 +150,3 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
-
-replace github.com/openconfig/magna => github.com/DanG100/magna v0.0.0-20240111225500-69715eccc875
