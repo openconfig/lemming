@@ -858,6 +858,7 @@ github.com/go-gl/glfw/v3.3/glfw v0.0.0-20191125211704-12ad95a8df72/go.mod h1:tQ2
 github.com/go-gl/glfw/v3.3/glfw v0.0.0-20200222043503-6f7a984d4dc4/go.mod h1:tQ2UAYgL5IevRw8kRxooKSPJfGvJ9fJQFa0TUsXzTg8=
 github.com/go-latex/latex v0.0.0-20210118124228-b3d85cf34e07/go.mod h1:CO1AlKB2CSIqUrmQPqA0gdRIlnLEY0gK5JGjh37zN5U=
 github.com/go-latex/latex v0.0.0-20210823091927-c0d11ff05a81/go.mod h1:SX0U8uGpxhq9o2S/CELCSUxEWWAuoCUcVCQWv7G2OCk=
+github.com/go-logr/logr v0.1.0/go.mod h1:ixOQHD9gLJUVQQ2ZOR7zLEifBX6tGkNJF4QyIY7sIas=
 github.com/go-logr/logr v1.2.0/go.mod h1:jdQByPbusPIv2/zmleS9BjJVeZ6kBagPoEUsqbVz/1A=
 github.com/go-logr/logr v1.2.4 h1:g01GSCwiDw2xSZfjJ2/T9M+S6pFdcNtFYsp+Y43HYDQ=
 github.com/go-logr/logr v1.2.4/go.mod h1:jdQByPbusPIv2/zmleS9BjJVeZ6kBagPoEUsqbVz/1A=
@@ -1134,6 +1135,8 @@ github.com/openconfig/kne v0.1.15 h1:3ADQpUasGv23V53KlkLdaJrMWM6yyJ4EGtJvFyVzCUA
 github.com/openconfig/kne v0.1.15/go.mod h1:4rV0EbqxQec3BRvvkcrsponO6XLlMYFuNynkPAWjaMw=
 github.com/openconfig/lemming/operator v0.2.0 h1:dovZnR6lQkOHXcODli1NDOr/GVYrBY05KS5X11jxVbw=
 github.com/openconfig/lemming/operator v0.2.0/go.mod h1:LKgEXSR5VK2CAeh2uKijKAXFj42uQuwakrCHVPF0iII=
+github.com/openconfig/magna v0.0.0-20240125181018-b59ccfe781f8 h1:Li3oruOjubVSr+7UAc6ohpWeD0FKk+7t7SzEkMN66Qk=
+github.com/openconfig/magna v0.0.0-20240125181018-b59ccfe781f8/go.mod h1:3B8JDwmq2vuR0J1JB4+XtpxC+FrVvtZa1129LJ+7AIw=
 github.com/openconfig/ondatra v0.4.8 h1:EnjtLMF4eiULquNVWHJulysV3VVKhAPeuQ0f+BxBBWs=
 github.com/openconfig/ondatra v0.4.8/go.mod h1:KH97HqpgW6wv7Y0QSpqr5tjUruzJOhryP+YCQKRa57c=
 github.com/openconfig/testt v0.0.0-20220311054427-efbb1a32ec07 h1:X631iD/B0ximGFb5P9LY5wHju4SiedxUhc5UZEo7VSw=
@@ -2052,6 +2055,8 @@ k8s.io/apimachinery v0.26.3 h1:dQx6PNETJ7nODU3XPtrwkfuubs6w7sX0M8n61zHIV/k=
 k8s.io/apimachinery v0.26.3/go.mod h1:ats7nN1LExKHvJ9TmwootT00Yz05MuYqPXEXaVeOy5I=
 k8s.io/client-go v0.26.3 h1:k1UY+KXfkxV2ScEL3gilKcF7761xkYsSD6BC9szIu8s=
 k8s.io/client-go v0.26.3/go.mod h1:ZPNu9lm8/dbRIPAgteN30RSXea6vrCpFvq+MateTUuQ=
+k8s.io/klog v1.0.0 h1:Pt+yjF5aB1xDSVbau4VsWe+dQNzA0qv1LlXdC2dF6Q8=
+k8s.io/klog v1.0.0/go.mod h1:4Bi6QPql/J/LkTDqv7R/cd3hPo4k2DG6Ptcz060Ez5I=
 k8s.io/klog/v2 v2.100.1 h1:7WCHKK6K8fNhTqfBhISHQ97KrnJNFZMcQvKp7gP/tmg=
 k8s.io/klog/v2 v2.100.1/go.mod h1:y1WjHnz7Dj687irZUWR/WLkLc5N1YHtjLdmgWjndZn0=
 k8s.io/kube-openapi v0.0.0-20230308215209-15aac26d736a h1:gmovKNur38vgoWfGtP5QOGNOA7ki4n6qNYoFAgMlNvg=

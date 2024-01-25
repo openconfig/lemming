@@ -336,8 +336,8 @@ def go_repositories():
     go_repository(
         name = "com_github_cloudflare_circl",
         importpath = "github.com/cloudflare/circl",
-        sum = "h1:fE/Qz0QdIGqeWfnwq0RE0R7MI51s0M2E4Ga9kq5AEMs=",
-        version = "v1.3.3",
+        sum = "h1:qlCDlTPz2n9fu58M0Nh1J/JzcFpfgkFHHX3O35r5vcU=",
+        version = "v1.3.7",
     )
 
     go_repository(
@@ -1413,8 +1413,8 @@ def go_repositories():
     go_repository(
         name = "com_github_microsoft_go_winio",
         importpath = "github.com/Microsoft/go-winio",
-        sum = "h1:a9IhgEQBCUEk6QCdml9CiJGhAws+YwffDHEMp1VMrpA=",
-        version = "v0.5.2",
+        sum = "h1:9/kr64B9VUZrLm5YYwbGtUJnMgqWVOdUAXu6Migciow=",
+        version = "v0.6.1",
     )
     go_repository(
         name = "com_github_miekg_dns",
@@ -1705,8 +1705,8 @@ def go_repositories():
     go_repository(
         name = "com_github_openconfig_magna",
         importpath = "github.com/openconfig/magna",
-        sum = "h1:euQlk2dcqH+7u6RFomFY+jPPSG9uHgw1Cvo51z6GsXY=",
-        version = "v0.0.0-20231227222122-d72edfd5fba9",
+        sum = "h1:Li3oruOjubVSr+7UAc6ohpWeD0FKk+7t7SzEkMN66Qk=",
+        version = "v0.0.0-20240125181018-b59ccfe781f8",
     )
 
     go_repository(

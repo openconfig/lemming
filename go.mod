@@ -16,11 +16,13 @@ require (
 	github.com/open-traffic-generator/snappi/gosnappi v0.13.0
 	github.com/openconfig/gnmi v0.10.0
 	github.com/openconfig/gnoi v0.3.0
+	github.com/openconfig/gnoigo v0.0.0-20231026010722-87413fdb22e7
 	github.com/openconfig/gnsi v1.2.3
 	github.com/openconfig/goyang v1.4.5
 	github.com/openconfig/gribi v1.0.0
 	github.com/openconfig/gribigo v0.0.0-20240116235734-d97fb76749ef
 	github.com/openconfig/kne v0.1.15
+	github.com/openconfig/magna v0.0.0-20240125181018-b59ccfe781f8
 	github.com/openconfig/ondatra v0.4.8
 	github.com/openconfig/ygnmi v0.11.1
 	github.com/openconfig/ygot v0.29.17
@@ -39,6 +41,7 @@ require (
 	google.golang.org/protobuf v1.32.0
 	k8s.io/apimachinery v0.26.3
 	k8s.io/client-go v0.26.3
+	k8s.io/klog v1.0.0
 	k8s.io/klog/v2 v2.100.1
 	modernc.org/cc/v4 v4.1.3
 )
@@ -95,7 +98,6 @@ require (
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/networkop/meshnet-cni v0.3.1-0.20230525201116-d7c306c635cf // indirect
 	github.com/open-traffic-generator/ixia-c-operator v0.3.6 // indirect
-	github.com/openconfig/gnoigo v0.0.0-20231026010722-87413fdb22e7 // indirect
 	github.com/openconfig/gocloser v0.0.0-20220310182203-c6c950ed3b0b // indirect
 	github.com/openconfig/lemming/operator v0.2.0 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect

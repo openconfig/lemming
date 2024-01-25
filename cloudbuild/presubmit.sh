@@ -35,6 +35,7 @@ curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/latest/skaffo
 sudo install skaffold /usr/local/bin/
 curl -Lo bazel https://github.com/bazelbuild/bazelisk/releases/download/v1.16.0/bazelisk-linux-amd64 && \
 sudo install bazel /usr/local/bin/
+sudo apt-get -y install libpcap-dev
 
 cd /tmp/workspace
 kne deploy ~/kne-internal/deploy/kne/kind-bridge.yaml
