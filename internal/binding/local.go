@@ -148,6 +148,12 @@ func (l *localLemming) DialGRIBI(ctx context.Context, opts ...grpc.DialOption) (
 	return grpb.NewGRIBIClient(conn), nil
 }
 
+// DataplaneConn returns a gRPC conn for the dataplane
+func (l *localLemming) DataplaneConn(ctx context.Context, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+	opts = append(opts, grpc.WithTransportCredentials(local.NewCredentials()))
+	return grpc.DialContext(ctx, net.JoinHostPort(l.addr, fmt.Sprint(dataplanePort)), opts...)
+}
+
 type localMagna struct {
 	binding.AbstractATE
 	addr string
@@ -278,6 +284,7 @@ func (lb *LocalBind) createDUT(ctx context.Context, dut *opb.Device, portMgr *du
 	}
 	boundLemming := &localLemming{
 		l:     l,
+		addr:  addr,
 		dutID: dutID,
 		AbstractDUT: binding.AbstractDUT{
 			Dims: &binding.Dims{
