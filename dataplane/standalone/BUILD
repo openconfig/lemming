@@ -35,6 +35,7 @@ cc_binary(
     ],
     linkshared = True,
     linkstatic = True,
+    tags = ["manual"],
     deps = [
         ":entrypoint",
     ],
@@ -42,22 +43,24 @@ cc_binary(
 
 pkg_tar(
     name = "sai-tar",
-    package_dir = "/usr/lib/x86_64-linux-gnu",
     files = {
-       ":sai-dynamic": "libsaivs.so.0.0.0"
+        ":sai-dynamic": "libsaivs.so.0.0.0",
     },
+    package_dir = "/usr/lib/x86_64-linux-gnu",
     symlinks = {
-        "/usr/lib/x86_64-linux-gnu/libsaivs.so.0": "libsaivs.so.0.0.0"
+        "/usr/lib/x86_64-linux-gnu/libsaivs.so.0": "libsaivs.so.0.0.0",
     },
+    tags = ["manual"],
 )
 
 pkg_deb(
     name = "sai-deb",
     architecture = "amd64",
-    maintainer = "OpenConfig",
-    description = "SAI implementation for lucius",
     data = ":sai-tar",
+    description = "SAI implementation for lucius",
+    maintainer = "OpenConfig",
     package = "lucius-libsai",
+    tags = ["manual"],
     version = "1.0-3",
 )
 
