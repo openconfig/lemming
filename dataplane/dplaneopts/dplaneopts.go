@@ -26,6 +26,8 @@ type Options struct {
 	HostifNetDevType fwdpb.PortType
 	// PortType is the fwdpb type for the port type.
 	PortType fwdpb.PortType
+	// PortConfigFile is the path of the port config
+	PortConfigFile string
 }
 
 // Option exposes additional configuration for the dataplane.
@@ -61,6 +63,24 @@ func WithPortType(t fwdpb.PortType) Option {
 	return func(o *Options) {
 		o.PortType = t
 	}
+}
+
+// WithPortConfigFile sets the path of the port config file.
+// Default: none
+func WithPortConfigFile(file string) Option {
+	return func(o *Options) {
+		o.PortConfigFile = file
+	}
+}
+
+// Port contains configuratiob data for a single port.
+type Port struct {
+	Lanes string `json:"lanes"`
+}
+
+// PortConfig contains configuration data for the dataplane ports.
+type PortConfig struct {
+	Ports map[string]*Port `json:"PORT"`
 }
 
 // ResolveOpts creates an option struct from the opts.

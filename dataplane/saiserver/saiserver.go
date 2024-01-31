@@ -263,6 +263,10 @@ func New(ctx context.Context, mgr *attrmgr.AttrMgr, s *grpc.Server, opts *dplane
 	if err != nil {
 		return nil, err
 	}
+	sw, err := newSwitch(mgr, fwdCtx, s, opts)
+	if err != nil {
+		return nil, err
+	}
 
 	srv := &Server{
 		mgr:               mgr,
@@ -293,7 +297,7 @@ func New(ctx context.Context, mgr *attrmgr.AttrMgr, s *grpc.Server, opts *dplane
 		schedulerGroup:    &schedulerGroup{},
 		scheduler:         &scheduler{},
 		srv6:              &srv6{},
-		saiSwitch:         newSwitch(mgr, fwdCtx, s, opts),
+		saiSwitch:         sw,
 		systemPort:        &systemPort{},
 		tam:               &tam{},
 		tunnel:            &tunnel{},

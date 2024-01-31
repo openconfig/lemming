@@ -35,7 +35,10 @@ func StartSink() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	sink := cpusink.New(fwdpb.NewForwardingClient(conn))
+	sink, err := cpusink.New(fwdpb.NewForwardingClient(conn))
+	if err != nil {
+		log.Fatal(err)
+	}
 	if err := sink.HandleIPUpdates(context.Background()); err != nil {
 		log.Fatal(err)
 	}
