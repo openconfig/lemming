@@ -27,6 +27,7 @@ import (
 
 	log "github.com/golang/glog"
 
+	"github.com/openconfig/gnmi/errlist"
 	"github.com/openconfig/lemming/gnmi/fakedevice"
 	"github.com/openconfig/lemming/gnmi/gnmiclient"
 	"github.com/openconfig/lemming/gnmi/oc"
@@ -252,13 +253,27 @@ func (t *bgpTask) reconcile(ctx context.Context, intended *oc.Root) error {
 		return nil
 	}
 
-	err := ygot.MergeStructInto(t.appliedBGP, intendedBGP, &ygot.MergeOverwriteExistingFields{})
+	errs := &errlist.List{}
+	errs.Add(ygot.MergeStructInto(t.appliedBGP, intendedBGP, &ygot.MergeOverwriteExistingFields{}))
+	errs.Add(ygot.MergeStructInto(t.appliedRoutingPolicy, intendedPolicy, &ygot.MergeOverwriteExistingFields{}))
+	//if pd := intendedPolicy.GetPolicyDefinition("CX-VF-IN"); pd != nil {
+	//	for _, k := range pd.Statement.Keys() {
+	//		s := pd.Statement.Get(k)
+	//		fmt.Printf("intended statement name = %v, c = %+v, a = %+v\n", k, s.GetConditions(), s.GetActions())
+	//	}
+	//}
+	//if pd := t.appliedRoutingPolicy.GetPolicyDefinition("CX-VF-IN"); pd != nil {
+	//	for _, k := range pd.Statement.Keys() {
+	//		s := pd.Statement.Get(k)
+	//		fmt.Printf("applied statement name = %v, c = %+v, a = %+v\n", k, s.GetConditions(), s.GetActions())
+	//	}
+	//}
 	// TODO(wenbli): Since policy definitions is an atomic node,
 	// unsupported policy leaves will be merged as well. Therefore omitting
 	// them from the applied state until we find a way to to prune out
 	// unsupported paths prior to merge.
 	//t.appliedRoutingPolicy.PolicyDefinition = nil
-	return err
+	return errs.Err()
 }
 
 // updateAppliedState is the ONLY function that's called when updating the appliedState.

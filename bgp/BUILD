@@ -18,6 +18,7 @@ go_library(
         "//gnmi/reconciler",
         "//internal/lemmingutil",
         "@com_github_golang_glog//:glog",
+        "@com_github_openconfig_gnmi//errlist",
         "@com_github_openconfig_ygnmi//ygnmi",
         "@com_github_openconfig_ygot//ygot",
         "@com_github_osrg_gobgp_v3//api",

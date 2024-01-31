@@ -125,6 +125,8 @@ func convertPolicyDefinition(policy *oc.RoutingPolicy_PolicyDefinition, neighAdd
 				},
 			},
 		})
+
+		fmt.Printf("<1> %s, %v -> %v\n", convertedPolicyName + ":" + statement.GetName(),  statement.GetActions().GetPolicyResult(), convertRouteDisposition(statement.GetActions().GetPolicyResult()))
 	}
 
 	return gobgpoc.PolicyDefinition{
