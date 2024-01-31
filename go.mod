@@ -26,7 +26,6 @@ require (
 	github.com/openconfig/ondatra v0.4.8
 	github.com/openconfig/ygnmi v0.11.1
 	github.com/openconfig/ygot v0.29.17
-	github.com/osrg/gobgp/v3 v3.20.0
 	github.com/p4lang/p4runtime v1.4.0-rc.5.0.20220728214547-13f0d02a521e
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.0
@@ -34,6 +33,7 @@ require (
 	github.com/spf13/viper v1.18.2
 	github.com/stoewer/go-strcase v1.3.0
 	github.com/vishvananda/netlink v1.2.1-beta.2
+	github.com/wenovus/gobgp/v3 v3.0.0-20230831013712-6d33842cbf42
 	go.uber.org/mock v0.2.0
 	golang.org/x/sys v0.16.0
 	google.golang.org/api v0.153.0
@@ -150,3 +150,5 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
+
+replace github.com/wenovus/gobgp/v3 => github.com/wenovus/gobgp/v3 v3.0.0-20240131053058-eb51bc3c2e05

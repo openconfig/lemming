@@ -2162,8 +2162,9 @@ def go_repositories():
     go_repository(
         name = "com_github_wenovus_gobgp_v3",
         importpath = "github.com/wenovus/gobgp/v3",
-        sum = "h1:jse5eORjbrlTIOPzOO3cpm4feJ16ZCntxzAHSdcWuy4=",
-        version = "v3.0.0-20230831013712-6d33842cbf42",
+        replace = "github.com/wenovus/gobgp/v3",
+        sum = "h1:KJTN6JHOByDYTDOgj3BlyXB1JPTNBA3mXaiRDNr13cY=",
+        version = "v3.0.0-20240131053058-eb51bc3c2e05",
     )
 
     go_repository(

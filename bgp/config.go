@@ -21,8 +21,8 @@ import (
 	log "github.com/golang/glog"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/internal/lemmingutil"
-	gobgpoc "github.com/osrg/gobgp/v3/pkg/config/oc"
-	"github.com/osrg/gobgp/v3/pkg/zebra"
+	gobgpoc "github.com/wenovus/gobgp/v3/pkg/config/oc"
+	"github.com/wenovus/gobgp/v3/pkg/zebra"
 )
 
 // intendedToGoBGP translates from OC to GoBGP intended config.

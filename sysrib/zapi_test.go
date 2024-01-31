@@ -39,7 +39,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/openconfig/ygnmi/ygnmi"
-	"github.com/osrg/gobgp/v3/pkg/zebra"
+	"github.com/wenovus/gobgp/v3/pkg/zebra"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/testing/protocmp"
 

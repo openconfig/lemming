@@ -21,7 +21,7 @@ import (
 
 	log "github.com/golang/glog"
 	"github.com/openconfig/gribigo/afthelper"
-	"github.com/osrg/gobgp/v3/pkg/zebra"
+	"github.com/wenovus/gobgp/v3/pkg/zebra"
 )
 
 func distributeRoute(s *ZServer, rr *ResolvedRoute, route *Route, isDelete bool) {

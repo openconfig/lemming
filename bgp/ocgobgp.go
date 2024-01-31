@@ -23,7 +23,7 @@ import (
 	log "github.com/golang/glog"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/internal/lemmingutil"
-	gobgpoc "github.com/osrg/gobgp/v3/pkg/config/oc"
+	gobgpoc "github.com/wenovus/gobgp/v3/pkg/config/oc"
 )
 
 // convertPolicyName converts from OC policy name to a neighbour-qualified

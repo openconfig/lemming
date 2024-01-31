@@ -35,10 +35,10 @@ import (
 	"github.com/openconfig/lemming/gnmi/reconciler"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot"
-	api "github.com/osrg/gobgp/v3/api"
-	"github.com/osrg/gobgp/v3/pkg/config"
-	gobgpoc "github.com/osrg/gobgp/v3/pkg/config/oc"
-	"github.com/osrg/gobgp/v3/pkg/server"
+	api "github.com/wenovus/gobgp/v3/api"
+	"github.com/wenovus/gobgp/v3/pkg/config"
+	gobgpoc "github.com/wenovus/gobgp/v3/pkg/config/oc"
+	"github.com/wenovus/gobgp/v3/pkg/server"
 )
 
 const (
