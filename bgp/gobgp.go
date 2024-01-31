@@ -257,7 +257,7 @@ func (t *bgpTask) reconcile(ctx context.Context, intended *oc.Root) error {
 	// unsupported policy leaves will be merged as well. Therefore omitting
 	// them from the applied state until we find a way to to prune out
 	// unsupported paths prior to merge.
-	t.appliedRoutingPolicy.PolicyDefinition = nil
+	//t.appliedRoutingPolicy.PolicyDefinition = nil
 	return err
 }
 
