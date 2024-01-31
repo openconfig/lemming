@@ -52,4 +52,17 @@ message RouteTestCase {
   string description = 1;
   TestRoute input = 2;
   RouteTestResult expected_result = 3;
+  repeated string prev_adj_rib_out_pre_communities = 4;
+  // An export policy is applied here by convention.
+  repeated string prev_adj_rib_out_post_communities = 5;
+
+  repeated string adj_rib_in_pre_communities = 6;
+  // An import policy is applied here by convention.
+  repeated string adj_rib_in_post_communities = 7;
+  repeated string local_rib_communities = 8;
+  repeated string adj_rib_out_pre_communities = 9;
+  repeated string adj_rib_out_post_communities = 10;
+
+  repeated string next_adj_rib_in_pre_communities = 11;
+  repeated string next_local_rib_communities = 12;
 }

@@ -26,7 +26,7 @@ require (
 	github.com/openconfig/ondatra v0.4.8
 	github.com/openconfig/ygnmi v0.11.1
 	github.com/openconfig/ygot v0.29.17
-	github.com/osrg/gobgp/v3 v3.20.0
+	github.com/osrg/gobgp/v3 v3.22.0
 	github.com/p4lang/p4runtime v1.4.0-rc.5.0.20220728214547-13f0d02a521e
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.0

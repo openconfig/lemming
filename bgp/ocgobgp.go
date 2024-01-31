@@ -37,7 +37,7 @@ func convertSetCommunities(setCommunity *oc.RoutingPolicy_PolicyDefinition_State
 	case oc.SetCommunity_Method_INLINE:
 		var setCommunitiesList []string
 		for _, comm := range setCommunity.GetInline().GetCommunities() {
-			setCommunitiesList = append(setCommunitiesList, convertCommunity(comm))
+			setCommunitiesList = append(setCommunitiesList, ConvertCommunity(comm))
 		}
 		return setCommunitiesList, nil
 	case oc.SetCommunity_Method_REFERENCE:
@@ -203,8 +203,8 @@ func defaultPolicyToRouteDisp(gobgpdefaultpolicy gobgpoc.DefaultPolicyType) gobg
 	}
 }
 
-// convertCommunity converts any community union type to its string representation to be used in GoBGP.
-func convertCommunity(community any) string {
+// ConvertCommunity converts any community union type to its string representation to be used in GoBGP.
+func ConvertCommunity(community any) string {
 	switch c := community.(type) {
 	case oc.UnionString:
 		return string(c)
@@ -233,7 +233,7 @@ func convertCommunitySet(occommset map[string]*oc.RoutingPolicy_DefinedSets_BgpD
 	for _, communitySetName := range commNames {
 		var communityList []string
 		for _, community := range occommset[communitySetName].CommunityMember {
-			communityList = append(communityList, convertCommunity(community))
+			communityList = append(communityList, ConvertCommunity(community))
 		}
 
 		indexMap[communitySetName] = len(commsets)
