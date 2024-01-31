@@ -151,4 +151,4 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-replace github.com/wenovus/gobgp/v3 => github.com/wenovus/gobgp/v3 v3.0.0-20240131053058-eb51bc3c2e05
+replace github.com/wenovus/gobgp/v3 => github.com/wenovus/gobgp/v3 v3.0.0-20240131055741-3fe277957ce4

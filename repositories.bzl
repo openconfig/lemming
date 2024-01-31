@@ -2161,10 +2161,11 @@ def go_repositories():
     )
     go_repository(
         name = "com_github_wenovus_gobgp_v3",
+        build_file_proto_mode = "disable",
         importpath = "github.com/wenovus/gobgp/v3",
         replace = "github.com/wenovus/gobgp/v3",
-        sum = "h1:KJTN6JHOByDYTDOgj3BlyXB1JPTNBA3mXaiRDNr13cY=",
-        version = "v3.0.0-20240131053058-eb51bc3c2e05",
+        sum = "h1:F2Zkec5JheYmP8Wh9P6KkQsJESULMgOoAxi40x7sRXQ=",
+        version = "v3.0.0-20240131055741-3fe277957ce4",
     )
 
     go_repository(
