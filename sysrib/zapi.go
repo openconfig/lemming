@@ -187,6 +187,10 @@ func (c *Client) RedistributeResolvedRoutes(conn net.Conn) {
 		if !ok {
 			continue
 		}
+		if rr.RoutePref.AdminDistance == AdminDistanceBGP {
+			// Do not redistribute BGP routes back to the BGP speaker.
+			continue
+		}
 		zrouteBody, err := convertToZAPIRoute(routeKey, rr, route)
 		if err != nil {
 			topicLogger.Warn(fmt.Sprintf("failed to convert resolved route to zebra BGP route: %v", err),
