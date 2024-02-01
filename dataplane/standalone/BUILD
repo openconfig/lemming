@@ -1,3 +1,6 @@
+load("@rules_pkg//pkg:deb.bzl", "pkg_deb")
+load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
+
 cc_library(
     name = "entrypoint",
     srcs = [
@@ -21,6 +24,44 @@ cc_binary(
     deps = [
         ":entrypoint",
     ],
+)
+
+cc_binary(
+    name = "sai-dynamic",
+    linkopts = [
+        "-lprotobuf",
+        "-lgrpc++",
+        "-lglog",
+    ],
+    linkshared = True,
+    linkstatic = True,
+    tags = ["manual"],
+    deps = [
+        ":entrypoint",
+    ],
+)
+
+pkg_tar(
+    name = "sai-tar",
+    files = {
+        ":sai-dynamic": "libsaivs.so.0.0.0",
+    },
+    package_dir = "/usr/lib/x86_64-linux-gnu",
+    symlinks = {
+        "/usr/lib/x86_64-linux-gnu/libsaivs.so.0": "libsaivs.so.0.0.0",
+    },
+    tags = ["manual"],
+)
+
+pkg_deb(
+    name = "sai-deb",
+    architecture = "amd64",
+    data = ":sai-tar",
+    description = "SAI implementation for lucius",
+    maintainer = "OpenConfig",
+    package = "lucius-libsai",
+    tags = ["manual"],
+    version = "1.0-3",
 )
 
 # By building a non-shared library, detect some linker issues.

@@ -1,2 +1,21 @@
 build --cxxopt=-std=c++17 --host_cxxopt=-std=c++17
 build --incompatible_strict_action_env=true
+
+
+build:remote --java_runtime_version=rbe_jdk
+build:remote --tool_java_runtime_version=rbe_jdk
+build:remote --extra_toolchains=//configs/bullseye/java:all
+build:remote --extra_toolchains=//configs/bullseye/config:cc-toolchain
+build:remote --extra_execution_platforms=//configs/bullseye/config:platform
+build:remote --host_platform=//configs/bullseye/config:platform
+build:remote --platforms=//configs/bullseye/config:platform
+build:remote --crosstool_top=//configs/bullseye/cc:toolchain
+build:remote --define=EXECUTOR=remote
+build:remote --incompatible_strict_action_env=true
+build:remote --remote_timeout=3600
+
+build:docker-bullseye --config=remote
+build:docker-bullseye --experimental_docker_image=us-west1-docker.pkg.dev/openconfig-lemming/internal/builder:latest
+build:docker-bullseye --spawn_strategy=docker --strategy=Javac=docker --genrule_strategy=docker
+build:docker-bullseye --experimental_docker_verbose
+build:docker-bullseye --experimental_enable_docker_sandbox

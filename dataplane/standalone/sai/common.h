@@ -200,6 +200,42 @@ void copy_list(S *dst, const google::protobuf::RepeatedField<T> &src,
   }
 }
 
+#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
+class PortStateReactor
+    : public grpc::experimental::ClientReadReactor<
+          lemming::dataplane::sai::PortStateChangeNotificationResponse> {
+ public:
+  PortStateReactor(std::shared_ptr<lemming::dataplane::sai::Switch::Stub> stub,
+                   sai_port_state_change_notification_fn callback) {
+    this->callback = callback;
+    lemming::dataplane::sai::PortStateChangeNotificationRequest req;
+    stub->experimental_async()->PortStateChangeNotification(&context, &req, this);
+    StartRead(&resp);
+    StartCall();
+  }
+
+  void OnReadDone(bool ok) override {
+    if (!ok) return;
+    std::vector<sai_port_oper_status_notification_t> v =
+        convert_to_oper_status(resp);
+    callback(v.size(), v.data());
+    StartRead(&resp);
+  }
+
+  void OnDone(const grpc::Status &status) override {
+    if (status.ok()) {
+      LOG(INFO) << "PortStateChangeNotification RPC succeeded.";
+    } else {
+      LOG(ERROR) << "PortStateChangeNotification RPC failed.";
+    }
+  }
+
+ private:
+  grpc::ClientContext context;
+  lemming::dataplane::sai::PortStateChangeNotificationResponse resp;
+  sai_port_state_change_notification_fn callback;
+};
+#else 
 class PortStateReactor
     : public grpc::ClientReadReactor<
           lemming::dataplane::sai::PortStateChangeNotificationResponse> {
@@ -234,5 +270,7 @@ class PortStateReactor
   lemming::dataplane::sai::PortStateChangeNotificationResponse resp;
   sai_port_state_change_notification_fn callback;
 };
+#endif
+
 
 #endif  // DATAPLANE_STANDALONE_SAI_COMMON_H_
