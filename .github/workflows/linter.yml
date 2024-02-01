@@ -41,4 +41,4 @@ jobs:
           IGNORE_GENERATED_FILES: true
           DEFAULT_BRANCH: main
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          FILTER_REGEX_EXCLUDE: (Dockerfile.*dockerignore|dataplane/standalone/sai) # Linter thinks these are docker files but they aren't.
+          FILTER_REGEX_EXCLUDE: (Dockerfile.*dockerignore|dataplane/standalone/sai|configs/bullseye) # Linter thinks these are docker files but they aren't.
