@@ -7,6 +7,9 @@ The second is used to distribute a deb package for use in syncd. In order to ens
 The image is not released publicly, but can be built using the [Dockerfile](../standalone/Dockerfile).
 
 1. `bazel build //dataplane/standalone:sai-deb --config docker-bullseye`
+   1. The `--config docker-bullseye` expands all the flags labeled `docker-bullseye` in `.bazelrc`
+   2. These flags enable bazel docker sandbox and set up the toolchains for building the target in a custom docker container.
+   3. The output of the command is a debian package built in container based on `debian:bullseye`.
 2. Built debian package is located at `bazel-bin/dataplane/standalone`
 
 ## RBE configs
