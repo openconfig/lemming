@@ -20,6 +20,7 @@ go_library(
         "//gnmi/gnmiclient",
         "//gnmi/oc",
         "//gnmi/oc/ocpath",
+        "//internal/debug",
         "//proto/dataplane",
         "//proto/sysrib",
         "@com_github_golang_glog//:glog",
