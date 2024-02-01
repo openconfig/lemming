@@ -21,6 +21,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"slices"
+	"strings"
 
 	"github.com/vishvananda/netlink"
 	"golang.org/x/exp/maps"
@@ -38,7 +40,7 @@ import (
 const (
 	contextID      = "lucius"
 	IP2MeTable     = "ip2me"
-	configPathPath = ""
+	configPathPath = "/etc/sonic/config_db.json"
 )
 
 // Sink is a CPU port client for a forwarding context.
@@ -59,6 +61,7 @@ func New(client fwdpb.ForwardingClient) (*Sink, error) {
 		return nil, err
 	}
 	ports := maps.Keys(config.Ports)
+	slices.Sort(ports)
 	nameToEth := make(map[string]string)
 	for i, port := range ports {
 		nameToEth[port] = fmt.Sprintf("eth%d", i+1)
@@ -68,6 +71,7 @@ func New(client fwdpb.ForwardingClient) (*Sink, error) {
 		client:          client,
 		ethDevToPort:    make(map[string]string),
 		ethDevToPortNID: make(map[string]uint64),
+		nameToEth:       make(map[string]string),
 	}, nil
 }
 
@@ -106,7 +110,7 @@ func (sink *Sink) ReceivePackets(ctx context.Context) error {
 					log.Errorf("failed to get link: %v", err)
 					continue
 				}
-				if err := netlink.LinkSetName(l, name); err != nil {
+				if err := netlink.LinkSetName(l, strings.ReplaceAll(name, "/", "_")); err != nil {
 					log.Errorf("failed to set link name: %v", err)
 					continue
 				}
