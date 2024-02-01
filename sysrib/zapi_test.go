@@ -453,6 +453,7 @@ func testRouteRedistribution(t *testing.T, routeReadyBeforeDial bool) {
 		desc              string
 		inAddIntfAction   *AddIntfAction
 		inSetRouteRequest *pb.SetRouteRequest
+		inExpectTimeout   bool
 		wantRoutes        []*dpb.Route
 	}{{
 		desc: "IPv4",
@@ -464,7 +465,7 @@ func testRouteRedistribution(t *testing.T, routeReadyBeforeDial bool) {
 			niName:  "DEFAULT",
 		},
 		inSetRouteRequest: &pb.SetRouteRequest{
-			AdminDistance: 10,
+			AdminDistance: AdminDistanceStatic,
 			Metric:        10,
 			Prefix: &pb.Prefix{
 				Family:     pb.Prefix_FAMILY_IPV4,
@@ -514,7 +515,7 @@ func testRouteRedistribution(t *testing.T, routeReadyBeforeDial bool) {
 			niName:  "DEFAULT",
 		},
 		inSetRouteRequest: &pb.SetRouteRequest{
-			AdminDistance: 10,
+			AdminDistance: AdminDistanceStatic,
 			Metric:        10,
 			Prefix: &pb.Prefix{
 				Family:     pb.Prefix_FAMILY_IPV6,
@@ -531,6 +532,108 @@ func testRouteRedistribution(t *testing.T, routeReadyBeforeDial bool) {
 			Prefix: &dpb.RoutePrefix{
 				NetworkInstance: "DEFAULT",
 				Cidr:            "4242::/42",
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Weights: []uint64{0},
+					Hops: []*dpb.NextHop{{
+						NextHopIp: "2001::ffff",
+						Interface: &dpb.OCInterface{
+							Interface: "eth0",
+						},
+					}},
+				},
+			},
+		}, {
+			Prefix: &dpb.RoutePrefix{
+				NetworkInstance: "DEFAULT",
+				Cidr:            "2001::/42",
+			},
+			Hop: &dpb.Route_Interface{
+				Interface: &dpb.OCInterface{
+					Interface: "eth0",
+				},
+			},
+		}},
+	}, {
+		desc: "IPv4-BGP",
+		inAddIntfAction: &AddIntfAction{
+			name:    "eth0",
+			ifindex: 0,
+			enabled: true,
+			prefix:  "192.168.1.1/24",
+			niName:  "DEFAULT",
+		},
+		inExpectTimeout: true,
+		inSetRouteRequest: &pb.SetRouteRequest{
+			AdminDistance: AdminDistanceBGP,
+			Metric:        10,
+			Prefix: &pb.Prefix{
+				Family:     pb.Prefix_FAMILY_IPV4,
+				Address:    "20.0.0.0",
+				MaskLength: 8,
+			},
+			Nexthops: []*pb.Nexthop{{
+				Type:    pb.Nexthop_TYPE_IPV4,
+				Address: "192.168.1.42",
+				Weight:  1,
+			}},
+		},
+		wantRoutes: []*dpb.Route{{
+			Prefix: &dpb.RoutePrefix{
+				NetworkInstance: "DEFAULT",
+				Cidr:            "20.0.0.0/8",
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Weights: []uint64{0},
+					Hops: []*dpb.NextHop{{
+						NextHopIp: "192.168.1.42",
+						Interface: &dpb.OCInterface{
+							Interface: "eth0",
+						},
+					}},
+				},
+			},
+		}, {
+			Prefix: &dpb.RoutePrefix{
+				NetworkInstance: "DEFAULT",
+				Cidr:            "192.168.1.0/24",
+			},
+			Hop: &dpb.Route_Interface{
+				Interface: &dpb.OCInterface{
+					Interface: "eth0",
+				},
+			},
+		}},
+	}, {
+		desc: "IPv6-BGP",
+		inAddIntfAction: &AddIntfAction{
+			name:    "eth0",
+			ifindex: 0,
+			enabled: true,
+			prefix:  "2001::aaaa/42",
+			niName:  "DEFAULT",
+		},
+		inExpectTimeout: true,
+		inSetRouteRequest: &pb.SetRouteRequest{
+			AdminDistance: AdminDistanceBGP,
+			Metric:        10,
+			Prefix: &pb.Prefix{
+				Family:     pb.Prefix_FAMILY_IPV6,
+				Address:    "4343::4343",
+				MaskLength: 42,
+			},
+			Nexthops: []*pb.Nexthop{{
+				Type:    pb.Nexthop_TYPE_IPV6,
+				Address: "2001::ffff",
+				Weight:  1,
+			}},
+		},
+		wantRoutes: []*dpb.Route{{
+			Prefix: &dpb.RoutePrefix{
+				NetworkInstance: "DEFAULT",
+				Cidr:            "4343::/42",
 			},
 			Hop: &dpb.Route_NextHops{
 				NextHops: &dpb.NextHopList{
@@ -637,9 +740,16 @@ func testRouteRedistribution(t *testing.T, routeReadyBeforeDial bool) {
 				}
 			}
 
+			conn.SetReadDeadline(time.Now().Add(10 * time.Second))
 			m, err := zebra.ReceiveSingleMsg(topicLogger, conn, version, software, "test-client")
+			if tt.inExpectTimeout {
+				if err == nil {
+					t.Fatalf("Expected route to not be exchanged to zebra, but zebra got message: %v", m)
+				}
+				return
+			}
 			if err != nil {
-				t.Fatal(err)
+				t.Fatalf("%T, %v", err, err)
 			} else if m == nil {
 				t.Fatal("got empty message")
 			}
@@ -651,6 +761,7 @@ func testRouteRedistribution(t *testing.T, routeReadyBeforeDial bool) {
 			if _, err := s.SetRoute(context.Background(), tt.inSetRouteRequest); err != nil {
 				t.Fatalf("Got unexpected error during call to SetRoute: %v", err)
 			}
+			conn.SetReadDeadline(time.Now().Add(10 * time.Second))
 			m, err = zebra.ReceiveSingleMsg(topicLogger, conn, version, software, "test-client")
 			if err != nil {
 				t.Fatal(err)
