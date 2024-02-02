@@ -29,6 +29,10 @@ func distributeRoute(s *ZServer, rr *ResolvedRoute, route *Route, isDelete bool)
 	if isDelete {
 		msgType = zebra.RedistributeRouteDel
 	}
+	if route.RoutePref.AdminDistance == AdminDistanceBGP {
+		// Do not redistribute BGP routes back to the BGP speaker.
+		return
+	}
 	zrouteBody, err := convertToZAPIRoute(rr.RouteKey, route, rr)
 	if err != nil {
 		log.Warningf("failed to convert resolved route to zebra BGP route: %v", err)

@@ -348,6 +348,24 @@ func waitOTGARPEntry(t *testing.T) {
 	t.Logf("Neighbor %v", lla)
 }
 
+// revalidateBGPRoutes checks for BGP route re-establishment after OTG config
+// repush. OTG re-establishes BGP sessions after config repush.
+func revalidateBGPRoutes(t *testing.T) {
+	t.Helper()
+	dut := ondatra.DUT(t, "dut")
+	bgpPath := ocpath.Root().NetworkInstance(fakedevice.DefaultNetworkInstance).Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, "BGP").Bgp()
+	t.Logf("Verify DUT's DUT-DUT BGP session up")
+	gnmi.Await(t, dut, bgpPath.Neighbor(dut2Port2.IPv4).SessionState().State(), 20*time.Second, oc.Bgp_Neighbor_SessionState_ESTABLISHED)
+	gnmi.Await(t, dut, bgpPath.Neighbor(dut2Port2.IPv6).SessionState().State(), 20*time.Second, oc.Bgp_Neighbor_SessionState_ESTABLISHED)
+	t.Logf("Verify DUT's DUT-OTG BGP session up")
+	gnmi.Await(t, dut, bgpPath.Neighbor(atePort2.IPv4).SessionState().State(), 120*time.Second, oc.Bgp_Neighbor_SessionState_ESTABLISHED)
+	gnmi.Await(t, dut, bgpPath.Neighbor(atePort2.IPv6).SessionState().State(), 120*time.Second, oc.Bgp_Neighbor_SessionState_ESTABLISHED)
+	v4uni := bgpPath.Rib().AfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST).Ipv4Unicast()
+	v6uni := bgpPath.Rib().AfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV6_UNICAST).Ipv6Unicast()
+	gnmi.Await(t, dut, v4uni.LocRib().Route(ateIndirectNHCIDR, oc.UnionString(atePort2.IPv4), 0).Prefix().State(), 60*time.Second, ateIndirectNHCIDR)
+	gnmi.Await(t, dut, v6uni.LocRib().Route(ateIndirectNHCIDRv6, oc.UnionString(atePort2.IPv6), 0).Prefix().State(), 60*time.Second, ateIndirectNHCIDRv6)
+}
+
 // testTraffic generates traffic flow from source network to
 // destination network via srcEndPoint to dstEndPoint and checks for
 // packet loss and returns loss percentage as float.
@@ -365,7 +383,13 @@ func testTraffic(t *testing.T, otg *otg.OTG, srcEndPoint, dstEndPoint attrs.Attr
 	v4 := flowipv4.Packet().Add().Ipv4()
 	v4.Src().SetValue(srcEndPoint.IPv4)
 	v4.Dst().Increment().SetStart(startingIP).SetCount(250)
+
+	revalidateBGPRoutes(t)
+
 	otg.PushConfig(t, otgConfig)
+	otg.StartProtocols(t)
+
+	revalidateBGPRoutes(t)
 
 	otg.StartTraffic(t)
 	time.Sleep(5 * time.Second)
@@ -397,7 +421,13 @@ func testTrafficv6(t *testing.T, otg *otg.OTG, srcEndPoint, dstEndPoint attrs.At
 	v6 := flowipv6.Packet().Add().Ipv6()
 	v6.Src().SetValue(srcEndPoint.IPv6)
 	v6.Dst().Increment().SetStart(startingIP).SetCount(250)
+
+	revalidateBGPRoutes(t)
+
 	otg.PushConfig(t, otgConfig)
+	otg.StartProtocols(t)
+
+	revalidateBGPRoutes(t)
 
 	otg.StartTraffic(t)
 	time.Sleep(5 * time.Second)
@@ -431,6 +461,8 @@ func testTrafficAndEncap(t *testing.T, otg *otg.OTG, startingIP string, v6Traffi
 
 	if loss := testTraffic(t, otg, atePort1, atePort2, startingIP); loss > lossTolerance {
 		t.Errorf("Loss: got %g, want <= %d", loss, lossTolerance)
+	} else {
+		t.Logf("Loss: got within acceptable range: %g", loss)
 	}
 
 	controlState.Port().Capture().SetState(gosnappi.StatePortCaptureState.STOP).SetPortNames([]string{atePort2.Name})
@@ -516,8 +548,15 @@ func testTrafficAndEncap(t *testing.T, otg *otg.OTG, startingIP string, v6Traffi
 	}
 
 	var expectedPacketCounter int
-	const packetN = 20
-	for i := 0; i != packetN; i++ {
+	// This number is for how many packets to peek before giving up on seeing the right flow.
+	// Because BGP re-establishment packets are counted this has to be a high number (>50).
+	var packetN = 200
+	const packetNAfterFirstGood = 30
+	const wantGoodPacketN = 20
+	var showPacketDebugOutput = false
+	var invalidPacketsPriorToFirstGood = 0
+	i := 0
+	for ; i != packetN; i++ {
 		pkt, err := ps.NextPacket()
 		if err != nil {
 			t.Fatalf("error reading next packet: %v", err)
@@ -526,30 +565,42 @@ func testTrafficAndEncap(t *testing.T, otg *otg.OTG, startingIP string, v6Traffi
 		if encapFields == nil {
 			nl := pkt.NetworkLayer()
 			if nl == nil {
-				t.Logf("packet doesn't have network layer: %s", pkt.Dump())
+				if showPacketDebugOutput {
+					t.Logf("packet doesn't have network layer: %s", pkt.Dump())
+				}
 				continue
 			}
 			if err := gotNL.DecodeFromBytes(nl.LayerContents(), gopacket.NilDecodeFeedback); err != nil {
-				t.Logf("cannot decode network layer header: %v\n%s", err, pkt.Dump())
+				if showPacketDebugOutput {
+					t.Logf("cannot decode network layer header: %v\n%s", err, pkt.Dump())
+				}
 				continue
 			}
 			// TODO(wenbli): What should NextHeader be?
 			if diff := cmp.Diff(wantNL, gotNL, cmpIgnoreOptsNL...); diff != "" {
-				t.Logf("Got unexpected network layer (-want, +got):\n%s\n%s", diff, pkt.Dump())
+				if showPacketDebugOutput {
+					t.Logf("Got unexpected network layer (-want, +got):\n%s\n%s", diff, pkt.Dump())
+				}
 				continue
 			}
 		} else {
 			nl := pkt.NetworkLayer()
 			if nl == nil {
-				t.Logf("packet doesn't have network layer: %s", pkt.Dump())
+				if showPacketDebugOutput {
+					t.Logf("packet doesn't have network layer: %s", pkt.Dump())
+				}
 				continue
 			}
 			if err := gotNL.DecodeFromBytes(nl.LayerContents(), gopacket.NilDecodeFeedback); err != nil {
-				t.Logf("cannot decode network layer header: %v\n%s", err, pkt.Dump())
+				if showPacketDebugOutput {
+					t.Logf("cannot decode network layer header: %v\n%s", err, pkt.Dump())
+				}
 				continue
 			}
 			if diff := cmp.Diff(wantNL, gotNL, cmpIgnoreOptsNL...); diff != "" {
-				t.Logf("Got unexpected network layer (-want, +got):\n%s\n%s", diff, pkt.Dump())
+				if showPacketDebugOutput {
+					t.Logf("Got unexpected network layer (-want, +got):\n%s\n%s", diff, pkt.Dump())
+				}
 				continue
 			}
 
@@ -561,15 +612,21 @@ func testTrafficAndEncap(t *testing.T, otg *otg.OTG, startingIP string, v6Traffi
 			var gotTL layers.UDP
 			tl := pkt.TransportLayer()
 			if tl == nil {
-				t.Errorf("packet doesn't have transport layer: %s", pkt.Dump())
+				if showPacketDebugOutput {
+					t.Errorf("packet doesn't have transport layer: %s", pkt.Dump())
+				}
 				continue
 			}
 			if err := gotTL.DecodeFromBytes(tl.LayerContents(), gopacket.NilDecodeFeedback); err != nil {
-				t.Errorf("cannot decode transport layer header: %v", err)
+				if showPacketDebugOutput {
+					t.Errorf("cannot decode transport layer header: %v", err)
+				}
 				continue
 			}
 			if diff := cmp.Diff(wantTL, gotTL, cmpIgnoreOptsTL...); diff != "" {
-				t.Errorf("Got unexpected transport layer (-want, +got):\n%s\n%s", diff, pkt.Dump())
+				if showPacketDebugOutput {
+					t.Errorf("Got unexpected transport layer (-want, +got):\n%s\n%s", diff, pkt.Dump())
+				}
 				continue
 			}
 			// TODO: Check that lower layers is the original packet.
@@ -579,13 +636,22 @@ func testTrafficAndEncap(t *testing.T, otg *otg.OTG, startingIP string, v6Traffi
 			// Reset packet index to avoid counting other packet
 			// types that may be initially in the stream prior to
 			// the first good packet.
+			invalidPacketsPriorToFirstGood = i
 			i = 0
+			packetN = packetNAfterFirstGood
+			showPacketDebugOutput = true
 		}
 		expectedPacketCounter++
+		if expectedPacketCounter == wantGoodPacketN {
+			break
+		}
+	}
+	if expectedPacketCounter > 0 {
+		t.Logf("Got %d packets prior to first good one.", invalidPacketsPriorToFirstGood)
 	}
 
-	if wantPacketN := packetN - 1; expectedPacketCounter < wantPacketN {
-		t.Errorf("Got less than %d expected packets: %v", wantPacketN, expectedPacketCounter)
+	if expectedPacketCounter < wantGoodPacketN {
+		t.Errorf("Got less than %d expected packets: %v", wantGoodPacketN, expectedPacketCounter)
 	} else {
 		t.Logf("Got %d expected packets.", expectedPacketCounter)
 	}

@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package debug contains flag for turning on or off debug messages.
+// Package debug contains flags for turning on or off debug messages.
 package debug
 
+// TODO: Move these flags to viper so that they're accessible via CLI.
 const (
 	// ExternalPortPacketTrace turns on packet tracing for lemming's ports
 	// that interface with other devices.
@@ -22,4 +23,6 @@ const (
 	// TAPPortPacketTrace turns on packet tracing for lemming's TAP interface ports
 	// that communicate between each external port and lemming's tasks.
 	TAPPortPacketTrace = true
+	// SysRIB controls whether debug messages for the main system RIB are printed.
+	SysRIB = false
 )

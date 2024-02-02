@@ -38,6 +38,7 @@ import (
 	"github.com/openconfig/lemming/gnmi/fakedevice"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
+	"github.com/openconfig/lemming/internal/debug"
 
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 
@@ -458,7 +459,7 @@ func resolvedRouteToRouteRequest(r *ResolvedRoute) (*dpb.Route, error) {
 // programs the forwarding plane.
 func (s *Server) ResolveAndProgramDiff(ctx context.Context) error {
 	log.Info("Recalculating resolved RIB")
-	if debugRIB {
+	if debug.SysRIB {
 		defer s.rib.PrintRIB()
 	}
 	s.rib.mu.RLock()
@@ -493,7 +494,7 @@ func (s *Server) ResolveAndProgramDiff(ctx context.Context) error {
 			distributeRoute(s.zServer, rr, s.resolvedRoutes[routeKey], true)
 		}
 	}
-	if debugRIB {
+	if debug.SysRIB {
 		s.PrintProgrammedRoutes()
 	}
 
@@ -551,7 +552,7 @@ func (s *Server) resolveAndProgramDiffAux(ctx context.Context, niName string, ni
 		s.programmedRoutesMu.Lock()
 		s.programmedRoutes[rr.RouteKey] = rr
 		s.programmedRoutesMu.Unlock()
-		if debugRIB {
+		if debug.SysRIB {
 			s.PrintProgrammedRoutes()
 		}
 		// ZAPI: If a new/updated route is programmed, redistribute it to clients.
