@@ -15,6 +15,7 @@
 // Package debug contains flags for turning on or off debug messages.
 package debug
 
+// TODO: Move these flags to viper so that they're accessible via CLI.
 const (
 	// ExternalPortPacketTrace turns on packet tracing for lemming's ports
 	// that interface with other devices.
