@@ -436,8 +436,8 @@ def go_repositories():
     go_repository(
         name = "com_github_docker_docker",
         importpath = "github.com/docker/docker",
-        sum = "h1:Ugvxm7a8+Gz6vqQYQQ2W7GYq5EUPaAiuPgIfVyI3dYE=",
-        version = "v20.10.24+incompatible",
+        sum = "h1:Wo6l37AuwP3JaMnZa226lzVXGA3F9Ig1seQen0cKYlM=",
+        version = "v24.0.7+incompatible",
     )
     go_repository(
         name = "com_github_docker_go_connections",
@@ -1594,8 +1594,8 @@ def go_repositories():
     go_repository(
         name = "com_github_open_traffic_generator_ixia_c_operator",
         importpath = "github.com/open-traffic-generator/ixia-c-operator",
-        sum = "h1:dablUs6FAToVDFaoIo2M+Z9UCa93KAwlj7HJqNwLwTQ=",
-        version = "v0.3.6",
+        sum = "h1:xH0hLVWf2wuVUT9ovFdh/WwwBf1oGkBu5YEWD61igck=",
+        version = "v0.3.4",
     )
     go_repository(
         name = "com_github_open_traffic_generator_keng_operator",
@@ -1693,8 +1693,8 @@ def go_repositories():
     go_repository(
         name = "com_github_openconfig_kne",
         importpath = "github.com/openconfig/kne",
-        sum = "h1:3ADQpUasGv23V53KlkLdaJrMWM6yyJ4EGtJvFyVzCUA=",
-        version = "v0.1.15",
+        sum = "h1:3bvkinEoT4xo0c5kcqnotdboq3ZfFHoVRP1YZja97W0=",
+        version = "v0.1.16",
     )
     go_repository(
         name = "com_github_openconfig_lemming_operator",
