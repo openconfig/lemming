@@ -61,7 +61,7 @@ pkg_deb(
     maintainer = "OpenConfig",
     package = "lucius-libsai",
     tags = ["manual"],
-    version = "1.0-3",
+    version = "1.0-4",
 )
 
 # By building a non-shared library, detect some linker issues.

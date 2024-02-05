@@ -83,6 +83,9 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 
 	// If a port config is set, then use the hardware lanes to find the interface names.
 	if port.config != nil {
+		if len(req.HwLaneList) == 0 {
+			return nil, fmt.Errorf("port lanes are required got %v", req.HwLaneList)
+		}
 		var b strings.Builder
 		b.WriteString(fmt.Sprint(req.HwLaneList[0]))
 		for _, l := range req.HwLaneList[1:] {
@@ -98,6 +101,13 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 		}
 		if dev == "" {
 			return nil, fmt.Errorf("could not find lanes %v in config", lanes)
+		}
+		if port.opts.PortMap != nil && len(port.opts.PortMap) != 0 {
+			if portMapPort := port.opts.PortMap[dev]; portMapPort == "" {
+				log.Warningf("port maped port doesn't for port %v", dev)
+			} else {
+				dev = portMapPort
+			}
 		}
 	}
 

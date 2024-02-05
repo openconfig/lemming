@@ -28,6 +28,8 @@ type Options struct {
 	PortType fwdpb.PortType
 	// PortConfigFile is the path of the port config
 	PortConfigFile string
+	// PortMap maps the modeled port name (Ethernet1/1/1) to Linux port name (eth1)
+	PortMap map[string]string
 }
 
 // Option exposes additional configuration for the dataplane.
@@ -73,6 +75,14 @@ func WithPortConfigFile(file string) Option {
 	}
 }
 
+// WithPortConfigFile sets the path of the port config file.
+// Default: none
+func WithPortMap(m map[string]string) Option {
+	return func(o *Options) {
+		o.PortMap = m
+	}
+}
+
 // Port contains configuratiob data for a single port.
 type Port struct {
 	Lanes string `json:"lanes"`
@@ -90,6 +100,7 @@ func ResolveOpts(opts ...Option) *Options {
 		Reconcilation:    true,
 		HostifNetDevType: fwdpb.PortType_PORT_TYPE_TAP,
 		PortType:         fwdpb.PortType_PORT_TYPE_KERNEL,
+		PortMap:          map[string]string{},
 	}
 
 	for _, opt := range opts {

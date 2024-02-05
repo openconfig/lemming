@@ -64,14 +64,15 @@ func New(client fwdpb.ForwardingClient) (*Sink, error) {
 	slices.Sort(ports)
 	nameToEth := make(map[string]string)
 	for i, port := range ports {
-		nameToEth[port] = fmt.Sprintf("eth%d", i+1)
+		log.Infof("port map %v to %v", port, fmt.Sprintf("eth%d", i+1))
+		nameToEth[strings.ReplaceAll(port, "/", "_")] = fmt.Sprintf("eth%d", i+1)
 	}
 
 	return &Sink{
 		client:          client,
 		ethDevToPort:    make(map[string]string),
 		ethDevToPortNID: make(map[string]uint64),
-		nameToEth:       make(map[string]string),
+		nameToEth:       nameToEth,
 	}, nil
 }
 
@@ -107,7 +108,7 @@ func (sink *Sink) ReceivePackets(ctx context.Context) error {
 				}
 				l, err := netlink.LinkByName(sink.nameToEth[name])
 				if err != nil {
-					log.Errorf("failed to get link: %v", err)
+					log.Errorf("failed to get link name %v, eth %v: %v", name, sink.nameToEth[name], err)
 					continue
 				}
 				if err := netlink.LinkSetName(l, strings.ReplaceAll(name, "/", "_")); err != nil {
