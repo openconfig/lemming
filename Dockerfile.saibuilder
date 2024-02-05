@@ -1,8 +1,8 @@
-FROM us-west1-docker.pkg.dev/openconfig-lemming/internal/builder:latest
+FROM us-west1-docker.pkg.dev/openconfig-lemming/internal/builder@sha256:6a960d06bfd63c9cd8cff1f2ab3b3cc21e578b570979b5574d232be644dd0bf9
 WORKDIR /build
 COPY patches/sai.patch sai.patch
-RUN wget https://github.com/opencomputeproject/SAI/archive/refs/tags/v1.11.0.tar.gz && tar xf v1.11.0.tar.gz && rm v1.11.0.tar.gz 
-RUN mkdir external && mv SAI-1.11.0 external/com_github_opencomputeproject_sai && cd external/com_github_opencomputeproject_sai  && patch -p1 < ../../sai.patch 
+RUN wget -q https://github.com/opencomputeproject/SAI/archive/refs/tags/v1.11.0.tar.gz && tar xf v1.11.0.tar.gz && rm v1.11.0.tar.gz 
+RUN mkdir external && mv SAI-1.11.0 external/com_github_opencomputeproject_sai && patch -p1 -d external/com_github_opencomputeproject_sai < sai.patch 
 COPY go.* .
 COPY dataplane/proto/sai/*.proto dataplane/proto/sai/
 COPY dataplane/cpusink/*.go dataplane/cpusink/
