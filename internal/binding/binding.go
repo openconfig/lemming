@@ -193,7 +193,7 @@ func (lb *LemmingBind) Reserve(ctx context.Context, tb *opb.Testbed, runTime tim
 
 		lb.created = true
 		// TODO: Wait for all pods to be ready.
-		time.Sleep(5 * time.Second)
+		time.Sleep(15 * time.Second)
 	} else if err != nil {
 		return nil, err
 	}
