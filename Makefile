@@ -91,7 +91,7 @@ Description: SAI implementation for lucius
 endef
 export DEB_CONTROL
 
-libsai-lucius: libsai.so 
+lucius-libsai: libsai.so 
 	rm -rf pkg/
 	mkdir -p pkg/lucius-libsai/DEBIAN
 	chmod 0755 pkg/lucius-libsai/DEBIAN
@@ -100,3 +100,9 @@ libsai-lucius: libsai.so
 	cd pkg/lucius-libsai/usr/lib/x86_64-linux-gnu && ln -s libsaivs.so.0.0.0 libsaivs.so.0
 	echo "$$DEB_CONTROL" > pkg/lucius-libsai/DEBIAN/control
 	dpkg-deb --build pkg/lucius-libsai
+
+lucius-libsai-bullseye:
+	DOCKER_BUILDKIT=1 docker build . -f Dockerfile.saibuilder -t lemming-libsai:latest
+	docker create --name libsai-temp lemming-libsai:latest
+	docker cp libsai-temp:/build/pkg/lucius-libsai.deb .
+	docker rm libsai-temp

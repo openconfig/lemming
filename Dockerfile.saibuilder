@@ -15,4 +15,4 @@ COPY dataplane/standalone/sai/*.cc dataplane/standalone/sai/
 COPY dataplane/standalone/sai/*.h dataplane/standalone/sai/
 COPY dataplane/standalone/entrypoint.cc dataplane/standalone/entrypoint.cc
 COPY Makefile .
-RUN make libsai-lucius -j 48
+RUN make lucius-libsai -j 48
