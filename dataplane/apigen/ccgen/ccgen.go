@@ -652,8 +652,11 @@ return msg;
 		LOG(ERROR) << status.error_message();
 		return SAI_STATUS_FAILURE;
 	}
+	if (object_count != resp.resps().size()) {
+		return SAI_STATUS_FAILURE;
+	}
 	for (uint32_t i = 0; i < object_count; i++) {
-		{{ if .OidVar -}} {{ .OidVar }} = object_id[i] = resp.resps(i).oid(); {{ end }}
+		{{ if .OidVar -}} object_id[i] = resp.resps(i).oid(); {{ end }}
 		object_statuses[i] = SAI_STATUS_SUCCESS;
 	}
 

@@ -52,7 +52,7 @@ func parse(headers []string, includePaths ...string) (*cc.AST, error) {
 const (
 	saiPath     = "bazel-lemming/external/com_github_opencomputeproject_sai"
 	ccOutDir    = "dataplane/standalone/sai"
-	protoOutDir = "dataplane/proto"
+	protoOutDir = "dataplane/proto/sai"
 )
 
 func generate() error {

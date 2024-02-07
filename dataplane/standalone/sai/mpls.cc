@@ -263,6 +263,9 @@ sai_status_t l_create_inseg_entries(uint32_t object_count,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
+  if (object_count != resp.resps().size()) {
+    return SAI_STATUS_FAILURE;
+  }
   for (uint32_t i = 0; i < object_count; i++) {
     object_statuses[i] = SAI_STATUS_SUCCESS;
   }

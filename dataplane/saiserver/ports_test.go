@@ -195,6 +195,109 @@ func TestCreatePort(t *testing.T) {
 	}
 }
 
+func TestCreatePorts(t *testing.T) {
+	tests := []struct {
+		desc            string
+		req             *saipb.CreatePortsRequest
+		getInterfaceErr error
+		want            *saipb.CreatePortsResponse
+		wantAttr        *saipb.PortAttribute
+		wantErr         string
+	}{{
+		desc: "success",
+		req: &saipb.CreatePortsRequest{
+			Reqs: []*saipb.CreatePortRequest{{}},
+		},
+		getInterfaceErr: fmt.Errorf("no interface"),
+		want: &saipb.CreatePortsResponse{
+			Resps: []*saipb.CreatePortResponse{{Oid: 1}},
+		},
+		wantAttr: &saipb.PortAttribute{
+			OperStatus:                       saipb.PortOperStatus_PORT_OPER_STATUS_NOT_PRESENT.Enum(),
+			QosNumberOfQueues:                proto.Uint32(0),
+			QosQueueList:                     []uint64{},
+			QosNumberOfSchedulerGroups:       proto.Uint32(0),
+			QosSchedulerGroupList:            []uint64{},
+			IngressPriorityGroupList:         []uint64{},
+			FloodStormControlPolicerId:       proto.Uint64(0),
+			BroadcastStormControlPolicerId:   proto.Uint64(0),
+			MulticastStormControlPolicerId:   proto.Uint64(0),
+			IngressAcl:                       proto.Uint64(0),
+			EgressAcl:                        proto.Uint64(0),
+			IngressMacsecAcl:                 proto.Uint64(0),
+			EgressMacsecAcl:                  proto.Uint64(0),
+			MacsecPortList:                   []uint64{},
+			IngressMirrorSession:             []uint64{},
+			EgressMirrorSession:              []uint64{},
+			IngressSamplepacketEnable:        proto.Uint64(0),
+			EgressSamplepacketEnable:         proto.Uint64(0),
+			IngressSampleMirrorSession:       []uint64{},
+			EgressSampleMirrorSession:        []uint64{},
+			PolicerId:                        proto.Uint64(0),
+			QosDot1PToTcMap:                  proto.Uint64(0),
+			QosDot1PToColorMap:               proto.Uint64(0),
+			QosDscpToTcMap:                   proto.Uint64(0),
+			QosDscpToColorMap:                proto.Uint64(0),
+			QosTcToQueueMap:                  proto.Uint64(0),
+			QosTcAndColorToDot1PMap:          proto.Uint64(0),
+			QosTcAndColorToDscpMap:           proto.Uint64(0),
+			QosTcToPriorityGroupMap:          proto.Uint64(0),
+			QosPfcPriorityToPriorityGroupMap: proto.Uint64(0),
+			QosPfcPriorityToQueueMap:         proto.Uint64(0),
+			QosSchedulerProfileId:            proto.Uint64(0),
+			QosIngressBufferProfileList:      []uint64{},
+			QosEgressBufferProfileList:       []uint64{},
+			EgressBlockPortList:              []uint64{},
+			PortPoolList:                     []uint64{},
+			IsolationGroup:                   proto.Uint64(0),
+			TamObject:                        []uint64{},
+			PortSerdesId:                     proto.Uint64(0),
+			QosMplsExpToTcMap:                proto.Uint64(0),
+			QosMplsExpToColorMap:             proto.Uint64(0),
+			QosTcAndColorToMplsExpMap:        proto.Uint64(0),
+			SystemPort:                       proto.Uint64(0),
+			QosDscpToForwardingClassMap:      proto.Uint64(0),
+			QosMplsExpToForwardingClassMap:   proto.Uint64(0),
+			IpsecPort:                        proto.Uint64(0),
+			SupportedSpeed:                   []uint32{1000, 10000, 40000},
+			OperSpeed:                        proto.Uint32(40000),
+			SupportedFecMode:                 []saipb.PortFecMode{saipb.PortFecMode_PORT_FEC_MODE_NONE},
+			NumberOfIngressPriorityGroups:    proto.Uint32(0),
+			QosMaximumHeadroomSize:           proto.Uint32(0),
+			AdminState:                       proto.Bool(true),
+			AutoNegMode:                      proto.Bool(true),
+			Mtu:                              proto.Uint32(1514),
+		},
+	}}
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			getInterface = func(name string) (*net.Interface, error) {
+				return nil, tt.getInterfaceErr
+			}
+			dplane := &fakeSwitchDataplane{}
+			c, mgr, stopFn := newTestPort(t, dplane)
+			defer stopFn()
+			got, gotErr := c.CreatePorts(context.TODO(), tt.req)
+			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
+				t.Fatalf("CreatePort() unexpected err: %s", diff)
+			}
+			if gotErr != nil {
+				return
+			}
+			if d := cmp.Diff(got, tt.want, protocmp.Transform()); d != "" {
+				t.Errorf("CreatePort() failed: diff(-got,+want)\n:%s", d)
+			}
+			attr := &saipb.PortAttribute{}
+			if err := mgr.PopulateAllAttributes("1", attr); err != nil {
+				t.Fatal(err)
+			}
+			if d := cmp.Diff(attr, tt.wantAttr, protocmp.Transform()); d != "" {
+				t.Errorf("CreatePort() failed: diff(-got,+want)\n:%s", d)
+			}
+		})
+	}
+}
+
 func TestSetPortAttribute(t *testing.T) {
 	tests := []struct {
 		desc            string
