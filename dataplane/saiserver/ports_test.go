@@ -208,12 +208,11 @@ func TestCreatePorts(t *testing.T) {
 		req: &saipb.CreatePortsRequest{
 			Reqs: []*saipb.CreatePortRequest{{}},
 		},
-		getInterfaceErr: fmt.Errorf("no interface"),
 		want: &saipb.CreatePortsResponse{
 			Resps: []*saipb.CreatePortResponse{{Oid: 1}},
 		},
 		wantAttr: &saipb.PortAttribute{
-			OperStatus:                       saipb.PortOperStatus_PORT_OPER_STATUS_NOT_PRESENT.Enum(),
+			OperStatus:                       saipb.PortOperStatus_PORT_OPER_STATUS_UP.Enum(),
 			QosNumberOfQueues:                proto.Uint32(0),
 			QosQueueList:                     []uint64{},
 			QosNumberOfSchedulerGroups:       proto.Uint32(0),
@@ -271,9 +270,6 @@ func TestCreatePorts(t *testing.T) {
 	}}
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			getInterface = func(name string) (*net.Interface, error) {
-				return nil, tt.getInterfaceErr
-			}
 			dplane := &fakeSwitchDataplane{}
 			c, mgr, stopFn := newTestPort(t, dplane)
 			defer stopFn()
@@ -285,14 +281,14 @@ func TestCreatePorts(t *testing.T) {
 				return
 			}
 			if d := cmp.Diff(got, tt.want, protocmp.Transform()); d != "" {
-				t.Errorf("CreatePort() failed: diff(-got,+want)\n:%s", d)
+				t.Errorf("CreatePorts() failed: diff(-got,+want)\n:%s", d)
 			}
 			attr := &saipb.PortAttribute{}
 			if err := mgr.PopulateAllAttributes("1", attr); err != nil {
 				t.Fatal(err)
 			}
 			if d := cmp.Diff(attr, tt.wantAttr, protocmp.Transform()); d != "" {
-				t.Errorf("CreatePort() failed: diff(-got,+want)\n:%s", d)
+				t.Errorf("CreatePorts() failed: diff(-got,+want)\n:%s", d)
 			}
 		})
 	}
