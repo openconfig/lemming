@@ -26,9 +26,9 @@ type Options struct {
 	HostifNetDevType fwdpb.PortType
 	// PortType is the fwdpb type for the port type.
 	PortType fwdpb.PortType
-	// PortConfigFile is the path of the port config
+	// PortConfigFile is the path of the port config.
 	PortConfigFile string
-	// PortMap maps the modeled port name (Ethernet1/1/1) to Linux port name (eth1)
+	// PortMap maps the modeled port name (Ethernet1/1/1) to Linux port name (eth1).
 	PortMap map[string]string
 }
 
@@ -75,7 +75,7 @@ func WithPortConfigFile(file string) Option {
 	}
 }
 
-// WithPortConfigFile sets the path of the port config file.
+// WithPortMap configure a map from port name to Linux network device to allow flexible port naming. (eg Ethernet8 -> eth1)
 // Default: none
 func WithPortMap(m map[string]string) Option {
 	return func(o *Options) {
@@ -83,7 +83,7 @@ func WithPortMap(m map[string]string) Option {
 	}
 }
 
-// Port contains configuratiob data for a single port.
+// Port contains configuration data for a single port.
 type Port struct {
 	Lanes string `json:"lanes"`
 }

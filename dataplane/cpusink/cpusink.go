@@ -48,7 +48,13 @@ type Sink struct {
 	client          fwdpb.ForwardingClient
 	ethDevToPort    map[string]string
 	ethDevToPortNID map[string]uint64
-	nameToEth       map[string]string
+	// nameToEth maps the modeled name (eg Ethernet8) to the Linux device name (eg eth1).
+	nameToEth map[string]string
+}
+
+// safeDeviceName returns valid name for a network device from the input name.
+func safeDeviceName(name string) string {
+	return strings.ReplaceAll(name, "/", "_")
 }
 
 func New(client fwdpb.ForwardingClient) (*Sink, error) {
@@ -65,7 +71,7 @@ func New(client fwdpb.ForwardingClient) (*Sink, error) {
 	nameToEth := make(map[string]string)
 	for i, port := range ports {
 		log.Infof("port map %v to %v", port, fmt.Sprintf("eth%d", i+1))
-		nameToEth[strings.ReplaceAll(port, "/", "_")] = fmt.Sprintf("eth%d", i+1)
+		nameToEth[safeDeviceName(port)] = fmt.Sprintf("eth%d", i+1)
 	}
 
 	return &Sink{
@@ -111,7 +117,7 @@ func (sink *Sink) ReceivePackets(ctx context.Context) error {
 					log.Errorf("failed to get link name %v, eth %v: %v", name, sink.nameToEth[name], err)
 					continue
 				}
-				if err := netlink.LinkSetName(l, strings.ReplaceAll(name, "/", "_")); err != nil {
+				if err := netlink.LinkSetName(l, safeDeviceName(name)); err != nil {
 					log.Errorf("failed to set link name: %v", err)
 					continue
 				}

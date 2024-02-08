@@ -37,7 +37,7 @@ import (
 var (
 	port          = flag.Int("port", 50000, "Port for api server")
 	configFile    = flag.String("config_file", "", "Path to config file")
-	portMapString = flag.String("port_map", "", "Map of Linux interface to modeled port names")
+	portMapString = flag.String("port_map", "", "Map of modeled port names to Linux interface to  as comma seperated list (eg Ethernet8:eth1,Ethernet10,eth2)")
 )
 
 func main() {

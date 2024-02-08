@@ -104,7 +104,7 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 		}
 		if port.opts.PortMap != nil && len(port.opts.PortMap) != 0 {
 			if portMapPort := port.opts.PortMap[dev]; portMapPort == "" {
-				log.Warningf("port maped port doesn't for port %v", dev)
+				log.Warningf("port named %q doesn't exist in the port map", dev)
 			} else {
 				dev = portMapPort
 			}
