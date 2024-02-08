@@ -209,7 +209,8 @@ class PortStateReactor
                    sai_port_state_change_notification_fn callback) {
     this->callback = callback;
     lemming::dataplane::sai::PortStateChangeNotificationRequest req;
-    stub->experimental_async()->PortStateChangeNotification(&context, &req, this);
+    stub->experimental_async()->PortStateChangeNotification(&context, &req,
+                                                            this);
     StartRead(&resp);
     StartCall();
   }
@@ -235,7 +236,7 @@ class PortStateReactor
   lemming::dataplane::sai::PortStateChangeNotificationResponse resp;
   sai_port_state_change_notification_fn callback;
 };
-#else 
+#else
 class PortStateReactor
     : public grpc::ClientReadReactor<
           lemming::dataplane::sai::PortStateChangeNotificationResponse> {
@@ -271,6 +272,5 @@ class PortStateReactor
   sai_port_state_change_notification_fn callback;
 };
 #endif
-
 
 #endif  // DATAPLANE_STANDALONE_SAI_COMMON_H_

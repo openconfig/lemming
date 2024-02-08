@@ -198,8 +198,11 @@ sai_status_t l_create_srv6_sidlists(sai_object_id_t switch_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
+  if (object_count != resp.resps().size()) {
+    return SAI_STATUS_FAILURE;
+  }
   for (uint32_t i = 0; i < object_count; i++) {
-    switch_id = object_id[i] = resp.resps(i).oid();
+    object_id[i] = resp.resps(i).oid();
     object_statuses[i] = SAI_STATUS_SUCCESS;
   }
 
@@ -372,6 +375,9 @@ sai_status_t l_create_my_sid_entries(uint32_t object_count,
   grpc::Status status = srv6->CreateMySidEntries(&context, req, &resp);
   if (!status.ok()) {
     LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  if (object_count != resp.resps().size()) {
     return SAI_STATUS_FAILURE;
   }
   for (uint32_t i = 0; i < object_count; i++) {

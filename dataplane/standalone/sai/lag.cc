@@ -367,8 +367,11 @@ sai_status_t l_create_lag_members(sai_object_id_t switch_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
+  if (object_count != resp.resps().size()) {
+    return SAI_STATUS_FAILURE;
+  }
   for (uint32_t i = 0; i < object_count; i++) {
-    switch_id = object_id[i] = resp.resps(i).oid();
+    object_id[i] = resp.resps(i).oid();
     object_statuses[i] = SAI_STATUS_SUCCESS;
   }
 

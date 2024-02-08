@@ -259,6 +259,19 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 	}, nil
 }
 
+// CreatePorts creates multiple ports.
+func (port *port) CreatePorts(ctx context.Context, re *saipb.CreatePortsRequest) (*saipb.CreatePortsResponse, error) {
+	resp := &saipb.CreatePortsResponse{}
+	for _, req := range re.GetReqs() {
+		res, err := attrmgr.InvokeAndSave(ctx, port.mgr, port.CreatePort, req)
+		if err != nil {
+			return nil, err
+		}
+		resp.Resps = append(resp.Resps, res)
+	}
+	return resp, nil
+}
+
 func (port *port) createCPUPort(ctx context.Context) (uint64, error) {
 	id := port.mgr.NextID()
 
