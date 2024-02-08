@@ -129,6 +129,8 @@ func (lb *LemmingBind) Release(ctx context.Context) error {
 	return nil
 }
 
+const waitForPodTimeout = 15 * time.Second
+
 // Reserve deploys the topology if it doesn't exists, then runs knebind Reserve.
 func (lb *LemmingBind) Reserve(ctx context.Context, tb *opb.Testbed, runTime time.Duration, waitTime time.Duration, partial map[string]string) (*binding.Reservation, error) {
 	// Get kubernetes API client.
@@ -193,7 +195,7 @@ func (lb *LemmingBind) Reserve(ctx context.Context, tb *opb.Testbed, runTime tim
 
 		lb.created = true
 		// TODO: Wait for all pods to be ready.
-		time.Sleep(5 * time.Second)
+		time.Sleep(waitForPodTimeout)
 	} else if err != nil {
 		return nil, err
 	}

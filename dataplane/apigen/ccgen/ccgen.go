@@ -153,22 +153,6 @@ func createCCData(meta *saiast.FuncMetadata, apiName string, sai *saiast.SAIAPI,
 				fmt.Println("skipping due to error: ", err)
 				continue
 			}
-			// When the sai client is running in different namespace than the server,
-			// need to set the name in client namespace, not the server.
-			// TODO: Decide if this needs to ebe supported long term.
-			if meta.TypeName == "HOSTIF" && attr.EnumName == "SAI_HOSTIF_ATTR_NAME" {
-				smt.CustomText = `{
-int idx;
-int count = sscanf( attr_list[i].value.chardata, "Ethernet%d", &idx);
-if (count == 1) {
-  std::ostringstream s;
-  s << "ip link set eth" << idx/4+1 << " name "
-	<< attr_list[i].value.chardata;
-  LOG(INFO) << s.str();
-  system(s.str().c_str());
-}
-}`
-			}
 			smt.EnumValue = attr.EnumName
 			convertFn.AttrSwitch.Attrs = append(convertFn.AttrSwitch.Attrs, smt)
 		}

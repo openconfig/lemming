@@ -2,15 +2,19 @@
 
 ## Bazel
 
-Bazel is the preferred way to build Lemming. There are two bazel targets: the first statically links the library, the other dynamically links glog, protobuf, gRPC libraries.
-The second is used to distribute a deb package for use in syncd. In order to ensure shared library version compatibility, bazel executes the build in a seperate docker container.
-The image is not released publicly, but can be built using the [Dockerfile](../standalone/Dockerfile).
+Bazel is the preferred way to build Lemming. However, to ensure library version compatibility, it may be required to build libsai.so using Make.
+There are two bazel targets: the first statically links the library, the other dynamically links glog, protobuf, gRPC libraries.
+In order to ensure shared library version compatibility, bazel executes the build in a seperate docker container. The image is not released publicly,
+but can be built using the [Dockerfile](../standalone/Dockerfile). P
 
-1. `bazel build //dataplane/standalone:sai-deb --config docker-bullseye`
+1. Option 1: `make lucius-libsai-bullseye`
+   1. This version compiles the protobufs using the libprotobuf from debian bullseye release.
+2. Option 2: `bazel build //dataplane/standalone:sai-deb --config docker-bullseye`
    1. The `--config docker-bullseye` expands all the flags labeled `docker-bullseye` in `.bazelrc`
    2. These flags enable bazel docker sandbox and set up the toolchains for building the target in a custom docker container.
    3. The output of the command is a debian package built using a container based on `debian:bullseye`.
-2. Built debian package is located at `bazel-bin/dataplane/standalone`
+
+3. Built debian package is located at `bazel-bin/dataplane/standalone`
 
 ## RBE configs
 

@@ -19,6 +19,7 @@ import (
 	"flag"
 	"fmt"
 	"net"
+	"strings"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"google.golang.org/grpc"
@@ -33,7 +34,11 @@ import (
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
-var port = flag.Int("port", 50000, "Port for api server")
+var (
+	port          = flag.Int("port", 50000, "Port for api server")
+	configFile    = flag.String("config_file", "", "Path to config file")
+	portMapString = flag.String("port_map", "", "Map of modeled port names to Linux interface to  as comma seperated list (eg Ethernet8:eth1,Ethernet10,eth2)")
+)
 
 func main() {
 	flag.Parse()
@@ -63,13 +68,26 @@ func start(port int) {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
+	portMap := map[string]string{}
+	for _, mapping := range strings.Split(*portMapString, ",") {
+		ports := strings.Split(mapping, ":")
+		if len(ports) != 2 {
+			log.Fatal("invalid port map format")
+		}
+		portMap[ports[0]] = ports[1]
+	}
+
 	mgr := attrmgr.New()
 
 	srv := grpc.NewServer(grpc.Creds(insecure.NewCredentials()),
 		grpc.ChainUnaryInterceptor(logging.UnaryServerInterceptor(getLogger()), mgr.Interceptor),
 		grpc.ChainStreamInterceptor(logging.StreamServerInterceptor(getLogger())))
 
-	opts := dplaneopts.ResolveOpts(dplaneopts.WithHostifNetDevPortType(fwdpb.PortType_PORT_TYPE_KERNEL))
+	opts := dplaneopts.ResolveOpts(
+		dplaneopts.WithHostifNetDevPortType(fwdpb.PortType_PORT_TYPE_KERNEL),
+		dplaneopts.WithPortConfigFile(*configFile),
+		dplaneopts.WithPortMap(portMap),
+	)
 
 	if _, err := saiserver.New(context.Background(), mgr, srv, opts); err != nil {
 		log.Fatalf("failed to create server: %v", err)

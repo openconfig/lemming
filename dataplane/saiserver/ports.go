@@ -16,8 +16,11 @@ package saiserver
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net"
+	"os"
+	"strings"
 
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"
@@ -33,7 +36,7 @@ import (
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
-func newPort(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server, opts *dplaneopts.Options) *port {
+func newPort(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server, opts *dplaneopts.Options) (*port, error) {
 	p := &port{
 		mgr:       mgr,
 		dataplane: dataplane,
@@ -41,8 +44,19 @@ func newPort(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server,
 		nextEth:   1, // Start at eth1
 		opts:      opts,
 	}
+	if opts.PortConfigFile != "" {
+		data, err := os.ReadFile(opts.PortConfigFile)
+		if err != nil {
+			return nil, err
+		}
+		p.config = &dplaneopts.PortConfig{}
+		if err := json.Unmarshal(data, p.config); err != nil {
+			return nil, err
+		}
+	}
+
 	saipb.RegisterPortServer(s, p)
-	return p
+	return p, nil
 }
 
 type port struct {
@@ -52,6 +66,7 @@ type port struct {
 	nextEth   int
 	portToEth map[uint64]string
 	opts      *dplaneopts.Options
+	config    *dplaneopts.PortConfig
 }
 
 // stub for testing
@@ -59,11 +74,42 @@ var getInterface = net.InterfaceByName
 
 // CreatePort creates a new port, mapping the port to ethX, where X is assigned sequentially from 1 to n.
 // Note: If more ports are created than eth devices, no error is returned, but the OperStatus is set to NOT_PRESENT.
-func (port *port) CreatePort(ctx context.Context, _ *saipb.CreatePortRequest) (*saipb.CreatePortResponse, error) {
+func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) (*saipb.CreatePortResponse, error) {
 	id := port.mgr.NextID()
 
+	// By default, create port sequentially starting at eth1.
 	dev := fmt.Sprintf("eth%v", port.nextEth)
 	port.nextEth++
+
+	// If a port config is set, then use the hardware lanes to find the interface names.
+	if port.config != nil {
+		if len(req.HwLaneList) == 0 {
+			return nil, fmt.Errorf("port lanes are required got %v", req.HwLaneList)
+		}
+		var b strings.Builder
+		b.WriteString(fmt.Sprint(req.HwLaneList[0]))
+		for _, l := range req.HwLaneList[1:] {
+			b.WriteString(",")
+			b.WriteString(fmt.Sprint(l))
+		}
+		dev = ""
+		lanes := b.String()
+		for n, cfg := range port.config.Ports {
+			if cfg.Lanes == lanes {
+				dev = n
+			}
+		}
+		if dev == "" {
+			return nil, fmt.Errorf("could not find lanes %v in config", lanes)
+		}
+		if port.opts.PortMap != nil && len(port.opts.PortMap) != 0 {
+			if portMapPort := port.opts.PortMap[dev]; portMapPort == "" {
+				log.Warningf("port named %q doesn't exist in the port map", dev)
+			} else {
+				dev = portMapPort
+			}
+		}
+	}
 
 	attrs := &saipb.PortAttribute{
 		QosNumberOfQueues:                proto.Uint32(0),

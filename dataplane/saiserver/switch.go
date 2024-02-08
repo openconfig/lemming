@@ -85,11 +85,15 @@ const (
 	NHActionTable         = "nh-action"
 )
 
-func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server, opts *dplaneopts.Options) *saiSwitch {
+func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server, opts *dplaneopts.Options) (*saiSwitch, error) {
+	port, err := newPort(mgr, engine, s, opts)
+	if err != nil {
+		return nil, err
+	}
 	sw := &saiSwitch{
 		dataplane:       engine,
 		acl:             newACL(mgr, engine, s),
-		port:            newPort(mgr, engine, s, opts),
+		port:            port,
 		vlan:            newVlan(mgr, engine, s),
 		stp:             &stp{},
 		vr:              &virtualRouter{},
@@ -108,7 +112,7 @@ func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server, 
 	saipb.RegisterStpServer(s, sw.stp)
 	saipb.RegisterVirtualRouterServer(s, sw.vr)
 	saipb.RegisterHashServer(s, sw.hash)
-	return sw
+	return sw, nil
 }
 
 const (

@@ -18,9 +18,16 @@ package cpusink
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"os"
+	"slices"
+	"strings"
 
 	"github.com/vishvananda/netlink"
+	"golang.org/x/exp/maps"
 
+	"github.com/openconfig/lemming/dataplane/dplaneopts"
 	"github.com/openconfig/lemming/dataplane/forwarding/attributes"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
 	"github.com/openconfig/lemming/dataplane/internal/kernel"
@@ -31,8 +38,9 @@ import (
 )
 
 const (
-	contextID  = "lucius"
-	IP2MeTable = "ip2me"
+	contextID      = "lucius"
+	IP2MeTable     = "ip2me"
+	configPathPath = "/etc/sonic/config_db.json"
 )
 
 // Sink is a CPU port client for a forwarding context.
@@ -40,14 +48,38 @@ type Sink struct {
 	client          fwdpb.ForwardingClient
 	ethDevToPort    map[string]string
 	ethDevToPortNID map[string]uint64
+	// nameToEth maps the modeled name (eg Ethernet8) to the Linux device name (eg eth1).
+	nameToEth map[string]string
 }
 
-func New(client fwdpb.ForwardingClient) *Sink {
+// safeDeviceName returns valid name for a network device from the input name.
+func safeDeviceName(name string) string {
+	return strings.ReplaceAll(name, "/", "_")
+}
+
+func New(client fwdpb.ForwardingClient) (*Sink, error) {
+	data, err := os.ReadFile(configPathPath)
+	if err != nil {
+		return nil, err
+	}
+	config := &dplaneopts.PortConfig{}
+	if err := json.Unmarshal(data, config); err != nil {
+		return nil, err
+	}
+	ports := maps.Keys(config.Ports)
+	slices.Sort(ports)
+	nameToEth := make(map[string]string)
+	for i, port := range ports {
+		log.Infof("port map %v to %v", port, fmt.Sprintf("eth%d", i+1))
+		nameToEth[safeDeviceName(port)] = fmt.Sprintf("eth%d", i+1)
+	}
+
 	return &Sink{
 		client:          client,
 		ethDevToPort:    make(map[string]string),
 		ethDevToPortNID: make(map[string]uint64),
-	}
+		nameToEth:       nameToEth,
+	}, nil
 }
 
 // ReceivePackets from packets from the CPU port and sends them to the correct ports.
@@ -79,6 +111,15 @@ func (sink *Sink) ReceivePackets(ctx context.Context) error {
 				name := desc.GetKernel().GetDeviceName()
 				if name == "" {
 					name = desc.GetTap().GetDeviceName()
+				}
+				l, err := netlink.LinkByName(sink.nameToEth[name])
+				if err != nil {
+					log.Errorf("failed to get link name %v, eth %v: %v", name, sink.nameToEth[name], err)
+					continue
+				}
+				if err := netlink.LinkSetName(l, safeDeviceName(name)); err != nil {
+					log.Errorf("failed to set link name: %v", err)
+					continue
 				}
 				// Get the port ID for this hostif.
 				attr, err := sink.client.AttributeQuery(ctx, &fwdpb.AttributeQueryRequest{
