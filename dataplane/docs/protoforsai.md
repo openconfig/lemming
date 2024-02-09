@@ -100,7 +100,7 @@ The `ExampleAttribute` message contains all possible attribute values for the Ex
 
 The `CreateExampleRequest` message contains only the attributes values that can be specified on creation, the `CreateExampleResponse` contains the ID of the created object.
 
-> Note: Some attributes are CREATE_ONLY and some CREATE_SET.
+> Note: Some attributes are CREATE_ONLY and some are CREATE_SET.
 > Note: Some objects are "switch-scoped" which mean they belong to an instance of a switch object.
 
 ### Delete
@@ -117,7 +117,7 @@ In the `GetExampleAttributeRequest` contains list the attributes to query from t
 
 ## apigen
 
-apigen generate the protobuf and C++ source and headers based on the [SAI](https://github.com/opencomputeproject/SAI/tree/master/inc) headers. apigen parses both the C headers directly and the Doxygen xml to generate the protobufs.
+apigen generates the protobuf and C++ source and headers based on the [SAI](https://github.com/opencomputeproject/SAI/tree/master/inc) headers. apigen parses both the C headers directly and the Doxygen xml to generate the protobufs.
 The apigen packages read the Doxygen comments from the attribute enums to "flatten" the list of `sai_attributes` into messages that only include the relevant attributes with the correct types.
 
 The apigen also generates a C++ implementation of the SAI API, which converts the C  SAI API to protobufs, performs the RPC, and converts the response. (ie a saipb Client library)
