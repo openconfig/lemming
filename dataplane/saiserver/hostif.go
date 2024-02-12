@@ -132,7 +132,7 @@ func (hostif *hostif) CreateHostif(ctx context.Context, req *saipb.CreateHostifR
 		attrReq := &saipb.GetPortAttributeRequest{Oid: req.GetObjId(), AttrType: []saipb.PortAttr{saipb.PortAttr_PORT_ATTR_OPER_STATUS}}
 		p := &saipb.GetPortAttributeResponse{}
 		if err := hostif.mgr.PopulateAttributes(attrReq, p); err != nil {
-			return nil, err
+			return nil, status.Errorf(codes.Internal, "failed to get cpu port: %v", err)
 		}
 		// If there is a corresponding port for the hostif, update the attributes
 		if p.GetAttr().GetOperStatus() != saipb.PortOperStatus_PORT_OPER_STATUS_NOT_PRESENT {

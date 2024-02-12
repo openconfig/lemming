@@ -34,12 +34,11 @@ import (
 
 func TestCreateHostif(t *testing.T) {
 	tests := []struct {
-		desc            string
-		req             *saipb.CreateHostifRequest
-		getInterfaceErr error
-		want            *saipb.CreateHostifResponse
-		wantAttr        *saipb.HostifAttribute
-		wantErr         string
+		desc     string
+		req      *saipb.CreateHostifRequest
+		want     *saipb.CreateHostifResponse
+		wantAttr *saipb.HostifAttribute
+		wantErr  string
 	}{{
 		desc: "unknown type",
 		req:  &saipb.CreateHostifRequest{},
@@ -54,27 +53,46 @@ func TestCreateHostif(t *testing.T) {
 			ObjId: proto.Uint64(2),
 		},
 		want: &saipb.CreateHostifResponse{
-			Oid: 1,
+			Oid: 3,
 		},
 		wantAttr: &saipb.HostifAttribute{
 			Type:       saipb.HostifType_HOSTIF_TYPE_NETDEV.Enum(),
 			ObjId:      proto.Uint64(2),
 			OperStatus: proto.Bool(true),
 		},
+	}, {
+		desc: "success cpu port",
+		req: &saipb.CreateHostifRequest{
+			Type:  saipb.HostifType_HOSTIF_TYPE_NETDEV.Enum(),
+			ObjId: proto.Uint64(10),
+		},
+		want: &saipb.CreateHostifResponse{
+			Oid: 3,
+		},
+		wantAttr: &saipb.HostifAttribute{
+			Type:       saipb.HostifType_HOSTIF_TYPE_NETDEV.Enum(),
+			ObjId:      proto.Uint64(10),
+			OperStatus: proto.Bool(true),
+		},
 	}}
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			getInterface = func(name string) (*net.Interface, error) {
-				return nil, tt.getInterfaceErr
-			}
 			dplane := &fakeSwitchDataplane{
 				ctx: fwdcontext.New("foo", "foo"),
 			}
 			dplane.ctx.SetPacketSink(func(*fwdpb.PacketSinkResponse) error { return nil })
 			c, mgr, stopFn := newTestHostif(t, dplane)
-			mgr.StoreAttributes(2, &saipb.PortAttribute{
+			// Create switch and ports
+			mgr.StoreAttributes(mgr.NextID(), &saipb.SwitchAttribute{
+				CpuPort: proto.Uint64(10),
+			})
+			mgr.StoreAttributes(10, &saipb.PortAttribute{
+				OperStatus: saipb.PortOperStatus_PORT_OPER_STATUS_UP.Enum(),
+			})
+			mgr.StoreAttributes(mgr.NextID(), &saipb.PortAttribute{
 				OperStatus: saipb.PortOperStatus_PORT_OPER_STATUS_DOWN.Enum(),
 			})
+
 			defer stopFn()
 			got, gotErr := c.CreateHostif(context.TODO(), tt.req)
 			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
@@ -87,7 +105,7 @@ func TestCreateHostif(t *testing.T) {
 				t.Errorf("CreateHostif() failed: diff(-got,+want)\n:%s", d)
 			}
 			attr := &saipb.HostifAttribute{}
-			if err := mgr.PopulateAllAttributes("1", attr); err != nil {
+			if err := mgr.PopulateAllAttributes("3", attr); err != nil {
 				t.Fatal(err)
 			}
 			if d := cmp.Diff(attr, tt.wantAttr, protocmp.Transform()); d != "" {
