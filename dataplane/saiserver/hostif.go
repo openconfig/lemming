@@ -155,13 +155,21 @@ func (hostif *hostif) CreateHostif(ctx context.Context, req *saipb.CreateHostifR
 				return nil, err
 			}
 		}
+
+		cpuPortReq := &saipb.GetSwitchAttributeRequest{Oid: 1, AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_CPU_PORT}}
+		resp := &saipb.GetSwitchAttributeResponse{}
+		if err := hostif.mgr.PopulateAttributes(cpuPortReq, resp); err != nil {
+			return nil, err
+		}
+
+		// Packets received from hostif are sent to their corresponding port.
 		update := &fwdpb.PortUpdateRequest{
 			ContextId: &fwdpb.ContextId{Id: hostif.dataplane.ID()},
 			PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)}},
 			Update: &fwdpb.PortUpdateDesc{
 				Port: &fwdpb.PortUpdateDesc_Kernel{
 					Kernel: &fwdpb.KernelPortUpdateDesc{
-						Inputs: []*fwdpb.ActionDesc{{ // Assume that the packet's originating from the device are sent to correct port.
+						Inputs: []*fwdpb.ActionDesc{{
 							ActionType: fwdpb.ActionType_ACTION_TYPE_SWAP_OUTPUT_INTERNAL_EXTERNAL,
 						}, {
 							ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
@@ -170,6 +178,22 @@ func (hostif *hostif) CreateHostif(ctx context.Context, req *saipb.CreateHostifR
 				},
 			},
 		}
+
+		// Unless, the corresponding port for this hostif is the CPU port, then run the normal forwarding pipeline.
+		if resp.GetAttr().GetCpuPort() == req.GetObjId() {
+			update = &fwdpb.PortUpdateRequest{
+				ContextId: &fwdpb.ContextId{Id: hostif.dataplane.ID()},
+				PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)}},
+				Update: &fwdpb.PortUpdateDesc{
+					Port: &fwdpb.PortUpdateDesc_Kernel{
+						Kernel: &fwdpb.KernelPortUpdateDesc{
+							Inputs: getForwardingPipeline(),
+						},
+					},
+				},
+			}
+		}
+
 		if _, err := hostif.dataplane.PortUpdate(ctx, update); err != nil {
 			return nil, err
 		}

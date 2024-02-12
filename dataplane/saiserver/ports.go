@@ -72,6 +72,25 @@ type port struct {
 // stub for testing
 var getInterface = net.InterfaceByName
 
+func getForwardingPipeline() []*fwdpb.ActionDesc {
+	return []*fwdpb.ActionDesc{
+		fwdconfig.Action(fwdconfig.LookupAction(inputIfaceTable)).Build(),                               // Match packet to interface.
+		fwdconfig.Action(fwdconfig.LookupAction(IngressVRFTable)).Build(),                               /// Match interface to VRF.
+		fwdconfig.Action(fwdconfig.LookupAction(PreIngressActionTable)).Build(),                         // Run pre-ingress actions.
+		fwdconfig.Action(fwdconfig.DecapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET)).Build(), // Decap L2 header.
+		fwdconfig.Action(fwdconfig.LookupAction(IngressActionTable)).Build(),                            // Run ingress action.
+		fwdconfig.Action(fwdconfig.LookupAction(FIBSelectorTable)).Build(),                              // Lookup in FIB.
+		fwdconfig.Action(fwdconfig.EncapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET)).Build(), // Encap L2 header.
+		fwdconfig.Action(fwdconfig.LookupAction(outputIfaceTable)).Build(),                              // Match interface to port
+		fwdconfig.Action(fwdconfig.LookupAction(NeighborTable)).Build(),                                 // Lookup in the neighbor table.
+		fwdconfig.Action(fwdconfig.LookupAction(EgressActionTable)).Build(),                             // Run egress actions
+		fwdconfig.Action(fwdconfig.LookupAction(SRCMACTable)).Build(),                                   // Lookup interface's MAC addr.
+		{
+			ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
+		},
+	}
+}
+
 // CreatePort creates a new port, mapping the port to ethX, where X is assigned sequentially from 1 to n.
 // Note: If more ports are created than eth devices, no error is returned, but the OperStatus is set to NOT_PRESENT.
 func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) (*saipb.CreatePortResponse, error) {
@@ -227,22 +246,7 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 		Update: &fwdpb.PortUpdateDesc{
 			Port: &fwdpb.PortUpdateDesc_Kernel{
 				Kernel: &fwdpb.KernelPortUpdateDesc{
-					Inputs: []*fwdpb.ActionDesc{
-						fwdconfig.Action(fwdconfig.LookupAction(inputIfaceTable)).Build(),                               // Match packet to interface.
-						fwdconfig.Action(fwdconfig.LookupAction(IngressVRFTable)).Build(),                               /// Match interface to VRF.
-						fwdconfig.Action(fwdconfig.LookupAction(PreIngressActionTable)).Build(),                         // Run pre-ingress actions.
-						fwdconfig.Action(fwdconfig.DecapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET)).Build(), // Decap L2 header.
-						fwdconfig.Action(fwdconfig.LookupAction(IngressActionTable)).Build(),                            // Run ingress action.
-						fwdconfig.Action(fwdconfig.LookupAction(FIBSelectorTable)).Build(),                              // Lookup in FIB.
-						fwdconfig.Action(fwdconfig.EncapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET)).Build(), // Encap L2 header.
-						fwdconfig.Action(fwdconfig.LookupAction(outputIfaceTable)).Build(),                              // Match interface to port
-						fwdconfig.Action(fwdconfig.LookupAction(NeighborTable)).Build(),                                 // Lookup in the neighbor table.
-						fwdconfig.Action(fwdconfig.LookupAction(EgressActionTable)).Build(),                             // Run egress actions
-						fwdconfig.Action(fwdconfig.LookupAction(SRCMACTable)).Build(),                                   // Lookup interface's MAC addr.
-						{
-							ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
-						},
-					},
+					Inputs:  getForwardingPipeline(),
 					Outputs: []*fwdpb.ActionDesc{},
 				},
 			},

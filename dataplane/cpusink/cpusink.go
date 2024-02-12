@@ -68,7 +68,13 @@ func New(client fwdpb.ForwardingClient) (*Sink, error) {
 	}
 	ports := maps.Keys(config.Ports)
 	slices.Sort(ports)
+	if len(config.SendToIngressPort) > 1 {
+		return nil, fmt.Errorf("expected at most 1 send to ingress port")
+	} else if len(config.SendToIngressPort) == 1 {
+		ports = append(ports, maps.Keys(config.SendToIngressPort)...)
+	}
 	nameToEth := make(map[string]string)
+
 	for i, port := range ports {
 		log.Infof("port map %v to %v", port, fmt.Sprintf("eth%d", i+1))
 		nameToEth[safeDeviceName(port)] = fmt.Sprintf("eth%d", i+1)
