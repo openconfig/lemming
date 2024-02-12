@@ -90,8 +90,9 @@ type Port struct {
 
 // PortConfig contains configuration data for the dataplane ports.
 type PortConfig struct {
-	Ports             map[string]*Port `json:"PORT"`
-	SendToIngressPort map[string]any   `json:"SEND_TO_INGRESS_PORT"`
+	Ports map[string]*Port `json:"PORT"`
+	// SendToIngressPort is an optional field that may contain exactly on entry, the name of hostif whose linked port is the CPU port.
+	SendToIngressPort map[string]any `json:"SEND_TO_INGRESS_PORT"`
 }
 
 // ResolveOpts creates an option struct from the opts.

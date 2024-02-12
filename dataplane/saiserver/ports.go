@@ -75,7 +75,7 @@ var getInterface = net.InterfaceByName
 func getForwardingPipeline() []*fwdpb.ActionDesc {
 	return []*fwdpb.ActionDesc{
 		fwdconfig.Action(fwdconfig.LookupAction(inputIfaceTable)).Build(),                               // Match packet to interface.
-		fwdconfig.Action(fwdconfig.LookupAction(IngressVRFTable)).Build(),                               /// Match interface to VRF.
+		fwdconfig.Action(fwdconfig.LookupAction(IngressVRFTable)).Build(),                               // Match interface to VRF.
 		fwdconfig.Action(fwdconfig.LookupAction(PreIngressActionTable)).Build(),                         // Run pre-ingress actions.
 		fwdconfig.Action(fwdconfig.DecapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET)).Build(), // Decap L2 header.
 		fwdconfig.Action(fwdconfig.LookupAction(IngressActionTable)).Build(),                            // Run ingress action.

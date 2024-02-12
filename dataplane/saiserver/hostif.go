@@ -54,6 +54,8 @@ type hostif struct {
 	opts             *dplaneopts.Options
 }
 
+const switchID = 1
+
 // CreateHostif creates a hostif interface (usually a tap interface).
 func (hostif *hostif) CreateHostif(ctx context.Context, req *saipb.CreateHostifRequest) (*saipb.CreateHostifResponse, error) {
 	id := hostif.mgr.NextID()
@@ -156,7 +158,7 @@ func (hostif *hostif) CreateHostif(ctx context.Context, req *saipb.CreateHostifR
 			}
 		}
 
-		cpuPortReq := &saipb.GetSwitchAttributeRequest{Oid: 1, AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_CPU_PORT}}
+		cpuPortReq := &saipb.GetSwitchAttributeRequest{Oid: switchID, AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_CPU_PORT}}
 		resp := &saipb.GetSwitchAttributeResponse{}
 		if err := hostif.mgr.PopulateAttributes(cpuPortReq, resp); err != nil {
 			return nil, err
@@ -181,17 +183,7 @@ func (hostif *hostif) CreateHostif(ctx context.Context, req *saipb.CreateHostifR
 
 		// Unless, the corresponding port for this hostif is the CPU port, then run the normal forwarding pipeline.
 		if resp.GetAttr().GetCpuPort() == req.GetObjId() {
-			update = &fwdpb.PortUpdateRequest{
-				ContextId: &fwdpb.ContextId{Id: hostif.dataplane.ID()},
-				PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)}},
-				Update: &fwdpb.PortUpdateDesc{
-					Port: &fwdpb.PortUpdateDesc_Kernel{
-						Kernel: &fwdpb.KernelPortUpdateDesc{
-							Inputs: getForwardingPipeline(),
-						},
-					},
-				},
-			}
+			update.Update.GetKernel().Inputs = getForwardingPipeline()
 		}
 
 		if _, err := hostif.dataplane.PortUpdate(ctx, update); err != nil {
