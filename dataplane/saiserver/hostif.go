@@ -54,6 +54,8 @@ type hostif struct {
 	opts             *dplaneopts.Options
 }
 
+const switchID = 1
+
 // CreateHostif creates a hostif interface (usually a tap interface).
 func (hostif *hostif) CreateHostif(ctx context.Context, req *saipb.CreateHostifRequest) (*saipb.CreateHostifResponse, error) {
 	id := hostif.mgr.NextID()
@@ -132,7 +134,7 @@ func (hostif *hostif) CreateHostif(ctx context.Context, req *saipb.CreateHostifR
 		attrReq := &saipb.GetPortAttributeRequest{Oid: req.GetObjId(), AttrType: []saipb.PortAttr{saipb.PortAttr_PORT_ATTR_OPER_STATUS}}
 		p := &saipb.GetPortAttributeResponse{}
 		if err := hostif.mgr.PopulateAttributes(attrReq, p); err != nil {
-			return nil, err
+			return nil, status.Errorf(codes.Internal, "failed to get cpu port: %v", err)
 		}
 		// If there is a corresponding port for the hostif, update the attributes
 		if p.GetAttr().GetOperStatus() != saipb.PortOperStatus_PORT_OPER_STATUS_NOT_PRESENT {
@@ -155,13 +157,21 @@ func (hostif *hostif) CreateHostif(ctx context.Context, req *saipb.CreateHostifR
 				return nil, err
 			}
 		}
+
+		cpuPortReq := &saipb.GetSwitchAttributeRequest{Oid: switchID, AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_CPU_PORT}}
+		resp := &saipb.GetSwitchAttributeResponse{}
+		if err := hostif.mgr.PopulateAttributes(cpuPortReq, resp); err != nil {
+			return nil, err
+		}
+
+		// Packets received from hostif are sent to their corresponding port.
 		update := &fwdpb.PortUpdateRequest{
 			ContextId: &fwdpb.ContextId{Id: hostif.dataplane.ID()},
 			PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)}},
 			Update: &fwdpb.PortUpdateDesc{
 				Port: &fwdpb.PortUpdateDesc_Kernel{
 					Kernel: &fwdpb.KernelPortUpdateDesc{
-						Inputs: []*fwdpb.ActionDesc{{ // Assume that the packet's originating from the device are sent to correct port.
+						Inputs: []*fwdpb.ActionDesc{{
 							ActionType: fwdpb.ActionType_ACTION_TYPE_SWAP_OUTPUT_INTERNAL_EXTERNAL,
 						}, {
 							ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
@@ -170,6 +180,12 @@ func (hostif *hostif) CreateHostif(ctx context.Context, req *saipb.CreateHostifR
 				},
 			},
 		}
+
+		// Unless, the corresponding port for this hostif is the CPU port, then run the normal forwarding pipeline.
+		if resp.GetAttr().GetCpuPort() == req.GetObjId() {
+			update.Update.GetKernel().Inputs = getForwardingPipeline()
+		}
+
 		if _, err := hostif.dataplane.PortUpdate(ctx, update); err != nil {
 			return nil, err
 		}
