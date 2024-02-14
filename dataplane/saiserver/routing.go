@@ -233,6 +233,25 @@ func (nh *nextHop) CreateNextHop(ctx context.Context, req *saipb.CreateNextHopRe
 	if req.GetType() != saipb.NextHopType_NEXT_HOP_TYPE_IP {
 		return nil, status.Errorf(codes.InvalidArgument, "unsupported req type: %v", req.GetType())
 	}
+	switch req.GetType() {
+	case saipb.NextHopType_NEXT_HOP_TYPE_TUNNEL_ENCAP:
+		ip := req.GetIp()
+		tunnel := req.GetTunnelId()
+		mac := req.GetTunnelMac()
+	}
+
+	actions := []*fwdpb.ActionDesc{
+		{
+			ActionType: fwdpb.ActionType_ACTION_TYPE_ENCAP,
+			Action: &fwdpb.ActionDesc_Encap{
+				Encap: &fwdpb.EncapActionDesc{
+					HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP,
+				},
+			},
+		},
+		fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithValue(req.GetIp())).Build(),
+	}
+	// SRC IP == encap tunnel IP or tunnel interface ip???
 
 	nhReq := fwdconfig.TableEntryAddRequest(nh.dataplane.ID(), NHTable).AppendEntry(
 		fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_ID).WithUint64(id))),
