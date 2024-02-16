@@ -509,9 +509,13 @@ func (t *bgpTask) updateRIBs(ctx context.Context) error {
 // error otherwise.
 func (t *bgpTask) queryTable(ctx context.Context, neighbor, tableName string, postPolicy bool, tableType api.TableType, afi api.Family_Afi, f func(route []*api.Destination)) {
 	// TODO: This doesn't intuitively make sense since filtered == postPolicy.
+	//enableFiltered := true
+
 	enableFiltered := postPolicy
+
 	if tableType == api.TableType_ADJ_OUT {
-		enableFiltered = !enableFiltered
+		//enableFiltered = !enableFiltered
+		enableFiltered = !postPolicy
 	}
 	var routes []*api.Destination
 	if err := t.bgpServer.ListPath(ctx, &api.ListPathRequest{
