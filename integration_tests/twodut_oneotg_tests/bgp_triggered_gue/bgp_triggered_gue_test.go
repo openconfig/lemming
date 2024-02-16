@@ -1028,7 +1028,7 @@ func TestBGPTriggeredGUE(t *testing.T) {
 			installPolicy(true, true, true)
 			// Overwrite route with IPv4 nexthop.
 			installStaticRoute(t, dut2, &oc.NetworkInstance_Protocol_Static{
-				Prefix: ygot.String(ateDstNetCIDR1v6MS), // This is less specific than the pure IPv6 routes.
+				Prefix: ygot.String(ateDstNetCIDR1v6MS), // This is more specific than the pure IPv6 routes.
 				NextHop: map[string]*oc.NetworkInstance_Protocol_Static_NextHop{
 					"single": {
 						Index: ygot.String("single"),
@@ -1039,7 +1039,7 @@ func TestBGPTriggeredGUE(t *testing.T) {
 				},
 			})
 			installStaticRoute(t, dut2, &oc.NetworkInstance_Protocol_Static{
-				Prefix: ygot.String(ateDstNetCIDR2v6MS), // This is less specific than the pure IPv6 routes.
+				Prefix: ygot.String(ateDstNetCIDR2v6MS), // This is more specific than the pure IPv6 routes.
 				NextHop: map[string]*oc.NetworkInstance_Protocol_Static_NextHop{
 					"single": {
 						Index: ygot.String("single"),
@@ -1050,7 +1050,7 @@ func TestBGPTriggeredGUE(t *testing.T) {
 				},
 			})
 			installStaticRoute(t, dut2, &oc.NetworkInstance_Protocol_Static{
-				Prefix: ygot.String(ateDstNetCIDR3v6MS), // This is less specific than the pure IPv6 routes.
+				Prefix: ygot.String(ateDstNetCIDR3v6MS), // This is more specific than the pure IPv6 routes.
 				NextHop: map[string]*oc.NetworkInstance_Protocol_Static_NextHop{
 					"single": {
 						Index: ygot.String("single"),
@@ -1114,5 +1114,4 @@ func TestBGPTriggeredGUE(t *testing.T) {
 	dut2.RawAPIs().GRIBI(t).Flush(context.Background(), &gribipb.FlushRequest{
 		NetworkInstance: &gribipb.FlushRequest_All{All: &gribipb.Empty{}},
 	})
-	// TODO: Test that entries are deleted and that there is no more traffic.
 }

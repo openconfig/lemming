@@ -46,8 +46,6 @@ type SysRIB struct {
 	// GUEPolicies are the configured BGP-triggered GUE policies.
 	// Every update to this should trigger a re-computation of the resolved
 	// routes.
-	// TODO(wenbli): Support v6 GUE policies. When adding support, make
-	// sure to error out when an IPv6-mapped IPv4 prefix is provided.
 	GUEPoliciesV4 *generics_tree.TreeV4[GUEPolicy]
 	GUEPoliciesV6 *generics_tree.TreeV6[GUEPolicy]
 }
@@ -63,7 +61,7 @@ type NIRIB struct {
 // GUEPolicy represents the static values in the IP and UDP headers that are
 // to encapsulate the packet.
 //
-// srcPort is a hash.
+// srcPort is a hash (not implemented).
 // dstIP is the nexthop of the BGP route.
 type GUEPolicy struct {
 	// dstPortv4 is the UDP port used when the packet payload is IPv4.
