@@ -50,6 +50,16 @@ type AttrMgr struct {
 	msgEnumToFieldNum map[string]map[int32]int
 }
 
+func deleteOID(mgr *AttrMgr, oid string) error {
+	mgr.mu.Lock()
+	defer mgr.mu.Unlock()
+	if _, ok := mgr.attrs[oid]; !ok {
+		return fmt.Errorf("OID not found: %s", oid)
+	}
+	delete(mgr.attrs, oid)
+	return nil
+}
+
 // New returns a new AttrMgr.
 func New() *AttrMgr {
 	mgr := &AttrMgr{
@@ -106,15 +116,26 @@ func (mgr *AttrMgr) Interceptor(ctx context.Context, req any, info *grpc.UnarySe
 	if err != nil {
 		return resp, err
 	}
-	if strings.Contains(info.FullMethod, "Create") || strings.Contains(info.FullMethod, "Set") {
+
+	switch {
+	case strings.Contains(info.FullMethod, "Create") || strings.Contains(info.FullMethod, "Set"):
 		id, err := mgr.getID(reqMsg, respMsg)
 		if err != nil {
 			log.Warningf("failed to get id %v", err)
 			return respMsg, nil
 		}
 		mgr.storeAttributes(id, reqMsg)
-	} else if strings.Contains(info.FullMethod, "Get") && strings.Contains(info.FullMethod, "Attribute") {
+	case strings.Contains(info.FullMethod, "Get") && strings.Contains(info.FullMethod, "Attribute"):
 		if err := mgr.PopulateAttributes(reqMsg, respMsg); err != nil {
+			return nil, err
+		}
+	case strings.Contains(info.FullMethod, "Remove"):
+		id, err := mgr.getID(reqMsg, respMsg)
+		if err != nil {
+			log.Warningf("failed to get id %v", err)
+			return respMsg, nil
+		}
+		if err := deleteOID(mgr, id); err != nil {
 			return nil, err
 		}
 	}

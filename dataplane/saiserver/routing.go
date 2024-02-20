@@ -249,6 +249,21 @@ func (nh *nextHop) CreateNextHop(ctx context.Context, req *saipb.CreateNextHopRe
 	}, nil
 }
 
+func (nh *nextHop) RemoveNextHop(ctx context.Context, r *saipb.RemoveNextHopRequest) (*saipb.RemoveNextHopResponse, error) {
+	entry := fwdconfig.EntryDesc(fwdconfig.ExactEntry(
+		fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_ID).WithUint64(r.GetOid()))).Build()
+	nhReq := &fwdpb.TableEntryRemoveRequest{
+		ContextId: &fwdpb.ContextId{Id: nh.dataplane.ID()},
+		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: NHTable}},
+		EntryDesc: entry,
+	}
+
+	if _, err := nh.dataplane.TableEntryRemove(ctx, nhReq); err != nil {
+		return nil, err
+	}
+	return &saipb.RemoveNextHopResponse{}, nil
+}
+
 func (nh *nextHop) CreateNextHops(ctx context.Context, r *saipb.CreateNextHopsRequest) (*saipb.CreateNextHopsResponse, error) {
 	resp := &saipb.CreateNextHopsResponse{}
 	for _, req := range r.GetReqs() {
