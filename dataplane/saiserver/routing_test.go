@@ -338,7 +338,7 @@ func TestRemoveNextHop(t *testing.T) {
 			Ip:                []byte{127, 0, 0, 1},
 		},
 	}, {
-		desc: "fali: non-existing next hop",
+		desc: "fail: non-existing next hop",
 		reqCreate: &saipb.CreateNextHopRequest{
 			Type:              saipb.NextHopType_NEXT_HOP_TYPE_IP.Enum(),
 			RouterInterfaceId: proto.Uint64(10),
