@@ -249,6 +249,7 @@ func (nh *nextHop) CreateNextHop(ctx context.Context, req *saipb.CreateNextHopRe
 	}, nil
 }
 
+// RemoveNextHop removes the next hop with the OID specified.
 func (nh *nextHop) RemoveNextHop(ctx context.Context, r *saipb.RemoveNextHopRequest) (*saipb.RemoveNextHopResponse, error) {
 	entry := fwdconfig.EntryDesc(fwdconfig.ExactEntry(
 		fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_ID).WithUint64(r.GetOid()))).Build()

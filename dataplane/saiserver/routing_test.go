@@ -330,26 +330,23 @@ func TestRemoveNextHop(t *testing.T) {
 		reqCreate *saipb.CreateNextHopRequest
 		oid       uint64 // specify this if you want an arbitrary OID to remove.
 		wantErr   string
-	}{
-		{
-			desc: "pass",
-			reqCreate: &saipb.CreateNextHopRequest{
-				Type:              saipb.NextHopType_NEXT_HOP_TYPE_IP.Enum(),
-				RouterInterfaceId: proto.Uint64(10),
-				Ip:                []byte{127, 0, 0, 1},
-			},
+	}{{
+		desc: "pass",
+		reqCreate: &saipb.CreateNextHopRequest{
+			Type:              saipb.NextHopType_NEXT_HOP_TYPE_IP.Enum(),
+			RouterInterfaceId: proto.Uint64(10),
+			Ip:                []byte{127, 0, 0, 1},
 		},
-		{
-			desc: "fail",
-			reqCreate: &saipb.CreateNextHopRequest{
-				Type:              saipb.NextHopType_NEXT_HOP_TYPE_IP.Enum(),
-				RouterInterfaceId: proto.Uint64(10),
-				Ip:                []byte{127, 0, 0, 1},
-			},
-			oid:     15, // a non-existing OID.
-			wantErr: "OID not found: 15",
+	}, {
+		desc: "fali: non-existing next hop",
+		reqCreate: &saipb.CreateNextHopRequest{
+			Type:              saipb.NextHopType_NEXT_HOP_TYPE_IP.Enum(),
+			RouterInterfaceId: proto.Uint64(10),
+			Ip:                []byte{127, 0, 0, 1},
 		},
-	}
+		oid:     15, // a non-existing OID.
+		wantErr: "OID not found: 15",
+	}}
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
 			dplane := &fakeSwitchDataplane{}
@@ -360,11 +357,11 @@ func TestRemoveNextHop(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Unexpcted error: %v", err)
 			}
-			theOid := tt.oid
-			if theOid == 0 {
-				theOid = resp.Oid
+			oid := tt.oid
+			if oid == 0 {
+				oid = resp.Oid
 			}
-			_, gotErr := c.RemoveNextHop(context.TODO(), &saipb.RemoveNextHopRequest{Oid: theOid})
+			_, gotErr := c.RemoveNextHop(context.TODO(), &saipb.RemoveNextHopRequest{Oid: oid})
 			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
 				t.Fatalf("RemoveNextHop() unexpected err: %s", diff)
 			}
