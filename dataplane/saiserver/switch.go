@@ -84,6 +84,7 @@ const (
 	IngressActionTable    = "ingress-table"
 	EgressActionTable     = "egress-action-table"
 	NHActionTable         = "nh-action"
+	TunnelEncap           = "tunnel-encap"
 )
 
 func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server, opts *dplaneopts.Options) (*saiSwitch, error) {
