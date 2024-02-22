@@ -113,6 +113,50 @@ func TestCreateNextHopGroup(t *testing.T) {
 	}
 }
 
+func TestRemoveNextHopGroup(t *testing.T) {
+	tests := []struct {
+		desc      string
+		memberReq *saipb.CreateNextHopGroupMemberRequest
+		oid       uint64 // specify this if you want an arbitrary OID to remove.
+		wantErr   string
+	}{{
+		desc: "success",
+	}, {
+		desc:    "fail: group not found",
+		oid:     15, // a non-existing OID.
+		wantErr: "group 15 does not exist",
+	}}
+	nhgReq := &saipb.CreateNextHopGroupRequest{
+		Type: saipb.NextHopGroupType_NEXT_HOP_GROUP_TYPE_DYNAMIC_UNORDERED_ECMP.Enum(),
+	}
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			dplane := &fakeSwitchDataplane{}
+			c, _, stopFn := newTestNextHopGroup(t, dplane)
+			defer stopFn()
+			ctx := context.Background()
+			resp, err := c.CreateNextHopGroup(ctx, nhgReq)
+			if err != nil {
+				t.Fatalf("unexpected err: %s", err)
+			}
+			oid := tt.oid
+			if oid == 0 {
+				oid = resp.Oid
+			}
+			if tt.memberReq != nil {
+				tt.memberReq.NextHopGroupId = proto.Uint64(oid)
+				if _, err := c.CreateNextHopGroupMember(ctx, tt.memberReq); err != nil {
+					t.Fatalf("unexpected err: %s", err)
+				}
+			}
+			_, gotErr := c.RemoveNextHopGroup(context.TODO(), &saipb.RemoveNextHopGroupRequest{Oid: oid})
+			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
+				t.Fatalf("RemoveNextHopGroup() unexpected err: %s", diff)
+			}
+		})
+	}
+}
+
 func TestCreateNextHopGroupMember(t *testing.T) {
 	tests := []struct {
 		desc     string
@@ -212,6 +256,135 @@ func TestCreateNextHopGroupMember(t *testing.T) {
 			}
 			if d := cmp.Diff(attr, tt.wantAttr, protocmp.Transform()); d != "" {
 				t.Errorf("CreateNextHopGroupMember() failed: diff(-got,+want)\n:%s", d)
+			}
+		})
+	}
+}
+
+func TestRemoveNextHopGroupMember(t *testing.T) {
+	tests := []struct {
+		desc     string
+		memberID uint64
+		wantAttr *saipb.NextHopGroupMemberAttribute
+		wantReq  *fwdpb.TableEntryAddRequest
+		wantErr  string
+	}{{
+		desc:     "success",
+		memberID: 0,
+		wantReq: &fwdpb.TableEntryAddRequest{
+			ContextId: &fwdpb.ContextId{Id: "foo"},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: NHGTable}},
+			Entries: []*fwdpb.TableEntryAddRequest_Entry{{
+				EntryDesc: &fwdpb.EntryDesc{
+					Entry: &fwdpb.EntryDesc_Exact{
+						Exact: &fwdpb.ExactEntryDesc{
+							Fields: []*fwdpb.PacketFieldBytes{{
+								FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{
+									FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_GROUP_ID,
+								}},
+								Bytes: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+							}},
+						},
+					},
+				},
+				Actions: []*fwdpb.ActionDesc{{
+					ActionType: fwdpb.ActionType_ACTION_TYPE_SELECT_ACTION_LIST,
+					Action: &fwdpb.ActionDesc_Select{
+						Select: &fwdpb.SelectActionListActionDesc{
+							SelectAlgorithm: fwdpb.SelectActionListActionDesc_SELECT_ALGORITHM_CRC32,
+							FieldIds: []*fwdpb.PacketFieldId{
+								{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO}},
+								{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC}},
+								{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST}},
+								{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_SRC}},
+								{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST}},
+							},
+							ActionLists: []*fwdpb.ActionList{{
+								Weight: 66,
+								Actions: []*fwdpb.ActionDesc{{
+									ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
+									Action: &fwdpb.ActionDesc_Update{
+										Update: &fwdpb.UpdateActionDesc{
+											FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_ID}},
+											Type:    fwdpb.UpdateType_UPDATE_TYPE_SET,
+											Field:   &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{}},
+											Value:   []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0c},
+										},
+									},
+								}},
+							}},
+						},
+					},
+				}, {
+					ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
+					Action: &fwdpb.ActionDesc_Lookup{
+						Lookup: &fwdpb.LookupActionDesc{
+							TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: NHTable}},
+						},
+					},
+				}},
+			}},
+		},
+		wantAttr: &saipb.NextHopGroupMemberAttribute{
+			NextHopGroupId: proto.Uint64(1),
+			NextHopId:      proto.Uint64(12),
+			Weight:         proto.Uint32(66),
+		},
+	}, {
+		desc:     "fail: member not found",
+		memberID: 100,
+		wantErr:  "cannot find member with id",
+	}}
+	// Creates two members.
+	createReqs := []*saipb.CreateNextHopGroupMemberRequest{{
+		NextHopId: proto.Uint64(11),
+		Weight:    proto.Uint32(33),
+	}, {
+		NextHopId: proto.Uint64(12),
+		Weight:    proto.Uint32(66),
+	}}
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			dplane := &fakeSwitchDataplane{}
+			c, mgr, stopFn := newTestNextHopGroup(t, dplane)
+			ctx := context.Background()
+			r, err := c.CreateNextHopGroup(ctx, &saipb.CreateNextHopGroupRequest{Type: saipb.NextHopGroupType_NEXT_HOP_GROUP_TYPE_DYNAMIC_UNORDERED_ECMP.Enum()})
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer stopFn()
+			memberID := tt.memberID // memberID is either the memberID specified in test case, or the memberID of the first added member.
+			if memberID == 0 {
+				for _, req := range createReqs {
+					req.NextHopGroupId = &r.Oid
+					resp, err := c.CreateNextHopGroupMember(ctx, req)
+					if err != nil {
+						t.Fatal("unexpected error: %v", err)
+					}
+					// Stores the first member ID.
+					if memberID == 0 {
+						memberID = resp.GetOid()
+					}
+				}
+			}
+
+			_, err = c.RemoveNextHopGroupMember(ctx, &saipb.RemoveNextHopGroupMemberRequest{Oid: memberID})
+			if diff := errdiff.Check(err, tt.wantErr); diff != "" {
+				t.Fatalf("RemoveNextHopGroupMember() unexpected err: %s", diff)
+			}
+			if tt.wantErr != "" {
+				return
+			}
+
+			if d := cmp.Diff(dplane.gotEntryAddReqs[2], tt.wantReq, protocmp.Transform()); d != "" {
+				t.Errorf("RemoveNextHopGroupMember() failed: diff(-got,+want)\n:%s", d)
+			}
+			attr := &saipb.NextHopGroupMemberAttribute{}
+			if err := mgr.PopulateAllAttributes("3", attr); err != nil {
+				t.Fatal(err)
+			}
+			if d := cmp.Diff(attr, tt.wantAttr, protocmp.Transform()); d != "" {
+				t.Errorf("RemoveNextHopGroupMember() failed: diff(-got,+want)\n:%s", d)
 			}
 		})
 	}
