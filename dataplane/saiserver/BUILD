@@ -9,6 +9,7 @@ go_library(
         "routing.go",
         "saiserver.go",
         "switch.go",
+        "tunnel.go",
     ],
     importpath = "github.com/openconfig/lemming/dataplane/saiserver",
     visibility = ["//visibility:public"],
@@ -39,6 +40,7 @@ go_test(
         "ports_test.go",
         "routing_test.go",
         "switch_test.go",
+        "tunnel_test.go",
     ],
     embed = [":saiserver"],
     deps = [

@@ -50,6 +50,7 @@ type saiSwitch struct {
 	nextHop         *nextHop
 	route           *route
 	lag             *lag
+	tunnel          *tunnel
 	routerInterface *routerInterface
 	mgr             *attrmgr.AttrMgr
 }
@@ -83,6 +84,7 @@ const (
 	IngressActionTable    = "ingress-table"
 	EgressActionTable     = "egress-action-table"
 	NHActionTable         = "nh-action"
+	TunnelEncap           = "tunnel-encap"
 )
 
 func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server, opts *dplaneopts.Options) (*saiSwitch, error) {
@@ -106,6 +108,7 @@ func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server, 
 		route:           newRoute(mgr, engine, s),
 		routerInterface: newRouterInterface(mgr, engine, s),
 		lag:             newLAG(mgr, engine, s),
+		tunnel:          newTunnel(mgr, engine, s),
 		mgr:             mgr,
 	}
 	saipb.RegisterSwitchServer(s, sw)
