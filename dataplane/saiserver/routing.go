@@ -215,6 +215,18 @@ func (nhg *nextHopGroup) RemoveNextHopGroup(_ context.Context, req *saipb.Remove
 		return nil, status.Errorf(codes.FailedPrecondition, "group %d does not exist", oid)
 	}
 	delete(nhg.groups, oid)
+
+	entry := fwdconfig.EntryDesc(fwdconfig.ExactEntry(
+		fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_GROUP_ID).WithUint64(oid))).Build()
+	nhReq := &fwdpb.TableEntryRemoveRequest{
+		ContextId: &fwdpb.ContextId{Id: nhg.dataplane.ID()},
+		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: NHTable}},
+		EntryDesc: entry,
+	}
+
+	if _, err := nhg.dataplane.TableEntryRemove(context.Background(), nhReq); err != nil {
+		return nil, err
+	}
 	return &saipb.RemoveNextHopGroupResponse{}, nil
 }
 
