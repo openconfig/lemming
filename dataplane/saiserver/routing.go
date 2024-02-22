@@ -116,7 +116,7 @@ func newNextHopGroup(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc
 	return n
 }
 
-// CreateNextHopGroupMember creates a next hop group.
+// CreateNextHopGroup creates a next hop group.
 func (nhg *nextHopGroup) CreateNextHopGroup(_ context.Context, req *saipb.CreateNextHopGroupRequest) (*saipb.CreateNextHopGroupResponse, error) {
 	id := nhg.mgr.NextID()
 
@@ -130,16 +130,17 @@ func (nhg *nextHopGroup) CreateNextHopGroup(_ context.Context, req *saipb.Create
 	}, nil
 }
 
-// CreateNextHopGroupMember adds a next hop to a next hop group.
-func (nhg *nextHopGroup) CreateNextHopGroupMember(ctx context.Context, req *saipb.CreateNextHopGroupMemberRequest) (*saipb.CreateNextHopGroupMemberResponse, error) {
-	memberID := nhg.mgr.NextID()
-	group := nhg.groups[req.GetNextHopGroupId()]
+// updateNextHopGroupMember updates the next hop group.
+// If m is nil, remove mid from the group(key: nhgid), otherwise add m to group with mid as the key.
+func updateNextHopGroupMember(ctx context.Context, nhg *nextHopGroup, nhgid, mid uint64, m *groupMember) (*fwdpb.TableEntryAddReply, error) {
+	group := nhg.groups[nhgid]
 	if group == nil {
-		return nil, status.Errorf(codes.FailedPrecondition, "group %v does not exist", req.GetNextHopGroupId())
+		return nil, status.Errorf(codes.FailedPrecondition, "group %d does not exist", nhgid)
 	}
-	group[memberID] = &groupMember{
-		nextHop: req.GetNextHopId(),
-		weight:  req.GetWeight(),
+	if m != nil {
+		group[mid] = m
+	} else {
+		delete(group, mid)
 	}
 	var actLists []*fwdpb.ActionList
 	for _, member := range group {
@@ -191,7 +192,7 @@ func (nhg *nextHopGroup) CreateNextHopGroupMember(ctx context.Context, req *saip
 				Entry: &fwdpb.EntryDesc_Exact{
 					Exact: &fwdpb.ExactEntryDesc{
 						Fields: []*fwdpb.PacketFieldBytes{{
-							Bytes: binary.BigEndian.AppendUint64(nil, req.GetNextHopGroupId()),
+							Bytes: binary.BigEndian.AppendUint64(nil, nhgid),
 							FieldId: &fwdpb.PacketFieldId{
 								Field: &fwdpb.PacketField{
 									FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_GROUP_ID,
@@ -204,11 +205,59 @@ func (nhg *nextHopGroup) CreateNextHopGroupMember(ctx context.Context, req *saip
 			Actions: actions,
 		}},
 	}
-	if _, err := nhg.dataplane.TableEntryAdd(ctx, entries); err != nil {
+	return nhg.dataplane.TableEntryAdd(ctx, entries)
+}
+
+// RemoveNextHopGroup removes the next hop group specified in the OID.
+func (nhg *nextHopGroup) RemoveNextHopGroup(_ context.Context, req *saipb.RemoveNextHopGroupRequest) (*saipb.RemoveNextHopGroupResponse, error) {
+	oid := req.GetOid()
+	if _, ok := nhg.groups[oid]; !ok {
+		return nil, status.Errorf(codes.FailedPrecondition, "group %d does not exist", oid)
+	}
+	// Emit an error if the NHG still has members.
+	if len(nhg.groups[oid]) != 0 {
+		return nil, status.Errorf(codes.FailedPrecondition, "cannot remove non-empty group %d", oid)
+	}
+	delete(nhg.groups, oid)
+	return &saipb.RemoveNextHopGroupResponse{}, nil
+}
+
+// CreateNextHopGroupMember adds a next hop to a next hop group.
+func (nhg *nextHopGroup) CreateNextHopGroupMember(ctx context.Context, req *saipb.CreateNextHopGroupMemberRequest) (*saipb.CreateNextHopGroupMemberResponse, error) {
+	nhgid := req.GetNextHopGroupId()
+	mid := nhg.mgr.NextID()
+	m := &groupMember{
+		nextHop: req.GetNextHopId(),
+		weight:  req.GetWeight(),
+	}
+	if _, err := updateNextHopGroupMember(ctx, nhg, nhgid, mid, m); err != nil {
+		return nil, err
+	}
+	return &saipb.CreateNextHopGroupMemberResponse{Oid: mid}, nil
+}
+
+// RemoveNextHopGroupMember remove the next hop group member specified in the OID.
+// Only need to remove with the desc.
+func (nhg *nextHopGroup) RemoveNextHopGroupMember(ctx context.Context, req *saipb.RemoveNextHopGroupMemberRequest) (*saipb.RemoveNextHopGroupMemberResponse, error) {
+	locateMember := func(oid uint64) (uint64, uint64, error) {
+		for nhgid, nhg := range nhg.groups {
+			for mid := range nhg {
+				if mid == oid {
+					return nhgid, mid, nil
+				}
+			}
+		}
+		return 0, 0, fmt.Errorf("cannot find member with id=%d", oid)
+	}
+	nhgid, mid, err := locateMember(req.GetOid())
+	if err != nil {
 		return nil, err
 	}
 
-	return &saipb.CreateNextHopGroupMemberResponse{Oid: memberID}, nil
+	if _, err := updateNextHopGroupMember(ctx, nhg, nhgid, mid, nil); err != nil {
+		return nil, err
+	}
+	return &saipb.RemoveNextHopGroupMemberResponse{}, nil
 }
 
 type nextHop struct {

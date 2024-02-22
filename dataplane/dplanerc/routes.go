@@ -120,7 +120,7 @@ func (ni *Reconciler) StartRoute(ctx context.Context, client *ygnmi.Client) erro
 				return ygnmi.Continue
 			}
 			for i, nh := range route.GetNextHops().GetHops() {
-				hopID, err = ni.createNextHop(ctx, nh)
+				hID, err := ni.createNextHop(ctx, nh)
 				if err != nil {
 					log.Warningf("failed to create next hop: %v", err)
 					return ygnmi.Continue
@@ -128,7 +128,7 @@ func (ni *Reconciler) StartRoute(ctx context.Context, client *ygnmi.Client) erro
 				_, err = ni.nextHopGroupClient.CreateNextHopGroupMember(ctx, &saipb.CreateNextHopGroupMemberRequest{
 					Switch:         ni.switchID,
 					NextHopGroupId: &group.Oid,
-					NextHopId:      &hopID,
+					NextHopId:      &hID,
 					Weight:         proto.Uint32(uint32(route.GetNextHops().Weights[i])),
 				})
 				if err != nil {
