@@ -214,10 +214,6 @@ func (nhg *nextHopGroup) RemoveNextHopGroup(_ context.Context, req *saipb.Remove
 	if _, ok := nhg.groups[oid]; !ok {
 		return nil, status.Errorf(codes.FailedPrecondition, "group %d does not exist", oid)
 	}
-	// Emit an error if the NHG still has members.
-	if len(nhg.groups[oid]) != 0 {
-		return nil, status.Errorf(codes.FailedPrecondition, "cannot remove non-empty group %d", oid)
-	}
 	delete(nhg.groups, oid)
 	return &saipb.RemoveNextHopGroupResponse{}, nil
 }

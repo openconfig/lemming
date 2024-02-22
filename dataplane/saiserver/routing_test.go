@@ -125,13 +125,6 @@ func TestRemoveNextHopGroup(t *testing.T) {
 		desc:    "fail: group not found",
 		oid:     15, // a non-existing OID.
 		wantErr: "group 15 does not exist",
-	}, {
-		desc: "fail: group not empty",
-		memberReq: &saipb.CreateNextHopGroupMemberRequest{
-			NextHopId: proto.Uint64(1),
-			Weight:    proto.Uint32(100),
-		},
-		wantErr: "cannot remove non-empty group",
 	}}
 	nhgReq := &saipb.CreateNextHopGroupRequest{
 		Type: saipb.NextHopGroupType_NEXT_HOP_GROUP_TYPE_DYNAMIC_UNORDERED_ECMP.Enum(),
@@ -271,17 +264,13 @@ func TestCreateNextHopGroupMember(t *testing.T) {
 func TestRemoveNextHopGroupMember(t *testing.T) {
 	tests := []struct {
 		desc     string
-		mid      uint64
-		reqIndex int
-		attrID   string
+		memberID uint64
 		wantAttr *saipb.NextHopGroupMemberAttribute
 		wantReq  *fwdpb.TableEntryAddRequest
 		wantErr  string
 	}{{
 		desc:     "success",
-		mid:      0,
-		reqIndex: 2,
-		attrID:   "3",
+		memberID: 0,
 		wantReq: &fwdpb.TableEntryAddRequest{
 			ContextId: &fwdpb.ContextId{Id: "foo"},
 			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: NHGTable}},
@@ -342,21 +331,18 @@ func TestRemoveNextHopGroupMember(t *testing.T) {
 			Weight:         proto.Uint32(66),
 		},
 	}, {
-		desc:    "fail: member not found",
-		mid:     100,
-		wantErr: "cannot find member with id",
+		desc:     "fail: member not found",
+		memberID: 100,
+		wantErr:  "cannot find member with id",
 	}}
-
 	// Creates two members.
-	createReqs := []*saipb.CreateNextHopGroupMemberRequest{
-		{
-			NextHopId: proto.Uint64(11),
-			Weight:    proto.Uint32(33),
-		}, {
-			NextHopId: proto.Uint64(12),
-			Weight:    proto.Uint32(66),
-		},
-	}
+	createReqs := []*saipb.CreateNextHopGroupMemberRequest{{
+		NextHopId: proto.Uint64(11),
+		Weight:    proto.Uint32(33),
+	}, {
+		NextHopId: proto.Uint64(12),
+		Weight:    proto.Uint32(66),
+	}}
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
 			dplane := &fakeSwitchDataplane{}
@@ -367,8 +353,8 @@ func TestRemoveNextHopGroupMember(t *testing.T) {
 				t.Fatal(err)
 			}
 			defer stopFn()
-			mid := tt.mid // mid is either the mid specified in test case, or the mid of the first added member.
-			if mid == 0 {
+			memberID := tt.memberID // memberID is either the memberID specified in test case, or the memberID of the first added member.
+			if memberID == 0 {
 				for _, req := range createReqs {
 					req.NextHopGroupId = &r.Oid
 					resp, err := c.CreateNextHopGroupMember(ctx, req)
@@ -376,13 +362,13 @@ func TestRemoveNextHopGroupMember(t *testing.T) {
 						t.Fatal("unexpected error: %v", err)
 					}
 					// Stores the first member ID.
-					if mid == 0 {
-						mid = resp.GetOid()
+					if memberID == 0 {
+						memberID = resp.GetOid()
 					}
 				}
 			}
 
-			_, err = c.RemoveNextHopGroupMember(ctx, &saipb.RemoveNextHopGroupMemberRequest{Oid: mid})
+			_, err = c.RemoveNextHopGroupMember(ctx, &saipb.RemoveNextHopGroupMemberRequest{Oid: memberID})
 			if diff := errdiff.Check(err, tt.wantErr); diff != "" {
 				t.Fatalf("RemoveNextHopGroupMember() unexpected err: %s", diff)
 			}
@@ -390,11 +376,11 @@ func TestRemoveNextHopGroupMember(t *testing.T) {
 				return
 			}
 
-			if d := cmp.Diff(dplane.gotEntryAddReqs[tt.reqIndex], tt.wantReq, protocmp.Transform()); d != "" {
+			if d := cmp.Diff(dplane.gotEntryAddReqs[2], tt.wantReq, protocmp.Transform()); d != "" {
 				t.Errorf("RemoveNextHopGroupMember() failed: diff(-got,+want)\n:%s", d)
 			}
 			attr := &saipb.NextHopGroupMemberAttribute{}
-			if err := mgr.PopulateAllAttributes(tt.attrID, attr); err != nil {
+			if err := mgr.PopulateAllAttributes("3", attr); err != nil {
 				t.Fatal(err)
 			}
 			if d := cmp.Diff(attr, tt.wantAttr, protocmp.Transform()); d != "" {
