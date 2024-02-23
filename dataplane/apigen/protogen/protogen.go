@@ -74,7 +74,7 @@ func generateCommonTypes(docInfo *docparser.SAIInfo) (string, error) {
 	common := &protoCommonTmplData{}
 
 	// Generate the hand-crafted messages.
-	rangeInOrder(saiTypeToProto, func(key string, typeInfo saiTypeInfo) error {
+	rangeInOrder(saiTypeToProto, func(_ string, typeInfo saiTypeInfo) error {
 		if typeInfo.MessageDef != "" {
 			common.Messages = append(common.Messages, typeInfo.MessageDef)
 		}
@@ -1009,13 +1009,13 @@ var saiTypeToProtoTypeCompound = map[string]func(subType string, xmlInfo *docpar
 		}
 		return "repeated " + saiast.TrimSAIName(subType, true, false), true
 	},
-	"sai_acl_field_data_t": func(next string, xmlInfo *docparser.SAIInfo) (string, bool) {
+	"sai_acl_field_data_t": func(_ string, _ *docparser.SAIInfo) (string, bool) {
 		return "AclFieldData", false
 	},
-	"sai_acl_action_data_t": func(next string, xmlInfo *docparser.SAIInfo) (string, bool) {
+	"sai_acl_action_data_t": func(_ string, _ *docparser.SAIInfo) (string, bool) {
 		return "AclActionData", false
 	},
-	"sai_pointer_t": func(next string, xmlInfo *docparser.SAIInfo) (string, bool) { return "-", false }, // Noop, these are special cases.
+	"sai_pointer_t": func(_ string, _ *docparser.SAIInfo) (string, bool) { return "-", false }, // Noop, these are special cases.
 }
 
 // saiTypeToProtoType returns the protobuf type string for a SAI type.

@@ -93,7 +93,7 @@ func createGRIBIServer(gClient gpb.GNMIClient, target string, root *oc.Root) (*s
 		return nil, err
 	}
 
-	ribHookfn := func(o constants.OpType, ts int64, ni string, data ygot.ValidatedGoStruct) {
+	ribHookfn := func(o constants.OpType, _ int64, ni string, data ygot.ValidatedGoStruct) {
 		if o != constants.Add {
 			// TODO(wenbli): handle replace and delete :-)
 			return
