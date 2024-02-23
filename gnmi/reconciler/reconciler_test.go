@@ -21,10 +21,11 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/openconfig/gnmi/errdiff"
-	"github.com/openconfig/lemming/gnmi/oc"
-	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"google.golang.org/protobuf/testing/protocmp"
+
+	"github.com/openconfig/lemming/gnmi/oc"
+	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 )
@@ -36,15 +37,15 @@ func TestWithStart(t *testing.T) {
 		want string
 	}{{
 		desc: "single starter",
-		rec: (&Builder{}).WithStart(func(ctx context.Context, c *ygnmi.Client) error {
+		rec: (&Builder{}).WithStart(func(context.Context, *ygnmi.Client) error {
 			return fmt.Errorf("start 1 err")
 		}).Build(),
 		want: "start 1 err",
 	}, {
 		desc: "2 start funcs",
-		rec: (&Builder{}).WithStart(func(ctx context.Context, c *ygnmi.Client) error {
+		rec: (&Builder{}).WithStart(func(context.Context, *ygnmi.Client) error {
 			return fmt.Errorf("start 1 err")
-		}).WithStart(func(ctx context.Context, c *ygnmi.Client) error {
+		}).WithStart(func(context.Context, *ygnmi.Client) error {
 			return fmt.Errorf("start 2 err")
 		}).Build(),
 		want: "start 1 err, start 2 err",
@@ -67,16 +68,16 @@ func TestWithValidator(t *testing.T) {
 		wantPaths []ygnmi.PathStruct
 	}{{
 		desc: "single validator",
-		rec: (&Builder{}).WithValidator([]ygnmi.PathStruct{ocpath.Root()}, func(r *oc.Root) error {
+		rec: (&Builder{}).WithValidator([]ygnmi.PathStruct{ocpath.Root()}, func(*oc.Root) error {
 			return fmt.Errorf("validator 1")
 		}).Build(),
 		want:      "validator 1",
 		wantPaths: []ygnmi.PathStruct{ocpath.Root()},
 	}, {
 		desc: "2 validate funcs",
-		rec: (&Builder{}).WithValidator([]ygnmi.PathStruct{ocpath.Root()}, func(r *oc.Root) error {
+		rec: (&Builder{}).WithValidator([]ygnmi.PathStruct{ocpath.Root()}, func(*oc.Root) error {
 			return fmt.Errorf("validator 1")
-		}).WithValidator([]ygnmi.PathStruct{ocpath.Root().InterfaceAny()}, func(r *oc.Root) error {
+		}).WithValidator([]ygnmi.PathStruct{ocpath.Root().InterfaceAny()}, func(*oc.Root) error {
 			return fmt.Errorf("validator 2")
 		}).Build(),
 		want:      "validator 1, validator 2",

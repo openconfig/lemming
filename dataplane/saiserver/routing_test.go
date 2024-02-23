@@ -359,7 +359,7 @@ func TestRemoveNextHopGroupMember(t *testing.T) {
 					req.NextHopGroupId = &r.Oid
 					resp, err := c.CreateNextHopGroupMember(ctx, req)
 					if err != nil {
-						t.Fatal("unexpected error: %v", err)
+						t.Fatalf("unexpected error: %v", err)
 					}
 					// Stores the first member ID.
 					if memberID == 0 {
@@ -489,7 +489,7 @@ func TestCreateNextHop(t *testing.T) {
 					ActionType: fwdpb.ActionType_ACTION_TYPE_ENCAP,
 					Action: &fwdpb.ActionDesc_Encap{
 						Encap: &fwdpb.EncapActionDesc{
-							HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP,
+							HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4,
 						},
 					},
 				}, {
