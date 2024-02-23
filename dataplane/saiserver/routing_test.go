@@ -359,7 +359,7 @@ func TestRemoveNextHopGroupMember(t *testing.T) {
 					req.NextHopGroupId = &r.Oid
 					resp, err := c.CreateNextHopGroupMember(ctx, req)
 					if err != nil {
-						t.Fatal("unexpected error: %v", err)
+						t.Fatalf("unexpected error: %v", err)
 					}
 					// Stores the first member ID.
 					if memberID == 0 {
