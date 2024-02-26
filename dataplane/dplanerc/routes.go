@@ -92,25 +92,18 @@ func (ni *Reconciler) StartRoute(ctx context.Context, client *ygnmi.Client) erro
 			if routeData := ni.ocRouteData.findRoute(prefixStr, vrfID); routeData == nil {
 				if routeData.isNHG {
 					log.Infof("removing next hop group")
-					var hasError bool
 					for nhgID, nhs := range routeData.nhg {
 						for nhID, memberID := range nhs {
 							if err := ni.removeNextHopGroupMember(ctx, memberID); err != nil {
 								log.Warningf("failed to delete next hop group member: %v", err)
-								hasError = true
 							}
 							if err := ni.removeNextHop(ctx, nhID); err != nil {
 								log.Warningf("failed to delete next hop: %v", err)
-								hasError = true
 							}
 						}
 						if err := ni.removeNextHopGroup(ctx, nhgID); err != nil {
 							log.Warningf("failed to delete next hop group: %v", err)
-							hasError = true
 						}
-					}
-					if hasError {
-						return ygnmi.Continue
 					}
 				} else {
 					log.Infof("removing next hop.")
