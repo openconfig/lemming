@@ -384,6 +384,17 @@ func (ni *Reconciler) addLAGMember(ctx context.Context, intf ocInterface, member
 		if err := ni.ifaceMgr.LinkSetDown(memberLink); err != nil {
 			log.Warningf("failed to set link %v down: %v", intf.name, err)
 		}
+		for i := 0; i < 3; i++ { // Ensure link is down before continuing.
+			memberLink, err := ni.ifaceMgr.LinkByIndex(memberData.hostifIfIndex)
+			if err != nil {
+				break
+			}
+			if memberLink.Attrs().OperState == netlink.OperDown {
+				break
+			}
+			time.Sleep(time.Second)
+		}
+
 		defer func() {
 			if err := ni.ifaceMgr.LinkSetUp(memberLink); err != nil {
 				log.Warningf("failed to set link %v up: %v", intf.name, err)

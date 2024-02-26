@@ -5,9 +5,6 @@ go_test(
     size = "enormous",
     srcs = ["prefix_set_test.go"],
     data = ["//integration_tests/dut_policy_tests:topology_testbed"],
-    tags = [
-        "exclusive",
-    ],
     deps = [
         "//gnmi/oc",
         "//internal/binding",

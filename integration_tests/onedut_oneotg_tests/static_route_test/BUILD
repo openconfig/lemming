@@ -5,9 +5,6 @@ go_test(
     size = "enormous",
     srcs = ["static_route_traffic_test.go"],
     data = ["//integration_tests/onedut_oneotg_tests:topology_testbed"],
-    tags = [
-        "exclusive",
-    ],
     deps = [
         "//gnmi/fakedevice",
         "//gnmi/oc",

@@ -607,6 +607,7 @@ func (tc *testCase) testFlow(t *testing.T, l3header headerType) {
 	tc.verifyDUT(t)
 	tc.verifyATE(t)
 
+	time.Sleep(1 * time.Second)
 	beforeTrafficCounters := tc.getCounters(t, "before")
 
 	tc.ate.OTG().StartTraffic(t)
