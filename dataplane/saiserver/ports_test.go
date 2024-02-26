@@ -168,7 +168,7 @@ func TestCreatePort(t *testing.T) {
 	}}
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			getInterface = func(name string) (*net.Interface, error) {
+			getInterface = func(string) (*net.Interface, error) {
 				return nil, tt.getInterfaceErr
 			}
 			dplane := &fakeSwitchDataplane{}
@@ -320,7 +320,7 @@ func TestSetPortAttribute(t *testing.T) {
 	}}
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			getInterface = func(name string) (*net.Interface, error) {
+			getInterface = func(string) (*net.Interface, error) {
 				return nil, tt.getInterfaceErr
 			}
 			dplane := &fakeSwitchDataplane{}

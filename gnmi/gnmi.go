@@ -672,7 +672,7 @@ func newSubscribeTargetUpdateStream(s grpc.ServerStream, target string) grpc.Ser
 //
 // ref: https://www.openconfig.net/docs/gnmi/gnmi-specification/#2221-path-target
 func NewSubscribeTargetUpdateInterceptor(target string) func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-	return func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	return func(srv any, ss grpc.ServerStream, _ *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		err := handler(srv, newSubscribeTargetUpdateStream(ss, target))
 		if err != nil {
 			fmt.Printf("ERROR in interceptor stream: %v\n", err)

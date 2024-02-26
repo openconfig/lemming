@@ -20,13 +20,14 @@ import (
 	"testing"
 
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
-	"github.com/openconfig/lemming/gnmi/gnmiclient"
-	"github.com/openconfig/lemming/gnmi/oc"
-	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/local"
+
+	"github.com/openconfig/lemming/gnmi/gnmiclient"
+	"github.com/openconfig/lemming/gnmi/oc"
+	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 )
 
 func BenchmarkGNMISet(b *testing.B) {
@@ -152,7 +153,7 @@ func BenchmarkGNMISet(b *testing.B) {
 			_, err := gnmiclient.Replace[*oc.Interface](context.Background(), configClient, ocpath.Root().Interface(name).Config(), &oc.Interface{Description: ygot.String(fmt.Sprintf("iteration %d", i))})
 			return err
 		},
-		op2: func(name string, i int) error {
+		op2: func(name string, _ int) error {
 			_, err := gnmiclient.Delete[*oc.Interface](context.Background(), configClient, ocpath.Root().Interface(name).Config())
 			return err
 		},
@@ -162,7 +163,7 @@ func BenchmarkGNMISet(b *testing.B) {
 			_, err := gnmiclient.Replace(context.Background(), stateClient, ocpath.Root().Interface(name).State(), &oc.Interface{Description: ygot.String(fmt.Sprintf("iteration %d", i))})
 			return err
 		},
-		op2: func(name string, i int) error {
+		op2: func(name string, _ int) error {
 			_, err := gnmiclient.Delete(context.Background(), stateClient, ocpath.Root().Interface(name).State())
 			return err
 		},
@@ -181,7 +182,7 @@ func BenchmarkGNMISet(b *testing.B) {
 			_, err := gnmiclient.Replace[*oc.RoutingPolicy_PolicyDefinition](context.Background(), configClient, ocpath.Root().RoutingPolicy().PolicyDefinition(name).Config(), policy)
 			return err
 		},
-		op2: func(name string, i int) error {
+		op2: func(name string, _ int) error {
 			_, err := gnmiclient.Delete[*oc.RoutingPolicy_PolicyDefinition](context.Background(), configClient, ocpath.Root().RoutingPolicy().PolicyDefinition(name).Config())
 			return err
 		},

@@ -65,10 +65,12 @@ func (ab *ActionBuilder) Build() *fwdpb.ActionDesc {
 
 // UpdateActionBuilder is a builder for an update action.
 type UpdateActionBuilder struct {
-	fieldIDNum fwdpb.PacketFieldNum
-	updateType fwdpb.UpdateType
-	fieldSrc   fwdpb.PacketFieldNum
-	value      []byte
+	fieldIDNum  fwdpb.PacketFieldNum
+	updateType  fwdpb.UpdateType
+	fieldSrc    fwdpb.PacketFieldNum
+	instance    uint32
+	srcInstance uint32
+	value       []byte
 }
 
 // UpdateAction returns a new update action builder.
@@ -88,6 +90,18 @@ func (u *UpdateActionBuilder) WithFieldIDNum(num fwdpb.PacketFieldNum) *UpdateAc
 // WithUpdateType sets the update type.
 func (u *UpdateActionBuilder) WithUpdateType(t fwdpb.UpdateType) *UpdateActionBuilder {
 	u.updateType = t
+	return u
+}
+
+// WithFieldIDInstance sets the instance of the id num.
+func (u *UpdateActionBuilder) WithFieldIDInstance(i uint32) *UpdateActionBuilder {
+	u.instance = i
+	return u
+}
+
+// WithFieldSrcInstance sets the instance of the src id num.
+func (u *UpdateActionBuilder) WithFieldSrcInstance(i uint32) *UpdateActionBuilder {
+	u.srcInstance = i
 	return u
 }
 
@@ -115,6 +129,7 @@ func (u *UpdateActionBuilder) set(ad *fwdpb.ActionDesc) {
 			FieldId: &fwdpb.PacketFieldId{
 				Field: &fwdpb.PacketField{
 					FieldNum: u.fieldIDNum,
+					Instance: u.instance,
 				},
 			},
 			Type:  u.updateType,
@@ -122,6 +137,7 @@ func (u *UpdateActionBuilder) set(ad *fwdpb.ActionDesc) {
 			Field: &fwdpb.PacketFieldId{
 				Field: &fwdpb.PacketField{
 					FieldNum: u.fieldSrc,
+					Instance: u.srcInstance,
 				},
 			},
 		},

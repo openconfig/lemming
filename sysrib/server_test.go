@@ -1093,7 +1093,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 				Address: "192.168.1.42",
 			}},
 		}},
-		wantRoutes: func(v4 bool) []*dpb.Route {
+		wantRoutes: func(bool) []*dpb.Route {
 			return []*dpb.Route{{
 				Prefix: &dpb.RoutePrefix{
 					NetworkInstance: "DEFAULT",
@@ -1184,7 +1184,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 	}, {
 		desc:             "Remove Policy",
 		inDeletePolicies: []string{"192.168.0.0/16"},
-		wantRoutes: func(v4 bool) []*dpb.Route {
+		wantRoutes: func(bool) []*dpb.Route {
 			return []*dpb.Route{{
 				Prefix: &dpb.RoutePrefix{
 					NetworkInstance: "DEFAULT",
@@ -1234,7 +1234,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 				Address: "10.10.10.10",
 			}},
 		}},
-		wantRoutes: func(v4 bool) []*dpb.Route {
+		wantRoutes: func(bool) []*dpb.Route {
 			return []*dpb.Route{{
 				Prefix: &dpb.RoutePrefix{
 					NetworkInstance: "DEFAULT",
@@ -1357,7 +1357,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 	}, {
 		desc:             "Remove Policy for second BGP route",
 		inDeletePolicies: []string{"10.10.0.0/16"},
-		wantRoutes: func(v4 bool) []*dpb.Route {
+		wantRoutes: func(bool) []*dpb.Route {
 			return []*dpb.Route{{
 				Prefix: &dpb.RoutePrefix{
 					NetworkInstance: "DEFAULT",
@@ -1423,7 +1423,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 				Address: "10.10.20.20",
 			}},
 		}},
-		wantRoutes: func(v4 bool) []*dpb.Route {
+		wantRoutes: func(bool) []*dpb.Route {
 			return []*dpb.Route{{
 				Prefix: &dpb.RoutePrefix{
 					NetworkInstance: "DEFAULT",
@@ -1770,7 +1770,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 				Address: "::ffff:10.10.20.30",
 			}},
 		}},
-		wantRoutes: func(v4 bool) []*dpb.Route {
+		wantRoutes: func(bool) []*dpb.Route {
 			return []*dpb.Route{{
 				Prefix: &dpb.RoutePrefix{
 					NetworkInstance: "DEFAULT",
@@ -1871,7 +1871,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 		desc:             "Remove the more-specific policy",
 		skipV4:           true,
 		inDeletePolicies: []string{"10.10.20.0/24"},
-		wantRoutes: func(v4 bool) []*dpb.Route {
+		wantRoutes: func(bool) []*dpb.Route {
 			return []*dpb.Route{{
 				Prefix: &dpb.RoutePrefix{
 					NetworkInstance: "DEFAULT",
@@ -1942,7 +1942,7 @@ func TestBGPGUEPolicy(t *testing.T) {
 		desc:             "Remove the more-specific policy",
 		skipV6:           true,
 		inDeletePolicies: []string{"10.10.20.0/24"},
-		wantRoutes: func(v4 bool) []*dpb.Route {
+		wantRoutes: func(bool) []*dpb.Route {
 			return []*dpb.Route{{
 				Prefix: &dpb.RoutePrefix{
 					NetworkInstance: "DEFAULT",

@@ -166,11 +166,11 @@ func (lb *LemmingBind) Reserve(ctx context.Context, tb *opb.Testbed, runTime tim
 			RetryPeriod:     2 * time.Second,
 			ReleaseOnCancel: true,
 			Callbacks: leaderelection.LeaderCallbacks{
-				OnStartedLeading: func(ctx context.Context) {
+				OnStartedLeading: func(context.Context) {
 					ready <- true
 				},
 				OnStoppedLeading: func() {},
-				OnNewLeader:      func(identity string) {},
+				OnNewLeader:      func(string) {},
 			},
 		})
 		if err != nil {

@@ -191,7 +191,7 @@ func testTrafficv6(t *testing.T, otg *otg.OTG, srcEndPoint, dstEndPoint attrs.At
 	flowipv6.TxRx().Device().
 		SetTxNames([]string{srcEndPoint.Name + ".IPv6"}).
 		SetRxNames([]string{dstEndPoint.Name + ".IPv6"})
-	flowipv6.Duration().SetChoice("continuous")
+	flowipv6.Duration().Continuous()
 	flowipv6.Packet().Add().Ethernet()
 	v6 := flowipv6.Packet().Add().Ipv6()
 	v6.Src().SetValue(srcEndPoint.IPv6)

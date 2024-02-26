@@ -50,6 +50,7 @@ type saiSwitch struct {
 	nextHop         *nextHop
 	route           *route
 	lag             *lag
+	tunnel          *tunnel
 	routerInterface *routerInterface
 	mgr             *attrmgr.AttrMgr
 }
@@ -83,6 +84,7 @@ const (
 	IngressActionTable    = "ingress-table"
 	EgressActionTable     = "egress-action-table"
 	NHActionTable         = "nh-action"
+	TunnelEncap           = "tunnel-encap"
 )
 
 func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server, opts *dplaneopts.Options) (*saiSwitch, error) {
@@ -106,6 +108,7 @@ func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server, 
 		route:           newRoute(mgr, engine, s),
 		routerInterface: newRouterInterface(mgr, engine, s),
 		lag:             newLAG(mgr, engine, s),
+		tunnel:          newTunnel(mgr, engine, s),
 		mgr:             mgr,
 	}
 	saipb.RegisterSwitchServer(s, sw)
@@ -453,6 +456,26 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 		},
 	})
 	if err != nil {
+		return nil, err
+	}
+	tunnel := &fwdpb.TableCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
+		Desc: &fwdpb.TableDesc{
+			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: TunnelEncap}},
+			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_DROP}},
+			Table: &fwdpb.TableDesc_Exact{
+				Exact: &fwdpb.ExactTableDesc{
+					FieldIds: []*fwdpb.PacketFieldId{{
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TUNNEL_ID,
+						},
+					}},
+				},
+			},
+		},
+	}
+	if _, err := sw.dataplane.TableCreate(ctx, tunnel); err != nil {
 		return nil, err
 	}
 

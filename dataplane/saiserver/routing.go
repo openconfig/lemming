@@ -132,10 +132,10 @@ func (nhg *nextHopGroup) CreateNextHopGroup(_ context.Context, req *saipb.Create
 
 // updateNextHopGroupMember updates the next hop group.
 // If m is nil, remove mid from the group(key: nhgid), otherwise add m to group with mid as the key.
-func updateNextHopGroupMember(ctx context.Context, nhg *nextHopGroup, nhgid, mid uint64, m *groupMember) (*fwdpb.TableEntryAddReply, error) {
+func updateNextHopGroupMember(ctx context.Context, nhg *nextHopGroup, nhgid, mid uint64, m *groupMember) error {
 	group := nhg.groups[nhgid]
 	if group == nil {
-		return nil, status.Errorf(codes.FailedPrecondition, "group %d does not exist", nhgid)
+		return status.Errorf(codes.FailedPrecondition, "group %d does not exist", nhgid)
 	}
 	if m != nil {
 		group[mid] = m
@@ -205,7 +205,8 @@ func updateNextHopGroupMember(ctx context.Context, nhg *nextHopGroup, nhgid, mid
 			Actions: actions,
 		}},
 	}
-	return nhg.dataplane.TableEntryAdd(ctx, entries)
+	_, err := nhg.dataplane.TableEntryAdd(ctx, entries)
+	return err
 }
 
 // RemoveNextHopGroup removes the next hop group specified in the OID.
@@ -238,7 +239,7 @@ func (nhg *nextHopGroup) CreateNextHopGroupMember(ctx context.Context, req *saip
 		nextHop: req.GetNextHopId(),
 		weight:  req.GetWeight(),
 	}
-	if _, err := updateNextHopGroupMember(ctx, nhg, nhgid, mid, m); err != nil {
+	if err := updateNextHopGroupMember(ctx, nhg, nhgid, mid, m); err != nil {
 		return nil, err
 	}
 	return &saipb.CreateNextHopGroupMemberResponse{Oid: mid}, nil
@@ -262,7 +263,7 @@ func (nhg *nextHopGroup) RemoveNextHopGroupMember(ctx context.Context, req *saip
 		return nil, err
 	}
 
-	if _, err := updateNextHopGroupMember(ctx, nhg, nhgid, mid, nil); err != nil {
+	if err := updateNextHopGroupMember(ctx, nhg, nhgid, mid, nil); err != nil {
 		return nil, err
 	}
 	return &saipb.RemoveNextHopGroupMemberResponse{}, nil
@@ -287,18 +288,46 @@ func newNextHop(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Serv
 func (nh *nextHop) CreateNextHop(ctx context.Context, req *saipb.CreateNextHopRequest) (*saipb.CreateNextHopResponse, error) {
 	id := nh.mgr.NextID()
 
-	if req.GetType() != saipb.NextHopType_NEXT_HOP_TYPE_IP {
+	var actions []*fwdpb.ActionDesc
+
+	switch req.GetType() {
+	case saipb.NextHopType_NEXT_HOP_TYPE_IP:
+		actions = []*fwdpb.ActionDesc{
+			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE).WithUint64Value(req.GetRouterInterfaceId())).Build(),
+			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP).WithValue(req.GetIp())).Build(),
+			fwdconfig.Action(fwdconfig.LookupAction(NHActionTable)).Build(),
+		}
+	case saipb.NextHopType_NEXT_HOP_TYPE_TUNNEL_ENCAP:
+		headerID := fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP6
+		if len(req.Ip) == 4 {
+			headerID = fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4
+		}
+
+		actions = []*fwdpb.ActionDesc{
+			{
+				ActionType: fwdpb.ActionType_ACTION_TYPE_ENCAP,
+				Action: &fwdpb.ActionDesc_Encap{
+					Encap: &fwdpb.EncapActionDesc{
+						HeaderId: headerID,
+					},
+				},
+			},
+			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithValue(req.GetIp())).Build(),
+			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP).WithValue(req.GetIp())).Build(),
+			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TUNNEL_ID).WithUint64Value(req.GetTunnelId())).Build(),
+			fwdconfig.Action(fwdconfig.LookupAction(NHActionTable)).Build(),
+			fwdconfig.Action(fwdconfig.LookupAction(TunnelEncap)).Build(),
+		}
+	default:
 		return nil, status.Errorf(codes.InvalidArgument, "unsupported req type: %v", req.GetType())
 	}
 
 	nhReq := fwdconfig.TableEntryAddRequest(nh.dataplane.ID(), NHTable).AppendEntry(
 		fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_ID).WithUint64(id))),
-		fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE).WithUint64Value(req.GetRouterInterfaceId())),
-		fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP).WithValue(req.GetIp())),
-		fwdconfig.Action(fwdconfig.LookupAction(NHActionTable)),
-	)
+	).Build()
+	nhReq.Entries[0].Actions = actions
 
-	if _, err := nh.dataplane.TableEntryAdd(ctx, nhReq.Build()); err != nil {
+	if _, err := nh.dataplane.TableEntryAdd(ctx, nhReq); err != nil {
 		return nil, err
 	}
 	return &saipb.CreateNextHopResponse{
