@@ -153,6 +153,7 @@ func New(conn grpc.ClientConnInterface, switchID, cpuPortID uint64, contextID st
 		cpuPortID:          cpuPortID,
 		contextID:          contextID,
 		ocInterfaceData:    interfaceMap{},
+		ocRouteData:        routeMap{},
 		hostifClient:       saipb.NewHostifClient(conn),
 		portClient:         saipb.NewPortClient(conn),
 		switchClient:       saipb.NewSwitchClient(conn),
