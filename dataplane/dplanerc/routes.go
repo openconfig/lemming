@@ -109,7 +109,6 @@ func (ni *Reconciler) StartRoute(ctx context.Context, client *ygnmi.Client) erro
 					log.Infof("removing next hop.")
 					if err := ni.removeNextHop(ctx, routeData.nh); err != nil {
 						log.Warningf("failed to delete next hop: %v", err)
-						return ygnmi.Continue
 					}
 				}
 			}
