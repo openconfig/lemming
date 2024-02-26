@@ -128,6 +128,8 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 				dev = portMapPort
 			}
 		}
+	} else if port.opts.EthDevAsLane {
+		dev = fmt.Sprintf("eth%v", req.HwLaneList[0])
 	}
 
 	attrs := &saipb.PortAttribute{
