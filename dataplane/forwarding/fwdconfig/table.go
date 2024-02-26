@@ -55,14 +55,16 @@ func (b TableEntryAddRequestBuilder) Build() *fwdpb.TableEntryAddRequest {
 		Entries:   []*fwdpb.TableEntryAddRequest_Entry{},
 	}
 	for i, entry := range b.entries {
-		var acts []*fwdpb.ActionDesc
-		for _, act := range b.actions[i] {
-			acts = append(acts, act.Build())
-		}
-		req.Entries = append(req.Entries, &fwdpb.TableEntryAddRequest_Entry{
+		tableEntry := &fwdpb.TableEntryAddRequest_Entry{
 			EntryDesc: entry.Build(),
-			Actions:   acts,
-		})
+		}
+		req.Entries = append(req.Entries, tableEntry)
+		if i >= len(b.actions) {
+			break
+		}
+		for _, act := range b.actions[i] {
+			tableEntry.Actions = append(tableEntry.Actions, act.Build())
+		}
 	}
 	return req
 }

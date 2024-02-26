@@ -81,10 +81,10 @@ func TestFakeBuild(t *testing.T) {
 			in := &bytes.Buffer{}
 			writeHex(t, in, tt.inContents)
 			out := &bytes.Buffer{}
-			openFile = func(filename string) (io.Reader, error) {
+			openFile = func(string) (io.Reader, error) {
 				return in, tt.openErr
 			}
-			createFile = func(filename string) (io.Writer, error) {
+			createFile = func(string) (io.Writer, error) {
 				return out, tt.openErr
 			}
 			_, err := (fakeBuilder{}).Build(tt.inDesc, nil)

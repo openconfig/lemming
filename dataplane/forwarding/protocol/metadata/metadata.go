@@ -44,6 +44,7 @@ type Metadata struct {
 	trapID         []byte         // ID of the trap rule that was applies to this packet.
 	inputIface     []byte         // L3 input interface id.
 	outputIface    []byte         // L3 output interface id.
+	tunnelID       []byte         // Tunnel ID
 	desc           *protocol.Desc // Protocol descriptor.
 }
 
@@ -120,6 +121,8 @@ func (m *Metadata) Field(id fwdpacket.FieldID) ([]byte, error) {
 		return m.outputIface, nil
 	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TRAP_ID:
 		return m.trapID, nil
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TUNNEL_ID:
+		return m.tunnelID, nil
 
 	default:
 		return nil, fmt.Errorf("metadata: Field %v failed, unsupported field", id)
@@ -219,6 +222,9 @@ func (m *Metadata) updateSet(id fwdpacket.FieldID, arg []byte) (bool, error) {
 		return true, nil
 	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE:
 		m.outputIface = arg
+		return true, nil
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TUNNEL_ID:
+		m.tunnelID = arg
 		return true, nil
 	default:
 		return false, fmt.Errorf("metadata: UpdateField failed, set unsupported for field %v", id)

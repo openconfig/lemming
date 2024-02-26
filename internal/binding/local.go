@@ -170,7 +170,7 @@ func (m *localMagna) DialGNMI(ctx context.Context, opts ...grpc.DialOption) (gpb
 }
 
 // DialOTG returns a OTH client for the dut.
-func (m *localMagna) DialOTG(ctx context.Context, opts ...grpc.DialOption) (gosnappi.GosnappiApi, error) {
+func (m *localMagna) DialOTG(ctx context.Context, opts ...grpc.DialOption) (gosnappi.Api, error) {
 	opts = append(opts, grpc.WithTransportCredentials(local.NewCredentials()))
 	conn, err := grpc.DialContext(ctx, net.JoinHostPort(m.addr, fmt.Sprint(otgPort)), opts...)
 	if err != nil {

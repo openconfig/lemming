@@ -18,10 +18,11 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/openconfig/ygot/ygot"
+
 	"github.com/openconfig/lemming/bgp"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
-	"github.com/openconfig/ygot/ygot"
 
 	valpb "github.com/openconfig/lemming/proto/policyval"
 )
@@ -39,9 +40,7 @@ const (
 	rejectASPathSetName2 = "reject-as-path-set2"
 )
 
-var (
-	rejectedASPathSet = []string{"64502"}
-)
+var rejectedASPathSet = []string{"64502"}
 
 func singletonPrefixSetName(route string) string {
 	return "only-" + route
@@ -169,7 +168,7 @@ func TestSetAttributes(t *testing.T) {
 				ExpectedResult: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
 			}},
 		},
-		installPolicies: func(t *testing.T, dut1, dut2, dut3, dut4, dut5 *Device) {
+		installPolicies: func(t *testing.T, dut1, dut2, _, _, dut5 *Device) {
 			if debug {
 				fmt.Println("Installing test policies")
 			}

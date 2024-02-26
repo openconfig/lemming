@@ -46,7 +46,7 @@ func main() {
 }
 
 func getLogger() logging.Logger {
-	return logging.LoggerFunc(func(ctx context.Context, level logging.Level, msg string, fields ...any) {
+	return logging.LoggerFunc(func(_ context.Context, level logging.Level, msg string, fields ...any) {
 		switch level {
 		case logging.LevelDebug:
 			log.V(1).Info(msg, fields)
