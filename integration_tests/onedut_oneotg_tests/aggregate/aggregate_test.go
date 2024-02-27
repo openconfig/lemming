@@ -648,7 +648,7 @@ func TestNegotiation(t *testing.T) {
 		}
 		t.Run(fmt.Sprintf("LagType=%s", lagType), func(t *testing.T) {
 			tc.configureDUT(t)
-			time.Sleep(5 * time.Second)
+			time.Sleep(10 * time.Second)
 			t.Run("VerifyDUT", tc.verifyDUT)
 
 			tc.configureATE(t)

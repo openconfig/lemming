@@ -1,0 +1,8 @@
+steps:
+  - id: build
+    name: gcr.io/cloud-builders/bazel:6.4.0
+    args: ['build', '//...','--remote_cache https://storage.googleapis.com/lemming-bazel-cache','--google_default_credentials']
+
+timeout: 3600s
+options:
+  machineType: 'E2_HIGHCPU_8'
