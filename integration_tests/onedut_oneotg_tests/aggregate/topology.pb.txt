@@ -3,9 +3,6 @@ nodes: {
     name: "dut"
     vendor: OPENCONFIG
     model: "LEMMING"
-    config: {
-        args: "--v=1"
-    }
 }
 nodes: {
     name: "otg"
