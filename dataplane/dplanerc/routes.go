@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"net"
 	"net/netip"
-	"strconv"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
@@ -68,19 +67,10 @@ func (ni *Reconciler) StartRoute(ctx context.Context, client *ygnmi.Client) erro
 		}
 		ipBytes := prefix.Masked().Addr().AsSlice()
 		mask := net.CIDRMask(prefix.Bits(), len(ipBytes)*8)
-		vrfIDStr, ok := v.Path.Elem[2].Key["vrf"]
-		if !ok {
-			vrfIDStr = "0"
-			log.Warningf("VRF not specified. Set to 0 by default.")
-		}
-		vrfID, err := strconv.ParseUint(vrfIDStr, 10, 64)
-		if err != nil {
-			log.Warningf("failed to get VRF ID: %v", err)
-			return ygnmi.Continue
-		}
+		var vrfID uint64 = 0 // TODO: support vrf-ids other than 0.
 		entry := &saipb.RouteEntry{
 			SwitchId: ni.switchID,
-			VrId:     0, // TODO: support vrf-ids other than 0.
+			VrId:     0,
 			Destination: &saipb.IpPrefix{
 				Addr: ipBytes,
 				Mask: mask,
