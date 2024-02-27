@@ -8,6 +8,19 @@ steps:
         "--google_default_credentials",
         "//...",
       ]
+  - id: test
+    name: gcr.io/cloud-builders/bazel:6.4.0
+    entrypoint: bash
+    args:
+      [
+        "bazel",
+        "test",
+        "-test_output=errors",
+        "-combined_report=lcov",
+        "--remote_cache=https://storage.googleapis.com/lemming-bazel-cache",
+        "--google_default_credentials",
+        "bazel query 'attr(size, small, tests(\"//...\")) +  attr(size, medium, tests(\"//...\"))'",
+      ]
 
 timeout: 3600s
 options:
