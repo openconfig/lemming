@@ -1,14 +1,21 @@
 steps:
   - id: build
-    name: gcr.io/cloud-builders/bazel:6.4.0
+    name: gcr.io/cloud-builders/ubuntu
     script: |
-      apt-get update && apt-get -y install libpcap-dev
+      curl -Lo bazel https://github.com/bazelbuild/bazelisk/releases/download/v1.16.0/bazelisk-linux-amd64 && \
+        install bazel /usr/local/bin/
+      apt-get update && apt-get -y install libpcap-dev build-essential golang
       bazel build --remote_cache=https://storage.googleapis.com/lemming-bazel-cache --google_default_credentials //...
   - id: test
-    name: gcr.io/cloud-builders/bazel:6.4.0
+    name: gcr.io/cloud-builders/ubuntu
     script: |
+      curl -Lo bazel https://github.com/bazelbuild/bazelisk/releases/download/v1.16.0/bazelisk-linux-amd64 && \
+        install bazel /usr/local/bin/
+      apt-get update && apt-get -y install libpcap-dev build-essential golang
       bazel test --test_output=errors --combined_report=lcov --remote_cache=https://storage.googleapis.com/lemming-bazel-cache  --google_default_credentials \
-      $(bazel query 'attr(size, small, tests("//...")) +  attr(size, medium, tests("//..."))')
+        $(bazel query 'attr(size, small, tests("//...")) +  attr(size, medium, tests("//..."))')
 timeout: 3600s
+
 options:
-  machineType: "E2_HIGHCPU_8"
+  pool:
+    name: 'projects/openconfig-lemming/locations/us-central1/workerPools/test-pool'
