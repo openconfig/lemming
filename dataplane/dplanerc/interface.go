@@ -81,6 +81,24 @@ func (d interfaceMap) findByPortID(portID uint64) (ocInterface, *interfaceData) 
 	return ocInterface{}, nil
 }
 
+type ocRoute struct {
+	vrf    uint64
+	prefix string
+}
+
+type routeData struct {
+	nh    uint64 // OID of the NextHop
+	isNHG bool
+	nhg   map[uint64]map[uint64]uint64 // NHG_ID/NH_ID -> Member_ID
+}
+
+type routeMap map[ocRoute]*routeData
+
+func (r routeMap) findRoute(ipPrefix string, vrfID uint64) *routeData {
+	key := ocRoute{vrf: vrfID, prefix: ipPrefix}
+	return r[key]
+}
+
 // Reconciler handles config updates to the paths.
 type Reconciler struct {
 	c *ygnmi.Client
@@ -102,6 +120,7 @@ type Reconciler struct {
 	switchID        uint64
 	ifaceMgr        interfaceManager
 	ocInterfaceData interfaceMap
+	ocRouteData     routeMap
 	cpuPortID       uint64
 	contextID       string
 }
@@ -134,6 +153,7 @@ func New(conn grpc.ClientConnInterface, switchID, cpuPortID uint64, contextID st
 		cpuPortID:          cpuPortID,
 		contextID:          contextID,
 		ocInterfaceData:    interfaceMap{},
+		ocRouteData:        routeMap{},
 		hostifClient:       saipb.NewHostifClient(conn),
 		portClient:         saipb.NewPortClient(conn),
 		switchClient:       saipb.NewSwitchClient(conn),

@@ -59,17 +59,18 @@ func (ni *Reconciler) StartRoute(ctx context.Context, client *ygnmi.Client) erro
 	ctx, cancelFn := context.WithCancel(ctx)
 	w := ygnmi.WatchAll(ctx, client, MustWildcardQuery(), func(v *ygnmi.Value[*dpb.Route]) error {
 		route, present := v.Val()
-		prefix, err := netip.ParsePrefix(v.Path.Elem[2].Key["prefix"])
+		prefixStr := v.Path.Elem[2].Key["prefix"]
+		prefix, err := netip.ParsePrefix(prefixStr)
 		if err != nil {
 			log.Warningf("failed to parse cidr: %v", err)
 			return ygnmi.Continue
 		}
 		ipBytes := prefix.Masked().Addr().AsSlice()
 		mask := net.CIDRMask(prefix.Bits(), len(ipBytes)*8)
-
+		var vrfID uint64 // TODO: support vrf-ids other than 0.
 		entry := &saipb.RouteEntry{
 			SwitchId: ni.switchID,
-			VrId:     0, // TODO: support vrf-ids other than 0.
+			VrId:     0,
 			Destination: &saipb.IpPrefix{
 				Addr: ipBytes,
 				Mask: mask,
@@ -77,8 +78,33 @@ func (ni *Reconciler) StartRoute(ctx context.Context, client *ygnmi.Client) erro
 		}
 
 		if !present {
+			// Remove NextHop or NextHopGroup.
+			if routeData := ni.ocRouteData.findRoute(prefixStr, vrfID); routeData != nil {
+				if routeData.isNHG {
+					log.Infof("removing next hop group")
+					for nhgID, nhs := range routeData.nhg {
+						for nhID, memberID := range nhs {
+							if err := ni.removeNextHopGroupMember(ctx, memberID); err != nil {
+								log.Warningf("failed to delete next hop group member: %v", err)
+							}
+							if err := ni.removeNextHop(ctx, nhID); err != nil {
+								log.Warningf("failed to delete next hop: %v", err)
+							}
+						}
+						if err := ni.removeNextHopGroup(ctx, nhgID); err != nil {
+							log.Warningf("failed to delete next hop group: %v", err)
+						}
+					}
+				} else {
+					log.Infof("removing next hop.")
+					if err := ni.removeNextHop(ctx, routeData.nh); err != nil {
+						log.Warningf("failed to delete next hop: %v", err)
+					}
+				}
+			}
+
 			log.Infof("removing route: %v", prefix)
-			_, err := ni.routeClient.RemoveRouteEntry(ctx, &saipb.RemoveRouteEntryRequest{
+			_, err = ni.routeClient.RemoveRouteEntry(ctx, &saipb.RemoveRouteEntryRequest{
 				Entry: entry,
 			})
 			if err != nil {
@@ -103,12 +129,14 @@ func (ni *Reconciler) StartRoute(ctx context.Context, client *ygnmi.Client) erro
 			return ygnmi.Continue
 		}
 		var hopID uint64
+		routeKey := ocRoute{prefix: prefixStr, vrf: vrfID}
 		if len(route.GetNextHops().GetHops()) == 1 {
 			hopID, err = ni.createNextHop(ctx, route.GetNextHops().Hops[0])
 			if err != nil {
 				log.Warningf("failed to create next hop: %v", err)
 				return ygnmi.Continue
 			}
+			ni.ocRouteData[routeKey] = &routeData{nh: hopID}
 		} else {
 			group, err := ni.nextHopGroupClient.CreateNextHopGroup(ctx, &saipb.CreateNextHopGroupRequest{
 				Switch: ni.switchID,
@@ -119,13 +147,14 @@ func (ni *Reconciler) StartRoute(ctx context.Context, client *ygnmi.Client) erro
 				log.Warningf("failed to create next hop group: %v", err)
 				return ygnmi.Continue
 			}
+			rd := &routeData{isNHG: true, nhg: map[uint64]map[uint64]uint64{hopID: {}}}
 			for i, nh := range route.GetNextHops().GetHops() {
 				hID, err := ni.createNextHop(ctx, nh)
 				if err != nil {
 					log.Warningf("failed to create next hop: %v", err)
 					return ygnmi.Continue
 				}
-				_, err = ni.nextHopGroupClient.CreateNextHopGroupMember(ctx, &saipb.CreateNextHopGroupMemberRequest{
+				resp, err := ni.nextHopGroupClient.CreateNextHopGroupMember(ctx, &saipb.CreateNextHopGroupMemberRequest{
 					Switch:         ni.switchID,
 					NextHopGroupId: &group.Oid,
 					NextHopId:      &hID,
@@ -135,7 +164,9 @@ func (ni *Reconciler) StartRoute(ctx context.Context, client *ygnmi.Client) erro
 					log.Warningf("failed to create next group member: %v", err)
 					return ygnmi.Continue
 				}
+				rd.nhg[hopID][hID] = resp.Oid
 			}
+			ni.ocRouteData[routeKey] = rd
 		}
 		rReq.NextHopId = proto.Uint64(hopID)
 		if _, err := ni.routeClient.CreateRouteEntry(ctx, &rReq); err != nil {
@@ -199,6 +230,36 @@ func (ni *Reconciler) createNextHop(ctx context.Context, hop *dpb.NextHop) (uint
 		log.Infof("created gue actions: %v", actReq)
 	}
 	return resp.Oid, nil
+}
+
+func (ni *Reconciler) removeNextHop(ctx context.Context, oid uint64) error {
+	hopReq := saipb.RemoveNextHopRequest{
+		Oid: oid,
+	}
+	if _, err := ni.nextHopClient.RemoveNextHop(ctx, &hopReq); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (ni *Reconciler) removeNextHopGroup(ctx context.Context, oid uint64) error {
+	hopReq := saipb.RemoveNextHopGroupRequest{
+		Oid: oid,
+	}
+	if _, err := ni.nextHopGroupClient.RemoveNextHopGroup(ctx, &hopReq); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (ni *Reconciler) removeNextHopGroupMember(ctx context.Context, oid uint64) error {
+	hopReq := saipb.RemoveNextHopGroupMemberRequest{
+		Oid: oid,
+	}
+	if _, err := ni.nextHopGroupClient.RemoveNextHopGroupMember(ctx, &hopReq); err != nil {
+		return err
+	}
+	return nil
 }
 
 func gueActions(gueHeaders *dpb.GUE) ([]*fwdpb.ActionDesc, error) {
