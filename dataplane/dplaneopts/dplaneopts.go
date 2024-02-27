@@ -30,6 +30,9 @@ type Options struct {
 	PortConfigFile string
 	// PortMap maps the modeled port name (Ethernet1/1/1) to Linux port name (eth1).
 	PortMap map[string]string
+	// EthDevAsLane treats ethX and hardware lane X.
+	// If a port is created with multiple lanes only the first is used.
+	EthDevAsLane bool
 }
 
 // Option exposes additional configuration for the dataplane.
@@ -80,6 +83,15 @@ func WithPortConfigFile(file string) Option {
 func WithPortMap(m map[string]string) Option {
 	return func(o *Options) {
 		o.PortMap = m
+	}
+}
+
+// WithEthDevAsLane enables treating ethX and hardware lane X.
+// If a port is created with multiple lanes only the first is used.
+// Default: none
+func WithEthDevAsLane(enable bool) Option {
+	return func(o *Options) {
+		o.EthDevAsLane = enable
 	}
 }
 
