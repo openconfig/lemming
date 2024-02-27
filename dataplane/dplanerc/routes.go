@@ -67,7 +67,7 @@ func (ni *Reconciler) StartRoute(ctx context.Context, client *ygnmi.Client) erro
 		}
 		ipBytes := prefix.Masked().Addr().AsSlice()
 		mask := net.CIDRMask(prefix.Bits(), len(ipBytes)*8)
-		var vrfID uint64 = 0 // TODO: support vrf-ids other than 0.
+		var vrfID uint64 // TODO: support vrf-ids other than 0.
 		entry := &saipb.RouteEntry{
 			SwitchId: ni.switchID,
 			VrId:     0,
