@@ -89,7 +89,7 @@ func (ni *Reconciler) StartRoute(ctx context.Context, client *ygnmi.Client) erro
 
 		if !present {
 			// Remove NextHop or NextHopGroup.
-			if routeData := ni.ocRouteData.findRoute(prefixStr, vrfID); routeData == nil {
+			if routeData := ni.ocRouteData.findRoute(prefixStr, vrfID); routeData != nil {
 				if routeData.isNHG {
 					log.Infof("removing next hop group")
 					for nhgID, nhs := range routeData.nhg {
