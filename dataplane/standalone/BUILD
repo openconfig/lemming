@@ -68,6 +68,7 @@ pkg_deb(
 cc_binary(
     name = "saibin",
     linkstatic = True,
+    tags = ["manual"],
     deps = [
         ":entrypoint",
     ],
