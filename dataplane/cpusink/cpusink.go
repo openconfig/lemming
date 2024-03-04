@@ -155,7 +155,7 @@ func (sink *Sink) ReceivePackets(ctx context.Context) error {
 			if !ok {
 				log.Infof("skipping port with id %v", resp.Packet.Egress.ObjectId.Id)
 			}
-			if err := p.Write(resp.Packet.Bytes); err != nil {
+			if _, err := p.Write(resp.Packet.Bytes, &kernel.PacketMetadata{}); err != nil {
 				log.Warningf("failed to write packet: %v", err)
 			}
 		}

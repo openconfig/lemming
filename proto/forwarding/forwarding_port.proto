@@ -240,8 +240,8 @@ message HostPortControlMessage {
 
 message Packet {
   uint64 host_port = 1; // ID of the host port. (sai hostif)
-  PortId input_port = 2; // ID of the input port. Metadata for genetlink packets.
-  PortId output_port = 3; // ID of the output port. Metadata for genetlink packets. Set if the trap action happend after the FIB.
+  PortId input_port = 2; // ID of the input port. Metadata for genetlink.
+  PortId output_port = 3; // ID of the output port. Metadata for genetlink.
   bytes frame = 4;
 }
 
