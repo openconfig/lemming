@@ -17,9 +17,9 @@ syntax = "proto3";
 
 package forwarding;
 
+import "google/rpc/status.proto";
 import "proto/forwarding/forwarding_action.proto";
 import "proto/forwarding/forwarding_common.proto";
-import "google/rpc/status.proto";
 
 option go_package = "github.com/openconfig/lemming/proto/forwarding";
 

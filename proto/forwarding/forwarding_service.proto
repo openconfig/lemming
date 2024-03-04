@@ -124,7 +124,8 @@ service Forwarding {
   //  Loop
   //    Server -> response
   //    Client -> reply
-  rpc HostPortControl(stream HostPortControlRequest) returns (stream HostPortControlMessage) {}
+  rpc HostPortControl(stream HostPortControlRequest) 
+      returns (stream HostPortControlMessage) {}
 
   // CPUPacketStream sends and receives packets on the CPU port.
   rpc CPUPacketStream(stream PacketIn) returns (stream PacketOut) {}
