@@ -61,12 +61,11 @@ func NewGenetlinkPort(family, group string) (*GenetlinkPort, error) {
 type PacketMetadata struct {
 	SrcIfIndex int
 	DstIfIndex int
-	Context    int
+	Context    int // Context is extra value that can be set by the forwarding pipeline.
 }
 
 // Writes writes a layer2 frame to the port.
 func (p GenetlinkPort) Write(frame []byte, md *PacketMetadata) (int, error) {
-	// TODO: Support src, dst, and context
 	data, err := (&NLPacket{
 		payload:      frame,
 		srcIfIndex:   int16(md.SrcIfIndex),
