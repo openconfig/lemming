@@ -55,7 +55,6 @@ const contextID = "lucius"
 type port struct {
 	portIO
 	cancelFn func()
-	ifIndex  int
 }
 
 type portIO interface {
@@ -139,7 +138,6 @@ func (m *PacketIOMgr) ManagePorts(c fwdpb.Forwarding_HostPortControlClient) erro
 			if sendErr != nil {
 				return sendErr
 			}
-
 		} else {
 			p, ok := m.hostifs[resp.GetPortId()]
 			if !ok {
