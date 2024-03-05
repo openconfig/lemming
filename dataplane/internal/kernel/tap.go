@@ -54,7 +54,7 @@ func (t *TapInterface) Delete() error {
 	return netlink.LinkDel(l)
 }
 
-func (t *TapInterface) Write(frame []byte, md *PacketMetadata) (int, error) {
+func (t *TapInterface) Write(frame []byte, _ *PacketMetadata) (int, error) {
 	return t.File.Write(frame)
 }
 

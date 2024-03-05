@@ -88,7 +88,7 @@ func (p GenetlinkPort) Write(frame []byte, md *PacketMetadata) (int, error) {
 }
 
 // Read is not implemented.
-func (p GenetlinkPort) Read(frame []byte) (int, error) {
+func (p GenetlinkPort) Read([]byte) (int, error) {
 	return 0, io.EOF
 }
 
