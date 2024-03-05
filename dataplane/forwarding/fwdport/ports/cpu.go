@@ -15,6 +15,7 @@
 package ports
 
 import (
+	"encoding/binary"
 	"fmt"
 
 	log "github.com/golang/glog"
@@ -29,8 +30,8 @@ import (
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
-// A cpuPort is a port that receives from and transmits to the controller.
-type cpuPort struct {
+// A CPUPort is a port that receives from and transmits to the controller.
+type CPUPort struct {
 	fwdobject.Base
 	queueID string                 // CPU queue id
 	queue   *queue.Queue           // Queue of packets
@@ -38,10 +39,11 @@ type cpuPort struct {
 	output  fwdaction.Actions      // Actions used to process transmitted packets
 	ctx     *fwdcontext.Context    // Forwarding context containing the port
 	export  []*fwdpb.PacketFieldId // List of fields to export when writing the packet
+	remote  bool
 }
 
 // String returns the port as a formatted string.
-func (p *cpuPort) String() string {
+func (p *CPUPort) String() string {
 	desc := fmt.Sprintf("Type=%v;CPU=%v;%v;<Queue=%v><Input=%v>;<Output=%v>;<Export=%v>", fwdpb.PortType_PORT_TYPE_CPU_PORT, p.queueID, p.BaseInfo(), p.queue, p.input, p.output, p.export)
 	if state, err := p.State(nil); err == nil {
 		desc += fmt.Sprintf("<State=%v>;", state)
@@ -49,12 +51,12 @@ func (p *cpuPort) String() string {
 	return desc
 }
 
-func (p *cpuPort) Type() fwdpb.PortType {
+func (p *CPUPort) Type() fwdpb.PortType {
 	return fwdpb.PortType_PORT_TYPE_CPU_PORT
 }
 
 // Cleanup releases references held by the table and its entries.
-func (p *cpuPort) Cleanup() {
+func (p *CPUPort) Cleanup() {
 	p.input.Cleanup()
 	p.output.Cleanup()
 	p.input = nil
@@ -63,7 +65,7 @@ func (p *cpuPort) Cleanup() {
 }
 
 // Update updates the actions for the port.
-func (p *cpuPort) Update(upd *fwdpb.PortUpdateDesc) error {
+func (p *CPUPort) Update(upd *fwdpb.PortUpdateDesc) error {
 	// Release any interim actions in case of errors.
 	var err error
 	defer func() {
@@ -87,9 +89,15 @@ func (p *cpuPort) Update(upd *fwdpb.PortUpdateDesc) error {
 }
 
 // Write applies output actions and writes a packet to the cable.
-func (p *cpuPort) Write(packet fwdpacket.Packet) (fwdaction.State, error) {
-	// After the CPU packet is processed, the output port may change. Rerun the out
+func (p *CPUPort) Write(packet fwdpacket.Packet) (fwdaction.State, error) {
+	if p.remote {
+		if err := p.queue.Write(packet); err != nil {
+			return fwdaction.DROP, err
+		}
+		return fwdaction.CONSUME, nil
+	}
 
+	// After the CPU packet is processed, the output port may change. Rerun the output actions.
 	outPort, err := fwdport.OutputPort(packet, p.ctx)
 	if err != nil {
 		return fwdaction.DROP, err
@@ -114,7 +122,11 @@ func (p *cpuPort) Write(packet fwdpacket.Packet) (fwdaction.State, error) {
 // Note that the queue handler runs in its own goroutine, and hence it must
 // relock the context. We also do not want to hold the lock when performing
 // the gRPC request.
-func (p *cpuPort) punt(v interface{}) {
+func (p *CPUPort) punt(v any) {
+	if p.remote {
+		p.puntRemotePort(v)
+		return
+	}
 	packet, ok := v.(fwdpacket.Packet)
 	if !ok {
 		fwdport.Increment(p, 1, fwdpb.CounterId_COUNTER_ID_TX_ERROR_PACKETS, fwdpb.CounterId_COUNTER_ID_TX_ERROR_OCTETS)
@@ -167,8 +179,53 @@ func (p *cpuPort) punt(v interface{}) {
 	fwdport.Increment(p, packet.Length(), fwdpb.CounterId_COUNTER_ID_TX_ERROR_PACKETS, fwdpb.CounterId_COUNTER_ID_TX_ERROR_OCTETS)
 }
 
+func (p *CPUPort) puntRemotePort(v any) {
+	packet, ok := v.(fwdpacket.Packet)
+	if !ok {
+		fwdport.Increment(p, 1, fwdpb.CounterId_COUNTER_ID_TX_ERROR_PACKETS, fwdpb.CounterId_COUNTER_ID_TX_ERROR_OCTETS)
+		return
+	}
+
+	p.ctx.RLock()
+	var ingressPID *fwdpb.PortId
+	if port, err := fwdport.InputPort(packet, p.ctx); err == nil {
+		ingressPID = fwdport.GetID(port)
+	}
+	egressPID := fwdport.GetID(p)
+	if port, err := fwdport.OutputPort(packet, p.ctx); err == nil {
+		egressPID = fwdport.GetID(port)
+	}
+	hostPort, err := packet.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_HOST_PORT_ID, 0))
+	if err != nil {
+		fwdport.Increment(p, packet.Length(), fwdpb.CounterId_COUNTER_ID_TX_ERROR_PACKETS, fwdpb.CounterId_COUNTER_ID_TX_ERROR_OCTETS)
+		return
+	}
+
+	response := &fwdpb.PacketOut{
+		Packet: &fwdpb.Packet{
+			InputPort:  ingressPID,
+			OutputPort: egressPID,
+			HostPort:   binary.BigEndian.Uint64(hostPort),
+			Frame:      packet.Frame(),
+		},
+	}
+
+	ps := p.ctx.CPUPortSink()
+	p.ctx.RUnlock()
+	if ps != nil {
+		timer := deadlock.NewTimer(deadlock.Timeout, fmt.Sprintf("Punting packet from port %v", p))
+		err := ps(response)
+		timer.Stop()
+		if err == nil {
+			return
+		}
+		log.Errorf("ports: Unable to punt packet, request %+v, err %v.", response, err)
+	}
+	fwdport.Increment(p, packet.Length(), fwdpb.CounterId_COUNTER_ID_TX_ERROR_PACKETS, fwdpb.CounterId_COUNTER_ID_TX_ERROR_OCTETS)
+}
+
 // Actions returns the port actions of the specified type.
-func (p *cpuPort) Actions(dir fwdpb.PortAction) fwdaction.Actions {
+func (p *CPUPort) Actions(dir fwdpb.PortAction) fwdaction.Actions {
 	switch dir {
 	case fwdpb.PortAction_PORT_ACTION_INPUT:
 		return p.input
@@ -181,7 +238,7 @@ func (p *cpuPort) Actions(dir fwdpb.PortAction) fwdaction.Actions {
 // State implements the port interface. The CPU port state cannot be controlled
 // (it is always enabled). It is considered to be connected if a packet sink
 // is present in the port's context.
-func (cpuPort) State(*fwdpb.PortInfo) (*fwdpb.PortStateReply, error) {
+func (CPUPort) State(*fwdpb.PortInfo) (*fwdpb.PortStateReply, error) {
 	ready := &fwdpb.PortStateReply{
 		Status: &fwdpb.PortInfo{
 			OperStatus:  fwdpb.PortState_PORT_STATE_ENABLED_UP,
@@ -206,10 +263,11 @@ func (*cpuBuilder) Build(pd *fwdpb.PortDesc, ctx *fwdcontext.Context) (fwdport.P
 		return nil, fmt.Errorf("ports: Unable to create cpu port")
 	}
 
-	p := cpuPort{
+	p := CPUPort{
 		ctx:     ctx,
 		queueID: cpu.Cpu.GetQueueId(),
 		export:  cpu.Cpu.GetExportFieldIds(),
+		remote:  cpu.Cpu.GetRemotePort(),
 	}
 	var err error
 	if l := cpu.Cpu.GetQueueLength(); l != 0 {
