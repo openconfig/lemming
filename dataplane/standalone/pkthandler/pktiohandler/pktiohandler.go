@@ -222,7 +222,7 @@ func (m *PacketIOMgr) createPort(msg *fwdpb.HostPortControlMessage) error {
 func (m *PacketIOMgr) queueRead(id uint64, done chan struct{}) {
 	p := m.hostifs[id]
 	go func() {
-		buf := make([]byte, 9100)
+		buf := make([]byte, 9100) // TODO: Configurable MTU.
 		for {
 			select {
 			case <-done:
