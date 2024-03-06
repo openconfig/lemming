@@ -607,6 +607,7 @@ func (tc *testCase) testFlow(t *testing.T, l3header headerType) {
 	tc.verifyDUT(t)
 	tc.verifyATE(t)
 
+	time.Sleep(1 * time.Second)
 	beforeTrafficCounters := tc.getCounters(t, "before")
 
 	tc.ate.OTG().StartTraffic(t)
@@ -647,7 +648,7 @@ func TestNegotiation(t *testing.T) {
 		}
 		t.Run(fmt.Sprintf("LagType=%s", lagType), func(t *testing.T) {
 			tc.configureDUT(t)
-			time.Sleep(5 * time.Second)
+			time.Sleep(10 * time.Second)
 			t.Run("VerifyDUT", tc.verifyDUT)
 
 			tc.configureATE(t)

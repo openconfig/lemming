@@ -8,9 +8,6 @@ go_test(
         "testbed.pb.txt",
         "topology.pb.txt",
     ],
-    tags = [
-        "exclusive",
-    ],
     deps = [
         "//internal/attrs",
         "//internal/binding",
