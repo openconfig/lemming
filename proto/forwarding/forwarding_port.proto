@@ -235,7 +235,8 @@ message HostPortControlMessage {
   PortDesc port = 1;
   uint64 port_id = 2;
   PortId dataplane_port = 3; // ID of the dataplane port related to this one.
-  bool create = 4; // Set to true if an hostif should be created, false for deletion.
+   // Set to true if an hostif should be created, false for delete.
+  bool create = 4;
 }
 
 message Packet {
