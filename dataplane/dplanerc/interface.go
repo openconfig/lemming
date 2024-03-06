@@ -409,6 +409,7 @@ func (ni *Reconciler) addLAGMember(ctx context.Context, intf ocInterface, member
 		for i := 0; i < ifaceDownRetries; i++ { // Ensure link is down before continuing.
 			memberLink, err := ni.ifaceMgr.LinkByIndex(memberData.hostifIfIndex)
 			if err != nil {
+				time.Sleep(time.Second)
 				continue
 			}
 			if memberLink.Attrs().OperState == netlink.OperDown {
