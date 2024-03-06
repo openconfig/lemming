@@ -290,7 +290,9 @@ func (port *port) createCPUPort(ctx context.Context) (uint64, error) {
 			PortType: fwdpb.PortType_PORT_TYPE_CPU_PORT,
 			PortId:   &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)}},
 			Port: &fwdpb.PortDesc_Cpu{
-				Cpu: &fwdpb.CPUPortDesc{},
+				Cpu: &fwdpb.CPUPortDesc{
+					RemotePort: port.opts.RemoteCPUPort,
+				},
 			},
 		},
 	})
