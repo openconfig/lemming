@@ -18,6 +18,7 @@ package kernel
 
 import (
 	"fmt"
+	"io"
 
 	"github.com/mdlayher/genetlink"
 	"github.com/mdlayher/netlink"
@@ -57,17 +58,22 @@ func NewGenetlinkPort(family, group string) (*GenetlinkPort, error) {
 	}, nil
 }
 
+type PacketMetadata struct {
+	SrcIfIndex int
+	DstIfIndex int
+	Context    int // Context is extra value that can be set by the forwarding pipeline.
+}
+
 // Writes writes a layer2 frame to the port.
-func (p GenetlinkPort) Write(frame []byte) error {
-	// TODO: Support src, dst, and context
+func (p GenetlinkPort) Write(frame []byte, md *PacketMetadata) (int, error) {
 	data, err := (&NLPacket{
 		payload:      frame,
-		srcIfIndex:   1,
-		dstIfIndex:   1,
-		contextValue: 1,
+		srcIfIndex:   int16(md.SrcIfIndex),
+		dstIfIndex:   int16(md.DstIfIndex),
+		contextValue: uint32(md.Context),
 	}).Encode()
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	_, err = p.conn.Send(genetlink.Message{
@@ -77,7 +83,17 @@ func (p GenetlinkPort) Write(frame []byte) error {
 		},
 		Data: data,
 	}, p.familyID, 0)
-	return err
+	return len(data), err
+}
+
+// Read is not implemented.
+func (p GenetlinkPort) Read([]byte) (int, error) {
+	return 0, io.EOF
+}
+
+// Delete closes the netlink connection.
+func (p GenetlinkPort) Delete() error {
+	return p.conn.Close()
 }
 
 // NLPacket contains a packet data.

@@ -18,6 +18,9 @@ proto_library(
         "forwarding_table.proto",
     ],
     visibility = ["//visibility:public"],
+    deps = [
+        "@googleapis//google/rpc:status_proto",
+    ],
 )
 
 go_proto_library(
@@ -26,6 +29,7 @@ go_proto_library(
     importpath = "github.com/openconfig/lemming/proto/forwarding",
     proto = ":forwarding_proto",
     visibility = ["//visibility:public"],
+    deps = ["@org_golang_google_genproto_googleapis_rpc//status"],
 )
 
 go_library(

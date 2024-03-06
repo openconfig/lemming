@@ -45,6 +45,7 @@ type Metadata struct {
 	inputIface     []byte         // L3 input interface id.
 	outputIface    []byte         // L3 output interface id.
 	tunnelID       []byte         // Tunnel ID
+	hostPortID     []byte         // Host port id
 	desc           *protocol.Desc // Protocol descriptor.
 }
 
@@ -123,6 +124,8 @@ func (m *Metadata) Field(id fwdpacket.FieldID) ([]byte, error) {
 		return m.trapID, nil
 	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TUNNEL_ID:
 		return m.tunnelID, nil
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_HOST_PORT_ID:
+		return m.hostPortID, nil
 
 	default:
 		return nil, fmt.Errorf("metadata: Field %v failed, unsupported field", id)
@@ -226,6 +229,9 @@ func (m *Metadata) updateSet(id fwdpacket.FieldID, arg []byte) (bool, error) {
 	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TUNNEL_ID:
 		m.tunnelID = arg
 		return true, nil
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_HOST_PORT_ID:
+		m.hostPortID = arg
+		return true, nil
 	default:
 		return false, fmt.Errorf("metadata: UpdateField failed, set unsupported for field %v", id)
 	}
@@ -279,6 +285,8 @@ func parse(frame *frame.Frame, desc *protocol.Desc) (protocol.Handler, fwdpb.Pac
 		nextHopIP:   make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP].DefaultSize),
 		inputIface:  make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_INPUT_IFACE].DefaultSize),
 		outputIface: make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE].DefaultSize),
+		tunnelID:    make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TUNNEL_ID].DefaultSize),
+		hostPortID:  make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_HOST_PORT_ID].DefaultSize),
 		attribute32: make(map[uint8][]byte),
 		attribute24: make(map[uint8][]byte),
 		attribute16: make(map[uint8][]byte),

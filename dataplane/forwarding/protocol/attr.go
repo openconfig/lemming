@@ -188,6 +188,9 @@ var FieldAttr = map[fwdpb.PacketFieldNum]struct {
 	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TUNNEL_ID: {
 		Sizes: []int{SizeUint64},
 	},
+	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_HOST_PORT_ID: {
+		Sizes: []int{SizeUint64},
+	},
 }
 
 // GroupAttr contains attributes for each packet header group.
@@ -225,6 +228,7 @@ var GroupAttr = map[fwdpb.PacketHeaderGroup]struct {
 			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_INPUT_IFACE,
 			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE,
 			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TUNNEL_ID,
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_HOST_PORT_ID,
 		},
 	},
 	fwdpb.PacketHeaderGroup_PACKET_HEADER_GROUP_L2: {

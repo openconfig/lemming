@@ -118,6 +118,18 @@ service Forwarding {
   rpc PacketSinkSubscribe(PacketSinkRequest) 
       returns (stream PacketSinkResponse) {}
 
+  // HostPortControl requests creation and deletion of host ports.
+  // Flow:
+  //  Client -> context id
+  //  Loop
+  //    Server -> response
+  //    Client -> reply
+  rpc HostPortControl(stream HostPortControlRequest) 
+      returns (stream HostPortControlMessage) {}
+
+  // CPUPacketStream sends and receives packets on the CPU port.
+  rpc CPUPacketStream(stream PacketIn) returns (stream PacketOut) {}
+
   // ObjectNID returns the numeric ID for a given string object id.
   rpc ObjectNID(ObjectNIDRequest) returns (ObjectNIDReply) {}
 }

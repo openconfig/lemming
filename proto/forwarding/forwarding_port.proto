@@ -17,6 +17,7 @@ syntax = "proto3";
 
 package forwarding;
 
+import "google/rpc/status.proto";
 import "proto/forwarding/forwarding_action.proto";
 import "proto/forwarding/forwarding_common.proto";
 
@@ -221,4 +222,37 @@ message PortStateRequest {
 
 message PortStateReply {
   PortInfo status = 1;
+}
+
+message HostPortControlRequest {
+  oneof msg {
+    ContextId context_id = 1;
+    google.rpc.Status status = 2;
+  }
+}
+
+message HostPortControlMessage {
+  PortDesc port = 1;
+  uint64 port_id = 2;
+  PortId dataplane_port = 3; // ID of the dataplane port related to this one.
+  // Set to true if an hostif should be created, false for delete.
+  bool create = 4;
+}
+
+message Packet {
+  uint64 host_port = 1; // ID of the host port. (sai hostif)
+  PortId input_port = 2; // ID of the input port. Metadata for genetlink.
+  PortId output_port = 3; // ID of the output port. Metadata for genetlink.
+  bytes frame = 4;
+}
+
+message PacketIn {
+  oneof msg {
+    ContextId context_id = 1;
+    Packet packet = 2;
+  }
+}
+
+message PacketOut {
+  Packet packet = 1;
 }
