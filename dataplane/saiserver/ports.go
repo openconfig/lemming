@@ -101,7 +101,12 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 	port.nextEth++
 
 	// If a port config is set, then use the hardware lanes to find the interface names.
-	if port.config != nil {
+	if port.opts.EthDevAsLane {
+		if len(req.HwLaneList) == 0 {
+			return nil, fmt.Errorf("port lanes are required got %v", req.HwLaneList)
+		}
+		dev = fmt.Sprintf("eth%v", req.HwLaneList[0])
+	} else if port.config != nil {
 		if len(req.HwLaneList) == 0 {
 			return nil, fmt.Errorf("port lanes are required got %v", req.HwLaneList)
 		}
@@ -128,11 +133,6 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 				dev = portMapPort
 			}
 		}
-	} else if port.opts.EthDevAsLane {
-		if len(req.HwLaneList) == 0 {
-			return nil, fmt.Errorf("port lanes are required got %v", req.HwLaneList)
-		}
-		dev = fmt.Sprintf("eth%v", req.HwLaneList[0])
 	}
 
 	attrs := &saipb.PortAttribute{
