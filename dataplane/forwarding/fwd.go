@@ -925,41 +925,63 @@ func (e *Server) CPUPacketStream(srv fwdpb.Forwarding_CPUPacketStreamServer) err
 	if err != nil {
 		return err
 	}
-	ctx, err := e.FindContext(init.GetContextId())
+	fwdCtx, err := e.FindContext(init.GetContextId())
 	if err != nil {
 		return fmt.Errorf("failed to get context, err %v", err)
 	}
 
+	fwdCtx.RLock()
 	cpuPortID := ""
-	for _, id := range ctx.Objects.IDs() {
-		obj, err := ctx.Objects.FindID(&fwdpb.ObjectId{Id: string(id)})
+	for _, id := range fwdCtx.Objects.IDs() {
+		obj, err := fwdCtx.Objects.FindID(&fwdpb.ObjectId{Id: string(id)})
 		if err != nil {
+			fwdCtx.RUnlock()
 			return err
 		}
 		if _, ok := obj.(*ports.CPUPort); ok {
 			cpuPortID = string(obj.ID())
 		}
 	}
+	fwdCtx.RUnlock()
 	if cpuPortID == "" {
 		return fmt.Errorf("couldn't find cpu port")
 	}
 
-	ctx.SetCPUPortSink(func(po *fwdpb.PacketOut) error {
+	packetCh := make(chan *fwdpb.PacketIn)
+	ctx, cancel := context.WithCancel(srv.Context())
+
+	// Since Recv() is blocking and we want this func to return immediately on cancel.
+	// Run the Recv in a seperate goroutine.
+	go func() {
+		for {
+			pkt, err := srv.Recv()
+			if err != nil {
+				continue
+			}
+			packetCh <- pkt
+		}
+	}()
+
+	fn := func(po *fwdpb.PacketOut) error {
 		return srv.Send(po)
-	})
+	}
+
+	fwdCtx.Lock()
+	fwdCtx.SetCPUPortSink(fn, cancel)
+	fwdCtx.Unlock()
 
 	for {
-		pkt, err := srv.Recv()
-		if err != nil {
-			continue
-		}
-		acts := []*fwdpb.ActionDesc{fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_HOST_PORT_ID).
-			WithUint64Value(pkt.GetPacket().GetHostPort())).Build()}
-
-		err = e.injectPacket(init.GetContextId(), &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: cpuPortID}}, fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET,
-			pkt.GetPacket().GetFrame(), acts, true, fwdpb.PortAction_PORT_ACTION_INPUT)
-		if err != nil {
-			continue
+		select {
+		case <-ctx.Done():
+			return nil
+		case pkt := <-packetCh:
+			acts := []*fwdpb.ActionDesc{fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_HOST_PORT_ID).
+				WithUint64Value(pkt.GetPacket().GetHostPort())).Build()}
+			err = e.injectPacket(init.GetContextId(), &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: cpuPortID}}, fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET,
+				pkt.GetPacket().GetFrame(), acts, true, fwdpb.PortAction_PORT_ACTION_INPUT)
+			if err != nil {
+				continue
+			}
 		}
 	}
 }
@@ -969,28 +991,40 @@ func (e *Server) HostPortControl(srv fwdpb.Forwarding_HostPortControlServer) err
 	if err != nil {
 		return err
 	}
-	ctx, err := e.FindContext(init.GetContextId())
+	fwdCtx, err := e.FindContext(init.GetContextId())
 	if err != nil {
 		return fmt.Errorf("failed to get context, err %v", err)
 	}
 	reqCh := make(chan *fwdpb.HostPortControlMessage)
 	respCh := make(chan *fwdpb.HostPortControlRequest)
+	ctx, cancel := context.WithCancel(srv.Context())
 	defer close(respCh)
 
-	ctx.SetPortControl(func(msg *fwdpb.HostPortControlMessage) error {
+	fn := func(msg *fwdpb.HostPortControlMessage) error {
 		reqCh <- msg
 		resp := <-respCh
 		return status.FromProto(resp.GetStatus()).Err()
-	})
+	}
+	fwdCtx.Lock()
+	fwdCtx.SetPortControl(fn, cancel)
+	fwdCtx.Unlock()
+	log.Info("initialized host port control channel")
+
 	for {
-		req := <-reqCh
-		if err := srv.Send(req); err != nil {
-			return err
+		select {
+		case <-ctx.Done():
+			return nil
+		case req := <-reqCh:
+			if err := srv.Send(req); err != nil {
+				return err
+			}
+			log.Info("sent message to client: %+v", req)
+			resp, err := srv.Recv()
+			if err != nil {
+				return err
+			}
+			respCh <- resp
+			log.Info("received message from client: %+v", req)
 		}
-		resp, err := srv.Recv()
-		if err != nil {
-			return err
-		}
-		respCh <- resp
 	}
 }

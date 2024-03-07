@@ -1,0 +1,12 @@
+[Unit]
+Description=Lucius Packet Handler
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=exec
+ExecStart=/usr/bin/pkthandler --alsologtostderr
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
