@@ -33,6 +33,9 @@ type Options struct {
 	// EthDevAsLane treats ethX and hardware lane X.
 	// If a port is created with multiple lanes only the first is used.
 	EthDevAsLane bool
+	// RemoteCPUPort enables sending all packets for the CPU over gRPC.
+	// TODO: In the future, only support this option.
+	RemoteCPUPort bool
 }
 
 // Option exposes additional configuration for the dataplane.
