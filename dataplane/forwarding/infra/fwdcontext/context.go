@@ -78,7 +78,9 @@ type Context struct {
 	// FakePortManager is the implementation of the port creator for the Fake port type.
 	FakePortManager FakePortManager
 	portCtl         PortControl
+	portCtlDone     func()
 	cpuPortSink     CPUPortSink
+	cpuPortSinkDone func()
 }
 
 type PortControl func(*fwdpb.HostPortControlMessage) error
@@ -189,8 +191,9 @@ func (ctx *Context) PacketSink() PacketCallback {
 }
 
 // SetPacketSink sets the port control service for the context
-func (ctx *Context) SetPortControl(fn PortControl) error {
+func (ctx *Context) SetPortControl(fn PortControl, doneFn func()) error {
 	ctx.portCtl = fn
+	ctx.portCtlDone = doneFn
 	return nil
 }
 
@@ -200,8 +203,9 @@ func (ctx *Context) PortControl() PortControl {
 }
 
 // SetCPUPortSink sets the port control service for the context
-func (ctx *Context) SetCPUPortSink(fn CPUPortSink) error {
+func (ctx *Context) SetCPUPortSink(fn CPUPortSink, doneFn func()) error {
 	ctx.cpuPortSink = fn
+	ctx.cpuPortSinkDone = doneFn
 	return nil
 }
 
@@ -217,6 +221,15 @@ func (ctx *Context) CPUPortSink() CPUPortSink {
 func (ctx *Context) Cleanup(ch chan bool, isPort func(*fwdpb.ObjectId) bool) {
 	ctx.SetPacketSink(nil)
 	ctx.SetNotification(nil)
+
+	if ctx.cpuPortSinkDone != nil {
+		ctx.cpuPortSinkDone()
+	}
+	if ctx.portCtlDone != nil {
+		ctx.portCtlDone()
+	}
+	ctx.SetCPUPortSink(nil, nil)
+	ctx.SetPortControl(nil, nil)
 
 	ids := ctx.Objects.IDs()
 

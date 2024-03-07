@@ -122,6 +122,7 @@ func (m *PacketIOMgr) ManagePorts(c fwdpb.Forwarding_HostPortControlClient) erro
 		if err != nil {
 			return err
 		}
+		log.Infof("received port control message: %+v", resp)
 		if resp.Create {
 			st := &status.Status{
 				Code: int32(codes.OK),

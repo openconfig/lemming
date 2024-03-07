@@ -28,6 +28,8 @@ import (
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
 	"github.com/openconfig/lemming/dataplane/saiserver/attrmgr"
 
+	log "github.com/golang/glog"
+
 	saipb "github.com/openconfig/lemming/dataplane/proto/sai"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
@@ -262,7 +264,7 @@ func (hostif *hostif) createRemoteHostif(ctx context.Context, req *saipb.CreateH
 		}
 		entry := fwdconfig.TableEntryAddRequest(hostif.dataplane.ID(), hostifToPortTable).
 			AppendEntry(fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_HOST_PORT_ID).WithUint64(id))),
-				fwdconfig.Action(fwdconfig.TransmitAction(fmt.Sprint(req.ObjId)))).Build()
+				fwdconfig.Action(fwdconfig.TransmitAction(fmt.Sprint(req.GetObjId())))).Build()
 
 		if req.GetObjId() == resp.GetAttr().GetCpuPort() {
 			entry.Entries[0].Actions = getForwardingPipeline()
@@ -311,9 +313,12 @@ func (hostif *hostif) createRemoteHostif(ctx context.Context, req *saipb.CreateH
 			Port:          portReq.GetPort(),
 			DataplanePort: &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(req.GetObjId())}},
 		}
+		log.Infof("sending port ctl message: %+v", ctlReq)
 		if err := ctl(ctlReq); err != nil {
 			return nil, err
 		}
+	} else {
+		log.Warning("didn't send port control message: channel is nil")
 	}
 	return &saipb.CreateHostifResponse{Oid: id}, nil
 }
@@ -321,6 +326,9 @@ func (hostif *hostif) createRemoteHostif(ctx context.Context, req *saipb.CreateH
 // SetHostifAttribute sets the attributes in the request.
 func (hostif *hostif) SetHostifAttribute(ctx context.Context, req *saipb.SetHostifAttributeRequest) (*saipb.SetHostifAttributeResponse, error) {
 	if req.OperStatus != nil {
+		if hostif.opts.RemoteCPUPort {
+			return nil, nil
+		}
 		stateReq := &fwdpb.PortStateRequest{
 			ContextId: &fwdpb.ContextId{Id: hostif.dataplane.ID()},
 			PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(req.GetOid())}},

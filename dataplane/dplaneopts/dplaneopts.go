@@ -91,10 +91,17 @@ func WithPortMap(m map[string]string) Option {
 
 // WithEthDevAsLane enables treating ethX and hardware lane X.
 // If a port is created with multiple lanes only the first is used.
-// Default: none
+// Default: false
 func WithEthDevAsLane(enable bool) Option {
 	return func(o *Options) {
 		o.EthDevAsLane = enable
+	}
+}
+
+// WithEthDevAsLane enables sending all packets from/to the CP port over gRPC
+func WithRemoteCPUPort(enable bool) Option {
+	return func(o *Options) {
+		o.RemoteCPUPort = enable
 	}
 }
 
