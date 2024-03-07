@@ -212,16 +212,18 @@ func (p *CPUPort) puntRemotePort(v any) {
 
 	ps := p.ctx.CPUPortSink()
 	p.ctx.RUnlock()
-	if ps != nil {
-		timer := deadlock.NewTimer(deadlock.Timeout, fmt.Sprintf("Punting packet from port %v", p))
-		err := ps(response)
-		timer.Stop()
-		if err == nil {
-			return
-		}
-		log.Errorf("ports: Unable to punt packet, request %+v, err %v.", response, err)
+	if ps == nil {
+		fwdport.Increment(p, packet.Length(), fwdpb.CounterId_COUNTER_ID_TX_ERROR_PACKETS, fwdpb.CounterId_COUNTER_ID_TX_ERROR_OCTETS)
+		return
 	}
-	fwdport.Increment(p, packet.Length(), fwdpb.CounterId_COUNTER_ID_TX_ERROR_PACKETS, fwdpb.CounterId_COUNTER_ID_TX_ERROR_OCTETS)
+
+	timer := deadlock.NewTimer(deadlock.Timeout, fmt.Sprintf("Punting packet from port %v", p))
+	defer timer.Stop()
+	if err := ps(response); err != nil {
+		fwdport.Increment(p, packet.Length(), fwdpb.CounterId_COUNTER_ID_TX_ERROR_PACKETS, fwdpb.CounterId_COUNTER_ID_TX_ERROR_OCTETS)
+		return
+	}
+	log.Errorf("ports: Unable to punt packet, request %+v, err %v.", response, err)
 }
 
 // Actions returns the port actions of the specified type.
