@@ -296,7 +296,7 @@ func (a *acl) CreateAclEntry(ctx context.Context, req *saipb.CreateAclEntryReque
 type myMacInfo struct {
 	priority       *uint32
 	portID         *uint64 // wildcard if not specified
-	vlanID         *uint32 // wildcard if not specified
+	vlanID         *uint16 // wildcard if not specified
 	macAddress     []byte
 	macAddressMask []byte
 }
@@ -311,7 +311,7 @@ func (mi *myMacInfo) ToEntryDesc(m *myMac) (*fwdpb.EntryDesc, error) {
 	if mi.vlanID != nil {
 		fields = append(fields,
 			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG).
-				WithBytes(binary.BigEndian.AppendUint16(nil, uint16(*mi.vlanID)), binary.BigEndian.AppendUint16(nil, 0x0FFF)))
+				WithBytes(binary.BigEndian.AppendUint16(nil, *mi.vlanID), binary.BigEndian.AppendUint16(nil, 0x0FFF)))
 	}
 
 	if mi.portID != nil {
@@ -361,11 +361,14 @@ func newMyMac(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server
 
 func (m *myMac) CreateMyMac(ctx context.Context, req *saipb.CreateMyMacRequest) (*saipb.CreateMyMacResponse, error) {
 	mi := &myMacInfo{
-		priority:       req.Priority,
-		portID:         req.PortId,
-		vlanID:         req.VlanId,
+		priority: req.Priority,
+		portID:   req.PortId,
 		macAddress:     req.GetMacAddress(),
 		macAddressMask: req.GetMacAddressMask(),
+	}
+	if req.VlanId != nil {
+		vid := (uint16)(req.GetVlanId())
+		mi.vlanID = &vid
 	}
 	if mi.macAddress == nil || mi.macAddressMask == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "MAC address and MAC address mask cannot be empty")
