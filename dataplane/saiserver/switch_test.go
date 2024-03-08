@@ -284,6 +284,10 @@ func (f *fakeSwitchDataplane) AttributeUpdate(context.Context, *fwdpb.AttributeU
 	return nil, nil
 }
 
+func (f *fakeSwitchDataplane) ObjectNID(context.Context, *fwdpb.ObjectNIDRequest) (*fwdpb.ObjectNIDReply, error) {
+	return nil, nil
+}
+
 func newTestServer(t testing.TB, newSrvFn func(mgr *attrmgr.AttrMgr, srv *grpc.Server)) (grpc.ClientConnInterface, *attrmgr.AttrMgr, func()) {
 	t.Helper()
 	mgr := attrmgr.New()

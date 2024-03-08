@@ -39,6 +39,7 @@ var (
 	configFile    = flag.String("config_file", "", "Path to config file")
 	portMapString = flag.String("port_map", "", "Map of modeled port names to Linux interface to  as comma seperated list (eg Ethernet8:eth1,Ethernet10,eth2)")
 	ethDevAsLane  = flag.Bool("eth_dev_as_lane", false, "If true, when creating ports, use ethX and hardware lane X")
+	remoteCPUPort = flag.Bool("remote_cpu_port", false, "If true, send all packets from/to the CPU port over gRPC")
 )
 
 func main() {
@@ -89,6 +90,7 @@ func start(port int) {
 		dplaneopts.WithPortConfigFile(*configFile),
 		dplaneopts.WithPortMap(portMap),
 		dplaneopts.WithEthDevAsLane(*ethDevAsLane),
+		dplaneopts.WithRemoteCPUPort(*remoteCPUPort),
 	)
 
 	if _, err := saiserver.New(context.Background(), mgr, srv, opts); err != nil {

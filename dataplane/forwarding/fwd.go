@@ -23,9 +23,12 @@ import (
 	"sync"
 
 	log "github.com/golang/glog"
+	"google.golang.org/grpc/status"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
+	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdport"
+	"github.com/openconfig/lemming/dataplane/forwarding/fwdport/ports"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdtable"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/deadlock"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdattribute"
@@ -39,7 +42,6 @@ import (
 	// essential, and there can be more to come, importing here is more
 	// beneficial.
 	_ "github.com/openconfig/lemming/dataplane/forwarding/fwdaction/actions"
-	_ "github.com/openconfig/lemming/dataplane/forwarding/fwdport/ports"
 	_ "github.com/openconfig/lemming/dataplane/forwarding/fwdtable/action"
 	_ "github.com/openconfig/lemming/dataplane/forwarding/fwdtable/bridge"
 	_ "github.com/openconfig/lemming/dataplane/forwarding/fwdtable/exact"
@@ -722,6 +724,76 @@ func (e *Server) FlowCounterQuery(_ context.Context, request *fwdpb.FlowCounterQ
 	return reply, nil
 }
 
+func (e *Server) injectPacket(contextID *fwdpb.ContextId, id *fwdpb.PortId, hid fwdpb.PacketHeaderId, frame []byte, preActions []*fwdpb.ActionDesc, debug bool, dir fwdpb.PortAction) error {
+	timer := deadlock.NewTimer(deadlock.Timeout, fmt.Sprintf("Processing packet"))
+	defer timer.Stop()
+
+	ctx, err := e.FindContext(contextID)
+	if err != nil {
+		return fmt.Errorf("fwd: PacketInject failed, err %v", err)
+	}
+
+	// In a goroutine, acquire a RWLock on the context, create the preprocessing
+	// actions and process the packet. The RPC does not wait for the complete
+	// packet processing. It returns once it has validated the input parameters.
+	status := make(chan error)
+
+	go func() {
+		ctx.RLock()
+		defer ctx.RUnlock()
+
+		port, err := fwdport.Find(id, ctx)
+		if err != nil {
+			status <- fmt.Errorf("fwd: PortInject failed, err %v", err)
+			return
+		}
+
+		packet, err := fwdpacket.New(hid, frame)
+		if err != nil {
+			status <- fmt.Errorf("fwd: PortInject failed, err %v", err)
+			return
+		}
+
+		pre, err := fwdaction.NewActions(preActions, ctx)
+		if err != nil {
+			status <- fmt.Errorf("fwd: PortInject failed to create preprocessing actions %v, err %v", preActions, err)
+			return
+		}
+
+		// Apply the preprocessing actions on the packet and inject it into the
+		// port while holding the context's RLock. After packet processing,
+		// cleanup the port and actions. Publish a "no error" on the status
+		// channel so that the RPC can return. Note that this also serializes
+		// the packets arriving from the CPU.
+		status <- nil
+
+		func() {
+			defer func() {
+				if pre != nil {
+					pre.Cleanup()
+				}
+			}()
+
+			packet.Debug(debug)
+			if len(pre) != 0 {
+				packet.Log().WithValues("context", ctx.ID, "port", port.ID())
+				state, err := fwdaction.ProcessPacket(packet, pre, port)
+				if state != fwdaction.CONTINUE || err != nil {
+					log.Errorf("%v: preprocessing failed, state %v, err %v", port.ID(), state, err)
+					return
+				}
+				packet.Log().V(1).Info("injecting packet", "frame", fwdpacket.IncludeFrameInLog)
+			}
+			fwdport.Process(port, packet, dir, ctx, "Control")
+		}()
+	}()
+
+	if err = <-status; err != nil {
+		return fmt.Errorf("fwd: PacketInject failed, err %v", err)
+	}
+	return nil
+}
+
 // PacketInject injects a packet in the specified forwarding context and port.
 func (e *Server) PacketInject(srv fwdpb.Forwarding_PacketInjectServer) error {
 	for {
@@ -729,71 +801,10 @@ func (e *Server) PacketInject(srv fwdpb.Forwarding_PacketInjectServer) error {
 		if err != nil {
 			return err
 		}
-		timer := deadlock.NewTimer(deadlock.Timeout, fmt.Sprintf("Processing %+v", request))
-		defer timer.Stop()
-
-		ctx, err := e.FindContext(request.GetContextId())
+		err = e.injectPacket(request.GetContextId(), request.GetPortId(), request.GetStartHeader(),
+			request.GetBytes(), request.GetPreprocesses(), request.GetDebug(), request.GetAction())
 		if err != nil {
-			return fmt.Errorf("fwd: PacketInject failed, err %v", err)
-		}
-
-		// In a goroutine, acquire a RWLock on the context, create the preprocessing
-		// actions and process the packet. The RPC does not wait for the complete
-		// packet processing. It returns once it has validated the input parameters.
-		status := make(chan error)
-
-		go func() {
-			ctx.RLock()
-			defer ctx.RUnlock()
-
-			port, err := fwdport.Find(request.GetPortId(), ctx)
-			if err != nil {
-				status <- fmt.Errorf("fwd: PortInject failed, err %v", err)
-				return
-			}
-
-			packet, err := fwdpacket.New(request.GetStartHeader(), request.GetBytes())
-			if err != nil {
-				status <- fmt.Errorf("fwd: PortInject failed, err %v", err)
-				return
-			}
-
-			pre, err := fwdaction.NewActions(request.GetPreprocesses(), ctx)
-			if err != nil {
-				status <- fmt.Errorf("fwd: PortInject failed to create preprocessing actions %v, err %v", request.GetPreprocesses(), err)
-				return
-			}
-
-			// Apply the preprocessing actions on the packet and inject it into the
-			// port while holding the context's RLock. After packet processing,
-			// cleanup the port and actions. Publish a "no error" on the status
-			// channel so that the RPC can return. Note that this also serializes
-			// the packets arriving from the CPU.
-			status <- nil
-
-			func() {
-				defer func() {
-					if pre != nil {
-						pre.Cleanup()
-					}
-				}()
-
-				packet.Debug(request.GetDebug())
-				if len(pre) != 0 {
-					packet.Log().WithValues("context", ctx.ID, "port", port.ID())
-					state, err := fwdaction.ProcessPacket(packet, pre, port)
-					if state != fwdaction.CONTINUE || err != nil {
-						log.Errorf("%v: preprocessing failed, state %v, err %v", port.ID(), state, err)
-						return
-					}
-					packet.Log().V(1).Info("injecting packet", "frame", fwdpacket.IncludeFrameInLog)
-				}
-				fwdport.Process(port, packet, request.GetAction(), ctx, "Control")
-			}()
-		}()
-
-		if err = <-status; err != nil {
-			return fmt.Errorf("fwd: PacketInject failed, err %v", err)
+			return err
 		}
 	}
 }
@@ -907,4 +918,113 @@ func (e *Server) ObjectNID(_ context.Context, request *fwdpb.ObjectNIDRequest) (
 		return nil, fmt.Errorf("fwd: ObjectNID failed, err %v", err)
 	}
 	return &fwdpb.ObjectNIDReply{Nid: uint64(obj.NID())}, nil
+}
+
+func (e *Server) CPUPacketStream(srv fwdpb.Forwarding_CPUPacketStreamServer) error {
+	init, err := srv.Recv()
+	if err != nil {
+		return err
+	}
+	fwdCtx, err := e.FindContext(init.GetContextId())
+	if err != nil {
+		return fmt.Errorf("failed to get context, err %v", err)
+	}
+
+	fwdCtx.RLock()
+	cpuPortID := ""
+	for _, id := range fwdCtx.Objects.IDs() {
+		obj, err := fwdCtx.Objects.FindID(&fwdpb.ObjectId{Id: string(id)})
+		if err != nil {
+			fwdCtx.RUnlock()
+			return err
+		}
+		if _, ok := obj.(*ports.CPUPort); ok {
+			cpuPortID = string(obj.ID())
+		}
+	}
+	fwdCtx.RUnlock()
+	if cpuPortID == "" {
+		return fmt.Errorf("couldn't find cpu port")
+	}
+
+	packetCh := make(chan *fwdpb.PacketIn)
+	ctx, cancel := context.WithCancel(srv.Context())
+
+	// Since Recv() is blocking and we want this func to return immediately on cancel.
+	// Run the Recv in a seperate goroutine.
+	go func() {
+		for {
+			pkt, err := srv.Recv()
+			if err != nil {
+				continue
+			}
+			packetCh <- pkt
+		}
+	}()
+
+	fn := func(po *fwdpb.PacketOut) error {
+		return srv.Send(po)
+	}
+
+	fwdCtx.Lock()
+	fwdCtx.SetCPUPortSink(fn, cancel)
+	fwdCtx.Unlock()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case pkt := <-packetCh:
+			acts := []*fwdpb.ActionDesc{fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_HOST_PORT_ID).
+				WithUint64Value(pkt.GetPacket().GetHostPort())).Build()}
+			err = e.injectPacket(init.GetContextId(), &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: cpuPortID}}, fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET,
+				pkt.GetPacket().GetFrame(), acts, true, fwdpb.PortAction_PORT_ACTION_INPUT)
+			if err != nil {
+				continue
+			}
+		}
+	}
+}
+
+func (e *Server) HostPortControl(srv fwdpb.Forwarding_HostPortControlServer) error {
+	init, err := srv.Recv()
+	if err != nil {
+		return err
+	}
+	fwdCtx, err := e.FindContext(init.GetContextId())
+	if err != nil {
+		return fmt.Errorf("failed to get context, err %v", err)
+	}
+	reqCh := make(chan *fwdpb.HostPortControlMessage)
+	respCh := make(chan *fwdpb.HostPortControlRequest)
+	ctx, cancel := context.WithCancel(srv.Context())
+	defer close(respCh)
+
+	fn := func(msg *fwdpb.HostPortControlMessage) error {
+		reqCh <- msg
+		resp := <-respCh
+		return status.FromProto(resp.GetStatus()).Err()
+	}
+	fwdCtx.Lock()
+	fwdCtx.SetPortControl(fn, cancel)
+	fwdCtx.Unlock()
+	log.Info("initialized host port control channel")
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case req := <-reqCh:
+			if err := srv.Send(req); err != nil {
+				return err
+			}
+			log.Info("sent message to client: %+v", req)
+			resp, err := srv.Recv()
+			if err != nil {
+				return err
+			}
+			respCh <- resp
+			log.Info("received message from client: %+v", req)
+		}
+	}
 }

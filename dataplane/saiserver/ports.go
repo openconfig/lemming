@@ -290,27 +290,50 @@ func (port *port) createCPUPort(ctx context.Context) (uint64, error) {
 			PortType: fwdpb.PortType_PORT_TYPE_CPU_PORT,
 			PortId:   &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)}},
 			Port: &fwdpb.PortDesc_Cpu{
-				Cpu: &fwdpb.CPUPortDesc{},
+				Cpu: &fwdpb.CPUPortDesc{
+					RemotePort: port.opts.RemoteCPUPort,
+				},
 			},
 		},
 	})
 	if err != nil {
 		return 0, err
 	}
-	_, err = port.dataplane.PortUpdate(ctx, &fwdpb.PortUpdateRequest{
+
+	req := &fwdpb.PortUpdateRequest{
 		ContextId: &fwdpb.ContextId{Id: port.dataplane.ID()},
 		PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)}},
 		Update: &fwdpb.PortUpdateDesc{
 			Port: &fwdpb.PortUpdateDesc_Cpu{
 				Cpu: &fwdpb.CPUPortUpdateDesc{
 					Outputs: []*fwdpb.ActionDesc{
-						fwdconfig.Action(fwdconfig.LookupAction(hostifTable)).Build(),
+						fwdconfig.Action(fwdconfig.LookupAction(trapIDToHostifTable)).Build(),
 						fwdconfig.Action(fwdconfig.LookupAction(cpusink.IP2MeTable)).Build(),
 					},
 				},
 			},
 		},
-	})
+	}
+	if port.opts.RemoteCPUPort {
+		req = &fwdpb.PortUpdateRequest{
+			ContextId: &fwdpb.ContextId{Id: port.dataplane.ID()},
+			PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)}},
+			Update: &fwdpb.PortUpdateDesc{
+				Port: &fwdpb.PortUpdateDesc_Cpu{
+					Cpu: &fwdpb.CPUPortUpdateDesc{
+						Inputs: []*fwdpb.ActionDesc{
+							fwdconfig.Action(fwdconfig.LookupAction(hostifToPortTable)).Build(),
+						},
+						Outputs: []*fwdpb.ActionDesc{
+							fwdconfig.Action(fwdconfig.LookupAction(trapIDToHostifTable)).Build(),
+							fwdconfig.Action(fwdconfig.LookupAction(portToHostifTable)).Build(),
+						},
+					},
+				},
+			},
+		}
+	}
+	_, err = port.dataplane.PortUpdate(ctx, req)
 	if err != nil {
 		return 0, err
 	}

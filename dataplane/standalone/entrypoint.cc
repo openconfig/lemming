@@ -71,7 +71,6 @@
 #include "dataplane/proto/sai/virtual_router.grpc.pb.h"
 #include "dataplane/proto/sai/vlan.grpc.pb.h"
 #include "dataplane/proto/sai/wred.grpc.pb.h"
-#include "dataplane/standalone/packetio/packetio.h"
 #include "dataplane/standalone/sai/acl.h"
 #include "dataplane/standalone/sai/bfd.h"
 #include "dataplane/standalone/sai/bmtor.h"
@@ -257,7 +256,6 @@ sai_status_t sai_api_initialize(
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  StartSink();
 
   return SAI_STATUS_SUCCESS;
 }

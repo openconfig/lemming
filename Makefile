@@ -76,11 +76,9 @@ dataplane/proto/sai/%.grpc.pb.o:  dataplane/proto/sai/%.grpc.pb.cc
 dataplane/standalone/sai/%.o: dataplane/standalone/sai/%.cc $(PROTO_SRC)
 	g++ -fPIC -c $< -o $@ -I . -I external/com_github_opencomputeproject_sai -I external/com_github_opencomputeproject_sai/inc  -I external/com_github_opencomputeproject_sai/experimental
 
-packetio:
-	go build -o dataplane/standalone/packetio/packetio.a -buildmode=c-archive ./dataplane/standalone/packetio 
 
-libsai.so: $(PROTO_OBJ) $(GRPC_OBJ) $(SAI_OBJ) packetio
-	g++ -fPIC -o libsai.so -shared dataplane/standalone/entrypoint.cc dataplane/proto/sai/*.o dataplane/standalone/sai/*.o dataplane/standalone/packetio/packetio.a -lglog -lprotobuf -lgrpc++ -I . -I external/com_github_opencomputeproject_sai -I external/com_github_opencomputeproject_sai/inc -I external/com_github_opencomputeproject_sai/experimental
+libsai.so: $(PROTO_OBJ) $(GRPC_OBJ) $(SAI_OBJ)
+	g++ -fPIC -o libsai.so -shared dataplane/standalone/entrypoint.cc dataplane/proto/sai/*.o dataplane/standalone/sai/*.o -lglog -lprotobuf -lgrpc++ -I . -I external/com_github_opencomputeproject_sai -I external/com_github_opencomputeproject_sai/inc -I external/com_github_opencomputeproject_sai/experimental
 
 define DEB_CONTROL =
 Package: lucius-libsai

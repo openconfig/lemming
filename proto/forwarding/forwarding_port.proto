@@ -57,6 +57,7 @@ message CPUPortDesc {
   string queue_id = 1;     // CPU queue-id.
   int32 queue_length = 2;  // Length of the CPU queue, unbounded by default
   repeated PacketFieldId export_field_ids = 3;  // Packet fields to export
+  bool remote_port = 4; // Is the CPU remote.
 }
 
 message KernelPortDesc {
