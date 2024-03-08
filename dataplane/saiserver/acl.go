@@ -302,31 +302,16 @@ type myMacInfo struct {
 }
 
 // ToEntryDesc returns the EntryDesc.
-func (mi *myMacInfo) ToEntryDesc(m *myMac, withPriority bool) (*fwdpb.EntryDesc, error) {
-	ed := &fwdpb.EntryDesc{
-		Entry: &fwdpb.EntryDesc_Flow{
-			Flow: &fwdpb.FlowEntryDesc{
-				Bank: 1,
-				Fields: []*fwdpb.PacketFieldMaskedBytes{{
-					FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST}},
-					Bytes:   mi.macAddress,
-					Masks:   mi.macAddressMask,
-				}},
-			},
-		},
-	}
-	if withPriority {
-		ed.GetFlow().Priority = *mi.priority
+func (mi *myMacInfo) ToEntryDesc(m *myMac) (*fwdpb.EntryDesc, error) {
+	fields := []*fwdconfig.PacketFieldMaskedBytesBuilder{
+		fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST).
+			WithBytes(mi.macAddress, mi.macAddressMask),
 	}
 
 	if mi.vlanID != nil {
-		ed.GetFlow().Fields = append(
-			ed.GetFlow().Fields,
-			&fwdpb.PacketFieldMaskedBytes{
-				FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG}},
-				Bytes:   binary.BigEndian.AppendUint32(nil, *mi.vlanID),
-				Masks:   binary.BigEndian.AppendUint32(nil, 0x00000FFF), // Match VLAN ID.
-			})
+		fields = append(fields,
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG).
+				WithBytes(binary.BigEndian.AppendUint16(nil, uint16(*mi.vlanID)), binary.BigEndian.AppendUint16(nil, 0x0FFF)))
 	}
 
 	if mi.portID != nil {
@@ -338,13 +323,21 @@ func (mi *myMacInfo) ToEntryDesc(m *myMac, withPriority bool) (*fwdpb.EntryDesc,
 		if err != nil {
 			return nil, err
 		}
-		ed.GetFlow().Fields = append(
-			ed.GetFlow().Fields,
-			&fwdpb.PacketFieldMaskedBytes{
-				FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT}},
-				Bytes:   binary.BigEndian.AppendUint64(nil, uint64(obj.NID())),
-				Masks:   binary.BigEndian.AppendUint64(nil, math.MaxUint64),
-			})
+		fields = append(fields,
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT).
+				WithBytes(binary.BigEndian.AppendUint64(nil, uint64(obj.NID())), binary.BigEndian.AppendUint64(nil, math.MaxUint64)))
+	}
+
+	ed := &fwdpb.EntryDesc{
+		Entry: &fwdpb.EntryDesc_Flow{
+			Flow: &fwdpb.FlowEntryDesc{
+				Priority: *mi.priority,
+				Bank:     1,
+			},
+		},
+	}
+	for _, f := range fields {
+		ed.GetFlow().Fields = append(ed.GetFlow().Fields, f.Build())
 	}
 	return ed, nil
 }
@@ -378,7 +371,7 @@ func (m *myMac) CreateMyMac(ctx context.Context, req *saipb.CreateMyMacRequest) 
 		return nil, status.Errorf(codes.InvalidArgument, "MAC address and MAC address mask cannot be empty")
 	}
 	id := m.mgr.NextID()
-	ed, err := mi.ToEntryDesc(m, true /*with_priority*/)
+	ed, err := mi.ToEntryDesc(m)
 	if err != nil {
 		return nil, status.Errorf(codes.FailedPrecondition, "failed to create entry descriptor: %v", err)
 	}
@@ -399,7 +392,7 @@ func (m *myMac) RemoveMyMac(ctx context.Context, req *saipb.RemoveMyMacRequest) 
 	if !ok {
 		return nil, status.Errorf(codes.FailedPrecondition, "%d does not exist", req.GetOid())
 	}
-	ed, err := mi.ToEntryDesc(m, false /*with_priority*/)
+	ed, err := mi.ToEntryDesc(m)
 	if err != nil {
 		return nil, status.Errorf(codes.FailedPrecondition, "failed to create entry descriptor: %v", err)
 	}
