@@ -28,6 +28,8 @@ import (
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
 	"github.com/openconfig/lemming/dataplane/saiserver/attrmgr"
 
+	log "github.com/golang/glog"
+
 	saipb "github.com/openconfig/lemming/dataplane/proto/sai"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
@@ -58,6 +60,9 @@ const switchID = 1
 
 // CreateHostif creates a hostif interface (usually a tap interface).
 func (hostif *hostif) CreateHostif(ctx context.Context, req *saipb.CreateHostifRequest) (*saipb.CreateHostifResponse, error) {
+	if hostif.opts.RemoteCPUPort {
+		return hostif.createRemoteHostif(ctx, req)
+	}
 	id := hostif.mgr.NextID()
 
 	switch req.GetType() {
@@ -224,9 +229,106 @@ func (hostif *hostif) CreateHostif(ctx context.Context, req *saipb.CreateHostifR
 	return &saipb.CreateHostifResponse{Oid: id}, nil
 }
 
+func (hostif *hostif) createRemoteHostif(ctx context.Context, req *saipb.CreateHostifRequest) (*saipb.CreateHostifResponse, error) {
+	id := hostif.mgr.NextID()
+
+	portReq := &fwdpb.PortCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: hostif.dataplane.ID()},
+		Port: &fwdpb.PortDesc{
+			PortId: &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)}},
+		},
+	}
+
+	switch req.GetType() {
+	case saipb.HostifType_HOSTIF_TYPE_GENETLINK:
+		portReq.Port.PortType = fwdpb.PortType_PORT_TYPE_GENETLINK
+		portReq.Port.Port = &fwdpb.PortDesc_Genetlink{
+			Genetlink: &fwdpb.GenetlinkPortDesc{
+				FamilyName: string(req.GetName()),
+				GroupName:  string(req.GetGenetlinkMcgrpName()),
+			},
+		}
+	case saipb.HostifType_HOSTIF_TYPE_NETDEV:
+		portReq.Port.PortType = fwdpb.PortType_PORT_TYPE_TAP
+		portReq.Port.Port = &fwdpb.PortDesc_Tap{
+			Tap: &fwdpb.TAPPortDesc{
+				DeviceName: string(req.GetName()),
+			},
+		}
+
+		// For packets coming from a netdev hostif, send them out its corresponding port.
+		cpuPortReq := &saipb.GetSwitchAttributeRequest{Oid: switchID, AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_CPU_PORT}}
+		resp := &saipb.GetSwitchAttributeResponse{}
+		if err := hostif.mgr.PopulateAttributes(cpuPortReq, resp); err != nil {
+			return nil, err
+		}
+		entry := fwdconfig.TableEntryAddRequest(hostif.dataplane.ID(), hostifToPortTable).
+			AppendEntry(fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_HOST_PORT_ID).WithUint64(id))),
+				fwdconfig.Action(fwdconfig.TransmitAction(fmt.Sprint(req.GetObjId())))).Build()
+
+		if req.GetObjId() == resp.GetAttr().GetCpuPort() {
+			entry.Entries[0].Actions = getForwardingPipeline()
+		}
+
+		if _, err := hostif.dataplane.TableEntryAdd(ctx, entry); err != nil {
+			return nil, err
+		}
+
+		nid, err := hostif.dataplane.ObjectNID(ctx, &fwdpb.ObjectNIDRequest{
+			ContextId: &fwdpb.ContextId{Id: hostif.dataplane.ID()},
+			ObjectId:  &fwdpb.ObjectId{Id: fmt.Sprint(req.GetObjId())},
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		entry = fwdconfig.TableEntryAddRequest(hostif.dataplane.ID(), portToHostifTable).
+			AppendEntry(fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT).WithUint64(nid.GetNid()))),
+				fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_HOST_PORT_ID).WithUint64Value(req.GetObjId()))).Build()
+
+		if _, err := hostif.dataplane.TableEntryAdd(ctx, entry); err != nil {
+			return nil, err
+		}
+
+	default:
+		return nil, status.Errorf(codes.InvalidArgument, "unknown type %v", req.GetType())
+	}
+
+	attr := &saipb.HostifAttribute{
+		OperStatus: proto.Bool(true),
+	}
+	hostif.mgr.StoreAttributes(id, attr)
+
+	// Notify the cpu sink about these port types, if there is one configured.
+	fwdCtx, err := hostif.dataplane.FindContext(&fwdpb.ContextId{Id: hostif.dataplane.ID()})
+	if err != nil {
+		return nil, err
+	}
+	fwdCtx.RLock()
+	ctl := fwdCtx.PortControl()
+	fwdCtx.RUnlock()
+	if ctl != nil {
+		ctlReq := &fwdpb.HostPortControlMessage{
+			Create:        true,
+			Port:          portReq.GetPort(),
+			DataplanePort: &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(req.GetObjId())}},
+		}
+		log.Infof("sending port ctl message: %+v", ctlReq)
+		if err := ctl(ctlReq); err != nil {
+			return nil, err
+		}
+	} else {
+		log.Warning("didn't send port control message: channel is nil")
+	}
+	return &saipb.CreateHostifResponse{Oid: id}, nil
+}
+
 // SetHostifAttribute sets the attributes in the request.
 func (hostif *hostif) SetHostifAttribute(ctx context.Context, req *saipb.SetHostifAttributeRequest) (*saipb.SetHostifAttributeResponse, error) {
 	if req.OperStatus != nil {
+		if hostif.opts.RemoteCPUPort {
+			return nil, nil
+		}
 		stateReq := &fwdpb.PortStateRequest{
 			ContextId: &fwdpb.ContextId{Id: hostif.dataplane.ID()},
 			PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(req.GetOid())}},
@@ -345,18 +447,18 @@ func (hostif *hostif) CreateHostifUserDefinedTrap(_ context.Context, req *saipb.
 }
 
 const (
-	hostifTable = "hostiftable"
+	trapIDToHostifTable = "hostiftable"
 )
 
 func (hostif *hostif) CreateHostifTableEntry(ctx context.Context, req *saipb.CreateHostifTableEntryRequest) (*saipb.CreateHostifTableEntryResponse, error) {
 	switch entryType := req.GetType(); entryType {
 	case saipb.HostifTableEntryType_HOSTIF_TABLE_ENTRY_TYPE_TRAP_ID:
 		hostif.trapIDToHostifID[req.GetTrapId()] = req.GetHostIf()
-		_, err := hostif.dataplane.TableEntryAdd(ctx, fwdconfig.TableEntryAddRequest(hostif.dataplane.ID(), hostifTable).
+		_, err := hostif.dataplane.TableEntryAdd(ctx, fwdconfig.TableEntryAddRequest(hostif.dataplane.ID(), trapIDToHostifTable).
 			AppendEntry(
 				fwdconfig.EntryDesc(fwdconfig.ExactEntry(
 					fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TRAP_ID).WithUint64(req.GetTrapId()))),
-				fwdconfig.Action(fwdconfig.TransmitAction(fmt.Sprint(req.GetHostIf())))).
+				fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_HOST_PORT_ID).WithUint64Value(req.GetHostIf()))).
 			Build())
 		if err != nil {
 			return nil, err

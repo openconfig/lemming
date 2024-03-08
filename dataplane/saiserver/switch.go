@@ -68,6 +68,7 @@ type switchDataplaneAPI interface {
 	PortCreate(context.Context, *fwdpb.PortCreateRequest) (*fwdpb.PortCreateReply, error)
 	PortUpdate(context.Context, *fwdpb.PortUpdateRequest) (*fwdpb.PortUpdateReply, error)
 	AttributeUpdate(context.Context, *fwdpb.AttributeUpdateRequest) (*fwdpb.AttributeUpdateReply, error)
+	ObjectNID(context.Context, *fwdpb.ObjectNIDRequest) (*fwdpb.ObjectNIDReply, error)
 }
 
 const (
@@ -90,6 +91,8 @@ const (
 	NHActionTable         = "nh-action"
 	TunnelEncap           = "tunnel-encap"
 	MyMacTable            = "my-mac-table"
+	hostifToPortTable     = "cpu-input"
+	portToHostifTable     = "cpu-output"
 )
 
 func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server, opts *dplaneopts.Options) (*saiSwitch, error) {
@@ -414,7 +417,7 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 	_, err = sw.dataplane.TableCreate(ctx, &fwdpb.TableCreateRequest{
 		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
 		Desc: &fwdpb.TableDesc{
-			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: hostifTable}},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: trapIDToHostifTable}},
 			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
 			Table: &fwdpb.TableDesc_Exact{
 				Exact: &fwdpb.ExactTableDesc{
@@ -491,6 +494,44 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 		},
 	}
 	if _, err := sw.dataplane.TableCreate(ctx, tunnel); err != nil {
+		return nil, err
+	}
+	_, err = sw.dataplane.TableCreate(ctx, &fwdpb.TableCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
+		Desc: &fwdpb.TableDesc{
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: hostifToPortTable}},
+			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
+			Table: &fwdpb.TableDesc_Exact{
+				Exact: &fwdpb.ExactTableDesc{
+					FieldIds: []*fwdpb.PacketFieldId{{
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_HOST_PORT_ID,
+						},
+					}},
+				},
+			},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	_, err = sw.dataplane.TableCreate(ctx, &fwdpb.TableCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
+		Desc: &fwdpb.TableDesc{
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: portToHostifTable}},
+			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
+			Table: &fwdpb.TableDesc_Exact{
+				Exact: &fwdpb.ExactTableDesc{
+					FieldIds: []*fwdpb.PacketFieldId{{
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT,
+						},
+					}},
+				},
+			},
+		},
+	})
+	if err != nil {
 		return nil, err
 	}
 

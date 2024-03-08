@@ -77,7 +77,13 @@ type Context struct {
 
 	// FakePortManager is the implementation of the port creator for the Fake port type.
 	FakePortManager FakePortManager
+	portCtl         PortControl
+	portCtlDone     func()
+	cpuPortSink     CPUPortSink
+	cpuPortSinkDone func()
 }
+
+type PortControl func(*fwdpb.HostPortControlMessage) error
 
 // New creates a new forwarding context with the specified id and fwd engine
 // name. The id identifies the forwarding context in an forwarding engine
@@ -169,8 +175,11 @@ func (ctx *Context) Notify(event *fwdpb.EventDesc) error {
 	return nq.Write(event)
 }
 
+type CPUPortSink func(*fwdpb.PacketOut) error
+
 // SetPacketSink sets the packet sink service for the context. If the packet
 // sink service is not set to nil, packets are dropped.
+// TODO: Deprecated remove
 func (ctx *Context) SetPacketSink(call PacketCallback) error {
 	ctx.packets = call
 	return nil
@@ -181,6 +190,30 @@ func (ctx *Context) PacketSink() PacketCallback {
 	return ctx.packets
 }
 
+// SetPacketSink sets the port control service for the context
+func (ctx *Context) SetPortControl(fn PortControl, doneFn func()) error {
+	ctx.portCtl = fn
+	ctx.portCtlDone = doneFn
+	return nil
+}
+
+// PortControl returns a handler to port control service
+func (ctx *Context) PortControl() PortControl {
+	return ctx.portCtl
+}
+
+// SetCPUPortSink sets the port control service for the context
+func (ctx *Context) SetCPUPortSink(fn CPUPortSink, doneFn func()) error {
+	ctx.cpuPortSink = fn
+	ctx.cpuPortSinkDone = doneFn
+	return nil
+}
+
+// PacketSink returns a handler to port control service
+func (ctx *Context) CPUPortSink() CPUPortSink {
+	return ctx.cpuPortSink
+}
+
 // Cleanup cleans up the context.
 // It first cleans up the objects that satisfy isPort.
 // Then it unblocks the caller by sending a message on the channel.
@@ -188,6 +221,15 @@ func (ctx *Context) PacketSink() PacketCallback {
 func (ctx *Context) Cleanup(ch chan bool, isPort func(*fwdpb.ObjectId) bool) {
 	ctx.SetPacketSink(nil)
 	ctx.SetNotification(nil)
+
+	if ctx.cpuPortSinkDone != nil {
+		ctx.cpuPortSinkDone()
+	}
+	if ctx.portCtlDone != nil {
+		ctx.portCtlDone()
+	}
+	ctx.SetCPUPortSink(nil, nil)
+	ctx.SetPortControl(nil, nil)
 
 	ids := ctx.Objects.IDs()
 
