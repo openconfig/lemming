@@ -361,8 +361,8 @@ func newMyMac(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server
 
 func (m *myMac) CreateMyMac(ctx context.Context, req *saipb.CreateMyMacRequest) (*saipb.CreateMyMacResponse, error) {
 	mi := &myMacInfo{
-		priority: req.Priority,
-		portID:   req.PortId,
+		priority:       req.Priority,
+		portID:         req.PortId,
 		macAddress:     req.GetMacAddress(),
 		macAddressMask: req.GetMacAddressMask(),
 	}
