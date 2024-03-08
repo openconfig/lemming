@@ -45,6 +45,7 @@ type saiSwitch struct {
 	bridge          *bridge
 	hostif          *hostif
 	hash            *hash
+	myMac           *myMac
 	neighbor        *neighbor
 	nextHopGroup    *nextHopGroup
 	nextHop         *nextHop
@@ -106,6 +107,7 @@ func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server, 
 		bridge:          newBridge(mgr, engine, s),
 		hostif:          newHostif(mgr, engine, s, opts),
 		hash:            &hash{},
+		myMac:           newMyMac(mgr, engine, s),
 		neighbor:        newNeighbor(mgr, engine, s),
 		nextHopGroup:    newNextHopGroup(mgr, engine, s),
 		nextHop:         newNextHop(mgr, engine, s),
