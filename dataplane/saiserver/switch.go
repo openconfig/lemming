@@ -45,6 +45,7 @@ type saiSwitch struct {
 	bridge          *bridge
 	hostif          *hostif
 	hash            *hash
+	myMac           *myMac
 	neighbor        *neighbor
 	nextHopGroup    *nextHopGroup
 	nextHop         *nextHop
@@ -71,6 +72,9 @@ type switchDataplaneAPI interface {
 }
 
 const (
+	inputIfaceTable       = "input-iface"
+	outputIfaceTable      = "output-iface"
+	IngressVRFTable       = "ingress-vrf"
 	FIBV4Table            = "fib-v4"
 	FIBV6Table            = "fib-v6"
 	SRCMACTable           = "port-mac"
@@ -86,6 +90,7 @@ const (
 	EgressActionTable     = "egress-action-table"
 	NHActionTable         = "nh-action"
 	TunnelEncap           = "tunnel-encap"
+	MyMacTable            = "my-mac-table"
 	hostifToPortTable     = "cpu-input"
 	portToHostifTable     = "cpu-output"
 )
@@ -105,6 +110,7 @@ func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server, 
 		bridge:          newBridge(mgr, engine, s),
 		hostif:          newHostif(mgr, engine, s, opts),
 		hash:            &hash{},
+		myMac:           newMyMac(mgr, engine, s),
 		neighbor:        newNeighbor(mgr, engine, s),
 		nextHopGroup:    newNextHopGroup(mgr, engine, s),
 		nextHop:         newNextHop(mgr, engine, s),
@@ -120,12 +126,6 @@ func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server, 
 	saipb.RegisterHashServer(s, sw.hash)
 	return sw, nil
 }
-
-const (
-	inputIfaceTable  = "input-iface"
-	outputIfaceTable = "output-iface"
-	IngressVRFTable  = "ingress-vrf"
-)
 
 // CreateSwitch a creates a new switch and populates its default values.
 func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequest) (*saipb.CreateSwitchResponse, error) {
@@ -219,6 +219,21 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 		},
 	}
 	if _, err := sw.dataplane.TableCreate(ctx, portMAC); err != nil {
+		return nil, err
+	}
+	myMAC := &fwdpb.TableCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
+		Desc: &fwdpb.TableDesc{
+			TableType: fwdpb.TableType_TABLE_TYPE_FLOW,
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: MyMacTable}},
+			Table: &fwdpb.TableDesc_Flow{
+				Flow: &fwdpb.FlowTableDesc{
+					BankCount: 1,
+				},
+			},
+		},
+	}
+	if _, err := sw.dataplane.TableCreate(ctx, myMAC); err != nil {
 		return nil, err
 	}
 	neighbor := &fwdpb.TableCreateRequest{

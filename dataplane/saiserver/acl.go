@@ -292,3 +292,121 @@ func (a *acl) CreateAclEntry(ctx context.Context, req *saipb.CreateAclEntryReque
 
 	return &saipb.CreateAclEntryResponse{Oid: id}, nil
 }
+
+type myMacInfo struct {
+	priority       *uint32
+	portID         *uint64 // wildcard if not specified
+	vlanID         *uint16 // wildcard if not specified
+	macAddress     []byte
+	macAddressMask []byte
+}
+
+// ToEntryDesc returns the EntryDesc.
+func (mi *myMacInfo) ToEntryDesc(m *myMac) (*fwdpb.EntryDesc, error) {
+	fields := []*fwdconfig.PacketFieldMaskedBytesBuilder{
+		fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST).
+			WithBytes(mi.macAddress, mi.macAddressMask),
+	}
+
+	if mi.vlanID != nil {
+		fields = append(fields,
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG).
+				WithBytes(binary.BigEndian.AppendUint16(nil, *mi.vlanID), binary.BigEndian.AppendUint16(nil, 0x0FFF)))
+	}
+
+	if mi.portID != nil {
+		fwdCtx, err := m.dataplane.FindContext(&fwdpb.ContextId{Id: m.dataplane.ID()})
+		if err != nil {
+			return nil, err
+		}
+		obj, err := fwdCtx.Objects.FindID(&fwdpb.ObjectId{Id: fmt.Sprint(*mi.portID)})
+		if err != nil {
+			return nil, err
+		}
+		fields = append(fields,
+			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT).
+				WithBytes(binary.BigEndian.AppendUint64(nil, uint64(obj.NID())), binary.BigEndian.AppendUint64(nil, math.MaxUint64)))
+	}
+
+	ed := &fwdpb.EntryDesc{
+		Entry: &fwdpb.EntryDesc_Flow{
+			Flow: &fwdpb.FlowEntryDesc{
+				Priority: *mi.priority,
+				Bank:     1,
+			},
+		},
+	}
+	for _, f := range fields {
+		ed.GetFlow().Fields = append(ed.GetFlow().Fields, f.Build())
+	}
+	return ed, nil
+}
+
+type myMac struct {
+	saipb.UnimplementedMyMacServer
+	mgr        *attrmgr.AttrMgr
+	dataplane  switchDataplaneAPI
+	myMacTable map[uint64]*myMacInfo
+}
+
+func newMyMac(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server) *myMac {
+	m := &myMac{
+		mgr:        mgr,
+		dataplane:  dataplane,
+		myMacTable: map[uint64]*myMacInfo{},
+	}
+	saipb.RegisterMyMacServer(s, m)
+	return m
+}
+
+func (m *myMac) CreateMyMac(ctx context.Context, req *saipb.CreateMyMacRequest) (*saipb.CreateMyMacResponse, error) {
+	mi := &myMacInfo{
+		priority:       req.Priority,
+		portID:         req.PortId,
+		macAddress:     req.GetMacAddress(),
+		macAddressMask: req.GetMacAddressMask(),
+	}
+	if req.VlanId != nil {
+		vid := (uint16)(req.GetVlanId())
+		mi.vlanID = &vid
+	}
+	if mi.macAddress == nil || mi.macAddressMask == nil {
+		return nil, status.Errorf(codes.InvalidArgument, "MAC address and MAC address mask cannot be empty")
+	}
+	id := m.mgr.NextID()
+	ed, err := mi.ToEntryDesc(m)
+	if err != nil {
+		return nil, status.Errorf(codes.FailedPrecondition, "failed to create entry descriptor: %v", err)
+	}
+	mReq := &fwdpb.TableEntryAddRequest{
+		ContextId: &fwdpb.ContextId{Id: m.dataplane.ID()},
+		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: MyMacTable}},
+		EntryDesc: ed,
+	}
+
+	if _, err := m.dataplane.TableEntryAdd(ctx, mReq); err != nil {
+		return nil, err
+	}
+	return &saipb.CreateMyMacResponse{Oid: id}, nil
+}
+
+func (m *myMac) RemoveMyMac(ctx context.Context, req *saipb.RemoveMyMacRequest) (*saipb.RemoveMyMacResponse, error) {
+	mi, ok := m.myMacTable[req.GetOid()]
+	if !ok {
+		return nil, status.Errorf(codes.FailedPrecondition, "%d does not exist", req.GetOid())
+	}
+	ed, err := mi.ToEntryDesc(m)
+	if err != nil {
+		return nil, status.Errorf(codes.FailedPrecondition, "failed to create entry descriptor: %v", err)
+	}
+	mReq := &fwdpb.TableEntryRemoveRequest{
+		ContextId: &fwdpb.ContextId{Id: m.dataplane.ID()},
+		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: MyMacTable}},
+		EntryDesc: ed,
+	}
+
+	if _, err := m.dataplane.TableEntryRemove(ctx, mReq); err != nil {
+		return nil, err
+	}
+	return &saipb.RemoveMyMacResponse{}, nil
+}
