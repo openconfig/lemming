@@ -98,10 +98,6 @@ type mpls struct {
 	saipb.UnimplementedMplsServer
 }
 
-type myMac struct {
-	saipb.UnimplementedMyMacServer
-}
-
 type nat struct {
 	saipb.UnimplementedNatServer
 }
@@ -192,7 +188,6 @@ type Server struct {
 	mcastFdb       *mcastFdb
 	mirror         *mirror
 	mpls           *mpls
-	myMac          *myMac
 	nat            *nat
 	policer        *policer
 	qosMap         *qosMap
@@ -282,7 +277,6 @@ func New(ctx context.Context, mgr *attrmgr.AttrMgr, s *grpc.Server, opts *dplane
 		mcastFdb:          &mcastFdb{},
 		mirror:            &mirror{},
 		mpls:              &mpls{},
-		myMac:             &myMac{},
 		nat:               &nat{},
 		policer:           &policer{},
 		qosMap:            &qosMap{},
@@ -315,7 +309,6 @@ func New(ctx context.Context, mgr *attrmgr.AttrMgr, s *grpc.Server, opts *dplane
 	saipb.RegisterMcastFdbServer(s, srv.mcastFdb)
 	saipb.RegisterMirrorServer(s, srv.mirror)
 	saipb.RegisterMplsServer(s, srv.mpls)
-	saipb.RegisterMyMacServer(s, srv.myMac)
 	saipb.RegisterNatServer(s, srv.nat)
 	saipb.RegisterPolicerServer(s, srv.policer)
 	saipb.RegisterQosMapServer(s, srv.qosMap)

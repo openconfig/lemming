@@ -292,3 +292,182 @@ func (a *acl) CreateAclEntry(ctx context.Context, req *saipb.CreateAclEntryReque
 
 	return &saipb.CreateAclEntryResponse{Oid: id}, nil
 }
+
+type myMacInfo struct {
+	portID         uint64 // wildcard if not specified
+	vlanID         uint32 // wildcard if not specified
+	macAddress     []byte
+	macAddressMask []byte
+}
+
+type myMac struct {
+	saipb.UnimplementedMyMacServer
+	mgr        *attrmgr.AttrMgr
+	dataplane  switchDataplaneAPI
+	myMacTable map[uint64]*myMacInfo
+}
+
+func newMyMac(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server) *myMac {
+	m := &myMac{
+		mgr:        mgr,
+		dataplane:  dataplane,
+		myMacTable: map[uint64]*myMacInfo{},
+	}
+	saipb.RegisterMyMacServer(s, m)
+	return m
+}
+
+func (m *myMac) CreateMyMac(ctx context.Context, req *saipb.CreateMyMacRequest) (*saipb.CreateMyMacResponse, error) {
+	mi := &myMacInfo{
+		portID:         req.GetPortId(),
+		vlanID:         req.GetVlanId(),
+		macAddress:     req.GetMacAddress(),
+		macAddressMask: req.GetMacAddressMask(),
+	}
+	if mi.macAddress == nil || mi.macAddressMask == nil {
+		return nil, status.Errorf(codes.InvalidArgument, "MAC address and MAC address mask cannot be empty")
+	}
+	id := m.mgr.NextID()
+	mReq := &fwdpb.TableEntryAddRequest{
+		ContextId: &fwdpb.ContextId{Id: m.dataplane.ID()},
+		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: MyMacTable}},
+		EntryDesc: &fwdpb.EntryDesc{
+			Entry: &fwdpb.EntryDesc_Flow{
+				Flow: &fwdpb.FlowEntryDesc{
+					Priority: req.GetPriority(),
+					Bank:     uint32(1),
+					Fields: []*fwdpb.PacketFieldMaskedBytes{
+						{
+							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST}},
+							Bytes:   req.GetMacAddress(),
+							Masks:   req.GetMacAddressMask(),
+						},
+					},
+				},
+			},
+		},
+	}
+
+	if mi.vlanID != 0 {
+		mReq.EntryDesc.GetFlow().Fields = append(
+			mReq.EntryDesc.GetFlow().Fields,
+			&fwdpb.PacketFieldMaskedBytes{
+				FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG}},
+				Bytes:   binary.BigEndian.AppendUint32(nil, mi.vlanID),
+				Masks:   binary.BigEndian.AppendUint32(nil, 0x00000FFF), // Match VLAN ID.
+			})
+	} else {
+		mReq.EntryDesc.GetFlow().Fields = append(
+			mReq.EntryDesc.GetFlow().Fields,
+			&fwdpb.PacketFieldMaskedBytes{
+				FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG}},
+				Bytes:   binary.BigEndian.AppendUint32(nil, mi.vlanID),
+				Masks:   binary.BigEndian.AppendUint32(nil, uint32(0x0)), // Wildcad
+			})
+	}
+
+	if mi.portID != 0 {
+		fwdCtx, err := m.dataplane.FindContext(&fwdpb.ContextId{Id: m.dataplane.ID()})
+		if err != nil {
+			return nil, err
+		}
+		obj, err := fwdCtx.Objects.FindID(&fwdpb.ObjectId{Id: fmt.Sprint(mi.portID)})
+		if err != nil {
+			return nil, err
+		}
+		mReq.EntryDesc.GetFlow().Fields = append(
+			mReq.EntryDesc.GetFlow().Fields,
+			&fwdpb.PacketFieldMaskedBytes{
+				FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT}},
+				Bytes:   binary.BigEndian.AppendUint64(nil, uint64(obj.NID())),
+				Masks:   binary.BigEndian.AppendUint64(nil, math.MaxUint64),
+			})
+	} else {
+		mReq.EntryDesc.GetFlow().Fields = append(
+			mReq.EntryDesc.GetFlow().Fields,
+			&fwdpb.PacketFieldMaskedBytes{
+				FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT}},
+				Bytes:   binary.BigEndian.AppendUint64(nil, uint64(0x0)),
+				Masks:   binary.BigEndian.AppendUint64(nil, uint64(0x0)), // Wildcad
+			})
+	}
+
+	if _, err := m.dataplane.TableEntryAdd(ctx, mReq); err != nil {
+		return nil, err
+	}
+	return &saipb.CreateMyMacResponse{Oid: id}, nil
+}
+
+func (m *myMac) RemoveMyMac(ctx context.Context, req *saipb.RemoveMyMacRequest) (*saipb.RemoveMyMacResponse, error) {
+	mi, ok := m.myMacTable[req.GetOid()]
+	if !ok {
+		return nil, status.Errorf(codes.FailedPrecondition, "%d does not exist", req.GetOid())
+	}
+	mReq := &fwdpb.TableEntryRemoveRequest{
+		ContextId: &fwdpb.ContextId{Id: m.dataplane.ID()},
+		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: MyMacTable}},
+		EntryDesc: &fwdpb.EntryDesc{
+			Entry: &fwdpb.EntryDesc_Flow{
+				Flow: &fwdpb.FlowEntryDesc{
+					Bank: uint32(1),
+					Fields: []*fwdpb.PacketFieldMaskedBytes{
+						{
+							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST}},
+							Bytes:   mi.macAddress,
+							Masks:   mi.macAddressMask,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	if mi.vlanID != 0 {
+		mReq.EntryDesc.GetFlow().Fields = append(
+			mReq.EntryDesc.GetFlow().Fields,
+			&fwdpb.PacketFieldMaskedBytes{
+				FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG}},
+				Bytes:   binary.BigEndian.AppendUint32(nil, mi.vlanID),
+				Masks:   binary.BigEndian.AppendUint32(nil, 0x00000FFF), // Match VLAN ID.
+			})
+	} else {
+		mReq.EntryDesc.GetFlow().Fields = append(
+			mReq.EntryDesc.GetFlow().Fields,
+			&fwdpb.PacketFieldMaskedBytes{
+				FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG}},
+				Bytes:   binary.BigEndian.AppendUint32(nil, mi.vlanID),
+				Masks:   binary.BigEndian.AppendUint32(nil, uint32(0x0)), // Wildcad
+			})
+	}
+
+	if mi.portID != 0 {
+		fwdCtx, err := m.dataplane.FindContext(&fwdpb.ContextId{Id: m.dataplane.ID()})
+		if err != nil {
+			return nil, err
+		}
+		obj, err := fwdCtx.Objects.FindID(&fwdpb.ObjectId{Id: fmt.Sprint(mi.portID)})
+		if err != nil {
+			return nil, err
+		}
+		mReq.EntryDesc.GetFlow().Fields = append(
+			mReq.EntryDesc.GetFlow().Fields,
+			&fwdpb.PacketFieldMaskedBytes{
+				FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT}},
+				Bytes:   binary.BigEndian.AppendUint64(nil, uint64(obj.NID())),
+				Masks:   binary.BigEndian.AppendUint64(nil, math.MaxUint64),
+			})
+	} else {
+		mReq.EntryDesc.GetFlow().Fields = append(
+			mReq.EntryDesc.GetFlow().Fields,
+			&fwdpb.PacketFieldMaskedBytes{
+				FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT}},
+				Bytes:   binary.BigEndian.AppendUint64(nil, uint64(0x0)),
+				Masks:   binary.BigEndian.AppendUint64(nil, uint64(0x0)), // Wildcad
+			})
+	}
+
+	if _, err := m.dataplane.TableEntryRemove(ctx, mReq); err != nil {
+		return nil, err
+	}
+	return &saipb.RemoveMyMacResponse{}, nil
+}

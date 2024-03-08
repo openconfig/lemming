@@ -70,6 +70,9 @@ type switchDataplaneAPI interface {
 }
 
 const (
+	inputIfaceTable       = "input-iface"
+	outputIfaceTable      = "output-iface"
+	IngressVRFTable       = "ingress-vrf"
 	FIBV4Table            = "fib-v4"
 	FIBV6Table            = "fib-v6"
 	SRCMACTable           = "port-mac"
@@ -85,6 +88,7 @@ const (
 	EgressActionTable     = "egress-action-table"
 	NHActionTable         = "nh-action"
 	TunnelEncap           = "tunnel-encap"
+	MyMacTable            = "my-mac-table"
 )
 
 func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server, opts *dplaneopts.Options) (*saiSwitch, error) {
@@ -117,12 +121,6 @@ func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server, 
 	saipb.RegisterHashServer(s, sw.hash)
 	return sw, nil
 }
-
-const (
-	inputIfaceTable  = "input-iface"
-	outputIfaceTable = "output-iface"
-	IngressVRFTable  = "ingress-vrf"
-)
 
 // CreateSwitch a creates a new switch and populates its default values.
 func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequest) (*saipb.CreateSwitchResponse, error) {
@@ -216,6 +214,21 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 		},
 	}
 	if _, err := sw.dataplane.TableCreate(ctx, portMAC); err != nil {
+		return nil, err
+	}
+	myMAC := &fwdpb.TableCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
+		Desc: &fwdpb.TableDesc{
+			TableType: fwdpb.TableType_TABLE_TYPE_FLOW,
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: MyMacTable}},
+			Table: &fwdpb.TableDesc_Flow{
+				Flow: &fwdpb.FlowTableDesc{
+					BankCount: 1,
+				},
+			},
+		},
+	}
+	if _, err := sw.dataplane.TableCreate(ctx, myMAC); err != nil {
 		return nil, err
 	}
 	neighbor := &fwdpb.TableCreateRequest{
