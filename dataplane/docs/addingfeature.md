@@ -16,7 +16,7 @@ The first step is to check if the forwarding supports everything we need. The an
 2. There is no randomized payload action, so let's add it.
    1. Add a new value to the `ActionType` enum in the [forwarding_action](../../proto/forwarding/forwarding_action.proto).
    2. Add a new action desc proto message for the new action and it to the `oneof action` in `ActionDesc`.
-   3. Implement the action in a new file in the [fwdaction](../forwarding/fwdactions/actions).
+   3. Implement the action in a new file in the [fwdaction](../forwarding/fwdaction/actions).
    4. Tables must implement the `fwdaction.Action` interface and register a builder (`fwdaction.Builder`). (see other packages for examples).
 3. There is no `foo` header parser, so let's add it.
    1. Add a new enum value to the PacketFieldNum [forwarding_common](../../proto/forwarding/forwarding_common.proto).
