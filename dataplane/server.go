@@ -39,12 +39,12 @@ import (
 
 // Dataplane is an implementation of Dataplane HAL API.
 type Dataplane struct {
-	saiserv       *saiserver.Server
-	srv           *grpc.Server
-	lis           net.Listener
-	reconcilers   []reconciler.Reconciler
-	opt           *dplaneopts.Options
-	pktioCancelFn func()
+	saiserv     *saiserver.Server
+	srv         *grpc.Server
+	lis         net.Listener
+	reconcilers []reconciler.Reconciler
+	opt         *dplaneopts.Options
+	cancelFn    func()
 }
 
 // New create a new dataplane instance.
@@ -128,16 +128,15 @@ func (d *Dataplane) Start(ctx context.Context, c gpb.GNMIClient, target string) 
 
 	fc := fwdpb.NewForwardingClient(conn)
 
-	pktioCtx, cancel := context.WithCancel(ctx)
-	portCtl, err := fc.HostPortControl(pktioCtx)
+	ctx, d.cancelFn = context.WithCancel(ctx)
+	portCtl, err := fc.HostPortControl(ctx)
 	if err != nil {
 		return err
 	}
-	packet, err := fc.CPUPacketStream(pktioCtx)
+	packet, err := fc.CPUPacketStream(ctx)
 	if err != nil {
 		return err
 	}
-	d.pktioCancelFn = cancel
 
 	go h.ManagePorts(portCtl)
 	go h.StreamPackets(packet)
@@ -170,7 +169,7 @@ func (d *Dataplane) SaiServer() *saiserver.Server {
 
 // Stop gracefully stops the server.
 func (d *Dataplane) Stop(ctx context.Context) error {
-	d.pktioCancelFn()
+	d.cancelFn()
 	for _, rec := range d.reconcilers {
 		if err := rec.Stop(ctx); err != nil {
 			return fmt.Errorf("failed to stop handler %q: %v", rec.ID(), err)
