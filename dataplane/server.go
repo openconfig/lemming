@@ -27,27 +27,30 @@ import (
 	"github.com/openconfig/lemming/dataplane/dplaneopts"
 	"github.com/openconfig/lemming/dataplane/saiserver"
 	"github.com/openconfig/lemming/dataplane/saiserver/attrmgr"
+	"github.com/openconfig/lemming/dataplane/standalone/pkthandler/pktiohandler"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/reconciler"
 
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 
 	saipb "github.com/openconfig/lemming/dataplane/proto/sai"
+	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
 // Dataplane is an implementation of Dataplane HAL API.
 type Dataplane struct {
-	saiserv     *saiserver.Server
-	srv         *grpc.Server
-	lis         net.Listener
-	reconcilers []reconciler.Reconciler
-	opt         *dplaneopts.Options
+	saiserv       *saiserver.Server
+	srv           *grpc.Server
+	lis           net.Listener
+	reconcilers   []reconciler.Reconciler
+	opt           *dplaneopts.Options
+	pktioCancelFn func()
 }
 
 // New create a new dataplane instance.
 func New(ctx context.Context, opts ...dplaneopts.Option) (*Dataplane, error) {
 	data := &Dataplane{
-		opt: dplaneopts.ResolveOpts(opts...),
+		opt: dplaneopts.ResolveOpts(append(opts, dplaneopts.WithEthDevAsLane(true), dplaneopts.WithRemoteCPUPort(true))...),
 	}
 
 	lis, err := (&net.ListenConfig{}).Listen(ctx, "tcp", data.opt.AddrPort)
@@ -118,6 +121,27 @@ func (d *Dataplane) Start(ctx context.Context, c gpb.GNMIClient, target string) 
 		return err
 	}
 
+	h, err := pktiohandler.New()
+	if err != nil {
+		return err
+	}
+
+	fc := fwdpb.NewForwardingClient(conn)
+
+	pktioCtx, cancel := context.WithCancel(ctx)
+	portCtl, err := fc.HostPortControl(pktioCtx)
+	if err != nil {
+		return err
+	}
+	packet, err := fc.CPUPacketStream(pktioCtx)
+	if err != nil {
+		return err
+	}
+	d.pktioCancelFn = cancel
+
+	go h.ManagePorts(portCtl)
+	go h.StreamPackets(packet)
+
 	if d.opt.Reconcilation {
 		d.reconcilers = append(d.reconcilers, getReconcilers(conn, swResp.Oid, *swAttrs.GetAttr().CpuPort, "lucius")...)
 
@@ -146,6 +170,7 @@ func (d *Dataplane) SaiServer() *saiserver.Server {
 
 // Stop gracefully stops the server.
 func (d *Dataplane) Stop(ctx context.Context) error {
+	d.pktioCancelFn()
 	for _, rec := range d.reconcilers {
 		if err := rec.Stop(ctx); err != nil {
 			return fmt.Errorf("failed to stop handler %q: %v", rec.ID(), err)

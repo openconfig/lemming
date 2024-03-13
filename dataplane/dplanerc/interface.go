@@ -32,8 +32,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/openconfig/lemming/dataplane/cpusink"
-	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
 	"github.com/openconfig/lemming/dataplane/internal/kernel"
 	"github.com/openconfig/lemming/gnmi/gnmiclient"
 	"github.com/openconfig/lemming/gnmi/oc"
@@ -768,11 +766,6 @@ func (ni *Reconciler) handleAddrUpdate(ctx context.Context, au *netlink.AddrUpda
 	pl, _ := au.LinkAddress.Mask.Size()
 	isV4 := au.LinkAddress.IP.To4() != nil
 
-	entry := fwdconfig.EntryDesc(fwdconfig.ExactEntry(
-		fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT).WithUint64(data.portNID),
-		fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(ipBytes),
-	))
-
 	log.V(1).Infof("handling addr update for %s ip %v pl %v", data.hostifDevName, ip, pl)
 	// The dataplane does not monitor the local interface's IP addr, they must set externally.
 	if au.NewAddr {
@@ -784,30 +777,6 @@ func (ni *Reconciler) handleAddrUpdate(ctx context.Context, au *netlink.AddrUpda
 			sub.GetOrCreateIpv6().GetOrCreateAddress(ip).PrefixLength = ygot.Uint8(uint8(pl))
 			gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(intf.name).Subinterface(intf.subintf).Ipv6().Address(ip).Ip().State(), au.LinkAddress.IP.String())
 			gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(intf.name).Subinterface(intf.subintf).Ipv6().Address(ip).PrefixLength().State(), uint8(pl))
-		}
-		// For an aggregate interface, add an IP2ME route for all of its members.
-		// TODO: As interfaces are added and removed from aggregate update their IP2MEs.
-		if data.isAggregate {
-			for _, memberName := range ni.state[intf.name].GetOrCreateAggregation().GetMember() {
-				memberData := ni.ocInterfaceData[ocInterface{name: memberName}]
-				entry := fwdconfig.EntryDesc(fwdconfig.ExactEntry(
-					fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT).WithUint64(memberData.portNID),
-					fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(ipBytes),
-				))
-				_, err := ni.fwdClient.TableEntryAdd(ctx, fwdconfig.TableEntryAddRequest(ni.contextID, cpusink.IP2MeTable).
-					AppendEntry(entry, fwdconfig.Action(fwdconfig.TransmitAction(fmt.Sprint(memberData.hostifID)))).Build())
-				if err != nil {
-					log.Warningf("failed to add route: %v", err)
-					return
-				}
-			}
-		} else {
-			_, err := ni.fwdClient.TableEntryAdd(ctx, fwdconfig.TableEntryAddRequest(ni.contextID, cpusink.IP2MeTable).
-				AppendEntry(entry, fwdconfig.Action(fwdconfig.TransmitAction(fmt.Sprint(data.hostifID)))).Build())
-			if err != nil {
-				log.Warningf("failed to add route: %v", err)
-				return
-			}
 		}
 		_, err := ni.routeClient.CreateRouteEntry(ctx, &saipb.CreateRouteEntryRequest{
 			Entry: &saipb.RouteEntry{
@@ -829,35 +798,6 @@ func (ni *Reconciler) handleAddrUpdate(ctx context.Context, au *netlink.AddrUpda
 		} else {
 			sub.GetOrCreateIpv6().DeleteAddress(ip)
 			gnmiclient.BatchDelete(sb, ocpath.Root().Interface(intf.name).Subinterface(intf.subintf).Ipv6().Address(ip).State())
-		}
-		// For an aggregate interface, add an IP2ME route for all of it's members.
-		if data.isAggregate {
-			for _, memberName := range ni.state[intf.name].GetOrCreateAggregation().GetMember() {
-				memberData := ni.ocInterfaceData[ocInterface{name: memberName}]
-				entry := fwdconfig.EntryDesc(fwdconfig.ExactEntry(
-					fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT).WithUint64(memberData.portNID),
-					fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(ipBytes),
-				))
-				_, err := ni.fwdClient.TableEntryRemove(ctx, &fwdpb.TableEntryRemoveRequest{
-					ContextId: &fwdpb.ContextId{Id: ni.contextID},
-					TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: cpusink.IP2MeTable}},
-					EntryDesc: entry.Build(),
-				})
-				if err != nil {
-					log.Warningf("failed to remove ip2me route: %v", err)
-					return
-				}
-			}
-		} else {
-			_, err := ni.fwdClient.TableEntryRemove(ctx, &fwdpb.TableEntryRemoveRequest{
-				ContextId: &fwdpb.ContextId{Id: ni.contextID},
-				TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: cpusink.IP2MeTable}},
-				EntryDesc: entry.Build(),
-			})
-			if err != nil {
-				log.Warningf("failed to remove ip2me route: %v", err)
-				return
-			}
 		}
 
 		_, err := ni.routeClient.RemoveRouteEntry(ctx, &saipb.RemoveRouteEntryRequest{
@@ -970,7 +910,7 @@ func (ni *Reconciler) setupPorts(ctx context.Context) error {
 		return err
 	}
 
-	for _, i := range ifs {
+	for idx, i := range ifs {
 		// Skip loopback, k8s pod interface, and tap interfaces.
 		if i.Attrs().Name == "lo" || i.Attrs().Name == "eth0" || strings.HasSuffix(i.Attrs().Name, internalSuffix) {
 			continue
@@ -983,7 +923,8 @@ func (ni *Reconciler) setupPorts(ctx context.Context) error {
 		data := &interfaceData{}
 
 		portResp, err := ni.portClient.CreatePort(ctx, &saipb.CreatePortRequest{
-			Switch: ni.switchID,
+			Switch:     ni.switchID,
+			HwLaneList: []uint32{uint32(idx)},
 		})
 		if err != nil {
 			return fmt.Errorf("failed to create port %q: %w", i.Attrs().Name, err)
