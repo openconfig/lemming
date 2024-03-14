@@ -27,6 +27,7 @@ func NewTap(name string) (*TapInterface, error) {
 			Name: name,
 		},
 		Mode:   netlink.TUNTAP_MODE_TAP,
+		Flags:  netlink.TUNTAP_MULTI_QUEUE_DEFAULTS,
 		Queues: 1,
 	}
 	if err := netlink.LinkAdd(tap); err != nil {

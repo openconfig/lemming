@@ -312,8 +312,10 @@ func (lb *LocalBind) createDUT(ctx context.Context, dut *opb.Device, portMgr *du
 	pc := saipb.NewPortClient(dplaneConn)
 	// For each port on the topology textproto.
 	// Create a saipb port and accociate the ondatra dut ID and port ID with the saipb OID.
-	for _, port := range dut.Ports {
-		resp, err := pc.CreatePort(ctx, &saipb.CreatePortRequest{})
+	for i, port := range dut.Ports {
+		resp, err := pc.CreatePort(ctx, &saipb.CreatePortRequest{
+			HwLaneList: []uint32{uint32(i)},
+		})
 		if err != nil {
 			return nil, err
 		}

@@ -980,6 +980,7 @@ func (e *Server) CPUPacketStream(srv fwdpb.Forwarding_CPUPacketStreamServer) err
 			err = e.injectPacket(init.GetContextId(), &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: cpuPortID}}, fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET,
 				pkt.GetPacket().GetFrame(), acts, true, fwdpb.PortAction_PORT_ACTION_INPUT)
 			if err != nil {
+				log.Warningf("inject err: %v", err)
 				continue
 			}
 		}
