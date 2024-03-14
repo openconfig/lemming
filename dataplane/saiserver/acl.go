@@ -303,6 +303,9 @@ type myMacInfo struct {
 
 // ToEntryDesc returns the EntryDesc.
 func (mi *myMacInfo) ToEntryDesc(m *myMac) (*fwdpb.EntryDesc, error) {
+	if mi.priority == nil {
+		return nil, fmt.Errorf("priority cannot be nil")
+	}
 	fields := []*fwdconfig.PacketFieldMaskedBytesBuilder{
 		fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST).
 			WithBytes(mi.macAddress, mi.macAddressMask),
@@ -382,6 +385,7 @@ func (m *myMac) CreateMyMac(ctx context.Context, req *saipb.CreateMyMacRequest) 
 		ContextId: &fwdpb.ContextId{Id: m.dataplane.ID()},
 		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: MyMacTable}},
 		EntryDesc: ed,
+		Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_CONTINUE}},
 	}
 
 	if _, err := m.dataplane.TableEntryAdd(ctx, mReq); err != nil {

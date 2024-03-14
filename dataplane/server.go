@@ -23,6 +23,7 @@ import (
 	"github.com/openconfig/ygnmi/ygnmi"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/local"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/openconfig/lemming/dataplane/dplaneopts"
 	"github.com/openconfig/lemming/dataplane/saiserver"
@@ -96,6 +97,18 @@ func (d *Dataplane) Start(ctx context.Context, c gpb.GNMIClient, target string) 
 		AttrType: []saipb.SwitchAttr{
 			saipb.SwitchAttr_SWITCH_ATTR_CPU_PORT,
 		},
+	})
+	if err != nil {
+		return err
+	}
+
+	// Allow all traffic to L3 processing.
+	mmc := saipb.NewMyMacClient(conn)
+	_, err = mmc.CreateMyMac(context.Background(), &saipb.CreateMyMacRequest{
+		Switch:         swResp.Oid,
+		Priority:       proto.Uint32(1),
+		MacAddress:     []byte{0, 0, 0, 0, 0, 0},
+		MacAddressMask: []byte{0, 0, 0, 0, 0, 0},
 	})
 	if err != nil {
 		return err

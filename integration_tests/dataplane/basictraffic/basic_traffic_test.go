@@ -17,6 +17,7 @@ package basictraffic
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"testing"
 	"time"
@@ -52,6 +53,7 @@ const (
 var (
 	dutPort1 = attrs.Attributes{
 		Desc:    "dutPort1",
+		MAC:     "10:10:10:10:10:10",
 		IPv4:    "192.0.2.1",
 		IPv4Len: ipv4PrefixLen,
 	}
@@ -65,6 +67,7 @@ var (
 
 	dutPort2 = attrs.Attributes{
 		Desc:    "dutPort2",
+		MAC:     "10:10:10:10:10:11",
 		IPv4:    "192.0.2.5",
 		IPv4Len: ipv4PrefixLen,
 	}
@@ -76,6 +79,22 @@ var (
 		IPv4Len: ipv4PrefixLen,
 	}
 )
+
+// macAddrString assumes a legit MAC address and converts it from byte slice to string.
+//
+//	e.g., []byte{0x02, 0x00, 0x01, 0x0A, 0xAE, 0xFF} -> "02:00:01:01:01:01"
+func macAddrString(b []byte) string {
+	return fmt.Sprintf("%02X:%02X:%02X:%02X:%02X:%02X", b[0], b[1], b[2], b[3], b[4], b[5])
+}
+
+// macAddrBytes assumes a legit MAC address and converts it from string to byte slice.
+//
+//	e.g., "02:00:01:01:01:01" -> []byte{0x02, 0x00, 0x01, 0x01, 0x01, 0x01}
+func macAddrBytes(s string) []byte {
+	b := [6]byte{}
+	fmt.Sscanf(s, "%02X:%02X:%02X:%02X:%02X:%02X", &b[0], &b[1], &b[2], &b[3], &b[4], &b[5])
+	return []byte(b[:])
+}
 
 func TestMain(m *testing.M) {
 	ondatra.RunTests(m, binding.Local("."))
@@ -108,12 +127,21 @@ func configureDUT(t testing.TB, dut *ondatra.DUTDevice) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// Allow all traffic to L3 processing.
+	mmc := saipb.NewMyMacClient(conn)
+	_, err = mmc.CreateMyMac(context.Background(), &saipb.CreateMyMacRequest{
+		Switch:   1,
+		Priority: proto.Uint32(1),
+		// PortId:         proto.Uint64(port1ID),
+		MacAddress:     []byte{0, 0, 0, 0, 0, 0},
+		MacAddressMask: []byte{0, 0, 0, 0, 0, 0},
+	})
 
 	_, err = ric.CreateRouterInterface(context.Background(), &saipb.CreateRouterInterfaceRequest{
 		Switch:        1,
 		PortId:        proto.Uint64(port1ID),
 		Type:          saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_PORT.Enum(),
-		SrcMacAddress: []byte{10, 10, 10, 10, 10, 10},
+		SrcMacAddress: macAddrBytes(dutPort1.MAC), // []byte{0x10, 0x10, 0x10, 0x10, 0x10, 0x10}
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -122,7 +150,7 @@ func configureDUT(t testing.TB, dut *ondatra.DUTDevice) {
 		Switch:        1,
 		PortId:        proto.Uint64(port2ID),
 		Type:          saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_PORT.Enum(),
-		SrcMacAddress: []byte{10, 10, 10, 10, 10, 11},
+		SrcMacAddress: macAddrBytes(dutPort2.MAC),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -168,7 +196,7 @@ func TestTraffic(t *testing.T) {
 	dut := ondatra.DUT(t, "dut")
 	configureDUT(t, dut)
 
-	loss := testTraffic(t, ate, ateTop, atePort1, atePort2, 10*time.Second)
+	loss := testTraffic(t, ate, ateTop, atePort1, dutPort1, atePort2, 10*time.Second)
 	if loss > 1 {
 		t.Errorf("loss %f, greater than 1", loss)
 	}
@@ -189,7 +217,7 @@ func configureATE(t *testing.T, ate *ondatra.ATEDevice) gosnappi.Config {
 // testTraffic generates traffic flow from source network to
 // destination network via srcEndPoint to dstEndPoint and checks for
 // packet loss and returns loss percentage as float.
-func testTraffic(t *testing.T, ate *ondatra.ATEDevice, top gosnappi.Config, srcEndPoint, dstEndPoint attrs.Attributes, dur time.Duration) float32 {
+func testTraffic(t *testing.T, ate *ondatra.ATEDevice, top gosnappi.Config, srcEndPoint, srcPeerEndpoint, dstEndPoint attrs.Attributes, dur time.Duration) float32 {
 	otg := ate.OTG()
 	top.Flows().Clear().Items()
 
@@ -206,7 +234,7 @@ func testTraffic(t *testing.T, ate *ondatra.ATEDevice, top gosnappi.Config, srcE
 	// Set up ethernet layer.
 	eth := ipFLow.Packet().Add().Ethernet()
 	eth.Src().SetValue(srcEndPoint.MAC)
-	eth.Dst().SetValue(dstEndPoint.MAC)
+	eth.Dst().SetValue(srcPeerEndpoint.MAC)
 
 	ip4 := ipFLow.Packet().Add().Ipv4()
 	ip4.Src().SetValue(srcEndPoint.IPv4)

@@ -74,6 +74,7 @@ var getInterface = net.InterfaceByName
 
 func getForwardingPipeline() []*fwdpb.ActionDesc {
 	return []*fwdpb.ActionDesc{
+		fwdconfig.Action(fwdconfig.LookupAction(MyMacTable)).Build(),                                    // Decide whether to process the packet.
 		fwdconfig.Action(fwdconfig.LookupAction(inputIfaceTable)).Build(),                               // Match packet to interface.
 		fwdconfig.Action(fwdconfig.LookupAction(IngressVRFTable)).Build(),                               // Match interface to VRF.
 		fwdconfig.Action(fwdconfig.LookupAction(PreIngressActionTable)).Build(),                         // Run pre-ingress actions.
@@ -89,6 +90,23 @@ func getForwardingPipeline() []*fwdpb.ActionDesc {
 			ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
 		},
 	}
+}
+
+func getMacAddress(dev string) (string, error) {
+	interfaces, err := net.Interfaces()
+	if err != nil {
+		return "", fmt.Errorf("Error getting interfaces:", err)
+	}
+
+	for idx, intf := range interfaces {
+		log.Infof("[%d]Craig - Intf %+v", idx, intf)
+	}
+	for _, iface := range interfaces {
+		if iface.Name == dev {
+			return iface.HardwareAddr.String(), nil
+		}
+	}
+	return "", fmt.Errorf("Interface not found:", dev)
 }
 
 // CreatePort creates a new port, mapping the port to ethX, where X is assigned sequentially from 1 to n.
@@ -263,6 +281,12 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 	attrs.OperStatus = saipb.PortOperStatus_PORT_OPER_STATUS_UP.Enum()
 	port.mgr.StoreAttributes(id, attrs)
 
+	// Add the port MAC address to its MyMac table.
+	if ma, err := getMacAddress(dev); err != nil {
+		log.Infof("Craig - Port %q with MAC address: %s", dev, ma)
+	} else {
+		log.Errorf("Craig - [%s] Failed to get MAC address", dev)
+	}
 	return &saipb.CreatePortResponse{
 		Oid: id,
 	}, nil
