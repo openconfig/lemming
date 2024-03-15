@@ -141,7 +141,7 @@ func configureDUT(t testing.TB, dut *ondatra.DUTDevice) {
 		Switch:        1,
 		PortId:        proto.Uint64(port1ID),
 		Type:          saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_PORT.Enum(),
-		SrcMacAddress: macAddrBytes(dutPort1.MAC), // []byte{0x10, 0x10, 0x10, 0x10, 0x10, 0x10}
+		SrcMacAddress: macAddrBytes(dutPort1.MAC),
 	})
 	if err != nil {
 		t.Fatal(err)
