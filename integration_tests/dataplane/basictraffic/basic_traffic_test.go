@@ -17,7 +17,7 @@ package basictraffic
 
 import (
 	"context"
-	"fmt"
+	"net"
 	"strconv"
 	"testing"
 	"time"
@@ -80,22 +80,6 @@ var (
 	}
 )
 
-// macAddrString assumes a legit MAC address and converts it from byte slice to string.
-//
-//	e.g., []byte{0x02, 0x00, 0x01, 0x0A, 0xAE, 0xFF} -> "02:00:01:01:01:01"
-func macAddrString(b []byte) string {
-	return fmt.Sprintf("%02X:%02X:%02X:%02X:%02X:%02X", b[0], b[1], b[2], b[3], b[4], b[5])
-}
-
-// macAddrBytes assumes a legit MAC address and converts it from string to byte slice.
-//
-//	e.g., "02:00:01:01:01:01" -> []byte{0x02, 0x00, 0x01, 0x01, 0x01, 0x01}
-func macAddrBytes(s string) []byte {
-	b := [6]byte{}
-	fmt.Sscanf(s, "%02X:%02X:%02X:%02X:%02X:%02X", &b[0], &b[1], &b[2], &b[3], &b[4], &b[5])
-	return []byte(b[:])
-}
-
 func TestMain(m *testing.M) {
 	ondatra.RunTests(m, binding.Local("."))
 }
@@ -137,12 +121,20 @@ func configureDUT(t testing.TB, dut *ondatra.DUTDevice) {
 		MacAddressMask: []byte{0, 0, 0, 0, 0, 0},
 	})
 
+	mac1, err := net.ParseMAC(dutPort1.MAC)
+	if err != nil {
+		t.Fatal(err)
+	}
 	_, err = ric.CreateRouterInterface(context.Background(), &saipb.CreateRouterInterfaceRequest{
 		Switch:        1,
 		PortId:        proto.Uint64(port1ID),
 		Type:          saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_PORT.Enum(),
-		SrcMacAddress: macAddrBytes(dutPort1.MAC),
+		SrcMacAddress: mac1,
 	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	mac2, err := net.ParseMAC(dutPort2.MAC)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -150,7 +142,7 @@ func configureDUT(t testing.TB, dut *ondatra.DUTDevice) {
 		Switch:        1,
 		PortId:        proto.Uint64(port2ID),
 		Type:          saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_PORT.Enum(),
-		SrcMacAddress: macAddrBytes(dutPort2.MAC),
+		SrcMacAddress: mac2,
 	})
 	if err != nil {
 		t.Fatal(err)
