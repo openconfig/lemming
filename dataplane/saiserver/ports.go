@@ -74,6 +74,7 @@ var getInterface = net.InterfaceByName
 
 func getForwardingPipeline() []*fwdpb.ActionDesc {
 	return []*fwdpb.ActionDesc{
+		fwdconfig.Action(fwdconfig.LookupAction(MyMacTable)).Build(),                                    // Decide whether to process the packet.
 		fwdconfig.Action(fwdconfig.LookupAction(inputIfaceTable)).Build(),                               // Match packet to interface.
 		fwdconfig.Action(fwdconfig.LookupAction(IngressVRFTable)).Build(),                               // Match interface to VRF.
 		fwdconfig.Action(fwdconfig.LookupAction(PreIngressActionTable)).Build(),                         // Run pre-ingress actions.
