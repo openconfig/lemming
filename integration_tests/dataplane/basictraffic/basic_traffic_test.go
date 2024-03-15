@@ -114,9 +114,8 @@ func configureDUT(t testing.TB, dut *ondatra.DUTDevice) {
 	// Allow all traffic to L3 processing.
 	mmc := saipb.NewMyMacClient(conn)
 	_, err = mmc.CreateMyMac(context.Background(), &saipb.CreateMyMacRequest{
-		Switch:   1,
-		Priority: proto.Uint32(1),
-		// PortId:         proto.Uint64(port1ID),
+		Switch:         1,
+		Priority:       proto.Uint32(1),
 		MacAddress:     []byte{0, 0, 0, 0, 0, 0},
 		MacAddressMask: []byte{0, 0, 0, 0, 0, 0},
 	})
