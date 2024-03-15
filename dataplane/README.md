@@ -1,4 +1,4 @@
-# The Lemming Dataplane
+# Lucius Dataplane
 
 The dataplane reads and writes packets from ports and the forwards packets between them.
 
