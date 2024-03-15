@@ -415,7 +415,7 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 		return nil, err
 	}
 
-	_, err = sw.dataplane.TableCreate(ctx, &fwdpb.TableCreateRequest{
+	trapToHostifTableReq := &fwdpb.TableCreateRequest{
 		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
 		Desc: &fwdpb.TableDesc{
 			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: trapIDToHostifTable}},
@@ -429,12 +429,14 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 					}},
 				},
 			},
-			Actions: []*fwdpb.ActionDesc{{
-				ActionType: fwdpb.ActionType_ACTION_TYPE_SWAP_OUTPUT_INTERNAL_EXTERNAL,
-			}},
 		},
-	})
-	if err != nil {
+	}
+
+	if !sw.port.opts.RemoteCPUPort {
+		trapToHostifTableReq.Desc.Actions = append(trapToHostifTableReq.Desc.Actions, &fwdpb.ActionDesc{ActionType: fwdpb.ActionType_ACTION_TYPE_SWAP_OUTPUT_INTERNAL_EXTERNAL})
+	}
+
+	if _, err = sw.dataplane.TableCreate(ctx, trapToHostifTableReq); err != nil {
 		return nil, err
 	}
 

@@ -284,7 +284,7 @@ func (hostif *hostif) createRemoteHostif(ctx context.Context, req *saipb.CreateH
 
 		entry = fwdconfig.TableEntryAddRequest(hostif.dataplane.ID(), portToHostifTable).
 			AppendEntry(fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT).WithUint64(nid.GetNid()))),
-				fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_HOST_PORT_ID).WithUint64Value(req.GetObjId()))).Build()
+				fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_HOST_PORT_ID).WithUint64Value(id))).Build()
 
 		if _, err := hostif.dataplane.TableEntryAdd(ctx, entry); err != nil {
 			return nil, err
@@ -312,6 +312,7 @@ func (hostif *hostif) createRemoteHostif(ctx context.Context, req *saipb.CreateH
 			Create:        true,
 			Port:          portReq.GetPort(),
 			DataplanePort: &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(req.GetObjId())}},
+			PortId:        id,
 		}
 		log.Infof("sending port ctl message: %+v", ctlReq)
 		if err := ctl(ctlReq); err != nil {

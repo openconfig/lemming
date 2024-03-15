@@ -22,8 +22,6 @@ go_library(
         "@org_golang_google_protobuf//proto",
     ] + select({
         "@io_bazel_rules_go//go/platform:android": [
-            "//dataplane/cpusink",
-            "//dataplane/forwarding/fwdconfig",
             "//dataplane/internal/kernel",
             "//gnmi/gnmiclient",
             "//gnmi/oc",
@@ -34,8 +32,6 @@ go_library(
             "@org_golang_x_sys//unix",
         ],
         "@io_bazel_rules_go//go/platform:linux": [
-            "//dataplane/cpusink",
-            "//dataplane/forwarding/fwdconfig",
             "//dataplane/internal/kernel",
             "//gnmi/gnmiclient",
             "//gnmi/oc",

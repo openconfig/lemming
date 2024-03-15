@@ -15,7 +15,9 @@
 package pktiohandler
 
 import (
+	"errors"
 	"fmt"
+	"io"
 	"time"
 
 	"google.golang.org/genproto/googleapis/rpc/status"
@@ -89,7 +91,12 @@ func (m *PacketIOMgr) StreamPackets(c fwdpb.Forwarding_CPUPacketStreamClient) er
 		default:
 			out, err := c.Recv()
 			if err != nil {
-				return err
+				if errors.Is(err, io.EOF) {
+					log.Warning("received EOF from server, exiting")
+					return nil
+				}
+				log.Warningf("received err from server: %v", err)
+				continue
 			}
 			port, ok := m.hostifs[out.GetPacket().GetHostPort()]
 			if !ok {
