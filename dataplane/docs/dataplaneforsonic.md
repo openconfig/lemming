@@ -2,7 +2,7 @@
 
 ## Overview
 
-The dataplane can be used with SONiC (and other NOS). The [standalone dataplane](../standalone/) is a C++ library the implements the SAI API. This library serializes and deserializes the C structs to equalivalent protobuf objects and performs gRPC requests to saiserver.
+The Lucius dataplane can be used with SONiC (and other NOS). The [standalone dataplane](../standalone/) is a C++ library the implements the SAI API. This library serializes and deserializes the C structs to equalivalent protobuf objects and performs gRPC requests to saiserver.
 
 ```plaintext
 ┌─────────────────────────────────────────────────────────────────────────┐
@@ -11,21 +11,21 @@ The dataplane can be used with SONiC (and other NOS). The [standalone dataplane]
 │  │                                             │  │                  │  │
 │  │  ┌───────────────────────────────────────┐  │  │                  │  │
 │  │  │                                       │  │  │                  │  │
-│  │  │   ┌───────────────────┐            ┌──┴──┴──┴──┐               │  │
-│  │  │   │                   │            │ Ethernet0 │               │  │
-│  │  │   │ ┌──────────────┐  │            └──┬──┬──┬──┘               │  │
-│  │  │   │ │              │  │               │  │  │                  │  │
-│  │  │   │ │ CPU Port MGR │  │               │  │  │                  │  │
-│  │  │   │ │ SAI Impl  ───┼──┼─────gRPC──────┼──┼──┼───► saiserver    │  │
-│  │  │   │ │              │  │               │  │  │                  │  │
-│  │  │   │ │ libsai.so    │  │               │  │  │                  │  │
-│  │  │   │ └──────────────┘  │               │  │  │                  │  │
-│  │  │   │                   │               │  │  │                  │  │
-│  │  │   │                   │               │  │  │                  │  │
-│  │  │   │ syncd             │               │  │  │                  │  │
-│  │  │   └───────────────────┘            ┌──┴──┴──┴──┐               │  │
-│  │  │                                    │ Ethernet4 │               │  │
-│  │  │                                    └──┬──┬──┬──┘               │  │
+│  │  │   ┌──────────────────┐                │  │  │                  │  │
+│  │  │   │                  │                │  │  │                  │  │
+│  │  │   │ ┌──────────────┐ │                │  │  │                  │  │
+│  │  │   │ │              │ │                │  │  │                  │  │
+│  │  │   │ │ CPU Port MGR │ │                │  │  │                  │  │
+│  │  │   │ │ SAI Impl  ───┼─┼──────gRPC──────┼──┼──┼───► saiserver    │  │
+│  │  │   │ │              │ │                │  │  │                  │  │
+│  │  │   │ │ libsai.so    │ │                │  │  │                  │  │
+│  │  │   │ └──────────────┘ │                │  │  │                  │  │
+│  │  │   │                  │                │  │  │                  │  │
+│  │  │   │                  │                │  │  │                  │  │
+│  │  │   │ syncd            │                │  │  │                  │  │
+│  │  │   └──────────────────┘ ┌────────────┐ │  │  │                  │  │
+│  │  │                        │pktiohandler◄─┼──┼──┼───►              │  │
+│  │  │                        └────────────┘ │  │  │                  │  │
 │  │  │ VM                                    │  │  │                  │  │
 │  │  └───────────────────────────────────────┘  │  │                  │  │
 │  │                                             │  │                  │  │
