@@ -304,7 +304,7 @@ type myMacInfo struct {
 // ToEntryDesc returns the EntryDesc.
 func (mi *myMacInfo) ToEntryDesc(m *myMac) (*fwdpb.EntryDesc, error) {
 	if mi.priority == nil {
-		return nil, fmt.Errorf("priority cannot be nil")
+		return nil, fmt.Errorf("priority needs to be specified")
 	}
 	fields := []*fwdconfig.PacketFieldMaskedBytesBuilder{
 		fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST).
