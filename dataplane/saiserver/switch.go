@@ -750,13 +750,14 @@ func (sw *saiSwitch) PortStateChangeNotification(_ *saipb.PortStateChangeNotific
 			} else if ed.GetPort().PortInfo.OperStatus == fwdpb.PortState_PORT_STATE_DISABLED_DOWN {
 				status = saipb.PortOperStatus_PORT_OPER_STATUS_DOWN
 			}
-
-			err = srv.Send(&saipb.PortStateChangeNotificationResponse{
+			resp := &saipb.PortStateChangeNotificationResponse{
 				Data: []*saipb.PortOperStatusNotification{{
 					PortId:    uint64(num),
 					PortState: status,
 				}},
-			})
+			}
+			log.Infof("send port event: %+v", resp)
+			err = srv.Send(resp)
 			if err != nil {
 				return err
 			}
