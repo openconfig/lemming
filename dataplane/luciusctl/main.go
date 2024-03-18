@@ -34,7 +34,7 @@ func main() {
 	cobra.OnInitialize(func() { viper.BindPFlags(cmd.Flags()) })
 	viper.BindPFlags(cmd.Flags())
 
-	cmd.AddCommand(info.New()...)
+	cmd.AddCommand(info.New())
 
 	if err := cmd.Execute(); err != nil {
 		os.Exit(1)

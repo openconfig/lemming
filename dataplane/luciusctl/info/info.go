@@ -69,10 +69,10 @@ func New() *cobra.Command {
 	}
 	cmd.AddCommand(list, get, lookup, portInput, portOutput)
 
-	return []*cobra.Command{cmd}
+	return cmd
 }
 
-func listFn(cmd *cobra.Command, args []string) error {
+func listFn(cmd *cobra.Command, _ []string) error {
 	conn, err := dial()
 	if err != nil {
 		return fmt.Errorf("failed to dial dataplane: %v", err)
@@ -123,7 +123,7 @@ func dial() (*grpc.ClientConn, error) {
 		return nil, fmt.Errorf("both insecure and tls skip verify are set")
 	}
 	opts := grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
-		InsecureSkipVerify: tlsSkipVerify,
+		InsecureSkipVerify: tlsSkipVerify, // nolint:gosec
 	}))
 	if insec {
 		opts = grpc.WithTransportCredentials(insecure.NewCredentials())
