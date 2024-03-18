@@ -925,6 +925,7 @@ func (ni *Reconciler) setupPorts(ctx context.Context) error {
 		portResp, err := ni.portClient.CreatePort(ctx, &saipb.CreatePortRequest{
 			Switch:     ni.switchID,
 			HwLaneList: []uint32{uint32(idx)},
+			AdminState: proto.Bool(true),
 		})
 		if err != nil {
 			return fmt.Errorf("failed to create port %q: %w", i.Attrs().Name, err)

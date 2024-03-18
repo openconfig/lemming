@@ -293,6 +293,7 @@ func New(ctx context.Context, mgr *attrmgr.AttrMgr, s *grpc.Server, opts *dplane
 		wred:              &wred{},
 	}
 	fwdpb.RegisterForwardingServer(s, fwdCtx)
+	fwdpb.RegisterInfoServer(s, fwdCtx)
 	saipb.RegisterEntrypointServer(s, srv)
 	saipb.RegisterBfdServer(s, srv.bfd)
 	saipb.RegisterCounterServer(s, srv.counter)

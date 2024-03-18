@@ -27,6 +27,7 @@ go_library(
         "//dataplane/forwarding/infra/fwdobject",
         "//dataplane/forwarding/infra/fwdpacket",
         "//dataplane/forwarding/infra/fwdset",
+        "//dataplane/forwarding/protocol",
         "//dataplane/forwarding/protocol/arp",
         "//dataplane/forwarding/protocol/ethernet",
         "//dataplane/forwarding/protocol/icmp",
