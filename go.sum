@@ -1148,8 +1148,8 @@ github.com/openconfig/ygot v0.10.4/go.mod h1:oCQNdXnv7dWc8scTDgoFkauv1wwplJn5Hsp
 github.com/openconfig/ygot v0.13.2/go.mod h1:kJN0yCXIH07dOXvNBEFm3XxXdnDD5NI6K99tnD5x49c=
 github.com/openconfig/ygot v0.29.17 h1:o1r7jSsWdpuIk/mqrt0xZ/MfE8CRUsgIPUwWudnZqaY=
 github.com/openconfig/ygot v0.29.17/go.mod h1:LeoQY1Ll4N20ccB33VjukrWJ6633V7jtg223GBfjHno=
-github.com/osrg/gobgp/v3 v3.22.0 h1:HKCk9+8hV5GQ4c35NuV8q+eKSnsScf+0v7oXB6jS8wU=
-github.com/osrg/gobgp/v3 v3.22.0/go.mod h1:4fbscYpsCk14EO16nTWAdJyErO4MbAZ2zLJmsmeXu/k=
+github.com/osrg/gobgp/v3 v3.24.1-0.20240317054555-912eb5a92026 h1:IQb3xVd9A8O767O3xEDnXn2n1rvmwlnNjrxUVR46Ug8=
+github.com/osrg/gobgp/v3 v3.24.1-0.20240317054555-912eb5a92026/go.mod h1:/0UclzjayCRM1hLcUcnb+BaKWsosdN083xajBZx70DU=
 github.com/p4lang/p4runtime v1.4.0-rc.5.0.20220728214547-13f0d02a521e h1:AfZKoikDXbZ7zWvO/lvCRzLo7i6lM+gNleYVMxPiWyQ=
 github.com/p4lang/p4runtime v1.4.0-rc.5.0.20220728214547-13f0d02a521e/go.mod h1:m9laObIMXM9N1ElGXijc66/MSM5eheZJLRLxg/TG+fU=
 github.com/patrickmn/go-cache v2.1.0+incompatible h1:HRMgzkcYKYpi3C8ajMPV8OFXaaRUnok+kx1WdO15EQc=
@@ -2017,8 +2017,8 @@ google.golang.org/protobuf v1.28.1/go.mod h1:HV8QOd/L58Z+nl8r43ehVNZIU/HEI6OcFqw
 google.golang.org/protobuf v1.29.1/go.mod h1:HV8QOd/L58Z+nl8r43ehVNZIU/HEI6OcFqwMG9pJV4I=
 google.golang.org/protobuf v1.30.0/go.mod h1:HV8QOd/L58Z+nl8r43ehVNZIU/HEI6OcFqwMG9pJV4I=
 google.golang.org/protobuf v1.31.0/go.mod h1:HV8QOd/L58Z+nl8r43ehVNZIU/HEI6OcFqwMG9pJV4I=
-google.golang.org/protobuf v1.32.0 h1:pPC6BG5ex8PDFnkbrGU3EixyhKcQ2aDuBS36lqK/C7I=
-google.golang.org/protobuf v1.32.0/go.mod h1:c6P6GXX6sHbq/GpV6MGZEdwhWPcYBgnhAHhKbcUYpos=
+google.golang.org/protobuf v1.33.0 h1:uNO2rsAINq/JlFpSdYEKIZ0uKD/R9cpdv0T+yoGwGmI=
+google.golang.org/protobuf v1.33.0/go.mod h1:c6P6GXX6sHbq/GpV6MGZEdwhWPcYBgnhAHhKbcUYpos=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=

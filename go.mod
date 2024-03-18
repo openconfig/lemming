@@ -26,7 +26,7 @@ require (
 	github.com/openconfig/ondatra v0.4.8
 	github.com/openconfig/ygnmi v0.11.1
 	github.com/openconfig/ygot v0.29.17
-	github.com/osrg/gobgp/v3 v3.22.0
+	github.com/osrg/gobgp/v3 v3.24.1-0.20240317054555-912eb5a92026
 	github.com/p4lang/p4runtime v1.4.0-rc.5.0.20220728214547-13f0d02a521e
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.0
@@ -38,7 +38,7 @@ require (
 	golang.org/x/sys v0.16.0
 	google.golang.org/api v0.153.0
 	google.golang.org/grpc v1.60.1
-	google.golang.org/protobuf v1.32.0
+	google.golang.org/protobuf v1.33.0
 	k8s.io/apimachinery v0.26.3
 	k8s.io/client-go v0.26.3
 	k8s.io/klog v1.0.0

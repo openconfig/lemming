@@ -126,7 +126,7 @@ func TestCommunitySet(t *testing.T) {
 		}
 		stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetPrefixSet(prefixSetName)
 		stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.PolicyTypes_MatchSetOptionsRestrictedType_ANY)
-		installSetCommunityPolicy(t, 11, dut2, stmt, testRef, "22222:22222")
+		configureSetCommunityPolicy(t, 11, dut2, stmt, testRef, "22222:22222")
 		stmt.GetOrCreateActions().SetPolicyResult(oc.RoutingPolicy_PolicyResultType_ACCEPT_ROUTE)
 
 		// Install policy
@@ -182,15 +182,15 @@ func TestCommunitySet(t *testing.T) {
 
 			switch i {
 			case 0:
-				installSetCommunityPolicy(t, i, dut1, stmt, testRef, oc.UnionString("10000:10000"))
+				configureSetCommunityPolicy(t, i, dut1, stmt, testRef, oc.UnionString("10000:10000"))
 			case 1:
-				installSetCommunityPolicy(t, i, dut1, stmt, testRef, oc.UnionString("11111:11111"))
+				configureSetCommunityPolicy(t, i, dut1, stmt, testRef, oc.UnionString("11111:11111"))
 			case 2:
-				installSetCommunityPolicy(t, i, dut1, stmt, testRef, oc.UnionString("33333:33333"))
+				configureSetCommunityPolicy(t, i, dut1, stmt, testRef, oc.UnionString("33333:33333"))
 			case 3:
-				installSetCommunityPolicy(t, i, dut1, stmt, testRef, oc.UnionString("33333:33333"), oc.UnionString("44444:44444"))
+				configureSetCommunityPolicy(t, i, dut1, stmt, testRef, oc.UnionString("33333:33333"), oc.UnionString("44444:44444"))
 			case 4:
-				installSetCommunityPolicy(t, i, dut1, stmt, testRef,
+				configureSetCommunityPolicy(t, i, dut1, stmt, testRef,
 					oc.UnionString("55555:55555"),
 					oc.UnionString("44444:44444"),
 					oc.UnionString("33333:33333"),
@@ -280,13 +280,13 @@ func TestCommunitySet(t *testing.T) {
 				stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().GetOrCreateReference().SetCommunitySetRefs([]string{commSetName})
 				stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetMethod(oc.SetCommunity_Method_REFERENCE)
 			case 8:
-				installSetCommunityPolicy(t, i, dut1, stmt, testRef, oc.UnionString("10000:10000"))
+				configureSetCommunityPolicy(t, i, dut1, stmt, testRef, oc.UnionString("10000:10000"))
 			case 9:
-				installSetCommunityPolicy(t, i, dut1, stmt, testRef, oc.UnionString("11111:11111"))
+				configureSetCommunityPolicy(t, i, dut1, stmt, testRef, oc.UnionString("11111:11111"))
 			case 10:
-				installSetCommunityPolicy(t, i, dut1, stmt, testRef, oc.UnionString("22222:22222"))
+				configureSetCommunityPolicy(t, i, dut1, stmt, testRef, oc.UnionString("22222:22222"))
 			case 11:
-				installSetCommunityPolicy(t, i, dut1, stmt, testRef, oc.UnionString("11111:11111"))
+				configureSetCommunityPolicy(t, i, dut1, stmt, testRef, oc.UnionString("11111:11111"))
 			}
 			stmt.GetOrCreateActions().SetPolicyResult(oc.RoutingPolicy_PolicyResultType_ACCEPT_ROUTE)
 		}
@@ -499,7 +499,9 @@ func TestCommunitySet(t *testing.T) {
 	test(true)
 }
 
-func installSetCommunityPolicy(t *testing.T, i int, dut *Device, stmt *oc.RoutingPolicy_PolicyDefinition_Statement, testRef bool, comms ...oc.UnionString) {
+// configureSetCommunityPolicy adds the community set to the given device, and
+// configures the input statement with a community replace action.
+func configureSetCommunityPolicy(t *testing.T, i int, dut *Device, stmt *oc.RoutingPolicy_PolicyDefinition_Statement, testRef bool, comms ...oc.UnionString) {
 	stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetOptions(oc.BgpPolicy_BgpSetCommunityOptionType_REPLACE)
 	if testRef {
 		commSetName := fmt.Sprintf("ref-set-%d", i)

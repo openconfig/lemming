@@ -104,13 +104,31 @@ func TestSetAttributes(t *testing.T) {
 				Input: &valpb.TestRoute{
 					ReachPrefix: routesUnderTest[1],
 				},
-				ExpectedResult: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
+				ExpectedResult:               valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
+				PrevAdjRibOutPreCommunities:  nil,
+				PrevAdjRibOutPostCommunities: []string{"23456:23456"},
+				AdjRibInPreCommunities:       []string{"23456:23456"},
+				AdjRibInPostCommunities:      []string{"23456:23456"},
+				LocalRibCommunities:          []string{"23456:23456"},
+				AdjRibOutPreCommunities:      []string{"23456:23456"},
+				AdjRibOutPostCommunities:     []string{"23456:23456"},
+				NextAdjRibInPreCommunities:   []string{"23456:23456"},
+				NextLocalRibCommunities:      []string{"23456:23456"},
 			}, {
 				Description: "Rejected route due to community set",
 				Input: &valpb.TestRoute{
 					ReachPrefix: routesUnderTest[2],
 				},
-				ExpectedResult: valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD,
+				ExpectedResult:               valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD,
+				PrevAdjRibOutPreCommunities:  nil,
+				PrevAdjRibOutPostCommunities: []string{"12345:12345"},
+				AdjRibInPreCommunities:       []string{"12345:12345"},
+				AdjRibInPostCommunities:      nil,
+				LocalRibCommunities:          nil,
+				AdjRibOutPreCommunities:      nil,
+				AdjRibOutPostCommunities:     nil,
+				NextAdjRibInPreCommunities:   nil,
+				NextLocalRibCommunities:      nil,
 			}, {
 				Description: "Unpreferred route due to local-pref",
 				Input: &valpb.TestRoute{
