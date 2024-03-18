@@ -432,7 +432,7 @@ func (e *Server) PortCreate(_ context.Context, request *fwdpb.PortCreateRequest)
 	// Notify with the current state of the port.
 	resp, err := object.State(nil)
 	if err != nil {
-		log.Warningf("skipping inital state notif due to error: %v", err)
+		log.Warningf("skipping initial state notification due to error: %v", err)
 		return reply, nil
 	}
 	err = ctx.Notify(&fwdpb.EventDesc{
@@ -445,7 +445,10 @@ func (e *Server) PortCreate(_ context.Context, request *fwdpb.PortCreateRequest)
 			},
 		},
 	})
-	log.Warningf("sent initial state notif err: %v", err)
+	if err != nil {
+		log.Warningf("error sending initial state notification: %v", err)
+	}
+
 	return reply, nil
 }
 

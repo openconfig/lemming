@@ -50,14 +50,14 @@ func New() *cobra.Command {
 	}
 	portInput := &cobra.Command{
 		Use:   "port-input port packetdata",
-		Short: "Processes the packet in the port input direction and returns the resulting actions. Note: may inject the packet into network.",
+		Short: "Processes the packet in the port's input actions. Note: may inject the packet into network.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return infoElement(cmd.Context(), args[0], fwdpb.InfoType_INFO_TYPE_PORT_INPUT, args[1])
 		},
 	}
 	portOutput := &cobra.Command{
 		Use:   "port-output port packetdata",
-		Short: "Processes the packet in the port output direction and returns the resulting actions. Note: may inject the packet into network.",
+		Short: "Processes the packet using the port's output actions. Note: may inject the packet into network.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return infoElement(cmd.Context(), args[0], fwdpb.InfoType_INFO_TYPE_PORT_OUTPUT, args[1])
 		},
