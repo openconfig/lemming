@@ -1759,8 +1759,8 @@ def go_repositories():
         name = "com_github_osrg_gobgp_v3",
         build_file_proto_mode = "disable",
         importpath = "github.com/osrg/gobgp/v3",
-        sum = "h1:U0dhaAo0QHscQQ+vTrnX2Rak9vaKnJ3aQDM5mAEeIEw=",
-        version = "v3.20.0",
+        sum = "h1:IQb3xVd9A8O767O3xEDnXn2n1rvmwlnNjrxUVR46Ug8=",
+        version = "v3.24.1-0.20240317054555-912eb5a92026",
     )
 
     go_repository(
@@ -3401,8 +3401,8 @@ def go_repositories():
     go_repository(
         name = "org_golang_google_protobuf",
         importpath = "google.golang.org/protobuf",
-        sum = "h1:pPC6BG5ex8PDFnkbrGU3EixyhKcQ2aDuBS36lqK/C7I=",
-        version = "v1.32.0",
+        sum = "h1:uNO2rsAINq/JlFpSdYEKIZ0uKD/R9cpdv0T+yoGwGmI=",
+        version = "v1.33.0",
     )
     go_repository(
         name = "org_golang_x_crypto",
