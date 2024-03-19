@@ -25,7 +25,7 @@ RUN if [ "${license}" = "true" ] ; then go-licenses save . --save_path THIRD_PAR
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
 FROM gcr.io/distroless/static:debug-nonroot
 WORKDIR /
-COPY --from=builder /workspace/operator .
+COPY --from=builder /workspace/operator /manager
 COPY --from=builder /workspace/THIRD_PARTY_LICENSES ./THIRD_PARTY
 USER 65532:65532
 
