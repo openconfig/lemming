@@ -17,6 +17,8 @@ go_library(
         "@io_k8s_sigs_controller_runtime//:controller-runtime",
         "@io_k8s_sigs_controller_runtime//pkg/healthz",
         "@io_k8s_sigs_controller_runtime//pkg/log/zap",
+        "@io_k8s_sigs_controller_runtime//pkg/metrics/server",
+        "@io_k8s_sigs_controller_runtime//pkg/webhook",
     ],
 )
 
