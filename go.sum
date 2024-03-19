@@ -1579,8 +1579,8 @@ github.com/openconfig/ygot v0.10.4/go.mod h1:oCQNdXnv7dWc8scTDgoFkauv1wwplJn5Hsp
 github.com/openconfig/ygot v0.13.2/go.mod h1:kJN0yCXIH07dOXvNBEFm3XxXdnDD5NI6K99tnD5x49c=
 github.com/openconfig/ygot v0.29.18 h1:vgG2r7RVwaVDXgHtpsCNW+qdSGSdxqRxUfRN2rPCy7M=
 github.com/openconfig/ygot v0.29.18/go.mod h1:sp6roPPmVDcTCF2E3qTjILA+jzJMkZ9d6spC9KLMqpc=
-github.com/osrg/gobgp/v3 v3.20.0 h1:U0dhaAo0QHscQQ+vTrnX2Rak9vaKnJ3aQDM5mAEeIEw=
-github.com/osrg/gobgp/v3 v3.20.0/go.mod h1:4fbscYpsCk14EO16nTWAdJyErO4MbAZ2zLJmsmeXu/k=
+github.com/osrg/gobgp/v3 v3.24.1-0.20240317054555-912eb5a92026 h1:IQb3xVd9A8O767O3xEDnXn2n1rvmwlnNjrxUVR46Ug8=
+github.com/osrg/gobgp/v3 v3.24.1-0.20240317054555-912eb5a92026/go.mod h1:/0UclzjayCRM1hLcUcnb+BaKWsosdN083xajBZx70DU=
 github.com/p4lang/p4runtime v1.4.0-rc.5.0.20220728214547-13f0d02a521e h1:AfZKoikDXbZ7zWvO/lvCRzLo7i6lM+gNleYVMxPiWyQ=
 github.com/p4lang/p4runtime v1.4.0-rc.5.0.20220728214547-13f0d02a521e/go.mod h1:m9laObIMXM9N1ElGXijc66/MSM5eheZJLRLxg/TG+fU=
 github.com/patrickmn/go-cache v2.1.0+incompatible h1:HRMgzkcYKYpi3C8ajMPV8OFXaaRUnok+kx1WdO15EQc=

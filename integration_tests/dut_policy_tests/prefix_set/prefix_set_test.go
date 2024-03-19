@@ -79,6 +79,17 @@ func TestPrefixSet(t *testing.T) {
 			stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.PolicyTypes_MatchSetOptionsRestrictedType_ANY)
 		}
 		stmt.GetOrCreateActions().SetPolicyResult(oc.RoutingPolicy_PolicyResultType_REJECT_ROUTE)
+		// Dummy community as a very simple community test.
+		stmt, err = policy.AppendNew("stmt2")
+		if err != nil {
+			t.Fatalf("Cannot append new BGP policy statement: %v", err)
+		}
+		var commUnions []oc.RoutingPolicy_PolicyDefinition_Statement_Actions_BgpActions_SetCommunity_Inline_Communities_Union
+		for _, c := range []oc.UnionString{"10000:10000"} {
+			commUnions = append(commUnions, c)
+		}
+		stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().GetOrCreateInline().SetCommunities(commUnions)
+		stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetMethod(oc.SetCommunity_Method_INLINE)
 		// Install policy
 		gnmi.Replace(t, dut2, policytest.RoutingPolicyPath.PolicyDefinition(policyName).Config(), &oc.RoutingPolicy_PolicyDefinition{Statement: policy})
 		neighIP := port1.IPv4
@@ -154,6 +165,19 @@ func TestPrefixSet(t *testing.T) {
 				ExpectedResult: invertResult(valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT, invert),
 			}},
 		}
+		for _, test := range spec.RouteTests {
+			if test.ExpectedResult == valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT {
+				test.PrevAdjRibOutPreCommunities = nil
+				test.PrevAdjRibOutPostCommunities = nil
+				test.AdjRibInPreCommunities = nil
+				test.AdjRibInPostCommunities = []string{"10000:10000"}
+				test.LocalRibCommunities = []string{"10000:10000"}
+				test.AdjRibOutPreCommunities = []string{"10000:10000"}
+				test.AdjRibOutPostCommunities = []string{"10000:10000"}
+				test.NextAdjRibInPreCommunities = []string{"10000:10000"}
+				test.NextLocalRibCommunities = []string{"10000:10000"}
+			}
+		}
 		return spec
 	}
 
@@ -171,6 +195,9 @@ func TestPrefixSet(t *testing.T) {
 			InstallPolicies: func(t *testing.T, pair12, pair52, pair23 *policytest.DevicePair) {
 				installPolicies(t, pair12, pair52, pair23, false, true)
 			},
+			// TODO(wenovus): Everything but the first subtest
+			// sometimes fails due to an unknown race condition.
+			SkipCheckingCommunities: true,
 		})
 	})
 
@@ -227,6 +254,19 @@ func TestPrefixSet(t *testing.T) {
 				ExpectedResult: invertResult(valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT, invert),
 			}},
 		}
+		for _, test := range spec.RouteTests {
+			if test.ExpectedResult == valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT {
+				test.PrevAdjRibOutPreCommunities = nil
+				test.PrevAdjRibOutPostCommunities = nil
+				test.AdjRibInPreCommunities = nil
+				test.AdjRibInPostCommunities = []string{"10000:10000"}
+				test.LocalRibCommunities = []string{"10000:10000"}
+				test.AdjRibOutPreCommunities = []string{"10000:10000"}
+				test.AdjRibOutPostCommunities = []string{"10000:10000"}
+				test.NextAdjRibInPreCommunities = []string{"10000:10000"}
+				test.NextLocalRibCommunities = []string{"10000:10000"}
+			}
+		}
 		return spec
 	}
 
@@ -236,6 +276,9 @@ func TestPrefixSet(t *testing.T) {
 			InstallPolicies: func(t *testing.T, pair12, pair52, pair23 *policytest.DevicePair) {
 				installPolicies(t, pair12, pair52, pair23, true, false)
 			},
+			// TODO(wenovus): Everything but the first subtest
+			// sometimes fails due to an unknown race condition.
+			SkipCheckingCommunities: true,
 		})
 	})
 	t.Run("INVERT/v6", func(t *testing.T) {
@@ -244,6 +287,9 @@ func TestPrefixSet(t *testing.T) {
 			InstallPolicies: func(t *testing.T, pair12, pair52, pair23 *policytest.DevicePair) {
 				installPolicies(t, pair12, pair52, pair23, true, true)
 			},
+			// TODO(wenovus): Everything but the first subtest
+			// sometimes fails due to an unknown race condition.
+			SkipCheckingCommunities: true,
 		})
 	})
 }
