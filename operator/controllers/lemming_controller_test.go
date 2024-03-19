@@ -25,14 +25,17 @@ import (
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/google/go-cmp/cmp"
-	lemmingscheme "github.com/openconfig/lemming/operator/api/clientset/scheme"
-	lemmingv1alpha1 "github.com/openconfig/lemming/operator/api/lemming/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sscheme "k8s.io/client-go/kubernetes/scheme"
+
+	lemmingscheme "github.com/openconfig/lemming/operator/api/clientset/scheme"
+	lemmingv1alpha1 "github.com/openconfig/lemming/operator/api/lemming/v1alpha1"
 )
 
 func TestReconcile(t *testing.T) {
@@ -155,7 +158,8 @@ func TestReconcile(t *testing.T) {
 				Client: c,
 				Scheme: k8sscheme.Scheme,
 			}
-			res, err := lr.Reconcile(context.Background(), reconcile.Request{NamespacedName: types.NamespacedName{Name: "lemming", Namespace: "fake"}})
+			ctx := log.IntoContext(context.Background(), zap.New())
+			res, err := lr.Reconcile(ctx, reconcile.Request{NamespacedName: types.NamespacedName{Name: "lemming", Namespace: "fake"}})
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Reconcile() unexpected error: got %v, want %t", err, tt.wantErr)
 			}
