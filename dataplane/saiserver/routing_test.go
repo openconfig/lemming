@@ -570,6 +570,7 @@ func TestCreateNextHop(t *testing.T) {
 		t.Run(tt.desc, func(t *testing.T) {
 			dplane := &fakeSwitchDataplane{}
 			c, mgr, stopFn := newTestNextHop(t, dplane)
+			mgr.StoreAttributes(10, &saipb.TunnelAttribute{Type: saipb.TunnelType_TUNNEL_TYPE_IPINIP.Enum()})
 			defer stopFn()
 			_, gotErr := c.CreateNextHop(context.TODO(), tt.req)
 			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {

@@ -161,7 +161,7 @@ func (t *tunnel) CreateTunnelTermTableEntry(ctx context.Context, req *saipb.Crea
 			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(srcIP, dstIPMask).Build(),
 		)
 	default:
-		return nil, status.Errorf(codes.InvalidArgument, "invalid tunnel type", req.GetType())
+		return nil, status.Errorf(codes.InvalidArgument, "invalid tunnel type: %v", req.GetType())
 	}
 
 	var actions []*fwdpb.ActionDesc
@@ -192,7 +192,7 @@ func (t *tunnel) CreateTunnelTermTableEntry(ctx context.Context, req *saipb.Crea
 			},
 		})
 	default:
-		return nil, status.Errorf(codes.InvalidArgument, "invalid tunnel type", req.GetType())
+		return nil, status.Errorf(codes.InvalidArgument, "invalid tunnel type: %v", req.GetType())
 	}
 	actions = append(actions,
 		fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF).WithUint64Value(req.GetVrId())).Build(),
