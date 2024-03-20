@@ -391,6 +391,15 @@ func (m *myMac) CreateMyMac(ctx context.Context, req *saipb.CreateMyMacRequest) 
 	if _, err := m.dataplane.TableEntryAdd(ctx, mReq); err != nil {
 		return nil, err
 	}
+	m.myMacTable[id] = mi
+	myMacEntry := &saipb.MyMacAttribute{
+		Priority:       req.Priority,
+		PortId:         req.PortId,
+		VlanId:         req.VlanId,
+		MacAddress:     req.MacAddress,
+		MacAddressMask: req.MacAddressMask,
+	}
+	m.mgr.StoreAttributes(id, myMacEntry)
 	return &saipb.CreateMyMacResponse{Oid: id}, nil
 }
 
