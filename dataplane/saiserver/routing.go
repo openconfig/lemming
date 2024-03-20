@@ -298,26 +298,55 @@ func (nh *nextHop) CreateNextHop(ctx context.Context, req *saipb.CreateNextHopRe
 			fwdconfig.Action(fwdconfig.LookupAction(NHActionTable)).Build(),
 		}
 	case saipb.NextHopType_NEXT_HOP_TYPE_TUNNEL_ENCAP:
+		tunnel := &saipb.GetTunnelAttributeResponse{}
+		err := nh.mgr.PopulateAttributes(&saipb.GetTunnelAttributeRequest{Oid: req.GetTunnelId(), AttrType: []saipb.TunnelAttr{saipb.TunnelAttr_TUNNEL_ATTR_TYPE}}, tunnel)
+		if err != nil {
+			return nil, err
+		}
+
 		headerID := fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP6
 		if len(req.Ip) == 4 {
 			headerID = fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4
 		}
+		actions = []*fwdpb.ActionDesc{}
 
-		actions = []*fwdpb.ActionDesc{
-			{
+		switch tunnel.GetAttr().GetType() {
+		case saipb.TunnelType_TUNNEL_TYPE_IPINIP:
+			actions = append(actions, &fwdpb.ActionDesc{
 				ActionType: fwdpb.ActionType_ACTION_TYPE_ENCAP,
 				Action: &fwdpb.ActionDesc_Encap{
 					Encap: &fwdpb.EncapActionDesc{
 						HeaderId: headerID,
 					},
 				},
-			},
+			})
+		case saipb.TunnelType_TUNNEL_TYPE_IPINIP_GRE:
+			actions = append(actions, &fwdpb.ActionDesc{
+				ActionType: fwdpb.ActionType_ACTION_TYPE_ENCAP,
+				Action: &fwdpb.ActionDesc_Encap{
+					Encap: &fwdpb.EncapActionDesc{
+						HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_GRE,
+					},
+				},
+			}, &fwdpb.ActionDesc{
+				ActionType: fwdpb.ActionType_ACTION_TYPE_ENCAP,
+				Action: &fwdpb.ActionDesc_Encap{
+					Encap: &fwdpb.EncapActionDesc{
+						HeaderId: headerID,
+					},
+				},
+			})
+		default:
+			return nil, status.Errorf(codes.InvalidArgument, "unsupported tunnel type: %v", tunnel.GetAttr().GetType())
+		}
+
+		actions = append(actions,
 			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithValue(req.GetIp())).Build(),
 			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP).WithValue(req.GetIp())).Build(),
 			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TUNNEL_ID).WithUint64Value(req.GetTunnelId())).Build(),
 			fwdconfig.Action(fwdconfig.LookupAction(NHActionTable)).Build(),
 			fwdconfig.Action(fwdconfig.LookupAction(TunnelEncap)).Build(),
-		}
+		)
 	default:
 		return nil, status.Errorf(codes.InvalidArgument, "unsupported req type: %v", req.GetType())
 	}
