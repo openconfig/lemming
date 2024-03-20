@@ -114,9 +114,11 @@ func (t *tunnel) CreateTunnelTermTableEntry(ctx context.Context, req *saipb.Crea
 	isV4 := len(req.SrcIp) == 4 || len(req.DstIp) == 4
 	zeroIP := ipV6AnyMask
 	exactMask := ipV6ExactMask
+	headerID := fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP6
 	if isV4 {
 		zeroIP = ipV4AnyMask
 		exactMask = ipV4ExactMask
+		headerID = fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4
 	}
 
 	srcIP := req.GetSrcIp()
@@ -171,7 +173,7 @@ func (t *tunnel) CreateTunnelTermTableEntry(ctx context.Context, req *saipb.Crea
 			ActionType: fwdpb.ActionType_ACTION_TYPE_DECAP,
 			Action: &fwdpb.ActionDesc_Decap{
 				Decap: &fwdpb.DecapActionDesc{
-					HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP,
+					HeaderId: headerID,
 				},
 			},
 		})
@@ -180,7 +182,7 @@ func (t *tunnel) CreateTunnelTermTableEntry(ctx context.Context, req *saipb.Crea
 			ActionType: fwdpb.ActionType_ACTION_TYPE_DECAP,
 			Action: &fwdpb.ActionDesc_Decap{
 				Decap: &fwdpb.DecapActionDesc{
-					HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP,
+					HeaderId: headerID,
 				},
 			},
 		}, &fwdpb.ActionDesc{
