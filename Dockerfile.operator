@@ -29,4 +29,4 @@ COPY --from=builder /workspace/operator /manager
 COPY --from=builder /workspace/THIRD_PARTY_LICENSES ./THIRD_PARTY
 USER 65532:65532
 
-ENTRYPOINT ["/operator"]
+ENTRYPOINT ["/manager"]
