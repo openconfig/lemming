@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// TODO: Fill this in with a real test
-package basictraffic
+package mymac
 
 import (
 	"context"
@@ -220,6 +219,7 @@ func restoreMyMac(t *testing.T, dut *ondatra.DUTDevice) error {
 }
 
 func TestMyMac(t *testing.T) {
+	// TODO: add more sub-tests when the Magna issue is resolved.
 	tests := []struct {
 		desc        string
 		clearMyMac  bool
