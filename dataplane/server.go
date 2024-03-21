@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"net"
 
-	log "github.com/golang/glog"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/local"
@@ -108,7 +107,7 @@ func (d *Dataplane) Start(ctx context.Context, c gpb.GNMIClient, target string) 
 
 	// Allow all traffic to L3 processing.
 	mmc := saipb.NewMyMacClient(conn)
-	resp, err := mmc.CreateMyMac(context.Background(), &saipb.CreateMyMacRequest{
+	_, err = mmc.CreateMyMac(context.Background(), &saipb.CreateMyMacRequest{
 		Switch:         swResp.Oid,
 		Priority:       proto.Uint32(1),
 		MacAddress:     []byte{0, 0, 0, 0, 0, 0},
@@ -117,7 +116,6 @@ func (d *Dataplane) Start(ctx context.Context, c gpb.GNMIClient, target string) 
 	if err != nil {
 		return err
 	}
-	log.Infof("Craig MyMac OID: %+v", resp.Oid)
 
 	_, err = hostif.CreateHostifTrap(ctx, &saipb.CreateHostifTrapRequest{
 		Switch:       swResp.Oid,
