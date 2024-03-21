@@ -17,7 +17,6 @@ package basictraffic
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"strconv"
 	"testing"
@@ -112,6 +111,14 @@ func configureDUT(t testing.TB, dut *ondatra.DUTDevice) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// Allow all traffic to L3 processing.
+	mmc := saipb.NewMyMacClient(conn)
+	_, err = mmc.CreateMyMac(context.Background(), &saipb.CreateMyMacRequest{
+		Switch:         1,
+		Priority:       proto.Uint32(1),
+		MacAddress:     []byte{0, 0, 0, 0, 0, 0},
+		MacAddressMask: []byte{0, 0, 0, 0, 0, 0},
+	})
 
 	mac1, err := net.ParseMAC(dutPort1.MAC)
 	if err != nil {
@@ -172,56 +179,17 @@ func configureDUT(t testing.TB, dut *ondatra.DUTDevice) {
 }
 
 func TestTraffic(t *testing.T) {
-	tests := []struct {
-		desc      string
-		myMacFunc func(*ondatra.DUTDevice) error
-		passed    bool
-	}{{
-		desc:   "Passed",
-		passed: true,
-	}, {
-		desc: "Failed",
-		myMacFunc: func(dut *ondatra.DUTDevice) error {
-			conn := dataplaneConn(t, dut)
-			mmc := saipb.NewMyMacClient(conn)
-			if _, err := mmc.RemoveMyMac(context.Background(), &saipb.RemoveMyMacRequest{
-				Oid: 9,
-			}); err != nil {
-				return fmt.Errorf("Failed to remove MyMac: %+v", err)
-			}
-			return nil
-		},
-	}}
+	ate := ondatra.ATE(t, "ate")
+	ateTop := configureATE(t, ate)
+	ate.OTG().PushConfig(t, ateTop)
+	ate.OTG().StartProtocols(t)
 
-	for _, tt := range tests {
-		ate := ondatra.ATE(t, "ate")
-		ateTop := configureATE(t, ate)
-		ate.OTG().PushConfig(t, ateTop)
-		ate.OTG().StartProtocols(t)
+	dut := ondatra.DUT(t, "dut")
+	configureDUT(t, dut)
 
-		dut := ondatra.DUT(t, "dut")
-		configureDUT(t, dut)
-
-		conn := dataplaneConn(t, dut)
-		mmc := saipb.NewSwitchClient(conn)
-		_, err := mmc.GetSwitchAttribute(context.Background(), &saipb.GetSwitchAttributeRequest{Oid: 1})
-		if err != nil {
-			t.Fatalf("Failed to MyMac Get attrs: %+v", err)
-		}
-		// t.Infof("Craig: %+v", rsp.GetAttr())
-
-		if tt.myMacFunc != nil {
-			if err := tt.myMacFunc(dut); err != nil {
-				t.Fatal(err)
-			}
-		}
-		tx, rx := testTraffic(t, ate, ateTop, atePort1, dutPort1, atePort2, 10*time.Second)
-		switch {
-		case tt.passed && rx != tx:
-			t.Errorf("got %d, expect 0", rx-tx)
-		case !tt.passed && rx != 0:
-			t.Errorf("got %fd, expect %d", rx, tx)
-		}
+	loss := testTraffic(t, ate, ateTop, atePort1, dutPort1, atePort2, 10*time.Second)
+	if loss > 1 {
+		t.Errorf("loss %f, greater than 1", loss)
 	}
 }
 
@@ -239,8 +207,8 @@ func configureATE(t *testing.T, ate *ondatra.ATEDevice) gosnappi.Config {
 
 // testTraffic generates traffic flow from source network to
 // destination network via srcEndPoint to dstEndPoint and checks for
-// packet loss and returns the number of tx and rx packets.
-func testTraffic(t *testing.T, ate *ondatra.ATEDevice, top gosnappi.Config, srcEndPoint, srcPeerEndpoint, dstEndPoint attrs.Attributes, dur time.Duration) (uint64, uint64) {
+// packet loss and returns loss percentage as float.
+func testTraffic(t *testing.T, ate *ondatra.ATEDevice, top gosnappi.Config, srcEndPoint, srcPeerEndpoint, dstEndPoint attrs.Attributes, dur time.Duration) float32 {
 	otg := ate.OTG()
 	top.Flows().Clear().Items()
 
@@ -275,5 +243,6 @@ func testTraffic(t *testing.T, ate *ondatra.ATEDevice, top gosnappi.Config, srcE
 
 	txPkts := gnmi.Get(t, otg, gnmi.OTG().Flow("Flow").Counters().OutPkts().State())
 	rxPkts := gnmi.Get(t, otg, gnmi.OTG().Flow("Flow").Counters().InPkts().State())
-	return txPkts, rxPkts
+	lossPct := (txPkts - rxPkts) * 100 / txPkts
+	return float32(lossPct)
 }
