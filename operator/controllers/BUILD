@@ -40,6 +40,8 @@ go_test(
         "@io_k8s_client_go//kubernetes/scheme",
         "@io_k8s_sigs_controller_runtime//pkg/client",
         "@io_k8s_sigs_controller_runtime//pkg/client/fake",
+        "@io_k8s_sigs_controller_runtime//pkg/log",
+        "@io_k8s_sigs_controller_runtime//pkg/log/zap",
         "@io_k8s_sigs_controller_runtime//pkg/reconcile",
         "@io_k8s_utils//pointer",
     ],

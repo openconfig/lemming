@@ -96,6 +96,8 @@ func getForwardingPipeline() []*fwdpb.ActionDesc {
 // Note: If more ports are created than eth devices, no error is returned, but the OperStatus is set to NOT_PRESENT.
 func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) (*saipb.CreatePortResponse, error) {
 	id := port.mgr.NextID()
+	// Set the type early, otherwise the initial port notifs won't send.
+	port.mgr.SetType(fmt.Sprint(id), saipb.ObjectType_OBJECT_TYPE_PORT)
 
 	// By default, create port sequentially starting at eth1.
 	dev := fmt.Sprintf("eth%v", port.nextEth)
@@ -242,6 +244,7 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 	}
 	fwdPort.Port.PortType = port.opts.PortType
 
+	log.Infof("created port %v, dev %v with lanes %v", id, dev, req.GetHwLaneList())
 	_, err := port.dataplane.PortCreate(ctx, fwdPort)
 	if err != nil {
 		return nil, err
@@ -262,6 +265,22 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 		return nil, err
 	}
 	attrs.OperStatus = saipb.PortOperStatus_PORT_OPER_STATUS_UP.Enum()
+	if req.AdminState == nil || req.GetAdminState() == false {
+		stateReq := &fwdpb.PortStateRequest{
+			ContextId: &fwdpb.ContextId{Id: port.dataplane.ID()},
+			PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)}},
+			Operation: &fwdpb.PortInfo{
+				AdminStatus: fwdpb.PortState_PORT_STATE_DISABLED_DOWN,
+			},
+		}
+		_, err := port.dataplane.PortState(ctx, stateReq)
+		if err != nil {
+			return nil, err
+		}
+		attrs.AdminState = proto.Bool(false)
+		attrs.OperStatus = saipb.PortOperStatus_PORT_OPER_STATUS_DOWN.Enum()
+	}
+
 	port.mgr.StoreAttributes(id, attrs)
 
 	return &saipb.CreatePortResponse{
@@ -471,7 +490,6 @@ func (port *port) GetPortStats(ctx context.Context, req *saipb.GetPortStatsReque
 			resp.Values = append(resp.Values, counterMap[fwdpb.CounterId_COUNTER_ID_TX_DROP_PACKETS])
 		default:
 			resp.Values = append(resp.Values, 0)
-			log.Infof("unknown port stat: %v", id)
 		}
 	}
 	return resp, nil

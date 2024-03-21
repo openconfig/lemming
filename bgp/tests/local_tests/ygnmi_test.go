@@ -45,6 +45,17 @@ func Get[T any](t testing.TB, dut *Device, q ygnmi.SingletonQuery[T]) T {
 	return v
 }
 
+// Lookup fetches the value of a ygnmi.SingletonQuery with a ONCE subscription.
+func Lookup[T any](t testing.TB, dut *Device, q ygnmi.SingletonQuery[T]) *ygnmi.Value[T] {
+	t.Helper()
+	c := dut.yc
+	v, err := ygnmi.Lookup(context.Background(), c, q)
+	if err != nil {
+		t.Fatalf("Lookup(t) on %s at %v: %v", c, q, err)
+	}
+	return v
+}
+
 // GetConfig fetches the value of a SingletonQuery with a ONCE subscription,
 // failing the test fatally if no value is present at the path.
 // Use Lookup to also get metadata or tolerate no value present.

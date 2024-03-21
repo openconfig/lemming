@@ -29,12 +29,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/google/go-cmp/cmp"
-	lemmingv1alpha1 "github.com/openconfig/lemming/operator/api/lemming/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
+
+	lemmingv1alpha1 "github.com/openconfig/lemming/operator/api/lemming/v1alpha1"
 )
 
 // LemmingReconciler reconciles a Lemming object
@@ -93,7 +94,7 @@ func (r *LemmingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	lemming.Status.Message = fmt.Sprintf("Pod Details: %s", pod.Status.Message)
 	if err := r.Status().Update(ctx, lemming); err != nil {
 		log.Error(err, "unable to update lemming status")
-		return ctrl.Result{}, err
+		return ctrl.Result{}, nil
 	}
 
 	return ctrl.Result{}, nil
@@ -145,12 +146,10 @@ const (
 	secretMountPath = "/certs"
 )
 
-var (
-	requiredArgs = map[string]struct{}{
-		"--enable_dataplane": {},
-		"--alsologtostderr":  {},
-	}
-)
+var requiredArgs = map[string]struct{}{
+	"--enable_dataplane": {},
+	"--alsologtostderr":  {},
+}
 
 func (r *LemmingReconciler) reconcilePod(ctx context.Context, lemming *lemmingv1alpha1.Lemming, secretName string) (*corev1.Pod, error) {
 	log := log.FromContext(ctx)

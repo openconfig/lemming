@@ -429,6 +429,26 @@ func (e *Server) PortCreate(_ context.Context, request *fwdpb.PortCreateRequest)
 			Index: uint64(object.NID()),
 		},
 	}
+	// Notify with the current state of the port.
+	resp, err := object.State(nil)
+	if err != nil {
+		log.Warningf("skipping initial state notification due to error: %v", err)
+		return reply, nil
+	}
+	err = ctx.Notify(&fwdpb.EventDesc{
+		Event: fwdpb.Event_EVENT_PORT,
+		Desc: &fwdpb.EventDesc_Port{
+			Port: &fwdpb.PortEventDesc{
+				Context:  request.GetContextId(),
+				PortId:   request.GetPort().GetPortId(),
+				PortInfo: resp.GetStatus(),
+			},
+		},
+	})
+	if err != nil {
+		log.Warningf("error sending initial state notification: %v", err)
+	}
+
 	return reply, nil
 }
 

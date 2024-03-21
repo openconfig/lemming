@@ -28,6 +28,7 @@ import (
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdobject"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdpacket"
+	"github.com/openconfig/lemming/dataplane/forwarding/protocol"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
@@ -290,6 +291,11 @@ func (l *InfoList) lookupInfo(e *entry, arg []byte, l2 fwdpb.PacketHeaderId) (st
 	if err != nil {
 		return "", fmt.Errorf("infolist: Unable to create packet, err %v", err)
 	}
+	// By default, the packet logging is dependent on the --v flag. Override this behavior
+	if pkt, ok := packet.(*protocol.Packet); ok {
+		pkt.OverrideGlobalLogLevel()
+	}
+
 	packet.Debug(true)
 	table.Process(packet, table)
 	m := packet.LogMsgs()
@@ -314,6 +320,10 @@ func (l *InfoList) lookupPacket(e *entry, arg []byte, l2 fwdpb.PacketHeaderId, d
 	packet, err := fwdpacket.New(l2, arg)
 	if err != nil {
 		return "", fmt.Errorf("infolist: Unable to create packet, err %v", err)
+	}
+	// By default, the packet logging is dependent on the --v flag. Override this behavior
+	if pkt, ok := packet.(*protocol.Packet); ok {
+		pkt.OverrideGlobalLogLevel()
 	}
 
 	packet.Debug(true)
