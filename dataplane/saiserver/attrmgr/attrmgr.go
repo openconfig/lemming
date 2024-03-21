@@ -267,7 +267,7 @@ func (mgr *AttrMgr) storeAttributes(id string, msg proto.Message) {
 	mgr.mu.Lock()
 	defer mgr.mu.Unlock()
 
-	log.Infof("Set %s to %+v", id, msg)
+	// log.Infof("Set %s to %+v", id, msg)
 	ty := proto.GetExtension(msg.ProtoReflect().Descriptor().Options(), saipb.E_SaiType).(saipb.ObjectType)
 	if ty != saipb.ObjectType_OBJECT_TYPE_UNSPECIFIED {
 		mgr.SetType(id, ty)
