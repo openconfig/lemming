@@ -387,10 +387,25 @@ func (m *myMac) CreateMyMac(ctx context.Context, req *saipb.CreateMyMacRequest) 
 		EntryDesc: ed,
 		Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_CONTINUE}},
 	}
-
 	if _, err := m.dataplane.TableEntryAdd(ctx, mReq); err != nil {
 		return nil, err
 	}
+	m.myMacTable[id] = mi
+	// Populate the switch attribute.
+	saReq := &saipb.GetSwitchAttributeRequest{
+		Oid: switchID,
+		AttrType: []saipb.SwitchAttr{
+			saipb.SwitchAttr_SWITCH_ATTR_MY_MAC_LIST,
+		},
+	}
+	saResp := &saipb.GetSwitchAttributeResponse{}
+	if err := m.mgr.PopulateAttributes(saReq, saResp); err != nil {
+		return nil, fmt.Errorf("Failed to populate switch attributes: %v", err)
+	}
+	mml := append(saResp.GetAttr().MyMacList, id)
+	m.mgr.StoreAttributes(switchID, &saipb.SwitchAttribute{
+		MyMacList: mml,
+	})
 	return &saipb.CreateMyMacResponse{Oid: id}, nil
 }
 
