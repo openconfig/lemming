@@ -146,7 +146,7 @@ func (lb *LemmingBind) Reserve(ctx context.Context, tb *opb.Testbed, runTime tim
 	// Acquire a lock on this topology, prevent another test from using this topology while this test is running.
 	lb.id = uuid.New().String()
 	lock, err := resourcelock.New(
-		resourcelock.ConfigMapsLeasesResourceLock,
+		resourcelock.LeasesResourceLock,
 		"default",
 		lb.topoName,
 		client.CoreV1(),

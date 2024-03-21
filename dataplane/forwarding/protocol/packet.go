@@ -202,7 +202,8 @@ var _ logr.LogSink = &packetLogger{}
 
 type packetLogger struct {
 	funcr.Formatter
-	msgs []string
+	msgs           []string
+	overrideGlobal bool
 }
 
 // Init receives optional information about the logr library for LogSink
@@ -213,6 +214,9 @@ func (pl packetLogger) Init(_ logr.RuntimeInfo) {}
 // For example, commandline flags might be used to set the logging
 // verbosity and disable some info logs.
 func (pl packetLogger) Enabled(level int) bool {
+	if pl.overrideGlobal {
+		return true
+	}
 	return bool(log.V(log.Level(level)))
 }
 
@@ -495,4 +499,9 @@ func (p *Packet) Reparse(id fwdpb.PacketHeaderId, fields []fwdpacket.FieldID, pr
 // StartHeader returns the start header of the packet.
 func (p *Packet) StartHeader() fwdpb.PacketHeaderId {
 	return p.start
+}
+
+// OverrideGlobalLogLevel override the set by -v and logs all messages.
+func (p *Packet) OverrideGlobalLogLevel() {
+	p.logSink.overrideGlobal = true
 }

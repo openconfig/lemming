@@ -15,10 +15,14 @@
 package policytest
 
 import (
+	"fmt"
+	"log"
 	"net/netip"
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/openconfig/lemming/bgp"
 	"github.com/openconfig/lemming/gnmi/fakedevice"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/netinstbgp"
@@ -57,6 +61,10 @@ type Device struct {
 	RouterID string
 }
 
+func (d *Device) String() string {
+	return fmt.Sprintf("BGP-device(RouterID: %v, AS: %v, ondatra.DUTDevice: %v)", d.RouterID, d.AS, d.DUTDevice)
+}
+
 type DevicePair struct {
 	First      *Device
 	Second     *Device
@@ -81,8 +89,9 @@ type DevicePair struct {
 // import policy change after a soft reset:
 // https://github.com/osrg/gobgp/blob/master/docs/sources/policy.md#policy-and-soft-reset
 type TestCase struct {
-	Spec            *valpb.PolicyTestCase
-	InstallPolicies func(t *testing.T, pair12, pair52, pair23 *DevicePair)
+	Spec                    *valpb.PolicyTestCase
+	InstallPolicies         func(t *testing.T, pair12, pair52, pair23 *DevicePair)
+	SkipCheckingCommunities bool
 }
 
 // TestPolicy is the helper policy integration tests can call to instantiate
@@ -473,6 +482,13 @@ func testPolicyAux(t *testing.T, testspec TestCase) {
 	gnmi.Delete(t, dut4, RoutingPolicyPath.Config())
 	gnmi.Delete(t, dut5, RoutingPolicyPath.Config())
 
+	// Remove any existing static route config.
+	staticp := ocpath.Root().NetworkInstance(fakedevice.DefaultNetworkInstance).
+		Protocol(oc.PolicyTypes_INSTALL_PROTOCOL_TYPE_STATIC, fakedevice.StaticRoutingProtocol)
+	gnmi.Delete(t, dut1, staticp.Config())
+	gnmi.Delete(t, dut4, staticp.Config())
+	gnmi.Delete(t, dut5, staticp.Config())
+
 	pair12 := &DevicePair{dut1, dut2, dut1Ports["port1"], dut2Ports["port1"]}
 	pair23 := &DevicePair{dut2, dut3, dut2Ports["port2"], dut3Ports["port1"]}
 	pair45 := &DevicePair{dut4, dut5, dut4Ports["port1"], dut5Ports["port1"]}
@@ -541,8 +557,186 @@ func testPolicyAux(t *testing.T, testspec TestCase) {
 
 	for _, routeTest := range testspec.Spec.RouteTests {
 		testPropagation(t, routeTest, pair12, pair23)
+		if !testspec.SkipCheckingCommunities {
+			testCommunities(t, routeTest, pair12, pair23)
+		}
 	}
 	for _, routeTest := range testspec.Spec.LongerPathRouteTests {
 		testPropagation(t, routeTest, pair52, pair23)
+		if !testspec.SkipCheckingCommunities {
+			testCommunities(t, routeTest, pair52, pair23)
+		}
 	}
+}
+
+func testCommunities(t *testing.T, routeTest *valpb.RouteTestCase, pair1, pair2 *DevicePair) {
+	prefix := routeTest.GetInput().GetReachPrefix()
+	if pfx, err := netip.ParsePrefix(prefix); err == nil && pfx.Addr().Is6() {
+		testCommunitiesAuxV6(t, routeTest, pair1, pair2)
+	} else {
+		testCommunitiesAuxV4(t, routeTest, pair1, pair2)
+	}
+}
+
+// RetryDiff retries a diff function maxN times or when it returns "".
+// In between each retry there is a five second delay.
+func RetryDiff(maxN uint, name string, f func() string) string {
+	var diff string
+	for i := uint(0); i <= maxN; i++ {
+		if diff = f(); diff == "" {
+			return ""
+		}
+		log.Printf("Retry %d of %s, diff: %v", i, name, diff)
+		time.Sleep(5 * time.Second)
+	}
+	return diff
+}
+
+func testCommunitiesAuxV4(t *testing.T, routeTest *valpb.RouteTestCase, pair1, pair2 *DevicePair) {
+	prevDUT, currDUT, nextDUT := pair1.First, pair1.Second, pair2.Second
+	port1, port21, port23, port3 := pair1.FirstPort, pair1.SecondPort, pair2.FirstPort, pair2.SecondPort
+
+	prevCommunityMap := gnmi.Lookup(t, prevDUT, BGPPath.Rib().CommunityMap().State())
+	prevCommMap, _ := prevCommunityMap.Val()
+	currCommunityMap := gnmi.Lookup(t, currDUT, BGPPath.Rib().CommunityMap().State())
+	currCommMap, _ := currCommunityMap.Val()
+	nextCommunityMap := gnmi.Lookup(t, nextDUT, BGPPath.Rib().CommunityMap().State())
+	nextCommMap, _ := nextCommunityMap.Val()
+	v4uni := BGPPath.Rib().AfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST).Ipv4Unicast()
+
+	prefix := routeTest.GetInput().GetReachPrefix()
+
+	if diff := RetryDiff(10, "AdjRibOutPre Communities Check", func() string {
+		return cmp.Diff(routeTest.PrevAdjRibOutPreCommunities, getCommunities(t, prevDUT, prevCommMap, v4uni.Neighbor(port21.IPv4).AdjRibOutPre().Route(prefix, 0).CommunityIndex().State()))
+	}); diff != "" {
+		t.Errorf("DUT %v AdjRibOutPre communities difference (prefix %s):\n%s", prevDUT, prefix, diff)
+	}
+	if diff := RetryDiff(10, "AdjRibOutPost communities Check", func() string {
+		return cmp.Diff(routeTest.PrevAdjRibOutPostCommunities, getCommunities(t, prevDUT, prevCommMap, v4uni.Neighbor(port21.IPv4).AdjRibOutPost().Route(prefix, 0).CommunityIndex().State()))
+	}); diff != "" {
+		t.Errorf("DUT %v AdjRibOutPost communities difference (prefix %s):\n%s", prevDUT, prefix, diff)
+	}
+	if diff := RetryDiff(10, "AdjRibInPre communities Check", func() string {
+		return cmp.Diff(routeTest.AdjRibInPreCommunities, getCommunities(t, currDUT, currCommMap, v4uni.Neighbor(port1.IPv4).AdjRibInPre().Route(prefix, 0).CommunityIndex().State()))
+	}); diff != "" {
+		t.Errorf("DUT %v AdjRibInPre communities difference (prefix %s):\n%s", currDUT, prefix, diff)
+	}
+	if diff := RetryDiff(10, "AdjRibInPost communities Check", func() string {
+		return cmp.Diff(routeTest.AdjRibInPostCommunities, getCommunities(t, currDUT, currCommMap, v4uni.Neighbor(port1.IPv4).AdjRibInPost().Route(prefix, 0).CommunityIndex().State()))
+	}); diff != "" {
+		t.Errorf("DUT %v AdjRibInPost communities difference (prefix %s):\n%s", currDUT, prefix, diff)
+	}
+	if diff := RetryDiff(10, "LocRib communities Check", func() string {
+		return cmp.Diff(routeTest.LocalRibCommunities, getCommunities(t, currDUT, currCommMap, v4uni.LocRib().Route(prefix, oc.UnionString(port1.IPv4), 0).CommunityIndex().State()))
+	}); diff != "" {
+		t.Errorf("DUT %v LocRib communities difference (prefix %s):\n%s", currDUT, prefix, diff)
+	}
+	if diff := RetryDiff(10, "AdjRibOutPre communities Check", func() string {
+		return cmp.Diff(routeTest.AdjRibOutPreCommunities, getCommunities(t, currDUT, currCommMap, v4uni.Neighbor(port3.IPv4).AdjRibOutPre().Route(prefix, 0).CommunityIndex().State()))
+	}); diff != "" {
+		t.Errorf("DUT %v AdjRibOutPre communities difference (prefix %s):\n%s", currDUT, prefix, diff)
+	}
+	if diff := RetryDiff(10, "AdjRibOutPost communities Check", func() string {
+		return cmp.Diff(routeTest.AdjRibOutPostCommunities, getCommunities(t, currDUT, currCommMap, v4uni.Neighbor(port3.IPv4).AdjRibOutPost().Route(prefix, 0).CommunityIndex().State()))
+	}); diff != "" {
+		t.Errorf("DUT %v AdjRibOutPost communities difference (prefix %s):\n%s", currDUT, prefix, diff)
+	}
+	if diff := RetryDiff(10, "AdjRibInPre communities Check", func() string {
+		return cmp.Diff(routeTest.NextAdjRibInPreCommunities, getCommunities(t, nextDUT, nextCommMap, v4uni.Neighbor(port23.IPv4).AdjRibInPre().Route(prefix, 0).CommunityIndex().State()))
+	}); diff != "" {
+		t.Errorf("DUT %v AdjRibInPre communities difference (prefix %s):\n%s", nextDUT, prefix, diff)
+	}
+	if diff := RetryDiff(10, "AdjRibInPre communities Check", func() string {
+		return cmp.Diff(routeTest.NextLocalRibCommunities, getCommunities(t, nextDUT, nextCommMap, v4uni.LocRib().Route(prefix, oc.UnionString(port23.IPv4), 0).CommunityIndex().State()))
+	}); diff != "" {
+		t.Errorf("DUT %v LocRib communities difference (prefix %s):\n%s", nextDUT, prefix, diff)
+	}
+}
+
+func testCommunitiesAuxV6(t *testing.T, routeTest *valpb.RouteTestCase, pair1, pair2 *DevicePair) {
+	prevDUT, currDUT, nextDUT := pair1.First, pair1.Second, pair2.Second
+	port1, port21, port23, port3 := pair1.FirstPort, pair1.SecondPort, pair2.FirstPort, pair2.SecondPort
+
+	prevCommunityMap := gnmi.Lookup(t, prevDUT, BGPPath.Rib().CommunityMap().State())
+	prevCommMap, _ := prevCommunityMap.Val()
+	currCommunityMap := gnmi.Lookup(t, currDUT, BGPPath.Rib().CommunityMap().State())
+	currCommMap, _ := currCommunityMap.Val()
+	nextCommunityMap := gnmi.Lookup(t, nextDUT, BGPPath.Rib().CommunityMap().State())
+	nextCommMap, _ := nextCommunityMap.Val()
+	v6uni := BGPPath.Rib().AfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV6_UNICAST).Ipv6Unicast()
+
+	prefix := routeTest.GetInput().GetReachPrefix()
+
+	if diff := RetryDiff(10, "AdjRibOutPre Communities Check", func() string {
+		return cmp.Diff(routeTest.PrevAdjRibOutPreCommunities, getCommunities(t, prevDUT, prevCommMap, v6uni.Neighbor(port21.IPv6).AdjRibOutPre().Route(prefix, 0).CommunityIndex().State()))
+	}); diff != "" {
+		t.Errorf("DUT %v AdjRibOutPre communities difference (prefix %s):\n%s", prevDUT, prefix, diff)
+	}
+	if diff := RetryDiff(10, "AdjRibOutPost communities Check", func() string {
+		return cmp.Diff(routeTest.PrevAdjRibOutPostCommunities, getCommunities(t, prevDUT, prevCommMap, v6uni.Neighbor(port21.IPv6).AdjRibOutPost().Route(prefix, 0).CommunityIndex().State()))
+	}); diff != "" {
+		t.Errorf("DUT %v AdjRibOutPost communities difference (prefix %s):\n%s", prevDUT, prefix, diff)
+	}
+	if diff := RetryDiff(10, "AdjRibInPre communities Check", func() string {
+		return cmp.Diff(routeTest.AdjRibInPreCommunities, getCommunities(t, currDUT, currCommMap, v6uni.Neighbor(port1.IPv6).AdjRibInPre().Route(prefix, 0).CommunityIndex().State()))
+	}); diff != "" {
+		t.Errorf("DUT %v AdjRibInPre communities difference (prefix %s):\n%s", currDUT, prefix, diff)
+	}
+	if diff := RetryDiff(10, "AdjRibInPost communities Check", func() string {
+		return cmp.Diff(routeTest.AdjRibInPostCommunities, getCommunities(t, currDUT, currCommMap, v6uni.Neighbor(port1.IPv6).AdjRibInPost().Route(prefix, 0).CommunityIndex().State()))
+	}); diff != "" {
+		t.Errorf("DUT %v AdjRibInPost communities difference (prefix %s):\n%s", currDUT, prefix, diff)
+	}
+	if diff := RetryDiff(10, "LocRib communities Check", func() string {
+		return cmp.Diff(routeTest.LocalRibCommunities, getCommunities(t, currDUT, currCommMap, v6uni.LocRib().Route(prefix, oc.UnionString(port1.IPv6), 0).CommunityIndex().State()))
+	}); diff != "" {
+		t.Errorf("DUT %v LocRib communities difference (prefix %s):\n%s", currDUT, prefix, diff)
+	}
+	if diff := RetryDiff(10, "AdjRibOutPre communities Check", func() string {
+		return cmp.Diff(routeTest.AdjRibOutPreCommunities, getCommunities(t, currDUT, currCommMap, v6uni.Neighbor(port3.IPv6).AdjRibOutPre().Route(prefix, 0).CommunityIndex().State()))
+	}); diff != "" {
+		t.Errorf("DUT %v AdjRibOutPre communities difference (prefix %s):\n%s", currDUT, prefix, diff)
+	}
+	if diff := RetryDiff(10, "AdjRibOutPost communities Check", func() string {
+		return cmp.Diff(routeTest.AdjRibOutPostCommunities, getCommunities(t, currDUT, currCommMap, v6uni.Neighbor(port3.IPv6).AdjRibOutPost().Route(prefix, 0).CommunityIndex().State()))
+	}); diff != "" {
+		t.Errorf("DUT %v AdjRibOutPost communities difference (prefix %s):\n%s", currDUT, prefix, diff)
+	}
+	if diff := RetryDiff(10, "AdjRibInPre communities Check", func() string {
+		return cmp.Diff(routeTest.NextAdjRibInPreCommunities, getCommunities(t, nextDUT, nextCommMap, v6uni.Neighbor(port23.IPv6).AdjRibInPre().Route(prefix, 0).CommunityIndex().State()))
+	}); diff != "" {
+		t.Errorf("DUT %v AdjRibInPre communities difference (prefix %s):\n%s", nextDUT, prefix, diff)
+	}
+	if diff := RetryDiff(10, "AdjRibInPre communities Check", func() string {
+		return cmp.Diff(routeTest.NextLocalRibCommunities, getCommunities(t, nextDUT, nextCommMap, v6uni.LocRib().Route(prefix, oc.UnionString(port23.IPv6), 0).CommunityIndex().State()))
+	}); diff != "" {
+		t.Errorf("DUT %v LocRib communities difference (prefix %s):\n%s", nextDUT, prefix, diff)
+	}
+}
+
+// getCommunities gets the communities of the given route query to a community index.
+//
+// If the community index doesn't exist (e.g. the route doesn't exist), nil is returned.
+func getCommunities(t *testing.T, dut *Device, commMap map[uint64]*oc.NetworkInstance_Protocol_Bgp_Rib_Community, query ygnmi.SingletonQuery[uint64]) []string {
+	t.Helper()
+	commIndexVal := gnmi.Lookup(t, dut, query)
+	commIndex, ok := commIndexVal.Val()
+	if !ok {
+		return nil
+	}
+	comms, ok := commMap[commIndex]
+	if !ok {
+		t.Errorf("RIB communities does not have expected community index: %v", commIndex)
+		return nil
+	}
+	var gotCommunities []string
+	for _, comm := range comms.GetCommunity() {
+		switch c := bgp.ConvertCommunity(comm); c {
+		case "":
+			t.Errorf("Unexpected community type: (%T, %v)", c, c)
+		default:
+			gotCommunities = append(gotCommunities, c)
+		}
+	}
+	return gotCommunities
 }
