@@ -128,6 +128,44 @@ func TestCreateTunnel(t *testing.T) {
 	}
 }
 
+func TestRemoveTunnel(t *testing.T) {
+	tests := []struct {
+		desc    string
+		req     *saipb.RemoveTunnelRequest
+		wantErr string
+	}{{
+		desc:    "invalid request",
+		req:     &saipb.RemoveTunnelRequest{},
+		wantErr: "not found",
+	}, {
+		desc: "success",
+		req: &saipb.RemoveTunnelRequest{
+			Oid: 1,
+		},
+	}}
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			dplane := &fakeSwitchDataplane{}
+			c, _, stopFn := newTestTunnel(t, dplane)
+			defer stopFn()
+			_, err := c.CreateTunnel(context.TODO(), &saipb.CreateTunnelRequest{
+				Type:              saipb.TunnelType_TUNNEL_TYPE_IPINIP.Enum(),
+				EncapEcnMode:      saipb.TunnelEncapEcnMode_TUNNEL_ENCAP_ECN_MODE_STANDARD.Enum(),
+				EncapDscpMode:     saipb.TunnelDscpMode_TUNNEL_DSCP_MODE_UNIFORM_MODEL.Enum(),
+				EncapTtlMode:      saipb.TunnelTtlMode_TUNNEL_TTL_MODE_UNIFORM_MODEL.Enum(),
+				UnderlayInterface: proto.Uint64(10),
+			})
+			if err != nil {
+				t.Fatalf("CreateTunnel() unexpected err: %s", err)
+			}
+			_, gotErr := c.RemoveTunnel(context.TODO(), tt.req)
+			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
+				t.Fatalf("RemoveTunnel() unexpected err: %s", diff)
+			}
+		})
+	}
+}
+
 func newTestTunnel(t testing.TB, api switchDataplaneAPI) (saipb.TunnelClient, *attrmgr.AttrMgr, func()) {
 	conn, mgr, stopFn := newTestServer(t, func(mgr *attrmgr.AttrMgr, srv *grpc.Server) {
 		newTunnel(mgr, api, srv)

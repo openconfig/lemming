@@ -16,6 +16,7 @@ package saiserver
 
 import (
 	"context"
+	"fmt"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -98,6 +99,18 @@ func (t *tunnel) CreateTunnel(ctx context.Context, req *saipb.CreateTunnelReques
 	}, nil
 }
 
+func (t *tunnel) RemoveTunnel(ctx context.Context, req *saipb.RemoveTunnelRequest) (*saipb.RemoveTunnelResponse, error) {
+	rReq := &fwdpb.TableEntryRemoveRequest{
+		ContextId: &fwdpb.ContextId{Id: t.dataplane.ID()},
+		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: TunnelEncap}},
+		EntryDesc: fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TUNNEL_ID).WithUint64(req.GetOid()))).Build(),
+	}
+	if _, err := t.dataplane.TableEntryRemove(ctx, rReq); err != nil {
+		return nil, err
+	}
+	return &saipb.RemoveTunnelResponse{}, nil
+}
+
 var (
 	ipV4ExactMask = []byte{0xFF, 0xFF, 0xFF, 0xFF}
 	ipV4AnyMask   = make([]byte, 4)
@@ -105,9 +118,7 @@ var (
 	ipV6AnyMask   = make([]byte, 16)
 )
 
-func (t *tunnel) CreateTunnelTermTableEntry(ctx context.Context, req *saipb.CreateTunnelTermTableEntryRequest) (*saipb.CreateTunnelTermTableEntryResponse, error) {
-	id := t.mgr.NextID()
-
+func termFieldsFromReq(req *saipb.CreateTunnelTermTableEntryRequest) ([]*fwdpb.PacketFieldMaskedBytes, fwdpb.PacketHeaderId, error) {
 	fields := []*fwdpb.PacketFieldMaskedBytes{}
 
 	// It is valid for some request fields to be omitted, so initialize slices to the correct length for the given IP protocol.
@@ -163,7 +174,17 @@ func (t *tunnel) CreateTunnelTermTableEntry(ctx context.Context, req *saipb.Crea
 			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(srcIP, dstIPMask).Build(),
 		)
 	default:
-		return nil, status.Errorf(codes.InvalidArgument, "invalid tunnel type: %v", req.GetType())
+		return nil, fwdpb.PacketHeaderId_PACKET_HEADER_ID_UNSPECIFIED, status.Errorf(codes.InvalidArgument, "invalid tunnel type: %v", req.GetType())
+	}
+	return fields, headerID, nil
+}
+
+func (t *tunnel) CreateTunnelTermTableEntry(ctx context.Context, req *saipb.CreateTunnelTermTableEntryRequest) (*saipb.CreateTunnelTermTableEntryResponse, error) {
+	id := t.mgr.NextID()
+
+	fields, headerID, err := termFieldsFromReq(req)
+	if err != nil {
+		return nil, err
 	}
 
 	var actions []*fwdpb.ActionDesc
@@ -220,4 +241,32 @@ func (t *tunnel) CreateTunnelTermTableEntry(ctx context.Context, req *saipb.Crea
 	return &saipb.CreateTunnelTermTableEntryResponse{
 		Oid: id,
 	}, nil
+}
+
+func (t *tunnel) RemoveTunnelTermTableEntry(ctx context.Context, req *saipb.RemoveTunnelTermTableEntryRequest) (*saipb.RemoveTunnelTermTableEntryResponse, error) {
+	cReq := &saipb.CreateTunnelTermTableEntryRequest{}
+	if err := t.mgr.PopulateAllAttributes(fmt.Sprint(req.GetOid()), cReq); err != nil {
+		return nil, err
+	}
+	fields, _, err := termFieldsFromReq(cReq)
+	if err != nil {
+		return nil, err
+	}
+
+	tReq := &fwdpb.TableEntryRemoveRequest{
+		ContextId: &fwdpb.ContextId{Id: t.dataplane.ID()},
+		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: tunTermTable}},
+		EntryDesc: &fwdpb.EntryDesc{Entry: &fwdpb.EntryDesc_Flow{
+			Flow: &fwdpb.FlowEntryDesc{
+				Id:       uint32(req.GetOid()),
+				Priority: 1,
+				Bank:     0,
+				Fields:   fields,
+			},
+		}},
+	}
+	if _, err := t.dataplane.TableEntryRemove(ctx, tReq); err != nil {
+		return nil, err
+	}
+	return &saipb.RemoveTunnelTermTableEntryResponse{}, nil
 }
