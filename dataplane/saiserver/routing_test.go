@@ -473,12 +473,12 @@ func TestCreateNextHop(t *testing.T) {
 		desc: "success tunnel next hop",
 		req: &saipb.CreateNextHopRequest{
 			Type:     saipb.NextHopType_NEXT_HOP_TYPE_TUNNEL_ENCAP.Enum(),
-			TunnelId: proto.Uint64(10),
+			TunnelId: proto.Uint64(15),
 			Ip:       []byte{127, 0, 0, 1},
 		},
 		wantAttr: &saipb.NextHopAttribute{
 			Type:     saipb.NextHopType_NEXT_HOP_TYPE_TUNNEL_ENCAP.Enum(),
-			TunnelId: proto.Uint64(10),
+			TunnelId: proto.Uint64(15),
 			Ip:       []byte{127, 0, 0, 1},
 		},
 		wantReq: &fwdpb.TableEntryAddRequest{
@@ -531,7 +531,7 @@ func TestCreateNextHop(t *testing.T) {
 								},
 							},
 							Field: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{}},
-							Value: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0a},
+							Value: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0f},
 						},
 					},
 				}, {
@@ -570,6 +570,7 @@ func TestCreateNextHop(t *testing.T) {
 		t.Run(tt.desc, func(t *testing.T) {
 			dplane := &fakeSwitchDataplane{}
 			c, mgr, stopFn := newTestNextHop(t, dplane)
+			mgr.StoreAttributes(15, &saipb.TunnelAttribute{Type: saipb.TunnelType_TUNNEL_TYPE_IPINIP.Enum()})
 			defer stopFn()
 			_, gotErr := c.CreateNextHop(context.TODO(), tt.req)
 			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
