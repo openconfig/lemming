@@ -71,6 +71,7 @@ message TAPPortDesc {
 message FakePortDesc {
   string in_file = 1;
   string out_file = 2;
+  uint32 hw_lane = 3;
 }
 
 message GenetlinkPortDesc {

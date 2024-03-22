@@ -221,7 +221,7 @@ func (fakeBuilder) Build(portDesc *fwdpb.PortDesc, ctx *fwdcontext.Context) (fwd
 			desc: fp.Fake,
 		}
 	}
-	port, err := mgr.CreatePort(portDesc.GetPortId().GetObjectId().GetId())
+	port, err := mgr.CreatePort(fmt.Sprint(fp.Fake.HwLane))
 	if err != nil {
 		return nil, err
 	}
