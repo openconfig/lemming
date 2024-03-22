@@ -79,7 +79,7 @@ func getForwardingPipeline() []*fwdpb.ActionDesc {
 		fwdconfig.Action(fwdconfig.LookupAction(IngressVRFTable)).Build(),                               // Match interface to VRF.
 		fwdconfig.Action(fwdconfig.LookupAction(PreIngressActionTable)).Build(),                         // Run pre-ingress actions.
 		fwdconfig.Action(fwdconfig.DecapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET)).Build(), // Decap L2 header.
-		fwdconfig.Action(fwdconfig.LookupAction(turnTermTable)).Build(),                                 // Decap the packet if we have a tunnel.
+		fwdconfig.Action(fwdconfig.LookupAction(tunTermTable)).Build(),                                  // Decap the packet if we have a tunnel.
 		fwdconfig.Action(fwdconfig.LookupAction(IngressActionTable)).Build(),                            // Run ingress action.
 		fwdconfig.Action(fwdconfig.LookupAction(FIBSelectorTable)).Build(),                              // Lookup in FIB.
 		fwdconfig.Action(fwdconfig.EncapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET)).Build(), // Encap L2 header.

@@ -202,7 +202,7 @@ func (t *tunnel) CreateTunnelTermTableEntry(ctx context.Context, req *saipb.Crea
 
 	tReq := &fwdpb.TableEntryAddRequest{
 		ContextId: &fwdpb.ContextId{Id: t.dataplane.ID()},
-		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: turnTermTable}},
+		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: tunTermTable}},
 		EntryDesc: &fwdpb.EntryDesc{Entry: &fwdpb.EntryDesc_Flow{
 			Flow: &fwdpb.FlowEntryDesc{
 				Id:       uint32(id),

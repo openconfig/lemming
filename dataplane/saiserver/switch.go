@@ -93,7 +93,7 @@ const (
 	MyMacTable            = "my-mac-table"
 	hostifToPortTable     = "cpu-input"
 	portToHostifTable     = "cpu-output"
-	turnTermTable         = "tun-term"
+	tunTermTable          = "tun-term"
 )
 
 func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server, opts *dplaneopts.Options) (*saiSwitch, error) {
@@ -543,7 +543,7 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 		Desc: &fwdpb.TableDesc{
 			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_CONTINUE}},
 			TableType: fwdpb.TableType_TABLE_TYPE_FLOW,
-			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: turnTermTable}},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: tunTermTable}},
 			Table: &fwdpb.TableDesc_Flow{
 				Flow: &fwdpb.FlowTableDesc{
 					BankCount: 1,
