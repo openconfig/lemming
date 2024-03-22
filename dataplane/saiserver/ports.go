@@ -184,7 +184,7 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 		QosDscpToForwardingClassMap:      proto.Uint64(0),
 		QosMplsExpToForwardingClassMap:   proto.Uint64(0),
 		IpsecPort:                        proto.Uint64(0),
-		SupportedSpeed:                   []uint32{1000, 10000, 40000},
+		SupportedSpeed:                   []uint32{1000, 10000, 40000, 50000, 100000, 200000, 400000, 800000},
 		OperSpeed:                        proto.Uint32(40000),
 		SupportedFecMode:                 []saipb.PortFecMode{saipb.PortFecMode_PORT_FEC_MODE_NONE},
 		NumberOfIngressPriorityGroups:    proto.Uint32(0),
@@ -219,9 +219,14 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 			fwdPort := &fwdpb.PortCreateRequest{
 				ContextId: &fwdpb.ContextId{Id: port.dataplane.ID()},
 				Port: &fwdpb.PortDesc{
-					PortType: fwdpb.PortType_PORT_TYPE_GENETLINK,
+					PortType: fwdpb.PortType_PORT_TYPE_TAP,
 					PortId: &fwdpb.PortId{
 						ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)},
+					},
+					Port: &fwdpb.PortDesc_Tap{
+						Tap: &fwdpb.TAPPortDesc{
+							DeviceName: fmt.Sprintf("port%d", id),
+						},
 					},
 				},
 			}
@@ -229,6 +234,17 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 			if err != nil {
 				return nil, err
 			}
+			stateReq := &fwdpb.PortStateRequest{
+				ContextId: &fwdpb.ContextId{Id: port.dataplane.ID()},
+				PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)}},
+				Operation: &fwdpb.PortInfo{
+					AdminStatus: fwdpb.PortState_PORT_STATE_DISABLED_DOWN,
+				},
+			}
+			if _, err := port.dataplane.PortState(ctx, stateReq); err != nil {
+				return nil, err
+			}
+
 			return &saipb.CreatePortResponse{
 				Oid: id,
 			}, nil
