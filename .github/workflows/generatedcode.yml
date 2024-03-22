@@ -26,7 +26,11 @@ jobs:
       - name: Run Gazelle
         run: bazel run //:gazelle
       - name: Check Diff
-        run: test -z "$(git status --porcelain)"
+        run: |
+          if test -n "$(git status --porcelain)"; then
+            git diff HEAD
+            exit 1
+          fi
   protos:
     runs-on: ubuntu-latest
     steps:
@@ -44,4 +48,8 @@ jobs:
       - name: Generate Protos
         run: tools/genproto.sh
       - name: Check Diff
-        run: test -z "$(git status --porcelain)"
+        run: |
+          if test -n "$(git status --porcelain)"; then
+            git diff HEAD
+            exit 1
+          fi
