@@ -417,8 +417,8 @@ func (lb *LocalBind) createATE(_ context.Context, ate *opb.Device, addr string, 
 
 // Release releases the reserved testbed.
 func (lb *LocalBind) Release(context.Context) error {
-	for _, close := range lb.closers {
-		close()
+	for _, closer := range lb.closers {
+		closer()
 	}
 
 	for name, port := range lb.portMgr.ports {
