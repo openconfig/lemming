@@ -239,11 +239,11 @@ func (lb *LocalBind) Reserve(ctx context.Context, tb *opb.Testbed, _, _ time.Dur
 	common.OverrideHandleCreator(lb.portMgr)
 
 	for _, ate := range tb.Ates {
-		addr, close, err := findAvailableLoopbackIP()
+		addr, closeFn, err := findAvailableLoopbackIP()
 		if err != nil {
 			return nil, err
 		}
-		lb.closers = append(lb.closers, close)
+		lb.closers = append(lb.closers, closeFn)
 
 		magna, err := lb.createATE(ctx, ate, addr, lb.portMgr)
 		if err != nil {
@@ -253,11 +253,11 @@ func (lb *LocalBind) Reserve(ctx context.Context, tb *opb.Testbed, _, _ time.Dur
 	}
 
 	for _, dut := range tb.Duts {
-		addr, close, err := findAvailableLoopbackIP()
+		addr, closeFn, err := findAvailableLoopbackIP()
 		if err != nil {
 			return nil, err
 		}
-		lb.closers = append(lb.closers, close)
+		lb.closers = append(lb.closers, closeFn)
 
 		lemming, err := lb.createDUT(ctx, dut, addr, lb.portMgr)
 		if err != nil {
@@ -491,24 +491,24 @@ func (pm *portMgr) createPorts(tb *opb.Testbed) error {
 }
 
 // CreateHandle implements  magna's API for creating handles.
-func (mgr *portMgr) CreateHandle(name string) (common.Port, error) {
-	port, ok := mgr.ports[name]
+func (pm *portMgr) CreateHandle(name string) (common.Port, error) {
+	port, ok := pm.ports[name]
 	if !ok {
 		return nil, fmt.Errorf("port %v not found", name)
 	}
 	return port.newHandle(), nil
 }
 
-func (mgr *portMgr) dutManager(dutID string) *dutManager {
+func (pm *portMgr) dutManager(dutID string) *dutManager {
 	return &dutManager{
-		mgr:   mgr,
+		mgr:   pm,
 		dutID: dutID,
 	}
 }
 
-func (mgr *portMgr) linkPorts(a, b string) error {
-	aPort := mgr.ports[a]
-	bPort := mgr.ports[b]
+func (pm *portMgr) linkPorts(a, b string) error {
+	aPort := pm.ports[a]
+	bPort := pm.ports[b]
 
 	if aPort == nil || bPort == nil {
 		return fmt.Errorf("ports do not exist: a %v b %v", a, b)
