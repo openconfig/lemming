@@ -217,7 +217,6 @@ func (mgr *AttrMgr) PopulateAttributes(req, resp proto.Message) error {
 }
 
 // PopulateAllAttributes fills the resp with the requests attributes.
-// This must called with FooAttribute message type.
 func (mgr *AttrMgr) PopulateAllAttributes(id string, msg proto.Message) error {
 	mgr.mu.Lock()
 	defer mgr.mu.Unlock()
