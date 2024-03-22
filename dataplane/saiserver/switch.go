@@ -93,7 +93,7 @@ const (
 	MyMacTable            = "my-mac-table"
 	hostifToPortTable     = "cpu-input"
 	portToHostifTable     = "cpu-output"
-	turnTermTable         = "turn-term"
+	turnTermTable         = "tun-term"
 )
 
 func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server, opts *dplaneopts.Options) (*saiSwitch, error) {

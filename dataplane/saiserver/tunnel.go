@@ -110,7 +110,7 @@ func (t *tunnel) CreateTunnelTermTableEntry(ctx context.Context, req *saipb.Crea
 
 	fields := []*fwdpb.PacketFieldMaskedBytes{}
 
-	// It is valid for some request fields to be omited, so initialize slices to the correct length for the given IP protocol.
+	// It is valid for some request fields to be omitted, so initialize slices to the correct length for the given IP protocol.
 	isV4 := len(req.SrcIp) == 4 || len(req.DstIp) == 4
 	zeroIP := ipV6AnyMask
 	exactMask := ipV6ExactMask
