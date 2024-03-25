@@ -254,7 +254,9 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 
 	case fwdpb.PortType_PORT_TYPE_FAKE:
 		fwdPort.Port.Port = &fwdpb.PortDesc_Fake{
-			Fake: &fwdpb.FakePortDesc{},
+			Fake: &fwdpb.FakePortDesc{
+				HwLane: req.GetHwLaneList()[0],
+			},
 		}
 	default:
 		return nil, fmt.Errorf("unsupported port type: %v", port.opts.PortType)

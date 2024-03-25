@@ -22,6 +22,7 @@ import (
 	"net"
 	"net/netip"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/google/gopacket"
@@ -65,6 +66,8 @@ import (
 // LocalBind is an Ondatra binding for in-process testbed. Only Lemming and Magna are supported.
 type LocalBind struct {
 	binding.Binding
+	portMgr *portMgr
+	closers []func() error
 }
 
 // Local is a local (in-process) binding for lemming and magna.
@@ -223,20 +226,26 @@ func (lb *LocalBind) Reserve(ctx context.Context, tb *opb.Testbed, _, _ time.Dur
 		ATEs: make(map[string]binding.ATE),
 	}
 
-	portMgr := &portMgr{
-		dut: &dutPortMgr{
-			ports: map[string]*chanPort{},
-		},
-		ate: &atePortMgr{
-			ports: map[string]*chanPort{},
-		},
+	lb.portMgr = &portMgr{
+		ports:         map[string]*chanPort{},
+		dutLaneToPort: map[string]map[string]string{},
+	}
+
+	if err := lb.portMgr.createPorts(tb); err != nil {
+		return nil, err
 	}
 
 	intf.OverrideAccessor(&accessor{})
-	common.OverrideHandleCreator(portMgr.ate)
+	common.OverrideHandleCreator(lb.portMgr)
 
 	for _, ate := range tb.Ates {
-		magna, err := lb.createATE(ctx, ate, portMgr.ate)
+		addr, closeFn, err := findAvailableLoopbackIP()
+		if err != nil {
+			return nil, err
+		}
+		lb.closers = append(lb.closers, closeFn)
+
+		magna, err := lb.createATE(ctx, ate, addr, lb.portMgr)
 		if err != nil {
 			return nil, err
 		}
@@ -244,7 +253,13 @@ func (lb *LocalBind) Reserve(ctx context.Context, tb *opb.Testbed, _, _ time.Dur
 	}
 
 	for _, dut := range tb.Duts {
-		lemming, err := lb.createDUT(ctx, dut, portMgr.dut)
+		addr, closeFn, err := findAvailableLoopbackIP()
+		if err != nil {
+			return nil, err
+		}
+		lb.closers = append(lb.closers, closeFn)
+
+		lemming, err := lb.createDUT(ctx, dut, addr, lb.portMgr)
 		if err != nil {
 			return nil, err
 		}
@@ -252,7 +267,7 @@ func (lb *LocalBind) Reserve(ctx context.Context, tb *opb.Testbed, _, _ time.Dur
 	}
 
 	for _, l := range tb.Links {
-		if err := portMgr.linkPorts(l.A, l.B); err != nil {
+		if err := lb.portMgr.linkPorts(l.A, l.B); err != nil {
 			return nil, err
 		}
 	}
@@ -260,11 +275,7 @@ func (lb *LocalBind) Reserve(ctx context.Context, tb *opb.Testbed, _, _ time.Dur
 	return &resv, nil
 }
 
-func (lb *LocalBind) createDUT(ctx context.Context, dut *opb.Device, portMgr *dutPortMgr) (*localLemming, error) {
-	addr, err := findAvailableLoopbackIP()
-	if err != nil {
-		return nil, err
-	}
+func (lb *LocalBind) createDUT(ctx context.Context, dut *opb.Device, addr string, portMgr *portMgr) (*localLemming, error) {
 	dutID := uuid.New().String()
 
 	l, err := lemming.New(dut.Id, fmt.Sprintf("unix:/tmp/zserv-test%s.api", dutID),
@@ -304,7 +315,7 @@ func (lb *LocalBind) createDUT(ctx context.Context, dut *opb.Device, portMgr *du
 	// In the dut, use the portMgr to create ports.
 	// Ondatra Port ID: Value from the topology textproto.
 	// Ondatra Port Name: Dataplane port id.
-	fwdCtx.FakePortManager = portMgr
+	fwdCtx.FakePortManager = portMgr.dutManager(dut.GetId())
 	dplaneConn, err := boundLemming.l.Dataplane().Conn()
 	if err != nil {
 		return nil, err
@@ -319,7 +330,6 @@ func (lb *LocalBind) createDUT(ctx context.Context, dut *opb.Device, portMgr *du
 		if err != nil {
 			return nil, err
 		}
-		portMgr.ports[fmt.Sprintf("%s:%s", dut.Id, port.Id)] = portMgr.lastCreatedPort
 		boundLemming.AbstractDUT.Dims.Ports[port.Id] = &binding.Port{
 			Name: fmt.Sprint(resp.Oid),
 		}
@@ -328,12 +338,7 @@ func (lb *LocalBind) createDUT(ctx context.Context, dut *opb.Device, portMgr *du
 }
 
 // TODO: this should probably be a library in magna.
-func (lb *LocalBind) createATE(_ context.Context, ate *opb.Device, portMgr *atePortMgr) (*localMagna, error) {
-	addr, err := findAvailableLoopbackIP()
-	if err != nil {
-		return nil, err
-	}
-
+func (lb *LocalBind) createATE(_ context.Context, ate *opb.Device, addr string, portMgr *portMgr) (*localMagna, error) {
 	otgSrv := lwotg.New()
 	telemSrv, err := lwotgtelem.New(context.Background(), ate.Id)
 	if err != nil {
@@ -412,121 +417,98 @@ func (lb *LocalBind) createATE(_ context.Context, ate *opb.Device, portMgr *ateP
 
 // Release releases the reserved testbed.
 func (lb *LocalBind) Release(context.Context) error {
+	for _, closer := range lb.closers {
+		closer()
+	}
+
+	for name, port := range lb.portMgr.ports {
+		fmt.Printf("port %s, tx enqueue %d, tx dequeue %d\n", name, port.txQueue.EnqueueCount(), port.txQueue.DequeueCount())
+		fmt.Printf("port %s, rx enqueue %d, rx dequeue %d\n", name, port.rxQueue.EnqueueCount(), port.rxQueue.DequeueCount())
+	}
 	return nil
 }
 
 // findAvailableLoopbackIP finds an unused loopback IP by attempting to open a tcp socket on the gNMI port.
-func findAvailableLoopbackIP() (string, error) {
+func findAvailableLoopbackIP() (string, func() error, error) {
 	var addr string
+	var closer func() error
 	for i := byte(2); i < 254; i++ {
 		addr = netip.AddrFrom4([4]byte{127, 0, 0, i}).String()
-		ln, err := net.Listen("tcp", net.JoinHostPort(addr, fmt.Sprint(gnmiPort)))
+		list, err := net.Listen("tcp", net.JoinHostPort(addr, "54591")) // Listen on a random port.
 		if err == nil {
-			ln.Close()
+			closer = list.Close
 			break
 		}
 	}
 	if addr == "" {
-		return "", fmt.Errorf("failed to find available ip")
+		return "", nil, fmt.Errorf("failed to find available ip")
 	}
-	return addr, nil
+	return addr, closer, nil
 }
 
-type chanPort struct {
-	txQueue *queue.Queue
-	rxQueue *queue.Queue
-}
-
-func (p *chanPort) WritePacketData(data []byte) error {
-	return p.txQueue.Write(data)
-}
-
-func (p *chanPort) ReadPacketData() ([]byte, gopacket.CaptureInfo, error) {
-	if p.rxQueue == nil {
-		return nil, gopacket.CaptureInfo{}, nil
+func newPort(name string) (*chanPort, error) {
+	tx, err := queue.NewUnbounded(name + "_tx")
+	if err != nil {
+		return nil, err
 	}
-	data, ok := <-p.rxQueue.Receive()
-	if !ok {
-		return nil, gopacket.CaptureInfo{}, io.EOF
+	p := &chanPort{
+		txQueue: tx,
 	}
-	packet := data.([]byte)
-	return packet, gopacket.CaptureInfo{
-		Timestamp:     time.Now(),
-		CaptureLength: len(packet),
-		Length:        len(packet),
-	}, nil
-}
-
-func (p *chanPort) Close() {
-	p.txQueue.Close()
-}
-
-func (p *chanPort) LinkType() layers.LinkType {
-	return layers.LinkTypeEthernet
-}
-
-func (p *chanPort) SetBPFFilter(string) error {
-	return nil
+	tx.Run()
+	p.run()
+	return p, nil
 }
 
 type portMgr struct {
-	dut *dutPortMgr
-	ate *atePortMgr
+	ports         map[string]*chanPort
+	dutLaneToPort map[string]map[string]string
 }
 
-// dutPortMgr implements lemming's port creator interface.
-// Note: this interface is different from magna, to avoid making the two project depending on eachother.
-type dutPortMgr struct {
-	ports map[string]*chanPort
-	// TODO: lastCreatedPort is a hack because we don't currently model hardware ports correctly in lemming.
-	lastCreatedPort *chanPort
+func (pm *portMgr) createPorts(tb *opb.Testbed) error {
+	for _, dut := range tb.Duts {
+		pm.dutLaneToPort[dut.GetId()] = make(map[string]string)
+		for i, port := range dut.Ports {
+			name := fmt.Sprintf("%s:%s", dut.GetId(), port.GetId())
+			p, err := newPort(name)
+			if err != nil {
+				return err
+			}
+			pm.dutLaneToPort[dut.GetId()][fmt.Sprint(i)] = name
+			pm.ports[name] = p
+		}
+	}
+	for _, ate := range tb.Ates {
+		for _, port := range ate.Ports {
+			name := fmt.Sprintf("%s:%s", ate.GetId(), port.GetId())
+			p, err := newPort(name)
+			if err != nil {
+				return err
+			}
+			pm.ports[name] = p
+		}
+	}
+	return nil
 }
 
-func (mgr *dutPortMgr) CreatePort(name string) (fwdcontext.Port, error) {
-	q, err := queue.NewUnbounded(fmt.Sprintf("%s-tx", name))
-	if err != nil {
-		return nil, err
+// CreateHandle implements  magna's API for creating handles.
+func (pm *portMgr) CreateHandle(name string) (common.Port, error) {
+	port, ok := pm.ports[name]
+	if !ok {
+		return nil, fmt.Errorf("port %v not found", name)
 	}
-	p := &chanPort{
-		txQueue: q,
-	}
-	mgr.lastCreatedPort = p
-	q.Run()
-	return p, nil
+	return port.newHandle(), nil
 }
 
-// atePortMgr implement magna's port creator interface.
-// Note: this interface is different from lemming, to avoid making the two project depending on eachother.
-type atePortMgr struct {
-	ports map[string]*chanPort
+func (pm *portMgr) dutManager(dutID string) *dutManager {
+	return &dutManager{
+		mgr:   pm,
+		dutID: dutID,
+	}
 }
 
-func (mgr *atePortMgr) CreateHandle(name string) (common.Port, error) {
-	if p, ok := mgr.ports[name]; ok {
-		return p, nil
-	}
-	q, err := queue.NewUnbounded(fmt.Sprintf("%s-tx", name))
-	if err != nil {
-		return nil, err
-	}
-	p := &chanPort{
-		txQueue: q,
-	}
-	q.Run()
-	fmt.Printf("create port %q", name)
-	mgr.ports[name] = p
-	return p, nil
-}
-
-func (mgr *portMgr) linkPorts(a, b string) error {
-	aPort := mgr.dut.ports[a]
-	if aPort == nil {
-		aPort = mgr.ate.ports[a]
-	}
-	bPort := mgr.dut.ports[b]
-	if bPort == nil {
-		bPort = mgr.ate.ports[b]
-	}
+func (pm *portMgr) linkPorts(a, b string) error {
+	aPort := pm.ports[a]
+	bPort := pm.ports[b]
 
 	if aPort == nil || bPort == nil {
 		return fmt.Errorf("ports do not exist: a %v b %v", a, b)
@@ -534,5 +516,100 @@ func (mgr *portMgr) linkPorts(a, b string) error {
 	aPort.rxQueue = bPort.txQueue
 	bPort.rxQueue = aPort.txQueue
 
+	return nil
+}
+
+// dutManager handles mapping from the SAI API hardware lane to Ondatra port ID.
+type dutManager struct {
+	mgr   *portMgr
+	dutID string
+}
+
+// CreatePort implements lemming's API for creating port.
+func (dm *dutManager) CreatePort(name string) (fwdcontext.Port, error) {
+	port, ok := dm.mgr.ports[dm.mgr.dutLaneToPort[dm.dutID][name]]
+	if !ok {
+		return nil, fmt.Errorf("port %v not found", name)
+	}
+	return port.newHandle(), nil
+}
+
+// chanPort is a fake port implemented using channels.
+type chanPort struct {
+	mu sync.RWMutex
+
+	txQueue *queue.Queue
+	rxQueue *queue.Queue
+	handles []*portHandle
+}
+
+func (p *chanPort) newHandle() *portHandle {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	h := &portHandle{
+		rx: make(chan []byte, 1024),
+		tx: p.txQueue,
+	}
+	p.handles = append(p.handles, h)
+	i := len(p.handles) - 1
+	h.closeFn = func() {
+		p.mu.Lock()
+		defer p.mu.Unlock()
+		close(h.rx)
+		p.handles = append(p.handles[:i], p.handles[i+1:]...)
+	}
+	return h
+}
+
+func (p *chanPort) run() {
+	go func() {
+		for {
+			if p.rxQueue == nil {
+				continue
+			}
+			packet := (<-p.rxQueue.Receive()).([]byte)
+			p.mu.RLock()
+			for _, h := range p.handles {
+				h.rx <- packet
+			}
+			p.mu.RUnlock()
+		}
+	}()
+}
+
+// portHandle provides an API for reading and writing to a chanPort.
+// Each handle gets a copy of all packets received and writes to a common queue.
+type portHandle struct {
+	rx      chan []byte
+	tx      *queue.Queue
+	closeFn func()
+}
+
+func (ph *portHandle) ReadPacketData() (data []byte, ci gopacket.CaptureInfo, err error) {
+	packet, ok := <-ph.rx
+	if !ok {
+		return nil, gopacket.CaptureInfo{}, io.EOF
+	}
+	return packet, gopacket.CaptureInfo{
+		Timestamp:     time.Now(),
+		CaptureLength: len(packet),
+		Length:        len(packet),
+	}, nil
+}
+
+func (ph *portHandle) WritePacketData(data []byte) error {
+	return ph.tx.Write(data)
+}
+
+func (ph *portHandle) Close() {
+	ph.closeFn()
+}
+
+func (ph *portHandle) LinkType() layers.LinkType {
+	return layers.LinkTypeEthernet
+}
+
+func (ph *portHandle) SetBPFFilter(string) error {
 	return nil
 }
