@@ -187,7 +187,7 @@ func TestTraffic(t *testing.T) {
 	dut := ondatra.DUT(t, "dut")
 	configureDUT(t, dut)
 
-	loss := testTraffic(t, ate, ateTop, atePort1, dutPort1, atePort2, 10*time.Second)
+	loss := testTraffic(t, ate, ateTop, atePort1, dutPort1, atePort2)
 	if loss > 1 {
 		t.Errorf("loss %f, greater than 1", loss)
 	}
@@ -208,40 +208,32 @@ func configureATE(t *testing.T, ate *ondatra.ATEDevice) gosnappi.Config {
 // testTraffic generates traffic flow from source network to
 // destination network via srcEndPoint to dstEndPoint and checks for
 // packet loss and returns loss percentage as float.
-func testTraffic(t *testing.T, ate *ondatra.ATEDevice, top gosnappi.Config, srcEndPoint, srcPeerEndpoint, dstEndPoint attrs.Attributes, dur time.Duration) float32 {
+func testTraffic(t *testing.T, ate *ondatra.ATEDevice, top gosnappi.Config, srcEndPoint, srcPeerEndpoint, dstEndPoint attrs.Attributes) float32 {
 	otg := ate.OTG()
 	top.Flows().Clear().Items()
 
-	ipFLow := top.Flows().Add().SetName("Flow")
-	ipFLow.Metrics().SetEnable(true)
-	ipFLow.TxRx().Port().SetTxName(srcEndPoint.Name).SetRxNames([]string{dstEndPoint.Name})
+	ipFlow := top.Flows().Add().SetName("Flow")
+	ipFlow.Metrics().SetEnable(true)
+	ipFlow.TxRx().Port().SetTxName(srcEndPoint.Name).SetRxNames([]string{dstEndPoint.Name})
 
-	ipFLow.Rate().SetPps(10)
-
-	// OTG specifies that the order of the <flow>.Packet().Add() calls determines
-	// the stack of headers that are to be used, starting at the outer-most and
-	// ending with the inner-most.
+	txPkts := uint64(100)
+	ipFlow.Rate().SetPps(100)
+	ipFlow.Duration().FixedPackets().SetPackets(uint32(txPkts))
 
 	// Set up ethernet layer.
-	eth := ipFLow.Packet().Add().Ethernet()
+	eth := ipFlow.Packet().Add().Ethernet()
 	eth.Src().SetValue(srcEndPoint.MAC)
 	eth.Dst().SetValue(srcPeerEndpoint.MAC)
 
-	ip4 := ipFLow.Packet().Add().Ipv4()
+	ip4 := ipFlow.Packet().Add().Ipv4()
 	ip4.Src().SetValue(srcEndPoint.IPv4)
 	ip4.Dst().SetValue(dstEndPoint.IPv4)
 	ip4.Version().SetValue(4)
 
 	otg.PushConfig(t, top)
-
 	otg.StartTraffic(t)
-	time.Sleep(dur)
-	t.Logf("Stop traffic")
-	otg.StopTraffic(t)
 
-	time.Sleep(5 * time.Second)
-
-	txPkts := gnmi.Get(t, otg, gnmi.OTG().Flow("Flow").Counters().OutPkts().State())
+	gnmi.Await(t, otg, gnmi.OTG().Flow("Flow").Counters().OutPkts().State(), 5*time.Second, txPkts)
 	rxPkts := gnmi.Get(t, otg, gnmi.OTG().Flow("Flow").Counters().InPkts().State())
 	lossPct := (txPkts - rxPkts) * 100 / txPkts
 	return float32(lossPct)
