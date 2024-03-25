@@ -525,7 +525,7 @@ type dutManager struct {
 	dutID string
 }
 
-// CreatePort impplements lemming's API for creating port.
+// CreatePort implements lemming's API for creating port.
 func (dm *dutManager) CreatePort(name string) (fwdcontext.Port, error) {
 	port, ok := dm.mgr.ports[dm.mgr.dutLaneToPort[dm.dutID][name]]
 	if !ok {
@@ -534,6 +534,7 @@ func (dm *dutManager) CreatePort(name string) (fwdcontext.Port, error) {
 	return port.newHandle(), nil
 }
 
+// chanPort is a fake port implemented using channels.
 type chanPort struct {
 	mu sync.RWMutex
 
@@ -577,6 +578,8 @@ func (p *chanPort) run() {
 	}()
 }
 
+// portHandle provides an API for reading and writing to a chanPort.
+// Each handle gets a copy of all packets received and writes to a common queue.
 type portHandle struct {
 	rx      chan []byte
 	tx      *queue.Queue
