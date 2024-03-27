@@ -25,8 +25,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
+	pktiopb "github.com/openconfig/lemming/dataplane/proto/packetio"
 	"github.com/openconfig/lemming/dataplane/standalone/pkthandler/pktiohandler"
-	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 
 	log "github.com/golang/glog"
 )
@@ -44,7 +44,7 @@ func main() {
 		log.Exit(err)
 	}
 
-	fc := fwdpb.NewForwardingClient(conn)
+	pktio := pktiopb.NewPacketIOClient(conn)
 
 	h, err := pktiohandler.New()
 	if err != nil {
@@ -59,11 +59,11 @@ func main() {
 		cancel()
 	}()
 
-	portCtl, err := fc.HostPortControl(ctx)
+	portCtl, err := pktio.HostPortControl(ctx)
 	if err != nil {
 		log.Exit(err)
 	}
-	packet, err := fc.CPUPacketStream(ctx)
+	packet, err := pktio.CPUPacketStream(ctx)
 	if err != nil {
 		log.Exit(err)
 	}

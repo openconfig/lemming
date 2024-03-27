@@ -22,6 +22,7 @@ go_library(
         "//dataplane/forwarding/infra/fwdpacket",
         "//dataplane/forwarding/util/hash/crc16",
         "//dataplane/forwarding/util/queue",
+        "//dataplane/proto/packetio",
         "//internal/debug",
         "//proto/forwarding",
         "@com_github_golang_glog//:glog",

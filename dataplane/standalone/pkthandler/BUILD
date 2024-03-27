@@ -9,8 +9,8 @@ go_library(
     importpath = "github.com/openconfig/lemming/dataplane/standalone/pkthandler",
     visibility = ["//visibility:private"],
     deps = [
+        "//dataplane/proto/packetio",
         "//dataplane/standalone/pkthandler/pktiohandler",
-        "//proto/forwarding",
         "@com_github_golang_glog//:glog",
         "@org_golang_google_grpc//:go_default_library",
         "@org_golang_google_grpc//credentials/insecure",

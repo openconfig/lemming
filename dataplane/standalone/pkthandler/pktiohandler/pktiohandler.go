@@ -28,7 +28,7 @@ import (
 
 	log "github.com/golang/glog"
 
-	fwdpb "github.com/openconfig/lemming/proto/forwarding"
+	pktiopb "github.com/openconfig/lemming/dataplane/proto/packetio"
 )
 
 // New returns a new PacketIOMgr
@@ -40,7 +40,7 @@ func New() (*PacketIOMgr, error) {
 	q.Run()
 	return &PacketIOMgr{
 		hostifs:           map[uint64]*port{},
-		dplanePortIfIndex: map[string]int{},
+		dplanePortIfIndex: map[uint64]int{},
 		sendQueue:         q,
 	}, nil
 }
@@ -48,11 +48,9 @@ func New() (*PacketIOMgr, error) {
 // PacketIOMgr creates and delete ports and reads and writes to them.
 type PacketIOMgr struct {
 	hostifs           map[uint64]*port
-	dplanePortIfIndex map[string]int // For tap devices, maps the dataport port id to hostif if index.
+	dplanePortIfIndex map[uint64]int // For tap devices, maps the dataport port id to hostif if index.
 	sendQueue         *queue.Queue
 }
-
-const contextID = "lucius"
 
 type port struct {
 	portIO
@@ -66,8 +64,8 @@ type portIO interface {
 }
 
 // StreamPackets sends and receives packets from a lucius CPU port.
-func (m *PacketIOMgr) StreamPackets(c fwdpb.Forwarding_CPUPacketStreamClient) error {
-	if err := c.Send(&fwdpb.PacketIn{Msg: &fwdpb.PacketIn_ContextId{ContextId: &fwdpb.ContextId{Id: contextID}}}); err != nil {
+func (m *PacketIOMgr) StreamPackets(c pktiopb.PacketIO_CPUPacketStreamClient) error {
+	if err := c.Send(&pktiopb.PacketIn{Msg: &pktiopb.PacketIn_Init{}}); err != nil {
 		return err
 	}
 
@@ -77,7 +75,7 @@ func (m *PacketIOMgr) StreamPackets(c fwdpb.Forwarding_CPUPacketStreamClient) er
 			case <-c.Context().Done():
 				return
 			case data := <-m.sendQueue.Receive():
-				if err := c.Send(&fwdpb.PacketIn{Msg: &fwdpb.PacketIn_Packet{Packet: data.(*fwdpb.Packet)}}); err != nil {
+				if err := c.Send(&pktiopb.PacketIn{Msg: &pktiopb.PacketIn_Packet{Packet: data.(*pktiopb.Packet)}}); err != nil {
 					continue
 				}
 			}
@@ -110,18 +108,18 @@ func (m *PacketIOMgr) StreamPackets(c fwdpb.Forwarding_CPUPacketStreamClient) er
 	}
 }
 
-func (m *PacketIOMgr) metadataFromPacket(p *fwdpb.Packet) *kernel.PacketMetadata {
+func (m *PacketIOMgr) metadataFromPacket(p *pktiopb.Packet) *kernel.PacketMetadata {
 	md := &kernel.PacketMetadata{
-		SrcIfIndex: m.dplanePortIfIndex[p.GetInputPort().GetObjectId().GetId()],
-		DstIfIndex: m.dplanePortIfIndex[p.GetOutputPort().GetObjectId().GetId()],
+		SrcIfIndex: m.dplanePortIfIndex[p.GetInputPort()],
+		DstIfIndex: m.dplanePortIfIndex[p.GetOutputPort()],
 	}
 
 	return md
 }
 
 // ManagePorts handles HostPortControl message from a forwarding server.
-func (m *PacketIOMgr) ManagePorts(c fwdpb.Forwarding_HostPortControlClient) error {
-	if err := c.Send(&fwdpb.HostPortControlRequest{Msg: &fwdpb.HostPortControlRequest_ContextId{ContextId: &fwdpb.ContextId{Id: contextID}}}); err != nil {
+func (m *PacketIOMgr) ManagePorts(c pktiopb.PacketIO_HostPortControlClient) error {
+	if err := c.Send(&pktiopb.HostPortControlRequest{Msg: &pktiopb.HostPortControlRequest_Init{}}); err != nil {
 		return err
 	}
 	for {
@@ -140,7 +138,7 @@ func (m *PacketIOMgr) ManagePorts(c fwdpb.Forwarding_HostPortControlClient) erro
 					Message: err.Error(),
 				}
 			}
-			sendErr := c.Send(&fwdpb.HostPortControlRequest{Msg: &fwdpb.HostPortControlRequest_Status{
+			sendErr := c.Send(&pktiopb.HostPortControlRequest{Msg: &pktiopb.HostPortControlRequest_Status{
 				Status: st,
 			}})
 			if sendErr != nil {
@@ -149,10 +147,10 @@ func (m *PacketIOMgr) ManagePorts(c fwdpb.Forwarding_HostPortControlClient) erro
 		} else {
 			p, ok := m.hostifs[resp.GetPortId()]
 			if !ok {
-				sendErr := c.Send(&fwdpb.HostPortControlRequest{Msg: &fwdpb.HostPortControlRequest_Status{
+				sendErr := c.Send(&pktiopb.HostPortControlRequest{Msg: &pktiopb.HostPortControlRequest_Status{
 					Status: &status.Status{
 						Code:    int32(codes.FailedPrecondition),
-						Message: fmt.Sprintf("port %v doesn't exist", resp.GetPort().GetPortId().GetObjectId().GetId()),
+						Message: fmt.Sprintf("port %v doesn't exist", resp.GetPortId()),
 					},
 				}})
 				if sendErr != nil {
@@ -164,7 +162,7 @@ func (m *PacketIOMgr) ManagePorts(c fwdpb.Forwarding_HostPortControlClient) erro
 			m.hostifs[resp.GetPortId()].cancelFn()
 
 			if err := p.Delete(); err != nil {
-				sendErr := c.Send(&fwdpb.HostPortControlRequest{Msg: &fwdpb.HostPortControlRequest_Status{
+				sendErr := c.Send(&pktiopb.HostPortControlRequest{Msg: &pktiopb.HostPortControlRequest_Status{
 					Status: &status.Status{
 						Code:    int32(codes.Internal),
 						Message: err.Error(),
@@ -176,7 +174,7 @@ func (m *PacketIOMgr) ManagePorts(c fwdpb.Forwarding_HostPortControlClient) erro
 			}
 
 			delete(m.hostifs, resp.GetPortId())
-			sendErr := c.Send(&fwdpb.HostPortControlRequest{Msg: &fwdpb.HostPortControlRequest_Status{
+			sendErr := c.Send(&pktiopb.HostPortControlRequest{Msg: &pktiopb.HostPortControlRequest_Status{
 				Status: &status.Status{
 					Code: int32(codes.OK),
 				},
@@ -190,29 +188,29 @@ func (m *PacketIOMgr) ManagePorts(c fwdpb.Forwarding_HostPortControlClient) erro
 
 var createTAPFunc = kernel.NewTap
 
-func (m *PacketIOMgr) createPort(msg *fwdpb.HostPortControlMessage) error {
+func (m *PacketIOMgr) createPort(msg *pktiopb.HostPortControlMessage) error {
 	var p portIO
-	switch msg.GetPort().GetPortType() {
-	case fwdpb.PortType_PORT_TYPE_GENETLINK:
-		portDesc := msg.GetPort().GetGenetlink()
+	switch msg.GetPort().(type) {
+	case *pktiopb.HostPortControlMessage_Genetlink:
+		portDesc := msg.GetGenetlink()
 		var err error
-		p, err = kernel.NewGenetlinkPort(portDesc.FamilyName, portDesc.GroupName)
+		p, err = kernel.NewGenetlinkPort(portDesc.Family, portDesc.Group)
 		if err != nil {
 			return err
 		}
-		log.Infof("add to new genetlink port: %v %v", portDesc.FamilyName, portDesc.GroupName)
-	case fwdpb.PortType_PORT_TYPE_TAP:
-		name := msg.GetPort().GetTap().GetDeviceName()
+		log.Infof("add to new genetlink port: %v %v", portDesc.Family, portDesc.Group)
+	case *pktiopb.HostPortControlMessage_Netdev:
+		name := msg.GetNetdev().GetName()
 		var err error
 		kp, err := createTAPFunc(name)
 		if err != nil {
 			return err
 		}
 		p = kp
-		m.dplanePortIfIndex[msg.GetDataplanePort().GetObjectId().GetId()] = kp.IfIndex()
+		m.dplanePortIfIndex[msg.GetDataplanePort()] = kp.IfIndex()
 		log.Infof("add to new netdev port: %v", name)
 	default:
-		return fmt.Errorf("unsupported port type: %q", msg.GetPort().GetPortType())
+		return fmt.Errorf("unsupported port type: %v", msg.GetPort())
 	}
 
 	doneCh := make(chan struct{})
@@ -240,7 +238,7 @@ func (m *PacketIOMgr) queueRead(id uint64, done chan struct{}) {
 				if err != nil || n == 0 {
 					continue
 				}
-				pkt := &fwdpb.Packet{
+				pkt := &pktiopb.Packet{
 					HostPort: id,
 					Frame:    buf[0:n],
 				}

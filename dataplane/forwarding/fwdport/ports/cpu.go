@@ -17,6 +17,7 @@ package ports
 import (
 	"encoding/binary"
 	"fmt"
+	"strconv"
 
 	log "github.com/golang/glog"
 
@@ -27,6 +28,7 @@ import (
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdobject"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdpacket"
 	"github.com/openconfig/lemming/dataplane/forwarding/util/queue"
+	pktiopb "github.com/openconfig/lemming/dataplane/proto/packetio"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
@@ -201,10 +203,19 @@ func (p *CPUPort) puntRemotePort(v any) {
 		return
 	}
 
-	response := &fwdpb.PacketOut{
-		Packet: &fwdpb.Packet{
-			InputPort:  ingressPID,
-			OutputPort: egressPID,
+	ingressID, err := strconv.Atoi(ingressPID.GetObjectId().GetId())
+	if err != nil {
+		return
+	}
+	egressID, err := strconv.Atoi(egressPID.GetObjectId().GetId())
+	if err != nil {
+		return
+	}
+
+	response := &pktiopb.PacketOut{
+		Packet: &pktiopb.Packet{
+			InputPort:  uint64(ingressID),
+			OutputPort: uint64(egressID),
 			HostPort:   binary.BigEndian.Uint64(hostPort),
 			Frame:      packet.Frame(),
 		},

@@ -1,0 +1,84 @@
+// Copyright 2024 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package lucius.dataplane.packetio;
+
+import "google/rpc/status.proto";
+
+option go_package = "github.com/openconfig/lemming/dataplane/proto/packetio";
+
+message HostPortControlInit {}
+
+message HostPortControlRequest {
+    oneof msg {
+      HostPortControlInit init = 1;
+      google.rpc.Status status = 2;
+    }
+}
+  
+message NetdevPort {
+    string name = 1;
+}
+
+message GenetlinkPort {
+    string family = 1;
+    string group = 2;
+}
+
+message HostPortControlMessage {
+  uint64 port_id = 1;
+  uint64 dataplane_port = 2; // ID of the dataplane port related to this one.
+  // Set to true if an hostif should be created, false for delete.
+  bool create = 3;
+  oneof port {
+    NetdevPort netdev = 4;
+    GenetlinkPort genetlink = 5;
+  }
+}
+
+message Packet {
+  uint64 host_port = 1; // ID of the host port. (sai hostif)
+  uint64 input_port = 2; // ID of the input port. Metadata for genetlink.
+  uint64 output_port = 3; // ID of the output port. Metadata for genetlink.
+  bytes frame = 4;
+}
+
+message PacketStreamInit {}
+
+message PacketIn {
+  oneof msg {
+    PacketStreamInit init = 1;
+    Packet packet = 2;
+  }
+}
+
+message PacketOut {
+  Packet packet = 1;
+}
+
+service PacketIO {
+  // HostPortControl requests creation and deletion of host ports.
+  // Flow:
+  //  Client -> context id
+  //  Loop
+  //    Server -> response
+  //    Client -> reply
+  rpc HostPortControl(stream HostPortControlRequest) 
+      returns (stream HostPortControlMessage) {}
+
+  // CPUPacketStream sends and receives packets on the CPU port.
+  rpc CPUPacketStream(stream PacketIn) returns (stream PacketOut) {}
+}

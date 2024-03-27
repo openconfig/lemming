@@ -8,7 +8,7 @@ go_library(
     deps = [
         "//dataplane/forwarding/util/queue",
         "//dataplane/internal/kernel",
-        "//proto/forwarding",
+        "//dataplane/proto/packetio",
         "@com_github_golang_glog//:glog",
         "@org_golang_google_genproto_googleapis_rpc//status",
         "@org_golang_google_grpc//codes",
@@ -21,7 +21,7 @@ go_test(
     embed = [":pktiohandler"],
     deps = [
         "//dataplane/internal/kernel",
-        "//proto/forwarding",
+        "//dataplane/proto/packetio",
         "@com_github_google_go_cmp//cmp",
         "@org_golang_google_grpc//codes",
         "@org_golang_google_protobuf//testing/protocmp",

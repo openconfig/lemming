@@ -34,8 +34,8 @@ import (
 
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 
+	pktiopb "github.com/openconfig/lemming/dataplane/proto/packetio"
 	saipb "github.com/openconfig/lemming/dataplane/proto/sai"
-	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
 // Dataplane is an implementation of Dataplane HAL API.
@@ -139,14 +139,14 @@ func (d *Dataplane) Start(ctx context.Context, c gpb.GNMIClient, target string) 
 		return err
 	}
 
-	fc := fwdpb.NewForwardingClient(conn)
+	pktio := pktiopb.NewPacketIOClient(conn)
 
 	ctx, d.cancelFn = context.WithCancel(ctx)
-	portCtl, err := fc.HostPortControl(ctx)
+	portCtl, err := pktio.HostPortControl(ctx)
 	if err != nil {
 		return err
 	}
-	packet, err := fc.CPUPacketStream(ctx)
+	packet, err := pktio.CPUPacketStream(ctx)
 	if err != nil {
 		return err
 	}

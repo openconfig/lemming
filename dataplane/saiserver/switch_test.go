@@ -288,6 +288,10 @@ func (f *fakeSwitchDataplane) ObjectNID(context.Context, *fwdpb.ObjectNIDRequest
 	return nil, nil
 }
 
+func (f *fakeSwitchDataplane) InjectPacket(*fwdpb.ContextId, *fwdpb.PortId, fwdpb.PacketHeaderId, []byte, []*fwdpb.ActionDesc, bool, fwdpb.PortAction) error {
+	return nil
+}
+
 func newTestServer(t testing.TB, newSrvFn func(mgr *attrmgr.AttrMgr, srv *grpc.Server)) (grpc.ClientConnInterface, *attrmgr.AttrMgr, func()) {
 	t.Helper()
 	mgr := attrmgr.New()
