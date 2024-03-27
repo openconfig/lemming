@@ -741,6 +741,7 @@ func (e *Server) FlowCounterQuery(_ context.Context, request *fwdpb.FlowCounterQ
 	return reply, nil
 }
 
+// InjectPacket inserts a packet in the forwarding pipeline, orginating from the specified port.
 func (e *Server) InjectPacket(contextID *fwdpb.ContextId, id *fwdpb.PortId, hid fwdpb.PacketHeaderId, frame []byte, preActions []*fwdpb.ActionDesc, debug bool, dir fwdpb.PortAction) error {
 	timer := deadlock.NewTimer(deadlock.Timeout, fmt.Sprintf("Processing packet"))
 	defer timer.Stop()
@@ -811,7 +812,7 @@ func (e *Server) InjectPacket(contextID *fwdpb.ContextId, id *fwdpb.PortId, hid 
 	return nil
 }
 
-// PacketInject injects a packet in the specified forwarding context and port.
+// PacketInject is a streaming RPC to inject a packets in the specified forwarding context and port.
 func (e *Server) PacketInject(srv fwdpb.Forwarding_PacketInjectServer) error {
 	for {
 		request, err := srv.Recv()
