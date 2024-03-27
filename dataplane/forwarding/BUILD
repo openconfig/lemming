@@ -11,9 +11,7 @@ go_library(
     deps = [
         "//dataplane/forwarding/fwdaction",
         "//dataplane/forwarding/fwdaction/actions",
-        "//dataplane/forwarding/fwdconfig",
         "//dataplane/forwarding/fwdport",
-        "//dataplane/forwarding/fwdport/ports",
         "//dataplane/forwarding/fwdtable",
         "//dataplane/forwarding/fwdtable/action",
         "//dataplane/forwarding/fwdtable/bridge",
@@ -38,6 +36,5 @@ go_library(
         "//dataplane/forwarding/protocol/udp",
         "//proto/forwarding",
         "@com_github_golang_glog//:glog",
-        "@org_golang_google_grpc//status",
     ],
 )

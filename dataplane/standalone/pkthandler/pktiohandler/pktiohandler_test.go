@@ -25,27 +25,27 @@ import (
 	"google.golang.org/protobuf/testing/protocmp"
 
 	"github.com/openconfig/lemming/dataplane/internal/kernel"
-	fwdpb "github.com/openconfig/lemming/proto/forwarding"
+	pktiopb "github.com/openconfig/lemming/dataplane/proto/packetio"
 )
 
 func TestStreamPackets(t *testing.T) {
 	tests := []struct {
 		desc                string
-		sendPackets         []*fwdpb.Packet
-		recvPackets         []*fwdpb.PacketOut
-		wantSentPacket      []*fwdpb.PacketIn
+		sendPackets         []*pktiopb.Packet
+		recvPackets         []*pktiopb.PacketOut
+		wantSentPacket      []*pktiopb.PacketIn
 		wantPortWrittenData []*portWriteData
 	}{{
 		desc: "send packets",
-		sendPackets: []*fwdpb.Packet{{
+		sendPackets: []*pktiopb.Packet{{
 			HostPort: 1,
 			Frame:    []byte("hello"),
 		}},
-		wantSentPacket: []*fwdpb.PacketIn{{
-			Msg: &fwdpb.PacketIn_ContextId{ContextId: &fwdpb.ContextId{Id: contextID}},
+		wantSentPacket: []*pktiopb.PacketIn{{
+			Msg: &pktiopb.PacketIn_Init{},
 		}, {
-			Msg: &fwdpb.PacketIn_Packet{
-				Packet: &fwdpb.Packet{
+			Msg: &pktiopb.PacketIn_Packet{
+				Packet: &pktiopb.Packet{
 					HostPort: 1,
 					Frame:    []byte("hello"),
 				},
@@ -53,14 +53,14 @@ func TestStreamPackets(t *testing.T) {
 		}},
 	}, {
 		desc: "recv packets",
-		recvPackets: []*fwdpb.PacketOut{{
-			Packet: &fwdpb.Packet{
+		recvPackets: []*pktiopb.PacketOut{{
+			Packet: &pktiopb.Packet{
 				HostPort: 1,
 				Frame:    []byte("hello"),
 			},
 		}},
-		wantSentPacket: []*fwdpb.PacketIn{{
-			Msg: &fwdpb.PacketIn_ContextId{ContextId: &fwdpb.ContextId{Id: contextID}},
+		wantSentPacket: []*pktiopb.PacketIn{{
+			Msg: &pktiopb.PacketIn_Init{},
 		}},
 		wantPortWrittenData: []*portWriteData{{
 			Frame: []byte("hello"),
@@ -104,22 +104,19 @@ func TestStreamPackets(t *testing.T) {
 func TestManagePorts(t *testing.T) {
 	tests := []struct {
 		desc    string
-		msgs    []*fwdpb.HostPortControlMessage
+		msgs    []*pktiopb.HostPortControlMessage
 		wantErr string
 		want    codes.Code
 	}{{
 		desc: "create",
-		msgs: []*fwdpb.HostPortControlMessage{{
-			Port: &fwdpb.PortDesc{
-				PortType: fwdpb.PortType_PORT_TYPE_TAP,
-				Port: &fwdpb.PortDesc_Tap{
-					Tap: &fwdpb.TAPPortDesc{
-						DeviceName: "foo1",
-					},
+		msgs: []*pktiopb.HostPortControlMessage{{
+			Port: &pktiopb.HostPortControlMessage_Netdev{
+				Netdev: &pktiopb.NetdevPort{
+					Name: "foo1",
 				},
 			},
 			PortId:        1,
-			DataplanePort: &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: "2"}},
+			DataplanePort: 2,
 			Create:        true,
 		}},
 		want: codes.OK,
@@ -163,10 +160,10 @@ func (p *fakePort) Write(frame []byte, md *kernel.PacketMetadata) (int, error) {
 }
 
 type fakePacketStream struct {
-	fwdpb.Forwarding_CPUPacketStreamClient
-	sendPackets    []*fwdpb.PacketIn
+	pktiopb.PacketIO_CPUPacketStreamClient
+	sendPackets    []*pktiopb.PacketIn
 	ctx            context.Context
-	recvPackets    []*fwdpb.PacketOut
+	recvPackets    []*pktiopb.PacketOut
 	recvPacketsIdx int
 }
 
@@ -177,12 +174,12 @@ func (f *fakePacketStream) Context() context.Context {
 	return f.ctx
 }
 
-func (f *fakePacketStream) Send(p *fwdpb.PacketIn) error {
+func (f *fakePacketStream) Send(p *pktiopb.PacketIn) error {
 	f.sendPackets = append(f.sendPackets, p)
 	return nil
 }
 
-func (f *fakePacketStream) Recv() (*fwdpb.PacketOut, error) {
+func (f *fakePacketStream) Recv() (*pktiopb.PacketOut, error) {
 	if f.recvPacketsIdx >= len(f.recvPackets) {
 		return nil, io.EOF
 	}
@@ -193,18 +190,18 @@ func (f *fakePacketStream) Recv() (*fwdpb.PacketOut, error) {
 }
 
 type fakeHostPortControl struct {
-	fwdpb.Forwarding_HostPortControlClient
-	gotReqs []*fwdpb.HostPortControlRequest
-	msg     []*fwdpb.HostPortControlMessage
+	pktiopb.PacketIO_HostPortControlClient
+	gotReqs []*pktiopb.HostPortControlRequest
+	msg     []*pktiopb.HostPortControlMessage
 	msgIdx  int
 }
 
-func (f *fakeHostPortControl) Send(req *fwdpb.HostPortControlRequest) error {
+func (f *fakeHostPortControl) Send(req *pktiopb.HostPortControlRequest) error {
 	f.gotReqs = append(f.gotReqs, req)
 	return nil
 }
 
-func (f *fakeHostPortControl) Recv() (*fwdpb.HostPortControlMessage, error) {
+func (f *fakeHostPortControl) Recv() (*pktiopb.HostPortControlMessage, error) {
 	if f.msgIdx >= len(f.msg) {
 		return nil, io.EOF
 	}

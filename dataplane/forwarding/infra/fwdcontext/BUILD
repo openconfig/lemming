@@ -10,6 +10,7 @@ go_library(
         "//dataplane/forwarding/infra/fwdattribute",
         "//dataplane/forwarding/infra/fwdobject",
         "//dataplane/forwarding/util/queue",
+        "//dataplane/proto/packetio",
         "//proto/forwarding",
         "@com_github_golang_glog//:glog",
         "@com_github_google_gopacket//:gopacket",

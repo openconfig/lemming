@@ -26,10 +26,12 @@ import (
 	"github.com/openconfig/lemming/dataplane/dplaneopts"
 	"github.com/openconfig/lemming/dataplane/forwarding/attributes"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
+	"github.com/openconfig/lemming/dataplane/forwarding/fwdport/ports"
 	"github.com/openconfig/lemming/dataplane/saiserver/attrmgr"
 
 	log "github.com/golang/glog"
 
+	pktiopb "github.com/openconfig/lemming/dataplane/proto/packetio"
 	saipb "github.com/openconfig/lemming/dataplane/proto/sai"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
@@ -44,6 +46,7 @@ func newHostif(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Serve
 	}
 
 	saipb.RegisterHostifServer(s, hostif)
+	pktiopb.RegisterPacketIOServer(s, hostif)
 	return hostif
 }
 
@@ -54,6 +57,7 @@ type hostif struct {
 	trapIDToHostifID map[uint64]uint64
 	groupIDToQueue   map[uint64]uint32
 	opts             *dplaneopts.Options
+	sendPortReq      func(msg *pktiopb.HostPortControlMessage) error
 }
 
 const switchID = 1
@@ -232,27 +236,24 @@ func (hostif *hostif) CreateHostif(ctx context.Context, req *saipb.CreateHostifR
 func (hostif *hostif) createRemoteHostif(ctx context.Context, req *saipb.CreateHostifRequest) (*saipb.CreateHostifResponse, error) {
 	id := hostif.mgr.NextID()
 
-	portReq := &fwdpb.PortCreateRequest{
-		ContextId: &fwdpb.ContextId{Id: hostif.dataplane.ID()},
-		Port: &fwdpb.PortDesc{
-			PortId: &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)}},
-		},
+	ctlReq := &pktiopb.HostPortControlMessage{
+		Create:        true,
+		DataplanePort: req.GetObjId(),
+		PortId:        id,
 	}
 
 	switch req.GetType() {
 	case saipb.HostifType_HOSTIF_TYPE_GENETLINK:
-		portReq.Port.PortType = fwdpb.PortType_PORT_TYPE_GENETLINK
-		portReq.Port.Port = &fwdpb.PortDesc_Genetlink{
-			Genetlink: &fwdpb.GenetlinkPortDesc{
-				FamilyName: string(req.GetName()),
-				GroupName:  string(req.GetGenetlinkMcgrpName()),
+		ctlReq.Port = &pktiopb.HostPortControlMessage_Genetlink{
+			Genetlink: &pktiopb.GenetlinkPort{
+				Family: string(req.GetName()),
+				Group:  string(req.GetGenetlinkMcgrpName()),
 			},
 		}
 	case saipb.HostifType_HOSTIF_TYPE_NETDEV:
-		portReq.Port.PortType = fwdpb.PortType_PORT_TYPE_TAP
-		portReq.Port.Port = &fwdpb.PortDesc_Tap{
-			Tap: &fwdpb.TAPPortDesc{
-				DeviceName: string(req.GetName()),
+		ctlReq.Port = &pktiopb.HostPortControlMessage_Netdev{
+			Netdev: &pktiopb.NetdevPort{
+				Name: string(req.GetName()),
 			},
 		}
 
@@ -289,7 +290,6 @@ func (hostif *hostif) createRemoteHostif(ctx context.Context, req *saipb.CreateH
 		if _, err := hostif.dataplane.TableEntryAdd(ctx, entry); err != nil {
 			return nil, err
 		}
-
 	default:
 		return nil, status.Errorf(codes.InvalidArgument, "unknown type %v", req.GetType())
 	}
@@ -299,28 +299,12 @@ func (hostif *hostif) createRemoteHostif(ctx context.Context, req *saipb.CreateH
 	}
 	hostif.mgr.StoreAttributes(id, attr)
 
-	// Notify the cpu sink about these port types, if there is one configured.
-	fwdCtx, err := hostif.dataplane.FindContext(&fwdpb.ContextId{Id: hostif.dataplane.ID()})
-	if err != nil {
-		return nil, err
-	}
-	fwdCtx.RLock()
-	ctl := fwdCtx.PortControl()
-	fwdCtx.RUnlock()
-	if ctl != nil {
-		ctlReq := &fwdpb.HostPortControlMessage{
-			Create:        true,
-			Port:          portReq.GetPort(),
-			DataplanePort: &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(req.GetObjId())}},
-			PortId:        id,
-		}
-		log.Infof("sending port ctl message: %+v", ctlReq)
-		if err := ctl(ctlReq); err != nil {
+	if hostif.sendPortReq != nil {
+		if err := hostif.sendPortReq(ctlReq); err != nil {
 			return nil, err
 		}
-	} else {
-		log.Warning("didn't send port control message: channel is nil")
 	}
+
 	return &saipb.CreateHostifResponse{Oid: id}, nil
 }
 
@@ -471,4 +455,106 @@ func (hostif *hostif) CreateHostifTableEntry(ctx context.Context, req *saipb.Cre
 	}
 
 	return nil, nil
+}
+
+func (hostif *hostif) CPUPacketStream(srv pktiopb.PacketIO_CPUPacketStreamServer) error {
+	_, err := srv.Recv()
+	if err != nil {
+		return err
+	}
+	fwdCtx, err := hostif.dataplane.FindContext(&fwdpb.ContextId{Id: hostif.dataplane.ID()})
+	if err != nil {
+		return err
+	}
+
+	fwdCtx.RLock()
+	cpuPortID := ""
+	for _, id := range fwdCtx.Objects.IDs() {
+		obj, err := fwdCtx.Objects.FindID(&fwdpb.ObjectId{Id: string(id)})
+		if err != nil {
+			fwdCtx.RUnlock()
+			return err
+		}
+		if _, ok := obj.(*ports.CPUPort); ok {
+			cpuPortID = string(obj.ID())
+		}
+	}
+	fwdCtx.RUnlock()
+	if cpuPortID == "" {
+		return fmt.Errorf("couldn't find cpu port")
+	}
+
+	packetCh := make(chan *pktiopb.PacketIn)
+	ctx, cancel := context.WithCancel(srv.Context())
+
+	// Since Recv() is blocking and we want this func to return immediately on cancel.
+	// Run the Recv in a seperate goroutine.
+	go func() {
+		for {
+			pkt, err := srv.Recv()
+			if err != nil {
+				continue
+			}
+			packetCh <- pkt
+		}
+	}()
+
+	fn := func(po *pktiopb.PacketOut) error {
+		return srv.Send(po)
+	}
+
+	fwdCtx.Lock()
+	fwdCtx.SetCPUPortSink(fn, cancel)
+	fwdCtx.Unlock()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case pkt := <-packetCh:
+			acts := []*fwdpb.ActionDesc{fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_HOST_PORT_ID).
+				WithUint64Value(pkt.GetPacket().GetHostPort())).Build()}
+			err = hostif.dataplane.InjectPacket(&fwdpb.ContextId{Id: hostif.dataplane.ID()}, &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: cpuPortID}}, fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET,
+				pkt.GetPacket().GetFrame(), acts, true, fwdpb.PortAction_PORT_ACTION_INPUT)
+			if err != nil {
+				log.Warningf("inject err: %v", err)
+				continue
+			}
+		}
+	}
+}
+
+func (hostif *hostif) HostPortControl(srv pktiopb.PacketIO_HostPortControlServer) error {
+	_, err := srv.Recv()
+	if err != nil {
+		return err
+	}
+	// TODO: Whenever this RPC is connected, should resend all existing hostifs to tolerate the client restarting.
+
+	reqCh := make(chan *pktiopb.HostPortControlMessage)
+	respCh := make(chan *pktiopb.HostPortControlRequest)
+	hostif.sendPortReq = func(msg *pktiopb.HostPortControlMessage) error {
+		reqCh <- msg
+		resp := <-respCh
+		return status.FromProto(resp.GetStatus()).Err()
+	}
+
+	log.Info("initialized host port control channel")
+	for {
+		select {
+		case <-srv.Context().Done():
+			return nil
+		case req := <-reqCh:
+			if err := srv.Send(req); err != nil {
+				return err
+			}
+			log.Info("sent message to client: %+v", req)
+			resp, err := srv.Recv()
+			if err != nil {
+				return err
+			}
+			respCh <- resp
+			log.Info("received message from client: %+v", req)
+		}
+	}
 }
