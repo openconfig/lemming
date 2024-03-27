@@ -52,8 +52,6 @@ type PacketIOMgr struct {
 	sendQueue         *queue.Queue
 }
 
-const contextID = "lucius"
-
 type port struct {
 	portIO
 	cancelFn func()

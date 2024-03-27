@@ -288,7 +288,7 @@ func (f *fakeSwitchDataplane) ObjectNID(context.Context, *fwdpb.ObjectNIDRequest
 	return nil, nil
 }
 
-func (f *fakeSwitchDataplane) InjectPacket(contextID *fwdpb.ContextId, id *fwdpb.PortId, hid fwdpb.PacketHeaderId, frame []byte, preActions []*fwdpb.ActionDesc, debug bool, dir fwdpb.PortAction) error {
+func (f *fakeSwitchDataplane) InjectPacket(*fwdpb.ContextId, *fwdpb.PortId, fwdpb.PacketHeaderId, []byte, []*fwdpb.ActionDesc, bool, fwdpb.PortAction) error {
 	return nil
 }
 
