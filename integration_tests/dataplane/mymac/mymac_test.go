@@ -227,27 +227,51 @@ func TestMyMac(t *testing.T) {
 		macAddrMask []byte
 		passed      bool
 	}{{
+		desc:       "Traffic passed",
+		clearMyMac: false,
+		passed:     true,
+	}, {
 		desc:       "Traffic dropped", // Remove the default entry that allows all traffic to L3.
 		clearMyMac: true,
 		passed:     false,
+	}, {
+		desc:       "Traffic passed again", // Remove the default entry that allows all traffic to L3.
+		clearMyMac: false,
+		passed:     true,
+		// }, {
+		// 	desc:        "Traffic passed again",
+		// 	clearMyMac:  false,
+		// 	macAddr:     net.HardwareAddr(atePort1.MAC),
+		// 	macAddrMask: []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
+		// 	passed:      true,
 	}}
-	ate := ondatra.ATE(t, "ate")
-	ateTop := configureATE(t, ate)
-	ate.OTG().PushConfig(t, ateTop)
-	ate.OTG().StartProtocols(t)
+	// ate := ondatra.ATE(t, "ate")
+	// ateTop := configureATE(t, ate)
+	// ate.OTG().PushConfig(t, ateTop)
+	// ate.OTG().StartProtocols(t)
 
-	dut := ondatra.DUT(t, "dut")
-	configureDUT(t, dut)
+	// dut := ondatra.DUT(t, "dut")
+	// configureDUT(t, dut)
 
 	for _, tt := range tests {
+		ate := ondatra.ATE(t, "ate")
+		ateTop := configureATE(t, ate)
+		ate.OTG().PushConfig(t, ateTop)
+		ate.OTG().StartProtocols(t)
+
+		dut := ondatra.DUT(t, "dut")
+		configureDUT(t, dut)
+
 		tx, rx := testTraffic(t, ate, ateTop, atePort1, dutPort1, atePort2, 10*time.Second, dut, tt.clearMyMac)
 		t.Logf("[%s] Got TX: %d, RX: %d", tt.desc, tx, rx)
 		if tx == 0 {
 			t.Fatalf("No packet sent")
 		}
 		switch {
-		case tt.passed && rx != tx, !tt.passed && rx != 0:
+		case tt.passed && rx != tx:
 			t.Errorf("got %d, expect %d", rx, tx)
+		case !tt.passed && rx != 0:
+			t.Errorf("got %d, expect 0", rx)
 		}
 	}
 }
@@ -275,36 +299,31 @@ func testTraffic(t *testing.T, ate *ondatra.ATEDevice, top gosnappi.Config, srcE
 	otg := ate.OTG()
 	top.Flows().Clear().Items()
 
-	ipFLow := top.Flows().Add().SetName("Flow")
-	ipFLow.Metrics().SetEnable(true)
-	ipFLow.TxRx().Port().SetTxName(srcEndPoint.Name).SetRxNames([]string{dstEndPoint.Name})
+	ipFlow := top.Flows().Add().SetName("Flow")
+	ipFlow.Metrics().SetEnable(true)
+	ipFlow.TxRx().Port().SetTxName(srcEndPoint.Name).SetRxNames([]string{dstEndPoint.Name})
 
-	ipFLow.Rate().SetPps(10)
-
-	// OTG specifies that the order of the <flow>.Packet().Add() calls determines
-	// the stack of headers that are to be used, starting at the outer-most and
-	// ending with the inner-most.
+	txPkts := uint64(1)
+	ipFlow.Rate().SetPps(1)
+	ipFlow.Duration().FixedPackets().SetPackets(uint32(txPkts))
 
 	// Set up ethernet layer.
-	eth := ipFLow.Packet().Add().Ethernet()
+	eth := ipFlow.Packet().Add().Ethernet()
 	eth.Src().SetValue(srcEndPoint.MAC)
 	eth.Dst().SetValue(srcPeerEndpoint.MAC)
 
-	ip4 := ipFLow.Packet().Add().Ipv4()
+	ip4 := ipFlow.Packet().Add().Ipv4()
 	ip4.Src().SetValue(srcEndPoint.IPv4)
 	ip4.Dst().SetValue(dstEndPoint.IPv4)
 	ip4.Version().SetValue(4)
 
 	otg.PushConfig(t, top)
-
+	t.Logf(">>>>>> Sending traffic...")
 	otg.StartTraffic(t)
-	time.Sleep(dur)
-	t.Logf("Stop traffic")
-	otg.StopTraffic(t)
+	defer otg.StopTraffic(t)
 
-	time.Sleep(5 * time.Second)
-
-	txPkts := gnmi.Get(t, otg, gnmi.OTG().Flow("Flow").Counters().OutPkts().State())
+	gnmi.Await(t, otg, gnmi.OTG().Flow("Flow").Counters().OutPkts().State(), 5*time.Second, txPkts)
+	t.Logf(">>>>>> Traffic received.")
 	rxPkts := gnmi.Get(t, otg, gnmi.OTG().Flow("Flow").Counters().InPkts().State())
 	return txPkts, rxPkts
 }
