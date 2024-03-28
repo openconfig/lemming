@@ -983,8 +983,8 @@ def go_repositories():
     go_repository(
         name = "com_github_grpc_ecosystem_go_grpc_middleware",
         importpath = "github.com/grpc-ecosystem/go-grpc-middleware",
-        sum = "h1:+9834+KizmvFV7pXQGSXQTsaWhq2GjuNUt0aUU0YBYw=",
-        version = "v1.3.0",
+        sum = "h1:UH//fgunKIs4JdUbpDl1VZCDaL56wXCB/5+wF6uHfaI=",
+        version = "v1.4.0",
     )
     go_repository(
         name = "com_github_grpc_ecosystem_go_grpc_middleware_v2",
@@ -1615,8 +1615,8 @@ def go_repositories():
     go_repository(
         name = "com_github_open_traffic_generator_ixia_c_operator",
         importpath = "github.com/open-traffic-generator/ixia-c-operator",
-        sum = "h1:xH0hLVWf2wuVUT9ovFdh/WwwBf1oGkBu5YEWD61igck=",
-        version = "v0.3.4",
+        sum = "h1:dablUs6FAToVDFaoIo2M+Z9UCa93KAwlj7HJqNwLwTQ=",
+        version = "v0.3.6",
     )
     go_repository(
         name = "com_github_open_traffic_generator_keng_operator",
@@ -1648,8 +1648,8 @@ def go_repositories():
     go_repository(
         name = "com_github_openconfig_featureprofiles",
         importpath = "github.com/openconfig/featureprofiles",
-        sum = "h1:3GlQ1wjWqTN+w0kLHtGxACCJ3CRnHjJ8McYwSkWpZXY=",
-        version = "v0.0.0-20230629171650-1057c66c4e52",
+        sum = "h1:InOTVH2wHIvMedgOmDwzrzTJo12JaEmKwdDtckhpb/Y=",
+        version = "v0.0.0-20240122173202-7718e50374f2",
     )
 
     go_repository(
@@ -1745,8 +1745,8 @@ def go_repositories():
     go_repository(
         name = "com_github_openconfig_magna",
         importpath = "github.com/openconfig/magna",
-        sum = "h1:Li3oruOjubVSr+7UAc6ohpWeD0FKk+7t7SzEkMN66Qk=",
-        version = "v0.0.0-20240125181018-b59ccfe781f8",
+        sum = "h1:tiy1WDRRFuWXCA9o0We8x3an3vywDVowyertHgjEUXo=",
+        version = "v0.0.0-20240326180454-518e16696c84",
     )
 
     go_repository(
