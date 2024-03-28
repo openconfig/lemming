@@ -17,6 +17,7 @@ package saiserver
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -42,6 +43,7 @@ func newHostif(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Serve
 		dataplane:        dataplane,
 		trapIDToHostifID: map[uint64]uint64{},
 		groupIDToQueue:   map[uint64]uint32{},
+		remoteHostifs:    map[uint64]*pktiopb.HostPortControlMessage{},
 		opts:             opts,
 	}
 
@@ -57,7 +59,19 @@ type hostif struct {
 	trapIDToHostifID map[uint64]uint64
 	groupIDToQueue   map[uint64]uint32
 	opts             *dplaneopts.Options
-	sendPortReq      func(msg *pktiopb.HostPortControlMessage) error
+	remoteMu         sync.Mutex
+	remoteHostifs    map[uint64]*pktiopb.HostPortControlMessage
+	remoteClosers    []func()
+	remotePortReq    func(msg *pktiopb.HostPortControlMessage) error
+}
+
+func (hostif *hostif) Reset() {
+	hostif.trapIDToHostifID = map[uint64]uint64{}
+	hostif.groupIDToQueue = map[uint64]uint32{}
+	hostif.remoteHostifs = map[uint64]*pktiopb.HostPortControlMessage{}
+	for _, closeFn := range hostif.remoteClosers {
+		closeFn()
+	}
 }
 
 const switchID = 1
@@ -235,6 +249,8 @@ func (hostif *hostif) CreateHostif(ctx context.Context, req *saipb.CreateHostifR
 
 func (hostif *hostif) createRemoteHostif(ctx context.Context, req *saipb.CreateHostifRequest) (*saipb.CreateHostifResponse, error) {
 	id := hostif.mgr.NextID()
+	hostif.remoteMu.Lock()
+	defer hostif.remoteMu.Unlock()
 
 	ctlReq := &pktiopb.HostPortControlMessage{
 		Create:        true,
@@ -294,18 +310,65 @@ func (hostif *hostif) createRemoteHostif(ctx context.Context, req *saipb.CreateH
 		return nil, status.Errorf(codes.InvalidArgument, "unknown type %v", req.GetType())
 	}
 
+	if hostif.remotePortReq == nil {
+		return nil, status.Error(codes.FailedPrecondition, "remote port control not configured")
+	}
+	if err := hostif.remotePortReq(ctlReq); err != nil {
+		return nil, err
+	}
+
 	attr := &saipb.HostifAttribute{
 		OperStatus: proto.Bool(true),
 	}
 	hostif.mgr.StoreAttributes(id, attr)
-
-	if hostif.sendPortReq != nil {
-		if err := hostif.sendPortReq(ctlReq); err != nil {
-			return nil, err
-		}
-	}
+	hostif.remoteHostifs[id] = ctlReq
 
 	return &saipb.CreateHostifResponse{Oid: id}, nil
+}
+
+func (hostif *hostif) RemoveHostif(ctx context.Context, req *saipb.RemoveHostifRequest) (*saipb.RemoveHostifResponse, error) {
+	if !hostif.opts.RemoteCPUPort {
+		return nil, status.Error(codes.Unimplemented, "only remote cpu port is supported")
+	}
+	hostif.remoteMu.Lock()
+	defer hostif.remoteMu.Unlock()
+
+	nid, err := hostif.dataplane.ObjectNID(ctx, &fwdpb.ObjectNIDRequest{
+		ContextId: &fwdpb.ContextId{Id: hostif.dataplane.ID()},
+		ObjectId:  &fwdpb.ObjectId{Id: fmt.Sprint(hostif.remoteHostifs[req.GetOid()])},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	delReq := fwdconfig.TableEntryRemoveRequest(hostif.dataplane.ID(), hostifToPortTable).AppendEntry(
+		fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_HOST_PORT_ID).WithUint64(req.GetOid()))),
+	).Build()
+	if _, err := hostif.dataplane.TableEntryRemove(ctx, delReq); err != nil {
+		return nil, err
+	}
+
+	delReq = fwdconfig.TableEntryRemoveRequest(hostif.dataplane.ID(), portToHostifTable).AppendEntry(
+		fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT).WithUint64(nid.GetNid()))),
+	).Build()
+	if _, err := hostif.dataplane.TableEntryRemove(ctx, delReq); err != nil {
+		return nil, err
+	}
+
+	ctlReq := &pktiopb.HostPortControlMessage{
+		Create: false,
+		PortId: req.Oid,
+	}
+
+	if hostif.remotePortReq == nil {
+		return nil, status.Error(codes.FailedPrecondition, "remote port control not configured")
+	}
+	if err := hostif.remotePortReq(ctlReq); err != nil {
+		return nil, err
+	}
+	delete(hostif.remoteHostifs, req.Oid)
+
+	return &saipb.RemoveHostifResponse{}, nil
 }
 
 // SetHostifAttribute sets the attributes in the request.
@@ -529,20 +592,31 @@ func (hostif *hostif) HostPortControl(srv pktiopb.PacketIO_HostPortControlServer
 	if err != nil {
 		return err
 	}
-	// TODO: Whenever this RPC is connected, should resend all existing hostifs to tolerate the client restarting.
 
+	hostif.remoteMu.Lock()
+	ctx, cancelFn := context.WithCancel(srv.Context())
+	hostif.remoteClosers = append(hostif.remoteClosers, cancelFn)
 	reqCh := make(chan *pktiopb.HostPortControlMessage)
 	respCh := make(chan *pktiopb.HostPortControlRequest)
-	hostif.sendPortReq = func(msg *pktiopb.HostPortControlMessage) error {
+	hostif.remotePortReq = func(msg *pktiopb.HostPortControlMessage) error {
 		reqCh <- msg
 		resp := <-respCh
 		return status.FromProto(resp.GetStatus()).Err()
 	}
 
+	// Send all existing hostif.
+	for _, msg := range hostif.remoteHostifs {
+		if err := hostif.remotePortReq(msg); err != nil {
+			hostif.remoteMu.Unlock()
+			return err
+		}
+	}
+	hostif.remoteMu.Unlock()
+
 	log.Info("initialized host port control channel")
 	for {
 		select {
-		case <-srv.Context().Done():
+		case <-ctx.Done():
 			return nil
 		case req := <-reqCh:
 			if err := srv.Send(req); err != nil {
