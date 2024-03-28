@@ -134,7 +134,7 @@ func (d *Dataplane) Start(ctx context.Context, c gpb.GNMIClient, target string) 
 		return err
 	}
 
-	h, err := pktiohandler.New()
+	h, err := pktiohandler.New("")
 	if err != nil {
 		return err
 	}

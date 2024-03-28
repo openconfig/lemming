@@ -74,7 +74,6 @@ type TableEntryRemoveRequestBuilder struct {
 	contextID string
 	tableID   string
 	entries   []*EntryDescBuilder
-	actions   [][]*ActionBuilder
 }
 
 // TableEntryRemoveRequest creates a new TableEntryRemoveRequestBuilder.

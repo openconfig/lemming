@@ -15,13 +15,16 @@
 package pktiohandler
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"time"
 
 	"google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/util/queue"
 	"github.com/openconfig/lemming/dataplane/internal/kernel"
@@ -32,7 +35,7 @@ import (
 )
 
 // New returns a new PacketIOMgr
-func New() (*PacketIOMgr, error) {
+func New(portFile string) (*PacketIOMgr, error) {
 	q, err := queue.NewUnbounded("send")
 	if err != nil {
 		return nil, err
@@ -42,6 +45,7 @@ func New() (*PacketIOMgr, error) {
 		hostifs:           map[uint64]*port{},
 		dplanePortIfIndex: map[uint64]int{},
 		sendQueue:         q,
+		portFile:          portFile,
 	}, nil
 }
 
@@ -50,11 +54,13 @@ type PacketIOMgr struct {
 	hostifs           map[uint64]*port
 	dplanePortIfIndex map[uint64]int // For tap devices, maps the dataport port id to hostif if index.
 	sendQueue         *queue.Queue
+	portFile          string
 }
 
 type port struct {
 	portIO
 	cancelFn func()
+	msg      *pktiopb.HostPortControlMessage
 }
 
 type portIO interface {
@@ -117,6 +123,21 @@ func (m *PacketIOMgr) metadataFromPacket(p *pktiopb.Packet) *kernel.PacketMetada
 	return md
 }
 
+func (m *PacketIOMgr) writePorts() error {
+	if m.portFile == "" {
+		return nil
+	}
+	data := map[uint64]string{}
+	for id, h := range m.hostifs {
+		data[id] = protojson.Format(h.msg)
+	}
+	contents, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(m.portFile, contents, 0666)
+}
+
 // ManagePorts handles HostPortControl message from a forwarding server.
 func (m *PacketIOMgr) ManagePorts(c pktiopb.PacketIO_HostPortControlClient) error {
 	if err := c.Send(&pktiopb.HostPortControlRequest{Msg: &pktiopb.HostPortControlRequest_Init{}}); err != nil {
@@ -143,6 +164,9 @@ func (m *PacketIOMgr) ManagePorts(c pktiopb.PacketIO_HostPortControlClient) erro
 			}})
 			if sendErr != nil {
 				return sendErr
+			}
+			if err := m.writePorts(); err != nil {
+				log.Warningf("failed to write file: %v", err)
 			}
 		} else {
 			p, ok := m.hostifs[resp.GetPortId()]
@@ -181,6 +205,9 @@ func (m *PacketIOMgr) ManagePorts(c pktiopb.PacketIO_HostPortControlClient) erro
 			}})
 			if sendErr != nil {
 				return sendErr
+			}
+			if err := m.writePorts(); err != nil {
+				log.Warningf("failed to write file: %v", err)
 			}
 		}
 	}
