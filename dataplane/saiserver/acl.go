@@ -293,36 +293,28 @@ func (a *acl) CreateAclEntry(ctx context.Context, req *saipb.CreateAclEntryReque
 	return &saipb.CreateAclEntryResponse{Oid: id}, nil
 }
 
-type myMacInfo struct {
-	priority       *uint32
-	portID         *uint64 // wildcard if not specified
-	vlanID         *uint16 // wildcard if not specified
-	macAddress     []byte
-	macAddressMask []byte
-}
-
-// ToEntryDesc returns the EntryDesc.
-func (mi *myMacInfo) ToEntryDesc(m *myMac) (*fwdpb.EntryDesc, error) {
-	if mi.priority == nil {
+// entryDescFromReq returns the EntryDesc based on req.
+func entryDescFromReq(m *myMac, req *saipb.CreateMyMacRequest) (*fwdpb.EntryDesc, error) {
+	if req.Priority == nil {
 		return nil, fmt.Errorf("priority needs to be specified")
 	}
 	fields := []*fwdconfig.PacketFieldMaskedBytesBuilder{
 		fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST).
-			WithBytes(mi.macAddress, mi.macAddressMask),
+			WithBytes(req.GetMacAddress(), req.GetMacAddressMask()),
 	}
 
-	if mi.vlanID != nil {
+	if req.VlanId != nil {
 		fields = append(fields,
 			fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG).
-				WithBytes(binary.BigEndian.AppendUint16(nil, *mi.vlanID), binary.BigEndian.AppendUint16(nil, 0x0FFF)))
+				WithBytes(binary.BigEndian.AppendUint16(nil, uint16(req.GetVlanId())), binary.BigEndian.AppendUint16(nil, 0x0FFF)))
 	}
 
-	if mi.portID != nil {
+	if req.PortId != nil {
 		fwdCtx, err := m.dataplane.FindContext(&fwdpb.ContextId{Id: m.dataplane.ID()})
 		if err != nil {
 			return nil, err
 		}
-		obj, err := fwdCtx.Objects.FindID(&fwdpb.ObjectId{Id: fmt.Sprint(*mi.portID)})
+		obj, err := fwdCtx.Objects.FindID(&fwdpb.ObjectId{Id: fmt.Sprint(req.GetPortId())})
 		if err != nil {
 			return nil, err
 		}
@@ -334,7 +326,7 @@ func (mi *myMacInfo) ToEntryDesc(m *myMac) (*fwdpb.EntryDesc, error) {
 	ed := &fwdpb.EntryDesc{
 		Entry: &fwdpb.EntryDesc_Flow{
 			Flow: &fwdpb.FlowEntryDesc{
-				Priority: *mi.priority,
+				Priority: req.GetPriority(),
 				Bank:     1,
 			},
 		},
@@ -347,37 +339,25 @@ func (mi *myMacInfo) ToEntryDesc(m *myMac) (*fwdpb.EntryDesc, error) {
 
 type myMac struct {
 	saipb.UnimplementedMyMacServer
-	mgr        *attrmgr.AttrMgr
-	dataplane  switchDataplaneAPI
-	myMacTable map[uint64]*myMacInfo
+	mgr       *attrmgr.AttrMgr
+	dataplane switchDataplaneAPI
 }
 
 func newMyMac(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server) *myMac {
 	m := &myMac{
-		mgr:        mgr,
-		dataplane:  dataplane,
-		myMacTable: map[uint64]*myMacInfo{},
+		mgr:       mgr,
+		dataplane: dataplane,
 	}
 	saipb.RegisterMyMacServer(s, m)
 	return m
 }
 
 func (m *myMac) CreateMyMac(ctx context.Context, req *saipb.CreateMyMacRequest) (*saipb.CreateMyMacResponse, error) {
-	mi := &myMacInfo{
-		priority:       req.Priority,
-		portID:         req.PortId,
-		macAddress:     req.GetMacAddress(),
-		macAddressMask: req.GetMacAddressMask(),
-	}
-	if req.VlanId != nil {
-		vid := (uint16)(req.GetVlanId())
-		mi.vlanID = &vid
-	}
-	if mi.macAddress == nil || mi.macAddressMask == nil {
+	if req.MacAddress == nil || req.MacAddressMask == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "MAC address and MAC address mask cannot be empty")
 	}
 	id := m.mgr.NextID()
-	ed, err := mi.ToEntryDesc(m)
+	ed, err := entryDescFromReq(m, req)
 	if err != nil {
 		return nil, status.Errorf(codes.FailedPrecondition, "failed to create entry descriptor: %v", err)
 	}
@@ -390,7 +370,6 @@ func (m *myMac) CreateMyMac(ctx context.Context, req *saipb.CreateMyMacRequest) 
 	if _, err := m.dataplane.TableEntryAdd(ctx, mReq); err != nil {
 		return nil, err
 	}
-	m.myMacTable[id] = mi
 	// Populate the switch attribute.
 	saReq := &saipb.GetSwitchAttributeRequest{
 		Oid: switchID,
@@ -410,22 +389,50 @@ func (m *myMac) CreateMyMac(ctx context.Context, req *saipb.CreateMyMacRequest) 
 }
 
 func (m *myMac) RemoveMyMac(ctx context.Context, req *saipb.RemoveMyMacRequest) (*saipb.RemoveMyMacResponse, error) {
-	mi, ok := m.myMacTable[req.GetOid()]
-	if !ok {
-		return nil, status.Errorf(codes.FailedPrecondition, "%d does not exist", req.GetOid())
+	cReq := &saipb.CreateMyMacRequest{}
+	if err := m.mgr.PopulateAllAttributes(fmt.Sprint(req.GetOid()), cReq); err != nil {
+		return nil, err
 	}
-	ed, err := mi.ToEntryDesc(m)
+	ed, err := entryDescFromReq(m, cReq)
 	if err != nil {
 		return nil, status.Errorf(codes.FailedPrecondition, "failed to create entry descriptor: %v", err)
 	}
+
 	mReq := &fwdpb.TableEntryRemoveRequest{
 		ContextId: &fwdpb.ContextId{Id: m.dataplane.ID()},
 		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: MyMacTable}},
 		EntryDesc: ed,
 	}
-
 	if _, err := m.dataplane.TableEntryRemove(ctx, mReq); err != nil {
 		return nil, err
 	}
+
+	// Populate the switch attribute.
+	saReq := &saipb.GetSwitchAttributeRequest{
+		Oid: switchID,
+		AttrType: []saipb.SwitchAttr{
+			saipb.SwitchAttr_SWITCH_ATTR_MY_MAC_LIST,
+		},
+	}
+	saResp := &saipb.GetSwitchAttributeResponse{}
+	if err := m.mgr.PopulateAttributes(saReq, saResp); err != nil {
+		return nil, fmt.Errorf("Failed to populate switch attributes: %v", err)
+	}
+	locate := func(uint64) int {
+		for i := range saResp.GetAttr().MyMacList {
+			if saResp.GetAttr().MyMacList[i] == req.GetOid() {
+				return i
+			}
+		}
+		return -1
+	}
+	if loc := locate(req.GetOid()); loc != -1 {
+		m.mgr.StoreAttributes(switchID, &saipb.SwitchAttribute{
+			MyMacList: append(saResp.GetAttr().MyMacList[:loc], saResp.GetAttr().MyMacList[loc+1:]...),
+		})
+	} else {
+		return nil, fmt.Errorf("Failed to store switch attributes: %v", err)
+	}
+
 	return &saipb.RemoveMyMacResponse{}, nil
 }

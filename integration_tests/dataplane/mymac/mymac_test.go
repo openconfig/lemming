@@ -99,9 +99,8 @@ func dataplaneConn(t testing.TB, dut *ondatra.DUTDevice) *grpc.ClientConn {
 	return conn
 }
 
-func configureDUT(t testing.TB, dut *ondatra.DUTDevice) {
+func configureDUT(t testing.TB, conn *grpc.ClientConn, dut *ondatra.DUTDevice) {
 	t.Helper()
-	conn := dataplaneConn(t, dut)
 	ric := saipb.NewRouterInterfaceClient(conn)
 	port1ID, err := strconv.ParseUint(dut.Port(t, "port1").Name(), 10, 64)
 	if err != nil {
@@ -171,16 +170,14 @@ func configureDUT(t testing.TB, dut *ondatra.DUTDevice) {
 }
 
 // clearMyMac removes all entities in MyMac table.
-func clearMyMac(t *testing.T, dut *ondatra.DUTDevice) error {
+func clearMyMac(t *testing.T, sc saipb.SwitchClient, mmc saipb.MyMacClient) error {
 	// Try to get the MyMac list, and there should be only one entry.
-	conn := dataplaneConn(t, dut)
-	mmc := saipb.NewSwitchClient(conn)
 	var err error
 	req := &saipb.GetSwitchAttributeRequest{
 		Oid:      1,
 		AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_MY_MAC_LIST},
 	}
-	resp, err := mmc.GetSwitchAttribute(context.Background(), req)
+	resp, err := sc.GetSwitchAttribute(context.Background(), req)
 	if err != nil {
 		return err
 	}
@@ -189,47 +186,132 @@ func clearMyMac(t *testing.T, dut *ondatra.DUTDevice) error {
 		return nil
 	}
 	for _, oid := range oids {
-		mmc := saipb.NewMyMacClient(conn)
 		if _, err := mmc.RemoveMyMac(context.Background(), &saipb.RemoveMyMacRequest{
 			Oid: oid,
 		}); err != nil {
 			return fmt.Errorf("Failed to remove MyMac: %+v", err)
 		}
+		t.Logf("Removed OID: %d", oid)
 	}
 	t.Logf("MyMac table cleared.")
 	return nil
 }
 
 // restoreMyMac restores the rule to allow all traffic to send to L3.
-func restoreMyMac(t *testing.T, dut *ondatra.DUTDevice) error {
+func restoreMyMac(t *testing.T, mmc saipb.MyMacClient) (uint64, error) {
 	// Allow all traffic to L3 processing.
-	conn := dataplaneConn(t, dut)
-	mmc := saipb.NewMyMacClient(conn)
-	_, err := mmc.CreateMyMac(context.Background(), &saipb.CreateMyMacRequest{
+	resp, err := mmc.CreateMyMac(context.Background(), &saipb.CreateMyMacRequest{
 		Switch:         1,
 		Priority:       proto.Uint32(1),
 		MacAddress:     []byte{0, 0, 0, 0, 0, 0},
 		MacAddressMask: []byte{0, 0, 0, 0, 0, 0},
 	})
 	if err != nil {
-		return err
+		return 0, err
 	}
 	t.Logf("MyMac table restored.")
+	return resp.GetOid(), nil
+}
+
+// printMyMacEntries prints the entries in the MyMac table.
+func printMyMacEntries(t *testing.T, sc saipb.SwitchClient, mmc saipb.MyMacClient) error {
+	var err error
+	req := &saipb.GetSwitchAttributeRequest{
+		Oid:      1,
+		AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_MY_MAC_LIST},
+	}
+	resp, err := sc.GetSwitchAttribute(context.Background(), req)
+	if err != nil {
+		return err
+	}
+	oids := resp.GetAttr().MyMacList
+	if oids == nil {
+		return nil
+	}
+	for _, oid := range oids {
+		resp2, err := mmc.GetMyMacAttribute(context.Background(), &saipb.GetMyMacAttributeRequest{
+			Oid: oid,
+		})
+		if err != nil {
+			return err
+		}
+		t.Logf(">>>>>> MyMac[%d]: %+v", oid, resp2.GetAttr())
+	}
 	return nil
 }
 
+type myMacTest struct {
+	desc               string
+	clearMyMac         bool
+	dstMAC             string
+	reqs               []*saipb.CreateMyMacRequest
+	wantTrafficDropped bool
+}
+
 func TestMyMac(t *testing.T) {
-	// TODO: add more sub-tests when the Magna issue is resolved.
-	tests := []struct {
-		desc        string
-		clearMyMac  bool
-		macAddr     []byte
-		macAddrMask []byte
-		passed      bool
-	}{{
-		desc:       "Traffic dropped", // Remove the default entry that allows all traffic to L3.
+	specialMAC := "00:1A:11:17:5F:80"
+	toMACAddr := func(ma string) []byte {
+		maddr, err := net.ParseMAC(ma)
+		if err != nil {
+			t.Fatalf("failed to parse MAC address: %v", err)
+		}
+		return maddr
+	}
+
+	tests := []myMacTest{{
+		desc:               "Traffic passed by default",
+		clearMyMac:         false,
+		wantTrafficDropped: false,
+	}, {
+		desc:               "Traffic dropped with clearing MyMac table", // Remove the default entry that allows all traffic to L3.
+		clearMyMac:         true,
+		wantTrafficDropped: true,
+	}, {
+		desc:       "Traffic passed with specific allowed MAC address",
 		clearMyMac: true,
-		passed:     false,
+		reqs: []*saipb.CreateMyMacRequest{{
+			Switch:         1,
+			Priority:       proto.Uint32(2010),
+			MacAddress:     toMACAddr(dutPort1.MAC),
+			MacAddressMask: []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
+		}, {
+			Switch:         1,
+			Priority:       proto.Uint32(2000),
+			MacAddress:     toMACAddr(specialMAC),
+			MacAddressMask: []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
+		}},
+		wantTrafficDropped: false,
+	}, {
+		desc:       "Traffic dropped with specific allowed MAC address",
+		clearMyMac: true,
+		reqs: []*saipb.CreateMyMacRequest{{
+			Switch:         1,
+			Priority:       proto.Uint32(2010),
+			MacAddress:     toMACAddr(dutPort2.MAC),
+			MacAddressMask: []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
+		}, {
+			Switch:         1,
+			Priority:       proto.Uint32(2000),
+			MacAddress:     toMACAddr(specialMAC),
+			MacAddressMask: []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
+		}},
+		wantTrafficDropped: true,
+	}, {
+		desc:       "Traffic passed where dst MAC is not interface MAC",
+		clearMyMac: true,
+		dstMAC:     specialMAC, // special MAC other than the port MAC.
+		reqs: []*saipb.CreateMyMacRequest{{
+			Switch:         1,
+			Priority:       proto.Uint32(2010),
+			MacAddress:     toMACAddr(dutPort2.MAC),
+			MacAddressMask: []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
+		}, {
+			Switch:         1,
+			Priority:       proto.Uint32(2000),
+			MacAddress:     toMACAddr(specialMAC),
+			MacAddressMask: []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
+		}},
+		wantTrafficDropped: false,
 	}}
 	ate := ondatra.ATE(t, "ate")
 	ateTop := configureATE(t, ate)
@@ -237,17 +319,21 @@ func TestMyMac(t *testing.T) {
 	ate.OTG().StartProtocols(t)
 
 	dut := ondatra.DUT(t, "dut")
-	configureDUT(t, dut)
-
-	for _, tt := range tests {
-		tx, rx := testTraffic(t, ate, ateTop, atePort1, dutPort1, atePort2, 10*time.Second, dut, tt.clearMyMac)
+	conn := dataplaneConn(t, dut)
+	configureDUT(t, conn, dut)
+	sc := saipb.NewSwitchClient(conn)
+	mmc := saipb.NewMyMacClient(conn)
+	for i, tt := range tests {
+		tx, rx := testTraffic(t, tt, sc, mmc, fmt.Sprintf("Flow%d", i), ate, ateTop, atePort1, dutPort1, atePort2, 10*time.Second, dut)
 		t.Logf("[%s] Got TX: %d, RX: %d", tt.desc, tx, rx)
 		if tx == 0 {
-			t.Fatalf("No packet sent")
+			t.Fatalf("no packet sent")
 		}
 		switch {
-		case tt.passed && rx != tx, !tt.passed && rx != 0:
+		case !tt.wantTrafficDropped && rx != tx:
 			t.Errorf("got %d, expect %d", rx, tx)
+		case tt.wantTrafficDropped && rx != 0:
+			t.Errorf("got %d, expect 0", rx)
 		}
 	}
 }
@@ -267,44 +353,48 @@ func configureATE(t *testing.T, ate *ondatra.ATEDevice) gosnappi.Config {
 // testTraffic generates traffic flow from source network to
 // destination network via srcEndPoint to dstEndPoint and checks for
 // packet loss and returns the number of tx and rx packets.
-func testTraffic(t *testing.T, ate *ondatra.ATEDevice, top gosnappi.Config, srcEndPoint, srcPeerEndpoint, dstEndPoint attrs.Attributes, dur time.Duration, dut *ondatra.DUTDevice, clearMyMacTable bool) (uint64, uint64) {
-	if clearMyMacTable {
-		clearMyMac(t, dut)
-		defer restoreMyMac(t, dut)
+func testTraffic(t *testing.T, tt myMacTest, sc saipb.SwitchClient, mmc saipb.MyMacClient, flowID string, ate *ondatra.ATEDevice, top gosnappi.Config, srcEndPoint, srcPeerEndpoint, dstEndPoint attrs.Attributes, dur time.Duration, dut *ondatra.DUTDevice) (uint64, uint64) {
+	if tt.clearMyMac {
+		clearMyMac(t, sc, mmc)
+		defer restoreMyMac(t, mmc)
 	}
+	for _, req := range tt.reqs {
+		_, err := mmc.CreateMyMac(context.Background(), req)
+		if err != nil {
+			t.Fatalf("failed to create MyMac entry: %v", err)
+		}
+	}
+
 	otg := ate.OTG()
 	top.Flows().Clear().Items()
 
-	ipFLow := top.Flows().Add().SetName("Flow")
-	ipFLow.Metrics().SetEnable(true)
-	ipFLow.TxRx().Port().SetTxName(srcEndPoint.Name).SetRxNames([]string{dstEndPoint.Name})
+	ipFlow := top.Flows().Add().SetName(flowID)
+	ipFlow.Metrics().SetEnable(true)
+	ipFlow.TxRx().Port().SetTxName(srcEndPoint.Name).SetRxNames([]string{dstEndPoint.Name})
 
-	ipFLow.Rate().SetPps(10)
-
-	// OTG specifies that the order of the <flow>.Packet().Add() calls determines
-	// the stack of headers that are to be used, starting at the outer-most and
-	// ending with the inner-most.
+	txPkts := uint64(100)
+	ipFlow.Rate().SetPps(100)
+	ipFlow.Duration().FixedPackets().SetPackets(uint32(txPkts))
 
 	// Set up ethernet layer.
-	eth := ipFLow.Packet().Add().Ethernet()
+	eth := ipFlow.Packet().Add().Ethernet()
 	eth.Src().SetValue(srcEndPoint.MAC)
 	eth.Dst().SetValue(srcPeerEndpoint.MAC)
+	// Change the traffic's dst MAC if specified.
+	if tt.dstMAC != "" {
+		eth.Dst().SetValue(tt.dstMAC)
+	}
 
-	ip4 := ipFLow.Packet().Add().Ipv4()
+	ip4 := ipFlow.Packet().Add().Ipv4()
 	ip4.Src().SetValue(srcEndPoint.IPv4)
 	ip4.Dst().SetValue(dstEndPoint.IPv4)
 	ip4.Version().SetValue(4)
 
 	otg.PushConfig(t, top)
-
 	otg.StartTraffic(t)
-	time.Sleep(dur)
-	t.Logf("Stop traffic")
-	otg.StopTraffic(t)
+	defer otg.StopTraffic(t)
 
-	time.Sleep(5 * time.Second)
-
-	txPkts := gnmi.Get(t, otg, gnmi.OTG().Flow("Flow").Counters().OutPkts().State())
-	rxPkts := gnmi.Get(t, otg, gnmi.OTG().Flow("Flow").Counters().InPkts().State())
+	gnmi.Await(t, otg, gnmi.OTG().Flow(flowID).Counters().OutPkts().State(), 5*time.Second, txPkts)
+	rxPkts := gnmi.Get(t, otg, gnmi.OTG().Flow(flowID).Counters().InPkts().State())
 	return txPkts, rxPkts
 }
