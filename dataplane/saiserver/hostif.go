@@ -328,7 +328,7 @@ func (hostif *hostif) createRemoteHostif(ctx context.Context, req *saipb.CreateH
 
 func (hostif *hostif) RemoveHostif(ctx context.Context, req *saipb.RemoveHostifRequest) (*saipb.RemoveHostifResponse, error) {
 	if !hostif.opts.RemoteCPUPort {
-		return nil, status.Error(codes.Unimplemented, "only remote cpu port is supported")
+		return nil, status.Error(codes.FailedPrecondition, "only remote cpu port is supported")
 	}
 	hostif.remoteMu.Lock()
 	defer hostif.remoteMu.Unlock()

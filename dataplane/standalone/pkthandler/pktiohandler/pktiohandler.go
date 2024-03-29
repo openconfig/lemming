@@ -135,7 +135,7 @@ func (m *PacketIOMgr) writePorts() error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(m.portFile, contents, 0666)
+	return os.WriteFile(m.portFile, contents, 0666) //nolint:gosec
 }
 
 // ManagePorts handles HostPortControl message from a forwarding server.

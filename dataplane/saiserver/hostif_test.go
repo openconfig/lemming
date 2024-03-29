@@ -18,15 +18,19 @@ import (
 	"context"
 	"net"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/openconfig/gnmi/errdiff"
+	"google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/testing/protocmp"
 
 	"github.com/openconfig/lemming/dataplane/dplaneopts"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
+	pktiopb "github.com/openconfig/lemming/dataplane/proto/packetio"
 	saipb "github.com/openconfig/lemming/dataplane/proto/sai"
 	"github.com/openconfig/lemming/dataplane/saiserver/attrmgr"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
@@ -81,7 +85,7 @@ func TestCreateHostif(t *testing.T) {
 				ctx: fwdcontext.New("foo", "foo"),
 			}
 			dplane.ctx.SetPacketSink(func(*fwdpb.PacketSinkResponse) error { return nil })
-			c, mgr, stopFn := newTestHostif(t, dplane)
+			c, mgr, stopFn := newTestHostif(t, dplane, false)
 			// Create switch and ports
 			mgr.StoreAttributes(mgr.NextID(), &saipb.SwitchAttribute{
 				CpuPort: proto.Uint64(10),
@@ -110,6 +114,72 @@ func TestCreateHostif(t *testing.T) {
 			}
 			if d := cmp.Diff(attr, tt.wantAttr, protocmp.Transform()); d != "" {
 				t.Errorf("CreateHostif() failed: diff(-got,+want)\n:%s", d)
+			}
+		})
+	}
+}
+
+func TestRemoveHostif(t *testing.T) {
+	tests := []struct {
+		desc    string
+		req     *saipb.RemoveHostifRequest
+		want    *pktiopb.HostPortControlMessage
+		wantErr string
+	}{{
+		desc: "sucess",
+		req: &saipb.RemoveHostifRequest{
+			Oid: 1,
+		},
+		want: &pktiopb.HostPortControlMessage{
+			PortId: 1,
+		},
+	}}
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			dplane := &fakeSwitchDataplane{
+				portIDToNID: map[string]uint64{
+					"1": 10,
+				},
+			}
+			c, mgr, stopFn := newTestHostif(t, dplane, true)
+			defer stopFn()
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+
+			mgr.StoreAttributes(1, &saipb.CreateHostifRequest{Name: []byte("eth1")})
+
+			msgCh := make(chan *pktiopb.HostPortControlMessage, 1)
+			pc, err := c.HostPortControl(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := pc.Send(&pktiopb.HostPortControlRequest{Msg: &pktiopb.HostPortControlRequest_Init{}}); err != nil {
+				t.Fatal(err)
+			}
+			time.Sleep(time.Millisecond)
+			go func() {
+				msg, _ := pc.Recv()
+				msgCh <- msg
+				pc.Send(&pktiopb.HostPortControlRequest{
+					Msg: &pktiopb.HostPortControlRequest_Status{
+						Status: &status.Status{
+							Code:    int32(codes.OK),
+							Message: "",
+						},
+					},
+				})
+			}()
+
+			_, gotErr := c.RemoveHostif(context.TODO(), tt.req)
+			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
+				t.Fatalf("RemoveHostif() unexpected err: %s", diff)
+			}
+			if gotErr != nil {
+				return
+			}
+			got := <-msgCh
+			if d := cmp.Diff(got, tt.want, protocmp.Transform()); d != "" {
+				t.Errorf("RemoveHostif() failed: diff(-got,+want)\n:%s", d)
 			}
 		})
 	}
@@ -144,7 +214,7 @@ func TestSetHostifAttribute(t *testing.T) {
 				return nil, tt.getInterfaceErr
 			}
 			dplane := &fakeSwitchDataplane{}
-			c, mgr, stopFn := newTestHostif(t, dplane)
+			c, mgr, stopFn := newTestHostif(t, dplane, false)
 			defer stopFn()
 			_, gotErr := c.SetHostifAttribute(context.TODO(), tt.req)
 			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
@@ -167,9 +237,20 @@ func TestSetHostifAttribute(t *testing.T) {
 	}
 }
 
-func newTestHostif(t testing.TB, api switchDataplaneAPI) (saipb.HostifClient, *attrmgr.AttrMgr, func()) {
+type hostifClient struct {
+	saipb.HostifClient
+	pktiopb.PacketIOClient
+}
+
+func newTestHostif(t testing.TB, api switchDataplaneAPI, remotePort bool) (*hostifClient, *attrmgr.AttrMgr, func()) {
 	conn, mgr, stopFn := newTestServer(t, func(mgr *attrmgr.AttrMgr, srv *grpc.Server) {
-		newHostif(mgr, api, srv, &dplaneopts.Options{HostifNetDevType: fwdpb.PortType_PORT_TYPE_KERNEL})
+		newHostif(mgr, api, srv, &dplaneopts.Options{
+			HostifNetDevType: fwdpb.PortType_PORT_TYPE_KERNEL,
+			RemoteCPUPort:    remotePort,
+		})
 	})
-	return saipb.NewHostifClient(conn), mgr, stopFn
+	return &hostifClient{
+		HostifClient:   saipb.NewHostifClient(conn),
+		PacketIOClient: pktiopb.NewPacketIOClient(conn),
+	}, mgr, stopFn
 }
