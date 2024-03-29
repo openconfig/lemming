@@ -240,71 +240,78 @@ func printMyMacEntries(t *testing.T, sc saipb.SwitchClient, mmc saipb.MyMacClien
 	return nil
 }
 
-// entry contains the MyMac request information.
-type entry struct {
-	priority    uint32
-	macAddr     string
-	macAddrMask []byte
-}
-
 type myMacTest struct {
-	desc       string
-	clearMyMac bool
-	dstMAC     string
-	entries    []entry
-	passed     bool
+	desc               string
+	clearMyMac         bool
+	dstMAC             string
+	reqs               []*saipb.CreateMyMacRequest
+	wantTrafficDropped bool
 }
 
 func TestMyMac(t *testing.T) {
 	specialMAC := "00:1A:11:17:5F:80"
+	toMACAddr := func(ma string) []byte {
+		maddr, err := net.ParseMAC(ma)
+		if err != nil {
+			t.Fatalf("failed to parse MAC address: %v", err)
+		}
+		return maddr
+	}
+
 	tests := []myMacTest{{
-		desc:       "Traffic passed by default",
-		clearMyMac: false,
-		passed:     true,
+		desc:               "Traffic passed by default",
+		clearMyMac:         false,
+		wantTrafficDropped: false,
 	}, {
-		desc:       "Traffic dropped with clearing MyMac table", // Remove the default entry that allows all traffic to L3.
-		clearMyMac: true,
-		passed:     false,
+		desc:               "Traffic dropped with clearing MyMac table", // Remove the default entry that allows all traffic to L3.
+		clearMyMac:         true,
+		wantTrafficDropped: true,
 	}, {
 		desc:       "Traffic passed with specific allowed MAC address",
 		clearMyMac: true,
-		entries: []entry{{
-			priority:    2010,
-			macAddr:     dutPort1.MAC,
-			macAddrMask: []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
+		reqs: []*saipb.CreateMyMacRequest{{
+			Switch:         1,
+			Priority:       proto.Uint32(2010),
+			MacAddress:     toMACAddr(dutPort1.MAC),
+			MacAddressMask: []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
 		}, {
-			priority:    2000,
-			macAddr:     specialMAC,
-			macAddrMask: []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
+			Switch:         1,
+			Priority:       proto.Uint32(2000),
+			MacAddress:     toMACAddr(specialMAC),
+			MacAddressMask: []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
 		}},
-		passed: true,
+		wantTrafficDropped: false,
 	}, {
 		desc:       "Traffic dropped with specific allowed MAC address",
 		clearMyMac: true,
-		entries: []entry{{
-			priority:    2010,
-			macAddr:     dutPort2.MAC,
-			macAddrMask: []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
+		reqs: []*saipb.CreateMyMacRequest{{
+			Switch:         1,
+			Priority:       proto.Uint32(2010),
+			MacAddress:     toMACAddr(dutPort2.MAC),
+			MacAddressMask: []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
 		}, {
-			priority:    2000,
-			macAddr:     specialMAC,
-			macAddrMask: []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
+			Switch:         1,
+			Priority:       proto.Uint32(2000),
+			MacAddress:     toMACAddr(specialMAC),
+			MacAddressMask: []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
 		}},
-		passed: false,
+		wantTrafficDropped: true,
 	}, {
-		desc:       "Traffic passed with special MAC address",
+		desc:       "Traffic passed where dst MAC is not interface MAC",
 		clearMyMac: true,
 		dstMAC:     specialMAC, // special MAC other than the port MAC.
-		entries: []entry{{
-			priority:    2010,
-			macAddr:     dutPort2.MAC,
-			macAddrMask: []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
+		reqs: []*saipb.CreateMyMacRequest{{
+			Switch:         1,
+			Priority:       proto.Uint32(2010),
+			MacAddress:     toMACAddr(dutPort2.MAC),
+			MacAddressMask: []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
 		}, {
-			priority:    2000,
-			macAddr:     specialMAC,
-			macAddrMask: []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
+			Switch:         1,
+			Priority:       proto.Uint32(2000),
+			MacAddress:     toMACAddr(specialMAC),
+			MacAddressMask: []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
 		}},
-		passed: true,
+		wantTrafficDropped: false,
 	}}
 	ate := ondatra.ATE(t, "ate")
 	ateTop := configureATE(t, ate)
@@ -323,9 +330,9 @@ func TestMyMac(t *testing.T) {
 			t.Fatalf("no packet sent")
 		}
 		switch {
-		case tt.passed && rx != tx:
+		case !tt.wantTrafficDropped && rx != tx:
 			t.Errorf("got %d, expect %d", rx, tx)
-		case !tt.passed && rx != 0:
+		case tt.wantTrafficDropped && rx != 0:
 			t.Errorf("got %d, expect 0", rx)
 		}
 	}
@@ -351,21 +358,11 @@ func testTraffic(t *testing.T, tt myMacTest, sc saipb.SwitchClient, mmc saipb.My
 		clearMyMac(t, sc, mmc)
 		defer restoreMyMac(t, mmc)
 	}
-	for _, ent := range tt.entries {
-		maddr, err := net.ParseMAC(ent.macAddr)
-		if err != nil {
-			t.Fatalf("failed to parse MAC address: %v", err)
-		}
-		resp, err := mmc.CreateMyMac(context.Background(), &saipb.CreateMyMacRequest{
-			Switch:         1,
-			Priority:       &ent.priority,
-			MacAddress:     maddr,
-			MacAddressMask: ent.macAddrMask,
-		})
+	for _, req := range tt.reqs {
+		_, err := mmc.CreateMyMac(context.Background(), req)
 		if err != nil {
 			t.Fatalf("failed to create MyMac entry: %v", err)
 		}
-		t.Logf("[%s] Added MyMac Entry %d: %s with mask %v", tt.desc, resp.GetOid(), ent.macAddr, ent.macAddrMask)
 	}
 
 	otg := ate.OTG()
