@@ -72,6 +72,7 @@ func (hostif *hostif) Reset() {
 	for _, closeFn := range hostif.remoteClosers {
 		closeFn()
 	}
+	hostif.remoteClosers = nil
 }
 
 const switchID = 1
@@ -249,8 +250,6 @@ func (hostif *hostif) CreateHostif(ctx context.Context, req *saipb.CreateHostifR
 
 func (hostif *hostif) createRemoteHostif(ctx context.Context, req *saipb.CreateHostifRequest) (*saipb.CreateHostifResponse, error) {
 	id := hostif.mgr.NextID()
-	hostif.remoteMu.Lock()
-	defer hostif.remoteMu.Unlock()
 
 	ctlReq := &pktiopb.HostPortControlMessage{
 		Create:        true,
@@ -309,6 +308,9 @@ func (hostif *hostif) createRemoteHostif(ctx context.Context, req *saipb.CreateH
 	default:
 		return nil, status.Errorf(codes.InvalidArgument, "unknown type %v", req.GetType())
 	}
+
+	hostif.remoteMu.Lock()
+	defer hostif.remoteMu.Unlock()
 
 	if hostif.remotePortReq == nil {
 		return nil, status.Error(codes.FailedPrecondition, "remote port control not configured")
