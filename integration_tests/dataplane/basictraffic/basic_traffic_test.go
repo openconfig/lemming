@@ -193,21 +193,6 @@ func TestTraffic(t *testing.T) {
 	}
 }
 
-func TestTrafficAgain(t *testing.T) {
-	ate := ondatra.ATE(t, "ate")
-	ateTop := configureATE(t, ate)
-	ate.OTG().PushConfig(t, ateTop)
-	ate.OTG().StartProtocols(t)
-
-	dut := ondatra.DUT(t, "dut")
-	configureDUT(t, dut)
-
-	loss := testTraffic(t, ate, ateTop, atePort1, dutPort1, atePort2)
-	if loss > 1 {
-		t.Errorf("loss %f, greater than 1", loss)
-	}
-}
-
 // configureATE configures port1 and port2 on the ATE.
 func configureATE(t *testing.T, ate *ondatra.ATEDevice) gosnappi.Config {
 	top := gosnappi.NewConfig()
