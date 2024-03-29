@@ -786,6 +786,7 @@ func (sw *saiSwitch) PortStateChangeNotification(_ *saipb.PortStateChangeNotific
 
 func (sw saiSwitch) Reset() {
 	sw.port.Reset()
+	sw.hostif.Reset()
 }
 
 // createFIBSelector creates a table that controls which forwarding table is used.

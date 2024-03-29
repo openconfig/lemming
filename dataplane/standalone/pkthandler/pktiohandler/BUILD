@@ -12,6 +12,7 @@ go_library(
         "@com_github_golang_glog//:glog",
         "@org_golang_google_genproto_googleapis_rpc//status",
         "@org_golang_google_grpc//codes",
+        "@org_golang_google_protobuf//encoding/protojson",
     ],
 )
 

@@ -69,6 +69,40 @@ func (b TableEntryAddRequestBuilder) Build() *fwdpb.TableEntryAddRequest {
 	return req
 }
 
+// TableEntryAddRequest builds TableEntryAddRequests.
+type TableEntryRemoveRequestBuilder struct {
+	contextID string
+	tableID   string
+	entries   []*EntryDescBuilder
+}
+
+// TableEntryRemoveRequest creates a new TableEntryRemoveRequestBuilder.
+func TableEntryRemoveRequest(ctxID, tableID string) *TableEntryRemoveRequestBuilder {
+	return &TableEntryRemoveRequestBuilder{
+		contextID: ctxID,
+		tableID:   tableID,
+	}
+}
+
+// AppendEntry adds an entry to the requests.
+func (b *TableEntryRemoveRequestBuilder) AppendEntry(entry *EntryDescBuilder) *TableEntryRemoveRequestBuilder {
+	b.entries = append(b.entries, entry)
+	return b
+}
+
+// Build returns a new TableEntryAddRequest.
+func (b TableEntryRemoveRequestBuilder) Build() *fwdpb.TableEntryRemoveRequest {
+	req := &fwdpb.TableEntryRemoveRequest{
+		ContextId: &fwdpb.ContextId{Id: b.contextID},
+		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: b.tableID}},
+		Entries:   []*fwdpb.EntryDesc{},
+	}
+	for _, entry := range b.entries {
+		req.Entries = append(req.Entries, entry.Build())
+	}
+	return req
+}
+
 type entryDescBuilder interface {
 	set(*fwdpb.EntryDesc)
 }

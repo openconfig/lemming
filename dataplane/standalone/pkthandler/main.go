@@ -16,6 +16,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"os"
 	"os/signal"
 	"sync"
@@ -35,7 +36,11 @@ const (
 	addr = "10.0.2.2:50000"
 )
 
+var portFile = flag.String("port_file", "/etc/sonic/pktio_ports.json", "File at which to include hostif info, for debugging only")
+
 func main() {
+	flag.Parse()
+
 	ctx, cancelFn := context.WithTimeout(context.Background(), time.Minute)
 	defer cancelFn()
 
@@ -46,7 +51,7 @@ func main() {
 
 	pktio := pktiopb.NewPacketIOClient(conn)
 
-	h, err := pktiohandler.New()
+	h, err := pktiohandler.New(*portFile)
 	if err != nil {
 		log.Exit(err)
 	}
