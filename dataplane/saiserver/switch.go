@@ -70,6 +70,7 @@ type switchDataplaneAPI interface {
 	AttributeUpdate(context.Context, *fwdpb.AttributeUpdateRequest) (*fwdpb.AttributeUpdateReply, error)
 	ObjectNID(context.Context, *fwdpb.ObjectNIDRequest) (*fwdpb.ObjectNIDReply, error)
 	InjectPacket(contextID *fwdpb.ContextId, id *fwdpb.PortId, hid fwdpb.PacketHeaderId, frame []byte, preActions []*fwdpb.ActionDesc, debug bool, dir fwdpb.PortAction) error
+	ObjectDelete(context.Context, *fwdpb.ObjectDeleteRequest) (*fwdpb.ObjectDeleteReply, error)
 }
 
 const (

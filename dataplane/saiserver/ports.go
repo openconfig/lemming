@@ -514,6 +514,15 @@ func (port *port) GetPortStats(ctx context.Context, req *saipb.GetPortStatsReque
 	return resp, nil
 }
 
+func (port *port) RemovePort(ctx context.Context, req *saipb.RemovePortRequest) (*saipb.RemovePortResponse, error) {
+	deleteReq := &fwdpb.ObjectDeleteRequest{
+		ContextId: &fwdpb.ContextId{Id: port.dataplane.ID()},
+		ObjectId:  &fwdpb.ObjectId{Id: fmt.Sprint(req.GetOid())},
+	}
+	_, err := port.dataplane.ObjectDelete(ctx, deleteReq)
+	return &saipb.RemovePortResponse{}, err
+}
+
 func (port *port) Reset() {
 	port.portToEth = make(map[uint64]string)
 	port.nextEth = 1
