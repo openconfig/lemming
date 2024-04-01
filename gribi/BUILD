@@ -10,7 +10,6 @@ go_library(
         "//gnmi/oc",
         "//gnmi/oc/ocpath",
         "//proto/sysrib",
-        "//sysrib",
         "@com_github_golang_glog//:glog",
         "@com_github_openconfig_gnmi//proto/gnmi",
         "@com_github_openconfig_gribi//v1/proto/service",

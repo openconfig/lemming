@@ -9,7 +9,6 @@ go_library(
     visibility = ["//visibility:private"],
     deps = [
         "//:lemming",
-        "//sysrib",
         "@com_github_golang_glog//:glog",
         "@com_github_spf13_pflag//:pflag",
         "@com_github_spf13_viper//:viper",

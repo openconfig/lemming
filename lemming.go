@@ -81,6 +81,7 @@ type opt struct {
 	gribiAddr      string
 	gnmiAddr       string
 	p4rtAddr       string
+	sysribAddr     string
 	bgpPort        uint16
 	dataplane      bool
 	dataplaneOpts  []dplaneopts.Option
@@ -88,7 +89,9 @@ type opt struct {
 
 // resolveOpts applies all the options and returns a struct containing the result.
 func resolveOpts(opts []Option) *opt {
-	o := &opt{}
+	o := &opt{
+		sysribAddr: "/tmp/sysrib.api",
+	}
 	for _, opt := range opts {
 		opt(o)
 	}
@@ -165,6 +168,14 @@ func WithDataplaneOpts(opts ...dplaneopts.Option) Option {
 	}
 }
 
+// WithSysribAddr specifies a unix domain socket path for sysrib.
+// Default: "/tmp/sysrib.api"
+func WithSysribAddr(sysribAddr string) Option {
+	return func(o *opt) {
+		o.sysribAddr = sysribAddr
+	}
+}
+
 // New returns a new initialized device.
 func New(targetName, zapiURL string, opts ...Option) (*Device, error) {
 	var dplane *dataplane.Dataplane
@@ -229,14 +240,14 @@ func New(targetName, zapiURL string, opts ...Option) (*Device, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := sysribServer.Start(context.Background(), cacheClient, targetName, zapiURL); err != nil {
+	if err := sysribServer.Start(context.Background(), cacheClient, targetName, zapiURL, resolvedOpts.sysribAddr); err != nil {
 		return nil, fmt.Errorf("sysribServer failed to start: %v", err)
 	}
 
 	log.Info("starting gRIBI")
 	// TODO(wenbli): Use gRIBIs once we change lemming's KNE config to use different ports.
 	// gRIBIs := grpc.NewServer()
-	gribiServer, err := fgribi.New(s, cacheClient, targetName, root)
+	gribiServer, err := fgribi.New(s, cacheClient, targetName, root, fmt.Sprintf("unix:%s", resolvedOpts.sysribAddr))
 	if err != nil {
 		return nil, err
 	}

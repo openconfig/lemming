@@ -327,7 +327,7 @@ func TestStaticRouteAndIntfs(t *testing.T) {
 
 	// Update the interface configuration on the gNMI server.
 	client := gnmiServer.LocalClient()
-	if err := s.Start(context.Background(), client, "local", ""); err != nil {
+	if err := s.Start(context.Background(), client, "local", "", "/tmp/sysrib.api"); err != nil {
 		t.Fatalf("cannot start sysrib server, %v", err)
 	}
 	defer s.Stop()

@@ -46,15 +46,6 @@ import (
 	sysribpb "github.com/openconfig/lemming/proto/sysrib"
 )
 
-const (
-	// SockAddr is the unix domain socket address for the Sysrib API.
-	SockAddr = "/tmp/sysrib.api"
-
-	// ZAPIAddr is the connection address for ZAPI, which is in the form
-	// of "type:address", where type can either be a unix or tcp socket.
-	ZAPIAddr = "unix:/var/run/zserv.api"
-)
-
 // AdminDistance is the admin-distance of a routing protocol. See
 // https://docs.frrouting.org/en/latest/zebra.html#administrative-distance
 const (
@@ -155,7 +146,7 @@ func New(cfg *oc.Root) (*Server, error) {
 // sysrib during their initialization.
 //
 // - If zapiURL is not specified, then the ZAPI server will not be started.
-func (s *Server) Start(ctx context.Context, gClient gpb.GNMIClient, target, zapiURL string) error {
+func (s *Server) Start(ctx context.Context, gClient gpb.GNMIClient, target, zapiURL, sysribAddr string) error {
 	if s == nil {
 		return errors.New("cannot start nil sysrib server")
 	}
@@ -178,10 +169,10 @@ func (s *Server) Start(ctx context.Context, gClient gpb.GNMIClient, target, zapi
 		return err
 	}
 
-	if err := os.RemoveAll(SockAddr); err != nil {
+	if err := os.RemoveAll(sysribAddr); err != nil {
 		return err
 	}
-	lis, err := net.Listen("unix", SockAddr)
+	lis, err := net.Listen("unix", sysribAddr)
 	if err != nil {
 		log.Fatalf("listen error: %v", err)
 	}

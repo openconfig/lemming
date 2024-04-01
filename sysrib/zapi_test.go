@@ -372,7 +372,7 @@ func testRouteAddDelete(t *testing.T) {
 		t.Fatal(err)
 	}
 	client := gnmiServer.LocalClient()
-	if err := s.sysrib.Start(context.Background(), client, "local", "unix:/tmp/zserv.api"); err != nil {
+	if err := s.sysrib.Start(context.Background(), client, "local", "unix:/tmp/zserv.api", "/tmp/sysrib.api"); err != nil {
 		t.Fatalf("cannot start sysrib server, %v", err)
 	}
 	defer s.sysrib.Stop()
@@ -672,7 +672,7 @@ func testRouteRedistribution(t *testing.T, routeReadyBeforeDial bool) {
 				t.Fatal(err)
 			}
 			client := gnmiServer.LocalClient()
-			if err := s.Start(context.Background(), client, "local", "unix:/tmp/zserv.api"); err != nil {
+			if err := s.Start(context.Background(), client, "local", "unix:/tmp/zserv.api", "/tmp/sysrib.api"); err != nil {
 				t.Fatalf("cannot start sysrib server, %v", err)
 			}
 			defer s.Stop()
