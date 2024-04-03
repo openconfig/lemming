@@ -284,6 +284,7 @@ func (lb *LocalBind) createDUT(ctx context.Context, dut *opb.Device, addr string
 		lemming.WithGRIBIAddr(net.JoinHostPort(addr, fmt.Sprint(gribiPort))),
 		lemming.WithTransportCreds(local.NewCredentials()),
 		lemming.WithDataplane(true),
+		lemming.WithSysribAddr(fmt.Sprintf("/tmp/sysrib-%s.api", dutID)),
 		lemming.WithDataplaneOpts(
 			dplaneopts.WithAddrPort(net.JoinHostPort(addr, fmt.Sprint(dataplanePort))),
 			dplaneopts.WithReconcilation(false),

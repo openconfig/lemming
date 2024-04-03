@@ -212,15 +212,16 @@ func TestSwitchPortStateChangeNotification(t *testing.T) {
 }
 
 type fakeSwitchDataplane struct {
-	events            []*fwdpb.EventDesc
-	gotEntryAddReqs   []*fwdpb.TableEntryAddRequest
-	gotPortStateReq   []*fwdpb.PortStateRequest
-	counterReplies    []*fwdpb.ObjectCountersReply
-	gotPortCreateReqs []*fwdpb.PortCreateRequest
-	gotPortUpdateReqs []*fwdpb.PortUpdateRequest
-	portIDToNID       map[string]uint64
-	counterRepliesIdx int
-	ctx               *fwdcontext.Context
+	events              []*fwdpb.EventDesc
+	gotEntryAddReqs     []*fwdpb.TableEntryAddRequest
+	gotPortStateReq     []*fwdpb.PortStateRequest
+	counterReplies      []*fwdpb.ObjectCountersReply
+	gotPortCreateReqs   []*fwdpb.PortCreateRequest
+	gotPortUpdateReqs   []*fwdpb.PortUpdateRequest
+	gotObjectDeleteReqs []*fwdpb.ObjectDeleteRequest
+	portIDToNID         map[string]uint64
+	counterRepliesIdx   int
+	ctx                 *fwdcontext.Context
 }
 
 func (f *fakeSwitchDataplane) NotifySubscribe(_ *fwdpb.NotifySubscribeRequest, srv fwdpb.Forwarding_NotifySubscribeServer) error {
@@ -290,6 +291,11 @@ func (f *fakeSwitchDataplane) ObjectNID(context.Context, *fwdpb.ObjectNIDRequest
 
 func (f *fakeSwitchDataplane) InjectPacket(*fwdpb.ContextId, *fwdpb.PortId, fwdpb.PacketHeaderId, []byte, []*fwdpb.ActionDesc, bool, fwdpb.PortAction) error {
 	return nil
+}
+
+func (f *fakeSwitchDataplane) ObjectDelete(_ context.Context, req *fwdpb.ObjectDeleteRequest) (*fwdpb.ObjectDeleteReply, error) {
+	f.gotObjectDeleteReqs = append(f.gotObjectDeleteReqs, req)
+	return nil, nil
 }
 
 func newTestServer(t testing.TB, newSrvFn func(mgr *attrmgr.AttrMgr, srv *grpc.Server)) (grpc.ClientConnInterface, *attrmgr.AttrMgr, func()) {

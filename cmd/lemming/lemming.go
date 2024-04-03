@@ -23,7 +23,6 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/openconfig/lemming"
-	"github.com/openconfig/lemming/sysrib"
 
 	log "github.com/golang/glog"
 )
@@ -35,7 +34,7 @@ var (
 	target      = pflag.String("target", "fakedut", "name of the fake target")
 	tlsKeyFile  = pflag.String("tls_key_file", "", "Controls whether to enable TLS for gNXI services. If unspecified, insecure credentials are used.")
 	tlsCertFile = pflag.String("tls_cert_file", "", "Controls whether to enable TLS for gNXI services. If unspecified, insecure credentials are used.")
-	zapiAddr    = pflag.String("zapi_addr", sysrib.ZAPIAddr, "Custom ZAPI address: use unix:/tmp/zserv.api for a temp.")
+	zapiAddr    = pflag.String("zapi_addr", "unix:/var/run/zserv.api", "Custom ZAPI address: use unix:/tmp/zserv.api for a temp.")
 	dplane      = pflag.Bool("enable_dataplane", false, "Controls whether to enable dataplane")
 )
 

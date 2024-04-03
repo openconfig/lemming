@@ -34,7 +34,6 @@ import (
 	"github.com/openconfig/lemming/gnmi/gnmiclient"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
-	"github.com/openconfig/lemming/sysrib"
 
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 	gribipb "github.com/openconfig/gribi/v1/proto/service"
@@ -54,8 +53,8 @@ type Server struct {
 // installed.
 // - root, if specified, will be used to populate connected routes into the RIB
 // manager. Note this is intended to be used for unit/standalone device testing.
-func New(s *grpc.Server, gClient gpb.GNMIClient, target string, root *oc.Root) (*Server, error) {
-	gs, err := createGRIBIServer(gClient, target, root)
+func New(s *grpc.Server, gClient gpb.GNMIClient, target string, root *oc.Root, sysribAddr string) (*Server, error) {
+	gs, err := createGRIBIServer(gClient, target, root, sysribAddr)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create gRIBI server, %v", err)
 	}
@@ -74,8 +73,8 @@ func New(s *grpc.Server, gClient gpb.GNMIClient, target string, root *oc.Root) (
 //
 // - root, if specified, will be used to populate connected routes into the RIB
 // manager. Note this is intended to be used for unit/standalone device testing.
-func createGRIBIServer(gClient gpb.GNMIClient, target string, root *oc.Root) (*server.Server, error) {
-	gzebraConn, err := grpc.DialContext(context.Background(), fmt.Sprintf("unix:%s", sysrib.SockAddr), grpc.WithTransportCredentials(insecure.NewCredentials()))
+func createGRIBIServer(gClient gpb.GNMIClient, target string, root *oc.Root, sysribAddr string) (*server.Server, error) {
+	gzebraConn, err := grpc.DialContext(context.Background(), sysribAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, fmt.Errorf("cannot dial to sysrib, %v", err)
 	}

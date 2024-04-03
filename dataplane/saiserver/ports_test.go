@@ -432,6 +432,44 @@ func TestGetPortStats(t *testing.T) {
 	}
 }
 
+func TestRemovePort(t *testing.T) {
+	tests := []struct {
+		desc    string
+		req     *saipb.RemovePortRequest
+		want    *fwdpb.ObjectDeleteRequest
+		wantErr string
+	}{{
+		desc: "success",
+		req: &saipb.RemovePortRequest{
+			Oid: 1,
+		},
+		want: &fwdpb.ObjectDeleteRequest{
+			ContextId: &fwdpb.ContextId{Id: "foo"},
+			ObjectId:  &fwdpb.ObjectId{Id: "1"},
+		},
+	}}
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			f := &fakeSwitchDataplane{}
+			c, mgr, stopFn := newTestPort(t, f)
+			defer stopFn()
+
+			mgr.StoreAttributes(1, &saipb.CreatePortRequest{HwLaneList: []uint32{1}})
+			_, gotErr := c.RemovePort(context.Background(), tt.req)
+			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
+				t.Fatalf("RemovePort() unexpected err: %s", diff)
+			}
+			if gotErr != nil {
+				return
+			}
+
+			if d := cmp.Diff(f.gotObjectDeleteReqs[0], tt.want, protocmp.Transform()); d != "" {
+				t.Errorf("RemovePort() failed: diff(-got,+want)\n:%s", d)
+			}
+		})
+	}
+}
+
 func newTestPort(t testing.TB, api switchDataplaneAPI) (saipb.PortClient, *attrmgr.AttrMgr, func()) {
 	conn, mgr, stopFn := newTestServer(t, func(mgr *attrmgr.AttrMgr, srv *grpc.Server) {
 		newPort(mgr, api, srv, &dplaneopts.Options{PortType: fwdpb.PortType_PORT_TYPE_KERNEL})
