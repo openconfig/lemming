@@ -1799,8 +1799,9 @@ def go_repositories():
         name = "com_github_osrg_gobgp_v3",
         build_file_proto_mode = "disable",
         importpath = "github.com/osrg/gobgp/v3",
-        sum = "h1:IQb3xVd9A8O767O3xEDnXn2n1rvmwlnNjrxUVR46Ug8=",
-        version = "v3.24.1-0.20240317054555-912eb5a92026",
+        replace = "github.com/wenovus/gobgp/v3",
+        sum = "h1:fJ3iMg0+1XAzxiT7RstwFHJbeyVf1ObJ905yiuKswfk=",
+        version = "v3.0.0-20240403233151-f765066449b4",
     )
 
     go_repository(

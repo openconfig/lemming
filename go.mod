@@ -161,3 +161,5 @@ require (
 )
 
 replace github.com/openconfig/gnoi => github.com/DanG100/gnoi v0.0.0-20240319222444-26c1b86c4d42
+
+replace github.com/osrg/gobgp/v3 => github.com/wenovus/gobgp/v3 v3.0.0-20240403233151-f765066449b4
