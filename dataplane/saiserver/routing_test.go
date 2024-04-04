@@ -167,8 +167,8 @@ func TestCreateNextHopGroupMember(t *testing.T) {
 	}{{
 		desc: "success",
 		req: &saipb.CreateNextHopGroupMemberRequest{
-			NextHopGroupId: proto.Uint64(1),
-			NextHopId:      proto.Uint64(2),
+			NextHopGroupId: proto.Uint64(2),
+			NextHopId:      proto.Uint64(3),
 			Weight:         proto.Uint32(3),
 		},
 		wantReq: &fwdpb.TableEntryAddRequest{
@@ -182,7 +182,7 @@ func TestCreateNextHopGroupMember(t *testing.T) {
 								FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{
 									FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_GROUP_ID,
 								}},
-								Bytes: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+								Bytes: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
 							}},
 						},
 					},
@@ -193,11 +193,7 @@ func TestCreateNextHopGroupMember(t *testing.T) {
 						Select: &fwdpb.SelectActionListActionDesc{
 							SelectAlgorithm: fwdpb.SelectActionListActionDesc_SELECT_ALGORITHM_CRC32,
 							FieldIds: []*fwdpb.PacketFieldId{
-								{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO}},
-								{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC}},
 								{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST}},
-								{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_SRC}},
-								{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST}},
 							},
 							ActionLists: []*fwdpb.ActionList{{
 								Weight: 3,
@@ -208,7 +204,7 @@ func TestCreateNextHopGroupMember(t *testing.T) {
 											FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_ID}},
 											Type:    fwdpb.UpdateType_UPDATE_TYPE_SET,
 											Field:   &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{}},
-											Value:   []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
+											Value:   []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03},
 										},
 									},
 								}},
@@ -226,8 +222,8 @@ func TestCreateNextHopGroupMember(t *testing.T) {
 			}},
 		},
 		wantAttr: &saipb.NextHopGroupMemberAttribute{
-			NextHopGroupId: proto.Uint64(1),
-			NextHopId:      proto.Uint64(2),
+			NextHopGroupId: proto.Uint64(2),
+			NextHopId:      proto.Uint64(3),
 			Weight:         proto.Uint32(3),
 		},
 	}}
@@ -235,6 +231,13 @@ func TestCreateNextHopGroupMember(t *testing.T) {
 		t.Run(tt.desc, func(t *testing.T) {
 			dplane := &fakeSwitchDataplane{}
 			c, mgr, stopFn := newTestNextHopGroup(t, dplane)
+
+			mgr.StoreAttributes(mgr.NextID(), &saipb.SwitchAttribute{EcmpHashIpv4: proto.Uint64(10), EcmpHashIpv6: proto.Uint64(10)})
+			mgr.StoreAttributes(3, &saipb.CreateNextHopRequest{Ip: []byte{127, 0, 0, 1}})
+			mgr.StoreAttributes(10, &saipb.CreateHashRequest{
+				NativeHashFieldList: []saipb.NativeHashField{saipb.NativeHashField_NATIVE_HASH_FIELD_DST_IP},
+			})
+
 			_, err := c.CreateNextHopGroup(context.Background(), &saipb.CreateNextHopGroupRequest{Type: saipb.NextHopGroupType_NEXT_HOP_GROUP_TYPE_DYNAMIC_UNORDERED_ECMP.Enum()})
 			if err != nil {
 				t.Fatal(err)
@@ -251,7 +254,7 @@ func TestCreateNextHopGroupMember(t *testing.T) {
 				t.Errorf("CreateNextHopGroupMember() failed: diff(-got,+want)\n:%s", d)
 			}
 			attr := &saipb.NextHopGroupMemberAttribute{}
-			if err := mgr.PopulateAllAttributes("2", attr); err != nil {
+			if err := mgr.PopulateAllAttributes("3", attr); err != nil {
 				t.Fatal(err)
 			}
 			if d := cmp.Diff(attr, tt.wantAttr, protocmp.Transform()); d != "" {
@@ -282,7 +285,7 @@ func TestRemoveNextHopGroupMember(t *testing.T) {
 								FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{
 									FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_GROUP_ID,
 								}},
-								Bytes: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+								Bytes: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
 							}},
 						},
 					},
@@ -293,11 +296,7 @@ func TestRemoveNextHopGroupMember(t *testing.T) {
 						Select: &fwdpb.SelectActionListActionDesc{
 							SelectAlgorithm: fwdpb.SelectActionListActionDesc_SELECT_ALGORITHM_CRC32,
 							FieldIds: []*fwdpb.PacketFieldId{
-								{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO}},
-								{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC}},
 								{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST}},
-								{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_SRC}},
-								{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST}},
 							},
 							ActionLists: []*fwdpb.ActionList{{
 								Weight: 66,
@@ -326,7 +325,7 @@ func TestRemoveNextHopGroupMember(t *testing.T) {
 			}},
 		},
 		wantAttr: &saipb.NextHopGroupMemberAttribute{
-			NextHopGroupId: proto.Uint64(1),
+			NextHopGroupId: proto.Uint64(2),
 			NextHopId:      proto.Uint64(12),
 			Weight:         proto.Uint32(66),
 		},
@@ -347,6 +346,13 @@ func TestRemoveNextHopGroupMember(t *testing.T) {
 		t.Run(tt.desc, func(t *testing.T) {
 			dplane := &fakeSwitchDataplane{}
 			c, mgr, stopFn := newTestNextHopGroup(t, dplane)
+			mgr.StoreAttributes(mgr.NextID(), &saipb.SwitchAttribute{EcmpHashIpv4: proto.Uint64(10), EcmpHashIpv6: proto.Uint64(10)})
+			mgr.StoreAttributes(10, &saipb.CreateNextHopRequest{Ip: []byte{127, 0, 0, 1}})
+			mgr.StoreAttributes(11, &saipb.CreateNextHopRequest{Ip: []byte{127, 0, 0, 2}})
+			mgr.StoreAttributes(10, &saipb.CreateHashRequest{
+				NativeHashFieldList: []saipb.NativeHashField{saipb.NativeHashField_NATIVE_HASH_FIELD_DST_IP},
+			})
+
 			ctx := context.Background()
 			r, err := c.CreateNextHopGroup(ctx, &saipb.CreateNextHopGroupRequest{Type: saipb.NextHopGroupType_NEXT_HOP_GROUP_TYPE_DYNAMIC_UNORDERED_ECMP.Enum()})
 			if err != nil {
@@ -380,7 +386,7 @@ func TestRemoveNextHopGroupMember(t *testing.T) {
 				t.Errorf("RemoveNextHopGroupMember() failed: diff(-got,+want)\n:%s", d)
 			}
 			attr := &saipb.NextHopGroupMemberAttribute{}
-			if err := mgr.PopulateAllAttributes("3", attr); err != nil {
+			if err := mgr.PopulateAllAttributes("4", attr); err != nil {
 				t.Fatal(err)
 			}
 			if d := cmp.Diff(attr, tt.wantAttr, protocmp.Transform()); d != "" {

@@ -106,6 +106,29 @@ func (d *Dataplane) Start(ctx context.Context, c gpb.GNMIClient, target string) 
 	}
 
 	// Allow all traffic to L3 processing.
+	hash := saipb.NewHashClient(conn)
+	hashResp, err := hash.CreateHash(context.Background(), &saipb.CreateHashRequest{
+		Switch: swResp.Oid,
+		NativeHashFieldList: []saipb.NativeHashField{
+			saipb.NativeHashField_NATIVE_HASH_FIELD_SRC_IP,
+			saipb.NativeHashField_NATIVE_HASH_FIELD_DST_IP,
+			saipb.NativeHashField_NATIVE_HASH_FIELD_L4_SRC_PORT,
+			saipb.NativeHashField_NATIVE_HASH_FIELD_L4_DST_PORT,
+		},
+	})
+	if err != nil {
+		return err
+	}
+	_, err = sw.SetSwitchAttribute(ctx, &saipb.SetSwitchAttributeRequest{
+		Oid:          swResp.Oid,
+		EcmpHashIpv4: proto.Uint64(hashResp.Oid),
+		EcmpHashIpv6: proto.Uint64(hashResp.Oid),
+	})
+	if err != nil {
+		return err
+	}
+
+	// Allow all traffic to L3 processing.
 	mmc := saipb.NewMyMacClient(conn)
 	_, err = mmc.CreateMyMac(context.Background(), &saipb.CreateMyMacRequest{
 		Switch:         swResp.Oid,
