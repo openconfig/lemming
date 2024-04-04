@@ -104,6 +104,7 @@ type nextHopGroup struct {
 	mgr       *attrmgr.AttrMgr
 	dataplane switchDataplaneAPI
 	groups    map[uint64]map[uint64]*groupMember // groups is map of next hop groups to a map of next hops
+	groupIsV4 map[uint64]bool                    // map from group id to IP protocol version
 }
 
 func newNextHopGroup(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server) *nextHopGroup {
@@ -111,6 +112,7 @@ func newNextHopGroup(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc
 		mgr:       mgr,
 		dataplane: dataplane,
 		groups:    map[uint64]map[uint64]*groupMember{},
+		groupIsV4: map[uint64]bool{},
 	}
 	saipb.RegisterNextHopGroupServer(s, n)
 	return n
@@ -132,12 +134,23 @@ func (nhg *nextHopGroup) CreateNextHopGroup(_ context.Context, req *saipb.Create
 
 // updateNextHopGroupMember updates the next hop group.
 // If m is nil, remove mid from the group(key: nhgid), otherwise add m to group with mid as the key.
-func updateNextHopGroupMember(ctx context.Context, nhg *nextHopGroup, nhgid, mid uint64, m *groupMember) error {
+func (nhg *nextHopGroup) updateNextHopGroupMember(ctx context.Context, nhgid, mid uint64, m *groupMember) error {
 	group := nhg.groups[nhgid]
 	if group == nil {
 		return status.Errorf(codes.FailedPrecondition, "group %d does not exist", nhgid)
 	}
 	if m != nil {
+		if _, ok := nhg.groupIsV4[nhgid]; !ok { // Use the first member added to group to determine if the group is ipv4.
+			nhAttr := &saipb.GetNextHopAttributeResponse{}
+			err := nhg.mgr.PopulateAttributes(&saipb.GetNextHopAttributeRequest{
+				Oid:      m.nextHop,
+				AttrType: []saipb.NextHopAttr{saipb.NextHopAttr_NEXT_HOP_ATTR_IP},
+			}, nhAttr)
+			if err != nil {
+				return fmt.Errorf("failed to retrieve next hop attr: %v", err)
+			}
+			nhg.groupIsV4[nhgid] = len(nhAttr.GetAttr().GetIp()) == 4
+		}
 		group[mid] = m
 	} else {
 		delete(group, mid)
@@ -150,23 +163,40 @@ func updateNextHopGroupMember(ctx context.Context, nhg *nextHopGroup, nhgid, mid
 			Actions: []*fwdpb.ActionDesc{action.Build()},
 		})
 	}
+
+	swAttr := &saipb.GetSwitchAttributeResponse{}
+	err := nhg.mgr.PopulateAttributes(&saipb.GetSwitchAttributeRequest{
+		Oid:      switchID,
+		AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_ECMP_HASH_IPV4, saipb.SwitchAttr_SWITCH_ATTR_ECMP_HASH_IPV6},
+	}, swAttr)
+	if err != nil {
+		return fmt.Errorf("failed to retrieve hash id: %v", err)
+	}
+	hashID := swAttr.GetAttr().GetEcmpHashIpv6()
+	if nhg.groupIsV4[nhgid] {
+		hashID = swAttr.GetAttr().GetEcmpHashIpv4()
+	}
+	hashAttr := &saipb.GetHashAttributeResponse{}
+	err = nhg.mgr.PopulateAttributes(&saipb.GetHashAttributeRequest{
+		Oid:      hashID,
+		AttrType: []saipb.HashAttr{saipb.HashAttr_HASH_ATTR_NATIVE_HASH_FIELD_LIST},
+	}, hashAttr)
+	if err != nil {
+		return fmt.Errorf("failed to retrieve hash field: %v", err)
+	}
+
+	fieldsID, err := convertHashFields(hashAttr.GetAttr().GetNativeHashFieldList())
+	if err != nil {
+		return fmt.Errorf("failed to compute hash fields: %v", err)
+	}
+
 	actions := []*fwdpb.ActionDesc{{
 		ActionType: fwdpb.ActionType_ACTION_TYPE_SELECT_ACTION_LIST,
 		Action: &fwdpb.ActionDesc_Select{
 			Select: &fwdpb.SelectActionListActionDesc{
 				SelectAlgorithm: fwdpb.SelectActionListActionDesc_SELECT_ALGORITHM_CRC32, // TODO: should algo + hash be configurable?
-				FieldIds: []*fwdpb.PacketFieldId{{Field: &fwdpb.PacketField{ // Hash the traffic flow, identified, IP protocol, L3 SRC, DST address, and L4 ports (if present).
-					FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO,
-				}}, {Field: &fwdpb.PacketField{
-					FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC,
-				}}, {Field: &fwdpb.PacketField{
-					FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST,
-				}}, {Field: &fwdpb.PacketField{
-					FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_SRC,
-				}}, {Field: &fwdpb.PacketField{
-					FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST,
-				}}},
-				ActionLists: actLists,
+				FieldIds:        fieldsID,
+				ActionLists:     actLists,
 			},
 		},
 	}, {
@@ -205,7 +235,7 @@ func updateNextHopGroupMember(ctx context.Context, nhg *nextHopGroup, nhgid, mid
 			Actions: actions,
 		}},
 	}
-	_, err := nhg.dataplane.TableEntryAdd(ctx, entries)
+	_, err = nhg.dataplane.TableEntryAdd(ctx, entries)
 	return err
 }
 
@@ -239,7 +269,7 @@ func (nhg *nextHopGroup) CreateNextHopGroupMember(ctx context.Context, req *saip
 		nextHop: req.GetNextHopId(),
 		weight:  req.GetWeight(),
 	}
-	if err := updateNextHopGroupMember(ctx, nhg, nhgid, mid, m); err != nil {
+	if err := nhg.updateNextHopGroupMember(ctx, nhgid, mid, m); err != nil {
 		return nil, err
 	}
 	return &saipb.CreateNextHopGroupMemberResponse{Oid: mid}, nil
@@ -263,7 +293,7 @@ func (nhg *nextHopGroup) RemoveNextHopGroupMember(ctx context.Context, req *saip
 		return nil, err
 	}
 
-	if err := updateNextHopGroupMember(ctx, nhg, nhgid, mid, nil); err != nil {
+	if err := nhg.updateNextHopGroupMember(ctx, nhgid, mid, nil); err != nil {
 		return nil, err
 	}
 	return &saipb.RemoveNextHopGroupMemberResponse{}, nil
@@ -677,4 +707,52 @@ func (br *bridge) CreateBridge(context.Context, *saipb.CreateBridgeRequest) (*sa
 	return &saipb.CreateBridgeResponse{
 		Oid: id,
 	}, nil
+}
+
+type hash struct {
+	saipb.UnimplementedHashServer
+	mgr       *attrmgr.AttrMgr
+	dataplane switchDataplaneAPI
+}
+
+func newHash(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server) *hash {
+	m := &hash{
+		mgr:       mgr,
+		dataplane: dataplane,
+	}
+	saipb.RegisterHashServer(s, m)
+	return m
+}
+
+func convertHashFields(list []saipb.NativeHashField) ([]*fwdpb.PacketFieldId, error) {
+	fields := []*fwdpb.PacketFieldId{}
+	for _, field := range list {
+		switch field {
+		case saipb.NativeHashField_NATIVE_HASH_FIELD_SRC_IP, saipb.NativeHashField_NATIVE_HASH_FIELD_SRC_IPV4, saipb.NativeHashField_NATIVE_HASH_FIELD_SRC_IPV6:
+			fields = append(fields, &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC}})
+		case saipb.NativeHashField_NATIVE_HASH_FIELD_DST_IP, saipb.NativeHashField_NATIVE_HASH_FIELD_DST_IPV4, saipb.NativeHashField_NATIVE_HASH_FIELD_DST_IPV6:
+			fields = append(fields, &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST}})
+		case saipb.NativeHashField_NATIVE_HASH_FIELD_L4_SRC_PORT:
+			fields = append(fields, &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_SRC}})
+		case saipb.NativeHashField_NATIVE_HASH_FIELD_L4_DST_PORT:
+			fields = append(fields, &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L4_PORT_DST}})
+		case saipb.NativeHashField_NATIVE_HASH_FIELD_IPV6_FLOW_LABEL:
+			fields = append(fields, &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP6_FLOW}})
+		default:
+			return nil, fmt.Errorf("unsupported hash field: %v", field)
+		}
+	}
+	return fields, nil
+}
+
+func (h *hash) CreateHash(_ context.Context, req *saipb.CreateHashRequest) (*saipb.CreateHashResponse, error) {
+	id := h.mgr.NextID()
+
+	// Creating a hash doesn't affect the forwarding pipeline, just validate the arguments.
+	_, err := convertHashFields(req.GetNativeHashFieldList())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	return &saipb.CreateHashResponse{Oid: id}, nil
 }

@@ -112,7 +112,7 @@ func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server, 
 		vr:              &virtualRouter{},
 		bridge:          newBridge(mgr, engine, s),
 		hostif:          newHostif(mgr, engine, s, opts),
-		hash:            &hash{},
+		hash:            newHash(mgr, engine, s),
 		myMac:           newMyMac(mgr, engine, s),
 		neighbor:        newNeighbor(mgr, engine, s),
 		nextHopGroup:    newNextHopGroup(mgr, engine, s),
@@ -126,7 +126,6 @@ func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server, 
 	saipb.RegisterSwitchServer(s, sw)
 	saipb.RegisterStpServer(s, sw.stp)
 	saipb.RegisterVirtualRouterServer(s, sw.vr)
-	saipb.RegisterHashServer(s, sw.hash)
 	return sw, nil
 }
 

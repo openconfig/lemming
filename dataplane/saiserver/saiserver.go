@@ -54,10 +54,6 @@ type fdb struct {
 	saipb.UnimplementedFdbServer
 }
 
-type hash struct {
-	saipb.UnimplementedHashServer
-}
-
 type ipmcGroup struct {
 	saipb.UnimplementedIpmcGroupServer
 }
