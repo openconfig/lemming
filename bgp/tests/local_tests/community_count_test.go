@@ -27,7 +27,7 @@ import (
 )
 
 func TestCommunityCount(t *testing.T) {
-	installRejectPolicy := func(t *testing.T, dut1, dut2, dut3, _, _ *Device) {
+	installRejectPolicy := func(t *testing.T, dut1, dut2, _, _, _ *Device) {
 		policyName := "community-count"
 		policy := &oc.RoutingPolicy_PolicyDefinition_Statement_OrderedMap{}
 
