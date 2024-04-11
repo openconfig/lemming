@@ -66,7 +66,7 @@ type hostif struct {
 }
 
 func (hostif *hostif) Reset() {
-	log.Info("reseting hostif")
+	log.Info("resetting hostif")
 	for _, closeFn := range hostif.remoteClosers {
 		closeFn()
 	}
