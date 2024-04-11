@@ -1,4 +1,4 @@
-// Copyright 2023 Google LLC
+// Copyright 2024 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -76,6 +76,8 @@ func TestCommunityCount(t *testing.T) {
 		Await(t, dut2, bgp.BGPPath.Neighbor(dut1.RouterID).ApplyPolicy().ImportPolicy().State(), []string{policyName})
 	}
 
+	// 10.* are subject to rejection due to community-count policy.
+	// 20.* must propagate in all cases due to prefix-match rule.
 	routeUnderTestList := []string{
 		"10.0.0.0/10",
 		"10.0.0.0/11",
