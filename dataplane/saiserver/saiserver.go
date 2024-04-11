@@ -212,6 +212,7 @@ func (s *Server) ObjectTypeQuery(_ context.Context, req *saipb.ObjectTypeQueryRe
 
 func (s *Server) Initialize(ctx context.Context, _ *saipb.InitializeRequest) (*saipb.InitializeResponse, error) {
 	if s.initialized {
+		log.Info("dataplane already intialized, reseting")
 		s.mgr.Reset()
 		s.saiSwitch.Reset()
 		if err := s.Reset(ctx); err != nil {

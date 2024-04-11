@@ -17,9 +17,9 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 	"time"
 
@@ -39,11 +39,10 @@ const (
 var portFile = flag.String("port_file", "/etc/sonic/pktio_ports.json", "File at which to include hostif info, for debugging only")
 
 func main() {
-	flag.Parse()
-
 	ctx, cancelFn := context.WithTimeout(context.Background(), time.Minute)
 	defer cancelFn()
 
+	log.Info("dialing packetio server")
 	conn, err := grpc.DialContext(ctx, addr, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
 	if err != nil {
 		log.Exit(err)
@@ -60,10 +59,12 @@ func main() {
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
-		<-sigCh
+		sig := <-sigCh
+		log.Infof("received signal %q exiting", sig)
 		cancel()
 	}()
 
+	log.Info("starting packetio RPCs")
 	portCtl, err := pktio.HostPortControl(ctx)
 	if err != nil {
 		log.Exit(err)
@@ -73,16 +74,26 @@ func main() {
 		log.Exit(err)
 	}
 
-	var wg sync.WaitGroup
-	wg.Add(2)
+	errCh := make(chan error)
 	go func() {
-		h.ManagePorts(portCtl)
-		wg.Done()
+		if err := h.ManagePorts(portCtl); err != nil {
+			errCh <- fmt.Errorf("HostPortControl rpc exited with err: %v", err)
+			return
+		}
+		errCh <- fmt.Errorf("HostPortControl rpc exited without error")
 	}()
 	go func() {
-		h.StreamPackets(packet)
-		wg.Done()
+		if err := h.StreamPackets(packet); err != nil {
+			errCh <- fmt.Errorf("StreamPackets rpc exited with err: %v", err)
+			return
+		}
+		errCh <- fmt.Errorf("StreamPackets rpc exited without error")
 	}()
 
-	wg.Wait()
+	err = <-errCh
+	log.Infof("stopped packetio RPCs: %v", err)
+}
+
+func init() {
+	flag.Parse()
 }

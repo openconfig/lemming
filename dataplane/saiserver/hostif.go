@@ -66,13 +66,15 @@ type hostif struct {
 }
 
 func (hostif *hostif) Reset() {
-	hostif.trapIDToHostifID = map[uint64]uint64{}
-	hostif.groupIDToQueue = map[uint64]uint32{}
-	hostif.remoteHostifs = map[uint64]*pktiopb.HostPortControlMessage{}
+	log.Info("reseting hostif")
 	for _, closeFn := range hostif.remoteClosers {
 		closeFn()
 	}
 	hostif.remoteClosers = nil
+	hostif.trapIDToHostifID = map[uint64]uint64{}
+	hostif.groupIDToQueue = map[uint64]uint32{}
+	hostif.remoteHostifs = map[uint64]*pktiopb.HostPortControlMessage{}
+	hostif.remotePortReq = nil
 }
 
 const switchID = 1
@@ -590,19 +592,32 @@ func (hostif *hostif) CPUPacketStream(srv pktiopb.PacketIO_CPUPacketStreamServer
 }
 
 func (hostif *hostif) HostPortControl(srv pktiopb.PacketIO_HostPortControlServer) error {
+	log.Info("started host port control channel")
 	_, err := srv.Recv()
 	if err != nil {
 		return err
 	}
+	log.Info("received init port control channel")
 
 	hostif.remoteMu.Lock()
 	ctx, cancelFn := context.WithCancel(srv.Context())
-	hostif.remoteClosers = append(hostif.remoteClosers, cancelFn)
-	reqCh := make(chan *pktiopb.HostPortControlMessage)
-	respCh := make(chan *pktiopb.HostPortControlRequest)
+	hostif.remoteClosers = append(hostif.remoteClosers, func() {
+		log.Info("canceling host port control")
+		cancelFn()
+	})
+
+	errCh := make(chan error)
+
 	hostif.remotePortReq = func(msg *pktiopb.HostPortControlMessage) error {
-		reqCh <- msg
-		resp := <-respCh
+		if err := srv.Send(msg); err != nil {
+			errCh <- err
+			return err
+		}
+		resp, err := srv.Recv()
+		if err != nil {
+			errCh <- err
+			return err
+		}
 		return status.FromProto(resp.GetStatus()).Err()
 	}
 
@@ -616,21 +631,19 @@ func (hostif *hostif) HostPortControl(srv pktiopb.PacketIO_HostPortControlServer
 	hostif.remoteMu.Unlock()
 
 	log.Info("initialized host port control channel")
-	for {
-		select {
-		case <-ctx.Done():
-			return nil
-		case req := <-reqCh:
-			if err := srv.Send(req); err != nil {
-				return err
-			}
-			log.Info("sent message to client: %+v", req)
-			resp, err := srv.Recv()
-			if err != nil {
-				return err
-			}
-			respCh <- resp
-			log.Info("received message from client: %+v", req)
-		}
+
+	// The HostPortControls exits in two cases: context cancels or RPC errors.
+	err = nil
+	select {
+	case <-ctx.Done():
+		log.Info("host port control done")
+	case err = <-errCh:
+		log.Info("host port control err: %v", err)
 	}
+
+	hostif.remoteMu.Lock()
+	hostif.remotePortReq = nil
+	hostif.remoteMu.Unlock()
+	log.Info("cleared host port control channel")
+	return err
 }
