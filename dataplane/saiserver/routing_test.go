@@ -848,6 +848,42 @@ func TestCreateRouterInterface(t *testing.T) {
 	}
 }
 
+func TestCreateHash(t *testing.T) {
+	tests := []struct {
+		desc    string
+		req     *saipb.CreateHashRequest
+		wantErr string
+	}{{
+		desc: "unknown type",
+		req: &saipb.CreateHashRequest{
+			NativeHashFieldList: []saipb.NativeHashField{saipb.NativeHashField_NATIVE_HASH_FIELD_UNSPECIFIED},
+		},
+		wantErr: "InvalidArgument",
+	}, {
+		desc: "success",
+		req: &saipb.CreateHashRequest{
+			NativeHashFieldList: []saipb.NativeHashField{
+				saipb.NativeHashField_NATIVE_HASH_FIELD_SRC_IP,
+				saipb.NativeHashField_NATIVE_HASH_FIELD_DST_IP,
+				saipb.NativeHashField_NATIVE_HASH_FIELD_L4_SRC_PORT,
+				saipb.NativeHashField_NATIVE_HASH_FIELD_L4_DST_PORT,
+				saipb.NativeHashField_NATIVE_HASH_FIELD_IPV6_FLOW_LABEL,
+			},
+		},
+	}}
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			dplane := &fakeSwitchDataplane{}
+			c, _, stopFn := newTestHash(t, dplane)
+			defer stopFn()
+			_, gotErr := c.CreateHash(context.TODO(), tt.req)
+			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
+				t.Fatalf("CreateHash() unexpected err: %s", diff)
+			}
+		})
+	}
+}
+
 func newTestNeighbor(t testing.TB, api switchDataplaneAPI) (saipb.NeighborClient, *attrmgr.AttrMgr, func()) {
 	conn, mgr, stopFn := newTestServer(t, func(mgr *attrmgr.AttrMgr, srv *grpc.Server) {
 		newNeighbor(mgr, api, srv)
@@ -881,4 +917,11 @@ func newTestRouterInterface(t testing.TB, api switchDataplaneAPI) (saipb.RouterI
 		newRouterInterface(mgr, api, srv)
 	})
 	return saipb.NewRouterInterfaceClient(conn), mgr, stopFn
+}
+
+func newTestHash(t testing.TB, api switchDataplaneAPI) (saipb.HashClient, *attrmgr.AttrMgr, func()) {
+	conn, mgr, stopFn := newTestServer(t, func(mgr *attrmgr.AttrMgr, srv *grpc.Server) {
+		newHash(mgr, api, srv)
+	})
+	return saipb.NewHashClient(conn), mgr, stopFn
 }
