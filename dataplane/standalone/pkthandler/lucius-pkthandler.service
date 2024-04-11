@@ -7,6 +7,7 @@ After=network-online.target
 Type=exec
 ExecStart=/usr/bin/pkthandler --alsologtostderr
 Restart=always
+RestartSec=1
 
 [Install]
 WantedBy=multi-user.target

@@ -524,6 +524,7 @@ func (port *port) RemovePort(ctx context.Context, req *saipb.RemovePortRequest) 
 }
 
 func (port *port) Reset() {
+	log.Info("reseting port")
 	port.portToEth = make(map[uint64]string)
 	port.nextEth = 1
 }

@@ -116,6 +116,7 @@ func (p *kernelPort) process() {
 			default:
 				d, _, err := p.handle.ReadPacketData()
 				if err == afpacket.ErrTimeout || err == afpacket.ErrPoll { // Don't log this error as it is very spammy.
+					time.Sleep(1 * time.Microsecond) // avoid busy looping
 					continue
 				}
 				if err != nil {
@@ -187,7 +188,7 @@ func (kernelBuilder) Build(portDesc *fwdpb.PortDesc, ctx *fwdcontext.Context) (f
 	}
 
 	// TODO: configure MTU
-	handle, err := afpacket.NewTPacket(afpacket.OptInterface(kp.Kernel.GetDeviceName()), afpacket.OptPollTimeout(time.Second))
+	handle, err := afpacket.NewTPacket(afpacket.OptInterface(kp.Kernel.GetDeviceName()) /*afpacket.OptPollTimeout(time.Second)*/)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create afpacket: %v", err)
 	}
