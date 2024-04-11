@@ -4,6 +4,7 @@ go_test(
     name = "local_tests_test",
     size = "large",
     srcs = [
+        "community_count_test.go",
         "community_set_test.go",
         "policy_test.go",
         "prefix_set_test.go",

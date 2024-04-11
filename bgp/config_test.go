@@ -66,6 +66,8 @@ func TestIntendedToGoBGPPolicies(t *testing.T) {
 			}
 			v4Stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetPrefixSet(prefixSet1Name)
 			v4Stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.PolicyTypes_MatchSetOptionsRestrictedType_ANY)
+			v4Stmt.GetOrCreateConditions().GetOrCreateBgpConditions().GetOrCreateCommunityCount().SetOperator(oc.PolicyTypes_ATTRIBUTE_COMPARISON_ATTRIBUTE_EQ)
+			v4Stmt.GetOrCreateConditions().GetOrCreateBgpConditions().GetOrCreateCommunityCount().SetValue(42)
 			v4Stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().GetOrCreateReference().SetCommunitySetRef(commsetName)
 			v4Stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetMethod(oc.SetCommunity_Method_REFERENCE)
 			v4Stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetOptions(oc.BgpPolicy_BgpSetCommunityOptionType_ADD)
@@ -156,12 +158,15 @@ func TestIntendedToGoBGPPolicies(t *testing.T) {
 							MatchAsPathSet: gobgpoc.MatchAsPathSet{
 								AsPathSet: "", MatchSetOptions: "any",
 							},
-							MedEq:                0x0,
-							OriginEq:             "",
-							NextHopInList:        []string(nil),
-							AfiSafiInList:        []gobgpoc.AfiSafiType(nil),
-							LocalPrefEq:          0x0,
-							CommunityCount:       gobgpoc.CommunityCount{Operator: "", Value: 0x0},
+							MedEq:         0x0,
+							OriginEq:      "",
+							NextHopInList: []string(nil),
+							AfiSafiInList: []gobgpoc.AfiSafiType(nil),
+							LocalPrefEq:   0x0,
+							CommunityCount: gobgpoc.CommunityCount{
+								Operator: gobgpoc.ATTRIBUTE_COMPARISON_EQ,
+								Value:    42,
+							},
 							AsPathLength:         gobgpoc.AsPathLength{Operator: "", Value: 0x0},
 							RouteType:            "",
 							RpkiValidationResult: "",
@@ -273,12 +278,15 @@ func TestIntendedToGoBGPPolicies(t *testing.T) {
 							MatchAsPathSet: gobgpoc.MatchAsPathSet{
 								AsPathSet: "", MatchSetOptions: "any",
 							},
-							MedEq:                0x0,
-							OriginEq:             "",
-							NextHopInList:        []string(nil),
-							AfiSafiInList:        []gobgpoc.AfiSafiType(nil),
-							LocalPrefEq:          0x0,
-							CommunityCount:       gobgpoc.CommunityCount{Operator: "", Value: 0x0},
+							MedEq:         0x0,
+							OriginEq:      "",
+							NextHopInList: []string(nil),
+							AfiSafiInList: []gobgpoc.AfiSafiType(nil),
+							LocalPrefEq:   0x0,
+							CommunityCount: gobgpoc.CommunityCount{
+								Operator: gobgpoc.ATTRIBUTE_COMPARISON_EQ,
+								Value:    42,
+							},
 							AsPathLength:         gobgpoc.AsPathLength{Operator: "", Value: 0x0},
 							RouteType:            "",
 							RpkiValidationResult: "",

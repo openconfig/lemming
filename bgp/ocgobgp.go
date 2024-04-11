@@ -101,6 +101,10 @@ func convertPolicyDefinition(policy *oc.RoutingPolicy_PolicyDefinition, neighAdd
 						CommunitySet:    statement.Conditions.GetBgpConditions().GetCommunitySet(),
 						MatchSetOptions: convertMatchSetOptionsType(occommset[statement.GetConditions().GetBgpConditions().GetCommunitySet()].GetMatchSetOptions()),
 					},
+					CommunityCount: gobgpoc.CommunityCount{
+						Operator: convertAttributeComparison(statement.Conditions.GetBgpConditions().GetCommunityCount().GetOperator()),
+						Value:    statement.Conditions.GetBgpConditions().GetCommunityCount().GetValue(),
+					},
 					MatchAsPathSet: gobgpoc.MatchAsPathSet{
 						AsPathSet:       statement.Conditions.GetBgpConditions().GetMatchAsPathSet().GetAsPathSet(),
 						MatchSetOptions: convertMatchSetOptionsType(statement.GetConditions().GetBgpConditions().GetMatchAsPathSet().GetMatchSetOptions()),
@@ -200,6 +204,19 @@ func defaultPolicyToRouteDisp(gobgpdefaultpolicy gobgpoc.DefaultPolicyType) gobg
 		return gobgpoc.ROUTE_DISPOSITION_ACCEPT_ROUTE
 	default:
 		return gobgpoc.ROUTE_DISPOSITION_REJECT_ROUTE
+	}
+}
+
+func convertAttributeComparison(ocpolicy oc.E_PolicyTypes_ATTRIBUTE_COMPARISON) gobgpoc.AttributeComparison {
+	switch ocpolicy {
+	case oc.PolicyTypes_ATTRIBUTE_COMPARISON_ATTRIBUTE_EQ:
+		return gobgpoc.ATTRIBUTE_COMPARISON_EQ
+	case oc.PolicyTypes_ATTRIBUTE_COMPARISON_ATTRIBUTE_GE:
+		return gobgpoc.ATTRIBUTE_COMPARISON_GE
+	case oc.PolicyTypes_ATTRIBUTE_COMPARISON_ATTRIBUTE_LE:
+		return gobgpoc.ATTRIBUTE_COMPARISON_LE
+	default:
+		return ""
 	}
 }
 
