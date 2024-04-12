@@ -2,6 +2,8 @@
 Description=Lucius Packet Handler
 Wants=network-online.target
 After=network-online.target
+# Infinite restarts when starting
+StartLimitIntervalSec=0 
 
 [Service]
 Type=exec
