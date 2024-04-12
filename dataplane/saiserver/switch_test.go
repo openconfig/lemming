@@ -212,16 +212,20 @@ func TestSwitchPortStateChangeNotification(t *testing.T) {
 }
 
 type fakeSwitchDataplane struct {
-	events              []*fwdpb.EventDesc
-	gotEntryAddReqs     []*fwdpb.TableEntryAddRequest
-	gotPortStateReq     []*fwdpb.PortStateRequest
-	counterReplies      []*fwdpb.ObjectCountersReply
-	gotPortCreateReqs   []*fwdpb.PortCreateRequest
-	gotPortUpdateReqs   []*fwdpb.PortUpdateRequest
-	gotObjectDeleteReqs []*fwdpb.ObjectDeleteRequest
-	portIDToNID         map[string]uint64
-	counterRepliesIdx   int
-	ctx                 *fwdcontext.Context
+	events                   []*fwdpb.EventDesc
+	gotEntryAddReqs          []*fwdpb.TableEntryAddRequest
+	gotPortStateReq          []*fwdpb.PortStateRequest
+	counterReplies           []*fwdpb.ObjectCountersReply
+	gotPortCreateReqs        []*fwdpb.PortCreateRequest
+	gotPortUpdateReqs        []*fwdpb.PortUpdateRequest
+	gotObjectDeleteReqs      []*fwdpb.ObjectDeleteRequest
+	gotFlowCounterCreateReqs []*fwdpb.FlowCounterCreateRequest
+	gotFlowCounterQueryReqs  []*fwdpb.FlowCounterQueryRequest
+	portIDToNID              map[string]uint64
+	counterRepliesIdx        int
+	flowQueryReplies         []*fwdpb.FlowCounterQueryReply
+	flowQueryRepliesIdx      int
+	ctx                      *fwdcontext.Context
 }
 
 func (f *fakeSwitchDataplane) NotifySubscribe(_ *fwdpb.NotifySubscribeRequest, srv fwdpb.Forwarding_NotifySubscribeServer) error {
@@ -296,6 +300,21 @@ func (f *fakeSwitchDataplane) InjectPacket(*fwdpb.ContextId, *fwdpb.PortId, fwdp
 func (f *fakeSwitchDataplane) ObjectDelete(_ context.Context, req *fwdpb.ObjectDeleteRequest) (*fwdpb.ObjectDeleteReply, error) {
 	f.gotObjectDeleteReqs = append(f.gotObjectDeleteReqs, req)
 	return nil, nil
+}
+
+func (f *fakeSwitchDataplane) FlowCounterCreate(_ context.Context, req *fwdpb.FlowCounterCreateRequest) (*fwdpb.FlowCounterCreateReply, error) {
+	f.gotFlowCounterCreateReqs = append(f.gotFlowCounterCreateReqs, req)
+	return nil, nil
+}
+
+func (f *fakeSwitchDataplane) FlowCounterQuery(_ context.Context, req *fwdpb.FlowCounterQueryRequest) (*fwdpb.FlowCounterQueryReply, error) {
+	f.gotFlowCounterQueryReqs = append(f.gotFlowCounterQueryReqs, req)
+	if f.flowQueryRepliesIdx > len(f.flowQueryReplies) {
+		return nil, io.EOF
+	}
+	r := f.flowQueryReplies[f.flowQueryRepliesIdx]
+	f.flowQueryRepliesIdx++
+	return r, nil
 }
 
 func newTestServer(t testing.TB, newSrvFn func(mgr *attrmgr.AttrMgr, srv *grpc.Server)) (grpc.ClientConnInterface, *attrmgr.AttrMgr, func()) {

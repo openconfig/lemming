@@ -17,6 +17,7 @@ package saiserver
 import (
 	"context"
 	"encoding/binary"
+	"fmt"
 	"math"
 	"net/netip"
 	"testing"
@@ -354,6 +355,50 @@ func TestCreateAclEntry(t *testing.T) {
 				ActionType: fwdpb.ActionType_ACTION_TYPE_CONTINUE,
 			}},
 		},
+	}, {
+		desc: "counter action",
+		req: &saipb.CreateAclEntryRequest{
+			TableId: proto.Uint64(1),
+			FieldDstIp: &saipb.AclFieldData{
+				Data: &saipb.AclFieldData_DataIp{
+					DataIp: []byte{127, 0, 0, 1},
+				},
+				Mask: &saipb.AclFieldData_MaskIp{
+					MaskIp: []byte{255, 255, 255, 0},
+				},
+			},
+			ActionCounter: &saipb.AclActionData{
+				Parameter: &saipb.AclActionData_Oid{
+					Oid: 10,
+				},
+			},
+		},
+		want: &fwdpb.TableEntryAddRequest{
+			ContextId: &fwdpb.ContextId{Id: "foo"},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: "1"}},
+			EntryDesc: &fwdpb.EntryDesc{
+				Entry: &fwdpb.EntryDesc_Flow{
+					Flow: &fwdpb.FlowEntryDesc{
+						Id: 1,
+						Fields: []*fwdpb.PacketFieldMaskedBytes{{
+							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST}},
+							Bytes:   []byte{127, 0, 0, 1},
+							Masks:   []byte{255, 255, 255, 0},
+						}},
+					},
+				},
+			},
+			Actions: []*fwdpb.ActionDesc{{
+				ActionType: fwdpb.ActionType_ACTION_TYPE_FLOW_COUNTER,
+				Action: &fwdpb.ActionDesc_Flow{
+					Flow: &fwdpb.FlowCounterActionDesc{
+						CounterId: &fwdpb.FlowCounterId{
+							ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(10)},
+						},
+					},
+				},
+			}},
+		},
 	}}
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
@@ -376,6 +421,128 @@ func TestCreateAclEntry(t *testing.T) {
 			}
 			if d := cmp.Diff(dplane.gotEntryAddReqs[0], tt.want, protocmp.Transform()); d != "" {
 				t.Errorf("CreateAclEntry() failed: diff(-got,+want)\n:%s", d)
+			}
+		})
+	}
+}
+
+func TestCreateAclCounter(t *testing.T) {
+	tests := []struct {
+		desc    string
+		req     *saipb.CreateAclCounterRequest
+		wantErr string
+		want    *fwdpb.FlowCounterCreateRequest
+	}{{
+		desc: "success",
+		req:  &saipb.CreateAclCounterRequest{},
+		want: &fwdpb.FlowCounterCreateRequest{
+			ContextId: &fwdpb.ContextId{Id: "foo"},
+			Id:        &fwdpb.FlowCounterId{ObjectId: &fwdpb.ObjectId{Id: "1"}},
+		},
+	}}
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			dplane := &fakeSwitchDataplane{}
+			c, _, stopFn := newTestACL(t, dplane)
+			defer stopFn()
+			_, gotErr := c.CreateAclCounter(context.TODO(), tt.req)
+			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
+				t.Fatalf("CreateAclCounter() unexpected err: %s", diff)
+			}
+			if gotErr != nil {
+				return
+			}
+			if d := cmp.Diff(dplane.gotFlowCounterCreateReqs[0], tt.want, protocmp.Transform()); d != "" {
+				t.Errorf("CreateAclCounter() failed: diff(-got,+want)\n:%s", d)
+			}
+		})
+	}
+}
+
+func TestRemoveAclCounter(t *testing.T) {
+	tests := []struct {
+		desc    string
+		req     *saipb.RemoveAclCounterRequest
+		wantErr string
+		want    *fwdpb.ObjectDeleteRequest
+	}{{
+		desc: "not found",
+		req: &saipb.RemoveAclCounterRequest{
+			Oid: 2,
+		},
+		wantErr: "not found",
+	}, {
+		desc: "success",
+		req: &saipb.RemoveAclCounterRequest{
+			Oid: 1,
+		},
+		want: &fwdpb.ObjectDeleteRequest{
+			ContextId: &fwdpb.ContextId{Id: "foo"},
+			ObjectId:  &fwdpb.ObjectId{Id: "1"},
+		},
+	}}
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			dplane := &fakeSwitchDataplane{
+				ctx: fwdcontext.New("foo", "foo"),
+			}
+			dplane.ctx.Objects.Insert(&fwdobject.Base{}, &fwdpb.ObjectId{Id: "1"})
+			c, a, stopFn := newTestACL(t, dplane)
+			a.mgr.StoreAttributes(1, &saipb.CreateAclCounterRequest{EnablePacketCount: proto.Bool(true)})
+			defer stopFn()
+			_, gotErr := c.RemoveAclCounter(context.TODO(), tt.req)
+			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
+				t.Fatalf("RemoveAclCounter() unexpected err: %s", diff)
+			}
+			if gotErr != nil {
+				return
+			}
+			if d := cmp.Diff(dplane.gotObjectDeleteReqs[0], tt.want, protocmp.Transform()); d != "" {
+				t.Errorf("RemoveAclCounter() failed: diff(-got,+want)\n:%s", d)
+			}
+		})
+	}
+}
+
+func TestGetAclCounterAttribute(t *testing.T) {
+	tests := []struct {
+		desc    string
+		req     *saipb.GetAclCounterAttributeRequest
+		wantErr string
+		want    *saipb.GetAclCounterAttributeResponse
+	}{{
+		desc: "success",
+		req: &saipb.GetAclCounterAttributeRequest{
+			Oid:      1,
+			AttrType: []saipb.AclCounterAttr{saipb.AclCounterAttr_ACL_COUNTER_ATTR_PACKETS},
+		},
+		want: &saipb.GetAclCounterAttributeResponse{
+			Attr: &saipb.AclCounterAttribute{
+				Packets: proto.Uint64(1),
+				Bytes:   proto.Uint64(0),
+			},
+		},
+	}}
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			dplane := &fakeSwitchDataplane{
+				flowQueryReplies: []*fwdpb.FlowCounterQueryReply{{
+					Counters: []*fwdpb.FlowCounter{{
+						Packets: 1,
+					}},
+				}},
+			}
+			c, _, stopFn := newTestACL(t, dplane)
+			defer stopFn()
+			got, gotErr := c.GetAclCounterAttribute(context.TODO(), tt.req)
+			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
+				t.Fatalf("GetAclCounterAttribute() unexpected err: %s", diff)
+			}
+			if gotErr != nil {
+				return
+			}
+			if d := cmp.Diff(got, tt.want, protocmp.Transform()); d != "" {
+				t.Errorf("GetAclCounterAttribute() failed: diff(-got,+want)\n:%s", d)
 			}
 		})
 	}
