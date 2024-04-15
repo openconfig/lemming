@@ -106,9 +106,16 @@ func (mgr *AttrMgr) Interceptor(ctx context.Context, req any, info *grpc.UnarySe
 		return handler(ctx, req)
 	}
 	resp, err := handler(ctx, req)
-	// Ignore unimplemented errors, so that we don't have to implement APIs we don't support.
-	if st, _ := status.FromError(err); err != nil && (st.Code() != codes.Unimplemented) {
-		return resp, err
+	// Ignore nonGet unimplemented errors.
+	if err != nil {
+		if st, _ := status.FromError(err); st.Code() != codes.Unimplemented {
+			return resp, err
+		} else {
+			switch {
+			case strings.Contains(info.FullMethod, "Create") || strings.Contains(info.FullMethod, "Set") || strings.Contains(info.FullMethod, "Remove"):
+				return resp, err
+			}
+		}
 	}
 	reqMsg := req.(proto.Message)
 	// If the resp is nil, then create a new response type.

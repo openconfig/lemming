@@ -5,6 +5,8 @@ go_library(
     srcs = [
         "acl.go",
         "hostif.go",
+        "isolation_group.go",
+        "policer.go",
         "ports.go",
         "routing.go",
         "saiserver.go",

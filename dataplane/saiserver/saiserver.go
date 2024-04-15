@@ -66,10 +66,6 @@ type ipsec struct {
 	saipb.UnimplementedIpsecServer
 }
 
-type isolationGroup struct {
-	saipb.UnimplementedIsolationGroupServer
-}
-
 type l2mcGroup struct {
 	saipb.UnimplementedL2McGroupServer
 }
@@ -96,10 +92,6 @@ type mpls struct {
 
 type nat struct {
 	saipb.UnimplementedNatServer
-}
-
-type policer struct {
-	saipb.UnimplementedPolicerServer
 }
 
 type qosMap struct {
@@ -177,7 +169,6 @@ type Server struct {
 	ipmcGroup      *ipmcGroup
 	ipmc           *ipmc
 	ipsec          *ipsec
-	isolationGroup *isolationGroup
 	l2mcGroup      *l2mcGroup
 	l2mc           *l2mc
 	macsec         *macsec
@@ -185,7 +176,6 @@ type Server struct {
 	mirror         *mirror
 	mpls           *mpls
 	nat            *nat
-	policer        *policer
 	qosMap         *qosMap
 	queue          *queue
 	rpfGroup       *rpfGroup
@@ -267,7 +257,6 @@ func New(ctx context.Context, mgr *attrmgr.AttrMgr, s *grpc.Server, opts *dplane
 		ipmcGroup:         &ipmcGroup{},
 		ipmc:              &ipmc{},
 		ipsec:             &ipsec{},
-		isolationGroup:    &isolationGroup{},
 		l2mcGroup:         &l2mcGroup{},
 		l2mc:              &l2mc{},
 		macsec:            &macsec{},
@@ -275,7 +264,6 @@ func New(ctx context.Context, mgr *attrmgr.AttrMgr, s *grpc.Server, opts *dplane
 		mirror:            &mirror{},
 		mpls:              &mpls{},
 		nat:               &nat{},
-		policer:           &policer{},
 		qosMap:            &qosMap{},
 		queue:             &queue{},
 		rpfGroup:          &rpfGroup{},
@@ -300,7 +288,6 @@ func New(ctx context.Context, mgr *attrmgr.AttrMgr, s *grpc.Server, opts *dplane
 	saipb.RegisterIpmcGroupServer(s, srv.ipmcGroup)
 	saipb.RegisterIpmcServer(s, srv.ipmc)
 	saipb.RegisterIpsecServer(s, srv.ipsec)
-	saipb.RegisterIsolationGroupServer(s, srv.isolationGroup)
 	saipb.RegisterL2McGroupServer(s, srv.l2mcGroup)
 	saipb.RegisterL2McServer(s, srv.l2mc)
 	saipb.RegisterMacsecServer(s, srv.macsec)
@@ -308,7 +295,6 @@ func New(ctx context.Context, mgr *attrmgr.AttrMgr, s *grpc.Server, opts *dplane
 	saipb.RegisterMirrorServer(s, srv.mirror)
 	saipb.RegisterMplsServer(s, srv.mpls)
 	saipb.RegisterNatServer(s, srv.nat)
-	saipb.RegisterPolicerServer(s, srv.policer)
 	saipb.RegisterQosMapServer(s, srv.qosMap)
 	saipb.RegisterQueueServer(s, srv.queue)
 	saipb.RegisterRpfGroupServer(s, srv.rpfGroup)

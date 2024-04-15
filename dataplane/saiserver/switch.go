@@ -45,10 +45,12 @@ type saiSwitch struct {
 	bridge          *bridge
 	hostif          *hostif
 	hash            *hash
+	isolationGroup  *isolationGroup
 	myMac           *myMac
 	neighbor        *neighbor
 	nextHopGroup    *nextHopGroup
 	nextHop         *nextHop
+	policer         *policer
 	route           *route
 	lag             *lag
 	tunnel          *tunnel
@@ -108,6 +110,7 @@ func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server, 
 	sw := &saiSwitch{
 		dataplane:       engine,
 		acl:             newACL(mgr, engine, s),
+		policer:         newPolicer(mgr, engine, s),
 		port:            port,
 		vlan:            newVlan(mgr, engine, s),
 		stp:             &stp{},
@@ -115,6 +118,7 @@ func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server, 
 		bridge:          newBridge(mgr, engine, s),
 		hostif:          newHostif(mgr, engine, s, opts),
 		hash:            newHash(mgr, engine, s),
+		isolationGroup:  newIsolationGroup(mgr, engine, s),
 		myMac:           newMyMac(mgr, engine, s),
 		neighbor:        newNeighbor(mgr, engine, s),
 		nextHopGroup:    newNextHopGroup(mgr, engine, s),
