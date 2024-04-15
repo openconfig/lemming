@@ -260,7 +260,6 @@ func (a *acl) CreateAclEntry(ctx context.Context, req *saipb.CreateAclEntryReque
 	if len(aReq.EntryDesc.GetFlow().Fields) == 0 {
 		return nil, status.Error(codes.InvalidArgument, "either no fields or not unsupports fields in entry req")
 	}
-
 	if req.ActionSetVrf != nil {
 		aReq.Actions = append(aReq.Actions,
 			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF).
@@ -285,12 +284,76 @@ func (a *acl) CreateAclEntry(ctx context.Context, req *saipb.CreateAclEntryReque
 			return nil, status.Errorf(codes.InvalidArgument, "unknown packet action type: %v", req.GetActionPacketAction().GetPacketAction())
 		}
 	}
+	if req.ActionCounter != nil {
+		aReq.Actions = append(aReq.Actions, &fwdpb.ActionDesc{
+			ActionType: fwdpb.ActionType_ACTION_TYPE_FLOW_COUNTER,
+			Action: &fwdpb.ActionDesc_Flow{
+				Flow: &fwdpb.FlowCounterActionDesc{
+					CounterId: &fwdpb.FlowCounterId{
+						ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(req.GetActionCounter().GetOid())},
+					},
+				},
+			},
+		})
+	}
 
 	if _, err := a.dataplane.TableEntryAdd(ctx, aReq); err != nil {
 		return nil, err
 	}
 
 	return &saipb.CreateAclEntryResponse{Oid: id}, nil
+}
+
+func (a *acl) CreateAclCounter(ctx context.Context, req *saipb.CreateAclCounterRequest) (*saipb.CreateAclCounterResponse, error) {
+	id := a.mgr.NextID()
+
+	_, err := a.dataplane.FlowCounterCreate(ctx, &fwdpb.FlowCounterCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: a.dataplane.ID()},
+		Id:        &fwdpb.FlowCounterId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)}},
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &saipb.CreateAclCounterResponse{Oid: id}, nil
+}
+
+func (a *acl) RemoveAclCounter(ctx context.Context, req *saipb.RemoveAclCounterRequest) (*saipb.RemoveAclCounterResponse, error) {
+	_, err := a.dataplane.ObjectDelete(ctx, &fwdpb.ObjectDeleteRequest{
+		ContextId: &fwdpb.ContextId{Id: a.dataplane.ID()},
+		ObjectId:  &fwdpb.ObjectId{Id: fmt.Sprint(req.GetOid())},
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &saipb.RemoveAclCounterResponse{}, nil
+}
+
+func (a *acl) GetAclCounterAttribute(ctx context.Context, req *saipb.GetAclCounterAttributeRequest) (*saipb.GetAclCounterAttributeResponse, error) {
+	fetchStats := false
+	for _, attr := range req.GetAttrType() {
+		switch attr {
+		case saipb.AclCounterAttr_ACL_COUNTER_ATTR_PACKETS, saipb.AclCounterAttr_ACL_COUNTER_ATTR_BYTES:
+			fetchStats = true
+		}
+	}
+	if !fetchStats {
+		return &saipb.GetAclCounterAttributeResponse{}, nil
+	}
+	count, err := a.dataplane.FlowCounterQuery(ctx, &fwdpb.FlowCounterQueryRequest{
+		ContextId: &fwdpb.ContextId{Id: a.dataplane.ID()},
+		Ids:       []*fwdpb.FlowCounterId{{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(req.Oid)}}},
+	})
+	if err != nil {
+		return nil, err
+	}
+	resp := &saipb.GetAclCounterAttributeResponse{
+		Attr: &saipb.AclCounterAttribute{
+			Packets: &count.GetCounters()[0].Packets,
+			Bytes:   &count.GetCounters()[0].Octets,
+		},
+	}
+	a.mgr.StoreAttributes(req.GetOid(), resp.GetAttr())
+	return resp, nil
 }
 
 // entryDescFromReq returns the EntryDesc based on req.

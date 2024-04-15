@@ -71,6 +71,8 @@ type switchDataplaneAPI interface {
 	ObjectNID(context.Context, *fwdpb.ObjectNIDRequest) (*fwdpb.ObjectNIDReply, error)
 	InjectPacket(contextID *fwdpb.ContextId, id *fwdpb.PortId, hid fwdpb.PacketHeaderId, frame []byte, preActions []*fwdpb.ActionDesc, debug bool, dir fwdpb.PortAction) error
 	ObjectDelete(context.Context, *fwdpb.ObjectDeleteRequest) (*fwdpb.ObjectDeleteReply, error)
+	FlowCounterCreate(_ context.Context, request *fwdpb.FlowCounterCreateRequest) (*fwdpb.FlowCounterCreateReply, error)
+	FlowCounterQuery(_ context.Context, request *fwdpb.FlowCounterQueryRequest) (*fwdpb.FlowCounterQueryReply, error)
 }
 
 const (
@@ -784,7 +786,7 @@ func (sw *saiSwitch) PortStateChangeNotification(_ *saipb.PortStateChangeNotific
 	}
 }
 
-func (sw saiSwitch) Reset() {
+func (sw *saiSwitch) Reset() {
 	sw.port.Reset()
 	sw.hostif.Reset()
 }
