@@ -106,7 +106,7 @@ func (mgr *AttrMgr) Interceptor(ctx context.Context, req any, info *grpc.UnarySe
 		return handler(ctx, req)
 	}
 	resp, err := handler(ctx, req)
-	// Ignore nonGet unimplemented errors.
+	// Ignore unimplemented error for Get*Attribute.
 	if err != nil {
 		st, _ := status.FromError(err)
 		switch {
