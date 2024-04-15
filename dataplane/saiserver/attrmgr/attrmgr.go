@@ -108,13 +108,10 @@ func (mgr *AttrMgr) Interceptor(ctx context.Context, req any, info *grpc.UnarySe
 	resp, err := handler(ctx, req)
 	// Ignore nonGet unimplemented errors.
 	if err != nil {
-		if st, _ := status.FromError(err); st.Code() != codes.Unimplemented {
+		st, _ := status.FromError(err)
+		switch {
+		case st.Code() != codes.Unimplemented, strings.Contains(info.FullMethod, "Create"), strings.Contains(info.FullMethod, "Set"), strings.Contains(info.FullMethod, "Remove"):
 			return resp, err
-		} else {
-			switch {
-			case strings.Contains(info.FullMethod, "Create") || strings.Contains(info.FullMethod, "Set") || strings.Contains(info.FullMethod, "Remove"):
-				return resp, err
-			}
 		}
 	}
 	reqMsg := req.(proto.Message)

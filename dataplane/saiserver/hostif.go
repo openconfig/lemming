@@ -400,7 +400,7 @@ func (hostif *hostif) SetHostifAttribute(ctx context.Context, req *saipb.SetHost
 }
 
 // SetHostifTrapGroupAttribute sets the trap group attribute.
-func (_ *hostif) SetHostifTrapGroupAttribute(context.Context, *saipb.SetHostifTrapGroupAttributeRequest) (*saipb.SetHostifTrapGroupAttributeResponse, error) {
+func (*hostif) SetHostifTrapGroupAttribute(context.Context, *saipb.SetHostifTrapGroupAttributeRequest) (*saipb.SetHostifTrapGroupAttributeResponse, error) {
 	// TODO: provide implementation.
 	return &saipb.SetHostifTrapGroupAttributeResponse{}, nil
 }
