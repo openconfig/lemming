@@ -1,4 +1,4 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "gnoi",
@@ -21,6 +21,22 @@ go_library(
         "@com_github_openconfig_gnoi//otdr",
         "@com_github_openconfig_gnoi//system",
         "@com_github_openconfig_gnoi//wavelength_router",
+        "@com_github_openconfig_ygnmi//ygnmi",
+        "@org_golang_google_grpc//:go_default_library",
+        "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//status",
+    ],
+)
+
+go_test(
+    name = "gnoi_test",
+    srcs = ["gnoi_test.go"],
+    embed = [":gnoi"],
+    deps = [
+        "//gnmi",
+        "//gnmi/fakedevice",
+        "//gnmi/oc/ocpath",
+        "@com_github_openconfig_gnoi//system",
         "@com_github_openconfig_ygnmi//ygnmi",
         "@org_golang_google_grpc//:go_default_library",
         "@org_golang_google_grpc//codes",

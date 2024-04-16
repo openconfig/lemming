@@ -86,7 +86,6 @@ func TestReboot(t *testing.T) {
 		if !(prevTime < afterTime) {
 			t.Errorf("boot time did not update after reboot")
 		}
-
 	})
 
 	t.Run("cancel-no-pending", func(t *testing.T) {
@@ -115,6 +114,14 @@ func TestReboot(t *testing.T) {
 		if prevTime != afterTime {
 			t.Errorf("boot did not get cancelled")
 		}
+
+		// Couple more no-op cancels.
+		if _, err := s.CancelReboot(ctx, &spb.CancelRebootRequest{}); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := s.CancelReboot(ctx, &spb.CancelRebootRequest{}); err != nil {
+			t.Fatal(err)
+		}
 	})
 
 	t.Run("reboot-while-pending", func(t *testing.T) {
@@ -125,8 +132,66 @@ func TestReboot(t *testing.T) {
 		if _, err := s.Reboot(ctx, &spb.RebootRequest{}); status.Convert(err).Code() != codes.AlreadyExists {
 			t.Fatalf("Expected AlreadyExists error, got %v", err)
 		}
+		if _, err := s.Reboot(ctx, &spb.RebootRequest{Delay: 1}); status.Convert(err).Code() != codes.AlreadyExists {
+			t.Fatalf("Expected AlreadyExists error, got %v", err)
+		}
 		if _, err := s.CancelReboot(ctx, &spb.CancelRebootRequest{}); err != nil {
 			t.Fatal(err)
 		}
 	})
+
+	closeProximityTests := []struct {
+		desc  string
+		delay uint64
+	}{{
+		desc:  "cancel-while-possibly-pending-1ns",
+		delay: 1e0,
+	}, {
+		desc:  "cancel-while-possibly-pending-10ns",
+		delay: 1e1,
+	}, {
+		desc:  "cancel-while-possibly-pending-100ns",
+		delay: 1e2,
+	}, {
+		desc:  "cancel-while-possibly-pending-1us",
+		delay: 1e3,
+	}, {
+		desc:  "cancel-while-possibly-pending-10us",
+		delay: 1e4,
+	}, {
+		desc:  "cancel-while-possibly-pending-100us",
+		delay: 1e5,
+	}, {
+		desc:  "cancel-while-possibly-pending-1ms",
+		delay: 1e6,
+	}, {
+		desc:  "cancel-while-possibly-pending-10ms",
+		delay: 1e7,
+	}, {
+		desc:  "cancel-while-possibly-pending-100ms",
+		delay: 1e8,
+	}}
+
+	for _, tt := range closeProximityTests {
+		t.Run(tt.desc, func(t *testing.T) {
+			if _, err := s.Reboot(ctx, &spb.RebootRequest{Delay: tt.delay}); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := s.CancelReboot(ctx, &spb.CancelRebootRequest{}); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := s.CancelReboot(ctx, &spb.CancelRebootRequest{}); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := s.CancelReboot(ctx, &spb.CancelRebootRequest{}); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := s.CancelReboot(ctx, &spb.CancelRebootRequest{}); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := s.CancelReboot(ctx, &spb.CancelRebootRequest{}); err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
 }

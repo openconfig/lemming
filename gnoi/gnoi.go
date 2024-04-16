@@ -128,9 +128,6 @@ func (s *system) Reboot(ctx context.Context, r *spb.RebootRequest) (*spb.RebootR
 		select {
 		case <-s.cancelReboot:
 			log.Infof("delayed reboot cancelled")
-			s.rebootMu.Lock()
-			defer s.rebootMu.Unlock()
-			s.hasPendingReboot = false
 			s.cancelRebootFinish <- struct{}{}
 		case <-time.After(time.Duration(delay) * time.Nanosecond):
 			now := time.Now().UnixNano()
@@ -158,13 +155,15 @@ func (s *system) CancelReboot(context.Context, *spb.CancelRebootRequest) (*spb.C
 	for {
 		select {
 		case <-s.cancelRebootFinish:
+			s.rebootMu.Lock()
+			defer s.rebootMu.Unlock()
+			s.hasPendingReboot = false
 			return &spb.CancelRebootResponse{}, nil
-		case <-time.After(time.Second):
+		case <-time.After(time.Second): // It's possible for reboot to happen after cancellation signal -- use polling to check that.
 			s.rebootMu.Lock()
 			if !s.hasPendingReboot {
-				s.cancelRebootFinish <- struct{}{}
-				<-s.cancelReboot // drain cancellation signal that's not needed due to race condition with hasPendingReboot.
 				s.rebootMu.Unlock()
+				<-s.cancelReboot // clean-up cancellation signal that's not needed since reboot actually happened.
 				return &spb.CancelRebootResponse{}, nil
 			}
 			s.rebootMu.Unlock()
