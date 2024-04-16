@@ -24,6 +24,7 @@ require (
 	github.com/openconfig/kne v0.1.16
 	github.com/openconfig/magna v0.0.0-20240326180454-518e16696c84
 	github.com/openconfig/ondatra v0.5.2
+	github.com/openconfig/testt v0.0.0-20220311054427-efbb1a32ec07
 	github.com/openconfig/ygnmi v0.11.1
 	github.com/openconfig/ygot v0.29.18
 	github.com/osrg/gobgp/v3 v3.25.1-0.20240410224816-7ef2f0bb8283

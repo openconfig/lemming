@@ -222,6 +222,7 @@ func New(targetName, zapiURL string, opts ...Option) (*Device, error) {
 	recs = append(recs,
 		fakedevice.NewSystemBaseTask(),
 		fakedevice.NewBootTimeTask(),
+		fakedevice.NewCurrentTimeTask(),
 		bgp.NewGoBGPTask(targetName, zapiURL, resolvedOpts.bgpPort),
 	)
 
@@ -271,6 +272,11 @@ func New(targetName, zapiURL string, opts ...Option) (*Device, error) {
 		return nil, fmt.Errorf("cannot create gRPC server for P4RT, %v", err)
 	}
 
+	gnoiServer, err := fgnoi.New(s, cacheClient, targetName)
+	if err != nil {
+		return nil, err
+	}
+
 	d := &Device{
 		gnmignoignsiService: &gRPCService{
 			s:       s,
@@ -289,7 +295,7 @@ func New(targetName, zapiURL string, opts ...Option) (*Device, error) {
 			stopped: make(chan struct{}),
 		},
 		gnmiServer:   gnmiServer,
-		gnoiServer:   fgnoi.New(s),
+		gnoiServer:   gnoiServer,
 		gribiServer:  gribiServer,
 		gnsiServer:   gnsiServer,
 		p4rtServer:   fp4rt.New(P4RTs),
