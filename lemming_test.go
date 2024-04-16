@@ -178,9 +178,9 @@ func TestFakeGNOI(t *testing.T) {
 	}
 
 	cSystem := spb.NewSystemClient(conn)
-	_, err = cSystem.Reboot(context.Background(), &spb.RebootRequest{})
+	_, err = cSystem.SwitchControlProcessor(context.Background(), &spb.SwitchControlProcessorRequest{})
 	if err == nil {
-		t.Errorf("gnoi.System.Reboot failed to return error")
+		t.Errorf("gnoi.System.SwitchControlProcessor failed to return error")
 	}
 
 	cWaveLengthRouter := wrpb.NewWavelengthRouterClient(conn)
