@@ -74,9 +74,7 @@ func TestInterceptor(t *testing.T) {
 			RestartWarm: proto.Bool(true),
 		},
 		handlerErr: status.Error(codes.Unimplemented, "foo"),
-		want: &saipb.CreateSwitchResponse{
-			Oid: 1,
-		},
+		wantErr:    "Unimplemented",
 	}, {
 		desc:  "create request unimplemented typed nil",
 		info:  &grpc.UnaryServerInfo{FullMethod: "/lemming.dataplane.sai.Switch/CreateSwitch"},
@@ -86,9 +84,7 @@ func TestInterceptor(t *testing.T) {
 		},
 		handlerResp: (*saipb.CreateSwitchResponse)(nil),
 		handlerErr:  status.Error(codes.Unimplemented, "foo"),
-		want: &saipb.CreateSwitchResponse{
-			Oid: 1,
-		},
+		wantErr:     "Unimplemented",
 	}, {
 		desc:  "create request entry",
 		info:  &grpc.UnaryServerInfo{FullMethod: "/lemming.dataplane.sai.Route/CreateRoute"},

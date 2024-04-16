@@ -399,6 +399,12 @@ func (hostif *hostif) SetHostifAttribute(ctx context.Context, req *saipb.SetHost
 	return nil, nil
 }
 
+// SetHostifTrapGroupAttribute sets the trap group attribute.
+func (*hostif) SetHostifTrapGroupAttribute(context.Context, *saipb.SetHostifTrapGroupAttributeRequest) (*saipb.SetHostifTrapGroupAttributeResponse, error) {
+	// TODO: provide implementation.
+	return &saipb.SetHostifTrapGroupAttributeResponse{}, nil
+}
+
 var (
 	etherTypeARP  = []byte{0x08, 0x06}
 	udldDstMAC    = []byte{0x01, 0x00, 0x0C, 0xCC, 0xCC, 0xCC}
