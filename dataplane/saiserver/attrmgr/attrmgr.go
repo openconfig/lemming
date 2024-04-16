@@ -108,9 +108,7 @@ func (mgr *AttrMgr) Interceptor(ctx context.Context, req any, info *grpc.UnarySe
 	resp, err := handler(ctx, req)
 	// Ignore unimplemented error for Get*Attribute.
 	if err != nil {
-		st, _ := status.FromError(err)
-		switch {
-		case st.Code() != codes.Unimplemented, strings.Contains(info.FullMethod, "Create"), strings.Contains(info.FullMethod, "Set"), strings.Contains(info.FullMethod, "Remove"):
+		if st, _ := status.FromError(err); st.Code() != codes.Unimplemented || !strings.Contains(info.FullMethod, "Get") {
 			return resp, err
 		}
 	}
