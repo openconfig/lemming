@@ -85,8 +85,16 @@ type system struct {
 
 	c *ygnmi.Client
 
-	rebootMu           sync.Mutex
-	hasPendingReboot   bool
+	// rebootMu has the following roles:
+	// * ensures that writes to hasPendingReboot are free from race
+	//   conditions
+	// * ensures consistency between reboot operations and the current
+	//   state of hasPendingReboot (i.e. prevent TOCCTOU race conditions).
+	rebootMu         sync.Mutex
+	hasPendingReboot bool
+	// These channels ensure that cancellation is a blocking operation to
+	// avoid future reboots from conflicting with cancelled pending
+	// reboots.
 	cancelReboot       chan struct{}
 	cancelRebootFinish chan struct{}
 }
