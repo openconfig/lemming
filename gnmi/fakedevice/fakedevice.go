@@ -25,19 +25,40 @@ import (
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 	"github.com/openconfig/lemming/gnmi/reconciler"
 	"github.com/openconfig/ygnmi/ygnmi"
+	"github.com/openconfig/ygot/ygot"
 )
 
 const (
 	DefaultNetworkInstance = "DEFAULT"
 	StaticRoutingProtocol  = "DEFAULT"
 	BGPRoutingProtocol     = "BGP"
+
+	chassisComponentName = "chassis"
 )
 
+// Reboot updates the system boot time to the provided Unix time.
+func Reboot(ctx context.Context, c *ygnmi.Client, rebootTime int64) error {
+	_, err := gnmiclient.Replace(gnmi.AddTimestampMetadata(ctx, rebootTime), c, ocpath.Root().System().BootTime().State(), uint64(rebootTime))
+	return err
+}
+
+// NewBootTimeTask initializes boot-related paths.
 func NewBootTimeTask() *reconciler.BuiltReconciler {
 	rec := reconciler.NewBuilder("boot time").
 		WithStart(func(ctx context.Context, c *ygnmi.Client) error {
-			_, err := gnmiclient.Replace(gnmi.AddTimestampMetadata(ctx, time.Now().UnixNano()), c, ocpath.Root().System().BootTime().State(), uint64(time.Now().UnixNano()))
-			return err
+			now := time.Now().UnixNano()
+			if err := Reboot(ctx, c, now); err != nil {
+				return err
+			}
+			if _, err := gnmiclient.Replace(gnmi.AddTimestampMetadata(ctx, now), c, ocpath.Root().Component(chassisComponentName).State(), &oc.Component{
+				Name:            ygot.String(chassisComponentName),
+				Type:            oc.PlatformTypes_OPENCONFIG_HARDWARE_COMPONENT_CHASSIS,
+				OperStatus:      oc.PlatformTypes_COMPONENT_OPER_STATUS_ACTIVE,
+				SoftwareVersion: ygot.String("current"),
+			}); err != nil {
+				return err
+			}
+			return nil
 		}).Build()
 
 	return rec

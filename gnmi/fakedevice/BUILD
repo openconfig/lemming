@@ -13,5 +13,6 @@ go_library(
         "//gnmi/reconciler",
         "@com_github_golang_glog//:glog",
         "@com_github_openconfig_ygnmi//ygnmi",
+        "@com_github_openconfig_ygot//ygot",
     ],
 )
