@@ -339,7 +339,7 @@ func (hostif *hostif) RemoveHostif(ctx context.Context, req *saipb.RemoveHostifR
 
 	nid, err := hostif.dataplane.ObjectNID(ctx, &fwdpb.ObjectNIDRequest{
 		ContextId: &fwdpb.ContextId{Id: hostif.dataplane.ID()},
-		ObjectId:  &fwdpb.ObjectId{Id: fmt.Sprint(hostif.remoteHostifs[req.GetOid()])},
+		ObjectId:  &fwdpb.ObjectId{Id: fmt.Sprint(hostif.remoteHostifs[req.GetOid()].GetDataplanePort())},
 	})
 	if err != nil {
 		return nil, err

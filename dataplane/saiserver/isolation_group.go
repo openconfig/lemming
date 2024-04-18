@@ -44,3 +44,8 @@ func (ig *isolationGroup) CreateIsolationGroup(context.Context, *saipb.CreateIso
 	// TODO: provide implementation.
 	return &saipb.CreateIsolationGroupResponse{}, nil
 }
+
+func (ig *isolationGroup) RemoveIsolationGroup(context.Context, *saipb.RemoveIsolationGroupRequest) (*saipb.RemoveIsolationGroupResponse, error) {
+	// TODO: provide implementation.
+	return &saipb.RemoveIsolationGroupResponse{}, nil
+}
