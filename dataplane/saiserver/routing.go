@@ -635,6 +635,64 @@ func (ri *routerInterface) CreateRouterInterface(ctx context.Context, req *saipb
 	return &saipb.CreateRouterInterfaceResponse{Oid: id}, nil
 }
 
+func (ri *routerInterface) RemoveRouterInterface(ctx context.Context, req *saipb.RemoveRouterInterfaceRequest) (*saipb.RemoveRouterInterfaceResponse, error) {
+	resp := &saipb.GetRouterInterfaceAttributeResponse{}
+	err := ri.mgr.PopulateAttributes(&saipb.GetRouterInterfaceAttributeRequest{
+		Oid:      req.GetOid(),
+		AttrType: []saipb.RouterInterfaceAttr{saipb.RouterInterfaceAttr_ROUTER_INTERFACE_ATTR_PORT_ID},
+	}, resp)
+	if err != nil {
+		return nil, err
+	}
+
+	nid, err := ri.dataplane.ObjectNID(ctx, &fwdpb.ObjectNIDRequest{
+		ContextId: &fwdpb.ContextId{Id: ri.dataplane.ID()},
+		ObjectId:  &fwdpb.ObjectId{Id: fmt.Sprint(resp.GetAttr().GetPortId())},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = ri.dataplane.TableEntryRemove(ctx, fwdconfig.TableEntryRemoveRequest(ri.dataplane.ID(), inputIfaceTable).
+		AppendEntry(
+			fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT).WithUint64(nid.GetNid()))),
+		).Build())
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = ri.dataplane.TableEntryRemove(ctx, fwdconfig.TableEntryRemoveRequest(ri.dataplane.ID(), outputIfaceTable).
+		AppendEntry(
+			fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE).WithUint64(req.GetOid()))),
+		).Build())
+	if err != nil {
+		return nil, err
+	}
+
+	// Link the interface to a VRF.
+	_, err = ri.dataplane.TableEntryRemove(ctx, fwdconfig.TableEntryRemoveRequest(ri.dataplane.ID(), IngressVRFTable).
+		AppendEntry(
+			fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_INPUT_IFACE).WithUint64(req.GetOid()))),
+		).Build())
+	if err != nil {
+		return nil, err
+	}
+
+	// Give the interface a SMAC.
+	_, err = ri.dataplane.TableEntryRemove(ctx, fwdconfig.TableEntryRemoveRequest(ri.dataplane.ID(), SRCMACTable).AppendEntry(
+		fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE).WithUint64(req.GetOid()))),
+	).Build())
+	if err != nil {
+		return nil, err
+	}
+
+	return &saipb.RemoveRouterInterfaceResponse{}, nil
+}
+
+func (ri *routerInterface) SetRouterInterfaceAttribute(context.Context, *saipb.SetRouterInterfaceAttributeRequest) (*saipb.SetRouterInterfaceAttributeResponse, error) {
+	return &saipb.SetRouterInterfaceAttributeResponse{}, nil
+}
+
 type vlan struct {
 	saipb.UnimplementedVlanServer
 	mgr       *attrmgr.AttrMgr
