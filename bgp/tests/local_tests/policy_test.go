@@ -407,5 +407,8 @@ func getAttrs(t *testing.T, dut *Device, attrSetMap map[uint64]*oc.NetworkInstan
 	if origin := attrs.GetOrigin(); origin != oc.BgpTypes_BgpOriginAttrType_UNSET {
 		gotAttrs.AttrSet.Origin = origin.String()
 	}
+	if attrs.Med != nil {
+		gotAttrs.AttrSet.Med = attrs.GetMed()
+	}
 	return gotAttrs
 }
