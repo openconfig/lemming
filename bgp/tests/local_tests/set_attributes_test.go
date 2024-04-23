@@ -113,6 +113,11 @@ func TestSetAttributes(t *testing.T) {
 				AdjRibOutPostCommunities:     []string{"23456:23456"},
 				NextAdjRibInPreCommunities:   []string{"23456:23456"},
 				NextLocalRibCommunities:      []string{"23456:23456"},
+				LocalRibAttrs: &valpb.RibAttributes{
+					AttrSet: &valpb.AttrSet{
+						Origin: "IGP",
+					},
+				},
 			}, {
 				Description: "Rejected route due to community set",
 				Input: &valpb.TestRoute{

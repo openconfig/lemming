@@ -600,8 +600,13 @@ func (t *bgpTask) populateRIBAttrs(path *api.Path, rib *oc.NetworkInstance_Proto
 		return b.String()
 	}
 
-	var hasCommunity bool
-	var commIndex uint64
+	var (
+		hasCommunity bool
+		commIndex    uint64
+		hasAttr      bool
+		attrSet      ribAttrSet
+	)
+
 	for _, attr := range path.GetPattrs() {
 		m, err := attr.UnmarshalNew()
 		if err != nil {
@@ -615,10 +620,28 @@ func (t *bgpTask) populateRIBAttrs(path *api.Path, rib *oc.NetworkInstance_Proto
 				commIndex = t.commAttrTracker.getOrAllocIndex(commsToString(comms))
 				rib.GetOrCreateCommunity(commIndex).SetCommunity(communitiesToOC(comms))
 			}
+		case *api.OriginAttribute:
+			hasAttr = true
+			switch origin := m.GetOrigin(); origin {
+			case 0:
+				attrSet.origin = oc.BgpTypes_BgpOriginAttrType_IGP
+			case 1:
+				attrSet.origin = oc.BgpTypes_BgpOriginAttrType_EGP
+			case 2:
+				attrSet.origin = oc.BgpTypes_BgpOriginAttrType_INCOMPLETE
+			default:
+				log.Errorf("BGP: Unrecognized origin attribute value: %v", origin)
+			}
 		}
 	}
 	if hasCommunity {
 		route.SetCommunityIndex(commIndex)
+	}
+	if hasAttr {
+		attrSetIndex := t.attrSetTracker.getOrAllocIndex(attrSet)
+		attrSetOC := rib.GetOrCreateAttrSet(attrSetIndex)
+		attrSetOC.SetOrigin(attrSet.origin)
+		route.SetAttrIndex(attrSetIndex)
 	}
 }
 

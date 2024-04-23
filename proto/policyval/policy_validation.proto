@@ -65,4 +65,23 @@ message RouteTestCase {
 
   repeated string next_adj_rib_in_pre_communities = 11;
   repeated string next_local_rib_communities = 12;
+
+  RibAttributes prev_adj_rib_out_pre_attrs = 13;
+  RibAttributes prev_adj_rib_out_post_attrs = 14;
+  RibAttributes adj_rib_in_pre_attrs = 15;
+  RibAttributes adj_rib_in_post_attrs = 16;
+  RibAttributes local_rib_attrs = 17;
+  RibAttributes adj_rib_out_pre_attrs = 18;
+  RibAttributes adj_rib_out_post_attrs = 19;
+  RibAttributes next_adj_rib_in_pre_attrs = 20;
+  RibAttributes next_adj_rib_in_post_attrs = 21;
+  RibAttributes next_local_rib_attrs = 22;
+}
+
+message RibAttributes {
+  AttrSet attr_set = 1;
+}
+
+message AttrSet {
+  string origin = 1;
 }
