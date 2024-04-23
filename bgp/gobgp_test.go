@@ -198,49 +198,49 @@ func TestValidatePrefixSetMode(t *testing.T) {
 }
 
 func TestPopulateAttrs(t *testing.T) {
-	r := newOCRIBAttrIndices()
-	r.beginPopulation(&oc.NetworkInstance_Protocol_Bgp_Rib{})
-	i := r.getOrAllocIndex([]uint32{1, 2, 3})
+	r := newOCRIBAttrIndices[[5]uint32]()
+	r.beginAllocation()
+	i := r.getOrAllocIndex([5]uint32{1, 2, 3})
 	if i != 1 {
 		t.Errorf("Unexpected index: %v", i)
 	}
-	i = r.getOrAllocIndex([]uint32{1, 2, 3})
+	i = r.getOrAllocIndex([5]uint32{1, 2, 3})
 	if i != 1 {
 		t.Errorf("Unexpected index: %v", i)
 	}
-	i = r.getOrAllocIndex([]uint32{1, 2, 3, 4})
+	i = r.getOrAllocIndex([5]uint32{1, 2, 3, 4})
 	if i != 2 {
 		t.Errorf("Unexpected index: %v", i)
 	}
-	i = r.getOrAllocIndex([]uint32{1, 2, 3, 4})
+	i = r.getOrAllocIndex([5]uint32{1, 2, 3, 4})
 	if i != 2 {
 		t.Errorf("Unexpected index: %v", i)
 	}
-	r.completePopulation()
+	r.completeAllocation()
 
-	r.beginPopulation(&oc.NetworkInstance_Protocol_Bgp_Rib{})
-	i = r.getOrAllocIndex([]uint32{1, 2, 3, 4})
+	r.beginAllocation()
+	i = r.getOrAllocIndex([5]uint32{1, 2, 3, 4})
 	if i != 2 {
 		t.Errorf("Unexpected index: %v", i)
 	}
-	i = r.getOrAllocIndex([]uint32{1, 2, 3, 4, 5})
+	i = r.getOrAllocIndex([5]uint32{1, 2, 3, 4, 5})
 	if i != 3 {
 		t.Errorf("Unexpected index: %v", i)
 	}
-	r.completePopulation()
+	r.completeAllocation()
 
-	r.beginPopulation(&oc.NetworkInstance_Protocol_Bgp_Rib{})
-	i = r.getOrAllocIndex([]uint32{1, 2, 3, 4})
+	r.beginAllocation()
+	i = r.getOrAllocIndex([5]uint32{1, 2, 3, 4})
 	if i != 2 {
 		t.Errorf("Unexpected index: %v", i)
 	}
-	i = r.getOrAllocIndex([]uint32{1, 2, 3, 4, 5})
+	i = r.getOrAllocIndex([5]uint32{1, 2, 3, 4, 5})
 	if i != 3 {
 		t.Errorf("Unexpected index: %v", i)
 	}
-	i = r.getOrAllocIndex([]uint32{1, 2, 3})
+	i = r.getOrAllocIndex([5]uint32{1, 2, 3})
 	if i != 4 {
 		t.Errorf("Unexpected index: %v", i)
 	}
-	r.completePopulation()
+	r.completeAllocation()
 }
