@@ -84,5 +84,6 @@ message RibAttributes {
 
 message AttrSet {
   string origin = 1;
-  uint32 med = 2;
+  optional uint32 med = 2;
+  optional uint32 local_pref = 3;
 }
