@@ -23,12 +23,10 @@ import (
 	"github.com/openconfig/lemming/gnmi/fakedevice"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
+	"github.com/openconfig/lemming/policytest"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/testing/protocmp"
-
-	valpb "github.com/openconfig/lemming/proto/policyval"
 )
 
 const (
@@ -50,13 +48,16 @@ const (
 // import policy change after a soft reset:
 // https://github.com/osrg/gobgp/blob/master/docs/sources/policy.md#policy-and-soft-reset
 type PolicyTestCase struct {
-	spec            *valpb.PolicyTestCase
-	installPolicies func(t *testing.T, dut1, dut2, dut3, dut4, dut5 *Device)
+	description             string
+	routeTests              []*policytest.RouteTestCase
+	alternatePathRouteTests []*policytest.RouteTestCase
+	longerPathRouteTests    []*policytest.RouteTestCase
+	installPolicies         func(t *testing.T, dut1, dut2, dut3, dut4, dut5 *Device)
 }
 
 // testPolicy is the helper policy integration tests can call to instantiate
 // policy tests.
-func testPolicy(t *testing.T, testspec PolicyTestCase) {
+func testPolicy(t *testing.T, testspec *PolicyTestCase) {
 	t.Helper()
 	dut1, stop1 := newLemming(t, 1, 64500, []*AddIntfAction{{
 		name:    "eth0",
@@ -90,33 +91,33 @@ func testPolicy(t *testing.T, testspec PolicyTestCase) {
 	testPolicyAux(t, testspec, dut1, dut2, dut3, dut4, dut5)
 }
 
-func testPropagation(t *testing.T, routeTest *valpb.RouteTestCase, prevDUT, currDUT, nextDUT *Device) {
+func testPropagation(t *testing.T, routeTest *policytest.RouteTestCase, prevDUT, currDUT, nextDUT *Device) {
 	t.Helper()
 	v4uni := bgp.BGPPath.Rib().AfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST).Ipv4Unicast()
 
-	prefix := routeTest.GetInput().GetReachPrefix()
+	prefix := routeTest.Input.ReachPrefix
 	// Check propagation to AdjRibOutPre for all prefixes.
 	Await(t, prevDUT, v4uni.Neighbor(currDUT.RouterID).AdjRibOutPre().Route(prefix, 0).Prefix().State(), prefix)
 	Await(t, prevDUT, v4uni.Neighbor(currDUT.RouterID).AdjRibOutPost().Route(prefix, 0).Prefix().State(), prefix)
 	Await(t, currDUT, v4uni.Neighbor(prevDUT.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), prefix)
-	switch expectedResult := routeTest.GetExpectedResult(); expectedResult {
-	case valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT:
+	switch expectedResult := routeTest.ExpectedResult; expectedResult {
+	case policytest.RouteAccepted:
 		t.Logf("Waiting for %s to be propagated", prefix)
 		Await(t, currDUT, v4uni.Neighbor(prevDUT.RouterID).AdjRibInPost().Route(prefix, 0).Prefix().State(), prefix)
 		Await(t, currDUT, v4uni.LocRib().Route(prefix, oc.UnionString(prevDUT.RouterID), 0).Prefix().State(), prefix)
 		Await(t, currDUT, v4uni.Neighbor(nextDUT.RouterID).AdjRibOutPre().Route(prefix, 0).Prefix().State(), prefix)
 		Await(t, currDUT, v4uni.Neighbor(nextDUT.RouterID).AdjRibOutPost().Route(prefix, 0).Prefix().State(), prefix)
 		Await(t, nextDUT, v4uni.Neighbor(currDUT.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), prefix)
-	case valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD:
+	case policytest.RouteDiscarded:
 		w := Watch(t, currDUT, v4uni.Neighbor(prevDUT.RouterID).AdjRibInPost().Route(prefix, 0).Prefix().State(), rejectTimeout, func(val *ygnmi.Value[string]) bool {
 			_, ok := val.Val()
 			return !ok
 		})
 		if _, ok := w.Await(t); !ok {
-			t.Errorf("prefix %q (%s) was not rejected from adj-rib-in-post of %v (neighbour %v) within timeout.", prefix, routeTest.GetDescription(), currDUT, prevDUT.ID)
+			t.Errorf("prefix %q (%s) was not rejected from adj-rib-in-post of %v (neighbour %v) within timeout.", prefix, routeTest.Description, currDUT, prevDUT.ID)
 			break
 		}
-		t.Logf("prefix %q (%s) was successfully rejected from adj-rib-in-post of %v (neighbour %v) within timeout.", prefix, routeTest.GetDescription(), currDUT, prevDUT.ID)
+		t.Logf("prefix %q (%s) was successfully rejected from adj-rib-in-post of %v (neighbour %v) within timeout.", prefix, routeTest.Description, currDUT, prevDUT.ID)
 
 		// Test withdrawal in the case of InstallPolicyAfterRoutes.
 		w = Watch(t, nextDUT, v4uni.Neighbor(currDUT.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), rejectTimeout, func(val *ygnmi.Value[string]) bool {
@@ -124,21 +125,21 @@ func testPropagation(t *testing.T, routeTest *valpb.RouteTestCase, prevDUT, curr
 			return !ok
 		})
 		if _, ok := w.Await(t); !ok {
-			t.Errorf("prefix %q (%s) was not rejected from adj-rib-in-pre of %v (neighbour %v) within timeout.", prefix, routeTest.GetDescription(), nextDUT, currDUT.ID)
+			t.Errorf("prefix %q (%s) was not rejected from adj-rib-in-pre of %v (neighbour %v) within timeout.", prefix, routeTest.Description, nextDUT, currDUT.ID)
 			break
 		}
-		t.Logf("prefix %q (%s) was successfully rejected from adj-rib-in-pre of %v (neighbour %v) within timeout.", prefix, routeTest.GetDescription(), nextDUT, currDUT.ID)
-	case valpb.RouteTestResult_ROUTE_TEST_RESULT_NOT_PREFERRED:
+		t.Logf("prefix %q (%s) was successfully rejected from adj-rib-in-pre of %v (neighbour %v) within timeout.", prefix, routeTest.Description, nextDUT, currDUT.ID)
+	case policytest.RouteNotPreferred:
 		Await(t, currDUT, v4uni.Neighbor(prevDUT.RouterID).AdjRibInPost().Route(prefix, 0).Prefix().State(), prefix)
 		w := Watch(t, currDUT, v4uni.LocRib().Route(prefix, oc.UnionString(prevDUT.RouterID), 0).Prefix().State(), rejectTimeout, func(val *ygnmi.Value[string]) bool {
 			_, ok := val.Val()
 			return !ok
 		})
 		if _, ok := w.Await(t); !ok {
-			t.Errorf("prefix %q with origin %q (%s) was selected into loc-rib of %v.", prefix, prevDUT.ID, routeTest.GetDescription(), currDUT)
+			t.Errorf("prefix %q with origin %q (%s) was selected into loc-rib of %v.", prefix, prevDUT.ID, routeTest.Description, currDUT)
 			break
 		}
-		t.Logf("prefix %q with origin %q (%s) was successfully not selected into loc-rib of %v within timeout.", prefix, prevDUT.ID, routeTest.GetDescription(), currDUT)
+		t.Logf("prefix %q with origin %q (%s) was successfully not selected into loc-rib of %v within timeout.", prefix, prevDUT.ID, routeTest.Description, currDUT)
 
 		Await(t, currDUT, v4uni.Neighbor(nextDUT.RouterID).AdjRibOutPre().Route(prefix, 0).Prefix().State(), prefix)
 		Await(t, currDUT, v4uni.Neighbor(nextDUT.RouterID).AdjRibOutPost().Route(prefix, 0).Prefix().State(), prefix)
@@ -148,7 +149,7 @@ func testPropagation(t *testing.T, routeTest *valpb.RouteTestCase, prevDUT, curr
 	}
 }
 
-func testPolicyAux(t *testing.T, testspec PolicyTestCase, dut1, dut2, dut3, dut4, dut5 *Device) {
+func testPolicyAux(t *testing.T, testspec *PolicyTestCase, dut1, dut2, dut3, dut4, dut5 *Device) {
 	// Remove any existing BGP config
 	//
 	// TODO(wenbli): Debug why sometimes this causes GoBGP to transiently
@@ -199,10 +200,10 @@ func testPolicyAux(t *testing.T, testspec PolicyTestCase, dut1, dut2, dut3, dut4
 		testspec.installPolicies(t, dut1, dut2, dut3, dut4, dut5)
 	}
 
-	for _, routeTest := range testspec.spec.RouteTests {
+	for _, routeTest := range testspec.routeTests {
 		// Install all regular test routes into DUT1.
 		route := &oc.NetworkInstance_Protocol_Static{
-			Prefix: ygot.String(routeTest.GetInput().GetReachPrefix()),
+			Prefix: ygot.String(routeTest.Input.ReachPrefix),
 			NextHop: map[string]*oc.NetworkInstance_Protocol_Static_NextHop{
 				"single": {
 					Index:   ygot.String("single"),
@@ -214,10 +215,10 @@ func testPolicyAux(t *testing.T, testspec PolicyTestCase, dut1, dut2, dut3, dut4
 		installStaticRoute(t, dut1, route)
 	}
 
-	for _, routeTest := range testspec.spec.LongerPathRouteTests {
+	for _, routeTest := range testspec.longerPathRouteTests {
 		// Install all longer-path test routes into DUT4.
 		route := &oc.NetworkInstance_Protocol_Static{
-			Prefix: ygot.String(routeTest.GetInput().GetReachPrefix()),
+			Prefix: ygot.String(routeTest.Input.ReachPrefix),
 			NextHop: map[string]*oc.NetworkInstance_Protocol_Static_NextHop{
 				"single": {
 					Index:   ygot.String("single"),
@@ -229,10 +230,10 @@ func testPolicyAux(t *testing.T, testspec PolicyTestCase, dut1, dut2, dut3, dut4
 		installStaticRoute(t, dut4, route)
 	}
 
-	for _, routeTest := range testspec.spec.AlternatePathRouteTests {
+	for _, routeTest := range testspec.alternatePathRouteTests {
 		// Install all alternate-path test routes into DUT5.
 		route := &oc.NetworkInstance_Protocol_Static{
-			Prefix: ygot.String(routeTest.GetInput().GetReachPrefix()),
+			Prefix: ygot.String(routeTest.Input.ReachPrefix),
 			NextHop: map[string]*oc.NetworkInstance_Protocol_Static_NextHop{
 				"single": {
 					Index:   ygot.String("single"),
@@ -250,19 +251,19 @@ func testPolicyAux(t *testing.T, testspec PolicyTestCase, dut1, dut2, dut3, dut4
 		t.Logf("Installed static route on %v: %s", dut1, formatYgot(v))
 	}
 
-	for _, routeTest := range testspec.spec.RouteTests {
+	for _, routeTest := range testspec.routeTests {
 		testPropagation(t, routeTest, dut1, dut2, dut3)
 		testCommunities(t, routeTest, dut1, dut2, dut3)
 		testAttrs(t, routeTest, dut1, dut2, dut3)
 	}
-	for _, routeTest := range testspec.spec.LongerPathRouteTests {
+	for _, routeTest := range testspec.longerPathRouteTests {
 		testPropagation(t, routeTest, dut5, dut2, dut3)
 		testCommunities(t, routeTest, dut5, dut2, dut3)
 		testAttrs(t, routeTest, dut5, dut2, dut3)
 	}
 }
 
-func testCommunities(t *testing.T, routeTest *valpb.RouteTestCase, prevDUT, currDUT, nextDUT *Device) {
+func testCommunities(t *testing.T, routeTest *policytest.RouteTestCase, prevDUT, currDUT, nextDUT *Device) {
 	prevCommunityMap := Lookup(t, prevDUT, bgp.BGPPath.Rib().CommunityMap().State())
 	prevCommMap, _ := prevCommunityMap.Val()
 	currCommunityMap := Lookup(t, currDUT, bgp.BGPPath.Rib().CommunityMap().State())
@@ -271,7 +272,7 @@ func testCommunities(t *testing.T, routeTest *valpb.RouteTestCase, prevDUT, curr
 	nextCommMap, _ := nextCommunityMap.Val()
 	v4uni := bgp.BGPPath.Rib().AfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST).Ipv4Unicast()
 
-	prefix := routeTest.GetInput().GetReachPrefix()
+	prefix := routeTest.Input.ReachPrefix
 
 	if diff := cmp.Diff(routeTest.PrevAdjRibOutPreCommunities, getCommunities(t, prevDUT, prevCommMap, v4uni.Neighbor(currDUT.RouterID).AdjRibOutPre().Route(prefix, 0).CommunityIndex().State())); diff != "" {
 		t.Errorf("DUT %v AdjRibOutPre communities difference (prefix %s) (-want, +got):\n%s", prevDUT.ID, prefix, diff)
@@ -328,7 +329,7 @@ func getCommunities(t *testing.T, dut *Device, commMap map[uint64]*oc.NetworkIns
 	return gotCommunities
 }
 
-func testAttrs(t *testing.T, routeTest *valpb.RouteTestCase, prevDUT, currDUT, nextDUT *Device) {
+func testAttrs(t *testing.T, routeTest *policytest.RouteTestCase, prevDUT, currDUT, nextDUT *Device) {
 	prevAttrSetMap := Lookup(t, prevDUT, bgp.BGPPath.Rib().AttrSetMap().State())
 	prevAttrMap, _ := prevAttrSetMap.Val()
 	currAttrSetMap := Lookup(t, currDUT, bgp.BGPPath.Rib().AttrSetMap().State())
@@ -337,14 +338,12 @@ func testAttrs(t *testing.T, routeTest *valpb.RouteTestCase, prevDUT, currDUT, n
 	nextAttrMap, _ := nextAttrSetMap.Val()
 	v4uni := bgp.BGPPath.Rib().AfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST).Ipv4Unicast()
 
-	prefix := routeTest.GetInput().GetReachPrefix()
+	prefix := routeTest.Input.ReachPrefix
 
-	igpAttr := &valpb.RibAttributes{
-		AttrSet: &valpb.AttrSet{
-			Origin:    "IGP",
-			LocalPref: proto.Uint32(100),
-			Med:       proto.Uint32(0),
-		},
+	igpAttr := &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+		Origin:    oc.BgpTypes_BgpOriginAttrType_IGP,
+		LocalPref: ygot.Uint32(100),
+		Med:       ygot.Uint32(0),
 	}
 
 	// NOTE: GoBGP doesn't seem to set origin properly -- it is always set to zero.
@@ -353,7 +352,7 @@ func testAttrs(t *testing.T, routeTest *valpb.RouteTestCase, prevDUT, currDUT, n
 	// If this is ever supported by GoBGP properly, OR if we decide to use
 	// SetOrigin to artificially set this attribute, then remove this
 	// function and associated logic.
-	nonNilOrIGP := func(a *valpb.RibAttributes, rejected bool) *valpb.RibAttributes {
+	nonNilOrIGP := func(a *oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet, rejected bool) *oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet {
 		if rejected {
 			return a
 		}
@@ -361,14 +360,11 @@ func testAttrs(t *testing.T, routeTest *valpb.RouteTestCase, prevDUT, currDUT, n
 			return igpAttr
 		}
 		// Set default values
-		if a.GetAttrSet() == nil {
-			a.AttrSet = &valpb.AttrSet{}
+		if a.Med == nil {
+			a.Med = ygot.Uint32(0)
 		}
-		if a.GetAttrSet().Med == nil {
-			a.AttrSet.Med = proto.Uint32(0)
-		}
-		if a.GetAttrSet().LocalPref == nil {
-			a.AttrSet.LocalPref = proto.Uint32(100)
+		if a.LocalPref == nil {
+			a.LocalPref = ygot.Uint32(100)
 		}
 		return a
 	}
@@ -382,22 +378,22 @@ func testAttrs(t *testing.T, routeTest *valpb.RouteTestCase, prevDUT, currDUT, n
 	if diff := cmp.Diff(nonNilOrIGP(routeTest.AdjRibInPreAttrs, false), getAttrs(t, currDUT, currAttrMap, v4uni.Neighbor(prevDUT.RouterID).AdjRibInPre().Route(prefix, 0).AttrIndex().State()), protocmp.Transform()); diff != "" {
 		t.Errorf("DUT %v AdjRibInPre attribute difference (prefix %s) (-want, +got):\n%s", currDUT.ID, prefix, diff)
 	}
-	if diff := cmp.Diff(nonNilOrIGP(routeTest.AdjRibInPostAttrs, routeTest.ExpectedResult == valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD), getAttrs(t, currDUT, currAttrMap, v4uni.Neighbor(prevDUT.RouterID).AdjRibInPost().Route(prefix, 0).AttrIndex().State()), protocmp.Transform()); diff != "" {
+	if diff := cmp.Diff(nonNilOrIGP(routeTest.AdjRibInPostAttrs, routeTest.ExpectedResult == policytest.RouteDiscarded), getAttrs(t, currDUT, currAttrMap, v4uni.Neighbor(prevDUT.RouterID).AdjRibInPost().Route(prefix, 0).AttrIndex().State()), protocmp.Transform()); diff != "" {
 		t.Errorf("DUT %v AdjRibInPost attribute difference (prefix %s) (-want, +got):\n%s", currDUT.ID, prefix, diff)
 	}
-	if diff := cmp.Diff(nonNilOrIGP(routeTest.LocalRibAttrs, routeTest.ExpectedResult != valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT), getAttrs(t, currDUT, currAttrMap, v4uni.LocRib().Route(prefix, oc.UnionString(prevDUT.RouterID), 0).AttrIndex().State()), protocmp.Transform()); diff != "" {
-		t.Errorf("DUT %v LocRib attrs difference (prefix %s) (-want, +got):\n%s", currDUT.ID, prefix, diff)
+	if diff := cmp.Diff(nonNilOrIGP(routeTest.LocalRibAttrs, routeTest.ExpectedResult != policytest.RouteAccepted), getAttrs(t, currDUT, currAttrMap, v4uni.LocRib().Route(prefix, oc.UnionString(prevDUT.RouterID), 0).AttrIndex().State()), protocmp.Transform()); diff != "" {
+		t.Errorf("DUT %v LocRib routeTest difference (prefix %s) (-want, +got):\n%s", currDUT.ID, prefix, diff)
 	}
-	if diff := cmp.Diff(nonNilOrIGP(routeTest.AdjRibOutPreAttrs, routeTest.ExpectedResult == valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD), getAttrs(t, currDUT, currAttrMap, v4uni.Neighbor(nextDUT.RouterID).AdjRibOutPre().Route(prefix, 0).AttrIndex().State()), protocmp.Transform()); diff != "" {
+	if diff := cmp.Diff(nonNilOrIGP(routeTest.AdjRibOutPreAttrs, routeTest.ExpectedResult == policytest.RouteDiscarded), getAttrs(t, currDUT, currAttrMap, v4uni.Neighbor(nextDUT.RouterID).AdjRibOutPre().Route(prefix, 0).AttrIndex().State()), protocmp.Transform()); diff != "" {
 		t.Errorf("DUT %v AdjRibOutPre attribute difference (prefix %s) (-want, +got):\n%s", currDUT.ID, prefix, diff)
 	}
-	if diff := cmp.Diff(nonNilOrIGP(routeTest.AdjRibOutPostAttrs, routeTest.ExpectedResult == valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD), getAttrs(t, currDUT, currAttrMap, v4uni.Neighbor(nextDUT.RouterID).AdjRibOutPost().Route(prefix, 0).AttrIndex().State()), protocmp.Transform()); diff != "" {
+	if diff := cmp.Diff(nonNilOrIGP(routeTest.AdjRibOutPostAttrs, routeTest.ExpectedResult == policytest.RouteDiscarded), getAttrs(t, currDUT, currAttrMap, v4uni.Neighbor(nextDUT.RouterID).AdjRibOutPost().Route(prefix, 0).AttrIndex().State()), protocmp.Transform()); diff != "" {
 		t.Errorf("DUT %v AdjRibOutPost attribute difference (prefix %s) (-want, +got):\n%s", currDUT.ID, prefix, diff)
 	}
-	if diff := cmp.Diff(nonNilOrIGP(routeTest.NextAdjRibInPreAttrs, routeTest.ExpectedResult == valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD), getAttrs(t, nextDUT, nextAttrMap, v4uni.Neighbor(currDUT.RouterID).AdjRibInPre().Route(prefix, 0).AttrIndex().State()), protocmp.Transform()); diff != "" {
+	if diff := cmp.Diff(nonNilOrIGP(routeTest.NextAdjRibInPreAttrs, routeTest.ExpectedResult == policytest.RouteDiscarded), getAttrs(t, nextDUT, nextAttrMap, v4uni.Neighbor(currDUT.RouterID).AdjRibInPre().Route(prefix, 0).AttrIndex().State()), protocmp.Transform()); diff != "" {
 		t.Errorf("DUT %v AdjRibInPre attribute difference (prefix %s) (-want, +got):\n%s", nextDUT.ID, prefix, diff)
 	}
-	if diff := cmp.Diff(nonNilOrIGP(routeTest.NextLocalRibAttrs, routeTest.ExpectedResult == valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD), getAttrs(t, nextDUT, nextAttrMap, v4uni.LocRib().Route(prefix, oc.UnionString(currDUT.RouterID), 0).AttrIndex().State()), protocmp.Transform()); diff != "" {
+	if diff := cmp.Diff(nonNilOrIGP(routeTest.NextLocalRibAttrs, routeTest.ExpectedResult == policytest.RouteDiscarded), getAttrs(t, nextDUT, nextAttrMap, v4uni.LocRib().Route(prefix, oc.UnionString(currDUT.RouterID), 0).AttrIndex().State()), protocmp.Transform()); diff != "" {
 		t.Errorf("DUT %v LocRib attribute difference (prefix %s) (-want, +got):\n%s", nextDUT.ID, prefix, diff)
 	}
 }
@@ -409,7 +405,7 @@ func testAttrs(t *testing.T, routeTest *valpb.RouteTestCase, prevDUT, currDUT, n
 // populates them.
 //
 // If the attr-set index doesn't exist (e.g. the route doesn't exist), nil is returned.
-func getAttrs(t *testing.T, dut *Device, attrSetMap map[uint64]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet, query ygnmi.SingletonQuery[uint64]) *valpb.RibAttributes {
+func getAttrs(t *testing.T, dut *Device, attrSetMap map[uint64]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet, query ygnmi.SingletonQuery[uint64]) *oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet {
 	attrIndexVal := Lookup(t, dut, query)
 	attrIndex, ok := attrIndexVal.Val()
 	if !ok {
@@ -420,20 +416,13 @@ func getAttrs(t *testing.T, dut *Device, attrSetMap map[uint64]*oc.NetworkInstan
 		t.Errorf("RIB attributes does not have expected attribute index: %v", attrIndex)
 		return nil
 	}
-
-	gotAttrs := &valpb.RibAttributes{AttrSet: &valpb.AttrSet{}}
-	if origin := attrs.GetOrigin(); origin != oc.BgpTypes_BgpOriginAttrType_UNSET {
-		gotAttrs.AttrSet.Origin = origin.String()
+	attrs.Index = nil
+	// Set default values.
+	if attrs.Med == nil {
+		attrs.Med = ygot.Uint32(0)
 	}
-	if attrs.Med != nil {
-		gotAttrs.AttrSet.Med = proto.Uint32(attrs.GetMed())
-	} else {
-		gotAttrs.AttrSet.Med = proto.Uint32(0)
+	if attrs.LocalPref == nil {
+		attrs.LocalPref = ygot.Uint32(100)
 	}
-	if attrs.LocalPref != nil {
-		gotAttrs.AttrSet.LocalPref = proto.Uint32(attrs.GetLocalPref())
-	} else {
-		gotAttrs.AttrSet.LocalPref = proto.Uint32(100)
-	}
-	return gotAttrs
+	return attrs
 }
