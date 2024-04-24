@@ -55,6 +55,56 @@ type PolicyTestCase struct {
 	installPolicies         func(t *testing.T, dut1, dut2, dut3, dut4, dut5 *Device)
 }
 
+type RouteTestCase struct {
+	description    string
+	input          TestRoute
+	expectedResult RouteTestResult
+
+	prevAdjRibOutPreCommunities []string
+	// An export policy is applied here by convention.
+	prevAdjRibOutPostCommunities []string
+
+	adjRibInPreCommunities []string
+	// An import policy is applied here by convention.
+	adjRibInPostCommunities  []string
+	localRibCommunities      []string
+	adjRibOutPreCommunities  []string
+	adjRibOutPostCommunities []string
+
+	nextAdjRibInPreCommunities []string
+	nextLocalRibCommunities    []string
+
+	prevAdjRibOutPreAttrs  *oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet
+	prevAdjRibOutPostAttrs *oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet
+	adjRibInPreAttrs       *oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet
+	adjRibInPostAttrs      *oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet
+	localRibAttrs          *oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet
+	adjRibOutPreAttrs      *oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet
+	adjRibOutPostAttrs     *oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet
+	nextAdjRibInPreAttrs   *oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet
+	nextAdjRibInPostAttrs  *oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet
+	nextLocalRibAttrs      *oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet
+}
+
+// This message represents a single prefix and its associated BGP attributes.
+type TestRoute struct {
+	reachPrefix string
+}
+
+// The expected result for a RouteTestCase
+type RouteTestResult int
+
+const (
+	// RouteUnspecified should never be the value of an actual test case.
+	RouteUnspecified RouteTestResult = iota
+	// RouteAccepted means to accept the input TestRoute.
+	RouteAccepted
+	// RouteDiscarded means to discard the input TestRoute.
+	RouteDiscarded
+	// RouteNotPreferred means not selected by best path selection.
+	RouteNotPreferred
+)
+
 // testPolicy is the helper policy integration tests can call to instantiate
 // policy tests.
 func testPolicy(t *testing.T, testspec *PolicyTestCase) {
