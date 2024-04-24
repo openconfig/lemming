@@ -600,13 +600,31 @@ func (t *bgpTask) populateRIBAttrs(path *api.Path, rib *oc.NetworkInstance_Proto
 		return b.String()
 	}
 
+	asSegmentsToString := func(segs []*api.AsSegment) string {
+		var b strings.Builder
+		for i, s := range segs {
+			if i != 0 {
+				b.WriteRune(' ')
+			}
+			// Here we trust that the proto String() implementation
+			// is a function (in the math sense), and will not map
+			// two different segments to the same string
+			// representation.
+			b.WriteString(s.String())
+			b.WriteRune('\n')
+		}
+		return b.String()
+	}
+
 	var (
-		hasCommunity bool
-		commIndex    uint64
-		hasOrigin    bool
-		hasMED       bool
-		hasLocalPref bool
-		attrSet      ribAttrSet
+		hasCommunity       bool
+		commIndex          uint64
+		hasOrigin          bool
+		hasMED             bool
+		hasLocalPref       bool
+		hasASPathAttribute bool
+		asSegments         []*api.AsSegment
+		attrSet            ribAttrSet
 	)
 
 	for _, attr := range path.GetPattrs() {
@@ -640,12 +658,16 @@ func (t *bgpTask) populateRIBAttrs(path *api.Path, rib *oc.NetworkInstance_Proto
 		case *api.LocalPrefAttribute:
 			hasLocalPref = true
 			attrSet.localPref = m.GetLocalPref()
+		case *api.AsPathAttribute:
+			hasASPathAttribute = true
+			asSegments = m.GetSegments()
+			attrSet.asPath = asSegmentsToString(asSegments)
 		}
 	}
 	if hasCommunity {
 		route.SetCommunityIndex(commIndex)
 	}
-	if hasOrigin || hasMED || hasLocalPref {
+	if hasOrigin || hasMED || hasLocalPref || hasASPathAttribute {
 		attrSetIndex := t.attrSetTracker.getOrAllocIndex(attrSet)
 		route.SetAttrIndex(attrSetIndex)
 		attrSetOC := rib.GetOrCreateAttrSet(attrSetIndex)
@@ -657,6 +679,13 @@ func (t *bgpTask) populateRIBAttrs(path *api.Path, rib *oc.NetworkInstance_Proto
 		}
 		if hasLocalPref {
 			attrSetOC.SetLocalPref(attrSet.localPref)
+		}
+		if hasASPathAttribute {
+			for i, s := range asSegments {
+				segmentOC := attrSetOC.GetOrCreateAsSegment(uint32(i))
+				segmentOC.SetType(convertSegmentTypeToOC(s.GetType()))
+				segmentOC.SetMember(s.GetNumbers())
+			}
 		}
 	}
 }
@@ -670,6 +699,7 @@ type ribAttrSet struct {
 	origin    oc.E_BgpTypes_BgpOriginAttrType
 	med       uint32
 	localPref uint32
+	asPath    string
 }
 
 // ocRIBAttrIndicesTracker is used to track and populate BGP RIB attribute

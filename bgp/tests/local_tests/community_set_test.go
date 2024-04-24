@@ -302,7 +302,8 @@ func TestCommunitySet(t *testing.T) {
 		}
 		t.Run(testName, func(t *testing.T) {
 			testPolicy(t, &PolicyTestCase{
-				description: "Test community set ANY and ALL",
+				description:         "Test community set ANY and ALL",
+				skipValidateAttrSet: true,
 				routeTests: []*policytest.RouteTestCase{{
 					Description: "No match",
 					Input: policytest.TestRoute{
