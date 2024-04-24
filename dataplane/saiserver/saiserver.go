@@ -98,10 +98,6 @@ type qosMap struct {
 	saipb.UnimplementedQosMapServer
 }
 
-type queue struct {
-	saipb.UnimplementedQueueServer
-}
-
 type rpfGroup struct {
 	saipb.UnimplementedRpfGroupServer
 }
@@ -173,7 +169,6 @@ type Server struct {
 	mpls           *mpls
 	nat            *nat
 	qosMap         *qosMap
-	queue          *queue
 	rpfGroup       *rpfGroup
 	samplePacket   *samplePacket
 	schedulerGroup *schedulerGroup
@@ -260,7 +255,6 @@ func New(ctx context.Context, mgr *attrmgr.AttrMgr, s *grpc.Server, opts *dplane
 		mpls:              &mpls{},
 		nat:               &nat{},
 		qosMap:            &qosMap{},
-		queue:             &queue{},
 		rpfGroup:          &rpfGroup{},
 		samplePacket:      &samplePacket{},
 		schedulerGroup:    &schedulerGroup{},
@@ -290,7 +284,6 @@ func New(ctx context.Context, mgr *attrmgr.AttrMgr, s *grpc.Server, opts *dplane
 	saipb.RegisterMplsServer(s, srv.mpls)
 	saipb.RegisterNatServer(s, srv.nat)
 	saipb.RegisterQosMapServer(s, srv.qosMap)
-	saipb.RegisterQueueServer(s, srv.queue)
 	saipb.RegisterRpfGroupServer(s, srv.rpfGroup)
 	saipb.RegisterSamplepacketServer(s, srv.samplePacket)
 	saipb.RegisterSchedulerGroupServer(s, srv.schedulerGroup)

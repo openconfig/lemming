@@ -36,7 +36,7 @@ import (
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
-func newPort(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server, vlan saipb.VlanServer, opts *dplaneopts.Options) (*port, error) {
+func newPort(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server, vlan saipb.VlanServer, queue saipb.QueueServer, opts *dplaneopts.Options) (*port, error) {
 	p := &port{
 		mgr:       mgr,
 		dataplane: dataplane,
@@ -44,6 +44,7 @@ func newPort(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server,
 		nextEth:   1, // Start at eth1
 		vlan:      vlan,
 		opts:      opts,
+		queue:     queue,
 	}
 	if opts.PortConfigFile != "" {
 		data, err := os.ReadFile(opts.PortConfigFile)
@@ -69,6 +70,7 @@ type port struct {
 	portToEth map[uint64]string
 	opts      *dplaneopts.Options
 	config    *dplaneopts.PortConfig
+	queue     saipb.QueueServer
 }
 
 // stub for testing
@@ -96,6 +98,8 @@ func getForwardingPipeline() []*fwdpb.ActionDesc {
 		},
 	}
 }
+
+const numQueue = 12
 
 // CreatePort creates a new port, mapping the port to ethX, where X is assigned sequentially from 1 to n.
 // Note: If more ports are created than eth devices, no error is returned, but the OperStatus is set to NOT_PRESENT.
@@ -143,9 +147,18 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 		}
 	}
 
+	queues := []uint64{}
+	for i := 0; i < numQueue; i++ {
+		qResp, err := attrmgr.InvokeAndSave(ctx, port.mgr, port.queue.CreateQueue, &saipb.CreateQueueRequest{})
+		if err != nil {
+			return nil, err
+		}
+		queues = append(queues, qResp.GetOid())
+	}
+
 	attrs := &saipb.PortAttribute{
-		QosNumberOfQueues:                proto.Uint32(0),
-		QosQueueList:                     []uint64{},
+		QosNumberOfQueues:                proto.Uint32(uint32(len(queues))),
+		QosQueueList:                     queues,
 		QosNumberOfSchedulerGroups:       proto.Uint32(0),
 		QosSchedulerGroupList:            []uint64{},
 		IngressPriorityGroupList:         []uint64{},
@@ -654,4 +667,27 @@ func (l *lag) RemoveLagMember(ctx context.Context, req *saipb.RemoveLagMemberReq
 	}
 	_, err := l.dataplane.PortUpdate(ctx, pReq)
 	return &saipb.RemoveLagMemberResponse{}, err
+}
+
+type queue struct {
+	saipb.UnimplementedQueueServer
+	mgr       *attrmgr.AttrMgr
+	dataplane switchDataplaneAPI
+}
+
+func newQueue(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server) *queue {
+	q := &queue{
+		mgr:       mgr,
+		dataplane: dataplane,
+	}
+	saipb.RegisterQueueServer(s, q)
+	return q
+}
+
+// CreateQueue creates a queue.
+// TODO: Implement this.
+func (q *queue) CreateQueue(context.Context, *saipb.CreateQueueRequest) (*saipb.CreateQueueResponse, error) {
+	return &saipb.CreateQueueResponse{
+		Oid: q.mgr.NextID(),
+	}, nil
 }
