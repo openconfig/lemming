@@ -22,6 +22,7 @@ go_library(
         "@com_github_openconfig_ygnmi//ygnmi",
         "@org_golang_google_grpc//:go_default_library",
         "@org_golang_google_grpc//credentials/local",
+        "@org_golang_google_grpc//reflection",
         "@org_golang_google_protobuf//proto",
     ] + select({
         "@io_bazel_rules_go//go/platform:aix": [
