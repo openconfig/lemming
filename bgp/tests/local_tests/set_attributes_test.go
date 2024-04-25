@@ -145,6 +145,29 @@ func TestSetAttributes(t *testing.T) {
 					ReachPrefix: routesUnderTest[4],
 				},
 				ExpectedResult: valpb.RouteTestResult_ROUTE_TEST_RESULT_NOT_PREFERRED,
+				PrevAdjRibOutPreAttrs: &valpb.RibAttributes{
+					AttrSet: &valpb.AttrSet{
+						Origin: "IGP",
+					},
+				},
+				PrevAdjRibOutPostAttrs: &valpb.RibAttributes{
+					AttrSet: &valpb.AttrSet{
+						Origin: "IGP",
+						Med:    uint32(higherMED),
+					},
+				},
+				AdjRibInPreAttrs: &valpb.RibAttributes{
+					AttrSet: &valpb.AttrSet{
+						Origin: "IGP",
+						Med:    uint32(higherMED),
+					},
+				},
+				AdjRibInPostAttrs: &valpb.RibAttributes{
+					AttrSet: &valpb.AttrSet{
+						Origin: "IGP",
+						Med:    uint32(higherMED),
+					},
+				},
 			}, {
 				Description: "Unpreferred route due to AS path prepend",
 				Input: &valpb.TestRoute{
@@ -189,6 +212,36 @@ func TestSetAttributes(t *testing.T) {
 					ReachPrefix: routesUnderTest[4],
 				},
 				ExpectedResult: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
+				PrevAdjRibOutPreAttrs: &valpb.RibAttributes{
+					AttrSet: &valpb.AttrSet{
+						Origin: "IGP",
+						Med:    uint32(lowerMED),
+					},
+				},
+				PrevAdjRibOutPostAttrs: &valpb.RibAttributes{
+					AttrSet: &valpb.AttrSet{
+						Origin: "IGP",
+						Med:    uint32(lowerMED),
+					},
+				},
+				AdjRibInPreAttrs: &valpb.RibAttributes{
+					AttrSet: &valpb.AttrSet{
+						Origin: "IGP",
+						Med:    uint32(lowerMED),
+					},
+				},
+				AdjRibInPostAttrs: &valpb.RibAttributes{
+					AttrSet: &valpb.AttrSet{
+						Origin: "IGP",
+						Med:    uint32(lowerMED),
+					},
+				},
+				LocalRibAttrs: &valpb.RibAttributes{
+					AttrSet: &valpb.AttrSet{
+						Origin: "IGP",
+						Med:    uint32(lowerMED),
+					},
+				},
 			}},
 		},
 		installPolicies: func(t *testing.T, dut1, dut2, _, _, dut5 *Device) {

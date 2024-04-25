@@ -603,7 +603,8 @@ func (t *bgpTask) populateRIBAttrs(path *api.Path, rib *oc.NetworkInstance_Proto
 	var (
 		hasCommunity bool
 		commIndex    uint64
-		hasAttr      bool
+		hasOrigin    bool
+		hasMED       bool
 		attrSet      ribAttrSet
 	)
 
@@ -621,7 +622,7 @@ func (t *bgpTask) populateRIBAttrs(path *api.Path, rib *oc.NetworkInstance_Proto
 				rib.GetOrCreateCommunity(commIndex).SetCommunity(communitiesToOC(comms))
 			}
 		case *api.OriginAttribute:
-			hasAttr = true
+			hasOrigin = true
 			switch origin := m.GetOrigin(); origin {
 			case 0:
 				attrSet.origin = oc.BgpTypes_BgpOriginAttrType_IGP
@@ -632,16 +633,24 @@ func (t *bgpTask) populateRIBAttrs(path *api.Path, rib *oc.NetworkInstance_Proto
 			default:
 				log.Errorf("BGP: Unrecognized origin attribute value: %v", origin)
 			}
+		case *api.MultiExitDiscAttribute:
+			hasMED = true
+			attrSet.med = m.GetMed()
 		}
 	}
 	if hasCommunity {
 		route.SetCommunityIndex(commIndex)
 	}
-	if hasAttr {
+	if hasOrigin || hasMED {
 		attrSetIndex := t.attrSetTracker.getOrAllocIndex(attrSet)
-		attrSetOC := rib.GetOrCreateAttrSet(attrSetIndex)
-		attrSetOC.SetOrigin(attrSet.origin)
 		route.SetAttrIndex(attrSetIndex)
+		attrSetOC := rib.GetOrCreateAttrSet(attrSetIndex)
+		if hasOrigin {
+			attrSetOC.SetOrigin(attrSet.origin)
+		}
+		if hasMED {
+			attrSetOC.SetMed(attrSet.med)
+		}
 	}
 }
 
@@ -652,6 +661,7 @@ type ocRIBRoute interface {
 
 type ribAttrSet struct {
 	origin oc.E_BgpTypes_BgpOriginAttrType
+	med    uint32
 }
 
 // ocRIBAttrIndicesTracker is used to track and populate BGP RIB attribute
