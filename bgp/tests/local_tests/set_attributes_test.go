@@ -19,13 +19,11 @@ import (
 	"testing"
 
 	"github.com/openconfig/ygot/ygot"
-	"google.golang.org/protobuf/proto"
 
 	"github.com/openconfig/lemming/bgp"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
-
-	valpb "github.com/openconfig/lemming/proto/policyval"
+	"github.com/openconfig/lemming/policytest"
 )
 
 const (
@@ -90,297 +88,227 @@ func TestSetAttributes(t *testing.T) {
 		Replace(t, dut2, rejASPathSet2Path.AsPathSetMember().Config(), []string{"64499"})
 	}
 
-	testPolicy(t, PolicyTestCase{
-		spec: &valpb.PolicyTestCase{
-			Description: "Test that one NLRI gets accepted and the other is rejected via various attribute values.",
-			RouteTests: []*valpb.RouteTestCase{{
-				Description: "Accepted route with no attributes",
-				Input: &valpb.TestRoute{
-					ReachPrefix: routesUnderTest[0],
-				},
-				ExpectedResult: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
-			}, {
-				Description: "Accepted route with some attributes",
-				Input: &valpb.TestRoute{
-					ReachPrefix: routesUnderTest[1],
-				},
-				ExpectedResult:               valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
-				PrevAdjRibOutPreCommunities:  nil,
-				PrevAdjRibOutPostCommunities: []string{"23456:23456"},
-				AdjRibInPreCommunities:       []string{"23456:23456"},
-				AdjRibInPostCommunities:      []string{"23456:23456"},
-				LocalRibCommunities:          []string{"23456:23456"},
-				AdjRibOutPreCommunities:      []string{"23456:23456"},
-				AdjRibOutPostCommunities:     []string{"23456:23456"},
-				NextAdjRibInPreCommunities:   []string{"23456:23456"},
-				NextLocalRibCommunities:      []string{"23456:23456"},
-				PrevAdjRibOutPreAttrs: &valpb.RibAttributes{
-					AttrSet: &valpb.AttrSet{
-						Origin: "IGP",
-					},
-				},
-				PrevAdjRibOutPostAttrs: &valpb.RibAttributes{
-					AttrSet: &valpb.AttrSet{
-						Origin:    "IGP",
-						LocalPref: proto.Uint32(higherLocalPref),
-					},
-				},
-				AdjRibInPreAttrs: &valpb.RibAttributes{
-					AttrSet: &valpb.AttrSet{
-						Origin:    "IGP",
-						LocalPref: proto.Uint32(higherLocalPref),
-					},
-				},
-				AdjRibInPostAttrs: &valpb.RibAttributes{
-					AttrSet: &valpb.AttrSet{
-						Origin:    "IGP",
-						LocalPref: proto.Uint32(higherLocalPref),
-					},
-				},
-				LocalRibAttrs: &valpb.RibAttributes{
-					AttrSet: &valpb.AttrSet{
-						Origin:    "IGP",
-						LocalPref: proto.Uint32(higherLocalPref),
-					},
-				},
-				AdjRibOutPreAttrs: &valpb.RibAttributes{
-					AttrSet: &valpb.AttrSet{
-						Origin:    "IGP",
-						LocalPref: proto.Uint32(higherLocalPref),
-					},
-				},
-				AdjRibOutPostAttrs: &valpb.RibAttributes{
-					AttrSet: &valpb.AttrSet{
-						Origin: "IGP",
-						// local-pref doesn't propagate to EBGP neighbour.
-					},
-				},
-				NextAdjRibInPreAttrs: &valpb.RibAttributes{
-					AttrSet: &valpb.AttrSet{
-						Origin: "IGP",
-					},
-				},
-				NextAdjRibInPostAttrs: &valpb.RibAttributes{
-					AttrSet: &valpb.AttrSet{
-						Origin: "IGP",
-					},
-				},
-				NextLocalRibAttrs: &valpb.RibAttributes{
-					AttrSet: &valpb.AttrSet{
-						Origin: "IGP",
-					},
-				},
-			}, {
-				Description: "Rejected route due to community set",
-				Input: &valpb.TestRoute{
-					ReachPrefix: routesUnderTest[2],
-				},
-				ExpectedResult:               valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD,
-				PrevAdjRibOutPreCommunities:  nil,
-				PrevAdjRibOutPostCommunities: []string{"12345:12345"},
-				AdjRibInPreCommunities:       []string{"12345:12345"},
-				AdjRibInPostCommunities:      nil,
-				LocalRibCommunities:          nil,
-				AdjRibOutPreCommunities:      nil,
-				AdjRibOutPostCommunities:     nil,
-				NextAdjRibInPreCommunities:   nil,
-				NextLocalRibCommunities:      nil,
-			}, {
-				Description: "Unpreferred route due to local-pref",
-				Input: &valpb.TestRoute{
-					ReachPrefix: routesUnderTest[3],
-				},
-				ExpectedResult: valpb.RouteTestResult_ROUTE_TEST_RESULT_NOT_PREFERRED,
-				PrevAdjRibOutPreAttrs: &valpb.RibAttributes{
-					AttrSet: &valpb.AttrSet{
-						Origin: "IGP",
-					},
-				},
-				PrevAdjRibOutPostAttrs: &valpb.RibAttributes{
-					AttrSet: &valpb.AttrSet{
-						Origin:    "IGP",
-						LocalPref: proto.Uint32(lowerLocalPref),
-					},
-				},
-				AdjRibInPreAttrs: &valpb.RibAttributes{
-					AttrSet: &valpb.AttrSet{
-						Origin:    "IGP",
-						LocalPref: proto.Uint32(lowerLocalPref),
-					},
-				},
-				AdjRibInPostAttrs: &valpb.RibAttributes{
-					AttrSet: &valpb.AttrSet{
-						Origin:    "IGP",
-						LocalPref: proto.Uint32(lowerLocalPref),
-					},
-				},
-				AdjRibOutPreAttrs: &valpb.RibAttributes{
-					AttrSet: &valpb.AttrSet{
-						Origin:    "IGP",
-						LocalPref: proto.Uint32(higherLocalPref),
-					},
-				},
-			}, {
-				Description: "Unpreferred route due to MED",
-				Input: &valpb.TestRoute{
-					ReachPrefix: routesUnderTest[4],
-				},
-				ExpectedResult: valpb.RouteTestResult_ROUTE_TEST_RESULT_NOT_PREFERRED,
-				PrevAdjRibOutPreAttrs: &valpb.RibAttributes{
-					AttrSet: &valpb.AttrSet{
-						Origin: "IGP",
-					},
-				},
-				PrevAdjRibOutPostAttrs: &valpb.RibAttributes{
-					AttrSet: &valpb.AttrSet{
-						Origin: "IGP",
-						Med:    proto.Uint32(uint32(higherMED)),
-					},
-				},
-				AdjRibInPreAttrs: &valpb.RibAttributes{
-					AttrSet: &valpb.AttrSet{
-						Origin: "IGP",
-						Med:    proto.Uint32(uint32(higherMED)),
-					},
-				},
-				AdjRibInPostAttrs: &valpb.RibAttributes{
-					AttrSet: &valpb.AttrSet{
-						Origin: "IGP",
-						Med:    proto.Uint32(uint32(higherMED)),
-					},
-				},
-			}, {
-				Description: "Unpreferred route due to AS path prepend",
-				Input: &valpb.TestRoute{
-					ReachPrefix: routesUnderTest[6],
-				},
-				ExpectedResult: valpb.RouteTestResult_ROUTE_TEST_RESULT_NOT_PREFERRED,
-			}, {
-				Description: "Rejected route due to AS path match on prepended AS",
-				Input: &valpb.TestRoute{
-					ReachPrefix: routesUnderTest[7],
-				},
-				ExpectedResult: valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD,
-			}},
-			LongerPathRouteTests: []*valpb.RouteTestCase{{
-				Description: "Rejected route due to longer AS Path",
-				Input: &valpb.TestRoute{
-					ReachPrefix: routesUnderTest[0],
-				},
-				ExpectedResult: valpb.RouteTestResult_ROUTE_TEST_RESULT_NOT_PREFERRED,
-			}, {
-				Description: "Accepted route due to higher local-pref",
-				Input: &valpb.TestRoute{
-					ReachPrefix: routesUnderTest[3],
-				},
-				ExpectedResult: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
-				PrevAdjRibOutPreAttrs: &valpb.RibAttributes{
-					AttrSet: &valpb.AttrSet{
-						Origin: "IGP",
-					},
-				},
-				PrevAdjRibOutPostAttrs: &valpb.RibAttributes{
-					AttrSet: &valpb.AttrSet{
-						Origin:    "IGP",
-						LocalPref: proto.Uint32(higherLocalPref),
-					},
-				},
-				AdjRibInPreAttrs: &valpb.RibAttributes{
-					AttrSet: &valpb.AttrSet{
-						Origin:    "IGP",
-						LocalPref: proto.Uint32(higherLocalPref),
-					},
-				},
-				AdjRibInPostAttrs: &valpb.RibAttributes{
-					AttrSet: &valpb.AttrSet{
-						Origin:    "IGP",
-						LocalPref: proto.Uint32(higherLocalPref),
-					},
-				},
-				LocalRibAttrs: &valpb.RibAttributes{
-					AttrSet: &valpb.AttrSet{
-						Origin:    "IGP",
-						LocalPref: proto.Uint32(higherLocalPref),
-					},
-				},
-				AdjRibOutPreAttrs: &valpb.RibAttributes{
-					AttrSet: &valpb.AttrSet{
-						Origin:    "IGP",
-						LocalPref: proto.Uint32(higherLocalPref),
-					},
-				},
-				AdjRibOutPostAttrs: &valpb.RibAttributes{
-					AttrSet: &valpb.AttrSet{
-						Origin: "IGP",
-						// local-pref doesn't propagate to EBGP neighbour.
-					},
-				},
-				NextAdjRibInPreAttrs: &valpb.RibAttributes{
-					AttrSet: &valpb.AttrSet{
-						Origin: "IGP",
-					},
-				},
-				NextAdjRibInPostAttrs: &valpb.RibAttributes{
-					AttrSet: &valpb.AttrSet{
-						Origin: "IGP",
-					},
-				},
-				NextLocalRibAttrs: &valpb.RibAttributes{
-					AttrSet: &valpb.AttrSet{
-						Origin: "IGP",
-					},
-				},
-			}, {
-				Description: "Rejected route due to AS path match",
-				Input: &valpb.TestRoute{
-					ReachPrefix: routesUnderTest[5],
-				},
-				ExpectedResult: valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD,
-			}, {
-				Description: "Accepted route due to shorter AS path after competing route's AS path prepend",
-				Input: &valpb.TestRoute{
-					ReachPrefix: routesUnderTest[6],
-				},
-				ExpectedResult: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
-			}},
-			AlternatePathRouteTests: []*valpb.RouteTestCase{{
-				Description: "Accepted route due to lower MED",
-				Input: &valpb.TestRoute{
-					ReachPrefix: routesUnderTest[4],
-				},
-				ExpectedResult: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
-				PrevAdjRibOutPreAttrs: &valpb.RibAttributes{
-					AttrSet: &valpb.AttrSet{
-						Origin: "IGP",
-						Med:    proto.Uint32(uint32(lowerMED)),
-					},
-				},
-				PrevAdjRibOutPostAttrs: &valpb.RibAttributes{
-					AttrSet: &valpb.AttrSet{
-						Origin: "IGP",
-						Med:    proto.Uint32(uint32(lowerMED)),
-					},
-				},
-				AdjRibInPreAttrs: &valpb.RibAttributes{
-					AttrSet: &valpb.AttrSet{
-						Origin: "IGP",
-						Med:    proto.Uint32(uint32(lowerMED)),
-					},
-				},
-				AdjRibInPostAttrs: &valpb.RibAttributes{
-					AttrSet: &valpb.AttrSet{
-						Origin: "IGP",
-						Med:    proto.Uint32(uint32(lowerMED)),
-					},
-				},
-				LocalRibAttrs: &valpb.RibAttributes{
-					AttrSet: &valpb.AttrSet{
-						Origin: "IGP",
-						Med:    proto.Uint32(uint32(lowerMED)),
-					},
-				},
-			}},
-		},
+	testPolicy(t, &PolicyTestCase{
+		description: "Test that one NLRI gets accepted and the other is rejected via various attribute values.",
+		routeTests: []*policytest.RouteTestCase{{
+			Description: "Accepted route with no attributes",
+			Input: policytest.TestRoute{
+				ReachPrefix: routesUnderTest[0],
+			},
+			ExpectedResult: policytest.RouteAccepted,
+		}, {
+			Description: "Accepted route with some attributes",
+			Input: policytest.TestRoute{
+				ReachPrefix: routesUnderTest[1],
+			},
+			ExpectedResult:               policytest.RouteAccepted,
+			PrevAdjRibOutPreCommunities:  nil,
+			PrevAdjRibOutPostCommunities: []string{"23456:23456"},
+			AdjRibInPreCommunities:       []string{"23456:23456"},
+			AdjRibInPostCommunities:      []string{"23456:23456"},
+			LocalRibCommunities:          []string{"23456:23456"},
+			AdjRibOutPreCommunities:      []string{"23456:23456"},
+			AdjRibOutPostCommunities:     []string{"23456:23456"},
+			NextAdjRibInPreCommunities:   []string{"23456:23456"},
+			NextLocalRibCommunities:      []string{"23456:23456"},
+			PrevAdjRibOutPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+			},
+			PrevAdjRibOutPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin:    oc.BgpTypes_BgpOriginAttrType_IGP,
+				LocalPref: ygot.Uint32(higherLocalPref),
+			},
+			AdjRibInPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin:    oc.BgpTypes_BgpOriginAttrType_IGP,
+				LocalPref: ygot.Uint32(higherLocalPref),
+			},
+			AdjRibInPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin:    oc.BgpTypes_BgpOriginAttrType_IGP,
+				LocalPref: ygot.Uint32(higherLocalPref),
+			},
+			LocalRibAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin:    oc.BgpTypes_BgpOriginAttrType_IGP,
+				LocalPref: ygot.Uint32(higherLocalPref),
+			},
+			AdjRibOutPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin:    oc.BgpTypes_BgpOriginAttrType_IGP,
+				LocalPref: ygot.Uint32(higherLocalPref),
+			},
+			AdjRibOutPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+				// local-pref doesn't propagate to EBGP neighbour.
+			},
+			NextAdjRibInPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+			},
+			NextAdjRibInPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+			},
+			NextLocalRibAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+			},
+		}, {
+			Description: "Rejected route due to community set",
+			Input: policytest.TestRoute{
+				ReachPrefix: routesUnderTest[2],
+			},
+			ExpectedResult:               policytest.RouteDiscarded,
+			PrevAdjRibOutPreCommunities:  nil,
+			PrevAdjRibOutPostCommunities: []string{"12345:12345"},
+			AdjRibInPreCommunities:       []string{"12345:12345"},
+			AdjRibInPostCommunities:      nil,
+			LocalRibCommunities:          nil,
+			AdjRibOutPreCommunities:      nil,
+			AdjRibOutPostCommunities:     nil,
+			NextAdjRibInPreCommunities:   nil,
+			NextLocalRibCommunities:      nil,
+		}, {
+			Description: "Unpreferred route due to local-pref",
+			Input: policytest.TestRoute{
+				ReachPrefix: routesUnderTest[3],
+			},
+			ExpectedResult: policytest.RouteNotPreferred,
+			PrevAdjRibOutPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+			},
+			PrevAdjRibOutPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin:    oc.BgpTypes_BgpOriginAttrType_IGP,
+				LocalPref: ygot.Uint32(lowerLocalPref),
+			},
+			AdjRibInPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin:    oc.BgpTypes_BgpOriginAttrType_IGP,
+				LocalPref: ygot.Uint32(lowerLocalPref),
+			},
+			AdjRibInPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin:    oc.BgpTypes_BgpOriginAttrType_IGP,
+				LocalPref: ygot.Uint32(lowerLocalPref),
+			},
+			AdjRibOutPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin:    oc.BgpTypes_BgpOriginAttrType_IGP,
+				LocalPref: ygot.Uint32(higherLocalPref),
+			},
+		}, {
+			Description: "Unpreferred route due to MED",
+			Input: policytest.TestRoute{
+				ReachPrefix: routesUnderTest[4],
+			},
+			ExpectedResult: policytest.RouteNotPreferred,
+			PrevAdjRibOutPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+			},
+			PrevAdjRibOutPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+				Med:    ygot.Uint32(uint32(higherMED)),
+			},
+			AdjRibInPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+				Med:    ygot.Uint32(uint32(higherMED)),
+			},
+			AdjRibInPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+				Med:    ygot.Uint32(uint32(higherMED)),
+			},
+		}, {
+			Description: "Unpreferred route due to AS path prepend",
+			Input: policytest.TestRoute{
+				ReachPrefix: routesUnderTest[6],
+			},
+			ExpectedResult: policytest.RouteNotPreferred,
+		}, {
+			Description: "Rejected route due to AS path match on prepended AS",
+			Input: policytest.TestRoute{
+				ReachPrefix: routesUnderTest[7],
+			},
+			ExpectedResult: policytest.RouteDiscarded,
+		}},
+		longerPathRouteTests: []*policytest.RouteTestCase{{
+			Description: "Rejected route due to longer AS Path",
+			Input: policytest.TestRoute{
+				ReachPrefix: routesUnderTest[0],
+			},
+			ExpectedResult: policytest.RouteNotPreferred,
+		}, {
+			Description: "Accepted route due to higher local-pref",
+			Input: policytest.TestRoute{
+				ReachPrefix: routesUnderTest[3],
+			},
+			ExpectedResult: policytest.RouteAccepted,
+			PrevAdjRibOutPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+			},
+			PrevAdjRibOutPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin:    oc.BgpTypes_BgpOriginAttrType_IGP,
+				LocalPref: ygot.Uint32(higherLocalPref),
+			},
+			AdjRibInPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin:    oc.BgpTypes_BgpOriginAttrType_IGP,
+				LocalPref: ygot.Uint32(higherLocalPref),
+			},
+			AdjRibInPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin:    oc.BgpTypes_BgpOriginAttrType_IGP,
+				LocalPref: ygot.Uint32(higherLocalPref),
+			},
+			LocalRibAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin:    oc.BgpTypes_BgpOriginAttrType_IGP,
+				LocalPref: ygot.Uint32(higherLocalPref),
+			},
+			AdjRibOutPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin:    oc.BgpTypes_BgpOriginAttrType_IGP,
+				LocalPref: ygot.Uint32(higherLocalPref),
+			},
+			AdjRibOutPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+				// local-pref doesn't propagate to EBGP neighbour.
+			},
+			NextAdjRibInPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+			},
+			NextAdjRibInPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+			},
+			NextLocalRibAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+			},
+		}, {
+			Description: "Rejected route due to AS path match",
+			Input: policytest.TestRoute{
+				ReachPrefix: routesUnderTest[5],
+			},
+			ExpectedResult: policytest.RouteDiscarded,
+		}, {
+			Description: "Accepted route due to shorter AS path after competing route's AS path prepend",
+			Input: policytest.TestRoute{
+				ReachPrefix: routesUnderTest[6],
+			},
+			ExpectedResult: policytest.RouteAccepted,
+		}},
+		alternatePathRouteTests: []*policytest.RouteTestCase{{
+			Description: "Accepted route due to lower MED",
+			Input: policytest.TestRoute{
+				ReachPrefix: routesUnderTest[4],
+			},
+			ExpectedResult: policytest.RouteAccepted,
+			PrevAdjRibOutPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+				Med:    ygot.Uint32(uint32(lowerMED)),
+			},
+			PrevAdjRibOutPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+				Med:    ygot.Uint32(uint32(lowerMED)),
+			},
+			AdjRibInPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+				Med:    ygot.Uint32(uint32(lowerMED)),
+			},
+			AdjRibInPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+				Med:    ygot.Uint32(uint32(lowerMED)),
+			},
+			LocalRibAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+				Med:    ygot.Uint32(uint32(lowerMED)),
+			},
+		}},
 		installPolicies: func(t *testing.T, dut1, dut2, _, _, dut5 *Device) {
 			if debug {
 				fmt.Println("Installing test policies")

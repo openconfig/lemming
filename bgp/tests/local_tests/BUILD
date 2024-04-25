@@ -21,7 +21,7 @@ go_test(
         "//gnmi/gnmiclient",
         "//gnmi/oc",
         "//gnmi/oc/ocpath",
-        "//proto/policyval",
+        "//policytest",
         "@com_github_google_go_cmp//cmp",
         "@com_github_openconfig_gnmi//proto/gnmi",
         "@com_github_openconfig_gribi//v1/proto/service",
@@ -36,7 +36,6 @@ go_test(
         "@org_golang_google_grpc//credentials/insecure",
         "@org_golang_google_grpc//credentials/local",
         "@org_golang_google_grpc//status",
-        "@org_golang_google_protobuf//proto",
         "@org_golang_google_protobuf//testing/protocmp",
     ],
 )

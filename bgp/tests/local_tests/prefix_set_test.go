@@ -21,8 +21,7 @@ import (
 	"github.com/openconfig/lemming/bgp"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
-
-	valpb "github.com/openconfig/lemming/proto/policyval"
+	"github.com/openconfig/lemming/policytest"
 )
 
 func TestPrefixSetMode(t *testing.T) {
@@ -90,125 +89,117 @@ func TestPrefixSet(t *testing.T) {
 		Await(t, dut2, bgp.BGPPath.Neighbor(dut1.RouterID).ApplyPolicy().ImportPolicy().State(), []string{policyName})
 	}
 
-	invertResult := func(result valpb.RouteTestResult, invert bool) valpb.RouteTestResult {
+	invertResult := func(result policytest.RouteTestResult, invert bool) policytest.RouteTestResult {
 		if invert {
 			switch result {
-			case valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT:
-				return valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD
-			case valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD:
-				return valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT
+			case policytest.RouteAccepted:
+				return policytest.RouteDiscarded
+			case policytest.RouteDiscarded:
+				return policytest.RouteAccepted
 			default:
 			}
 		}
 		return result
 	}
 
-	getspec := func(invert bool) *valpb.PolicyTestCase {
-		spec := &valpb.PolicyTestCase{
-			Description: "Test that one prefix gets accepted and the other rejected via an ANY prefix-set.",
-			RouteTests: []*valpb.RouteTestCase{{
+	getspec := func(invert bool) *PolicyTestCase {
+		return &PolicyTestCase{
+			description: "Test that one prefix gets accepted and the other rejected via an ANY prefix-set.",
+			routeTests: []*policytest.RouteTestCase{{
 				Description: "Exact match",
-				Input: &valpb.TestRoute{
+				Input: policytest.TestRoute{
 					ReachPrefix: "10.33.0.0/16",
 				},
-				ExpectedResult: invertResult(valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD, invert),
+				ExpectedResult: invertResult(policytest.RouteDiscarded, invert),
 			}, {
 				Description: "Not exact match",
-				Input: &valpb.TestRoute{
+				Input: policytest.TestRoute{
 					ReachPrefix: "10.33.0.0/17",
 				},
-				ExpectedResult: invertResult(valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT, invert),
+				ExpectedResult: invertResult(policytest.RouteAccepted, invert),
 			}, {
 				Description: "No match with any prefix",
-				Input: &valpb.TestRoute{
+				Input: policytest.TestRoute{
 					ReachPrefix: "10.3.0.0/16",
 				},
-				ExpectedResult: invertResult(valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT, invert),
+				ExpectedResult: invertResult(policytest.RouteAccepted, invert),
 			}, {
 				Description: "mask length too short",
-				Input: &valpb.TestRoute{
+				Input: policytest.TestRoute{
 					ReachPrefix: "10.34.0.0/15",
 				},
-				ExpectedResult: invertResult(valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT, invert),
+				ExpectedResult: invertResult(policytest.RouteAccepted, invert),
 			}, {
 				Description: "Lower end of mask length",
-				Input: &valpb.TestRoute{
+				Input: policytest.TestRoute{
 					ReachPrefix: "10.34.0.0/16",
 				},
-				ExpectedResult: invertResult(valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD, invert),
+				ExpectedResult: invertResult(policytest.RouteDiscarded, invert),
 			}, {
 				Description: "Middle of mask length",
-				Input: &valpb.TestRoute{
+				Input: policytest.TestRoute{
 					ReachPrefix: "10.34.0.0/20",
 				},
-				ExpectedResult: invertResult(valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD, invert),
+				ExpectedResult: invertResult(policytest.RouteDiscarded, invert),
 			}, {
 				Description: "Middle of mask length -- different prefix",
-				Input: &valpb.TestRoute{
+				Input: policytest.TestRoute{
 					ReachPrefix: "10.34.240.0/20",
 				},
-				ExpectedResult: invertResult(valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD, invert),
+				ExpectedResult: invertResult(policytest.RouteDiscarded, invert),
 			}, {
 				Description: "Upper end of mask length",
-				Input: &valpb.TestRoute{
+				Input: policytest.TestRoute{
 					ReachPrefix: "10.34.0.0/23",
 				},
-				ExpectedResult: invertResult(valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD, invert),
+				ExpectedResult: invertResult(policytest.RouteDiscarded, invert),
 			}, {
 				Description: "Upper end of mask length -- different prefix",
-				Input: &valpb.TestRoute{
+				Input: policytest.TestRoute{
 					ReachPrefix: "10.34.254.0/23",
 				},
-				ExpectedResult: invertResult(valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD, invert),
+				ExpectedResult: invertResult(policytest.RouteDiscarded, invert),
 			}, {
 				Description: "mask length too long",
-				Input: &valpb.TestRoute{
+				Input: policytest.TestRoute{
 					ReachPrefix: "10.34.0.0/24",
 				},
-				ExpectedResult: invertResult(valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT, invert),
+				ExpectedResult: invertResult(policytest.RouteAccepted, invert),
 			}, {
 				Description: "eq-prefix-lowest",
-				Input: &valpb.TestRoute{
+				Input: policytest.TestRoute{
 					ReachPrefix: "10.0.6.0/28",
 				},
-				ExpectedResult: invertResult(valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD, invert),
+				ExpectedResult: invertResult(policytest.RouteDiscarded, invert),
 			}, {
 				Description: "eq-prefix-middle",
-				Input: &valpb.TestRoute{
+				Input: policytest.TestRoute{
 					ReachPrefix: "10.0.6.192/28", // 192 = 0xc0
 				},
-				ExpectedResult: invertResult(valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD, invert),
+				ExpectedResult: invertResult(policytest.RouteDiscarded, invert),
 			}, {
 				Description: "eq-prefix-no-match",
-				Input: &valpb.TestRoute{
+				Input: policytest.TestRoute{
 					ReachPrefix: "10.0.7.192/28", // 192 = 0xc0
 				},
-				ExpectedResult: invertResult(valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT, invert),
+				ExpectedResult: invertResult(policytest.RouteAccepted, invert),
 			}, {
 				Description: "eq-prefix-highest",
-				Input: &valpb.TestRoute{
+				Input: policytest.TestRoute{
 					ReachPrefix: "10.0.6.240/28", // 240 = 0xf0
 				},
-				ExpectedResult: invertResult(valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD, invert),
+				ExpectedResult: invertResult(policytest.RouteDiscarded, invert),
 			}},
+			installPolicies: func(t *testing.T, dut1, dut2, dut3, dut4, dut5 *Device) {
+				installPolicies(t, dut1, dut2, dut3, dut4, dut5, invert)
+			},
 		}
-		return spec
 	}
 
 	t.Run("ANY", func(t *testing.T) {
-		testPolicy(t, PolicyTestCase{
-			spec: getspec(false),
-			installPolicies: func(t *testing.T, dut1, dut2, dut3, dut4, dut5 *Device) {
-				installPolicies(t, dut1, dut2, dut3, dut4, dut5, false)
-			},
-		})
+		testPolicy(t, getspec(false))
 	})
 	t.Run("INVERT", func(t *testing.T) {
-		testPolicy(t, PolicyTestCase{
-			spec: getspec(true),
-			installPolicies: func(t *testing.T, dut1, dut2, dut3, dut4, dut5 *Device) {
-				installPolicies(t, dut1, dut2, dut3, dut4, dut5, true)
-			},
-		})
+		testPolicy(t, getspec(true))
 	})
 }
