@@ -605,6 +605,7 @@ func (t *bgpTask) populateRIBAttrs(path *api.Path, rib *oc.NetworkInstance_Proto
 		commIndex    uint64
 		hasOrigin    bool
 		hasMED       bool
+		hasLocalPref bool
 		attrSet      ribAttrSet
 	)
 
@@ -636,12 +637,15 @@ func (t *bgpTask) populateRIBAttrs(path *api.Path, rib *oc.NetworkInstance_Proto
 		case *api.MultiExitDiscAttribute:
 			hasMED = true
 			attrSet.med = m.GetMed()
+		case *api.LocalPrefAttribute:
+			hasLocalPref = true
+			attrSet.localPref = m.GetLocalPref()
 		}
 	}
 	if hasCommunity {
 		route.SetCommunityIndex(commIndex)
 	}
-	if hasOrigin || hasMED {
+	if hasOrigin || hasMED || hasLocalPref {
 		attrSetIndex := t.attrSetTracker.getOrAllocIndex(attrSet)
 		route.SetAttrIndex(attrSetIndex)
 		attrSetOC := rib.GetOrCreateAttrSet(attrSetIndex)
@@ -650,6 +654,9 @@ func (t *bgpTask) populateRIBAttrs(path *api.Path, rib *oc.NetworkInstance_Proto
 		}
 		if hasMED {
 			attrSetOC.SetMed(attrSet.med)
+		}
+		if hasLocalPref {
+			attrSetOC.SetLocalPref(attrSet.localPref)
 		}
 	}
 }
@@ -660,8 +667,9 @@ type ocRIBRoute interface {
 }
 
 type ribAttrSet struct {
-	origin oc.E_BgpTypes_BgpOriginAttrType
-	med    uint32
+	origin    oc.E_BgpTypes_BgpOriginAttrType
+	med       uint32
+	localPref uint32
 }
 
 // ocRIBAttrIndicesTracker is used to track and populate BGP RIB attribute

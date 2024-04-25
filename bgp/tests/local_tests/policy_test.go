@@ -15,7 +15,6 @@
 package local_test
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -26,6 +25,7 @@ import (
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/testing/protocmp"
 
 	valpb "github.com/openconfig/lemming/proto/policyval"
@@ -341,7 +341,9 @@ func testAttrs(t *testing.T, routeTest *valpb.RouteTestCase, prevDUT, currDUT, n
 
 	igpAttr := &valpb.RibAttributes{
 		AttrSet: &valpb.AttrSet{
-			Origin: "IGP",
+			Origin:    "IGP",
+			LocalPref: proto.Uint32(100),
+			Med:       proto.Uint32(0),
 		},
 	}
 
@@ -352,8 +354,21 @@ func testAttrs(t *testing.T, routeTest *valpb.RouteTestCase, prevDUT, currDUT, n
 	// SetOrigin to artificially set this attribute, then remove this
 	// function and associated logic.
 	nonNilOrIGP := func(a *valpb.RibAttributes, rejected bool) *valpb.RibAttributes {
-		if a == nil && !rejected {
+		if rejected {
+			return a
+		}
+		if a == nil {
 			return igpAttr
+		}
+		// Set default values
+		if a.GetAttrSet() == nil {
+			a.AttrSet = &valpb.AttrSet{}
+		}
+		if a.GetAttrSet().Med == nil {
+			a.AttrSet.Med = proto.Uint32(0)
+		}
+		if a.GetAttrSet().LocalPref == nil {
+			a.AttrSet.LocalPref = proto.Uint32(100)
 		}
 		return a
 	}
@@ -374,7 +389,6 @@ func testAttrs(t *testing.T, routeTest *valpb.RouteTestCase, prevDUT, currDUT, n
 		t.Errorf("DUT %v LocRib attrs difference (prefix %s) (-want, +got):\n%s", currDUT.ID, prefix, diff)
 	}
 	if diff := cmp.Diff(nonNilOrIGP(routeTest.AdjRibOutPreAttrs, routeTest.ExpectedResult == valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD), getAttrs(t, currDUT, currAttrMap, v4uni.Neighbor(nextDUT.RouterID).AdjRibOutPre().Route(prefix, 0).AttrIndex().State()), protocmp.Transform()); diff != "" {
-		fmt.Println("<1>", prefix, routeTest.ExpectedResult, valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT)
 		t.Errorf("DUT %v AdjRibOutPre attribute difference (prefix %s) (-want, +got):\n%s", currDUT.ID, prefix, diff)
 	}
 	if diff := cmp.Diff(nonNilOrIGP(routeTest.AdjRibOutPostAttrs, routeTest.ExpectedResult == valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD), getAttrs(t, currDUT, currAttrMap, v4uni.Neighbor(nextDUT.RouterID).AdjRibOutPost().Route(prefix, 0).AttrIndex().State()), protocmp.Transform()); diff != "" {
@@ -389,6 +403,10 @@ func testAttrs(t *testing.T, routeTest *valpb.RouteTestCase, prevDUT, currDUT, n
 }
 
 // getAttrs gets the attribute of the given route query to a attr-set index.
+//
+// For optional attributes that have defaults (e.g. local-pref and med),
+// they're automatically populated if not available, since GoBGP inconsistently
+// populates them.
 //
 // If the attr-set index doesn't exist (e.g. the route doesn't exist), nil is returned.
 func getAttrs(t *testing.T, dut *Device, attrSetMap map[uint64]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet, query ygnmi.SingletonQuery[uint64]) *valpb.RibAttributes {
@@ -408,7 +426,14 @@ func getAttrs(t *testing.T, dut *Device, attrSetMap map[uint64]*oc.NetworkInstan
 		gotAttrs.AttrSet.Origin = origin.String()
 	}
 	if attrs.Med != nil {
-		gotAttrs.AttrSet.Med = attrs.GetMed()
+		gotAttrs.AttrSet.Med = proto.Uint32(attrs.GetMed())
+	} else {
+		gotAttrs.AttrSet.Med = proto.Uint32(0)
+	}
+	if attrs.LocalPref != nil {
+		gotAttrs.AttrSet.LocalPref = proto.Uint32(attrs.GetLocalPref())
+	} else {
+		gotAttrs.AttrSet.LocalPref = proto.Uint32(100)
 	}
 	return gotAttrs
 }

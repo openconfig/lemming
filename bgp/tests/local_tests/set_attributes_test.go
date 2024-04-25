@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"github.com/openconfig/ygot/ygot"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/openconfig/lemming/bgp"
 	"github.com/openconfig/lemming/gnmi/oc"
@@ -113,7 +114,58 @@ func TestSetAttributes(t *testing.T) {
 				AdjRibOutPostCommunities:     []string{"23456:23456"},
 				NextAdjRibInPreCommunities:   []string{"23456:23456"},
 				NextLocalRibCommunities:      []string{"23456:23456"},
+				PrevAdjRibOutPreAttrs: &valpb.RibAttributes{
+					AttrSet: &valpb.AttrSet{
+						Origin: "IGP",
+					},
+				},
+				PrevAdjRibOutPostAttrs: &valpb.RibAttributes{
+					AttrSet: &valpb.AttrSet{
+						Origin:    "IGP",
+						LocalPref: proto.Uint32(higherLocalPref),
+					},
+				},
+				AdjRibInPreAttrs: &valpb.RibAttributes{
+					AttrSet: &valpb.AttrSet{
+						Origin:    "IGP",
+						LocalPref: proto.Uint32(higherLocalPref),
+					},
+				},
+				AdjRibInPostAttrs: &valpb.RibAttributes{
+					AttrSet: &valpb.AttrSet{
+						Origin:    "IGP",
+						LocalPref: proto.Uint32(higherLocalPref),
+					},
+				},
 				LocalRibAttrs: &valpb.RibAttributes{
+					AttrSet: &valpb.AttrSet{
+						Origin:    "IGP",
+						LocalPref: proto.Uint32(higherLocalPref),
+					},
+				},
+				AdjRibOutPreAttrs: &valpb.RibAttributes{
+					AttrSet: &valpb.AttrSet{
+						Origin:    "IGP",
+						LocalPref: proto.Uint32(higherLocalPref),
+					},
+				},
+				AdjRibOutPostAttrs: &valpb.RibAttributes{
+					AttrSet: &valpb.AttrSet{
+						Origin: "IGP",
+						// local-pref doesn't propagate to EBGP neighbour.
+					},
+				},
+				NextAdjRibInPreAttrs: &valpb.RibAttributes{
+					AttrSet: &valpb.AttrSet{
+						Origin: "IGP",
+					},
+				},
+				NextAdjRibInPostAttrs: &valpb.RibAttributes{
+					AttrSet: &valpb.AttrSet{
+						Origin: "IGP",
+					},
+				},
+				NextLocalRibAttrs: &valpb.RibAttributes{
 					AttrSet: &valpb.AttrSet{
 						Origin: "IGP",
 					},
@@ -139,6 +191,35 @@ func TestSetAttributes(t *testing.T) {
 					ReachPrefix: routesUnderTest[3],
 				},
 				ExpectedResult: valpb.RouteTestResult_ROUTE_TEST_RESULT_NOT_PREFERRED,
+				PrevAdjRibOutPreAttrs: &valpb.RibAttributes{
+					AttrSet: &valpb.AttrSet{
+						Origin: "IGP",
+					},
+				},
+				PrevAdjRibOutPostAttrs: &valpb.RibAttributes{
+					AttrSet: &valpb.AttrSet{
+						Origin:    "IGP",
+						LocalPref: proto.Uint32(lowerLocalPref),
+					},
+				},
+				AdjRibInPreAttrs: &valpb.RibAttributes{
+					AttrSet: &valpb.AttrSet{
+						Origin:    "IGP",
+						LocalPref: proto.Uint32(lowerLocalPref),
+					},
+				},
+				AdjRibInPostAttrs: &valpb.RibAttributes{
+					AttrSet: &valpb.AttrSet{
+						Origin:    "IGP",
+						LocalPref: proto.Uint32(lowerLocalPref),
+					},
+				},
+				AdjRibOutPreAttrs: &valpb.RibAttributes{
+					AttrSet: &valpb.AttrSet{
+						Origin:    "IGP",
+						LocalPref: proto.Uint32(higherLocalPref),
+					},
+				},
 			}, {
 				Description: "Unpreferred route due to MED",
 				Input: &valpb.TestRoute{
@@ -153,19 +234,19 @@ func TestSetAttributes(t *testing.T) {
 				PrevAdjRibOutPostAttrs: &valpb.RibAttributes{
 					AttrSet: &valpb.AttrSet{
 						Origin: "IGP",
-						Med:    uint32(higherMED),
+						Med:    proto.Uint32(uint32(higherMED)),
 					},
 				},
 				AdjRibInPreAttrs: &valpb.RibAttributes{
 					AttrSet: &valpb.AttrSet{
 						Origin: "IGP",
-						Med:    uint32(higherMED),
+						Med:    proto.Uint32(uint32(higherMED)),
 					},
 				},
 				AdjRibInPostAttrs: &valpb.RibAttributes{
 					AttrSet: &valpb.AttrSet{
 						Origin: "IGP",
-						Med:    uint32(higherMED),
+						Med:    proto.Uint32(uint32(higherMED)),
 					},
 				},
 			}, {
@@ -193,6 +274,62 @@ func TestSetAttributes(t *testing.T) {
 					ReachPrefix: routesUnderTest[3],
 				},
 				ExpectedResult: valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT,
+				PrevAdjRibOutPreAttrs: &valpb.RibAttributes{
+					AttrSet: &valpb.AttrSet{
+						Origin: "IGP",
+					},
+				},
+				PrevAdjRibOutPostAttrs: &valpb.RibAttributes{
+					AttrSet: &valpb.AttrSet{
+						Origin:    "IGP",
+						LocalPref: proto.Uint32(higherLocalPref),
+					},
+				},
+				AdjRibInPreAttrs: &valpb.RibAttributes{
+					AttrSet: &valpb.AttrSet{
+						Origin:    "IGP",
+						LocalPref: proto.Uint32(higherLocalPref),
+					},
+				},
+				AdjRibInPostAttrs: &valpb.RibAttributes{
+					AttrSet: &valpb.AttrSet{
+						Origin:    "IGP",
+						LocalPref: proto.Uint32(higherLocalPref),
+					},
+				},
+				LocalRibAttrs: &valpb.RibAttributes{
+					AttrSet: &valpb.AttrSet{
+						Origin:    "IGP",
+						LocalPref: proto.Uint32(higherLocalPref),
+					},
+				},
+				AdjRibOutPreAttrs: &valpb.RibAttributes{
+					AttrSet: &valpb.AttrSet{
+						Origin:    "IGP",
+						LocalPref: proto.Uint32(higherLocalPref),
+					},
+				},
+				AdjRibOutPostAttrs: &valpb.RibAttributes{
+					AttrSet: &valpb.AttrSet{
+						Origin: "IGP",
+						// local-pref doesn't propagate to EBGP neighbour.
+					},
+				},
+				NextAdjRibInPreAttrs: &valpb.RibAttributes{
+					AttrSet: &valpb.AttrSet{
+						Origin: "IGP",
+					},
+				},
+				NextAdjRibInPostAttrs: &valpb.RibAttributes{
+					AttrSet: &valpb.AttrSet{
+						Origin: "IGP",
+					},
+				},
+				NextLocalRibAttrs: &valpb.RibAttributes{
+					AttrSet: &valpb.AttrSet{
+						Origin: "IGP",
+					},
+				},
 			}, {
 				Description: "Rejected route due to AS path match",
 				Input: &valpb.TestRoute{
@@ -215,31 +352,31 @@ func TestSetAttributes(t *testing.T) {
 				PrevAdjRibOutPreAttrs: &valpb.RibAttributes{
 					AttrSet: &valpb.AttrSet{
 						Origin: "IGP",
-						Med:    uint32(lowerMED),
+						Med:    proto.Uint32(uint32(lowerMED)),
 					},
 				},
 				PrevAdjRibOutPostAttrs: &valpb.RibAttributes{
 					AttrSet: &valpb.AttrSet{
 						Origin: "IGP",
-						Med:    uint32(lowerMED),
+						Med:    proto.Uint32(uint32(lowerMED)),
 					},
 				},
 				AdjRibInPreAttrs: &valpb.RibAttributes{
 					AttrSet: &valpb.AttrSet{
 						Origin: "IGP",
-						Med:    uint32(lowerMED),
+						Med:    proto.Uint32(uint32(lowerMED)),
 					},
 				},
 				AdjRibInPostAttrs: &valpb.RibAttributes{
 					AttrSet: &valpb.AttrSet{
 						Origin: "IGP",
-						Med:    uint32(lowerMED),
+						Med:    proto.Uint32(uint32(lowerMED)),
 					},
 				},
 				LocalRibAttrs: &valpb.RibAttributes{
 					AttrSet: &valpb.AttrSet{
 						Origin: "IGP",
-						Med:    uint32(lowerMED),
+						Med:    proto.Uint32(uint32(lowerMED)),
 					},
 				},
 			}},
