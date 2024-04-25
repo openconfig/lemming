@@ -9,6 +9,7 @@ go_test(
         "policy_test.go",
         "prefix_set_test.go",
         "route_propagation_test.go",
+        "route_type_test.go",
         "session_establish_test.go",
         "set_attributes_test.go",
         "ygnmi_test.go",
