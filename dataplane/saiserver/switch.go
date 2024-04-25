@@ -55,6 +55,7 @@ type saiSwitch struct {
 	lag             *lag
 	tunnel          *tunnel
 	queue           *queue
+	sg              *schedulerGroup
 	routerInterface *routerInterface
 	udf             *udf
 	mgr             *attrmgr.AttrMgr
@@ -109,7 +110,8 @@ const (
 func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server, opts *dplaneopts.Options) (*saiSwitch, error) {
 	vlan := newVlan(mgr, engine, s)
 	q := newQueue(mgr, engine, s)
-	port, err := newPort(mgr, engine, s, vlan, q, opts)
+	sg := newSchedulerGroup(mgr, engine, s)
+	port, err := newPort(mgr, engine, s, vlan, q, sg, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -135,6 +137,7 @@ func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server, 
 		tunnel:          newTunnel(mgr, engine, s),
 		udf:             newUdf(mgr, engine, s),
 		queue:           q,
+		sg:              sg,
 		mgr:             mgr,
 	}
 	saipb.RegisterSwitchServer(s, sw)

@@ -106,10 +106,6 @@ type samplePacket struct {
 	saipb.UnimplementedSamplepacketServer
 }
 
-type schedulerGroup struct {
-	saipb.UnimplementedSchedulerGroupServer
-}
-
 type scheduler struct {
 	saipb.UnimplementedSchedulerServer
 }
@@ -257,7 +253,6 @@ func New(ctx context.Context, mgr *attrmgr.AttrMgr, s *grpc.Server, opts *dplane
 		qosMap:            &qosMap{},
 		rpfGroup:          &rpfGroup{},
 		samplePacket:      &samplePacket{},
-		schedulerGroup:    &schedulerGroup{},
 		scheduler:         &scheduler{},
 		srv6:              &srv6{},
 		saiSwitch:         sw,
@@ -286,7 +281,6 @@ func New(ctx context.Context, mgr *attrmgr.AttrMgr, s *grpc.Server, opts *dplane
 	saipb.RegisterQosMapServer(s, srv.qosMap)
 	saipb.RegisterRpfGroupServer(s, srv.rpfGroup)
 	saipb.RegisterSamplepacketServer(s, srv.samplePacket)
-	saipb.RegisterSchedulerGroupServer(s, srv.schedulerGroup)
 	saipb.RegisterSchedulerServer(s, srv.scheduler)
 	saipb.RegisterSrv6Server(s, srv.srv6)
 	saipb.RegisterSystemPortServer(s, srv.systemPort)

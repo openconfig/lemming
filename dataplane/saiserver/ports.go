@@ -36,7 +36,7 @@ import (
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
-func newPort(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server, vlan saipb.VlanServer, queue saipb.QueueServer, opts *dplaneopts.Options) (*port, error) {
+func newPort(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server, vlan saipb.VlanServer, queue saipb.QueueServer, sg saipb.SchedulerGroupServer, opts *dplaneopts.Options) (*port, error) {
 	p := &port{
 		mgr:       mgr,
 		dataplane: dataplane,
@@ -45,6 +45,7 @@ func newPort(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server,
 		vlan:      vlan,
 		opts:      opts,
 		queue:     queue,
+		sg:        sg,
 	}
 	if opts.PortConfigFile != "" {
 		data, err := os.ReadFile(opts.PortConfigFile)
@@ -71,6 +72,7 @@ type port struct {
 	opts      *dplaneopts.Options
 	config    *dplaneopts.PortConfig
 	queue     saipb.QueueServer
+	sg        saipb.SchedulerGroupServer
 }
 
 // stub for testing
@@ -99,7 +101,10 @@ func getForwardingPipeline() []*fwdpb.ActionDesc {
 	}
 }
 
-const numQueue = 12
+const (
+	numQueues          = 12
+	numSchedulerGroups = 12
+)
 
 // CreatePort creates a new port, mapping the port to ethX, where X is assigned sequentially from 1 to n.
 // Note: If more ports are created than eth devices, no error is returned, but the OperStatus is set to NOT_PRESENT.
@@ -148,19 +153,46 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 	}
 
 	queues := []uint64{}
-	for i := 0; i < numQueue; i++ {
-		qResp, err := attrmgr.InvokeAndSave(ctx, port.mgr, port.queue.CreateQueue, &saipb.CreateQueueRequest{})
+	for i := 0; i < numQueues; i++ {
+		qResp, err := attrmgr.InvokeAndSave(ctx, port.mgr, port.queue.CreateQueue, &saipb.CreateQueueRequest{
+			Type:                saipb.QueueType_QUEUE_TYPE_ALL.Enum(),
+			Port:                proto.Uint64(id),
+			Index:               proto.Uint32(uint32(i)),
+			ParentSchedulerNode: proto.Uint64(id),
+			WredProfileId:       proto.Uint64(0),
+			BufferProfileId:     proto.Uint64(0),
+			SchedulerProfileId:  proto.Uint64(0),
+			TamObject:           []uint64{},
+		})
 		if err != nil {
 			return nil, err
 		}
+
 		queues = append(queues, qResp.GetOid())
+	}
+
+	sgs := []uint64{}
+	for i := 0; i < numQueues; i++ {
+		sgResp, err := attrmgr.InvokeAndSave(ctx, port.mgr, port.sg.CreateSchedulerGroup, &saipb.CreateSchedulerGroupRequest{
+			PortId:             proto.Uint64(id),
+			SchedulerProfileId: proto.Uint64(0),
+			ParentNode:         proto.Uint64(id),
+		})
+		if err != nil {
+			return nil, err
+		}
+		port.mgr.StoreAttributes(sgResp.GetOid(), &saipb.SchedulerGroupAttribute{
+			ChildCount: proto.Uint32(1),
+			ChildList:  []uint64{queues[i]},
+		})
+		sgs = append(sgs, sgResp.GetOid())
 	}
 
 	attrs := &saipb.PortAttribute{
 		QosNumberOfQueues:                proto.Uint32(uint32(len(queues))),
 		QosQueueList:                     queues,
-		QosNumberOfSchedulerGroups:       proto.Uint32(0),
-		QosSchedulerGroupList:            []uint64{},
+		QosNumberOfSchedulerGroups:       proto.Uint32(uint32(len(sgs))),
+		QosSchedulerGroupList:            sgs,
 		IngressPriorityGroupList:         []uint64{},
 		FloodStormControlPolicerId:       proto.Uint64(0),
 		BroadcastStormControlPolicerId:   proto.Uint64(0),
@@ -687,7 +719,46 @@ func newQueue(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server
 // CreateQueue creates a queue.
 // TODO: Implement this.
 func (q *queue) CreateQueue(context.Context, *saipb.CreateQueueRequest) (*saipb.CreateQueueResponse, error) {
+	id := q.mgr.NextID()
+
 	return &saipb.CreateQueueResponse{
-		Oid: q.mgr.NextID(),
+		Oid: id,
 	}, nil
+}
+
+// SetQueueAttribute sets an attribute.
+// TODO: Implement this.
+func (q *queue) SetQueueAttribute(context.Context, *saipb.SetQueueAttributeRequest) (*saipb.SetQueueAttributeResponse, error) {
+	return &saipb.SetQueueAttributeResponse{}, nil
+}
+
+type schedulerGroup struct {
+	saipb.UnimplementedSchedulerGroupServer
+	mgr       *attrmgr.AttrMgr
+	dataplane switchDataplaneAPI
+}
+
+func newSchedulerGroup(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server) *schedulerGroup {
+	sg := &schedulerGroup{
+		mgr:       mgr,
+		dataplane: dataplane,
+	}
+	saipb.RegisterSchedulerGroupServer(s, sg)
+	return sg
+}
+
+// CreateSchedulerGroup creates a scheduler group.
+// TODO: Implement this.
+func (sg *schedulerGroup) CreateSchedulerGroup(context.Context, *saipb.CreateSchedulerGroupRequest) (*saipb.CreateSchedulerGroupResponse, error) {
+	id := sg.mgr.NextID()
+
+	return &saipb.CreateSchedulerGroupResponse{
+		Oid: id,
+	}, nil
+}
+
+// SetQueueAttribute sets a scheduler group attr.
+// TODO: Implement this.
+func (sg *schedulerGroup) SetSchedulerGroupAttribute(context.Context, *saipb.SetSchedulerGroupAttributeRequest) (*saipb.SetSchedulerGroupAttributeResponse, error) {
+	return &saipb.SetSchedulerGroupAttributeResponse{}, nil
 }
