@@ -110,6 +110,7 @@ func convertPolicyDefinition(policy *oc.RoutingPolicy_PolicyDefinition, neighAdd
 						AsPathSet:       statement.Conditions.GetBgpConditions().GetMatchAsPathSet().GetAsPathSet(),
 						MatchSetOptions: convertMatchSetOptionsType(statement.GetConditions().GetBgpConditions().GetMatchAsPathSet().GetMatchSetOptions()),
 					},
+					RouteType: convertRouteType(statement.GetConditions().GetBgpConditions().GetRouteType()),
 				},
 			},
 			Actions: gobgpoc.Actions{
@@ -216,6 +217,17 @@ func convertAttributeComparison(ocpolicy oc.E_PolicyTypes_ATTRIBUTE_COMPARISON) 
 		return gobgpoc.ATTRIBUTE_COMPARISON_GE
 	case oc.PolicyTypes_ATTRIBUTE_COMPARISON_ATTRIBUTE_LE:
 		return gobgpoc.ATTRIBUTE_COMPARISON_LE
+	default:
+		return ""
+	}
+}
+
+func convertRouteType(rt oc.E_BgpConditions_RouteType) gobgpoc.RouteType {
+	switch rt {
+	case oc.BgpConditions_RouteType_EXTERNAL:
+		return gobgpoc.ROUTE_TYPE_EXTERNAL
+	case oc.BgpConditions_RouteType_INTERNAL:
+		return gobgpoc.ROUTE_TYPE_INTERNAL
 	default:
 		return ""
 	}
