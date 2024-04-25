@@ -117,7 +117,7 @@ type bgpTask struct {
 
 	yclient *ygnmi.Client
 
-	ribattrs *ocRIBAttrIndices
+	commAttrTracker *ocRIBAttrIndicesTracker[string]
 
 	appliedStateMu       sync.Mutex
 	appliedState         *oc.Root
@@ -137,7 +137,7 @@ func newBgpTask(targetName, zapiURL string, listenPort uint16) *bgpTask {
 		zapiURL:    zapiURL,
 		listenPort: listenPort,
 
-		ribattrs: newOCRIBAttrIndices(),
+		commAttrTracker: newOCRIBAttrIndices[string](),
 
 		appliedState:         appliedState,
 		appliedBGP:           appliedBGP,
@@ -352,10 +352,12 @@ func (t *bgpTask) updateRIBs(ctx context.Context) error {
 
 	return t.updateAppliedState(ctx, func() error {
 		bgpRIB := t.appliedBGP.GetOrCreateRib()
-		t.ribattrs.beginPopulation(bgpRIB)
-		defer t.ribattrs.completePopulation()
-		v4uni := t.appliedBGP.GetOrCreateRib().GetOrCreateAfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST).GetOrCreateIpv4Unicast()
+		// Clear RIB attributes for fresh population.
+		bgpRIB.Community = nil
+		t.commAttrTracker.beginAllocation()
+		defer t.commAttrTracker.completeAllocation()
 
+		v4uni := t.appliedBGP.GetOrCreateRib().GetOrCreateAfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST).GetOrCreateIpv4Unicast()
 		v6uni := t.appliedBGP.GetOrCreateRib().GetOrCreateAfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV6_UNICAST).GetOrCreateIpv6Unicast()
 
 		t.queryTable(ctx, "", false, api.TableType_LOCAL, api.Family_AFI_IP, func(routes []*api.Destination) {
@@ -371,7 +373,7 @@ func (t *bgpTask) updateRIBs(ctx context.Context) error {
 						origin = oc.UnionString(path.NeighborIp)
 					}
 					// TODO: this ID should match the ID in adj-rib-in-post.
-					t.ribattrs.populateRIBAttrs(path, bgpRIB, locRib.GetOrCreateRoute(route.Prefix, origin, uint32(i)))
+					populateRIBAttrs(t.commAttrTracker, path, bgpRIB, locRib.GetOrCreateRoute(route.Prefix, origin, uint32(i)))
 				}
 			}
 		})
@@ -388,7 +390,7 @@ func (t *bgpTask) updateRIBs(ctx context.Context) error {
 						origin = oc.UnionString(path.NeighborIp)
 					}
 					// TODO: this ID should match the ID in adj-rib-in-post.
-					t.ribattrs.populateRIBAttrs(path, bgpRIB, locRib.GetOrCreateRoute(route.Prefix, origin, uint32(i)))
+					populateRIBAttrs(t.commAttrTracker, path, bgpRIB, locRib.GetOrCreateRoute(route.Prefix, origin, uint32(i)))
 				}
 			}
 		})
@@ -403,7 +405,7 @@ func (t *bgpTask) updateRIBs(ctx context.Context) error {
 				for _, route := range routes {
 					for i, path := range route.Paths {
 						// TODO: this ID should be retrieved from the update message.
-						t.ribattrs.populateRIBAttrs(path, bgpRIB, neighContainer.GetOrCreateAdjRibInPre().GetOrCreateRoute(route.Prefix, uint32(i)))
+						populateRIBAttrs(t.commAttrTracker, path, bgpRIB, neighContainer.GetOrCreateAdjRibInPre().GetOrCreateRoute(route.Prefix, uint32(i)))
 					}
 				}
 			})
@@ -412,7 +414,7 @@ func (t *bgpTask) updateRIBs(ctx context.Context) error {
 					for i, path := range route.Paths {
 						// TODO: this ID should be retrieved from the update message.
 						if !path.Filtered {
-							t.ribattrs.populateRIBAttrs(path, bgpRIB, neighContainer.GetOrCreateAdjRibInPost().GetOrCreateRoute(route.Prefix, uint32(i)))
+							populateRIBAttrs(t.commAttrTracker, path, bgpRIB, neighContainer.GetOrCreateAdjRibInPost().GetOrCreateRoute(route.Prefix, uint32(i)))
 						}
 					}
 				}
@@ -426,7 +428,7 @@ func (t *bgpTask) updateRIBs(ctx context.Context) error {
 						// the generated UUID isn't propagated.
 						//
 						// Note that path.NeighborIp is <nil> for some reason so have to use neigh.
-						t.ribattrs.populateRIBAttrs(path, bgpRIB, neighContainer.GetOrCreateAdjRibOutPre().GetOrCreateRoute(route.Prefix, uint32(i)))
+						populateRIBAttrs(t.commAttrTracker, path, bgpRIB, neighContainer.GetOrCreateAdjRibOutPre().GetOrCreateRoute(route.Prefix, uint32(i)))
 					}
 				}
 			})
@@ -440,7 +442,7 @@ func (t *bgpTask) updateRIBs(ctx context.Context) error {
 						//
 						// Note that path.NeighborIp is <nil> for some reason so have to use neigh.
 						if !path.Filtered {
-							t.ribattrs.populateRIBAttrs(path, bgpRIB, neighContainer.GetOrCreateAdjRibOutPost().GetOrCreateRoute(route.Prefix, uint32(i)))
+							populateRIBAttrs(t.commAttrTracker, path, bgpRIB, neighContainer.GetOrCreateAdjRibOutPost().GetOrCreateRoute(route.Prefix, uint32(i)))
 						}
 					}
 				}
@@ -457,7 +459,7 @@ func (t *bgpTask) updateRIBs(ctx context.Context) error {
 				for _, route := range routes {
 					for i, path := range route.Paths {
 						// TODO: this ID should be retrieved from the update message.
-						t.ribattrs.populateRIBAttrs(path, bgpRIB, neighContainer.GetOrCreateAdjRibInPre().GetOrCreateRoute(route.Prefix, uint32(i)))
+						populateRIBAttrs(t.commAttrTracker, path, bgpRIB, neighContainer.GetOrCreateAdjRibInPre().GetOrCreateRoute(route.Prefix, uint32(i)))
 					}
 				}
 			})
@@ -466,7 +468,7 @@ func (t *bgpTask) updateRIBs(ctx context.Context) error {
 					for i, path := range route.Paths {
 						// TODO: this ID should be retrieved from the update message.
 						if !path.Filtered {
-							t.ribattrs.populateRIBAttrs(path, bgpRIB, neighContainer.GetOrCreateAdjRibInPost().GetOrCreateRoute(route.Prefix, uint32(i)))
+							populateRIBAttrs(t.commAttrTracker, path, bgpRIB, neighContainer.GetOrCreateAdjRibInPost().GetOrCreateRoute(route.Prefix, uint32(i)))
 						}
 					}
 				}
@@ -480,7 +482,7 @@ func (t *bgpTask) updateRIBs(ctx context.Context) error {
 						// the generated UUID isn't propagated.
 						//
 						// Note that path.NeighborIp is <nil> for some reason so have to use neigh.
-						t.ribattrs.populateRIBAttrs(path, bgpRIB, neighContainer.GetOrCreateAdjRibOutPre().GetOrCreateRoute(route.Prefix, uint32(i)))
+						populateRIBAttrs(t.commAttrTracker, path, bgpRIB, neighContainer.GetOrCreateAdjRibOutPre().GetOrCreateRoute(route.Prefix, uint32(i)))
 					}
 				}
 			})
@@ -494,7 +496,7 @@ func (t *bgpTask) updateRIBs(ctx context.Context) error {
 						//
 						// Note that path.NeighborIp is <nil> for some reason so have to use neigh.
 						if !path.Filtered {
-							t.ribattrs.populateRIBAttrs(path, bgpRIB, neighContainer.GetOrCreateAdjRibOutPost().GetOrCreateRoute(route.Prefix, uint32(i)))
+							populateRIBAttrs(t.commAttrTracker, path, bgpRIB, neighContainer.GetOrCreateAdjRibOutPost().GetOrCreateRoute(route.Prefix, uint32(i)))
 						}
 					}
 				}
@@ -561,43 +563,70 @@ type ocRIBRoute interface {
 	SetCommunityIndex(uint64)
 }
 
-// ocRIBAttrIndices is used to track and populate BGP RIB attribute
+// ocRIBAttrIndicesTracker is used to track and populate BGP RIB attribute
 // information.
-type ocRIBAttrIndices struct {
-	lastCommIndex         uint64
-	commAllocs            map[string]uint64
-	commIndiciesInUse     map[uint64]string
-	commIndiciesInUseNext map[uint64]string
+type ocRIBAttrIndicesTracker[T comparable] struct {
+	lastIndex         uint64
+	allocs            map[T]uint64
+	indiciesInUse     map[uint64]T
+	indiciesInUseNext map[uint64]T
 }
 
-func newOCRIBAttrIndices() *ocRIBAttrIndices {
-	return &ocRIBAttrIndices{
-		lastCommIndex:         0,
-		commAllocs:            map[string]uint64{},
-		commIndiciesInUse:     map[uint64]string{},
-		commIndiciesInUseNext: map[uint64]string{},
+func newOCRIBAttrIndices[T comparable]() *ocRIBAttrIndicesTracker[T] {
+	return &ocRIBAttrIndicesTracker[T]{
+		lastIndex:         0,
+		allocs:            map[T]uint64{},
+		indiciesInUse:     map[uint64]T{},
+		indiciesInUseNext: map[uint64]T{},
 	}
 }
 
-// beginPopulation indicates a fresh round of attribute index allocation.
-func (r *ocRIBAttrIndices) beginPopulation(rib *oc.NetworkInstance_Protocol_Bgp_Rib) {
-	rib.Community = nil
-	r.commIndiciesInUseNext = map[uint64]string{}
+// beginAllocation indicates a fresh round of attribute index allocation.
+func (r *ocRIBAttrIndicesTracker[T]) beginAllocation() {
+	r.indiciesInUseNext = map[uint64]T{}
 }
 
-// completePopulation indicates to finish allocation and delete unused indices.
-func (r *ocRIBAttrIndices) completePopulation() {
-	for i, commStr := range r.commIndiciesInUse {
-		if _, ok := r.commIndiciesInUseNext[i]; !ok {
-			delete(r.commAllocs, commStr)
+// completeAllocation indicates to finish allocation and delete unused indices.
+func (r *ocRIBAttrIndicesTracker[T]) completeAllocation() {
+	for i, key := range r.indiciesInUse {
+		if _, ok := r.indiciesInUseNext[i]; !ok {
+			delete(r.allocs, key)
 		}
 	}
 
-	r.commIndiciesInUse = r.commIndiciesInUseNext
-	r.commIndiciesInUseNext = map[uint64]string{}
+	r.indiciesInUse = r.indiciesInUseNext
+	r.indiciesInUseNext = map[uint64]T{}
 }
 
-func (r *ocRIBAttrIndices) getOrAllocIndex(comms []uint32) uint64 {
+func (r *ocRIBAttrIndicesTracker[T]) getOrAllocIndex(key T) uint64 {
+	i, ok := r.allocs[key]
+	if ok {
+		r.indiciesInUseNext[i] = key
+		return i
+	}
+
+	if len(r.indiciesInUse) == math.MaxInt {
+		log.Fatal("Way too many unities")
+	}
+	r.lastIndex++
+	//revive:disable:empty-block while loop usage.
+	for _, ok := r.indiciesInUse[r.lastIndex]; ok; r.lastIndex++ {
+	}
+	//revive:enable:empty-block
+	i = r.lastIndex
+
+	r.allocs[key] = i
+	r.indiciesInUse[i] = key
+	r.indiciesInUseNext[i] = key
+	return i
+}
+
+// populateRIBAttrs populates path attributes of routes in the RIB.
+//
+// - path is the GoBGP path attributes.
+// - rib is the BGP RIB applied state to be populated.
+// - route is the route in the RIB whose attribute reference needs to be updated.
+func populateRIBAttrs(commAttrTracker *ocRIBAttrIndicesTracker[string], path *api.Path, rib *oc.NetworkInstance_Protocol_Bgp_Rib, route ocRIBRoute) {
 	commsToString := func(comms []uint32) string {
 		var b strings.Builder
 		for i, comm := range comms {
@@ -609,35 +638,6 @@ func (r *ocRIBAttrIndices) getOrAllocIndex(comms []uint32) uint64 {
 		return b.String()
 	}
 
-	commStr := commsToString(comms)
-	i, ok := r.commAllocs[commStr]
-	if ok {
-		r.commIndiciesInUseNext[i] = commStr
-		return i
-	}
-
-	if len(r.commIndiciesInUse) == math.MaxInt {
-		log.Fatal("Way too many communities")
-	}
-	r.lastCommIndex++
-	//revive:disable:empty-block while loop usage.
-	for _, ok := r.commIndiciesInUse[r.lastCommIndex]; ok; r.lastCommIndex++ {
-	}
-	//revive:enable:empty-block
-	i = r.lastCommIndex
-
-	r.commAllocs[commStr] = i
-	r.commIndiciesInUse[i] = commStr
-	r.commIndiciesInUseNext[i] = commStr
-	return i
-}
-
-// populateRIBAttrs populates path attributes of routes in the RIB.
-//
-// - path is the GoBGP path attributes.
-// - rib is the BGP RIB applied state to be populated.
-// - route is the route in the RIB whose attribute reference needs to be updated.
-func (r *ocRIBAttrIndices) populateRIBAttrs(path *api.Path, rib *oc.NetworkInstance_Protocol_Bgp_Rib, route ocRIBRoute) {
 	var hasCommunity bool
 	var commIndex uint64
 	for _, attr := range path.GetPattrs() {
@@ -650,7 +650,7 @@ func (r *ocRIBAttrIndices) populateRIBAttrs(path *api.Path, rib *oc.NetworkInsta
 		case *api.CommunitiesAttribute:
 			if comms := m.GetCommunities(); len(comms) > 0 {
 				hasCommunity = true
-				commIndex = r.getOrAllocIndex(comms)
+				commIndex = commAttrTracker.getOrAllocIndex(commsToString(comms))
 				rib.GetOrCreateCommunity(commIndex).SetCommunity(communitiesToOC(comms))
 			}
 		}
