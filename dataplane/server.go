@@ -23,6 +23,7 @@ import (
 	"github.com/openconfig/ygnmi/ygnmi"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/local"
+	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/openconfig/lemming/dataplane/dplaneopts"
@@ -61,6 +62,7 @@ func New(ctx context.Context, opts ...dplaneopts.Option) (*Dataplane, error) {
 
 	mgr := attrmgr.New()
 	srv := grpc.NewServer(grpc.Creds(local.NewCredentials()), grpc.ChainUnaryInterceptor(mgr.Interceptor))
+	reflection.Register(srv)
 
 	saiserv, err := saiserver.New(ctx, mgr, srv, data.opt)
 	if err != nil {
