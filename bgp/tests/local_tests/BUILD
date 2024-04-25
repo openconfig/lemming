@@ -36,5 +36,6 @@ go_test(
         "@org_golang_google_grpc//credentials/insecure",
         "@org_golang_google_grpc//credentials/local",
         "@org_golang_google_grpc//status",
+        "@org_golang_google_protobuf//testing/protocmp",
     ],
 )

@@ -15,6 +15,7 @@
 package local_test
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -25,6 +26,7 @@ import (
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot"
+	"google.golang.org/protobuf/testing/protocmp"
 
 	valpb "github.com/openconfig/lemming/proto/policyval"
 )
@@ -251,10 +253,12 @@ func testPolicyAux(t *testing.T, testspec PolicyTestCase, dut1, dut2, dut3, dut4
 	for _, routeTest := range testspec.spec.RouteTests {
 		testPropagation(t, routeTest, dut1, dut2, dut3)
 		testCommunities(t, routeTest, dut1, dut2, dut3)
+		testAttrs(t, routeTest, dut1, dut2, dut3)
 	}
 	for _, routeTest := range testspec.spec.LongerPathRouteTests {
 		testPropagation(t, routeTest, dut5, dut2, dut3)
 		testCommunities(t, routeTest, dut5, dut2, dut3)
+		testAttrs(t, routeTest, dut5, dut2, dut3)
 	}
 }
 
@@ -270,31 +274,31 @@ func testCommunities(t *testing.T, routeTest *valpb.RouteTestCase, prevDUT, curr
 	prefix := routeTest.GetInput().GetReachPrefix()
 
 	if diff := cmp.Diff(routeTest.PrevAdjRibOutPreCommunities, getCommunities(t, prevDUT, prevCommMap, v4uni.Neighbor(currDUT.RouterID).AdjRibOutPre().Route(prefix, 0).CommunityIndex().State())); diff != "" {
-		t.Errorf("DUT %v AdjRibOutPre communities difference (prefix %s):\n%s", prevDUT.ID, prefix, diff)
+		t.Errorf("DUT %v AdjRibOutPre communities difference (prefix %s) (-want, +got):\n%s", prevDUT.ID, prefix, diff)
 	}
 	if diff := cmp.Diff(routeTest.PrevAdjRibOutPostCommunities, getCommunities(t, prevDUT, prevCommMap, v4uni.Neighbor(currDUT.RouterID).AdjRibOutPost().Route(prefix, 0).CommunityIndex().State())); diff != "" {
-		t.Errorf("DUT %v AdjRibOutPost communities difference (prefix %s):\n%s", prevDUT.ID, prefix, diff)
+		t.Errorf("DUT %v AdjRibOutPost communities difference (prefix %s) (-want, +got):\n%s", prevDUT.ID, prefix, diff)
 	}
 	if diff := cmp.Diff(routeTest.AdjRibInPreCommunities, getCommunities(t, currDUT, currCommMap, v4uni.Neighbor(prevDUT.RouterID).AdjRibInPre().Route(prefix, 0).CommunityIndex().State())); diff != "" {
-		t.Errorf("DUT %v AdjRibInPre communities difference (prefix %s):\n%s", currDUT.ID, prefix, diff)
+		t.Errorf("DUT %v AdjRibInPre communities difference (prefix %s) (-want, +got):\n%s", currDUT.ID, prefix, diff)
 	}
 	if diff := cmp.Diff(routeTest.AdjRibInPostCommunities, getCommunities(t, currDUT, currCommMap, v4uni.Neighbor(prevDUT.RouterID).AdjRibInPost().Route(prefix, 0).CommunityIndex().State())); diff != "" {
-		t.Errorf("DUT %v AdjRibInPost communities difference (prefix %s):\n%s", currDUT.ID, prefix, diff)
+		t.Errorf("DUT %v AdjRibInPost communities difference (prefix %s) (-want, +got):\n%s", currDUT.ID, prefix, diff)
 	}
 	if diff := cmp.Diff(routeTest.LocalRibCommunities, getCommunities(t, currDUT, currCommMap, v4uni.LocRib().Route(prefix, oc.UnionString(prevDUT.RouterID), 0).CommunityIndex().State())); diff != "" {
-		t.Errorf("DUT %v LocRib communities difference (prefix %s):\n%s", currDUT.ID, prefix, diff)
+		t.Errorf("DUT %v LocRib communities difference (prefix %s) (-want, +got):\n%s", currDUT.ID, prefix, diff)
 	}
 	if diff := cmp.Diff(routeTest.AdjRibOutPreCommunities, getCommunities(t, currDUT, currCommMap, v4uni.Neighbor(nextDUT.RouterID).AdjRibOutPre().Route(prefix, 0).CommunityIndex().State())); diff != "" {
-		t.Errorf("DUT %v AdjRibOutPre communities difference (prefix %s):\n%s", currDUT.ID, prefix, diff)
+		t.Errorf("DUT %v AdjRibOutPre communities difference (prefix %s) (-want, +got):\n%s", currDUT.ID, prefix, diff)
 	}
 	if diff := cmp.Diff(routeTest.AdjRibOutPostCommunities, getCommunities(t, currDUT, currCommMap, v4uni.Neighbor(nextDUT.RouterID).AdjRibOutPost().Route(prefix, 0).CommunityIndex().State())); diff != "" {
-		t.Errorf("DUT %v AdjRibOutPost communities difference (prefix %s):\n%s", currDUT.ID, prefix, diff)
+		t.Errorf("DUT %v AdjRibOutPost communities difference (prefix %s) (-want, +got):\n%s", currDUT.ID, prefix, diff)
 	}
 	if diff := cmp.Diff(routeTest.NextAdjRibInPreCommunities, getCommunities(t, nextDUT, nextCommMap, v4uni.Neighbor(currDUT.RouterID).AdjRibInPre().Route(prefix, 0).CommunityIndex().State())); diff != "" {
-		t.Errorf("DUT %v AdjRibInPre communities difference (prefix %s):\n%s", nextDUT.ID, prefix, diff)
+		t.Errorf("DUT %v AdjRibInPre communities difference (prefix %s) (-want, +got):\n%s", nextDUT.ID, prefix, diff)
 	}
 	if diff := cmp.Diff(routeTest.NextLocalRibCommunities, getCommunities(t, nextDUT, nextCommMap, v4uni.LocRib().Route(prefix, oc.UnionString(currDUT.RouterID), 0).CommunityIndex().State())); diff != "" {
-		t.Errorf("DUT %v LocRib communities difference (prefix %s):\n%s", nextDUT.ID, prefix, diff)
+		t.Errorf("DUT %v LocRib communities difference (prefix %s) (-want, +got):\n%s", nextDUT.ID, prefix, diff)
 	}
 }
 
@@ -322,4 +326,86 @@ func getCommunities(t *testing.T, dut *Device, commMap map[uint64]*oc.NetworkIns
 		}
 	}
 	return gotCommunities
+}
+
+func testAttrs(t *testing.T, routeTest *valpb.RouteTestCase, prevDUT, currDUT, nextDUT *Device) {
+	prevAttrSetMap := Lookup(t, prevDUT, bgp.BGPPath.Rib().AttrSetMap().State())
+	prevAttrMap, _ := prevAttrSetMap.Val()
+	currAttrSetMap := Lookup(t, currDUT, bgp.BGPPath.Rib().AttrSetMap().State())
+	currAttrMap, _ := currAttrSetMap.Val()
+	nextAttrSetMap := Lookup(t, nextDUT, bgp.BGPPath.Rib().AttrSetMap().State())
+	nextAttrMap, _ := nextAttrSetMap.Val()
+	v4uni := bgp.BGPPath.Rib().AfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST).Ipv4Unicast()
+
+	prefix := routeTest.GetInput().GetReachPrefix()
+
+	igpAttr := &valpb.RibAttributes{
+		AttrSet: &valpb.AttrSet{
+			Origin: "IGP",
+		},
+	}
+
+	// NOTE: GoBGP doesn't seem to set origin properly -- it is always set to zero.
+	//       So, for simplicity just always test if it's "IGP" instead of
+	//       specifying confusing test cases where the origin should not be IGP.
+	// If this is ever supported by GoBGP properly, OR if we decide to use
+	// SetOrigin to artificially set this attribute, then remove this
+	// function and associated logic.
+	nonNilOrIGP := func(a *valpb.RibAttributes, rejected bool) *valpb.RibAttributes {
+		if a == nil && !rejected {
+			return igpAttr
+		}
+		return a
+	}
+
+	if diff := cmp.Diff(nonNilOrIGP(routeTest.PrevAdjRibOutPreAttrs, false), getAttrs(t, prevDUT, prevAttrMap, v4uni.Neighbor(currDUT.RouterID).AdjRibOutPre().Route(prefix, 0).AttrIndex().State()), protocmp.Transform()); diff != "" {
+		t.Errorf("DUT %v AdjRibOutPre attribute difference (prefix %s) (-want, +got):\n%s", prevDUT.ID, prefix, diff)
+	}
+	if diff := cmp.Diff(nonNilOrIGP(routeTest.PrevAdjRibOutPostAttrs, false), getAttrs(t, prevDUT, prevAttrMap, v4uni.Neighbor(currDUT.RouterID).AdjRibOutPost().Route(prefix, 0).AttrIndex().State()), protocmp.Transform()); diff != "" {
+		t.Errorf("DUT %v AdjRibOutPost attribute difference (prefix %s) (-want, +got):\n%s", prevDUT.ID, prefix, diff)
+	}
+	if diff := cmp.Diff(nonNilOrIGP(routeTest.AdjRibInPreAttrs, false), getAttrs(t, currDUT, currAttrMap, v4uni.Neighbor(prevDUT.RouterID).AdjRibInPre().Route(prefix, 0).AttrIndex().State()), protocmp.Transform()); diff != "" {
+		t.Errorf("DUT %v AdjRibInPre attribute difference (prefix %s) (-want, +got):\n%s", currDUT.ID, prefix, diff)
+	}
+	if diff := cmp.Diff(nonNilOrIGP(routeTest.AdjRibInPostAttrs, routeTest.ExpectedResult == valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD), getAttrs(t, currDUT, currAttrMap, v4uni.Neighbor(prevDUT.RouterID).AdjRibInPost().Route(prefix, 0).AttrIndex().State()), protocmp.Transform()); diff != "" {
+		t.Errorf("DUT %v AdjRibInPost attribute difference (prefix %s) (-want, +got):\n%s", currDUT.ID, prefix, diff)
+	}
+	if diff := cmp.Diff(nonNilOrIGP(routeTest.LocalRibAttrs, routeTest.ExpectedResult != valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT), getAttrs(t, currDUT, currAttrMap, v4uni.LocRib().Route(prefix, oc.UnionString(prevDUT.RouterID), 0).AttrIndex().State()), protocmp.Transform()); diff != "" {
+		t.Errorf("DUT %v LocRib attrs difference (prefix %s) (-want, +got):\n%s", currDUT.ID, prefix, diff)
+	}
+	if diff := cmp.Diff(nonNilOrIGP(routeTest.AdjRibOutPreAttrs, routeTest.ExpectedResult == valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD), getAttrs(t, currDUT, currAttrMap, v4uni.Neighbor(nextDUT.RouterID).AdjRibOutPre().Route(prefix, 0).AttrIndex().State()), protocmp.Transform()); diff != "" {
+		fmt.Println("<1>", prefix, routeTest.ExpectedResult, valpb.RouteTestResult_ROUTE_TEST_RESULT_ACCEPT)
+		t.Errorf("DUT %v AdjRibOutPre attribute difference (prefix %s) (-want, +got):\n%s", currDUT.ID, prefix, diff)
+	}
+	if diff := cmp.Diff(nonNilOrIGP(routeTest.AdjRibOutPostAttrs, routeTest.ExpectedResult == valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD), getAttrs(t, currDUT, currAttrMap, v4uni.Neighbor(nextDUT.RouterID).AdjRibOutPost().Route(prefix, 0).AttrIndex().State()), protocmp.Transform()); diff != "" {
+		t.Errorf("DUT %v AdjRibOutPost attribute difference (prefix %s) (-want, +got):\n%s", currDUT.ID, prefix, diff)
+	}
+	if diff := cmp.Diff(nonNilOrIGP(routeTest.NextAdjRibInPreAttrs, routeTest.ExpectedResult == valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD), getAttrs(t, nextDUT, nextAttrMap, v4uni.Neighbor(currDUT.RouterID).AdjRibInPre().Route(prefix, 0).AttrIndex().State()), protocmp.Transform()); diff != "" {
+		t.Errorf("DUT %v AdjRibInPre attribute difference (prefix %s) (-want, +got):\n%s", nextDUT.ID, prefix, diff)
+	}
+	if diff := cmp.Diff(nonNilOrIGP(routeTest.NextLocalRibAttrs, routeTest.ExpectedResult == valpb.RouteTestResult_ROUTE_TEST_RESULT_DISCARD), getAttrs(t, nextDUT, nextAttrMap, v4uni.LocRib().Route(prefix, oc.UnionString(currDUT.RouterID), 0).AttrIndex().State()), protocmp.Transform()); diff != "" {
+		t.Errorf("DUT %v LocRib attribute difference (prefix %s) (-want, +got):\n%s", nextDUT.ID, prefix, diff)
+	}
+}
+
+// getAttrs gets the attribute of the given route query to a attr-set index.
+//
+// If the attr-set index doesn't exist (e.g. the route doesn't exist), nil is returned.
+func getAttrs(t *testing.T, dut *Device, attrSetMap map[uint64]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet, query ygnmi.SingletonQuery[uint64]) *valpb.RibAttributes {
+	attrIndexVal := Lookup(t, dut, query)
+	attrIndex, ok := attrIndexVal.Val()
+	if !ok {
+		return nil
+	}
+	attrs, ok := attrSetMap[attrIndex]
+	if !ok {
+		t.Errorf("RIB attributes does not have expected attribute index: %v", attrIndex)
+		return nil
+	}
+
+	gotAttrs := &valpb.RibAttributes{AttrSet: &valpb.AttrSet{}}
+	if origin := attrs.GetOrigin(); origin != oc.BgpTypes_BgpOriginAttrType_UNSET {
+		gotAttrs.AttrSet.Origin = origin.String()
+	}
+	return gotAttrs
 }
