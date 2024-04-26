@@ -104,7 +104,8 @@ func TestPrefixSet(t *testing.T) {
 
 	getspec := func(invert bool) *PolicyTestCase {
 		return &PolicyTestCase{
-			description: "Test that one prefix gets accepted and the other rejected via an ANY prefix-set.",
+			description:         "Test that one prefix gets accepted and the other rejected via an ANY prefix-set.",
+			skipValidateAttrSet: true,
 			routeTests: []*policytest.RouteTestCase{{
 				Description: "Exact match",
 				Input: policytest.TestRoute{

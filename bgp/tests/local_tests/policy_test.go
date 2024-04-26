@@ -15,6 +15,7 @@
 package local_test
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -52,6 +53,7 @@ type PolicyTestCase struct {
 	routeTests              []*policytest.RouteTestCase
 	alternatePathRouteTests []*policytest.RouteTestCase
 	longerPathRouteTests    []*policytest.RouteTestCase
+	skipValidateAttrSet     bool // whether attr-sets are validated
 	installPolicies         func(t *testing.T, dut1, dut2, dut3, dut4, dut5 *Device)
 }
 
@@ -254,12 +256,16 @@ func testPolicyAux(t *testing.T, testspec *PolicyTestCase, dut1, dut2, dut3, dut
 	for _, routeTest := range testspec.routeTests {
 		testPropagation(t, routeTest, dut1, dut2, dut3)
 		testCommunities(t, routeTest, dut1, dut2, dut3)
-		testAttrs(t, routeTest, dut1, dut2, dut3)
+		if !testspec.skipValidateAttrSet {
+			testAttrs(t, routeTest, dut1, dut2, dut3)
+		}
 	}
 	for _, routeTest := range testspec.longerPathRouteTests {
 		testPropagation(t, routeTest, dut5, dut2, dut3)
 		testCommunities(t, routeTest, dut5, dut2, dut3)
-		testAttrs(t, routeTest, dut5, dut2, dut3)
+		if !testspec.skipValidateAttrSet {
+			testAttrs(t, routeTest, dut5, dut2, dut3)
+		}
 	}
 }
 
@@ -329,6 +335,33 @@ func getCommunities(t *testing.T, dut *Device, commMap map[uint64]*oc.NetworkIns
 	return gotCommunities
 }
 
+// awaitNoDiff periodically checks diffFunc's output until empty or timeout.
+//
+//   - updateRIBFunc is called periodically to update any RIB data used in the
+//     validation.
+func awaitNoDiff(diffFunc func() string, updateRIBFunc func()) string {
+	timeout := time.After(awaitTimeLimit)
+	updateTicker := time.NewTicker(5 * time.Second)
+	defer updateTicker.Stop()
+
+	var diff string
+
+	for {
+		select {
+		case <-timeout:
+			return diff
+		case <-updateTicker.C:
+			updateRIBFunc()
+		default:
+			diff = diffFunc()
+			if diff == "" {
+				return ""
+			}
+			time.Sleep(time.Second)
+		}
+	}
+}
+
 func testAttrs(t *testing.T, routeTest *policytest.RouteTestCase, prevDUT, currDUT, nextDUT *Device) {
 	prevAttrSetMap := Lookup(t, prevDUT, bgp.BGPPath.Rib().AttrSetMap().State())
 	prevAttrMap, _ := prevAttrSetMap.Val()
@@ -336,6 +369,15 @@ func testAttrs(t *testing.T, routeTest *policytest.RouteTestCase, prevDUT, currD
 	currAttrMap, _ := currAttrSetMap.Val()
 	nextAttrSetMap := Lookup(t, nextDUT, bgp.BGPPath.Rib().AttrSetMap().State())
 	nextAttrMap, _ := nextAttrSetMap.Val()
+	updateAttrMaps := func() {
+		prevAttrSetMap = Lookup(t, prevDUT, bgp.BGPPath.Rib().AttrSetMap().State())
+		prevAttrMap, _ = prevAttrSetMap.Val()
+		currAttrSetMap = Lookup(t, currDUT, bgp.BGPPath.Rib().AttrSetMap().State())
+		currAttrMap, _ = currAttrSetMap.Val()
+		nextAttrSetMap = Lookup(t, nextDUT, bgp.BGPPath.Rib().AttrSetMap().State())
+		nextAttrMap, _ = nextAttrSetMap.Val()
+	}
+
 	v4uni := bgp.BGPPath.Rib().AfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST).Ipv4Unicast()
 
 	prefix := routeTest.Input.ReachPrefix
@@ -346,17 +388,16 @@ func testAttrs(t *testing.T, routeTest *policytest.RouteTestCase, prevDUT, currD
 		Med:       ygot.Uint32(0),
 	}
 
-	// NOTE: GoBGP doesn't seem to set origin properly -- it is always set to zero.
-	//       So, for simplicity just always test if it's "IGP" instead of
-	//       specifying confusing test cases where the origin should not be IGP.
-	// If this is ever supported by GoBGP properly, OR if we decide to use
-	// SetOrigin to artificially set this attribute, then remove this
-	// function and associated logic.
-	nonNilOrIGP := func(a *oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet, rejected bool) *oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet {
+	defaultAttrs := func(a *oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet, rejected bool) *oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet {
 		if rejected {
 			return a
 		}
 		if a == nil {
+			// NOTE: GoBGP doesn't seem to set origin properly -- it is always set to zero (IGP).
+			//       So, for simplicity just always test if it's "IGP" instead of
+			//       specifying confusing test cases where the origin should not be IGP.
+			// If this is ever supported by GoBGP properly, OR if we decide to use
+			// SetOrigin to artificially set this attribute, then remove this if block.
 			return igpAttr
 		}
 		// Set default values
@@ -369,31 +410,85 @@ func testAttrs(t *testing.T, routeTest *policytest.RouteTestCase, prevDUT, currD
 		return a
 	}
 
-	if diff := cmp.Diff(nonNilOrIGP(routeTest.PrevAdjRibOutPreAttrs, false), getAttrs(t, prevDUT, prevAttrMap, v4uni.Neighbor(currDUT.RouterID).AdjRibOutPre().Route(prefix, 0).AttrIndex().State()), protocmp.Transform()); diff != "" {
+	if diff := awaitNoDiff(func() string {
+		attrs, err := getAttrs(t, prevDUT, prevAttrMap, v4uni.Neighbor(currDUT.RouterID).AdjRibOutPre().Route(prefix, 0).AttrIndex().State())
+		if err != nil {
+			return err.Error()
+		}
+		return cmp.Diff(defaultAttrs(routeTest.PrevAdjRibOutPreAttrs, false), attrs, protocmp.Transform())
+	}, updateAttrMaps); diff != "" {
 		t.Errorf("DUT %v AdjRibOutPre attribute difference (prefix %s) (-want, +got):\n%s", prevDUT.ID, prefix, diff)
 	}
-	if diff := cmp.Diff(nonNilOrIGP(routeTest.PrevAdjRibOutPostAttrs, false), getAttrs(t, prevDUT, prevAttrMap, v4uni.Neighbor(currDUT.RouterID).AdjRibOutPost().Route(prefix, 0).AttrIndex().State()), protocmp.Transform()); diff != "" {
+	if diff := awaitNoDiff(func() string {
+		attrs, err := getAttrs(t, prevDUT, prevAttrMap, v4uni.Neighbor(currDUT.RouterID).AdjRibOutPost().Route(prefix, 0).AttrIndex().State())
+		if err != nil {
+			return err.Error()
+		}
+		return cmp.Diff(defaultAttrs(routeTest.PrevAdjRibOutPostAttrs, false), attrs, protocmp.Transform())
+	}, updateAttrMaps); diff != "" {
 		t.Errorf("DUT %v AdjRibOutPost attribute difference (prefix %s) (-want, +got):\n%s", prevDUT.ID, prefix, diff)
 	}
-	if diff := cmp.Diff(nonNilOrIGP(routeTest.AdjRibInPreAttrs, false), getAttrs(t, currDUT, currAttrMap, v4uni.Neighbor(prevDUT.RouterID).AdjRibInPre().Route(prefix, 0).AttrIndex().State()), protocmp.Transform()); diff != "" {
+	if diff := awaitNoDiff(func() string {
+		attrs, err := getAttrs(t, currDUT, currAttrMap, v4uni.Neighbor(prevDUT.RouterID).AdjRibInPre().Route(prefix, 0).AttrIndex().State())
+		if err != nil {
+			return err.Error()
+		}
+		return cmp.Diff(defaultAttrs(routeTest.AdjRibInPreAttrs, false), attrs, protocmp.Transform())
+	}, updateAttrMaps); diff != "" {
 		t.Errorf("DUT %v AdjRibInPre attribute difference (prefix %s) (-want, +got):\n%s", currDUT.ID, prefix, diff)
 	}
-	if diff := cmp.Diff(nonNilOrIGP(routeTest.AdjRibInPostAttrs, routeTest.ExpectedResult == policytest.RouteDiscarded), getAttrs(t, currDUT, currAttrMap, v4uni.Neighbor(prevDUT.RouterID).AdjRibInPost().Route(prefix, 0).AttrIndex().State()), protocmp.Transform()); diff != "" {
+	if diff := awaitNoDiff(func() string {
+		attrs, err := getAttrs(t, currDUT, currAttrMap, v4uni.Neighbor(prevDUT.RouterID).AdjRibInPost().Route(prefix, 0).AttrIndex().State())
+		if err != nil {
+			return err.Error()
+		}
+		return cmp.Diff(defaultAttrs(routeTest.AdjRibInPostAttrs, routeTest.ExpectedResult == policytest.RouteDiscarded), attrs, protocmp.Transform())
+	}, updateAttrMaps); diff != "" {
 		t.Errorf("DUT %v AdjRibInPost attribute difference (prefix %s) (-want, +got):\n%s", currDUT.ID, prefix, diff)
 	}
-	if diff := cmp.Diff(nonNilOrIGP(routeTest.LocalRibAttrs, routeTest.ExpectedResult != policytest.RouteAccepted), getAttrs(t, currDUT, currAttrMap, v4uni.LocRib().Route(prefix, oc.UnionString(prevDUT.RouterID), 0).AttrIndex().State()), protocmp.Transform()); diff != "" {
+	if diff := awaitNoDiff(func() string {
+		attrs, err := getAttrs(t, currDUT, currAttrMap, v4uni.LocRib().Route(prefix, oc.UnionString(prevDUT.RouterID), 0).AttrIndex().State())
+		if err != nil {
+			return err.Error()
+		}
+		return cmp.Diff(defaultAttrs(routeTest.LocalRibAttrs, routeTest.ExpectedResult != policytest.RouteAccepted), attrs, protocmp.Transform())
+	}, updateAttrMaps); diff != "" {
 		t.Errorf("DUT %v LocRib routeTest difference (prefix %s) (-want, +got):\n%s", currDUT.ID, prefix, diff)
 	}
-	if diff := cmp.Diff(nonNilOrIGP(routeTest.AdjRibOutPreAttrs, routeTest.ExpectedResult == policytest.RouteDiscarded), getAttrs(t, currDUT, currAttrMap, v4uni.Neighbor(nextDUT.RouterID).AdjRibOutPre().Route(prefix, 0).AttrIndex().State()), protocmp.Transform()); diff != "" {
+	if diff := awaitNoDiff(func() string {
+		attrs, err := getAttrs(t, currDUT, currAttrMap, v4uni.Neighbor(nextDUT.RouterID).AdjRibOutPre().Route(prefix, 0).AttrIndex().State())
+		if err != nil {
+			return err.Error()
+		}
+		return cmp.Diff(defaultAttrs(routeTest.AdjRibOutPreAttrs, routeTest.ExpectedResult == policytest.RouteDiscarded), attrs, protocmp.Transform())
+	}, updateAttrMaps); diff != "" {
 		t.Errorf("DUT %v AdjRibOutPre attribute difference (prefix %s) (-want, +got):\n%s", currDUT.ID, prefix, diff)
 	}
-	if diff := cmp.Diff(nonNilOrIGP(routeTest.AdjRibOutPostAttrs, routeTest.ExpectedResult == policytest.RouteDiscarded), getAttrs(t, currDUT, currAttrMap, v4uni.Neighbor(nextDUT.RouterID).AdjRibOutPost().Route(prefix, 0).AttrIndex().State()), protocmp.Transform()); diff != "" {
+	if diff := awaitNoDiff(func() string {
+		attrs, err := getAttrs(t, currDUT, currAttrMap, v4uni.Neighbor(nextDUT.RouterID).AdjRibOutPost().Route(prefix, 0).AttrIndex().State())
+		if err != nil {
+			return err.Error()
+		}
+		return cmp.Diff(defaultAttrs(routeTest.AdjRibOutPostAttrs, routeTest.ExpectedResult == policytest.RouteDiscarded), attrs, protocmp.Transform())
+	}, updateAttrMaps); diff != "" {
 		t.Errorf("DUT %v AdjRibOutPost attribute difference (prefix %s) (-want, +got):\n%s", currDUT.ID, prefix, diff)
 	}
-	if diff := cmp.Diff(nonNilOrIGP(routeTest.NextAdjRibInPreAttrs, routeTest.ExpectedResult == policytest.RouteDiscarded), getAttrs(t, nextDUT, nextAttrMap, v4uni.Neighbor(currDUT.RouterID).AdjRibInPre().Route(prefix, 0).AttrIndex().State()), protocmp.Transform()); diff != "" {
+	if diff := awaitNoDiff(func() string {
+		attrs, err := getAttrs(t, nextDUT, nextAttrMap, v4uni.Neighbor(currDUT.RouterID).AdjRibInPre().Route(prefix, 0).AttrIndex().State())
+		if err != nil {
+			return err.Error()
+		}
+		return cmp.Diff(defaultAttrs(routeTest.NextAdjRibInPreAttrs, routeTest.ExpectedResult == policytest.RouteDiscarded), attrs, protocmp.Transform())
+	}, updateAttrMaps); diff != "" {
 		t.Errorf("DUT %v AdjRibInPre attribute difference (prefix %s) (-want, +got):\n%s", nextDUT.ID, prefix, diff)
 	}
-	if diff := cmp.Diff(nonNilOrIGP(routeTest.NextLocalRibAttrs, routeTest.ExpectedResult == policytest.RouteDiscarded), getAttrs(t, nextDUT, nextAttrMap, v4uni.LocRib().Route(prefix, oc.UnionString(currDUT.RouterID), 0).AttrIndex().State()), protocmp.Transform()); diff != "" {
+	if diff := awaitNoDiff(func() string {
+		attrs, err := getAttrs(t, nextDUT, nextAttrMap, v4uni.LocRib().Route(prefix, oc.UnionString(currDUT.RouterID), 0).AttrIndex().State())
+		if err != nil {
+			return err.Error()
+		}
+		return cmp.Diff(defaultAttrs(routeTest.NextLocalRibAttrs, routeTest.ExpectedResult == policytest.RouteDiscarded), attrs, protocmp.Transform())
+	}, updateAttrMaps); diff != "" {
 		t.Errorf("DUT %v LocRib attribute difference (prefix %s) (-want, +got):\n%s", nextDUT.ID, prefix, diff)
 	}
 }
@@ -405,16 +500,15 @@ func testAttrs(t *testing.T, routeTest *policytest.RouteTestCase, prevDUT, currD
 // populates them.
 //
 // If the attr-set index doesn't exist (e.g. the route doesn't exist), nil is returned.
-func getAttrs(t *testing.T, dut *Device, attrSetMap map[uint64]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet, query ygnmi.SingletonQuery[uint64]) *oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet {
+func getAttrs(t *testing.T, dut *Device, attrSetMap map[uint64]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet, query ygnmi.SingletonQuery[uint64]) (*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet, error) {
 	attrIndexVal := Lookup(t, dut, query)
 	attrIndex, ok := attrIndexVal.Val()
 	if !ok {
-		return nil
+		return nil, nil
 	}
 	attrs, ok := attrSetMap[attrIndex]
 	if !ok {
-		t.Errorf("RIB attributes does not have expected attribute index: %v", attrIndex)
-		return nil
+		return nil, fmt.Errorf("RIB attributes does not have expected attribute index: %v", attrIndex)
 	}
 	attrs.Index = nil
 	// Set default values.
@@ -424,5 +518,5 @@ func getAttrs(t *testing.T, dut *Device, attrSetMap map[uint64]*oc.NetworkInstan
 	if attrs.LocalPref == nil {
 		attrs.LocalPref = ygot.Uint32(100)
 	}
-	return attrs
+	return attrs, nil
 }

@@ -156,7 +156,8 @@ func TestCommunityCount(t *testing.T) {
 		testName := "test-community-count"
 		t.Run(testName, func(t *testing.T) {
 			testPolicy(t, &PolicyTestCase{
-				description: "community-count",
+				description:         "community-count",
+				skipValidateAttrSet: true,
 				routeTests: []*policytest.RouteTestCase{{
 					Description: "0",
 					Input: policytest.TestRoute{

@@ -23,6 +23,7 @@ import (
 	log "github.com/golang/glog"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/internal/lemmingutil"
+	api "github.com/osrg/gobgp/v3/api"
 	gobgpoc "github.com/osrg/gobgp/v3/pkg/config/oc"
 )
 
@@ -333,5 +334,20 @@ func convertMED(med oc.RoutingPolicy_PolicyDefinition_Statement_Actions_BgpActio
 		return "", fmt.Errorf("unsupported value for MED: (%T, %v)", med, med)
 	default:
 		return "", fmt.Errorf("unrecognized value for MED: (%T, %v)", med, med)
+	}
+}
+
+func convertSegmentTypeToOC(segmentType api.AsSegment_Type) oc.E_BgpTypes_AsPathSegmentType {
+	switch segmentType {
+	case api.AsSegment_AS_SET:
+		return oc.BgpTypes_AsPathSegmentType_AS_SET
+	case api.AsSegment_AS_SEQUENCE:
+		return oc.BgpTypes_AsPathSegmentType_AS_SEQ
+	case api.AsSegment_AS_CONFED_SEQUENCE:
+		return oc.BgpTypes_AsPathSegmentType_AS_CONFED_SEQUENCE
+	case api.AsSegment_AS_CONFED_SET:
+		return oc.BgpTypes_AsPathSegmentType_AS_CONFED_SET
+	default:
+		return oc.BgpTypes_AsPathSegmentType_UNSET
 	}
 }
