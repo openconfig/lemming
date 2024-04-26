@@ -1,4 +1,4 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "sai",
@@ -21,5 +21,18 @@ go_library(
         "@org_golang_google_protobuf//reflect/protoreflect",
         "@org_golang_google_protobuf//types/descriptorpb",
         "@org_golang_google_protobuf//types/dynamicpb",
+    ],
+)
+
+go_test(
+    name = "sai_test",
+    srcs = ["apidiscover_test.go"],
+    embed = [":sai"],
+    deps = [
+        "@com_github_google_go_cmp//cmp",
+        "@org_golang_google_grpc//:go_default_library",
+        "@org_golang_google_grpc//reflection/grpc_reflection_v1",
+        "@org_golang_google_protobuf//proto",
+        "@org_golang_google_protobuf//types/descriptorpb",
     ],
 )
