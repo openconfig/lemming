@@ -26,6 +26,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
+	reflectpb "google.golang.org/grpc/reflection/grpc_reflection_v1"
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/dynamicpb"
@@ -36,18 +37,28 @@ func New() *cobra.Command {
 		Use: "sai",
 	}
 	get := &cobra.Command{
-		Use:     getAttr,
+		Use:   getAttr + "type id [enum...]",
+		Short: "Query attributes from SAI server",
+		Long: `The get-attribute command performs a Get[Type]Attribute request to the SAI server.
+Arguments:
+	type: SAI object type (case insensitive) eg switch, port, hostiftrapgroup etc.
+	id: uint OID or prototext string for object with entry eg 1, 
+
+Examples:
+  luciusctl sai get-attr switch 1 cpu_port
+  luciusctl sai get-attribute routeentry 'switch_id: 1 vr_id: 1 destination: {addr: "\127\000\000\001" mask: "\xFF\xFF\xFF\xFF"}' next_hop_id
+`,
 		Aliases: []string{"get-attr"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			conn, err := dial()
 			if err != nil {
 				return err
 			}
-			rpcs, err := discoverRPCs(conn)
+			rpcs, err := discoverRPCs(reflectpb.NewServerReflectionClient(conn))
 			if err != nil {
 				return err
 			}
-			m := rpcs[getAttr][args[0]]
+			m := rpcs[getAttr][strings.ToLower(args[0])]
 			req := dynamicpb.NewMessage(m.input)
 
 			if m.hasOID {
@@ -63,6 +74,9 @@ func New() *cobra.Command {
 			}
 
 			for _, arg := range args[2:] {
+				if m.args[arg] == nil {
+					return fmt.Errorf("unknown arg %s", arg)
+				}
 				req.Mutable(req.Descriptor().Fields().ByNumber(2)).List().Append(protoreflect.ValueOf(m.args[arg].enumVal))
 			}
 
@@ -79,7 +93,7 @@ func New() *cobra.Command {
 			if err != nil {
 				return nil, cobra.ShellCompDirectiveError
 			}
-			msg, err := discoverRPCs(conn)
+			msg, err := discoverRPCs(reflectpb.NewServerReflectionClient(conn))
 			if err != nil {
 				return nil, cobra.ShellCompDirectiveError
 			}

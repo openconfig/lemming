@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"strings"
 
-	"google.golang.org/grpc"
 	reflectpb "google.golang.org/grpc/reflection/grpc_reflection_v1"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
@@ -42,12 +41,11 @@ type method struct {
 
 // discoverRPCs uses gRPC reflection to find all the SAI APIs on the server.
 // It returns a CLI-friendly names for the RPCs and their attributes.
-func discoverRPCs(conn grpc.ClientConnInterface) (map[string]map[string]*method, error) {
+func discoverRPCs(refl reflectpb.ServerReflectionClient) (map[string]map[string]*method, error) {
 	methods := map[string]map[string]*method{
 		getAttr: {},
 	}
 
-	refl := reflectpb.NewServerReflectionClient(conn)
 	info, err := refl.ServerReflectionInfo(context.Background())
 	if err != nil {
 		return methods, err
