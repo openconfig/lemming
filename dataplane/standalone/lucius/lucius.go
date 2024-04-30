@@ -24,6 +24,7 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/reflection"
 
 	"github.com/openconfig/lemming/dataplane/dplaneopts"
 	"github.com/openconfig/lemming/dataplane/saiserver"
@@ -84,6 +85,8 @@ func start(port int) {
 	srv := grpc.NewServer(grpc.Creds(insecure.NewCredentials()),
 		grpc.ChainUnaryInterceptor(logging.UnaryServerInterceptor(getLogger()), mgr.Interceptor),
 		grpc.ChainStreamInterceptor(logging.StreamServerInterceptor(getLogger())))
+
+	reflection.Register(srv)
 
 	opts := dplaneopts.ResolveOpts(
 		dplaneopts.WithHostifNetDevPortType(fwdpb.PortType_PORT_TYPE_KERNEL),

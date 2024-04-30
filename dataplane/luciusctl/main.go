@@ -21,6 +21,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/openconfig/lemming/dataplane/luciusctl/info"
+	"github.com/openconfig/lemming/dataplane/luciusctl/sai"
 )
 
 func main() {
@@ -34,7 +35,7 @@ func main() {
 	cobra.OnInitialize(func() { viper.BindPFlags(cmd.Flags()) })
 	viper.BindPFlags(cmd.Flags())
 
-	cmd.AddCommand(info.New())
+	cmd.AddCommand(info.New(), sai.New())
 
 	if err := cmd.Execute(); err != nil {
 		os.Exit(1)
