@@ -76,57 +76,50 @@ func TestRouteType(t *testing.T) {
 		Await(t, dut2, bgp.BGPPath.Neighbor(dut5.RouterID).ApplyPolicy().ImportPolicy().State(), []string{policyName})
 	}
 
-	test := func() {
-		testName := "test-route-type"
-		t.Run(testName, func(t *testing.T) {
-			testPolicy(t, &PolicyTestCase{
-				description:         "route-type",
-				skipValidateAttrSet: true,
-				dut1IsEBGP:          true,
-				routeTests: []*policytest.RouteTestCase{{
-					Description: "not set",
-					Input: policytest.TestRoute{
-						ReachPrefix: routeUnderTestList[0],
-					},
-					ExpectedResult: policytest.RouteDiscarded,
-				}, {
-					Description: "internal",
-					Input: policytest.TestRoute{
-						ReachPrefix: routeUnderTestList[1],
-					},
-					ExpectedResult: policytest.RouteAccepted,
-				}, {
-					Description: "external",
-					Input: policytest.TestRoute{
-						ReachPrefix: routeUnderTestList[2],
-					},
-					ExpectedResult: policytest.RouteDiscarded,
-				}},
-				alternatePathRouteTests: []*policytest.RouteTestCase{{
-					Description: "not set",
-					Input: policytest.TestRoute{
-						ReachPrefix: routeUnderTestList[3],
-					},
-					ExpectedResult: policytest.RouteDiscarded,
-				}, {
-					Description: "internal",
-					Input: policytest.TestRoute{
-						ReachPrefix: routeUnderTestList[4],
-					},
-					ExpectedResult: policytest.RouteDiscarded,
-				}, {
-					Description: "external",
-					Input: policytest.TestRoute{
-						ReachPrefix: routeUnderTestList[5],
-					},
-					ExpectedResult: policytest.RouteAccepted,
-				}},
-				installPolicies: func(t *testing.T, dut1, dut2, dut3, dut4, dut5 *Device) {
-					installRejectPolicy(t, dut1, dut2, dut3, dut4, dut5)
-				},
-			})
-		})
-	}
-
-	test()
+	testPolicy(t, &PolicyTestCase{
+		description:         "route-type",
+		skipValidateAttrSet: true,
+		dut1IsEBGP:          true,
+		routeTests: []*policytest.RouteTestCase{{
+			Description: "not set",
+			Input: policytest.TestRoute{
+				ReachPrefix: routeUnderTestList[0],
+			},
+			ExpectedResult: policytest.RouteDiscarded,
+		}, {
+			Description: "internal",
+			Input: policytest.TestRoute{
+				ReachPrefix: routeUnderTestList[1],
+			},
+			ExpectedResult: policytest.RouteAccepted,
+		}, {
+			Description: "external",
+			Input: policytest.TestRoute{
+				ReachPrefix: routeUnderTestList[2],
+			},
+			ExpectedResult: policytest.RouteDiscarded,
+		}},
+		alternatePathRouteTests: []*policytest.RouteTestCase{{
+			Description: "not set",
+			Input: policytest.TestRoute{
+				ReachPrefix: routeUnderTestList[3],
+			},
+			ExpectedResult: policytest.RouteDiscarded,
+		}, {
+			Description: "internal",
+			Input: policytest.TestRoute{
+				ReachPrefix: routeUnderTestList[4],
+			},
+			ExpectedResult: policytest.RouteDiscarded,
+		}, {
+			Description: "external",
+			Input: policytest.TestRoute{
+				ReachPrefix: routeUnderTestList[5],
+			},
+			ExpectedResult: policytest.RouteAccepted,
+		}},
+		installPolicies: func(t *testing.T, dut1, dut2, dut3, dut4, dut5 *Device) {
+			installRejectPolicy(t, dut1, dut2, dut3, dut4, dut5)
+		},
+	})
 }
