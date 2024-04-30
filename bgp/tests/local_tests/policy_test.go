@@ -54,6 +54,7 @@ type PolicyTestCase struct {
 	alternatePathRouteTests []*policytest.RouteTestCase
 	longerPathRouteTests    []*policytest.RouteTestCase
 	skipValidateAttrSet     bool // whether attr-sets are validated
+	dut1IsEBGP              bool // whether DUT1 and DUT2 are in different ASes
 	installPolicies         func(t *testing.T, dut1, dut2, dut3, dut4, dut5 *Device)
 }
 
@@ -61,7 +62,11 @@ type PolicyTestCase struct {
 // policy tests.
 func testPolicy(t *testing.T, testspec *PolicyTestCase) {
 	t.Helper()
-	dut1, stop1 := newLemming(t, 1, 64500, []*AddIntfAction{{
+	dut1AS := uint32(64500)
+	if testspec.dut1IsEBGP {
+		dut1AS = 64599
+	}
+	dut1, stop1 := newLemming(t, 1, dut1AS, []*AddIntfAction{{
 		name:    "eth0",
 		ifindex: 0,
 		enabled: true,
@@ -104,7 +109,7 @@ func testPropagation(t *testing.T, routeTest *policytest.RouteTestCase, prevDUT,
 	Await(t, currDUT, v4uni.Neighbor(prevDUT.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), prefix)
 	switch expectedResult := routeTest.ExpectedResult; expectedResult {
 	case policytest.RouteAccepted:
-		t.Logf("Waiting for %s to be propagated", prefix)
+		t.Logf("Waiting for %q (%s) to be propagated", prefix, routeTest.Description)
 		Await(t, currDUT, v4uni.Neighbor(prevDUT.RouterID).AdjRibInPost().Route(prefix, 0).Prefix().State(), prefix)
 		Await(t, currDUT, v4uni.LocRib().Route(prefix, oc.UnionString(prevDUT.RouterID), 0).Prefix().State(), prefix)
 		Await(t, currDUT, v4uni.Neighbor(nextDUT.RouterID).AdjRibOutPre().Route(prefix, 0).Prefix().State(), prefix)

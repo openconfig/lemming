@@ -77,6 +77,7 @@ func TestIntendedToGoBGPPolicies(t *testing.T) {
 			}
 			v4Stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetPrefixSet(prefixSet2Name)
 			v4Stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.PolicyTypes_MatchSetOptionsRestrictedType_ANY)
+			v4Stmt.GetOrCreateConditions().GetOrCreateBgpConditions().SetRouteType(oc.BgpConditions_RouteType_EXTERNAL)
 			v4Stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetMethod(oc.SetCommunity_Method_REFERENCE)
 			v4Stmt.GetOrCreateActions().GetOrCreateBgpActions().GetOrCreateSetCommunity().SetOptions(oc.BgpPolicy_BgpSetCommunityOptionType_REPLACE)
 			v4Stmt.GetOrCreateActions().SetPolicyResult(oc.RoutingPolicy_PolicyResultType_ACCEPT_ROUTE)
@@ -214,7 +215,7 @@ func TestIntendedToGoBGPPolicies(t *testing.T) {
 							LocalPrefEq:          0x0,
 							CommunityCount:       gobgpoc.CommunityCount{Operator: "", Value: 0x0},
 							AsPathLength:         gobgpoc.AsPathLength{Operator: "", Value: 0x0},
-							RouteType:            "",
+							RouteType:            "external",
 							RpkiValidationResult: "",
 							MatchLargeCommunitySet: gobgpoc.MatchLargeCommunitySet{
 								LargeCommunitySet: "",
@@ -334,7 +335,7 @@ func TestIntendedToGoBGPPolicies(t *testing.T) {
 							LocalPrefEq:          0x0,
 							CommunityCount:       gobgpoc.CommunityCount{Operator: "", Value: 0x0},
 							AsPathLength:         gobgpoc.AsPathLength{Operator: "", Value: 0x0},
-							RouteType:            "",
+							RouteType:            "external",
 							RpkiValidationResult: "",
 							MatchLargeCommunitySet: gobgpoc.MatchLargeCommunitySet{
 								LargeCommunitySet: "",
