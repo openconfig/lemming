@@ -574,6 +574,13 @@ func newRouterInterface(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *g
 	return r
 }
 
+func ifaceCounterID(oid uint64, input bool) string {
+	if input {
+		return fmt.Sprintf("%d-in-counter", oid)
+	}
+	return fmt.Sprintf("%d-out-counter", oid)
+}
+
 // CreateRouterInterfaces creates a new router interface.
 func (ri *routerInterface) CreateRouterInterface(ctx context.Context, req *saipb.CreateRouterInterfaceRequest) (*saipb.CreateRouterInterfaceResponse, error) {
 	id := ri.mgr.NextID()
@@ -594,11 +601,30 @@ func (ri *routerInterface) CreateRouterInterface(ctx context.Context, req *saipb
 		return nil, err
 	}
 
+	inCounter := ifaceCounterID(id, true)
+	outCounter := ifaceCounterID(id, false)
+
+	_, err = ri.dataplane.FlowCounterCreate(ctx, &fwdpb.FlowCounterCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: ri.dataplane.ID()},
+		Id:        &fwdpb.FlowCounterId{ObjectId: &fwdpb.ObjectId{Id: inCounter}},
+	})
+	if err != nil {
+		return nil, err
+	}
+	_, err = ri.dataplane.FlowCounterCreate(ctx, &fwdpb.FlowCounterCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: ri.dataplane.ID()},
+		Id:        &fwdpb.FlowCounterId{ObjectId: &fwdpb.ObjectId{Id: outCounter}},
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	// Link the port to the interface.
 	_, err = ri.dataplane.TableEntryAdd(ctx, fwdconfig.TableEntryAddRequest(ri.dataplane.ID(), inputIfaceTable).
 		AppendEntry(
 			fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT).WithUint64(uint64(obj.NID())))),
 			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_INPUT_IFACE).WithUint64Value(id)),
+			fwdconfig.Action(fwdconfig.FlowCounterAction(inCounter)),
 		).Build())
 	if err != nil {
 		return nil, err
@@ -608,6 +634,7 @@ func (ri *routerInterface) CreateRouterInterface(ctx context.Context, req *saipb
 		AppendEntry(
 			fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE).WithUint64(id))),
 			fwdconfig.Action(fwdconfig.TransmitAction(fmt.Sprint(req.GetPortId()))),
+			fwdconfig.Action(fwdconfig.FlowCounterAction(outCounter)),
 		).Build())
 	if err != nil {
 		return nil, err
@@ -691,6 +718,39 @@ func (ri *routerInterface) RemoveRouterInterface(ctx context.Context, req *saipb
 
 func (ri *routerInterface) SetRouterInterfaceAttribute(context.Context, *saipb.SetRouterInterfaceAttributeRequest) (*saipb.SetRouterInterfaceAttributeResponse, error) {
 	return &saipb.SetRouterInterfaceAttributeResponse{}, nil
+}
+
+func (ri *routerInterface) GetRouterInterfaceStats(ctx context.Context, req *saipb.GetRouterInterfaceStatsRequest) (*saipb.GetRouterInterfaceStatsResponse, error) {
+	counters, err := ri.dataplane.FlowCounterQuery(ctx, &fwdpb.FlowCounterQueryRequest{
+		ContextId: &fwdpb.ContextId{Id: ri.dataplane.ID()},
+		Ids: []*fwdpb.FlowCounterId{{
+			ObjectId: &fwdpb.ObjectId{Id: ifaceCounterID(req.GetOid(), true)},
+		}, {
+			ObjectId: &fwdpb.ObjectId{Id: ifaceCounterID(req.GetOid(), false)},
+		}},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	vals := []uint64{}
+
+	for _, counter := range req.GetCounterIds() {
+		switch counter {
+		case saipb.RouterInterfaceStat_ROUTER_INTERFACE_STAT_IN_OCTETS:
+			vals = append(vals, counters.GetCounters()[0].Octets)
+		case saipb.RouterInterfaceStat_ROUTER_INTERFACE_STAT_IN_PACKETS:
+			vals = append(vals, counters.GetCounters()[0].Packets)
+		case saipb.RouterInterfaceStat_ROUTER_INTERFACE_STAT_OUT_OCTETS:
+			vals = append(vals, counters.GetCounters()[1].Octets)
+		case saipb.RouterInterfaceStat_ROUTER_INTERFACE_STAT_OUT_PACKETS:
+			vals = append(vals, counters.GetCounters()[1].Packets)
+		default: // TODO: Support more stats.
+			vals = append(vals, 0)
+		}
+	}
+
+	return &saipb.GetRouterInterfaceStatsResponse{Values: vals}, nil
 }
 
 type vlan struct {
