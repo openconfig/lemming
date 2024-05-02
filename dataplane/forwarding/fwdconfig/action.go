@@ -303,3 +303,31 @@ func (u *DropActionBuilder) set(*fwdpb.ActionDesc) {
 func (u *DropActionBuilder) actionType() fwdpb.ActionType {
 	return fwdpb.ActionType_ACTION_TYPE_DROP
 }
+
+// FlowActionBuilder is a builder for a flow action.
+type FlowCounterActionBuilder struct {
+	id string
+}
+
+// FlowAction returns a new flow action builder.
+func FlowCounterAction(id string) *FlowCounterActionBuilder {
+	return &FlowCounterActionBuilder{
+		id: id,
+	}
+}
+
+func (u *FlowCounterActionBuilder) set(a *fwdpb.ActionDesc) {
+	a.Action = &fwdpb.ActionDesc_Flow{
+		Flow: &fwdpb.FlowCounterActionDesc{
+			CounterId: &fwdpb.FlowCounterId{
+				ObjectId: &fwdpb.ObjectId{
+					Id: u.id,
+				},
+			},
+		},
+	}
+}
+
+func (u *FlowCounterActionBuilder) actionType() fwdpb.ActionType {
+	return fwdpb.ActionType_ACTION_TYPE_FLOW_COUNTER
+}
