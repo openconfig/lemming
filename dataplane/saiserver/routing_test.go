@@ -822,6 +822,15 @@ func TestCreateRouterInterface(t *testing.T) {
 							Value: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
 						},
 					},
+				}, {
+					ActionType: fwdpb.ActionType_ACTION_TYPE_FLOW_COUNTER,
+					Action: &fwdpb.ActionDesc_Flow{
+						Flow: &fwdpb.FlowCounterActionDesc{
+							CounterId: &fwdpb.FlowCounterId{
+								ObjectId: &fwdpb.ObjectId{Id: "1-in-counter"},
+							},
+						},
+					},
 				}},
 			}},
 		},
