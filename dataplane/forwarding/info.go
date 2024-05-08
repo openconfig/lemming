@@ -110,6 +110,40 @@ func CounterInfo(obj fwdobject.Object) string {
 	return strings.Join(buffer, "\n")
 }
 
+// PortInfo returns the details of the specified Port.
+// TODO: Use PortInfo, probably needs to return object info string alongside the PortElementInfo return value.
+func PortInfo(ctx *fwdcontext.Context, arg interface{}) (*fwdpb.PortElementInfo, error) {
+	port, ok := arg.(fwdport.Port)
+	if !ok {
+		return nil, fmt.Errorf("arg %v is not a Port", arg)
+	}
+	desc := &fwdpb.PortDesc{
+		PortType: port.Type(),
+		desc.PortId: fwdport.GetID(port),
+	}
+	switch desc.PortType {
+		default:
+			return nil, fmt.Errorf("unknown PortType %v", desc.PortType)
+		case fwdpb.PortType_PORT_TYPE_CPU_PORT:
+			cpu, ok := port.(*ports.CPUPort)
+			if !ok {
+				return nil, fmt.Errorf("ports: Unable to create cpu port")
+			}
+			desc.Port = &fwdpb.CPUPortDesc{
+				QueueId: cpu.queueID,
+				QueueLength: int32(cpu.queue.max),
+				ExportFieldIds: cpu.export,
+				Remote:  cpu.remote,
+			}
+		// TODO: cases for other port types
+	}
+	var counters []*fwdpb.Counter
+	for _, c := range port.Counters() {
+		counters = append(counters, &fwdpb.Counter{Id: c.ID, Value: c.Value})
+	}
+	return &fwdpb.PortElementInfo{Desc: desc, Counters: counters}, nil
+}
+
 // TableInfo returns the details of the specified Table as a string.
 func TableInfo(ctx *fwdcontext.Context, arg interface{}) string {
 	table, ok := arg.(fwdtable.Table)

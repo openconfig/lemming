@@ -18,6 +18,7 @@ syntax = "proto3";
 package forwarding;
 
 import "proto/forwarding/forwarding_common.proto";
+import "proto/forwarding/forwarding_port.proto";
 
 option go_package = "github.com/openconfig/lemming/proto/forwarding";
 
@@ -59,12 +60,19 @@ message InfoElementRequest {
 
   // Start header of the frame if applicable. (INFO_TYPE_LOOKUP,
   // INFO_PORT_INPUT, INFO_PORT_OUTPUT)
-  PacketHeaderId start_header =
-      4;  
+  PacketHeaderId start_header = 4;  
 }
 
-// An InfoElementReply is the formatted contents of the specified information
-// element.
+// An InfoElementReply is the contents of the specified information element.
 message InfoElementReply {
   string content = 1;
+  oneof element_info {
+    PortElementInfo = 2;
+  }
+}
+
+// A PortInfo contains info specific to a Port element.
+message PortElementInfo {
+  PortDesc desc = 1;
+  repeated Counter counters = 2;
 }
