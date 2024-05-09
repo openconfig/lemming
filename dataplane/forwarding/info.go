@@ -111,7 +111,7 @@ func CounterInfo(obj fwdobject.Object) string {
 }
 
 // PortInfo returns the details of the specified Port.
-func PortInfo(ctx *fwdcontext.Context, arg interface{}) (*fwdpb.PortElementInfo, error) {
+func PortInfo(_ *fwdcontext.Context, arg interface{}) (*fwdpb.PortElementInfo, error) {
 	port, ok := arg.(fwdport.Port)
 	if !ok {
 		return nil, fmt.Errorf("arg %v is not a Port", arg)
