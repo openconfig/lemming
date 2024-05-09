@@ -208,7 +208,7 @@ func (mgr *AttrMgr) PopulateAttributes(req, resp proto.Message) error {
 		enumVal := reqList.Get(i).Enum()
 		val, ok := mgr.attrs[id][int32(enumVal)]
 		if !ok {
-			return fmt.Errorf("requested attribute not set: %v", reqList.Get(i))
+			return fmt.Errorf("requested attribute not set: %v in OID: %v", reqList.Get(i), id)
 		}
 		// Empty lists exist so they are not errors, but are not settable.
 		if val != nil {

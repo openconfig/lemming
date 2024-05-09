@@ -74,6 +74,7 @@ var getInterface = net.InterfaceByName
 
 func getForwardingPipeline() []*fwdpb.ActionDesc {
 	return []*fwdpb.ActionDesc{
+		fwdconfig.Action(fwdconfig.LookupAction(VlanTable)).Build(),                                     // Tag VLAN.
 		fwdconfig.Action(fwdconfig.LookupAction(MyMacTable)).Build(),                                    // Decide whether to process the packet.
 		fwdconfig.Action(fwdconfig.LookupAction(inputIfaceTable)).Build(),                               // Match packet to interface.
 		fwdconfig.Action(fwdconfig.LookupAction(IngressVRFTable)).Build(),                               // Match interface to VRF.
@@ -87,6 +88,7 @@ func getForwardingPipeline() []*fwdpb.ActionDesc {
 		fwdconfig.Action(fwdconfig.LookupAction(NeighborTable)).Build(),                                 // Lookup in the neighbor table.
 		fwdconfig.Action(fwdconfig.LookupAction(EgressActionTable)).Build(),                             // Run egress actions
 		fwdconfig.Action(fwdconfig.LookupAction(SRCMACTable)).Build(),                                   // Lookup interface's MAC addr.
+		// Port:VLAN table to Tag/untag VLAN based on the output port VID.
 		{
 			ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
 		},

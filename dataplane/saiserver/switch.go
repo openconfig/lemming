@@ -100,6 +100,8 @@ const (
 	hostifToPortTable     = "cpu-input"
 	portToHostifTable     = "cpu-output"
 	tunTermTable          = "tun-term"
+	VlanTable             = "vlan"
+	DefaultVlanId         = 1
 )
 
 func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server, opts *dplaneopts.Options) (*saiSwitch, error) {
@@ -227,6 +229,26 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 		},
 	}
 	if _, err := sw.dataplane.TableCreate(ctx, portMAC); err != nil {
+		return nil, err
+	}
+	vlanReq := &fwdpb.TableCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
+		Desc: &fwdpb.TableDesc{
+			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: VlanTable}},
+			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_DROP}},
+			Table: &fwdpb.TableDesc_Exact{
+				Exact: &fwdpb.ExactTableDesc{
+					FieldIds: []*fwdpb.PacketFieldId{{
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT,
+						},
+					}},
+				},
+			},
+		},
+	}
+	if _, err := sw.dataplane.TableCreate(ctx, vlanReq); err != nil {
 		return nil, err
 	}
 	myMAC := &fwdpb.TableCreateRequest{
@@ -576,7 +598,9 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 	sw.mgr.StoreAttributes(swID, &saipb.SwitchAttribute{DefaultStpInstId: &stpResp.Oid})
 
 	vlanResp, err := attrmgr.InvokeAndSave(ctx, sw.mgr, sw.vlan.CreateVlan, &saipb.CreateVlanRequest{
-		Switch: swID,
+		Switch:       swID,
+		VlanId:       proto.Uint32(DefaultVlanId), // Create the default VLAN.
+		LearnDisable: proto.Bool(true),            // TODO: figure out what does this do?
 	})
 	if err != nil {
 		return nil, err
@@ -622,7 +646,7 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 		NumberOfEcmpGroups:               proto.Uint32(1024),
 		PortList:                         []uint64{cpuPortID},
 		SwitchHardwareInfo:               []int32{},
-		DefaultVlanId:                    &vlanResp.Oid,
+		DefaultVlanId:                    &vlanResp.Oid, // proto.Uint64(DefaultVlanId),
 		DefaultVirtualRouterId:           &vrResp.Oid,
 		DefaultOverrideVirtualRouterId:   &vrResp.Oid,
 		Default_1QBridgeId:               &brResp.Oid,
@@ -693,7 +717,6 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 		NatZoneCounterObjectId:         proto.Uint64(0),
 	}
 	sw.mgr.StoreAttributes(swID, attrs)
-
 	return &saipb.CreateSwitchResponse{
 		Oid: swID,
 	}, nil

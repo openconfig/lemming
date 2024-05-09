@@ -31,6 +31,7 @@ import (
 
 	log "github.com/golang/glog"
 
+	"github.com/openconfig/lemming/dataplane/proto/sai"
 	saipb "github.com/openconfig/lemming/dataplane/proto/sai"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
@@ -630,6 +631,8 @@ func (ri *routerInterface) CreateRouterInterface(ctx context.Context, req *saipb
 		return nil, err
 	}
 
+	// Here we associate a port to its output interface. How is output port assigned?
+	// Does that mean that we trigger the xmit of port GetPortId()?
 	_, err = ri.dataplane.TableEntryAdd(ctx, fwdconfig.TableEntryAddRequest(ri.dataplane.ID(), outputIfaceTable).
 		AppendEntry(
 			fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE).WithUint64(id))),
@@ -753,25 +756,38 @@ func (ri *routerInterface) GetRouterInterfaceStats(ctx context.Context, req *sai
 	return &saipb.GetRouterInterfaceStatsResponse{Values: vals}, nil
 }
 
+// vlanMember contains the info of a VLAN member.
+type vlanMember struct {
+	Oid  uint64
+	Vid  uint32
+	Mode sai.VlanTaggingMode
+}
+
 type vlan struct {
 	saipb.UnimplementedVlanServer
 	mgr       *attrmgr.AttrMgr
 	dataplane switchDataplaneAPI
+	oidByVId  map[uint32]uint64                // VID -> VLAN_OID
+	vlans     map[uint64]map[uint64]vlanMember // VLAN_OID -> VLAN_Member_OID
 }
 
 func newVlan(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server) *vlan {
 	v := &vlan{
 		mgr:       mgr,
 		dataplane: dataplane,
+		oidByVId:  map[uint32]uint64{},
+		vlans:     map[uint64]map[uint64]vlanMember{},
 	}
 	saipb.RegisterVlanServer(s, v)
 	return v
 }
 
-func (vlan *vlan) CreateVlan(context.Context, *saipb.CreateVlanRequest) (*saipb.CreateVlanResponse, error) {
+func (vlan *vlan) CreateVlan(ctx context.Context, r *saipb.CreateVlanRequest) (*saipb.CreateVlanResponse, error) {
 	id := vlan.mgr.NextID()
+	vlan.vlans[id] = map[uint64]vlanMember{}
+	vlan.oidByVId[*r.VlanId] = id
 
-	req := &saipb.GetSwitchAttributeRequest{Oid: 1, AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_DEFAULT_STP_INST_ID}}
+	req := &saipb.GetSwitchAttributeRequest{Oid: 1, AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_DEFAULT_VLAN_ID}}
 	resp := &saipb.GetSwitchAttributeResponse{}
 
 	if err := vlan.mgr.PopulateAttributes(req, resp); err != nil {
@@ -781,6 +797,7 @@ func (vlan *vlan) CreateVlan(context.Context, *saipb.CreateVlanRequest) (*saipb.
 	attrs := &saipb.VlanAttribute{
 		MemberList:                         []uint64{},
 		StpInstance:                        resp.Attr.DefaultStpInstId,
+		VlanId:                             r.VlanId,
 		UnknownNonIpMcastOutputGroupId:     proto.Uint64(0),
 		UnknownIpv4McastOutputGroupId:      proto.Uint64(0),
 		UnknownIpv6McastOutputGroupId:      proto.Uint64(0),
@@ -796,6 +813,36 @@ func (vlan *vlan) CreateVlan(context.Context, *saipb.CreateVlanRequest) (*saipb.
 	return &saipb.CreateVlanResponse{
 		Oid: id,
 	}, nil
+}
+
+func (vlan *vlan) RemoveVlan(context.Context, *saipb.RemoveVlanRequest) (*saipb.RemoveVlanResponse, error) {
+	return &saipb.RemoveVlanResponse{}, nil
+}
+
+func (vlan *vlan) CreateVlanMember(ctx context.Context, req *saipb.CreateVlanMemberRequest) (*saipb.CreateVlanMemberResponse, error) {
+	// Locate the OID of the VLAN.
+	vOid, ok := vlan.oidByVId[uint32(*req.VlanId)]
+	if !ok {
+		return nil, status.Errorf(codes.FailedPrecondition, "VLAN %d does not exsit", req.GetVlanId())
+	}
+	mOid := req.GetBridgePortId()
+	entry := fwdconfig.TableEntryAddRequest(vlan.dataplane.ID(), VlanTable).AppendEntry(fwdconfig.EntryDesc(fwdconfig.ExactEntry(
+		fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT).WithUint64(mOid),
+	)), fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG).WithUint64Value(req.GetVlanId()))).Build()
+
+	if _, err := vlan.dataplane.TableEntryAdd(ctx, entry); err != nil {
+		return nil, err
+	}
+	vlan.vlans[vOid][mOid] = vlanMember{Oid: mOid, Vid: uint32(req.GetVlanId()), Mode: req.GetVlanTaggingMode()}
+	return &saipb.CreateVlanMemberResponse{Oid: mOid}, nil
+}
+
+func (vlan *vlan) RemoveVlanMember(context.Context, *saipb.RemoveVlanMemberRequest) (*saipb.RemoveVlanMemberResponse, error) {
+	return &saipb.RemoveVlanMemberResponse{}, nil
+}
+
+func (vlan *vlan) CreateVlanMembers(context.Context, *saipb.CreateVlanMembersRequest) (*saipb.CreateVlanMembersResponse, error) {
+	return &saipb.CreateVlanMembersResponse{}, nil
 }
 
 type bridge struct {

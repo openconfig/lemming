@@ -39,6 +39,7 @@ import (
 
 	log "github.com/golang/glog"
 
+	"github.com/openconfig/lemming/dataplane/proto/sai"
 	saipb "github.com/openconfig/lemming/dataplane/proto/sai"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
@@ -112,6 +113,7 @@ type Reconciler struct {
 	fwdClient          fwdpb.ForwardingClient
 	nextHopGroupClient saipb.NextHopGroupClient
 	lagClient          saipb.LagClient
+	vlanClient         saipb.VlanClient
 	stateMu            sync.RWMutex
 	// state keeps track of the applied state of the device's interfaces so that we do not issue duplicate configuration commands to the device's interfaces.
 	state           map[string]*oc.Interface
@@ -162,6 +164,7 @@ func New(conn grpc.ClientConnInterface, switchID, cpuPortID uint64, contextID st
 		nextHopGroupClient: saipb.NewNextHopGroupClient(conn),
 		fwdClient:          fwdpb.NewForwardingClient(conn),
 		lagClient:          saipb.NewLagClient(conn),
+		vlanClient:         saipb.NewVlanClient(conn),
 	}
 	return r
 }
@@ -940,6 +943,15 @@ func (ni *Reconciler) setupPorts(ctx context.Context) error {
 		}
 		data.portNID = nid.Nid
 
+		// Add this port to default VLAN.
+		// Should we move this code to sai server?
+		if _, err := ni.vlanClient.CreateVlanMember(ctx, &saipb.CreateVlanMemberRequest{
+			VlanId:          proto.Uint64(1), // the default VLAN ID.
+			BridgePortId:    proto.Uint64(portResp.Oid),
+			VlanTaggingMode: sai.VlanTaggingMode_VLAN_TAGGING_MODE_TAGGED.Enum(),
+		}); err != nil {
+			return fmt.Errorf("failed to add port to the default VLAN")
+		}
 		hostifName := i.Attrs().Name + internalSuffix
 		hostifResp, err := ni.hostifClient.CreateHostif(ctx, &saipb.CreateHostifRequest{
 			Switch:     ni.switchID,
