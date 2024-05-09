@@ -36,7 +36,13 @@ type genetlinkPort struct {
 	fwdobject.Base
 	input  fwdaction.Actions
 	output fwdaction.Actions
+	desc *fwdpb.PortDesc
 	ctx    *fwdcontext.Context // Forwarding context containing the port
+}
+
+// Desc returns the port description proto.
+func (p *genetlinkPort) Desc() *fwdpb.PortDesc {
+	return p.desc
 }
 
 func (p *genetlinkPort) String() string {
@@ -111,8 +117,9 @@ func (p *genetlinkPort) State(*fwdpb.PortInfo) (*fwdpb.PortStateReply, error) {
 type genetlinkBuilder struct{}
 
 // Build creates a new port.
-func (genetlinkBuilder) Build(_ *fwdpb.PortDesc, ctx *fwdcontext.Context) (fwdport.Port, error) {
+func (genetlinkBuilder) Build(pd *fwdpb.PortDesc, ctx *fwdcontext.Context) (fwdport.Port, error) {
 	return &genetlinkPort{
 		ctx: ctx,
+		desc: pd,
 	}, nil
 }

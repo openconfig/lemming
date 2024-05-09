@@ -41,7 +41,13 @@ type CPUPort struct {
 	output  fwdaction.Actions      // Actions used to process transmitted packets
 	ctx     *fwdcontext.Context    // Forwarding context containing the port
 	export  []*fwdpb.PacketFieldId // List of fields to export when writing the packet
+	desc *fwdpb.PortDesc
 	remote  bool
+}
+
+// Desc returns the port description proto.
+func (p *CPUPort) Desc() *fwdpb.PortDesc {
+	return p.desc
 }
 
 // String returns the port as a formatted string.
@@ -281,6 +287,7 @@ func (*cpuBuilder) Build(pd *fwdpb.PortDesc, ctx *fwdcontext.Context) (fwdport.P
 		queueID: cpu.Cpu.GetQueueId(),
 		export:  cpu.Cpu.GetExportFieldIds(),
 		remote:  cpu.Cpu.GetRemotePort(),
+		desc: pd,
 	}
 	var err error
 	if l := cpu.Cpu.GetQueueLength(); l != 0 {

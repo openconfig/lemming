@@ -67,7 +67,7 @@ message InfoElementRequest {
 message InfoElementReply {
   string content = 1;
   oneof element_info {
-    PortElementInfo = 2;
+    PortElementInfo port_info = 2;
   }
 }
 

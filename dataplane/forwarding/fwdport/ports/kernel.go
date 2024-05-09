@@ -48,6 +48,7 @@ type kernelPort struct {
 	devName      string
 	input        fwdaction.Actions
 	output       fwdaction.Actions
+	desc *fwdpb.Desc
 	ctx          *fwdcontext.Context // Forwarding context containing the port
 	handle       packetHandle
 	doneCh       chan struct{}
@@ -59,6 +60,11 @@ type packetHandle interface {
 	gopacket.PacketDataSource
 	WritePacketData([]byte) error
 	Close()
+}
+
+// Desc returns the port description proto.
+func (p *kernelPort) Desc() *fwdpb.PortDesc {
+	return p.desc
 }
 
 func (p *kernelPort) String() string {
@@ -196,6 +202,7 @@ func (kernelBuilder) Build(portDesc *fwdpb.PortDesc, ctx *fwdcontext.Context) (f
 		ctx:          ctx,
 		handle:       handle,
 		devName:      kp.Kernel.DeviceName,
+		desc: portDesc,
 		doneCh:       make(chan struct{}),
 		linkUpdateCh: make(chan netlink.LinkUpdate),
 	}
