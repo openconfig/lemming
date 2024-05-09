@@ -48,7 +48,7 @@ type kernelPort struct {
 	devName      string
 	input        fwdaction.Actions
 	output       fwdaction.Actions
-	desc         *fwdpb.Desc
+	desc         *fwdpb.PortDesc
 	ctx          *fwdcontext.Context // Forwarding context containing the port
 	handle       packetHandle
 	doneCh       chan struct{}
