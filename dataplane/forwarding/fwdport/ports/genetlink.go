@@ -36,7 +36,7 @@ type genetlinkPort struct {
 	fwdobject.Base
 	input  fwdaction.Actions
 	output fwdaction.Actions
-	desc *fwdpb.PortDesc
+	desc   *fwdpb.PortDesc
 	ctx    *fwdcontext.Context // Forwarding context containing the port
 }
 
@@ -119,7 +119,7 @@ type genetlinkBuilder struct{}
 // Build creates a new port.
 func (genetlinkBuilder) Build(pd *fwdpb.PortDesc, ctx *fwdcontext.Context) (fwdport.Port, error) {
 	return &genetlinkPort{
-		ctx: ctx,
+		ctx:  ctx,
 		desc: pd,
 	}, nil
 }

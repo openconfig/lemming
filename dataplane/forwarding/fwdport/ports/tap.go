@@ -50,7 +50,7 @@ type tapPort struct {
 	fwdobject.Base
 	input        fwdaction.Actions
 	output       fwdaction.Actions
-	desc *fwdpb.PortDesc
+	desc         *fwdpb.PortDesc
 	ctx          *fwdcontext.Context // Forwarding context containing the port
 	fd           int
 	devName      string
@@ -283,7 +283,7 @@ func (tp tapBuilder) Build(portDesc *fwdpb.PortDesc, ctx *fwdcontext.Context) (f
 		file:         file,
 		fd:           fd,
 		devName:      kp.Tap.GetDeviceName(),
-		desc: portDesc,
+		desc:         portDesc,
 		doneCh:       make(chan struct{}),
 		linkUpdateCh: make(chan netlink.LinkUpdate),
 	}

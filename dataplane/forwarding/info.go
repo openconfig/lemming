@@ -121,7 +121,7 @@ func PortInfo(ctx *fwdcontext.Context, arg interface{}) (*fwdpb.PortElementInfo,
 	for _, c := range port.Counters() {
 		counters = append(counters, &fwdpb.Counter{Id: c.ID, Value: c.Value})
 	}
-	return &fwdpb.PortElementInfo{Desc: [port.Desc(), Counters: counters}, nil
+	return &fwdpb.PortElementInfo{Desc: port.Desc(), Counters: counters}, nil
 }
 
 // TableInfo returns the details of the specified Table as a string.

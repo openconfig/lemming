@@ -44,7 +44,7 @@ type fakePort struct {
 	port   fwdcontext.Port
 	input  fwdaction.Actions
 	output fwdaction.Actions
-	desc *fwdpb.PortDesc
+	desc   *fwdpb.PortDesc
 	ctx    *fwdcontext.Context // Forwarding context containing the port
 }
 
