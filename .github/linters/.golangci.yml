@@ -46,7 +46,6 @@ linters:
     - revive
     - staticcheck
     - unconvert
-    - unparam
     - unused
     - wastedassign
     - whitespace
@@ -68,3 +67,7 @@ linters-settings:
   gosec:
     excludes:
       - G204
+  revive:
+    rules:
+      - name: unused-parameter
+        disabled: true

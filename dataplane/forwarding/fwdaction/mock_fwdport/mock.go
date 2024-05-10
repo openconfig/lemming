@@ -94,6 +94,20 @@ func (mr *MockPortMockRecorder) Counters() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Counters", reflect.TypeOf((*MockPort)(nil).Counters))
 }
 
+// Desc mocks base method.
+func (m *MockPort) Desc() *forwarding.PortDesc {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Desc")
+	ret0, _ := ret[0].(*forwarding.PortDesc)
+	return ret0
+}
+
+// Desc indicates an expected call of Desc.
+func (mr *MockPortMockRecorder) Desc() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Desc", reflect.TypeOf((*MockPort)(nil).Desc))
+}
+
 // ID mocks base method.
 func (m *MockPort) ID() fwdobject.ID {
 	m.ctrl.T.Helper()

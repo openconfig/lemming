@@ -44,7 +44,13 @@ type fakePort struct {
 	port   fwdcontext.Port
 	input  fwdaction.Actions
 	output fwdaction.Actions
+	desc   *fwdpb.PortDesc
 	ctx    *fwdcontext.Context // Forwarding context containing the port
+}
+
+// Desc returns the port description proto.
+func (p *fakePort) Desc() *fwdpb.PortDesc {
+	return p.desc
 }
 
 func (p *fakePort) String() string {
@@ -229,6 +235,7 @@ func (fakeBuilder) Build(portDesc *fwdpb.PortDesc, ctx *fwdcontext.Context) (fwd
 	p := &fakePort{
 		ctx:  ctx,
 		port: port,
+		desc: portDesc,
 	}
 	list := append(fwdport.CounterList, fwdaction.CounterList...)
 	if err := p.InitCounters("", list...); err != nil {

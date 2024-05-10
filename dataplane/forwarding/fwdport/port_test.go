@@ -33,6 +33,8 @@ type testPort struct {
 	allocated bool
 }
 
+func (testPort) Desc() *fwdpb.PortDesc { return nil }
+
 // Name returns the name of the port.
 func (testPort) Name() string { return "" }
 

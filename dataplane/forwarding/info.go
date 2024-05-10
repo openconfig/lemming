@@ -110,6 +110,19 @@ func CounterInfo(obj fwdobject.Object) string {
 	return strings.Join(buffer, "\n")
 }
 
+// PortInfo returns the details of the specified Port.
+func PortInfo(_ *fwdcontext.Context, arg interface{}) (*fwdpb.PortElementInfo, error) {
+	port, ok := arg.(fwdport.Port)
+	if !ok {
+		return nil, fmt.Errorf("arg %v is not a Port", arg)
+	}
+	var counters []*fwdpb.Counter
+	for _, c := range port.Counters() {
+		counters = append(counters, &fwdpb.Counter{Id: c.ID, Value: c.Value})
+	}
+	return &fwdpb.PortElementInfo{Desc: port.Desc(), Counters: counters}, nil
+}
+
 // TableInfo returns the details of the specified Table as a string.
 func TableInfo(ctx *fwdcontext.Context, arg interface{}) string {
 	table, ok := arg.(fwdtable.Table)
@@ -153,6 +166,9 @@ func ContextInfo(ctx *fwdcontext.Context, _ interface{}) string {
 }
 
 // A Handler returns the contents of an info element.
+//
+// TODO(dgrau): Handler should return a *fwdpb.InfoElementReply so there can be
+// structured infomation per entry/arg type.
 type Handler func(*fwdcontext.Context, interface{}) string
 
 // An entry represents a Handler and its argument.
@@ -333,28 +349,54 @@ func (l *InfoList) lookupPacket(e *entry, arg []byte, l2 fwdpb.PacketHeaderId, d
 }
 
 // Element retrieves the contents of a specific information element.
-func (l *InfoList) Element(name string, infoType fwdpb.InfoType, frame []byte, start fwdpb.PacketHeaderId) (string, error) {
+func (l *InfoList) Element(name string, infoType fwdpb.InfoType, frame []byte, start fwdpb.PacketHeaderId) (*fwdpb.InfoElementReply, error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	e, ok := l.handlers[name]
 	if !ok {
-		return "", fmt.Errorf("infolist: Unable to find handler for %v", name)
+		return nil, fmt.Errorf("infolist: Unable to find handler for %v", name)
 	}
 
 	switch infoType {
 	case fwdpb.InfoType_INFO_TYPE_ALL:
-		return l.allInfo(e)
+		reply := &fwdpb.InfoElementReply{}
+		switch e.arg.(type) {
+		case *fwdport.Port:
+			pi, err := PortInfo(e.ctx, e.arg)
+			if err != nil {
+				return nil, fmt.Errorf("unable to get PortInfo: %v", err)
+			}
+			reply.ElementInfo = &fwdpb.InfoElementReply_PortInfo{PortInfo: pi}
+		}
+		ai, err := l.allInfo(e)
+		if err != nil {
+			return nil, err
+		}
+		reply.Content = ai
+		return reply, nil
 
 	case fwdpb.InfoType_INFO_TYPE_LOOKUP:
-		return l.lookupInfo(e, frame, start)
+		li, err := l.lookupInfo(e, frame, start)
+		if err != nil {
+			return nil, err
+		}
+		return &fwdpb.InfoElementReply{Content: li}, nil
 
 	case fwdpb.InfoType_INFO_TYPE_PORT_INPUT:
-		return l.lookupPacket(e, frame, start, fwdpb.PortAction_PORT_ACTION_INPUT)
+		lp, err := l.lookupPacket(e, frame, start, fwdpb.PortAction_PORT_ACTION_INPUT)
+		if err != nil {
+			return nil, err
+		}
+		return &fwdpb.InfoElementReply{Content: lp}, nil
 
 	case fwdpb.InfoType_INFO_TYPE_PORT_OUTPUT:
-		return l.lookupPacket(e, frame, start, fwdpb.PortAction_PORT_ACTION_OUTPUT)
+		lp, err := l.lookupPacket(e, frame, start, fwdpb.PortAction_PORT_ACTION_OUTPUT)
+		if err != nil {
+			return nil, err
+		}
+		return &fwdpb.InfoElementReply{Content: lp}, nil
 
 	default:
-		return "", fmt.Errorf("infolist: Unable to handle infoType %v for %v", infoType, name)
+		return nil, fmt.Errorf("infolist: Unable to handle infoType %v for %v", infoType, name)
 	}
 }
