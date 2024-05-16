@@ -1,5 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 load("@bazel_gazelle//:def.bzl", "gazelle")
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 # gazelle:prefix github.com/openconfig/lemming
 # gazelle:resolve proto proto google/rpc/status.proto @googleapis//google/rpc:status_proto
