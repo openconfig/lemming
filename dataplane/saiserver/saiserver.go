@@ -134,10 +134,6 @@ type tam struct {
 	saipb.UnimplementedTamServer
 }
 
-type udf struct {
-	saipb.UnimplementedUdfServer
-}
-
 type virtualRouter struct {
 	saipb.UnimplementedVirtualRouterServer
 }
@@ -186,7 +182,6 @@ type Server struct {
 	saiSwitch      *saiSwitch
 	systemPort     *systemPort
 	tam            *tam
-	udf            *udf
 	wred           *wred
 }
 
@@ -274,7 +269,6 @@ func New(ctx context.Context, mgr *attrmgr.AttrMgr, s *grpc.Server, opts *dplane
 		saiSwitch:         sw,
 		systemPort:        &systemPort{},
 		tam:               &tam{},
-		udf:               &udf{},
 		wred:              &wred{},
 	}
 	fwdpb.RegisterForwardingServer(s, fwdCtx)
@@ -304,7 +298,6 @@ func New(ctx context.Context, mgr *attrmgr.AttrMgr, s *grpc.Server, opts *dplane
 	saipb.RegisterSrv6Server(s, srv.srv6)
 	saipb.RegisterSystemPortServer(s, srv.systemPort)
 	saipb.RegisterTamServer(s, srv.tam)
-	saipb.RegisterUdfServer(s, srv.udf)
 	saipb.RegisterWredServer(s, srv.wred)
 
 	return srv, nil
