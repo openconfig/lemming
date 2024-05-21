@@ -17,6 +17,7 @@ package saiserver
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 
 	"google.golang.org/grpc"
@@ -77,7 +78,10 @@ func (hostif *hostif) Reset() {
 	hostif.remotePortReq = nil
 }
 
-const switchID = 1
+const (
+	switchID     = 1
+	familyPrefix = "genl_packet"
+)
 
 // CreateHostif creates a hostif interface (usually a tap interface).
 func (hostif *hostif) CreateHostif(ctx context.Context, req *saipb.CreateHostifRequest) (*saipb.CreateHostifResponse, error) {
@@ -261,9 +265,14 @@ func (hostif *hostif) createRemoteHostif(ctx context.Context, req *saipb.CreateH
 
 	switch req.GetType() {
 	case saipb.HostifType_HOSTIF_TYPE_GENETLINK:
+		name := string(req.GetName()) // The name can be genl_packet_q0, but the netlink family is gen_packet.
+		if strings.HasPrefix(name, familyPrefix) {
+			name = familyPrefix
+		}
+
 		ctlReq.Port = &pktiopb.HostPortControlMessage_Genetlink{
 			Genetlink: &pktiopb.GenetlinkPort{
-				Family: string(req.GetName()),
+				Family: name,
 				Group:  string(req.GetGenetlinkMcgrpName()),
 			},
 		}
