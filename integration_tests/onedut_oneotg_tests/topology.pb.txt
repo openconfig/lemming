@@ -23,7 +23,7 @@ nodes: {
     vendor: OPENCONFIG
     model: "LEMMING"
     config: {
-        args: "--v=1"
+        args: "--v=3"
     }
 }
 links: {

@@ -125,33 +125,35 @@ func configureDUT(t *testing.T, dut *ondatra.DUTDevice) {
 	gnmi.Await(t, dut, ocpath.Root().Interface(dut.Port(t, "port2").Name()).Subinterface(0).Ipv6().Address(dutPort2.IPv6).Ip().State(), time.Minute, dutPort2.IPv6)
 }
 
-func waitOTGARPEntry(t *testing.T) {
+func waitOTGARPEntry(t *testing.T, ports ...string) {
 	ate := ondatra.ATE(t, "ate")
 
-	val, ok := gnmi.WatchAll(t, ate.OTG(), otgpath.Root().InterfaceAny().Ipv4NeighborAny().LinkLayerAddress().State(), time.Minute, func(v *ygnmi.Value[string]) bool {
-		return v.IsPresent()
-	}).Await(t)
-	if !ok {
-		t.Fatal("failed to get neighbor")
-	}
-	lla, _ := val.Val()
-	t.Logf("Neighbor %v", lla)
+	for _, port := range ports {
+		val, ok := gnmi.WatchAll(t, ate.OTG(), otgpath.Root().Interface(port).Ipv4NeighborAny().LinkLayerAddress().State(), time.Minute, func(v *ygnmi.Value[string]) bool {
+			return v.IsPresent()
+		}).Await(t)
+		if !ok {
+			t.Fatal("failed to get neighbor")
+		}
+		lla, _ := val.Val()
+		t.Logf("Neighbor Port %v, IP: %v, LLA %v", val.Path.GetElem()[1].Key["name"], val.Path.GetElem()[3].Key["ipv4-address"], lla)
 
-	val, ok = gnmi.WatchAll(t, ate.OTG(), otgpath.Root().InterfaceAny().Ipv6NeighborAny().LinkLayerAddress().State(), time.Minute, func(v *ygnmi.Value[string]) bool {
-		return v.IsPresent()
-	}).Await(t)
-	if !ok {
-		t.Fatal("failed to get neighbor")
+		val, ok = gnmi.WatchAll(t, ate.OTG(), otgpath.Root().Interface(port).Ipv6NeighborAny().LinkLayerAddress().State(), time.Minute, func(v *ygnmi.Value[string]) bool {
+			return v.IsPresent()
+		}).Await(t)
+		if !ok {
+			t.Fatal("failed to get neighbor")
+		}
+		lla, _ = val.Val()
+		t.Logf("Neighbor Port %v, IP: %v, LLA %v", val.Path.GetElem()[1].Key["name"], val.Path.GetElem()[3].Key["ipv6-address"], lla)
 	}
-	lla, _ = val.Val()
-	t.Logf("Neighbor %v", lla)
 }
 
 // testTraffic generates traffic flow from source network to
 // destination network via srcEndPoint to dstEndPoint and checks for
 // packet loss and returns loss percentage as float.
 func testTraffic(t *testing.T, otg *otg.OTG, srcEndPoint, dstEndPoint attrs.Attributes, startAddress string, dur time.Duration) float32 {
-	waitOTGARPEntry(t)
+	waitOTGARPEntry(t, srcEndPoint.Name+".Eth", dstEndPoint.Name+".Eth")
 	top := otg.FetchConfig(t)
 	top.Flows().Clear().Items()
 	flowipv4 := top.Flows().Add().SetName("Flow")
@@ -183,7 +185,7 @@ func testTraffic(t *testing.T, otg *otg.OTG, srcEndPoint, dstEndPoint attrs.Attr
 // destination network via srcEndPoint to dstEndPoint and checks for
 // packet loss and returns loss percentage as float.
 func testTrafficv6(t *testing.T, otg *otg.OTG, srcEndPoint, dstEndPoint attrs.Attributes, startAddress string, dur time.Duration) float32 {
-	waitOTGARPEntry(t)
+	waitOTGARPEntry(t, srcEndPoint.Name+".Eth", dstEndPoint.Name+".Eth")
 	top := otg.FetchConfig(t)
 	top.Flows().Clear().Items()
 	flowipv6 := top.Flows().Add().SetName("Flow2")
@@ -496,9 +498,7 @@ func TestGRIBIEntry(t *testing.T) {
 				testTrafficFn = testTrafficv6
 				flowName = "Flow2"
 			}
-
-			// Send some traffic to make sure neighbor cache is warmed up on the dut.
-			testTrafficFn(t, otg, atePort1, atePort2, tc.startAddress, 1*time.Second)
+			otg.StartProtocols(t)
 
 			if loss := testTrafficFn(t, otg, atePort1, atePort2, tc.startAddress, 5*time.Second); loss > 1 {
 				t.Errorf("Loss: got %g, want <= 1", loss)
