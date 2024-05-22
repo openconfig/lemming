@@ -101,7 +101,7 @@ const (
 	portToHostifTable     = "cpu-output"
 	tunTermTable          = "tun-term"
 	VlanTable             = "vlan"
-	DefaultVlanId         = 1
+	DefaultVlanId         = 4095 // ID of the default VLAN.
 )
 
 func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server, opts *dplaneopts.Options) (*saiSwitch, error) {
@@ -236,7 +236,7 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 		Desc: &fwdpb.TableDesc{
 			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
 			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: VlanTable}},
-			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_DROP}},
+			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_CONTINUE}},
 			Table: &fwdpb.TableDesc_Exact{
 				Exact: &fwdpb.ExactTableDesc{
 					FieldIds: []*fwdpb.PacketFieldId{{
@@ -605,6 +605,7 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 	if err != nil {
 		return nil, err
 	}
+	sw.mgr.StoreAttributes(swID, &saipb.SwitchAttribute{DefaultVlanId: &vlanResp.Oid})
 
 	vrResp, err := attrmgr.InvokeAndSave(ctx, sw.mgr, sw.vr.CreateVirtualRouter, &saipb.CreateVirtualRouterRequest{
 		Switch: swID,
@@ -646,7 +647,7 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 		NumberOfEcmpGroups:               proto.Uint32(1024),
 		PortList:                         []uint64{cpuPortID},
 		SwitchHardwareInfo:               []int32{},
-		DefaultVlanId:                    &vlanResp.Oid, // proto.Uint64(DefaultVlanId),
+		DefaultVlanId:                    &vlanResp.Oid,
 		DefaultVirtualRouterId:           &vrResp.Oid,
 		DefaultOverrideVirtualRouterId:   &vrResp.Oid,
 		Default_1QBridgeId:               &brResp.Oid,

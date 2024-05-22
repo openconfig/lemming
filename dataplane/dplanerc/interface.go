@@ -944,13 +944,12 @@ func (ni *Reconciler) setupPorts(ctx context.Context) error {
 		data.portNID = nid.Nid
 
 		// Add this port to default VLAN.
-		// Should we move this code to sai server?
 		if _, err := ni.vlanClient.CreateVlanMember(ctx, &saipb.CreateVlanMemberRequest{
-			VlanId:          proto.Uint64(1), // the default VLAN ID.
+			VlanId:          proto.Uint64(4095), // the default VLAN ID.
 			BridgePortId:    proto.Uint64(portResp.Oid),
-			VlanTaggingMode: sai.VlanTaggingMode_VLAN_TAGGING_MODE_TAGGED.Enum(),
+			VlanTaggingMode: sai.VlanTaggingMode_VLAN_TAGGING_MODE_UNTAGGED.Enum(),
 		}); err != nil {
-			return fmt.Errorf("failed to add port to the default VLAN")
+			return fmt.Errorf("failed to add port to the default VLAN: %v", err)
 		}
 		hostifName := i.Attrs().Name + internalSuffix
 		hostifResp, err := ni.hostifClient.CreateHostif(ctx, &saipb.CreateHostifRequest{
