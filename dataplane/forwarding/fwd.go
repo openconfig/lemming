@@ -851,11 +851,7 @@ func (e *Server) InfoList(context.Context, *fwdpb.InfoListRequest) (*fwdpb.InfoL
 
 // InfoElement retrieves the contents of a specific information element.
 func (e *Server) InfoElement(_ context.Context, request *fwdpb.InfoElementRequest) (*fwdpb.InfoElementReply, error) {
-	content, err := e.info.Element(request.GetName(), request.GetType(), request.GetFrame(), request.GetStartHeader())
-	if err != nil {
-		return nil, err
-	}
-	return &fwdpb.InfoElementReply{Content: content}, nil
+	return e.info.Element(request.GetName(), request.GetType(), request.GetFrame(), request.GetStartHeader())
 }
 
 // Operation processes incoming OperationRequests and extracts the contained Request.

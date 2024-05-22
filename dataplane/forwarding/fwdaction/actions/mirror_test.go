@@ -53,6 +53,8 @@ func (r *recordPort) Write(packet fwdpacket.Packet) (fwdaction.State, error) {
 	return fwdaction.CONSUME, nil
 }
 
+func (recordPort) Desc() *fwdpb.PortDesc { return nil }
+
 // String returns an empty string.
 func (recordPort) String() string { return "" }
 

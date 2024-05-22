@@ -99,6 +99,7 @@ type portGroup struct {
 	hashFn   func(key []byte) int                                   // function used to hash a set of bytes
 	hash     fwdpb.AggregateHashAlgorithm                           // hash algorithm used to select the port
 	packetFn func(packet fwdpacket.Packet) (fwdaction.State, error) // function used to process packets
+	desc     *fwdpb.PortDesc
 	ctx      *fwdcontext.Context
 	// list of members used to hash for packets. If a member has two instances
 	// in the group, it appears twice in this array.
@@ -106,6 +107,11 @@ type portGroup struct {
 
 	// map of members indexed by the port id.
 	memberMap map[fwdobject.ID]*member
+}
+
+// Desc returns the port description proto.
+func (p *portGroup) Desc() *fwdpb.PortDesc {
+	return p.desc
 }
 
 // String returns the port as a formatted string.
@@ -435,10 +441,11 @@ func init() {
 }
 
 // Build creates a new port group.
-func (groupBuilder) Build(_ *fwdpb.PortDesc, ctx *fwdcontext.Context) (fwdport.Port, error) {
+func (groupBuilder) Build(pd *fwdpb.PortDesc, ctx *fwdcontext.Context) (fwdport.Port, error) {
 	p := portGroup{
 		ctx:       ctx,
 		memberMap: make(map[fwdobject.ID]*member),
+		desc:      pd,
 	}
 
 	// Store counters for all ports and actions.

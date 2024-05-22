@@ -91,6 +91,9 @@ type Port interface {
 
 	// Type returns the port type.
 	Type() fwdpb.PortType
+
+	// Desc returns the port description.
+	Desc() *fwdpb.PortDesc
 }
 
 // A Builder can build Ports of the specified type.

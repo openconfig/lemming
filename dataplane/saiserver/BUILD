@@ -12,6 +12,7 @@ go_library(
         "saiserver.go",
         "switch.go",
         "tunnel.go",
+        "udf.go",
     ],
     importpath = "github.com/openconfig/lemming/dataplane/saiserver",
     visibility = ["//visibility:public"],
