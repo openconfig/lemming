@@ -221,6 +221,7 @@ type fakeSwitchDataplane struct {
 	gotObjectDeleteReqs      []*fwdpb.ObjectDeleteRequest
 	gotFlowCounterCreateReqs []*fwdpb.FlowCounterCreateRequest
 	gotFlowCounterQueryReqs  []*fwdpb.FlowCounterQueryRequest
+	gotEntryRemoveReqs       []*fwdpb.TableEntryRemoveRequest
 	portIDToNID              map[string]uint64
 	counterRepliesIdx        int
 	flowQueryReplies         []*fwdpb.FlowCounterQueryReply
@@ -244,7 +245,8 @@ func (f *fakeSwitchDataplane) TableEntryAdd(_ context.Context, req *fwdpb.TableE
 	return nil, nil
 }
 
-func (f *fakeSwitchDataplane) TableEntryRemove(context.Context, *fwdpb.TableEntryRemoveRequest) (*fwdpb.TableEntryRemoveReply, error) {
+func (f *fakeSwitchDataplane) TableEntryRemove(_ context.Context, req *fwdpb.TableEntryRemoveRequest) (*fwdpb.TableEntryRemoveReply, error) {
+	f.gotEntryRemoveReqs = append(f.gotEntryRemoveReqs, req)
 	return nil, nil
 }
 
