@@ -55,6 +55,7 @@ type saiSwitch struct {
 	lag             *lag
 	tunnel          *tunnel
 	routerInterface *routerInterface
+	udf             *udf
 	mgr             *attrmgr.AttrMgr
 }
 
@@ -127,6 +128,7 @@ func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server, 
 		routerInterface: newRouterInterface(mgr, engine, s),
 		lag:             newLAG(mgr, engine, s),
 		tunnel:          newTunnel(mgr, engine, s),
+		udf:             newUdf(mgr, engine, s),
 		mgr:             mgr,
 	}
 	saipb.RegisterSwitchServer(s, sw)
