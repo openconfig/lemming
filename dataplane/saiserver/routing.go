@@ -783,15 +783,6 @@ func newVlan(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server)
 	return v
 }
 
-func (vlan *vlan) vidByOid(id uint64) uint32 {
-	for vid, oid := range vlan.oidByVId {
-		if id == oid {
-			return vid
-		}
-	}
-	return 0
-}
-
 func (vlan *vlan) CreateVlan(ctx context.Context, r *saipb.CreateVlanRequest) (*saipb.CreateVlanResponse, error) {
 	id := vlan.mgr.NextID()
 	req := &saipb.GetSwitchAttributeRequest{Oid: 1, AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_DEFAULT_STP_INST_ID}}
@@ -827,7 +818,7 @@ func (vlan *vlan) CreateVlan(ctx context.Context, r *saipb.CreateVlanRequest) (*
 func (vlan *vlan) RemoveVlan(ctx context.Context, req *saipb.RemoveVlanRequest) (*saipb.RemoveVlanResponse, error) {
 	memberMap, ok := vlan.vlans[req.GetOid()]
 	if !ok {
-		return nil, fmt.Errorf("VLAN not found: %v")
+		return nil, fmt.Errorf("VLAN not found for OID: %d", req.GetOid())
 	}
 	// Assign this VLAN's associated ports back to the default VLAN.
 	dVid := vlan.oidByVId[DefaultVlanId]
