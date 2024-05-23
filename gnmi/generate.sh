@@ -19,12 +19,10 @@
 set -e
 
 git clone https://github.com/openconfig/public.git
-git clone https://github.com/openconfig/gnsi.git
 
 EXCLUDE_MODULES=ietf-interfaces,openconfig-bfd,openconfig-messages
 
 YANG_FILES=(
-  gnsi/yang/gnsi-telemetry.yang
   public/release/models/acl/openconfig-acl.yang
   public/release/models/acl/openconfig-packet-match.yang
   public/release/models/aft/openconfig-aft.yang
@@ -83,9 +81,9 @@ go run github.com/openconfig/ygnmi/app/ygnmi generator \
   --structs_split_files_count=8 \
   --pathstructs_split_files_count=8 \
   --output_dir=oc \
-  --paths=public/release/models/...,public/third_party/ietf/...,gnsi/... \
+  --paths=public/release/models/...,public/third_party/ietf/... \
   "${YANG_FILES[@]}"
 
 find oc -name "*.go" -exec goimports -w {} +
 find oc -name "*.go" -exec gofmt -w -s {} +
-rm -rf public gnsi
+rm -rf public
