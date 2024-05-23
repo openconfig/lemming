@@ -45,7 +45,6 @@ func TestCommunitySet(t *testing.T) {
 			oc.UnionString("11111:11111"),
 			oc.UnionString("22222:22222"),
 		})
-		Replace(t, dut2, ocpath.Root().RoutingPolicy().DefinedSets().BgpDefinedSets().CommunitySet(anyCommSetName).MatchSetOptions().Config(), oc.PolicyTypes_MatchSetOptionsType_ANY)
 
 		// Create ALL community set
 		allCommSetName := "ALL-community-set"
@@ -72,7 +71,8 @@ func TestCommunitySet(t *testing.T) {
 		}
 		stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetPrefixSet(prefixSetName)
 		stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.PolicyTypes_MatchSetOptionsRestrictedType_ANY)
-		stmt.GetOrCreateConditions().GetOrCreateBgpConditions().SetCommunitySet(anyCommSetName)
+		stmt.GetOrCreateConditions().GetOrCreateBgpConditions().GetOrCreateMatchCommunitySet().SetCommunitySet(anyCommSetName)
+		stmt.GetOrCreateConditions().GetOrCreateBgpConditions().GetOrCreateMatchCommunitySet().SetMatchSetOptions(oc.PolicyTypes_MatchSetOptionsType_ANY)
 		stmt.GetOrCreateActions().SetPolicyResult(oc.RoutingPolicy_PolicyResultType_REJECT_ROUTE)
 
 		stmt, err = policy.AppendNew("reject-all-community-sets")
@@ -81,7 +81,8 @@ func TestCommunitySet(t *testing.T) {
 		}
 		stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetPrefixSet(prefixSetName)
 		stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.PolicyTypes_MatchSetOptionsRestrictedType_ANY)
-		stmt.GetOrCreateConditions().GetOrCreateBgpConditions().SetCommunitySet(allCommSetName)
+		stmt.GetOrCreateConditions().GetOrCreateBgpConditions().GetOrCreateMatchCommunitySet().SetCommunitySet(allCommSetName)
+		stmt.GetOrCreateConditions().GetOrCreateBgpConditions().GetOrCreateMatchCommunitySet().SetMatchSetOptions(oc.PolicyTypes_MatchSetOptionsType_ALL)
 		stmt.GetOrCreateActions().SetPolicyResult(oc.RoutingPolicy_PolicyResultType_REJECT_ROUTE)
 
 		// Create prefix set for INVERT policy
@@ -97,7 +98,8 @@ func TestCommunitySet(t *testing.T) {
 		}
 		stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetPrefixSet(prefixSetName)
 		stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.PolicyTypes_MatchSetOptionsRestrictedType_ANY)
-		stmt.GetOrCreateConditions().GetOrCreateBgpConditions().SetCommunitySet(invertCommSetName)
+		stmt.GetOrCreateConditions().GetOrCreateBgpConditions().GetOrCreateMatchCommunitySet().SetCommunitySet(invertCommSetName)
+		stmt.GetOrCreateConditions().GetOrCreateBgpConditions().GetOrCreateMatchCommunitySet().SetMatchSetOptions(oc.PolicyTypes_MatchSetOptionsType_INVERT)
 		stmt.GetOrCreateActions().SetPolicyResult(oc.RoutingPolicy_PolicyResultType_REJECT_ROUTE)
 
 		// Policy to reject routes with the given community set conditions
@@ -109,7 +111,8 @@ func TestCommunitySet(t *testing.T) {
 		}
 		stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetPrefixSet(prefixSetName)
 		stmt.GetOrCreateConditions().GetOrCreateMatchPrefixSet().SetMatchSetOptions(oc.PolicyTypes_MatchSetOptionsRestrictedType_ANY)
-		stmt.GetOrCreateConditions().GetOrCreateBgpConditions().SetCommunitySet(anyCommSetName)
+		stmt.GetOrCreateConditions().GetOrCreateBgpConditions().GetOrCreateMatchCommunitySet().SetCommunitySet(anyCommSetName)
+		stmt.GetOrCreateConditions().GetOrCreateBgpConditions().GetOrCreateMatchCommunitySet().SetMatchSetOptions(oc.PolicyTypes_MatchSetOptionsType_ANY)
 		stmt.GetOrCreateActions().SetPolicyResult(oc.RoutingPolicy_PolicyResultType_REJECT_ROUTE)
 
 		// Create prefix set for setting a new community

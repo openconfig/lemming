@@ -76,7 +76,6 @@ func TestSetAttributes(t *testing.T) {
 		Replace(t, dut2, rejCommMemberPath.Config(), []oc.RoutingPolicy_DefinedSets_BgpDefinedSets_CommunitySet_CommunityMember_Union{
 			rejectedCommunitySet,
 		})
-		Replace(t, dut2, ocpath.Root().RoutingPolicy().DefinedSets().BgpDefinedSets().CommunitySet(rejectCommSetName).MatchSetOptions().Config(), oc.PolicyTypes_MatchSetOptionsType_ANY)
 
 		// Create AS path-sets
 		rejASPathSetPath := ocpath.Root().RoutingPolicy().DefinedSets().BgpDefinedSets().AsPathSet(rejectASPathSetName)
@@ -759,7 +758,8 @@ func TestSetAttributes(t *testing.T) {
 
 					// Match on given list of community set members and reject it.
 					installDut1ImportStmt = true
-					dut1ImportStmt.GetOrCreateConditions().GetOrCreateBgpConditions().SetCommunitySet(rejectCommSetName)
+					dut1ImportStmt.GetOrCreateConditions().GetOrCreateBgpConditions().GetOrCreateMatchCommunitySet().SetCommunitySet(rejectCommSetName)
+					dut1ImportStmt.GetOrCreateConditions().GetOrCreateBgpConditions().GetOrCreateMatchCommunitySet().SetMatchSetOptions(oc.PolicyTypes_MatchSetOptionsType_ANY)
 				case 3:
 					// Set local-pref such that the longer AS Path is preferred.
 					installDut1ExportStmt = true

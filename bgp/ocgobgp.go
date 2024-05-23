@@ -33,6 +33,8 @@ func convertPolicyName(neighAddr, ocPolicyName string) string {
 	return neighAddr + "|" + ocPolicyName
 }
 
+// convertSetCommunities returns the list of communities to be set
+// given the OC SetCommunity parameters.
 func convertSetCommunities(setCommunity *oc.RoutingPolicy_PolicyDefinition_Statement_Actions_BgpActions_SetCommunity, convertedCommSets []gobgpoc.CommunitySet, commSetIndexMap map[string]int) ([]string, error) {
 	switch setCommunity.GetMethod() {
 	case oc.SetCommunity_Method_INLINE:
@@ -99,8 +101,8 @@ func convertPolicyDefinition(policy *oc.RoutingPolicy_PolicyDefinition, neighAdd
 				},
 				BgpConditions: gobgpoc.BgpConditions{
 					MatchCommunitySet: gobgpoc.MatchCommunitySet{
-						CommunitySet:    statement.Conditions.GetBgpConditions().GetCommunitySet(),
-						MatchSetOptions: convertMatchSetOptionsType(occommset[statement.GetConditions().GetBgpConditions().GetCommunitySet()].GetMatchSetOptions()),
+						CommunitySet:    statement.Conditions.GetBgpConditions().GetMatchCommunitySet().GetCommunitySet(),
+						MatchSetOptions: convertMatchSetOptionsType(statement.GetConditions().GetBgpConditions().GetMatchCommunitySet().GetMatchSetOptions()),
 					},
 					CommunityCount: gobgpoc.CommunityCount{
 						Operator: convertAttributeComparison(statement.Conditions.GetBgpConditions().GetCommunityCount().GetOperator()),
