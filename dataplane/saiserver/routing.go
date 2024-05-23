@@ -832,8 +832,13 @@ func (vlan *vlan) RemoveVlan(ctx context.Context, req *saipb.RemoveVlanRequest) 
 	// Assign this VLAN's associated ports back to the default VLAN.
 	dVid := vlan.oidByVId[DefaultVlanId]
 	for k, v := range memberMap {
+		_, err := attrmgr.InvokeAndSave(ctx, vlan.mgr, vlan.RemoveVlanMember, &saipb.RemoveVlanMemberRequest{
+			Oid: req.GetOid(),
+		})
+		if err != nil {
+			return nil, err
+		}
 		vlan.vlans[dVid][k] = v
-		log.Infof("Move port %d to default VLAN", k)
 	}
 	// Update VLAN attributes.
 	rmVlanAttrReq := &saipb.GetVlanAttributeRequest{Oid: req.GetOid(), AttrType: []saipb.VlanAttr{saipb.VlanAttr_VLAN_ATTR_MEMBER_LIST}}
@@ -894,19 +899,17 @@ func (vlan *vlan) RemoveVlanMember(ctx context.Context, r *saipb.RemoveVlanMembe
 		}
 		return 0, 0, fmt.Errorf("cannot find member with id=%d", oid)
 	}
-	// Remove the port from its current VLAN and move it back to the default VLAN.
+	// Move the port back to the default VLAN.
 	vOid, mOid, err := locateMember(r.GetOid())
 	if err != nil {
 		return nil, err
 	}
-	entry := fwdconfig.EntryDesc(fwdconfig.ExactEntry(
-		fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT).WithUint64(r.GetOid()))).Build()
-	vlanReq := &fwdpb.TableEntryRemoveRequest{
-		ContextId: &fwdpb.ContextId{Id: vlan.dataplane.ID()},
-		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: VlanTable}},
-		EntryDesc: entry,
-	}
-	if _, err := vlan.dataplane.TableEntryRemove(context.Background(), vlanReq); err != nil {
+	_, err = attrmgr.InvokeAndSave(ctx, vlan.mgr, vlan.CreateVlanMember, &saipb.CreateVlanMemberRequest{
+		VlanId:          proto.Uint64(4095), // the default VLAN ID.
+		BridgePortId:    proto.Uint64(mOid),
+		VlanTaggingMode: sai.VlanTaggingMode_VLAN_TAGGING_MODE_UNTAGGED.Enum(),
+	})
+	if err != nil {
 		return nil, err
 	}
 	// Update attributes.
@@ -915,7 +918,7 @@ func (vlan *vlan) RemoveVlanMember(ctx context.Context, r *saipb.RemoveVlanMembe
 	if err := vlan.mgr.PopulateAttributes(vlanAttrReq, vlanAttrResp); err != nil {
 		return nil, err
 	}
-	// vlanAttrResp.GetAttr().MemberList = append(vlanAttrResp.GetAttr().MemberList, mOid)
+	vlanAttrResp.GetAttr().MemberList = append(vlanAttrResp.GetAttr().MemberList, mOid)
 	newMemList := []uint64{}
 	for _, i := range vlanAttrResp.Attr.GetMemberList() {
 		if i != mOid {
