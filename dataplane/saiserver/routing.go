@@ -758,9 +758,10 @@ func (ri *routerInterface) GetRouterInterfaceStats(ctx context.Context, req *sai
 
 // vlanMember contains the info of a VLAN member.
 type vlanMember struct {
-	Oid  uint64
-	Vid  uint32
-	Mode sai.VlanTaggingMode
+	Oid    uint64
+	PortID uint64
+	Vid    uint32
+	Mode   sai.VlanTaggingMode
 }
 
 type vlan struct {
@@ -861,7 +862,7 @@ func (vlan *vlan) CreateVlanMember(ctx context.Context, req *saipb.CreateVlanMem
 	if !ok {
 		return nil, status.Errorf(codes.FailedPrecondition, "VLAN %d does not exsit", req.GetVlanId())
 	}
-	mOid := req.GetBridgePortId()
+	mOid := vlan.mgr.NextID()
 	// VLAN tagging
 	entry := fwdconfig.TableEntryAddRequest(vlan.dataplane.ID(), VlanTable).AppendEntry(fwdconfig.EntryDesc(fwdconfig.ExactEntry(
 		fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT).WithUint64(mOid),
@@ -870,7 +871,7 @@ func (vlan *vlan) CreateVlanMember(ctx context.Context, req *saipb.CreateVlanMem
 	if _, err := vlan.dataplane.TableEntryAdd(ctx, entry); err != nil {
 		return nil, err
 	}
-	vlan.vlans[vOid][mOid] = &vlanMember{Oid: mOid, Vid: uint32(req.GetVlanId()), Mode: req.GetVlanTaggingMode()}
+	vlan.vlans[vOid][mOid] = &vlanMember{Oid: mOid, PortID: req.GetBridgePortId(), Vid: uint32(req.GetVlanId()), Mode: req.GetVlanTaggingMode()}
 	// Update attributes
 	vlanAttrReq := &saipb.GetVlanAttributeRequest{Oid: vOid, AttrType: []saipb.VlanAttr{saipb.VlanAttr_VLAN_ATTR_MEMBER_LIST}}
 	vlanAttrResp := &saipb.GetVlanAttributeResponse{}
