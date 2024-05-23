@@ -426,6 +426,78 @@ func TestCreateAclEntry(t *testing.T) {
 	}
 }
 
+func TestRemoveAclEntry(t *testing.T) {
+	tests := []struct {
+		desc    string
+		req     *saipb.RemoveAclEntryRequest
+		wantErr string
+		want    *fwdpb.TableEntryRemoveRequest
+	}{{
+		desc: "not found",
+		req: &saipb.RemoveAclEntryRequest{
+			Oid: 2,
+		},
+		wantErr: "FailedPrecondition",
+	}, {
+		desc: "success",
+		req: &saipb.RemoveAclEntryRequest{
+			Oid: 1,
+		},
+		want: &fwdpb.TableEntryRemoveRequest{
+			ContextId: &fwdpb.ContextId{Id: "foo"},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: "1"}},
+			EntryDesc: &fwdpb.EntryDesc{
+				Entry: &fwdpb.EntryDesc_Flow{
+					Flow: &fwdpb.FlowEntryDesc{
+						Id: 1,
+						Fields: []*fwdpb.PacketFieldMaskedBytes{{
+							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST}},
+							Bytes:   []byte{127, 0, 0, 1},
+							Masks:   []byte{255, 255, 255, 0},
+						}},
+					},
+				},
+			},
+		},
+	}}
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			dplane := &fakeSwitchDataplane{}
+
+			c, a, stopFn := newTestACL(t, dplane)
+			defer stopFn()
+			a.tableToLocation[1] = tableLocation{
+				groupID: "1",
+				bank:    0,
+			}
+			_, err := c.CreateAclEntry(context.TODO(), &saipb.CreateAclEntryRequest{
+				TableId: proto.Uint64(1),
+				FieldDstIp: &saipb.AclFieldData{
+					Data: &saipb.AclFieldData_DataIp{
+						DataIp: []byte{127, 0, 0, 1},
+					},
+					Mask: &saipb.AclFieldData_MaskIp{
+						MaskIp: []byte{255, 255, 255, 0},
+					},
+				},
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, gotErr := c.RemoveAclEntry(context.Background(), tt.req)
+			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
+				t.Fatalf("RemoveAclCounter() unexpected err: %s", diff)
+			}
+			if gotErr != nil {
+				return
+			}
+			if d := cmp.Diff(dplane.gotEntryRemoveReqs[0], tt.want, protocmp.Transform()); d != "" {
+				t.Errorf("RemoveAclCounter() failed: diff(-got,+want)\n:%s", d)
+			}
+		})
+	}
+}
+
 func TestCreateAclCounter(t *testing.T) {
 	tests := []struct {
 		desc    string

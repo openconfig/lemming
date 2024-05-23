@@ -123,23 +123,16 @@ func (a *acl) CreateAclTable(context.Context, *saipb.CreateAclTableRequest) (*sa
 	return &saipb.CreateAclTableResponse{Oid: id}, nil
 }
 
-// CreateAclEntry adds an entry in the a bank.
-func (a *acl) CreateAclEntry(ctx context.Context, req *saipb.CreateAclEntryRequest) (*saipb.CreateAclEntryResponse, error) {
-	id := a.mgr.NextID()
-	gb, ok := a.tableToLocation[req.GetTableId()]
-	if !ok {
-		return nil, status.Errorf(codes.FailedPrecondition, "table is not member of a group")
-	}
-
+func (a *acl) createAclEntryFields(req *saipb.CreateAclEntryRequest, id uint64, gid string, bank int) (*fwdpb.TableEntryAddRequest, error) {
 	aReq := &fwdpb.TableEntryAddRequest{
 		ContextId: &fwdpb.ContextId{Id: a.dataplane.ID()},
-		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: gb.groupID}},
+		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: gid}},
 		EntryDesc: &fwdpb.EntryDesc{
 			Entry: &fwdpb.EntryDesc_Flow{
 				Flow: &fwdpb.FlowEntryDesc{
 					Priority: req.GetPriority(),
 					Id:       uint32(id),
-					Bank:     uint32(gb.bank),
+					Bank:     uint32(bank),
 				},
 			},
 		},
@@ -260,6 +253,21 @@ func (a *acl) CreateAclEntry(ctx context.Context, req *saipb.CreateAclEntryReque
 	if len(aReq.EntryDesc.GetFlow().Fields) == 0 {
 		return nil, status.Error(codes.InvalidArgument, "either no fields or not unsupports fields in entry req")
 	}
+	return aReq, nil
+}
+
+// CreateAclEntry adds an entry in the a bank.
+func (a *acl) CreateAclEntry(ctx context.Context, req *saipb.CreateAclEntryRequest) (*saipb.CreateAclEntryResponse, error) {
+	id := a.mgr.NextID()
+	gb, ok := a.tableToLocation[req.GetTableId()]
+	if !ok {
+		return nil, status.Errorf(codes.FailedPrecondition, "table is not member of a group")
+	}
+	aReq, err := a.createAclEntryFields(req, id, gb.groupID, gb.bank)
+	if err != nil {
+		return nil, err
+	}
+
 	if req.ActionSetVrf != nil {
 		aReq.Actions = append(aReq.Actions,
 			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF).
@@ -302,6 +310,32 @@ func (a *acl) CreateAclEntry(ctx context.Context, req *saipb.CreateAclEntryReque
 	}
 
 	return &saipb.CreateAclEntryResponse{Oid: id}, nil
+}
+
+func (a *acl) RemoveAclEntry(ctx context.Context, req *saipb.RemoveAclEntryRequest) (*saipb.RemoveAclEntryResponse, error) {
+	cReq := &saipb.CreateAclEntryRequest{}
+	if err := a.mgr.PopulateAllAttributes(fmt.Sprint(req.GetOid()), cReq); err != nil {
+		return nil, err
+	}
+	gb, ok := a.tableToLocation[cReq.GetTableId()]
+	if !ok {
+		return nil, status.Errorf(codes.FailedPrecondition, "table is not member of a group")
+	}
+
+	aReq, err := a.createAclEntryFields(cReq, req.GetOid(), gb.groupID, gb.bank)
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err := a.dataplane.TableEntryRemove(ctx, &fwdpb.TableEntryRemoveRequest{
+		ContextId: aReq.ContextId,
+		TableId:   aReq.TableId,
+		EntryDesc: aReq.EntryDesc,
+	}); err != nil {
+		return nil, err
+	}
+
+	return &saipb.RemoveAclEntryResponse{}, nil
 }
 
 func (a *acl) CreateAclCounter(ctx context.Context, req *saipb.CreateAclCounterRequest) (*saipb.CreateAclCounterResponse, error) {
