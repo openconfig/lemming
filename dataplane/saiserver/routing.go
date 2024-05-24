@@ -859,12 +859,20 @@ func (vlan *vlan) CreateVlanMember(ctx context.Context, req *saipb.CreateVlanMem
 		return nil, status.Errorf(codes.FailedPrecondition, "VLAN %d does not exsit", req.GetVlanId())
 	}
 	mOid := vlan.mgr.NextID()
-	// VLAN tagging
-	entry := fwdconfig.TableEntryAddRequest(vlan.dataplane.ID(), VlanTable).AppendEntry(fwdconfig.EntryDesc(fwdconfig.ExactEntry(
-		fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT).WithUint64(mOid),
-	)), fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG).WithUint64Value(req.GetVlanId()))).Build()
-
-	if _, err := vlan.dataplane.TableEntryAdd(ctx, entry); err != nil {
+	nid, err := vlan.dataplane.ObjectNID(ctx, &fwdpb.ObjectNIDRequest{
+		ContextId: &fwdpb.ContextId{Id: vlan.dataplane.ID()},
+		ObjectId:  &fwdpb.ObjectId{Id: fmt.Sprint(req.GetBridgePortId())},
+	})
+	if err != nil {
+		return nil, err
+	}
+	vlanReq := fwdconfig.TableEntryAddRequest(vlan.dataplane.ID(), VlanTable).AppendEntry(
+		fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT).WithUint64(nid.GetNid())))).Build()
+	vlanReq.Entries[0].Actions = []*fwdpb.ActionDesc{
+		fwdconfig.Action(fwdconfig.EncapAction(fwdpb.PacketHeaderId(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG))).Build(),
+		fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG).WithUint64Value(req.GetVlanId())).Build(),
+	}
+	if _, err := vlan.dataplane.TableEntryAdd(ctx, vlanReq); err != nil {
 		return nil, err
 	}
 	vlan.vlans[vOid][mOid] = &vlanMember{Oid: mOid, PortID: req.GetBridgePortId(), Vid: uint32(req.GetVlanId()), Mode: req.GetVlanTaggingMode()}
@@ -876,6 +884,7 @@ func (vlan *vlan) CreateVlanMember(ctx context.Context, req *saipb.CreateVlanMem
 	}
 	vlanAttrResp.GetAttr().MemberList = append(vlanAttrResp.GetAttr().MemberList, mOid)
 	vlan.mgr.StoreAttributes(vOid, vlanAttrResp)
+	log.Infof("Add port %d to VLAN %d", req.GetBridgePortId(), req.GetVlanId())
 	return &saipb.CreateVlanMemberResponse{Oid: mOid}, nil
 }
 

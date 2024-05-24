@@ -124,6 +124,16 @@ func configureDUT(t testing.TB, conn *grpc.ClientConn, dut *ondatra.DUTDevice) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// Add this port to default VLAN.
+	vc := saipb.NewVlanClient(conn)
+	ctx := context.Background()
+	if _, err := vc.CreateVlanMember(ctx, &saipb.CreateVlanMemberRequest{
+		VlanId:          proto.Uint64(4095), // the default VLAN ID.
+		BridgePortId:    proto.Uint64(port1ID),
+		VlanTaggingMode: saipb.VlanTaggingMode_VLAN_TAGGING_MODE_UNTAGGED.Enum(),
+	}); err != nil {
+		t.Errorf("failed to add port 1 to the default VLAN: %v", err)
+	}
 	mac2, err := net.ParseMAC(dutPort2.MAC)
 	if err != nil {
 		t.Fatal(err)
@@ -137,7 +147,13 @@ func configureDUT(t testing.TB, conn *grpc.ClientConn, dut *ondatra.DUTDevice) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
+	if _, err := vc.CreateVlanMember(ctx, &saipb.CreateVlanMemberRequest{
+		VlanId:          proto.Uint64(4095), // the default VLAN ID.
+		BridgePortId:    proto.Uint64(port2ID),
+		VlanTaggingMode: saipb.VlanTaggingMode_VLAN_TAGGING_MODE_UNTAGGED.Enum(),
+	}); err != nil {
+		t.Errorf("failed to add port 2 to the default VLAN: %v", err)
+	}
 	rc := saipb.NewRouteClient(conn)
 	_, err = rc.CreateRouteEntry(context.Background(), &saipb.CreateRouteEntryRequest{
 		Entry: &saipb.RouteEntry{
