@@ -784,6 +784,9 @@ func newVlan(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server)
 }
 
 func (vlan *vlan) CreateVlan(ctx context.Context, r *saipb.CreateVlanRequest) (*saipb.CreateVlanResponse, error) {
+	if _, ok := vlan.oidByVId[r.GetVlanId()]; ok {
+		return nil, fmt.Errorf("found existing VLAN %d", r.GetVlanId())
+	}
 	id := vlan.mgr.NextID()
 	req := &saipb.GetSwitchAttributeRequest{Oid: 1, AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_DEFAULT_STP_INST_ID}}
 	resp := &saipb.GetSwitchAttributeResponse{}
