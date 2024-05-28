@@ -39,7 +39,6 @@ import (
 
 	log "github.com/golang/glog"
 
-	"github.com/openconfig/lemming/dataplane/proto/sai"
 	saipb "github.com/openconfig/lemming/dataplane/proto/sai"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
@@ -944,10 +943,17 @@ func (ni *Reconciler) setupPorts(ctx context.Context) error {
 		data.portNID = nid.Nid
 
 		// Add this port to default VLAN.
+		swAttr, err := ni.switchClient.GetSwitchAttribute(ctx, &saipb.GetSwitchAttributeRequest{
+			Oid:      ni.switchID,
+			AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_DEFAULT_VLAN_ID},
+		})
+		if err != nil {
+			return err
+		}
 		if _, err := ni.vlanClient.CreateVlanMember(ctx, &saipb.CreateVlanMemberRequest{
-			VlanId:          proto.Uint64(4095), // the default VLAN ID.
+			VlanId:          proto.Uint64(*swAttr.GetAttr().DefaultVlanId),
 			BridgePortId:    proto.Uint64(portResp.Oid),
-			VlanTaggingMode: sai.VlanTaggingMode_VLAN_TAGGING_MODE_UNTAGGED.Enum(),
+			VlanTaggingMode: saipb.VlanTaggingMode_VLAN_TAGGING_MODE_UNTAGGED.Enum(),
 		}); err != nil {
 			return fmt.Errorf("failed to add port to the default VLAN: %v", err)
 		}

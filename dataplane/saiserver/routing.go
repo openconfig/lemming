@@ -857,10 +857,7 @@ func (vlan *vlan) RemoveVlan(ctx context.Context, req *saipb.RemoveVlanRequest) 
 
 func (vlan *vlan) CreateVlanMember(ctx context.Context, req *saipb.CreateVlanMemberRequest) (*saipb.CreateVlanMemberResponse, error) {
 	// Locate the OID of the VLAN.
-	vOid, ok := vlan.oidByVId[uint32(*req.VlanId)]
-	if !ok {
-		return nil, status.Errorf(codes.FailedPrecondition, "VLAN %d does not exsit", req.GetVlanId())
-	}
+	vOid := *req.VlanId
 	mOid := vlan.mgr.NextID()
 	nid, err := vlan.dataplane.ObjectNID(ctx, &fwdpb.ObjectNIDRequest{
 		ContextId: &fwdpb.ContextId{Id: vlan.dataplane.ID()},

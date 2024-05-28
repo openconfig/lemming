@@ -138,8 +138,15 @@ func createRIF(t testing.TB, dut *ondatra.DUTDevice, portID string, mac string, 
 	// Add this port to default VLAN.
 	vc := saipb.NewVlanClient(conn)
 	ctx := context.Background()
+	swAttr, err := saipb.NewSwitchClient(conn).GetSwitchAttribute(ctx, &saipb.GetSwitchAttributeRequest{
+		Oid:      *proto.Uint64(1),
+		AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_DEFAULT_VLAN_ID},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
 	if _, err := vc.CreateVlanMember(ctx, &saipb.CreateVlanMemberRequest{
-		VlanId:          proto.Uint64(4095), // the default VLAN ID.
+		VlanId:          proto.Uint64(*swAttr.GetAttr().DefaultVlanId),
 		BridgePortId:    proto.Uint64(port1ID),
 		VlanTaggingMode: saipb.VlanTaggingMode_VLAN_TAGGING_MODE_UNTAGGED.Enum(),
 	}); err != nil {

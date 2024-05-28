@@ -102,7 +102,7 @@ const (
 	portToHostifTable     = "cpu-output"
 	tunTermTable          = "tun-term"
 	VlanTable             = "vlan"
-	DefaultVlanId         = 4095 // ID of the default VLAN.
+	DefaultVlanId         = 4095 // An reserved VLAN ID used as the default VLAN ID for internal usage.
 )
 
 func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server, opts *dplaneopts.Options) (*saiSwitch, error) {
@@ -608,7 +608,6 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 		return nil, err
 	}
 	sw.mgr.StoreAttributes(swID, &saipb.SwitchAttribute{DefaultVlanId: &vlanResp.Oid})
-
 	vrResp, err := attrmgr.InvokeAndSave(ctx, sw.mgr, sw.vr.CreateVirtualRouter, &saipb.CreateVirtualRouterRequest{
 		Switch: swID,
 	})
