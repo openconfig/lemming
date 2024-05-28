@@ -631,8 +631,6 @@ func (ri *routerInterface) CreateRouterInterface(ctx context.Context, req *saipb
 		return nil, err
 	}
 
-	// Here we associate a port to its output interface. How is output port assigned?
-	// Does that mean that we trigger the xmit of port GetPortId()?
 	_, err = ri.dataplane.TableEntryAdd(ctx, fwdconfig.TableEntryAddRequest(ri.dataplane.ID(), outputIfaceTable).
 		AppendEntry(
 			fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE).WithUint64(id))),
