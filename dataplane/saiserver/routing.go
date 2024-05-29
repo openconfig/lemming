@@ -915,8 +915,12 @@ func (vlan *vlan) RemoveVlanMember(ctx context.Context, r *saipb.RemoveVlanMembe
 	if err != nil {
 		return nil, err
 	}
+	vOid, ok := vlan.oidByVId[DefaultVlanId]
+	if !ok {
+		return nil, fmt.Errorf("cannot find default VLAN: %v", err)
+	}
 	_, err = attrmgr.InvokeAndSave(ctx, vlan.mgr, vlan.CreateVlanMember, &saipb.CreateVlanMemberRequest{
-		VlanId:          proto.Uint64(4095), // the default VLAN ID.
+		VlanId:          proto.Uint64(vOid),
 		BridgePortId:    proto.Uint64(mOid),
 		VlanTaggingMode: sai.VlanTaggingMode_VLAN_TAGGING_MODE_UNTAGGED.Enum(),
 	})
