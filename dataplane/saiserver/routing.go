@@ -781,6 +781,15 @@ func newVlan(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server)
 	return v
 }
 
+func (vlan *vlan) vidByOid(oid uint64) (uint32, error) {
+	for v, o := range vlan.oidByVId {
+		if o == oid {
+			return v, nil
+		}
+	}
+	return 0, fmt.Errorf("cannot find VLAN with OID %d", oid)
+}
+
 func (vlan *vlan) CreateVlan(ctx context.Context, r *saipb.CreateVlanRequest) (*saipb.CreateVlanResponse, error) {
 	if _, ok := vlan.oidByVId[r.GetVlanId()]; ok {
 		return nil, fmt.Errorf("found existing VLAN %d", r.GetVlanId())
@@ -855,7 +864,11 @@ func (vlan *vlan) RemoveVlan(ctx context.Context, req *saipb.RemoveVlanRequest) 
 
 func (vlan *vlan) CreateVlanMember(ctx context.Context, req *saipb.CreateVlanMemberRequest) (*saipb.CreateVlanMemberResponse, error) {
 	// Locate the OID of the VLAN.
-	vOid := *req.VlanId
+	vOid := req.GetVlanId()
+	vId, err := vlan.vidByOid(vOid)
+	if err != nil {
+		return nil, err
+	}
 	mOid := vlan.mgr.NextID()
 	nid, err := vlan.dataplane.ObjectNID(ctx, &fwdpb.ObjectNIDRequest{
 		ContextId: &fwdpb.ContextId{Id: vlan.dataplane.ID()},
@@ -867,13 +880,13 @@ func (vlan *vlan) CreateVlanMember(ctx context.Context, req *saipb.CreateVlanMem
 	vlanReq := fwdconfig.TableEntryAddRequest(vlan.dataplane.ID(), VlanTable).AppendEntry(
 		fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT).WithUint64(nid.GetNid())))).Build()
 	vlanReq.Entries[0].Actions = []*fwdpb.ActionDesc{
-		fwdconfig.Action(fwdconfig.EncapAction(fwdpb.PacketHeaderId(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG))).Build(),
-		fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG).WithUint64Value(req.GetVlanId())).Build(),
+		fwdconfig.Action(fwdconfig.EncapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET_VLAN)).Build(),
+		fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG).WithUint64Value(uint64(vId))).Build(),
 	}
 	if _, err := vlan.dataplane.TableEntryAdd(ctx, vlanReq); err != nil {
 		return nil, err
 	}
-	vlan.vlans[vOid][mOid] = &vlanMember{Oid: mOid, PortID: req.GetBridgePortId(), Vid: uint32(req.GetVlanId()), Mode: req.GetVlanTaggingMode()}
+	vlan.vlans[vOid][mOid] = &vlanMember{Oid: mOid, PortID: req.GetBridgePortId(), Vid: vId, Mode: req.GetVlanTaggingMode()}
 	// Update attributes
 	vlanAttrReq := &saipb.GetVlanAttributeRequest{Oid: vOid, AttrType: []saipb.VlanAttr{saipb.VlanAttr_VLAN_ATTR_MEMBER_LIST}}
 	vlanAttrResp := &saipb.GetVlanAttributeResponse{}
@@ -882,7 +895,7 @@ func (vlan *vlan) CreateVlanMember(ctx context.Context, req *saipb.CreateVlanMem
 	}
 	vlanAttrResp.GetAttr().MemberList = append(vlanAttrResp.GetAttr().MemberList, mOid)
 	vlan.mgr.StoreAttributes(vOid, vlanAttrResp)
-	log.Infof("Add port %d to VLAN %d", req.GetBridgePortId(), req.GetVlanId())
+	log.Infof("Add port %d to VLAN OID %d", req.GetBridgePortId(), req.GetVlanId())
 	return &saipb.CreateVlanMemberResponse{Oid: mOid}, nil
 }
 
