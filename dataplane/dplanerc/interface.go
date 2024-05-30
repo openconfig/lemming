@@ -951,7 +951,7 @@ func (ni *Reconciler) setupPorts(ctx context.Context) error {
 			return err
 		}
 		if _, err := ni.vlanClient.CreateVlanMember(ctx, &saipb.CreateVlanMemberRequest{
-			VlanId:          proto.Uint64(*swAttr.GetAttr().DefaultVlanId),
+			VlanId:          proto.Uint64(swAttr.GetAttr().GetDefaultVlanId()),
 			BridgePortId:    proto.Uint64(portResp.Oid),
 			VlanTaggingMode: saipb.VlanTaggingMode_VLAN_TAGGING_MODE_UNTAGGED.Enum(),
 		}); err != nil {
