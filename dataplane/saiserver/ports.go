@@ -310,16 +310,15 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 	if err := port.mgr.PopulateAttributes(&saipb.GetSwitchAttributeRequest{
 		Oid:      1,
 		AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_DEFAULT_VLAN_ID},
-	}, swAttr); err == nil {
-		if _, err := port.vlan.CreateVlanMember(ctx, &saipb.CreateVlanMemberRequest{
-			VlanId:          proto.Uint64(swAttr.GetAttr().GetDefaultVlanId()),
-			BridgePortId:    proto.Uint64(id),
-			VlanTaggingMode: saipb.VlanTaggingMode_VLAN_TAGGING_MODE_UNTAGGED.Enum(),
-		}); err != nil {
-			return nil, fmt.Errorf("Failed to add port to the default VLAN: %v", err)
-		}
-	} else {
-		log.Errorf("Failed to retrive the default VLAN's OID. This is working as intended in unit tests.")
+	}, swAttr); err != nil {
+		return nil, fmt.Errorf("Failed to retrive the default VLAN's OID. This is working as intended in unit tests.")
+	}
+	if _, err := port.vlan.CreateVlanMember(ctx, &saipb.CreateVlanMemberRequest{
+		VlanId:          proto.Uint64(swAttr.GetAttr().GetDefaultVlanId()),
+		BridgePortId:    proto.Uint64(id),
+		VlanTaggingMode: saipb.VlanTaggingMode_VLAN_TAGGING_MODE_UNTAGGED.Enum(),
+	}); err != nil {
+		return nil, fmt.Errorf("Failed to add port to the default VLAN: %v", err)
 	}
 	return &saipb.CreatePortResponse{
 		Oid: id,
