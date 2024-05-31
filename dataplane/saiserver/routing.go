@@ -32,7 +32,6 @@ import (
 
 	log "github.com/golang/glog"
 
-	"github.com/openconfig/lemming/dataplane/proto/sai"
 	saipb "github.com/openconfig/lemming/dataplane/proto/sai"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
@@ -760,7 +759,7 @@ type vlanMember struct {
 	Oid    uint64
 	PortID uint64
 	Vid    uint32
-	Mode   sai.VlanTaggingMode
+	Mode   saipb.VlanTaggingMode
 }
 
 type vlan struct {
@@ -943,7 +942,7 @@ func (vlan *vlan) RemoveVlanMember(ctx context.Context, r *saipb.RemoveVlanMembe
 	_, err := attrmgr.InvokeAndSave(ctx, vlan.mgr, vlan.CreateVlanMember, &saipb.CreateVlanMemberRequest{
 		VlanId:          proto.Uint64(defVOid),
 		BridgePortId:    proto.Uint64(member.PortID),
-		VlanTaggingMode: sai.VlanTaggingMode_VLAN_TAGGING_MODE_UNTAGGED.Enum(),
+		VlanTaggingMode: saipb.VlanTaggingMode_VLAN_TAGGING_MODE_UNTAGGED.Enum(),
 	})
 	if err != nil {
 		return nil, err

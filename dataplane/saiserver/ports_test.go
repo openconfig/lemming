@@ -166,10 +166,6 @@ func TestCreatePort(t *testing.T) {
 			Mtu:                              proto.Uint32(1514),
 		},
 	}}
-	// attrs := &saipb.SwitchAttribute{
-	// 	DefaultVlanId: &vlanResp.Oid,
-	// }
-	// sw.mgr.StoreAttributes(1, attrs)
 
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
