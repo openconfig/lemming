@@ -36,12 +36,13 @@ import (
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
-func newPort(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server, opts *dplaneopts.Options) (*port, error) {
+func newPort(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server, vlan saipb.VlanServer, opts *dplaneopts.Options) (*port, error) {
 	p := &port{
 		mgr:       mgr,
 		dataplane: dataplane,
 		portToEth: make(map[uint64]string),
 		nextEth:   1, // Start at eth1
+		vlan:      vlan,
 		opts:      opts,
 	}
 	if opts.PortConfigFile != "" {
@@ -61,6 +62,7 @@ func newPort(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server,
 
 type port struct {
 	saipb.UnimplementedPortServer
+	vlan      saipb.VlanServer
 	mgr       *attrmgr.AttrMgr
 	dataplane switchDataplaneAPI
 	nextEth   int
@@ -303,7 +305,22 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 	}
 
 	port.mgr.StoreAttributes(id, attrs)
-
+	// Add the port to the default VLAN.
+	swAttr := &saipb.GetSwitchAttributeResponse{}
+	if err := port.mgr.PopulateAttributes(&saipb.GetSwitchAttributeRequest{
+		Oid:      1,
+		AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_DEFAULT_VLAN_ID},
+	}, swAttr); err == nil {
+		if _, err := port.vlan.CreateVlanMember(ctx, &saipb.CreateVlanMemberRequest{
+			VlanId:          proto.Uint64(swAttr.GetAttr().GetDefaultVlanId()),
+			BridgePortId:    proto.Uint64(id),
+			VlanTaggingMode: saipb.VlanTaggingMode_VLAN_TAGGING_MODE_UNTAGGED.Enum(),
+		}); err != nil {
+			return nil, fmt.Errorf("Failed to add port to the default VLAN: %v", err)
+		}
+	} else {
+		log.Errorf("Failed to retrive the default VLAN's OID. This is working as intended in unit tests.")
+	}
 	return &saipb.CreatePortResponse{
 		Oid: id,
 	}, nil

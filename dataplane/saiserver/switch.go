@@ -106,7 +106,8 @@ const (
 )
 
 func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server, opts *dplaneopts.Options) (*saiSwitch, error) {
-	port, err := newPort(mgr, engine, s, opts)
+	vlan := newVlan(mgr, engine, s)
+	port, err := newPort(mgr, engine, s, vlan, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +116,7 @@ func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server, 
 		acl:             newACL(mgr, engine, s),
 		policer:         newPolicer(mgr, engine, s),
 		port:            port,
-		vlan:            newVlan(mgr, engine, s),
+		vlan:            vlan,
 		stp:             &stp{},
 		vr:              &virtualRouter{},
 		bridge:          newBridge(mgr, engine, s),
@@ -637,6 +638,7 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 	// These values are mostly meaningless, but clients expect these to be set.
 	// The values either the default value for the attribute (https://github.com/opencomputeproject/SAI/blob/master/inc/saiswitch.h)
 	// or for unsupported features a zero value.
+	log.Infof("Populate Attr for default VLAN ID: %d for Switch ID: %d", vlanResp.GetOid(), swID)
 	attrs := &saipb.SwitchAttribute{
 		CpuPort:                          proto.Uint64(cpuPortID),
 		NumberOfActivePorts:              proto.Uint32(0),

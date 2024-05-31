@@ -166,6 +166,11 @@ func TestCreatePort(t *testing.T) {
 			Mtu:                              proto.Uint32(1514),
 		},
 	}}
+	// attrs := &saipb.SwitchAttribute{
+	// 	DefaultVlanId: &vlanResp.Oid,
+	// }
+	// sw.mgr.StoreAttributes(1, attrs)
+
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
 			getInterface = func(string) (*net.Interface, error) {
@@ -472,7 +477,8 @@ func TestRemovePort(t *testing.T) {
 
 func newTestPort(t testing.TB, api switchDataplaneAPI) (saipb.PortClient, *attrmgr.AttrMgr, func()) {
 	conn, mgr, stopFn := newTestServer(t, func(mgr *attrmgr.AttrMgr, srv *grpc.Server) {
-		newPort(mgr, api, srv, &dplaneopts.Options{PortType: fwdpb.PortType_PORT_TYPE_KERNEL})
+		vlan := newVlan(mgr, api, srv)
+		newPort(mgr, api, srv, vlan, &dplaneopts.Options{PortType: fwdpb.PortType_PORT_TYPE_KERNEL})
 	})
 	return saipb.NewPortClient(conn), mgr, stopFn
 }

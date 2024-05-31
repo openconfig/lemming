@@ -135,22 +135,6 @@ func configureDUT(t testing.TB, dut *ondatra.DUTDevice) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	ctx := context.Background()
-	swAttr, err := saipb.NewSwitchClient(conn).GetSwitchAttribute(ctx, &saipb.GetSwitchAttributeRequest{
-		Oid:      *proto.Uint64(1),
-		AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_DEFAULT_VLAN_ID},
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	vc := saipb.NewVlanClient(conn)
-	if _, err := vc.CreateVlanMember(ctx, &saipb.CreateVlanMemberRequest{
-		VlanId:          proto.Uint64(*swAttr.GetAttr().DefaultVlanId),
-		BridgePortId:    proto.Uint64(port1ID),
-		VlanTaggingMode: saipb.VlanTaggingMode_VLAN_TAGGING_MODE_UNTAGGED.Enum(),
-	}); err != nil {
-		t.Errorf("failed to add port 1 to the default VLAN: %v", err)
-	}
 	mac2, err := net.ParseMAC(dutPort2.MAC)
 	if err != nil {
 		t.Fatal(err)
@@ -163,13 +147,6 @@ func configureDUT(t testing.TB, dut *ondatra.DUTDevice) {
 	})
 	if err != nil {
 		t.Fatal(err)
-	}
-	if _, err := vc.CreateVlanMember(ctx, &saipb.CreateVlanMemberRequest{
-		VlanId:          proto.Uint64(*swAttr.GetAttr().DefaultVlanId),
-		BridgePortId:    proto.Uint64(port2ID),
-		VlanTaggingMode: saipb.VlanTaggingMode_VLAN_TAGGING_MODE_UNTAGGED.Enum(),
-	}); err != nil {
-		t.Errorf("failed to add port 2 to the default VLAN: %v", err)
 	}
 	rc := saipb.NewRouteClient(conn)
 	_, err = rc.CreateRouteEntry(context.Background(), &saipb.CreateRouteEntryRequest{
