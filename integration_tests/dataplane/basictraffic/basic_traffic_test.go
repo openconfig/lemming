@@ -119,7 +119,9 @@ func configureDUT(t testing.TB, dut *ondatra.DUTDevice) {
 		MacAddress:     []byte{0, 0, 0, 0, 0, 0},
 		MacAddressMask: []byte{0, 0, 0, 0, 0, 0},
 	})
-
+	if err != nil {
+		t.Fatal(err)
+	}
 	mac1, err := net.ParseMAC(dutPort1.MAC)
 	if err != nil {
 		t.Fatal(err)
@@ -146,7 +148,6 @@ func configureDUT(t testing.TB, dut *ondatra.DUTDevice) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
 	rc := saipb.NewRouteClient(conn)
 	_, err = rc.CreateRouteEntry(context.Background(), &saipb.CreateRouteEntryRequest{
 		Entry: &saipb.RouteEntry{

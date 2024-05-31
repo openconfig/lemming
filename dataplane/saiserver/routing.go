@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/binary"
 	"fmt"
+	"sync"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -753,24 +754,70 @@ func (ri *routerInterface) GetRouterInterfaceStats(ctx context.Context, req *sai
 	return &saipb.GetRouterInterfaceStatsResponse{Values: vals}, nil
 }
 
+// vlanMember contains the info of a VLAN member.
+type vlanMember struct {
+	Oid    uint64
+	PortID uint64
+	Vid    uint32
+	Mode   saipb.VlanTaggingMode
+}
+
 type vlan struct {
+	mu sync.Mutex
 	saipb.UnimplementedVlanServer
 	mgr       *attrmgr.AttrMgr
 	dataplane switchDataplaneAPI
+	oidByVId  map[uint32]uint64                 // VID -> VLAN_OID
+	vlans     map[uint64]map[uint64]*vlanMember // VLAN_OID -> VLAN_Member_OID (port)
 }
 
 func newVlan(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server) *vlan {
 	v := &vlan{
 		mgr:       mgr,
 		dataplane: dataplane,
+		oidByVId:  map[uint32]uint64{},
+		vlans:     map[uint64]map[uint64]*vlanMember{},
 	}
 	saipb.RegisterVlanServer(s, v)
 	return v
 }
 
-func (vlan *vlan) CreateVlan(context.Context, *saipb.CreateVlanRequest) (*saipb.CreateVlanResponse, error) {
-	id := vlan.mgr.NextID()
+func (vlan *vlan) vidByOid(oid uint64) (uint32, error) {
+	for v, o := range vlan.oidByVId {
+		if o == oid {
+			return v, nil
+		}
+	}
+	return 0, fmt.Errorf("cannot find VLAN with OID %d", oid)
+}
 
+func (vlan *vlan) memberByOid(oid uint64) *vlanMember {
+	for _, v := range vlan.vlans {
+		for mOid, member := range v {
+			if mOid == oid {
+				return member
+			}
+		}
+	}
+	return nil
+}
+
+func (vlan *vlan) memberByPortId(oid uint64) *vlanMember {
+	for _, v := range vlan.vlans {
+		for _, member := range v {
+			if member.PortID == oid {
+				return member
+			}
+		}
+	}
+	return nil
+}
+
+func (vlan *vlan) CreateVlan(ctx context.Context, r *saipb.CreateVlanRequest) (*saipb.CreateVlanResponse, error) {
+	if _, ok := vlan.oidByVId[r.GetVlanId()]; ok {
+		return nil, fmt.Errorf("found existing VLAN %d", r.GetVlanId())
+	}
+	id := vlan.mgr.NextID()
 	req := &saipb.GetSwitchAttributeRequest{Oid: 1, AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_DEFAULT_STP_INST_ID}}
 	resp := &saipb.GetSwitchAttributeResponse{}
 
@@ -781,6 +828,7 @@ func (vlan *vlan) CreateVlan(context.Context, *saipb.CreateVlanRequest) (*saipb.
 	attrs := &saipb.VlanAttribute{
 		MemberList:                         []uint64{},
 		StpInstance:                        resp.Attr.DefaultStpInstId,
+		VlanId:                             r.VlanId,
 		UnknownNonIpMcastOutputGroupId:     proto.Uint64(0),
 		UnknownIpv4McastOutputGroupId:      proto.Uint64(0),
 		UnknownIpv6McastOutputGroupId:      proto.Uint64(0),
@@ -793,9 +841,125 @@ func (vlan *vlan) CreateVlan(context.Context, *saipb.CreateVlanRequest) (*saipb.
 		TamObject:                          []uint64{},
 	}
 	vlan.mgr.StoreAttributes(id, attrs)
+	vlan.vlans[id] = map[uint64]*vlanMember{}
+	vlan.oidByVId[r.GetVlanId()] = id
 	return &saipb.CreateVlanResponse{
 		Oid: id,
 	}, nil
+}
+
+func (vlan *vlan) RemoveVlan(ctx context.Context, r *saipb.RemoveVlanRequest) (*saipb.RemoveVlanResponse, error) {
+	vId, err := vlan.vidByOid(r.GetOid())
+	if err != nil {
+		return nil, fmt.Errorf("cannot find VLAN ID for OID %d", r.GetOid())
+	}
+	if vId == DefaultVlanId {
+		return nil, fmt.Errorf("cannot remove default VLAN")
+	}
+	for _, v := range vlan.vlans[r.GetOid()] {
+		_, err := attrmgr.InvokeAndSave(ctx, vlan.mgr, vlan.RemoveVlanMember, &saipb.RemoveVlanMemberRequest{
+			Oid: v.Oid,
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+	// Update the internal map.
+	vlan.mu.Lock()
+	delete(vlan.vlans, r.GetOid())
+	vlan.mu.Unlock()
+	return &saipb.RemoveVlanResponse{}, nil
+}
+
+func (vlan *vlan) CreateVlanMember(ctx context.Context, r *saipb.CreateVlanMemberRequest) (*saipb.CreateVlanMemberResponse, error) {
+	vOid := r.GetVlanId()
+	vId, err := vlan.vidByOid(vOid)
+	if err != nil {
+		return nil, err
+	}
+	member := vlan.memberByPortId(r.GetBridgePortId()) // Keep the vlan member if this port was assigned to any VLAN.
+	mOid := vlan.mgr.NextID()
+	nid, err := vlan.dataplane.ObjectNID(ctx, &fwdpb.ObjectNIDRequest{
+		ContextId: &fwdpb.ContextId{Id: vlan.dataplane.ID()},
+		ObjectId:  &fwdpb.ObjectId{Id: fmt.Sprint(r.GetBridgePortId())},
+	})
+	if err != nil {
+		return nil, err
+	}
+	vlanReq := fwdconfig.TableEntryAddRequest(vlan.dataplane.ID(), VlanTable).AppendEntry(
+		fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT).WithUint64(nid.GetNid())))).Build()
+	vlanReq.Entries[0].Actions = []*fwdpb.ActionDesc{
+		fwdconfig.Action(fwdconfig.EncapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET_VLAN)).Build(),
+		fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG).WithUint64Value(uint64(vId))).Build(),
+	}
+	if _, err := vlan.dataplane.TableEntryAdd(ctx, vlanReq); err != nil {
+		return nil, err
+	}
+	// Update the attributes and intenal data.
+	vlanAttrReq := &saipb.GetVlanAttributeRequest{Oid: vOid, AttrType: []saipb.VlanAttr{saipb.VlanAttr_VLAN_ATTR_MEMBER_LIST}}
+	vlanAttrResp := &saipb.GetVlanAttributeResponse{}
+	if err := vlan.mgr.PopulateAttributes(vlanAttrReq, vlanAttrResp); err != nil {
+		return nil, err
+	}
+	vlanAttrResp.GetAttr().MemberList = append(vlanAttrResp.GetAttr().MemberList, mOid)
+	vlan.mgr.StoreAttributes(vOid, vlanAttrResp.GetAttr())
+	vlan.mu.Lock()
+	vlan.vlans[vOid][mOid] = &vlanMember{Oid: mOid, PortID: r.GetBridgePortId(), Vid: vId, Mode: r.GetVlanTaggingMode()}
+	vlan.mu.Unlock()
+	if member != nil {
+		preVlanOid := vlan.oidByVId[member.Vid]
+		vlanAttrReq = &saipb.GetVlanAttributeRequest{Oid: preVlanOid, AttrType: []saipb.VlanAttr{saipb.VlanAttr_VLAN_ATTR_MEMBER_LIST}}
+		vlanAttrResp = &saipb.GetVlanAttributeResponse{}
+		if err := vlan.mgr.PopulateAttributes(vlanAttrReq, vlanAttrResp); err != nil {
+			return nil, err
+		}
+		newMemList := []uint64{}
+		for _, i := range vlanAttrResp.Attr.GetMemberList() {
+			if i != member.Oid {
+				newMemList = append(newMemList, i)
+			}
+		}
+		vlanAttrResp.GetAttr().MemberList = newMemList
+		vlan.mgr.StoreAttributes(preVlanOid, vlanAttrResp.GetAttr())
+		// Update internal map.
+		vlan.mu.Lock()
+		delete(vlan.vlans[preVlanOid], member.Oid)
+		vlan.mu.Unlock()
+	}
+	return &saipb.CreateVlanMemberResponse{Oid: mOid}, nil
+}
+
+func (vlan *vlan) RemoveVlanMember(ctx context.Context, r *saipb.RemoveVlanMemberRequest) (*saipb.RemoveVlanMemberResponse, error) {
+	member := vlan.memberByOid(r.GetOid())
+	if member == nil {
+		return nil, fmt.Errorf("cannot find member with OID %d", r.GetOid())
+	}
+	defVOid, ok := vlan.oidByVId[DefaultVlanId]
+	if !ok {
+		return nil, fmt.Errorf("cannot find default VLAN.")
+	}
+	// Move the port back to the default VLAN.
+	_, err := attrmgr.InvokeAndSave(ctx, vlan.mgr, vlan.CreateVlanMember, &saipb.CreateVlanMemberRequest{
+		VlanId:          proto.Uint64(defVOid),
+		BridgePortId:    proto.Uint64(member.PortID),
+		VlanTaggingMode: saipb.VlanTaggingMode_VLAN_TAGGING_MODE_UNTAGGED.Enum(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &saipb.RemoveVlanMemberResponse{}, nil
+}
+
+func (vlan *vlan) CreateVlanMembers(ctx context.Context, r *saipb.CreateVlanMembersRequest) (*saipb.CreateVlanMembersResponse, error) {
+	resp := &saipb.CreateVlanMembersResponse{}
+	for _, req := range r.GetReqs() {
+		res, err := attrmgr.InvokeAndSave(ctx, vlan.mgr, vlan.CreateVlanMember, req)
+		if err != nil {
+			return nil, err
+		}
+		resp.Resps = append(resp.Resps, res)
+	}
+	return resp, nil
 }
 
 type bridge struct {

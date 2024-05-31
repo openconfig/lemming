@@ -137,7 +137,6 @@ func configureDUT(t testing.TB, conn *grpc.ClientConn, dut *ondatra.DUTDevice) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
 	rc := saipb.NewRouteClient(conn)
 	_, err = rc.CreateRouteEntry(context.Background(), &saipb.CreateRouteEntryRequest{
 		Entry: &saipb.RouteEntry{

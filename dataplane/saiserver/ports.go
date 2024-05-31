@@ -36,12 +36,13 @@ import (
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
-func newPort(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server, opts *dplaneopts.Options) (*port, error) {
+func newPort(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server, vlan saipb.VlanServer, opts *dplaneopts.Options) (*port, error) {
 	p := &port{
 		mgr:       mgr,
 		dataplane: dataplane,
 		portToEth: make(map[uint64]string),
 		nextEth:   1, // Start at eth1
+		vlan:      vlan,
 		opts:      opts,
 	}
 	if opts.PortConfigFile != "" {
@@ -61,6 +62,7 @@ func newPort(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server,
 
 type port struct {
 	saipb.UnimplementedPortServer
+	vlan      saipb.VlanServer
 	mgr       *attrmgr.AttrMgr
 	dataplane switchDataplaneAPI
 	nextEth   int
@@ -74,19 +76,21 @@ var getInterface = net.InterfaceByName
 
 func getForwardingPipeline() []*fwdpb.ActionDesc {
 	return []*fwdpb.ActionDesc{
-		fwdconfig.Action(fwdconfig.LookupAction(MyMacTable)).Build(),                                    // Decide whether to process the packet.
-		fwdconfig.Action(fwdconfig.LookupAction(inputIfaceTable)).Build(),                               // Match packet to interface.
-		fwdconfig.Action(fwdconfig.LookupAction(IngressVRFTable)).Build(),                               // Match interface to VRF.
-		fwdconfig.Action(fwdconfig.LookupAction(PreIngressActionTable)).Build(),                         // Run pre-ingress actions.
-		fwdconfig.Action(fwdconfig.DecapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET)).Build(), // Decap L2 header.
-		fwdconfig.Action(fwdconfig.LookupAction(tunTermTable)).Build(),                                  // Decap the packet if we have a tunnel.
-		fwdconfig.Action(fwdconfig.LookupAction(IngressActionTable)).Build(),                            // Run ingress action.
-		fwdconfig.Action(fwdconfig.LookupAction(FIBSelectorTable)).Build(),                              // Lookup in FIB.
-		fwdconfig.Action(fwdconfig.EncapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET)).Build(), // Encap L2 header.
-		fwdconfig.Action(fwdconfig.LookupAction(outputIfaceTable)).Build(),                              // Match interface to port
-		fwdconfig.Action(fwdconfig.LookupAction(NeighborTable)).Build(),                                 // Lookup in the neighbor table.
-		fwdconfig.Action(fwdconfig.LookupAction(EgressActionTable)).Build(),                             // Run egress actions
-		fwdconfig.Action(fwdconfig.LookupAction(SRCMACTable)).Build(),                                   // Lookup interface's MAC addr.
+		fwdconfig.Action(fwdconfig.LookupAction(VlanTable)).Build(),                                          // Tag VLAN.
+		fwdconfig.Action(fwdconfig.LookupAction(MyMacTable)).Build(),                                         // Decide whether to process the packet.
+		fwdconfig.Action(fwdconfig.LookupAction(inputIfaceTable)).Build(),                                    // Match packet to interface.
+		fwdconfig.Action(fwdconfig.LookupAction(IngressVRFTable)).Build(),                                    // Match interface to VRF.
+		fwdconfig.Action(fwdconfig.LookupAction(PreIngressActionTable)).Build(),                              // Run pre-ingress actions.
+		fwdconfig.Action(fwdconfig.DecapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET)).Build(),      // Decap L2 header.
+		fwdconfig.Action(fwdconfig.LookupAction(tunTermTable)).Build(),                                       // Decap the packet if we have a tunnel.
+		fwdconfig.Action(fwdconfig.LookupAction(IngressActionTable)).Build(),                                 // Run ingress action.
+		fwdconfig.Action(fwdconfig.LookupAction(FIBSelectorTable)).Build(),                                   // Lookup in FIB.
+		fwdconfig.Action(fwdconfig.EncapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET)).Build(),      // Encap L2 header.
+		fwdconfig.Action(fwdconfig.LookupAction(outputIfaceTable)).Build(),                                   // Match interface to port
+		fwdconfig.Action(fwdconfig.LookupAction(NeighborTable)).Build(),                                      // Lookup in the neighbor table.
+		fwdconfig.Action(fwdconfig.LookupAction(EgressActionTable)).Build(),                                  // Run egress actions
+		fwdconfig.Action(fwdconfig.LookupAction(SRCMACTable)).Build(),                                        // Lookup interface's MAC addr.
+		fwdconfig.Action(fwdconfig.DecapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET_VLAN)).Build(), // TODO: Revise the code if trunk mode needs to be supported.
 		{
 			ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
 		},
@@ -301,7 +305,21 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 	}
 
 	port.mgr.StoreAttributes(id, attrs)
-
+	// Add the port to the default VLAN.
+	swAttr := &saipb.GetSwitchAttributeResponse{}
+	if err := port.mgr.PopulateAttributes(&saipb.GetSwitchAttributeRequest{
+		Oid:      1,
+		AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_DEFAULT_VLAN_ID},
+	}, swAttr); err != nil {
+		return nil, fmt.Errorf("Failed to retrive the default VLAN's OID. This is working as intended in unit tests.")
+	}
+	if _, err := port.vlan.CreateVlanMember(ctx, &saipb.CreateVlanMemberRequest{
+		VlanId:          proto.Uint64(swAttr.GetAttr().GetDefaultVlanId()),
+		BridgePortId:    proto.Uint64(id),
+		VlanTaggingMode: saipb.VlanTaggingMode_VLAN_TAGGING_MODE_UNTAGGED.Enum(),
+	}); err != nil {
+		return nil, fmt.Errorf("Failed to add port to the default VLAN: %v", err)
+	}
 	return &saipb.CreatePortResponse{
 		Oid: id,
 	}, nil

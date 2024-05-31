@@ -45,7 +45,7 @@ func TestCreatePort(t *testing.T) {
 		req:             &saipb.CreatePortRequest{},
 		getInterfaceErr: fmt.Errorf("no interface"),
 		want: &saipb.CreatePortResponse{
-			Oid: 1,
+			Oid: 3,
 		},
 		wantAttr: &saipb.PortAttribute{
 			OperStatus:                       saipb.PortOperStatus_PORT_OPER_STATUS_NOT_PRESENT.Enum(),
@@ -107,7 +107,7 @@ func TestCreatePort(t *testing.T) {
 		desc: "existing interface",
 		req:  &saipb.CreatePortRequest{},
 		want: &saipb.CreatePortResponse{
-			Oid: 1,
+			Oid: 3,
 		},
 		wantAttr: &saipb.PortAttribute{
 			OperStatus:                       saipb.PortOperStatus_PORT_OPER_STATUS_DOWN.Enum(),
@@ -166,6 +166,7 @@ func TestCreatePort(t *testing.T) {
 			Mtu:                              proto.Uint32(1514),
 		},
 	}}
+
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
 			getInterface = func(string) (*net.Interface, error) {
@@ -185,7 +186,7 @@ func TestCreatePort(t *testing.T) {
 				t.Errorf("CreatePort() failed: diff(-got,+want)\n:%s", d)
 			}
 			attr := &saipb.PortAttribute{}
-			if err := mgr.PopulateAllAttributes("1", attr); err != nil {
+			if err := mgr.PopulateAllAttributes("3", attr); err != nil {
 				t.Fatal(err)
 			}
 			if d := cmp.Diff(attr, tt.wantAttr, protocmp.Transform()); d != "" {
@@ -209,7 +210,7 @@ func TestCreatePorts(t *testing.T) {
 			Reqs: []*saipb.CreatePortRequest{{}},
 		},
 		want: &saipb.CreatePortsResponse{
-			Resps: []*saipb.CreatePortResponse{{Oid: 1}},
+			Resps: []*saipb.CreatePortResponse{{Oid: 3}},
 		},
 		wantAttr: &saipb.PortAttribute{
 			OperStatus:                       saipb.PortOperStatus_PORT_OPER_STATUS_DOWN.Enum(),
@@ -284,7 +285,7 @@ func TestCreatePorts(t *testing.T) {
 				t.Errorf("CreatePorts() failed: diff(-got,+want)\n:%s", d)
 			}
 			attr := &saipb.PortAttribute{}
-			if err := mgr.PopulateAllAttributes("1", attr); err != nil {
+			if err := mgr.PopulateAllAttributes("3", attr); err != nil {
 				t.Fatal(err)
 			}
 			if d := cmp.Diff(attr, tt.wantAttr, protocmp.Transform()); d != "" {
@@ -305,11 +306,11 @@ func TestSetPortAttribute(t *testing.T) {
 	}{{
 		desc: "admin status",
 		req: &saipb.SetPortAttributeRequest{
-			Oid:        1,
+			Oid:        3,
 			AdminState: proto.Bool(false),
 		},
 		wantReq: &fwdpb.PortStateRequest{
-			PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: "1"}},
+			PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: "3"}},
 			Operation: &fwdpb.PortInfo{AdminStatus: fwdpb.PortState_PORT_STATE_DISABLED_DOWN},
 			ContextId: &fwdpb.ContextId{Id: "foo"},
 		},
@@ -325,7 +326,7 @@ func TestSetPortAttribute(t *testing.T) {
 			}
 			dplane := &fakeSwitchDataplane{}
 			c, mgr, stopFn := newTestPort(t, dplane)
-			mgr.StoreAttributes(1, &saipb.PortAttribute{
+			mgr.StoreAttributes(3, &saipb.PortAttribute{
 				OperStatus: saipb.PortOperStatus_PORT_OPER_STATUS_DOWN.Enum(),
 			})
 			defer stopFn()
@@ -340,7 +341,7 @@ func TestSetPortAttribute(t *testing.T) {
 				t.Errorf("SetPortAttribute() failed: diff(-got,+want)\n:%s", d)
 			}
 			attr := &saipb.PortAttribute{}
-			if err := mgr.PopulateAllAttributes("1", attr); err != nil {
+			if err := mgr.PopulateAllAttributes("3", attr); err != nil {
 				t.Fatal(err)
 			}
 			if d := cmp.Diff(attr, tt.wantAttr, protocmp.Transform()); d != "" {
@@ -360,7 +361,7 @@ func TestGetPortStats(t *testing.T) {
 	}{{
 		desc: "all stats",
 		req: &saipb.GetPortStatsRequest{
-			Oid: 1,
+			Oid: 3,
 			CounterIds: []saipb.PortStat{
 				saipb.PortStat_PORT_STAT_IF_IN_UCAST_PKTS,
 				saipb.PortStat_PORT_STAT_IF_IN_NON_UCAST_PKTS,
@@ -472,7 +473,25 @@ func TestRemovePort(t *testing.T) {
 
 func newTestPort(t testing.TB, api switchDataplaneAPI) (saipb.PortClient, *attrmgr.AttrMgr, func()) {
 	conn, mgr, stopFn := newTestServer(t, func(mgr *attrmgr.AttrMgr, srv *grpc.Server) {
-		newPort(mgr, api, srv, &dplaneopts.Options{PortType: fwdpb.PortType_PORT_TYPE_KERNEL})
+		// The following initialization code assigns OID 1 to the switch, and OID 2 to the VLAN.
+		// Therefore, the next available ID is 3.
+		vlan := newVlan(mgr, api, srv)
+		swID := mgr.NextID()
+		mgr.StoreAttributes(swID, &saipb.SwitchAttribute{
+			DefaultStpInstId: proto.Uint64(101),
+		})
+		resp, err := vlan.CreateVlan(context.Background(), &saipb.CreateVlanRequest{
+			Switch:       swID,
+			VlanId:       proto.Uint32(DefaultVlanId),
+			LearnDisable: proto.Bool(true),
+		})
+		if err != nil {
+			t.Fatalf("Failed to create a VLAN: %v", err)
+		}
+		mgr.StoreAttributes(swID, &saipb.SwitchAttribute{
+			DefaultVlanId: proto.Uint64(resp.GetOid()),
+		})
+		newPort(mgr, api, srv, vlan, &dplaneopts.Options{PortType: fwdpb.PortType_PORT_TYPE_KERNEL})
 	})
 	return saipb.NewPortClient(conn), mgr, stopFn
 }
