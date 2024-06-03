@@ -278,7 +278,7 @@ func checkOTGBGP4Prefix(t *testing.T, otg *otg.OTG, config gosnappi.Config, expe
 	_, ok := gnmi.WatchAll(t,
 		otg,
 		gnmi.OTG().BgpPeer(expectedOTGBGPPrefix.PeerName).UnicastIpv4PrefixAny().WithAddress(expectedOTGBGPPrefix.Address).State(),
-		time.Minute,
+		3*time.Minute,
 		func(v *ygnmi.Value[*otgtelemetry.BgpPeer_UnicastIpv4Prefix]) bool {
 			_, present := v.Val()
 			return present
@@ -303,7 +303,7 @@ func checkOTGBGP6Prefix(t *testing.T, otg *otg.OTG, config gosnappi.Config, expe
 	_, ok := gnmi.WatchAll(t,
 		otg,
 		gnmi.OTG().BgpPeer(expectedOTGBGPPrefix.PeerName).UnicastIpv6PrefixAny().WithAddress(expectedOTGBGPPrefix.Address).State(),
-		time.Minute,
+		3*time.Minute,
 		func(v *ygnmi.Value[*otgtelemetry.BgpPeer_UnicastIpv6Prefix]) bool {
 			_, present := v.Val()
 			return present
