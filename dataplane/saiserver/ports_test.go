@@ -477,6 +477,7 @@ func newTestPort(t testing.TB, api switchDataplaneAPI) (saipb.PortClient, *attrm
 		// Therefore, the next available ID is 3.
 		vlan := newVlan(mgr, api, srv)
 		q := newQueue(mgr, api, srv)
+		sg := newSchedulerGroup(mgr, api, srv)
 		swID := mgr.NextID()
 		mgr.StoreAttributes(swID, &saipb.SwitchAttribute{
 			DefaultStpInstId: proto.Uint64(101),
@@ -492,7 +493,7 @@ func newTestPort(t testing.TB, api switchDataplaneAPI) (saipb.PortClient, *attrm
 		mgr.StoreAttributes(swID, &saipb.SwitchAttribute{
 			DefaultVlanId: proto.Uint64(resp.GetOid()),
 		})
-		newPort(mgr, api, srv, vlan, q, &dplaneopts.Options{PortType: fwdpb.PortType_PORT_TYPE_KERNEL})
+		newPort(mgr, api, srv, vlan, q, sg, &dplaneopts.Options{PortType: fwdpb.PortType_PORT_TYPE_KERNEL})
 	})
 	return saipb.NewPortClient(conn), mgr, stopFn
 }
