@@ -106,10 +106,6 @@ type samplePacket struct {
 	saipb.UnimplementedSamplepacketServer
 }
 
-type scheduler struct {
-	saipb.UnimplementedSchedulerServer
-}
-
 type srv6 struct {
 	saipb.UnimplementedSrv6Server
 }
@@ -146,34 +142,32 @@ func (fc *forwardingContext) ID() string {
 type Server struct {
 	saipb.UnimplementedEntrypointServer
 	*forwardingContext
-	mgr            *attrmgr.AttrMgr
-	initialized    bool
-	bfd            *bfd
-	buffer         *buffer
-	counter        *counter
-	debugCounter   *debugCounter
-	dtel           *dtel
-	fdb            *fdb
-	ipmcGroup      *ipmcGroup
-	ipmc           *ipmc
-	ipsec          *ipsec
-	l2mcGroup      *l2mcGroup
-	l2mc           *l2mc
-	macsec         *macsec
-	mcastFdb       *mcastFdb
-	mirror         *mirror
-	mpls           *mpls
-	nat            *nat
-	qosMap         *qosMap
-	rpfGroup       *rpfGroup
-	samplePacket   *samplePacket
-	schedulerGroup *schedulerGroup
-	scheduler      *scheduler
-	srv6           *srv6
-	saiSwitch      *saiSwitch
-	systemPort     *systemPort
-	tam            *tam
-	wred           *wred
+	mgr          *attrmgr.AttrMgr
+	initialized  bool
+	bfd          *bfd
+	buffer       *buffer
+	counter      *counter
+	debugCounter *debugCounter
+	dtel         *dtel
+	fdb          *fdb
+	ipmcGroup    *ipmcGroup
+	ipmc         *ipmc
+	ipsec        *ipsec
+	l2mcGroup    *l2mcGroup
+	l2mc         *l2mc
+	macsec       *macsec
+	mcastFdb     *mcastFdb
+	mirror       *mirror
+	mpls         *mpls
+	nat          *nat
+	qosMap       *qosMap
+	rpfGroup     *rpfGroup
+	samplePacket *samplePacket
+	srv6         *srv6
+	saiSwitch    *saiSwitch
+	systemPort   *systemPort
+	tam          *tam
+	wred         *wred
 }
 
 func (s *Server) ObjectTypeQuery(_ context.Context, req *saipb.ObjectTypeQueryRequest) (*saipb.ObjectTypeQueryResponse, error) {
@@ -253,7 +247,6 @@ func New(ctx context.Context, mgr *attrmgr.AttrMgr, s *grpc.Server, opts *dplane
 		qosMap:            &qosMap{},
 		rpfGroup:          &rpfGroup{},
 		samplePacket:      &samplePacket{},
-		scheduler:         &scheduler{},
 		srv6:              &srv6{},
 		saiSwitch:         sw,
 		systemPort:        &systemPort{},
@@ -281,7 +274,6 @@ func New(ctx context.Context, mgr *attrmgr.AttrMgr, s *grpc.Server, opts *dplane
 	saipb.RegisterQosMapServer(s, srv.qosMap)
 	saipb.RegisterRpfGroupServer(s, srv.rpfGroup)
 	saipb.RegisterSamplepacketServer(s, srv.samplePacket)
-	saipb.RegisterSchedulerServer(s, srv.scheduler)
 	saipb.RegisterSrv6Server(s, srv.srv6)
 	saipb.RegisterSystemPortServer(s, srv.systemPort)
 	saipb.RegisterTamServer(s, srv.tam)

@@ -58,6 +58,7 @@ type saiSwitch struct {
 	sg              *schedulerGroup
 	routerInterface *routerInterface
 	udf             *udf
+	scheduler       *scheduler
 	mgr             *attrmgr.AttrMgr
 }
 
@@ -136,6 +137,7 @@ func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server, 
 		lag:             newLAG(mgr, engine, s),
 		tunnel:          newTunnel(mgr, engine, s),
 		udf:             newUdf(mgr, engine, s),
+		scheduler:       newScheduler(mgr, engine, s),
 		queue:           q,
 		sg:              sg,
 		mgr:             mgr,

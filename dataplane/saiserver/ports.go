@@ -358,7 +358,7 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 	}, swAttr); err != nil {
 		return nil, fmt.Errorf("Failed to retrive the default VLAN's OID. This is working as intended in unit tests.")
 	}
-	if _, err := port.vlan.CreateVlanMember(ctx, &saipb.CreateVlanMemberRequest{
+	if _, err := attrmgr.InvokeAndSave(ctx, port.mgr, port.vlan.CreateVlanMember, &saipb.CreateVlanMemberRequest{
 		VlanId:          proto.Uint64(swAttr.GetAttr().GetDefaultVlanId()),
 		BridgePortId:    proto.Uint64(id),
 		VlanTaggingMode: saipb.VlanTaggingMode_VLAN_TAGGING_MODE_UNTAGGED.Enum(),
@@ -761,4 +761,31 @@ func (sg *schedulerGroup) CreateSchedulerGroup(context.Context, *saipb.CreateSch
 // TODO: Implement this.
 func (sg *schedulerGroup) SetSchedulerGroupAttribute(context.Context, *saipb.SetSchedulerGroupAttributeRequest) (*saipb.SetSchedulerGroupAttributeResponse, error) {
 	return &saipb.SetSchedulerGroupAttributeResponse{}, nil
+}
+
+func newScheduler(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, srv *grpc.Server) *scheduler {
+	s := &scheduler{
+		mgr:       mgr,
+		dataplane: dataplane,
+	}
+	saipb.RegisterSchedulerServer(srv, s)
+	return s
+}
+
+type scheduler struct {
+	saipb.UnimplementedSchedulerServer
+	mgr       *attrmgr.AttrMgr
+	dataplane switchDataplaneAPI
+}
+
+func (s *scheduler) CreateScheduler(context.Context, *saipb.CreateSchedulerRequest) (*saipb.CreateSchedulerResponse, error) {
+	id := s.mgr.NextID()
+
+	return &saipb.CreateSchedulerResponse{
+		Oid: id,
+	}, nil
+}
+
+func (s *scheduler) SetSchedulerAttribute(context.Context, *saipb.SetSchedulerAttributeRequest) (*saipb.SetSchedulerAttributeResponse, error) {
+	return &saipb.SetSchedulerAttributeResponse{}, nil
 }
