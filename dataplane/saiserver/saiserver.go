@@ -94,28 +94,12 @@ type nat struct {
 	saipb.UnimplementedNatServer
 }
 
-type qosMap struct {
-	saipb.UnimplementedQosMapServer
-}
-
-type queue struct {
-	saipb.UnimplementedQueueServer
-}
-
 type rpfGroup struct {
 	saipb.UnimplementedRpfGroupServer
 }
 
 type samplePacket struct {
 	saipb.UnimplementedSamplepacketServer
-}
-
-type schedulerGroup struct {
-	saipb.UnimplementedSchedulerGroupServer
-}
-
-type scheduler struct {
-	saipb.UnimplementedSchedulerServer
 }
 
 type srv6 struct {
@@ -154,35 +138,31 @@ func (fc *forwardingContext) ID() string {
 type Server struct {
 	saipb.UnimplementedEntrypointServer
 	*forwardingContext
-	mgr            *attrmgr.AttrMgr
-	initialized    bool
-	bfd            *bfd
-	buffer         *buffer
-	counter        *counter
-	debugCounter   *debugCounter
-	dtel           *dtel
-	fdb            *fdb
-	ipmcGroup      *ipmcGroup
-	ipmc           *ipmc
-	ipsec          *ipsec
-	l2mcGroup      *l2mcGroup
-	l2mc           *l2mc
-	macsec         *macsec
-	mcastFdb       *mcastFdb
-	mirror         *mirror
-	mpls           *mpls
-	nat            *nat
-	qosMap         *qosMap
-	queue          *queue
-	rpfGroup       *rpfGroup
-	samplePacket   *samplePacket
-	schedulerGroup *schedulerGroup
-	scheduler      *scheduler
-	srv6           *srv6
-	saiSwitch      *saiSwitch
-	systemPort     *systemPort
-	tam            *tam
-	wred           *wred
+	mgr          *attrmgr.AttrMgr
+	initialized  bool
+	bfd          *bfd
+	buffer       *buffer
+	counter      *counter
+	debugCounter *debugCounter
+	dtel         *dtel
+	fdb          *fdb
+	ipmcGroup    *ipmcGroup
+	ipmc         *ipmc
+	ipsec        *ipsec
+	l2mcGroup    *l2mcGroup
+	l2mc         *l2mc
+	macsec       *macsec
+	mcastFdb     *mcastFdb
+	mirror       *mirror
+	mpls         *mpls
+	nat          *nat
+	rpfGroup     *rpfGroup
+	samplePacket *samplePacket
+	srv6         *srv6
+	saiSwitch    *saiSwitch
+	systemPort   *systemPort
+	tam          *tam
+	wred         *wred
 }
 
 func (s *Server) ObjectTypeQuery(_ context.Context, req *saipb.ObjectTypeQueryRequest) (*saipb.ObjectTypeQueryResponse, error) {
@@ -259,12 +239,8 @@ func New(ctx context.Context, mgr *attrmgr.AttrMgr, s *grpc.Server, opts *dplane
 		mirror:            &mirror{},
 		mpls:              &mpls{},
 		nat:               &nat{},
-		qosMap:            &qosMap{},
-		queue:             &queue{},
 		rpfGroup:          &rpfGroup{},
 		samplePacket:      &samplePacket{},
-		schedulerGroup:    &schedulerGroup{},
-		scheduler:         &scheduler{},
 		srv6:              &srv6{},
 		saiSwitch:         sw,
 		systemPort:        &systemPort{},
@@ -289,12 +265,8 @@ func New(ctx context.Context, mgr *attrmgr.AttrMgr, s *grpc.Server, opts *dplane
 	saipb.RegisterMirrorServer(s, srv.mirror)
 	saipb.RegisterMplsServer(s, srv.mpls)
 	saipb.RegisterNatServer(s, srv.nat)
-	saipb.RegisterQosMapServer(s, srv.qosMap)
-	saipb.RegisterQueueServer(s, srv.queue)
 	saipb.RegisterRpfGroupServer(s, srv.rpfGroup)
 	saipb.RegisterSamplepacketServer(s, srv.samplePacket)
-	saipb.RegisterSchedulerGroupServer(s, srv.schedulerGroup)
-	saipb.RegisterSchedulerServer(s, srv.scheduler)
 	saipb.RegisterSrv6Server(s, srv.srv6)
 	saipb.RegisterSystemPortServer(s, srv.systemPort)
 	saipb.RegisterTamServer(s, srv.tam)

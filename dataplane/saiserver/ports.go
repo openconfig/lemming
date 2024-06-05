@@ -36,7 +36,7 @@ import (
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
-func newPort(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server, vlan saipb.VlanServer, opts *dplaneopts.Options) (*port, error) {
+func newPort(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server, vlan saipb.VlanServer, queue saipb.QueueServer, sg saipb.SchedulerGroupServer, opts *dplaneopts.Options) (*port, error) {
 	p := &port{
 		mgr:       mgr,
 		dataplane: dataplane,
@@ -44,6 +44,8 @@ func newPort(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server,
 		nextEth:   1, // Start at eth1
 		vlan:      vlan,
 		opts:      opts,
+		queue:     queue,
+		sg:        sg,
 	}
 	if opts.PortConfigFile != "" {
 		data, err := os.ReadFile(opts.PortConfigFile)
@@ -69,6 +71,8 @@ type port struct {
 	portToEth map[uint64]string
 	opts      *dplaneopts.Options
 	config    *dplaneopts.PortConfig
+	queue     saipb.QueueServer
+	sg        saipb.SchedulerGroupServer
 }
 
 // stub for testing
@@ -96,6 +100,11 @@ func getForwardingPipeline() []*fwdpb.ActionDesc {
 		},
 	}
 }
+
+const (
+	numQueues          = 12
+	numSchedulerGroups = 12
+)
 
 // CreatePort creates a new port, mapping the port to ethX, where X is assigned sequentially from 1 to n.
 // Note: If more ports are created than eth devices, no error is returned, but the OperStatus is set to NOT_PRESENT.
@@ -143,11 +152,47 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 		}
 	}
 
+	queues := []uint64{}
+	for i := 0; i < numQueues; i++ {
+		qResp, err := attrmgr.InvokeAndSave(ctx, port.mgr, port.queue.CreateQueue, &saipb.CreateQueueRequest{
+			Type:                saipb.QueueType_QUEUE_TYPE_ALL.Enum(),
+			Port:                proto.Uint64(id),
+			Index:               proto.Uint32(uint32(i)),
+			ParentSchedulerNode: proto.Uint64(id),
+			WredProfileId:       proto.Uint64(0),
+			BufferProfileId:     proto.Uint64(0),
+			SchedulerProfileId:  proto.Uint64(0),
+			TamObject:           []uint64{},
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		queues = append(queues, qResp.GetOid())
+	}
+
+	sgs := []uint64{}
+	for i := 0; i < numQueues; i++ {
+		sgResp, err := attrmgr.InvokeAndSave(ctx, port.mgr, port.sg.CreateSchedulerGroup, &saipb.CreateSchedulerGroupRequest{
+			PortId:             proto.Uint64(id),
+			SchedulerProfileId: proto.Uint64(0),
+			ParentNode:         proto.Uint64(id),
+		})
+		if err != nil {
+			return nil, err
+		}
+		port.mgr.StoreAttributes(sgResp.GetOid(), &saipb.SchedulerGroupAttribute{
+			ChildCount: proto.Uint32(1),
+			ChildList:  []uint64{queues[i]},
+		})
+		sgs = append(sgs, sgResp.GetOid())
+	}
+
 	attrs := &saipb.PortAttribute{
-		QosNumberOfQueues:                proto.Uint32(0),
-		QosQueueList:                     []uint64{},
-		QosNumberOfSchedulerGroups:       proto.Uint32(0),
-		QosSchedulerGroupList:            []uint64{},
+		QosNumberOfQueues:                proto.Uint32(uint32(len(queues))),
+		QosQueueList:                     queues,
+		QosNumberOfSchedulerGroups:       proto.Uint32(uint32(len(sgs))),
+		QosSchedulerGroupList:            sgs,
 		IngressPriorityGroupList:         []uint64{},
 		FloodStormControlPolicerId:       proto.Uint64(0),
 		BroadcastStormControlPolicerId:   proto.Uint64(0),
@@ -313,7 +358,7 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 	}, swAttr); err != nil {
 		return nil, fmt.Errorf("Failed to retrive the default VLAN's OID. This is working as intended in unit tests.")
 	}
-	if _, err := port.vlan.CreateVlanMember(ctx, &saipb.CreateVlanMemberRequest{
+	if _, err := attrmgr.InvokeAndSave(ctx, port.mgr, port.vlan.CreateVlanMember, &saipb.CreateVlanMemberRequest{
 		VlanId:          proto.Uint64(swAttr.GetAttr().GetDefaultVlanId()),
 		BridgePortId:    proto.Uint64(id),
 		VlanTaggingMode: saipb.VlanTaggingMode_VLAN_TAGGING_MODE_UNTAGGED.Enum(),
@@ -654,4 +699,120 @@ func (l *lag) RemoveLagMember(ctx context.Context, req *saipb.RemoveLagMemberReq
 	}
 	_, err := l.dataplane.PortUpdate(ctx, pReq)
 	return &saipb.RemoveLagMemberResponse{}, err
+}
+
+type queue struct {
+	saipb.UnimplementedQueueServer
+	mgr       *attrmgr.AttrMgr
+	dataplane switchDataplaneAPI
+}
+
+func newQueue(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server) *queue {
+	q := &queue{
+		mgr:       mgr,
+		dataplane: dataplane,
+	}
+	saipb.RegisterQueueServer(s, q)
+	return q
+}
+
+// CreateQueue creates a queue.
+// TODO: Implement this.
+func (q *queue) CreateQueue(context.Context, *saipb.CreateQueueRequest) (*saipb.CreateQueueResponse, error) {
+	id := q.mgr.NextID()
+
+	return &saipb.CreateQueueResponse{
+		Oid: id,
+	}, nil
+}
+
+// SetQueueAttribute sets an attribute.
+// TODO: Implement this.
+func (q *queue) SetQueueAttribute(context.Context, *saipb.SetQueueAttributeRequest) (*saipb.SetQueueAttributeResponse, error) {
+	return &saipb.SetQueueAttributeResponse{}, nil
+}
+
+type schedulerGroup struct {
+	saipb.UnimplementedSchedulerGroupServer
+	mgr       *attrmgr.AttrMgr
+	dataplane switchDataplaneAPI
+}
+
+func newSchedulerGroup(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server) *schedulerGroup {
+	sg := &schedulerGroup{
+		mgr:       mgr,
+		dataplane: dataplane,
+	}
+	saipb.RegisterSchedulerGroupServer(s, sg)
+	return sg
+}
+
+// CreateSchedulerGroup creates a scheduler group.
+// TODO: Implement this.
+func (sg *schedulerGroup) CreateSchedulerGroup(context.Context, *saipb.CreateSchedulerGroupRequest) (*saipb.CreateSchedulerGroupResponse, error) {
+	id := sg.mgr.NextID()
+
+	return &saipb.CreateSchedulerGroupResponse{
+		Oid: id,
+	}, nil
+}
+
+// SetQueueAttribute sets a scheduler group attr.
+// TODO: Implement this.
+func (sg *schedulerGroup) SetSchedulerGroupAttribute(context.Context, *saipb.SetSchedulerGroupAttributeRequest) (*saipb.SetSchedulerGroupAttributeResponse, error) {
+	return &saipb.SetSchedulerGroupAttributeResponse{}, nil
+}
+
+func newScheduler(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, srv *grpc.Server) *scheduler {
+	s := &scheduler{
+		mgr:       mgr,
+		dataplane: dataplane,
+	}
+	saipb.RegisterSchedulerServer(srv, s)
+	return s
+}
+
+type scheduler struct {
+	saipb.UnimplementedSchedulerServer
+	mgr       *attrmgr.AttrMgr
+	dataplane switchDataplaneAPI
+}
+
+func (s *scheduler) CreateScheduler(context.Context, *saipb.CreateSchedulerRequest) (*saipb.CreateSchedulerResponse, error) {
+	id := s.mgr.NextID()
+
+	return &saipb.CreateSchedulerResponse{
+		Oid: id,
+	}, nil
+}
+
+func (s *scheduler) SetSchedulerAttribute(context.Context, *saipb.SetSchedulerAttributeRequest) (*saipb.SetSchedulerAttributeResponse, error) {
+	return &saipb.SetSchedulerAttributeResponse{}, nil
+}
+
+func newQOSMap(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, srv *grpc.Server) *qosMap {
+	q := &qosMap{
+		mgr:       mgr,
+		dataplane: dataplane,
+	}
+	saipb.RegisterQosMapServer(srv, q)
+	return q
+}
+
+type qosMap struct {
+	saipb.UnimplementedQosMapServer
+	mgr       *attrmgr.AttrMgr
+	dataplane switchDataplaneAPI
+}
+
+func (q *qosMap) CreateQosMap(context.Context, *saipb.CreateQosMapRequest) (*saipb.CreateQosMapResponse, error) {
+	id := q.mgr.NextID()
+
+	return &saipb.CreateQosMapResponse{
+		Oid: id,
+	}, nil
+}
+
+func (q *qosMap) SetQosMapAttribute(context.Context, *saipb.SetQosMapAttributeRequest) (*saipb.SetQosMapAttributeResponse, error) {
+	return &saipb.SetQosMapAttributeResponse{}, nil
 }

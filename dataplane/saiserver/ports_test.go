@@ -49,10 +49,10 @@ func TestCreatePort(t *testing.T) {
 		},
 		wantAttr: &saipb.PortAttribute{
 			OperStatus:                       saipb.PortOperStatus_PORT_OPER_STATUS_NOT_PRESENT.Enum(),
-			QosNumberOfQueues:                proto.Uint32(0),
-			QosQueueList:                     []uint64{},
-			QosNumberOfSchedulerGroups:       proto.Uint32(0),
-			QosSchedulerGroupList:            []uint64{},
+			QosNumberOfQueues:                proto.Uint32(12),
+			QosQueueList:                     []uint64{4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
+			QosNumberOfSchedulerGroups:       proto.Uint32(12),
+			QosSchedulerGroupList:            []uint64{16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27},
 			IngressPriorityGroupList:         []uint64{},
 			FloodStormControlPolicerId:       proto.Uint64(0),
 			BroadcastStormControlPolicerId:   proto.Uint64(0),
@@ -111,10 +111,10 @@ func TestCreatePort(t *testing.T) {
 		},
 		wantAttr: &saipb.PortAttribute{
 			OperStatus:                       saipb.PortOperStatus_PORT_OPER_STATUS_DOWN.Enum(),
-			QosNumberOfQueues:                proto.Uint32(0),
-			QosQueueList:                     []uint64{},
-			QosNumberOfSchedulerGroups:       proto.Uint32(0),
-			QosSchedulerGroupList:            []uint64{},
+			QosNumberOfQueues:                proto.Uint32(12),
+			QosQueueList:                     []uint64{4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
+			QosNumberOfSchedulerGroups:       proto.Uint32(12),
+			QosSchedulerGroupList:            []uint64{16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27},
 			IngressPriorityGroupList:         []uint64{},
 			FloodStormControlPolicerId:       proto.Uint64(0),
 			BroadcastStormControlPolicerId:   proto.Uint64(0),
@@ -214,10 +214,10 @@ func TestCreatePorts(t *testing.T) {
 		},
 		wantAttr: &saipb.PortAttribute{
 			OperStatus:                       saipb.PortOperStatus_PORT_OPER_STATUS_DOWN.Enum(),
-			QosNumberOfQueues:                proto.Uint32(0),
-			QosQueueList:                     []uint64{},
-			QosNumberOfSchedulerGroups:       proto.Uint32(0),
-			QosSchedulerGroupList:            []uint64{},
+			QosNumberOfQueues:                proto.Uint32(12),
+			QosQueueList:                     []uint64{4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
+			QosNumberOfSchedulerGroups:       proto.Uint32(12),
+			QosSchedulerGroupList:            []uint64{16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27},
 			IngressPriorityGroupList:         []uint64{},
 			FloodStormControlPolicerId:       proto.Uint64(0),
 			BroadcastStormControlPolicerId:   proto.Uint64(0),
@@ -476,6 +476,8 @@ func newTestPort(t testing.TB, api switchDataplaneAPI) (saipb.PortClient, *attrm
 		// The following initialization code assigns OID 1 to the switch, and OID 2 to the VLAN.
 		// Therefore, the next available ID is 3.
 		vlan := newVlan(mgr, api, srv)
+		q := newQueue(mgr, api, srv)
+		sg := newSchedulerGroup(mgr, api, srv)
 		swID := mgr.NextID()
 		mgr.StoreAttributes(swID, &saipb.SwitchAttribute{
 			DefaultStpInstId: proto.Uint64(101),
@@ -491,7 +493,7 @@ func newTestPort(t testing.TB, api switchDataplaneAPI) (saipb.PortClient, *attrm
 		mgr.StoreAttributes(swID, &saipb.SwitchAttribute{
 			DefaultVlanId: proto.Uint64(resp.GetOid()),
 		})
-		newPort(mgr, api, srv, vlan, &dplaneopts.Options{PortType: fwdpb.PortType_PORT_TYPE_KERNEL})
+		newPort(mgr, api, srv, vlan, q, sg, &dplaneopts.Options{PortType: fwdpb.PortType_PORT_TYPE_KERNEL})
 	})
 	return saipb.NewPortClient(conn), mgr, stopFn
 }
