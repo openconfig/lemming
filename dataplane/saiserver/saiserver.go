@@ -94,10 +94,6 @@ type nat struct {
 	saipb.UnimplementedNatServer
 }
 
-type qosMap struct {
-	saipb.UnimplementedQosMapServer
-}
-
 type rpfGroup struct {
 	saipb.UnimplementedRpfGroupServer
 }
@@ -160,7 +156,6 @@ type Server struct {
 	mirror       *mirror
 	mpls         *mpls
 	nat          *nat
-	qosMap       *qosMap
 	rpfGroup     *rpfGroup
 	samplePacket *samplePacket
 	srv6         *srv6
@@ -244,7 +239,6 @@ func New(ctx context.Context, mgr *attrmgr.AttrMgr, s *grpc.Server, opts *dplane
 		mirror:            &mirror{},
 		mpls:              &mpls{},
 		nat:               &nat{},
-		qosMap:            &qosMap{},
 		rpfGroup:          &rpfGroup{},
 		samplePacket:      &samplePacket{},
 		srv6:              &srv6{},
@@ -271,7 +265,6 @@ func New(ctx context.Context, mgr *attrmgr.AttrMgr, s *grpc.Server, opts *dplane
 	saipb.RegisterMirrorServer(s, srv.mirror)
 	saipb.RegisterMplsServer(s, srv.mpls)
 	saipb.RegisterNatServer(s, srv.nat)
-	saipb.RegisterQosMapServer(s, srv.qosMap)
 	saipb.RegisterRpfGroupServer(s, srv.rpfGroup)
 	saipb.RegisterSamplepacketServer(s, srv.samplePacket)
 	saipb.RegisterSrv6Server(s, srv.srv6)

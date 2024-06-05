@@ -59,6 +59,7 @@ type saiSwitch struct {
 	routerInterface *routerInterface
 	udf             *udf
 	scheduler       *scheduler
+	qosMap          *qosMap
 	mgr             *attrmgr.AttrMgr
 }
 
@@ -138,6 +139,7 @@ func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server, 
 		tunnel:          newTunnel(mgr, engine, s),
 		udf:             newUdf(mgr, engine, s),
 		scheduler:       newScheduler(mgr, engine, s),
+		qosMap:          newQOSMap(mgr, engine, s),
 		queue:           q,
 		sg:              sg,
 		mgr:             mgr,

@@ -789,3 +789,30 @@ func (s *scheduler) CreateScheduler(context.Context, *saipb.CreateSchedulerReque
 func (s *scheduler) SetSchedulerAttribute(context.Context, *saipb.SetSchedulerAttributeRequest) (*saipb.SetSchedulerAttributeResponse, error) {
 	return &saipb.SetSchedulerAttributeResponse{}, nil
 }
+
+func newQOSMap(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, srv *grpc.Server) *qosMap {
+	q := &qosMap{
+		mgr:       mgr,
+		dataplane: dataplane,
+	}
+	saipb.RegisterQosMapServer(srv, q)
+	return q
+}
+
+type qosMap struct {
+	saipb.UnimplementedQosMapServer
+	mgr       *attrmgr.AttrMgr
+	dataplane switchDataplaneAPI
+}
+
+func (q *qosMap) CreateQosMap(context.Context, *saipb.CreateQosMapRequest) (*saipb.CreateQosMapResponse, error) {
+	id := q.mgr.NextID()
+
+	return &saipb.CreateQosMapResponse{
+		Oid: id,
+	}, nil
+}
+
+func (q *qosMap) SetQosMapAttribute(context.Context, *saipb.SetQosMapAttributeRequest) (*saipb.SetQosMapAttributeResponse, error) {
+	return &saipb.SetQosMapAttributeResponse{}, nil
+}
