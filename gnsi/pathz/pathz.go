@@ -21,9 +21,10 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/openconfig/lemming/gnsi/acltrie"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"github.com/openconfig/lemming/gnsi/acltrie"
 
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 	pathzpb "github.com/openconfig/gnsi/pathz"
@@ -54,8 +55,15 @@ func (s *Server) Rotate(rs pathzpb.Pathz_RotateServer) error {
 	s.rotationInProgress.Store(true)
 	defer s.rotationInProgress.Store(false)
 
+	ctx := rs.Context()
 	receivedUploadReq := false
 	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+
 		resp, err := rs.Recv()
 		if err != nil {
 			return err
@@ -92,7 +100,7 @@ func (s *Server) Rotate(rs pathzpb.Pathz_RotateServer) error {
 			s.sandbox = nil
 			s.sandboxMu.Unlock()
 			s.activeMu.Unlock()
-			return rs.SendAndClose(&pathzpb.RotateResponse{})
+			return rs.Send(&pathzpb.RotateResponse{})
 		}
 	}
 }
