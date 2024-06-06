@@ -814,6 +814,7 @@ func (vlan *vlan) memberByPortId(oid uint64) *vlanMember {
 }
 
 func (vlan *vlan) CreateVlan(ctx context.Context, r *saipb.CreateVlanRequest) (*saipb.CreateVlanResponse, error) {
+	log.Infof("Craig: Creating VLAN (vid=%d)", r.GetVlanId())
 	if _, ok := vlan.oidByVId[r.GetVlanId()]; ok {
 		return nil, fmt.Errorf("found existing VLAN %d", r.GetVlanId())
 	}
@@ -843,12 +844,16 @@ func (vlan *vlan) CreateVlan(ctx context.Context, r *saipb.CreateVlanRequest) (*
 	vlan.mgr.StoreAttributes(id, attrs)
 	vlan.vlans[id] = map[uint64]*vlanMember{}
 	vlan.oidByVId[r.GetVlanId()] = id
+	log.Infof(" => Craig: Created VLAN ID=%d (oid=%d)", r.GetVlanId(), id)
+
 	return &saipb.CreateVlanResponse{
 		Oid: id,
 	}, nil
 }
 
 func (vlan *vlan) RemoveVlan(ctx context.Context, r *saipb.RemoveVlanRequest) (*saipb.RemoveVlanResponse, error) {
+	log.Infof("Craig: Removing VLAN (oid=%d)", r.GetOid())
+
 	vId, err := vlan.vidByOid(r.GetOid())
 	if err != nil {
 		return nil, fmt.Errorf("cannot find VLAN ID for OID %d", r.GetOid())
@@ -868,6 +873,7 @@ func (vlan *vlan) RemoveVlan(ctx context.Context, r *saipb.RemoveVlanRequest) (*
 	vlan.mu.Lock()
 	delete(vlan.vlans, r.GetOid())
 	vlan.mu.Unlock()
+	log.Infof(" => Craig: Removed VLAN (oid=%d)", r.GetOid())
 	return &saipb.RemoveVlanResponse{}, nil
 }
 
@@ -878,12 +884,16 @@ func (vlan *vlan) CreateVlanMember(ctx context.Context, r *saipb.CreateVlanMembe
 		return nil, err
 	}
 	member := vlan.memberByPortId(r.GetBridgePortId()) // Keep the vlan member if this port was assigned to any VLAN.
+	if member != nil {
+		log.Infof("Craig: [Existing] Creating VLAN Member OID=%d (port id=%d) to VLAN OID=%d: %+v", member.Oid, r.GetBridgePortId(), r.GetVlanId(), member)
+	}
 	mOid := vlan.mgr.NextID()
 	nid, err := vlan.dataplane.ObjectNID(ctx, &fwdpb.ObjectNIDRequest{
 		ContextId: &fwdpb.ContextId{Id: vlan.dataplane.ID()},
 		ObjectId:  &fwdpb.ObjectId{Id: fmt.Sprint(r.GetBridgePortId())},
 	})
 	if err != nil {
+		log.Infof("** Craig: Failed to find NID for port id=%d", r.GetBridgePortId())
 		return nil, err
 	}
 	vlanReq := fwdconfig.TableEntryAddRequest(vlan.dataplane.ID(), VlanTable).AppendEntry(
@@ -926,10 +936,13 @@ func (vlan *vlan) CreateVlanMember(ctx context.Context, r *saipb.CreateVlanMembe
 		delete(vlan.vlans[preVlanOid], member.Oid)
 		vlan.mu.Unlock()
 	}
+	log.Infof(" => Craig: Created VLAN Member(port id=%d)", r.GetBridgePortId())
 	return &saipb.CreateVlanMemberResponse{Oid: mOid}, nil
 }
 
 func (vlan *vlan) RemoveVlanMember(ctx context.Context, r *saipb.RemoveVlanMemberRequest) (*saipb.RemoveVlanMemberResponse, error) {
+	log.Infof("Craig: Removing VLAN member(oid=%d)", r.GetOid())
+
 	member := vlan.memberByOid(r.GetOid())
 	if member == nil {
 		return nil, fmt.Errorf("cannot find member with OID %d", r.GetOid())
@@ -947,6 +960,7 @@ func (vlan *vlan) RemoveVlanMember(ctx context.Context, r *saipb.RemoveVlanMembe
 	if err != nil {
 		return nil, err
 	}
+	log.Infof(" => Craig: Removed VLAN member(oid=%d)", r.GetOid())
 	return &saipb.RemoveVlanMemberResponse{}, nil
 }
 
