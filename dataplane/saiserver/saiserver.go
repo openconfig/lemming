@@ -66,14 +66,6 @@ type ipsec struct {
 	saipb.UnimplementedIpsecServer
 }
 
-type l2mcGroup struct {
-	saipb.UnimplementedL2McGroupServer
-}
-
-type l2mc struct {
-	saipb.UnimplementedL2McServer
-}
-
 type macsec struct {
 	saipb.UnimplementedMacsecServer
 }
@@ -149,8 +141,6 @@ type Server struct {
 	ipmcGroup    *ipmcGroup
 	ipmc         *ipmc
 	ipsec        *ipsec
-	l2mcGroup    *l2mcGroup
-	l2mc         *l2mc
 	macsec       *macsec
 	mcastFdb     *mcastFdb
 	mirror       *mirror
@@ -232,8 +222,6 @@ func New(ctx context.Context, mgr *attrmgr.AttrMgr, s *grpc.Server, opts *dplane
 		ipmcGroup:         &ipmcGroup{},
 		ipmc:              &ipmc{},
 		ipsec:             &ipsec{},
-		l2mcGroup:         &l2mcGroup{},
-		l2mc:              &l2mc{},
 		macsec:            &macsec{},
 		mcastFdb:          &mcastFdb{},
 		mirror:            &mirror{},
@@ -258,8 +246,6 @@ func New(ctx context.Context, mgr *attrmgr.AttrMgr, s *grpc.Server, opts *dplane
 	saipb.RegisterIpmcGroupServer(s, srv.ipmcGroup)
 	saipb.RegisterIpmcServer(s, srv.ipmc)
 	saipb.RegisterIpsecServer(s, srv.ipsec)
-	saipb.RegisterL2McGroupServer(s, srv.l2mcGroup)
-	saipb.RegisterL2McServer(s, srv.l2mc)
 	saipb.RegisterMacsecServer(s, srv.macsec)
 	saipb.RegisterMcastFdbServer(s, srv.mcastFdb)
 	saipb.RegisterMirrorServer(s, srv.mirror)
