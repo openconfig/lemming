@@ -6,6 +6,7 @@ go_library(
         "acl.go",
         "hostif.go",
         "isolation_group.go",
+        "l2.go",
         "policer.go",
         "ports.go",
         "routing.go",
