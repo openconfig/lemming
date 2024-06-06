@@ -100,7 +100,9 @@ func (s *Server) Rotate(rs pathzpb.Pathz_RotateServer) error {
 			s.sandbox = nil
 			s.sandboxMu.Unlock()
 			s.activeMu.Unlock()
-			return rs.Send(&pathzpb.RotateResponse{})
+			if err := rs.Send(&pathzpb.RotateResponse{}); err != nil {
+				return err
+			}
 		}
 	}
 }
