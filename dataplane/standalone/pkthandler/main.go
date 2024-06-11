@@ -43,7 +43,7 @@ func main() {
 	defer cancelFn()
 
 	log.Info("dialing packetio server")
-	conn, err := grpc.DialContext(ctx, addr, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
+	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Exit(err)
 	}
