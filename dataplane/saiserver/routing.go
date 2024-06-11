@@ -849,6 +849,13 @@ func (vlan *vlan) CreateVlan(ctx context.Context, r *saipb.CreateVlanRequest) (*
 }
 
 func (vlan *vlan) RemoveVlan(ctx context.Context, r *saipb.RemoveVlanRequest) (*saipb.RemoveVlanResponse, error) {
+	vId, err := vlan.vidByOid(r.GetOid())
+	if err != nil {
+		return nil, fmt.Errorf("cannot find VLAN ID for OID %d", r.GetOid())
+	}
+	if vId == DefaultVlanId {
+		return nil, fmt.Errorf("cannot remove default VLAN")
+	}
 	for _, v := range vlan.vlans[r.GetOid()] {
 		_, err := attrmgr.InvokeAndSave(ctx, vlan.mgr, vlan.RemoveVlanMember, &saipb.RemoveVlanMemberRequest{
 			Oid: v.Oid,
