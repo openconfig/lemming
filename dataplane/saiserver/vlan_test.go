@@ -229,7 +229,7 @@ func TestVlanOperations(t *testing.T) {
 		t.Fatalf("Failed to create a non-default VLAN")
 	}
 
-	// Remove one port from the non-default VLAN, and ensure it is moved to the default VLAN.
+	// Remove one port from the non-default VLAN.
 	_, err = c.RemoveVlanMember(ctx, &saipb.RemoveVlanMemberRequest{
 		Oid: testVLANMembers[0],
 	})
@@ -244,7 +244,7 @@ func TestVlanOperations(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to get members of default VLAN: %v", err)
 	}
-	if len(testm) != 1 && len(defaultm) != 3 {
+	if len(testm) != 1 && len(defaultm) != 2 {
 		t.Errorf("Failed to remove a non-default VLAN member")
 	}
 
@@ -259,8 +259,8 @@ func TestVlanOperations(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to get members of the default VLAN: %v", err)
 	}
-	// Ensure all of the 4 ports are now under the default VLAN.
-	if len(defaultm) != 4 {
+	// Ensure the default VLAN only has 2 members.
+	if len(defaultm) != 2 {
 		t.Errorf("Failed to remove the non-default VLAN")
 	}
 }
