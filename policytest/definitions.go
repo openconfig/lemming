@@ -17,8 +17,14 @@ package policytest
 import "github.com/openconfig/lemming/gnmi/oc"
 
 type RouteTestCase struct {
+	Input                  TestRoute
+	RouteTest              *RoutePathTestCase
+	AlternatePathRouteTest *RoutePathTestCase
+	LongerPathRouteTest    *RoutePathTestCase
+}
+
+type RoutePathTestCase struct {
 	Description    string
-	Input          TestRoute
 	ExpectedResult RouteTestResult
 
 	PrevAdjRibOutPreCommunities []string

@@ -81,42 +81,53 @@ func TestRouteType(t *testing.T) {
 		skipValidateAttrSet: true,
 		dut1IsEBGP:          true,
 		routeTests: []*policytest.RouteTestCase{{
-			Description: "not set",
 			Input: policytest.TestRoute{
 				ReachPrefix: routeUnderTestList[0],
 			},
-			ExpectedResult: policytest.RouteDiscarded,
+			RouteTest: &policytest.RoutePathTestCase{
+				Description:    "not set",
+				ExpectedResult: policytest.RouteDiscarded,
+			},
 		}, {
-			Description: "internal",
 			Input: policytest.TestRoute{
 				ReachPrefix: routeUnderTestList[1],
 			},
-			ExpectedResult: policytest.RouteAccepted,
+			RouteTest: &policytest.RoutePathTestCase{
+				Description:    "internal",
+				ExpectedResult: policytest.RouteAccepted,
+			},
 		}, {
-			Description: "external",
 			Input: policytest.TestRoute{
 				ReachPrefix: routeUnderTestList[2],
 			},
-			ExpectedResult: policytest.RouteDiscarded,
-		}},
-		alternatePathRouteTests: []*policytest.RouteTestCase{{
-			Description: "not set",
+			RouteTest: &policytest.RoutePathTestCase{
+				Description:    "external",
+				ExpectedResult: policytest.RouteDiscarded,
+			},
+		}, {
 			Input: policytest.TestRoute{
 				ReachPrefix: routeUnderTestList[3],
 			},
-			ExpectedResult: policytest.RouteDiscarded,
+			AlternatePathRouteTest: &policytest.RoutePathTestCase{
+				Description:    "not set",
+				ExpectedResult: policytest.RouteDiscarded,
+			},
 		}, {
-			Description: "internal",
 			Input: policytest.TestRoute{
 				ReachPrefix: routeUnderTestList[4],
 			},
-			ExpectedResult: policytest.RouteDiscarded,
+			AlternatePathRouteTest: &policytest.RoutePathTestCase{
+				Description:    "internal",
+				ExpectedResult: policytest.RouteDiscarded,
+			},
 		}, {
-			Description: "external",
 			Input: policytest.TestRoute{
 				ReachPrefix: routeUnderTestList[5],
 			},
-			ExpectedResult: policytest.RouteAccepted,
+			AlternatePathRouteTest: &policytest.RoutePathTestCase{
+				Description:    "external",
+				ExpectedResult: policytest.RouteAccepted,
+			},
 		}},
 		installPolicies: func(t *testing.T, dut1, dut2, dut3, dut4, dut5 *Device) {
 			installRejectPolicy(t, dut1, dut2, dut3, dut4, dut5)

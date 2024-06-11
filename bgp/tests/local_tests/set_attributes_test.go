@@ -47,15 +47,15 @@ func singletonPrefixSetName(route string) string {
 
 // TestSetAttributes tests setting BGP attributes.
 func TestSetAttributes(t *testing.T) {
-	routesUnderTest := []string{
-		"10.1.0.0/16",
-		"10.2.0.0/16",
-		"10.10.0.0/16",
-		"10.11.0.0/16",
-		"10.12.0.0/16",
-		"10.13.0.0/16",
-		"10.14.0.0/16",
-		"10.15.0.0/16",
+	routesUnderTest := map[int]string{
+		0: "10.1.0.0/16",
+		1: "10.2.0.0/16",
+		2: "10.10.0.0/16",
+		3: "10.11.0.0/16",
+		4: "10.12.0.0/16",
+		5: "10.13.0.0/16",
+		6: "10.14.0.0/16",
+		7: "10.15.0.0/16",
 	}
 
 	installDefinedSets := func(t *testing.T, dut1, dut2, dut5 *Device) {
@@ -87,13 +87,12 @@ func TestSetAttributes(t *testing.T) {
 		Replace(t, dut2, rejASPathSet2Path.AsPathSetMember().Config(), []string{"64499"})
 	}
 
-	testPolicy(t, &PolicyTestCase{
-		description: "Test that one NLRI gets accepted and the other is rejected via various attribute values.",
-		routeTests: []*policytest.RouteTestCase{{
-			Description: "Accepted route with no attributes",
-			Input: policytest.TestRoute{
-				ReachPrefix: routesUnderTest[0],
-			},
+	routeTests := []*policytest.RouteTestCase{{
+		Input: policytest.TestRoute{
+			ReachPrefix: routesUnderTest[0],
+		},
+		RouteTest: &policytest.RoutePathTestCase{
+			Description:    "Accepted route with no attributes",
 			ExpectedResult: policytest.RouteAccepted,
 			PrevAdjRibOutPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
 				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
@@ -140,11 +139,72 @@ func TestSetAttributes(t *testing.T) {
 					0: {Index: ygot.Uint32(0), Member: []uint32{64500}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
 				},
 			},
-		}, {
-			Description: "Accepted route with some attributes",
-			Input: policytest.TestRoute{
-				ReachPrefix: routesUnderTest[1],
+		},
+		LongerPathRouteTest: &policytest.RoutePathTestCase{
+			Description:    "Rejected route due to longer AS Path",
+			ExpectedResult: policytest.RouteNotPreferred,
+			PrevAdjRibOutPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
+					0: {Index: ygot.Uint32(0), Member: []uint32{64502}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
+				},
 			},
+			PrevAdjRibOutPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
+					0: {Index: ygot.Uint32(0), Member: []uint32{64502}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
+				},
+			},
+			AdjRibInPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
+					0: {Index: ygot.Uint32(0), Member: []uint32{64502}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
+				},
+			},
+			AdjRibInPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
+					0: {Index: ygot.Uint32(0), Member: []uint32{64502}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
+				},
+			},
+			LocalRibAttrs: nil,
+			AdjRibOutPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
+					0: {Index: ygot.Uint32(0), Member: []uint32{64500}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
+				},
+			},
+			AdjRibOutPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
+					0: {Index: ygot.Uint32(0), Member: []uint32{64500}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
+				},
+			},
+			NextAdjRibInPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
+					0: {Index: ygot.Uint32(0), Member: []uint32{64500}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
+				},
+			},
+			NextAdjRibInPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
+					0: {Index: ygot.Uint32(0), Member: []uint32{64500}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
+				},
+			},
+			NextLocalRibAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
+					0: {Index: ygot.Uint32(0), Member: []uint32{64500}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
+				},
+			},
+		},
+	}, {
+		Input: policytest.TestRoute{
+			ReachPrefix: routesUnderTest[1],
+		},
+		RouteTest: &policytest.RoutePathTestCase{
+			Description:                  "Accepted route with some attributes",
 			ExpectedResult:               policytest.RouteAccepted,
 			PrevAdjRibOutPreCommunities:  nil,
 			PrevAdjRibOutPostCommunities: []string{"23456:23456"},
@@ -206,11 +266,13 @@ func TestSetAttributes(t *testing.T) {
 					0: {Index: ygot.Uint32(0), Member: []uint32{64500}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
 				},
 			},
-		}, {
-			Description: "Rejected route due to community set",
-			Input: policytest.TestRoute{
-				ReachPrefix: routesUnderTest[2],
-			},
+		},
+	}, {
+		Input: policytest.TestRoute{
+			ReachPrefix: routesUnderTest[2],
+		},
+		RouteTest: &policytest.RoutePathTestCase{
+			Description:                  "Rejected route due to community set",
 			ExpectedResult:               policytest.RouteDiscarded,
 			PrevAdjRibOutPreCommunities:  nil,
 			PrevAdjRibOutPostCommunities: []string{"12345:12345"},
@@ -221,11 +283,13 @@ func TestSetAttributes(t *testing.T) {
 			AdjRibOutPostCommunities:     nil,
 			NextAdjRibInPreCommunities:   nil,
 			NextLocalRibCommunities:      nil,
-		}, {
-			Description: "Unpreferred route due to local-pref",
-			Input: policytest.TestRoute{
-				ReachPrefix: routesUnderTest[3],
-			},
+		},
+	}, {
+		Input: policytest.TestRoute{
+			ReachPrefix: routesUnderTest[3],
+		},
+		RouteTest: &policytest.RoutePathTestCase{
+			Description:    "Unpreferred route due to local-pref",
 			ExpectedResult: policytest.RouteNotPreferred,
 			PrevAdjRibOutPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
 				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
@@ -274,203 +338,9 @@ func TestSetAttributes(t *testing.T) {
 					0: {Index: ygot.Uint32(0), Member: []uint32{64500, 64502}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
 				},
 			},
-		}, {
-			Description: "Unpreferred route due to MED",
-			Input: policytest.TestRoute{
-				ReachPrefix: routesUnderTest[4],
-			},
-			ExpectedResult: policytest.RouteNotPreferred,
-			PrevAdjRibOutPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
-				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
-			},
-			PrevAdjRibOutPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
-				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
-				Med:    ygot.Uint32(uint32(higherMED)),
-			},
-			AdjRibInPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
-				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
-				Med:    ygot.Uint32(uint32(higherMED)),
-			},
-			AdjRibInPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
-				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
-				Med:    ygot.Uint32(uint32(higherMED)),
-			},
-			AdjRibOutPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
-				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
-				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
-					0: {Index: ygot.Uint32(0), Member: []uint32{64500}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
-				},
-			},
-			AdjRibOutPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
-				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
-				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
-					0: {Index: ygot.Uint32(0), Member: []uint32{64500}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
-				},
-			},
-			NextAdjRibInPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
-				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
-				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
-					0: {Index: ygot.Uint32(0), Member: []uint32{64500}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
-				},
-			},
-			NextAdjRibInPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
-				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
-				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
-					0: {Index: ygot.Uint32(0), Member: []uint32{64500}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
-				},
-			},
-			NextLocalRibAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
-				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
-				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
-					0: {Index: ygot.Uint32(0), Member: []uint32{64500}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
-				},
-			},
-		}, {
-			Description: "Unpreferred route due to AS path prepend",
-			Input: policytest.TestRoute{
-				ReachPrefix: routesUnderTest[6],
-			},
-			ExpectedResult: policytest.RouteNotPreferred,
-			PrevAdjRibOutPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
-				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
-			},
-			PrevAdjRibOutPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
-				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
-				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
-					0: {Index: ygot.Uint32(0), Member: []uint32{64499, 64499, 64499}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
-				},
-			},
-			AdjRibInPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
-				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
-				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
-					0: {Index: ygot.Uint32(0), Member: []uint32{64499, 64499, 64499}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
-				},
-			},
-			AdjRibInPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
-				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
-				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
-					0: {Index: ygot.Uint32(0), Member: []uint32{64499, 64499, 64499}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
-				},
-			},
-			LocalRibAttrs: nil,
-			AdjRibOutPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
-				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
-				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
-					0: {Index: ygot.Uint32(0), Member: []uint32{64500, 64498, 64502}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
-				},
-			},
-			AdjRibOutPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
-				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
-				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
-					0: {Index: ygot.Uint32(0), Member: []uint32{64500, 64498, 64502}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
-				},
-			},
-			NextAdjRibInPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
-				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
-				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
-					0: {Index: ygot.Uint32(0), Member: []uint32{64500, 64498, 64502}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
-				},
-			},
-			NextAdjRibInPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
-				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
-				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
-					0: {Index: ygot.Uint32(0), Member: []uint32{64500, 64498, 64502}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
-				},
-			},
-			NextLocalRibAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
-				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
-				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
-					0: {Index: ygot.Uint32(0), Member: []uint32{64500, 64498, 64502}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
-				},
-			},
-		}, {
-			Description: "Rejected route due to AS path match on prepended AS",
-			Input: policytest.TestRoute{
-				ReachPrefix: routesUnderTest[7],
-			},
-			ExpectedResult: policytest.RouteDiscarded,
-			PrevAdjRibOutPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
-				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
-			},
-			PrevAdjRibOutPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
-				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
-				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
-					0: {Index: ygot.Uint32(0), Member: []uint32{64499, 64499}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
-				},
-			},
-			AdjRibInPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
-				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
-				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
-					0: {Index: ygot.Uint32(0), Member: []uint32{64499, 64499}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
-				},
-			},
-		}},
-		longerPathRouteTests: []*policytest.RouteTestCase{{
-			Description: "Rejected route due to longer AS Path",
-			Input: policytest.TestRoute{
-				ReachPrefix: routesUnderTest[0],
-			},
-			ExpectedResult: policytest.RouteNotPreferred,
-			PrevAdjRibOutPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
-				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
-				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
-					0: {Index: ygot.Uint32(0), Member: []uint32{64502}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
-				},
-			},
-			PrevAdjRibOutPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
-				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
-				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
-					0: {Index: ygot.Uint32(0), Member: []uint32{64502}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
-				},
-			},
-			AdjRibInPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
-				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
-				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
-					0: {Index: ygot.Uint32(0), Member: []uint32{64502}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
-				},
-			},
-			AdjRibInPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
-				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
-				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
-					0: {Index: ygot.Uint32(0), Member: []uint32{64502}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
-				},
-			},
-			LocalRibAttrs: nil,
-			AdjRibOutPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
-				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
-				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
-					0: {Index: ygot.Uint32(0), Member: []uint32{64500}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
-				},
-			},
-			AdjRibOutPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
-				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
-				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
-					0: {Index: ygot.Uint32(0), Member: []uint32{64500}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
-				},
-			},
-			NextAdjRibInPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
-				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
-				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
-					0: {Index: ygot.Uint32(0), Member: []uint32{64500}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
-				},
-			},
-			NextAdjRibInPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
-				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
-				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
-					0: {Index: ygot.Uint32(0), Member: []uint32{64500}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
-				},
-			},
-			NextLocalRibAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
-				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
-				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
-					0: {Index: ygot.Uint32(0), Member: []uint32{64500}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
-				},
-			},
-		}, {
-			Description: "Accepted route due to higher local-pref",
-			Input: policytest.TestRoute{
-				ReachPrefix: routesUnderTest[3],
-			},
+		},
+		LongerPathRouteTest: &policytest.RoutePathTestCase{
+			Description:    "Accepted route due to higher local-pref",
 			ExpectedResult: policytest.RouteAccepted,
 			PrevAdjRibOutPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
 				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
@@ -538,11 +408,120 @@ func TestSetAttributes(t *testing.T) {
 					0: {Index: ygot.Uint32(0), Member: []uint32{64500, 64502}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
 				},
 			},
-		}, {
-			Description: "Rejected route due to AS path match",
-			Input: policytest.TestRoute{
-				ReachPrefix: routesUnderTest[5],
+		},
+	}, {
+		Input: policytest.TestRoute{
+			ReachPrefix: routesUnderTest[4],
+		},
+		RouteTest: &policytest.RoutePathTestCase{
+			Description:    "Unpreferred route due to MED",
+			ExpectedResult: policytest.RouteNotPreferred,
+			PrevAdjRibOutPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
 			},
+			PrevAdjRibOutPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+				Med:    ygot.Uint32(uint32(higherMED)),
+			},
+			AdjRibInPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+				Med:    ygot.Uint32(uint32(higherMED)),
+			},
+			AdjRibInPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+				Med:    ygot.Uint32(uint32(higherMED)),
+			},
+			AdjRibOutPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
+					0: {Index: ygot.Uint32(0), Member: []uint32{64500}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
+				},
+			},
+			AdjRibOutPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
+					0: {Index: ygot.Uint32(0), Member: []uint32{64500}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
+				},
+			},
+			NextAdjRibInPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
+					0: {Index: ygot.Uint32(0), Member: []uint32{64500}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
+				},
+			},
+			NextAdjRibInPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
+					0: {Index: ygot.Uint32(0), Member: []uint32{64500}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
+				},
+			},
+			NextLocalRibAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
+					0: {Index: ygot.Uint32(0), Member: []uint32{64500}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
+				},
+			},
+		},
+		AlternatePathRouteTest: &policytest.RoutePathTestCase{
+			Description:    "Accepted route due to lower MED",
+			ExpectedResult: policytest.RouteAccepted,
+			PrevAdjRibOutPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+				Med:    ygot.Uint32(uint32(lowerMED)),
+			},
+			PrevAdjRibOutPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+				Med:    ygot.Uint32(uint32(lowerMED)),
+			},
+			AdjRibInPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+				Med:    ygot.Uint32(uint32(lowerMED)),
+			},
+			AdjRibInPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+				Med:    ygot.Uint32(uint32(lowerMED)),
+			},
+			LocalRibAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+				Med:    ygot.Uint32(uint32(lowerMED)),
+			},
+			AdjRibOutPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
+					0: {Index: ygot.Uint32(0), Member: []uint32{64500}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
+				},
+			},
+			AdjRibOutPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
+					0: {Index: ygot.Uint32(0), Member: []uint32{64500}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
+				},
+			},
+			NextAdjRibInPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
+					0: {Index: ygot.Uint32(0), Member: []uint32{64500}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
+				},
+			},
+			NextAdjRibInPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
+					0: {Index: ygot.Uint32(0), Member: []uint32{64500}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
+				},
+			},
+			NextLocalRibAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
+					0: {Index: ygot.Uint32(0), Member: []uint32{64500}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
+				},
+			},
+		},
+	}, {
+		Input: policytest.TestRoute{
+			ReachPrefix: routesUnderTest[5],
+		},
+		LongerPathRouteTest: &policytest.RoutePathTestCase{
+			Description:    "Rejected route due to AS path match",
 			ExpectedResult: policytest.RouteDiscarded,
 			PrevAdjRibOutPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
 				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
@@ -562,11 +541,69 @@ func TestSetAttributes(t *testing.T) {
 					0: {Index: ygot.Uint32(0), Member: []uint32{64502}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
 				},
 			},
-		}, {
-			Description: "Accepted route due to shorter AS path after competing route's AS path prepend",
-			Input: policytest.TestRoute{
-				ReachPrefix: routesUnderTest[6],
+		},
+	}, {
+		Input: policytest.TestRoute{
+			ReachPrefix: routesUnderTest[6],
+		},
+		RouteTest: &policytest.RoutePathTestCase{
+			Description:    "Unpreferred route due to AS path prepend",
+			ExpectedResult: policytest.RouteNotPreferred,
+			PrevAdjRibOutPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
 			},
+			PrevAdjRibOutPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
+					0: {Index: ygot.Uint32(0), Member: []uint32{64499, 64499, 64499}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
+				},
+			},
+			AdjRibInPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
+					0: {Index: ygot.Uint32(0), Member: []uint32{64499, 64499, 64499}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
+				},
+			},
+			AdjRibInPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
+					0: {Index: ygot.Uint32(0), Member: []uint32{64499, 64499, 64499}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
+				},
+			},
+			LocalRibAttrs: nil,
+			AdjRibOutPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
+					0: {Index: ygot.Uint32(0), Member: []uint32{64500, 64498, 64502}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
+				},
+			},
+			AdjRibOutPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
+					0: {Index: ygot.Uint32(0), Member: []uint32{64500, 64498, 64502}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
+				},
+			},
+			NextAdjRibInPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
+					0: {Index: ygot.Uint32(0), Member: []uint32{64500, 64498, 64502}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
+				},
+			},
+			NextAdjRibInPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
+					0: {Index: ygot.Uint32(0), Member: []uint32{64500, 64498, 64502}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
+				},
+			},
+			NextLocalRibAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
+					0: {Index: ygot.Uint32(0), Member: []uint32{64500, 64498, 64502}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
+				},
+			},
+		},
+		LongerPathRouteTest: &policytest.RoutePathTestCase{
+			Description:    "Accepted route due to shorter AS path after competing route's AS path prepend",
 			ExpectedResult: policytest.RouteAccepted,
 			PrevAdjRibOutPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
 				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
@@ -628,64 +665,35 @@ func TestSetAttributes(t *testing.T) {
 					0: {Index: ygot.Uint32(0), Member: []uint32{64500, 64498, 64502}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
 				},
 			},
-		}},
-		alternatePathRouteTests: []*policytest.RouteTestCase{{
-			Description: "Accepted route due to lower MED",
-			Input: policytest.TestRoute{
-				ReachPrefix: routesUnderTest[4],
-			},
-			ExpectedResult: policytest.RouteAccepted,
+		},
+	}, {
+		Input: policytest.TestRoute{
+			ReachPrefix: routesUnderTest[7],
+		},
+		RouteTest: &policytest.RoutePathTestCase{
+			Description:    "Rejected route due to AS path match on prepended AS",
+			ExpectedResult: policytest.RouteDiscarded,
 			PrevAdjRibOutPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
 				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
-				Med:    ygot.Uint32(uint32(lowerMED)),
 			},
 			PrevAdjRibOutPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
 				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
-				Med:    ygot.Uint32(uint32(lowerMED)),
+				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
+					0: {Index: ygot.Uint32(0), Member: []uint32{64499, 64499}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
+				},
 			},
 			AdjRibInPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
 				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
-				Med:    ygot.Uint32(uint32(lowerMED)),
-			},
-			AdjRibInPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
-				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
-				Med:    ygot.Uint32(uint32(lowerMED)),
-			},
-			LocalRibAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
-				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
-				Med:    ygot.Uint32(uint32(lowerMED)),
-			},
-			AdjRibOutPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
-				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
 				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
-					0: {Index: ygot.Uint32(0), Member: []uint32{64500}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
+					0: {Index: ygot.Uint32(0), Member: []uint32{64499, 64499}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
 				},
 			},
-			AdjRibOutPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
-				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
-				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
-					0: {Index: ygot.Uint32(0), Member: []uint32{64500}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
-				},
-			},
-			NextAdjRibInPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
-				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
-				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
-					0: {Index: ygot.Uint32(0), Member: []uint32{64500}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
-				},
-			},
-			NextAdjRibInPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
-				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
-				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
-					0: {Index: ygot.Uint32(0), Member: []uint32{64500}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
-				},
-			},
-			NextLocalRibAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
-				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
-				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
-					0: {Index: ygot.Uint32(0), Member: []uint32{64500}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
-				},
-			},
-		}},
+		},
+	}}
+
+	testPolicy(t, &PolicyTestCase{
+		description: "Test that one NLRI gets accepted and the other is rejected via various attribute values.",
+		routeTests:  routeTests,
 		installPolicies: func(t *testing.T, dut1, dut2, _, _, dut5 *Device) {
 			if debug {
 				fmt.Println("Installing test policies")

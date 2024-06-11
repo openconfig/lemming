@@ -89,8 +89,6 @@ type DevicePair struct {
 type TestCase struct {
 	Description             string
 	RouteTests              []*RouteTestCase
-	AlternatePathRouteTests []*RouteTestCase
-	LongerPathRouteTests    []*RouteTestCase
 	InstallPolicies         func(t *testing.T, pair12, pair52, pair23 *DevicePair)
 	SkipCheckingCommunities bool
 }
@@ -220,22 +218,21 @@ var (
 	}
 )
 
-func testPropagation(t *testing.T, routeTest *RouteTestCase, pair1, pair2 *DevicePair) {
+func testPropagation(t *testing.T, route TestRoute, routeTest *RoutePathTestCase, pair1, pair2 *DevicePair) {
 	t.Helper()
-	prefix := routeTest.Input.ReachPrefix
-	if pfx, err := netip.ParsePrefix(prefix); err == nil && pfx.Addr().Is6() {
-		testPropagationAuxV6(t, routeTest, pair1, pair2, BGPPath.Rib().AfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV6_UNICAST).Ipv6Unicast())
+	if pfx, err := netip.ParsePrefix(route.ReachPrefix); err == nil && pfx.Addr().Is6() {
+		testPropagationAuxV6(t, route, routeTest, pair1, pair2, BGPPath.Rib().AfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV6_UNICAST).Ipv6Unicast())
 	} else {
-		testPropagationAuxV4(t, routeTest, pair1, pair2, BGPPath.Rib().AfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST).Ipv4Unicast())
+		testPropagationAuxV4(t, route, routeTest, pair1, pair2, BGPPath.Rib().AfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST).Ipv4Unicast())
 	}
 }
 
-func testPropagationAuxV4(t *testing.T, routeTest *RouteTestCase, pair1, pair2 *DevicePair, afiSafi *netinstbgp.NetworkInstance_Protocol_Bgp_Rib_AfiSafi_Ipv4UnicastPath) {
+func testPropagationAuxV4(t *testing.T, route TestRoute, routeTest *RoutePathTestCase, pair1, pair2 *DevicePair, afiSafi *netinstbgp.NetworkInstance_Protocol_Bgp_Rib_AfiSafi_Ipv4UnicastPath) {
 	t.Helper()
 	prevDUT, currDUT, nextDUT := pair1.First, pair1.Second, pair2.Second
 	port1, port21, port23, port3 := pair1.FirstPort, pair1.SecondPort, pair2.FirstPort, pair2.SecondPort
 
-	prefix := routeTest.Input.ReachPrefix
+	prefix := route.ReachPrefix
 	// Check propagation to AdjRibOutPre for all prefixes.
 	gnmi.Await(t, prevDUT, afiSafi.Neighbor(port21.IPv4).AdjRibOutPre().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
 	gnmi.Await(t, prevDUT, afiSafi.Neighbor(port21.IPv4).AdjRibOutPost().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
@@ -289,12 +286,12 @@ func testPropagationAuxV4(t *testing.T, routeTest *RouteTestCase, pair1, pair2 *
 	}
 }
 
-func testPropagationAuxV6(t *testing.T, routeTest *RouteTestCase, pair1, pair2 *DevicePair, afiSafi *netinstbgp.NetworkInstance_Protocol_Bgp_Rib_AfiSafi_Ipv6UnicastPath) {
+func testPropagationAuxV6(t *testing.T, route TestRoute, routeTest *RoutePathTestCase, pair1, pair2 *DevicePair, afiSafi *netinstbgp.NetworkInstance_Protocol_Bgp_Rib_AfiSafi_Ipv6UnicastPath) {
 	t.Helper()
 	prevDUT, currDUT, nextDUT := pair1.First, pair1.Second, pair2.Second
 	port1, port21, port23, port3 := pair1.FirstPort, pair1.SecondPort, pair2.FirstPort, pair2.SecondPort
 
-	prefix := routeTest.Input.ReachPrefix
+	prefix := route.ReachPrefix
 	// Check propagation to AdjRibOutPre for all prefixes.
 	gnmi.Await(t, prevDUT, afiSafi.Neighbor(port21.IPv6).AdjRibOutPre().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
 	gnmi.Await(t, prevDUT, afiSafi.Neighbor(port21.IPv6).AdjRibOutPost().Route(prefix, 0).Prefix().State(), awaitTimeout, prefix)
@@ -512,70 +509,73 @@ func testPolicyAux(t *testing.T, testspec *TestCase) {
 	establishSessionPairs(t, pair12, pair23, pair45, pair52)
 
 	for _, routeTest := range testspec.RouteTests {
-		// Install all regular test routes into DUT1.
-		route := &oc.NetworkInstance_Protocol_Static{
-			Prefix: ygot.String(routeTest.Input.ReachPrefix),
-			NextHop: map[string]*oc.NetworkInstance_Protocol_Static_NextHop{
-				"single": {
-					Index:   ygot.String("single"),
-					NextHop: oc.UnionString(dut1Ports["port0"].IPv4),
-					Recurse: ygot.Bool(true),
+		if routeTest.RouteTest != nil {
+			// Install regular test route into DUT1.
+			route := &oc.NetworkInstance_Protocol_Static{
+				Prefix: ygot.String(routeTest.Input.ReachPrefix),
+				NextHop: map[string]*oc.NetworkInstance_Protocol_Static_NextHop{
+					"single": {
+						Index:   ygot.String("single"),
+						NextHop: oc.UnionString(dut1Ports["port0"].IPv4),
+						Recurse: ygot.Bool(true),
+					},
 				},
-			},
+			}
+			installStaticRoute(t, dut1, route)
 		}
-		installStaticRoute(t, dut1, route)
-	}
-
-	for _, routeTest := range testspec.LongerPathRouteTests {
-		// Install all longer-path test routes into DUT4.
-		route := &oc.NetworkInstance_Protocol_Static{
-			Prefix: ygot.String(routeTest.Input.ReachPrefix),
-			NextHop: map[string]*oc.NetworkInstance_Protocol_Static_NextHop{
-				"single": {
-					Index:   ygot.String("single"),
-					NextHop: oc.UnionString(dut4Ports["port0"].IPv4),
-					Recurse: ygot.Bool(true),
+		if routeTest.LongerPathRouteTest != nil {
+			// Install longer-path test route into DUT4.
+			route := &oc.NetworkInstance_Protocol_Static{
+				Prefix: ygot.String(routeTest.Input.ReachPrefix),
+				NextHop: map[string]*oc.NetworkInstance_Protocol_Static_NextHop{
+					"single": {
+						Index:   ygot.String("single"),
+						NextHop: oc.UnionString(dut4Ports["port0"].IPv4),
+						Recurse: ygot.Bool(true),
+					},
 				},
-			},
+			}
+			installStaticRoute(t, dut4, route)
 		}
-		installStaticRoute(t, dut4, route)
-	}
-
-	for _, routeTest := range testspec.AlternatePathRouteTests {
-		// Install all alternate-path test routes into DUT5.
-		route := &oc.NetworkInstance_Protocol_Static{
-			Prefix: ygot.String(routeTest.Input.ReachPrefix),
-			NextHop: map[string]*oc.NetworkInstance_Protocol_Static_NextHop{
-				"single": {
-					Index:   ygot.String("single"),
-					NextHop: oc.UnionString(dut5Ports["port0"].IPv4),
-					Recurse: ygot.Bool(true),
+		if routeTest.AlternatePathRouteTest != nil {
+			// Install alternate-path test route into DUT5.
+			route := &oc.NetworkInstance_Protocol_Static{
+				Prefix: ygot.String(routeTest.Input.ReachPrefix),
+				NextHop: map[string]*oc.NetworkInstance_Protocol_Static_NextHop{
+					"single": {
+						Index:   ygot.String("single"),
+						NextHop: oc.UnionString(dut5Ports["port0"].IPv4),
+						Recurse: ygot.Bool(true),
+					},
 				},
-			},
+			}
+			installStaticRoute(t, dut5, route)
 		}
-		installStaticRoute(t, dut5, route)
 	}
 
 	for _, routeTest := range testspec.RouteTests {
-		testPropagation(t, routeTest, pair12, pair23)
-		if !testspec.SkipCheckingCommunities {
-			testCommunities(t, routeTest, pair12, pair23)
+		if routeTest.RouteTest != nil {
+			testPropagation(t, routeTest.Input, routeTest.RouteTest, pair12, pair23)
+			if !testspec.SkipCheckingCommunities {
+				testCommunities(t, routeTest.Input, routeTest.RouteTest, pair12, pair23)
+			}
 		}
-	}
-	for _, routeTest := range testspec.LongerPathRouteTests {
-		testPropagation(t, routeTest, pair52, pair23)
-		if !testspec.SkipCheckingCommunities {
-			testCommunities(t, routeTest, pair52, pair23)
+
+		if routeTest.LongerPathRouteTest != nil {
+			testPropagation(t, routeTest.Input, routeTest.LongerPathRouteTest, pair52, pair23)
+			if !testspec.SkipCheckingCommunities {
+				testCommunities(t, routeTest.Input, routeTest.LongerPathRouteTest, pair52, pair23)
+			}
 		}
 	}
 }
 
-func testCommunities(t *testing.T, routeTest *RouteTestCase, pair1, pair2 *DevicePair) {
-	prefix := routeTest.Input.ReachPrefix
+func testCommunities(t *testing.T, route TestRoute, routeTest *RoutePathTestCase, pair1, pair2 *DevicePair) {
+	prefix := route.ReachPrefix
 	if pfx, err := netip.ParsePrefix(prefix); err == nil && pfx.Addr().Is6() {
-		testCommunitiesAuxV6(t, routeTest, pair1, pair2)
+		testCommunitiesAuxV6(t, route, routeTest, pair1, pair2)
 	} else {
-		testCommunitiesAuxV4(t, routeTest, pair1, pair2)
+		testCommunitiesAuxV4(t, route, routeTest, pair1, pair2)
 	}
 }
 
@@ -593,7 +593,7 @@ func RetryDiff(maxN uint, name string, f func() string) string {
 	return diff
 }
 
-func testCommunitiesAuxV4(t *testing.T, routeTest *RouteTestCase, pair1, pair2 *DevicePair) {
+func testCommunitiesAuxV4(t *testing.T, route TestRoute, routeTest *RoutePathTestCase, pair1, pair2 *DevicePair) {
 	prevDUT, currDUT, nextDUT := pair1.First, pair1.Second, pair2.Second
 	port1, port21, port23, port3 := pair1.FirstPort, pair1.SecondPort, pair2.FirstPort, pair2.SecondPort
 
@@ -605,7 +605,7 @@ func testCommunitiesAuxV4(t *testing.T, routeTest *RouteTestCase, pair1, pair2 *
 	nextCommMap, _ := nextCommunityMap.Val()
 	v4uni := BGPPath.Rib().AfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST).Ipv4Unicast()
 
-	prefix := routeTest.Input.ReachPrefix
+	prefix := route.ReachPrefix
 
 	if diff := RetryDiff(10, "AdjRibOutPre Communities Check", func() string {
 		return cmp.Diff(routeTest.PrevAdjRibOutPreCommunities, getCommunities(t, prevDUT, prevCommMap, v4uni.Neighbor(port21.IPv4).AdjRibOutPre().Route(prefix, 0).CommunityIndex().State()))
@@ -654,7 +654,7 @@ func testCommunitiesAuxV4(t *testing.T, routeTest *RouteTestCase, pair1, pair2 *
 	}
 }
 
-func testCommunitiesAuxV6(t *testing.T, routeTest *RouteTestCase, pair1, pair2 *DevicePair) {
+func testCommunitiesAuxV6(t *testing.T, route TestRoute, routeTest *RoutePathTestCase, pair1, pair2 *DevicePair) {
 	prevDUT, currDUT, nextDUT := pair1.First, pair1.Second, pair2.Second
 	port1, port21, port23, port3 := pair1.FirstPort, pair1.SecondPort, pair2.FirstPort, pair2.SecondPort
 
@@ -666,7 +666,7 @@ func testCommunitiesAuxV6(t *testing.T, routeTest *RouteTestCase, pair1, pair2 *
 	nextCommMap, _ := nextCommunityMap.Val()
 	v6uni := BGPPath.Rib().AfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV6_UNICAST).Ipv6Unicast()
 
-	prefix := routeTest.Input.ReachPrefix
+	prefix := route.ReachPrefix
 
 	if diff := RetryDiff(10, "AdjRibOutPre Communities Check", func() string {
 		return cmp.Diff(routeTest.PrevAdjRibOutPreCommunities, getCommunities(t, prevDUT, prevCommMap, v6uni.Neighbor(port21.IPv6).AdjRibOutPre().Route(prefix, 0).CommunityIndex().State()))

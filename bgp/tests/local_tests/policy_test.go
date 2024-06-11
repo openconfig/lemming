@@ -49,13 +49,11 @@ const (
 // import policy change after a soft reset:
 // https://github.com/osrg/gobgp/blob/master/docs/sources/policy.md#policy-and-soft-reset
 type PolicyTestCase struct {
-	description             string
-	routeTests              []*policytest.RouteTestCase
-	alternatePathRouteTests []*policytest.RouteTestCase
-	longerPathRouteTests    []*policytest.RouteTestCase
-	skipValidateAttrSet     bool // whether attr-sets are validated
-	dut1IsEBGP              bool // whether DUT1 and DUT2 are in different ASes
-	installPolicies         func(t *testing.T, dut1, dut2, dut3, dut4, dut5 *Device)
+	description         string
+	routeTests          []*policytest.RouteTestCase
+	skipValidateAttrSet bool // whether attr-sets are validated
+	dut1IsEBGP          bool // whether DUT1 and DUT2 are in different ASes
+	installPolicies     func(t *testing.T, dut1, dut2, dut3, dut4, dut5 *Device)
 }
 
 // testPolicy is the helper policy integration tests can call to instantiate
@@ -98,11 +96,11 @@ func testPolicy(t *testing.T, testspec *PolicyTestCase) {
 	testPolicyAux(t, testspec, dut1, dut2, dut3, dut4, dut5)
 }
 
-func testPropagation(t *testing.T, routeTest *policytest.RouteTestCase, prevDUT, currDUT, nextDUT *Device) {
+func testPropagation(t *testing.T, route policytest.TestRoute, routeTest *policytest.RoutePathTestCase, prevDUT, currDUT, nextDUT *Device) {
 	t.Helper()
 	v4uni := bgp.BGPPath.Rib().AfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST).Ipv4Unicast()
 
-	prefix := routeTest.Input.ReachPrefix
+	prefix := route.ReachPrefix
 	// Check propagation to AdjRibOutPre for all prefixes.
 	Await(t, prevDUT, v4uni.Neighbor(currDUT.RouterID).AdjRibOutPre().Route(prefix, 0).Prefix().State(), prefix)
 	Await(t, prevDUT, v4uni.Neighbor(currDUT.RouterID).AdjRibOutPost().Route(prefix, 0).Prefix().State(), prefix)
@@ -208,48 +206,48 @@ func testPolicyAux(t *testing.T, testspec *PolicyTestCase, dut1, dut2, dut3, dut
 	}
 
 	for _, routeTest := range testspec.routeTests {
-		// Install all regular test routes into DUT1.
-		route := &oc.NetworkInstance_Protocol_Static{
-			Prefix: ygot.String(routeTest.Input.ReachPrefix),
-			NextHop: map[string]*oc.NetworkInstance_Protocol_Static_NextHop{
-				"single": {
-					Index:   ygot.String("single"),
-					NextHop: oc.UnionString("192.0.2.1"),
-					Recurse: ygot.Bool(true),
+		if routeTest.RouteTest != nil {
+			// Install regular test route into DUT1.
+			route := &oc.NetworkInstance_Protocol_Static{
+				Prefix: ygot.String(routeTest.Input.ReachPrefix),
+				NextHop: map[string]*oc.NetworkInstance_Protocol_Static_NextHop{
+					"single": {
+						Index:   ygot.String("single"),
+						NextHop: oc.UnionString("192.0.2.1"),
+						Recurse: ygot.Bool(true),
+					},
 				},
-			},
+			}
+			installStaticRoute(t, dut1, route)
 		}
-		installStaticRoute(t, dut1, route)
-	}
-
-	for _, routeTest := range testspec.longerPathRouteTests {
-		// Install all longer-path test routes into DUT4.
-		route := &oc.NetworkInstance_Protocol_Static{
-			Prefix: ygot.String(routeTest.Input.ReachPrefix),
-			NextHop: map[string]*oc.NetworkInstance_Protocol_Static_NextHop{
-				"single": {
-					Index:   ygot.String("single"),
-					NextHop: oc.UnionString("192.0.2.1"),
-					Recurse: ygot.Bool(true),
+		if routeTest.LongerPathRouteTest != nil {
+			// Install longer-path test route into DUT4.
+			route := &oc.NetworkInstance_Protocol_Static{
+				Prefix: ygot.String(routeTest.Input.ReachPrefix),
+				NextHop: map[string]*oc.NetworkInstance_Protocol_Static_NextHop{
+					"single": {
+						Index:   ygot.String("single"),
+						NextHop: oc.UnionString("192.0.2.1"),
+						Recurse: ygot.Bool(true),
+					},
 				},
-			},
+			}
+			installStaticRoute(t, dut4, route)
 		}
-		installStaticRoute(t, dut4, route)
-	}
-
-	for _, routeTest := range testspec.alternatePathRouteTests {
-		// Install all alternate-path test routes into DUT5.
-		route := &oc.NetworkInstance_Protocol_Static{
-			Prefix: ygot.String(routeTest.Input.ReachPrefix),
-			NextHop: map[string]*oc.NetworkInstance_Protocol_Static_NextHop{
-				"single": {
-					Index:   ygot.String("single"),
-					NextHop: oc.UnionString("193.0.2.1"),
-					Recurse: ygot.Bool(true),
+		if routeTest.AlternatePathRouteTest != nil {
+			// Install alternate-path test route into DUT5.
+			route := &oc.NetworkInstance_Protocol_Static{
+				Prefix: ygot.String(routeTest.Input.ReachPrefix),
+				NextHop: map[string]*oc.NetworkInstance_Protocol_Static_NextHop{
+					"single": {
+						Index:   ygot.String("single"),
+						NextHop: oc.UnionString("193.0.2.1"),
+						Recurse: ygot.Bool(true),
+					},
 				},
-			},
+			}
+			installStaticRoute(t, dut5, route)
 		}
-		installStaticRoute(t, dut5, route)
 	}
 
 	if debug {
@@ -259,22 +257,25 @@ func testPolicyAux(t *testing.T, testspec *PolicyTestCase, dut1, dut2, dut3, dut
 	}
 
 	for _, routeTest := range testspec.routeTests {
-		testPropagation(t, routeTest, dut1, dut2, dut3)
-		testCommunities(t, routeTest, dut1, dut2, dut3)
-		if !testspec.skipValidateAttrSet {
-			testAttrs(t, routeTest, dut1, dut2, dut3)
+		if routeTest.RouteTest != nil {
+			testPropagation(t, routeTest.Input, routeTest.RouteTest, dut1, dut2, dut3)
+			testCommunities(t, routeTest.Input, routeTest.RouteTest, dut1, dut2, dut3)
+			if !testspec.skipValidateAttrSet {
+				testAttrs(t, routeTest.Input, routeTest.RouteTest, dut1, dut2, dut3)
+			}
 		}
-	}
-	for _, routeTest := range testspec.longerPathRouteTests {
-		testPropagation(t, routeTest, dut5, dut2, dut3)
-		testCommunities(t, routeTest, dut5, dut2, dut3)
-		if !testspec.skipValidateAttrSet {
-			testAttrs(t, routeTest, dut5, dut2, dut3)
+
+		if routeTest.LongerPathRouteTest != nil {
+			testPropagation(t, routeTest.Input, routeTest.LongerPathRouteTest, dut5, dut2, dut3)
+			testCommunities(t, routeTest.Input, routeTest.LongerPathRouteTest, dut5, dut2, dut3)
+			if !testspec.skipValidateAttrSet {
+				testAttrs(t, routeTest.Input, routeTest.LongerPathRouteTest, dut5, dut2, dut3)
+			}
 		}
 	}
 }
 
-func testCommunities(t *testing.T, routeTest *policytest.RouteTestCase, prevDUT, currDUT, nextDUT *Device) {
+func testCommunities(t *testing.T, route policytest.TestRoute, routeTest *policytest.RoutePathTestCase, prevDUT, currDUT, nextDUT *Device) {
 	prevCommunityMap := Lookup(t, prevDUT, bgp.BGPPath.Rib().CommunityMap().State())
 	prevCommMap, _ := prevCommunityMap.Val()
 	currCommunityMap := Lookup(t, currDUT, bgp.BGPPath.Rib().CommunityMap().State())
@@ -283,7 +284,7 @@ func testCommunities(t *testing.T, routeTest *policytest.RouteTestCase, prevDUT,
 	nextCommMap, _ := nextCommunityMap.Val()
 	v4uni := bgp.BGPPath.Rib().AfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST).Ipv4Unicast()
 
-	prefix := routeTest.Input.ReachPrefix
+	prefix := route.ReachPrefix
 
 	if diff := cmp.Diff(routeTest.PrevAdjRibOutPreCommunities, getCommunities(t, prevDUT, prevCommMap, v4uni.Neighbor(currDUT.RouterID).AdjRibOutPre().Route(prefix, 0).CommunityIndex().State())); diff != "" {
 		t.Errorf("DUT %v AdjRibOutPre communities difference (prefix %s) (-want, +got):\n%s", prevDUT.ID, prefix, diff)
@@ -367,7 +368,7 @@ func awaitNoDiff(diffFunc func() string, updateRIBFunc func()) string {
 	}
 }
 
-func testAttrs(t *testing.T, routeTest *policytest.RouteTestCase, prevDUT, currDUT, nextDUT *Device) {
+func testAttrs(t *testing.T, route policytest.TestRoute, routeTest *policytest.RoutePathTestCase, prevDUT, currDUT, nextDUT *Device) {
 	prevAttrSetMap := Lookup(t, prevDUT, bgp.BGPPath.Rib().AttrSetMap().State())
 	prevAttrMap, _ := prevAttrSetMap.Val()
 	currAttrSetMap := Lookup(t, currDUT, bgp.BGPPath.Rib().AttrSetMap().State())
@@ -385,7 +386,7 @@ func testAttrs(t *testing.T, routeTest *policytest.RouteTestCase, prevDUT, currD
 
 	v4uni := bgp.BGPPath.Rib().AfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST).Ipv4Unicast()
 
-	prefix := routeTest.Input.ReachPrefix
+	prefix := route.ReachPrefix
 
 	igpAttr := &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
 		Origin:    oc.BgpTypes_BgpOriginAttrType_IGP,

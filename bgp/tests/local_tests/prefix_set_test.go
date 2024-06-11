@@ -107,89 +107,117 @@ func TestPrefixSet(t *testing.T) {
 			description:         "Test that one prefix gets accepted and the other rejected via an ANY prefix-set.",
 			skipValidateAttrSet: true,
 			routeTests: []*policytest.RouteTestCase{{
-				Description: "Exact match",
 				Input: policytest.TestRoute{
 					ReachPrefix: "10.33.0.0/16",
 				},
-				ExpectedResult: invertResult(policytest.RouteDiscarded, invert),
+				RouteTest: &policytest.RoutePathTestCase{
+					Description:    "Exact match",
+					ExpectedResult: invertResult(policytest.RouteDiscarded, invert),
+				},
 			}, {
-				Description: "Not exact match",
 				Input: policytest.TestRoute{
 					ReachPrefix: "10.33.0.0/17",
 				},
-				ExpectedResult: invertResult(policytest.RouteAccepted, invert),
+				RouteTest: &policytest.RoutePathTestCase{
+					Description:    "Not exact match",
+					ExpectedResult: invertResult(policytest.RouteAccepted, invert),
+				},
 			}, {
-				Description: "No match with any prefix",
 				Input: policytest.TestRoute{
 					ReachPrefix: "10.3.0.0/16",
 				},
-				ExpectedResult: invertResult(policytest.RouteAccepted, invert),
+				RouteTest: &policytest.RoutePathTestCase{
+					Description:    "No match with any prefix",
+					ExpectedResult: invertResult(policytest.RouteAccepted, invert),
+				},
 			}, {
-				Description: "mask length too short",
 				Input: policytest.TestRoute{
 					ReachPrefix: "10.34.0.0/15",
 				},
-				ExpectedResult: invertResult(policytest.RouteAccepted, invert),
+				RouteTest: &policytest.RoutePathTestCase{
+					Description:    "mask length too short",
+					ExpectedResult: invertResult(policytest.RouteAccepted, invert),
+				},
 			}, {
-				Description: "Lower end of mask length",
 				Input: policytest.TestRoute{
 					ReachPrefix: "10.34.0.0/16",
 				},
-				ExpectedResult: invertResult(policytest.RouteDiscarded, invert),
+				RouteTest: &policytest.RoutePathTestCase{
+					Description:    "Lower end of mask length",
+					ExpectedResult: invertResult(policytest.RouteDiscarded, invert),
+				},
 			}, {
-				Description: "Middle of mask length",
 				Input: policytest.TestRoute{
 					ReachPrefix: "10.34.0.0/20",
 				},
-				ExpectedResult: invertResult(policytest.RouteDiscarded, invert),
+				RouteTest: &policytest.RoutePathTestCase{
+					Description:    "Middle of mask length",
+					ExpectedResult: invertResult(policytest.RouteDiscarded, invert),
+				},
 			}, {
-				Description: "Middle of mask length -- different prefix",
 				Input: policytest.TestRoute{
 					ReachPrefix: "10.34.240.0/20",
 				},
-				ExpectedResult: invertResult(policytest.RouteDiscarded, invert),
+				RouteTest: &policytest.RoutePathTestCase{
+					Description:    "Middle of mask length -- different prefix",
+					ExpectedResult: invertResult(policytest.RouteDiscarded, invert),
+				},
 			}, {
-				Description: "Upper end of mask length",
 				Input: policytest.TestRoute{
 					ReachPrefix: "10.34.0.0/23",
 				},
-				ExpectedResult: invertResult(policytest.RouteDiscarded, invert),
+				RouteTest: &policytest.RoutePathTestCase{
+					Description:    "Upper end of mask length",
+					ExpectedResult: invertResult(policytest.RouteDiscarded, invert),
+				},
 			}, {
-				Description: "Upper end of mask length -- different prefix",
 				Input: policytest.TestRoute{
 					ReachPrefix: "10.34.254.0/23",
 				},
-				ExpectedResult: invertResult(policytest.RouteDiscarded, invert),
+				RouteTest: &policytest.RoutePathTestCase{
+					Description:    "Upper end of mask length -- different prefix",
+					ExpectedResult: invertResult(policytest.RouteDiscarded, invert),
+				},
 			}, {
-				Description: "mask length too long",
 				Input: policytest.TestRoute{
 					ReachPrefix: "10.34.0.0/24",
 				},
-				ExpectedResult: invertResult(policytest.RouteAccepted, invert),
+				RouteTest: &policytest.RoutePathTestCase{
+					Description:    "mask length too long",
+					ExpectedResult: invertResult(policytest.RouteAccepted, invert),
+				},
 			}, {
-				Description: "eq-prefix-lowest",
 				Input: policytest.TestRoute{
 					ReachPrefix: "10.0.6.0/28",
 				},
-				ExpectedResult: invertResult(policytest.RouteDiscarded, invert),
+				RouteTest: &policytest.RoutePathTestCase{
+					Description:    "eq-prefix-lowest",
+					ExpectedResult: invertResult(policytest.RouteDiscarded, invert),
+				},
 			}, {
-				Description: "eq-prefix-middle",
 				Input: policytest.TestRoute{
 					ReachPrefix: "10.0.6.192/28", // 192 = 0xc0
 				},
-				ExpectedResult: invertResult(policytest.RouteDiscarded, invert),
+				RouteTest: &policytest.RoutePathTestCase{
+					Description:    "eq-prefix-middle",
+					ExpectedResult: invertResult(policytest.RouteDiscarded, invert),
+				},
 			}, {
-				Description: "eq-prefix-no-match",
 				Input: policytest.TestRoute{
 					ReachPrefix: "10.0.7.192/28", // 192 = 0xc0
 				},
-				ExpectedResult: invertResult(policytest.RouteAccepted, invert),
+				RouteTest: &policytest.RoutePathTestCase{
+					Description:    "eq-prefix-no-match",
+					ExpectedResult: invertResult(policytest.RouteAccepted, invert),
+				},
 			}, {
-				Description: "eq-prefix-highest",
 				Input: policytest.TestRoute{
 					ReachPrefix: "10.0.6.240/28", // 240 = 0xf0
 				},
-				ExpectedResult: invertResult(policytest.RouteDiscarded, invert),
+				RouteTest: &policytest.RoutePathTestCase{
+					Description:    "eq-prefix-highest",
+					ExpectedResult: invertResult(policytest.RouteDiscarded, invert),
+				},
 			}},
 			installPolicies: func(t *testing.T, dut1, dut2, dut3, dut4, dut5 *Device) {
 				installPolicies(t, dut1, dut2, dut3, dut4, dut5, invert)
