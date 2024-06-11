@@ -141,5 +141,5 @@ func dial() (*grpc.ClientConn, error) {
 		opts = grpc.WithTransportCredentials(insecure.NewCredentials())
 	}
 
-	return grpc.Dial(viper.GetString("address"), opts)
+	return grpc.NewClient(viper.GetString("address"), opts)
 }

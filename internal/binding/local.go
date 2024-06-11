@@ -114,7 +114,7 @@ func (c *gnsiClient) Pathz() pathzpb.PathzClient { return pathzpb.NewPathzClient
 // DialGNMI returns a gNMI client for the dut.
 func (l *localLemming) DialGNMI(ctx context.Context, opts ...grpc.DialOption) (gpb.GNMIClient, error) {
 	opts = append(opts, grpc.WithTransportCredentials(local.NewCredentials()))
-	conn, err := grpc.DialContext(ctx, net.JoinHostPort(l.addr, fmt.Sprint(gnmiPort)), opts...)
+	conn, err := grpc.NewClient(net.JoinHostPort(l.addr, fmt.Sprint(gnmiPort)), opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +124,7 @@ func (l *localLemming) DialGNMI(ctx context.Context, opts ...grpc.DialOption) (g
 // DialGNOI returns a gNOI client for the dut.
 func (l *localLemming) DialGNOI(ctx context.Context, opts ...grpc.DialOption) (gnoigo.Clients, error) {
 	opts = append(opts, grpc.WithTransportCredentials(local.NewCredentials()))
-	conn, err := grpc.DialContext(ctx, net.JoinHostPort(l.addr, fmt.Sprint(gnmiPort)), opts...)
+	conn, err := grpc.NewClient(net.JoinHostPort(l.addr, fmt.Sprint(gnmiPort)), opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +134,7 @@ func (l *localLemming) DialGNOI(ctx context.Context, opts ...grpc.DialOption) (g
 // DialGNSI returns a gNSI client for the dut.
 func (l *localLemming) DialGNSI(ctx context.Context, opts ...grpc.DialOption) (binding.GNSIClients, error) {
 	opts = append(opts, grpc.WithTransportCredentials(local.NewCredentials()))
-	conn, err := grpc.DialContext(ctx, net.JoinHostPort(l.addr, fmt.Sprint(gnmiPort)), opts...)
+	conn, err := grpc.NewClient(net.JoinHostPort(l.addr, fmt.Sprint(gnmiPort)), opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -144,7 +144,7 @@ func (l *localLemming) DialGNSI(ctx context.Context, opts ...grpc.DialOption) (b
 // DialGRIBI returns a gRIBI client for the dut.
 func (l *localLemming) DialGRIBI(ctx context.Context, opts ...grpc.DialOption) (grpb.GRIBIClient, error) {
 	opts = append(opts, grpc.WithTransportCredentials(local.NewCredentials()))
-	conn, err := grpc.DialContext(ctx, net.JoinHostPort(l.addr, fmt.Sprint(gribiPort)), opts...)
+	conn, err := grpc.NewClient(net.JoinHostPort(l.addr, fmt.Sprint(gribiPort)), opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +154,7 @@ func (l *localLemming) DialGRIBI(ctx context.Context, opts ...grpc.DialOption) (
 // DataplaneConn returns a gRPC conn for the dataplane
 func (l *localLemming) DataplaneConn(ctx context.Context, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
 	opts = append(opts, grpc.WithTransportCredentials(local.NewCredentials()))
-	return grpc.DialContext(ctx, net.JoinHostPort(l.addr, fmt.Sprint(dataplanePort)), opts...)
+	return grpc.NewClient(net.JoinHostPort(l.addr, fmt.Sprint(dataplanePort)), opts...)
 }
 
 type localMagna struct {
@@ -165,7 +165,7 @@ type localMagna struct {
 // DialGNMI returns a gNMI client for the dut.
 func (m *localMagna) DialGNMI(ctx context.Context, opts ...grpc.DialOption) (gpb.GNMIClient, error) {
 	opts = append(opts, grpc.WithTransportCredentials(local.NewCredentials()))
-	conn, err := grpc.DialContext(ctx, net.JoinHostPort(m.addr, fmt.Sprint(gnmiPort)), opts...)
+	conn, err := grpc.NewClient(net.JoinHostPort(m.addr, fmt.Sprint(gnmiPort)), opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -175,7 +175,7 @@ func (m *localMagna) DialGNMI(ctx context.Context, opts ...grpc.DialOption) (gpb
 // DialOTG returns a OTH client for the dut.
 func (m *localMagna) DialOTG(ctx context.Context, opts ...grpc.DialOption) (gosnappi.Api, error) {
 	opts = append(opts, grpc.WithTransportCredentials(local.NewCredentials()))
-	conn, err := grpc.DialContext(ctx, net.JoinHostPort(m.addr, fmt.Sprint(otgPort)), opts...)
+	conn, err := grpc.NewClient(net.JoinHostPort(m.addr, fmt.Sprint(otgPort)), opts...)
 	if err != nil {
 		return nil, err
 	}

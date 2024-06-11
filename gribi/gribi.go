@@ -74,7 +74,7 @@ func New(s *grpc.Server, gClient gpb.GNMIClient, target string, root *oc.Root, s
 // - root, if specified, will be used to populate connected routes into the RIB
 // manager. Note this is intended to be used for unit/standalone device testing.
 func createGRIBIServer(gClient gpb.GNMIClient, target string, root *oc.Root, sysribAddr string) (*server.Server, error) {
-	gzebraConn, err := grpc.DialContext(context.Background(), sysribAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	gzebraConn, err := grpc.NewClient(sysribAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, fmt.Errorf("cannot dial to sysrib, %v", err)
 	}
