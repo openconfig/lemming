@@ -21,7 +21,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -39,9 +38,6 @@ const (
 var portFile = flag.String("port_file", "/etc/sonic/pktio_ports.json", "File at which to include hostif info, for debugging only")
 
 func main() {
-	ctx, cancelFn := context.WithTimeout(context.Background(), time.Minute)
-	defer cancelFn()
-
 	log.Info("dialing packetio server")
 	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
@@ -54,6 +50,7 @@ func main() {
 	if err != nil {
 		log.Exit(err)
 	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 
 	sigCh := make(chan os.Signal, 1)
