@@ -194,7 +194,7 @@ func (d *Dataplane) Start(ctx context.Context, c gpb.GNMIClient, target string) 
 
 // FwdClient gets a gRPC client to the packet forwarding engine.
 func (d *Dataplane) Conn() (grpc.ClientConnInterface, error) {
-	conn, err := grpc.Dial(d.lis.Addr().String(), grpc.WithTransportCredentials(local.NewCredentials()))
+	conn, err := grpc.NewClient(d.lis.Addr().String(), grpc.WithTransportCredentials(local.NewCredentials()))
 	if err != nil {
 		return nil, fmt.Errorf("failed to dial server: %w", err)
 	}

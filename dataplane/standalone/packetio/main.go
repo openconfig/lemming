@@ -31,7 +31,7 @@ const addr = "10.0.2.2:50000"
 
 //export StartSink
 func StartSink() {
-	conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatal(err)
 	}
