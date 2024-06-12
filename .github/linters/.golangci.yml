@@ -23,10 +23,13 @@
 # see https://github.com/golangci/golangci-lint/blob/master/.golangci.example.yml
 run:
   timeout: 60m
-  skip-dirs:
+issues:
+  exclude-dirs:
     - gnmi/oc
     - integration_tests # Loading ondatra is very slow
-issues:
+  exclude:
+    - "grpc.Dial is deprecated" # TODO: Remove this once UDS is resolved
+    - "grpc.DialContext is deprecated"
   exclude-rules:
     - path: _test\.go
       linters:
