@@ -28,13 +28,14 @@ issues:
     - gnmi/oc
     - integration_tests # Loading ondatra is very slow
   exclude:
-    - "grpc.Dial is deprecated" # TODO: Remove this once UDS is resolved
   exclude-rules:
     - path: _test\.go
       linters:
         - dupl
         - gosec
         - goconst
+    - path: gribi/gribi.go
+      text: "grpc.Dial is deprecated" # TODO(https://github.com/openconfig/lemming/issues/433): bgp/tests/local_tests -- TestRoutePropagation fails.
 linters:
   disable-all: true
   enable:
