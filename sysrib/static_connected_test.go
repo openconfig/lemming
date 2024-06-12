@@ -337,7 +337,7 @@ func TestStaticRouteAndIntfs(t *testing.T) {
 		t.Fatalf("cannot create ygnmi client: %v", err)
 	}
 
-	conn, err := grpc.Dial(lis.Addr().String(), grpc.WithTransportCredentials(local.NewCredentials()))
+	conn, err := grpc.NewClient(lis.Addr().String(), grpc.WithTransportCredentials(local.NewCredentials()))
 	if err != nil {
 		t.Fatalf("cannot dial gNMI server, %v", err)
 	}

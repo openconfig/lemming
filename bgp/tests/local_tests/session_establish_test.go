@@ -63,7 +63,7 @@ var (
 
 func ygnmiClient(t *testing.T, target, dialTarget string) *ygnmi.Client {
 	t.Helper()
-	conn, err := grpc.Dial(dialTarget, grpc.WithTransportCredentials(local.NewCredentials()))
+	conn, err := grpc.NewClient(dialTarget, grpc.WithTransportCredentials(local.NewCredentials()))
 	if err != nil {
 		t.Fatalf("cannot dial gNMI server, %v", err)
 	}
@@ -145,7 +145,7 @@ func newLemming(t *testing.T, id uint, as uint32, connectedIntfs []*AddIntfActio
 		configureInterface(t, intf, l.GNMI())
 	}
 
-	conn, err := grpc.Dial(gribiTarget, grpc.WithTransportCredentials(local.NewCredentials()))
+	conn, err := grpc.NewClient(gribiTarget, grpc.WithTransportCredentials(local.NewCredentials()))
 	if err != nil {
 		t.Fatalf("cannot dial gNMI server, %v", err)
 	}

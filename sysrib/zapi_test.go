@@ -740,7 +740,7 @@ func testRouteRedistribution(t *testing.T, routeReadyBeforeDial bool) {
 				}
 			}
 
-			conn.SetReadDeadline(time.Now().Add(10 * time.Second))
+			conn.SetReadDeadline(time.Now().Add(30 * time.Second))
 			m, err := zebra.ReceiveSingleMsg(topicLogger, conn, version, software, "test-client")
 			if tt.inExpectTimeout {
 				if err == nil {

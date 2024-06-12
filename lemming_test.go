@@ -50,7 +50,7 @@ import (
 func TestFakeGNMI(t *testing.T) {
 	f := startLemming(t)
 	defer f.Stop()
-	conn, err := grpc.Dial(f.GNMIAddr(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(f.GNMIAddr(), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		t.Fatalf("failed to Dial fake: %v", err)
 	}
@@ -105,7 +105,7 @@ func TestStop(t *testing.T) {
 func TestFakeGNOI(t *testing.T) {
 	f := startLemming(t)
 	defer f.stop()
-	conn, err := grpc.Dial(f.GNMIAddr(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(f.GNMIAddr(), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		t.Fatalf("failed to Dial fake: %v", err)
 	}
@@ -200,7 +200,7 @@ func TestGNSI(t *testing.T) {
 	t.Run(desc, func(t *testing.T) {
 		f := startLemming(t)
 		defer f.stop()
-		conn, err := grpc.Dial(f.Addr(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+		conn, err := grpc.NewClient(f.Addr(), grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
 			t.Fatalf("failed to Dial fake: %v", err)
 		}
@@ -219,7 +219,7 @@ func TestGNSI(t *testing.T) {
 	t.Run(desc, func(t *testing.T) {
 		f := startLemming(t)
 		defer f.stop()
-		conn, err := grpc.Dial(f.Addr(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+		conn, err := grpc.NewClient(f.Addr(), grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
 			t.Fatalf("failed to Dial fake: %v", err)
 		}
@@ -238,7 +238,7 @@ func TestGNSI(t *testing.T) {
 	t.Run(desc, func(t *testing.T) {
 		f := startLemming(t)
 		defer f.stop()
-		conn, err := grpc.Dial(f.Addr(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+		conn, err := grpc.NewClient(f.Addr(), grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
 			t.Fatalf("failed to Dial fake: %v", err)
 		}
@@ -257,7 +257,7 @@ func TestGNSI(t *testing.T) {
 	t.Run(desc, func(t *testing.T) {
 		f := startLemming(t)
 		defer f.stop()
-		conn, err := grpc.Dial(f.Addr(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+		conn, err := grpc.NewClient(f.Addr(), grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
 			t.Fatalf("failed to Dial fake: %v", err)
 		}
@@ -276,7 +276,7 @@ func TestGNSI(t *testing.T) {
 	t.Run(desc, func(t *testing.T) {
 		f := startLemming(t)
 		defer f.stop()
-		conn, err := grpc.Dial(f.Addr(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+		conn, err := grpc.NewClient(f.Addr(), grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
 			t.Fatalf("failed to Dial fake: %v", err)
 		}
