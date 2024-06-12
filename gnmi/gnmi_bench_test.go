@@ -40,7 +40,7 @@ func BenchmarkGNMISet(b *testing.B) {
 		b.Fatalf("cannot start server, got err: %v", err)
 	}
 	defer gnmiServer.c.Stop()
-	conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(local.NewCredentials()))
+	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(local.NewCredentials()))
 	if err != nil {
 		b.Fatalf("cannot dial gNMI server, %v", err)
 	}

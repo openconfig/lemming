@@ -884,6 +884,7 @@ func (vlan *vlan) CreateVlanMember(ctx context.Context, r *saipb.CreateVlanMembe
 		ObjectId:  &fwdpb.ObjectId{Id: fmt.Sprint(r.GetBridgePortId())},
 	})
 	if err != nil {
+		log.Infof("Failed to find NID for port id=%d: %v", r.GetBridgePortId(), err)
 		return nil, err
 	}
 	vlanReq := fwdconfig.TableEntryAddRequest(vlan.dataplane.ID(), VlanTable).AppendEntry(
@@ -934,17 +935,16 @@ func (vlan *vlan) RemoveVlanMember(ctx context.Context, r *saipb.RemoveVlanMembe
 	if member == nil {
 		return nil, fmt.Errorf("cannot find member with OID %d", r.GetOid())
 	}
-	defVOid, ok := vlan.oidByVId[DefaultVlanId]
-	if !ok {
-		return nil, fmt.Errorf("cannot find default VLAN.")
-	}
-	// Move the port back to the default VLAN.
-	_, err := attrmgr.InvokeAndSave(ctx, vlan.mgr, vlan.CreateVlanMember, &saipb.CreateVlanMemberRequest{
-		VlanId:          proto.Uint64(defVOid),
-		BridgePortId:    proto.Uint64(member.PortID),
-		VlanTaggingMode: saipb.VlanTaggingMode_VLAN_TAGGING_MODE_UNTAGGED.Enum(),
+	nid, err := vlan.dataplane.ObjectNID(ctx, &fwdpb.ObjectNIDRequest{
+		ContextId: &fwdpb.ContextId{Id: vlan.dataplane.ID()},
+		ObjectId:  &fwdpb.ObjectId{Id: fmt.Sprint(member.PortID)},
 	})
 	if err != nil {
+		log.Infof("Failed to find NID for port id=%d: %v", member.PortID, err)
+		return nil, err
+	}
+	if _, err := vlan.dataplane.TableEntryRemove(ctx, fwdconfig.TableEntryRemoveRequest(vlan.dataplane.ID(), VlanTable).AppendEntry(
+		fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT).WithUint64(nid.GetNid())))).Build()); err != nil {
 		return nil, err
 	}
 	return &saipb.RemoveVlanMemberResponse{}, nil

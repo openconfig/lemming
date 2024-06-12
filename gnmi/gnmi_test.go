@@ -260,7 +260,7 @@ func testSetSubSetup(t *testing.T, prefix, path *gpb.Path, useSet, config bool) 
 		t.Fatalf("cannot start server, got err: %v", err)
 	}
 
-	conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(local.NewCredentials()))
+	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(local.NewCredentials()))
 	if err != nil {
 		t.Fatalf("cannot dial gNMI server, %v", err)
 	}
@@ -751,7 +751,7 @@ func TestSetYGNMI(t *testing.T) {
 	}
 	t.Logf("Running gNMI server on %s", addr)
 	defer gnmiServer.c.Stop()
-	conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(local.NewCredentials()))
+	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(local.NewCredentials()))
 	if err != nil {
 		t.Fatalf("cannot dial gNMI server, %v", err)
 	}
@@ -840,7 +840,7 @@ func TestSetWithAuth(t *testing.T) {
 				t.Fatalf("cannot start server, got err: %v", err)
 			}
 			defer gnmiServer.c.Stop()
-			conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(local.NewCredentials()))
+			conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(local.NewCredentials()))
 			if err != nil {
 				t.Fatalf("cannot dial gNMI server, %v", err)
 			}
@@ -907,7 +907,7 @@ func TestSTREAM(t *testing.T) {
 	wg.Add(1)
 	go func(ctx context.Context, cfn func()) {
 		defer cfn()
-		conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(local.NewCredentials()))
+		conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(local.NewCredentials()))
 		if err != nil {
 			sendErr = fmt.Errorf("cannot dial gNMI server, %v", err)
 			return
@@ -1124,7 +1124,7 @@ func TestSubscribeWithAuth(t *testing.T) {
 				},
 			})
 			defer gnmiServer.c.Stop()
-			conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(local.NewCredentials()))
+			conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(local.NewCredentials()))
 			if err != nil {
 				t.Fatalf("cannot dial gNMI server, %v", err)
 			}

@@ -263,6 +263,7 @@ func (m *PacketIOMgr) queueRead(id uint64, done chan struct{}) {
 			default:
 				n, err := p.Read(buf)
 				if err != nil || n == 0 {
+					time.Sleep(time.Millisecond)
 					continue
 				}
 				pkt := &pktiopb.Packet{
@@ -270,7 +271,7 @@ func (m *PacketIOMgr) queueRead(id uint64, done chan struct{}) {
 					Frame:    buf[0:n],
 				}
 				m.sendQueue.Write(pkt)
-				time.Sleep(time.Microsecond)
+				time.Sleep(time.Millisecond)
 			}
 		}
 	}()
