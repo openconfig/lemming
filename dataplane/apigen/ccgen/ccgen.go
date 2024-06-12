@@ -200,6 +200,17 @@ func createCCData(meta *saiast.FuncMetadata, apiName string, sai *saiast.SAIAPI,
 			}
 			smt.EnumValue = attr.EnumName
 		}
+	case "remove_bulk":
+		convertFn = nil
+		for _, attr := range info.Attrs[meta.TypeName].CreateFields {
+			name := sanitizeProtoName(attr.MemberName)
+			smt, err := protoFieldSetter(attr.SaiType, "", name, "attr_list[i].value", info)
+			if err != nil {
+				fmt.Println("skipping due to error: ", err)
+				continue
+			}
+			smt.EnumValue = attr.EnumName
+		}
 	case "get_stats":
 		convertFn = nil
 		opFn.AttrEnumType = strcase.UpperCamelCase(meta.TypeName + " stat")
@@ -487,7 +498,7 @@ var supportedOperation = map[string]bool{
 	"get_stats":          true,
 	"get_stats_ext":      true,
 	"create_bulk":        true,
-	"remove_bulk":        false,
+	"remove_bulk":        true,
 	"set_attribute_bulk": false,
 	"get_attribute_bulk": false,
 }
@@ -700,6 +711,27 @@ return msg;
 	if (!status.ok()) {
 		LOG(ERROR) << status.error_message();
 		return SAI_STATUS_FAILURE;
+	}
+	{{ else if eq .Operation "remove_bulk" }}
+	lemming::dataplane::sai::{{ .ReqType }} req;
+	lemming::dataplane::sai::{{ .RespType }} resp;
+	grpc::ClientContext context;
+
+	for (uint32_t i = 0; i < object_count; i++) {
+		{{ if .OidVar -}} req.add_reqs().set_oid(object_id[i]); {{ end }}
+		{{ if .EntryVar }} *req.add_reqs()->mutable_entry() = {{ .EntryConversionFunc }}({{ printf "" .EntryVar }}[i]); {{ end }}
+	}
+
+	grpc::Status status = {{ .Client }}->{{ .RPCMethod }}(&context, req, &resp);
+	if (!status.ok()) {
+		LOG(ERROR) << status.error_message();
+		return SAI_STATUS_FAILURE;
+	}
+	if (object_count != resp.resps().size()) {
+		return SAI_STATUS_FAILURE;
+	}
+	for (uint32_t i = 0; i < object_count; i++) {
+		object_statuses[i] = SAI_STATUS_SUCCESS;
 	}
 	{{ else if eq .Operation "get_stats" }}
 	lemming::dataplane::sai::{{ .ReqType }} req;

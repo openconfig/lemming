@@ -577,6 +577,14 @@ message CreatePortsResponse {
   repeated CreatePortResponse resps = 1;
 }
 
+message RemovePortsRequest {
+  repeated RemovePortRequest reqs = 1;
+}
+
+message RemovePortsResponse {
+  repeated RemovePortResponse resps = 1;
+}
+
 service Port {
   rpc CreatePort(CreatePortRequest) returns (CreatePortResponse) {}
   rpc RemovePort(RemovePortRequest) returns (RemovePortResponse) {}
@@ -608,4 +616,5 @@ service Port {
   rpc GetPortSerdesAttribute(GetPortSerdesAttributeRequest)
       returns (GetPortSerdesAttributeResponse) {}
   rpc CreatePorts(CreatePortsRequest) returns (CreatePortsResponse) {}
+  rpc RemovePorts(RemovePortsRequest) returns (RemovePortsResponse) {}
 }

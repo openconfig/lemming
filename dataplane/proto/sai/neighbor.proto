@@ -75,6 +75,14 @@ message CreateNeighborEntriesResponse {
   repeated CreateNeighborEntryResponse resps = 1;
 }
 
+message RemoveNeighborEntriesRequest {
+  repeated RemoveNeighborEntryRequest reqs = 1;
+}
+
+message RemoveNeighborEntriesResponse {
+  repeated RemoveNeighborEntryResponse resps = 1;
+}
+
 service Neighbor {
   rpc CreateNeighborEntry(CreateNeighborEntryRequest)
       returns (CreateNeighborEntryResponse) {}
@@ -86,4 +94,6 @@ service Neighbor {
       returns (GetNeighborEntryAttributeResponse) {}
   rpc CreateNeighborEntries(CreateNeighborEntriesRequest)
       returns (CreateNeighborEntriesResponse) {}
+  rpc RemoveNeighborEntries(RemoveNeighborEntriesRequest)
+      returns (RemoveNeighborEntriesResponse) {}
 }

@@ -80,6 +80,14 @@ message CreateInsegEntriesResponse {
   repeated CreateInsegEntryResponse resps = 1;
 }
 
+message RemoveInsegEntriesRequest {
+  repeated RemoveInsegEntryRequest reqs = 1;
+}
+
+message RemoveInsegEntriesResponse {
+  repeated RemoveInsegEntryResponse resps = 1;
+}
+
 service Mpls {
   rpc CreateInsegEntry(CreateInsegEntryRequest)
       returns (CreateInsegEntryResponse) {}
@@ -91,4 +99,6 @@ service Mpls {
       returns (GetInsegEntryAttributeResponse) {}
   rpc CreateInsegEntries(CreateInsegEntriesRequest)
       returns (CreateInsegEntriesResponse) {}
+  rpc RemoveInsegEntries(RemoveInsegEntriesRequest)
+      returns (RemoveInsegEntriesResponse) {}
 }

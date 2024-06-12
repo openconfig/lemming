@@ -1860,7 +1860,28 @@ sai_status_t l_remove_ports(uint32_t object_count,
                             sai_bulk_op_error_mode_t mode,
                             sai_status_t *object_statuses) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-  return SAI_STATUS_NOT_IMPLEMENTED;
+
+  lemming::dataplane::sai::RemovePortsRequest req;
+  lemming::dataplane::sai::RemovePortsResponse resp;
+  grpc::ClientContext context;
+
+  for (uint32_t i = 0; i < object_count; i++) {
+    req.add_reqs().set_oid(object_id[i]);
+  }
+
+  grpc::Status status = port->RemovePorts(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  if (object_count != resp.resps().size()) {
+    return SAI_STATUS_FAILURE;
+  }
+  for (uint32_t i = 0; i < object_count; i++) {
+    object_statuses[i] = SAI_STATUS_SUCCESS;
+  }
+
+  return SAI_STATUS_SUCCESS;
 }
 
 sai_status_t l_set_ports_attribute(uint32_t object_count,

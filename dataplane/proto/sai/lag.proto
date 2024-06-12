@@ -120,6 +120,14 @@ message CreateLagMembersResponse {
   repeated CreateLagMemberResponse resps = 1;
 }
 
+message RemoveLagMembersRequest {
+  repeated RemoveLagMemberRequest reqs = 1;
+}
+
+message RemoveLagMembersResponse {
+  repeated RemoveLagMemberResponse resps = 1;
+}
+
 service Lag {
   rpc CreateLag(CreateLagRequest) returns (CreateLagResponse) {}
   rpc RemoveLag(RemoveLagRequest) returns (RemoveLagResponse) {}
@@ -137,4 +145,6 @@ service Lag {
       returns (GetLagMemberAttributeResponse) {}
   rpc CreateLagMembers(CreateLagMembersRequest)
       returns (CreateLagMembersResponse) {}
+  rpc RemoveLagMembers(RemoveLagMembersRequest)
+      returns (RemoveLagMembersResponse) {}
 }

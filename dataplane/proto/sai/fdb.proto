@@ -71,6 +71,14 @@ message CreateFdbEntriesResponse {
   repeated CreateFdbEntryResponse resps = 1;
 }
 
+message RemoveFdbEntriesRequest {
+  repeated RemoveFdbEntryRequest reqs = 1;
+}
+
+message RemoveFdbEntriesResponse {
+  repeated RemoveFdbEntryResponse resps = 1;
+}
+
 service Fdb {
   rpc CreateFdbEntry(CreateFdbEntryRequest) returns (CreateFdbEntryResponse) {}
   rpc RemoveFdbEntry(RemoveFdbEntryRequest) returns (RemoveFdbEntryResponse) {}
@@ -80,4 +88,6 @@ service Fdb {
       returns (GetFdbEntryAttributeResponse) {}
   rpc CreateFdbEntries(CreateFdbEntriesRequest)
       returns (CreateFdbEntriesResponse) {}
+  rpc RemoveFdbEntries(RemoveFdbEntriesRequest)
+      returns (RemoveFdbEntriesResponse) {}
 }

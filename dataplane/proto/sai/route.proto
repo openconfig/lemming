@@ -63,6 +63,14 @@ message CreateRouteEntriesResponse {
   repeated CreateRouteEntryResponse resps = 1;
 }
 
+message RemoveRouteEntriesRequest {
+  repeated RemoveRouteEntryRequest reqs = 1;
+}
+
+message RemoveRouteEntriesResponse {
+  repeated RemoveRouteEntryResponse resps = 1;
+}
+
 service Route {
   rpc CreateRouteEntry(CreateRouteEntryRequest)
       returns (CreateRouteEntryResponse) {}
@@ -74,4 +82,6 @@ service Route {
       returns (GetRouteEntryAttributeResponse) {}
   rpc CreateRouteEntries(CreateRouteEntriesRequest)
       returns (CreateRouteEntriesResponse) {}
+  rpc RemoveRouteEntries(RemoveRouteEntriesRequest)
+      returns (RemoveRouteEntriesResponse) {}
 }

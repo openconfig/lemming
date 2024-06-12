@@ -128,6 +128,14 @@ message CreateNextHopGroupMembersResponse {
   repeated CreateNextHopGroupMemberResponse resps = 1;
 }
 
+message RemoveNextHopGroupMembersRequest {
+  repeated RemoveNextHopGroupMemberRequest reqs = 1;
+}
+
+message RemoveNextHopGroupMembersResponse {
+  repeated RemoveNextHopGroupMemberResponse resps = 1;
+}
+
 message CreateNextHopGroupMapRequest {
   option (sai_type) = OBJECT_TYPE_NEXT_HOP_GROUP_MAP;
   uint64 switch = 1;
@@ -180,6 +188,8 @@ service NextHopGroup {
       returns (GetNextHopGroupMemberAttributeResponse) {}
   rpc CreateNextHopGroupMembers(CreateNextHopGroupMembersRequest)
       returns (CreateNextHopGroupMembersResponse) {}
+  rpc RemoveNextHopGroupMembers(RemoveNextHopGroupMembersRequest)
+      returns (RemoveNextHopGroupMembersResponse) {}
   rpc CreateNextHopGroupMap(CreateNextHopGroupMapRequest)
       returns (CreateNextHopGroupMapResponse) {}
   rpc RemoveNextHopGroupMap(RemoveNextHopGroupMapRequest)

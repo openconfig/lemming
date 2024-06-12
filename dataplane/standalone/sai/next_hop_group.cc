@@ -435,7 +435,29 @@ sai_status_t l_remove_next_hop_group_members(uint32_t object_count,
                                              sai_bulk_op_error_mode_t mode,
                                              sai_status_t *object_statuses) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-  return SAI_STATUS_NOT_IMPLEMENTED;
+
+  lemming::dataplane::sai::RemoveNextHopGroupMembersRequest req;
+  lemming::dataplane::sai::RemoveNextHopGroupMembersResponse resp;
+  grpc::ClientContext context;
+
+  for (uint32_t i = 0; i < object_count; i++) {
+    req.add_reqs().set_oid(object_id[i]);
+  }
+
+  grpc::Status status =
+      next_hop_group->RemoveNextHopGroupMembers(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  if (object_count != resp.resps().size()) {
+    return SAI_STATUS_FAILURE;
+  }
+  for (uint32_t i = 0; i < object_count; i++) {
+    object_statuses[i] = SAI_STATUS_SUCCESS;
+  }
+
+  return SAI_STATUS_SUCCESS;
 }
 
 sai_status_t l_create_next_hop_group_map(sai_object_id_t *next_hop_group_map_id,

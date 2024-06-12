@@ -41,7 +41,6 @@ type saiSwitch struct {
 	port            *port
 	vlan            *vlan
 	stp             *stp
-	vr              *virtualRouter
 	bridge          *bridge
 	hostif          *hostif
 	hash            *hash
@@ -59,9 +58,11 @@ type saiSwitch struct {
 	queue           *queue
 	sg              *schedulerGroup
 	routerInterface *routerInterface
+	virtualRouter   *virtualRouter
 	udf             *udf
 	scheduler       *scheduler
 	qosMap          *qosMap
+	rpf             *rpfGroup
 	mgr             *attrmgr.AttrMgr
 }
 
@@ -126,7 +127,6 @@ func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server, 
 		port:            port,
 		vlan:            vlan,
 		stp:             &stp{},
-		vr:              &virtualRouter{},
 		bridge:          newBridge(mgr, engine, s),
 		hostif:          newHostif(mgr, engine, s, opts),
 		hash:            newHash(mgr, engine, s),
@@ -144,13 +144,14 @@ func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server, 
 		udf:             newUdf(mgr, engine, s),
 		scheduler:       newScheduler(mgr, engine, s),
 		qosMap:          newQOSMap(mgr, engine, s),
+		virtualRouter:   newVirtualRouter(mgr, engine, s),
+		rpf:             newRpfGroup(mgr, engine, s),
 		queue:           q,
 		sg:              sg,
 		mgr:             mgr,
 	}
 	saipb.RegisterSwitchServer(s, sw)
 	saipb.RegisterStpServer(s, sw.stp)
-	saipb.RegisterVirtualRouterServer(s, sw.vr)
 	return sw, nil
 }
 
@@ -623,7 +624,7 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 		return nil, err
 	}
 	sw.mgr.StoreAttributes(swID, &saipb.SwitchAttribute{DefaultVlanId: &vlanResp.Oid})
-	vrResp, err := attrmgr.InvokeAndSave(ctx, sw.mgr, sw.vr.CreateVirtualRouter, &saipb.CreateVirtualRouterRequest{
+	vrResp, err := attrmgr.InvokeAndSave(ctx, sw.mgr, sw.virtualRouter.CreateVirtualRouter, &saipb.CreateVirtualRouterRequest{
 		Switch: swID,
 	})
 	if err != nil {
