@@ -113,6 +113,7 @@ func convertPolicyDefinition(policy *oc.RoutingPolicy_PolicyDefinition, neighAdd
 						MatchSetOptions: convertMatchSetOptionsType(statement.GetConditions().GetBgpConditions().GetMatchAsPathSet().GetMatchSetOptions()),
 					},
 					RouteType: convertRouteType(statement.GetConditions().GetBgpConditions().GetRouteType()),
+					OriginEq:  convertOrigin(statement.GetConditions().GetBgpConditions().GetOriginEq()),
 				},
 			},
 			Actions: gobgpoc.Actions{
@@ -130,6 +131,7 @@ func convertPolicyDefinition(policy *oc.RoutingPolicy_PolicyDefinition, neighAdd
 						RepeatN: statement.GetActions().GetBgpActions().GetSetAsPathPrepend().GetRepeatN(),
 						As:      strconv.FormatUint(uint64(statement.GetActions().GetBgpActions().GetSetAsPathPrepend().GetAsn()), 10),
 					},
+					SetRouteOrigin: convertOrigin(statement.GetActions().GetBgpActions().GetSetRouteOrigin()),
 				},
 			},
 		})
@@ -363,5 +365,18 @@ func convertSegmentTypeToOC(segmentType api.AsSegment_Type) oc.E_BgpTypes_AsPath
 		return oc.BgpTypes_AsPathSegmentType_AS_CONFED_SET
 	default:
 		return oc.BgpTypes_AsPathSegmentType_UNSET
+	}
+}
+
+func convertOrigin(origin oc.E_BgpTypes_BgpOriginAttrType) gobgpoc.BgpOriginAttrType {
+	switch origin {
+	case oc.BgpTypes_BgpOriginAttrType_EGP:
+		return gobgpoc.BGP_ORIGIN_ATTR_TYPE_EGP
+	case oc.BgpTypes_BgpOriginAttrType_IGP:
+		return gobgpoc.BGP_ORIGIN_ATTR_TYPE_IGP
+	case oc.BgpTypes_BgpOriginAttrType_INCOMPLETE:
+		return gobgpoc.BGP_ORIGIN_ATTR_TYPE_INCOMPLETE
+	default:
+		return ""
 	}
 }

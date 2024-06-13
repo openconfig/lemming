@@ -48,14 +48,18 @@ func singletonPrefixSetName(route string) string {
 // TestSetAttributes tests setting BGP attributes.
 func TestSetAttributes(t *testing.T) {
 	routesUnderTest := map[int]string{
-		0: "10.1.0.0/16",
-		1: "10.2.0.0/16",
-		2: "10.10.0.0/16",
-		3: "10.11.0.0/16",
-		4: "10.12.0.0/16",
-		5: "10.13.0.0/16",
-		6: "10.14.0.0/16",
-		7: "10.15.0.0/16",
+		0:  "10.1.0.0/16",
+		1:  "10.2.0.0/16",
+		2:  "10.10.0.0/16",
+		3:  "10.11.0.0/16",
+		4:  "10.12.0.0/16",
+		5:  "10.13.0.0/16",
+		6:  "10.14.0.0/16",
+		7:  "10.15.0.0/16",
+		30: "10.30.0.0/16",
+		31: "10.31.0.0/16",
+		32: "10.32.0.0/16",
+		33: "10.33.0.0/16",
 	}
 
 	installDefinedSets := func(t *testing.T, dut1, dut2, dut5 *Device) {
@@ -680,6 +684,98 @@ func TestSetAttributes(t *testing.T) {
 				},
 			},
 		},
+	}, {
+		Input: policytest.TestRoute{
+			ReachPrefix: routesUnderTest[30],
+		},
+		RouteTest: &policytest.RoutePathTestCase{
+			Description:    "Rejected route due to Origin Match",
+			ExpectedResult: policytest.RouteDiscarded,
+			PrevAdjRibOutPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+			},
+			PrevAdjRibOutPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_EGP,
+			},
+			AdjRibInPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_EGP,
+			},
+		},
+	}, {
+		Input: policytest.TestRoute{
+			ReachPrefix: routesUnderTest[31],
+		},
+		RouteTest: &policytest.RoutePathTestCase{
+			Description:    "Rejected route due to Origin Match",
+			ExpectedResult: policytest.RouteDiscarded,
+		},
+	}, {
+		Input: policytest.TestRoute{
+			ReachPrefix: routesUnderTest[32],
+		},
+		RouteTest: &policytest.RoutePathTestCase{
+			Description:    "Rejected route due to Origin Match",
+			ExpectedResult: policytest.RouteDiscarded,
+			PrevAdjRibOutPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+			},
+			PrevAdjRibOutPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_INCOMPLETE,
+			},
+			AdjRibInPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_INCOMPLETE,
+			},
+		},
+	}, {
+		Input: policytest.TestRoute{
+			ReachPrefix: routesUnderTest[33],
+		},
+		RouteTest: &policytest.RoutePathTestCase{
+			Description:    "Accepted route due to Origin Mismatch",
+			ExpectedResult: policytest.RouteAccepted,
+			PrevAdjRibOutPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
+			},
+			PrevAdjRibOutPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_EGP,
+			},
+			AdjRibInPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_EGP,
+			},
+			AdjRibInPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_EGP,
+			},
+			LocalRibAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_EGP,
+			},
+			AdjRibOutPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_EGP,
+			},
+			AdjRibOutPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_EGP,
+				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
+					0: {Index: ygot.Uint32(0), Member: []uint32{64500}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
+				},
+			},
+			NextAdjRibInPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_EGP,
+				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
+					0: {Index: ygot.Uint32(0), Member: []uint32{64500}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
+				},
+			},
+			NextAdjRibInPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_EGP,
+				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
+					0: {Index: ygot.Uint32(0), Member: []uint32{64500}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
+				},
+			},
+			NextLocalRibAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				Origin: oc.BgpTypes_BgpOriginAttrType_EGP,
+				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
+					0: {Index: ygot.Uint32(0), Member: []uint32{64500}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
+				},
+			},
+		},
 	}}
 
 	testPolicy(t, &PolicyTestCase{
@@ -796,6 +892,34 @@ func TestSetAttributes(t *testing.T) {
 					installDut1ImportStmt = true
 					dut1ImportStmt.GetOrCreateConditions().GetOrCreateBgpConditions().GetOrCreateMatchAsPathSet().SetAsPathSet(rejectASPathSetName2)
 					dut1ImportStmt.GetOrCreateConditions().GetOrCreateBgpConditions().GetOrCreateMatchAsPathSet().SetMatchSetOptions(oc.PolicyTypes_MatchSetOptionsType_ANY)
+				case 30:
+					// Set Route Origin and then match on it for rejection.
+					installDut1ExportStmt = true
+					dut1ExportStmt.GetOrCreateActions().GetOrCreateBgpActions().SetSetRouteOrigin(oc.BgpTypes_BgpOriginAttrType_EGP)
+
+					installDut1ImportStmt = true
+					dut1ImportStmt.GetOrCreateConditions().GetOrCreateBgpConditions().SetOriginEq(oc.BgpTypes_BgpOriginAttrType_EGP)
+				case 31:
+					// Set Route Origin and then match on it for rejection.
+					installDut1ExportStmt = true
+					dut1ExportStmt.GetOrCreateActions().GetOrCreateBgpActions().SetSetRouteOrigin(oc.BgpTypes_BgpOriginAttrType_IGP)
+
+					installDut1ImportStmt = true
+					dut1ImportStmt.GetOrCreateConditions().GetOrCreateBgpConditions().SetOriginEq(oc.BgpTypes_BgpOriginAttrType_IGP)
+				case 32:
+					// Set Route Origin and then match on it for rejection.
+					installDut1ExportStmt = true
+					dut1ExportStmt.GetOrCreateActions().GetOrCreateBgpActions().SetSetRouteOrigin(oc.BgpTypes_BgpOriginAttrType_INCOMPLETE)
+
+					installDut1ImportStmt = true
+					dut1ImportStmt.GetOrCreateConditions().GetOrCreateBgpConditions().SetOriginEq(oc.BgpTypes_BgpOriginAttrType_INCOMPLETE)
+				case 33:
+					// Set Route Origin and then match on a different one for rejection.
+					installDut1ExportStmt = true
+					dut1ExportStmt.GetOrCreateActions().GetOrCreateBgpActions().SetSetRouteOrigin(oc.BgpTypes_BgpOriginAttrType_EGP)
+
+					installDut1ImportStmt = false
+					dut1ImportStmt.GetOrCreateConditions().GetOrCreateBgpConditions().SetOriginEq(oc.BgpTypes_BgpOriginAttrType_IGP)
 				}
 				if installDut1ExportStmt {
 					dut1ExportStmt.GetOrCreateActions().SetPolicyResult(oc.RoutingPolicy_PolicyResultType_ACCEPT_ROUTE)

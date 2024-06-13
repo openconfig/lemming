@@ -642,12 +642,12 @@ func (t *bgpTask) populateRIBAttrs(path *api.Path, rib *oc.NetworkInstance_Proto
 			}
 		case *api.OriginAttribute:
 			hasOrigin = true
-			switch origin := m.GetOrigin(); origin {
-			case 0:
+			switch origin := m.GetOrigin(); int(origin) {
+			case gobgpoc.BGP_ORIGIN_ATTR_TYPE_IGP.ToInt():
 				attrSet.origin = oc.BgpTypes_BgpOriginAttrType_IGP
-			case 1:
+			case gobgpoc.BGP_ORIGIN_ATTR_TYPE_EGP.ToInt():
 				attrSet.origin = oc.BgpTypes_BgpOriginAttrType_EGP
-			case 2:
+			case gobgpoc.BGP_ORIGIN_ATTR_TYPE_INCOMPLETE.ToInt():
 				attrSet.origin = oc.BgpTypes_BgpOriginAttrType_INCOMPLETE
 			default:
 				log.Errorf("BGP: Unrecognized origin attribute value: %v", origin)
