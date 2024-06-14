@@ -86,6 +86,10 @@ func convertPolicyDefinition(policy *oc.RoutingPolicy_PolicyDefinition, neighAdd
 		if err != nil {
 			log.Errorf("MED value not supported: %v", err)
 		}
+		setNextHop, err := convertNextHop(statement.GetActions().GetBgpActions().GetSetNextHop())
+		if err != nil {
+			log.Error(err)
+		}
 		statements = append(statements, gobgpoc.Statement{
 			// In GoBGP, statements must have globally-unique names.
 			// Ensure uniqueness by qualifying each one with the name of the converted policy.
@@ -112,8 +116,9 @@ func convertPolicyDefinition(policy *oc.RoutingPolicy_PolicyDefinition, neighAdd
 						AsPathSet:       statement.Conditions.GetBgpConditions().GetMatchAsPathSet().GetAsPathSet(),
 						MatchSetOptions: convertMatchSetOptionsType(statement.GetConditions().GetBgpConditions().GetMatchAsPathSet().GetMatchSetOptions()),
 					},
-					RouteType: convertRouteType(statement.GetConditions().GetBgpConditions().GetRouteType()),
-					OriginEq:  convertOrigin(statement.GetConditions().GetBgpConditions().GetOriginEq()),
+					RouteType:     convertRouteType(statement.GetConditions().GetBgpConditions().GetRouteType()),
+					OriginEq:      convertOrigin(statement.GetConditions().GetBgpConditions().GetOriginEq()),
+					NextHopInList: statement.GetConditions().GetBgpConditions().GetNextHopIn(),
 				},
 			},
 			Actions: gobgpoc.Actions{
@@ -132,6 +137,7 @@ func convertPolicyDefinition(policy *oc.RoutingPolicy_PolicyDefinition, neighAdd
 						As:      strconv.FormatUint(uint64(statement.GetActions().GetBgpActions().GetSetAsPathPrepend().GetAsn()), 10),
 					},
 					SetRouteOrigin: convertOrigin(statement.GetActions().GetBgpActions().GetSetRouteOrigin()),
+					SetNextHop:     setNextHop,
 				},
 			},
 		})
@@ -379,4 +385,22 @@ func convertOrigin(origin oc.E_BgpTypes_BgpOriginAttrType) gobgpoc.BgpOriginAttr
 	default:
 		return ""
 	}
+}
+
+func convertNextHop(nexthop oc.RoutingPolicy_PolicyDefinition_Statement_Actions_BgpActions_SetNextHop_Union) (gobgpoc.BgpNextHopType, error) {
+	if nexthop == nil {
+		return "", nil
+	}
+	switch nh := nexthop.(type) {
+	case oc.UnionString:
+		return gobgpoc.BgpNextHopType(nh), nil
+	case oc.E_BgpPolicy_BgpNextHopType_Enum:
+		switch nh {
+		case oc.BgpPolicy_BgpNextHopType_Enum_SELF:
+			return gobgpoc.BgpNextHopType("self"), nil
+		case oc.BgpPolicy_BgpNextHopType_Enum_PEER_ADDRESS:
+			return gobgpoc.BgpNextHopType("peer-address"), nil
+		}
+	}
+	return "", fmt.Errorf("unrecognized value for SetNextHop: (%T, %v)", nexthop, nexthop)
 }

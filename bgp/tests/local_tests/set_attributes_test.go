@@ -47,6 +47,7 @@ func singletonPrefixSetName(route string) string {
 
 // TestSetAttributes tests setting BGP attributes.
 func TestSetAttributes(t *testing.T) {
+	// For debugging: just comment out the ones you don't want to run.
 	routesUnderTest := map[int]string{
 		0:  "10.1.0.0/16",
 		1:  "10.2.0.0/16",
@@ -56,6 +57,11 @@ func TestSetAttributes(t *testing.T) {
 		5:  "10.13.0.0/16",
 		6:  "10.14.0.0/16",
 		7:  "10.15.0.0/16",
+		20: "10.20.0.0/16",
+		21: "10.21.0.0/16",
+		22: "10.22.0.0/16",
+		23: "10.23.0.0/16",
+		24: "10.24.0.0/16",
 		30: "10.30.0.0/16",
 		31: "10.31.0.0/16",
 		32: "10.32.0.0/16",
@@ -686,6 +692,86 @@ func TestSetAttributes(t *testing.T) {
 		},
 	}, {
 		Input: policytest.TestRoute{
+			ReachPrefix: routesUnderTest[20],
+		},
+		RouteTest: &policytest.RoutePathTestCase{
+			Description:    "Rejected route due to NextHop Match",
+			ExpectedResult: policytest.RouteDiscarded,
+		},
+	}, {
+		Input: policytest.TestRoute{
+			ReachPrefix: routesUnderTest[21],
+		},
+		RouteTest: &policytest.RoutePathTestCase{
+			Description:    "Accepted route due to NextHop Mismatch",
+			ExpectedResult: policytest.RouteAccepted,
+			AdjRibOutPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
+					0: {Index: ygot.Uint32(0), Member: []uint32{64500}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
+				},
+			},
+			NextAdjRibInPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
+					0: {Index: ygot.Uint32(0), Member: []uint32{64500}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
+				},
+			},
+			NextAdjRibInPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
+					0: {Index: ygot.Uint32(0), Member: []uint32{64500}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
+				},
+			},
+			NextLocalRibAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
+					0: {Index: ygot.Uint32(0), Member: []uint32{64500}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
+				},
+			},
+		},
+	}, {
+		Input: policytest.TestRoute{
+			ReachPrefix: routesUnderTest[22],
+		},
+		RouteTest: &policytest.RoutePathTestCase{
+			Description:    "Rejected route due to NextHop Match",
+			ExpectedResult: policytest.RouteDiscarded,
+		},
+	}, {
+		Input: policytest.TestRoute{
+			ReachPrefix: routesUnderTest[23],
+		},
+		RouteTest: &policytest.RoutePathTestCase{
+			Description:    "Accepted route due to NextHop Mismatch",
+			ExpectedResult: policytest.RouteAccepted,
+			AdjRibOutPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
+					0: {Index: ygot.Uint32(0), Member: []uint32{64500}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
+				},
+			},
+			NextAdjRibInPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
+					0: {Index: ygot.Uint32(0), Member: []uint32{64500}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
+				},
+			},
+			NextAdjRibInPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
+					0: {Index: ygot.Uint32(0), Member: []uint32{64500}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
+				},
+			},
+			NextLocalRibAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
+				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
+					0: {Index: ygot.Uint32(0), Member: []uint32{64500}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
+				},
+			},
+		},
+	}, {
+		Input: policytest.TestRoute{
+			ReachPrefix: routesUnderTest[24],
+		},
+		RouteTest: &policytest.RoutePathTestCase{
+			Description:    "Rejected route due to NextHop Mismatch",
+			ExpectedResult: policytest.RouteDiscarded,
+		},
+	}, {
+		Input: policytest.TestRoute{
 			ReachPrefix: routesUnderTest[30],
 		},
 		RouteTest: &policytest.RoutePathTestCase{
@@ -892,6 +978,38 @@ func TestSetAttributes(t *testing.T) {
 					installDut1ImportStmt = true
 					dut1ImportStmt.GetOrCreateConditions().GetOrCreateBgpConditions().GetOrCreateMatchAsPathSet().SetAsPathSet(rejectASPathSetName2)
 					dut1ImportStmt.GetOrCreateConditions().GetOrCreateBgpConditions().GetOrCreateMatchAsPathSet().SetMatchSetOptions(oc.PolicyTypes_MatchSetOptionsType_ANY)
+				case 20:
+					// Set NextHop SELF and then match on it for rejection.
+					installDut1ExportStmt = true
+					dut1ExportStmt.GetOrCreateActions().GetOrCreateBgpActions().SetSetNextHop(oc.BgpPolicy_BgpNextHopType_Enum_SELF)
+
+					installDut1ImportStmt = true
+					dut1ImportStmt.GetOrCreateConditions().GetOrCreateBgpConditions().SetNextHopIn([]string{dut1.RouterID})
+				case 21:
+					// Don't set NextHop but still match on it.
+					installDut1ImportStmt = true
+					dut1ImportStmt.GetOrCreateConditions().GetOrCreateBgpConditions().SetNextHopIn([]string{dut1.RouterID})
+				case 22:
+					// Set NextHop to custom and then match on it for rejection.
+					installDut1ExportStmt = true
+					dut1ExportStmt.GetOrCreateActions().GetOrCreateBgpActions().SetSetNextHop(oc.UnionString("1.2.3.4"))
+
+					installDut1ImportStmt = true
+					dut1ImportStmt.GetOrCreateConditions().GetOrCreateBgpConditions().SetNextHopIn([]string{"1.2.3.4"})
+				case 23:
+					// Set NextHop to custom and then match on a different one.
+					installDut1ExportStmt = true
+					dut1ExportStmt.GetOrCreateActions().GetOrCreateBgpActions().SetSetNextHop(oc.UnionString("1.2.3.4"))
+
+					installDut1ImportStmt = true
+					dut1ImportStmt.GetOrCreateConditions().GetOrCreateBgpConditions().SetNextHopIn([]string{dut1.RouterID})
+				case 24:
+					// Set NextHop to custom and then match on a different one.
+					installDut1ExportStmt = true
+					dut1ExportStmt.GetOrCreateActions().GetOrCreateBgpActions().SetSetNextHop(oc.BgpPolicy_BgpNextHopType_Enum_PEER_ADDRESS)
+
+					installDut1ImportStmt = true
+					dut1ImportStmt.GetOrCreateConditions().GetOrCreateBgpConditions().SetNextHopIn([]string{dut2.RouterID})
 				case 30:
 					// Set Route Origin and then match on it for rejection.
 					installDut1ExportStmt = true

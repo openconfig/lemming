@@ -86,6 +86,10 @@ func TestIntendedToGoBGPPolicies(t *testing.T) {
 			v4Stmt.GetOrCreateConditions().GetOrCreateBgpConditions().SetOriginEq(oc.BgpTypes_BgpOriginAttrType_EGP)
 			v4Stmt.GetOrCreateActions().GetOrCreateBgpActions().SetSetRouteOrigin(oc.BgpTypes_BgpOriginAttrType_IGP)
 
+			// set-next-hop
+			v4Stmt.GetOrCreateConditions().GetOrCreateBgpConditions().SetNextHopIn([]string{"111.111.111.111"})
+			v4Stmt.GetOrCreateActions().GetOrCreateBgpActions().SetSetNextHop(oc.BgpPolicy_BgpNextHopType_Enum_SELF)
+
 			bgpoc.GetOrCreateNeighbor("1.1.1.1").GetOrCreateApplyPolicy().SetExportPolicy([]string{policyName})
 			bgpoc.GetOrCreateNeighbor("1.1.1.1").GetOrCreateApplyPolicy().SetImportPolicy([]string{policyName})
 			bgpoc.GetOrCreateNeighbor("1.1.1.1").GetOrCreateApplyPolicy().SetDefaultImportPolicy(oc.RoutingPolicy_DefaultPolicyType_ACCEPT_ROUTE)
@@ -214,7 +218,7 @@ func TestIntendedToGoBGPPolicies(t *testing.T) {
 							},
 							MedEq:                0x0,
 							OriginEq:             "egp",
-							NextHopInList:        []string(nil),
+							NextHopInList:        []string{"111.111.111.111"},
 							AfiSafiInList:        []gobgpoc.AfiSafiType(nil),
 							LocalPrefEq:          0x0,
 							CommunityCount:       gobgpoc.CommunityCount{Operator: "", Value: 0x0},
@@ -235,7 +239,7 @@ func TestIntendedToGoBGPPolicies(t *testing.T) {
 							SetExtCommunity:   gobgpoc.SetExtCommunity{SetExtCommunityMethod: gobgpoc.SetExtCommunityMethod{CommunitiesList: []string(nil), ExtCommunitySetRef: ""}, Options: ""},
 							SetRouteOrigin:    "igp",
 							SetLocalPref:      0x0,
-							SetNextHop:        "",
+							SetNextHop:        "self",
 							SetMed:            "",
 							SetLargeCommunity: gobgpoc.SetLargeCommunity{SetLargeCommunityMethod: gobgpoc.SetLargeCommunityMethod{CommunitiesList: []string(nil)}, Options: ""},
 						},
@@ -334,7 +338,7 @@ func TestIntendedToGoBGPPolicies(t *testing.T) {
 							},
 							MedEq:                0x0,
 							OriginEq:             "egp",
-							NextHopInList:        []string(nil),
+							NextHopInList:        []string{"111.111.111.111"},
 							AfiSafiInList:        []gobgpoc.AfiSafiType(nil),
 							LocalPrefEq:          0x0,
 							CommunityCount:       gobgpoc.CommunityCount{Operator: "", Value: 0x0},
@@ -355,7 +359,7 @@ func TestIntendedToGoBGPPolicies(t *testing.T) {
 							SetExtCommunity:   gobgpoc.SetExtCommunity{SetExtCommunityMethod: gobgpoc.SetExtCommunityMethod{CommunitiesList: []string(nil), ExtCommunitySetRef: ""}, Options: ""},
 							SetRouteOrigin:    "igp",
 							SetLocalPref:      0x0,
-							SetNextHop:        "",
+							SetNextHop:        "self",
 							SetMed:            "",
 							SetLargeCommunity: gobgpoc.SetLargeCommunity{SetLargeCommunityMethod: gobgpoc.SetLargeCommunityMethod{CommunitiesList: []string(nil)}, Options: ""},
 						},
