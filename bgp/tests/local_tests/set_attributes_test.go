@@ -111,9 +111,6 @@ func TestSetAttributes(t *testing.T) {
 			},
 			AdjRibOutPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
 				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
-				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
-					0: {Index: ygot.Uint32(0), Member: []uint32{64500}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
-				},
 			},
 			AdjRibOutPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
 				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
@@ -170,9 +167,6 @@ func TestSetAttributes(t *testing.T) {
 			LocalRibAttrs: nil,
 			AdjRibOutPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
 				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
-				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
-					0: {Index: ygot.Uint32(0), Member: []uint32{64500}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
-				},
 			},
 			AdjRibOutPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
 				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
@@ -237,9 +231,6 @@ func TestSetAttributes(t *testing.T) {
 			AdjRibOutPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
 				Origin:    oc.BgpTypes_BgpOriginAttrType_IGP,
 				LocalPref: ygot.Uint32(higherLocalPref),
-				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
-					0: {Index: ygot.Uint32(0), Member: []uint32{64500}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
-				},
 			},
 			AdjRibOutPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
 				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
@@ -310,9 +301,10 @@ func TestSetAttributes(t *testing.T) {
 				Origin:    oc.BgpTypes_BgpOriginAttrType_IGP,
 				LocalPref: ygot.Uint32(higherLocalPref),
 				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
-					0: {Index: ygot.Uint32(0), Member: []uint32{64500, 64502}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
+					0: {Index: ygot.Uint32(0), Member: []uint32{64502}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
 				},
 			},
+			LocalRibAttrs: nil,
 			AdjRibOutPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
 				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
 				// local-pref doesn't propagate to EBGP neighbour.
@@ -380,7 +372,7 @@ func TestSetAttributes(t *testing.T) {
 				Origin:    oc.BgpTypes_BgpOriginAttrType_IGP,
 				LocalPref: ygot.Uint32(higherLocalPref),
 				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
-					0: {Index: ygot.Uint32(0), Member: []uint32{64500, 64502}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
+					0: {Index: ygot.Uint32(0), Member: []uint32{64502}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
 				},
 			},
 			AdjRibOutPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
@@ -431,11 +423,10 @@ func TestSetAttributes(t *testing.T) {
 				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
 				Med:    ygot.Uint32(uint32(higherMED)),
 			},
+			LocalRibAttrs: nil,
 			AdjRibOutPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
 				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
-				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
-					0: {Index: ygot.Uint32(0), Member: []uint32{64500}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
-				},
+				Med:    ygot.Uint32(uint32(lowerMED)),
 			},
 			AdjRibOutPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
 				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
@@ -574,7 +565,7 @@ func TestSetAttributes(t *testing.T) {
 			AdjRibOutPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
 				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
 				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
-					0: {Index: ygot.Uint32(0), Member: []uint32{64500, 64498, 64502}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
+					0: {Index: ygot.Uint32(0), Member: []uint32{64498, 64502}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
 				},
 			},
 			AdjRibOutPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
@@ -638,7 +629,7 @@ func TestSetAttributes(t *testing.T) {
 			AdjRibOutPreAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
 				Origin: oc.BgpTypes_BgpOriginAttrType_IGP,
 				AsSegment: map[uint32]*oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet_AsSegment{
-					0: {Index: ygot.Uint32(0), Member: []uint32{64500, 64498, 64502}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
+					0: {Index: ygot.Uint32(0), Member: []uint32{64498, 64502}, Type: oc.BgpTypes_AsPathSegmentType_AS_SEQ},
 				},
 			},
 			AdjRibOutPostAttrs: &oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet{
