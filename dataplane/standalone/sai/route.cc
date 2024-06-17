@@ -1,5 +1,3 @@
-
-
 // Copyright 2023 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -228,8 +226,7 @@ sai_status_t l_remove_route_entries(uint32_t object_count,
   grpc::ClientContext context;
 
   for (uint32_t i = 0; i < object_count; i++) {
-    *req.add_reqs()->mutable_entry() =
-        convert_from_route_entry(*route_entry[i]);
+    *req.add_reqs()->mutable_entry() = convert_from_route_entry(route_entry[i]);
   }
 
   grpc::Status status = route->RemoveRouteEntries(&context, req, &resp);

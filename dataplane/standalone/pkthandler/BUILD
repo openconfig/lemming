@@ -63,5 +63,5 @@ pkg_deb(
     preinst = "preinst",
     prerm = "prerm",
     tags = ["manual"],
-    version = "1.0-0",
+    version = "1.2-0",
 )

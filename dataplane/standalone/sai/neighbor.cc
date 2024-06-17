@@ -1,5 +1,3 @@
-
-
 // Copyright 2023 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -268,7 +266,7 @@ sai_status_t l_remove_neighbor_entries(
 
   for (uint32_t i = 0; i < object_count; i++) {
     *req.add_reqs()->mutable_entry() =
-        convert_from_neighbor_entry(*neighbor_entry[i]);
+        convert_from_neighbor_entry(neighbor_entry[i]);
   }
 
   grpc::Status status = neighbor->RemoveNeighborEntries(&context, req, &resp);

@@ -1,5 +1,3 @@
-
-
 // Copyright 2023 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -441,7 +439,7 @@ sai_status_t l_remove_next_hop_group_members(uint32_t object_count,
   grpc::ClientContext context;
 
   for (uint32_t i = 0; i < object_count; i++) {
-    req.add_reqs().set_oid(object_id[i]);
+    req.add_reqs()->set_oid(object_id[i]);
   }
 
   grpc::Status status =

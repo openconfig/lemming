@@ -202,6 +202,7 @@ func createCCData(meta *saiast.FuncMetadata, apiName string, sai *saiast.SAIAPI,
 		}
 	case "remove_bulk":
 		convertFn = nil
+		opFn.EntryVar = strings.TrimPrefix(opFn.EntryVar, "*") // Usual entry is pointer, but for remove_bulk it's an array.
 		for _, attr := range info.Attrs[meta.TypeName].CreateFields {
 			name := sanitizeProtoName(attr.MemberName)
 			smt, err := protoFieldSetter(attr.SaiType, "", name, "attr_list[i].value", info)
@@ -535,7 +536,7 @@ extern const {{ .APIType }} l_{{ .APIName }};
 #endif  // {{ .IncludeGuard }}
 `))
 	ccTmpl = template.Must(template.New("cc").Parse(`
-{{ define "getattr" }}
+{{- define "getattr" }}
 {{ $parent := . }}
 switch ({{ .Var }}) {
   {{ range .Attrs }}
@@ -557,7 +558,7 @@ switch ({{ .Var }}) {
  {{- end }}
 }
 {{ end }}
-{{ define "setattr" }}
+{{- define "setattr" }}
 {{ $parent := . }}
 switch ({{ .Var }}) {
   {{ range .Attrs }}
@@ -573,9 +574,7 @@ switch ({{ .Var }}) {
 	break;
  {{- end }}
 }
-{{ end }}
-
-
+{{ end -}}
 // Copyright 2023 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -718,8 +717,8 @@ return msg;
 	grpc::ClientContext context;
 
 	for (uint32_t i = 0; i < object_count; i++) {
-		{{ if .OidVar -}} req.add_reqs().set_oid(object_id[i]); {{ end }}
-		{{ if .EntryVar }} *req.add_reqs()->mutable_entry() = {{ .EntryConversionFunc }}({{ printf "" .EntryVar }}[i]); {{ end }}
+		{{ if .OidVar -}} req.add_reqs()->set_oid(object_id[i]); {{ end }}
+		{{ if .EntryVar }} *req.add_reqs()->mutable_entry() = {{ .EntryConversionFunc }}({{ .EntryVar }}[i]); {{ end }}
 	}
 
 	grpc::Status status = {{ .Client }}->{{ .RPCMethod }}(&context, req, &resp);
