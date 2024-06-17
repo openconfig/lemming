@@ -120,66 +120,82 @@ func TestPrefixSet(t *testing.T) {
 				installPolicies(t, pair12, pair52, pair23, false, invert)
 			},
 			RouteTests: []*policytest.RouteTestCase{{
-				Description: "Exact match",
 				Input: policytest.TestRoute{
 					ReachPrefix: "10.33.0.0/16",
 				},
-				ExpectedResult: invertResult(policytest.RouteDiscarded, invert),
+				RouteTest: &policytest.RoutePathTestCase{
+					Description:    "Exact match",
+					ExpectedResult: invertResult(policytest.RouteDiscarded, invert),
+				},
 			}, {
-				Description: "Not exact match",
 				Input: policytest.TestRoute{
 					ReachPrefix: "10.33.0.0/17",
 				},
-				ExpectedResult: invertResult(policytest.RouteAccepted, invert),
+				RouteTest: &policytest.RoutePathTestCase{
+					Description:    "Not exact match",
+					ExpectedResult: invertResult(policytest.RouteAccepted, invert),
+				},
 			}, {
-				Description: "No match with any prefix",
 				Input: policytest.TestRoute{
 					ReachPrefix: "10.3.0.0/16",
 				},
-				ExpectedResult: invertResult(policytest.RouteAccepted, invert),
+				RouteTest: &policytest.RoutePathTestCase{
+					Description:    "No match with any prefix",
+					ExpectedResult: invertResult(policytest.RouteAccepted, invert),
+				},
 			}, {
-				Description: "mask length too short",
 				Input: policytest.TestRoute{
 					ReachPrefix: "10.34.0.0/15",
 				},
-				ExpectedResult: invertResult(policytest.RouteAccepted, invert),
+				RouteTest: &policytest.RoutePathTestCase{
+					Description:    "mask length too short",
+					ExpectedResult: invertResult(policytest.RouteAccepted, invert),
+				},
 			}, {
-				Description: "Lower end of mask length",
 				Input: policytest.TestRoute{
 					ReachPrefix: "10.34.0.0/16",
 				},
-				ExpectedResult: invertResult(policytest.RouteDiscarded, invert),
+				RouteTest: &policytest.RoutePathTestCase{
+					Description:    "Lower end of mask length",
+					ExpectedResult: invertResult(policytest.RouteDiscarded, invert),
+				},
 			}, {
-				Description: "Middle of mask length",
 				Input: policytest.TestRoute{
 					ReachPrefix: "10.34.0.0/20",
 				},
-				ExpectedResult: invertResult(policytest.RouteDiscarded, invert),
+				RouteTest: &policytest.RoutePathTestCase{
+					Description:    "Middle of mask length",
+					ExpectedResult: invertResult(policytest.RouteDiscarded, invert),
+				},
 			}, {
-				Description: "Upper end of mask length",
 				Input: policytest.TestRoute{
 					ReachPrefix: "10.34.0.0/23",
 				},
-				ExpectedResult: invertResult(policytest.RouteDiscarded, invert),
+				RouteTest: &policytest.RoutePathTestCase{
+					Description:    "Upper end of mask length",
+					ExpectedResult: invertResult(policytest.RouteDiscarded, invert),
+				},
 			}, {
-				Description: "mask length too long",
 				Input: policytest.TestRoute{
 					ReachPrefix: "10.34.0.0/24",
 				},
-				ExpectedResult: invertResult(policytest.RouteAccepted, invert),
+				RouteTest: &policytest.RoutePathTestCase{
+					Description:    "mask length too long",
+					ExpectedResult: invertResult(policytest.RouteAccepted, invert),
+				},
 			}},
 		}
 		for _, test := range spec.RouteTests {
-			if test.ExpectedResult == policytest.RouteAccepted {
-				test.PrevAdjRibOutPreCommunities = nil
-				test.PrevAdjRibOutPostCommunities = nil
-				test.AdjRibInPreCommunities = nil
-				test.AdjRibInPostCommunities = []string{"10000:10000"}
-				test.LocalRibCommunities = []string{"10000:10000"}
-				test.AdjRibOutPreCommunities = []string{"10000:10000"}
-				test.AdjRibOutPostCommunities = []string{"10000:10000"}
-				test.NextAdjRibInPreCommunities = []string{"10000:10000"}
-				test.NextLocalRibCommunities = []string{"10000:10000"}
+			if test.RouteTest.ExpectedResult == policytest.RouteAccepted {
+				test.RouteTest.PrevAdjRibOutPreCommunities = nil
+				test.RouteTest.PrevAdjRibOutPostCommunities = nil
+				test.RouteTest.AdjRibInPreCommunities = nil
+				test.RouteTest.AdjRibInPostCommunities = []string{"10000:10000"}
+				test.RouteTest.LocalRibCommunities = []string{"10000:10000"}
+				test.RouteTest.AdjRibOutPreCommunities = []string{"10000:10000"}
+				test.RouteTest.AdjRibOutPostCommunities = []string{"10000:10000"}
+				test.RouteTest.NextAdjRibInPreCommunities = []string{"10000:10000"}
+				test.RouteTest.NextLocalRibCommunities = []string{"10000:10000"}
 			}
 		}
 		return spec
@@ -202,66 +218,82 @@ func TestPrefixSet(t *testing.T) {
 				installPolicies(t, pair12, pair52, pair23, true, invert)
 			},
 			RouteTests: []*policytest.RouteTestCase{{
-				Description: "Exact match",
 				Input: policytest.TestRoute{
 					ReachPrefix: "2001::33:0:0/96",
 				},
-				ExpectedResult: invertResult(policytest.RouteDiscarded, invert),
+				RouteTest: &policytest.RoutePathTestCase{
+					Description:    "Exact match",
+					ExpectedResult: invertResult(policytest.RouteDiscarded, invert),
+				},
 			}, {
-				Description: "Not exact match",
 				Input: policytest.TestRoute{
 					ReachPrefix: "2001::33:0:0/97",
 				},
-				ExpectedResult: invertResult(policytest.RouteAccepted, invert),
+				RouteTest: &policytest.RoutePathTestCase{
+					Description:    "Not exact match",
+					ExpectedResult: invertResult(policytest.RouteAccepted, invert),
+				},
 			}, {
-				Description: "No match with any prefix",
 				Input: policytest.TestRoute{
 					ReachPrefix: "2001::3:0:0/96",
 				},
-				ExpectedResult: invertResult(policytest.RouteAccepted, invert),
+				RouteTest: &policytest.RoutePathTestCase{
+					Description:    "No match with any prefix",
+					ExpectedResult: invertResult(policytest.RouteAccepted, invert),
+				},
 			}, {
-				Description: "mask length too short",
 				Input: policytest.TestRoute{
 					ReachPrefix: "2001::34:0:0/95",
 				},
-				ExpectedResult: invertResult(policytest.RouteAccepted, invert),
+				RouteTest: &policytest.RoutePathTestCase{
+					Description:    "mask length too short",
+					ExpectedResult: invertResult(policytest.RouteAccepted, invert),
+				},
 			}, {
-				Description: "Lower end of mask length",
 				Input: policytest.TestRoute{
 					ReachPrefix: "2001::34:0:0/96",
 				},
-				ExpectedResult: invertResult(policytest.RouteDiscarded, invert),
+				RouteTest: &policytest.RoutePathTestCase{
+					Description:    "Lower end of mask length",
+					ExpectedResult: invertResult(policytest.RouteDiscarded, invert),
+				},
 			}, {
-				Description: "Middle of mask length",
 				Input: policytest.TestRoute{
 					ReachPrefix: "2001::34:0:0/104",
 				},
-				ExpectedResult: invertResult(policytest.RouteDiscarded, invert),
+				RouteTest: &policytest.RoutePathTestCase{
+					Description:    "Middle of mask length",
+					ExpectedResult: invertResult(policytest.RouteDiscarded, invert),
+				},
 			}, {
-				Description: "Upper end of mask length",
 				Input: policytest.TestRoute{
 					ReachPrefix: "2001::34:0:0/111",
 				},
-				ExpectedResult: invertResult(policytest.RouteDiscarded, invert),
+				RouteTest: &policytest.RoutePathTestCase{
+					Description:    "Upper end of mask length",
+					ExpectedResult: invertResult(policytest.RouteDiscarded, invert),
+				},
 			}, {
-				Description: "mask length too long",
 				Input: policytest.TestRoute{
 					ReachPrefix: "2001::34:0:0/112",
 				},
-				ExpectedResult: invertResult(policytest.RouteAccepted, invert),
+				RouteTest: &policytest.RoutePathTestCase{
+					Description:    "mask length too long",
+					ExpectedResult: invertResult(policytest.RouteAccepted, invert),
+				},
 			}},
 		}
 		for _, test := range spec.RouteTests {
-			if test.ExpectedResult == policytest.RouteAccepted {
-				test.PrevAdjRibOutPreCommunities = nil
-				test.PrevAdjRibOutPostCommunities = nil
-				test.AdjRibInPreCommunities = nil
-				test.AdjRibInPostCommunities = []string{"10000:10000"}
-				test.LocalRibCommunities = []string{"10000:10000"}
-				test.AdjRibOutPreCommunities = []string{"10000:10000"}
-				test.AdjRibOutPostCommunities = []string{"10000:10000"}
-				test.NextAdjRibInPreCommunities = []string{"10000:10000"}
-				test.NextLocalRibCommunities = []string{"10000:10000"}
+			if test.RouteTest.ExpectedResult == policytest.RouteAccepted {
+				test.RouteTest.PrevAdjRibOutPreCommunities = nil
+				test.RouteTest.PrevAdjRibOutPostCommunities = nil
+				test.RouteTest.AdjRibInPreCommunities = nil
+				test.RouteTest.AdjRibInPostCommunities = []string{"10000:10000"}
+				test.RouteTest.LocalRibCommunities = []string{"10000:10000"}
+				test.RouteTest.AdjRibOutPreCommunities = []string{"10000:10000"}
+				test.RouteTest.AdjRibOutPostCommunities = []string{"10000:10000"}
+				test.RouteTest.NextAdjRibInPreCommunities = []string{"10000:10000"}
+				test.RouteTest.NextLocalRibCommunities = []string{"10000:10000"}
 			}
 		}
 		return spec
