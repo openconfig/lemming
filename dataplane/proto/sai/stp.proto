@@ -87,6 +87,14 @@ message CreateStpPortsResponse {
   repeated CreateStpPortResponse resps = 1;
 }
 
+message RemoveStpPortsRequest {
+  repeated RemoveStpPortRequest reqs = 1;
+}
+
+message RemoveStpPortsResponse {
+  repeated RemoveStpPortResponse resps = 1;
+}
+
 service Stp {
   rpc CreateStp(CreateStpRequest) returns (CreateStpResponse) {}
   rpc RemoveStp(RemoveStpRequest) returns (RemoveStpResponse) {}
@@ -99,4 +107,5 @@ service Stp {
   rpc GetStpPortAttribute(GetStpPortAttributeRequest)
       returns (GetStpPortAttributeResponse) {}
   rpc CreateStpPorts(CreateStpPortsRequest) returns (CreateStpPortsResponse) {}
+  rpc RemoveStpPorts(RemoveStpPortsRequest) returns (RemoveStpPortsResponse) {}
 }

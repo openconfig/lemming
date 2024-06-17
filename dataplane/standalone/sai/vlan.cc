@@ -1,5 +1,3 @@
-
-
 // Copyright 2023 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -525,7 +523,28 @@ sai_status_t l_remove_vlan_members(uint32_t object_count,
                                    sai_bulk_op_error_mode_t mode,
                                    sai_status_t *object_statuses) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-  return SAI_STATUS_NOT_IMPLEMENTED;
+
+  lemming::dataplane::sai::RemoveVlanMembersRequest req;
+  lemming::dataplane::sai::RemoveVlanMembersResponse resp;
+  grpc::ClientContext context;
+
+  for (uint32_t i = 0; i < object_count; i++) {
+    req.add_reqs()->set_oid(object_id[i]);
+  }
+
+  grpc::Status status = vlan->RemoveVlanMembers(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  if (object_count != resp.resps().size()) {
+    return SAI_STATUS_FAILURE;
+  }
+  for (uint32_t i = 0; i < object_count; i++) {
+    object_statuses[i] = SAI_STATUS_SUCCESS;
+  }
+
+  return SAI_STATUS_SUCCESS;
 }
 
 sai_status_t l_get_vlan_stats(sai_object_id_t vlan_id,

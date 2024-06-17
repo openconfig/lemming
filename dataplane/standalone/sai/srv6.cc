@@ -1,5 +1,3 @@
-
-
 // Copyright 2023 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -214,7 +212,28 @@ sai_status_t l_remove_srv6_sidlists(uint32_t object_count,
                                     sai_bulk_op_error_mode_t mode,
                                     sai_status_t *object_statuses) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-  return SAI_STATUS_NOT_IMPLEMENTED;
+
+  lemming::dataplane::sai::RemoveSrv6SidlistsRequest req;
+  lemming::dataplane::sai::RemoveSrv6SidlistsResponse resp;
+  grpc::ClientContext context;
+
+  for (uint32_t i = 0; i < object_count; i++) {
+    req.add_reqs()->set_oid(object_id[i]);
+  }
+
+  grpc::Status status = srv6->RemoveSrv6Sidlists(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  if (object_count != resp.resps().size()) {
+    return SAI_STATUS_FAILURE;
+  }
+  for (uint32_t i = 0; i < object_count; i++) {
+    object_statuses[i] = SAI_STATUS_SUCCESS;
+  }
+
+  return SAI_STATUS_SUCCESS;
 }
 
 sai_status_t l_create_my_sid_entry(const sai_my_sid_entry_t *my_sid_entry,
@@ -392,7 +411,27 @@ sai_status_t l_remove_my_sid_entries(uint32_t object_count,
                                      sai_bulk_op_error_mode_t mode,
                                      sai_status_t *object_statuses) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-  return SAI_STATUS_NOT_IMPLEMENTED;
+
+  lemming::dataplane::sai::RemoveMySidEntriesRequest req;
+  lemming::dataplane::sai::RemoveMySidEntriesResponse resp;
+  grpc::ClientContext context;
+
+  for (uint32_t i = 0; i < object_count; i++) {
+  }
+
+  grpc::Status status = srv6->RemoveMySidEntries(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  if (object_count != resp.resps().size()) {
+    return SAI_STATUS_FAILURE;
+  }
+  for (uint32_t i = 0; i < object_count; i++) {
+    object_statuses[i] = SAI_STATUS_SUCCESS;
+  }
+
+  return SAI_STATUS_SUCCESS;
 }
 
 sai_status_t l_set_my_sid_entries_attribute(

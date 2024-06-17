@@ -69,6 +69,14 @@ message CreateSrv6SidlistsResponse {
   repeated CreateSrv6SidlistResponse resps = 1;
 }
 
+message RemoveSrv6SidlistsRequest {
+  repeated RemoveSrv6SidlistRequest reqs = 1;
+}
+
+message RemoveSrv6SidlistsResponse {
+  repeated RemoveSrv6SidlistResponse resps = 1;
+}
+
 message CreateMySidEntryRequest {
   option (sai_type) = OBJECT_TYPE_MY_SID_ENTRY;
   MySidEntry entry = 1;
@@ -125,6 +133,14 @@ message CreateMySidEntriesResponse {
   repeated CreateMySidEntryResponse resps = 1;
 }
 
+message RemoveMySidEntriesRequest {
+  repeated RemoveMySidEntryRequest reqs = 1;
+}
+
+message RemoveMySidEntriesResponse {
+  repeated RemoveMySidEntryResponse resps = 1;
+}
+
 service Srv6 {
   rpc CreateSrv6Sidlist(CreateSrv6SidlistRequest)
       returns (CreateSrv6SidlistResponse) {}
@@ -136,6 +152,8 @@ service Srv6 {
       returns (GetSrv6SidlistAttributeResponse) {}
   rpc CreateSrv6Sidlists(CreateSrv6SidlistsRequest)
       returns (CreateSrv6SidlistsResponse) {}
+  rpc RemoveSrv6Sidlists(RemoveSrv6SidlistsRequest)
+      returns (RemoveSrv6SidlistsResponse) {}
   rpc CreateMySidEntry(CreateMySidEntryRequest)
       returns (CreateMySidEntryResponse) {}
   rpc RemoveMySidEntry(RemoveMySidEntryRequest)
@@ -146,4 +164,6 @@ service Srv6 {
       returns (GetMySidEntryAttributeResponse) {}
   rpc CreateMySidEntries(CreateMySidEntriesRequest)
       returns (CreateMySidEntriesResponse) {}
+  rpc RemoveMySidEntries(RemoveMySidEntriesRequest)
+      returns (RemoveMySidEntriesResponse) {}
 }

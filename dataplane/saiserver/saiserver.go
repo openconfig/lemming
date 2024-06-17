@@ -86,10 +86,6 @@ type nat struct {
 	saipb.UnimplementedNatServer
 }
 
-type rpfGroup struct {
-	saipb.UnimplementedRpfGroupServer
-}
-
 type samplePacket struct {
 	saipb.UnimplementedSamplepacketServer
 }
@@ -108,10 +104,6 @@ type systemPort struct {
 
 type tam struct {
 	saipb.UnimplementedTamServer
-}
-
-type virtualRouter struct {
-	saipb.UnimplementedVirtualRouterServer
 }
 
 type wred struct {
@@ -146,7 +138,6 @@ type Server struct {
 	mirror       *mirror
 	mpls         *mpls
 	nat          *nat
-	rpfGroup     *rpfGroup
 	samplePacket *samplePacket
 	srv6         *srv6
 	saiSwitch    *saiSwitch
@@ -227,7 +218,6 @@ func New(ctx context.Context, mgr *attrmgr.AttrMgr, s *grpc.Server, opts *dplane
 		mirror:            &mirror{},
 		mpls:              &mpls{},
 		nat:               &nat{},
-		rpfGroup:          &rpfGroup{},
 		samplePacket:      &samplePacket{},
 		srv6:              &srv6{},
 		saiSwitch:         sw,
@@ -251,7 +241,6 @@ func New(ctx context.Context, mgr *attrmgr.AttrMgr, s *grpc.Server, opts *dplane
 	saipb.RegisterMirrorServer(s, srv.mirror)
 	saipb.RegisterMplsServer(s, srv.mpls)
 	saipb.RegisterNatServer(s, srv.nat)
-	saipb.RegisterRpfGroupServer(s, srv.rpfGroup)
 	saipb.RegisterSamplepacketServer(s, srv.samplePacket)
 	saipb.RegisterSrv6Server(s, srv.srv6)
 	saipb.RegisterSystemPortServer(s, srv.systemPort)

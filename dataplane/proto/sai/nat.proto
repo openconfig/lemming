@@ -104,6 +104,14 @@ message CreateNatEntriesResponse {
   repeated CreateNatEntryResponse resps = 1;
 }
 
+message RemoveNatEntriesRequest {
+  repeated RemoveNatEntryRequest reqs = 1;
+}
+
+message RemoveNatEntriesResponse {
+  repeated RemoveNatEntryResponse resps = 1;
+}
+
 message CreateNatZoneCounterRequest {
   option (sai_type) = OBJECT_TYPE_NAT_ZONE_COUNTER;
   uint64 switch = 1;
@@ -156,6 +164,8 @@ service Nat {
       returns (GetNatEntryAttributeResponse) {}
   rpc CreateNatEntries(CreateNatEntriesRequest)
       returns (CreateNatEntriesResponse) {}
+  rpc RemoveNatEntries(RemoveNatEntriesRequest)
+      returns (RemoveNatEntriesResponse) {}
   rpc CreateNatZoneCounter(CreateNatZoneCounterRequest)
       returns (CreateNatZoneCounterResponse) {}
   rpc RemoveNatZoneCounter(RemoveNatZoneCounterRequest)

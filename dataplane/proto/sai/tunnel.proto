@@ -286,6 +286,14 @@ message CreateTunnelsResponse {
   repeated CreateTunnelResponse resps = 1;
 }
 
+message RemoveTunnelsRequest {
+  repeated RemoveTunnelRequest reqs = 1;
+}
+
+message RemoveTunnelsResponse {
+  repeated RemoveTunnelResponse resps = 1;
+}
+
 service Tunnel {
   rpc CreateTunnelMap(CreateTunnelMapRequest)
       returns (CreateTunnelMapResponse) {}
@@ -315,4 +323,5 @@ service Tunnel {
   rpc GetTunnelMapEntryAttribute(GetTunnelMapEntryAttributeRequest)
       returns (GetTunnelMapEntryAttributeResponse) {}
   rpc CreateTunnels(CreateTunnelsRequest) returns (CreateTunnelsResponse) {}
+  rpc RemoveTunnels(RemoveTunnelsRequest) returns (RemoveTunnelsResponse) {}
 }

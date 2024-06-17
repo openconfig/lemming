@@ -1,5 +1,3 @@
-
-
 // Copyright 2023 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -261,7 +259,29 @@ sai_status_t l_remove_neighbor_entries(
     uint32_t object_count, const sai_neighbor_entry_t *neighbor_entry,
     sai_bulk_op_error_mode_t mode, sai_status_t *object_statuses) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-  return SAI_STATUS_NOT_IMPLEMENTED;
+
+  lemming::dataplane::sai::RemoveNeighborEntriesRequest req;
+  lemming::dataplane::sai::RemoveNeighborEntriesResponse resp;
+  grpc::ClientContext context;
+
+  for (uint32_t i = 0; i < object_count; i++) {
+    *req.add_reqs()->mutable_entry() =
+        convert_from_neighbor_entry(neighbor_entry[i]);
+  }
+
+  grpc::Status status = neighbor->RemoveNeighborEntries(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  if (object_count != resp.resps().size()) {
+    return SAI_STATUS_FAILURE;
+  }
+  for (uint32_t i = 0; i < object_count; i++) {
+    object_statuses[i] = SAI_STATUS_SUCCESS;
+  }
+
+  return SAI_STATUS_SUCCESS;
 }
 
 sai_status_t l_set_neighbor_entries_attribute(

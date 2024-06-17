@@ -41,6 +41,17 @@ func newPolicer(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Serv
 
 // CreatePolicer return policer.
 func (p *policer) CreatePolicer(context.Context, *saipb.CreatePolicerRequest) (*saipb.CreatePolicerResponse, error) {
+	id := p.mgr.NextID()
 	// TODO: provide implementation.
-	return &saipb.CreatePolicerResponse{}, nil
+	return &saipb.CreatePolicerResponse{
+		Oid: id,
+	}, nil
+}
+
+func (p *policer) RemovePolicer(context.Context, *saipb.RemovePolicerRequest) (*saipb.RemovePolicerResponse, error) {
+	return &saipb.RemovePolicerResponse{}, nil
+}
+
+func (p *policer) SetPolicerAttribute(context.Context, *saipb.SetPolicerAttributeRequest) (*saipb.SetPolicerAttributeResponse, error) {
+	return &saipb.SetPolicerAttributeResponse{}, nil
 }

@@ -1038,3 +1038,67 @@ func (h *hash) CreateHash(_ context.Context, req *saipb.CreateHashRequest) (*sai
 
 	return &saipb.CreateHashResponse{Oid: id}, nil
 }
+
+type virtualRouter struct {
+	saipb.UnimplementedVirtualRouterServer
+	mgr       *attrmgr.AttrMgr
+	dataplane switchDataplaneAPI
+}
+
+func newVirtualRouter(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server) *virtualRouter {
+	vr := &virtualRouter{
+		mgr:       mgr,
+		dataplane: dataplane,
+	}
+	saipb.RegisterVirtualRouterServer(s, vr)
+	return vr
+}
+
+func (vr *virtualRouter) CreateVirtualRouter(context.Context, *saipb.CreateVirtualRouterRequest) (*saipb.CreateVirtualRouterResponse, error) {
+	id := vr.mgr.NextID()
+
+	return &saipb.CreateVirtualRouterResponse{Oid: id}, nil
+}
+
+func (vr *virtualRouter) RemoveVirtualRouter(context.Context, *saipb.RemoveVirtualRouterRequest) (*saipb.RemoveVirtualRouterResponse, error) {
+	return &saipb.RemoveVirtualRouterResponse{}, nil
+}
+
+func (vr *virtualRouter) SetVirtualRouterAttribute(context.Context, *saipb.SetVirtualRouterAttributeRequest) (*saipb.SetVirtualRouterAttributeResponse, error) {
+	return &saipb.SetVirtualRouterAttributeResponse{}, nil
+}
+
+type rpfGroup struct {
+	saipb.UnimplementedRpfGroupServer
+	mgr       *attrmgr.AttrMgr
+	dataplane switchDataplaneAPI
+}
+
+func newRpfGroup(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server) *rpfGroup {
+	rpf := &rpfGroup{
+		mgr:       mgr,
+		dataplane: dataplane,
+	}
+	saipb.RegisterRpfGroupServer(s, rpf)
+	return rpf
+}
+
+func (rpf *rpfGroup) CreateRpfGroup(context.Context, *saipb.CreateRpfGroupRequest) (*saipb.CreateRpfGroupResponse, error) {
+	id := rpf.mgr.NextID()
+
+	return &saipb.CreateRpfGroupResponse{Oid: id}, nil
+}
+
+func (rpf *rpfGroup) CreateRpfGroupMember(context.Context, *saipb.CreateRpfGroupMemberRequest) (*saipb.CreateRpfGroupMemberResponse, error) {
+	id := rpf.mgr.NextID()
+
+	return &saipb.CreateRpfGroupMemberResponse{Oid: id}, nil
+}
+
+func (rpf *rpfGroup) RemoveRpfGroup(context.Context, *saipb.RemoveRpfGroupRequest) (*saipb.RemoveRpfGroupResponse, error) {
+	return &saipb.RemoveRpfGroupResponse{}, nil
+}
+
+func (rpf *rpfGroup) RemoveRpfGroupMember(context.Context, *saipb.RemoveRpfGroupMemberRequest) (*saipb.RemoveRpfGroupMemberResponse, error) {
+	return &saipb.RemoveRpfGroupMemberResponse{}, nil
+}

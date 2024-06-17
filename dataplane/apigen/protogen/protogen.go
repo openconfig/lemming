@@ -274,6 +274,17 @@ func populateTmplDataFromFunc(apis map[string]*protoAPITmplData, docInfo *docpar
 			ProtoType: repeatedType + strcase.UpperCamelCase("Create "+meta.TypeName+"Response"),
 			Index:     1,
 		})
+	case "remove_bulk":
+		req.Fields = append(req.Fields, protoTmplField{
+			Name:      "reqs",
+			ProtoType: repeatedType + strcase.UpperCamelCase("Remove "+meta.TypeName+"Request"),
+			Index:     1,
+		})
+		resp.Fields = append(resp.Fields, protoTmplField{
+			Name:      "resps",
+			ProtoType: repeatedType + strcase.UpperCamelCase("Remove "+meta.TypeName+"Response"),
+			Index:     1,
+		})
 	case "get_stats":
 		req.Fields = append(req.Fields, idField, protoTmplField{
 			Name:      "counter_ids",
