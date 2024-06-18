@@ -27,7 +27,7 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/util/queue"
-	"github.com/openconfig/lemming/dataplane/internal/kernel"
+	"github.com/openconfig/lemming/dataplane/kernel"
 
 	log "github.com/golang/glog"
 

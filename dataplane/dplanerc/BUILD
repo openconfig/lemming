@@ -22,7 +22,7 @@ go_library(
         "@org_golang_google_protobuf//proto",
     ] + select({
         "@io_bazel_rules_go//go/platform:android": [
-            "//dataplane/internal/kernel",
+            "//dataplane/kernel",
             "//gnmi/gnmiclient",
             "//gnmi/oc",
             "//gnmi/oc/ocpath",
@@ -32,7 +32,7 @@ go_library(
             "@org_golang_x_sys//unix",
         ],
         "@io_bazel_rules_go//go/platform:linux": [
-            "//dataplane/internal/kernel",
+            "//dataplane/kernel",
             "//gnmi/gnmiclient",
             "//gnmi/oc",
             "//gnmi/oc/ocpath",

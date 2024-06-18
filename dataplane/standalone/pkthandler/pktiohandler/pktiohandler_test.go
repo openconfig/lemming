@@ -24,7 +24,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/testing/protocmp"
 
-	"github.com/openconfig/lemming/dataplane/internal/kernel"
+	"github.com/openconfig/lemming/dataplane/kernel"
 	pktiopb "github.com/openconfig/lemming/dataplane/proto/packetio"
 )
 

@@ -7,7 +7,7 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//dataplane/forwarding/util/queue",
-        "//dataplane/internal/kernel",
+        "//dataplane/kernel",
         "//dataplane/proto/packetio",
         "@com_github_golang_glog//:glog",
         "@org_golang_google_genproto_googleapis_rpc//status",
@@ -21,7 +21,7 @@ go_test(
     srcs = ["pktiohandler_test.go"],
     embed = [":pktiohandler"],
     deps = [
-        "//dataplane/internal/kernel",
+        "//dataplane/kernel",
         "//dataplane/proto/packetio",
         "@com_github_google_go_cmp//cmp",
         "@org_golang_google_grpc//codes",
