@@ -3,7 +3,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "kerneltest",
     srcs = ["kernel.go"],
-    importpath = "github.com/openconfig/lemming/dataplane/internal/kernel/kerneltest",
+    importpath = "github.com/openconfig/lemming/dataplane/kernel/kerneltest",
     visibility = ["//dataplane:__subpackages__"],
     deps = select({
         "@io_bazel_rules_go//go/platform:android": [

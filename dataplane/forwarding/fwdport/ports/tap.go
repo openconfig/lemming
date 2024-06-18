@@ -31,7 +31,7 @@ import (
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdobject"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdpacket"
-	"github.com/openconfig/lemming/dataplane/internal/kernel"
+	"github.com/openconfig/lemming/dataplane/kernel"
 	"github.com/openconfig/lemming/internal/debug"
 
 	log "github.com/golang/glog"

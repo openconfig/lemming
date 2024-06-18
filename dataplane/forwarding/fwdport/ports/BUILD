@@ -31,13 +31,13 @@ go_library(
         "@com_github_google_gopacket//pcapgo",
     ] + select({
         "@io_bazel_rules_go//go/platform:android": [
-            "//dataplane/internal/kernel",
+            "//dataplane/kernel",
             "@com_github_google_gopacket//afpacket",
             "@com_github_vishvananda_netlink//:netlink",
             "@org_golang_x_sys//unix",
         ],
         "@io_bazel_rules_go//go/platform:linux": [
-            "//dataplane/internal/kernel",
+            "//dataplane/kernel",
             "@com_github_google_gopacket//afpacket",
             "@com_github_vishvananda_netlink//:netlink",
             "@org_golang_x_sys//unix",

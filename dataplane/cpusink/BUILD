@@ -9,7 +9,7 @@ go_library(
         "//dataplane/dplaneopts",
         "//dataplane/forwarding/attributes",
         "//dataplane/forwarding/fwdconfig",
-        "//dataplane/internal/kernel",
+        "//dataplane/kernel",
         "//proto/forwarding",
         "@com_github_golang_glog//:glog",
         "@com_github_vishvananda_netlink//:netlink",

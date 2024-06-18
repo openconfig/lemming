@@ -7,7 +7,7 @@ go_library(
         "kernel.go",
         "tap.go",
     ],
-    importpath = "github.com/openconfig/lemming/dataplane/internal/kernel",
+    importpath = "github.com/openconfig/lemming/dataplane/kernel",
     visibility = ["//dataplane:__subpackages__"],
     deps = [
         "@com_github_vishvananda_netlink//:netlink",
