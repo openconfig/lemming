@@ -1512,8 +1512,8 @@ def go_repositories():
         name = "com_github_osrg_gobgp_v3",
         build_file_proto_mode = "disable",
         importpath = "github.com/osrg/gobgp/v3",
-        sum = "h1:lhc6n8L5Yqm1ZNca+21TQjpXBrl+O3sNwDgU0/407Ms=",
-        version = "v3.27.1-0.20240606071546-dace87570846",
+        sum = "h1:HamaGNtGjbXR3iqXr2f5J4b9YXgLEz3DtItZuIVn0vk=",
+        version = "v3.27.1-0.20240613095719-0c8d2054ef43",
     )
     go_repository(
         name = "com_github_patrickmn_go_cache",

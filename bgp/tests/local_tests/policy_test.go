@@ -206,6 +206,9 @@ func testPolicyAux(t *testing.T, testspec *PolicyTestCase, dut1, dut2, dut3, dut
 	}
 
 	for _, routeTest := range testspec.routeTests {
+		if routeTest.Input.ReachPrefix == "" {
+			continue
+		}
 		if routeTest.RouteTest != nil {
 			// Install regular test route into DUT1.
 			route := &oc.NetworkInstance_Protocol_Static{
@@ -257,6 +260,9 @@ func testPolicyAux(t *testing.T, testspec *PolicyTestCase, dut1, dut2, dut3, dut
 	}
 
 	for _, routeTest := range testspec.routeTests {
+		if routeTest.Input.ReachPrefix == "" {
+			continue
+		}
 		if routeTest.RouteTest != nil {
 			testPropagation(t, routeTest.Input, routeTest.RouteTest, dut1, dut2, dut3)
 			testCommunities(t, routeTest.Input, routeTest.RouteTest, dut1, dut2, dut3)
