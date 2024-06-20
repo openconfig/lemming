@@ -230,7 +230,7 @@ func parseInitializer(i int, vals []EnumValue) (val int, rerr error) {
 	if strings.Contains(init, "+") {
 		splits := strings.Split(init, "+")
 		if len(splits) != 2 {
-			return 0, fmt.Errorf("invalid init format expected A + B", init)
+			return 0, fmt.Errorf("invalid init format expected A + B: %q", init)
 		}
 		lhs := strings.TrimSpace(splits[0])
 		rhs := strings.TrimSpace(splits[1])
@@ -251,7 +251,7 @@ func parseInitializer(i int, vals []EnumValue) (val int, rerr error) {
 	if strings.Contains(init, "<<") {
 		splits := strings.Split(init, "<<")
 		if len(splits) != 2 {
-			return 0, fmt.Errorf("invalid init format expected A + B", init)
+			return 0, fmt.Errorf("invalid init format expected A << B: %q", init)
 		}
 		lhs := strings.TrimSpace(splits[0])
 		rhs := strings.TrimSpace(splits[1])
