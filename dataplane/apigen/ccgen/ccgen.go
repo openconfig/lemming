@@ -298,8 +298,6 @@ func createCCData(meta *saiast.FuncMetadata, apiName string, sai *saiast.SAIAPI,
 	return opFn, convertFn
 }
 
-const protoNS = "lemming::dataplane::sai::"
-
 type accessorType int
 
 const (
