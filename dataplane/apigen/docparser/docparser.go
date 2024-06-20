@@ -229,6 +229,9 @@ func parseInitializer(i int, vals []EnumValue) (val int, rerr error) {
 	}
 	if strings.Contains(init, "+") {
 		splits := strings.Split(init, "+")
+		if len(splits) != 2 {
+			return 0, fmt.Errorf("invalid init format expected A + B", init)
+		}
 		lhs := strings.TrimSpace(splits[0])
 		rhs := strings.TrimSpace(splits[1])
 		rv, err := strconv.ParseUint(rhs, 0, 64)
@@ -247,6 +250,9 @@ func parseInitializer(i int, vals []EnumValue) (val int, rerr error) {
 	}
 	if strings.Contains(init, "<<") {
 		splits := strings.Split(init, "<<")
+		if len(splits) != 2 {
+			return 0, fmt.Errorf("invalid init format expected A + B", init)
+		}
 		lhs := strings.TrimSpace(splits[0])
 		rhs := strings.TrimSpace(splits[1])
 		lv, err := strconv.ParseUint(lhs, 0, 64)
@@ -321,8 +327,6 @@ func parseXMLEntries(members []MemberDef, xmlInfo *SAIInfo) error {
 			retryEntry = append(retryEntry, enum)
 		}
 	}
-	consts := saiConsts
-	fmt.Println(consts)
 	// Retry processing enum once, for enums that refer to other enums.
 	for _, enum := range retryEntry {
 		err := processEntry(enum)
