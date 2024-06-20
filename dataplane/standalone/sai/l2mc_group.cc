@@ -19,6 +19,7 @@
 #include "dataplane/proto/sai/common.pb.h"
 #include "dataplane/proto/sai/l2mc_group.pb.h"
 #include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
 const sai_l2mc_group_api_t l_l2mc_group = {
     .create_l2mc_group = l_create_l2mc_group,
@@ -121,8 +122,7 @@ sai_status_t l_get_l2mc_group_attribute(sai_object_id_t l2mc_group_id,
   req.set_oid(l2mc_group_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::L2mcGroupAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_l2mc_group_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = l2mc_group->GetL2mcGroupAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -203,8 +203,8 @@ sai_status_t l_get_l2mc_group_member_attribute(
   req.set_oid(l2mc_group_member_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::L2mcGroupMemberAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(
+        convert_sai_l2mc_group_member_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status =
       l2mc_group->GetL2mcGroupMemberAttribute(&context, req, &resp);

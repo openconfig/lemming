@@ -19,6 +19,7 @@
 #include "dataplane/proto/sai/common.pb.h"
 #include "dataplane/proto/sai/generic_programmable.pb.h"
 #include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
 const sai_generic_programmable_api_t l_generic_programmable = {
     .create_generic_programmable = l_create_generic_programmable,
@@ -127,8 +128,7 @@ sai_status_t l_get_generic_programmable_attribute(
 
   for (uint32_t i = 0; i < attr_count; i++) {
     req.add_attr_type(
-        static_cast<lemming::dataplane::sai::GenericProgrammableAttr>(
-            attr_list[i].id + 1));
+        convert_sai_generic_programmable_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = generic_programmable->GetGenericProgrammableAttribute(
       &context, req, &resp);

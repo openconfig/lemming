@@ -19,6 +19,7 @@
 #include "dataplane/proto/sai/common.pb.h"
 #include "dataplane/proto/sai/port.pb.h"
 #include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
 const sai_port_api_t l_port = {
     .create_port = l_create_port,
@@ -74,8 +75,8 @@ lemming::dataplane::sai::CreatePortRequest convert_create_port(
         msg.set_admin_state(attr_list[i].value.booldata);
         break;
       case SAI_PORT_ATTR_MEDIA_TYPE:
-        msg.set_media_type(static_cast<lemming::dataplane::sai::PortMediaType>(
-            attr_list[i].value.s32 + 1));
+        msg.set_media_type(
+            convert_sai_port_media_type_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_PORT_ATTR_ADVERTISED_SPEED:
         msg.mutable_advertised_speed()->Add(
@@ -92,16 +93,15 @@ lemming::dataplane::sai::CreatePortRequest convert_create_port(
         break;
       case SAI_PORT_ATTR_ADVERTISED_FLOW_CONTROL_MODE:
         msg.set_advertised_flow_control_mode(
-            static_cast<lemming::dataplane::sai::PortFlowControlMode>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_port_flow_control_mode_t_to_proto(
+                attr_list[i].value.s32));
         break;
       case SAI_PORT_ATTR_ADVERTISED_ASYMMETRIC_PAUSE_MODE:
         msg.set_advertised_asymmetric_pause_mode(attr_list[i].value.booldata);
         break;
       case SAI_PORT_ATTR_ADVERTISED_MEDIA_TYPE:
         msg.set_advertised_media_type(
-            static_cast<lemming::dataplane::sai::PortMediaType>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_port_media_type_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_PORT_ATTR_ADVERTISED_OUI_CODE:
         msg.set_advertised_oui_code(attr_list[i].value.u32);
@@ -120,20 +120,19 @@ lemming::dataplane::sai::CreatePortRequest convert_create_port(
         break;
       case SAI_PORT_ATTR_INTERNAL_LOOPBACK_MODE:
         msg.set_internal_loopback_mode(
-            static_cast<lemming::dataplane::sai::PortInternalLoopbackMode>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_port_internal_loopback_mode_t_to_proto(
+                attr_list[i].value.s32));
         break;
       case SAI_PORT_ATTR_USE_EXTENDED_FEC:
         msg.set_use_extended_fec(attr_list[i].value.booldata);
         break;
       case SAI_PORT_ATTR_FEC_MODE:
-        msg.set_fec_mode(static_cast<lemming::dataplane::sai::PortFecMode>(
-            attr_list[i].value.s32 + 1));
+        msg.set_fec_mode(
+            convert_sai_port_fec_mode_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_PORT_ATTR_FEC_MODE_EXTENDED:
-        msg.set_fec_mode_extended(
-            static_cast<lemming::dataplane::sai::PortFecModeExtended>(
-                attr_list[i].value.s32 + 1));
+        msg.set_fec_mode_extended(convert_sai_port_fec_mode_extended_t_to_proto(
+            attr_list[i].value.s32));
         break;
       case SAI_PORT_ATTR_UPDATE_DSCP:
         msg.set_update_dscp(attr_list[i].value.booldata);
@@ -152,8 +151,8 @@ lemming::dataplane::sai::CreatePortRequest convert_create_port(
         break;
       case SAI_PORT_ATTR_GLOBAL_FLOW_CONTROL_MODE:
         msg.set_global_flow_control_mode(
-            static_cast<lemming::dataplane::sai::PortFlowControlMode>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_port_flow_control_mode_t_to_proto(
+                attr_list[i].value.s32));
         break;
       case SAI_PORT_ATTR_INGRESS_ACL:
         msg.set_ingress_acl(attr_list[i].value.oid);
@@ -244,8 +243,8 @@ lemming::dataplane::sai::CreatePortRequest convert_create_port(
         break;
       case SAI_PORT_ATTR_PRIORITY_FLOW_CONTROL_MODE:
         msg.set_priority_flow_control_mode(
-            static_cast<lemming::dataplane::sai::PortPriorityFlowControlMode>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_port_priority_flow_control_mode_t_to_proto(
+                attr_list[i].value.s32));
         break;
       case SAI_PORT_ATTR_PRIORITY_FLOW_CONTROL:
         msg.set_priority_flow_control(attr_list[i].value.u8);
@@ -306,13 +305,12 @@ lemming::dataplane::sai::CreatePortRequest convert_create_port(
         msg.set_link_training_enable(attr_list[i].value.booldata);
         break;
       case SAI_PORT_ATTR_PTP_MODE:
-        msg.set_ptp_mode(static_cast<lemming::dataplane::sai::PortPtpMode>(
-            attr_list[i].value.s32 + 1));
+        msg.set_ptp_mode(
+            convert_sai_port_ptp_mode_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_PORT_ATTR_INTERFACE_TYPE:
         msg.set_interface_type(
-            static_cast<lemming::dataplane::sai::PortInterfaceType>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_port_interface_type_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_PORT_ATTR_REFERENCE_CLOCK:
         msg.set_reference_clock(attr_list[i].value.u64);
@@ -322,8 +320,7 @@ lemming::dataplane::sai::CreatePortRequest convert_create_port(
         break;
       case SAI_PORT_ATTR_PRBS_CONFIG:
         msg.set_prbs_config(
-            static_cast<lemming::dataplane::sai::PortPrbsConfig>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_port_prbs_config_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_PORT_ATTR_DISABLE_DECREMENT_TTL:
         msg.set_disable_decrement_ttl(attr_list[i].value.booldata);
@@ -345,30 +342,27 @@ lemming::dataplane::sai::CreatePortRequest convert_create_port(
         break;
       case SAI_PORT_ATTR_LOOPBACK_MODE:
         msg.set_loopback_mode(
-            static_cast<lemming::dataplane::sai::PortLoopbackMode>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_port_loopback_mode_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_PORT_ATTR_MDIX_MODE_CONFIG:
-        msg.set_mdix_mode_config(
-            static_cast<lemming::dataplane::sai::PortMdixModeConfig>(
-                attr_list[i].value.s32 + 1));
+        msg.set_mdix_mode_config(convert_sai_port_mdix_mode_config_t_to_proto(
+            attr_list[i].value.s32));
         break;
       case SAI_PORT_ATTR_AUTO_NEG_CONFIG_MODE:
         msg.set_auto_neg_config_mode(
-            static_cast<lemming::dataplane::sai::PortAutoNegConfigMode>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_port_auto_neg_config_mode_t_to_proto(
+                attr_list[i].value.s32));
         break;
       case SAI_PORT_ATTR_1000X_SGMII_SLAVE_AUTODETECT:
         msg.set__1000x_sgmii_slave_autodetect(attr_list[i].value.booldata);
         break;
       case SAI_PORT_ATTR_MODULE_TYPE:
         msg.set_module_type(
-            static_cast<lemming::dataplane::sai::PortModuleType>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_port_module_type_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_PORT_ATTR_DUAL_MEDIA:
-        msg.set_dual_media(static_cast<lemming::dataplane::sai::PortDualMedia>(
-            attr_list[i].value.s32 + 1));
+        msg.set_dual_media(
+            convert_sai_port_dual_media_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_PORT_ATTR_IPG:
         msg.set_ipg(attr_list[i].value.u32);
@@ -435,8 +429,8 @@ convert_create_port_connector(sai_object_id_t switch_id, uint32_t attr_count,
         break;
       case SAI_PORT_CONNECTOR_ATTR_FAILOVER_MODE:
         msg.set_failover_mode(
-            static_cast<lemming::dataplane::sai::PortConnectorFailoverMode>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_port_connector_failover_mode_t_to_proto(
+                attr_list[i].value.s32));
         break;
     }
   }
@@ -571,8 +565,8 @@ sai_status_t l_set_port_attribute(sai_object_id_t port_id,
       req.set_admin_state(attr->value.booldata);
       break;
     case SAI_PORT_ATTR_MEDIA_TYPE:
-      req.set_media_type(static_cast<lemming::dataplane::sai::PortMediaType>(
-          attr->value.s32 + 1));
+      req.set_media_type(
+          convert_sai_port_media_type_t_to_proto(attr->value.s32));
       break;
     case SAI_PORT_ATTR_ADVERTISED_SPEED:
       req.mutable_advertised_speed()->Add(
@@ -589,16 +583,14 @@ sai_status_t l_set_port_attribute(sai_object_id_t port_id,
       break;
     case SAI_PORT_ATTR_ADVERTISED_FLOW_CONTROL_MODE:
       req.set_advertised_flow_control_mode(
-          static_cast<lemming::dataplane::sai::PortFlowControlMode>(
-              attr->value.s32 + 1));
+          convert_sai_port_flow_control_mode_t_to_proto(attr->value.s32));
       break;
     case SAI_PORT_ATTR_ADVERTISED_ASYMMETRIC_PAUSE_MODE:
       req.set_advertised_asymmetric_pause_mode(attr->value.booldata);
       break;
     case SAI_PORT_ATTR_ADVERTISED_MEDIA_TYPE:
       req.set_advertised_media_type(
-          static_cast<lemming::dataplane::sai::PortMediaType>(attr->value.s32 +
-                                                              1));
+          convert_sai_port_media_type_t_to_proto(attr->value.s32));
       break;
     case SAI_PORT_ATTR_ADVERTISED_OUI_CODE:
       req.set_advertised_oui_code(attr->value.u32);
@@ -617,20 +609,17 @@ sai_status_t l_set_port_attribute(sai_object_id_t port_id,
       break;
     case SAI_PORT_ATTR_INTERNAL_LOOPBACK_MODE:
       req.set_internal_loopback_mode(
-          static_cast<lemming::dataplane::sai::PortInternalLoopbackMode>(
-              attr->value.s32 + 1));
+          convert_sai_port_internal_loopback_mode_t_to_proto(attr->value.s32));
       break;
     case SAI_PORT_ATTR_USE_EXTENDED_FEC:
       req.set_use_extended_fec(attr->value.booldata);
       break;
     case SAI_PORT_ATTR_FEC_MODE:
-      req.set_fec_mode(static_cast<lemming::dataplane::sai::PortFecMode>(
-          attr->value.s32 + 1));
+      req.set_fec_mode(convert_sai_port_fec_mode_t_to_proto(attr->value.s32));
       break;
     case SAI_PORT_ATTR_FEC_MODE_EXTENDED:
       req.set_fec_mode_extended(
-          static_cast<lemming::dataplane::sai::PortFecModeExtended>(
-              attr->value.s32 + 1));
+          convert_sai_port_fec_mode_extended_t_to_proto(attr->value.s32));
       break;
     case SAI_PORT_ATTR_UPDATE_DSCP:
       req.set_update_dscp(attr->value.booldata);
@@ -649,8 +638,7 @@ sai_status_t l_set_port_attribute(sai_object_id_t port_id,
       break;
     case SAI_PORT_ATTR_GLOBAL_FLOW_CONTROL_MODE:
       req.set_global_flow_control_mode(
-          static_cast<lemming::dataplane::sai::PortFlowControlMode>(
-              attr->value.s32 + 1));
+          convert_sai_port_flow_control_mode_t_to_proto(attr->value.s32));
       break;
     case SAI_PORT_ATTR_INGRESS_ACL:
       req.set_ingress_acl(attr->value.oid);
@@ -741,8 +729,8 @@ sai_status_t l_set_port_attribute(sai_object_id_t port_id,
       break;
     case SAI_PORT_ATTR_PRIORITY_FLOW_CONTROL_MODE:
       req.set_priority_flow_control_mode(
-          static_cast<lemming::dataplane::sai::PortPriorityFlowControlMode>(
-              attr->value.s32 + 1));
+          convert_sai_port_priority_flow_control_mode_t_to_proto(
+              attr->value.s32));
       break;
     case SAI_PORT_ATTR_PRIORITY_FLOW_CONTROL:
       req.set_priority_flow_control(attr->value.u8);
@@ -803,20 +791,18 @@ sai_status_t l_set_port_attribute(sai_object_id_t port_id,
       req.set_link_training_enable(attr->value.booldata);
       break;
     case SAI_PORT_ATTR_PTP_MODE:
-      req.set_ptp_mode(static_cast<lemming::dataplane::sai::PortPtpMode>(
-          attr->value.s32 + 1));
+      req.set_ptp_mode(convert_sai_port_ptp_mode_t_to_proto(attr->value.s32));
       break;
     case SAI_PORT_ATTR_INTERFACE_TYPE:
       req.set_interface_type(
-          static_cast<lemming::dataplane::sai::PortInterfaceType>(
-              attr->value.s32 + 1));
+          convert_sai_port_interface_type_t_to_proto(attr->value.s32));
       break;
     case SAI_PORT_ATTR_PRBS_POLYNOMIAL:
       req.set_prbs_polynomial(attr->value.u32);
       break;
     case SAI_PORT_ATTR_PRBS_CONFIG:
-      req.set_prbs_config(static_cast<lemming::dataplane::sai::PortPrbsConfig>(
-          attr->value.s32 + 1));
+      req.set_prbs_config(
+          convert_sai_port_prbs_config_t_to_proto(attr->value.s32));
       break;
     case SAI_PORT_ATTR_DISABLE_DECREMENT_TTL:
       req.set_disable_decrement_ttl(attr->value.booldata);
@@ -838,29 +824,26 @@ sai_status_t l_set_port_attribute(sai_object_id_t port_id,
       break;
     case SAI_PORT_ATTR_LOOPBACK_MODE:
       req.set_loopback_mode(
-          static_cast<lemming::dataplane::sai::PortLoopbackMode>(
-              attr->value.s32 + 1));
+          convert_sai_port_loopback_mode_t_to_proto(attr->value.s32));
       break;
     case SAI_PORT_ATTR_MDIX_MODE_CONFIG:
       req.set_mdix_mode_config(
-          static_cast<lemming::dataplane::sai::PortMdixModeConfig>(
-              attr->value.s32 + 1));
+          convert_sai_port_mdix_mode_config_t_to_proto(attr->value.s32));
       break;
     case SAI_PORT_ATTR_AUTO_NEG_CONFIG_MODE:
       req.set_auto_neg_config_mode(
-          static_cast<lemming::dataplane::sai::PortAutoNegConfigMode>(
-              attr->value.s32 + 1));
+          convert_sai_port_auto_neg_config_mode_t_to_proto(attr->value.s32));
       break;
     case SAI_PORT_ATTR_1000X_SGMII_SLAVE_AUTODETECT:
       req.set__1000x_sgmii_slave_autodetect(attr->value.booldata);
       break;
     case SAI_PORT_ATTR_MODULE_TYPE:
-      req.set_module_type(static_cast<lemming::dataplane::sai::PortModuleType>(
-          attr->value.s32 + 1));
+      req.set_module_type(
+          convert_sai_port_module_type_t_to_proto(attr->value.s32));
       break;
     case SAI_PORT_ATTR_DUAL_MEDIA:
-      req.set_dual_media(static_cast<lemming::dataplane::sai::PortDualMedia>(
-          attr->value.s32 + 1));
+      req.set_dual_media(
+          convert_sai_port_dual_media_t_to_proto(attr->value.s32));
       break;
     case SAI_PORT_ATTR_IPG:
       req.set_ipg(attr->value.u32);
@@ -902,8 +885,7 @@ sai_status_t l_get_port_attribute(sai_object_id_t port_id, uint32_t attr_count,
   req.set_oid(port_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(
-        static_cast<lemming::dataplane::sai::PortAttr>(attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_port_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = port->GetPortAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -913,15 +895,16 @@ sai_status_t l_get_port_attribute(sai_object_id_t port_id, uint32_t attr_count,
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_PORT_ATTR_TYPE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().type() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_port_type_t_to_sai(resp.attr().type());
         break;
       case SAI_PORT_ATTR_OPER_STATUS:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().oper_status() - 1);
+            convert_sai_port_oper_status_t_to_sai(resp.attr().oper_status());
         break;
       case SAI_PORT_ATTR_CURRENT_BREAKOUT_MODE_TYPE:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().current_breakout_mode_type() - 1);
+        attr_list[i].value.s32 = convert_sai_port_breakout_mode_type_t_to_sai(
+            resp.attr().current_breakout_mode_type());
         break;
       case SAI_PORT_ATTR_QOS_NUMBER_OF_QUEUES:
         attr_list[i].value.u32 = resp.attr().qos_number_of_queues();
@@ -955,16 +938,16 @@ sai_status_t l_get_port_attribute(sai_object_id_t port_id, uint32_t attr_count,
         attr_list[i].value.booldata = resp.attr().supported_auto_neg_mode();
         break;
       case SAI_PORT_ATTR_SUPPORTED_FLOW_CONTROL_MODE:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().supported_flow_control_mode() - 1);
+        attr_list[i].value.s32 = convert_sai_port_flow_control_mode_t_to_sai(
+            resp.attr().supported_flow_control_mode());
         break;
       case SAI_PORT_ATTR_SUPPORTED_ASYMMETRIC_PAUSE_MODE:
         attr_list[i].value.booldata =
             resp.attr().supported_asymmetric_pause_mode();
         break;
       case SAI_PORT_ATTR_SUPPORTED_MEDIA_TYPE:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().supported_media_type() - 1);
+        attr_list[i].value.s32 = convert_sai_port_media_type_t_to_sai(
+            resp.attr().supported_media_type());
         break;
       case SAI_PORT_ATTR_REMOTE_ADVERTISED_SPEED:
         copy_list(attr_list[i].value.u32list.list,
@@ -981,16 +964,16 @@ sai_status_t l_get_port_attribute(sai_object_id_t port_id, uint32_t attr_count,
             resp.attr().remote_advertised_auto_neg_mode();
         break;
       case SAI_PORT_ATTR_REMOTE_ADVERTISED_FLOW_CONTROL_MODE:
-        attr_list[i].value.s32 = static_cast<int>(
-            resp.attr().remote_advertised_flow_control_mode() - 1);
+        attr_list[i].value.s32 = convert_sai_port_flow_control_mode_t_to_sai(
+            resp.attr().remote_advertised_flow_control_mode());
         break;
       case SAI_PORT_ATTR_REMOTE_ADVERTISED_ASYMMETRIC_PAUSE_MODE:
         attr_list[i].value.booldata =
             resp.attr().remote_advertised_asymmetric_pause_mode();
         break;
       case SAI_PORT_ATTR_REMOTE_ADVERTISED_MEDIA_TYPE:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().remote_advertised_media_type() - 1);
+        attr_list[i].value.s32 = convert_sai_port_media_type_t_to_sai(
+            resp.attr().remote_advertised_media_type());
         break;
       case SAI_PORT_ATTR_REMOTE_ADVERTISED_OUI_CODE:
         attr_list[i].value.u32 = resp.attr().remote_advertised_oui_code();
@@ -1024,7 +1007,8 @@ sai_status_t l_get_port_attribute(sai_object_id_t port_id, uint32_t attr_count,
         attr_list[i].value.booldata = resp.attr().admin_state();
         break;
       case SAI_PORT_ATTR_MEDIA_TYPE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().media_type() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_port_media_type_t_to_sai(resp.attr().media_type());
         break;
       case SAI_PORT_ATTR_ADVERTISED_SPEED:
         copy_list(attr_list[i].value.u32list.list,
@@ -1040,16 +1024,16 @@ sai_status_t l_get_port_attribute(sai_object_id_t port_id, uint32_t attr_count,
         attr_list[i].value.booldata = resp.attr().advertised_auto_neg_mode();
         break;
       case SAI_PORT_ATTR_ADVERTISED_FLOW_CONTROL_MODE:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().advertised_flow_control_mode() - 1);
+        attr_list[i].value.s32 = convert_sai_port_flow_control_mode_t_to_sai(
+            resp.attr().advertised_flow_control_mode());
         break;
       case SAI_PORT_ATTR_ADVERTISED_ASYMMETRIC_PAUSE_MODE:
         attr_list[i].value.booldata =
             resp.attr().advertised_asymmetric_pause_mode();
         break;
       case SAI_PORT_ATTR_ADVERTISED_MEDIA_TYPE:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().advertised_media_type() - 1);
+        attr_list[i].value.s32 = convert_sai_port_media_type_t_to_sai(
+            resp.attr().advertised_media_type());
         break;
       case SAI_PORT_ATTR_ADVERTISED_OUI_CODE:
         attr_list[i].value.u32 = resp.attr().advertised_oui_code();
@@ -1068,17 +1052,19 @@ sai_status_t l_get_port_attribute(sai_object_id_t port_id, uint32_t attr_count,
         break;
       case SAI_PORT_ATTR_INTERNAL_LOOPBACK_MODE:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().internal_loopback_mode() - 1);
+            convert_sai_port_internal_loopback_mode_t_to_sai(
+                resp.attr().internal_loopback_mode());
         break;
       case SAI_PORT_ATTR_USE_EXTENDED_FEC:
         attr_list[i].value.booldata = resp.attr().use_extended_fec();
         break;
       case SAI_PORT_ATTR_FEC_MODE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().fec_mode() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_port_fec_mode_t_to_sai(resp.attr().fec_mode());
         break;
       case SAI_PORT_ATTR_FEC_MODE_EXTENDED:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().fec_mode_extended() - 1);
+        attr_list[i].value.s32 = convert_sai_port_fec_mode_extended_t_to_sai(
+            resp.attr().fec_mode_extended());
         break;
       case SAI_PORT_ATTR_UPDATE_DSCP:
         attr_list[i].value.booldata = resp.attr().update_dscp();
@@ -1098,8 +1084,8 @@ sai_status_t l_get_port_attribute(sai_object_id_t port_id, uint32_t attr_count,
             resp.attr().multicast_storm_control_policer_id();
         break;
       case SAI_PORT_ATTR_GLOBAL_FLOW_CONTROL_MODE:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().global_flow_control_mode() - 1);
+        attr_list[i].value.s32 = convert_sai_port_flow_control_mode_t_to_sai(
+            resp.attr().global_flow_control_mode());
         break;
       case SAI_PORT_ATTR_INGRESS_ACL:
         attr_list[i].value.oid = resp.attr().ingress_acl();
@@ -1196,7 +1182,8 @@ sai_status_t l_get_port_attribute(sai_object_id_t port_id, uint32_t attr_count,
         break;
       case SAI_PORT_ATTR_PRIORITY_FLOW_CONTROL_MODE:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().priority_flow_control_mode() - 1);
+            convert_sai_port_priority_flow_control_mode_t_to_sai(
+                resp.attr().priority_flow_control_mode());
         break;
       case SAI_PORT_ATTR_PRIORITY_FLOW_CONTROL:
         attr_list[i].value.u8 = resp.attr().priority_flow_control();
@@ -1259,11 +1246,12 @@ sai_status_t l_get_port_attribute(sai_object_id_t port_id, uint32_t attr_count,
         attr_list[i].value.booldata = resp.attr().link_training_enable();
         break;
       case SAI_PORT_ATTR_PTP_MODE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().ptp_mode() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_port_ptp_mode_t_to_sai(resp.attr().ptp_mode());
         break;
       case SAI_PORT_ATTR_INTERFACE_TYPE:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().interface_type() - 1);
+        attr_list[i].value.s32 = convert_sai_port_interface_type_t_to_sai(
+            resp.attr().interface_type());
         break;
       case SAI_PORT_ATTR_REFERENCE_CLOCK:
         attr_list[i].value.u64 = resp.attr().reference_clock();
@@ -1276,15 +1264,17 @@ sai_status_t l_get_port_attribute(sai_object_id_t port_id, uint32_t attr_count,
         break;
       case SAI_PORT_ATTR_LINK_TRAINING_FAILURE_STATUS:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().link_training_failure_status() - 1);
+            convert_sai_port_link_training_failure_status_t_to_sai(
+                resp.attr().link_training_failure_status());
         break;
       case SAI_PORT_ATTR_LINK_TRAINING_RX_STATUS:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().link_training_rx_status() - 1);
+            convert_sai_port_link_training_rx_status_t_to_sai(
+                resp.attr().link_training_rx_status());
         break;
       case SAI_PORT_ATTR_PRBS_CONFIG:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().prbs_config() - 1);
+            convert_sai_port_prbs_config_t_to_sai(resp.attr().prbs_config());
         break;
       case SAI_PORT_ATTR_PRBS_LOCK_STATUS:
         attr_list[i].value.booldata = resp.attr().prbs_lock_status();
@@ -1293,8 +1283,8 @@ sai_status_t l_get_port_attribute(sai_object_id_t port_id, uint32_t attr_count,
         attr_list[i].value.booldata = resp.attr().prbs_lock_loss_status();
         break;
       case SAI_PORT_ATTR_PRBS_RX_STATUS:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().prbs_rx_status() - 1);
+        attr_list[i].value.s32 = convert_sai_port_prbs_rx_status_t_to_sai(
+            resp.attr().prbs_rx_status());
         break;
       case SAI_PORT_ATTR_AUTO_NEG_STATUS:
         attr_list[i].value.booldata = resp.attr().auto_neg_status();
@@ -1318,8 +1308,8 @@ sai_status_t l_get_port_attribute(sai_object_id_t port_id, uint32_t attr_count,
         attr_list[i].value.booldata = resp.attr().fabric_attached();
         break;
       case SAI_PORT_ATTR_FABRIC_ATTACHED_SWITCH_TYPE:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().fabric_attached_switch_type() - 1);
+        attr_list[i].value.s32 = convert_sai_switch_type_t_to_sai(
+            resp.attr().fabric_attached_switch_type());
         break;
       case SAI_PORT_ATTR_FABRIC_ATTACHED_SWITCH_ID:
         attr_list[i].value.u32 = resp.attr().fabric_attached_switch_id();
@@ -1334,20 +1324,20 @@ sai_status_t l_get_port_attribute(sai_object_id_t port_id, uint32_t attr_count,
         attr_list[i].value.booldata = resp.attr().auto_neg_fec_mode_override();
         break;
       case SAI_PORT_ATTR_LOOPBACK_MODE:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().loopback_mode() - 1);
+        attr_list[i].value.s32 = convert_sai_port_loopback_mode_t_to_sai(
+            resp.attr().loopback_mode());
         break;
       case SAI_PORT_ATTR_MDIX_MODE_STATUS:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().mdix_mode_status() - 1);
+        attr_list[i].value.s32 = convert_sai_port_mdix_mode_status_t_to_sai(
+            resp.attr().mdix_mode_status());
         break;
       case SAI_PORT_ATTR_MDIX_MODE_CONFIG:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().mdix_mode_config() - 1);
+        attr_list[i].value.s32 = convert_sai_port_mdix_mode_config_t_to_sai(
+            resp.attr().mdix_mode_config());
         break;
       case SAI_PORT_ATTR_AUTO_NEG_CONFIG_MODE:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().auto_neg_config_mode() - 1);
+        attr_list[i].value.s32 = convert_sai_port_auto_neg_config_mode_t_to_sai(
+            resp.attr().auto_neg_config_mode());
         break;
       case SAI_PORT_ATTR_1000X_SGMII_SLAVE_AUTODETECT:
         attr_list[i].value.booldata =
@@ -1355,14 +1345,15 @@ sai_status_t l_get_port_attribute(sai_object_id_t port_id, uint32_t attr_count,
         break;
       case SAI_PORT_ATTR_MODULE_TYPE:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().module_type() - 1);
+            convert_sai_port_module_type_t_to_sai(resp.attr().module_type());
         break;
       case SAI_PORT_ATTR_DUAL_MEDIA:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().dual_media() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_port_dual_media_t_to_sai(resp.attr().dual_media());
         break;
       case SAI_PORT_ATTR_AUTO_NEG_FEC_MODE_EXTENDED:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().auto_neg_fec_mode_extended() - 1);
+        attr_list[i].value.s32 = convert_sai_port_fec_mode_extended_t_to_sai(
+            resp.attr().auto_neg_fec_mode_extended());
         break;
       case SAI_PORT_ATTR_IPG:
         attr_list[i].value.u32 = resp.attr().ipg();
@@ -1412,8 +1403,7 @@ sai_status_t l_get_port_stats(sai_object_id_t port_id,
   req.set_oid(port_id);
 
   for (uint32_t i = 0; i < number_of_counters; i++) {
-    req.add_counter_ids(
-        static_cast<lemming::dataplane::sai::PortStat>(counter_ids[i] + 1));
+    req.add_counter_ids(convert_sai_port_stat_t_to_proto(counter_ids[i]));
   }
   grpc::Status status = port->GetPortStats(&context, req, &resp);
   if (!status.ok()) {
@@ -1519,8 +1509,7 @@ sai_status_t l_get_port_pool_attribute(sai_object_id_t port_pool_id,
   req.set_oid(port_pool_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::PortPoolAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_port_pool_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = port->GetPortPoolAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -1556,8 +1545,7 @@ sai_status_t l_get_port_pool_stats(sai_object_id_t port_pool_id,
   req.set_oid(port_pool_id);
 
   for (uint32_t i = 0; i < number_of_counters; i++) {
-    req.add_counter_ids(
-        static_cast<lemming::dataplane::sai::PortPoolStat>(counter_ids[i] + 1));
+    req.add_counter_ids(convert_sai_port_pool_stat_t_to_proto(counter_ids[i]));
   }
   grpc::Status status = port->GetPortPoolStats(&context, req, &resp);
   if (!status.ok()) {
@@ -1641,8 +1629,7 @@ sai_status_t l_set_port_connector_attribute(sai_object_id_t port_connector_id,
   switch (attr->id) {
     case SAI_PORT_CONNECTOR_ATTR_FAILOVER_MODE:
       req.set_failover_mode(
-          static_cast<lemming::dataplane::sai::PortConnectorFailoverMode>(
-              attr->value.s32 + 1));
+          convert_sai_port_connector_failover_mode_t_to_proto(attr->value.s32));
       break;
   }
 
@@ -1667,8 +1654,8 @@ sai_status_t l_get_port_connector_attribute(sai_object_id_t port_connector_id,
   req.set_oid(port_connector_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::PortConnectorAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(
+        convert_sai_port_connector_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = port->GetPortConnectorAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -1691,7 +1678,8 @@ sai_status_t l_get_port_connector_attribute(sai_object_id_t port_connector_id,
         break;
       case SAI_PORT_CONNECTOR_ATTR_FAILOVER_MODE:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().failover_mode() - 1);
+            convert_sai_port_connector_failover_mode_t_to_sai(
+                resp.attr().failover_mode());
         break;
     }
   }
@@ -1757,8 +1745,7 @@ sai_status_t l_get_port_serdes_attribute(sai_object_id_t port_serdes_id,
   req.set_oid(port_serdes_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::PortSerdesAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_port_serdes_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = port->GetPortSerdesAttribute(&context, req, &resp);
   if (!status.ok()) {

@@ -7,7 +7,6 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//dataplane/apigen/docparser",
-        "//dataplane/apigen/protogen",
         "//dataplane/apigen/saiast",
         "@com_github_stoewer_go_strcase//:go-strcase",
     ],

@@ -19,6 +19,7 @@
 #include "dataplane/proto/sai/acl.pb.h"
 #include "dataplane/proto/sai/common.pb.h"
 #include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
 const sai_acl_api_t l_acl = {
     .create_acl_table = l_create_acl_table,
@@ -57,8 +58,8 @@ lemming::dataplane::sai::CreateAclTableRequest convert_create_acl_table(
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_ACL_TABLE_ATTR_ACL_STAGE:
-        msg.set_acl_stage(static_cast<lemming::dataplane::sai::AclStage>(
-            attr_list[i].value.s32 + 1));
+        msg.set_acl_stage(
+            convert_sai_acl_stage_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_ACL_TABLE_ATTR_SIZE:
         msg.set_size(attr_list[i].value.u32);
@@ -779,8 +780,8 @@ lemming::dataplane::sai::CreateAclRangeRequest convert_create_acl_range(
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_ACL_RANGE_ATTR_TYPE:
-        msg.set_type(static_cast<lemming::dataplane::sai::AclRangeType>(
-            attr_list[i].value.s32 + 1));
+        msg.set_type(
+            convert_sai_acl_range_type_t_to_proto(attr_list[i].value.s32));
         break;
     }
   }
@@ -795,12 +796,12 @@ convert_create_acl_table_group(sai_object_id_t switch_id, uint32_t attr_count,
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_ACL_TABLE_GROUP_ATTR_ACL_STAGE:
-        msg.set_acl_stage(static_cast<lemming::dataplane::sai::AclStage>(
-            attr_list[i].value.s32 + 1));
+        msg.set_acl_stage(
+            convert_sai_acl_stage_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_ACL_TABLE_GROUP_ATTR_TYPE:
-        msg.set_type(static_cast<lemming::dataplane::sai::AclTableGroupType>(
-            attr_list[i].value.s32 + 1));
+        msg.set_type(convert_sai_acl_table_group_type_t_to_proto(
+            attr_list[i].value.s32));
         break;
     }
   }
@@ -886,8 +887,7 @@ sai_status_t l_get_acl_table_attribute(sai_object_id_t acl_table_id,
   req.set_oid(acl_table_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::AclTableAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_acl_table_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = acl->GetAclTableAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -897,7 +897,8 @@ sai_status_t l_get_acl_table_attribute(sai_object_id_t acl_table_id,
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_ACL_TABLE_ATTR_ACL_STAGE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().acl_stage() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_acl_stage_t_to_sai(resp.attr().acl_stage());
         break;
       case SAI_ACL_TABLE_ATTR_SIZE:
         attr_list[i].value.u32 = resp.attr().size();
@@ -1634,8 +1635,7 @@ sai_status_t l_get_acl_entry_attribute(sai_object_id_t acl_entry_id,
   req.set_oid(acl_entry_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::AclEntryAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_acl_entry_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = acl->GetAclEntryAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -1740,8 +1740,7 @@ sai_status_t l_get_acl_counter_attribute(sai_object_id_t acl_counter_id,
   req.set_oid(acl_counter_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::AclCounterAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_acl_counter_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = acl->GetAclCounterAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -1831,8 +1830,7 @@ sai_status_t l_get_acl_range_attribute(sai_object_id_t acl_range_id,
   req.set_oid(acl_range_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::AclRangeAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_acl_range_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = acl->GetAclRangeAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -1842,7 +1840,8 @@ sai_status_t l_get_acl_range_attribute(sai_object_id_t acl_range_id,
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_ACL_RANGE_ATTR_TYPE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().type() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_acl_range_type_t_to_sai(resp.attr().type());
         break;
     }
   }
@@ -1908,8 +1907,8 @@ sai_status_t l_get_acl_table_group_attribute(sai_object_id_t acl_table_group_id,
   req.set_oid(acl_table_group_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::AclTableGroupAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(
+        convert_sai_acl_table_group_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = acl->GetAclTableGroupAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -1919,10 +1918,12 @@ sai_status_t l_get_acl_table_group_attribute(sai_object_id_t acl_table_group_id,
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_ACL_TABLE_GROUP_ATTR_ACL_STAGE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().acl_stage() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_acl_stage_t_to_sai(resp.attr().acl_stage());
         break;
       case SAI_ACL_TABLE_GROUP_ATTR_TYPE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().type() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_acl_table_group_type_t_to_sai(resp.attr().type());
         break;
       case SAI_ACL_TABLE_GROUP_ATTR_MEMBER_LIST:
         copy_list(attr_list[i].value.objlist.list, resp.attr().member_list(),
@@ -1993,8 +1994,7 @@ sai_status_t l_get_acl_table_group_member_attribute(
 
   for (uint32_t i = 0; i < attr_count; i++) {
     req.add_attr_type(
-        static_cast<lemming::dataplane::sai::AclTableGroupMemberAttr>(
-            attr_list[i].id + 1));
+        convert_sai_acl_table_group_member_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status =
       acl->GetAclTableGroupMemberAttribute(&context, req, &resp);

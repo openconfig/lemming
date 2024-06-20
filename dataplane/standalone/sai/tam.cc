@@ -19,6 +19,7 @@
 #include "dataplane/proto/sai/common.pb.h"
 #include "dataplane/proto/sai/tam.pb.h"
 #include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
 const sai_tam_api_t l_tam = {
     .create_tam = l_create_tam,
@@ -103,8 +104,8 @@ lemming::dataplane::sai::CreateTamMathFuncRequest convert_create_tam_math_func(
     switch (attr_list[i].id) {
       case SAI_TAM_MATH_FUNC_ATTR_TAM_TEL_MATH_FUNC_TYPE:
         msg.set_tam_tel_math_func_type(
-            static_cast<lemming::dataplane::sai::TamTelMathFuncType>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_tam_tel_math_func_type_t_to_proto(
+                attr_list[i].value.s32));
         break;
     }
   }
@@ -119,8 +120,8 @@ lemming::dataplane::sai::CreateTamReportRequest convert_create_tam_report(
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_TAM_REPORT_ATTR_TYPE:
-        msg.set_type(static_cast<lemming::dataplane::sai::TamReportType>(
-            attr_list[i].value.s32 + 1));
+        msg.set_type(
+            convert_sai_tam_report_type_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_TAM_REPORT_ATTR_HISTOGRAM_NUMBER_OF_BINS:
         msg.set_histogram_number_of_bins(attr_list[i].value.u32);
@@ -134,8 +135,8 @@ lemming::dataplane::sai::CreateTamReportRequest convert_create_tam_report(
         msg.set_quota(attr_list[i].value.u32);
         break;
       case SAI_TAM_REPORT_ATTR_REPORT_MODE:
-        msg.set_report_mode(static_cast<lemming::dataplane::sai::TamReportMode>(
-            attr_list[i].value.s32 + 1));
+        msg.set_report_mode(
+            convert_sai_tam_report_mode_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_TAM_REPORT_ATTR_REPORT_INTERVAL:
         msg.set_report_interval(attr_list[i].value.u32);
@@ -175,9 +176,8 @@ convert_create_tam_event_threshold(sai_object_id_t switch_id,
         msg.set_abs_value(attr_list[i].value.u32);
         break;
       case SAI_TAM_EVENT_THRESHOLD_ATTR_UNIT:
-        msg.set_unit(
-            static_cast<lemming::dataplane::sai::TamEventThresholdUnit>(
-                attr_list[i].value.s32 + 1));
+        msg.set_unit(convert_sai_tam_event_threshold_unit_t_to_proto(
+            attr_list[i].value.s32));
         break;
     }
   }
@@ -192,8 +192,8 @@ lemming::dataplane::sai::CreateTamIntRequest convert_create_tam_int(
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_TAM_INT_ATTR_TYPE:
-        msg.set_type(static_cast<lemming::dataplane::sai::TamIntType>(
-            attr_list[i].value.s32 + 1));
+        msg.set_type(
+            convert_sai_tam_int_type_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_TAM_INT_ATTR_DEVICE_ID:
         msg.set_device_id(attr_list[i].value.u32);
@@ -202,9 +202,8 @@ lemming::dataplane::sai::CreateTamIntRequest convert_create_tam_int(
         msg.set_ioam_trace_type(attr_list[i].value.u32);
         break;
       case SAI_TAM_INT_ATTR_INT_PRESENCE_TYPE:
-        msg.set_int_presence_type(
-            static_cast<lemming::dataplane::sai::TamIntPresenceType>(
-                attr_list[i].value.s32 + 1));
+        msg.set_int_presence_type(convert_sai_tam_int_presence_type_t_to_proto(
+            attr_list[i].value.s32));
         break;
       case SAI_TAM_INT_ATTR_INT_PRESENCE_PB1:
         msg.set_int_presence_pb1(attr_list[i].value.u32);
@@ -288,8 +287,7 @@ lemming::dataplane::sai::CreateTamTelTypeRequest convert_create_tam_tel_type(
     switch (attr_list[i].id) {
       case SAI_TAM_TEL_TYPE_ATTR_TAM_TELEMETRY_TYPE:
         msg.set_tam_telemetry_type(
-            static_cast<lemming::dataplane::sai::TamTelemetryType>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_tam_telemetry_type_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_TAM_TEL_TYPE_ATTR_INT_SWITCH_IDENTIFIER:
         msg.set_int_switch_identifier(attr_list[i].value.u32);
@@ -351,8 +349,7 @@ lemming::dataplane::sai::CreateTamTransportRequest convert_create_tam_transport(
     switch (attr_list[i].id) {
       case SAI_TAM_TRANSPORT_ATTR_TRANSPORT_TYPE:
         msg.set_transport_type(
-            static_cast<lemming::dataplane::sai::TamTransportType>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_tam_transport_type_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_TAM_TRANSPORT_ATTR_SRC_PORT:
         msg.set_src_port(attr_list[i].value.u32);
@@ -362,8 +359,8 @@ lemming::dataplane::sai::CreateTamTransportRequest convert_create_tam_transport(
         break;
       case SAI_TAM_TRANSPORT_ATTR_TRANSPORT_AUTH_TYPE:
         msg.set_transport_auth_type(
-            static_cast<lemming::dataplane::sai::TamTransportAuthType>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_tam_transport_auth_type_t_to_proto(
+                attr_list[i].value.s32));
         break;
       case SAI_TAM_TRANSPORT_ATTR_MTU:
         msg.set_mtu(attr_list[i].value.u32);
@@ -392,8 +389,7 @@ lemming::dataplane::sai::CreateTamTelemetryRequest convert_create_tam_telemetry(
         break;
       case SAI_TAM_TELEMETRY_ATTR_TAM_REPORTING_UNIT:
         msg.set_tam_reporting_unit(
-            static_cast<lemming::dataplane::sai::TamReportingUnit>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_tam_reporting_unit_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_TAM_TELEMETRY_ATTR_REPORTING_INTERVAL:
         msg.set_reporting_interval(attr_list[i].value.u32);
@@ -462,8 +458,8 @@ lemming::dataplane::sai::CreateTamEventRequest convert_create_tam_event(
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_TAM_EVENT_ATTR_TYPE:
-        msg.set_type(static_cast<lemming::dataplane::sai::TamEventType>(
-            attr_list[i].value.s32 + 1));
+        msg.set_type(
+            convert_sai_tam_event_type_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_TAM_EVENT_ATTR_ACTION_LIST:
         msg.mutable_action_list()->Add(
@@ -571,8 +567,7 @@ sai_status_t l_get_tam_attribute(sai_object_id_t tam_id, uint32_t attr_count,
   req.set_oid(tam_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(
-        static_cast<lemming::dataplane::sai::TamAttr>(attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_tam_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = tam->GetTamAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -653,8 +648,7 @@ sai_status_t l_set_tam_math_func_attribute(sai_object_id_t tam_math_func_id,
   switch (attr->id) {
     case SAI_TAM_MATH_FUNC_ATTR_TAM_TEL_MATH_FUNC_TYPE:
       req.set_tam_tel_math_func_type(
-          static_cast<lemming::dataplane::sai::TamTelMathFuncType>(
-              attr->value.s32 + 1));
+          convert_sai_tam_tel_math_func_type_t_to_proto(attr->value.s32));
       break;
   }
 
@@ -679,8 +673,8 @@ sai_status_t l_get_tam_math_func_attribute(sai_object_id_t tam_math_func_id,
   req.set_oid(tam_math_func_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::TamMathFuncAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(
+        convert_sai_tam_math_func_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = tam->GetTamMathFuncAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -690,8 +684,8 @@ sai_status_t l_get_tam_math_func_attribute(sai_object_id_t tam_math_func_id,
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_TAM_MATH_FUNC_ATTR_TAM_TEL_MATH_FUNC_TYPE:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().tam_tel_math_func_type() - 1);
+        attr_list[i].value.s32 = convert_sai_tam_tel_math_func_type_t_to_sai(
+            resp.attr().tam_tel_math_func_type());
         break;
     }
   }
@@ -748,8 +742,7 @@ sai_status_t l_set_tam_report_attribute(sai_object_id_t tam_report_id,
 
   switch (attr->id) {
     case SAI_TAM_REPORT_ATTR_TYPE:
-      req.set_type(static_cast<lemming::dataplane::sai::TamReportType>(
-          attr->value.s32 + 1));
+      req.set_type(convert_sai_tam_report_type_t_to_proto(attr->value.s32));
       break;
     case SAI_TAM_REPORT_ATTR_QUOTA:
       req.set_quota(attr->value.u32);
@@ -786,8 +779,7 @@ sai_status_t l_get_tam_report_attribute(sai_object_id_t tam_report_id,
   req.set_oid(tam_report_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::TamReportAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_tam_report_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = tam->GetTamReportAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -797,7 +789,8 @@ sai_status_t l_get_tam_report_attribute(sai_object_id_t tam_report_id,
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_TAM_REPORT_ATTR_TYPE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().type() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_tam_report_type_t_to_sai(resp.attr().type());
         break;
       case SAI_TAM_REPORT_ATTR_HISTOGRAM_NUMBER_OF_BINS:
         attr_list[i].value.u32 = resp.attr().histogram_number_of_bins();
@@ -812,7 +805,7 @@ sai_status_t l_get_tam_report_attribute(sai_object_id_t tam_report_id,
         break;
       case SAI_TAM_REPORT_ATTR_REPORT_MODE:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().report_mode() - 1);
+            convert_sai_tam_report_mode_t_to_sai(resp.attr().report_mode());
         break;
       case SAI_TAM_REPORT_ATTR_REPORT_INTERVAL:
         attr_list[i].value.u32 = resp.attr().report_interval();
@@ -894,8 +887,8 @@ sai_status_t l_set_tam_event_threshold_attribute(
       req.set_abs_value(attr->value.u32);
       break;
     case SAI_TAM_EVENT_THRESHOLD_ATTR_UNIT:
-      req.set_unit(static_cast<lemming::dataplane::sai::TamEventThresholdUnit>(
-          attr->value.s32 + 1));
+      req.set_unit(
+          convert_sai_tam_event_threshold_unit_t_to_proto(attr->value.s32));
       break;
   }
 
@@ -922,8 +915,7 @@ sai_status_t l_get_tam_event_threshold_attribute(
 
   for (uint32_t i = 0; i < attr_count; i++) {
     req.add_attr_type(
-        static_cast<lemming::dataplane::sai::TamEventThresholdAttr>(
-            attr_list[i].id + 1));
+        convert_sai_tam_event_threshold_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status =
       tam->GetTamEventThresholdAttribute(&context, req, &resp);
@@ -949,7 +941,8 @@ sai_status_t l_get_tam_event_threshold_attribute(
         attr_list[i].value.u32 = resp.attr().abs_value();
         break;
       case SAI_TAM_EVENT_THRESHOLD_ATTR_UNIT:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().unit() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_tam_event_threshold_unit_t_to_sai(resp.attr().unit());
         break;
     }
   }
@@ -1081,8 +1074,7 @@ sai_status_t l_get_tam_int_attribute(sai_object_id_t tam_int_id,
   req.set_oid(tam_int_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(
-        static_cast<lemming::dataplane::sai::TamIntAttr>(attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_tam_int_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = tam->GetTamIntAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -1092,7 +1084,8 @@ sai_status_t l_get_tam_int_attribute(sai_object_id_t tam_int_id,
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_TAM_INT_ATTR_TYPE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().type() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_tam_int_type_t_to_sai(resp.attr().type());
         break;
       case SAI_TAM_INT_ATTR_DEVICE_ID:
         attr_list[i].value.u32 = resp.attr().device_id();
@@ -1101,8 +1094,8 @@ sai_status_t l_get_tam_int_attribute(sai_object_id_t tam_int_id,
         attr_list[i].value.u32 = resp.attr().ioam_trace_type();
         break;
       case SAI_TAM_INT_ATTR_INT_PRESENCE_TYPE:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().int_presence_type() - 1);
+        attr_list[i].value.s32 = convert_sai_tam_int_presence_type_t_to_sai(
+            resp.attr().int_presence_type());
         break;
       case SAI_TAM_INT_ATTR_INT_PRESENCE_PB1:
         attr_list[i].value.u32 = resp.attr().int_presence_pb1();
@@ -1291,8 +1284,8 @@ sai_status_t l_get_tam_tel_type_attribute(sai_object_id_t tam_tel_type_id,
   req.set_oid(tam_tel_type_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::TamTelTypeAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(
+        convert_sai_tam_tel_type_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = tam->GetTamTelTypeAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -1302,8 +1295,8 @@ sai_status_t l_get_tam_tel_type_attribute(sai_object_id_t tam_tel_type_id,
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_TAM_TEL_TYPE_ATTR_TAM_TELEMETRY_TYPE:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().tam_telemetry_type() - 1);
+        attr_list[i].value.s32 = convert_sai_tam_telemetry_type_t_to_sai(
+            resp.attr().tam_telemetry_type());
         break;
       case SAI_TAM_TEL_TYPE_ATTR_INT_SWITCH_IDENTIFIER:
         attr_list[i].value.u32 = resp.attr().int_switch_identifier();
@@ -1418,8 +1411,7 @@ sai_status_t l_set_tam_transport_attribute(sai_object_id_t tam_transport_id,
       break;
     case SAI_TAM_TRANSPORT_ATTR_TRANSPORT_AUTH_TYPE:
       req.set_transport_auth_type(
-          static_cast<lemming::dataplane::sai::TamTransportAuthType>(
-              attr->value.s32 + 1));
+          convert_sai_tam_transport_auth_type_t_to_proto(attr->value.s32));
       break;
     case SAI_TAM_TRANSPORT_ATTR_MTU:
       req.set_mtu(attr->value.u32);
@@ -1447,8 +1439,8 @@ sai_status_t l_get_tam_transport_attribute(sai_object_id_t tam_transport_id,
   req.set_oid(tam_transport_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::TamTransportAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(
+        convert_sai_tam_transport_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = tam->GetTamTransportAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -1458,8 +1450,8 @@ sai_status_t l_get_tam_transport_attribute(sai_object_id_t tam_transport_id,
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_TAM_TRANSPORT_ATTR_TRANSPORT_TYPE:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().transport_type() - 1);
+        attr_list[i].value.s32 = convert_sai_tam_transport_type_t_to_sai(
+            resp.attr().transport_type());
         break;
       case SAI_TAM_TRANSPORT_ATTR_SRC_PORT:
         attr_list[i].value.u32 = resp.attr().src_port();
@@ -1468,8 +1460,8 @@ sai_status_t l_get_tam_transport_attribute(sai_object_id_t tam_transport_id,
         attr_list[i].value.u32 = resp.attr().dst_port();
         break;
       case SAI_TAM_TRANSPORT_ATTR_TRANSPORT_AUTH_TYPE:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().transport_auth_type() - 1);
+        attr_list[i].value.s32 = convert_sai_tam_transport_auth_type_t_to_sai(
+            resp.attr().transport_auth_type());
         break;
       case SAI_TAM_TRANSPORT_ATTR_MTU:
         attr_list[i].value.u32 = resp.attr().mtu();
@@ -1536,8 +1528,7 @@ sai_status_t l_set_tam_telemetry_attribute(sai_object_id_t tam_telemetry_id,
       break;
     case SAI_TAM_TELEMETRY_ATTR_TAM_REPORTING_UNIT:
       req.set_tam_reporting_unit(
-          static_cast<lemming::dataplane::sai::TamReportingUnit>(
-              attr->value.s32 + 1));
+          convert_sai_tam_reporting_unit_t_to_proto(attr->value.s32));
       break;
     case SAI_TAM_TELEMETRY_ATTR_REPORTING_INTERVAL:
       req.set_reporting_interval(attr->value.u32);
@@ -1565,8 +1556,8 @@ sai_status_t l_get_tam_telemetry_attribute(sai_object_id_t tam_telemetry_id,
   req.set_oid(tam_telemetry_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::TamTelemetryAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(
+        convert_sai_tam_telemetry_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = tam->GetTamTelemetryAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -1584,8 +1575,8 @@ sai_status_t l_get_tam_telemetry_attribute(sai_object_id_t tam_telemetry_id,
                   &attr_list[i].value.objlist.count);
         break;
       case SAI_TAM_TELEMETRY_ATTR_TAM_REPORTING_UNIT:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().tam_reporting_unit() - 1);
+        attr_list[i].value.s32 = convert_sai_tam_reporting_unit_t_to_sai(
+            resp.attr().tam_reporting_unit());
         break;
       case SAI_TAM_TELEMETRY_ATTR_REPORTING_INTERVAL:
         attr_list[i].value.u32 = resp.attr().reporting_interval();
@@ -1689,8 +1680,8 @@ sai_status_t l_get_tam_collector_attribute(sai_object_id_t tam_collector_id,
   req.set_oid(tam_collector_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::TamCollectorAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(
+        convert_sai_tam_collector_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = tam->GetTamCollectorAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -1804,8 +1795,8 @@ sai_status_t l_get_tam_event_action_attribute(
   req.set_oid(tam_event_action_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::TamEventActionAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(
+        convert_sai_tam_event_action_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = tam->GetTamEventActionAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -1903,8 +1894,7 @@ sai_status_t l_get_tam_event_attribute(sai_object_id_t tam_event_id,
   req.set_oid(tam_event_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::TamEventAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_tam_event_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = tam->GetTamEventAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -1914,7 +1904,8 @@ sai_status_t l_get_tam_event_attribute(sai_object_id_t tam_event_id,
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_TAM_EVENT_ATTR_TYPE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().type() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_tam_event_type_t_to_sai(resp.attr().type());
         break;
       case SAI_TAM_EVENT_ATTR_ACTION_LIST:
         copy_list(attr_list[i].value.objlist.list, resp.attr().action_list(),

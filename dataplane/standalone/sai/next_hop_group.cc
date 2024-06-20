@@ -19,6 +19,7 @@
 #include "dataplane/proto/sai/common.pb.h"
 #include "dataplane/proto/sai/next_hop_group.pb.h"
 #include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
 const sai_next_hop_group_api_t l_next_hop_group = {
     .create_next_hop_group = l_create_next_hop_group,
@@ -51,8 +52,8 @@ convert_create_next_hop_group(sai_object_id_t switch_id, uint32_t attr_count,
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_NEXT_HOP_GROUP_ATTR_TYPE:
-        msg.set_type(static_cast<lemming::dataplane::sai::NextHopGroupType>(
-            attr_list[i].value.s32 + 1));
+        msg.set_type(
+            convert_sai_next_hop_group_type_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_NEXT_HOP_GROUP_ATTR_SET_SWITCHOVER:
         msg.set_set_switchover(attr_list[i].value.booldata);
@@ -90,9 +91,8 @@ convert_create_next_hop_group_member(sai_object_id_t switch_id,
         break;
       case SAI_NEXT_HOP_GROUP_MEMBER_ATTR_CONFIGURED_ROLE:
         msg.set_configured_role(
-            static_cast<
-                lemming::dataplane::sai::NextHopGroupMemberConfiguredRole>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_next_hop_group_member_configured_role_t_to_proto(
+                attr_list[i].value.s32));
         break;
       case SAI_NEXT_HOP_GROUP_MEMBER_ATTR_MONITORED_OBJECT:
         msg.set_monitored_object(attr_list[i].value.oid);
@@ -120,8 +120,8 @@ convert_create_next_hop_group_map(sai_object_id_t switch_id,
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_NEXT_HOP_GROUP_MAP_ATTR_TYPE:
-        msg.set_type(static_cast<lemming::dataplane::sai::NextHopGroupMapType>(
-            attr_list[i].value.s32 + 1));
+        msg.set_type(convert_sai_next_hop_group_map_type_t_to_proto(
+            attr_list[i].value.s32));
         break;
     }
   }
@@ -212,8 +212,8 @@ sai_status_t l_get_next_hop_group_attribute(sai_object_id_t next_hop_group_id,
   req.set_oid(next_hop_group_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::NextHopGroupAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(
+        convert_sai_next_hop_group_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status =
       next_hop_group->GetNextHopGroupAttribute(&context, req, &resp);
@@ -232,7 +232,8 @@ sai_status_t l_get_next_hop_group_attribute(sai_object_id_t next_hop_group_id,
                   &attr_list[i].value.objlist.count);
         break;
       case SAI_NEXT_HOP_GROUP_ATTR_TYPE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().type() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_next_hop_group_type_t_to_sai(resp.attr().type());
         break;
       case SAI_NEXT_HOP_GROUP_ATTR_SET_SWITCHOVER:
         attr_list[i].value.booldata = resp.attr().set_switchover();
@@ -346,8 +347,7 @@ sai_status_t l_get_next_hop_group_member_attribute(
 
   for (uint32_t i = 0; i < attr_count; i++) {
     req.add_attr_type(
-        static_cast<lemming::dataplane::sai::NextHopGroupMemberAttr>(
-            attr_list[i].id + 1));
+        convert_sai_next_hop_group_member_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status =
       next_hop_group->GetNextHopGroupMemberAttribute(&context, req, &resp);
@@ -368,11 +368,13 @@ sai_status_t l_get_next_hop_group_member_attribute(
         break;
       case SAI_NEXT_HOP_GROUP_MEMBER_ATTR_CONFIGURED_ROLE:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().configured_role() - 1);
+            convert_sai_next_hop_group_member_configured_role_t_to_sai(
+                resp.attr().configured_role());
         break;
       case SAI_NEXT_HOP_GROUP_MEMBER_ATTR_OBSERVED_ROLE:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().observed_role() - 1);
+            convert_sai_next_hop_group_member_observed_role_t_to_sai(
+                resp.attr().observed_role());
         break;
       case SAI_NEXT_HOP_GROUP_MEMBER_ATTR_MONITORED_OBJECT:
         attr_list[i].value.oid = resp.attr().monitored_object();
@@ -519,8 +521,8 @@ sai_status_t l_get_next_hop_group_map_attribute(
   req.set_oid(next_hop_group_map_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::NextHopGroupMapAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(
+        convert_sai_next_hop_group_map_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status =
       next_hop_group->GetNextHopGroupMapAttribute(&context, req, &resp);
@@ -531,7 +533,8 @@ sai_status_t l_get_next_hop_group_map_attribute(
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_NEXT_HOP_GROUP_MAP_ATTR_TYPE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().type() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_next_hop_group_map_type_t_to_sai(resp.attr().type());
         break;
     }
   }

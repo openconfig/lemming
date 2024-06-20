@@ -19,6 +19,7 @@
 #include "dataplane/proto/sai/common.pb.h"
 #include "dataplane/proto/sai/stp.pb.h"
 #include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
 const sai_stp_api_t l_stp = {
     .create_stp = l_create_stp,
@@ -58,8 +59,8 @@ lemming::dataplane::sai::CreateStpPortRequest convert_create_stp_port(
         msg.set_bridge_port(attr_list[i].value.oid);
         break;
       case SAI_STP_PORT_ATTR_STATE:
-        msg.set_state(static_cast<lemming::dataplane::sai::StpPortState>(
-            attr_list[i].value.s32 + 1));
+        msg.set_state(
+            convert_sai_stp_port_state_t_to_proto(attr_list[i].value.s32));
         break;
     }
   }
@@ -122,8 +123,7 @@ sai_status_t l_get_stp_attribute(sai_object_id_t stp_id, uint32_t attr_count,
   req.set_oid(stp_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(
-        static_cast<lemming::dataplane::sai::StpAttr>(attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_stp_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = stp->GetStpAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -194,8 +194,7 @@ sai_status_t l_set_stp_port_attribute(sai_object_id_t stp_port_id,
 
   switch (attr->id) {
     case SAI_STP_PORT_ATTR_STATE:
-      req.set_state(static_cast<lemming::dataplane::sai::StpPortState>(
-          attr->value.s32 + 1));
+      req.set_state(convert_sai_stp_port_state_t_to_proto(attr->value.s32));
       break;
   }
 
@@ -220,8 +219,7 @@ sai_status_t l_get_stp_port_attribute(sai_object_id_t stp_port_id,
   req.set_oid(stp_port_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(
-        static_cast<lemming::dataplane::sai::StpPortAttr>(attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_stp_port_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = stp->GetStpPortAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -237,7 +235,8 @@ sai_status_t l_get_stp_port_attribute(sai_object_id_t stp_port_id,
         attr_list[i].value.oid = resp.attr().bridge_port();
         break;
       case SAI_STP_PORT_ATTR_STATE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().state() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_stp_port_state_t_to_sai(resp.attr().state());
         break;
     }
   }

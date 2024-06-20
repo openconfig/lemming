@@ -19,6 +19,7 @@
 #include "dataplane/proto/sai/common.pb.h"
 #include "dataplane/proto/sai/lag.pb.h"
 #include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
 const sai_lag_api_t l_lag = {
     .create_lag = l_create_lag,
@@ -190,8 +191,7 @@ sai_status_t l_get_lag_attribute(sai_object_id_t lag_id, uint32_t attr_count,
   req.set_oid(lag_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(
-        static_cast<lemming::dataplane::sai::LagAttr>(attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_lag_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = lag->GetLagAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -314,8 +314,7 @@ sai_status_t l_get_lag_member_attribute(sai_object_id_t lag_member_id,
   req.set_oid(lag_member_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::LagMemberAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_lag_member_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = lag->GetLagMemberAttribute(&context, req, &resp);
   if (!status.ok()) {

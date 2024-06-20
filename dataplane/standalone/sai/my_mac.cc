@@ -19,6 +19,7 @@
 #include "dataplane/proto/sai/common.pb.h"
 #include "dataplane/proto/sai/my_mac.pb.h"
 #include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
 const sai_my_mac_api_t l_my_mac = {
     .create_my_mac = l_create_my_mac,
@@ -130,8 +131,7 @@ sai_status_t l_get_my_mac_attribute(sai_object_id_t my_mac_id,
   req.set_oid(my_mac_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(
-        static_cast<lemming::dataplane::sai::MyMacAttr>(attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_my_mac_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = my_mac->GetMyMacAttribute(&context, req, &resp);
   if (!status.ok()) {

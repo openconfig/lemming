@@ -19,6 +19,7 @@
 #include "dataplane/proto/sai/common.pb.h"
 #include "dataplane/proto/sai/rpf_group.pb.h"
 #include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
 const sai_rpf_group_api_t l_rpf_group = {
     .create_rpf_group = l_create_rpf_group,
@@ -117,8 +118,7 @@ sai_status_t l_get_rpf_group_attribute(sai_object_id_t rpf_group_id,
   req.set_oid(rpf_group_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::RpfGroupAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_rpf_group_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = rpf_group->GetRpfGroupAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -199,8 +199,8 @@ sai_status_t l_get_rpf_group_member_attribute(
   req.set_oid(rpf_group_member_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::RpfGroupMemberAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(
+        convert_sai_rpf_group_member_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status =
       rpf_group->GetRpfGroupMemberAttribute(&context, req, &resp);

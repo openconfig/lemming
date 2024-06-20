@@ -19,6 +19,7 @@
 #include "dataplane/proto/sai/common.pb.h"
 #include "dataplane/proto/sai/mpls.pb.h"
 #include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
 const sai_mpls_api_t l_mpls = {
     .create_inseg_entry = l_create_inseg_entry,
@@ -42,8 +43,7 @@ lemming::dataplane::sai::CreateInsegEntryRequest convert_create_inseg_entry(
         break;
       case SAI_INSEG_ENTRY_ATTR_PACKET_ACTION:
         msg.set_packet_action(
-            static_cast<lemming::dataplane::sai::PacketAction>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_packet_action_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_INSEG_ENTRY_ATTR_TRAP_PRIORITY:
         msg.set_trap_priority(attr_list[i].value.u8);
@@ -52,9 +52,8 @@ lemming::dataplane::sai::CreateInsegEntryRequest convert_create_inseg_entry(
         msg.set_next_hop_id(attr_list[i].value.oid);
         break;
       case SAI_INSEG_ENTRY_ATTR_PSC_TYPE:
-        msg.set_psc_type(
-            static_cast<lemming::dataplane::sai::InsegEntryPscType>(
-                attr_list[i].value.s32 + 1));
+        msg.set_psc_type(convert_sai_inseg_entry_psc_type_t_to_proto(
+            attr_list[i].value.s32));
         break;
       case SAI_INSEG_ENTRY_ATTR_QOS_TC:
         msg.set_qos_tc(attr_list[i].value.u8);
@@ -66,14 +65,12 @@ lemming::dataplane::sai::CreateInsegEntryRequest convert_create_inseg_entry(
         msg.set_mpls_exp_to_color_map(attr_list[i].value.oid);
         break;
       case SAI_INSEG_ENTRY_ATTR_POP_TTL_MODE:
-        msg.set_pop_ttl_mode(
-            static_cast<lemming::dataplane::sai::InsegEntryPopTtlMode>(
-                attr_list[i].value.s32 + 1));
+        msg.set_pop_ttl_mode(convert_sai_inseg_entry_pop_ttl_mode_t_to_proto(
+            attr_list[i].value.s32));
         break;
       case SAI_INSEG_ENTRY_ATTR_POP_QOS_MODE:
-        msg.set_pop_qos_mode(
-            static_cast<lemming::dataplane::sai::InsegEntryPopQosMode>(
-                attr_list[i].value.s32 + 1));
+        msg.set_pop_qos_mode(convert_sai_inseg_entry_pop_qos_mode_t_to_proto(
+            attr_list[i].value.s32));
         break;
       case SAI_INSEG_ENTRY_ATTR_COUNTER_ID:
         msg.set_counter_id(attr_list[i].value.oid);
@@ -131,8 +128,8 @@ sai_status_t l_set_inseg_entry_attribute(const sai_inseg_entry_t *inseg_entry,
       req.set_num_of_pop(attr->value.u8);
       break;
     case SAI_INSEG_ENTRY_ATTR_PACKET_ACTION:
-      req.set_packet_action(static_cast<lemming::dataplane::sai::PacketAction>(
-          attr->value.s32 + 1));
+      req.set_packet_action(
+          convert_sai_packet_action_t_to_proto(attr->value.s32));
       break;
     case SAI_INSEG_ENTRY_ATTR_TRAP_PRIORITY:
       req.set_trap_priority(attr->value.u8);
@@ -141,8 +138,8 @@ sai_status_t l_set_inseg_entry_attribute(const sai_inseg_entry_t *inseg_entry,
       req.set_next_hop_id(attr->value.oid);
       break;
     case SAI_INSEG_ENTRY_ATTR_PSC_TYPE:
-      req.set_psc_type(static_cast<lemming::dataplane::sai::InsegEntryPscType>(
-          attr->value.s32 + 1));
+      req.set_psc_type(
+          convert_sai_inseg_entry_psc_type_t_to_proto(attr->value.s32));
       break;
     case SAI_INSEG_ENTRY_ATTR_QOS_TC:
       req.set_qos_tc(attr->value.u8);
@@ -155,13 +152,11 @@ sai_status_t l_set_inseg_entry_attribute(const sai_inseg_entry_t *inseg_entry,
       break;
     case SAI_INSEG_ENTRY_ATTR_POP_TTL_MODE:
       req.set_pop_ttl_mode(
-          static_cast<lemming::dataplane::sai::InsegEntryPopTtlMode>(
-              attr->value.s32 + 1));
+          convert_sai_inseg_entry_pop_ttl_mode_t_to_proto(attr->value.s32));
       break;
     case SAI_INSEG_ENTRY_ATTR_POP_QOS_MODE:
       req.set_pop_qos_mode(
-          static_cast<lemming::dataplane::sai::InsegEntryPopQosMode>(
-              attr->value.s32 + 1));
+          convert_sai_inseg_entry_pop_qos_mode_t_to_proto(attr->value.s32));
       break;
     case SAI_INSEG_ENTRY_ATTR_COUNTER_ID:
       req.set_counter_id(attr->value.oid);
@@ -187,8 +182,7 @@ sai_status_t l_get_inseg_entry_attribute(const sai_inseg_entry_t *inseg_entry,
   grpc::ClientContext context;
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::InsegEntryAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_inseg_entry_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = mpls->GetInsegEntryAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -202,7 +196,7 @@ sai_status_t l_get_inseg_entry_attribute(const sai_inseg_entry_t *inseg_entry,
         break;
       case SAI_INSEG_ENTRY_ATTR_PACKET_ACTION:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().packet_action() - 1);
+            convert_sai_packet_action_t_to_sai(resp.attr().packet_action());
         break;
       case SAI_INSEG_ENTRY_ATTR_TRAP_PRIORITY:
         attr_list[i].value.u8 = resp.attr().trap_priority();
@@ -211,7 +205,8 @@ sai_status_t l_get_inseg_entry_attribute(const sai_inseg_entry_t *inseg_entry,
         attr_list[i].value.oid = resp.attr().next_hop_id();
         break;
       case SAI_INSEG_ENTRY_ATTR_PSC_TYPE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().psc_type() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_inseg_entry_psc_type_t_to_sai(resp.attr().psc_type());
         break;
       case SAI_INSEG_ENTRY_ATTR_QOS_TC:
         attr_list[i].value.u8 = resp.attr().qos_tc();
@@ -223,12 +218,12 @@ sai_status_t l_get_inseg_entry_attribute(const sai_inseg_entry_t *inseg_entry,
         attr_list[i].value.oid = resp.attr().mpls_exp_to_color_map();
         break;
       case SAI_INSEG_ENTRY_ATTR_POP_TTL_MODE:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().pop_ttl_mode() - 1);
+        attr_list[i].value.s32 = convert_sai_inseg_entry_pop_ttl_mode_t_to_sai(
+            resp.attr().pop_ttl_mode());
         break;
       case SAI_INSEG_ENTRY_ATTR_POP_QOS_MODE:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().pop_qos_mode() - 1);
+        attr_list[i].value.s32 = convert_sai_inseg_entry_pop_qos_mode_t_to_sai(
+            resp.attr().pop_qos_mode());
         break;
       case SAI_INSEG_ENTRY_ATTR_COUNTER_ID:
         attr_list[i].value.oid = resp.attr().counter_id();

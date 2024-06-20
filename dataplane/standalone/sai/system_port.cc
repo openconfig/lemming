@@ -19,6 +19,7 @@
 #include "dataplane/proto/sai/common.pb.h"
 #include "dataplane/proto/sai/system_port.pb.h"
 #include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
 const sai_system_port_api_t l_system_port = {
     .create_system_port = l_create_system_port,
@@ -124,8 +125,7 @@ sai_status_t l_get_system_port_attribute(sai_object_id_t system_port_id,
   req.set_oid(system_port_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::SystemPortAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_system_port_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status =
       system_port->GetSystemPortAttribute(&context, req, &resp);
@@ -136,7 +136,8 @@ sai_status_t l_get_system_port_attribute(sai_object_id_t system_port_id,
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_SYSTEM_PORT_ATTR_TYPE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().type() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_system_port_type_t_to_sai(resp.attr().type());
         break;
       case SAI_SYSTEM_PORT_ATTR_QOS_NUMBER_OF_VOQS:
         attr_list[i].value.u32 = resp.attr().qos_number_of_voqs();

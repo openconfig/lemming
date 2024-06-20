@@ -19,6 +19,7 @@
 #include "dataplane/proto/sai/common.pb.h"
 #include "dataplane/proto/sai/wred.pb.h"
 #include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
 const sai_wred_api_t l_wred = {
     .create_wred = l_create_wred,
@@ -74,8 +75,8 @@ lemming::dataplane::sai::CreateWredRequest convert_create_wred(
         msg.set_weight(attr_list[i].value.u8);
         break;
       case SAI_WRED_ATTR_ECN_MARK_MODE:
-        msg.set_ecn_mark_mode(static_cast<lemming::dataplane::sai::EcnMarkMode>(
-            attr_list[i].value.s32 + 1));
+        msg.set_ecn_mark_mode(
+            convert_sai_ecn_mark_mode_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_WRED_ATTR_ECN_GREEN_MIN_THRESHOLD:
         msg.set_ecn_green_min_threshold(attr_list[i].value.u32);
@@ -206,8 +207,8 @@ sai_status_t l_set_wred_attribute(sai_object_id_t wred_id,
       req.set_weight(attr->value.u8);
       break;
     case SAI_WRED_ATTR_ECN_MARK_MODE:
-      req.set_ecn_mark_mode(static_cast<lemming::dataplane::sai::EcnMarkMode>(
-          attr->value.s32 + 1));
+      req.set_ecn_mark_mode(
+          convert_sai_ecn_mark_mode_t_to_proto(attr->value.s32));
       break;
     case SAI_WRED_ATTR_ECN_GREEN_MIN_THRESHOLD:
       req.set_ecn_green_min_threshold(attr->value.u32);
@@ -267,8 +268,7 @@ sai_status_t l_get_wred_attribute(sai_object_id_t wred_id, uint32_t attr_count,
   req.set_oid(wred_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(
-        static_cast<lemming::dataplane::sai::WredAttr>(attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_wred_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = wred->GetWredAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -318,7 +318,7 @@ sai_status_t l_get_wred_attribute(sai_object_id_t wred_id, uint32_t attr_count,
         break;
       case SAI_WRED_ATTR_ECN_MARK_MODE:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().ecn_mark_mode() - 1);
+            convert_sai_ecn_mark_mode_t_to_sai(resp.attr().ecn_mark_mode());
         break;
       case SAI_WRED_ATTR_ECN_GREEN_MIN_THRESHOLD:
         attr_list[i].value.u32 = resp.attr().ecn_green_min_threshold();

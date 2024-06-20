@@ -19,6 +19,7 @@
 #include "dataplane/proto/sai/bfd.pb.h"
 #include "dataplane/proto/sai/common.pb.h"
 #include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
 const sai_bfd_api_t l_bfd = {
     .create_bfd_session = l_create_bfd_session,
@@ -38,8 +39,8 @@ lemming::dataplane::sai::CreateBfdSessionRequest convert_create_bfd_session(
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_BFD_SESSION_ATTR_TYPE:
-        msg.set_type(static_cast<lemming::dataplane::sai::BfdSessionType>(
-            attr_list[i].value.s32 + 1));
+        msg.set_type(
+            convert_sai_bfd_session_type_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_BFD_SESSION_ATTR_HW_LOOKUP_VALID:
         msg.set_hw_lookup_valid(attr_list[i].value.booldata);
@@ -79,8 +80,8 @@ lemming::dataplane::sai::CreateBfdSessionRequest convert_create_bfd_session(
         break;
       case SAI_BFD_SESSION_ATTR_BFD_ENCAPSULATION_TYPE:
         msg.set_bfd_encapsulation_type(
-            static_cast<lemming::dataplane::sai::BfdEncapsulationType>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_bfd_encapsulation_type_t_to_proto(
+                attr_list[i].value.s32));
         break;
       case SAI_BFD_SESSION_ATTR_IPHDR_VERSION:
         msg.set_iphdr_version(attr_list[i].value.u8);
@@ -140,9 +141,8 @@ lemming::dataplane::sai::CreateBfdSessionRequest convert_create_bfd_session(
         msg.set_multiplier(attr_list[i].value.u8);
         break;
       case SAI_BFD_SESSION_ATTR_OFFLOAD_TYPE:
-        msg.set_offload_type(
-            static_cast<lemming::dataplane::sai::BfdSessionOffloadType>(
-                attr_list[i].value.s32 + 1));
+        msg.set_offload_type(convert_sai_bfd_session_offload_type_t_to_proto(
+            attr_list[i].value.s32));
         break;
     }
   }
@@ -272,8 +272,7 @@ sai_status_t l_get_bfd_session_attribute(sai_object_id_t bfd_session_id,
   req.set_oid(bfd_session_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::BfdSessionAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_bfd_session_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = bfd->GetBfdSessionAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -283,7 +282,8 @@ sai_status_t l_get_bfd_session_attribute(sai_object_id_t bfd_session_id,
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_BFD_SESSION_ATTR_TYPE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().type() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_bfd_session_type_t_to_sai(resp.attr().type());
         break;
       case SAI_BFD_SESSION_ATTR_HW_LOOKUP_VALID:
         attr_list[i].value.booldata = resp.attr().hw_lookup_valid();
@@ -322,8 +322,8 @@ sai_status_t l_get_bfd_session_attribute(sai_object_id_t bfd_session_id,
         attr_list[i].value.booldata = resp.attr().vlan_header_valid();
         break;
       case SAI_BFD_SESSION_ATTR_BFD_ENCAPSULATION_TYPE:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().bfd_encapsulation_type() - 1);
+        attr_list[i].value.s32 = convert_sai_bfd_encapsulation_type_t_to_sai(
+            resp.attr().bfd_encapsulation_type());
         break;
       case SAI_BFD_SESSION_ATTR_IPHDR_VERSION:
         attr_list[i].value.u8 = resp.attr().iphdr_version();
@@ -389,11 +389,12 @@ sai_status_t l_get_bfd_session_attribute(sai_object_id_t bfd_session_id,
         attr_list[i].value.u32 = resp.attr().remote_min_rx();
         break;
       case SAI_BFD_SESSION_ATTR_STATE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().state() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_bfd_session_state_t_to_sai(resp.attr().state());
         break;
       case SAI_BFD_SESSION_ATTR_OFFLOAD_TYPE:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().offload_type() - 1);
+        attr_list[i].value.s32 = convert_sai_bfd_session_offload_type_t_to_sai(
+            resp.attr().offload_type());
         break;
       case SAI_BFD_SESSION_ATTR_NEGOTIATED_TX:
         attr_list[i].value.u32 = resp.attr().negotiated_tx();
@@ -428,8 +429,8 @@ sai_status_t l_get_bfd_session_stats(sai_object_id_t bfd_session_id,
   req.set_oid(bfd_session_id);
 
   for (uint32_t i = 0; i < number_of_counters; i++) {
-    req.add_counter_ids(static_cast<lemming::dataplane::sai::BfdSessionStat>(
-        counter_ids[i] + 1));
+    req.add_counter_ids(
+        convert_sai_bfd_session_stat_t_to_proto(counter_ids[i]));
   }
   grpc::Status status = bfd->GetBfdSessionStats(&context, req, &resp);
   if (!status.ok()) {

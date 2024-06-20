@@ -19,6 +19,7 @@
 #include "dataplane/proto/sai/common.pb.h"
 #include "dataplane/proto/sai/nat.pb.h"
 #include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
 const sai_nat_api_t l_nat = {
     .create_nat_entry = l_create_nat_entry,
@@ -42,8 +43,8 @@ lemming::dataplane::sai::CreateNatEntryRequest convert_create_nat_entry(
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_NAT_ENTRY_ATTR_NAT_TYPE:
-        msg.set_nat_type(static_cast<lemming::dataplane::sai::NatType>(
-            attr_list[i].value.s32 + 1));
+        msg.set_nat_type(
+            convert_sai_nat_type_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_NAT_ENTRY_ATTR_SRC_IP:
         msg.set_src_ip(&attr_list[i].value.ip4, sizeof(attr_list[i].value.ip4));
@@ -102,8 +103,8 @@ convert_create_nat_zone_counter(sai_object_id_t switch_id, uint32_t attr_count,
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_NAT_ZONE_COUNTER_ATTR_NAT_TYPE:
-        msg.set_nat_type(static_cast<lemming::dataplane::sai::NatType>(
-            attr_list[i].value.s32 + 1));
+        msg.set_nat_type(
+            convert_sai_nat_type_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_NAT_ZONE_COUNTER_ATTR_ZONE_ID:
         msg.set_zone_id(attr_list[i].value.u8);
@@ -176,8 +177,7 @@ sai_status_t l_set_nat_entry_attribute(const sai_nat_entry_t *nat_entry,
 
   switch (attr->id) {
     case SAI_NAT_ENTRY_ATTR_NAT_TYPE:
-      req.set_nat_type(
-          static_cast<lemming::dataplane::sai::NatType>(attr->value.s32 + 1));
+      req.set_nat_type(convert_sai_nat_type_t_to_proto(attr->value.s32));
       break;
     case SAI_NAT_ENTRY_ATTR_SRC_IP:
       req.set_src_ip(&attr->value.ip4, sizeof(attr->value.ip4));
@@ -242,8 +242,7 @@ sai_status_t l_get_nat_entry_attribute(const sai_nat_entry_t *nat_entry,
   grpc::ClientContext context;
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::NatEntryAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_nat_entry_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = nat->GetNatEntryAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -253,7 +252,8 @@ sai_status_t l_get_nat_entry_attribute(const sai_nat_entry_t *nat_entry,
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_NAT_ENTRY_ATTR_NAT_TYPE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().nat_type() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_nat_type_t_to_sai(resp.attr().nat_type());
         break;
       case SAI_NAT_ENTRY_ATTR_SRC_IP:
         memcpy(&attr_list[i].value.ip4, resp.attr().src_ip().data(),
@@ -436,8 +436,7 @@ sai_status_t l_set_nat_zone_counter_attribute(
 
   switch (attr->id) {
     case SAI_NAT_ZONE_COUNTER_ATTR_NAT_TYPE:
-      req.set_nat_type(
-          static_cast<lemming::dataplane::sai::NatType>(attr->value.s32 + 1));
+      req.set_nat_type(convert_sai_nat_type_t_to_proto(attr->value.s32));
       break;
     case SAI_NAT_ZONE_COUNTER_ATTR_ZONE_ID:
       req.set_zone_id(attr->value.u8);
@@ -474,8 +473,8 @@ sai_status_t l_get_nat_zone_counter_attribute(
   req.set_oid(nat_zone_counter_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::NatZoneCounterAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(
+        convert_sai_nat_zone_counter_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = nat->GetNatZoneCounterAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -485,7 +484,8 @@ sai_status_t l_get_nat_zone_counter_attribute(
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_NAT_ZONE_COUNTER_ATTR_NAT_TYPE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().nat_type() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_nat_type_t_to_sai(resp.attr().nat_type());
         break;
       case SAI_NAT_ZONE_COUNTER_ATTR_ZONE_ID:
         attr_list[i].value.u8 = resp.attr().zone_id();

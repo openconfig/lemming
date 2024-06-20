@@ -19,6 +19,7 @@
 #include "dataplane/proto/sai/common.pb.h"
 #include "dataplane/proto/sai/route.pb.h"
 #include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
 const sai_route_api_t l_route = {
     .create_route_entry = l_create_route_entry,
@@ -39,8 +40,7 @@ lemming::dataplane::sai::CreateRouteEntryRequest convert_create_route_entry(
     switch (attr_list[i].id) {
       case SAI_ROUTE_ENTRY_ATTR_PACKET_ACTION:
         msg.set_packet_action(
-            static_cast<lemming::dataplane::sai::PacketAction>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_packet_action_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_ROUTE_ENTRY_ATTR_USER_TRAP_ID:
         msg.set_user_trap_id(attr_list[i].value.oid);
@@ -108,8 +108,8 @@ sai_status_t l_set_route_entry_attribute(const sai_route_entry_t *route_entry,
 
   switch (attr->id) {
     case SAI_ROUTE_ENTRY_ATTR_PACKET_ACTION:
-      req.set_packet_action(static_cast<lemming::dataplane::sai::PacketAction>(
-          attr->value.s32 + 1));
+      req.set_packet_action(
+          convert_sai_packet_action_t_to_proto(attr->value.s32));
       break;
     case SAI_ROUTE_ENTRY_ATTR_USER_TRAP_ID:
       req.set_user_trap_id(attr->value.oid);
@@ -145,8 +145,7 @@ sai_status_t l_get_route_entry_attribute(const sai_route_entry_t *route_entry,
   *req.mutable_entry() = convert_from_route_entry(*route_entry);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::RouteEntryAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_route_entry_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = route->GetRouteEntryAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -157,7 +156,7 @@ sai_status_t l_get_route_entry_attribute(const sai_route_entry_t *route_entry,
     switch (attr_list[i].id) {
       case SAI_ROUTE_ENTRY_ATTR_PACKET_ACTION:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().packet_action() - 1);
+            convert_sai_packet_action_t_to_sai(resp.attr().packet_action());
         break;
       case SAI_ROUTE_ENTRY_ATTR_USER_TRAP_ID:
         attr_list[i].value.oid = resp.attr().user_trap_id();
@@ -170,7 +169,7 @@ sai_status_t l_get_route_entry_attribute(const sai_route_entry_t *route_entry,
         break;
       case SAI_ROUTE_ENTRY_ATTR_IP_ADDR_FAMILY:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().ip_addr_family() - 1);
+            convert_sai_ip_addr_family_t_to_sai(resp.attr().ip_addr_family());
         break;
       case SAI_ROUTE_ENTRY_ATTR_COUNTER_ID:
         attr_list[i].value.oid = resp.attr().counter_id();

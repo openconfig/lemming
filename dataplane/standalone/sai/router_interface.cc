@@ -19,6 +19,7 @@
 #include "dataplane/proto/sai/common.pb.h"
 #include "dataplane/proto/sai/router_interface.pb.h"
 #include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
 const sai_router_interface_api_t l_router_interface = {
     .create_router_interface = l_create_router_interface,
@@ -41,8 +42,8 @@ convert_create_router_interface(sai_object_id_t switch_id, uint32_t attr_count,
         msg.set_virtual_router_id(attr_list[i].value.oid);
         break;
       case SAI_ROUTER_INTERFACE_ATTR_TYPE:
-        msg.set_type(static_cast<lemming::dataplane::sai::RouterInterfaceType>(
-            attr_list[i].value.s32 + 1));
+        msg.set_type(convert_sai_router_interface_type_t_to_proto(
+            attr_list[i].value.s32));
         break;
       case SAI_ROUTER_INTERFACE_ATTR_PORT_ID:
         msg.set_port_id(attr_list[i].value.oid);
@@ -80,8 +81,7 @@ convert_create_router_interface(sai_object_id_t switch_id, uint32_t attr_count,
         break;
       case SAI_ROUTER_INTERFACE_ATTR_NEIGHBOR_MISS_PACKET_ACTION:
         msg.set_neighbor_miss_packet_action(
-            static_cast<lemming::dataplane::sai::PacketAction>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_packet_action_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_ROUTER_INTERFACE_ATTR_V4_MCAST_ENABLE:
         msg.set_v4_mcast_enable(attr_list[i].value.booldata);
@@ -91,8 +91,7 @@ convert_create_router_interface(sai_object_id_t switch_id, uint32_t attr_count,
         break;
       case SAI_ROUTER_INTERFACE_ATTR_LOOPBACK_PACKET_ACTION:
         msg.set_loopback_packet_action(
-            static_cast<lemming::dataplane::sai::PacketAction>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_packet_action_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_ROUTER_INTERFACE_ATTR_IS_VIRTUAL:
         msg.set_is_virtual(attr_list[i].value.booldata);
@@ -182,8 +181,7 @@ sai_status_t l_set_router_interface_attribute(
       break;
     case SAI_ROUTER_INTERFACE_ATTR_NEIGHBOR_MISS_PACKET_ACTION:
       req.set_neighbor_miss_packet_action(
-          static_cast<lemming::dataplane::sai::PacketAction>(attr->value.s32 +
-                                                             1));
+          convert_sai_packet_action_t_to_proto(attr->value.s32));
       break;
     case SAI_ROUTER_INTERFACE_ATTR_V4_MCAST_ENABLE:
       req.set_v4_mcast_enable(attr->value.booldata);
@@ -193,8 +191,7 @@ sai_status_t l_set_router_interface_attribute(
       break;
     case SAI_ROUTER_INTERFACE_ATTR_LOOPBACK_PACKET_ACTION:
       req.set_loopback_packet_action(
-          static_cast<lemming::dataplane::sai::PacketAction>(attr->value.s32 +
-                                                             1));
+          convert_sai_packet_action_t_to_proto(attr->value.s32));
       break;
     case SAI_ROUTER_INTERFACE_ATTR_NAT_ZONE_ID:
       req.set_nat_zone_id(attr->value.u8);
@@ -229,8 +226,8 @@ sai_status_t l_get_router_interface_attribute(
   req.set_oid(router_interface_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::RouterInterfaceAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(
+        convert_sai_router_interface_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status =
       router_interface->GetRouterInterfaceAttribute(&context, req, &resp);
@@ -244,7 +241,8 @@ sai_status_t l_get_router_interface_attribute(
         attr_list[i].value.oid = resp.attr().virtual_router_id();
         break;
       case SAI_ROUTER_INTERFACE_ATTR_TYPE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().type() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_router_interface_type_t_to_sai(resp.attr().type());
         break;
       case SAI_ROUTER_INTERFACE_ATTR_PORT_ID:
         attr_list[i].value.oid = resp.attr().port_id();
@@ -281,8 +279,8 @@ sai_status_t l_get_router_interface_attribute(
         attr_list[i].value.oid = resp.attr().egress_acl();
         break;
       case SAI_ROUTER_INTERFACE_ATTR_NEIGHBOR_MISS_PACKET_ACTION:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().neighbor_miss_packet_action() - 1);
+        attr_list[i].value.s32 = convert_sai_packet_action_t_to_sai(
+            resp.attr().neighbor_miss_packet_action());
         break;
       case SAI_ROUTER_INTERFACE_ATTR_V4_MCAST_ENABLE:
         attr_list[i].value.booldata = resp.attr().v4_mcast_enable();
@@ -291,8 +289,8 @@ sai_status_t l_get_router_interface_attribute(
         attr_list[i].value.booldata = resp.attr().v6_mcast_enable();
         break;
       case SAI_ROUTER_INTERFACE_ATTR_LOOPBACK_PACKET_ACTION:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().loopback_packet_action() - 1);
+        attr_list[i].value.s32 = convert_sai_packet_action_t_to_sai(
+            resp.attr().loopback_packet_action());
         break;
       case SAI_ROUTER_INTERFACE_ATTR_IS_VIRTUAL:
         attr_list[i].value.booldata = resp.attr().is_virtual();
@@ -325,8 +323,7 @@ sai_status_t l_get_router_interface_stats(sai_object_id_t router_interface_id,
 
   for (uint32_t i = 0; i < number_of_counters; i++) {
     req.add_counter_ids(
-        static_cast<lemming::dataplane::sai::RouterInterfaceStat>(
-            counter_ids[i] + 1));
+        convert_sai_router_interface_stat_t_to_proto(counter_ids[i]));
   }
   grpc::Status status =
       router_interface->GetRouterInterfaceStats(&context, req, &resp);

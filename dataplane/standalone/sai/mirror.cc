@@ -19,6 +19,7 @@
 #include "dataplane/proto/sai/common.pb.h"
 #include "dataplane/proto/sai/mirror.pb.h"
 #include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
 const sai_mirror_api_t l_mirror = {
     .create_mirror_session = l_create_mirror_session,
@@ -35,8 +36,8 @@ convert_create_mirror_session(sai_object_id_t switch_id, uint32_t attr_count,
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_MIRROR_SESSION_ATTR_TYPE:
-        msg.set_type(static_cast<lemming::dataplane::sai::MirrorSessionType>(
-            attr_list[i].value.s32 + 1));
+        msg.set_type(
+            convert_sai_mirror_session_type_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_MIRROR_SESSION_ATTR_MONITOR_PORT:
         msg.set_monitor_port(attr_list[i].value.oid);
@@ -49,8 +50,8 @@ convert_create_mirror_session(sai_object_id_t switch_id, uint32_t attr_count,
         break;
       case SAI_MIRROR_SESSION_ATTR_CONGESTION_MODE:
         msg.set_congestion_mode(
-            static_cast<lemming::dataplane::sai::MirrorSessionCongestionMode>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_mirror_session_congestion_mode_t_to_proto(
+                attr_list[i].value.s32));
         break;
       case SAI_MIRROR_SESSION_ATTR_TC:
         msg.set_tc(attr_list[i].value.u8);
@@ -72,8 +73,8 @@ convert_create_mirror_session(sai_object_id_t switch_id, uint32_t attr_count,
         break;
       case SAI_MIRROR_SESSION_ATTR_ERSPAN_ENCAPSULATION_TYPE:
         msg.set_erspan_encapsulation_type(
-            static_cast<lemming::dataplane::sai::ErspanEncapsulationType>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_erspan_encapsulation_type_t_to_proto(
+                attr_list[i].value.s32));
         break;
       case SAI_MIRROR_SESSION_ATTR_IPHDR_VERSION:
         msg.set_iphdr_version(attr_list[i].value.u8);
@@ -188,8 +189,8 @@ sai_status_t l_set_mirror_session_attribute(sai_object_id_t mirror_session_id,
       break;
     case SAI_MIRROR_SESSION_ATTR_CONGESTION_MODE:
       req.set_congestion_mode(
-          static_cast<lemming::dataplane::sai::MirrorSessionCongestionMode>(
-              attr->value.s32 + 1));
+          convert_sai_mirror_session_congestion_mode_t_to_proto(
+              attr->value.s32));
       break;
     case SAI_MIRROR_SESSION_ATTR_TC:
       req.set_tc(attr->value.u8);
@@ -273,8 +274,8 @@ sai_status_t l_get_mirror_session_attribute(sai_object_id_t mirror_session_id,
   req.set_oid(mirror_session_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::MirrorSessionAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(
+        convert_sai_mirror_session_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = mirror->GetMirrorSessionAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -284,7 +285,8 @@ sai_status_t l_get_mirror_session_attribute(sai_object_id_t mirror_session_id,
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_MIRROR_SESSION_ATTR_TYPE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().type() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_mirror_session_type_t_to_sai(resp.attr().type());
         break;
       case SAI_MIRROR_SESSION_ATTR_MONITOR_PORT:
         attr_list[i].value.oid = resp.attr().monitor_port();
@@ -297,7 +299,8 @@ sai_status_t l_get_mirror_session_attribute(sai_object_id_t mirror_session_id,
         break;
       case SAI_MIRROR_SESSION_ATTR_CONGESTION_MODE:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().congestion_mode() - 1);
+            convert_sai_mirror_session_congestion_mode_t_to_sai(
+                resp.attr().congestion_mode());
         break;
       case SAI_MIRROR_SESSION_ATTR_TC:
         attr_list[i].value.u8 = resp.attr().tc();
@@ -318,8 +321,8 @@ sai_status_t l_get_mirror_session_attribute(sai_object_id_t mirror_session_id,
         attr_list[i].value.booldata = resp.attr().vlan_header_valid();
         break;
       case SAI_MIRROR_SESSION_ATTR_ERSPAN_ENCAPSULATION_TYPE:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().erspan_encapsulation_type() - 1);
+        attr_list[i].value.s32 = convert_sai_erspan_encapsulation_type_t_to_sai(
+            resp.attr().erspan_encapsulation_type());
         break;
       case SAI_MIRROR_SESSION_ATTR_IPHDR_VERSION:
         attr_list[i].value.u8 = resp.attr().iphdr_version();

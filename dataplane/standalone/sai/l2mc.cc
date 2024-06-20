@@ -19,6 +19,7 @@
 #include "dataplane/proto/sai/common.pb.h"
 #include "dataplane/proto/sai/l2mc.pb.h"
 #include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
 const sai_l2mc_api_t l_l2mc = {
     .create_l2mc_entry = l_create_l2mc_entry,
@@ -35,8 +36,7 @@ lemming::dataplane::sai::CreateL2mcEntryRequest convert_create_l2mc_entry(
     switch (attr_list[i].id) {
       case SAI_L2MC_ENTRY_ATTR_PACKET_ACTION:
         msg.set_packet_action(
-            static_cast<lemming::dataplane::sai::PacketAction>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_packet_action_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_L2MC_ENTRY_ATTR_OUTPUT_GROUP_ID:
         msg.set_output_group_id(attr_list[i].value.oid);
@@ -91,8 +91,8 @@ sai_status_t l_set_l2mc_entry_attribute(const sai_l2mc_entry_t *l2mc_entry,
 
   switch (attr->id) {
     case SAI_L2MC_ENTRY_ATTR_PACKET_ACTION:
-      req.set_packet_action(static_cast<lemming::dataplane::sai::PacketAction>(
-          attr->value.s32 + 1));
+      req.set_packet_action(
+          convert_sai_packet_action_t_to_proto(attr->value.s32));
       break;
     case SAI_L2MC_ENTRY_ATTR_OUTPUT_GROUP_ID:
       req.set_output_group_id(attr->value.oid);
@@ -118,8 +118,7 @@ sai_status_t l_get_l2mc_entry_attribute(const sai_l2mc_entry_t *l2mc_entry,
   grpc::ClientContext context;
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::L2mcEntryAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_l2mc_entry_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = l2mc->GetL2mcEntryAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -130,7 +129,7 @@ sai_status_t l_get_l2mc_entry_attribute(const sai_l2mc_entry_t *l2mc_entry,
     switch (attr_list[i].id) {
       case SAI_L2MC_ENTRY_ATTR_PACKET_ACTION:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().packet_action() - 1);
+            convert_sai_packet_action_t_to_sai(resp.attr().packet_action());
         break;
       case SAI_L2MC_ENTRY_ATTR_OUTPUT_GROUP_ID:
         attr_list[i].value.oid = resp.attr().output_group_id();

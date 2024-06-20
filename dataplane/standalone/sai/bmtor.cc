@@ -19,6 +19,7 @@
 #include "dataplane/proto/sai/bmtor.pb.h"
 #include "dataplane/proto/sai/common.pb.h"
 #include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
 const sai_bmtor_api_t l_bmtor = {
     .create_table_bitmap_classification_entry =
@@ -70,9 +71,8 @@ convert_create_table_bitmap_classification_entry(
     switch (attr_list[i].id) {
       case SAI_TABLE_BITMAP_CLASSIFICATION_ENTRY_ATTR_ACTION:
         msg.set_action(
-            static_cast<
-                lemming::dataplane::sai::TableBitmapClassificationEntryAction>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_table_bitmap_classification_entry_action_t_to_proto(
+                attr_list[i].value.s32));
         break;
       case SAI_TABLE_BITMAP_CLASSIFICATION_ENTRY_ATTR_ROUTER_INTERFACE_KEY:
         msg.set_router_interface_key(attr_list[i].value.oid);
@@ -97,9 +97,8 @@ convert_create_table_bitmap_router_entry(sai_object_id_t switch_id,
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_TABLE_BITMAP_ROUTER_ENTRY_ATTR_ACTION:
-        msg.set_action(
-            static_cast<lemming::dataplane::sai::TableBitmapRouterEntryAction>(
-                attr_list[i].value.s32 + 1));
+        msg.set_action(convert_sai_table_bitmap_router_entry_action_t_to_proto(
+            attr_list[i].value.s32));
         break;
       case SAI_TABLE_BITMAP_ROUTER_ENTRY_ATTR_PRIORITY:
         msg.set_priority(attr_list[i].value.u32);
@@ -136,9 +135,8 @@ convert_create_table_meta_tunnel_entry(sai_object_id_t switch_id,
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_TABLE_META_TUNNEL_ENTRY_ATTR_ACTION:
-        msg.set_action(
-            static_cast<lemming::dataplane::sai::TableMetaTunnelEntryAction>(
-                attr_list[i].value.s32 + 1));
+        msg.set_action(convert_sai_table_meta_tunnel_entry_action_t_to_proto(
+            attr_list[i].value.s32));
         break;
       case SAI_TABLE_META_TUNNEL_ENTRY_ATTR_METADATA_KEY:
         msg.set_metadata_key(attr_list[i].value.u16);
@@ -224,9 +222,8 @@ sai_status_t l_get_table_bitmap_classification_entry_attribute(
 
   for (uint32_t i = 0; i < attr_count; i++) {
     req.add_attr_type(
-        static_cast<
-            lemming::dataplane::sai::TableBitmapClassificationEntryAttr>(
-            attr_list[i].id + 1));
+        convert_sai_table_bitmap_classification_entry_attr_t_to_proto(
+            attr_list[i].id));
   }
   grpc::Status status =
       bmtor->GetTableBitmapClassificationEntryAttribute(&context, req, &resp);
@@ -237,7 +234,9 @@ sai_status_t l_get_table_bitmap_classification_entry_attribute(
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_TABLE_BITMAP_CLASSIFICATION_ENTRY_ATTR_ACTION:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().action() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_table_bitmap_classification_entry_action_t_to_sai(
+                resp.attr().action());
         break;
       case SAI_TABLE_BITMAP_CLASSIFICATION_ENTRY_ATTR_ROUTER_INTERFACE_KEY:
         attr_list[i].value.oid = resp.attr().router_interface_key();
@@ -267,9 +266,8 @@ sai_status_t l_get_table_bitmap_classification_entry_stats(
 
   for (uint32_t i = 0; i < number_of_counters; i++) {
     req.add_counter_ids(
-        static_cast<
-            lemming::dataplane::sai::TableBitmapClassificationEntryStat>(
-            counter_ids[i] + 1));
+        convert_sai_table_bitmap_classification_entry_stat_t_to_proto(
+            counter_ids[i]));
   }
   grpc::Status status =
       bmtor->GetTableBitmapClassificationEntryStats(&context, req, &resp);
@@ -364,8 +362,7 @@ sai_status_t l_get_table_bitmap_router_entry_attribute(
 
   for (uint32_t i = 0; i < attr_count; i++) {
     req.add_attr_type(
-        static_cast<lemming::dataplane::sai::TableBitmapRouterEntryAttr>(
-            attr_list[i].id + 1));
+        convert_sai_table_bitmap_router_entry_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status =
       bmtor->GetTableBitmapRouterEntryAttribute(&context, req, &resp);
@@ -376,7 +373,9 @@ sai_status_t l_get_table_bitmap_router_entry_attribute(
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_TABLE_BITMAP_ROUTER_ENTRY_ATTR_ACTION:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().action() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_table_bitmap_router_entry_action_t_to_sai(
+                resp.attr().action());
         break;
       case SAI_TABLE_BITMAP_ROUTER_ENTRY_ATTR_PRIORITY:
         attr_list[i].value.u32 = resp.attr().priority();
@@ -417,8 +416,7 @@ sai_status_t l_get_table_bitmap_router_entry_stats(
 
   for (uint32_t i = 0; i < number_of_counters; i++) {
     req.add_counter_ids(
-        static_cast<lemming::dataplane::sai::TableBitmapRouterEntryStat>(
-            counter_ids[i] + 1));
+        convert_sai_table_bitmap_router_entry_stat_t_to_proto(counter_ids[i]));
   }
   grpc::Status status =
       bmtor->GetTableBitmapRouterEntryStats(&context, req, &resp);
@@ -510,8 +508,7 @@ sai_status_t l_get_table_meta_tunnel_entry_attribute(
 
   for (uint32_t i = 0; i < attr_count; i++) {
     req.add_attr_type(
-        static_cast<lemming::dataplane::sai::TableMetaTunnelEntryAttr>(
-            attr_list[i].id + 1));
+        convert_sai_table_meta_tunnel_entry_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status =
       bmtor->GetTableMetaTunnelEntryAttribute(&context, req, &resp);
@@ -522,7 +519,9 @@ sai_status_t l_get_table_meta_tunnel_entry_attribute(
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_TABLE_META_TUNNEL_ENTRY_ATTR_ACTION:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().action() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_table_meta_tunnel_entry_action_t_to_sai(
+                resp.attr().action());
         break;
       case SAI_TABLE_META_TUNNEL_ENTRY_ATTR_METADATA_KEY:
         attr_list[i].value.u16 = resp.attr().metadata_key();
@@ -555,8 +554,7 @@ sai_status_t l_get_table_meta_tunnel_entry_stats(
 
   for (uint32_t i = 0; i < number_of_counters; i++) {
     req.add_counter_ids(
-        static_cast<lemming::dataplane::sai::TableMetaTunnelEntryStat>(
-            counter_ids[i] + 1));
+        convert_sai_table_meta_tunnel_entry_stat_t_to_proto(counter_ids[i]));
   }
   grpc::Status status =
       bmtor->GetTableMetaTunnelEntryStats(&context, req, &resp);

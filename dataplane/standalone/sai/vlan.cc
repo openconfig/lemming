@@ -19,6 +19,7 @@
 #include "dataplane/proto/sai/common.pb.h"
 #include "dataplane/proto/sai/vlan.pb.h"
 #include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
 const sai_vlan_api_t l_vlan = {
     .create_vlan = l_create_vlan,
@@ -57,13 +58,13 @@ lemming::dataplane::sai::CreateVlanRequest convert_create_vlan(
         break;
       case SAI_VLAN_ATTR_IPV4_MCAST_LOOKUP_KEY_TYPE:
         msg.set_ipv4_mcast_lookup_key_type(
-            static_cast<lemming::dataplane::sai::VlanMcastLookupKeyType>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_vlan_mcast_lookup_key_type_t_to_proto(
+                attr_list[i].value.s32));
         break;
       case SAI_VLAN_ATTR_IPV6_MCAST_LOOKUP_KEY_TYPE:
         msg.set_ipv6_mcast_lookup_key_type(
-            static_cast<lemming::dataplane::sai::VlanMcastLookupKeyType>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_vlan_mcast_lookup_key_type_t_to_proto(
+                attr_list[i].value.s32));
         break;
       case SAI_VLAN_ATTR_UNKNOWN_NON_IP_MCAST_OUTPUT_GROUP_ID:
         msg.set_unknown_non_ip_mcast_output_group_id(attr_list[i].value.oid);
@@ -88,24 +89,24 @@ lemming::dataplane::sai::CreateVlanRequest convert_create_vlan(
         break;
       case SAI_VLAN_ATTR_UNKNOWN_UNICAST_FLOOD_CONTROL_TYPE:
         msg.set_unknown_unicast_flood_control_type(
-            static_cast<lemming::dataplane::sai::VlanFloodControlType>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_vlan_flood_control_type_t_to_proto(
+                attr_list[i].value.s32));
         break;
       case SAI_VLAN_ATTR_UNKNOWN_UNICAST_FLOOD_GROUP:
         msg.set_unknown_unicast_flood_group(attr_list[i].value.oid);
         break;
       case SAI_VLAN_ATTR_UNKNOWN_MULTICAST_FLOOD_CONTROL_TYPE:
         msg.set_unknown_multicast_flood_control_type(
-            static_cast<lemming::dataplane::sai::VlanFloodControlType>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_vlan_flood_control_type_t_to_proto(
+                attr_list[i].value.s32));
         break;
       case SAI_VLAN_ATTR_UNKNOWN_MULTICAST_FLOOD_GROUP:
         msg.set_unknown_multicast_flood_group(attr_list[i].value.oid);
         break;
       case SAI_VLAN_ATTR_BROADCAST_FLOOD_CONTROL_TYPE:
         msg.set_broadcast_flood_control_type(
-            static_cast<lemming::dataplane::sai::VlanFloodControlType>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_vlan_flood_control_type_t_to_proto(
+                attr_list[i].value.s32));
         break;
       case SAI_VLAN_ATTR_BROADCAST_FLOOD_GROUP:
         msg.set_broadcast_flood_group(attr_list[i].value.oid);
@@ -138,8 +139,7 @@ lemming::dataplane::sai::CreateVlanMemberRequest convert_create_vlan_member(
         break;
       case SAI_VLAN_MEMBER_ATTR_VLAN_TAGGING_MODE:
         msg.set_vlan_tagging_mode(
-            static_cast<lemming::dataplane::sai::VlanTaggingMode>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_vlan_tagging_mode_t_to_proto(attr_list[i].value.s32));
         break;
     }
   }
@@ -205,13 +205,11 @@ sai_status_t l_set_vlan_attribute(sai_object_id_t vlan_id,
       break;
     case SAI_VLAN_ATTR_IPV4_MCAST_LOOKUP_KEY_TYPE:
       req.set_ipv4_mcast_lookup_key_type(
-          static_cast<lemming::dataplane::sai::VlanMcastLookupKeyType>(
-              attr->value.s32 + 1));
+          convert_sai_vlan_mcast_lookup_key_type_t_to_proto(attr->value.s32));
       break;
     case SAI_VLAN_ATTR_IPV6_MCAST_LOOKUP_KEY_TYPE:
       req.set_ipv6_mcast_lookup_key_type(
-          static_cast<lemming::dataplane::sai::VlanMcastLookupKeyType>(
-              attr->value.s32 + 1));
+          convert_sai_vlan_mcast_lookup_key_type_t_to_proto(attr->value.s32));
       break;
     case SAI_VLAN_ATTR_UNKNOWN_NON_IP_MCAST_OUTPUT_GROUP_ID:
       req.set_unknown_non_ip_mcast_output_group_id(attr->value.oid);
@@ -236,24 +234,21 @@ sai_status_t l_set_vlan_attribute(sai_object_id_t vlan_id,
       break;
     case SAI_VLAN_ATTR_UNKNOWN_UNICAST_FLOOD_CONTROL_TYPE:
       req.set_unknown_unicast_flood_control_type(
-          static_cast<lemming::dataplane::sai::VlanFloodControlType>(
-              attr->value.s32 + 1));
+          convert_sai_vlan_flood_control_type_t_to_proto(attr->value.s32));
       break;
     case SAI_VLAN_ATTR_UNKNOWN_UNICAST_FLOOD_GROUP:
       req.set_unknown_unicast_flood_group(attr->value.oid);
       break;
     case SAI_VLAN_ATTR_UNKNOWN_MULTICAST_FLOOD_CONTROL_TYPE:
       req.set_unknown_multicast_flood_control_type(
-          static_cast<lemming::dataplane::sai::VlanFloodControlType>(
-              attr->value.s32 + 1));
+          convert_sai_vlan_flood_control_type_t_to_proto(attr->value.s32));
       break;
     case SAI_VLAN_ATTR_UNKNOWN_MULTICAST_FLOOD_GROUP:
       req.set_unknown_multicast_flood_group(attr->value.oid);
       break;
     case SAI_VLAN_ATTR_BROADCAST_FLOOD_CONTROL_TYPE:
       req.set_broadcast_flood_control_type(
-          static_cast<lemming::dataplane::sai::VlanFloodControlType>(
-              attr->value.s32 + 1));
+          convert_sai_vlan_flood_control_type_t_to_proto(attr->value.s32));
       break;
     case SAI_VLAN_ATTR_BROADCAST_FLOOD_GROUP:
       req.set_broadcast_flood_group(attr->value.oid);
@@ -288,8 +283,7 @@ sai_status_t l_get_vlan_attribute(sai_object_id_t vlan_id, uint32_t attr_count,
   req.set_oid(vlan_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(
-        static_cast<lemming::dataplane::sai::VlanAttr>(attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_vlan_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = vlan->GetVlanAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -316,11 +310,13 @@ sai_status_t l_get_vlan_attribute(sai_object_id_t vlan_id, uint32_t attr_count,
         break;
       case SAI_VLAN_ATTR_IPV4_MCAST_LOOKUP_KEY_TYPE:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().ipv4_mcast_lookup_key_type() - 1);
+            convert_sai_vlan_mcast_lookup_key_type_t_to_sai(
+                resp.attr().ipv4_mcast_lookup_key_type());
         break;
       case SAI_VLAN_ATTR_IPV6_MCAST_LOOKUP_KEY_TYPE:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().ipv6_mcast_lookup_key_type() - 1);
+            convert_sai_vlan_mcast_lookup_key_type_t_to_sai(
+                resp.attr().ipv6_mcast_lookup_key_type());
         break;
       case SAI_VLAN_ATTR_UNKNOWN_NON_IP_MCAST_OUTPUT_GROUP_ID:
         attr_list[i].value.oid =
@@ -348,22 +344,22 @@ sai_status_t l_get_vlan_attribute(sai_object_id_t vlan_id, uint32_t attr_count,
         attr_list[i].value.u32 = resp.attr().meta_data();
         break;
       case SAI_VLAN_ATTR_UNKNOWN_UNICAST_FLOOD_CONTROL_TYPE:
-        attr_list[i].value.s32 = static_cast<int>(
-            resp.attr().unknown_unicast_flood_control_type() - 1);
+        attr_list[i].value.s32 = convert_sai_vlan_flood_control_type_t_to_sai(
+            resp.attr().unknown_unicast_flood_control_type());
         break;
       case SAI_VLAN_ATTR_UNKNOWN_UNICAST_FLOOD_GROUP:
         attr_list[i].value.oid = resp.attr().unknown_unicast_flood_group();
         break;
       case SAI_VLAN_ATTR_UNKNOWN_MULTICAST_FLOOD_CONTROL_TYPE:
-        attr_list[i].value.s32 = static_cast<int>(
-            resp.attr().unknown_multicast_flood_control_type() - 1);
+        attr_list[i].value.s32 = convert_sai_vlan_flood_control_type_t_to_sai(
+            resp.attr().unknown_multicast_flood_control_type());
         break;
       case SAI_VLAN_ATTR_UNKNOWN_MULTICAST_FLOOD_GROUP:
         attr_list[i].value.oid = resp.attr().unknown_multicast_flood_group();
         break;
       case SAI_VLAN_ATTR_BROADCAST_FLOOD_CONTROL_TYPE:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().broadcast_flood_control_type() - 1);
+        attr_list[i].value.s32 = convert_sai_vlan_flood_control_type_t_to_sai(
+            resp.attr().broadcast_flood_control_type());
         break;
       case SAI_VLAN_ATTR_BROADCAST_FLOOD_GROUP:
         attr_list[i].value.oid = resp.attr().broadcast_flood_group();
@@ -432,8 +428,7 @@ sai_status_t l_set_vlan_member_attribute(sai_object_id_t vlan_member_id,
   switch (attr->id) {
     case SAI_VLAN_MEMBER_ATTR_VLAN_TAGGING_MODE:
       req.set_vlan_tagging_mode(
-          static_cast<lemming::dataplane::sai::VlanTaggingMode>(
-              attr->value.s32 + 1));
+          convert_sai_vlan_tagging_mode_t_to_proto(attr->value.s32));
       break;
   }
 
@@ -458,8 +453,7 @@ sai_status_t l_get_vlan_member_attribute(sai_object_id_t vlan_member_id,
   req.set_oid(vlan_member_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::VlanMemberAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_vlan_member_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = vlan->GetVlanMemberAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -475,8 +469,8 @@ sai_status_t l_get_vlan_member_attribute(sai_object_id_t vlan_member_id,
         attr_list[i].value.oid = resp.attr().bridge_port_id();
         break;
       case SAI_VLAN_MEMBER_ATTR_VLAN_TAGGING_MODE:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().vlan_tagging_mode() - 1);
+        attr_list[i].value.s32 = convert_sai_vlan_tagging_mode_t_to_sai(
+            resp.attr().vlan_tagging_mode());
         break;
     }
   }
@@ -559,8 +553,7 @@ sai_status_t l_get_vlan_stats(sai_object_id_t vlan_id,
   req.set_oid(vlan_id);
 
   for (uint32_t i = 0; i < number_of_counters; i++) {
-    req.add_counter_ids(
-        static_cast<lemming::dataplane::sai::VlanStat>(counter_ids[i] + 1));
+    req.add_counter_ids(convert_sai_vlan_stat_t_to_proto(counter_ids[i]));
   }
   grpc::Status status = vlan->GetVlanStats(&context, req, &resp);
   if (!status.ok()) {

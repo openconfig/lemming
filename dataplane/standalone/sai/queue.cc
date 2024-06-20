@@ -19,6 +19,7 @@
 #include "dataplane/proto/sai/common.pb.h"
 #include "dataplane/proto/sai/queue.pb.h"
 #include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
 const sai_queue_api_t l_queue = {
     .create_queue = l_create_queue,
@@ -38,8 +39,7 @@ lemming::dataplane::sai::CreateQueueRequest convert_create_queue(
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_QUEUE_ATTR_TYPE:
-        msg.set_type(static_cast<lemming::dataplane::sai::QueueType>(
-            attr_list[i].value.s32 + 1));
+        msg.set_type(convert_sai_queue_type_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_QUEUE_ATTR_PORT:
         msg.set_port(attr_list[i].value.oid);
@@ -72,8 +72,7 @@ lemming::dataplane::sai::CreateQueueRequest convert_create_queue(
         break;
       case SAI_QUEUE_ATTR_PFC_DLR_PACKET_ACTION:
         msg.set_pfc_dlr_packet_action(
-            static_cast<lemming::dataplane::sai::PacketAction>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_packet_action_t_to_proto(attr_list[i].value.s32));
         break;
     }
   }
@@ -153,8 +152,7 @@ sai_status_t l_set_queue_attribute(sai_object_id_t queue_id,
       break;
     case SAI_QUEUE_ATTR_PFC_DLR_PACKET_ACTION:
       req.set_pfc_dlr_packet_action(
-          static_cast<lemming::dataplane::sai::PacketAction>(attr->value.s32 +
-                                                             1));
+          convert_sai_packet_action_t_to_proto(attr->value.s32));
       break;
   }
 
@@ -179,8 +177,7 @@ sai_status_t l_get_queue_attribute(sai_object_id_t queue_id,
   req.set_oid(queue_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(
-        static_cast<lemming::dataplane::sai::QueueAttr>(attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_queue_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = queue->GetQueueAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -190,7 +187,8 @@ sai_status_t l_get_queue_attribute(sai_object_id_t queue_id,
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_QUEUE_ATTR_TYPE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().type() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_queue_type_t_to_sai(resp.attr().type());
         break;
       case SAI_QUEUE_ATTR_PORT:
         attr_list[i].value.oid = resp.attr().port();
@@ -224,12 +222,13 @@ sai_status_t l_get_queue_attribute(sai_object_id_t queue_id,
                   &attr_list[i].value.objlist.count);
         break;
       case SAI_QUEUE_ATTR_PFC_DLR_PACKET_ACTION:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().pfc_dlr_packet_action() - 1);
+        attr_list[i].value.s32 = convert_sai_packet_action_t_to_sai(
+            resp.attr().pfc_dlr_packet_action());
         break;
       case SAI_QUEUE_ATTR_PFC_CONTINUOUS_DEADLOCK_STATE:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().pfc_continuous_deadlock_state() - 1);
+            convert_sai_queue_pfc_continuous_deadlock_state_t_to_sai(
+                resp.attr().pfc_continuous_deadlock_state());
         break;
     }
   }
@@ -249,8 +248,7 @@ sai_status_t l_get_queue_stats(sai_object_id_t queue_id,
   req.set_oid(queue_id);
 
   for (uint32_t i = 0; i < number_of_counters; i++) {
-    req.add_counter_ids(
-        static_cast<lemming::dataplane::sai::QueueStat>(counter_ids[i] + 1));
+    req.add_counter_ids(convert_sai_queue_stat_t_to_proto(counter_ids[i]));
   }
   grpc::Status status = queue->GetQueueStats(&context, req, &resp);
   if (!status.ok()) {

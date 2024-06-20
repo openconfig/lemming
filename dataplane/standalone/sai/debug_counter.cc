@@ -19,6 +19,7 @@
 #include "dataplane/proto/sai/common.pb.h"
 #include "dataplane/proto/sai/debug_counter.pb.h"
 #include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
 const sai_debug_counter_api_t l_debug_counter = {
     .create_debug_counter = l_create_debug_counter,
@@ -35,13 +36,12 @@ lemming::dataplane::sai::CreateDebugCounterRequest convert_create_debug_counter(
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_DEBUG_COUNTER_ATTR_TYPE:
-        msg.set_type(static_cast<lemming::dataplane::sai::DebugCounterType>(
-            attr_list[i].value.s32 + 1));
+        msg.set_type(
+            convert_sai_debug_counter_type_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_DEBUG_COUNTER_ATTR_BIND_METHOD:
-        msg.set_bind_method(
-            static_cast<lemming::dataplane::sai::DebugCounterBindMethod>(
-                attr_list[i].value.s32 + 1));
+        msg.set_bind_method(convert_sai_debug_counter_bind_method_t_to_proto(
+            attr_list[i].value.s32));
         break;
     }
   }
@@ -106,8 +106,8 @@ sai_status_t l_get_debug_counter_attribute(sai_object_id_t debug_counter_id,
   req.set_oid(debug_counter_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::DebugCounterAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(
+        convert_sai_debug_counter_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status =
       debug_counter->GetDebugCounterAttribute(&context, req, &resp);
@@ -121,11 +121,12 @@ sai_status_t l_get_debug_counter_attribute(sai_object_id_t debug_counter_id,
         attr_list[i].value.u32 = resp.attr().index();
         break;
       case SAI_DEBUG_COUNTER_ATTR_TYPE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().type() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_debug_counter_type_t_to_sai(resp.attr().type());
         break;
       case SAI_DEBUG_COUNTER_ATTR_BIND_METHOD:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().bind_method() - 1);
+        attr_list[i].value.s32 = convert_sai_debug_counter_bind_method_t_to_sai(
+            resp.attr().bind_method());
         break;
     }
   }

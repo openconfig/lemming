@@ -19,6 +19,7 @@
 #include "dataplane/proto/sai/common.pb.h"
 #include "dataplane/proto/sai/samplepacket.pb.h"
 #include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
 const sai_samplepacket_api_t l_samplepacket = {
     .create_samplepacket = l_create_samplepacket,
@@ -38,12 +39,12 @@ lemming::dataplane::sai::CreateSamplepacketRequest convert_create_samplepacket(
         msg.set_sample_rate(attr_list[i].value.u32);
         break;
       case SAI_SAMPLEPACKET_ATTR_TYPE:
-        msg.set_type(static_cast<lemming::dataplane::sai::SamplepacketType>(
-            attr_list[i].value.s32 + 1));
+        msg.set_type(
+            convert_sai_samplepacket_type_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_SAMPLEPACKET_ATTR_MODE:
-        msg.set_mode(static_cast<lemming::dataplane::sai::SamplepacketMode>(
-            attr_list[i].value.s32 + 1));
+        msg.set_mode(
+            convert_sai_samplepacket_mode_t_to_proto(attr_list[i].value.s32));
         break;
     }
   }
@@ -126,8 +127,8 @@ sai_status_t l_get_samplepacket_attribute(sai_object_id_t samplepacket_id,
   req.set_oid(samplepacket_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::SamplepacketAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(
+        convert_sai_samplepacket_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status =
       samplepacket->GetSamplepacketAttribute(&context, req, &resp);
@@ -141,10 +142,12 @@ sai_status_t l_get_samplepacket_attribute(sai_object_id_t samplepacket_id,
         attr_list[i].value.u32 = resp.attr().sample_rate();
         break;
       case SAI_SAMPLEPACKET_ATTR_TYPE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().type() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_samplepacket_type_t_to_sai(resp.attr().type());
         break;
       case SAI_SAMPLEPACKET_ATTR_MODE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().mode() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_samplepacket_mode_t_to_sai(resp.attr().mode());
         break;
     }
   }

@@ -19,6 +19,7 @@
 #include "dataplane/proto/sai/buffer.pb.h"
 #include "dataplane/proto/sai/common.pb.h"
 #include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
 const sai_buffer_api_t l_buffer = {
     .create_buffer_pool = l_create_buffer_pool,
@@ -52,16 +53,16 @@ lemming::dataplane::sai::CreateBufferPoolRequest convert_create_buffer_pool(
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_BUFFER_POOL_ATTR_TYPE:
-        msg.set_type(static_cast<lemming::dataplane::sai::BufferPoolType>(
-            attr_list[i].value.s32 + 1));
+        msg.set_type(
+            convert_sai_buffer_pool_type_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_BUFFER_POOL_ATTR_SIZE:
         msg.set_size(attr_list[i].value.u64);
         break;
       case SAI_BUFFER_POOL_ATTR_THRESHOLD_MODE:
         msg.set_threshold_mode(
-            static_cast<lemming::dataplane::sai::BufferPoolThresholdMode>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_buffer_pool_threshold_mode_t_to_proto(
+                attr_list[i].value.s32));
         break;
       case SAI_BUFFER_POOL_ATTR_TAM:
         msg.mutable_tam()->Add(
@@ -121,8 +122,8 @@ convert_create_buffer_profile(sai_object_id_t switch_id, uint32_t attr_count,
         break;
       case SAI_BUFFER_PROFILE_ATTR_THRESHOLD_MODE:
         msg.set_threshold_mode(
-            static_cast<lemming::dataplane::sai::BufferProfileThresholdMode>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_buffer_profile_threshold_mode_t_to_proto(
+                attr_list[i].value.s32));
         break;
       case SAI_BUFFER_PROFILE_ATTR_SHARED_DYNAMIC_TH:
         msg.set_shared_dynamic_th(attr_list[i].value.s8);
@@ -230,8 +231,7 @@ sai_status_t l_get_buffer_pool_attribute(sai_object_id_t buffer_pool_id,
   req.set_oid(buffer_pool_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::BufferPoolAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_buffer_pool_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = buffer->GetBufferPoolAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -244,14 +244,16 @@ sai_status_t l_get_buffer_pool_attribute(sai_object_id_t buffer_pool_id,
         attr_list[i].value.u64 = resp.attr().shared_size();
         break;
       case SAI_BUFFER_POOL_ATTR_TYPE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().type() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_buffer_pool_type_t_to_sai(resp.attr().type());
         break;
       case SAI_BUFFER_POOL_ATTR_SIZE:
         attr_list[i].value.u64 = resp.attr().size();
         break;
       case SAI_BUFFER_POOL_ATTR_THRESHOLD_MODE:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().threshold_mode() - 1);
+            convert_sai_buffer_pool_threshold_mode_t_to_sai(
+                resp.attr().threshold_mode());
         break;
       case SAI_BUFFER_POOL_ATTR_TAM:
         copy_list(attr_list[i].value.objlist.list, resp.attr().tam(),
@@ -281,8 +283,8 @@ sai_status_t l_get_buffer_pool_stats(sai_object_id_t buffer_pool_id,
   req.set_oid(buffer_pool_id);
 
   for (uint32_t i = 0; i < number_of_counters; i++) {
-    req.add_counter_ids(static_cast<lemming::dataplane::sai::BufferPoolStat>(
-        counter_ids[i] + 1));
+    req.add_counter_ids(
+        convert_sai_buffer_pool_stat_t_to_proto(counter_ids[i]));
   }
   grpc::Status status = buffer->GetBufferPoolStats(&context, req, &resp);
   if (!status.ok()) {
@@ -399,8 +401,7 @@ sai_status_t l_get_ingress_priority_group_attribute(
 
   for (uint32_t i = 0; i < attr_count; i++) {
     req.add_attr_type(
-        static_cast<lemming::dataplane::sai::IngressPriorityGroupAttr>(
-            attr_list[i].id + 1));
+        convert_sai_ingress_priority_group_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status =
       buffer->GetIngressPriorityGroupAttribute(&context, req, &resp);
@@ -441,8 +442,7 @@ sai_status_t l_get_ingress_priority_group_stats(
 
   for (uint32_t i = 0; i < number_of_counters; i++) {
     req.add_counter_ids(
-        static_cast<lemming::dataplane::sai::IngressPriorityGroupStat>(
-            counter_ids[i] + 1));
+        convert_sai_ingress_priority_group_stat_t_to_proto(counter_ids[i]));
   }
   grpc::Status status =
       buffer->GetIngressPriorityGroupStats(&context, req, &resp);
@@ -565,8 +565,8 @@ sai_status_t l_get_buffer_profile_attribute(sai_object_id_t buffer_profile_id,
   req.set_oid(buffer_profile_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::BufferProfileAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(
+        convert_sai_buffer_profile_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = buffer->GetBufferProfileAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -583,7 +583,8 @@ sai_status_t l_get_buffer_profile_attribute(sai_object_id_t buffer_profile_id,
         break;
       case SAI_BUFFER_PROFILE_ATTR_THRESHOLD_MODE:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().threshold_mode() - 1);
+            convert_sai_buffer_profile_threshold_mode_t_to_sai(
+                resp.attr().threshold_mode());
         break;
       case SAI_BUFFER_PROFILE_ATTR_SHARED_DYNAMIC_TH:
         attr_list[i].value.s8 = resp.attr().shared_dynamic_th();

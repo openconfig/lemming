@@ -19,6 +19,7 @@
 #include "dataplane/proto/sai/common.pb.h"
 #include "dataplane/proto/sai/neighbor.pb.h"
 #include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
 const sai_neighbor_api_t l_neighbor = {
     .create_neighbor_entry = l_create_neighbor_entry,
@@ -44,8 +45,7 @@ convert_create_neighbor_entry(uint32_t attr_count,
         break;
       case SAI_NEIGHBOR_ENTRY_ATTR_PACKET_ACTION:
         msg.set_packet_action(
-            static_cast<lemming::dataplane::sai::PacketAction>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_packet_action_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_NEIGHBOR_ENTRY_ATTR_USER_TRAP_ID:
         msg.set_user_trap_id(attr_list[i].value.oid);
@@ -126,8 +126,8 @@ sai_status_t l_set_neighbor_entry_attribute(
       req.set_dst_mac_address(attr->value.mac, sizeof(attr->value.mac));
       break;
     case SAI_NEIGHBOR_ENTRY_ATTR_PACKET_ACTION:
-      req.set_packet_action(static_cast<lemming::dataplane::sai::PacketAction>(
-          attr->value.s32 + 1));
+      req.set_packet_action(
+          convert_sai_packet_action_t_to_proto(attr->value.s32));
       break;
     case SAI_NEIGHBOR_ENTRY_ATTR_USER_TRAP_ID:
       req.set_user_trap_id(attr->value.oid);
@@ -173,8 +173,8 @@ sai_status_t l_get_neighbor_entry_attribute(
   *req.mutable_entry() = convert_from_neighbor_entry(*neighbor_entry);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::NeighborEntryAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(
+        convert_sai_neighbor_entry_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status =
       neighbor->GetNeighborEntryAttribute(&context, req, &resp);
@@ -190,7 +190,7 @@ sai_status_t l_get_neighbor_entry_attribute(
         break;
       case SAI_NEIGHBOR_ENTRY_ATTR_PACKET_ACTION:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().packet_action() - 1);
+            convert_sai_packet_action_t_to_sai(resp.attr().packet_action());
         break;
       case SAI_NEIGHBOR_ENTRY_ATTR_USER_TRAP_ID:
         attr_list[i].value.oid = resp.attr().user_trap_id();
@@ -215,7 +215,7 @@ sai_status_t l_get_neighbor_entry_attribute(
         break;
       case SAI_NEIGHBOR_ENTRY_ATTR_IP_ADDR_FAMILY:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().ip_addr_family() - 1);
+            convert_sai_ip_addr_family_t_to_sai(resp.attr().ip_addr_family());
         break;
     }
   }

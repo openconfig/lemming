@@ -51,6 +51,7 @@ type AttrTypeName struct {
 	SaiType    string
 	EnumName   string
 	Comment    string
+	Value      int
 }
 
 // Doxygen is the root of the generated xml struct.
@@ -112,14 +113,32 @@ func ParseSAIXMLDir() (*SAIInfo, error) {
 	if err != nil {
 		return nil, err
 	}
+	members := []MemberDef{}
 	for _, file := range files {
 		if !strings.HasSuffix(file.Name(), "xml") {
 			continue
 		}
-		if err := parseXMLFile(filepath.Join(xmlPath, file.Name()), i); err != nil {
+		if strings.Contains(file.Name(), "saimetadata") {
+			fmt.Println("skipping file ", file.Name())
+			continue
+		}
+		file := filepath.Join(xmlPath, file.Name())
+		b, err := os.ReadFile(file)
+		if err != nil {
 			return nil, err
 		}
+		dox := &Doxygen{}
+		if err := xml.Unmarshal(b, dox); err != nil {
+			return nil, err
+		}
+		for _, section := range dox.CompoundDef.SectionDef {
+			members = append(members, section.MemberDef...)
+		}
 	}
+	if err := parseXMLEntries(members, i); err != nil {
+		return nil, err
+	}
+
 	return i, nil
 }
 
@@ -127,10 +146,11 @@ var typeNameExpr = regexp.MustCompile("sai_(.*)_attr.*")
 
 // memberToAttrInfo converts the MemberDef into attrInfo extracting the enum values,
 // their types, and if they createable, readable, and/or writable.
-func memberToAttrInfo(enum MemberDef) *Attr {
+func memberToAttrInfo(enum MemberDef) (*Attr, error) {
 	info := &Attr{}
 	trimStr := strings.TrimSuffix(strings.TrimPrefix(enum.Name, "_"), "_t") + "_"
-	for _, value := range enum.EnumValues {
+
+	for i, value := range enum.EnumValues {
 		var canCreate, canRead, canSet bool
 		var saiType string
 		for _, details := range value.DetailedDescription.Paragraph.SimpleSect {
@@ -152,6 +172,10 @@ func memberToAttrInfo(enum MemberDef) *Attr {
 				}
 			}
 		}
+		val, err := parseInitializer(i, enum.EnumValues)
+		if err != nil {
+			return nil, err
+		}
 		if !canCreate && !canRead && !canSet {
 			continue
 		}
@@ -160,6 +184,7 @@ func memberToAttrInfo(enum MemberDef) *Attr {
 			MemberName: strings.TrimPrefix(strings.ToLower(value.Name), trimStr),
 			SaiType:    saiType,
 			Comment:    strings.TrimSpace(value.BriefDescription.Paragraph.InlineText),
+			Value:      val,
 		}
 		if canCreate {
 			info.CreateFields = append(info.CreateFields, atn)
@@ -171,62 +196,138 @@ func memberToAttrInfo(enum MemberDef) *Attr {
 			info.SetFields = append(info.SetFields, atn)
 		}
 	}
-	return info
+	return info, nil
 }
 
-func memberToEnumValueStrings(enum MemberDef) []*Enum {
+var saiConsts = map[string]int{
+	"SAI_ACL_USER_DEFINED_FIELD_ATTR_ID_RANGE": 0xff,
+}
+
+func parseInitializer(i int, vals []EnumValue) (val int, rerr error) {
+	defer func() {
+		if rerr == nil {
+			saiConsts[vals[i].Name] = val
+		}
+	}()
+
+	findIndex := func(val string, vals []EnumValue) int {
+		for i, eV := range vals {
+			if eV.Name == val {
+				return i
+			}
+		}
+		return -1
+	}
+
+	init := strings.TrimSpace(strings.TrimPrefix(vals[i].Initializer, "= "))
+	if init == "" {
+		if i == 0 {
+			return 0, nil
+		}
+		prev, err := parseInitializer(i-1, vals)
+		return prev + 1, err
+	}
+	if strings.Contains(init, "+") {
+		splits := strings.Split(init, "+")
+		lhs := strings.TrimSpace(splits[0])
+		rhs := strings.TrimSpace(splits[1])
+		rv, err := strconv.ParseUint(rhs, 0, 64)
+		if err != nil {
+			saiConst, ok := saiConsts[rhs]
+			if !ok {
+				return 0, err
+			}
+			rv = uint64(saiConst)
+		}
+		lv, err := parseInitializer(findIndex(lhs, vals), vals)
+		if err != nil {
+			return 0, err
+		}
+		return lv + int(rv), nil
+	}
+	if strings.Contains(init, "<<") {
+		splits := strings.Split(init, "<<")
+		lhs := strings.TrimSpace(splits[0])
+		rhs := strings.TrimSpace(splits[1])
+		lv, err := strconv.ParseUint(lhs, 0, 64)
+		if err != nil {
+			return 0, err
+		}
+		rv, err := strconv.ParseUint(rhs, 0, 64)
+		if err != nil {
+			return 0, err
+		}
+		return int(lv << rv), nil
+	}
+
+	if v, err := strconv.ParseUint(init, 0, 64); err == nil {
+		return int(v), nil
+	}
+	if v, ok := saiConsts[init]; ok {
+		return v, nil
+	}
+	if idx := findIndex(init, vals); idx != -1 {
+		return parseInitializer(idx, vals)
+	}
+	return 0, fmt.Errorf("failed to parse intialiazer for enum %v", vals[i].Name)
+}
+
+func memberToEnumValueStrings(enum MemberDef) ([]*Enum, error) {
 	res := []*Enum{}
-	prev := -1 // Since enum values may repeat, store previous enum value. If the enum value isn't an assignment, then it is prev + 1.
 	for i, value := range enum.EnumValues {
-		val := prev + 1
-		value.Initializer = strings.TrimSpace(strings.TrimPrefix(value.Initializer, "= "))
-		if value.Initializer != "" {
-			if v, err := strconv.ParseUint(value.Initializer, 0, 64); err == nil {
-				val = int(v)
-			}
-			for j := 0; j < i; j++ {
-				if value.Initializer == enum.EnumValues[j].Name {
-					val = res[j].Value
-					break
-				}
-			}
+		val, err := parseInitializer(i, enum.EnumValues)
+		if err != nil {
+			return nil, err
 		}
 		res = append(res, &Enum{
 			Name:  value.Name,
 			Value: val,
 		})
-		prev = val
 	}
-	return res
+	return res, nil
 }
 
-// parseXMLFile parses a single XML and appends the values into xmlInfo.
-func parseXMLFile(file string, xmlInfo *SAIInfo) error {
-	b, err := os.ReadFile(file)
-	if err != nil {
-		return err
-	}
-	dox := &Doxygen{}
-	if err := xml.Unmarshal(b, dox); err != nil {
-		return err
+// parseXMLEntries parses a single XML and appends the values into xmlInfo.
+func parseXMLEntries(members []MemberDef, xmlInfo *SAIInfo) error {
+	retryEntry := []MemberDef{}
+
+	processEntry := func(enum MemberDef) error {
+		if enum.Kind != "enum" {
+			return nil
+		}
+		if strings.Contains(enum.Name, "attr_t") {
+			matches := typeNameExpr.FindStringSubmatch(enum.Name)
+			if len(matches) != 2 {
+				return fmt.Errorf("unexpected number of matches: got %v", matches)
+			}
+			info, err := memberToAttrInfo(enum)
+			if err != nil {
+				return err
+			}
+			xmlInfo.Attrs[strings.ToUpper(matches[1])] = info
+		} else {
+			enums, err := memberToEnumValueStrings(enum)
+			if err != nil {
+				return err
+			}
+			xmlInfo.Enums[strings.TrimPrefix(enum.Name, "_")] = enums
+		}
+		return nil
 	}
 
-	for _, section := range dox.CompoundDef.SectionDef {
-		for _, enum := range section.MemberDef {
-			if enum.Kind != "enum" {
-				fmt.Printf("skipping kind %s\n", enum.Kind)
-				continue
-			}
-			if strings.Contains(enum.Name, "attr_t") {
-				matches := typeNameExpr.FindStringSubmatch(enum.Name)
-				if len(matches) != 2 {
-					return fmt.Errorf("unexpected number of matches: got %v", matches)
-				}
-				info := memberToAttrInfo(enum)
-				xmlInfo.Attrs[strings.ToUpper(matches[1])] = info
-			} else {
-				xmlInfo.Enums[strings.TrimPrefix(enum.Name, "_")] = memberToEnumValueStrings(enum)
-			}
+	for _, enum := range members {
+		err := processEntry(enum)
+		if err != nil {
+			retryEntry = append(retryEntry, enum)
+		}
+	}
+	consts := saiConsts
+	fmt.Println(consts)
+	// Retry processing enum once, for enums that refer to other enums.
+	for _, enum := range retryEntry {
+		err := processEntry(enum)
+		if err != nil {
+			return err
 		}
 	}
 

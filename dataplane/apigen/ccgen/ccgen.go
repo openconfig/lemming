@@ -23,13 +23,13 @@ import (
 	strcase "github.com/stoewer/go-strcase"
 
 	"github.com/openconfig/lemming/dataplane/apigen/docparser"
-	"github.com/openconfig/lemming/dataplane/apigen/protogen"
 	"github.com/openconfig/lemming/dataplane/apigen/saiast"
 )
 
 // Generate generates the C++ code for the SAI library.
 func Generate(doc *docparser.SAIInfo, sai *saiast.SAIAPI) (map[string]string, error) {
 	files := make(map[string]string)
+	enums := enumFile{}
 	for _, iface := range sai.Ifaces {
 		apiName := strings.TrimSuffix(strings.TrimPrefix(iface.Name, "sai_"), "_api_t")
 		ccData := ccTemplateData{
@@ -62,7 +62,71 @@ func Generate(doc *docparser.SAIInfo, sai *saiast.SAIAPI) (map[string]string, er
 		}
 		files[apiName+".h"] = headerBuilder.String()
 		files[apiName+".cc"] = implBuilder.String()
+		enums.ProtoIncludes = append(enums.ProtoIncludes, apiName+".pb")
 	}
+	for name, enumDesc := range doc.Enums {
+		e := enum{
+			SAIName:         name,
+			ProtoName:       saiast.TrimSAIName(name, true, false),
+			UnspecifiedName: saiast.TrimSAIName(name, false, true) + "_UNSPECIFIED",
+		}
+		if len(enumDesc) == 0 {
+			continue
+		}
+		seenVal := map[int]struct{}{}
+		for _, enumElemDesc := range enumDesc {
+			if _, ok := seenVal[enumElemDesc.Value]; ok {
+				continue
+			}
+			seenVal[enumElemDesc.Value] = struct{}{}
+			name := strings.TrimPrefix(enumElemDesc.Name, "SAI_")
+			// If the SAI name conflicts with unspecified proto name, then add SAI prefix,
+			// that way the proto enum value is always 1 greater than the c enum.
+			if name == e.UnspecifiedName {
+				name = strings.TrimSuffix(saiast.TrimSAIName(name, false, true), "_UNSPECIFIED") + "_SAI_UNSPECIFIED"
+			}
+			e.Elems = append(e.Elems, enumElem{
+				SAIName:   enumElemDesc.Name,
+				ProtoName: name,
+			})
+		}
+		e.DefaultReturn = e.Elems[0].SAIName
+		enums.Enums = append(enums.Enums, e)
+	}
+	for name, attr := range doc.Attrs {
+		if _, ok := unsupportedEnum[name]; ok {
+			continue
+		}
+		e := enum{
+			SAIName:         "sai_" + strings.ToLower(name) + "_attr_t",
+			ProtoName:       saiast.TrimSAIName(name+"_ATTR", true, false),
+			UnspecifiedName: saiast.TrimSAIName(name+"_ATTR", false, true) + "_UNSPECIFIED",
+		}
+		for _, val := range attr.ReadFields {
+			name := strings.TrimPrefix(val.EnumName, "SAI_")
+			// If the SAI name conflicts with unspecified proto name, then add SAI prefix,
+			// that way the proto enum value is always 1 greater than the c enum.
+			if name == e.UnspecifiedName {
+				name = strings.TrimSuffix(saiast.TrimSAIName(name+"_ATTR", false, true), "_UNSPECIFIED") + "_SAI_UNSPECIFIED"
+			}
+			e.Elems = append(e.Elems, enumElem{
+				SAIName:   val.EnumName,
+				ProtoName: name,
+			})
+		}
+		e.DefaultReturn = e.Elems[0].SAIName
+		enums.Enums = append(enums.Enums, e)
+	}
+	var headerBuilder, implBuilder strings.Builder
+	if err := enumHeaderTmpl.Execute(&headerBuilder, enums); err != nil {
+		return nil, err
+	}
+	if err := enumCCTmpl.Execute(&implBuilder, enums); err != nil {
+		return nil, err
+	}
+	files["enum.h"] = headerBuilder.String()
+	files["enum.cc"] = implBuilder.String()
+
 	return files, nil
 }
 
@@ -72,6 +136,11 @@ func sanitizeProtoName(inName string) string {
 		name = fmt.Sprintf("_%s", name)
 	}
 	return name
+}
+
+var unsupportedEnum = map[string]struct{}{
+	"FDB_FLUSH":     {},
+	"HOSTIF_PACKET": {},
 }
 
 // createCCData returns a two structs with the template data for the given function.
@@ -122,6 +191,7 @@ func createCCData(meta *saiast.FuncMetadata, apiName string, sai *saiast.SAIAPI,
 	opFn.RPCMethod = strcase.UpperCamelCase(meta.Name)
 	opFn.SwitchScoped = meta.IsSwitchScoped
 	opFn.AttrEnumType = strcase.UpperCamelCase(meta.TypeName + " attr")
+	opFn.AttrType = strcase.SnakeCase("sai_" + meta.TypeName + "_attr_t")
 
 	// If the func has entry, then we don't use ids, instead pass the entry to the proto.
 	if meta.Entry == "" {
@@ -214,6 +284,7 @@ func createCCData(meta *saiast.FuncMetadata, apiName string, sai *saiast.SAIAPI,
 		}
 	case "get_stats":
 		convertFn = nil
+		opFn.AttrType = strcase.SnakeCase("sai_" + meta.TypeName + "_stat_t")
 		opFn.AttrEnumType = strcase.UpperCamelCase(meta.TypeName + " stat")
 	default:
 		convertFn = nil
@@ -397,11 +468,7 @@ func protoFieldSetter(saiType, protoVar, protoField, varName string, info *docpa
 	}
 
 	if _, ok := info.Enums[saiType]; ok {
-		pType, _, err := protogen.SaiTypeToProtoType(saiType, info)
-		if err != nil {
-			return nil, err
-		}
-		smt.Args = fmt.Sprintf("static_cast<%s%s>(%s.s32 + 1)", protoNS, pType, varName)
+		smt.Args = fmt.Sprintf("convert_%s_to_proto(%s.s32)", saiType, varName)
 		return smt, nil
 	}
 
@@ -451,8 +518,8 @@ func protoFieldGetter(saiType, protoField, varName string, info *docparser.SAIIn
 	}
 	if _, ok := info.Enums[saiType]; ok {
 		smt.Var = varName + ".s32"
-		smt.ConvertFunc = fmt.Sprintf("static_cast<int>")
-		smt.ConvertFuncArgs = " - 1"
+		smt.ConvertFunc = fmt.Sprintf("convert_%s_to_sai", saiType)
+		smt.ConvertFuncArgs = ""
 		return smt, nil
 	}
 	ua, ok := typeToUnionAccessor[saiType]
@@ -594,6 +661,7 @@ switch ({{ .Var }}) {
 #include "dataplane/standalone/sai/common.h"
 #include "dataplane/proto/sai/common.pb.h"
 #include "dataplane/proto/sai/{{ .ProtoInclude }}.h"
+#include "dataplane/standalone/sai/enum.h"
 
 const {{ .APIType }} l_{{ .APIName }} = {
 {{- range .Funcs }}
@@ -678,7 +746,7 @@ return msg;
 	{{ if .OidVar -}} req.set_oid({{ .OidVar }}); {{ end }}
 
 	for (uint32_t i = 0; i < attr_count; i++) {
-		req.add_attr_type(static_cast<lemming::dataplane::sai::{{ .AttrEnumType }}>(attr_list[i].id + 1));
+		req.add_attr_type(convert_{{ .AttrType }}_to_proto(attr_list[i].id));
 	}
 	grpc::Status status = {{ .Client }}->{{ .RPCMethod }}(&context, req, &resp);
 	if (!status.ok()) {
@@ -739,7 +807,7 @@ return msg;
 	{{ if .OidVar -}} req.set_oid({{ .OidVar }}); {{ end }}
 	{{ if .EntryVar }} *req.mutable_entry() = {{ .EntryConversionFunc }}({{ .EntryVar }}); {{ end }}
 	for (uint32_t i = 0; i < number_of_counters; i++) {
-		req.add_counter_ids(static_cast<lemming::dataplane::sai::{{ .AttrEnumType }}>(counter_ids[i] + 1));
+		req.add_counter_ids(convert_{{ .AttrType }}_to_proto(counter_ids[i]));
 	}
 	grpc::Status status = {{ .Client }}->{{ .RPCMethod }}(&context, req, &resp);
 	if (!status.ok()) {
@@ -757,7 +825,98 @@ return msg;
 }
 {{ end }}
 `))
+	enumHeaderTmpl = template.Must(template.New("enum").Parse(`
+// Copyright 2024 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#ifndef DATAPLANE_STANDALONE_SAI_ENUM_H_
+#define DATAPLANE_STANDALONE_SAI_ENUM_H_
+
+#include "dataplane/proto/sai/common.pb.h"
+{{ range .ProtoIncludes }}
+#include "dataplane/proto/sai/{{ . }}.h"
+{{ end }}
+
+extern "C" {
+	#include "inc/sai.h"
+	#include "experimental/saiextensions.h"
+}
+
+{{ range .Enums }}
+lemming::dataplane::sai::{{ .ProtoName }} convert_{{ .SAIName }}_to_proto(const sai_int32_t val);
+{{ .SAIName }} convert_{{ .SAIName }}_to_sai(lemming::dataplane::sai::{{ .ProtoName }} val);
+{{ end }}
+
+#endif  // DATAPLANE_STANDALONE_SAI_ENUM_H_
+`))
+	enumCCTmpl = template.Must(template.New("enum").Parse(`
+// Copyright 2024 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include "dataplane/standalone/sai/enum.h"
+
+{{ range .Enums }}
+{{$enum := .}}
+lemming::dataplane::sai::{{ .ProtoName }} convert_{{ .SAIName }}_to_proto(const sai_int32_t val) {
+    switch (val) {
+    {{ range .Elems }}
+        case {{ .SAIName}}: return lemming::dataplane::sai::{{ .ProtoName}};
+    {{ end }}
+        default: return lemming::dataplane::sai::{{ $enum.UnspecifiedName}};
+    }
+}
+{{ .SAIName }} convert_{{ .SAIName }}_to_sai(lemming::dataplane::sai::{{ .ProtoName }} val) {
+    switch (val) {
+    {{ range .Elems }}
+        case lemming::dataplane::sai::{{ .ProtoName}}: return {{ .SAIName}};
+    {{ end }}
+        default: return {{ $enum.DefaultReturn }};
+    }
+}
+
+{{ end }}
+`))
 )
+
+type enumFile struct {
+	ProtoIncludes []string
+	Enums         []enum
+}
+
+type enum struct {
+	SAIName         string
+	ProtoName       string
+	UnspecifiedName string
+	Elems           []enumElem
+	DefaultReturn   string
+}
+
+type enumElem struct {
+	SAIName   string
+	ProtoName string
+}
 
 type AttrSwitchSmt struct {
 	// EnumValue is the name of enum value string. (eg SAI_HOSTIF_ATTR_OPER_STATUS).

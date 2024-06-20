@@ -19,6 +19,7 @@
 #include "dataplane/proto/sai/common.pb.h"
 #include "dataplane/proto/sai/udf.pb.h"
 #include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
 const sai_udf_api_t l_udf = {
     .create_udf = l_create_udf,
@@ -49,8 +50,7 @@ lemming::dataplane::sai::CreateUdfRequest convert_create_udf(
         msg.set_group_id(attr_list[i].value.oid);
         break;
       case SAI_UDF_ATTR_BASE:
-        msg.set_base(static_cast<lemming::dataplane::sai::UdfBase>(
-            attr_list[i].value.s32 + 1));
+        msg.set_base(convert_sai_udf_base_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_UDF_ATTR_OFFSET:
         msg.set_offset(attr_list[i].value.u16);
@@ -103,8 +103,8 @@ lemming::dataplane::sai::CreateUdfGroupRequest convert_create_udf_group(
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_UDF_GROUP_ATTR_TYPE:
-        msg.set_type(static_cast<lemming::dataplane::sai::UdfGroupType>(
-            attr_list[i].value.s32 + 1));
+        msg.set_type(
+            convert_sai_udf_group_type_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_UDF_GROUP_ATTR_LENGTH:
         msg.set_length(attr_list[i].value.u16);
@@ -163,8 +163,7 @@ sai_status_t l_set_udf_attribute(sai_object_id_t udf_id,
 
   switch (attr->id) {
     case SAI_UDF_ATTR_BASE:
-      req.set_base(
-          static_cast<lemming::dataplane::sai::UdfBase>(attr->value.s32 + 1));
+      req.set_base(convert_sai_udf_base_t_to_proto(attr->value.s32));
       break;
     case SAI_UDF_ATTR_HASH_MASK:
       req.mutable_hash_mask()->Add(
@@ -193,8 +192,7 @@ sai_status_t l_get_udf_attribute(sai_object_id_t udf_id, uint32_t attr_count,
   req.set_oid(udf_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(
-        static_cast<lemming::dataplane::sai::UdfAttr>(attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_udf_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = udf->GetUdfAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -210,7 +208,8 @@ sai_status_t l_get_udf_attribute(sai_object_id_t udf_id, uint32_t attr_count,
         attr_list[i].value.oid = resp.attr().group_id();
         break;
       case SAI_UDF_ATTR_BASE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().base() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_udf_base_t_to_sai(resp.attr().base());
         break;
       case SAI_UDF_ATTR_OFFSET:
         attr_list[i].value.u16 = resp.attr().offset();
@@ -282,8 +281,7 @@ sai_status_t l_get_udf_match_attribute(sai_object_id_t udf_match_id,
   req.set_oid(udf_match_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::UdfMatchAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_udf_match_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = udf->GetUdfMatchAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -358,8 +356,7 @@ sai_status_t l_get_udf_group_attribute(sai_object_id_t udf_group_id,
   req.set_oid(udf_group_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::UdfGroupAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_udf_group_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = udf->GetUdfGroupAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -373,7 +370,8 @@ sai_status_t l_get_udf_group_attribute(sai_object_id_t udf_group_id,
                   &attr_list[i].value.objlist.count);
         break;
       case SAI_UDF_GROUP_ATTR_TYPE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().type() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_udf_group_type_t_to_sai(resp.attr().type());
         break;
       case SAI_UDF_GROUP_ATTR_LENGTH:
         attr_list[i].value.u16 = resp.attr().length();

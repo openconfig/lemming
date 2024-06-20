@@ -19,6 +19,7 @@
 #include "dataplane/proto/sai/common.pb.h"
 #include "dataplane/proto/sai/ipmc_group.pb.h"
 #include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
 const sai_ipmc_group_api_t l_ipmc_group = {
     .create_ipmc_group = l_create_ipmc_group,
@@ -117,8 +118,7 @@ sai_status_t l_get_ipmc_group_attribute(sai_object_id_t ipmc_group_id,
   req.set_oid(ipmc_group_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::IpmcGroupAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_ipmc_group_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = ipmc_group->GetIpmcGroupAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -199,8 +199,8 @@ sai_status_t l_get_ipmc_group_member_attribute(
   req.set_oid(ipmc_group_member_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::IpmcGroupMemberAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(
+        convert_sai_ipmc_group_member_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status =
       ipmc_group->GetIpmcGroupMemberAttribute(&context, req, &resp);

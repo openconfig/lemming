@@ -19,6 +19,7 @@
 #include "dataplane/proto/sai/common.pb.h"
 #include "dataplane/proto/sai/ipsec.pb.h"
 #include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
 const sai_ipsec_api_t l_ipsec = {
     .create_ipsec = l_create_ipsec,
@@ -70,8 +71,8 @@ lemming::dataplane::sai::CreateIpsecRequest convert_create_ipsec(
         msg.set_octet_count_low_watermark(attr_list[i].value.u64);
         break;
       case SAI_IPSEC_ATTR_STATS_MODE:
-        msg.set_stats_mode(static_cast<lemming::dataplane::sai::StatsMode>(
-            attr_list[i].value.s32 + 1));
+        msg.set_stats_mode(
+            convert_sai_stats_mode_t_to_proto(attr_list[i].value.s32));
         break;
     }
   }
@@ -102,8 +103,8 @@ lemming::dataplane::sai::CreateIpsecPortRequest convert_create_ipsec_port(
         break;
       case SAI_IPSEC_PORT_ATTR_SWITCH_SWITCHING_MODE:
         msg.set_switch_switching_mode(
-            static_cast<lemming::dataplane::sai::SwitchSwitchingMode>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_switch_switching_mode_t_to_proto(
+                attr_list[i].value.s32));
         break;
     }
   }
@@ -119,8 +120,7 @@ lemming::dataplane::sai::CreateIpsecSaRequest convert_create_ipsec_sa(
     switch (attr_list[i].id) {
       case SAI_IPSEC_SA_ATTR_IPSEC_DIRECTION:
         msg.set_ipsec_direction(
-            static_cast<lemming::dataplane::sai::IpsecDirection>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_ipsec_direction_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_IPSEC_SA_ATTR_IPSEC_ID:
         msg.set_ipsec_id(attr_list[i].value.oid);
@@ -140,8 +140,8 @@ lemming::dataplane::sai::CreateIpsecSaRequest convert_create_ipsec_sa(
         msg.set_ipsec_esn_enable(attr_list[i].value.booldata);
         break;
       case SAI_IPSEC_SA_ATTR_IPSEC_CIPHER:
-        msg.set_ipsec_cipher(static_cast<lemming::dataplane::sai::IpsecCipher>(
-            attr_list[i].value.s32 + 1));
+        msg.set_ipsec_cipher(
+            convert_sai_ipsec_cipher_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_IPSEC_SA_ATTR_SALT:
         msg.set_salt(attr_list[i].value.u32);
@@ -245,8 +245,7 @@ sai_status_t l_set_ipsec_attribute(sai_object_id_t ipsec_id,
       req.set_octet_count_low_watermark(attr->value.u64);
       break;
     case SAI_IPSEC_ATTR_STATS_MODE:
-      req.set_stats_mode(
-          static_cast<lemming::dataplane::sai::StatsMode>(attr->value.s32 + 1));
+      req.set_stats_mode(convert_sai_stats_mode_t_to_proto(attr->value.s32));
       break;
   }
 
@@ -271,8 +270,7 @@ sai_status_t l_get_ipsec_attribute(sai_object_id_t ipsec_id,
   req.set_oid(ipsec_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(
-        static_cast<lemming::dataplane::sai::IpsecAttr>(attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_ipsec_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = ipsec->GetIpsecAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -334,7 +332,8 @@ sai_status_t l_get_ipsec_attribute(sai_object_id_t ipsec_id,
         attr_list[i].value.u64 = resp.attr().octet_count_low_watermark();
         break;
       case SAI_IPSEC_ATTR_STATS_MODE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().stats_mode() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_stats_mode_t_to_sai(resp.attr().stats_mode());
         break;
       case SAI_IPSEC_ATTR_AVAILABLE_IPSEC_SA:
         attr_list[i].value.u32 = resp.attr().available_ipsec_sa();
@@ -408,8 +407,7 @@ sai_status_t l_set_ipsec_port_attribute(sai_object_id_t ipsec_port_id,
       break;
     case SAI_IPSEC_PORT_ATTR_SWITCH_SWITCHING_MODE:
       req.set_switch_switching_mode(
-          static_cast<lemming::dataplane::sai::SwitchSwitchingMode>(
-              attr->value.s32 + 1));
+          convert_sai_switch_switching_mode_t_to_proto(attr->value.s32));
       break;
   }
 
@@ -434,8 +432,7 @@ sai_status_t l_get_ipsec_port_attribute(sai_object_id_t ipsec_port_id,
   req.set_oid(ipsec_port_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::IpsecPortAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_ipsec_port_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = ipsec->GetIpsecPortAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -460,8 +457,8 @@ sai_status_t l_get_ipsec_port_attribute(sai_object_id_t ipsec_port_id,
         attr_list[i].value.booldata = resp.attr().vrf_from_packet_vlan_enable();
         break;
       case SAI_IPSEC_PORT_ATTR_SWITCH_SWITCHING_MODE:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().switch_switching_mode() - 1);
+        attr_list[i].value.s32 = convert_sai_switch_switching_mode_t_to_sai(
+            resp.attr().switch_switching_mode());
         break;
     }
   }
@@ -481,8 +478,7 @@ sai_status_t l_get_ipsec_port_stats(sai_object_id_t ipsec_port_id,
   req.set_oid(ipsec_port_id);
 
   for (uint32_t i = 0; i < number_of_counters; i++) {
-    req.add_counter_ids(static_cast<lemming::dataplane::sai::IpsecPortStat>(
-        counter_ids[i] + 1));
+    req.add_counter_ids(convert_sai_ipsec_port_stat_t_to_proto(counter_ids[i]));
   }
   grpc::Status status = ipsec->GetIpsecPortStats(&context, req, &resp);
   if (!status.ok()) {
@@ -606,8 +602,7 @@ sai_status_t l_get_ipsec_sa_attribute(sai_object_id_t ipsec_sa_id,
   req.set_oid(ipsec_sa_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(
-        static_cast<lemming::dataplane::sai::IpsecSaAttr>(attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_ipsec_sa_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = ipsec->GetIpsecSaAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -618,14 +613,15 @@ sai_status_t l_get_ipsec_sa_attribute(sai_object_id_t ipsec_sa_id,
     switch (attr_list[i].id) {
       case SAI_IPSEC_SA_ATTR_IPSEC_DIRECTION:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().ipsec_direction() - 1);
+            convert_sai_ipsec_direction_t_to_sai(resp.attr().ipsec_direction());
         break;
       case SAI_IPSEC_SA_ATTR_IPSEC_ID:
         attr_list[i].value.oid = resp.attr().ipsec_id();
         break;
       case SAI_IPSEC_SA_ATTR_OCTET_COUNT_STATUS:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().octet_count_status() - 1);
+            convert_sai_ipsec_sa_octet_count_status_t_to_sai(
+                resp.attr().octet_count_status());
         break;
       case SAI_IPSEC_SA_ATTR_EXTERNAL_SA_INDEX:
         attr_list[i].value.u32 = resp.attr().external_sa_index();
@@ -646,7 +642,7 @@ sai_status_t l_get_ipsec_sa_attribute(sai_object_id_t ipsec_sa_id,
         break;
       case SAI_IPSEC_SA_ATTR_IPSEC_CIPHER:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().ipsec_cipher() - 1);
+            convert_sai_ipsec_cipher_t_to_sai(resp.attr().ipsec_cipher());
         break;
       case SAI_IPSEC_SA_ATTR_SALT:
         attr_list[i].value.u32 = resp.attr().salt();
@@ -699,8 +695,7 @@ sai_status_t l_get_ipsec_sa_stats(sai_object_id_t ipsec_sa_id,
   req.set_oid(ipsec_sa_id);
 
   for (uint32_t i = 0; i < number_of_counters; i++) {
-    req.add_counter_ids(
-        static_cast<lemming::dataplane::sai::IpsecSaStat>(counter_ids[i] + 1));
+    req.add_counter_ids(convert_sai_ipsec_sa_stat_t_to_proto(counter_ids[i]));
   }
   grpc::Status status = ipsec->GetIpsecSaStats(&context, req, &resp);
   if (!status.ok()) {

@@ -19,6 +19,7 @@
 #include "dataplane/proto/sai/common.pb.h"
 #include "dataplane/proto/sai/tunnel.pb.h"
 #include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
 const sai_tunnel_api_t l_tunnel = {
     .create_tunnel_map = l_create_tunnel_map,
@@ -56,8 +57,8 @@ lemming::dataplane::sai::CreateTunnelMapRequest convert_create_tunnel_map(
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_TUNNEL_MAP_ATTR_TYPE:
-        msg.set_type(static_cast<lemming::dataplane::sai::TunnelMapType>(
-            attr_list[i].value.s32 + 1));
+        msg.set_type(
+            convert_sai_tunnel_map_type_t_to_proto(attr_list[i].value.s32));
         break;
     }
   }
@@ -72,8 +73,8 @@ lemming::dataplane::sai::CreateTunnelRequest convert_create_tunnel(
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_TUNNEL_ATTR_TYPE:
-        msg.set_type(static_cast<lemming::dataplane::sai::TunnelType>(
-            attr_list[i].value.s32 + 1));
+        msg.set_type(
+            convert_sai_tunnel_type_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_TUNNEL_ATTR_UNDERLAY_INTERFACE:
         msg.set_underlay_interface(attr_list[i].value.oid);
@@ -82,8 +83,8 @@ lemming::dataplane::sai::CreateTunnelRequest convert_create_tunnel(
         msg.set_overlay_interface(attr_list[i].value.oid);
         break;
       case SAI_TUNNEL_ATTR_PEER_MODE:
-        msg.set_peer_mode(static_cast<lemming::dataplane::sai::TunnelPeerMode>(
-            attr_list[i].value.s32 + 1));
+        msg.set_peer_mode(
+            convert_sai_tunnel_peer_mode_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_TUNNEL_ATTR_ENCAP_SRC_IP:
         msg.set_encap_src_ip(
@@ -95,16 +96,14 @@ lemming::dataplane::sai::CreateTunnelRequest convert_create_tunnel(
         break;
       case SAI_TUNNEL_ATTR_ENCAP_TTL_MODE:
         msg.set_encap_ttl_mode(
-            static_cast<lemming::dataplane::sai::TunnelTtlMode>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_tunnel_ttl_mode_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_TUNNEL_ATTR_ENCAP_TTL_VAL:
         msg.set_encap_ttl_val(attr_list[i].value.u8);
         break;
       case SAI_TUNNEL_ATTR_ENCAP_DSCP_MODE:
         msg.set_encap_dscp_mode(
-            static_cast<lemming::dataplane::sai::TunnelDscpMode>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_tunnel_dscp_mode_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_TUNNEL_ATTR_ENCAP_DSCP_VAL:
         msg.set_encap_dscp_val(attr_list[i].value.u8);
@@ -116,9 +115,8 @@ lemming::dataplane::sai::CreateTunnelRequest convert_create_tunnel(
         msg.set_encap_gre_key(attr_list[i].value.u32);
         break;
       case SAI_TUNNEL_ATTR_ENCAP_ECN_MODE:
-        msg.set_encap_ecn_mode(
-            static_cast<lemming::dataplane::sai::TunnelEncapEcnMode>(
-                attr_list[i].value.s32 + 1));
+        msg.set_encap_ecn_mode(convert_sai_tunnel_encap_ecn_mode_t_to_proto(
+            attr_list[i].value.s32));
         break;
       case SAI_TUNNEL_ATTR_ENCAP_MAPPERS:
         msg.mutable_encap_mappers()->Add(
@@ -126,9 +124,8 @@ lemming::dataplane::sai::CreateTunnelRequest convert_create_tunnel(
             attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
         break;
       case SAI_TUNNEL_ATTR_DECAP_ECN_MODE:
-        msg.set_decap_ecn_mode(
-            static_cast<lemming::dataplane::sai::TunnelDecapEcnMode>(
-                attr_list[i].value.s32 + 1));
+        msg.set_decap_ecn_mode(convert_sai_tunnel_decap_ecn_mode_t_to_proto(
+            attr_list[i].value.s32));
         break;
       case SAI_TUNNEL_ATTR_DECAP_MAPPERS:
         msg.mutable_decap_mappers()->Add(
@@ -137,23 +134,20 @@ lemming::dataplane::sai::CreateTunnelRequest convert_create_tunnel(
         break;
       case SAI_TUNNEL_ATTR_DECAP_TTL_MODE:
         msg.set_decap_ttl_mode(
-            static_cast<lemming::dataplane::sai::TunnelTtlMode>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_tunnel_ttl_mode_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_TUNNEL_ATTR_DECAP_DSCP_MODE:
         msg.set_decap_dscp_mode(
-            static_cast<lemming::dataplane::sai::TunnelDscpMode>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_tunnel_dscp_mode_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_TUNNEL_ATTR_LOOPBACK_PACKET_ACTION:
         msg.set_loopback_packet_action(
-            static_cast<lemming::dataplane::sai::PacketAction>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_packet_action_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_TUNNEL_ATTR_VXLAN_UDP_SPORT_MODE:
         msg.set_vxlan_udp_sport_mode(
-            static_cast<lemming::dataplane::sai::TunnelVxlanUdpSportMode>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_tunnel_vxlan_udp_sport_mode_t_to_proto(
+                attr_list[i].value.s32));
         break;
       case SAI_TUNNEL_ATTR_VXLAN_UDP_SPORT:
         msg.set_vxlan_udp_sport(attr_list[i].value.u16);
@@ -201,9 +195,8 @@ convert_create_tunnel_term_table_entry(sai_object_id_t switch_id,
         msg.set_vr_id(attr_list[i].value.oid);
         break;
       case SAI_TUNNEL_TERM_TABLE_ENTRY_ATTR_TYPE:
-        msg.set_type(
-            static_cast<lemming::dataplane::sai::TunnelTermTableEntryType>(
-                attr_list[i].value.s32 + 1));
+        msg.set_type(convert_sai_tunnel_term_table_entry_type_t_to_proto(
+            attr_list[i].value.s32));
         break;
       case SAI_TUNNEL_TERM_TABLE_ENTRY_ATTR_DST_IP:
         msg.set_dst_ip(convert_from_ip_address(attr_list[i].value.ipaddr));
@@ -218,8 +211,8 @@ convert_create_tunnel_term_table_entry(sai_object_id_t switch_id,
         msg.set_src_ip_mask(convert_from_ip_address(attr_list[i].value.ipaddr));
         break;
       case SAI_TUNNEL_TERM_TABLE_ENTRY_ATTR_TUNNEL_TYPE:
-        msg.set_tunnel_type(static_cast<lemming::dataplane::sai::TunnelType>(
-            attr_list[i].value.s32 + 1));
+        msg.set_tunnel_type(
+            convert_sai_tunnel_type_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_TUNNEL_TERM_TABLE_ENTRY_ATTR_ACTION_TUNNEL_ID:
         msg.set_action_tunnel_id(attr_list[i].value.oid);
@@ -241,8 +234,7 @@ convert_create_tunnel_map_entry(sai_object_id_t switch_id, uint32_t attr_count,
     switch (attr_list[i].id) {
       case SAI_TUNNEL_MAP_ENTRY_ATTR_TUNNEL_MAP_TYPE:
         msg.set_tunnel_map_type(
-            static_cast<lemming::dataplane::sai::TunnelMapType>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_tunnel_map_type_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_TUNNEL_MAP_ENTRY_ATTR_TUNNEL_MAP:
         msg.set_tunnel_map(attr_list[i].value.oid);
@@ -351,8 +343,7 @@ sai_status_t l_get_tunnel_map_attribute(sai_object_id_t tunnel_map_id,
   req.set_oid(tunnel_map_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::TunnelMapAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_tunnel_map_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = tunnel->GetTunnelMapAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -362,7 +353,8 @@ sai_status_t l_get_tunnel_map_attribute(sai_object_id_t tunnel_map_id,
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_TUNNEL_MAP_ATTR_TYPE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().type() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_tunnel_map_type_t_to_sai(resp.attr().type());
         break;
       case SAI_TUNNEL_MAP_ATTR_ENTRY_LIST:
         copy_list(attr_list[i].value.objlist.list, resp.attr().entry_list(),
@@ -424,16 +416,14 @@ sai_status_t l_set_tunnel_attribute(sai_object_id_t tunnel_id,
   switch (attr->id) {
     case SAI_TUNNEL_ATTR_ENCAP_TTL_MODE:
       req.set_encap_ttl_mode(
-          static_cast<lemming::dataplane::sai::TunnelTtlMode>(attr->value.s32 +
-                                                              1));
+          convert_sai_tunnel_ttl_mode_t_to_proto(attr->value.s32));
       break;
     case SAI_TUNNEL_ATTR_ENCAP_TTL_VAL:
       req.set_encap_ttl_val(attr->value.u8);
       break;
     case SAI_TUNNEL_ATTR_ENCAP_DSCP_MODE:
       req.set_encap_dscp_mode(
-          static_cast<lemming::dataplane::sai::TunnelDscpMode>(attr->value.s32 +
-                                                               1));
+          convert_sai_tunnel_dscp_mode_t_to_proto(attr->value.s32));
       break;
     case SAI_TUNNEL_ATTR_ENCAP_DSCP_VAL:
       req.set_encap_dscp_val(attr->value.u8);
@@ -443,23 +433,19 @@ sai_status_t l_set_tunnel_attribute(sai_object_id_t tunnel_id,
       break;
     case SAI_TUNNEL_ATTR_DECAP_TTL_MODE:
       req.set_decap_ttl_mode(
-          static_cast<lemming::dataplane::sai::TunnelTtlMode>(attr->value.s32 +
-                                                              1));
+          convert_sai_tunnel_ttl_mode_t_to_proto(attr->value.s32));
       break;
     case SAI_TUNNEL_ATTR_DECAP_DSCP_MODE:
       req.set_decap_dscp_mode(
-          static_cast<lemming::dataplane::sai::TunnelDscpMode>(attr->value.s32 +
-                                                               1));
+          convert_sai_tunnel_dscp_mode_t_to_proto(attr->value.s32));
       break;
     case SAI_TUNNEL_ATTR_LOOPBACK_PACKET_ACTION:
       req.set_loopback_packet_action(
-          static_cast<lemming::dataplane::sai::PacketAction>(attr->value.s32 +
-                                                             1));
+          convert_sai_packet_action_t_to_proto(attr->value.s32));
       break;
     case SAI_TUNNEL_ATTR_VXLAN_UDP_SPORT_MODE:
       req.set_vxlan_udp_sport_mode(
-          static_cast<lemming::dataplane::sai::TunnelVxlanUdpSportMode>(
-              attr->value.s32 + 1));
+          convert_sai_tunnel_vxlan_udp_sport_mode_t_to_proto(attr->value.s32));
       break;
     case SAI_TUNNEL_ATTR_VXLAN_UDP_SPORT:
       req.set_vxlan_udp_sport(attr->value.u16);
@@ -513,8 +499,7 @@ sai_status_t l_get_tunnel_attribute(sai_object_id_t tunnel_id,
   req.set_oid(tunnel_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(
-        static_cast<lemming::dataplane::sai::TunnelAttr>(attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_tunnel_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = tunnel->GetTunnelAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -524,7 +509,8 @@ sai_status_t l_get_tunnel_attribute(sai_object_id_t tunnel_id,
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_TUNNEL_ATTR_TYPE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().type() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_tunnel_type_t_to_sai(resp.attr().type());
         break;
       case SAI_TUNNEL_ATTR_UNDERLAY_INTERFACE:
         attr_list[i].value.oid = resp.attr().underlay_interface();
@@ -533,7 +519,8 @@ sai_status_t l_get_tunnel_attribute(sai_object_id_t tunnel_id,
         attr_list[i].value.oid = resp.attr().overlay_interface();
         break;
       case SAI_TUNNEL_ATTR_PEER_MODE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().peer_mode() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_tunnel_peer_mode_t_to_sai(resp.attr().peer_mode());
         break;
       case SAI_TUNNEL_ATTR_ENCAP_SRC_IP:
         attr_list[i].value.ipaddr =
@@ -545,14 +532,14 @@ sai_status_t l_get_tunnel_attribute(sai_object_id_t tunnel_id,
         break;
       case SAI_TUNNEL_ATTR_ENCAP_TTL_MODE:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().encap_ttl_mode() - 1);
+            convert_sai_tunnel_ttl_mode_t_to_sai(resp.attr().encap_ttl_mode());
         break;
       case SAI_TUNNEL_ATTR_ENCAP_TTL_VAL:
         attr_list[i].value.u8 = resp.attr().encap_ttl_val();
         break;
       case SAI_TUNNEL_ATTR_ENCAP_DSCP_MODE:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().encap_dscp_mode() - 1);
+        attr_list[i].value.s32 = convert_sai_tunnel_dscp_mode_t_to_sai(
+            resp.attr().encap_dscp_mode());
         break;
       case SAI_TUNNEL_ATTR_ENCAP_DSCP_VAL:
         attr_list[i].value.u8 = resp.attr().encap_dscp_val();
@@ -564,16 +551,16 @@ sai_status_t l_get_tunnel_attribute(sai_object_id_t tunnel_id,
         attr_list[i].value.u32 = resp.attr().encap_gre_key();
         break;
       case SAI_TUNNEL_ATTR_ENCAP_ECN_MODE:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().encap_ecn_mode() - 1);
+        attr_list[i].value.s32 = convert_sai_tunnel_encap_ecn_mode_t_to_sai(
+            resp.attr().encap_ecn_mode());
         break;
       case SAI_TUNNEL_ATTR_ENCAP_MAPPERS:
         copy_list(attr_list[i].value.objlist.list, resp.attr().encap_mappers(),
                   &attr_list[i].value.objlist.count);
         break;
       case SAI_TUNNEL_ATTR_DECAP_ECN_MODE:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().decap_ecn_mode() - 1);
+        attr_list[i].value.s32 = convert_sai_tunnel_decap_ecn_mode_t_to_sai(
+            resp.attr().decap_ecn_mode());
         break;
       case SAI_TUNNEL_ATTR_DECAP_MAPPERS:
         copy_list(attr_list[i].value.objlist.list, resp.attr().decap_mappers(),
@@ -581,11 +568,11 @@ sai_status_t l_get_tunnel_attribute(sai_object_id_t tunnel_id,
         break;
       case SAI_TUNNEL_ATTR_DECAP_TTL_MODE:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().decap_ttl_mode() - 1);
+            convert_sai_tunnel_ttl_mode_t_to_sai(resp.attr().decap_ttl_mode());
         break;
       case SAI_TUNNEL_ATTR_DECAP_DSCP_MODE:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().decap_dscp_mode() - 1);
+        attr_list[i].value.s32 = convert_sai_tunnel_dscp_mode_t_to_sai(
+            resp.attr().decap_dscp_mode());
         break;
       case SAI_TUNNEL_ATTR_TERM_TABLE_ENTRY_LIST:
         copy_list(attr_list[i].value.objlist.list,
@@ -593,12 +580,13 @@ sai_status_t l_get_tunnel_attribute(sai_object_id_t tunnel_id,
                   &attr_list[i].value.objlist.count);
         break;
       case SAI_TUNNEL_ATTR_LOOPBACK_PACKET_ACTION:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().loopback_packet_action() - 1);
+        attr_list[i].value.s32 = convert_sai_packet_action_t_to_sai(
+            resp.attr().loopback_packet_action());
         break;
       case SAI_TUNNEL_ATTR_VXLAN_UDP_SPORT_MODE:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().vxlan_udp_sport_mode() - 1);
+            convert_sai_tunnel_vxlan_udp_sport_mode_t_to_sai(
+                resp.attr().vxlan_udp_sport_mode());
         break;
       case SAI_TUNNEL_ATTR_VXLAN_UDP_SPORT:
         attr_list[i].value.u16 = resp.attr().vxlan_udp_sport();
@@ -649,8 +637,7 @@ sai_status_t l_get_tunnel_stats(sai_object_id_t tunnel_id,
   req.set_oid(tunnel_id);
 
   for (uint32_t i = 0; i < number_of_counters; i++) {
-    req.add_counter_ids(
-        static_cast<lemming::dataplane::sai::TunnelStat>(counter_ids[i] + 1));
+    req.add_counter_ids(convert_sai_tunnel_stat_t_to_proto(counter_ids[i]));
   }
   grpc::Status status = tunnel->GetTunnelStats(&context, req, &resp);
   if (!status.ok()) {
@@ -761,8 +748,7 @@ sai_status_t l_get_tunnel_term_table_entry_attribute(
 
   for (uint32_t i = 0; i < attr_count; i++) {
     req.add_attr_type(
-        static_cast<lemming::dataplane::sai::TunnelTermTableEntryAttr>(
-            attr_list[i].id + 1));
+        convert_sai_tunnel_term_table_entry_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status =
       tunnel->GetTunnelTermTableEntryAttribute(&context, req, &resp);
@@ -776,7 +762,9 @@ sai_status_t l_get_tunnel_term_table_entry_attribute(
         attr_list[i].value.oid = resp.attr().vr_id();
         break;
       case SAI_TUNNEL_TERM_TABLE_ENTRY_ATTR_TYPE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().type() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_tunnel_term_table_entry_type_t_to_sai(
+                resp.attr().type());
         break;
       case SAI_TUNNEL_TERM_TABLE_ENTRY_ATTR_DST_IP:
         attr_list[i].value.ipaddr = convert_to_ip_address(resp.attr().dst_ip());
@@ -794,14 +782,14 @@ sai_status_t l_get_tunnel_term_table_entry_attribute(
         break;
       case SAI_TUNNEL_TERM_TABLE_ENTRY_ATTR_TUNNEL_TYPE:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().tunnel_type() - 1);
+            convert_sai_tunnel_type_t_to_sai(resp.attr().tunnel_type());
         break;
       case SAI_TUNNEL_TERM_TABLE_ENTRY_ATTR_ACTION_TUNNEL_ID:
         attr_list[i].value.oid = resp.attr().action_tunnel_id();
         break;
       case SAI_TUNNEL_TERM_TABLE_ENTRY_ATTR_IP_ADDR_FAMILY:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().ip_addr_family() - 1);
+            convert_sai_ip_addr_family_t_to_sai(resp.attr().ip_addr_family());
         break;
       case SAI_TUNNEL_TERM_TABLE_ENTRY_ATTR_IPSEC_VERIFIED:
         attr_list[i].value.booldata = resp.attr().ipsec_verified();
@@ -870,8 +858,8 @@ sai_status_t l_get_tunnel_map_entry_attribute(
   req.set_oid(tunnel_map_entry_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::TunnelMapEntryAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(
+        convert_sai_tunnel_map_entry_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status =
       tunnel->GetTunnelMapEntryAttribute(&context, req, &resp);
@@ -883,7 +871,7 @@ sai_status_t l_get_tunnel_map_entry_attribute(
     switch (attr_list[i].id) {
       case SAI_TUNNEL_MAP_ENTRY_ATTR_TUNNEL_MAP_TYPE:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().tunnel_map_type() - 1);
+            convert_sai_tunnel_map_type_t_to_sai(resp.attr().tunnel_map_type());
         break;
       case SAI_TUNNEL_MAP_ENTRY_ATTR_TUNNEL_MAP:
         attr_list[i].value.oid = resp.attr().tunnel_map();

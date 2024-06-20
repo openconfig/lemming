@@ -19,6 +19,7 @@
 #include "dataplane/proto/sai/common.pb.h"
 #include "dataplane/proto/sai/next_hop.pb.h"
 #include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
 const sai_next_hop_api_t l_next_hop = {
     .create_next_hop = l_create_next_hop,
@@ -39,8 +40,8 @@ lemming::dataplane::sai::CreateNextHopRequest convert_create_next_hop(
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_NEXT_HOP_ATTR_TYPE:
-        msg.set_type(static_cast<lemming::dataplane::sai::NextHopType>(
-            attr_list[i].value.s32 + 1));
+        msg.set_type(
+            convert_sai_next_hop_type_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_NEXT_HOP_ATTR_IP:
         msg.set_ip(convert_from_ip_address(attr_list[i].value.ipaddr));
@@ -73,21 +74,19 @@ lemming::dataplane::sai::CreateNextHopRequest convert_create_next_hop(
         msg.set_disable_decrement_ttl(attr_list[i].value.booldata);
         break;
       case SAI_NEXT_HOP_ATTR_OUTSEG_TYPE:
-        msg.set_outseg_type(static_cast<lemming::dataplane::sai::OutsegType>(
-            attr_list[i].value.s32 + 1));
+        msg.set_outseg_type(
+            convert_sai_outseg_type_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_NEXT_HOP_ATTR_OUTSEG_TTL_MODE:
         msg.set_outseg_ttl_mode(
-            static_cast<lemming::dataplane::sai::OutsegTtlMode>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_outseg_ttl_mode_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_NEXT_HOP_ATTR_OUTSEG_TTL_VALUE:
         msg.set_outseg_ttl_value(attr_list[i].value.u8);
         break;
       case SAI_NEXT_HOP_ATTR_OUTSEG_EXP_MODE:
         msg.set_outseg_exp_mode(
-            static_cast<lemming::dataplane::sai::OutsegExpMode>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_outseg_exp_mode_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_NEXT_HOP_ATTR_OUTSEG_EXP_VALUE:
         msg.set_outseg_exp_value(attr_list[i].value.u8);
@@ -161,21 +160,18 @@ sai_status_t l_set_next_hop_attribute(sai_object_id_t next_hop_id,
       req.set_disable_decrement_ttl(attr->value.booldata);
       break;
     case SAI_NEXT_HOP_ATTR_OUTSEG_TYPE:
-      req.set_outseg_type(static_cast<lemming::dataplane::sai::OutsegType>(
-          attr->value.s32 + 1));
+      req.set_outseg_type(convert_sai_outseg_type_t_to_proto(attr->value.s32));
       break;
     case SAI_NEXT_HOP_ATTR_OUTSEG_TTL_MODE:
       req.set_outseg_ttl_mode(
-          static_cast<lemming::dataplane::sai::OutsegTtlMode>(attr->value.s32 +
-                                                              1));
+          convert_sai_outseg_ttl_mode_t_to_proto(attr->value.s32));
       break;
     case SAI_NEXT_HOP_ATTR_OUTSEG_TTL_VALUE:
       req.set_outseg_ttl_value(attr->value.u8);
       break;
     case SAI_NEXT_HOP_ATTR_OUTSEG_EXP_MODE:
       req.set_outseg_exp_mode(
-          static_cast<lemming::dataplane::sai::OutsegExpMode>(attr->value.s32 +
-                                                              1));
+          convert_sai_outseg_exp_mode_t_to_proto(attr->value.s32));
       break;
     case SAI_NEXT_HOP_ATTR_OUTSEG_EXP_VALUE:
       req.set_outseg_exp_value(attr->value.u8);
@@ -206,8 +202,7 @@ sai_status_t l_get_next_hop_attribute(sai_object_id_t next_hop_id,
   req.set_oid(next_hop_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(
-        static_cast<lemming::dataplane::sai::NextHopAttr>(attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_next_hop_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = next_hop->GetNextHopAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -217,7 +212,8 @@ sai_status_t l_get_next_hop_attribute(sai_object_id_t next_hop_id,
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_NEXT_HOP_ATTR_TYPE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().type() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_next_hop_type_t_to_sai(resp.attr().type());
         break;
       case SAI_NEXT_HOP_ATTR_IP:
         attr_list[i].value.ipaddr = convert_to_ip_address(resp.attr().ip());
@@ -250,18 +246,18 @@ sai_status_t l_get_next_hop_attribute(sai_object_id_t next_hop_id,
         break;
       case SAI_NEXT_HOP_ATTR_OUTSEG_TYPE:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().outseg_type() - 1);
+            convert_sai_outseg_type_t_to_sai(resp.attr().outseg_type());
         break;
       case SAI_NEXT_HOP_ATTR_OUTSEG_TTL_MODE:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().outseg_ttl_mode() - 1);
+            convert_sai_outseg_ttl_mode_t_to_sai(resp.attr().outseg_ttl_mode());
         break;
       case SAI_NEXT_HOP_ATTR_OUTSEG_TTL_VALUE:
         attr_list[i].value.u8 = resp.attr().outseg_ttl_value();
         break;
       case SAI_NEXT_HOP_ATTR_OUTSEG_EXP_MODE:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().outseg_exp_mode() - 1);
+            convert_sai_outseg_exp_mode_t_to_sai(resp.attr().outseg_exp_mode());
         break;
       case SAI_NEXT_HOP_ATTR_OUTSEG_EXP_VALUE:
         attr_list[i].value.u8 = resp.attr().outseg_exp_value();
