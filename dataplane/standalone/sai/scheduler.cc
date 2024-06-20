@@ -19,6 +19,7 @@
 #include "dataplane/proto/sai/common.pb.h"
 #include "dataplane/proto/sai/scheduler.pb.h"
 #include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
 const sai_scheduler_api_t l_scheduler = {
     .create_scheduler = l_create_scheduler,
@@ -36,15 +37,14 @@ lemming::dataplane::sai::CreateSchedulerRequest convert_create_scheduler(
     switch (attr_list[i].id) {
       case SAI_SCHEDULER_ATTR_SCHEDULING_TYPE:
         msg.set_scheduling_type(
-            static_cast<lemming::dataplane::sai::SchedulingType>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_scheduling_type_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_SCHEDULER_ATTR_SCHEDULING_WEIGHT:
         msg.set_scheduling_weight(attr_list[i].value.u8);
         break;
       case SAI_SCHEDULER_ATTR_METER_TYPE:
-        msg.set_meter_type(static_cast<lemming::dataplane::sai::MeterType>(
-            attr_list[i].value.s32 + 1));
+        msg.set_meter_type(
+            convert_sai_meter_type_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_SCHEDULER_ATTR_MIN_BANDWIDTH_RATE:
         msg.set_min_bandwidth_rate(attr_list[i].value.u64);
@@ -113,15 +113,13 @@ sai_status_t l_set_scheduler_attribute(sai_object_id_t scheduler_id,
   switch (attr->id) {
     case SAI_SCHEDULER_ATTR_SCHEDULING_TYPE:
       req.set_scheduling_type(
-          static_cast<lemming::dataplane::sai::SchedulingType>(attr->value.s32 +
-                                                               1));
+          convert_sai_scheduling_type_t_to_proto(attr->value.s32));
       break;
     case SAI_SCHEDULER_ATTR_SCHEDULING_WEIGHT:
       req.set_scheduling_weight(attr->value.u8);
       break;
     case SAI_SCHEDULER_ATTR_METER_TYPE:
-      req.set_meter_type(
-          static_cast<lemming::dataplane::sai::MeterType>(attr->value.s32 + 1));
+      req.set_meter_type(convert_sai_meter_type_t_to_proto(attr->value.s32));
       break;
     case SAI_SCHEDULER_ATTR_MIN_BANDWIDTH_RATE:
       req.set_min_bandwidth_rate(attr->value.u64);
@@ -158,8 +156,7 @@ sai_status_t l_get_scheduler_attribute(sai_object_id_t scheduler_id,
   req.set_oid(scheduler_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::SchedulerAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_scheduler_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = scheduler->GetSchedulerAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -170,13 +167,14 @@ sai_status_t l_get_scheduler_attribute(sai_object_id_t scheduler_id,
     switch (attr_list[i].id) {
       case SAI_SCHEDULER_ATTR_SCHEDULING_TYPE:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().scheduling_type() - 1);
+            convert_sai_scheduling_type_t_to_sai(resp.attr().scheduling_type());
         break;
       case SAI_SCHEDULER_ATTR_SCHEDULING_WEIGHT:
         attr_list[i].value.u8 = resp.attr().scheduling_weight();
         break;
       case SAI_SCHEDULER_ATTR_METER_TYPE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().meter_type() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_meter_type_t_to_sai(resp.attr().meter_type());
         break;
       case SAI_SCHEDULER_ATTR_MIN_BANDWIDTH_RATE:
         attr_list[i].value.u64 = resp.attr().min_bandwidth_rate();

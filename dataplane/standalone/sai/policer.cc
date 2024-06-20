@@ -19,6 +19,7 @@
 #include "dataplane/proto/sai/common.pb.h"
 #include "dataplane/proto/sai/policer.pb.h"
 #include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
 const sai_policer_api_t l_policer = {
     .create_policer = l_create_policer,
@@ -38,17 +39,16 @@ lemming::dataplane::sai::CreatePolicerRequest convert_create_policer(
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_POLICER_ATTR_METER_TYPE:
-        msg.set_meter_type(static_cast<lemming::dataplane::sai::MeterType>(
-            attr_list[i].value.s32 + 1));
+        msg.set_meter_type(
+            convert_sai_meter_type_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_POLICER_ATTR_MODE:
-        msg.set_mode(static_cast<lemming::dataplane::sai::PolicerMode>(
-            attr_list[i].value.s32 + 1));
+        msg.set_mode(
+            convert_sai_policer_mode_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_POLICER_ATTR_COLOR_SOURCE:
-        msg.set_color_source(
-            static_cast<lemming::dataplane::sai::PolicerColorSource>(
-                attr_list[i].value.s32 + 1));
+        msg.set_color_source(convert_sai_policer_color_source_t_to_proto(
+            attr_list[i].value.s32));
         break;
       case SAI_POLICER_ATTR_CBS:
         msg.set_cbs(attr_list[i].value.u64);
@@ -64,22 +64,19 @@ lemming::dataplane::sai::CreatePolicerRequest convert_create_policer(
         break;
       case SAI_POLICER_ATTR_GREEN_PACKET_ACTION:
         msg.set_green_packet_action(
-            static_cast<lemming::dataplane::sai::PacketAction>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_packet_action_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_POLICER_ATTR_YELLOW_PACKET_ACTION:
         msg.set_yellow_packet_action(
-            static_cast<lemming::dataplane::sai::PacketAction>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_packet_action_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_POLICER_ATTR_RED_PACKET_ACTION:
         msg.set_red_packet_action(
-            static_cast<lemming::dataplane::sai::PacketAction>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_packet_action_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_POLICER_ATTR_OBJECT_STAGE:
-        msg.set_object_stage(static_cast<lemming::dataplane::sai::ObjectStage>(
-            attr_list[i].value.s32 + 1));
+        msg.set_object_stage(
+            convert_sai_object_stage_t_to_proto(attr_list[i].value.s32));
         break;
     }
   }
@@ -148,18 +145,15 @@ sai_status_t l_set_policer_attribute(sai_object_id_t policer_id,
       break;
     case SAI_POLICER_ATTR_GREEN_PACKET_ACTION:
       req.set_green_packet_action(
-          static_cast<lemming::dataplane::sai::PacketAction>(attr->value.s32 +
-                                                             1));
+          convert_sai_packet_action_t_to_proto(attr->value.s32));
       break;
     case SAI_POLICER_ATTR_YELLOW_PACKET_ACTION:
       req.set_yellow_packet_action(
-          static_cast<lemming::dataplane::sai::PacketAction>(attr->value.s32 +
-                                                             1));
+          convert_sai_packet_action_t_to_proto(attr->value.s32));
       break;
     case SAI_POLICER_ATTR_RED_PACKET_ACTION:
       req.set_red_packet_action(
-          static_cast<lemming::dataplane::sai::PacketAction>(attr->value.s32 +
-                                                             1));
+          convert_sai_packet_action_t_to_proto(attr->value.s32));
       break;
   }
 
@@ -184,8 +178,7 @@ sai_status_t l_get_policer_attribute(sai_object_id_t policer_id,
   req.set_oid(policer_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(
-        static_cast<lemming::dataplane::sai::PolicerAttr>(attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_policer_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = policer->GetPolicerAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -195,14 +188,16 @@ sai_status_t l_get_policer_attribute(sai_object_id_t policer_id,
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_POLICER_ATTR_METER_TYPE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().meter_type() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_meter_type_t_to_sai(resp.attr().meter_type());
         break;
       case SAI_POLICER_ATTR_MODE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().mode() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_policer_mode_t_to_sai(resp.attr().mode());
         break;
       case SAI_POLICER_ATTR_COLOR_SOURCE:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().color_source() - 1);
+        attr_list[i].value.s32 = convert_sai_policer_color_source_t_to_sai(
+            resp.attr().color_source());
         break;
       case SAI_POLICER_ATTR_CBS:
         attr_list[i].value.u64 = resp.attr().cbs();
@@ -217,20 +212,20 @@ sai_status_t l_get_policer_attribute(sai_object_id_t policer_id,
         attr_list[i].value.u64 = resp.attr().pir();
         break;
       case SAI_POLICER_ATTR_GREEN_PACKET_ACTION:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().green_packet_action() - 1);
+        attr_list[i].value.s32 = convert_sai_packet_action_t_to_sai(
+            resp.attr().green_packet_action());
         break;
       case SAI_POLICER_ATTR_YELLOW_PACKET_ACTION:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().yellow_packet_action() - 1);
+        attr_list[i].value.s32 = convert_sai_packet_action_t_to_sai(
+            resp.attr().yellow_packet_action());
         break;
       case SAI_POLICER_ATTR_RED_PACKET_ACTION:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().red_packet_action() - 1);
+            convert_sai_packet_action_t_to_sai(resp.attr().red_packet_action());
         break;
       case SAI_POLICER_ATTR_OBJECT_STAGE:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().object_stage() - 1);
+            convert_sai_object_stage_t_to_sai(resp.attr().object_stage());
         break;
     }
   }
@@ -250,8 +245,7 @@ sai_status_t l_get_policer_stats(sai_object_id_t policer_id,
   req.set_oid(policer_id);
 
   for (uint32_t i = 0; i < number_of_counters; i++) {
-    req.add_counter_ids(
-        static_cast<lemming::dataplane::sai::PolicerStat>(counter_ids[i] + 1));
+    req.add_counter_ids(convert_sai_policer_stat_t_to_proto(counter_ids[i]));
   }
   grpc::Status status = policer->GetPolicerStats(&context, req, &resp);
   if (!status.ok()) {

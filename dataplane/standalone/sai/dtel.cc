@@ -19,6 +19,7 @@
 #include "dataplane/proto/sai/common.pb.h"
 #include "dataplane/proto/sai/dtel.pb.h"
 #include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
 const sai_dtel_api_t l_dtel = {
     .create_dtel = l_create_dtel,
@@ -179,8 +180,8 @@ lemming::dataplane::sai::CreateDtelEventRequest convert_create_dtel_event(
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_DTEL_EVENT_ATTR_TYPE:
-        msg.set_type(static_cast<lemming::dataplane::sai::DtelEventType>(
-            attr_list[i].value.s32 + 1));
+        msg.set_type(
+            convert_sai_dtel_event_type_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_DTEL_EVENT_ATTR_REPORT_SESSION:
         msg.set_report_session(attr_list[i].value.oid);
@@ -297,8 +298,7 @@ sai_status_t l_get_dtel_attribute(sai_object_id_t dtel_id, uint32_t attr_count,
   req.set_oid(dtel_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(
-        static_cast<lemming::dataplane::sai::DtelAttr>(attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_dtel_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = dtel->GetDtelAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -425,8 +425,8 @@ sai_status_t l_get_dtel_queue_report_attribute(
   req.set_oid(dtel_queue_report_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::DtelQueueReportAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(
+        convert_sai_dtel_queue_report_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = dtel->GetDtelQueueReportAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -546,8 +546,8 @@ sai_status_t l_get_dtel_int_session_attribute(
   req.set_oid(dtel_int_session_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::DtelIntSessionAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(
+        convert_sai_dtel_int_session_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = dtel->GetDtelIntSessionAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -666,8 +666,7 @@ sai_status_t l_get_dtel_report_session_attribute(
 
   for (uint32_t i = 0; i < attr_count; i++) {
     req.add_attr_type(
-        static_cast<lemming::dataplane::sai::DtelReportSessionAttr>(
-            attr_list[i].id + 1));
+        convert_sai_dtel_report_session_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status =
       dtel->GetDtelReportSessionAttribute(&context, req, &resp);
@@ -772,8 +771,7 @@ sai_status_t l_get_dtel_event_attribute(sai_object_id_t dtel_event_id,
   req.set_oid(dtel_event_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::DtelEventAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_dtel_event_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = dtel->GetDtelEventAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -783,7 +781,8 @@ sai_status_t l_get_dtel_event_attribute(sai_object_id_t dtel_event_id,
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_DTEL_EVENT_ATTR_TYPE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().type() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_dtel_event_type_t_to_sai(resp.attr().type());
         break;
       case SAI_DTEL_EVENT_ATTR_REPORT_SESSION:
         attr_list[i].value.oid = resp.attr().report_session();

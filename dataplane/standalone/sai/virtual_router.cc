@@ -19,6 +19,7 @@
 #include "dataplane/proto/sai/common.pb.h"
 #include "dataplane/proto/sai/virtual_router.pb.h"
 #include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
 const sai_virtual_router_api_t l_virtual_router = {
     .create_virtual_router = l_create_virtual_router,
@@ -46,18 +47,15 @@ convert_create_virtual_router(sai_object_id_t switch_id, uint32_t attr_count,
         break;
       case SAI_VIRTUAL_ROUTER_ATTR_VIOLATION_TTL1_PACKET_ACTION:
         msg.set_violation_ttl1_packet_action(
-            static_cast<lemming::dataplane::sai::PacketAction>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_packet_action_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_VIRTUAL_ROUTER_ATTR_VIOLATION_IP_OPTIONS_PACKET_ACTION:
         msg.set_violation_ip_options_packet_action(
-            static_cast<lemming::dataplane::sai::PacketAction>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_packet_action_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_VIRTUAL_ROUTER_ATTR_UNKNOWN_L3_MULTICAST_PACKET_ACTION:
         msg.set_unknown_l3_multicast_packet_action(
-            static_cast<lemming::dataplane::sai::PacketAction>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_packet_action_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_VIRTUAL_ROUTER_ATTR_LABEL:
         msg.set_label(attr_list[i].value.chardata);
@@ -129,18 +127,15 @@ sai_status_t l_set_virtual_router_attribute(sai_object_id_t virtual_router_id,
       break;
     case SAI_VIRTUAL_ROUTER_ATTR_VIOLATION_TTL1_PACKET_ACTION:
       req.set_violation_ttl1_packet_action(
-          static_cast<lemming::dataplane::sai::PacketAction>(attr->value.s32 +
-                                                             1));
+          convert_sai_packet_action_t_to_proto(attr->value.s32));
       break;
     case SAI_VIRTUAL_ROUTER_ATTR_VIOLATION_IP_OPTIONS_PACKET_ACTION:
       req.set_violation_ip_options_packet_action(
-          static_cast<lemming::dataplane::sai::PacketAction>(attr->value.s32 +
-                                                             1));
+          convert_sai_packet_action_t_to_proto(attr->value.s32));
       break;
     case SAI_VIRTUAL_ROUTER_ATTR_UNKNOWN_L3_MULTICAST_PACKET_ACTION:
       req.set_unknown_l3_multicast_packet_action(
-          static_cast<lemming::dataplane::sai::PacketAction>(attr->value.s32 +
-                                                             1));
+          convert_sai_packet_action_t_to_proto(attr->value.s32));
       break;
     case SAI_VIRTUAL_ROUTER_ATTR_LABEL:
       req.set_label(attr->value.chardata);
@@ -169,8 +164,8 @@ sai_status_t l_get_virtual_router_attribute(sai_object_id_t virtual_router_id,
   req.set_oid(virtual_router_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::VirtualRouterAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(
+        convert_sai_virtual_router_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status =
       virtual_router->GetVirtualRouterAttribute(&context, req, &resp);
@@ -191,16 +186,16 @@ sai_status_t l_get_virtual_router_attribute(sai_object_id_t virtual_router_id,
                sizeof(sai_mac_t));
         break;
       case SAI_VIRTUAL_ROUTER_ATTR_VIOLATION_TTL1_PACKET_ACTION:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().violation_ttl1_packet_action() - 1);
+        attr_list[i].value.s32 = convert_sai_packet_action_t_to_sai(
+            resp.attr().violation_ttl1_packet_action());
         break;
       case SAI_VIRTUAL_ROUTER_ATTR_VIOLATION_IP_OPTIONS_PACKET_ACTION:
-        attr_list[i].value.s32 = static_cast<int>(
-            resp.attr().violation_ip_options_packet_action() - 1);
+        attr_list[i].value.s32 = convert_sai_packet_action_t_to_sai(
+            resp.attr().violation_ip_options_packet_action());
         break;
       case SAI_VIRTUAL_ROUTER_ATTR_UNKNOWN_L3_MULTICAST_PACKET_ACTION:
-        attr_list[i].value.s32 = static_cast<int>(
-            resp.attr().unknown_l3_multicast_packet_action() - 1);
+        attr_list[i].value.s32 = convert_sai_packet_action_t_to_sai(
+            resp.attr().unknown_l3_multicast_packet_action());
         break;
       case SAI_VIRTUAL_ROUTER_ATTR_LABEL:
         strncpy(attr_list[i].value.chardata, resp.attr().label().data(), 32);

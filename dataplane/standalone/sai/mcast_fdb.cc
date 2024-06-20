@@ -19,6 +19,7 @@
 #include "dataplane/proto/sai/common.pb.h"
 #include "dataplane/proto/sai/mcast_fdb.pb.h"
 #include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
 const sai_mcast_fdb_api_t l_mcast_fdb = {
     .create_mcast_fdb_entry = l_create_mcast_fdb_entry,
@@ -39,8 +40,7 @@ convert_create_mcast_fdb_entry(uint32_t attr_count,
         break;
       case SAI_MCAST_FDB_ENTRY_ATTR_PACKET_ACTION:
         msg.set_packet_action(
-            static_cast<lemming::dataplane::sai::PacketAction>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_packet_action_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_MCAST_FDB_ENTRY_ATTR_META_DATA:
         msg.set_meta_data(attr_list[i].value.u32);
@@ -99,8 +99,8 @@ sai_status_t l_set_mcast_fdb_entry_attribute(
       req.set_group_id(attr->value.oid);
       break;
     case SAI_MCAST_FDB_ENTRY_ATTR_PACKET_ACTION:
-      req.set_packet_action(static_cast<lemming::dataplane::sai::PacketAction>(
-          attr->value.s32 + 1));
+      req.set_packet_action(
+          convert_sai_packet_action_t_to_proto(attr->value.s32));
       break;
     case SAI_MCAST_FDB_ENTRY_ATTR_META_DATA:
       req.set_meta_data(attr->value.u32);
@@ -127,8 +127,8 @@ sai_status_t l_get_mcast_fdb_entry_attribute(
   grpc::ClientContext context;
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::McastFdbEntryAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(
+        convert_sai_mcast_fdb_entry_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status =
       mcast_fdb->GetMcastFdbEntryAttribute(&context, req, &resp);
@@ -143,7 +143,7 @@ sai_status_t l_get_mcast_fdb_entry_attribute(
         break;
       case SAI_MCAST_FDB_ENTRY_ATTR_PACKET_ACTION:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().packet_action() - 1);
+            convert_sai_packet_action_t_to_sai(resp.attr().packet_action());
         break;
       case SAI_MCAST_FDB_ENTRY_ATTR_META_DATA:
         attr_list[i].value.u32 = resp.attr().meta_data();

@@ -19,6 +19,7 @@
 #include "dataplane/proto/sai/common.pb.h"
 #include "dataplane/proto/sai/switch.pb.h"
 #include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
 const sai_switch_api_t l_switch = {
     .create_switch = l_create_switch,
@@ -55,9 +56,8 @@ lemming::dataplane::sai::CreateSwitchRequest convert_create_switch(
         msg.set_warm_recover(attr_list[i].value.booldata);
         break;
       case SAI_SWITCH_ATTR_SWITCHING_MODE:
-        msg.set_switching_mode(
-            static_cast<lemming::dataplane::sai::SwitchSwitchingMode>(
-                attr_list[i].value.s32 + 1));
+        msg.set_switching_mode(convert_sai_switch_switching_mode_t_to_proto(
+            attr_list[i].value.s32));
         break;
       case SAI_SWITCH_ATTR_BCAST_CPU_FLOOD_ENABLE:
         msg.set_bcast_cpu_flood_enable(attr_list[i].value.booldata);
@@ -77,23 +77,19 @@ lemming::dataplane::sai::CreateSwitchRequest convert_create_switch(
         break;
       case SAI_SWITCH_ATTR_FDB_UNICAST_MISS_PACKET_ACTION:
         msg.set_fdb_unicast_miss_packet_action(
-            static_cast<lemming::dataplane::sai::PacketAction>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_packet_action_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_SWITCH_ATTR_FDB_BROADCAST_MISS_PACKET_ACTION:
         msg.set_fdb_broadcast_miss_packet_action(
-            static_cast<lemming::dataplane::sai::PacketAction>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_packet_action_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_SWITCH_ATTR_FDB_MULTICAST_MISS_PACKET_ACTION:
         msg.set_fdb_multicast_miss_packet_action(
-            static_cast<lemming::dataplane::sai::PacketAction>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_packet_action_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_SWITCH_ATTR_ECMP_DEFAULT_HASH_ALGORITHM:
         msg.set_ecmp_default_hash_algorithm(
-            static_cast<lemming::dataplane::sai::HashAlgorithm>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_hash_algorithm_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_SWITCH_ATTR_ECMP_DEFAULT_HASH_SEED:
         msg.set_ecmp_default_hash_seed(attr_list[i].value.u32);
@@ -115,8 +111,7 @@ lemming::dataplane::sai::CreateSwitchRequest convert_create_switch(
         break;
       case SAI_SWITCH_ATTR_LAG_DEFAULT_HASH_ALGORITHM:
         msg.set_lag_default_hash_algorithm(
-            static_cast<lemming::dataplane::sai::HashAlgorithm>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_hash_algorithm_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_SWITCH_ATTR_LAG_DEFAULT_HASH_SEED:
         msg.set_lag_default_hash_seed(attr_list[i].value.u32);
@@ -195,8 +190,7 @@ lemming::dataplane::sai::CreateSwitchRequest convert_create_switch(
         break;
       case SAI_SWITCH_ATTR_PFC_DLR_PACKET_ACTION:
         msg.set_pfc_dlr_packet_action(
-            static_cast<lemming::dataplane::sai::PacketAction>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_packet_action_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_SWITCH_ATTR_TPID_OUTER_VLAN:
         msg.set_tpid_outer_vlan(attr_list[i].value.u16);
@@ -239,8 +233,8 @@ lemming::dataplane::sai::CreateSwitchRequest convert_create_switch(
         break;
       case SAI_SWITCH_ATTR_HARDWARE_ACCESS_BUS:
         msg.set_hardware_access_bus(
-            static_cast<lemming::dataplane::sai::SwitchHardwareAccessBus>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_switch_hardware_access_bus_t_to_proto(
+                attr_list[i].value.s32));
         break;
       case SAI_SWITCH_ATTR_PLATFROM_CONTEXT:
         msg.set_platfrom_context(attr_list[i].value.u64);
@@ -250,13 +244,13 @@ lemming::dataplane::sai::CreateSwitchRequest convert_create_switch(
         break;
       case SAI_SWITCH_ATTR_FIRMWARE_LOAD_METHOD:
         msg.set_firmware_load_method(
-            static_cast<lemming::dataplane::sai::SwitchFirmwareLoadMethod>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_switch_firmware_load_method_t_to_proto(
+                attr_list[i].value.s32));
         break;
       case SAI_SWITCH_ATTR_FIRMWARE_LOAD_TYPE:
         msg.set_firmware_load_type(
-            static_cast<lemming::dataplane::sai::SwitchFirmwareLoadType>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_switch_firmware_load_type_t_to_proto(
+                attr_list[i].value.s32));
         break;
       case SAI_SWITCH_ATTR_FIRMWARE_DOWNLOAD_EXECUTE:
         msg.set_firmware_download_execute(attr_list[i].value.booldata);
@@ -268,8 +262,8 @@ lemming::dataplane::sai::CreateSwitchRequest convert_create_switch(
         msg.set_firmware_verify_and_init_switch(attr_list[i].value.booldata);
         break;
       case SAI_SWITCH_ATTR_TYPE:
-        msg.set_type(static_cast<lemming::dataplane::sai::SwitchType>(
-            attr_list[i].value.s32 + 1));
+        msg.set_type(
+            convert_sai_switch_type_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_SWITCH_ATTR_MACSEC_OBJECT_LIST:
         msg.mutable_macsec_object_list()->Add(
@@ -293,8 +287,8 @@ lemming::dataplane::sai::CreateSwitchRequest convert_create_switch(
         break;
       case SAI_SWITCH_ATTR_FAILOVER_CONFIG_MODE:
         msg.set_failover_config_mode(
-            static_cast<lemming::dataplane::sai::SwitchFailoverConfigMode>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_switch_failover_config_mode_t_to_proto(
+                attr_list[i].value.s32));
         break;
       case SAI_SWITCH_ATTR_TUNNEL_OBJECTS_LIST:
         msg.mutable_tunnel_objects_list()->Add(
@@ -337,18 +331,17 @@ lemming::dataplane::sai::CreateSwitchTunnelRequest convert_create_switch_tunnel(
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_SWITCH_TUNNEL_ATTR_TUNNEL_TYPE:
-        msg.set_tunnel_type(static_cast<lemming::dataplane::sai::TunnelType>(
-            attr_list[i].value.s32 + 1));
+        msg.set_tunnel_type(
+            convert_sai_tunnel_type_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_SWITCH_TUNNEL_ATTR_LOOPBACK_PACKET_ACTION:
         msg.set_loopback_packet_action(
-            static_cast<lemming::dataplane::sai::PacketAction>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_packet_action_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_SWITCH_TUNNEL_ATTR_TUNNEL_ENCAP_ECN_MODE:
         msg.set_tunnel_encap_ecn_mode(
-            static_cast<lemming::dataplane::sai::TunnelEncapEcnMode>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_tunnel_encap_ecn_mode_t_to_proto(
+                attr_list[i].value.s32));
         break;
       case SAI_SWITCH_TUNNEL_ATTR_ENCAP_MAPPERS:
         msg.mutable_encap_mappers()->Add(
@@ -357,8 +350,8 @@ lemming::dataplane::sai::CreateSwitchTunnelRequest convert_create_switch_tunnel(
         break;
       case SAI_SWITCH_TUNNEL_ATTR_TUNNEL_DECAP_ECN_MODE:
         msg.set_tunnel_decap_ecn_mode(
-            static_cast<lemming::dataplane::sai::TunnelDecapEcnMode>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_tunnel_decap_ecn_mode_t_to_proto(
+                attr_list[i].value.s32));
         break;
       case SAI_SWITCH_TUNNEL_ATTR_DECAP_MAPPERS:
         msg.mutable_decap_mappers()->Add(
@@ -367,8 +360,8 @@ lemming::dataplane::sai::CreateSwitchTunnelRequest convert_create_switch_tunnel(
         break;
       case SAI_SWITCH_TUNNEL_ATTR_TUNNEL_VXLAN_UDP_SPORT_MODE:
         msg.set_tunnel_vxlan_udp_sport_mode(
-            static_cast<lemming::dataplane::sai::TunnelVxlanUdpSportMode>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_tunnel_vxlan_udp_sport_mode_t_to_proto(
+                attr_list[i].value.s32));
         break;
       case SAI_SWITCH_TUNNEL_ATTR_VXLAN_UDP_SPORT:
         msg.set_vxlan_udp_sport(attr_list[i].value.u16);
@@ -453,8 +446,7 @@ sai_status_t l_set_switch_attribute(sai_object_id_t switch_id,
       break;
     case SAI_SWITCH_ATTR_SWITCHING_MODE:
       req.set_switching_mode(
-          static_cast<lemming::dataplane::sai::SwitchSwitchingMode>(
-              attr->value.s32 + 1));
+          convert_sai_switch_switching_mode_t_to_proto(attr->value.s32));
       break;
     case SAI_SWITCH_ATTR_BCAST_CPU_FLOOD_ENABLE:
       req.set_bcast_cpu_flood_enable(attr->value.booldata);
@@ -473,23 +465,19 @@ sai_status_t l_set_switch_attribute(sai_object_id_t switch_id,
       break;
     case SAI_SWITCH_ATTR_FDB_UNICAST_MISS_PACKET_ACTION:
       req.set_fdb_unicast_miss_packet_action(
-          static_cast<lemming::dataplane::sai::PacketAction>(attr->value.s32 +
-                                                             1));
+          convert_sai_packet_action_t_to_proto(attr->value.s32));
       break;
     case SAI_SWITCH_ATTR_FDB_BROADCAST_MISS_PACKET_ACTION:
       req.set_fdb_broadcast_miss_packet_action(
-          static_cast<lemming::dataplane::sai::PacketAction>(attr->value.s32 +
-                                                             1));
+          convert_sai_packet_action_t_to_proto(attr->value.s32));
       break;
     case SAI_SWITCH_ATTR_FDB_MULTICAST_MISS_PACKET_ACTION:
       req.set_fdb_multicast_miss_packet_action(
-          static_cast<lemming::dataplane::sai::PacketAction>(attr->value.s32 +
-                                                             1));
+          convert_sai_packet_action_t_to_proto(attr->value.s32));
       break;
     case SAI_SWITCH_ATTR_ECMP_DEFAULT_HASH_ALGORITHM:
       req.set_ecmp_default_hash_algorithm(
-          static_cast<lemming::dataplane::sai::HashAlgorithm>(attr->value.s32 +
-                                                              1));
+          convert_sai_hash_algorithm_t_to_proto(attr->value.s32));
       break;
     case SAI_SWITCH_ATTR_ECMP_DEFAULT_HASH_SEED:
       req.set_ecmp_default_hash_seed(attr->value.u32);
@@ -511,8 +499,7 @@ sai_status_t l_set_switch_attribute(sai_object_id_t switch_id,
       break;
     case SAI_SWITCH_ATTR_LAG_DEFAULT_HASH_ALGORITHM:
       req.set_lag_default_hash_algorithm(
-          static_cast<lemming::dataplane::sai::HashAlgorithm>(attr->value.s32 +
-                                                              1));
+          convert_sai_hash_algorithm_t_to_proto(attr->value.s32));
       break;
     case SAI_SWITCH_ATTR_LAG_DEFAULT_HASH_SEED:
       req.set_lag_default_hash_seed(attr->value.u32);
@@ -575,8 +562,7 @@ sai_status_t l_set_switch_attribute(sai_object_id_t switch_id,
       break;
     case SAI_SWITCH_ATTR_PFC_DLR_PACKET_ACTION:
       req.set_pfc_dlr_packet_action(
-          static_cast<lemming::dataplane::sai::PacketAction>(attr->value.s32 +
-                                                             1));
+          convert_sai_packet_action_t_to_proto(attr->value.s32));
       break;
     case SAI_SWITCH_ATTR_TPID_OUTER_VLAN:
       req.set_tpid_outer_vlan(attr->value.u16);
@@ -642,8 +628,7 @@ sai_status_t l_set_switch_attribute(sai_object_id_t switch_id,
       break;
     case SAI_SWITCH_ATTR_FAILOVER_CONFIG_MODE:
       req.set_failover_config_mode(
-          static_cast<lemming::dataplane::sai::SwitchFailoverConfigMode>(
-              attr->value.s32 + 1));
+          convert_sai_switch_failover_config_mode_t_to_proto(attr->value.s32));
       break;
     case SAI_SWITCH_ATTR_TUNNEL_OBJECTS_LIST:
       req.mutable_tunnel_objects_list()->Add(
@@ -691,8 +676,7 @@ sai_status_t l_get_switch_attribute(sai_object_id_t switch_id,
   req.set_oid(switch_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(
-        static_cast<lemming::dataplane::sai::SwitchAttr>(attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_switch_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = switch_->GetSwitchAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -758,7 +742,7 @@ sai_status_t l_get_switch_attribute(sai_object_id_t switch_id,
         break;
       case SAI_SWITCH_ATTR_OPER_STATUS:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().oper_status() - 1);
+            convert_sai_switch_oper_status_t_to_sai(resp.attr().oper_status());
         break;
       case SAI_SWITCH_ATTR_MAX_NUMBER_OF_TEMP_SENSORS:
         attr_list[i].value.u8 = resp.attr().max_number_of_temp_sensors();
@@ -898,8 +882,8 @@ sai_status_t l_get_switch_attribute(sai_object_id_t switch_id,
         attr_list[i].value.booldata = resp.attr().warm_recover();
         break;
       case SAI_SWITCH_ATTR_RESTART_TYPE:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().restart_type() - 1);
+        attr_list[i].value.s32 = convert_sai_switch_restart_type_t_to_sai(
+            resp.attr().restart_type());
         break;
       case SAI_SWITCH_ATTR_MIN_PLANNED_RESTART_INTERVAL:
         attr_list[i].value.u32 = resp.attr().min_planned_restart_interval();
@@ -919,11 +903,12 @@ sai_status_t l_get_switch_attribute(sai_object_id_t switch_id,
         break;
       case SAI_SWITCH_ATTR_MCAST_SNOOPING_CAPABILITY:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().mcast_snooping_capability() - 1);
+            convert_sai_switch_mcast_snooping_capability_t_to_sai(
+                resp.attr().mcast_snooping_capability());
         break;
       case SAI_SWITCH_ATTR_SWITCHING_MODE:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().switching_mode() - 1);
+        attr_list[i].value.s32 = convert_sai_switch_switching_mode_t_to_sai(
+            resp.attr().switching_mode());
         break;
       case SAI_SWITCH_ATTR_BCAST_CPU_FLOOD_ENABLE:
         attr_list[i].value.booldata = resp.attr().bcast_cpu_flood_enable();
@@ -942,20 +927,20 @@ sai_status_t l_get_switch_attribute(sai_object_id_t switch_id,
         attr_list[i].value.u32 = resp.attr().fdb_aging_time();
         break;
       case SAI_SWITCH_ATTR_FDB_UNICAST_MISS_PACKET_ACTION:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().fdb_unicast_miss_packet_action() - 1);
+        attr_list[i].value.s32 = convert_sai_packet_action_t_to_sai(
+            resp.attr().fdb_unicast_miss_packet_action());
         break;
       case SAI_SWITCH_ATTR_FDB_BROADCAST_MISS_PACKET_ACTION:
-        attr_list[i].value.s32 = static_cast<int>(
-            resp.attr().fdb_broadcast_miss_packet_action() - 1);
+        attr_list[i].value.s32 = convert_sai_packet_action_t_to_sai(
+            resp.attr().fdb_broadcast_miss_packet_action());
         break;
       case SAI_SWITCH_ATTR_FDB_MULTICAST_MISS_PACKET_ACTION:
-        attr_list[i].value.s32 = static_cast<int>(
-            resp.attr().fdb_multicast_miss_packet_action() - 1);
+        attr_list[i].value.s32 = convert_sai_packet_action_t_to_sai(
+            resp.attr().fdb_multicast_miss_packet_action());
         break;
       case SAI_SWITCH_ATTR_ECMP_DEFAULT_HASH_ALGORITHM:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().ecmp_default_hash_algorithm() - 1);
+        attr_list[i].value.s32 = convert_sai_hash_algorithm_t_to_sai(
+            resp.attr().ecmp_default_hash_algorithm());
         break;
       case SAI_SWITCH_ATTR_ECMP_DEFAULT_HASH_SEED:
         attr_list[i].value.u32 = resp.attr().ecmp_default_hash_seed();
@@ -976,8 +961,8 @@ sai_status_t l_get_switch_attribute(sai_object_id_t switch_id,
         attr_list[i].value.oid = resp.attr().ecmp_hash_ipv6();
         break;
       case SAI_SWITCH_ATTR_LAG_DEFAULT_HASH_ALGORITHM:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().lag_default_hash_algorithm() - 1);
+        attr_list[i].value.s32 = convert_sai_hash_algorithm_t_to_sai(
+            resp.attr().lag_default_hash_algorithm());
         break;
       case SAI_SWITCH_ATTR_LAG_DEFAULT_HASH_SEED:
         attr_list[i].value.u32 = resp.attr().lag_default_hash_seed();
@@ -1064,8 +1049,8 @@ sai_status_t l_get_switch_attribute(sai_object_id_t switch_id,
         attr_list[i].value.u32 = resp.attr().qos_num_lossless_queues();
         break;
       case SAI_SWITCH_ATTR_PFC_DLR_PACKET_ACTION:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().pfc_dlr_packet_action() - 1);
+        attr_list[i].value.s32 = convert_sai_packet_action_t_to_sai(
+            resp.attr().pfc_dlr_packet_action());
         break;
       case SAI_SWITCH_ATTR_TPID_OUTER_VLAN:
         attr_list[i].value.u16 = resp.attr().tpid_outer_vlan();
@@ -1127,7 +1112,8 @@ sai_status_t l_get_switch_attribute(sai_object_id_t switch_id,
         break;
       case SAI_SWITCH_ATTR_HARDWARE_ACCESS_BUS:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().hardware_access_bus() - 1);
+            convert_sai_switch_hardware_access_bus_t_to_sai(
+                resp.attr().hardware_access_bus());
         break;
       case SAI_SWITCH_ATTR_PLATFROM_CONTEXT:
         attr_list[i].value.u64 = resp.attr().platfrom_context();
@@ -1137,11 +1123,12 @@ sai_status_t l_get_switch_attribute(sai_object_id_t switch_id,
         break;
       case SAI_SWITCH_ATTR_FIRMWARE_LOAD_METHOD:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().firmware_load_method() - 1);
+            convert_sai_switch_firmware_load_method_t_to_sai(
+                resp.attr().firmware_load_method());
         break;
       case SAI_SWITCH_ATTR_FIRMWARE_LOAD_TYPE:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().firmware_load_type() - 1);
+        attr_list[i].value.s32 = convert_sai_switch_firmware_load_type_t_to_sai(
+            resp.attr().firmware_load_type());
         break;
       case SAI_SWITCH_ATTR_FIRMWARE_DOWNLOAD_EXECUTE:
         attr_list[i].value.booldata = resp.attr().firmware_download_execute();
@@ -1172,7 +1159,8 @@ sai_status_t l_get_switch_attribute(sai_object_id_t switch_id,
             resp.attr().propogate_port_state_from_line_to_system_port_support();
         break;
       case SAI_SWITCH_ATTR_TYPE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().type() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_switch_type_t_to_sai(resp.attr().type());
         break;
       case SAI_SWITCH_ATTR_MACSEC_OBJECT_LIST:
         copy_list(attr_list[i].value.objlist.list,
@@ -1215,7 +1203,8 @@ sai_status_t l_get_switch_attribute(sai_object_id_t switch_id,
         break;
       case SAI_SWITCH_ATTR_FAILOVER_CONFIG_MODE:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().failover_config_mode() - 1);
+            convert_sai_switch_failover_config_mode_t_to_sai(
+                resp.attr().failover_config_mode());
         break;
       case SAI_SWITCH_ATTR_SUPPORTED_FAILOVER_MODE:
         attr_list[i].value.booldata = resp.attr().supported_failover_mode();
@@ -1302,8 +1291,7 @@ sai_status_t l_get_switch_stats(sai_object_id_t switch_id,
   req.set_oid(switch_id);
 
   for (uint32_t i = 0; i < number_of_counters; i++) {
-    req.add_counter_ids(
-        static_cast<lemming::dataplane::sai::SwitchStat>(counter_ids[i] + 1));
+    req.add_counter_ids(convert_sai_switch_stat_t_to_proto(counter_ids[i]));
   }
   grpc::Status status = switch_->GetSwitchStats(&context, req, &resp);
   if (!status.ok()) {
@@ -1386,13 +1374,11 @@ sai_status_t l_set_switch_tunnel_attribute(sai_object_id_t switch_tunnel_id,
   switch (attr->id) {
     case SAI_SWITCH_TUNNEL_ATTR_LOOPBACK_PACKET_ACTION:
       req.set_loopback_packet_action(
-          static_cast<lemming::dataplane::sai::PacketAction>(attr->value.s32 +
-                                                             1));
+          convert_sai_packet_action_t_to_proto(attr->value.s32));
       break;
     case SAI_SWITCH_TUNNEL_ATTR_TUNNEL_VXLAN_UDP_SPORT_MODE:
       req.set_tunnel_vxlan_udp_sport_mode(
-          static_cast<lemming::dataplane::sai::TunnelVxlanUdpSportMode>(
-              attr->value.s32 + 1));
+          convert_sai_tunnel_vxlan_udp_sport_mode_t_to_proto(attr->value.s32));
       break;
     case SAI_SWITCH_TUNNEL_ATTR_VXLAN_UDP_SPORT:
       req.set_vxlan_udp_sport(attr->value.u16);
@@ -1435,8 +1421,8 @@ sai_status_t l_get_switch_tunnel_attribute(sai_object_id_t switch_tunnel_id,
   req.set_oid(switch_tunnel_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::SwitchTunnelAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(
+        convert_sai_switch_tunnel_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = switch_->GetSwitchTunnelAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -1447,23 +1433,23 @@ sai_status_t l_get_switch_tunnel_attribute(sai_object_id_t switch_tunnel_id,
     switch (attr_list[i].id) {
       case SAI_SWITCH_TUNNEL_ATTR_TUNNEL_TYPE:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().tunnel_type() - 1);
+            convert_sai_tunnel_type_t_to_sai(resp.attr().tunnel_type());
         break;
       case SAI_SWITCH_TUNNEL_ATTR_LOOPBACK_PACKET_ACTION:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().loopback_packet_action() - 1);
+        attr_list[i].value.s32 = convert_sai_packet_action_t_to_sai(
+            resp.attr().loopback_packet_action());
         break;
       case SAI_SWITCH_TUNNEL_ATTR_TUNNEL_ENCAP_ECN_MODE:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().tunnel_encap_ecn_mode() - 1);
+        attr_list[i].value.s32 = convert_sai_tunnel_encap_ecn_mode_t_to_sai(
+            resp.attr().tunnel_encap_ecn_mode());
         break;
       case SAI_SWITCH_TUNNEL_ATTR_ENCAP_MAPPERS:
         copy_list(attr_list[i].value.objlist.list, resp.attr().encap_mappers(),
                   &attr_list[i].value.objlist.count);
         break;
       case SAI_SWITCH_TUNNEL_ATTR_TUNNEL_DECAP_ECN_MODE:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().tunnel_decap_ecn_mode() - 1);
+        attr_list[i].value.s32 = convert_sai_tunnel_decap_ecn_mode_t_to_sai(
+            resp.attr().tunnel_decap_ecn_mode());
         break;
       case SAI_SWITCH_TUNNEL_ATTR_DECAP_MAPPERS:
         copy_list(attr_list[i].value.objlist.list, resp.attr().decap_mappers(),
@@ -1471,7 +1457,8 @@ sai_status_t l_get_switch_tunnel_attribute(sai_object_id_t switch_tunnel_id,
         break;
       case SAI_SWITCH_TUNNEL_ATTR_TUNNEL_VXLAN_UDP_SPORT_MODE:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().tunnel_vxlan_udp_sport_mode() - 1);
+            convert_sai_tunnel_vxlan_udp_sport_mode_t_to_sai(
+                resp.attr().tunnel_vxlan_udp_sport_mode());
         break;
       case SAI_SWITCH_TUNNEL_ATTR_VXLAN_UDP_SPORT:
         attr_list[i].value.u16 = resp.attr().vxlan_udp_sport();

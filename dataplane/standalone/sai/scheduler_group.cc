@@ -19,6 +19,7 @@
 #include "dataplane/proto/sai/common.pb.h"
 #include "dataplane/proto/sai/scheduler_group.pb.h"
 #include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
 const sai_scheduler_group_api_t l_scheduler_group = {
     .create_scheduler_group = l_create_scheduler_group,
@@ -135,8 +136,8 @@ sai_status_t l_get_scheduler_group_attribute(sai_object_id_t scheduler_group_id,
   req.set_oid(scheduler_group_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::SchedulerGroupAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(
+        convert_sai_scheduler_group_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status =
       scheduler_group->GetSchedulerGroupAttribute(&context, req, &resp);

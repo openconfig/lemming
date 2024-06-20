@@ -19,6 +19,7 @@
 #include "dataplane/proto/sai/common.pb.h"
 #include "dataplane/proto/sai/qos_map.pb.h"
 #include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
 const sai_qos_map_api_t l_qos_map = {
     .create_qos_map = l_create_qos_map,
@@ -35,8 +36,8 @@ lemming::dataplane::sai::CreateQosMapRequest convert_create_qos_map(
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_QOS_MAP_ATTR_TYPE:
-        msg.set_type(static_cast<lemming::dataplane::sai::QosMapType>(
-            attr_list[i].value.s32 + 1));
+        msg.set_type(
+            convert_sai_qos_map_type_t_to_proto(attr_list[i].value.s32));
         break;
     }
   }
@@ -100,8 +101,7 @@ sai_status_t l_get_qos_map_attribute(sai_object_id_t qos_map_id,
   req.set_oid(qos_map_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(
-        static_cast<lemming::dataplane::sai::QosMapAttr>(attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_qos_map_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = qos_map->GetQosMapAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -111,7 +111,8 @@ sai_status_t l_get_qos_map_attribute(sai_object_id_t qos_map_id,
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_QOS_MAP_ATTR_TYPE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().type() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_qos_map_type_t_to_sai(resp.attr().type());
         break;
     }
   }

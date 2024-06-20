@@ -19,6 +19,7 @@
 #include "dataplane/proto/sai/common.pb.h"
 #include "dataplane/proto/sai/fdb.pb.h"
 #include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
 const sai_fdb_api_t l_fdb = {
     .create_fdb_entry = l_create_fdb_entry,
@@ -39,13 +40,12 @@ lemming::dataplane::sai::CreateFdbEntryRequest convert_create_fdb_entry(
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_FDB_ENTRY_ATTR_TYPE:
-        msg.set_type(static_cast<lemming::dataplane::sai::FdbEntryType>(
-            attr_list[i].value.s32 + 1));
+        msg.set_type(
+            convert_sai_fdb_entry_type_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_FDB_ENTRY_ATTR_PACKET_ACTION:
         msg.set_packet_action(
-            static_cast<lemming::dataplane::sai::PacketAction>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_packet_action_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_FDB_ENTRY_ATTR_USER_TRAP_ID:
         msg.set_user_trap_id(attr_list[i].value.oid);
@@ -115,12 +115,11 @@ sai_status_t l_set_fdb_entry_attribute(const sai_fdb_entry_t *fdb_entry,
 
   switch (attr->id) {
     case SAI_FDB_ENTRY_ATTR_TYPE:
-      req.set_type(static_cast<lemming::dataplane::sai::FdbEntryType>(
-          attr->value.s32 + 1));
+      req.set_type(convert_sai_fdb_entry_type_t_to_proto(attr->value.s32));
       break;
     case SAI_FDB_ENTRY_ATTR_PACKET_ACTION:
-      req.set_packet_action(static_cast<lemming::dataplane::sai::PacketAction>(
-          attr->value.s32 + 1));
+      req.set_packet_action(
+          convert_sai_packet_action_t_to_proto(attr->value.s32));
       break;
     case SAI_FDB_ENTRY_ATTR_USER_TRAP_ID:
       req.set_user_trap_id(attr->value.oid);
@@ -161,8 +160,7 @@ sai_status_t l_get_fdb_entry_attribute(const sai_fdb_entry_t *fdb_entry,
   grpc::ClientContext context;
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::FdbEntryAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_fdb_entry_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = fdb->GetFdbEntryAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -172,11 +170,12 @@ sai_status_t l_get_fdb_entry_attribute(const sai_fdb_entry_t *fdb_entry,
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_FDB_ENTRY_ATTR_TYPE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().type() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_fdb_entry_type_t_to_sai(resp.attr().type());
         break;
       case SAI_FDB_ENTRY_ATTR_PACKET_ACTION:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().packet_action() - 1);
+            convert_sai_packet_action_t_to_sai(resp.attr().packet_action());
         break;
       case SAI_FDB_ENTRY_ATTR_USER_TRAP_ID:
         attr_list[i].value.oid = resp.attr().user_trap_id();

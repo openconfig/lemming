@@ -19,6 +19,7 @@
 #include "dataplane/proto/sai/common.pb.h"
 #include "dataplane/proto/sai/hostif.pb.h"
 #include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
 const sai_hostif_api_t l_hostif = {
     .create_hostif = l_create_hostif,
@@ -57,8 +58,8 @@ lemming::dataplane::sai::CreateHostifRequest convert_create_hostif(
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_HOSTIF_ATTR_TYPE:
-        msg.set_type(static_cast<lemming::dataplane::sai::HostifType>(
-            attr_list[i].value.s32 + 1));
+        msg.set_type(
+            convert_sai_hostif_type_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_HOSTIF_ATTR_OBJ_ID:
         msg.set_obj_id(attr_list[i].value.oid);
@@ -73,8 +74,8 @@ lemming::dataplane::sai::CreateHostifRequest convert_create_hostif(
         msg.set_queue(attr_list[i].value.u32);
         break;
       case SAI_HOSTIF_ATTR_VLAN_TAG:
-        msg.set_vlan_tag(static_cast<lemming::dataplane::sai::HostifVlanTag>(
-            attr_list[i].value.s32 + 1));
+        msg.set_vlan_tag(
+            convert_sai_hostif_vlan_tag_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_HOSTIF_ATTR_GENETLINK_MCGRP_NAME:
         msg.set_genetlink_mcgrp_name(attr_list[i].value.chardata);
@@ -93,8 +94,8 @@ convert_create_hostif_table_entry(sai_object_id_t switch_id,
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_HOSTIF_TABLE_ENTRY_ATTR_TYPE:
-        msg.set_type(static_cast<lemming::dataplane::sai::HostifTableEntryType>(
-            attr_list[i].value.s32 + 1));
+        msg.set_type(convert_sai_hostif_table_entry_type_t_to_proto(
+            attr_list[i].value.s32));
         break;
       case SAI_HOSTIF_TABLE_ENTRY_ATTR_OBJ_ID:
         msg.set_obj_id(attr_list[i].value.oid);
@@ -104,8 +105,8 @@ convert_create_hostif_table_entry(sai_object_id_t switch_id,
         break;
       case SAI_HOSTIF_TABLE_ENTRY_ATTR_CHANNEL_TYPE:
         msg.set_channel_type(
-            static_cast<lemming::dataplane::sai::HostifTableEntryChannelType>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_hostif_table_entry_channel_type_t_to_proto(
+                attr_list[i].value.s32));
         break;
       case SAI_HOSTIF_TABLE_ENTRY_ATTR_HOST_IF:
         msg.set_host_if(attr_list[i].value.oid);
@@ -132,8 +133,8 @@ convert_create_hostif_trap_group(sai_object_id_t switch_id, uint32_t attr_count,
         msg.set_policer(attr_list[i].value.oid);
         break;
       case SAI_HOSTIF_TRAP_GROUP_ATTR_OBJECT_STAGE:
-        msg.set_object_stage(static_cast<lemming::dataplane::sai::ObjectStage>(
-            attr_list[i].value.s32 + 1));
+        msg.set_object_stage(
+            convert_sai_object_stage_t_to_proto(attr_list[i].value.s32));
         break;
     }
   }
@@ -148,13 +149,12 @@ lemming::dataplane::sai::CreateHostifTrapRequest convert_create_hostif_trap(
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_HOSTIF_TRAP_ATTR_TRAP_TYPE:
-        msg.set_trap_type(static_cast<lemming::dataplane::sai::HostifTrapType>(
-            attr_list[i].value.s32 + 1));
+        msg.set_trap_type(
+            convert_sai_hostif_trap_type_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_HOSTIF_TRAP_ATTR_PACKET_ACTION:
         msg.set_packet_action(
-            static_cast<lemming::dataplane::sai::PacketAction>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_packet_action_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_HOSTIF_TRAP_ATTR_TRAP_PRIORITY:
         msg.set_trap_priority(attr_list[i].value.u32);
@@ -189,9 +189,8 @@ convert_create_hostif_user_defined_trap(sai_object_id_t switch_id,
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_HOSTIF_USER_DEFINED_TRAP_ATTR_TYPE:
-        msg.set_type(
-            static_cast<lemming::dataplane::sai::HostifUserDefinedTrapType>(
-                attr_list[i].value.s32 + 1));
+        msg.set_type(convert_sai_hostif_user_defined_trap_type_t_to_proto(
+            attr_list[i].value.s32));
         break;
       case SAI_HOSTIF_USER_DEFINED_TRAP_ATTR_TRAP_PRIORITY:
         msg.set_trap_priority(attr_list[i].value.u32);
@@ -259,8 +258,7 @@ sai_status_t l_set_hostif_attribute(sai_object_id_t hostif_id,
       req.set_queue(attr->value.u32);
       break;
     case SAI_HOSTIF_ATTR_VLAN_TAG:
-      req.set_vlan_tag(static_cast<lemming::dataplane::sai::HostifVlanTag>(
-          attr->value.s32 + 1));
+      req.set_vlan_tag(convert_sai_hostif_vlan_tag_t_to_proto(attr->value.s32));
       break;
   }
 
@@ -285,8 +283,7 @@ sai_status_t l_get_hostif_attribute(sai_object_id_t hostif_id,
   req.set_oid(hostif_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(
-        static_cast<lemming::dataplane::sai::HostifAttr>(attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_hostif_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = hostif->GetHostifAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -296,7 +293,8 @@ sai_status_t l_get_hostif_attribute(sai_object_id_t hostif_id,
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_HOSTIF_ATTR_TYPE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().type() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_hostif_type_t_to_sai(resp.attr().type());
         break;
       case SAI_HOSTIF_ATTR_OBJ_ID:
         attr_list[i].value.oid = resp.attr().obj_id();
@@ -311,7 +309,8 @@ sai_status_t l_get_hostif_attribute(sai_object_id_t hostif_id,
         attr_list[i].value.u32 = resp.attr().queue();
         break;
       case SAI_HOSTIF_ATTR_VLAN_TAG:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().vlan_tag() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_hostif_vlan_tag_t_to_sai(resp.attr().vlan_tag());
         break;
       case SAI_HOSTIF_ATTR_GENETLINK_MCGRP_NAME:
         strncpy(attr_list[i].value.chardata,
@@ -383,8 +382,7 @@ sai_status_t l_get_hostif_table_entry_attribute(
 
   for (uint32_t i = 0; i < attr_count; i++) {
     req.add_attr_type(
-        static_cast<lemming::dataplane::sai::HostifTableEntryAttr>(
-            attr_list[i].id + 1));
+        convert_sai_hostif_table_entry_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status =
       hostif->GetHostifTableEntryAttribute(&context, req, &resp);
@@ -395,7 +393,8 @@ sai_status_t l_get_hostif_table_entry_attribute(
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_HOSTIF_TABLE_ENTRY_ATTR_TYPE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().type() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_hostif_table_entry_type_t_to_sai(resp.attr().type());
         break;
       case SAI_HOSTIF_TABLE_ENTRY_ATTR_OBJ_ID:
         attr_list[i].value.oid = resp.attr().obj_id();
@@ -405,7 +404,8 @@ sai_status_t l_get_hostif_table_entry_attribute(
         break;
       case SAI_HOSTIF_TABLE_ENTRY_ATTR_CHANNEL_TYPE:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().channel_type() - 1);
+            convert_sai_hostif_table_entry_channel_type_t_to_sai(
+                resp.attr().channel_type());
         break;
       case SAI_HOSTIF_TABLE_ENTRY_ATTR_HOST_IF:
         attr_list[i].value.oid = resp.attr().host_if();
@@ -498,8 +498,8 @@ sai_status_t l_get_hostif_trap_group_attribute(
   req.set_oid(hostif_trap_group_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::HostifTrapGroupAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(
+        convert_sai_hostif_trap_group_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status =
       hostif->GetHostifTrapGroupAttribute(&context, req, &resp);
@@ -520,7 +520,7 @@ sai_status_t l_get_hostif_trap_group_attribute(
         break;
       case SAI_HOSTIF_TRAP_GROUP_ATTR_OBJECT_STAGE:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().object_stage() - 1);
+            convert_sai_object_stage_t_to_sai(resp.attr().object_stage());
         break;
     }
   }
@@ -578,8 +578,8 @@ sai_status_t l_set_hostif_trap_attribute(sai_object_id_t hostif_trap_id,
 
   switch (attr->id) {
     case SAI_HOSTIF_TRAP_ATTR_PACKET_ACTION:
-      req.set_packet_action(static_cast<lemming::dataplane::sai::PacketAction>(
-          attr->value.s32 + 1));
+      req.set_packet_action(
+          convert_sai_packet_action_t_to_proto(attr->value.s32));
       break;
     case SAI_HOSTIF_TRAP_ATTR_TRAP_PRIORITY:
       req.set_trap_priority(attr->value.u32);
@@ -623,8 +623,7 @@ sai_status_t l_get_hostif_trap_attribute(sai_object_id_t hostif_trap_id,
   req.set_oid(hostif_trap_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::HostifTrapAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_hostif_trap_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = hostif->GetHostifTrapAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -634,11 +633,12 @@ sai_status_t l_get_hostif_trap_attribute(sai_object_id_t hostif_trap_id,
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_HOSTIF_TRAP_ATTR_TRAP_TYPE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().trap_type() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_hostif_trap_type_t_to_sai(resp.attr().trap_type());
         break;
       case SAI_HOSTIF_TRAP_ATTR_PACKET_ACTION:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().packet_action() - 1);
+            convert_sai_packet_action_t_to_sai(resp.attr().packet_action());
         break;
       case SAI_HOSTIF_TRAP_ATTR_TRAP_PRIORITY:
         attr_list[i].value.u32 = resp.attr().trap_priority();
@@ -746,8 +746,7 @@ sai_status_t l_get_hostif_user_defined_trap_attribute(
 
   for (uint32_t i = 0; i < attr_count; i++) {
     req.add_attr_type(
-        static_cast<lemming::dataplane::sai::HostifUserDefinedTrapAttr>(
-            attr_list[i].id + 1));
+        convert_sai_hostif_user_defined_trap_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status =
       hostif->GetHostifUserDefinedTrapAttribute(&context, req, &resp);
@@ -758,7 +757,9 @@ sai_status_t l_get_hostif_user_defined_trap_attribute(
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_HOSTIF_USER_DEFINED_TRAP_ATTR_TYPE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().type() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_hostif_user_defined_trap_type_t_to_sai(
+                resp.attr().type());
         break;
       case SAI_HOSTIF_USER_DEFINED_TRAP_ATTR_TRAP_PRIORITY:
         attr_list[i].value.u32 = resp.attr().trap_priority();

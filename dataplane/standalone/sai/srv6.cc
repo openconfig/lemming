@@ -19,6 +19,7 @@
 #include "dataplane/proto/sai/common.pb.h"
 #include "dataplane/proto/sai/srv6.pb.h"
 #include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
 const sai_srv6_api_t l_srv6 = {
     .create_srv6_sidlist = l_create_srv6_sidlist,
@@ -45,8 +46,8 @@ lemming::dataplane::sai::CreateSrv6SidlistRequest convert_create_srv6_sidlist(
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_SRV6_SIDLIST_ATTR_TYPE:
-        msg.set_type(static_cast<lemming::dataplane::sai::Srv6SidlistType>(
-            attr_list[i].value.s32 + 1));
+        msg.set_type(
+            convert_sai_srv6_sidlist_type_t_to_proto(attr_list[i].value.s32));
         break;
     }
   }
@@ -61,19 +62,17 @@ lemming::dataplane::sai::CreateMySidEntryRequest convert_create_my_sid_entry(
     switch (attr_list[i].id) {
       case SAI_MY_SID_ENTRY_ATTR_ENDPOINT_BEHAVIOR:
         msg.set_endpoint_behavior(
-            static_cast<lemming::dataplane::sai::MySidEntryEndpointBehavior>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_my_sid_entry_endpoint_behavior_t_to_proto(
+                attr_list[i].value.s32));
         break;
       case SAI_MY_SID_ENTRY_ATTR_ENDPOINT_BEHAVIOR_FLAVOR:
         msg.set_endpoint_behavior_flavor(
-            static_cast<
-                lemming::dataplane::sai::MySidEntryEndpointBehaviorFlavor>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_my_sid_entry_endpoint_behavior_flavor_t_to_proto(
+                attr_list[i].value.s32));
         break;
       case SAI_MY_SID_ENTRY_ATTR_PACKET_ACTION:
         msg.set_packet_action(
-            static_cast<lemming::dataplane::sai::PacketAction>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_packet_action_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_MY_SID_ENTRY_ATTR_TRAP_PRIORITY:
         msg.set_trap_priority(attr_list[i].value.u8);
@@ -153,8 +152,8 @@ sai_status_t l_get_srv6_sidlist_attribute(sai_object_id_t srv6_sidlist_id,
   req.set_oid(srv6_sidlist_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::Srv6SidlistAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(
+        convert_sai_srv6_sidlist_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = srv6->GetSrv6SidlistAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -164,7 +163,8 @@ sai_status_t l_get_srv6_sidlist_attribute(sai_object_id_t srv6_sidlist_id,
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_SRV6_SIDLIST_ATTR_TYPE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().type() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_srv6_sidlist_type_t_to_sai(resp.attr().type());
         break;
     }
   }
@@ -282,18 +282,17 @@ sai_status_t l_set_my_sid_entry_attribute(
   switch (attr->id) {
     case SAI_MY_SID_ENTRY_ATTR_ENDPOINT_BEHAVIOR:
       req.set_endpoint_behavior(
-          static_cast<lemming::dataplane::sai::MySidEntryEndpointBehavior>(
-              attr->value.s32 + 1));
+          convert_sai_my_sid_entry_endpoint_behavior_t_to_proto(
+              attr->value.s32));
       break;
     case SAI_MY_SID_ENTRY_ATTR_ENDPOINT_BEHAVIOR_FLAVOR:
       req.set_endpoint_behavior_flavor(
-          static_cast<
-              lemming::dataplane::sai::MySidEntryEndpointBehaviorFlavor>(
-              attr->value.s32 + 1));
+          convert_sai_my_sid_entry_endpoint_behavior_flavor_t_to_proto(
+              attr->value.s32));
       break;
     case SAI_MY_SID_ENTRY_ATTR_PACKET_ACTION:
-      req.set_packet_action(static_cast<lemming::dataplane::sai::PacketAction>(
-          attr->value.s32 + 1));
+      req.set_packet_action(
+          convert_sai_packet_action_t_to_proto(attr->value.s32));
       break;
     case SAI_MY_SID_ENTRY_ATTR_TRAP_PRIORITY:
       req.set_trap_priority(attr->value.u8);
@@ -331,8 +330,8 @@ sai_status_t l_get_my_sid_entry_attribute(
   grpc::ClientContext context;
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::MySidEntryAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(
+        convert_sai_my_sid_entry_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = srv6->GetMySidEntryAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -343,15 +342,17 @@ sai_status_t l_get_my_sid_entry_attribute(
     switch (attr_list[i].id) {
       case SAI_MY_SID_ENTRY_ATTR_ENDPOINT_BEHAVIOR:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().endpoint_behavior() - 1);
+            convert_sai_my_sid_entry_endpoint_behavior_t_to_sai(
+                resp.attr().endpoint_behavior());
         break;
       case SAI_MY_SID_ENTRY_ATTR_ENDPOINT_BEHAVIOR_FLAVOR:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().endpoint_behavior_flavor() - 1);
+            convert_sai_my_sid_entry_endpoint_behavior_flavor_t_to_sai(
+                resp.attr().endpoint_behavior_flavor());
         break;
       case SAI_MY_SID_ENTRY_ATTR_PACKET_ACTION:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().packet_action() - 1);
+            convert_sai_packet_action_t_to_sai(resp.attr().packet_action());
         break;
       case SAI_MY_SID_ENTRY_ATTR_TRAP_PRIORITY:
         attr_list[i].value.u8 = resp.attr().trap_priority();

@@ -19,6 +19,7 @@
 #include "dataplane/proto/sai/common.pb.h"
 #include "dataplane/proto/sai/hash.pb.h"
 #include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
 const sai_hash_api_t l_hash = {
     .create_hash = l_create_hash,
@@ -65,8 +66,7 @@ convert_create_fine_grained_hash_field(sai_object_id_t switch_id,
     switch (attr_list[i].id) {
       case SAI_FINE_GRAINED_HASH_FIELD_ATTR_NATIVE_HASH_FIELD:
         msg.set_native_hash_field(
-            static_cast<lemming::dataplane::sai::NativeHashField>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_native_hash_field_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_FINE_GRAINED_HASH_FIELD_ATTR_IPV4_MASK:
         msg.set_ipv4_mask(&attr_list[i].value.ip4,
@@ -164,8 +164,7 @@ sai_status_t l_get_hash_attribute(sai_object_id_t hash_id, uint32_t attr_count,
   req.set_oid(hash_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(
-        static_cast<lemming::dataplane::sai::HashAttr>(attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_hash_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = hash->GetHashAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -248,8 +247,7 @@ sai_status_t l_get_fine_grained_hash_field_attribute(
 
   for (uint32_t i = 0; i < attr_count; i++) {
     req.add_attr_type(
-        static_cast<lemming::dataplane::sai::FineGrainedHashFieldAttr>(
-            attr_list[i].id + 1));
+        convert_sai_fine_grained_hash_field_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status =
       hash->GetFineGrainedHashFieldAttribute(&context, req, &resp);
@@ -260,8 +258,8 @@ sai_status_t l_get_fine_grained_hash_field_attribute(
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_FINE_GRAINED_HASH_FIELD_ATTR_NATIVE_HASH_FIELD:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().native_hash_field() - 1);
+        attr_list[i].value.s32 = convert_sai_native_hash_field_t_to_sai(
+            resp.attr().native_hash_field());
         break;
       case SAI_FINE_GRAINED_HASH_FIELD_ATTR_IPV4_MASK:
         memcpy(&attr_list[i].value.ip4, resp.attr().ipv4_mask().data(),

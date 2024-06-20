@@ -19,6 +19,7 @@
 #include "dataplane/proto/sai/common.pb.h"
 #include "dataplane/proto/sai/macsec.pb.h"
 #include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
 const sai_macsec_api_t l_macsec = {
     .create_macsec = l_create_macsec,
@@ -63,8 +64,8 @@ lemming::dataplane::sai::CreateMacsecRequest convert_create_macsec(
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_MACSEC_ATTR_DIRECTION:
-        msg.set_direction(static_cast<lemming::dataplane::sai::MacsecDirection>(
-            attr_list[i].value.s32 + 1));
+        msg.set_direction(
+            convert_sai_macsec_direction_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_MACSEC_ATTR_WARM_BOOT_ENABLE:
         msg.set_warm_boot_enable(attr_list[i].value.booldata);
@@ -79,8 +80,8 @@ lemming::dataplane::sai::CreateMacsecRequest convert_create_macsec(
         msg.set_max_vlan_tags_parsed(attr_list[i].value.u8);
         break;
       case SAI_MACSEC_ATTR_STATS_MODE:
-        msg.set_stats_mode(static_cast<lemming::dataplane::sai::StatsMode>(
-            attr_list[i].value.s32 + 1));
+        msg.set_stats_mode(
+            convert_sai_stats_mode_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_MACSEC_ATTR_PHYSICAL_BYPASS_ENABLE:
         msg.set_physical_bypass_enable(attr_list[i].value.booldata);
@@ -99,8 +100,7 @@ lemming::dataplane::sai::CreateMacsecPortRequest convert_create_macsec_port(
     switch (attr_list[i].id) {
       case SAI_MACSEC_PORT_ATTR_MACSEC_DIRECTION:
         msg.set_macsec_direction(
-            static_cast<lemming::dataplane::sai::MacsecDirection>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_macsec_direction_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_MACSEC_PORT_ATTR_PORT_ID:
         msg.set_port_id(attr_list[i].value.oid);
@@ -113,8 +113,8 @@ lemming::dataplane::sai::CreateMacsecPortRequest convert_create_macsec_port(
         break;
       case SAI_MACSEC_PORT_ATTR_SWITCH_SWITCHING_MODE:
         msg.set_switch_switching_mode(
-            static_cast<lemming::dataplane::sai::SwitchSwitchingMode>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_switch_switching_mode_t_to_proto(
+                attr_list[i].value.s32));
         break;
     }
   }
@@ -130,8 +130,7 @@ lemming::dataplane::sai::CreateMacsecFlowRequest convert_create_macsec_flow(
     switch (attr_list[i].id) {
       case SAI_MACSEC_FLOW_ATTR_MACSEC_DIRECTION:
         msg.set_macsec_direction(
-            static_cast<lemming::dataplane::sai::MacsecDirection>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_macsec_direction_t_to_proto(attr_list[i].value.s32));
         break;
     }
   }
@@ -147,8 +146,7 @@ lemming::dataplane::sai::CreateMacsecScRequest convert_create_macsec_sc(
     switch (attr_list[i].id) {
       case SAI_MACSEC_SC_ATTR_MACSEC_DIRECTION:
         msg.set_macsec_direction(
-            static_cast<lemming::dataplane::sai::MacsecDirection>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_macsec_direction_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_MACSEC_SC_ATTR_FLOW_ID:
         msg.set_flow_id(attr_list[i].value.oid);
@@ -170,8 +168,7 @@ lemming::dataplane::sai::CreateMacsecScRequest convert_create_macsec_sc(
         break;
       case SAI_MACSEC_SC_ATTR_MACSEC_CIPHER_SUITE:
         msg.set_macsec_cipher_suite(
-            static_cast<lemming::dataplane::sai::MacsecCipherSuite>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_macsec_cipher_suite_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_MACSEC_SC_ATTR_ENCRYPTION_ENABLE:
         msg.set_encryption_enable(attr_list[i].value.booldata);
@@ -190,8 +187,7 @@ lemming::dataplane::sai::CreateMacsecSaRequest convert_create_macsec_sa(
     switch (attr_list[i].id) {
       case SAI_MACSEC_SA_ATTR_MACSEC_DIRECTION:
         msg.set_macsec_direction(
-            static_cast<lemming::dataplane::sai::MacsecDirection>(
-                attr_list[i].value.s32 + 1));
+            convert_sai_macsec_direction_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_MACSEC_SA_ATTR_SC_ID:
         msg.set_sc_id(attr_list[i].value.oid);
@@ -274,8 +270,7 @@ sai_status_t l_set_macsec_attribute(sai_object_id_t macsec_id,
       req.set_max_vlan_tags_parsed(attr->value.u8);
       break;
     case SAI_MACSEC_ATTR_STATS_MODE:
-      req.set_stats_mode(
-          static_cast<lemming::dataplane::sai::StatsMode>(attr->value.s32 + 1));
+      req.set_stats_mode(convert_sai_stats_mode_t_to_proto(attr->value.s32));
       break;
     case SAI_MACSEC_ATTR_PHYSICAL_BYPASS_ENABLE:
       req.set_physical_bypass_enable(attr->value.booldata);
@@ -303,8 +298,7 @@ sai_status_t l_get_macsec_attribute(sai_object_id_t macsec_id,
   req.set_oid(macsec_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(
-        static_cast<lemming::dataplane::sai::MacsecAttr>(attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_macsec_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = macsec->GetMacsecAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -314,7 +308,8 @@ sai_status_t l_get_macsec_attribute(sai_object_id_t macsec_id,
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_MACSEC_ATTR_DIRECTION:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().direction() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_macsec_direction_t_to_sai(resp.attr().direction());
         break;
       case SAI_MACSEC_ATTR_SWITCHING_MODE_CUT_THROUGH_SUPPORTED:
         attr_list[i].value.booldata =
@@ -370,7 +365,8 @@ sai_status_t l_get_macsec_attribute(sai_object_id_t macsec_id,
         attr_list[i].value.u8 = resp.attr().max_vlan_tags_parsed();
         break;
       case SAI_MACSEC_ATTR_STATS_MODE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().stats_mode() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_stats_mode_t_to_sai(resp.attr().stats_mode());
         break;
       case SAI_MACSEC_ATTR_PHYSICAL_BYPASS_ENABLE:
         attr_list[i].value.booldata = resp.attr().physical_bypass_enable();
@@ -395,7 +391,8 @@ sai_status_t l_get_macsec_attribute(sai_object_id_t macsec_id,
         break;
       case SAI_MACSEC_ATTR_MAX_SECURE_ASSOCIATIONS_PER_SC:
         attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().max_secure_associations_per_sc() - 1);
+            convert_sai_macsec_max_secure_associations_per_sc_t_to_sai(
+                resp.attr().max_secure_associations_per_sc());
         break;
     }
   }
@@ -460,8 +457,7 @@ sai_status_t l_set_macsec_port_attribute(sai_object_id_t macsec_port_id,
       break;
     case SAI_MACSEC_PORT_ATTR_SWITCH_SWITCHING_MODE:
       req.set_switch_switching_mode(
-          static_cast<lemming::dataplane::sai::SwitchSwitchingMode>(
-              attr->value.s32 + 1));
+          convert_sai_switch_switching_mode_t_to_proto(attr->value.s32));
       break;
   }
 
@@ -486,8 +482,7 @@ sai_status_t l_get_macsec_port_attribute(sai_object_id_t macsec_port_id,
   req.set_oid(macsec_port_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::MacsecPortAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_macsec_port_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = macsec->GetMacsecPortAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -497,8 +492,8 @@ sai_status_t l_get_macsec_port_attribute(sai_object_id_t macsec_port_id,
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_MACSEC_PORT_ATTR_MACSEC_DIRECTION:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().macsec_direction() - 1);
+        attr_list[i].value.s32 = convert_sai_macsec_direction_t_to_sai(
+            resp.attr().macsec_direction());
         break;
       case SAI_MACSEC_PORT_ATTR_PORT_ID:
         attr_list[i].value.oid = resp.attr().port_id();
@@ -510,8 +505,8 @@ sai_status_t l_get_macsec_port_attribute(sai_object_id_t macsec_port_id,
         attr_list[i].value.booldata = resp.attr().stag_enable();
         break;
       case SAI_MACSEC_PORT_ATTR_SWITCH_SWITCHING_MODE:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().switch_switching_mode() - 1);
+        attr_list[i].value.s32 = convert_sai_switch_switching_mode_t_to_sai(
+            resp.attr().switch_switching_mode());
         break;
     }
   }
@@ -531,8 +526,8 @@ sai_status_t l_get_macsec_port_stats(sai_object_id_t macsec_port_id,
   req.set_oid(macsec_port_id);
 
   for (uint32_t i = 0; i < number_of_counters; i++) {
-    req.add_counter_ids(static_cast<lemming::dataplane::sai::MacsecPortStat>(
-        counter_ids[i] + 1));
+    req.add_counter_ids(
+        convert_sai_macsec_port_stat_t_to_proto(counter_ids[i]));
   }
   grpc::Status status = macsec->GetMacsecPortStats(&context, req, &resp);
   if (!status.ok()) {
@@ -623,8 +618,7 @@ sai_status_t l_get_macsec_flow_attribute(sai_object_id_t macsec_flow_id,
   req.set_oid(macsec_flow_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::MacsecFlowAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_macsec_flow_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = macsec->GetMacsecFlowAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -634,8 +628,8 @@ sai_status_t l_get_macsec_flow_attribute(sai_object_id_t macsec_flow_id,
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_MACSEC_FLOW_ATTR_MACSEC_DIRECTION:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().macsec_direction() - 1);
+        attr_list[i].value.s32 = convert_sai_macsec_direction_t_to_sai(
+            resp.attr().macsec_direction());
         break;
       case SAI_MACSEC_FLOW_ATTR_ACL_ENTRY_LIST:
         copy_list(attr_list[i].value.objlist.list, resp.attr().acl_entry_list(),
@@ -663,8 +657,8 @@ sai_status_t l_get_macsec_flow_stats(sai_object_id_t macsec_flow_id,
   req.set_oid(macsec_flow_id);
 
   for (uint32_t i = 0; i < number_of_counters; i++) {
-    req.add_counter_ids(static_cast<lemming::dataplane::sai::MacsecFlowStat>(
-        counter_ids[i] + 1));
+    req.add_counter_ids(
+        convert_sai_macsec_flow_stat_t_to_proto(counter_ids[i]));
   }
   grpc::Status status = macsec->GetMacsecFlowStats(&context, req, &resp);
   if (!status.ok()) {
@@ -759,8 +753,7 @@ sai_status_t l_set_macsec_sc_attribute(sai_object_id_t macsec_sc_id,
       break;
     case SAI_MACSEC_SC_ATTR_MACSEC_CIPHER_SUITE:
       req.set_macsec_cipher_suite(
-          static_cast<lemming::dataplane::sai::MacsecCipherSuite>(
-              attr->value.s32 + 1));
+          convert_sai_macsec_cipher_suite_t_to_proto(attr->value.s32));
       break;
     case SAI_MACSEC_SC_ATTR_ENCRYPTION_ENABLE:
       req.set_encryption_enable(attr->value.booldata);
@@ -788,8 +781,7 @@ sai_status_t l_get_macsec_sc_attribute(sai_object_id_t macsec_sc_id,
   req.set_oid(macsec_sc_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::MacsecScAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_macsec_sc_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = macsec->GetMacsecScAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -799,8 +791,8 @@ sai_status_t l_get_macsec_sc_attribute(sai_object_id_t macsec_sc_id,
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_MACSEC_SC_ATTR_MACSEC_DIRECTION:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().macsec_direction() - 1);
+        attr_list[i].value.s32 = convert_sai_macsec_direction_t_to_sai(
+            resp.attr().macsec_direction());
         break;
       case SAI_MACSEC_SC_ATTR_FLOW_ID:
         attr_list[i].value.oid = resp.attr().flow_id();
@@ -829,8 +821,8 @@ sai_status_t l_get_macsec_sc_attribute(sai_object_id_t macsec_sc_id,
                   &attr_list[i].value.objlist.count);
         break;
       case SAI_MACSEC_SC_ATTR_MACSEC_CIPHER_SUITE:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().macsec_cipher_suite() - 1);
+        attr_list[i].value.s32 = convert_sai_macsec_cipher_suite_t_to_sai(
+            resp.attr().macsec_cipher_suite());
         break;
       case SAI_MACSEC_SC_ATTR_ENCRYPTION_ENABLE:
         attr_list[i].value.booldata = resp.attr().encryption_enable();
@@ -853,8 +845,7 @@ sai_status_t l_get_macsec_sc_stats(sai_object_id_t macsec_sc_id,
   req.set_oid(macsec_sc_id);
 
   for (uint32_t i = 0; i < number_of_counters; i++) {
-    req.add_counter_ids(
-        static_cast<lemming::dataplane::sai::MacsecScStat>(counter_ids[i] + 1));
+    req.add_counter_ids(convert_sai_macsec_sc_stat_t_to_proto(counter_ids[i]));
   }
   grpc::Status status = macsec->GetMacsecScStats(&context, req, &resp);
   if (!status.ok()) {
@@ -964,8 +955,7 @@ sai_status_t l_get_macsec_sa_attribute(sai_object_id_t macsec_sa_id,
   req.set_oid(macsec_sa_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::MacsecSaAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_macsec_sa_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = macsec->GetMacsecSaAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -975,8 +965,8 @@ sai_status_t l_get_macsec_sa_attribute(sai_object_id_t macsec_sa_id,
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_MACSEC_SA_ATTR_MACSEC_DIRECTION:
-        attr_list[i].value.s32 =
-            static_cast<int>(resp.attr().macsec_direction() - 1);
+        attr_list[i].value.s32 = convert_sai_macsec_direction_t_to_sai(
+            resp.attr().macsec_direction());
         break;
       case SAI_MACSEC_SA_ATTR_SC_ID:
         attr_list[i].value.oid = resp.attr().sc_id();
@@ -1014,8 +1004,7 @@ sai_status_t l_get_macsec_sa_stats(sai_object_id_t macsec_sa_id,
   req.set_oid(macsec_sa_id);
 
   for (uint32_t i = 0; i < number_of_counters; i++) {
-    req.add_counter_ids(
-        static_cast<lemming::dataplane::sai::MacsecSaStat>(counter_ids[i] + 1));
+    req.add_counter_ids(convert_sai_macsec_sa_stat_t_to_proto(counter_ids[i]));
   }
   grpc::Status status = macsec->GetMacsecSaStats(&context, req, &resp);
   if (!status.ok()) {

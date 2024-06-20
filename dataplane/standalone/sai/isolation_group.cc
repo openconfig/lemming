@@ -19,6 +19,7 @@
 #include "dataplane/proto/sai/common.pb.h"
 #include "dataplane/proto/sai/isolation_group.pb.h"
 #include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
 const sai_isolation_group_api_t l_isolation_group = {
     .create_isolation_group = l_create_isolation_group,
@@ -41,8 +42,8 @@ convert_create_isolation_group(sai_object_id_t switch_id, uint32_t attr_count,
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_ISOLATION_GROUP_ATTR_TYPE:
-        msg.set_type(static_cast<lemming::dataplane::sai::IsolationGroupType>(
-            attr_list[i].value.s32 + 1));
+        msg.set_type(convert_sai_isolation_group_type_t_to_proto(
+            attr_list[i].value.s32));
         break;
     }
   }
@@ -128,8 +129,8 @@ sai_status_t l_get_isolation_group_attribute(sai_object_id_t isolation_group_id,
   req.set_oid(isolation_group_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(static_cast<lemming::dataplane::sai::IsolationGroupAttr>(
-        attr_list[i].id + 1));
+    req.add_attr_type(
+        convert_sai_isolation_group_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status =
       isolation_group->GetIsolationGroupAttribute(&context, req, &resp);
@@ -140,7 +141,8 @@ sai_status_t l_get_isolation_group_attribute(sai_object_id_t isolation_group_id,
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_ISOLATION_GROUP_ATTR_TYPE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().type() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_isolation_group_type_t_to_sai(resp.attr().type());
         break;
       case SAI_ISOLATION_GROUP_ATTR_ISOLATION_MEMBER_LIST:
         copy_list(attr_list[i].value.objlist.list,
@@ -214,8 +216,7 @@ sai_status_t l_get_isolation_group_member_attribute(
 
   for (uint32_t i = 0; i < attr_count; i++) {
     req.add_attr_type(
-        static_cast<lemming::dataplane::sai::IsolationGroupMemberAttr>(
-            attr_list[i].id + 1));
+        convert_sai_isolation_group_member_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status =
       isolation_group->GetIsolationGroupMemberAttribute(&context, req, &resp);

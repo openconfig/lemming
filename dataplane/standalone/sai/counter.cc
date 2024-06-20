@@ -19,6 +19,7 @@
 #include "dataplane/proto/sai/common.pb.h"
 #include "dataplane/proto/sai/counter.pb.h"
 #include "dataplane/standalone/sai/common.h"
+#include "dataplane/standalone/sai/enum.h"
 
 const sai_counter_api_t l_counter = {
     .create_counter = l_create_counter,
@@ -38,8 +39,8 @@ lemming::dataplane::sai::CreateCounterRequest convert_create_counter(
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_COUNTER_ATTR_TYPE:
-        msg.set_type(static_cast<lemming::dataplane::sai::CounterType>(
-            attr_list[i].value.s32 + 1));
+        msg.set_type(
+            convert_sai_counter_type_t_to_proto(attr_list[i].value.s32));
         break;
       case SAI_COUNTER_ATTR_LABEL:
         msg.set_label(attr_list[i].value.chardata);
@@ -123,8 +124,7 @@ sai_status_t l_get_counter_attribute(sai_object_id_t counter_id,
   req.set_oid(counter_id);
 
   for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(
-        static_cast<lemming::dataplane::sai::CounterAttr>(attr_list[i].id + 1));
+    req.add_attr_type(convert_sai_counter_attr_t_to_proto(attr_list[i].id));
   }
   grpc::Status status = counter->GetCounterAttribute(&context, req, &resp);
   if (!status.ok()) {
@@ -134,7 +134,8 @@ sai_status_t l_get_counter_attribute(sai_object_id_t counter_id,
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
       case SAI_COUNTER_ATTR_TYPE:
-        attr_list[i].value.s32 = static_cast<int>(resp.attr().type() - 1);
+        attr_list[i].value.s32 =
+            convert_sai_counter_type_t_to_sai(resp.attr().type());
         break;
       case SAI_COUNTER_ATTR_LABEL:
         strncpy(attr_list[i].value.chardata, resp.attr().label().data(), 32);
@@ -157,8 +158,7 @@ sai_status_t l_get_counter_stats(sai_object_id_t counter_id,
   req.set_oid(counter_id);
 
   for (uint32_t i = 0; i < number_of_counters; i++) {
-    req.add_counter_ids(
-        static_cast<lemming::dataplane::sai::CounterStat>(counter_ids[i] + 1));
+    req.add_counter_ids(convert_sai_counter_stat_t_to_proto(counter_ids[i]));
   }
   grpc::Status status = counter->GetCounterStats(&context, req, &resp);
   if (!status.ok()) {
