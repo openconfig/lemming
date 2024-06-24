@@ -20,6 +20,7 @@
 #include <string>
 
 #include "dataplane/proto/sai/common.pb.h"
+#include "dataplane/standalone/sai/enum.h"
 
 std::string convert_from_ip_addr(sai_ip_addr_family_t addr_family,
                                  const sai_ip_addr_t& addr) {
@@ -144,8 +145,7 @@ lemming::dataplane::sai::AclActionData convert_from_acl_action_data_action(
     const sai_acl_action_data_t& in, sai_int32_t val) {
   lemming::dataplane::sai::AclActionData out;
   out.set_enable(in.enable);
-  out.set_packet_action(
-      static_cast<lemming::dataplane::sai::PacketAction>(val + 1));
+  out.set_packet_action(convert_sai_packet_action_t_to_proto(val));
   return out;
 }
 
@@ -214,8 +214,92 @@ lemming::dataplane::sai::AclFieldData convert_from_acl_field_data_ip_type(
     const sai_acl_field_data_t& in, sai_int32_t type, sai_int32_t mask) {
   lemming::dataplane::sai::AclFieldData out;
   out.set_enable(in.enable);
-  out.set_data_ip_type(
-      static_cast<lemming::dataplane::sai::AclIpType>(type + 1));
+  out.set_data_ip_type(convert_sai_acl_ip_type_t_to_proto(type));
   out.set_mask_int(mask);
+  return out;
+}
+
+sai_acl_action_data_t convert_to_acl_action_data(
+    const lemming::dataplane::sai::AclActionData& in, uint64_t id) {
+  sai_acl_action_data_t out;
+  out.enable = in.enable();
+  out.parameter.oid = id;
+  return out;
+}
+
+sai_acl_action_data_t convert_to_acl_action_data_action(
+    const lemming::dataplane::sai::AclActionData& in,
+    lemming::dataplane::sai::PacketAction val) {
+  sai_acl_action_data_t out;
+  out.enable = in.enable();
+  out.parameter.s32 = convert_sai_packet_action_t_to_sai(val);
+  return out;
+}
+
+sai_acl_field_data_t convert_to_acl_field_data(
+    const lemming::dataplane::sai::AclFieldData& in, std::string data,
+    std::string mask) {
+  sai_acl_field_data_t out;
+  out.enable = in.enable();
+
+  out.data.ip4 = *reinterpret_cast<sai_uint32_t*>(&data[0]);
+  out.mask.ip4 = *reinterpret_cast<sai_uint32_t*>(&mask[0]);
+  return out;
+}
+
+sai_acl_field_data_t convert_to_acl_field_data_u8(
+    const lemming::dataplane::sai::AclFieldData& in, sai_uint8_t data,
+    sai_uint8_t mask) {
+  sai_acl_field_data_t out;
+  out.enable = in.enable();
+  out.data.u8 = data;
+  out.mask.u8 = mask;
+  return out;
+}
+
+sai_acl_field_data_t convert_to_acl_field_data_u16(
+    const lemming::dataplane::sai::AclFieldData& in, sai_uint16_t data,
+    sai_uint16_t mask) {
+  sai_acl_field_data_t out;
+  out.enable = in.enable();
+  out.data.u16 = data;
+  out.mask.u16 = mask;
+  return out;
+}
+
+sai_acl_field_data_t convert_to_acl_field_data(
+    const lemming::dataplane::sai::AclFieldData& in, sai_object_id_t data) {
+  sai_acl_field_data_t out;
+  out.enable = in.enable();
+  out.data.oid = data;
+  return out;
+}
+
+sai_acl_field_data_t convert_to_acl_field_data_ip6(
+    const lemming::dataplane::sai::AclFieldData& in, std::string data,
+    std::string mask) {
+  sai_acl_field_data_t out;
+  out.enable = in.enable();
+  memcpy(out.data.ip6, data.data(), sizeof(sai_ip6_t));
+  memcpy(out.mask.ip6, mask.data(), sizeof(sai_ip6_t));
+  return out;
+}
+
+sai_acl_field_data_t convert_to_acl_field_data_mac(
+    const lemming::dataplane::sai::AclFieldData& in, const std::string data,
+    const std::string mask) {
+  sai_acl_field_data_t out;
+  out.enable = in.enable();
+  memcpy(out.data.mac, data.data(), sizeof(sai_mac_t));
+  memcpy(out.mask.mac, mask.data(), sizeof(sai_mac_t));
+  return out;
+}
+
+sai_acl_field_data_t convert_to_acl_field_data_ip_type(
+    const lemming::dataplane::sai::AclFieldData& in,
+    lemming::dataplane::sai::AclIpType type) {
+  sai_acl_field_data_t out;
+  out.enable = in.enable();
+  out.data.s32 = convert_sai_acl_ip_type_t_to_sai(type);
   return out;
 }

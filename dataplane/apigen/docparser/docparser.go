@@ -186,6 +186,13 @@ func memberToAttrInfo(enum MemberDef) (*Attr, error) {
 			Comment:    strings.TrimSpace(value.BriefDescription.Paragraph.InlineText),
 			Value:      val,
 		}
+		if strings.HasSuffix(value.Name, "_MIN") {
+			atn.SaiType = fmt.Sprintf("map_%s", atn.SaiType)
+		}
+		if strings.HasSuffix(value.Name, "_MAX") {
+			continue
+		}
+
 		if canCreate {
 			info.CreateFields = append(info.CreateFields, atn)
 		}

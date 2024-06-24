@@ -16,6 +16,7 @@ package ccgen
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"text/template"
 	"unicode"
@@ -117,6 +118,7 @@ func Generate(doc *docparser.SAIInfo, sai *saiast.SAIAPI) (map[string]string, er
 		e.DefaultReturn = e.Elems[0].SAIName
 		enums.Enums = append(enums.Enums, e)
 	}
+	slices.SortFunc(enums.Enums, func(a, b enum) int { return strings.Compare(a.SAIName, b.SAIName) })
 	var headerBuilder, implBuilder strings.Builder
 	if err := enumHeaderTmpl.Execute(&headerBuilder, enums); err != nil {
 		return nil, err
@@ -142,6 +144,12 @@ var unsupportedEnum = map[string]struct{}{
 	"FDB_FLUSH":     {},
 	"HOSTIF_PACKET": {},
 }
+
+const (
+	createOp  = "create"
+	getAttrOp = "get_attribute"
+	setAttrOp = "set_attribute"
+)
 
 // createCCData returns a two structs with the template data for the given function.
 // The first is the implementation of the API: CreateFoo.
@@ -209,7 +217,7 @@ func createCCData(meta *saiast.FuncMetadata, apiName string, sai *saiast.SAIAPI,
 	}
 
 	switch opFn.Operation {
-	case "create":
+	case createOp:
 		convertFn.AttrSwitch = &AttrSwitch{
 			Var:      "attr_list[i].id",
 			ProtoVar: "msg",
@@ -226,7 +234,7 @@ func createCCData(meta *saiast.FuncMetadata, apiName string, sai *saiast.SAIAPI,
 			smt.EnumValue = attr.EnumName
 			convertFn.AttrSwitch.Attrs = append(convertFn.AttrSwitch.Attrs, smt)
 		}
-	case "get_attribute":
+	case getAttrOp:
 		opFn.AttrSwitch = &AttrSwitch{
 			Var:      "attr_list[i].id",
 			ProtoVar: "resp.attr()",
@@ -242,7 +250,7 @@ func createCCData(meta *saiast.FuncMetadata, apiName string, sai *saiast.SAIAPI,
 			smt.EnumValue = attr.EnumName
 			opFn.AttrSwitch.Attrs = append(opFn.AttrSwitch.Attrs, smt)
 		}
-	case "set_attribute":
+	case setAttrOp:
 		convertFn = nil
 		opFn.AttrSwitch = &AttrSwitch{
 			Var:      "attr->id",
@@ -290,6 +298,44 @@ func createCCData(meta *saiast.FuncMetadata, apiName string, sai *saiast.SAIAPI,
 		convertFn = nil
 	}
 
+	// Patches for non-standard APIS
+	if meta.TypeName == "ACL_TABLE" {
+		switch meta.Operation {
+		case createOp:
+			convertFn.AttrConvertInsert = `
+if (attr_list[i].id >= SAI_ACL_TABLE_ATTR_USER_DEFINED_FIELD_GROUP_MIN && attr_list[i].id < SAI_ACL_TABLE_ATTR_USER_DEFINED_FIELD_GROUP_MAX) {
+  (*msg.mutable_user_defined_field_group_min())[attr_list[i].id - SAI_ACL_TABLE_ATTR_USER_DEFINED_FIELD_GROUP_MIN] = attr_list[i].value.oid;
+}`
+		case getAttrOp:
+			opFn.AttrConvertInsert = `
+if (attr_list[i].id >= SAI_ACL_TABLE_ATTR_USER_DEFINED_FIELD_GROUP_MIN && attr_list[i].id < SAI_ACL_TABLE_ATTR_USER_DEFINED_FIELD_GROUP_MAX) {
+  attr_list[i].value.oid = resp.attr().user_defined_field_group_min().at(attr_list[i].id - SAI_ACL_TABLE_ATTR_USER_DEFINED_FIELD_GROUP_MIN);
+}`
+		}
+	}
+	if meta.TypeName == "ACL_ENTRY" {
+		switch meta.Operation {
+		case createOp:
+			convertFn.AttrConvertInsert = `
+if (attr_list[i].id >= SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN && attr_list[i].id < SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MAX) {
+    (*msg.mutable_user_defined_field_group_min())[attr_list[i].id  - SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN].mutable_data_list()->mutable_list()->Add(attr_list[i].value.aclfield.data.u8list.list, attr_list[i].value.aclfield.data.u8list.list + attr_list[i].value.aclfield.data.u8list.count);
+    (*msg.mutable_user_defined_field_group_min())[attr_list[i].id  - SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN].mutable_mask_list()->mutable_list()->Add(attr_list[i].value.aclfield.mask.u8list.list, attr_list[i].value.aclfield.mask.u8list.list + attr_list[i].value.aclfield.mask.u8list.count);
+}`
+		case setAttrOp:
+			opFn.AttrConvertInsert = `
+if (attr->id >= SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN && attr->id < SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MAX) {
+(*req.mutable_user_defined_field_group_min())[attr->id  - SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN].mutable_data_list()->mutable_list()->Add(attr->value.aclfield.data.u8list.list, attr->value.aclfield.data.u8list.list + attr->value.aclfield.data.u8list.count);
+(*req.mutable_user_defined_field_group_min())[attr->id  - SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN].mutable_mask_list()->mutable_list()->Add(attr->value.aclfield.mask.u8list.list, attr->value.aclfield.mask.u8list.list + attr->value.aclfield.mask.u8list.count);
+}`
+		case getAttrOp:
+			opFn.AttrConvertInsert = `
+if (attr_list[i].id >= SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN && attr_list[i].id < SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MAX) {
+    copy_list(attr_list[i].value.aclfield.data.u8list.list, resp.attr().user_defined_field_group_min().at(attr_list[i].id - SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN).data_list().list(), &attr_list[i].value.aclfield.data.u8list.count);
+    copy_list(attr_list[i].value.aclfield.mask.u8list.list, resp.attr().user_defined_field_group_min().at(attr_list[i].id - SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN).mask_list().list(), &attr_list[i].value.aclfield.mask.u8list.count);
+}`
+		}
+	}
+
 	opFn.UseCommonAPI = supportedOperation[opFn.Operation]
 	// Function or types that don't follow standard naming.
 	if strings.Contains(opFn.TypeName, "PORT_ALL") || strings.Contains(opFn.TypeName, "ALL_NEIGHBOR") {
@@ -311,6 +357,7 @@ const (
 
 type unionAccessor struct {
 	accessor        string
+	protoAccessor   string
 	pointerOf       bool
 	aType           accessorType
 	convertFromFunc string
@@ -416,46 +463,64 @@ var typeToUnionAccessor = map[string]*unionAccessor{
 	"sai_acl_field_data_t sai_ip4_t": {
 		accessor:        "ip4",
 		convertFromFunc: "convert_from_acl_field_data",
+		convertToFunc:   "convert_to_acl_field_data",
+		protoAccessor:   "ip",
 		aType:           acl,
 	},
 	"sai_acl_action_data_t sai_object_id_t": {
 		accessor:        "oid",
 		convertFromFunc: "convert_from_acl_action_data",
+		convertToFunc:   "convert_to_acl_action_data",
+		protoAccessor:   "oid",
 		aType:           acl,
 	},
 	"sai_acl_action_data_t sai_packet_action_t": {
 		accessor:        "s32",
 		convertFromFunc: "convert_from_acl_action_data_action",
+		convertToFunc:   "convert_to_acl_action_data_action",
+		protoAccessor:   "packet_action",
 		aType:           acl,
 	},
 	"sai_acl_field_data_t sai_acl_ip_type_t": {
 		accessor:        "s32",
 		convertFromFunc: "convert_from_acl_field_data_ip_type",
+		convertToFunc:   "convert_to_acl_field_data_ip_type",
+		protoAccessor:   "ip_type",
 		aType:           acl,
 	},
 	"sai_acl_field_data_t sai_uint8_t": {
 		accessor:        "u8",
 		convertFromFunc: "convert_from_acl_field_data",
+		convertToFunc:   "convert_to_acl_field_data_u8",
+		protoAccessor:   "uint",
 		aType:           acl,
 	},
 	"sai_acl_field_data_t sai_uint16_t": {
 		accessor:        "u16",
 		convertFromFunc: "convert_from_acl_field_data",
+		convertToFunc:   "convert_to_acl_field_data_u16",
+		protoAccessor:   "uint",
 		aType:           acl,
 	},
 	"sai_acl_field_data_t sai_ip6_t": {
 		accessor:        "ip6",
 		convertFromFunc: "convert_from_acl_field_data_ip6",
+		convertToFunc:   "convert_to_acl_field_data_ip6",
+		protoAccessor:   "ip",
 		aType:           acl,
 	},
 	"sai_acl_field_data_t sai_mac_t": {
 		accessor:        "mac",
 		convertFromFunc: "convert_from_acl_field_data_mac",
+		convertToFunc:   "convert_to_acl_field_data_mac",
+		protoAccessor:   "mac",
 		aType:           acl,
 	},
 	"sai_acl_field_data_t sai_object_id_t": {
 		accessor:        "oid",
 		convertFromFunc: "convert_from_acl_field_data",
+		convertToFunc:   "convert_to_acl_field_data",
+		protoAccessor:   "oid",
 		aType:           acl,
 	},
 }
@@ -551,15 +616,28 @@ func protoFieldGetter(saiType, protoField, varName string, info *docparser.SAIIn
 		smt.CopyConvertFuncArgs = fmt.Sprintf(", &%s.count", smt.Var)
 		smt.Var += ".list"
 		return smt, nil
+	case acl:
+		smt.ConvertFunc = ua.convertToFunc
+		access := "aclaction"
+		smt.ConvertFuncArgs = fmt.Sprintf(", resp.attr().%s().%s()", smt.ProtoFunc, ua.protoAccessor)
+		if strings.Contains(saiType, "sai_acl_field_data_t") {
+			access = "aclfield"
+			smt.ConvertFuncArgs = fmt.Sprintf(", resp.attr().%s().data_%s(), resp.attr().%s().mask_%s()", smt.ProtoFunc, ua.protoAccessor, smt.ProtoFunc, ua.protoAccessor)
+			if strings.Contains(saiType, "sai_object_id_t") || strings.Contains(saiType, "sai_acl_ip_type_t") {
+				smt.ConvertFuncArgs = fmt.Sprintf(", resp.attr().%s().data_%s()", smt.ProtoFunc, ua.protoAccessor)
+			}
+		}
+		smt.Var = varName + "." + access
+		return smt, nil
 	}
 	return nil, fmt.Errorf("unknown accessor type %q", saiType)
 }
 
 var supportedOperation = map[string]bool{
-	"create":             true,
+	createOp:             true,
 	"remove":             true,
-	"get_attribute":      true,
-	"set_attribute":      true,
+	getAttrOp:            true,
+	setAttrOp:            true,
 	"clear_stats":        true,
 	"get_stats":          true,
 	"get_stats_ext":      true,
@@ -678,6 +756,7 @@ lemming::dataplane::sai::{{ .ReturnType }} msg;
 {{ if .SwitchScoped }} msg.set_switch_(switch_id); {{ end }}
 {{ if .EntryVar }} *msg.mutable_entry() = {{ .EntryConversionFunc }}({{ .EntryVar }}); {{ end }}
  for(uint32_t i = 0; i < attr_count; i++ ) {
+	{{ .AttrConvertInsert }}
 	{{ template "setattr" .AttrSwitch }}
 }
 {{- else if eq .Operation "get_attribute" }}
@@ -752,6 +831,7 @@ return msg;
 		return SAI_STATUS_FAILURE;
 	}
 	for(uint32_t i = 0; i < attr_count; i++ ) {
+		{{ .AttrConvertInsert }}
 		{{ template "getattr" .AttrSwitch }}
 	}
 	{{ else if and (eq .Operation "set_attribute") (ne (len .AttrSwitch.Attrs) 0) }}
@@ -760,6 +840,7 @@ return msg;
 	grpc::ClientContext context;
 	{{ if .OidVar -}} req.set_oid({{ .OidVar }}); {{ end }}
 	{{ if .EntryVar }} *req.mutable_entry() = {{ .EntryConversionFunc }}({{ .EntryVar }}); {{ end }}
+	{{ .AttrConvertInsert }}
 	{{ template "setattr" .AttrSwitch }}
 	grpc::Status status = {{ .Client }}->{{ .RPCMethod }}(&context, req, &resp);
 	if (!status.ok()) {
@@ -965,6 +1046,7 @@ type templateFunc struct {
 	EntryConversionFunc string
 	EntryVar            string
 	ConvertFunc         string
+	AttrConvertInsert   string
 }
 
 type ccTemplateData struct {

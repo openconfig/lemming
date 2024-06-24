@@ -101,14 +101,13 @@ enum AclTableAttr {
   ACL_TABLE_ATTR_FIELD_BTH_OPCODE = 90;
   ACL_TABLE_ATTR_FIELD_AETH_SYNDROME = 91;
   ACL_TABLE_ATTR_USER_DEFINED_FIELD_GROUP_MIN = 92;
-  ACL_TABLE_ATTR_USER_DEFINED_FIELD_GROUP_MAX = 93;
-  ACL_TABLE_ATTR_FIELD_ACL_RANGE_TYPE = 94;
-  ACL_TABLE_ATTR_FIELD_IPV6_NEXT_HEADER = 95;
-  ACL_TABLE_ATTR_FIELD_GRE_KEY = 96;
-  ACL_TABLE_ATTR_FIELD_TAM_INT_TYPE = 97;
-  ACL_TABLE_ATTR_ENTRY_LIST = 98;
-  ACL_TABLE_ATTR_AVAILABLE_ACL_ENTRY = 99;
-  ACL_TABLE_ATTR_AVAILABLE_ACL_COUNTER = 100;
+  ACL_TABLE_ATTR_FIELD_ACL_RANGE_TYPE = 93;
+  ACL_TABLE_ATTR_FIELD_IPV6_NEXT_HEADER = 94;
+  ACL_TABLE_ATTR_FIELD_GRE_KEY = 95;
+  ACL_TABLE_ATTR_FIELD_TAM_INT_TYPE = 96;
+  ACL_TABLE_ATTR_ENTRY_LIST = 97;
+  ACL_TABLE_ATTR_AVAILABLE_ACL_ENTRY = 98;
+  ACL_TABLE_ATTR_AVAILABLE_ACL_COUNTER = 99;
 }
 
 enum AclEntryAttr {
@@ -204,64 +203,63 @@ enum AclEntryAttr {
   ACL_ENTRY_ATTR_FIELD_BTH_OPCODE = 89;
   ACL_ENTRY_ATTR_FIELD_AETH_SYNDROME = 90;
   ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN = 91;
-  ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MAX = 92;
-  ACL_ENTRY_ATTR_FIELD_ACL_RANGE_TYPE = 93;
-  ACL_ENTRY_ATTR_FIELD_IPV6_NEXT_HEADER = 94;
-  ACL_ENTRY_ATTR_FIELD_GRE_KEY = 95;
-  ACL_ENTRY_ATTR_FIELD_TAM_INT_TYPE = 96;
-  ACL_ENTRY_ATTR_ACTION_REDIRECT = 97;
-  ACL_ENTRY_ATTR_ACTION_ENDPOINT_IP = 98;
-  ACL_ENTRY_ATTR_ACTION_REDIRECT_LIST = 99;
-  ACL_ENTRY_ATTR_ACTION_PACKET_ACTION = 100;
-  ACL_ENTRY_ATTR_ACTION_FLOOD = 101;
-  ACL_ENTRY_ATTR_ACTION_COUNTER = 102;
-  ACL_ENTRY_ATTR_ACTION_MIRROR_INGRESS = 103;
-  ACL_ENTRY_ATTR_ACTION_MIRROR_EGRESS = 104;
-  ACL_ENTRY_ATTR_ACTION_SET_POLICER = 105;
-  ACL_ENTRY_ATTR_ACTION_DECREMENT_TTL = 106;
-  ACL_ENTRY_ATTR_ACTION_SET_TC = 107;
-  ACL_ENTRY_ATTR_ACTION_SET_PACKET_COLOR = 108;
-  ACL_ENTRY_ATTR_ACTION_SET_INNER_VLAN_ID = 109;
-  ACL_ENTRY_ATTR_ACTION_SET_INNER_VLAN_PRI = 110;
-  ACL_ENTRY_ATTR_ACTION_SET_OUTER_VLAN_ID = 111;
-  ACL_ENTRY_ATTR_ACTION_SET_OUTER_VLAN_PRI = 112;
-  ACL_ENTRY_ATTR_ACTION_ADD_VLAN_ID = 113;
-  ACL_ENTRY_ATTR_ACTION_ADD_VLAN_PRI = 114;
-  ACL_ENTRY_ATTR_ACTION_SET_SRC_MAC = 115;
-  ACL_ENTRY_ATTR_ACTION_SET_DST_MAC = 116;
-  ACL_ENTRY_ATTR_ACTION_SET_SRC_IP = 117;
-  ACL_ENTRY_ATTR_ACTION_SET_DST_IP = 118;
-  ACL_ENTRY_ATTR_ACTION_SET_SRC_IPV6 = 119;
-  ACL_ENTRY_ATTR_ACTION_SET_DST_IPV6 = 120;
-  ACL_ENTRY_ATTR_ACTION_SET_DSCP = 121;
-  ACL_ENTRY_ATTR_ACTION_SET_ECN = 122;
-  ACL_ENTRY_ATTR_ACTION_SET_L4_SRC_PORT = 123;
-  ACL_ENTRY_ATTR_ACTION_SET_L4_DST_PORT = 124;
-  ACL_ENTRY_ATTR_ACTION_INGRESS_SAMPLEPACKET_ENABLE = 125;
-  ACL_ENTRY_ATTR_ACTION_EGRESS_SAMPLEPACKET_ENABLE = 126;
-  ACL_ENTRY_ATTR_ACTION_SET_ACL_META_DATA = 127;
-  ACL_ENTRY_ATTR_ACTION_EGRESS_BLOCK_PORT_LIST = 128;
-  ACL_ENTRY_ATTR_ACTION_SET_USER_TRAP_ID = 129;
-  ACL_ENTRY_ATTR_ACTION_SET_DO_NOT_LEARN = 130;
-  ACL_ENTRY_ATTR_ACTION_ACL_DTEL_FLOW_OP = 131;
-  ACL_ENTRY_ATTR_ACTION_DTEL_INT_SESSION = 132;
-  ACL_ENTRY_ATTR_ACTION_DTEL_DROP_REPORT_ENABLE = 133;
-  ACL_ENTRY_ATTR_ACTION_DTEL_TAIL_DROP_REPORT_ENABLE = 134;
-  ACL_ENTRY_ATTR_ACTION_DTEL_FLOW_SAMPLE_PERCENT = 135;
-  ACL_ENTRY_ATTR_ACTION_DTEL_REPORT_ALL_PACKETS = 136;
-  ACL_ENTRY_ATTR_ACTION_NO_NAT = 137;
-  ACL_ENTRY_ATTR_ACTION_INT_INSERT = 138;
-  ACL_ENTRY_ATTR_ACTION_INT_DELETE = 139;
-  ACL_ENTRY_ATTR_ACTION_INT_REPORT_FLOW = 140;
-  ACL_ENTRY_ATTR_ACTION_INT_REPORT_DROPS = 141;
-  ACL_ENTRY_ATTR_ACTION_INT_REPORT_TAIL_DROPS = 142;
-  ACL_ENTRY_ATTR_ACTION_TAM_INT_OBJECT = 143;
-  ACL_ENTRY_ATTR_ACTION_SET_ISOLATION_GROUP = 144;
-  ACL_ENTRY_ATTR_ACTION_MACSEC_FLOW = 145;
-  ACL_ENTRY_ATTR_ACTION_SET_LAG_HASH_ID = 146;
-  ACL_ENTRY_ATTR_ACTION_SET_ECMP_HASH_ID = 147;
-  ACL_ENTRY_ATTR_ACTION_SET_VRF = 148;
-  ACL_ENTRY_ATTR_ACTION_SET_FORWARDING_CLASS = 149;
+  ACL_ENTRY_ATTR_FIELD_ACL_RANGE_TYPE = 92;
+  ACL_ENTRY_ATTR_FIELD_IPV6_NEXT_HEADER = 93;
+  ACL_ENTRY_ATTR_FIELD_GRE_KEY = 94;
+  ACL_ENTRY_ATTR_FIELD_TAM_INT_TYPE = 95;
+  ACL_ENTRY_ATTR_ACTION_REDIRECT = 96;
+  ACL_ENTRY_ATTR_ACTION_ENDPOINT_IP = 97;
+  ACL_ENTRY_ATTR_ACTION_REDIRECT_LIST = 98;
+  ACL_ENTRY_ATTR_ACTION_PACKET_ACTION = 99;
+  ACL_ENTRY_ATTR_ACTION_FLOOD = 100;
+  ACL_ENTRY_ATTR_ACTION_COUNTER = 101;
+  ACL_ENTRY_ATTR_ACTION_MIRROR_INGRESS = 102;
+  ACL_ENTRY_ATTR_ACTION_MIRROR_EGRESS = 103;
+  ACL_ENTRY_ATTR_ACTION_SET_POLICER = 104;
+  ACL_ENTRY_ATTR_ACTION_DECREMENT_TTL = 105;
+  ACL_ENTRY_ATTR_ACTION_SET_TC = 106;
+  ACL_ENTRY_ATTR_ACTION_SET_PACKET_COLOR = 107;
+  ACL_ENTRY_ATTR_ACTION_SET_INNER_VLAN_ID = 108;
+  ACL_ENTRY_ATTR_ACTION_SET_INNER_VLAN_PRI = 109;
+  ACL_ENTRY_ATTR_ACTION_SET_OUTER_VLAN_ID = 110;
+  ACL_ENTRY_ATTR_ACTION_SET_OUTER_VLAN_PRI = 111;
+  ACL_ENTRY_ATTR_ACTION_ADD_VLAN_ID = 112;
+  ACL_ENTRY_ATTR_ACTION_ADD_VLAN_PRI = 113;
+  ACL_ENTRY_ATTR_ACTION_SET_SRC_MAC = 114;
+  ACL_ENTRY_ATTR_ACTION_SET_DST_MAC = 115;
+  ACL_ENTRY_ATTR_ACTION_SET_SRC_IP = 116;
+  ACL_ENTRY_ATTR_ACTION_SET_DST_IP = 117;
+  ACL_ENTRY_ATTR_ACTION_SET_SRC_IPV6 = 118;
+  ACL_ENTRY_ATTR_ACTION_SET_DST_IPV6 = 119;
+  ACL_ENTRY_ATTR_ACTION_SET_DSCP = 120;
+  ACL_ENTRY_ATTR_ACTION_SET_ECN = 121;
+  ACL_ENTRY_ATTR_ACTION_SET_L4_SRC_PORT = 122;
+  ACL_ENTRY_ATTR_ACTION_SET_L4_DST_PORT = 123;
+  ACL_ENTRY_ATTR_ACTION_INGRESS_SAMPLEPACKET_ENABLE = 124;
+  ACL_ENTRY_ATTR_ACTION_EGRESS_SAMPLEPACKET_ENABLE = 125;
+  ACL_ENTRY_ATTR_ACTION_SET_ACL_META_DATA = 126;
+  ACL_ENTRY_ATTR_ACTION_EGRESS_BLOCK_PORT_LIST = 127;
+  ACL_ENTRY_ATTR_ACTION_SET_USER_TRAP_ID = 128;
+  ACL_ENTRY_ATTR_ACTION_SET_DO_NOT_LEARN = 129;
+  ACL_ENTRY_ATTR_ACTION_ACL_DTEL_FLOW_OP = 130;
+  ACL_ENTRY_ATTR_ACTION_DTEL_INT_SESSION = 131;
+  ACL_ENTRY_ATTR_ACTION_DTEL_DROP_REPORT_ENABLE = 132;
+  ACL_ENTRY_ATTR_ACTION_DTEL_TAIL_DROP_REPORT_ENABLE = 133;
+  ACL_ENTRY_ATTR_ACTION_DTEL_FLOW_SAMPLE_PERCENT = 134;
+  ACL_ENTRY_ATTR_ACTION_DTEL_REPORT_ALL_PACKETS = 135;
+  ACL_ENTRY_ATTR_ACTION_NO_NAT = 136;
+  ACL_ENTRY_ATTR_ACTION_INT_INSERT = 137;
+  ACL_ENTRY_ATTR_ACTION_INT_DELETE = 138;
+  ACL_ENTRY_ATTR_ACTION_INT_REPORT_FLOW = 139;
+  ACL_ENTRY_ATTR_ACTION_INT_REPORT_DROPS = 140;
+  ACL_ENTRY_ATTR_ACTION_INT_REPORT_TAIL_DROPS = 141;
+  ACL_ENTRY_ATTR_ACTION_TAM_INT_OBJECT = 142;
+  ACL_ENTRY_ATTR_ACTION_SET_ISOLATION_GROUP = 143;
+  ACL_ENTRY_ATTR_ACTION_MACSEC_FLOW = 144;
+  ACL_ENTRY_ATTR_ACTION_SET_LAG_HASH_ID = 145;
+  ACL_ENTRY_ATTR_ACTION_SET_ECMP_HASH_ID = 146;
+  ACL_ENTRY_ATTR_ACTION_SET_VRF = 147;
+  ACL_ENTRY_ATTR_ACTION_SET_FORWARDING_CLASS = 148;
 }
 
 enum AclCounterAttr {
@@ -390,12 +388,12 @@ message CreateAclTableRequest {
   optional bool field_route_npu_meta_dst_hit = 90 [(attr_enum_value) = 89];
   optional bool field_bth_opcode = 91 [(attr_enum_value) = 90];
   optional bool field_aeth_syndrome = 92 [(attr_enum_value) = 91];
-  optional uint64 user_defined_field_group_min = 93 [(attr_enum_value) = 92];
-  optional uint64 user_defined_field_group_max = 94 [(attr_enum_value) = 93];
-  repeated AclRangeType field_acl_range_type = 95 [(attr_enum_value) = 94];
-  optional bool field_ipv6_next_header = 96 [(attr_enum_value) = 95];
-  optional bool field_gre_key = 97 [(attr_enum_value) = 96];
-  optional bool field_tam_int_type = 98 [(attr_enum_value) = 97];
+  map<uint64, uint64> user_defined_field_group_min = 93
+      [(attr_enum_value) = 92];
+  repeated AclRangeType field_acl_range_type = 94 [(attr_enum_value) = 93];
+  optional bool field_ipv6_next_header = 95 [(attr_enum_value) = 94];
+  optional bool field_gre_key = 96 [(attr_enum_value) = 95];
+  optional bool field_tam_int_type = 97 [(attr_enum_value) = 96];
 }
 
 message CreateAclTableResponse {
@@ -514,89 +512,87 @@ message CreateAclEntryRequest {
       [(attr_enum_value) = 88];
   optional AclFieldData field_bth_opcode = 90 [(attr_enum_value) = 89];
   optional AclFieldData field_aeth_syndrome = 91 [(attr_enum_value) = 90];
-  optional AclFieldData user_defined_field_group_min = 92
+  map<uint64, AclFieldData> user_defined_field_group_min = 92
       [(attr_enum_value) = 91];
-  optional AclFieldData user_defined_field_group_max = 93
-      [(attr_enum_value) = 92];
-  optional AclFieldData field_acl_range_type = 94 [(attr_enum_value) = 93];
-  optional AclFieldData field_ipv6_next_header = 95 [(attr_enum_value) = 94];
-  optional AclFieldData field_gre_key = 96 [(attr_enum_value) = 95];
-  optional AclFieldData field_tam_int_type = 97 [(attr_enum_value) = 96];
-  optional AclActionData action_redirect = 98 [(attr_enum_value) = 97];
-  optional AclActionData action_endpoint_ip = 99 [(attr_enum_value) = 98];
-  optional AclActionData action_redirect_list = 100 [(attr_enum_value) = 99];
-  optional AclActionData action_packet_action = 101 [(attr_enum_value) = 100];
-  optional AclActionData action_flood = 102 [(attr_enum_value) = 101];
-  optional AclActionData action_counter = 103 [(attr_enum_value) = 102];
-  optional AclActionData action_mirror_ingress = 104 [(attr_enum_value) = 103];
-  optional AclActionData action_mirror_egress = 105 [(attr_enum_value) = 104];
-  optional AclActionData action_set_policer = 106 [(attr_enum_value) = 105];
-  optional AclActionData action_decrement_ttl = 107 [(attr_enum_value) = 106];
-  optional AclActionData action_set_tc = 108 [(attr_enum_value) = 107];
-  optional AclActionData action_set_packet_color = 109
+  optional AclFieldData field_acl_range_type = 93 [(attr_enum_value) = 92];
+  optional AclFieldData field_ipv6_next_header = 94 [(attr_enum_value) = 93];
+  optional AclFieldData field_gre_key = 95 [(attr_enum_value) = 94];
+  optional AclFieldData field_tam_int_type = 96 [(attr_enum_value) = 95];
+  optional AclActionData action_redirect = 97 [(attr_enum_value) = 96];
+  optional AclActionData action_endpoint_ip = 98 [(attr_enum_value) = 97];
+  optional AclActionData action_redirect_list = 99 [(attr_enum_value) = 98];
+  optional AclActionData action_packet_action = 100 [(attr_enum_value) = 99];
+  optional AclActionData action_flood = 101 [(attr_enum_value) = 100];
+  optional AclActionData action_counter = 102 [(attr_enum_value) = 101];
+  optional AclActionData action_mirror_ingress = 103 [(attr_enum_value) = 102];
+  optional AclActionData action_mirror_egress = 104 [(attr_enum_value) = 103];
+  optional AclActionData action_set_policer = 105 [(attr_enum_value) = 104];
+  optional AclActionData action_decrement_ttl = 106 [(attr_enum_value) = 105];
+  optional AclActionData action_set_tc = 107 [(attr_enum_value) = 106];
+  optional AclActionData action_set_packet_color = 108
+      [(attr_enum_value) = 107];
+  optional AclActionData action_set_inner_vlan_id = 109
       [(attr_enum_value) = 108];
-  optional AclActionData action_set_inner_vlan_id = 110
+  optional AclActionData action_set_inner_vlan_pri = 110
       [(attr_enum_value) = 109];
-  optional AclActionData action_set_inner_vlan_pri = 111
+  optional AclActionData action_set_outer_vlan_id = 111
       [(attr_enum_value) = 110];
-  optional AclActionData action_set_outer_vlan_id = 112
+  optional AclActionData action_set_outer_vlan_pri = 112
       [(attr_enum_value) = 111];
-  optional AclActionData action_set_outer_vlan_pri = 113
-      [(attr_enum_value) = 112];
-  optional AclActionData action_add_vlan_id = 114 [(attr_enum_value) = 113];
-  optional AclActionData action_add_vlan_pri = 115 [(attr_enum_value) = 114];
-  optional AclActionData action_set_src_mac = 116 [(attr_enum_value) = 115];
-  optional AclActionData action_set_dst_mac = 117 [(attr_enum_value) = 116];
-  optional AclActionData action_set_src_ip = 118 [(attr_enum_value) = 117];
-  optional AclActionData action_set_dst_ip = 119 [(attr_enum_value) = 118];
-  optional AclActionData action_set_src_ipv6 = 120 [(attr_enum_value) = 119];
-  optional AclActionData action_set_dst_ipv6 = 121 [(attr_enum_value) = 120];
-  optional AclActionData action_set_dscp = 122 [(attr_enum_value) = 121];
-  optional AclActionData action_set_ecn = 123 [(attr_enum_value) = 122];
-  optional AclActionData action_set_l4_src_port = 124 [(attr_enum_value) = 123];
-  optional AclActionData action_set_l4_dst_port = 125 [(attr_enum_value) = 124];
-  optional AclActionData action_ingress_samplepacket_enable = 126
+  optional AclActionData action_add_vlan_id = 113 [(attr_enum_value) = 112];
+  optional AclActionData action_add_vlan_pri = 114 [(attr_enum_value) = 113];
+  optional AclActionData action_set_src_mac = 115 [(attr_enum_value) = 114];
+  optional AclActionData action_set_dst_mac = 116 [(attr_enum_value) = 115];
+  optional AclActionData action_set_src_ip = 117 [(attr_enum_value) = 116];
+  optional AclActionData action_set_dst_ip = 118 [(attr_enum_value) = 117];
+  optional AclActionData action_set_src_ipv6 = 119 [(attr_enum_value) = 118];
+  optional AclActionData action_set_dst_ipv6 = 120 [(attr_enum_value) = 119];
+  optional AclActionData action_set_dscp = 121 [(attr_enum_value) = 120];
+  optional AclActionData action_set_ecn = 122 [(attr_enum_value) = 121];
+  optional AclActionData action_set_l4_src_port = 123 [(attr_enum_value) = 122];
+  optional AclActionData action_set_l4_dst_port = 124 [(attr_enum_value) = 123];
+  optional AclActionData action_ingress_samplepacket_enable = 125
+      [(attr_enum_value) = 124];
+  optional AclActionData action_egress_samplepacket_enable = 126
       [(attr_enum_value) = 125];
-  optional AclActionData action_egress_samplepacket_enable = 127
+  optional AclActionData action_set_acl_meta_data = 127
       [(attr_enum_value) = 126];
-  optional AclActionData action_set_acl_meta_data = 128
+  optional AclActionData action_egress_block_port_list = 128
       [(attr_enum_value) = 127];
-  optional AclActionData action_egress_block_port_list = 129
+  optional AclActionData action_set_user_trap_id = 129
       [(attr_enum_value) = 128];
-  optional AclActionData action_set_user_trap_id = 130
+  optional AclActionData action_set_do_not_learn = 130
       [(attr_enum_value) = 129];
-  optional AclActionData action_set_do_not_learn = 131
+  optional AclActionData action_acl_dtel_flow_op = 131
       [(attr_enum_value) = 130];
-  optional AclActionData action_acl_dtel_flow_op = 132
+  optional AclActionData action_dtel_int_session = 132
       [(attr_enum_value) = 131];
-  optional AclActionData action_dtel_int_session = 133
+  optional AclActionData action_dtel_drop_report_enable = 133
       [(attr_enum_value) = 132];
-  optional AclActionData action_dtel_drop_report_enable = 134
+  optional AclActionData action_dtel_tail_drop_report_enable = 134
       [(attr_enum_value) = 133];
-  optional AclActionData action_dtel_tail_drop_report_enable = 135
+  optional AclActionData action_dtel_flow_sample_percent = 135
       [(attr_enum_value) = 134];
-  optional AclActionData action_dtel_flow_sample_percent = 136
+  optional AclActionData action_dtel_report_all_packets = 136
       [(attr_enum_value) = 135];
-  optional AclActionData action_dtel_report_all_packets = 137
-      [(attr_enum_value) = 136];
-  optional AclActionData action_no_nat = 138 [(attr_enum_value) = 137];
-  optional AclActionData action_int_insert = 139 [(attr_enum_value) = 138];
-  optional AclActionData action_int_delete = 140 [(attr_enum_value) = 139];
-  optional AclActionData action_int_report_flow = 141 [(attr_enum_value) = 140];
-  optional AclActionData action_int_report_drops = 142
+  optional AclActionData action_no_nat = 137 [(attr_enum_value) = 136];
+  optional AclActionData action_int_insert = 138 [(attr_enum_value) = 137];
+  optional AclActionData action_int_delete = 139 [(attr_enum_value) = 138];
+  optional AclActionData action_int_report_flow = 140 [(attr_enum_value) = 139];
+  optional AclActionData action_int_report_drops = 141
+      [(attr_enum_value) = 140];
+  optional AclActionData action_int_report_tail_drops = 142
       [(attr_enum_value) = 141];
-  optional AclActionData action_int_report_tail_drops = 143
-      [(attr_enum_value) = 142];
-  optional AclActionData action_tam_int_object = 144 [(attr_enum_value) = 143];
-  optional AclActionData action_set_isolation_group = 145
-      [(attr_enum_value) = 144];
-  optional AclActionData action_macsec_flow = 146 [(attr_enum_value) = 145];
-  optional AclActionData action_set_lag_hash_id = 147 [(attr_enum_value) = 146];
-  optional AclActionData action_set_ecmp_hash_id = 148
-      [(attr_enum_value) = 147];
-  optional AclActionData action_set_vrf = 149 [(attr_enum_value) = 148];
-  optional AclActionData action_set_forwarding_class = 150
-      [(attr_enum_value) = 149];
+  optional AclActionData action_tam_int_object = 143 [(attr_enum_value) = 142];
+  optional AclActionData action_set_isolation_group = 144
+      [(attr_enum_value) = 143];
+  optional AclActionData action_macsec_flow = 145 [(attr_enum_value) = 144];
+  optional AclActionData action_set_lag_hash_id = 146 [(attr_enum_value) = 145];
+  optional AclActionData action_set_ecmp_hash_id = 147
+      [(attr_enum_value) = 146];
+  optional AclActionData action_set_vrf = 148 [(attr_enum_value) = 147];
+  optional AclActionData action_set_forwarding_class = 149
+      [(attr_enum_value) = 148];
 }
 
 message CreateAclEntryResponse {
@@ -704,89 +700,87 @@ message SetAclEntryAttributeRequest {
       [(attr_enum_value) = 88];
   optional AclFieldData field_bth_opcode = 89 [(attr_enum_value) = 89];
   optional AclFieldData field_aeth_syndrome = 90 [(attr_enum_value) = 90];
-  optional AclFieldData user_defined_field_group_min = 91
+  map<uint64, AclFieldData> user_defined_field_group_min = 91
       [(attr_enum_value) = 91];
-  optional AclFieldData user_defined_field_group_max = 92
-      [(attr_enum_value) = 92];
-  optional AclFieldData field_acl_range_type = 93 [(attr_enum_value) = 93];
-  optional AclFieldData field_ipv6_next_header = 94 [(attr_enum_value) = 94];
-  optional AclFieldData field_gre_key = 95 [(attr_enum_value) = 95];
-  optional AclFieldData field_tam_int_type = 96 [(attr_enum_value) = 96];
-  optional AclActionData action_redirect = 97 [(attr_enum_value) = 97];
-  optional AclActionData action_endpoint_ip = 98 [(attr_enum_value) = 98];
-  optional AclActionData action_redirect_list = 99 [(attr_enum_value) = 99];
-  optional AclActionData action_packet_action = 100 [(attr_enum_value) = 100];
-  optional AclActionData action_flood = 101 [(attr_enum_value) = 101];
-  optional AclActionData action_counter = 102 [(attr_enum_value) = 102];
-  optional AclActionData action_mirror_ingress = 103 [(attr_enum_value) = 103];
-  optional AclActionData action_mirror_egress = 104 [(attr_enum_value) = 104];
-  optional AclActionData action_set_policer = 105 [(attr_enum_value) = 105];
-  optional AclActionData action_decrement_ttl = 106 [(attr_enum_value) = 106];
-  optional AclActionData action_set_tc = 107 [(attr_enum_value) = 107];
-  optional AclActionData action_set_packet_color = 108
+  optional AclFieldData field_acl_range_type = 92 [(attr_enum_value) = 92];
+  optional AclFieldData field_ipv6_next_header = 93 [(attr_enum_value) = 93];
+  optional AclFieldData field_gre_key = 94 [(attr_enum_value) = 94];
+  optional AclFieldData field_tam_int_type = 95 [(attr_enum_value) = 95];
+  optional AclActionData action_redirect = 96 [(attr_enum_value) = 96];
+  optional AclActionData action_endpoint_ip = 97 [(attr_enum_value) = 97];
+  optional AclActionData action_redirect_list = 98 [(attr_enum_value) = 98];
+  optional AclActionData action_packet_action = 99 [(attr_enum_value) = 99];
+  optional AclActionData action_flood = 100 [(attr_enum_value) = 100];
+  optional AclActionData action_counter = 101 [(attr_enum_value) = 101];
+  optional AclActionData action_mirror_ingress = 102 [(attr_enum_value) = 102];
+  optional AclActionData action_mirror_egress = 103 [(attr_enum_value) = 103];
+  optional AclActionData action_set_policer = 104 [(attr_enum_value) = 104];
+  optional AclActionData action_decrement_ttl = 105 [(attr_enum_value) = 105];
+  optional AclActionData action_set_tc = 106 [(attr_enum_value) = 106];
+  optional AclActionData action_set_packet_color = 107
+      [(attr_enum_value) = 107];
+  optional AclActionData action_set_inner_vlan_id = 108
       [(attr_enum_value) = 108];
-  optional AclActionData action_set_inner_vlan_id = 109
+  optional AclActionData action_set_inner_vlan_pri = 109
       [(attr_enum_value) = 109];
-  optional AclActionData action_set_inner_vlan_pri = 110
+  optional AclActionData action_set_outer_vlan_id = 110
       [(attr_enum_value) = 110];
-  optional AclActionData action_set_outer_vlan_id = 111
+  optional AclActionData action_set_outer_vlan_pri = 111
       [(attr_enum_value) = 111];
-  optional AclActionData action_set_outer_vlan_pri = 112
-      [(attr_enum_value) = 112];
-  optional AclActionData action_add_vlan_id = 113 [(attr_enum_value) = 113];
-  optional AclActionData action_add_vlan_pri = 114 [(attr_enum_value) = 114];
-  optional AclActionData action_set_src_mac = 115 [(attr_enum_value) = 115];
-  optional AclActionData action_set_dst_mac = 116 [(attr_enum_value) = 116];
-  optional AclActionData action_set_src_ip = 117 [(attr_enum_value) = 117];
-  optional AclActionData action_set_dst_ip = 118 [(attr_enum_value) = 118];
-  optional AclActionData action_set_src_ipv6 = 119 [(attr_enum_value) = 119];
-  optional AclActionData action_set_dst_ipv6 = 120 [(attr_enum_value) = 120];
-  optional AclActionData action_set_dscp = 121 [(attr_enum_value) = 121];
-  optional AclActionData action_set_ecn = 122 [(attr_enum_value) = 122];
-  optional AclActionData action_set_l4_src_port = 123 [(attr_enum_value) = 123];
-  optional AclActionData action_set_l4_dst_port = 124 [(attr_enum_value) = 124];
-  optional AclActionData action_ingress_samplepacket_enable = 125
+  optional AclActionData action_add_vlan_id = 112 [(attr_enum_value) = 112];
+  optional AclActionData action_add_vlan_pri = 113 [(attr_enum_value) = 113];
+  optional AclActionData action_set_src_mac = 114 [(attr_enum_value) = 114];
+  optional AclActionData action_set_dst_mac = 115 [(attr_enum_value) = 115];
+  optional AclActionData action_set_src_ip = 116 [(attr_enum_value) = 116];
+  optional AclActionData action_set_dst_ip = 117 [(attr_enum_value) = 117];
+  optional AclActionData action_set_src_ipv6 = 118 [(attr_enum_value) = 118];
+  optional AclActionData action_set_dst_ipv6 = 119 [(attr_enum_value) = 119];
+  optional AclActionData action_set_dscp = 120 [(attr_enum_value) = 120];
+  optional AclActionData action_set_ecn = 121 [(attr_enum_value) = 121];
+  optional AclActionData action_set_l4_src_port = 122 [(attr_enum_value) = 122];
+  optional AclActionData action_set_l4_dst_port = 123 [(attr_enum_value) = 123];
+  optional AclActionData action_ingress_samplepacket_enable = 124
+      [(attr_enum_value) = 124];
+  optional AclActionData action_egress_samplepacket_enable = 125
       [(attr_enum_value) = 125];
-  optional AclActionData action_egress_samplepacket_enable = 126
+  optional AclActionData action_set_acl_meta_data = 126
       [(attr_enum_value) = 126];
-  optional AclActionData action_set_acl_meta_data = 127
+  optional AclActionData action_egress_block_port_list = 127
       [(attr_enum_value) = 127];
-  optional AclActionData action_egress_block_port_list = 128
+  optional AclActionData action_set_user_trap_id = 128
       [(attr_enum_value) = 128];
-  optional AclActionData action_set_user_trap_id = 129
+  optional AclActionData action_set_do_not_learn = 129
       [(attr_enum_value) = 129];
-  optional AclActionData action_set_do_not_learn = 130
+  optional AclActionData action_acl_dtel_flow_op = 130
       [(attr_enum_value) = 130];
-  optional AclActionData action_acl_dtel_flow_op = 131
+  optional AclActionData action_dtel_int_session = 131
       [(attr_enum_value) = 131];
-  optional AclActionData action_dtel_int_session = 132
+  optional AclActionData action_dtel_drop_report_enable = 132
       [(attr_enum_value) = 132];
-  optional AclActionData action_dtel_drop_report_enable = 133
+  optional AclActionData action_dtel_tail_drop_report_enable = 133
       [(attr_enum_value) = 133];
-  optional AclActionData action_dtel_tail_drop_report_enable = 134
+  optional AclActionData action_dtel_flow_sample_percent = 134
       [(attr_enum_value) = 134];
-  optional AclActionData action_dtel_flow_sample_percent = 135
+  optional AclActionData action_dtel_report_all_packets = 135
       [(attr_enum_value) = 135];
-  optional AclActionData action_dtel_report_all_packets = 136
-      [(attr_enum_value) = 136];
-  optional AclActionData action_no_nat = 137 [(attr_enum_value) = 137];
-  optional AclActionData action_int_insert = 138 [(attr_enum_value) = 138];
-  optional AclActionData action_int_delete = 139 [(attr_enum_value) = 139];
-  optional AclActionData action_int_report_flow = 140 [(attr_enum_value) = 140];
-  optional AclActionData action_int_report_drops = 141
+  optional AclActionData action_no_nat = 136 [(attr_enum_value) = 136];
+  optional AclActionData action_int_insert = 137 [(attr_enum_value) = 137];
+  optional AclActionData action_int_delete = 138 [(attr_enum_value) = 138];
+  optional AclActionData action_int_report_flow = 139 [(attr_enum_value) = 139];
+  optional AclActionData action_int_report_drops = 140
+      [(attr_enum_value) = 140];
+  optional AclActionData action_int_report_tail_drops = 141
       [(attr_enum_value) = 141];
-  optional AclActionData action_int_report_tail_drops = 142
-      [(attr_enum_value) = 142];
-  optional AclActionData action_tam_int_object = 143 [(attr_enum_value) = 143];
-  optional AclActionData action_set_isolation_group = 144
-      [(attr_enum_value) = 144];
-  optional AclActionData action_macsec_flow = 145 [(attr_enum_value) = 145];
-  optional AclActionData action_set_lag_hash_id = 146 [(attr_enum_value) = 146];
-  optional AclActionData action_set_ecmp_hash_id = 147
-      [(attr_enum_value) = 147];
-  optional AclActionData action_set_vrf = 148 [(attr_enum_value) = 148];
-  optional AclActionData action_set_forwarding_class = 149
-      [(attr_enum_value) = 149];
+  optional AclActionData action_tam_int_object = 142 [(attr_enum_value) = 142];
+  optional AclActionData action_set_isolation_group = 143
+      [(attr_enum_value) = 143];
+  optional AclActionData action_macsec_flow = 144 [(attr_enum_value) = 144];
+  optional AclActionData action_set_lag_hash_id = 145 [(attr_enum_value) = 145];
+  optional AclActionData action_set_ecmp_hash_id = 146
+      [(attr_enum_value) = 146];
+  optional AclActionData action_set_vrf = 147 [(attr_enum_value) = 147];
+  optional AclActionData action_set_forwarding_class = 148
+      [(attr_enum_value) = 148];
 }
 
 message SetAclEntryAttributeResponse {}

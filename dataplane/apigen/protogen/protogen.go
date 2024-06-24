@@ -494,6 +494,7 @@ type saiTypeInfo struct {
 	Repeated   bool
 	ProtoType  string
 	MessageDef string
+	Required   bool
 }
 
 var (
@@ -546,6 +547,10 @@ var (
 		},
 		"sai_object_id_t": {
 			ProtoType: "uint64",
+		},
+		"map_sai_object_id_t": {
+			ProtoType: "map<uint64, uint64>",
+			Required:  true,
 		},
 		"sai_object_list_t": {
 			Repeated:  true,
@@ -1023,6 +1028,9 @@ var saiTypeToProtoTypeCompound = map[string]func(subType string, xmlInfo *docpar
 	"sai_acl_field_data_t": func(_ string, _ *docparser.SAIInfo) (string, bool) {
 		return "AclFieldData", false
 	},
+	"map_sai_acl_field_data_t": func(_ string, _ *docparser.SAIInfo) (string, bool) {
+		return "map<uint64, AclFieldData>", true
+	},
 	"sai_acl_action_data_t": func(_ string, _ *docparser.SAIInfo) (string, bool) {
 		return "AclActionData", false
 	},
@@ -1038,7 +1046,7 @@ func SaiTypeToProtoType(saiType string, xmlInfo *docparser.SAIInfo) (string, boo
 		if pt.Repeated {
 			return "repeated " + pt.ProtoType, true, nil
 		}
-		return pt.ProtoType, false, nil
+		return pt.ProtoType, pt.Required, nil
 	}
 	if _, ok := xmlInfo.Enums[saiType]; ok {
 		return saiast.TrimSAIName(saiType, true, false), false, nil

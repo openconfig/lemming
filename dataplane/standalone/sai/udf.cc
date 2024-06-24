@@ -290,6 +290,21 @@ sai_status_t l_get_udf_match_attribute(sai_object_id_t udf_match_id,
   }
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
+      case SAI_UDF_MATCH_ATTR_L2_TYPE:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u16(
+            resp.attr().l2_type(), resp.attr().l2_type().data_uint(),
+            resp.attr().l2_type().mask_uint());
+        break;
+      case SAI_UDF_MATCH_ATTR_L3_TYPE:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u8(
+            resp.attr().l3_type(), resp.attr().l3_type().data_uint(),
+            resp.attr().l3_type().mask_uint());
+        break;
+      case SAI_UDF_MATCH_ATTR_GRE_TYPE:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u16(
+            resp.attr().gre_type(), resp.attr().gre_type().data_uint(),
+            resp.attr().gre_type().mask_uint());
+        break;
       case SAI_UDF_MATCH_ATTR_PRIORITY:
         attr_list[i].value.u8 = resp.attr().priority();
         break;
