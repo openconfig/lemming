@@ -219,8 +219,6 @@ lemming::dataplane::sai::AclFieldData convert_from_acl_field_data_ip_type(
   return out;
 }
 
-////
-
 sai_acl_action_data_t convert_to_acl_action_data(
     const lemming::dataplane::sai::AclActionData& in, uint64_t id) {
   sai_acl_action_data_t out;
