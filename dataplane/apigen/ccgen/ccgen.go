@@ -145,6 +145,12 @@ var unsupportedEnum = map[string]struct{}{
 	"HOSTIF_PACKET": {},
 }
 
+const (
+	createOp  = "create"
+	getAttrOp = "get_attribute"
+	setAttrOp = "set_attribute"
+)
+
 // createCCData returns a two structs with the template data for the given function.
 // The first is the implementation of the API: CreateFoo.
 // The second is the a conversion func from attribute list to the proto message. covert_create_foo.
@@ -211,7 +217,7 @@ func createCCData(meta *saiast.FuncMetadata, apiName string, sai *saiast.SAIAPI,
 	}
 
 	switch opFn.Operation {
-	case "create":
+	case createOp:
 		convertFn.AttrSwitch = &AttrSwitch{
 			Var:      "attr_list[i].id",
 			ProtoVar: "msg",
@@ -228,7 +234,7 @@ func createCCData(meta *saiast.FuncMetadata, apiName string, sai *saiast.SAIAPI,
 			smt.EnumValue = attr.EnumName
 			convertFn.AttrSwitch.Attrs = append(convertFn.AttrSwitch.Attrs, smt)
 		}
-	case "get_attribute":
+	case getAttrOp:
 		opFn.AttrSwitch = &AttrSwitch{
 			Var:      "attr_list[i].id",
 			ProtoVar: "resp.attr()",
@@ -244,7 +250,7 @@ func createCCData(meta *saiast.FuncMetadata, apiName string, sai *saiast.SAIAPI,
 			smt.EnumValue = attr.EnumName
 			opFn.AttrSwitch.Attrs = append(opFn.AttrSwitch.Attrs, smt)
 		}
-	case "set_attribute":
+	case setAttrOp:
 		convertFn = nil
 		opFn.AttrSwitch = &AttrSwitch{
 			Var:      "attr->id",
@@ -293,38 +299,41 @@ func createCCData(meta *saiast.FuncMetadata, apiName string, sai *saiast.SAIAPI,
 	}
 
 	// Patches for non-standard APIS
-	if meta.TypeName == "ACL_TABLE" && meta.Operation == "create" {
-		convertFn.AttrConvertInsert = `
+	if meta.TypeName == "ACL_TABLE" {
+		switch meta.Operation {
+		case createOp:
+			convertFn.AttrConvertInsert = `
 if (attr_list[i].id >= SAI_ACL_TABLE_ATTR_USER_DEFINED_FIELD_GROUP_MIN && attr_list[i].id < SAI_ACL_TABLE_ATTR_USER_DEFINED_FIELD_GROUP_MAX) {
   (*msg.mutable_user_defined_field_group_min())[attr_list[i].id - SAI_ACL_TABLE_ATTR_USER_DEFINED_FIELD_GROUP_MIN] = attr_list[i].value.oid;
 }`
-	}
-	if meta.TypeName == "ACL_TABLE" && meta.Operation == "get_attribute" {
-		opFn.AttrConvertInsert = `
+		case getAttrOp:
+			opFn.AttrConvertInsert = `
 if (attr_list[i].id >= SAI_ACL_TABLE_ATTR_USER_DEFINED_FIELD_GROUP_MIN && attr_list[i].id < SAI_ACL_TABLE_ATTR_USER_DEFINED_FIELD_GROUP_MAX) {
   attr_list[i].value.oid = resp.attr().user_defined_field_group_min().at(attr_list[i].id - SAI_ACL_TABLE_ATTR_USER_DEFINED_FIELD_GROUP_MIN);
 }`
+		}
 	}
-	if meta.TypeName == "ACL_ENTRY" && meta.Operation == "create" {
-		convertFn.AttrConvertInsert = `
+	if meta.TypeName == "ACL_ENTRY" {
+		switch meta.Operation {
+		case createOp:
+			convertFn.AttrConvertInsert = `
 if (attr_list[i].id >= SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN && attr_list[i].id < SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MAX) {
     (*msg.mutable_user_defined_field_group_min())[attr_list[i].id  - SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN].mutable_data_list()->mutable_list()->Add(attr_list[i].value.aclfield.data.u8list.list, attr_list[i].value.aclfield.data.u8list.list + attr_list[i].value.aclfield.data.u8list.count);
     (*msg.mutable_user_defined_field_group_min())[attr_list[i].id  - SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN].mutable_mask_list()->mutable_list()->Add(attr_list[i].value.aclfield.mask.u8list.list, attr_list[i].value.aclfield.mask.u8list.list + attr_list[i].value.aclfield.mask.u8list.count);
 }`
-	}
-	if meta.TypeName == "ACL_ENTRY" && meta.Operation == "set_attribute" {
-		opFn.AttrConvertInsert = `
+		case setAttrOp:
+			opFn.AttrConvertInsert = `
 if (attr->id >= SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN && attr->id < SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MAX) {
-    (*req.mutable_user_defined_field_group_min())[attr->id  - SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN].mutable_data_list()->mutable_list()->Add(attr->value.aclfield.data.u8list.list, attr->value.aclfield.data.u8list.list + attr->value.aclfield.data.u8list.count);
-    (*req.mutable_user_defined_field_group_min())[attr->id  - SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN].mutable_mask_list()->mutable_list()->Add(attr->value.aclfield.mask.u8list.list, attr->value.aclfield.mask.u8list.list + attr->value.aclfield.mask.u8list.count);
+(*req.mutable_user_defined_field_group_min())[attr->id  - SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN].mutable_data_list()->mutable_list()->Add(attr->value.aclfield.data.u8list.list, attr->value.aclfield.data.u8list.list + attr->value.aclfield.data.u8list.count);
+(*req.mutable_user_defined_field_group_min())[attr->id  - SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN].mutable_mask_list()->mutable_list()->Add(attr->value.aclfield.mask.u8list.list, attr->value.aclfield.mask.u8list.list + attr->value.aclfield.mask.u8list.count);
 }`
-	}
-	if meta.TypeName == "ACL_ENTRY" && meta.Operation == "get_attribute" {
-		opFn.AttrConvertInsert = `
+		case getAttrOp:
+			opFn.AttrConvertInsert = `
 if (attr_list[i].id >= SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN && attr_list[i].id < SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MAX) {
     copy_list(attr_list[i].value.aclfield.data.u8list.list, resp.attr().user_defined_field_group_min().at(attr_list[i].id - SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN).data_list().list(), &attr_list[i].value.aclfield.data.u8list.count);
     copy_list(attr_list[i].value.aclfield.mask.u8list.list, resp.attr().user_defined_field_group_min().at(attr_list[i].id - SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN).mask_list().list(), &attr_list[i].value.aclfield.mask.u8list.count);
 }`
+		}
 	}
 
 	opFn.UseCommonAPI = supportedOperation[opFn.Operation]
@@ -625,10 +634,10 @@ func protoFieldGetter(saiType, protoField, varName string, info *docparser.SAIIn
 }
 
 var supportedOperation = map[string]bool{
-	"create":             true,
+	createOp:             true,
 	"remove":             true,
-	"get_attribute":      true,
-	"set_attribute":      true,
+	getAttrOp:            true,
+	setAttrOp:            true,
 	"clear_stats":        true,
 	"get_stats":          true,
 	"get_stats_ext":      true,
