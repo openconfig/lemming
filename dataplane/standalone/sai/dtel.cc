@@ -335,6 +335,11 @@ sai_status_t l_get_dtel_attribute(sai_object_id_t dtel_id, uint32_t attr_count,
         copy_list(attr_list[i].value.objlist.list, resp.attr().sink_port_list(),
                   &attr_list[i].value.objlist.count);
         break;
+      case SAI_DTEL_ATTR_INT_L4_DSCP:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u8(
+            resp.attr().int_l4_dscp(), resp.attr().int_l4_dscp().data_uint(),
+            resp.attr().int_l4_dscp().mask_uint());
+        break;
     }
   }
 

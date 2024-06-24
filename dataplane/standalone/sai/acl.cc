@@ -56,6 +56,13 @@ lemming::dataplane::sai::CreateAclTableRequest convert_create_acl_table(
   lemming::dataplane::sai::CreateAclTableRequest msg;
 
   for (uint32_t i = 0; i < attr_count; i++) {
+    if (attr_list[i].id >= SAI_ACL_TABLE_ATTR_USER_DEFINED_FIELD_GROUP_MIN &&
+        attr_list[i].id < SAI_ACL_TABLE_ATTR_USER_DEFINED_FIELD_GROUP_MAX) {
+      (*msg.mutable_user_defined_field_group_min())
+          [attr_list[i].id - SAI_ACL_TABLE_ATTR_USER_DEFINED_FIELD_GROUP_MIN] =
+              attr_list[i].value.oid;
+    }
+
     switch (attr_list[i].id) {
       case SAI_ACL_TABLE_ATTR_ACL_STAGE:
         msg.set_acl_stage(
@@ -325,12 +332,6 @@ lemming::dataplane::sai::CreateAclTableRequest convert_create_acl_table(
       case SAI_ACL_TABLE_ATTR_FIELD_AETH_SYNDROME:
         msg.set_field_aeth_syndrome(attr_list[i].value.booldata);
         break;
-      case SAI_ACL_TABLE_ATTR_USER_DEFINED_FIELD_GROUP_MIN:
-        msg.set_user_defined_field_group_min(attr_list[i].value.oid);
-        break;
-      case SAI_ACL_TABLE_ATTR_USER_DEFINED_FIELD_GROUP_MAX:
-        msg.set_user_defined_field_group_max(attr_list[i].value.oid);
-        break;
       case SAI_ACL_TABLE_ATTR_FIELD_IPV6_NEXT_HEADER:
         msg.set_field_ipv6_next_header(attr_list[i].value.booldata);
         break;
@@ -351,6 +352,24 @@ lemming::dataplane::sai::CreateAclEntryRequest convert_create_acl_entry(
   lemming::dataplane::sai::CreateAclEntryRequest msg;
 
   for (uint32_t i = 0; i < attr_count; i++) {
+    if (attr_list[i].id >= SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN &&
+        attr_list[i].id < SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MAX) {
+      (*msg.mutable_user_defined_field_group_min())
+          [attr_list[i].id - SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN]
+              .mutable_data_list()
+              ->mutable_list()
+              ->Add(attr_list[i].value.aclfield.data.u8list.list,
+                    attr_list[i].value.aclfield.data.u8list.list +
+                        attr_list[i].value.aclfield.data.u8list.count);
+      (*msg.mutable_user_defined_field_group_min())
+          [attr_list[i].id - SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN]
+              .mutable_mask_list()
+              ->mutable_list()
+              ->Add(attr_list[i].value.aclfield.mask.u8list.list,
+                    attr_list[i].value.aclfield.mask.u8list.list +
+                        attr_list[i].value.aclfield.mask.u8list.count);
+    }
+
     switch (attr_list[i].id) {
       case SAI_ACL_ENTRY_ATTR_TABLE_ID:
         msg.set_table_id(attr_list[i].value.oid);
@@ -895,6 +914,12 @@ sai_status_t l_get_acl_table_attribute(sai_object_id_t acl_table_id,
     return SAI_STATUS_FAILURE;
   }
   for (uint32_t i = 0; i < attr_count; i++) {
+    if (attr_list[i].id >= SAI_ACL_TABLE_ATTR_USER_DEFINED_FIELD_GROUP_MIN &&
+        attr_list[i].id < SAI_ACL_TABLE_ATTR_USER_DEFINED_FIELD_GROUP_MAX) {
+      attr_list[i].value.oid = resp.attr().user_defined_field_group_min().at(
+          attr_list[i].id - SAI_ACL_TABLE_ATTR_USER_DEFINED_FIELD_GROUP_MIN);
+    }
+
     switch (attr_list[i].id) {
       case SAI_ACL_TABLE_ATTR_ACL_STAGE:
         attr_list[i].value.s32 =
@@ -1167,12 +1192,6 @@ sai_status_t l_get_acl_table_attribute(sai_object_id_t acl_table_id,
       case SAI_ACL_TABLE_ATTR_FIELD_AETH_SYNDROME:
         attr_list[i].value.booldata = resp.attr().field_aeth_syndrome();
         break;
-      case SAI_ACL_TABLE_ATTR_USER_DEFINED_FIELD_GROUP_MIN:
-        attr_list[i].value.oid = resp.attr().user_defined_field_group_min();
-        break;
-      case SAI_ACL_TABLE_ATTR_USER_DEFINED_FIELD_GROUP_MAX:
-        attr_list[i].value.oid = resp.attr().user_defined_field_group_max();
-        break;
       case SAI_ACL_TABLE_ATTR_FIELD_IPV6_NEXT_HEADER:
         attr_list[i].value.booldata = resp.attr().field_ipv6_next_header();
         break;
@@ -1244,6 +1263,24 @@ sai_status_t l_set_acl_entry_attribute(sai_object_id_t acl_entry_id,
   lemming::dataplane::sai::SetAclEntryAttributeResponse resp;
   grpc::ClientContext context;
   req.set_oid(acl_entry_id);
+
+  if (attr->id >= SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN &&
+      attr->id < SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MAX) {
+    (*req.mutable_user_defined_field_group_min())
+        [attr->id - SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN]
+            .mutable_data_list()
+            ->mutable_list()
+            ->Add(attr->value.aclfield.data.u8list.list,
+                  attr->value.aclfield.data.u8list.list +
+                      attr->value.aclfield.data.u8list.count);
+    (*req.mutable_user_defined_field_group_min())
+        [attr->id - SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN]
+            .mutable_mask_list()
+            ->mutable_list()
+            ->Add(attr->value.aclfield.mask.u8list.list,
+                  attr->value.aclfield.mask.u8list.list +
+                      attr->value.aclfield.mask.u8list.count);
+  }
 
   switch (attr->id) {
     case SAI_ACL_ENTRY_ATTR_PRIORITY:
@@ -1643,6 +1680,26 @@ sai_status_t l_get_acl_entry_attribute(sai_object_id_t acl_entry_id,
     return SAI_STATUS_FAILURE;
   }
   for (uint32_t i = 0; i < attr_count; i++) {
+    if (attr_list[i].id >= SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN &&
+        attr_list[i].id < SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MAX) {
+      copy_list(attr_list[i].value.aclfield.data.u8list.list,
+                resp.attr()
+                    .user_defined_field_group_min()
+                    .at(attr_list[i].id -
+                        SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN)
+                    .data_list()
+                    .list(),
+                &attr_list[i].value.aclfield.data.u8list.count);
+      copy_list(attr_list[i].value.aclfield.mask.u8list.list,
+                resp.attr()
+                    .user_defined_field_group_min()
+                    .at(attr_list[i].id -
+                        SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN)
+                    .mask_list()
+                    .list(),
+                &attr_list[i].value.aclfield.mask.u8list.count);
+    }
+
     switch (attr_list[i].id) {
       case SAI_ACL_ENTRY_ATTR_TABLE_ID:
         attr_list[i].value.oid = resp.attr().table_id();
@@ -1652,6 +1709,426 @@ sai_status_t l_get_acl_entry_attribute(sai_object_id_t acl_entry_id,
         break;
       case SAI_ACL_ENTRY_ATTR_ADMIN_STATE:
         attr_list[i].value.booldata = resp.attr().admin_state();
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_SRC_IPV6:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_ip6(
+            resp.attr().field_src_ipv6(),
+            resp.attr().field_src_ipv6().data_ip(),
+            resp.attr().field_src_ipv6().mask_ip());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_SRC_IPV6_WORD3:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_ip6(
+            resp.attr().field_src_ipv6_word3(),
+            resp.attr().field_src_ipv6_word3().data_ip(),
+            resp.attr().field_src_ipv6_word3().mask_ip());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_SRC_IPV6_WORD2:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_ip6(
+            resp.attr().field_src_ipv6_word2(),
+            resp.attr().field_src_ipv6_word2().data_ip(),
+            resp.attr().field_src_ipv6_word2().mask_ip());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_SRC_IPV6_WORD1:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_ip6(
+            resp.attr().field_src_ipv6_word1(),
+            resp.attr().field_src_ipv6_word1().data_ip(),
+            resp.attr().field_src_ipv6_word1().mask_ip());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_SRC_IPV6_WORD0:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_ip6(
+            resp.attr().field_src_ipv6_word0(),
+            resp.attr().field_src_ipv6_word0().data_ip(),
+            resp.attr().field_src_ipv6_word0().mask_ip());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_DST_IPV6:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_ip6(
+            resp.attr().field_dst_ipv6(),
+            resp.attr().field_dst_ipv6().data_ip(),
+            resp.attr().field_dst_ipv6().mask_ip());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_DST_IPV6_WORD3:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_ip6(
+            resp.attr().field_dst_ipv6_word3(),
+            resp.attr().field_dst_ipv6_word3().data_ip(),
+            resp.attr().field_dst_ipv6_word3().mask_ip());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_DST_IPV6_WORD2:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_ip6(
+            resp.attr().field_dst_ipv6_word2(),
+            resp.attr().field_dst_ipv6_word2().data_ip(),
+            resp.attr().field_dst_ipv6_word2().mask_ip());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_DST_IPV6_WORD1:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_ip6(
+            resp.attr().field_dst_ipv6_word1(),
+            resp.attr().field_dst_ipv6_word1().data_ip(),
+            resp.attr().field_dst_ipv6_word1().mask_ip());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_DST_IPV6_WORD0:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_ip6(
+            resp.attr().field_dst_ipv6_word0(),
+            resp.attr().field_dst_ipv6_word0().data_ip(),
+            resp.attr().field_dst_ipv6_word0().mask_ip());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_INNER_SRC_IPV6:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_ip6(
+            resp.attr().field_inner_src_ipv6(),
+            resp.attr().field_inner_src_ipv6().data_ip(),
+            resp.attr().field_inner_src_ipv6().mask_ip());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_INNER_DST_IPV6:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_ip6(
+            resp.attr().field_inner_dst_ipv6(),
+            resp.attr().field_inner_dst_ipv6().data_ip(),
+            resp.attr().field_inner_dst_ipv6().mask_ip());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_SRC_MAC:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_mac(
+            resp.attr().field_src_mac(), resp.attr().field_src_mac().data_mac(),
+            resp.attr().field_src_mac().mask_mac());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_DST_MAC:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_mac(
+            resp.attr().field_dst_mac(), resp.attr().field_dst_mac().data_mac(),
+            resp.attr().field_dst_mac().mask_mac());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_SRC_IP:
+        attr_list[i].value.aclfield = convert_to_acl_field_data(
+            resp.attr().field_src_ip(), resp.attr().field_src_ip().data_ip(),
+            resp.attr().field_src_ip().mask_ip());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_DST_IP:
+        attr_list[i].value.aclfield = convert_to_acl_field_data(
+            resp.attr().field_dst_ip(), resp.attr().field_dst_ip().data_ip(),
+            resp.attr().field_dst_ip().mask_ip());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_INNER_SRC_IP:
+        attr_list[i].value.aclfield = convert_to_acl_field_data(
+            resp.attr().field_inner_src_ip(),
+            resp.attr().field_inner_src_ip().data_ip(),
+            resp.attr().field_inner_src_ip().mask_ip());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_INNER_DST_IP:
+        attr_list[i].value.aclfield = convert_to_acl_field_data(
+            resp.attr().field_inner_dst_ip(),
+            resp.attr().field_inner_dst_ip().data_ip(),
+            resp.attr().field_inner_dst_ip().mask_ip());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_IN_PORT:
+        attr_list[i].value.aclfield =
+            convert_to_acl_field_data(resp.attr().field_in_port(),
+                                      resp.attr().field_in_port().data_oid());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_OUT_PORT:
+        attr_list[i].value.aclfield =
+            convert_to_acl_field_data(resp.attr().field_out_port(),
+                                      resp.attr().field_out_port().data_oid());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_SRC_PORT:
+        attr_list[i].value.aclfield =
+            convert_to_acl_field_data(resp.attr().field_src_port(),
+                                      resp.attr().field_src_port().data_oid());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_OUTER_VLAN_ID:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u16(
+            resp.attr().field_outer_vlan_id(),
+            resp.attr().field_outer_vlan_id().data_uint(),
+            resp.attr().field_outer_vlan_id().mask_uint());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_OUTER_VLAN_PRI:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u8(
+            resp.attr().field_outer_vlan_pri(),
+            resp.attr().field_outer_vlan_pri().data_uint(),
+            resp.attr().field_outer_vlan_pri().mask_uint());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_OUTER_VLAN_CFI:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u8(
+            resp.attr().field_outer_vlan_cfi(),
+            resp.attr().field_outer_vlan_cfi().data_uint(),
+            resp.attr().field_outer_vlan_cfi().mask_uint());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_INNER_VLAN_ID:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u16(
+            resp.attr().field_inner_vlan_id(),
+            resp.attr().field_inner_vlan_id().data_uint(),
+            resp.attr().field_inner_vlan_id().mask_uint());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_INNER_VLAN_PRI:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u8(
+            resp.attr().field_inner_vlan_pri(),
+            resp.attr().field_inner_vlan_pri().data_uint(),
+            resp.attr().field_inner_vlan_pri().mask_uint());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_INNER_VLAN_CFI:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u8(
+            resp.attr().field_inner_vlan_cfi(),
+            resp.attr().field_inner_vlan_cfi().data_uint(),
+            resp.attr().field_inner_vlan_cfi().mask_uint());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_L4_SRC_PORT:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u16(
+            resp.attr().field_l4_src_port(),
+            resp.attr().field_l4_src_port().data_uint(),
+            resp.attr().field_l4_src_port().mask_uint());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_L4_DST_PORT:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u16(
+            resp.attr().field_l4_dst_port(),
+            resp.attr().field_l4_dst_port().data_uint(),
+            resp.attr().field_l4_dst_port().mask_uint());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_INNER_L4_SRC_PORT:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u16(
+            resp.attr().field_inner_l4_src_port(),
+            resp.attr().field_inner_l4_src_port().data_uint(),
+            resp.attr().field_inner_l4_src_port().mask_uint());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_INNER_L4_DST_PORT:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u16(
+            resp.attr().field_inner_l4_dst_port(),
+            resp.attr().field_inner_l4_dst_port().data_uint(),
+            resp.attr().field_inner_l4_dst_port().mask_uint());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_ETHER_TYPE:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u16(
+            resp.attr().field_ether_type(),
+            resp.attr().field_ether_type().data_uint(),
+            resp.attr().field_ether_type().mask_uint());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_INNER_ETHER_TYPE:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u16(
+            resp.attr().field_inner_ether_type(),
+            resp.attr().field_inner_ether_type().data_uint(),
+            resp.attr().field_inner_ether_type().mask_uint());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_IP_PROTOCOL:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u8(
+            resp.attr().field_ip_protocol(),
+            resp.attr().field_ip_protocol().data_uint(),
+            resp.attr().field_ip_protocol().mask_uint());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_INNER_IP_PROTOCOL:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u8(
+            resp.attr().field_inner_ip_protocol(),
+            resp.attr().field_inner_ip_protocol().data_uint(),
+            resp.attr().field_inner_ip_protocol().mask_uint());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_IP_IDENTIFICATION:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u16(
+            resp.attr().field_ip_identification(),
+            resp.attr().field_ip_identification().data_uint(),
+            resp.attr().field_ip_identification().mask_uint());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_DSCP:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u8(
+            resp.attr().field_dscp(), resp.attr().field_dscp().data_uint(),
+            resp.attr().field_dscp().mask_uint());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_ECN:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u8(
+            resp.attr().field_ecn(), resp.attr().field_ecn().data_uint(),
+            resp.attr().field_ecn().mask_uint());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_TTL:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u8(
+            resp.attr().field_ttl(), resp.attr().field_ttl().data_uint(),
+            resp.attr().field_ttl().mask_uint());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_TOS:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u8(
+            resp.attr().field_tos(), resp.attr().field_tos().data_uint(),
+            resp.attr().field_tos().mask_uint());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_IP_FLAGS:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u8(
+            resp.attr().field_ip_flags(),
+            resp.attr().field_ip_flags().data_uint(),
+            resp.attr().field_ip_flags().mask_uint());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_TCP_FLAGS:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u8(
+            resp.attr().field_tcp_flags(),
+            resp.attr().field_tcp_flags().data_uint(),
+            resp.attr().field_tcp_flags().mask_uint());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_ACL_IP_TYPE:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_ip_type(
+            resp.attr().field_acl_ip_type(),
+            resp.attr().field_acl_ip_type().data_ip_type());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_TC:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u8(
+            resp.attr().field_tc(), resp.attr().field_tc().data_uint(),
+            resp.attr().field_tc().mask_uint());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_ICMP_TYPE:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u8(
+            resp.attr().field_icmp_type(),
+            resp.attr().field_icmp_type().data_uint(),
+            resp.attr().field_icmp_type().mask_uint());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_ICMP_CODE:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u8(
+            resp.attr().field_icmp_code(),
+            resp.attr().field_icmp_code().data_uint(),
+            resp.attr().field_icmp_code().mask_uint());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_ICMPV6_TYPE:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u8(
+            resp.attr().field_icmpv6_type(),
+            resp.attr().field_icmpv6_type().data_uint(),
+            resp.attr().field_icmpv6_type().mask_uint());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_ICMPV6_CODE:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u8(
+            resp.attr().field_icmpv6_code(),
+            resp.attr().field_icmpv6_code().data_uint(),
+            resp.attr().field_icmpv6_code().mask_uint());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL0_TTL:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u8(
+            resp.attr().field_mpls_label0_ttl(),
+            resp.attr().field_mpls_label0_ttl().data_uint(),
+            resp.attr().field_mpls_label0_ttl().mask_uint());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL0_EXP:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u8(
+            resp.attr().field_mpls_label0_exp(),
+            resp.attr().field_mpls_label0_exp().data_uint(),
+            resp.attr().field_mpls_label0_exp().mask_uint());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL1_TTL:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u8(
+            resp.attr().field_mpls_label1_ttl(),
+            resp.attr().field_mpls_label1_ttl().data_uint(),
+            resp.attr().field_mpls_label1_ttl().mask_uint());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL1_EXP:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u8(
+            resp.attr().field_mpls_label1_exp(),
+            resp.attr().field_mpls_label1_exp().data_uint(),
+            resp.attr().field_mpls_label1_exp().mask_uint());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL2_TTL:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u8(
+            resp.attr().field_mpls_label2_ttl(),
+            resp.attr().field_mpls_label2_ttl().data_uint(),
+            resp.attr().field_mpls_label2_ttl().mask_uint());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL2_EXP:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u8(
+            resp.attr().field_mpls_label2_exp(),
+            resp.attr().field_mpls_label2_exp().data_uint(),
+            resp.attr().field_mpls_label2_exp().mask_uint());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL3_TTL:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u8(
+            resp.attr().field_mpls_label3_ttl(),
+            resp.attr().field_mpls_label3_ttl().data_uint(),
+            resp.attr().field_mpls_label3_ttl().mask_uint());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL3_EXP:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u8(
+            resp.attr().field_mpls_label3_exp(),
+            resp.attr().field_mpls_label3_exp().data_uint(),
+            resp.attr().field_mpls_label3_exp().mask_uint());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL4_TTL:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u8(
+            resp.attr().field_mpls_label4_ttl(),
+            resp.attr().field_mpls_label4_ttl().data_uint(),
+            resp.attr().field_mpls_label4_ttl().mask_uint());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL4_EXP:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u8(
+            resp.attr().field_mpls_label4_exp(),
+            resp.attr().field_mpls_label4_exp().data_uint(),
+            resp.attr().field_mpls_label4_exp().mask_uint());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_BTH_OPCODE:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u8(
+            resp.attr().field_bth_opcode(),
+            resp.attr().field_bth_opcode().data_uint(),
+            resp.attr().field_bth_opcode().mask_uint());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_AETH_SYNDROME:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u8(
+            resp.attr().field_aeth_syndrome(),
+            resp.attr().field_aeth_syndrome().data_uint(),
+            resp.attr().field_aeth_syndrome().mask_uint());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_IPV6_NEXT_HEADER:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u8(
+            resp.attr().field_ipv6_next_header(),
+            resp.attr().field_ipv6_next_header().data_uint(),
+            resp.attr().field_ipv6_next_header().mask_uint());
+        break;
+      case SAI_ACL_ENTRY_ATTR_ACTION_REDIRECT:
+        attr_list[i].value.aclaction = convert_to_acl_action_data(
+            resp.attr().action_redirect(), resp.attr().action_redirect().oid());
+        break;
+      case SAI_ACL_ENTRY_ATTR_ACTION_PACKET_ACTION:
+        attr_list[i].value.aclaction = convert_to_acl_action_data_action(
+            resp.attr().action_packet_action(),
+            resp.attr().action_packet_action().packet_action());
+        break;
+      case SAI_ACL_ENTRY_ATTR_ACTION_COUNTER:
+        attr_list[i].value.aclaction = convert_to_acl_action_data(
+            resp.attr().action_counter(), resp.attr().action_counter().oid());
+        break;
+      case SAI_ACL_ENTRY_ATTR_ACTION_SET_POLICER:
+        attr_list[i].value.aclaction =
+            convert_to_acl_action_data(resp.attr().action_set_policer(),
+                                       resp.attr().action_set_policer().oid());
+        break;
+      case SAI_ACL_ENTRY_ATTR_ACTION_INGRESS_SAMPLEPACKET_ENABLE:
+        attr_list[i].value.aclaction = convert_to_acl_action_data(
+            resp.attr().action_ingress_samplepacket_enable(),
+            resp.attr().action_ingress_samplepacket_enable().oid());
+        break;
+      case SAI_ACL_ENTRY_ATTR_ACTION_EGRESS_SAMPLEPACKET_ENABLE:
+        attr_list[i].value.aclaction = convert_to_acl_action_data(
+            resp.attr().action_egress_samplepacket_enable(),
+            resp.attr().action_egress_samplepacket_enable().oid());
+        break;
+      case SAI_ACL_ENTRY_ATTR_ACTION_SET_USER_TRAP_ID:
+        attr_list[i].value.aclaction = convert_to_acl_action_data(
+            resp.attr().action_set_user_trap_id(),
+            resp.attr().action_set_user_trap_id().oid());
+        break;
+      case SAI_ACL_ENTRY_ATTR_ACTION_DTEL_INT_SESSION:
+        attr_list[i].value.aclaction = convert_to_acl_action_data(
+            resp.attr().action_dtel_int_session(),
+            resp.attr().action_dtel_int_session().oid());
+        break;
+      case SAI_ACL_ENTRY_ATTR_ACTION_TAM_INT_OBJECT:
+        attr_list[i].value.aclaction = convert_to_acl_action_data(
+            resp.attr().action_tam_int_object(),
+            resp.attr().action_tam_int_object().oid());
+        break;
+      case SAI_ACL_ENTRY_ATTR_ACTION_SET_ISOLATION_GROUP:
+        attr_list[i].value.aclaction = convert_to_acl_action_data(
+            resp.attr().action_set_isolation_group(),
+            resp.attr().action_set_isolation_group().oid());
+        break;
+      case SAI_ACL_ENTRY_ATTR_ACTION_MACSEC_FLOW:
+        attr_list[i].value.aclaction =
+            convert_to_acl_action_data(resp.attr().action_macsec_flow(),
+                                       resp.attr().action_macsec_flow().oid());
+        break;
+      case SAI_ACL_ENTRY_ATTR_ACTION_SET_LAG_HASH_ID:
+        attr_list[i].value.aclaction = convert_to_acl_action_data(
+            resp.attr().action_set_lag_hash_id(),
+            resp.attr().action_set_lag_hash_id().oid());
+        break;
+      case SAI_ACL_ENTRY_ATTR_ACTION_SET_ECMP_HASH_ID:
+        attr_list[i].value.aclaction = convert_to_acl_action_data(
+            resp.attr().action_set_ecmp_hash_id(),
+            resp.attr().action_set_ecmp_hash_id().oid());
+        break;
+      case SAI_ACL_ENTRY_ATTR_ACTION_SET_VRF:
+        attr_list[i].value.aclaction = convert_to_acl_action_data(
+            resp.attr().action_set_vrf(), resp.attr().action_set_vrf().oid());
         break;
     }
   }
