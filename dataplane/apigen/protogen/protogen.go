@@ -739,6 +739,7 @@ message QOSMap {
 		bytes mask_mac = 4;
 		bytes mask_ip = 5;
 		Uint64List mask_list = 6;
+		bytes mask_u8list = 15;
 	};
 	oneof data {
 		bool data_bool = 7;
@@ -749,6 +750,7 @@ message QOSMap {
 		Uint64List data_list = 12;
 		AclIpType data_ip_type = 13;
 		uint64 data_oid = 14;
+		bytes data_u8list = 16;
 	};
 }
 

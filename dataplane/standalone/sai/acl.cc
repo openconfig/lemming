@@ -354,20 +354,18 @@ lemming::dataplane::sai::CreateAclEntryRequest convert_create_acl_entry(
   for (uint32_t i = 0; i < attr_count; i++) {
     if (attr_list[i].id >= SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN &&
         attr_list[i].id < SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MAX) {
-      (*msg.mutable_user_defined_field_group_min())
-          [attr_list[i].id - SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN]
-              .mutable_data_list()
-              ->mutable_list()
-              ->Add(attr_list[i].value.aclfield.data.u8list.list,
-                    attr_list[i].value.aclfield.data.u8list.list +
-                        attr_list[i].value.aclfield.data.u8list.count);
-      (*msg.mutable_user_defined_field_group_min())
-          [attr_list[i].id - SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN]
-              .mutable_mask_list()
-              ->mutable_list()
-              ->Add(attr_list[i].value.aclfield.mask.u8list.list,
-                    attr_list[i].value.aclfield.mask.u8list.list +
-                        attr_list[i].value.aclfield.mask.u8list.count);
+      *(*msg.mutable_user_defined_field_group_min())
+           [attr_list[i].id - SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN]
+               .mutable_data_u8list() =
+          std::string(attr_list[i].value.aclfield.data.u8list.list,
+                      attr_list[i].value.aclfield.data.u8list.list +
+                          attr_list[i].value.aclfield.data.u8list.count);
+      *(*msg.mutable_user_defined_field_group_min())
+           [attr_list[i].id - SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN]
+               .mutable_mask_u8list() =
+          std::string(attr_list[i].value.aclfield.mask.u8list.list,
+                      attr_list[i].value.aclfield.mask.u8list.list +
+                          attr_list[i].value.aclfield.mask.u8list.count);
     }
 
     switch (attr_list[i].id) {
@@ -1266,20 +1264,18 @@ sai_status_t l_set_acl_entry_attribute(sai_object_id_t acl_entry_id,
 
   if (attr->id >= SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN &&
       attr->id < SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MAX) {
-    (*req.mutable_user_defined_field_group_min())
-        [attr->id - SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN]
-            .mutable_data_list()
-            ->mutable_list()
-            ->Add(attr->value.aclfield.data.u8list.list,
-                  attr->value.aclfield.data.u8list.list +
-                      attr->value.aclfield.data.u8list.count);
-    (*req.mutable_user_defined_field_group_min())
-        [attr->id - SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN]
-            .mutable_mask_list()
-            ->mutable_list()
-            ->Add(attr->value.aclfield.mask.u8list.list,
-                  attr->value.aclfield.mask.u8list.list +
-                      attr->value.aclfield.mask.u8list.count);
+    *(*req.mutable_user_defined_field_group_min())
+         [attr->id - SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN]
+             .mutable_data_u8list() =
+        std::string(attr->value.aclfield.data.u8list.list,
+                    attr->value.aclfield.data.u8list.list +
+                        attr->value.aclfield.data.u8list.count);
+    *(*req.mutable_user_defined_field_group_min())
+         [attr->id - SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN]
+             .mutable_mask_u8list() =
+        std::string(attr->value.aclfield.mask.u8list.list,
+                    attr->value.aclfield.mask.u8list.list +
+                        attr->value.aclfield.mask.u8list.count);
   }
 
   switch (attr->id) {
@@ -1682,22 +1678,16 @@ sai_status_t l_get_acl_entry_attribute(sai_object_id_t acl_entry_id,
   for (uint32_t i = 0; i < attr_count; i++) {
     if (attr_list[i].id >= SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN &&
         attr_list[i].id < SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MAX) {
-      copy_list(attr_list[i].value.aclfield.data.u8list.list,
-                resp.attr()
-                    .user_defined_field_group_min()
-                    .at(attr_list[i].id -
-                        SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN)
-                    .data_list()
-                    .list(),
-                &attr_list[i].value.aclfield.data.u8list.count);
-      copy_list(attr_list[i].value.aclfield.mask.u8list.list,
-                resp.attr()
-                    .user_defined_field_group_min()
-                    .at(attr_list[i].id -
-                        SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN)
-                    .mask_list()
-                    .list(),
-                &attr_list[i].value.aclfield.mask.u8list.count);
+      auto acl_attr = resp.attr().user_defined_field_group_min().at(
+          attr_list[i].id - SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN);
+      memcpy(attr_list[i].value.aclfield.data.u8list.list,
+             acl_attr.data_u8list().data(), acl_attr.data_u8list().size());
+      memcpy(attr_list[i].value.aclfield.mask.u8list.list,
+             acl_attr.mask_u8list().data(), acl_attr.mask_u8list().size());
+      attr_list[i].value.aclfield.data.u8list.count =
+          acl_attr.data_u8list().size();
+      attr_list[i].value.aclfield.mask.u8list.count =
+          acl_attr.mask_u8list().size();
     }
 
     switch (attr_list[i].id) {
