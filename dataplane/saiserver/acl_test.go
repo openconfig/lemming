@@ -486,13 +486,13 @@ func TestRemoveAclEntry(t *testing.T) {
 			}
 			_, gotErr := c.RemoveAclEntry(context.Background(), tt.req)
 			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
-				t.Fatalf("RemoveAclCounter() unexpected err: %s", diff)
+				t.Fatalf("RemoveAclEntry() unexpected err: %s", diff)
 			}
 			if gotErr != nil {
 				return
 			}
 			if d := cmp.Diff(dplane.gotEntryRemoveReqs[0], tt.want, protocmp.Transform()); d != "" {
-				t.Errorf("RemoveAclCounter() failed: diff(-got,+want)\n:%s", d)
+				t.Errorf("RemoveAclEntry() failed: diff(-got,+want)\n:%s", d)
 			}
 		})
 	}
