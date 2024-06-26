@@ -16,6 +16,7 @@ package saiserver
 
 import (
 	"context"
+	"fmt"
 
 	"google.golang.org/grpc"
 
@@ -38,21 +39,27 @@ func newUdf(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server) 
 	return udf
 }
 
-// TODO: Implement this.
-func (u *udf) CreateUdf(context.Context, *saipb.CreateUdfRequest) (*saipb.CreateUdfResponse, error) {
+func (u *udf) CreateUdf(ctx context.Context, req *saipb.CreateUdfRequest) (*saipb.CreateUdfResponse, error) {
+	id := u.mgr.NextID()
+
+	udfGroup := &saipb.UdfGroupAttribute{}
+	if err := u.mgr.PopulateAllAttributes(fmt.Sprint(req.GetGroupId()), udfGroup); err != nil {
+		return nil, err
+	}
+	udfGroup.UdfList = append(udfGroup.UdfList, id)
+	u.mgr.StoreAttributes(id, udfGroup)
+
 	return &saipb.CreateUdfResponse{
-		Oid: u.mgr.NextID(),
+		Oid: id,
 	}, nil
 }
 
-// TODO: Implement this.
 func (u *udf) CreateUdfGroup(context.Context, *saipb.CreateUdfGroupRequest) (*saipb.CreateUdfGroupResponse, error) {
 	return &saipb.CreateUdfGroupResponse{
 		Oid: u.mgr.NextID(),
 	}, nil
 }
 
-// TODO: Implement this.
 func (u *udf) CreateUdfMatch(context.Context, *saipb.CreateUdfMatchRequest) (*saipb.CreateUdfMatchResponse, error) {
 	return &saipb.CreateUdfMatchResponse{
 		Oid: u.mgr.NextID(),

@@ -220,9 +220,14 @@ func (mgr *AttrMgr) PopulateAttributes(req, resp proto.Message) error {
 
 // PopulateAllAttributes retrieves all attributes for an object.
 // Supported message types FooAttribute, CreateFooRequest, SetFooRequest.
-func (mgr *AttrMgr) PopulateAllAttributes(id string, msg proto.Message) error {
+func (mgr *AttrMgr) PopulateAllAttributes(id string, msg proto.Message) (rerr error) {
 	mgr.mu.Lock()
 	defer mgr.mu.Unlock()
+	defer func() {
+		if r := recover(); r != nil {
+			rerr = fmt.Errorf("protoreflect error: %v", r)
+		}
+	}()
 
 	desc := msg.ProtoReflect().Descriptor()
 	for i := 0; i < desc.Fields().Len(); i++ {
@@ -238,6 +243,7 @@ func (mgr *AttrMgr) PopulateAllAttributes(id string, msg proto.Message) error {
 		if !ok || val == nil {
 			continue
 		}
+
 		msg.ProtoReflect().Set(desc.Fields().Get(i), *val)
 	}
 	return nil

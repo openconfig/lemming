@@ -250,6 +250,44 @@ func (a *acl) createAclEntryFields(req *saipb.CreateAclEntryRequest, id uint64, 
 			Masks:   []byte{byte(req.GetFieldTtl().GetMaskUint())},
 		})
 	}
+	if len(req.GetUserDefinedFieldGroupMin()) > 0 {
+		table := &saipb.AclTableAttribute{}
+		if err := a.mgr.PopulateAllAttributes(fmt.Sprint(req.GetTableId()), table); err != nil {
+			return nil, err
+		}
+		for id, field := range req.GetUserDefinedFieldGroupMin() {
+			udfGroup := &saipb.UdfGroupAttribute{}
+			if err := a.mgr.PopulateAllAttributes(fmt.Sprint(table.UserDefinedFieldGroupMin[id]), udfGroup); err != nil {
+				return nil, err
+			}
+			for _, udfID := range udfGroup.GetUdfList() {
+				udf := &saipb.UdfAttribute{}
+				if err := a.mgr.PopulateAllAttributes(fmt.Sprint(udfID), udf); err != nil {
+					return nil, err
+				}
+				hg := fwdpb.PacketHeaderGroup_PACKET_HEADER_GROUP_L2
+				switch udf.GetBase() {
+				case saipb.UdfBase_UDF_BASE_L2:
+					hg = fwdpb.PacketHeaderGroup_PACKET_HEADER_GROUP_L2
+				case saipb.UdfBase_UDF_BASE_L3:
+					hg = fwdpb.PacketHeaderGroup_PACKET_HEADER_GROUP_L3
+				case saipb.UdfBase_UDF_BASE_L4:
+					hg = fwdpb.PacketHeaderGroup_PACKET_HEADER_GROUP_L4
+				}
+
+				aReq.EntryDesc.GetFlow().Fields = append(aReq.EntryDesc.GetFlow().Fields, &fwdpb.PacketFieldMaskedBytes{
+					FieldId: &fwdpb.PacketFieldId{Bytes: &fwdpb.PacketBytes{
+						HeaderGroup: hg,
+						Instance:    0,
+						Offset:      udf.GetOffset(),
+						Size:        udfGroup.GetLength(),
+					}},
+					Bytes: field.GetDataU8List(),
+					Masks: field.GetMaskU8List(),
+				})
+			}
+		}
+	}
 	if len(aReq.EntryDesc.GetFlow().Fields) == 0 {
 		return nil, status.Error(codes.InvalidArgument, "either no fields or not unsupports fields in entry req")
 	}
