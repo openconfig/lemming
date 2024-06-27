@@ -1,3 +1,5 @@
+<!-- markdownlint-disable MD007 MD030 -->
+
 # GoBGP: Life of a BGP UPDATE Message for Policy Evaluation
 
 This document captures some important moments during the life of BGP Update

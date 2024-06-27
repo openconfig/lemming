@@ -1,3 +1,5 @@
+<!-- markdownlint-disable MD007 MD030 -->
+
 # Lemming and GoBGP
 
 ![gobgp integration system diagram](img/gobgp_integration_system_diagram.png)
