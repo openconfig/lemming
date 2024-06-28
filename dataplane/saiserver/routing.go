@@ -82,6 +82,19 @@ func (n *neighbor) RemoveNeighborEntry(ctx context.Context, req *saipb.RemoveNei
 	return &saipb.RemoveNeighborEntryResponse{}, nil
 }
 
+// RemoveNeighborEntries removes multiple neighbors to the neighbor table.
+func (n *neighbor) RemoveNeighborEntries(ctx context.Context, re *saipb.RemoveNeighborEntriesRequest) (*saipb.RemoveNeighborEntriesResponse, error) {
+	resp := &saipb.RemoveNeighborEntriesResponse{}
+	for _, req := range re.GetReqs() {
+		res, err := attrmgr.InvokeAndSave(ctx, n.mgr, n.RemoveNeighborEntry, req)
+		if err != nil {
+			return nil, err
+		}
+		resp.Resps = append(resp.Resps, res)
+	}
+	return resp, nil
+}
+
 // CreateNeighborEntries adds multiple neighbors to the neighbor table.
 func (n *neighbor) CreateNeighborEntries(ctx context.Context, re *saipb.CreateNeighborEntriesRequest) (*saipb.CreateNeighborEntriesResponse, error) {
 	resp := &saipb.CreateNeighborEntriesResponse{}
@@ -423,6 +436,18 @@ func (nh *nextHop) CreateNextHops(ctx context.Context, r *saipb.CreateNextHopsRe
 	return resp, nil
 }
 
+func (nh *nextHop) RemoveNextHops(ctx context.Context, r *saipb.RemoveNextHopsRequest) (*saipb.RemoveNextHopsResponse, error) {
+	resp := &saipb.RemoveNextHopsResponse{}
+	for _, req := range r.GetReqs() {
+		res, err := attrmgr.InvokeAndSave(ctx, nh.mgr, nh.RemoveNextHop, req)
+		if err != nil {
+			return nil, err
+		}
+		resp.Resps = append(resp.Resps, res)
+	}
+	return resp, nil
+}
+
 type route struct {
 	saipb.UnimplementedRouteServer
 	mgr       *attrmgr.AttrMgr
@@ -558,6 +583,18 @@ func (r *route) RemoveRouteEntry(ctx context.Context, req *saipb.RemoveRouteEntr
 		).Build(),
 	})
 	return &saipb.RemoveRouteEntryResponse{}, err
+}
+
+func (r *route) RemoveRouteEntries(ctx context.Context, re *saipb.RemoveRouteEntriesRequest) (*saipb.RemoveRouteEntriesResponse, error) {
+	resp := &saipb.RemoveRouteEntriesResponse{}
+	for _, req := range re.GetReqs() {
+		res, err := attrmgr.InvokeAndSave(ctx, r.mgr, r.RemoveRouteEntry, req)
+		if err != nil {
+			return nil, err
+		}
+		resp.Resps = append(resp.Resps, res)
+	}
+	return resp, nil
 }
 
 type routerInterface struct {
