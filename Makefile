@@ -10,8 +10,7 @@ load-operator:
 
 .PHONY: load 
 load:
-	bazel build //cmd/lemming:image-tar
-	docker load -i bazel-bin/cmd/lemming/image-tar/tarball.tar
+	DOCKER_BUILDKIT=1 docker build . --target release -f Dockerfile.lemming -t "us-west1-docker.pkg.dev/openconfig-lemming/release/lemming:ga"
 	kind load docker-image us-west1-docker.pkg.dev/openconfig-lemming/release/lemming:ga --name kne
 
 .PHONY: buildfile
