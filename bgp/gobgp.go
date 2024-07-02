@@ -166,6 +166,7 @@ func (t *bgpTask) start(ctx context.Context, yclient *ygnmi.Client) error {
 		BGPPath.NeighborAny().NeighborAddress().Config().PathStruct(),
 		BGPPath.NeighborAny().NeighborPort().Config().PathStruct(),
 		BGPPath.NeighborAny().Transport().LocalAddress().Config().PathStruct(),
+		BGPPath.NeighborAny().AsPathOptions().Config().PathStruct(),
 		// BGP Policy statements
 		RoutingPolicyPath.PolicyDefinitionAny().Name().Config().PathStruct(),
 		RoutingPolicyPath.PolicyDefinitionAny().StatementMap().Config().PathStruct(),

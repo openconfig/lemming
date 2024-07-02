@@ -17,10 +17,11 @@ package policytest
 import "github.com/openconfig/lemming/gnmi/oc"
 
 type RouteTestCase struct {
-	Input                  TestRoute
-	RouteTest              *RoutePathTestCase
-	AlternatePathRouteTest *RoutePathTestCase
-	LongerPathRouteTest    *RoutePathTestCase
+	Input                   TestRoute
+	RouteTest               *RoutePathTestCase
+	AlternatePathRouteTest  *RoutePathTestCase
+	LongerPathRouteTest     *RoutePathTestCase
+	SkipDUT2RouteValidation bool
 }
 
 type RoutePathTestCase struct {

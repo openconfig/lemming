@@ -96,7 +96,7 @@ func testPolicy(t *testing.T, testspec *PolicyTestCase) {
 	testPolicyAux(t, testspec, dut1, dut2, dut3, dut4, dut5)
 }
 
-func testPropagation(t *testing.T, route policytest.TestRoute, routeTest *policytest.RoutePathTestCase, prevDUT, currDUT, nextDUT *Device) {
+func testPropagation(t *testing.T, route policytest.TestRoute, routeTest *policytest.RoutePathTestCase, prevDUT, currDUT, nextDUT *Device, skipCurrDUT bool) {
 	t.Helper()
 	v4uni := bgp.BGPPath.Rib().AfiSafi(oc.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST).Ipv4Unicast()
 
@@ -104,28 +104,34 @@ func testPropagation(t *testing.T, route policytest.TestRoute, routeTest *policy
 	// Check propagation to AdjRibOutPre for all prefixes.
 	Await(t, prevDUT, v4uni.Neighbor(currDUT.RouterID).AdjRibOutPre().Route(prefix, 0).Prefix().State(), prefix)
 	Await(t, prevDUT, v4uni.Neighbor(currDUT.RouterID).AdjRibOutPost().Route(prefix, 0).Prefix().State(), prefix)
-	Await(t, currDUT, v4uni.Neighbor(prevDUT.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), prefix)
+	if !skipCurrDUT {
+		Await(t, currDUT, v4uni.Neighbor(prevDUT.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), prefix)
+	}
 	switch expectedResult := routeTest.ExpectedResult; expectedResult {
 	case policytest.RouteAccepted:
 		t.Logf("Waiting for %q (%s) to be propagated", prefix, routeTest.Description)
-		Await(t, currDUT, v4uni.Neighbor(prevDUT.RouterID).AdjRibInPost().Route(prefix, 0).Prefix().State(), prefix)
-		Await(t, currDUT, v4uni.LocRib().Route(prefix, oc.UnionString(prevDUT.RouterID), 0).Prefix().State(), prefix)
-		Await(t, currDUT, v4uni.Neighbor(nextDUT.RouterID).AdjRibOutPre().Route(prefix, 0).Prefix().State(), prefix)
-		Await(t, currDUT, v4uni.Neighbor(nextDUT.RouterID).AdjRibOutPost().Route(prefix, 0).Prefix().State(), prefix)
+		if !skipCurrDUT {
+			Await(t, currDUT, v4uni.Neighbor(prevDUT.RouterID).AdjRibInPost().Route(prefix, 0).Prefix().State(), prefix)
+			Await(t, currDUT, v4uni.LocRib().Route(prefix, oc.UnionString(prevDUT.RouterID), 0).Prefix().State(), prefix)
+			Await(t, currDUT, v4uni.Neighbor(nextDUT.RouterID).AdjRibOutPre().Route(prefix, 0).Prefix().State(), prefix)
+			Await(t, currDUT, v4uni.Neighbor(nextDUT.RouterID).AdjRibOutPost().Route(prefix, 0).Prefix().State(), prefix)
+		}
 		Await(t, nextDUT, v4uni.Neighbor(currDUT.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), prefix)
 	case policytest.RouteDiscarded:
-		w := Watch(t, currDUT, v4uni.Neighbor(prevDUT.RouterID).AdjRibInPost().Route(prefix, 0).Prefix().State(), rejectTimeout, func(val *ygnmi.Value[string]) bool {
-			_, ok := val.Val()
-			return !ok
-		})
-		if _, ok := w.Await(t); !ok {
-			t.Errorf("prefix %q (%s) was not rejected from adj-rib-in-post of %v (neighbour %v) within timeout.", prefix, routeTest.Description, currDUT, prevDUT.ID)
-			break
+		if !skipCurrDUT {
+			w := Watch(t, currDUT, v4uni.Neighbor(prevDUT.RouterID).AdjRibInPost().Route(prefix, 0).Prefix().State(), rejectTimeout, func(val *ygnmi.Value[string]) bool {
+				_, ok := val.Val()
+				return !ok
+			})
+			if _, ok := w.Await(t); !ok {
+				t.Errorf("prefix %q (%s) was not rejected from adj-rib-in-post of %v (neighbour %v) within timeout.", prefix, routeTest.Description, currDUT, prevDUT.ID)
+				break
+			}
+			t.Logf("prefix %q (%s) was successfully rejected from adj-rib-in-post of %v (neighbour %v) within timeout.", prefix, routeTest.Description, currDUT, prevDUT.ID)
 		}
-		t.Logf("prefix %q (%s) was successfully rejected from adj-rib-in-post of %v (neighbour %v) within timeout.", prefix, routeTest.Description, currDUT, prevDUT.ID)
 
 		// Test withdrawal in the case of InstallPolicyAfterRoutes.
-		w = Watch(t, nextDUT, v4uni.Neighbor(currDUT.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), rejectTimeout, func(val *ygnmi.Value[string]) bool {
+		w := Watch(t, nextDUT, v4uni.Neighbor(currDUT.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), rejectTimeout, func(val *ygnmi.Value[string]) bool {
 			_, ok := val.Val()
 			return !ok
 		})
@@ -135,19 +141,21 @@ func testPropagation(t *testing.T, route policytest.TestRoute, routeTest *policy
 		}
 		t.Logf("prefix %q (%s) was successfully rejected from adj-rib-in-pre of %v (neighbour %v) within timeout.", prefix, routeTest.Description, nextDUT, currDUT.ID)
 	case policytest.RouteNotPreferred:
-		Await(t, currDUT, v4uni.Neighbor(prevDUT.RouterID).AdjRibInPost().Route(prefix, 0).Prefix().State(), prefix)
-		w := Watch(t, currDUT, v4uni.LocRib().Route(prefix, oc.UnionString(prevDUT.RouterID), 0).Prefix().State(), rejectTimeout, func(val *ygnmi.Value[string]) bool {
-			_, ok := val.Val()
-			return !ok
-		})
-		if _, ok := w.Await(t); !ok {
-			t.Errorf("prefix %q with origin %q (%s) was selected into loc-rib of %v.", prefix, prevDUT.ID, routeTest.Description, currDUT)
-			break
+		if !skipCurrDUT {
+			Await(t, currDUT, v4uni.Neighbor(prevDUT.RouterID).AdjRibInPost().Route(prefix, 0).Prefix().State(), prefix)
+			w := Watch(t, currDUT, v4uni.LocRib().Route(prefix, oc.UnionString(prevDUT.RouterID), 0).Prefix().State(), rejectTimeout, func(val *ygnmi.Value[string]) bool {
+				_, ok := val.Val()
+				return !ok
+			})
+			if _, ok := w.Await(t); !ok {
+				t.Errorf("prefix %q with origin %q (%s) was selected into loc-rib of %v.", prefix, prevDUT.ID, routeTest.Description, currDUT)
+				break
+			}
+			t.Logf("prefix %q with origin %q (%s) was successfully not selected into loc-rib of %v within timeout.", prefix, prevDUT.ID, routeTest.Description, currDUT)
+			Await(t, currDUT, v4uni.Neighbor(nextDUT.RouterID).AdjRibOutPre().Route(prefix, 0).Prefix().State(), prefix)
+			Await(t, currDUT, v4uni.Neighbor(nextDUT.RouterID).AdjRibOutPost().Route(prefix, 0).Prefix().State(), prefix)
 		}
-		t.Logf("prefix %q with origin %q (%s) was successfully not selected into loc-rib of %v within timeout.", prefix, prevDUT.ID, routeTest.Description, currDUT)
 
-		Await(t, currDUT, v4uni.Neighbor(nextDUT.RouterID).AdjRibOutPre().Route(prefix, 0).Prefix().State(), prefix)
-		Await(t, currDUT, v4uni.Neighbor(nextDUT.RouterID).AdjRibOutPost().Route(prefix, 0).Prefix().State(), prefix)
 		Await(t, nextDUT, v4uni.Neighbor(currDUT.RouterID).AdjRibInPre().Route(prefix, 0).Prefix().State(), prefix)
 	default:
 		t.Fatalf("Invalid or unhandled policy result: %v", expectedResult)
@@ -264,7 +272,7 @@ func testPolicyAux(t *testing.T, testspec *PolicyTestCase, dut1, dut2, dut3, dut
 			continue
 		}
 		if routeTest.RouteTest != nil {
-			testPropagation(t, routeTest.Input, routeTest.RouteTest, dut1, dut2, dut3)
+			testPropagation(t, routeTest.Input, routeTest.RouteTest, dut1, dut2, dut3, routeTest.SkipDUT2RouteValidation)
 			testCommunities(t, routeTest.Input, routeTest.RouteTest, dut1, dut2, dut3)
 			if !testspec.skipValidateAttrSet {
 				testAttrs(t, routeTest.Input, routeTest.RouteTest, dut1, dut2, dut3)
@@ -272,7 +280,7 @@ func testPolicyAux(t *testing.T, testspec *PolicyTestCase, dut1, dut2, dut3, dut
 		}
 
 		if routeTest.LongerPathRouteTest != nil {
-			testPropagation(t, routeTest.Input, routeTest.LongerPathRouteTest, dut5, dut2, dut3)
+			testPropagation(t, routeTest.Input, routeTest.LongerPathRouteTest, dut5, dut2, dut3, routeTest.SkipDUT2RouteValidation)
 			testCommunities(t, routeTest.Input, routeTest.LongerPathRouteTest, dut5, dut2, dut3)
 			if !testspec.skipValidateAttrSet {
 				testAttrs(t, routeTest.Input, routeTest.LongerPathRouteTest, dut5, dut2, dut3)
