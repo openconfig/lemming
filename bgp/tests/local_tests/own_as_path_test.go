@@ -82,7 +82,6 @@ func TestOwnASPath(t *testing.T) {
 	}
 
 	for i := 0; i <= 5; i++ {
-
 		var routeTests []*policytest.RouteTestCase
 		for routeId, prefix := range routeUnderTestList {
 			result := policytest.RouteAccepted
