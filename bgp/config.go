@@ -66,6 +66,12 @@ func intendedToGoBGP(bgpoc *oc.NetworkInstance_Protocol_Bgp, policyoc *oc.Routin
 					RemotePort:   neigh.GetNeighborPort(),
 				},
 			},
+			AsPathOptions: gobgpoc.AsPathOptions{
+				Config: gobgpoc.AsPathOptionsConfig{
+					AllowOwnAs:    neigh.GetAsPathOptions().GetAllowOwnAs(),
+					ReplacePeerAs: neigh.GetAsPathOptions().GetReplacePeerAs(),
+				},
+			},
 		})
 	}
 
