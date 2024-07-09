@@ -119,7 +119,7 @@ for route resolution.
         but rather the OpenConfig /config leaves are simply copied into /state
         values after a successful configuration. This is because GoBGP doesn't
         explicitly have the same semantics (see
-        https://github.com/osrg/gobgp/issues/2584).
+        <https://github.com/osrg/gobgp/issues/2584>).
     *   `reconcile()` demonstrates at the high-level how GoBGP is managed: its
         `config.InitialConfig` and `config.UpdateConfig` are used to
         declaratively change the running configuration of GoBGP via a
@@ -195,7 +195,7 @@ arbitrary route attributes, and the import-side policies reject routes based on
 these attributes. This is because GoBGP only withdraws routes on import policy
 change after a soft reset, and therefore it is preferred to place the rejection
 policies on the import side:
-https://github.com/osrg/gobgp/blob/master/docs/sources/policy.md#policy-and-soft-reset
+<https://github.com/osrg/gobgp/blob/master/docs/sources/policy.md#policy-and-soft-reset>
 
 #### Library Locations
 
