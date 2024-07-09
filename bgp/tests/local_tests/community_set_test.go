@@ -145,7 +145,8 @@ func TestCommunitySet(t *testing.T) {
 		Await(t, dut2, bgp.BGPPath.Neighbor(dut3.RouterID).ApplyPolicy().ImportPolicy().State(), []string{uselessPolicyName})
 	}
 
-	routeUnderTestList := map[int]string{
+	routesUnderTest := map[int]string{
+		// For debugging: just comment out the ones you don't want to run.
 		0:  "10.0.0.0/10",
 		1:  "10.0.0.0/11",
 		2:  "10.0.0.0/12",
@@ -168,7 +169,7 @@ func TestCommunitySet(t *testing.T) {
 		policyName := "set-communities"
 		policy := &oc.RoutingPolicy_PolicyDefinition_Statement_OrderedMap{}
 
-		for i, route := range routeUnderTestList {
+		for i, route := range routesUnderTest {
 			// Create prefix set
 			prefixSetName := "accept-" + route
 			prefixSetPath := ocpath.Root().RoutingPolicy().DefinedSets().PrefixSet(prefixSetName)
@@ -309,7 +310,7 @@ func TestCommunitySet(t *testing.T) {
 				skipValidateAttrSet: true,
 				routeTests: []*policytest.RouteTestCase{{
 					Input: policytest.TestRoute{
-						ReachPrefix: routeUnderTestList[0],
+						ReachPrefix: routesUnderTest[0],
 					},
 					RouteTest: &policytest.RoutePathTestCase{
 						Description:                  "No match",
@@ -326,7 +327,7 @@ func TestCommunitySet(t *testing.T) {
 					},
 				}, {
 					Input: policytest.TestRoute{
-						ReachPrefix: routeUnderTestList[1],
+						ReachPrefix: routesUnderTest[1],
 					},
 					RouteTest: &policytest.RoutePathTestCase{
 						Description:                  "Matches ANY",
@@ -343,7 +344,7 @@ func TestCommunitySet(t *testing.T) {
 					},
 				}, {
 					Input: policytest.TestRoute{
-						ReachPrefix: routeUnderTestList[2],
+						ReachPrefix: routesUnderTest[2],
 					},
 					RouteTest: &policytest.RoutePathTestCase{
 						Description:                  "Partially matches ALL",
@@ -360,7 +361,7 @@ func TestCommunitySet(t *testing.T) {
 					},
 				}, {
 					Input: policytest.TestRoute{
-						ReachPrefix: routeUnderTestList[3],
+						ReachPrefix: routesUnderTest[3],
 					},
 					RouteTest: &policytest.RoutePathTestCase{
 						Description:                  "Matches ALL",
@@ -377,7 +378,7 @@ func TestCommunitySet(t *testing.T) {
 					},
 				}, {
 					Input: policytest.TestRoute{
-						ReachPrefix: routeUnderTestList[4],
+						ReachPrefix: routesUnderTest[4],
 					},
 					RouteTest: &policytest.RoutePathTestCase{
 						Description:                  "Matches ALL reversed and with extra community",
@@ -394,7 +395,7 @@ func TestCommunitySet(t *testing.T) {
 					},
 				}, {
 					Input: policytest.TestRoute{
-						ReachPrefix: routeUnderTestList[5],
+						ReachPrefix: routesUnderTest[5],
 					},
 					RouteTest: &policytest.RoutePathTestCase{
 						Description:                  "Matches ALL after ADD",
@@ -411,7 +412,7 @@ func TestCommunitySet(t *testing.T) {
 					},
 				}, {
 					Input: policytest.TestRoute{
-						ReachPrefix: routeUnderTestList[6],
+						ReachPrefix: routesUnderTest[6],
 					},
 					RouteTest: &policytest.RoutePathTestCase{
 						Description:                  "REMOVE",
@@ -428,7 +429,7 @@ func TestCommunitySet(t *testing.T) {
 					},
 				}, {
 					Input: policytest.TestRoute{
-						ReachPrefix: routeUnderTestList[7],
+						ReachPrefix: routesUnderTest[7],
 					},
 					RouteTest: &policytest.RoutePathTestCase{
 						Description:                  "REMOVE-ALL",
@@ -445,7 +446,7 @@ func TestCommunitySet(t *testing.T) {
 					},
 				}, {
 					Input: policytest.TestRoute{
-						ReachPrefix: routeUnderTestList[8],
+						ReachPrefix: routesUnderTest[8],
 					},
 					RouteTest: &policytest.RoutePathTestCase{
 						Description:                  "matches-invert",
@@ -462,7 +463,7 @@ func TestCommunitySet(t *testing.T) {
 					},
 				}, {
 					Input: policytest.TestRoute{
-						ReachPrefix: routeUnderTestList[9],
+						ReachPrefix: routesUnderTest[9],
 					},
 					RouteTest: &policytest.RoutePathTestCase{
 						Description:                  "no-match-invert",
@@ -479,7 +480,7 @@ func TestCommunitySet(t *testing.T) {
 					},
 				}, {
 					Input: policytest.TestRoute{
-						ReachPrefix: routeUnderTestList[10],
+						ReachPrefix: routesUnderTest[10],
 					},
 					RouteTest: &policytest.RoutePathTestCase{
 						Description:                  "no-match-invert-2",
@@ -496,7 +497,7 @@ func TestCommunitySet(t *testing.T) {
 					},
 				}, {
 					Input: policytest.TestRoute{
-						ReachPrefix: routeUnderTestList[11],
+						ReachPrefix: routesUnderTest[11],
 					},
 					RouteTest: &policytest.RoutePathTestCase{
 						Description:                  "community-modified-at-import",

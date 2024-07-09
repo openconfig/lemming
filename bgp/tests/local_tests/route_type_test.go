@@ -26,13 +26,14 @@ import (
 )
 
 func TestRouteType(t *testing.T) {
-	routeUnderTestList := []string{
-		"10.0.0.0/10",
-		"10.0.0.0/11",
-		"10.0.0.0/12",
-		"10.0.0.0/13",
-		"10.0.0.0/14",
-		"10.0.0.0/15",
+	routesUnderTest := []string{
+		// For debugging: just comment out the ones you don't want to run.
+		0: "10.0.0.0/10",
+		1: "10.0.0.0/11",
+		2: "10.0.0.0/12",
+		3: "10.0.0.0/13",
+		4: "10.0.0.0/14",
+		5: "10.0.0.0/15",
 	}
 
 	installRejectPolicy := func(t *testing.T, dut1, dut2, _, _, dut5 *Device) {
@@ -43,7 +44,7 @@ func TestRouteType(t *testing.T) {
 		policyName := "route-type"
 		policy := &oc.RoutingPolicy_PolicyDefinition_Statement_OrderedMap{}
 
-		for i, route := range routeUnderTestList {
+		for i, route := range routesUnderTest {
 			// Create prefix set
 			prefixSetName := "for-" + route
 			prefixSetPath := ocpath.Root().RoutingPolicy().DefinedSets().PrefixSet(prefixSetName)
@@ -82,7 +83,7 @@ func TestRouteType(t *testing.T) {
 		dut1IsEBGP:          true,
 		routeTests: []*policytest.RouteTestCase{{
 			Input: policytest.TestRoute{
-				ReachPrefix: routeUnderTestList[0],
+				ReachPrefix: routesUnderTest[0],
 			},
 			RouteTest: &policytest.RoutePathTestCase{
 				Description:    "not set",
@@ -90,7 +91,7 @@ func TestRouteType(t *testing.T) {
 			},
 		}, {
 			Input: policytest.TestRoute{
-				ReachPrefix: routeUnderTestList[1],
+				ReachPrefix: routesUnderTest[1],
 			},
 			RouteTest: &policytest.RoutePathTestCase{
 				Description:    "internal",
@@ -98,7 +99,7 @@ func TestRouteType(t *testing.T) {
 			},
 		}, {
 			Input: policytest.TestRoute{
-				ReachPrefix: routeUnderTestList[2],
+				ReachPrefix: routesUnderTest[2],
 			},
 			RouteTest: &policytest.RoutePathTestCase{
 				Description:    "external",
@@ -106,7 +107,7 @@ func TestRouteType(t *testing.T) {
 			},
 		}, {
 			Input: policytest.TestRoute{
-				ReachPrefix: routeUnderTestList[3],
+				ReachPrefix: routesUnderTest[3],
 			},
 			AlternatePathRouteTest: &policytest.RoutePathTestCase{
 				Description:    "not set",
@@ -114,7 +115,7 @@ func TestRouteType(t *testing.T) {
 			},
 		}, {
 			Input: policytest.TestRoute{
-				ReachPrefix: routeUnderTestList[4],
+				ReachPrefix: routesUnderTest[4],
 			},
 			AlternatePathRouteTest: &policytest.RoutePathTestCase{
 				Description:    "internal",
@@ -122,7 +123,7 @@ func TestRouteType(t *testing.T) {
 			},
 		}, {
 			Input: policytest.TestRoute{
-				ReachPrefix: routeUnderTestList[5],
+				ReachPrefix: routesUnderTest[5],
 			},
 			AlternatePathRouteTest: &policytest.RoutePathTestCase{
 				Description:    "external",
