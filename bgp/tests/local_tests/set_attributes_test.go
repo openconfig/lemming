@@ -47,8 +47,8 @@ func singletonPrefixSetName(route string) string {
 
 // TestSetAttributes tests setting BGP attributes.
 func TestSetAttributes(t *testing.T) {
-	// For debugging: just comment out the ones you don't want to run.
 	routesUnderTest := map[int]string{
+		// For debugging: just comment out the ones you don't want to run.
 		0:  "10.1.0.0/16",
 		1:  "10.2.0.0/16",
 		2:  "10.10.0.0/16",

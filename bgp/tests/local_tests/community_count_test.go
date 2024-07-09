@@ -77,7 +77,8 @@ func TestCommunityCount(t *testing.T) {
 
 	// 10.* are subject to rejection due to community-count policy.
 	// 20.* must propagate in all cases due to prefix-match rule.
-	routeUnderTestList := map[int]string{
+	routesUnderTest := map[int]string{
+		// For debugging: just comment out the ones you don't want to run.
 		0:  "10.0.0.0/10",
 		1:  "10.0.0.0/11",
 		2:  "10.0.0.0/12",
@@ -102,7 +103,7 @@ func TestCommunityCount(t *testing.T) {
 		policyName := "set-communities"
 		policy := &oc.RoutingPolicy_PolicyDefinition_Statement_OrderedMap{}
 
-		for i, route := range routeUnderTestList {
+		for i, route := range routesUnderTest {
 			// Create prefix set
 			prefixSetName := "accept-" + route
 			prefixSetPath := ocpath.Root().RoutingPolicy().DefinedSets().PrefixSet(prefixSetName)
@@ -157,7 +158,7 @@ func TestCommunityCount(t *testing.T) {
 		skipValidateAttrSet: true,
 		routeTests: []*policytest.RouteTestCase{{
 			Input: policytest.TestRoute{
-				ReachPrefix: routeUnderTestList[0],
+				ReachPrefix: routesUnderTest[0],
 			},
 			RouteTest: &policytest.RoutePathTestCase{
 				Description:                  "0",
@@ -174,7 +175,7 @@ func TestCommunityCount(t *testing.T) {
 			},
 		}, {
 			Input: policytest.TestRoute{
-				ReachPrefix: routeUnderTestList[1],
+				ReachPrefix: routesUnderTest[1],
 			},
 			RouteTest: &policytest.RoutePathTestCase{
 				Description:                  "1",
@@ -191,7 +192,7 @@ func TestCommunityCount(t *testing.T) {
 			},
 		}, {
 			Input: policytest.TestRoute{
-				ReachPrefix: routeUnderTestList[2],
+				ReachPrefix: routesUnderTest[2],
 			},
 			RouteTest: &policytest.RoutePathTestCase{
 				Description:                  "2",
@@ -208,7 +209,7 @@ func TestCommunityCount(t *testing.T) {
 			},
 		}, {
 			Input: policytest.TestRoute{
-				ReachPrefix: routeUnderTestList[3],
+				ReachPrefix: routesUnderTest[3],
 			},
 			RouteTest: &policytest.RoutePathTestCase{
 				Description:                  "3",
@@ -225,7 +226,7 @@ func TestCommunityCount(t *testing.T) {
 			},
 		}, {
 			Input: policytest.TestRoute{
-				ReachPrefix: routeUnderTestList[4],
+				ReachPrefix: routesUnderTest[4],
 			},
 			RouteTest: &policytest.RoutePathTestCase{
 				Description:                  "4",
@@ -242,7 +243,7 @@ func TestCommunityCount(t *testing.T) {
 			},
 		}, {
 			Input: policytest.TestRoute{
-				ReachPrefix: routeUnderTestList[5],
+				ReachPrefix: routesUnderTest[5],
 			},
 			RouteTest: &policytest.RoutePathTestCase{
 				Description:                  "5",
@@ -259,7 +260,7 @@ func TestCommunityCount(t *testing.T) {
 			},
 		}, {
 			Input: policytest.TestRoute{
-				ReachPrefix: routeUnderTestList[6],
+				ReachPrefix: routesUnderTest[6],
 			},
 			RouteTest: &policytest.RoutePathTestCase{
 				Description:                  "6",
@@ -276,7 +277,7 @@ func TestCommunityCount(t *testing.T) {
 			},
 		}, {
 			Input: policytest.TestRoute{
-				ReachPrefix: routeUnderTestList[7],
+				ReachPrefix: routesUnderTest[7],
 			},
 			RouteTest: &policytest.RoutePathTestCase{
 				Description:                  "7",
@@ -293,7 +294,7 @@ func TestCommunityCount(t *testing.T) {
 			},
 		}, {
 			Input: policytest.TestRoute{
-				ReachPrefix: routeUnderTestList[8],
+				ReachPrefix: routesUnderTest[8],
 			},
 			RouteTest: &policytest.RoutePathTestCase{
 				Description:                  "0-different-prefix",
@@ -310,7 +311,7 @@ func TestCommunityCount(t *testing.T) {
 			},
 		}, {
 			Input: policytest.TestRoute{
-				ReachPrefix: routeUnderTestList[9],
+				ReachPrefix: routesUnderTest[9],
 			},
 			RouteTest: &policytest.RoutePathTestCase{
 				Description:                  "1-different-prefix",
@@ -327,7 +328,7 @@ func TestCommunityCount(t *testing.T) {
 			},
 		}, {
 			Input: policytest.TestRoute{
-				ReachPrefix: routeUnderTestList[10],
+				ReachPrefix: routesUnderTest[10],
 			},
 			RouteTest: &policytest.RoutePathTestCase{
 				Description:                  "2-different-prefix",
@@ -344,7 +345,7 @@ func TestCommunityCount(t *testing.T) {
 			},
 		}, {
 			Input: policytest.TestRoute{
-				ReachPrefix: routeUnderTestList[11],
+				ReachPrefix: routesUnderTest[11],
 			},
 			RouteTest: &policytest.RoutePathTestCase{
 				Description:                  "3-different-prefix",
@@ -361,7 +362,7 @@ func TestCommunityCount(t *testing.T) {
 			},
 		}, {
 			Input: policytest.TestRoute{
-				ReachPrefix: routeUnderTestList[12],
+				ReachPrefix: routesUnderTest[12],
 			},
 			RouteTest: &policytest.RoutePathTestCase{
 				Description:                  "4-different-prefix",
@@ -378,7 +379,7 @@ func TestCommunityCount(t *testing.T) {
 			},
 		}, {
 			Input: policytest.TestRoute{
-				ReachPrefix: routeUnderTestList[13],
+				ReachPrefix: routesUnderTest[13],
 			},
 			RouteTest: &policytest.RoutePathTestCase{
 				Description:                  "5-different-prefix",

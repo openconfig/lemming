@@ -109,8 +109,17 @@ for route resolution.
     configuration changes and the server. To understand `bgpTask`, start
     hierarchically from the reconciler interface methods, the most important
     being `start()`.
+    *   `start` initializes a new GoBGP server, and lists the set of OpenConfig
+        paths that the reconciler is interested in from the central datastore.
+        **Important:** Without listing a required path, it will not be available
+        for translation.
     *   `updateAppliedState()` is a wrapper required for any function that may
-        update the BGP applied state (i.e. /state values).
+        update the BGP applied state (i.e. /state values). Note that applied
+        state isn't translated from GoBGP back to OpenConfig's /state values,
+        but rather the OpenConfig /config leaves are simply copied into /state
+        values after a successful configuration. This is because GoBGP doesn't
+        explicitly have the same semantics (see
+        <https://github.com/osrg/gobgp/issues/2584>).
     *   `reconcile()` demonstrates at the high-level how GoBGP is managed: its
         `config.InitialConfig` and `config.UpdateConfig` are used to
         declaratively change the running configuration of GoBGP via a
@@ -147,10 +156,53 @@ for route resolution.
 
 Lemming’s BGP policy features can be tested in two ways: 1) spinning up multiple
 instances of lemming as different threads and have them talk to each other via
-loopback addresses (`bgp/tests/local_tests`), or 2) running Ondatra tests in KNE
-(`integration_tests/dut_policy_tests`). The local instances of lemming are
-controlled by Ondatra-like tests as defined by the
-[PolicyTestCase struct](https://github.com/openconfig/lemming/blob/7aae358c380f1cbc6925905be14cae57f7f3ef43/bgp/tests/local_tests/policy_test.go#L51-L57).
+TCP sessions bound to different loopback addresses (`bgp/tests/local_tests`), or
+2) running Ondatra tests in KNE (`integration_tests/dut_policy_tests`).
+
+### Policy Testing Helper Library
+
+Whether you're testing using single-process lemmings or KNE, a helper library
+for each is available for setting up the following fixed topology that makes
+thorough testing for a wide range of policy features easier.
+
+```go
+// Topology:
+//
+//  DUT1 (AS 64500) -> DUT2 (AS 64500) -> DUT3 (AS 64501)
+//                      ^
+//                      |
+//  DUT4 (AS 64502) -> DUT5 (AS 64500)
+```
+
+This fixed topology is a five-device topology that enables route injection via
+three different entry points and testing route propagation and attribute
+manipulation across possibly competing AS paths.
+
+Most tests inject routes at DUT1, which can test non-competing route paths as
+they propagate through the devices. At each device, the relevant RIBs are
+checked for their routes and attributes. For example, all 5 RIBs (adj-in-pre,
+adj-in-post, local-rib, adj-out-pre, adj-out-post) are checked for DUT2, and
+just the adj-out RIBs are checked for DUT1.
+
+In order to test competing route paths where a route is not preferred, routes
+can be injected into DUT4 (longer path), and DUT5 (alternate path). This means
+functionalities such as AS path length preference, and local-pref attribute
+preference can be tested.
+
+Currently by convention, all policies are installed on DUT1 (export-side), DUT5
+(export-side), and DUT2 (import-side). The export-side policies are used to set
+arbitrary route attributes, and the import-side policies reject routes based on
+these attributes. This is because GoBGP only withdraws routes on import policy
+change after a soft reset, and therefore it is preferred to place the rejection
+policies on the import side:
+<https://github.com/osrg/gobgp/blob/master/docs/sources/policy.md#policy-and-soft-reset>
+
+#### Library Locations
+
+*   thread-based lemmings (Ondatra-like library):
+    [PolicyTestCase struct](https://github.com/openconfig/lemming/blob/7aae358c380f1cbc6925905be14cae57f7f3ef43/bgp/tests/local_tests/policy_test.go#L51-L57).
+*   KNE-based lemmings (Ondatra library):
+    [library](https://github.com/openconfig/lemming/blob/main/policytest/policytest.go).
 
 **Limitation**: When testing lemming instances locally, only IPv4 routes are
 allowed. This is due to IPv6 having a single localhost address (::1/128),
@@ -159,7 +211,8 @@ servers from being started on the same port on multiple loopback addresses. This
 challenge would need to be resolved before being able to run IPv6 tests in a
 single process.
 
-For running Ondatra/KNE tests with lemming, see
+For running custom Ondatra/KNE tests with lemming not using the helper library,
+see
 <https://github.com/openconfig/lemming?tab=readme-ov-file#running-integration-tests>.
 
 ## Notes on Adding Features to GoBGP
@@ -171,3 +224,11 @@ Since GoBGP development must happen in a fork, it is recommended to test the
 feature using the fork repository before filing a PR to GoBGP to minimize
 back-and-forth with the GoBGP maintainers, who may take up to many days, or even
 weeks, before responding to new issues or PRs.
+
+To depend on a fork of GoBGP, run the following, replacing the fork repository
+name and version number accordingly:
+
+```bash
+go mod edit -replace=github.com/osrg/gobgp/v3=github.com/wenovus/gobgp/v3@0c8d2054ef4335cce593cd36896fe8afeb52174c
+make buildfile
+```
