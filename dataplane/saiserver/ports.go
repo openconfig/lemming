@@ -187,7 +187,10 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 		})
 		sgs = append(sgs, sgResp.GetOid())
 	}
-
+	vId := uint32(DefaultVlanId)
+	if req.PortVlanId != nil {
+		vId = req.GetPortVlanId()
+	}
 	attrs := &saipb.PortAttribute{
 		QosNumberOfQueues:                proto.Uint32(uint32(len(queues))),
 		QosQueueList:                     queues,
@@ -242,6 +245,7 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 		AdminState:                       proto.Bool(true),
 		AutoNegMode:                      proto.Bool(true),
 		Mtu:                              proto.Uint32(1514),
+		PortVlanId:                       proto.Uint32(vId),
 	}
 
 	fwdPort := &fwdpb.PortCreateRequest{
@@ -350,20 +354,22 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 	}
 
 	port.mgr.StoreAttributes(id, attrs)
-	// Add the port to the default VLAN.
-	swAttr := &saipb.GetSwitchAttributeResponse{}
-	if err := port.mgr.PopulateAttributes(&saipb.GetSwitchAttributeRequest{
-		Oid:      1,
-		AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_DEFAULT_VLAN_ID},
-	}, swAttr); err != nil {
-		return nil, fmt.Errorf("Failed to retrive the default VLAN's OID. This is working as intended in unit tests.")
+	nid, err := port.dataplane.ObjectNID(ctx, &fwdpb.ObjectNIDRequest{
+		ContextId: &fwdpb.ContextId{Id: port.dataplane.ID()},
+		ObjectId:  &fwdpb.ObjectId{Id: fmt.Sprint(id)},
+	})
+	if err != nil {
+		log.Infof("Failed to find NID for port id=%d: %v", id, err)
+		return nil, err
 	}
-	if _, err := attrmgr.InvokeAndSave(ctx, port.mgr, port.vlan.CreateVlanMember, &saipb.CreateVlanMemberRequest{
-		VlanId:          proto.Uint64(swAttr.GetAttr().GetDefaultVlanId()),
-		BridgePortId:    proto.Uint64(id),
-		VlanTaggingMode: saipb.VlanTaggingMode_VLAN_TAGGING_MODE_UNTAGGED.Enum(),
-	}); err != nil {
-		return nil, fmt.Errorf("Failed to add port to the default VLAN: %v", err)
+	vlanReq := fwdconfig.TableEntryAddRequest(port.dataplane.ID(), VlanTable).AppendEntry(
+		fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT).WithUint64(nid.GetNid())))).Build()
+	vlanReq.Entries[0].Actions = []*fwdpb.ActionDesc{
+		fwdconfig.Action(fwdconfig.EncapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET_VLAN)).Build(),
+		fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG).WithUint64Value(uint64(attrs.GetPortVlanId()))).Build(),
+	}
+	if _, err := port.dataplane.TableEntryAdd(ctx, vlanReq); err != nil {
+		return nil, err
 	}
 	return &saipb.CreatePortResponse{
 		Oid: id,

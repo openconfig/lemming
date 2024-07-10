@@ -109,7 +109,7 @@ const (
 	portToHostifTable     = "cpu-output"
 	tunTermTable          = "tun-term"
 	VlanTable             = "vlan"
-	DefaultVlanId         = 4095 // An reserved VLAN ID used as the default VLAN ID for internal usage.
+	DefaultVlanId         = 1
 )
 
 func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server, opts *dplaneopts.Options) (*saiSwitch, error) {
