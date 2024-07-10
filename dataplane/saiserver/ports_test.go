@@ -102,6 +102,7 @@ func TestCreatePort(t *testing.T) {
 			AdminState:                       proto.Bool(true),
 			AutoNegMode:                      proto.Bool(true),
 			Mtu:                              proto.Uint32(1514),
+			PortVlanId:                       proto.Uint32(DefaultVlanId),
 		},
 	}, {
 		desc: "existing interface",
@@ -164,6 +165,7 @@ func TestCreatePort(t *testing.T) {
 			AdminState:                       proto.Bool(false),
 			AutoNegMode:                      proto.Bool(true),
 			Mtu:                              proto.Uint32(1514),
+			PortVlanId:                       proto.Uint32(DefaultVlanId),
 		},
 	}}
 
@@ -267,6 +269,7 @@ func TestCreatePorts(t *testing.T) {
 			AdminState:                       proto.Bool(false),
 			AutoNegMode:                      proto.Bool(true),
 			Mtu:                              proto.Uint32(1514),
+			PortVlanId:                       proto.Uint32(DefaultVlanId),
 		},
 	}}
 	for _, tt := range tests {
