@@ -4,6 +4,7 @@ go 1.21
 
 require (
 	cloud.google.com/go/cloudbuild v1.15.1
+	github.com/fatih/color v1.15.0
 	github.com/go-logr/logr v1.4.1
 	github.com/golang/glog v1.2.1
 	github.com/google/go-cmp v0.6.0
@@ -97,6 +98,8 @@ require (
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
+	github.com/mattn/go-colorable v0.1.13 // indirect
+	github.com/mattn/go-isatty v0.0.19 // indirect
 	github.com/mdlayher/socket v0.5.1 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/moby/spdystream v0.2.0 // indirect
