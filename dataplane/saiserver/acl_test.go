@@ -129,7 +129,7 @@ func TestCreateAclEntry(t *testing.T) {
 			EntryDesc: &fwdpb.EntryDesc{
 				Entry: &fwdpb.EntryDesc_Flow{
 					Flow: &fwdpb.FlowEntryDesc{
-						Id: 1,
+						Id: 2,
 						Fields: []*fwdpb.PacketFieldMaskedBytes{{
 							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST}},
 							Bytes:   []byte{127, 0, 0, 1},
@@ -207,7 +207,7 @@ func TestCreateAclEntry(t *testing.T) {
 			EntryDesc: &fwdpb.EntryDesc{
 				Entry: &fwdpb.EntryDesc_Flow{
 					Flow: &fwdpb.FlowEntryDesc{
-						Id: 1,
+						Id: 2,
 						Fields: []*fwdpb.PacketFieldMaskedBytes{{
 							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST}},
 							Bytes:   []byte{127, 0, 0, 1},
@@ -256,7 +256,7 @@ func TestCreateAclEntry(t *testing.T) {
 			EntryDesc: &fwdpb.EntryDesc{
 				Entry: &fwdpb.EntryDesc_Flow{
 					Flow: &fwdpb.FlowEntryDesc{
-						Id: 1,
+						Id: 2,
 						Fields: []*fwdpb.PacketFieldMaskedBytes{{
 							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST}},
 							Bytes:   []byte{127, 0, 0, 1},
@@ -305,7 +305,7 @@ func TestCreateAclEntry(t *testing.T) {
 			EntryDesc: &fwdpb.EntryDesc{
 				Entry: &fwdpb.EntryDesc_Flow{
 					Flow: &fwdpb.FlowEntryDesc{
-						Id: 1,
+						Id: 2,
 						Fields: []*fwdpb.PacketFieldMaskedBytes{{
 							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST}},
 							Bytes:   []byte{127, 0, 0, 1},
@@ -342,7 +342,7 @@ func TestCreateAclEntry(t *testing.T) {
 			EntryDesc: &fwdpb.EntryDesc{
 				Entry: &fwdpb.EntryDesc_Flow{
 					Flow: &fwdpb.FlowEntryDesc{
-						Id: 1,
+						Id: 2,
 						Fields: []*fwdpb.PacketFieldMaskedBytes{{
 							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST}},
 							Bytes:   []byte{127, 0, 0, 1},
@@ -379,7 +379,7 @@ func TestCreateAclEntry(t *testing.T) {
 			EntryDesc: &fwdpb.EntryDesc{
 				Entry: &fwdpb.EntryDesc_Flow{
 					Flow: &fwdpb.FlowEntryDesc{
-						Id: 1,
+						Id: 2,
 						Fields: []*fwdpb.PacketFieldMaskedBytes{{
 							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST}},
 							Bytes:   []byte{127, 0, 0, 1},
@@ -407,6 +407,9 @@ func TestCreateAclEntry(t *testing.T) {
 			}
 			dplane.ctx.Objects.Insert(&fwdobject.Base{}, &fwdpb.ObjectId{Id: "1"})
 			c, a, stopFn := newTestACL(t, dplane)
+			a.mgr.StoreAttributes(a.mgr.NextID(), &saipb.SwitchAttribute{
+				CpuPort: proto.Uint64(10),
+			})
 			a.tableToLocation[1] = tableLocation{
 				groupID: "1",
 				bank:    0,
@@ -435,21 +438,21 @@ func TestRemoveAclEntry(t *testing.T) {
 	}{{
 		desc: "not found",
 		req: &saipb.RemoveAclEntryRequest{
-			Oid: 2,
+			Oid: 3,
 		},
 		wantErr: "FailedPrecondition",
 	}, {
 		desc: "success",
 		req: &saipb.RemoveAclEntryRequest{
-			Oid: 1,
+			Oid: 2,
 		},
 		want: &fwdpb.TableEntryRemoveRequest{
 			ContextId: &fwdpb.ContextId{Id: "foo"},
-			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: "1"}},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: "2"}},
 			EntryDesc: &fwdpb.EntryDesc{
 				Entry: &fwdpb.EntryDesc_Flow{
 					Flow: &fwdpb.FlowEntryDesc{
-						Id: 1,
+						Id: 2,
 						Fields: []*fwdpb.PacketFieldMaskedBytes{{
 							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST}},
 							Bytes:   []byte{127, 0, 0, 1},
@@ -463,15 +466,17 @@ func TestRemoveAclEntry(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
 			dplane := &fakeSwitchDataplane{}
-
 			c, a, stopFn := newTestACL(t, dplane)
+			a.mgr.StoreAttributes(a.mgr.NextID(), &saipb.SwitchAttribute{
+				CpuPort: proto.Uint64(10),
+			})
 			defer stopFn()
-			a.tableToLocation[1] = tableLocation{
-				groupID: "1",
+			a.tableToLocation[2] = tableLocation{
+				groupID: "2",
 				bank:    0,
 			}
 			_, err := c.CreateAclEntry(context.TODO(), &saipb.CreateAclEntryRequest{
-				TableId: proto.Uint64(1),
+				TableId: proto.Uint64(2),
 				FieldDstIp: &saipb.AclFieldData{
 					Data: &saipb.AclFieldData_DataIp{
 						DataIp: []byte{127, 0, 0, 1},

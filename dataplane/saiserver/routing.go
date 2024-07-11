@@ -59,6 +59,9 @@ func (n *neighbor) CreateNeighborEntry(ctx context.Context, req *saipb.CreateNei
 	)), fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST).WithValue(req.GetDstMacAddress())),
 	).Build()
 
+	// After updated the dst_mac, continue to egress.
+	entry.Entries[0].Actions = append(entry.Entries[0].Actions, getEgressPipeline()...)
+
 	if _, err := n.dataplane.TableEntryAdd(ctx, entry); err != nil {
 		return nil, err
 	}

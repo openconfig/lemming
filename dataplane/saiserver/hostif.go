@@ -213,7 +213,7 @@ func (hostif *hostif) CreateHostif(ctx context.Context, req *saipb.CreateHostifR
 
 		// Unless, the corresponding port for this hostif is the CPU port, then run the normal forwarding pipeline.
 		if resp.GetAttr().GetCpuPort() == req.GetObjId() {
-			update.Update.GetKernel().Inputs = getForwardingPipeline()
+			update.Update.GetKernel().Inputs = getPreIngressPipeline()
 		}
 
 		if _, err := hostif.dataplane.PortUpdate(ctx, update); err != nil {
@@ -294,7 +294,7 @@ func (hostif *hostif) createRemoteHostif(ctx context.Context, req *saipb.CreateH
 				fwdconfig.Action(fwdconfig.TransmitAction(fmt.Sprint(req.GetObjId())))).Build()
 
 		if req.GetObjId() == resp.GetAttr().GetCpuPort() {
-			entry.Entries[0].Actions = getForwardingPipeline()
+			entry.Entries[0].Actions = getPreIngressPipeline()
 		}
 
 		if _, err := hostif.dataplane.TableEntryAdd(ctx, entry); err != nil {

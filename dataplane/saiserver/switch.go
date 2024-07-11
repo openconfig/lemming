@@ -269,12 +269,35 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 	if _, err := sw.dataplane.TableCreate(ctx, vlanReq); err != nil {
 		return nil, err
 	}
+	action := &fwdpb.TableCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
+		Desc: &fwdpb.TableDesc{
+			TableType: fwdpb.TableType_TABLE_TYPE_ACTION,
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: PreIngressActionTable}},
+			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_CONTINUE}},
+			Table: &fwdpb.TableDesc_Action{
+				Action: &fwdpb.ActionTableDesc{},
+			},
+		},
+	}
+	if _, err := sw.dataplane.TableCreate(ctx, action); err != nil {
+		return nil, err
+	}
+	action.Desc.TableId.ObjectId.Id = IngressActionTable
+	if _, err := sw.dataplane.TableCreate(ctx, action); err != nil {
+		return nil, err
+	}
+	action.Desc.TableId.ObjectId.Id = EgressActionTable
+	if _, err := sw.dataplane.TableCreate(ctx, action); err != nil {
+		return nil, err
+	}
+
 	myMAC := &fwdpb.TableCreateRequest{
 		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
 		Desc: &fwdpb.TableDesc{
 			TableType: fwdpb.TableType_TABLE_TYPE_FLOW,
 			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: MyMacTable}},
-			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_DROP}},
+			Actions:   getL2Pipeline(),
 			Table: &fwdpb.TableDesc_Flow{
 				Flow: &fwdpb.FlowTableDesc{
 					BankCount: 1,
@@ -353,28 +376,6 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 		return nil, err
 	}
 
-	action := &fwdpb.TableCreateRequest{
-		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
-		Desc: &fwdpb.TableDesc{
-			TableType: fwdpb.TableType_TABLE_TYPE_ACTION,
-			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: PreIngressActionTable}},
-			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_CONTINUE}},
-			Table: &fwdpb.TableDesc_Action{
-				Action: &fwdpb.ActionTableDesc{},
-			},
-		},
-	}
-	if _, err := sw.dataplane.TableCreate(ctx, action); err != nil {
-		return nil, err
-	}
-	action.Desc.TableId.ObjectId.Id = IngressActionTable
-	if _, err := sw.dataplane.TableCreate(ctx, action); err != nil {
-		return nil, err
-	}
-	action.Desc.TableId.ObjectId.Id = EgressActionTable
-	if _, err := sw.dataplane.TableCreate(ctx, action); err != nil {
-		return nil, err
-	}
 	nexthopAction := &fwdpb.TableCreateRequest{
 		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
 		Desc: &fwdpb.TableDesc{

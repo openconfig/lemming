@@ -78,20 +78,37 @@ type port struct {
 // stub for testing
 var getInterface = net.InterfaceByName
 
-func getForwardingPipeline() []*fwdpb.ActionDesc {
+func getPreIngressPipeline() []*fwdpb.ActionDesc {
 	return []*fwdpb.ActionDesc{
-		fwdconfig.Action(fwdconfig.LookupAction(VlanTable)).Build(),                                          // Tag VLAN.
-		fwdconfig.Action(fwdconfig.LookupAction(MyMacTable)).Build(),                                         // Decide whether to process the packet.
-		fwdconfig.Action(fwdconfig.LookupAction(inputIfaceTable)).Build(),                                    // Match packet to interface.
-		fwdconfig.Action(fwdconfig.LookupAction(IngressVRFTable)).Build(),                                    // Match interface to VRF.
-		fwdconfig.Action(fwdconfig.LookupAction(PreIngressActionTable)).Build(),                              // Run pre-ingress actions.
-		fwdconfig.Action(fwdconfig.DecapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET)).Build(),      // Decap L2 header.
-		fwdconfig.Action(fwdconfig.LookupAction(tunTermTable)).Build(),                                       // Decap the packet if we have a tunnel.
-		fwdconfig.Action(fwdconfig.LookupAction(IngressActionTable)).Build(),                                 // Run ingress action.
-		fwdconfig.Action(fwdconfig.LookupAction(FIBSelectorTable)).Build(),                                   // Lookup in FIB.
-		fwdconfig.Action(fwdconfig.EncapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET)).Build(),      // Encap L2 header.
-		fwdconfig.Action(fwdconfig.LookupAction(outputIfaceTable)).Build(),                                   // Match interface to port
-		fwdconfig.Action(fwdconfig.LookupAction(NeighborTable)).Build(),                                      // Lookup in the neighbor table.
+		fwdconfig.Action(fwdconfig.LookupAction(tunTermTable)).Build(),          // Decap the packet if we have a tunnel.
+		fwdconfig.Action(fwdconfig.LookupAction(VlanTable)).Build(),             // Tag VLAN.
+		fwdconfig.Action(fwdconfig.LookupAction(inputIfaceTable)).Build(),       // Match packet to interface.
+		fwdconfig.Action(fwdconfig.LookupAction(IngressVRFTable)).Build(),       // Match interface to VRF.
+		fwdconfig.Action(fwdconfig.LookupAction(PreIngressActionTable)).Build(), // Run pre-ingress actions.
+		fwdconfig.Action(fwdconfig.LookupAction(MyMacTable)).Build(),            // Decide whether to process the packet.
+	}
+}
+
+func getL3Pipeline() []*fwdpb.ActionDesc {
+	return []*fwdpb.ActionDesc{
+		fwdconfig.Action(fwdconfig.DecapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET)).Build(), // Decap L2 header.
+		fwdconfig.Action(fwdconfig.LookupAction(IngressActionTable)).Build(),                            // Run ingress action.
+		fwdconfig.Action(fwdconfig.LookupAction(FIBSelectorTable)).Build(),                              // Lookup in FIB.
+		fwdconfig.Action(fwdconfig.EncapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET)).Build(), // Encap L2 header.
+		fwdconfig.Action(fwdconfig.LookupAction(outputIfaceTable)).Build(),                              // Match interface to port
+		fwdconfig.Action(fwdconfig.LookupAction(NeighborTable)).Build(),                                 // Lookup in the neighbor table.
+	}
+}
+
+func getL2Pipeline() []*fwdpb.ActionDesc {
+	return []*fwdpb.ActionDesc{
+		fwdconfig.Action(fwdconfig.LookupAction(IngressActionTable)).Build(), // Run ingress action.
+		fwdconfig.Action(fwdconfig.DropAction()).Build(),                     // DROP
+	}
+}
+
+func getEgressPipeline() []*fwdpb.ActionDesc {
+	return []*fwdpb.ActionDesc{
 		fwdconfig.Action(fwdconfig.LookupAction(EgressActionTable)).Build(),                                  // Run egress actions
 		fwdconfig.Action(fwdconfig.LookupAction(SRCMACTable)).Build(),                                        // Lookup interface's MAC addr.
 		fwdconfig.Action(fwdconfig.DecapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET_VLAN)).Build(), // TODO: Revise the code if trunk mode needs to be supported.
@@ -327,7 +344,7 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 		Update: &fwdpb.PortUpdateDesc{
 			Port: &fwdpb.PortUpdateDesc_Kernel{
 				Kernel: &fwdpb.KernelPortUpdateDesc{
-					Inputs:  getForwardingPipeline(),
+					Inputs:  getPreIngressPipeline(),
 					Outputs: []*fwdpb.ActionDesc{},
 				},
 			},

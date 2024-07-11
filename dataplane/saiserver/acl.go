@@ -316,20 +316,6 @@ func (a *acl) CreateAclEntry(ctx context.Context, req *saipb.CreateAclEntryReque
 			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TRAP_ID).
 				WithUint64Value(req.GetActionSetUserTrapId().GetOid())).Build())
 	}
-	if req.ActionPacketAction != nil {
-		switch req.GetActionPacketAction().GetPacketAction() {
-		case saipb.PacketAction_PACKET_ACTION_DROP,
-			saipb.PacketAction_PACKET_ACTION_TRAP, // COPY and DROP
-			saipb.PacketAction_PACKET_ACTION_DENY: // COPY_CANCEL and DROP
-			aReq.Actions = append(aReq.Actions, &fwdpb.ActionDesc{ActionType: fwdpb.ActionType_ACTION_TYPE_DROP})
-		case saipb.PacketAction_PACKET_ACTION_FORWARD,
-			saipb.PacketAction_PACKET_ACTION_LOG,     // COPY and FORWARD
-			saipb.PacketAction_PACKET_ACTION_TRANSIT: // COPY_CANCEL and FORWARD
-			aReq.Actions = append(aReq.Actions, &fwdpb.ActionDesc{ActionType: fwdpb.ActionType_ACTION_TYPE_CONTINUE}) // Packets are forwarded by default so continue.
-		default:
-			return nil, status.Errorf(codes.InvalidArgument, "unknown packet action type: %v", req.GetActionPacketAction().GetPacketAction())
-		}
-	}
 	if req.ActionCounter != nil {
 		aReq.Actions = append(aReq.Actions, &fwdpb.ActionDesc{
 			ActionType: fwdpb.ActionType_ACTION_TYPE_FLOW_COUNTER,
@@ -341,6 +327,27 @@ func (a *acl) CreateAclEntry(ctx context.Context, req *saipb.CreateAclEntryReque
 				},
 			},
 		})
+	}
+
+	cpuPortReq := &saipb.GetSwitchAttributeRequest{Oid: switchID, AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_CPU_PORT}}
+	resp := &saipb.GetSwitchAttributeResponse{}
+	if err := a.mgr.PopulateAttributes(cpuPortReq, resp); err != nil {
+		return nil, err
+	}
+
+	if req.ActionPacketAction != nil {
+		switch req.GetActionPacketAction().GetPacketAction() {
+		case saipb.PacketAction_PACKET_ACTION_DROP, saipb.PacketAction_PACKET_ACTION_DENY: // COPY_CANCEL and DROP
+			aReq.Actions = append(aReq.Actions, &fwdpb.ActionDesc{ActionType: fwdpb.ActionType_ACTION_TYPE_DROP})
+		case saipb.PacketAction_PACKET_ACTION_TRAP: // COPY and DROP
+			aReq.Actions = append(aReq.Actions, fwdconfig.Action(fwdconfig.TransmitAction(fmt.Sprint(resp.GetAttr().GetCpuPort())).WithImmediate(true)).Build())
+		case saipb.PacketAction_PACKET_ACTION_FORWARD,
+			saipb.PacketAction_PACKET_ACTION_LOG,     // COPY and FORWARD
+			saipb.PacketAction_PACKET_ACTION_TRANSIT: // COPY_CANCEL and FORWARD
+			aReq.Actions = append(aReq.Actions, &fwdpb.ActionDesc{ActionType: fwdpb.ActionType_ACTION_TYPE_CONTINUE}) // Packets are forwarded by default so continue.
+		default:
+			return nil, status.Errorf(codes.InvalidArgument, "unknown packet action type: %v", req.GetActionPacketAction().GetPacketAction())
+		}
 	}
 
 	if _, err := a.dataplane.TableEntryAdd(ctx, aReq); err != nil {
@@ -500,7 +507,7 @@ func (m *myMac) CreateMyMac(ctx context.Context, req *saipb.CreateMyMacRequest) 
 		ContextId: &fwdpb.ContextId{Id: m.dataplane.ID()},
 		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: MyMacTable}},
 		EntryDesc: ed,
-		Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_CONTINUE}},
+		Actions:   getL3Pipeline(),
 	}
 	if _, err := m.dataplane.TableEntryAdd(ctx, mReq); err != nil {
 		return nil, err
