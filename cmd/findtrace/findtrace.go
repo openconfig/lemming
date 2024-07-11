@@ -1,4 +1,4 @@
-// Copyright 2023 Google LLC
+// Copyright 2024 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Findtrace prints the packet traces from logs of the dataplane and optional only prints traces matching the first argument.
+// Usage: kubectl logs lemming | findtrace 10
 package main
 
 import (
@@ -31,7 +33,7 @@ func main() {
 		text := scanner.Text()
 		if strings.Contains(text, "Packet Trace:") {
 			str := trace.String()
-			if strings.Contains(str, os.Args[1]) {
+			if len(os.Args) == 1 || strings.Contains(str, os.Args[1]) {
 				out := strings.ReplaceAll(str, os.Args[1], color.RedString(os.Args[1]))
 				fmt.Println(out)
 			}
@@ -44,7 +46,7 @@ func main() {
 		}
 	}
 	str := trace.String()
-	if strings.Contains(str, os.Args[1]) {
+	if len(os.Args) == 1 || strings.Contains(str, os.Args[1]) {
 		out := strings.ReplaceAll(str, os.Args[1], color.RedString(os.Args[1]))
 		fmt.Println(out)
 	}
