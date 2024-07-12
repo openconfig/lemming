@@ -594,6 +594,8 @@ func (hostif *hostif) CPUPacketStream(srv pktiopb.PacketIO_CPUPacketStreamServer
 		case <-ctx.Done():
 			return nil
 		case pkt := <-packetCh:
+			log.V(3).Infof("received packet %x", pkt.GetPacket().GetFrame())
+
 			acts := []*fwdpb.ActionDesc{fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_HOST_PORT_ID).
 				WithUint64Value(pkt.GetPacket().GetHostPort())).Build()}
 			err = hostif.dataplane.InjectPacket(&fwdpb.ContextId{Id: hostif.dataplane.ID()}, &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: cpuPortID}}, fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET,
