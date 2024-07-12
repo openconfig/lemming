@@ -27,6 +27,8 @@ import (
 	"google.golang.org/grpc/reflection"
 	"k8s.io/klog/v2"
 
+	gribis "github.com/openconfig/gribigo/server"
+
 	"github.com/openconfig/lemming/bgp"
 	"github.com/openconfig/lemming/dataplane"
 	"github.com/openconfig/lemming/dataplane/dplaneopts"
@@ -85,6 +87,10 @@ type opt struct {
 	bgpPort        uint16
 	dataplane      bool
 	dataplaneOpts  []dplaneopts.Option
+	// disableRIBForwardReferences indicates that the lemming's RIB should not
+	// allow for forward references (e.g., next-hop-groups that reference
+	// next-hops that do not yet exist).
+	disableRIBForwardReferences bool
 }
 
 // resolveOpts applies all the options and returns a struct containing the result.
@@ -176,6 +182,15 @@ func WithSysribAddr(sysribAddr string) Option {
 	}
 }
 
+// WithNoRIBForwardReferences specifies that the lemming's RIB should not
+// allow forward references - e.g., a next-hop-group that references a next-hop
+// that does not exist.
+func WithNoRIBForwardReferences() Option {
+	return func(o *opt) {
+		o.disableRIBForwardReferences = true
+	}
+}
+
 // New returns a new initialized device.
 func New(targetName, zapiURL string, opts ...Option) (*Device, error) {
 	var dplane *dataplane.Dataplane
@@ -248,7 +263,11 @@ func New(targetName, zapiURL string, opts ...Option) (*Device, error) {
 	log.Info("starting gRIBI")
 	// TODO(wenbli): Use gRIBIs once we change lemming's KNE config to use different ports.
 	// gRIBIs := grpc.NewServer()
-	gribiServer, err := fgribi.New(s, cacheClient, targetName, root, fmt.Sprintf("unix:%s", resolvedOpts.sysribAddr))
+	gribiOpts := []gribis.ServerOpt{}
+	if resolvedOpts.disableRIBForwardReferences {
+		gribiOpts = append(gribiOpts, gribis.WithNoRIBForwardReferences())
+	}
+	gribiServer, err := fgribi.New(s, cacheClient, targetName, root,fmt.Sprintf("unix:%s", resolvedOpts.sysribAddr) gribiOpts...)
 	if err != nil {
 		return nil, err
 	}
