@@ -54,8 +54,10 @@ type Server struct {
 // installed.
 // - root, if specified, will be used to populate connected routes into the RIB
 // manager. Note this is intended to be used for unit/standalone device testing.
-func New(s *grpc.Server, gClient gpb.GNMIClient, target string, root *oc.Root) (*Server, error) {
-	gs, err := createGRIBIServer(gClient, target, root)
+//   - opts, if specified, will be used to control the underlying gRIBI server's
+//     behaviours.
+func New(s *grpc.Server, gClient gpb.GNMIClient, target string, root *oc.Root, opts ...server.ServerOpt) (*Server, error) {
+	gs, err := createGRIBIServer(gClient, target, root, opts...)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create gRIBI server, %v", err)
 	}
@@ -74,7 +76,10 @@ func New(s *grpc.Server, gClient gpb.GNMIClient, target string, root *oc.Root) (
 //
 // - root, if specified, will be used to populate connected routes into the RIB
 // manager. Note this is intended to be used for unit/standalone device testing.
-func createGRIBIServer(gClient gpb.GNMIClient, target string, root *oc.Root) (*server.Server, error) {
+//
+// The ServerOpt slice provided is handed to the gRIBI fake server to control its
+// behaviour.
+func createGRIBIServer(gClient gpb.GNMIClient, target string, root *oc.Root, opts ...server.ServerOpt) (*server.Server, error) {
 	gzebraConn, err := grpc.DialContext(context.Background(), fmt.Sprintf("unix:%s", sysrib.SockAddr), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, fmt.Errorf("cannot dial to sysrib, %v", err)
@@ -149,11 +154,15 @@ func createGRIBIServer(gClient gpb.GNMIClient, target string, root *oc.Root) (*s
 		log.Infof("Sent route %v with response %v", routeReq, resp)
 	}
 
-	return server.New(
+	sOpts := []server.ServerOpt{
 		server.WithPostChangeRIBHook(ribHookfn),
 		server.WithRIBResolvedEntryHook(ribAddfn),
 		server.WithVRFs(networkInstances),
-	)
+	}
+
+	sOpts = append(sOpts, opts...)
+
+	return server.New(sOpts...)
 }
 
 // createSetRouteRequest converts a Route to a sysrib SetRouteRequest
