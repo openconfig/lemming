@@ -267,7 +267,7 @@ func New(targetName, zapiURL string, opts ...Option) (*Device, error) {
 	if resolvedOpts.disableRIBForwardReferences {
 		gribiOpts = append(gribiOpts, gribis.WithNoRIBForwardReferences())
 	}
-	gribiServer, err := fgribi.New(s, cacheClient, targetName, root,fmt.Sprintf("unix:%s", resolvedOpts.sysribAddr), gribiOpts...)
+	gribiServer, err := fgribi.New(s, cacheClient, targetName, root, fmt.Sprintf("unix:%s", resolvedOpts.sysribAddr), gribiOpts...)
 	if err != nil {
 		return nil, err
 	}
