@@ -29,7 +29,7 @@ go_library(
         "//p4rt",
         "//sysrib",
         "@com_github_golang_glog//:glog",
-	"@com_github_openconfig_gribigo//server",
+        "@com_github_openconfig_gribigo//server",
         "@io_k8s_klog_v2//:klog",
         "@org_golang_google_grpc//:go_default_library",
         "@org_golang_google_grpc//credentials",
