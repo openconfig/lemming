@@ -162,7 +162,7 @@ func createGRIBIServer(gClient gpb.GNMIClient, target string, root *oc.Root, sys
 		server.WithPostChangeRIBHook(ribHookfn),
 		server.WithRIBResolvedEntryHook(ribAddfn),
 		server.WithVRFs(networkInstances),
-	}, opts...))
+	}, opts...)...)
 }
 
 // createSetRouteRequest converts a Route to a sysrib SetRouteRequest
