@@ -163,7 +163,10 @@ func (ip *IP6) SetPayload(id fwdpb.PacketHeaderId, length int64) {
 	if !ok {
 		proto = protoReserved
 	}
-	ip.header.Field(ip6ProtoPos, ip6ProtoBytes).SetValue(uint(proto))
+	if id != fwdpb.PacketHeaderId_PACKET_HEADER_ID_OPAQUE { // If the packet header is an unknown type, don't change it.
+		ip.header.Field(ip6ProtoPos, ip6ProtoBytes).SetValue(uint(proto))
+	}
+
 	ip.header.Field(ip6LengthPos, ip6LengthBytes).SetValue(uint(length))
 	ip.payload = length
 }
