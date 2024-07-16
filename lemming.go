@@ -87,10 +87,7 @@ type opt struct {
 	bgpPort        uint16
 	dataplane      bool
 	dataplaneOpts  []dplaneopts.Option
-	// disableRIBForwardReferences indicates that the lemming's RIB should not
-	// allow for forward references (e.g., next-hop-groups that reference
-	// next-hops that do not yet exist).
-	disableRIBForwardReferences bool
+	gribiOpts      []gribis.ServerOpt
 }
 
 // resolveOpts applies all the options and returns a struct containing the result.
@@ -182,12 +179,11 @@ func WithSysribAddr(sysribAddr string) Option {
 	}
 }
 
-// WithNoRIBForwardReferences specifies that the lemming's RIB should not
-// allow forward references - e.g., a next-hop-group that references a next-hop
-// that does not exist.
-func WithNoRIBForwardReferences() Option {
+// WithGRIBIOpts specifies the set of gRIBI options that should be passed to
+// the gRIBI server that lemming runs.
+func WithGRIBIOpts(opts ...gribis.ServerOpt) Option {
 	return func(o *opt) {
-		o.disableRIBForwardReferences = true
+		o.gribiOpts = opts
 	}
 }
 
@@ -263,11 +259,7 @@ func New(targetName, zapiURL string, opts ...Option) (*Device, error) {
 	log.Info("starting gRIBI")
 	// TODO(wenbli): Use gRIBIs once we change lemming's KNE config to use different ports.
 	// gRIBIs := grpc.NewServer()
-	gribiOpts := []gribis.ServerOpt{}
-	if resolvedOpts.disableRIBForwardReferences {
-		gribiOpts = append(gribiOpts, gribis.WithNoRIBForwardReferences())
-	}
-	gribiServer, err := fgribi.New(s, cacheClient, targetName, root, fmt.Sprintf("unix:%s", resolvedOpts.sysribAddr), gribiOpts...)
+	gribiServer, err := fgribi.New(s, cacheClient, targetName, root, fmt.Sprintf("unix:%s", resolvedOpts.sysribAddr), resolvedOpts.gribiOpts...)
 	if err != nil {
 		return nil, err
 	}
