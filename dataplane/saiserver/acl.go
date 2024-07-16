@@ -306,6 +306,12 @@ func (a *acl) CreateAclEntry(ctx context.Context, req *saipb.CreateAclEntryReque
 		return nil, err
 	}
 
+	cpuPortReq := &saipb.GetSwitchAttributeRequest{Oid: switchID, AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_CPU_PORT}}
+	resp := &saipb.GetSwitchAttributeResponse{}
+	if err := a.mgr.PopulateAttributes(cpuPortReq, resp); err != nil {
+		return nil, err
+	}
+
 	if req.ActionSetVrf != nil {
 		aReq.Actions = append(aReq.Actions,
 			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF).
@@ -315,6 +321,9 @@ func (a *acl) CreateAclEntry(ctx context.Context, req *saipb.CreateAclEntryReque
 		aReq.Actions = append(aReq.Actions,
 			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TRAP_ID).
 				WithUint64Value(req.GetActionSetUserTrapId().GetOid())).Build())
+		if req.ActionPacketAction == nil {
+			aReq.Actions = append(aReq.Actions, fwdconfig.Action(fwdconfig.TransmitAction(fmt.Sprint(resp.GetAttr().GetCpuPort())).WithImmediate(true)).Build())
+		}
 	}
 	if req.ActionCounter != nil {
 		aReq.Actions = append(aReq.Actions, &fwdpb.ActionDesc{
@@ -327,12 +336,6 @@ func (a *acl) CreateAclEntry(ctx context.Context, req *saipb.CreateAclEntryReque
 				},
 			},
 		})
-	}
-
-	cpuPortReq := &saipb.GetSwitchAttributeRequest{Oid: switchID, AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_CPU_PORT}}
-	resp := &saipb.GetSwitchAttributeResponse{}
-	if err := a.mgr.PopulateAttributes(cpuPortReq, resp); err != nil {
-		return nil, err
 	}
 
 	if req.ActionPacketAction != nil {
