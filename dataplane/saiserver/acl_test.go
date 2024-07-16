@@ -279,6 +279,14 @@ func TestCreateAclEntry(t *testing.T) {
 						Value: binary.BigEndian.AppendUint64(nil, 1),
 					},
 				},
+			}, {
+				ActionType: fwdpb.ActionType_ACTION_TYPE_TRANSMIT,
+				Action: &fwdpb.ActionDesc_Transmit{
+					Transmit: &fwdpb.TransmitActionDesc{
+						Immediate: true,
+						PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: "10"}},
+					},
+				},
 			}},
 		},
 	}, {
