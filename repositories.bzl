@@ -1437,8 +1437,8 @@ def go_repositories():
     go_repository(
         name = "com_github_openconfig_gribigo",
         importpath = "github.com/openconfig/gribigo",
-        sum = "h1:MwzM4PieAaHBYDTUd5wMFqzVTzerf3OvHdLmjv7mD+g=",
-        version = "v0.0.0-20240314002941-b59d04db23bd",
+        sum = "h1:KTuSH6nuZUQxarrctK/Lw5EzjALKpBYX+U0wqum1/S4=",
+        version = "v0.0.0-20240712014900-6e0dad60c17a",
     )
     go_repository(
         name = "com_github_openconfig_grpctunnel",
@@ -1881,12 +1881,6 @@ def go_repositories():
         importpath = "github.com/vishvananda/netns",
         sum = "h1:Oeaw1EM2JMxD51g9uhtC0D7erkIjgmj8+JZc26m1YX8=",
         version = "v0.0.4",
-    )
-    go_repository(
-        name = "com_github_wenovus_gobgp_v3",
-        importpath = "github.com/wenovus/gobgp/v3",
-        sum = "h1:jse5eORjbrlTIOPzOO3cpm4feJ16ZCntxzAHSdcWuy4=",
-        version = "v3.0.0-20230831013712-6d33842cbf42",
     )
     go_repository(
         name = "com_github_wi2l_jsondiff",
@@ -3078,8 +3072,8 @@ def go_repositories():
         name = "org_golang_google_grpc",
         build_file_proto_mode = "disable",
         importpath = "google.golang.org/grpc",
-        sum = "h1:KH3VH9y/MgNQg1dE7b3XfVK0GsPSIzJwdF617gUSbvY=",
-        version = "v1.64.0",
+        sum = "h1:LKtvyfbX3UGVPFcGqJ9ItpVWW6oN/2XqTxfAnwRRXiA=",
+        version = "v1.64.1",
     )
     go_repository(
         name = "org_golang_google_grpc_cmd_protoc_gen_go_grpc",
