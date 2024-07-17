@@ -16,12 +16,15 @@ package saiserver
 
 import (
 	"context"
+	"fmt"
 
 	"google.golang.org/grpc"
 
+	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
 	"github.com/openconfig/lemming/dataplane/saiserver/attrmgr"
 
 	saipb "github.com/openconfig/lemming/dataplane/proto/sai"
+	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
 type policer struct {
@@ -39,16 +42,46 @@ func newPolicer(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Serv
 	return p
 }
 
-// CreatePolicer return policer.
-func (p *policer) CreatePolicer(context.Context, *saipb.CreatePolicerRequest) (*saipb.CreatePolicerResponse, error) {
+// CreatePolicer creates a new policer, QOS is not actually supported.ß the GREEN action is always taken.ß
+func (p *policer) CreatePolicer(ctx context.Context, req *saipb.CreatePolicerRequest) (*saipb.CreatePolicerResponse, error) {
 	id := p.mgr.NextID()
-	// TODO: provide implementation.
+
+	cpuPortReq := &saipb.GetSwitchAttributeRequest{Oid: switchID, AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_CPU_PORT}}
+	resp := &saipb.GetSwitchAttributeResponse{}
+	if err := p.mgr.PopulateAttributes(cpuPortReq, resp); err != nil {
+		return nil, err
+	}
+
+	var action *fwdconfig.ActionBuilder
+
+	switch req.GetGreenPacketAction() {
+	case saipb.PacketAction_PACKET_ACTION_TRAP:
+		action = fwdconfig.Action(fwdconfig.TransmitAction(fmt.Sprint(resp.GetAttr().GetCpuPort())).WithImmediate(true))
+	default:
+		return nil, fmt.Errorf("unsupport policer action: %v", req.GetGreenPacketAction())
+	}
+
+	tReq := fwdconfig.TableEntryAddRequest(p.dataplane.ID(), policerTabler).
+		AppendEntry(fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_POLICER_ID).WithUint64(id))), action)
+
+	if _, err := p.dataplane.TableEntryAdd(ctx, tReq.Build()); err != nil {
+		return nil, err
+	}
+
 	return &saipb.CreatePolicerResponse{
 		Oid: id,
 	}, nil
 }
 
-func (p *policer) RemovePolicer(context.Context, *saipb.RemovePolicerRequest) (*saipb.RemovePolicerResponse, error) {
+// RemovePolicer removes the entry from the table.
+func (p *policer) RemovePolicer(ctx context.Context, req *saipb.RemovePolicerRequest) (*saipb.RemovePolicerResponse, error) {
+	tReq := fwdconfig.TableEntryRemoveRequest(p.dataplane.ID(), policerTabler).
+		AppendEntry(fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_POLICER_ID).WithUint64(req.GetOid()))))
+
+	if _, err := p.dataplane.TableEntryRemove(ctx, tReq.Build()); err != nil {
+		return nil, err
+	}
+
 	return &saipb.RemovePolicerResponse{}, nil
 }
 

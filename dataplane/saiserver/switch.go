@@ -109,6 +109,7 @@ const (
 	portToHostifTable     = "cpu-output"
 	tunTermTable          = "tun-term"
 	VlanTable             = "vlan"
+	policerTabler         = "policerTable"
 	DefaultVlanId         = 1
 )
 
@@ -595,6 +596,26 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 			Table: &fwdpb.TableDesc_Flow{
 				Flow: &fwdpb.FlowTableDesc{
 					BankCount: 1,
+				},
+			},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = sw.dataplane.TableCreate(ctx, &fwdpb.TableCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
+		Desc: &fwdpb.TableDesc{
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: policerTabler}},
+			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
+			Table: &fwdpb.TableDesc_Exact{
+				Exact: &fwdpb.ExactTableDesc{
+					FieldIds: []*fwdpb.PacketFieldId{{
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_POLICER_ID,
+						},
+					}},
 				},
 			},
 		},
