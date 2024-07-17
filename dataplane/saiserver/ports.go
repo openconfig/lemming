@@ -104,7 +104,6 @@ func getL3Pipeline() []*fwdpb.ActionDesc {
 func getL2Pipeline() []*fwdpb.ActionDesc {
 	return []*fwdpb.ActionDesc{
 		fwdconfig.Action(fwdconfig.LookupAction(IngressActionTable)).Build(), // Run ingress action.
-		fwdconfig.Action(fwdconfig.LookupAction(L2MCGroupTable)).Build(),     // Check L2MC group.
 		fwdconfig.Action(fwdconfig.DropAction()).Build(),                     // DROP
 	}
 }
@@ -449,6 +448,8 @@ func (port *port) createCPUPort(ctx context.Context) (uint64, error) {
 				Port: &fwdpb.PortUpdateDesc_Cpu{
 					Cpu: &fwdpb.CPUPortUpdateDesc{
 						Inputs: []*fwdpb.ActionDesc{
+							fwdconfig.Action(fwdconfig.LookupAction(IngressActionTable)).Build(), // Run ingress action.
+							fwdconfig.Action(fwdconfig.LookupAction(L2MCGroupTable)).Build(),     // Check L2MC group.
 							fwdconfig.Action(fwdconfig.LookupAction(hostifToPortTable)).Build(),
 						},
 						Outputs: []*fwdpb.ActionDesc{
