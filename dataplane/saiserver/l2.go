@@ -119,7 +119,7 @@ func (mg *l2mcGroup) updateGroupMember(ctx context.Context, gid, mid uint64, m *
 				Mirror: &fwdpb.MirrorActionDesc{
 					PortId: &fwdpb.PortId{
 						ObjectId: &fwdpb.ObjectId{
-							Id: fmt.Sprint(member),
+							Id: fmt.Sprint(member.outputId),
 						},
 					},
 				},
