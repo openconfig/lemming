@@ -191,6 +191,9 @@ var FieldAttr = map[fwdpb.PacketFieldNum]struct {
 	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_HOST_PORT_ID: {
 		Sizes: []int{SizeUint64},
 	},
+	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L2MC_GROUP_ID: {
+		Sizes: []int{SizeUint64},
+	},
 }
 
 // GroupAttr contains attributes for each packet header group.

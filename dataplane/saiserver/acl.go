@@ -328,6 +328,11 @@ func (a *acl) CreateAclEntry(ctx context.Context, req *saipb.CreateAclEntryReque
 			},
 		})
 	}
+	if req.ActionRedirect != nil {
+		aReq.Actions = append(aReq.Actions,
+			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET,
+				fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L2MC_GROUP_ID).WithUint64Value(req.GetActionRedirect().GetOid())).Build())
+	}
 
 	cpuPortReq := &saipb.GetSwitchAttributeRequest{Oid: switchID, AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_CPU_PORT}}
 	resp := &saipb.GetSwitchAttributeResponse{}

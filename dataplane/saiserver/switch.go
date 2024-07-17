@@ -109,6 +109,7 @@ const (
 	portToHostifTable     = "cpu-output"
 	tunTermTable          = "tun-term"
 	VlanTable             = "vlan"
+	L2MCGroupTable        = "l2mcg"
 	DefaultVlanId         = 1
 )
 
@@ -267,6 +268,26 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 		},
 	}
 	if _, err := sw.dataplane.TableCreate(ctx, vlanReq); err != nil {
+		return nil, err
+	}
+	l2mcGroupReq := &fwdpb.TableCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
+		Desc: &fwdpb.TableDesc{
+			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: L2MCGroupTable}},
+			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_CONTINUE}},
+			Table: &fwdpb.TableDesc_Exact{
+				Exact: &fwdpb.ExactTableDesc{
+					FieldIds: []*fwdpb.PacketFieldId{{
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L2MC_GROUP_ID,
+						},
+					}},
+				},
+			},
+		},
+	}
+	if _, err := sw.dataplane.TableCreate(ctx, l2mcGroupReq); err != nil {
 		return nil, err
 	}
 	action := &fwdpb.TableCreateRequest{
