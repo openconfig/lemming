@@ -232,6 +232,7 @@ var GroupAttr = map[fwdpb.PacketHeaderGroup]struct {
 			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE,
 			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TUNNEL_ID,
 			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_HOST_PORT_ID,
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L2MC_GROUP_ID,
 		},
 	},
 	fwdpb.PacketHeaderGroup_PACKET_HEADER_GROUP_L2: {
