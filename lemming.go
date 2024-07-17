@@ -27,6 +27,8 @@ import (
 	"google.golang.org/grpc/reflection"
 	"k8s.io/klog/v2"
 
+	gribis "github.com/openconfig/gribigo/server"
+
 	"github.com/openconfig/lemming/bgp"
 	"github.com/openconfig/lemming/dataplane"
 	"github.com/openconfig/lemming/dataplane/dplaneopts"
@@ -85,6 +87,7 @@ type opt struct {
 	bgpPort        uint16
 	dataplane      bool
 	dataplaneOpts  []dplaneopts.Option
+	gribiOpts      []gribis.ServerOpt
 }
 
 // resolveOpts applies all the options and returns a struct containing the result.
@@ -176,6 +179,14 @@ func WithSysribAddr(sysribAddr string) Option {
 	}
 }
 
+// WithGRIBIOpts specifies the set of gRIBI options that should be passed to
+// the gRIBI server that lemming runs.
+func WithGRIBIOpts(opts ...gribis.ServerOpt) Option {
+	return func(o *opt) {
+		o.gribiOpts = opts
+	}
+}
+
 // New returns a new initialized device.
 func New(targetName, zapiURL string, opts ...Option) (*Device, error) {
 	var dplane *dataplane.Dataplane
@@ -248,7 +259,7 @@ func New(targetName, zapiURL string, opts ...Option) (*Device, error) {
 	log.Info("starting gRIBI")
 	// TODO(wenbli): Use gRIBIs once we change lemming's KNE config to use different ports.
 	// gRIBIs := grpc.NewServer()
-	gribiServer, err := fgribi.New(s, cacheClient, targetName, root, fmt.Sprintf("unix:%s", resolvedOpts.sysribAddr))
+	gribiServer, err := fgribi.New(s, cacheClient, targetName, root, fmt.Sprintf("unix:%s", resolvedOpts.sysribAddr), resolvedOpts.gribiOpts...)
 	if err != nil {
 		return nil, err
 	}
