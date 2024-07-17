@@ -329,9 +329,16 @@ func (a *acl) CreateAclEntry(ctx context.Context, req *saipb.CreateAclEntryReque
 		})
 	}
 	if req.ActionRedirect != nil {
-		aReq.Actions = append(aReq.Actions,
-			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET,
-				fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L2MC_GROUP_ID).WithUint64Value(req.GetActionRedirect().GetOid())).Build())
+		switch typ := a.mgr.GetType(fmt.Sprint(req.GetActionRedirect().GetOid())); typ {
+		case saipb.ObjectType_OBJECT_TYPE_L2MC_GROUP:
+			aReq.Actions = append(aReq.Actions, []*fwdpb.ActionDesc{
+				fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET,
+					fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L2MC_GROUP_ID).WithUint64Value(req.GetActionRedirect().GetOid())).Build(),
+				fwdconfig.Action(fwdconfig.LookupAction(L2MCGroupTable)).Build(), // Check L2MC group.
+			}...)
+		default:
+			return nil, status.Errorf(codes.InvalidArgument, "type %q is not supported; only support L2MC Group for ACL Redirect for now", typ.String())
+		}
 	}
 
 	cpuPortReq := &saipb.GetSwitchAttributeRequest{Oid: switchID, AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_CPU_PORT}}
