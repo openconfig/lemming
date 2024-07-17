@@ -53,8 +53,10 @@ type Server struct {
 // installed.
 // - root, if specified, will be used to populate connected routes into the RIB
 // manager. Note this is intended to be used for unit/standalone device testing.
-func New(s *grpc.Server, gClient gpb.GNMIClient, target string, root *oc.Root, sysribAddr string) (*Server, error) {
-	gs, err := createGRIBIServer(gClient, target, root, sysribAddr)
+//   - opts, if specified, will be used to control the underlying gRIBI server's
+//     behaviours.
+func New(s *grpc.Server, gClient gpb.GNMIClient, target string, root *oc.Root, sysribAddr string, opts ...server.ServerOpt) (*Server, error) {
+	gs, err := createGRIBIServer(gClient, target, root, sysribAddr, opts...)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create gRIBI server, %v", err)
 	}
@@ -73,7 +75,10 @@ func New(s *grpc.Server, gClient gpb.GNMIClient, target string, root *oc.Root, s
 //
 // - root, if specified, will be used to populate connected routes into the RIB
 // manager. Note this is intended to be used for unit/standalone device testing.
-func createGRIBIServer(gClient gpb.GNMIClient, target string, root *oc.Root, sysribAddr string) (*server.Server, error) {
+//
+// The ServerOpt slice provided is handed to the gRIBI fake server to control its
+// behaviour.
+func createGRIBIServer(gClient gpb.GNMIClient, target string, root *oc.Root, sysribAddr string, opts ...server.ServerOpt) (*server.Server, error) {
 	gzebraConn, err := grpc.Dial(sysribAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, fmt.Errorf("cannot dial to sysrib, %v", err)
@@ -153,11 +158,11 @@ func createGRIBIServer(gClient gpb.GNMIClient, target string, root *oc.Root, sys
 		log.Infof("Sent route %v with response %v", routeReq, resp)
 	}
 
-	return server.New(
+	return server.New(append([]server.ServerOpt{
 		server.WithPostChangeRIBHook(ribHookfn),
 		server.WithRIBResolvedEntryHook(ribAddfn),
 		server.WithVRFs(networkInstances),
-	)
+	}, opts...)...)
 }
 
 // createSetRouteRequest converts a Route to a sysrib SetRouteRequest
