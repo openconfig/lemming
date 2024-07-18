@@ -87,7 +87,9 @@ sai_status_t l_create_isolation_group(sai_object_id_t *isolation_group_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *isolation_group_id = resp.oid();
+  if (isolation_group_id) {
+    *isolation_group_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -172,7 +174,9 @@ sai_status_t l_create_isolation_group_member(
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *isolation_group_member_id = resp.oid();
+  if (isolation_group_member_id) {
+    *isolation_group_member_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }

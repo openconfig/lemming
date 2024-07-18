@@ -146,7 +146,9 @@ sai_status_t l_create_mirror_session(sai_object_id_t *mirror_session_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *mirror_session_id = resp.oid();
+  if (mirror_session_id) {
+    *mirror_session_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }

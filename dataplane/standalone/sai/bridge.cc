@@ -159,7 +159,9 @@ sai_status_t l_create_bridge(sai_object_id_t *bridge_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *bridge_id = resp.oid();
+  if (bridge_id) {
+    *bridge_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -352,7 +354,9 @@ sai_status_t l_create_bridge_port(sai_object_id_t *bridge_port_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *bridge_port_id = resp.oid();
+  if (bridge_port_id) {
+    *bridge_port_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }

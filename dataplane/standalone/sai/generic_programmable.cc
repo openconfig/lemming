@@ -66,7 +66,9 @@ sai_status_t l_create_generic_programmable(
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *generic_programmable_id = resp.oid();
+  if (generic_programmable_id) {
+    *generic_programmable_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }

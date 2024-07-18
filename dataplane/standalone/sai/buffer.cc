@@ -162,7 +162,9 @@ sai_status_t l_create_buffer_pool(sai_object_id_t *buffer_pool_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *buffer_pool_id = resp.oid();
+  if (buffer_pool_id) {
+    *buffer_pool_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -334,7 +336,9 @@ sai_status_t l_create_ingress_priority_group(
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *ingress_priority_group_id = resp.oid();
+  if (ingress_priority_group_id) {
+    *ingress_priority_group_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -492,7 +496,9 @@ sai_status_t l_create_buffer_profile(sai_object_id_t *buffer_profile_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *buffer_profile_id = resp.oid();
+  if (buffer_profile_id) {
+    *buffer_profile_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }

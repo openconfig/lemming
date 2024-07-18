@@ -73,7 +73,9 @@ sai_status_t l_create_my_mac(sai_object_id_t *my_mac_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *my_mac_id = resp.oid();
+  if (my_mac_id) {
+    *my_mac_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }

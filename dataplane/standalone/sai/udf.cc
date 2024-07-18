@@ -130,7 +130,9 @@ sai_status_t l_create_udf(sai_object_id_t *udf_id, sai_object_id_t switch_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *udf_id = resp.oid();
+  if (udf_id) {
+    *udf_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -240,7 +242,9 @@ sai_status_t l_create_udf_match(sai_object_id_t *udf_match_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *udf_match_id = resp.oid();
+  if (udf_match_id) {
+    *udf_match_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -330,7 +334,9 @@ sai_status_t l_create_udf_group(sai_object_id_t *udf_group_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *udf_group_id = resp.oid();
+  if (udf_group_id) {
+    *udf_group_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }

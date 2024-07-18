@@ -210,7 +210,9 @@ sai_status_t l_create_dtel(sai_object_id_t *dtel_id, sai_object_id_t switch_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *dtel_id = resp.oid();
+  if (dtel_id) {
+    *dtel_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -363,7 +365,9 @@ sai_status_t l_create_dtel_queue_report(sai_object_id_t *dtel_queue_report_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *dtel_queue_report_id = resp.oid();
+  if (dtel_queue_report_id) {
+    *dtel_queue_report_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -478,7 +482,9 @@ sai_status_t l_create_dtel_int_session(sai_object_id_t *dtel_int_session_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *dtel_int_session_id = resp.oid();
+  if (dtel_int_session_id) {
+    *dtel_int_session_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -601,7 +607,9 @@ sai_status_t l_create_dtel_report_session(
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *dtel_report_session_id = resp.oid();
+  if (dtel_report_session_id) {
+    *dtel_report_session_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -715,7 +723,9 @@ sai_status_t l_create_dtel_event(sai_object_id_t *dtel_event_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *dtel_event_id = resp.oid();
+  if (dtel_event_id) {
+    *dtel_event_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }

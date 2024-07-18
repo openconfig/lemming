@@ -17,6 +17,14 @@ enum NextHopGroupAttr {
   NEXT_HOP_GROUP_ATTR_CONFIGURED_SIZE = 6;
   NEXT_HOP_GROUP_ATTR_REAL_SIZE = 7;
   NEXT_HOP_GROUP_ATTR_SELECTION_MAP = 8;
+  NEXT_HOP_GROUP_ATTR_HIERARCHICAL_NEXTHOP = 9;
+  NEXT_HOP_GROUP_ATTR_ARS_OBJECT_ID = 10;
+  NEXT_HOP_GROUP_ATTR_ARS_PACKET_DROPS = 11;
+  NEXT_HOP_GROUP_ATTR_ARS_NEXT_HOP_REASSIGNMENTS = 12;
+  NEXT_HOP_GROUP_ATTR_ARS_PORT_REASSIGNMENTS = 13;
+  NEXT_HOP_GROUP_ATTR_NEXT_HOP_LIST = 14;
+  NEXT_HOP_GROUP_ATTR_NEXT_HOP_MEMBER_WEIGHT_LIST = 15;
+  NEXT_HOP_GROUP_ATTR_NEXT_HOP_MEMBER_COUNTER_LIST = 16;
 }
 
 enum NextHopGroupMemberAttr {
@@ -30,6 +38,7 @@ enum NextHopGroupMemberAttr {
   NEXT_HOP_GROUP_MEMBER_ATTR_INDEX = 7;
   NEXT_HOP_GROUP_MEMBER_ATTR_SEQUENCE_ID = 8;
   NEXT_HOP_GROUP_MEMBER_ATTR_COUNTER_ID = 9;
+  NEXT_HOP_GROUP_MEMBER_ATTR_ARS_ALTERNATE_PATH = 10;
 }
 
 enum NextHopGroupMapAttr {
@@ -46,6 +55,11 @@ message CreateNextHopGroupRequest {
   optional uint64 counter_id = 4 [(attr_enum_value) = 5];
   optional uint32 configured_size = 5 [(attr_enum_value) = 6];
   optional uint64 selection_map = 6 [(attr_enum_value) = 8];
+  optional bool hierarchical_nexthop = 7 [(attr_enum_value) = 9];
+  optional uint64 ars_object_id = 8 [(attr_enum_value) = 10];
+  repeated uint64 next_hop_list = 9 [(attr_enum_value) = 14];
+  repeated uint32 next_hop_member_weight_list = 10 [(attr_enum_value) = 15];
+  repeated uint64 next_hop_member_counter_list = 11 [(attr_enum_value) = 16];
 }
 
 message CreateNextHopGroupResponse {
@@ -63,6 +77,10 @@ message SetNextHopGroupAttributeRequest {
   optional bool set_switchover = 2 [(attr_enum_value) = 4];
   optional uint64 counter_id = 3 [(attr_enum_value) = 5];
   optional uint64 selection_map = 4 [(attr_enum_value) = 8];
+  optional uint64 ars_object_id = 5 [(attr_enum_value) = 10];
+  repeated uint64 next_hop_list = 6 [(attr_enum_value) = 14];
+  repeated uint32 next_hop_member_weight_list = 7 [(attr_enum_value) = 15];
+  repeated uint64 next_hop_member_counter_list = 8 [(attr_enum_value) = 16];
 }
 
 message SetNextHopGroupAttributeResponse {}
@@ -88,6 +106,7 @@ message CreateNextHopGroupMemberRequest {
   optional uint32 index = 7 [(attr_enum_value) = 7];
   optional uint32 sequence_id = 8 [(attr_enum_value) = 8];
   optional uint64 counter_id = 9 [(attr_enum_value) = 9];
+  optional bool ars_alternate_path = 10 [(attr_enum_value) = 10];
 }
 
 message CreateNextHopGroupMemberResponse {
@@ -107,6 +126,7 @@ message SetNextHopGroupMemberAttributeRequest {
   optional uint64 monitored_object = 4 [(attr_enum_value) = 6];
   optional uint32 sequence_id = 5 [(attr_enum_value) = 8];
   optional uint64 counter_id = 6 [(attr_enum_value) = 9];
+  optional bool ars_alternate_path = 7 [(attr_enum_value) = 10];
 }
 
 message SetNextHopGroupMemberAttributeResponse {}
@@ -169,6 +189,22 @@ message GetNextHopGroupMapAttributeResponse {
   NextHopGroupMapAttribute attr = 1;
 }
 
+message CreateNextHopGroupsRequest {
+  repeated CreateNextHopGroupRequest reqs = 1;
+}
+
+message CreateNextHopGroupsResponse {
+  repeated CreateNextHopGroupResponse resps = 1;
+}
+
+message RemoveNextHopGroupsRequest {
+  repeated RemoveNextHopGroupRequest reqs = 1;
+}
+
+message RemoveNextHopGroupsResponse {
+  repeated RemoveNextHopGroupResponse resps = 1;
+}
+
 service NextHopGroup {
   rpc CreateNextHopGroup(CreateNextHopGroupRequest)
       returns (CreateNextHopGroupResponse) {}
@@ -198,4 +234,8 @@ service NextHopGroup {
       returns (SetNextHopGroupMapAttributeResponse) {}
   rpc GetNextHopGroupMapAttribute(GetNextHopGroupMapAttributeRequest)
       returns (GetNextHopGroupMapAttributeResponse) {}
+  rpc CreateNextHopGroups(CreateNextHopGroupsRequest)
+      returns (CreateNextHopGroupsResponse) {}
+  rpc RemoveNextHopGroups(RemoveNextHopGroupsRequest)
+      returns (RemoveNextHopGroupsResponse) {}
 }

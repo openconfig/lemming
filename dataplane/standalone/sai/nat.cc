@@ -403,7 +403,9 @@ sai_status_t l_create_nat_zone_counter(sai_object_id_t *nat_zone_counter_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *nat_zone_counter_id = resp.oid();
+  if (nat_zone_counter_id) {
+    *nat_zone_counter_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }

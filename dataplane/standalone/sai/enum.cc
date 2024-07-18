@@ -9697,6 +9697,34 @@ convert_sai_next_hop_group_attr_t_to_proto(const sai_int32_t val) {
     case SAI_NEXT_HOP_GROUP_ATTR_SELECTION_MAP:
       return lemming::dataplane::sai::NEXT_HOP_GROUP_ATTR_SELECTION_MAP;
 
+    case SAI_NEXT_HOP_GROUP_ATTR_HIERARCHICAL_NEXTHOP:
+      return lemming::dataplane::sai::NEXT_HOP_GROUP_ATTR_HIERARCHICAL_NEXTHOP;
+
+    case SAI_NEXT_HOP_GROUP_ATTR_ARS_OBJECT_ID:
+      return lemming::dataplane::sai::NEXT_HOP_GROUP_ATTR_ARS_OBJECT_ID;
+
+    case SAI_NEXT_HOP_GROUP_ATTR_ARS_PACKET_DROPS:
+      return lemming::dataplane::sai::NEXT_HOP_GROUP_ATTR_ARS_PACKET_DROPS;
+
+    case SAI_NEXT_HOP_GROUP_ATTR_ARS_NEXT_HOP_REASSIGNMENTS:
+      return lemming::dataplane::sai::
+          NEXT_HOP_GROUP_ATTR_ARS_NEXT_HOP_REASSIGNMENTS;
+
+    case SAI_NEXT_HOP_GROUP_ATTR_ARS_PORT_REASSIGNMENTS:
+      return lemming::dataplane::sai::
+          NEXT_HOP_GROUP_ATTR_ARS_PORT_REASSIGNMENTS;
+
+    case SAI_NEXT_HOP_GROUP_ATTR_NEXT_HOP_LIST:
+      return lemming::dataplane::sai::NEXT_HOP_GROUP_ATTR_NEXT_HOP_LIST;
+
+    case SAI_NEXT_HOP_GROUP_ATTR_NEXT_HOP_MEMBER_WEIGHT_LIST:
+      return lemming::dataplane::sai::
+          NEXT_HOP_GROUP_ATTR_NEXT_HOP_MEMBER_WEIGHT_LIST;
+
+    case SAI_NEXT_HOP_GROUP_ATTR_NEXT_HOP_MEMBER_COUNTER_LIST:
+      return lemming::dataplane::sai::
+          NEXT_HOP_GROUP_ATTR_NEXT_HOP_MEMBER_COUNTER_LIST;
+
     default:
       return lemming::dataplane::sai::NEXT_HOP_GROUP_ATTR_UNSPECIFIED;
   }
@@ -9727,6 +9755,33 @@ sai_next_hop_group_attr_t convert_sai_next_hop_group_attr_t_to_sai(
 
     case lemming::dataplane::sai::NEXT_HOP_GROUP_ATTR_SELECTION_MAP:
       return SAI_NEXT_HOP_GROUP_ATTR_SELECTION_MAP;
+
+    case lemming::dataplane::sai::NEXT_HOP_GROUP_ATTR_HIERARCHICAL_NEXTHOP:
+      return SAI_NEXT_HOP_GROUP_ATTR_HIERARCHICAL_NEXTHOP;
+
+    case lemming::dataplane::sai::NEXT_HOP_GROUP_ATTR_ARS_OBJECT_ID:
+      return SAI_NEXT_HOP_GROUP_ATTR_ARS_OBJECT_ID;
+
+    case lemming::dataplane::sai::NEXT_HOP_GROUP_ATTR_ARS_PACKET_DROPS:
+      return SAI_NEXT_HOP_GROUP_ATTR_ARS_PACKET_DROPS;
+
+    case lemming::dataplane::sai::
+        NEXT_HOP_GROUP_ATTR_ARS_NEXT_HOP_REASSIGNMENTS:
+      return SAI_NEXT_HOP_GROUP_ATTR_ARS_NEXT_HOP_REASSIGNMENTS;
+
+    case lemming::dataplane::sai::NEXT_HOP_GROUP_ATTR_ARS_PORT_REASSIGNMENTS:
+      return SAI_NEXT_HOP_GROUP_ATTR_ARS_PORT_REASSIGNMENTS;
+
+    case lemming::dataplane::sai::NEXT_HOP_GROUP_ATTR_NEXT_HOP_LIST:
+      return SAI_NEXT_HOP_GROUP_ATTR_NEXT_HOP_LIST;
+
+    case lemming::dataplane::sai::
+        NEXT_HOP_GROUP_ATTR_NEXT_HOP_MEMBER_WEIGHT_LIST:
+      return SAI_NEXT_HOP_GROUP_ATTR_NEXT_HOP_MEMBER_WEIGHT_LIST;
+
+    case lemming::dataplane::sai::
+        NEXT_HOP_GROUP_ATTR_NEXT_HOP_MEMBER_COUNTER_LIST:
+      return SAI_NEXT_HOP_GROUP_ATTR_NEXT_HOP_MEMBER_COUNTER_LIST;
 
     default:
       return SAI_NEXT_HOP_GROUP_ATTR_NEXT_HOP_COUNT;
@@ -9816,6 +9871,10 @@ convert_sai_next_hop_group_member_attr_t_to_proto(const sai_int32_t val) {
     case SAI_NEXT_HOP_GROUP_MEMBER_ATTR_COUNTER_ID:
       return lemming::dataplane::sai::NEXT_HOP_GROUP_MEMBER_ATTR_COUNTER_ID;
 
+    case SAI_NEXT_HOP_GROUP_MEMBER_ATTR_ARS_ALTERNATE_PATH:
+      return lemming::dataplane::sai::
+          NEXT_HOP_GROUP_MEMBER_ATTR_ARS_ALTERNATE_PATH;
+
     default:
       return lemming::dataplane::sai::NEXT_HOP_GROUP_MEMBER_ATTR_UNSPECIFIED;
   }
@@ -9850,6 +9909,9 @@ convert_sai_next_hop_group_member_attr_t_to_sai(
 
     case lemming::dataplane::sai::NEXT_HOP_GROUP_MEMBER_ATTR_COUNTER_ID:
       return SAI_NEXT_HOP_GROUP_MEMBER_ATTR_COUNTER_ID;
+
+    case lemming::dataplane::sai::NEXT_HOP_GROUP_MEMBER_ATTR_ARS_ALTERNATE_PATH:
+      return SAI_NEXT_HOP_GROUP_MEMBER_ATTR_ARS_ALTERNATE_PATH;
 
     default:
       return SAI_NEXT_HOP_GROUP_MEMBER_ATTR_NEXT_HOP_GROUP_ID;
@@ -9939,6 +10001,9 @@ convert_sai_next_hop_group_type_t_to_proto(const sai_int32_t val) {
     case SAI_NEXT_HOP_GROUP_TYPE_CLASS_BASED:
       return lemming::dataplane::sai::NEXT_HOP_GROUP_TYPE_CLASS_BASED;
 
+    case SAI_NEXT_HOP_GROUP_TYPE_ECMP_WITH_MEMBERS:
+      return lemming::dataplane::sai::NEXT_HOP_GROUP_TYPE_ECMP_WITH_MEMBERS;
+
     default:
       return lemming::dataplane::sai::NEXT_HOP_GROUP_TYPE_UNSPECIFIED;
   }
@@ -9960,6 +10025,9 @@ sai_next_hop_group_type_t convert_sai_next_hop_group_type_t_to_sai(
 
     case lemming::dataplane::sai::NEXT_HOP_GROUP_TYPE_CLASS_BASED:
       return SAI_NEXT_HOP_GROUP_TYPE_CLASS_BASED;
+
+    case lemming::dataplane::sai::NEXT_HOP_GROUP_TYPE_ECMP_WITH_MEMBERS:
+      return SAI_NEXT_HOP_GROUP_TYPE_ECMP_WITH_MEMBERS;
 
     default:
       return SAI_NEXT_HOP_GROUP_TYPE_DYNAMIC_UNORDERED_ECMP;

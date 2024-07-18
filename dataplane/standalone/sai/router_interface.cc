@@ -128,7 +128,9 @@ sai_status_t l_create_router_interface(sai_object_id_t *router_interface_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *router_interface_id = resp.oid();
+  if (router_interface_id) {
+    *router_interface_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }

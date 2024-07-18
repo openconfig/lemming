@@ -65,7 +65,9 @@ sai_status_t l_create_debug_counter(sai_object_id_t *debug_counter_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *debug_counter_id = resp.oid();
+  if (debug_counter_id) {
+    *debug_counter_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }

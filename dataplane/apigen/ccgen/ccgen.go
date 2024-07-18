@@ -204,6 +204,7 @@ func createCCData(meta *saiast.FuncMetadata, apiName string, sai *saiast.SAIAPI,
 	// If the func has entry, then we don't use ids, instead pass the entry to the proto.
 	if meta.Entry == "" {
 		opFn.OidVar = sai.Funcs[fn.Typ].Params[0].Name
+		opFn.OidPointer = strings.TrimPrefix(opFn.OidVar, "*")
 	} else {
 		i := 0
 		if strings.Contains(opFn.Operation, "bulk") {
@@ -794,7 +795,11 @@ return msg;
 		LOG(ERROR) << status.error_message();
 		return SAI_STATUS_FAILURE;
 	}
-	{{ if .OidVar -}} {{ .OidVar }} = resp.oid(); {{ end }}
+	{{ if .OidVar -}}
+	if ({{.OidPointer }}) {
+	{{ .OidVar }} = resp.oid(); 
+  	}
+	{{ end }}
 	{{ else if eq .Operation "create_bulk" }}
 	lemming::dataplane::sai::{{ .ReqType }} req;
 	lemming::dataplane::sai::{{ .RespType }} resp;
@@ -1050,6 +1055,7 @@ type templateFunc struct {
 	Client              string
 	RPCMethod           string
 	OidVar              string
+	OidPointer          string
 	AttrType            string
 	AttrEnumType        string
 	SwitchScoped        bool

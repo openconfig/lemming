@@ -162,7 +162,9 @@ sai_status_t l_create_vlan(sai_object_id_t *vlan_id, sai_object_id_t switch_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *vlan_id = resp.oid();
+  if (vlan_id) {
+    *vlan_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -394,7 +396,9 @@ sai_status_t l_create_vlan_member(sai_object_id_t *vlan_member_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *vlan_member_id = resp.oid();
+  if (vlan_member_id) {
+    *vlan_member_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }

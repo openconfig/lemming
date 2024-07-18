@@ -1212,6 +1212,7 @@ enum NextHopGroupType {
   NEXT_HOP_GROUP_TYPE_FINE_GRAIN_ECMP = 3;
   NEXT_HOP_GROUP_TYPE_PROTECTION = 4;
   NEXT_HOP_GROUP_TYPE_CLASS_BASED = 5;
+  NEXT_HOP_GROUP_TYPE_ECMP_WITH_MEMBERS = 6;
 }
 
 enum NextHopType {
@@ -3356,6 +3357,14 @@ message NextHopGroupAttribute {
   optional uint32 configured_size = 6 [(attr_enum_value) = 6];
   optional uint32 real_size = 7 [(attr_enum_value) = 7];
   optional uint64 selection_map = 8 [(attr_enum_value) = 8];
+  optional bool hierarchical_nexthop = 9 [(attr_enum_value) = 9];
+  optional uint64 ars_object_id = 10 [(attr_enum_value) = 10];
+  optional uint32 ars_packet_drops = 11 [(attr_enum_value) = 11];
+  optional uint32 ars_next_hop_reassignments = 12 [(attr_enum_value) = 12];
+  optional uint32 ars_port_reassignments = 13 [(attr_enum_value) = 13];
+  repeated uint64 next_hop_list = 14 [(attr_enum_value) = 14];
+  repeated uint32 next_hop_member_weight_list = 15 [(attr_enum_value) = 15];
+  repeated uint64 next_hop_member_counter_list = 16 [(attr_enum_value) = 16];
 }
 
 message NextHopGroupMapAttribute {
@@ -3375,6 +3384,7 @@ message NextHopGroupMemberAttribute {
   optional uint32 index = 7 [(attr_enum_value) = 7];
   optional uint32 sequence_id = 8 [(attr_enum_value) = 8];
   optional uint64 counter_id = 9 [(attr_enum_value) = 9];
+  optional bool ars_alternate_path = 10 [(attr_enum_value) = 10];
 }
 
 message PolicerAttribute {

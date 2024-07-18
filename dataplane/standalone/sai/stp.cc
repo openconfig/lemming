@@ -83,7 +83,9 @@ sai_status_t l_create_stp(sai_object_id_t *stp_id, sai_object_id_t switch_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *stp_id = resp.oid();
+  if (stp_id) {
+    *stp_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -161,7 +163,9 @@ sai_status_t l_create_stp_port(sai_object_id_t *stp_port_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *stp_port_id = resp.oid();
+  if (stp_port_id) {
+    *stp_port_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }

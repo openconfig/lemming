@@ -60,7 +60,9 @@ sai_status_t l_create_qos_map(sai_object_id_t *qos_map_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *qos_map_id = resp.oid();
+  if (qos_map_id) {
+    *qos_map_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }

@@ -175,7 +175,9 @@ sai_status_t l_create_table_bitmap_classification_entry(
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *table_bitmap_classification_entry_id = resp.oid();
+  if (table_bitmap_classification_entry_id) {
+    *table_bitmap_classification_entry_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -318,7 +320,9 @@ sai_status_t l_create_table_bitmap_router_entry(
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *table_bitmap_router_entry_id = resp.oid();
+  if (table_bitmap_router_entry_id) {
+    *table_bitmap_router_entry_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -465,7 +469,9 @@ sai_status_t l_create_table_meta_tunnel_entry(
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *table_meta_tunnel_entry_id = resp.oid();
+  if (table_meta_tunnel_entry_id) {
+    *table_meta_tunnel_entry_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
