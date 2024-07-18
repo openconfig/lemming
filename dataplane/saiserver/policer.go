@@ -42,7 +42,7 @@ func newPolicer(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Serv
 	return p
 }
 
-// CreatePolicer creates a new policer, QOS is not actually supported.ß the GREEN action is always taken.ß
+// CreatePolicer creates a new policer, QOS is not actually supported.ß the GREEN action is always taken.
 func (p *policer) CreatePolicer(ctx context.Context, req *saipb.CreatePolicerRequest) (*saipb.CreatePolicerResponse, error) {
 	id := p.mgr.NextID()
 
