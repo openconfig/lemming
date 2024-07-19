@@ -177,6 +177,7 @@ enum PacketFieldNum {
   PACKET_FIELD_NUM_TUNNEL_ID = 62; // Tunnel ID (metadata).
   PACKET_FIELD_NUM_HOST_PORT_ID = 63; // Host port id (metadata).
   PACKET_FIELD_NUM_L2MC_GROUP_ID = 64; // L2MC Group id (metadata).
+  PACKET_FIELD_NUM_POLICER_ID = 65; // Policer id (metadata).
   PACKET_FIELD_NUM_COUNT = 1000;
 }
 

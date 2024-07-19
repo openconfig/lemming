@@ -44,6 +44,7 @@ go_test(
         "acl_test.go",
         "hostif_test.go",
         "l2mc_test.go",
+        "policer_test.go",
         "ports_test.go",
         "routing_test.go",
         "switch_test.go",

@@ -46,7 +46,8 @@ type Metadata struct {
 	outputIface    []byte         // L3 output interface id.
 	tunnelID       []byte         // Tunnel ID
 	hostPortID     []byte         // Host port id
-	l2mcgid        []byte         // L2MC Group ID
+	l2mcGroupID    []byte         // L2MC Group ID
+	policer        []byte         // Policer ID
 	desc           *protocol.Desc // Protocol descriptor.
 }
 
@@ -128,7 +129,9 @@ func (m *Metadata) Field(id fwdpacket.FieldID) ([]byte, error) {
 	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_HOST_PORT_ID:
 		return m.hostPortID, nil
 	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L2MC_GROUP_ID:
-		return m.l2mcgid, nil
+		return m.l2mcGroupID, nil
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_POLICER_ID:
+		return m.policer, nil
 
 	default:
 		return nil, fmt.Errorf("metadata: Field %v failed, unsupported field", id)
@@ -236,7 +239,10 @@ func (m *Metadata) updateSet(id fwdpacket.FieldID, arg []byte) (bool, error) {
 		m.hostPortID = arg
 		return true, nil
 	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L2MC_GROUP_ID:
-		m.l2mcgid = arg
+		m.l2mcGroupID = arg
+		return true, nil
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_POLICER_ID:
+		m.policer = arg
 		return true, nil
 	default:
 		return false, fmt.Errorf("metadata: UpdateField failed, set unsupported for field %v", id)
@@ -293,7 +299,8 @@ func parse(frame *frame.Frame, desc *protocol.Desc) (protocol.Handler, fwdpb.Pac
 		outputIface: make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE].DefaultSize),
 		tunnelID:    make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TUNNEL_ID].DefaultSize),
 		hostPortID:  make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_HOST_PORT_ID].DefaultSize),
-		l2mcgid:     make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L2MC_GROUP_ID].DefaultSize),
+		l2mcGroupID: make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L2MC_GROUP_ID].DefaultSize),
+		policer:     make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_POLICER_ID].DefaultSize),
 		attribute32: make(map[uint8][]byte),
 		attribute24: make(map[uint8][]byte),
 		attribute16: make(map[uint8][]byte),
