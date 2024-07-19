@@ -47,6 +47,7 @@ func newL2mcGroup(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Se
 	mg := &l2mcGroup{
 		mgr:       mgr,
 		dataplane: dataplane,
+		groups:    map[uint64]map[uint64]*l2mcGroupMember{},
 	}
 	saipb.RegisterL2McGroupServer(s, mg)
 	return mg
@@ -65,12 +66,21 @@ func (mg *l2mcGroup) CreateL2McGroup(ctx context.Context, req *saipb.CreateL2McG
 	return &saipb.CreateL2McGroupResponse{Oid: id}, nil
 }
 
+func (mg *l2mcGroup) portNidFromBrirdgeId(ctx context.Context, outputId uint64) (uint64, error) {
+	req := &saipb.GetBridgePortAttributeRequest{Oid: outputId, AttrType: []saipb.BridgePortAttr{saipb.BridgePortAttr_BRIDGE_PORT_ATTR_PORT_ID}}
+	resp := &saipb.GetBridgePortAttributeResponse{}
+	if err := mg.mgr.PopulateAttributes(req, resp); err != nil {
+		return 0, fmt.Errorf("failed to populate OutputId (oid=%d): %v", outputId, err)
+	}
+	if resp.GetAttr().PortId == nil {
+		return 0, fmt.Errorf("cannot find portId for bridge port %q", outputId)
+	}
+	return resp.GetAttr().GetPortId(), nil
+}
+
 // updateGroupMember updates the member of a L2MC group.
 // If m is nil, remove mid from the group(key: group id), otherwise add m to groups with mid as the key.
 func (mg *l2mcGroup) updateGroupMember(ctx context.Context, gid, mid uint64, m *l2mcGroupMember) error {
-	if mg.groups[gid] == nil {
-		return status.Errorf(codes.FailedPrecondition, "L2MC group %d does not exist", gid)
-	}
 	if m == nil {
 		// Remove the member.
 		delete(mg.groups[gid], mid)
@@ -113,13 +123,17 @@ func (mg *l2mcGroup) updateGroupMember(ctx context.Context, gid, mid uint64, m *
 	}
 	var actions []*fwdpb.ActionDesc
 	for _, member := range mg.groups[gid] {
+		portId, err := mg.portNidFromBrirdgeId(ctx, member.outputId)
+		if err != nil {
+			return err
+		}
 		actions = append(actions, &fwdpb.ActionDesc{
 			ActionType: fwdpb.ActionType_ACTION_TYPE_MIRROR,
 			Action: &fwdpb.ActionDesc_Mirror{
 				Mirror: &fwdpb.MirrorActionDesc{
 					PortId: &fwdpb.PortId{
 						ObjectId: &fwdpb.ObjectId{
-							Id: fmt.Sprint(member.outputId),
+							Id: fmt.Sprint(portId),
 						},
 					},
 				},
@@ -156,6 +170,12 @@ func (mg *l2mcGroup) updateGroupMember(ctx context.Context, gid, mid uint64, m *
 }
 
 func (mg *l2mcGroup) CreateL2McGroupMember(ctx context.Context, req *saipb.CreateL2McGroupMemberRequest) (*saipb.CreateL2McGroupMemberResponse, error) {
+	if mg.groups[req.GetL2McGroupId()] == nil {
+		return nil, status.Errorf(codes.FailedPrecondition, "cannot find L2MC group with group ID=%d", req.GetL2McGroupId())
+	}
+	if _, err := mg.portNidFromBrirdgeId(ctx, req.GetL2McOutputId()); err != nil {
+		return nil, err
+	}
 	id := mg.mgr.NextID()
 	if err := mg.updateGroupMember(ctx, req.GetL2McGroupId(), id, &l2mcGroupMember{
 		oid:      id,
@@ -169,9 +189,9 @@ func (mg *l2mcGroup) CreateL2McGroupMember(ctx context.Context, req *saipb.Creat
 
 func (mg *l2mcGroup) RemoveL2McGroup(ctx context.Context, req *saipb.RemoveL2McGroupRequest) (*saipb.RemoveL2McGroupResponse, error) {
 	if mg.groups[req.GetOid()] == nil {
-		return nil, fmt.Errorf("cannot find L2MC group %q", req.GetOid())
+		return nil, status.Errorf(codes.FailedPrecondition, "cannot find L2MC group %q", req.GetOid())
 	}
-	// Remove all members in the group
+	// Remove all members in the group.
 	for _, p := range mg.groups[req.GetOid()] {
 		_, err := attrmgr.InvokeAndSave(ctx, mg.mgr, mg.RemoveL2McGroupMember, &saipb.RemoveL2McGroupMemberRequest{
 			Oid: p.oid,
@@ -196,7 +216,7 @@ func (mg *l2mcGroup) RemoveL2McGroupMember(ctx context.Context, req *saipb.Remov
 	}
 	m := locateMember(req.GetOid())
 	if m == nil {
-		return nil, fmt.Errorf("cannot find member with OID %d", req.GetOid())
+		return nil, status.Errorf(codes.FailedPrecondition, "cannot find L2MC group member with OID %d", req.GetOid())
 	}
 	if err := mg.updateGroupMember(ctx, m.groupId, m.oid, nil); err != nil {
 		return nil, err
