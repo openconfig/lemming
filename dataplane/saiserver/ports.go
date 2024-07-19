@@ -448,6 +448,7 @@ func (port *port) createCPUPort(ctx context.Context) (uint64, error) {
 				Port: &fwdpb.PortUpdateDesc_Cpu{
 					Cpu: &fwdpb.CPUPortUpdateDesc{
 						Inputs: []*fwdpb.ActionDesc{
+							fwdconfig.Action(fwdconfig.LookupAction(L2MCGroupTable)).Build(),
 							fwdconfig.Action(fwdconfig.LookupAction(hostifToPortTable)).Build(),
 						},
 						Outputs: []*fwdpb.ActionDesc{
