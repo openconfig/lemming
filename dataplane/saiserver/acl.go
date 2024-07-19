@@ -339,6 +339,7 @@ func (a *acl) CreateAclEntry(ctx context.Context, req *saipb.CreateAclEntryReque
 		default:
 			return nil, status.Errorf(codes.InvalidArgument, "type %q is not supported; only support L2MC Group for ACL Redirect for now", typ.String())
 		}
+	}
 	if req.ActionSetPolicer != nil {
 		aReq.Actions = append(aReq.Actions,
 			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_POLICER_ID).
