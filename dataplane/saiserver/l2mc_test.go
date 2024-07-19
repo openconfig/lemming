@@ -294,6 +294,69 @@ func TestRemoveL2McGroupMember(t *testing.T) {
 	}
 }
 
+func TestRemoveL2McGroup(t *testing.T) {
+	tests := []struct {
+		desc    string
+		req     *saipb.RemoveL2McGroupRequest
+		want    *fwdpb.TableEntryRemoveRequest
+		wantErr string
+	}{{
+		desc: "non-existing group",
+		req: &saipb.RemoveL2McGroupRequest{
+			Oid: 123,
+		},
+		wantErr: "cannot find L2MC group with group ID",
+	}, {
+		desc: "success",
+		want: &fwdpb.TableEntryRemoveRequest{
+			ContextId: &fwdpb.ContextId{Id: "foo"},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: L2MCGroupTable}},
+			Entries: []*fwdpb.EntryDesc{{
+				Entry: &fwdpb.EntryDesc_Exact{
+					Exact: &fwdpb.ExactEntryDesc{
+						Fields: []*fwdpb.PacketFieldBytes{{
+							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L2MC_GROUP_ID}},
+							Bytes:   []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+						}},
+					},
+				},
+			}},
+		},
+	}}
+
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			dplane := &fakeSwitchDataplane{}
+			c, _, stopFn := newTestL2McGroup(t, dplane)
+			defer stopFn()
+			ctx := context.TODO()
+			rmReq := &saipb.RemoveL2McGroupRequest{}
+			if tt.req == nil {
+				resp, err := c.CreateL2McGroup(ctx, &saipb.CreateL2McGroupRequest{
+					Switch: *proto.Uint64(1),
+				})
+				if err != nil {
+					t.Fatalf("failed to create L2MC group: %v", err)
+				}
+				rmReq.Oid = resp.GetOid()
+			} else {
+				rmReq = tt.req
+			}
+			_, gotErr := c.RemoveL2McGroup(ctx, rmReq)
+			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
+				t.Fatalf("RemoveL2McGroup() unexpected err: %s", diff)
+			}
+			if gotErr != nil {
+				return
+			}
+
+			if d := cmp.Diff(dplane.gotEntryRemoveReqs[0], tt.want, protocmp.Transform()); d != "" {
+				t.Errorf("RemoveL2McGroup() request check failed: diff(-got,+want)\n:%s", d)
+			}
+		})
+	}
+}
+
 func newTestL2McGroup(t testing.TB, api switchDataplaneAPI) (saipb.L2McGroupClient, *l2mcGroup, func()) {
 	var p *l2mcGroup
 	conn, _, stopFn := newTestServer(t, func(mgr *attrmgr.AttrMgr, srv *grpc.Server) {

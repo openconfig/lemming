@@ -24,6 +24,7 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
 	"github.com/openconfig/lemming/dataplane/saiserver/attrmgr"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 
@@ -84,9 +85,6 @@ func (mg *l2mcGroup) updateGroupMember(ctx context.Context, gid, mid uint64, m *
 	if m == nil {
 		// Remove the member.
 		delete(mg.groups[gid], mid)
-		if len(mg.groups[gid]) == 0 {
-			delete(mg.groups, gid)
-		}
 	} else {
 		// Add a member.
 		mg.groups[gid][mid] = m
@@ -101,11 +99,9 @@ func (mg *l2mcGroup) updateGroupMember(ctx context.Context, gid, mid uint64, m *
 		mList = append(mList, m.oid)
 	}
 	gAttr := &saipb.L2McGroupAttribute{}
-	if err := mg.mgr.PopulateAllAttributes(fmt.Sprint(gid), gAttr); err != nil {
-		return err
-	}
 	gAttr.L2McMemberList = mList
-	*gAttr.L2McOutputCount = uint32(len(mList))
+	cnt := uint32(len(mList))
+	gAttr.L2McOutputCount = &cnt
 	mg.mgr.StoreAttributes(gid, gAttr)
 
 	var actions []*fwdpb.ActionDesc
@@ -176,16 +172,12 @@ func (mg *l2mcGroup) CreateL2McGroupMember(ctx context.Context, req *saipb.Creat
 
 func (mg *l2mcGroup) RemoveL2McGroup(ctx context.Context, req *saipb.RemoveL2McGroupRequest) (*saipb.RemoveL2McGroupResponse, error) {
 	if mg.groups[req.GetOid()] == nil {
-		return nil, status.Errorf(codes.FailedPrecondition, "cannot find L2MC group %q", req.GetOid())
+		return nil, status.Errorf(codes.FailedPrecondition, "cannot find L2MC group with group ID=%d", req.GetOid())
 	}
-	// Remove all members in the group.
-	for _, p := range mg.groups[req.GetOid()] {
-		_, err := attrmgr.InvokeAndSave(ctx, mg.mgr, mg.RemoveL2McGroupMember, &saipb.RemoveL2McGroupMemberRequest{
-			Oid: p.oid,
-		})
-		if err != nil {
-			return nil, err
-		}
+	delete(mg.groups, req.GetOid())
+	if _, err := mg.dataplane.TableEntryRemove(ctx, fwdconfig.TableEntryRemoveRequest(mg.dataplane.ID(), L2MCGroupTable).AppendEntry(
+		fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L2MC_GROUP_ID).WithUint64(req.GetOid())))).Build()); err != nil {
+		return nil, err
 	}
 	return &saipb.RemoveL2McGroupResponse{}, nil
 }
