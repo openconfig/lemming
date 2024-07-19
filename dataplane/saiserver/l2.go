@@ -87,21 +87,6 @@ func (mg *l2mcGroup) updateGroupMember(ctx context.Context, gid, mid uint64, m *
 		if len(mg.groups[gid]) == 0 {
 			delete(mg.groups, gid)
 		}
-		gReq := &saipb.GetL2McGroupAttributeRequest{Oid: gid, AttrType: []saipb.L2McGroupAttr{saipb.L2McGroupAttr_L2MC_GROUP_ATTR_L2MC_MEMBER_LIST, saipb.L2McGroupAttr_L2MC_GROUP_ATTR_L2MC_OUTPUT_COUNT}}
-		gResp := &saipb.GetL2McGroupAttributeResponse{}
-		if err := mg.mgr.PopulateAttributes(gReq, gResp); err != nil {
-			return err
-		}
-		gAttrs := gResp.GetAttr()
-		newMemList := []uint64{}
-		for _, i := range gAttrs.GetL2McMemberList() {
-			if i != mid {
-				newMemList = append(newMemList, i)
-			}
-		}
-		gAttrs.L2McMemberList = newMemList
-		*gAttrs.L2McOutputCount -= 1
-		mg.mgr.StoreAttributes(gid, gAttrs)
 	} else {
 		// Add a member.
 		mg.groups[gid][mid] = m
@@ -110,17 +95,19 @@ func (mg *l2mcGroup) updateGroupMember(ctx context.Context, gid, mid uint64, m *
 			L2McOutputId: &m.outputId,
 		}
 		mg.mgr.StoreAttributes(mid, attr)
-		// Update L2MC Group Attributes.
-		gReq := &saipb.GetL2McGroupAttributeRequest{Oid: gid, AttrType: []saipb.L2McGroupAttr{saipb.L2McGroupAttr_L2MC_GROUP_ATTR_L2MC_MEMBER_LIST, saipb.L2McGroupAttr_L2MC_GROUP_ATTR_L2MC_OUTPUT_COUNT}}
-		gResp := &saipb.GetL2McGroupAttributeResponse{}
-		if err := mg.mgr.PopulateAttributes(gReq, gResp); err != nil {
-			return err
-		}
-		gAttrs := gResp.GetAttr()
-		gAttrs.L2McMemberList = append(gAttrs.GetL2McMemberList(), mid)
-		*gAttrs.L2McOutputCount += 1
-		mg.mgr.StoreAttributes(gid, gAttrs)
 	}
+	mList := []uint64{}
+	for _, m := range mg.groups[gid] {
+		mList = append(mList, m.oid)
+	}
+	gAttr := &saipb.L2McGroupAttribute{}
+	if err := mg.mgr.PopulateAllAttributes(fmt.Sprint(gid), gAttr); err != nil {
+		return err
+	}
+	gAttr.L2McMemberList = mList
+	*gAttr.L2McOutputCount = uint32(len(mList))
+	mg.mgr.StoreAttributes(gid, gAttr)
+
 	var actions []*fwdpb.ActionDesc
 	for _, member := range mg.groups[gid] {
 		portId, err := mg.portNidFromBrirdgeId(ctx, member.outputId)
