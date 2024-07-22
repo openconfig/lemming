@@ -16,6 +16,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"os"
 	"path/filepath"
@@ -49,26 +50,29 @@ func parse(headers []string, includePaths ...string) (*cc.AST, error) {
 	return ast, nil
 }
 
-const (
-	saiPath     = "bazel-lemming/external/com_github_opencomputeproject_sai"
-	ccOutDir    = "dataplane/standalone/sai"
-	protoOutDir = "dataplane/proto/sai"
+var (
+	saiPath        = flag.String("sai_path", "bazel-lemming/external/com_github_opencomputeproject_sai", "Path to SAI repo")
+	ccOutDir       = flag.String("cc_out_dir", "dataplane/standalone/sai", "Output directory for C++ code")
+	protoOutDir    = flag.String("proto_out_dir", "dataplane/proto/sai", "Output dirrectory for proto code")
+	protoPackage   = flag.String("proto_package", "lemming.dataplane.sai", "Package for generated proto code")
+	protoGoPackage = flag.String("proto_go_package", "github.com/openconfig/lemming/dataplane/proto/sai", "Go package option in proto code")
+	xmlPath        = flag.String("xml_path", "dataplane/apigen/xml", "Path to generate SAI doxygen XML files.")
 )
 
 func generate() error {
-	saiHeaderFile, err := filepath.Abs(filepath.Join(saiPath, "inc/sai.h"))
+	saiHeaderFile, err := filepath.Abs(filepath.Join(*saiPath, "inc/sai.h"))
 	if err != nil {
 		return err
 	}
-	expHeaderFile, err := filepath.Abs(filepath.Join(saiPath, "experimental/saiextensions.h"))
+	expHeaderFile, err := filepath.Abs(filepath.Join(*saiPath, "experimental/saiextensions.h"))
 	if err != nil {
 		return err
 	}
-	incDir, err := filepath.Abs(filepath.Join(saiPath, "inc"))
+	incDir, err := filepath.Abs(filepath.Join(*saiPath, "inc"))
 	if err != nil {
 		return err
 	}
-	experiDir, err := filepath.Abs(filepath.Join(saiPath, "experimental"))
+	experiDir, err := filepath.Abs(filepath.Join(*saiPath, "experimental"))
 	if err != nil {
 		return err
 	}
@@ -77,27 +81,27 @@ func generate() error {
 		return err
 	}
 	sai := saiast.Get(ast)
-	xmlInfo, err := docparser.ParseSAIXMLDir()
+	xmlInfo, err := docparser.ParseSAIXMLDir(*xmlPath)
 	if err != nil {
 		return err
 	}
 
-	protos, err := protogen.Generate(xmlInfo, sai)
+	protos, err := protogen.Generate(xmlInfo, sai, *protoPackage, *protoGoPackage, *protoOutDir)
 	if err != nil {
 		return err
 	}
-	ccFiles, err := ccgen.Generate(xmlInfo, sai)
+	ccFiles, err := ccgen.Generate(xmlInfo, sai, *protoOutDir, *ccOutDir)
 	if err != nil {
 		return err
 	}
 
 	for file, content := range protos {
-		if err := os.WriteFile(filepath.Join(protoOutDir, file), []byte(content), 0o600); err != nil {
+		if err := os.WriteFile(filepath.Join(*protoOutDir, file), []byte(content), 0o600); err != nil {
 			return err
 		}
 	}
 	for file, content := range ccFiles {
-		if err := os.WriteFile(filepath.Join(ccOutDir, file), []byte(content), 0o600); err != nil {
+		if err := os.WriteFile(filepath.Join(*ccOutDir, file), []byte(content), 0o600); err != nil {
 			return err
 		}
 	}
@@ -106,6 +110,7 @@ func generate() error {
 }
 
 func main() {
+	flag.Parse()
 	if err := generate(); err != nil {
 		log.Fatal(err)
 	}
