@@ -28,9 +28,12 @@ import (
 )
 
 // Generate generates the C++ code for the SAI library.
-func Generate(doc *docparser.SAIInfo, sai *saiast.SAIAPI) (map[string]string, error) {
+func Generate(doc *docparser.SAIInfo, sai *saiast.SAIAPI, protoOutDir, ccOutDir string) (map[string]string, error) {
 	files := make(map[string]string)
-	enums := enumFile{}
+	enums := enumFile{
+		ProtoOutDir: protoOutDir,
+		CCOutDir:    ccOutDir,
+	}
 	for _, iface := range sai.Ifaces {
 		apiName := strings.TrimSuffix(strings.TrimPrefix(iface.Name, "sai_"), "_api_t")
 		ccData := ccTemplateData{
@@ -39,6 +42,8 @@ func Generate(doc *docparser.SAIInfo, sai *saiast.SAIAPI) (map[string]string, er
 			APIType:      iface.Name,
 			APIName:      apiName,
 			ProtoInclude: apiName + ".pb",
+			ProtoOutDir:  protoOutDir,
+			CCOutDir:     ccOutDir,
 		}
 		switch apiName {
 		case "switch":
@@ -742,12 +747,12 @@ switch ({{ .Var }}) {
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "dataplane/standalone/sai/{{ .Header }}"
+#include "{{ .CCOutDir }}/{{ .Header }}"
+#include "{{ .CCOutDir }}/common.h"
+#include "{{ .CCOutDir }}/enum.h"
+#include "{{ .ProtoOutDir }}/common.pb.h"
+#include "{{ .ProtoOutDir }}/{{ .ProtoInclude }}.h"
 #include <glog/logging.h>
-#include "dataplane/standalone/sai/common.h"
-#include "dataplane/proto/sai/common.pb.h"
-#include "dataplane/proto/sai/{{ .ProtoInclude }}.h"
-#include "dataplane/standalone/sai/enum.h"
 
 const {{ .APIType }} l_{{ .APIName }} = {
 {{- range .Funcs }}
@@ -932,9 +937,9 @@ return msg;
 #ifndef DATAPLANE_STANDALONE_SAI_ENUM_H_
 #define DATAPLANE_STANDALONE_SAI_ENUM_H_
 
-#include "dataplane/proto/sai/common.pb.h"
-{{ range .ProtoIncludes }}
-#include "dataplane/proto/sai/{{ . }}.h"
+#include "{{ .ProtoOutDir }}/common.pb.h"
+{{$file := .}} {{ range .ProtoIncludes }}
+#include "{{ $file.ProtoOutDir }}/{{ . }}.h"
 {{ end }}
 
 extern "C" {
@@ -964,7 +969,7 @@ lemming::dataplane::sai::{{ .ProtoName }} convert_{{ .SAIName }}_to_proto(const 
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "dataplane/standalone/sai/enum.h"
+#include "{{ .CCOutDir }}/enum.h"
 
 {{ range .Enums }}
 {{$enum := .}}
@@ -992,6 +997,8 @@ lemming::dataplane::sai::{{ .ProtoName }} convert_{{ .SAIName }}_to_proto(const 
 type enumFile struct {
 	ProtoIncludes []string
 	Enums         []enum
+	ProtoOutDir   string
+	CCOutDir      string
 }
 
 type enum struct {
@@ -1068,4 +1075,6 @@ type ccTemplateData struct {
 	Globals      []string
 	Funcs        []*templateFunc
 	ConvertFuncs []*templateFunc
+	ProtoOutDir  string
+	CCOutDir     string
 }

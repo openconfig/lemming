@@ -31,9 +31,9 @@ import (
 )
 
 // Generates returns a map of files containing the generated code code.
-func Generate(doc *docparser.SAIInfo, sai *saiast.SAIAPI) (map[string]string, error) {
+func Generate(doc *docparser.SAIInfo, sai *saiast.SAIAPI, protoPackage, protoGoPackage, protoOutDir string) (map[string]string, error) {
 	files := map[string]string{}
-	common, err := generateCommonTypes(doc)
+	common, err := generateCommonTypes(doc, protoPackage, protoGoPackage)
 	if err != nil {
 		return nil, err
 	}
@@ -42,6 +42,16 @@ func Generate(doc *docparser.SAIInfo, sai *saiast.SAIAPI) (map[string]string, er
 	apis := map[string]*protoAPITmplData{}
 	for _, iface := range sai.Ifaces {
 		apiName := strings.TrimSuffix(strings.TrimPrefix(iface.Name, "sai_"), "_api_t")
+		if _, ok := apis[apiName]; !ok {
+			apis[apiName] = &protoAPITmplData{
+				ServiceName:    saiast.TrimSAIName(apiName, true, false),
+				Enums:          []protoEnum{},
+				ProtoPackage:   protoPackage,
+				ProtoGoPackage: protoGoPackage,
+				ProtoOutDir:    protoOutDir,
+			}
+		}
+
 		for _, fn := range iface.Funcs {
 			meta := sai.GetFuncMeta(fn)
 			if err := populateTmplDataFromFunc(apis, doc, apiName, meta); err != nil {
@@ -70,8 +80,11 @@ func rangeInOrder[T any](m map[string]T, pred func(key string, val T) error) err
 
 // generateCommonTypes returns all contents of the common proto.
 // These all reside in the common.proto file to simplify handling imports.
-func generateCommonTypes(docInfo *docparser.SAIInfo) (string, error) {
-	common := &protoCommonTmplData{}
+func generateCommonTypes(docInfo *docparser.SAIInfo, protoPackage, protoGoPackage string) (string, error) {
+	common := &protoCommonTmplData{
+		ProtoPackage:   protoPackage,
+		ProtoGoPackage: protoGoPackage,
+	}
 
 	// Generate the hand-crafted messages.
 	rangeInOrder(saiTypeToProto, func(_ string, typeInfo saiTypeInfo) error {
@@ -143,13 +156,6 @@ func populateTmplDataFromFunc(apis map[string]*protoAPITmplData, docInfo *docpar
 	if docInfo.Attrs[meta.TypeName] == nil {
 		fmt.Printf("no doc info for type: %v\n", meta.TypeName)
 		return nil
-	}
-
-	if _, ok := apis[apiName]; !ok {
-		apis[apiName] = &protoAPITmplData{
-			ServiceName: saiast.TrimSAIName(apiName, true, false),
-			Enums:       []protoEnum{},
-		}
 	}
 
 	req := &protoTmplMessage{
@@ -348,11 +354,11 @@ var (
 	protoTmpl = template.Must(template.New("proto").Parse(`
 syntax = "proto3";
 
-package lemming.dataplane.sai;
+package {{ .ProtoPackage }};
 
-import "dataplane/proto/sai/common.proto";
+import "{{ .ProtoOutDir }}/common.proto";
 
-option go_package = "github.com/openconfig/lemming/dataplane/proto/sai";
+option go_package = "{{ .ProtoGoPackage }}";
 
 {{ range .Enums }}
 enum {{ .Name }} {
@@ -382,12 +388,12 @@ service {{ .ServiceName }} {
 	protoCommonTmpl = template.Must(template.New("common").Parse(`
 syntax = "proto3";
 
-package lemming.dataplane.sai;
+package {{ .ProtoPackage }};
 	
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/descriptor.proto";
 
-option go_package = "github.com/openconfig/lemming/dataplane/proto/sai";
+option go_package = "{{ .ProtoGoPackage }}";
 
 extend google.protobuf.FieldOptions {
 	optional int32 attr_enum_value = 515153358;
@@ -447,17 +453,22 @@ message {{ .Name }} {
 
 // protoAPITmplData contains the formated information needed to render the protobuf template.
 type protoAPITmplData struct {
-	Messages    []protoTmplMessage
-	RPCs        []protoRPC
-	Enums       []protoEnum
-	ServiceName string
+	Messages       []protoTmplMessage
+	RPCs           []protoRPC
+	Enums          []protoEnum
+	ServiceName    string
+	ProtoPackage   string
+	ProtoGoPackage string
+	ProtoOutDir    string
 }
 
 // protoCommonTmplData contains the formated information needed to render the protobuf template.
 type protoCommonTmplData struct {
-	Messages []string
-	Enums    []*protoEnum
-	Lists    []*protoTmplMessage
+	Messages       []string
+	Enums          []*protoEnum
+	Lists          []*protoTmplMessage
+	ProtoPackage   string
+	ProtoGoPackage string
 }
 
 type protoEnum struct {

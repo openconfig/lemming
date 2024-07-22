@@ -101,10 +101,8 @@ type SimpleSect struct {
 	Para string `xml:"para"`
 }
 
-const xmlPath = "dataplane/apigen/xml"
-
 // ParseSAIXMLDir parses all the SAI Doxygen XML files in a directory.
-func ParseSAIXMLDir() (*SAIInfo, error) {
+func ParseSAIXMLDir(xmlPath string) (*SAIInfo, error) {
 	i := &SAIInfo{
 		Attrs: make(map[string]*Attr),
 		Enums: make(map[string][]*Enum),

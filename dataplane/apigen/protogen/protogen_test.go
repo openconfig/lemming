@@ -622,7 +622,7 @@ service Sample {
 	}}
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			got, gotErr := Generate(tt.inInfo, tt.inAst)
+			got, gotErr := Generate(tt.inInfo, tt.inAst, "lemming.dataplane.sai", "github.com/openconfig/lemming/dataplane/proto/sai", "dataplane/proto/sai")
 			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
 				t.Fatalf("Generate() unexpected err: %s", diff)
 			}
