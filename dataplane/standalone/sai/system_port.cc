@@ -63,7 +63,9 @@ sai_status_t l_create_system_port(sai_object_id_t *system_port_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *system_port_id = resp.oid();
+  if (system_port_id) {
+    *system_port_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }

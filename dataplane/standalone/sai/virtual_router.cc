@@ -83,7 +83,9 @@ sai_status_t l_create_virtual_router(sai_object_id_t *virtual_router_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *virtual_router_id = resp.oid();
+  if (virtual_router_id) {
+    *virtual_router_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }

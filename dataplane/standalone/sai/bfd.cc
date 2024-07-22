@@ -166,7 +166,9 @@ sai_status_t l_create_bfd_session(sai_object_id_t *bfd_session_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *bfd_session_id = resp.oid();
+  if (bfd_session_id) {
+    *bfd_session_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }

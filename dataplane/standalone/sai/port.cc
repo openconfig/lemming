@@ -523,7 +523,9 @@ sai_status_t l_create_port(sai_object_id_t *port_id, sai_object_id_t switch_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *port_id = resp.oid();
+  if (port_id) {
+    *port_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -1451,7 +1453,9 @@ sai_status_t l_create_port_pool(sai_object_id_t *port_pool_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *port_pool_id = resp.oid();
+  if (port_pool_id) {
+    *port_pool_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -1595,7 +1599,9 @@ sai_status_t l_create_port_connector(sai_object_id_t *port_connector_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *port_connector_id = resp.oid();
+  if (port_connector_id) {
+    *port_connector_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -1704,7 +1710,9 @@ sai_status_t l_create_port_serdes(sai_object_id_t *port_serdes_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *port_serdes_id = resp.oid();
+  if (port_serdes_id) {
+    *port_serdes_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }

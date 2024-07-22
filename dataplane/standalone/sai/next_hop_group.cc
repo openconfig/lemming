@@ -42,6 +42,10 @@ const sai_next_hop_group_api_t l_next_hop_group = {
         l_set_next_hop_group_members_attribute,
     .get_next_hop_group_members_attribute =
         l_get_next_hop_group_members_attribute,
+    .create_next_hop_groups = l_create_next_hop_groups,
+    .remove_next_hop_groups = l_remove_next_hop_groups,
+    .set_next_hop_groups_attribute = l_set_next_hop_groups_attribute,
+    .get_next_hop_groups_attribute = l_get_next_hop_groups_attribute,
 };
 
 lemming::dataplane::sai::CreateNextHopGroupRequest
@@ -66,6 +70,27 @@ convert_create_next_hop_group(sai_object_id_t switch_id, uint32_t attr_count,
         break;
       case SAI_NEXT_HOP_GROUP_ATTR_SELECTION_MAP:
         msg.set_selection_map(attr_list[i].value.oid);
+        break;
+      case SAI_NEXT_HOP_GROUP_ATTR_HIERARCHICAL_NEXTHOP:
+        msg.set_hierarchical_nexthop(attr_list[i].value.booldata);
+        break;
+      case SAI_NEXT_HOP_GROUP_ATTR_ARS_OBJECT_ID:
+        msg.set_ars_object_id(attr_list[i].value.oid);
+        break;
+      case SAI_NEXT_HOP_GROUP_ATTR_NEXT_HOP_LIST:
+        msg.mutable_next_hop_list()->Add(
+            attr_list[i].value.objlist.list,
+            attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
+        break;
+      case SAI_NEXT_HOP_GROUP_ATTR_NEXT_HOP_MEMBER_WEIGHT_LIST:
+        msg.mutable_next_hop_member_weight_list()->Add(
+            attr_list[i].value.u32list.list,
+            attr_list[i].value.u32list.list + attr_list[i].value.u32list.count);
+        break;
+      case SAI_NEXT_HOP_GROUP_ATTR_NEXT_HOP_MEMBER_COUNTER_LIST:
+        msg.mutable_next_hop_member_counter_list()->Add(
+            attr_list[i].value.objlist.list,
+            attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
         break;
     }
   }
@@ -105,6 +130,9 @@ convert_create_next_hop_group_member(sai_object_id_t switch_id,
         break;
       case SAI_NEXT_HOP_GROUP_MEMBER_ATTR_COUNTER_ID:
         msg.set_counter_id(attr_list[i].value.oid);
+        break;
+      case SAI_NEXT_HOP_GROUP_MEMBER_ATTR_ARS_ALTERNATE_PATH:
+        msg.set_ars_alternate_path(attr_list[i].value.booldata);
         break;
     }
   }
@@ -146,7 +174,9 @@ sai_status_t l_create_next_hop_group(sai_object_id_t *next_hop_group_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *next_hop_group_id = resp.oid();
+  if (next_hop_group_id) {
+    *next_hop_group_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -187,6 +217,24 @@ sai_status_t l_set_next_hop_group_attribute(sai_object_id_t next_hop_group_id,
       break;
     case SAI_NEXT_HOP_GROUP_ATTR_SELECTION_MAP:
       req.set_selection_map(attr->value.oid);
+      break;
+    case SAI_NEXT_HOP_GROUP_ATTR_ARS_OBJECT_ID:
+      req.set_ars_object_id(attr->value.oid);
+      break;
+    case SAI_NEXT_HOP_GROUP_ATTR_NEXT_HOP_LIST:
+      req.mutable_next_hop_list()->Add(
+          attr->value.objlist.list,
+          attr->value.objlist.list + attr->value.objlist.count);
+      break;
+    case SAI_NEXT_HOP_GROUP_ATTR_NEXT_HOP_MEMBER_WEIGHT_LIST:
+      req.mutable_next_hop_member_weight_list()->Add(
+          attr->value.u32list.list,
+          attr->value.u32list.list + attr->value.u32list.count);
+      break;
+    case SAI_NEXT_HOP_GROUP_ATTR_NEXT_HOP_MEMBER_COUNTER_LIST:
+      req.mutable_next_hop_member_counter_list()->Add(
+          attr->value.objlist.list,
+          attr->value.objlist.list + attr->value.objlist.count);
       break;
   }
 
@@ -250,6 +298,35 @@ sai_status_t l_get_next_hop_group_attribute(sai_object_id_t next_hop_group_id,
       case SAI_NEXT_HOP_GROUP_ATTR_SELECTION_MAP:
         attr_list[i].value.oid = resp.attr().selection_map();
         break;
+      case SAI_NEXT_HOP_GROUP_ATTR_HIERARCHICAL_NEXTHOP:
+        attr_list[i].value.booldata = resp.attr().hierarchical_nexthop();
+        break;
+      case SAI_NEXT_HOP_GROUP_ATTR_ARS_OBJECT_ID:
+        attr_list[i].value.oid = resp.attr().ars_object_id();
+        break;
+      case SAI_NEXT_HOP_GROUP_ATTR_ARS_PACKET_DROPS:
+        attr_list[i].value.u32 = resp.attr().ars_packet_drops();
+        break;
+      case SAI_NEXT_HOP_GROUP_ATTR_ARS_NEXT_HOP_REASSIGNMENTS:
+        attr_list[i].value.u32 = resp.attr().ars_next_hop_reassignments();
+        break;
+      case SAI_NEXT_HOP_GROUP_ATTR_ARS_PORT_REASSIGNMENTS:
+        attr_list[i].value.u32 = resp.attr().ars_port_reassignments();
+        break;
+      case SAI_NEXT_HOP_GROUP_ATTR_NEXT_HOP_LIST:
+        copy_list(attr_list[i].value.objlist.list, resp.attr().next_hop_list(),
+                  &attr_list[i].value.objlist.count);
+        break;
+      case SAI_NEXT_HOP_GROUP_ATTR_NEXT_HOP_MEMBER_WEIGHT_LIST:
+        copy_list(attr_list[i].value.u32list.list,
+                  resp.attr().next_hop_member_weight_list(),
+                  &attr_list[i].value.u32list.count);
+        break;
+      case SAI_NEXT_HOP_GROUP_ATTR_NEXT_HOP_MEMBER_COUNTER_LIST:
+        copy_list(attr_list[i].value.objlist.list,
+                  resp.attr().next_hop_member_counter_list(),
+                  &attr_list[i].value.objlist.count);
+        break;
     }
   }
 
@@ -273,7 +350,9 @@ sai_status_t l_create_next_hop_group_member(
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *next_hop_group_member_id = resp.oid();
+  if (next_hop_group_member_id) {
+    *next_hop_group_member_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -321,6 +400,9 @@ sai_status_t l_set_next_hop_group_member_attribute(
       break;
     case SAI_NEXT_HOP_GROUP_MEMBER_ATTR_COUNTER_ID:
       req.set_counter_id(attr->value.oid);
+      break;
+    case SAI_NEXT_HOP_GROUP_MEMBER_ATTR_ARS_ALTERNATE_PATH:
+      req.set_ars_alternate_path(attr->value.booldata);
       break;
   }
 
@@ -387,6 +469,9 @@ sai_status_t l_get_next_hop_group_member_attribute(
         break;
       case SAI_NEXT_HOP_GROUP_MEMBER_ATTR_COUNTER_ID:
         attr_list[i].value.oid = resp.attr().counter_id();
+        break;
+      case SAI_NEXT_HOP_GROUP_MEMBER_ATTR_ARS_ALTERNATE_PATH:
+        attr_list[i].value.booldata = resp.attr().ars_alternate_path();
         break;
     }
   }
@@ -478,7 +563,9 @@ sai_status_t l_create_next_hop_group_map(sai_object_id_t *next_hop_group_map_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *next_hop_group_map_id = resp.oid();
+  if (next_hop_group_map_id) {
+    *next_hop_group_map_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -554,6 +641,91 @@ sai_status_t l_get_next_hop_group_members_attribute(
     uint32_t object_count, const sai_object_id_t *object_id,
     const uint32_t *attr_count, sai_attribute_t **attr_list,
     sai_bulk_op_error_mode_t mode, sai_status_t *object_statuses) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return SAI_STATUS_NOT_IMPLEMENTED;
+}
+
+sai_status_t l_create_next_hop_groups(sai_object_id_t switch_id,
+                                      uint32_t object_count,
+                                      const uint32_t *attr_count,
+                                      const sai_attribute_t **attr_list,
+                                      sai_bulk_op_error_mode_t mode,
+                                      sai_object_id_t *object_id,
+                                      sai_status_t *object_statuses) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  lemming::dataplane::sai::CreateNextHopGroupsRequest req;
+  lemming::dataplane::sai::CreateNextHopGroupsResponse resp;
+  grpc::ClientContext context;
+
+  for (uint32_t i = 0; i < object_count; i++) {
+    auto r =
+        convert_create_next_hop_group(switch_id, attr_count[i], attr_list[i]);
+    *req.add_reqs() = r;
+  }
+
+  grpc::Status status =
+      next_hop_group->CreateNextHopGroups(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  if (object_count != resp.resps().size()) {
+    return SAI_STATUS_FAILURE;
+  }
+  for (uint32_t i = 0; i < object_count; i++) {
+    object_id[i] = resp.resps(i).oid();
+    object_statuses[i] = SAI_STATUS_SUCCESS;
+  }
+
+  return SAI_STATUS_SUCCESS;
+}
+
+sai_status_t l_remove_next_hop_groups(uint32_t object_count,
+                                      const sai_object_id_t *object_id,
+                                      sai_bulk_op_error_mode_t mode,
+                                      sai_status_t *object_statuses) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  lemming::dataplane::sai::RemoveNextHopGroupsRequest req;
+  lemming::dataplane::sai::RemoveNextHopGroupsResponse resp;
+  grpc::ClientContext context;
+
+  for (uint32_t i = 0; i < object_count; i++) {
+    req.add_reqs()->set_oid(object_id[i]);
+  }
+
+  grpc::Status status =
+      next_hop_group->RemoveNextHopGroups(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+  if (object_count != resp.resps().size()) {
+    return SAI_STATUS_FAILURE;
+  }
+  for (uint32_t i = 0; i < object_count; i++) {
+    object_statuses[i] = SAI_STATUS_SUCCESS;
+  }
+
+  return SAI_STATUS_SUCCESS;
+}
+
+sai_status_t l_set_next_hop_groups_attribute(uint32_t object_count,
+                                             const sai_object_id_t *object_id,
+                                             const sai_attribute_t *attr_list,
+                                             sai_bulk_op_error_mode_t mode,
+                                             sai_status_t *object_statuses) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return SAI_STATUS_NOT_IMPLEMENTED;
+}
+
+sai_status_t l_get_next_hop_groups_attribute(uint32_t object_count,
+                                             const sai_object_id_t *object_id,
+                                             const uint32_t *attr_count,
+                                             sai_attribute_t **attr_list,
+                                             sai_bulk_op_error_mode_t mode,
+                                             sai_status_t *object_statuses) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
   return SAI_STATUS_NOT_IMPLEMENTED;
 }

@@ -81,7 +81,9 @@ sai_status_t l_create_l2mc_group(sai_object_id_t *l2mc_group_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *l2mc_group_id = resp.oid();
+  if (l2mc_group_id) {
+    *l2mc_group_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -162,7 +164,9 @@ sai_status_t l_create_l2mc_group_member(sai_object_id_t *l2mc_group_member_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *l2mc_group_member_id = resp.oid();
+  if (l2mc_group_member_id) {
+    *l2mc_group_member_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }

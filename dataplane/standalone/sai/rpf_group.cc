@@ -77,7 +77,9 @@ sai_status_t l_create_rpf_group(sai_object_id_t *rpf_group_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *rpf_group_id = resp.oid();
+  if (rpf_group_id) {
+    *rpf_group_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -158,7 +160,9 @@ sai_status_t l_create_rpf_group_member(sai_object_id_t *rpf_group_member_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *rpf_group_member_id = resp.oid();
+  if (rpf_group_member_id) {
+    *rpf_group_member_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }

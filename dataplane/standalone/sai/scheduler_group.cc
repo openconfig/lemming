@@ -73,7 +73,9 @@ sai_status_t l_create_scheduler_group(sai_object_id_t *scheduler_group_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *scheduler_group_id = resp.oid();
+  if (scheduler_group_id) {
+    *scheduler_group_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }

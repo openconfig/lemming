@@ -400,7 +400,9 @@ sai_status_t l_create_switch(sai_object_id_t *switch_id, uint32_t attr_count,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *switch_id = resp.oid();
+  if (switch_id) {
+    *switch_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -1340,7 +1342,9 @@ sai_status_t l_create_switch_tunnel(sai_object_id_t *switch_tunnel_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *switch_tunnel_id = resp.oid();
+  if (switch_tunnel_id) {
+    *switch_tunnel_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }

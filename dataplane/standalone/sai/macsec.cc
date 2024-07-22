@@ -225,7 +225,9 @@ sai_status_t l_create_macsec(sai_object_id_t *macsec_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *macsec_id = resp.oid();
+  if (macsec_id) {
+    *macsec_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -417,7 +419,9 @@ sai_status_t l_create_macsec_port(sai_object_id_t *macsec_port_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *macsec_port_id = resp.oid();
+  if (macsec_port_id) {
+    *macsec_port_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -577,7 +581,9 @@ sai_status_t l_create_macsec_flow(sai_object_id_t *macsec_flow_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *macsec_flow_id = resp.oid();
+  if (macsec_flow_id) {
+    *macsec_flow_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -707,7 +713,9 @@ sai_status_t l_create_macsec_sc(sai_object_id_t *macsec_sc_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *macsec_sc_id = resp.oid();
+  if (macsec_sc_id) {
+    *macsec_sc_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -894,7 +902,9 @@ sai_status_t l_create_macsec_sa(sai_object_id_t *macsec_sa_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *macsec_sa_id = resp.oid();
+  if (macsec_sa_id) {
+    *macsec_sa_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }

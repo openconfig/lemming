@@ -113,7 +113,9 @@ sai_status_t l_create_lag(sai_object_id_t *lag_id, sai_object_id_t switch_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *lag_id = resp.oid();
+  if (lag_id) {
+    *lag_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -253,7 +255,9 @@ sai_status_t l_create_lag_member(sai_object_id_t *lag_member_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *lag_member_id = resp.oid();
+  if (lag_member_id) {
+    *lag_member_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }

@@ -498,7 +498,9 @@ sai_status_t l_create_tam(sai_object_id_t *tam_id, sai_object_id_t switch_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *tam_id = resp.oid();
+  if (tam_id) {
+    *tam_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -614,7 +616,9 @@ sai_status_t l_create_tam_math_func(sai_object_id_t *tam_math_func_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *tam_math_func_id = resp.oid();
+  if (tam_math_func_id) {
+    *tam_math_func_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -709,7 +713,9 @@ sai_status_t l_create_tam_report(sai_object_id_t *tam_report_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *tam_report_id = resp.oid();
+  if (tam_report_id) {
+    *tam_report_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -838,7 +844,9 @@ sai_status_t l_create_tam_event_threshold(
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *tam_event_threshold_id = resp.oid();
+  if (tam_event_threshold_id) {
+    *tam_event_threshold_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -966,7 +974,9 @@ sai_status_t l_create_tam_int(sai_object_id_t *tam_int_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *tam_int_id = resp.oid();
+  if (tam_int_id) {
+    *tam_int_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -1187,7 +1197,9 @@ sai_status_t l_create_tam_tel_type(sai_object_id_t *tam_tel_type_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *tam_tel_type_id = resp.oid();
+  if (tam_tel_type_id) {
+    *tam_tel_type_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -1371,7 +1383,9 @@ sai_status_t l_create_tam_transport(sai_object_id_t *tam_transport_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *tam_transport_id = resp.oid();
+  if (tam_transport_id) {
+    *tam_transport_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -1489,7 +1503,9 @@ sai_status_t l_create_tam_telemetry(sai_object_id_t *tam_telemetry_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *tam_telemetry_id = resp.oid();
+  if (tam_telemetry_id) {
+    *tam_telemetry_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -1604,7 +1620,9 @@ sai_status_t l_create_tam_collector(sai_object_id_t *tam_collector_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *tam_collector_id = resp.oid();
+  if (tam_collector_id) {
+    *tam_collector_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -1734,7 +1752,9 @@ sai_status_t l_create_tam_event_action(sai_object_id_t *tam_event_action_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *tam_event_action_id = resp.oid();
+  if (tam_event_action_id) {
+    *tam_event_action_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -1833,7 +1853,9 @@ sai_status_t l_create_tam_event(sai_object_id_t *tam_event_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *tam_event_id = resp.oid();
+  if (tam_event_id) {
+    *tam_event_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }

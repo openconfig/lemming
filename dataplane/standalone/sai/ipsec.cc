@@ -194,7 +194,9 @@ sai_status_t l_create_ipsec(sai_object_id_t *ipsec_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *ipsec_id = resp.oid();
+  if (ipsec_id) {
+    *ipsec_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -364,7 +366,9 @@ sai_status_t l_create_ipsec_port(sai_object_id_t *ipsec_port_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *ipsec_port_id = resp.oid();
+  if (ipsec_port_id) {
+    *ipsec_port_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -527,7 +531,9 @@ sai_status_t l_create_ipsec_sa(sai_object_id_t *ipsec_sa_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *ipsec_sa_id = resp.oid();
+  if (ipsec_sa_id) {
+    *ipsec_sa_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }

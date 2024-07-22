@@ -111,7 +111,9 @@ sai_status_t l_create_srv6_sidlist(sai_object_id_t *srv6_sidlist_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *srv6_sidlist_id = resp.oid();
+  if (srv6_sidlist_id) {
+    *srv6_sidlist_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }

@@ -115,7 +115,9 @@ sai_status_t l_create_next_hop(sai_object_id_t *next_hop_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *next_hop_id = resp.oid();
+  if (next_hop_id) {
+    *next_hop_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }

@@ -77,7 +77,9 @@ sai_status_t l_create_ipmc_group(sai_object_id_t *ipmc_group_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *ipmc_group_id = resp.oid();
+  if (ipmc_group_id) {
+    *ipmc_group_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -158,7 +160,9 @@ sai_status_t l_create_ipmc_group_member(sai_object_id_t *ipmc_group_member_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *ipmc_group_member_id = resp.oid();
+  if (ipmc_group_member_id) {
+    *ipmc_group_member_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }

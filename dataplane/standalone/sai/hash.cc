@@ -100,7 +100,9 @@ sai_status_t l_create_hash(sai_object_id_t *hash_id, sai_object_id_t switch_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *hash_id = resp.oid();
+  if (hash_id) {
+    *hash_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -204,7 +206,9 @@ sai_status_t l_create_fine_grained_hash_field(
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *fine_grained_hash_field_id = resp.oid();
+  if (fine_grained_hash_field_id) {
+    *fine_grained_hash_field_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }

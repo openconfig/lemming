@@ -863,7 +863,9 @@ sai_status_t l_create_acl_table(sai_object_id_t *acl_table_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *acl_table_id = resp.oid();
+  if (acl_table_id) {
+    *acl_table_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -1231,7 +1233,9 @@ sai_status_t l_create_acl_entry(sai_object_id_t *acl_entry_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *acl_entry_id = resp.oid();
+  if (acl_entry_id) {
+    *acl_entry_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -2143,7 +2147,9 @@ sai_status_t l_create_acl_counter(sai_object_id_t *acl_counter_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *acl_counter_id = resp.oid();
+  if (acl_counter_id) {
+    *acl_counter_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -2256,7 +2262,9 @@ sai_status_t l_create_acl_range(sai_object_id_t *acl_range_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *acl_range_id = resp.oid();
+  if (acl_range_id) {
+    *acl_range_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -2333,7 +2341,9 @@ sai_status_t l_create_acl_table_group(sai_object_id_t *acl_table_group_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *acl_table_group_id = resp.oid();
+  if (acl_table_group_id) {
+    *acl_table_group_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -2418,7 +2428,9 @@ sai_status_t l_create_acl_table_group_member(
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *acl_table_group_member_id = resp.oid();
+  if (acl_table_group_member_id) {
+    *acl_table_group_member_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }

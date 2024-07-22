@@ -68,7 +68,9 @@ sai_status_t l_create_samplepacket(sai_object_id_t *samplepacket_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *samplepacket_id = resp.oid();
+  if (samplepacket_id) {
+    *samplepacket_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }

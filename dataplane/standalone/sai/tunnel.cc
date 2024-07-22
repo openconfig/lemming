@@ -302,7 +302,9 @@ sai_status_t l_create_tunnel_map(sai_object_id_t *tunnel_map_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *tunnel_map_id = resp.oid();
+  if (tunnel_map_id) {
+    *tunnel_map_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -382,7 +384,9 @@ sai_status_t l_create_tunnel(sai_object_id_t *tunnel_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *tunnel_id = resp.oid();
+  if (tunnel_id) {
+    *tunnel_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -686,7 +690,9 @@ sai_status_t l_create_tunnel_term_table_entry(
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *tunnel_term_table_entry_id = resp.oid();
+  if (tunnel_term_table_entry_id) {
+    *tunnel_term_table_entry_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -817,7 +823,9 @@ sai_status_t l_create_tunnel_map_entry(sai_object_id_t *tunnel_map_entry_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *tunnel_map_entry_id = resp.oid();
+  if (tunnel_map_entry_id) {
+    *tunnel_map_entry_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }

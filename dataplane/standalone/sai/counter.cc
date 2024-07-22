@@ -66,7 +66,9 @@ sai_status_t l_create_counter(sai_object_id_t *counter_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *counter_id = resp.oid();
+  if (counter_id) {
+    *counter_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }

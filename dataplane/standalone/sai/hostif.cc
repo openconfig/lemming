@@ -219,7 +219,9 @@ sai_status_t l_create_hostif(sai_object_id_t *hostif_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *hostif_id = resp.oid();
+  if (hostif_id) {
+    *hostif_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -339,7 +341,9 @@ sai_status_t l_create_hostif_table_entry(sai_object_id_t *hostif_table_entry_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *hostif_table_entry_id = resp.oid();
+  if (hostif_table_entry_id) {
+    *hostif_table_entry_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -433,7 +437,9 @@ sai_status_t l_create_hostif_trap_group(sai_object_id_t *hostif_trap_group_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *hostif_trap_group_id = resp.oid();
+  if (hostif_trap_group_id) {
+    *hostif_trap_group_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -545,7 +551,9 @@ sai_status_t l_create_hostif_trap(sai_object_id_t *hostif_trap_id,
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *hostif_trap_id = resp.oid();
+  if (hostif_trap_id) {
+    *hostif_trap_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
@@ -681,7 +689,9 @@ sai_status_t l_create_hostif_user_defined_trap(
     LOG(ERROR) << status.error_message();
     return SAI_STATUS_FAILURE;
   }
-  *hostif_user_defined_trap_id = resp.oid();
+  if (hostif_user_defined_trap_id) {
+    *hostif_user_defined_trap_id = resp.oid();
+  }
 
   return SAI_STATUS_SUCCESS;
 }
