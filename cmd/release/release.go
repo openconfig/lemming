@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package release
 
 import (
 	"bufio"
@@ -28,14 +28,12 @@ import (
 	"google.golang.org/api/option"
 )
 
-func main() {
+func NewRelease() *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "release",
 	}
 	cmd.AddCommand(operator(), lemming())
-	if err := cmd.ExecuteContext(context.Background()); err != nil {
-		os.Exit(1)
-	}
+	return cmd
 }
 
 func operator() *cobra.Command {
