@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Findtrace prints the packet traces from logs of the dataplane and optional only prints traces matching the first argument.
-// Usage: kubectl logs lemming | findtrace 10
-package main
+package findtrace
 
 import (
 	"bufio"
@@ -23,31 +21,40 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
+	"github.com/spf13/cobra"
 )
 
-func main() {
-	scanner := bufio.NewScanner(os.Stdin)
-	var trace strings.Builder
+func New() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "findtrace [search term]",
+		Short: "Searches lucius logs for the specified term and returns the matching packet traces",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			scanner := bufio.NewScanner(os.Stdin)
+			var trace strings.Builder
 
-	for scanner.Scan() {
-		text := scanner.Text()
-		if strings.Contains(text, "Packet Trace:") {
+			for scanner.Scan() {
+				text := scanner.Text()
+				if strings.Contains(text, "Packet Trace:") {
+					str := trace.String()
+					if len(os.Args) == 1 || strings.Contains(str, os.Args[1]) {
+						out := strings.ReplaceAll(str, os.Args[1], color.RedString(os.Args[1]))
+						fmt.Println(out)
+					}
+					trace = strings.Builder{}
+					continue
+				}
+				if strings.Contains(text, "packet.go") {
+					trace.WriteString(text)
+					trace.WriteString("\n")
+				}
+			}
 			str := trace.String()
 			if len(os.Args) == 1 || strings.Contains(str, os.Args[1]) {
 				out := strings.ReplaceAll(str, os.Args[1], color.RedString(os.Args[1]))
 				fmt.Println(out)
 			}
-			trace = strings.Builder{}
-			continue
-		}
-		if strings.Contains(text, "packet.go") {
-			trace.WriteString(text)
-			trace.WriteString("\n")
-		}
+			return nil
+		},
 	}
-	str := trace.String()
-	if len(os.Args) == 1 || strings.Contains(str, os.Args[1]) {
-		out := strings.ReplaceAll(str, os.Args[1], color.RedString(os.Args[1]))
-		fmt.Println(out)
-	}
+	return cmd
 }

@@ -12,11 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package luciusctl
 
 import (
-	"os"
-
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -24,9 +22,10 @@ import (
 	"github.com/openconfig/lemming/dataplane/luciusctl/sai"
 )
 
-func main() {
-	cmd := cobra.Command{
-		Use: "luciusctl",
+func New() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "lucius",
+		Short: "lucius queries info from a running instance of lucius.",
 	}
 	cmd.PersistentFlags().StringP("address", "a", "", "Address of dataplane server")
 	cmd.PersistentFlags().Bool("insecure", false, "Use plaintext to dial server")
@@ -37,7 +36,5 @@ func main() {
 
 	cmd.AddCommand(info.New(), sai.New())
 
-	if err := cmd.Execute(); err != nil {
-		os.Exit(1)
-	}
+	return cmd
 }
