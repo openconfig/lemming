@@ -136,17 +136,52 @@ func newNextHopGroup(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc
 }
 
 // CreateNextHopGroup creates a next hop group.
-func (nhg *nextHopGroup) CreateNextHopGroup(_ context.Context, req *saipb.CreateNextHopGroupRequest) (*saipb.CreateNextHopGroupResponse, error) {
+func (nhg *nextHopGroup) CreateNextHopGroup(ctx context.Context, req *saipb.CreateNextHopGroupRequest) (*saipb.CreateNextHopGroupResponse, error) {
 	id := nhg.mgr.NextID()
 
-	if req.GetType() != saipb.NextHopGroupType_NEXT_HOP_GROUP_TYPE_DYNAMIC_UNORDERED_ECMP {
+	switch req.GetType() {
+	case saipb.NextHopGroupType_NEXT_HOP_GROUP_TYPE_DYNAMIC_UNORDERED_ECMP:
+		nhg.groups[id] = map[uint64]*groupMember{}
+		return &saipb.CreateNextHopGroupResponse{
+			Oid: id,
+		}, nil
+	case saipb.NextHopGroupType_NEXT_HOP_GROUP_TYPE_ECMP_WITH_MEMBERS:
+		nhg.groups[id] = map[uint64]*groupMember{}
+
+		memReq := &saipb.CreateNextHopGroupMembersRequest{}
+		for i, nh := range req.GetNextHopList() {
+			memReq.Reqs = append(memReq.Reqs, &saipb.CreateNextHopGroupMemberRequest{
+				Switch:         switchID,
+				NextHopGroupId: proto.Uint64(id),
+				NextHopId:      proto.Uint64(nh),
+				Weight:         proto.Uint32(req.GetNextHopMemberWeightList()[i]),
+			})
+		}
+
+		_, err := attrmgr.InvokeAndSave(ctx, nhg.mgr, nhg.CreateNextHopGroupMembers, memReq)
+		if err != nil {
+			return nil, err
+		}
+		return &saipb.CreateNextHopGroupResponse{
+			Oid: id,
+		}, nil
+
+	default:
 		return nil, status.Errorf(codes.InvalidArgument, "unsupported req type: %v", req.GetType())
 	}
+}
 
-	nhg.groups[id] = map[uint64]*groupMember{}
-	return &saipb.CreateNextHopGroupResponse{
-		Oid: id,
-	}, nil
+// CreateNextHopGroups creates multiple next hop groups.
+func (nhg *nextHopGroup) CreateNextHopGroups(ctx context.Context, r *saipb.CreateNextHopGroupsRequest) (*saipb.CreateNextHopGroupsResponse, error) {
+	resp := &saipb.CreateNextHopGroupsResponse{}
+	for _, req := range r.GetReqs() {
+		res, err := attrmgr.InvokeAndSave(ctx, nhg.mgr, nhg.CreateNextHopGroup, req)
+		if err != nil {
+			return nil, err
+		}
+		resp.Resps = append(resp.Resps, res)
+	}
+	return resp, nil
 }
 
 // updateNextHopGroupMember updates the next hop group.

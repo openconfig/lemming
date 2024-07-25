@@ -93,7 +93,8 @@ func InvokeAndSave[T proto.Message, S proto.Message](ctx context.Context, mgr *A
 	}
 	id, err := mgr.getID(req, respMsg)
 	if err != nil {
-		return resp, err
+		log.Warningf("failed to get id %v", err)
+		return respMsg.(S), nil
 	}
 	mgr.storeAttributes(id, req)
 
