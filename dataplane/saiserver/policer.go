@@ -42,7 +42,7 @@ func newPolicer(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Serv
 	return p
 }
 
-// CreatePolicer creates a new policer, QOS is not actually supported.ß the GREEN action is always taken.
+// CreatePolicer creates a new policer, QOS is not actually supported. the GREEN action is always taken.
 func (p *policer) CreatePolicer(ctx context.Context, req *saipb.CreatePolicerRequest) (*saipb.CreatePolicerResponse, error) {
 	id := p.mgr.NextID()
 
@@ -55,8 +55,9 @@ func (p *policer) CreatePolicer(ctx context.Context, req *saipb.CreatePolicerReq
 	var action *fwdconfig.ActionBuilder
 
 	switch req.GetGreenPacketAction() {
-	case saipb.PacketAction_PACKET_ACTION_TRAP:
+	case saipb.PacketAction_PACKET_ACTION_TRAP, saipb.PacketAction_PACKET_ACTION_COPY:
 		action = fwdconfig.Action(fwdconfig.TransmitAction(fmt.Sprint(resp.GetAttr().GetCpuPort())).WithImmediate(true))
+
 	default:
 		return nil, fmt.Errorf("unsupport policer action: %v", req.GetGreenPacketAction())
 	}

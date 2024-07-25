@@ -175,8 +175,14 @@ func (a *acl) createAclEntryFields(req *saipb.CreateAclEntryRequest, id uint64, 
 			fieldMask.Bytes = binary.BigEndian.AppendUint16(nil, 0x86DD) // Match IPv6.
 		case saipb.AclIpType_ACL_IP_TYPE_ARP:
 			fieldMask.Bytes = binary.BigEndian.AppendUint16(nil, 0x0806) // Match ARP.
+		case saipb.AclIpType_ACL_IP_TYPE_IP:
+			fieldMask = &fwdpb.PacketFieldMaskedBytes{
+				FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO}},
+				Bytes:   []byte{0x4}, // IPv4 0100 IPv6 0110
+				Masks:   []byte{0x4}, // Mask 0100
+			}
 		default:
-			return nil, status.Errorf(codes.InvalidArgument, "unspporrted ACL_IP_TYPE: %v", t)
+			return nil, status.Errorf(codes.InvalidArgument, "unsupported ACL_IP_TYPE: %v", t)
 		}
 		aReq.EntryDesc.GetFlow().Fields = append(aReq.EntryDesc.GetFlow().Fields, fieldMask)
 	}

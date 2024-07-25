@@ -82,12 +82,24 @@ func TestCreateNextHopGroup(t *testing.T) {
 		req:     &saipb.CreateNextHopGroupRequest{},
 		wantErr: "InvalidArgument",
 	}, {
-		desc: "success",
+		desc: "dynamic unordered",
 		req: &saipb.CreateNextHopGroupRequest{
 			Type: saipb.NextHopGroupType_NEXT_HOP_GROUP_TYPE_DYNAMIC_UNORDERED_ECMP.Enum(),
 		},
 		wantAttr: &saipb.NextHopGroupAttribute{
 			Type: saipb.NextHopGroupType_NEXT_HOP_GROUP_TYPE_DYNAMIC_UNORDERED_ECMP.Enum(),
+		},
+	}, {
+		desc: "ecmp with members",
+		req: &saipb.CreateNextHopGroupRequest{
+			Type:                    saipb.NextHopGroupType_NEXT_HOP_GROUP_TYPE_ECMP_WITH_MEMBERS.Enum(),
+			NextHopList:             []uint64{10},
+			NextHopMemberWeightList: []uint32{1},
+		},
+		wantAttr: &saipb.NextHopGroupAttribute{
+			Type:                    saipb.NextHopGroupType_NEXT_HOP_GROUP_TYPE_ECMP_WITH_MEMBERS.Enum(),
+			NextHopList:             []uint64{10},
+			NextHopMemberWeightList: []uint32{1},
 		},
 	}}
 	for _, tt := range tests {
