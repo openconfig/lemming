@@ -590,6 +590,152 @@ func TestServer(t *testing.T) {
 			},
 		}},
 	}, {
+		desc: "recursive onto self",
+		noV6: true,
+		// No error received here, since we can allow this to be programmed,
+		// it just is not valid.
+		inSetRouteRequests: []*SetRouteRequestAction{{
+			Desc: "route that resolves to self",
+			RouteReq: &pb.SetRouteRequest{
+				AdminDistance: 20,
+				Metric:        10,
+				Prefix: &pb.Prefix{
+					Family:     pb.Prefix_FAMILY_IPV4,
+					Address:    "1.0.0.0",
+					MaskLength: 8,
+				},
+				Nexthops: []*pb.Nexthop{{
+					Type:    pb.Nexthop_TYPE_IPV4,
+					Address: "1.1.1.1",
+				}},
+			},
+		}},
+	}, {
+		desc: "recursive onto self v6",
+		noV6: true,
+		// No error received here, since we can allow this to be programmed
+		// again, but it is not not valid.
+		inSetRouteRequests: []*SetRouteRequestAction{{
+			Desc: "route that resolves to self",
+			RouteReq: &pb.SetRouteRequest{
+				AdminDistance: 20,
+				Metric:        10,
+				Prefix: &pb.Prefix{
+					Family:     pb.Prefix_FAMILY_IPV6,
+					Address:    "2001:db8::",
+					MaskLength: 48,
+				},
+				Nexthops: []*pb.Nexthop{{
+					Type:    pb.Nexthop_TYPE_IPV6,
+					Address: "2001:db8::1",
+				}},
+			},
+		}},
+	}, {
+		desc: "recursive onto self v4, one ecmp branch",
+		noV6: true,
+		inSetRouteRequests: []*SetRouteRequestAction{{
+			Desc: "invalid NH",
+			RouteReq: &pb.SetRouteRequest{
+				AdminDistance: 20,
+				Metric:        10,
+				Prefix: &pb.Prefix{
+					Family:     pb.Prefix_FAMILY_IPV4,
+					Address:    "172.16.1.1",
+					MaskLength: 24,
+				},
+				Nexthops: []*pb.Nexthop{{
+					Type:    pb.Nexthop_TYPE_IPV4,
+					Address: "10.0.0.1",
+				}},
+			},
+		}, {
+			Desc: "valid NH",
+			RouteReq: &pb.SetRouteRequest{
+				AdminDistance: 20,
+				Metric:        10,
+				Prefix: &pb.Prefix{
+					Family:     pb.Prefix_FAMILY_IPV4,
+					Address:    "1.1.1.0",
+					MaskLength: 24,
+				},
+				Nexthops: []*pb.Nexthop{{
+					Type:    pb.Nexthop_TYPE_IPV4,
+					Address: "172.16.1.1",
+				}, {
+					Type:    pb.Nexthop_TYPE_IPV4,
+					Address: "192.168.1.1",
+				}},
+			},
+		}, {
+			Desc: "route",
+			RouteReq: &pb.SetRouteRequest{
+				AdminDistance: 20,
+				Metric:        10,
+				Prefix: &pb.Prefix{
+					Family:     pb.Prefix_FAMILY_IPV4,
+					Address:    "10.0.0.0",
+					MaskLength: 8,
+				},
+				Nexthops: []*pb.Nexthop{{
+					Type:    pb.Nexthop_TYPE_IPV4,
+					Address: "1.1.1.1",
+				}},
+			},
+		}},
+		wantRoutes: []*dpb.Route{{
+			Prefix: &dpb.RoutePrefix{
+				NetworkInstance: "DEFAULT",
+				Cidr:            "1.1.1.0/24",
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Weights: []uint64{0},
+					Hops: []*dpb.NextHop{{
+						// Should only resolve via the valid connected eth0 route - not the invalid recursive one.
+						NextHopIp: "192.168.1.1",
+						Interface: &dpb.OCInterface{
+							Interface: "eth0",
+						},
+					}},
+				},
+			},
+		}, {
+			Prefix: &dpb.RoutePrefix{
+				NetworkInstance: "DEFAULT",
+				Cidr:            "10.0.0.0/8",
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Weights: []uint64{0},
+					Hops: []*dpb.NextHop{{
+						// Should only resolve via the valid connected eth0 route - not the invalid recursive one.
+						NextHopIp: "192.168.1.1",
+						Interface: &dpb.OCInterface{
+							Interface: "eth0",
+						},
+					}},
+				},
+			},
+		}, {
+			Prefix: &dpb.RoutePrefix{
+				NetworkInstance: "DEFAULT",
+				Cidr:            "172.16.1.0/24",
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Weights: []uint64{0},
+					Hops: []*dpb.NextHop{{
+						// Should only resolve via the valid connected eth0 route - not the invalid recursive one.
+						NextHopIp: "192.168.1.1",
+						Interface: &dpb.OCInterface{
+							Interface: "eth0",
+						},
+					}},
+				},
+			},
+		}},
+	}, {
 		desc: "Unresolvable and ECMP",
 		inSetRouteRequests: []*SetRouteRequestAction{{
 			Desc: "unresolvable route",
@@ -1011,8 +1157,7 @@ func TestServer(t *testing.T) {
 					for _, req := range tt.inSetRouteRequests {
 						// TODO(wenbli): Test SetRouteResponse
 						_, err := s.SetRoute(context.Background(), req.RouteReq)
-						hasErr := err != nil
-						if hasErr != tt.wantErr {
+						if (err != nil) != tt.wantErr {
 							t.Fatalf("%s: got error during call to SetRoute: %v, wantErr: %v", req.Desc, err, tt.wantErr)
 						}
 					}

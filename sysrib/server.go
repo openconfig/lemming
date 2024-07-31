@@ -586,8 +586,6 @@ func (s *Server) SetRoute(ctx context.Context, req *sysribpb.SetRouteRequest) (*
 		})
 	}
 
-	// TODO(wenbli): Check if recursive resolution is an infinite recursion. This happens if there is a cycle.
-
 	niName := vrfIDToNiName(req.GetVrfId())
 	if err := s.setRoute(ctx, niName, &Route{
 		Prefix:   pfx,

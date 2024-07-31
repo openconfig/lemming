@@ -372,8 +372,8 @@ type Interface struct {
 
 // entryForCIDR returns the RIB entry for the IP address specified by ip within
 // the specified network instance. It returns a bool indicating whether the
-// entry was found, a slice of strings which contains its tags, and an optional
-// error.
+// entry was found, a slice of Route structs that describe he entries for the net
+// provided, and an optional error.
 func (sr *SysRIB) entryForCIDR(ni string, ip *net.IPNet) (bool, []*Route, error) {
 	rib, ok := sr.NI[ni]
 	if !ok {
@@ -423,12 +423,14 @@ func addressToPrefix(address string) (*net.IPNet, error) {
 // EgressInterface looks up the IP destination address ip in the routes for network instance
 // named inputNI. It returns a slice of the interfaces that the packet would be forwarded
 // via.
-//
-// TODO(robjs): support determining the NI based solely on the input interface.
-// TODO(robjs): support a better description of a packet using the formats that ONDATRA uses.
-//
-// TODO(robjs): support WCMP
 func (sr *SysRIB) EgressInterface(inputNI string, ip *net.IPNet) ([]*Interface, error) {
+	return sr.egressInterfaceInternal(inputNI, ip, []*Route{})
+}
+
+// egressInterfaceInternal is a recursive implementation of EgressInterface that trakcs the
+// routes that have been visited along each branch. This ensures that where circular dependencies
+// exist then the RIB can detect them and determine the route is invalid.
+func (sr *SysRIB) egressInterfaceInternal(inputNI string, ip *net.IPNet, visited []*Route) ([]*Interface, error) {
 	// no RIB recursion currently
 	if inputNI == "" {
 		inputNI = sr.defaultNI
@@ -445,12 +447,29 @@ func (sr *SysRIB) EgressInterface(inputNI string, ip *net.IPNet) ([]*Interface, 
 		return nil, nil
 	}
 
-	egressIfs := []*Interface{}
+	var egressIfs []*Interface
 	for _, cr := range routes {
 		if cr.Connected != nil {
 			egressIfs = append(egressIfs, cr.Connected)
 			continue
 		}
+
+		// If we have already visited this route on this recursion, then this is
+		// a circular dependency, and we should declare that this branch isn't
+		// valid.
+		loop := false
+		for _, r := range visited {
+			if reflect.DeepEqual(cr, r) {
+				log.V(1).Infof("route %v has a circular dependency", ip)
+				loop = true
+			}
+		}
+		if loop {
+			continue
+		}
+
+		// Store the route as something that we have visited on this branch.
+		v := append(visited, cr)
 
 		// This isn't a connected route, check whether we can resolve the next-hops.
 		for _, nh := range cr.NextHops {
@@ -458,7 +477,8 @@ func (sr *SysRIB) EgressInterface(inputNI string, ip *net.IPNet) ([]*Interface, 
 			if err != nil {
 				return nil, err
 			}
-			recursiveNHIfs, err := sr.EgressInterface(nh.NetworkInstance, nhop)
+
+			recursiveNHIfs, err := sr.egressInterfaceInternal(nh.NetworkInstance, nhop, v)
 			if err != nil {
 				return nil, fmt.Errorf("for nexthop %s, can't resolve: %v", nh.Address, err)
 			}
@@ -481,6 +501,13 @@ func (sr *SysRIB) EgressInterface(inputNI string, ip *net.IPNet) ([]*Interface, 
 //
 // NOTE: sr.mu.RLock() must be called prior to calling this function.
 func (sr *SysRIB) egressNexthops(inputNI string, ip *net.IPNet, interfaces map[Interface]bool) (map[ResolvedNexthop]bool, *Route, error) {
+	return sr.egressNexthopsInternal(inputNI, ip, interfaces, []*Route{})
+}
+
+// egressNexthopsInternal is recursively called by egressNexthops to determine
+// the nexthops for an input IP prefix. It keeps track of the routes that have
+// been visited on a branch to avoid recursive loops.
+func (sr *SysRIB) egressNexthopsInternal(inputNI string, ip *net.IPNet, interfaces map[Interface]bool, visited []*Route) (map[ResolvedNexthop]bool, *Route, error) {
 	// no RIB recursion currently
 	if inputNI == "" {
 		inputNI = sr.defaultNI
@@ -513,6 +540,7 @@ func (sr *SysRIB) egressNexthops(inputNI string, ip *net.IPNet, interfaces map[I
 			resolvedRoutes[cr.RoutePref] = cr
 		}
 		egressNhs := allEgressNhs[cr.RoutePref]
+
 		if cr.Connected != nil {
 			if interfaces[*cr.Connected] {
 				nh := ResolvedNexthop{
@@ -531,13 +559,28 @@ func (sr *SysRIB) egressNexthops(inputNI string, ip *net.IPNet, interfaces map[I
 		}
 
 		// This isn't a connected route, check whether we can resolve the next-hops.
+		// But first check whether we've already visited this route.
+		var loop bool
+		for _, r := range visited {
+			if reflect.DeepEqual(cr, r) {
+				log.V(1).Infof("Route %+v has a resolution loop", cr)
+				loop = true
+				break
+			}
+		}
+		if loop {
+			continue
+		}
+
+		v := append(visited, cr)
 		for _, nh := range cr.NextHops {
 			log.V(1).Infof("Recursively resolving nexthop: %+v", *nh)
 			nhop, err := addressToPrefix(nh.Address)
 			if err != nil {
 				return nil, nil, err
 			}
-			recursiveNHs, _, err := sr.egressNexthops(nh.NetworkInstance, nhop, interfaces)
+
+			recursiveNHs, _, err := sr.egressNexthopsInternal(nh.NetworkInstance, nhop, interfaces, v)
 			if err != nil {
 				return nil, nil, fmt.Errorf("for nexthop %s, can't resolve: %v", nh.Address, err)
 			}
