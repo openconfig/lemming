@@ -499,6 +499,145 @@ func TestEgressInterface(t *testing.T) {
 			{Name: "eth0", Subinterface: 0},
 		},
 	}, {
+		desc: "v4 route that recurses onto itself - not connected",
+		inCfg: func() *oc.Root {
+			d := &oc.Root{}
+			d.GetOrCreateNetworkInstance("DEFAULT").
+				Type = oc.NetworkInstanceTypes_NETWORK_INSTANCE_TYPE_DEFAULT_INSTANCE
+			return d
+		}(),
+		inAddRoutes: map[string][]*Route{
+			"DEFAULT": {{
+				Prefix: "1.1.1.1/32",
+				NextHops: []*afthelper.NextHopSummary{{
+					Address:         "1.1.1.1",
+					NetworkInstance: "DEFAULT",
+				}},
+			}},
+		},
+		inNI: "DEFAULT",
+		inIP: mustCIDR("1.1.1.1/32"),
+	}, {
+		desc: "v4 route that recurses onto a prefix that contains this addr",
+		inCfg: func() *oc.Root {
+			d := &oc.Root{}
+			d.GetOrCreateNetworkInstance("DEFAULT").
+				Type = oc.NetworkInstanceTypes_NETWORK_INSTANCE_TYPE_DEFAULT_INSTANCE
+			return d
+		}(),
+		inAddRoutes: map[string][]*Route{
+			"DEFAULT": {{
+				Prefix: "1.0.0.0/8",
+				NextHops: []*afthelper.NextHopSummary{{
+					Address:         "1.1.1.1",
+					NetworkInstance: "DEFAULT",
+				}},
+			}},
+		},
+		inNI: "DEFAULT",
+		inIP: mustCIDR("1.1.1.1/32"),
+	}, {
+		desc: "v4 route that recurses onto itself - via an intermediate route",
+		inCfg: func() *oc.Root {
+			d := &oc.Root{}
+			d.GetOrCreateNetworkInstance("DEFAULT").
+				Type = oc.NetworkInstanceTypes_NETWORK_INSTANCE_TYPE_DEFAULT_INSTANCE
+			return d
+		}(),
+		inAddRoutes: map[string][]*Route{
+			"DEFAULT": {{
+				Prefix: "1.0.0.0/8",
+				NextHops: []*afthelper.NextHopSummary{{
+					Address:         "2.2.2.2",
+					NetworkInstance: "DEFAULT",
+				}},
+			}, {
+				Prefix: "2.0.0.0/8",
+				NextHops: []*afthelper.NextHopSummary{{
+					Address:         "1.1.1.1",
+					NetworkInstance: "DEFAULT",
+				}},
+			}},
+		},
+		inNI: "DEFAULT",
+		inIP: mustCIDR("1.1.1.1/32"),
+	}, {
+		desc: "v4 route that recurses onto itself on one ECMP path",
+		inCfg: func() *oc.Root {
+			d := &oc.Root{}
+			d.GetOrCreateInterface("eth0").
+				GetOrCreateSubinterface(0).
+				GetOrCreateIpv4().
+				GetOrCreateAddress("192.0.2.1").
+				PrefixLength = ygot.Uint8(24)
+			d.GetOrCreateInterface("eth1").
+				GetOrCreateSubinterface(0).
+				GetOrCreateIpv4().
+				GetOrCreateAddress("192.0.3.1").
+				PrefixLength = ygot.Uint8(24)
+			d.GetOrCreateNetworkInstance("DEFAULT").
+				Type = oc.NetworkInstanceTypes_NETWORK_INSTANCE_TYPE_DEFAULT_INSTANCE
+			return d
+		}(),
+		inAddRoutes: map[string][]*Route{
+			"DEFAULT": {{
+				Prefix: "1.1.1.0/24",
+				NextHops: []*afthelper.NextHopSummary{{
+					Address: "192.0.2.1",
+				}, {
+					Address: "2.2.2.2",
+				}},
+			}, {
+				Prefix: "2.0.0.0/8",
+				NextHops: []*afthelper.NextHopSummary{{
+					Address: "1.1.1.1",
+				}},
+			}},
+		},
+		inNI: "DEFAULT",
+		inIP: mustCIDR("1.1.1.1/32"),
+		wantInterface: []*Interface{
+			{Name: "eth0", Subinterface: 0},
+		},
+	}, {
+		desc: "v6 route that recurses onto itself on one ECMP path",
+		inCfg: func() *oc.Root {
+			d := &oc.Root{}
+			d.GetOrCreateInterface("eth0").
+				GetOrCreateSubinterface(0).
+				GetOrCreateIpv6().
+				GetOrCreateAddress("2001:db8:1::").
+				PrefixLength = ygot.Uint8(48)
+			d.GetOrCreateInterface("eth1").
+				GetOrCreateSubinterface(0).
+				GetOrCreateIpv6().
+				GetOrCreateAddress("2001:db8:2::").
+				PrefixLength = ygot.Uint8(48)
+			d.GetOrCreateNetworkInstance("DEFAULT").
+				Type = oc.NetworkInstanceTypes_NETWORK_INSTANCE_TYPE_DEFAULT_INSTANCE
+			return d
+		}(),
+		inAddRoutes: map[string][]*Route{
+			"DEFAULT": {{
+				Prefix: "2001:db8:42::/48",
+				NextHops: []*afthelper.NextHopSummary{{
+					Address: "2001:db8:1::1",
+				}, {
+					Address: "2001:db8:0b::1",
+				}},
+			}, {
+				Prefix: "2001:db8:0b::1/128",
+				NextHops: []*afthelper.NextHopSummary{{
+					Address: "2001:db8:42::1",
+				}},
+			}},
+		},
+		inNI: "DEFAULT",
+		inIP: mustCIDR("2001:db8:42::42/128"),
+		wantInterface: []*Interface{
+			{Name: "eth0", Subinterface: 0},
+		},
+	}, {
 		desc: "v4 recursive route onto two connected route",
 		inCfg: func() *oc.Root {
 			d := &oc.Root{}
