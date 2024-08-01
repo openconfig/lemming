@@ -351,6 +351,24 @@ sai_acl_action_type_t convert_sai_acl_action_type_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_acl_action_type_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_acl_action_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_acl_action_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_acl_action_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::AclActionType>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::AclBindPointType
 convert_sai_acl_bind_point_type_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -394,6 +412,24 @@ sai_acl_bind_point_type_t convert_sai_acl_bind_point_type_t_to_sai(
     default:
       return SAI_ACL_BIND_POINT_TYPE_PORT;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_acl_bind_point_type_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_acl_bind_point_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_acl_bind_point_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_acl_bind_point_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::AclBindPointType>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::AclCounterAttr convert_sai_acl_counter_attr_t_to_proto(
@@ -447,6 +483,24 @@ sai_acl_counter_attr_t convert_sai_acl_counter_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_acl_counter_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_acl_counter_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_acl_counter_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_acl_counter_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::AclCounterAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::AclDtelFlowOp convert_sai_acl_dtel_flow_op_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -484,6 +538,24 @@ sai_acl_dtel_flow_op_t convert_sai_acl_dtel_flow_op_t_to_sai(
     default:
       return SAI_ACL_DTEL_FLOW_OP_NOP;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_acl_dtel_flow_op_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_acl_dtel_flow_op_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_acl_dtel_flow_op_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_acl_dtel_flow_op_t_to_sai(
+        static_cast<lemming::dataplane::sai::AclDtelFlowOp>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::AclEntryAttr convert_sai_acl_entry_attr_t_to_proto(
@@ -1407,6 +1479,24 @@ sai_acl_entry_attr_t convert_sai_acl_entry_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_acl_entry_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_acl_entry_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_acl_entry_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_acl_entry_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::AclEntryAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::AclIpFrag convert_sai_acl_ip_frag_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -1450,6 +1540,24 @@ sai_acl_ip_frag_t convert_sai_acl_ip_frag_t_to_sai(
     default:
       return SAI_ACL_IP_FRAG_ANY;
   }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_acl_ip_frag_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_acl_ip_frag_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_acl_ip_frag_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_acl_ip_frag_t_to_sai(
+        static_cast<lemming::dataplane::sai::AclIpFrag>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::AclIpType convert_sai_acl_ip_type_t_to_proto(
@@ -1527,6 +1635,24 @@ sai_acl_ip_type_t convert_sai_acl_ip_type_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_acl_ip_type_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_acl_ip_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_acl_ip_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_acl_ip_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::AclIpType>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::AclRangeAttr convert_sai_acl_range_attr_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -1552,6 +1678,24 @@ sai_acl_range_attr_t convert_sai_acl_range_attr_t_to_sai(
     default:
       return SAI_ACL_RANGE_ATTR_TYPE;
   }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_acl_range_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_acl_range_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_acl_range_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_acl_range_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::AclRangeAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::AclRangeType convert_sai_acl_range_type_t_to_proto(
@@ -1599,6 +1743,24 @@ sai_acl_range_type_t convert_sai_acl_range_type_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_acl_range_type_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_acl_range_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_acl_range_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_acl_range_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::AclRangeType>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::AclStage convert_sai_acl_stage_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -1642,6 +1804,24 @@ sai_acl_stage_t convert_sai_acl_stage_t_to_sai(
     default:
       return SAI_ACL_STAGE_INGRESS;
   }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_acl_stage_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_acl_stage_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_acl_stage_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_acl_stage_t_to_sai(
+        static_cast<lemming::dataplane::sai::AclStage>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::AclTableAttr convert_sai_acl_table_attr_t_to_proto(
@@ -2258,6 +2438,24 @@ sai_acl_table_attr_t convert_sai_acl_table_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_acl_table_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_acl_table_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_acl_table_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_acl_table_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::AclTableAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::AclTableGroupAttr
 convert_sai_acl_table_group_attr_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -2298,6 +2496,24 @@ sai_acl_table_group_attr_t convert_sai_acl_table_group_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_acl_table_group_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_acl_table_group_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_acl_table_group_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_acl_table_group_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::AclTableGroupAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::AclTableGroupMemberAttr
 convert_sai_acl_table_group_member_attr_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -2334,6 +2550,27 @@ convert_sai_acl_table_group_member_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_acl_table_group_member_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_acl_table_group_member_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_acl_table_group_member_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_acl_table_group_member_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::AclTableGroupMemberAttr>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::AclTableGroupType
 convert_sai_acl_table_group_type_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -2361,6 +2598,24 @@ sai_acl_table_group_type_t convert_sai_acl_table_group_type_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_acl_table_group_type_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_acl_table_group_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_acl_table_group_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_acl_table_group_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::AclTableGroupType>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::ApiExtensions convert_sai_api_extensions_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -2386,6 +2641,24 @@ sai_api_extensions_t convert_sai_api_extensions_t_to_sai(
     default:
       return SAI_API_EXTENSIONS_RANGE_START;
   }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_api_extensions_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_api_extensions_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_api_extensions_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_api_extensions_t_to_sai(
+        static_cast<lemming::dataplane::sai::ApiExtensions>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::Api convert_sai_api_t_to_proto(const sai_int32_t val) {
@@ -2695,6 +2968,24 @@ sai_api_t convert_sai_api_t_to_sai(lemming::dataplane::sai::Api val) {
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_api_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_api_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_api_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_api_t_to_sai(
+        static_cast<lemming::dataplane::sai::Api>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::BfdEncapsulationType
 convert_sai_bfd_encapsulation_type_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -2726,6 +3017,25 @@ sai_bfd_encapsulation_type_t convert_sai_bfd_encapsulation_type_t_to_sai(
     default:
       return SAI_BFD_ENCAPSULATION_TYPE_IP_IN_IP;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_bfd_encapsulation_type_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_bfd_encapsulation_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_bfd_encapsulation_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_bfd_encapsulation_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::BfdEncapsulationType>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::BfdSessionAttr convert_sai_bfd_session_attr_t_to_proto(
@@ -2983,6 +3293,24 @@ sai_bfd_session_attr_t convert_sai_bfd_session_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_bfd_session_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_bfd_session_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_bfd_session_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_bfd_session_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::BfdSessionAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::BfdSessionOffloadType
 convert_sai_bfd_session_offload_type_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -3016,6 +3344,27 @@ sai_bfd_session_offload_type_t convert_sai_bfd_session_offload_type_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_bfd_session_offload_type_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_bfd_session_offload_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_bfd_session_offload_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_bfd_session_offload_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::BfdSessionOffloadType>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::BfdSessionStat convert_sai_bfd_session_stat_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -3047,6 +3396,24 @@ sai_bfd_session_stat_t convert_sai_bfd_session_stat_t_to_sai(
     default:
       return SAI_BFD_SESSION_STAT_IN_PACKETS;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_bfd_session_stat_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_bfd_session_stat_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_bfd_session_stat_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_bfd_session_stat_t_to_sai(
+        static_cast<lemming::dataplane::sai::BfdSessionStat>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::BfdSessionState
@@ -3088,6 +3455,24 @@ sai_bfd_session_state_t convert_sai_bfd_session_state_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_bfd_session_state_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_bfd_session_state_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_bfd_session_state_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_bfd_session_state_t_to_sai(
+        static_cast<lemming::dataplane::sai::BfdSessionState>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::BfdSessionType convert_sai_bfd_session_type_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -3125,6 +3510,24 @@ sai_bfd_session_type_t convert_sai_bfd_session_type_t_to_sai(
     default:
       return SAI_BFD_SESSION_TYPE_DEMAND_ACTIVE;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_bfd_session_type_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_bfd_session_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_bfd_session_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_bfd_session_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::BfdSessionType>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::BridgeAttr convert_sai_bridge_attr_t_to_proto(
@@ -3206,6 +3609,24 @@ sai_bridge_attr_t convert_sai_bridge_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_bridge_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_bridge_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_bridge_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_bridge_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::BridgeAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::BridgeFloodControlType
 convert_sai_bridge_flood_control_type_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -3243,6 +3664,27 @@ sai_bridge_flood_control_type_t convert_sai_bridge_flood_control_type_t_to_sai(
     default:
       return SAI_BRIDGE_FLOOD_CONTROL_TYPE_SUB_PORTS;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_bridge_flood_control_type_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_bridge_flood_control_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_bridge_flood_control_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_bridge_flood_control_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::BridgeFloodControlType>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::BridgePortAttr convert_sai_bridge_port_attr_t_to_proto(
@@ -3346,6 +3788,24 @@ sai_bridge_port_attr_t convert_sai_bridge_port_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_bridge_port_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_bridge_port_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_bridge_port_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_bridge_port_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::BridgePortAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::BridgePortFdbLearningMode
 convert_sai_bridge_port_fdb_learning_mode_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -3400,6 +3860,27 @@ convert_sai_bridge_port_fdb_learning_mode_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_bridge_port_fdb_learning_mode_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_bridge_port_fdb_learning_mode_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_bridge_port_fdb_learning_mode_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_bridge_port_fdb_learning_mode_t_to_sai(
+        static_cast<lemming::dataplane::sai::BridgePortFdbLearningMode>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::BridgePortStat convert_sai_bridge_port_stat_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -3439,6 +3920,24 @@ sai_bridge_port_stat_t convert_sai_bridge_port_stat_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_bridge_port_stat_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_bridge_port_stat_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_bridge_port_stat_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_bridge_port_stat_t_to_sai(
+        static_cast<lemming::dataplane::sai::BridgePortStat>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::BridgePortTaggingMode
 convert_sai_bridge_port_tagging_mode_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -3464,6 +3963,27 @@ sai_bridge_port_tagging_mode_t convert_sai_bridge_port_tagging_mode_t_to_sai(
     default:
       return SAI_BRIDGE_PORT_TAGGING_MODE_UNTAGGED;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_bridge_port_tagging_mode_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_bridge_port_tagging_mode_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_bridge_port_tagging_mode_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_bridge_port_tagging_mode_t_to_sai(
+        static_cast<lemming::dataplane::sai::BridgePortTaggingMode>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::BridgePortType convert_sai_bridge_port_type_t_to_proto(
@@ -3511,6 +4031,24 @@ sai_bridge_port_type_t convert_sai_bridge_port_type_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_bridge_port_type_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_bridge_port_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_bridge_port_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_bridge_port_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::BridgePortType>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::BridgeStat convert_sai_bridge_stat_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -3550,6 +4088,24 @@ sai_bridge_stat_t convert_sai_bridge_stat_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_bridge_stat_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_bridge_stat_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_bridge_stat_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_bridge_stat_t_to_sai(
+        static_cast<lemming::dataplane::sai::BridgeStat>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::BridgeType convert_sai_bridge_type_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -3575,6 +4131,24 @@ sai_bridge_type_t convert_sai_bridge_type_t_to_sai(
     default:
       return SAI_BRIDGE_TYPE_1Q;
   }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_bridge_type_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_bridge_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_bridge_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_bridge_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::BridgeType>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::BufferPoolAttr convert_sai_buffer_pool_attr_t_to_proto(
@@ -3632,6 +4206,24 @@ sai_buffer_pool_attr_t convert_sai_buffer_pool_attr_t_to_sai(
     default:
       return SAI_BUFFER_POOL_ATTR_SHARED_SIZE;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_buffer_pool_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_buffer_pool_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_buffer_pool_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_buffer_pool_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::BufferPoolAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::BufferPoolStat convert_sai_buffer_pool_stat_t_to_proto(
@@ -3795,6 +4387,24 @@ sai_buffer_pool_stat_t convert_sai_buffer_pool_stat_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_buffer_pool_stat_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_buffer_pool_stat_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_buffer_pool_stat_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_buffer_pool_stat_t_to_sai(
+        static_cast<lemming::dataplane::sai::BufferPoolStat>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::BufferPoolThresholdMode
 convert_sai_buffer_pool_threshold_mode_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -3821,6 +4431,27 @@ convert_sai_buffer_pool_threshold_mode_t_to_sai(
     default:
       return SAI_BUFFER_POOL_THRESHOLD_MODE_STATIC;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_buffer_pool_threshold_mode_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_buffer_pool_threshold_mode_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_buffer_pool_threshold_mode_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_buffer_pool_threshold_mode_t_to_sai(
+        static_cast<lemming::dataplane::sai::BufferPoolThresholdMode>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::BufferPoolType convert_sai_buffer_pool_type_t_to_proto(
@@ -3854,6 +4485,24 @@ sai_buffer_pool_type_t convert_sai_buffer_pool_type_t_to_sai(
     default:
       return SAI_BUFFER_POOL_TYPE_INGRESS;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_buffer_pool_type_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_buffer_pool_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_buffer_pool_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_buffer_pool_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::BufferPoolType>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::BufferProfileAttr
@@ -3919,6 +4568,24 @@ sai_buffer_profile_attr_t convert_sai_buffer_profile_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_buffer_profile_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_buffer_profile_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_buffer_profile_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_buffer_profile_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::BufferProfileAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::BufferProfileThresholdMode
 convert_sai_buffer_profile_threshold_mode_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -3947,6 +4614,27 @@ convert_sai_buffer_profile_threshold_mode_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_buffer_profile_threshold_mode_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_buffer_profile_threshold_mode_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_buffer_profile_threshold_mode_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_buffer_profile_threshold_mode_t_to_sai(
+        static_cast<lemming::dataplane::sai::BufferProfileThresholdMode>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::BulkOpErrorMode
 convert_sai_bulk_op_error_mode_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -3972,6 +4660,24 @@ sai_bulk_op_error_mode_t convert_sai_bulk_op_error_mode_t_to_sai(
     default:
       return SAI_BULK_OP_ERROR_MODE_STOP_ON_ERROR;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_bulk_op_error_mode_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_bulk_op_error_mode_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_bulk_op_error_mode_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_bulk_op_error_mode_t_to_sai(
+        static_cast<lemming::dataplane::sai::BulkOpErrorMode>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::CommonApi convert_sai_common_api_t_to_proto(
@@ -4043,6 +4749,24 @@ sai_common_api_t convert_sai_common_api_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_common_api_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_common_api_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_common_api_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_common_api_t_to_sai(
+        static_cast<lemming::dataplane::sai::CommonApi>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::CounterAttr convert_sai_counter_attr_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -4068,6 +4792,24 @@ sai_counter_attr_t convert_sai_counter_attr_t_to_sai(
     default:
       return SAI_COUNTER_ATTR_TYPE;
   }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_counter_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_counter_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_counter_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_counter_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::CounterAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::CounterStat convert_sai_counter_stat_t_to_proto(
@@ -4103,6 +4845,24 @@ sai_counter_stat_t convert_sai_counter_stat_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_counter_stat_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_counter_stat_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_counter_stat_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_counter_stat_t_to_sai(
+        static_cast<lemming::dataplane::sai::CounterStat>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::CounterType convert_sai_counter_type_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -4122,6 +4882,24 @@ sai_counter_type_t convert_sai_counter_type_t_to_sai(
     default:
       return SAI_COUNTER_TYPE_REGULAR;
   }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_counter_type_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_counter_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_counter_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_counter_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::CounterType>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::DebugCounterAttr
@@ -4169,6 +4947,24 @@ sai_debug_counter_attr_t convert_sai_debug_counter_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_debug_counter_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_debug_counter_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_debug_counter_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_debug_counter_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::DebugCounterAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::DebugCounterBindMethod
 convert_sai_debug_counter_bind_method_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -4188,6 +4984,27 @@ sai_debug_counter_bind_method_t convert_sai_debug_counter_bind_method_t_to_sai(
     default:
       return SAI_DEBUG_COUNTER_BIND_METHOD_AUTOMATIC;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_debug_counter_bind_method_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_debug_counter_bind_method_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_debug_counter_bind_method_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_debug_counter_bind_method_t_to_sai(
+        static_cast<lemming::dataplane::sai::DebugCounterBindMethod>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::DebugCounterType
@@ -4228,6 +5045,24 @@ sai_debug_counter_type_t convert_sai_debug_counter_type_t_to_sai(
     default:
       return SAI_DEBUG_COUNTER_TYPE_PORT_IN_DROP_REASONS;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_debug_counter_type_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_debug_counter_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_debug_counter_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_debug_counter_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::DebugCounterType>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::DtelAttr convert_sai_dtel_attr_t_to_proto(
@@ -4305,6 +5140,24 @@ sai_dtel_attr_t convert_sai_dtel_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_dtel_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_dtel_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_dtel_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_dtel_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::DtelAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::DtelEventAttr convert_sai_dtel_event_attr_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -4336,6 +5189,24 @@ sai_dtel_event_attr_t convert_sai_dtel_event_attr_t_to_sai(
     default:
       return SAI_DTEL_EVENT_ATTR_TYPE;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_dtel_event_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_dtel_event_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_dtel_event_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_dtel_event_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::DtelEventAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::DtelEventType convert_sai_dtel_event_type_t_to_proto(
@@ -4396,6 +5267,24 @@ sai_dtel_event_type_t convert_sai_dtel_event_type_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_dtel_event_type_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_dtel_event_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_dtel_event_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_dtel_event_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::DtelEventType>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::DtelIntSessionAttr
 convert_sai_dtel_int_session_attr_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -4452,6 +5341,25 @@ sai_dtel_int_session_attr_t convert_sai_dtel_int_session_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_dtel_int_session_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_dtel_int_session_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_dtel_int_session_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_dtel_int_session_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::DtelIntSessionAttr>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::DtelQueueReportAttr
 convert_sai_dtel_queue_report_attr_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -4495,6 +5403,25 @@ sai_dtel_queue_report_attr_t convert_sai_dtel_queue_report_attr_t_to_sai(
     default:
       return SAI_DTEL_QUEUE_REPORT_ATTR_QUEUE_ID;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_dtel_queue_report_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_dtel_queue_report_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_dtel_queue_report_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_dtel_queue_report_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::DtelQueueReportAttr>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::DtelReportSessionAttr
@@ -4541,6 +5468,27 @@ sai_dtel_report_session_attr_t convert_sai_dtel_report_session_attr_t_to_sai(
     default:
       return SAI_DTEL_REPORT_SESSION_ATTR_SRC_IP;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_dtel_report_session_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_dtel_report_session_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_dtel_report_session_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_dtel_report_session_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::DtelReportSessionAttr>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::EcnMarkMode convert_sai_ecn_mark_mode_t_to_proto(
@@ -4606,6 +5554,24 @@ sai_ecn_mark_mode_t convert_sai_ecn_mark_mode_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_ecn_mark_mode_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_ecn_mark_mode_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_ecn_mark_mode_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_ecn_mark_mode_t_to_sai(
+        static_cast<lemming::dataplane::sai::EcnMarkMode>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::ErspanEncapsulationType
 convert_sai_erspan_encapsulation_type_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -4627,6 +5593,27 @@ sai_erspan_encapsulation_type_t convert_sai_erspan_encapsulation_type_t_to_sai(
     default:
       return SAI_ERSPAN_ENCAPSULATION_TYPE_MIRROR_L3_GRE_TUNNEL;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_erspan_encapsulation_type_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_erspan_encapsulation_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_erspan_encapsulation_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_erspan_encapsulation_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::ErspanEncapsulationType>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::FdbEntryAttr convert_sai_fdb_entry_attr_t_to_proto(
@@ -4692,6 +5679,24 @@ sai_fdb_entry_attr_t convert_sai_fdb_entry_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_fdb_entry_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_fdb_entry_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_fdb_entry_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_fdb_entry_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::FdbEntryAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::FdbEntryType convert_sai_fdb_entry_type_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -4717,6 +5722,24 @@ sai_fdb_entry_type_t convert_sai_fdb_entry_type_t_to_sai(
     default:
       return SAI_FDB_ENTRY_TYPE_DYNAMIC;
   }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_fdb_entry_type_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_fdb_entry_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_fdb_entry_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_fdb_entry_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::FdbEntryType>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::FdbEvent convert_sai_fdb_event_t_to_proto(
@@ -4758,6 +5781,24 @@ sai_fdb_event_t convert_sai_fdb_event_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_fdb_event_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_fdb_event_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_fdb_event_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_fdb_event_t_to_sai(
+        static_cast<lemming::dataplane::sai::FdbEvent>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::FdbFlushEntryType
 convert_sai_fdb_flush_entry_type_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -4789,6 +5830,24 @@ sai_fdb_flush_entry_type_t convert_sai_fdb_flush_entry_type_t_to_sai(
     default:
       return SAI_FDB_FLUSH_ENTRY_TYPE_DYNAMIC;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_fdb_flush_entry_type_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_fdb_flush_entry_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_fdb_flush_entry_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_fdb_flush_entry_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::FdbFlushEntryType>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::FineGrainedHashFieldAttr
@@ -4833,6 +5892,27 @@ convert_sai_fine_grained_hash_field_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_fine_grained_hash_field_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_fine_grained_hash_field_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_fine_grained_hash_field_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_fine_grained_hash_field_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::FineGrainedHashFieldAttr>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::GenericProgrammableAttr
 convert_sai_generic_programmable_attr_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -4864,6 +5944,27 @@ sai_generic_programmable_attr_t convert_sai_generic_programmable_attr_t_to_sai(
     default:
       return SAI_GENERIC_PROGRAMMABLE_ATTR_OBJECT_NAME;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_generic_programmable_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_generic_programmable_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_generic_programmable_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_generic_programmable_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::GenericProgrammableAttr>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::HashAlgorithm convert_sai_hash_algorithm_t_to_proto(
@@ -4923,6 +6024,24 @@ sai_hash_algorithm_t convert_sai_hash_algorithm_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_hash_algorithm_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_hash_algorithm_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_hash_algorithm_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_hash_algorithm_t_to_sai(
+        static_cast<lemming::dataplane::sai::HashAlgorithm>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::HashAttr convert_sai_hash_attr_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -4954,6 +6073,24 @@ sai_hash_attr_t convert_sai_hash_attr_t_to_sai(
     default:
       return SAI_HASH_ATTR_NATIVE_HASH_FIELD_LIST;
   }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_hash_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_hash_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_hash_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_hash_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::HashAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::HostifAttr convert_sai_hostif_attr_t_to_proto(
@@ -5013,6 +6150,24 @@ sai_hostif_attr_t convert_sai_hostif_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_hostif_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_hostif_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_hostif_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_hostif_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::HostifAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::HostifTableEntryAttr
 convert_sai_hostif_table_entry_attr_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -5056,6 +6211,27 @@ sai_hostif_table_entry_attr_t convert_sai_hostif_table_entry_attr_t_to_sai(
     default:
       return SAI_HOSTIF_TABLE_ENTRY_ATTR_TYPE;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_hostif_table_entry_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_hostif_table_entry_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_hostif_table_entry_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_hostif_table_entry_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::HostifTableEntryAttr>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::HostifTableEntryChannelType
@@ -5115,6 +6291,27 @@ convert_sai_hostif_table_entry_channel_type_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_hostif_table_entry_channel_type_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_hostif_table_entry_channel_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_hostif_table_entry_channel_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_hostif_table_entry_channel_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::HostifTableEntryChannelType>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::HostifTableEntryType
 convert_sai_hostif_table_entry_type_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -5158,6 +6355,27 @@ sai_hostif_table_entry_type_t convert_sai_hostif_table_entry_type_t_to_sai(
     default:
       return SAI_HOSTIF_TABLE_ENTRY_TYPE_PORT;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_hostif_table_entry_type_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_hostif_table_entry_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_hostif_table_entry_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_hostif_table_entry_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::HostifTableEntryType>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::HostifTrapAttr convert_sai_hostif_trap_attr_t_to_proto(
@@ -5217,6 +6435,24 @@ sai_hostif_trap_attr_t convert_sai_hostif_trap_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_hostif_trap_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_hostif_trap_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_hostif_trap_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_hostif_trap_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::HostifTrapAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::HostifTrapGroupAttr
 convert_sai_hostif_trap_group_attr_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -5254,6 +6490,25 @@ sai_hostif_trap_group_attr_t convert_sai_hostif_trap_group_attr_t_to_sai(
     default:
       return SAI_HOSTIF_TRAP_GROUP_ATTR_ADMIN_STATE;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_hostif_trap_group_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_hostif_trap_group_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_hostif_trap_group_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_hostif_trap_group_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::HostifTrapGroupAttr>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::HostifTrapType convert_sai_hostif_trap_type_t_to_proto(
@@ -5691,6 +6946,24 @@ sai_hostif_trap_type_t convert_sai_hostif_trap_type_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_hostif_trap_type_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_hostif_trap_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_hostif_trap_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_hostif_trap_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::HostifTrapType>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::HostifTxType convert_sai_hostif_tx_type_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -5722,6 +6995,24 @@ sai_hostif_tx_type_t convert_sai_hostif_tx_type_t_to_sai(
     default:
       return SAI_HOSTIF_TX_TYPE_PIPELINE_BYPASS;
   }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_hostif_tx_type_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_hostif_tx_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_hostif_tx_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_hostif_tx_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::HostifTxType>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::HostifType convert_sai_hostif_type_t_to_proto(
@@ -5757,6 +7048,24 @@ sai_hostif_type_t convert_sai_hostif_type_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_hostif_type_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_hostif_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_hostif_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_hostif_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::HostifType>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::HostifUserDefinedTrapAttr
 convert_sai_hostif_user_defined_trap_attr_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -5790,6 +7099,27 @@ convert_sai_hostif_user_defined_trap_attr_t_to_sai(
     default:
       return SAI_HOSTIF_USER_DEFINED_TRAP_ATTR_TYPE;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_hostif_user_defined_trap_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_hostif_user_defined_trap_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_hostif_user_defined_trap_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_hostif_user_defined_trap_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::HostifUserDefinedTrapAttr>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::HostifUserDefinedTrapType
@@ -5852,6 +7182,27 @@ convert_sai_hostif_user_defined_trap_type_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_hostif_user_defined_trap_type_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_hostif_user_defined_trap_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_hostif_user_defined_trap_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_hostif_user_defined_trap_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::HostifUserDefinedTrapType>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::HostifVlanTag convert_sai_hostif_vlan_tag_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -5883,6 +7234,24 @@ sai_hostif_vlan_tag_t convert_sai_hostif_vlan_tag_t_to_sai(
     default:
       return SAI_HOSTIF_VLAN_TAG_STRIP;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_hostif_vlan_tag_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_hostif_vlan_tag_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_hostif_vlan_tag_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_hostif_vlan_tag_t_to_sai(
+        static_cast<lemming::dataplane::sai::HostifVlanTag>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::InDropReason convert_sai_in_drop_reason_t_to_proto(
@@ -6248,6 +7617,24 @@ sai_in_drop_reason_t convert_sai_in_drop_reason_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_in_drop_reason_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_in_drop_reason_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_in_drop_reason_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_in_drop_reason_t_to_sai(
+        static_cast<lemming::dataplane::sai::InDropReason>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::IngressPriorityGroupAttr
 convert_sai_ingress_priority_group_attr_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -6287,6 +7674,27 @@ convert_sai_ingress_priority_group_attr_t_to_sai(
     default:
       return SAI_INGRESS_PRIORITY_GROUP_ATTR_BUFFER_PROFILE;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_ingress_priority_group_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_ingress_priority_group_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_ingress_priority_group_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_ingress_priority_group_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::IngressPriorityGroupAttr>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::IngressPriorityGroupStat
@@ -6378,6 +7786,27 @@ convert_sai_ingress_priority_group_stat_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_ingress_priority_group_stat_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_ingress_priority_group_stat_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_ingress_priority_group_stat_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_ingress_priority_group_stat_t_to_sai(
+        static_cast<lemming::dataplane::sai::IngressPriorityGroupStat>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::InsegEntryAttr convert_sai_inseg_entry_attr_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -6459,6 +7888,24 @@ sai_inseg_entry_attr_t convert_sai_inseg_entry_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_inseg_entry_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_inseg_entry_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_inseg_entry_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_inseg_entry_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::InsegEntryAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::InsegEntryPopQosMode
 convert_sai_inseg_entry_pop_qos_mode_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -6484,6 +7931,27 @@ sai_inseg_entry_pop_qos_mode_t convert_sai_inseg_entry_pop_qos_mode_t_to_sai(
     default:
       return SAI_INSEG_ENTRY_POP_QOS_MODE_UNIFORM;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_inseg_entry_pop_qos_mode_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_inseg_entry_pop_qos_mode_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_inseg_entry_pop_qos_mode_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_inseg_entry_pop_qos_mode_t_to_sai(
+        static_cast<lemming::dataplane::sai::InsegEntryPopQosMode>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::InsegEntryPopTtlMode
@@ -6513,6 +7981,27 @@ sai_inseg_entry_pop_ttl_mode_t convert_sai_inseg_entry_pop_ttl_mode_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_inseg_entry_pop_ttl_mode_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_inseg_entry_pop_ttl_mode_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_inseg_entry_pop_ttl_mode_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_inseg_entry_pop_ttl_mode_t_to_sai(
+        static_cast<lemming::dataplane::sai::InsegEntryPopTtlMode>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::InsegEntryPscType
 convert_sai_inseg_entry_psc_type_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -6540,6 +8029,24 @@ sai_inseg_entry_psc_type_t convert_sai_inseg_entry_psc_type_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_inseg_entry_psc_type_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_inseg_entry_psc_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_inseg_entry_psc_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_inseg_entry_psc_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::InsegEntryPscType>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::IpAddrFamily convert_sai_ip_addr_family_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -6565,6 +8072,24 @@ sai_ip_addr_family_t convert_sai_ip_addr_family_t_to_sai(
     default:
       return SAI_IP_ADDR_FAMILY_IPV4;
   }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_ip_addr_family_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_ip_addr_family_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_ip_addr_family_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_ip_addr_family_t_to_sai(
+        static_cast<lemming::dataplane::sai::IpAddrFamily>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::IpmcEntryAttr convert_sai_ipmc_entry_attr_t_to_proto(
@@ -6606,6 +8131,24 @@ sai_ipmc_entry_attr_t convert_sai_ipmc_entry_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_ipmc_entry_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_ipmc_entry_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_ipmc_entry_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_ipmc_entry_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::IpmcEntryAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::IpmcEntryType convert_sai_ipmc_entry_type_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -6631,6 +8174,24 @@ sai_ipmc_entry_type_t convert_sai_ipmc_entry_type_t_to_sai(
     default:
       return SAI_IPMC_ENTRY_TYPE_SG;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_ipmc_entry_type_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_ipmc_entry_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_ipmc_entry_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_ipmc_entry_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::IpmcEntryType>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::IpmcGroupAttr convert_sai_ipmc_group_attr_t_to_proto(
@@ -6660,6 +8221,24 @@ sai_ipmc_group_attr_t convert_sai_ipmc_group_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_ipmc_group_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_ipmc_group_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_ipmc_group_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_ipmc_group_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::IpmcGroupAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::IpmcGroupMemberAttr
 convert_sai_ipmc_group_member_attr_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -6685,6 +8264,25 @@ sai_ipmc_group_member_attr_t convert_sai_ipmc_group_member_attr_t_to_sai(
     default:
       return SAI_IPMC_GROUP_MEMBER_ATTR_IPMC_GROUP_ID;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_ipmc_group_member_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_ipmc_group_member_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_ipmc_group_member_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_ipmc_group_member_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::IpmcGroupMemberAttr>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::IpsecAttr convert_sai_ipsec_attr_t_to_proto(
@@ -6827,6 +8425,24 @@ sai_ipsec_attr_t convert_sai_ipsec_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_ipsec_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_ipsec_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_ipsec_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_ipsec_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::IpsecAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::IpsecCipher convert_sai_ipsec_cipher_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -6866,6 +8482,24 @@ sai_ipsec_cipher_t convert_sai_ipsec_cipher_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_ipsec_cipher_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_ipsec_cipher_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_ipsec_cipher_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_ipsec_cipher_t_to_sai(
+        static_cast<lemming::dataplane::sai::IpsecCipher>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::IpsecDirection convert_sai_ipsec_direction_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -6891,6 +8525,24 @@ sai_ipsec_direction_t convert_sai_ipsec_direction_t_to_sai(
     default:
       return SAI_IPSEC_DIRECTION_EGRESS;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_ipsec_direction_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_ipsec_direction_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_ipsec_direction_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_ipsec_direction_t_to_sai(
+        static_cast<lemming::dataplane::sai::IpsecDirection>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::IpsecPortAttr convert_sai_ipsec_port_attr_t_to_proto(
@@ -6945,6 +8597,24 @@ sai_ipsec_port_attr_t convert_sai_ipsec_port_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_ipsec_port_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_ipsec_port_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_ipsec_port_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_ipsec_port_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::IpsecPortAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::IpsecPortStat convert_sai_ipsec_port_stat_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -6994,6 +8664,24 @@ sai_ipsec_port_stat_t convert_sai_ipsec_port_stat_t_to_sai(
     default:
       return SAI_IPSEC_PORT_STAT_TX_ERROR_PKTS;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_ipsec_port_stat_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_ipsec_port_stat_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_ipsec_port_stat_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_ipsec_port_stat_t_to_sai(
+        static_cast<lemming::dataplane::sai::IpsecPortStat>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::IpsecSaAttr convert_sai_ipsec_sa_attr_t_to_proto(
@@ -7139,6 +8827,24 @@ sai_ipsec_sa_attr_t convert_sai_ipsec_sa_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_ipsec_sa_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_ipsec_sa_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_ipsec_sa_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_ipsec_sa_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::IpsecSaAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::IpsecSaOctetCountStatus
 convert_sai_ipsec_sa_octet_count_status_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -7177,6 +8883,27 @@ convert_sai_ipsec_sa_octet_count_status_t_to_sai(
     default:
       return SAI_IPSEC_SA_OCTET_COUNT_STATUS_BELOW_LOW_WATERMARK;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_ipsec_sa_octet_count_status_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_ipsec_sa_octet_count_status_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_ipsec_sa_octet_count_status_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_ipsec_sa_octet_count_status_t_to_sai(
+        static_cast<lemming::dataplane::sai::IpsecSaOctetCountStatus>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::IpsecSaStat convert_sai_ipsec_sa_stat_t_to_proto(
@@ -7254,6 +8981,24 @@ sai_ipsec_sa_stat_t convert_sai_ipsec_sa_stat_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_ipsec_sa_stat_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_ipsec_sa_stat_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_ipsec_sa_stat_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_ipsec_sa_stat_t_to_sai(
+        static_cast<lemming::dataplane::sai::IpsecSaStat>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::IsolationGroupAttr
 convert_sai_isolation_group_attr_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -7280,6 +9025,25 @@ sai_isolation_group_attr_t convert_sai_isolation_group_attr_t_to_sai(
     default:
       return SAI_ISOLATION_GROUP_ATTR_TYPE;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_isolation_group_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_isolation_group_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_isolation_group_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_isolation_group_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::IsolationGroupAttr>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::IsolationGroupMemberAttr
@@ -7313,6 +9077,27 @@ convert_sai_isolation_group_member_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_isolation_group_member_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_isolation_group_member_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_isolation_group_member_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_isolation_group_member_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::IsolationGroupMemberAttr>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::IsolationGroupType
 convert_sai_isolation_group_type_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -7338,6 +9123,25 @@ sai_isolation_group_type_t convert_sai_isolation_group_type_t_to_sai(
     default:
       return SAI_ISOLATION_GROUP_TYPE_PORT;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_isolation_group_type_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_isolation_group_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_isolation_group_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_isolation_group_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::IsolationGroupType>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::L2mcEntryAttr convert_sai_l2mc_entry_attr_t_to_proto(
@@ -7367,6 +9171,24 @@ sai_l2mc_entry_attr_t convert_sai_l2mc_entry_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_l2mc_entry_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_l2mc_entry_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_l2mc_entry_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_l2mc_entry_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::L2mcEntryAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::L2mcEntryType convert_sai_l2mc_entry_type_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -7394,6 +9216,24 @@ sai_l2mc_entry_type_t convert_sai_l2mc_entry_type_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_l2mc_entry_type_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_l2mc_entry_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_l2mc_entry_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_l2mc_entry_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::L2mcEntryType>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::L2mcGroupAttr convert_sai_l2mc_group_attr_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -7419,6 +9259,24 @@ sai_l2mc_group_attr_t convert_sai_l2mc_group_attr_t_to_sai(
     default:
       return SAI_L2MC_GROUP_ATTR_L2MC_OUTPUT_COUNT;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_l2mc_group_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_l2mc_group_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_l2mc_group_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_l2mc_group_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::L2mcGroupAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::L2mcGroupMemberAttr
@@ -7452,6 +9310,25 @@ sai_l2mc_group_member_attr_t convert_sai_l2mc_group_member_attr_t_to_sai(
     default:
       return SAI_L2MC_GROUP_MEMBER_ATTR_L2MC_GROUP_ID;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_l2mc_group_member_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_l2mc_group_member_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_l2mc_group_member_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_l2mc_group_member_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::L2mcGroupMemberAttr>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::LagAttr convert_sai_lag_attr_t_to_proto(
@@ -7529,6 +9406,24 @@ sai_lag_attr_t convert_sai_lag_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_lag_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_lag_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_lag_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_lag_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::LagAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::LagMemberAttr convert_sai_lag_member_attr_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -7566,6 +9461,24 @@ sai_lag_member_attr_t convert_sai_lag_member_attr_t_to_sai(
     default:
       return SAI_LAG_MEMBER_ATTR_LAG_ID;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_lag_member_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_lag_member_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_lag_member_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_lag_member_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::LagMemberAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::LogLevel convert_sai_log_level_t_to_proto(
@@ -7617,6 +9530,24 @@ sai_log_level_t convert_sai_log_level_t_to_sai(
     default:
       return SAI_LOG_LEVEL_DEBUG;
   }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_log_level_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_log_level_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_log_level_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_log_level_t_to_sai(
+        static_cast<lemming::dataplane::sai::LogLevel>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::MacsecAttr convert_sai_macsec_attr_t_to_proto(
@@ -7796,6 +9727,24 @@ sai_macsec_attr_t convert_sai_macsec_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_macsec_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_macsec_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_macsec_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_macsec_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::MacsecAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::MacsecCipherSuite
 convert_sai_macsec_cipher_suite_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -7835,6 +9784,24 @@ sai_macsec_cipher_suite_t convert_sai_macsec_cipher_suite_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_macsec_cipher_suite_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_macsec_cipher_suite_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_macsec_cipher_suite_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_macsec_cipher_suite_t_to_sai(
+        static_cast<lemming::dataplane::sai::MacsecCipherSuite>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::MacsecDirection
 convert_sai_macsec_direction_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -7860,6 +9827,24 @@ sai_macsec_direction_t convert_sai_macsec_direction_t_to_sai(
     default:
       return SAI_MACSEC_DIRECTION_EGRESS;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_macsec_direction_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_macsec_direction_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_macsec_direction_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_macsec_direction_t_to_sai(
+        static_cast<lemming::dataplane::sai::MacsecDirection>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::MacsecFlowAttr convert_sai_macsec_flow_attr_t_to_proto(
@@ -7893,6 +9878,24 @@ sai_macsec_flow_attr_t convert_sai_macsec_flow_attr_t_to_sai(
     default:
       return SAI_MACSEC_FLOW_ATTR_MACSEC_DIRECTION;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_macsec_flow_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_macsec_flow_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_macsec_flow_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_macsec_flow_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::MacsecFlowAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::MacsecFlowStat convert_sai_macsec_flow_stat_t_to_proto(
@@ -8028,6 +10031,24 @@ sai_macsec_flow_stat_t convert_sai_macsec_flow_stat_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_macsec_flow_stat_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_macsec_flow_stat_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_macsec_flow_stat_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_macsec_flow_stat_t_to_sai(
+        static_cast<lemming::dataplane::sai::MacsecFlowStat>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::MacsecMaxSecureAssociationsPerSc
 convert_sai_macsec_max_secure_associations_per_sc_t_to_proto(
     const sai_int32_t val) {
@@ -8057,6 +10078,27 @@ convert_sai_macsec_max_secure_associations_per_sc_t_to_sai(
     default:
       return SAI_MACSEC_MAX_SECURE_ASSOCIATIONS_PER_SC_TWO;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_macsec_max_secure_associations_per_sc_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_macsec_max_secure_associations_per_sc_t_to_proto(
+        list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_macsec_max_secure_associations_per_sc_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_macsec_max_secure_associations_per_sc_t_to_sai(
+        static_cast<lemming::dataplane::sai::MacsecMaxSecureAssociationsPerSc>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::MacsecPortAttr convert_sai_macsec_port_attr_t_to_proto(
@@ -8104,6 +10146,24 @@ sai_macsec_port_attr_t convert_sai_macsec_port_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_macsec_port_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_macsec_port_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_macsec_port_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_macsec_port_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::MacsecPortAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::MacsecPortStat convert_sai_macsec_port_stat_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -8135,6 +10195,24 @@ sai_macsec_port_stat_t convert_sai_macsec_port_stat_t_to_sai(
     default:
       return SAI_MACSEC_PORT_STAT_PRE_MACSEC_DROP_PKTS;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_macsec_port_stat_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_macsec_port_stat_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_macsec_port_stat_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_macsec_port_stat_t_to_sai(
+        static_cast<lemming::dataplane::sai::MacsecPortStat>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::MacsecSaAttr convert_sai_macsec_sa_attr_t_to_proto(
@@ -8210,6 +10288,24 @@ sai_macsec_sa_attr_t convert_sai_macsec_sa_attr_t_to_sai(
     default:
       return SAI_MACSEC_SA_ATTR_MACSEC_DIRECTION;
   }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_macsec_sa_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_macsec_sa_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_macsec_sa_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_macsec_sa_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::MacsecSaAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::MacsecSaStat convert_sai_macsec_sa_stat_t_to_proto(
@@ -8299,6 +10395,24 @@ sai_macsec_sa_stat_t convert_sai_macsec_sa_stat_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_macsec_sa_stat_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_macsec_sa_stat_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_macsec_sa_stat_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_macsec_sa_stat_t_to_sai(
+        static_cast<lemming::dataplane::sai::MacsecSaStat>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::MacsecScAttr convert_sai_macsec_sc_attr_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -8384,6 +10498,24 @@ sai_macsec_sc_attr_t convert_sai_macsec_sc_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_macsec_sc_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_macsec_sc_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_macsec_sc_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_macsec_sc_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::MacsecScAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::MacsecScStat convert_sai_macsec_sc_stat_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -8403,6 +10535,24 @@ sai_macsec_sc_stat_t convert_sai_macsec_sc_stat_t_to_sai(
     default:
       return SAI_MACSEC_SC_STAT_SA_NOT_IN_USE;
   }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_macsec_sc_stat_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_macsec_sc_stat_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_macsec_sc_stat_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_macsec_sc_stat_t_to_sai(
+        static_cast<lemming::dataplane::sai::MacsecScStat>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::McastFdbEntryAttr
@@ -8438,6 +10588,24 @@ sai_mcast_fdb_entry_attr_t convert_sai_mcast_fdb_entry_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_mcast_fdb_entry_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_mcast_fdb_entry_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_mcast_fdb_entry_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_mcast_fdb_entry_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::McastFdbEntryAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::MeterType convert_sai_meter_type_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -8469,6 +10637,24 @@ sai_meter_type_t convert_sai_meter_type_t_to_sai(
     default:
       return SAI_METER_TYPE_PACKETS;
   }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_meter_type_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_meter_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_meter_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_meter_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::MeterType>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::MirrorSessionAttr
@@ -8644,6 +10830,24 @@ sai_mirror_session_attr_t convert_sai_mirror_session_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_mirror_session_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_mirror_session_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_mirror_session_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_mirror_session_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::MirrorSessionAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::MirrorSessionCongestionMode
 convert_sai_mirror_session_congestion_mode_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -8672,6 +10876,27 @@ convert_sai_mirror_session_congestion_mode_t_to_sai(
     default:
       return SAI_MIRROR_SESSION_CONGESTION_MODE_INDEPENDENT;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_mirror_session_congestion_mode_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_mirror_session_congestion_mode_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_mirror_session_congestion_mode_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_mirror_session_congestion_mode_t_to_sai(
+        static_cast<lemming::dataplane::sai::MirrorSessionCongestionMode>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::MirrorSessionType
@@ -8711,6 +10936,24 @@ sai_mirror_session_type_t convert_sai_mirror_session_type_t_to_sai(
     default:
       return SAI_MIRROR_SESSION_TYPE_LOCAL;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_mirror_session_type_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_mirror_session_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_mirror_session_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_mirror_session_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::MirrorSessionType>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::MyMacAttr convert_sai_my_mac_attr_t_to_proto(
@@ -8756,6 +10999,24 @@ sai_my_mac_attr_t convert_sai_my_mac_attr_t_to_sai(
     default:
       return SAI_MY_MAC_ATTR_PRIORITY;
   }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_my_mac_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_my_mac_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_my_mac_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_my_mac_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::MyMacAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::MySidEntryAttr
@@ -8820,6 +11081,24 @@ sai_my_sid_entry_attr_t convert_sai_my_sid_entry_attr_t_to_sai(
     default:
       return SAI_MY_SID_ENTRY_ATTR_ENDPOINT_BEHAVIOR;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_my_sid_entry_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_my_sid_entry_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_my_sid_entry_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_my_sid_entry_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::MySidEntryAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::MySidEntryEndpointBehaviorFlavor
@@ -8895,6 +11174,27 @@ convert_sai_my_sid_entry_endpoint_behavior_flavor_t_to_sai(
     default:
       return SAI_MY_SID_ENTRY_ENDPOINT_BEHAVIOR_FLAVOR_NONE;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_my_sid_entry_endpoint_behavior_flavor_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_my_sid_entry_endpoint_behavior_flavor_t_to_proto(
+        list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_my_sid_entry_endpoint_behavior_flavor_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_my_sid_entry_endpoint_behavior_flavor_t_to_sai(
+        static_cast<lemming::dataplane::sai::MySidEntryEndpointBehaviorFlavor>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::MySidEntryEndpointBehavior
@@ -9016,6 +11316,27 @@ convert_sai_my_sid_entry_endpoint_behavior_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_my_sid_entry_endpoint_behavior_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_my_sid_entry_endpoint_behavior_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_my_sid_entry_endpoint_behavior_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_my_sid_entry_endpoint_behavior_t_to_sai(
+        static_cast<lemming::dataplane::sai::MySidEntryEndpointBehavior>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::NatEntryAttr convert_sai_nat_entry_attr_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -9121,6 +11442,24 @@ sai_nat_entry_attr_t convert_sai_nat_entry_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_nat_entry_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_nat_entry_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_nat_entry_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_nat_entry_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::NatEntryAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::NatEvent convert_sai_nat_event_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -9146,6 +11485,24 @@ sai_nat_event_t convert_sai_nat_event_t_to_sai(
     default:
       return SAI_NAT_EVENT_NONE;
   }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_nat_event_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_nat_event_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_nat_event_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_nat_event_t_to_sai(
+        static_cast<lemming::dataplane::sai::NatEvent>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::NatType convert_sai_nat_type_t_to_proto(
@@ -9191,6 +11548,24 @@ sai_nat_type_t convert_sai_nat_type_t_to_sai(
     default:
       return SAI_NAT_TYPE_NONE;
   }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_nat_type_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_nat_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_nat_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_nat_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::NatType>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::NatZoneCounterAttr
@@ -9261,6 +11636,25 @@ sai_nat_zone_counter_attr_t convert_sai_nat_zone_counter_attr_t_to_sai(
     default:
       return SAI_NAT_ZONE_COUNTER_ATTR_NAT_TYPE;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_nat_zone_counter_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_nat_zone_counter_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_nat_zone_counter_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_nat_zone_counter_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::NatZoneCounterAttr>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::NativeHashField
@@ -9482,6 +11876,24 @@ sai_native_hash_field_t convert_sai_native_hash_field_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_native_hash_field_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_native_hash_field_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_native_hash_field_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_native_hash_field_t_to_sai(
+        static_cast<lemming::dataplane::sai::NativeHashField>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::NeighborEntryAttr
 convert_sai_neighbor_entry_attr_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -9555,6 +11967,24 @@ sai_neighbor_entry_attr_t convert_sai_neighbor_entry_attr_t_to_sai(
     default:
       return SAI_NEIGHBOR_ENTRY_ATTR_DST_MAC_ADDRESS;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_neighbor_entry_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_neighbor_entry_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_neighbor_entry_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_neighbor_entry_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::NeighborEntryAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::NextHopAttr convert_sai_next_hop_attr_t_to_proto(
@@ -9668,6 +12098,24 @@ sai_next_hop_attr_t convert_sai_next_hop_attr_t_to_sai(
     default:
       return SAI_NEXT_HOP_ATTR_TYPE;
   }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_next_hop_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_next_hop_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_next_hop_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_next_hop_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::NextHopAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::NextHopGroupAttr
@@ -9788,6 +12236,24 @@ sai_next_hop_group_attr_t convert_sai_next_hop_group_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_next_hop_group_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_next_hop_group_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_next_hop_group_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_next_hop_group_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::NextHopGroupAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::NextHopGroupMapAttr
 convert_sai_next_hop_group_map_attr_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -9815,6 +12281,27 @@ sai_next_hop_group_map_attr_t convert_sai_next_hop_group_map_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_next_hop_group_map_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_next_hop_group_map_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_next_hop_group_map_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_next_hop_group_map_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::NextHopGroupMapAttr>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::NextHopGroupMapType
 convert_sai_next_hop_group_map_type_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -9836,6 +12323,27 @@ sai_next_hop_group_map_type_t convert_sai_next_hop_group_map_type_t_to_sai(
     default:
       return SAI_NEXT_HOP_GROUP_MAP_TYPE_FORWARDING_CLASS_TO_INDEX;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_next_hop_group_map_type_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_next_hop_group_map_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_next_hop_group_map_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_next_hop_group_map_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::NextHopGroupMapType>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::NextHopGroupMemberAttr
@@ -9918,6 +12426,27 @@ convert_sai_next_hop_group_member_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_next_hop_group_member_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_next_hop_group_member_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_next_hop_group_member_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_next_hop_group_member_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::NextHopGroupMemberAttr>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::NextHopGroupMemberConfiguredRole
 convert_sai_next_hop_group_member_configured_role_t_to_proto(
     const sai_int32_t val) {
@@ -9950,6 +12479,27 @@ convert_sai_next_hop_group_member_configured_role_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_next_hop_group_member_configured_role_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_next_hop_group_member_configured_role_t_to_proto(
+        list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_next_hop_group_member_configured_role_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_next_hop_group_member_configured_role_t_to_sai(
+        static_cast<lemming::dataplane::sai::NextHopGroupMemberConfiguredRole>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::NextHopGroupMemberObservedRole
 convert_sai_next_hop_group_member_observed_role_t_to_proto(
     const sai_int32_t val) {
@@ -9980,6 +12530,27 @@ convert_sai_next_hop_group_member_observed_role_t_to_sai(
     default:
       return SAI_NEXT_HOP_GROUP_MEMBER_OBSERVED_ROLE_ACTIVE;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_next_hop_group_member_observed_role_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_next_hop_group_member_observed_role_t_to_proto(
+        list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_next_hop_group_member_observed_role_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_next_hop_group_member_observed_role_t_to_sai(
+        static_cast<lemming::dataplane::sai::NextHopGroupMemberObservedRole>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::NextHopGroupType
@@ -10034,6 +12605,24 @@ sai_next_hop_group_type_t convert_sai_next_hop_group_type_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_next_hop_group_type_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_next_hop_group_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_next_hop_group_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_next_hop_group_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::NextHopGroupType>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::NextHopType convert_sai_next_hop_type_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -10073,6 +12662,24 @@ sai_next_hop_type_t convert_sai_next_hop_type_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_next_hop_type_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_next_hop_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_next_hop_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_next_hop_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::NextHopType>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::ObjectStage convert_sai_object_stage_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -10104,6 +12711,24 @@ sai_object_stage_t convert_sai_object_stage_t_to_sai(
     default:
       return SAI_OBJECT_STAGE_BOTH;
   }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_object_stage_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_object_stage_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_object_stage_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_object_stage_t_to_sai(
+        static_cast<lemming::dataplane::sai::ObjectStage>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::ObjectTypeExtensions
@@ -10143,6 +12768,25 @@ sai_object_type_extensions_t convert_sai_object_type_extensions_t_to_sai(
     default:
       return SAI_OBJECT_TYPE_EXTENSIONS_RANGE_START;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_object_type_extensions_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_object_type_extensions_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_object_type_extensions_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_object_type_extensions_t_to_sai(
+        static_cast<lemming::dataplane::sai::ObjectTypeExtensions>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::ObjectType convert_sai_object_type_t_to_proto(
@@ -10784,6 +13428,24 @@ sai_object_type_t convert_sai_object_type_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_object_type_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_object_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_object_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_object_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::ObjectType>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::OutDropReason convert_sai_out_drop_reason_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -10848,6 +13510,24 @@ sai_out_drop_reason_t convert_sai_out_drop_reason_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_out_drop_reason_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_out_drop_reason_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_out_drop_reason_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_out_drop_reason_t_to_sai(
+        static_cast<lemming::dataplane::sai::OutDropReason>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::OutsegExpMode convert_sai_outseg_exp_mode_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -10873,6 +13553,24 @@ sai_outseg_exp_mode_t convert_sai_outseg_exp_mode_t_to_sai(
     default:
       return SAI_OUTSEG_EXP_MODE_UNIFORM;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_outseg_exp_mode_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_outseg_exp_mode_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_outseg_exp_mode_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_outseg_exp_mode_t_to_sai(
+        static_cast<lemming::dataplane::sai::OutsegExpMode>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::OutsegTtlMode convert_sai_outseg_ttl_mode_t_to_proto(
@@ -10902,6 +13600,24 @@ sai_outseg_ttl_mode_t convert_sai_outseg_ttl_mode_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_outseg_ttl_mode_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_outseg_ttl_mode_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_outseg_ttl_mode_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_outseg_ttl_mode_t_to_sai(
+        static_cast<lemming::dataplane::sai::OutsegTtlMode>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::OutsegType convert_sai_outseg_type_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -10927,6 +13643,24 @@ sai_outseg_type_t convert_sai_outseg_type_t_to_sai(
     default:
       return SAI_OUTSEG_TYPE_PUSH;
   }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_outseg_type_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_outseg_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_outseg_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_outseg_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::OutsegType>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::PacketAction convert_sai_packet_action_t_to_proto(
@@ -10998,6 +13732,24 @@ sai_packet_action_t convert_sai_packet_action_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_packet_action_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_packet_action_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_packet_action_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_packet_action_t_to_sai(
+        static_cast<lemming::dataplane::sai::PacketAction>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::PacketColor convert_sai_packet_color_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -11031,6 +13783,24 @@ sai_packet_color_t convert_sai_packet_color_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_packet_color_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_packet_color_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_packet_color_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_packet_color_t_to_sai(
+        static_cast<lemming::dataplane::sai::PacketColor>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::PacketVlan convert_sai_packet_vlan_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -11062,6 +13832,24 @@ sai_packet_vlan_t convert_sai_packet_vlan_t_to_sai(
     default:
       return SAI_PACKET_VLAN_UNTAG;
   }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_packet_vlan_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_packet_vlan_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_packet_vlan_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_packet_vlan_t_to_sai(
+        static_cast<lemming::dataplane::sai::PacketVlan>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::PolicerAttr convert_sai_policer_attr_t_to_proto(
@@ -11153,6 +13941,24 @@ sai_policer_attr_t convert_sai_policer_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_policer_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_policer_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_policer_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_policer_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::PolicerAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::PolicerColorSource
 convert_sai_policer_color_source_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -11184,6 +13990,25 @@ sai_policer_color_source_t convert_sai_policer_color_source_t_to_sai(
     default:
       return SAI_POLICER_COLOR_SOURCE_BLIND;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_policer_color_source_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_policer_color_source_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_policer_color_source_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_policer_color_source_t_to_sai(
+        static_cast<lemming::dataplane::sai::PolicerColorSource>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::PolicerMode convert_sai_policer_mode_t_to_proto(
@@ -11223,6 +14048,24 @@ sai_policer_mode_t convert_sai_policer_mode_t_to_sai(
     default:
       return SAI_POLICER_MODE_SR_TCM;
   }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_policer_mode_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_policer_mode_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_policer_mode_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_policer_mode_t_to_sai(
+        static_cast<lemming::dataplane::sai::PolicerMode>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::PolicerStat convert_sai_policer_stat_t_to_proto(
@@ -11292,6 +14135,24 @@ sai_policer_stat_t convert_sai_policer_stat_t_to_sai(
     default:
       return SAI_POLICER_STAT_PACKETS;
   }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_policer_stat_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_policer_stat_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_policer_stat_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_policer_stat_t_to_sai(
+        static_cast<lemming::dataplane::sai::PolicerStat>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::PortAttr convert_sai_port_attr_t_to_proto(
@@ -12255,6 +15116,24 @@ sai_port_attr_t convert_sai_port_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_port_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_port_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_port_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_port_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::PortAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::PortAutoNegConfigMode
 convert_sai_port_auto_neg_config_mode_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -12294,6 +15173,27 @@ sai_port_auto_neg_config_mode_t convert_sai_port_auto_neg_config_mode_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_port_auto_neg_config_mode_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_port_auto_neg_config_mode_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_port_auto_neg_config_mode_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_port_auto_neg_config_mode_t_to_sai(
+        static_cast<lemming::dataplane::sai::PortAutoNegConfigMode>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::PortBreakoutModeType
 convert_sai_port_breakout_mode_type_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -12331,6 +15231,27 @@ sai_port_breakout_mode_type_t convert_sai_port_breakout_mode_type_t_to_sai(
     default:
       return SAI_PORT_BREAKOUT_MODE_TYPE_1_LANE;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_port_breakout_mode_type_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_port_breakout_mode_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_port_breakout_mode_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_port_breakout_mode_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::PortBreakoutModeType>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::PortConnectorAttr
@@ -12382,6 +15303,24 @@ sai_port_connector_attr_t convert_sai_port_connector_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_port_connector_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_port_connector_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_port_connector_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_port_connector_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::PortConnectorAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::PortConnectorFailoverMode
 convert_sai_port_connector_failover_mode_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -12414,6 +15353,27 @@ convert_sai_port_connector_failover_mode_t_to_sai(
     default:
       return SAI_PORT_CONNECTOR_FAILOVER_MODE_DISABLE;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_port_connector_failover_mode_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_port_connector_failover_mode_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_port_connector_failover_mode_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_port_connector_failover_mode_t_to_sai(
+        static_cast<lemming::dataplane::sai::PortConnectorFailoverMode>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::PortDualMedia convert_sai_port_dual_media_t_to_proto(
@@ -12459,6 +15419,24 @@ sai_port_dual_media_t convert_sai_port_dual_media_t_to_sai(
     default:
       return SAI_PORT_DUAL_MEDIA_NONE;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_port_dual_media_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_port_dual_media_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_port_dual_media_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_port_dual_media_t_to_sai(
+        static_cast<lemming::dataplane::sai::PortDualMedia>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::PortErrStatus convert_sai_port_err_status_t_to_proto(
@@ -12531,6 +15509,24 @@ sai_port_err_status_t convert_sai_port_err_status_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_port_err_status_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_port_err_status_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_port_err_status_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_port_err_status_t_to_sai(
+        static_cast<lemming::dataplane::sai::PortErrStatus>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::PortFecModeExtended
 convert_sai_port_fec_mode_extended_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -12576,6 +15572,25 @@ sai_port_fec_mode_extended_t convert_sai_port_fec_mode_extended_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_port_fec_mode_extended_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_port_fec_mode_extended_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_port_fec_mode_extended_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_port_fec_mode_extended_t_to_sai(
+        static_cast<lemming::dataplane::sai::PortFecModeExtended>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::PortFecMode convert_sai_port_fec_mode_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -12607,6 +15622,24 @@ sai_port_fec_mode_t convert_sai_port_fec_mode_t_to_sai(
     default:
       return SAI_PORT_FEC_MODE_NONE;
   }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_port_fec_mode_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_port_fec_mode_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_port_fec_mode_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_port_fec_mode_t_to_sai(
+        static_cast<lemming::dataplane::sai::PortFecMode>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::PortFlowControlMode
@@ -12646,6 +15679,25 @@ sai_port_flow_control_mode_t convert_sai_port_flow_control_mode_t_to_sai(
     default:
       return SAI_PORT_FLOW_CONTROL_MODE_DISABLE;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_port_flow_control_mode_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_port_flow_control_mode_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_port_flow_control_mode_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_port_flow_control_mode_t_to_sai(
+        static_cast<lemming::dataplane::sai::PortFlowControlMode>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::PortInterfaceType
@@ -12813,6 +15865,24 @@ sai_port_interface_type_t convert_sai_port_interface_type_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_port_interface_type_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_port_interface_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_port_interface_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_port_interface_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::PortInterfaceType>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::PortInternalLoopbackMode
 convert_sai_port_internal_loopback_mode_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -12845,6 +15915,27 @@ convert_sai_port_internal_loopback_mode_t_to_sai(
     default:
       return SAI_PORT_INTERNAL_LOOPBACK_MODE_NONE;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_port_internal_loopback_mode_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_port_internal_loopback_mode_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_port_internal_loopback_mode_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_port_internal_loopback_mode_t_to_sai(
+        static_cast<lemming::dataplane::sai::PortInternalLoopbackMode>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::PortLinkTrainingFailureStatus
@@ -12895,6 +15986,27 @@ convert_sai_port_link_training_failure_status_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_port_link_training_failure_status_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_port_link_training_failure_status_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_port_link_training_failure_status_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_port_link_training_failure_status_t_to_sai(
+        static_cast<lemming::dataplane::sai::PortLinkTrainingFailureStatus>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::PortLinkTrainingRxStatus
 convert_sai_port_link_training_rx_status_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -12921,6 +16033,27 @@ convert_sai_port_link_training_rx_status_t_to_sai(
     default:
       return SAI_PORT_LINK_TRAINING_RX_STATUS_NOT_TRAINED;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_port_link_training_rx_status_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_port_link_training_rx_status_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_port_link_training_rx_status_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_port_link_training_rx_status_t_to_sai(
+        static_cast<lemming::dataplane::sai::PortLinkTrainingRxStatus>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::PortLoopbackMode
@@ -12962,6 +16095,24 @@ sai_port_loopback_mode_t convert_sai_port_loopback_mode_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_port_loopback_mode_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_port_loopback_mode_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_port_loopback_mode_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_port_loopback_mode_t_to_sai(
+        static_cast<lemming::dataplane::sai::PortLoopbackMode>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::PortMdixModeConfig
 convert_sai_port_mdix_mode_config_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -12995,6 +16146,25 @@ sai_port_mdix_mode_config_t convert_sai_port_mdix_mode_config_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_port_mdix_mode_config_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_port_mdix_mode_config_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_port_mdix_mode_config_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_port_mdix_mode_config_t_to_sai(
+        static_cast<lemming::dataplane::sai::PortMdixModeConfig>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::PortMdixModeStatus
 convert_sai_port_mdix_mode_status_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -13020,6 +16190,25 @@ sai_port_mdix_mode_status_t convert_sai_port_mdix_mode_status_t_to_sai(
     default:
       return SAI_PORT_MDIX_MODE_STATUS_STRAIGHT;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_port_mdix_mode_status_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_port_mdix_mode_status_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_port_mdix_mode_status_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_port_mdix_mode_status_t_to_sai(
+        static_cast<lemming::dataplane::sai::PortMdixModeStatus>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::PortMediaType convert_sai_port_media_type_t_to_proto(
@@ -13067,6 +16256,24 @@ sai_port_media_type_t convert_sai_port_media_type_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_port_media_type_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_port_media_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_port_media_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_port_media_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::PortMediaType>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::PortModuleType convert_sai_port_module_type_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -13098,6 +16305,24 @@ sai_port_module_type_t convert_sai_port_module_type_t_to_sai(
     default:
       return SAI_PORT_MODULE_TYPE_1000BASE_X;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_port_module_type_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_port_module_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_port_module_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_port_module_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::PortModuleType>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::PortOperStatus convert_sai_port_oper_status_t_to_proto(
@@ -13145,6 +16370,24 @@ sai_port_oper_status_t convert_sai_port_oper_status_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_port_oper_status_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_port_oper_status_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_port_oper_status_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_port_oper_status_t_to_sai(
+        static_cast<lemming::dataplane::sai::PortOperStatus>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::PortPoolAttr convert_sai_port_pool_attr_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -13176,6 +16419,24 @@ sai_port_pool_attr_t convert_sai_port_pool_attr_t_to_sai(
     default:
       return SAI_PORT_POOL_ATTR_PORT_ID;
   }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_port_pool_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_port_pool_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_port_pool_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_port_pool_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::PortPoolAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::PortPoolStat convert_sai_port_pool_stat_t_to_proto(
@@ -13332,6 +16593,24 @@ sai_port_pool_stat_t convert_sai_port_pool_stat_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_port_pool_stat_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_port_pool_stat_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_port_pool_stat_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_port_pool_stat_t_to_sai(
+        static_cast<lemming::dataplane::sai::PortPoolStat>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::PortPrbsConfig convert_sai_port_prbs_config_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -13369,6 +16648,24 @@ sai_port_prbs_config_t convert_sai_port_prbs_config_t_to_sai(
     default:
       return SAI_PORT_PRBS_CONFIG_DISABLE;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_port_prbs_config_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_port_prbs_config_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_port_prbs_config_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_port_prbs_config_t_to_sai(
+        static_cast<lemming::dataplane::sai::PortPrbsConfig>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::PortPrbsRxStatus
@@ -13410,6 +16707,24 @@ sai_port_prbs_rx_status_t convert_sai_port_prbs_rx_status_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_port_prbs_rx_status_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_port_prbs_rx_status_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_port_prbs_rx_status_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_port_prbs_rx_status_t_to_sai(
+        static_cast<lemming::dataplane::sai::PortPrbsRxStatus>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::PortPriorityFlowControlMode
 convert_sai_port_priority_flow_control_mode_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -13437,6 +16752,27 @@ convert_sai_port_priority_flow_control_mode_t_to_sai(
     default:
       return SAI_PORT_PRIORITY_FLOW_CONTROL_MODE_COMBINED;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_port_priority_flow_control_mode_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_port_priority_flow_control_mode_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_port_priority_flow_control_mode_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_port_priority_flow_control_mode_t_to_sai(
+        static_cast<lemming::dataplane::sai::PortPriorityFlowControlMode>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::PortPtpMode convert_sai_port_ptp_mode_t_to_proto(
@@ -13470,6 +16806,24 @@ sai_port_ptp_mode_t convert_sai_port_ptp_mode_t_to_sai(
     default:
       return SAI_PORT_PTP_MODE_NONE;
   }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_port_ptp_mode_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_port_ptp_mode_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_port_ptp_mode_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_port_ptp_mode_t_to_sai(
+        static_cast<lemming::dataplane::sai::PortPtpMode>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::PortSerdesAttr convert_sai_port_serdes_attr_t_to_proto(
@@ -13557,6 +16911,24 @@ sai_port_serdes_attr_t convert_sai_port_serdes_attr_t_to_sai(
     default:
       return SAI_PORT_SERDES_ATTR_PORT_ID;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_port_serdes_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_port_serdes_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_port_serdes_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_port_serdes_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::PortSerdesAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::PortStat convert_sai_port_stat_t_to_proto(
@@ -14947,6 +18319,24 @@ sai_port_stat_t convert_sai_port_stat_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_port_stat_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_port_stat_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_port_stat_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_port_stat_t_to_sai(
+        static_cast<lemming::dataplane::sai::PortStat>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::PortType convert_sai_port_type_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -14986,6 +18376,24 @@ sai_port_type_t convert_sai_port_type_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_port_type_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_port_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_port_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_port_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::PortType>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::QosMapAttr convert_sai_qos_map_attr_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -15011,6 +18419,24 @@ sai_qos_map_attr_t convert_sai_qos_map_attr_t_to_sai(
     default:
       return SAI_QOS_MAP_ATTR_TYPE;
   }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_qos_map_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_qos_map_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_qos_map_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_qos_map_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::QosMapAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::QosMapType convert_sai_qos_map_type_t_to_proto(
@@ -15125,6 +18551,24 @@ sai_qos_map_type_t convert_sai_qos_map_type_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_qos_map_type_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_qos_map_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_qos_map_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_qos_map_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::QosMapType>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::QueueAttr convert_sai_queue_attr_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -15218,6 +18662,24 @@ sai_queue_attr_t convert_sai_queue_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_queue_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_queue_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_queue_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_queue_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::QueueAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::QueuePfcContinuousDeadlockState
 convert_sai_queue_pfc_continuous_deadlock_state_t_to_proto(
     const sai_int32_t val) {
@@ -15259,6 +18721,27 @@ convert_sai_queue_pfc_continuous_deadlock_state_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_queue_pfc_continuous_deadlock_state_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_queue_pfc_continuous_deadlock_state_t_to_proto(
+        list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_queue_pfc_continuous_deadlock_state_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_queue_pfc_continuous_deadlock_state_t_to_sai(
+        static_cast<lemming::dataplane::sai::QueuePfcContinuousDeadlockState>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::QueuePfcDeadlockEventType
 convert_sai_queue_pfc_deadlock_event_type_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -15285,6 +18768,27 @@ convert_sai_queue_pfc_deadlock_event_type_t_to_sai(
     default:
       return SAI_QUEUE_PFC_DEADLOCK_EVENT_TYPE_DETECTED;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_queue_pfc_deadlock_event_type_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_queue_pfc_deadlock_event_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_queue_pfc_deadlock_event_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_queue_pfc_deadlock_event_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::QueuePfcDeadlockEventType>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::QueueStat convert_sai_queue_stat_t_to_proto(
@@ -15536,6 +19040,24 @@ sai_queue_stat_t convert_sai_queue_stat_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_queue_stat_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_queue_stat_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_queue_stat_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_queue_stat_t_to_sai(
+        static_cast<lemming::dataplane::sai::QueueStat>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::QueueType convert_sai_queue_type_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -15593,6 +19115,24 @@ sai_queue_type_t convert_sai_queue_type_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_queue_type_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_queue_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_queue_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_queue_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::QueueType>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::RouteEntryAttr convert_sai_route_entry_attr_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -15642,6 +19182,24 @@ sai_route_entry_attr_t convert_sai_route_entry_attr_t_to_sai(
     default:
       return SAI_ROUTE_ENTRY_ATTR_PACKET_ACTION;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_route_entry_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_route_entry_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_route_entry_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_route_entry_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::RouteEntryAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::RouterInterfaceAttr
@@ -15789,6 +19347,25 @@ sai_router_interface_attr_t convert_sai_router_interface_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_router_interface_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_router_interface_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_router_interface_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_router_interface_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::RouterInterfaceAttr>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::RouterInterfaceStat
 convert_sai_router_interface_stat_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -15852,6 +19429,25 @@ sai_router_interface_stat_t convert_sai_router_interface_stat_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_router_interface_stat_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_router_interface_stat_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_router_interface_stat_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_router_interface_stat_t_to_sai(
+        static_cast<lemming::dataplane::sai::RouterInterfaceStat>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::RouterInterfaceType
 convert_sai_router_interface_type_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -15909,6 +19505,25 @@ sai_router_interface_type_t convert_sai_router_interface_type_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_router_interface_type_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_router_interface_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_router_interface_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_router_interface_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::RouterInterfaceType>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::RpfGroupAttr convert_sai_rpf_group_attr_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -15936,6 +19551,24 @@ sai_rpf_group_attr_t convert_sai_rpf_group_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_rpf_group_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_rpf_group_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_rpf_group_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_rpf_group_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::RpfGroupAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::RpfGroupMemberAttr
 convert_sai_rpf_group_member_attr_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -15961,6 +19594,25 @@ sai_rpf_group_member_attr_t convert_sai_rpf_group_member_attr_t_to_sai(
     default:
       return SAI_RPF_GROUP_MEMBER_ATTR_RPF_GROUP_ID;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_rpf_group_member_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_rpf_group_member_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_rpf_group_member_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_rpf_group_member_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::RpfGroupMemberAttr>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::SamplepacketAttr
@@ -15996,6 +19648,24 @@ sai_samplepacket_attr_t convert_sai_samplepacket_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_samplepacket_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_samplepacket_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_samplepacket_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_samplepacket_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::SamplepacketAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::SamplepacketMode
 convert_sai_samplepacket_mode_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -16023,6 +19693,24 @@ sai_samplepacket_mode_t convert_sai_samplepacket_mode_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_samplepacket_mode_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_samplepacket_mode_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_samplepacket_mode_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_samplepacket_mode_t_to_sai(
+        static_cast<lemming::dataplane::sai::SamplepacketMode>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::SamplepacketType
 convert_sai_samplepacket_type_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -16048,6 +19736,24 @@ sai_samplepacket_type_t convert_sai_samplepacket_type_t_to_sai(
     default:
       return SAI_SAMPLEPACKET_TYPE_SLOW_PATH;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_samplepacket_type_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_samplepacket_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_samplepacket_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_samplepacket_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::SamplepacketType>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::SchedulerAttr convert_sai_scheduler_attr_t_to_proto(
@@ -16107,6 +19813,24 @@ sai_scheduler_attr_t convert_sai_scheduler_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_scheduler_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_scheduler_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_scheduler_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_scheduler_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::SchedulerAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::SchedulerGroupAttr
 convert_sai_scheduler_group_attr_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -16164,6 +19888,25 @@ sai_scheduler_group_attr_t convert_sai_scheduler_group_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_scheduler_group_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_scheduler_group_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_scheduler_group_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_scheduler_group_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::SchedulerGroupAttr>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::SchedulingType convert_sai_scheduling_type_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -16197,6 +19940,24 @@ sai_scheduling_type_t convert_sai_scheduling_type_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_scheduling_type_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_scheduling_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_scheduling_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_scheduling_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::SchedulingType>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::Srv6SidlistAttr
 convert_sai_srv6_sidlist_attr_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -16228,6 +19989,24 @@ sai_srv6_sidlist_attr_t convert_sai_srv6_sidlist_attr_t_to_sai(
     default:
       return SAI_SRV6_SIDLIST_ATTR_TYPE;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_srv6_sidlist_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_srv6_sidlist_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_srv6_sidlist_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_srv6_sidlist_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::Srv6SidlistAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::Srv6SidlistType
@@ -16275,6 +20054,24 @@ sai_srv6_sidlist_type_t convert_sai_srv6_sidlist_type_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_srv6_sidlist_type_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_srv6_sidlist_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_srv6_sidlist_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_srv6_sidlist_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::Srv6SidlistType>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::StatsMode convert_sai_stats_mode_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -16320,6 +20117,24 @@ sai_stats_mode_t convert_sai_stats_mode_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_stats_mode_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_stats_mode_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_stats_mode_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_stats_mode_t_to_sai(
+        static_cast<lemming::dataplane::sai::StatsMode>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::StpAttr convert_sai_stp_attr_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -16351,6 +20166,24 @@ sai_stp_attr_t convert_sai_stp_attr_t_to_sai(
     default:
       return SAI_STP_ATTR_VLAN_LIST;
   }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_stp_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_stp_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_stp_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_stp_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::StpAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::StpPortAttr convert_sai_stp_port_attr_t_to_proto(
@@ -16386,6 +20219,24 @@ sai_stp_port_attr_t convert_sai_stp_port_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_stp_port_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_stp_port_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_stp_port_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_stp_port_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::StpPortAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::StpPortState convert_sai_stp_port_state_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -16419,6 +20270,24 @@ sai_stp_port_state_t convert_sai_stp_port_state_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_stp_port_state_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_stp_port_state_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_stp_port_state_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_stp_port_state_t_to_sai(
+        static_cast<lemming::dataplane::sai::StpPortState>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::SwitchAttrExtensions
 convert_sai_switch_attr_extensions_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -16444,6 +20313,25 @@ sai_switch_attr_extensions_t convert_sai_switch_attr_extensions_t_to_sai(
     default:
       return SAI_SWITCH_ATTR_EXTENSIONS_RANGE_START;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_switch_attr_extensions_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_switch_attr_extensions_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_switch_attr_extensions_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_switch_attr_extensions_t_to_sai(
+        static_cast<lemming::dataplane::sai::SwitchAttrExtensions>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::SwitchAttr convert_sai_switch_attr_t_to_proto(
@@ -17763,6 +21651,24 @@ sai_switch_attr_t convert_sai_switch_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_switch_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_switch_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_switch_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_switch_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::SwitchAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::SwitchFailoverConfigMode
 convert_sai_switch_failover_config_mode_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -17789,6 +21695,27 @@ convert_sai_switch_failover_config_mode_t_to_sai(
     default:
       return SAI_SWITCH_FAILOVER_CONFIG_MODE_NO_HITLESS;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_switch_failover_config_mode_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_switch_failover_config_mode_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_switch_failover_config_mode_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_switch_failover_config_mode_t_to_sai(
+        static_cast<lemming::dataplane::sai::SwitchFailoverConfigMode>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::SwitchFirmwareLoadMethod
@@ -17825,6 +21752,27 @@ convert_sai_switch_firmware_load_method_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_switch_firmware_load_method_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_switch_firmware_load_method_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_switch_firmware_load_method_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_switch_firmware_load_method_t_to_sai(
+        static_cast<lemming::dataplane::sai::SwitchFirmwareLoadMethod>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::SwitchFirmwareLoadType
 convert_sai_switch_firmware_load_type_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -17856,6 +21804,27 @@ sai_switch_firmware_load_type_t convert_sai_switch_firmware_load_type_t_to_sai(
     default:
       return SAI_SWITCH_FIRMWARE_LOAD_TYPE_SKIP;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_switch_firmware_load_type_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_switch_firmware_load_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_switch_firmware_load_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_switch_firmware_load_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::SwitchFirmwareLoadType>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::SwitchHardwareAccessBus
@@ -17890,6 +21859,27 @@ convert_sai_switch_hardware_access_bus_t_to_sai(
     default:
       return SAI_SWITCH_HARDWARE_ACCESS_BUS_MDIO;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_switch_hardware_access_bus_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_switch_hardware_access_bus_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_switch_hardware_access_bus_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_switch_hardware_access_bus_t_to_sai(
+        static_cast<lemming::dataplane::sai::SwitchHardwareAccessBus>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::SwitchMcastSnoopingCapability
@@ -17934,6 +21924,27 @@ convert_sai_switch_mcast_snooping_capability_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_switch_mcast_snooping_capability_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_switch_mcast_snooping_capability_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_switch_mcast_snooping_capability_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_switch_mcast_snooping_capability_t_to_sai(
+        static_cast<lemming::dataplane::sai::SwitchMcastSnoopingCapability>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::SwitchOperStatus
 convert_sai_switch_oper_status_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -17973,6 +21984,24 @@ sai_switch_oper_status_t convert_sai_switch_oper_status_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_switch_oper_status_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_switch_oper_status_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_switch_oper_status_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_switch_oper_status_t_to_sai(
+        static_cast<lemming::dataplane::sai::SwitchOperStatus>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::SwitchRestartType
 convert_sai_switch_restart_type_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -18004,6 +22033,24 @@ sai_switch_restart_type_t convert_sai_switch_restart_type_t_to_sai(
     default:
       return SAI_SWITCH_RESTART_TYPE_NONE;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_switch_restart_type_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_switch_restart_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_switch_restart_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_switch_restart_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::SwitchRestartType>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::SwitchStat convert_sai_switch_stat_t_to_proto(
@@ -18188,6 +22235,24 @@ sai_switch_stat_t convert_sai_switch_stat_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_switch_stat_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_switch_stat_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_switch_stat_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_switch_stat_t_to_sai(
+        static_cast<lemming::dataplane::sai::SwitchStat>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::SwitchSwitchingMode
 convert_sai_switch_switching_mode_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -18213,6 +22278,25 @@ sai_switch_switching_mode_t convert_sai_switch_switching_mode_t_to_sai(
     default:
       return SAI_SWITCH_SWITCHING_MODE_CUT_THROUGH;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_switch_switching_mode_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_switch_switching_mode_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_switch_switching_mode_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_switch_switching_mode_t_to_sai(
+        static_cast<lemming::dataplane::sai::SwitchSwitchingMode>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::SwitchTunnelAttr
@@ -18316,6 +22400,24 @@ sai_switch_tunnel_attr_t convert_sai_switch_tunnel_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_switch_tunnel_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_switch_tunnel_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_switch_tunnel_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_switch_tunnel_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::SwitchTunnelAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::SwitchType convert_sai_switch_type_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -18353,6 +22455,24 @@ sai_switch_type_t convert_sai_switch_type_t_to_sai(
     default:
       return SAI_SWITCH_TYPE_NPU;
   }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_switch_type_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_switch_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_switch_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_switch_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::SwitchType>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::SystemPortAttr convert_sai_system_port_attr_t_to_proto(
@@ -18412,6 +22532,24 @@ sai_system_port_attr_t convert_sai_system_port_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_system_port_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_system_port_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_system_port_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_system_port_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::SystemPortAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::SystemPortType convert_sai_system_port_type_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -18437,6 +22575,24 @@ sai_system_port_type_t convert_sai_system_port_type_t_to_sai(
     default:
       return SAI_SYSTEM_PORT_TYPE_LOCAL;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_system_port_type_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_system_port_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_system_port_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_system_port_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::SystemPortType>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::TableBitmapClassificationEntryAction
@@ -18471,6 +22627,29 @@ convert_sai_table_bitmap_classification_entry_action_t_to_sai(
     default:
       return SAI_TABLE_BITMAP_CLASSIFICATION_ENTRY_ACTION_SET_METADATA;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_table_bitmap_classification_entry_action_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_table_bitmap_classification_entry_action_t_to_proto(
+            list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_table_bitmap_classification_entry_action_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_table_bitmap_classification_entry_action_t_to_sai(
+        static_cast<
+            lemming::dataplane::sai::TableBitmapClassificationEntryAction>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::TableBitmapClassificationEntryAttr
@@ -18522,6 +22701,29 @@ convert_sai_table_bitmap_classification_entry_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_table_bitmap_classification_entry_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_table_bitmap_classification_entry_attr_t_to_proto(
+            list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_table_bitmap_classification_entry_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_table_bitmap_classification_entry_attr_t_to_sai(
+        static_cast<
+            lemming::dataplane::sai::TableBitmapClassificationEntryAttr>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::TableBitmapClassificationEntryStat
 convert_sai_table_bitmap_classification_entry_stat_t_to_proto(
     const sai_int32_t val) {
@@ -18554,6 +22756,29 @@ convert_sai_table_bitmap_classification_entry_stat_t_to_sai(
     default:
       return SAI_TABLE_BITMAP_CLASSIFICATION_ENTRY_STAT_HIT_PACKETS;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_table_bitmap_classification_entry_stat_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_table_bitmap_classification_entry_stat_t_to_proto(
+            list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_table_bitmap_classification_entry_stat_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_table_bitmap_classification_entry_stat_t_to_sai(
+        static_cast<
+            lemming::dataplane::sai::TableBitmapClassificationEntryStat>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::TableBitmapRouterEntryAction
@@ -18602,6 +22827,27 @@ convert_sai_table_bitmap_router_entry_action_t_to_sai(
     default:
       return SAI_TABLE_BITMAP_ROUTER_ENTRY_ACTION_TO_NEXTHOP;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_table_bitmap_router_entry_action_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_table_bitmap_router_entry_action_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_table_bitmap_router_entry_action_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_table_bitmap_router_entry_action_t_to_sai(
+        static_cast<lemming::dataplane::sai::TableBitmapRouterEntryAction>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::TableBitmapRouterEntryAttr
@@ -18682,6 +22928,27 @@ convert_sai_table_bitmap_router_entry_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_table_bitmap_router_entry_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_table_bitmap_router_entry_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_table_bitmap_router_entry_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_table_bitmap_router_entry_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::TableBitmapRouterEntryAttr>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::TableBitmapRouterEntryStat
 convert_sai_table_bitmap_router_entry_stat_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -18712,6 +22979,27 @@ convert_sai_table_bitmap_router_entry_stat_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_table_bitmap_router_entry_stat_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_table_bitmap_router_entry_stat_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_table_bitmap_router_entry_stat_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_table_bitmap_router_entry_stat_t_to_sai(
+        static_cast<lemming::dataplane::sai::TableBitmapRouterEntryStat>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::TableMetaTunnelEntryAction
 convert_sai_table_meta_tunnel_entry_action_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -18740,6 +23028,27 @@ convert_sai_table_meta_tunnel_entry_action_t_to_sai(
     default:
       return SAI_TABLE_META_TUNNEL_ENTRY_ACTION_TUNNEL_ENCAP;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_table_meta_tunnel_entry_action_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_table_meta_tunnel_entry_action_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_table_meta_tunnel_entry_action_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_table_meta_tunnel_entry_action_t_to_sai(
+        static_cast<lemming::dataplane::sai::TableMetaTunnelEntryAction>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::TableMetaTunnelEntryAttr
@@ -18788,6 +23097,27 @@ convert_sai_table_meta_tunnel_entry_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_table_meta_tunnel_entry_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_table_meta_tunnel_entry_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_table_meta_tunnel_entry_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_table_meta_tunnel_entry_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::TableMetaTunnelEntryAttr>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::TableMetaTunnelEntryStat
 convert_sai_table_meta_tunnel_entry_stat_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -18814,6 +23144,27 @@ convert_sai_table_meta_tunnel_entry_stat_t_to_sai(
     default:
       return SAI_TABLE_META_TUNNEL_ENTRY_STAT_HIT_PACKETS;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_table_meta_tunnel_entry_stat_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_table_meta_tunnel_entry_stat_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_table_meta_tunnel_entry_stat_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_table_meta_tunnel_entry_stat_t_to_sai(
+        static_cast<lemming::dataplane::sai::TableMetaTunnelEntryStat>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::TamAttr convert_sai_tam_attr_t_to_proto(
@@ -18853,6 +23204,24 @@ sai_tam_attr_t convert_sai_tam_attr_t_to_sai(
     default:
       return SAI_TAM_ATTR_TELEMETRY_OBJECTS_LIST;
   }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_tam_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_tam_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_tam_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_tam_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::TamAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::TamBindPointType
@@ -18912,6 +23281,24 @@ sai_tam_bind_point_type_t convert_sai_tam_bind_point_type_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_tam_bind_point_type_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_tam_bind_point_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_tam_bind_point_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_tam_bind_point_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::TamBindPointType>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::TamCollectorAttr
 convert_sai_tam_collector_attr_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -18969,6 +23356,24 @@ sai_tam_collector_attr_t convert_sai_tam_collector_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_tam_collector_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_tam_collector_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_tam_collector_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_tam_collector_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::TamCollectorAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::TamEventActionAttr
 convert_sai_tam_event_action_attr_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -18994,6 +23399,25 @@ sai_tam_event_action_attr_t convert_sai_tam_event_action_attr_t_to_sai(
     default:
       return SAI_TAM_EVENT_ACTION_ATTR_REPORT_TYPE;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_tam_event_action_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_tam_event_action_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_tam_event_action_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_tam_event_action_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::TamEventActionAttr>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::TamEventAttr convert_sai_tam_event_attr_t_to_proto(
@@ -19039,6 +23463,24 @@ sai_tam_event_attr_t convert_sai_tam_event_attr_t_to_sai(
     default:
       return SAI_TAM_EVENT_ATTR_TYPE;
   }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_tam_event_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_tam_event_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_tam_event_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_tam_event_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::TamEventAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::TamEventThresholdAttr
@@ -19090,6 +23532,27 @@ sai_tam_event_threshold_attr_t convert_sai_tam_event_threshold_attr_t_to_sai(
     default:
       return SAI_TAM_EVENT_THRESHOLD_ATTR_HIGH_WATERMARK;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_tam_event_threshold_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_tam_event_threshold_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_tam_event_threshold_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_tam_event_threshold_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::TamEventThresholdAttr>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::TamEventThresholdUnit
@@ -19147,6 +23610,27 @@ sai_tam_event_threshold_unit_t convert_sai_tam_event_threshold_unit_t_to_sai(
     default:
       return SAI_TAM_EVENT_THRESHOLD_UNIT_NANOSEC;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_tam_event_threshold_unit_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_tam_event_threshold_unit_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_tam_event_threshold_unit_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_tam_event_threshold_unit_t_to_sai(
+        static_cast<lemming::dataplane::sai::TamEventThresholdUnit>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::TamEventType convert_sai_tam_event_type_t_to_proto(
@@ -19222,6 +23706,24 @@ sai_tam_event_type_t convert_sai_tam_event_type_t_to_sai(
     default:
       return SAI_TAM_EVENT_TYPE_FLOW_STATE;
   }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_tam_event_type_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_tam_event_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_tam_event_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_tam_event_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::TamEventType>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::TamIntAttr convert_sai_tam_int_attr_t_to_proto(
@@ -19395,6 +23897,24 @@ sai_tam_int_attr_t convert_sai_tam_int_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_tam_int_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_tam_int_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_tam_int_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_tam_int_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::TamIntAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::TamIntPresenceType
 convert_sai_tam_int_presence_type_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -19432,6 +23952,25 @@ sai_tam_int_presence_type_t convert_sai_tam_int_presence_type_t_to_sai(
     default:
       return SAI_TAM_INT_PRESENCE_TYPE_UNDEFINED;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_tam_int_presence_type_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_tam_int_presence_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_tam_int_presence_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_tam_int_presence_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::TamIntPresenceType>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::TamIntType convert_sai_tam_int_type_t_to_proto(
@@ -19491,6 +24030,24 @@ sai_tam_int_type_t convert_sai_tam_int_type_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_tam_int_type_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_tam_int_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_tam_int_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_tam_int_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::TamIntType>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::TamMathFuncAttr
 convert_sai_tam_math_func_attr_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -19510,6 +24067,24 @@ sai_tam_math_func_attr_t convert_sai_tam_math_func_attr_t_to_sai(
     default:
       return SAI_TAM_MATH_FUNC_ATTR_TAM_TEL_MATH_FUNC_TYPE;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_tam_math_func_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_tam_math_func_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_tam_math_func_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_tam_math_func_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::TamMathFuncAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::TamReportAttr convert_sai_tam_report_attr_t_to_proto(
@@ -19575,6 +24150,24 @@ sai_tam_report_attr_t convert_sai_tam_report_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_tam_report_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_tam_report_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_tam_report_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_tam_report_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::TamReportAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::TamReportMode convert_sai_tam_report_mode_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -19600,6 +24193,24 @@ sai_tam_report_mode_t convert_sai_tam_report_mode_t_to_sai(
     default:
       return SAI_TAM_REPORT_MODE_ALL;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_tam_report_mode_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_tam_report_mode_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_tam_report_mode_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_tam_report_mode_t_to_sai(
+        static_cast<lemming::dataplane::sai::TamReportMode>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::TamReportType convert_sai_tam_report_type_t_to_proto(
@@ -19665,6 +24276,24 @@ sai_tam_report_type_t convert_sai_tam_report_type_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_tam_report_type_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_tam_report_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_tam_report_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_tam_report_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::TamReportType>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::TamReportingUnit
 convert_sai_tam_reporting_unit_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -19702,6 +24331,24 @@ sai_tam_reporting_unit_t convert_sai_tam_reporting_unit_t_to_sai(
     default:
       return SAI_TAM_REPORTING_UNIT_SEC;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_tam_reporting_unit_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_tam_reporting_unit_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_tam_reporting_unit_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_tam_reporting_unit_t_to_sai(
+        static_cast<lemming::dataplane::sai::TamReportingUnit>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::TamTelMathFuncType
@@ -19753,6 +24400,25 @@ sai_tam_tel_math_func_type_t convert_sai_tam_tel_math_func_type_t_to_sai(
     default:
       return SAI_TAM_TEL_MATH_FUNC_TYPE_NONE;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_tam_tel_math_func_type_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_tam_tel_math_func_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_tam_tel_math_func_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_tam_tel_math_func_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::TamTelMathFuncType>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::TamTelTypeAttr
@@ -19879,6 +24545,24 @@ sai_tam_tel_type_attr_t convert_sai_tam_tel_type_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_tam_tel_type_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_tam_tel_type_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_tam_tel_type_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_tam_tel_type_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::TamTelTypeAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::TamTelemetryAttr
 convert_sai_tam_telemetry_attr_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -19916,6 +24600,24 @@ sai_tam_telemetry_attr_t convert_sai_tam_telemetry_attr_t_to_sai(
     default:
       return SAI_TAM_TELEMETRY_ATTR_TAM_TYPE_LIST;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_tam_telemetry_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_tam_telemetry_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_tam_telemetry_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_tam_telemetry_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::TamTelemetryAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::TamTelemetryType
@@ -19963,6 +24665,24 @@ sai_tam_telemetry_type_t convert_sai_tam_telemetry_type_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_tam_telemetry_type_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_tam_telemetry_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_tam_telemetry_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_tam_telemetry_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::TamTelemetryType>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::TamTransportAttr
 convert_sai_tam_transport_attr_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -20008,6 +24728,24 @@ sai_tam_transport_attr_t convert_sai_tam_transport_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_tam_transport_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_tam_transport_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_tam_transport_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_tam_transport_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::TamTransportAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::TamTransportAuthType
 convert_sai_tam_transport_auth_type_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -20039,6 +24777,27 @@ sai_tam_transport_auth_type_t convert_sai_tam_transport_auth_type_t_to_sai(
     default:
       return SAI_TAM_TRANSPORT_AUTH_TYPE_NONE;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_tam_transport_auth_type_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_tam_transport_auth_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_tam_transport_auth_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_tam_transport_auth_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::TamTransportAuthType>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::TamTransportType
@@ -20086,6 +24845,24 @@ sai_tam_transport_type_t convert_sai_tam_transport_type_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_tam_transport_type_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_tam_transport_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_tam_transport_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_tam_transport_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::TamTransportType>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::TlvType convert_sai_tlv_type_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -20123,6 +24900,24 @@ sai_tlv_type_t convert_sai_tlv_type_t_to_sai(
     default:
       return SAI_TLV_TYPE_INGRESS;
   }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_tlv_type_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_tlv_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_tlv_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_tlv_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::TlvType>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::TunnelAttr convert_sai_tunnel_attr_t_to_proto(
@@ -20324,6 +25119,24 @@ sai_tunnel_attr_t convert_sai_tunnel_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_tunnel_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_tunnel_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_tunnel_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_tunnel_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::TunnelAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::TunnelDecapEcnMode
 convert_sai_tunnel_decap_ecn_mode_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -20357,6 +25170,25 @@ sai_tunnel_decap_ecn_mode_t convert_sai_tunnel_decap_ecn_mode_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_tunnel_decap_ecn_mode_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_tunnel_decap_ecn_mode_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_tunnel_decap_ecn_mode_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_tunnel_decap_ecn_mode_t_to_sai(
+        static_cast<lemming::dataplane::sai::TunnelDecapEcnMode>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::TunnelDscpMode convert_sai_tunnel_dscp_mode_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -20382,6 +25214,24 @@ sai_tunnel_dscp_mode_t convert_sai_tunnel_dscp_mode_t_to_sai(
     default:
       return SAI_TUNNEL_DSCP_MODE_UNIFORM_MODEL;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_tunnel_dscp_mode_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_tunnel_dscp_mode_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_tunnel_dscp_mode_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_tunnel_dscp_mode_t_to_sai(
+        static_cast<lemming::dataplane::sai::TunnelDscpMode>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::TunnelEncapEcnMode
@@ -20411,6 +25261,25 @@ sai_tunnel_encap_ecn_mode_t convert_sai_tunnel_encap_ecn_mode_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_tunnel_encap_ecn_mode_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_tunnel_encap_ecn_mode_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_tunnel_encap_ecn_mode_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_tunnel_encap_ecn_mode_t_to_sai(
+        static_cast<lemming::dataplane::sai::TunnelEncapEcnMode>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::TunnelMapAttr convert_sai_tunnel_map_attr_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -20436,6 +25305,24 @@ sai_tunnel_map_attr_t convert_sai_tunnel_map_attr_t_to_sai(
     default:
       return SAI_TUNNEL_MAP_ATTR_TYPE;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_tunnel_map_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_tunnel_map_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_tunnel_map_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_tunnel_map_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::TunnelMapAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::TunnelMapEntryAttr
@@ -20551,6 +25438,25 @@ sai_tunnel_map_entry_attr_t convert_sai_tunnel_map_entry_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_tunnel_map_entry_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_tunnel_map_entry_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_tunnel_map_entry_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_tunnel_map_entry_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::TunnelMapEntryAttr>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::TunnelMapType convert_sai_tunnel_map_type_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -20644,6 +25550,24 @@ sai_tunnel_map_type_t convert_sai_tunnel_map_type_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_tunnel_map_type_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_tunnel_map_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_tunnel_map_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_tunnel_map_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::TunnelMapType>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::TunnelPeerMode convert_sai_tunnel_peer_mode_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -20669,6 +25593,24 @@ sai_tunnel_peer_mode_t convert_sai_tunnel_peer_mode_t_to_sai(
     default:
       return SAI_TUNNEL_PEER_MODE_P2P;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_tunnel_peer_mode_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_tunnel_peer_mode_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_tunnel_peer_mode_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_tunnel_peer_mode_t_to_sai(
+        static_cast<lemming::dataplane::sai::TunnelPeerMode>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::TunnelStat convert_sai_tunnel_stat_t_to_proto(
@@ -20708,6 +25650,24 @@ sai_tunnel_stat_t convert_sai_tunnel_stat_t_to_sai(
     default:
       return SAI_TUNNEL_STAT_IN_OCTETS;
   }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_tunnel_stat_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_tunnel_stat_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_tunnel_stat_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_tunnel_stat_t_to_sai(
+        static_cast<lemming::dataplane::sai::TunnelStat>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::TunnelTermTableEntryAttr
@@ -20789,6 +25749,27 @@ convert_sai_tunnel_term_table_entry_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_tunnel_term_table_entry_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_tunnel_term_table_entry_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_tunnel_term_table_entry_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_tunnel_term_table_entry_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::TunnelTermTableEntryAttr>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::TunnelTermTableEntryType
 convert_sai_tunnel_term_table_entry_type_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -20829,6 +25810,27 @@ convert_sai_tunnel_term_table_entry_type_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_tunnel_term_table_entry_type_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_tunnel_term_table_entry_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_tunnel_term_table_entry_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_tunnel_term_table_entry_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::TunnelTermTableEntryType>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::TunnelTtlMode convert_sai_tunnel_ttl_mode_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -20854,6 +25856,24 @@ sai_tunnel_ttl_mode_t convert_sai_tunnel_ttl_mode_t_to_sai(
     default:
       return SAI_TUNNEL_TTL_MODE_UNIFORM_MODEL;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_tunnel_ttl_mode_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_tunnel_ttl_mode_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_tunnel_ttl_mode_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_tunnel_ttl_mode_t_to_sai(
+        static_cast<lemming::dataplane::sai::TunnelTtlMode>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::TunnelType convert_sai_tunnel_type_t_to_proto(
@@ -20925,6 +25945,24 @@ sai_tunnel_type_t convert_sai_tunnel_type_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_tunnel_type_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_tunnel_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_tunnel_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_tunnel_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::TunnelType>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::TunnelVxlanUdpSportMode
 convert_sai_tunnel_vxlan_udp_sport_mode_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -20951,6 +25989,27 @@ convert_sai_tunnel_vxlan_udp_sport_mode_t_to_sai(
     default:
       return SAI_TUNNEL_VXLAN_UDP_SPORT_MODE_USER_DEFINED;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_tunnel_vxlan_udp_sport_mode_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_tunnel_vxlan_udp_sport_mode_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_tunnel_vxlan_udp_sport_mode_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_tunnel_vxlan_udp_sport_mode_t_to_sai(
+        static_cast<lemming::dataplane::sai::TunnelVxlanUdpSportMode>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::UdfAttr convert_sai_udf_attr_t_to_proto(
@@ -20998,6 +26057,24 @@ sai_udf_attr_t convert_sai_udf_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_udf_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_udf_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_udf_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_udf_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::UdfAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::UdfBase convert_sai_udf_base_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -21029,6 +26106,24 @@ sai_udf_base_t convert_sai_udf_base_t_to_sai(
     default:
       return SAI_UDF_BASE_L2;
   }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_udf_base_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_udf_base_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_udf_base_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_udf_base_t_to_sai(
+        static_cast<lemming::dataplane::sai::UdfBase>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::UdfGroupAttr convert_sai_udf_group_attr_t_to_proto(
@@ -21064,6 +26159,24 @@ sai_udf_group_attr_t convert_sai_udf_group_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_udf_group_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_udf_group_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_udf_group_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_udf_group_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::UdfGroupAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::UdfGroupType convert_sai_udf_group_type_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -21095,6 +26208,24 @@ sai_udf_group_type_t convert_sai_udf_group_type_t_to_sai(
     default:
       return SAI_UDF_GROUP_TYPE_START;
   }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_udf_group_type_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_udf_group_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_udf_group_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_udf_group_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::UdfGroupType>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::UdfMatchAttr convert_sai_udf_match_attr_t_to_proto(
@@ -21134,6 +26265,24 @@ sai_udf_match_attr_t convert_sai_udf_match_attr_t_to_sai(
     default:
       return SAI_UDF_MATCH_ATTR_L2_TYPE;
   }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_udf_match_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_udf_match_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_udf_match_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_udf_match_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::UdfMatchAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::VirtualRouterAttr
@@ -21197,6 +26346,24 @@ sai_virtual_router_attr_t convert_sai_virtual_router_attr_t_to_sai(
     default:
       return SAI_VIRTUAL_ROUTER_ATTR_ADMIN_V4_STATE;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_virtual_router_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_virtual_router_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_virtual_router_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_virtual_router_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::VirtualRouterAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::VlanAttr convert_sai_vlan_attr_t_to_proto(
@@ -21355,6 +26522,24 @@ sai_vlan_attr_t convert_sai_vlan_attr_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_vlan_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_vlan_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_vlan_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_vlan_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::VlanAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::VlanFloodControlType
 convert_sai_vlan_flood_control_type_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -21392,6 +26577,27 @@ sai_vlan_flood_control_type_t convert_sai_vlan_flood_control_type_t_to_sai(
     default:
       return SAI_VLAN_FLOOD_CONTROL_TYPE_ALL;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_vlan_flood_control_type_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_vlan_flood_control_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_vlan_flood_control_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_vlan_flood_control_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::VlanFloodControlType>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::VlanMcastLookupKeyType
@@ -21434,6 +26640,27 @@ convert_sai_vlan_mcast_lookup_key_type_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int>
+convert_list_sai_vlan_mcast_lookup_key_type_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(
+        convert_sai_vlan_mcast_lookup_key_type_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_vlan_mcast_lookup_key_type_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_vlan_mcast_lookup_key_type_t_to_sai(
+        static_cast<lemming::dataplane::sai::VlanMcastLookupKeyType>(
+            proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::VlanMemberAttr convert_sai_vlan_member_attr_t_to_proto(
     const sai_int32_t val) {
   switch (val) {
@@ -21465,6 +26692,24 @@ sai_vlan_member_attr_t convert_sai_vlan_member_attr_t_to_sai(
     default:
       return SAI_VLAN_MEMBER_ATTR_VLAN_ID;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_vlan_member_attr_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_vlan_member_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_vlan_member_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_vlan_member_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::VlanMemberAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::VlanStat convert_sai_vlan_stat_t_to_proto(
@@ -21566,6 +26811,24 @@ sai_vlan_stat_t convert_sai_vlan_stat_t_to_sai(
   }
 }
 
+google::protobuf::RepeatedField<int> convert_list_sai_vlan_stat_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_vlan_stat_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_vlan_stat_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_vlan_stat_t_to_sai(
+        static_cast<lemming::dataplane::sai::VlanStat>(proto_list[i]));
+  }
+  *count = proto_list.size();
+}
+
 lemming::dataplane::sai::VlanTaggingMode
 convert_sai_vlan_tagging_mode_t_to_proto(const sai_int32_t val) {
   switch (val) {
@@ -21597,6 +26860,24 @@ sai_vlan_tagging_mode_t convert_sai_vlan_tagging_mode_t_to_sai(
     default:
       return SAI_VLAN_TAGGING_MODE_UNTAGGED;
   }
+}
+
+google::protobuf::RepeatedField<int>
+convert_list_sai_vlan_tagging_mode_t_to_proto(const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_vlan_tagging_mode_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_vlan_tagging_mode_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_vlan_tagging_mode_t_to_sai(
+        static_cast<lemming::dataplane::sai::VlanTaggingMode>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }
 
 lemming::dataplane::sai::WredAttr convert_sai_wred_attr_t_to_proto(
@@ -21769,4 +27050,22 @@ sai_wred_attr_t convert_sai_wred_attr_t_to_sai(
     default:
       return SAI_WRED_ATTR_GREEN_ENABLE;
   }
+}
+
+google::protobuf::RepeatedField<int> convert_list_sai_wred_attr_t_to_proto(
+    const sai_s32_list_t &list) {
+  google::protobuf::RepeatedField<int> proto_list;
+  for (int i = 0; i < list.count; i++) {
+    proto_list.Add(convert_sai_wred_attr_t_to_proto(list.list[i]));
+  }
+  return proto_list;
+}
+void convert_list_sai_wred_attr_t_to_sai(
+    int32_t *list, const google::protobuf::RepeatedField<int> &proto_list,
+    uint32_t *count) {
+  for (int i = 0; i < proto_list.size(); i++) {
+    list[i] = convert_sai_wred_attr_t_to_sai(
+        static_cast<lemming::dataplane::sai::WredAttr>(proto_list[i]));
+  }
+  *count = proto_list.size();
 }

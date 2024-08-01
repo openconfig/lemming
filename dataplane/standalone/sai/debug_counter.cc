@@ -43,6 +43,16 @@ lemming::dataplane::sai::CreateDebugCounterRequest convert_create_debug_counter(
         msg.set_bind_method(convert_sai_debug_counter_bind_method_t_to_proto(
             attr_list[i].value.s32));
         break;
+      case SAI_DEBUG_COUNTER_ATTR_IN_DROP_REASON_LIST:
+        msg.mutable_in_drop_reason_list()->CopyFrom(
+            convert_list_sai_in_drop_reason_t_to_proto(
+                attr_list[i].value.s32list));
+        break;
+      case SAI_DEBUG_COUNTER_ATTR_OUT_DROP_REASON_LIST:
+        msg.mutable_out_drop_reason_list()->CopyFrom(
+            convert_list_sai_out_drop_reason_t_to_proto(
+                attr_list[i].value.s32list));
+        break;
     }
   }
   return msg;
@@ -93,6 +103,29 @@ sai_status_t l_set_debug_counter_attribute(sai_object_id_t debug_counter_id,
                                            const sai_attribute_t *attr) {
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
+  lemming::dataplane::sai::SetDebugCounterAttributeRequest req;
+  lemming::dataplane::sai::SetDebugCounterAttributeResponse resp;
+  grpc::ClientContext context;
+  req.set_oid(debug_counter_id);
+
+  switch (attr->id) {
+    case SAI_DEBUG_COUNTER_ATTR_IN_DROP_REASON_LIST:
+      req.mutable_in_drop_reason_list()->CopyFrom(
+          convert_list_sai_in_drop_reason_t_to_proto(attr->value.s32list));
+      break;
+    case SAI_DEBUG_COUNTER_ATTR_OUT_DROP_REASON_LIST:
+      req.mutable_out_drop_reason_list()->CopyFrom(
+          convert_list_sai_out_drop_reason_t_to_proto(attr->value.s32list));
+      break;
+  }
+
+  grpc::Status status =
+      debug_counter->SetDebugCounterAttribute(&context, req, &resp);
+  if (!status.ok()) {
+    LOG(ERROR) << status.error_message();
+    return SAI_STATUS_FAILURE;
+  }
+
   return SAI_STATUS_SUCCESS;
 }
 
@@ -129,6 +162,16 @@ sai_status_t l_get_debug_counter_attribute(sai_object_id_t debug_counter_id,
       case SAI_DEBUG_COUNTER_ATTR_BIND_METHOD:
         attr_list[i].value.s32 = convert_sai_debug_counter_bind_method_t_to_sai(
             resp.attr().bind_method());
+        break;
+      case SAI_DEBUG_COUNTER_ATTR_IN_DROP_REASON_LIST:
+        convert_list_sai_in_drop_reason_t_to_sai(
+            attr_list[i].value.s32list.list, resp.attr().in_drop_reason_list(),
+            &attr_list[i].value.s32list.count);
+        break;
+      case SAI_DEBUG_COUNTER_ATTR_OUT_DROP_REASON_LIST:
+        convert_list_sai_out_drop_reason_t_to_sai(
+            attr_list[i].value.s32list.list, resp.attr().out_drop_reason_list(),
+            &attr_list[i].value.s32list.count);
         break;
     }
   }

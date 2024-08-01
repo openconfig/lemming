@@ -107,6 +107,17 @@ func TestCreateNextHopGroup(t *testing.T) {
 			dplane := &fakeSwitchDataplane{}
 			c, mgr, stopFn := newTestNextHopGroup(t, dplane)
 			defer stopFn()
+			mgr.StoreAttributes(switchID, &saipb.SwitchAttribute{
+				EcmpHashIpv4: proto.Uint64(5),
+				EcmpHashIpv6: proto.Uint64(5),
+			})
+			mgr.StoreAttributes(5, &saipb.HashAttribute{
+				NativeHashFieldList: []saipb.NativeHashField{saipb.NativeHashField_NATIVE_HASH_FIELD_DST_IP},
+			})
+			mgr.StoreAttributes(10, &saipb.NextHopAttribute{
+				Ip: []byte{127, 0, 0, 1},
+			})
+
 			_, gotErr := c.CreateNextHopGroup(context.TODO(), tt.req)
 			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
 				t.Fatalf("CreateNextHopGroup() unexpected err: %s", diff)
@@ -244,7 +255,7 @@ func TestCreateNextHopGroupMember(t *testing.T) {
 			dplane := &fakeSwitchDataplane{}
 			c, mgr, stopFn := newTestNextHopGroup(t, dplane)
 
-			mgr.StoreAttributes(mgr.NextID(), &saipb.SwitchAttribute{EcmpHashIpv4: proto.Uint64(10), EcmpHashIpv6: proto.Uint64(10)})
+			mgr.StoreAttributes(mgr.NextID(), &saipb.SwitchAttribute{EcmpHashIpv4: proto.Uint64(10), EcmpHashIpv6: proto.Uint64(9)})
 			mgr.StoreAttributes(3, &saipb.CreateNextHopRequest{Ip: []byte{127, 0, 0, 1}})
 			mgr.StoreAttributes(10, &saipb.CreateHashRequest{
 				NativeHashFieldList: []saipb.NativeHashField{saipb.NativeHashField_NATIVE_HASH_FIELD_DST_IP},
@@ -358,10 +369,10 @@ func TestRemoveNextHopGroupMember(t *testing.T) {
 		t.Run(tt.desc, func(t *testing.T) {
 			dplane := &fakeSwitchDataplane{}
 			c, mgr, stopFn := newTestNextHopGroup(t, dplane)
-			mgr.StoreAttributes(mgr.NextID(), &saipb.SwitchAttribute{EcmpHashIpv4: proto.Uint64(10), EcmpHashIpv6: proto.Uint64(10)})
+			mgr.StoreAttributes(mgr.NextID(), &saipb.SwitchAttribute{EcmpHashIpv4: proto.Uint64(9), EcmpHashIpv6: proto.Uint64(10)})
 			mgr.StoreAttributes(10, &saipb.CreateNextHopRequest{Ip: []byte{127, 0, 0, 1}})
 			mgr.StoreAttributes(11, &saipb.CreateNextHopRequest{Ip: []byte{127, 0, 0, 2}})
-			mgr.StoreAttributes(10, &saipb.CreateHashRequest{
+			mgr.StoreAttributes(9, &saipb.CreateHashRequest{
 				NativeHashFieldList: []saipb.NativeHashField{saipb.NativeHashField_NATIVE_HASH_FIELD_DST_IP},
 			})
 
@@ -900,6 +911,9 @@ func TestCreateHash(t *testing.T) {
 			_, gotErr := c.CreateHash(context.TODO(), tt.req)
 			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
 				t.Fatalf("CreateHash() unexpected err: %s", diff)
+			}
+			if gotErr != nil {
+				return
 			}
 		})
 	}

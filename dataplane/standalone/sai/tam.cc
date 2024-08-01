@@ -90,6 +90,11 @@ lemming::dataplane::sai::CreateTamRequest convert_create_tam(
             attr_list[i].value.objlist.list,
             attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
         break;
+      case SAI_TAM_ATTR_TAM_BIND_POINT_TYPE_LIST:
+        msg.mutable_tam_bind_point_type_list()->CopyFrom(
+            convert_list_sai_tam_bind_point_type_t_to_proto(
+                attr_list[i].value.s32list));
+        break;
     }
   }
   return msg;
@@ -592,6 +597,12 @@ sai_status_t l_get_tam_attribute(sai_object_id_t tam_id, uint32_t attr_count,
         copy_list(attr_list[i].value.objlist.list,
                   resp.attr().int_objects_list(),
                   &attr_list[i].value.objlist.count);
+        break;
+      case SAI_TAM_ATTR_TAM_BIND_POINT_TYPE_LIST:
+        convert_list_sai_tam_bind_point_type_t_to_sai(
+            attr_list[i].value.s32list.list,
+            resp.attr().tam_bind_point_type_list(),
+            &attr_list[i].value.s32list.count);
         break;
     }
   }

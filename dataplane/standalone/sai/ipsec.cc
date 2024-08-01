@@ -306,6 +306,12 @@ sai_status_t l_get_ipsec_attribute(sai_object_id_t ipsec_id,
       case SAI_IPSEC_ATTR_ESN_64BIT_SUPPORTED:
         attr_list[i].value.booldata = resp.attr().esn_64bit_supported();
         break;
+      case SAI_IPSEC_ATTR_SUPPORTED_CIPHER_LIST:
+        convert_list_sai_ipsec_cipher_t_to_sai(
+            attr_list[i].value.s32list.list,
+            resp.attr().supported_cipher_list(),
+            &attr_list[i].value.s32list.count);
+        break;
       case SAI_IPSEC_ATTR_SYSTEM_SIDE_MTU:
         attr_list[i].value.u16 = resp.attr().system_side_mtu();
         break;

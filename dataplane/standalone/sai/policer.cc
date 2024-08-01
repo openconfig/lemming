@@ -74,6 +74,11 @@ lemming::dataplane::sai::CreatePolicerRequest convert_create_policer(
         msg.set_red_packet_action(
             convert_sai_packet_action_t_to_proto(attr_list[i].value.s32));
         break;
+      case SAI_POLICER_ATTR_ENABLE_COUNTER_PACKET_ACTION_LIST:
+        msg.mutable_enable_counter_packet_action_list()->CopyFrom(
+            convert_list_sai_packet_action_t_to_proto(
+                attr_list[i].value.s32list));
+        break;
       case SAI_POLICER_ATTR_OBJECT_STAGE:
         msg.set_object_stage(
             convert_sai_object_stage_t_to_proto(attr_list[i].value.s32));
@@ -157,6 +162,10 @@ sai_status_t l_set_policer_attribute(sai_object_id_t policer_id,
       req.set_red_packet_action(
           convert_sai_packet_action_t_to_proto(attr->value.s32));
       break;
+    case SAI_POLICER_ATTR_ENABLE_COUNTER_PACKET_ACTION_LIST:
+      req.mutable_enable_counter_packet_action_list()->CopyFrom(
+          convert_list_sai_packet_action_t_to_proto(attr->value.s32list));
+      break;
   }
 
   grpc::Status status = policer->SetPolicerAttribute(&context, req, &resp);
@@ -224,6 +233,12 @@ sai_status_t l_get_policer_attribute(sai_object_id_t policer_id,
       case SAI_POLICER_ATTR_RED_PACKET_ACTION:
         attr_list[i].value.s32 =
             convert_sai_packet_action_t_to_sai(resp.attr().red_packet_action());
+        break;
+      case SAI_POLICER_ATTR_ENABLE_COUNTER_PACKET_ACTION_LIST:
+        convert_list_sai_packet_action_t_to_sai(
+            attr_list[i].value.s32list.list,
+            resp.attr().enable_counter_packet_action_list(),
+            &attr_list[i].value.s32list.count);
         break;
       case SAI_POLICER_ATTR_OBJECT_STAGE:
         attr_list[i].value.s32 =

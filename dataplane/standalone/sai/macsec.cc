@@ -331,6 +331,12 @@ sai_status_t l_get_macsec_attribute(sai_object_id_t macsec_id,
       case SAI_MACSEC_ATTR_SCI_IN_INGRESS_MACSEC_ACL:
         attr_list[i].value.booldata = resp.attr().sci_in_ingress_macsec_acl();
         break;
+      case SAI_MACSEC_ATTR_SUPPORTED_CIPHER_SUITE_LIST:
+        convert_list_sai_macsec_cipher_suite_t_to_sai(
+            attr_list[i].value.s32list.list,
+            resp.attr().supported_cipher_suite_list(),
+            &attr_list[i].value.s32list.count);
+        break;
       case SAI_MACSEC_ATTR_PN_32BIT_SUPPORTED:
         attr_list[i].value.booldata = resp.attr().pn_32bit_supported();
         break;

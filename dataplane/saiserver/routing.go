@@ -228,16 +228,13 @@ func (nhg *nextHopGroup) updateNextHopGroupMember(ctx context.Context, nhgid, mi
 	if nhg.groupIsV4[nhgid] {
 		hashID = swAttr.GetAttr().GetEcmpHashIpv4()
 	}
-	hashAttr := &saipb.GetHashAttributeResponse{}
-	err = nhg.mgr.PopulateAttributes(&saipb.GetHashAttributeRequest{
-		Oid:      hashID,
-		AttrType: []saipb.HashAttr{saipb.HashAttr_HASH_ATTR_NATIVE_HASH_FIELD_LIST},
-	}, hashAttr)
+	hashAttr := &saipb.HashAttribute{}
+	err = nhg.mgr.PopulateAllAttributes(fmt.Sprint(hashID), hashAttr)
 	if err != nil {
-		return fmt.Errorf("failed to retrieve hash field: %v", err)
+		return fmt.Errorf("failed to retrieve hash attrs: %v", err)
 	}
 
-	fieldsID, err := convertHashFields(hashAttr.GetAttr().GetNativeHashFieldList())
+	fieldsID, err := convertHashFields(hashAttr.GetNativeHashFieldList())
 	if err != nil {
 		return fmt.Errorf("failed to compute hash fields: %v", err)
 	}
@@ -303,7 +300,7 @@ func (nhg *nextHopGroup) RemoveNextHopGroup(_ context.Context, req *saipb.Remove
 		fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_GROUP_ID).WithUint64(oid))).Build()
 	nhgReq := &fwdpb.TableEntryRemoveRequest{
 		ContextId: &fwdpb.ContextId{Id: nhg.dataplane.ID()},
-		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: NHTable}},
+		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: NHGTable}},
 		EntryDesc: entry,
 	}
 
@@ -325,6 +322,19 @@ func (nhg *nextHopGroup) CreateNextHopGroupMember(ctx context.Context, req *saip
 		return nil, err
 	}
 	return &saipb.CreateNextHopGroupMemberResponse{Oid: mid}, nil
+}
+
+// CreateNextHopGroups creates multiple next hop groups.
+func (nhg *nextHopGroup) CreateNextHopGroupMembers(ctx context.Context, r *saipb.CreateNextHopGroupMembersRequest) (*saipb.CreateNextHopGroupMembersResponse, error) {
+	resp := &saipb.CreateNextHopGroupMembersResponse{}
+	for _, req := range r.GetReqs() {
+		res, err := attrmgr.InvokeAndSave(ctx, nhg.mgr, nhg.CreateNextHopGroupMember, req)
+		if err != nil {
+			return nil, err
+		}
+		resp.Resps = append(resp.Resps, res)
+	}
+	return resp, nil
 }
 
 // RemoveNextHopGroupMember remove the next hop group member specified in the OID.
@@ -583,7 +593,8 @@ func (r *route) CreateRouteEntry(ctx context.Context, req *saipb.CreateRouteEntr
 		entry.AppendActions(fwdconfig.Action(fwdconfig.DropAction()))
 	}
 
-	_, err := r.dataplane.TableEntryAdd(ctx, entry.Build())
+	route := entry.Build()
+	_, err := r.dataplane.TableEntryAdd(ctx, route)
 	if err != nil {
 		return nil, err
 	}
@@ -1082,6 +1093,10 @@ func newHash(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server)
 }
 
 func convertHashFields(list []saipb.NativeHashField) ([]*fwdpb.PacketFieldId, error) {
+	if len(list) == 0 {
+		return nil, fmt.Errorf("got 0 hash fields")
+	}
+
 	fields := []*fwdpb.PacketFieldId{}
 	for _, field := range list {
 		switch field {
