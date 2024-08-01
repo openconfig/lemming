@@ -195,7 +195,7 @@ sai_status_t l_create_route_entries(uint32_t object_count,
   for (uint32_t i = 0; i < object_count; i++) {
     auto r = convert_create_route_entry(attr_count[i], attr_list[i]);
 
-    *r.mutable_entry() = convert_from_route_entry(*route_entry);
+    *r.mutable_entry() = convert_from_route_entry(route_entry[i]);
     *req.add_reqs() = r;
   }
 

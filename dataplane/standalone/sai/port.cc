@@ -83,6 +83,16 @@ lemming::dataplane::sai::CreatePortRequest convert_create_port(
             attr_list[i].value.u32list.list,
             attr_list[i].value.u32list.list + attr_list[i].value.u32list.count);
         break;
+      case SAI_PORT_ATTR_ADVERTISED_FEC_MODE:
+        msg.mutable_advertised_fec_mode()->CopyFrom(
+            convert_list_sai_port_fec_mode_t_to_proto(
+                attr_list[i].value.s32list));
+        break;
+      case SAI_PORT_ATTR_ADVERTISED_FEC_MODE_EXTENDED:
+        msg.mutable_advertised_fec_mode_extended()->CopyFrom(
+            convert_list_sai_port_fec_mode_extended_t_to_proto(
+                attr_list[i].value.s32list));
+        break;
       case SAI_PORT_ATTR_ADVERTISED_HALF_DUPLEX_SPEED:
         msg.mutable_advertised_half_duplex_speed()->Add(
             attr_list[i].value.u32list.list,
@@ -311,6 +321,11 @@ lemming::dataplane::sai::CreatePortRequest convert_create_port(
       case SAI_PORT_ATTR_INTERFACE_TYPE:
         msg.set_interface_type(
             convert_sai_port_interface_type_t_to_proto(attr_list[i].value.s32));
+        break;
+      case SAI_PORT_ATTR_ADVERTISED_INTERFACE_TYPE:
+        msg.mutable_advertised_interface_type()->CopyFrom(
+            convert_list_sai_port_interface_type_t_to_proto(
+                attr_list[i].value.s32list));
         break;
       case SAI_PORT_ATTR_REFERENCE_CLOCK:
         msg.set_reference_clock(attr_list[i].value.u64);
@@ -575,6 +590,15 @@ sai_status_t l_set_port_attribute(sai_object_id_t port_id,
           attr->value.u32list.list,
           attr->value.u32list.list + attr->value.u32list.count);
       break;
+    case SAI_PORT_ATTR_ADVERTISED_FEC_MODE:
+      req.mutable_advertised_fec_mode()->CopyFrom(
+          convert_list_sai_port_fec_mode_t_to_proto(attr->value.s32list));
+      break;
+    case SAI_PORT_ATTR_ADVERTISED_FEC_MODE_EXTENDED:
+      req.mutable_advertised_fec_mode_extended()->CopyFrom(
+          convert_list_sai_port_fec_mode_extended_t_to_proto(
+              attr->value.s32list));
+      break;
     case SAI_PORT_ATTR_ADVERTISED_HALF_DUPLEX_SPEED:
       req.mutable_advertised_half_duplex_speed()->Add(
           attr->value.u32list.list,
@@ -799,6 +823,10 @@ sai_status_t l_set_port_attribute(sai_object_id_t port_id,
       req.set_interface_type(
           convert_sai_port_interface_type_t_to_proto(attr->value.s32));
       break;
+    case SAI_PORT_ATTR_ADVERTISED_INTERFACE_TYPE:
+      req.mutable_advertised_interface_type()->CopyFrom(
+          convert_list_sai_port_interface_type_t_to_proto(attr->value.s32list));
+      break;
     case SAI_PORT_ATTR_PRBS_POLYNOMIAL:
       req.set_prbs_polynomial(attr->value.u32);
       break;
@@ -904,6 +932,12 @@ sai_status_t l_get_port_attribute(sai_object_id_t port_id, uint32_t attr_count,
         attr_list[i].value.s32 =
             convert_sai_port_oper_status_t_to_sai(resp.attr().oper_status());
         break;
+      case SAI_PORT_ATTR_SUPPORTED_BREAKOUT_MODE_TYPE:
+        convert_list_sai_port_breakout_mode_type_t_to_sai(
+            attr_list[i].value.s32list.list,
+            resp.attr().supported_breakout_mode_type(),
+            &attr_list[i].value.s32list.count);
+        break;
       case SAI_PORT_ATTR_CURRENT_BREAKOUT_MODE_TYPE:
         attr_list[i].value.s32 = convert_sai_port_breakout_mode_type_t_to_sai(
             resp.attr().current_breakout_mode_type());
@@ -931,6 +965,17 @@ sai_status_t l_get_port_attribute(sai_object_id_t port_id, uint32_t attr_count,
                   resp.attr().supported_speed(),
                   &attr_list[i].value.u32list.count);
         break;
+      case SAI_PORT_ATTR_SUPPORTED_FEC_MODE:
+        convert_list_sai_port_fec_mode_t_to_sai(
+            attr_list[i].value.s32list.list, resp.attr().supported_fec_mode(),
+            &attr_list[i].value.s32list.count);
+        break;
+      case SAI_PORT_ATTR_SUPPORTED_FEC_MODE_EXTENDED:
+        convert_list_sai_port_fec_mode_extended_t_to_sai(
+            attr_list[i].value.s32list.list,
+            resp.attr().supported_fec_mode_extended(),
+            &attr_list[i].value.s32list.count);
+        break;
       case SAI_PORT_ATTR_SUPPORTED_HALF_DUPLEX_SPEED:
         copy_list(attr_list[i].value.u32list.list,
                   resp.attr().supported_half_duplex_speed(),
@@ -955,6 +1000,18 @@ sai_status_t l_get_port_attribute(sai_object_id_t port_id, uint32_t attr_count,
         copy_list(attr_list[i].value.u32list.list,
                   resp.attr().remote_advertised_speed(),
                   &attr_list[i].value.u32list.count);
+        break;
+      case SAI_PORT_ATTR_REMOTE_ADVERTISED_FEC_MODE:
+        convert_list_sai_port_fec_mode_t_to_sai(
+            attr_list[i].value.s32list.list,
+            resp.attr().remote_advertised_fec_mode(),
+            &attr_list[i].value.s32list.count);
+        break;
+      case SAI_PORT_ATTR_REMOTE_ADVERTISED_FEC_MODE_EXTENDED:
+        convert_list_sai_port_fec_mode_extended_t_to_sai(
+            attr_list[i].value.s32list.list,
+            resp.attr().remote_advertised_fec_mode_extended(),
+            &attr_list[i].value.s32list.count);
         break;
       case SAI_PORT_ATTR_REMOTE_ADVERTISED_HALF_DUPLEX_SPEED:
         copy_list(attr_list[i].value.u32list.list,
@@ -1016,6 +1073,17 @@ sai_status_t l_get_port_attribute(sai_object_id_t port_id, uint32_t attr_count,
         copy_list(attr_list[i].value.u32list.list,
                   resp.attr().advertised_speed(),
                   &attr_list[i].value.u32list.count);
+        break;
+      case SAI_PORT_ATTR_ADVERTISED_FEC_MODE:
+        convert_list_sai_port_fec_mode_t_to_sai(
+            attr_list[i].value.s32list.list, resp.attr().advertised_fec_mode(),
+            &attr_list[i].value.s32list.count);
+        break;
+      case SAI_PORT_ATTR_ADVERTISED_FEC_MODE_EXTENDED:
+        convert_list_sai_port_fec_mode_extended_t_to_sai(
+            attr_list[i].value.s32list.list,
+            resp.attr().advertised_fec_mode_extended(),
+            &attr_list[i].value.s32list.count);
         break;
       case SAI_PORT_ATTR_ADVERTISED_HALF_DUPLEX_SPEED:
         copy_list(attr_list[i].value.u32list.list,
@@ -1254,6 +1322,12 @@ sai_status_t l_get_port_attribute(sai_object_id_t port_id, uint32_t attr_count,
       case SAI_PORT_ATTR_INTERFACE_TYPE:
         attr_list[i].value.s32 = convert_sai_port_interface_type_t_to_sai(
             resp.attr().interface_type());
+        break;
+      case SAI_PORT_ATTR_ADVERTISED_INTERFACE_TYPE:
+        convert_list_sai_port_interface_type_t_to_sai(
+            attr_list[i].value.s32list.list,
+            resp.attr().advertised_interface_type(),
+            &attr_list[i].value.s32list.count);
         break;
       case SAI_PORT_ATTR_REFERENCE_CLOCK:
         attr_list[i].value.u64 = resp.attr().reference_clock();

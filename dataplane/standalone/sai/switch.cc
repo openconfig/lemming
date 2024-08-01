@@ -1047,12 +1047,23 @@ sai_status_t l_get_switch_attribute(sai_object_id_t switch_id,
       case SAI_SWITCH_ATTR_SRV6_MAX_SID_DEPTH:
         attr_list[i].value.u32 = resp.attr().srv6_max_sid_depth();
         break;
+      case SAI_SWITCH_ATTR_SRV6_TLV_TYPE:
+        convert_list_sai_tlv_type_t_to_sai(attr_list[i].value.s32list.list,
+                                           resp.attr().srv6_tlv_type(),
+                                           &attr_list[i].value.s32list.count);
+        break;
       case SAI_SWITCH_ATTR_QOS_NUM_LOSSLESS_QUEUES:
         attr_list[i].value.u32 = resp.attr().qos_num_lossless_queues();
         break;
       case SAI_SWITCH_ATTR_PFC_DLR_PACKET_ACTION:
         attr_list[i].value.s32 = convert_sai_packet_action_t_to_sai(
             resp.attr().pfc_dlr_packet_action());
+        break;
+      case SAI_SWITCH_ATTR_SUPPORTED_PROTECTED_OBJECT_TYPE:
+        convert_list_sai_object_type_t_to_sai(
+            attr_list[i].value.s32list.list,
+            resp.attr().supported_protected_object_type(),
+            &attr_list[i].value.s32list.count);
         break;
       case SAI_SWITCH_ATTR_TPID_OUTER_VLAN:
         attr_list[i].value.u16 = resp.attr().tpid_outer_vlan();
@@ -1071,6 +1082,18 @@ sai_status_t l_get_switch_attribute(sai_object_id_t switch_id,
         break;
       case SAI_SWITCH_ATTR_MAX_BFD_SESSION:
         attr_list[i].value.u32 = resp.attr().max_bfd_session();
+        break;
+      case SAI_SWITCH_ATTR_SUPPORTED_IPV4_BFD_SESSION_OFFLOAD_TYPE:
+        convert_list_sai_bfd_session_offload_type_t_to_sai(
+            attr_list[i].value.s32list.list,
+            resp.attr().supported_ipv4_bfd_session_offload_type(),
+            &attr_list[i].value.s32list.count);
+        break;
+      case SAI_SWITCH_ATTR_SUPPORTED_IPV6_BFD_SESSION_OFFLOAD_TYPE:
+        convert_list_sai_bfd_session_offload_type_t_to_sai(
+            attr_list[i].value.s32list.list,
+            resp.attr().supported_ipv6_bfd_session_offload_type(),
+            &attr_list[i].value.s32list.count);
         break;
       case SAI_SWITCH_ATTR_MIN_BFD_RX:
         attr_list[i].value.u32 = resp.attr().min_bfd_rx();
@@ -1095,6 +1118,12 @@ sai_status_t l_get_switch_attribute(sai_object_id_t switch_id,
       case SAI_SWITCH_ATTR_MAX_SAMPLED_MIRROR_SESSION:
         attr_list[i].value.u32 = resp.attr().max_sampled_mirror_session();
         break;
+      case SAI_SWITCH_ATTR_SUPPORTED_EXTENDED_STATS_MODE:
+        convert_list_sai_stats_mode_t_to_sai(
+            attr_list[i].value.s32list.list,
+            resp.attr().supported_extended_stats_mode(),
+            &attr_list[i].value.s32list.count);
+        break;
       case SAI_SWITCH_ATTR_UNINIT_DATA_PLANE_ON_REMOVAL:
         attr_list[i].value.booldata =
             resp.attr().uninit_data_plane_on_removal();
@@ -1102,6 +1131,12 @@ sai_status_t l_get_switch_attribute(sai_object_id_t switch_id,
       case SAI_SWITCH_ATTR_TAM_OBJECT_ID:
         copy_list(attr_list[i].value.objlist.list, resp.attr().tam_object_id(),
                   &attr_list[i].value.objlist.count);
+        break;
+      case SAI_SWITCH_ATTR_SUPPORTED_OBJECT_TYPE_LIST:
+        convert_list_sai_object_type_t_to_sai(
+            attr_list[i].value.s32list.list,
+            resp.attr().supported_object_type_list(),
+            &attr_list[i].value.s32list.count);
         break;
       case SAI_SWITCH_ATTR_PRE_SHUTDOWN:
         attr_list[i].value.booldata = resp.attr().pre_shutdown();

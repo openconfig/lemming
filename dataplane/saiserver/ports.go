@@ -452,7 +452,7 @@ func (port *port) createCPUPort(ctx context.Context) (uint64, error) {
 							fwdconfig.Action(fwdconfig.LookupAction(hostifToPortTable)).Build(),
 						},
 						Outputs: []*fwdpb.ActionDesc{
-							fwdconfig.Action(fwdconfig.LookupAction(trapIDToHostifTable)).Build(),
+							fwdconfig.Action(fwdconfig.LookupAction(trapIDToHostifTable)).Build(), // Check if the trap ID sets a hostif, otherwise use the default mapping of port -> hostif.
 							fwdconfig.Action(fwdconfig.LookupAction(portToHostifTable)).Build(),
 						},
 					},

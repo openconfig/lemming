@@ -41,6 +41,11 @@ lemming::dataplane::sai::CreateHashRequest convert_create_hash(
 
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
+      case SAI_HASH_ATTR_NATIVE_HASH_FIELD_LIST:
+        msg.mutable_native_hash_field_list()->CopyFrom(
+            convert_list_sai_native_hash_field_t_to_proto(
+                attr_list[i].value.s32list));
+        break;
       case SAI_HASH_ATTR_UDF_GROUP_LIST:
         msg.mutable_udf_group_list()->Add(
             attr_list[i].value.objlist.list,
@@ -134,6 +139,10 @@ sai_status_t l_set_hash_attribute(sai_object_id_t hash_id,
   req.set_oid(hash_id);
 
   switch (attr->id) {
+    case SAI_HASH_ATTR_NATIVE_HASH_FIELD_LIST:
+      req.mutable_native_hash_field_list()->CopyFrom(
+          convert_list_sai_native_hash_field_t_to_proto(attr->value.s32list));
+      break;
     case SAI_HASH_ATTR_UDF_GROUP_LIST:
       req.mutable_udf_group_list()->Add(
           attr->value.objlist.list,
@@ -175,6 +184,12 @@ sai_status_t l_get_hash_attribute(sai_object_id_t hash_id, uint32_t attr_count,
   }
   for (uint32_t i = 0; i < attr_count; i++) {
     switch (attr_list[i].id) {
+      case SAI_HASH_ATTR_NATIVE_HASH_FIELD_LIST:
+        convert_list_sai_native_hash_field_t_to_sai(
+            attr_list[i].value.s32list.list,
+            resp.attr().native_hash_field_list(),
+            &attr_list[i].value.s32list.count);
+        break;
       case SAI_HASH_ATTR_UDF_GROUP_LIST:
         copy_list(attr_list[i].value.objlist.list, resp.attr().udf_group_list(),
                   &attr_list[i].value.objlist.count);

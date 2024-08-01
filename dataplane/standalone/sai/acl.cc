@@ -68,8 +68,18 @@ lemming::dataplane::sai::CreateAclTableRequest convert_create_acl_table(
         msg.set_acl_stage(
             convert_sai_acl_stage_t_to_proto(attr_list[i].value.s32));
         break;
+      case SAI_ACL_TABLE_ATTR_ACL_BIND_POINT_TYPE_LIST:
+        msg.mutable_acl_bind_point_type_list()->CopyFrom(
+            convert_list_sai_acl_bind_point_type_t_to_proto(
+                attr_list[i].value.s32list));
+        break;
       case SAI_ACL_TABLE_ATTR_SIZE:
         msg.set_size(attr_list[i].value.u32);
+        break;
+      case SAI_ACL_TABLE_ATTR_ACL_ACTION_TYPE_LIST:
+        msg.mutable_acl_action_type_list()->CopyFrom(
+            convert_list_sai_acl_action_type_t_to_proto(
+                attr_list[i].value.s32list));
         break;
       case SAI_ACL_TABLE_ATTR_FIELD_SRC_IPV6:
         msg.set_field_src_ipv6(attr_list[i].value.booldata);
@@ -331,6 +341,11 @@ lemming::dataplane::sai::CreateAclTableRequest convert_create_acl_table(
         break;
       case SAI_ACL_TABLE_ATTR_FIELD_AETH_SYNDROME:
         msg.set_field_aeth_syndrome(attr_list[i].value.booldata);
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_ACL_RANGE_TYPE:
+        msg.mutable_field_acl_range_type()->CopyFrom(
+            convert_list_sai_acl_range_type_t_to_proto(
+                attr_list[i].value.s32list));
         break;
       case SAI_ACL_TABLE_ATTR_FIELD_IPV6_NEXT_HEADER:
         msg.set_field_ipv6_next_header(attr_list[i].value.booldata);
@@ -816,6 +831,11 @@ convert_create_acl_table_group(sai_object_id_t switch_id, uint32_t attr_count,
         msg.set_acl_stage(
             convert_sai_acl_stage_t_to_proto(attr_list[i].value.s32));
         break;
+      case SAI_ACL_TABLE_GROUP_ATTR_ACL_BIND_POINT_TYPE_LIST:
+        msg.mutable_acl_bind_point_type_list()->CopyFrom(
+            convert_list_sai_acl_bind_point_type_t_to_proto(
+                attr_list[i].value.s32list));
+        break;
       case SAI_ACL_TABLE_GROUP_ATTR_TYPE:
         msg.set_type(convert_sai_acl_table_group_type_t_to_proto(
             attr_list[i].value.s32));
@@ -925,8 +945,19 @@ sai_status_t l_get_acl_table_attribute(sai_object_id_t acl_table_id,
         attr_list[i].value.s32 =
             convert_sai_acl_stage_t_to_sai(resp.attr().acl_stage());
         break;
+      case SAI_ACL_TABLE_ATTR_ACL_BIND_POINT_TYPE_LIST:
+        convert_list_sai_acl_bind_point_type_t_to_sai(
+            attr_list[i].value.s32list.list,
+            resp.attr().acl_bind_point_type_list(),
+            &attr_list[i].value.s32list.count);
+        break;
       case SAI_ACL_TABLE_ATTR_SIZE:
         attr_list[i].value.u32 = resp.attr().size();
+        break;
+      case SAI_ACL_TABLE_ATTR_ACL_ACTION_TYPE_LIST:
+        convert_list_sai_acl_action_type_t_to_sai(
+            attr_list[i].value.s32list.list, resp.attr().acl_action_type_list(),
+            &attr_list[i].value.s32list.count);
         break;
       case SAI_ACL_TABLE_ATTR_FIELD_SRC_IPV6:
         attr_list[i].value.booldata = resp.attr().field_src_ipv6();
@@ -1191,6 +1222,11 @@ sai_status_t l_get_acl_table_attribute(sai_object_id_t acl_table_id,
         break;
       case SAI_ACL_TABLE_ATTR_FIELD_AETH_SYNDROME:
         attr_list[i].value.booldata = resp.attr().field_aeth_syndrome();
+        break;
+      case SAI_ACL_TABLE_ATTR_FIELD_ACL_RANGE_TYPE:
+        convert_list_sai_acl_range_type_t_to_sai(
+            attr_list[i].value.s32list.list, resp.attr().field_acl_range_type(),
+            &attr_list[i].value.s32list.count);
         break;
       case SAI_ACL_TABLE_ATTR_FIELD_IPV6_NEXT_HEADER:
         attr_list[i].value.booldata = resp.attr().field_ipv6_next_header();
@@ -2397,6 +2433,12 @@ sai_status_t l_get_acl_table_group_attribute(sai_object_id_t acl_table_group_id,
       case SAI_ACL_TABLE_GROUP_ATTR_ACL_STAGE:
         attr_list[i].value.s32 =
             convert_sai_acl_stage_t_to_sai(resp.attr().acl_stage());
+        break;
+      case SAI_ACL_TABLE_GROUP_ATTR_ACL_BIND_POINT_TYPE_LIST:
+        convert_list_sai_acl_bind_point_type_t_to_sai(
+            attr_list[i].value.s32list.list,
+            resp.attr().acl_bind_point_type_list(),
+            &attr_list[i].value.s32list.count);
         break;
       case SAI_ACL_TABLE_GROUP_ATTR_TYPE:
         attr_list[i].value.s32 =

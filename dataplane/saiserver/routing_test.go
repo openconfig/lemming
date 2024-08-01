@@ -895,12 +895,21 @@ func TestCreateHash(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
 			dplane := &fakeSwitchDataplane{}
-			c, _, stopFn := newTestHash(t, dplane)
+			c, m, stopFn := newTestHash(t, dplane)
 			defer stopFn()
-			_, gotErr := c.CreateHash(context.TODO(), tt.req)
+			got, gotErr := c.CreateHash(context.TODO(), tt.req)
 			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
 				t.Fatalf("CreateHash() unexpected err: %s", diff)
 			}
+			if gotErr != nil {
+				return
+			}
+			hashAttr := &saipb.GetHashAttributeResponse{}
+			m.PopulateAttributes(&saipb.GetHashAttributeRequest{
+				Oid:      got.Oid,
+				AttrType: []saipb.HashAttr{saipb.HashAttr_HASH_ATTR_NATIVE_HASH_FIELD_LIST},
+			}, hashAttr)
+			t.Fatal(hashAttr)
 		})
 	}
 }

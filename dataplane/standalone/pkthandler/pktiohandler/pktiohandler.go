@@ -24,7 +24,6 @@ import (
 
 	"google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/util/queue"
 	"github.com/openconfig/lemming/dataplane/kernel"
@@ -104,10 +103,12 @@ func (m *PacketIOMgr) StreamPackets(c pktiopb.PacketIO_CPUPacketStreamClient) er
 			}
 			port, ok := m.hostifs[out.GetPacket().GetHostPort()]
 			if !ok {
+				log.Warningf("skipping unknown port id: %v", out.GetPacket().GetHostPort())
 				continue
 			}
 
 			if _, err := port.Write(out.GetPacket().GetFrame(), m.metadataFromPacket(out.GetPacket())); err != nil {
+				log.Warningf("port write err: %v", err)
 				continue
 			}
 		}
@@ -127,11 +128,18 @@ func (m *PacketIOMgr) writePorts() error {
 	if m.portFile == "" {
 		return nil
 	}
-	data := map[uint64]string{}
-	for id, h := range m.hostifs {
-		data[id] = protojson.Format(h.msg)
+	msg := struct {
+		Hostifs map[uint64]*pktiopb.HostPortControlMessage
+		PortIds map[uint64]int
+	}{
+		Hostifs: make(map[uint64]*pktiopb.HostPortControlMessage),
+		PortIds: m.dplanePortIfIndex,
 	}
-	contents, err := json.Marshal(data)
+
+	for id, h := range m.hostifs {
+		msg.Hostifs[id] = h.msg
+	}
+	contents, err := json.Marshal(msg)
 	if err != nil {
 		return err
 	}
@@ -245,6 +253,7 @@ func (m *PacketIOMgr) createPort(msg *pktiopb.HostPortControlMessage) error {
 	m.hostifs[msg.GetPortId()] = &port{
 		portIO:   p,
 		cancelFn: func() { close(doneCh) },
+		msg:      msg,
 	}
 
 	m.queueRead(msg.GetPortId(), doneCh)

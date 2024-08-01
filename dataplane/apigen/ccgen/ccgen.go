@@ -274,6 +274,7 @@ func createCCData(meta *saiast.FuncMetadata, apiName string, sai *saiast.SAIAPI,
 		}
 	case "create_bulk":
 		convertFn = nil
+		opFn.EntryVar = strings.TrimPrefix(opFn.EntryVar, "*") // Usual entry is pointer, but for remove_bulk it's an array.
 		opFn.ConvertFunc = strcase.SnakeCase("convert_create " + meta.TypeName)
 		for _, attr := range info.Attrs[meta.TypeName].CreateFields {
 			name := sanitizeProtoName(attr.MemberName)
@@ -553,8 +554,19 @@ func protoFieldSetter(saiType, protoVar, protoField, varName string, info *docpa
 
 	ua, ok := typeToUnionAccessor[saiType]
 	if !ok {
-		return nil, fmt.Errorf("unknown sai type: %q", saiType)
+		split := strings.Split(saiType, " ")
+		if len(split) != 2 {
+			return nil, fmt.Errorf("unknown sai type: %q", saiType)
+		}
+		if _, ok := info.Enums[split[1]]; split[0] == "sai_s32_list_t" && ok {
+			smt.ProtoFunc = fmt.Sprintf("mutable_%s()->CopyFrom", protoField)
+			smt.Args = fmt.Sprintf("convert_list_%s_to_proto(%s.%s)", split[1], varName, "s32list")
+			return smt, nil
+		} else {
+			return nil, fmt.Errorf("unknown sai type: %q", saiType)
+		}
 	}
+
 	switch ua.aType {
 	case scalar:
 		smt.Args = fmt.Sprintf("%s.%s", varName, ua.accessor)
@@ -603,9 +615,22 @@ func protoFieldGetter(saiType, protoField, varName string, info *docparser.SAIIn
 	}
 	ua, ok := typeToUnionAccessor[saiType]
 	if !ok {
-		return nil, fmt.Errorf("unknown sai type: %q", saiType)
+		split := strings.Split(saiType, " ")
+		if len(split) != 2 {
+			return nil, fmt.Errorf("unknown sai type: %q", saiType)
+		}
+		if _, ok := info.Enums[split[1]]; split[0] == "sai_s32_list_t" && ok {
+			smt.Var = fmt.Sprintf("%s.%s", varName, "s32list")
+			smt.CopyConvertFuncArgs = fmt.Sprintf(", &%s.count", smt.Var)
+			smt.CopyConvertFunc = fmt.Sprintf("convert_list_%s_to_sai", split[1])
+			smt.Var += ".list"
+			return smt, nil
+		} else {
+			return nil, fmt.Errorf("unknown sai type: %q", saiType)
+		}
 	}
 	smt.Var = fmt.Sprintf("%s.%s", varName, ua.accessor)
+
 	switch ua.aType {
 	case scalar:
 		if saiType == "char" {
@@ -817,7 +842,7 @@ return msg;
 		auto r = {{.ConvertFunc}}(attr_count[i], attr_list[i]);
 		{{ end -}}
 		{{- if .EntryVar }}
-		*r.mutable_entry() = {{ .EntryConversionFunc }}({{ .EntryVar }}); 
+		*r.mutable_entry() = {{ .EntryConversionFunc }}({{ .EntryVar }}[i]); 
 		{{ end -}}
 		*req.add_reqs() = r;
 	}
@@ -955,6 +980,8 @@ extern "C" {
 {{ range .Enums }}
 lemming::dataplane::sai::{{ .ProtoName }} convert_{{ .SAIName }}_to_proto(const sai_int32_t val);
 {{ .SAIName }} convert_{{ .SAIName }}_to_sai(lemming::dataplane::sai::{{ .ProtoName }} val);
+google::protobuf::RepeatedField<int> convert_list_{{ .SAIName }}_to_proto(const sai_s32_list_t &list);
+void convert_list_{{ .SAIName }}_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count);
 {{ end }}
 
 #endif  // DATAPLANE_STANDALONE_SAI_ENUM_H_
@@ -993,6 +1020,20 @@ lemming::dataplane::sai::{{ .ProtoName }} convert_{{ .SAIName }}_to_proto(const 
     {{ end }}
         default: return {{ $enum.DefaultReturn }};
     }
+}
+
+google::protobuf::RepeatedField<int> convert_list_{{ .SAIName }}_to_proto(const sai_s32_list_t &list) {
+	google::protobuf::RepeatedField<int> proto_list;
+	for (int i = 0; i < list.count; i++) {
+		proto_list.Add(convert_{{ .SAIName }}_to_proto(list.list[i]));
+	}
+	return proto_list;
+}
+void convert_list_{{ .SAIName }}_to_sai(int32_t *list, const google::protobuf::RepeatedField<int> &proto_list, uint32_t *count) {
+	for (int i = 0; i < proto_list.size(); i++) {
+		list[i] = convert_{{ .SAIName }}_to_sai(static_cast<lemming::dataplane::sai::{{.ProtoName}}>(proto_list[i]));
+	}
+	*count = proto_list.size();
 }
 
 {{ end }}

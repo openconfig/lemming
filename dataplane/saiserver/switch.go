@@ -418,6 +418,25 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 	if _, err := sw.dataplane.TableCreate(ctx, nexthopAction); err != nil {
 		return nil, err
 	}
+	_, err := sw.dataplane.TableCreate(ctx, &fwdpb.TableCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
+		Desc: &fwdpb.TableDesc{
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: portToHostifTable}},
+			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
+			Table: &fwdpb.TableDesc_Exact{
+				Exact: &fwdpb.ExactTableDesc{
+					FieldIds: []*fwdpb.PacketFieldId{{
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT,
+						},
+					}},
+				},
+			},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
 
 	// Setup the packet io tables. A packet is punted by setting the output port to the CPU port.
 	// There a two places where packets can be punted:
@@ -431,11 +450,12 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 	//   2. For netdev (lucius kernel/tap): write the packets directly to the hostif.
 
 	// Create the trap table and add it to the end of ingress stage.
-	_, err := sw.dataplane.TableCreate(ctx, &fwdpb.TableCreateRequest{
+	_, err = sw.dataplane.TableCreate(ctx, &fwdpb.TableCreateRequest{
 		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
 		Desc: &fwdpb.TableDesc{
 			TableType: fwdpb.TableType_TABLE_TYPE_FLOW,
-			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: trapTableID}},
+			// Actions:   []*fwdpb.ActionDesc{fwdconfig.Action(fwdconfig.LookupAction(portToHostifTable)).Build()},
+			TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: trapTableID}},
 			Table: &fwdpb.TableDesc_Flow{
 				Flow: &fwdpb.FlowTableDesc{
 					BankCount: 1,
@@ -589,25 +609,7 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 	if err != nil {
 		return nil, err
 	}
-	_, err = sw.dataplane.TableCreate(ctx, &fwdpb.TableCreateRequest{
-		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
-		Desc: &fwdpb.TableDesc{
-			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: portToHostifTable}},
-			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
-			Table: &fwdpb.TableDesc_Exact{
-				Exact: &fwdpb.ExactTableDesc{
-					FieldIds: []*fwdpb.PacketFieldId{{
-						Field: &fwdpb.PacketField{
-							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT,
-						},
-					}},
-				},
-			},
-		},
-	})
-	if err != nil {
-		return nil, err
-	}
+
 	_, err = sw.dataplane.TableCreate(ctx, &fwdpb.TableCreateRequest{
 		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
 		Desc: &fwdpb.TableDesc{
@@ -688,6 +690,12 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 	}
 	hashResp, err := attrmgr.InvokeAndSave(ctx, sw.mgr, sw.hash.CreateHash, &saipb.CreateHashRequest{
 		Switch: swID,
+		NativeHashFieldList: []saipb.NativeHashField{
+			saipb.NativeHashField_NATIVE_HASH_FIELD_SRC_IP,
+			saipb.NativeHashField_NATIVE_HASH_FIELD_DST_IP,
+			saipb.NativeHashField_NATIVE_HASH_FIELD_L4_SRC_PORT,
+			saipb.NativeHashField_NATIVE_HASH_FIELD_L4_DST_PORT,
+		},
 	})
 	if err != nil {
 		return nil, err
