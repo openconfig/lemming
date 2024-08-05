@@ -67,8 +67,8 @@ func TestCreateAclEntry(t *testing.T) {
 				Data: &saipb.AclFieldData_DataOid{DataOid: 1},
 			},
 			FieldDscp: &saipb.AclFieldData{
-				Data: &saipb.AclFieldData_DataUint{DataUint: 10},
-				Mask: &saipb.AclFieldData_MaskUint{MaskUint: 0xff},
+				Data: &saipb.AclFieldData_DataUint{DataUint: 0b1},
+				Mask: &saipb.AclFieldData_MaskUint{MaskUint: 0b1},
 			},
 			FieldDstIpv6Word3: &saipb.AclFieldData{
 				Data: &saipb.AclFieldData_DataIp{
@@ -129,7 +129,8 @@ func TestCreateAclEntry(t *testing.T) {
 			EntryDesc: &fwdpb.EntryDesc{
 				Entry: &fwdpb.EntryDesc_Flow{
 					Flow: &fwdpb.FlowEntryDesc{
-						Id: 2,
+						Id:       2,
+						Priority: math.MaxUint32,
 						Fields: []*fwdpb.PacketFieldMaskedBytes{{
 							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST}},
 							Bytes:   []byte{127, 0, 0, 1},
@@ -140,8 +141,8 @@ func TestCreateAclEntry(t *testing.T) {
 							Masks:   binary.BigEndian.AppendUint64(nil, math.MaxUint64),
 						}, {
 							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_QOS}},
-							Bytes:   []byte{10},
-							Masks:   []byte{255},
+							Bytes:   []byte{0b100},
+							Masks:   []byte{0b100},
 						}, {
 							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST}},
 							Bytes:   netip.MustParseAddr("cafe:beef::").AsSlice(),
@@ -207,7 +208,8 @@ func TestCreateAclEntry(t *testing.T) {
 			EntryDesc: &fwdpb.EntryDesc{
 				Entry: &fwdpb.EntryDesc_Flow{
 					Flow: &fwdpb.FlowEntryDesc{
-						Id: 2,
+						Id:       2,
+						Priority: math.MaxUint32,
 						Fields: []*fwdpb.PacketFieldMaskedBytes{{
 							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST}},
 							Bytes:   []byte{127, 0, 0, 1},
@@ -256,7 +258,8 @@ func TestCreateAclEntry(t *testing.T) {
 			EntryDesc: &fwdpb.EntryDesc{
 				Entry: &fwdpb.EntryDesc_Flow{
 					Flow: &fwdpb.FlowEntryDesc{
-						Id: 2,
+						Id:       2,
+						Priority: math.MaxUint32,
 						Fields: []*fwdpb.PacketFieldMaskedBytes{{
 							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST}},
 							Bytes:   []byte{127, 0, 0, 1},
@@ -305,7 +308,8 @@ func TestCreateAclEntry(t *testing.T) {
 			EntryDesc: &fwdpb.EntryDesc{
 				Entry: &fwdpb.EntryDesc_Flow{
 					Flow: &fwdpb.FlowEntryDesc{
-						Id: 2,
+						Id:       2,
+						Priority: math.MaxUint32,
 						Fields: []*fwdpb.PacketFieldMaskedBytes{{
 							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST}},
 							Bytes:   []byte{127, 0, 0, 1},
@@ -342,7 +346,8 @@ func TestCreateAclEntry(t *testing.T) {
 			EntryDesc: &fwdpb.EntryDesc{
 				Entry: &fwdpb.EntryDesc_Flow{
 					Flow: &fwdpb.FlowEntryDesc{
-						Id: 2,
+						Id:       2,
+						Priority: math.MaxUint32,
 						Fields: []*fwdpb.PacketFieldMaskedBytes{{
 							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST}},
 							Bytes:   []byte{127, 0, 0, 1},
@@ -379,7 +384,8 @@ func TestCreateAclEntry(t *testing.T) {
 			EntryDesc: &fwdpb.EntryDesc{
 				Entry: &fwdpb.EntryDesc_Flow{
 					Flow: &fwdpb.FlowEntryDesc{
-						Id: 2,
+						Id:       2,
+						Priority: math.MaxUint32,
 						Fields: []*fwdpb.PacketFieldMaskedBytes{{
 							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST}},
 							Bytes:   []byte{127, 0, 0, 1},
@@ -452,7 +458,8 @@ func TestRemoveAclEntry(t *testing.T) {
 			EntryDesc: &fwdpb.EntryDesc{
 				Entry: &fwdpb.EntryDesc_Flow{
 					Flow: &fwdpb.FlowEntryDesc{
-						Id: 2,
+						Id:       2,
+						Priority: math.MaxUint32,
 						Fields: []*fwdpb.PacketFieldMaskedBytes{{
 							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST}},
 							Bytes:   []byte{127, 0, 0, 1},

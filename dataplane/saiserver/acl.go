@@ -130,7 +130,7 @@ func (a *acl) createAclEntryFields(req *saipb.CreateAclEntryRequest, id uint64, 
 		EntryDesc: &fwdpb.EntryDesc{
 			Entry: &fwdpb.EntryDesc_Flow{
 				Flow: &fwdpb.FlowEntryDesc{
-					Priority: req.GetPriority(),
+					Priority: math.MaxUint32 - req.GetPriority(), // TODO: SAI and Lucius have reversed definition of priority, this be cleaner if lucius supported both.
 					Id:       uint32(id),
 					Bank:     uint32(bank),
 				},
@@ -177,7 +177,7 @@ func (a *acl) createAclEntryFields(req *saipb.CreateAclEntryRequest, id uint64, 
 			fieldMask.Bytes = binary.BigEndian.AppendUint16(nil, 0x0806) // Match ARP.
 		case saipb.AclIpType_ACL_IP_TYPE_IP:
 			fieldMask = &fwdpb.PacketFieldMaskedBytes{
-				FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_PROTO}},
+				FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION}},
 				Bytes:   []byte{0x4}, // IPv4 0100 IPv6 0110
 				Masks:   []byte{0x4}, // Mask 0100
 			}
@@ -187,10 +187,14 @@ func (a *acl) createAclEntryFields(req *saipb.CreateAclEntryRequest, id uint64, 
 		aReq.EntryDesc.GetFlow().Fields = append(aReq.EntryDesc.GetFlow().Fields, fieldMask)
 	}
 	if req.GetFieldDscp() != nil {
+		// The QOS header in lucius corresponds to DSCP and ECN, so shift the bits left by 2.
+		data := byte(req.GetFieldDscp().GetDataUint()) << 2
+		mask := byte(req.GetFieldDscp().GetMaskUint()) << 2
+
 		aReq.EntryDesc.GetFlow().Fields = append(aReq.EntryDesc.GetFlow().Fields, &fwdpb.PacketFieldMaskedBytes{
 			FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_QOS}},
-			Bytes:   []byte{byte(req.GetFieldDscp().GetDataUint())},
-			Masks:   []byte{byte(req.GetFieldDscp().GetMaskUint())},
+			Bytes:   []byte{data},
+			Masks:   []byte{mask},
 		})
 	}
 	if req.GetFieldDstIpv6Word3() != nil { // Word3 is supposed to match the 127:96 bits of the IP, assume the caller is masking this correctly put the whole IP in the table.
