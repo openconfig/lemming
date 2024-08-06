@@ -636,9 +636,18 @@ func (t *bgpTask) populateRIBAttrs(path *api.Path, rib *oc.NetworkInstance_Proto
 			continue
 		}
 		switch m := m.(type) {
+		// When advertising routes, lemming sets the next-hop attribute.
 		case *api.NextHopAttribute:
 			hasNextHop = true
 			attrSet.nextHop = m.GetNextHop()
+		// Other BGP speakers (like the OTG) may use the MP_REACH_NLRI attribute.
+		case *api.MpReachNLRIAttribute:
+			if len(m.NextHops) == 1 {
+				hasNextHop = true
+				attrSet.nextHop = m.NextHops[0]
+			} else if len(m.NextHops) > 1 {
+				log.Errorf("BGP: MP_REACH_NLRI with multiple next-hops: %v", m.NextHops)
+			}
 		case *api.CommunitiesAttribute:
 			if comms := m.GetCommunities(); len(comms) > 0 {
 				hasCommunity = true
