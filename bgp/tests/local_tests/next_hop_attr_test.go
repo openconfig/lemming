@@ -27,7 +27,6 @@ import (
 // This test case creates a new topology in which all IP addresses are fixed. The topology consists
 // of only two connected devices. The second device sets the next-hop to itself.
 func TestNextHopAttr(t *testing.T) {
-
 	prefix := "10.0.0.0/10"
 
 	dut1, dut2, stop := setupShortTopology(t)
