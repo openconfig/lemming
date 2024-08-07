@@ -642,11 +642,13 @@ func (t *bgpTask) populateRIBAttrs(path *api.Path, rib *oc.NetworkInstance_Proto
 			attrSet.nextHop = m.GetNextHop()
 		// Other BGP speakers (like the OTG) may use the MP_REACH_NLRI attribute.
 		case *api.MpReachNLRIAttribute:
-			if len(m.NextHops) == 1 {
+			// Some BGP speakers attach two next-hops to IPv6 afi-safi routes. In that case, the
+			// second next-hop is a link-local address (starting with fe80:). OpenConfig, however,
+			// can only represent single next-hops. We therefore just take the first next-hop
+			// address.
+			if len(m.NextHops) > 0 {
 				hasNextHop = true
 				attrSet.nextHop = m.NextHops[0]
-			} else if len(m.NextHops) > 1 {
-				log.Errorf("BGP: MP_REACH_NLRI with multiple next-hops: %v", m.NextHops)
 			}
 		case *api.CommunitiesAttribute:
 			if comms := m.GetCommunities(); len(comms) > 0 {
