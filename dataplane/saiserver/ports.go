@@ -920,6 +920,6 @@ func (w *wred) SetWredAttribute(context.Context, *saipb.SetWredAttributeRequest)
 	return &saipb.SetWredAttributeResponse{}, nil
 }
 
-func RemoveWred(context.Context, *saipb.RemoveWredRequest) (*saipb.RemoveWredResponse, error) {
+func (w *wred) RemoveWred(context.Context, *saipb.RemoveWredRequest) (*saipb.RemoveWredResponse, error) {
 	return &saipb.RemoveWredResponse{}, nil
 }
