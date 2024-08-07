@@ -57,7 +57,8 @@ func (p *policer) CreatePolicer(ctx context.Context, req *saipb.CreatePolicerReq
 	switch req.GetGreenPacketAction() {
 	case saipb.PacketAction_PACKET_ACTION_TRAP, saipb.PacketAction_PACKET_ACTION_COPY:
 		action = fwdconfig.Action(fwdconfig.TransmitAction(fmt.Sprint(resp.GetAttr().GetCpuPort())).WithImmediate(true))
-
+	case saipb.PacketAction_PACKET_ACTION_FORWARD, saipb.PacketAction_PACKET_ACTION_UNSPECIFIED: // If unset, the default action is FORWARD.
+		action = fwdconfig.Action(fwdconfig.ContinueAction())
 	default:
 		return nil, fmt.Errorf("unsupport policer action: %v", req.GetGreenPacketAction())
 	}
