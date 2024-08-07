@@ -757,6 +757,10 @@ func (q *queue) SetQueueAttribute(context.Context, *saipb.SetQueueAttributeReque
 	return &saipb.SetQueueAttributeResponse{}, nil
 }
 
+func (q *queue) RemoveQueue(context.Context, *saipb.RemoveQueueRequest) (*saipb.RemoveQueueResponse, error) {
+	return &saipb.RemoveQueueResponse{}, nil
+}
+
 type schedulerGroup struct {
 	saipb.UnimplementedSchedulerGroupServer
 	mgr       *attrmgr.AttrMgr
@@ -840,4 +844,82 @@ func (q *qosMap) CreateQosMap(context.Context, *saipb.CreateQosMapRequest) (*sai
 
 func (q *qosMap) SetQosMapAttribute(context.Context, *saipb.SetQosMapAttributeRequest) (*saipb.SetQosMapAttributeResponse, error) {
 	return &saipb.SetQosMapAttributeResponse{}, nil
+}
+
+type buffer struct {
+	saipb.UnimplementedBufferServer
+	mgr       *attrmgr.AttrMgr
+	dataplane switchDataplaneAPI
+}
+
+func newBuffer(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, srv *grpc.Server) *buffer {
+	b := &buffer{
+		mgr:       mgr,
+		dataplane: dataplane,
+	}
+	saipb.RegisterBufferServer(srv, b)
+	return b
+}
+
+func (b *buffer) CreateBufferPool(context.Context, *saipb.CreateBufferPoolRequest) (*saipb.CreateBufferPoolResponse, error) {
+	id := b.mgr.NextID()
+
+	return &saipb.CreateBufferPoolResponse{
+		Oid: id,
+	}, nil
+}
+
+func (b *buffer) CreateBufferProfile(context.Context, *saipb.CreateBufferProfileRequest) (*saipb.CreateBufferProfileResponse, error) {
+	id := b.mgr.NextID()
+
+	return &saipb.CreateBufferProfileResponse{
+		Oid: id,
+	}, nil
+}
+
+func (b *buffer) RemoveBufferPool(context.Context, *saipb.RemoveBufferPoolRequest) (*saipb.RemoveBufferPoolResponse, error) {
+	return &saipb.RemoveBufferPoolResponse{}, nil
+}
+
+func (b *buffer) RemoveBufferProfile(context.Context, *saipb.RemoveBufferProfileRequest) (*saipb.RemoveBufferProfileResponse, error) {
+	return &saipb.RemoveBufferProfileResponse{}, nil
+}
+
+func (b *buffer) SetBufferPoolAttribute(context.Context, *saipb.SetBufferPoolAttributeRequest) (*saipb.SetBufferPoolAttributeResponse, error) {
+	return &saipb.SetBufferPoolAttributeResponse{}, nil
+}
+
+func (b *buffer) SetBufferProfileAttribute(context.Context, *saipb.SetBufferProfileAttributeRequest) (*saipb.SetBufferProfileAttributeResponse, error) {
+	return &saipb.SetBufferProfileAttributeResponse{}, nil
+}
+
+type wred struct {
+	saipb.UnimplementedWredServer
+	mgr       *attrmgr.AttrMgr
+	dataplane switchDataplaneAPI
+}
+
+func newWRED(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, srv *grpc.Server) *wred {
+	w := &wred{
+		mgr:       mgr,
+		dataplane: dataplane,
+	}
+	saipb.RegisterWredServer(srv, w)
+	return w
+}
+
+func (w *wred) CreateWred(context.Context, *saipb.CreateWredRequest) (*saipb.CreateWredResponse, error) {
+	id := w.mgr.NextID()
+
+	return &saipb.CreateWredResponse{
+		Oid: id,
+	}, nil
+}
+
+func (w *wred) SetWredAttribute(context.Context, *saipb.SetWredAttributeRequest) (*saipb.SetWredAttributeResponse, error) {
+	return &saipb.SetWredAttributeResponse{}, nil
+}
+
+func RemoveWred(context.Context, *saipb.RemoveWredRequest) (*saipb.RemoveWredResponse, error) {
+	return &saipb.RemoveWredResponse{}, nil
 }
