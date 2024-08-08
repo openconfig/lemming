@@ -6,6 +6,7 @@ go_test(
     srcs = [
         "community_count_test.go",
         "community_set_test.go",
+        "next_hop_attr_test.go",
         "own_as_path_test.go",
         "policy_test.go",
         "prefix_set_test.go",

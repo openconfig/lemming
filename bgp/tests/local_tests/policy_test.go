@@ -402,6 +402,17 @@ func setDefaultAttrs(a *oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet, rejected bo
 	if a.LocalPref == nil {
 		a.LocalPref = ygot.Uint32(100)
 	}
+	// reset the next-hop
+	a.NextHop = nil
+	return a
+}
+
+// Set the next-hop to nil, so that test-cases do not need to compare the next-hop.
+func resetNextHop(a *oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet) *oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet {
+	if a == nil {
+		return nil
+	}
+	a.NextHop = nil
 	return a
 }
 
@@ -430,7 +441,7 @@ func testAttrs(t *testing.T, route policytest.TestRoute, routeTest *policytest.R
 		if err != nil {
 			return err.Error()
 		}
-		return cmp.Diff(setDefaultAttrs(routeTest.PrevAdjRibOutPreAttrs, false), attrs, protocmp.Transform())
+		return cmp.Diff(setDefaultAttrs(routeTest.PrevAdjRibOutPreAttrs, false), resetNextHop(attrs), protocmp.Transform())
 	}, updateAttrMaps); diff != "" {
 		t.Errorf("DUT %v AdjRibOutPre attribute difference (prefix %s) (-want, +got):\n%s", prevDUT.ID, prefix, diff)
 	}
@@ -439,7 +450,7 @@ func testAttrs(t *testing.T, route policytest.TestRoute, routeTest *policytest.R
 		if err != nil {
 			return err.Error()
 		}
-		return cmp.Diff(setDefaultAttrs(routeTest.PrevAdjRibOutPostAttrs, false), attrs, protocmp.Transform())
+		return cmp.Diff(setDefaultAttrs(routeTest.PrevAdjRibOutPostAttrs, false), resetNextHop(attrs), protocmp.Transform())
 	}, updateAttrMaps); diff != "" {
 		t.Errorf("DUT %v AdjRibOutPost attribute difference (prefix %s) (-want, +got):\n%s", prevDUT.ID, prefix, diff)
 	}
@@ -448,7 +459,7 @@ func testAttrs(t *testing.T, route policytest.TestRoute, routeTest *policytest.R
 		if err != nil {
 			return err.Error()
 		}
-		return cmp.Diff(setDefaultAttrs(routeTest.AdjRibInPreAttrs, false), attrs, protocmp.Transform())
+		return cmp.Diff(setDefaultAttrs(routeTest.AdjRibInPreAttrs, false), resetNextHop(attrs), protocmp.Transform())
 	}, updateAttrMaps); diff != "" {
 		t.Errorf("DUT %v AdjRibInPre attribute difference (prefix %s) (-want, +got):\n%s", currDUT.ID, prefix, diff)
 	}
@@ -457,7 +468,7 @@ func testAttrs(t *testing.T, route policytest.TestRoute, routeTest *policytest.R
 		if err != nil {
 			return err.Error()
 		}
-		return cmp.Diff(setDefaultAttrs(routeTest.AdjRibInPostAttrs, routeTest.ExpectedResult == policytest.RouteDiscarded), attrs, protocmp.Transform())
+		return cmp.Diff(setDefaultAttrs(routeTest.AdjRibInPostAttrs, routeTest.ExpectedResult == policytest.RouteDiscarded), resetNextHop(attrs), protocmp.Transform())
 	}, updateAttrMaps); diff != "" {
 		t.Errorf("DUT %v AdjRibInPost attribute difference (prefix %s) (-want, +got):\n%s", currDUT.ID, prefix, diff)
 	}
@@ -466,7 +477,7 @@ func testAttrs(t *testing.T, route policytest.TestRoute, routeTest *policytest.R
 		if err != nil {
 			return err.Error()
 		}
-		return cmp.Diff(setDefaultAttrs(routeTest.LocalRibAttrs, routeTest.ExpectedResult != policytest.RouteAccepted), attrs, protocmp.Transform())
+		return cmp.Diff(setDefaultAttrs(routeTest.LocalRibAttrs, routeTest.ExpectedResult != policytest.RouteAccepted), resetNextHop(attrs), protocmp.Transform())
 	}, updateAttrMaps); diff != "" {
 		t.Errorf("DUT %v LocRib routeTest difference (prefix %s) (-want, +got):\n%s", currDUT.ID, prefix, diff)
 	}
@@ -475,7 +486,7 @@ func testAttrs(t *testing.T, route policytest.TestRoute, routeTest *policytest.R
 		if err != nil {
 			return err.Error()
 		}
-		return cmp.Diff(setDefaultAttrs(routeTest.AdjRibOutPreAttrs, routeTest.ExpectedResult == policytest.RouteDiscarded), attrs, protocmp.Transform())
+		return cmp.Diff(setDefaultAttrs(routeTest.AdjRibOutPreAttrs, routeTest.ExpectedResult == policytest.RouteDiscarded), resetNextHop(attrs), protocmp.Transform())
 	}, updateAttrMaps); diff != "" {
 		t.Errorf("DUT %v AdjRibOutPre attribute difference (prefix %s) (-want, +got):\n%s\n%+v", currDUT.ID, prefix, diff, routeTest.AdjRibOutPreAttrs)
 	}
@@ -484,7 +495,7 @@ func testAttrs(t *testing.T, route policytest.TestRoute, routeTest *policytest.R
 		if err != nil {
 			return err.Error()
 		}
-		return cmp.Diff(setDefaultAttrs(routeTest.AdjRibOutPostAttrs, routeTest.ExpectedResult == policytest.RouteDiscarded), attrs, protocmp.Transform())
+		return cmp.Diff(setDefaultAttrs(routeTest.AdjRibOutPostAttrs, routeTest.ExpectedResult == policytest.RouteDiscarded), resetNextHop(attrs), protocmp.Transform())
 	}, updateAttrMaps); diff != "" {
 		t.Errorf("DUT %v AdjRibOutPost attribute difference (prefix %s) (-want, +got):\n%s", currDUT.ID, prefix, diff)
 	}
@@ -493,7 +504,7 @@ func testAttrs(t *testing.T, route policytest.TestRoute, routeTest *policytest.R
 		if err != nil {
 			return err.Error()
 		}
-		return cmp.Diff(setDefaultAttrs(routeTest.NextAdjRibInPreAttrs, routeTest.ExpectedResult == policytest.RouteDiscarded), attrs, protocmp.Transform())
+		return cmp.Diff(setDefaultAttrs(routeTest.NextAdjRibInPreAttrs, routeTest.ExpectedResult == policytest.RouteDiscarded), resetNextHop(attrs), protocmp.Transform())
 	}, updateAttrMaps); diff != "" {
 		t.Errorf("DUT %v AdjRibInPre attribute difference (prefix %s) (-want, +got):\n%s", nextDUT.ID, prefix, diff)
 	}
@@ -502,7 +513,7 @@ func testAttrs(t *testing.T, route policytest.TestRoute, routeTest *policytest.R
 		if err != nil {
 			return err.Error()
 		}
-		return cmp.Diff(setDefaultAttrs(routeTest.NextLocalRibAttrs, routeTest.ExpectedResult == policytest.RouteDiscarded), attrs, protocmp.Transform())
+		return cmp.Diff(setDefaultAttrs(routeTest.NextLocalRibAttrs, routeTest.ExpectedResult == policytest.RouteDiscarded), resetNextHop(attrs), protocmp.Transform())
 	}, updateAttrMaps); diff != "" {
 		t.Errorf("DUT %v LocRib attribute difference (prefix %s) (-want, +got):\n%s", nextDUT.ID, prefix, diff)
 	}

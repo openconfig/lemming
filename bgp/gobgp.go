@@ -618,6 +618,7 @@ func (t *bgpTask) populateRIBAttrs(path *api.Path, rib *oc.NetworkInstance_Proto
 	}
 
 	var (
+		hasNextHop         bool
 		hasCommunity       bool
 		commIndex          uint64
 		hasOrigin          bool
@@ -635,6 +636,20 @@ func (t *bgpTask) populateRIBAttrs(path *api.Path, rib *oc.NetworkInstance_Proto
 			continue
 		}
 		switch m := m.(type) {
+		// When advertising routes, lemming sets the next-hop attribute.
+		case *api.NextHopAttribute:
+			hasNextHop = true
+			attrSet.nextHop = m.GetNextHop()
+		// Other BGP speakers (like the OTG) may use the MP_REACH_NLRI attribute.
+		case *api.MpReachNLRIAttribute:
+			// Some BGP speakers attach two next-hops to IPv6 afi-safi routes. In that case, the
+			// second next-hop is a link-local address (starting with fe80:). OpenConfig, however,
+			// can only represent single next-hops. We therefore just take the first next-hop
+			// address.
+			if len(m.NextHops) > 0 {
+				hasNextHop = true
+				attrSet.nextHop = m.NextHops[0]
+			}
 		case *api.CommunitiesAttribute:
 			if comms := m.GetCommunities(); len(comms) > 0 {
 				hasCommunity = true
@@ -672,6 +687,9 @@ func (t *bgpTask) populateRIBAttrs(path *api.Path, rib *oc.NetworkInstance_Proto
 		attrSetIndex := t.attrSetTracker.getOrAllocIndex(attrSet)
 		route.SetAttrIndex(attrSetIndex)
 		attrSetOC := rib.GetOrCreateAttrSet(attrSetIndex)
+		if hasNextHop {
+			attrSetOC.SetNextHop(attrSet.nextHop)
+		}
 		if hasOrigin {
 			attrSetOC.SetOrigin(attrSet.origin)
 		}
@@ -697,6 +715,7 @@ type ocRIBRoute interface {
 }
 
 type ribAttrSet struct {
+	nextHop   string
 	origin    oc.E_BgpTypes_BgpOriginAttrType
 	med       uint32
 	localPref uint32
