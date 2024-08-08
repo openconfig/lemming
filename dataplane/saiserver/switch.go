@@ -38,6 +38,7 @@ type saiSwitch struct {
 	saipb.UnimplementedSwitchServer
 	dataplane       switchDataplaneAPI
 	acl             *acl
+	buffer          *buffer
 	port            *port
 	vlan            *vlan
 	stp             *stp
@@ -63,6 +64,7 @@ type saiSwitch struct {
 	scheduler       *scheduler
 	qosMap          *qosMap
 	rpf             *rpfGroup
+	wred            *wred
 	mgr             *attrmgr.AttrMgr
 }
 
@@ -148,6 +150,8 @@ func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server, 
 		qosMap:          newQOSMap(mgr, engine, s),
 		virtualRouter:   newVirtualRouter(mgr, engine, s),
 		rpf:             newRpfGroup(mgr, engine, s),
+		buffer:          newBuffer(mgr, engine, s),
+		wred:            newWRED(mgr, engine, s),
 		queue:           q,
 		sg:              sg,
 		mgr:             mgr,

@@ -34,10 +34,6 @@ type bfd struct {
 	saipb.UnimplementedBfdServer
 }
 
-type buffer struct {
-	saipb.UnimplementedBufferServer
-}
-
 type counter struct {
 	saipb.UnimplementedCounterServer
 }
@@ -106,10 +102,6 @@ type tam struct {
 	saipb.UnimplementedTamServer
 }
 
-type wred struct {
-	saipb.UnimplementedWredServer
-}
-
 type forwardingContext struct {
 	*forwarding.Server
 	id string
@@ -125,7 +117,6 @@ type Server struct {
 	mgr          *attrmgr.AttrMgr
 	initialized  bool
 	bfd          *bfd
-	buffer       *buffer
 	counter      *counter
 	debugCounter *debugCounter
 	dtel         *dtel
@@ -143,7 +134,6 @@ type Server struct {
 	saiSwitch    *saiSwitch
 	systemPort   *systemPort
 	tam          *tam
-	wred         *wred
 }
 
 func (s *Server) ObjectTypeQuery(_ context.Context, req *saipb.ObjectTypeQueryRequest) (*saipb.ObjectTypeQueryResponse, error) {
@@ -205,7 +195,6 @@ func New(ctx context.Context, mgr *attrmgr.AttrMgr, s *grpc.Server, opts *dplane
 		mgr:               mgr,
 		forwardingContext: fwdCtx,
 		bfd:               &bfd{},
-		buffer:            &buffer{},
 		counter:           &counter{},
 		debugCounter:      &debugCounter{},
 		dtel:              &dtel{},
@@ -223,7 +212,6 @@ func New(ctx context.Context, mgr *attrmgr.AttrMgr, s *grpc.Server, opts *dplane
 		saiSwitch:         sw,
 		systemPort:        &systemPort{},
 		tam:               &tam{},
-		wred:              &wred{},
 	}
 	fwdpb.RegisterForwardingServer(s, fwdCtx)
 	fwdpb.RegisterInfoServer(s, fwdCtx)
@@ -245,7 +233,6 @@ func New(ctx context.Context, mgr *attrmgr.AttrMgr, s *grpc.Server, opts *dplane
 	saipb.RegisterSrv6Server(s, srv.srv6)
 	saipb.RegisterSystemPortServer(s, srv.systemPort)
 	saipb.RegisterTamServer(s, srv.tam)
-	saipb.RegisterWredServer(s, srv.wred)
 
 	return srv, nil
 }

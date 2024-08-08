@@ -331,3 +331,18 @@ func (u *FlowCounterActionBuilder) set(a *fwdpb.ActionDesc) {
 func (u *FlowCounterActionBuilder) actionType() fwdpb.ActionType {
 	return fwdpb.ActionType_ACTION_TYPE_FLOW_COUNTER
 }
+
+// ContinueActionBuilder is a builder for a continue action.
+type ContinueActionBuilder struct{}
+
+// ContinueAction returns a new continue action builder.
+func ContinueAction() *ContinueActionBuilder {
+	return &ContinueActionBuilder{}
+}
+
+func (u *ContinueActionBuilder) set(*fwdpb.ActionDesc) {
+}
+
+func (u *ContinueActionBuilder) actionType() fwdpb.ActionType {
+	return fwdpb.ActionType_ACTION_TYPE_CONTINUE
+}
