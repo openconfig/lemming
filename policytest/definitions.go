@@ -42,6 +42,7 @@ type RoutePathTestCase struct {
 	NextAdjRibInPreCommunities []string
 	NextLocalRibCommunities    []string
 
+	// The next-hop attribute will not be compared (the addresses are not stable between test runs)
 	PrevAdjRibOutPreAttrs  *oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet
 	PrevAdjRibOutPostAttrs *oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet
 	AdjRibInPreAttrs       *oc.NetworkInstance_Protocol_Bgp_Rib_AttrSet
