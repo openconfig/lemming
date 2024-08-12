@@ -92,6 +92,7 @@ func getPreIngressPipeline() []*fwdpb.ActionDesc {
 func getL3Pipeline() []*fwdpb.ActionDesc {
 	return []*fwdpb.ActionDesc{
 		fwdconfig.Action(fwdconfig.LookupAction(IngressActionTable)).Build(),                                                                                    // Run ingress action.
+		fwdconfig.Action(fwdconfig.LookupAction(invalidIPTable)).Build(),                                                                                        // Do not forward packets with invalid addresses
 		fwdconfig.Action(fwdconfig.DecapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET)).Build(),                                                         // Decap L2 header.
 		fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_DEC, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP).WithValue([]byte{0x1})).Build(), // Decrement TTL.
 		fwdconfig.Action(fwdconfig.LookupAction(FIBSelectorTable)).Build(),                                                                                      // Lookup in FIB.
