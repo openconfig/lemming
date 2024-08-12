@@ -17,6 +17,7 @@ package saiserver
 import (
 	"context"
 	"fmt"
+	"net"
 	"strconv"
 
 	"google.golang.org/grpc"
@@ -113,6 +114,7 @@ const (
 	VlanTable             = "vlan"
 	L2MCGroupTable        = "l2mcg"
 	policerTabler         = "policerTable"
+	invalidIPTable        = "invalid-ip"
 	DefaultVlanId         = 1
 )
 
@@ -315,6 +317,10 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 	}
 	action.Desc.TableId.ObjectId.Id = EgressActionTable
 	if _, err := sw.dataplane.TableCreate(ctx, action); err != nil {
+		return nil, err
+	}
+
+	if err := sw.createInvalidIPFilter(ctx); err != nil {
 		return nil, err
 	}
 
@@ -793,6 +799,60 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 	return &saipb.CreateSwitchResponse{
 		Oid: swID,
 	}, nil
+}
+
+// Set up rules to drop packets that contain invalid IP.
+// https://www.rfc-editor.org/rfc/rfc1812#section-5.3.7
+func (sw *saiSwitch) createInvalidIPFilter(ctx context.Context) error {
+	_, err := sw.dataplane.TableCreate(ctx, &fwdpb.TableCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
+		Desc: &fwdpb.TableDesc{
+			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_CONTINUE}},
+			TableType: fwdpb.TableType_TABLE_TYPE_FLOW,
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: invalidIPTable}},
+			Table: &fwdpb.TableDesc_Flow{
+				Flow: &fwdpb.FlowTableDesc{
+					BankCount: 1,
+				},
+			},
+		},
+	})
+	if err != nil {
+		return err
+	}
+	// Packets can't have multicast, or loopback IP as the source IP.
+	invalidSrcIP := []string{"224.0.0.0/4", "ff00::/8", "127.0.0.0/8"}
+	for _, ip := range invalidSrcIP {
+		_, prefix, err := net.ParseCIDR(ip)
+		if err != nil {
+			return err
+		}
+		req := fwdconfig.TableEntryAddRequest(sw.dataplane.ID(), invalidIPTable).
+			AppendEntry(
+				fwdconfig.EntryDesc(fwdconfig.FlowEntry(fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC).WithBytes(prefix.IP, prefix.Mask))),
+				fwdconfig.Action(fwdconfig.DropAction()),
+			).Build()
+		if _, err := sw.dataplane.TableEntryAdd(ctx, req); err != nil {
+			return err
+		}
+	}
+	// Only unicast MAC address are processed at this stage, so multicast IPs are invalid
+	invalidDstIP := []string{"224.0.0.0/4", "ff00::/8", "fe80::/10", "127.0.0.0/8", "255.255.255.255/24"}
+	for _, ip := range invalidDstIP {
+		_, prefix, err := net.ParseCIDR(ip)
+		if err != nil {
+			return err
+		}
+		req := fwdconfig.TableEntryAddRequest(sw.dataplane.ID(), invalidIPTable).
+			AppendEntry(
+				fwdconfig.EntryDesc(fwdconfig.FlowEntry(fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(prefix.IP, prefix.Mask))),
+				fwdconfig.Action(fwdconfig.DropAction()),
+			).Build()
+		if _, err := sw.dataplane.TableEntryAdd(ctx, req); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (sw *saiSwitch) SetSwitchAttribute(ctx context.Context, req *saipb.SetSwitchAttributeRequest) (*saipb.SetSwitchAttributeResponse, error) {

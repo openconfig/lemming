@@ -370,9 +370,16 @@ func (a *acl) CreateAclEntry(ctx context.Context, req *saipb.CreateAclEntryReque
 			aReq.Actions = append(aReq.Actions, &fwdpb.ActionDesc{ActionType: fwdpb.ActionType_ACTION_TYPE_DROP})
 		case saipb.PacketAction_PACKET_ACTION_TRAP: // COPY and DROP
 			aReq.Actions = append(aReq.Actions, fwdconfig.Action(fwdconfig.TransmitAction(fmt.Sprint(resp.GetAttr().GetCpuPort())).WithImmediate(true)).Build())
-		case saipb.PacketAction_PACKET_ACTION_FORWARD,
-			saipb.PacketAction_PACKET_ACTION_LOG,     // COPY and FORWARD
-			saipb.PacketAction_PACKET_ACTION_TRANSIT: // COPY_CANCEL and FORWARD
+		case saipb.PacketAction_PACKET_ACTION_LOG: // COPY and FORWARD
+			mirror := &fwdpb.ActionDesc{
+				ActionType: fwdpb.ActionType_ACTION_TYPE_MIRROR,
+				Action: &fwdpb.ActionDesc_Mirror{Mirror: &fwdpb.MirrorActionDesc{
+					PortId:     &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(resp.GetAttr().GetCpuPort())}},
+					PortAction: fwdpb.PortAction_PORT_ACTION_OUTPUT,
+				}},
+			}
+			aReq.Actions = append(aReq.Actions, mirror, &fwdpb.ActionDesc{ActionType: fwdpb.ActionType_ACTION_TYPE_CONTINUE})
+		case saipb.PacketAction_PACKET_ACTION_FORWARD, saipb.PacketAction_PACKET_ACTION_TRANSIT: // COPY_CANCEL and FORWARD
 			aReq.Actions = append(aReq.Actions, &fwdpb.ActionDesc{ActionType: fwdpb.ActionType_ACTION_TYPE_CONTINUE}) // Packets are forwarded by default so continue.
 		default:
 			return nil, status.Errorf(codes.InvalidArgument, "unknown packet action type: %v", req.GetActionPacketAction().GetPacketAction())
