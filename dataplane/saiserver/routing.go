@@ -1048,6 +1048,12 @@ func (vlan *vlan) CreateVlanMembers(ctx context.Context, r *saipb.CreateVlanMemb
 	return resp, nil
 }
 
+func (vlan *vlan) Reset() {
+	log.Info("resetting vlan")
+	vlan.oidByVId = map[uint32]uint64{}
+	vlan.vlans = map[uint64]map[uint64]*vlanMember{}
+}
+
 type bridge struct {
 	saipb.UnimplementedBridgeServer
 	mgr       *attrmgr.AttrMgr

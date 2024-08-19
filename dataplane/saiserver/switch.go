@@ -947,6 +947,7 @@ func (sw *saiSwitch) PortStateChangeNotification(_ *saipb.PortStateChangeNotific
 }
 
 func (sw *saiSwitch) Reset() {
+	sw.vlan.Reset()
 	sw.port.Reset()
 	sw.hostif.Reset()
 }
