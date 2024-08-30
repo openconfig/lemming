@@ -38,9 +38,9 @@ import (
 var (
 	port          = flag.Int("port", 50000, "Port for api server")
 	configFile    = flag.String("config_file", "", "Path to config file")
-	portMapString = flag.String("port_map", "", "Map of modeled port names to Linux interface to  as comma seperated list (eg Ethernet8:eth1,Ethernet10,eth2)")
-	ethDevAsLane  = flag.Bool("eth_dev_as_lane", false, "If true, when creating ports, use ethX and hardware lane X")
-	remoteCPUPort = flag.Bool("remote_cpu_port", false, "If true, send all packets from/to the CPU port over gRPC")
+	portMapString = flag.String("port_map", "", "Map of modeled port names to Linux interface to  as comma seperated list (eg Ethernet8:eth1,Ethernet10,eth2) (deprecated, will be removed in future release)")
+	ethDevAsLane  = flag.Bool("eth_dev_as_lane", true, "If true, when creating ports, use ethX and hardware lane X (deprecated, will always to true in future release)")
+	remoteCPUPort = flag.Bool("remote_cpu_port", true, "If true, send all packets from/to the CPU port over gRPC (deprecated, will always to true in future release)")
 )
 
 func main() {
