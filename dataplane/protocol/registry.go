@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // Package registry is the registry of protocol on the dataplane.
-package registry
+package protocol
 
 import (
 	"errors"
