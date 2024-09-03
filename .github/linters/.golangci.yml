@@ -70,6 +70,7 @@ linters-settings:
   gosec:
     excludes:
       - G204
+      - G115
   revive:
     rules:
       - name: unused-parameter

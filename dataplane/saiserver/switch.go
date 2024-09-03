@@ -114,7 +114,7 @@ const (
 	VlanTable             = "vlan"
 	L2MCGroupTable        = "l2mcg"
 	policerTabler         = "policerTable"
-	invalidIPTable        = "invalid-ip"
+	invalidPacketTable    = "invalid-ip"
 	DefaultVlanId         = 1
 )
 
@@ -320,7 +320,7 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 		return nil, err
 	}
 
-	if err := sw.createInvalidIPFilter(ctx); err != nil {
+	if err := sw.createInvalidPacketFilter(ctx); err != nil {
 		return nil, err
 	}
 
@@ -801,15 +801,15 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 	}, nil
 }
 
-// Set up rules to drop packets that contain invalid IP.
+// Set up rules to drop packets that contain invalid IP or ttl == 0.
 // https://www.rfc-editor.org/rfc/rfc1812#section-5.3.7
-func (sw *saiSwitch) createInvalidIPFilter(ctx context.Context) error {
+func (sw *saiSwitch) createInvalidPacketFilter(ctx context.Context) error {
 	_, err := sw.dataplane.TableCreate(ctx, &fwdpb.TableCreateRequest{
 		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
 		Desc: &fwdpb.TableDesc{
 			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_CONTINUE}},
 			TableType: fwdpb.TableType_TABLE_TYPE_FLOW,
-			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: invalidIPTable}},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: invalidPacketTable}},
 			Table: &fwdpb.TableDesc_Flow{
 				Flow: &fwdpb.FlowTableDesc{
 					BankCount: 1,
@@ -827,7 +827,7 @@ func (sw *saiSwitch) createInvalidIPFilter(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-		req := fwdconfig.TableEntryAddRequest(sw.dataplane.ID(), invalidIPTable).
+		req := fwdconfig.TableEntryAddRequest(sw.dataplane.ID(), invalidPacketTable).
 			AppendEntry(
 				fwdconfig.EntryDesc(fwdconfig.FlowEntry(fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC).WithBytes(prefix.IP, prefix.Mask))),
 				fwdconfig.Action(fwdconfig.DropAction()),
@@ -843,7 +843,7 @@ func (sw *saiSwitch) createInvalidIPFilter(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-		req := fwdconfig.TableEntryAddRequest(sw.dataplane.ID(), invalidIPTable).
+		req := fwdconfig.TableEntryAddRequest(sw.dataplane.ID(), invalidPacketTable).
 			AppendEntry(
 				fwdconfig.EntryDesc(fwdconfig.FlowEntry(fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(prefix.IP, prefix.Mask))),
 				fwdconfig.Action(fwdconfig.DropAction()),
@@ -851,6 +851,14 @@ func (sw *saiSwitch) createInvalidIPFilter(ctx context.Context) error {
 		if _, err := sw.dataplane.TableEntryAdd(ctx, req); err != nil {
 			return err
 		}
+	}
+	req := fwdconfig.TableEntryAddRequest(sw.dataplane.ID(), invalidPacketTable).
+		AppendEntry(
+			fwdconfig.EntryDesc(fwdconfig.FlowEntry(fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP).WithBytes([]byte{0x00}, []byte{0xFF}))),
+			fwdconfig.Action(fwdconfig.DropAction()),
+		).Build()
+	if _, err := sw.dataplane.TableEntryAdd(ctx, req); err != nil {
+		return err
 	}
 	return nil
 }
