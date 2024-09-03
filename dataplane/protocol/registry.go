@@ -63,7 +63,7 @@ func NewRegistry(psc pktiopb.PacketIO_CPUPacketStreamClient) (*Registry, error) 
 	return pr, nil
 }
 
-// Context returns the context of psc.
+// Context returns the context of gPRC client.
 func (r *Registry) Context() context.Context {
 	return r.psc.Context()
 }
