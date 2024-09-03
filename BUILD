@@ -19,7 +19,6 @@ go_library(
         "//bgp",
         "//dataplane",
         "//dataplane/dplaneopts",
-        "//dataplane/protocol",
         "//gnmi",
         "//gnmi/fakedevice",
         "//gnmi/oc",
