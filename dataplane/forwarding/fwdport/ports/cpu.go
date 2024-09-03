@@ -238,9 +238,9 @@ func (p *CPUPort) puntRemotePort(v any) {
 	defer timer.Stop()
 	if err := ps(response); err != nil {
 		fwdport.Increment(p, packet.Length(), fwdpb.CounterId_COUNTER_ID_TX_ERROR_PACKETS, fwdpb.CounterId_COUNTER_ID_TX_ERROR_OCTETS)
+		log.Errorf("ports: Unable to punt packet, request %+v, err %v.", response, err)
 		return
 	}
-	log.Errorf("ports: Unable to punt packet, request %+v, err %v.", response, err)
 }
 
 // Actions returns the port actions of the specified type.

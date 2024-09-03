@@ -1,9 +1,9 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
-    name = "registry",
+    name = "protocol",
     srcs = ["registry.go"],
-    importpath = "github.com/openconfig/lemming/dataplane/protocol/registry",
+    importpath = "github.com/openconfig/lemming/dataplane/protocol",
     visibility = ["//visibility:public"],
     deps = [
         "//dataplane/forwarding/util/queue",
@@ -18,7 +18,7 @@ go_library(
 go_test(
     name = "registry_test",
     srcs = ["registry_test.go"],
-    embed = [":registry"],
+    embed = [":protocol"],
     deps = [
         "//dataplane/kernel",
         "//dataplane/proto/packetio",

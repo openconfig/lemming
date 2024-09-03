@@ -13,6 +13,7 @@ go_library(
         "//dataplane/dplaneopts",
         "//dataplane/proto/packetio",
         "//dataplane/proto/sai",
+        "//dataplane/protocol",
         "//dataplane/saiserver",
         "//dataplane/saiserver/attrmgr",
         "//dataplane/standalone/pkthandler/pktiohandler",
