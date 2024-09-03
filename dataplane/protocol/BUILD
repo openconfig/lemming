@@ -1,20 +1,5 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
-go_library(
-    name = "protocol",
-    srcs = ["registry.go"],
-    importpath = "github.com/openconfig/lemming/dataplane/protocol",
-    visibility = ["//visibility:public"],
-    deps = [
-        "//dataplane/forwarding/util/queue",
-        "//dataplane/kernel",
-        "//dataplane/proto/packetio",
-        "@com_github_golang_glog//:glog",
-        "@org_golang_google_genproto_googleapis_rpc//status",
-        "@org_golang_google_grpc//codes",
-    ],
-)
-
 go_test(
     name = "registry_test",
     srcs = ["registry_test.go"],
