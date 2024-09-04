@@ -16,16 +16,12 @@ package saiserver
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net"
-	"os"
-	"strings"
 
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/openconfig/lemming/dataplane/cpusink"
 	"github.com/openconfig/lemming/dataplane/dplaneopts"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
 	"github.com/openconfig/lemming/dataplane/saiserver/attrmgr"
@@ -40,22 +36,10 @@ func newPort(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server,
 	p := &port{
 		mgr:       mgr,
 		dataplane: dataplane,
-		portToEth: make(map[uint64]string),
-		nextEth:   1, // Start at eth1
 		vlan:      vlan,
 		opts:      opts,
 		queue:     queue,
 		sg:        sg,
-	}
-	if opts.PortConfigFile != "" {
-		data, err := os.ReadFile(opts.PortConfigFile)
-		if err != nil {
-			return nil, err
-		}
-		p.config = &dplaneopts.PortConfig{}
-		if err := json.Unmarshal(data, p.config); err != nil {
-			return nil, err
-		}
 	}
 
 	saipb.RegisterPortServer(s, p)
@@ -67,10 +51,7 @@ type port struct {
 	vlan      saipb.VlanServer
 	mgr       *attrmgr.AttrMgr
 	dataplane switchDataplaneAPI
-	nextEth   int
-	portToEth map[uint64]string
 	opts      *dplaneopts.Options
-	config    *dplaneopts.PortConfig
 	queue     saipb.QueueServer
 	sg        saipb.SchedulerGroupServer
 }
@@ -132,44 +113,10 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 	// Set the type early, otherwise the initial port notifs won't send.
 	port.mgr.SetType(fmt.Sprint(id), saipb.ObjectType_OBJECT_TYPE_PORT)
 
-	// By default, create port sequentially starting at eth1.
-	dev := fmt.Sprintf("eth%v", port.nextEth)
-	port.nextEth++
-
-	// If a port config is set, then use the hardware lanes to find the interface names.
-	if port.opts.EthDevAsLane {
-		if len(req.HwLaneList) == 0 {
-			return nil, fmt.Errorf("port lanes are required got %v", req.HwLaneList)
-		}
-		dev = fmt.Sprintf("eth%v", req.HwLaneList[0])
-	} else if port.config != nil {
-		if len(req.HwLaneList) == 0 {
-			return nil, fmt.Errorf("port lanes are required got %v", req.HwLaneList)
-		}
-		var b strings.Builder
-		b.WriteString(fmt.Sprint(req.HwLaneList[0]))
-		for _, l := range req.HwLaneList[1:] {
-			b.WriteString(",")
-			b.WriteString(fmt.Sprint(l))
-		}
-		dev = ""
-		lanes := b.String()
-		for n, cfg := range port.config.Ports {
-			if cfg.Lanes == lanes {
-				dev = n
-			}
-		}
-		if dev == "" {
-			return nil, fmt.Errorf("could not find lanes %v in config", lanes)
-		}
-		if port.opts.PortMap != nil && len(port.opts.PortMap) != 0 {
-			if portMapPort := port.opts.PortMap[dev]; portMapPort == "" {
-				log.Warningf("port named %q doesn't exist in the port map", dev)
-			} else {
-				dev = portMapPort
-			}
-		}
+	if len(req.HwLaneList) == 0 {
+		return nil, fmt.Errorf("port lanes are required got %v", req.HwLaneList)
 	}
+	dev := fmt.Sprintf("eth%v", req.HwLaneList[0])
 
 	queues := []uint64{}
 	for i := 0; i < numQueues; i++ {
@@ -322,7 +269,6 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 				Oid: id,
 			}, nil
 		}
-		port.portToEth[id] = dev
 
 	case fwdpb.PortType_PORT_TYPE_FAKE:
 		fwdPort.Port.Port = &fwdpb.PortDesc_Fake{
@@ -418,7 +364,7 @@ func (port *port) createCPUPort(ctx context.Context) (uint64, error) {
 			PortId:   &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)}},
 			Port: &fwdpb.PortDesc_Cpu{
 				Cpu: &fwdpb.CPUPortDesc{
-					RemotePort: port.opts.RemoteCPUPort,
+					RemotePort: true,
 				},
 			},
 		},
@@ -433,33 +379,17 @@ func (port *port) createCPUPort(ctx context.Context) (uint64, error) {
 		Update: &fwdpb.PortUpdateDesc{
 			Port: &fwdpb.PortUpdateDesc_Cpu{
 				Cpu: &fwdpb.CPUPortUpdateDesc{
+					Inputs: []*fwdpb.ActionDesc{
+						fwdconfig.Action(fwdconfig.LookupAction(L2MCGroupTable)).Build(),
+						fwdconfig.Action(fwdconfig.LookupAction(hostifToPortTable)).Build(),
+					},
 					Outputs: []*fwdpb.ActionDesc{
-						fwdconfig.Action(fwdconfig.LookupAction(trapIDToHostifTable)).Build(),
-						fwdconfig.Action(fwdconfig.LookupAction(cpusink.IP2MeTable)).Build(),
+						fwdconfig.Action(fwdconfig.LookupAction(trapIDToHostifTable)).Build(), // Check if the trap ID sets a hostif, otherwise use the default mapping of port -> hostif.
+						fwdconfig.Action(fwdconfig.LookupAction(portToHostifTable)).Build(),
 					},
 				},
 			},
 		},
-	}
-	if port.opts.RemoteCPUPort {
-		req = &fwdpb.PortUpdateRequest{
-			ContextId: &fwdpb.ContextId{Id: port.dataplane.ID()},
-			PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)}},
-			Update: &fwdpb.PortUpdateDesc{
-				Port: &fwdpb.PortUpdateDesc_Cpu{
-					Cpu: &fwdpb.CPUPortUpdateDesc{
-						Inputs: []*fwdpb.ActionDesc{
-							fwdconfig.Action(fwdconfig.LookupAction(L2MCGroupTable)).Build(),
-							fwdconfig.Action(fwdconfig.LookupAction(hostifToPortTable)).Build(),
-						},
-						Outputs: []*fwdpb.ActionDesc{
-							fwdconfig.Action(fwdconfig.LookupAction(trapIDToHostifTable)).Build(), // Check if the trap ID sets a hostif, otherwise use the default mapping of port -> hostif.
-							fwdconfig.Action(fwdconfig.LookupAction(portToHostifTable)).Build(),
-						},
-					},
-				},
-			},
-		}
 	}
 	_, err = port.dataplane.PortUpdate(ctx, req)
 	if err != nil {
@@ -614,8 +544,6 @@ func (port *port) RemovePort(ctx context.Context, req *saipb.RemovePortRequest) 
 
 func (port *port) Reset() {
 	log.Info("reseting port")
-	port.portToEth = make(map[uint64]string)
-	port.nextEth = 1
 }
 
 type lagMember struct {

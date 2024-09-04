@@ -827,21 +827,6 @@ func (e *Server) PacketInject(srv fwdpb.Forwarding_PacketInjectServer) error {
 	}
 }
 
-// PacketEject sets the packet sink for a context and stream packets to the client.
-func (e *Server) PacketSinkSubscribe(req *fwdpb.PacketSinkRequest, srv fwdpb.Forwarding_PacketSinkSubscribeServer) error {
-	errCh := make(chan error)
-	f := func(r *fwdpb.PacketSinkResponse) error {
-		if err := srv.Send(r); err != nil {
-			errCh <- err
-		}
-		return nil
-	}
-	if err := e.UpdatePacketSink(req.GetContextId(), f); err != nil {
-		return err
-	}
-	return <-errCh
-}
-
 // InfoList retrieves a list of all information elements.
 func (e *Server) InfoList(context.Context, *fwdpb.InfoListRequest) (*fwdpb.InfoListReply, error) {
 	return &fwdpb.InfoListReply{

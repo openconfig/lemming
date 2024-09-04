@@ -26,16 +26,6 @@ type Options struct {
 	HostifNetDevType fwdpb.PortType
 	// PortType is the fwdpb type for the port type.
 	PortType fwdpb.PortType
-	// PortConfigFile is the path of the port config.
-	PortConfigFile string
-	// PortMap maps the modeled port name (Ethernet1/1/1) to Linux port name (eth1).
-	PortMap map[string]string
-	// EthDevAsLane treats ethX and hardware lane X.
-	// If a port is created with multiple lanes only the first is used.
-	EthDevAsLane bool
-	// RemoteCPUPort enables sending all packets for the CPU over gRPC.
-	// TODO: In the future, only support this option.
-	RemoteCPUPort bool
 }
 
 // Option exposes additional configuration for the dataplane.
@@ -73,50 +63,6 @@ func WithPortType(t fwdpb.PortType) Option {
 	}
 }
 
-// WithPortConfigFile sets the path of the port config file.
-// Default: none
-func WithPortConfigFile(file string) Option {
-	return func(o *Options) {
-		o.PortConfigFile = file
-	}
-}
-
-// WithPortMap configure a map from port name to Linux network device to allow flexible port naming. (eg Ethernet8 -> eth1)
-// Default: none
-func WithPortMap(m map[string]string) Option {
-	return func(o *Options) {
-		o.PortMap = m
-	}
-}
-
-// WithEthDevAsLane enables treating ethX and hardware lane X.
-// If a port is created with multiple lanes only the first is used.
-// Default: false
-func WithEthDevAsLane(enable bool) Option {
-	return func(o *Options) {
-		o.EthDevAsLane = enable
-	}
-}
-
-// WithEthDevAsLane enables sending all packets from/to the CP port over gRPC
-func WithRemoteCPUPort(enable bool) Option {
-	return func(o *Options) {
-		o.RemoteCPUPort = enable
-	}
-}
-
-// Port contains configuration data for a single port.
-type Port struct {
-	Lanes string `json:"lanes"`
-}
-
-// PortConfig contains configuration data for the dataplane ports.
-type PortConfig struct {
-	Ports map[string]*Port `json:"PORT"`
-	// SendToIngressPort is an optional field that may contain exactly on entry, the name of hostif whose linked port is the CPU port.
-	SendToIngressPort map[string]any `json:"SEND_TO_INGRESS_PORT"`
-}
-
 // ResolveOpts creates an option struct from the opts.
 func ResolveOpts(opts ...Option) *Options {
 	resolved := &Options{
@@ -124,7 +70,6 @@ func ResolveOpts(opts ...Option) *Options {
 		Reconcilation:    true,
 		HostifNetDevType: fwdpb.PortType_PORT_TYPE_TAP,
 		PortType:         fwdpb.PortType_PORT_TYPE_KERNEL,
-		PortMap:          map[string]string{},
 	}
 
 	for _, opt := range opts {

@@ -16,7 +16,6 @@ package saiserver
 
 import (
 	"context"
-	"net"
 	"testing"
 	"time"
 
@@ -85,7 +84,7 @@ func TestCreateHostif(t *testing.T) {
 				ctx: fwdcontext.New("foo", "foo"),
 			}
 			dplane.ctx.SetPacketSink(func(*fwdpb.PacketSinkResponse) error { return nil })
-			c, mgr, stopFn := newTestHostif(t, dplane, false)
+			c, mgr, stopFn := newTestHostif(t, dplane)
 			// Create switch and ports
 			mgr.StoreAttributes(mgr.NextID(), &saipb.SwitchAttribute{
 				CpuPort: proto.Uint64(10),
@@ -96,6 +95,30 @@ func TestCreateHostif(t *testing.T) {
 			mgr.StoreAttributes(mgr.NextID(), &saipb.PortAttribute{
 				OperStatus: saipb.PortOperStatus_PORT_OPER_STATUS_DOWN.Enum(),
 			})
+
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			msgCh := make(chan *pktiopb.HostPortControlMessage, 1)
+			pc, err := c.HostPortControl(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := pc.Send(&pktiopb.HostPortControlRequest{Msg: &pktiopb.HostPortControlRequest_Init{}}); err != nil {
+				t.Fatal(err)
+			}
+			time.Sleep(time.Millisecond)
+			go func() {
+				msg, _ := pc.Recv()
+				msgCh <- msg
+				pc.Send(&pktiopb.HostPortControlRequest{
+					Msg: &pktiopb.HostPortControlRequest_Status{
+						Status: &status.Status{
+							Code:    int32(codes.OK),
+							Message: "",
+						},
+					},
+				})
+			}()
 
 			defer stopFn()
 			got, gotErr := c.CreateHostif(context.TODO(), tt.req)
@@ -108,6 +131,7 @@ func TestCreateHostif(t *testing.T) {
 			if d := cmp.Diff(got, tt.want, protocmp.Transform()); d != "" {
 				t.Errorf("CreateHostif() failed: diff(-got,+want)\n:%s", d)
 			}
+			_ = <-msgCh
 			attr := &saipb.HostifAttribute{}
 			if err := mgr.PopulateAllAttributes("3", attr); err != nil {
 				t.Fatal(err)
@@ -141,7 +165,7 @@ func TestRemoveHostif(t *testing.T) {
 					"1": 10,
 				},
 			}
-			c, mgr, stopFn := newTestHostif(t, dplane, true)
+			c, mgr, stopFn := newTestHostif(t, dplane)
 			defer stopFn()
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
@@ -185,68 +209,15 @@ func TestRemoveHostif(t *testing.T) {
 	}
 }
 
-func TestSetHostifAttribute(t *testing.T) {
-	tests := []struct {
-		desc            string
-		req             *saipb.SetHostifAttributeRequest
-		getInterfaceErr error
-		wantAttr        *saipb.HostifAttribute
-		wantReq         *fwdpb.PortStateRequest
-		wantErr         string
-	}{{
-		desc: "oper status",
-		req: &saipb.SetHostifAttributeRequest{
-			Oid:        1,
-			OperStatus: proto.Bool(false),
-		},
-		wantReq: &fwdpb.PortStateRequest{
-			PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: "1"}},
-			Operation: &fwdpb.PortInfo{AdminStatus: fwdpb.PortState_PORT_STATE_DISABLED_DOWN},
-			ContextId: &fwdpb.ContextId{Id: "foo"},
-		},
-		wantAttr: &saipb.HostifAttribute{
-			OperStatus: proto.Bool(false),
-		},
-	}}
-	for _, tt := range tests {
-		t.Run(tt.desc, func(t *testing.T) {
-			getInterface = func(string) (*net.Interface, error) {
-				return nil, tt.getInterfaceErr
-			}
-			dplane := &fakeSwitchDataplane{}
-			c, mgr, stopFn := newTestHostif(t, dplane, false)
-			defer stopFn()
-			_, gotErr := c.SetHostifAttribute(context.TODO(), tt.req)
-			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
-				t.Fatalf("SetHostifAttribute() unexpected err: %s", diff)
-			}
-			if gotErr != nil {
-				return
-			}
-			if d := cmp.Diff(dplane.gotPortStateReq[0], tt.wantReq, protocmp.Transform()); d != "" {
-				t.Errorf("SetHostifAttribute() failed: diff(-got,+want)\n:%s", d)
-			}
-			attr := &saipb.HostifAttribute{}
-			if err := mgr.PopulateAllAttributes("1", attr); err != nil {
-				t.Fatal(err)
-			}
-			if d := cmp.Diff(attr, tt.wantAttr, protocmp.Transform()); d != "" {
-				t.Errorf("SetHostifAttribute() failed: diff(-got,+want)\n:%s", d)
-			}
-		})
-	}
-}
-
 type hostifClient struct {
 	saipb.HostifClient
 	pktiopb.PacketIOClient
 }
 
-func newTestHostif(t testing.TB, api switchDataplaneAPI, remotePort bool) (*hostifClient, *attrmgr.AttrMgr, func()) {
+func newTestHostif(t testing.TB, api switchDataplaneAPI) (*hostifClient, *attrmgr.AttrMgr, func()) {
 	conn, mgr, stopFn := newTestServer(t, func(mgr *attrmgr.AttrMgr, srv *grpc.Server) {
 		newHostif(mgr, api, srv, &dplaneopts.Options{
 			HostifNetDevType: fwdpb.PortType_PORT_TYPE_KERNEL,
-			RemoteCPUPort:    remotePort,
 		})
 	})
 	return &hostifClient{

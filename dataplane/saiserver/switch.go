@@ -25,7 +25,6 @@ import (
 
 	log "github.com/golang/glog"
 
-	"github.com/openconfig/lemming/dataplane/cpusink"
 	"github.com/openconfig/lemming/dataplane/dplaneopts"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
@@ -487,35 +486,6 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 		return nil, err
 	}
 
-	// Create the IP2MeTable and hostif tables, these map the packet to real hostif port.
-	// These tables are set as output actions of the CPU port.
-	_, err = sw.dataplane.TableCreate(ctx, &fwdpb.TableCreateRequest{
-		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
-		Desc: &fwdpb.TableDesc{
-			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: cpusink.IP2MeTable}},
-			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
-			Table: &fwdpb.TableDesc_Exact{
-				Exact: &fwdpb.ExactTableDesc{
-					FieldIds: []*fwdpb.PacketFieldId{{
-						Field: &fwdpb.PacketField{
-							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT,
-						},
-					}, {
-						Field: &fwdpb.PacketField{
-							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST,
-						},
-					}},
-				},
-			},
-			Actions: []*fwdpb.ActionDesc{{
-				ActionType: fwdpb.ActionType_ACTION_TYPE_CONTINUE,
-			}},
-		},
-	})
-	if err != nil {
-		return nil, err
-	}
-
 	trapToHostifTableReq := &fwdpb.TableCreateRequest{
 		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
 		Desc: &fwdpb.TableDesc{
@@ -531,10 +501,6 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 				},
 			},
 		},
-	}
-
-	if !sw.port.opts.RemoteCPUPort {
-		trapToHostifTableReq.Desc.Actions = append(trapToHostifTableReq.Desc.Actions, &fwdpb.ActionDesc{ActionType: fwdpb.ActionType_ACTION_TYPE_SWAP_OUTPUT_INTERNAL_EXTERNAL})
 	}
 
 	if _, err = sw.dataplane.TableCreate(ctx, trapToHostifTableReq); err != nil {

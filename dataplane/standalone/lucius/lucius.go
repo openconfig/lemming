@@ -19,7 +19,6 @@ import (
 	"flag"
 	"fmt"
 	"net"
-	"strings"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"google.golang.org/grpc"
@@ -36,11 +35,12 @@ import (
 )
 
 var (
-	port          = flag.Int("port", 50000, "Port for api server")
-	configFile    = flag.String("config_file", "", "Path to config file")
-	portMapString = flag.String("port_map", "", "Map of modeled port names to Linux interface to  as comma seperated list (eg Ethernet8:eth1,Ethernet10,eth2) (deprecated, will be removed in future release)")
-	ethDevAsLane  = flag.Bool("eth_dev_as_lane", true, "If true, when creating ports, use ethX and hardware lane X (deprecated, will always to true in future release)")
-	remoteCPUPort = flag.Bool("remote_cpu_port", true, "If true, send all packets from/to the CPU port over gRPC (deprecated, will always to true in future release)")
+	port = flag.Int("port", 50000, "Port for api server")
+	// All below flags are not used, kept for now to prevent breaking exsting users, will be removed in future release.
+	_ = flag.String("config_file", "", "Path to config file (deprecated, no-op will always to true in future release)")
+	_ = flag.String("port_map", "", "Map of modeled port names to Linux interface to  as comma seperated list (eg Ethernet8:eth1,Ethernet10,eth2) (deprecated, no-op will be removed in future release)")
+	_ = flag.Bool("eth_dev_as_lane", true, "If true, when creating ports, use ethX and hardware lane X (deprecated, no-op will always to true in future release)")
+	_ = flag.Bool("remote_cpu_port", true, "If true, send all packets from/to the CPU port over gRPC (deprecated, no-op will always to true in future release)")
 )
 
 func main() {
@@ -71,17 +71,7 @@ func start(port int) {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	portMap := map[string]string{}
-	for _, mapping := range strings.Split(*portMapString, ",") {
-		ports := strings.Split(mapping, ":")
-		if len(ports) != 2 {
-			log.Fatal("invalid port map format")
-		}
-		portMap[ports[0]] = ports[1]
-	}
-
 	mgr := attrmgr.New()
-
 	srv := grpc.NewServer(grpc.Creds(insecure.NewCredentials()),
 		grpc.ChainUnaryInterceptor(logging.UnaryServerInterceptor(getLogger()), mgr.Interceptor),
 		grpc.ChainStreamInterceptor(logging.StreamServerInterceptor(getLogger())))
@@ -90,10 +80,6 @@ func start(port int) {
 
 	opts := dplaneopts.ResolveOpts(
 		dplaneopts.WithHostifNetDevPortType(fwdpb.PortType_PORT_TYPE_KERNEL),
-		dplaneopts.WithPortConfigFile(*configFile),
-		dplaneopts.WithPortMap(portMap),
-		dplaneopts.WithEthDevAsLane(*ethDevAsLane),
-		dplaneopts.WithRemoteCPUPort(*remoteCPUPort),
 	)
 
 	if _, err := saiserver.New(context.Background(), mgr, srv, opts); err != nil {
