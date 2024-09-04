@@ -16,6 +16,7 @@
 package protocol
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -62,6 +63,11 @@ func NewRegistry(psc pktiopb.PacketIO_CPUPacketStreamClient) (*Registry, error) 
 	return pr, nil
 }
 
+// Context returns the context of gPRC client.
+func (r *Registry) Context() context.Context {
+	return r.psc.Context()
+}
+
 // Start starts a goroutine to intecept the packets from the psc stream client.
 // The packet will be sent to the protocol handler if it is available in the
 // registry, or sent to bypass queue so that it will be processed by the
@@ -96,7 +102,9 @@ func (r *Registry) Start() {
 					}
 				}
 				if !processed {
-					r.bypassQ.Write(pkt)
+					if err := r.bypassQ.Write(pkt); err != nil {
+						log.Warningf("Error occurred when inserting packet: %v", err)
+					}
 				}
 				time.Sleep(time.Millisecond)
 			}
@@ -114,9 +122,9 @@ func (r *Registry) Recv() (*packetio.PacketOut, error) {
 	pkt, ok := <-r.bypassQ.Receive()
 	if !ok {
 		// The queue is closed.
-		return nil, nil
+		return nil, fmt.Errorf("queue is closed.")
 	}
-	return &pktiopb.PacketOut{Packet: pkt.(*pktiopb.Packet)}, nil
+	return pkt.(*pktiopb.PacketOut), nil
 }
 
 // Send sends the packet via the streaming client it holds.

@@ -27,6 +27,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/openconfig/lemming/dataplane/dplaneopts"
+	"github.com/openconfig/lemming/dataplane/protocol"
 	"github.com/openconfig/lemming/dataplane/saiserver"
 	"github.com/openconfig/lemming/dataplane/saiserver/attrmgr"
 	"github.com/openconfig/lemming/dataplane/standalone/pkthandler/pktiohandler"
@@ -47,6 +48,7 @@ type Dataplane struct {
 	reconcilers []reconciler.Reconciler
 	opt         *dplaneopts.Options
 	cancelFn    func()
+	pr          *protocol.Registry
 }
 
 // New create a new dataplane instance.
@@ -175,9 +177,13 @@ func (d *Dataplane) Start(ctx context.Context, c gpb.GNMIClient, target string) 
 	if err != nil {
 		return err
 	}
-
+	d.pr, err = protocol.NewRegistry(packet)
+	if err != nil {
+		return err
+	}
+	d.pr.Start()
 	go h.ManagePorts(portCtl)
-	go h.StreamPackets(packet)
+	go h.StreamPackets(d.pr)
 
 	if d.opt.Reconcilation {
 		d.reconcilers = append(d.reconcilers, getReconcilers(conn, swResp.Oid, *swAttrs.GetAttr().CpuPort, "lucius")...)
