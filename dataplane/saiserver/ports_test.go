@@ -221,7 +221,7 @@ func TestCreatePorts(t *testing.T) {
 			Resps: []*saipb.CreatePortResponse{{Oid: 3}},
 		},
 		wantAttr: &saipb.PortAttribute{
-			OperStatus:                       saipb.PortOperStatus_PORT_OPER_STATUS_NOT_PRESENT.Enum(),
+			OperStatus:                       saipb.PortOperStatus_PORT_OPER_STATUS_DOWN.Enum(),
 			QosNumberOfQueues:                proto.Uint32(12),
 			HwLaneList:                       []uint32{1},
 			QosQueueList:                     []uint64{4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
@@ -273,7 +273,7 @@ func TestCreatePorts(t *testing.T) {
 			SupportedFecMode:                 []saipb.PortFecMode{saipb.PortFecMode_PORT_FEC_MODE_NONE},
 			NumberOfIngressPriorityGroups:    proto.Uint32(0),
 			QosMaximumHeadroomSize:           proto.Uint32(0),
-			AdminState:                       proto.Bool(true),
+			AdminState:                       proto.Bool(false),
 			AutoNegMode:                      proto.Bool(true),
 			Mtu:                              proto.Uint32(1514),
 			PortVlanId:                       proto.Uint32(DefaultVlanId),
