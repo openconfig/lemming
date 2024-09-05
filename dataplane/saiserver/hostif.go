@@ -26,7 +26,6 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/openconfig/lemming/dataplane/dplaneopts"
-	"github.com/openconfig/lemming/dataplane/forwarding/attributes"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdport/ports"
 	"github.com/openconfig/lemming/dataplane/saiserver/attrmgr"
@@ -85,176 +84,6 @@ const (
 
 // CreateHostif creates a hostif interface (usually a tap interface).
 func (hostif *hostif) CreateHostif(ctx context.Context, req *saipb.CreateHostifRequest) (*saipb.CreateHostifResponse, error) {
-	if hostif.opts.RemoteCPUPort {
-		return hostif.createRemoteHostif(ctx, req)
-	}
-	id := hostif.mgr.NextID()
-
-	switch req.GetType() {
-	case saipb.HostifType_HOSTIF_TYPE_GENETLINK: // For genetlink device, pass the port description to the cpu sink.
-		// First, create the port in the dataplane: this port is "virtual", it doesn't do any packet io.
-		// It ensures that the packet metadata is correct.
-		portReq := &fwdpb.PortCreateRequest{
-			ContextId: &fwdpb.ContextId{Id: hostif.dataplane.ID()},
-			Port: &fwdpb.PortDesc{
-				PortId:   &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)}},
-				PortType: fwdpb.PortType_PORT_TYPE_GENETLINK,
-				Port: &fwdpb.PortDesc_Genetlink{
-					Genetlink: &fwdpb.GenetlinkPortDesc{
-						FamilyName: string(req.GetName()),
-						GroupName:  string(req.GetGenetlinkMcgrpName()),
-					},
-				},
-			},
-		}
-		if _, err := hostif.dataplane.PortCreate(ctx, portReq); err != nil {
-			return nil, err
-		}
-		// Notify the cpu sink about these port types.
-		fwdCtx, err := hostif.dataplane.FindContext(&fwdpb.ContextId{Id: hostif.dataplane.ID()})
-		if err != nil {
-			return nil, err
-		}
-		fwdCtx.RLock()
-		ps := fwdCtx.PacketSink()
-		fwdCtx.RUnlock()
-		ps(&fwdpb.PacketSinkResponse{
-			Resp: &fwdpb.PacketSinkResponse_Port{
-				Port: &fwdpb.PacketSinkPortInfo{
-					Port: portReq.Port,
-				},
-			},
-		})
-
-		return &saipb.CreateHostifResponse{Oid: id}, nil
-	case saipb.HostifType_HOSTIF_TYPE_NETDEV:
-		portType := hostif.opts.HostifNetDevType
-		port := &fwdpb.PortCreateRequest{
-			ContextId: &fwdpb.ContextId{Id: hostif.dataplane.ID()},
-			Port: &fwdpb.PortDesc{
-				PortType: portType,
-				PortId: &fwdpb.PortId{
-					ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)},
-				},
-			},
-		}
-		switch portType {
-		case fwdpb.PortType_PORT_TYPE_KERNEL:
-			port.Port.Port = &fwdpb.PortDesc_Kernel{
-				Kernel: &fwdpb.KernelPortDesc{
-					DeviceName: string(req.GetName()),
-				},
-			}
-		case fwdpb.PortType_PORT_TYPE_TAP:
-			port.Port.Port = &fwdpb.PortDesc_Tap{
-				Tap: &fwdpb.TAPPortDesc{
-					DeviceName: string(req.GetName()),
-				},
-			}
-		default:
-			return nil, fmt.Errorf("unkown port type: %v", portType)
-		}
-
-		if _, err := hostif.dataplane.PortCreate(ctx, port); err != nil {
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		attrReq := &saipb.GetPortAttributeRequest{Oid: req.GetObjId(), AttrType: []saipb.PortAttr{saipb.PortAttr_PORT_ATTR_OPER_STATUS}}
-		p := &saipb.GetPortAttributeResponse{}
-		if err := hostif.mgr.PopulateAttributes(attrReq, p); err != nil {
-			return nil, status.Errorf(codes.Internal, "failed to get cpu port: %v", err)
-		}
-		// If there is a corresponding port for the hostif, update the attributes
-		if p.GetAttr().GetOperStatus() != saipb.PortOperStatus_PORT_OPER_STATUS_NOT_PRESENT {
-			_, err := hostif.dataplane.AttributeUpdate(ctx, &fwdpb.AttributeUpdateRequest{
-				ContextId: &fwdpb.ContextId{Id: hostif.dataplane.ID()},
-				ObjectId:  &fwdpb.ObjectId{Id: fmt.Sprint(id)},
-				AttrId:    attributes.SwapActionRelatedPort,
-				AttrValue: fmt.Sprint(req.GetObjId()),
-			})
-			if err != nil {
-				return nil, err
-			}
-			_, err = hostif.dataplane.AttributeUpdate(ctx, &fwdpb.AttributeUpdateRequest{
-				ContextId: &fwdpb.ContextId{Id: hostif.dataplane.ID()},
-				ObjectId:  &fwdpb.ObjectId{Id: fmt.Sprint(req.GetObjId())},
-				AttrId:    attributes.SwapActionRelatedPort,
-				AttrValue: fmt.Sprint(id),
-			})
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		cpuPortReq := &saipb.GetSwitchAttributeRequest{Oid: switchID, AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_CPU_PORT}}
-		resp := &saipb.GetSwitchAttributeResponse{}
-		if err := hostif.mgr.PopulateAttributes(cpuPortReq, resp); err != nil {
-			return nil, err
-		}
-
-		// Packets received from hostif are sent to their corresponding port.
-		update := &fwdpb.PortUpdateRequest{
-			ContextId: &fwdpb.ContextId{Id: hostif.dataplane.ID()},
-			PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)}},
-			Update: &fwdpb.PortUpdateDesc{
-				Port: &fwdpb.PortUpdateDesc_Kernel{
-					Kernel: &fwdpb.KernelPortUpdateDesc{
-						Inputs: []*fwdpb.ActionDesc{{
-							ActionType: fwdpb.ActionType_ACTION_TYPE_SWAP_OUTPUT_INTERNAL_EXTERNAL,
-						}, {
-							ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
-						}},
-					},
-				},
-			},
-		}
-
-		// Unless, the corresponding port for this hostif is the CPU port, then run the normal forwarding pipeline.
-		if resp.GetAttr().GetCpuPort() == req.GetObjId() {
-			update.Update.GetKernel().Inputs = getPreIngressPipeline()
-		}
-
-		if _, err := hostif.dataplane.PortUpdate(ctx, update); err != nil {
-			return nil, err
-		}
-
-		attr := &saipb.HostifAttribute{
-			OperStatus: proto.Bool(true),
-		}
-		hostif.mgr.StoreAttributes(id, attr)
-
-		// Notify the cpu sink about these port types, if there is one configured.
-		fwdCtx, err := hostif.dataplane.FindContext(&fwdpb.ContextId{Id: hostif.dataplane.ID()})
-		if err != nil {
-			return nil, err
-		}
-		fwdCtx.RLock()
-		ps := fwdCtx.PacketSink()
-		fwdCtx.RUnlock()
-		if ps != nil {
-			ps(&fwdpb.PacketSinkResponse{
-				Resp: &fwdpb.PacketSinkResponse_Port{
-					Port: &fwdpb.PacketSinkPortInfo{
-						Port: &fwdpb.PortDesc{
-							PortType: fwdpb.PortType_PORT_TYPE_KERNEL,
-							PortId:   &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(id)}},
-							Port: &fwdpb.PortDesc_Kernel{
-								Kernel: &fwdpb.KernelPortDesc{DeviceName: string(req.GetName())},
-							},
-						},
-					},
-				},
-			})
-		}
-	default:
-		return nil, status.Errorf(codes.InvalidArgument, "unknown type %v", req.GetType())
-	}
-	return &saipb.CreateHostifResponse{Oid: id}, nil
-}
-
-func (hostif *hostif) createRemoteHostif(ctx context.Context, req *saipb.CreateHostifRequest) (*saipb.CreateHostifResponse, error) {
 	id := hostif.mgr.NextID()
 
 	ctlReq := &pktiopb.HostPortControlMessage{
@@ -340,9 +169,6 @@ func (hostif *hostif) createRemoteHostif(ctx context.Context, req *saipb.CreateH
 }
 
 func (hostif *hostif) RemoveHostif(ctx context.Context, req *saipb.RemoveHostifRequest) (*saipb.RemoveHostifResponse, error) {
-	if !hostif.opts.RemoteCPUPort {
-		return nil, status.Error(codes.FailedPrecondition, "only remote cpu port is supported")
-	}
 	hostif.remoteMu.Lock()
 	defer hostif.remoteMu.Unlock()
 
@@ -386,25 +212,6 @@ func (hostif *hostif) RemoveHostif(ctx context.Context, req *saipb.RemoveHostifR
 
 // SetHostifAttribute sets the attributes in the request.
 func (hostif *hostif) SetHostifAttribute(ctx context.Context, req *saipb.SetHostifAttributeRequest) (*saipb.SetHostifAttributeResponse, error) {
-	if req.OperStatus != nil {
-		if hostif.opts.RemoteCPUPort {
-			return nil, nil
-		}
-		stateReq := &fwdpb.PortStateRequest{
-			ContextId: &fwdpb.ContextId{Id: hostif.dataplane.ID()},
-			PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(req.GetOid())}},
-		}
-		stateReq.Operation = &fwdpb.PortInfo{
-			AdminStatus: fwdpb.PortState_PORT_STATE_DISABLED_DOWN,
-		}
-		if req.GetOperStatus() {
-			stateReq.Operation.AdminStatus = fwdpb.PortState_PORT_STATE_ENABLED_UP
-		}
-		_, err := hostif.dataplane.PortState(ctx, stateReq)
-		if err != nil {
-			return nil, err
-		}
-	}
 	return nil, nil
 }
 

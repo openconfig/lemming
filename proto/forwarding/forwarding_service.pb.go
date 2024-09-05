@@ -51,7 +51,7 @@ var file_proto_forwarding_forwarding_service_proto_rawDesc = []byte{
 	0x6f, 0x72, 0x74, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x27, 0x70, 0x72, 0x6f, 0x74, 0x6f,
 	0x2f, 0x66, 0x6f, 0x72, 0x77, 0x61, 0x72, 0x64, 0x69, 0x6e, 0x67, 0x2f, 0x66, 0x6f, 0x72, 0x77,
 	0x61, 0x72, 0x64, 0x69, 0x6e, 0x67, 0x5f, 0x74, 0x61, 0x62, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x32, 0x99, 0x10, 0x0a, 0x0a, 0x46, 0x6f, 0x72, 0x77, 0x61, 0x72, 0x64, 0x69, 0x6e,
+	0x74, 0x6f, 0x32, 0xbf, 0x0f, 0x0a, 0x0a, 0x46, 0x6f, 0x72, 0x77, 0x61, 0x72, 0x64, 0x69, 0x6e,
 	0x67, 0x12, 0x53, 0x0a, 0x0d, 0x43, 0x6f, 0x6e, 0x74, 0x65, 0x78, 0x74, 0x43, 0x72, 0x65, 0x61,
 	0x74, 0x65, 0x12, 0x20, 0x2e, 0x66, 0x6f, 0x72, 0x77, 0x61, 0x72, 0x64, 0x69, 0x6e, 0x67, 0x2e,
 	0x43, 0x6f, 0x6e, 0x74, 0x65, 0x78, 0x74, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x52, 0x65, 0x71,
@@ -170,31 +170,25 @@ var file_proto_forwarding_forwarding_service_proto_rawDesc = []byte{
 	0x67, 0x2e, 0x50, 0x61, 0x63, 0x6b, 0x65, 0x74, 0x49, 0x6e, 0x6a, 0x65, 0x63, 0x74, 0x52, 0x65,
 	0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x20, 0x2e, 0x66, 0x6f, 0x72, 0x77, 0x61, 0x72, 0x64, 0x69,
 	0x6e, 0x67, 0x2e, 0x50, 0x61, 0x63, 0x6b, 0x65, 0x74, 0x49, 0x6e, 0x6a, 0x65, 0x63, 0x74, 0x52,
-	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x28, 0x01, 0x12, 0x58, 0x0a, 0x13, 0x50,
-	0x61, 0x63, 0x6b, 0x65, 0x74, 0x53, 0x69, 0x6e, 0x6b, 0x53, 0x75, 0x62, 0x73, 0x63, 0x72, 0x69,
-	0x62, 0x65, 0x12, 0x1d, 0x2e, 0x66, 0x6f, 0x72, 0x77, 0x61, 0x72, 0x64, 0x69, 0x6e, 0x67, 0x2e,
-	0x50, 0x61, 0x63, 0x6b, 0x65, 0x74, 0x53, 0x69, 0x6e, 0x6b, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
-	0x74, 0x1a, 0x1e, 0x2e, 0x66, 0x6f, 0x72, 0x77, 0x61, 0x72, 0x64, 0x69, 0x6e, 0x67, 0x2e, 0x50,
-	0x61, 0x63, 0x6b, 0x65, 0x74, 0x53, 0x69, 0x6e, 0x6b, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x22, 0x00, 0x30, 0x01, 0x12, 0x47, 0x0a, 0x09, 0x4f, 0x62, 0x6a, 0x65, 0x63, 0x74, 0x4e,
-	0x49, 0x44, 0x12, 0x1c, 0x2e, 0x66, 0x6f, 0x72, 0x77, 0x61, 0x72, 0x64, 0x69, 0x6e, 0x67, 0x2e,
-	0x4f, 0x62, 0x6a, 0x65, 0x63, 0x74, 0x4e, 0x49, 0x44, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
-	0x1a, 0x1a, 0x2e, 0x66, 0x6f, 0x72, 0x77, 0x61, 0x72, 0x64, 0x69, 0x6e, 0x67, 0x2e, 0x4f, 0x62,
-	0x6a, 0x65, 0x63, 0x74, 0x4e, 0x49, 0x44, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x22, 0x00, 0x32, 0x9b,
-	0x01, 0x0a, 0x04, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x44, 0x0a, 0x08, 0x49, 0x6e, 0x66, 0x6f, 0x4c,
-	0x69, 0x73, 0x74, 0x12, 0x1b, 0x2e, 0x66, 0x6f, 0x72, 0x77, 0x61, 0x72, 0x64, 0x69, 0x6e, 0x67,
-	0x2e, 0x49, 0x6e, 0x66, 0x6f, 0x4c, 0x69, 0x73, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
-	0x1a, 0x19, 0x2e, 0x66, 0x6f, 0x72, 0x77, 0x61, 0x72, 0x64, 0x69, 0x6e, 0x67, 0x2e, 0x49, 0x6e,
-	0x66, 0x6f, 0x4c, 0x69, 0x73, 0x74, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x22, 0x00, 0x12, 0x4d, 0x0a,
-	0x0b, 0x49, 0x6e, 0x66, 0x6f, 0x45, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x12, 0x1e, 0x2e, 0x66,
-	0x6f, 0x72, 0x77, 0x61, 0x72, 0x64, 0x69, 0x6e, 0x67, 0x2e, 0x49, 0x6e, 0x66, 0x6f, 0x45, 0x6c,
-	0x65, 0x6d, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1c, 0x2e, 0x66,
-	0x6f, 0x72, 0x77, 0x61, 0x72, 0x64, 0x69, 0x6e, 0x67, 0x2e, 0x49, 0x6e, 0x66, 0x6f, 0x45, 0x6c,
-	0x65, 0x6d, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x22, 0x00, 0x42, 0x30, 0x5a, 0x2e,
-	0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6f, 0x70, 0x65, 0x6e, 0x63,
-	0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2f, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2f, 0x70, 0x72,
-	0x6f, 0x74, 0x6f, 0x2f, 0x66, 0x6f, 0x72, 0x77, 0x61, 0x72, 0x64, 0x69, 0x6e, 0x67, 0x62, 0x06,
-	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x28, 0x01, 0x12, 0x47, 0x0a, 0x09, 0x4f,
+	0x62, 0x6a, 0x65, 0x63, 0x74, 0x4e, 0x49, 0x44, 0x12, 0x1c, 0x2e, 0x66, 0x6f, 0x72, 0x77, 0x61,
+	0x72, 0x64, 0x69, 0x6e, 0x67, 0x2e, 0x4f, 0x62, 0x6a, 0x65, 0x63, 0x74, 0x4e, 0x49, 0x44, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1a, 0x2e, 0x66, 0x6f, 0x72, 0x77, 0x61, 0x72, 0x64,
+	0x69, 0x6e, 0x67, 0x2e, 0x4f, 0x62, 0x6a, 0x65, 0x63, 0x74, 0x4e, 0x49, 0x44, 0x52, 0x65, 0x70,
+	0x6c, 0x79, 0x22, 0x00, 0x32, 0x9b, 0x01, 0x0a, 0x04, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x44, 0x0a,
+	0x08, 0x49, 0x6e, 0x66, 0x6f, 0x4c, 0x69, 0x73, 0x74, 0x12, 0x1b, 0x2e, 0x66, 0x6f, 0x72, 0x77,
+	0x61, 0x72, 0x64, 0x69, 0x6e, 0x67, 0x2e, 0x49, 0x6e, 0x66, 0x6f, 0x4c, 0x69, 0x73, 0x74, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x19, 0x2e, 0x66, 0x6f, 0x72, 0x77, 0x61, 0x72, 0x64,
+	0x69, 0x6e, 0x67, 0x2e, 0x49, 0x6e, 0x66, 0x6f, 0x4c, 0x69, 0x73, 0x74, 0x52, 0x65, 0x70, 0x6c,
+	0x79, 0x22, 0x00, 0x12, 0x4d, 0x0a, 0x0b, 0x49, 0x6e, 0x66, 0x6f, 0x45, 0x6c, 0x65, 0x6d, 0x65,
+	0x6e, 0x74, 0x12, 0x1e, 0x2e, 0x66, 0x6f, 0x72, 0x77, 0x61, 0x72, 0x64, 0x69, 0x6e, 0x67, 0x2e,
+	0x49, 0x6e, 0x66, 0x6f, 0x45, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x1a, 0x1c, 0x2e, 0x66, 0x6f, 0x72, 0x77, 0x61, 0x72, 0x64, 0x69, 0x6e, 0x67, 0x2e,
+	0x49, 0x6e, 0x66, 0x6f, 0x45, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x70, 0x6c, 0x79,
+	0x22, 0x00, 0x42, 0x30, 0x5a, 0x2e, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d,
+	0x2f, 0x6f, 0x70, 0x65, 0x6e, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2f, 0x6c, 0x65, 0x6d, 0x6d,
+	0x69, 0x6e, 0x67, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x66, 0x6f, 0x72, 0x77, 0x61, 0x72,
+	0x64, 0x69, 0x6e, 0x67, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var file_proto_forwarding_forwarding_service_proto_goTypes = []interface{}{
@@ -221,37 +215,35 @@ var file_proto_forwarding_forwarding_service_proto_goTypes = []interface{}{
 	(*OperationRequest)(nil),         // 20: forwarding.OperationRequest
 	(*NotifySubscribeRequest)(nil),   // 21: forwarding.NotifySubscribeRequest
 	(*PacketInjectRequest)(nil),      // 22: forwarding.PacketInjectRequest
-	(*PacketSinkRequest)(nil),        // 23: forwarding.PacketSinkRequest
-	(*ObjectNIDRequest)(nil),         // 24: forwarding.ObjectNIDRequest
-	(*InfoListRequest)(nil),          // 25: forwarding.InfoListRequest
-	(*InfoElementRequest)(nil),       // 26: forwarding.InfoElementRequest
-	(*ContextCreateReply)(nil),       // 27: forwarding.ContextCreateReply
-	(*ContextDeleteReply)(nil),       // 28: forwarding.ContextDeleteReply
-	(*ContextListReply)(nil),         // 29: forwarding.ContextListReply
-	(*SetCreateReply)(nil),           // 30: forwarding.SetCreateReply
-	(*SetUpdateReply)(nil),           // 31: forwarding.SetUpdateReply
-	(*AttributeListReply)(nil),       // 32: forwarding.AttributeListReply
-	(*AttributeUpdateReply)(nil),     // 33: forwarding.AttributeUpdateReply
-	(*AttributeQueryReply)(nil),      // 34: forwarding.AttributeQueryReply
-	(*ObjectDeleteReply)(nil),        // 35: forwarding.ObjectDeleteReply
-	(*ObjectListReply)(nil),          // 36: forwarding.ObjectListReply
-	(*ObjectCountersReply)(nil),      // 37: forwarding.ObjectCountersReply
-	(*TableCreateReply)(nil),         // 38: forwarding.TableCreateReply
-	(*TableEntryAddReply)(nil),       // 39: forwarding.TableEntryAddReply
-	(*TableEntryRemoveReply)(nil),    // 40: forwarding.TableEntryRemoveReply
-	(*TableListReply)(nil),           // 41: forwarding.TableListReply
-	(*PortCreateReply)(nil),          // 42: forwarding.PortCreateReply
-	(*PortUpdateReply)(nil),          // 43: forwarding.PortUpdateReply
-	(*PortStateReply)(nil),           // 44: forwarding.PortStateReply
-	(*FlowCounterCreateReply)(nil),   // 45: forwarding.FlowCounterCreateReply
-	(*FlowCounterQueryReply)(nil),    // 46: forwarding.FlowCounterQueryReply
-	(*OperationReply)(nil),           // 47: forwarding.OperationReply
-	(*EventDesc)(nil),                // 48: forwarding.EventDesc
-	(*PacketInjectResponse)(nil),     // 49: forwarding.PacketInjectResponse
-	(*PacketSinkResponse)(nil),       // 50: forwarding.PacketSinkResponse
-	(*ObjectNIDReply)(nil),           // 51: forwarding.ObjectNIDReply
-	(*InfoListReply)(nil),            // 52: forwarding.InfoListReply
-	(*InfoElementReply)(nil),         // 53: forwarding.InfoElementReply
+	(*ObjectNIDRequest)(nil),         // 23: forwarding.ObjectNIDRequest
+	(*InfoListRequest)(nil),          // 24: forwarding.InfoListRequest
+	(*InfoElementRequest)(nil),       // 25: forwarding.InfoElementRequest
+	(*ContextCreateReply)(nil),       // 26: forwarding.ContextCreateReply
+	(*ContextDeleteReply)(nil),       // 27: forwarding.ContextDeleteReply
+	(*ContextListReply)(nil),         // 28: forwarding.ContextListReply
+	(*SetCreateReply)(nil),           // 29: forwarding.SetCreateReply
+	(*SetUpdateReply)(nil),           // 30: forwarding.SetUpdateReply
+	(*AttributeListReply)(nil),       // 31: forwarding.AttributeListReply
+	(*AttributeUpdateReply)(nil),     // 32: forwarding.AttributeUpdateReply
+	(*AttributeQueryReply)(nil),      // 33: forwarding.AttributeQueryReply
+	(*ObjectDeleteReply)(nil),        // 34: forwarding.ObjectDeleteReply
+	(*ObjectListReply)(nil),          // 35: forwarding.ObjectListReply
+	(*ObjectCountersReply)(nil),      // 36: forwarding.ObjectCountersReply
+	(*TableCreateReply)(nil),         // 37: forwarding.TableCreateReply
+	(*TableEntryAddReply)(nil),       // 38: forwarding.TableEntryAddReply
+	(*TableEntryRemoveReply)(nil),    // 39: forwarding.TableEntryRemoveReply
+	(*TableListReply)(nil),           // 40: forwarding.TableListReply
+	(*PortCreateReply)(nil),          // 41: forwarding.PortCreateReply
+	(*PortUpdateReply)(nil),          // 42: forwarding.PortUpdateReply
+	(*PortStateReply)(nil),           // 43: forwarding.PortStateReply
+	(*FlowCounterCreateReply)(nil),   // 44: forwarding.FlowCounterCreateReply
+	(*FlowCounterQueryReply)(nil),    // 45: forwarding.FlowCounterQueryReply
+	(*OperationReply)(nil),           // 46: forwarding.OperationReply
+	(*EventDesc)(nil),                // 47: forwarding.EventDesc
+	(*PacketInjectResponse)(nil),     // 48: forwarding.PacketInjectResponse
+	(*ObjectNIDReply)(nil),           // 49: forwarding.ObjectNIDReply
+	(*InfoListReply)(nil),            // 50: forwarding.InfoListReply
+	(*InfoElementReply)(nil),         // 51: forwarding.InfoElementReply
 }
 var file_proto_forwarding_forwarding_service_proto_depIdxs = []int32{
 	0,  // 0: forwarding.Forwarding.ContextCreate:input_type -> forwarding.ContextCreateRequest
@@ -277,39 +269,37 @@ var file_proto_forwarding_forwarding_service_proto_depIdxs = []int32{
 	20, // 20: forwarding.Forwarding.Operation:input_type -> forwarding.OperationRequest
 	21, // 21: forwarding.Forwarding.NotifySubscribe:input_type -> forwarding.NotifySubscribeRequest
 	22, // 22: forwarding.Forwarding.PacketInject:input_type -> forwarding.PacketInjectRequest
-	23, // 23: forwarding.Forwarding.PacketSinkSubscribe:input_type -> forwarding.PacketSinkRequest
-	24, // 24: forwarding.Forwarding.ObjectNID:input_type -> forwarding.ObjectNIDRequest
-	25, // 25: forwarding.Info.InfoList:input_type -> forwarding.InfoListRequest
-	26, // 26: forwarding.Info.InfoElement:input_type -> forwarding.InfoElementRequest
-	27, // 27: forwarding.Forwarding.ContextCreate:output_type -> forwarding.ContextCreateReply
-	28, // 28: forwarding.Forwarding.ContextDelete:output_type -> forwarding.ContextDeleteReply
-	29, // 29: forwarding.Forwarding.ContextList:output_type -> forwarding.ContextListReply
-	30, // 30: forwarding.Forwarding.SetCreate:output_type -> forwarding.SetCreateReply
-	31, // 31: forwarding.Forwarding.SetUpdate:output_type -> forwarding.SetUpdateReply
-	32, // 32: forwarding.Forwarding.AttributeList:output_type -> forwarding.AttributeListReply
-	33, // 33: forwarding.Forwarding.AttributeUpdate:output_type -> forwarding.AttributeUpdateReply
-	34, // 34: forwarding.Forwarding.AttributeQuery:output_type -> forwarding.AttributeQueryReply
-	35, // 35: forwarding.Forwarding.ObjectDelete:output_type -> forwarding.ObjectDeleteReply
-	36, // 36: forwarding.Forwarding.ObjectList:output_type -> forwarding.ObjectListReply
-	37, // 37: forwarding.Forwarding.ObjectCounters:output_type -> forwarding.ObjectCountersReply
-	38, // 38: forwarding.Forwarding.TableCreate:output_type -> forwarding.TableCreateReply
-	39, // 39: forwarding.Forwarding.TableEntryAdd:output_type -> forwarding.TableEntryAddReply
-	40, // 40: forwarding.Forwarding.TableEntryRemove:output_type -> forwarding.TableEntryRemoveReply
-	41, // 41: forwarding.Forwarding.TableList:output_type -> forwarding.TableListReply
-	42, // 42: forwarding.Forwarding.PortCreate:output_type -> forwarding.PortCreateReply
-	43, // 43: forwarding.Forwarding.PortUpdate:output_type -> forwarding.PortUpdateReply
-	44, // 44: forwarding.Forwarding.PortState:output_type -> forwarding.PortStateReply
-	45, // 45: forwarding.Forwarding.FlowCounterCreate:output_type -> forwarding.FlowCounterCreateReply
-	46, // 46: forwarding.Forwarding.FlowCounterQuery:output_type -> forwarding.FlowCounterQueryReply
-	47, // 47: forwarding.Forwarding.Operation:output_type -> forwarding.OperationReply
-	48, // 48: forwarding.Forwarding.NotifySubscribe:output_type -> forwarding.EventDesc
-	49, // 49: forwarding.Forwarding.PacketInject:output_type -> forwarding.PacketInjectResponse
-	50, // 50: forwarding.Forwarding.PacketSinkSubscribe:output_type -> forwarding.PacketSinkResponse
-	51, // 51: forwarding.Forwarding.ObjectNID:output_type -> forwarding.ObjectNIDReply
-	52, // 52: forwarding.Info.InfoList:output_type -> forwarding.InfoListReply
-	53, // 53: forwarding.Info.InfoElement:output_type -> forwarding.InfoElementReply
-	27, // [27:54] is the sub-list for method output_type
-	0,  // [0:27] is the sub-list for method input_type
+	23, // 23: forwarding.Forwarding.ObjectNID:input_type -> forwarding.ObjectNIDRequest
+	24, // 24: forwarding.Info.InfoList:input_type -> forwarding.InfoListRequest
+	25, // 25: forwarding.Info.InfoElement:input_type -> forwarding.InfoElementRequest
+	26, // 26: forwarding.Forwarding.ContextCreate:output_type -> forwarding.ContextCreateReply
+	27, // 27: forwarding.Forwarding.ContextDelete:output_type -> forwarding.ContextDeleteReply
+	28, // 28: forwarding.Forwarding.ContextList:output_type -> forwarding.ContextListReply
+	29, // 29: forwarding.Forwarding.SetCreate:output_type -> forwarding.SetCreateReply
+	30, // 30: forwarding.Forwarding.SetUpdate:output_type -> forwarding.SetUpdateReply
+	31, // 31: forwarding.Forwarding.AttributeList:output_type -> forwarding.AttributeListReply
+	32, // 32: forwarding.Forwarding.AttributeUpdate:output_type -> forwarding.AttributeUpdateReply
+	33, // 33: forwarding.Forwarding.AttributeQuery:output_type -> forwarding.AttributeQueryReply
+	34, // 34: forwarding.Forwarding.ObjectDelete:output_type -> forwarding.ObjectDeleteReply
+	35, // 35: forwarding.Forwarding.ObjectList:output_type -> forwarding.ObjectListReply
+	36, // 36: forwarding.Forwarding.ObjectCounters:output_type -> forwarding.ObjectCountersReply
+	37, // 37: forwarding.Forwarding.TableCreate:output_type -> forwarding.TableCreateReply
+	38, // 38: forwarding.Forwarding.TableEntryAdd:output_type -> forwarding.TableEntryAddReply
+	39, // 39: forwarding.Forwarding.TableEntryRemove:output_type -> forwarding.TableEntryRemoveReply
+	40, // 40: forwarding.Forwarding.TableList:output_type -> forwarding.TableListReply
+	41, // 41: forwarding.Forwarding.PortCreate:output_type -> forwarding.PortCreateReply
+	42, // 42: forwarding.Forwarding.PortUpdate:output_type -> forwarding.PortUpdateReply
+	43, // 43: forwarding.Forwarding.PortState:output_type -> forwarding.PortStateReply
+	44, // 44: forwarding.Forwarding.FlowCounterCreate:output_type -> forwarding.FlowCounterCreateReply
+	45, // 45: forwarding.Forwarding.FlowCounterQuery:output_type -> forwarding.FlowCounterQueryReply
+	46, // 46: forwarding.Forwarding.Operation:output_type -> forwarding.OperationReply
+	47, // 47: forwarding.Forwarding.NotifySubscribe:output_type -> forwarding.EventDesc
+	48, // 48: forwarding.Forwarding.PacketInject:output_type -> forwarding.PacketInjectResponse
+	49, // 49: forwarding.Forwarding.ObjectNID:output_type -> forwarding.ObjectNIDReply
+	50, // 50: forwarding.Info.InfoList:output_type -> forwarding.InfoListReply
+	51, // 51: forwarding.Info.InfoElement:output_type -> forwarding.InfoElementReply
+	26, // [26:52] is the sub-list for method output_type
+	0,  // [0:26] is the sub-list for method input_type
 	0,  // [0:0] is the sub-list for extension type_name
 	0,  // [0:0] is the sub-list for extension extendee
 	0,  // [0:0] is the sub-list for field type_name
@@ -382,7 +372,6 @@ type ForwardingClient interface {
 	Operation(ctx context.Context, opts ...grpc.CallOption) (Forwarding_OperationClient, error)
 	NotifySubscribe(ctx context.Context, in *NotifySubscribeRequest, opts ...grpc.CallOption) (Forwarding_NotifySubscribeClient, error)
 	PacketInject(ctx context.Context, opts ...grpc.CallOption) (Forwarding_PacketInjectClient, error)
-	PacketSinkSubscribe(ctx context.Context, in *PacketSinkRequest, opts ...grpc.CallOption) (Forwarding_PacketSinkSubscribeClient, error)
 	ObjectNID(ctx context.Context, in *ObjectNIDRequest, opts ...grpc.CallOption) (*ObjectNIDReply, error)
 }
 
@@ -671,38 +660,6 @@ func (x *forwardingPacketInjectClient) CloseAndRecv() (*PacketInjectResponse, er
 	return m, nil
 }
 
-func (c *forwardingClient) PacketSinkSubscribe(ctx context.Context, in *PacketSinkRequest, opts ...grpc.CallOption) (Forwarding_PacketSinkSubscribeClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_Forwarding_serviceDesc.Streams[3], "/forwarding.Forwarding/PacketSinkSubscribe", opts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &forwardingPacketSinkSubscribeClient{stream}
-	if err := x.ClientStream.SendMsg(in); err != nil {
-		return nil, err
-	}
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	return x, nil
-}
-
-type Forwarding_PacketSinkSubscribeClient interface {
-	Recv() (*PacketSinkResponse, error)
-	grpc.ClientStream
-}
-
-type forwardingPacketSinkSubscribeClient struct {
-	grpc.ClientStream
-}
-
-func (x *forwardingPacketSinkSubscribeClient) Recv() (*PacketSinkResponse, error) {
-	m := new(PacketSinkResponse)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
 func (c *forwardingClient) ObjectNID(ctx context.Context, in *ObjectNIDRequest, opts ...grpc.CallOption) (*ObjectNIDReply, error) {
 	out := new(ObjectNIDReply)
 	err := c.cc.Invoke(ctx, "/forwarding.Forwarding/ObjectNID", in, out, opts...)
@@ -737,7 +694,6 @@ type ForwardingServer interface {
 	Operation(Forwarding_OperationServer) error
 	NotifySubscribe(*NotifySubscribeRequest, Forwarding_NotifySubscribeServer) error
 	PacketInject(Forwarding_PacketInjectServer) error
-	PacketSinkSubscribe(*PacketSinkRequest, Forwarding_PacketSinkSubscribeServer) error
 	ObjectNID(context.Context, *ObjectNIDRequest) (*ObjectNIDReply, error)
 }
 
@@ -813,9 +769,6 @@ func (*UnimplementedForwardingServer) NotifySubscribe(*NotifySubscribeRequest, F
 }
 func (*UnimplementedForwardingServer) PacketInject(Forwarding_PacketInjectServer) error {
 	return status.Errorf(codes.Unimplemented, "method PacketInject not implemented")
-}
-func (*UnimplementedForwardingServer) PacketSinkSubscribe(*PacketSinkRequest, Forwarding_PacketSinkSubscribeServer) error {
-	return status.Errorf(codes.Unimplemented, "method PacketSinkSubscribe not implemented")
 }
 func (*UnimplementedForwardingServer) ObjectNID(context.Context, *ObjectNIDRequest) (*ObjectNIDReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ObjectNID not implemented")
@@ -1258,27 +1211,6 @@ func (x *forwardingPacketInjectServer) Recv() (*PacketInjectRequest, error) {
 	return m, nil
 }
 
-func _Forwarding_PacketSinkSubscribe_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(PacketSinkRequest)
-	if err := stream.RecvMsg(m); err != nil {
-		return err
-	}
-	return srv.(ForwardingServer).PacketSinkSubscribe(m, &forwardingPacketSinkSubscribeServer{stream})
-}
-
-type Forwarding_PacketSinkSubscribeServer interface {
-	Send(*PacketSinkResponse) error
-	grpc.ServerStream
-}
-
-type forwardingPacketSinkSubscribeServer struct {
-	grpc.ServerStream
-}
-
-func (x *forwardingPacketSinkSubscribeServer) Send(m *PacketSinkResponse) error {
-	return x.ServerStream.SendMsg(m)
-}
-
 func _Forwarding_ObjectNID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ObjectNIDRequest)
 	if err := dec(in); err != nil {
@@ -1402,11 +1334,6 @@ var _Forwarding_serviceDesc = grpc.ServiceDesc{
 			StreamName:    "PacketInject",
 			Handler:       _Forwarding_PacketInject_Handler,
 			ClientStreams: true,
-		},
-		{
-			StreamName:    "PacketSinkSubscribe",
-			Handler:       _Forwarding_PacketSinkSubscribe_Handler,
-			ServerStreams: true,
 		},
 	},
 	Metadata: "proto/forwarding/forwarding_service.proto",

@@ -41,8 +41,10 @@ func TestCreatePort(t *testing.T) {
 		wantAttr        *saipb.PortAttribute
 		wantErr         string
 	}{{
-		desc:            "non-existent interface",
-		req:             &saipb.CreatePortRequest{},
+		desc: "non-existent interface",
+		req: &saipb.CreatePortRequest{
+			HwLaneList: []uint32{1},
+		},
 		getInterfaceErr: fmt.Errorf("no interface"),
 		want: &saipb.CreatePortResponse{
 			Oid: 3,
@@ -50,6 +52,7 @@ func TestCreatePort(t *testing.T) {
 		wantAttr: &saipb.PortAttribute{
 			OperStatus:                       saipb.PortOperStatus_PORT_OPER_STATUS_NOT_PRESENT.Enum(),
 			QosNumberOfQueues:                proto.Uint32(12),
+			HwLaneList:                       []uint32{1},
 			QosQueueList:                     []uint64{4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
 			QosNumberOfSchedulerGroups:       proto.Uint32(12),
 			QosSchedulerGroupList:            []uint64{16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27},
@@ -106,12 +109,15 @@ func TestCreatePort(t *testing.T) {
 		},
 	}, {
 		desc: "existing interface",
-		req:  &saipb.CreatePortRequest{},
+		req: &saipb.CreatePortRequest{
+			HwLaneList: []uint32{1},
+		},
 		want: &saipb.CreatePortResponse{
 			Oid: 3,
 		},
 		wantAttr: &saipb.PortAttribute{
 			OperStatus:                       saipb.PortOperStatus_PORT_OPER_STATUS_DOWN.Enum(),
+			HwLaneList:                       []uint32{1},
 			QosNumberOfQueues:                proto.Uint32(12),
 			QosQueueList:                     []uint64{4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
 			QosNumberOfSchedulerGroups:       proto.Uint32(12),
@@ -209,7 +215,7 @@ func TestCreatePorts(t *testing.T) {
 	}{{
 		desc: "success",
 		req: &saipb.CreatePortsRequest{
-			Reqs: []*saipb.CreatePortRequest{{}},
+			Reqs: []*saipb.CreatePortRequest{{HwLaneList: []uint32{1}}},
 		},
 		want: &saipb.CreatePortsResponse{
 			Resps: []*saipb.CreatePortResponse{{Oid: 3}},
@@ -217,6 +223,7 @@ func TestCreatePorts(t *testing.T) {
 		wantAttr: &saipb.PortAttribute{
 			OperStatus:                       saipb.PortOperStatus_PORT_OPER_STATUS_DOWN.Enum(),
 			QosNumberOfQueues:                proto.Uint32(12),
+			HwLaneList:                       []uint32{1},
 			QosQueueList:                     []uint64{4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
 			QosNumberOfSchedulerGroups:       proto.Uint32(12),
 			QosSchedulerGroupList:            []uint64{16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27},

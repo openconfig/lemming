@@ -54,7 +54,7 @@ type Dataplane struct {
 // New create a new dataplane instance.
 func New(ctx context.Context, opts ...dplaneopts.Option) (*Dataplane, error) {
 	data := &Dataplane{
-		opt: dplaneopts.ResolveOpts(append(opts, dplaneopts.WithEthDevAsLane(true), dplaneopts.WithRemoteCPUPort(true))...),
+		opt: dplaneopts.ResolveOpts(opts...),
 	}
 
 	lis, err := (&net.ListenConfig{}).Listen(ctx, "tcp", data.opt.AddrPort)
