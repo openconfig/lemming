@@ -486,7 +486,32 @@ func (port *port) SetPortAttribute(ctx context.Context, req *saipb.SetPortAttrib
 			return nil, err
 		}
 	}
+	portAttr := &saipb.GetPortAttributeResponse{}
+	port.mgr.PopulateAttributes(&saipb.GetPortAttributeRequest{Oid: req.GetOid(), AttrType: []saipb.PortAttr{saipb.PortAttr_PORT_ATTR_HW_LANE_LIST, saipb.PortAttr_PORT_ATTR_SPEED}}, portAttr)
+
+	if req.FecModeExtended != nil && len(port.opts.HardwareProfile.FECModes) > 0 {
+		supported := checkFECMode(req.GetFecModeExtended(), int(portAttr.GetAttr().GetSpeed()), len(portAttr.GetAttr().GetHwLaneList()), port.opts.HardwareProfile.FECModes)
+		if !supported {
+			return nil, fmt.Errorf("unsupported FEC mode: %v", req.GetFecModeExtended())
+		}
+	}
 	return &saipb.SetPortAttributeResponse{}, nil
+}
+
+func checkFECMode(newMode saipb.PortFecModeExtended, speed, lanes int, modes []*dplaneopts.FECMode) bool {
+	for _, mode := range modes {
+		if mode.Speed == speed && mode.Lanes == lanes {
+			for _, m := range mode.Modes {
+				if newMode.String() == m {
+					return true
+				}
+			}
+		}
+	}
+	if newMode == saipb.PortFecModeExtended_PORT_FEC_MODE_EXTENDED_NONE {
+		return true
+	}
+	return false
 }
 
 // GetPortStats returns the stats for a port.

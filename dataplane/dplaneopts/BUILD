@@ -5,5 +5,8 @@ go_library(
     srcs = ["dplaneopts.go"],
     importpath = "github.com/openconfig/lemming/dataplane/dplaneopts",
     visibility = ["//visibility:public"],
-    deps = ["//proto/forwarding"],
+    deps = [
+        "//proto/forwarding",
+        "@in_gopkg_yaml_v3//:yaml_v3",
+    ],
 )
