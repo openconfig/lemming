@@ -500,7 +500,7 @@ func (port *port) SetPortAttribute(ctx context.Context, req *saipb.SetPortAttrib
 
 func checkFECMode(newMode saipb.PortFecModeExtended, speed, lanes int, modes []*dplaneopts.FECMode) bool {
 	for _, mode := range modes {
-		if mode.Speed == int(speed) && mode.Lanes == lanes {
+		if mode.Speed == speed && mode.Lanes == lanes {
 			for _, m := range mode.Modes {
 				if newMode.String() == m {
 					return true
