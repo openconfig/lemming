@@ -33,15 +33,13 @@ import (
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 
 	"github.com/openconfig/lemming/dataplane/proto/packetio"
-	"github.com/openconfig/lemming/dataplane/protocol"
 )
 
 // Daemon is the implementation of the LLDP protocol.
 type Daemon struct {
-	registry *protocol.Registry
-	enabled  bool
-	mu       sync.Mutex             // guard the ports map
-	ports    map[string]*portDaemon // key=hostif_id
+	enabled bool
+	mu      sync.Mutex             // guard the ports map
+	ports   map[string]*portDaemon // key=hostif_id
 }
 
 // New returns the main procotol handler.
@@ -184,9 +182,6 @@ func (l *lldpInfo) Frame() ([]byte, error) {
 }
 
 // portDaemon contains the required information for LLDP and processes the LLDP frames for a given hostif.
-// * This struct represents a port, that means it subsribes to the port status and send the update accordingly.
-// * When receiving update from this port, it updates the information for this port and populates to gNMI.
-//   - This strcut is intercepting the packet flow: it consumes the LLDP packet only and return non-LLDP packet.
 type portDaemon struct {
 	Name      string
 	info      *lldpInfo
@@ -202,7 +197,7 @@ type portDaemon struct {
 // newPortDaemon creates a port daemon to send/recv LLDP protocol.
 func newPortDaemon(hostif string) *portDaemon {
 	pd := &portDaemon{
-		// HostIfId: hostif,
+		Name:      hostif,
 		doneCh:    make(chan struct{}),
 		InCh:      make(chan *packetio.Packet),
 		ErrSendCh: make(chan error),
@@ -259,7 +254,7 @@ func newPortDaemon(hostif string) *portDaemon {
 						}
 						info, ok := layer.(*layers.LinkLayerDiscoveryInfo)
 						if !ok {
-							pd.ErrRecvCh <- fmt.Errorf("packet is not LinkLayerDiscoveryInfo", "layer", layer)
+							pd.ErrRecvCh <- fmt.Errorf("packet is not LinkLayerDiscoveryInfo: %+v", layer)
 							continue
 						}
 						pd.info.RemoteSysName = info.SysName
@@ -272,7 +267,6 @@ func newPortDaemon(hostif string) *portDaemon {
 			}
 		}
 	}()
-
 	return pd
 }
 
