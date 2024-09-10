@@ -23,6 +23,7 @@ go_library(
     ] + select({
         "@io_bazel_rules_go//go/platform:android": [
             "//dataplane/kernel",
+            "//dataplane/protocol/lldp",
             "//gnmi/gnmiclient",
             "//gnmi/oc",
             "//gnmi/oc/ocpath",
@@ -33,6 +34,7 @@ go_library(
         ],
         "@io_bazel_rules_go//go/platform:linux": [
             "//dataplane/kernel",
+            "//dataplane/protocol/lldp",
             "//gnmi/gnmiclient",
             "//gnmi/oc",
             "//gnmi/oc/ocpath",

@@ -1181,16 +1181,34 @@ def go_repositories():
         version = "v2.0.0",
     )
     go_repository(
+        name = "com_github_mdlayher_ethernet",
+        importpath = "github.com/mdlayher/ethernet",
+        sum = "h1:2oDp6OOhLxQ9JBoUuysVz9UZ9uI6oLUbvAZu0x8o+vE=",
+        version = "v0.0.0-20220221185849-529eae5b6118",
+    )
+    go_repository(
         name = "com_github_mdlayher_genetlink",
         importpath = "github.com/mdlayher/genetlink",
         sum = "h1:KdrNKe+CTu+IbZnm/GVUMXSqBBLqcGpRDa0xkQy56gw=",
         version = "v1.3.2",
     )
     go_repository(
+        name = "com_github_mdlayher_lldp",
+        importpath = "github.com/mdlayher/lldp",
+        sum = "h1:i4JJtLb5iDVsncU7splD9ZCQXvxN13tGDUWihfKOq18=",
+        version = "v0.0.0-20150915211757-afd9f83164c5",
+    )
+    go_repository(
         name = "com_github_mdlayher_netlink",
         importpath = "github.com/mdlayher/netlink",
         sum = "h1:/UtM3ofJap7Vl4QWCPDGXY8d3GIY2UGSDbK+QWmY8/g=",
         version = "v1.7.2",
+    )
+    go_repository(
+        name = "com_github_mdlayher_packet",
+        importpath = "github.com/mdlayher/packet",
+        sum = "h1:InhZJbdShQYt6XV2GPj5XHxChzOfhJJOMbvnGAmOfQ8=",
+        version = "v1.0.0",
     )
     go_repository(
         name = "com_github_mdlayher_socket",

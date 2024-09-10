@@ -33,6 +33,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/openconfig/lemming/dataplane/kernel"
+	"github.com/openconfig/lemming/dataplane/protocol/lldp"
 	"github.com/openconfig/lemming/gnmi/gnmiclient"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
@@ -97,6 +98,10 @@ func (r routeMap) findRoute(ipPrefix string, vrfID uint64) *routeData {
 	return r[key]
 }
 
+type protocolHanlder interface {
+	Reconcile(context.Context, *oc.Root, *ygnmi.Client) error
+}
+
 // Reconciler handles config updates to the paths.
 type Reconciler struct {
 	c *ygnmi.Client
@@ -113,6 +118,7 @@ type Reconciler struct {
 	nextHopGroupClient saipb.NextHopGroupClient
 	lagClient          saipb.LagClient
 	stateMu            sync.RWMutex
+	lldp               protocolHanlder
 	// state keeps track of the applied state of the device's interfaces so that we do not issue duplicate configuration commands to the device's interfaces.
 	state           map[string]*oc.Interface
 	switchID        uint64
@@ -162,6 +168,7 @@ func New(conn grpc.ClientConnInterface, switchID, cpuPortID uint64, contextID st
 		nextHopGroupClient: saipb.NewNextHopGroupClient(conn),
 		fwdClient:          fwdpb.NewForwardingClient(conn),
 		lagClient:          saipb.NewLagClient(conn),
+		lldp:               lldp.New(),
 	}
 	return r
 }
@@ -186,18 +193,21 @@ func (ni *Reconciler) StartInterface(ctx context.Context, client *ygnmi.Client) 
 		ocpath.Root().InterfaceAny().Subinterface(0).Ipv6().AddressAny().PrefixLength().Config().PathStruct(),
 		ocpath.Root().InterfaceAny().Aggregation().LagType().Config().PathStruct(),
 		ocpath.Root().InterfaceAny().Ethernet().AggregateId().Config().PathStruct(),
+		ocpath.Root().Lldp().Enabled().Config().PathStruct(),
+		ocpath.Root().Lldp().InterfaceAny().Config().PathStruct(),
 	)
 	cancelCtx, cancelFn := context.WithCancel(ctx)
 
 	watcher := ygnmi.Watch(cancelCtx, ni.c, b.Config(), func(val *ygnmi.Value[*oc.Root]) error {
 		log.V(2).Info("reconciling interfaces")
 		root, ok := val.Val()
-		if !ok || root.Interface == nil {
+		if !ok || (root.Interface == nil && root.Lldp.Interface == nil) {
 			return ygnmi.Continue
 		}
 		for _, i := range root.Interface {
 			ni.reconcile(cancelCtx, i)
 		}
+		ni.reconcileLldp(cancelCtx, root)
 		return ygnmi.Continue
 	})
 	linkDoneCh := make(chan struct{})
@@ -501,6 +511,16 @@ func (ni *Reconciler) setMinLinks(intf ocInterface, data *interfaceData, minLink
 	return nil
 }
 
+// reconcileLldp compares the LLDP config with state and modifies state to match config.
+func (ni *Reconciler) reconcileLldp(ctx context.Context, intent *oc.Root) {
+	if intent.Lldp.Interface == nil {
+		return
+	}
+	if err := ni.lldp.Reconcile(ctx, intent, ni.c); err != nil {
+		log.Warningf("error found LLDP reconciliation: %v", err)
+	}
+}
+
 // reconcile compares the interface config with state and modifies state to match config.
 func (ni *Reconciler) reconcile(ctx context.Context, config *oc.Interface) {
 	ni.stateMu.RLock()
@@ -711,6 +731,7 @@ func (ni *Reconciler) handleDataplaneEvent(ctx context.Context, resp *saipb.Port
 }
 
 // handleLinkUpdate modifies the state based on changes to link state.
+// This is the callback from netlink.
 func (ni *Reconciler) handleLinkUpdate(ctx context.Context, lu *netlink.LinkUpdate) {
 	ni.stateMu.Lock()
 	defer ni.stateMu.Unlock()
