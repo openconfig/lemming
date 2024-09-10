@@ -41,8 +41,10 @@ func TestCreatePort(t *testing.T) {
 		wantAttr        *saipb.PortAttribute
 		wantErr         string
 	}{{
-		desc:            "non-existent interface",
-		req:             &saipb.CreatePortRequest{},
+		desc: "non-existent interface",
+		req: &saipb.CreatePortRequest{
+			HwLaneList: []uint32{1},
+		},
 		getInterfaceErr: fmt.Errorf("no interface"),
 		want: &saipb.CreatePortResponse{
 			Oid: 3,
@@ -50,6 +52,7 @@ func TestCreatePort(t *testing.T) {
 		wantAttr: &saipb.PortAttribute{
 			OperStatus:                       saipb.PortOperStatus_PORT_OPER_STATUS_NOT_PRESENT.Enum(),
 			QosNumberOfQueues:                proto.Uint32(12),
+			HwLaneList:                       []uint32{1},
 			QosQueueList:                     []uint64{4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
 			QosNumberOfSchedulerGroups:       proto.Uint32(12),
 			QosSchedulerGroupList:            []uint64{16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27},
@@ -106,12 +109,15 @@ func TestCreatePort(t *testing.T) {
 		},
 	}, {
 		desc: "existing interface",
-		req:  &saipb.CreatePortRequest{},
+		req: &saipb.CreatePortRequest{
+			HwLaneList: []uint32{1},
+		},
 		want: &saipb.CreatePortResponse{
 			Oid: 3,
 		},
 		wantAttr: &saipb.PortAttribute{
 			OperStatus:                       saipb.PortOperStatus_PORT_OPER_STATUS_DOWN.Enum(),
+			HwLaneList:                       []uint32{1},
 			QosNumberOfQueues:                proto.Uint32(12),
 			QosQueueList:                     []uint64{4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
 			QosNumberOfSchedulerGroups:       proto.Uint32(12),
@@ -175,7 +181,7 @@ func TestCreatePort(t *testing.T) {
 				return nil, tt.getInterfaceErr
 			}
 			dplane := &fakeSwitchDataplane{}
-			c, mgr, stopFn := newTestPort(t, dplane)
+			c, mgr, stopFn := newTestPort(t, dplane, &dplaneopts.Options{PortType: fwdpb.PortType_PORT_TYPE_KERNEL})
 			defer stopFn()
 			got, gotErr := c.CreatePort(context.TODO(), tt.req)
 			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
@@ -209,7 +215,7 @@ func TestCreatePorts(t *testing.T) {
 	}{{
 		desc: "success",
 		req: &saipb.CreatePortsRequest{
-			Reqs: []*saipb.CreatePortRequest{{}},
+			Reqs: []*saipb.CreatePortRequest{{HwLaneList: []uint32{1}}},
 		},
 		want: &saipb.CreatePortsResponse{
 			Resps: []*saipb.CreatePortResponse{{Oid: 3}},
@@ -217,6 +223,7 @@ func TestCreatePorts(t *testing.T) {
 		wantAttr: &saipb.PortAttribute{
 			OperStatus:                       saipb.PortOperStatus_PORT_OPER_STATUS_DOWN.Enum(),
 			QosNumberOfQueues:                proto.Uint32(12),
+			HwLaneList:                       []uint32{1},
 			QosQueueList:                     []uint64{4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
 			QosNumberOfSchedulerGroups:       proto.Uint32(12),
 			QosSchedulerGroupList:            []uint64{16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27},
@@ -275,7 +282,7 @@ func TestCreatePorts(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
 			dplane := &fakeSwitchDataplane{}
-			c, mgr, stopFn := newTestPort(t, dplane)
+			c, mgr, stopFn := newTestPort(t, dplane, &dplaneopts.Options{PortType: fwdpb.PortType_PORT_TYPE_KERNEL})
 			defer stopFn()
 			got, gotErr := c.CreatePorts(context.TODO(), tt.req)
 			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
@@ -328,7 +335,7 @@ func TestSetPortAttribute(t *testing.T) {
 				return nil, tt.getInterfaceErr
 			}
 			dplane := &fakeSwitchDataplane{}
-			c, mgr, stopFn := newTestPort(t, dplane)
+			c, mgr, stopFn := newTestPort(t, dplane, &dplaneopts.Options{})
 			mgr.StoreAttributes(3, &saipb.PortAttribute{
 				OperStatus: saipb.PortOperStatus_PORT_OPER_STATUS_DOWN.Enum(),
 			})
@@ -349,6 +356,63 @@ func TestSetPortAttribute(t *testing.T) {
 			}
 			if d := cmp.Diff(attr, tt.wantAttr, protocmp.Transform()); d != "" {
 				t.Errorf("SetPortAttribute() failed: diff(-got,+want)\n:%s", d)
+			}
+		})
+	}
+	fecTests := []struct {
+		desc    string
+		req     *saipb.SetPortAttributeRequest
+		opts    *dplaneopts.Options
+		wantErr string
+	}{{
+		desc: "invalid extended fec mode",
+		req: &saipb.SetPortAttributeRequest{
+			Oid:             3,
+			FecModeExtended: saipb.PortFecModeExtended_PORT_FEC_MODE_EXTENDED_RS544_INTERLEAVED.Enum(),
+		},
+		opts: &dplaneopts.Options{
+			HardwareProfile: &dplaneopts.HardwareProfile{
+				FECModes: []*dplaneopts.FECMode{{
+					Speed: 400,
+					Lanes: 2,
+					Modes: []string{saipb.PortFecModeExtended_PORT_FEC_MODE_EXTENDED_RS544_INTERLEAVED.String()},
+				}},
+			},
+		},
+		wantErr: "unsupported FEC",
+	}, {
+		desc: "valid extended fec mode",
+		req: &saipb.SetPortAttributeRequest{
+			Oid:             3,
+			FecModeExtended: saipb.PortFecModeExtended_PORT_FEC_MODE_EXTENDED_RS544_INTERLEAVED.Enum(),
+		},
+		opts: &dplaneopts.Options{
+			HardwareProfile: &dplaneopts.HardwareProfile{
+				FECModes: []*dplaneopts.FECMode{{
+					Speed: 400,
+					Lanes: 1,
+					Modes: []string{saipb.PortFecModeExtended_PORT_FEC_MODE_EXTENDED_RS544_INTERLEAVED.String()},
+				}},
+			},
+		},
+	}}
+	for _, tt := range fecTests {
+		t.Run(tt.desc, func(t *testing.T) {
+			dplane := &fakeSwitchDataplane{}
+			c, mgr, stopFn := newTestPort(t, dplane, tt.opts)
+			mgr.StoreAttributes(3, &saipb.PortAttribute{
+				OperStatus: saipb.PortOperStatus_PORT_OPER_STATUS_DOWN.Enum(),
+				Speed:      proto.Uint32(400),
+				HwLaneList: []uint32{1},
+			})
+			defer stopFn()
+
+			_, gotErr := c.SetPortAttribute(context.TODO(), tt.req)
+			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
+				t.Fatalf("SetPortAttribute() unexpected err: %s", diff)
+			}
+			if gotErr != nil {
+				return
 			}
 		})
 	}
@@ -420,7 +484,7 @@ func TestGetPortStats(t *testing.T) {
 			dplane := &fakeSwitchDataplane{
 				counterReplies: []*fwdpb.ObjectCountersReply{tt.counterReply},
 			}
-			c, _, stopFn := newTestPort(t, dplane)
+			c, _, stopFn := newTestPort(t, dplane, &dplaneopts.Options{PortType: fwdpb.PortType_PORT_TYPE_KERNEL})
 			defer stopFn()
 			got, gotErr := c.GetPortStats(context.TODO(), tt.req)
 			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
@@ -455,7 +519,7 @@ func TestRemovePort(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
 			f := &fakeSwitchDataplane{}
-			c, mgr, stopFn := newTestPort(t, f)
+			c, mgr, stopFn := newTestPort(t, f, &dplaneopts.Options{PortType: fwdpb.PortType_PORT_TYPE_KERNEL})
 			defer stopFn()
 
 			mgr.StoreAttributes(1, &saipb.CreatePortRequest{HwLaneList: []uint32{1}})
@@ -474,7 +538,7 @@ func TestRemovePort(t *testing.T) {
 	}
 }
 
-func newTestPort(t testing.TB, api switchDataplaneAPI) (saipb.PortClient, *attrmgr.AttrMgr, func()) {
+func newTestPort(t testing.TB, api switchDataplaneAPI, opts *dplaneopts.Options) (saipb.PortClient, *attrmgr.AttrMgr, func()) {
 	conn, mgr, stopFn := newTestServer(t, func(mgr *attrmgr.AttrMgr, srv *grpc.Server) {
 		// The following initialization code assigns OID 1 to the switch, and OID 2 to the VLAN.
 		// Therefore, the next available ID is 3.
@@ -496,7 +560,7 @@ func newTestPort(t testing.TB, api switchDataplaneAPI) (saipb.PortClient, *attrm
 		mgr.StoreAttributes(swID, &saipb.SwitchAttribute{
 			DefaultVlanId: proto.Uint64(resp.GetOid()),
 		})
-		newPort(mgr, api, srv, vlan, q, sg, &dplaneopts.Options{PortType: fwdpb.PortType_PORT_TYPE_KERNEL})
+		newPort(mgr, api, srv, vlan, q, sg, opts)
 	})
 	return saipb.NewPortClient(conn), mgr, stopFn
 }

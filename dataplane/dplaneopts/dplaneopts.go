@@ -14,7 +14,13 @@
 
 package dplaneopts
 
-import fwdpb "github.com/openconfig/lemming/proto/forwarding"
+import (
+	"os"
+
+	"gopkg.in/yaml.v3"
+
+	fwdpb "github.com/openconfig/lemming/proto/forwarding"
+)
 
 // Options configures the dataplane
 type Options struct {
@@ -26,95 +32,61 @@ type Options struct {
 	HostifNetDevType fwdpb.PortType
 	// PortType is the fwdpb type for the port type.
 	PortType fwdpb.PortType
-	// PortConfigFile is the path of the port config.
-	PortConfigFile string
-	// PortMap maps the modeled port name (Ethernet1/1/1) to Linux port name (eth1).
-	PortMap map[string]string
-	// EthDevAsLane treats ethX and hardware lane X.
-	// If a port is created with multiple lanes only the first is used.
-	EthDevAsLane bool
-	// RemoteCPUPort enables sending all packets for the CPU over gRPC.
-	// TODO: In the future, only support this option.
-	RemoteCPUPort bool
+	// HardwareProfile is the "hardware" like config options.
+	HardwareProfile *HardwareProfile
 }
 
 // Option exposes additional configuration for the dataplane.
-type Option func(*Options)
+type Option func(*Options) error
 
 // WithAddrPort sets the address of the dataplane gRPC server
 // Default: 127.0.0.1:0
 func WithAddrPort(addrPort string) Option {
-	return func(o *Options) {
+	return func(o *Options) error {
 		o.AddrPort = addrPort
+		return nil
 	}
 }
 
 // WithReconcilation enables the gNMI reconcilation.
 // Default: true
 func WithReconcilation(rec bool) Option {
-	return func(o *Options) {
+	return func(o *Options) error {
 		o.Reconcilation = rec
+		return nil
 	}
 }
 
 // WithHostifNetDevPortType sets the lucius port type for saipb hostif NETDEV.
 // Default: fwdpb.PortType_PORT_TYPE_TAP
 func WithHostifNetDevPortType(t fwdpb.PortType) Option {
-	return func(o *Options) {
+	return func(o *Options) error {
 		o.HostifNetDevType = t
+		return nil
 	}
 }
 
 // WithPortType sets the lucius port type for saipb ports.
 // Default: fwdpb.PortType_PORT_TYPE_KERNEL
 func WithPortType(t fwdpb.PortType) Option {
-	return func(o *Options) {
+	return func(o *Options) error {
 		o.PortType = t
+		return nil
 	}
 }
 
-// WithPortConfigFile sets the path of the port config file.
-// Default: none
-func WithPortConfigFile(file string) Option {
-	return func(o *Options) {
-		o.PortConfigFile = file
+// WithHardwareProfile sets location of the hardware profile config
+func WithHardwareProfile(file string) Option {
+	return func(o *Options) error {
+		if file == "" {
+			return nil
+		}
+		data, err := os.ReadFile(file)
+		if err != nil {
+			return err
+		}
+		return yaml.Unmarshal(data, o.HardwareProfile)
 	}
-}
-
-// WithPortMap configure a map from port name to Linux network device to allow flexible port naming. (eg Ethernet8 -> eth1)
-// Default: none
-func WithPortMap(m map[string]string) Option {
-	return func(o *Options) {
-		o.PortMap = m
-	}
-}
-
-// WithEthDevAsLane enables treating ethX and hardware lane X.
-// If a port is created with multiple lanes only the first is used.
-// Default: false
-func WithEthDevAsLane(enable bool) Option {
-	return func(o *Options) {
-		o.EthDevAsLane = enable
-	}
-}
-
-// WithEthDevAsLane enables sending all packets from/to the CP port over gRPC
-func WithRemoteCPUPort(enable bool) Option {
-	return func(o *Options) {
-		o.RemoteCPUPort = enable
-	}
-}
-
-// Port contains configuration data for a single port.
-type Port struct {
-	Lanes string `json:"lanes"`
-}
-
-// PortConfig contains configuration data for the dataplane ports.
-type PortConfig struct {
-	Ports map[string]*Port `json:"PORT"`
-	// SendToIngressPort is an optional field that may contain exactly on entry, the name of hostif whose linked port is the CPU port.
-	SendToIngressPort map[string]any `json:"SEND_TO_INGRESS_PORT"`
 }
 
 // ResolveOpts creates an option struct from the opts.
@@ -124,11 +96,23 @@ func ResolveOpts(opts ...Option) *Options {
 		Reconcilation:    true,
 		HostifNetDevType: fwdpb.PortType_PORT_TYPE_TAP,
 		PortType:         fwdpb.PortType_PORT_TYPE_KERNEL,
-		PortMap:          map[string]string{},
+		HardwareProfile:  &HardwareProfile{},
 	}
 
 	for _, opt := range opts {
 		opt(resolved)
 	}
 	return resolved
+}
+
+type FECMode struct {
+	Speed int      // Speed in Gbps.
+	Lanes int      // Number of lanes.
+	Modes []string // Supported modes.
+}
+
+// HardwareProfile is the "hardware" like config options.
+type HardwareProfile struct {
+	// FECModes configures the support FECMode for a given speed and lanes combination.
+	FECModes []*FECMode `yaml:"fec_modes"`
 }
