@@ -144,7 +144,12 @@ sai_status_t l_create_nat_entry(const sai_nat_entry_t *nat_entry,
 
   grpc::Status status = nat->CreateNatEntry(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+    } else {
+      LOG(ERROR) << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
 
@@ -160,7 +165,12 @@ sai_status_t l_remove_nat_entry(const sai_nat_entry_t *nat_entry) {
 
   grpc::Status status = nat->RemoveNatEntry(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+    } else {
+      LOG(ERROR) << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
 
@@ -225,7 +235,12 @@ sai_status_t l_set_nat_entry_attribute(const sai_nat_entry_t *nat_entry,
 
   grpc::Status status = nat->SetNatEntryAttribute(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+    } else {
+      LOG(ERROR) << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
 
@@ -246,7 +261,12 @@ sai_status_t l_get_nat_entry_attribute(const sai_nat_entry_t *nat_entry,
   }
   grpc::Status status = nat->GetNatEntryAttribute(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+    } else {
+      LOG(ERROR) << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
   for (uint32_t i = 0; i < attr_count; i++) {
@@ -326,7 +346,12 @@ sai_status_t l_create_nat_entries(uint32_t object_count,
 
   grpc::Status status = nat->CreateNatEntries(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+    } else {
+      LOG(ERROR) << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
   if (object_count != resp.resps().size()) {
@@ -354,7 +379,12 @@ sai_status_t l_remove_nat_entries(uint32_t object_count,
 
   grpc::Status status = nat->RemoveNatEntries(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+    } else {
+      LOG(ERROR) << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
   if (object_count != resp.resps().size()) {
@@ -400,7 +430,12 @@ sai_status_t l_create_nat_zone_counter(sai_object_id_t *nat_zone_counter_id,
 
   grpc::Status status = nat->CreateNatZoneCounter(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+    } else {
+      LOG(ERROR) << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
   if (nat_zone_counter_id) {
@@ -420,7 +455,12 @@ sai_status_t l_remove_nat_zone_counter(sai_object_id_t nat_zone_counter_id) {
 
   grpc::Status status = nat->RemoveNatZoneCounter(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+    } else {
+      LOG(ERROR) << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
 
@@ -456,7 +496,12 @@ sai_status_t l_set_nat_zone_counter_attribute(
 
   grpc::Status status = nat->SetNatZoneCounterAttribute(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+    } else {
+      LOG(ERROR) << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
 
@@ -480,7 +525,12 @@ sai_status_t l_get_nat_zone_counter_attribute(
   }
   grpc::Status status = nat->GetNatZoneCounterAttribute(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+    } else {
+      LOG(ERROR) << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
   for (uint32_t i = 0; i < attr_count; i++) {

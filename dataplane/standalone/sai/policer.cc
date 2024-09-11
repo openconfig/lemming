@@ -101,7 +101,12 @@ sai_status_t l_create_policer(sai_object_id_t *policer_id,
 
   grpc::Status status = policer->CreatePolicer(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+    } else {
+      LOG(ERROR) << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
   if (policer_id) {
@@ -121,7 +126,12 @@ sai_status_t l_remove_policer(sai_object_id_t policer_id) {
 
   grpc::Status status = policer->RemovePolicer(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+    } else {
+      LOG(ERROR) << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
 
@@ -170,7 +180,12 @@ sai_status_t l_set_policer_attribute(sai_object_id_t policer_id,
 
   grpc::Status status = policer->SetPolicerAttribute(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+    } else {
+      LOG(ERROR) << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
 
@@ -193,7 +208,12 @@ sai_status_t l_get_policer_attribute(sai_object_id_t policer_id,
   }
   grpc::Status status = policer->GetPolicerAttribute(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+    } else {
+      LOG(ERROR) << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
   for (uint32_t i = 0; i < attr_count; i++) {
@@ -266,7 +286,12 @@ sai_status_t l_get_policer_stats(sai_object_id_t policer_id,
   }
   grpc::Status status = policer->GetPolicerStats(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+    } else {
+      LOG(ERROR) << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
   for (uint32_t i = 0;

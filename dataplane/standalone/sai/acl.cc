@@ -880,7 +880,12 @@ sai_status_t l_create_acl_table(sai_object_id_t *acl_table_id,
 
   grpc::Status status = acl->CreateAclTable(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+    } else {
+      LOG(ERROR) << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
   if (acl_table_id) {
@@ -900,7 +905,12 @@ sai_status_t l_remove_acl_table(sai_object_id_t acl_table_id) {
 
   grpc::Status status = acl->RemoveAclTable(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+    } else {
+      LOG(ERROR) << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
 
@@ -930,7 +940,12 @@ sai_status_t l_get_acl_table_attribute(sai_object_id_t acl_table_id,
   }
   grpc::Status status = acl->GetAclTableAttribute(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+    } else {
+      LOG(ERROR) << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
   for (uint32_t i = 0; i < attr_count; i++) {
@@ -1266,7 +1281,12 @@ sai_status_t l_create_acl_entry(sai_object_id_t *acl_entry_id,
 
   grpc::Status status = acl->CreateAclEntry(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+    } else {
+      LOG(ERROR) << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
   if (acl_entry_id) {
@@ -1286,7 +1306,12 @@ sai_status_t l_remove_acl_entry(sai_object_id_t acl_entry_id) {
 
   grpc::Status status = acl->RemoveAclEntry(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+    } else {
+      LOG(ERROR) << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
 
@@ -1689,7 +1714,12 @@ sai_status_t l_set_acl_entry_attribute(sai_object_id_t acl_entry_id,
 
   grpc::Status status = acl->SetAclEntryAttribute(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+    } else {
+      LOG(ERROR) << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
 
@@ -1712,7 +1742,12 @@ sai_status_t l_get_acl_entry_attribute(sai_object_id_t acl_entry_id,
   }
   grpc::Status status = acl->GetAclEntryAttribute(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+    } else {
+      LOG(ERROR) << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
   for (uint32_t i = 0; i < attr_count; i++) {
@@ -2180,7 +2215,12 @@ sai_status_t l_create_acl_counter(sai_object_id_t *acl_counter_id,
 
   grpc::Status status = acl->CreateAclCounter(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+    } else {
+      LOG(ERROR) << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
   if (acl_counter_id) {
@@ -2200,7 +2240,12 @@ sai_status_t l_remove_acl_counter(sai_object_id_t acl_counter_id) {
 
   grpc::Status status = acl->RemoveAclCounter(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+    } else {
+      LOG(ERROR) << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
 
@@ -2230,7 +2275,12 @@ sai_status_t l_set_acl_counter_attribute(sai_object_id_t acl_counter_id,
 
   grpc::Status status = acl->SetAclCounterAttribute(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+    } else {
+      LOG(ERROR) << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
 
@@ -2253,7 +2303,12 @@ sai_status_t l_get_acl_counter_attribute(sai_object_id_t acl_counter_id,
   }
   grpc::Status status = acl->GetAclCounterAttribute(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+    } else {
+      LOG(ERROR) << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
   for (uint32_t i = 0; i < attr_count; i++) {
@@ -2295,7 +2350,12 @@ sai_status_t l_create_acl_range(sai_object_id_t *acl_range_id,
 
   grpc::Status status = acl->CreateAclRange(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+    } else {
+      LOG(ERROR) << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
   if (acl_range_id) {
@@ -2315,7 +2375,12 @@ sai_status_t l_remove_acl_range(sai_object_id_t acl_range_id) {
 
   grpc::Status status = acl->RemoveAclRange(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+    } else {
+      LOG(ERROR) << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
 
@@ -2345,7 +2410,12 @@ sai_status_t l_get_acl_range_attribute(sai_object_id_t acl_range_id,
   }
   grpc::Status status = acl->GetAclRangeAttribute(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+    } else {
+      LOG(ERROR) << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
   for (uint32_t i = 0; i < attr_count; i++) {
@@ -2374,7 +2444,12 @@ sai_status_t l_create_acl_table_group(sai_object_id_t *acl_table_group_id,
 
   grpc::Status status = acl->CreateAclTableGroup(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+    } else {
+      LOG(ERROR) << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
   if (acl_table_group_id) {
@@ -2394,7 +2469,12 @@ sai_status_t l_remove_acl_table_group(sai_object_id_t acl_table_group_id) {
 
   grpc::Status status = acl->RemoveAclTableGroup(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+    } else {
+      LOG(ERROR) << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
 
@@ -2425,7 +2505,12 @@ sai_status_t l_get_acl_table_group_attribute(sai_object_id_t acl_table_group_id,
   }
   grpc::Status status = acl->GetAclTableGroupAttribute(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+    } else {
+      LOG(ERROR) << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
   for (uint32_t i = 0; i < attr_count; i++) {
@@ -2467,7 +2552,12 @@ sai_status_t l_create_acl_table_group_member(
 
   grpc::Status status = acl->CreateAclTableGroupMember(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+    } else {
+      LOG(ERROR) << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
   if (acl_table_group_member_id) {
@@ -2488,7 +2578,12 @@ sai_status_t l_remove_acl_table_group_member(
 
   grpc::Status status = acl->RemoveAclTableGroupMember(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+    } else {
+      LOG(ERROR) << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
 
@@ -2520,7 +2615,12 @@ sai_status_t l_get_acl_table_group_member_attribute(
   grpc::Status status =
       acl->GetAclTableGroupMemberAttribute(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+    } else {
+      LOG(ERROR) << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
   for (uint32_t i = 0; i < attr_count; i++) {

@@ -82,7 +82,12 @@ sai_status_t l_create_fdb_entry(const sai_fdb_entry_t *fdb_entry,
 
   grpc::Status status = fdb->CreateFdbEntry(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+    } else {
+      LOG(ERROR) << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
 
@@ -98,7 +103,12 @@ sai_status_t l_remove_fdb_entry(const sai_fdb_entry_t *fdb_entry) {
 
   grpc::Status status = fdb->RemoveFdbEntry(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+    } else {
+      LOG(ERROR) << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
 
@@ -143,7 +153,12 @@ sai_status_t l_set_fdb_entry_attribute(const sai_fdb_entry_t *fdb_entry,
 
   grpc::Status status = fdb->SetFdbEntryAttribute(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+    } else {
+      LOG(ERROR) << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
 
@@ -164,7 +179,12 @@ sai_status_t l_get_fdb_entry_attribute(const sai_fdb_entry_t *fdb_entry,
   }
   grpc::Status status = fdb->GetFdbEntryAttribute(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+    } else {
+      LOG(ERROR) << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
   for (uint32_t i = 0; i < attr_count; i++) {
@@ -227,7 +247,12 @@ sai_status_t l_create_fdb_entries(uint32_t object_count,
 
   grpc::Status status = fdb->CreateFdbEntries(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+    } else {
+      LOG(ERROR) << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
   if (object_count != resp.resps().size()) {
@@ -255,7 +280,12 @@ sai_status_t l_remove_fdb_entries(uint32_t object_count,
 
   grpc::Status status = fdb->RemoveFdbEntries(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+    } else {
+      LOG(ERROR) << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
   if (object_count != resp.resps().size()) {

@@ -57,7 +57,12 @@ sai_status_t l_create_qos_map(sai_object_id_t *qos_map_id,
 
   grpc::Status status = qos_map->CreateQosMap(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+    } else {
+      LOG(ERROR) << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
   if (qos_map_id) {
@@ -77,7 +82,12 @@ sai_status_t l_remove_qos_map(sai_object_id_t qos_map_id) {
 
   grpc::Status status = qos_map->RemoveQosMap(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+    } else {
+      LOG(ERROR) << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
 
@@ -107,7 +117,12 @@ sai_status_t l_get_qos_map_attribute(sai_object_id_t qos_map_id,
   }
   grpc::Status status = qos_map->GetQosMapAttribute(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+    } else {
+      LOG(ERROR) << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
   for (uint32_t i = 0; i < attr_count; i++) {
