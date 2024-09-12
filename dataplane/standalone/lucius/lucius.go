@@ -125,21 +125,16 @@ func start(port int) {
 
 // setupOTelSDK bootstraps the OpenTelemetry pipeline.
 // If it does not return an error, make sure to call shutdown for proper cleanup.
-func setupOTelSDK(ctx context.Context) (shutdown func(context.Context) error, err error) {
+func setupOTelSDK(ctx context.Context) (func(context.Context) error, error) {
 	var shutdownFuncs []func(context.Context) error
 
-	shutdown = func(ctx context.Context) error {
+	shutdown := func(ctx context.Context) error {
 		var err error
 		for _, fn := range shutdownFuncs {
 			err = errors.Join(err, fn(ctx))
 		}
 		shutdownFuncs = nil
 		return err
-	}
-
-	// handleErr calls shutdown for cleanup and makes sure that all errors are returned.
-	handleErr := func(inErr error) {
-		err = errors.Join(inErr, shutdown(ctx))
 	}
 
 	res := resource.Default()
@@ -169,13 +164,12 @@ func setupOTelSDK(ctx context.Context) (shutdown func(context.Context) error, er
 	// Set up logger provider.
 	loggerProvider, err := newLoggerProvider(res)
 	if err != nil {
-		handleErr(err)
-		return
+		return nil, errors.Join(err, shutdown(ctx))
 	}
 	shutdownFuncs = append(shutdownFuncs, loggerProvider.Shutdown)
 	global.SetLoggerProvider(loggerProvider)
 
-	return
+	return shutdown, nil
 }
 
 func newPropagator() propagation.TextMapPropagator {
