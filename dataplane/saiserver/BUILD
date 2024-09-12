@@ -29,6 +29,8 @@ go_library(
         "//proto/forwarding",
         "@com_github_golang_glog//:glog",
         "@com_github_openconfig_gnmi//errlist",
+        "@io_opentelemetry_go_otel//:otel",
+        "@io_opentelemetry_go_otel_trace//:trace",
         "@org_golang_google_grpc//:go_default_library",
         "@org_golang_google_grpc//codes",
         "@org_golang_google_grpc//status",
