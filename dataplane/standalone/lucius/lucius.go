@@ -66,17 +66,8 @@ func main() {
 }
 
 func getLogger() logging.Logger {
-	return logging.LoggerFunc(func(ctx context.Context, level logging.Level, msg string, fields ...any) {
-		switch level {
-		case logging.LevelDebug:
-			slog.DebugContext(ctx, msg, fields)
-		case logging.LevelInfo:
-			slog.InfoContext(ctx, msg, fields)
-		case logging.LevelWarn:
-			slog.WarnContext(ctx, msg, fields)
-		case logging.LevelError:
-			slog.ErrorContext(ctx, msg, fields)
-		}
+	return logging.LoggerFunc(func(ctx context.Context, lvl logging.Level, msg string, fields ...any) {
+		slog.Log(ctx, slog.Level(lvl), msg, fields...)
 	})
 }
 
@@ -151,7 +142,6 @@ func setupOTelSDK(ctx context.Context) (func(context.Context) error, error) {
 	)
 
 	meterProvider := sdkmetric.NewMeterProvider(
-		sdkmetric.WithReader(sdkmetric.NewPeriodicReader(nil)),
 		sdkmetric.WithResource(res),
 	)
 
