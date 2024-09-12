@@ -301,9 +301,10 @@ sai_status_t l_create_tunnel_map(sai_object_id_t *tunnel_map_id,
   if (!status.ok()) {
     auto it = context.GetServerTrailingMetadata().find("traceparent");
     if (it != context.GetServerTrailingMetadata().end()) {
-      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
     } else {
-      LOG(ERROR) << status.error_message();
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
     }
     return SAI_STATUS_FAILURE;
   }
@@ -326,9 +327,10 @@ sai_status_t l_remove_tunnel_map(sai_object_id_t tunnel_map_id) {
   if (!status.ok()) {
     auto it = context.GetServerTrailingMetadata().find("traceparent");
     if (it != context.GetServerTrailingMetadata().end()) {
-      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
     } else {
-      LOG(ERROR) << status.error_message();
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
     }
     return SAI_STATUS_FAILURE;
   }
@@ -361,9 +363,10 @@ sai_status_t l_get_tunnel_map_attribute(sai_object_id_t tunnel_map_id,
   if (!status.ok()) {
     auto it = context.GetServerTrailingMetadata().find("traceparent");
     if (it != context.GetServerTrailingMetadata().end()) {
-      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
     } else {
-      LOG(ERROR) << status.error_message();
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
     }
     return SAI_STATUS_FAILURE;
   }
@@ -398,9 +401,10 @@ sai_status_t l_create_tunnel(sai_object_id_t *tunnel_id,
   if (!status.ok()) {
     auto it = context.GetServerTrailingMetadata().find("traceparent");
     if (it != context.GetServerTrailingMetadata().end()) {
-      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
     } else {
-      LOG(ERROR) << status.error_message();
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
     }
     return SAI_STATUS_FAILURE;
   }
@@ -423,9 +427,10 @@ sai_status_t l_remove_tunnel(sai_object_id_t tunnel_id) {
   if (!status.ok()) {
     auto it = context.GetServerTrailingMetadata().find("traceparent");
     if (it != context.GetServerTrailingMetadata().end()) {
-      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
     } else {
-      LOG(ERROR) << status.error_message();
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
     }
     return SAI_STATUS_FAILURE;
   }
@@ -511,9 +516,10 @@ sai_status_t l_set_tunnel_attribute(sai_object_id_t tunnel_id,
   if (!status.ok()) {
     auto it = context.GetServerTrailingMetadata().find("traceparent");
     if (it != context.GetServerTrailingMetadata().end()) {
-      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
     } else {
-      LOG(ERROR) << status.error_message();
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
     }
     return SAI_STATUS_FAILURE;
   }
@@ -539,9 +545,10 @@ sai_status_t l_get_tunnel_attribute(sai_object_id_t tunnel_id,
   if (!status.ok()) {
     auto it = context.GetServerTrailingMetadata().find("traceparent");
     if (it != context.GetServerTrailingMetadata().end()) {
-      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
     } else {
-      LOG(ERROR) << status.error_message();
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
     }
     return SAI_STATUS_FAILURE;
   }
@@ -682,9 +689,10 @@ sai_status_t l_get_tunnel_stats(sai_object_id_t tunnel_id,
   if (!status.ok()) {
     auto it = context.GetServerTrailingMetadata().find("traceparent");
     if (it != context.GetServerTrailingMetadata().end()) {
-      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
     } else {
-      LOG(ERROR) << status.error_message();
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
     }
     return SAI_STATUS_FAILURE;
   }
@@ -729,9 +737,10 @@ sai_status_t l_create_tunnel_term_table_entry(
   if (!status.ok()) {
     auto it = context.GetServerTrailingMetadata().find("traceparent");
     if (it != context.GetServerTrailingMetadata().end()) {
-      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
     } else {
-      LOG(ERROR) << status.error_message();
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
     }
     return SAI_STATUS_FAILURE;
   }
@@ -756,9 +765,10 @@ sai_status_t l_remove_tunnel_term_table_entry(
   if (!status.ok()) {
     auto it = context.GetServerTrailingMetadata().find("traceparent");
     if (it != context.GetServerTrailingMetadata().end()) {
-      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
     } else {
-      LOG(ERROR) << status.error_message();
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
     }
     return SAI_STATUS_FAILURE;
   }
@@ -786,9 +796,10 @@ sai_status_t l_set_tunnel_term_table_entry_attribute(
   if (!status.ok()) {
     auto it = context.GetServerTrailingMetadata().find("traceparent");
     if (it != context.GetServerTrailingMetadata().end()) {
-      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
     } else {
-      LOG(ERROR) << status.error_message();
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
     }
     return SAI_STATUS_FAILURE;
   }
@@ -816,9 +827,10 @@ sai_status_t l_get_tunnel_term_table_entry_attribute(
   if (!status.ok()) {
     auto it = context.GetServerTrailingMetadata().find("traceparent");
     if (it != context.GetServerTrailingMetadata().end()) {
-      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
     } else {
-      LOG(ERROR) << status.error_message();
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
     }
     return SAI_STATUS_FAILURE;
   }
@@ -882,9 +894,10 @@ sai_status_t l_create_tunnel_map_entry(sai_object_id_t *tunnel_map_entry_id,
   if (!status.ok()) {
     auto it = context.GetServerTrailingMetadata().find("traceparent");
     if (it != context.GetServerTrailingMetadata().end()) {
-      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
     } else {
-      LOG(ERROR) << status.error_message();
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
     }
     return SAI_STATUS_FAILURE;
   }
@@ -907,9 +920,10 @@ sai_status_t l_remove_tunnel_map_entry(sai_object_id_t tunnel_map_entry_id) {
   if (!status.ok()) {
     auto it = context.GetServerTrailingMetadata().find("traceparent");
     if (it != context.GetServerTrailingMetadata().end()) {
-      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
     } else {
-      LOG(ERROR) << status.error_message();
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
     }
     return SAI_STATUS_FAILURE;
   }
@@ -944,9 +958,10 @@ sai_status_t l_get_tunnel_map_entry_attribute(
   if (!status.ok()) {
     auto it = context.GetServerTrailingMetadata().find("traceparent");
     if (it != context.GetServerTrailingMetadata().end()) {
-      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
     } else {
-      LOG(ERROR) << status.error_message();
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
     }
     return SAI_STATUS_FAILURE;
   }
@@ -1028,9 +1043,10 @@ sai_status_t l_create_tunnels(sai_object_id_t switch_id, uint32_t object_count,
   if (!status.ok()) {
     auto it = context.GetServerTrailingMetadata().find("traceparent");
     if (it != context.GetServerTrailingMetadata().end()) {
-      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
     } else {
-      LOG(ERROR) << status.error_message();
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
     }
     return SAI_STATUS_FAILURE;
   }
@@ -1063,9 +1079,10 @@ sai_status_t l_remove_tunnels(uint32_t object_count,
   if (!status.ok()) {
     auto it = context.GetServerTrailingMetadata().find("traceparent");
     if (it != context.GetServerTrailingMetadata().end()) {
-      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
     } else {
-      LOG(ERROR) << status.error_message();
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
     }
     return SAI_STATUS_FAILURE;
   }

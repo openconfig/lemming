@@ -67,9 +67,10 @@ sai_status_t l_create_samplepacket(sai_object_id_t *samplepacket_id,
   if (!status.ok()) {
     auto it = context.GetServerTrailingMetadata().find("traceparent");
     if (it != context.GetServerTrailingMetadata().end()) {
-      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
     } else {
-      LOG(ERROR) << status.error_message();
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
     }
     return SAI_STATUS_FAILURE;
   }
@@ -92,9 +93,10 @@ sai_status_t l_remove_samplepacket(sai_object_id_t samplepacket_id) {
   if (!status.ok()) {
     auto it = context.GetServerTrailingMetadata().find("traceparent");
     if (it != context.GetServerTrailingMetadata().end()) {
-      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
     } else {
-      LOG(ERROR) << status.error_message();
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
     }
     return SAI_STATUS_FAILURE;
   }
@@ -122,9 +124,10 @@ sai_status_t l_set_samplepacket_attribute(sai_object_id_t samplepacket_id,
   if (!status.ok()) {
     auto it = context.GetServerTrailingMetadata().find("traceparent");
     if (it != context.GetServerTrailingMetadata().end()) {
-      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
     } else {
-      LOG(ERROR) << status.error_message();
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
     }
     return SAI_STATUS_FAILURE;
   }
@@ -152,9 +155,10 @@ sai_status_t l_get_samplepacket_attribute(sai_object_id_t samplepacket_id,
   if (!status.ok()) {
     auto it = context.GetServerTrailingMetadata().find("traceparent");
     if (it != context.GetServerTrailingMetadata().end()) {
-      LOG(ERROR) << "Trace ID " << it->second << " " << status.error_message();
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
     } else {
-      LOG(ERROR) << status.error_message();
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
     }
     return SAI_STATUS_FAILURE;
   }
