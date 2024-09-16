@@ -407,7 +407,7 @@ func (hostif *hostif) CPUPacketStream(srv pktiopb.PacketIO_CPUPacketStreamServer
 			err = hostif.dataplane.InjectPacket(&fwdpb.ContextId{Id: hostif.dataplane.ID()}, &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: cpuPortID}}, fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET,
 				pkt.GetPacket().GetFrame(), acts, true, fwdpb.PortAction_PORT_ACTION_INPUT)
 			if err != nil {
-				slog.WarnContext(ctx, "inject err: %v", err)
+				slog.WarnContext(ctx, "inject err", "err", err)
 				continue
 			}
 		}
@@ -461,7 +461,7 @@ func (hostif *hostif) HostPortControl(srv pktiopb.PacketIO_HostPortControlServer
 	case <-ctx.Done():
 		slog.InfoContext(srv.Context(), "host port control done")
 	case err = <-errCh:
-		slog.InfoContext(srv.Context(), "host port control err: %v", err)
+		slog.InfoContext(srv.Context(), "host port control err", "err", err)
 	}
 
 	hostif.remoteMu.Lock()

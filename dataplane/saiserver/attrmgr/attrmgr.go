@@ -93,7 +93,7 @@ func InvokeAndSave[T proto.Message, S proto.Message](ctx context.Context, mgr *A
 	}
 	id, err := mgr.getID(req, respMsg)
 	if err != nil {
-		slog.WarnContext(ctx, "failed to get id %v", err)
+		slog.WarnContext(ctx, "failed to get id", "err", err)
 		return respMsg.(S), nil
 	}
 	mgr.storeAttributes(id, req)
@@ -124,7 +124,7 @@ func (mgr *AttrMgr) Interceptor(ctx context.Context, req any, info *grpc.UnarySe
 	case strings.Contains(info.FullMethod, "Create") || strings.Contains(info.FullMethod, "Set"):
 		id, err := mgr.getID(reqMsg, respMsg)
 		if err != nil {
-			slog.WarnContext(ctx, "failed to get id %v", err)
+			slog.WarnContext(ctx, "failed to get id", "err", err)
 			return respMsg, nil
 		}
 		mgr.storeAttributes(id, reqMsg)
@@ -135,7 +135,7 @@ func (mgr *AttrMgr) Interceptor(ctx context.Context, req any, info *grpc.UnarySe
 	case strings.Contains(info.FullMethod, "Remove"):
 		id, err := mgr.getID(reqMsg, respMsg)
 		if err != nil {
-			slog.WarnContext(ctx, "failed to get id %v", err)
+			slog.WarnContext(ctx, "failed to get id", "err", err)
 			return respMsg, nil
 		}
 		if err := deleteOID(mgr, id); err != nil {
