@@ -17,6 +17,7 @@ package saiserver
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net"
 
 	"google.golang.org/grpc"
@@ -25,8 +26,6 @@ import (
 	"github.com/openconfig/lemming/dataplane/dplaneopts"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
 	"github.com/openconfig/lemming/dataplane/saiserver/attrmgr"
-
-	log "github.com/golang/glog"
 
 	saipb "github.com/openconfig/lemming/dataplane/proto/sai"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
@@ -281,7 +280,7 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 	}
 	fwdPort.Port.PortType = port.opts.PortType
 
-	log.Infof("created port %v, dev %v with lanes %v", id, dev, req.GetHwLaneList())
+	slog.InfoContext(ctx, "created port", "port", id, "device", dev, "hwlane", req.GetHwLaneList())
 	_, err := port.dataplane.PortCreate(ctx, fwdPort)
 	if err != nil {
 		return nil, err
@@ -324,7 +323,7 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 		ObjectId:  &fwdpb.ObjectId{Id: fmt.Sprint(id)},
 	})
 	if err != nil {
-		log.Infof("Failed to find NID for port id=%d: %v", id, err)
+		slog.InfoContext(ctx, "Failed to find NID for port", "port", id, "err", err)
 		return nil, err
 	}
 	vlanReq := fwdconfig.TableEntryAddRequest(port.dataplane.ID(), VlanTable).AppendEntry(
@@ -568,7 +567,7 @@ func (port *port) RemovePort(ctx context.Context, req *saipb.RemovePortRequest) 
 }
 
 func (port *port) Reset() {
-	log.Info("reseting port")
+	slog.Info("reseting port")
 }
 
 type lagMember struct {

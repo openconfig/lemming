@@ -17,6 +17,7 @@ package saiserver
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net"
 	"strconv"
 
@@ -24,8 +25,6 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"
-
-	log "github.com/golang/glog"
 
 	"github.com/openconfig/lemming/dataplane/dplaneopts"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
@@ -969,7 +968,7 @@ func (sw *saiSwitch) PortStateChangeNotification(_ *saipb.PortStateChangeNotific
 		case ed := <-fwdSrv.ch:
 			num, err := strconv.Atoi(ed.GetPort().GetPortId().GetObjectId().GetId())
 			if err != nil {
-				log.Warningf("couldn't get numeric port id: %v", err)
+				slog.WarnContext(srv.Context(), "couldn't get numeric port id", "err", err)
 				continue
 			}
 			oType := sw.mgr.GetType(ed.GetPort().GetPortId().GetObjectId().GetId())
@@ -978,7 +977,7 @@ func (sw *saiSwitch) PortStateChangeNotification(_ *saipb.PortStateChangeNotific
 			case saipb.ObjectType_OBJECT_TYPE_BRIDGE_PORT:
 			case saipb.ObjectType_OBJECT_TYPE_LAG:
 			default:
-				log.Infof("skipping port state event for type %v", oType)
+				slog.InfoContext(srv.Context(), "skipping port state event", "type", oType)
 				continue
 			}
 			status := saipb.PortOperStatus_PORT_OPER_STATUS_UNKNOWN
@@ -993,7 +992,7 @@ func (sw *saiSwitch) PortStateChangeNotification(_ *saipb.PortStateChangeNotific
 					PortState: status,
 				}},
 			}
-			log.Infof("send port event: %+v", resp)
+			slog.InfoContext(srv.Context(), "send port event", "event", resp)
 			err = srv.Send(resp)
 			if err != nil {
 				return err
