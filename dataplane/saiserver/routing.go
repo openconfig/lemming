@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/binary"
 	"fmt"
+	"log/slog"
 	"sync"
 
 	"google.golang.org/grpc"
@@ -29,8 +30,6 @@ import (
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
 	"github.com/openconfig/lemming/dataplane/saiserver/attrmgr"
-
-	log "github.com/golang/glog"
 
 	saipb "github.com/openconfig/lemming/dataplane/proto/sai"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
@@ -674,7 +673,7 @@ func (ri *routerInterface) CreateRouterInterface(ctx context.Context, req *saipb
 	switch req.GetType() {
 	case saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_PORT:
 	case saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_LOOPBACK: // TODO: Support loopback interfaces
-		log.Warning("loopback interfaces not supported")
+		slog.WarnContext(ctx, "loopback interfaces not supported")
 		return &saipb.CreateRouterInterfaceResponse{Oid: id}, nil
 	default:
 		return nil, status.Errorf(codes.InvalidArgument, "unknown interface type: %v", req.GetType())
@@ -970,7 +969,7 @@ func (vlan *vlan) CreateVlanMember(ctx context.Context, r *saipb.CreateVlanMembe
 		ObjectId:  &fwdpb.ObjectId{Id: fmt.Sprint(r.GetBridgePortId())},
 	})
 	if err != nil {
-		log.Infof("Failed to find NID for port id=%d: %v", r.GetBridgePortId(), err)
+		slog.InfoContext(ctx, "Failed to find NID for port", "bridge_port", r.GetBridgePortId(), "err", err)
 		return nil, err
 	}
 	vlanReq := fwdconfig.TableEntryAddRequest(vlan.dataplane.ID(), VlanTable).AppendEntry(
@@ -1026,7 +1025,7 @@ func (vlan *vlan) RemoveVlanMember(ctx context.Context, r *saipb.RemoveVlanMembe
 		ObjectId:  &fwdpb.ObjectId{Id: fmt.Sprint(member.PortID)},
 	})
 	if err != nil {
-		log.Infof("Failed to find NID for port id=%d: %v", member.PortID, err)
+		slog.InfoContext(ctx, "Failed to find NID for port", "bridge_port", member.PortID, "err", err)
 		return nil, err
 	}
 	if _, err := vlan.dataplane.TableEntryRemove(ctx, fwdconfig.TableEntryRemoveRequest(vlan.dataplane.ID(), VlanTable).AppendEntry(
@@ -1049,7 +1048,7 @@ func (vlan *vlan) CreateVlanMembers(ctx context.Context, r *saipb.CreateVlanMemb
 }
 
 func (vlan *vlan) Reset() {
-	log.Info("resetting vlan")
+	slog.Info("resetting vlan")
 	vlan.oidByVId = map[uint32]uint64{}
 	vlan.vlans = map[uint64]map[uint64]*vlanMember{}
 }

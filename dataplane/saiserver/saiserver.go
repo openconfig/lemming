@@ -17,14 +17,13 @@ package saiserver
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/openconfig/lemming/dataplane/dplaneopts"
 	"github.com/openconfig/lemming/dataplane/forwarding"
 	"github.com/openconfig/lemming/dataplane/saiserver/attrmgr"
 
 	"google.golang.org/grpc"
-
-	log "github.com/golang/glog"
 
 	saipb "github.com/openconfig/lemming/dataplane/proto/sai"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
@@ -136,10 +135,10 @@ type Server struct {
 	tam          *tam
 }
 
-func (s *Server) ObjectTypeQuery(_ context.Context, req *saipb.ObjectTypeQueryRequest) (*saipb.ObjectTypeQueryResponse, error) {
+func (s *Server) ObjectTypeQuery(ctx context.Context, req *saipb.ObjectTypeQueryRequest) (*saipb.ObjectTypeQueryResponse, error) {
 	val := s.mgr.GetType(fmt.Sprint(req.GetObject()))
 	if val == saipb.ObjectType_OBJECT_TYPE_NULL {
-		log.Warningf("unknown object id %v, type %v", req.Object, val)
+		slog.WarnContext(ctx, "unknown object id", "oid", req.Object)
 	}
 	return &saipb.ObjectTypeQueryResponse{
 		Type: val,
@@ -148,7 +147,7 @@ func (s *Server) ObjectTypeQuery(_ context.Context, req *saipb.ObjectTypeQueryRe
 
 func (s *Server) Initialize(ctx context.Context, _ *saipb.InitializeRequest) (*saipb.InitializeResponse, error) {
 	if s.initialized {
-		log.Info("dataplane already intialized, reseting")
+		slog.InfoContext(ctx, "dataplane already intialized, reseting")
 		s.mgr.Reset()
 		s.saiSwitch.Reset()
 		if err := s.Reset(ctx); err != nil {

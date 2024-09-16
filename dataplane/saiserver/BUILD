@@ -27,7 +27,6 @@ go_library(
         "//dataplane/proto/sai",
         "//dataplane/saiserver/attrmgr",
         "//proto/forwarding",
-        "@com_github_golang_glog//:glog",
         "@com_github_openconfig_gnmi//errlist",
         "@io_opentelemetry_go_otel//:otel",
         "@io_opentelemetry_go_otel_trace//:trace",
