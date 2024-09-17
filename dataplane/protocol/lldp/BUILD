@@ -7,14 +7,12 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//dataplane/proto/packetio",
-        "//dataplane/protocol",
         "//gnmi/gnmiclient",
         "//gnmi/oc",
         "//gnmi/oc/ocpath",
         "@com_github_golang_glog//:glog",
         "@com_github_google_gopacket//:gopacket",
         "@com_github_google_gopacket//layers",
-        "@com_github_mdlayher_lldp//:lldp",
         "@com_github_openconfig_ygnmi//ygnmi",
     ],
 )
@@ -23,5 +21,9 @@ go_test(
     name = "lldp_test",
     srcs = ["lldp_test.go"],
     embed = [":lldp"],
-    deps = ["//dataplane/proto/packetio"],
+    deps = [
+        "//dataplane/proto/packetio",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_openconfig_gnmi//errdiff",
+    ],
 )

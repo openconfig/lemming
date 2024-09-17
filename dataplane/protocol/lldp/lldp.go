@@ -17,6 +17,7 @@ package lldp
 import (
 	"context"
 	"fmt"
+	"net"
 	"sync"
 	"time"
 
@@ -28,7 +29,6 @@ import (
 	"github.com/openconfig/lemming/gnmi/oc"
 
 	log "github.com/golang/glog"
-	"github.com/mdlayher/lldp"
 
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 
@@ -37,72 +37,124 @@ import (
 
 // Daemon is the implementation of the LLDP protocol.
 type Daemon struct {
-	enabled bool
-	mu      sync.Mutex             // guard the ports map
-	ports   map[string]*portDaemon // key=hostif_id
+	enabled       bool                   // whether LLDP is enabled globally
+	muPortEnabled sync.Mutex             // guard the map of enabled ports
+	portEnabled   map[string]bool        // contains the enabled ports
+	muPds         sync.Mutex             // guard the map of active port daemons
+	portDaemons   map[string]*portDaemon // tracks the active port daemons
 }
 
 // New returns the main procotol handler.
 func New() *Daemon {
 	return &Daemon{
-		ports: map[string]*portDaemon{},
+		portEnabled: map[string]bool{},
+		portDaemons: map[string]*portDaemon{},
 	}
 }
 
-// getOrCreatePortDaemon returns the state interface.
-func (d *Daemon) getOrCreatePortDaemon(name string) *portDaemon {
-	if _, ok := d.ports[name]; !ok {
-		d.ports[name] = newPortDaemon(name)
+// Start starts the procotol handler.
+func (d *Daemon) Start() {
+	if d.portDaemons == nil {
+		d.portDaemons = map[string]*portDaemon{}
 	}
-	return d.ports[name]
+	d.enabled = true
+}
+
+// Stop stops the procotol handler by stopping all port daemons.
+func (d *Daemon) Stop() {
+	for _, p := range d.portDaemons {
+		p.Stop()
+	}
+	d.enabled = false
+	d.portDaemons = nil
+}
+
+// changePortState tries to change the port state and returns whether the state is acutally changed.
+func (d *Daemon) changePortState(intf *oc.Lldp_Interface) bool {
+	d.changePdState(intf)
+	if d.isPortEnabled(intf.GetName()) != intf.GetEnabled() {
+		d.muPortEnabled.Lock()
+		defer d.muPortEnabled.Unlock()
+		d.portEnabled[intf.GetName()] = intf.GetEnabled()
+		return true
+	}
+	return false
+}
+
+// changePdState tries to change the running state of the port daemon.
+func (d *Daemon) changePdState(intf *oc.Lldp_Interface) {
+	// only active when LLPD is gobally enabled and interface enabled.
+	wantActive := d.enabled && intf.GetEnabled()
+	_, currActive := d.portDaemons[intf.GetName()]
+	switch {
+	case wantActive && !currActive:
+		d.startPortDaemon(intf.GetName())
+	case !wantActive && currActive:
+		d.stopPortDaemon(intf.GetName())
+	}
+}
+
+func (d *Daemon) isPortEnabled(name string) bool {
+	state, ok := d.portEnabled[name]
+	if ok {
+		return state
+	}
+	d.muPortEnabled.Lock()
+	defer d.muPortEnabled.Unlock()
+	d.portEnabled[name] = false
+	return false
+}
+
+// startPortDaemon starts the port daemon.
+func (d *Daemon) startPortDaemon(name string) error {
+	_, ok := d.portDaemons[name]
+	if ok {
+		return fmt.Errorf("Port %s is already running.", name)
+	}
+	d.muPds.Lock()
+	defer d.muPds.Unlock()
+	d.portDaemons[name] = newPortDaemon(name)
+	return nil
+}
+
+// stopPortDaemon stops the port daemon.
+func (d *Daemon) stopPortDaemon(name string) error {
+	p, ok := d.portDaemons[name]
+	if !ok {
+		return fmt.Errorf("failed to find Port %s.", name)
+	}
+	d.muPds.Lock()
+	defer d.muPds.Unlock()
+	p.Stop()
+	delete(d.portDaemons, name)
+	return nil
+}
+
+func (d *Daemon) reconcileLldpEnabled(sb *ygnmi.SetBatch, intent *oc.Root, c *ygnmi.Client) error {
+	if wantEnabled := intent.Lldp.GetEnabled(); d.enabled != wantEnabled {
+		d.enabled = wantEnabled
+		gnmiclient.BatchUpdate(sb, ocpath.Root().Lldp().Enabled().State(), d.enabled)
+	}
+	return nil
+}
+
+func (d *Daemon) reconcileLldpInterfaceEnabled(sb *ygnmi.SetBatch, intent *oc.Root, c *ygnmi.Client) error {
+	for _, intf := range intent.GetLldp().Interface {
+		if changed := d.changePortState(intf); changed {
+			gnmiclient.BatchUpdate(sb, ocpath.Root().Lldp().Interface(intf.GetName()).Enabled().State(), intf.GetEnabled())
+		}
+	}
+	return nil
 }
 
 // Reconcile reconciles LLDP for all ports.
 func (d *Daemon) Reconcile(ctx context.Context, intent *oc.Root, c *ygnmi.Client) error {
-	d.mu.Lock()
-	defer d.mu.Unlock()
 	sb := &ygnmi.SetBatch{}
-	// Protocol enable.
-	if d.enabled != intent.Lldp.GetEnabled() {
-		d.enabled = intent.Lldp.GetEnabled()
-		gnmiclient.BatchUpdate(sb, ocpath.Root().Lldp().Enabled().State(), d.enabled)
-	}
-	// Per-interface enable.
-	for _, intf := range intent.GetLldp().Interface {
-		pd := d.getOrCreatePortDaemon(intf.GetName())
-		newState := intent.Lldp.GetEnabled() && intf.GetEnabled()
-		if pd.enabled != newState {
-			pd.SetEnabled(newState)
-			gnmiclient.BatchUpdate(sb, ocpath.Root().Lldp().Interface(intf.GetName()).Enabled().State(), newState)
-		}
-	}
+	d.reconcileLldpEnabled(sb, intent, c)
+	d.reconcileLldpInterfaceEnabled(sb, intent, c)
 	if _, err := sb.Set(ctx, c); err != nil {
 		return fmt.Errorf("failed to update LLDP enable state: %v", err)
 	}
-	return nil
-}
-
-// AddPort registers a port.
-func (d *Daemon) AddPort(pn string) error {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	_, ok := d.ports[pn]
-	if ok {
-		return fmt.Errorf("port %q exists already", pn)
-	}
-	d.ports[pn] = newPortDaemon(pn)
-	return nil
-}
-
-// RemovePort deregisters a port.
-func (d *Daemon) RemovePort(pn string) error {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	_, ok := d.ports[pn]
-	if !ok {
-		return fmt.Errorf("port %q not found", pn)
-	}
-	delete(d.ports, pn)
 	return nil
 }
 
@@ -113,178 +165,89 @@ func (d *Daemon) Matched(po *packetio.PacketOut) bool {
 
 // Process dispatches the packet to the corresponding port handler.
 func (d *Daemon) Process(p *packetio.Packet) error {
-	pd, ok := d.ports[fmt.Sprintf("%d", p.HostPort)]
+	pd, ok := d.portDaemons[fmt.Sprintf("%d", p.HostPort)]
 	if !ok {
 		return fmt.Errorf("port %q not found", p.HostPort)
 	}
 	return pd.Process(p)
 }
 
-// Start starts the procotol handler.
-func (d *Daemon) Start() error {
-	return nil
-}
-
-// Stop stops the procotol handler.
-func (d *Daemon) Stop() {
-	for _, p := range d.ports {
-		p.Stop()
-	}
-	d.ports = nil
-}
-
-// lldpInfo contains LLDP protocol information.
-type lldpInfo struct {
-	HostIfId       string
-	SysName        string
-	SysDesc        string
-	PortName       string
-	PortDesc       string
-	RemoteSysName  string
-	RemoteSysDesc  string
-	RemotePortName string
-	RemotePortDesc string
-	HardwareAddr   string
-	Interval       time.Duration
-}
-
-// Frames returns the LLDP packet.
-func (l *lldpInfo) Frame() ([]byte, error) {
-	lf := lldp.Frame{
-		ChassisID: &lldp.ChassisID{
-			Subtype: lldp.ChassisIDSubtypeMACAddress,
-			ID:      []byte(l.HardwareAddr),
-		},
-		PortID: &lldp.PortID{
-			Subtype: lldp.PortIDSubtypeInterfaceName,
-			ID:      []byte(l.PortName),
-		},
-		TTL: 2 * l.Interval,
-		Optional: []*lldp.TLV{
-			{
-				Type:   lldp.TLVTypePortDescription,
-				Value:  []byte(l.PortDesc),
-				Length: uint16(len(l.PortDesc)),
-			},
-			{
-				Type:   lldp.TLVTypeSystemName,
-				Value:  []byte(l.SysName),
-				Length: uint16(len(l.SysName)),
-			},
-			{
-				Type:   lldp.TLVTypeSystemDescription,
-				Value:  []byte(l.SysDesc),
-				Length: uint16(len(l.SysDesc)),
-			},
-		},
-	}
-	return lf.MarshalBinary()
-}
-
 // portDaemon contains the required information for LLDP and processes the LLDP frames for a given hostif.
 type portDaemon struct {
 	Name      string
 	info      *lldpInfo
-	enabled   bool
-	enabledCh chan bool // indicates the state of this daemon.
 	Interval  time.Duration
 	doneCh    chan struct{}
-	InCh      chan *packetio.Packet
-	ErrSendCh chan error
-	ErrRecvCh chan error
+	inCh      chan *packetio.Packet
+	errRecvCh chan error
 }
 
 // newPortDaemon creates a port daemon to send/recv LLDP protocol.
 func newPortDaemon(hostif string) *portDaemon {
-	pd := &portDaemon{
+	d := &portDaemon{
 		Name:      hostif,
 		doneCh:    make(chan struct{}),
-		InCh:      make(chan *packetio.Packet),
-		ErrSendCh: make(chan error),
-		ErrRecvCh: make(chan error),
+		inCh:      make(chan *packetio.Packet),
+		errRecvCh: make(chan error),
 	}
-
 	go func() {
 		log.Infof("Start LLDP sender.")
-		enabled := false
 		for {
 			select {
-			case <-pd.doneCh:
+			case <-d.doneCh:
 				log.Infof("Stop sending LLDP frame")
 				return
-			case e := <-pd.enabledCh:
-				enabled = e
 			default:
-				if enabled {
-					_, err := pd.info.Frame()
-					if err != nil {
-						pd.ErrSendCh <- fmt.Errorf("failed to create LLDP frame: %v", err)
-						continue
-					}
-					// TODO: Send the packe to the hostif.
-					log.Infof("Write LLDP frame to port: %+v", hostif)
-					time.Sleep(pd.Interval * time.Second)
-				} else {
-					log.Infof("LLDP frame sending paused.")
-					enabled = <-pd.enabledCh
+				_, err := d.info.Frame()
+				if err != nil {
+					log.Errorf("failed to create LLDP frame: %v", err)
+					continue
 				}
+				// TODO: Send the packe to the hostif.
+				log.Infof("Write LLDP frame to port: %+v", d.Name)
+				time.Sleep(d.Interval)
 			}
 		}
 	}()
 
 	go func() {
 		log.Infof("Start LLDP receiver.")
-		enabled := false
 		for {
 			select {
-			case <-pd.doneCh:
+			case <-d.doneCh:
 				log.Infof("Stop processing LLDP frame")
 				return
-			case e := <-pd.enabledCh:
-				enabled = e
 			default:
-				if enabled {
-					f := <-pd.InCh
-					log.Infof("Got LLDP Frame: %+v", f.String())
-					pkt := gopacket.NewPacket(f.GetFrame(), layers.LayerTypeEthernet, gopacket.Default)
-					for _, layer := range pkt.Layers() {
-						if layer.LayerType() != layers.LayerTypeLinkLayerDiscoveryInfo {
-							log.Infof("Skipped layer %v", layer.LayerType().String())
-							continue
-						}
-						info, ok := layer.(*layers.LinkLayerDiscoveryInfo)
-						if !ok {
-							pd.ErrRecvCh <- fmt.Errorf("packet is not LinkLayerDiscoveryInfo: %+v", layer)
-							continue
-						}
-						pd.info.RemoteSysName = info.SysName
-						pd.info.RemoteSysDesc = info.SysDescription
+				f := <-d.inCh
+				log.Infof("Got LLDP Frame: %+v", f.String())
+				pkt := gopacket.NewPacket(f.GetFrame(), layers.LayerTypeEthernet, gopacket.Default)
+				for _, layer := range pkt.Layers() {
+					if layer.LayerType() != layers.LayerTypeLinkLayerDiscoveryInfo {
+						log.Infof("Skipped layer %v", layer.LayerType().String())
+						continue
 					}
-				} else {
-					log.Infof("LLDP frame receiving paused.")
-					enabled = <-pd.enabledCh
+					info, ok := layer.(*layers.LinkLayerDiscoveryInfo)
+					if !ok {
+						d.errRecvCh <- fmt.Errorf("packet is not LinkLayerDiscoveryInfo: %+v", layer)
+						continue
+					}
+					d.info.RemoteSysName = info.SysName
+					d.info.RemoteSysDesc = info.SysDescription
 				}
 			}
 		}
 	}()
-	return pd
+	return d
 }
 
 // Process handles the packet from the hostif and update the remote information.
 func (d *portDaemon) Process(p *packetio.Packet) error {
-	if d.InCh == nil {
+	if d.inCh == nil {
 		return fmt.Errorf("failed to inject packet")
 	}
-	d.InCh <- p
-	err := <-d.ErrRecvCh
+	d.inCh <- p
+	err := <-d.errRecvCh
 	return err
-}
-
-// SetEnabled starts/stops sending and receiving goroutines for this port.
-func (d *portDaemon) SetEnabled(b bool) error {
-	d.enabledCh <- b
-	d.enabled = b
-	return nil
 }
 
 // Stop stops the port daemon.
@@ -300,4 +263,66 @@ func IsLldp(po *packetio.PacketOut) bool {
 		return false
 	}
 	return ethLayer.(*layers.Ethernet).EthernetType == layers.EthernetType(layers.EthernetTypeLinkLayerDiscovery.LayerType())
+}
+
+// lldpInfo contains LLDP protocol information.
+type lldpInfo struct {
+	HostIfId       string
+	SysName        string
+	SysDesc        string
+	PortName       string
+	PortDesc       string
+	RemoteSysName  string
+	RemoteSysDesc  string
+	RemotePortName string
+	RemotePortDesc string
+	HardwareAddr   []byte
+	Interval       uint16
+}
+
+// Frames returns the LLDP packet.
+func (l *lldpInfo) Frame() ([]byte, error) {
+	dstMac, err := net.ParseMAC("01:80:C2:00:00:0E")
+	if err != nil {
+		return nil, err
+	}
+	pktEth := &layers.Ethernet{
+		SrcMAC:       net.HardwareAddr(l.HardwareAddr),
+		DstMAC:       dstMac,
+		EthernetType: layers.EthernetTypeLinkLayerDiscovery,
+	}
+	pktLldp := &layers.LinkLayerDiscovery{
+		ChassisID: layers.LLDPChassisID{
+			Subtype: layers.LLDPChassisIDSubTypeMACAddr,
+			ID:      l.HardwareAddr,
+		},
+		PortID: layers.LLDPPortID{
+			Subtype: layers.LLDPPortIDSubtypeIfaceName,
+			ID:      []byte(l.PortName),
+		},
+		TTL: 2 * l.Interval,
+		Values: []layers.LinkLayerDiscoveryValue{
+			{
+				Type:   layers.LLDPTLVPortDescription,
+				Value:  []byte(l.PortDesc),
+				Length: uint16(len(l.PortDesc)),
+			}, {
+				Type:   layers.LLDPTLVSysName,
+				Value:  []byte(l.SysName),
+				Length: uint16(len(l.SysName)),
+			}, {
+				Type:   layers.LLDPTLVSysDescription,
+				Value:  []byte(l.SysDesc),
+				Length: uint16(len(l.SysDesc)),
+			},
+		},
+	}
+	buf := gopacket.NewSerializeBuffer()
+	if err := gopacket.SerializeLayers(buf, gopacket.SerializeOptions{
+		FixLengths:       true,
+		ComputeChecksums: true,
+	}, pktEth, pktLldp); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
 }
