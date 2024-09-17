@@ -191,7 +191,7 @@ const (
 	VlanTable             = "vlan"
 	L2MCGroupTable        = "l2mcg"
 	policerTabler         = "policerTable"
-	invalidPacketTable    = "invalid-ip"
+	invalidIngressTable   = "invalid-ingress"
 	DefaultVlanId         = 1
 )
 
@@ -856,7 +856,7 @@ func (sw *saiSwitch) createInvalidPacketFilter(ctx context.Context) error {
 		Desc: &fwdpb.TableDesc{
 			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_CONTINUE}},
 			TableType: fwdpb.TableType_TABLE_TYPE_FLOW,
-			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: invalidPacketTable}},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: invalidIngressTable}},
 			Table: &fwdpb.TableDesc_Flow{
 				Flow: &fwdpb.FlowTableDesc{
 					BankCount: 1,
@@ -874,7 +874,7 @@ func (sw *saiSwitch) createInvalidPacketFilter(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-		req := fwdconfig.TableEntryAddRequest(sw.dataplane.ID(), invalidPacketTable).
+		req := fwdconfig.TableEntryAddRequest(sw.dataplane.ID(), invalidIngressTable).
 			AppendEntry(
 				fwdconfig.EntryDesc(fwdconfig.FlowEntry(fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC).WithBytes(prefix.IP, prefix.Mask))),
 				fwdconfig.Action(fwdconfig.DropAction()),
@@ -890,7 +890,7 @@ func (sw *saiSwitch) createInvalidPacketFilter(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-		req := fwdconfig.TableEntryAddRequest(sw.dataplane.ID(), invalidPacketTable).
+		req := fwdconfig.TableEntryAddRequest(sw.dataplane.ID(), invalidIngressTable).
 			AppendEntry(
 				fwdconfig.EntryDesc(fwdconfig.FlowEntry(fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(prefix.IP, prefix.Mask))),
 				fwdconfig.Action(fwdconfig.DropAction()),
@@ -899,7 +899,9 @@ func (sw *saiSwitch) createInvalidPacketFilter(ctx context.Context) error {
 			return err
 		}
 	}
-	req := fwdconfig.TableEntryAddRequest(sw.dataplane.ID(), invalidPacketTable).
+
+	// Before the TTL is decremented and after the packets may be punted, drop packet with TTL == 1 or TTL == 0.
+	req := fwdconfig.TableEntryAddRequest(sw.dataplane.ID(), invalidIngressTable).
 		AppendEntry(
 			fwdconfig.EntryDesc(fwdconfig.FlowEntry(fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP).WithBytes([]byte{0x00}, []byte{0xFF}))),
 			fwdconfig.Action(fwdconfig.DropAction()),
@@ -907,6 +909,15 @@ func (sw *saiSwitch) createInvalidPacketFilter(ctx context.Context) error {
 	if _, err := sw.dataplane.TableEntryAdd(ctx, req); err != nil {
 		return err
 	}
+	req = fwdconfig.TableEntryAddRequest(sw.dataplane.ID(), invalidIngressTable).
+		AppendEntry(
+			fwdconfig.EntryDesc(fwdconfig.FlowEntry(fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP).WithBytes([]byte{0x01}, []byte{0xFF}))),
+			fwdconfig.Action(fwdconfig.DropAction()),
+		).Build()
+	if _, err := sw.dataplane.TableEntryAdd(ctx, req); err != nil {
+		return err
+	}
+
 	return nil
 }
 
