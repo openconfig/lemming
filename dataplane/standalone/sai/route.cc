@@ -72,7 +72,13 @@ sai_status_t l_create_route_entry(const sai_route_entry_t *route_entry,
   *req.mutable_entry() = convert_from_route_entry(*route_entry);
   grpc::Status status = route->CreateRouteEntry(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
 
@@ -89,7 +95,13 @@ sai_status_t l_remove_route_entry(const sai_route_entry_t *route_entry) {
   *req.mutable_entry() = convert_from_route_entry(*route_entry);
   grpc::Status status = route->RemoveRouteEntry(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
 
@@ -127,7 +139,13 @@ sai_status_t l_set_route_entry_attribute(const sai_route_entry_t *route_entry,
 
   grpc::Status status = route->SetRouteEntryAttribute(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
 
@@ -149,7 +167,13 @@ sai_status_t l_get_route_entry_attribute(const sai_route_entry_t *route_entry,
   }
   grpc::Status status = route->GetRouteEntryAttribute(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
   for (uint32_t i = 0; i < attr_count; i++) {
@@ -201,7 +225,13 @@ sai_status_t l_create_route_entries(uint32_t object_count,
 
   grpc::Status status = route->CreateRouteEntries(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
   if (object_count != resp.resps().size()) {
@@ -230,7 +260,13 @@ sai_status_t l_remove_route_entries(uint32_t object_count,
 
   grpc::Status status = route->RemoveRouteEntries(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
   if (object_count != resp.resps().size()) {

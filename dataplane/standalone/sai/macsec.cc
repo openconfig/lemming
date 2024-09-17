@@ -222,7 +222,13 @@ sai_status_t l_create_macsec(sai_object_id_t *macsec_id,
 
   grpc::Status status = macsec->CreateMacsec(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
   if (macsec_id) {
@@ -242,7 +248,13 @@ sai_status_t l_remove_macsec(sai_object_id_t macsec_id) {
 
   grpc::Status status = macsec->RemoveMacsec(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
 
@@ -281,7 +293,13 @@ sai_status_t l_set_macsec_attribute(sai_object_id_t macsec_id,
 
   grpc::Status status = macsec->SetMacsecAttribute(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
 
@@ -304,7 +322,13 @@ sai_status_t l_get_macsec_attribute(sai_object_id_t macsec_id,
   }
   grpc::Status status = macsec->GetMacsecAttribute(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
   for (uint32_t i = 0; i < attr_count; i++) {
@@ -422,7 +446,13 @@ sai_status_t l_create_macsec_port(sai_object_id_t *macsec_port_id,
 
   grpc::Status status = macsec->CreateMacsecPort(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
   if (macsec_port_id) {
@@ -442,7 +472,13 @@ sai_status_t l_remove_macsec_port(sai_object_id_t macsec_port_id) {
 
   grpc::Status status = macsec->RemoveMacsecPort(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
 
@@ -473,7 +509,13 @@ sai_status_t l_set_macsec_port_attribute(sai_object_id_t macsec_port_id,
 
   grpc::Status status = macsec->SetMacsecPortAttribute(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
 
@@ -496,7 +538,13 @@ sai_status_t l_get_macsec_port_attribute(sai_object_id_t macsec_port_id,
   }
   grpc::Status status = macsec->GetMacsecPortAttribute(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
   for (uint32_t i = 0; i < attr_count; i++) {
@@ -541,7 +589,13 @@ sai_status_t l_get_macsec_port_stats(sai_object_id_t macsec_port_id,
   }
   grpc::Status status = macsec->GetMacsecPortStats(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
   for (uint32_t i = 0;
@@ -584,7 +638,13 @@ sai_status_t l_create_macsec_flow(sai_object_id_t *macsec_flow_id,
 
   grpc::Status status = macsec->CreateMacsecFlow(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
   if (macsec_flow_id) {
@@ -604,7 +664,13 @@ sai_status_t l_remove_macsec_flow(sai_object_id_t macsec_flow_id) {
 
   grpc::Status status = macsec->RemoveMacsecFlow(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
 
@@ -634,7 +700,13 @@ sai_status_t l_get_macsec_flow_attribute(sai_object_id_t macsec_flow_id,
   }
   grpc::Status status = macsec->GetMacsecFlowAttribute(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
   for (uint32_t i = 0; i < attr_count; i++) {
@@ -674,7 +746,13 @@ sai_status_t l_get_macsec_flow_stats(sai_object_id_t macsec_flow_id,
   }
   grpc::Status status = macsec->GetMacsecFlowStats(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
   for (uint32_t i = 0;
@@ -716,7 +794,13 @@ sai_status_t l_create_macsec_sc(sai_object_id_t *macsec_sc_id,
 
   grpc::Status status = macsec->CreateMacsecSc(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
   if (macsec_sc_id) {
@@ -736,7 +820,13 @@ sai_status_t l_remove_macsec_sc(sai_object_id_t macsec_sc_id) {
 
   grpc::Status status = macsec->RemoveMacsecSc(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
 
@@ -776,7 +866,13 @@ sai_status_t l_set_macsec_sc_attribute(sai_object_id_t macsec_sc_id,
 
   grpc::Status status = macsec->SetMacsecScAttribute(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
 
@@ -799,7 +895,13 @@ sai_status_t l_get_macsec_sc_attribute(sai_object_id_t macsec_sc_id,
   }
   grpc::Status status = macsec->GetMacsecScAttribute(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
   for (uint32_t i = 0; i < attr_count; i++) {
@@ -863,7 +965,13 @@ sai_status_t l_get_macsec_sc_stats(sai_object_id_t macsec_sc_id,
   }
   grpc::Status status = macsec->GetMacsecScStats(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
   for (uint32_t i = 0;
@@ -905,7 +1013,13 @@ sai_status_t l_create_macsec_sa(sai_object_id_t *macsec_sa_id,
 
   grpc::Status status = macsec->CreateMacsecSa(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
   if (macsec_sa_id) {
@@ -925,7 +1039,13 @@ sai_status_t l_remove_macsec_sa(sai_object_id_t macsec_sa_id) {
 
   grpc::Status status = macsec->RemoveMacsecSa(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
 
@@ -952,7 +1072,13 @@ sai_status_t l_set_macsec_sa_attribute(sai_object_id_t macsec_sa_id,
 
   grpc::Status status = macsec->SetMacsecSaAttribute(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
 
@@ -975,7 +1101,13 @@ sai_status_t l_get_macsec_sa_attribute(sai_object_id_t macsec_sa_id,
   }
   grpc::Status status = macsec->GetMacsecSaAttribute(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
   for (uint32_t i = 0; i < attr_count; i++) {
@@ -1024,7 +1156,13 @@ sai_status_t l_get_macsec_sa_stats(sai_object_id_t macsec_sa_id,
   }
   grpc::Status status = macsec->GetMacsecSaStats(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
   for (uint32_t i = 0;

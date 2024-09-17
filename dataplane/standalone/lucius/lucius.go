@@ -16,20 +16,31 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
+	"log"
+	"log/slog"
 	"net"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/stdout/stdoutlog"
+	"go.opentelemetry.io/otel/log/global"
+	"go.opentelemetry.io/otel/propagation"
+	sdklog "go.opentelemetry.io/otel/sdk/log"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/resource"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
 
 	"github.com/openconfig/lemming/dataplane/dplaneopts"
 	"github.com/openconfig/lemming/dataplane/saiserver"
 	"github.com/openconfig/lemming/dataplane/saiserver/attrmgr"
-
-	log "github.com/golang/glog"
 
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
@@ -46,26 +57,34 @@ var (
 
 func main() {
 	flag.Parse()
+	cancel, err := setupOTelSDK(context.Background())
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer cancel(context.Background())
 	start(*port)
 }
 
 func getLogger() logging.Logger {
-	return logging.LoggerFunc(func(_ context.Context, level logging.Level, msg string, fields ...any) {
-		switch level {
-		case logging.LevelDebug:
-			log.V(1).Info(msg, fields)
-		case logging.LevelInfo:
-			log.Info(msg, fields)
-		case logging.LevelWarn:
-			log.Warning(msg, fields)
-		case logging.LevelError:
-			log.Error(msg, fields)
-		}
+	return logging.LoggerFunc(func(ctx context.Context, lvl logging.Level, msg string, fields ...any) {
+		slog.Log(ctx, slog.Level(lvl), msg, fields...)
 	})
 }
 
+var tracer = otel.Tracer("")
+
+func traceHandler(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+	ctx, span := tracer.Start(ctx, info.FullMethod)
+	defer span.End()
+
+	resp, err := handler(ctx, req)
+	grpc.SetTrailer(ctx, metadata.Pairs("traceparent", span.SpanContext().TraceID().String()))
+
+	return resp, err
+}
+
 func start(port int) {
-	log.Info("lucius initialized")
+	slog.Info("lucius initialized")
 
 	lis, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
 	if err != nil {
@@ -74,8 +93,10 @@ func start(port int) {
 
 	mgr := attrmgr.New()
 	srv := grpc.NewServer(grpc.Creds(insecure.NewCredentials()),
-		grpc.ChainUnaryInterceptor(logging.UnaryServerInterceptor(getLogger()), mgr.Interceptor),
-		grpc.ChainStreamInterceptor(logging.StreamServerInterceptor(getLogger())))
+		grpc.ChainUnaryInterceptor(logging.UnaryServerInterceptor(getLogger()), mgr.Interceptor, traceHandler),
+		grpc.ChainStreamInterceptor(logging.StreamServerInterceptor(getLogger())),
+		grpc.StatsHandler(otelgrpc.NewServerHandler()),
+	)
 
 	reflection.Register(srv)
 
@@ -91,4 +112,72 @@ func start(port int) {
 	if err := srv.Serve(lis); err != nil {
 		log.Fatalf("failed to serve forwarding server: %v", err)
 	}
+}
+
+// setupOTelSDK bootstraps the OpenTelemetry pipeline.
+// If it does not return an error, make sure to call shutdown for proper cleanup.
+func setupOTelSDK(ctx context.Context) (func(context.Context) error, error) {
+	var shutdownFuncs []func(context.Context) error
+
+	shutdown := func(ctx context.Context) error {
+		var err error
+		for _, fn := range shutdownFuncs {
+			err = errors.Join(err, fn(ctx))
+		}
+		shutdownFuncs = nil
+		return err
+	}
+
+	res := resource.Default()
+
+	// Set up propagator.
+	prop := newPropagator()
+	otel.SetTextMapPropagator(prop)
+
+	bsp := sdktrace.NewBatchSpanProcessor(nil)
+	tracerProvider := sdktrace.NewTracerProvider(
+		sdktrace.WithSampler(sdktrace.AlwaysSample()),
+		sdktrace.WithResource(res),
+		sdktrace.WithSpanProcessor(bsp),
+	)
+
+	meterProvider := sdkmetric.NewMeterProvider(
+		sdkmetric.WithResource(res),
+	)
+
+	shutdownFuncs = append(shutdownFuncs, tracerProvider.Shutdown)
+	otel.SetTracerProvider(tracerProvider)
+
+	shutdownFuncs = append(shutdownFuncs, meterProvider.Shutdown)
+	otel.SetMeterProvider(meterProvider)
+
+	// Set up logger provider.
+	loggerProvider, err := newLoggerProvider(res)
+	if err != nil {
+		return nil, errors.Join(err, shutdown(ctx))
+	}
+	shutdownFuncs = append(shutdownFuncs, loggerProvider.Shutdown)
+	global.SetLoggerProvider(loggerProvider)
+
+	return shutdown, nil
+}
+
+func newPropagator() propagation.TextMapPropagator {
+	return propagation.NewCompositeTextMapPropagator(
+		propagation.TraceContext{},
+		propagation.Baggage{},
+	)
+}
+
+func newLoggerProvider(res *resource.Resource) (*sdklog.LoggerProvider, error) {
+	logExporter, err := stdoutlog.New()
+	if err != nil {
+		return nil, err
+	}
+
+	loggerProvider := sdklog.NewLoggerProvider(
+		sdklog.WithProcessor(sdklog.NewBatchProcessor(logExporter)),
+		sdklog.WithResource(res),
+	)
+	return loggerProvider, nil
 }

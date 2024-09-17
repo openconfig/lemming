@@ -163,7 +163,13 @@ sai_status_t l_create_bfd_session(sai_object_id_t *bfd_session_id,
 
   grpc::Status status = bfd->CreateBfdSession(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
   if (bfd_session_id) {
@@ -183,7 +189,13 @@ sai_status_t l_remove_bfd_session(sai_object_id_t bfd_session_id) {
 
   grpc::Status status = bfd->RemoveBfdSession(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
 
@@ -255,7 +267,13 @@ sai_status_t l_set_bfd_session_attribute(sai_object_id_t bfd_session_id,
 
   grpc::Status status = bfd->SetBfdSessionAttribute(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
 
@@ -278,7 +296,13 @@ sai_status_t l_get_bfd_session_attribute(sai_object_id_t bfd_session_id,
   }
   grpc::Status status = bfd->GetBfdSessionAttribute(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
   for (uint32_t i = 0; i < attr_count; i++) {
@@ -436,7 +460,13 @@ sai_status_t l_get_bfd_session_stats(sai_object_id_t bfd_session_id,
   }
   grpc::Status status = bfd->GetBfdSessionStats(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
   for (uint32_t i = 0;

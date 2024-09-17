@@ -74,7 +74,13 @@ sai_status_t l_create_ipmc_group(sai_object_id_t *ipmc_group_id,
 
   grpc::Status status = ipmc_group->CreateIpmcGroup(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
   if (ipmc_group_id) {
@@ -94,7 +100,13 @@ sai_status_t l_remove_ipmc_group(sai_object_id_t ipmc_group_id) {
 
   grpc::Status status = ipmc_group->RemoveIpmcGroup(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
 
@@ -124,7 +136,13 @@ sai_status_t l_get_ipmc_group_attribute(sai_object_id_t ipmc_group_id,
   }
   grpc::Status status = ipmc_group->GetIpmcGroupAttribute(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
   for (uint32_t i = 0; i < attr_count; i++) {
@@ -157,7 +175,13 @@ sai_status_t l_create_ipmc_group_member(sai_object_id_t *ipmc_group_member_id,
 
   grpc::Status status = ipmc_group->CreateIpmcGroupMember(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
   if (ipmc_group_member_id) {
@@ -177,7 +201,13 @@ sai_status_t l_remove_ipmc_group_member(sai_object_id_t ipmc_group_member_id) {
 
   grpc::Status status = ipmc_group->RemoveIpmcGroupMember(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
 
@@ -209,7 +239,13 @@ sai_status_t l_get_ipmc_group_member_attribute(
   grpc::Status status =
       ipmc_group->GetIpmcGroupMemberAttribute(&context, req, &resp);
   if (!status.ok()) {
-    LOG(ERROR) << status.error_message();
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
     return SAI_STATUS_FAILURE;
   }
   for (uint32_t i = 0; i < attr_count; i++) {

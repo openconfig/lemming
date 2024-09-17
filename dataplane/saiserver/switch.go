@@ -17,13 +17,14 @@ package saiserver
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net"
 	"strconv"
 
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"
-
-	log "github.com/golang/glog"
 
 	"github.com/openconfig/lemming/dataplane/dplaneopts"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
@@ -87,6 +88,83 @@ type switchDataplaneAPI interface {
 	FlowCounterQuery(_ context.Context, request *fwdpb.FlowCounterQueryRequest) (*fwdpb.FlowCounterQueryReply, error)
 }
 
+type luciusTrace struct {
+	switchDataplaneAPI
+	tracer trace.Tracer
+}
+
+func (l *luciusTrace) TableCreate(ctx context.Context, req *fwdpb.TableCreateRequest) (*fwdpb.TableCreateReply, error) {
+	ctx, span := l.tracer.Start(ctx, "TableCreate")
+	defer span.End()
+	return l.switchDataplaneAPI.TableCreate(ctx, req)
+}
+
+func (l *luciusTrace) TableEntryAdd(ctx context.Context, req *fwdpb.TableEntryAddRequest) (*fwdpb.TableEntryAddReply, error) {
+	ctx, span := l.tracer.Start(ctx, "TableEntryAdd")
+	defer span.End()
+	return l.switchDataplaneAPI.TableEntryAdd(ctx, req)
+}
+
+func (l *luciusTrace) TableEntryRemove(ctx context.Context, req *fwdpb.TableEntryRemoveRequest) (*fwdpb.TableEntryRemoveReply, error) {
+	ctx, span := l.tracer.Start(ctx, "TableEntryRemove")
+	defer span.End()
+	return l.switchDataplaneAPI.TableEntryRemove(ctx, req)
+}
+
+func (l *luciusTrace) PortState(ctx context.Context, req *fwdpb.PortStateRequest) (*fwdpb.PortStateReply, error) {
+	ctx, span := l.tracer.Start(ctx, "PortState")
+	defer span.End()
+	return l.switchDataplaneAPI.PortState(ctx, req)
+}
+
+func (l *luciusTrace) ObjectCounters(ctx context.Context, req *fwdpb.ObjectCountersRequest) (*fwdpb.ObjectCountersReply, error) {
+	ctx, span := l.tracer.Start(ctx, "ObjectCounters")
+	defer span.End()
+	return l.switchDataplaneAPI.ObjectCounters(ctx, req)
+}
+
+func (l *luciusTrace) PortCreate(ctx context.Context, req *fwdpb.PortCreateRequest) (*fwdpb.PortCreateReply, error) {
+	ctx, span := l.tracer.Start(ctx, "PortCreate")
+	defer span.End()
+	return l.switchDataplaneAPI.PortCreate(ctx, req)
+}
+
+func (l *luciusTrace) PortUpdate(ctx context.Context, req *fwdpb.PortUpdateRequest) (*fwdpb.PortUpdateReply, error) {
+	ctx, span := l.tracer.Start(ctx, "PortUpdate")
+	defer span.End()
+	return l.switchDataplaneAPI.PortUpdate(ctx, req)
+}
+
+func (l *luciusTrace) AttributeUpdate(ctx context.Context, req *fwdpb.AttributeUpdateRequest) (*fwdpb.AttributeUpdateReply, error) {
+	ctx, span := l.tracer.Start(ctx, "AttributeUpdate")
+	defer span.End()
+	return l.switchDataplaneAPI.AttributeUpdate(ctx, req)
+}
+
+func (l *luciusTrace) ObjectNID(ctx context.Context, req *fwdpb.ObjectNIDRequest) (*fwdpb.ObjectNIDReply, error) {
+	ctx, span := l.tracer.Start(ctx, "ObjectNID")
+	defer span.End()
+	return l.switchDataplaneAPI.ObjectNID(ctx, req)
+}
+
+func (l *luciusTrace) ObjectDelete(ctx context.Context, req *fwdpb.ObjectDeleteRequest) (*fwdpb.ObjectDeleteReply, error) {
+	ctx, span := l.tracer.Start(ctx, "ObjectDelete")
+	defer span.End()
+	return l.switchDataplaneAPI.ObjectDelete(ctx, req)
+}
+
+func (l *luciusTrace) FlowCounterCreate(ctx context.Context, req *fwdpb.FlowCounterCreateRequest) (*fwdpb.FlowCounterCreateReply, error) {
+	ctx, span := l.tracer.Start(ctx, "FlowCounterCreate")
+	defer span.End()
+	return l.switchDataplaneAPI.FlowCounterCreate(ctx, req)
+}
+
+func (l *luciusTrace) FlowCounterQuery(ctx context.Context, req *fwdpb.FlowCounterQueryRequest) (*fwdpb.FlowCounterQueryReply, error) {
+	ctx, span := l.tracer.Start(ctx, "FlowCounterQuery")
+	defer span.End()
+	return l.switchDataplaneAPI.FlowCounterQuery(ctx, req)
+}
+
 const (
 	inputIfaceTable       = "input-iface"
 	outputIfaceTable      = "output-iface"
@@ -118,17 +196,20 @@ const (
 )
 
 func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server, opts *dplaneopts.Options) (*saiSwitch, error) {
-	vlan := newVlan(mgr, engine, s)
-	q := newQueue(mgr, engine, s)
-	sg := newSchedulerGroup(mgr, engine, s)
-	port, err := newPort(mgr, engine, s, vlan, q, sg, opts)
+	dplane := &luciusTrace{switchDataplaneAPI: engine, tracer: otel.Tracer("lucius")}
+
+	vlan := newVlan(mgr, dplane, s)
+	q := newQueue(mgr, dplane, s)
+	sg := newSchedulerGroup(mgr, dplane, s)
+	port, err := newPort(mgr, dplane, s, vlan, q, sg, opts)
 	if err != nil {
 		return nil, err
 	}
+
 	sw := &saiSwitch{
-		dataplane:       engine,
-		acl:             newACL(mgr, engine, s),
-		policer:         newPolicer(mgr, engine, s),
+		dataplane:       dplane,
+		acl:             newACL(mgr, dplane, s),
+		policer:         newPolicer(mgr, dplane, s),
 		port:            port,
 		vlan:            vlan,
 		stp:             &stp{},
@@ -887,7 +968,7 @@ func (sw *saiSwitch) PortStateChangeNotification(_ *saipb.PortStateChangeNotific
 		case ed := <-fwdSrv.ch:
 			num, err := strconv.Atoi(ed.GetPort().GetPortId().GetObjectId().GetId())
 			if err != nil {
-				log.Warningf("couldn't get numeric port id: %v", err)
+				slog.WarnContext(srv.Context(), "couldn't get numeric port id", "err", err)
 				continue
 			}
 			oType := sw.mgr.GetType(ed.GetPort().GetPortId().GetObjectId().GetId())
@@ -896,7 +977,7 @@ func (sw *saiSwitch) PortStateChangeNotification(_ *saipb.PortStateChangeNotific
 			case saipb.ObjectType_OBJECT_TYPE_BRIDGE_PORT:
 			case saipb.ObjectType_OBJECT_TYPE_LAG:
 			default:
-				log.Infof("skipping port state event for type %v", oType)
+				slog.InfoContext(srv.Context(), "skipping port state event", "type", oType)
 				continue
 			}
 			status := saipb.PortOperStatus_PORT_OPER_STATUS_UNKNOWN
@@ -911,7 +992,7 @@ func (sw *saiSwitch) PortStateChangeNotification(_ *saipb.PortStateChangeNotific
 					PortState: status,
 				}},
 			}
-			log.Infof("send port event: %+v", resp)
+			slog.InfoContext(srv.Context(), "send port event", "event", resp)
 			err = srv.Send(resp)
 			if err != nil {
 				return err

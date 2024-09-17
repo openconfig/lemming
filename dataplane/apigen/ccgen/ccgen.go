@@ -822,7 +822,12 @@ return msg;
 	{{ if .EntryVar }} *req.mutable_entry() = {{ .EntryConversionFunc }}({{ .EntryVar }}); {{ end }}
 	grpc::Status status = {{ .Client }}->{{ .RPCMethod }}(&context, req, &resp);
 	if (!status.ok()) {
-		LOG(ERROR) << status.error_message();
+		auto it = context.GetServerTrailingMetadata().find("traceparent");
+		if (it != context.GetServerTrailingMetadata().end()) {
+			LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second << " msg: " << status.error_message(); 
+		} else {
+			LOG(ERROR) << "Lucius RPC error: " << status.error_message(); 
+		}
 		return SAI_STATUS_FAILURE;
 	}
 	{{ if .OidVar -}}
@@ -849,7 +854,12 @@ return msg;
 
 	grpc::Status status = {{ .Client }}->{{ .RPCMethod }}(&context, req, &resp);
 	if (!status.ok()) {
-		LOG(ERROR) << status.error_message();
+		auto it = context.GetServerTrailingMetadata().find("traceparent");
+		if (it != context.GetServerTrailingMetadata().end()) {
+			LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second << " msg: " << status.error_message(); 
+		} else {
+			LOG(ERROR) << "Lucius RPC error: " << status.error_message(); 
+		}
 		return SAI_STATUS_FAILURE;
 	}
 	if (object_count != resp.resps().size()) {
@@ -872,7 +882,12 @@ return msg;
 	}
 	grpc::Status status = {{ .Client }}->{{ .RPCMethod }}(&context, req, &resp);
 	if (!status.ok()) {
-		LOG(ERROR) << status.error_message();
+		auto it = context.GetServerTrailingMetadata().find("traceparent");
+		if (it != context.GetServerTrailingMetadata().end()) {
+			LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second << " msg: " << status.error_message(); 
+		} else {
+			LOG(ERROR) << "Lucius RPC error: " << status.error_message(); 
+		}
 		return SAI_STATUS_FAILURE;
 	}
 	for(uint32_t i = 0; i < attr_count; i++ ) {
@@ -889,7 +904,12 @@ return msg;
 	{{ template "setattr" .AttrSwitch }}
 	grpc::Status status = {{ .Client }}->{{ .RPCMethod }}(&context, req, &resp);
 	if (!status.ok()) {
-		LOG(ERROR) << status.error_message();
+		auto it = context.GetServerTrailingMetadata().find("traceparent");
+		if (it != context.GetServerTrailingMetadata().end()) {
+			LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second << " msg: " << status.error_message(); 
+		} else {
+			LOG(ERROR) << "Lucius RPC error: " << status.error_message(); 
+		}
 		return SAI_STATUS_FAILURE;
 	}
 	{{ else if eq .Operation "remove" }}
@@ -900,7 +920,12 @@ return msg;
 	{{ if .EntryVar }} *req.mutable_entry() = {{ .EntryConversionFunc }}({{ .EntryVar }}); {{ end }}
 	grpc::Status status = {{ .Client }}->{{ .RPCMethod }}(&context, req, &resp);
 	if (!status.ok()) {
-		LOG(ERROR) << status.error_message();
+		auto it = context.GetServerTrailingMetadata().find("traceparent");
+		if (it != context.GetServerTrailingMetadata().end()) {
+			LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second << " msg: " << status.error_message(); 
+		} else {
+			LOG(ERROR) << "Lucius RPC error: " << status.error_message(); 
+		}
 		return SAI_STATUS_FAILURE;
 	}
 	{{ else if eq .Operation "remove_bulk" }}
@@ -915,7 +940,12 @@ return msg;
 
 	grpc::Status status = {{ .Client }}->{{ .RPCMethod }}(&context, req, &resp);
 	if (!status.ok()) {
-		LOG(ERROR) << status.error_message();
+		auto it = context.GetServerTrailingMetadata().find("traceparent");
+		if (it != context.GetServerTrailingMetadata().end()) {
+			LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second << " msg: " << status.error_message(); 
+		} else {
+			LOG(ERROR) << "Lucius RPC error: " << status.error_message(); 
+		}
 		return SAI_STATUS_FAILURE;
 	}
 	if (object_count != resp.resps().size()) {
@@ -935,7 +965,12 @@ return msg;
 	}
 	grpc::Status status = {{ .Client }}->{{ .RPCMethod }}(&context, req, &resp);
 	if (!status.ok()) {
-		LOG(ERROR) << status.error_message();
+		auto it = context.GetServerTrailingMetadata().find("traceparent");
+		if (it != context.GetServerTrailingMetadata().end()) {
+			LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second << " msg: " << status.error_message(); 
+		} else {
+			LOG(ERROR) << "Lucius RPC error: " << status.error_message(); 
+		}
 		return SAI_STATUS_FAILURE;
 	}
 	for(uint32_t i = 0; i < number_of_counters && i < uint32_t(resp.values_size()); i++ ) {

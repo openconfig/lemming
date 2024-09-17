@@ -17,6 +17,7 @@ package saiserver
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 	"sync"
 
@@ -29,8 +30,6 @@ import (
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdport/ports"
 	"github.com/openconfig/lemming/dataplane/saiserver/attrmgr"
-
-	log "github.com/golang/glog"
 
 	pktiopb "github.com/openconfig/lemming/dataplane/proto/packetio"
 	saipb "github.com/openconfig/lemming/dataplane/proto/sai"
@@ -66,7 +65,7 @@ type hostif struct {
 }
 
 func (hostif *hostif) Reset() {
-	log.Info("resetting hostif")
+	slog.Info("resetting hostif")
 	for _, closeFn := range hostif.remoteClosers {
 		closeFn()
 	}
@@ -401,14 +400,14 @@ func (hostif *hostif) CPUPacketStream(srv pktiopb.PacketIO_CPUPacketStreamServer
 		case <-ctx.Done():
 			return nil
 		case pkt := <-packetCh:
-			log.V(3).Infof("received packet %x", pkt.GetPacket().GetFrame())
+			slog.Debug("received packet", "packet", pkt.GetPacket().GetFrame())
 
 			acts := []*fwdpb.ActionDesc{fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_HOST_PORT_ID).
 				WithUint64Value(pkt.GetPacket().GetHostPort())).Build()}
 			err = hostif.dataplane.InjectPacket(&fwdpb.ContextId{Id: hostif.dataplane.ID()}, &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: cpuPortID}}, fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET,
 				pkt.GetPacket().GetFrame(), acts, true, fwdpb.PortAction_PORT_ACTION_INPUT)
 			if err != nil {
-				log.Warningf("inject err: %v", err)
+				slog.WarnContext(ctx, "inject err", "err", err)
 				continue
 			}
 		}
@@ -416,17 +415,17 @@ func (hostif *hostif) CPUPacketStream(srv pktiopb.PacketIO_CPUPacketStreamServer
 }
 
 func (hostif *hostif) HostPortControl(srv pktiopb.PacketIO_HostPortControlServer) error {
-	log.Info("started host port control channel")
+	slog.InfoContext(srv.Context(), "started host port control channel")
 	_, err := srv.Recv()
 	if err != nil {
 		return err
 	}
-	log.Info("received init port control channel")
+	slog.InfoContext(srv.Context(), "received init port control channel")
 
 	hostif.remoteMu.Lock()
 	ctx, cancelFn := context.WithCancel(srv.Context())
 	hostif.remoteClosers = append(hostif.remoteClosers, func() {
-		log.Info("canceling host port control")
+		slog.InfoContext(srv.Context(), "canceling host port control")
 		cancelFn()
 	})
 
@@ -454,20 +453,20 @@ func (hostif *hostif) HostPortControl(srv pktiopb.PacketIO_HostPortControlServer
 	}
 	hostif.remoteMu.Unlock()
 
-	log.Info("initialized host port control channel")
+	slog.InfoContext(srv.Context(), "initialized host port control channel")
 
 	// The HostPortControls exits in two cases: context cancels or RPC errors.
 	err = nil
 	select {
 	case <-ctx.Done():
-		log.Info("host port control done")
+		slog.InfoContext(srv.Context(), "host port control done")
 	case err = <-errCh:
-		log.Info("host port control err: %v", err)
+		slog.InfoContext(srv.Context(), "host port control err", "err", err)
 	}
 
 	hostif.remoteMu.Lock()
 	hostif.remotePortReq = nil
 	hostif.remoteMu.Unlock()
-	log.Info("cleared host port control channel")
+	slog.InfoContext(srv.Context(), "cleared host port control channel")
 	return err
 }
