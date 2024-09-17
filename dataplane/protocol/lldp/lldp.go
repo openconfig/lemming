@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"sync"
 	"time"
 
 	"github.com/google/gopacket"
@@ -37,11 +36,9 @@ import (
 
 // Daemon is the implementation of the LLDP protocol.
 type Daemon struct {
-	enabled       bool                   // whether LLDP is enabled globally
-	muPortEnabled sync.Mutex             // guard the map of enabled ports
-	portEnabled   map[string]bool        // contains the enabled ports
-	muPds         sync.Mutex             // guard the map of active port daemons
-	portDaemons   map[string]*portDaemon // tracks the active port daemons
+	enabled     bool                   // whether LLDP is enabled globally
+	portEnabled map[string]bool        // contains the enabled ports
+	portDaemons map[string]*portDaemon // tracks the active port daemons
 }
 
 // New returns the main procotol handler.
@@ -71,63 +68,27 @@ func (d *Daemon) Stop() {
 
 // changePortState tries to change the port state and returns whether the state is acutally changed.
 func (d *Daemon) changePortState(intf *oc.Lldp_Interface) bool {
-	d.changePdState(intf)
-	if d.isPortEnabled(intf.GetName()) != intf.GetEnabled() {
-		d.muPortEnabled.Lock()
-		defer d.muPortEnabled.Unlock()
+	// Update the PD state.
+	wantActive := d.enabled && intf.GetEnabled()
+	pd, currActive := d.portDaemons[intf.GetName()]
+	switch {
+	case !currActive && wantActive:
+		d.portDaemons[intf.GetName()] = newPortDaemon(intf.GetName())
+	case currActive && !wantActive:
+		pd.Stop()
+		delete(d.portDaemons, intf.GetName())
+	}
+
+	// Update the enabled state.
+	state, ok := d.portEnabled[intf.GetName()]
+	if !ok {
+		d.portEnabled[intf.GetName()] = false
+	}
+	if state != intf.GetEnabled() {
 		d.portEnabled[intf.GetName()] = intf.GetEnabled()
 		return true
 	}
 	return false
-}
-
-// changePdState tries to change the running state of the port daemon.
-func (d *Daemon) changePdState(intf *oc.Lldp_Interface) {
-	// only active when LLPD is gobally enabled and interface enabled.
-	wantActive := d.enabled && intf.GetEnabled()
-	_, currActive := d.portDaemons[intf.GetName()]
-	switch {
-	case wantActive && !currActive:
-		d.startPortDaemon(intf.GetName())
-	case !wantActive && currActive:
-		d.stopPortDaemon(intf.GetName())
-	}
-}
-
-func (d *Daemon) isPortEnabled(name string) bool {
-	state, ok := d.portEnabled[name]
-	if ok {
-		return state
-	}
-	d.muPortEnabled.Lock()
-	defer d.muPortEnabled.Unlock()
-	d.portEnabled[name] = false
-	return false
-}
-
-// startPortDaemon starts the port daemon.
-func (d *Daemon) startPortDaemon(name string) error {
-	_, ok := d.portDaemons[name]
-	if ok {
-		return fmt.Errorf("Port %s is already running.", name)
-	}
-	d.muPds.Lock()
-	defer d.muPds.Unlock()
-	d.portDaemons[name] = newPortDaemon(name)
-	return nil
-}
-
-// stopPortDaemon stops the port daemon.
-func (d *Daemon) stopPortDaemon(name string) error {
-	p, ok := d.portDaemons[name]
-	if !ok {
-		return fmt.Errorf("failed to find Port %s.", name)
-	}
-	d.muPds.Lock()
-	defer d.muPds.Unlock()
-	p.Stop()
-	delete(d.portDaemons, name)
-	return nil
 }
 
 func (d *Daemon) reconcileLldpEnabled(sb *ygnmi.SetBatch, intent *oc.Root, c *ygnmi.Client) error {
@@ -150,8 +111,12 @@ func (d *Daemon) reconcileLldpInterfaceEnabled(sb *ygnmi.SetBatch, intent *oc.Ro
 // Reconcile reconciles LLDP for all ports.
 func (d *Daemon) Reconcile(ctx context.Context, intent *oc.Root, c *ygnmi.Client) error {
 	sb := &ygnmi.SetBatch{}
-	d.reconcileLldpEnabled(sb, intent, c)
-	d.reconcileLldpInterfaceEnabled(sb, intent, c)
+	for _, f := range []func(*ygnmi.SetBatch, *oc.Root, *ygnmi.Client) error{
+		d.reconcileLldpEnabled,
+		d.reconcileLldpInterfaceEnabled,
+	} {
+		f(sb, intent, c)
+	}
 	if _, err := sb.Set(ctx, c); err != nil {
 		return fmt.Errorf("failed to update LLDP enable state: %v", err)
 	}
