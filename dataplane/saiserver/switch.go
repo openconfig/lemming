@@ -191,7 +191,8 @@ const (
 	VlanTable             = "vlan"
 	L2MCGroupTable        = "l2mcg"
 	policerTabler         = "policerTable"
-	invalidIngressTable   = "invalid-ingress"
+	invalidIngressV4Table = "invalid-ingress-v4"
+	invalidIngressV6Table = "invalid-ingress-v6"
 	DefaultVlanId         = 1
 )
 
@@ -851,71 +852,69 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 // Set up rules to drop packets that contain invalid IP or ttl == 0.
 // https://www.rfc-editor.org/rfc/rfc1812#section-5.3.7
 func (sw *saiSwitch) createInvalidPacketFilter(ctx context.Context) error {
-	_, err := sw.dataplane.TableCreate(ctx, &fwdpb.TableCreateRequest{
-		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
-		Desc: &fwdpb.TableDesc{
-			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_CONTINUE}},
-			TableType: fwdpb.TableType_TABLE_TYPE_FLOW,
-			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: invalidIngressTable}},
-			Table: &fwdpb.TableDesc_Flow{
-				Flow: &fwdpb.FlowTableDesc{
-					BankCount: 1,
-				},
-			},
+	ips := map[string]map[fwdpb.PacketFieldNum][]string{
+		invalidIngressV4Table: {
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC: {"224.0.0.0/4", "127.0.0.0/8"},
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST: {"224.0.0.0/4", "127.0.0.0/8", "255.255.255.255/24"},
 		},
-	})
-	if err != nil {
-		return err
+		invalidIngressV6Table: {
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC: {"ff00::/8"},
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST: {"ff00::/8", "fe80::/10"},
+		},
 	}
 	// Packets can't have multicast, or loopback IP as the source IP.
-	invalidSrcIP := []string{"224.0.0.0/4", "ff00::/8", "127.0.0.0/8"}
-	for _, ip := range invalidSrcIP {
-		_, prefix, err := net.ParseCIDR(ip)
-		if err != nil {
-			return err
-		}
-		req := fwdconfig.TableEntryAddRequest(sw.dataplane.ID(), invalidIngressTable).
-			AppendEntry(
-				fwdconfig.EntryDesc(fwdconfig.FlowEntry(fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC).WithBytes(prefix.IP, prefix.Mask))),
-				fwdconfig.Action(fwdconfig.DropAction()),
-			).Build()
-		if _, err := sw.dataplane.TableEntryAdd(ctx, req); err != nil {
-			return err
-		}
-	}
 	// Only unicast MAC address are processed at this stage, so multicast IPs are invalid
-	invalidDstIP := []string{"224.0.0.0/4", "ff00::/8", "fe80::/10", "127.0.0.0/8", "255.255.255.255/24"}
-	for _, ip := range invalidDstIP {
-		_, prefix, err := net.ParseCIDR(ip)
+	for table, ipsByField := range ips {
+		_, err := sw.dataplane.TableCreate(ctx, &fwdpb.TableCreateRequest{
+			ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
+			Desc: &fwdpb.TableDesc{
+				Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_CONTINUE}},
+				TableType: fwdpb.TableType_TABLE_TYPE_FLOW,
+				TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: table}},
+				Table: &fwdpb.TableDesc_Flow{
+					Flow: &fwdpb.FlowTableDesc{
+						BankCount: 1,
+					},
+				},
+			},
+		})
 		if err != nil {
 			return err
 		}
-		req := fwdconfig.TableEntryAddRequest(sw.dataplane.ID(), invalidIngressTable).
+
+		for field, ips := range ipsByField {
+			for _, ip := range ips {
+				_, prefix, err := net.ParseCIDR(ip)
+				if err != nil {
+					return err
+				}
+				req := fwdconfig.TableEntryAddRequest(sw.dataplane.ID(), table).
+					AppendEntry(
+						fwdconfig.EntryDesc(fwdconfig.FlowEntry(fwdconfig.PacketFieldMaskedBytes(field).WithBytes(prefix.IP, prefix.Mask))),
+						fwdconfig.Action(fwdconfig.DropAction()),
+					).Build()
+				if _, err := sw.dataplane.TableEntryAdd(ctx, req); err != nil {
+					return err
+				}
+			}
+		}
+		// Before the TTL is decremented and after the packets may be punted, drop packet with TTL == 1 or TTL == 0.
+		req := fwdconfig.TableEntryAddRequest(sw.dataplane.ID(), table).
 			AppendEntry(
-				fwdconfig.EntryDesc(fwdconfig.FlowEntry(fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST).WithBytes(prefix.IP, prefix.Mask))),
+				fwdconfig.EntryDesc(fwdconfig.FlowEntry(fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP).WithBytes([]byte{0x00}, []byte{0xFF}))),
 				fwdconfig.Action(fwdconfig.DropAction()),
 			).Build()
 		if _, err := sw.dataplane.TableEntryAdd(ctx, req); err != nil {
 			return err
 		}
-	}
-
-	// Before the TTL is decremented and after the packets may be punted, drop packet with TTL == 1 or TTL == 0.
-	req := fwdconfig.TableEntryAddRequest(sw.dataplane.ID(), invalidIngressTable).
-		AppendEntry(
-			fwdconfig.EntryDesc(fwdconfig.FlowEntry(fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP).WithBytes([]byte{0x00}, []byte{0xFF}))),
-			fwdconfig.Action(fwdconfig.DropAction()),
-		).Build()
-	if _, err := sw.dataplane.TableEntryAdd(ctx, req); err != nil {
-		return err
-	}
-	req = fwdconfig.TableEntryAddRequest(sw.dataplane.ID(), invalidIngressTable).
-		AppendEntry(
-			fwdconfig.EntryDesc(fwdconfig.FlowEntry(fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP).WithBytes([]byte{0x01}, []byte{0xFF}))),
-			fwdconfig.Action(fwdconfig.DropAction()),
-		).Build()
-	if _, err := sw.dataplane.TableEntryAdd(ctx, req); err != nil {
-		return err
+		req = fwdconfig.TableEntryAddRequest(sw.dataplane.ID(), table).
+			AppendEntry(
+				fwdconfig.EntryDesc(fwdconfig.FlowEntry(fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP).WithBytes([]byte{0x01}, []byte{0xFF}))),
+				fwdconfig.Action(fwdconfig.DropAction()),
+			).Build()
+		if _, err := sw.dataplane.TableEntryAdd(ctx, req); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -1067,6 +1066,13 @@ func createFIBSelector(ctx context.Context, id string, c switchDataplaneAPI) err
 						TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: FIBV4Table}},
 					},
 				},
+			}, {
+				ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
+				Action: &fwdpb.ActionDesc_Lookup{
+					Lookup: &fwdpb.LookupActionDesc{
+						TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: invalidIngressV4Table}},
+					},
+				},
 			}},
 		}, {
 			EntryDesc: &fwdpb.EntryDesc{
@@ -1084,6 +1090,13 @@ func createFIBSelector(ctx context.Context, id string, c switchDataplaneAPI) err
 				Action: &fwdpb.ActionDesc_Lookup{
 					Lookup: &fwdpb.LookupActionDesc{
 						TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: FIBV6Table}},
+					},
+				},
+			}, {
+				ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
+				Action: &fwdpb.ActionDesc_Lookup{
+					Lookup: &fwdpb.LookupActionDesc{
+						TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: invalidIngressV6Table}},
 					},
 				},
 			}},
