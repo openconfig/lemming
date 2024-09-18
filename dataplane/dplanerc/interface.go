@@ -204,10 +204,14 @@ func (ni *Reconciler) StartInterface(ctx context.Context, client *ygnmi.Client) 
 		if !ok || (root.Interface == nil && root.Lldp.Interface == nil) {
 			return ygnmi.Continue
 		}
-		for _, i := range root.Interface {
-			ni.reconcile(cancelCtx, i)
+		if root.Interface != nil {
+			for _, i := range root.Interface {
+				ni.reconcile(cancelCtx, i)
+			}
 		}
-		ni.reconcileLldp(cancelCtx, root)
+		if root.Lldp.Interface != nil {
+			ni.reconcileLldp(cancelCtx, root)
+		}
 		return ygnmi.Continue
 	})
 	linkDoneCh := make(chan struct{})
@@ -513,9 +517,6 @@ func (ni *Reconciler) setMinLinks(intf ocInterface, data *interfaceData, minLink
 
 // reconcileLldp compares the LLDP config with state and modifies state to match config.
 func (ni *Reconciler) reconcileLldp(ctx context.Context, intent *oc.Root) {
-	if intent.Lldp.Interface == nil {
-		return
-	}
 	if err := ni.lldp.Reconcile(ctx, intent, ni.c); err != nil {
 		log.Warningf("error found LLDP reconciliation: %v", err)
 	}

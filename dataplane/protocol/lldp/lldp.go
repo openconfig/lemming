@@ -66,7 +66,7 @@ func (d *Daemon) Stop() {
 	d.portDaemons = nil
 }
 
-// changePortState tries to change the port state and returns whether the state is acutally changed.
+// changePortState tries to change the port state and returns whether the state is actually changed.
 func (d *Daemon) changePortState(intf *oc.Lldp_Interface) bool {
 	// Update the PD state.
 	wantActive := d.enabled && intf.GetEnabled()
@@ -91,31 +91,17 @@ func (d *Daemon) changePortState(intf *oc.Lldp_Interface) bool {
 	return false
 }
 
-func (d *Daemon) reconcileLldpEnabled(sb *ygnmi.SetBatch, intent *oc.Root, c *ygnmi.Client) error {
+// Reconcile reconciles LLDP for all ports.
+func (d *Daemon) Reconcile(ctx context.Context, intent *oc.Root, c *ygnmi.Client) error {
+	sb := &ygnmi.SetBatch{}
 	if wantEnabled := intent.Lldp.GetEnabled(); d.enabled != wantEnabled {
 		d.enabled = wantEnabled
 		gnmiclient.BatchUpdate(sb, ocpath.Root().Lldp().Enabled().State(), d.enabled)
 	}
-	return nil
-}
-
-func (d *Daemon) reconcileLldpInterfaceEnabled(sb *ygnmi.SetBatch, intent *oc.Root, c *ygnmi.Client) error {
 	for _, intf := range intent.GetLldp().Interface {
 		if changed := d.changePortState(intf); changed {
 			gnmiclient.BatchUpdate(sb, ocpath.Root().Lldp().Interface(intf.GetName()).Enabled().State(), intf.GetEnabled())
 		}
-	}
-	return nil
-}
-
-// Reconcile reconciles LLDP for all ports.
-func (d *Daemon) Reconcile(ctx context.Context, intent *oc.Root, c *ygnmi.Client) error {
-	sb := &ygnmi.SetBatch{}
-	for _, f := range []func(*ygnmi.SetBatch, *oc.Root, *ygnmi.Client) error{
-		d.reconcileLldpEnabled,
-		d.reconcileLldpInterfaceEnabled,
-	} {
-		f(sb, intent, c)
 	}
 	if _, err := sb.Set(ctx, c); err != nil {
 		return fmt.Errorf("failed to update LLDP enable state: %v", err)
