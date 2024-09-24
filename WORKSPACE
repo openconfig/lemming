@@ -136,7 +136,7 @@ load("@rules_distroless//apt:index.bzl", "deb_index")
 # bazel run @bookworm//:lock
 deb_index(
     name = "bookworm",
-    lock = "@@//:bookworm.lock.json",
+    lock = "//:bookworm.lock.json",
     manifest = "//:bookworm.yaml",
 )
 
