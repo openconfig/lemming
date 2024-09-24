@@ -1,4 +1,5 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+load("@rules_distroless//distroless:defs.bzl", "cacerts")
 load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
@@ -12,6 +13,7 @@ go_library(
         "//dataplane/saiserver",
         "//dataplane/saiserver/attrmgr",
         "//proto/forwarding",
+        "@com_github_googlecloudplatform_opentelemetry_operations_go_exporter_trace//:trace",
         "@com_github_grpc_ecosystem_go_grpc_middleware_v2//interceptors/logging",
         "@io_opentelemetry_go_contrib_instrumentation_google_golang_org_grpc_otelgrpc//:otelgrpc",
         "@io_opentelemetry_go_otel//:otel",
@@ -41,11 +43,21 @@ pkg_tar(
     package_dir = "lucius",
 )
 
+cacerts(
+    name = "cacerts",
+    package = select({
+        "@platforms//cpu:x86_64": "@bookworm//ca-certificates/amd64:data",
+    }),
+)
+
 oci_image(
     name = "image",
     base = "@debian_bookworm",
     entrypoint = ["/lucius/lucius"],
-    tars = [":bin-tar"],
+    tars = [
+        ":bin-tar",
+        ":cacerts",
+    ],
 )
 
 # Note: This is image isn't suitable for release, as it doesn't contain license information.

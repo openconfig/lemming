@@ -61,6 +61,13 @@ http_archive(
     ],
 )
 
+http_archive(
+    name = "rules_distroless",
+    sha256 = "44c1e485723ad342212b48e410bae50306b5f8b39da65243e1db2f5b74faa8d6",
+    strip_prefix = "rules_distroless-0.3.7",
+    url = "https://github.com/GoogleContainerTools/rules_distroless/releases/download/v0.3.7/rules_distroless-v0.3.7.tar.gz",
+)
+
 load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
 
 bazel_skylib_workspace()
@@ -113,6 +120,29 @@ switched_rules_by_language(
     cc = True,
     grpc = True,
 )
+
+# Distroless
+
+load("@rules_distroless//distroless:dependencies.bzl", "distroless_dependencies")
+
+distroless_dependencies()
+
+load("@rules_distroless//distroless:toolchains.bzl", "distroless_register_toolchains")
+
+distroless_register_toolchains()
+
+load("@rules_distroless//apt:index.bzl", "deb_index")
+
+# bazel run @bookworm//:lock
+deb_index(
+    name = "bookworm",
+    lock = "@@//:bookworm.lock.json",
+    manifest = "//:bookworm.yaml",
+)
+
+load("@bookworm//:packages.bzl", "bookworm_packages")
+
+bookworm_packages()
 
 # OCI Container
 

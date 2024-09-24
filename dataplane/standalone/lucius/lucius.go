@@ -23,6 +23,7 @@ import (
 	"log/slog"
 	"net"
 
+	texporter "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
@@ -48,11 +49,13 @@ import (
 var (
 	port = flag.Int("port", 50000, "Port for api server")
 	// All below flags are not used, kept for now to prevent breaking exsting users, will be removed in future release.
-	_         = flag.String("config_file", "", "Path to config file (deprecated, no-op will always to true in future release)")
-	_         = flag.String("port_map", "", "Map of modeled port names to Linux interface to  as comma seperated list (eg Ethernet8:eth1,Ethernet10,eth2) (deprecated, no-op will be removed in future release)")
-	_         = flag.Bool("eth_dev_as_lane", true, "If true, when creating ports, use ethX and hardware lane X (deprecated, no-op will always to true in future release)")
-	_         = flag.Bool("remote_cpu_port", true, "If true, send all packets from/to the CPU port over gRPC (deprecated, no-op will always to true in future release)")
-	hwProfile = flag.String("hw_profile", "", "Path to hardware profile config file.")
+	_              = flag.String("config_file", "", "Path to config file (deprecated, no-op will always to true in future release)")
+	_              = flag.String("port_map", "", "Map of modeled port names to Linux interface to  as comma seperated list (eg Ethernet8:eth1,Ethernet10,eth2) (deprecated, no-op will be removed in future release)")
+	_              = flag.Bool("eth_dev_as_lane", true, "If true, when creating ports, use ethX and hardware lane X (deprecated, no-op will always to true in future release)")
+	_              = flag.Bool("remote_cpu_port", true, "If true, send all packets from/to the CPU port over gRPC (deprecated, no-op will always to true in future release)")
+	gcpTelemExport = flag.Bool("gcp_telem_export", false, "If true, export OTEL telemetry to GCP")
+	gcpProject     = flag.String("gcp_project", "", "GCP project to export to, by default it will use project where the GCE instance is running")
+	hwProfile      = flag.String("hw_profile", "", "Path to hardware profile config file.")
 )
 
 func main() {
@@ -119,6 +122,16 @@ func start(port int) {
 func setupOTelSDK(ctx context.Context) (func(context.Context) error, error) {
 	var shutdownFuncs []func(context.Context) error
 
+	var exporter sdktrace.SpanExporter
+
+	var err error
+	if *gcpTelemExport {
+		exporter, err = texporter.New(texporter.WithProjectID(*gcpProject))
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	shutdown := func(ctx context.Context) error {
 		var err error
 		for _, fn := range shutdownFuncs {
@@ -134,7 +147,7 @@ func setupOTelSDK(ctx context.Context) (func(context.Context) error, error) {
 	prop := newPropagator()
 	otel.SetTextMapPropagator(prop)
 
-	bsp := sdktrace.NewBatchSpanProcessor(nil)
+	bsp := sdktrace.NewBatchSpanProcessor(exporter)
 	tracerProvider := sdktrace.NewTracerProvider(
 		sdktrace.WithSampler(sdktrace.AlwaysSample()),
 		sdktrace.WithResource(res),
