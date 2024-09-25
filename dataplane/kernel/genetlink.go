@@ -34,6 +34,7 @@ type GenetlinkPort struct {
 
 // NewGenetlinkPort creates netlink socket for the given family and multicast group.
 func NewGenetlinkPort(family, group string) (*GenetlinkPort, error) {
+	log.Errorf("creating genl port: %s %s", family, group)
 	conn, err := genetlink.Dial(nil)
 	if err != nil {
 		return nil, err
