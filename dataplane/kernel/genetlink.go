@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"io"
 
+	log "github.com/golang/glog"
+
 	"github.com/mdlayher/genetlink"
 	"github.com/mdlayher/netlink"
 )
@@ -66,6 +68,8 @@ type PacketMetadata struct {
 
 // Writes writes a layer2 frame to the port.
 func (p GenetlinkPort) Write(frame []byte, md *PacketMetadata) (int, error) {
+	log.Errorf("writing genl packet: %x", frame)
+
 	data, err := (&NLPacket{
 		payload:      frame,
 		srcIfIndex:   int16(md.SrcIfIndex),
