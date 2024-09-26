@@ -22,7 +22,6 @@ int family_id;
 int create_index = 0;
 const int max_sockets = 16;
 
-
 int create_port(const char* family, const char* group) {
   if (nlsocks == NULL) {
     nlsocks = malloc(sizeof(struct nl_sock*) * max_sockets);
@@ -60,14 +59,18 @@ int create_port(const char* family, const char* group) {
   return create_index;
 }
 
-int send_packet(int sock_idx, const void* pkt, uint32_t size, int in_ifindex, int out_ifindex,
-                unsigned int context) {
-  printf("creating nl msg");
+int send_packet(int sock_idx, const void* pkt, uint32_t size, int in_ifindex,
+                int out_ifindex, unsigned int context) {
+  printf("creating nl msg sock idx: %d", sock_idx);
   struct nl_msg* msg = nlmsg_alloc();
   genlmsg_put(msg, NL_AUTO_PORT, NL_AUTO_SEQ, family_id, 0, 0, 0, 1);
+  printf("putting src if index nl msg: %d", in_ifindex);
   NLA_PUT_S16(msg, GENL_PACKET_ATTR_IIFINDEX, in_ifindex);
+  printf("putting dst if index nl msg: %d", out_ifindex);
   NLA_PUT_S16(msg, GENL_PACKET_ATTR_OIFINDEX, out_ifindex);
+  printf("putting context nl msg: %d", context);
   NLA_PUT_U32(msg, GENL_PACKET_ATTR_CONTEXT, context);
+  printf("putting data nl msg, size: %d", size);
   NLA_PUT(msg, GENL_PACKET_ATTR_DATA, size, pkt);
   printf("sending to index %d", sock_idx);
   if (nl_send(nlsocks[sock_idx], msg) < 0) {
