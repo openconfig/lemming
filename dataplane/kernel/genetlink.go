@@ -83,7 +83,7 @@ func (p GenetlinkPort) Write(frame []byte, md *PacketMetadata) (int, error) {
 
 	_, err = p.conn.Send(genetlink.Message{
 		Header: genetlink.Header{
-			Command: 1,
+			Command: 0,
 			Version: 1,
 		},
 		Data: data,
