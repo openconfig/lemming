@@ -27,6 +27,7 @@ import (
 
 	"github.com/openconfig/lemming/dataplane/forwarding/util/queue"
 	"github.com/openconfig/lemming/dataplane/kernel"
+	"github.com/openconfig/lemming/dataplane/kernel/genetlink"
 
 	log "github.com/golang/glog"
 
@@ -229,7 +230,7 @@ func (m *PacketIOMgr) createPort(msg *pktiopb.HostPortControlMessage) error {
 	case *pktiopb.HostPortControlMessage_Genetlink:
 		portDesc := msg.GetGenetlink()
 		var err error
-		p, err = kernel.NewGenetlinkPort(portDesc.Family, portDesc.Group)
+		p, err = genetlink.NewGenetlinkPort(portDesc.Family, portDesc.Group)
 		if err != nil {
 			return err
 		}

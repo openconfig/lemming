@@ -5,6 +5,7 @@
 #include <netlink/genl/family.h>
 #include <netlink/genl/genl.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #include "stdlib.h"
 
@@ -56,20 +57,24 @@ int create_port(const char* family, const char* group) {
 
   nl_socket_set_peer_groups(nlsock, (1 << (group_id - 1)));
 
-  return 0;
+  return create_index;
 }
 
 int send_packet(int sock_idx, const void* pkt, uint32_t size, int in_ifindex, int out_ifindex,
                 unsigned int context) {
+  printf("creating nl msg");
   struct nl_msg* msg = nlmsg_alloc();
   genlmsg_put(msg, NL_AUTO_PORT, NL_AUTO_SEQ, family_id, 0, 0, 0, 1);
   NLA_PUT_S16(msg, GENL_PACKET_ATTR_IIFINDEX, in_ifindex);
   NLA_PUT_S16(msg, GENL_PACKET_ATTR_OIFINDEX, out_ifindex);
   NLA_PUT_U32(msg, GENL_PACKET_ATTR_CONTEXT, context);
   NLA_PUT(msg, GENL_PACKET_ATTR_DATA, size, pkt);
+  printf("sending to index %d", sock_idx);
   if (nl_send(nlsocks[sock_idx], msg) < 0) {
+    printf("failed to send message");
     return -1;
   }
+  printf("sent message");
   nlmsg_free(msg);
   return 0;
 nla_put_failure:

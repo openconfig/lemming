@@ -14,7 +14,7 @@
 
 //go:build linux
 
-package kernel
+package genetlink
 
 // #cgo LDFLAGS: -lnl-3 -lnl-genl-3
 // #cgo CFLAGS: -I/usr/include/libnl3
@@ -29,7 +29,7 @@ import (
 
 	log "github.com/golang/glog"
 
-	"github.com/mdlayher/netlink"
+	"github.com/openconfig/lemming/dataplane/kernel"
 )
 
 // GenetlinkPort is connect to a netlink socket that be written to.
@@ -56,14 +56,8 @@ func NewGenetlinkPort(family, group string) (*GenetlinkPort, error) {
 	}, nil
 }
 
-type PacketMetadata struct {
-	SrcIfIndex int16
-	DstIfIndex int16
-	Context    uint32 // Context is extra value that can be set by the forwarding pipeline.
-}
-
 // Writes writes a layer2 frame to the port.
-func (p GenetlinkPort) Write(frame []byte, md *PacketMetadata) (int, error) {
+func (p GenetlinkPort) Write(frame []byte, md *kernel.PacketMetadata) (int, error) {
 	log.Errorf("writing genl packet: %x", frame)
 
 	packet := C.CBytes(frame)
@@ -85,30 +79,4 @@ func (p GenetlinkPort) Read([]byte) (int, error) {
 // Delete closes the netlink connection.
 func (p GenetlinkPort) Delete() error {
 	return nil
-}
-
-// NLPacket contains a packet data.
-type NLPacket struct {
-	srcIfIndex   int16
-	dstIfIndex   int16
-	contextValue uint32
-	payload      []byte
-}
-
-// Constants sourced from https://github.com/sonic-net/sonic-pins/blob/main/p4rt_app/sonic/receive_genetlink.cc#L32
-const (
-	AttrDstIfIndex uint16 = iota
-	AttrSrcIfIndex
-	AttrContextValue
-	AttrPayload
-)
-
-// Encode encodes the packet into a netlink-compatible byte slice.
-func (nl *NLPacket) Encode() ([]byte, error) {
-	enc := netlink.NewAttributeEncoder()
-	enc.Int16(AttrSrcIfIndex, nl.srcIfIndex)
-	enc.Int16(AttrSrcIfIndex, nl.dstIfIndex)
-	enc.Uint32(AttrContextValue, nl.contextValue)
-	enc.Bytes(AttrPayload, nl.payload)
-	return enc.Encode()
 }
