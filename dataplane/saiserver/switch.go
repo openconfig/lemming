@@ -572,6 +572,7 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
 		Desc: &fwdpb.TableDesc{
 			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: trapIDToHostifTable}},
+			Actions:   []*fwdpb.ActionDesc{fwdconfig.Action(fwdconfig.LookupAction(portToHostifTable)).Build()},
 			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
 			Table: &fwdpb.TableDesc_Exact{
 				Exact: &fwdpb.ExactTableDesc{

@@ -16,79 +16,65 @@
 
 package kernel
 
+// #cgo LDFLAGS: -lnl-3 -lnl-genl-3
+// #cgo CFLAGS: -I/usr/include/libnl3
+// #include "genetlink.h"
+// #include <stdlib.h>
+import "C"
+
 import (
 	"fmt"
 	"io"
+	"unsafe"
 
 	log "github.com/golang/glog"
 
-	"github.com/mdlayher/genetlink"
 	"github.com/mdlayher/netlink"
 )
 
 // GenetlinkPort is connect to a netlink socket that be written to.
 type GenetlinkPort struct {
-	conn     *genetlink.Conn
-	familyID uint16
+	socketIndex int
 }
 
 // NewGenetlinkPort creates netlink socket for the given family and multicast group.
 func NewGenetlinkPort(family, group string) (*GenetlinkPort, error) {
 	log.Errorf("creating genl port: %s %s", family, group)
-	conn, err := genetlink.Dial(nil)
-	if err != nil {
-		return nil, err
+
+	cFamily := C.CString(family)
+	defer C.free(unsafe.Pointer(cFamily))
+	cGroup := C.CString(group)
+	defer C.free(unsafe.Pointer(cGroup))
+
+	idx := C.create_port(cFamily, cGroup)
+	if idx < 0 {
+		return nil, fmt.Errorf("failed to create port: %d", idx)
 	}
-	fam, err := conn.GetFamily(family)
-	if err != nil {
-		return nil, fmt.Errorf("could not find %v family", family)
-	}
-	grpID := -1
-	for _, grp := range fam.Groups {
-		if grp.Name == group {
-			grpID = int(grp.ID)
-			break
-		}
-	}
-	if grpID == -1 {
-		return nil, fmt.Errorf("could not find multicast group in the %v family", family)
-	}
-	if err := conn.JoinGroup(uint32(grpID)); err != nil {
-		return nil, err
-	}
+
 	return &GenetlinkPort{
-		conn: conn,
+		socketIndex: int(idx),
 	}, nil
 }
 
 type PacketMetadata struct {
-	SrcIfIndex int
-	DstIfIndex int
-	Context    int // Context is extra value that can be set by the forwarding pipeline.
+	SrcIfIndex int16
+	DstIfIndex int16
+	Context    uint32 // Context is extra value that can be set by the forwarding pipeline.
 }
 
 // Writes writes a layer2 frame to the port.
 func (p GenetlinkPort) Write(frame []byte, md *PacketMetadata) (int, error) {
 	log.Errorf("writing genl packet: %x", frame)
 
-	data, err := (&NLPacket{
-		payload:      frame,
-		srcIfIndex:   int16(md.SrcIfIndex),
-		dstIfIndex:   int16(md.DstIfIndex),
-		contextValue: uint32(md.Context),
-	}).Encode()
-	if err != nil {
-		return 0, err
+	packet := C.CBytes(frame)
+	defer C.free(unsafe.Pointer(packet))
+
+	res := C.send_packet(C.int(p.socketIndex), packet, C.uint(uint32(len(frame))), C.int(md.SrcIfIndex), C.int(md.DstIfIndex), C.uint(md.Context))
+	if res < 0 {
+		return 0, fmt.Errorf("failed to write packet")
 	}
 
-	_, err = p.conn.Send(genetlink.Message{
-		Header: genetlink.Header{
-			Command: 0,
-			Version: 1,
-		},
-		Data: data,
-	}, p.familyID, 0)
-	return len(data), err
+	return len(frame), nil
 }
 
 // Read is not implemented.
@@ -98,7 +84,7 @@ func (p GenetlinkPort) Read([]byte) (int, error) {
 
 // Delete closes the netlink connection.
 func (p GenetlinkPort) Delete() error {
-	return p.conn.Close()
+	return nil
 }
 
 // NLPacket contains a packet data.

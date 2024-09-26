@@ -117,8 +117,8 @@ func (m *PacketIOMgr) StreamPackets(c pktiopb.PacketIO_CPUPacketStreamClient) er
 
 func (m *PacketIOMgr) metadataFromPacket(p *pktiopb.Packet) *kernel.PacketMetadata {
 	md := &kernel.PacketMetadata{
-		SrcIfIndex: m.dplanePortIfIndex[p.GetInputPort()],
-		DstIfIndex: m.dplanePortIfIndex[p.GetOutputPort()],
+		SrcIfIndex: int16(m.dplanePortIfIndex[p.GetInputPort()]),
+		DstIfIndex: int16(m.dplanePortIfIndex[p.GetOutputPort()]),
 	}
 
 	return md
