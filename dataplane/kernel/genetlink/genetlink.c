@@ -31,7 +31,6 @@ int create_port(const char* family, const char* group) {
   }
 
   struct nl_sock* nlsock = nlsocks[create_index];
-  create_index++;
 
   nlsock = nl_socket_alloc();
   if (nlsock == NULL) {
@@ -56,7 +55,7 @@ int create_port(const char* family, const char* group) {
 
   nl_socket_set_peer_groups(nlsock, (1 << (group_id - 1)));
 
-  return create_index;
+  return create_index++;
 }
 
 int send_packet(int sock_idx, const void* pkt, uint32_t size, int in_ifindex,
