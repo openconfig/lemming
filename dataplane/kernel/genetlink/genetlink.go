@@ -51,6 +51,7 @@ func NewGenetlinkPort(family, group string) (*GenetlinkPort, error) {
 		return nil, fmt.Errorf("failed to create port: %d", idx)
 	}
 
+	log.Errorf("creating genl port: %d", idx)
 	return &GenetlinkPort{
 		socketIndex: int(idx),
 	}, nil

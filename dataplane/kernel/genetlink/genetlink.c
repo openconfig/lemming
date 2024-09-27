@@ -71,7 +71,7 @@ int send_packet(int sock_idx, const void* pkt, uint32_t size, int in_ifindex,
   printf("putting context nl msg: %d", context);
   NLA_PUT_U32(msg, GENL_PACKET_ATTR_CONTEXT, context);
   printf("putting data nl msg, size: %d", size);
-  NLA_PUT(msg, GENL_PACKET_ATTR_DATA, size, pkt);
+  // NLA_PUT(msg, GENL_PACKET_ATTR_DATA, size, pkt);
   printf("sending to index %d", sock_idx);
   if (nl_send(nlsocks[sock_idx], msg) < 0) {
     printf("failed to send message");
