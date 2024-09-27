@@ -63,14 +63,14 @@ int send_packet(int sock_idx, const void* pkt, uint32_t size, int in_ifindex,
   fprintf(stderr,"populating packet to index %d\n", sock_idx);
   struct nl_msg* msg = nlmsg_alloc();
   genlmsg_put(msg, NL_AUTO_PORT, NL_AUTO_SEQ, family_id, 0, 0, 0, 1);
-  // fprintf(stderr, "putting src if index nl msg: %d\n", in_ifindex);
-  // NLA_PUT_S16(msg, GENL_PACKET_ATTR_IIFINDEX, in_ifindex);
-  // fprintf(stderr, "putting dst if index nl msg: %d\n", out_ifindex);
-  // NLA_PUT_S16(msg, GENL_PACKET_ATTR_OIFINDEX, out_ifindex);
-  // fprintf(stderr, "putting context nl msg: %d\n", context);
-  // NLA_PUT_U32(msg, GENL_PACKET_ATTR_CONTEXT, context);
-  // fprintf(stderr, "putting data nl msg, size: %d\n", size);
-  // NLA_PUT(msg, GENL_PACKET_ATTR_DATA, size, pkt);
+  fprintf(stderr, "putting src if index nl msg: %d\n", in_ifindex);
+  NLA_PUT_S16(msg, GENL_PACKET_ATTR_IIFINDEX, in_ifindex);
+  fprintf(stderr, "putting dst if index nl msg: %d\n", out_ifindex);
+  NLA_PUT_S16(msg, GENL_PACKET_ATTR_OIFINDEX, out_ifindex);
+  fprintf(stderr, "putting context nl msg: %d\n", context);
+  NLA_PUT_U32(msg, GENL_PACKET_ATTR_CONTEXT, context);
+  fprintf(stderr, "putting data nl msg, size: %d\n", size);
+  NLA_PUT(msg, GENL_PACKET_ATTR_DATA, size, pkt);
   fprintf(stderr,"sending to index %d\n", sock_idx);
   if (nl_send(nlsocks[sock_idx], msg) < 0) {
     fprintf(stderr,"failed to send message\n");
