@@ -98,31 +98,9 @@ func (p *CPUPort) Update(upd *fwdpb.PortUpdateDesc) error {
 
 // Write applies output actions and writes a packet to the cable.
 func (p *CPUPort) Write(packet fwdpacket.Packet) (fwdaction.State, error) {
-	if p.remote {
-		if err := p.queue.Write(packet); err != nil {
-			return fwdaction.DROP, err
-		}
-		return fwdaction.CONSUME, nil
-	}
-
-	// After the CPU packet is processed, the output port may change. Rerun the output actions.
-	outPort, err := fwdport.OutputPort(packet, p.ctx)
-	if err != nil {
+	if err := p.queue.Write(packet); err != nil {
 		return fwdaction.DROP, err
 	}
-
-	// TODO: The types of ports are sent over gRPC should be probably be configurable.
-	if outPort.Type() == fwdpb.PortType_PORT_TYPE_GENETLINK || outPort.Type() == fwdpb.PortType_PORT_TYPE_CPU_PORT {
-		if err := p.queue.Write(packet); err != nil {
-			return fwdaction.DROP, err
-		}
-		return fwdaction.CONSUME, nil
-	}
-
-	if err := fwdport.Output(outPort, packet, fwdpb.PortAction_PORT_ACTION_OUTPUT, p.ctx); err != nil {
-		return fwdaction.DROP, err
-	}
-
 	return fwdaction.CONSUME, nil
 }
 
@@ -131,10 +109,6 @@ func (p *CPUPort) Write(packet fwdpacket.Packet) (fwdaction.State, error) {
 // relock the context. We also do not want to hold the lock when performing
 // the gRPC request.
 func (p *CPUPort) punt(v any) {
-	if p.remote {
-		p.puntRemotePort(v)
-		return
-	}
 	packet, ok := v.(fwdpacket.Packet)
 	if !ok {
 		fwdport.Increment(p, 1, fwdpb.CounterId_COUNTER_ID_TX_ERROR_PACKETS, fwdpb.CounterId_COUNTER_ID_TX_ERROR_OCTETS)
@@ -146,63 +120,10 @@ func (p *CPUPort) punt(v any) {
 	if port, err := fwdport.InputPort(packet, p.ctx); err == nil {
 		ingressPID = fwdport.GetID(port)
 	}
-	egressPID := fwdport.GetID(p)
-	if port, err := fwdport.OutputPort(packet, p.ctx); err == nil {
-		egressPID = fwdport.GetID(port)
-	}
-	var parsed []*fwdpb.PacketFieldBytes
-	for _, f := range p.export {
-		value, err := packet.Field(fwdpacket.NewFieldID(f))
-		if err != nil {
-			continue
-		}
-		parsed = append(parsed, &fwdpb.PacketFieldBytes{
-			FieldId: f,
-			Bytes:   value,
-		})
-	}
-	response := &fwdpb.PacketSinkResponse{
-		Resp: &fwdpb.PacketSinkResponse_Packet{
-			Packet: &fwdpb.PacketSinkPacketInfo{
-				PortId:       fwdport.GetID(p),
-				Egress:       egressPID,
-				Ingress:      ingressPID,
-				Bytes:        packet.Frame(),
-				ParsedFields: parsed,
-			},
-		},
-	}
-
-	ps := p.ctx.PacketSink()
-	p.ctx.RUnlock()
-	if ps != nil {
-		timer := deadlock.NewTimer(deadlock.Timeout, fmt.Sprintf("Punting packet from port %v", p))
-		err := ps(response)
-		timer.Stop()
-		if err == nil {
-			return
-		}
-		log.Errorf("ports: Unable to punt packet, request %+v, err %v.", response, err)
-	}
-	fwdport.Increment(p, packet.Length(), fwdpb.CounterId_COUNTER_ID_TX_ERROR_PACKETS, fwdpb.CounterId_COUNTER_ID_TX_ERROR_OCTETS)
-}
-
-func (p *CPUPort) puntRemotePort(v any) {
-	packet, ok := v.(fwdpacket.Packet)
-	if !ok {
-		fwdport.Increment(p, 1, fwdpb.CounterId_COUNTER_ID_TX_ERROR_PACKETS, fwdpb.CounterId_COUNTER_ID_TX_ERROR_OCTETS)
-		return
-	}
-
-	p.ctx.RLock()
-	var ingressPID *fwdpb.PortId
-	if port, err := fwdport.InputPort(packet, p.ctx); err == nil {
-		ingressPID = fwdport.GetID(port)
-	}
-	egressPID := fwdport.GetID(p)
-	if port, err := fwdport.OutputPort(packet, p.ctx); err == nil {
-		egressPID = fwdport.GetID(port)
-	}
+	// egressPID := fwdport.GetID(p)
+	// if port, err := fwdport.OutputPort(packet, p.ctx); err == nil {
+	// 	egressPID = fwdport.GetID(port)
+	// }
 	hostPort, err := packet.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_HOST_PORT_ID, 0))
 	if err != nil {
 		fwdport.Increment(p, packet.Length(), fwdpb.CounterId_COUNTER_ID_TX_ERROR_PACKETS, fwdpb.CounterId_COUNTER_ID_TX_ERROR_OCTETS)
@@ -213,15 +134,15 @@ func (p *CPUPort) puntRemotePort(v any) {
 	if err != nil {
 		return
 	}
-	egressID, err := strconv.Atoi(egressPID.GetObjectId().GetId())
-	if err != nil {
-		return
-	}
+	// egressID, err := strconv.Atoi(egressPID.GetObjectId().GetId())
+	// if err != nil {
+	// 	return
+	// }
 
 	response := &pktiopb.PacketOut{
 		Packet: &pktiopb.Packet{
 			InputPort:  uint64(ingressID),
-			OutputPort: uint64(egressID),
+			OutputPort: uint64(0),
 			HostPort:   binary.BigEndian.Uint64(hostPort),
 			Frame:      packet.Frame(),
 		},
