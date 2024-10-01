@@ -20,8 +20,7 @@
 #include <netlink/genl/genl.h>
 #include <stdint.h>
 #include <stdio.h>
-
-#include "stdlib.h"
+#include <stdlib.h>
 
 enum {
   /* packet metadata */
@@ -31,29 +30,24 @@ enum {
   GENL_PACKET_ATTR_DATA,
 };
 
-struct nl_sock** nlsocks = NULL;
-int* families = NULL;
-int create_idx = 0;
-const int max_sockets = 20;
-
 struct nl_sock* create_port(const char* family, const char* group) {
   fprintf(stderr, "creating port\n");
 
   struct nl_sock* sock = nl_socket_alloc();
   if (sock == NULL) {
-    fprintf(stderr,"error: failed to alloc nl socket");
+    fprintf(stderr, "error: failed to alloc nl socket");
     return NULL;
   }
   nl_socket_disable_auto_ack(sock);
   int error = genl_connect(sock);
   if (error < 0) {
-    fprintf(stderr,"error: failed to disable auto ack");
+    fprintf(stderr, "error: failed to disable auto ack");
     nl_socket_free(sock);
     return NULL;
   }
   int group_id = genl_ctrl_resolve_grp(sock, family, group);
   if (group_id < 0) {
-    fprintf(stderr,"error: failed to resolve group");
+    fprintf(stderr, "error: failed to resolve group");
     nl_socket_free(sock);
     return NULL;
   }
@@ -61,21 +55,19 @@ struct nl_sock* create_port(const char* family, const char* group) {
   return sock;
 }
 
-void delete_port(void * sock) {
-  nl_socket_free(sock);
-}
+void delete_port(void* sock) { nl_socket_free(sock); }
 
-int send_packet(void* sock, int family, const void* pkt, uint32_t size, int in_ifindex,
-                int out_ifindex, unsigned int context) {
+int send_packet(void* sock, int family, const void* pkt, uint32_t size,
+                int in_ifindex, int out_ifindex, unsigned int context) {
   struct nl_msg* msg = nlmsg_alloc();
   genlmsg_put(msg, NL_AUTO_PORT, NL_AUTO_SEQ, family, 0, 0, 0, 1);
   NLA_PUT_S16(msg, GENL_PACKET_ATTR_IIFINDEX, in_ifindex);
   NLA_PUT_S16(msg, GENL_PACKET_ATTR_OIFINDEX, out_ifindex);
   NLA_PUT_U32(msg, GENL_PACKET_ATTR_CONTEXT, context);
   NLA_PUT(msg, GENL_PACKET_ATTR_DATA, size, pkt);
-  fprintf(stderr,"sending packet size: %d\n", size);
+  fprintf(stderr, "sending packet size: %d\n", size);
   if (nl_send(sock, msg) < 0) {
-    fprintf(stderr,"failed to send packet\n");
+    fprintf(stderr, "failed to send packet\n");
     return -1;
   }
   nlmsg_free(msg);
