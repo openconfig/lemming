@@ -29,12 +29,15 @@ import (
 
 	log "github.com/golang/glog"
 
+	"github.com/mdlayher/genetlink"
+
 	"github.com/openconfig/lemming/dataplane/kernel"
 )
 
 // GenetlinkPort is connect to a netlink socket that be written to.
 type GenetlinkPort struct {
-	socketIndex int
+	sock     unsafe.Pointer
+	familyID int
 }
 
 // NewGenetlinkPort creates netlink socket for the given family and multicast group.
@@ -46,14 +49,33 @@ func NewGenetlinkPort(family, group string) (*GenetlinkPort, error) {
 	cGroup := C.CString(group)
 	defer C.free(unsafe.Pointer(cGroup))
 
-	idx := C.create_port(cFamily, cGroup)
-	if idx < 0 {
-		return nil, fmt.Errorf("failed to create port: %d", idx)
+	conn, err := genetlink.Dial(nil)
+	if err != nil {
+		return nil, err
+	}
+	fam, err := conn.GetFamily(family)
+	if err != nil {
+		return nil, err
+	}
+	familyID := -1
+	for _, grp := range fam.Groups {
+		if grp.Name == group {
+			familyID = int(grp.ID)
+		}
+	}
+	if familyID == -1 {
+		return nil, fmt.Errorf("failed to find multicast group")
 	}
 
-	log.Errorf("creating genl port: %d", idx)
+	sockAddr := C.create_port(cFamily, cGroup)
+	if sockAddr == nil {
+		return nil, fmt.Errorf("failed to create port")
+	}
+
+	log.Errorf("creating genl port")
 	return &GenetlinkPort{
-		socketIndex: int(idx),
+		sock:     unsafe.Pointer(sockAddr),
+		familyID: familyID,
 	}, nil
 }
 
@@ -64,7 +86,7 @@ func (p GenetlinkPort) Write(frame []byte, md *kernel.PacketMetadata) (int, erro
 	packet := C.CBytes(frame)
 	defer C.free(unsafe.Pointer(packet))
 
-	res := C.send_packet(C.int(p.socketIndex), packet, C.uint(uint32(len(frame))), C.int(md.SrcIfIndex), C.int(md.DstIfIndex), C.uint(md.Context))
+	res := C.send_packet(p.sock, C.int(p.familyID), packet, C.uint(uint32(len(frame))), C.int(md.SrcIfIndex), C.int(md.DstIfIndex), C.uint(md.Context))
 	if res < 0 {
 		return 0, fmt.Errorf("failed to write packet")
 	}
@@ -79,5 +101,6 @@ func (p GenetlinkPort) Read([]byte) (int, error) {
 
 // Delete closes the netlink connection.
 func (p GenetlinkPort) Delete() error {
+	C.delete_port(p.sock)
 	return nil
 }

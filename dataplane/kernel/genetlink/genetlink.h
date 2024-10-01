@@ -17,11 +17,13 @@
 
 #include <stdint.h>
 
-// create_port create genetlink socket and returns the id of the port, or -1 on error.
-int create_port(const char* family, const char* group);
+// create_port create genetlink socket.
+struct nl_sock* create_port(const char* family, const char* group);
+
+void delete_port(void * sock);
 
 // send_packet sends a packet with given metadata to specified port.
-int send_packet(int sock_idx, const void* pkt, uint32_t size, int in_ifindex, int out_ifindex,
+int send_packet(void* sock, int family, const void* pkt, uint32_t size, int in_ifindex, int out_ifindex,
                 unsigned int context);
 
 #endif

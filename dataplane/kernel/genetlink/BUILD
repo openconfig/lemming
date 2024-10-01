@@ -32,10 +32,12 @@ go_library(
         "@io_bazel_rules_go//go/platform:android": [
             "//dataplane/kernel",
             "@com_github_golang_glog//:glog",
+            "@com_github_mdlayher_genetlink//:genetlink",
         ],
         "@io_bazel_rules_go//go/platform:linux": [
             "//dataplane/kernel",
             "@com_github_golang_glog//:glog",
+            "@com_github_mdlayher_genetlink//:genetlink",
         ],
         "//conditions:default": [],
     }),
