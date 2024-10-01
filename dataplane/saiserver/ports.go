@@ -61,7 +61,6 @@ var getInterface = net.InterfaceByName
 func getPreIngressPipeline() []*fwdpb.ActionDesc {
 	return []*fwdpb.ActionDesc{
 		fwdconfig.Action(fwdconfig.LookupAction(tunTermTable)).Build(),          // Decap the packet if we have a tunnel.
-		fwdconfig.Action(fwdconfig.LookupAction(VlanTable)).Build(),             // Tag VLAN.
 		fwdconfig.Action(fwdconfig.LookupAction(inputIfaceTable)).Build(),       // Match packet to interface.
 		fwdconfig.Action(fwdconfig.LookupAction(IngressVRFTable)).Build(),       // Match interface to VRF.
 		fwdconfig.Action(fwdconfig.LookupAction(PreIngressActionTable)).Build(), // Run pre-ingress actions.
@@ -73,9 +72,9 @@ func getL3Pipeline() []*fwdpb.ActionDesc {
 	return []*fwdpb.ActionDesc{
 		fwdconfig.Action(fwdconfig.LookupAction(IngressActionTable)).Build(),                                                                                    // Run ingress action.
 		fwdconfig.Action(fwdconfig.DecapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET)).Build(),                                                         // Decap L2 header.
-		fwdconfig.Action(fwdconfig.LookupAction(FIBSelectorTable)).Build(),                                                                                      // Lookup in FIB.                                                                          // Do not forward packets with invalid fields.
+		fwdconfig.Action(fwdconfig.LookupAction(FIBSelectorTable)).Build(),                                                                                      // Lookup in FIB.
 		fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_DEC, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP).WithValue([]byte{0x1})).Build(), // Decrement TTL.
-		fwdconfig.Action(fwdconfig.EncapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET)).Build(),                                                         // Encap L2 header.                                                                    // Drop invalid packets the FIB.
+		fwdconfig.Action(fwdconfig.EncapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET)).Build(),                                                         // Encap L2 header.
 		fwdconfig.Action(fwdconfig.LookupAction(outputIfaceTable)).Build(),                                                                                      // Match interface to port
 		fwdconfig.Action(fwdconfig.LookupAction(NeighborTable)).Build(),                                                                                         // Lookup in the neighbor table.
 	}
@@ -90,9 +89,8 @@ func getL2Pipeline() []*fwdpb.ActionDesc {
 
 func getEgressPipeline() []*fwdpb.ActionDesc {
 	return []*fwdpb.ActionDesc{
-		fwdconfig.Action(fwdconfig.LookupAction(EgressActionTable)).Build(),                                  // Run egress actions
-		fwdconfig.Action(fwdconfig.LookupAction(SRCMACTable)).Build(),                                        // Lookup interface's MAC addr.
-		fwdconfig.Action(fwdconfig.DecapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET_VLAN)).Build(), // TODO: Revise the code if trunk mode needs to be supported.
+		fwdconfig.Action(fwdconfig.LookupAction(EgressActionTable)).Build(), // Run egress actions
+		fwdconfig.Action(fwdconfig.LookupAction(SRCMACTable)).Build(),       // Lookup interface's MAC addr.
 		{
 			ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
 		},

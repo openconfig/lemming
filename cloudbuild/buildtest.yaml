@@ -4,12 +4,12 @@ steps:
     script: |
       curl -Lo bazel https://github.com/bazelbuild/bazelisk/releases/download/v1.16.0/bazelisk-linux-amd64 && \
         install bazel /usr/local/bin/
-      apt-get update && apt-get -y install libpcap-dev
+      apt-get update && apt-get -y install libpcap-dev libnl-genl-3-dev libnl-3-dev
       bazel build --remote_cache=https://storage.googleapis.com/lemming-bazel-cache --google_default_credentials //...
   - id: test
     name: gcr.io/cloud-builders/bazel
     script: |
-      apt-get update && apt-get -y install libpcap-dev
+      apt-get update && apt-get -y install libpcap-dev libnl-genl-3-dev libnl-3-dev
       bazel test --test_output=errors --combined_report=lcov --remote_cache=https://storage.googleapis.com/lemming-bazel-cache  --google_default_credentials \
         $(bazel query 'attr(size, small, tests("//...")) +  attr(size, medium, tests("//..."))')
 timeout: 3600s
