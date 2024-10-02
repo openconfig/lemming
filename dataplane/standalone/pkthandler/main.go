@@ -28,6 +28,9 @@ import (
 	pktiopb "github.com/openconfig/lemming/dataplane/proto/packetio"
 	"github.com/openconfig/lemming/dataplane/standalone/pkthandler/pktiohandler"
 
+	_ "github.com/openconfig/lemming/dataplane/kernel/genetlink"
+	_ "github.com/openconfig/lemming/dataplane/kernel/tap"
+
 	log "github.com/golang/glog"
 )
 

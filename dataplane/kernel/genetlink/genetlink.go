@@ -86,7 +86,7 @@ func (p GenetlinkPort) Write(frame []byte, md *kernel.PacketMetadata) (int, erro
 	log.Errorf("writing genl packet: %x", frame)
 
 	packet := C.CBytes(frame)
-	defer C.free(unsafe.Pointer(packet))
+	defer C.free(packet)
 
 	res := C.send_packet(p.sock, C.int(p.familyID), packet, C.uint(uint32(len(frame))), C.int(md.SrcIfIndex), C.int(md.DstIfIndex), C.uint(md.Context))
 	if res < 0 {

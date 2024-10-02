@@ -31,10 +31,6 @@ import (
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
-// A PacketCallback transmits packets to a packet sink as specified by the
-// injection request.
-type PacketCallback func(*fwdpb.PacketSinkResponse) error
-
 // An NotificationCallback generates events to a notification service.
 type NotificationCallback func(*fwdpb.EventDesc)
 
@@ -65,7 +61,6 @@ type FakePortManager interface {
 type Context struct {
 	sync.RWMutex                  // Synchronization between provisioning and forwarding
 	Objects      *fwdobject.Table // Set of all visible forwarding objects
-	packets      PacketCallback   // Packet service
 	ID           string           // ID of the context
 	Instance     string           // Name of the forwarding engine instance
 	Attributes   fwdattribute.Set

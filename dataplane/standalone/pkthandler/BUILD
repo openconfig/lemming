@@ -9,6 +9,8 @@ go_library(
     importpath = "github.com/openconfig/lemming/dataplane/standalone/pkthandler",
     visibility = ["//visibility:private"],
     deps = [
+        "//dataplane/kernel/genetlink",
+        "//dataplane/kernel/tap",
         "//dataplane/proto/packetio",
         "//dataplane/standalone/pkthandler/pktiohandler",
         "@com_github_golang_glog//:glog",

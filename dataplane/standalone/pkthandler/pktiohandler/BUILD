@@ -24,6 +24,7 @@ go_test(
         "//dataplane/kernel",
         "//dataplane/proto/packetio",
         "@com_github_google_go_cmp//cmp",
+        "@com_github_vishvananda_netlink//:netlink",
         "@org_golang_google_grpc//codes",
         "@org_golang_google_protobuf//testing/protocmp",
     ],

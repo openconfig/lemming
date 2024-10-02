@@ -26,4 +26,4 @@ void delete_port(void* sock);
 int send_packet(void* sock, int family, const void* pkt, uint32_t size,
                 int in_ifindex, int out_ifindex, unsigned int context);
 
-#endif
+#endif  // DATAPLANE_KERNEL_GENETLINK_GENETLINK_H_
