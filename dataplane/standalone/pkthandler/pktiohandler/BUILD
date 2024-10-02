@@ -8,9 +8,9 @@ go_library(
     deps = [
         "//dataplane/forwarding/util/queue",
         "//dataplane/kernel",
-        "//dataplane/kernel/genetlink",
         "//dataplane/proto/packetio",
         "@com_github_golang_glog//:glog",
+        "@com_github_vishvananda_netlink//:netlink",
         "@org_golang_google_genproto_googleapis_rpc//status",
         "@org_golang_google_grpc//codes",
     ],

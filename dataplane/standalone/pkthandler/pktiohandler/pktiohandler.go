@@ -25,9 +25,10 @@ import (
 	"google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc/codes"
 
+	"github.com/vishvananda/netlink"
+
 	"github.com/openconfig/lemming/dataplane/forwarding/util/queue"
 	"github.com/openconfig/lemming/dataplane/kernel"
-	"github.com/openconfig/lemming/dataplane/kernel/genetlink"
 
 	log "github.com/golang/glog"
 
@@ -58,12 +59,12 @@ type PacketIOMgr struct {
 }
 
 type port struct {
-	portIO
+	PortIO
 	cancelFn func()
 	msg      *pktiopb.HostPortControlMessage
 }
 
-type portIO interface {
+type PortIO interface {
 	Delete() error
 	Write([]byte, *kernel.PacketMetadata) (int, error)
 	Read([]byte) (int, error)
@@ -222,29 +223,34 @@ func (m *PacketIOMgr) ManagePorts(c pktiopb.PacketIO_HostPortControlClient) erro
 	}
 }
 
-var createTAPFunc = kernel.NewTap
+var builder = map[pktiopb.PortType]func(*pktiopb.HostPortControlMessage) (PortIO, error){}
+
+func Register(t pktiopb.PortType, b func(*pktiopb.HostPortControlMessage) (PortIO, error)) {
+	builder[t] = b
+}
+
+var linkByName = netlink.LinkByName
 
 func (m *PacketIOMgr) createPort(msg *pktiopb.HostPortControlMessage) error {
-	var p portIO
+	var p PortIO
 	switch msg.GetPort().(type) {
 	case *pktiopb.HostPortControlMessage_Genetlink:
-		portDesc := msg.GetGenetlink()
 		var err error
-		p, err = genetlink.NewGenetlinkPort(portDesc.Family, portDesc.Group)
+		p, err = builder[pktiopb.PortType_PORT_TYPE_GENETLINK](msg)
 		if err != nil {
 			return err
 		}
-		log.Infof("add to new genetlink port: %v %v", portDesc.Family, portDesc.Group)
 	case *pktiopb.HostPortControlMessage_Netdev:
-		name := msg.GetNetdev().GetName()
 		var err error
-		kp, err := createTAPFunc(name)
+		p, err = builder[pktiopb.PortType_PORT_TYPE_NETDEV](msg)
 		if err != nil {
 			return err
 		}
-		p = kp
-		m.dplanePortIfIndex[msg.GetDataplanePort()] = kp.IfIndex()
-		log.Infof("add to new netdev port: %v", name)
+		l, err := linkByName(msg.GetNetdev().GetName())
+		if err != nil {
+			return err
+		}
+		m.dplanePortIfIndex[msg.GetDataplanePort()] = l.Attrs().Index
 	default:
 		return fmt.Errorf("unsupported port type: %v", msg.GetPort())
 	}
@@ -252,7 +258,7 @@ func (m *PacketIOMgr) createPort(msg *pktiopb.HostPortControlMessage) error {
 	doneCh := make(chan struct{})
 
 	m.hostifs[msg.GetPortId()] = &port{
-		portIO:   p,
+		PortIO:   p,
 		cancelFn: func() { close(doneCh) },
 		msg:      msg,
 	}

@@ -12,19 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package kernel
+package tap
 
 import (
 	"os"
 
 	"github.com/vishvananda/netlink"
+
+	"github.com/openconfig/lemming/dataplane/kernel"
+	pktiopb "github.com/openconfig/lemming/dataplane/proto/packetio"
+	"github.com/openconfig/lemming/dataplane/standalone/pkthandler/pktiohandler"
 )
 
-// NewTap creates a new tap interface.
-func NewTap(name string) (*TapInterface, error) {
+// New creates a new tap interface.
+func New(msg *pktiopb.HostPortControlMessage) (pktiohandler.PortIO, error) {
 	tap := &netlink.Tuntap{
 		LinkAttrs: netlink.LinkAttrs{
-			Name: name,
+			Name: msg.GetNetdev().GetName(),
 		},
 		Mode:       netlink.TUNTAP_MODE_TAP,
 		Flags:      netlink.TUNTAP_MULTI_QUEUE_DEFAULTS,
@@ -35,7 +39,7 @@ func NewTap(name string) (*TapInterface, error) {
 		return nil, err
 	}
 	return &TapInterface{
-		name:    name,
+		name:    msg.GetNetdev().GetName(),
 		File:    tap.Fds[0],
 		ifIndex: tap.Index,
 	}, nil
@@ -57,10 +61,14 @@ func (t *TapInterface) Delete() error {
 	return netlink.LinkDel(l)
 }
 
-func (t *TapInterface) Write(frame []byte, _ *PacketMetadata) (int, error) {
+func (t *TapInterface) Write(frame []byte, _ *kernel.PacketMetadata) (int, error) {
 	return t.File.Write(frame)
 }
 
 func (t *TapInterface) IfIndex() int {
 	return t.ifIndex
+}
+
+func init() {
+	pktiohandler.Register(pktiopb.PortType_PORT_TYPE_NETDEV, New)
 }

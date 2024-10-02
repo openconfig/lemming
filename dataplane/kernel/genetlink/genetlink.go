@@ -32,6 +32,8 @@ import (
 	"github.com/mdlayher/genetlink"
 
 	"github.com/openconfig/lemming/dataplane/kernel"
+	pktiopb "github.com/openconfig/lemming/dataplane/proto/packetio"
+	"github.com/openconfig/lemming/dataplane/standalone/pkthandler/pktiohandler"
 )
 
 // GenetlinkPort is connect to a netlink socket that be written to.
@@ -41,25 +43,25 @@ type GenetlinkPort struct {
 }
 
 // NewGenetlinkPort creates netlink socket for the given family and multicast group.
-func NewGenetlinkPort(family, group string) (*GenetlinkPort, error) {
-	log.Errorf("creating genl port: %s %s", family, group)
+func New(msg *pktiopb.HostPortControlMessage) (pktiohandler.PortIO, error) {
+	log.Errorf("creating genl port: %s %s", msg.GetGenetlink().GetFamily(), msg.GetGenetlink().GetGroup())
 
-	cFamily := C.CString(family)
+	cFamily := C.CString(msg.GetGenetlink().GetFamily())
 	defer C.free(unsafe.Pointer(cFamily))
-	cGroup := C.CString(group)
+	cGroup := C.CString(msg.GetGenetlink().GetGroup())
 	defer C.free(unsafe.Pointer(cGroup))
 
 	conn, err := genetlink.Dial(nil)
 	if err != nil {
 		return nil, err
 	}
-	fam, err := conn.GetFamily(family)
+	fam, err := conn.GetFamily(msg.GetGenetlink().GetFamily())
 	if err != nil {
 		return nil, err
 	}
 	familyID := -1
 	for _, grp := range fam.Groups {
-		if grp.Name == group {
+		if grp.Name == msg.GetGenetlink().GetGroup() {
 			familyID = int(grp.ID)
 		}
 	}
@@ -103,4 +105,8 @@ func (p GenetlinkPort) Read([]byte) (int, error) {
 func (p GenetlinkPort) Delete() error {
 	C.delete_port(p.sock)
 	return nil
+}
+
+func init() {
+	pktiohandler.Register(pktiopb.PortType_PORT_TYPE_GENETLINK, New)
 }

@@ -31,11 +31,15 @@ go_library(
     deps = select({
         "@io_bazel_rules_go//go/platform:android": [
             "//dataplane/kernel",
+            "//dataplane/proto/packetio",
+            "//dataplane/standalone/pkthandler/pktiohandler",
             "@com_github_golang_glog//:glog",
             "@com_github_mdlayher_genetlink//:genetlink",
         ],
         "@io_bazel_rules_go//go/platform:linux": [
             "//dataplane/kernel",
+            "//dataplane/proto/packetio",
+            "//dataplane/standalone/pkthandler/pktiohandler",
             "@com_github_golang_glog//:glog",
             "@com_github_mdlayher_genetlink//:genetlink",
         ],
