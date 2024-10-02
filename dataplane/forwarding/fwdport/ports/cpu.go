@@ -23,7 +23,6 @@ import (
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdport"
-	"github.com/openconfig/lemming/dataplane/forwarding/infra/deadlock"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdobject"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdpacket"
@@ -114,30 +113,20 @@ func (p *CPUPort) punt(v any) {
 		fwdport.Increment(p, 1, fwdpb.CounterId_COUNTER_ID_TX_ERROR_PACKETS, fwdpb.CounterId_COUNTER_ID_TX_ERROR_OCTETS)
 		return
 	}
-
 	p.ctx.RLock()
 	var ingressPID *fwdpb.PortId
 	if port, err := fwdport.InputPort(packet, p.ctx); err == nil {
 		ingressPID = fwdport.GetID(port)
 	}
-	// egressPID := fwdport.GetID(p)
-	// if port, err := fwdport.OutputPort(packet, p.ctx); err == nil {
-	// 	egressPID = fwdport.GetID(port)
-	// }
 	hostPort, err := packet.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_HOST_PORT_ID, 0))
 	if err != nil {
 		fwdport.Increment(p, packet.Length(), fwdpb.CounterId_COUNTER_ID_TX_ERROR_PACKETS, fwdpb.CounterId_COUNTER_ID_TX_ERROR_OCTETS)
 		return
 	}
-
 	ingressID, err := strconv.Atoi(ingressPID.GetObjectId().GetId())
 	if err != nil {
 		return
 	}
-	// egressID, err := strconv.Atoi(egressPID.GetObjectId().GetId())
-	// if err != nil {
-	// 	return
-	// }
 
 	response := &pktiopb.PacketOut{
 		Packet: &pktiopb.Packet{
@@ -155,8 +144,8 @@ func (p *CPUPort) punt(v any) {
 		return
 	}
 
-	timer := deadlock.NewTimer(deadlock.Timeout, fmt.Sprintf("Punting packet from port %v", p))
-	defer timer.Stop()
+	// timer := deadlock.NewTimer(deadlock.Timeout, fmt.Sprintf("Punting packet from port %v", p))
+	// defer timer.Stop()
 	if err := ps(response); err != nil {
 		fwdport.Increment(p, packet.Length(), fwdpb.CounterId_COUNTER_ID_TX_ERROR_PACKETS, fwdpb.CounterId_COUNTER_ID_TX_ERROR_OCTETS)
 		log.Errorf("ports: Unable to punt packet, request %+v, err %v.", response, err)

@@ -174,19 +174,6 @@ func (ctx *Context) Notify(event *fwdpb.EventDesc) error {
 
 type CPUPortSink func(*pktiopb.PacketOut) error
 
-// SetPacketSink sets the packet sink service for the context. If the packet
-// sink service is not set to nil, packets are dropped.
-// TODO: Deprecated remove
-func (ctx *Context) SetPacketSink(call PacketCallback) error {
-	ctx.packets = call
-	return nil
-}
-
-// PacketSink returns a handler to the packet sink service.
-func (ctx *Context) PacketSink() PacketCallback {
-	return ctx.packets
-}
-
 // SetCPUPortSink sets the port control service for the context
 func (ctx *Context) SetCPUPortSink(fn CPUPortSink, doneFn func()) error {
 	ctx.cpuPortSink = fn
@@ -204,7 +191,6 @@ func (ctx *Context) CPUPortSink() CPUPortSink {
 // Then it unblocks the caller by sending a message on the channel.
 // Then it cleans up the rest of the objects.
 func (ctx *Context) Cleanup(ch chan bool, isPort func(*fwdpb.ObjectId) bool) {
-	ctx.SetPacketSink(nil)
 	ctx.SetNotification(nil)
 
 	if ctx.cpuPortSinkDone != nil {

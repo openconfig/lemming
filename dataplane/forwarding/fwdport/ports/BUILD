@@ -16,7 +16,6 @@ go_library(
     deps = [
         "//dataplane/forwarding/fwdaction",
         "//dataplane/forwarding/fwdport",
-        "//dataplane/forwarding/infra/deadlock",
         "//dataplane/forwarding/infra/fwdcontext",
         "//dataplane/forwarding/infra/fwdobject",
         "//dataplane/forwarding/infra/fwdpacket",
@@ -68,6 +67,7 @@ go_test(
         "//dataplane/forwarding/protocol/ethernet",
         "//dataplane/forwarding/protocol/metadata",
         "//dataplane/forwarding/protocol/opaque",
+        "//dataplane/proto/packetio",
         "//proto/forwarding",
         "@com_github_go_logr_logr//testr",
         "@com_github_google_go_cmp//cmp",
@@ -75,7 +75,6 @@ go_test(
         "@com_github_google_gopacket//layers",
         "@com_github_google_gopacket//pcapgo",
         "@com_github_openconfig_gnmi//errdiff",
-        "@org_golang_google_protobuf//proto",
         "@org_uber_go_mock//gomock",
     ],
 )

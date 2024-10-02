@@ -97,26 +97,6 @@ func (e *Server) UpdateNotification(contextID *fwdpb.ContextId, notification fwd
 	return nil
 }
 
-// UpdatePacketSink updates the packet sink service for a context. If the
-// service is set to nil, no packets are delivered externally for the context.
-// The address is the address of the packet service (used in queries)
-// in the host:port format.
-func (e *Server) UpdatePacketSink(contextID *fwdpb.ContextId, packet fwdcontext.PacketCallback) error {
-	if contextID == nil {
-		return errors.New("fwd: UpdatePacketSink failed, No context ID")
-	}
-
-	ctx, err := e.FindContext(contextID)
-	if err != nil {
-		return fmt.Errorf("fwd: UpdatePacketSink failed, err %v", err)
-	}
-
-	ctx.Lock()
-	defer ctx.Unlock()
-	ctx.SetPacketSink(packet)
-	return nil
-}
-
 // ContextCreate creates a new context. Note that if the packet sink and/or
 // notification services are specified but not reachable, the context creation
 // fails.

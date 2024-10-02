@@ -15,14 +15,16 @@
 package ports
 
 import (
+	"encoding/binary"
 	"testing"
 
-	"google.golang.org/protobuf/proto"
+	"github.com/google/go-cmp/cmp"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdport"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdobject"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdpacket"
+	pktiopb "github.com/openconfig/lemming/dataplane/proto/packetio"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 
 	_ "github.com/openconfig/lemming/dataplane/forwarding/protocol/arp"
@@ -34,46 +36,34 @@ import (
 // A RecordPacketSink records the last injected packet and generates a
 // notification on its channel.
 type RecordPacketSink struct {
-	notify       chan bool
-	lastResponse *fwdpb.PacketSinkResponse
+	notify chan bool
+	resp   *pktiopb.PacketOut
 }
 
 // PacketSink records the inject packet request and generates a notification.
-func (p *RecordPacketSink) PacketSink(resp *fwdpb.PacketSinkResponse) error {
-	p.lastResponse = resp
+func (p *RecordPacketSink) Send(resp *pktiopb.PacketOut) error {
+	p.resp = resp
 	p.notify <- true
 	return nil
 }
 
 // Tests the writes to the CPU port.
 func TestCpuWrite(t *testing.T) {
-	name := "TestPort"
+	name := "1"
 	ctx := fwdcontext.New("test", "fwd")
 	ps := &RecordPacketSink{
 		notify: make(chan bool),
 	}
-	ctx.SetPacketSink(ps.PacketSink)
+	ctx.SetCPUPortSink(ps.Send, func() {})
 
 	// Create a CPU port that exports the ETHER_TYPE and IP_ADDR_DST
 	desc := &fwdpb.PortDesc{
 		PortType: fwdpb.PortType_PORT_TYPE_CPU_PORT,
 		PortId:   fwdport.MakeID(fwdobject.NewID(name)),
 	}
-	ethertype := &fwdpb.PacketFieldId{
-		Field: &fwdpb.PacketField{
-			FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_TYPE,
-			Instance: 0,
-		},
-	}
-	ipaddress := &fwdpb.PacketFieldId{
-		Field: &fwdpb.PacketField{
-			FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST,
-			Instance: 0,
-		},
-	}
+
 	cpu := &fwdpb.CPUPortDesc{
-		QueueId:        name,
-		ExportFieldIds: []*fwdpb.PacketFieldId{ethertype, ipaddress},
+		QueueId: name,
 	}
 	desc.Port = &fwdpb.PortDesc_Cpu{
 		Cpu: cpu,
@@ -95,6 +85,8 @@ func TestCpuWrite(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Unable to create ARP packet, err %v.", err)
 	}
+	packet.Update(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_HOST_PORT_ID, 1), fwdpacket.OpSet, binary.BigEndian.AppendUint64(nil, 1))
+	fwdport.SetInputPort(packet, port)
 	fwdport.SetOutputPort(packet, port)
 
 	// Write the packet out of the cpu port and wait for it to be received
@@ -103,19 +95,12 @@ func TestCpuWrite(t *testing.T) {
 		t.Fatalf("Write failed, err %v.", err)
 	}
 	<-ps.notify
-	t.Logf("Got request %+v", ps.lastResponse)
+	t.Logf("Got request %+v", ps.resp)
 
 	// Verify that the packet was received and the parsed fields only have
 	// the ETHER_TYPE set to ARP.
-	list := ps.lastResponse.GetPacket().GetParsedFields()
-	if len(list) != 1 {
-		t.Fatalf("Write failed to get parsed fields, got %v, want 1.", len(list))
-	}
-	want := &fwdpb.PacketFieldBytes{
-		FieldId: ethertype,
-		Bytes:   []byte{0x08, 0x06},
-	}
-	if !proto.Equal(list[0], want) {
-		t.Fatalf("Write failed to get parsed fields, Got %v, want %v", list[0], want)
+	got := ps.resp.GetPacket()
+	if d := cmp.Diff(got.GetFrame(), arp); d != "" {
+		t.Fatalf("Write failed to get parsed fields, diff: %s", d)
 	}
 }
