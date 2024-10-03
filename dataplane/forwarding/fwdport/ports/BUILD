@@ -16,6 +16,7 @@ go_library(
     deps = [
         "//dataplane/forwarding/fwdaction",
         "//dataplane/forwarding/fwdport",
+        "//dataplane/forwarding/infra/deadlock",
         "//dataplane/forwarding/infra/fwdcontext",
         "//dataplane/forwarding/infra/fwdobject",
         "//dataplane/forwarding/infra/fwdpacket",
