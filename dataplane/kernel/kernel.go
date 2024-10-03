@@ -183,3 +183,9 @@ func (k *Interfaces) LinkSetNoMaster(link netlink.Link) error {
 func (k *Interfaces) LinkModify(link netlink.Link) error {
 	return netlink.LinkModify(link)
 }
+
+type PacketMetadata struct {
+	SrcIfIndex int16
+	DstIfIndex int16
+	Context    uint32 // Context is extra value that can be set by the forwarding pipeline.
+}

@@ -27,6 +27,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/openconfig/lemming/dataplane/dplaneopts"
+	_ "github.com/openconfig/lemming/dataplane/kernel/tap"
 	"github.com/openconfig/lemming/dataplane/protocol"
 	"github.com/openconfig/lemming/dataplane/saiserver"
 	"github.com/openconfig/lemming/dataplane/saiserver/attrmgr"

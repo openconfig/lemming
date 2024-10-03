@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/vishvananda/netlink"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/testing/protocmp"
 
@@ -75,7 +76,7 @@ func TestStreamPackets(t *testing.T) {
 			}
 			fp := &fakePort{}
 			mgr.hostifs[1] = &port{
-				portIO:   fp,
+				PortIO:   fp,
 				cancelFn: func() {},
 			}
 			ctx, cancelFn := context.WithCancel(context.Background())
@@ -100,6 +101,11 @@ func TestStreamPackets(t *testing.T) {
 		})
 	}
 }
+
+type fakeLink struct{}
+
+func (l *fakeLink) Attrs() *netlink.LinkAttrs { return &netlink.LinkAttrs{} }
+func (l *fakeLink) Type() string              { return "" }
 
 func TestManagePorts(t *testing.T) {
 	tests := []struct {
@@ -127,10 +133,12 @@ func TestManagePorts(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unexpected error on New(): %v", err)
 			}
-			createTAPFunc = func(string) (*kernel.TapInterface, error) {
-				return &kernel.TapInterface{}, nil
+			builder[pktiopb.PortType_PORT_TYPE_NETDEV] = func(hpcm *pktiopb.HostPortControlMessage) (PortIO, error) {
+				return nil, nil
 			}
-
+			linkByName = func(name string) (netlink.Link, error) {
+				return &fakeLink{}, nil
+			}
 			hpc := &fakeHostPortControl{
 				msg: tt.msgs,
 			}
@@ -138,7 +146,7 @@ func TestManagePorts(t *testing.T) {
 				t.Fatalf("ManagePorts() unexpected error: %v", err)
 			}
 			if got := codes.Code(hpc.gotReqs[1].GetStatus().GetCode()); got != tt.want {
-				t.Fatalf("ManagePorts() unexpected result: got %v, want %v", got, tt.want)
+				t.Fatalf("ManagePorts() unexpected result: got %v, want %v", hpc.gotReqs[1].GetStatus(), tt.want)
 			}
 		})
 	}
@@ -150,7 +158,7 @@ type portWriteData struct {
 }
 
 type fakePort struct {
-	portIO
+	PortIO
 	writtenData []*portWriteData
 }
 

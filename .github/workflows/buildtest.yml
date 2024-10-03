@@ -36,7 +36,7 @@ jobs:
             ${{ runner.os }}-bazel-
       - name: Install pcap
         run: |
-          sudo apt-get install libpcap-dev
+          sudo apt-get install libpcap-dev libnl-genl-3-dev libnl-3-dev
       - name: Build Lemming
         run: bazel build //...
       - name: Save Bazel Cache
@@ -63,7 +63,7 @@ jobs:
             ${{ runner.os }}-bazel-
       - name: Install pcap
         run: |
-          sudo apt-get install libpcap-dev
+          sudo apt-get install libpcap-dev libnl-genl-3-dev libnl-3-dev
       - name: Test
         run: make coverage
       - name: Coveralls

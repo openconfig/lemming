@@ -69,6 +69,12 @@ message PacketOut {
   Packet packet = 1;
 }
 
+enum PortType {
+  PORT_TYPE_UNSPECIFIED = 0;
+  PORT_TYPE_NETDEV = 1;
+  PORT_TYPE_GENETLINK = 2;
+}
+
 service PacketIO {
   // HostPortControl requests creation and deletion of host ports.
   // Flow:

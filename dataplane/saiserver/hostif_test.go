@@ -83,7 +83,7 @@ func TestCreateHostif(t *testing.T) {
 			dplane := &fakeSwitchDataplane{
 				ctx: fwdcontext.New("foo", "foo"),
 			}
-			dplane.ctx.SetPacketSink(func(*fwdpb.PacketSinkResponse) error { return nil })
+			dplane.ctx.SetCPUPortSink(func(po *pktiopb.PacketOut) error { return nil }, func() {})
 			c, mgr, stopFn := newTestHostif(t, dplane)
 			// Create switch and ports
 			mgr.StoreAttributes(mgr.NextID(), &saipb.SwitchAttribute{

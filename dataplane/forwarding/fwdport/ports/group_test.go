@@ -127,7 +127,6 @@ func TestPortGroupHash(t *testing.T) {
 	defer ctrl.Finish()
 
 	names := []string{"p1", "p2", "p3", "p4"}
-	ctx := fwdcontext.New("test", "fwd")
 
 	hashFn := []fwdpb.AggregateHashAlgorithm{
 		fwdpb.AggregateHashAlgorithm_AGGREGATE_HASH_ALGORITHM_CRC16,
@@ -135,6 +134,7 @@ func TestPortGroupHash(t *testing.T) {
 	}
 
 	for id, fn := range hashFn {
+		ctx := fwdcontext.New("test", "fwd")
 		var ports []fwdport.Port
 		for _, name := range names {
 			ports = append(ports, porttestutil.CreateTestPort(t, ctx, fmt.Sprintf("%v-%v", name, id)))
