@@ -23,6 +23,7 @@ import (
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdport"
+	"github.com/openconfig/lemming/dataplane/forwarding/infra/deadlock"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdobject"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdpacket"
@@ -131,7 +132,7 @@ func (p *CPUPort) punt(v any) {
 	response := &pktiopb.PacketOut{
 		Packet: &pktiopb.Packet{
 			InputPort:  uint64(ingressID),
-			OutputPort: uint64(0),
+			OutputPort: uint64(0), // TODO: If the packet was punted after the FIB, this not be output port.
 			HostPort:   binary.BigEndian.Uint64(hostPort),
 			Frame:      packet.Frame(),
 		},
@@ -144,8 +145,8 @@ func (p *CPUPort) punt(v any) {
 		return
 	}
 
-	// timer := deadlock.NewTimer(deadlock.Timeout, fmt.Sprintf("Punting packet from port %v", p))
-	// defer timer.Stop()
+	timer := deadlock.NewTimer(deadlock.Timeout, fmt.Sprintf("Punting packet from port %v", p))
+	defer timer.Stop()
 	if err := ps(response); err != nil {
 		fwdport.Increment(p, packet.Length(), fwdpb.CounterId_COUNTER_ID_TX_ERROR_PACKETS, fwdpb.CounterId_COUNTER_ID_TX_ERROR_OCTETS)
 		log.Errorf("ports: Unable to punt packet, request %+v, err %v.", response, err)

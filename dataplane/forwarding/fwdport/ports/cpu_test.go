@@ -56,7 +56,6 @@ func TestCpuWrite(t *testing.T) {
 	}
 	ctx.SetCPUPortSink(ps.Send, func() {})
 
-	// Create a CPU port that exports the ETHER_TYPE and IP_ADDR_DST
 	desc := &fwdpb.PortDesc{
 		PortType: fwdpb.PortType_PORT_TYPE_CPU_PORT,
 		PortId:   fwdport.MakeID(fwdobject.NewID(name)),

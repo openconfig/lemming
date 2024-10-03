@@ -41,13 +41,13 @@ struct nl_sock* create_port(const char* family, const char* group) {
   nl_socket_disable_auto_ack(sock);
   int error = genl_connect(sock);
   if (error < 0) {
-    fprintf(stderr, "error: failed to disable auto ack");
+    fprintf(stderr, "error: failed to disable auto ack: err %d", error);
     nl_socket_free(sock);
     return NULL;
   }
   int group_id = genl_ctrl_resolve_grp(sock, family, group);
   if (group_id < 0) {
-    fprintf(stderr, "error: failed to resolve group");
+    fprintf(stderr, "error: failed to resolve group: err %d", group_id);
     nl_socket_free(sock);
     return NULL;
   }
@@ -60,6 +60,10 @@ void delete_port(void* sock) { nl_socket_free(sock); }
 int send_packet(void* sock, int family, const void* pkt, uint32_t size,
                 int in_ifindex, int out_ifindex, unsigned int context) {
   struct nl_msg* msg = nlmsg_alloc();
+  if (msg == NULL) {
+    fprintf(stderr, "failed to allocate packet\n");
+    return -1;
+  }
   genlmsg_put(msg, NL_AUTO_PORT, NL_AUTO_SEQ, family, 0, 0, 0, 1);
   NLA_PUT_S16(msg, GENL_PACKET_ATTR_IIFINDEX, in_ifindex);
   NLA_PUT_S16(msg, GENL_PACKET_ATTR_OIFINDEX, out_ifindex);
