@@ -1377,8 +1377,6 @@ github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 h1:0CwZNZbxp69SHPd
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5/go.mod h1:wHh0iHkYZB8zMSxRWpUBQtwG5a7fFgvEO+odwuTv2gs=
 github.com/boombuler/barcode v1.0.0/go.mod h1:paBWMcWSl3LHKBqUq+rly7CNSldXjb2rDl3JlRe0mD8=
 github.com/boombuler/barcode v1.0.1/go.mod h1:paBWMcWSl3LHKBqUq+rly7CNSldXjb2rDl3JlRe0mD8=
-github.com/bstoll/gnsi v0.0.0-20240521212038-98858ebbeb0b h1:WwIuKAJWt/f6MZVpyxaES5w+cS9xeL2yk8ucfnHbtC8=
-github.com/bstoll/gnsi v0.0.0-20240521212038-98858ebbeb0b/go.mod h1:RiHTEIb2ruIeWOOamms6vqbZtgmajDx+g5YJlF2hZ0k=
 github.com/carlmontanari/difflibgo v0.0.0-20210718194309-31b9e131c298 h1:Y8rTum6LZ8oP/2aC+OaaP76OCjHbunKMkim81mzNCH0=
 github.com/carlmontanari/difflibgo v0.0.0-20210718194309-31b9e131c298/go.mod h1:+3MuSIeC3qmdSesR12cTLeb47R/Vvo+bHdB6hC5HShk=
 github.com/cenkalti/backoff/v4 v4.0.0/go.mod h1:eEew/i+1Q6OrCDZh3WiXYv3+nJwBASZ8Bog/87DQnVg=
@@ -1792,6 +1790,8 @@ github.com/openconfig/gnoi v0.4.1 h1:sONbBqRBKjPT6voRAFqhTkUIatAajBp+YRLCWgyS4Dk
 github.com/openconfig/gnoi v0.4.1/go.mod h1:KDWxp9YvfRNR5BbiLy6uQSzHUpGhAtO8C80XXKLqNqU=
 github.com/openconfig/gnoigo v0.0.0-20240320202954-ebd033e3542c h1:egPgBUBDn0XEtbz0CvE+Bh/I/3iTzwzMq5/rmtPJdQs=
 github.com/openconfig/gnoigo v0.0.0-20240320202954-ebd033e3542c/go.mod h1:Se/HklUcFVcCGB66khgYouiesLRPoa4UL1ovvmE/68k=
+github.com/openconfig/gnsi v1.6.0 h1:PfQa9Gy0lH1sHqA2L3Gj2fEh2zPMbWxMmIRQv2Nk1T8=
+github.com/openconfig/gnsi v1.6.0/go.mod h1:RiHTEIb2ruIeWOOamms6vqbZtgmajDx+g5YJlF2hZ0k=
 github.com/openconfig/gocloser v0.0.0-20220310182203-c6c950ed3b0b h1:NSYuxdlOWLldNpid1dThR6Dci96juXioUguMho6aliI=
 github.com/openconfig/gocloser v0.0.0-20220310182203-c6c950ed3b0b/go.mod h1:uhC/ybmPapgeyAL2b9ZrUQ+DZE+DB+J+/7377PX+lek=
 github.com/openconfig/goyang v0.0.0-20200115183954-d0a48929f0ea/go.mod h1:dhXaV0JgHJzdrHi2l+w0fZrwArtXL7jEFoiqLEdmkvU=
