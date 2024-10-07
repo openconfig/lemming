@@ -16,12 +16,11 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0
 	github.com/kentik/patricia v1.2.1
 	github.com/mdlayher/genetlink v1.3.2
-	github.com/mdlayher/netlink v1.7.2
 	github.com/open-traffic-generator/snappi/gosnappi v1.5.1
 	github.com/openconfig/gnmi v0.11.0
 	github.com/openconfig/gnoi v0.4.1
 	github.com/openconfig/gnoigo v0.0.0-20240320202954-ebd033e3542c
-	github.com/openconfig/gnsi v1.4.5
+	github.com/openconfig/gnsi v1.6.0
 	github.com/openconfig/goyang v1.4.5
 	github.com/openconfig/gribi v1.0.0
 	github.com/openconfig/gribigo v0.0.0-20240712014900-6e0dad60c17a
@@ -116,6 +115,7 @@ require (
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.19 // indirect
+	github.com/mdlayher/netlink v1.7.2 // indirect
 	github.com/mdlayher/socket v0.5.1 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/moby/spdystream v0.2.0 // indirect
@@ -177,5 +177,3 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
-
-replace github.com/openconfig/gnsi => github.com/bstoll/gnsi v0.0.0-20240521212038-98858ebbeb0b

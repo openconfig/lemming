@@ -487,7 +487,7 @@ func (port *port) SetPortAttribute(ctx context.Context, req *saipb.SetPortAttrib
 	if req.FecModeExtended != nil && len(port.opts.HardwareProfile.FECModes) > 0 {
 		supported := checkFECMode(req.GetFecModeExtended(), int(portAttr.GetAttr().GetSpeed()), len(portAttr.GetAttr().GetHwLaneList()), port.opts.HardwareProfile.FECModes)
 		if !supported {
-			return nil, fmt.Errorf("unsupported FEC mode: %v", req.GetFecModeExtended())
+			return nil, fmt.Errorf("unsupported FEC mode: %v for speed %d and lanes %d", req.GetFecModeExtended(), portAttr.GetAttr().GetSpeed(), len(portAttr.GetAttr().GetHwLaneList()))
 		}
 	}
 	return &saipb.SetPortAttributeResponse{}, nil
