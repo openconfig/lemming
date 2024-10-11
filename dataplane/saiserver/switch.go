@@ -855,7 +855,7 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 func (sw *saiSwitch) createInvalidPacketFilter(ctx context.Context) error {
 	ips := map[string]map[fwdpb.PacketFieldNum][]string{
 		invalidIngressV4Table: {
-			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC: {"224.0.0.0/4", "127.0.0.0/8"},
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC: {"127.0.0.0/8"},
 			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST: {"224.0.0.0/4", "127.0.0.0/8", "255.255.255.255/24"},
 		},
 		invalidIngressV6Table: {

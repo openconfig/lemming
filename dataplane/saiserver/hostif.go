@@ -324,15 +324,44 @@ const (
 )
 
 func (hostif *hostif) CreateHostifTableEntry(ctx context.Context, req *saipb.CreateHostifTableEntryRequest) (*saipb.CreateHostifTableEntryResponse, error) {
+	cpuPortReq := &saipb.GetSwitchAttributeRequest{Oid: switchID, AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_CPU_PORT}}
+	resp := &saipb.GetSwitchAttributeResponse{}
+	if err := hostif.mgr.PopulateAttributes(cpuPortReq, resp); err != nil {
+		return nil, err
+	}
+
 	switch entryType := req.GetType(); entryType {
 	case saipb.HostifTableEntryType_HOSTIF_TABLE_ENTRY_TYPE_TRAP_ID:
 		hostif.trapIDToHostifID[req.GetTrapId()] = req.GetHostIf()
-		_, err := hostif.dataplane.TableEntryAdd(ctx, fwdconfig.TableEntryAddRequest(hostif.dataplane.ID(), trapIDToHostifTable).
+		tReq := fwdconfig.TableEntryAddRequest(hostif.dataplane.ID(), trapIDToHostifTable).
 			AppendEntry(
 				fwdconfig.EntryDesc(fwdconfig.ExactEntry(
 					fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TRAP_ID).WithUint64(req.GetTrapId()))),
 				fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_HOST_PORT_ID).WithUint64Value(req.GetHostIf()))).
-			Build())
+			Build()
+
+		hostifReq := &saipb.GetHostifAttributeRequest{Oid: req.GetHostIf(), AttrType: []saipb.HostifAttr{saipb.HostifAttr_HOSTIF_ATTR_TYPE}}
+		hostifResp := &saipb.GetHostifAttributeResponse{}
+		if err := hostif.mgr.PopulateAttributes(hostifReq, hostifResp); err != nil {
+			return nil, err
+		}
+		// For GENETLINK trap rules, also send the packet to the correct netdev.
+		if hostifResp.GetAttr().GetType() == saipb.HostifType_HOSTIF_TYPE_GENETLINK {
+			tReq.Entries[0].Actions = append(tReq.Entries[0].Actions, &fwdpb.ActionDesc{
+				ActionType: fwdpb.ActionType_ACTION_TYPE_MIRROR,
+				Action: &fwdpb.ActionDesc_Mirror{
+					Mirror: &fwdpb.MirrorActionDesc{
+						FieldIds:   []*fwdpb.PacketFieldId{},
+						PortAction: fwdpb.PortAction_PORT_ACTION_OUTPUT,
+						PortId: &fwdpb.PortId{
+							ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(resp.GetAttr().GetCpuPort())},
+						},
+					},
+				},
+			})
+		}
+
+		_, err := hostif.dataplane.TableEntryAdd(ctx, tReq)
 		if err != nil {
 			return nil, err
 		}
