@@ -854,13 +854,13 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 // https://www.rfc-editor.org/rfc/rfc1812#section-5.3.7
 func (sw *saiSwitch) createInvalidPacketFilter(ctx context.Context) error {
 	ips := map[string]map[fwdpb.PacketFieldNum][]string{
-		invalidIngressV4Table: {
-			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC: {"127.0.0.0/8"},
-			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST: {"224.0.0.0/4", "127.0.0.0/8", "255.255.255.255/24"},
+		invalidIngressV4Table: { /*                               LOOPBACK      BROADCAST             MULTICAST */
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC: {"127.0.0.0/8", "255.255.255.255/32", "224.0.0.0/4"},
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST: {"127.0.0.0/8", "255.255.255.255/32"},
 		},
-		invalidIngressV6Table: {
-			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC: {"ff00::/8"},
-			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST: {"ff00::/8", "fe80::/10"},
+		invalidIngressV6Table: { /*                              LOOPBACK  MULTICAST*/
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_SRC: {"::1/128", "ff00::/8"},
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST: {"::1/128"},
 		},
 	}
 	// Packets can't have multicast, or loopback IP as the source IP.
