@@ -61,7 +61,10 @@ func (p *policer) CreatePolicer(ctx context.Context, req *saipb.CreatePolicerReq
 		action = &fwdpb.ActionDesc{
 			ActionType: fwdpb.ActionType_ACTION_TYPE_MIRROR,
 			Action: &fwdpb.ActionDesc_Mirror{Mirror: &fwdpb.MirrorActionDesc{
-				PortId:     &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(resp.GetAttr().GetCpuPort())}},
+				PortId: &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(resp.GetAttr().GetCpuPort())}},
+				FieldIds: []*fwdpb.PacketFieldId{{
+					Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TRAP_ID},
+				}},
 				PortAction: fwdpb.PortAction_PORT_ACTION_OUTPUT,
 			}},
 		}
