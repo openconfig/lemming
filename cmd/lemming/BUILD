@@ -33,7 +33,10 @@ oci_image(
     name = "image",
     base = "@debian_bookworm",
     entrypoint = ["/lemming/lemming"],
-    tars = [":bin-tar"],
+    tars = [
+        ":bin-tar",
+        "@bookworm//libpcap-dev/amd64",
+    ],
 )
 
 # Note: This is image isn't suitable for release, as it doesn't contain license information.

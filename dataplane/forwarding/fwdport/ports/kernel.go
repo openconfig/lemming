@@ -19,10 +19,9 @@ package ports
 import (
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/google/gopacket"
-	"github.com/google/gopacket/afpacket"
+	"github.com/google/gopacket/pcap"
 	"github.com/vishvananda/netlink"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdaction"
@@ -121,10 +120,6 @@ func (p *kernelPort) process() {
 				return
 			default:
 				d, _, err := p.handle.ReadPacketData()
-				if err == afpacket.ErrTimeout || err == afpacket.ErrPoll { // Don't log this error as it is very spammy.
-					time.Sleep(1 * time.Millisecond) // TODO: Tune this parameter, avoid busy looping.
-					continue
-				}
 				if err != nil {
 					log.Warningf("err reading packet data for %v: %v", p.devName, err)
 					continue
@@ -193,8 +188,10 @@ func (kernelBuilder) Build(portDesc *fwdpb.PortDesc, ctx *fwdcontext.Context) (f
 		return nil, fmt.Errorf("failed to set arp_ignore to 2: %v", err)
 	}
 
+	netlink.LinkSetUp(l)
+
 	// TODO: configure MTU
-	handle, err := afpacket.NewTPacket(afpacket.OptInterface(kp.Kernel.GetDeviceName()) /*afpacket.OptPollTimeout(time.Second)*/)
+	handle, err := pcap.OpenLive(kp.Kernel.GetDeviceName(), 1514, true, pcap.BlockForever)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create afpacket: %v", err)
 	}

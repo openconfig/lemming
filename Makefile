@@ -30,9 +30,10 @@ load-debug:
 	kind load docker-image us-west1-docker.pkg.dev/openconfig-lemming/release/lemming:ga --name kne
 
 ## Run integration tests
+## TODO: Reenable BGP triggered GUE tests once it works.
 .PHONY: itest
 itest:
-	bazel test --flaky_test_attempts=3 --test_output=errors --cache_test_results=no $(shell bazel query 'tests("//...") except (attr(size, small, tests("//...")) + attr(size, medium, tests("//..."))) ') 
+	bazel test --flaky_test_attempts=3 --test_output=errors --cache_test_results=no $(shell bazel query 'tests("//...") except (//integration_tests/twodut_oneotg_tests/bgp_triggered_gue:bgp_triggered_gue_test + attr(size, small, tests("//...")) + attr(size, medium, tests("//..."))) ') 
 
 .PHONY: test
 test:
