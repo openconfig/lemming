@@ -57,6 +57,7 @@ oci_image(
     tars = [
         ":bin-tar",
         ":cacerts",
+        "@bookworm//libpcap-dev/amd64",
     ],
 )
 

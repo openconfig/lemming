@@ -11,3 +11,4 @@ archs:
 
 packages:
   - "ca-certificates"
+  - "libpcap-dev"

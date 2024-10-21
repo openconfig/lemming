@@ -79,6 +79,638 @@
 			"sha256": "1a03df5a57833d65b5bb08cfa19d50e76f29088dc9e64fb934af42d9023a0807",
 			"url": "https://snapshot.debian.org/archive/debian/20240917T144520Z/pool/main/g/gcc-12/gcc-12-base_12.2.0-14_amd64.deb",
 			"version": "12.2.0-14"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [
+				{
+					"key": "libpcap0.8-dev_1.10.3-1_amd64",
+					"name": "libpcap0.8-dev",
+					"version": "1.10.3-1"
+				},
+				{
+					"key": "libpcap0.8_1.10.3-1_amd64",
+					"name": "libpcap0.8",
+					"version": "1.10.3-1"
+				},
+				{
+					"key": "libdbus-1-3_1.14.10-1_deb12u1_amd64",
+					"name": "libdbus-1-3",
+					"version": "1.14.10-1~deb12u1"
+				},
+				{
+					"key": "libsystemd0_252.30-1_deb12u2_amd64",
+					"name": "libsystemd0",
+					"version": "252.30-1~deb12u2"
+				},
+				{
+					"key": "libzstd1_1.5.4-p-dfsg2-5_amd64",
+					"name": "libzstd1",
+					"version": "1.5.4+dfsg2-5"
+				},
+				{
+					"key": "libc6_2.36-9-p-deb12u8_amd64",
+					"name": "libc6",
+					"version": "2.36-9+deb12u8"
+				},
+				{
+					"key": "libgcc-s1_12.2.0-14_amd64",
+					"name": "libgcc-s1",
+					"version": "12.2.0-14"
+				},
+				{
+					"key": "gcc-12-base_12.2.0-14_amd64",
+					"name": "gcc-12-base",
+					"version": "12.2.0-14"
+				},
+				{
+					"key": "liblzma5_5.4.1-0.2_amd64",
+					"name": "liblzma5",
+					"version": "5.4.1-0.2"
+				},
+				{
+					"key": "liblz4-1_1.9.4-1_amd64",
+					"name": "liblz4-1",
+					"version": "1.9.4-1"
+				},
+				{
+					"key": "libgcrypt20_1.10.1-3_amd64",
+					"name": "libgcrypt20",
+					"version": "1.10.1-3"
+				},
+				{
+					"key": "libgpg-error0_1.46-1_amd64",
+					"name": "libgpg-error0",
+					"version": "1.46-1"
+				},
+				{
+					"key": "libcap2_1-2.66-4_amd64",
+					"name": "libcap2",
+					"version": "1:2.66-4"
+				},
+				{
+					"key": "libdbus-1-dev_1.14.10-1_deb12u1_amd64",
+					"name": "libdbus-1-dev",
+					"version": "1.14.10-1~deb12u1"
+				},
+				{
+					"key": "xml-core_0.18-p-nmu1_amd64",
+					"name": "xml-core",
+					"version": "0.18+nmu1"
+				},
+				{
+					"key": "sgml-base_1.31_amd64",
+					"name": "sgml-base",
+					"version": "1.31"
+				},
+				{
+					"key": "dpkg_1.21.22_amd64",
+					"name": "dpkg",
+					"version": "1.21.22"
+				},
+				{
+					"key": "tar_1.34-p-dfsg-1.2-p-deb12u1_amd64",
+					"name": "tar",
+					"version": "1.34+dfsg-1.2+deb12u1"
+				},
+				{
+					"key": "libselinux1_3.4-1-p-b6_amd64",
+					"name": "libselinux1",
+					"version": "3.4-1+b6"
+				},
+				{
+					"key": "libpcre2-8-0_10.42-1_amd64",
+					"name": "libpcre2-8-0",
+					"version": "10.42-1"
+				},
+				{
+					"key": "libacl1_2.3.1-3_amd64",
+					"name": "libacl1",
+					"version": "2.3.1-3"
+				},
+				{
+					"key": "zlib1g_1-1.2.13.dfsg-1_amd64",
+					"name": "zlib1g",
+					"version": "1:1.2.13.dfsg-1"
+				},
+				{
+					"key": "libmd0_1.0.4-2_amd64",
+					"name": "libmd0",
+					"version": "1.0.4-2"
+				},
+				{
+					"key": "libbz2-1.0_1.0.8-5-p-b1_amd64",
+					"name": "libbz2-1.0",
+					"version": "1.0.8-5+b1"
+				},
+				{
+					"key": "sed_4.9-1_amd64",
+					"name": "sed",
+					"version": "4.9-1"
+				},
+				{
+					"key": "pkg-config_1.8.1-1_amd64",
+					"name": "pkg-config",
+					"version": "1.8.1-1"
+				},
+				{
+					"key": "pkgconf_1.8.1-1_amd64",
+					"name": "pkgconf",
+					"version": "1.8.1-1"
+				},
+				{
+					"key": "pkgconf-bin_1.8.1-1_amd64",
+					"name": "pkgconf-bin",
+					"version": "1.8.1-1"
+				},
+				{
+					"key": "libpkgconf3_1.8.1-1_amd64",
+					"name": "libpkgconf3",
+					"version": "1.8.1-1"
+				},
+				{
+					"key": "libc6-dev_2.36-9-p-deb12u8_amd64",
+					"name": "libc6-dev",
+					"version": "2.36-9+deb12u8"
+				},
+				{
+					"key": "rpcsvc-proto_1.4.3-1_amd64",
+					"name": "rpcsvc-proto",
+					"version": "1.4.3-1"
+				},
+				{
+					"key": "libnsl-dev_1.3.0-2_amd64",
+					"name": "libnsl-dev",
+					"version": "1.3.0-2"
+				},
+				{
+					"key": "libtirpc-dev_1.3.3-p-ds-1_amd64",
+					"name": "libtirpc-dev",
+					"version": "1.3.3+ds-1"
+				},
+				{
+					"key": "libtirpc3_1.3.3-p-ds-1_amd64",
+					"name": "libtirpc3",
+					"version": "1.3.3+ds-1"
+				},
+				{
+					"key": "libtirpc-common_1.3.3-p-ds-1_amd64",
+					"name": "libtirpc-common",
+					"version": "1.3.3+ds-1"
+				},
+				{
+					"key": "libgssapi-krb5-2_1.20.1-2-p-deb12u2_amd64",
+					"name": "libgssapi-krb5-2",
+					"version": "1.20.1-2+deb12u2"
+				},
+				{
+					"key": "libkrb5support0_1.20.1-2-p-deb12u2_amd64",
+					"name": "libkrb5support0",
+					"version": "1.20.1-2+deb12u2"
+				},
+				{
+					"key": "libkrb5-3_1.20.1-2-p-deb12u2_amd64",
+					"name": "libkrb5-3",
+					"version": "1.20.1-2+deb12u2"
+				},
+				{
+					"key": "libssl3_3.0.14-1_deb12u2_amd64",
+					"name": "libssl3",
+					"version": "3.0.14-1~deb12u2"
+				},
+				{
+					"key": "libkeyutils1_1.6.3-2_amd64",
+					"name": "libkeyutils1",
+					"version": "1.6.3-2"
+				},
+				{
+					"key": "libk5crypto3_1.20.1-2-p-deb12u2_amd64",
+					"name": "libk5crypto3",
+					"version": "1.20.1-2+deb12u2"
+				},
+				{
+					"key": "libcom-err2_1.47.0-2_amd64",
+					"name": "libcom-err2",
+					"version": "1.47.0-2"
+				},
+				{
+					"key": "libnsl2_1.3.0-2_amd64",
+					"name": "libnsl2",
+					"version": "1.3.0-2"
+				},
+				{
+					"key": "libcrypt-dev_1-4.4.33-2_amd64",
+					"name": "libcrypt-dev",
+					"version": "1:4.4.33-2"
+				},
+				{
+					"key": "libcrypt1_1-4.4.33-2_amd64",
+					"name": "libcrypt1",
+					"version": "1:4.4.33-2"
+				},
+				{
+					"key": "linux-libc-dev_6.1.106-3_amd64",
+					"name": "linux-libc-dev",
+					"version": "6.1.106-3"
+				},
+				{
+					"key": "libc-dev-bin_2.36-9-p-deb12u8_amd64",
+					"name": "libc-dev-bin",
+					"version": "2.36-9+deb12u8"
+				}
+			],
+			"key": "libpcap-dev_1.10.3-1_amd64",
+			"name": "libpcap-dev",
+			"sha256": "ecce257d786f1734d78cbf8bd41a56b3b86626163e6027904bec31137e78e18c",
+			"url": "https://snapshot.debian.org/archive/debian/20240917T144520Z/pool/main/libp/libpcap/libpcap-dev_1.10.3-1_amd64.deb",
+			"version": "1.10.3-1"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "libpcap0.8-dev_1.10.3-1_amd64",
+			"name": "libpcap0.8-dev",
+			"sha256": "5f66e87262e42cc42a77d6acdb41098e4ff3e6db3bdba1b73189dea5a3afb88c",
+			"url": "https://snapshot.debian.org/archive/debian/20240917T144520Z/pool/main/libp/libpcap/libpcap0.8-dev_1.10.3-1_amd64.deb",
+			"version": "1.10.3-1"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "libpcap0.8_1.10.3-1_amd64",
+			"name": "libpcap0.8",
+			"sha256": "856014904c4d7ec9a9ba864c546d91c059b9bf00c7c89eda6fd0a16045f8faac",
+			"url": "https://snapshot.debian.org/archive/debian/20240917T144520Z/pool/main/libp/libpcap/libpcap0.8_1.10.3-1_amd64.deb",
+			"version": "1.10.3-1"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "libdbus-1-3_1.14.10-1_deb12u1_amd64",
+			"name": "libdbus-1-3",
+			"sha256": "18ee0ce5fab9f7b671e87da1e9fa18660e36e04a3402f24bdb8635e0ba1d35f6",
+			"url": "https://snapshot.debian.org/archive/debian/20240917T144520Z/pool/main/d/dbus/libdbus-1-3_1.14.10-1~deb12u1_amd64.deb",
+			"version": "1.14.10-1~deb12u1"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "libsystemd0_252.30-1_deb12u2_amd64",
+			"name": "libsystemd0",
+			"sha256": "25b3d3415228272059a2f2e60f36e361fcdbcf6f9f408cbdd47806743c0afcdf",
+			"url": "https://snapshot.debian.org/archive/debian/20240917T144520Z/pool/main/s/systemd/libsystemd0_252.30-1~deb12u2_amd64.deb",
+			"version": "252.30-1~deb12u2"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "libzstd1_1.5.4-p-dfsg2-5_amd64",
+			"name": "libzstd1",
+			"sha256": "6315b5ac38b724a710fb96bf1042019398cb656718b1522279a5185ed39318fa",
+			"url": "https://snapshot.debian.org/archive/debian/20240917T144520Z/pool/main/libz/libzstd/libzstd1_1.5.4+dfsg2-5_amd64.deb",
+			"version": "1.5.4+dfsg2-5"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "liblzma5_5.4.1-0.2_amd64",
+			"name": "liblzma5",
+			"sha256": "d4b7736e58512a2b047f9cb91b71db5a3cf9d3451192fc6da044c77bf51fe869",
+			"url": "https://snapshot.debian.org/archive/debian/20240917T144520Z/pool/main/x/xz-utils/liblzma5_5.4.1-0.2_amd64.deb",
+			"version": "5.4.1-0.2"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "liblz4-1_1.9.4-1_amd64",
+			"name": "liblz4-1",
+			"sha256": "64cde86cef1deaf828bd60297839b59710b5cd8dc50efd4f12643caaee9389d3",
+			"url": "https://snapshot.debian.org/archive/debian/20240917T144520Z/pool/main/l/lz4/liblz4-1_1.9.4-1_amd64.deb",
+			"version": "1.9.4-1"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "libgcrypt20_1.10.1-3_amd64",
+			"name": "libgcrypt20",
+			"sha256": "bffcac7e4f69e39d37d4a33e841d6371ac8b5aba6cd55546b385dc7ff6c702f5",
+			"url": "https://snapshot.debian.org/archive/debian/20240917T144520Z/pool/main/libg/libgcrypt20/libgcrypt20_1.10.1-3_amd64.deb",
+			"version": "1.10.1-3"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "libgpg-error0_1.46-1_amd64",
+			"name": "libgpg-error0",
+			"sha256": "89944ee11d7370ce6ef46fc52f094c4a6512eff8943ec4c6ebefeae6360ceada",
+			"url": "https://snapshot.debian.org/archive/debian/20240917T144520Z/pool/main/libg/libgpg-error/libgpg-error0_1.46-1_amd64.deb",
+			"version": "1.46-1"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "libcap2_1-2.66-4_amd64",
+			"name": "libcap2",
+			"sha256": "b36fefe9867f9e59b540f952e957a72ebdc241e997179d826da19a9511ade4a3",
+			"url": "https://snapshot.debian.org/archive/debian/20240917T144520Z/pool/main/libc/libcap2/libcap2_2.66-4_amd64.deb",
+			"version": "1:2.66-4"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "libdbus-1-dev_1.14.10-1_deb12u1_amd64",
+			"name": "libdbus-1-dev",
+			"sha256": "967a42e91eaa7d1885721b374a28cb0d30a0e63daaccf5e3594180bec6072c76",
+			"url": "https://snapshot.debian.org/archive/debian/20240917T144520Z/pool/main/d/dbus/libdbus-1-dev_1.14.10-1~deb12u1_amd64.deb",
+			"version": "1.14.10-1~deb12u1"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "xml-core_0.18-p-nmu1_amd64",
+			"name": "xml-core",
+			"sha256": "fcc5e2dfd3c6d1ffb50a73d9fd1d562724644f4ad779c7f695fea04e68febb0e",
+			"url": "https://snapshot.debian.org/archive/debian/20240917T144520Z/pool/main/x/xml-core/xml-core_0.18+nmu1_all.deb",
+			"version": "0.18+nmu1"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "sgml-base_1.31_amd64",
+			"name": "sgml-base",
+			"sha256": "bd69220c46abaec55f0d82f2fa103c3fc89ff7c921ac68f3f242ac790f04a35d",
+			"url": "https://snapshot.debian.org/archive/debian/20240917T144520Z/pool/main/s/sgml-base/sgml-base_1.31_all.deb",
+			"version": "1.31"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "dpkg_1.21.22_amd64",
+			"name": "dpkg",
+			"sha256": "9d97f27d8a8a06dd4800e8e0291337ca02e11cdfd7df09a4566a982a6d9fe4c4",
+			"url": "https://snapshot.debian.org/archive/debian/20240917T144520Z/pool/main/d/dpkg/dpkg_1.21.22_amd64.deb",
+			"version": "1.21.22"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "tar_1.34-p-dfsg-1.2-p-deb12u1_amd64",
+			"name": "tar",
+			"sha256": "24fb92e98c2969171f81a8b589263d705f6b1670f95d121cd74c810d4605acc3",
+			"url": "https://snapshot.debian.org/archive/debian/20240917T144520Z/pool/main/t/tar/tar_1.34+dfsg-1.2+deb12u1_amd64.deb",
+			"version": "1.34+dfsg-1.2+deb12u1"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "libselinux1_3.4-1-p-b6_amd64",
+			"name": "libselinux1",
+			"sha256": "2b07f5287b9105f40158b56e4d70cc1652dac56a408f3507b4ab3d061eed425f",
+			"url": "https://snapshot.debian.org/archive/debian/20240917T144520Z/pool/main/libs/libselinux/libselinux1_3.4-1+b6_amd64.deb",
+			"version": "3.4-1+b6"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "libpcre2-8-0_10.42-1_amd64",
+			"name": "libpcre2-8-0",
+			"sha256": "030db54f4d76cdfe2bf0e8eb5f9efea0233ab3c7aa942d672c7b63b52dbaf935",
+			"url": "https://snapshot.debian.org/archive/debian/20240917T144520Z/pool/main/p/pcre2/libpcre2-8-0_10.42-1_amd64.deb",
+			"version": "10.42-1"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "libacl1_2.3.1-3_amd64",
+			"name": "libacl1",
+			"sha256": "8be9df5795114bfe90e2be3d208ef47a5edd3fc7b3e20d387a597486d444e5e2",
+			"url": "https://snapshot.debian.org/archive/debian/20240917T144520Z/pool/main/a/acl/libacl1_2.3.1-3_amd64.deb",
+			"version": "2.3.1-3"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "zlib1g_1-1.2.13.dfsg-1_amd64",
+			"name": "zlib1g",
+			"sha256": "d7dd1d1411fedf27f5e27650a6eff20ef294077b568f4c8c5e51466dc7c08ce4",
+			"url": "https://snapshot.debian.org/archive/debian/20240917T144520Z/pool/main/z/zlib/zlib1g_1.2.13.dfsg-1_amd64.deb",
+			"version": "1:1.2.13.dfsg-1"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "libmd0_1.0.4-2_amd64",
+			"name": "libmd0",
+			"sha256": "03539fd30c509e27101d13a56e52eda9062bdf1aefe337c07ab56def25a13eab",
+			"url": "https://snapshot.debian.org/archive/debian/20240917T144520Z/pool/main/libm/libmd/libmd0_1.0.4-2_amd64.deb",
+			"version": "1.0.4-2"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "libbz2-1.0_1.0.8-5-p-b1_amd64",
+			"name": "libbz2-1.0",
+			"sha256": "54149da3f44b22d523b26b692033b84503d822cc5122fed606ea69cc83ca5aeb",
+			"url": "https://snapshot.debian.org/archive/debian/20240917T144520Z/pool/main/b/bzip2/libbz2-1.0_1.0.8-5+b1_amd64.deb",
+			"version": "1.0.8-5+b1"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "sed_4.9-1_amd64",
+			"name": "sed",
+			"sha256": "177cacdfe9508448d84bf25534a87a7fcc058d8e2dcd422672851ea13f2115df",
+			"url": "https://snapshot.debian.org/archive/debian/20240917T144520Z/pool/main/s/sed/sed_4.9-1_amd64.deb",
+			"version": "4.9-1"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "pkg-config_1.8.1-1_amd64",
+			"name": "pkg-config",
+			"sha256": "312b2bdeff4671f8e0d589c124554890e944dd083061e9ad6f129bc76a970765",
+			"url": "https://snapshot.debian.org/archive/debian/20240917T144520Z/pool/main/p/pkgconf/pkg-config_1.8.1-1_amd64.deb",
+			"version": "1.8.1-1"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "pkgconf_1.8.1-1_amd64",
+			"name": "pkgconf",
+			"sha256": "4e3ce982b5fedc6c6119268435504a64f5ffcc6d93aaecaea902d816eba1215f",
+			"url": "https://snapshot.debian.org/archive/debian/20240917T144520Z/pool/main/p/pkgconf/pkgconf_1.8.1-1_amd64.deb",
+			"version": "1.8.1-1"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "pkgconf-bin_1.8.1-1_amd64",
+			"name": "pkgconf-bin",
+			"sha256": "8fb5a8f83e46ad04b4cf02651ceec56c0611a335cf0d30780d859a95d0400174",
+			"url": "https://snapshot.debian.org/archive/debian/20240917T144520Z/pool/main/p/pkgconf/pkgconf-bin_1.8.1-1_amd64.deb",
+			"version": "1.8.1-1"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "libpkgconf3_1.8.1-1_amd64",
+			"name": "libpkgconf3",
+			"sha256": "da01fb901123ae498c36387a32240e09e1f2866810146c5a574273f7eaf31093",
+			"url": "https://snapshot.debian.org/archive/debian/20240917T144520Z/pool/main/p/pkgconf/libpkgconf3_1.8.1-1_amd64.deb",
+			"version": "1.8.1-1"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "libc6-dev_2.36-9-p-deb12u8_amd64",
+			"name": "libc6-dev",
+			"sha256": "7ae2baa371d1c920ae1116349c15e54a41744ed85d579c0c3ebf4e743c51c189",
+			"url": "https://snapshot.debian.org/archive/debian/20240917T144520Z/pool/main/g/glibc/libc6-dev_2.36-9+deb12u8_amd64.deb",
+			"version": "2.36-9+deb12u8"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "rpcsvc-proto_1.4.3-1_amd64",
+			"name": "rpcsvc-proto",
+			"sha256": "32ac0692694f8a34cc90c895f4fc739680fb2ef0e2d4870a68833682bf1c81a3",
+			"url": "https://snapshot.debian.org/archive/debian/20240917T144520Z/pool/main/r/rpcsvc-proto/rpcsvc-proto_1.4.3-1_amd64.deb",
+			"version": "1.4.3-1"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "libnsl-dev_1.3.0-2_amd64",
+			"name": "libnsl-dev",
+			"sha256": "bb81a188c119cd7fdebae723cbc95887b6c549b2fe4fb7e268a9c8846444da99",
+			"url": "https://snapshot.debian.org/archive/debian/20240917T144520Z/pool/main/libn/libnsl/libnsl-dev_1.3.0-2_amd64.deb",
+			"version": "1.3.0-2"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "libtirpc-dev_1.3.3-p-ds-1_amd64",
+			"name": "libtirpc-dev",
+			"sha256": "03326473eed54ffa27efae19aa5d6aeb402930968f869f318445513093691d55",
+			"url": "https://snapshot.debian.org/archive/debian/20240917T144520Z/pool/main/libt/libtirpc/libtirpc-dev_1.3.3+ds-1_amd64.deb",
+			"version": "1.3.3+ds-1"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "libtirpc3_1.3.3-p-ds-1_amd64",
+			"name": "libtirpc3",
+			"sha256": "2a46d5a5e9486da11ffeff5740931740d6deae4f92cd6098df060dc5dff1e1c7",
+			"url": "https://snapshot.debian.org/archive/debian/20240917T144520Z/pool/main/libt/libtirpc/libtirpc3_1.3.3+ds-1_amd64.deb",
+			"version": "1.3.3+ds-1"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "libtirpc-common_1.3.3-p-ds-1_amd64",
+			"name": "libtirpc-common",
+			"sha256": "3e3ef129b4bf61513144236e15e1b4ec57fa5ae3dc8a72137abdbefb7a63af85",
+			"url": "https://snapshot.debian.org/archive/debian/20240917T144520Z/pool/main/libt/libtirpc/libtirpc-common_1.3.3+ds-1_all.deb",
+			"version": "1.3.3+ds-1"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "libgssapi-krb5-2_1.20.1-2-p-deb12u2_amd64",
+			"name": "libgssapi-krb5-2",
+			"sha256": "454eb2ecb79e03682b176f04a54b8820ccf8868c074995d96fb6f4736f546cec",
+			"url": "https://snapshot.debian.org/archive/debian-security/20240917T144520Z/pool/updates/main/k/krb5/libgssapi-krb5-2_1.20.1-2+deb12u2_amd64.deb",
+			"version": "1.20.1-2+deb12u2"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "libkrb5support0_1.20.1-2-p-deb12u2_amd64",
+			"name": "libkrb5support0",
+			"sha256": "3bb1a8f9cfdd31f92e0cdd0a040c738a2de0d343afe7f830850e3ab7695e649c",
+			"url": "https://snapshot.debian.org/archive/debian-security/20240917T144520Z/pool/updates/main/k/krb5/libkrb5support0_1.20.1-2+deb12u2_amd64.deb",
+			"version": "1.20.1-2+deb12u2"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "libkrb5-3_1.20.1-2-p-deb12u2_amd64",
+			"name": "libkrb5-3",
+			"sha256": "9ce3d67db89417e1539f33a62ce85959dc96e3865ecad77606e2af1e6680d6da",
+			"url": "https://snapshot.debian.org/archive/debian-security/20240917T144520Z/pool/updates/main/k/krb5/libkrb5-3_1.20.1-2+deb12u2_amd64.deb",
+			"version": "1.20.1-2+deb12u2"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "libkeyutils1_1.6.3-2_amd64",
+			"name": "libkeyutils1",
+			"sha256": "cfac89e6a7a54ff3c6a4f843310e25efeddaa771baeae470bd98bd588c373563",
+			"url": "https://snapshot.debian.org/archive/debian/20240917T144520Z/pool/main/k/keyutils/libkeyutils1_1.6.3-2_amd64.deb",
+			"version": "1.6.3-2"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "libk5crypto3_1.20.1-2-p-deb12u2_amd64",
+			"name": "libk5crypto3",
+			"sha256": "de8ae0c2bb31c926b24c374c1159e8b8d5f9817421f45dd29f22cd201982ee3d",
+			"url": "https://snapshot.debian.org/archive/debian-security/20240917T144520Z/pool/updates/main/k/krb5/libk5crypto3_1.20.1-2+deb12u2_amd64.deb",
+			"version": "1.20.1-2+deb12u2"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "libcom-err2_1.47.0-2_amd64",
+			"name": "libcom-err2",
+			"sha256": "8010e4285276bb344c05ae780deae2fffb45e237116c3a78481365c5954125ec",
+			"url": "https://snapshot.debian.org/archive/debian/20240917T144520Z/pool/main/e/e2fsprogs/libcom-err2_1.47.0-2_amd64.deb",
+			"version": "1.47.0-2"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "libnsl2_1.3.0-2_amd64",
+			"name": "libnsl2",
+			"sha256": "c0d83437fdb016cb289436f49f28a36be44b3e8f1f2498c7e3a095f709c0d6f8",
+			"url": "https://snapshot.debian.org/archive/debian/20240917T144520Z/pool/main/libn/libnsl/libnsl2_1.3.0-2_amd64.deb",
+			"version": "1.3.0-2"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "libcrypt-dev_1-4.4.33-2_amd64",
+			"name": "libcrypt-dev",
+			"sha256": "81ccd29130f75a9e3adabc80e61921abff42f76761e1f792fa2d1bb69af7f52f",
+			"url": "https://snapshot.debian.org/archive/debian/20240917T144520Z/pool/main/libx/libxcrypt/libcrypt-dev_4.4.33-2_amd64.deb",
+			"version": "1:4.4.33-2"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "libcrypt1_1-4.4.33-2_amd64",
+			"name": "libcrypt1",
+			"sha256": "f5f60a5cdfd4e4eaa9438ade5078a57741a7a78d659fcb0c701204f523e8bd29",
+			"url": "https://snapshot.debian.org/archive/debian/20240917T144520Z/pool/main/libx/libxcrypt/libcrypt1_4.4.33-2_amd64.deb",
+			"version": "1:4.4.33-2"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "linux-libc-dev_6.1.106-3_amd64",
+			"name": "linux-libc-dev",
+			"sha256": "92e1785628599defb198b1cfac9a8b8f40af47a3a7e290ba4d09f08a81a42dc0",
+			"url": "https://snapshot.debian.org/archive/debian/20240917T144520Z/pool/main/l/linux/linux-libc-dev_6.1.106-3_amd64.deb",
+			"version": "6.1.106-3"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "libc-dev-bin_2.36-9-p-deb12u8_amd64",
+			"name": "libc-dev-bin",
+			"sha256": "20d0917b8ff1e2a62c92d2b300e9573c1948c7220c2e29de96c69746001dfe57",
+			"url": "https://snapshot.debian.org/archive/debian/20240917T144520Z/pool/main/g/glibc/libc-dev-bin_2.36-9+deb12u8_amd64.deb",
+			"version": "2.36-9+deb12u8"
 		}
 	],
 	"version": 1
