@@ -821,6 +821,12 @@ def go_repositories():
         version = "v0.0.0-20210719221736-1c9a4c676720",
     )
     go_repository(
+        name = "com_github_googlecloudplatform_opentelemetry_operations_go_detectors_gcp",
+        importpath = "github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp",
+        sum = "h1:cZpsGsWTIFKymTA0je7IIvi1O7Es7apb9CF3EQlOcfE=",
+        version = "v1.24.2",
+    )
+    go_repository(
         name = "com_github_googlecloudplatform_opentelemetry_operations_go_exporter_trace",
         importpath = "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace",
         sum = "h1:01bHLeqkrxYSkjvyTBEZ8rxBxDhWm1snWGEW73Te4lU=",
@@ -2117,8 +2123,8 @@ def go_repositories():
     go_repository(
         name = "com_google_cloud_go_compute_metadata",
         importpath = "cloud.google.com/go/compute/metadata",
-        sum = "h1:Zr0eK8JbFv6+Wi4ilXAR8FJ3wyNdpxHKJNPos6LTZOY=",
-        version = "v0.5.0",
+        sum = "h1:UxK4uu/Tn+I3p2dYWTfiX4wva7aYlKixAHn3fyqngqo=",
+        version = "v0.5.2",
     )
     go_repository(
         name = "com_google_cloud_go_contactcenterinsights",
@@ -2971,6 +2977,12 @@ def go_repositories():
         version = "v0.24.0",
     )
     go_repository(
+        name = "io_opentelemetry_go_contrib_detectors_gcp",
+        importpath = "go.opentelemetry.io/contrib/detectors/gcp",
+        sum = "h1:G1JQOreVrfhRkner+l4mrGxmfqYCAuy76asTDAo0xsA=",
+        version = "v1.31.0",
+    )
+    go_repository(
         name = "io_opentelemetry_go_contrib_instrumentation_google_golang_org_grpc_otelgrpc",
         importpath = "go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc",
         sum = "h1:vS1Ao/R55RNV4O7TA2Qopok8yN+X0LIP6RVWLFkprck=",
@@ -2985,8 +2997,8 @@ def go_repositories():
     go_repository(
         name = "io_opentelemetry_go_otel",
         importpath = "go.opentelemetry.io/otel",
-        sum = "h1:F2t8sK4qf1fAmY9ua4ohFS/K+FUuOPemHUIXHtktrts=",
-        version = "v1.30.0",
+        sum = "h1:NsJcKPIW0D0H3NgzPDHmo0WW6SptzPdqg/L1zsIm2hY=",
+        version = "v1.31.0",
     )
     go_repository(
         name = "io_opentelemetry_go_otel_exporters_otlp_otlptrace",
@@ -3015,14 +3027,14 @@ def go_repositories():
     go_repository(
         name = "io_opentelemetry_go_otel_metric",
         importpath = "go.opentelemetry.io/otel/metric",
-        sum = "h1:4xNulvn9gjzo4hjg+wzIKG7iNFEaBMX00Qd4QIZs7+w=",
-        version = "v1.30.0",
+        sum = "h1:FSErL0ATQAmYHUIzSezZibnyVlft1ybhy4ozRPcF2fE=",
+        version = "v1.31.0",
     )
     go_repository(
         name = "io_opentelemetry_go_otel_sdk",
         importpath = "go.opentelemetry.io/otel/sdk",
-        sum = "h1:cHdik6irO49R5IysVhdn8oaiR9m8XluDaJAs4DfOrYE=",
-        version = "v1.30.0",
+        sum = "h1:xLY3abVHYZ5HSfOg3l2E5LUj2Cwva5Y7yGxnSW9H5Gk=",
+        version = "v1.31.0",
     )
     go_repository(
         name = "io_opentelemetry_go_otel_sdk_log",
@@ -3039,8 +3051,8 @@ def go_repositories():
     go_repository(
         name = "io_opentelemetry_go_otel_trace",
         importpath = "go.opentelemetry.io/otel/trace",
-        sum = "h1:7UBkkYzeg3C7kQX8VAidWh2biiQbtAKjyIML8dQ9wmc=",
-        version = "v1.30.0",
+        sum = "h1:ffjsj1aRouKewfr85U2aGagJ46+MvodynlQ1HYdmJys=",
+        version = "v1.31.0",
     )
     go_repository(
         name = "io_opentelemetry_go_proto_otlp",
@@ -3203,8 +3215,8 @@ def go_repositories():
     go_repository(
         name = "org_golang_x_sys",
         importpath = "golang.org/x/sys",
-        sum = "h1:r+8e+loiHxRqhXVl6ML1nO3l1+oFoWbnlu2Ehimmi34=",
-        version = "v0.25.0",
+        sum = "h1:KHjCJyddX0LoSTb3J+vWpupP9p0oznkqVk/IfjymZbo=",
+        version = "v0.26.0",
     )
     go_repository(
         name = "org_golang_x_term",

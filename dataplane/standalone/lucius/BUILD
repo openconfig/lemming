@@ -12,9 +12,11 @@ go_library(
         "//dataplane/dplaneopts",
         "//dataplane/saiserver",
         "//dataplane/saiserver/attrmgr",
+        "//internal/cloudlog",
         "//proto/forwarding",
         "@com_github_googlecloudplatform_opentelemetry_operations_go_exporter_trace//:trace",
         "@com_github_grpc_ecosystem_go_grpc_middleware_v2//interceptors/logging",
+        "@io_opentelemetry_go_contrib_detectors_gcp//:gcp",
         "@io_opentelemetry_go_contrib_instrumentation_google_golang_org_grpc_otelgrpc//:otelgrpc",
         "@io_opentelemetry_go_otel//:otel",
         "@io_opentelemetry_go_otel//propagation",
@@ -29,12 +31,6 @@ go_library(
         "@org_golang_google_grpc//metadata",
         "@org_golang_google_grpc//reflection",
     ],
-)
-
-go_binary(
-    name = "lucius",
-    embed = [":lucius_lib"],
-    visibility = ["//visibility:public"],
 )
 
 pkg_tar(
@@ -66,4 +62,10 @@ oci_tarball(
     name = "image-tar",
     image = ":image",
     repo_tags = ["us-west1-docker.pkg.dev/openconfig-lemming/release/lucius:ga"],
+)
+
+go_binary(
+    name = "lucius",
+    embed = [":lucius_lib"],
+    visibility = ["//visibility:public"],
 )

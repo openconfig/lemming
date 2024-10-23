@@ -25,6 +25,7 @@ import (
 
 	texporter "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
+	"go.opentelemetry.io/contrib/detectors/gcp"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/stdout/stdoutlog"
@@ -42,6 +43,7 @@ import (
 	"github.com/openconfig/lemming/dataplane/dplaneopts"
 	"github.com/openconfig/lemming/dataplane/saiserver"
 	"github.com/openconfig/lemming/dataplane/saiserver/attrmgr"
+	"github.com/openconfig/lemming/internal/cloudlog"
 
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
@@ -53,7 +55,7 @@ var (
 	_              = flag.String("port_map", "", "Map of modeled port names to Linux interface to  as comma seperated list (eg Ethernet8:eth1,Ethernet10,eth2) (deprecated, no-op will be removed in future release)")
 	_              = flag.Bool("eth_dev_as_lane", true, "If true, when creating ports, use ethX and hardware lane X (deprecated, no-op will always to true in future release)")
 	_              = flag.Bool("remote_cpu_port", true, "If true, send all packets from/to the CPU port over gRPC (deprecated, no-op will always to true in future release)")
-	gcpTelemExport = flag.Bool("gcp_telem_export", false, "If true, export OTEL telemetry to GCP")
+	gcpTelemExport = flag.Bool("gcp_telem_export", false, "If true, export OTEL telemetry and logs to GCP")
 	gcpProject     = flag.String("gcp_project", "", "GCP project to export to, by default it will use project where the GCE instance is running")
 	hwProfile      = flag.String("hw_profile", "", "Path to hardware profile config file.")
 )
@@ -126,10 +128,11 @@ func setupOTelSDK(ctx context.Context) (func(context.Context) error, error) {
 
 	var err error
 	if *gcpTelemExport {
-		exporter, err = texporter.New(texporter.WithProjectID(*gcpProject))
+		exporter, err = texporter.New(texporter.WithProjectID(*gcpProject), texporter.WithDestinationProjectQuota())
 		if err != nil {
 			return nil, err
 		}
+		cloudlog.SetGlobalLogger(ctx, *gcpProject, "lucius")
 	}
 
 	shutdown := func(ctx context.Context) error {
@@ -141,7 +144,10 @@ func setupOTelSDK(ctx context.Context) (func(context.Context) error, error) {
 		return err
 	}
 
-	res := resource.Default()
+	res, err := resource.New(ctx, resource.WithDetectors(gcp.NewDetector()), resource.WithHost(), resource.WithTelemetrySDK())
+	if err != nil {
+		return nil, err
+	}
 
 	// Set up propagator.
 	prop := newPropagator()
