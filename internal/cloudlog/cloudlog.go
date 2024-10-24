@@ -54,7 +54,7 @@ func SetGlobalLogger(ctx context.Context, project, logName string) error {
 				h.l.Flush()
 			case <-t.C:
 				if err := h.l.Flush(); err != nil {
-					fmt.Println(err)
+					fmt.Fprintf(os.Stderr, "log flush err: %v", err)
 				}
 			}
 		}
