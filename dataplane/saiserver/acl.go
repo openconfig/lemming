@@ -28,6 +28,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 
 	saipb "github.com/openconfig/lemming/dataplane/proto/sai"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
@@ -120,6 +121,12 @@ func (a *acl) CreateAclTableGroupMember(_ context.Context, req *saipb.CreateAclT
 // CreateAclTable is noop as the table is already created in the group.
 func (a *acl) CreateAclTable(context.Context, *saipb.CreateAclTableRequest) (*saipb.CreateAclTableResponse, error) {
 	id := a.mgr.NextID()
+
+	a.mgr.StoreAttributes(id, &saipb.AclTableAttribute{
+		AvailableAclEntry:   proto.Uint32(10000),
+		AvailableAclCounter: proto.Uint32(10000),
+	})
+
 	return &saipb.CreateAclTableResponse{Oid: id}, nil
 }
 
@@ -370,6 +377,17 @@ func (a *acl) CreateAclEntry(ctx context.Context, req *saipb.CreateAclEntryReque
 			aReq.Actions = append(aReq.Actions, &fwdpb.ActionDesc{ActionType: fwdpb.ActionType_ACTION_TYPE_DROP})
 		case saipb.PacketAction_PACKET_ACTION_TRAP: // COPY and DROP
 			aReq.Actions = append(aReq.Actions, fwdconfig.Action(fwdconfig.TransmitAction(fmt.Sprint(resp.GetAttr().GetCpuPort())).WithImmediate(true)).Build())
+		case saipb.PacketAction_PACKET_ACTION_COPY:
+			aReq.Actions = append(aReq.Actions, &fwdpb.ActionDesc{
+				ActionType: fwdpb.ActionType_ACTION_TYPE_MIRROR,
+				Action: &fwdpb.ActionDesc_Mirror{Mirror: &fwdpb.MirrorActionDesc{
+					PortId: &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(resp.GetAttr().GetCpuPort())}},
+					FieldIds: []*fwdpb.PacketFieldId{{
+						Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TRAP_ID},
+					}},
+					PortAction: fwdpb.PortAction_PORT_ACTION_OUTPUT,
+				}},
+			})
 		case saipb.PacketAction_PACKET_ACTION_LOG: // COPY and FORWARD
 			mirror := &fwdpb.ActionDesc{
 				ActionType: fwdpb.ActionType_ACTION_TYPE_MIRROR,
