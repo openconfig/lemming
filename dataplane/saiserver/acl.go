@@ -28,6 +28,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 
 	saipb "github.com/openconfig/lemming/dataplane/proto/sai"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
@@ -120,6 +121,12 @@ func (a *acl) CreateAclTableGroupMember(_ context.Context, req *saipb.CreateAclT
 // CreateAclTable is noop as the table is already created in the group.
 func (a *acl) CreateAclTable(context.Context, *saipb.CreateAclTableRequest) (*saipb.CreateAclTableResponse, error) {
 	id := a.mgr.NextID()
+
+	a.mgr.StoreAttributes(id, &saipb.AclTableAttribute{
+		AvailableAclEntry:   proto.Uint32(10000),
+		AvailableAclCounter: proto.Uint32(10000),
+	})
+
 	return &saipb.CreateAclTableResponse{Oid: id}, nil
 }
 
