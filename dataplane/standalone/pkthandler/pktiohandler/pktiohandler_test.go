@@ -90,7 +90,7 @@ func TestStreamPackets(t *testing.T) {
 				mgr.sendQueue.Write(pkt)
 			}
 			mgr.StreamPackets(ps)
-			time.Sleep(time.Millisecond) // Sleep long enough to drain the send queue.
+			time.Sleep(5 * time.Millisecond) // Sleep long enough to drain the send queue.
 
 			if d := cmp.Diff(ps.sendPackets, tt.wantSentPacket, protocmp.Transform()); d != "" {
 				t.Errorf("StreamPackets() failed: sent packet diff(-got,+want)\n:%s", d)
@@ -134,7 +134,7 @@ func TestManagePorts(t *testing.T) {
 				t.Fatalf("unexpected error on New(): %v", err)
 			}
 			builder[pktiopb.PortType_PORT_TYPE_NETDEV] = func(hpcm *pktiopb.HostPortControlMessage) (PortIO, error) {
-				return nil, nil
+				return &fakePort{}, nil
 			}
 			linkByName = func(name string) (netlink.Link, error) {
 				return &fakeLink{}, nil
@@ -160,6 +160,10 @@ type portWriteData struct {
 type fakePort struct {
 	PortIO
 	writtenData []*portWriteData
+}
+
+func (p *fakePort) Read([]byte) (int, error) {
+	return 0, nil
 }
 
 func (p *fakePort) Write(frame []byte, md *kernel.PacketMetadata) (int, error) {
