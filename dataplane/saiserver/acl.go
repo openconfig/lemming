@@ -19,6 +19,7 @@ import (
 	"context"
 	"encoding/binary"
 	"fmt"
+	"log/slog"
 	"math"
 	"sync"
 
@@ -232,6 +233,13 @@ func (a *acl) createAclEntryFields(req *saipb.CreateAclEntryRequest, id uint64, 
 			Masks:   binary.BigEndian.AppendUint16(nil, uint16(req.GetFieldEtherType().GetMaskUint())),
 		})
 	}
+	if req.GetFieldIcmpType() != nil {
+		aReq.EntryDesc.GetFlow().Fields = append(aReq.EntryDesc.GetFlow().Fields, &fwdpb.PacketFieldMaskedBytes{
+			FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP_TYPE}},
+			Bytes:   []byte{byte(req.GetFieldIcmpType().GetDataUint())},
+			Masks:   []byte{byte(req.GetFieldIcmpType().GetMaskUint())},
+		})
+	}
 	if req.GetFieldIcmpv6Type() != nil {
 		aReq.EntryDesc.GetFlow().Fields = append(aReq.EntryDesc.GetFlow().Fields, &fwdpb.PacketFieldMaskedBytes{
 			FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ICMP_TYPE}},
@@ -416,6 +424,7 @@ func (a *acl) RemoveAclEntry(ctx context.Context, req *saipb.RemoveAclEntryReque
 	if err := a.mgr.PopulateAllAttributes(fmt.Sprint(req.GetOid()), cReq); err != nil {
 		return nil, err
 	}
+	slog.InfoContext(ctx, "removing acl entry", "oid", req.Oid, "entry", cReq)
 	gb, ok := a.tableToLocation[cReq.GetTableId()]
 	if !ok {
 		return nil, status.Errorf(codes.FailedPrecondition, "table is not member of a group")
