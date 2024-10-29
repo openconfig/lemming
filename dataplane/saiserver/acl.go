@@ -168,6 +168,22 @@ func (a *acl) createAclEntryFields(req *saipb.CreateAclEntryRequest, id uint64, 
 			Masks:   binary.BigEndian.AppendUint64(nil, math.MaxUint64),
 		})
 	}
+	if req.GetFieldOutPort() != nil {
+		fwdCtx, err := a.dataplane.FindContext(&fwdpb.ContextId{Id: a.dataplane.ID()})
+		if err != nil {
+			return nil, err
+		}
+		obj, err := fwdCtx.Objects.FindID(&fwdpb.ObjectId{Id: fmt.Sprint(req.FieldOutPort.GetDataOid())})
+		if err != nil {
+			return nil, err
+		}
+		nid := obj.NID()
+		aReq.EntryDesc.GetFlow().Fields = append(aReq.EntryDesc.GetFlow().Fields, &fwdpb.PacketFieldMaskedBytes{
+			FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT}},
+			Bytes:   binary.BigEndian.AppendUint64(nil, uint64(nid)),
+			Masks:   binary.BigEndian.AppendUint64(nil, math.MaxUint64),
+		})
+	}
 	if req.GetFieldAclIpType() != nil { // Use the EtherType header to match against specific protocols.
 		fieldMask := &fwdpb.PacketFieldMaskedBytes{
 			FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_TYPE}},

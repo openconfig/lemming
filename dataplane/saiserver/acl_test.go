@@ -66,6 +66,9 @@ func TestCreateAclEntry(t *testing.T) {
 			FieldInPort: &saipb.AclFieldData{
 				Data: &saipb.AclFieldData_DataOid{DataOid: 1},
 			},
+			FieldOutPort: &saipb.AclFieldData{
+				Data: &saipb.AclFieldData_DataOid{DataOid: 1},
+			},
 			FieldDscp: &saipb.AclFieldData{
 				Data: &saipb.AclFieldData_DataUint{DataUint: 0b1},
 				Mask: &saipb.AclFieldData_MaskUint{MaskUint: 0b1},
@@ -137,6 +140,10 @@ func TestCreateAclEntry(t *testing.T) {
 							Masks:   []byte{255, 255, 255, 0},
 						}, {
 							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT}},
+							Bytes:   binary.BigEndian.AppendUint64(nil, 1),
+							Masks:   binary.BigEndian.AppendUint64(nil, math.MaxUint64),
+						}, {
+							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT}},
 							Bytes:   binary.BigEndian.AppendUint64(nil, 1),
 							Masks:   binary.BigEndian.AppendUint64(nil, math.MaxUint64),
 						}, {
