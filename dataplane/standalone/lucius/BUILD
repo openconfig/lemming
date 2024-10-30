@@ -26,7 +26,7 @@ go_library(
         "@io_opentelemetry_go_otel_sdk//trace",
         "@io_opentelemetry_go_otel_sdk_log//:log",
         "@io_opentelemetry_go_otel_sdk_metric//:metric",
-        "@org_golang_google_grpc//:go_default_library",
+        "@org_golang_google_grpc//:grpc",
         "@org_golang_google_grpc//credentials/insecure",
         "@org_golang_google_grpc//metadata",
         "@org_golang_google_grpc//reflection",

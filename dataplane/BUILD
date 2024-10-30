@@ -22,7 +22,7 @@ go_library(
         "//gnmi/reconciler",
         "@com_github_openconfig_gnmi//proto/gnmi",
         "@com_github_openconfig_ygnmi//ygnmi",
-        "@org_golang_google_grpc//:go_default_library",
+        "@org_golang_google_grpc//:grpc",
         "@org_golang_google_grpc//credentials/local",
         "@org_golang_google_grpc//reflection",
         "@org_golang_google_protobuf//proto",
@@ -60,7 +60,13 @@ go_library(
         "@io_bazel_rules_go//go/platform:openbsd": [
             "//dataplane/dplanerc",
         ],
+        "@io_bazel_rules_go//go/platform:osx": [
+            "//dataplane/dplanerc",
+        ],
         "@io_bazel_rules_go//go/platform:plan9": [
+            "//dataplane/dplanerc",
+        ],
+        "@io_bazel_rules_go//go/platform:qnx": [
             "//dataplane/dplanerc",
         ],
         "@io_bazel_rules_go//go/platform:solaris": [

@@ -11,7 +11,7 @@ go_library(
     deps = [
         "@com_github_spf13_cobra//:cobra",
         "@com_github_spf13_viper//:viper",
-        "@org_golang_google_grpc//:go_default_library",
+        "@org_golang_google_grpc//:grpc",
         "@org_golang_google_grpc//credentials",
         "@org_golang_google_grpc//credentials/insecure",
         "@org_golang_google_grpc//reflection/grpc_reflection_v1",
@@ -30,7 +30,7 @@ go_test(
     embed = [":sai"],
     deps = [
         "@com_github_google_go_cmp//cmp",
-        "@org_golang_google_grpc//:go_default_library",
+        "@org_golang_google_grpc//:grpc",
         "@org_golang_google_grpc//reflection/grpc_reflection_v1",
         "@org_golang_google_protobuf//proto",
         "@org_golang_google_protobuf//types/descriptorpb",

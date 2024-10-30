@@ -20,7 +20,9 @@ import (
 	"encoding/binary"
 	"fmt"
 	"log/slog"
+	"maps"
 	"math"
+	"slices"
 	"sync"
 
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
@@ -168,6 +170,22 @@ func (a *acl) createAclEntryFields(req *saipb.CreateAclEntryRequest, id uint64, 
 			Masks:   binary.BigEndian.AppendUint64(nil, math.MaxUint64),
 		})
 	}
+	if req.GetFieldOutPort() != nil {
+		fwdCtx, err := a.dataplane.FindContext(&fwdpb.ContextId{Id: a.dataplane.ID()})
+		if err != nil {
+			return nil, err
+		}
+		obj, err := fwdCtx.Objects.FindID(&fwdpb.ObjectId{Id: fmt.Sprint(req.FieldOutPort.GetDataOid())})
+		if err != nil {
+			return nil, err
+		}
+		nid := obj.NID()
+		aReq.EntryDesc.GetFlow().Fields = append(aReq.EntryDesc.GetFlow().Fields, &fwdpb.PacketFieldMaskedBytes{
+			FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT}},
+			Bytes:   binary.BigEndian.AppendUint64(nil, uint64(nid)),
+			Masks:   binary.BigEndian.AppendUint64(nil, math.MaxUint64),
+		})
+	}
 	if req.GetFieldAclIpType() != nil { // Use the EtherType header to match against specific protocols.
 		fieldMask := &fwdpb.PacketFieldMaskedBytes{
 			FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_TYPE}},
@@ -280,9 +298,10 @@ func (a *acl) createAclEntryFields(req *saipb.CreateAclEntryRequest, id uint64, 
 		if err := a.mgr.PopulateAllAttributes(fmt.Sprint(req.GetTableId()), table); err != nil {
 			return nil, err
 		}
-		for id, field := range req.GetUserDefinedFieldGroupMin() {
+		keys := maps.Keys(req.GetUserDefinedFieldGroupMin())
+		for _, key := range slices.Sorted(keys) {
 			udfGroup := &saipb.UdfGroupAttribute{}
-			if err := a.mgr.PopulateAllAttributes(fmt.Sprint(table.UserDefinedFieldGroupMin[id]), udfGroup); err != nil {
+			if err := a.mgr.PopulateAllAttributes(fmt.Sprint(table.UserDefinedFieldGroupMin[key]), udfGroup); err != nil {
 				return nil, err
 			}
 			for _, udfID := range udfGroup.GetUdfList() {
@@ -307,8 +326,8 @@ func (a *acl) createAclEntryFields(req *saipb.CreateAclEntryRequest, id uint64, 
 						Offset:      udf.GetOffset(),
 						Size:        udfGroup.GetLength(),
 					}},
-					Bytes: field.GetDataU8List(),
-					Masks: field.GetMaskU8List(),
+					Bytes: req.GetUserDefinedFieldGroupMin()[key].GetDataU8List(),
+					Masks: req.GetUserDefinedFieldGroupMin()[key].GetMaskU8List(),
 				})
 			}
 		}
@@ -411,7 +430,7 @@ func (a *acl) CreateAclEntry(ctx context.Context, req *saipb.CreateAclEntryReque
 			return nil, status.Errorf(codes.InvalidArgument, "unknown packet action type: %v", req.GetActionPacketAction().GetPacketAction())
 		}
 	}
-
+	slog.InfoContext(ctx, "creating acl entry", "oid", id, "entry", req, "fwdentry", aReq)
 	if _, err := a.dataplane.TableEntryAdd(ctx, aReq); err != nil {
 		return nil, err
 	}
@@ -424,7 +443,6 @@ func (a *acl) RemoveAclEntry(ctx context.Context, req *saipb.RemoveAclEntryReque
 	if err := a.mgr.PopulateAllAttributes(fmt.Sprint(req.GetOid()), cReq); err != nil {
 		return nil, err
 	}
-	slog.InfoContext(ctx, "removing acl entry", "oid", req.Oid, "entry", cReq)
 	gb, ok := a.tableToLocation[cReq.GetTableId()]
 	if !ok {
 		return nil, status.Errorf(codes.FailedPrecondition, "table is not member of a group")
@@ -435,6 +453,7 @@ func (a *acl) RemoveAclEntry(ctx context.Context, req *saipb.RemoveAclEntryReque
 		return nil, err
 	}
 
+	slog.InfoContext(ctx, "removing acl entry", "oid", req.Oid, "entry", cReq, "fwdentry", aReq)
 	if _, err := a.dataplane.TableEntryRemove(ctx, &fwdpb.TableEntryRemoveRequest{
 		ContextId: aReq.ContextId,
 		TableId:   aReq.TableId,
