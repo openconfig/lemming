@@ -453,7 +453,7 @@ func (a *acl) RemoveAclEntry(ctx context.Context, req *saipb.RemoveAclEntryReque
 		return nil, err
 	}
 
-	slog.InfoContext(ctx, "creating acl entry", "oid", req.Oid, "entry", cReq, "fwdentry", aReq)
+	slog.InfoContext(ctx, "removing acl entry", "oid", req.Oid, "entry", cReq, "fwdentry", aReq)
 	if _, err := a.dataplane.TableEntryRemove(ctx, &fwdpb.TableEntryRemoveRequest{
 		ContextId: aReq.ContextId,
 		TableId:   aReq.TableId,
