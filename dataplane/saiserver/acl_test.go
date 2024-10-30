@@ -49,12 +49,12 @@ func TestCreateAclEntry(t *testing.T) {
 		desc:    "no fields",
 		wantErr: "InvalidArgument",
 		req: &saipb.CreateAclEntryRequest{
-			TableId: proto.Uint64(1),
+			TableId: proto.Uint64(2),
 		},
 	}, {
 		desc: "all fields",
 		req: &saipb.CreateAclEntryRequest{
-			TableId: proto.Uint64(1),
+			TableId: proto.Uint64(2),
 			FieldDstIp: &saipb.AclFieldData{
 				Data: &saipb.AclFieldData_DataIp{
 					DataIp: []byte{127, 0, 0, 1},
@@ -194,7 +194,7 @@ func TestCreateAclEntry(t *testing.T) {
 	}, {
 		desc: "vrf action",
 		req: &saipb.CreateAclEntryRequest{
-			TableId: proto.Uint64(1),
+			TableId: proto.Uint64(2),
 			FieldDstIp: &saipb.AclFieldData{
 				Data: &saipb.AclFieldData_DataIp{
 					DataIp: []byte{127, 0, 0, 1},
@@ -244,7 +244,7 @@ func TestCreateAclEntry(t *testing.T) {
 	}, {
 		desc: "user trap action",
 		req: &saipb.CreateAclEntryRequest{
-			TableId: proto.Uint64(1),
+			TableId: proto.Uint64(2),
 			FieldDstIp: &saipb.AclFieldData{
 				Data: &saipb.AclFieldData_DataIp{
 					DataIp: []byte{127, 0, 0, 1},
@@ -294,7 +294,7 @@ func TestCreateAclEntry(t *testing.T) {
 	}, {
 		desc: "drop action",
 		req: &saipb.CreateAclEntryRequest{
-			TableId: proto.Uint64(1),
+			TableId: proto.Uint64(2),
 			FieldDstIp: &saipb.AclFieldData{
 				Data: &saipb.AclFieldData_DataIp{
 					DataIp: []byte{127, 0, 0, 1},
@@ -332,7 +332,7 @@ func TestCreateAclEntry(t *testing.T) {
 	}, {
 		desc: "forward action",
 		req: &saipb.CreateAclEntryRequest{
-			TableId: proto.Uint64(1),
+			TableId: proto.Uint64(2),
 			FieldDstIp: &saipb.AclFieldData{
 				Data: &saipb.AclFieldData_DataIp{
 					DataIp: []byte{127, 0, 0, 1},
@@ -370,7 +370,7 @@ func TestCreateAclEntry(t *testing.T) {
 	}, {
 		desc: "counter action",
 		req: &saipb.CreateAclEntryRequest{
-			TableId: proto.Uint64(1),
+			TableId: proto.Uint64(2),
 			FieldDstIp: &saipb.AclFieldData{
 				Data: &saipb.AclFieldData_DataIp{
 					DataIp: []byte{127, 0, 0, 1},
@@ -412,6 +412,54 @@ func TestCreateAclEntry(t *testing.T) {
 				},
 			}},
 		},
+	}, {
+		desc: "UDF",
+		req: &saipb.CreateAclEntryRequest{
+			TableId: proto.Uint64(2),
+			UserDefinedFieldGroupMin: map[uint64]*saipb.AclFieldData{
+				0: {
+					Data: &saipb.AclFieldData_DataU8List{DataU8List: []byte{0x00, 0x01}},
+					Mask: &saipb.AclFieldData_MaskU8List{MaskU8List: []byte{0xFF, 0xFF}},
+				},
+				1: {
+					Data: &saipb.AclFieldData_DataU8List{DataU8List: []byte{0x00, 0x02}},
+					Mask: &saipb.AclFieldData_MaskU8List{MaskU8List: []byte{0xFF, 0xFF}},
+				},
+			},
+		},
+		want: &fwdpb.TableEntryAddRequest{
+			ContextId: &fwdpb.ContextId{Id: "foo"},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: "1"}},
+			EntryDesc: &fwdpb.EntryDesc{
+				Entry: &fwdpb.EntryDesc_Flow{
+					Flow: &fwdpb.FlowEntryDesc{
+						Id:       2,
+						Priority: math.MaxUint32,
+						Fields: []*fwdpb.PacketFieldMaskedBytes{{
+							FieldId: &fwdpb.PacketFieldId{
+								Bytes: &fwdpb.PacketBytes{
+									HeaderGroup: fwdpb.PacketHeaderGroup_PACKET_HEADER_GROUP_L3,
+									Offset:      2,
+									Size:        2,
+								},
+							},
+							Bytes: []byte{0x0, 0x1},
+							Masks: []byte{0xFF, 0xFF},
+						}, {
+							FieldId: &fwdpb.PacketFieldId{
+								Bytes: &fwdpb.PacketBytes{
+									HeaderGroup: fwdpb.PacketHeaderGroup_PACKET_HEADER_GROUP_L3,
+									Offset:      8,
+									Size:        2,
+								},
+							},
+							Bytes: []byte{0x0, 0x2},
+							Masks: []byte{0xFF, 0xFF},
+						}},
+					},
+				},
+			},
+		},
 	}}
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
@@ -423,7 +471,33 @@ func TestCreateAclEntry(t *testing.T) {
 			a.mgr.StoreAttributes(a.mgr.NextID(), &saipb.SwitchAttribute{
 				CpuPort: proto.Uint64(10),
 			})
+			a.mgr.StoreAttributes(2, &saipb.AclTableAttribute{
+				UserDefinedFieldGroupMin: map[uint64]uint64{
+					0: 15,
+					1: 16,
+				},
+			})
+			a.mgr.StoreAttributes(15, &saipb.UdfGroupAttribute{
+				UdfList: []uint64{20},
+				Length:  proto.Uint32(2),
+			})
+			a.mgr.StoreAttributes(20, &saipb.UdfAttribute{
+				Base:   saipb.UdfBase_UDF_BASE_L3.Enum(),
+				Offset: proto.Uint32(2),
+			})
 			a.tableToLocation[1] = tableLocation{
+				groupID: "1",
+				bank:    0,
+			}
+			a.mgr.StoreAttributes(16, &saipb.UdfGroupAttribute{
+				UdfList: []uint64{21},
+				Length:  proto.Uint32(2),
+			})
+			a.mgr.StoreAttributes(21, &saipb.UdfAttribute{
+				Base:   saipb.UdfBase_UDF_BASE_L3.Enum(),
+				Offset: proto.Uint32(8),
+			})
+			a.tableToLocation[2] = tableLocation{
 				groupID: "1",
 				bank:    0,
 			}

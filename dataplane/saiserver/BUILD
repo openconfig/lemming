@@ -48,6 +48,7 @@ go_test(
         "routing_test.go",
         "switch_test.go",
         "tunnel_test.go",
+        "udf_test.go",
         "vlan_test.go",
     ],
     embed = [":saiserver"],

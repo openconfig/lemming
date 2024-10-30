@@ -47,7 +47,7 @@ func (u *udf) CreateUdf(ctx context.Context, req *saipb.CreateUdfRequest) (*saip
 		return nil, err
 	}
 	udfGroup.UdfList = append(udfGroup.UdfList, id)
-	u.mgr.StoreAttributes(id, udfGroup)
+	u.mgr.StoreAttributes(req.GetGroupId(), udfGroup)
 
 	return &saipb.CreateUdfResponse{
 		Oid: id,
