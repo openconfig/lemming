@@ -10,6 +10,6 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "@com_github_p4lang_p4runtime//:p4runtime_go_proto",
-        "@org_golang_google_grpc//:go_default_library",
+        "@org_golang_google_grpc//:grpc",
     ],
 )

@@ -29,7 +29,7 @@ go_library(
             "//gnmi/oc/ocpath",
             "@com_github_openconfig_ygot//ygot",
             "@com_github_vishvananda_netlink//:netlink",
-            "@org_golang_google_grpc//:go_default_library",
+            "@org_golang_google_grpc//:grpc",
             "@org_golang_x_sys//unix",
         ],
         "@io_bazel_rules_go//go/platform:linux": [
@@ -40,7 +40,7 @@ go_library(
             "//gnmi/oc/ocpath",
             "@com_github_openconfig_ygot//ygot",
             "@com_github_vishvananda_netlink//:netlink",
-            "@org_golang_google_grpc//:go_default_library",
+            "@org_golang_google_grpc//:grpc",
             "@org_golang_x_sys//unix",
         ],
         "//conditions:default": [],

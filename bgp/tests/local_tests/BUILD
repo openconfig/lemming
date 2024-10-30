@@ -34,7 +34,7 @@ go_test(
         "@com_github_openconfig_gribigo//fluent",
         "@com_github_openconfig_ygnmi//ygnmi",
         "@com_github_openconfig_ygot//ygot",
-        "@org_golang_google_grpc//:go_default_library",
+        "@org_golang_google_grpc//:grpc",
         "@org_golang_google_grpc//codes",
         "@org_golang_google_grpc//credentials/insecure",
         "@org_golang_google_grpc//credentials/local",

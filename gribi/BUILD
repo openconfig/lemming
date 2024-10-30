@@ -21,7 +21,7 @@ go_library(
         "@com_github_openconfig_ygnmi//ygnmi",
         "@com_github_openconfig_ygot//ygot",
         "@com_github_openconfig_ygot//ytypes",
-        "@org_golang_google_grpc//:go_default_library",
+        "@org_golang_google_grpc//:grpc",
         "@org_golang_google_grpc//credentials/insecure",
     ],
 )

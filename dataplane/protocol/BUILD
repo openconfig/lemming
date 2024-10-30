@@ -20,7 +20,7 @@ go_test(
         "//dataplane/proto/packetio",
         "@com_github_google_go_cmp//cmp",
         "@com_github_openconfig_gnmi//errdiff",
-        "@org_golang_google_grpc//:go_default_library",
+        "@org_golang_google_grpc//:grpc",
         "@org_golang_google_protobuf//testing/protocmp",
     ],
 )

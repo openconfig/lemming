@@ -48,7 +48,7 @@ go_library(
         "@io_k8s_client_go//tools/leaderelection",
         "@io_k8s_client_go//tools/leaderelection/resourcelock",
         "@io_k8s_klog//:klog",
-        "@org_golang_google_grpc//:go_default_library",
+        "@org_golang_google_grpc//:grpc",
         "@org_golang_google_grpc//credentials/local",
         "@org_golang_google_grpc//reflection",
     ],

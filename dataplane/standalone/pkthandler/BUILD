@@ -14,7 +14,7 @@ go_library(
         "//dataplane/proto/packetio",
         "//dataplane/standalone/pkthandler/pktiohandler",
         "@com_github_golang_glog//:glog",
-        "@org_golang_google_grpc//:go_default_library",
+        "@org_golang_google_grpc//:grpc",
         "@org_golang_google_grpc//credentials/insecure",
     ],
 )

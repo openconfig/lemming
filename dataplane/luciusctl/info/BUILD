@@ -9,7 +9,7 @@ go_library(
         "//proto/forwarding",
         "@com_github_spf13_cobra//:cobra",
         "@com_github_spf13_viper//:viper",
-        "@org_golang_google_grpc//:go_default_library",
+        "@org_golang_google_grpc//:grpc",
         "@org_golang_google_grpc//credentials",
         "@org_golang_google_grpc//credentials/insecure",
     ],
