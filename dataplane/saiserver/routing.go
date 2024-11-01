@@ -510,6 +510,7 @@ func newRoute(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server
 	return r
 }
 
+// routeDstMeta is the key to PACKET_ATTRIBUTE_32 field for routing table metadata.
 const routeDstMeta = 0
 
 // CreateRouteEntry creates a new route entry.
