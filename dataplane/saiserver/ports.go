@@ -675,6 +675,14 @@ func (l *lag) RemoveLagMember(ctx context.Context, req *saipb.RemoveLagMemberReq
 	return &saipb.RemoveLagMemberResponse{}, err
 }
 
+func (l *lag) SetLagAttribute(context.Context, *saipb.SetLagAttributeRequest) (*saipb.SetLagAttributeResponse, error) {
+	return &saipb.SetLagAttributeResponse{}, nil
+}
+
+func (l *lag) SetLagMemberAttribute(context.Context, *saipb.SetLagMemberAttributeRequest) (*saipb.SetLagMemberAttributeResponse, error) {
+	return &saipb.SetLagMemberAttributeResponse{}, nil
+}
+
 type queue struct {
 	saipb.UnimplementedQueueServer
 	mgr       *attrmgr.AttrMgr

@@ -729,6 +729,7 @@ func TestCreateRouteEntry(t *testing.T) {
 				SwitchId: 1,
 			},
 			PacketAction: saipb.PacketAction_PACKET_ACTION_TRANSIT.Enum(),
+			MetaData:     proto.Uint32(10),
 			NextHopId:    proto.Uint64(100),
 		},
 		wantReq: &fwdpb.TableEntryAddRequest{
@@ -753,6 +754,19 @@ func TestCreateRouteEntry(t *testing.T) {
 					Action: &fwdpb.ActionDesc_Transmit{
 						Transmit: &fwdpb.TransmitActionDesc{
 							PortId: &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: "100"}},
+						},
+					},
+				}, {
+					ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
+					Action: &fwdpb.ActionDesc_Update{
+						Update: &fwdpb.UpdateActionDesc{
+							Type:  fwdpb.UpdateType_UPDATE_TYPE_SET,
+							Field: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{}},
+							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{
+								FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_32,
+								Instance: routeDstMeta,
+							}},
+							Value: []uint8{0x00, 0x00, 0x00, 0x0a},
 						},
 					},
 				}},
