@@ -125,6 +125,10 @@ func TestCreateAclEntry(t *testing.T) {
 				Data: &saipb.AclFieldData_DataUint{DataUint: 0x01},
 				Mask: &saipb.AclFieldData_MaskUint{MaskUint: 0xff},
 			},
+			FieldRouteDstUserMeta: &saipb.AclFieldData{
+				Data: &saipb.AclFieldData_DataUint{DataUint: 0x2},
+				Mask: &saipb.AclFieldData_MaskUint{MaskUint: 0xff},
+			},
 		},
 		want: &fwdpb.TableEntryAddRequest{
 			ContextId: &fwdpb.ContextId{Id: "foo"},
@@ -186,6 +190,10 @@ func TestCreateAclEntry(t *testing.T) {
 							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP}},
 							Bytes:   []byte{0x01},
 							Masks:   []byte{0xff},
+						}, {
+							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_32, Instance: routeDstMeta}},
+							Bytes:   []byte{0x0, 0x0, 0x0, 0x02},
+							Masks:   []byte{0x0, 0x0, 0x0, 0xff},
 						}},
 					},
 				},

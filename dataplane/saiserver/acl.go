@@ -293,6 +293,13 @@ func (a *acl) createAclEntryFields(req *saipb.CreateAclEntryRequest, id uint64, 
 			Masks:   []byte{byte(req.GetFieldTtl().GetMaskUint())},
 		})
 	}
+	if req.GetFieldRouteDstUserMeta() != nil {
+		aReq.EntryDesc.GetFlow().Fields = append(aReq.EntryDesc.GetFlow().Fields, &fwdpb.PacketFieldMaskedBytes{
+			FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_32, Instance: routeDstMeta}},
+			Bytes:   binary.BigEndian.AppendUint32(nil, uint32(req.GetFieldRouteDstUserMeta().GetDataUint())),
+			Masks:   binary.BigEndian.AppendUint32(nil, uint32(req.GetFieldRouteDstUserMeta().GetMaskUint())),
+		})
+	}
 	if len(req.GetUserDefinedFieldGroupMin()) > 0 {
 		table := &saipb.AclTableAttribute{}
 		if err := a.mgr.PopulateAllAttributes(fmt.Sprint(req.GetTableId()), table); err != nil {

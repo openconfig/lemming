@@ -510,6 +510,9 @@ func newRoute(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server
 	return r
 }
 
+// routeDstMeta is the key to PACKET_ATTRIBUTE_32 field for routing table metadata.
+const routeDstMeta = 0
+
 // CreateRouteEntry creates a new route entry.
 func (r *route) CreateRouteEntry(ctx context.Context, req *saipb.CreateRouteEntryRequest) (*saipb.CreateRouteEntryResponse, error) {
 	fib := FIBV6Table
@@ -535,21 +538,23 @@ func (r *route) CreateRouteEntry(ctx context.Context, req *saipb.CreateRouteEntr
 	}
 	nextType := r.mgr.GetType(fmt.Sprint(req.GetNextHopId()))
 
+	actions := []*fwdconfig.ActionBuilder{}
+
 	// If the packet action is drop, then next hop is optional.
 	if forward {
 		switch nextType {
 		case saipb.ObjectType_OBJECT_TYPE_NEXT_HOP:
-			entry.AppendActions(fwdconfig.Action(
+			actions = append(actions, fwdconfig.Action(
 				fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_ID).WithUint64Value(req.GetNextHopId())),
 				fwdconfig.Action(fwdconfig.LookupAction(NHTable)),
 			)
 		case saipb.ObjectType_OBJECT_TYPE_NEXT_HOP_GROUP:
-			entry.AppendActions(fwdconfig.Action(
+			actions = append(actions, fwdconfig.Action(
 				fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_GROUP_ID).WithUint64Value(req.GetNextHopId())),
 				fwdconfig.Action(fwdconfig.LookupAction(NHGTable)),
 			)
 		case saipb.ObjectType_OBJECT_TYPE_ROUTER_INTERFACE:
-			entry.AppendActions(
+			actions = append(actions,
 				// Set the next hop IP in the packet's metadata.
 				fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_COPY, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP).WithFieldSrc(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST)),
 				// Set the output iface.
@@ -579,7 +584,7 @@ func (r *route) CreateRouteEntry(ctx context.Context, req *saipb.CreateRouteEntr
 				}
 				return &saipb.CreateRouteEntryResponse{}, nil
 			}
-			entry.AppendActions(
+			actions = append(actions,
 				// Set the next hop IP in the packet's metadata.
 				fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_COPY, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP).WithFieldSrc(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST)),
 				// Set the output port.
@@ -589,8 +594,13 @@ func (r *route) CreateRouteEntry(ctx context.Context, req *saipb.CreateRouteEntr
 			return nil, status.Errorf(codes.InvalidArgument, "unknown next hop type: %v", nextType)
 		}
 	} else {
-		entry.AppendActions(fwdconfig.Action(fwdconfig.DropAction()))
+		actions = append(actions, fwdconfig.Action(fwdconfig.DropAction()))
 	}
+	if req.MetaData != nil {
+		actions = append(actions, fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_32).
+			WithFieldIDInstance(routeDstMeta).WithValue(binary.BigEndian.AppendUint32(nil, req.GetMetaData()))))
+	}
+	entry.AppendActions(actions...)
 
 	route := entry.Build()
 	_, err := r.dataplane.TableEntryAdd(ctx, route)
