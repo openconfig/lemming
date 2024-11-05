@@ -8,6 +8,6 @@ go_library(
     deps = [
         "//dataplane/apigen/docparser",
         "//dataplane/apigen/saiast",
-        "@com_github_stoewer_go_strcase//:go-strcase",
+        "//dataplane/apigen/typeinfo",
     ],
 )
