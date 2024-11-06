@@ -68,6 +68,9 @@
 
 extern "C" {
 #include "inc/sai.h"
+}
+
+extern "C" {
 #include "experimental/saiextensions.h"
 }
 

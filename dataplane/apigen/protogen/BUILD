@@ -8,9 +8,8 @@ go_library(
     deps = [
         "//dataplane/apigen/docparser",
         "//dataplane/apigen/saiast",
+        "//dataplane/apigen/typeinfo",
         "//internal/lemmingutil",
-        "@com_github_golang_glog//:glog",
-        "@com_github_stoewer_go_strcase//:go-strcase",
     ],
 )
 
