@@ -406,10 +406,18 @@ message FooAttribute {
 				}},
 			}},
 			Funcs: map[string]*saiast.SAIFunc{
-				"sai_create_foo_t":        {},
-				"sai_remove_foo_t":        {},
-				"sai_set_foo_attribute_t": {},
-				"sai_get_foo_attribute_t": {},
+				"sai_create_foo_t": {
+					Params: []saiast.TypeDecl{{}},
+				},
+				"sai_remove_foo_t": {
+					Params: []saiast.TypeDecl{{}},
+				},
+				"sai_set_foo_attribute_t": {
+					Params: []saiast.TypeDecl{{}},
+				},
+				"sai_get_foo_attribute_t": {
+					Params: []saiast.TypeDecl{{}},
+				},
 			},
 		},
 		inInfo: &docparser.SAIInfo{
@@ -526,10 +534,10 @@ service Sample {
 			}},
 			Funcs: map[string]*saiast.SAIFunc{
 				"sai_create_foo_t":        {Params: []saiast.TypeDecl{{Name: "object_id", Typ: "*sai_object_id_t"}, {Name: "switch_id", Typ: "sai_object_id_t"}}},
-				"sai_remove_foo_t":        {},
-				"sai_set_foo_attribute_t": {},
-				"sai_get_foo_attribute_t": {},
-				"sai_get_foo_stats_t":     {},
+				"sai_remove_foo_t":        {Params: []saiast.TypeDecl{{}}},
+				"sai_set_foo_attribute_t": {Params: []saiast.TypeDecl{{}}},
+				"sai_get_foo_attribute_t": {Params: []saiast.TypeDecl{{}}},
+				"sai_get_foo_stats_t":     {Params: []saiast.TypeDecl{{}}},
 			},
 		},
 		inInfo: &docparser.SAIInfo{
