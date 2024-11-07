@@ -424,7 +424,7 @@ var typeToUnionAccessor = map[string]*unionAccessor{
 	},
 	"sai_acl_field_data_t sai_ip4_t": {
 		accessor:        "ip4",
-		convertFromFunc: "convert_from_acl_field_data",
+		convertFromFunc: "convert_from_acl_field_data_ip4",
 		convertToFunc:   "convert_to_acl_field_data",
 		protoAccessor:   "ip",
 		aType:           acl,
