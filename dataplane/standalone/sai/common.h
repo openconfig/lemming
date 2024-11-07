@@ -205,6 +205,10 @@ sai_acl_field_data_t convert_to_acl_field_data_u16(
     const lemming::dataplane::sai::AclFieldData &in, sai_uint16_t data,
     sai_uint16_t mask);
 
+sai_acl_field_data_t convert_to_acl_field_data_u32(
+    const lemming::dataplane::sai::AclFieldData &in, sai_uint32_t data,
+    sai_uint32_t mask);
+
 sai_acl_field_data_t convert_to_acl_field_data(
     const lemming::dataplane::sai::AclFieldData &in, sai_object_id_t data);
 
