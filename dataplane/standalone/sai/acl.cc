@@ -605,6 +605,11 @@ lemming::dataplane::sai::CreateAclEntryRequest convert_create_acl_entry(
             attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.s32,
             attr_list[i].value.aclfield.mask.s32);
         break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_IPV6_FLOW_LABEL:
+        *msg.mutable_field_ipv6_flow_label() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u32,
+            attr_list[i].value.aclfield.mask.u32);
+        break;
       case SAI_ACL_ENTRY_ATTR_FIELD_TC:
         *msg.mutable_field_tc() = convert_from_acl_field_data(
             attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u8,
@@ -630,6 +635,16 @@ lemming::dataplane::sai::CreateAclEntryRequest convert_create_acl_entry(
             attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u8,
             attr_list[i].value.aclfield.mask.u8);
         break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_TUNNEL_VNI:
+        *msg.mutable_field_tunnel_vni() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u32,
+            attr_list[i].value.aclfield.mask.u32);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL0_LABEL:
+        *msg.mutable_field_mpls_label0_label() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u32,
+            attr_list[i].value.aclfield.mask.u32);
+        break;
       case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL0_TTL:
         *msg.mutable_field_mpls_label0_ttl() = convert_from_acl_field_data(
             attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u8,
@@ -639,6 +654,11 @@ lemming::dataplane::sai::CreateAclEntryRequest convert_create_acl_entry(
         *msg.mutable_field_mpls_label0_exp() = convert_from_acl_field_data(
             attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u8,
             attr_list[i].value.aclfield.mask.u8);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL1_LABEL:
+        *msg.mutable_field_mpls_label1_label() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u32,
+            attr_list[i].value.aclfield.mask.u32);
         break;
       case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL1_TTL:
         *msg.mutable_field_mpls_label1_ttl() = convert_from_acl_field_data(
@@ -650,6 +670,11 @@ lemming::dataplane::sai::CreateAclEntryRequest convert_create_acl_entry(
             attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u8,
             attr_list[i].value.aclfield.mask.u8);
         break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL2_LABEL:
+        *msg.mutable_field_mpls_label2_label() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u32,
+            attr_list[i].value.aclfield.mask.u32);
+        break;
       case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL2_TTL:
         *msg.mutable_field_mpls_label2_ttl() = convert_from_acl_field_data(
             attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u8,
@@ -659,6 +684,11 @@ lemming::dataplane::sai::CreateAclEntryRequest convert_create_acl_entry(
         *msg.mutable_field_mpls_label2_exp() = convert_from_acl_field_data(
             attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u8,
             attr_list[i].value.aclfield.mask.u8);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL3_LABEL:
+        *msg.mutable_field_mpls_label3_label() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u32,
+            attr_list[i].value.aclfield.mask.u32);
         break;
       case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL3_TTL:
         *msg.mutable_field_mpls_label3_ttl() = convert_from_acl_field_data(
@@ -670,6 +700,11 @@ lemming::dataplane::sai::CreateAclEntryRequest convert_create_acl_entry(
             attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u8,
             attr_list[i].value.aclfield.mask.u8);
         break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL4_LABEL:
+        *msg.mutable_field_mpls_label4_label() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u32,
+            attr_list[i].value.aclfield.mask.u32);
+        break;
       case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL4_TTL:
         *msg.mutable_field_mpls_label4_ttl() = convert_from_acl_field_data(
             attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u8,
@@ -679,6 +714,37 @@ lemming::dataplane::sai::CreateAclEntryRequest convert_create_acl_entry(
         *msg.mutable_field_mpls_label4_exp() = convert_from_acl_field_data(
             attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u8,
             attr_list[i].value.aclfield.mask.u8);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_FDB_DST_USER_META:
+        *msg.mutable_field_fdb_dst_user_meta() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u32,
+            attr_list[i].value.aclfield.mask.u32);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_ROUTE_DST_USER_META:
+        *msg.mutable_field_route_dst_user_meta() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u32,
+            attr_list[i].value.aclfield.mask.u32);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_NEIGHBOR_DST_USER_META:
+        *msg.mutable_field_neighbor_dst_user_meta() =
+            convert_from_acl_field_data(attr_list[i].value.aclfield,
+                                        attr_list[i].value.aclfield.data.u32,
+                                        attr_list[i].value.aclfield.mask.u32);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_PORT_USER_META:
+        *msg.mutable_field_port_user_meta() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u32,
+            attr_list[i].value.aclfield.mask.u32);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_VLAN_USER_META:
+        *msg.mutable_field_vlan_user_meta() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u32,
+            attr_list[i].value.aclfield.mask.u32);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_ACL_USER_META:
+        *msg.mutable_field_acl_user_meta() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u32,
+            attr_list[i].value.aclfield.mask.u32);
         break;
       case SAI_ACL_ENTRY_ATTR_FIELD_BTH_OPCODE:
         *msg.mutable_field_bth_opcode() = convert_from_acl_field_data(
@@ -694,6 +760,11 @@ lemming::dataplane::sai::CreateAclEntryRequest convert_create_acl_entry(
         *msg.mutable_field_ipv6_next_header() = convert_from_acl_field_data(
             attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u8,
             attr_list[i].value.aclfield.mask.u8);
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_GRE_KEY:
+        *msg.mutable_field_gre_key() = convert_from_acl_field_data(
+            attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.u32,
+            attr_list[i].value.aclfield.mask.u32);
         break;
       case SAI_ACL_ENTRY_ATTR_ACTION_REDIRECT:
         *msg.mutable_action_redirect() = convert_from_acl_action_data(
@@ -1567,6 +1638,11 @@ sai_status_t l_set_acl_entry_attribute(sai_object_id_t acl_entry_id,
           attr->value.aclfield, attr->value.aclfield.data.s32,
           attr->value.aclfield.mask.s32);
       break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_IPV6_FLOW_LABEL:
+      *req.mutable_field_ipv6_flow_label() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u32,
+          attr->value.aclfield.mask.u32);
+      break;
     case SAI_ACL_ENTRY_ATTR_FIELD_TC:
       *req.mutable_field_tc() = convert_from_acl_field_data(
           attr->value.aclfield, attr->value.aclfield.data.u8,
@@ -1592,6 +1668,16 @@ sai_status_t l_set_acl_entry_attribute(sai_object_id_t acl_entry_id,
           attr->value.aclfield, attr->value.aclfield.data.u8,
           attr->value.aclfield.mask.u8);
       break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_TUNNEL_VNI:
+      *req.mutable_field_tunnel_vni() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u32,
+          attr->value.aclfield.mask.u32);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL0_LABEL:
+      *req.mutable_field_mpls_label0_label() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u32,
+          attr->value.aclfield.mask.u32);
+      break;
     case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL0_TTL:
       *req.mutable_field_mpls_label0_ttl() = convert_from_acl_field_data(
           attr->value.aclfield, attr->value.aclfield.data.u8,
@@ -1601,6 +1687,11 @@ sai_status_t l_set_acl_entry_attribute(sai_object_id_t acl_entry_id,
       *req.mutable_field_mpls_label0_exp() = convert_from_acl_field_data(
           attr->value.aclfield, attr->value.aclfield.data.u8,
           attr->value.aclfield.mask.u8);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL1_LABEL:
+      *req.mutable_field_mpls_label1_label() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u32,
+          attr->value.aclfield.mask.u32);
       break;
     case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL1_TTL:
       *req.mutable_field_mpls_label1_ttl() = convert_from_acl_field_data(
@@ -1612,6 +1703,11 @@ sai_status_t l_set_acl_entry_attribute(sai_object_id_t acl_entry_id,
           attr->value.aclfield, attr->value.aclfield.data.u8,
           attr->value.aclfield.mask.u8);
       break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL2_LABEL:
+      *req.mutable_field_mpls_label2_label() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u32,
+          attr->value.aclfield.mask.u32);
+      break;
     case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL2_TTL:
       *req.mutable_field_mpls_label2_ttl() = convert_from_acl_field_data(
           attr->value.aclfield, attr->value.aclfield.data.u8,
@@ -1621,6 +1717,11 @@ sai_status_t l_set_acl_entry_attribute(sai_object_id_t acl_entry_id,
       *req.mutable_field_mpls_label2_exp() = convert_from_acl_field_data(
           attr->value.aclfield, attr->value.aclfield.data.u8,
           attr->value.aclfield.mask.u8);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL3_LABEL:
+      *req.mutable_field_mpls_label3_label() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u32,
+          attr->value.aclfield.mask.u32);
       break;
     case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL3_TTL:
       *req.mutable_field_mpls_label3_ttl() = convert_from_acl_field_data(
@@ -1632,6 +1733,11 @@ sai_status_t l_set_acl_entry_attribute(sai_object_id_t acl_entry_id,
           attr->value.aclfield, attr->value.aclfield.data.u8,
           attr->value.aclfield.mask.u8);
       break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL4_LABEL:
+      *req.mutable_field_mpls_label4_label() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u32,
+          attr->value.aclfield.mask.u32);
+      break;
     case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL4_TTL:
       *req.mutable_field_mpls_label4_ttl() = convert_from_acl_field_data(
           attr->value.aclfield, attr->value.aclfield.data.u8,
@@ -1641,6 +1747,36 @@ sai_status_t l_set_acl_entry_attribute(sai_object_id_t acl_entry_id,
       *req.mutable_field_mpls_label4_exp() = convert_from_acl_field_data(
           attr->value.aclfield, attr->value.aclfield.data.u8,
           attr->value.aclfield.mask.u8);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_FDB_DST_USER_META:
+      *req.mutable_field_fdb_dst_user_meta() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u32,
+          attr->value.aclfield.mask.u32);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_ROUTE_DST_USER_META:
+      *req.mutable_field_route_dst_user_meta() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u32,
+          attr->value.aclfield.mask.u32);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_NEIGHBOR_DST_USER_META:
+      *req.mutable_field_neighbor_dst_user_meta() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u32,
+          attr->value.aclfield.mask.u32);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_PORT_USER_META:
+      *req.mutable_field_port_user_meta() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u32,
+          attr->value.aclfield.mask.u32);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_VLAN_USER_META:
+      *req.mutable_field_vlan_user_meta() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u32,
+          attr->value.aclfield.mask.u32);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_ACL_USER_META:
+      *req.mutable_field_acl_user_meta() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u32,
+          attr->value.aclfield.mask.u32);
       break;
     case SAI_ACL_ENTRY_ATTR_FIELD_BTH_OPCODE:
       *req.mutable_field_bth_opcode() = convert_from_acl_field_data(
@@ -1656,6 +1792,11 @@ sai_status_t l_set_acl_entry_attribute(sai_object_id_t acl_entry_id,
       *req.mutable_field_ipv6_next_header() = convert_from_acl_field_data(
           attr->value.aclfield, attr->value.aclfield.data.u8,
           attr->value.aclfield.mask.u8);
+      break;
+    case SAI_ACL_ENTRY_ATTR_FIELD_GRE_KEY:
+      *req.mutable_field_gre_key() = convert_from_acl_field_data(
+          attr->value.aclfield, attr->value.aclfield.data.u32,
+          attr->value.aclfield.mask.u32);
       break;
     case SAI_ACL_ENTRY_ATTR_ACTION_REDIRECT:
       *req.mutable_action_redirect() = convert_from_acl_action_data(
@@ -2028,6 +2169,12 @@ sai_status_t l_get_acl_entry_attribute(sai_object_id_t acl_entry_id,
             resp.attr().field_acl_ip_type(),
             resp.attr().field_acl_ip_type().data_ip_type());
         break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_IPV6_FLOW_LABEL:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u32(
+            resp.attr().field_ipv6_flow_label(),
+            resp.attr().field_ipv6_flow_label().data_uint(),
+            resp.attr().field_ipv6_flow_label().mask_uint());
+        break;
       case SAI_ACL_ENTRY_ATTR_FIELD_TC:
         attr_list[i].value.aclfield = convert_to_acl_field_data_u8(
             resp.attr().field_tc(), resp.attr().field_tc().data_uint(),
@@ -2057,6 +2204,18 @@ sai_status_t l_get_acl_entry_attribute(sai_object_id_t acl_entry_id,
             resp.attr().field_icmpv6_code().data_uint(),
             resp.attr().field_icmpv6_code().mask_uint());
         break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_TUNNEL_VNI:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u32(
+            resp.attr().field_tunnel_vni(),
+            resp.attr().field_tunnel_vni().data_uint(),
+            resp.attr().field_tunnel_vni().mask_uint());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL0_LABEL:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u32(
+            resp.attr().field_mpls_label0_label(),
+            resp.attr().field_mpls_label0_label().data_uint(),
+            resp.attr().field_mpls_label0_label().mask_uint());
+        break;
       case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL0_TTL:
         attr_list[i].value.aclfield = convert_to_acl_field_data_u8(
             resp.attr().field_mpls_label0_ttl(),
@@ -2068,6 +2227,12 @@ sai_status_t l_get_acl_entry_attribute(sai_object_id_t acl_entry_id,
             resp.attr().field_mpls_label0_exp(),
             resp.attr().field_mpls_label0_exp().data_uint(),
             resp.attr().field_mpls_label0_exp().mask_uint());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL1_LABEL:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u32(
+            resp.attr().field_mpls_label1_label(),
+            resp.attr().field_mpls_label1_label().data_uint(),
+            resp.attr().field_mpls_label1_label().mask_uint());
         break;
       case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL1_TTL:
         attr_list[i].value.aclfield = convert_to_acl_field_data_u8(
@@ -2081,6 +2246,12 @@ sai_status_t l_get_acl_entry_attribute(sai_object_id_t acl_entry_id,
             resp.attr().field_mpls_label1_exp().data_uint(),
             resp.attr().field_mpls_label1_exp().mask_uint());
         break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL2_LABEL:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u32(
+            resp.attr().field_mpls_label2_label(),
+            resp.attr().field_mpls_label2_label().data_uint(),
+            resp.attr().field_mpls_label2_label().mask_uint());
+        break;
       case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL2_TTL:
         attr_list[i].value.aclfield = convert_to_acl_field_data_u8(
             resp.attr().field_mpls_label2_ttl(),
@@ -2092,6 +2263,12 @@ sai_status_t l_get_acl_entry_attribute(sai_object_id_t acl_entry_id,
             resp.attr().field_mpls_label2_exp(),
             resp.attr().field_mpls_label2_exp().data_uint(),
             resp.attr().field_mpls_label2_exp().mask_uint());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL3_LABEL:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u32(
+            resp.attr().field_mpls_label3_label(),
+            resp.attr().field_mpls_label3_label().data_uint(),
+            resp.attr().field_mpls_label3_label().mask_uint());
         break;
       case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL3_TTL:
         attr_list[i].value.aclfield = convert_to_acl_field_data_u8(
@@ -2105,6 +2282,12 @@ sai_status_t l_get_acl_entry_attribute(sai_object_id_t acl_entry_id,
             resp.attr().field_mpls_label3_exp().data_uint(),
             resp.attr().field_mpls_label3_exp().mask_uint());
         break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL4_LABEL:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u32(
+            resp.attr().field_mpls_label4_label(),
+            resp.attr().field_mpls_label4_label().data_uint(),
+            resp.attr().field_mpls_label4_label().mask_uint());
+        break;
       case SAI_ACL_ENTRY_ATTR_FIELD_MPLS_LABEL4_TTL:
         attr_list[i].value.aclfield = convert_to_acl_field_data_u8(
             resp.attr().field_mpls_label4_ttl(),
@@ -2116,6 +2299,42 @@ sai_status_t l_get_acl_entry_attribute(sai_object_id_t acl_entry_id,
             resp.attr().field_mpls_label4_exp(),
             resp.attr().field_mpls_label4_exp().data_uint(),
             resp.attr().field_mpls_label4_exp().mask_uint());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_FDB_DST_USER_META:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u32(
+            resp.attr().field_fdb_dst_user_meta(),
+            resp.attr().field_fdb_dst_user_meta().data_uint(),
+            resp.attr().field_fdb_dst_user_meta().mask_uint());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_ROUTE_DST_USER_META:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u32(
+            resp.attr().field_route_dst_user_meta(),
+            resp.attr().field_route_dst_user_meta().data_uint(),
+            resp.attr().field_route_dst_user_meta().mask_uint());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_NEIGHBOR_DST_USER_META:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u32(
+            resp.attr().field_neighbor_dst_user_meta(),
+            resp.attr().field_neighbor_dst_user_meta().data_uint(),
+            resp.attr().field_neighbor_dst_user_meta().mask_uint());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_PORT_USER_META:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u32(
+            resp.attr().field_port_user_meta(),
+            resp.attr().field_port_user_meta().data_uint(),
+            resp.attr().field_port_user_meta().mask_uint());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_VLAN_USER_META:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u32(
+            resp.attr().field_vlan_user_meta(),
+            resp.attr().field_vlan_user_meta().data_uint(),
+            resp.attr().field_vlan_user_meta().mask_uint());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_ACL_USER_META:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u32(
+            resp.attr().field_acl_user_meta(),
+            resp.attr().field_acl_user_meta().data_uint(),
+            resp.attr().field_acl_user_meta().mask_uint());
         break;
       case SAI_ACL_ENTRY_ATTR_FIELD_BTH_OPCODE:
         attr_list[i].value.aclfield = convert_to_acl_field_data_u8(
@@ -2134,6 +2353,12 @@ sai_status_t l_get_acl_entry_attribute(sai_object_id_t acl_entry_id,
             resp.attr().field_ipv6_next_header(),
             resp.attr().field_ipv6_next_header().data_uint(),
             resp.attr().field_ipv6_next_header().mask_uint());
+        break;
+      case SAI_ACL_ENTRY_ATTR_FIELD_GRE_KEY:
+        attr_list[i].value.aclfield = convert_to_acl_field_data_u32(
+            resp.attr().field_gre_key(),
+            resp.attr().field_gre_key().data_uint(),
+            resp.attr().field_gre_key().mask_uint());
         break;
       case SAI_ACL_ENTRY_ATTR_ACTION_REDIRECT:
         attr_list[i].value.aclaction = convert_to_acl_action_data(
