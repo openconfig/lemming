@@ -79,7 +79,8 @@ enum PacketHeaderGroup {
   PACKET_HEADER_GROUP_L2 = 3;       // L2 header.
   PACKET_HEADER_GROUP_L3 = 4;       // L3 header.
   PACKET_HEADER_GROUP_L4 = 5;       // L4 header.
-  PACKET_HEADER_GROUP_PAYLOAD = 6;  // Payload.
+  PACKET_HEADER_GROUP_L2_5 = 6; // L2.5 Header (mpls).
+  PACKET_HEADER_GROUP_PAYLOAD = 7;  // Payload.
   PACKET_HEADER_GROUP_COUNT = 20;
 }
 
@@ -127,6 +128,7 @@ enum PacketHeaderId {
   PACKET_HEADER_ID_TUNNEL_6TO4_AUTO = 15;
   PACKET_HEADER_ID_TUNNEL_6TO4_SECURE = 16;
   PACKET_HEADER_ID_IP = 19;
+  PACKET_HEADER_ID_MPLS = 20;
   PACKET_HEADER_ID_COUNT = 1000;
 }
 
@@ -178,6 +180,9 @@ enum PacketFieldNum {
   PACKET_FIELD_NUM_HOST_PORT_ID = 63; // Host port id (metadata).
   PACKET_FIELD_NUM_L2MC_GROUP_ID = 64; // L2MC Group id (metadata).
   PACKET_FIELD_NUM_POLICER_ID = 65; // Policer id (metadata).
+  PACKET_FIELD_NUM_MPLS_LABEL = 66; // MPLS Label
+  PACKET_FIELD_NUM_MPLS_TC = 67; // MPLS Traffic Class
+  PACKET_FIELD_NUM_MPLS_TTL = 68; // MPLS TTL
   PACKET_FIELD_NUM_COUNT = 1000;
 }
 

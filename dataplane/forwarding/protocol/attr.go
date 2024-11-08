@@ -197,6 +197,15 @@ var FieldAttr = map[fwdpb.PacketFieldNum]struct {
 	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_POLICER_ID: {
 		Sizes: []int{SizeUint64},
 	},
+	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_MPLS_TC: {
+		Sizes: []int{SizeUint8},
+	},
+	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_MPLS_LABEL: {
+		Sizes: []int{SizeUint32},
+	},
+	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_MPLS_TTL: {
+		Sizes: []int{SizeUint8},
+	},
 }
 
 // GroupAttr contains attributes for each packet header group.
@@ -254,8 +263,19 @@ var GroupAttr = map[fwdpb.PacketHeaderGroup]struct {
 			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_PRIORITY,
 		},
 	},
-	fwdpb.PacketHeaderGroup_PACKET_HEADER_GROUP_L3: {
+	fwdpb.PacketHeaderGroup_PACKET_HEADER_GROUP_L2_5: {
 		Position: 2,
+		headers: []fwdpb.PacketHeaderId{
+			fwdpb.PacketHeaderId_PACKET_HEADER_ID_MPLS,
+		},
+		fields: []fwdpb.PacketFieldNum{
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_MPLS_LABEL,
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_MPLS_TC,
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_MPLS_TTL,
+		},
+	},
+	fwdpb.PacketHeaderGroup_PACKET_HEADER_GROUP_L3: {
+		Position: 3,
 		headers: []fwdpb.PacketHeaderId{
 			fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4,
 			fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP,
@@ -277,7 +297,7 @@ var GroupAttr = map[fwdpb.PacketHeaderGroup]struct {
 		},
 	},
 	fwdpb.PacketHeaderGroup_PACKET_HEADER_GROUP_L4: {
-		Position: 3,
+		Position: 4,
 		headers: []fwdpb.PacketHeaderId{
 			fwdpb.PacketHeaderId_PACKET_HEADER_ID_TCP,
 			fwdpb.PacketHeaderId_PACKET_HEADER_ID_UDP,
@@ -289,7 +309,7 @@ var GroupAttr = map[fwdpb.PacketHeaderGroup]struct {
 		},
 	},
 	fwdpb.PacketHeaderGroup_PACKET_HEADER_GROUP_PAYLOAD: {
-		Position: 4,
+		Position: 5,
 		headers: []fwdpb.PacketHeaderId{
 			fwdpb.PacketHeaderId_PACKET_HEADER_ID_ICMP4,
 			fwdpb.PacketHeaderId_PACKET_HEADER_ID_ICMP6,

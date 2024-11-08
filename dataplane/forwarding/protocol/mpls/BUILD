@@ -6,6 +6,7 @@ go_library(
     importpath = "github.com/openconfig/lemming/dataplane/forwarding/protocol/mpls",
     visibility = ["//visibility:public"],
     deps = [
+        "//dataplane/forwarding/infra/fwdpacket",
         "//dataplane/forwarding/protocol",
         "//dataplane/forwarding/util/frame",
         "//proto/forwarding",
