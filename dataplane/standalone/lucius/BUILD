@@ -16,6 +16,8 @@ go_library(
         "//proto/forwarding",
         "@com_github_googlecloudplatform_opentelemetry_operations_go_exporter_trace//:trace",
         "@com_github_grpc_ecosystem_go_grpc_middleware_v2//interceptors/logging",
+        "@com_google_cloud_go_trace//apiv2",
+        "@com_google_cloud_go_trace//apiv2/tracepb",
         "@io_opentelemetry_go_contrib_detectors_gcp//:gcp",
         "@io_opentelemetry_go_contrib_instrumentation_google_golang_org_grpc_otelgrpc//:otelgrpc",
         "@io_opentelemetry_go_otel//:otel",
@@ -30,6 +32,7 @@ go_library(
         "@org_golang_google_grpc//credentials/insecure",
         "@org_golang_google_grpc//metadata",
         "@org_golang_google_grpc//reflection",
+        "@org_golang_google_protobuf//types/known/timestamppb",
     ],
 )
 

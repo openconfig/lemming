@@ -35,6 +35,10 @@ func SetGlobalLogger(ctx context.Context, project, logName string) error {
 	if err != nil {
 		return err
 	}
+	if err := cl.Ping(ctx); err != nil {
+		fmt.Fprintf(os.Stderr, "failed to ping cloud logging, not exporting logs: %v\n", err)
+		return err
+	}
 
 	h := &cloudLogHandle{
 		Handler: slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{}),
@@ -52,6 +56,7 @@ func SetGlobalLogger(ctx context.Context, project, logName string) error {
 			select {
 			case <-sigs:
 				h.l.Flush()
+				os.Exit(1)
 			case <-t.C:
 				if err := h.l.Flush(); err != nil {
 					fmt.Fprintf(os.Stderr, "log flush err: %v", err)
