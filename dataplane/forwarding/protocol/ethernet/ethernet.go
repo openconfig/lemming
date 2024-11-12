@@ -58,13 +58,15 @@ var tagOffsets = []int{14, 18}
 
 // Constants defined for various ether types in network byte order.
 const (
-	nextSingle   = 0x8100       // Single tagged frame.
-	nextDouble   = 0x9100       // Double tagged frame.
-	nextARP      = 0x0806       // ARP payload.
-	nextIP4      = 0x0800       // IP4 payload.
-	nextIP6      = 0x86DD       // IP6 payload.
-	nextReserved = 0xFFFF       // Opaque data.
-	Reserved     = nextReserved // Opaque data.
+	nextSingle        = 0x8100       // Single tagged frame.
+	nextDouble        = 0x9100       // Double tagged frame.
+	nextARP           = 0x0806       // ARP payload.
+	nextIP4           = 0x0800       // IP4 payload.
+	nextIP6           = 0x86DD       // IP6 payload.
+	nextMPLSUnicast   = 0x8847       // MPLS Unicast
+	nextMPLSMulticast = 0x8848       // MPLS Mutlicast // TODO: Add support for this.
+	nextReserved      = 0xFFFF       // Opaque data.
+	Reserved          = nextReserved // Opaque data.
 )
 
 // NextHeader maps ether-types to packet header.
@@ -72,9 +74,10 @@ var NextHeader = map[uint16]fwdpb.PacketHeaderId{}
 
 // HeaderNext maps packet headers to ether-types.
 var HeaderNext = map[fwdpb.PacketHeaderId]uint16{
-	fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4: nextIP4,
-	fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP6: nextIP6,
-	fwdpb.PacketHeaderId_PACKET_HEADER_ID_ARP: nextARP,
+	fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4:  nextIP4,
+	fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP6:  nextIP6,
+	fwdpb.PacketHeaderId_PACKET_HEADER_ID_ARP:  nextARP,
+	fwdpb.PacketHeaderId_PACKET_HEADER_ID_MPLS: nextMPLSUnicast,
 }
 
 // An Ethernet presents a ethernet header. It can parse, query, add, remove
@@ -125,7 +128,6 @@ func (eth *Ethernet) field(id fwdpacket.FieldID) frame.Field {
 
 	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_PRIORITY:
 		if int(id.Instance) >= len(eth.vlans) {
-			// TOOD(neeleshb): We currently ignore the vlan priority due to b/31199367.
 			if id.Num == fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_PRIORITY {
 				return make([]byte, vlanBytes)
 			}

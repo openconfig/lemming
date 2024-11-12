@@ -144,6 +144,7 @@ type PacketFieldTest struct {
 
 // TestPacketFields performs a series of packet field tests.
 func TestPacketFields(name string, t *testing.T, tests []PacketFieldTest) {
+	t.Helper()
 	for pos, test := range tests {
 		orig := makeFrame(test.Orig)
 		packet, err := fwdpacket.New(test.StartHeader, orig)
@@ -191,6 +192,7 @@ type PacketHeaderTest struct {
 
 // TestPacketHeaders performs a series of packet header tests.
 func TestPacketHeaders(name string, t *testing.T, tests []PacketHeaderTest) {
+	t.Helper()
 	for pos, test := range tests {
 		orig := makeFrame(test.Orig)
 		packet, err := fwdpacket.New(test.StartHeader, orig)
