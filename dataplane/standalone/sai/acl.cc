@@ -464,22 +464,22 @@ lemming::dataplane::sai::CreateAclEntryRequest convert_create_acl_entry(
             attr_list[i].value.aclfield.mask.mac);
         break;
       case SAI_ACL_ENTRY_ATTR_FIELD_SRC_IP:
-        *msg.mutable_field_src_ip() = convert_from_acl_field_data(
+        *msg.mutable_field_src_ip() = convert_from_acl_field_data_ip4(
             attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.ip4,
             attr_list[i].value.aclfield.mask.ip4);
         break;
       case SAI_ACL_ENTRY_ATTR_FIELD_DST_IP:
-        *msg.mutable_field_dst_ip() = convert_from_acl_field_data(
+        *msg.mutable_field_dst_ip() = convert_from_acl_field_data_ip4(
             attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.ip4,
             attr_list[i].value.aclfield.mask.ip4);
         break;
       case SAI_ACL_ENTRY_ATTR_FIELD_INNER_SRC_IP:
-        *msg.mutable_field_inner_src_ip() = convert_from_acl_field_data(
+        *msg.mutable_field_inner_src_ip() = convert_from_acl_field_data_ip4(
             attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.ip4,
             attr_list[i].value.aclfield.mask.ip4);
         break;
       case SAI_ACL_ENTRY_ATTR_FIELD_INNER_DST_IP:
-        *msg.mutable_field_inner_dst_ip() = convert_from_acl_field_data(
+        *msg.mutable_field_inner_dst_ip() = convert_from_acl_field_data_ip4(
             attr_list[i].value.aclfield, attr_list[i].value.aclfield.data.ip4,
             attr_list[i].value.aclfield.mask.ip4);
         break;
@@ -1497,22 +1497,22 @@ sai_status_t l_set_acl_entry_attribute(sai_object_id_t acl_entry_id,
           attr->value.aclfield.mask.mac);
       break;
     case SAI_ACL_ENTRY_ATTR_FIELD_SRC_IP:
-      *req.mutable_field_src_ip() = convert_from_acl_field_data(
+      *req.mutable_field_src_ip() = convert_from_acl_field_data_ip4(
           attr->value.aclfield, attr->value.aclfield.data.ip4,
           attr->value.aclfield.mask.ip4);
       break;
     case SAI_ACL_ENTRY_ATTR_FIELD_DST_IP:
-      *req.mutable_field_dst_ip() = convert_from_acl_field_data(
+      *req.mutable_field_dst_ip() = convert_from_acl_field_data_ip4(
           attr->value.aclfield, attr->value.aclfield.data.ip4,
           attr->value.aclfield.mask.ip4);
       break;
     case SAI_ACL_ENTRY_ATTR_FIELD_INNER_SRC_IP:
-      *req.mutable_field_inner_src_ip() = convert_from_acl_field_data(
+      *req.mutable_field_inner_src_ip() = convert_from_acl_field_data_ip4(
           attr->value.aclfield, attr->value.aclfield.data.ip4,
           attr->value.aclfield.mask.ip4);
       break;
     case SAI_ACL_ENTRY_ATTR_FIELD_INNER_DST_IP:
-      *req.mutable_field_inner_dst_ip() = convert_from_acl_field_data(
+      *req.mutable_field_inner_dst_ip() = convert_from_acl_field_data_ip4(
           attr->value.aclfield, attr->value.aclfield.data.ip4,
           attr->value.aclfield.mask.ip4);
       break;

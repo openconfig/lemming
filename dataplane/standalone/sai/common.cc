@@ -148,7 +148,7 @@ lemming::dataplane::sai::AclActionData convert_from_acl_action_data_action(
   return out;
 }
 
-lemming::dataplane::sai::AclFieldData convert_from_acl_field_data(
+lemming::dataplane::sai::AclFieldData convert_from_acl_field_data_ip4(
     const sai_acl_field_data_t& in, sai_ip4_t data, sai_ip4_t mask) {
   lemming::dataplane::sai::AclFieldData out;
   out.set_enable(in.enable);
@@ -170,6 +170,15 @@ lemming::dataplane::sai::AclFieldData convert_from_acl_field_data(
 
 lemming::dataplane::sai::AclFieldData convert_from_acl_field_data(
     const sai_acl_field_data_t& in, sai_uint16_t data, sai_uint16_t mask) {
+  lemming::dataplane::sai::AclFieldData out;
+  out.set_enable(in.enable);
+  out.set_data_uint(data);
+  out.set_mask_uint(mask);
+  return out;
+}
+
+lemming::dataplane::sai::AclFieldData convert_from_acl_field_data(
+    const sai_acl_field_data_t& in, sai_uint32_t data, sai_uint32_t mask) {
   lemming::dataplane::sai::AclFieldData out;
   out.set_enable(in.enable);
   out.set_data_uint(data);
