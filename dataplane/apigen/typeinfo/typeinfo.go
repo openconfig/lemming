@@ -30,9 +30,39 @@ type TemplateData struct {
 	APIs map[string]*APITemplate
 }
 
+type GenType struct {
+	Name   string
+	Option string
+	Fields []protoTmplField
+}
+
+type GenFunc struct {
+	ProtoRPCName        string
+	ProtoRequestType    string
+	ProtoResponseType   string
+	ReturnType          string
+	Name                string
+	Args                string
+	TypeName            string
+	Operation           string
+	Vars                string
+	UseCommonAPI        bool
+	AttrSwitch          *AttrSwitch
+	Client              string
+	OidVar              string
+	OidPointer          string
+	AttrType            string
+	AttrEnumType        string
+	SwitchScoped        bool
+	EntryConversionFunc string
+	EntryVar            string
+	ConvertFunc         string
+	AttrConvertInsert   string
+}
+
 type APITemplate struct {
-	Messages       []ProtoTmplMessage
-	RPCs           []ProtoRPC
+	Types          []*GenType
+	Funcs          []*GenFunc
 	Enums          []ProtoEnum
 	ServiceName    string
 	ProtoPackage   string
@@ -46,8 +76,7 @@ type APITemplate struct {
 	ProtoClass     string
 	APIName        string
 	Globals        []string
-	Funcs          []*TemplateFunc
-	ConvertFuncs   []*TemplateFunc
+	ConvertFuncs   []*GenFunc
 	CCOutDir       string
 }
 
@@ -79,182 +108,73 @@ func Data(doc *docparser.SAIInfo, sai *saiast.SAIAPI, protoPackage, protoGoPacka
 
 		for _, fn := range iface.Funcs {
 			meta := sai.GetFuncMeta(fn)
-			if err := populateTmplDataFromFunc(data.APIs, doc, apiName, meta); err != nil {
+			gFunc := &GenFunc{}
+			protoReqType, protoRespType, err := genProtoReqResp(doc, apiName, meta)
+			if err != nil {
 				return nil, err
 			}
-			opFn, convertFn := createCCData(meta, apiName, sai, doc, fn)
-			if opFn != nil {
-				data.APIs[apiName].Funcs = append(data.APIs[apiName].Funcs, opFn)
+			if protoReqType != nil && protoRespType != nil {
+				gFunc.ProtoRPCName = strcase.UpperCamelCase(meta.Name)
+				gFunc.ProtoRequestType = protoReqType.Name
+				gFunc.ProtoResponseType = protoRespType.Name
+				data.APIs[apiName].Types = append(data.APIs[apiName].Types, protoReqType, protoRespType)
 			}
-			if convertFn != nil {
+
+			populateCCInfo(meta, apiName, sai, doc, fn, gFunc)
+
+			if gFunc.Operation == getAttrOp {
+				enum := genProtoEnum(doc, apiName, meta)
+				if enum != nil {
+					data.APIs[apiName].Enums = append(data.APIs[apiName].Enums, *enum)
+				}
+				fns, msgs := genStreamingRPC(doc, apiName, meta)
+				data.APIs[apiName].Funcs = append(data.APIs[apiName].Funcs, fns...)
+				data.APIs[apiName].Types = append(data.APIs[apiName].Types, msgs...)
+			}
+			if gFunc.Operation == createOp {
+				convertFn := genConvertFunc(gFunc, meta, doc, sai, fn)
 				data.APIs[apiName].ConvertFuncs = append(data.APIs[apiName].ConvertFuncs, convertFn)
 			}
+			data.APIs[apiName].Funcs = append(data.APIs[apiName].Funcs, gFunc)
 		}
 	}
 	return data, nil
 }
 
-// createCCData returns a two structs with the template data for the given function.
-// The first is the implementation of the API: CreateFoo.
-// The second is the a conversion func from attribute list to the proto message. covert_create_foo.
-func createCCData(meta *saiast.FuncMetadata, apiName string, sai *saiast.SAIAPI, info *docparser.SAIInfo, fn *saiast.TypeDecl) (*TemplateFunc, *TemplateFunc) {
-	if info.Attrs[meta.TypeName] == nil {
-		fmt.Printf("no doc info for type: %v\n", meta.TypeName)
-		return nil, nil
+func genConvertFunc(genFunc *GenFunc, meta *saiast.FuncMetadata, info *docparser.SAIInfo, sai *saiast.SAIAPI, fn *saiast.TypeDecl) *GenFunc {
+	convertFn := &GenFunc{
+		Name:              "convert_" + meta.Name,
+		Operation:         genFunc.Operation,
+		TypeName:          genFunc.TypeName,
+		ProtoRequestType:  genFunc.ProtoRequestType,
+		ProtoResponseType: genFunc.ProtoResponseType,
 	}
-	opFn := &TemplateFunc{
-		ReturnType: sai.Funcs[fn.Typ].ReturnType,
-		Name:       meta.Name,
-		Operation:  meta.Operation,
-		TypeName:   meta.TypeName,
-		ReqType:    strcase.UpperCamelCase(meta.Name + "_request"),
-		RespType:   strcase.UpperCamelCase(meta.Name + "_response"),
-	}
-	convertFn := &TemplateFunc{
-		Name:      "convert_" + meta.Name,
-		Operation: meta.Operation,
-		TypeName:  meta.TypeName,
-		ReqType:   strcase.UpperCamelCase(meta.Name + "_request"),
-		RespType:  strcase.UpperCamelCase(meta.Name + "_response"),
-	}
-
-	var paramDefs []string
-	var paramVars []string
-	for _, param := range sai.Funcs[fn.Typ].Params {
-		paramDefs = append(paramDefs, fmt.Sprintf("%s %s", param.Typ, param.Name))
-		name := strings.ReplaceAll(param.Name, "*", "")
-		// Functions that operator on entries take some entry type instead of an object id as argument.
-		// Generate a entry union with the pointer to entry instead.
-		if strings.Contains(param.Typ, "entry") {
-			opFn.Entry = fmt.Sprintf("common_entry_t entry = {.%s = %s};", name, name)
-			name = "entry"
-		}
-		paramVars = append(paramVars, name)
-	}
-	opFn.Args = strings.Join(paramDefs, ", ")
-	opFn.Vars = strings.Join(paramVars[1:], ", ")
+	paramDefs, paramVars := getParamDefs(sai.Funcs[fn.Typ].Params)
 	convertFn.Args = strings.Join(paramDefs[1:], ", ")
 	convertFn.Vars = strings.Join(paramVars[1:], ", ")
-	opFn.Client = strcase.SnakeCase(apiName)
-	if opFn.Client == "switch" { // switch is C++ keyword.
-		opFn.Client = "switch_"
+	convertFn.AttrSwitch = &AttrSwitch{
+		Var:      "attr_list[i].id",
+		ProtoVar: "msg",
 	}
-	opFn.RPCMethod = strcase.UpperCamelCase(meta.Name)
-	opFn.SwitchScoped = meta.IsSwitchScoped
-	opFn.AttrEnumType = strcase.UpperCamelCase(meta.TypeName + " attr")
-	opFn.AttrType = strcase.SnakeCase("sai_" + meta.TypeName + "_attr_t")
+	convertFn.ReturnType = genFunc.ProtoRequestType
 
-	// If the func has entry, then we don't use ids, instead pass the entry to the proto.
-	if meta.Entry == "" {
-		opFn.OidVar = sai.Funcs[fn.Typ].Params[0].Name
-		opFn.OidPointer = strings.TrimPrefix(opFn.OidVar, "*")
-	} else {
-		i := 0
-		if strings.Contains(opFn.Operation, "bulk") {
-			i = 1
+	for _, attr := range info.Attrs[meta.TypeName].CreateFields {
+		name := sanitizeProtoName(attr.MemberName)
+		smt, err := protoFieldSetter(attr.SaiType, convertFn.AttrSwitch.ProtoVar, name, "attr_list[i].value", info)
+		if err != nil {
+			fmt.Println("skipping due to error: ", err)
+			continue
 		}
-		entryType := strings.TrimPrefix(sai.Funcs[fn.Typ].Params[i].Typ, "const ")
-		if ua, ok := typeToUnionAccessor[entryType]; ok {
-			opFn.EntryConversionFunc = ua.convertFromFunc
-			opFn.EntryVar = sai.Funcs[fn.Typ].Params[i].Name
-		}
+		smt.EnumValue = attr.EnumName
+		convertFn.AttrSwitch.Attrs = append(convertFn.AttrSwitch.Attrs, smt)
 	}
 
-	switch opFn.Operation {
-	case createOp:
-		convertFn.AttrSwitch = &AttrSwitch{
-			Var:      "attr_list[i].id",
-			ProtoVar: "msg",
-		}
-		opFn.ConvertFunc = strcase.SnakeCase("convert_create " + meta.TypeName)
-		convertFn.ReturnType = opFn.ReqType
-		for _, attr := range info.Attrs[meta.TypeName].CreateFields {
-			name := sanitizeProtoName(attr.MemberName)
-			smt, err := protoFieldSetter(attr.SaiType, convertFn.AttrSwitch.ProtoVar, name, "attr_list[i].value", info)
-			if err != nil {
-				fmt.Println("skipping due to error: ", err)
-				continue
-			}
-			smt.EnumValue = attr.EnumName
-			convertFn.AttrSwitch.Attrs = append(convertFn.AttrSwitch.Attrs, smt)
-		}
-	case getAttrOp:
-		opFn.AttrSwitch = &AttrSwitch{
-			Var:      "attr_list[i].id",
-			ProtoVar: "resp.attr()",
-		}
-		convertFn = nil
-		for _, attr := range info.Attrs[meta.TypeName].ReadFields {
-			name := sanitizeProtoName(attr.MemberName)
-			smt, err := protoFieldGetter(attr.SaiType, name, "attr_list[i].value", info)
-			if err != nil {
-				fmt.Println("skipping due to error: ", err)
-				continue
-			}
-			smt.EnumValue = attr.EnumName
-			opFn.AttrSwitch.Attrs = append(opFn.AttrSwitch.Attrs, smt)
-		}
-	case setAttrOp:
-		convertFn = nil
-		opFn.AttrSwitch = &AttrSwitch{
-			Var:      "attr->id",
-			ProtoVar: "req",
-		}
-		for _, attr := range info.Attrs[meta.TypeName].SetFields {
-			name := sanitizeProtoName(attr.MemberName)
-			smt, err := protoFieldSetter(attr.SaiType, opFn.AttrSwitch.ProtoVar, name, "attr->value", info)
-			if err != nil {
-				fmt.Println("skipping due to error: ", err)
-				continue
-			}
-			smt.EnumValue = attr.EnumName
-			opFn.AttrSwitch.Attrs = append(opFn.AttrSwitch.Attrs, smt)
-		}
-	case "create_bulk":
-		convertFn = nil
-		opFn.EntryVar = strings.TrimPrefix(opFn.EntryVar, "*") // Usual entry is pointer, but for remove_bulk it's an array.
-		opFn.ConvertFunc = strcase.SnakeCase("convert_create " + meta.TypeName)
-		for _, attr := range info.Attrs[meta.TypeName].CreateFields {
-			name := sanitizeProtoName(attr.MemberName)
-			smt, err := protoFieldSetter(attr.SaiType, "", name, "attr_list[i].value", info)
-			if err != nil {
-				fmt.Println("skipping due to error: ", err)
-				continue
-			}
-			smt.EnumValue = attr.EnumName
-		}
-	case "remove_bulk":
-		convertFn = nil
-		opFn.EntryVar = strings.TrimPrefix(opFn.EntryVar, "*") // Usual entry is pointer, but for remove_bulk it's an array.
-		for _, attr := range info.Attrs[meta.TypeName].CreateFields {
-			name := sanitizeProtoName(attr.MemberName)
-			smt, err := protoFieldSetter(attr.SaiType, "", name, "attr_list[i].value", info)
-			if err != nil {
-				fmt.Println("skipping due to error: ", err)
-				continue
-			}
-			smt.EnumValue = attr.EnumName
-		}
-	case "get_stats":
-		convertFn = nil
-		opFn.AttrType = strcase.SnakeCase("sai_" + meta.TypeName + "_stat_t")
-		opFn.AttrEnumType = strcase.UpperCamelCase(meta.TypeName + " stat")
-	default:
-		convertFn = nil
-	}
-
-	// Patches for non-standard APIS
 	if meta.TypeName == "ACL_TABLE" {
 		switch meta.Operation {
 		case createOp:
 			convertFn.AttrConvertInsert = `
 if (attr_list[i].id >= SAI_ACL_TABLE_ATTR_USER_DEFINED_FIELD_GROUP_MIN && attr_list[i].id < SAI_ACL_TABLE_ATTR_USER_DEFINED_FIELD_GROUP_MAX) {
   (*msg.mutable_user_defined_field_group_min())[attr_list[i].id - SAI_ACL_TABLE_ATTR_USER_DEFINED_FIELD_GROUP_MIN] = attr_list[i].value.oid;
-}`
-		case getAttrOp:
-			opFn.AttrConvertInsert = `
-if (attr_list[i].id >= SAI_ACL_TABLE_ATTR_USER_DEFINED_FIELD_GROUP_MIN && attr_list[i].id < SAI_ACL_TABLE_ATTR_USER_DEFINED_FIELD_GROUP_MAX) {
-  attr_list[i].value.oid = resp.attr().user_defined_field_group_min().at(attr_list[i].id - SAI_ACL_TABLE_ATTR_USER_DEFINED_FIELD_GROUP_MIN);
 }`
 		}
 	}
@@ -266,14 +186,146 @@ if (attr_list[i].id >= SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN && attr_l
     *(*msg.mutable_user_defined_field_group_min())[attr_list[i].id  - SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN].mutable_data_u8list() = std::string(attr_list[i].value.aclfield.data.u8list.list, attr_list[i].value.aclfield.data.u8list.list + attr_list[i].value.aclfield.data.u8list.count);
     *(*msg.mutable_user_defined_field_group_min())[attr_list[i].id  - SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN].mutable_mask_u8list() = std::string(attr_list[i].value.aclfield.mask.u8list.list, attr_list[i].value.aclfield.mask.u8list.list + attr_list[i].value.aclfield.mask.u8list.count);
 }`
+		}
+	}
+
+	return convertFn
+}
+
+func getParamDefs(params []saiast.TypeDecl) ([]string, []string) {
+	var paramDefs []string
+	var paramVars []string
+	for _, param := range params {
+		paramDefs = append(paramDefs, fmt.Sprintf("%s %s", param.Typ, param.Name))
+		name := strings.ReplaceAll(param.Name, "*", "")
+		paramVars = append(paramVars, name)
+	}
+	return paramDefs, paramVars
+}
+
+// populateCCInfo returns a two structs with the template data for the given function.
+// The first is the implementation of the API: CreateFoo.
+// The second is the a conversion func from attribute list to the proto message. covert_create_foo.
+func populateCCInfo(meta *saiast.FuncMetadata, apiName string, sai *saiast.SAIAPI, info *docparser.SAIInfo, fn *saiast.TypeDecl, genFunc *GenFunc) {
+	if info.Attrs[meta.TypeName] == nil {
+		fmt.Printf("no doc info for type: %v\n", meta.TypeName)
+		return
+	}
+	genFunc.ReturnType = sai.Funcs[fn.Typ].ReturnType
+	genFunc.Name = meta.Name
+	genFunc.Operation = meta.Operation
+	genFunc.TypeName = meta.TypeName
+
+	paramDefs, paramVars := getParamDefs(sai.Funcs[fn.Typ].Params)
+	genFunc.Args = strings.Join(paramDefs, ", ")
+	genFunc.Vars = strings.Join(paramVars[1:], ", ")
+
+	genFunc.Client = strcase.SnakeCase(apiName)
+	if genFunc.Client == "switch" { // switch is C++ keyword.
+		genFunc.Client = "switch_"
+	}
+	genFunc.SwitchScoped = meta.IsSwitchScoped
+	genFunc.AttrEnumType = strcase.UpperCamelCase(meta.TypeName + " attr")
+	genFunc.AttrType = strcase.SnakeCase("sai_" + meta.TypeName + "_attr_t")
+
+	// If the func has entry, then we don't use ids, instead pass the entry to the proto.
+	if meta.Entry == "" {
+		genFunc.OidVar = sai.Funcs[fn.Typ].Params[0].Name
+		genFunc.OidPointer = strings.TrimPrefix(genFunc.OidVar, "*")
+	} else {
+		i := 0
+		if strings.Contains(genFunc.Operation, "bulk") {
+			i = 1
+		}
+		entryType := strings.TrimPrefix(sai.Funcs[fn.Typ].Params[i].Typ, "const ")
+		if ua, ok := typeToUnionAccessor[entryType]; ok {
+			genFunc.EntryConversionFunc = ua.convertFromFunc
+			genFunc.EntryVar = sai.Funcs[fn.Typ].Params[i].Name
+		}
+	}
+
+	switch genFunc.Operation {
+	case createOp:
+		genFunc.ConvertFunc = strcase.SnakeCase("convert_create " + meta.TypeName)
+	case getAttrOp:
+		genFunc.AttrSwitch = &AttrSwitch{
+			Var:      "attr_list[i].id",
+			ProtoVar: "resp.attr()",
+		}
+		for _, attr := range info.Attrs[meta.TypeName].ReadFields {
+			name := sanitizeProtoName(attr.MemberName)
+			smt, err := protoFieldGetter(attr.SaiType, name, "attr_list[i].value", info)
+			if err != nil {
+				fmt.Println("skipping due to error: ", err)
+				continue
+			}
+			smt.EnumValue = attr.EnumName
+			genFunc.AttrSwitch.Attrs = append(genFunc.AttrSwitch.Attrs, smt)
+		}
+	case setAttrOp:
+		genFunc.AttrSwitch = &AttrSwitch{
+			Var:      "attr->id",
+			ProtoVar: "req",
+		}
+		for _, attr := range info.Attrs[meta.TypeName].SetFields {
+			name := sanitizeProtoName(attr.MemberName)
+			smt, err := protoFieldSetter(attr.SaiType, genFunc.AttrSwitch.ProtoVar, name, "attr->value", info)
+			if err != nil {
+				fmt.Println("skipping due to error: ", err)
+				continue
+			}
+			smt.EnumValue = attr.EnumName
+			genFunc.AttrSwitch.Attrs = append(genFunc.AttrSwitch.Attrs, smt)
+		}
+	case "create_bulk":
+		genFunc.EntryVar = strings.TrimPrefix(genFunc.EntryVar, "*") // Usual entry is pointer, but for remove_bulk it's an array.
+		genFunc.ConvertFunc = strcase.SnakeCase("convert_create " + meta.TypeName)
+		for _, attr := range info.Attrs[meta.TypeName].CreateFields {
+			name := sanitizeProtoName(attr.MemberName)
+			smt, err := protoFieldSetter(attr.SaiType, "", name, "attr_list[i].value", info)
+			if err != nil {
+				fmt.Println("skipping due to error: ", err)
+				continue
+			}
+			smt.EnumValue = attr.EnumName
+		}
+	case "remove_bulk":
+		genFunc.EntryVar = strings.TrimPrefix(genFunc.EntryVar, "*") // Usual entry is pointer, but for remove_bulk it's an array.
+		for _, attr := range info.Attrs[meta.TypeName].CreateFields {
+			name := sanitizeProtoName(attr.MemberName)
+			smt, err := protoFieldSetter(attr.SaiType, "", name, "attr_list[i].value", info)
+			if err != nil {
+				fmt.Println("skipping due to error: ", err)
+				continue
+			}
+			smt.EnumValue = attr.EnumName
+		}
+	case "get_stats":
+		genFunc.AttrType = strcase.SnakeCase("sai_" + meta.TypeName + "_stat_t")
+		genFunc.AttrEnumType = strcase.UpperCamelCase(meta.TypeName + " stat")
+	default:
+	}
+
+	// Patches for non-standard APIS
+	if meta.TypeName == "ACL_TABLE" {
+		switch meta.Operation {
+		case getAttrOp:
+			genFunc.AttrConvertInsert = `
+if (attr_list[i].id >= SAI_ACL_TABLE_ATTR_USER_DEFINED_FIELD_GROUP_MIN && attr_list[i].id < SAI_ACL_TABLE_ATTR_USER_DEFINED_FIELD_GROUP_MAX) {
+  attr_list[i].value.oid = resp.attr().user_defined_field_group_min().at(attr_list[i].id - SAI_ACL_TABLE_ATTR_USER_DEFINED_FIELD_GROUP_MIN);
+}`
+		}
+	}
+	if meta.TypeName == "ACL_ENTRY" {
+		switch meta.Operation {
 		case setAttrOp:
-			opFn.AttrConvertInsert = `
+			genFunc.AttrConvertInsert = `
 if (attr->id >= SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN && attr->id < SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MAX) {
 *(*req.mutable_user_defined_field_group_min())[attr->id  - SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN].mutable_data_u8list() = std::string(attr->value.aclfield.data.u8list.list, attr->value.aclfield.data.u8list.list + attr->value.aclfield.data.u8list.count);
 *(*req.mutable_user_defined_field_group_min())[attr->id  - SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN].mutable_mask_u8list() = std::string(attr->value.aclfield.mask.u8list.list, attr->value.aclfield.mask.u8list.list + attr->value.aclfield.mask.u8list.count);
 }`
 		case getAttrOp:
-			opFn.AttrConvertInsert = `
+			genFunc.AttrConvertInsert = `
 if (attr_list[i].id >= SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN && attr_list[i].id < SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MAX) {
 	auto acl_attr = resp.attr().user_defined_field_group_min().at(attr_list[i].id - SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN);
 	memcpy(attr_list[i].value.aclfield.data.u8list.list, acl_attr.data_u8list().data(), acl_attr.data_u8list().size());
@@ -284,12 +336,11 @@ if (attr_list[i].id >= SAI_ACL_ENTRY_ATTR_USER_DEFINED_FIELD_GROUP_MIN && attr_l
 		}
 	}
 
-	opFn.UseCommonAPI = supportedOperation[opFn.Operation]
+	genFunc.UseCommonAPI = supportedOperation[genFunc.Operation]
 	// Function or types that don't follow standard naming.
-	if strings.Contains(opFn.TypeName, "PORT_ALL") || strings.Contains(opFn.TypeName, "ALL_NEIGHBOR") {
-		opFn.UseCommonAPI = false
+	if strings.Contains(genFunc.TypeName, "PORT_ALL") || strings.Contains(genFunc.TypeName, "ALL_NEIGHBOR") {
+		genFunc.UseCommonAPI = false
 	}
-	return opFn, convertFn
 }
 
 func sanitizeProtoName(inName string) string {
@@ -326,179 +377,6 @@ type unionAccessor struct {
 	convertToFunc   string
 	convertToCopy   bool // If there is preallocated list, need to copy elems into it.
 	assignmentVar   string
-}
-
-var typeToUnionAccessor = map[string]*unionAccessor{
-	"sai_object_list_t": {
-		accessor: "objlist",
-		aType:    variableSizedArray,
-	},
-	"sai_s32_list_t": {
-		accessor: "s32list",
-		aType:    variableSizedArray,
-	},
-	"sai_u32_list_t": {
-		accessor: "u32list",
-		aType:    variableSizedArray,
-	},
-	"sai_u8_list_t": {
-		accessor: "u8list",
-		aType:    variableSizedArray,
-	},
-	"sai_s8_list_t": {
-		accessor: "s8list",
-		aType:    variableSizedArray,
-	},
-	"sai_mac_t": {
-		accessor: "mac",
-		aType:    fixedSizedArray,
-	},
-	"sai_ip4_t": {
-		accessor:  "ip4",
-		aType:     fixedSizedArray,
-		pointerOf: true,
-	},
-	"sai_ip6_t": {
-		accessor: "ip6",
-		aType:    fixedSizedArray,
-	},
-	"sai_object_id_t": {
-		accessor: "oid",
-		aType:    scalar,
-	},
-	"sai_uint64_t": {
-		accessor: "u64",
-		aType:    scalar,
-	},
-	"sai_uint32_t": {
-		accessor: "u32",
-		aType:    scalar,
-	},
-	"sai_uint16_t": {
-		accessor: "u16",
-		aType:    scalar,
-	},
-	"sai_uint8_t": {
-		accessor: "u8",
-		aType:    scalar,
-	},
-	"sai_int8_t": {
-		accessor: "s8",
-		aType:    scalar,
-	},
-	"bool": {
-		accessor: "booldata",
-		aType:    scalar,
-	},
-	"char": {
-		accessor: "chardata",
-		aType:    scalar,
-	},
-	"sai_ip_address_t": {
-		accessor:        "ipaddr",
-		convertFromFunc: "convert_from_ip_address",
-		convertToFunc:   "convert_to_ip_address",
-		aType:           convertFunc,
-	},
-	"sai_route_entry_t": {
-		convertFromFunc: "convert_from_route_entry",
-		convertToFunc:   "convert_to_route_entry",
-		aType:           convertFunc,
-	},
-	"sai_neighbor_entry_t": {
-		convertFromFunc: "convert_from_neighbor_entry",
-		convertToFunc:   "convert_to_neighbor_entry",
-		aType:           convertFunc,
-	},
-	"sai_pointer_t sai_port_state_change_notification_fn": {
-		aType:           callbackRPC,
-		assignmentVar:   "port_state",
-		convertFromFunc: "std::make_unique<PortStateReactor>",
-	},
-	"sai_acl_capability_t": {
-		accessor:        "aclcapability",
-		aType:           convertFunc,
-		convertToCopy:   true,
-		convertFromFunc: "convert_from_acl_capability",
-		convertToFunc:   "convert_to_acl_capability",
-	},
-	"sai_acl_field_data_t sai_ip4_t": {
-		accessor:        "ip4",
-		convertFromFunc: "convert_from_acl_field_data_ip4",
-		convertToFunc:   "convert_to_acl_field_data",
-		protoAccessor:   "ip",
-		aType:           acl,
-	},
-	"sai_acl_action_data_t sai_object_id_t": {
-		accessor:        "oid",
-		convertFromFunc: "convert_from_acl_action_data",
-		convertToFunc:   "convert_to_acl_action_data",
-		protoAccessor:   "oid",
-		aType:           acl,
-	},
-	"sai_acl_action_data_t sai_packet_action_t": {
-		accessor:        "s32",
-		convertFromFunc: "convert_from_acl_action_data_action",
-		convertToFunc:   "convert_to_acl_action_data_action",
-		protoAccessor:   "packet_action",
-		aType:           acl,
-	},
-	"sai_acl_field_data_t sai_acl_ip_type_t": {
-		accessor:        "s32",
-		convertFromFunc: "convert_from_acl_field_data_ip_type",
-		convertToFunc:   "convert_to_acl_field_data_ip_type",
-		protoAccessor:   "ip_type",
-		aType:           acl,
-	},
-	"sai_acl_field_data_t sai_uint8_t": {
-		accessor:        "u8",
-		convertFromFunc: "convert_from_acl_field_data",
-		convertToFunc:   "convert_to_acl_field_data_u8",
-		protoAccessor:   "uint",
-		aType:           acl,
-	},
-	"sai_acl_field_data_t sai_uint16_t": {
-		accessor:        "u16",
-		convertFromFunc: "convert_from_acl_field_data",
-		convertToFunc:   "convert_to_acl_field_data_u16",
-		protoAccessor:   "uint",
-		aType:           acl,
-	},
-	"sai_acl_field_data_t sai_uint32_t": {
-		accessor:        "u32",
-		convertFromFunc: "convert_from_acl_field_data",
-		convertToFunc:   "convert_to_acl_field_data_u32",
-		protoAccessor:   "uint",
-		aType:           acl,
-	},
-	"sai_acl_field_data_t sai_ip6_t": {
-		accessor:        "ip6",
-		convertFromFunc: "convert_from_acl_field_data_ip6",
-		convertToFunc:   "convert_to_acl_field_data_ip6",
-		protoAccessor:   "ip",
-		aType:           acl,
-	},
-	"sai_acl_field_data_t sai_mac_t": {
-		accessor:        "mac",
-		convertFromFunc: "convert_from_acl_field_data_mac",
-		convertToFunc:   "convert_to_acl_field_data_mac",
-		protoAccessor:   "mac",
-		aType:           acl,
-	},
-	"sai_acl_field_data_t sai_object_id_t": {
-		accessor:        "oid",
-		convertFromFunc: "convert_from_acl_field_data",
-		convertToFunc:   "convert_to_acl_field_data",
-		protoAccessor:   "oid",
-		aType:           acl,
-	},
-	"sai_acl_field_data_t sai_u8_list_t": {
-		accessor:        "u8list",
-		convertFromFunc: "convert_from_acl_field_data",
-		convertToFunc:   "convert_to_acl_field_data_u8",
-		protoAccessor:   "sai_u8_list_t",
-		aType:           acl,
-	},
 }
 
 var supportedOperation = map[string]bool{
@@ -604,31 +482,6 @@ type AttrSwitch struct {
 	ProtoVar string
 }
 
-type TemplateFunc struct {
-	ReturnType          string
-	Name                string
-	Args                string
-	TypeName            string
-	Operation           string
-	Vars                string
-	UseCommonAPI        bool
-	Entry               string
-	AttrSwitch          *AttrSwitch
-	ReqType             string
-	RespType            string
-	Client              string
-	RPCMethod           string
-	OidVar              string
-	OidPointer          string
-	AttrType            string
-	AttrEnumType        string
-	SwitchScoped        bool
-	EntryConversionFunc string
-	EntryVar            string
-	ConvertFunc         string
-	AttrConvertInsert   string
-}
-
 func protoFieldGetter(saiType, protoField, varName string, info *docparser.SAIInfo) (*AttrSwitchSmt, error) {
 	smt := &AttrSwitchSmt{
 		ProtoFunc: protoField,
@@ -700,18 +553,68 @@ func protoFieldGetter(saiType, protoField, varName string, info *docparser.SAIIn
 	return nil, fmt.Errorf("unknown accessor type %q", saiType)
 }
 
-// populateTmplDataFromFunc populatsd the protobuf template struct from a SAI function call.
-func populateTmplDataFromFunc(apis map[string]*APITemplate, docInfo *docparser.SAIInfo, apiName string, meta *saiast.FuncMetadata) error {
+func genStreamingRPC(docInfo *docparser.SAIInfo, apiName string, meta *saiast.FuncMetadata) ([]*GenFunc, []*GenType) {
+	types := []*GenType{}
+	rpcs := []*GenFunc{}
 	if docInfo.Attrs[meta.TypeName] == nil {
-		fmt.Printf("no doc info for type: %v\n", meta.TypeName)
+		return nil, nil
+	}
+
+	for _, attr := range docInfo.Attrs[meta.TypeName].ReadFields {
+		if strings.Contains(attr.SaiType, "sai_pointer_t") {
+			funcName := strings.Split(attr.SaiType, " ")[1]
+			name := saiast.TrimSAIName(strings.TrimSuffix(funcName, "_fn"), true, false)
+			req := &GenType{
+				Name: strcase.UpperCamelCase(name + "_request"),
+			}
+			resp, ok := funcToStreamResp[funcName]
+			if !ok {
+				// TODO: There are 2 function pointers that don't follow this pattern, support them.
+				log.Warningf("skipping unknown func type %q\n", funcName)
+				continue
+			}
+			types = append(types, req, resp)
+			rpcs = append(rpcs, &GenFunc{
+				ProtoRequestType:  req.Name,
+				ProtoResponseType: "stream " + resp.Name,
+				ProtoRPCName:      strcase.UpperCamelCase(name),
+			})
+		}
+	}
+	return rpcs, types
+}
+
+func genProtoEnum(docInfo *docparser.SAIInfo, apiName string, meta *saiast.FuncMetadata) *ProtoEnum {
+	// attrEnum is the special emun that describes the possible values can be set/get for the API.
+	if docInfo.Attrs[meta.TypeName] == nil {
 		return nil
 	}
 
-	req := &ProtoTmplMessage{
+	attrEnum := ProtoEnum{
+		Name:   strcase.UpperCamelCase(meta.TypeName + "_ATTR"),
+		Values: []ProtoEnumValues{{Index: 0, Name: meta.TypeName + "_ATTR_UNSPECIFIED"}},
+	}
+
+	// For the attributes, generate code for the type if needed.
+	for i, attr := range docInfo.Attrs[meta.TypeName].ReadFields {
+		attrEnum.Values = append(attrEnum.Values, ProtoEnumValues{
+			Index: i + 1,
+			Name:  strings.TrimPrefix(attr.EnumName, "SAI_"),
+		})
+	}
+	return &attrEnum
+}
+
+func genProtoReqResp(docInfo *docparser.SAIInfo, apiName string, meta *saiast.FuncMetadata) (*GenType, *GenType, error) {
+	req := &GenType{
 		Name: strcase.UpperCamelCase(meta.Name + "_request"),
 	}
-	resp := &ProtoTmplMessage{
+	resp := &GenType{
 		Name: strcase.UpperCamelCase(meta.Name + "_response"),
+	}
+	if docInfo.Attrs[meta.TypeName] == nil {
+		fmt.Printf("no doc info for type: %v\n", meta.TypeName)
+		return nil, nil, nil
 	}
 
 	idField := protoTmplField{
@@ -729,7 +632,7 @@ func populateTmplDataFromFunc(apis map[string]*APITemplate, docInfo *docparser.S
 
 	// Handle proto generation
 	switch meta.Operation {
-	case "create":
+	case createOp:
 		requestIdx := 1
 		if meta.IsSwitchScoped {
 			req.Fields = append(req.Fields, protoTmplField{
@@ -753,24 +656,24 @@ func populateTmplDataFromFunc(apis map[string]*APITemplate, docInfo *docparser.S
 
 		attrs, err := CreateAttrs(requestIdx, meta.TypeName, docInfo, docInfo.Attrs[meta.TypeName].CreateFields)
 		if err != nil {
-			return err
+			return nil, nil, err
 		}
 		req.Fields = append(req.Fields, attrs...)
 		if meta.Entry == "" { // Entries don't have id.
 			resp.Fields = append(resp.Fields, idField)
 		}
-	case "set_attribute":
+	case setAttrOp:
 		// If there are no settable attributes, do nothing.
 		if len(docInfo.Attrs[meta.TypeName].SetFields) == 0 {
-			return nil
+			return nil, nil, nil
 		}
 		req.Fields = append(req.Fields, idField)
 		attrs, err := CreateAttrs(2, meta.TypeName, docInfo, docInfo.Attrs[meta.TypeName].SetFields)
 		if err != nil {
-			return err
+			return nil, nil, err
 		}
 		req.Fields = append(req.Fields, attrs...)
-	case "get_attribute":
+	case getAttrOp:
 		req.Fields = append(req.Fields, idField, protoTmplField{
 			ProtoType: repeatedType + strcase.UpperCamelCase(meta.TypeName+" attr"),
 			Index:     2,
@@ -781,41 +684,6 @@ func populateTmplDataFromFunc(apis map[string]*APITemplate, docInfo *docparser.S
 			Name:      "attr",
 			ProtoType: strcase.UpperCamelCase(meta.TypeName + "Attribute"),
 		})
-
-		// attrEnum is the special emun that describes the possible values can be set/get for the API.
-		attrEnum := ProtoEnum{
-			Name:   strcase.UpperCamelCase(meta.TypeName + "_ATTR"),
-			Values: []ProtoEnumValues{{Index: 0, Name: meta.TypeName + "_ATTR_UNSPECIFIED"}},
-		}
-
-		// For the attributes, generate code for the type if needed.
-		for i, attr := range docInfo.Attrs[meta.TypeName].ReadFields {
-			attrEnum.Values = append(attrEnum.Values, ProtoEnumValues{
-				Index: i + 1,
-				Name:  strings.TrimPrefix(attr.EnumName, "SAI_"),
-			})
-			// Handle function pointers as streaming RPCs.
-			if strings.Contains(attr.SaiType, "sai_pointer_t") {
-				funcName := strings.Split(attr.SaiType, " ")[1]
-				name := saiast.TrimSAIName(strings.TrimSuffix(funcName, "_fn"), true, false)
-				req := &ProtoTmplMessage{
-					Name: strcase.UpperCamelCase(name + "_request"),
-				}
-				resp, ok := funcToStreamResp[funcName]
-				if !ok {
-					// TODO: There are 2 function pointers that don't follow this pattern, support them.
-					log.Warningf("skipping unknown func type %q\n", funcName)
-					continue
-				}
-				apis[apiName].Messages = append(apis[apiName].Messages, *req, resp)
-				apis[apiName].RPCs = append(apis[apiName].RPCs, ProtoRPC{
-					RequestName:  req.Name,
-					ResponseName: "stream " + resp.Name,
-					Name:         strcase.UpperCamelCase(name),
-				})
-			}
-		}
-		apis[apiName].Enums = append(apis[apiName].Enums, attrEnum)
 	case "remove":
 		req.Fields = append(req.Fields, idField)
 	case "create_bulk":
@@ -852,15 +720,9 @@ func populateTmplDataFromFunc(apis map[string]*APITemplate, docInfo *docparser.S
 			Index:     1,
 		})
 	default:
-		return nil
+		return nil, nil, nil
 	}
-	apis[apiName].Messages = append(apis[apiName].Messages, *req, *resp)
-	apis[apiName].RPCs = append(apis[apiName].RPCs, ProtoRPC{
-		RequestName:  req.Name,
-		ResponseName: resp.Name,
-		Name:         strcase.UpperCamelCase(meta.Name),
-	})
-	return nil
+	return req, resp, nil
 }
 
 func CreateAttrs(startIdx int, typeName string, xmlInfo *docparser.SAIInfo, attrs []*docparser.AttrTypeName) ([]protoTmplField, error) {
@@ -904,548 +766,6 @@ type SAITypeInfo struct {
 	ProtoType  string
 	MessageDef string
 	Required   bool
-}
-
-var (
-	SAITypeToProto = map[string]SAITypeInfo{
-		"bool": {
-			ProtoType: "bool",
-		},
-		"char": {
-			ProtoType: "bytes",
-		},
-		"sai_uint8_t": {
-			ProtoType: "uint32",
-		},
-		"sai_int8_t": {
-			ProtoType: "int32",
-		},
-		"sai_uint16_t": {
-			ProtoType: "uint32",
-		},
-		"sai_int16_t": {
-			ProtoType: "int32",
-		},
-		"sai_uint32_t": {
-			ProtoType: "uint32",
-		},
-		"sai_int32_t": {
-			ProtoType: "uint32",
-		},
-		"sai_uint64_t": {
-			ProtoType: "uint64",
-		},
-		"sai_int64_t": {
-			ProtoType: "int64",
-		},
-		"sai_mac_t": {
-			ProtoType: "bytes",
-		},
-		"sai_json_t": {
-			ProtoType: "bytes",
-		},
-		"sai_ip4_t": {
-			ProtoType: "bytes",
-		},
-		"sai_ip6_t": {
-			ProtoType: "bytes",
-		},
-		"sai_s32_list_t": {
-			Repeated:  true,
-			ProtoType: "int32",
-		},
-		"sai_object_id_t": {
-			ProtoType: "uint64",
-		},
-		"map_sai_object_id_t": {
-			ProtoType: "map<uint64, uint64>",
-			Required:  true,
-		},
-		"sai_object_list_t": {
-			Repeated:  true,
-			ProtoType: "uint64",
-		},
-		"sai_encrypt_key_t": {
-			ProtoType: "bytes",
-		},
-		"sai_auth_key_t": {
-			ProtoType: "bytes",
-		},
-		"sai_macsec_sak_t": {
-			ProtoType: "bytes",
-		},
-		"sai_macsec_auth_key_t": {
-			ProtoType: "bytes",
-		},
-		"sai_macsec_salt_t": {
-			ProtoType: "bytes",
-		},
-		"sai_u32_list_t": {
-			Repeated:  true,
-			ProtoType: "uint32",
-		},
-		"sai_segment_list_t": {
-			Repeated:  true,
-			ProtoType: "bytes",
-		},
-		"sai_s8_list_t": {
-			Repeated:  true,
-			ProtoType: "int32",
-		},
-		"sai_u8_list_t": {
-			Repeated:  true,
-			ProtoType: "uint32",
-		},
-		"sai_port_err_status_list_t": {
-			Repeated:  true,
-			ProtoType: "PortErrStatus",
-		},
-		"sai_vlan_list_t": {
-			Repeated:  true,
-			ProtoType: "uint32",
-		},
-		"sai_timespec_t": {
-			ProtoType: "google.protobuf.Timestamp",
-		},
-		// The non-scalar types could be autogenerated, but that aren't that many so create messages by hand.
-		"sai_u32_range_t": {
-			ProtoType: "Uint32Range",
-			MessageDef: `message Uint32Range {
-	uint64 min = 1;
-	uint64 max = 2;
-}`,
-		},
-		"sai_ip_address_t": {
-			ProtoType: "bytes",
-		},
-		"sai_latch_status_t": {
-			ProtoType: "LatchStatus",
-			MessageDef: `message LatchStatus {
-	bool current_status = 1;
-	bool changed = 2;
-}`,
-		},
-		"sai_port_lane_latch_status_list_t": {
-			Repeated:  true,
-			ProtoType: "PortLaneLatchStatus",
-			MessageDef: `message PortLaneLatchStatus {
-	uint32 lane = 1;
-	LatchStatus value = 2;
-}`,
-		},
-		"sai_map_list_t": { // Wrap the map in a message because maps can't be repeated.
-			Repeated:  true,
-			ProtoType: "UintMap",
-			MessageDef: `message UintMap {
-	map<uint32, uint32> uintmap = 1;
-}`,
-		},
-		"sai_tlv_list_t": {
-			Repeated:  true,
-			ProtoType: "TLVEntry",
-			MessageDef: `message HMAC {
-	uint32 key_id = 1;
-	repeated uint32 hmac = 2;
-}
-
-message TLVEntry {
-	oneof entry {
-		bytes ingress_node = 1; 
-		bytes egress_node = 2;
-		bytes opaque_container = 3;
-		HMAC hmac = 4;
-	}
-}`,
-		},
-		"sai_qos_map_list_t": {
-			Repeated:  true,
-			ProtoType: "QOSMap",
-			MessageDef: `
-message	QOSMapParams {
-	uint32 tc = 1;
-	uint32 dscp = 2;
-	uint32 dot1p = 3;
-	uint32 prio = 4;
-	uint32 pg = 5;
-	uint32 queue_index = 6;
-	PacketColor color = 7;
-	uint32 mpls_exp = 8;
-	uint32 fc = 9;
-}
-
-message QOSMap {
-	QOSMapParams key = 1;
-	QOSMapParams value = 2;
-}`,
-		},
-		"sai_system_port_config_t": {
-			ProtoType: "SystemPortConfig",
-			MessageDef: `message SystemPortConfig {
-	uint32 port_id = 1;
-	uint32 attached_switch_id = 2;
-	uint32 attached_core_index = 3;
-	uint32 attached_core_port_index = 4;
-	uint32 speed = 5;
-	uint32 num_voq = 6;
-}`,
-		},
-		"sai_system_port_config_list_t": {
-			Repeated:  true,
-			ProtoType: "SystemPortConfig",
-		},
-		"sai_ip_address_list_t": {
-			Repeated:  true,
-			ProtoType: "bytes",
-		},
-		"sai_port_eye_values_list_t": {
-			Repeated:  true,
-			ProtoType: "PortEyeValues",
-			MessageDef: `message PortEyeValues {
-	uint32 lane = 1;
-	int32 left = 2;
-	int32 right = 3;
-	int32 up = 4;
-	int32 down = 5;
-}`,
-		},
-		"sai_prbs_rx_state_t": {
-			ProtoType: "PRBS_RXState",
-			MessageDef: `message PRBS_RXState {
-	PortPrbsRxStatus rx_status = 1;
-	uint32 error_count = 2;
-}`,
-		},
-		"sai_fabric_port_reachability_t": {
-			ProtoType: "FabricPortReachability",
-			MessageDef: `message FabricPortReachability {
-	uint32 switch_id = 1;
-	bool reachable = 2;
-}`,
-		},
-		"sai_acl_resource_list_t": {
-			Repeated:  true,
-			ProtoType: "ACLResource",
-			MessageDef: `message ACLResource {
-	AclStage stage = 1;
-	AclBindPointType bind_point = 2;
-	uint32 avail_num = 3;
-}`,
-		},
-		"sai_acl_capability_t": {
-			ProtoType: "ACLCapability",
-			MessageDef: `message ACLCapability {
-	bool is_action_list_mandatory = 1;
-	repeated AclActionType action_list = 2;
-}`,
-		},
-		"sai_acl_field_data_t": {
-			ProtoType: "AclFieldData",
-			MessageDef: `message AclFieldData {
-	bool enable = 1;
-	oneof mask {
-		uint64 mask_uint = 2;
-		int64 mask_int = 3;
-		bytes mask_mac = 4;
-		bytes mask_ip = 5;
-		Uint64List mask_list = 6;
-		bytes mask_u8list = 15;
-	};
-	oneof data {
-		bool data_bool = 7;
-		uint64 data_uint = 8;
-		int64 data_int = 9;
-		bytes data_mac = 10;
-		bytes data_ip = 11;
-		Uint64List data_list = 12;
-		AclIpType data_ip_type = 13;
-		uint64 data_oid = 14;
-		bytes data_u8list = 16;
-	};
-}
-
-message Uint64List {
-	repeated uint64 list = 1;
-}`,
-		},
-		"sai_acl_action_data_t": {
-			ProtoType: "AclActionData",
-			MessageDef: `message AclActionData {
-	bool enable = 1;
-	oneof parameter {
-		uint64 uint = 2;
-		uint64 int = 3;
-		bytes mac = 4;
-		bytes ip = 5;
-		uint64 oid = 6;
-		Uint64List objlist = 7;
-		bytes ipaddr = 8;
-		PacketAction packet_action = 9;
-	};
-}`,
-		},
-		"sai_fdb_entry_t": {
-			ProtoType: "FdbEntry",
-			MessageDef: `message FdbEntry {
-	uint64 switch_id = 1;
-	bytes mac_address = 2;
-	uint64 bv_id = 3;
-}`,
-		},
-		"sai_ipmc_entry_t": {
-			ProtoType: "IpmcEntry",
-			MessageDef: `message IpmcEntry {
-	uint64 switch_id = 1;
-	uint64 vr_id = 2;
-	IpmcEntryType type = 3;
-	bytes destination = 4;
-	bytes source = 5;
-}`,
-		},
-		"sai_l2mc_entry_t": {
-			ProtoType: "L2mcEntry",
-			MessageDef: `message L2mcEntry {
-	uint64 switch_id = 1;
-	uint64 bv_id = 2;
-	L2mcEntryType type = 3;
-	bytes destination = 4;
-	bytes source = 5;
-}`,
-		},
-		"sai_mcast_fdb_entry_t": {
-			ProtoType: "McastFdbEntry",
-			MessageDef: `message McastFdbEntry {
-	uint64 switch_id = 1;
-	bytes mac_address = 2;
-	uint64 bv_id = 3;
-}`,
-		},
-		"sai_inseg_entry_t": {
-			ProtoType: "InsegEntry",
-			MessageDef: `message InsegEntry {
-	uint64 switch_id = 1;
-	uint32 label = 2;
-}`,
-		},
-		"sai_nat_entry_data_t": {
-			ProtoType: "NatEntryData",
-			MessageDef: `message NatEntryData{
-	oneof key {
-		bytes key_src_ip = 2;
-		bytes key_dst_ip = 3;
-		uint32 key_proto = 4;
-		uint32 key_l4_src_port = 5;
-		uint32 key_l4_dst_port = 6;
-	};
-	oneof mask {
-		bytes mask_src_ip = 7;
-		bytes mask_dst_ip = 8;
-		uint32 mask_proto = 9;
-		uint32 mask_l4_src_port = 10;
-		uint32 mask_l4_dst_port = 11;
-	};
-}`,
-		},
-		"sai_nat_entry_t": {
-			ProtoType: "NatEntry",
-			MessageDef: `message NatEntry {
-	uint64 switch_id = 1;
-	uint64 vr_id = 2;
-	NatType nat_type = 3;
-	NatEntryData data = 4;
-}`,
-		},
-		"sai_neighbor_entry_t": {
-			ProtoType: "NeighborEntry",
-			MessageDef: `message NeighborEntry {
-	uint64 switch_id = 1;
-	uint64 rif_id = 2;
-	bytes ip_address = 3;
-}`,
-		},
-		"sai_ip_prefix_t": {
-			ProtoType: "IpPrefix",
-			MessageDef: `message IpPrefix {
-	bytes addr = 1;
-	bytes mask = 2;
-}`,
-		},
-		"sai_route_entry_t": {
-			ProtoType: "RouteEntry",
-			MessageDef: `message RouteEntry {
-	uint64 switch_id = 1;
-	uint64 vr_id = 2;
-	IpPrefix destination = 3;
-}`,
-		},
-		"sai_my_sid_entry_t": {
-			ProtoType: "MySidEntry",
-			MessageDef: `message MySidEntry {
-	uint64 switch_id = 1;
-	uint64 vr_id = 2;
-	uint32 locator_block_len = 3;
-	uint32 locator_node_len = 4;
-	uint32 function_len = 5;
-	uint32 args_len = 6;
-	bytes sid = 7;
-}`,
-		},
-		"sai_fdb_event_notification_data_t": {
-			ProtoType: "FdbEventNotificationData",
-			MessageDef: `
-message FdbEventNotificationData {
-    FdbEvent event_type = 1;
-	FdbEntry fdb_entry = 2;
-	repeated FdbEntryAttribute attrs = 3;
-}`,
-		},
-		"sai_port_oper_status_notification_t": {
-			ProtoType: "PortOperStatusNotification",
-			MessageDef: `message PortOperStatusNotification {
-	uint64 port_id = 1;
-	PortOperStatus port_state = 2;
-}`,
-		},
-		"sai_queue_deadlock_notification_data_t": {
-			ProtoType: "QueueDeadlockNotificationData",
-			MessageDef: `message QueueDeadlockNotificationData {
-	uint64 queue_id = 1;
-	QueuePfcDeadlockEventType event= 2;
-	bool app_managed_recovery = 3;
-}`,
-		},
-		"sai_bfd_session_state_notification_t": {
-			ProtoType: "BfdSessionStateChangeNotificationData",
-			MessageDef: `message BfdSessionStateChangeNotificationData {
-	uint64 bfd_session_id = 1;
-	BfdSessionState session_state = 2;
-}`,
-		},
-		"sai_ipsec_sa_status_notification_t": {
-			ProtoType: "IpsecSaStatusNotificationData",
-			MessageDef: `message IpsecSaStatusNotificationData {
-    uint64 ipsec_sa_id = 1;
-	IpsecSaOctetCountStatus ipsec_sa_octet_count_status = 2;
-	bool ipsec_egress_sn_at_max_limit = 3;
-}`,
-		},
-	}
-	// The notification function types are implemented as streaming RPCs.
-	funcToStreamResp = map[string]ProtoTmplMessage{
-		"sai_switch_state_change_notification_fn": {
-			Name: "SwitchStateChangeNotificationResponse",
-			Fields: []protoTmplField{{
-				Index:     1,
-				ProtoType: "uint64",
-				Name:      "switch_id",
-			}, {
-				Index:     2,
-				ProtoType: "SwitchOperStatus",
-				Name:      "switch_oper_status",
-			}},
-		},
-		"sai_switch_shutdown_request_notification_fn": {
-			Name: "SwitchShutdownRequestNotificationResponse",
-			Fields: []protoTmplField{{
-				Index:     1,
-				ProtoType: "uint64",
-				Name:      "switch_id",
-			}},
-		},
-		"sai_fdb_event_notification_fn": {
-			Name: "FdbEventNotificationResponse",
-			Fields: []protoTmplField{{
-				Index:     1,
-				ProtoType: "repeated FdbEventNotificationData",
-				Name:      "data",
-			}},
-		},
-		"sai_port_state_change_notification_fn": {
-			Name: "PortStateChangeNotificationResponse",
-			Fields: []protoTmplField{{
-				Index:     1,
-				ProtoType: "repeated PortOperStatusNotification",
-				Name:      "data",
-			}},
-		},
-		"sai_packet_event_notification_fn": {
-			Name: "PacketEventNotificationResponse",
-			Fields: []protoTmplField{{
-				Index:     1,
-				ProtoType: "uint64",
-				Name:      "switch_id",
-			}, {
-				Index:     2,
-				ProtoType: "bytes",
-				Name:      "buffer",
-			}, {
-				Index:     3,
-				ProtoType: "repeated HostifPacketAttribute",
-				Name:      "attrs",
-			}},
-		},
-		"sai_queue_pfc_deadlock_notification_fn": {
-			Name: "QueuePfcDeadlockNotificationResponse",
-			Fields: []protoTmplField{{
-				Index:     1,
-				ProtoType: "repeated QueueDeadlockNotificationData",
-				Name:      "data",
-			}},
-		},
-		"sai_bfd_session_state_change_notification_fn": {
-			Name: "BfdSessionStateChangeNotificationResponse",
-			Fields: []protoTmplField{{
-				Index:     1,
-				ProtoType: "repeated BfdSessionStateChangeNotificationData",
-				Name:      "data",
-			}},
-		},
-		"sai_tam_event_notification_fn": {
-			Name: "TamEventNotificationResponse",
-			Fields: []protoTmplField{{
-				Index:     1,
-				ProtoType: "uint64",
-				Name:      "tam_event_id",
-			}, {
-				Index:     2,
-				ProtoType: "bytes",
-				Name:      "buffer",
-			}, {
-				Index:     3,
-				ProtoType: "repeated TamEventActionAttribute",
-				Name:      "attrs",
-			}},
-		},
-		"sai_ipsec_sa_status_change_notification_fn": {
-			Name: "IpsecSaStatusNotificationDataResponse",
-			Fields: []protoTmplField{{
-				Index:     1,
-				ProtoType: "repeated IpsecSaStatusNotificationData",
-				Name:      "data",
-			}},
-		},
-	}
-)
-
-// saiTypeToProtoTypeCompound handles compound sai types (eg list of enums).
-// The map key contains the base type (eg list) and func accepts the subtype (eg an enum type)
-// and returns the full type string (eg repeated sample_enum).
-var saiTypeToProtoTypeCompound = map[string]func(subType string, xmlInfo *docparser.SAIInfo) (string, bool){
-	"sai_s32_list_t": func(subType string, xmlInfo *docparser.SAIInfo) (string, bool) {
-		if _, ok := xmlInfo.Enums[subType]; !ok {
-			return "", false
-		}
-		return "repeated " + saiast.TrimSAIName(subType, true, false), true
-	},
-	"sai_acl_field_data_t": func(_ string, _ *docparser.SAIInfo) (string, bool) {
-		return "AclFieldData", false
-	},
-	"map_sai_acl_field_data_t": func(_ string, _ *docparser.SAIInfo) (string, bool) {
-		return "map<uint64, AclFieldData>", true
-	},
-	"sai_acl_action_data_t": func(_ string, _ *docparser.SAIInfo) (string, bool) {
-		return "AclActionData", false
-	},
-	"sai_pointer_t": func(_ string, _ *docparser.SAIInfo) (string, bool) { return "-", false }, // Noop, these are special cases.
 }
 
 // saiTypeToProtoType returns the protobuf type string for a SAI type.
@@ -1497,12 +817,6 @@ type protoTmplField struct {
 	Name      string
 	Index     int
 	Option    string
-}
-
-type ProtoRPC struct {
-	RequestName  string
-	ResponseName string
-	Name         string
 }
 
 const repeatedType = "repeated "

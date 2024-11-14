@@ -433,6 +433,15 @@ message SetSwitchAttributeRequest {
 
 message SetSwitchAttributeResponse {}
 
+message GetSwitchAttributeRequest {
+  uint64 oid = 1;
+  repeated SwitchAttr attr_type = 2;
+}
+
+message GetSwitchAttributeResponse {
+  SwitchAttribute attr = 1;
+}
+
 message SwitchStateChangeNotificationRequest {}
 
 message SwitchStateChangeNotificationResponse {
@@ -490,15 +499,6 @@ message IpsecSaStatusChangeNotificationRequest {}
 
 message IpsecSaStatusNotificationDataResponse {
   repeated IpsecSaStatusNotificationData data = 1;
-}
-
-message GetSwitchAttributeRequest {
-  uint64 oid = 1;
-  repeated SwitchAttr attr_type = 2;
-}
-
-message GetSwitchAttributeResponse {
-  SwitchAttribute attr = 1;
 }
 
 message GetSwitchStatsRequest {
