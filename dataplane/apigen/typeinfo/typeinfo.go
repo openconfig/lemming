@@ -58,6 +58,7 @@ type GenFunc struct {
 	EntryVar            string
 	ConvertFunc         string
 	AttrConvertInsert   string
+	IsStreaming         bool
 }
 
 type APITemplate struct {
@@ -98,6 +99,7 @@ func Data(doc *docparser.SAIInfo, sai *saiast.SAIAPI, protoPackage, protoGoPacka
 				APIType:        iface.Name,
 				APIName:        apiName,
 				ProtoInclude:   apiName + ".pb",
+				GRPCInclude:    apiName + ".grpc.pb",
 				CCOutDir:       ccOutDir,
 			}
 		}
@@ -578,6 +580,7 @@ func genStreamingRPC(docInfo *docparser.SAIInfo, apiName string, meta *saiast.Fu
 				ProtoRequestType:  req.Name,
 				ProtoResponseType: "stream " + resp.Name,
 				ProtoRPCName:      strcase.UpperCamelCase(name),
+				IsStreaming:       true,
 			})
 		}
 	}
