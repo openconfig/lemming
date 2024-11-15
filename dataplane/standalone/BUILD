@@ -76,15 +76,15 @@ cc_binary(
 cc_binary(
     name = "server",
     srcs = ["server.cc"],
-    tags = ["manual"],
-    deps = [
-        "//dataplane/standalone/saiserver",
-        "@com_github_grpc_grpc//:grpc++",
-    ],
     linkopts = [
         "-lprotobuf",
         "-lgrpc++",
         "-lglog",
-        "-lsai"
+        "-lsai",
+    ],
+    tags = ["manual"],
+    deps = [
+        "//dataplane/standalone/saiserver",
+        "@com_github_grpc_grpc//:grpc++",
     ],
 )
