@@ -157,7 +157,7 @@ enum {{ .Name }} {
 }
 {{ end -}}
 
-{{ range .Messages }}
+{{ range .Types }}
 message {{ .Name }} {
 	{{- if .Option }}
 	{{ .Option }};
@@ -169,8 +169,10 @@ message {{ .Name }} {
 {{ end }}
 
 service {{ .ServiceName }} {
-	{{- range .RPCs }}
-	rpc {{ .Name }} ({{ .RequestName }}) returns ({{ .ResponseName }}) {}
+	{{- range .Funcs }}
+	{{- if .ProtoRPCName }}
+	rpc {{ .ProtoRPCName }} ({{ .ProtoRequestType }}) returns ({{ .ProtoResponseType }}) {}
+	{{- end }}
 	{{- end }}
 }
 `))

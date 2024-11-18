@@ -148,7 +148,9 @@ extern "C" {
 extern const {{ .APIType }} l_{{ .APIName }};
 
 {{ range .Funcs }}
+{{- if .Name }}
 {{ .ReturnType }} l_{{ .Name }}({{ .Args }});
+{{- end }}
 {{ end }}
 
 #endif  // {{ .IncludeGuard }}
@@ -216,7 +218,9 @@ switch ({{ .Var }}) {
 
 const {{ .APIType }} l_{{ .APIName }} = {
 {{- range .Funcs }}
+{{- if .Name }}
 	.{{ .Name }} = l_{{ .Name }},
+{{- end }}
 {{- end }}
 };
 
@@ -245,16 +249,17 @@ return msg;
 {{ end }}
 
 {{- range .Funcs }}
+{{- if .Name }}
 {{ .ReturnType }} l_{{ .Name }}({{ .Args }}) {
 	LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 	{{- if .UseCommonAPI }}
 	{{ if eq .Operation "create" }}
-	lemming::dataplane::sai::{{ .ReqType }} req = {{.ConvertFunc}}({{.Vars}});
-	lemming::dataplane::sai::{{ .RespType }} resp;
+	lemming::dataplane::sai::{{ .ProtoRequestType }} req = {{.ConvertFunc}}({{.Vars}});
+	lemming::dataplane::sai::{{ .ProtoResponseType }} resp;
 	grpc::ClientContext context;
 	{{ if .SwitchScoped }} req.set_switch_(switch_id); {{ end }}
 	{{ if .EntryVar }} *req.mutable_entry() = {{ .EntryConversionFunc }}({{ .EntryVar }}); {{ end }}
-	grpc::Status status = {{ .Client }}->{{ .RPCMethod }}(&context, req, &resp);
+	grpc::Status status = {{ .Client }}->{{ .ProtoRPCName }}(&context, req, &resp);
 	if (!status.ok()) {
 		auto it = context.GetServerTrailingMetadata().find("traceparent");
 		if (it != context.GetServerTrailingMetadata().end()) {
@@ -270,8 +275,8 @@ return msg;
   	}
 	{{ end }}
 	{{ else if eq .Operation "create_bulk" }}
-	lemming::dataplane::sai::{{ .ReqType }} req;
-	lemming::dataplane::sai::{{ .RespType }} resp;
+	lemming::dataplane::sai::{{ .ProtoRequestType }} req;
+	lemming::dataplane::sai::{{ .ProtoResponseType }} resp;
 	grpc::ClientContext context;
 
 	for (uint32_t i = 0; i < object_count; i++) {
@@ -286,7 +291,7 @@ return msg;
 		*req.add_reqs() = r;
 	}
 
-	grpc::Status status = {{ .Client }}->{{ .RPCMethod }}(&context, req, &resp);
+	grpc::Status status = {{ .Client }}->{{ .ProtoRPCName }}(&context, req, &resp);
 	if (!status.ok()) {
 		auto it = context.GetServerTrailingMetadata().find("traceparent");
 		if (it != context.GetServerTrailingMetadata().end()) {
@@ -305,8 +310,8 @@ return msg;
 	}
 
 	{{ else if eq .Operation "get_attribute" }}
-	lemming::dataplane::sai::{{ .ReqType }} req;
-	lemming::dataplane::sai::{{ .RespType }} resp;
+	lemming::dataplane::sai::{{ .ProtoRequestType }} req;
+	lemming::dataplane::sai::{{ .ProtoResponseType }} resp;
 	grpc::ClientContext context;
 	{{ if .EntryVar }} *req.mutable_entry() = {{ .EntryConversionFunc }}({{ .EntryVar }}); {{ end }}
 	{{ if .OidVar -}} req.set_oid({{ .OidVar }}); {{ end }}
@@ -314,7 +319,7 @@ return msg;
 	for (uint32_t i = 0; i < attr_count; i++) {
 		req.add_attr_type(convert_{{ .AttrType }}_to_proto(attr_list[i].id));
 	}
-	grpc::Status status = {{ .Client }}->{{ .RPCMethod }}(&context, req, &resp);
+	grpc::Status status = {{ .Client }}->{{ .ProtoRPCName }}(&context, req, &resp);
 	if (!status.ok()) {
 		auto it = context.GetServerTrailingMetadata().find("traceparent");
 		if (it != context.GetServerTrailingMetadata().end()) {
@@ -329,14 +334,14 @@ return msg;
 		{{ template "getattr" .AttrSwitch }}
 	}
 	{{ else if and (eq .Operation "set_attribute") (ne (len .AttrSwitch.Attrs) 0) }}
-	lemming::dataplane::sai::{{ .ReqType }} req;
-	lemming::dataplane::sai::{{ .RespType }} resp;
+	lemming::dataplane::sai::{{ .ProtoRequestType }} req;
+	lemming::dataplane::sai::{{ .ProtoResponseType }} resp;
 	grpc::ClientContext context;
 	{{ if .OidVar -}} req.set_oid({{ .OidVar }}); {{ end }}
 	{{ if .EntryVar }} *req.mutable_entry() = {{ .EntryConversionFunc }}({{ .EntryVar }}); {{ end }}
 	{{ .AttrConvertInsert }}
 	{{ template "setattr" .AttrSwitch }}
-	grpc::Status status = {{ .Client }}->{{ .RPCMethod }}(&context, req, &resp);
+	grpc::Status status = {{ .Client }}->{{ .ProtoRPCName }}(&context, req, &resp);
 	if (!status.ok()) {
 		auto it = context.GetServerTrailingMetadata().find("traceparent");
 		if (it != context.GetServerTrailingMetadata().end()) {
@@ -347,12 +352,12 @@ return msg;
 		return SAI_STATUS_FAILURE;
 	}
 	{{ else if eq .Operation "remove" }}
-	lemming::dataplane::sai::{{ .ReqType }} req;
-	lemming::dataplane::sai::{{ .RespType }} resp;
+	lemming::dataplane::sai::{{ .ProtoRequestType }} req;
+	lemming::dataplane::sai::{{ .ProtoResponseType }} resp;
 	grpc::ClientContext context;
 	{{ if .OidVar -}} req.set_oid({{ .OidVar }}); {{ end }}
 	{{ if .EntryVar }} *req.mutable_entry() = {{ .EntryConversionFunc }}({{ .EntryVar }}); {{ end }}
-	grpc::Status status = {{ .Client }}->{{ .RPCMethod }}(&context, req, &resp);
+	grpc::Status status = {{ .Client }}->{{ .ProtoRPCName }}(&context, req, &resp);
 	if (!status.ok()) {
 		auto it = context.GetServerTrailingMetadata().find("traceparent");
 		if (it != context.GetServerTrailingMetadata().end()) {
@@ -363,8 +368,8 @@ return msg;
 		return SAI_STATUS_FAILURE;
 	}
 	{{ else if eq .Operation "remove_bulk" }}
-	lemming::dataplane::sai::{{ .ReqType }} req;
-	lemming::dataplane::sai::{{ .RespType }} resp;
+	lemming::dataplane::sai::{{ .ProtoRequestType }} req;
+	lemming::dataplane::sai::{{ .ProtoResponseType }} resp;
 	grpc::ClientContext context;
 
 	for (uint32_t i = 0; i < object_count; i++) {
@@ -372,7 +377,7 @@ return msg;
 		{{ if .EntryVar }} *req.add_reqs()->mutable_entry() = {{ .EntryConversionFunc }}({{ .EntryVar }}[i]); {{ end }}
 	}
 
-	grpc::Status status = {{ .Client }}->{{ .RPCMethod }}(&context, req, &resp);
+	grpc::Status status = {{ .Client }}->{{ .ProtoRPCName }}(&context, req, &resp);
 	if (!status.ok()) {
 		auto it = context.GetServerTrailingMetadata().find("traceparent");
 		if (it != context.GetServerTrailingMetadata().end()) {
@@ -389,15 +394,15 @@ return msg;
 		object_statuses[i] = SAI_STATUS_SUCCESS;
 	}
 	{{ else if eq .Operation "get_stats" }}
-	lemming::dataplane::sai::{{ .ReqType }} req;
-	lemming::dataplane::sai::{{ .RespType }} resp;
+	lemming::dataplane::sai::{{ .ProtoRequestType }} req;
+	lemming::dataplane::sai::{{ .ProtoResponseType }} resp;
 	grpc::ClientContext context;
 	{{ if .OidVar -}} req.set_oid({{ .OidVar }}); {{ end }}
 	{{ if .EntryVar }} *req.mutable_entry() = {{ .EntryConversionFunc }}({{ .EntryVar }}); {{ end }}
 	for (uint32_t i = 0; i < number_of_counters; i++) {
 		req.add_counter_ids(convert_{{ .AttrType }}_to_proto(counter_ids[i]));
 	}
-	grpc::Status status = {{ .Client }}->{{ .RPCMethod }}(&context, req, &resp);
+	grpc::Status status = {{ .Client }}->{{ .ProtoRPCName }}(&context, req, &resp);
 	if (!status.ok()) {
 		auto it = context.GetServerTrailingMetadata().find("traceparent");
 		if (it != context.GetServerTrailingMetadata().end()) {
@@ -416,6 +421,7 @@ return msg;
 	return SAI_STATUS_NOT_IMPLEMENTED;
 	{{- end }}
 }
+{{- end }}
 {{ end }}
 `))
 	enumHeaderTmpl = template.Must(template.New("enum").Parse(`

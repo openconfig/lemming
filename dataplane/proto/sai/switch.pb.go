@@ -2254,6 +2254,108 @@ func (*SetSwitchAttributeResponse) Descriptor() ([]byte, []int) {
 	return file_dataplane_proto_sai_switch_proto_rawDescGZIP(), []int{5}
 }
 
+type GetSwitchAttributeRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Oid      uint64       `protobuf:"varint,1,opt,name=oid,proto3" json:"oid,omitempty"`
+	AttrType []SwitchAttr `protobuf:"varint,2,rep,packed,name=attr_type,json=attrType,proto3,enum=lemming.dataplane.sai.SwitchAttr" json:"attr_type,omitempty"`
+}
+
+func (x *GetSwitchAttributeRequest) Reset() {
+	*x = GetSwitchAttributeRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_dataplane_proto_sai_switch_proto_msgTypes[6]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GetSwitchAttributeRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetSwitchAttributeRequest) ProtoMessage() {}
+
+func (x *GetSwitchAttributeRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_dataplane_proto_sai_switch_proto_msgTypes[6]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetSwitchAttributeRequest.ProtoReflect.Descriptor instead.
+func (*GetSwitchAttributeRequest) Descriptor() ([]byte, []int) {
+	return file_dataplane_proto_sai_switch_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *GetSwitchAttributeRequest) GetOid() uint64 {
+	if x != nil {
+		return x.Oid
+	}
+	return 0
+}
+
+func (x *GetSwitchAttributeRequest) GetAttrType() []SwitchAttr {
+	if x != nil {
+		return x.AttrType
+	}
+	return nil
+}
+
+type GetSwitchAttributeResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Attr *SwitchAttribute `protobuf:"bytes,1,opt,name=attr,proto3" json:"attr,omitempty"`
+}
+
+func (x *GetSwitchAttributeResponse) Reset() {
+	*x = GetSwitchAttributeResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_dataplane_proto_sai_switch_proto_msgTypes[7]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GetSwitchAttributeResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetSwitchAttributeResponse) ProtoMessage() {}
+
+func (x *GetSwitchAttributeResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_dataplane_proto_sai_switch_proto_msgTypes[7]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetSwitchAttributeResponse.ProtoReflect.Descriptor instead.
+func (*GetSwitchAttributeResponse) Descriptor() ([]byte, []int) {
+	return file_dataplane_proto_sai_switch_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *GetSwitchAttributeResponse) GetAttr() *SwitchAttribute {
+	if x != nil {
+		return x.Attr
+	}
+	return nil
+}
+
 type SwitchStateChangeNotificationRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2263,7 +2365,7 @@ type SwitchStateChangeNotificationRequest struct {
 func (x *SwitchStateChangeNotificationRequest) Reset() {
 	*x = SwitchStateChangeNotificationRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_dataplane_proto_sai_switch_proto_msgTypes[6]
+		mi := &file_dataplane_proto_sai_switch_proto_msgTypes[8]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2276,7 +2378,7 @@ func (x *SwitchStateChangeNotificationRequest) String() string {
 func (*SwitchStateChangeNotificationRequest) ProtoMessage() {}
 
 func (x *SwitchStateChangeNotificationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_switch_proto_msgTypes[6]
+	mi := &file_dataplane_proto_sai_switch_proto_msgTypes[8]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2289,7 +2391,7 @@ func (x *SwitchStateChangeNotificationRequest) ProtoReflect() protoreflect.Messa
 
 // Deprecated: Use SwitchStateChangeNotificationRequest.ProtoReflect.Descriptor instead.
 func (*SwitchStateChangeNotificationRequest) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_switch_proto_rawDescGZIP(), []int{6}
+	return file_dataplane_proto_sai_switch_proto_rawDescGZIP(), []int{8}
 }
 
 type SwitchStateChangeNotificationResponse struct {
@@ -2304,7 +2406,7 @@ type SwitchStateChangeNotificationResponse struct {
 func (x *SwitchStateChangeNotificationResponse) Reset() {
 	*x = SwitchStateChangeNotificationResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_dataplane_proto_sai_switch_proto_msgTypes[7]
+		mi := &file_dataplane_proto_sai_switch_proto_msgTypes[9]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2317,7 +2419,7 @@ func (x *SwitchStateChangeNotificationResponse) String() string {
 func (*SwitchStateChangeNotificationResponse) ProtoMessage() {}
 
 func (x *SwitchStateChangeNotificationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_switch_proto_msgTypes[7]
+	mi := &file_dataplane_proto_sai_switch_proto_msgTypes[9]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2330,7 +2432,7 @@ func (x *SwitchStateChangeNotificationResponse) ProtoReflect() protoreflect.Mess
 
 // Deprecated: Use SwitchStateChangeNotificationResponse.ProtoReflect.Descriptor instead.
 func (*SwitchStateChangeNotificationResponse) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_switch_proto_rawDescGZIP(), []int{7}
+	return file_dataplane_proto_sai_switch_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *SwitchStateChangeNotificationResponse) GetSwitchId() uint64 {
@@ -2356,7 +2458,7 @@ type SwitchShutdownRequestNotificationRequest struct {
 func (x *SwitchShutdownRequestNotificationRequest) Reset() {
 	*x = SwitchShutdownRequestNotificationRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_dataplane_proto_sai_switch_proto_msgTypes[8]
+		mi := &file_dataplane_proto_sai_switch_proto_msgTypes[10]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2369,7 +2471,7 @@ func (x *SwitchShutdownRequestNotificationRequest) String() string {
 func (*SwitchShutdownRequestNotificationRequest) ProtoMessage() {}
 
 func (x *SwitchShutdownRequestNotificationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_switch_proto_msgTypes[8]
+	mi := &file_dataplane_proto_sai_switch_proto_msgTypes[10]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2382,7 +2484,7 @@ func (x *SwitchShutdownRequestNotificationRequest) ProtoReflect() protoreflect.M
 
 // Deprecated: Use SwitchShutdownRequestNotificationRequest.ProtoReflect.Descriptor instead.
 func (*SwitchShutdownRequestNotificationRequest) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_switch_proto_rawDescGZIP(), []int{8}
+	return file_dataplane_proto_sai_switch_proto_rawDescGZIP(), []int{10}
 }
 
 type SwitchShutdownRequestNotificationResponse struct {
@@ -2396,7 +2498,7 @@ type SwitchShutdownRequestNotificationResponse struct {
 func (x *SwitchShutdownRequestNotificationResponse) Reset() {
 	*x = SwitchShutdownRequestNotificationResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_dataplane_proto_sai_switch_proto_msgTypes[9]
+		mi := &file_dataplane_proto_sai_switch_proto_msgTypes[11]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2409,7 +2511,7 @@ func (x *SwitchShutdownRequestNotificationResponse) String() string {
 func (*SwitchShutdownRequestNotificationResponse) ProtoMessage() {}
 
 func (x *SwitchShutdownRequestNotificationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_switch_proto_msgTypes[9]
+	mi := &file_dataplane_proto_sai_switch_proto_msgTypes[11]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2422,7 +2524,7 @@ func (x *SwitchShutdownRequestNotificationResponse) ProtoReflect() protoreflect.
 
 // Deprecated: Use SwitchShutdownRequestNotificationResponse.ProtoReflect.Descriptor instead.
 func (*SwitchShutdownRequestNotificationResponse) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_switch_proto_rawDescGZIP(), []int{9}
+	return file_dataplane_proto_sai_switch_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *SwitchShutdownRequestNotificationResponse) GetSwitchId() uint64 {
@@ -2441,7 +2543,7 @@ type FdbEventNotificationRequest struct {
 func (x *FdbEventNotificationRequest) Reset() {
 	*x = FdbEventNotificationRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_dataplane_proto_sai_switch_proto_msgTypes[10]
+		mi := &file_dataplane_proto_sai_switch_proto_msgTypes[12]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2454,7 +2556,7 @@ func (x *FdbEventNotificationRequest) String() string {
 func (*FdbEventNotificationRequest) ProtoMessage() {}
 
 func (x *FdbEventNotificationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_switch_proto_msgTypes[10]
+	mi := &file_dataplane_proto_sai_switch_proto_msgTypes[12]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2467,7 +2569,7 @@ func (x *FdbEventNotificationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FdbEventNotificationRequest.ProtoReflect.Descriptor instead.
 func (*FdbEventNotificationRequest) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_switch_proto_rawDescGZIP(), []int{10}
+	return file_dataplane_proto_sai_switch_proto_rawDescGZIP(), []int{12}
 }
 
 type FdbEventNotificationResponse struct {
@@ -2481,7 +2583,7 @@ type FdbEventNotificationResponse struct {
 func (x *FdbEventNotificationResponse) Reset() {
 	*x = FdbEventNotificationResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_dataplane_proto_sai_switch_proto_msgTypes[11]
+		mi := &file_dataplane_proto_sai_switch_proto_msgTypes[13]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2494,7 +2596,7 @@ func (x *FdbEventNotificationResponse) String() string {
 func (*FdbEventNotificationResponse) ProtoMessage() {}
 
 func (x *FdbEventNotificationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_switch_proto_msgTypes[11]
+	mi := &file_dataplane_proto_sai_switch_proto_msgTypes[13]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2507,7 +2609,7 @@ func (x *FdbEventNotificationResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FdbEventNotificationResponse.ProtoReflect.Descriptor instead.
 func (*FdbEventNotificationResponse) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_switch_proto_rawDescGZIP(), []int{11}
+	return file_dataplane_proto_sai_switch_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *FdbEventNotificationResponse) GetData() []*FdbEventNotificationData {
@@ -2526,7 +2628,7 @@ type PortStateChangeNotificationRequest struct {
 func (x *PortStateChangeNotificationRequest) Reset() {
 	*x = PortStateChangeNotificationRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_dataplane_proto_sai_switch_proto_msgTypes[12]
+		mi := &file_dataplane_proto_sai_switch_proto_msgTypes[14]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2539,7 +2641,7 @@ func (x *PortStateChangeNotificationRequest) String() string {
 func (*PortStateChangeNotificationRequest) ProtoMessage() {}
 
 func (x *PortStateChangeNotificationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_switch_proto_msgTypes[12]
+	mi := &file_dataplane_proto_sai_switch_proto_msgTypes[14]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2552,7 +2654,7 @@ func (x *PortStateChangeNotificationRequest) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use PortStateChangeNotificationRequest.ProtoReflect.Descriptor instead.
 func (*PortStateChangeNotificationRequest) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_switch_proto_rawDescGZIP(), []int{12}
+	return file_dataplane_proto_sai_switch_proto_rawDescGZIP(), []int{14}
 }
 
 type PortStateChangeNotificationResponse struct {
@@ -2566,7 +2668,7 @@ type PortStateChangeNotificationResponse struct {
 func (x *PortStateChangeNotificationResponse) Reset() {
 	*x = PortStateChangeNotificationResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_dataplane_proto_sai_switch_proto_msgTypes[13]
+		mi := &file_dataplane_proto_sai_switch_proto_msgTypes[15]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2579,7 +2681,7 @@ func (x *PortStateChangeNotificationResponse) String() string {
 func (*PortStateChangeNotificationResponse) ProtoMessage() {}
 
 func (x *PortStateChangeNotificationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_switch_proto_msgTypes[13]
+	mi := &file_dataplane_proto_sai_switch_proto_msgTypes[15]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2592,7 +2694,7 @@ func (x *PortStateChangeNotificationResponse) ProtoReflect() protoreflect.Messag
 
 // Deprecated: Use PortStateChangeNotificationResponse.ProtoReflect.Descriptor instead.
 func (*PortStateChangeNotificationResponse) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_switch_proto_rawDescGZIP(), []int{13}
+	return file_dataplane_proto_sai_switch_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *PortStateChangeNotificationResponse) GetData() []*PortOperStatusNotification {
@@ -2611,7 +2713,7 @@ type PacketEventNotificationRequest struct {
 func (x *PacketEventNotificationRequest) Reset() {
 	*x = PacketEventNotificationRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_dataplane_proto_sai_switch_proto_msgTypes[14]
+		mi := &file_dataplane_proto_sai_switch_proto_msgTypes[16]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2624,7 +2726,7 @@ func (x *PacketEventNotificationRequest) String() string {
 func (*PacketEventNotificationRequest) ProtoMessage() {}
 
 func (x *PacketEventNotificationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_switch_proto_msgTypes[14]
+	mi := &file_dataplane_proto_sai_switch_proto_msgTypes[16]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2637,7 +2739,7 @@ func (x *PacketEventNotificationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PacketEventNotificationRequest.ProtoReflect.Descriptor instead.
 func (*PacketEventNotificationRequest) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_switch_proto_rawDescGZIP(), []int{14}
+	return file_dataplane_proto_sai_switch_proto_rawDescGZIP(), []int{16}
 }
 
 type PacketEventNotificationResponse struct {
@@ -2653,7 +2755,7 @@ type PacketEventNotificationResponse struct {
 func (x *PacketEventNotificationResponse) Reset() {
 	*x = PacketEventNotificationResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_dataplane_proto_sai_switch_proto_msgTypes[15]
+		mi := &file_dataplane_proto_sai_switch_proto_msgTypes[17]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2666,7 +2768,7 @@ func (x *PacketEventNotificationResponse) String() string {
 func (*PacketEventNotificationResponse) ProtoMessage() {}
 
 func (x *PacketEventNotificationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_switch_proto_msgTypes[15]
+	mi := &file_dataplane_proto_sai_switch_proto_msgTypes[17]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2679,7 +2781,7 @@ func (x *PacketEventNotificationResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PacketEventNotificationResponse.ProtoReflect.Descriptor instead.
 func (*PacketEventNotificationResponse) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_switch_proto_rawDescGZIP(), []int{15}
+	return file_dataplane_proto_sai_switch_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *PacketEventNotificationResponse) GetSwitchId() uint64 {
@@ -2712,7 +2814,7 @@ type QueuePfcDeadlockNotificationRequest struct {
 func (x *QueuePfcDeadlockNotificationRequest) Reset() {
 	*x = QueuePfcDeadlockNotificationRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_dataplane_proto_sai_switch_proto_msgTypes[16]
+		mi := &file_dataplane_proto_sai_switch_proto_msgTypes[18]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2725,7 +2827,7 @@ func (x *QueuePfcDeadlockNotificationRequest) String() string {
 func (*QueuePfcDeadlockNotificationRequest) ProtoMessage() {}
 
 func (x *QueuePfcDeadlockNotificationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_switch_proto_msgTypes[16]
+	mi := &file_dataplane_proto_sai_switch_proto_msgTypes[18]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2738,7 +2840,7 @@ func (x *QueuePfcDeadlockNotificationRequest) ProtoReflect() protoreflect.Messag
 
 // Deprecated: Use QueuePfcDeadlockNotificationRequest.ProtoReflect.Descriptor instead.
 func (*QueuePfcDeadlockNotificationRequest) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_switch_proto_rawDescGZIP(), []int{16}
+	return file_dataplane_proto_sai_switch_proto_rawDescGZIP(), []int{18}
 }
 
 type QueuePfcDeadlockNotificationResponse struct {
@@ -2752,7 +2854,7 @@ type QueuePfcDeadlockNotificationResponse struct {
 func (x *QueuePfcDeadlockNotificationResponse) Reset() {
 	*x = QueuePfcDeadlockNotificationResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_dataplane_proto_sai_switch_proto_msgTypes[17]
+		mi := &file_dataplane_proto_sai_switch_proto_msgTypes[19]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2765,7 +2867,7 @@ func (x *QueuePfcDeadlockNotificationResponse) String() string {
 func (*QueuePfcDeadlockNotificationResponse) ProtoMessage() {}
 
 func (x *QueuePfcDeadlockNotificationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_switch_proto_msgTypes[17]
+	mi := &file_dataplane_proto_sai_switch_proto_msgTypes[19]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2778,7 +2880,7 @@ func (x *QueuePfcDeadlockNotificationResponse) ProtoReflect() protoreflect.Messa
 
 // Deprecated: Use QueuePfcDeadlockNotificationResponse.ProtoReflect.Descriptor instead.
 func (*QueuePfcDeadlockNotificationResponse) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_switch_proto_rawDescGZIP(), []int{17}
+	return file_dataplane_proto_sai_switch_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *QueuePfcDeadlockNotificationResponse) GetData() []*QueueDeadlockNotificationData {
@@ -2797,7 +2899,7 @@ type BfdSessionStateChangeNotificationRequest struct {
 func (x *BfdSessionStateChangeNotificationRequest) Reset() {
 	*x = BfdSessionStateChangeNotificationRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_dataplane_proto_sai_switch_proto_msgTypes[18]
+		mi := &file_dataplane_proto_sai_switch_proto_msgTypes[20]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2810,7 +2912,7 @@ func (x *BfdSessionStateChangeNotificationRequest) String() string {
 func (*BfdSessionStateChangeNotificationRequest) ProtoMessage() {}
 
 func (x *BfdSessionStateChangeNotificationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_switch_proto_msgTypes[18]
+	mi := &file_dataplane_proto_sai_switch_proto_msgTypes[20]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2823,7 +2925,7 @@ func (x *BfdSessionStateChangeNotificationRequest) ProtoReflect() protoreflect.M
 
 // Deprecated: Use BfdSessionStateChangeNotificationRequest.ProtoReflect.Descriptor instead.
 func (*BfdSessionStateChangeNotificationRequest) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_switch_proto_rawDescGZIP(), []int{18}
+	return file_dataplane_proto_sai_switch_proto_rawDescGZIP(), []int{20}
 }
 
 type BfdSessionStateChangeNotificationResponse struct {
@@ -2837,7 +2939,7 @@ type BfdSessionStateChangeNotificationResponse struct {
 func (x *BfdSessionStateChangeNotificationResponse) Reset() {
 	*x = BfdSessionStateChangeNotificationResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_dataplane_proto_sai_switch_proto_msgTypes[19]
+		mi := &file_dataplane_proto_sai_switch_proto_msgTypes[21]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2850,7 +2952,7 @@ func (x *BfdSessionStateChangeNotificationResponse) String() string {
 func (*BfdSessionStateChangeNotificationResponse) ProtoMessage() {}
 
 func (x *BfdSessionStateChangeNotificationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_switch_proto_msgTypes[19]
+	mi := &file_dataplane_proto_sai_switch_proto_msgTypes[21]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2863,7 +2965,7 @@ func (x *BfdSessionStateChangeNotificationResponse) ProtoReflect() protoreflect.
 
 // Deprecated: Use BfdSessionStateChangeNotificationResponse.ProtoReflect.Descriptor instead.
 func (*BfdSessionStateChangeNotificationResponse) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_switch_proto_rawDescGZIP(), []int{19}
+	return file_dataplane_proto_sai_switch_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *BfdSessionStateChangeNotificationResponse) GetData() []*BfdSessionStateChangeNotificationData {
@@ -2882,7 +2984,7 @@ type TamEventNotificationRequest struct {
 func (x *TamEventNotificationRequest) Reset() {
 	*x = TamEventNotificationRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_dataplane_proto_sai_switch_proto_msgTypes[20]
+		mi := &file_dataplane_proto_sai_switch_proto_msgTypes[22]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2895,7 +2997,7 @@ func (x *TamEventNotificationRequest) String() string {
 func (*TamEventNotificationRequest) ProtoMessage() {}
 
 func (x *TamEventNotificationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_switch_proto_msgTypes[20]
+	mi := &file_dataplane_proto_sai_switch_proto_msgTypes[22]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2908,7 +3010,7 @@ func (x *TamEventNotificationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TamEventNotificationRequest.ProtoReflect.Descriptor instead.
 func (*TamEventNotificationRequest) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_switch_proto_rawDescGZIP(), []int{20}
+	return file_dataplane_proto_sai_switch_proto_rawDescGZIP(), []int{22}
 }
 
 type TamEventNotificationResponse struct {
@@ -2924,7 +3026,7 @@ type TamEventNotificationResponse struct {
 func (x *TamEventNotificationResponse) Reset() {
 	*x = TamEventNotificationResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_dataplane_proto_sai_switch_proto_msgTypes[21]
+		mi := &file_dataplane_proto_sai_switch_proto_msgTypes[23]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2937,7 +3039,7 @@ func (x *TamEventNotificationResponse) String() string {
 func (*TamEventNotificationResponse) ProtoMessage() {}
 
 func (x *TamEventNotificationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_switch_proto_msgTypes[21]
+	mi := &file_dataplane_proto_sai_switch_proto_msgTypes[23]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2950,7 +3052,7 @@ func (x *TamEventNotificationResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TamEventNotificationResponse.ProtoReflect.Descriptor instead.
 func (*TamEventNotificationResponse) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_switch_proto_rawDescGZIP(), []int{21}
+	return file_dataplane_proto_sai_switch_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *TamEventNotificationResponse) GetTamEventId() uint64 {
@@ -2983,7 +3085,7 @@ type IpsecSaStatusChangeNotificationRequest struct {
 func (x *IpsecSaStatusChangeNotificationRequest) Reset() {
 	*x = IpsecSaStatusChangeNotificationRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_dataplane_proto_sai_switch_proto_msgTypes[22]
+		mi := &file_dataplane_proto_sai_switch_proto_msgTypes[24]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2996,7 +3098,7 @@ func (x *IpsecSaStatusChangeNotificationRequest) String() string {
 func (*IpsecSaStatusChangeNotificationRequest) ProtoMessage() {}
 
 func (x *IpsecSaStatusChangeNotificationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_switch_proto_msgTypes[22]
+	mi := &file_dataplane_proto_sai_switch_proto_msgTypes[24]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3009,7 +3111,7 @@ func (x *IpsecSaStatusChangeNotificationRequest) ProtoReflect() protoreflect.Mes
 
 // Deprecated: Use IpsecSaStatusChangeNotificationRequest.ProtoReflect.Descriptor instead.
 func (*IpsecSaStatusChangeNotificationRequest) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_switch_proto_rawDescGZIP(), []int{22}
+	return file_dataplane_proto_sai_switch_proto_rawDescGZIP(), []int{24}
 }
 
 type IpsecSaStatusNotificationDataResponse struct {
@@ -3023,7 +3125,7 @@ type IpsecSaStatusNotificationDataResponse struct {
 func (x *IpsecSaStatusNotificationDataResponse) Reset() {
 	*x = IpsecSaStatusNotificationDataResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_dataplane_proto_sai_switch_proto_msgTypes[23]
+		mi := &file_dataplane_proto_sai_switch_proto_msgTypes[25]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3036,7 +3138,7 @@ func (x *IpsecSaStatusNotificationDataResponse) String() string {
 func (*IpsecSaStatusNotificationDataResponse) ProtoMessage() {}
 
 func (x *IpsecSaStatusNotificationDataResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_switch_proto_msgTypes[23]
+	mi := &file_dataplane_proto_sai_switch_proto_msgTypes[25]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3049,114 +3151,12 @@ func (x *IpsecSaStatusNotificationDataResponse) ProtoReflect() protoreflect.Mess
 
 // Deprecated: Use IpsecSaStatusNotificationDataResponse.ProtoReflect.Descriptor instead.
 func (*IpsecSaStatusNotificationDataResponse) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_switch_proto_rawDescGZIP(), []int{23}
+	return file_dataplane_proto_sai_switch_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *IpsecSaStatusNotificationDataResponse) GetData() []*IpsecSaStatusNotificationData {
 	if x != nil {
 		return x.Data
-	}
-	return nil
-}
-
-type GetSwitchAttributeRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Oid      uint64       `protobuf:"varint,1,opt,name=oid,proto3" json:"oid,omitempty"`
-	AttrType []SwitchAttr `protobuf:"varint,2,rep,packed,name=attr_type,json=attrType,proto3,enum=lemming.dataplane.sai.SwitchAttr" json:"attr_type,omitempty"`
-}
-
-func (x *GetSwitchAttributeRequest) Reset() {
-	*x = GetSwitchAttributeRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_dataplane_proto_sai_switch_proto_msgTypes[24]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *GetSwitchAttributeRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetSwitchAttributeRequest) ProtoMessage() {}
-
-func (x *GetSwitchAttributeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_switch_proto_msgTypes[24]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GetSwitchAttributeRequest.ProtoReflect.Descriptor instead.
-func (*GetSwitchAttributeRequest) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_switch_proto_rawDescGZIP(), []int{24}
-}
-
-func (x *GetSwitchAttributeRequest) GetOid() uint64 {
-	if x != nil {
-		return x.Oid
-	}
-	return 0
-}
-
-func (x *GetSwitchAttributeRequest) GetAttrType() []SwitchAttr {
-	if x != nil {
-		return x.AttrType
-	}
-	return nil
-}
-
-type GetSwitchAttributeResponse struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Attr *SwitchAttribute `protobuf:"bytes,1,opt,name=attr,proto3" json:"attr,omitempty"`
-}
-
-func (x *GetSwitchAttributeResponse) Reset() {
-	*x = GetSwitchAttributeResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_dataplane_proto_sai_switch_proto_msgTypes[25]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *GetSwitchAttributeResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetSwitchAttributeResponse) ProtoMessage() {}
-
-func (x *GetSwitchAttributeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_dataplane_proto_sai_switch_proto_msgTypes[25]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GetSwitchAttributeResponse.ProtoReflect.Descriptor instead.
-func (*GetSwitchAttributeResponse) Descriptor() ([]byte, []int) {
-	return file_dataplane_proto_sai_switch_proto_rawDescGZIP(), []int{25}
-}
-
-func (x *GetSwitchAttributeResponse) GetAttr() *SwitchAttribute {
-	if x != nil {
-		return x.Attr
 	}
 	return nil
 }
@@ -4691,111 +4691,111 @@ var file_dataplane_proto_sai_switch_proto_rawDesc = []byte{
 	0x74, 0x70, 0x69, 0x64, 0x42, 0x14, 0x0a, 0x12, 0x5f, 0x65, 0x63, 0x6d, 0x70, 0x5f, 0x6d, 0x65,
 	0x6d, 0x62, 0x65, 0x72, 0x5f, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x22, 0x1c, 0x0a, 0x1a, 0x53, 0x65,
 	0x74, 0x53, 0x77, 0x69, 0x74, 0x63, 0x68, 0x41, 0x74, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x65,
-	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x26, 0x0a, 0x24, 0x53, 0x77, 0x69, 0x74,
-	0x63, 0x68, 0x53, 0x74, 0x61, 0x74, 0x65, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x4e, 0x6f, 0x74,
-	0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
-	0x22, 0x9b, 0x01, 0x0a, 0x25, 0x53, 0x77, 0x69, 0x74, 0x63, 0x68, 0x53, 0x74, 0x61, 0x74, 0x65,
-	0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69,
-	0x6f, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x1b, 0x0a, 0x09, 0x73, 0x77,
-	0x69, 0x74, 0x63, 0x68, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x08, 0x73,
-	0x77, 0x69, 0x74, 0x63, 0x68, 0x49, 0x64, 0x12, 0x55, 0x0a, 0x12, 0x73, 0x77, 0x69, 0x74, 0x63,
-	0x68, 0x5f, 0x6f, 0x70, 0x65, 0x72, 0x5f, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x18, 0x02, 0x20,
-	0x01, 0x28, 0x0e, 0x32, 0x27, 0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61,
+	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x6d, 0x0a, 0x19, 0x47, 0x65, 0x74, 0x53,
+	0x77, 0x69, 0x74, 0x63, 0x68, 0x41, 0x74, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x65, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x10, 0x0a, 0x03, 0x6f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x04, 0x52, 0x03, 0x6f, 0x69, 0x64, 0x12, 0x3e, 0x0a, 0x09, 0x61, 0x74, 0x74, 0x72, 0x5f,
+	0x74, 0x79, 0x70, 0x65, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0e, 0x32, 0x21, 0x2e, 0x6c, 0x65, 0x6d,
+	0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x73,
+	0x61, 0x69, 0x2e, 0x53, 0x77, 0x69, 0x74, 0x63, 0x68, 0x41, 0x74, 0x74, 0x72, 0x52, 0x08, 0x61,
+	0x74, 0x74, 0x72, 0x54, 0x79, 0x70, 0x65, 0x22, 0x58, 0x0a, 0x1a, 0x47, 0x65, 0x74, 0x53, 0x77,
+	0x69, 0x74, 0x63, 0x68, 0x41, 0x74, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x65, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x3a, 0x0a, 0x04, 0x61, 0x74, 0x74, 0x72, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x26, 0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61,
 	0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x73, 0x61, 0x69, 0x2e, 0x53, 0x77, 0x69, 0x74,
-	0x63, 0x68, 0x4f, 0x70, 0x65, 0x72, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x10, 0x73, 0x77,
-	0x69, 0x74, 0x63, 0x68, 0x4f, 0x70, 0x65, 0x72, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x22, 0x2a,
-	0x0a, 0x28, 0x53, 0x77, 0x69, 0x74, 0x63, 0x68, 0x53, 0x68, 0x75, 0x74, 0x64, 0x6f, 0x77, 0x6e,
-	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74,
-	0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x48, 0x0a, 0x29, 0x53, 0x77,
-	0x69, 0x74, 0x63, 0x68, 0x53, 0x68, 0x75, 0x74, 0x64, 0x6f, 0x77, 0x6e, 0x52, 0x65, 0x71, 0x75,
-	0x65, 0x73, 0x74, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52,
-	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x1b, 0x0a, 0x09, 0x73, 0x77, 0x69, 0x74, 0x63,
-	0x68, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x08, 0x73, 0x77, 0x69, 0x74,
-	0x63, 0x68, 0x49, 0x64, 0x22, 0x1d, 0x0a, 0x1b, 0x46, 0x64, 0x62, 0x45, 0x76, 0x65, 0x6e, 0x74,
-	0x4e, 0x6f, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75,
-	0x65, 0x73, 0x74, 0x22, 0x63, 0x0a, 0x1c, 0x46, 0x64, 0x62, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x4e,
-	0x6f, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f,
-	0x6e, 0x73, 0x65, 0x12, 0x43, 0x0a, 0x04, 0x64, 0x61, 0x74, 0x61, 0x18, 0x01, 0x20, 0x03, 0x28,
-	0x0b, 0x32, 0x2f, 0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61, 0x74, 0x61,
-	0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x73, 0x61, 0x69, 0x2e, 0x46, 0x64, 0x62, 0x45, 0x76, 0x65,
-	0x6e, 0x74, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x44, 0x61,
-	0x74, 0x61, 0x52, 0x04, 0x64, 0x61, 0x74, 0x61, 0x22, 0x24, 0x0a, 0x22, 0x50, 0x6f, 0x72, 0x74,
-	0x53, 0x74, 0x61, 0x74, 0x65, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x4e, 0x6f, 0x74, 0x69, 0x66,
-	0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x6c,
-	0x0a, 0x23, 0x50, 0x6f, 0x72, 0x74, 0x53, 0x74, 0x61, 0x74, 0x65, 0x43, 0x68, 0x61, 0x6e, 0x67,
-	0x65, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73,
-	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x45, 0x0a, 0x04, 0x64, 0x61, 0x74, 0x61, 0x18, 0x01, 0x20,
-	0x03, 0x28, 0x0b, 0x32, 0x31, 0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61,
-	0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x73, 0x61, 0x69, 0x2e, 0x50, 0x6f, 0x72, 0x74,
-	0x4f, 0x70, 0x65, 0x72, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x69,
-	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x04, 0x64, 0x61, 0x74, 0x61, 0x22, 0x20, 0x0a, 0x1e,
-	0x50, 0x61, 0x63, 0x6b, 0x65, 0x74, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x4e, 0x6f, 0x74, 0x69, 0x66,
-	0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x9a,
-	0x01, 0x0a, 0x1f, 0x50, 0x61, 0x63, 0x6b, 0x65, 0x74, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x4e, 0x6f,
-	0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
-	0x73, 0x65, 0x12, 0x1b, 0x0a, 0x09, 0x73, 0x77, 0x69, 0x74, 0x63, 0x68, 0x5f, 0x69, 0x64, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x08, 0x73, 0x77, 0x69, 0x74, 0x63, 0x68, 0x49, 0x64, 0x12,
-	0x16, 0x0a, 0x06, 0x62, 0x75, 0x66, 0x66, 0x65, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c, 0x52,
-	0x06, 0x62, 0x75, 0x66, 0x66, 0x65, 0x72, 0x12, 0x42, 0x0a, 0x05, 0x61, 0x74, 0x74, 0x72, 0x73,
-	0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x2c, 0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67,
-	0x2e, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x73, 0x61, 0x69, 0x2e, 0x48,
-	0x6f, 0x73, 0x74, 0x69, 0x66, 0x50, 0x61, 0x63, 0x6b, 0x65, 0x74, 0x41, 0x74, 0x74, 0x72, 0x69,
-	0x62, 0x75, 0x74, 0x65, 0x52, 0x05, 0x61, 0x74, 0x74, 0x72, 0x73, 0x22, 0x25, 0x0a, 0x23, 0x51,
-	0x75, 0x65, 0x75, 0x65, 0x50, 0x66, 0x63, 0x44, 0x65, 0x61, 0x64, 0x6c, 0x6f, 0x63, 0x6b, 0x4e,
-	0x6f, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65,
-	0x73, 0x74, 0x22, 0x70, 0x0a, 0x24, 0x51, 0x75, 0x65, 0x75, 0x65, 0x50, 0x66, 0x63, 0x44, 0x65,
-	0x61, 0x64, 0x6c, 0x6f, 0x63, 0x6b, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69,
-	0x6f, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x48, 0x0a, 0x04, 0x64, 0x61,
-	0x74, 0x61, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x34, 0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69,
-	0x6e, 0x67, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x73, 0x61, 0x69,
-	0x2e, 0x51, 0x75, 0x65, 0x75, 0x65, 0x44, 0x65, 0x61, 0x64, 0x6c, 0x6f, 0x63, 0x6b, 0x4e, 0x6f,
-	0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x44, 0x61, 0x74, 0x61, 0x52, 0x04,
-	0x64, 0x61, 0x74, 0x61, 0x22, 0x2a, 0x0a, 0x28, 0x42, 0x66, 0x64, 0x53, 0x65, 0x73, 0x73, 0x69,
-	0x6f, 0x6e, 0x53, 0x74, 0x61, 0x74, 0x65, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x4e, 0x6f, 0x74,
-	0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
-	0x22, 0x7d, 0x0a, 0x29, 0x42, 0x66, 0x64, 0x53, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x53, 0x74,
-	0x61, 0x74, 0x65, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x69, 0x63,
-	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x50, 0x0a,
-	0x04, 0x64, 0x61, 0x74, 0x61, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x3c, 0x2e, 0x6c, 0x65,
-	0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e,
-	0x73, 0x61, 0x69, 0x2e, 0x42, 0x66, 0x64, 0x53, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x53, 0x74,
-	0x61, 0x74, 0x65, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x69, 0x63,
-	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x44, 0x61, 0x74, 0x61, 0x52, 0x04, 0x64, 0x61, 0x74, 0x61, 0x22,
-	0x1d, 0x0a, 0x1b, 0x54, 0x61, 0x6d, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x4e, 0x6f, 0x74, 0x69, 0x66,
-	0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x9e,
-	0x01, 0x0a, 0x1c, 0x54, 0x61, 0x6d, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x4e, 0x6f, 0x74, 0x69, 0x66,
-	0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12,
-	0x20, 0x0a, 0x0c, 0x74, 0x61, 0x6d, 0x5f, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x5f, 0x69, 0x64, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0a, 0x74, 0x61, 0x6d, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x49,
-	0x64, 0x12, 0x16, 0x0a, 0x06, 0x62, 0x75, 0x66, 0x66, 0x65, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28,
-	0x0c, 0x52, 0x06, 0x62, 0x75, 0x66, 0x66, 0x65, 0x72, 0x12, 0x44, 0x0a, 0x05, 0x61, 0x74, 0x74,
-	0x72, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x2e, 0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69,
-	0x6e, 0x67, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x73, 0x61, 0x69,
-	0x2e, 0x54, 0x61, 0x6d, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x41, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x41,
-	0x74, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x65, 0x52, 0x05, 0x61, 0x74, 0x74, 0x72, 0x73, 0x22,
-	0x28, 0x0a, 0x26, 0x49, 0x70, 0x73, 0x65, 0x63, 0x53, 0x61, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73,
+	0x63, 0x68, 0x41, 0x74, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x65, 0x52, 0x04, 0x61, 0x74, 0x74,
+	0x72, 0x22, 0x26, 0x0a, 0x24, 0x53, 0x77, 0x69, 0x74, 0x63, 0x68, 0x53, 0x74, 0x61, 0x74, 0x65,
 	0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69,
-	0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x71, 0x0a, 0x25, 0x49, 0x70, 0x73,
-	0x65, 0x63, 0x53, 0x61, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x69,
-	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x44, 0x61, 0x74, 0x61, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
-	0x73, 0x65, 0x12, 0x48, 0x0a, 0x04, 0x64, 0x61, 0x74, 0x61, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b,
-	0x32, 0x34, 0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x70,
-	0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x73, 0x61, 0x69, 0x2e, 0x49, 0x70, 0x73, 0x65, 0x63, 0x53, 0x61,
-	0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69,
-	0x6f, 0x6e, 0x44, 0x61, 0x74, 0x61, 0x52, 0x04, 0x64, 0x61, 0x74, 0x61, 0x22, 0x6d, 0x0a, 0x19,
-	0x47, 0x65, 0x74, 0x53, 0x77, 0x69, 0x74, 0x63, 0x68, 0x41, 0x74, 0x74, 0x72, 0x69, 0x62, 0x75,
-	0x74, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x10, 0x0a, 0x03, 0x6f, 0x69, 0x64,
-	0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x03, 0x6f, 0x69, 0x64, 0x12, 0x3e, 0x0a, 0x09, 0x61,
-	0x74, 0x74, 0x72, 0x5f, 0x74, 0x79, 0x70, 0x65, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0e, 0x32, 0x21,
-	0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c, 0x61,
-	0x6e, 0x65, 0x2e, 0x73, 0x61, 0x69, 0x2e, 0x53, 0x77, 0x69, 0x74, 0x63, 0x68, 0x41, 0x74, 0x74,
-	0x72, 0x52, 0x08, 0x61, 0x74, 0x74, 0x72, 0x54, 0x79, 0x70, 0x65, 0x22, 0x58, 0x0a, 0x1a, 0x47,
-	0x65, 0x74, 0x53, 0x77, 0x69, 0x74, 0x63, 0x68, 0x41, 0x74, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74,
-	0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x3a, 0x0a, 0x04, 0x61, 0x74, 0x74,
-	0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x26, 0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e,
-	0x67, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x73, 0x61, 0x69, 0x2e,
-	0x53, 0x77, 0x69, 0x74, 0x63, 0x68, 0x41, 0x74, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x65, 0x52,
-	0x04, 0x61, 0x74, 0x74, 0x72, 0x22, 0x6d, 0x0a, 0x15, 0x47, 0x65, 0x74, 0x53, 0x77, 0x69, 0x74,
+	0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x9b, 0x01, 0x0a, 0x25, 0x53, 0x77,
+	0x69, 0x74, 0x63, 0x68, 0x53, 0x74, 0x61, 0x74, 0x65, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x4e,
+	0x6f, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x12, 0x1b, 0x0a, 0x09, 0x73, 0x77, 0x69, 0x74, 0x63, 0x68, 0x5f, 0x69, 0x64,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x08, 0x73, 0x77, 0x69, 0x74, 0x63, 0x68, 0x49, 0x64,
+	0x12, 0x55, 0x0a, 0x12, 0x73, 0x77, 0x69, 0x74, 0x63, 0x68, 0x5f, 0x6f, 0x70, 0x65, 0x72, 0x5f,
+	0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x27, 0x2e, 0x6c,
+	0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65,
+	0x2e, 0x73, 0x61, 0x69, 0x2e, 0x53, 0x77, 0x69, 0x74, 0x63, 0x68, 0x4f, 0x70, 0x65, 0x72, 0x53,
+	0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x10, 0x73, 0x77, 0x69, 0x74, 0x63, 0x68, 0x4f, 0x70, 0x65,
+	0x72, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x22, 0x2a, 0x0a, 0x28, 0x53, 0x77, 0x69, 0x74, 0x63,
+	0x68, 0x53, 0x68, 0x75, 0x74, 0x64, 0x6f, 0x77, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x4e, 0x6f, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x22, 0x48, 0x0a, 0x29, 0x53, 0x77, 0x69, 0x74, 0x63, 0x68, 0x53, 0x68, 0x75,
+	0x74, 0x64, 0x6f, 0x77, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x4e, 0x6f, 0x74, 0x69,
+	0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x12, 0x1b, 0x0a, 0x09, 0x73, 0x77, 0x69, 0x74, 0x63, 0x68, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x04, 0x52, 0x08, 0x73, 0x77, 0x69, 0x74, 0x63, 0x68, 0x49, 0x64, 0x22, 0x1d, 0x0a,
+	0x1b, 0x46, 0x64, 0x62, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x69, 0x63,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x63, 0x0a, 0x1c,
+	0x46, 0x64, 0x62, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61,
+	0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x43, 0x0a, 0x04,
+	0x64, 0x61, 0x74, 0x61, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x2f, 0x2e, 0x6c, 0x65, 0x6d,
+	0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x73,
+	0x61, 0x69, 0x2e, 0x46, 0x64, 0x62, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x4e, 0x6f, 0x74, 0x69, 0x66,
+	0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x44, 0x61, 0x74, 0x61, 0x52, 0x04, 0x64, 0x61, 0x74,
+	0x61, 0x22, 0x24, 0x0a, 0x22, 0x50, 0x6f, 0x72, 0x74, 0x53, 0x74, 0x61, 0x74, 0x65, 0x43, 0x68,
+	0x61, 0x6e, 0x67, 0x65, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x6c, 0x0a, 0x23, 0x50, 0x6f, 0x72, 0x74, 0x53,
+	0x74, 0x61, 0x74, 0x65, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x69,
+	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x45,
+	0x0a, 0x04, 0x64, 0x61, 0x74, 0x61, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x31, 0x2e, 0x6c,
+	0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65,
+	0x2e, 0x73, 0x61, 0x69, 0x2e, 0x50, 0x6f, 0x72, 0x74, 0x4f, 0x70, 0x65, 0x72, 0x53, 0x74, 0x61,
+	0x74, 0x75, 0x73, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52,
+	0x04, 0x64, 0x61, 0x74, 0x61, 0x22, 0x20, 0x0a, 0x1e, 0x50, 0x61, 0x63, 0x6b, 0x65, 0x74, 0x45,
+	0x76, 0x65, 0x6e, 0x74, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x9a, 0x01, 0x0a, 0x1f, 0x50, 0x61, 0x63, 0x6b,
+	0x65, 0x74, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x1b, 0x0a, 0x09, 0x73,
+	0x77, 0x69, 0x74, 0x63, 0x68, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x08,
+	0x73, 0x77, 0x69, 0x74, 0x63, 0x68, 0x49, 0x64, 0x12, 0x16, 0x0a, 0x06, 0x62, 0x75, 0x66, 0x66,
+	0x65, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x06, 0x62, 0x75, 0x66, 0x66, 0x65, 0x72,
+	0x12, 0x42, 0x0a, 0x05, 0x61, 0x74, 0x74, 0x72, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32,
+	0x2c, 0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c,
+	0x61, 0x6e, 0x65, 0x2e, 0x73, 0x61, 0x69, 0x2e, 0x48, 0x6f, 0x73, 0x74, 0x69, 0x66, 0x50, 0x61,
+	0x63, 0x6b, 0x65, 0x74, 0x41, 0x74, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x65, 0x52, 0x05, 0x61,
+	0x74, 0x74, 0x72, 0x73, 0x22, 0x25, 0x0a, 0x23, 0x51, 0x75, 0x65, 0x75, 0x65, 0x50, 0x66, 0x63,
+	0x44, 0x65, 0x61, 0x64, 0x6c, 0x6f, 0x63, 0x6b, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61,
+	0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x70, 0x0a, 0x24, 0x51,
+	0x75, 0x65, 0x75, 0x65, 0x50, 0x66, 0x63, 0x44, 0x65, 0x61, 0x64, 0x6c, 0x6f, 0x63, 0x6b, 0x4e,
+	0x6f, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x12, 0x48, 0x0a, 0x04, 0x64, 0x61, 0x74, 0x61, 0x18, 0x01, 0x20, 0x03, 0x28,
+	0x0b, 0x32, 0x34, 0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61, 0x74, 0x61,
+	0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x73, 0x61, 0x69, 0x2e, 0x51, 0x75, 0x65, 0x75, 0x65, 0x44,
+	0x65, 0x61, 0x64, 0x6c, 0x6f, 0x63, 0x6b, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0x44, 0x61, 0x74, 0x61, 0x52, 0x04, 0x64, 0x61, 0x74, 0x61, 0x22, 0x2a, 0x0a,
+	0x28, 0x42, 0x66, 0x64, 0x53, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x53, 0x74, 0x61, 0x74, 0x65,
+	0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x7d, 0x0a, 0x29, 0x42, 0x66, 0x64,
+	0x53, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x53, 0x74, 0x61, 0x74, 0x65, 0x43, 0x68, 0x61, 0x6e,
+	0x67, 0x65, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65,
+	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x50, 0x0a, 0x04, 0x64, 0x61, 0x74, 0x61, 0x18, 0x01,
+	0x20, 0x03, 0x28, 0x0b, 0x32, 0x3c, 0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64,
+	0x61, 0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x73, 0x61, 0x69, 0x2e, 0x42, 0x66, 0x64,
+	0x53, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x53, 0x74, 0x61, 0x74, 0x65, 0x43, 0x68, 0x61, 0x6e,
+	0x67, 0x65, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x44, 0x61,
+	0x74, 0x61, 0x52, 0x04, 0x64, 0x61, 0x74, 0x61, 0x22, 0x1d, 0x0a, 0x1b, 0x54, 0x61, 0x6d, 0x45,
+	0x76, 0x65, 0x6e, 0x74, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x9e, 0x01, 0x0a, 0x1c, 0x54, 0x61, 0x6d, 0x45,
+	0x76, 0x65, 0x6e, 0x74, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x20, 0x0a, 0x0c, 0x74, 0x61, 0x6d, 0x5f,
+	0x65, 0x76, 0x65, 0x6e, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0a,
+	0x74, 0x61, 0x6d, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x49, 0x64, 0x12, 0x16, 0x0a, 0x06, 0x62, 0x75,
+	0x66, 0x66, 0x65, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x06, 0x62, 0x75, 0x66, 0x66,
+	0x65, 0x72, 0x12, 0x44, 0x0a, 0x05, 0x61, 0x74, 0x74, 0x72, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28,
+	0x0b, 0x32, 0x2e, 0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61, 0x74, 0x61,
+	0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x73, 0x61, 0x69, 0x2e, 0x54, 0x61, 0x6d, 0x45, 0x76, 0x65,
+	0x6e, 0x74, 0x41, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x41, 0x74, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74,
+	0x65, 0x52, 0x05, 0x61, 0x74, 0x74, 0x72, 0x73, 0x22, 0x28, 0x0a, 0x26, 0x49, 0x70, 0x73, 0x65,
+	0x63, 0x53, 0x61, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x4e,
+	0x6f, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x22, 0x71, 0x0a, 0x25, 0x49, 0x70, 0x73, 0x65, 0x63, 0x53, 0x61, 0x53, 0x74, 0x61,
+	0x74, 0x75, 0x73, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x44,
+	0x61, 0x74, 0x61, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x48, 0x0a, 0x04, 0x64,
+	0x61, 0x74, 0x61, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x34, 0x2e, 0x6c, 0x65, 0x6d, 0x6d,
+	0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x73, 0x61,
+	0x69, 0x2e, 0x49, 0x70, 0x73, 0x65, 0x63, 0x53, 0x61, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x4e,
+	0x6f, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x44, 0x61, 0x74, 0x61, 0x52,
+	0x04, 0x64, 0x61, 0x74, 0x61, 0x22, 0x6d, 0x0a, 0x15, 0x47, 0x65, 0x74, 0x53, 0x77, 0x69, 0x74,
 	0x63, 0x68, 0x53, 0x74, 0x61, 0x74, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x10,
 	0x0a, 0x03, 0x6f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x03, 0x6f, 0x69, 0x64,
 	0x12, 0x42, 0x0a, 0x0b, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x65, 0x72, 0x5f, 0x69, 0x64, 0x73, 0x18,
@@ -5735,26 +5735,26 @@ var file_dataplane_proto_sai_switch_proto_goTypes = []interface{}{
 	(*RemoveSwitchResponse)(nil),                      // 5: lemming.dataplane.sai.RemoveSwitchResponse
 	(*SetSwitchAttributeRequest)(nil),                 // 6: lemming.dataplane.sai.SetSwitchAttributeRequest
 	(*SetSwitchAttributeResponse)(nil),                // 7: lemming.dataplane.sai.SetSwitchAttributeResponse
-	(*SwitchStateChangeNotificationRequest)(nil),      // 8: lemming.dataplane.sai.SwitchStateChangeNotificationRequest
-	(*SwitchStateChangeNotificationResponse)(nil),     // 9: lemming.dataplane.sai.SwitchStateChangeNotificationResponse
-	(*SwitchShutdownRequestNotificationRequest)(nil),  // 10: lemming.dataplane.sai.SwitchShutdownRequestNotificationRequest
-	(*SwitchShutdownRequestNotificationResponse)(nil), // 11: lemming.dataplane.sai.SwitchShutdownRequestNotificationResponse
-	(*FdbEventNotificationRequest)(nil),               // 12: lemming.dataplane.sai.FdbEventNotificationRequest
-	(*FdbEventNotificationResponse)(nil),              // 13: lemming.dataplane.sai.FdbEventNotificationResponse
-	(*PortStateChangeNotificationRequest)(nil),        // 14: lemming.dataplane.sai.PortStateChangeNotificationRequest
-	(*PortStateChangeNotificationResponse)(nil),       // 15: lemming.dataplane.sai.PortStateChangeNotificationResponse
-	(*PacketEventNotificationRequest)(nil),            // 16: lemming.dataplane.sai.PacketEventNotificationRequest
-	(*PacketEventNotificationResponse)(nil),           // 17: lemming.dataplane.sai.PacketEventNotificationResponse
-	(*QueuePfcDeadlockNotificationRequest)(nil),       // 18: lemming.dataplane.sai.QueuePfcDeadlockNotificationRequest
-	(*QueuePfcDeadlockNotificationResponse)(nil),      // 19: lemming.dataplane.sai.QueuePfcDeadlockNotificationResponse
-	(*BfdSessionStateChangeNotificationRequest)(nil),  // 20: lemming.dataplane.sai.BfdSessionStateChangeNotificationRequest
-	(*BfdSessionStateChangeNotificationResponse)(nil), // 21: lemming.dataplane.sai.BfdSessionStateChangeNotificationResponse
-	(*TamEventNotificationRequest)(nil),               // 22: lemming.dataplane.sai.TamEventNotificationRequest
-	(*TamEventNotificationResponse)(nil),              // 23: lemming.dataplane.sai.TamEventNotificationResponse
-	(*IpsecSaStatusChangeNotificationRequest)(nil),    // 24: lemming.dataplane.sai.IpsecSaStatusChangeNotificationRequest
-	(*IpsecSaStatusNotificationDataResponse)(nil),     // 25: lemming.dataplane.sai.IpsecSaStatusNotificationDataResponse
-	(*GetSwitchAttributeRequest)(nil),                 // 26: lemming.dataplane.sai.GetSwitchAttributeRequest
-	(*GetSwitchAttributeResponse)(nil),                // 27: lemming.dataplane.sai.GetSwitchAttributeResponse
+	(*GetSwitchAttributeRequest)(nil),                 // 8: lemming.dataplane.sai.GetSwitchAttributeRequest
+	(*GetSwitchAttributeResponse)(nil),                // 9: lemming.dataplane.sai.GetSwitchAttributeResponse
+	(*SwitchStateChangeNotificationRequest)(nil),      // 10: lemming.dataplane.sai.SwitchStateChangeNotificationRequest
+	(*SwitchStateChangeNotificationResponse)(nil),     // 11: lemming.dataplane.sai.SwitchStateChangeNotificationResponse
+	(*SwitchShutdownRequestNotificationRequest)(nil),  // 12: lemming.dataplane.sai.SwitchShutdownRequestNotificationRequest
+	(*SwitchShutdownRequestNotificationResponse)(nil), // 13: lemming.dataplane.sai.SwitchShutdownRequestNotificationResponse
+	(*FdbEventNotificationRequest)(nil),               // 14: lemming.dataplane.sai.FdbEventNotificationRequest
+	(*FdbEventNotificationResponse)(nil),              // 15: lemming.dataplane.sai.FdbEventNotificationResponse
+	(*PortStateChangeNotificationRequest)(nil),        // 16: lemming.dataplane.sai.PortStateChangeNotificationRequest
+	(*PortStateChangeNotificationResponse)(nil),       // 17: lemming.dataplane.sai.PortStateChangeNotificationResponse
+	(*PacketEventNotificationRequest)(nil),            // 18: lemming.dataplane.sai.PacketEventNotificationRequest
+	(*PacketEventNotificationResponse)(nil),           // 19: lemming.dataplane.sai.PacketEventNotificationResponse
+	(*QueuePfcDeadlockNotificationRequest)(nil),       // 20: lemming.dataplane.sai.QueuePfcDeadlockNotificationRequest
+	(*QueuePfcDeadlockNotificationResponse)(nil),      // 21: lemming.dataplane.sai.QueuePfcDeadlockNotificationResponse
+	(*BfdSessionStateChangeNotificationRequest)(nil),  // 22: lemming.dataplane.sai.BfdSessionStateChangeNotificationRequest
+	(*BfdSessionStateChangeNotificationResponse)(nil), // 23: lemming.dataplane.sai.BfdSessionStateChangeNotificationResponse
+	(*TamEventNotificationRequest)(nil),               // 24: lemming.dataplane.sai.TamEventNotificationRequest
+	(*TamEventNotificationResponse)(nil),              // 25: lemming.dataplane.sai.TamEventNotificationResponse
+	(*IpsecSaStatusChangeNotificationRequest)(nil),    // 26: lemming.dataplane.sai.IpsecSaStatusChangeNotificationRequest
+	(*IpsecSaStatusNotificationDataResponse)(nil),     // 27: lemming.dataplane.sai.IpsecSaStatusNotificationDataResponse
 	(*GetSwitchStatsRequest)(nil),                     // 28: lemming.dataplane.sai.GetSwitchStatsRequest
 	(*GetSwitchStatsResponse)(nil),                    // 29: lemming.dataplane.sai.GetSwitchStatsResponse
 	(*CreateSwitchTunnelRequest)(nil),                 // 30: lemming.dataplane.sai.CreateSwitchTunnelRequest
@@ -5775,15 +5775,15 @@ var file_dataplane_proto_sai_switch_proto_goTypes = []interface{}{
 	(SwitchType)(0),                                   // 45: lemming.dataplane.sai.SwitchType
 	(*SystemPortConfig)(nil),                          // 46: lemming.dataplane.sai.SystemPortConfig
 	(SwitchFailoverConfigMode)(0),                     // 47: lemming.dataplane.sai.SwitchFailoverConfigMode
-	(SwitchOperStatus)(0),                             // 48: lemming.dataplane.sai.SwitchOperStatus
-	(*FdbEventNotificationData)(nil),                  // 49: lemming.dataplane.sai.FdbEventNotificationData
-	(*PortOperStatusNotification)(nil),                // 50: lemming.dataplane.sai.PortOperStatusNotification
-	(*HostifPacketAttribute)(nil),                     // 51: lemming.dataplane.sai.HostifPacketAttribute
-	(*QueueDeadlockNotificationData)(nil),             // 52: lemming.dataplane.sai.QueueDeadlockNotificationData
-	(*BfdSessionStateChangeNotificationData)(nil),     // 53: lemming.dataplane.sai.BfdSessionStateChangeNotificationData
-	(*TamEventActionAttribute)(nil),                   // 54: lemming.dataplane.sai.TamEventActionAttribute
-	(*IpsecSaStatusNotificationData)(nil),             // 55: lemming.dataplane.sai.IpsecSaStatusNotificationData
-	(*SwitchAttribute)(nil),                           // 56: lemming.dataplane.sai.SwitchAttribute
+	(*SwitchAttribute)(nil),                           // 48: lemming.dataplane.sai.SwitchAttribute
+	(SwitchOperStatus)(0),                             // 49: lemming.dataplane.sai.SwitchOperStatus
+	(*FdbEventNotificationData)(nil),                  // 50: lemming.dataplane.sai.FdbEventNotificationData
+	(*PortOperStatusNotification)(nil),                // 51: lemming.dataplane.sai.PortOperStatusNotification
+	(*HostifPacketAttribute)(nil),                     // 52: lemming.dataplane.sai.HostifPacketAttribute
+	(*QueueDeadlockNotificationData)(nil),             // 53: lemming.dataplane.sai.QueueDeadlockNotificationData
+	(*BfdSessionStateChangeNotificationData)(nil),     // 54: lemming.dataplane.sai.BfdSessionStateChangeNotificationData
+	(*TamEventActionAttribute)(nil),                   // 55: lemming.dataplane.sai.TamEventActionAttribute
+	(*IpsecSaStatusNotificationData)(nil),             // 56: lemming.dataplane.sai.IpsecSaStatusNotificationData
 	(SwitchStat)(0),                                   // 57: lemming.dataplane.sai.SwitchStat
 	(TunnelType)(0),                                   // 58: lemming.dataplane.sai.TunnelType
 	(TunnelEncapEcnMode)(0),                           // 59: lemming.dataplane.sai.TunnelEncapEcnMode
@@ -5817,16 +5817,16 @@ var file_dataplane_proto_sai_switch_proto_depIdxs = []int32{
 	41, // 22: lemming.dataplane.sai.SetSwitchAttributeRequest.pfc_tc_dld_interval:type_name -> lemming.dataplane.sai.UintMap
 	41, // 23: lemming.dataplane.sai.SetSwitchAttributeRequest.pfc_tc_dlr_interval:type_name -> lemming.dataplane.sai.UintMap
 	47, // 24: lemming.dataplane.sai.SetSwitchAttributeRequest.failover_config_mode:type_name -> lemming.dataplane.sai.SwitchFailoverConfigMode
-	48, // 25: lemming.dataplane.sai.SwitchStateChangeNotificationResponse.switch_oper_status:type_name -> lemming.dataplane.sai.SwitchOperStatus
-	49, // 26: lemming.dataplane.sai.FdbEventNotificationResponse.data:type_name -> lemming.dataplane.sai.FdbEventNotificationData
-	50, // 27: lemming.dataplane.sai.PortStateChangeNotificationResponse.data:type_name -> lemming.dataplane.sai.PortOperStatusNotification
-	51, // 28: lemming.dataplane.sai.PacketEventNotificationResponse.attrs:type_name -> lemming.dataplane.sai.HostifPacketAttribute
-	52, // 29: lemming.dataplane.sai.QueuePfcDeadlockNotificationResponse.data:type_name -> lemming.dataplane.sai.QueueDeadlockNotificationData
-	53, // 30: lemming.dataplane.sai.BfdSessionStateChangeNotificationResponse.data:type_name -> lemming.dataplane.sai.BfdSessionStateChangeNotificationData
-	54, // 31: lemming.dataplane.sai.TamEventNotificationResponse.attrs:type_name -> lemming.dataplane.sai.TamEventActionAttribute
-	55, // 32: lemming.dataplane.sai.IpsecSaStatusNotificationDataResponse.data:type_name -> lemming.dataplane.sai.IpsecSaStatusNotificationData
-	0,  // 33: lemming.dataplane.sai.GetSwitchAttributeRequest.attr_type:type_name -> lemming.dataplane.sai.SwitchAttr
-	56, // 34: lemming.dataplane.sai.GetSwitchAttributeResponse.attr:type_name -> lemming.dataplane.sai.SwitchAttribute
+	0,  // 25: lemming.dataplane.sai.GetSwitchAttributeRequest.attr_type:type_name -> lemming.dataplane.sai.SwitchAttr
+	48, // 26: lemming.dataplane.sai.GetSwitchAttributeResponse.attr:type_name -> lemming.dataplane.sai.SwitchAttribute
+	49, // 27: lemming.dataplane.sai.SwitchStateChangeNotificationResponse.switch_oper_status:type_name -> lemming.dataplane.sai.SwitchOperStatus
+	50, // 28: lemming.dataplane.sai.FdbEventNotificationResponse.data:type_name -> lemming.dataplane.sai.FdbEventNotificationData
+	51, // 29: lemming.dataplane.sai.PortStateChangeNotificationResponse.data:type_name -> lemming.dataplane.sai.PortOperStatusNotification
+	52, // 30: lemming.dataplane.sai.PacketEventNotificationResponse.attrs:type_name -> lemming.dataplane.sai.HostifPacketAttribute
+	53, // 31: lemming.dataplane.sai.QueuePfcDeadlockNotificationResponse.data:type_name -> lemming.dataplane.sai.QueueDeadlockNotificationData
+	54, // 32: lemming.dataplane.sai.BfdSessionStateChangeNotificationResponse.data:type_name -> lemming.dataplane.sai.BfdSessionStateChangeNotificationData
+	55, // 33: lemming.dataplane.sai.TamEventNotificationResponse.attrs:type_name -> lemming.dataplane.sai.TamEventActionAttribute
+	56, // 34: lemming.dataplane.sai.IpsecSaStatusNotificationDataResponse.data:type_name -> lemming.dataplane.sai.IpsecSaStatusNotificationData
 	57, // 35: lemming.dataplane.sai.GetSwitchStatsRequest.counter_ids:type_name -> lemming.dataplane.sai.SwitchStat
 	58, // 36: lemming.dataplane.sai.CreateSwitchTunnelRequest.tunnel_type:type_name -> lemming.dataplane.sai.TunnelType
 	39, // 37: lemming.dataplane.sai.CreateSwitchTunnelRequest.loopback_packet_action:type_name -> lemming.dataplane.sai.PacketAction
@@ -5840,16 +5840,16 @@ var file_dataplane_proto_sai_switch_proto_depIdxs = []int32{
 	2,  // 45: lemming.dataplane.sai.Switch.CreateSwitch:input_type -> lemming.dataplane.sai.CreateSwitchRequest
 	4,  // 46: lemming.dataplane.sai.Switch.RemoveSwitch:input_type -> lemming.dataplane.sai.RemoveSwitchRequest
 	6,  // 47: lemming.dataplane.sai.Switch.SetSwitchAttribute:input_type -> lemming.dataplane.sai.SetSwitchAttributeRequest
-	8,  // 48: lemming.dataplane.sai.Switch.SwitchStateChangeNotification:input_type -> lemming.dataplane.sai.SwitchStateChangeNotificationRequest
-	10, // 49: lemming.dataplane.sai.Switch.SwitchShutdownRequestNotification:input_type -> lemming.dataplane.sai.SwitchShutdownRequestNotificationRequest
-	12, // 50: lemming.dataplane.sai.Switch.FdbEventNotification:input_type -> lemming.dataplane.sai.FdbEventNotificationRequest
-	14, // 51: lemming.dataplane.sai.Switch.PortStateChangeNotification:input_type -> lemming.dataplane.sai.PortStateChangeNotificationRequest
-	16, // 52: lemming.dataplane.sai.Switch.PacketEventNotification:input_type -> lemming.dataplane.sai.PacketEventNotificationRequest
-	18, // 53: lemming.dataplane.sai.Switch.QueuePfcDeadlockNotification:input_type -> lemming.dataplane.sai.QueuePfcDeadlockNotificationRequest
-	20, // 54: lemming.dataplane.sai.Switch.BfdSessionStateChangeNotification:input_type -> lemming.dataplane.sai.BfdSessionStateChangeNotificationRequest
-	22, // 55: lemming.dataplane.sai.Switch.TamEventNotification:input_type -> lemming.dataplane.sai.TamEventNotificationRequest
-	24, // 56: lemming.dataplane.sai.Switch.IpsecSaStatusChangeNotification:input_type -> lemming.dataplane.sai.IpsecSaStatusChangeNotificationRequest
-	26, // 57: lemming.dataplane.sai.Switch.GetSwitchAttribute:input_type -> lemming.dataplane.sai.GetSwitchAttributeRequest
+	10, // 48: lemming.dataplane.sai.Switch.SwitchStateChangeNotification:input_type -> lemming.dataplane.sai.SwitchStateChangeNotificationRequest
+	12, // 49: lemming.dataplane.sai.Switch.SwitchShutdownRequestNotification:input_type -> lemming.dataplane.sai.SwitchShutdownRequestNotificationRequest
+	14, // 50: lemming.dataplane.sai.Switch.FdbEventNotification:input_type -> lemming.dataplane.sai.FdbEventNotificationRequest
+	16, // 51: lemming.dataplane.sai.Switch.PortStateChangeNotification:input_type -> lemming.dataplane.sai.PortStateChangeNotificationRequest
+	18, // 52: lemming.dataplane.sai.Switch.PacketEventNotification:input_type -> lemming.dataplane.sai.PacketEventNotificationRequest
+	20, // 53: lemming.dataplane.sai.Switch.QueuePfcDeadlockNotification:input_type -> lemming.dataplane.sai.QueuePfcDeadlockNotificationRequest
+	22, // 54: lemming.dataplane.sai.Switch.BfdSessionStateChangeNotification:input_type -> lemming.dataplane.sai.BfdSessionStateChangeNotificationRequest
+	24, // 55: lemming.dataplane.sai.Switch.TamEventNotification:input_type -> lemming.dataplane.sai.TamEventNotificationRequest
+	26, // 56: lemming.dataplane.sai.Switch.IpsecSaStatusChangeNotification:input_type -> lemming.dataplane.sai.IpsecSaStatusChangeNotificationRequest
+	8,  // 57: lemming.dataplane.sai.Switch.GetSwitchAttribute:input_type -> lemming.dataplane.sai.GetSwitchAttributeRequest
 	28, // 58: lemming.dataplane.sai.Switch.GetSwitchStats:input_type -> lemming.dataplane.sai.GetSwitchStatsRequest
 	30, // 59: lemming.dataplane.sai.Switch.CreateSwitchTunnel:input_type -> lemming.dataplane.sai.CreateSwitchTunnelRequest
 	32, // 60: lemming.dataplane.sai.Switch.RemoveSwitchTunnel:input_type -> lemming.dataplane.sai.RemoveSwitchTunnelRequest
@@ -5858,16 +5858,16 @@ var file_dataplane_proto_sai_switch_proto_depIdxs = []int32{
 	3,  // 63: lemming.dataplane.sai.Switch.CreateSwitch:output_type -> lemming.dataplane.sai.CreateSwitchResponse
 	5,  // 64: lemming.dataplane.sai.Switch.RemoveSwitch:output_type -> lemming.dataplane.sai.RemoveSwitchResponse
 	7,  // 65: lemming.dataplane.sai.Switch.SetSwitchAttribute:output_type -> lemming.dataplane.sai.SetSwitchAttributeResponse
-	9,  // 66: lemming.dataplane.sai.Switch.SwitchStateChangeNotification:output_type -> lemming.dataplane.sai.SwitchStateChangeNotificationResponse
-	11, // 67: lemming.dataplane.sai.Switch.SwitchShutdownRequestNotification:output_type -> lemming.dataplane.sai.SwitchShutdownRequestNotificationResponse
-	13, // 68: lemming.dataplane.sai.Switch.FdbEventNotification:output_type -> lemming.dataplane.sai.FdbEventNotificationResponse
-	15, // 69: lemming.dataplane.sai.Switch.PortStateChangeNotification:output_type -> lemming.dataplane.sai.PortStateChangeNotificationResponse
-	17, // 70: lemming.dataplane.sai.Switch.PacketEventNotification:output_type -> lemming.dataplane.sai.PacketEventNotificationResponse
-	19, // 71: lemming.dataplane.sai.Switch.QueuePfcDeadlockNotification:output_type -> lemming.dataplane.sai.QueuePfcDeadlockNotificationResponse
-	21, // 72: lemming.dataplane.sai.Switch.BfdSessionStateChangeNotification:output_type -> lemming.dataplane.sai.BfdSessionStateChangeNotificationResponse
-	23, // 73: lemming.dataplane.sai.Switch.TamEventNotification:output_type -> lemming.dataplane.sai.TamEventNotificationResponse
-	25, // 74: lemming.dataplane.sai.Switch.IpsecSaStatusChangeNotification:output_type -> lemming.dataplane.sai.IpsecSaStatusNotificationDataResponse
-	27, // 75: lemming.dataplane.sai.Switch.GetSwitchAttribute:output_type -> lemming.dataplane.sai.GetSwitchAttributeResponse
+	11, // 66: lemming.dataplane.sai.Switch.SwitchStateChangeNotification:output_type -> lemming.dataplane.sai.SwitchStateChangeNotificationResponse
+	13, // 67: lemming.dataplane.sai.Switch.SwitchShutdownRequestNotification:output_type -> lemming.dataplane.sai.SwitchShutdownRequestNotificationResponse
+	15, // 68: lemming.dataplane.sai.Switch.FdbEventNotification:output_type -> lemming.dataplane.sai.FdbEventNotificationResponse
+	17, // 69: lemming.dataplane.sai.Switch.PortStateChangeNotification:output_type -> lemming.dataplane.sai.PortStateChangeNotificationResponse
+	19, // 70: lemming.dataplane.sai.Switch.PacketEventNotification:output_type -> lemming.dataplane.sai.PacketEventNotificationResponse
+	21, // 71: lemming.dataplane.sai.Switch.QueuePfcDeadlockNotification:output_type -> lemming.dataplane.sai.QueuePfcDeadlockNotificationResponse
+	23, // 72: lemming.dataplane.sai.Switch.BfdSessionStateChangeNotification:output_type -> lemming.dataplane.sai.BfdSessionStateChangeNotificationResponse
+	25, // 73: lemming.dataplane.sai.Switch.TamEventNotification:output_type -> lemming.dataplane.sai.TamEventNotificationResponse
+	27, // 74: lemming.dataplane.sai.Switch.IpsecSaStatusChangeNotification:output_type -> lemming.dataplane.sai.IpsecSaStatusNotificationDataResponse
+	9,  // 75: lemming.dataplane.sai.Switch.GetSwitchAttribute:output_type -> lemming.dataplane.sai.GetSwitchAttributeResponse
 	29, // 76: lemming.dataplane.sai.Switch.GetSwitchStats:output_type -> lemming.dataplane.sai.GetSwitchStatsResponse
 	31, // 77: lemming.dataplane.sai.Switch.CreateSwitchTunnel:output_type -> lemming.dataplane.sai.CreateSwitchTunnelResponse
 	33, // 78: lemming.dataplane.sai.Switch.RemoveSwitchTunnel:output_type -> lemming.dataplane.sai.RemoveSwitchTunnelResponse
@@ -5960,222 +5960,6 @@ func file_dataplane_proto_sai_switch_proto_init() {
 			}
 		}
 		file_dataplane_proto_sai_switch_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SwitchStateChangeNotificationRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_dataplane_proto_sai_switch_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SwitchStateChangeNotificationResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_dataplane_proto_sai_switch_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SwitchShutdownRequestNotificationRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_dataplane_proto_sai_switch_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SwitchShutdownRequestNotificationResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_dataplane_proto_sai_switch_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*FdbEventNotificationRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_dataplane_proto_sai_switch_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*FdbEventNotificationResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_dataplane_proto_sai_switch_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PortStateChangeNotificationRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_dataplane_proto_sai_switch_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PortStateChangeNotificationResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_dataplane_proto_sai_switch_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PacketEventNotificationRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_dataplane_proto_sai_switch_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PacketEventNotificationResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_dataplane_proto_sai_switch_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueuePfcDeadlockNotificationRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_dataplane_proto_sai_switch_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueuePfcDeadlockNotificationResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_dataplane_proto_sai_switch_proto_msgTypes[18].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*BfdSessionStateChangeNotificationRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_dataplane_proto_sai_switch_proto_msgTypes[19].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*BfdSessionStateChangeNotificationResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_dataplane_proto_sai_switch_proto_msgTypes[20].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TamEventNotificationRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_dataplane_proto_sai_switch_proto_msgTypes[21].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TamEventNotificationResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_dataplane_proto_sai_switch_proto_msgTypes[22].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*IpsecSaStatusChangeNotificationRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_dataplane_proto_sai_switch_proto_msgTypes[23].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*IpsecSaStatusNotificationDataResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_dataplane_proto_sai_switch_proto_msgTypes[24].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*GetSwitchAttributeRequest); i {
 			case 0:
 				return &v.state
@@ -6187,8 +5971,224 @@ func file_dataplane_proto_sai_switch_proto_init() {
 				return nil
 			}
 		}
-		file_dataplane_proto_sai_switch_proto_msgTypes[25].Exporter = func(v interface{}, i int) interface{} {
+		file_dataplane_proto_sai_switch_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*GetSwitchAttributeResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_dataplane_proto_sai_switch_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*SwitchStateChangeNotificationRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_dataplane_proto_sai_switch_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*SwitchStateChangeNotificationResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_dataplane_proto_sai_switch_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*SwitchShutdownRequestNotificationRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_dataplane_proto_sai_switch_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*SwitchShutdownRequestNotificationResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_dataplane_proto_sai_switch_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*FdbEventNotificationRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_dataplane_proto_sai_switch_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*FdbEventNotificationResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_dataplane_proto_sai_switch_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*PortStateChangeNotificationRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_dataplane_proto_sai_switch_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*PortStateChangeNotificationResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_dataplane_proto_sai_switch_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*PacketEventNotificationRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_dataplane_proto_sai_switch_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*PacketEventNotificationResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_dataplane_proto_sai_switch_proto_msgTypes[18].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*QueuePfcDeadlockNotificationRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_dataplane_proto_sai_switch_proto_msgTypes[19].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*QueuePfcDeadlockNotificationResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_dataplane_proto_sai_switch_proto_msgTypes[20].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*BfdSessionStateChangeNotificationRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_dataplane_proto_sai_switch_proto_msgTypes[21].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*BfdSessionStateChangeNotificationResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_dataplane_proto_sai_switch_proto_msgTypes[22].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*TamEventNotificationRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_dataplane_proto_sai_switch_proto_msgTypes[23].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*TamEventNotificationResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_dataplane_proto_sai_switch_proto_msgTypes[24].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*IpsecSaStatusChangeNotificationRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_dataplane_proto_sai_switch_proto_msgTypes[25].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*IpsecSaStatusNotificationDataResponse); i {
 			case 0:
 				return &v.state
 			case 1:
