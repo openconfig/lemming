@@ -72,3 +72,19 @@ cc_binary(
         ":entrypoint",
     ],
 )
+
+cc_binary(
+    name = "server",
+    srcs = ["server.cc"],
+    linkopts = [
+        "-lprotobuf",
+        "-lgrpc++",
+        "-lglog",
+        "-lsai",
+    ],
+    tags = ["manual"],
+    deps = [
+        "//dataplane/standalone/saiserver",
+        "@com_github_grpc_grpc//:grpc++",
+    ],
+)
