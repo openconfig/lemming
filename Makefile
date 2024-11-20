@@ -58,6 +58,8 @@ PROTO_OBJ = $(patsubst dataplane/proto/sai/%.proto, dataplane/proto/sai/%.pb.o, 
 GRPC_OBJ = $(patsubst dataplane/proto/sai/%.proto, dataplane/proto/sai/%.grpc.pb.o, $(PROTOS))
 SAI_SRC = $(wildcard dataplane/standalone/sai/*.cc)
 SAI_OBJ = $(patsubst dataplane/standalone/sai/%.cc, dataplane/standalone/sai/%.o, $(SAI_SRC))
+SAISERV_SRC = $(wildcard dataplane/standalone/saiserver/*.cc)
+SAISERV_OBJ = $(patsubst dataplane/standalone/saiserver/%.cc, dataplane/standalone/saiserver/%.o, $(SAISERV_SRC))
 
 .PHONY: sai-clean
 sai-clean:
@@ -77,9 +79,15 @@ dataplane/proto/sai/%.grpc.pb.o:  dataplane/proto/sai/%.grpc.pb.cc
 dataplane/standalone/sai/%.o: dataplane/standalone/sai/%.cc $(PROTO_SRC)
 	g++ -fPIC -c $< -o $@ -I . -I external/com_github_opencomputeproject_sai -I external/com_github_opencomputeproject_sai/inc  -I external/com_github_opencomputeproject_sai/experimental
 
-
 libsai.so: $(PROTO_OBJ) $(GRPC_OBJ) $(SAI_OBJ)
 	g++ -fPIC -o libsai.so -shared dataplane/standalone/entrypoint.cc dataplane/proto/sai/*.o dataplane/standalone/sai/*.o -lglog -lprotobuf -lgrpc++ -I . -I external/com_github_opencomputeproject_sai -I external/com_github_opencomputeproject_sai/inc -I external/com_github_opencomputeproject_sai/experimental
+
+dataplane/standalone/saiserver/%.o: dataplane/standalone/saiserver/%.cc $(PROTO_SRC)
+	g++ -fPIC -c $< -o $@ -I . -I external/com_github_opencomputeproject_sai -I external/com_github_opencomputeproject_sai/inc  -I external/com_github_opencomputeproject_sai/experimental
+
+dataplane/standalone/server: $(PROTO_OBJ) $(GRPC_OBJ) $(SAISERV_OBJ)
+	g++ -o dataplane/standalone/server dataplane/standalone/server.cc dataplane/standalone/saiserver/*.o dataplane/proto/sai/*.o -libsaivs -labsl_synchronization -lglog -lgpr -lprotobuf -lgrpc -lgrpc++ -I . -I external/com_github_opencomputeproject_sai -I external/com_github_opencomputeproject_sai/inc -I external/com_github_opencomputeproject_sai/experimental
+
 
 define DEB_CONTROL =
 Package: lucius-libsai

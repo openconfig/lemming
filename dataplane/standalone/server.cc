@@ -268,6 +268,9 @@ int main() {
 
   grpc::ServerBuilder builder;
 
+  Entry entry;
+
+  builder.RegisterService(&entry);
   builder.RegisterService(acl.get());
   builder.RegisterService(bfd.get());
   builder.RegisterService(buffer.get());
