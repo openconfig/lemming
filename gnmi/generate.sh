@@ -19,6 +19,7 @@
 set -e
 
 git clone https://github.com/openconfig/public.git
+cd public && git checkout v5.0.0 && cd ..
 
 EXCLUDE_MODULES=ietf-interfaces,openconfig-bfd,openconfig-messages
 
