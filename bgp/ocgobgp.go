@@ -21,10 +21,11 @@ import (
 	"strings"
 
 	log "github.com/golang/glog"
-	"github.com/openconfig/lemming/gnmi/oc"
-	"github.com/openconfig/lemming/internal/lemmingutil"
 	api "github.com/osrg/gobgp/v3/api"
 	gobgpoc "github.com/osrg/gobgp/v3/pkg/config/oc"
+
+	"github.com/openconfig/lemming/gnmi/oc"
+	"github.com/openconfig/lemming/internal/lemmingutil"
 )
 
 // convertPolicyName converts from OC policy name to a neighbour-qualified
@@ -344,8 +345,6 @@ func convertMED(med oc.RoutingPolicy_PolicyDefinition_Statement_Actions_BgpActio
 		return "", nil
 	}
 	switch c := med.(type) {
-	case oc.UnionString:
-		return string(c), nil
 	case oc.UnionUint32:
 		return strconv.FormatUint(uint64(c), 10), nil
 	case oc.E_BgpPolicy_BgpSetMedType_Enum:
