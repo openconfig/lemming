@@ -64,21 +64,19 @@ func dataplaneConn(t testing.TB, dut *ondatra.DUTDevice) *grpc.ClientConn {
 
 var (
 	dutPort1 = attrs.Attributes{
-		Desc:    "dutPort1",
-		MAC:     "10:10:10:10:10:10",
-		IPv4:    "192.0.2.1",
-		IPv4Len: 30,
+		Desc: "dutPort1",
+		MAC:  "10:10:10:10:10:10",
 	}
 
 	dutPort2 = attrs.Attributes{
-		Desc:    "dutPort2",
-		MAC:     "10:10:10:10:10:11",
-		IPv4:    "192.0.2.5",
-		IPv4Len: 30,
+		Desc: "dutPort2",
+		MAC:  "10:10:10:10:10:11",
 	}
 )
 
-func configureDUT(t testing.TB, dut *ondatra.DUTDevice, hop *oc.NetworkInstance_Afts_NextHop) {
+const neighborMAC = "10:10:10:10:10:12"
+
+func configureDUT(t testing.TB, dut *ondatra.DUTDevice, hop *oc.NetworkInstance_Afts_NextHop, routePrefix string) {
 	t.Helper()
 	conn := dataplaneConn(t, dut)
 	// Allow all traffic to L3 processing.
@@ -165,8 +163,8 @@ func configureDUT(t testing.TB, dut *ondatra.DUTDevice, hop *oc.NetworkInstance_
 	if _, err := fwd.TableEntryAdd(context.Background(), actReq); err != nil {
 		t.Fatal(err)
 	}
-	saiutil.CreateRoute(t, dut, "2003::10/128", nh.GetOid())
-	saiutil.CreateNeighbor(t, dut, "2003::3", "10:10:10:10:10:12", outRIF)
+	saiutil.CreateRoute(t, dut, routePrefix, nh.GetOid())
+	saiutil.CreateNeighbor(t, dut, *hop.IpAddress, neighborMAC, outRIF)
 }
 
 func parseMac(t testing.TB, mac string) net.HardwareAddr {
@@ -198,7 +196,7 @@ func TestMPLSoverUDP(t *testing.T) {
 		},
 	}
 
-	configureDUT(t, ondatra.DUT(t, "dut"), hop)
+	configureDUT(t, ondatra.DUT(t, "dut"), hop, "2003::10/128")
 
 	// Create test packet
 	eth := &layers.Ethernet{
@@ -232,7 +230,7 @@ func TestMPLSoverUDP(t *testing.T) {
 
 	wantEth := &layers.Ethernet{
 		SrcMAC:       parseMac(t, dutPort2.MAC),
-		DstMAC:       parseMac(t, "10:10:10:10:10:12"),
+		DstMAC:       parseMac(t, neighborMAC),
 		EthernetType: layers.EthernetTypeIPv6,
 	}
 
