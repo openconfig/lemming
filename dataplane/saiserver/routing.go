@@ -680,8 +680,12 @@ func ifaceCounterID(oid uint64, input bool) string {
 // CreateRouterInterfaces creates a new router interface.
 func (ri *routerInterface) CreateRouterInterface(ctx context.Context, req *saipb.CreateRouterInterfaceRequest) (*saipb.CreateRouterInterfaceResponse, error) {
 	id := ri.mgr.NextID()
+
+	vlanID := uint16(0)
 	switch req.GetType() {
 	case saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_PORT:
+	case saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_SUB_PORT:
+		vlanID = uint16(req.GetOuterVlanId())
 	case saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_LOOPBACK: // TODO: Support loopback interfaces
 		slog.WarnContext(ctx, "loopback interfaces not supported")
 		return &saipb.CreateRouterInterfaceResponse{Oid: id}, nil
@@ -715,23 +719,48 @@ func (ri *routerInterface) CreateRouterInterface(ctx context.Context, req *saipb
 		return nil, err
 	}
 
-	// Link the port to the interface.
-	_, err = ri.dataplane.TableEntryAdd(ctx, fwdconfig.TableEntryAddRequest(ri.dataplane.ID(), inputIfaceTable).
+	inReq := fwdconfig.TableEntryAddRequest(ri.dataplane.ID(), inputIfaceTable).
 		AppendEntry(
-			fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT).WithUint64(uint64(obj.NID())))),
+			fwdconfig.EntryDesc(fwdconfig.ExactEntry(
+				fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT).WithUint64(uint64(obj.NID())),
+				fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG).WithBytes(binary.BigEndian.AppendUint16(nil, vlanID)),
+			)),
 			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_INPUT_IFACE).WithUint64Value(id)),
 			fwdconfig.Action(fwdconfig.FlowCounterAction(inCounter)),
-		).Build())
+		).Build()
+
+	if vlanID != 0 {
+		inReq.Entries[0].Actions = append(inReq.Entries[0].Actions, &fwdpb.ActionDesc{
+			ActionType: fwdpb.ActionType_ACTION_TYPE_DECAP,
+			Action: &fwdpb.ActionDesc_Decap{
+				Decap: &fwdpb.DecapActionDesc{
+					HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET_VLAN,
+				},
+			},
+		})
+	}
+
+	// Link the port to the interface.
+	_, err = ri.dataplane.TableEntryAdd(ctx, inReq)
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = ri.dataplane.TableEntryAdd(ctx, fwdconfig.TableEntryAddRequest(ri.dataplane.ID(), outputIfaceTable).
+	outReq := fwdconfig.TableEntryAddRequest(ri.dataplane.ID(), outputIfaceTable).
 		AppendEntry(
 			fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE).WithUint64(id))),
 			fwdconfig.Action(fwdconfig.TransmitAction(fmt.Sprint(req.GetPortId()))),
 			fwdconfig.Action(fwdconfig.FlowCounterAction(outCounter)),
-		).Build())
+		).Build()
+
+	if vlanID != 0 {
+		outReq.Entries[0].Actions = append(inReq.Entries[0].Actions,
+			fwdconfig.Action(fwdconfig.EncapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET_VLAN)).Build(),
+			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG).WithValue(binary.BigEndian.AppendUint16(nil, vlanID))).Build(),
+		)
+	}
+
+	_, err = ri.dataplane.TableEntryAdd(ctx, outReq)
 	if err != nil {
 		return nil, err
 	}

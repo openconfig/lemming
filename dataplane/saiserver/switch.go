@@ -601,6 +601,10 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 						Field: &fwdpb.PacketField{
 							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT, // TODO: Figure out all the ways ports can be mapped to interfaces.
 						},
+					}, {
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG, // TODO: Figure out all the ways ports can be mapped to interfaces.
+						},
 					}},
 				},
 			},

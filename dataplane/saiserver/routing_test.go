@@ -16,6 +16,7 @@ package saiserver
 
 import (
 	"context"
+	"encoding/binary"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -828,7 +829,7 @@ func TestCreateRouterInterface(t *testing.T) {
 		req:     &saipb.CreateRouterInterfaceRequest{},
 		wantErr: "InvalidArgument",
 	}, {
-		desc: "success port",
+		desc: "success port - port",
 		req: &saipb.CreateRouterInterfaceRequest{
 			PortId: proto.Uint64(10),
 			Type:   saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_PORT.Enum(),
@@ -844,6 +845,11 @@ func TestCreateRouterInterface(t *testing.T) {
 								FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT,
 							}},
 							Bytes: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+						}, {
+							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{
+								FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG,
+							}},
+							Bytes: binary.BigEndian.AppendUint16(nil, 0),
 						}},
 					},
 				}},
@@ -866,6 +872,63 @@ func TestCreateRouterInterface(t *testing.T) {
 							CounterId: &fwdpb.FlowCounterId{
 								ObjectId: &fwdpb.ObjectId{Id: "1-in-counter"},
 							},
+						},
+					},
+				}},
+			}},
+		},
+	}, {
+		desc: "success port - subport",
+		req: &saipb.CreateRouterInterfaceRequest{
+			PortId:      proto.Uint64(10),
+			Type:        saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_SUB_PORT.Enum(),
+			OuterVlanId: proto.Uint32(100),
+		},
+		wantReq: &fwdpb.TableEntryAddRequest{
+			ContextId: &fwdpb.ContextId{Id: "foo"},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: inputIfaceTable}},
+			Entries: []*fwdpb.TableEntryAddRequest_Entry{{
+				EntryDesc: &fwdpb.EntryDesc{Entry: &fwdpb.EntryDesc_Exact{
+					Exact: &fwdpb.ExactEntryDesc{
+						Fields: []*fwdpb.PacketFieldBytes{{
+							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{
+								FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT,
+							}},
+							Bytes: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+						}, {
+							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{
+								FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG,
+							}},
+							Bytes: binary.BigEndian.AppendUint16(nil, 100),
+						}},
+					},
+				}},
+				Actions: []*fwdpb.ActionDesc{{
+					ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
+					Action: &fwdpb.ActionDesc_Update{
+						Update: &fwdpb.UpdateActionDesc{
+							Type: fwdpb.UpdateType_UPDATE_TYPE_SET,
+							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{
+								FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_INPUT_IFACE,
+							}},
+							Field: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{}},
+							Value: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+						},
+					},
+				}, {
+					ActionType: fwdpb.ActionType_ACTION_TYPE_FLOW_COUNTER,
+					Action: &fwdpb.ActionDesc_Flow{
+						Flow: &fwdpb.FlowCounterActionDesc{
+							CounterId: &fwdpb.FlowCounterId{
+								ObjectId: &fwdpb.ObjectId{Id: "1-in-counter"},
+							},
+						},
+					},
+				}, {
+					ActionType: fwdpb.ActionType_ACTION_TYPE_DECAP,
+					Action: &fwdpb.ActionDesc_Decap{
+						Decap: &fwdpb.DecapActionDesc{
+							HeaderId: fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET_VLAN,
 						},
 					},
 				}},
