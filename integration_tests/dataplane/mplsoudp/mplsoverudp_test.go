@@ -163,7 +163,7 @@ func configureDUT(t testing.TB, dut *ondatra.DUTDevice, hop *oc.NetworkInstance_
 	if _, err := fwd.TableEntryAdd(context.Background(), actReq); err != nil {
 		t.Fatal(err)
 	}
-	saiutil.CreateRoute(t, dut, routePrefix, nh.GetOid())
+	saiutil.CreateRoute(t, dut, routePrefix, nh.GetOid(), 0)
 	saiutil.CreateNeighbor(t, dut, *hop.IpAddress, neighborMAC, outRIF)
 }
 
