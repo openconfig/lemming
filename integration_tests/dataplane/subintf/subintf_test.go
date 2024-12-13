@@ -81,7 +81,7 @@ func TestVLANSubIntfMatch(t *testing.T) {
 					},
 				},
 			}),
-			saiutil.ConfigNeighbor(saiutil.InterfaceRef{Intf: "port2"}, "192.0.2.2", dutPort2.MAC),
+			saiutil.ConfigNeighbor(saiutil.InterfaceRef{Intf: "port2"}, "192.0.2.2", "10:10:10:10:10:13"),
 		},
 		In: &saiutil.Packet{
 			Port: "port1",
@@ -110,7 +110,7 @@ func TestVLANSubIntfMatch(t *testing.T) {
 			Layers: []gopacket.SerializableLayer{
 				&layers.Ethernet{
 					SrcMAC:       saiutil.MustParseMac(t, "10:10:10:10:10:11"),
-					DstMAC:       saiutil.MustParseMac(t, "10:10:10:10:10:11"),
+					DstMAC:       saiutil.MustParseMac(t, "10:10:10:10:10:13"),
 					EthernetType: layers.EthernetTypeIPv4,
 				},
 				&layers.IPv4{

@@ -58,7 +58,7 @@ func (c *configer) UnConfig(t testing.TB, s *Suite, dut *ondatra.DUTDevice) {
 	c.uncfg(t, s, dut)
 }
 
-func CreateRIF(t testing.TB, dut *ondatra.DUTDevice, port *ondatra.Port, smac string) uint64 {
+func CreateRIF(t testing.TB, dut *ondatra.DUTDevice, port *ondatra.Port, smac string, vrID uint64) uint64 {
 	t.Helper()
 	conn := dataplaneConn(t, dut)
 	ric := saipb.NewRouterInterfaceClient(conn)
@@ -71,10 +71,11 @@ func CreateRIF(t testing.TB, dut *ondatra.DUTDevice, port *ondatra.Port, smac st
 		t.Fatal(err)
 	}
 	resp, err := ric.CreateRouterInterface(context.Background(), &saipb.CreateRouterInterfaceRequest{
-		Switch:        1,
-		PortId:        proto.Uint64(port1ID),
-		Type:          saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_PORT.Enum(),
-		SrcMacAddress: mac,
+		Switch:          1,
+		PortId:          proto.Uint64(port1ID),
+		VirtualRouterId: proto.Uint64(vrID),
+		Type:            saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_PORT.Enum(),
+		SrcMacAddress:   mac,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -190,11 +191,11 @@ func ConfigAft(vrf string, aft *oc.NetworkInstance_Afts) *configer {
 	return c
 }
 
-func ConfigRIF(portID string, mac string, vlan string) *configer {
+func ConfigRIF(portID string, mac string, vrf string) *configer {
 	c := &configer{}
 
 	c.cfg = func(t testing.TB, s *Suite, dut *ondatra.DUTDevice) {
-		id := CreateRIF(t, dut, dut.Port(t, portID), mac)
+		id := CreateRIF(t, dut, dut.Port(t, portID), mac, s.oc2SAIVRF[vrf])
 		s.interfaceMap[InterfaceRef{Intf: portID}] = id
 	}
 
@@ -218,11 +219,12 @@ func ConfigVLANSubIntf(portID string, index uint32, smac string, vlan uint16, vr
 		}
 
 		resp, err := ric.CreateRouterInterface(context.Background(), &saipb.CreateRouterInterfaceRequest{
-			Switch:        1,
-			PortId:        proto.Uint64(port1ID),
-			Type:          saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_SUB_PORT.Enum(),
-			OuterVlanId:   proto.Uint32(uint32(vlan)),
-			SrcMacAddress: mac,
+			Switch:          1,
+			PortId:          proto.Uint64(port1ID),
+			Type:            saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_SUB_PORT.Enum(),
+			VirtualRouterId: proto.Uint64(s.oc2SAIVRF[vrf]),
+			OuterVlanId:     proto.Uint32(uint32(vlan)),
+			SrcMacAddress:   mac,
 		})
 		if err != nil {
 			t.Fatal(err)

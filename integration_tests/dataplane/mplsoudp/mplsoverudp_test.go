@@ -90,8 +90,8 @@ func configureDUT(t testing.TB, dut *ondatra.DUTDevice, hop *oc.NetworkInstance_
 	if err != nil {
 		t.Fatal(err)
 	}
-	saiutil.CreateRIF(t, dut, dut.Port(t, "port1"), dutPort1.MAC)
-	outRIF := saiutil.CreateRIF(t, dut, dut.Port(t, "port2"), dutPort2.MAC)
+	saiutil.CreateRIF(t, dut, dut.Port(t, "port1"), dutPort1.MAC, 0)
+	outRIF := saiutil.CreateRIF(t, dut, dut.Port(t, "port2"), dutPort2.MAC, 0)
 
 	nhc := saipb.NewNextHopClient(conn)
 
