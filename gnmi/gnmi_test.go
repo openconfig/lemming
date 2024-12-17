@@ -30,9 +30,6 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/openconfig/gnmi/errdiff"
 	"github.com/openconfig/gnmi/value"
-	"github.com/openconfig/lemming/gnmi/gnmiclient"
-	"github.com/openconfig/lemming/gnmi/oc"
-	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 	"github.com/openconfig/ygnmi/schemaless"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot"
@@ -40,6 +37,10 @@ import (
 	"google.golang.org/grpc/credentials/local"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/encoding/prototext"
+
+	"github.com/openconfig/lemming/gnmi/gnmiclient"
+	"github.com/openconfig/lemming/gnmi/oc"
+	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 )
@@ -792,6 +793,9 @@ func TestSetYGNMI(t *testing.T) {
 				if !ok {
 					t.Fatalf("Got object not a GoStruct")
 				}
+				// Diffs between empty structs and nil should be ignored, so populate defaults.
+				want.(populateDefaultser).PopulateDefaults()
+				gotGS.(populateDefaultser).PopulateDefaults()
 				nos, err := ygot.Diff(want, gotGS)
 				if err != nil {
 					t.Fatal(err)
