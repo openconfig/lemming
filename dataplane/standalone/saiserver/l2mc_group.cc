@@ -25,6 +25,8 @@ grpc::Status L2mcGroup::CreateL2mcGroup(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateL2mcGroupRequest* req,
     lemming::dataplane::sai::CreateL2mcGroupResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -32,6 +34,22 @@ grpc::Status L2mcGroup::RemoveL2mcGroup(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveL2mcGroupRequest* req,
     lemming::dataplane::sai::RemoveL2mcGroupResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+  auto status = api->remove_l2mc_group(req.get_oid());
+
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -39,6 +57,8 @@ grpc::Status L2mcGroup::GetL2mcGroupAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetL2mcGroupAttributeRequest* req,
     lemming::dataplane::sai::GetL2mcGroupAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -46,6 +66,8 @@ grpc::Status L2mcGroup::CreateL2mcGroupMember(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateL2mcGroupMemberRequest* req,
     lemming::dataplane::sai::CreateL2mcGroupMemberResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -53,6 +75,22 @@ grpc::Status L2mcGroup::RemoveL2mcGroupMember(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveL2mcGroupMemberRequest* req,
     lemming::dataplane::sai::RemoveL2mcGroupMemberResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+  auto status = api->remove_l2mc_group_member(req.get_oid());
+
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -60,5 +98,7 @@ grpc::Status L2mcGroup::GetL2mcGroupMemberAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetL2mcGroupMemberAttributeRequest* req,
     lemming::dataplane::sai::GetL2mcGroupMemberAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }

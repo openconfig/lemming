@@ -25,6 +25,8 @@ grpc::Status Udf::CreateUdf(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateUdfRequest* req,
     lemming::dataplane::sai::CreateUdfResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -32,6 +34,22 @@ grpc::Status Udf::RemoveUdf(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveUdfRequest* req,
     lemming::dataplane::sai::RemoveUdfResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+  auto status = api->remove_udf(req.get_oid());
+
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -39,6 +57,8 @@ grpc::Status Udf::SetUdfAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetUdfAttributeRequest* req,
     lemming::dataplane::sai::SetUdfAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -46,6 +66,8 @@ grpc::Status Udf::GetUdfAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetUdfAttributeRequest* req,
     lemming::dataplane::sai::GetUdfAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -53,6 +75,8 @@ grpc::Status Udf::CreateUdfMatch(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateUdfMatchRequest* req,
     lemming::dataplane::sai::CreateUdfMatchResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -60,6 +84,22 @@ grpc::Status Udf::RemoveUdfMatch(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveUdfMatchRequest* req,
     lemming::dataplane::sai::RemoveUdfMatchResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+  auto status = api->remove_udf_match(req.get_oid());
+
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -67,6 +107,8 @@ grpc::Status Udf::GetUdfMatchAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetUdfMatchAttributeRequest* req,
     lemming::dataplane::sai::GetUdfMatchAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -74,6 +116,8 @@ grpc::Status Udf::CreateUdfGroup(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateUdfGroupRequest* req,
     lemming::dataplane::sai::CreateUdfGroupResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -81,6 +125,22 @@ grpc::Status Udf::RemoveUdfGroup(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveUdfGroupRequest* req,
     lemming::dataplane::sai::RemoveUdfGroupResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+  auto status = api->remove_udf_group(req.get_oid());
+
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -88,5 +148,7 @@ grpc::Status Udf::GetUdfGroupAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetUdfGroupAttributeRequest* req,
     lemming::dataplane::sai::GetUdfGroupAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }

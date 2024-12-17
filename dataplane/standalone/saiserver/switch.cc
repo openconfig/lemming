@@ -25,6 +25,8 @@ grpc::Status Switch::CreateSwitch(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateSwitchRequest* req,
     lemming::dataplane::sai::CreateSwitchResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -32,6 +34,22 @@ grpc::Status Switch::RemoveSwitch(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveSwitchRequest* req,
     lemming::dataplane::sai::RemoveSwitchResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+  auto status = api->remove_switch(req.get_oid());
+
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -39,6 +57,8 @@ grpc::Status Switch::SetSwitchAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetSwitchAttributeRequest* req,
     lemming::dataplane::sai::SetSwitchAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -46,6 +66,8 @@ grpc::Status Switch::GetSwitchAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetSwitchAttributeRequest* req,
     lemming::dataplane::sai::GetSwitchAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -53,6 +75,8 @@ grpc::Status Switch::GetSwitchStats(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetSwitchStatsRequest* req,
     lemming::dataplane::sai::GetSwitchStatsResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -60,6 +84,8 @@ grpc::Status Switch::CreateSwitchTunnel(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateSwitchTunnelRequest* req,
     lemming::dataplane::sai::CreateSwitchTunnelResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -67,6 +93,22 @@ grpc::Status Switch::RemoveSwitchTunnel(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveSwitchTunnelRequest* req,
     lemming::dataplane::sai::RemoveSwitchTunnelResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+  auto status = api->remove_switch_tunnel(req.get_oid());
+
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -74,6 +116,8 @@ grpc::Status Switch::SetSwitchTunnelAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetSwitchTunnelAttributeRequest* req,
     lemming::dataplane::sai::SetSwitchTunnelAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -81,5 +125,7 @@ grpc::Status Switch::GetSwitchTunnelAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetSwitchTunnelAttributeRequest* req,
     lemming::dataplane::sai::GetSwitchTunnelAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }

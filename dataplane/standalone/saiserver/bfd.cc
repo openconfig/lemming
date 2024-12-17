@@ -25,6 +25,8 @@ grpc::Status Bfd::CreateBfdSession(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateBfdSessionRequest* req,
     lemming::dataplane::sai::CreateBfdSessionResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -32,6 +34,22 @@ grpc::Status Bfd::RemoveBfdSession(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveBfdSessionRequest* req,
     lemming::dataplane::sai::RemoveBfdSessionResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+  auto status = api->remove_bfd_session(req.get_oid());
+
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -39,6 +57,8 @@ grpc::Status Bfd::SetBfdSessionAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetBfdSessionAttributeRequest* req,
     lemming::dataplane::sai::SetBfdSessionAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -46,6 +66,8 @@ grpc::Status Bfd::GetBfdSessionAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetBfdSessionAttributeRequest* req,
     lemming::dataplane::sai::GetBfdSessionAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -53,5 +75,7 @@ grpc::Status Bfd::GetBfdSessionStats(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetBfdSessionStatsRequest* req,
     lemming::dataplane::sai::GetBfdSessionStatsResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }

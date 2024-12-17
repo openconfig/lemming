@@ -25,6 +25,8 @@ grpc::Status Mpls::CreateInsegEntry(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateInsegEntryRequest* req,
     lemming::dataplane::sai::CreateInsegEntryResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -32,6 +34,21 @@ grpc::Status Mpls::RemoveInsegEntry(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveInsegEntryRequest* req,
     lemming::dataplane::sai::RemoveInsegEntryResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -39,6 +56,8 @@ grpc::Status Mpls::SetInsegEntryAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetInsegEntryAttributeRequest* req,
     lemming::dataplane::sai::SetInsegEntryAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -46,6 +65,8 @@ grpc::Status Mpls::GetInsegEntryAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetInsegEntryAttributeRequest* req,
     lemming::dataplane::sai::GetInsegEntryAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -53,6 +74,8 @@ grpc::Status Mpls::CreateInsegEntries(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateInsegEntriesRequest* req,
     lemming::dataplane::sai::CreateInsegEntriesResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -60,5 +83,7 @@ grpc::Status Mpls::RemoveInsegEntries(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveInsegEntriesRequest* req,
     lemming::dataplane::sai::RemoveInsegEntriesResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }

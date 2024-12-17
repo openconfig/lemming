@@ -155,7 +155,7 @@ class {{ .ServiceName }} final : public lemming::dataplane::sai::{{ .ServiceName
 
 #endif  // {{ .IncludeGuard }}
 `))
-	serverCCTmpl = template.Must(template.New("header").Parse(`// Copyright 2024 Google LLC
+	serverCCTmpl = template.Must(template.New("cc").Parse(`// Copyright 2024 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -179,6 +179,26 @@ class {{ .ServiceName }} final : public lemming::dataplane::sai::{{ .ServiceName
 {{ range .Funcs }}
 {{- if and .ProtoRPCName (not .IsStreaming) }}
 grpc::Status {{ $.ServiceName }}::{{ .ProtoRPCName }}(grpc::ServerContext* context, const lemming::dataplane::sai::{{ .ProtoRequestType }}* req, lemming::dataplane::sai::{{ .ProtoResponseType }}* resp) {
+	LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+	{{- if .UseCommonAPI }}
+	{{ if eq .Operation "remove" }}
+	grpc::ClientContext context;
+	{{ if .OidVar -}} auto status = api->{{ .Name }}(req.get_oid()); {{ end }}
+  	{{ if .EntryVar }} 
+	{{ .Args }} entry = {{ .EntryConversionToFunc }}(req); 
+	auto status = api->{{.Name}}(entry);
+	{{ end }}
+	if(!status.ok()) {
+	auto it = context.GetServerTrailingMetadata().find("traceparent");
+		if (it != context.GetServerTrailingMetadata().end()) {
+			LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second << " msg: " << status.error_message(); 
+		} else {
+			LOG(ERROR) << "Lucius RPC error: " << status.error_message(); 
+		}
+		return grpc::Status::INTERNAL;
+	}
+	{{end}}
+	{{- end}}
 	return grpc::Status::OK;
 }
 

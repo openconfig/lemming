@@ -56,6 +56,7 @@ type GenFunc struct {
 	SwitchScoped        bool
 	EntryConversionFunc string
 	EntryVar            string
+	EntryConversionToFunc string
 	ConvertFunc         string
 	AttrConvertInsert   string
 	IsStreaming         bool
@@ -242,6 +243,7 @@ func populateCCInfo(meta *saiast.FuncMetadata, apiName string, sai *saiast.SAIAP
 		entryType := strings.TrimPrefix(sai.Funcs[fn.Typ].Params[i].Typ, "const ")
 		if ua, ok := typeToUnionAccessor[entryType]; ok {
 			genFunc.EntryConversionFunc = ua.convertFromFunc
+			genFunc.EntryConversionToFunc = ua.convertToFunc
 			genFunc.EntryVar = sai.Funcs[fn.Typ].Params[i].Name
 		}
 	}

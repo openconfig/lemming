@@ -25,6 +25,8 @@ grpc::Status Queue::CreateQueue(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateQueueRequest* req,
     lemming::dataplane::sai::CreateQueueResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -32,6 +34,22 @@ grpc::Status Queue::RemoveQueue(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveQueueRequest* req,
     lemming::dataplane::sai::RemoveQueueResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+  auto status = api->remove_queue(req.get_oid());
+
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -39,6 +57,8 @@ grpc::Status Queue::SetQueueAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetQueueAttributeRequest* req,
     lemming::dataplane::sai::SetQueueAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -46,6 +66,8 @@ grpc::Status Queue::GetQueueAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetQueueAttributeRequest* req,
     lemming::dataplane::sai::GetQueueAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -53,5 +75,7 @@ grpc::Status Queue::GetQueueStats(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetQueueStatsRequest* req,
     lemming::dataplane::sai::GetQueueStatsResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }

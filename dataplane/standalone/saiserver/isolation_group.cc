@@ -25,6 +25,8 @@ grpc::Status IsolationGroup::CreateIsolationGroup(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateIsolationGroupRequest* req,
     lemming::dataplane::sai::CreateIsolationGroupResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -32,6 +34,22 @@ grpc::Status IsolationGroup::RemoveIsolationGroup(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveIsolationGroupRequest* req,
     lemming::dataplane::sai::RemoveIsolationGroupResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+  auto status = api->remove_isolation_group(req.get_oid());
+
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -39,6 +57,8 @@ grpc::Status IsolationGroup::GetIsolationGroupAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetIsolationGroupAttributeRequest* req,
     lemming::dataplane::sai::GetIsolationGroupAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -46,6 +66,8 @@ grpc::Status IsolationGroup::CreateIsolationGroupMember(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateIsolationGroupMemberRequest* req,
     lemming::dataplane::sai::CreateIsolationGroupMemberResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -53,6 +75,22 @@ grpc::Status IsolationGroup::RemoveIsolationGroupMember(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveIsolationGroupMemberRequest* req,
     lemming::dataplane::sai::RemoveIsolationGroupMemberResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+  auto status = api->remove_isolation_group_member(req.get_oid());
+
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -60,5 +98,7 @@ grpc::Status IsolationGroup::GetIsolationGroupMemberAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetIsolationGroupMemberAttributeRequest* req,
     lemming::dataplane::sai::GetIsolationGroupMemberAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }

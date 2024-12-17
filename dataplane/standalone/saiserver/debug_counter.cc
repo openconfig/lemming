@@ -25,6 +25,8 @@ grpc::Status DebugCounter::CreateDebugCounter(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateDebugCounterRequest* req,
     lemming::dataplane::sai::CreateDebugCounterResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -32,6 +34,22 @@ grpc::Status DebugCounter::RemoveDebugCounter(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveDebugCounterRequest* req,
     lemming::dataplane::sai::RemoveDebugCounterResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+  auto status = api->remove_debug_counter(req.get_oid());
+
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -39,6 +57,8 @@ grpc::Status DebugCounter::SetDebugCounterAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetDebugCounterAttributeRequest* req,
     lemming::dataplane::sai::SetDebugCounterAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -46,5 +66,7 @@ grpc::Status DebugCounter::GetDebugCounterAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetDebugCounterAttributeRequest* req,
     lemming::dataplane::sai::GetDebugCounterAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }

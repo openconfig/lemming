@@ -25,6 +25,8 @@ grpc::Status Route::CreateRouteEntry(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateRouteEntryRequest* req,
     lemming::dataplane::sai::CreateRouteEntryResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -32,6 +34,24 @@ grpc::Status Route::RemoveRouteEntry(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveRouteEntryRequest* req,
     lemming::dataplane::sai::RemoveRouteEntryResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+
+  const sai_route_entry_t* route_entry entry = convert_to_route_entry(req);
+  auto status = api->remove_route_entry(entry);
+
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -39,6 +59,8 @@ grpc::Status Route::SetRouteEntryAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetRouteEntryAttributeRequest* req,
     lemming::dataplane::sai::SetRouteEntryAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -46,6 +68,8 @@ grpc::Status Route::GetRouteEntryAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetRouteEntryAttributeRequest* req,
     lemming::dataplane::sai::GetRouteEntryAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -53,6 +77,8 @@ grpc::Status Route::CreateRouteEntries(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateRouteEntriesRequest* req,
     lemming::dataplane::sai::CreateRouteEntriesResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -60,5 +86,7 @@ grpc::Status Route::RemoveRouteEntries(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveRouteEntriesRequest* req,
     lemming::dataplane::sai::RemoveRouteEntriesResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }

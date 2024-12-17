@@ -25,6 +25,8 @@ grpc::Status Vlan::CreateVlan(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateVlanRequest* req,
     lemming::dataplane::sai::CreateVlanResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -32,6 +34,22 @@ grpc::Status Vlan::RemoveVlan(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveVlanRequest* req,
     lemming::dataplane::sai::RemoveVlanResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+  auto status = api->remove_vlan(req.get_oid());
+
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -39,6 +57,8 @@ grpc::Status Vlan::SetVlanAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetVlanAttributeRequest* req,
     lemming::dataplane::sai::SetVlanAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -46,6 +66,8 @@ grpc::Status Vlan::GetVlanAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetVlanAttributeRequest* req,
     lemming::dataplane::sai::GetVlanAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -53,6 +75,8 @@ grpc::Status Vlan::CreateVlanMember(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateVlanMemberRequest* req,
     lemming::dataplane::sai::CreateVlanMemberResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -60,6 +84,22 @@ grpc::Status Vlan::RemoveVlanMember(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveVlanMemberRequest* req,
     lemming::dataplane::sai::RemoveVlanMemberResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+  auto status = api->remove_vlan_member(req.get_oid());
+
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -67,6 +107,8 @@ grpc::Status Vlan::SetVlanMemberAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetVlanMemberAttributeRequest* req,
     lemming::dataplane::sai::SetVlanMemberAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -74,6 +116,8 @@ grpc::Status Vlan::GetVlanMemberAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetVlanMemberAttributeRequest* req,
     lemming::dataplane::sai::GetVlanMemberAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -81,6 +125,8 @@ grpc::Status Vlan::CreateVlanMembers(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateVlanMembersRequest* req,
     lemming::dataplane::sai::CreateVlanMembersResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -88,6 +134,8 @@ grpc::Status Vlan::RemoveVlanMembers(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveVlanMembersRequest* req,
     lemming::dataplane::sai::RemoveVlanMembersResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -95,5 +143,7 @@ grpc::Status Vlan::GetVlanStats(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetVlanStatsRequest* req,
     lemming::dataplane::sai::GetVlanStatsResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }

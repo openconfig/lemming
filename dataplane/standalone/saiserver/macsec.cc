@@ -25,6 +25,8 @@ grpc::Status Macsec::CreateMacsec(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateMacsecRequest* req,
     lemming::dataplane::sai::CreateMacsecResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -32,6 +34,22 @@ grpc::Status Macsec::RemoveMacsec(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveMacsecRequest* req,
     lemming::dataplane::sai::RemoveMacsecResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+  auto status = api->remove_macsec(req.get_oid());
+
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -39,6 +57,8 @@ grpc::Status Macsec::SetMacsecAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetMacsecAttributeRequest* req,
     lemming::dataplane::sai::SetMacsecAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -46,6 +66,8 @@ grpc::Status Macsec::GetMacsecAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetMacsecAttributeRequest* req,
     lemming::dataplane::sai::GetMacsecAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -53,6 +75,8 @@ grpc::Status Macsec::CreateMacsecPort(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateMacsecPortRequest* req,
     lemming::dataplane::sai::CreateMacsecPortResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -60,6 +84,22 @@ grpc::Status Macsec::RemoveMacsecPort(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveMacsecPortRequest* req,
     lemming::dataplane::sai::RemoveMacsecPortResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+  auto status = api->remove_macsec_port(req.get_oid());
+
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -67,6 +107,8 @@ grpc::Status Macsec::SetMacsecPortAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetMacsecPortAttributeRequest* req,
     lemming::dataplane::sai::SetMacsecPortAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -74,6 +116,8 @@ grpc::Status Macsec::GetMacsecPortAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetMacsecPortAttributeRequest* req,
     lemming::dataplane::sai::GetMacsecPortAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -81,6 +125,8 @@ grpc::Status Macsec::GetMacsecPortStats(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetMacsecPortStatsRequest* req,
     lemming::dataplane::sai::GetMacsecPortStatsResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -88,6 +134,8 @@ grpc::Status Macsec::CreateMacsecFlow(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateMacsecFlowRequest* req,
     lemming::dataplane::sai::CreateMacsecFlowResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -95,6 +143,22 @@ grpc::Status Macsec::RemoveMacsecFlow(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveMacsecFlowRequest* req,
     lemming::dataplane::sai::RemoveMacsecFlowResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+  auto status = api->remove_macsec_flow(req.get_oid());
+
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -102,6 +166,8 @@ grpc::Status Macsec::GetMacsecFlowAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetMacsecFlowAttributeRequest* req,
     lemming::dataplane::sai::GetMacsecFlowAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -109,6 +175,8 @@ grpc::Status Macsec::GetMacsecFlowStats(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetMacsecFlowStatsRequest* req,
     lemming::dataplane::sai::GetMacsecFlowStatsResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -116,6 +184,8 @@ grpc::Status Macsec::CreateMacsecSc(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateMacsecScRequest* req,
     lemming::dataplane::sai::CreateMacsecScResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -123,6 +193,22 @@ grpc::Status Macsec::RemoveMacsecSc(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveMacsecScRequest* req,
     lemming::dataplane::sai::RemoveMacsecScResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+  auto status = api->remove_macsec_sc(req.get_oid());
+
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -130,6 +216,8 @@ grpc::Status Macsec::SetMacsecScAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetMacsecScAttributeRequest* req,
     lemming::dataplane::sai::SetMacsecScAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -137,6 +225,8 @@ grpc::Status Macsec::GetMacsecScAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetMacsecScAttributeRequest* req,
     lemming::dataplane::sai::GetMacsecScAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -144,6 +234,8 @@ grpc::Status Macsec::GetMacsecScStats(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetMacsecScStatsRequest* req,
     lemming::dataplane::sai::GetMacsecScStatsResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -151,6 +243,8 @@ grpc::Status Macsec::CreateMacsecSa(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateMacsecSaRequest* req,
     lemming::dataplane::sai::CreateMacsecSaResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -158,6 +252,22 @@ grpc::Status Macsec::RemoveMacsecSa(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveMacsecSaRequest* req,
     lemming::dataplane::sai::RemoveMacsecSaResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+  auto status = api->remove_macsec_sa(req.get_oid());
+
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -165,6 +275,8 @@ grpc::Status Macsec::SetMacsecSaAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetMacsecSaAttributeRequest* req,
     lemming::dataplane::sai::SetMacsecSaAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -172,6 +284,8 @@ grpc::Status Macsec::GetMacsecSaAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetMacsecSaAttributeRequest* req,
     lemming::dataplane::sai::GetMacsecSaAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -179,5 +293,7 @@ grpc::Status Macsec::GetMacsecSaStats(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetMacsecSaStatsRequest* req,
     lemming::dataplane::sai::GetMacsecSaStatsResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
