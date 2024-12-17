@@ -25,6 +25,8 @@ grpc::Status RouterInterface::CreateRouterInterface(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateRouterInterfaceRequest* req,
     lemming::dataplane::sai::CreateRouterInterfaceResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -32,6 +34,16 @@ grpc::Status RouterInterface::RemoveRouterInterface(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveRouterInterfaceRequest* req,
     lemming::dataplane::sai::RemoveRouterInterfaceResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  auto status = api->remove_router_interface(req->oid());
+
+  if (status != SAI_STATUS_SUCCESS) {
+    context->AddTrailingMetadata("status-code", "500");
+    context->AddTrailingMetadata("message", "Internal server error");
+    return grpc::Status(grpc::StatusCode::INTERNAL, "Internal error occurred");
+  }
+
   return grpc::Status::OK;
 }
 
@@ -39,6 +51,8 @@ grpc::Status RouterInterface::SetRouterInterfaceAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetRouterInterfaceAttributeRequest* req,
     lemming::dataplane::sai::SetRouterInterfaceAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -46,6 +60,8 @@ grpc::Status RouterInterface::GetRouterInterfaceAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetRouterInterfaceAttributeRequest* req,
     lemming::dataplane::sai::GetRouterInterfaceAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -53,5 +69,7 @@ grpc::Status RouterInterface::GetRouterInterfaceStats(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetRouterInterfaceStatsRequest* req,
     lemming::dataplane::sai::GetRouterInterfaceStatsResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }

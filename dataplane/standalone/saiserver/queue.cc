@@ -25,6 +25,8 @@ grpc::Status Queue::CreateQueue(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateQueueRequest* req,
     lemming::dataplane::sai::CreateQueueResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -32,6 +34,16 @@ grpc::Status Queue::RemoveQueue(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveQueueRequest* req,
     lemming::dataplane::sai::RemoveQueueResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  auto status = api->remove_queue(req->oid());
+
+  if (status != SAI_STATUS_SUCCESS) {
+    context->AddTrailingMetadata("status-code", "500");
+    context->AddTrailingMetadata("message", "Internal server error");
+    return grpc::Status(grpc::StatusCode::INTERNAL, "Internal error occurred");
+  }
+
   return grpc::Status::OK;
 }
 
@@ -39,6 +51,8 @@ grpc::Status Queue::SetQueueAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetQueueAttributeRequest* req,
     lemming::dataplane::sai::SetQueueAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -46,6 +60,8 @@ grpc::Status Queue::GetQueueAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetQueueAttributeRequest* req,
     lemming::dataplane::sai::GetQueueAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -53,5 +69,7 @@ grpc::Status Queue::GetQueueStats(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetQueueStatsRequest* req,
     lemming::dataplane::sai::GetQueueStatsResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }

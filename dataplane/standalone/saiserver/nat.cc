@@ -25,6 +25,8 @@ grpc::Status Nat::CreateNatEntry(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateNatEntryRequest* req,
     lemming::dataplane::sai::CreateNatEntryResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -32,6 +34,8 @@ grpc::Status Nat::RemoveNatEntry(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveNatEntryRequest* req,
     lemming::dataplane::sai::RemoveNatEntryResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -39,6 +43,8 @@ grpc::Status Nat::SetNatEntryAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetNatEntryAttributeRequest* req,
     lemming::dataplane::sai::SetNatEntryAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -46,6 +52,8 @@ grpc::Status Nat::GetNatEntryAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetNatEntryAttributeRequest* req,
     lemming::dataplane::sai::GetNatEntryAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -53,6 +61,8 @@ grpc::Status Nat::CreateNatEntries(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateNatEntriesRequest* req,
     lemming::dataplane::sai::CreateNatEntriesResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -60,6 +70,8 @@ grpc::Status Nat::RemoveNatEntries(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveNatEntriesRequest* req,
     lemming::dataplane::sai::RemoveNatEntriesResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -67,6 +79,8 @@ grpc::Status Nat::CreateNatZoneCounter(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateNatZoneCounterRequest* req,
     lemming::dataplane::sai::CreateNatZoneCounterResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -74,6 +88,16 @@ grpc::Status Nat::RemoveNatZoneCounter(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveNatZoneCounterRequest* req,
     lemming::dataplane::sai::RemoveNatZoneCounterResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  auto status = api->remove_nat_zone_counter(req->oid());
+
+  if (status != SAI_STATUS_SUCCESS) {
+    context->AddTrailingMetadata("status-code", "500");
+    context->AddTrailingMetadata("message", "Internal server error");
+    return grpc::Status(grpc::StatusCode::INTERNAL, "Internal error occurred");
+  }
+
   return grpc::Status::OK;
 }
 
@@ -81,6 +105,8 @@ grpc::Status Nat::SetNatZoneCounterAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetNatZoneCounterAttributeRequest* req,
     lemming::dataplane::sai::SetNatZoneCounterAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -88,5 +114,7 @@ grpc::Status Nat::GetNatZoneCounterAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetNatZoneCounterAttributeRequest* req,
     lemming::dataplane::sai::GetNatZoneCounterAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }

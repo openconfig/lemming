@@ -25,6 +25,8 @@ grpc::Status Mirror::CreateMirrorSession(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateMirrorSessionRequest* req,
     lemming::dataplane::sai::CreateMirrorSessionResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -32,6 +34,16 @@ grpc::Status Mirror::RemoveMirrorSession(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveMirrorSessionRequest* req,
     lemming::dataplane::sai::RemoveMirrorSessionResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  auto status = api->remove_mirror_session(req->oid());
+
+  if (status != SAI_STATUS_SUCCESS) {
+    context->AddTrailingMetadata("status-code", "500");
+    context->AddTrailingMetadata("message", "Internal server error");
+    return grpc::Status(grpc::StatusCode::INTERNAL, "Internal error occurred");
+  }
+
   return grpc::Status::OK;
 }
 
@@ -39,6 +51,8 @@ grpc::Status Mirror::SetMirrorSessionAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetMirrorSessionAttributeRequest* req,
     lemming::dataplane::sai::SetMirrorSessionAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -46,5 +60,7 @@ grpc::Status Mirror::GetMirrorSessionAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetMirrorSessionAttributeRequest* req,
     lemming::dataplane::sai::GetMirrorSessionAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }

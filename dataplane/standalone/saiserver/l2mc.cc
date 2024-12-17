@@ -25,6 +25,8 @@ grpc::Status L2mc::CreateL2mcEntry(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateL2mcEntryRequest* req,
     lemming::dataplane::sai::CreateL2mcEntryResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -32,6 +34,8 @@ grpc::Status L2mc::RemoveL2mcEntry(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveL2mcEntryRequest* req,
     lemming::dataplane::sai::RemoveL2mcEntryResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -39,6 +43,8 @@ grpc::Status L2mc::SetL2mcEntryAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetL2mcEntryAttributeRequest* req,
     lemming::dataplane::sai::SetL2mcEntryAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -46,5 +52,7 @@ grpc::Status L2mc::GetL2mcEntryAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetL2mcEntryAttributeRequest* req,
     lemming::dataplane::sai::GetL2mcEntryAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }

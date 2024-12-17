@@ -25,6 +25,8 @@ grpc::Status Policer::CreatePolicer(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreatePolicerRequest* req,
     lemming::dataplane::sai::CreatePolicerResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -32,6 +34,16 @@ grpc::Status Policer::RemovePolicer(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemovePolicerRequest* req,
     lemming::dataplane::sai::RemovePolicerResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  auto status = api->remove_policer(req->oid());
+
+  if (status != SAI_STATUS_SUCCESS) {
+    context->AddTrailingMetadata("status-code", "500");
+    context->AddTrailingMetadata("message", "Internal server error");
+    return grpc::Status(grpc::StatusCode::INTERNAL, "Internal error occurred");
+  }
+
   return grpc::Status::OK;
 }
 
@@ -39,6 +51,8 @@ grpc::Status Policer::SetPolicerAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetPolicerAttributeRequest* req,
     lemming::dataplane::sai::SetPolicerAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -46,6 +60,8 @@ grpc::Status Policer::GetPolicerAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetPolicerAttributeRequest* req,
     lemming::dataplane::sai::GetPolicerAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -53,5 +69,7 @@ grpc::Status Policer::GetPolicerStats(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetPolicerStatsRequest* req,
     lemming::dataplane::sai::GetPolicerStatsResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }

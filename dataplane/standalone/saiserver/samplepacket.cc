@@ -25,6 +25,8 @@ grpc::Status Samplepacket::CreateSamplepacket(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateSamplepacketRequest* req,
     lemming::dataplane::sai::CreateSamplepacketResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -32,6 +34,16 @@ grpc::Status Samplepacket::RemoveSamplepacket(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveSamplepacketRequest* req,
     lemming::dataplane::sai::RemoveSamplepacketResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  auto status = api->remove_samplepacket(req->oid());
+
+  if (status != SAI_STATUS_SUCCESS) {
+    context->AddTrailingMetadata("status-code", "500");
+    context->AddTrailingMetadata("message", "Internal server error");
+    return grpc::Status(grpc::StatusCode::INTERNAL, "Internal error occurred");
+  }
+
   return grpc::Status::OK;
 }
 
@@ -39,6 +51,8 @@ grpc::Status Samplepacket::SetSamplepacketAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetSamplepacketAttributeRequest* req,
     lemming::dataplane::sai::SetSamplepacketAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -46,5 +60,7 @@ grpc::Status Samplepacket::GetSamplepacketAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetSamplepacketAttributeRequest* req,
     lemming::dataplane::sai::GetSamplepacketAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }

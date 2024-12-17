@@ -25,6 +25,8 @@ grpc::Status NextHop::CreateNextHop(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateNextHopRequest* req,
     lemming::dataplane::sai::CreateNextHopResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -32,6 +34,16 @@ grpc::Status NextHop::RemoveNextHop(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveNextHopRequest* req,
     lemming::dataplane::sai::RemoveNextHopResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  auto status = api->remove_next_hop(req->oid());
+
+  if (status != SAI_STATUS_SUCCESS) {
+    context->AddTrailingMetadata("status-code", "500");
+    context->AddTrailingMetadata("message", "Internal server error");
+    return grpc::Status(grpc::StatusCode::INTERNAL, "Internal error occurred");
+  }
+
   return grpc::Status::OK;
 }
 
@@ -39,6 +51,8 @@ grpc::Status NextHop::SetNextHopAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetNextHopAttributeRequest* req,
     lemming::dataplane::sai::SetNextHopAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -46,6 +60,8 @@ grpc::Status NextHop::GetNextHopAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetNextHopAttributeRequest* req,
     lemming::dataplane::sai::GetNextHopAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -53,6 +69,8 @@ grpc::Status NextHop::CreateNextHops(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateNextHopsRequest* req,
     lemming::dataplane::sai::CreateNextHopsResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -60,5 +78,7 @@ grpc::Status NextHop::RemoveNextHops(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveNextHopsRequest* req,
     lemming::dataplane::sai::RemoveNextHopsResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }

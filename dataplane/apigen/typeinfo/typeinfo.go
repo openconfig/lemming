@@ -37,28 +37,29 @@ type GenType struct {
 }
 
 type GenFunc struct {
-	ProtoRPCName        string
-	ProtoRequestType    string
-	ProtoResponseType   string
-	ReturnType          string
-	Name                string
-	Args                string
-	TypeName            string
-	Operation           string
-	Vars                string
-	UseCommonAPI        bool
-	AttrSwitch          *AttrSwitch
-	Client              string
-	OidVar              string
-	OidPointer          string
-	AttrType            string
-	AttrEnumType        string
-	SwitchScoped        bool
-	EntryConversionFunc string
-	EntryVar            string
-	ConvertFunc         string
-	AttrConvertInsert   string
-	IsStreaming         bool
+	ProtoRPCName          string
+	ProtoRequestType      string
+	ProtoResponseType     string
+	ReturnType            string
+	Name                  string
+	Args                  string
+	TypeName              string
+	Operation             string
+	Vars                  string
+	UseCommonAPI          bool
+	AttrSwitch            *AttrSwitch
+	Client                string
+	OidVar                string
+	OidPointer            string
+	AttrType              string
+	AttrEnumType          string
+	SwitchScoped          bool
+	EntryConversionFunc   string
+	EntryVar              string
+	EntryConversionToFunc string
+	ConvertFunc           string
+	AttrConvertInsert     string
+	IsStreaming           bool
 }
 
 type APITemplate struct {
@@ -242,6 +243,7 @@ func populateCCInfo(meta *saiast.FuncMetadata, apiName string, sai *saiast.SAIAP
 		entryType := strings.TrimPrefix(sai.Funcs[fn.Typ].Params[i].Typ, "const ")
 		if ua, ok := typeToUnionAccessor[entryType]; ok {
 			genFunc.EntryConversionFunc = ua.convertFromFunc
+			genFunc.EntryConversionToFunc = ua.convertToFunc
 			genFunc.EntryVar = sai.Funcs[fn.Typ].Params[i].Name
 		}
 	}

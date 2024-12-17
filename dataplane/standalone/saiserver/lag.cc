@@ -25,6 +25,8 @@ grpc::Status Lag::CreateLag(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateLagRequest* req,
     lemming::dataplane::sai::CreateLagResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -32,6 +34,16 @@ grpc::Status Lag::RemoveLag(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveLagRequest* req,
     lemming::dataplane::sai::RemoveLagResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  auto status = api->remove_lag(req->oid());
+
+  if (status != SAI_STATUS_SUCCESS) {
+    context->AddTrailingMetadata("status-code", "500");
+    context->AddTrailingMetadata("message", "Internal server error");
+    return grpc::Status(grpc::StatusCode::INTERNAL, "Internal error occurred");
+  }
+
   return grpc::Status::OK;
 }
 
@@ -39,6 +51,8 @@ grpc::Status Lag::SetLagAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetLagAttributeRequest* req,
     lemming::dataplane::sai::SetLagAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -46,6 +60,8 @@ grpc::Status Lag::GetLagAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetLagAttributeRequest* req,
     lemming::dataplane::sai::GetLagAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -53,6 +69,8 @@ grpc::Status Lag::CreateLagMember(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateLagMemberRequest* req,
     lemming::dataplane::sai::CreateLagMemberResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -60,6 +78,16 @@ grpc::Status Lag::RemoveLagMember(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveLagMemberRequest* req,
     lemming::dataplane::sai::RemoveLagMemberResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  auto status = api->remove_lag_member(req->oid());
+
+  if (status != SAI_STATUS_SUCCESS) {
+    context->AddTrailingMetadata("status-code", "500");
+    context->AddTrailingMetadata("message", "Internal server error");
+    return grpc::Status(grpc::StatusCode::INTERNAL, "Internal error occurred");
+  }
+
   return grpc::Status::OK;
 }
 
@@ -67,6 +95,8 @@ grpc::Status Lag::SetLagMemberAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetLagMemberAttributeRequest* req,
     lemming::dataplane::sai::SetLagMemberAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -74,6 +104,8 @@ grpc::Status Lag::GetLagMemberAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetLagMemberAttributeRequest* req,
     lemming::dataplane::sai::GetLagMemberAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -81,6 +113,8 @@ grpc::Status Lag::CreateLagMembers(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateLagMembersRequest* req,
     lemming::dataplane::sai::CreateLagMembersResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -88,5 +122,7 @@ grpc::Status Lag::RemoveLagMembers(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveLagMembersRequest* req,
     lemming::dataplane::sai::RemoveLagMembersResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }

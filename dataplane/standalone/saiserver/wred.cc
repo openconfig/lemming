@@ -25,6 +25,8 @@ grpc::Status Wred::CreateWred(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateWredRequest* req,
     lemming::dataplane::sai::CreateWredResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -32,6 +34,16 @@ grpc::Status Wred::RemoveWred(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveWredRequest* req,
     lemming::dataplane::sai::RemoveWredResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  auto status = api->remove_wred(req->oid());
+
+  if (status != SAI_STATUS_SUCCESS) {
+    context->AddTrailingMetadata("status-code", "500");
+    context->AddTrailingMetadata("message", "Internal server error");
+    return grpc::Status(grpc::StatusCode::INTERNAL, "Internal error occurred");
+  }
+
   return grpc::Status::OK;
 }
 
@@ -39,6 +51,8 @@ grpc::Status Wred::SetWredAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetWredAttributeRequest* req,
     lemming::dataplane::sai::SetWredAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -46,5 +60,7 @@ grpc::Status Wred::GetWredAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetWredAttributeRequest* req,
     lemming::dataplane::sai::GetWredAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }

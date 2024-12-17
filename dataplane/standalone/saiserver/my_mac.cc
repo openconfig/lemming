@@ -25,6 +25,8 @@ grpc::Status MyMac::CreateMyMac(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateMyMacRequest* req,
     lemming::dataplane::sai::CreateMyMacResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -32,6 +34,16 @@ grpc::Status MyMac::RemoveMyMac(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveMyMacRequest* req,
     lemming::dataplane::sai::RemoveMyMacResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  auto status = api->remove_my_mac(req->oid());
+
+  if (status != SAI_STATUS_SUCCESS) {
+    context->AddTrailingMetadata("status-code", "500");
+    context->AddTrailingMetadata("message", "Internal server error");
+    return grpc::Status(grpc::StatusCode::INTERNAL, "Internal error occurred");
+  }
+
   return grpc::Status::OK;
 }
 
@@ -39,6 +51,8 @@ grpc::Status MyMac::SetMyMacAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetMyMacAttributeRequest* req,
     lemming::dataplane::sai::SetMyMacAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -46,5 +60,7 @@ grpc::Status MyMac::GetMyMacAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetMyMacAttributeRequest* req,
     lemming::dataplane::sai::GetMyMacAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }

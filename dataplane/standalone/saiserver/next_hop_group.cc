@@ -25,6 +25,8 @@ grpc::Status NextHopGroup::CreateNextHopGroup(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateNextHopGroupRequest* req,
     lemming::dataplane::sai::CreateNextHopGroupResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -32,6 +34,16 @@ grpc::Status NextHopGroup::RemoveNextHopGroup(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveNextHopGroupRequest* req,
     lemming::dataplane::sai::RemoveNextHopGroupResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  auto status = api->remove_next_hop_group(req->oid());
+
+  if (status != SAI_STATUS_SUCCESS) {
+    context->AddTrailingMetadata("status-code", "500");
+    context->AddTrailingMetadata("message", "Internal server error");
+    return grpc::Status(grpc::StatusCode::INTERNAL, "Internal error occurred");
+  }
+
   return grpc::Status::OK;
 }
 
@@ -39,6 +51,8 @@ grpc::Status NextHopGroup::SetNextHopGroupAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetNextHopGroupAttributeRequest* req,
     lemming::dataplane::sai::SetNextHopGroupAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -46,6 +60,8 @@ grpc::Status NextHopGroup::GetNextHopGroupAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetNextHopGroupAttributeRequest* req,
     lemming::dataplane::sai::GetNextHopGroupAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -53,6 +69,8 @@ grpc::Status NextHopGroup::CreateNextHopGroupMember(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateNextHopGroupMemberRequest* req,
     lemming::dataplane::sai::CreateNextHopGroupMemberResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -60,6 +78,16 @@ grpc::Status NextHopGroup::RemoveNextHopGroupMember(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveNextHopGroupMemberRequest* req,
     lemming::dataplane::sai::RemoveNextHopGroupMemberResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  auto status = api->remove_next_hop_group_member(req->oid());
+
+  if (status != SAI_STATUS_SUCCESS) {
+    context->AddTrailingMetadata("status-code", "500");
+    context->AddTrailingMetadata("message", "Internal server error");
+    return grpc::Status(grpc::StatusCode::INTERNAL, "Internal error occurred");
+  }
+
   return grpc::Status::OK;
 }
 
@@ -67,6 +95,8 @@ grpc::Status NextHopGroup::SetNextHopGroupMemberAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetNextHopGroupMemberAttributeRequest* req,
     lemming::dataplane::sai::SetNextHopGroupMemberAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -74,6 +104,8 @@ grpc::Status NextHopGroup::GetNextHopGroupMemberAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetNextHopGroupMemberAttributeRequest* req,
     lemming::dataplane::sai::GetNextHopGroupMemberAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -81,6 +113,8 @@ grpc::Status NextHopGroup::CreateNextHopGroupMembers(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateNextHopGroupMembersRequest* req,
     lemming::dataplane::sai::CreateNextHopGroupMembersResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -88,6 +122,8 @@ grpc::Status NextHopGroup::RemoveNextHopGroupMembers(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveNextHopGroupMembersRequest* req,
     lemming::dataplane::sai::RemoveNextHopGroupMembersResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -95,6 +131,8 @@ grpc::Status NextHopGroup::CreateNextHopGroupMap(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateNextHopGroupMapRequest* req,
     lemming::dataplane::sai::CreateNextHopGroupMapResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -102,6 +140,16 @@ grpc::Status NextHopGroup::RemoveNextHopGroupMap(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveNextHopGroupMapRequest* req,
     lemming::dataplane::sai::RemoveNextHopGroupMapResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  auto status = api->remove_next_hop_group_map(req->oid());
+
+  if (status != SAI_STATUS_SUCCESS) {
+    context->AddTrailingMetadata("status-code", "500");
+    context->AddTrailingMetadata("message", "Internal server error");
+    return grpc::Status(grpc::StatusCode::INTERNAL, "Internal error occurred");
+  }
+
   return grpc::Status::OK;
 }
 
@@ -109,6 +157,8 @@ grpc::Status NextHopGroup::SetNextHopGroupMapAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetNextHopGroupMapAttributeRequest* req,
     lemming::dataplane::sai::SetNextHopGroupMapAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -116,6 +166,8 @@ grpc::Status NextHopGroup::GetNextHopGroupMapAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetNextHopGroupMapAttributeRequest* req,
     lemming::dataplane::sai::GetNextHopGroupMapAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -123,6 +175,8 @@ grpc::Status NextHopGroup::CreateNextHopGroups(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateNextHopGroupsRequest* req,
     lemming::dataplane::sai::CreateNextHopGroupsResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -130,5 +184,7 @@ grpc::Status NextHopGroup::RemoveNextHopGroups(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveNextHopGroupsRequest* req,
     lemming::dataplane::sai::RemoveNextHopGroupsResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }

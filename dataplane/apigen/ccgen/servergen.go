@@ -155,7 +155,7 @@ class {{ .ServiceName }} final : public lemming::dataplane::sai::{{ .ServiceName
 
 #endif  // {{ .IncludeGuard }}
 `))
-	serverCCTmpl = template.Must(template.New("header").Parse(`// Copyright 2024 Google LLC
+	serverCCTmpl = template.Must(template.New("cc").Parse(`// Copyright 2024 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -179,6 +179,25 @@ class {{ .ServiceName }} final : public lemming::dataplane::sai::{{ .ServiceName
 {{ range .Funcs }}
 {{- if and .ProtoRPCName (not .IsStreaming) }}
 grpc::Status {{ $.ServiceName }}::{{ .ProtoRPCName }}(grpc::ServerContext* context, const lemming::dataplane::sai::{{ .ProtoRequestType }}* req, lemming::dataplane::sai::{{ .ProtoResponseType }}* resp) {
+	LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+	{{- if .UseCommonAPI }}
+		{{ if eq .Operation "remove" }}
+			{{ if .OidVar -}} auto status = api->{{ .Name }}(req->oid());
+			{{ else -}}
+				{{ if .EntryVar }} 
+					auto entry = {{ .EntryConversionToFunc }}(req->entry()); 
+					auto status = api->{{.Name}}(&entry);
+				{{ end }}
+			{{end}}
+		{{ if or (ne (len .OidVar) 0) (ne (len .EntryVar) 0)}}
+		if(status != SAI_STATUS_SUCCESS) {
+			context->AddTrailingMetadata("status-code", "500");
+			context->AddTrailingMetadata("message","Internal server error");
+			return grpc::Status(grpc::StatusCode::INTERNAL, "Internal error occurred"); 
+		}
+		{{ end }}
+		{{ end }}
+	{{- end}}
 	return grpc::Status::OK;
 }
 

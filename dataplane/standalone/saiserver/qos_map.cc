@@ -25,6 +25,8 @@ grpc::Status QosMap::CreateQosMap(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateQosMapRequest* req,
     lemming::dataplane::sai::CreateQosMapResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -32,6 +34,16 @@ grpc::Status QosMap::RemoveQosMap(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveQosMapRequest* req,
     lemming::dataplane::sai::RemoveQosMapResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  auto status = api->remove_qos_map(req->oid());
+
+  if (status != SAI_STATUS_SUCCESS) {
+    context->AddTrailingMetadata("status-code", "500");
+    context->AddTrailingMetadata("message", "Internal server error");
+    return grpc::Status(grpc::StatusCode::INTERNAL, "Internal error occurred");
+  }
+
   return grpc::Status::OK;
 }
 
@@ -39,6 +51,8 @@ grpc::Status QosMap::SetQosMapAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetQosMapAttributeRequest* req,
     lemming::dataplane::sai::SetQosMapAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -46,5 +60,7 @@ grpc::Status QosMap::GetQosMapAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetQosMapAttributeRequest* req,
     lemming::dataplane::sai::GetQosMapAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
