@@ -25,6 +25,8 @@ grpc::Status RpfGroup::CreateRpfGroup(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateRpfGroupRequest* req,
     lemming::dataplane::sai::CreateRpfGroupResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -32,6 +34,23 @@ grpc::Status RpfGroup::RemoveRpfGroup(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveRpfGroupRequest* req,
     lemming::dataplane::sai::RemoveRpfGroupResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+  auto status = api->remove_rpf_group(req.get_oid());
+
+  auto status = api->remove_rpf_group(entry);
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -39,6 +58,8 @@ grpc::Status RpfGroup::GetRpfGroupAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetRpfGroupAttributeRequest* req,
     lemming::dataplane::sai::GetRpfGroupAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -46,6 +67,8 @@ grpc::Status RpfGroup::CreateRpfGroupMember(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateRpfGroupMemberRequest* req,
     lemming::dataplane::sai::CreateRpfGroupMemberResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -53,6 +76,23 @@ grpc::Status RpfGroup::RemoveRpfGroupMember(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveRpfGroupMemberRequest* req,
     lemming::dataplane::sai::RemoveRpfGroupMemberResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+  auto status = api->remove_rpf_group_member(req.get_oid());
+
+  auto status = api->remove_rpf_group_member(entry);
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -60,5 +100,7 @@ grpc::Status RpfGroup::GetRpfGroupMemberAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetRpfGroupMemberAttributeRequest* req,
     lemming::dataplane::sai::GetRpfGroupMemberAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }

@@ -25,6 +25,8 @@ grpc::Status Hash::CreateHash(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateHashRequest* req,
     lemming::dataplane::sai::CreateHashResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -32,6 +34,23 @@ grpc::Status Hash::RemoveHash(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveHashRequest* req,
     lemming::dataplane::sai::RemoveHashResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+  auto status = api->remove_hash(req.get_oid());
+
+  auto status = api->remove_hash(entry);
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -39,6 +58,8 @@ grpc::Status Hash::SetHashAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetHashAttributeRequest* req,
     lemming::dataplane::sai::SetHashAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -46,6 +67,8 @@ grpc::Status Hash::GetHashAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetHashAttributeRequest* req,
     lemming::dataplane::sai::GetHashAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -53,6 +76,8 @@ grpc::Status Hash::CreateFineGrainedHashField(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateFineGrainedHashFieldRequest* req,
     lemming::dataplane::sai::CreateFineGrainedHashFieldResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -60,6 +85,23 @@ grpc::Status Hash::RemoveFineGrainedHashField(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveFineGrainedHashFieldRequest* req,
     lemming::dataplane::sai::RemoveFineGrainedHashFieldResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+  auto status = api->remove_fine_grained_hash_field(req.get_oid());
+
+  auto status = api->remove_fine_grained_hash_field(entry);
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -67,5 +109,7 @@ grpc::Status Hash::GetFineGrainedHashFieldAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetFineGrainedHashFieldAttributeRequest* req,
     lemming::dataplane::sai::GetFineGrainedHashFieldAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }

@@ -25,6 +25,8 @@ grpc::Status SchedulerGroup::CreateSchedulerGroup(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateSchedulerGroupRequest* req,
     lemming::dataplane::sai::CreateSchedulerGroupResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -32,6 +34,23 @@ grpc::Status SchedulerGroup::RemoveSchedulerGroup(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveSchedulerGroupRequest* req,
     lemming::dataplane::sai::RemoveSchedulerGroupResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+  auto status = api->remove_scheduler_group(req.get_oid());
+
+  auto status = api->remove_scheduler_group(entry);
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -39,6 +58,8 @@ grpc::Status SchedulerGroup::SetSchedulerGroupAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetSchedulerGroupAttributeRequest* req,
     lemming::dataplane::sai::SetSchedulerGroupAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -46,5 +67,7 @@ grpc::Status SchedulerGroup::GetSchedulerGroupAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetSchedulerGroupAttributeRequest* req,
     lemming::dataplane::sai::GetSchedulerGroupAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }

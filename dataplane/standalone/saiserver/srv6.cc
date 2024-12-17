@@ -25,6 +25,8 @@ grpc::Status Srv6::CreateSrv6Sidlist(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateSrv6SidlistRequest* req,
     lemming::dataplane::sai::CreateSrv6SidlistResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -32,6 +34,23 @@ grpc::Status Srv6::RemoveSrv6Sidlist(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveSrv6SidlistRequest* req,
     lemming::dataplane::sai::RemoveSrv6SidlistResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+  auto status = api->remove_srv6_sidlist(req.get_oid());
+
+  auto status = api->remove_srv6_sidlist(entry);
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -39,6 +58,8 @@ grpc::Status Srv6::SetSrv6SidlistAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetSrv6SidlistAttributeRequest* req,
     lemming::dataplane::sai::SetSrv6SidlistAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -46,6 +67,8 @@ grpc::Status Srv6::GetSrv6SidlistAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetSrv6SidlistAttributeRequest* req,
     lemming::dataplane::sai::GetSrv6SidlistAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -53,6 +76,8 @@ grpc::Status Srv6::CreateSrv6Sidlists(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateSrv6SidlistsRequest* req,
     lemming::dataplane::sai::CreateSrv6SidlistsResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -60,6 +85,8 @@ grpc::Status Srv6::RemoveSrv6Sidlists(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveSrv6SidlistsRequest* req,
     lemming::dataplane::sai::RemoveSrv6SidlistsResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -67,6 +94,8 @@ grpc::Status Srv6::CreateMySidEntry(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateMySidEntryRequest* req,
     lemming::dataplane::sai::CreateMySidEntryResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -74,6 +103,22 @@ grpc::Status Srv6::RemoveMySidEntry(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveMySidEntryRequest* req,
     lemming::dataplane::sai::RemoveMySidEntryResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+
+  auto status = api->remove_my_sid_entry(entry);
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -81,6 +126,8 @@ grpc::Status Srv6::SetMySidEntryAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetMySidEntryAttributeRequest* req,
     lemming::dataplane::sai::SetMySidEntryAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -88,6 +135,8 @@ grpc::Status Srv6::GetMySidEntryAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetMySidEntryAttributeRequest* req,
     lemming::dataplane::sai::GetMySidEntryAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -95,6 +144,8 @@ grpc::Status Srv6::CreateMySidEntries(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateMySidEntriesRequest* req,
     lemming::dataplane::sai::CreateMySidEntriesResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -102,5 +153,7 @@ grpc::Status Srv6::RemoveMySidEntries(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveMySidEntriesRequest* req,
     lemming::dataplane::sai::RemoveMySidEntriesResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }

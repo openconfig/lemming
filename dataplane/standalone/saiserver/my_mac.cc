@@ -25,6 +25,8 @@ grpc::Status MyMac::CreateMyMac(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateMyMacRequest* req,
     lemming::dataplane::sai::CreateMyMacResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -32,6 +34,23 @@ grpc::Status MyMac::RemoveMyMac(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveMyMacRequest* req,
     lemming::dataplane::sai::RemoveMyMacResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+  auto status = api->remove_my_mac(req.get_oid());
+
+  auto status = api->remove_my_mac(entry);
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -39,6 +58,8 @@ grpc::Status MyMac::SetMyMacAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetMyMacAttributeRequest* req,
     lemming::dataplane::sai::SetMyMacAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -46,5 +67,7 @@ grpc::Status MyMac::GetMyMacAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetMyMacAttributeRequest* req,
     lemming::dataplane::sai::GetMyMacAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }

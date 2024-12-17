@@ -25,6 +25,8 @@ grpc::Status Neighbor::CreateNeighborEntry(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateNeighborEntryRequest* req,
     lemming::dataplane::sai::CreateNeighborEntryResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -32,6 +34,24 @@ grpc::Status Neighbor::RemoveNeighborEntry(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveNeighborEntryRequest* req,
     lemming::dataplane::sai::RemoveNeighborEntryResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+
+  const sai_neighbor_entry_t* neighbor_entry entry =
+      convert_to_neighbor_entry(req);
+  auto status = api->remove_neighbor_entry(entry);
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -39,6 +59,8 @@ grpc::Status Neighbor::SetNeighborEntryAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetNeighborEntryAttributeRequest* req,
     lemming::dataplane::sai::SetNeighborEntryAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -46,6 +68,8 @@ grpc::Status Neighbor::GetNeighborEntryAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetNeighborEntryAttributeRequest* req,
     lemming::dataplane::sai::GetNeighborEntryAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -53,6 +77,8 @@ grpc::Status Neighbor::CreateNeighborEntries(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateNeighborEntriesRequest* req,
     lemming::dataplane::sai::CreateNeighborEntriesResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -60,5 +86,7 @@ grpc::Status Neighbor::RemoveNeighborEntries(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveNeighborEntriesRequest* req,
     lemming::dataplane::sai::RemoveNeighborEntriesResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
