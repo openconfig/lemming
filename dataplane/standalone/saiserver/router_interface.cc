@@ -25,6 +25,8 @@ grpc::Status RouterInterface::CreateRouterInterface(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateRouterInterfaceRequest* req,
     lemming::dataplane::sai::CreateRouterInterfaceResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -32,6 +34,23 @@ grpc::Status RouterInterface::RemoveRouterInterface(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveRouterInterfaceRequest* req,
     lemming::dataplane::sai::RemoveRouterInterfaceResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+  auto status = api->remove_router_interface(req.get_oid());
+
+  auto status = api->remove_router_interface(entry);
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -39,6 +58,8 @@ grpc::Status RouterInterface::SetRouterInterfaceAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetRouterInterfaceAttributeRequest* req,
     lemming::dataplane::sai::SetRouterInterfaceAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -46,6 +67,8 @@ grpc::Status RouterInterface::GetRouterInterfaceAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetRouterInterfaceAttributeRequest* req,
     lemming::dataplane::sai::GetRouterInterfaceAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -53,5 +76,7 @@ grpc::Status RouterInterface::GetRouterInterfaceStats(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetRouterInterfaceStatsRequest* req,
     lemming::dataplane::sai::GetRouterInterfaceStatsResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }

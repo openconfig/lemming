@@ -27,6 +27,8 @@ grpc::Status Bmtor::CreateTableBitmapClassificationEntry(
         req,
     lemming::dataplane::sai::CreateTableBitmapClassificationEntryResponse*
         resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -36,6 +38,23 @@ grpc::Status Bmtor::RemoveTableBitmapClassificationEntry(
         req,
     lemming::dataplane::sai::RemoveTableBitmapClassificationEntryResponse*
         resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+  auto status = api->remove_table_bitmap_classification_entry(req.get_oid());
+
+  auto status = api->remove_table_bitmap_classification_entry(entry);
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -45,6 +64,8 @@ grpc::Status Bmtor::GetTableBitmapClassificationEntryAttribute(
         GetTableBitmapClassificationEntryAttributeRequest* req,
     lemming::dataplane::sai::GetTableBitmapClassificationEntryAttributeResponse*
         resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -54,6 +75,8 @@ grpc::Status Bmtor::GetTableBitmapClassificationEntryStats(
         GetTableBitmapClassificationEntryStatsRequest* req,
     lemming::dataplane::sai::GetTableBitmapClassificationEntryStatsResponse*
         resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -61,6 +84,8 @@ grpc::Status Bmtor::CreateTableBitmapRouterEntry(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateTableBitmapRouterEntryRequest* req,
     lemming::dataplane::sai::CreateTableBitmapRouterEntryResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -68,6 +93,23 @@ grpc::Status Bmtor::RemoveTableBitmapRouterEntry(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveTableBitmapRouterEntryRequest* req,
     lemming::dataplane::sai::RemoveTableBitmapRouterEntryResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+  auto status = api->remove_table_bitmap_router_entry(req.get_oid());
+
+  auto status = api->remove_table_bitmap_router_entry(entry);
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -76,6 +118,8 @@ grpc::Status Bmtor::GetTableBitmapRouterEntryAttribute(
     const lemming::dataplane::sai::GetTableBitmapRouterEntryAttributeRequest*
         req,
     lemming::dataplane::sai::GetTableBitmapRouterEntryAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -83,6 +127,8 @@ grpc::Status Bmtor::GetTableBitmapRouterEntryStats(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetTableBitmapRouterEntryStatsRequest* req,
     lemming::dataplane::sai::GetTableBitmapRouterEntryStatsResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -90,6 +136,8 @@ grpc::Status Bmtor::CreateTableMetaTunnelEntry(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateTableMetaTunnelEntryRequest* req,
     lemming::dataplane::sai::CreateTableMetaTunnelEntryResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -97,6 +145,23 @@ grpc::Status Bmtor::RemoveTableMetaTunnelEntry(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveTableMetaTunnelEntryRequest* req,
     lemming::dataplane::sai::RemoveTableMetaTunnelEntryResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+  auto status = api->remove_table_meta_tunnel_entry(req.get_oid());
+
+  auto status = api->remove_table_meta_tunnel_entry(entry);
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -104,6 +169,8 @@ grpc::Status Bmtor::GetTableMetaTunnelEntryAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetTableMetaTunnelEntryAttributeRequest* req,
     lemming::dataplane::sai::GetTableMetaTunnelEntryAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -111,5 +178,7 @@ grpc::Status Bmtor::GetTableMetaTunnelEntryStats(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetTableMetaTunnelEntryStatsRequest* req,
     lemming::dataplane::sai::GetTableMetaTunnelEntryStatsResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }

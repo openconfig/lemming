@@ -25,6 +25,8 @@ grpc::Status Dtel::CreateDtel(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateDtelRequest* req,
     lemming::dataplane::sai::CreateDtelResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -32,6 +34,23 @@ grpc::Status Dtel::RemoveDtel(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveDtelRequest* req,
     lemming::dataplane::sai::RemoveDtelResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+  auto status = api->remove_dtel(req.get_oid());
+
+  auto status = api->remove_dtel(entry);
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -39,6 +58,8 @@ grpc::Status Dtel::SetDtelAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetDtelAttributeRequest* req,
     lemming::dataplane::sai::SetDtelAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -46,6 +67,8 @@ grpc::Status Dtel::GetDtelAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetDtelAttributeRequest* req,
     lemming::dataplane::sai::GetDtelAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -53,6 +76,8 @@ grpc::Status Dtel::CreateDtelQueueReport(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateDtelQueueReportRequest* req,
     lemming::dataplane::sai::CreateDtelQueueReportResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -60,6 +85,23 @@ grpc::Status Dtel::RemoveDtelQueueReport(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveDtelQueueReportRequest* req,
     lemming::dataplane::sai::RemoveDtelQueueReportResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+  auto status = api->remove_dtel_queue_report(req.get_oid());
+
+  auto status = api->remove_dtel_queue_report(entry);
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -67,6 +109,8 @@ grpc::Status Dtel::SetDtelQueueReportAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetDtelQueueReportAttributeRequest* req,
     lemming::dataplane::sai::SetDtelQueueReportAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -74,6 +118,8 @@ grpc::Status Dtel::GetDtelQueueReportAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetDtelQueueReportAttributeRequest* req,
     lemming::dataplane::sai::GetDtelQueueReportAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -81,6 +127,8 @@ grpc::Status Dtel::CreateDtelIntSession(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateDtelIntSessionRequest* req,
     lemming::dataplane::sai::CreateDtelIntSessionResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -88,6 +136,23 @@ grpc::Status Dtel::RemoveDtelIntSession(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveDtelIntSessionRequest* req,
     lemming::dataplane::sai::RemoveDtelIntSessionResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+  auto status = api->remove_dtel_int_session(req.get_oid());
+
+  auto status = api->remove_dtel_int_session(entry);
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -95,6 +160,8 @@ grpc::Status Dtel::SetDtelIntSessionAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetDtelIntSessionAttributeRequest* req,
     lemming::dataplane::sai::SetDtelIntSessionAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -102,6 +169,8 @@ grpc::Status Dtel::GetDtelIntSessionAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetDtelIntSessionAttributeRequest* req,
     lemming::dataplane::sai::GetDtelIntSessionAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -109,6 +178,8 @@ grpc::Status Dtel::CreateDtelReportSession(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateDtelReportSessionRequest* req,
     lemming::dataplane::sai::CreateDtelReportSessionResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -116,6 +187,23 @@ grpc::Status Dtel::RemoveDtelReportSession(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveDtelReportSessionRequest* req,
     lemming::dataplane::sai::RemoveDtelReportSessionResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+  auto status = api->remove_dtel_report_session(req.get_oid());
+
+  auto status = api->remove_dtel_report_session(entry);
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -123,6 +211,8 @@ grpc::Status Dtel::SetDtelReportSessionAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetDtelReportSessionAttributeRequest* req,
     lemming::dataplane::sai::SetDtelReportSessionAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -130,6 +220,8 @@ grpc::Status Dtel::GetDtelReportSessionAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetDtelReportSessionAttributeRequest* req,
     lemming::dataplane::sai::GetDtelReportSessionAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -137,6 +229,8 @@ grpc::Status Dtel::CreateDtelEvent(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateDtelEventRequest* req,
     lemming::dataplane::sai::CreateDtelEventResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -144,6 +238,23 @@ grpc::Status Dtel::RemoveDtelEvent(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveDtelEventRequest* req,
     lemming::dataplane::sai::RemoveDtelEventResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+  auto status = api->remove_dtel_event(req.get_oid());
+
+  auto status = api->remove_dtel_event(entry);
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -151,6 +262,8 @@ grpc::Status Dtel::SetDtelEventAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetDtelEventAttributeRequest* req,
     lemming::dataplane::sai::SetDtelEventAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -158,5 +271,7 @@ grpc::Status Dtel::GetDtelEventAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetDtelEventAttributeRequest* req,
     lemming::dataplane::sai::GetDtelEventAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }

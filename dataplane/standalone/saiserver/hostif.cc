@@ -25,6 +25,8 @@ grpc::Status Hostif::CreateHostif(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateHostifRequest* req,
     lemming::dataplane::sai::CreateHostifResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -32,6 +34,23 @@ grpc::Status Hostif::RemoveHostif(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveHostifRequest* req,
     lemming::dataplane::sai::RemoveHostifResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+  auto status = api->remove_hostif(req.get_oid());
+
+  auto status = api->remove_hostif(entry);
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -39,6 +58,8 @@ grpc::Status Hostif::SetHostifAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetHostifAttributeRequest* req,
     lemming::dataplane::sai::SetHostifAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -46,6 +67,8 @@ grpc::Status Hostif::GetHostifAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetHostifAttributeRequest* req,
     lemming::dataplane::sai::GetHostifAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -53,6 +76,8 @@ grpc::Status Hostif::CreateHostifTableEntry(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateHostifTableEntryRequest* req,
     lemming::dataplane::sai::CreateHostifTableEntryResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -60,6 +85,23 @@ grpc::Status Hostif::RemoveHostifTableEntry(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveHostifTableEntryRequest* req,
     lemming::dataplane::sai::RemoveHostifTableEntryResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+  auto status = api->remove_hostif_table_entry(req.get_oid());
+
+  auto status = api->remove_hostif_table_entry(entry);
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -67,6 +109,8 @@ grpc::Status Hostif::GetHostifTableEntryAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetHostifTableEntryAttributeRequest* req,
     lemming::dataplane::sai::GetHostifTableEntryAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -74,6 +118,8 @@ grpc::Status Hostif::CreateHostifTrapGroup(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateHostifTrapGroupRequest* req,
     lemming::dataplane::sai::CreateHostifTrapGroupResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -81,6 +127,23 @@ grpc::Status Hostif::RemoveHostifTrapGroup(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveHostifTrapGroupRequest* req,
     lemming::dataplane::sai::RemoveHostifTrapGroupResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+  auto status = api->remove_hostif_trap_group(req.get_oid());
+
+  auto status = api->remove_hostif_trap_group(entry);
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -88,6 +151,8 @@ grpc::Status Hostif::SetHostifTrapGroupAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetHostifTrapGroupAttributeRequest* req,
     lemming::dataplane::sai::SetHostifTrapGroupAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -95,6 +160,8 @@ grpc::Status Hostif::GetHostifTrapGroupAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetHostifTrapGroupAttributeRequest* req,
     lemming::dataplane::sai::GetHostifTrapGroupAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -102,6 +169,8 @@ grpc::Status Hostif::CreateHostifTrap(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateHostifTrapRequest* req,
     lemming::dataplane::sai::CreateHostifTrapResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -109,6 +178,23 @@ grpc::Status Hostif::RemoveHostifTrap(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveHostifTrapRequest* req,
     lemming::dataplane::sai::RemoveHostifTrapResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+  auto status = api->remove_hostif_trap(req.get_oid());
+
+  auto status = api->remove_hostif_trap(entry);
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -116,6 +202,8 @@ grpc::Status Hostif::SetHostifTrapAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetHostifTrapAttributeRequest* req,
     lemming::dataplane::sai::SetHostifTrapAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -123,6 +211,8 @@ grpc::Status Hostif::GetHostifTrapAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetHostifTrapAttributeRequest* req,
     lemming::dataplane::sai::GetHostifTrapAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -130,6 +220,8 @@ grpc::Status Hostif::CreateHostifUserDefinedTrap(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateHostifUserDefinedTrapRequest* req,
     lemming::dataplane::sai::CreateHostifUserDefinedTrapResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -137,6 +229,23 @@ grpc::Status Hostif::RemoveHostifUserDefinedTrap(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveHostifUserDefinedTrapRequest* req,
     lemming::dataplane::sai::RemoveHostifUserDefinedTrapResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+  auto status = api->remove_hostif_user_defined_trap(req.get_oid());
+
+  auto status = api->remove_hostif_user_defined_trap(entry);
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -145,6 +254,8 @@ grpc::Status Hostif::SetHostifUserDefinedTrapAttribute(
     const lemming::dataplane::sai::SetHostifUserDefinedTrapAttributeRequest*
         req,
     lemming::dataplane::sai::SetHostifUserDefinedTrapAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -153,5 +264,7 @@ grpc::Status Hostif::GetHostifUserDefinedTrapAttribute(
     const lemming::dataplane::sai::GetHostifUserDefinedTrapAttributeRequest*
         req,
     lemming::dataplane::sai::GetHostifUserDefinedTrapAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }

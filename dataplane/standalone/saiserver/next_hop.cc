@@ -25,6 +25,8 @@ grpc::Status NextHop::CreateNextHop(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateNextHopRequest* req,
     lemming::dataplane::sai::CreateNextHopResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -32,6 +34,23 @@ grpc::Status NextHop::RemoveNextHop(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveNextHopRequest* req,
     lemming::dataplane::sai::RemoveNextHopResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+  auto status = api->remove_next_hop(req.get_oid());
+
+  auto status = api->remove_next_hop(entry);
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -39,6 +58,8 @@ grpc::Status NextHop::SetNextHopAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetNextHopAttributeRequest* req,
     lemming::dataplane::sai::SetNextHopAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -46,6 +67,8 @@ grpc::Status NextHop::GetNextHopAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetNextHopAttributeRequest* req,
     lemming::dataplane::sai::GetNextHopAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -53,6 +76,8 @@ grpc::Status NextHop::CreateNextHops(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateNextHopsRequest* req,
     lemming::dataplane::sai::CreateNextHopsResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -60,5 +85,7 @@ grpc::Status NextHop::RemoveNextHops(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveNextHopsRequest* req,
     lemming::dataplane::sai::RemoveNextHopsResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }

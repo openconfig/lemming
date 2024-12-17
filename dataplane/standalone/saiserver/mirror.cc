@@ -25,6 +25,8 @@ grpc::Status Mirror::CreateMirrorSession(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateMirrorSessionRequest* req,
     lemming::dataplane::sai::CreateMirrorSessionResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -32,6 +34,23 @@ grpc::Status Mirror::RemoveMirrorSession(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveMirrorSessionRequest* req,
     lemming::dataplane::sai::RemoveMirrorSessionResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+  auto status = api->remove_mirror_session(req.get_oid());
+
+  auto status = api->remove_mirror_session(entry);
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -39,6 +58,8 @@ grpc::Status Mirror::SetMirrorSessionAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetMirrorSessionAttributeRequest* req,
     lemming::dataplane::sai::SetMirrorSessionAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -46,5 +67,7 @@ grpc::Status Mirror::GetMirrorSessionAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetMirrorSessionAttributeRequest* req,
     lemming::dataplane::sai::GetMirrorSessionAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }

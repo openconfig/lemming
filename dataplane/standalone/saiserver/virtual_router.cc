@@ -25,6 +25,8 @@ grpc::Status VirtualRouter::CreateVirtualRouter(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateVirtualRouterRequest* req,
     lemming::dataplane::sai::CreateVirtualRouterResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -32,6 +34,23 @@ grpc::Status VirtualRouter::RemoveVirtualRouter(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveVirtualRouterRequest* req,
     lemming::dataplane::sai::RemoveVirtualRouterResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+  auto status = api->remove_virtual_router(req.get_oid());
+
+  auto status = api->remove_virtual_router(entry);
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -39,6 +58,8 @@ grpc::Status VirtualRouter::SetVirtualRouterAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetVirtualRouterAttributeRequest* req,
     lemming::dataplane::sai::SetVirtualRouterAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -46,5 +67,7 @@ grpc::Status VirtualRouter::GetVirtualRouterAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetVirtualRouterAttributeRequest* req,
     lemming::dataplane::sai::GetVirtualRouterAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }

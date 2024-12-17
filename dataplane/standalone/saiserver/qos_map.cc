@@ -25,6 +25,8 @@ grpc::Status QosMap::CreateQosMap(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateQosMapRequest* req,
     lemming::dataplane::sai::CreateQosMapResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -32,6 +34,23 @@ grpc::Status QosMap::RemoveQosMap(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveQosMapRequest* req,
     lemming::dataplane::sai::RemoveQosMapResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+  auto status = api->remove_qos_map(req.get_oid());
+
+  auto status = api->remove_qos_map(entry);
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -39,6 +58,8 @@ grpc::Status QosMap::SetQosMapAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetQosMapAttributeRequest* req,
     lemming::dataplane::sai::SetQosMapAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -46,5 +67,7 @@ grpc::Status QosMap::GetQosMapAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetQosMapAttributeRequest* req,
     lemming::dataplane::sai::GetQosMapAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }

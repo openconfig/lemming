@@ -25,6 +25,8 @@ grpc::Status Fdb::CreateFdbEntry(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateFdbEntryRequest* req,
     lemming::dataplane::sai::CreateFdbEntryResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -32,6 +34,22 @@ grpc::Status Fdb::RemoveFdbEntry(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveFdbEntryRequest* req,
     lemming::dataplane::sai::RemoveFdbEntryResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+
+  auto status = api->remove_fdb_entry(entry);
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -39,6 +57,8 @@ grpc::Status Fdb::SetFdbEntryAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetFdbEntryAttributeRequest* req,
     lemming::dataplane::sai::SetFdbEntryAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -46,6 +66,8 @@ grpc::Status Fdb::GetFdbEntryAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetFdbEntryAttributeRequest* req,
     lemming::dataplane::sai::GetFdbEntryAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -53,6 +75,8 @@ grpc::Status Fdb::CreateFdbEntries(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateFdbEntriesRequest* req,
     lemming::dataplane::sai::CreateFdbEntriesResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -60,5 +84,7 @@ grpc::Status Fdb::RemoveFdbEntries(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveFdbEntriesRequest* req,
     lemming::dataplane::sai::RemoveFdbEntriesResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }

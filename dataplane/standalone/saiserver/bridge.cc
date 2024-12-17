@@ -25,6 +25,8 @@ grpc::Status Bridge::CreateBridge(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateBridgeRequest* req,
     lemming::dataplane::sai::CreateBridgeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -32,6 +34,23 @@ grpc::Status Bridge::RemoveBridge(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveBridgeRequest* req,
     lemming::dataplane::sai::RemoveBridgeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+  auto status = api->remove_bridge(req.get_oid());
+
+  auto status = api->remove_bridge(entry);
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -39,6 +58,8 @@ grpc::Status Bridge::SetBridgeAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetBridgeAttributeRequest* req,
     lemming::dataplane::sai::SetBridgeAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -46,6 +67,8 @@ grpc::Status Bridge::GetBridgeAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetBridgeAttributeRequest* req,
     lemming::dataplane::sai::GetBridgeAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -53,6 +76,8 @@ grpc::Status Bridge::GetBridgeStats(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetBridgeStatsRequest* req,
     lemming::dataplane::sai::GetBridgeStatsResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -60,6 +85,8 @@ grpc::Status Bridge::CreateBridgePort(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateBridgePortRequest* req,
     lemming::dataplane::sai::CreateBridgePortResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -67,6 +94,23 @@ grpc::Status Bridge::RemoveBridgePort(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveBridgePortRequest* req,
     lemming::dataplane::sai::RemoveBridgePortResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+  auto status = api->remove_bridge_port(req.get_oid());
+
+  auto status = api->remove_bridge_port(entry);
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -74,6 +118,8 @@ grpc::Status Bridge::SetBridgePortAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetBridgePortAttributeRequest* req,
     lemming::dataplane::sai::SetBridgePortAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -81,6 +127,8 @@ grpc::Status Bridge::GetBridgePortAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetBridgePortAttributeRequest* req,
     lemming::dataplane::sai::GetBridgePortAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -88,5 +136,7 @@ grpc::Status Bridge::GetBridgePortStats(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetBridgePortStatsRequest* req,
     lemming::dataplane::sai::GetBridgePortStatsResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }

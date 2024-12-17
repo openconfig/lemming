@@ -25,6 +25,8 @@ grpc::Status McastFdb::CreateMcastFdbEntry(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateMcastFdbEntryRequest* req,
     lemming::dataplane::sai::CreateMcastFdbEntryResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -32,6 +34,22 @@ grpc::Status McastFdb::RemoveMcastFdbEntry(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveMcastFdbEntryRequest* req,
     lemming::dataplane::sai::RemoveMcastFdbEntryResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  grpc::ClientContext context;
+
+  auto status = api->remove_mcast_fdb_entry(entry);
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return grpc::Status::INTERNAL;
+  }
+
   return grpc::Status::OK;
 }
 
@@ -39,6 +57,8 @@ grpc::Status McastFdb::SetMcastFdbEntryAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetMcastFdbEntryAttributeRequest* req,
     lemming::dataplane::sai::SetMcastFdbEntryAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -46,5 +66,7 @@ grpc::Status McastFdb::GetMcastFdbEntryAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetMcastFdbEntryAttributeRequest* req,
     lemming::dataplane::sai::GetMcastFdbEntryAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
