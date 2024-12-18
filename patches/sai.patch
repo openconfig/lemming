@@ -175,3 +175,35 @@ index 1e87356..cb4ed6c 100644
  } sai_next_hop_group_api_t;
  
  /**
+diff --git a/inc/sairouterinterface.h b/inc/sairouterinterface.h
+index 1d71d48..74c4021 100644
+--- a/inc/sairouterinterface.h
++++ b/inc/sairouterinterface.h
+@@ -294,6 +294,15 @@ typedef enum _sai_router_interface_attr_t
+      */
+     SAI_ROUTER_INTERFACE_ATTR_ADMIN_MPLS_STATE,
+ 
++    /**
++     * @brief Label attribute used to uniquely identify router interface.
++     *
++     * @type char
++     * @flags CREATE_AND_SET
++     * @default ""
++     */
++    SAI_ROUTER_INTERFACE_ATTR_LABEL,
++
+     /**
+      * @brief End of attributes
+      */
+@@ -451,6 +460,11 @@ typedef struct _sai_router_interface_api_t
+     sai_get_router_interface_stats_ext_fn   get_router_interface_stats_ext;
+     sai_clear_router_interface_stats_fn     clear_router_interface_stats;
+ 
++    sai_bulk_object_create_fn               create_router_interfaces;
++    sai_bulk_object_remove_fn               remove_router_interfaces;
++    sai_bulk_object_set_attribute_fn        set_router_interfaces_attribute;
++    sai_bulk_object_get_attribute_fn        get_router_interfaces_attribute;
++
+ } sai_router_interface_api_t;
+ 
+ /**

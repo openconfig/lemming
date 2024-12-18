@@ -107,6 +107,22 @@ message GetRouterInterfaceStatsResponse {
   repeated uint64 values = 1;
 }
 
+message CreateRouterInterfacesRequest {
+  repeated CreateRouterInterfaceRequest reqs = 1;
+}
+
+message CreateRouterInterfacesResponse {
+  repeated CreateRouterInterfaceResponse resps = 1;
+}
+
+message RemoveRouterInterfacesRequest {
+  repeated RemoveRouterInterfaceRequest reqs = 1;
+}
+
+message RemoveRouterInterfacesResponse {
+  repeated RemoveRouterInterfaceResponse resps = 1;
+}
+
 service RouterInterface {
   rpc CreateRouterInterface(CreateRouterInterfaceRequest)
       returns (CreateRouterInterfaceResponse) {}
@@ -118,4 +134,8 @@ service RouterInterface {
       returns (GetRouterInterfaceAttributeResponse) {}
   rpc GetRouterInterfaceStats(GetRouterInterfaceStatsRequest)
       returns (GetRouterInterfaceStatsResponse) {}
+  rpc CreateRouterInterfaces(CreateRouterInterfacesRequest)
+      returns (CreateRouterInterfacesResponse) {}
+  rpc RemoveRouterInterfaces(RemoveRouterInterfacesRequest)
+      returns (RemoveRouterInterfacesResponse) {}
 }
