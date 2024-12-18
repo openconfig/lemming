@@ -319,6 +319,8 @@ func (ni *Reconciler) startCounterUpdates(ctx context.Context) {
 						saipb.PortStat_PORT_STAT_IF_OUT_NON_UCAST_PKTS, // 3
 						saipb.PortStat_PORT_STAT_IF_IN_OCTETS,          // 4
 						saipb.PortStat_PORT_STAT_IF_OUT_OCTETS,         // 5
+						saipb.PortStat_PORT_STAT_IF_OUT_MULTICAST_PKTS, // 6
+						saipb.PortStat_PORT_STAT_IF_OUT_BROADCAST_PKTS, // 7
 					},
 				})
 				log.V(2).Infof("querying counters for interface %q, got %v", intfName, stats)
