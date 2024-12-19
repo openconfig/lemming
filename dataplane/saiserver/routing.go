@@ -791,10 +791,23 @@ func (ri *routerInterface) RemoveRouterInterface(ctx context.Context, req *saipb
 	resp := &saipb.GetRouterInterfaceAttributeResponse{}
 	err := ri.mgr.PopulateAttributes(&saipb.GetRouterInterfaceAttributeRequest{
 		Oid:      req.GetOid(),
-		AttrType: []saipb.RouterInterfaceAttr{saipb.RouterInterfaceAttr_ROUTER_INTERFACE_ATTR_PORT_ID},
+		AttrType: []saipb.RouterInterfaceAttr{saipb.RouterInterfaceAttr_ROUTER_INTERFACE_ATTR_PORT_ID, saipb.RouterInterfaceAttr_ROUTER_INTERFACE_ATTR_TYPE},
 	}, resp)
 	if err != nil {
 		return nil, err
+	}
+
+	var vlanID uint16
+	if resp.GetAttr().GetType() == saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_SUB_PORT {
+		resp := &saipb.GetRouterInterfaceAttributeResponse{}
+		err := ri.mgr.PopulateAttributes(&saipb.GetRouterInterfaceAttributeRequest{
+			Oid:      req.GetOid(),
+			AttrType: []saipb.RouterInterfaceAttr{saipb.RouterInterfaceAttr_ROUTER_INTERFACE_ATTR_OUTER_VLAN_ID},
+		}, resp)
+		if err != nil {
+			return nil, err
+		}
+		vlanID = uint16(resp.GetAttr().GetOuterVlanId())
 	}
 
 	nid, err := ri.dataplane.ObjectNID(ctx, &fwdpb.ObjectNIDRequest{
@@ -807,7 +820,10 @@ func (ri *routerInterface) RemoveRouterInterface(ctx context.Context, req *saipb
 
 	_, err = ri.dataplane.TableEntryRemove(ctx, fwdconfig.TableEntryRemoveRequest(ri.dataplane.ID(), inputIfaceTable).
 		AppendEntry(
-			fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT).WithUint64(nid.GetNid()))),
+			fwdconfig.EntryDesc(fwdconfig.ExactEntry(
+				fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT).WithUint64(nid.GetNid()),
+				fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG).WithBytes(binary.BigEndian.AppendUint16(nil, vlanID)),
+			)),
 		).Build())
 	if err != nil {
 		return nil, err
@@ -876,6 +892,30 @@ func (ri *routerInterface) GetRouterInterfaceStats(ctx context.Context, req *sai
 	}
 
 	return &saipb.GetRouterInterfaceStatsResponse{Values: vals}, nil
+}
+
+func (ri *routerInterface) CreateRouterInterfaces(ctx context.Context, req *saipb.CreateRouterInterfacesRequest) (*saipb.CreateRouterInterfacesResponse, error) {
+	resp := &saipb.CreateRouterInterfacesResponse{}
+	for _, r := range req.GetReqs() {
+		id, err := ri.CreateRouterInterface(ctx, r)
+		if err != nil {
+			return nil, err
+		}
+		resp.Resps = append(resp.Resps, id)
+	}
+	return resp, nil
+}
+
+func (ri *routerInterface) RemoveRouterInterfaces(ctx context.Context, req *saipb.RemoveRouterInterfacesRequest) (*saipb.RemoveRouterInterfacesResponse, error) {
+	resp := &saipb.RemoveRouterInterfacesResponse{}
+	for _, r := range req.GetReqs() {
+		id, err := ri.RemoveRouterInterface(ctx, r)
+		if err != nil {
+			return nil, err
+		}
+		resp.Resps = append(resp.Resps, id)
+	}
+	return resp, nil
 }
 
 // vlanMember contains the info of a VLAN member.

@@ -957,6 +957,99 @@ func TestCreateRouterInterface(t *testing.T) {
 	}
 }
 
+func TestRemoveRouterInterface(t *testing.T) {
+	tests := []struct {
+		desc    string
+		req     *saipb.RemoveRouterInterfaceRequest
+		wantReq *fwdpb.TableEntryRemoveRequest
+		wantErr string
+	}{{
+		desc:    "unknown type",
+		req:     &saipb.RemoveRouterInterfaceRequest{},
+		wantErr: "attribute not set",
+	}, {
+		desc: "success port - port",
+		req: &saipb.RemoveRouterInterfaceRequest{
+			Oid: 10,
+		},
+		wantReq: &fwdpb.TableEntryRemoveRequest{
+			ContextId: &fwdpb.ContextId{Id: "foo"},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: inputIfaceTable}},
+			Entries: []*fwdpb.EntryDesc{{
+				Entry: &fwdpb.EntryDesc_Exact{
+					Exact: &fwdpb.ExactEntryDesc{
+						Fields: []*fwdpb.PacketFieldBytes{{
+							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{
+								FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT,
+							}},
+							Bytes: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+						}, {
+							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{
+								FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG,
+							}},
+							Bytes: binary.BigEndian.AppendUint16(nil, 0),
+						}},
+					},
+				},
+			}},
+		},
+	}, {
+		desc: "success port - subport",
+		req: &saipb.RemoveRouterInterfaceRequest{
+			Oid: 11,
+		},
+		wantReq: &fwdpb.TableEntryRemoveRequest{
+			ContextId: &fwdpb.ContextId{Id: "foo"},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: inputIfaceTable}},
+			Entries: []*fwdpb.EntryDesc{{
+				Entry: &fwdpb.EntryDesc_Exact{
+					Exact: &fwdpb.ExactEntryDesc{
+						Fields: []*fwdpb.PacketFieldBytes{{
+							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{
+								FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT,
+							}},
+							Bytes: []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+						}, {
+							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{
+								FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG,
+							}},
+							Bytes: binary.BigEndian.AppendUint16(nil, 100),
+						}},
+					},
+				},
+			}},
+		},
+	}}
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			dplane := &fakeSwitchDataplane{
+				ctx: fwdcontext.New("foo", "foo"),
+			}
+			c, mgr, stopFn := newTestRouterInterface(t, dplane)
+			mgr.StoreAttributes(10, &saipb.RouterInterfaceAttribute{
+				Type:   saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_PORT.Enum(),
+				PortId: proto.Uint64(5),
+			})
+			mgr.StoreAttributes(11, &saipb.RouterInterfaceAttribute{
+				Type:        saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_SUB_PORT.Enum(),
+				OuterVlanId: proto.Uint32(100),
+				PortId:      proto.Uint64(5),
+			})
+			defer stopFn()
+			_, gotErr := c.RemoveRouterInterface(context.TODO(), tt.req)
+			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
+				t.Fatalf("CreateRouterInterface() unexpected err: %s", diff)
+			}
+			if gotErr != nil {
+				return
+			}
+			if d := cmp.Diff(dplane.gotEntryRemoveReqs[0], tt.wantReq, protocmp.Transform()); d != "" {
+				t.Errorf("CreateRouterInterface() failed: diff(-got,+want)\n:%s", d)
+			}
+		})
+	}
+}
+
 func TestCreateHash(t *testing.T) {
 	tests := []struct {
 		desc    string
