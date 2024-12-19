@@ -22,7 +22,10 @@ import (
 	"log"
 	"log/slog"
 	"net"
+	"os"
 
+	traceapi "cloud.google.com/go/trace/apiv2"
+	"cloud.google.com/go/trace/apiv2/tracepb"
 	texporter "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"go.opentelemetry.io/contrib/detectors/gcp"
@@ -39,6 +42,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/openconfig/lemming/dataplane/dplaneopts"
 	"github.com/openconfig/lemming/dataplane/saiserver"
@@ -131,6 +135,29 @@ func setupOTelSDK(ctx context.Context) (func(context.Context) error, error) {
 		exporter, err = texporter.New(texporter.WithProjectID(*gcpProject), texporter.WithDestinationProjectQuota())
 		if err != nil {
 			return nil, err
+		}
+		// Create a test span and try exporting it to verify authentication is successful.
+		c, err := traceapi.NewClient(ctx)
+		if err != nil {
+			return nil, err
+		}
+		_, span := tracer.Start(ctx, "ping")
+		span.End()
+
+		batchCtx := metadata.NewOutgoingContext(ctx, metadata.New(map[string]string{"x-goog-user-project": *gcpProject}))
+		err = c.BatchWriteSpans(batchCtx, &tracepb.BatchWriteSpansRequest{
+			Name: fmt.Sprintf("projects/%s", *gcpProject),
+			Spans: []*tracepb.Span{{
+				Name:        fmt.Sprintf("projects/%s/traces/%s/spans/%s", *gcpProject, span.SpanContext().TraceID().String(), span.SpanContext().SpanID().String()),
+				SpanId:      span.SpanContext().SpanID().String(),
+				DisplayName: &tracepb.TruncatableString{Value: "test"},
+				StartTime:   timestamppb.Now(),
+				EndTime:     timestamppb.Now(),
+			}},
+		})
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "failed to export test trace, disabling exporter: %v\n", err)
+			exporter = nil
 		}
 		cloudlog.SetGlobalLogger(ctx, *gcpProject, "lucius")
 	}
