@@ -25,6 +25,8 @@ grpc::Status SystemPort::CreateSystemPort(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateSystemPortRequest* req,
     lemming::dataplane::sai::CreateSystemPortResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -32,6 +34,16 @@ grpc::Status SystemPort::RemoveSystemPort(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveSystemPortRequest* req,
     lemming::dataplane::sai::RemoveSystemPortResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  auto status = api->remove_system_port(req->oid());
+
+  if (status != SAI_STATUS_SUCCESS) {
+    context->AddTrailingMetadata("status-code", "500");
+    context->AddTrailingMetadata("message", "Internal server error");
+    return grpc::Status(grpc::StatusCode::INTERNAL, "Internal error occurred");
+  }
+
   return grpc::Status::OK;
 }
 
@@ -39,6 +51,8 @@ grpc::Status SystemPort::SetSystemPortAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetSystemPortAttributeRequest* req,
     lemming::dataplane::sai::SetSystemPortAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -46,5 +60,7 @@ grpc::Status SystemPort::GetSystemPortAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetSystemPortAttributeRequest* req,
     lemming::dataplane::sai::GetSystemPortAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }

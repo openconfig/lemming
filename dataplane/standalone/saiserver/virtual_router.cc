@@ -25,6 +25,8 @@ grpc::Status VirtualRouter::CreateVirtualRouter(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateVirtualRouterRequest* req,
     lemming::dataplane::sai::CreateVirtualRouterResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -32,6 +34,16 @@ grpc::Status VirtualRouter::RemoveVirtualRouter(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveVirtualRouterRequest* req,
     lemming::dataplane::sai::RemoveVirtualRouterResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  auto status = api->remove_virtual_router(req->oid());
+
+  if (status != SAI_STATUS_SUCCESS) {
+    context->AddTrailingMetadata("status-code", "500");
+    context->AddTrailingMetadata("message", "Internal server error");
+    return grpc::Status(grpc::StatusCode::INTERNAL, "Internal error occurred");
+  }
+
   return grpc::Status::OK;
 }
 
@@ -39,6 +51,8 @@ grpc::Status VirtualRouter::SetVirtualRouterAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetVirtualRouterAttributeRequest* req,
     lemming::dataplane::sai::SetVirtualRouterAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -46,5 +60,7 @@ grpc::Status VirtualRouter::GetVirtualRouterAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetVirtualRouterAttributeRequest* req,
     lemming::dataplane::sai::GetVirtualRouterAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }

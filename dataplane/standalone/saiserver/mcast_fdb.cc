@@ -25,6 +25,8 @@ grpc::Status McastFdb::CreateMcastFdbEntry(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateMcastFdbEntryRequest* req,
     lemming::dataplane::sai::CreateMcastFdbEntryResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -32,6 +34,8 @@ grpc::Status McastFdb::RemoveMcastFdbEntry(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveMcastFdbEntryRequest* req,
     lemming::dataplane::sai::RemoveMcastFdbEntryResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -39,6 +43,8 @@ grpc::Status McastFdb::SetMcastFdbEntryAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetMcastFdbEntryAttributeRequest* req,
     lemming::dataplane::sai::SetMcastFdbEntryAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -46,5 +52,7 @@ grpc::Status McastFdb::GetMcastFdbEntryAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetMcastFdbEntryAttributeRequest* req,
     lemming::dataplane::sai::GetMcastFdbEntryAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }

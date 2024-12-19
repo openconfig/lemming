@@ -25,6 +25,8 @@ grpc::Status Counter::CreateCounter(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateCounterRequest* req,
     lemming::dataplane::sai::CreateCounterResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -32,6 +34,16 @@ grpc::Status Counter::RemoveCounter(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveCounterRequest* req,
     lemming::dataplane::sai::RemoveCounterResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  auto status = api->remove_counter(req->oid());
+
+  if (status != SAI_STATUS_SUCCESS) {
+    context->AddTrailingMetadata("status-code", "500");
+    context->AddTrailingMetadata("message", "Internal server error");
+    return grpc::Status(grpc::StatusCode::INTERNAL, "Internal error occurred");
+  }
+
   return grpc::Status::OK;
 }
 
@@ -39,6 +51,8 @@ grpc::Status Counter::SetCounterAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetCounterAttributeRequest* req,
     lemming::dataplane::sai::SetCounterAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -46,6 +60,8 @@ grpc::Status Counter::GetCounterAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetCounterAttributeRequest* req,
     lemming::dataplane::sai::GetCounterAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -53,5 +69,7 @@ grpc::Status Counter::GetCounterStats(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetCounterStatsRequest* req,
     lemming::dataplane::sai::GetCounterStatsResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }

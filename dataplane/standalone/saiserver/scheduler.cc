@@ -25,6 +25,8 @@ grpc::Status Scheduler::CreateScheduler(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateSchedulerRequest* req,
     lemming::dataplane::sai::CreateSchedulerResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -32,6 +34,16 @@ grpc::Status Scheduler::RemoveScheduler(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveSchedulerRequest* req,
     lemming::dataplane::sai::RemoveSchedulerResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  auto status = api->remove_scheduler(req->oid());
+
+  if (status != SAI_STATUS_SUCCESS) {
+    context->AddTrailingMetadata("status-code", "500");
+    context->AddTrailingMetadata("message", "Internal server error");
+    return grpc::Status(grpc::StatusCode::INTERNAL, "Internal error occurred");
+  }
+
   return grpc::Status::OK;
 }
 
@@ -39,6 +51,8 @@ grpc::Status Scheduler::SetSchedulerAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetSchedulerAttributeRequest* req,
     lemming::dataplane::sai::SetSchedulerAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -46,5 +60,7 @@ grpc::Status Scheduler::GetSchedulerAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetSchedulerAttributeRequest* req,
     lemming::dataplane::sai::GetSchedulerAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }

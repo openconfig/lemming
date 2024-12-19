@@ -25,6 +25,8 @@ grpc::Status GenericProgrammable::CreateGenericProgrammable(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateGenericProgrammableRequest* req,
     lemming::dataplane::sai::CreateGenericProgrammableResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -32,6 +34,16 @@ grpc::Status GenericProgrammable::RemoveGenericProgrammable(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveGenericProgrammableRequest* req,
     lemming::dataplane::sai::RemoveGenericProgrammableResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  auto status = api->remove_generic_programmable(req->oid());
+
+  if (status != SAI_STATUS_SUCCESS) {
+    context->AddTrailingMetadata("status-code", "500");
+    context->AddTrailingMetadata("message", "Internal server error");
+    return grpc::Status(grpc::StatusCode::INTERNAL, "Internal error occurred");
+  }
+
   return grpc::Status::OK;
 }
 
@@ -39,6 +51,8 @@ grpc::Status GenericProgrammable::SetGenericProgrammableAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetGenericProgrammableAttributeRequest* req,
     lemming::dataplane::sai::SetGenericProgrammableAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -46,5 +60,7 @@ grpc::Status GenericProgrammable::GetGenericProgrammableAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetGenericProgrammableAttributeRequest* req,
     lemming::dataplane::sai::GetGenericProgrammableAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }

@@ -25,6 +25,8 @@ grpc::Status Bfd::CreateBfdSession(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateBfdSessionRequest* req,
     lemming::dataplane::sai::CreateBfdSessionResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -32,6 +34,16 @@ grpc::Status Bfd::RemoveBfdSession(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveBfdSessionRequest* req,
     lemming::dataplane::sai::RemoveBfdSessionResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  auto status = api->remove_bfd_session(req->oid());
+
+  if (status != SAI_STATUS_SUCCESS) {
+    context->AddTrailingMetadata("status-code", "500");
+    context->AddTrailingMetadata("message", "Internal server error");
+    return grpc::Status(grpc::StatusCode::INTERNAL, "Internal error occurred");
+  }
+
   return grpc::Status::OK;
 }
 
@@ -39,6 +51,8 @@ grpc::Status Bfd::SetBfdSessionAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetBfdSessionAttributeRequest* req,
     lemming::dataplane::sai::SetBfdSessionAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -46,6 +60,8 @@ grpc::Status Bfd::GetBfdSessionAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetBfdSessionAttributeRequest* req,
     lemming::dataplane::sai::GetBfdSessionAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -53,5 +69,7 @@ grpc::Status Bfd::GetBfdSessionStats(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetBfdSessionStatsRequest* req,
     lemming::dataplane::sai::GetBfdSessionStatsResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }

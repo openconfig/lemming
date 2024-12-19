@@ -25,6 +25,8 @@ grpc::Status Ipmc::CreateIpmcEntry(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateIpmcEntryRequest* req,
     lemming::dataplane::sai::CreateIpmcEntryResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -32,6 +34,8 @@ grpc::Status Ipmc::RemoveIpmcEntry(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveIpmcEntryRequest* req,
     lemming::dataplane::sai::RemoveIpmcEntryResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -39,6 +43,8 @@ grpc::Status Ipmc::SetIpmcEntryAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetIpmcEntryAttributeRequest* req,
     lemming::dataplane::sai::SetIpmcEntryAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -46,5 +52,7 @@ grpc::Status Ipmc::GetIpmcEntryAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetIpmcEntryAttributeRequest* req,
     lemming::dataplane::sai::GetIpmcEntryAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }

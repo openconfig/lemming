@@ -25,6 +25,8 @@ grpc::Status Ipsec::CreateIpsec(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateIpsecRequest* req,
     lemming::dataplane::sai::CreateIpsecResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -32,6 +34,16 @@ grpc::Status Ipsec::RemoveIpsec(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveIpsecRequest* req,
     lemming::dataplane::sai::RemoveIpsecResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  auto status = api->remove_ipsec(req->oid());
+
+  if (status != SAI_STATUS_SUCCESS) {
+    context->AddTrailingMetadata("status-code", "500");
+    context->AddTrailingMetadata("message", "Internal server error");
+    return grpc::Status(grpc::StatusCode::INTERNAL, "Internal error occurred");
+  }
+
   return grpc::Status::OK;
 }
 
@@ -39,6 +51,8 @@ grpc::Status Ipsec::SetIpsecAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetIpsecAttributeRequest* req,
     lemming::dataplane::sai::SetIpsecAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -46,6 +60,8 @@ grpc::Status Ipsec::GetIpsecAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetIpsecAttributeRequest* req,
     lemming::dataplane::sai::GetIpsecAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -53,6 +69,8 @@ grpc::Status Ipsec::CreateIpsecPort(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateIpsecPortRequest* req,
     lemming::dataplane::sai::CreateIpsecPortResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -60,6 +78,16 @@ grpc::Status Ipsec::RemoveIpsecPort(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveIpsecPortRequest* req,
     lemming::dataplane::sai::RemoveIpsecPortResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  auto status = api->remove_ipsec_port(req->oid());
+
+  if (status != SAI_STATUS_SUCCESS) {
+    context->AddTrailingMetadata("status-code", "500");
+    context->AddTrailingMetadata("message", "Internal server error");
+    return grpc::Status(grpc::StatusCode::INTERNAL, "Internal error occurred");
+  }
+
   return grpc::Status::OK;
 }
 
@@ -67,6 +95,8 @@ grpc::Status Ipsec::SetIpsecPortAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetIpsecPortAttributeRequest* req,
     lemming::dataplane::sai::SetIpsecPortAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -74,6 +104,8 @@ grpc::Status Ipsec::GetIpsecPortAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetIpsecPortAttributeRequest* req,
     lemming::dataplane::sai::GetIpsecPortAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -81,6 +113,8 @@ grpc::Status Ipsec::GetIpsecPortStats(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetIpsecPortStatsRequest* req,
     lemming::dataplane::sai::GetIpsecPortStatsResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -88,6 +122,8 @@ grpc::Status Ipsec::CreateIpsecSa(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::CreateIpsecSaRequest* req,
     lemming::dataplane::sai::CreateIpsecSaResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -95,6 +131,16 @@ grpc::Status Ipsec::RemoveIpsecSa(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::RemoveIpsecSaRequest* req,
     lemming::dataplane::sai::RemoveIpsecSaResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  auto status = api->remove_ipsec_sa(req->oid());
+
+  if (status != SAI_STATUS_SUCCESS) {
+    context->AddTrailingMetadata("status-code", "500");
+    context->AddTrailingMetadata("message", "Internal server error");
+    return grpc::Status(grpc::StatusCode::INTERNAL, "Internal error occurred");
+  }
+
   return grpc::Status::OK;
 }
 
@@ -102,6 +148,8 @@ grpc::Status Ipsec::SetIpsecSaAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::SetIpsecSaAttributeRequest* req,
     lemming::dataplane::sai::SetIpsecSaAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -109,6 +157,8 @@ grpc::Status Ipsec::GetIpsecSaAttribute(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetIpsecSaAttributeRequest* req,
     lemming::dataplane::sai::GetIpsecSaAttributeResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
 
@@ -116,5 +166,7 @@ grpc::Status Ipsec::GetIpsecSaStats(
     grpc::ServerContext* context,
     const lemming::dataplane::sai::GetIpsecSaStatsRequest* req,
     lemming::dataplane::sai::GetIpsecSaStatsResponse* resp) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
   return grpc::Status::OK;
 }
