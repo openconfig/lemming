@@ -29,6 +29,10 @@ const sai_router_interface_api_t l_router_interface = {
     .get_router_interface_stats = l_get_router_interface_stats,
     .get_router_interface_stats_ext = l_get_router_interface_stats_ext,
     .clear_router_interface_stats = l_clear_router_interface_stats,
+    .create_router_interfaces = l_create_router_interfaces,
+    .remove_router_interfaces = l_remove_router_interfaces,
+    .set_router_interfaces_attribute = l_set_router_interfaces_attribute,
+    .get_router_interfaces_attribute = l_get_router_interfaces_attribute,
 };
 
 lemming::dataplane::sai::CreateRouterInterfaceRequest
@@ -386,4 +390,101 @@ sai_status_t l_clear_router_interface_stats(sai_object_id_t router_interface_id,
   LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
 
   return SAI_STATUS_SUCCESS;
+}
+
+sai_status_t l_create_router_interfaces(sai_object_id_t switch_id,
+                                        uint32_t object_count,
+                                        const uint32_t *attr_count,
+                                        const sai_attribute_t **attr_list,
+                                        sai_bulk_op_error_mode_t mode,
+                                        sai_object_id_t *object_id,
+                                        sai_status_t *object_statuses) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  lemming::dataplane::sai::CreateRouterInterfacesRequest req;
+  lemming::dataplane::sai::CreateRouterInterfacesResponse resp;
+  grpc::ClientContext context;
+
+  for (uint32_t i = 0; i < object_count; i++) {
+    auto r =
+        convert_create_router_interface(switch_id, attr_count[i], attr_list[i]);
+    *req.add_reqs() = r;
+  }
+
+  grpc::Status status =
+      router_interface->CreateRouterInterfaces(&context, req, &resp);
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return SAI_STATUS_FAILURE;
+  }
+  if (object_count != resp.resps().size()) {
+    return SAI_STATUS_FAILURE;
+  }
+  for (uint32_t i = 0; i < object_count; i++) {
+    object_id[i] = resp.resps(i).oid();
+    object_statuses[i] = SAI_STATUS_SUCCESS;
+  }
+
+  return SAI_STATUS_SUCCESS;
+}
+
+sai_status_t l_remove_router_interfaces(uint32_t object_count,
+                                        const sai_object_id_t *object_id,
+                                        sai_bulk_op_error_mode_t mode,
+                                        sai_status_t *object_statuses) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+
+  lemming::dataplane::sai::RemoveRouterInterfacesRequest req;
+  lemming::dataplane::sai::RemoveRouterInterfacesResponse resp;
+  grpc::ClientContext context;
+
+  for (uint32_t i = 0; i < object_count; i++) {
+    req.add_reqs()->set_oid(object_id[i]);
+  }
+
+  grpc::Status status =
+      router_interface->RemoveRouterInterfaces(&context, req, &resp);
+  if (!status.ok()) {
+    auto it = context.GetServerTrailingMetadata().find("traceparent");
+    if (it != context.GetServerTrailingMetadata().end()) {
+      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
+                 << " msg: " << status.error_message();
+    } else {
+      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
+    }
+    return SAI_STATUS_FAILURE;
+  }
+  if (object_count != resp.resps().size()) {
+    return SAI_STATUS_FAILURE;
+  }
+  for (uint32_t i = 0; i < object_count; i++) {
+    object_statuses[i] = SAI_STATUS_SUCCESS;
+  }
+
+  return SAI_STATUS_SUCCESS;
+}
+
+sai_status_t l_set_router_interfaces_attribute(uint32_t object_count,
+                                               const sai_object_id_t *object_id,
+                                               const sai_attribute_t *attr_list,
+                                               sai_bulk_op_error_mode_t mode,
+                                               sai_status_t *object_statuses) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return SAI_STATUS_NOT_IMPLEMENTED;
+}
+
+sai_status_t l_get_router_interfaces_attribute(uint32_t object_count,
+                                               const sai_object_id_t *object_id,
+                                               const uint32_t *attr_count,
+                                               sai_attribute_t **attr_list,
+                                               sai_bulk_op_error_mode_t mode,
+                                               sai_status_t *object_statuses) {
+  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+  return SAI_STATUS_NOT_IMPLEMENTED;
 }

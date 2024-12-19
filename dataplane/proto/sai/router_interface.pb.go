@@ -870,6 +870,194 @@ func (x *GetRouterInterfaceStatsResponse) GetValues() []uint64 {
 	return nil
 }
 
+type CreateRouterInterfacesRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Reqs []*CreateRouterInterfaceRequest `protobuf:"bytes,1,rep,name=reqs,proto3" json:"reqs,omitempty"`
+}
+
+func (x *CreateRouterInterfacesRequest) Reset() {
+	*x = CreateRouterInterfacesRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_dataplane_proto_sai_router_interface_proto_msgTypes[10]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *CreateRouterInterfacesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateRouterInterfacesRequest) ProtoMessage() {}
+
+func (x *CreateRouterInterfacesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_dataplane_proto_sai_router_interface_proto_msgTypes[10]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateRouterInterfacesRequest.ProtoReflect.Descriptor instead.
+func (*CreateRouterInterfacesRequest) Descriptor() ([]byte, []int) {
+	return file_dataplane_proto_sai_router_interface_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *CreateRouterInterfacesRequest) GetReqs() []*CreateRouterInterfaceRequest {
+	if x != nil {
+		return x.Reqs
+	}
+	return nil
+}
+
+type CreateRouterInterfacesResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Resps []*CreateRouterInterfaceResponse `protobuf:"bytes,1,rep,name=resps,proto3" json:"resps,omitempty"`
+}
+
+func (x *CreateRouterInterfacesResponse) Reset() {
+	*x = CreateRouterInterfacesResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_dataplane_proto_sai_router_interface_proto_msgTypes[11]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *CreateRouterInterfacesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateRouterInterfacesResponse) ProtoMessage() {}
+
+func (x *CreateRouterInterfacesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_dataplane_proto_sai_router_interface_proto_msgTypes[11]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateRouterInterfacesResponse.ProtoReflect.Descriptor instead.
+func (*CreateRouterInterfacesResponse) Descriptor() ([]byte, []int) {
+	return file_dataplane_proto_sai_router_interface_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *CreateRouterInterfacesResponse) GetResps() []*CreateRouterInterfaceResponse {
+	if x != nil {
+		return x.Resps
+	}
+	return nil
+}
+
+type RemoveRouterInterfacesRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Reqs []*RemoveRouterInterfaceRequest `protobuf:"bytes,1,rep,name=reqs,proto3" json:"reqs,omitempty"`
+}
+
+func (x *RemoveRouterInterfacesRequest) Reset() {
+	*x = RemoveRouterInterfacesRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_dataplane_proto_sai_router_interface_proto_msgTypes[12]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *RemoveRouterInterfacesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RemoveRouterInterfacesRequest) ProtoMessage() {}
+
+func (x *RemoveRouterInterfacesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_dataplane_proto_sai_router_interface_proto_msgTypes[12]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RemoveRouterInterfacesRequest.ProtoReflect.Descriptor instead.
+func (*RemoveRouterInterfacesRequest) Descriptor() ([]byte, []int) {
+	return file_dataplane_proto_sai_router_interface_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *RemoveRouterInterfacesRequest) GetReqs() []*RemoveRouterInterfaceRequest {
+	if x != nil {
+		return x.Reqs
+	}
+	return nil
+}
+
+type RemoveRouterInterfacesResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Resps []*RemoveRouterInterfaceResponse `protobuf:"bytes,1,rep,name=resps,proto3" json:"resps,omitempty"`
+}
+
+func (x *RemoveRouterInterfacesResponse) Reset() {
+	*x = RemoveRouterInterfacesResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_dataplane_proto_sai_router_interface_proto_msgTypes[13]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *RemoveRouterInterfacesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RemoveRouterInterfacesResponse) ProtoMessage() {}
+
+func (x *RemoveRouterInterfacesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_dataplane_proto_sai_router_interface_proto_msgTypes[13]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RemoveRouterInterfacesResponse.ProtoReflect.Descriptor instead.
+func (*RemoveRouterInterfacesResponse) Descriptor() ([]byte, []int) {
+	return file_dataplane_proto_sai_router_interface_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *RemoveRouterInterfacesResponse) GetResps() []*RemoveRouterInterfaceResponse {
+	if x != nil {
+		return x.Resps
+	}
+	return nil
+}
+
 var File_dataplane_proto_sai_router_interface_proto protoreflect.FileDescriptor
 
 var file_dataplane_proto_sai_router_interface_proto_rawDesc = []byte{
@@ -1084,7 +1272,34 @@ var file_dataplane_proto_sai_router_interface_proto_rawDesc = []byte{
 	0x74, 0x52, 0x6f, 0x75, 0x74, 0x65, 0x72, 0x49, 0x6e, 0x74, 0x65, 0x72, 0x66, 0x61, 0x63, 0x65,
 	0x53, 0x74, 0x61, 0x74, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x16, 0x0a,
 	0x06, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x04, 0x52, 0x06, 0x76,
-	0x61, 0x6c, 0x75, 0x65, 0x73, 0x2a, 0x9a, 0x07, 0x0a, 0x13, 0x52, 0x6f, 0x75, 0x74, 0x65, 0x72,
+	0x61, 0x6c, 0x75, 0x65, 0x73, 0x22, 0x68, 0x0a, 0x1d, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x52,
+	0x6f, 0x75, 0x74, 0x65, 0x72, 0x49, 0x6e, 0x74, 0x65, 0x72, 0x66, 0x61, 0x63, 0x65, 0x73, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x47, 0x0a, 0x04, 0x72, 0x65, 0x71, 0x73, 0x18, 0x01,
+	0x20, 0x03, 0x28, 0x0b, 0x32, 0x33, 0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64,
+	0x61, 0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x73, 0x61, 0x69, 0x2e, 0x43, 0x72, 0x65,
+	0x61, 0x74, 0x65, 0x52, 0x6f, 0x75, 0x74, 0x65, 0x72, 0x49, 0x6e, 0x74, 0x65, 0x72, 0x66, 0x61,
+	0x63, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x52, 0x04, 0x72, 0x65, 0x71, 0x73, 0x22,
+	0x6c, 0x0a, 0x1e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x52, 0x6f, 0x75, 0x74, 0x65, 0x72, 0x49,
+	0x6e, 0x74, 0x65, 0x72, 0x66, 0x61, 0x63, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x12, 0x4a, 0x0a, 0x05, 0x72, 0x65, 0x73, 0x70, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b,
+	0x32, 0x34, 0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x70,
+	0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x73, 0x61, 0x69, 0x2e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x52,
+	0x6f, 0x75, 0x74, 0x65, 0x72, 0x49, 0x6e, 0x74, 0x65, 0x72, 0x66, 0x61, 0x63, 0x65, 0x52, 0x65,
+	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x52, 0x05, 0x72, 0x65, 0x73, 0x70, 0x73, 0x22, 0x68, 0x0a,
+	0x1d, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x52, 0x6f, 0x75, 0x74, 0x65, 0x72, 0x49, 0x6e, 0x74,
+	0x65, 0x72, 0x66, 0x61, 0x63, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x47,
+	0x0a, 0x04, 0x72, 0x65, 0x71, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x33, 0x2e, 0x6c,
+	0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65,
+	0x2e, 0x73, 0x61, 0x69, 0x2e, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x52, 0x6f, 0x75, 0x74, 0x65,
+	0x72, 0x49, 0x6e, 0x74, 0x65, 0x72, 0x66, 0x61, 0x63, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x52, 0x04, 0x72, 0x65, 0x71, 0x73, 0x22, 0x6c, 0x0a, 0x1e, 0x52, 0x65, 0x6d, 0x6f, 0x76,
+	0x65, 0x52, 0x6f, 0x75, 0x74, 0x65, 0x72, 0x49, 0x6e, 0x74, 0x65, 0x72, 0x66, 0x61, 0x63, 0x65,
+	0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x4a, 0x0a, 0x05, 0x72, 0x65, 0x73,
+	0x70, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x34, 0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69,
+	0x6e, 0x67, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x73, 0x61, 0x69,
+	0x2e, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x52, 0x6f, 0x75, 0x74, 0x65, 0x72, 0x49, 0x6e, 0x74,
+	0x65, 0x72, 0x66, 0x61, 0x63, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x52, 0x05,
+	0x72, 0x65, 0x73, 0x70, 0x73, 0x2a, 0x9a, 0x07, 0x0a, 0x13, 0x52, 0x6f, 0x75, 0x74, 0x65, 0x72,
 	0x49, 0x6e, 0x74, 0x65, 0x72, 0x66, 0x61, 0x63, 0x65, 0x41, 0x74, 0x74, 0x72, 0x12, 0x25, 0x0a,
 	0x21, 0x52, 0x4f, 0x55, 0x54, 0x45, 0x52, 0x5f, 0x49, 0x4e, 0x54, 0x45, 0x52, 0x46, 0x41, 0x43,
 	0x45, 0x5f, 0x41, 0x54, 0x54, 0x52, 0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45, 0x43, 0x49, 0x46, 0x49,
@@ -1142,7 +1357,7 @@ var file_dataplane_proto_sai_router_interface_proto_rawDesc = []byte{
 	0x5f, 0x54, 0x54, 0x4c, 0x10, 0x14, 0x12, 0x2a, 0x0a, 0x26, 0x52, 0x4f, 0x55, 0x54, 0x45, 0x52,
 	0x5f, 0x49, 0x4e, 0x54, 0x45, 0x52, 0x46, 0x41, 0x43, 0x45, 0x5f, 0x41, 0x54, 0x54, 0x52, 0x5f,
 	0x41, 0x44, 0x4d, 0x49, 0x4e, 0x5f, 0x4d, 0x50, 0x4c, 0x53, 0x5f, 0x53, 0x54, 0x41, 0x54, 0x45,
-	0x10, 0x15, 0x32, 0xde, 0x05, 0x0a, 0x0f, 0x52, 0x6f, 0x75, 0x74, 0x65, 0x72, 0x49, 0x6e, 0x74,
+	0x10, 0x15, 0x32, 0xf2, 0x07, 0x0a, 0x0f, 0x52, 0x6f, 0x75, 0x74, 0x65, 0x72, 0x49, 0x6e, 0x74,
 	0x65, 0x72, 0x66, 0x61, 0x63, 0x65, 0x12, 0x84, 0x01, 0x0a, 0x15, 0x43, 0x72, 0x65, 0x61, 0x74,
 	0x65, 0x52, 0x6f, 0x75, 0x74, 0x65, 0x72, 0x49, 0x6e, 0x74, 0x65, 0x72, 0x66, 0x61, 0x63, 0x65,
 	0x12, 0x33, 0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x70,
@@ -1188,10 +1403,28 @@ var file_dataplane_proto_sai_router_interface_proto_rawDesc = []byte{
 	0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x73, 0x61,
 	0x69, 0x2e, 0x47, 0x65, 0x74, 0x52, 0x6f, 0x75, 0x74, 0x65, 0x72, 0x49, 0x6e, 0x74, 0x65, 0x72,
 	0x66, 0x61, 0x63, 0x65, 0x53, 0x74, 0x61, 0x74, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x22, 0x00, 0x42, 0x33, 0x5a, 0x31, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f,
-	0x6d, 0x2f, 0x6f, 0x70, 0x65, 0x6e, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2f, 0x6c, 0x65, 0x6d,
-	0x6d, 0x69, 0x6e, 0x67, 0x2f, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2f, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x73, 0x61, 0x69, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x65, 0x22, 0x00, 0x12, 0x87, 0x01, 0x0a, 0x16, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x52, 0x6f,
+	0x75, 0x74, 0x65, 0x72, 0x49, 0x6e, 0x74, 0x65, 0x72, 0x66, 0x61, 0x63, 0x65, 0x73, 0x12, 0x34,
+	0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c, 0x61,
+	0x6e, 0x65, 0x2e, 0x73, 0x61, 0x69, 0x2e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x52, 0x6f, 0x75,
+	0x74, 0x65, 0x72, 0x49, 0x6e, 0x74, 0x65, 0x72, 0x66, 0x61, 0x63, 0x65, 0x73, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x1a, 0x35, 0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64,
+	0x61, 0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x73, 0x61, 0x69, 0x2e, 0x43, 0x72, 0x65,
+	0x61, 0x74, 0x65, 0x52, 0x6f, 0x75, 0x74, 0x65, 0x72, 0x49, 0x6e, 0x74, 0x65, 0x72, 0x66, 0x61,
+	0x63, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x87, 0x01,
+	0x0a, 0x16, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x52, 0x6f, 0x75, 0x74, 0x65, 0x72, 0x49, 0x6e,
+	0x74, 0x65, 0x72, 0x66, 0x61, 0x63, 0x65, 0x73, 0x12, 0x34, 0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69,
+	0x6e, 0x67, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c, 0x61, 0x6e, 0x65, 0x2e, 0x73, 0x61, 0x69,
+	0x2e, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x52, 0x6f, 0x75, 0x74, 0x65, 0x72, 0x49, 0x6e, 0x74,
+	0x65, 0x72, 0x66, 0x61, 0x63, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x35,
+	0x2e, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c, 0x61,
+	0x6e, 0x65, 0x2e, 0x73, 0x61, 0x69, 0x2e, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x52, 0x6f, 0x75,
+	0x74, 0x65, 0x72, 0x49, 0x6e, 0x74, 0x65, 0x72, 0x66, 0x61, 0x63, 0x65, 0x73, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x42, 0x33, 0x5a, 0x31, 0x67, 0x69, 0x74, 0x68, 0x75,
+	0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6f, 0x70, 0x65, 0x6e, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67,
+	0x2f, 0x6c, 0x65, 0x6d, 0x6d, 0x69, 0x6e, 0x67, 0x2f, 0x64, 0x61, 0x74, 0x61, 0x70, 0x6c, 0x61,
+	0x6e, 0x65, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x73, 0x61, 0x69, 0x62, 0x06, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1207,7 +1440,7 @@ func file_dataplane_proto_sai_router_interface_proto_rawDescGZIP() []byte {
 }
 
 var file_dataplane_proto_sai_router_interface_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_dataplane_proto_sai_router_interface_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_dataplane_proto_sai_router_interface_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_dataplane_proto_sai_router_interface_proto_goTypes = []interface{}{
 	(RouterInterfaceAttr)(0),                    // 0: lemming.dataplane.sai.RouterInterfaceAttr
 	(*CreateRouterInterfaceRequest)(nil),        // 1: lemming.dataplane.sai.CreateRouterInterfaceRequest
@@ -1220,35 +1453,47 @@ var file_dataplane_proto_sai_router_interface_proto_goTypes = []interface{}{
 	(*GetRouterInterfaceAttributeResponse)(nil), // 8: lemming.dataplane.sai.GetRouterInterfaceAttributeResponse
 	(*GetRouterInterfaceStatsRequest)(nil),      // 9: lemming.dataplane.sai.GetRouterInterfaceStatsRequest
 	(*GetRouterInterfaceStatsResponse)(nil),     // 10: lemming.dataplane.sai.GetRouterInterfaceStatsResponse
-	(RouterInterfaceType)(0),                    // 11: lemming.dataplane.sai.RouterInterfaceType
-	(PacketAction)(0),                           // 12: lemming.dataplane.sai.PacketAction
-	(*RouterInterfaceAttribute)(nil),            // 13: lemming.dataplane.sai.RouterInterfaceAttribute
-	(RouterInterfaceStat)(0),                    // 14: lemming.dataplane.sai.RouterInterfaceStat
+	(*CreateRouterInterfacesRequest)(nil),       // 11: lemming.dataplane.sai.CreateRouterInterfacesRequest
+	(*CreateRouterInterfacesResponse)(nil),      // 12: lemming.dataplane.sai.CreateRouterInterfacesResponse
+	(*RemoveRouterInterfacesRequest)(nil),       // 13: lemming.dataplane.sai.RemoveRouterInterfacesRequest
+	(*RemoveRouterInterfacesResponse)(nil),      // 14: lemming.dataplane.sai.RemoveRouterInterfacesResponse
+	(RouterInterfaceType)(0),                    // 15: lemming.dataplane.sai.RouterInterfaceType
+	(PacketAction)(0),                           // 16: lemming.dataplane.sai.PacketAction
+	(*RouterInterfaceAttribute)(nil),            // 17: lemming.dataplane.sai.RouterInterfaceAttribute
+	(RouterInterfaceStat)(0),                    // 18: lemming.dataplane.sai.RouterInterfaceStat
 }
 var file_dataplane_proto_sai_router_interface_proto_depIdxs = []int32{
-	11, // 0: lemming.dataplane.sai.CreateRouterInterfaceRequest.type:type_name -> lemming.dataplane.sai.RouterInterfaceType
-	12, // 1: lemming.dataplane.sai.CreateRouterInterfaceRequest.neighbor_miss_packet_action:type_name -> lemming.dataplane.sai.PacketAction
-	12, // 2: lemming.dataplane.sai.CreateRouterInterfaceRequest.loopback_packet_action:type_name -> lemming.dataplane.sai.PacketAction
-	12, // 3: lemming.dataplane.sai.SetRouterInterfaceAttributeRequest.neighbor_miss_packet_action:type_name -> lemming.dataplane.sai.PacketAction
-	12, // 4: lemming.dataplane.sai.SetRouterInterfaceAttributeRequest.loopback_packet_action:type_name -> lemming.dataplane.sai.PacketAction
+	15, // 0: lemming.dataplane.sai.CreateRouterInterfaceRequest.type:type_name -> lemming.dataplane.sai.RouterInterfaceType
+	16, // 1: lemming.dataplane.sai.CreateRouterInterfaceRequest.neighbor_miss_packet_action:type_name -> lemming.dataplane.sai.PacketAction
+	16, // 2: lemming.dataplane.sai.CreateRouterInterfaceRequest.loopback_packet_action:type_name -> lemming.dataplane.sai.PacketAction
+	16, // 3: lemming.dataplane.sai.SetRouterInterfaceAttributeRequest.neighbor_miss_packet_action:type_name -> lemming.dataplane.sai.PacketAction
+	16, // 4: lemming.dataplane.sai.SetRouterInterfaceAttributeRequest.loopback_packet_action:type_name -> lemming.dataplane.sai.PacketAction
 	0,  // 5: lemming.dataplane.sai.GetRouterInterfaceAttributeRequest.attr_type:type_name -> lemming.dataplane.sai.RouterInterfaceAttr
-	13, // 6: lemming.dataplane.sai.GetRouterInterfaceAttributeResponse.attr:type_name -> lemming.dataplane.sai.RouterInterfaceAttribute
-	14, // 7: lemming.dataplane.sai.GetRouterInterfaceStatsRequest.counter_ids:type_name -> lemming.dataplane.sai.RouterInterfaceStat
-	1,  // 8: lemming.dataplane.sai.RouterInterface.CreateRouterInterface:input_type -> lemming.dataplane.sai.CreateRouterInterfaceRequest
-	3,  // 9: lemming.dataplane.sai.RouterInterface.RemoveRouterInterface:input_type -> lemming.dataplane.sai.RemoveRouterInterfaceRequest
-	5,  // 10: lemming.dataplane.sai.RouterInterface.SetRouterInterfaceAttribute:input_type -> lemming.dataplane.sai.SetRouterInterfaceAttributeRequest
-	7,  // 11: lemming.dataplane.sai.RouterInterface.GetRouterInterfaceAttribute:input_type -> lemming.dataplane.sai.GetRouterInterfaceAttributeRequest
-	9,  // 12: lemming.dataplane.sai.RouterInterface.GetRouterInterfaceStats:input_type -> lemming.dataplane.sai.GetRouterInterfaceStatsRequest
-	2,  // 13: lemming.dataplane.sai.RouterInterface.CreateRouterInterface:output_type -> lemming.dataplane.sai.CreateRouterInterfaceResponse
-	4,  // 14: lemming.dataplane.sai.RouterInterface.RemoveRouterInterface:output_type -> lemming.dataplane.sai.RemoveRouterInterfaceResponse
-	6,  // 15: lemming.dataplane.sai.RouterInterface.SetRouterInterfaceAttribute:output_type -> lemming.dataplane.sai.SetRouterInterfaceAttributeResponse
-	8,  // 16: lemming.dataplane.sai.RouterInterface.GetRouterInterfaceAttribute:output_type -> lemming.dataplane.sai.GetRouterInterfaceAttributeResponse
-	10, // 17: lemming.dataplane.sai.RouterInterface.GetRouterInterfaceStats:output_type -> lemming.dataplane.sai.GetRouterInterfaceStatsResponse
-	13, // [13:18] is the sub-list for method output_type
-	8,  // [8:13] is the sub-list for method input_type
-	8,  // [8:8] is the sub-list for extension type_name
-	8,  // [8:8] is the sub-list for extension extendee
-	0,  // [0:8] is the sub-list for field type_name
+	17, // 6: lemming.dataplane.sai.GetRouterInterfaceAttributeResponse.attr:type_name -> lemming.dataplane.sai.RouterInterfaceAttribute
+	18, // 7: lemming.dataplane.sai.GetRouterInterfaceStatsRequest.counter_ids:type_name -> lemming.dataplane.sai.RouterInterfaceStat
+	1,  // 8: lemming.dataplane.sai.CreateRouterInterfacesRequest.reqs:type_name -> lemming.dataplane.sai.CreateRouterInterfaceRequest
+	2,  // 9: lemming.dataplane.sai.CreateRouterInterfacesResponse.resps:type_name -> lemming.dataplane.sai.CreateRouterInterfaceResponse
+	3,  // 10: lemming.dataplane.sai.RemoveRouterInterfacesRequest.reqs:type_name -> lemming.dataplane.sai.RemoveRouterInterfaceRequest
+	4,  // 11: lemming.dataplane.sai.RemoveRouterInterfacesResponse.resps:type_name -> lemming.dataplane.sai.RemoveRouterInterfaceResponse
+	1,  // 12: lemming.dataplane.sai.RouterInterface.CreateRouterInterface:input_type -> lemming.dataplane.sai.CreateRouterInterfaceRequest
+	3,  // 13: lemming.dataplane.sai.RouterInterface.RemoveRouterInterface:input_type -> lemming.dataplane.sai.RemoveRouterInterfaceRequest
+	5,  // 14: lemming.dataplane.sai.RouterInterface.SetRouterInterfaceAttribute:input_type -> lemming.dataplane.sai.SetRouterInterfaceAttributeRequest
+	7,  // 15: lemming.dataplane.sai.RouterInterface.GetRouterInterfaceAttribute:input_type -> lemming.dataplane.sai.GetRouterInterfaceAttributeRequest
+	9,  // 16: lemming.dataplane.sai.RouterInterface.GetRouterInterfaceStats:input_type -> lemming.dataplane.sai.GetRouterInterfaceStatsRequest
+	11, // 17: lemming.dataplane.sai.RouterInterface.CreateRouterInterfaces:input_type -> lemming.dataplane.sai.CreateRouterInterfacesRequest
+	13, // 18: lemming.dataplane.sai.RouterInterface.RemoveRouterInterfaces:input_type -> lemming.dataplane.sai.RemoveRouterInterfacesRequest
+	2,  // 19: lemming.dataplane.sai.RouterInterface.CreateRouterInterface:output_type -> lemming.dataplane.sai.CreateRouterInterfaceResponse
+	4,  // 20: lemming.dataplane.sai.RouterInterface.RemoveRouterInterface:output_type -> lemming.dataplane.sai.RemoveRouterInterfaceResponse
+	6,  // 21: lemming.dataplane.sai.RouterInterface.SetRouterInterfaceAttribute:output_type -> lemming.dataplane.sai.SetRouterInterfaceAttributeResponse
+	8,  // 22: lemming.dataplane.sai.RouterInterface.GetRouterInterfaceAttribute:output_type -> lemming.dataplane.sai.GetRouterInterfaceAttributeResponse
+	10, // 23: lemming.dataplane.sai.RouterInterface.GetRouterInterfaceStats:output_type -> lemming.dataplane.sai.GetRouterInterfaceStatsResponse
+	12, // 24: lemming.dataplane.sai.RouterInterface.CreateRouterInterfaces:output_type -> lemming.dataplane.sai.CreateRouterInterfacesResponse
+	14, // 25: lemming.dataplane.sai.RouterInterface.RemoveRouterInterfaces:output_type -> lemming.dataplane.sai.RemoveRouterInterfacesResponse
+	19, // [19:26] is the sub-list for method output_type
+	12, // [12:19] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_dataplane_proto_sai_router_interface_proto_init() }
@@ -1378,6 +1623,54 @@ func file_dataplane_proto_sai_router_interface_proto_init() {
 				return nil
 			}
 		}
+		file_dataplane_proto_sai_router_interface_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*CreateRouterInterfacesRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_dataplane_proto_sai_router_interface_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*CreateRouterInterfacesResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_dataplane_proto_sai_router_interface_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*RemoveRouterInterfacesRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_dataplane_proto_sai_router_interface_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*RemoveRouterInterfacesResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	file_dataplane_proto_sai_router_interface_proto_msgTypes[0].OneofWrappers = []interface{}{}
 	file_dataplane_proto_sai_router_interface_proto_msgTypes[4].OneofWrappers = []interface{}{}
@@ -1387,7 +1680,7 @@ func file_dataplane_proto_sai_router_interface_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_dataplane_proto_sai_router_interface_proto_rawDesc,
 			NumEnums:      1,
-			NumMessages:   10,
+			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
@@ -1419,6 +1712,8 @@ type RouterInterfaceClient interface {
 	SetRouterInterfaceAttribute(ctx context.Context, in *SetRouterInterfaceAttributeRequest, opts ...grpc.CallOption) (*SetRouterInterfaceAttributeResponse, error)
 	GetRouterInterfaceAttribute(ctx context.Context, in *GetRouterInterfaceAttributeRequest, opts ...grpc.CallOption) (*GetRouterInterfaceAttributeResponse, error)
 	GetRouterInterfaceStats(ctx context.Context, in *GetRouterInterfaceStatsRequest, opts ...grpc.CallOption) (*GetRouterInterfaceStatsResponse, error)
+	CreateRouterInterfaces(ctx context.Context, in *CreateRouterInterfacesRequest, opts ...grpc.CallOption) (*CreateRouterInterfacesResponse, error)
+	RemoveRouterInterfaces(ctx context.Context, in *RemoveRouterInterfacesRequest, opts ...grpc.CallOption) (*RemoveRouterInterfacesResponse, error)
 }
 
 type routerInterfaceClient struct {
@@ -1474,6 +1769,24 @@ func (c *routerInterfaceClient) GetRouterInterfaceStats(ctx context.Context, in 
 	return out, nil
 }
 
+func (c *routerInterfaceClient) CreateRouterInterfaces(ctx context.Context, in *CreateRouterInterfacesRequest, opts ...grpc.CallOption) (*CreateRouterInterfacesResponse, error) {
+	out := new(CreateRouterInterfacesResponse)
+	err := c.cc.Invoke(ctx, "/lemming.dataplane.sai.RouterInterface/CreateRouterInterfaces", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *routerInterfaceClient) RemoveRouterInterfaces(ctx context.Context, in *RemoveRouterInterfacesRequest, opts ...grpc.CallOption) (*RemoveRouterInterfacesResponse, error) {
+	out := new(RemoveRouterInterfacesResponse)
+	err := c.cc.Invoke(ctx, "/lemming.dataplane.sai.RouterInterface/RemoveRouterInterfaces", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RouterInterfaceServer is the server API for RouterInterface service.
 type RouterInterfaceServer interface {
 	CreateRouterInterface(context.Context, *CreateRouterInterfaceRequest) (*CreateRouterInterfaceResponse, error)
@@ -1481,6 +1794,8 @@ type RouterInterfaceServer interface {
 	SetRouterInterfaceAttribute(context.Context, *SetRouterInterfaceAttributeRequest) (*SetRouterInterfaceAttributeResponse, error)
 	GetRouterInterfaceAttribute(context.Context, *GetRouterInterfaceAttributeRequest) (*GetRouterInterfaceAttributeResponse, error)
 	GetRouterInterfaceStats(context.Context, *GetRouterInterfaceStatsRequest) (*GetRouterInterfaceStatsResponse, error)
+	CreateRouterInterfaces(context.Context, *CreateRouterInterfacesRequest) (*CreateRouterInterfacesResponse, error)
+	RemoveRouterInterfaces(context.Context, *RemoveRouterInterfacesRequest) (*RemoveRouterInterfacesResponse, error)
 }
 
 // UnimplementedRouterInterfaceServer can be embedded to have forward compatible implementations.
@@ -1501,6 +1816,12 @@ func (*UnimplementedRouterInterfaceServer) GetRouterInterfaceAttribute(context.C
 }
 func (*UnimplementedRouterInterfaceServer) GetRouterInterfaceStats(context.Context, *GetRouterInterfaceStatsRequest) (*GetRouterInterfaceStatsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRouterInterfaceStats not implemented")
+}
+func (*UnimplementedRouterInterfaceServer) CreateRouterInterfaces(context.Context, *CreateRouterInterfacesRequest) (*CreateRouterInterfacesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateRouterInterfaces not implemented")
+}
+func (*UnimplementedRouterInterfaceServer) RemoveRouterInterfaces(context.Context, *RemoveRouterInterfacesRequest) (*RemoveRouterInterfacesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RemoveRouterInterfaces not implemented")
 }
 
 func RegisterRouterInterfaceServer(s *grpc.Server, srv RouterInterfaceServer) {
@@ -1597,6 +1918,42 @@ func _RouterInterface_GetRouterInterfaceStats_Handler(srv interface{}, ctx conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RouterInterface_CreateRouterInterfaces_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateRouterInterfacesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RouterInterfaceServer).CreateRouterInterfaces(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/lemming.dataplane.sai.RouterInterface/CreateRouterInterfaces",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RouterInterfaceServer).CreateRouterInterfaces(ctx, req.(*CreateRouterInterfacesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RouterInterface_RemoveRouterInterfaces_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RemoveRouterInterfacesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RouterInterfaceServer).RemoveRouterInterfaces(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/lemming.dataplane.sai.RouterInterface/RemoveRouterInterfaces",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RouterInterfaceServer).RemoveRouterInterfaces(ctx, req.(*RemoveRouterInterfacesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _RouterInterface_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "lemming.dataplane.sai.RouterInterface",
 	HandlerType: (*RouterInterfaceServer)(nil),
@@ -1620,6 +1977,14 @@ var _RouterInterface_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetRouterInterfaceStats",
 			Handler:    _RouterInterface_GetRouterInterfaceStats_Handler,
+		},
+		{
+			MethodName: "CreateRouterInterfaces",
+			Handler:    _RouterInterface_CreateRouterInterfaces_Handler,
+		},
+		{
+			MethodName: "RemoveRouterInterfaces",
+			Handler:    _RouterInterface_RemoveRouterInterfaces_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
