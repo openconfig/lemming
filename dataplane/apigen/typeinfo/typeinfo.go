@@ -643,7 +643,7 @@ func genProtoReqResp(docInfo *docparser.SAIInfo, apiName string, meta *saiast.Fu
 			req.Fields = append(req.Fields, protoTmplField{
 				Index:     requestIdx,
 				ProtoType: "uint64",
-				Name:      "switch",
+				Name:      "switch_oid",
 			})
 			requestIdx++
 		} else if meta.Entry != "" {
