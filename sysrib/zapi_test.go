@@ -741,7 +741,7 @@ func testRouteRedistribution(t *testing.T, routeReadyBeforeDial bool) {
 			}
 
 			// TODO: see if large timeout helps flakiness
-			conn.SetReadDeadline(time.Now().Add(120 * time.Second))
+			conn.SetReadDeadline(time.Now().Add(10 * time.Second))
 			m, err := zebra.ReceiveSingleMsg(topicLogger, conn, version, software, "test-client")
 			if tt.inExpectTimeout {
 				if err == nil {
