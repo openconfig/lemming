@@ -536,6 +536,10 @@ func (port *port) GetPortStats(ctx context.Context, req *saipb.GetPortStatsReque
 			resp.Values = append(resp.Values, counterMap[fwdpb.CounterId_COUNTER_ID_TX_UCAST_PACKETS])
 		case saipb.PortStat_PORT_STAT_IF_OUT_NON_UCAST_PKTS:
 			resp.Values = append(resp.Values, counterMap[fwdpb.CounterId_COUNTER_ID_TX_NON_UCAST_PACKETS])
+		case saipb.PortStat_PORT_STAT_IF_OUT_MULTICAST_PKTS:
+			resp.Values = append(resp.Values, counterMap[fwdpb.CounterId_COUNTER_ID_TX_MULTICAST_PACKETS])
+		case saipb.PortStat_PORT_STAT_IF_OUT_BROADCAST_PKTS:
+			resp.Values = append(resp.Values, counterMap[fwdpb.CounterId_COUNTER_ID_TX_BROADCAST_PACKETS])
 		case saipb.PortStat_PORT_STAT_IF_OUT_ERRORS:
 			resp.Values = append(resp.Values, counterMap[fwdpb.CounterId_COUNTER_ID_TX_ERROR_PACKETS])
 		case saipb.PortStat_PORT_STAT_IF_IN_OCTETS:
