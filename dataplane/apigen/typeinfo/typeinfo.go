@@ -82,7 +82,7 @@ type APITemplate struct {
 	CCOutDir       string
 }
 
-func Data(doc *docparser.SAIInfo, sai *saiast.SAIAPI, protoPackage, protoGoPackage, ccOutDir, protoOutDir string) (*TemplateData, error) {
+func Data(doc *docparser.SAIInfo, sai *saiast.SAIAPI, protoPackage, protoGoPackage, ccOutDir, protoOutDir string, server bool) (*TemplateData, error) {
 	data := &TemplateData{
 		APIs: map[string]*APITemplate{},
 	}
@@ -123,7 +123,7 @@ func Data(doc *docparser.SAIInfo, sai *saiast.SAIAPI, protoPackage, protoGoPacka
 				data.APIs[apiName].Types = append(data.APIs[apiName].Types, protoReqType, protoRespType)
 			}
 
-			populateCCInfo(meta, apiName, sai, doc, fn, gFunc)
+			populateCCInfo(meta, apiName, sai, doc, fn, gFunc, server)
 
 			if gFunc.Operation == getAttrOp {
 				enum := genProtoEnum(doc, apiName, meta)
@@ -135,7 +135,7 @@ func Data(doc *docparser.SAIInfo, sai *saiast.SAIAPI, protoPackage, protoGoPacka
 				data.APIs[apiName].Types = append(data.APIs[apiName].Types, msgs...)
 			}
 			if gFunc.Operation == createOp {
-				convertFn := genConvertFunc(gFunc, meta, doc, sai, fn)
+				convertFn := genConvertFunc(gFunc, meta, doc, sai, fn, server)
 				data.APIs[apiName].ConvertFuncs = append(data.APIs[apiName].ConvertFuncs, convertFn)
 			}
 			data.APIs[apiName].Funcs = append(data.APIs[apiName].Funcs, gFunc)
@@ -144,7 +144,7 @@ func Data(doc *docparser.SAIInfo, sai *saiast.SAIAPI, protoPackage, protoGoPacka
 	return data, nil
 }
 
-func genConvertFunc(genFunc *GenFunc, meta *saiast.FuncMetadata, info *docparser.SAIInfo, sai *saiast.SAIAPI, fn *saiast.TypeDecl) *GenFunc {
+func genConvertFunc(genFunc *GenFunc, meta *saiast.FuncMetadata, info *docparser.SAIInfo, sai *saiast.SAIAPI, fn *saiast.TypeDecl, server bool) *GenFunc {
 	convertFn := &GenFunc{
 		Name:              "convert_" + meta.Name,
 		Operation:         genFunc.Operation,
@@ -209,7 +209,7 @@ func getParamDefs(params []saiast.TypeDecl) ([]string, []string) {
 // populateCCInfo returns a two structs with the template data for the given function.
 // The first is the implementation of the API: CreateFoo.
 // The second is the a conversion func from attribute list to the proto message. covert_create_foo.
-func populateCCInfo(meta *saiast.FuncMetadata, apiName string, sai *saiast.SAIAPI, info *docparser.SAIInfo, fn *saiast.TypeDecl, genFunc *GenFunc) {
+func populateCCInfo(meta *saiast.FuncMetadata, apiName string, sai *saiast.SAIAPI, info *docparser.SAIInfo, fn *saiast.TypeDecl, genFunc *GenFunc, server bool) {
 	if info.Attrs[meta.TypeName] == nil {
 		fmt.Printf("no doc info for type: %v\n", meta.TypeName)
 		return
