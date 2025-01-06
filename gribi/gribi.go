@@ -62,8 +62,9 @@ func New(s *grpc.Server, gClient gpb.GNMIClient, target string, root *oc.Root, s
 	}
 
 	srv := &Server{
-		Server: gs,
-		s:      s,
+		UnimplementedGRIBIServer: &gribipb.UnimplementedGRIBIServer{},
+		Server:                   gs,
+		s:                        s,
 	}
 	gribipb.RegisterGRIBIServer(s, srv)
 
