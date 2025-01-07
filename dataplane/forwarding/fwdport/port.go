@@ -67,6 +67,8 @@ var CounterList = []fwdpb.CounterId{
 	fwdpb.CounterId_COUNTER_ID_TX_NON_UCAST_PACKETS,
 	fwdpb.CounterId_COUNTER_ID_RX_UCAST_PACKETS,
 	fwdpb.CounterId_COUNTER_ID_RX_NON_UCAST_PACKETS,
+	fwdpb.CounterId_COUNTER_ID_TX_BROADCAST_PACKETS,
+	fwdpb.CounterId_COUNTER_ID_TX_MULTICAST_PACKETS,
 }
 
 // A Port is an entry or exit point within the forwarding plane. Each port
@@ -231,7 +233,7 @@ func SetOutputPort(packet fwdpacket.Packet, port Port) {
 // Increment increments a packet and octet counters on the port.
 func Increment(port Port, octets int, packetID, octetID fwdpb.CounterId) {
 	port.Increment(packetID, 1)
-	port.Increment(octetID, uint32(octets))
+	port.Increment(octetID, uint32(octets)+4) // Add 4 bytes per packet to account for FCS
 }
 
 // Input processes an incoming packet. The specified port actions are applied
@@ -299,15 +301,22 @@ func Output(port Port, packet fwdpacket.Packet, dir fwdpb.PortAction, _ *fwdcont
 	}()
 	Increment(port, packet.Length(), fwdpb.CounterId_COUNTER_ID_TX_PACKETS, fwdpb.CounterId_COUNTER_ID_TX_OCTETS)
 	SetOutputPort(packet, port)
-	mac, err := packet.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC, 0))
+	mac, err := packet.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST, 0))
 	if err != nil {
 		Increment(port, packet.Length(), fwdpb.CounterId_COUNTER_ID_TX_ERROR_PACKETS, fwdpb.CounterId_COUNTER_ID_TX_ERROR_OCTETS)
 		return err
 	}
-	if mac[0]%2 == 0 { // Unicast address is when is least significant bit of the 1st octet is 0.
+	if mac[0]%2 == 0 { // Unicast address is when least significant bit of the 1st octet is 0.
 		port.Increment(fwdpb.CounterId_COUNTER_ID_TX_UCAST_PACKETS, 1)
 	} else {
 		port.Increment(fwdpb.CounterId_COUNTER_ID_TX_NON_UCAST_PACKETS, 1)
+
+		isBroadcastMac := (mac[0] == 0xFF && mac[1] == 0xFF && mac[2] == 0xFF && mac[3] == 0xFF && mac[4] == 0xFF && mac[5] == 0xFF)
+		if isBroadcastMac { // Broadcast address is when all bits are set to 1.
+			port.Increment(fwdpb.CounterId_COUNTER_ID_TX_BROADCAST_PACKETS, 1)
+		} else { // Multicast address is when least significant bit of the 1st octet is 1.
+			port.Increment(fwdpb.CounterId_COUNTER_ID_TX_MULTICAST_PACKETS, 1)
+		}
 	}
 
 	packet.Log().V(3).Info("output packet", "frame", fwdpacket.IncludeFrameInLog)

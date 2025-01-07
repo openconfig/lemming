@@ -16,6 +16,13 @@
 
 set -xe
 
+# shellcheck disable=SC2317
+function dumpinfo {
+    if [ -d "/tmp/cluster-log" ]; then
+        gsutil cp -r -Z /tmp/cluster-log "gs://lemming-test-logs/$BUILD"
+    fi
+}
+
 cat << EOF > ~/.bazelrc
 build --remote_cache https://storage.googleapis.com/lemming-bazel-cache
 build --google_default_credentials
@@ -32,4 +39,12 @@ cd /tmp/workspace
 kne deploy ~/kne-internal/deploy/kne/kind-bridge.yaml
 
 make load
+
+set +e
+rc=0
+trap dumpinfo EXIT
+trap 'rc=$?' ERR
+
 make itest
+
+exit "${rc}"

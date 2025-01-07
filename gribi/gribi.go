@@ -158,11 +158,16 @@ func createGRIBIServer(gClient gpb.GNMIClient, target string, root *oc.Root, sys
 		log.Infof("Sent route %v with response %v", routeReq, resp)
 	}
 
-	return server.New(append([]server.ServerOpt{
+	s, err := server.New(append([]server.ServerOpt{
 		server.WithPostChangeRIBHook(ribHookfn),
 		server.WithRIBResolvedEntryHook(ribAddfn),
 		server.WithVRFs(networkInstances),
 	}, opts...)...)
+	if err != nil {
+		return nil, err
+	}
+	s.UnimplementedGRIBIServer = &gribipb.UnimplementedGRIBIServer{}
+	return s, nil
 }
 
 // createSetRouteRequest converts a Route to a sysrib SetRouteRequest
