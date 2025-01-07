@@ -107,6 +107,10 @@ func (p GenetlinkPort) Delete() error {
 	return nil
 }
 
+func (t GenetlinkPort) SetAdminState(up bool) error {
+	return nil
+}
+
 func init() {
 	pktiohandler.Register(pktiopb.PortType_PORT_TYPE_GENETLINK, New)
 }

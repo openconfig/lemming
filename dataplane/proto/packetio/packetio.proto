@@ -38,15 +38,24 @@ message GenetlinkPort {
     string group = 2;
 }
 
+enum PortOperation {
+  PORT_OPERATION_UNSPECIFIED = 0;
+  PORT_OPERATION_CREATE = 1;
+  PORT_OPERATION_DELETE = 2;
+  PORT_OPERATION_SET_UP = 3;
+  PORT_OPERATION_SET_DOWN = 4;
+}
+
 message HostPortControlMessage {
   uint64 port_id = 1;
   uint64 dataplane_port = 2; // ID of the dataplane port related to this one.
   // Set to true if an hostif should be created, false for delete.
-  bool create = 3;
+  bool create = 3 [deprecated=true];
   oneof port {
     NetdevPort netdev = 4;
     GenetlinkPort genetlink = 5;
   }
+  PortOperation op = 6;
 }
 
 message Packet {
