@@ -68,6 +68,7 @@ type PortIO interface {
 	Delete() error
 	Write([]byte, *kernel.PacketMetadata) (int, error)
 	Read([]byte) (int, error)
+	SetAdminState(bool) error
 }
 
 // StreamPackets sends and receives packets from a lucius CPU port.
@@ -153,13 +154,15 @@ func (m *PacketIOMgr) ManagePorts(c pktiopb.PacketIO_HostPortControlClient) erro
 	if err := c.Send(&pktiopb.HostPortControlRequest{Msg: &pktiopb.HostPortControlRequest_Init{}}); err != nil {
 		return err
 	}
+
 	for {
 		resp, err := c.Recv()
 		if err != nil {
 			return err
 		}
 		log.Infof("received port control message: %+v", resp)
-		if resp.Create {
+		switch {
+		case (resp.Op == pktiopb.PortOperation_PORT_OPERATION_UNSPECIFIED && resp.Create) || resp.Op == pktiopb.PortOperation_PORT_OPERATION_CREATE:
 			st := &status.Status{
 				Code: int32(codes.OK),
 			}
@@ -178,7 +181,7 @@ func (m *PacketIOMgr) ManagePorts(c pktiopb.PacketIO_HostPortControlClient) erro
 			if err := m.writePorts(); err != nil {
 				log.Warningf("failed to write file: %v", err)
 			}
-		} else {
+		case resp.Op == pktiopb.PortOperation_PORT_OPERATION_UNSPECIFIED || resp.Op == pktiopb.PortOperation_PORT_OPERATION_DELETE:
 			p, ok := m.hostifs[resp.GetPortId()]
 			if !ok {
 				sendErr := c.Send(&pktiopb.HostPortControlRequest{Msg: &pktiopb.HostPortControlRequest_Status{
@@ -192,9 +195,7 @@ func (m *PacketIOMgr) ManagePorts(c pktiopb.PacketIO_HostPortControlClient) erro
 				}
 				continue
 			}
-
 			m.hostifs[resp.GetPortId()].cancelFn()
-
 			if err := p.Delete(); err != nil {
 				sendErr := c.Send(&pktiopb.HostPortControlRequest{Msg: &pktiopb.HostPortControlRequest_Status{
 					Status: &status.Status{
@@ -206,7 +207,6 @@ func (m *PacketIOMgr) ManagePorts(c pktiopb.PacketIO_HostPortControlClient) erro
 					return sendErr
 				}
 			}
-
 			delete(m.hostifs, resp.GetPortId())
 			sendErr := c.Send(&pktiopb.HostPortControlRequest{Msg: &pktiopb.HostPortControlRequest_Status{
 				Status: &status.Status{
@@ -218,6 +218,36 @@ func (m *PacketIOMgr) ManagePorts(c pktiopb.PacketIO_HostPortControlClient) erro
 			}
 			if err := m.writePorts(); err != nil {
 				log.Warningf("failed to write file: %v", err)
+			}
+		case resp.Op == pktiopb.PortOperation_PORT_OPERATION_SET_UP || resp.Op == pktiopb.PortOperation_PORT_OPERATION_SET_DOWN:
+			p, ok := m.hostifs[resp.GetPortId()]
+			if !ok {
+				sendErr := c.Send(&pktiopb.HostPortControlRequest{Msg: &pktiopb.HostPortControlRequest_Status{
+					Status: &status.Status{
+						Code:    int32(codes.FailedPrecondition),
+						Message: fmt.Sprintf("port %v doesn't exist", resp.GetPortId()),
+					},
+				}})
+				if sendErr != nil {
+					return sendErr
+				}
+				continue
+			}
+			st := &status.Status{
+				Code: int32(codes.OK),
+			}
+			state := resp.Op == pktiopb.PortOperation_PORT_OPERATION_SET_UP
+			if p.SetAdminState(state); err != nil {
+				st = &status.Status{
+					Code:    int32(codes.Internal),
+					Message: err.Error(),
+				}
+			}
+			sendErr := c.Send(&pktiopb.HostPortControlRequest{Msg: &pktiopb.HostPortControlRequest_Status{
+				Status: st,
+			}})
+			if sendErr != nil {
+				return sendErr
 			}
 		}
 	}

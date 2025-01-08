@@ -69,6 +69,17 @@ func (t *TapInterface) IfIndex() int {
 	return t.ifIndex
 }
 
+func (t *TapInterface) SetAdminState(up bool) error {
+	l, err := netlink.LinkByName(t.name)
+	if err != nil {
+		return err
+	}
+	if up {
+		return netlink.LinkSetUp(l)
+	}
+	return netlink.LinkSetDown(l)
+}
+
 func init() {
 	pktiohandler.Register(pktiopb.PortType_PORT_TYPE_NETDEV, New)
 }
