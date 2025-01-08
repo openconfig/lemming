@@ -124,6 +124,37 @@ func TestManagePorts(t *testing.T) {
 			PortId:        1,
 			DataplanePort: 2,
 			Create:        true,
+			Op:            pktiopb.PortOperation_PORT_OPERATION_CREATE,
+		}},
+		want: codes.OK,
+	}, {
+		desc: "delete not existing",
+		msgs: []*pktiopb.HostPortControlMessage{{
+			PortId: 1,
+			Create: false,
+			Op:     pktiopb.PortOperation_PORT_OPERATION_DELETE,
+		}},
+		want: codes.FailedPrecondition,
+	}, {
+		desc: "delete",
+		msgs: []*pktiopb.HostPortControlMessage{{
+			PortId: 2,
+			Create: false,
+			Op:     pktiopb.PortOperation_PORT_OPERATION_DELETE,
+		}},
+		want: codes.OK,
+	}, {
+		desc: "set state not existing",
+		msgs: []*pktiopb.HostPortControlMessage{{
+			PortId: 1,
+			Op:     pktiopb.PortOperation_PORT_OPERATION_SET_DOWN,
+		}},
+		want: codes.FailedPrecondition,
+	}, {
+		desc: "set state",
+		msgs: []*pktiopb.HostPortControlMessage{{
+			PortId: 2,
+			Op:     pktiopb.PortOperation_PORT_OPERATION_SET_DOWN,
 		}},
 		want: codes.OK,
 	}}
@@ -132,6 +163,10 @@ func TestManagePorts(t *testing.T) {
 			mgr, err := New("")
 			if err != nil {
 				t.Fatalf("unexpected error on New(): %v", err)
+			}
+			mgr.hostifs[2] = &port{
+				PortIO:   &fakePort{},
+				cancelFn: func() {},
 			}
 			builder[pktiopb.PortType_PORT_TYPE_NETDEV] = func(hpcm *pktiopb.HostPortControlMessage) (PortIO, error) {
 				return &fakePort{}, nil
@@ -160,6 +195,14 @@ type portWriteData struct {
 type fakePort struct {
 	PortIO
 	writtenData []*portWriteData
+}
+
+func (p *fakePort) Delete() error {
+	return nil
+}
+
+func (p *fakePort) SetAdminState(bool) error {
+	return nil
 }
 
 func (p *fakePort) Read([]byte) (int, error) {
