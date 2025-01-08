@@ -9,7 +9,7 @@ require (
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace v1.24.1
 	github.com/fatih/color v1.15.0
 	github.com/go-logr/logr v1.4.2
-	github.com/golang/glog v1.2.1
+	github.com/golang/glog v1.2.2
 	github.com/google/go-cmp v0.6.0
 	github.com/google/gopacket v1.1.19
 	github.com/google/uuid v1.6.0
@@ -22,14 +22,14 @@ require (
 	github.com/openconfig/gnoigo v0.0.0-20240320202954-ebd033e3542c
 	github.com/openconfig/gnsi v1.6.0
 	github.com/openconfig/goyang v1.4.5
-	github.com/openconfig/gribi v1.0.0
-	github.com/openconfig/gribigo v0.0.0-20240712014900-6e0dad60c17a
+	github.com/openconfig/gribi v1.8.1
+	github.com/openconfig/gribigo v0.0.0-20250107192927-4f307a2fa0f7
 	github.com/openconfig/kne v0.1.18
 	github.com/openconfig/magna v0.0.0-20240326180454-518e16696c84
 	github.com/openconfig/ondatra v0.5.8
 	github.com/openconfig/testt v0.0.0-20220311054427-efbb1a32ec07
 	github.com/openconfig/ygnmi v0.11.1
-	github.com/openconfig/ygot v0.29.19
+	github.com/openconfig/ygot v0.29.20
 	github.com/osrg/gobgp/v3 v3.27.1-0.20240614010451-0148e2d22dcf
 	github.com/p4lang/p4runtime v1.4.0-rc.5.0.20220728214547-13f0d02a521e
 	github.com/sirupsen/logrus v1.9.3
@@ -50,9 +50,9 @@ require (
 	go.uber.org/mock v0.2.0
 	golang.org/x/sys v0.29.0
 	google.golang.org/api v0.188.0
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240709173604-40e1e62336c5
-	google.golang.org/grpc v1.64.1
-	google.golang.org/protobuf v1.34.2
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20241209162323-e6fa225c2576
+	google.golang.org/grpc v1.68.1
+	google.golang.org/protobuf v1.35.2
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/apimachinery v0.29.3
 	k8s.io/client-go v0.29.3
@@ -154,13 +154,13 @@ require (
 	golang.org/x/crypto v0.32.0 // indirect
 	golang.org/x/exp v0.0.0-20240604190554-fc45aab8b7f8 // indirect
 	golang.org/x/net v0.34.0 // indirect
-	golang.org/x/oauth2 v0.21.0 // indirect
+	golang.org/x/oauth2 v0.23.0 // indirect
 	golang.org/x/sync v0.10.0 // indirect
 	golang.org/x/term v0.28.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	google.golang.org/genproto v0.0.0-20240708141625-4ad9e859172b // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20240709173604-40e1e62336c5 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20240903143218-8af14fe29dc1 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
