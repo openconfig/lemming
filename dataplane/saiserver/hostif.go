@@ -89,6 +89,18 @@ func (hostif *hostif) CreateHostif(ctx context.Context, req *saipb.CreateHostifR
 		Create:        true,
 		DataplanePort: req.GetObjId(),
 		PortId:        id,
+		Op:            pktiopb.PortOperation_PORT_OPERATION_CREATE,
+	}
+
+	operStatus := pktiopb.PortOperation_PORT_OPERATION_SET_DOWN
+
+	if req.GetOperStatus() {
+		operStatus = pktiopb.PortOperation_PORT_OPERATION_SET_UP
+	}
+
+	operReq := &pktiopb.HostPortControlMessage{
+		PortId: id,
+		Op:     operStatus,
 	}
 
 	switch req.GetType() {
@@ -155,6 +167,9 @@ func (hostif *hostif) CreateHostif(ctx context.Context, req *saipb.CreateHostifR
 		return nil, status.Error(codes.FailedPrecondition, "remote port control not configured")
 	}
 	if err := hostif.remotePortReq(ctlReq); err != nil {
+		return nil, err
+	}
+	if err := hostif.remotePortReq(operReq); err != nil {
 		return nil, err
 	}
 

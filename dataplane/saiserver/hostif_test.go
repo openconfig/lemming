@@ -98,7 +98,7 @@ func TestCreateHostif(t *testing.T) {
 
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
-			msgCh := make(chan *pktiopb.HostPortControlMessage, 1)
+			msgCh := make(chan *pktiopb.HostPortControlMessage, 2)
 			pc, err := c.HostPortControl(ctx)
 			if err != nil {
 				t.Fatal(err)
@@ -107,7 +107,7 @@ func TestCreateHostif(t *testing.T) {
 				t.Fatal(err)
 			}
 			time.Sleep(time.Millisecond)
-			go func() {
+			processRequest := func() {
 				msg, _ := pc.Recv()
 				msgCh <- msg
 				pc.Send(&pktiopb.HostPortControlRequest{
@@ -118,7 +118,10 @@ func TestCreateHostif(t *testing.T) {
 						},
 					},
 				})
-			}()
+			}
+
+			go processRequest()
+			go processRequest()
 
 			defer stopFn()
 			got, gotErr := c.CreateHostif(context.TODO(), tt.req)
@@ -131,7 +134,10 @@ func TestCreateHostif(t *testing.T) {
 			if d := cmp.Diff(got, tt.want, protocmp.Transform()); d != "" {
 				t.Errorf("CreateHostif() failed: diff(-got,+want)\n:%s", d)
 			}
+
 			_ = <-msgCh
+			_ = <-msgCh
+
 			attr := &saipb.HostifAttribute{}
 			if err := mgr.PopulateAllAttributes("3", attr); err != nil {
 				t.Fatal(err)
