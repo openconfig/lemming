@@ -91,6 +91,16 @@ func (hostif *hostif) CreateHostif(ctx context.Context, req *saipb.CreateHostifR
 		PortId:        id,
 	}
 
+	oper_status := pktiopb.PortOperation_PORT_OPERATION_SET_DOWN
+	if req.oper_status {
+		oper_status = pktiopb.PortOperation_PORT_OPERATION_SET_UP
+	}
+
+	operReq := &pktiopb.HostPortControlMessage{
+		PortId: id,
+		Op:     oper_status,
+	}
+
 	switch req.GetType() {
 	case saipb.HostifType_HOSTIF_TYPE_GENETLINK:
 		name := string(req.GetName()) // The name can be genl_packet_q0, but the netlink family is gen_packet.
@@ -155,6 +165,9 @@ func (hostif *hostif) CreateHostif(ctx context.Context, req *saipb.CreateHostifR
 		return nil, status.Error(codes.FailedPrecondition, "remote port control not configured")
 	}
 	if err := hostif.remotePortReq(ctlReq); err != nil {
+		return nil, err
+	}
+	if err := hostif.remotePortReq(operReq); err != nil {
 		return nil, err
 	}
 
