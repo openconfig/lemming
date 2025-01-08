@@ -92,7 +92,8 @@ func (hostif *hostif) CreateHostif(ctx context.Context, req *saipb.CreateHostifR
 	}
 
 	oper_status := pktiopb.PortOperation_PORT_OPERATION_SET_DOWN
-	if req.oper_status {
+
+	if req.GetOperStatus() {
 		oper_status = pktiopb.PortOperation_PORT_OPERATION_SET_UP
 	}
 
