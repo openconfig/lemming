@@ -24,7 +24,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/proto"
 
 	"github.com/openconfig/lemming/dataplane/dplaneopts"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
@@ -89,6 +88,18 @@ func (hostif *hostif) CreateHostif(ctx context.Context, req *saipb.CreateHostifR
 		Create:        true,
 		DataplanePort: req.GetObjId(),
 		PortId:        id,
+		Op:            pktiopb.PortOperation_PORT_OPERATION_CREATE,
+	}
+
+	operStatus := pktiopb.PortOperation_PORT_OPERATION_SET_DOWN
+
+	if req.GetOperStatus() {
+		operStatus = pktiopb.PortOperation_PORT_OPERATION_SET_UP
+	}
+
+	operReq := &pktiopb.HostPortControlMessage{
+		PortId: id,
+		Op:     operStatus,
 	}
 
 	switch req.GetType() {
@@ -157,11 +168,12 @@ func (hostif *hostif) CreateHostif(ctx context.Context, req *saipb.CreateHostifR
 	if err := hostif.remotePortReq(ctlReq); err != nil {
 		return nil, err
 	}
-
-	attr := &saipb.HostifAttribute{
-		OperStatus: proto.Bool(true),
+	slog.Info("hostif created", "oid", id)
+	if err := hostif.remotePortReq(operReq); err != nil {
+		return nil, err
 	}
-	hostif.mgr.StoreAttributes(id, attr)
+
+	slog.Info("hostif status set", "oid", id, "op", operStatus)
 	hostif.remoteHostifs[id] = ctlReq
 
 	return &saipb.CreateHostifResponse{Oid: id}, nil
@@ -211,6 +223,19 @@ func (hostif *hostif) RemoveHostif(ctx context.Context, req *saipb.RemoveHostifR
 
 // SetHostifAttribute sets the attributes in the request.
 func (hostif *hostif) SetHostifAttribute(ctx context.Context, req *saipb.SetHostifAttributeRequest) (*saipb.SetHostifAttributeResponse, error) {
+	if req.OperStatus != nil {
+		op := pktiopb.PortOperation_PORT_OPERATION_SET_DOWN
+
+		if req.GetOperStatus() {
+			op = pktiopb.PortOperation_PORT_OPERATION_SET_UP
+		}
+		if err := hostif.remotePortReq(&pktiopb.HostPortControlMessage{
+			PortId: req.GetOid(),
+			Op:     op,
+		}); err != nil {
+			return nil, err
+		}
+	}
 	return nil, nil
 }
 
