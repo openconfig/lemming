@@ -59,9 +59,8 @@ func TestCreateHostif(t *testing.T) {
 			Oid: 3,
 		},
 		wantAttr: &saipb.HostifAttribute{
-			Type:       saipb.HostifType_HOSTIF_TYPE_NETDEV.Enum(),
-			ObjId:      proto.Uint64(2),
-			OperStatus: proto.Bool(true),
+			Type:  saipb.HostifType_HOSTIF_TYPE_NETDEV.Enum(),
+			ObjId: proto.Uint64(2),
 		},
 	}, {
 		desc: "success cpu port",
@@ -73,9 +72,8 @@ func TestCreateHostif(t *testing.T) {
 			Oid: 3,
 		},
 		wantAttr: &saipb.HostifAttribute{
-			Type:       saipb.HostifType_HOSTIF_TYPE_NETDEV.Enum(),
-			ObjId:      proto.Uint64(10),
-			OperStatus: proto.Bool(true),
+			Type:  saipb.HostifType_HOSTIF_TYPE_NETDEV.Enum(),
+			ObjId: proto.Uint64(10),
 		},
 	}}
 	for _, tt := range tests {
