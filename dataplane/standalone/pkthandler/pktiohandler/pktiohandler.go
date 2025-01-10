@@ -161,8 +161,8 @@ func (m *PacketIOMgr) ManagePorts(c pktiopb.PacketIO_HostPortControlClient) erro
 			return err
 		}
 		log.Infof("received port control message: %+v", resp)
-		switch {
-		case (resp.Op == pktiopb.PortOperation_PORT_OPERATION_UNSPECIFIED && resp.Create) || resp.Op == pktiopb.PortOperation_PORT_OPERATION_CREATE:
+		switch resp.Op {
+		case pktiopb.PortOperation_PORT_OPERATION_CREATE:
 			st := &status.Status{
 				Code: int32(codes.OK),
 			}
@@ -181,7 +181,7 @@ func (m *PacketIOMgr) ManagePorts(c pktiopb.PacketIO_HostPortControlClient) erro
 			if err := m.writePorts(); err != nil {
 				log.Warningf("failed to write file: %v", err)
 			}
-		case resp.Op == pktiopb.PortOperation_PORT_OPERATION_UNSPECIFIED || resp.Op == pktiopb.PortOperation_PORT_OPERATION_DELETE:
+		case pktiopb.PortOperation_PORT_OPERATION_DELETE:
 			p, ok := m.hostifs[resp.GetPortId()]
 			if !ok {
 				sendErr := c.Send(&pktiopb.HostPortControlRequest{Msg: &pktiopb.HostPortControlRequest_Status{
@@ -219,7 +219,7 @@ func (m *PacketIOMgr) ManagePorts(c pktiopb.PacketIO_HostPortControlClient) erro
 			if err := m.writePorts(); err != nil {
 				log.Warningf("failed to write file: %v", err)
 			}
-		case resp.Op == pktiopb.PortOperation_PORT_OPERATION_SET_UP || resp.Op == pktiopb.PortOperation_PORT_OPERATION_SET_DOWN:
+		case pktiopb.PortOperation_PORT_OPERATION_SET_UP, pktiopb.PortOperation_PORT_OPERATION_SET_DOWN:
 			p, ok := m.hostifs[resp.GetPortId()]
 			if !ok {
 				sendErr := c.Send(&pktiopb.HostPortControlRequest{Msg: &pktiopb.HostPortControlRequest_Status{

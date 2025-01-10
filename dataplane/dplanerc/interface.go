@@ -970,7 +970,7 @@ func (ni *Reconciler) setupPorts(ctx context.Context) error {
 			Type:       saipb.HostifType_HOSTIF_TYPE_NETDEV.Enum(),
 			ObjId:      &portResp.Oid,
 			Name:       []byte(hostifName),
-			OperStatus: proto.Bool(true),
+			OperStatus: proto.Bool(false),
 		})
 		if err != nil {
 			return fmt.Errorf("failed to create host interface %q: %w", hostifName, err)
