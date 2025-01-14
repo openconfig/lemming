@@ -12,6 +12,7 @@ go_library(
         "//dataplane/forwarding/fwdaction",
         "//dataplane/forwarding/fwdaction/actions",
         "//dataplane/forwarding/fwdport",
+        "//dataplane/forwarding/fwdport/ports",
         "//dataplane/forwarding/fwdtable",
         "//dataplane/forwarding/fwdtable/action",
         "//dataplane/forwarding/fwdtable/bridge",

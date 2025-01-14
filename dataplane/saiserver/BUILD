@@ -21,7 +21,6 @@ go_library(
         "//dataplane/dplaneopts",
         "//dataplane/forwarding",
         "//dataplane/forwarding/fwdconfig",
-        "//dataplane/forwarding/fwdport/ports",
         "//dataplane/forwarding/infra/fwdcontext",
         "//dataplane/proto/packetio",
         "//dataplane/proto/sai",
