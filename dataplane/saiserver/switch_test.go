@@ -222,6 +222,7 @@ type fakeSwitchDataplane struct {
 	gotFlowCounterCreateReqs []*fwdpb.FlowCounterCreateRequest
 	gotFlowCounterQueryReqs  []*fwdpb.FlowCounterQueryRequest
 	gotEntryRemoveReqs       []*fwdpb.TableEntryRemoveRequest
+	gotPackets               [][]byte
 	portIDToNID              map[string]uint64
 	counterRepliesIdx        int
 	flowQueryReplies         []*fwdpb.FlowCounterQueryReply
@@ -295,7 +296,8 @@ func (f *fakeSwitchDataplane) ObjectNID(context.Context, *fwdpb.ObjectNIDRequest
 	return nil, nil
 }
 
-func (f *fakeSwitchDataplane) InjectPacket(*fwdpb.ContextId, *fwdpb.PortId, fwdpb.PacketHeaderId, []byte, []*fwdpb.ActionDesc, bool, fwdpb.PortAction) error {
+func (f *fakeSwitchDataplane) InjectPacket(_ *fwdpb.ContextId, _ *fwdpb.PortId, _ fwdpb.PacketHeaderId, pkt []byte, _ []*fwdpb.ActionDesc, _ bool, _ fwdpb.PortAction) error {
+	f.gotPackets = append(f.gotPackets, pkt)
 	return nil
 }
 

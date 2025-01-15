@@ -39,6 +39,7 @@ import (
 	// essential, and there can be more to come, importing here is more
 	// beneficial.
 	_ "github.com/openconfig/lemming/dataplane/forwarding/fwdaction/actions"
+	_ "github.com/openconfig/lemming/dataplane/forwarding/fwdport/ports"
 	_ "github.com/openconfig/lemming/dataplane/forwarding/fwdtable/action"
 	_ "github.com/openconfig/lemming/dataplane/forwarding/fwdtable/bridge"
 	_ "github.com/openconfig/lemming/dataplane/forwarding/fwdtable/exact"

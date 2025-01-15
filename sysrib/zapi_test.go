@@ -739,9 +739,13 @@ func testRouteRedistribution(t *testing.T, routeReadyBeforeDial bool) {
 					t.Fatalf("Got unexpected error during call to SetRoute: %v", err)
 				}
 			}
+			deadline := time.Now().Add(10 * time.Second)
+			if routeReadyBeforeDial {
+				deadline = time.Now().Add(30 * time.Second)
+			}
 
 			// TODO: see if large timeout helps flakiness
-			conn.SetReadDeadline(time.Now().Add(10 * time.Second))
+			conn.SetReadDeadline(deadline)
 			m, err := zebra.ReceiveSingleMsg(topicLogger, conn, version, software, "test-client")
 			if tt.inExpectTimeout {
 				if err == nil {

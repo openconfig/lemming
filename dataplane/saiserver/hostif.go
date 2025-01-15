@@ -27,7 +27,6 @@ import (
 
 	"github.com/openconfig/lemming/dataplane/dplaneopts"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
-	"github.com/openconfig/lemming/dataplane/forwarding/fwdport/ports"
 	"github.com/openconfig/lemming/dataplane/saiserver/attrmgr"
 
 	pktiopb "github.com/openconfig/lemming/dataplane/proto/packetio"
@@ -44,7 +43,6 @@ func newHostif(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Serve
 		remoteHostifs:    map[uint64]*pktiopb.HostPortControlMessage{},
 		opts:             opts,
 	}
-
 	saipb.RegisterHostifServer(s, hostif)
 	pktiopb.RegisterPacketIOServer(s, hostif)
 	return hostif
@@ -409,24 +407,25 @@ func (hostif *hostif) CPUPacketStream(srv pktiopb.PacketIO_CPUPacketStreamServer
 		return err
 	}
 
-	fwdCtx.RLock()
+	// This RPC may be called before the CPU port is ready. In such cases, it will drop the packets until it is.
 	cpuPortID := ""
-	for _, id := range fwdCtx.Objects.IDs() {
-		obj, err := fwdCtx.Objects.FindID(&fwdpb.ObjectId{Id: string(id)})
-		if err != nil {
-			fwdCtx.RUnlock()
-			return err
+	updateCPUPortID := func() {
+		if cpuPortID != "" {
+			return
 		}
-		if _, ok := obj.(*ports.CPUPort); ok {
-			cpuPortID = string(obj.ID())
+		attrReq := &saipb.GetSwitchAttributeRequest{
+			Oid:      switchID,
+			AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_CPU_PORT},
 		}
-	}
-	fwdCtx.RUnlock()
-	if cpuPortID == "" {
-		return fmt.Errorf("couldn't find cpu port")
+		resp := &saipb.GetSwitchAttributeResponse{}
+		if err := hostif.mgr.PopulateAttributes(attrReq, resp); err != nil {
+			slog.WarnContext(srv.Context(), "failed to failed cpu port", "error", err)
+			return
+		}
+		cpuPortID = fmt.Sprint(resp.GetAttr().GetCpuPort())
 	}
 
-	packetCh := make(chan *pktiopb.PacketIn)
+	packetCh := make(chan *pktiopb.PacketIn, 1000)
 	ctx, cancel := context.WithCancel(srv.Context())
 
 	// Since Recv() is blocking and we want this func to return immediately on cancel.
@@ -454,6 +453,10 @@ func (hostif *hostif) CPUPacketStream(srv pktiopb.PacketIO_CPUPacketStreamServer
 		case <-ctx.Done():
 			return nil
 		case pkt := <-packetCh:
+			updateCPUPortID()
+			if cpuPortID == "" {
+				continue
+			}
 			slog.Debug("received packet", "packet", pkt.GetPacket().GetFrame())
 
 			acts := []*fwdpb.ActionDesc{fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_HOST_PORT_ID).

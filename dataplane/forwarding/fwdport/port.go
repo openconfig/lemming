@@ -259,7 +259,7 @@ func Input(port Port, packet fwdpacket.Packet, dir fwdpb.PortAction, ctx *fwdcon
 		port.Increment(fwdpb.CounterId_COUNTER_ID_RX_NON_UCAST_PACKETS, 1)
 	}
 
-	packet.Log().V(3).Info("input packet", "port", port.ID(), "frame", fwdpacket.IncludeFrameInLog)
+	packet.Log().V(1).Info("input packet", "port", port.ID(), "frame", fwdpacket.IncludeFrameInLog)
 	state, err := fwdaction.ProcessPacket(packet, port.Actions(dir), port)
 	if err != nil {
 		Increment(port, packet.Length(), fwdpb.CounterId_COUNTER_ID_RX_ERROR_PACKETS, fwdpb.CounterId_COUNTER_ID_RX_ERROR_OCTETS)

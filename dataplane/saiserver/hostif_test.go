@@ -16,22 +16,31 @@ package saiserver
 
 import (
 	"context"
+	"encoding/binary"
+	"net"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/gopacket"
+	"github.com/google/gopacket/layers"
 	"github.com/openconfig/gnmi/errdiff"
 	"google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/testing/protocmp"
 
 	"github.com/openconfig/lemming/dataplane/dplaneopts"
+	"github.com/openconfig/lemming/dataplane/forwarding/fwdport"
 	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdcontext"
+	"github.com/openconfig/lemming/dataplane/forwarding/infra/fwdpacket"
+	"github.com/openconfig/lemming/dataplane/saiserver/attrmgr"
+
 	pktiopb "github.com/openconfig/lemming/dataplane/proto/packetio"
 	saipb "github.com/openconfig/lemming/dataplane/proto/sai"
-	"github.com/openconfig/lemming/dataplane/saiserver/attrmgr"
+
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
@@ -211,6 +220,113 @@ func TestRemoveHostif(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestCPUPacketStream(t *testing.T) {
+	dplane := &fakeSwitchDataplane{
+		ctx: fwdcontext.New("test", "test"),
+	}
+	p, err := fwdport.New(&fwdpb.PortDesc{
+		PortType: fwdpb.PortType_PORT_TYPE_CPU_PORT,
+		PortId:   &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: "2"}},
+		Port:     &fwdpb.PortDesc_Cpu{},
+	}, dplane.ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	c, mgr, stopFn := newTestHostif(t, dplane)
+	mgr.StoreAttributes(1, &saipb.SwitchAttribute{
+		CpuPort: proto.Uint64(2),
+	})
+
+	defer stopFn()
+
+	s, err := c.PacketIOClient.CPUPacketStream(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Send(&pktiopb.PacketIn{}); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("send", func(t *testing.T) {
+		if err := s.Send(&pktiopb.PacketIn{
+			Msg: &pktiopb.PacketIn_Packet{
+				Packet: &pktiopb.Packet{
+					Frame: []byte("hello"),
+				},
+			},
+		}); err != nil {
+			t.Fatal(err)
+		}
+		time.Sleep(10 * time.Millisecond)
+		want := [][]byte{[]byte("hello")}
+		if d := cmp.Diff(dplane.gotPackets, want); d != "" {
+			t.Errorf("PacketStream() failed: diff(-got,+want)\n:%s", d)
+		}
+	})
+	t.Run("recv", func(t *testing.T) {
+		if _, err := p.Write(createPacket(t, uint64(p.NID()))); err != nil {
+			t.Fatal(err)
+		}
+		got, err := s.Recv()
+		if err != nil {
+			t.Fatal(err)
+		}
+		want := &pktiopb.PacketOut{
+			Packet: &pktiopb.Packet{
+				HostPort:  1,
+				InputPort: 2,
+			},
+		}
+		if d := cmp.Diff(got, want, protocmp.Transform(), protocmp.IgnoreFields(&pktiopb.Packet{}, protoreflect.Name("frame"))); d != "" {
+			t.Errorf("PacketStream() failed: diff(-got,+want)\n:%s", d)
+		}
+	})
+}
+
+func createPacket(t testing.TB, nid uint64) fwdpacket.Packet {
+	t.Helper()
+	eth := &layers.Ethernet{
+		SrcMAC:       parseMac(t, "00:00:00:00:00:01"),
+		DstMAC:       parseMac(t, "00:00:00:00:00:02"),
+		EthernetType: layers.EthernetTypeIPv6,
+	}
+	ip := &layers.IPv6{
+		Version:  6,
+		SrcIP:    net.ParseIP("2003::9"),
+		DstIP:    net.ParseIP("2003::10"),
+		HopLimit: 255,
+	}
+	payload := gopacket.Payload([]byte("hello world"))
+	buf := gopacket.NewSerializeBuffer()
+	if err := gopacket.SerializeLayers(buf, gopacket.SerializeOptions{FixLengths: true}, eth, ip, payload); err != nil {
+		t.Fatalf("failed to serialize headers: %v", err)
+	}
+
+	p, err := fwdpacket.New(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET, buf.Bytes())
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = p.Update(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_HOST_PORT_ID, 0), fwdpacket.OpSet, binary.BigEndian.AppendUint64(nil, 1))
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = p.Update(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT, 0), fwdpacket.OpSet, binary.BigEndian.AppendUint64(nil, nid))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return p
+}
+
+func parseMac(t testing.TB, mac string) net.HardwareAddr {
+	addr, err := net.ParseMAC(mac)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return addr
 }
 
 type hostifClient struct {
