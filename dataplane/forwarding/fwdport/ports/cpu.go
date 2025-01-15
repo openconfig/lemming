@@ -35,14 +35,12 @@ import (
 // A CPUPort is a port that receives from and transmits to the controller.
 type CPUPort struct {
 	fwdobject.Base
-	queueID string                 // CPU queue id
-	queue   *queue.Queue           // Queue of packets
-	input   fwdaction.Actions      // Actions used to process received packets
-	output  fwdaction.Actions      // Actions used to process transmitted packets
-	ctx     *fwdcontext.Context    // Forwarding context containing the port
-	export  []*fwdpb.PacketFieldId // List of fields to export when writing the packet
+	queueID string              // CPU queue id
+	queue   *queue.Queue        // Queue of packets
+	input   fwdaction.Actions   // Actions used to process received packets
+	output  fwdaction.Actions   // Actions used to process transmitted packets
+	ctx     *fwdcontext.Context // Forwarding context containing the port
 	desc    *fwdpb.PortDesc
-	remote  bool
 }
 
 // Desc returns the port description proto.
@@ -52,7 +50,7 @@ func (p *CPUPort) Desc() *fwdpb.PortDesc {
 
 // String returns the port as a formatted string.
 func (p *CPUPort) String() string {
-	desc := fmt.Sprintf("Type=%v;CPU=%v;%v;<Queue=%v><Input=%v>;<Output=%v>;<Export=%v>", fwdpb.PortType_PORT_TYPE_CPU_PORT, p.queueID, p.BaseInfo(), p.queue, p.input, p.output, p.export)
+	desc := fmt.Sprintf("Type=%v;CPU=%v;%v;<Queue=%v><Input=%v>;<Output=%v>", fwdpb.PortType_PORT_TYPE_CPU_PORT, p.queueID, p.BaseInfo(), p.queue, p.input, p.output)
 	if state, err := p.State(nil); err == nil {
 		desc += fmt.Sprintf("<State=%v>;", state)
 	}
@@ -69,7 +67,6 @@ func (p *CPUPort) Cleanup() {
 	p.output.Cleanup()
 	p.input = nil
 	p.output = nil
-	p.export = nil
 }
 
 // Update updates the actions for the port.
@@ -196,8 +193,6 @@ func (*cpuBuilder) Build(pd *fwdpb.PortDesc, ctx *fwdcontext.Context) (fwdport.P
 	p := CPUPort{
 		ctx:     ctx,
 		queueID: cpu.Cpu.GetQueueId(),
-		export:  cpu.Cpu.GetExportFieldIds(),
-		remote:  cpu.Cpu.GetRemotePort(),
 		desc:    pd,
 	}
 	var err error

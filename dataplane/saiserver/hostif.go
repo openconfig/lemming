@@ -44,7 +44,6 @@ func newHostif(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Serve
 		remoteHostifs:    map[uint64]*pktiopb.HostPortControlMessage{},
 		opts:             opts,
 	}
-
 	saipb.RegisterHostifServer(s, hostif)
 	pktiopb.RegisterPacketIOServer(s, hostif)
 	return hostif
@@ -401,7 +400,7 @@ func (hostif *hostif) CPUPacketStream(srv pktiopb.PacketIO_CPUPacketStreamServer
 		cpuPortID = fmt.Sprint(resp.GetAttr().GetCpuPort())
 	}
 
-	packetCh := make(chan *pktiopb.PacketIn)
+	packetCh := make(chan *pktiopb.PacketIn, 1000)
 	ctx, cancel := context.WithCancel(srv.Context())
 
 	// Since Recv() is blocking and we want this func to return immediately on cancel.
