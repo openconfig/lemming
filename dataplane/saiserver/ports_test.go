@@ -658,3 +658,46 @@ func TestLagMember(t *testing.T) {
 		t.Errorf("RemoveLagMember() failed: diff(-got,+want)\n:%s", d)
 	}
 }
+
+func TestCreateScheduler(t *testing.T) {
+	tests := []struct {
+		desc     string
+		req      *saipb.CreateSchedulerRequest
+		wantAttr *saipb.SchedulerAttribute
+		wantErr  string
+	}{{
+		desc: "success",
+		req:  &saipb.CreateSchedulerRequest{},
+		wantAttr: &saipb.SchedulerAttribute{
+			MinBandwidthRate: proto.Uint64(0),
+		},
+	}}
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			dplane := &fakeSwitchDataplane{}
+			c, mgr, stopFn := newTestScheduler(t, dplane)
+			defer stopFn()
+			got, gotErr := c.CreateScheduler(context.Background(), tt.req)
+			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
+				t.Fatalf("CreateScheduler() unexpected err: %s", diff)
+			}
+			if gotErr != nil {
+				return
+			}
+			attr := &saipb.SchedulerAttribute{}
+			if err := mgr.PopulateAllAttributes(fmt.Sprint(got.GetOid()), attr); err != nil {
+				t.Fatal(err)
+			}
+			if d := cmp.Diff(attr, tt.wantAttr, protocmp.Transform()); d != "" {
+				t.Errorf("CreateScheduler() failed: diff(-got,+want)\n:%s", d)
+			}
+		})
+	}
+}
+
+func newTestScheduler(t testing.TB, api switchDataplaneAPI) (saipb.SchedulerClient, *attrmgr.AttrMgr, func()) {
+	conn, mgr, stopFn := newTestServer(t, func(mgr *attrmgr.AttrMgr, srv *grpc.Server) {
+		newScheduler(mgr, api, srv)
+	})
+	return saipb.NewSchedulerClient(conn), mgr, stopFn
+}

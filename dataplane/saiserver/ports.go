@@ -771,6 +771,10 @@ type scheduler struct {
 func (s *scheduler) CreateScheduler(context.Context, *saipb.CreateSchedulerRequest) (*saipb.CreateSchedulerResponse, error) {
 	id := s.mgr.NextID()
 
+	s.mgr.StoreAttributes(id, &saipb.SchedulerAttribute{
+		MinBandwidthRate: proto.Uint64(0),
+	})
+
 	return &saipb.CreateSchedulerResponse{
 		Oid: id,
 	}, nil
