@@ -29,9 +29,10 @@ import (
 	"github.com/kentik/patricia"
 	"github.com/kentik/patricia/generics_tree"
 	"github.com/openconfig/gribigo/afthelper"
+	"github.com/openconfig/ygot/ytypes"
+
 	"github.com/openconfig/lemming/gnmi/fakedevice"
 	"github.com/openconfig/lemming/gnmi/oc"
-	"github.com/openconfig/ygot/ytypes"
 )
 
 // SysRIB is a RIB data structure that can be used to resolve routing entries to their egress interfaces.
@@ -500,14 +501,14 @@ func (sr *SysRIB) egressInterfaceInternal(inputNI string, ip *net.IPNet, visited
 // returned as resolvable routes.
 //
 // NOTE: sr.mu.RLock() must be called prior to calling this function.
-func (sr *SysRIB) egressNexthops(inputNI string, ip *net.IPNet, interfaces map[Interface]bool) (map[ResolvedNexthop]bool, *Route, error) {
+func (sr *SysRIB) egressNexthops(inputNI string, ip *net.IPNet, interfaces map[Interface]bool) ([]*ResolvedNexthop, *Route, error) {
 	return sr.egressNexthopsInternal(inputNI, ip, interfaces, []*Route{})
 }
 
 // egressNexthopsInternal is recursively called by egressNexthops to determine
 // the nexthops for an input IP prefix. It keeps track of the routes that have
 // been visited on a branch to avoid recursive loops.
-func (sr *SysRIB) egressNexthopsInternal(inputNI string, ip *net.IPNet, interfaces map[Interface]bool, visited []*Route) (map[ResolvedNexthop]bool, *Route, error) {
+func (sr *SysRIB) egressNexthopsInternal(inputNI string, ip *net.IPNet, interfaces map[Interface]bool, visited []*Route) ([]*ResolvedNexthop, *Route, error) {
 	// no RIB recursion currently
 	if inputNI == "" {
 		inputNI = sr.defaultNI
@@ -531,19 +532,19 @@ func (sr *SysRIB) egressNexthopsInternal(inputNI string, ip *net.IPNet, interfac
 	// When there is a tie, use regular ECMP/WCMP rules.
 	//
 	// TODO(wenbli): Support WCMP.
-	allEgressNhs := map[RoutePreference]map[ResolvedNexthop]bool{}
+	allEgressNhs := map[RoutePreference][]*ResolvedNexthop{}
 	resolvedRoutes := map[RoutePreference]*Route{}
 	for _, cr := range routes {
 		log.V(1).Infof("Resolving route: %v", cr)
 		if allEgressNhs[cr.RoutePref] == nil {
-			allEgressNhs[cr.RoutePref] = map[ResolvedNexthop]bool{}
+			allEgressNhs[cr.RoutePref] = []*ResolvedNexthop{}
 			resolvedRoutes[cr.RoutePref] = cr
 		}
 		egressNhs := allEgressNhs[cr.RoutePref]
 
 		if cr.Connected != nil {
 			if interfaces[*cr.Connected] {
-				nh := ResolvedNexthop{
+				nh := &ResolvedNexthop{
 					Port: *cr.Connected,
 					NextHopSummary: afthelper.NextHopSummary{
 						NetworkInstance: inputNI,
@@ -553,7 +554,7 @@ func (sr *SysRIB) egressNexthopsInternal(inputNI string, ip *net.IPNet, interfac
 					nh.Address = ip.IP.String()
 				}
 				// TODO(wenbli): Implement WCMP: there could be a merger of two nexthops, in which case we add their weights.
-				egressNhs[nh] = true
+				egressNhs = append(egressNhs, nh)
 			}
 			continue
 		}
@@ -602,14 +603,14 @@ func (sr *SysRIB) egressNexthopsInternal(inputNI string, ip *net.IPNet, interfac
 					return nil, nil, fmt.Errorf("Error during GUE policy look-up: %v", err)
 				}
 			}
-			for rnh := range recursiveNHs {
+			for _, rnh := range recursiveNHs {
 				switch {
 				case rnh.HasGUE():
 					return nil, nil, fmt.Errorf("route %v resolves over another route that has a BGP-triggered GUE action, the behaviour is undefined, nexthop: %v, recursive nexthop: %v", cr, nh, rnh)
 				}
 				rnh.GUEHeaders = encapHeaders
 				// TODO(wenbli): Implement WCMP: there could be a merger of two nexthops, in which case we add their weights.
-				egressNhs[rnh] = true
+				egressNhs = append(egressNhs, rnh)
 			}
 		}
 	}

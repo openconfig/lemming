@@ -315,9 +315,11 @@ type ResolvedRoute struct {
 	RouteKey
 
 	// NOTE: The order of the nexthops should not matter when being programmed into the forwarding plane. As such, the forwarding plane should sort these nexthops before assigning the hash output for ECMP.
-	Nexthops map[ResolvedNexthop]bool
+	Nexthops []*ResolvedNexthop
 	// TODO(wenbli): backup nexthops.
 }
+
+type EncapHeader struct{}
 
 // ResolvedNexthop contains the information required to forward an IP packet.
 //
@@ -327,6 +329,7 @@ type ResolvedNexthop struct {
 
 	Port       Interface
 	GUEHeaders GUEHeaders
+	Headers    []*EncapHeader
 }
 
 // HasGUE returns a bool indicating whether the resolved nexthop contains GUE
@@ -380,7 +383,7 @@ func resolvedRouteToRouteRequest(r *ResolvedRoute) (*dpb.Route, error) {
 	// Connected routes are routes with a single next hop with no address.
 	// TODO: Include a better signal for this.
 	if len(r.Nexthops) == 1 {
-		for nh := range r.Nexthops {
+		for _, nh := range r.Nexthops {
 			if nh.Address == "" {
 				return &dpb.Route{
 					Prefix: &dpb.RoutePrefix{
@@ -399,7 +402,7 @@ func resolvedRouteToRouteRequest(r *ResolvedRoute) (*dpb.Route, error) {
 	}
 
 	nexthops := &dpb.NextHopList{}
-	for nh := range r.Nexthops {
+	for _, nh := range r.Nexthops {
 		dnh := &dpb.NextHop{
 			Interface: &dpb.OCInterface{
 				Interface:    nh.Port.Name,
