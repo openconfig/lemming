@@ -22,6 +22,7 @@ go_library(
         "//gnmi/oc/ocpath",
         "//internal/debug",
         "//proto/dataplane",
+        "//proto/routing",
         "//proto/sysrib",
         "@com_github_golang_glog//:glog",
         "@com_github_google_go_cmp//cmp",

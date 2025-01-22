@@ -18,6 +18,8 @@ package sysrib;
 
 option go_package = "github.com/openconfig/lemming/proto/sysrib";
 
+import "proto/routing/routing.proto";
+
 service Sysrib {
   rpc SetRoute(SetRouteRequest) returns (SetRouteResponse);
   // TODO(wenbli): Define nexthop tracking service.
@@ -70,6 +72,7 @@ message Nexthop {
   //int32 ifindex = 3;
   string address = 3;
   uint64 weight = 4;
+  routing.Headers headers = 5;
 }
 
 message SetRouteResponse {

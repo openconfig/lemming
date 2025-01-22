@@ -65,21 +65,22 @@ type NIRIB struct {
 // srcPort is a hash (not implemented).
 // dstIP is the nexthop of the BGP route.
 type GUEPolicy struct {
-	// dstPortv4 is the UDP port used when the packet payload is IPv4.
-	dstPortv4 uint16
-	// dstPortv6 is the UDP port used when the packet payload is IPv6.
-	dstPortv6 uint16
-	srcIP4    [4]byte
-	srcIP6    [16]byte
+	// DstPortv4 is the UDP port used when the packet payload is IPv4.
+	DstPortv4 uint16
+	// DstPortv6 is the UDP port used when the packet payload is IPv6.
+	DstPortv6 uint16
+	SrcIP4    [4]byte
+	SrcIP6    [16]byte
 }
 
 // GUEHeaders represents the IP and UDP headers that are to encapsulate the
 // packet.
+// TODO: Deprecate this and use the more flexible encap headers instead.
 type GUEHeaders struct {
 	GUEPolicy
-	dstIP4 [4]byte
-	dstIP6 [16]byte
-	isV6   bool
+	DstIP4 [4]byte
+	DstIP6 [16]byte
+	IsV6   bool
 }
 
 // getGUEHeader retrieves the GUEHeader for the given address if it matched a
@@ -122,11 +123,11 @@ func (sr *SysRIB) getGUEHeader(address string, payloadIsV6 bool) (GUEHeaders, bo
 		}
 		return GUEHeaders{
 			GUEPolicy: GUEPolicy{
-				dstPortv6: policy.dstPortv6,
-				srcIP6:    policy.srcIP6,
+				DstPortv6: policy.DstPortv6,
+				SrcIP6:    policy.SrcIP6,
 			},
-			dstIP6: dstIP6,
-			isV6:   true,
+			DstIP6: dstIP6,
+			IsV6:   true,
 		}, true, nil
 	}
 	var dstIP4 [4]byte
@@ -135,15 +136,15 @@ func (sr *SysRIB) getGUEHeader(address string, payloadIsV6 bool) (GUEHeaders, bo
 	}
 	gueHeaders := GUEHeaders{
 		GUEPolicy: GUEPolicy{
-			srcIP4: policy.srcIP4,
+			SrcIP4: policy.SrcIP4,
 		},
-		dstIP4: dstIP4,
-		isV6:   false,
+		DstIP4: dstIP4,
+		IsV6:   false,
 	}
 	if payloadIsV6 {
-		gueHeaders.dstPortv6 = policy.dstPortv6
+		gueHeaders.DstPortv6 = policy.DstPortv6
 	} else {
-		gueHeaders.dstPortv4 = policy.dstPortv4
+		gueHeaders.DstPortv4 = policy.DstPortv4
 	}
 	return gueHeaders, true, nil
 }
@@ -540,7 +541,6 @@ func (sr *SysRIB) egressNexthopsInternal(inputNI string, ip *net.IPNet, interfac
 			allEgressNhs[cr.RoutePref] = []*ResolvedNexthop{}
 			resolvedRoutes[cr.RoutePref] = cr
 		}
-		egressNhs := allEgressNhs[cr.RoutePref]
 
 		if cr.Connected != nil {
 			if interfaces[*cr.Connected] {
@@ -554,7 +554,7 @@ func (sr *SysRIB) egressNexthopsInternal(inputNI string, ip *net.IPNet, interfac
 					nh.Address = ip.IP.String()
 				}
 				// TODO(wenbli): Implement WCMP: there could be a merger of two nexthops, in which case we add their weights.
-				egressNhs = append(egressNhs, nh)
+				allEgressNhs[cr.RoutePref] = append(allEgressNhs[cr.RoutePref], nh)
 			}
 			continue
 		}
@@ -610,7 +610,7 @@ func (sr *SysRIB) egressNexthopsInternal(inputNI string, ip *net.IPNet, interfac
 				}
 				rnh.GUEHeaders = encapHeaders
 				// TODO(wenbli): Implement WCMP: there could be a merger of two nexthops, in which case we add their weights.
-				egressNhs = append(egressNhs, rnh)
+				allEgressNhs[cr.RoutePref] = append(allEgressNhs[cr.RoutePref], rnh)
 			}
 		}
 	}

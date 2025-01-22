@@ -103,8 +103,8 @@ func mapPolicyTo6(h GUEPolicy) GUEPolicy {
 	if h == zero {
 		return h
 	}
-	zero.dstPortv6 = h.dstPortv4
-	zero.srcIP6 = mapAddressTo6Bytes(h.srcIP4)
+	zero.DstPortv6 = h.DstPortv4
+	zero.SrcIP6 = mapAddressTo6Bytes(h.SrcIP4)
 	return zero
 }
 
@@ -1277,10 +1277,10 @@ func TestBGPGUEPolicy(t *testing.T) {
 		desc: "Add Policy",
 		inAddPolicies: map[string]GUEPolicy{
 			"192.168.0.0/16": {
-				dstPortv4: 8,
-				dstPortv6: 16,
-				srcIP4:    [4]byte{42, 42, 42, 42},
-				srcIP6:    [16]byte{42, 42, 42, 42, 42},
+				DstPortv4: 8,
+				DstPortv6: 16,
+				SrcIP4:    [4]byte{42, 42, 42, 42},
+				SrcIP6:    [16]byte{42, 42, 42, 42, 42},
 			},
 		},
 		wantRoutes: func(v4 bool) []*dpb.Route {
@@ -1434,10 +1434,10 @@ func TestBGPGUEPolicy(t *testing.T) {
 		desc: "Add Policy for second BGP route",
 		inAddPolicies: map[string]GUEPolicy{
 			"10.10.0.0/16": {
-				dstPortv4: 9,
-				dstPortv6: 18,
-				srcIP4:    [4]byte{43, 43, 43, 43},
-				srcIP6:    [16]byte{43, 43, 43, 43, 43},
+				DstPortv4: 9,
+				DstPortv6: 18,
+				SrcIP4:    [4]byte{43, 43, 43, 43},
+				SrcIP6:    [16]byte{43, 43, 43, 43, 43},
 			},
 		},
 		wantRoutes: func(v4 bool) []*dpb.Route {
@@ -1639,10 +1639,10 @@ func TestBGPGUEPolicy(t *testing.T) {
 		desc: "Add a policy that applies to two BGP routes",
 		inAddPolicies: map[string]GUEPolicy{
 			"10.0.0.0/8": {
-				dstPortv4: 8,
-				dstPortv6: 16,
-				srcIP4:    [4]byte{8, 8, 8, 8},
-				srcIP6:    [16]byte{8, 8, 8, 8, 8},
+				DstPortv4: 8,
+				DstPortv6: 16,
+				SrcIP4:    [4]byte{8, 8, 8, 8},
+				SrcIP6:    [16]byte{8, 8, 8, 8, 8},
 			},
 		},
 		wantRoutes: func(v4 bool) []*dpb.Route {
@@ -1732,10 +1732,10 @@ func TestBGPGUEPolicy(t *testing.T) {
 		desc: "Add a more specific policy that applies to a BGP route",
 		inAddPolicies: map[string]GUEPolicy{
 			"10.10.20.0/24": {
-				dstPortv4: 16,
-				dstPortv6: 32,
-				srcIP4:    [4]byte{16, 16, 16, 16},
-				srcIP6:    [16]byte{16, 16, 16, 16, 16},
+				DstPortv4: 16,
+				DstPortv6: 32,
+				SrcIP4:    [4]byte{16, 16, 16, 16},
+				SrcIP6:    [16]byte{16, 16, 16, 16, 16},
 			},
 		},
 		wantRoutes: func(v4 bool) []*dpb.Route {
