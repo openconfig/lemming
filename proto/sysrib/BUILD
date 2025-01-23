@@ -6,6 +6,7 @@ proto_library(
     name = "sysrib_proto",
     srcs = ["sysrib.proto"],
     visibility = ["//visibility:public"],
+    deps = ["//proto/routing:routing_proto"],
 )
 
 go_proto_library(
@@ -14,6 +15,7 @@ go_proto_library(
     importpath = "github.com/openconfig/lemming/proto/sysrib",
     proto = ":sysrib_proto",
     visibility = ["//visibility:public"],
+    deps = ["//proto/routing"],
 )
 
 go_library(

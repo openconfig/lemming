@@ -68,7 +68,7 @@ func convertToZAPIRoute(routeKey RouteKey, route *Route, rr *ResolvedRoute) (*ze
 	prefixLen, _ := ipnet.Mask.Size()
 
 	var nexthops []zebra.Nexthop
-	for nh := range rr.Nexthops {
+	for _, nh := range rr.Nexthops {
 		nexthops = append(nexthops, zebra.Nexthop{
 			VrfID:  vrfID,
 			Gate:   net.ParseIP(nh.Address),

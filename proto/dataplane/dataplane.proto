@@ -16,6 +16,8 @@ syntax = "proto3";
 
 package lemming.dataplane;
 
+import "proto/routing/routing.proto";
+
 option go_package = "github.com/openconfig/lemming/proto/dataplane";
 
 message OCInterface {
@@ -35,6 +37,7 @@ message NextHop {
   string next_hop_ip = 2;
   oneof encap {
     GUE gue = 3;
+    routing.Headers headers = 5;
   }
 }
 

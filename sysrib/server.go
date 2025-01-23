@@ -43,6 +43,7 @@ import (
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 
 	dpb "github.com/openconfig/lemming/proto/dataplane"
+	routingpb "github.com/openconfig/lemming/proto/routing"
 	sysribpb "github.com/openconfig/lemming/proto/sysrib"
 )
 
@@ -254,9 +255,9 @@ func (s *Server) monitorBGPGUEPolicies(ctx context.Context, yclient *ygnmi.Clien
 					continue
 				}
 				updatePolicy(prefix.String(), GUEPolicy{
-					dstPortv4: *ocPolicy.DstPortIpv4,
-					dstPortv6: *ocPolicy.DstPortIpv6,
-					srcIP4:    addr.As4(),
+					DstPortv4: *ocPolicy.DstPortIpv4,
+					DstPortv6: *ocPolicy.DstPortIpv6,
+					SrcIP4:    addr.As4(),
 				})
 			}
 			for pfx, ocPolicy := range rootVal.BgpGueIpv6GlobalPolicy {
@@ -276,8 +277,8 @@ func (s *Server) monitorBGPGUEPolicies(ctx context.Context, yclient *ygnmi.Clien
 					continue
 				}
 				updatePolicy(prefix.String(), GUEPolicy{
-					dstPortv6: *ocPolicy.DstPortIpv6,
-					srcIP6:    addr.As16(),
+					DstPortv6: *ocPolicy.DstPortIpv6,
+					SrcIP6:    addr.As16(),
 				})
 			}
 
@@ -315,7 +316,7 @@ type ResolvedRoute struct {
 	RouteKey
 
 	// NOTE: The order of the nexthops should not matter when being programmed into the forwarding plane. As such, the forwarding plane should sort these nexthops before assigning the hash output for ECMP.
-	Nexthops map[ResolvedNexthop]bool
+	Nexthops []*ResolvedNexthop
 	// TODO(wenbli): backup nexthops.
 }
 
@@ -327,6 +328,7 @@ type ResolvedNexthop struct {
 
 	Port       Interface
 	GUEHeaders GUEHeaders
+	Headers    []*routingpb.Header
 }
 
 // HasGUE returns a bool indicating whether the resolved nexthop contains GUE
@@ -380,7 +382,7 @@ func resolvedRouteToRouteRequest(r *ResolvedRoute) (*dpb.Route, error) {
 	// Connected routes are routes with a single next hop with no address.
 	// TODO: Include a better signal for this.
 	if len(r.Nexthops) == 1 {
-		for nh := range r.Nexthops {
+		for _, nh := range r.Nexthops {
 			if nh.Address == "" {
 				return &dpb.Route{
 					Prefix: &dpb.RoutePrefix{
@@ -399,7 +401,7 @@ func resolvedRouteToRouteRequest(r *ResolvedRoute) (*dpb.Route, error) {
 	}
 
 	nexthops := &dpb.NextHopList{}
-	for nh := range r.Nexthops {
+	for _, nh := range r.Nexthops {
 		dnh := &dpb.NextHop{
 			Interface: &dpb.OCInterface{
 				Interface:    nh.Port.Name,
@@ -408,27 +410,27 @@ func resolvedRouteToRouteRequest(r *ResolvedRoute) (*dpb.Route, error) {
 			NextHopIp: nh.Address,
 		}
 		if nh.HasGUE() {
-			if !nh.GUEHeaders.isV6 {
+			if !nh.GUEHeaders.IsV6 {
 				dnh.Encap = &dpb.NextHop_Gue{
 					Gue: &dpb.GUE{
-						SrcIp: nh.GUEHeaders.srcIP4[:],
-						DstIp: nh.GUEHeaders.dstIP4[:],
-						IsV6:  nh.GUEHeaders.isV6,
+						SrcIp: nh.GUEHeaders.SrcIP4[:],
+						DstIp: nh.GUEHeaders.DstIP4[:],
+						IsV6:  nh.GUEHeaders.IsV6,
 					},
 				}
 			} else {
 				dnh.Encap = &dpb.NextHop_Gue{
 					Gue: &dpb.GUE{
-						SrcIp: nh.GUEHeaders.srcIP6[:],
-						DstIp: nh.GUEHeaders.dstIP6[:],
-						IsV6:  nh.GUEHeaders.isV6,
+						SrcIp: nh.GUEHeaders.SrcIP6[:],
+						DstIp: nh.GUEHeaders.DstIP6[:],
+						IsV6:  nh.GUEHeaders.IsV6,
 					},
 				}
 			}
 			if pfx.Addr().Is4() || pfx.Addr().Is4In6() {
-				dnh.GetGue().DstPort = uint32(nh.GUEHeaders.dstPortv4)
+				dnh.GetGue().DstPort = uint32(nh.GUEHeaders.DstPortv4)
 			} else {
-				dnh.GetGue().DstPort = uint32(nh.GUEHeaders.dstPortv6)
+				dnh.GetGue().DstPort = uint32(nh.GUEHeaders.DstPortv6)
 			}
 		}
 		nexthops.Hops = append(nexthops.Hops, dnh)

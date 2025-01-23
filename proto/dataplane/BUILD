@@ -7,6 +7,7 @@ proto_library(
     name = "dataplane_proto",
     srcs = ["dataplane.proto"],
     visibility = ["//visibility:public"],
+    deps = ["//proto/routing:routing_proto"],
 )
 
 go_proto_library(
@@ -14,6 +15,7 @@ go_proto_library(
     importpath = "github.com/openconfig/lemming/proto/dataplane",
     proto = ":dataplane_proto",
     visibility = ["//visibility:public"],
+    deps = ["//proto/routing"],
 )
 
 go_library(

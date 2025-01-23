@@ -16,6 +16,8 @@ syntax = "proto3";
 
 package sysrib;
 
+import "proto/routing/routing.proto";
+
 option go_package = "github.com/openconfig/lemming/proto/sysrib";
 
 service Sysrib {
@@ -70,6 +72,7 @@ message Nexthop {
   //int32 ifindex = 3;
   string address = 3;
   uint64 weight = 4;
+  routing.Headers headers = 5;
 }
 
 message SetRouteResponse {
