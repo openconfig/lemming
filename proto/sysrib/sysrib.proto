@@ -16,9 +16,9 @@ syntax = "proto3";
 
 package sysrib;
 
-option go_package = "github.com/openconfig/lemming/proto/sysrib";
-
 import "proto/routing/routing.proto";
+
+option go_package = "github.com/openconfig/lemming/proto/sysrib";
 
 service Sysrib {
   rpc SetRoute(SetRouteRequest) returns (SetRouteResponse);

@@ -19,23 +19,23 @@ package routing;
 option go_package = "github.com/openconfig/lemming/proto/routing";
 
 enum HeaderType {
-    HEADER_TYPE_UNSPECIFIED = 0;
-    HEADER_TYPE_IP4 = 1;
-    HEADER_TYPE_IP6 = 2;
-    HEADER_TYPE_UDP4 = 3;
-    HEADER_TYPE_UDP6 = 4;
-    HEADER_TYPE_MPLS = 5;
+  HEADER_TYPE_UNSPECIFIED = 0;
+  HEADER_TYPE_IP4 = 1;
+  HEADER_TYPE_IP6 = 2;
+  HEADER_TYPE_UDP4 = 3;
+  HEADER_TYPE_UDP6 = 4;
+  HEADER_TYPE_MPLS = 5;
 }
-  
+
 message Header {
-    HeaderType type = 1;
-    string src_ip = 2;
-    string dst_ip = 3;
-    uint32 src_port = 4;
-    uint32 dst_port = 5;
-    repeated uint32 labels = 6;
+  HeaderType type = 1;
+  string src_ip = 2;
+  string dst_ip = 3;
+  uint32 src_port = 4;
+  uint32 dst_port = 5;
+  repeated uint32 labels = 6;
 }
 
 message Headers {
-    repeated Header headers = 1;
+  repeated Header headers = 1;
 }
