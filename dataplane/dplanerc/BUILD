@@ -14,6 +14,7 @@ go_library(
         "//gnmi",
         "//proto/dataplane",
         "//proto/forwarding",
+        "//proto/routing",
         "@com_github_golang_glog//:glog",
         "@com_github_google_gopacket//:gopacket",
         "@com_github_google_gopacket//layers",

@@ -409,6 +409,9 @@ func resolvedRouteToRouteRequest(r *ResolvedRoute) (*dpb.Route, error) {
 			},
 			NextHopIp: nh.Address,
 		}
+		if len(nh.Headers) > 0 {
+			dnh.Encap = &dpb.NextHop_Headers{Headers: &routingpb.Headers{Headers: nh.Headers}}
+		}
 		if nh.HasGUE() {
 			if !nh.GUEHeaders.IsV6 {
 				dnh.Encap = &dpb.NextHop_Gue{
