@@ -115,11 +115,15 @@ func (r *LemmingReconciler) reconcileSecrets(ctx context.Context, lemming *lemmi
 	}
 
 	if !apierrors.IsNotFound(err) {
-		if lemming.Spec.TLS.SelfSigned == nil {
+		if lemming.Spec.TLS == nil {
 			log.Info("no tls config and secret exists, deleting it.")
 			return nil, r.Delete(ctx, secret)
 		}
 		return secret, nil
+	}
+	if lemming.Spec.TLS == nil {
+		log.Info("no tls config and secret doesn't exist, doing nothing.")
+		return nil, nil
 	}
 
 	if lemming.Spec.TLS.SelfSigned != nil {
@@ -138,7 +142,7 @@ func (r *LemmingReconciler) reconcileSecrets(ctx context.Context, lemming *lemmi
 		log.Info("tls config not empty and secret doesn't exist, creating it.")
 		return secret, r.Create(ctx, secret)
 	}
-	log.Info("no tls config and secret doesn't exist, doing nothing.")
+	log.Info("no self signed config and secret doesn't exist, doing nothing.")
 	return nil, nil
 }
 
