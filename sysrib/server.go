@@ -579,15 +579,18 @@ func (s *Server) SetRoute(ctx context.Context, req *sysribpb.SetRouteRequest) (*
 		return nil, err
 	}
 
-	nexthops := []*afthelper.NextHopSummary{}
+	nexthops := []*ResolvedNexthop{}
 	for _, nh := range req.GetNexthops() {
 		if nh.GetType() != sysribpb.Nexthop_TYPE_IPV4 && nh.GetType() != sysribpb.Nexthop_TYPE_IPV6 {
 			return nil, status.Errorf(codes.Unimplemented, "Unrecognized nexthop type: %s", nh.GetType())
 		}
-		nexthops = append(nexthops, &afthelper.NextHopSummary{
-			Weight:          nh.GetWeight(),
-			Address:         nh.GetAddress(),
-			NetworkInstance: vrfIDToNiName(nh.GetVrfId()),
+		nexthops = append(nexthops, &ResolvedNexthop{
+			NextHopSummary: afthelper.NextHopSummary{
+				Weight:          nh.GetWeight(),
+				Address:         nh.GetAddress(),
+				NetworkInstance: vrfIDToNiName(nh.GetVrfId()),
+			},
+			Headers: nh.GetEncap().GetHeaders(),
 		})
 	}
 

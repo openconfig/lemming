@@ -167,7 +167,7 @@ type Route struct {
 	Connected *Interface `json:"connected"`
 	// NextHops is the set of IP nexthops that the route uses if
 	// it is not a connected route.
-	NextHops  []*afthelper.NextHopSummary `json:"nexthops"`
+	NextHops  []*ResolvedNexthop `json:"nexthops"`
 	RoutePref RoutePreference
 }
 
@@ -608,6 +608,7 @@ func (sr *SysRIB) egressNexthopsInternal(inputNI string, ip *net.IPNet, interfac
 				case rnh.HasGUE():
 					return nil, nil, fmt.Errorf("route %v resolves over another route that has a BGP-triggered GUE action, the behaviour is undefined, nexthop: %v, recursive nexthop: %v", cr, nh, rnh)
 				}
+				rnh.Headers = append(nh.Headers, rnh.Headers...)
 				rnh.GUEHeaders = encapHeaders
 				// TODO(wenbli): Implement WCMP: there could be a merger of two nexthops, in which case we add their weights.
 				allEgressNhs[cr.RoutePref] = append(allEgressNhs[cr.RoutePref], rnh)
