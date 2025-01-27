@@ -112,6 +112,7 @@ func (*system) Time(context.Context, *spb.TimeRequest) (*spb.TimeResponse, error
 }
 
 func (s *system) Reboot(ctx context.Context, r *spb.RebootRequest) (*spb.RebootResponse, error) {
+	log.Infof("Received reboot request: %v", r)
 	if r.Method == spb.RebootMethod_POWERUP {
 		return &spb.RebootResponse{}, nil
 	}
@@ -147,11 +148,12 @@ func (s *system) Reboot(ctx context.Context, r *spb.RebootRequest) (*spb.RebootR
 			s.hasPendingReboot = false
 		}
 	}()
-
+	log.Infof("successful reboot with delay %v, type %v, and force %v", r.GetDelay(), r.GetMethod(), r.GetForce())
 	return &spb.RebootResponse{}, nil
 }
 
-func (s *system) CancelReboot(context.Context, *spb.CancelRebootRequest) (*spb.CancelRebootResponse, error) {
+func (s *system) CancelReboot(ctx context.Context, c *spb.CancelRebootRequest) (*spb.CancelRebootResponse, error) {
+	log.Infof("Received cancel reboot request %v", c)
 	s.rebootMu.Lock()
 	hasPendingReboot := s.hasPendingReboot
 	s.rebootMu.Unlock()
