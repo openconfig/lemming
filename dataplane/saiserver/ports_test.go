@@ -282,6 +282,9 @@ func TestCreatePorts(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
 			dplane := &fakeSwitchDataplane{}
+			getInterface = func(string) (*net.Interface, error) {
+				return nil, tt.getInterfaceErr
+			}
 			c, mgr, stopFn := newTestPort(t, dplane, &dplaneopts.Options{PortType: fwdpb.PortType_PORT_TYPE_KERNEL})
 			defer stopFn()
 			got, gotErr := c.CreatePorts(context.TODO(), tt.req)
