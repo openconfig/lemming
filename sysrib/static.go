@@ -19,16 +19,17 @@ import (
 
 	log "github.com/golang/glog"
 	"github.com/openconfig/gribigo/afthelper"
+	"github.com/openconfig/ygnmi/ygnmi"
+
 	"github.com/openconfig/lemming/gnmi/fakedevice"
 	"github.com/openconfig/lemming/gnmi/gnmiclient"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
-	"github.com/openconfig/ygnmi/ygnmi"
 )
 
 // convertStaticRoute converts an OC static route to a sysrib Route
 func convertStaticRoute(prefix string, sroute *oc.NetworkInstance_Protocol_Static) *Route {
-	var nexthops []*afthelper.NextHopSummary
+	var nexthops []*ResolvedNexthop
 	if sroute != nil {
 		for _, snh := range sroute.NextHop {
 			// TODO(wenbli): Implement recurse option.
@@ -36,10 +37,12 @@ func convertStaticRoute(prefix string, sroute *oc.NetworkInstance_Protocol_Stati
 			switch nh := snh.NextHop.(type) {
 			case nil:
 			case oc.UnionString:
-				nexthops = append(nexthops, &afthelper.NextHopSummary{
-					Weight:          1,
-					Address:         string(nh),
-					NetworkInstance: fakedevice.DefaultNetworkInstance,
+				nexthops = append(nexthops, &ResolvedNexthop{
+					NextHopSummary: afthelper.NextHopSummary{
+						Weight:          1,
+						Address:         string(nh),
+						NetworkInstance: fakedevice.DefaultNetworkInstance,
+					},
 				})
 			default:
 				log.Warningf("sysrib: Unhandled static route nexthop type (%T): %v", nh, nh)

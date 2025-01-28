@@ -35,6 +35,7 @@ import (
 	"github.com/openconfig/lemming/dataplane/saiserver"
 	dpb "github.com/openconfig/lemming/proto/dataplane"
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
+	routingpb "github.com/openconfig/lemming/proto/routing"
 )
 
 // RouteQuery returns a ygnmi query for a route with the given prefix and vrf.
@@ -229,6 +230,66 @@ func (ni *Reconciler) createNextHop(ctx context.Context, hop *dpb.NextHop) (uint
 		}
 		log.Infof("created gue actions: %v", actReq)
 	}
+	// TODO: refactor this into a seperate func
+	if len(hop.GetHeaders().GetHeaders()) > 0 {
+		layer := []gopacket.SerializableLayer{}
+		parseHdr := fwdpb.PacketHeaderId_PACKET_HEADER_ID_OPAQUE
+		for _, hdr := range hop.GetHeaders().GetHeaders() {
+			layer = append(layer, routingpb.ToLayers(hdr)...)
+			if parseHdr == fwdpb.PacketHeaderId_PACKET_HEADER_ID_OPAQUE { // The forwarding engine needs to know the first header that is being reparsed.
+				switch hdr.Type {
+				case routingpb.HeaderType_HEADER_TYPE_UDP4, routingpb.HeaderType_HEADER_TYPE_IP4:
+					parseHdr = fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP4
+				case routingpb.HeaderType_HEADER_TYPE_UDP6, routingpb.HeaderType_HEADER_TYPE_IP6:
+					parseHdr = fwdpb.PacketHeaderId_PACKET_HEADER_ID_IP6
+				case routingpb.HeaderType_HEADER_TYPE_MPLS:
+					parseHdr = fwdpb.PacketHeaderId_PACKET_HEADER_ID_MPLS
+				}
+			}
+		}
+		buf := gopacket.NewSerializeBuffer()
+		if err := gopacket.SerializeLayers(buf, gopacket.SerializeOptions{FixLengths: true, ComputeChecksums: true}, layer...); err != nil {
+			return 0, fmt.Errorf("failed to serialize layer: %v", err)
+		}
+
+		acts := []*fwdpb.ActionDesc{{
+			ActionType: fwdpb.ActionType_ACTION_TYPE_REPARSE,
+			Action: &fwdpb.ActionDesc_Reparse{
+				Reparse: &fwdpb.ReparseActionDesc{
+					HeaderId: parseHdr,
+					FieldIds: []*fwdpb.PacketFieldId{ // Copy all metadata fields.
+						{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP}},
+						{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT}},
+						{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT}},
+						{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_INPUT_IFACE}},
+						{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE}},
+						{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TRAP_ID}},
+						{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF}},
+					},
+					// After the UDP header, the rest of the packet (original packet) will be classified as payload.
+					Prepend: buf.Bytes(),
+				},
+			},
+		}}
+		actReq := &fwdpb.TableEntryAddRequest{
+			ContextId: &fwdpb.ContextId{Id: ni.contextID},
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: saiserver.NHActionTable}},
+			EntryDesc: &fwdpb.EntryDesc{Entry: &fwdpb.EntryDesc_Exact{
+				Exact: &fwdpb.ExactEntryDesc{
+					Fields: []*fwdpb.PacketFieldBytes{{
+						FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_ID}},
+						Bytes:   binary.BigEndian.AppendUint64(nil, resp.Oid),
+					}},
+				},
+			}},
+			Actions: acts,
+		}
+		_, err = ni.fwdClient.TableEntryAdd(ctx, actReq)
+		if err != nil {
+			return 0, err
+		}
+	}
+
 	return resp.Oid, nil
 }
 

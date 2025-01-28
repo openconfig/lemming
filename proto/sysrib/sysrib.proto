@@ -72,7 +72,7 @@ message Nexthop {
   //int32 ifindex = 3;
   string address = 3;
   uint64 weight = 4;
-  routing.Headers headers = 5;
+  routing.Headers encap = 5;
 }
 
 message SetRouteResponse {

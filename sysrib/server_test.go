@@ -37,6 +37,7 @@ import (
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 
 	dpb "github.com/openconfig/lemming/proto/dataplane"
+	"github.com/openconfig/lemming/proto/routing"
 	pb "github.com/openconfig/lemming/proto/sysrib"
 )
 
@@ -1071,6 +1072,106 @@ func TestServer(t *testing.T) {
 						NextHopIp: "192.168.1.42",
 						Interface: &dpb.OCInterface{
 							Interface: "eth0",
+						},
+					}},
+				},
+			},
+		}},
+	}, {
+		desc: "Encap",
+		inSetRouteRequests: []*SetRouteRequestAction{{
+			Desc: "2nd level indirect route",
+			RouteReq: &pb.SetRouteRequest{
+				AdminDistance: 10,
+				Metric:        10,
+				Prefix: &pb.Prefix{
+					Family:     pb.Prefix_FAMILY_IPV4,
+					Address:    "20.0.0.0",
+					MaskLength: 8,
+				},
+				Nexthops: []*pb.Nexthop{{
+					Type:    pb.Nexthop_TYPE_IPV4,
+					Address: "10.10.10.10",
+					Encap: &routing.Headers{
+						Headers: []*routing.Header{{
+							Type:   routing.HeaderType_HEADER_TYPE_MPLS,
+							Labels: []uint32{100},
+						}},
+					},
+				}},
+			},
+		}, {
+			Desc: "1st level indirect route",
+			RouteReq: &pb.SetRouteRequest{
+				AdminDistance: 5,
+				Metric:        5,
+				Prefix: &pb.Prefix{
+					Family:     pb.Prefix_FAMILY_IPV4,
+					Address:    "10.0.0.0",
+					MaskLength: 8,
+				},
+				Nexthops: []*pb.Nexthop{{
+					Type:    pb.Nexthop_TYPE_IPV4,
+					Address: "192.168.5.42",
+					Encap: &routing.Headers{
+						Headers: []*routing.Header{{
+							Type:  routing.HeaderType_HEADER_TYPE_IP4,
+							SrcIp: "10.0.0.10",
+							DstIp: "192.168.5.42",
+						}},
+					},
+				}},
+			},
+		}},
+		wantRoutes: []*dpb.Route{{
+			Prefix: &dpb.RoutePrefix{
+				NetworkInstance: "DEFAULT",
+				Cidr:            "10.0.0.0/8",
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Weights: []uint64{0},
+					Hops: []*dpb.NextHop{{
+						NextHopIp: "192.168.5.42",
+						Interface: &dpb.OCInterface{
+							Interface: "eth4",
+						},
+						Encap: &dpb.NextHop_Headers{
+							Headers: &routing.Headers{
+								Headers: []*routing.Header{{
+									Type:  routing.HeaderType_HEADER_TYPE_IP4,
+									SrcIp: "10.0.0.10",
+									DstIp: "192.168.5.42",
+								}},
+							},
+						},
+					}},
+				},
+			},
+		}, {
+			Prefix: &dpb.RoutePrefix{
+				NetworkInstance: "DEFAULT",
+				Cidr:            "20.0.0.0/8",
+			},
+			Hop: &dpb.Route_NextHops{
+				NextHops: &dpb.NextHopList{
+					Weights: []uint64{0},
+					Hops: []*dpb.NextHop{{
+						NextHopIp: "192.168.5.42",
+						Interface: &dpb.OCInterface{
+							Interface: "eth4",
+						},
+						Encap: &dpb.NextHop_Headers{
+							Headers: &routing.Headers{
+								Headers: []*routing.Header{{
+									Type:   routing.HeaderType_HEADER_TYPE_MPLS,
+									Labels: []uint32{100},
+								}, {
+									Type:  routing.HeaderType_HEADER_TYPE_IP4,
+									SrcIp: "10.0.0.10",
+									DstIp: "192.168.5.42",
+								}},
+							},
 						},
 					}},
 				},

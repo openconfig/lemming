@@ -58,6 +58,7 @@ go_test(
         "//gnmi/oc",
         "//gnmi/oc/ocpath",
         "//proto/dataplane",
+        "//proto/routing",
         "//proto/sysrib",
         "@com_github_google_go_cmp//cmp",
         "@com_github_google_go_cmp//cmp/cmpopts",

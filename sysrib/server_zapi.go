@@ -102,12 +102,14 @@ func (s *Server) setZebraRoute(ctx context.Context, niName string, zroute *zebra
 
 // convertZebraRoute converts a zebra route to a Sysrib route.
 func convertZebraRoute(niName string, zroute *zebra.IPRouteBody) *Route {
-	var nexthops []*afthelper.NextHopSummary
+	var nexthops []*ResolvedNexthop
 	for _, znh := range zroute.Nexthops {
-		nexthops = append(nexthops, &afthelper.NextHopSummary{
-			Weight:          1,
-			Address:         znh.Gate.String(),
-			NetworkInstance: niName,
+		nexthops = append(nexthops, &ResolvedNexthop{
+			NextHopSummary: afthelper.NextHopSummary{
+				Weight:          1,
+				Address:         znh.Gate.String(),
+				NetworkInstance: niName,
+			},
 		})
 	}
 	var routePref RoutePreference

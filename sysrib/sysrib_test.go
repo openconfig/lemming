@@ -22,9 +22,10 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/openconfig/gribigo/afthelper"
+	"github.com/openconfig/ygot/ygot"
+
 	"github.com/openconfig/lemming/gnmi/fakedevice"
 	"github.com/openconfig/lemming/gnmi/oc"
-	"github.com/openconfig/ygot/ygot"
 )
 
 func mustCIDR(s string) net.IPNet {
@@ -406,9 +407,11 @@ func TestEgressInterface(t *testing.T) {
 		inAddRoutes: map[string][]*Route{
 			"DEFAULT": {{
 				Prefix: "8.8.8.8/32",
-				NextHops: []*afthelper.NextHopSummary{{
-					Address:         "192.0.2.1",
-					NetworkInstance: "DEFAULT",
+				NextHops: []*ResolvedNexthop{{
+					NextHopSummary: afthelper.NextHopSummary{
+						Address:         "192.0.2.1",
+						NetworkInstance: "DEFAULT",
+					},
 				}},
 			}},
 		},
@@ -433,9 +436,11 @@ func TestEgressInterface(t *testing.T) {
 		inAddRoutes: map[string][]*Route{
 			"DEFAULT": {{
 				Prefix: "2023::2025/128",
-				NextHops: []*afthelper.NextHopSummary{{
-					Address:         "2001::abcd",
-					NetworkInstance: "DEFAULT",
+				NextHops: []*ResolvedNexthop{{
+					NextHopSummary: afthelper.NextHopSummary{
+						Address:         "2001::abcd",
+						NetworkInstance: "DEFAULT",
+					},
 				}},
 			}},
 		},
@@ -460,9 +465,11 @@ func TestEgressInterface(t *testing.T) {
 		inAddRoutes: map[string][]*Route{
 			"DEFAULT": {{
 				Prefix: "2023::2025/128",
-				NextHops: []*afthelper.NextHopSummary{{
-					Address:         "192.0.2.1",
-					NetworkInstance: "DEFAULT",
+				NextHops: []*ResolvedNexthop{{
+					NextHopSummary: afthelper.NextHopSummary{
+						Address:         "192.0.2.1",
+						NetworkInstance: "DEFAULT",
+					},
 				}},
 			}},
 		},
@@ -487,9 +494,11 @@ func TestEgressInterface(t *testing.T) {
 		inAddRoutes: map[string][]*Route{
 			"DEFAULT": {{
 				Prefix: "2023::2025/128",
-				NextHops: []*afthelper.NextHopSummary{{
-					Address:         "::ffff:192.0.2.1",
-					NetworkInstance: "DEFAULT",
+				NextHops: []*ResolvedNexthop{{
+					NextHopSummary: afthelper.NextHopSummary{
+						Address:         "::ffff:192.0.2.1",
+						NetworkInstance: "DEFAULT",
+					},
 				}},
 			}},
 		},
@@ -509,9 +518,11 @@ func TestEgressInterface(t *testing.T) {
 		inAddRoutes: map[string][]*Route{
 			"DEFAULT": {{
 				Prefix: "1.1.1.1/32",
-				NextHops: []*afthelper.NextHopSummary{{
-					Address:         "1.1.1.1",
-					NetworkInstance: "DEFAULT",
+				NextHops: []*ResolvedNexthop{{
+					NextHopSummary: afthelper.NextHopSummary{
+						Address:         "1.1.1.1",
+						NetworkInstance: "DEFAULT",
+					},
 				}},
 			}},
 		},
@@ -528,9 +539,11 @@ func TestEgressInterface(t *testing.T) {
 		inAddRoutes: map[string][]*Route{
 			"DEFAULT": {{
 				Prefix: "1.0.0.0/8",
-				NextHops: []*afthelper.NextHopSummary{{
-					Address:         "1.1.1.1",
-					NetworkInstance: "DEFAULT",
+				NextHops: []*ResolvedNexthop{{
+					NextHopSummary: afthelper.NextHopSummary{
+						Address:         "1.1.1.1",
+						NetworkInstance: "DEFAULT",
+					},
 				}},
 			}},
 		},
@@ -547,15 +560,19 @@ func TestEgressInterface(t *testing.T) {
 		inAddRoutes: map[string][]*Route{
 			"DEFAULT": {{
 				Prefix: "1.0.0.0/8",
-				NextHops: []*afthelper.NextHopSummary{{
-					Address:         "2.2.2.2",
-					NetworkInstance: "DEFAULT",
+				NextHops: []*ResolvedNexthop{{
+					NextHopSummary: afthelper.NextHopSummary{
+						Address:         "2.2.2.2",
+						NetworkInstance: "DEFAULT",
+					},
 				}},
 			}, {
 				Prefix: "2.0.0.0/8",
-				NextHops: []*afthelper.NextHopSummary{{
-					Address:         "1.1.1.1",
-					NetworkInstance: "DEFAULT",
+				NextHops: []*ResolvedNexthop{{
+					NextHopSummary: afthelper.NextHopSummary{
+						Address:         "1.1.1.1",
+						NetworkInstance: "DEFAULT",
+					},
 				}},
 			}},
 		},
@@ -582,15 +599,21 @@ func TestEgressInterface(t *testing.T) {
 		inAddRoutes: map[string][]*Route{
 			"DEFAULT": {{
 				Prefix: "1.1.1.0/24",
-				NextHops: []*afthelper.NextHopSummary{{
-					Address: "192.0.2.1",
+				NextHops: []*ResolvedNexthop{{
+					NextHopSummary: afthelper.NextHopSummary{
+						Address: "192.0.2.1",
+					},
 				}, {
-					Address: "2.2.2.2",
+					NextHopSummary: afthelper.NextHopSummary{
+						Address: "2.2.2.2",
+					},
 				}},
 			}, {
 				Prefix: "2.0.0.0/8",
-				NextHops: []*afthelper.NextHopSummary{{
-					Address: "1.1.1.1",
+				NextHops: []*ResolvedNexthop{{
+					NextHopSummary: afthelper.NextHopSummary{
+						Address: "1.1.1.1",
+					},
 				}},
 			}},
 		},
@@ -620,15 +643,21 @@ func TestEgressInterface(t *testing.T) {
 		inAddRoutes: map[string][]*Route{
 			"DEFAULT": {{
 				Prefix: "2001:db8:42::/48",
-				NextHops: []*afthelper.NextHopSummary{{
-					Address: "2001:db8:1::1",
+				NextHops: []*ResolvedNexthop{{
+					NextHopSummary: afthelper.NextHopSummary{
+						Address: "2001:db8:1::1",
+					},
 				}, {
-					Address: "2001:db8:0b::1",
+					NextHopSummary: afthelper.NextHopSummary{
+						Address: "2001:db8:0b::1",
+					},
 				}},
 			}, {
 				Prefix: "2001:db8:0b::1/128",
-				NextHops: []*afthelper.NextHopSummary{{
-					Address: "2001:db8:42::1",
+				NextHops: []*ResolvedNexthop{{
+					NextHopSummary: afthelper.NextHopSummary{
+						Address: "2001:db8:42::1",
+					},
 				}},
 			}},
 		},
@@ -658,12 +687,16 @@ func TestEgressInterface(t *testing.T) {
 		inAddRoutes: map[string][]*Route{
 			"DEFAULT": {{
 				Prefix: "8.8.8.8/32",
-				NextHops: []*afthelper.NextHopSummary{{
-					Address:         "192.0.2.1",
-					NetworkInstance: "DEFAULT",
+				NextHops: []*ResolvedNexthop{{
+					NextHopSummary: afthelper.NextHopSummary{
+						Address:         "192.0.2.1",
+						NetworkInstance: "DEFAULT",
+					},
 				}, {
-					Address:         "172.16.12.4",
-					NetworkInstance: "DEFAULT",
+					NextHopSummary: afthelper.NextHopSummary{
+						Address:         "172.16.12.4",
+						NetworkInstance: "DEFAULT",
+					},
 				}},
 			}},
 		},
@@ -694,12 +727,16 @@ func TestEgressInterface(t *testing.T) {
 		inAddRoutes: map[string][]*Route{
 			"DEFAULT": {{
 				Prefix: "2023::2025/128",
-				NextHops: []*afthelper.NextHopSummary{{
-					Address:         "2001::abcd",
-					NetworkInstance: "DEFAULT",
+				NextHops: []*ResolvedNexthop{{
+					NextHopSummary: afthelper.NextHopSummary{
+						Address:         "2001::abcd",
+						NetworkInstance: "DEFAULT",
+					},
 				}, {
-					Address:         "4002::def0",
-					NetworkInstance: "DEFAULT",
+					NextHopSummary: afthelper.NextHopSummary{
+						Address:         "4002::def0",
+						NetworkInstance: "DEFAULT",
+					},
 				}},
 			}},
 		},
@@ -730,12 +767,16 @@ func TestEgressInterface(t *testing.T) {
 		inAddRoutes: map[string][]*Route{
 			"DEFAULT": {{
 				Prefix: "2023::2025/128",
-				NextHops: []*afthelper.NextHopSummary{{
-					Address:         "::ffff:192.0.2.1",
-					NetworkInstance: "DEFAULT",
+				NextHops: []*ResolvedNexthop{{
+					NextHopSummary: afthelper.NextHopSummary{
+						Address:         "::ffff:192.0.2.1",
+						NetworkInstance: "DEFAULT",
+					},
 				}, {
-					Address:         "4002::def0",
-					NetworkInstance: "DEFAULT",
+					NextHopSummary: afthelper.NextHopSummary{
+						Address:         "4002::def0",
+						NetworkInstance: "DEFAULT",
+					},
 				}},
 			}},
 		},

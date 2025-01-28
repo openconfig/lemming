@@ -34,6 +34,7 @@ message Header {
   uint32 src_port = 4;
   uint32 dst_port = 5;
   repeated uint32 labels = 6;
+  uint32 ip_ttl = 7;
 }
 
 message Headers {
