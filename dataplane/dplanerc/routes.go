@@ -230,6 +230,7 @@ func (ni *Reconciler) createNextHop(ctx context.Context, hop *dpb.NextHop) (uint
 		}
 		log.Infof("created gue actions: %v", actReq)
 	}
+	// TODO: refactor this into a seperate func
 	if len(hop.GetHeaders().GetHeaders()) > 0 {
 		layer := []gopacket.SerializableLayer{}
 		parseHdr := fwdpb.PacketHeaderId_PACKET_HEADER_ID_OPAQUE
@@ -263,8 +264,6 @@ func (ni *Reconciler) createNextHop(ctx context.Context, hop *dpb.NextHop) (uint
 						{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_INPUT_IFACE}},
 						{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE}},
 						{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TRAP_ID}},
-						{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_GROUP_ID}},
-						{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_ID}},
 						{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF}},
 					},
 					// After the UDP header, the rest of the packet (original packet) will be classified as payload.
