@@ -41,7 +41,8 @@ import (
 // LemmingReconciler reconciles a Lemming object
 type LemmingReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme    *runtime.Scheme
+	ExtraArgs []string
 }
 
 //+kubebuilder:rbac:groups=lemming.openconfig.net,resources=lemmings,verbs=get;list;watch;create;update;patch;delete
@@ -190,6 +191,7 @@ func (r *LemmingReconciler) reconcilePod(ctx context.Context, lemming *lemmingv1
 	for arg := range requiredArgs {
 		sortedArgs = append(sortedArgs, arg)
 	}
+	sortedArgs = append(sortedArgs, r.ExtraArgs...)
 	sort.Strings(sortedArgs)
 	pod.Spec.Containers[0].Args = append(pod.Spec.Containers[0].Args, sortedArgs...)
 
@@ -261,10 +263,7 @@ func (r *LemmingReconciler) setupInitialPod(pod *corev1.Pod, lemming *lemmingv1a
 	pod.ObjectMeta = metav1.ObjectMeta{
 		Name:      lemming.Name,
 		Namespace: lemming.Namespace,
-		Labels: map[string]string{
-			"app":  lemming.Name,
-			"topo": lemming.Namespace,
-		},
+		Labels:    lemming.Labels,
 	}
 	pod.Spec.InitContainers = []corev1.Container{{
 		Name: "init",
