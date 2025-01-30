@@ -22,6 +22,21 @@ function dumpinfo {
     fi
 }
 
+sudo tee /etc/google-cloud-ops-agent/config.yaml << EOF 
+logging:
+  receivers:
+    kne-pods:
+      type: files
+      include_paths:
+        - /tmp/kne-logs/pods/*/*/*.log
+      record_log_file_path: true
+  service:
+    pipelines:
+      kne-pods-pipeline:
+        receivers: [kne-pods]
+EOF
+sudo service google-cloud-ops-agent restart
+
 echo "$BUILD"
 cat << EOF > ~/.bazelrc
 build --remote_cache https://storage.googleapis.com/lemming-bazel-cache
