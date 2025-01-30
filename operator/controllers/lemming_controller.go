@@ -263,7 +263,13 @@ func (r *LemmingReconciler) setupInitialPod(pod *corev1.Pod, lemming *lemmingv1a
 	pod.ObjectMeta = metav1.ObjectMeta{
 		Name:      lemming.Name,
 		Namespace: lemming.Namespace,
-		Labels:    lemming.Labels,
+		Labels: map[string]string{
+			"app":  lemming.Name,
+			"topo": lemming.Namespace,
+		},
+	}
+	for k, v := range lemming.Labels {
+		pod.Labels[k] = v
 	}
 	pod.Spec.InitContainers = []corev1.Container{{
 		Name: "init",
