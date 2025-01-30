@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sync"
 	"time"
 
 	"google.golang.org/genproto/googleapis/rpc/status"
@@ -52,6 +53,7 @@ func New(portFile string) (*PacketIOMgr, error) {
 
 // PacketIOMgr creates and delete ports and reads and writes to them.
 type PacketIOMgr struct {
+	mu                sync.Mutex
 	hostifs           map[uint64]*port
 	dplanePortIfIndex map[uint64]int // For tap devices, maps the dataport port id to hostif if index.
 	sendQueue         *queue.Queue
@@ -104,7 +106,9 @@ func (m *PacketIOMgr) StreamPackets(c pktiopb.PacketIO_CPUPacketStreamClient) er
 				log.Warningf("received err from server: %v", err)
 				continue
 			}
+			m.mu.Lock()
 			port, ok := m.hostifs[out.GetPacket().GetHostPort()]
+			m.mu.Unlock()
 			if !ok {
 				log.Warningf("skipping unknown port id: %v", out.GetPacket().GetHostPort())
 				continue
@@ -119,6 +123,8 @@ func (m *PacketIOMgr) StreamPackets(c pktiopb.PacketIO_CPUPacketStreamClient) er
 }
 
 func (m *PacketIOMgr) metadataFromPacket(p *pktiopb.Packet) *kernel.PacketMetadata {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	md := &kernel.PacketMetadata{
 		SrcIfIndex: int16(m.dplanePortIfIndex[p.GetInputPort()]),
 		DstIfIndex: int16(m.dplanePortIfIndex[p.GetOutputPort()]),
@@ -128,6 +134,9 @@ func (m *PacketIOMgr) metadataFromPacket(p *pktiopb.Packet) *kernel.PacketMetada
 }
 
 func (m *PacketIOMgr) writePorts() error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	if m.portFile == "" {
 		return nil
 	}
@@ -138,7 +147,6 @@ func (m *PacketIOMgr) writePorts() error {
 		Hostifs: make(map[uint64]*pktiopb.HostPortControlMessage),
 		PortIds: m.dplanePortIfIndex,
 	}
-
 	for id, h := range m.hostifs {
 		msg.Hostifs[id] = h.msg
 	}
@@ -182,7 +190,9 @@ func (m *PacketIOMgr) ManagePorts(c pktiopb.PacketIO_HostPortControlClient) erro
 				log.Warningf("failed to write file: %v", err)
 			}
 		case pktiopb.PortOperation_PORT_OPERATION_DELETE:
+			m.mu.Lock()
 			p, ok := m.hostifs[resp.GetPortId()]
+			m.mu.Unlock()
 			if !ok {
 				sendErr := c.Send(&pktiopb.HostPortControlRequest{Msg: &pktiopb.HostPortControlRequest_Status{
 					Status: &status.Status{
@@ -195,7 +205,7 @@ func (m *PacketIOMgr) ManagePorts(c pktiopb.PacketIO_HostPortControlClient) erro
 				}
 				continue
 			}
-			m.hostifs[resp.GetPortId()].cancelFn()
+			p.cancelFn()
 			if err := p.Delete(); err != nil {
 				sendErr := c.Send(&pktiopb.HostPortControlRequest{Msg: &pktiopb.HostPortControlRequest_Status{
 					Status: &status.Status{
@@ -207,7 +217,9 @@ func (m *PacketIOMgr) ManagePorts(c pktiopb.PacketIO_HostPortControlClient) erro
 					return sendErr
 				}
 			}
+			m.mu.Lock()
 			delete(m.hostifs, resp.GetPortId())
+			m.mu.Unlock()
 			sendErr := c.Send(&pktiopb.HostPortControlRequest{Msg: &pktiopb.HostPortControlRequest_Status{
 				Status: &status.Status{
 					Code: int32(codes.OK),
@@ -220,7 +232,9 @@ func (m *PacketIOMgr) ManagePorts(c pktiopb.PacketIO_HostPortControlClient) erro
 				log.Warningf("failed to write file: %v", err)
 			}
 		case pktiopb.PortOperation_PORT_OPERATION_SET_UP, pktiopb.PortOperation_PORT_OPERATION_SET_DOWN:
+			m.mu.Lock()
 			p, ok := m.hostifs[resp.GetPortId()]
+			m.mu.Unlock()
 			if !ok {
 				sendErr := c.Send(&pktiopb.HostPortControlRequest{Msg: &pktiopb.HostPortControlRequest_Status{
 					Status: &status.Status{
@@ -262,6 +276,8 @@ func Register(t pktiopb.PortType, b func(*pktiopb.HostPortControlMessage) (PortI
 var linkByName = netlink.LinkByName
 
 func (m *PacketIOMgr) createPort(msg *pktiopb.HostPortControlMessage) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	var p PortIO
 	switch msg.GetPort().(type) {
 	case *pktiopb.HostPortControlMessage_Genetlink:
