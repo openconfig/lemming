@@ -315,9 +315,7 @@ func (m *PacketIOMgr) createPort(msg *pktiopb.HostPortControlMessage) error {
 }
 
 func (m *PacketIOMgr) queueRead(id uint64, done chan struct{}) {
-	m.mu.Lock()
 	p := m.hostifs[id]
-	m.mu.Unlock()
 	go func() {
 		buf := make([]byte, 9100) // TODO: Configurable MTU.
 		for {
