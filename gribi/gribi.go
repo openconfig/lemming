@@ -221,9 +221,29 @@ func createSetRouteRequest(prefix string, nexthops []*afthelper.NextHopSummary, 
 					IpTtl:   uint32(udp.GetIpTtl()),
 				})
 			case aft.AftTypes_EncapsulationHeaderType_MPLS:
-				nh.Encap.Headers = append(nh.Encap.Headers, &routingpb.Header{
+				rh := &routingpb.Header{
 					Type: routingpb.HeaderType_HEADER_TYPE_MPLS,
-				})
+				}
+				for _, l := range eh.GetMpls().GetMplsLabelStack() {
+					switch val := l.(type) {
+					case aft.UnionUint32:
+						rh.Labels = append(rh.Labels, uint32(val))
+					case aft.E_MplsTypes_MplsLabel_Enum: // https://www.iana.org/assignments/mpls-label-values/mpls-label-values.xhtml
+						switch val {
+						case aft.MplsTypes_MplsLabel_Enum_IPV4_EXPLICIT_NULL:
+							rh.Labels = append(rh.Labels, 0)
+						case aft.MplsTypes_MplsLabel_Enum_ROUTER_ALERT:
+							rh.Labels = append(rh.Labels, 1)
+						case aft.MplsTypes_MplsLabel_Enum_IPV6_EXPLICIT_NULL:
+							rh.Labels = append(rh.Labels, 2)
+						case aft.MplsTypes_MplsLabel_Enum_IMPLICIT_NULL:
+							rh.Labels = append(rh.Labels, 3)
+						case aft.MplsTypes_MplsLabel_Enum_ENTROPY_LABEL_INDICATOR:
+							rh.Labels = append(rh.Labels, 7)
+						}
+					}
+				}
+				nh.Encap.Headers = append(nh.Encap.Headers, rh)
 			default:
 				return nil, fmt.Errorf("unsupported encap type: %v", eh.Type)
 			}
