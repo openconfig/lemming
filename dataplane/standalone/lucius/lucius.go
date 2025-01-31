@@ -39,6 +39,7 @@ import (
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
@@ -99,11 +100,18 @@ func start(port int) {
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
+	logOpts := []logging.Option{logging.WithLogOnEvents(logging.FinishCall), logging.WithLevels(func(code codes.Code) logging.Level {
+		switch code {
+		case codes.OK:
+			return logging.LevelDebug
+		}
+		return logging.DefaultServerCodeToLevel(code)
+	})}
 
 	mgr := attrmgr.New()
 	srv := grpc.NewServer(grpc.Creds(insecure.NewCredentials()),
-		grpc.ChainUnaryInterceptor(logging.UnaryServerInterceptor(getLogger()), mgr.Interceptor, traceHandler),
-		grpc.ChainStreamInterceptor(logging.StreamServerInterceptor(getLogger())),
+		grpc.ChainUnaryInterceptor(logging.UnaryServerInterceptor(getLogger(), logOpts...), mgr.Interceptor, traceHandler),
+		grpc.ChainStreamInterceptor(logging.StreamServerInterceptor(getLogger(), logOpts...)),
 		grpc.StatsHandler(otelgrpc.NewServerHandler()),
 	)
 
