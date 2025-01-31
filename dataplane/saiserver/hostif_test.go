@@ -169,6 +169,7 @@ func TestRemoveHostif(t *testing.T) {
 		},
 		want: &pktiopb.HostPortControlMessage{
 			PortId: 1,
+			Op:     pktiopb.PortOperation_PORT_OPERATION_DELETE,
 		},
 	}}
 	for _, tt := range tests {

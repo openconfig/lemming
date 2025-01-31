@@ -204,8 +204,8 @@ func (hostif *hostif) RemoveHostif(ctx context.Context, req *saipb.RemoveHostifR
 	}
 
 	ctlReq := &pktiopb.HostPortControlMessage{
-		Create: false,
 		PortId: req.Oid,
+		Op:     pktiopb.PortOperation_PORT_OPERATION_DELETE,
 	}
 
 	if hostif.remotePortReq == nil {
