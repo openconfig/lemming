@@ -208,7 +208,7 @@ func createSetRouteRequest(prefix string, nexthops []*afthelper.NextHopSummary, 
 			case aft.AftTypes_EncapsulationHeaderType_UDP:
 				udpType := routingpb.HeaderType_HEADER_TYPE_UDP4
 				var udp udpEncap = eh.GetUdpV4() // TODO: there should be a specific enum value for this.
-				if eh.GetUdpV4() == nil {
+				if udp == nil {
 					udp = eh.GetUdpV6()
 					udpType = routingpb.HeaderType_HEADER_TYPE_UDP6
 				}
