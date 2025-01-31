@@ -21,7 +21,6 @@ import (
 	"runtime/debug"
 	"slices"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 
@@ -275,45 +274,41 @@ func updateCacheNotifs(c *Collector, nos []*gpb.Notification, origin string) err
 			pathsForDelete = append(pathsForDelete, p)
 		}
 		if len(n.Update) > 0 {
-			log.V(1).Infof("datastore: updating the following values: %+v", n.Update)
+			log.V(3).Infof("datastore: updating the following values: %+v", n.Update)
 		}
 		if len(pathsForDelete) > 0 {
-			log.V(1).Infof("datastore: deleting the following paths: %+v", pathsForDelete)
+			log.V(3).Infof("datastore: deleting the following paths: %+v", pathsForDelete)
 		}
-		log.V(1).Infof("datastore: calling GnmiUpdate with the following notification:\n%s", prototext.Format(n))
+		log.V(3).Infof("datastore: calling GnmiUpdate with the following notification:\n%s", prototext.Format(n))
 		if err := c.GnmiUpdate(n); err != nil {
 			return fmt.Errorf("%w: notification:\n%s\n%s", err, prototext.Format(n), string(debug.Stack()))
 		}
 		if enableDebugLog && (len(n.Delete) != 0 || len(n.Update) != 0) {
-			log.V(0).Infof("updateCacheNotifs:\n%s", compactNotifString(n))
+			logUpdate(n)
 		}
 	}
 	return nil
 }
 
-func compactNotifString(n *gpb.Notification) string {
-	var build strings.Builder
+func logUpdate(n *gpb.Notification) {
 	prefix, err := ygot.PathToString(n.Prefix)
 	if err != nil {
-		return prototext.Format(n)
+		return
 	}
-	build.WriteString(fmt.Sprintf("prefix: %s\n", prefix))
-	build.WriteString(fmt.Sprintf("timestamp: %d\n", n.GetTimestamp()))
 	for _, d := range n.Delete {
 		path, err := ygot.PathToString(d)
 		if err != nil {
-			return prototext.Format(n)
+			return
 		}
-		build.WriteString(fmt.Sprintf("delete: %s\n", path))
+		log.V(1).Infof("ts: %d, pre: %s, delete: %s", n.GetTimestamp(), prefix, path)
 	}
 	for _, u := range n.Update {
 		path, err := ygot.PathToString(u.GetPath())
 		if err != nil {
-			return prototext.Format(n)
+			return
 		}
-		build.WriteString(fmt.Sprintf("update %s: %v\n", path, u.GetVal()))
+		log.V(1).Infof("ts: %d, pre: %s, update %s: %v\n", n.GetTimestamp(), prefix, path, u.GetVal())
 	}
-	return build.String()
 }
 
 // unmarshalSetRequest unmarshals the setrequest into the schema.
@@ -546,7 +541,7 @@ func (s *Server) Set(ctx context.Context, req *gpb.SetRequest) (*gpb.SetResponse
 		s.configMu.Lock()
 		defer s.configMu.Unlock()
 
-		log.V(1).Infof("config datastore service received SetRequest: %v", prototext.Format(req))
+		log.V(2).Infof("config datastore service received SetRequest: %v", prototext.Format(req))
 		if s.configSchema == nil {
 			return s.UnimplementedGNMIServer.Set(ctx, req)
 		}

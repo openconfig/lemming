@@ -18,7 +18,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"runtime/debug"
 	"time"
 
 	log "github.com/golang/glog"
@@ -143,7 +142,7 @@ func (c *Collector) GnmiUpdate(n *gpb.Notification) error {
 	}
 	err := t.GnmiUpdate(n)
 	if errors.Is(err, cache.ErrStale) {
-		log.Errorf("Unexpected stale update while updating cache: %v, (current time: %v, notif time: %v): %v\n\n%v", err, time.Now().UnixNano(), n.Timestamp, string(debug.Stack()), compactNotifString(n))
+		log.Errorf("Unexpected stale update while updating cache: %v, (current time: %v, notif time: %v)", err, time.Now().UnixNano(), n.Timestamp)
 		return nil
 	}
 	return err
