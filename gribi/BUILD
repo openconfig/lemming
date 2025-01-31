@@ -9,6 +9,7 @@ go_library(
         "//gnmi/gnmiclient",
         "//gnmi/oc",
         "//gnmi/oc/ocpath",
+        "//proto/routing",
         "//proto/sysrib",
         "@com_github_golang_glog//:glog",
         "@com_github_openconfig_gnmi//proto/gnmi",

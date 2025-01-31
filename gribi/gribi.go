@@ -17,7 +17,9 @@ package gribi
 import (
 	"context"
 	"fmt"
+	"maps"
 	"net/netip"
+	"slices"
 
 	log "github.com/golang/glog"
 	"github.com/openconfig/gribigo/aft"
@@ -38,6 +40,7 @@ import (
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 	gribipb "github.com/openconfig/gribi/v1/proto/service"
 
+	routingpb "github.com/openconfig/lemming/proto/routing"
 	sysribpb "github.com/openconfig/lemming/proto/sysrib"
 )
 
@@ -141,7 +144,7 @@ func createGRIBIServer(gClient gpb.GNMIClient, target string, root *oc.Root, sys
 			return
 		}
 
-		routeReq, err := createSetRouteRequest(prefix, nhSum)
+		routeReq, err := createSetRouteRequest(prefix, nhSum, ribs)
 		if err != nil {
 			log.Errorf("Cannot create SetRouteRequest: %v", err)
 			return
@@ -170,8 +173,16 @@ func createGRIBIServer(gClient gpb.GNMIClient, target string, root *oc.Root, sys
 	return s, nil
 }
 
+type udpEncap interface {
+	GetDstIp() string
+	GetSrcIp() string
+	GetDstUdpPort() uint16
+	GetSrcUdpPort() uint16
+	GetIpTtl() uint8
+}
+
 // createSetRouteRequest converts a Route to a sysrib SetRouteRequest
-func createSetRouteRequest(prefix string, nexthops []*afthelper.NextHopSummary) (*sysribpb.SetRouteRequest, error) {
+func createSetRouteRequest(prefix string, nexthops []*afthelper.NextHopSummary, ribs map[string]*aft.RIB) (*sysribpb.SetRouteRequest, error) {
 	pfx, err := netip.ParsePrefix(prefix)
 	if err != nil {
 		log.Errorf("Cannot parse prefix %q as CIDR for calling sysrib", prefix)
@@ -183,11 +194,61 @@ func createSetRouteRequest(prefix string, nexthops []*afthelper.NextHopSummary) 
 
 	var zNexthops []*sysribpb.Nexthop
 	for _, nhs := range nexthops {
-		zNexthops = append(zNexthops, &sysribpb.Nexthop{
+		nh := &sysribpb.Nexthop{
 			Type:    sysribpb.Nexthop_TYPE_IPV4,
 			Address: nhs.Address,
 			Weight:  nhs.Weight,
-		})
+			Encap:   &routingpb.Headers{},
+		}
+		encaps := slices.Collect(maps.Keys(ribs[nhs.NetworkInstance].GetAfts().GetNextHop(nhs.Index).EncapHeader))
+		slices.Sort(encaps)
+		for _, i := range encaps {
+			eh := ribs[nhs.NetworkInstance].GetAfts().GetNextHop(nhs.Index).GetEncapHeader(i)
+			switch eh.Type {
+			case aft.AftTypes_EncapsulationHeaderType_UDP:
+				udpType := routingpb.HeaderType_HEADER_TYPE_UDP4
+				var udp udpEncap = eh.GetUdpV4() // TODO: there should be a specific enum value for this.
+				if eh.GetUdpV4() == nil {
+					udp = eh.GetUdpV6()
+					udpType = routingpb.HeaderType_HEADER_TYPE_UDP6
+				}
+				nh.Encap.Headers = append(nh.Encap.Headers, &routingpb.Header{
+					Type:    udpType,
+					SrcIp:   udp.GetSrcIp(),
+					DstIp:   udp.GetDstIp(),
+					SrcPort: uint32(udp.GetSrcUdpPort()),
+					DstPort: uint32(udp.GetDstUdpPort()),
+					IpTtl:   uint32(udp.GetIpTtl()),
+				})
+			case aft.AftTypes_EncapsulationHeaderType_MPLS:
+				rh := &routingpb.Header{
+					Type: routingpb.HeaderType_HEADER_TYPE_MPLS,
+				}
+				for _, l := range eh.GetMpls().GetMplsLabelStack() {
+					switch val := l.(type) {
+					case aft.UnionUint32:
+						rh.Labels = append(rh.Labels, uint32(val))
+					case aft.E_MplsTypes_MplsLabel_Enum: // https://www.iana.org/assignments/mpls-label-values/mpls-label-values.xhtml
+						switch val {
+						case aft.MplsTypes_MplsLabel_Enum_IPV4_EXPLICIT_NULL:
+							rh.Labels = append(rh.Labels, 0)
+						case aft.MplsTypes_MplsLabel_Enum_ROUTER_ALERT:
+							rh.Labels = append(rh.Labels, 1)
+						case aft.MplsTypes_MplsLabel_Enum_IPV6_EXPLICIT_NULL:
+							rh.Labels = append(rh.Labels, 2)
+						case aft.MplsTypes_MplsLabel_Enum_IMPLICIT_NULL:
+							rh.Labels = append(rh.Labels, 3)
+						case aft.MplsTypes_MplsLabel_Enum_ENTROPY_LABEL_INDICATOR:
+							rh.Labels = append(rh.Labels, 7)
+						}
+					}
+				}
+				nh.Encap.Headers = append(nh.Encap.Headers, rh)
+			default:
+				return nil, fmt.Errorf("unsupported encap type: %v", eh.Type)
+			}
+		}
+		zNexthops = append(zNexthops, nh)
 	}
 
 	family := sysribpb.Prefix_FAMILY_IPV4

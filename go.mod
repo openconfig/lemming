@@ -23,7 +23,7 @@ require (
 	github.com/openconfig/gnsi v1.6.0
 	github.com/openconfig/goyang v1.4.5
 	github.com/openconfig/gribi v1.8.1
-	github.com/openconfig/gribigo v0.0.0-20250107192927-4f307a2fa0f7
+	github.com/openconfig/gribigo v0.0.0-20250129051118-4cc32a19859b
 	github.com/openconfig/kne v0.1.18
 	github.com/openconfig/magna v0.0.0-20240326180454-518e16696c84
 	github.com/openconfig/ondatra v0.5.8
