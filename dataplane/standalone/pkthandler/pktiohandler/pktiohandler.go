@@ -263,6 +263,16 @@ func (m *PacketIOMgr) ManagePorts(c pktiopb.PacketIO_HostPortControlClient) erro
 			if sendErr != nil {
 				return sendErr
 			}
+		default:
+			sendErr := c.Send(&pktiopb.HostPortControlRequest{Msg: &pktiopb.HostPortControlRequest_Status{
+				Status: &status.Status{
+					Code:    int32(codes.InvalidArgument),
+					Message: fmt.Sprintf("invalid operation: %v", resp.Op),
+				},
+			}})
+			if sendErr != nil {
+				return sendErr
+			}
 		}
 	}
 }
