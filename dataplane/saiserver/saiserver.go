@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"log/slog"
 
+	"go.opentelemetry.io/otel"
+
 	"github.com/openconfig/lemming/dataplane/dplaneopts"
 	"github.com/openconfig/lemming/dataplane/forwarding"
 	"github.com/openconfig/lemming/dataplane/saiserver/attrmgr"
@@ -232,6 +234,13 @@ func New(ctx context.Context, mgr *attrmgr.AttrMgr, s *grpc.Server, opts *dplane
 	saipb.RegisterSrv6Server(s, srv.srv6)
 	saipb.RegisterSystemPortServer(s, srv.systemPort)
 	saipb.RegisterTamServer(s, srv.tam)
+
+	m := otel.GetMeterProvider().Meter("openconfig/lemming/dataplane/saiserver")
+	c, err := m.Int64Counter("lucius-instance")
+	if err != nil {
+		return nil, err
+	}
+	c.Add(ctx, 1)
 
 	return srv, nil
 }

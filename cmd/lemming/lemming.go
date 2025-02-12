@@ -15,7 +15,10 @@
 package main
 
 import (
+	"context"
 	"flag"
+	"os"
+	"os/signal"
 
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -23,19 +26,24 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/openconfig/lemming"
+	"github.com/openconfig/lemming/internal/telemetry"
 
 	log "github.com/golang/glog"
 )
 
 var (
-	gnmiAddr    = pflag.String("gnmi", ":9339", "gNMI listen address")
-	gribiAddr   = pflag.String("gribi", ":9340", "gRIBI listen address")
-	bgpPort     = pflag.Uint("bgp_port", 179, "BGP listening port")
-	target      = pflag.String("target", "fakedut", "name of the fake target")
-	tlsKeyFile  = pflag.String("tls_key_file", "", "Controls whether to enable TLS for gNXI services. If unspecified, insecure credentials are used.")
-	tlsCertFile = pflag.String("tls_cert_file", "", "Controls whether to enable TLS for gNXI services. If unspecified, insecure credentials are used.")
-	zapiAddr    = pflag.String("zapi_addr", "unix:/var/run/zserv.api", "Custom ZAPI address: use unix:/tmp/zserv.api for a temp.")
-	dplane      = pflag.Bool("enable_dataplane", false, "Controls whether to enable dataplane")
+	gnmiAddr       = pflag.String("gnmi", ":9339", "gNMI listen address")
+	gribiAddr      = pflag.String("gribi", ":9340", "gRIBI listen address")
+	bgpPort        = pflag.Uint("bgp_port", 179, "BGP listening port")
+	target         = pflag.String("target", "fakedut", "name of the fake target")
+	tlsKeyFile     = pflag.String("tls_key_file", "", "Controls whether to enable TLS for gNXI services. If unspecified, insecure credentials are used.")
+	tlsCertFile    = pflag.String("tls_cert_file", "", "Controls whether to enable TLS for gNXI services. If unspecified, insecure credentials are used.")
+	zapiAddr       = pflag.String("zapi_addr", "unix:/var/run/zserv.api", "Custom ZAPI address: use unix:/tmp/zserv.api for a temp.")
+	dplane         = pflag.Bool("enable_dataplane", false, "Controls whether to enable dataplane")
+	gcpTraceExport = flag.Bool("gcp_trace_export", false, "If true, export OTEL traces to GCP")
+	gcpMeterExport = flag.Bool("gcp_meter_export", false, "If true, export OTEL meters to GCP")
+	gcpLogExport   = flag.Bool("gcp_log_export", false, "If true, export application logs to GCP")
+	gcpProject     = pflag.String("gcp_project", "", "GCP project to export to, by default it will use project where the GCE instance is running")
 )
 
 func main() {
@@ -43,12 +51,18 @@ func main() {
 	pflag.Parse()
 	viper.BindPFlags(pflag.CommandLine)
 
+	cancel, err := telemetry.Setup(context.Background(), telemetry.WithGCPProject(*gcpProject), telemetry.WithGCPLogExport(*gcpLogExport), telemetry.WithGCPTraceExport(*gcpTraceExport), telemetry.WithGCPMeterExport(*gcpMeterExport))
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer cancel(context.Background())
+
 	creds := insecure.NewCredentials()
 	if *tlsCertFile != "" && *tlsKeyFile != "" {
 		var err error
 		creds, err = credentials.NewServerTLSFromFile(*tlsCertFile, *tlsKeyFile)
 		if err != nil {
-			log.Fatalf("failed to create tls credentials: %v", err)
+			log.Exitf("failed to create tls credentials: %v", err)
 		}
 	}
 
@@ -59,10 +73,17 @@ func main() {
 		lemming.WithDataplane(*dplane),
 	)
 	if err != nil {
-		log.Fatalf("Failed to start lemming: %v", err)
+		log.Exitf("Failed to start lemming: %v", err)
 	}
 	defer f.Stop()
 
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+
 	log.Info("lemming initialization complete")
-	select {}
+	select {
+	case <-c:
+		log.Info("received sigint")
+		return
+	}
 }
