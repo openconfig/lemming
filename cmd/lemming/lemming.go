@@ -62,7 +62,7 @@ func main() {
 		var err error
 		creds, err = credentials.NewServerTLSFromFile(*tlsCertFile, *tlsKeyFile)
 		if err != nil {
-			log.Fatalf("failed to create tls credentials: %v", err)
+			log.Exitf("failed to create tls credentials: %v", err)
 		}
 	}
 
@@ -73,7 +73,7 @@ func main() {
 		lemming.WithDataplane(*dplane),
 	)
 	if err != nil {
-		log.Fatalf("Failed to start lemming: %v", err)
+		log.Exitf("Failed to start lemming: %v", err)
 	}
 	defer f.Stop()
 
