@@ -19,10 +19,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"os/signal"
 	"runtime"
-	"syscall"
-	"time"
 
 	"cloud.google.com/go/logging"
 	"cloud.google.com/go/logging/apiv2/loggingpb"
@@ -30,49 +27,31 @@ import (
 )
 
 // SetGlobal sets the global slog to use output a GCP cloud logging and stderr
-func SetGlobalLogger(ctx context.Context, project, logName string) error {
+func SetGlobalLogger(ctx context.Context, project, logName string, l slog.Level) func(context.Context) error {
 	cl, err := logging.NewClient(ctx, fmt.Sprintf("projects/%s", project))
 	if err != nil {
-		return err
+		return func(ctx context.Context) error { return nil }
 	}
 	if err := cl.Ping(ctx); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to ping cloud logging, not exporting logs: %v\n", err)
-		return err
+		return func(ctx context.Context) error { return nil }
 	}
-
 	h := &cloudLogHandle{
 		Handler: slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{}),
 		l:       cl.Logger(logName),
 		project: project,
+		level:   l,
 	}
 
-	t := time.NewTicker(time.Second)
-
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-
-	go func() {
-		for {
-			select {
-			case <-sigs:
-				h.l.Flush()
-				os.Exit(1)
-			case <-t.C:
-				if err := h.l.Flush(); err != nil {
-					fmt.Fprintf(os.Stderr, "log flush err: %v", err)
-				}
-			}
-		}
-	}()
-
 	slog.SetDefault(slog.New(h))
-	return nil
+	return func(context.Context) error { return h.l.Flush() }
 }
 
 type cloudLogHandle struct {
 	slog.Handler
 	l       *logging.Logger
 	project string
+	level   slog.Level
 }
 
 func (t *cloudLogHandle) Handle(ctx context.Context, record slog.Record) error {
@@ -113,8 +92,9 @@ func (t *cloudLogHandle) Handle(ctx context.Context, record slog.Record) error {
 		Line:     int64(f.Line),
 		Function: f.Function,
 	}
-
-	t.l.Log(entry)
+	if record.Level >= t.level {
+		t.l.Log(entry)
+	}
 
 	return t.Handler.Handle(ctx, record)
 }

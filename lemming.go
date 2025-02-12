@@ -22,6 +22,7 @@ import (
 	"runtime"
 	"sync"
 
+	"go.opentelemetry.io/otel"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/reflection"
@@ -318,6 +319,13 @@ func New(targetName, zapiURL string, opts ...Option) (*Device, error) {
 	if err := gnmiServer.StartReconcilers(context.Background()); err != nil {
 		return nil, err
 	}
+
+	m := otel.GetMeterProvider().Meter("openconfig/lemming")
+	c, err := m.Int64Counter("lemming-instance")
+	if err != nil {
+		return nil, err
+	}
+	c.Add(context.Background(), 1)
 
 	log.Info("lemming created")
 	return d, nil
