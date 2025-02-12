@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "telemetry",
+    srcs = ["telemetry.go"],
+    importpath = "github.com/openconfig/lemming/internal/telemetry",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/cloudlog",
+        "@com_github_googlecloudplatform_opentelemetry_operations_go_exporter_metric//:metric",
+        "@com_github_googlecloudplatform_opentelemetry_operations_go_exporter_trace//:trace",
+        "@com_google_cloud_go_monitoring//apiv3/v2:apiv3",
+        "@com_google_cloud_go_monitoring//apiv3/v2/monitoringpb",
+        "@com_google_cloud_go_trace//apiv2",
+        "@com_google_cloud_go_trace//apiv2/tracepb",
+        "@io_opentelemetry_go_contrib_detectors_gcp//:gcp",
+        "@io_opentelemetry_go_otel//:otel",
+        "@io_opentelemetry_go_otel//propagation",
+        "@io_opentelemetry_go_otel_exporters_stdout_stdoutlog//:stdoutlog",
+        "@io_opentelemetry_go_otel_log//global",
+        "@io_opentelemetry_go_otel_sdk//resource",
+        "@io_opentelemetry_go_otel_sdk//trace",
+        "@io_opentelemetry_go_otel_sdk_log//:log",
+        "@io_opentelemetry_go_otel_sdk_metric//:metric",
+        "@org_golang_google_genproto_googleapis_api//metric",
+        "@org_golang_google_grpc//metadata",
+        "@org_golang_google_protobuf//types/known/timestamppb",
+        "@org_golang_x_oauth2//google",
+    ],
+)

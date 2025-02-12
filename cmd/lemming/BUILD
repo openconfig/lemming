@@ -1,4 +1,5 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+load("@rules_distroless//distroless:defs.bzl", "cacerts")
 load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
@@ -9,6 +10,7 @@ go_library(
     visibility = ["//visibility:private"],
     deps = [
         "//:lemming",
+        "//internal/telemetry",
         "@com_github_golang_glog//:glog",
         "@com_github_spf13_pflag//:pflag",
         "@com_github_spf13_viper//:viper",
@@ -29,12 +31,20 @@ pkg_tar(
     package_dir = "lemming",
 )
 
+cacerts(
+    name = "cacerts",
+    package = select({
+        "@platforms//cpu:x86_64": "@bookworm//ca-certificates/amd64:data",
+    }),
+)
+
 oci_image(
     name = "image",
     base = "@debian_bookworm",
     entrypoint = ["/lemming/lemming"],
     tars = [
         ":bin-tar",
+        ":cacerts",
         "@bookworm//libpcap-dev/amd64",
     ],
 )

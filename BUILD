@@ -31,6 +31,7 @@ go_library(
         "@com_github_golang_glog//:glog",
         "@com_github_openconfig_gribigo//server",
         "@io_k8s_klog_v2//:klog",
+        "@io_opentelemetry_go_otel//:otel",
         "@org_golang_google_grpc//:grpc",
         "@org_golang_google_grpc//credentials",
         "@org_golang_google_grpc//reflection",

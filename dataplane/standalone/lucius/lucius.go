@@ -16,39 +16,25 @@ package main
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"fmt"
 	"log"
 	"log/slog"
 	"net"
-	"os"
 
-	traceapi "cloud.google.com/go/trace/apiv2"
-	"cloud.google.com/go/trace/apiv2/tracepb"
-	texporter "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
-	"go.opentelemetry.io/contrib/detectors/gcp"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/exporters/stdout/stdoutlog"
-	"go.opentelemetry.io/otel/log/global"
-	"go.opentelemetry.io/otel/propagation"
-	sdklog "go.opentelemetry.io/otel/sdk/log"
-	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
-	"go.opentelemetry.io/otel/sdk/resource"
-	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/openconfig/lemming/dataplane/dplaneopts"
 	"github.com/openconfig/lemming/dataplane/saiserver"
 	"github.com/openconfig/lemming/dataplane/saiserver/attrmgr"
-	"github.com/openconfig/lemming/internal/cloudlog"
+	"github.com/openconfig/lemming/internal/telemetry"
 
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
@@ -60,14 +46,18 @@ var (
 	_              = flag.String("port_map", "", "Map of modeled port names to Linux interface to  as comma seperated list (eg Ethernet8:eth1,Ethernet10,eth2) (deprecated, no-op will be removed in future release)")
 	_              = flag.Bool("eth_dev_as_lane", true, "If true, when creating ports, use ethX and hardware lane X (deprecated, no-op will always to true in future release)")
 	_              = flag.Bool("remote_cpu_port", true, "If true, send all packets from/to the CPU port over gRPC (deprecated, no-op will always to true in future release)")
-	gcpTelemExport = flag.Bool("gcp_telem_export", false, "If true, export OTEL telemetry and logs to GCP")
+	instGrpc       = flag.Bool("instrument_grpc", false, "If true, adds intrumentation for all gRPCS servers.")
+	gcpTraceExport = flag.Bool("gcp_trace_export", false, "If true, export OTEL traces to GCP")
+	gcpMeterExport = flag.Bool("gcp_meter_export", false, "If true, export OTEL meters to GCP")
+	gcpLogExport   = flag.Bool("gcp_log_export", false, "If true, export application logs to GCP")
 	gcpProject     = flag.String("gcp_project", "", "GCP project to export to, by default it will use project where the GCE instance is running")
 	hwProfile      = flag.String("hw_profile", "", "Path to hardware profile config file.")
 )
 
 func main() {
 	flag.Parse()
-	cancel, err := setupOTelSDK(context.Background())
+
+	cancel, err := telemetry.Setup(context.Background(), telemetry.WithGCPProject(*gcpProject), telemetry.WithGCPLogExport(*gcpLogExport), telemetry.WithGCPTraceExport(*gcpTraceExport), telemetry.WithGCPMeterExport(*gcpMeterExport))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -109,11 +99,16 @@ func start(port int) {
 	})}
 
 	mgr := attrmgr.New()
-	srv := grpc.NewServer(grpc.Creds(insecure.NewCredentials()),
+	srvOpts := []grpc.ServerOption{
+		grpc.Creds(insecure.NewCredentials()),
 		grpc.ChainUnaryInterceptor(logging.UnaryServerInterceptor(getLogger(), logOpts...), mgr.Interceptor, traceHandler),
 		grpc.ChainStreamInterceptor(logging.StreamServerInterceptor(getLogger(), logOpts...)),
-		grpc.StatsHandler(otelgrpc.NewServerHandler()),
-	)
+	}
+	if *instGrpc {
+		srvOpts = append(srvOpts, grpc.StatsHandler(otelgrpc.NewServerHandler()))
+	}
+
+	srv := grpc.NewServer(srvOpts...)
 
 	reflection.Register(srv)
 
@@ -129,109 +124,4 @@ func start(port int) {
 	if err := srv.Serve(lis); err != nil {
 		log.Fatalf("failed to serve forwarding server: %v", err)
 	}
-}
-
-// setupOTelSDK bootstraps the OpenTelemetry pipeline.
-// If it does not return an error, make sure to call shutdown for proper cleanup.
-func setupOTelSDK(ctx context.Context) (func(context.Context) error, error) {
-	var shutdownFuncs []func(context.Context) error
-
-	var exporter sdktrace.SpanExporter
-
-	var err error
-	if *gcpTelemExport {
-		exporter, err = texporter.New(texporter.WithProjectID(*gcpProject), texporter.WithDestinationProjectQuota())
-		if err != nil {
-			return nil, err
-		}
-		// Create a test span and try exporting it to verify authentication is successful.
-		c, err := traceapi.NewClient(ctx)
-		if err != nil {
-			return nil, err
-		}
-		_, span := tracer.Start(ctx, "ping")
-		span.End()
-
-		batchCtx := metadata.NewOutgoingContext(ctx, metadata.New(map[string]string{"x-goog-user-project": *gcpProject}))
-		err = c.BatchWriteSpans(batchCtx, &tracepb.BatchWriteSpansRequest{
-			Name: fmt.Sprintf("projects/%s", *gcpProject),
-			Spans: []*tracepb.Span{{
-				Name:        fmt.Sprintf("projects/%s/traces/%s/spans/%s", *gcpProject, span.SpanContext().TraceID().String(), span.SpanContext().SpanID().String()),
-				SpanId:      span.SpanContext().SpanID().String(),
-				DisplayName: &tracepb.TruncatableString{Value: "test"},
-				StartTime:   timestamppb.Now(),
-				EndTime:     timestamppb.Now(),
-			}},
-		})
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "failed to export test trace, disabling exporter: %v\n", err)
-			exporter = nil
-		}
-		cloudlog.SetGlobalLogger(ctx, *gcpProject, "lucius")
-	}
-
-	shutdown := func(ctx context.Context) error {
-		var err error
-		for _, fn := range shutdownFuncs {
-			err = errors.Join(err, fn(ctx))
-		}
-		shutdownFuncs = nil
-		return err
-	}
-
-	res, err := resource.New(ctx, resource.WithDetectors(gcp.NewDetector()), resource.WithHost(), resource.WithTelemetrySDK())
-	if err != nil {
-		return nil, err
-	}
-
-	// Set up propagator.
-	prop := newPropagator()
-	otel.SetTextMapPropagator(prop)
-
-	bsp := sdktrace.NewBatchSpanProcessor(exporter)
-	tracerProvider := sdktrace.NewTracerProvider(
-		sdktrace.WithSampler(sdktrace.AlwaysSample()),
-		sdktrace.WithResource(res),
-		sdktrace.WithSpanProcessor(bsp),
-	)
-
-	meterProvider := sdkmetric.NewMeterProvider(
-		sdkmetric.WithResource(res),
-	)
-
-	shutdownFuncs = append(shutdownFuncs, tracerProvider.Shutdown)
-	otel.SetTracerProvider(tracerProvider)
-
-	shutdownFuncs = append(shutdownFuncs, meterProvider.Shutdown)
-	otel.SetMeterProvider(meterProvider)
-
-	// Set up logger provider.
-	loggerProvider, err := newLoggerProvider(res)
-	if err != nil {
-		return nil, errors.Join(err, shutdown(ctx))
-	}
-	shutdownFuncs = append(shutdownFuncs, loggerProvider.Shutdown)
-	global.SetLoggerProvider(loggerProvider)
-
-	return shutdown, nil
-}
-
-func newPropagator() propagation.TextMapPropagator {
-	return propagation.NewCompositeTextMapPropagator(
-		propagation.TraceContext{},
-		propagation.Baggage{},
-	)
-}
-
-func newLoggerProvider(res *resource.Resource) (*sdklog.LoggerProvider, error) {
-	logExporter, err := stdoutlog.New()
-	if err != nil {
-		return nil, err
-	}
-
-	loggerProvider := sdklog.NewLoggerProvider(
-		sdklog.WithProcessor(sdklog.NewBatchProcessor(logExporter)),
-		sdklog.WithResource(res),
-	)
-	return loggerProvider, nil
 }
