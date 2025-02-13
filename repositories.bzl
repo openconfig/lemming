@@ -412,8 +412,8 @@ def go_repositories():
     go_repository(
         name = "com_github_envoyproxy_go_control_plane",
         importpath = "github.com/envoyproxy/go-control-plane",
-        sum = "h1:HzkeUz1Knt+3bK+8LG1bxOO/jzWZmdxpwC51i202les=",
-        version = "v0.13.0",
+        sum = "h1:vPfJZCkob6yTMEgS+0TwfTUfbHjfy/6vOJ8hUWX/uXE=",
+        version = "v0.13.1",
     )
     go_repository(
         name = "com_github_envoyproxy_protoc_gen_validate",
@@ -664,8 +664,8 @@ def go_repositories():
     go_repository(
         name = "com_github_golang_glog",
         importpath = "github.com/golang/glog",
-        sum = "h1:1+mZ9upx1Dh6FmUTFR1naJ77miKiXgALjWOZ3NVFPmY=",
-        version = "v1.2.2",
+        sum = "h1:CNNw5U8lSiiBk7druxtSHHTsRWcxKoac6kZKm2peBBc=",
+        version = "v1.2.4",
     )
     go_repository(
         name = "com_github_golang_groupcache",
@@ -1441,21 +1441,22 @@ def go_repositories():
     go_repository(
         name = "com_github_openconfig_goyang",
         importpath = "github.com/openconfig/goyang",
-        sum = "h1:+s3p3MeiPQ/QNsC5DL3MXhCp5cv4dag3vlGKCtszsRU=",
-        version = "v1.4.5",
+        sum = "h1:JjnPbLY1/y28VyTO67LsEV0TaLWNiZyDcsppGq4F4is=",
+        version = "v1.6.0",
     )
     go_repository(
         name = "com_github_openconfig_gribi",
         build_file_proto_mode = "disable",
         importpath = "github.com/openconfig/gribi",
-        sum = "h1:asucWuDLssIo2Tm9gEgaMSExRL/ZmHUyaMt0FMz9NrI=",
-        version = "v1.8.1",
+        sum = "h1:FOkhM/9c7DEHjS5FtlQqvp+mZYiSiME+SHNIB/u6tYI=",
+        version = "v1.9.0",
     )
     go_repository(
         name = "com_github_openconfig_gribigo",
         importpath = "github.com/openconfig/gribigo",
-        sum = "h1:E9lVHTiQJKDkcnJ+DPTe1+RO+Pf6Vnv9YQd7KJRtFsc=",
-        version = "v0.0.0-20250129051118-4cc32a19859b",
+        replace = "github.com/tengyiG/gribigo",
+        sum = "h1:xArwT9OIVXGil3eIOW8hzHLVUuIhDplL0xi4FDOjjBw=",
+        version = "v0.0.0-20250212004953-4c1b9e63b662",
     )
     go_repository(
         name = "com_github_openconfig_grpctunnel",
@@ -1510,8 +1511,8 @@ def go_repositories():
         name = "com_github_openconfig_ygot",
         build_file_proto_mode = "disable",
         importpath = "github.com/openconfig/ygot",
-        sum = "h1:XHLpwCN91QuKc2LAvnEqtCmH8OuxgLlErDhrdl2mJw8=",
-        version = "v0.29.20",
+        sum = "h1:pS2pTzy9NjYAbp6OnqrVDh1Ip/feNhcWlNnC+1r5svk=",
+        version = "v0.29.21-0.20250212000509-7956ee9146e0",
     )
     go_repository(
         name = "com_github_opencontainers_go_digest",
@@ -2736,8 +2737,8 @@ def go_repositories():
     go_repository(
         name = "dev_cel_expr",
         importpath = "cel.dev/expr",
-        sum = "h1:NR0+oFYzR1CqLFhTAqg3ql59G9VfN8fKq1TCHJ6gq1g=",
-        version = "v0.16.1",
+        sum = "h1:RwRhoH17VhAu9U5CMvMhH1PDVgf0tuz9FT+24AfMLfU=",
+        version = "v0.16.2",
     )
     go_repository(
         name = "ht_sr_git_sbinet_gg",
@@ -3051,8 +3052,8 @@ def go_repositories():
     go_repository(
         name = "io_opentelemetry_go_otel_sdk_metric",
         importpath = "go.opentelemetry.io/otel/sdk/metric",
-        sum = "h1:5uGNOlpXi+Hbo/DRoI31BSb1v+OGcpv2NemcCrOL8gI=",
-        version = "v1.27.0",
+        sum = "h1:i9hxxLJF/9kkvfHppyLL55aW7iIJz4JjxTeYusH7zMc=",
+        version = "v1.31.0",
     )
     go_repository(
         name = "io_opentelemetry_go_otel_trace",
@@ -3124,8 +3125,8 @@ def go_repositories():
     go_repository(
         name = "org_golang_google_genproto_googleapis_api",
         importpath = "google.golang.org/genproto/googleapis/api",
-        sum = "h1:hjSy6tcFQZ171igDaN5QHOw2n6vx40juYbC/x67CEhc=",
-        version = "v0.0.0-20240903143218-8af14fe29dc1",
+        sum = "h1:fVoAXEKA4+yufmbdVYv+SE73+cPZbbbe8paLsHfkK+U=",
+        version = "v0.0.0-20241015192408-796eee8c2d53",
     )
     go_repository(
         name = "org_golang_google_genproto_googleapis_bytestream",
@@ -3143,8 +3144,8 @@ def go_repositories():
         name = "org_golang_google_grpc",
         build_file_proto_mode = "disable",
         importpath = "google.golang.org/grpc",
-        sum = "h1:oI5oTa11+ng8r8XMMN7jAOmWfPZWbYpCFaMUTACxkM0=",
-        version = "v1.68.1",
+        sum = "h1:MF5TftSMkd8GLw/m0KM6V8CMOCY6NZ1NQDPGFgbTt4A=",
+        version = "v1.69.4",
     )
     go_repository(
         name = "org_golang_google_grpc_cmd_protoc_gen_go_grpc",
@@ -3155,8 +3156,8 @@ def go_repositories():
     go_repository(
         name = "org_golang_google_protobuf",
         importpath = "google.golang.org/protobuf",
-        sum = "h1:8Ar7bF+apOIoThw1EdZl0p1oWvMqTHmpA2fRTyZO8io=",
-        version = "v1.35.2",
+        sum = "h1:82DV7MYdb8anAVi3qge1wSnMDrnKK7ebr+I0hHRN1BU=",
+        version = "v1.36.3",
     )
     go_repository(
         name = "org_golang_x_crypto",

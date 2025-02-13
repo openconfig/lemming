@@ -181,6 +181,17 @@ type udpEncap interface {
 	GetIpTtl() uint8
 }
 
+func appendUDPHeader(nh *sysribpb.Nexthop, t routingpb.HeaderType, udp udpEncap) {
+	nh.Encap.Headers = append(nh.Encap.Headers, &routingpb.Header{
+		Type:    t,
+		SrcIp:   udp.GetSrcIp(),
+		DstIp:   udp.GetDstIp(),
+		SrcPort: uint32(udp.GetSrcUdpPort()),
+		DstPort: uint32(udp.GetDstUdpPort()),
+		IpTtl:   uint32(udp.GetIpTtl()),
+	})
+}
+
 // createSetRouteRequest converts a Route to a sysrib SetRouteRequest
 func createSetRouteRequest(prefix string, nexthops []*afthelper.NextHopSummary, ribs map[string]*aft.RIB) (*sysribpb.SetRouteRequest, error) {
 	pfx, err := netip.ParsePrefix(prefix)
@@ -205,21 +216,10 @@ func createSetRouteRequest(prefix string, nexthops []*afthelper.NextHopSummary, 
 		for _, i := range encaps {
 			eh := ribs[nhs.NetworkInstance].GetAfts().GetNextHop(nhs.Index).GetEncapHeader(i)
 			switch eh.Type {
-			case aft.AftTypes_EncapsulationHeaderType_UDP:
-				udpType := routingpb.HeaderType_HEADER_TYPE_UDP4
-				var udp udpEncap = eh.GetUdpV4() // TODO: there should be a specific enum value for this.
-				if eh.GetUdpV4() == nil {
-					udp = eh.GetUdpV6()
-					udpType = routingpb.HeaderType_HEADER_TYPE_UDP6
-				}
-				nh.Encap.Headers = append(nh.Encap.Headers, &routingpb.Header{
-					Type:    udpType,
-					SrcIp:   udp.GetSrcIp(),
-					DstIp:   udp.GetDstIp(),
-					SrcPort: uint32(udp.GetSrcUdpPort()),
-					DstPort: uint32(udp.GetDstUdpPort()),
-					IpTtl:   uint32(udp.GetIpTtl()),
-				})
+			case aft.AftTypes_EncapsulationHeaderType_UDPV4:
+				appendUDPHeader(nh, routingpb.HeaderType_HEADER_TYPE_UDP4, eh.GetUdpV4())
+			case aft.AftTypes_EncapsulationHeaderType_UDPV6:
+				appendUDPHeader(nh, routingpb.HeaderType_HEADER_TYPE_UDP6, eh.GetUdpV6())
 			case aft.AftTypes_EncapsulationHeaderType_MPLS:
 				rh := &routingpb.Header{
 					Type: routingpb.HeaderType_HEADER_TYPE_MPLS,
