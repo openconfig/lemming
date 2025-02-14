@@ -10,6 +10,7 @@ go_library(
     visibility = ["//visibility:private"],
     deps = [
         "//:lemming",
+        "//dataplane/dplaneopts",
         "//internal/telemetry",
         "@com_github_golang_glog//:glog",
         "@com_github_spf13_pflag//:pflag",

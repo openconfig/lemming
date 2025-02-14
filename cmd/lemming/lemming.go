@@ -26,6 +26,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/openconfig/lemming"
+	"github.com/openconfig/lemming/dataplane/dplaneopts"
 	"github.com/openconfig/lemming/internal/telemetry"
 
 	log "github.com/golang/glog"
@@ -71,6 +72,7 @@ func main() {
 		lemming.WithGNMIAddr(*gnmiAddr),
 		lemming.WithBGPPort(uint16(*bgpPort)),
 		lemming.WithDataplane(*dplane),
+		lemming.WithDataplaneOpts(dplaneopts.WithSkipIPValidation()),
 	)
 	if err != nil {
 		log.Exitf("Failed to start lemming: %v", err)
