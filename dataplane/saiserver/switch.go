@@ -38,6 +38,7 @@ import (
 type saiSwitch struct {
 	saipb.UnimplementedSwitchServer
 	dataplane       switchDataplaneAPI
+	opts            *dplaneopts.Options
 	acl             *acl
 	buffer          *buffer
 	port            *port
@@ -209,6 +210,7 @@ func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server, 
 
 	sw := &saiSwitch{
 		dataplane:       dplane,
+		opts:            opts,
 		acl:             newACL(mgr, dplane, s),
 		policer:         newPolicer(mgr, dplane, s),
 		port:            port,
@@ -401,8 +403,10 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 		return nil, err
 	}
 
-	if err := sw.createInvalidPacketFilter(ctx); err != nil {
-		return nil, err
+	if !sw.opts.SkipIPValidation {
+		if err := sw.createInvalidPacketFilter(ctx); err != nil {
+			return nil, err
+		}
 	}
 
 	myMAC := &fwdpb.TableCreateRequest{
@@ -485,7 +489,7 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 	if _, err := sw.dataplane.TableCreate(ctx, nhg); err != nil {
 		return nil, err
 	}
-	if err := createFIBSelector(ctx, sw.dataplane.ID(), sw.dataplane); err != nil {
+	if err := sw.createFIBSelector(ctx); err != nil {
 		return nil, err
 	}
 
@@ -1023,7 +1027,7 @@ func (sw *saiSwitch) Reset() {
 }
 
 // createFIBSelector creates a table that controls which forwarding table is used.
-func createFIBSelector(ctx context.Context, id string, c switchDataplaneAPI) error {
+func (sw *saiSwitch) createFIBSelector(ctx context.Context) error {
 	fieldID := &fwdpb.PacketFieldId{
 		Field: &fwdpb.PacketField{
 			FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION,
@@ -1031,7 +1035,7 @@ func createFIBSelector(ctx context.Context, id string, c switchDataplaneAPI) err
 	}
 
 	ipVersion := &fwdpb.TableCreateRequest{
-		ContextId: &fwdpb.ContextId{Id: id},
+		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
 		Desc: &fwdpb.TableDesc{
 			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
 			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: FIBSelectorTable}},
@@ -1043,11 +1047,47 @@ func createFIBSelector(ctx context.Context, id string, c switchDataplaneAPI) err
 			},
 		},
 	}
-	if _, err := c.TableCreate(ctx, ipVersion); err != nil {
+	if _, err := sw.dataplane.TableCreate(ctx, ipVersion); err != nil {
 		return err
 	}
+	v4Acts := []*fwdpb.ActionDesc{{
+		ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
+		Action: &fwdpb.ActionDesc_Lookup{
+			Lookup: &fwdpb.LookupActionDesc{
+				TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: FIBV4Table}},
+			},
+		},
+	}}
+	v6Acts := []*fwdpb.ActionDesc{{
+		ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
+		Action: &fwdpb.ActionDesc_Lookup{
+			Lookup: &fwdpb.LookupActionDesc{
+				TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: FIBV6Table}},
+			},
+		},
+	}}
+
+	if !sw.opts.SkipIPValidation {
+		v4Acts = append(v4Acts, &fwdpb.ActionDesc{
+			ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
+			Action: &fwdpb.ActionDesc_Lookup{
+				Lookup: &fwdpb.LookupActionDesc{
+					TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: invalidIngressV4Table}},
+				},
+			},
+		})
+		v6Acts = append(v6Acts, &fwdpb.ActionDesc{
+			ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
+			Action: &fwdpb.ActionDesc_Lookup{
+				Lookup: &fwdpb.LookupActionDesc{
+					TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: invalidIngressV6Table}},
+				},
+			},
+		})
+	}
+
 	entries := &fwdpb.TableEntryAddRequest{
-		ContextId: &fwdpb.ContextId{Id: id},
+		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
 		TableId: &fwdpb.TableId{
 			ObjectId: &fwdpb.ObjectId{
 				Id: FIBSelectorTable,
@@ -1064,21 +1104,7 @@ func createFIBSelector(ctx context.Context, id string, c switchDataplaneAPI) err
 					},
 				},
 			},
-			Actions: []*fwdpb.ActionDesc{{
-				ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
-				Action: &fwdpb.ActionDesc_Lookup{
-					Lookup: &fwdpb.LookupActionDesc{
-						TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: FIBV4Table}},
-					},
-				},
-			}, {
-				ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
-				Action: &fwdpb.ActionDesc_Lookup{
-					Lookup: &fwdpb.LookupActionDesc{
-						TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: invalidIngressV4Table}},
-					},
-				},
-			}},
+			Actions: v4Acts,
 		}, {
 			EntryDesc: &fwdpb.EntryDesc{
 				Entry: &fwdpb.EntryDesc_Exact{
@@ -1090,24 +1116,10 @@ func createFIBSelector(ctx context.Context, id string, c switchDataplaneAPI) err
 					},
 				},
 			},
-			Actions: []*fwdpb.ActionDesc{{
-				ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
-				Action: &fwdpb.ActionDesc_Lookup{
-					Lookup: &fwdpb.LookupActionDesc{
-						TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: FIBV6Table}},
-					},
-				},
-			}, {
-				ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
-				Action: &fwdpb.ActionDesc_Lookup{
-					Lookup: &fwdpb.LookupActionDesc{
-						TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: invalidIngressV6Table}},
-					},
-				},
-			}},
+			Actions: v6Acts,
 		}},
 	}
-	if _, err := c.TableEntryAdd(ctx, entries); err != nil {
+	if _, err := sw.dataplane.TableEntryAdd(ctx, entries); err != nil {
 		return err
 	}
 	return nil

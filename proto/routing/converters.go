@@ -40,6 +40,7 @@ func ToLayers(hdr *Header) []gopacket.SerializableLayer {
 			SrcPort: layers.UDPPort(hdr.SrcPort),
 			DstPort: layers.UDPPort(hdr.DstPort),
 		}
+		udp.SetNetworkLayerForChecksum(ip)
 		layer = append(layer, ip, udp)
 	case HeaderType_HEADER_TYPE_UDP6:
 		ip := &layers.IPv6{
@@ -53,6 +54,7 @@ func ToLayers(hdr *Header) []gopacket.SerializableLayer {
 			SrcPort: layers.UDPPort(hdr.SrcPort),
 			DstPort: layers.UDPPort(hdr.DstPort),
 		}
+		udp.SetNetworkLayerForChecksum(ip)
 		layer = append(layer, ip, udp)
 	}
 	return layer

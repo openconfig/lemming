@@ -34,6 +34,8 @@ type Options struct {
 	PortType fwdpb.PortType
 	// HardwareProfile is the "hardware" like config options.
 	HardwareProfile *HardwareProfile
+	// SkipIPValidation skips droping packets with invalid src or dst IPs.
+	SkipIPValidation bool
 }
 
 // Option exposes additional configuration for the dataplane.
@@ -86,6 +88,13 @@ func WithHardwareProfile(file string) Option {
 			return err
 		}
 		return yaml.Unmarshal(data, o.HardwareProfile)
+	}
+}
+
+func WithSkipIPValidation() Option {
+	return func(o *Options) error {
+		o.SkipIPValidation = true
+		return nil
 	}
 }
 

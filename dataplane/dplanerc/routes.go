@@ -234,7 +234,8 @@ func (ni *Reconciler) createNextHop(ctx context.Context, hop *dpb.NextHop) (uint
 	if len(hop.GetHeaders().GetHeaders()) > 0 {
 		layer := []gopacket.SerializableLayer{}
 		parseHdr := fwdpb.PacketHeaderId_PACKET_HEADER_ID_OPAQUE
-		for _, hdr := range hop.GetHeaders().GetHeaders() {
+		for i := len(hop.GetHeaders().GetHeaders()) - 1; i >= 0; i-- {
+			hdr := hop.GetHeaders().GetHeaders()[i]
 			layer = append(layer, routingpb.ToLayers(hdr)...)
 			if parseHdr == fwdpb.PacketHeaderId_PACKET_HEADER_ID_OPAQUE { // The forwarding engine needs to know the first header that is being reparsed.
 				switch hdr.Type {
