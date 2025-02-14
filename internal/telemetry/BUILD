@@ -7,6 +7,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/cloudlog",
+        "@com_github_google_uuid//:uuid",
         "@com_github_googlecloudplatform_opentelemetry_operations_go_exporter_metric//:metric",
         "@com_github_googlecloudplatform_opentelemetry_operations_go_exporter_trace//:trace",
         "@com_google_cloud_go_monitoring//apiv3/v2:apiv3",
@@ -16,6 +17,7 @@ go_library(
         "@io_opentelemetry_go_contrib_detectors_gcp//:gcp",
         "@io_opentelemetry_go_otel//:otel",
         "@io_opentelemetry_go_otel//propagation",
+        "@io_opentelemetry_go_otel//semconv/v1.24.0:v1_24_0",
         "@io_opentelemetry_go_otel_exporters_stdout_stdoutlog//:stdoutlog",
         "@io_opentelemetry_go_otel_log//global",
         "@io_opentelemetry_go_otel_sdk//resource",
