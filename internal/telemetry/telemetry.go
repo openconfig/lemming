@@ -28,6 +28,8 @@ import (
 	"cloud.google.com/go/trace/apiv2/tracepb"
 	mexporter "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric"
 	texporter "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace"
+	"github.com/google/uuid"
+	"github.com/googleapis/gax-go/v2/apierror"
 	"go.opentelemetry.io/contrib/detectors/gcp"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/stdout/stdoutlog"
@@ -37,8 +39,10 @@ import (
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/genproto/googleapis/api/metric"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -104,7 +108,21 @@ func Setup(ctx context.Context, options ...Option) (func(context.Context) error,
 		shutdownFuncs = append(shutdownFuncs, cloudlog.SetGlobalLogger(ctx, o.gcpProject, "lucius", slog.LevelWarn))
 	}
 
-	res, err := resource.New(ctx, resource.WithDetectors(gcp.NewDetector()), resource.WithHost(), resource.WithTelemetrySDK())
+	host, err := os.Hostname()
+	if err != nil {
+		host = "unknown"
+	}
+	ns, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
+	if err != nil {
+		ns = []byte{}
+	}
+	nodeID := os.Getenv("KNE_NODE_ID")
+	if nodeID == "" {
+		nodeID = uuid.New().String()
+	}
+
+	res, err := resource.New(ctx, resource.WithDetectors(gcp.NewDetector()),
+		resource.WithHost(), resource.WithTelemetrySDK(), resource.WithAttributes(semconv.ServiceName(host), semconv.ServiceNamespace(string(ns)), semconv.ServiceInstanceID(nodeID)))
 	if err != nil {
 		return nil, err
 	}
@@ -173,10 +191,11 @@ func setupTrace(ctx context.Context, res *resource.Resource, o *opts) func(conte
 
 	err = c.BatchWriteSpans(ctx, req)
 	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to export test trace: %v\n", err)
 		batchCtx := metadata.NewOutgoingContext(ctx, metadata.New(map[string]string{"x-goog-user-project": o.gcpProject}))
 		err = c.BatchWriteSpans(batchCtx, req)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "failed to export test trace, disabling exporter: %v\n", err)
+			fmt.Fprintf(os.Stderr, "failed to export test trace with destination quota, disabling exporter: %v\n", err)
 			return tracerProvider.Shutdown
 		}
 		exportOpts = append(exportOpts, texporter.WithDestinationProjectQuota())
@@ -228,11 +247,15 @@ func setupMeter(ctx context.Context, res *resource.Resource, o *opts) func(conte
 	exportOpts := []mexporter.Option{mexporter.WithProjectID(o.gcpProject)}
 
 	err = mc.CreateTimeSeries(ctx, req)
-	if err != nil {
+	var apiErr *apierror.APIError
+	if errors.As(err, &apiErr) && apiErr.GRPCStatus().Code() == codes.InvalidArgument {
+		fmt.Fprintf(os.Stderr, "test metric got invalid argument, likely ratelimit, continuing: %v\n", err)
+	} else if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to export test metric: %v\n", err)
 		batchCtx := metadata.NewOutgoingContext(ctx, metadata.New(map[string]string{"x-goog-user-project": o.gcpProject}))
 		err = mc.CreateTimeSeries(batchCtx, req)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "failed to export test metric, disabling exporter: %v\n", err)
+			fmt.Fprintf(os.Stderr, "failed to export test metric with destination quota, disabling exporter: %v\n", err)
 			return meterProvider.Shutdown
 		}
 		exportOpts = append(exportOpts, mexporter.WithDestinationProjectQuota())
