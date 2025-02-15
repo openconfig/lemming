@@ -29,6 +29,7 @@ import (
 	mexporter "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric"
 	texporter "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace"
 	"github.com/google/uuid"
+	"github.com/googleapis/gax-go/v2/apierror"
 	"go.opentelemetry.io/contrib/detectors/gcp"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/stdout/stdoutlog"
@@ -41,6 +42,7 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/genproto/googleapis/api/metric"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -245,7 +247,10 @@ func setupMeter(ctx context.Context, res *resource.Resource, o *opts) func(conte
 	exportOpts := []mexporter.Option{mexporter.WithProjectID(o.gcpProject)}
 
 	err = mc.CreateTimeSeries(ctx, req)
-	if err != nil {
+	var apiErr *apierror.APIError
+	if errors.As(err, &apiErr) && apiErr.GRPCStatus().Code() == codes.InvalidArgument {
+		fmt.Fprintf(os.Stderr, "test metric got invalid argument, likely ratelimit, continuing: %v\n", err)
+	} else if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to export test metric: %v\n", err)
 		batchCtx := metadata.NewOutgoingContext(ctx, metadata.New(map[string]string{"x-goog-user-project": o.gcpProject}))
 		err = mc.CreateTimeSeries(batchCtx, req)

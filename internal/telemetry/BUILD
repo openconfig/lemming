@@ -8,6 +8,7 @@ go_library(
     deps = [
         "//internal/cloudlog",
         "@com_github_google_uuid//:uuid",
+        "@com_github_googleapis_gax_go_v2//apierror",
         "@com_github_googlecloudplatform_opentelemetry_operations_go_exporter_metric//:metric",
         "@com_github_googlecloudplatform_opentelemetry_operations_go_exporter_trace//:trace",
         "@com_google_cloud_go_monitoring//apiv3/v2:apiv3",
@@ -25,6 +26,7 @@ go_library(
         "@io_opentelemetry_go_otel_sdk_log//:log",
         "@io_opentelemetry_go_otel_sdk_metric//:metric",
         "@org_golang_google_genproto_googleapis_api//metric",
+        "@org_golang_google_grpc//codes",
         "@org_golang_google_grpc//metadata",
         "@org_golang_google_protobuf//types/known/timestamppb",
         "@org_golang_x_oauth2//google",
