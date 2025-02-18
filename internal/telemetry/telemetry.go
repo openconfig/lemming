@@ -127,7 +127,6 @@ func Setup(ctx context.Context, options ...Option) (func(context.Context) error,
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(res)
 
 	shutdownFuncs = append(shutdownFuncs, setupTrace(ctx, res, o))
 	shutdownFuncs = append(shutdownFuncs, setupMeter(ctx, res, o))
