@@ -24,15 +24,15 @@ require (
 	github.com/openconfig/gnoi v0.4.1
 	github.com/openconfig/gnoigo v0.0.0-20240320202954-ebd033e3542c
 	github.com/openconfig/gnsi v1.6.0
-	github.com/openconfig/goyang v1.4.5
-	github.com/openconfig/gribi v1.8.1
+	github.com/openconfig/goyang v1.6.0
+	github.com/openconfig/gribi v1.9.0
 	github.com/openconfig/gribigo v0.0.0-20250129051118-4cc32a19859b
 	github.com/openconfig/kne v0.1.18
 	github.com/openconfig/magna v0.0.0-20240326180454-518e16696c84
 	github.com/openconfig/ondatra v0.5.8
 	github.com/openconfig/testt v0.0.0-20220311054427-efbb1a32ec07
 	github.com/openconfig/ygnmi v0.11.1
-	github.com/openconfig/ygot v0.29.20
+	github.com/openconfig/ygot v0.29.21
 	github.com/osrg/gobgp/v3 v3.27.1-0.20240614010451-0148e2d22dcf
 	github.com/p4lang/p4runtime v1.4.0-rc.5.0.20220728214547-13f0d02a521e
 	github.com/sirupsen/logrus v1.9.3
@@ -57,7 +57,7 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20250106144421-5f5ef82da422
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250106144421-5f5ef82da422
 	google.golang.org/grpc v1.69.4
-	google.golang.org/protobuf v1.36.2
+	google.golang.org/protobuf v1.36.3
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/apimachinery v0.29.3
 	k8s.io/client-go v0.29.3
@@ -181,3 +181,5 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
+
+replace github.com/openconfig/gribigo => github.com/tengyiG/gribigo v0.0.0-20250212004953-4c1b9e63b662
