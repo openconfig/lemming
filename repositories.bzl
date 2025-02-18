@@ -1447,21 +1447,22 @@ def go_repositories():
     go_repository(
         name = "com_github_openconfig_goyang",
         importpath = "github.com/openconfig/goyang",
-        sum = "h1:+s3p3MeiPQ/QNsC5DL3MXhCp5cv4dag3vlGKCtszsRU=",
-        version = "v1.4.5",
+        sum = "h1:JjnPbLY1/y28VyTO67LsEV0TaLWNiZyDcsppGq4F4is=",
+        version = "v1.6.0",
     )
     go_repository(
         name = "com_github_openconfig_gribi",
         build_file_proto_mode = "disable",
         importpath = "github.com/openconfig/gribi",
-        sum = "h1:asucWuDLssIo2Tm9gEgaMSExRL/ZmHUyaMt0FMz9NrI=",
-        version = "v1.8.1",
+        sum = "h1:FOkhM/9c7DEHjS5FtlQqvp+mZYiSiME+SHNIB/u6tYI=",
+        version = "v1.9.0",
     )
     go_repository(
         name = "com_github_openconfig_gribigo",
         importpath = "github.com/openconfig/gribigo",
-        sum = "h1:E9lVHTiQJKDkcnJ+DPTe1+RO+Pf6Vnv9YQd7KJRtFsc=",
-        version = "v0.0.0-20250129051118-4cc32a19859b",
+        replace = "github.com/tengyiG/gribigo",
+        sum = "h1:xArwT9OIVXGil3eIOW8hzHLVUuIhDplL0xi4FDOjjBw=",
+        version = "v0.0.0-20250212004953-4c1b9e63b662",
     )
     go_repository(
         name = "com_github_openconfig_grpctunnel",
@@ -1516,8 +1517,8 @@ def go_repositories():
         name = "com_github_openconfig_ygot",
         build_file_proto_mode = "disable",
         importpath = "github.com/openconfig/ygot",
-        sum = "h1:XHLpwCN91QuKc2LAvnEqtCmH8OuxgLlErDhrdl2mJw8=",
-        version = "v0.29.20",
+        sum = "h1:nTkrS+Vln8fxVhoC6jpDCvvXyrupHR9OcM0rFQVFrz4=",
+        version = "v0.29.21",
     )
     go_repository(
         name = "com_github_opencontainers_go_digest",
@@ -3173,8 +3174,8 @@ def go_repositories():
     go_repository(
         name = "org_golang_google_protobuf",
         importpath = "google.golang.org/protobuf",
-        sum = "h1:R8FeyR1/eLmkutZOM5CWghmo5itiG9z0ktFlTVLuTmU=",
-        version = "v1.36.2",
+        sum = "h1:82DV7MYdb8anAVi3qge1wSnMDrnKK7ebr+I0hHRN1BU=",
+        version = "v1.36.3",
     )
     go_repository(
         name = "org_golang_x_crypto",
