@@ -32,6 +32,7 @@ import (
 	"github.com/googleapis/gax-go/v2/apierror"
 	"go.opentelemetry.io/contrib/detectors/gcp"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/stdout/stdoutlog"
 	"go.opentelemetry.io/otel/log/global"
 	"go.opentelemetry.io/otel/propagation"
@@ -244,7 +245,10 @@ func setupMeter(ctx context.Context, res *resource.Resource, o *opts) func(conte
 		}},
 	}
 
-	exportOpts := []mexporter.Option{mexporter.WithProjectID(o.gcpProject)}
+	exportOpts := []mexporter.Option{
+		mexporter.WithProjectID(o.gcpProject),
+		mexporter.WithFilteredResourceAttributes(attribute.NewAllowKeysFilter(semconv.ServiceNameKey, semconv.ServiceNamespaceKey, semconv.ServiceInstanceIDKey, semconv.CloudAccountIDKey, semconv.GCPGceInstanceNameKey)),
+	}
 
 	err = mc.CreateTimeSeries(ctx, req)
 	var apiErr *apierror.APIError

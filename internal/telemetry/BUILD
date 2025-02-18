@@ -17,6 +17,7 @@ go_library(
         "@com_google_cloud_go_trace//apiv2/tracepb",
         "@io_opentelemetry_go_contrib_detectors_gcp//:gcp",
         "@io_opentelemetry_go_otel//:otel",
+        "@io_opentelemetry_go_otel//attribute",
         "@io_opentelemetry_go_otel//propagation",
         "@io_opentelemetry_go_otel//semconv/v1.24.0:v1_24_0",
         "@io_opentelemetry_go_otel_exporters_stdout_stdoutlog//:stdoutlog",

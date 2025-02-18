@@ -605,7 +605,8 @@ type PathAuth interface {
 
 // subscribeTargetUpdateStream wraps around the embedded grpc.ServerStream, and
 // intercepts the RecvMsg and SendMsg method call to populate gNMI Subscribe's
-// target if it's not populated in the SubscribeRequest.
+// to correct Lemming's behavior. The gnmi implementation is borrowed from a collector
+// which has different semantics than a device.
 type subscribeTargetUpdateStream struct {
 	grpc.ServerStream
 	// target is the target of the gNMI collector used by the lemming
@@ -620,26 +621,26 @@ func (w *subscribeTargetUpdateStream) RecvMsg(m any) error {
 	if err := w.ServerStream.RecvMsg(m); err != nil {
 		return err
 	}
+	// Store the target from the subscribe request, then set the target to lemming's target name.
 	if req, ok := m.(*gpb.SubscribeRequest); ok {
 		sub := req.GetSubscribe()
 		if sub != nil {
 			w.subscribeTarget = sub.GetPrefix().GetTarget()
-			if sub.GetPrefix().GetTarget() == "" {
-				if sub.Prefix == nil {
-					sub.Prefix = &gpb.Path{}
-				}
-				sub.Prefix.Target = w.target
+			if sub.Prefix == nil {
+				sub.Prefix = &gpb.Path{}
 			}
+			sub.Prefix.Target = w.target
 		}
 	}
 	return nil
 }
 
 func (w *subscribeTargetUpdateStream) SendMsg(m any) error {
-	// Clear target if it's not specified in the original SubscribeRequest:
+	// The returned target from the server must match the target sent by the client,
+	// override the target in the request.
 	// https://www.openconfig.net/docs/gnmi/gnmi-specification/#2221-path-target
-	if resp, ok := m.(*gpb.SubscribeResponse); w.subscribeTarget == "" && ok {
-		if notif := resp.GetUpdate(); notif != nil && notif.GetPrefix().GetTarget() != "" {
+	if resp, ok := m.(*gpb.SubscribeResponse); ok {
+		if notif := resp.GetUpdate(); notif != nil {
 			// A clone of the entire notification is
 			// required; otherwise the notification in the
 			// collector cache is also altered.
@@ -648,7 +649,7 @@ func (w *subscribeTargetUpdateStream) SendMsg(m any) error {
 			// proto here for better performance:
 			// https://github.com/golang/protobuf/issues/1155
 			resp.Response = &gpb.SubscribeResponse_Update{Update: proto.Clone(notif).(*gpb.Notification)}
-			resp.GetUpdate().Prefix.Target = ""
+			resp.GetUpdate().Prefix.Target = w.subscribeTarget
 		}
 	}
 	return w.ServerStream.SendMsg(m)
