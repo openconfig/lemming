@@ -26,7 +26,7 @@ require (
 	github.com/openconfig/gnsi v1.6.0
 	github.com/openconfig/goyang v1.6.0
 	github.com/openconfig/gribi v1.9.0
-	github.com/openconfig/gribigo v0.0.0-20250129051118-4cc32a19859b
+	github.com/openconfig/gribigo v0.1.0
 	github.com/openconfig/kne v0.1.18
 	github.com/openconfig/magna v0.0.0-20240326180454-518e16696c84
 	github.com/openconfig/ondatra v0.5.8
@@ -181,5 +181,3 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
-
-replace github.com/openconfig/gribigo => github.com/tengyiG/gribigo v0.0.0-20250212004953-4c1b9e63b662

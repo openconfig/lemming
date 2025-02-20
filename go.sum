@@ -1802,6 +1802,8 @@ github.com/openconfig/goyang v1.6.0 h1:JjnPbLY1/y28VyTO67LsEV0TaLWNiZyDcsppGq4F4
 github.com/openconfig/goyang v1.6.0/go.mod h1:sdNZi/wdTZyLNBNfgLzmmbi7kISm7FskMDKKzMY+x1M=
 github.com/openconfig/gribi v1.9.0 h1:FOkhM/9c7DEHjS5FtlQqvp+mZYiSiME+SHNIB/u6tYI=
 github.com/openconfig/gribi v1.9.0/go.mod h1:bzoH3ROsWt/3TeNHukKGjsSMSAgY7VwOKtyzMegZL4E=
+github.com/openconfig/gribigo v0.1.0 h1:tABUCF3c6gZo1ezPFzlSlvgrFNY/lW7dRscmv1Lkokg=
+github.com/openconfig/gribigo v0.1.0/go.mod h1:N+235ZptsBSjQ7J6Uj5rH+KdW7WjO71l1dBx3/T8X/U=
 github.com/openconfig/grpctunnel v0.0.0-20220819142823-6f5422b8ca70 h1:t6SvvdfWCMlw0XPlsdxO8EgO+q/fXnTevDjdYREKFwU=
 github.com/openconfig/grpctunnel v0.0.0-20220819142823-6f5422b8ca70/go.mod h1:OmTWe7RyZj2CIzIgy4ovEBzCLBJzRvWSZmn7u02U9gU=
 github.com/openconfig/kne v0.1.18 h1:8D9SexWhj6knxfvEficyVj0F13GIvF1pQz7TKwVDSUI=
@@ -1923,8 +1925,6 @@ github.com/stretchr/testify v1.10.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf
 github.com/subosito/gotenv v1.6.0 h1:9NlTDc1FTs4qu0DDq7AEtTPNw6SVm7uBMsUCUjABIf8=
 github.com/subosito/gotenv v1.6.0/go.mod h1:Dk4QP5c2W3ibzajGcXpNraDfq2IrhjMIvMSWPKKo0FU=
 github.com/substrait-io/substrait-go v0.4.2/go.mod h1:qhpnLmrcvAnlZsUyPXZRqldiHapPTXC3t7xFgDi3aQg=
-github.com/tengyiG/gribigo v0.0.0-20250212004953-4c1b9e63b662 h1:xArwT9OIVXGil3eIOW8hzHLVUuIhDplL0xi4FDOjjBw=
-github.com/tengyiG/gribigo v0.0.0-20250212004953-4c1b9e63b662/go.mod h1:N+235ZptsBSjQ7J6Uj5rH+KdW7WjO71l1dBx3/T8X/U=
 github.com/vishvananda/netlink v1.2.1-beta.2 h1:Llsql0lnQEbHj0I1OuKyp8otXp0r3q0mPkuhwHfStVs=
 github.com/vishvananda/netlink v1.2.1-beta.2/go.mod h1:twkDnbuQxJYemMlGd4JFIcuhgX83tXhKS2B/PRMpOho=
 github.com/vishvananda/netns v0.0.0-20200728191858-db3c7e526aae/go.mod h1:DD4vA1DwXk04H54A1oHXtwZmA0grkVMdPxx/VGLCah0=
