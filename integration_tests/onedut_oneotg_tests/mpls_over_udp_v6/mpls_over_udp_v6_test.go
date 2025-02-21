@@ -21,6 +21,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/open-traffic-generator/snappi/gosnappi"
 	"github.com/openconfig/gribigo/chk"
 	"github.com/openconfig/gribigo/client"
@@ -31,10 +32,13 @@ import (
 	"github.com/openconfig/ondatra/gnmi/otg/otgpath"
 	"github.com/openconfig/ondatra/otg"
 	"github.com/openconfig/ygnmi/ygnmi"
+	"github.com/openconfig/ygot/ygot"
 
 	gribipb "github.com/openconfig/gribi/v1/proto/service"
 
 	"github.com/openconfig/lemming/gnmi/fakedevice"
+	"github.com/openconfig/lemming/gnmi/oc"
+	ni "github.com/openconfig/lemming/gnmi/oc/networkinstance"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 	"github.com/openconfig/lemming/internal/attrs"
 	"github.com/openconfig/lemming/internal/binding"
@@ -46,24 +50,21 @@ const (
 )
 
 const (
-	// IPv4
-	ateDstNetCIDRv4 = "198.51.100.0/24"
 	// IPv6
 	ateDstNetCIDRv6     = "2003::/48"
 	ateIndirectNHv6     = "2002::"
 	ateIndirectNHCIDRv6 = ateIndirectNHv6 + "/48"
 	// Common attributes
-	nhIndex      = 1
-	nhgIndex     = 42
-	nhIndex2     = 2
-	nhgIndex2    = 52
-	nhIndex3     = 3
-	nhgIndex3    = 62
-	mplsLabel    = uint64(100)     // Example MPLS label
-	udpPort      = uint64(6635)    // Example UDP port
-	outerIPv6Src = "2001:f:a:1::0" // Example outer IPv6 src, adjust as needed
-	outerIPv6Dst = "2001:f:c:e::2" // Example outer IPv6 dst, adjust as needed
-	ipTTL        = 1
+	nhIndex        = 1
+	nhgIndex       = 42
+	mplsLabel      = uint64(100)     // Example MPLS label
+	udpPort        = uint16(6635)    // Example UDP port
+	outerIPv6Src   = "2001:f:a:1::0" // Example outer IPv6 src, adjust as needed
+	outerIPv6Dst   = "2001:f:c:e::2" // Example outer IPv6 dst, adjust as needed
+	ipTTL          = uint8(1)
+	startAddressV6 = "2003::6464"
+	flowNameV6     = "FlowV6"
+	dscp           = 46
 )
 
 var (
@@ -102,6 +103,8 @@ var (
 	}
 )
 
+var destIP = atePort2.IPv6
+
 func TestMain(m *testing.M) {
 	ondatra.RunTests(m, binding.KNE(".."))
 }
@@ -133,11 +136,6 @@ func configureOTG(t *testing.T, ate *ondatra.ATEDevice) gosnappi.Config {
 	return top
 }
 
-// ateIndirectNH     = ateIndirectNHv4
-// ateDstNetCIDR     = ateDstNetCIDRv4
-// ateIndirectNHCIDR = ateIndirectNHCIDRv4
-var destIP = atePort2.IPv6
-
 func waitOTGARPEntry(t *testing.T) {
 	ate := ondatra.ATE(t, "ate")
 
@@ -167,7 +165,7 @@ func testTrafficv6(t *testing.T, otg *otg.OTG, srcEndPoint, dstEndPoint attrs.At
 	waitOTGARPEntry(t)
 	top := otg.FetchConfig(t)
 	top.Flows().Clear().Items()
-	flowipv6 := top.Flows().Add().SetName("Flow2")
+	flowipv6 := top.Flows().Add().SetName(flowNameV6)
 	flowipv6.Metrics().SetEnable(true)
 	flowipv6.TxRx().Device().
 		SetTxNames([]string{srcEndPoint.Name + ".IPv6"}).
@@ -186,8 +184,8 @@ func testTrafficv6(t *testing.T, otg *otg.OTG, srcEndPoint, dstEndPoint attrs.At
 
 	time.Sleep(5 * time.Second)
 
-	txPkts := gnmi.Get(t, otg, gnmi.OTG().Flow("Flow2").Counters().OutPkts().State())
-	rxPkts := gnmi.Get(t, otg, gnmi.OTG().Flow("Flow2").Counters().InPkts().State())
+	txPkts := gnmi.Get(t, otg, gnmi.OTG().Flow(flowNameV6).Counters().OutPkts().State())
+	rxPkts := gnmi.Get(t, otg, gnmi.OTG().Flow(flowNameV6).Counters().InPkts().State())
 	lossPct := (txPkts - rxPkts) * 100 / txPkts
 	return float32(lossPct)
 }
@@ -234,6 +232,21 @@ func routeInstallResult(t *testing.T, prefix string, c constants.OpType) *client
 	}
 }
 
+func checkEncapHeaders(t *testing.T, dut *ondatra.DUTDevice, nhgPaths []*ni.NetworkInstance_Afts_NextHopGroupPath, wantEncapHeaders map[uint8]*oc.NetworkInstance_Afts_NextHop_EncapHeader) {
+	for _, p := range nhgPaths {
+		nhs := gnmi.Get(t, dut, p.State()).NextHop
+		for ind := range nhs {
+			nhp := ocpath.Root().NetworkInstance(fakedevice.DefaultNetworkInstance).Afts().NextHop(ind)
+			ehs := gnmi.Get(t, dut, nhp.State()).EncapHeader
+			for i, eh := range ehs {
+				if diff := cmp.Diff(wantEncapHeaders[i], eh); diff != "" {
+					t.Errorf("Diff (-got +want): %v", diff)
+				}
+			}
+		}
+	}
+}
+
 func TestMPLSOverUDPIPv6(t *testing.T) {
 	dut := ondatra.DUT(t, "dut")
 	configureDUT(t, dut)
@@ -246,7 +259,9 @@ func TestMPLSOverUDPIPv6(t *testing.T) {
 	tests := []struct {
 		desc                    string
 		entries                 []fluent.GRIBIEntry
+		nextHopGroupPaths       []*ni.NetworkInstance_Afts_NextHopGroupPath
 		wantAddOperationResults []*client.OpResult
+		wantEncapHeaders        map[uint8]*oc.NetworkInstance_Afts_NextHop_EncapHeader
 		wantDelOperationResults []*client.OpResult
 	}{
 		{
@@ -255,12 +270,15 @@ func TestMPLSOverUDPIPv6(t *testing.T) {
 				fluent.NextHopEntry().WithNetworkInstance(fakedevice.DefaultNetworkInstance).
 					WithIndex(nhIndex).WithIPAddress(destIP).AddEncapHeader(
 					fluent.MPLSEncapHeader().WithLabels(mplsLabel),
-					fluent.UDPV6EncapHeader().WithDstUDPPort(udpPort).WithSrcUDPPort(udpPort).WithSrcIP(atePort1.IPv6).WithDstIP(atePort2.IPv6),
+					fluent.UDPV6EncapHeader().WithDstUDPPort(uint64(udpPort)).WithSrcUDPPort(uint64(udpPort)).WithSrcIP(atePort1.IPv6).WithDstIP(atePort2.IPv6).WithDSCP(dscp).WithIPTTL(uint64(ipTTL)),
 				),
 				fluent.NextHopGroupEntry().WithNetworkInstance(fakedevice.DefaultNetworkInstance).
 					WithID(nhgIndex).AddNextHop(nhIndex, 1),
 				fluent.IPv6Entry().WithNetworkInstance(fakedevice.DefaultNetworkInstance).
 					WithPrefix(ateDstNetCIDRv6).WithNextHopGroup(nhgIndex),
+			},
+			nextHopGroupPaths: []*ni.NetworkInstance_Afts_NextHopGroupPath{
+				(*ni.NetworkInstance_Afts_NextHopGroupPath)(ocpath.Root().NetworkInstance(fakedevice.DefaultNetworkInstance).Afts().NextHopGroup(nhgIndex)),
 			},
 			wantAddOperationResults: []*client.OpResult{
 				fluent.OperationResult().
@@ -274,6 +292,29 @@ func TestMPLSOverUDPIPv6(t *testing.T) {
 					WithOperationType(constants.Add).
 					AsResult(),
 				routeInstallResult(t, ateDstNetCIDRv6, constants.Add),
+			},
+			wantEncapHeaders: map[uint8]*oc.NetworkInstance_Afts_NextHop_EncapHeader{
+				1: {
+					Index: ygot.Uint8(1),
+					Type: oc.AftTypes_EncapsulationHeaderType_MPLS,
+					Mpls: &oc.NetworkInstance_Afts_NextHop_EncapHeader_Mpls{
+						MplsLabelStack: []oc.NetworkInstance_Afts_NextHop_EncapHeader_Mpls_MplsLabelStack_Union{
+							oc.UnionUint32(mplsLabel),
+						},
+					},
+				},
+				2: {
+					Index: ygot.Uint8(2),
+					Type: oc.AftTypes_EncapsulationHeaderType_UDPV6,
+					UdpV6: &oc.NetworkInstance_Afts_NextHop_EncapHeader_UdpV6{
+						Dscp:       ygot.Uint8(dscp),
+						DstIp:      ygot.String(atePort2.IPv6),
+						DstUdpPort: ygot.Uint16(udpPort),
+						IpTtl:      ygot.Uint8(ipTTL),
+						SrcIp:      ygot.String(atePort1.IPv6),
+						SrcUdpPort: ygot.Uint16(udpPort),
+					},
+				},
 			},
 			wantDelOperationResults: []*client.OpResult{
 				routeInstallResult(t, ateDstNetCIDRv6, constants.Delete),
@@ -314,17 +355,17 @@ func TestMPLSOverUDPIPv6(t *testing.T) {
 
 			for _, wantResult := range tc.wantAddOperationResults {
 				chk.HasResult(t, c.Results(t), wantResult, chk.IgnoreOperationID())
-				t.Logf("results: %v\n\n", c.Results(t))
-				t.Logf("want add results: %v\n\n", tc.wantAddOperationResults)
 			}
 
-			testTrafficv6(t, otg, atePort1, atePort2, "2003::6464", 1*time.Second)
-			if loss := testTrafficv6(t, otg, atePort1, atePort2, "2003::6464", 5*time.Second); loss > 1 {
+			testTrafficv6(t, otg, atePort1, atePort2, startAddressV6, 1*time.Second)
+			if loss := testTrafficv6(t, otg, atePort1, atePort2, startAddressV6, 5*time.Second); loss > 1 {
 				t.Errorf("Loss: got %g, want <= 1", loss)
 			}
 
+			checkEncapHeaders(t, dut, tc.nextHopGroupPaths, tc.wantEncapHeaders)
+
 			var txPkts, rxPkts uint64
-			flowName := "Flow2"
+			flowName := flowNameV6
 			// counters are not erased, so have to accumulate the packets from previous subtests.
 			txPkts += gnmi.Get(t, otg, gnmi.OTG().Flow(flowName).Counters().OutPkts().State())
 			rxPkts += gnmi.Get(t, otg, gnmi.OTG().Flow(flowName).Counters().InPkts().State())
@@ -336,12 +377,12 @@ func TestMPLSOverUDPIPv6(t *testing.T) {
 				t.Fatalf("Await got error for entries: %v", err)
 			}
 
-			testTrafficv6(t, otg, atePort1, atePort2, "2003::6464", 1*time.Second)
+			testTrafficv6(t, otg, atePort1, atePort2, startAddressV6, 1*time.Second)
 			for _, wantResult := range tc.wantDelOperationResults {
 				chk.HasResult(t, c.Results(t), wantResult, chk.IgnoreOperationID())
 			}
 
-			if loss := testTrafficv6(t, otg, atePort1, atePort2, "2003::6464", 5*time.Second); loss != 100 {
+			if loss := testTrafficv6(t, otg, atePort1, atePort2, startAddressV6, 5*time.Second); loss != 100 {
 				t.Errorf("Loss: got %g, want 100", loss)
 			}
 
