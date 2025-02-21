@@ -239,7 +239,7 @@ func checkEncapHeaders(t *testing.T, dut *ondatra.DUTDevice, nhgPaths []*ni.Netw
 			nhp := ocpath.Root().NetworkInstance(fakedevice.DefaultNetworkInstance).Afts().NextHop(ind)
 			ehs := gnmi.Get(t, dut, nhp.State()).EncapHeader
 			for i, eh := range ehs {
-				if diff := cmp.Diff(wantEncapHeaders[i], eh); diff != "" {
+				if diff := cmp.Diff(eh, wantEncapHeaders[i]); diff != "" {
 					t.Errorf("Diff (-got +want): %v", diff)
 				}
 			}
@@ -261,8 +261,9 @@ func TestMPLSOverUDPIPv6(t *testing.T) {
 		entries                 []fluent.GRIBIEntry
 		nextHopGroupPaths       []*ni.NetworkInstance_Afts_NextHopGroupPath
 		wantAddOperationResults []*client.OpResult
-		wantEncapHeaders        map[uint8]*oc.NetworkInstance_Afts_NextHop_EncapHeader
+		wantAddEncapHeaders     map[uint8]*oc.NetworkInstance_Afts_NextHop_EncapHeader
 		wantDelOperationResults []*client.OpResult
+		wantDelEncapHeaders     map[uint8]*oc.NetworkInstance_Afts_NextHop_EncapHeader
 	}{
 		{
 			desc: "mplsoudpv6",
@@ -293,10 +294,10 @@ func TestMPLSOverUDPIPv6(t *testing.T) {
 					AsResult(),
 				routeInstallResult(t, ateDstNetCIDRv6, constants.Add),
 			},
-			wantEncapHeaders: map[uint8]*oc.NetworkInstance_Afts_NextHop_EncapHeader{
+			wantAddEncapHeaders: map[uint8]*oc.NetworkInstance_Afts_NextHop_EncapHeader{
 				1: {
 					Index: ygot.Uint8(1),
-					Type: oc.AftTypes_EncapsulationHeaderType_MPLS,
+					Type:  oc.AftTypes_EncapsulationHeaderType_MPLS,
 					Mpls: &oc.NetworkInstance_Afts_NextHop_EncapHeader_Mpls{
 						MplsLabelStack: []oc.NetworkInstance_Afts_NextHop_EncapHeader_Mpls_MplsLabelStack_Union{
 							oc.UnionUint32(mplsLabel),
@@ -305,7 +306,7 @@ func TestMPLSOverUDPIPv6(t *testing.T) {
 				},
 				2: {
 					Index: ygot.Uint8(2),
-					Type: oc.AftTypes_EncapsulationHeaderType_UDPV6,
+					Type:  oc.AftTypes_EncapsulationHeaderType_UDPV6,
 					UdpV6: &oc.NetworkInstance_Afts_NextHop_EncapHeader_UdpV6{
 						Dscp:       ygot.Uint8(dscp),
 						DstIp:      ygot.String(atePort2.IPv6),
@@ -329,6 +330,7 @@ func TestMPLSOverUDPIPv6(t *testing.T) {
 					WithOperationType(constants.Delete).
 					AsResult(),
 			},
+			wantDelEncapHeaders: map[uint8]*oc.NetworkInstance_Afts_NextHop_EncapHeader{},
 		},
 	}
 	for _, tc := range tests {
@@ -348,6 +350,7 @@ func TestMPLSOverUDPIPv6(t *testing.T) {
 				t.Fatalf("Await got error during session negotiation: %v", err)
 			}
 
+			t.Log("Sending ADD Modify request")
 			c.Modify().AddEntry(t, tc.entries...)
 			if err := awaitTimeout(ctx, c, t, time.Minute); err != nil {
 				t.Fatalf("Await got error for entries: %v", err)
@@ -357,12 +360,11 @@ func TestMPLSOverUDPIPv6(t *testing.T) {
 				chk.HasResult(t, c.Results(t), wantResult, chk.IgnoreOperationID())
 			}
 
-			testTrafficv6(t, otg, atePort1, atePort2, startAddressV6, 1*time.Second)
 			if loss := testTrafficv6(t, otg, atePort1, atePort2, startAddressV6, 5*time.Second); loss > 1 {
 				t.Errorf("Loss: got %g, want <= 1", loss)
 			}
 
-			checkEncapHeaders(t, dut, tc.nextHopGroupPaths, tc.wantEncapHeaders)
+			checkEncapHeaders(t, dut, tc.nextHopGroupPaths, tc.wantAddEncapHeaders)
 
 			var txPkts, rxPkts uint64
 			flowName := flowNameV6
@@ -371,13 +373,13 @@ func TestMPLSOverUDPIPv6(t *testing.T) {
 			rxPkts += gnmi.Get(t, otg, gnmi.OTG().Flow(flowName).Counters().InPkts().State())
 			testCounters(t, dut, txPkts, rxPkts)
 
+			t.Log("Sending DELETE Modify request")
 			slices.Reverse(tc.entries)
 			c.Modify().DeleteEntry(t, tc.entries...)
 			if err := awaitTimeout(ctx, c, t, time.Minute); err != nil {
 				t.Fatalf("Await got error for entries: %v", err)
 			}
 
-			testTrafficv6(t, otg, atePort1, atePort2, startAddressV6, 1*time.Second)
 			for _, wantResult := range tc.wantDelOperationResults {
 				chk.HasResult(t, c.Results(t), wantResult, chk.IgnoreOperationID())
 			}
@@ -386,9 +388,10 @@ func TestMPLSOverUDPIPv6(t *testing.T) {
 				t.Errorf("Loss: got %g, want 100", loss)
 			}
 
-			gribic.Flush(context.Background(), &gribipb.FlushRequest{
+			gribic.Flush(ctx, &gribipb.FlushRequest{
 				NetworkInstance: &gribipb.FlushRequest_All{All: &gribipb.Empty{}},
 			})
+			checkEncapHeaders(t, dut, tc.nextHopGroupPaths, tc.wantDelEncapHeaders)
 		})
 	}
 }
