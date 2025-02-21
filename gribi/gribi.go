@@ -101,12 +101,8 @@ func createGRIBIServer(gClient gpb.GNMIClient, target string, root *oc.Root, sys
 	}
 
 	ribHookfn := func(o constants.OpType, _ int64, ni string, data ygot.ValidatedGoStruct) {
-		if o != constants.Add {
-			// TODO(wenbli): handle replace and delete :-)
-			return
-		}
 		// write gNMI notifications
-		if err := updateAft(yclient, o, ni, data); err != nil {
+		if err := updateAft(yclient, o, ni, data, o); err != nil {
 			log.Errorf("invalid notifications, %v", err)
 		}
 
@@ -280,8 +276,20 @@ func convertGoStruct(a, b ygot.GoStruct, unmarshal func(data []byte, destStruct 
 	return unmarshal(data, b)
 }
 
+func gnmiSet[T any](client *ygnmi.Client, path ygnmi.SingletonQuery[T], val T, op constants.OpType) (*ygnmi.Result, error) {
+	switch op {
+	case constants.Add:
+		return gnmiclient.Update(context.Background(), client, path, val)
+	case constants.Replace:
+		return gnmiclient.Replace(context.Background(), client, path, val)
+	case constants.Delete:
+		return gnmiclient.Delete(context.Background(), client, path)
+	}
+	return nil, nil
+}
+
 // updateAft creates the corresponding ygnmi PathStruct from a RIB operation.
-func updateAft(yclient *ygnmi.Client, _ constants.OpType, ni string, e ygot.GoStruct) error {
+func updateAft(yclient *ygnmi.Client, _ constants.OpType, ni string, e ygot.GoStruct, op constants.OpType) error {
 	var err error
 	switch t := e.(type) {
 	case *aft.Afts_Ipv4Entry:
@@ -290,7 +298,8 @@ func updateAft(yclient *ygnmi.Client, _ constants.OpType, ni string, e ygot.GoSt
 			break
 		}
 		path := ocpath.Root().NetworkInstance(ni).Afts().Ipv4Entry(t.GetPrefix()).State()
-		if _, err := gnmiclient.Update(context.Background(), yclient, path, dst); err != nil {
+
+		if _, err := gnmiSet(yclient, path, dst, op); err != nil {
 			log.Warningf("unable to update gRIBI data: %v", err)
 		}
 	case *aft.Afts_Ipv6Entry:
@@ -299,7 +308,7 @@ func updateAft(yclient *ygnmi.Client, _ constants.OpType, ni string, e ygot.GoSt
 			break
 		}
 		path := ocpath.Root().NetworkInstance(ni).Afts().Ipv6Entry(t.GetPrefix()).State()
-		if _, err := gnmiclient.Update(context.Background(), yclient, path, dst); err != nil {
+		if _, err := gnmiSet(yclient, path, dst, op); err != nil {
 			log.Warningf("unable to update gRIBI data: %v", err)
 		}
 	case *aft.Afts_NextHopGroup:
@@ -308,7 +317,7 @@ func updateAft(yclient *ygnmi.Client, _ constants.OpType, ni string, e ygot.GoSt
 			break
 		}
 		path := ocpath.Root().NetworkInstance(ni).Afts().NextHopGroup(t.GetId()).State()
-		if _, err := gnmiclient.Update(context.Background(), yclient, path, dst); err != nil {
+		if _, err := gnmiSet(yclient, path, dst, op); err != nil {
 			log.Warningf("unable to update gRIBI data: %v", err)
 		}
 	case *aft.Afts_NextHop:
@@ -317,7 +326,7 @@ func updateAft(yclient *ygnmi.Client, _ constants.OpType, ni string, e ygot.GoSt
 			break
 		}
 		path := ocpath.Root().NetworkInstance(ni).Afts().NextHop(t.GetIndex()).State()
-		if _, err := gnmiclient.Update(context.Background(), yclient, path, dst); err != nil {
+		if _, err := gnmiSet(yclient, path, dst, op); err != nil {
 			log.Warningf("unable to update gRIBI data: %v", err)
 		}
 	case *aft.Afts_LabelEntry:
@@ -335,7 +344,7 @@ func updateAft(yclient *ygnmi.Client, _ constants.OpType, ni string, e ygot.GoSt
 			return fmt.Errorf("Unhandled Label entry type")
 		}
 		path := ocpath.Root().NetworkInstance(ni).Afts().LabelEntry(dstLabel).State()
-		if _, err := gnmiclient.Update(context.Background(), yclient, path, dst); err != nil {
+		if _, err := gnmiSet(yclient, path, dst, op); err != nil {
 			log.Warningf("unable to update gRIBI data: %v", err)
 		}
 	default:
