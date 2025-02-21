@@ -7,9 +7,12 @@ go_test(
     data = ["//integration_tests/onedut_oneotg_tests:topology_testbed"],
     deps = [
         "//gnmi/fakedevice",
+        "//gnmi/oc",
+        "//gnmi/oc/networkinstance",
         "//gnmi/oc/ocpath",
         "//internal/attrs",
         "//internal/binding",
+        "@com_github_google_go_cmp//cmp",
         "@com_github_open_traffic_generator_snappi_gosnappi//:gosnappi",
         "@com_github_openconfig_gribi//v1/proto/service",
         "@com_github_openconfig_gribigo//chk",
@@ -21,5 +24,6 @@ go_test(
         "@com_github_openconfig_ondatra//gnmi/otg/otgpath",
         "@com_github_openconfig_ondatra//otg",
         "@com_github_openconfig_ygnmi//ygnmi",
+        "@com_github_openconfig_ygot//ygot",
     ],
 )
