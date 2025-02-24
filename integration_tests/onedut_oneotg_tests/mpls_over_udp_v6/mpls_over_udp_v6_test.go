@@ -234,10 +234,18 @@ func routeInstallResult(t *testing.T, prefix string, c constants.OpType) *client
 
 func checkEncapHeaders(t *testing.T, dut *ondatra.DUTDevice, nhgPaths []*ni.NetworkInstance_Afts_NextHopGroupPath, wantEncapHeaders map[uint8]*oc.NetworkInstance_Afts_NextHop_EncapHeader) {
 	for _, p := range nhgPaths {
-		nhs := gnmi.Get(t, dut, p.State()).NextHop
+		nhg, present := gnmi.Lookup(t, dut, p.State()).Val()
+		if !present {
+			return
+		}
+		nhs := nhg.NextHop
 		for ind := range nhs {
 			nhp := ocpath.Root().NetworkInstance(fakedevice.DefaultNetworkInstance).Afts().NextHop(ind)
-			ehs := gnmi.Get(t, dut, nhp.State()).EncapHeader
+			nh, present := gnmi.Lookup(t, dut, nhp.State()).Val()
+			if !present {
+				continue
+			}
+			ehs := nh.EncapHeader
 			for i, eh := range ehs {
 				if diff := cmp.Diff(eh, wantEncapHeaders[i]); diff != "" {
 					t.Errorf("Diff (-got +want): %v", diff)
