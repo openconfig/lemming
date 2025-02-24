@@ -298,7 +298,6 @@ func updateAft(yclient *ygnmi.Client, _ constants.OpType, ni string, e ygot.GoSt
 			break
 		}
 		path := ocpath.Root().NetworkInstance(ni).Afts().Ipv4Entry(t.GetPrefix()).State()
-
 		if _, err := gnmiSet(yclient, path, dst, op); err != nil {
 			log.Warningf("unable to update gRIBI data: %v", err)
 		}
