@@ -1,9 +1,9 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_test")
 
 go_test(
-    name = "mpls_over_udp_v6_test",
+    name = "mpls_over_udp_test",
     size = "enormous",
-    srcs = ["mpls_over_udp_v6_test.go"],
+    srcs = ["mpls_over_udp_test.go"],
     data = ["//integration_tests/onedut_oneotg_tests:topology_testbed"],
     deps = [
         "//gnmi/fakedevice",
