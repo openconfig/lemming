@@ -30,25 +30,26 @@ import (
 // Since metadata is not a real packet header, it does not contribute to the
 // packet's frame.
 type Metadata struct {
-	length         uint64           // Packet length.
-	inputPort      []byte           // Input port identifier.
-	outputPort     []byte           // Output port identifier.
-	vrf            []byte           // VRF identifier.
-	attribute32    map[uint8][]byte // Map of 32-bit attributes indexed by instance.
-	attribute24    map[uint8][]byte // Map of 24-bit attributes indexed by instance.
-	attribute16    map[uint8][]byte // Map of 16-bit attributes indexed by instance.
-	attribute8     map[uint8][]byte // Map of 8-bit attributes indexed by instance.
-	nextHopIP      []byte
-	nextHopID      []byte         // ID of the next hop.
-	nextHopGroupID []byte         // ID of the next hop group.
-	trapID         []byte         // ID of the trap rule that was applies to this packet.
-	inputIface     []byte         // L3 input interface id.
-	outputIface    []byte         // L3 output interface id.
-	tunnelID       []byte         // Tunnel ID
-	hostPortID     []byte         // Host port id
-	l2mcGroupID    []byte         // L2MC Group ID
-	policer        []byte         // Policer ID
-	desc           *protocol.Desc // Protocol descriptor.
+	length           uint64           // Packet length.
+	inputPort        []byte           // Input port identifier.
+	outputPort       []byte           // Output port identifier.
+	vrf              []byte           // VRF identifier.
+	attribute32      map[uint8][]byte // Map of 32-bit attributes indexed by instance.
+	attribute24      map[uint8][]byte // Map of 24-bit attributes indexed by instance.
+	attribute16      map[uint8][]byte // Map of 16-bit attributes indexed by instance.
+	attribute8       map[uint8][]byte // Map of 8-bit attributes indexed by instance.
+	nextHopIP        []byte
+	nextHopID        []byte         // ID of the next hop.
+	nextHopGroupID   []byte         // ID of the next hop group.
+	trapID           []byte         // ID of the trap rule that was applies to this packet.
+	inputIface       []byte         // L3 input interface id.
+	outputIface      []byte         // L3 output interface id.
+	tunnelID         []byte         // Tunnel ID
+	hostPortID       []byte         // Host port id
+	l2mcGroupID      []byte         // L2MC Group ID
+	policer          []byte         // Policer ID
+	targetEgressPort []byte         // Target egress port
+	desc             *protocol.Desc // Protocol descriptor.
 }
 
 // Header returns nil as it does not contribute to the packet's frame.
@@ -132,7 +133,8 @@ func (m *Metadata) Field(id fwdpacket.FieldID) ([]byte, error) {
 		return m.l2mcGroupID, nil
 	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_POLICER_ID:
 		return m.policer, nil
-
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TARGET_EGRESS_PORT:
+		return m.targetEgressPort, nil
 	default:
 		return nil, fmt.Errorf("metadata: Field %v failed, unsupported field", id)
 	}
@@ -244,6 +246,9 @@ func (m *Metadata) updateSet(id fwdpacket.FieldID, arg []byte) (bool, error) {
 	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_POLICER_ID:
 		m.policer = arg
 		return true, nil
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TARGET_EGRESS_PORT:
+		m.targetEgressPort = arg
+		return true, nil
 	default:
 		return false, fmt.Errorf("metadata: UpdateField failed, set unsupported for field %v", id)
 	}
@@ -289,22 +294,23 @@ func (Metadata) Modify(fwdpb.PacketHeaderId) error {
 // (and the port).
 func parse(frame *frame.Frame, desc *protocol.Desc) (protocol.Handler, fwdpb.PacketHeaderId, error) {
 	return &Metadata{
-		desc:        desc,
-		length:      uint64(frame.Len()),
-		vrf:         make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF].DefaultSize),
-		inputPort:   make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT].DefaultSize),
-		outputPort:  make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT].DefaultSize),
-		nextHopIP:   make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP].DefaultSize),
-		inputIface:  make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_INPUT_IFACE].DefaultSize),
-		outputIface: make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE].DefaultSize),
-		tunnelID:    make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TUNNEL_ID].DefaultSize),
-		hostPortID:  make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_HOST_PORT_ID].DefaultSize),
-		l2mcGroupID: make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L2MC_GROUP_ID].DefaultSize),
-		policer:     make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_POLICER_ID].DefaultSize),
-		attribute32: make(map[uint8][]byte),
-		attribute24: make(map[uint8][]byte),
-		attribute16: make(map[uint8][]byte),
-		attribute8:  make(map[uint8][]byte),
+		desc:             desc,
+		length:           uint64(frame.Len()),
+		vrf:              make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF].DefaultSize),
+		inputPort:        make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT].DefaultSize),
+		outputPort:       make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_OUTPUT].DefaultSize),
+		nextHopIP:        make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP].DefaultSize),
+		inputIface:       make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_INPUT_IFACE].DefaultSize),
+		outputIface:      make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE].DefaultSize),
+		tunnelID:         make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TUNNEL_ID].DefaultSize),
+		hostPortID:       make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_HOST_PORT_ID].DefaultSize),
+		l2mcGroupID:      make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L2MC_GROUP_ID].DefaultSize),
+		policer:          make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_POLICER_ID].DefaultSize),
+		targetEgressPort: make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TARGET_EGRESS_PORT].DefaultSize),
+		attribute32:      make(map[uint8][]byte),
+		attribute24:      make(map[uint8][]byte),
+		attribute16:      make(map[uint8][]byte),
+		attribute8:       make(map[uint8][]byte),
 	}, fwdpb.PacketHeaderId_PACKET_HEADER_ID_NONE, nil
 }
 

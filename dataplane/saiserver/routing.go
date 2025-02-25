@@ -751,6 +751,7 @@ func (ri *routerInterface) CreateRouterInterface(ctx context.Context, req *saipb
 			fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE).WithUint64(id))),
 			fwdconfig.Action(fwdconfig.TransmitAction(fmt.Sprint(req.GetPortId()))),
 			fwdconfig.Action(fwdconfig.FlowCounterAction(outCounter)),
+			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TARGET_EGRESS_PORT).WithUint64Value(req.GetPortId())),
 		).Build()
 
 	if vlanID != 0 {

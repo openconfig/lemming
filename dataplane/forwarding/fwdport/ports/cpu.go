@@ -125,11 +125,15 @@ func (p *CPUPort) punt(v any) {
 	if err != nil {
 		return
 	}
+	egressPort, err := packet.Field(fwdpacket.NewFieldIDFromNum(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TARGET_EGRESS_PORT, 0))
+	if err != nil {
+		egressPort = binary.BigEndian.AppendUint64(nil, 0)
+	}
 
 	response := &pktiopb.PacketOut{
 		Packet: &pktiopb.Packet{
 			InputPort:  uint64(ingressID),
-			OutputPort: uint64(0), // TODO: If the packet was punted after the FIB, this not be output port.
+			OutputPort: binary.BigEndian.Uint64(egressPort),
 			HostPort:   binary.BigEndian.Uint64(hostPort),
 			Frame:      packet.Frame(),
 		},

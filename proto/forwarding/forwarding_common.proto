@@ -183,6 +183,7 @@ enum PacketFieldNum {
   PACKET_FIELD_NUM_MPLS_LABEL = 66; // MPLS Label
   PACKET_FIELD_NUM_MPLS_TC = 67; // MPLS Traffic Class
   PACKET_FIELD_NUM_MPLS_TTL = 68; // MPLS TTL
+  PACKET_FIELD_NUM_TARGET_EGRESS_PORT = 69; // Original output port (metadata)
   PACKET_FIELD_NUM_COUNT = 1000;
 }
 
