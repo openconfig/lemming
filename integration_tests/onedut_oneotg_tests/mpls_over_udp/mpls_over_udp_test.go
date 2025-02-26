@@ -29,7 +29,6 @@ import (
 	"github.com/openconfig/gribigo/fluent"
 	"github.com/openconfig/ondatra"
 	"github.com/openconfig/ondatra/gnmi"
-	"github.com/openconfig/ondatra/gnmi/otg/otgpath"
 	"github.com/openconfig/ondatra/otg"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot"
@@ -112,15 +111,55 @@ func TestMain(m *testing.M) {
 // configureDUT configures port1 and port2 on the DUT.
 func configureDUT(t *testing.T, dut *ondatra.DUTDevice) {
 	p1 := dut.Port(t, "port1")
-	gnmi.Replace(t, dut, ocpath.Root().Interface(p1.Name()).Config(), dutPort1.NewOCInterface(p1.Name(), dut))
-
 	p2 := dut.Port(t, "port2")
-	gnmi.Replace(t, dut, ocpath.Root().Interface(p2.Name()).Config(), dutPort2.NewOCInterface(p2.Name(), dut))
+	portList := []*ondatra.Port{p1, p2}
+
+	// Added for loop
+	for idx, a := range []attrs.Attributes{dutPort1, dutPort2} {
+		p := portList[idx]
+		intf := a.NewOCInterface(p.Name(), dut)
+		if p.PMD() == ondatra.PMD100GBASEFR && dut.Vendor() != ondatra.CISCO && dut.Vendor() != ondatra.JUNIPER {
+			e := intf.GetOrCreateEthernet()
+			e.AutoNegotiate = ygot.Bool(false)
+			e.DuplexMode = oc.Ethernet_DuplexMode_FULL
+			e.PortSpeed = oc.IfEthernet_ETHERNET_SPEED_SPEED_100GB
+		}
+		gnmi.Replace(t, dut, ocpath.Root().Interface(p.Name()).Config(), intf) // Modified
+	}
 
 	gnmi.Await(t, dut, ocpath.Root().Interface(dut.Port(t, "port1").Name()).Subinterface(0).Ipv4().Address(dutPort1.IPv4).Ip().State(), time.Minute, dutPort1.IPv4)
 	gnmi.Await(t, dut, ocpath.Root().Interface(dut.Port(t, "port2").Name()).Subinterface(0).Ipv4().Address(dutPort2.IPv4).Ip().State(), time.Minute, dutPort2.IPv4)
 	gnmi.Await(t, dut, ocpath.Root().Interface(dut.Port(t, "port1").Name()).Subinterface(0).Ipv6().Address(dutPort1.IPv6).Ip().State(), time.Minute, dutPort1.IPv6)
 	gnmi.Await(t, dut, ocpath.Root().Interface(dut.Port(t, "port2").Name()).Subinterface(0).Ipv6().Address(dutPort2.IPv6).Ip().State(), time.Minute, dutPort2.IPv6)
+}
+
+// WaitForARP waits for ARP to resolve on all OTG interfaces for a given ipType, which is
+// either "IPv4" or "IPv6".
+func WaitForARP(t *testing.T, otg *otg.OTG, c gosnappi.Config, ipType string) {
+	intfs := []string{}
+	for _, d := range c.Devices().Items() {
+		Eth := d.Ethernets().Items()[0]
+		intfs = append(intfs, Eth.Name())
+	}
+
+	for _, intf := range intfs {
+		switch ipType {
+		case "IPv4":
+			got, ok := gnmi.WatchAll(t, otg, gnmi.OTG().Interface(intf).Ipv4NeighborAny().LinkLayerAddress().State(), 2*time.Minute, func(val *ygnmi.Value[string]) bool {
+				return val.IsPresent()
+			}).Await(t)
+			if !ok {
+				t.Fatalf("Did not receive OTG Neighbor entry for interface %s, last got: %v", intf, got)
+			}
+		case "IPv6":
+			got, ok := gnmi.WatchAll(t, otg, gnmi.OTG().Interface(intf).Ipv6NeighborAny().LinkLayerAddress().State(), 2*time.Minute, func(val *ygnmi.Value[string]) bool {
+				return val.IsPresent()
+			}).Await(t)
+			if !ok {
+				t.Fatalf("Did not receive OTG Neighbor entry for interface %s, last got: %v", intf, got)
+			}
+		}
+	}
 }
 
 // configureOTG configures port1 and port2 on the ATE.
@@ -133,36 +172,29 @@ func configureOTG(t *testing.T, ate *ondatra.ATEDevice) gosnappi.Config {
 	atePort1.AddToOTG(top, p1, &dutPort1)
 	atePort2.AddToOTG(top, p2, &dutPort2)
 
+	pmd100GFRPorts := []string{}
+	for _, p := range top.Ports().Items() {
+		port := ate.Port(t, p.Name())
+		if port.PMD() == ondatra.PMD100GBASEFR {
+			pmd100GFRPorts = append(pmd100GFRPorts, port.ID())
+		}
+	}
+	// Disable FEC for 100G-FR ports because Novus does not support it.
+	if len(pmd100GFRPorts) > 0 {
+		l1Settings := top.Layer1().Add().SetName("L1").SetPortNames(pmd100GFRPorts)
+		l1Settings.SetAutoNegotiate(true).SetIeeeMediaDefaults(false).SetSpeed("speed_100_gbps")
+		autoNegotiate := l1Settings.AutoNegotiation()
+		autoNegotiate.SetRsFec(false)
+	}
+
 	return top
-}
-
-func waitOTGARPEntry(t *testing.T) {
-	ate := ondatra.ATE(t, "ate")
-
-	val, ok := gnmi.WatchAll(t, ate.OTG(), otgpath.Root().InterfaceAny().Ipv4NeighborAny().LinkLayerAddress().State(), time.Minute, func(v *ygnmi.Value[string]) bool {
-		return v.IsPresent()
-	}).Await(t)
-	if !ok {
-		t.Fatal("failed to get neighbor")
-	}
-	lla, _ := val.Val()
-	t.Logf("Neighbor %v", lla)
-
-	val, ok = gnmi.WatchAll(t, ate.OTG(), otgpath.Root().InterfaceAny().Ipv6NeighborAny().LinkLayerAddress().State(), time.Minute, func(v *ygnmi.Value[string]) bool {
-		return v.IsPresent()
-	}).Await(t)
-	if !ok {
-		t.Fatal("failed to get neighbor")
-	}
-	lla, _ = val.Val()
-	t.Logf("Neighbor %v", lla)
 }
 
 // testTrafficv6 generates traffic flow from source network to
 // destination network via srcEndPoint to dstEndPoint and checks for
 // packet loss and returns loss percentage as float.
 func testTrafficv6(t *testing.T, otg *otg.OTG, srcEndPoint, dstEndPoint attrs.Attributes, startAddress string, dur time.Duration) float32 {
-	waitOTGARPEntry(t)
+	WaitForARP(t, otg, otg.FetchConfig(t), "IPv6")
 	top := otg.FetchConfig(t)
 	top.Flows().Clear().Items()
 	flowipv6 := top.Flows().Add().SetName(flowNameV6)
@@ -255,6 +287,31 @@ func checkEncapHeaders(t *testing.T, dut *ondatra.DUTDevice, nhgPaths []*ni.Netw
 	}
 }
 
+// enableCapture enables packet capture on specified list of ports on OTG
+func enableCapture(t *testing.T, otg *otg.OTG, topo gosnappi.Config, otgPortName string) {
+	t.Log("Enabling capture on ", otgPortName)
+	topo.Captures().Add().SetName(otgPortName).SetPortNames([]string{otgPortName}).SetFormat(gosnappi.CaptureFormat.PCAP)
+	pb, _ := topo.Marshal().ToProto()
+	t.Log(pb.GetCaptures())
+	otg.PushConfig(t, topo)
+}
+
+// startCapture starts the capture on the otg ports
+func startCapture(t *testing.T, ate *ondatra.ATEDevice) {
+	otg := ate.OTG()
+	cs := gosnappi.NewControlState()
+	cs.Port().Capture().SetState(gosnappi.StatePortCaptureState.START)
+	otg.SetControlState(t, cs)
+}
+
+// stopCapture starts the capture on the otg ports
+func stopCapture(t *testing.T, ate *ondatra.ATEDevice) {
+	otg := ate.OTG()
+	cs := gosnappi.NewControlState()
+	cs.Port().Capture().SetState(gosnappi.StatePortCaptureState.STOP)
+	otg.SetControlState(t, cs)
+}
+
 func TestMPLSOverUDPIPv6(t *testing.T) {
 	dut := ondatra.DUT(t, "dut")
 	configureDUT(t, dut)
@@ -262,7 +319,10 @@ func TestMPLSOverUDPIPv6(t *testing.T) {
 	ate := ondatra.ATE(t, "ate")
 	otg := ate.OTG()
 	otgConfig := configureOTG(t, ate)
+	t.Logf("Pushing config to ATE and starting protocols...")
 	otg.PushConfig(t, otgConfig)
+	t.Logf("starting protocols...")
+	otg.StartProtocols(t)
 
 	tests := []struct {
 		desc                    string
@@ -272,6 +332,9 @@ func TestMPLSOverUDPIPv6(t *testing.T) {
 		wantAddEncapHeaders     map[uint8]*oc.NetworkInstance_Afts_NextHop_EncapHeader
 		wantDelOperationResults []*client.OpResult
 		wantDelEncapHeaders     map[uint8]*oc.NetworkInstance_Afts_NextHop_EncapHeader
+		capturePort             string
+		wantMPLSLabel           uint64
+		wantOuterIP             string
 	}{
 		{
 			desc: "mplsoudpv6",
@@ -339,6 +402,9 @@ func TestMPLSOverUDPIPv6(t *testing.T) {
 					AsResult(),
 			},
 			wantDelEncapHeaders: map[uint8]*oc.NetworkInstance_Afts_NextHop_EncapHeader{},
+			capturePort:         atePort2.Name,
+			wantMPLSLabel:       mplsLabel,
+			wantOuterIP:         atePort2.IPv6,
 		},
 	}
 	for _, tc := range tests {
@@ -368,10 +434,15 @@ func TestMPLSOverUDPIPv6(t *testing.T) {
 				chk.HasResult(t, c.Results(t), wantResult, chk.IgnoreOperationID())
 			}
 
+			enableCapture(t, otg, otgConfig, tc.capturePort)
+			startCapture(t, ate)
 			if loss := testTrafficv6(t, otg, atePort1, atePort2, startAddressV6, 5*time.Second); loss > 1 {
 				t.Errorf("Loss: got %g, want <= 1", loss)
 			}
+			stopCapture(t, ate)
 
+			// TODO(tengyi): we need to wait LayerTypeAGUEVar0 updates in https://github.com/google/gopacket/blob/master/layers/layertypes.go
+			// to include the packet validations and checks as required by TE-18.1.1 under featureprofiles.
 			checkEncapHeaders(t, dut, tc.nextHopGroupPaths, tc.wantAddEncapHeaders)
 
 			var txPkts, rxPkts uint64
