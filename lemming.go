@@ -33,6 +33,7 @@ import (
 	"github.com/openconfig/lemming/bgp"
 	"github.com/openconfig/lemming/dataplane"
 	"github.com/openconfig/lemming/dataplane/dplaneopts"
+	"github.com/openconfig/lemming/fault"
 	fgnmi "github.com/openconfig/lemming/gnmi"
 	"github.com/openconfig/lemming/gnmi/fakedevice"
 	"github.com/openconfig/lemming/gnmi/oc"
@@ -41,6 +42,7 @@ import (
 	fgnsi "github.com/openconfig/lemming/gnsi"
 	fgribi "github.com/openconfig/lemming/gribi"
 	fp4rt "github.com/openconfig/lemming/p4rt"
+	faultpb "github.com/openconfig/lemming/proto/fault"
 	"github.com/openconfig/lemming/sysrib"
 
 	log "github.com/golang/glog"
@@ -57,6 +59,7 @@ type Device struct {
 	gnmignoignsiService *gRPCService
 	gribiService        *gRPCService
 	p4rtService         *gRPCService
+	faultService        *gRPCService
 	stop                func()
 
 	gnmiServer   *fgnmi.Server
@@ -85,8 +88,10 @@ type opt struct {
 	gnmiAddr       string
 	p4rtAddr       string
 	sysribAddr     string
+	faultAddr      string
 	bgpPort        uint16
 	dataplane      bool
+	faultInject    bool
 	dataplaneOpts  []dplaneopts.Option
 	gribiOpts      []gribis.ServerOpt
 }
@@ -188,6 +193,20 @@ func WithGRIBIOpts(opts ...gribis.ServerOpt) Option {
 	}
 }
 
+// WithFaultInjection enables the fault injection service.
+func WithFaultInjection(enable bool) Option {
+	return func(o *opt) {
+		o.faultInject = enable
+	}
+}
+
+// WithFaultAddr sets the address of the fault service.
+func WithFaultAddr(addr string) Option {
+	return func(o *opt) {
+		o.faultAddr = addr
+	}
+}
+
 // New returns a new initialized device.
 func New(targetName, zapiURL string, opts ...Option) (*Device, error) {
 	var dplane *dataplane.Dataplane
@@ -223,11 +242,35 @@ func New(targetName, zapiURL string, opts ...Option) (*Device, error) {
 	}
 
 	var grpcOpts []grpc.ServerOption
+	streamInt := []grpc.StreamServerInterceptor{fgnmi.NewSubscribeTargetUpdateInterceptor(targetName)}
+	unaryInt := []grpc.UnaryServerInterceptor{}
+
 	creds := resolvedOpts.tlsCredentials
 	if creds != nil {
 		grpcOpts = append(grpcOpts, grpc.Creds(creds))
 	}
-	grpcOpts = append(grpcOpts, grpc.StreamInterceptor(fgnmi.NewSubscribeTargetUpdateInterceptor(targetName)))
+
+	var faultService *gRPCService
+
+	if resolvedOpts.faultInject {
+		faultInt := fault.NewInterceptor()
+		l, err := net.Listen("tcp", resolvedOpts.faultAddr)
+		if err != nil {
+			return nil, err
+		}
+		srv := grpc.NewServer(grpc.Creds(creds))
+		faultpb.RegisterFaultInjectServer(srv, faultInt)
+
+		streamInt = append(streamInt, faultInt.Stream)
+		unaryInt = append(unaryInt, faultInt.Unary)
+		faultService = &gRPCService{
+			lis:     l,
+			s:       srv,
+			stopped: make(chan struct{}),
+		}
+	}
+
+	grpcOpts = append(grpcOpts, grpc.ChainStreamInterceptor(streamInt...), grpc.ChainUnaryInterceptor(unaryInt...))
 
 	s := grpc.NewServer(grpcOpts...)
 
@@ -306,6 +349,7 @@ func New(targetName, zapiURL string, opts ...Option) (*Device, error) {
 			lis:     lp4rt,
 			stopped: make(chan struct{}),
 		},
+		faultService: faultService,
 		gnmiServer:   gnmiServer,
 		gnoiServer:   gnoiServer,
 		gribiServer:  gribiServer,
@@ -404,8 +448,12 @@ func (d *Device) startServer() {
 		"gNMI/gNOI/gNSI": d.gnmignoignsiService,
 		"gRIBI":          d.gribiService,
 		"P4RT":           d.p4rtService,
+		"Fault":          d.faultService,
 	}
 	for svcName, svc := range services {
+		if svc == nil {
+			continue
+		}
 		// Capture loop variables by value instead of reference.
 		svcName, svc := svcName, svc
 		go func() {

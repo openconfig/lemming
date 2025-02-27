@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package fault implements the fault RPC service and provides client libraries.
 package fault
 
 import (
 	"context"
-	"regexp"
+	"fmt"
 	"sync"
 	"time"
 
@@ -48,28 +49,30 @@ type Interceptor struct {
 
 type faultMessage struct {
 	rpcID, msgID string
-	method       string
+	msgType      faultpb.MessageType
 	msg          *anypb.Any
 	status       *status.Status
 }
 
 type faultSubscription struct {
-	exp         *regexp.Regexp
 	originMsgCh chan *faultMessage
 }
 
-func (i *Interceptor) sendRecvFault(ch chan *faultMessage, rpcID string, msg any, oErr error) (any, error) {
+func (i *Interceptor) sendRecvFault(ch chan *faultMessage, rpcID string, msg any, msgType faultpb.MessageType, oErr error) (any, error) {
+	var mAny *anypb.Any
+	if msg != nil {
+		mpb, ok := msg.(proto.Message)
+		if !ok { // Do not intercept RPC where the response is not a protobuf message.
+			return msg, oErr
+		}
+		var err error
+		mAny, err = anypb.New(mpb)
+		if err != nil {
+			return msg, oErr
+		}
+	}
+
 	msgID := uuid.New().String()
-
-	mpb, ok := msg.(proto.Message)
-	if !ok { // Do not intercept RPC where the response is not a protobuf message.
-		return msg, nil
-	}
-	mAny, err := anypb.New(mpb)
-	if err != nil {
-		return msg, oErr
-	}
-
 	recvCh := make(chan *faultMessage, 1)
 	i.receiversMu.Lock()
 	i.receivers[msgID] = recvCh
@@ -78,24 +81,27 @@ func (i *Interceptor) sendRecvFault(ch chan *faultMessage, rpcID string, msg any
 	stErr, _ := status.FromError(oErr)
 
 	ch <- &faultMessage{ // Send the original req to the fault RPC.
-		rpcID:  rpcID,
-		msgID:  msgID,
-		msg:    mAny,
-		status: stErr,
+		rpcID:   rpcID,
+		msgID:   msgID,
+		msg:     mAny,
+		status:  stErr,
+		msgType: msgType,
 	}
 
 	var recv *faultMessage
 	select { // Receive the potential modified req from the fault RPC.
 	case recv = <-recvCh:
-	case <-time.After(time.Second):
-	}
-	if recv == nil {
-		return msg, oErr
+	case <-time.After(5 * time.Second):
+		fmt.Println("timeout")
 	}
 
 	i.receiversMu.Lock()
 	delete(i.receivers, msgID)
 	i.receiversMu.Unlock()
+
+	if recv == nil {
+		return msg, oErr
+	}
 	res, err := recv.msg.UnmarshalNew()
 	if err != nil {
 		return msg, oErr
@@ -104,30 +110,24 @@ func (i *Interceptor) sendRecvFault(ch chan *faultMessage, rpcID string, msg any
 	return res, recv.status.Err()
 }
 
+// Unary implements the grpc unary server imterceptor interface, adding fault injection to unary RPCs.
 func (i *Interceptor) Unary(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-	rpcID := uuid.New().String()
-
 	i.faultSubsMu.Lock()
-	var sub *faultSubscription
-	for _, fs := range i.faultSubs {
-		if fs.exp.FindString(info.FullMethod) != "" {
-			sub = fs
-			break
-		}
-	}
+	sub, ok := i.faultSubs[info.FullMethod]
 	i.faultSubsMu.Unlock()
-	if sub == nil {
+	if !ok {
 		return handler(ctx, req)
 	}
 
-	modReq, oErr := i.sendRecvFault(sub.originMsgCh, rpcID, req, nil)
+	rpcID := uuid.New().String()
+	modReq, oErr := i.sendRecvFault(sub.originMsgCh, rpcID, req, faultpb.MessageType_MESSAGE_TYPE_REQUEST, nil)
 	if oErr != nil { // If the fault client wants to return an error, don't run the handler and return.
 		return modReq, oErr
 	}
 	res, hErr := handler(ctx, modReq) // Run the implementation of the RPC.
 
-	modResp, oErr := i.sendRecvFault(sub.originMsgCh, rpcID, res, hErr)
-	return modResp, oErr
+	modResp, err := i.sendRecvFault(sub.originMsgCh, rpcID, res, faultpb.MessageType_MESSAGE_TYPE_RESPONSE, hErr)
+	return modResp, err
 }
 
 type streamInt struct {
@@ -139,36 +139,33 @@ type streamInt struct {
 
 func (si *streamInt) RecvMsg(m any) error {
 	err := si.ServerStream.RecvMsg(m)
-	msg, err := si.int.sendRecvFault(si.fs.originMsgCh, si.rpcID, m, err)
+	msg, err := si.int.sendRecvFault(si.fs.originMsgCh, si.rpcID, m, faultpb.MessageType_MESSAGE_TYPE_REQUEST, err)
 	if pm, ok := m.(proto.Message); ok {
 		proto.Merge(pm, msg.(proto.Message))
 	}
-
 	return err
 }
 
 func (si *streamInt) SendMsg(m any) error {
-	msg, err := si.int.sendRecvFault(si.fs.originMsgCh, si.rpcID, m, nil)
+	msg, err := si.int.sendRecvFault(si.fs.originMsgCh, si.rpcID, m, faultpb.MessageType_MESSAGE_TYPE_RESPONSE, nil)
 	if err != nil {
 		return err
 	}
 	return si.ServerStream.SendMsg(msg)
 }
 
+// Stream implements the grpc strean server imterceptor interface, adding fault injection to streanubg RPCs.
 func (i *Interceptor) Stream(srv any, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 	if info.FullMethod == "/lemming.fault.FaultInject/Intercept" { // Do not self-intercept
 		return handler(srv, stream)
 	}
 
 	i.faultSubsMu.Lock()
-	var sub *faultSubscription
-	for _, fs := range i.faultSubs {
-		if fs.exp.FindString(info.FullMethod) != "" {
-			sub = fs
-			break
-		}
-	}
+	sub, ok := i.faultSubs[info.FullMethod]
 	i.faultSubsMu.Unlock()
+	if !ok {
+		return handler(srv, stream)
+	}
 
 	si := &streamInt{
 		ServerStream: stream,
@@ -176,10 +173,28 @@ func (i *Interceptor) Stream(srv any, stream grpc.ServerStream, info *grpc.Strea
 		fs:           sub,
 		rpcID:        uuid.New().String(),
 	}
-
-	return handler(srv, si)
+	hErr := handler(srv, si)
+	_, err := si.int.sendRecvFault(si.fs.originMsgCh, si.rpcID, nil, faultpb.MessageType_MESSAGE_TYPE_STREAM_END, hErr)
+	return err
 }
 
+// Intercept streams RPC requests and responses to the fault client allowing injection of errors.
+// Flow:
+//  1. Client sends InterceptSubRequest matching the RPC to inject faults.
+//  2. Server sends original request or response
+//  3. Client replies with optional modified request and error.
+//
+// Unary RPCs:
+//
+//	When the client receives a request, it can either reply with a request message and OK status which
+//	causes RPC processing to proceed normally, or it can reply with a response and an error bypassing the server implementatiom
+//	When the client receives a response, it can reply with the same resposnse or a modified response. It can reply with a non-OK status
+//	to inject an into the resposnse.
+//
+// Streaming RPC:
+//
+//	Streaming RPC works the same as unary, except if the client wants to inject an error in request,
+//	it must supply the request type (NOT reponse)
 func (i *Interceptor) Intercept(srv faultpb.FaultInject_InterceptServer) error {
 	req, err := srv.Recv()
 	if err != nil {
@@ -188,23 +203,21 @@ func (i *Interceptor) Intercept(srv faultpb.FaultInject_InterceptServer) error {
 	if req.GetIntSub() == nil {
 		return status.Errorf(codes.InvalidArgument, "expected first request to be rpc filter")
 	}
-	exp, oErr := regexp.Compile(req.GetIntSub().GetMethodRegex())
-	if oErr != nil {
-		return status.Errorf(codes.InvalidArgument, "invalid regex: %v", oErr)
-	}
 	fs := &faultSubscription{
-		exp:         exp,
 		originMsgCh: make(chan *faultMessage),
 	}
 
-	intID := uuid.New().String()
 	i.faultSubsMu.Lock()
-	i.faultSubs[intID] = fs
+	if _, ok := i.faultSubs[req.GetIntSub().GetMethod()]; ok {
+		i.faultSubsMu.Unlock()
+		return status.Errorf(codes.FailedPrecondition, "interceptor already registered for this RPC")
+	}
+	i.faultSubs[req.GetIntSub().GetMethod()] = fs
 	i.faultSubsMu.Unlock()
 
 	defer func() {
 		i.faultSubsMu.Lock()
-		delete(i.faultSubs, intID)
+		delete(i.faultSubs, req.GetIntSub().GetMethod())
 		i.faultSubsMu.Unlock()
 	}()
 
@@ -233,18 +246,21 @@ func (i *Interceptor) Intercept(srv faultpb.FaultInject_InterceptServer) error {
 	for {
 		select {
 		case <-srv.Context().Done():
-			return nil
+			return srv.Context().Err()
 		case err := <-recvErr:
 			return err
 		case req := <-fs.originMsgCh:
-			srv.Send(&faultpb.InterceptResponse{
+			err := srv.Send(&faultpb.InterceptResponse{
 				OriginalMsg: &faultpb.ServerMessage{
-					RpcId:  req.rpcID,
-					MsgId:  req.msgID,
-					Method: req.method,
-					Msg:    req.msg,
+					RpcId:   req.rpcID,
+					MsgId:   req.msgID,
+					MsgType: req.msgType,
+					Msg:     req.msg,
 				},
 			})
+			if err != nil {
+				return err
+			}
 		}
 	}
 }
