@@ -471,10 +471,14 @@ func (d *Device) startServer() {
 
 	d.stop = func() {
 		for _, svc := range services {
-			svc.s.Stop()
+			if svc != nil {
+				svc.s.Stop()
+			}
 		}
 		for _, svc := range services {
-			<-svc.stopped
+			if svc != nil {
+				<-svc.stopped
+			}
 		}
 	}
 }
