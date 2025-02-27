@@ -111,21 +111,10 @@ func TestMain(m *testing.M) {
 // configureDUT configures port1 and port2 on the DUT.
 func configureDUT(t *testing.T, dut *ondatra.DUTDevice) {
 	p1 := dut.Port(t, "port1")
-	p2 := dut.Port(t, "port2")
-	portList := []*ondatra.Port{p1, p2}
+	gnmi.Replace(t, dut, ocpath.Root().Interface(p1.Name()).Config(), dutPort1.NewOCInterface(p1.Name(), dut))
 
-	// Added for loop
-	for idx, a := range []attrs.Attributes{dutPort1, dutPort2} {
-		p := portList[idx]
-		intf := a.NewOCInterface(p.Name(), dut)
-		if p.PMD() == ondatra.PMD100GBASEFR && dut.Vendor() != ondatra.CISCO && dut.Vendor() != ondatra.JUNIPER {
-			e := intf.GetOrCreateEthernet()
-			e.AutoNegotiate = ygot.Bool(false)
-			e.DuplexMode = oc.Ethernet_DuplexMode_FULL
-			e.PortSpeed = oc.IfEthernet_ETHERNET_SPEED_SPEED_100GB
-		}
-		gnmi.Replace(t, dut, ocpath.Root().Interface(p.Name()).Config(), intf) // Modified
-	}
+	p2 := dut.Port(t, "port2")
+	gnmi.Replace(t, dut, ocpath.Root().Interface(p2.Name()).Config(), dutPort2.NewOCInterface(p2.Name(), dut))
 
 	gnmi.Await(t, dut, ocpath.Root().Interface(dut.Port(t, "port1").Name()).Subinterface(0).Ipv4().Address(dutPort1.IPv4).Ip().State(), time.Minute, dutPort1.IPv4)
 	gnmi.Await(t, dut, ocpath.Root().Interface(dut.Port(t, "port2").Name()).Subinterface(0).Ipv4().Address(dutPort2.IPv4).Ip().State(), time.Minute, dutPort2.IPv4)
@@ -171,21 +160,6 @@ func configureOTG(t *testing.T, ate *ondatra.ATEDevice) gosnappi.Config {
 
 	atePort1.AddToOTG(top, p1, &dutPort1)
 	atePort2.AddToOTG(top, p2, &dutPort2)
-
-	pmd100GFRPorts := []string{}
-	for _, p := range top.Ports().Items() {
-		port := ate.Port(t, p.Name())
-		if port.PMD() == ondatra.PMD100GBASEFR {
-			pmd100GFRPorts = append(pmd100GFRPorts, port.ID())
-		}
-	}
-	// Disable FEC for 100G-FR ports because Novus does not support it.
-	if len(pmd100GFRPorts) > 0 {
-		l1Settings := top.Layer1().Add().SetName("L1").SetPortNames(pmd100GFRPorts)
-		l1Settings.SetAutoNegotiate(true).SetIeeeMediaDefaults(false).SetSpeed("speed_100_gbps")
-		autoNegotiate := l1Settings.AutoNegotiation()
-		autoNegotiate.SetRsFec(false)
-	}
 
 	return top
 }
@@ -342,7 +316,7 @@ func TestMPLSOverUDPIPv6(t *testing.T) {
 				fluent.NextHopEntry().WithNetworkInstance(fakedevice.DefaultNetworkInstance).
 					WithIndex(nhIndex).WithIPAddress(destIP).AddEncapHeader(
 					fluent.MPLSEncapHeader().WithLabels(mplsLabel),
-					fluent.UDPV6EncapHeader().WithDstUDPPort(uint64(udpPort)).WithSrcUDPPort(uint64(udpPort)).WithSrcIP(atePort1.IPv6).WithDstIP(atePort2.IPv6).WithDSCP(dscp).WithIPTTL(uint64(ipTTL)),
+					fluent.UDPV6EncapHeader().WithDstUDPPort(uint64(udpPort)).WithSrcUDPPort(uint64(udpPort)).WithSrcIP(atePort1.IPv6).WithDstIP(destIP).WithDSCP(dscp).WithIPTTL(uint64(ipTTL)),
 				),
 				fluent.NextHopGroupEntry().WithNetworkInstance(fakedevice.DefaultNetworkInstance).
 					WithID(nhgIndex).AddNextHop(nhIndex, 1),
@@ -380,7 +354,7 @@ func TestMPLSOverUDPIPv6(t *testing.T) {
 					Type:  oc.AftTypes_EncapsulationHeaderType_UDPV6,
 					UdpV6: &oc.NetworkInstance_Afts_NextHop_EncapHeader_UdpV6{
 						Dscp:       ygot.Uint8(dscp),
-						DstIp:      ygot.String(atePort2.IPv6),
+						DstIp:      ygot.String(destIP),
 						DstUdpPort: ygot.Uint16(udpPort),
 						IpTtl:      ygot.Uint8(ipTTL),
 						SrcIp:      ygot.String(atePort1.IPv6),
@@ -404,7 +378,7 @@ func TestMPLSOverUDPIPv6(t *testing.T) {
 			wantDelEncapHeaders: map[uint8]*oc.NetworkInstance_Afts_NextHop_EncapHeader{},
 			capturePort:         atePort2.Name,
 			wantMPLSLabel:       mplsLabel,
-			wantOuterIP:         atePort2.IPv6,
+			wantOuterIP:         destIP,
 		},
 	}
 	for _, tc := range tests {
