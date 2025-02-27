@@ -58,6 +58,10 @@ type faultSubscription struct {
 	originMsgCh chan *faultMessage
 }
 
+// sendRecvFault sends the msg to fault client and waits for the response.
+// msg: the original request received or response from the handler
+// oErr: the original error returned from the handler
+// returns the (optionally) modified msg and err from the client.
 func (i *Interceptor) sendRecvFault(ch chan *faultMessage, rpcID string, msg any, msgType faultpb.MessageType, oErr error) (any, error) {
 	var mAny *anypb.Any
 	if msg != nil {
@@ -174,6 +178,7 @@ func (i *Interceptor) Stream(srv any, stream grpc.ServerStream, info *grpc.Strea
 		rpcID:        uuid.New().String(),
 	}
 	hErr := handler(srv, si)
+	// After the handler exits, there may be an additional to should be injected.
 	_, err := si.int.sendRecvFault(si.fs.originMsgCh, si.rpcID, nil, faultpb.MessageType_MESSAGE_TYPE_STREAM_END, hErr)
 	return err
 }
