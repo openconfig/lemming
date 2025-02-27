@@ -16,6 +16,7 @@ package fault
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"testing"
 	"time"
@@ -25,6 +26,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/testing/protocmp"
 	"google.golang.org/protobuf/types/known/anypb"
 
 	"github.com/google/go-cmp/cmp"
@@ -36,9 +38,16 @@ import (
 
 type pingServer struct {
 	testpb.UnimplementedPingServer
+	gotReq []*testpb.PingRequest
 }
 
+const returnErr = "return err"
+
 func (s *pingServer) Unary(_ context.Context, r *testpb.PingRequest) (*testpb.PingResponse, error) {
+	s.gotReq = append(s.gotReq, r)
+	if r.Msg == returnErr {
+		return nil, fmt.Errorf("return err")
+	}
 	return &testpb.PingResponse{
 		Msg: r.GetMsg(),
 	}, nil
@@ -47,8 +56,12 @@ func (s *pingServer) Unary(_ context.Context, r *testpb.PingRequest) (*testpb.Pi
 func (s *pingServer) Stream(srv testpb.Ping_StreamServer) error {
 	for {
 		m, err := srv.Recv()
+		s.gotReq = append(s.gotReq, m)
 		if err != nil {
 			return err
+		}
+		if m.Msg == returnErr {
+			return fmt.Errorf("return err")
 		}
 		err = srv.Send(&testpb.PingResponse{Msg: m.GetMsg()})
 		if err != nil {
@@ -81,16 +94,16 @@ func TestIntercept(t *testing.T) {
 	pc := testpb.NewPingClient(c)
 	fc := faultpb.NewFaultInjectClient(c)
 
-	unaryPing := func(pc testpb.PingClient) (string, error) {
-		res, err := pc.Unary(context.Background(), &testpb.PingRequest{Msg: "hello"})
+	unaryPing := func(pc testpb.PingClient, msg string) (string, error) {
+		res, err := pc.Unary(context.Background(), &testpb.PingRequest{Msg: msg})
 		return res.GetMsg(), err
 	}
-	streamPing := func(pc testpb.PingClient) (string, error) {
+	streamPing := func(pc testpb.PingClient, msg string) (string, error) {
 		sc, err := pc.Stream(context.Background())
 		if err != nil {
 			return "", err
 		}
-		if err := sc.Send(&testpb.PingRequest{Msg: "hello"}); err != nil {
+		if err := sc.Send(&testpb.PingRequest{Msg: msg}); err != nil {
 			return "", err
 		}
 		res, err := sc.Recv()
@@ -101,18 +114,23 @@ func TestIntercept(t *testing.T) {
 		desc      string
 		want      string
 		wantErr   string
+		msg       string
 		subReq    *faultpb.InterceptSubRequest
-		testRPC   func(pc testpb.PingClient) (string, error)
+		testRPC   func(pc testpb.PingClient, msg string) (string, error)
+		wantReq   []*testpb.PingRequest
 		faultMsgs []*faultpb.FaultMessage
 	}{{
 		desc:    "no match",
 		testRPC: unaryPing,
 		want:    "hello",
+		msg:     "hello",
+		wantReq: []*testpb.PingRequest{{Msg: "hello"}},
 	}, {
 		desc:    "unary modify req and resp",
 		testRPC: unaryPing,
-		subReq:  &faultpb.InterceptSubRequest{MethodRegex: ".*"},
+		subReq:  &faultpb.InterceptSubRequest{Method: "/test.ping.Ping/Unary"},
 		want:    "test2",
+		wantReq: []*testpb.PingRequest{{Msg: "test1"}},
 		faultMsgs: []*faultpb.FaultMessage{{
 			Msg: mustMarshalAny(t, &testpb.PingRequest{Msg: "test1"}),
 		}, {
@@ -121,8 +139,9 @@ func TestIntercept(t *testing.T) {
 	}, {
 		desc:    "unary modify req with err",
 		testRPC: unaryPing,
-		subReq:  &faultpb.InterceptSubRequest{MethodRegex: ".*"},
+		subReq:  &faultpb.InterceptSubRequest{Method: "/test.ping.Ping/Unary"},
 		wantErr: "error message",
+		msg:     "hello",
 		faultMsgs: []*faultpb.FaultMessage{{
 			Msg:    mustMarshalAny(t, &testpb.PingResponse{Msg: "test"}),
 			Status: status.New(codes.Internal, "error message").Proto(),
@@ -130,10 +149,23 @@ func TestIntercept(t *testing.T) {
 	}, {
 		desc:    "unary modify resp with err",
 		testRPC: unaryPing,
-		subReq:  &faultpb.InterceptSubRequest{MethodRegex: ".*"},
+		subReq:  &faultpb.InterceptSubRequest{Method: "/test.ping.Ping/Unary"},
 		wantErr: "error message",
+		wantReq: []*testpb.PingRequest{{Msg: "test"}},
 		faultMsgs: []*faultpb.FaultMessage{{
 			Msg: mustMarshalAny(t, &testpb.PingRequest{Msg: "test"}),
+		}, {
+			Msg:    mustMarshalAny(t, &testpb.PingResponse{Msg: "test"}),
+			Status: status.New(codes.Internal, "error message").Proto(),
+		}},
+	}, {
+		desc:    "unary override handler err",
+		testRPC: unaryPing,
+		subReq:  &faultpb.InterceptSubRequest{Method: "/test.ping.Ping/Unary"},
+		wantErr: "error message",
+		wantReq: []*testpb.PingRequest{{Msg: returnErr}},
+		faultMsgs: []*faultpb.FaultMessage{{
+			Msg: mustMarshalAny(t, &testpb.PingRequest{Msg: returnErr}),
 		}, {
 			Msg:    mustMarshalAny(t, &testpb.PingResponse{Msg: "test"}),
 			Status: status.New(codes.Internal, "error message").Proto(),
@@ -141,29 +173,45 @@ func TestIntercept(t *testing.T) {
 	}, {
 		desc:    "stream modify req and resp",
 		testRPC: streamPing,
-		subReq:  &faultpb.InterceptSubRequest{MethodRegex: ".*"},
+		subReq:  &faultpb.InterceptSubRequest{Method: "/test.ping.Ping/Stream"},
 		want:    "test2",
+		msg:     "hello",
+		wantReq: []*testpb.PingRequest{{Msg: "test1"}},
 		faultMsgs: []*faultpb.FaultMessage{{
 			Msg: mustMarshalAny(t, &testpb.PingRequest{Msg: "test1"}),
 		}, {
 			Msg: mustMarshalAny(t, &testpb.PingResponse{Msg: "test2"}),
-		}},
+		}, {}},
 	}, {
 		desc:    "stream modify req with err",
 		testRPC: streamPing,
-		subReq:  &faultpb.InterceptSubRequest{MethodRegex: ".*"},
+		subReq:  &faultpb.InterceptSubRequest{Method: "/test.ping.Ping/Stream"},
 		wantErr: "error message",
+		wantReq: []*testpb.PingRequest{nil}, // The server calls Recv, which returns the injected error and no value.
 		faultMsgs: []*faultpb.FaultMessage{{
 			Msg:    mustMarshalAny(t, &testpb.PingRequest{Msg: "test"}),
 			Status: status.New(codes.Internal, "error message").Proto(),
-		}},
+		}, {}},
 	}, {
 		desc:    "stream modify resp with err",
 		testRPC: streamPing,
-		subReq:  &faultpb.InterceptSubRequest{MethodRegex: ".*"},
+		subReq:  &faultpb.InterceptSubRequest{Method: "/test.ping.Ping/Stream"},
 		wantErr: "error message",
+		wantReq: []*testpb.PingRequest{{Msg: "test"}},
 		faultMsgs: []*faultpb.FaultMessage{{
 			Msg: mustMarshalAny(t, &testpb.PingRequest{Msg: "test"}),
+		}, {
+			Msg:    mustMarshalAny(t, &testpb.PingResponse{Msg: "test"}),
+			Status: status.New(codes.Internal, "error message").Proto(),
+		}, {}},
+	}, {
+		desc:    "stream override handler err",
+		testRPC: streamPing,
+		subReq:  &faultpb.InterceptSubRequest{Method: "/test.ping.Ping/Stream"},
+		wantErr: "error message",
+		wantReq: []*testpb.PingRequest{{Msg: returnErr}},
+		faultMsgs: []*faultpb.FaultMessage{{
+			Msg: mustMarshalAny(t, &testpb.PingRequest{Msg: returnErr}),
 		}, {
 			Msg:    mustMarshalAny(t, &testpb.PingResponse{Msg: "test"}),
 			Status: status.New(codes.Internal, "error message").Proto(),
@@ -171,8 +219,10 @@ func TestIntercept(t *testing.T) {
 	}}
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
+			ps.gotReq = nil
 			ctx, cancelFn := context.WithCancel(context.Background())
 			defer cancelFn()
+			time.Sleep(10 * time.Millisecond) // Sleep long enough for previous Intercept to close.
 			if tt.subReq != nil {
 				sub, err := fc.Intercept(ctx)
 				if err != nil {
@@ -195,15 +245,15 @@ func TestIntercept(t *testing.T) {
 				}()
 			}
 			time.Sleep(10 * time.Millisecond) // Sleep long enough for the 1st fault RPC to send.
-			got, gotErr := tt.testRPC(pc)
+			got, gotErr := tt.testRPC(pc, tt.msg)
 			if diff := errdiff.Check(gotErr, tt.wantErr); diff != "" {
-				t.Fatalf("unexpected err: %s", diff)
-			}
-			if gotErr != nil {
-				return
+				t.Errorf("unexpected err: %s", diff)
 			}
 			if d := cmp.Diff(got, tt.want); d != "" {
-				t.Errorf("unexpect result: diff(-got,+want)\n:%s", d)
+				t.Errorf("unexpected result: diff(-got,+want)\n:%s", d)
+			}
+			if d := cmp.Diff(ps.gotReq, tt.wantReq, protocmp.Transform()); d != "" {
+				t.Errorf("unexpected input requests: diff(-got,+want)\n:%s", d)
 			}
 		})
 	}

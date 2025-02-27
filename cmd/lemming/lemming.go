@@ -41,10 +41,12 @@ var (
 	tlsCertFile    = pflag.String("tls_cert_file", "", "Controls whether to enable TLS for gNXI services. If unspecified, insecure credentials are used.")
 	zapiAddr       = pflag.String("zapi_addr", "unix:/var/run/zserv.api", "Custom ZAPI address: use unix:/tmp/zserv.api for a temp.")
 	dplane         = pflag.Bool("enable_dataplane", false, "Controls whether to enable dataplane")
-	gcpTraceExport = flag.Bool("gcp_trace_export", false, "If true, export OTEL traces to GCP")
-	gcpMeterExport = flag.Bool("gcp_meter_export", false, "If true, export OTEL meters to GCP")
-	gcpLogExport   = flag.Bool("gcp_log_export", false, "If true, export application logs to GCP")
+	gcpTraceExport = pflag.Bool("gcp_trace_export", false, "If true, export OTEL traces to GCP")
+	gcpMeterExport = pflag.Bool("gcp_meter_export", false, "If true, export OTEL meters to GCP")
+	gcpLogExport   = pflag.Bool("gcp_log_export", false, "If true, export application logs to GCP")
 	gcpProject     = pflag.String("gcp_project", "", "GCP project to export to, by default it will use project where the GCE instance is running")
+	faultAddr      = pflag.String("fault_addr", ":9399", "fault server listen address")
+	faultEnable    = pflag.Bool("enable_fault", true, "Enable fault service")
 )
 
 func main() {
@@ -72,6 +74,8 @@ func main() {
 		lemming.WithGNMIAddr(*gnmiAddr),
 		lemming.WithBGPPort(uint16(*bgpPort)),
 		lemming.WithDataplane(*dplane),
+		lemming.WithFaultAddr(*faultAddr),
+		lemming.WithFaultInjection(*faultEnable),
 		lemming.WithDataplaneOpts(dplaneopts.WithSkipIPValidation()),
 	)
 	if err != nil {
