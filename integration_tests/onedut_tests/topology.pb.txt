@@ -6,4 +6,27 @@ nodes: {
     config: {
         args: "--v=1"
     }
+    services: {
+        key: 9339
+        value: {
+            names: "gnmi"
+            names: "gnoi"
+            names: "gnsi"
+            inside: 9339
+        }
+    }
+    services: {
+        key: 9340
+        value: {
+            names: "gribi"
+            inside: 9340
+        }
+    }
+    services: {
+        key: 9399
+        value: {
+            names: "fault"
+            inside: 9399
+        }
+    }
 }
