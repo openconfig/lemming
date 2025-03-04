@@ -1460,9 +1460,8 @@ def go_repositories():
     go_repository(
         name = "com_github_openconfig_gribigo",
         importpath = "github.com/openconfig/gribigo",
-        replace = "github.com/tengyiG/gribigo",
-        sum = "h1:xArwT9OIVXGil3eIOW8hzHLVUuIhDplL0xi4FDOjjBw=",
-        version = "v0.0.0-20250212004953-4c1b9e63b662",
+        sum = "h1:tABUCF3c6gZo1ezPFzlSlvgrFNY/lW7dRscmv1Lkokg=",
+        version = "v0.1.0",
     )
     go_repository(
         name = "com_github_openconfig_grpctunnel",
@@ -3384,8 +3383,8 @@ def go_repositories():
     go_repository(
         name = "org_uber_go_atomic",
         importpath = "go.uber.org/atomic",
-        sum = "h1:9qC72Qh0+3MqyJbAn8YU5xVq1frD8bn3JtD2oXtafVQ=",
-        version = "v1.10.0",
+        sum = "h1:ZvwS0R+56ePWxUNi+Atn9dWONBPp/AUETXlHW0DxSjE=",
+        version = "v1.11.0",
     )
     go_repository(
         name = "org_uber_go_goleak",
