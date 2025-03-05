@@ -16,12 +16,17 @@ package integration_test
 
 import (
 	"context"
+	"log"
 	"net/netip"
+	"os"
 	"slices"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/gopacket"
+	"github.com/google/gopacket/layers"
+	"github.com/google/gopacket/pcap"
 	"github.com/open-traffic-generator/snappi/gosnappi"
 	"github.com/openconfig/gribigo/chk"
 	"github.com/openconfig/gribigo/client"
@@ -286,6 +291,46 @@ func stopCapture(t *testing.T, ate *ondatra.ATEDevice) {
 	otg.SetControlState(t, cs)
 }
 
+// validatePacketCapture reads capture files and checks the encapped packet for desired protocol, dscp and ttl
+func validatePacketCapture(t *testing.T, ate *ondatra.ATEDevice, otgPortName string, dstIP string) {
+	bytes := ate.OTG().GetCapture(t, gosnappi.NewCaptureRequest().SetPortName(otgPortName))
+	f, err := os.CreateTemp("", ".pcap")
+	if err != nil {
+		t.Fatalf("ERROR: Could not create temporary pcap file: %v\n", err)
+	}
+	if _, err := f.Write(bytes); err != nil {
+		t.Fatalf("ERROR: Could not write bytes to pcap file: %v\n", err)
+	}
+	f.Close()
+	t.Logf("Verifying packet attributes captured on %s", otgPortName)
+	handle, err := pcap.OpenOffline(f.Name())
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer handle.Close()
+	packetSource := gopacket.NewPacketSource(handle, handle.LinkType())
+	for packet := range packetSource.Packets() {
+		t.Logf("Received a valid packet: %v", packet)
+		mplsLayer:= packet.Layer(layers.LayerTypeMPLS)
+		if mplsLayer == nil {
+			continue
+		}
+		udpLayer := packet.Layer(layers.LayerTypeUDP)
+		if udpLayer == nil {
+			continue
+		}
+		ipv6Layer := packet.Layer(layers.LayerTypeIPv6)
+		if ipv6Layer == nil {
+			continue
+		}
+		innerPacket := ipv6Layer.(*layers.IPv6)
+		// Validate destination IP is dstIP
+		if innerPacket.DstIP.String() != dstIP {
+			t.Errorf("Got packet destination IP %s, want %s", innerPacket.DstIP.String(), dstIP)
+		}
+	}
+}
+
 func TestMPLSOverUDPIPv6(t *testing.T) {
 	dut := ondatra.DUT(t, "dut")
 	configureDUT(t, dut)
@@ -409,14 +454,15 @@ func TestMPLSOverUDPIPv6(t *testing.T) {
 			}
 
 			enableCapture(t, otg, otgConfig, tc.capturePort)
+			time.Sleep(1 * time.Second)
 			startCapture(t, ate)
+			time.Sleep(1 * time.Second)
 			if loss := testTrafficv6(t, otg, atePort1, atePort2, startAddressV6, 5*time.Second); loss > 1 {
 				t.Errorf("Loss: got %g, want <= 1", loss)
 			}
+			time.Sleep(10 * time.Second)
 			stopCapture(t, ate)
 
-			// TODO(tengyi): we need to wait LayerTypeAGUEVar0 updates in https://github.com/google/gopacket/blob/master/layers/layertypes.go
-			// to include the packet validations and checks as required by TE-18.1.1 under featureprofiles.
 			checkEncapHeaders(t, dut, tc.nextHopGroupPaths, tc.wantAddEncapHeaders)
 
 			var txPkts, rxPkts uint64
@@ -425,6 +471,8 @@ func TestMPLSOverUDPIPv6(t *testing.T) {
 			txPkts += gnmi.Get(t, otg, gnmi.OTG().Flow(flowName).Counters().OutPkts().State())
 			rxPkts += gnmi.Get(t, otg, gnmi.OTG().Flow(flowName).Counters().InPkts().State())
 			testCounters(t, dut, txPkts, rxPkts)
+
+			validatePacketCapture(t, ate, atePort2.Name, destIP)
 
 			t.Log("Sending DELETE Modify request")
 			slices.Reverse(tc.entries)
