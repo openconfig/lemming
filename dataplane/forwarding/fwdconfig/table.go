@@ -21,7 +21,7 @@ type TableEntryAddRequestBuilder struct {
 	contextID string
 	tableID   string
 	entries   []*EntryDescBuilder
-	actions   [][]*ActionBuilder
+	actions   [][]ActionDescBuilder
 }
 
 // TableEntryAddRequest creates a new TableEntryAddRequestBuilder.
@@ -33,7 +33,7 @@ func TableEntryAddRequest(ctxID, tableID string) *TableEntryAddRequestBuilder {
 }
 
 // AppendEntry adds an entry and the actions to the requests.
-func (b *TableEntryAddRequestBuilder) AppendEntry(entry *EntryDescBuilder, actions ...*ActionBuilder) *TableEntryAddRequestBuilder {
+func (b *TableEntryAddRequestBuilder) AppendEntry(entry *EntryDescBuilder, actions ...ActionDescBuilder) *TableEntryAddRequestBuilder {
 	b.entries = append(b.entries, entry)
 	if len(actions) != 0 {
 		b.actions = append(b.actions, actions)
@@ -42,7 +42,7 @@ func (b *TableEntryAddRequestBuilder) AppendEntry(entry *EntryDescBuilder, actio
 }
 
 // AppendEntry adds the actions to the requests.
-func (b *TableEntryAddRequestBuilder) AppendActions(actions ...*ActionBuilder) *TableEntryAddRequestBuilder {
+func (b *TableEntryAddRequestBuilder) AppendActions(actions ...ActionDescBuilder) *TableEntryAddRequestBuilder {
 	b.actions = append(b.actions, actions)
 	return b
 }
@@ -63,7 +63,11 @@ func (b TableEntryAddRequestBuilder) Build() *fwdpb.TableEntryAddRequest {
 			break
 		}
 		for _, act := range b.actions[i] {
-			tableEntry.Actions = append(tableEntry.Actions, act.Build())
+			d := &fwdpb.ActionDesc{
+				ActionType: act.actionType(),
+			}
+			act.set(d)
+			tableEntry.Actions = append(tableEntry.Actions, d)
 		}
 	}
 	return req
