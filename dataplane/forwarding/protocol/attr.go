@@ -206,6 +206,12 @@ var FieldAttr = map[fwdpb.PacketFieldNum]struct {
 	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_MPLS_TTL: {
 		Sizes: []int{SizeUint8},
 	},
+	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TARGET_EGRESS_PORT: {
+		Sizes: []int{SizeUint64},
+	},
+	fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ACTION: {
+		Sizes: []int{SizeUint8},
+	},
 }
 
 // GroupAttr contains attributes for each packet header group.
@@ -246,6 +252,8 @@ var GroupAttr = map[fwdpb.PacketHeaderGroup]struct {
 			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_HOST_PORT_ID,
 			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L2MC_GROUP_ID,
 			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_POLICER_ID,
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TARGET_EGRESS_PORT,
+			fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ACTION,
 		},
 	},
 	fwdpb.PacketHeaderGroup_PACKET_HEADER_GROUP_L2: {

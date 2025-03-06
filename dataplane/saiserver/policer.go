@@ -16,7 +16,6 @@ package saiserver
 
 import (
 	"context"
-	"fmt"
 
 	"google.golang.org/grpc"
 
@@ -52,27 +51,7 @@ func (p *policer) CreatePolicer(ctx context.Context, req *saipb.CreatePolicerReq
 		return nil, err
 	}
 
-	var action *fwdpb.ActionDesc
-
-	switch req.GetGreenPacketAction() {
-	case saipb.PacketAction_PACKET_ACTION_TRAP:
-		action = fwdconfig.Action(fwdconfig.TransmitAction(fmt.Sprint(resp.GetAttr().GetCpuPort())).WithImmediate(true)).Build()
-	case saipb.PacketAction_PACKET_ACTION_COPY:
-		action = &fwdpb.ActionDesc{
-			ActionType: fwdpb.ActionType_ACTION_TYPE_MIRROR,
-			Action: &fwdpb.ActionDesc_Mirror{Mirror: &fwdpb.MirrorActionDesc{
-				PortId: &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(resp.GetAttr().GetCpuPort())}},
-				FieldIds: []*fwdpb.PacketFieldId{{
-					Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TRAP_ID},
-				}},
-				PortAction: fwdpb.PortAction_PORT_ACTION_OUTPUT,
-			}},
-		}
-	case saipb.PacketAction_PACKET_ACTION_FORWARD, saipb.PacketAction_PACKET_ACTION_UNSPECIFIED: // If unset, the default action is FORWARD.
-		action = fwdconfig.Action(fwdconfig.ContinueAction()).Build()
-	default:
-		return nil, fmt.Errorf("unsupport policer action: %v", req.GetGreenPacketAction())
-	}
+	action := computePacketAction(req.GetGreenPacketAction())
 
 	tReq := fwdconfig.TableEntryAddRequest(p.dataplane.ID(), policerTabler).
 		AppendEntry(fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_POLICER_ID).WithUint64(id)))).Build()

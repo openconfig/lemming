@@ -58,11 +58,14 @@ func TestCreatePolicer(t *testing.T) {
 					},
 				},
 				Actions: []*fwdpb.ActionDesc{{
-					ActionType: fwdpb.ActionType_ACTION_TYPE_TRANSMIT,
-					Action: &fwdpb.ActionDesc_Transmit{
-						Transmit: &fwdpb.TransmitActionDesc{
-							PortId:    &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: "10"}},
-							Immediate: true,
+					ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
+					Action: &fwdpb.ActionDesc_Update{
+						Update: &fwdpb.UpdateActionDesc{
+							FieldId:  &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ACTION}},
+							Field:    &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{}},
+							Type:     fwdpb.UpdateType_UPDATE_TYPE_BIT_WRITE,
+							Value:    []byte{2},
+							BitCount: 2,
 						},
 					},
 				}},
