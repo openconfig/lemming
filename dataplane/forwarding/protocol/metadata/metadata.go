@@ -49,6 +49,7 @@ type Metadata struct {
 	l2mcGroupID      []byte         // L2MC Group ID
 	policer          []byte         // Policer ID
 	targetEgressPort []byte         // Target egress port
+	packetAction     []byte         // Action that packet is taking.
 	desc             *protocol.Desc // Protocol descriptor.
 }
 
@@ -135,6 +136,8 @@ func (m *Metadata) Field(id fwdpacket.FieldID) ([]byte, error) {
 		return m.policer, nil
 	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TARGET_EGRESS_PORT:
 		return m.targetEgressPort, nil
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ACTION:
+		return m.packetAction, nil
 	default:
 		return nil, fmt.Errorf("metadata: Field %v failed, unsupported field", id)
 	}
@@ -249,6 +252,9 @@ func (m *Metadata) updateSet(id fwdpacket.FieldID, arg []byte) (bool, error) {
 	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TARGET_EGRESS_PORT:
 		m.targetEgressPort = arg
 		return true, nil
+	case fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ACTION:
+		m.packetAction = arg
+		return true, nil
 	default:
 		return false, fmt.Errorf("metadata: UpdateField failed, set unsupported for field %v", id)
 	}
@@ -307,6 +313,7 @@ func parse(frame *frame.Frame, desc *protocol.Desc) (protocol.Handler, fwdpb.Pac
 		l2mcGroupID:      make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_L2MC_GROUP_ID].DefaultSize),
 		policer:          make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_POLICER_ID].DefaultSize),
 		targetEgressPort: make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TARGET_EGRESS_PORT].DefaultSize),
+		packetAction:     make([]byte, protocol.FieldAttr[fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ACTION].DefaultSize),
 		attribute32:      make(map[uint8][]byte),
 		attribute24:      make(map[uint8][]byte),
 		attribute16:      make(map[uint8][]byte),

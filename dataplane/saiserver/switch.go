@@ -194,6 +194,7 @@ const (
 	policerTabler         = "policerTable"
 	invalidIngressV4Table = "invalid-ingress-v4"
 	invalidIngressV6Table = "invalid-ingress-v6"
+	outputTable           = "output-table"
 	DefaultVlanId         = 1
 )
 
@@ -277,7 +278,7 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 		Desc: &fwdpb.TableDesc{
 			TableType: fwdpb.TableType_TABLE_TYPE_PREFIX,
 			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: FIBV4Table}},
-			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_DROP}},
+			Actions:   []*fwdpb.ActionDesc{fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_BIT_WRITE, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ACTION).WithBitOp(1, 0).WithValue([]byte{0})).Build()},
 			Table: &fwdpb.TableDesc_Prefix{
 				Prefix: &fwdpb.PrefixTableDesc{
 					FieldIds: []*fwdpb.PacketFieldId{{
@@ -301,7 +302,7 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 		Desc: &fwdpb.TableDesc{
 			TableType: fwdpb.TableType_TABLE_TYPE_PREFIX,
 			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: FIBV6Table}},
-			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_DROP}},
+			Actions:   []*fwdpb.ActionDesc{fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_BIT_WRITE, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ACTION).WithBitOp(1, 0).WithValue([]byte{0})).Build()},
 			Table: &fwdpb.TableDesc_Prefix{
 				Prefix: &fwdpb.PrefixTableDesc{
 					FieldIds: []*fwdpb.PacketFieldId{{
@@ -325,7 +326,7 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 		Desc: &fwdpb.TableDesc{
 			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
 			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: SRCMACTable}},
-			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_DROP}},
+			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_CONTINUE}},
 			Table: &fwdpb.TableDesc_Exact{
 				Exact: &fwdpb.ExactTableDesc{
 					FieldIds: []*fwdpb.PacketFieldId{{
@@ -409,22 +410,6 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 		}
 	}
 
-	myMAC := &fwdpb.TableCreateRequest{
-		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
-		Desc: &fwdpb.TableDesc{
-			TableType: fwdpb.TableType_TABLE_TYPE_FLOW,
-			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: MyMacTable}},
-			Actions:   getL2Pipeline(),
-			Table: &fwdpb.TableDesc_Flow{
-				Flow: &fwdpb.FlowTableDesc{
-					BankCount: 1,
-				},
-			},
-		},
-	}
-	if _, err := sw.dataplane.TableCreate(ctx, myMAC); err != nil {
-		return nil, err
-	}
 	neighbor := &fwdpb.TableCreateRequest{
 		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
 		Desc: &fwdpb.TableDesc{
@@ -454,7 +439,7 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 		Desc: &fwdpb.TableDesc{
 			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
 			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: NHTable}},
-			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_DROP}},
+			Actions:   []*fwdpb.ActionDesc{fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_BIT_WRITE, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ACTION).WithBitOp(1, 0).WithValue([]byte{0})).Build()},
 			Table: &fwdpb.TableDesc_Exact{
 				Exact: &fwdpb.ExactTableDesc{
 					FieldIds: []*fwdpb.PacketFieldId{{
@@ -474,7 +459,7 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 		Desc: &fwdpb.TableDesc{
 			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
 			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: NHGTable}},
-			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_DROP}},
+			Actions:   []*fwdpb.ActionDesc{fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_BIT_WRITE, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ACTION).WithBitOp(1, 0).WithValue([]byte{0})).Build()},
 			Table: &fwdpb.TableDesc_Exact{
 				Exact: &fwdpb.ExactTableDesc{
 					FieldIds: []*fwdpb.PacketFieldId{{
@@ -565,7 +550,7 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 	_, err = sw.dataplane.TableEntryAdd(ctx, fwdconfig.TableEntryAddRequest(sw.dataplane.ID(), PreIngressActionTable).
 		AppendEntry(
 			fwdconfig.EntryDesc(fwdconfig.ActionEntry("trap", fwdpb.ActionEntryDesc_INSERT_METHOD_APPEND)),
-			fwdconfig.Action(fwdconfig.LookupAction(trapTableID))).
+			fwdconfig.LookupAction(trapTableID)).
 		Build(),
 	)
 	if err != nil {
@@ -716,6 +701,28 @@ func (sw *saiSwitch) CreateSwitch(ctx context.Context, _ *saipb.CreateSwitchRequ
 
 	cpuPortID, err := sw.port.createCPUPort(ctx)
 	if err != nil {
+		return nil, err
+	}
+
+	err = sw.createOutputTable(ctx, fmt.Sprint(cpuPortID))
+	if err != nil {
+		return nil, err
+	}
+
+	myMAC := &fwdpb.TableCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
+		Desc: &fwdpb.TableDesc{
+			TableType: fwdpb.TableType_TABLE_TYPE_FLOW,
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: MyMacTable}},
+			Actions:   getL2Pipeline(),
+			Table: &fwdpb.TableDesc_Flow{
+				Flow: &fwdpb.FlowTableDesc{
+					BankCount: 1,
+				},
+			},
+		},
+	}
+	if _, err := sw.dataplane.TableCreate(ctx, myMAC); err != nil {
 		return nil, err
 	}
 
@@ -900,7 +907,7 @@ func (sw *saiSwitch) createInvalidPacketFilter(ctx context.Context) error {
 				req := fwdconfig.TableEntryAddRequest(sw.dataplane.ID(), table).
 					AppendEntry(
 						fwdconfig.EntryDesc(fwdconfig.FlowEntry(fwdconfig.PacketFieldMaskedBytes(field).WithBytes(prefix.IP, prefix.Mask))),
-						fwdconfig.Action(fwdconfig.DropAction()),
+						fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_BIT_WRITE, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ACTION).WithBitOp(1, 0).WithValue([]byte{0}),
 					).Build()
 				if _, err := sw.dataplane.TableEntryAdd(ctx, req); err != nil {
 					return err
@@ -911,7 +918,7 @@ func (sw *saiSwitch) createInvalidPacketFilter(ctx context.Context) error {
 		req := fwdconfig.TableEntryAddRequest(sw.dataplane.ID(), table).
 			AppendEntry(
 				fwdconfig.EntryDesc(fwdconfig.FlowEntry(fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP).WithBytes([]byte{0x00}, []byte{0xFF}))),
-				fwdconfig.Action(fwdconfig.DropAction()),
+				fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_BIT_WRITE, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ACTION).WithBitOp(1, 0).WithValue([]byte{0}),
 			).Build()
 		if _, err := sw.dataplane.TableEntryAdd(ctx, req); err != nil {
 			return err
@@ -919,11 +926,63 @@ func (sw *saiSwitch) createInvalidPacketFilter(ctx context.Context) error {
 		req = fwdconfig.TableEntryAddRequest(sw.dataplane.ID(), table).
 			AppendEntry(
 				fwdconfig.EntryDesc(fwdconfig.FlowEntry(fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP).WithBytes([]byte{0x01}, []byte{0xFF}))),
-				fwdconfig.Action(fwdconfig.DropAction()),
+				fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_BIT_WRITE, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ACTION).WithBitOp(1, 0).WithValue([]byte{0}),
 			).Build()
 		if _, err := sw.dataplane.TableEntryAdd(ctx, req); err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (sw *saiSwitch) createOutputTable(ctx context.Context, cpuPortID string) error {
+	_, err := sw.dataplane.TableCreate(ctx, &fwdpb.TableCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
+		Desc: &fwdpb.TableDesc{
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: outputTable}},
+			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
+			Table: &fwdpb.TableDesc_Exact{
+				Exact: &fwdpb.ExactTableDesc{
+					FieldIds: []*fwdpb.PacketFieldId{{
+						Field: &fwdpb.PacketField{
+							FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ACTION,
+						},
+					}},
+				},
+			},
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	req := fwdconfig.TableEntryAddRequest(sw.dataplane.ID(), outputTable).AppendEntry(
+		fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ACTION).WithBytes([]byte{0}))), // DROP
+		fwdconfig.DropAction(),
+	).AppendEntry(
+		fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ACTION).WithBytes([]byte{1}))), // FORWARD
+		fwdconfig.DecapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET),                                                                           // Decap L2 header.
+		fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_DEC, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP).WithValue([]byte{0x1}),                   // Decrement TTL.
+		fwdconfig.LookupAction(NHActionTable),                                 // Apply additional encap actions
+		fwdconfig.EncapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET), // Encap L2 header.
+		fwdconfig.LookupAction(NeighborTable),                                 // Lookup in the neighbor table.
+		fwdconfig.LookupAction(SRCMACTable),                                   // Update source mac
+	).AppendEntry(
+		fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ACTION).WithBytes([]byte{2}))), // COPY AND DROP
+		fwdconfig.TransmitAction(cpuPortID),
+	).AppendEntry(
+		fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ACTION).WithBytes([]byte{3}))), // COPY AND FORWARD
+		fwdconfig.MirrorAction().WithPort(cpuPortID, fwdpb.PortAction_PORT_ACTION_OUTPUT).WithFields(fwdconfig.PacketFieldIDField(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TRAP_ID, 0), fwdconfig.PacketFieldIDField(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TARGET_EGRESS_PORT, 0)),
+		fwdconfig.DecapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET),                                                         // Decap L2 header.
+		fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_DEC, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP).WithValue([]byte{0x1}), // Decrement TTL.
+		fwdconfig.LookupAction(NHActionTable),                                 // Apply additional encap actions
+		fwdconfig.EncapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET), // Encap L2 header.
+		fwdconfig.LookupAction(NeighborTable),                                 // Lookup in the neighbor table.
+		fwdconfig.LookupAction(SRCMACTable),                                   // Update source mac
+	)
+	if _, err := sw.dataplane.TableEntryAdd(ctx, req.Build()); err != nil {
+		return err
 	}
 
 	return nil
