@@ -15,11 +15,15 @@
 package integration_test
 
 import (
+	"bytes"
 	"context"
+	"encoding/binary"
+	"fmt"
 	"log"
 	"net/netip"
 	"os"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -61,11 +65,12 @@ const (
 	// Common attributes
 	nhIndex        = 1
 	nhgIndex       = 42
-	mplsLabel      = uint64(100)     // Example MPLS label
-	udpPort        = uint16(6635)    // Example UDP port
+	mplsLabel      = uint64(200)     // Example MPLS label
+	udpSrcPort     = uint16(6635)    // Example UDP source port
+	udpDstPort     = uint16(6634)    // Example UDP destination port
 	outerIPv6Src   = "2001:f:a:1::0" // Example outer IPv6 src, adjust as needed
 	outerIPv6Dst   = "2001:f:c:e::2" // Example outer IPv6 dst, adjust as needed
-	ipTTL          = uint8(1)
+	ipTTL          = uint8(3)
 	startAddressV6 = "2003::6464"
 	flowNameV6     = "FlowV6"
 	dscp           = 46
@@ -291,15 +296,56 @@ func stopCapture(t *testing.T, ate *ondatra.ATEDevice) {
 	otg.SetControlState(t, cs)
 }
 
+type packetResult struct {
+	mplsLabel  uint64
+	udpSrcPort uint16
+	udpDstPort uint16
+	ipTTL      uint8
+	srcIP      string
+	dstIP      string
+}
+
+func formatMPLSHeader(data []byte) string {
+	if len(data) < 4 {
+		return ""
+	}
+
+	headerValue := binary.BigEndian.Uint32(data[:4])
+
+	label := (headerValue >> 12) & 0xFFFFF
+	exp := uint8((headerValue >> 9) & 0x07)
+	s := (headerValue >> 8) & 0x01
+	ttl := uint8(headerValue & 0xFF)
+
+	var sb strings.Builder
+	sb.WriteString(fmt.Sprintf("MPLS Label: %d\n", label))
+	sb.WriteString(fmt.Sprintf("EXP: %d\n", exp))
+	sb.WriteString(fmt.Sprintf("Bottom of Stack: %t\n", s == 1))
+	sb.WriteString(fmt.Sprintf("TTL: %d\n", ttl))
+
+	if len(data) > 4 {
+		sb.WriteString(fmt.Sprintf("Payload: % X", data[4:]))
+	}
+
+	return sb.String()
+}
+
+func mplsLabelToPacketBytes(n uint32) []byte {
+	buf := make([]byte, 4)
+	n <<= 12
+	binary.BigEndian.PutUint32(buf, n)
+	return buf
+}
+
 // validatePacketCapture reads capture files and checks the encapped packet for desired protocol, dscp and ttl
-func validatePacketCapture(t *testing.T, ate *ondatra.ATEDevice, otgPortName string, dstIP string) {
-	bytes := ate.OTG().GetCapture(t, gosnappi.NewCaptureRequest().SetPortName(otgPortName))
+func validatePacketCapture(t *testing.T, ate *ondatra.ATEDevice, otgPortName string, pr *packetResult) {
+	packetBytes := ate.OTG().GetCapture(t, gosnappi.NewCaptureRequest().SetPortName(otgPortName))
 	f, err := os.CreateTemp("", ".pcap")
 	if err != nil {
 		t.Fatalf("ERROR: Could not create temporary pcap file: %v\n", err)
 	}
-	if _, err := f.Write(bytes); err != nil {
-		t.Fatalf("ERROR: Could not write bytes to pcap file: %v\n", err)
+	if _, err := f.Write(packetBytes); err != nil {
+		t.Fatalf("ERROR: Could not write packetBytes to pcap file: %v\n", err)
 	}
 	f.Close()
 	t.Logf("Verifying packet attributes captured on %s", otgPortName)
@@ -310,24 +356,37 @@ func validatePacketCapture(t *testing.T, ate *ondatra.ATEDevice, otgPortName str
 	defer handle.Close()
 	packetSource := gopacket.NewPacketSource(handle, handle.LinkType())
 	for packet := range packetSource.Packets() {
-		t.Logf("Received a valid packet: %v", packet)
-		mplsLayer:= packet.Layer(layers.LayerTypeMPLS)
-		if mplsLayer == nil {
-			continue
-		}
 		udpLayer := packet.Layer(layers.LayerTypeUDP)
-		if udpLayer == nil {
-			continue
-		}
 		ipv6Layer := packet.Layer(layers.LayerTypeIPv6)
-		if ipv6Layer == nil {
+		if udpLayer == nil || ipv6Layer == nil {
 			continue
 		}
-		innerPacket := ipv6Layer.(*layers.IPv6)
+
+		// Ipv6 packet checks
+		v6Packet := ipv6Layer.(*layers.IPv6)
 		// Validate destination IP is dstIP
-		if innerPacket.DstIP.String() != dstIP {
-			t.Errorf("Got packet destination IP %s, want %s", innerPacket.DstIP.String(), dstIP)
+		if v6Packet.DstIP.String() != pr.dstIP {
+			t.Errorf("Got packet destination IP %s, want %s", v6Packet.DstIP.String(), pr.dstIP)
 		}
+		if v6Packet.SrcIP.String() != pr.srcIP {
+			t.Errorf("Got packet source IP %s, want %s", v6Packet.SrcIP.String(), pr.srcIP)
+		}
+
+		// UDP packet checks
+		udpPacket := udpLayer.(*layers.UDP)
+		if udpPacket.SrcPort != layers.UDPPort(pr.udpSrcPort) {
+			t.Errorf("Got udp source port: %d, want %d", udpPacket.SrcPort, pr.udpSrcPort)
+		}
+		if udpPacket.DstPort != layers.UDPPort(pr.udpDstPort) {
+			t.Errorf("Got udp source port: %d, want %d", udpPacket.DstPort, pr.udpDstPort)
+		}
+		mplsBytes := mplsLabelToPacketBytes(uint32(pr.mplsLabel))
+		payload := udpLayer.(*layers.UDP).LayerPayload()
+
+		if bytes.Compare(payload, mplsBytes) != 0 {
+			t.Errorf("Got UDP payload %s, want %s", formatMPLSHeader(payload), formatMPLSHeader(mplsBytes))
+		}
+
 	}
 }
 
@@ -361,7 +420,7 @@ func TestMPLSOverUDPIPv6(t *testing.T) {
 				fluent.NextHopEntry().WithNetworkInstance(fakedevice.DefaultNetworkInstance).
 					WithIndex(nhIndex).WithIPAddress(destIP).AddEncapHeader(
 					fluent.MPLSEncapHeader().WithLabels(mplsLabel),
-					fluent.UDPV6EncapHeader().WithDstUDPPort(uint64(udpPort)).WithSrcUDPPort(uint64(udpPort)).WithSrcIP(atePort1.IPv6).WithDstIP(destIP).WithDSCP(dscp).WithIPTTL(uint64(ipTTL)),
+					fluent.UDPV6EncapHeader().WithDstUDPPort(uint64(udpDstPort)).WithSrcUDPPort(uint64(udpSrcPort)).WithSrcIP(atePort1.IPv6).WithDstIP(destIP).WithDSCP(dscp).WithIPTTL(uint64(ipTTL)),
 				),
 				fluent.NextHopGroupEntry().WithNetworkInstance(fakedevice.DefaultNetworkInstance).
 					WithID(nhgIndex).AddNextHop(nhIndex, 1),
@@ -400,10 +459,10 @@ func TestMPLSOverUDPIPv6(t *testing.T) {
 					UdpV6: &oc.NetworkInstance_Afts_NextHop_EncapHeader_UdpV6{
 						Dscp:       ygot.Uint8(dscp),
 						DstIp:      ygot.String(destIP),
-						DstUdpPort: ygot.Uint16(udpPort),
+						DstUdpPort: ygot.Uint16(udpDstPort),
 						IpTtl:      ygot.Uint8(ipTTL),
 						SrcIp:      ygot.String(atePort1.IPv6),
-						SrcUdpPort: ygot.Uint16(udpPort),
+						SrcUdpPort: ygot.Uint16(udpSrcPort),
 					},
 				},
 			},
@@ -472,7 +531,15 @@ func TestMPLSOverUDPIPv6(t *testing.T) {
 			rxPkts += gnmi.Get(t, otg, gnmi.OTG().Flow(flowName).Counters().InPkts().State())
 			testCounters(t, dut, txPkts, rxPkts)
 
-			validatePacketCapture(t, ate, atePort2.Name, destIP)
+			validatePacketCapture(t, ate, atePort2.Name,
+				&packetResult{
+					mplsLabel:  mplsLabel,
+					udpSrcPort: udpSrcPort,
+					udpDstPort: udpDstPort,
+					ipTTL:      ipTTL,
+					srcIP:      atePort1.IPv6,
+					dstIP:      destIP,
+				})
 
 			t.Log("Sending DELETE Modify request")
 			slices.Reverse(tc.entries)
