@@ -10,6 +10,7 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//proto/fault",
+        "@com_github_golang_glog//:glog",
         "@com_github_google_uuid//:uuid",
         "@com_github_openconfig_gnmi//proto/gnmi",
         "@org_golang_google_grpc//:grpc",

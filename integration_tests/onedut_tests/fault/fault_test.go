@@ -16,13 +16,19 @@ package fault
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/openconfig/ondatra"
+	"github.com/openconfig/testt"
 	"google.golang.org/grpc"
 
+	"github.com/openconfig/ondatra/gnmi"
+
+	"github.com/openconfig/lemming/fault"
 	"github.com/openconfig/lemming/internal/binding"
-	faultpb "github.com/openconfig/lemming/proto/fault"
+
+	gpb "github.com/openconfig/gnmi/proto/gnmi"
 )
 
 func TestMain(m *testing.M) {
@@ -40,5 +46,12 @@ func TestFault(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	faultpb.NewFaultInjectClient(conn)
+	s := fault.NewClient(conn).GNMISubscribe(t)
+	s.SetReqCallback(func(sr *gpb.SubscribeRequest) (*gpb.SubscribeRequest, error) {
+		return nil, fmt.Errorf("fake error")
+	})
+
+	testt.ExpectFatal(t, func(t testing.TB) {
+		gnmi.Get(t, dut, gnmi.OC().System().State())
+	})
 }
