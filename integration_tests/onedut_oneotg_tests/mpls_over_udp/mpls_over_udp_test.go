@@ -371,6 +371,9 @@ func validatePacketCapture(t *testing.T, ate *ondatra.ATEDevice, otgPortName str
 		if v6Packet.SrcIP.String() != pr.srcIP {
 			t.Errorf("Got packet source IP %s, want %s", v6Packet.SrcIP.String(), pr.srcIP)
 		}
+		if v6Packet.HopLimit != ipTTL - 1 {
+			t.Errorf("Got hop limit %d, want %d", v6Packet.HopLimit, ipTTL - 1)
+		}
 
 		// UDP packet checks
 		udpPacket := udpLayer.(*layers.UDP)
@@ -380,13 +383,12 @@ func validatePacketCapture(t *testing.T, ate *ondatra.ATEDevice, otgPortName str
 		if udpPacket.DstPort != layers.UDPPort(pr.udpDstPort) {
 			t.Errorf("Got udp source port: %d, want %d", udpPacket.DstPort, pr.udpDstPort)
 		}
+
 		mplsBytes := mplsLabelToPacketBytes(uint32(pr.mplsLabel))
 		payload := udpLayer.(*layers.UDP).LayerPayload()
-
 		if bytes.Compare(payload, mplsBytes) != 0 {
 			t.Errorf("Got UDP payload %s, want %s", formatMPLSHeader(payload), formatMPLSHeader(mplsBytes))
 		}
-
 	}
 }
 
