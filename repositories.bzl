@@ -750,9 +750,8 @@ def go_repositories():
     go_repository(
         name = "com_github_google_gopacket",
         importpath = "github.com/google/gopacket",
-        replace = "github.com/tengyiG/gopacket",
-        sum = "h1:nWhiozMN34ubOfaPvryB0gvfQ8Ui6KEdfxshZgumuHg=",
-        version = "v1.1.20-0.20250305004400-190a2ef7c202",
+        sum = "h1:ves8RnFZPGiFnTS0uPQStjwru6uO6h+nlr9j6fL7kF8=",
+        version = "v1.1.19",
     )
     go_repository(
         name = "com_github_google_martian",
