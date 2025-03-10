@@ -54,7 +54,7 @@ func (c *Client) GNMISubscribe(t testing.TB) *StreamClient[*gpb.SubscribeRequest
 	return sc
 }
 
-// GNMIst staets intercepting gnmi.Set calls.
+// GNMISet starts intercepting gnmi.Set calls.
 func (c *Client) GNMISet(t testing.TB) *UnaryClient[*gpb.SetRequest, *gpb.SetResponse] {
 	t.Helper()
 	uc, err := newUnaryClient[*gpb.SetRequest, *gpb.SetResponse]("/gnmi.gNMI/Set", c.fc)
@@ -72,6 +72,7 @@ func newStreamClient[ReqT, RespT proto.Message](rpc string, fc faultpb.FaultInje
 
 	s, err := fc.Intercept(ctx)
 	if err != nil {
+		cancel()
 		return nil, err
 	}
 	err = s.Send(&faultpb.InterceptRequest{Msg: &faultpb.InterceptRequest_IntSub{
@@ -80,6 +81,7 @@ func newStreamClient[ReqT, RespT proto.Message](rpc string, fc faultpb.FaultInje
 		},
 	}})
 	if err != nil {
+		cancel()
 		return nil, err
 	}
 
@@ -202,6 +204,7 @@ func newUnaryClient[ReqT, RespT proto.Message](rpc string, fc faultpb.FaultInjec
 
 	s, err := fc.Intercept(ctx)
 	if err != nil {
+		cancel()
 		return nil, err
 	}
 	err = s.Send(&faultpb.InterceptRequest{Msg: &faultpb.InterceptRequest_IntSub{
@@ -210,6 +213,7 @@ func newUnaryClient[ReqT, RespT proto.Message](rpc string, fc faultpb.FaultInjec
 		},
 	}})
 	if err != nil {
+		cancel()
 		return nil, err
 	}
 

@@ -2,6 +2,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_test")
 
 go_test(
     name = "fault_test",
+    size = "enormous",
     srcs = ["fault_test.go"],
     data = ["//integration_tests/onedut_tests:topology_testbed"],
     deps = [
