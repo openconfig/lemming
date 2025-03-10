@@ -70,7 +70,7 @@ type UpdateActionBuilder struct {
 	fieldSrc      fwdpb.PacketFieldNum
 	instance      uint32
 	srcInstance   uint32
-	offset, count uint32
+	offset, count uint32 // Offset and count in bits for BIT_WRITE update.
 	value         []byte
 }
 
@@ -357,7 +357,7 @@ func (u *ContinueActionBuilder) actionType() fwdpb.ActionType {
 	return fwdpb.ActionType_ACTION_TYPE_CONTINUE
 }
 
-// MirrorActionBuilder is a builder for a continue action.
+// MirrorActionBuilder is a builder for a mirror action.
 type MirrorActionBuilder struct {
 	portID  string
 	portAct fwdpb.PortAction

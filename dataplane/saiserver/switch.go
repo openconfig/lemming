@@ -963,11 +963,11 @@ func (sw *saiSwitch) createOutputTable(ctx context.Context, cpuPortID string) er
 	).AppendEntry(
 		fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ACTION).WithBytes([]byte{1}))), // FORWARD
 		fwdconfig.DecapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET),                                                                           // Decap L2 header.
-		fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_DEC, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP).WithValue([]byte{0x1}),                   // Decrement TTL.
-		fwdconfig.LookupAction(NHActionTable),                                 // Apply additional encap actions
-		fwdconfig.EncapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET), // Encap L2 header.
-		fwdconfig.LookupAction(NeighborTable),                                 // Lookup in the neighbor table.
-		fwdconfig.LookupAction(SRCMACTable),                                   // Update source mac
+		fwdconfig.LookupAction(NHActionTable), // Apply additional encap actions
+		fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_DEC, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP).WithValue([]byte{0x1}), // Decrement TTL.
+		fwdconfig.EncapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET),                                                         // Encap L2 header.
+		fwdconfig.LookupAction(NeighborTable), // Lookup in the neighbor table.
+		fwdconfig.LookupAction(SRCMACTable),   // Update source mac
 	).AppendEntry(
 		fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ACTION).WithBytes([]byte{2}))), // COPY AND DROP
 		fwdconfig.TransmitAction(cpuPortID),
@@ -975,11 +975,11 @@ func (sw *saiSwitch) createOutputTable(ctx context.Context, cpuPortID string) er
 		fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ACTION).WithBytes([]byte{3}))), // COPY AND FORWARD
 		fwdconfig.MirrorAction().WithPort(cpuPortID, fwdpb.PortAction_PORT_ACTION_OUTPUT).WithFields(fwdconfig.PacketFieldIDField(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TRAP_ID, 0), fwdconfig.PacketFieldIDField(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TARGET_EGRESS_PORT, 0)),
 		fwdconfig.DecapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET),                                                         // Decap L2 header.
+		fwdconfig.LookupAction(NHActionTable),                                                                                         // Apply additional encap actions
 		fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_DEC, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP).WithValue([]byte{0x1}), // Decrement TTL.
-		fwdconfig.LookupAction(NHActionTable),                                 // Apply additional encap actions
-		fwdconfig.EncapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET), // Encap L2 header.
-		fwdconfig.LookupAction(NeighborTable),                                 // Lookup in the neighbor table.
-		fwdconfig.LookupAction(SRCMACTable),                                   // Update source mac
+		fwdconfig.EncapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET),                                                         // Encap L2 header.
+		fwdconfig.LookupAction(NeighborTable),                                                                                         // Lookup in the neighbor table.
+		fwdconfig.LookupAction(SRCMACTable),                                                                                           // Update source mac
 	)
 	if _, err := sw.dataplane.TableEntryAdd(ctx, req.Build()); err != nil {
 		return err
