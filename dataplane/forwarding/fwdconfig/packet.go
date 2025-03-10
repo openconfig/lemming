@@ -128,3 +128,45 @@ func (b *PacketFieldMaskedBytesBuilder) Build() *fwdpb.PacketFieldMaskedBytes {
 		},
 	}
 }
+
+// PacketFieldIdBuilder is a builder for PacketField.
+type PacketFieldIdBuilder struct {
+	field        fwdpb.PacketFieldNum
+	instance     uint32
+	grp          fwdpb.PacketHeaderGroup
+	offset, size uint32
+}
+
+func PacketFieldIDField(f fwdpb.PacketFieldNum, instance int) *PacketFieldIdBuilder {
+	return &PacketFieldIdBuilder{
+		field:    f,
+		instance: uint32(instance),
+	}
+}
+
+func PacketFieldIDBytes(grp fwdpb.PacketHeaderGroup, instance, offset, size int) *PacketFieldIdBuilder {
+	return &PacketFieldIdBuilder{
+		grp:      grp,
+		instance: uint32(instance),
+		offset:   uint32(offset),
+		size:     uint32(size),
+	}
+}
+
+func (b *PacketFieldIdBuilder) Build() *fwdpb.PacketFieldId {
+	if b.grp != fwdpb.PacketHeaderGroup_PACKET_HEADER_GROUP_UNSPECIFIED {
+		return &fwdpb.PacketFieldId{Bytes: &fwdpb.PacketBytes{
+			HeaderGroup: b.grp,
+			Instance:    b.instance,
+			Offset:      b.offset,
+			Size:        b.size,
+		}}
+	}
+
+	return &fwdpb.PacketFieldId{
+		Field: &fwdpb.PacketField{
+			FieldNum: b.field,
+			Instance: b.instance,
+		},
+	}
+}

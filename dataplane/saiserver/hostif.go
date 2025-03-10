@@ -128,7 +128,7 @@ func (hostif *hostif) CreateHostif(ctx context.Context, req *saipb.CreateHostifR
 		}
 		entry := fwdconfig.TableEntryAddRequest(hostif.dataplane.ID(), hostifToPortTable).
 			AppendEntry(fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_HOST_PORT_ID).WithUint64(id))),
-				fwdconfig.Action(fwdconfig.TransmitAction(fmt.Sprint(req.GetObjId())))).Build()
+				fwdconfig.TransmitAction(fmt.Sprint(req.GetObjId()))).Build()
 
 		if req.GetObjId() == resp.GetAttr().GetCpuPort() {
 			entry.Entries[0].Actions = getPreIngressPipeline()
@@ -148,7 +148,7 @@ func (hostif *hostif) CreateHostif(ctx context.Context, req *saipb.CreateHostifR
 
 		entry = fwdconfig.TableEntryAddRequest(hostif.dataplane.ID(), portToHostifTable).
 			AppendEntry(fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT).WithUint64(nid.GetNid()))),
-				fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_HOST_PORT_ID).WithUint64Value(id))).Build()
+				fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_HOST_PORT_ID).WithUint64Value(id)).Build()
 
 		if _, err := hostif.dataplane.TableEntryAdd(ctx, entry); err != nil {
 			return nil, err
@@ -312,15 +312,13 @@ func (hostif *hostif) CreateHostifTrap(ctx context.Context, req *saipb.CreateHos
 		return nil, status.Errorf(codes.InvalidArgument, "unknown trap type: %v", tType)
 	}
 
-	switch act := req.GetPacketAction(); act { // TODO: Support copy
-	case saipb.PacketAction_PACKET_ACTION_TRAP, saipb.PacketAction_PACKET_ACTION_COPY: // TRAP means COPY to CPU and DROP, just transmit immediately, which interrupts any pending actions.
-		for i := 0; i < entriesAdded; i++ {
-			fwdReq.AppendActions(fwdconfig.Action(fwdconfig.TransmitAction(fmt.Sprint(swAttr.GetAttr().GetCpuPort())).WithImmediate(true)))
-		}
-	default:
-		return nil, status.Errorf(codes.InvalidArgument, "unknown action type: %v", act)
+	addReq := fwdReq.Build()
+	act := computePacketAction(req.GetPacketAction())
+	for i := 0; i < entriesAdded; i++ {
+		addReq.Entries[i].Actions = append(addReq.Entries[i].Actions, act)
 	}
-	if _, err := hostif.dataplane.TableEntryAdd(ctx, fwdReq.Build()); err != nil {
+
+	if _, err := hostif.dataplane.TableEntryAdd(ctx, addReq); err != nil {
 		return nil, err
 	}
 	// TODO: Support multiple queues, by using the group ID.
@@ -360,7 +358,7 @@ func (hostif *hostif) CreateHostifTableEntry(ctx context.Context, req *saipb.Cre
 			AppendEntry(
 				fwdconfig.EntryDesc(fwdconfig.ExactEntry(
 					fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TRAP_ID).WithUint64(req.GetTrapId()))),
-				fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_HOST_PORT_ID).WithUint64Value(req.GetHostIf()))).
+				fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_HOST_PORT_ID).WithUint64Value(req.GetHostIf())).
 			Build()
 
 		hostifReq := &saipb.GetHostifAttributeRequest{Oid: req.GetHostIf(), AttrType: []saipb.HostifAttr{saipb.HostifAttr_HOSTIF_ATTR_TYPE}}

@@ -55,11 +55,8 @@ func (n *neighbor) CreateNeighborEntry(ctx context.Context, req *saipb.CreateNei
 	entry := fwdconfig.TableEntryAddRequest(n.dataplane.ID(), NeighborTable).AppendEntry(fwdconfig.EntryDesc(fwdconfig.ExactEntry(
 		fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE).WithUint64(req.GetEntry().GetRifId()),
 		fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP).WithBytes(req.GetEntry().GetIpAddress()),
-	)), fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST).WithValue(req.GetDstMacAddress())),
+	)), fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST).WithValue(req.GetDstMacAddress()),
 	).Build()
-
-	// After updated the dst_mac, continue to egress.
-	entry.Entries[0].Actions = append(entry.Entries[0].Actions, getEgressPipeline()...)
 
 	if _, err := n.dataplane.TableEntryAdd(ctx, entry); err != nil {
 		return nil, err
@@ -386,7 +383,6 @@ func (nh *nextHop) CreateNextHop(ctx context.Context, req *saipb.CreateNextHopRe
 		actions = []*fwdpb.ActionDesc{
 			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE).WithUint64Value(req.GetRouterInterfaceId())).Build(),
 			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP).WithValue(req.GetIp())).Build(),
-			fwdconfig.Action(fwdconfig.LookupAction(NHActionTable)).Build(),
 		}
 	case saipb.NextHopType_NEXT_HOP_TYPE_TUNNEL_ENCAP:
 		tunnel := &saipb.GetTunnelAttributeResponse{}
@@ -538,27 +534,28 @@ func (r *route) CreateRouteEntry(ctx context.Context, req *saipb.CreateRouteEntr
 	}
 	nextType := r.mgr.GetType(fmt.Sprint(req.GetNextHopId()))
 
-	actions := []*fwdconfig.ActionBuilder{}
+	actions := []fwdconfig.ActionDescBuilder{}
 
 	// If the packet action is drop, then next hop is optional.
 	if forward {
+		actions = append(actions, fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_BIT_WRITE, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ACTION).WithBitOp(1, 0).WithValue([]byte{1}))
 		switch nextType {
 		case saipb.ObjectType_OBJECT_TYPE_NEXT_HOP:
-			actions = append(actions, fwdconfig.Action(
-				fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_ID).WithUint64Value(req.GetNextHopId())),
-				fwdconfig.Action(fwdconfig.LookupAction(NHTable)),
+			actions = append(actions,
+				fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_ID).WithUint64Value(req.GetNextHopId()),
+				fwdconfig.LookupAction(NHTable),
 			)
 		case saipb.ObjectType_OBJECT_TYPE_NEXT_HOP_GROUP:
-			actions = append(actions, fwdconfig.Action(
-				fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_GROUP_ID).WithUint64Value(req.GetNextHopId())),
-				fwdconfig.Action(fwdconfig.LookupAction(NHGTable)),
+			actions = append(actions,
+				fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_GROUP_ID).WithUint64Value(req.GetNextHopId()),
+				fwdconfig.LookupAction(NHGTable),
 			)
 		case saipb.ObjectType_OBJECT_TYPE_ROUTER_INTERFACE:
 			actions = append(actions,
 				// Set the next hop IP in the packet's metadata.
-				fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_COPY, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP).WithFieldSrc(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST)),
+				fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_COPY, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP).WithFieldSrc(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST),
 				// Set the output iface.
-				fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE).WithUint64Value(req.GetNextHopId())),
+				fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE).WithUint64Value(req.GetNextHopId()),
 			)
 		case saipb.ObjectType_OBJECT_TYPE_PORT:
 			attrReq := &saipb.GetSwitchAttributeRequest{
@@ -577,7 +574,7 @@ func (r *route) CreateRouteEntry(ctx context.Context, req *saipb.CreateRouteEntr
 								req.GetEntry().GetDestination().GetAddr(),
 								req.GetEntry().GetDestination().GetMask()),
 							fwdconfig.PacketFieldMaskedBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF).WithUint64(req.GetEntry().GetVrId()))),
-						fwdconfig.Action(fwdconfig.TransmitAction(fmt.Sprint(req.GetNextHopId())).WithImmediate(true))).
+						fwdconfig.TransmitAction(fmt.Sprint(req.GetNextHopId())).WithImmediate(true)).
 					Build())
 				if err != nil {
 					return nil, status.Errorf(codes.Internal, "failed to add next IP2ME route: %v", nextType)
@@ -586,19 +583,19 @@ func (r *route) CreateRouteEntry(ctx context.Context, req *saipb.CreateRouteEntr
 			}
 			actions = append(actions,
 				// Set the next hop IP in the packet's metadata.
-				fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_COPY, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP).WithFieldSrc(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST)),
+				fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_COPY, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_NEXT_HOP_IP).WithFieldSrc(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST),
 				// Set the output port.
-				fwdconfig.Action(fwdconfig.TransmitAction(fmt.Sprint(req.GetNextHopId()))),
+				fwdconfig.TransmitAction(fmt.Sprint(req.GetNextHopId())),
 			)
 		default:
 			return nil, status.Errorf(codes.InvalidArgument, "unknown next hop type: %v", nextType)
 		}
 	} else {
-		actions = append(actions, fwdconfig.Action(fwdconfig.DropAction()))
+		actions = append(actions, fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_BIT_WRITE, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ACTION).WithBitOp(1, 0).WithValue([]byte{0}))
 	}
 	if req.MetaData != nil {
-		actions = append(actions, fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_32).
-			WithFieldIDInstance(routeDstMeta).WithValue(binary.BigEndian.AppendUint32(nil, req.GetMetaData()))))
+		actions = append(actions, fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ATTRIBUTE_32).
+			WithFieldIDInstance(routeDstMeta).WithValue(binary.BigEndian.AppendUint32(nil, req.GetMetaData())))
 	}
 	entry.AppendActions(actions...)
 
@@ -725,8 +722,8 @@ func (ri *routerInterface) CreateRouterInterface(ctx context.Context, req *saipb
 				fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_PORT_INPUT).WithUint64(uint64(obj.NID())),
 				fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_VLAN_TAG).WithBytes(binary.BigEndian.AppendUint16(nil, vlanID)),
 			)),
-			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_INPUT_IFACE).WithUint64Value(id)),
-			fwdconfig.Action(fwdconfig.FlowCounterAction(inCounter)),
+			fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_INPUT_IFACE).WithUint64Value(id),
+			fwdconfig.FlowCounterAction(inCounter),
 		).Build()
 
 	if vlanID != 0 {
@@ -749,8 +746,9 @@ func (ri *routerInterface) CreateRouterInterface(ctx context.Context, req *saipb
 	outReq := fwdconfig.TableEntryAddRequest(ri.dataplane.ID(), outputIfaceTable).
 		AppendEntry(
 			fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE).WithUint64(id))),
-			fwdconfig.Action(fwdconfig.TransmitAction(fmt.Sprint(req.GetPortId()))),
-			fwdconfig.Action(fwdconfig.FlowCounterAction(outCounter)),
+			fwdconfig.TransmitAction(fmt.Sprint(req.GetPortId())),
+			fwdconfig.FlowCounterAction(outCounter),
+			fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TARGET_EGRESS_PORT).WithUint64Value(req.GetPortId()),
 		).Build()
 
 	if vlanID != 0 {
@@ -769,7 +767,7 @@ func (ri *routerInterface) CreateRouterInterface(ctx context.Context, req *saipb
 	_, err = ri.dataplane.TableEntryAdd(ctx, fwdconfig.TableEntryAddRequest(ri.dataplane.ID(), IngressVRFTable).
 		AppendEntry(
 			fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_INPUT_IFACE).WithUint64(id))),
-			fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF).WithUint64Value(req.GetVirtualRouterId())),
+			fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_VRF).WithUint64Value(req.GetVirtualRouterId()),
 		).Build())
 	if err != nil {
 		return nil, err
@@ -778,7 +776,7 @@ func (ri *routerInterface) CreateRouterInterface(ctx context.Context, req *saipb
 	// Give the interface a SMAC.
 	_, err = ri.dataplane.TableEntryAdd(ctx, fwdconfig.TableEntryAddRequest(ri.dataplane.ID(), SRCMACTable).AppendEntry(
 		fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_OUTPUT_IFACE).WithUint64(id))),
-		fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC).WithValue(req.GetSrcMacAddress())),
+		fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_SET, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_SRC).WithValue(req.GetSrcMacAddress()),
 	).Build())
 	if err != nil {
 		return nil, err

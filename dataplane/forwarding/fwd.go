@@ -503,7 +503,7 @@ func (e *Server) TableCreate(_ context.Context, request *fwdpb.TableCreateReques
 
 	object, err := fwdtable.New(ctx, request.GetDesc())
 	if err != nil {
-		return nil, fmt.Errorf("fwd: TableCreate failed, err %v", err)
+		return nil, fmt.Errorf("fwd: TableCreate failed, table %q: err %v", request.GetDesc().GetTableId().GetObjectId().GetId(), err)
 	}
 	e.info.AddObject(ctx, object)
 	reply := &fwdpb.TableCreateReply{
