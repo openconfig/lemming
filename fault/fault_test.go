@@ -191,7 +191,9 @@ func TestIntercept(t *testing.T) {
 		faultMsgs: []*faultpb.FaultMessage{{
 			Msg:    mustMarshalAny(t, &testpb.PingRequest{Msg: "test"}),
 			Status: status.New(codes.Internal, "error message").Proto(),
-		}, {}},
+		}, {
+			Status: status.New(codes.Internal, "error message").Proto(),
+		}},
 	}, {
 		desc:    "stream modify resp with err",
 		testRPC: streamPing,
@@ -203,7 +205,9 @@ func TestIntercept(t *testing.T) {
 		}, {
 			Msg:    mustMarshalAny(t, &testpb.PingResponse{Msg: "test"}),
 			Status: status.New(codes.Internal, "error message").Proto(),
-		}, {}},
+		}, {
+			Status: status.New(codes.Internal, "error message").Proto(),
+		}},
 	}, {
 		desc:    "stream override handler err",
 		testRPC: streamPing,

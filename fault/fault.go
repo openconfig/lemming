@@ -17,10 +17,10 @@ package fault
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 
+	log "github.com/golang/glog"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -96,7 +96,7 @@ func (i *Interceptor) sendRecvFault(ch chan *faultMessage, rpcID string, msg any
 	select { // Receive the potential modified req from the fault RPC.
 	case recv = <-recvCh:
 	case <-time.After(5 * time.Second):
-		fmt.Println("timeout")
+		log.Infof("timeout waiting for msg %v", msgID)
 	}
 
 	i.receiversMu.Lock()
@@ -105,6 +105,9 @@ func (i *Interceptor) sendRecvFault(ch chan *faultMessage, rpcID string, msg any
 
 	if recv == nil {
 		return msg, oErr
+	}
+	if recv.msg == nil {
+		return nil, recv.status.Err()
 	}
 	res, err := recv.msg.UnmarshalNew()
 	if err != nil {
@@ -144,14 +147,18 @@ type streamInt struct {
 func (si *streamInt) RecvMsg(m any) error {
 	err := si.ServerStream.RecvMsg(m)
 	msg, err := si.int.sendRecvFault(si.fs.originMsgCh, si.rpcID, m, faultpb.MessageType_MESSAGE_TYPE_REQUEST, err)
-	if pm, ok := m.(proto.Message); ok {
-		proto.Merge(pm, msg.(proto.Message))
+	log.Infof("fault stream recv, msg %v, err %v", msg, err)
+	if msg != nil {
+		if pm, ok := m.(proto.Message); ok {
+			proto.Merge(pm, msg.(proto.Message))
+		}
 	}
 	return err
 }
 
 func (si *streamInt) SendMsg(m any) error {
 	msg, err := si.int.sendRecvFault(si.fs.originMsgCh, si.rpcID, m, faultpb.MessageType_MESSAGE_TYPE_RESPONSE, nil)
+	log.Infof("fault stream send, msg %v, err %v", msg, err)
 	if err != nil {
 		return err
 	}
@@ -178,8 +185,10 @@ func (i *Interceptor) Stream(srv any, stream grpc.ServerStream, info *grpc.Strea
 		rpcID:        uuid.New().String(),
 	}
 	hErr := handler(srv, si)
+	log.Infof("original stream end, err %v", hErr)
 	// After the handler exits, there may be an additional to should be injected.
 	_, err := si.int.sendRecvFault(si.fs.originMsgCh, si.rpcID, nil, faultpb.MessageType_MESSAGE_TYPE_STREAM_END, hErr)
+	log.Infof("fault stream end, err %v", err)
 	return err
 }
 
@@ -261,6 +270,7 @@ func (i *Interceptor) Intercept(srv faultpb.FaultInject_InterceptServer) error {
 					MsgId:   req.msgID,
 					MsgType: req.msgType,
 					Msg:     req.msg,
+					Status:  req.status.Proto(),
 				},
 			})
 			if err != nil {
