@@ -475,13 +475,6 @@ func TestCreateNextHop(t *testing.T) {
 							Value: []byte{0x7f, 0x00, 0x00, 0x01},
 						},
 					},
-				}, {
-					ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
-					Action: &fwdpb.ActionDesc_Lookup{
-						Lookup: &fwdpb.LookupActionDesc{
-							TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: NHActionTable}},
-						},
-					},
 				}},
 				EntryDesc: &fwdpb.EntryDesc{
 					Entry: &fwdpb.EntryDesc_Exact{
@@ -696,7 +689,18 @@ func TestCreateRouteEntry(t *testing.T) {
 			ContextId: &fwdpb.ContextId{Id: "foo"},
 			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: FIBV4Table}},
 			Entries: []*fwdpb.TableEntryAddRequest_Entry{{
-				Actions: []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_DROP}},
+				Actions: []*fwdpb.ActionDesc{{
+					ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
+					Action: &fwdpb.ActionDesc_Update{
+						Update: &fwdpb.UpdateActionDesc{
+							FieldId:  &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ACTION}},
+							Field:    &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{}},
+							Type:     fwdpb.UpdateType_UPDATE_TYPE_BIT_WRITE,
+							Value:    []byte{0},
+							BitCount: 1,
+						},
+					},
+				}},
 				EntryDesc: &fwdpb.EntryDesc{
 					Entry: &fwdpb.EntryDesc_Prefix{
 						Prefix: &fwdpb.PrefixEntryDesc{
@@ -738,6 +742,17 @@ func TestCreateRouteEntry(t *testing.T) {
 			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: FIBV4Table}},
 			Entries: []*fwdpb.TableEntryAddRequest_Entry{{
 				Actions: []*fwdpb.ActionDesc{{
+					ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
+					Action: &fwdpb.ActionDesc_Update{
+						Update: &fwdpb.UpdateActionDesc{
+							FieldId:  &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ACTION}},
+							Field:    &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{}},
+							Type:     fwdpb.UpdateType_UPDATE_TYPE_BIT_WRITE,
+							Value:    []byte{1},
+							BitCount: 1,
+						},
+					},
+				}, {
 					ActionType: fwdpb.ActionType_ACTION_TYPE_UPDATE,
 					Action: &fwdpb.ActionDesc_Update{
 						Update: &fwdpb.UpdateActionDesc{

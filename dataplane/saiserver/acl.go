@@ -406,36 +406,7 @@ func (a *acl) CreateAclEntry(ctx context.Context, req *saipb.CreateAclEntryReque
 	}
 
 	if req.ActionPacketAction != nil {
-		switch req.GetActionPacketAction().GetPacketAction() {
-		case saipb.PacketAction_PACKET_ACTION_DROP, saipb.PacketAction_PACKET_ACTION_DENY: // COPY_CANCEL and DROP
-			aReq.Actions = append(aReq.Actions, &fwdpb.ActionDesc{ActionType: fwdpb.ActionType_ACTION_TYPE_DROP})
-		case saipb.PacketAction_PACKET_ACTION_TRAP: // COPY and DROP
-			aReq.Actions = append(aReq.Actions, fwdconfig.Action(fwdconfig.TransmitAction(fmt.Sprint(resp.GetAttr().GetCpuPort())).WithImmediate(true)).Build())
-		case saipb.PacketAction_PACKET_ACTION_COPY:
-			aReq.Actions = append(aReq.Actions, &fwdpb.ActionDesc{
-				ActionType: fwdpb.ActionType_ACTION_TYPE_MIRROR,
-				Action: &fwdpb.ActionDesc_Mirror{Mirror: &fwdpb.MirrorActionDesc{
-					PortId: &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(resp.GetAttr().GetCpuPort())}},
-					FieldIds: []*fwdpb.PacketFieldId{{
-						Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_TRAP_ID},
-					}},
-					PortAction: fwdpb.PortAction_PORT_ACTION_OUTPUT,
-				}},
-			})
-		case saipb.PacketAction_PACKET_ACTION_LOG: // COPY and FORWARD
-			mirror := &fwdpb.ActionDesc{
-				ActionType: fwdpb.ActionType_ACTION_TYPE_MIRROR,
-				Action: &fwdpb.ActionDesc_Mirror{Mirror: &fwdpb.MirrorActionDesc{
-					PortId:     &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: fmt.Sprint(resp.GetAttr().GetCpuPort())}},
-					PortAction: fwdpb.PortAction_PORT_ACTION_OUTPUT,
-				}},
-			}
-			aReq.Actions = append(aReq.Actions, mirror, &fwdpb.ActionDesc{ActionType: fwdpb.ActionType_ACTION_TYPE_CONTINUE})
-		case saipb.PacketAction_PACKET_ACTION_FORWARD, saipb.PacketAction_PACKET_ACTION_TRANSIT: // COPY_CANCEL and FORWARD
-			aReq.Actions = append(aReq.Actions, &fwdpb.ActionDesc{ActionType: fwdpb.ActionType_ACTION_TYPE_CONTINUE}) // Packets are forwarded by default so continue.
-		default:
-			return nil, status.Errorf(codes.InvalidArgument, "unknown packet action type: %v", req.GetActionPacketAction().GetPacketAction())
-		}
+		aReq.Actions = append(aReq.Actions, computePacketAction(req.GetActionPacketAction().GetPacketAction()))
 	}
 	slog.InfoContext(ctx, "creating acl entry", "oid", id, "entry", req, "fwdentry", aReq)
 	if _, err := a.dataplane.TableEntryAdd(ctx, aReq); err != nil {
@@ -443,6 +414,40 @@ func (a *acl) CreateAclEntry(ctx context.Context, req *saipb.CreateAclEntryReque
 	}
 
 	return &saipb.CreateAclEntryResponse{Oid: id}, nil
+}
+
+// forwardAction 00000001
+// copyAction    00000010
+func computePacketAction(act saipb.PacketAction) *fwdpb.ActionDesc {
+	var val byte
+	count := 1
+	offset := 0
+	switch act {
+	case saipb.PacketAction_PACKET_ACTION_DROP:
+		val = 0
+	case saipb.PacketAction_PACKET_ACTION_FORWARD:
+		val = 1
+	case saipb.PacketAction_PACKET_ACTION_COPY_CANCEL:
+		val = 0
+		offset = 1
+	case saipb.PacketAction_PACKET_ACTION_COPY:
+		val = 1
+		offset = 1
+	case saipb.PacketAction_PACKET_ACTION_TRAP: // COPY and DROP
+		val = 2
+		count = 2
+	case saipb.PacketAction_PACKET_ACTION_LOG: // COPY AND FORWARD
+		val = 3
+		count = 2
+	case saipb.PacketAction_PACKET_ACTION_DENY: // COPY_CANCEL AND DROP
+		val = 0
+		count = 2
+	case saipb.PacketAction_PACKET_ACTION_TRANSIT: // COPY_CANCEL and FORWARD
+		val = 1
+		count = 2
+	}
+
+	return fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_BIT_WRITE, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_PACKET_ACTION).WithBitOp(count, offset).WithValue([]byte{val})).Build()
 }
 
 func (a *acl) RemoveAclEntry(ctx context.Context, req *saipb.RemoveAclEntryRequest) (*saipb.RemoveAclEntryResponse, error) {

@@ -21,35 +21,35 @@ import (
 	fwdpb "github.com/openconfig/lemming/proto/forwarding"
 )
 
-type actionDescBuilder interface {
+type ActionDescBuilder interface {
 	set(*fwdpb.ActionDesc)
 	actionType() fwdpb.ActionType
 }
 
 var (
 	// Compile-time checks that builders implement actionDescBuilder interface.
-	_ actionDescBuilder = &UpdateActionBuilder{}
-	_ actionDescBuilder = &TransmitActionBuilder{}
-	_ actionDescBuilder = &LookupActionBuilder{}
-	_ actionDescBuilder = &EncapActionBuilder{}
-	_ actionDescBuilder = &DecapActionBuilder{}
-	_ actionDescBuilder = &DropActionBuilder{}
+	_ ActionDescBuilder = &UpdateActionBuilder{}
+	_ ActionDescBuilder = &TransmitActionBuilder{}
+	_ ActionDescBuilder = &LookupActionBuilder{}
+	_ ActionDescBuilder = &EncapActionBuilder{}
+	_ ActionDescBuilder = &DecapActionBuilder{}
+	_ ActionDescBuilder = &DropActionBuilder{}
 )
 
 // ActionBuilder is a builder for forward action types.
 type ActionBuilder struct {
-	adb actionDescBuilder
+	adb ActionDescBuilder
 }
 
 // Action returns a new action builder.
-func Action(adb actionDescBuilder) *ActionBuilder {
+func Action(adb ActionDescBuilder) *ActionBuilder {
 	return &ActionBuilder{
 		adb: adb,
 	}
 }
 
 // WithActionDesc sets the action description
-func (ab *ActionBuilder) WithActionDesc(adb actionDescBuilder) *ActionBuilder {
+func (ab *ActionBuilder) WithActionDesc(adb ActionDescBuilder) *ActionBuilder {
 	ab.adb = adb
 	return ab
 }
@@ -65,12 +65,13 @@ func (ab *ActionBuilder) Build() *fwdpb.ActionDesc {
 
 // UpdateActionBuilder is a builder for an update action.
 type UpdateActionBuilder struct {
-	fieldIDNum  fwdpb.PacketFieldNum
-	updateType  fwdpb.UpdateType
-	fieldSrc    fwdpb.PacketFieldNum
-	instance    uint32
-	srcInstance uint32
-	value       []byte
+	fieldIDNum    fwdpb.PacketFieldNum
+	updateType    fwdpb.UpdateType
+	fieldSrc      fwdpb.PacketFieldNum
+	instance      uint32
+	srcInstance   uint32
+	offset, count uint32 // Offset and count in bits for BIT_WRITE update.
+	value         []byte
 }
 
 // UpdateAction returns a new update action builder.
@@ -123,6 +124,13 @@ func (u *UpdateActionBuilder) WithValue(v []byte) *UpdateActionBuilder {
 	return u
 }
 
+// WithBitOp sets the bit count and offset fields.
+func (u *UpdateActionBuilder) WithBitOp(count, offset int) *UpdateActionBuilder {
+	u.offset = uint32(offset)
+	u.count = uint32(count)
+	return u
+}
+
 func (u *UpdateActionBuilder) set(ad *fwdpb.ActionDesc) {
 	upd := &fwdpb.ActionDesc_Update{
 		Update: &fwdpb.UpdateActionDesc{
@@ -132,8 +140,10 @@ func (u *UpdateActionBuilder) set(ad *fwdpb.ActionDesc) {
 					Instance: u.instance,
 				},
 			},
-			Type:  u.updateType,
-			Value: u.value,
+			Type:      u.updateType,
+			Value:     u.value,
+			BitOffset: u.offset,
+			BitCount:  u.count,
 			Field: &fwdpb.PacketFieldId{
 				Field: &fwdpb.PacketField{
 					FieldNum: u.fieldSrc,
@@ -345,4 +355,57 @@ func (u *ContinueActionBuilder) set(*fwdpb.ActionDesc) {
 
 func (u *ContinueActionBuilder) actionType() fwdpb.ActionType {
 	return fwdpb.ActionType_ACTION_TYPE_CONTINUE
+}
+
+// MirrorActionBuilder is a builder for a mirror action.
+type MirrorActionBuilder struct {
+	portID  string
+	portAct fwdpb.PortAction
+	fields  []*PacketFieldIdBuilder
+	act     []*ActionBuilder
+}
+
+// MirrorAction returns a new mirror action builder.
+func MirrorAction() *MirrorActionBuilder {
+	return &MirrorActionBuilder{}
+}
+
+func (m *MirrorActionBuilder) WithPort(id string, act fwdpb.PortAction) *MirrorActionBuilder {
+	m.portID = id
+	m.portAct = act
+	return m
+}
+
+func (m *MirrorActionBuilder) WithFields(f ...*PacketFieldIdBuilder) *MirrorActionBuilder {
+	m.fields = f
+	return m
+}
+
+func (m *MirrorActionBuilder) WithActions(a ...*ActionBuilder) *MirrorActionBuilder {
+	m.act = a
+	return m
+}
+
+func (m *MirrorActionBuilder) set(a *fwdpb.ActionDesc) {
+	fields := []*fwdpb.PacketFieldId{}
+	for _, f := range m.fields {
+		fields = append(fields, f.Build())
+	}
+	act := []*fwdpb.ActionDesc{}
+	for _, a := range m.act {
+		act = append(act, a.Build())
+	}
+
+	a.Action = &fwdpb.ActionDesc_Mirror{
+		Mirror: &fwdpb.MirrorActionDesc{
+			PortId:     &fwdpb.PortId{ObjectId: &fwdpb.ObjectId{Id: m.portID}},
+			PortAction: m.portAct,
+			FieldIds:   fields,
+			Actions:    act,
+		},
+	}
+}
+
+func (m *MirrorActionBuilder) actionType() fwdpb.ActionType {
+	return fwdpb.ActionType_ACTION_TYPE_MIRROR
 }

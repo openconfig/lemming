@@ -70,27 +70,21 @@ func getPreIngressPipeline() []*fwdpb.ActionDesc {
 
 func getL3Pipeline() []*fwdpb.ActionDesc {
 	return []*fwdpb.ActionDesc{
-		fwdconfig.Action(fwdconfig.LookupAction(IngressActionTable)).Build(),                                                                                    // Run ingress action.
-		fwdconfig.Action(fwdconfig.DecapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET)).Build(),                                                         // Decap L2 header.
-		fwdconfig.Action(fwdconfig.LookupAction(FIBSelectorTable)).Build(),                                                                                      // Lookup in FIB.
-		fwdconfig.Action(fwdconfig.UpdateAction(fwdpb.UpdateType_UPDATE_TYPE_DEC, fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_HOP).WithValue([]byte{0x1})).Build(), // Decrement TTL.
-		fwdconfig.Action(fwdconfig.EncapAction(fwdpb.PacketHeaderId_PACKET_HEADER_ID_ETHERNET)).Build(),                                                         // Encap L2 header.
-		fwdconfig.Action(fwdconfig.LookupAction(outputIfaceTable)).Build(),                                                                                      // Match interface to port
-		fwdconfig.Action(fwdconfig.LookupAction(NeighborTable)).Build(),                                                                                         // Lookup in the neighbor table.
+		fwdconfig.Action(fwdconfig.LookupAction(FIBSelectorTable)).Build(),   // Lookup in FIB.
+		fwdconfig.Action(fwdconfig.LookupAction(IngressActionTable)).Build(), // Run ingress action.
+		fwdconfig.Action(fwdconfig.LookupAction(outputIfaceTable)).Build(),   // Match interface to port
+		fwdconfig.Action(fwdconfig.LookupAction(EgressActionTable)).Build(),  // Run egress actions
+		fwdconfig.Action(fwdconfig.LookupAction(outputTable)).Build(),        // Take final decision on forward, drop, or trap.
+		{
+			ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
+		},
 	}
 }
 
 func getL2Pipeline() []*fwdpb.ActionDesc {
 	return []*fwdpb.ActionDesc{
 		fwdconfig.Action(fwdconfig.LookupAction(IngressActionTable)).Build(), // Run ingress action.
-		fwdconfig.Action(fwdconfig.DropAction()).Build(),                     // DROP
-	}
-}
-
-func getEgressPipeline() []*fwdpb.ActionDesc {
-	return []*fwdpb.ActionDesc{
-		fwdconfig.Action(fwdconfig.LookupAction(EgressActionTable)).Build(), // Run egress actions
-		fwdconfig.Action(fwdconfig.LookupAction(SRCMACTable)).Build(),       // Lookup interface's MAC addr.
+		fwdconfig.Action(fwdconfig.LookupAction(outputTable)).Build(),        // Take final decision on forward, drop, or trap.
 		{
 			ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
 		},
@@ -289,7 +283,7 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 			Port: &fwdpb.PortUpdateDesc_Kernel{
 				Kernel: &fwdpb.KernelPortUpdateDesc{
 					Inputs:  getPreIngressPipeline(),
-					Outputs: []*fwdpb.ActionDesc{},
+					Outputs: nil,
 				},
 			},
 		},

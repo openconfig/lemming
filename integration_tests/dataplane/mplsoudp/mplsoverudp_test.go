@@ -250,8 +250,14 @@ func TestMPLSoverUDP(t *testing.T) {
 	wantMPLS := &layers.MPLS{
 		Label: 100,
 	}
+	wantInnerIP := &layers.IPv6{
+		Version:  6,
+		SrcIP:    net.ParseIP("2003::9"),
+		DstIP:    net.ParseIP("2003::10"),
+		HopLimit: 255,
+	}
 	buf = gopacket.NewSerializeBuffer()
-	if err := gopacket.SerializeLayers(buf, gopacket.SerializeOptions{FixLengths: true}, wantMPLS, ip, payload); err != nil {
+	if err := gopacket.SerializeLayers(buf, gopacket.SerializeOptions{FixLengths: true}, wantMPLS, wantInnerIP, payload); err != nil {
 		t.Fatalf("failed to serialize GUE headers: %v", err)
 	}
 	wantPayload := gopacket.Payload(buf.Bytes())
