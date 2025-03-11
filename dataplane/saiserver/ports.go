@@ -199,7 +199,7 @@ func (port *port) CreatePort(ctx context.Context, req *saipb.CreatePortRequest) 
 		NumberOfIngressPriorityGroups:    proto.Uint32(0),
 		QosMaximumHeadroomSize:           proto.Uint32(0),
 		AdminState:                       proto.Bool(true),
-		AutoNegMode:                      proto.Bool(true),
+		AutoNegMode:                      proto.Bool(req.GetAutoNegMode()),
 		Mtu:                              proto.Uint32(1514),
 		PortVlanId:                       proto.Uint32(vId),
 	}
