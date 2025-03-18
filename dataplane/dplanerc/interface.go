@@ -579,6 +579,9 @@ func (ni *Reconciler) reconcile(ctx context.Context, config *oc.Interface) {
 }
 
 func (ni *Reconciler) reconcileEthernet(ctx context.Context, config, state *oc.Interface, intf ocInterface, data *interfaceData) {
+	if data == nil {
+		return
+	}
 	if config.GetOrCreateEthernet().GetAggregateId() != state.GetOrCreateEthernet().GetAggregateId() {
 		log.Infof("reconciling lag member intf %v: config agg id %v, state agg id %v", intf.name, config.GetEthernet().GetAggregateId(), state.GetEthernet().GetAggregateId())
 		if data.lagMembershipID != 0 {
