@@ -58,6 +58,7 @@ type interfaceData struct {
 	rifID           uint64
 	lagMembershipID uint64
 	isAggregate     bool
+	networkInstance string
 }
 
 type interfaceMap map[ocInterface]*interfaceData
@@ -195,14 +196,24 @@ func (ni *Reconciler) StartInterface(ctx context.Context, client *ygnmi.Client) 
 		ocpath.Root().InterfaceAny().Ethernet().AggregateId().Config().PathStruct(),
 		ocpath.Root().Lldp().Enabled().Config().PathStruct(),
 		ocpath.Root().Lldp().InterfaceAny().Config().PathStruct(),
+		ocpath.Root().NetworkInstanceAny().InterfaceAny().Config().PathStruct(),
 	)
 	cancelCtx, cancelFn := context.WithCancel(ctx)
 
 	watcher := ygnmi.Watch(cancelCtx, ni.c, b.Config(), func(val *ygnmi.Value[*oc.Root]) error {
 		log.V(2).Info("reconciling interfaces")
 		root, ok := val.Val()
-		if !ok || (root.Interface == nil && root.Lldp.Interface == nil) {
+		if !ok {
 			return ygnmi.Continue
+		}
+		for niName, netInst := range root.NetworkInstance {
+			for intfName, intf := range netInst.Interface {
+				intfRef := ocInterface{
+					name:    intfName,
+					subintf: intf.GetSubinterface(),
+				}
+				ni.ocInterfaceData[intfRef].networkInstance = niName
+			}
 		}
 		if root.Interface != nil {
 			for _, i := range root.Interface {
@@ -212,6 +223,7 @@ func (ni *Reconciler) StartInterface(ctx context.Context, client *ygnmi.Client) 
 		if root.Lldp.Interface != nil {
 			ni.reconcileLldp(cancelCtx, root)
 		}
+
 		return ygnmi.Continue
 	})
 	linkDoneCh := make(chan struct{})
@@ -394,6 +406,7 @@ func (ni *Reconciler) createLAG(ctx context.Context, intf ocInterface, lagType o
 	gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(intf.name).Ethernet().HwMacAddress().State(), l.Attrs().HardwareAddr.String())
 	gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(intf.name).Ethernet().MacAddress().State(), l.Attrs().HardwareAddr.String())
 	gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(intf.name).Aggregation().LagType().State(), lagType)
+	gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(intf.name).Enabled().State(), true)
 	gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(intf.name).AdminStatus().State(), oc.Interface_AdminStatus_UP)
 	gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(intf.name).OperStatus().State(), oc.Interface_OperStatus_UP)
 	gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(intf.name).Type().State(), oc.IETFInterfaces_InterfaceType_ieee8023adLag)
@@ -538,13 +551,34 @@ func (ni *Reconciler) reconcile(ctx context.Context, config *oc.Interface) {
 
 	intf := ocInterface{name: config.GetName(), subintf: 0}
 	state := ni.getOrCreateInterface(config.GetName())
-	data, ok := ni.ocInterfaceData[intf]
+	data := ni.ocInterfaceData[intf]
 
-	// Create a new lag interface
+	ni.reconcileEthernet(ctx, config, state, intf, data)
 
-	if data == nil {
-		return
+	sb := &ygnmi.SetBatch{}
+	if config.GetEnabled() != state.GetEnabled() {
+		log.Infof("reconciling config enabled on intf: %v", intf)
+		adminStatus := oc.Interface_AdminStatus_DOWN
+		if config.GetEnabled() {
+			adminStatus = oc.Interface_AdminStatus_UP
+		}
+		gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(intf.name).Enabled().State(), config.GetEnabled())
+		gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(intf.name).AdminStatus().State(), adminStatus)
 	}
+	if _, err := sb.Set(ctx, ni.c); err != nil {
+		log.Warningf("failed to set link status: %v", err)
+	}
+
+	if config.GetOrCreateAggregation().GetMinLinks() != state.GetOrCreateAggregation().GetMinLinks() {
+		if err := ni.setMinLinks(intf, data, config.GetOrCreateAggregation().GetMinLinks()); err != nil {
+			log.Warningf("failed to set min links: %v", err)
+		}
+	}
+	ni.reconcileSubIntf(ctx, config, state)
+	ni.reconcileIPs(config, state)
+}
+
+func (ni *Reconciler) reconcileEthernet(ctx context.Context, config, state *oc.Interface, intf ocInterface, data *interfaceData) {
 	if config.GetOrCreateEthernet().GetAggregateId() != state.GetOrCreateEthernet().GetAggregateId() {
 		log.Infof("reconciling lag member intf %v: config agg id %v, state agg id %v", intf.name, config.GetEthernet().GetAggregateId(), state.GetEthernet().GetAggregateId())
 		if data.lagMembershipID != 0 {
@@ -558,12 +592,6 @@ func (ni *Reconciler) reconcile(ctx context.Context, config *oc.Interface) {
 			if err := ni.addLAGMember(ctx, intf, data, config.GetEthernet().GetAggregateId()); err != nil {
 				log.Warningf("intf %v failed to add lag member %v: %v", intf.name, config.GetEthernet().GetAggregateId(), err)
 			}
-		}
-	}
-
-	if config.GetOrCreateAggregation().GetMinLinks() != state.GetOrCreateAggregation().GetMinLinks() {
-		if err := ni.setMinLinks(intf, data, config.GetOrCreateAggregation().GetMinLinks()); err != nil {
-			log.Warningf("failed to set min links: %v", err)
 		}
 	}
 
@@ -584,53 +612,9 @@ func (ni *Reconciler) reconcile(ctx context.Context, config *oc.Interface) {
 			}
 		}
 	}
-
-	if config.GetOrCreateSubinterface(intf.subintf).Enabled != nil {
-		if state.GetOrCreateSubinterface(intf.subintf).Enabled == nil || config.GetSubinterface(intf.subintf).GetEnabled() != state.GetSubinterface(intf.subintf).GetEnabled() {
-			log.V(1).Infof("setting interface %s enabled %t", data.hostifDevName, config.GetSubinterface(intf.subintf).GetEnabled())
-			if data.hostifID != 0 {
-				_, err := ni.hostifClient.SetHostifAttribute(ctx, &saipb.SetHostifAttributeRequest{
-					Oid:        data.hostifID,
-					OperStatus: proto.Bool(config.GetSubinterface(0).GetEnabled()),
-				})
-				if err != nil {
-					log.Warningf("Failed to set oper status of hostif: %v", err)
-				}
-			}
-			if !data.isAggregate {
-				_, err := ni.portClient.SetPortAttribute(ctx, &saipb.SetPortAttributeRequest{
-					Oid:        data.portID,
-					AdminState: proto.Bool(config.GetSubinterface(0).GetEnabled()),
-				})
-				if err != nil {
-					log.Warningf("Failed to set admin state of port: %v", err)
-				}
-			}
-			if err := ni.ifaceMgr.SetState(data.hostifDevName, config.GetSubinterface(intf.subintf).GetEnabled()); err != nil {
-				log.Warningf("Failed to set admin state of hostif: %v", err)
-			}
-
-			sb := &ygnmi.SetBatch{}
-			enabled := config.GetSubinterface(intf.subintf).GetEnabled() && config.GetEnabled()
-			adminStatus := oc.Interface_AdminStatus_DOWN
-			if enabled {
-				adminStatus = oc.Interface_AdminStatus_UP
-			}
-			// TODO: Right now treating subinterface 0 and interface as the same.
-			gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(intf.name).Enabled().State(), enabled)
-			gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(intf.name).AdminStatus().State(), adminStatus)
-			gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(intf.name).Subinterface(intf.subintf).Enabled().State(), enabled)
-			gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(intf.name).Subinterface(intf.subintf).AdminStatus().State(), adminStatus)
-			if _, err := sb.Set(ctx, ni.c); err != nil {
-				log.Warningf("failed to set link status: %v", err)
-			}
-		}
-	}
-
-	ni.reconcileIPs(config, state, data)
 }
 
-func (ni *Reconciler) reconcilerSubIntf(ctx context.Context, config, state *oc.Interface) {
+func (ni *Reconciler) reconcileSubIntf(ctx context.Context, config, state *oc.Interface) {
 	for idx, subintf := range config.Subinterface {
 		intfRef := ocInterface{
 			name:    config.GetName(),
@@ -639,19 +623,56 @@ func (ni *Reconciler) reconcilerSubIntf(ctx context.Context, config, state *oc.I
 		data, ok := ni.ocInterfaceData[intfRef]
 		// We have a new interface.
 		if !ok {
-			if config.GetAggregation().GetLagType() != oc.IfAggregate_AggregationType_UNSET { // New aggregate interface
+			switch {
+			case config.GetAggregation().GetLagType() != oc.IfAggregate_AggregationType_UNSET:
 				log.Infof("creating new lag interface: %v", intfRefToDevName(intfRef))
 				if err := ni.createLAG(ctx, intfRef, config.GetAggregation().GetLagType()); err != nil {
 					log.Warningf("failed to create lag: %v", err)
 				}
-			} else if idx != 0 && subintf.Vlan != nil { // New VLAN subinterface
+			case idx != 0 && subintf.Vlan != nil:
 				log.Infof("creating new vlan intf: %v", intfRefToDevName(intfRef))
 				ni.createVLANSubIntf(ctx, intfRef, config)
+			default:
+				log.Warningf("new interface %+v, can't be created", intfRef)
+				return
 			}
+			data = ni.ocInterfaceData[intfRef]
 		}
 
 		enabled := config.GetSubinterface(idx).GetEnabled() && config.GetEnabled()
-		// Reconcile
+		if data.hostifID != 0 {
+			_, err := ni.hostifClient.SetHostifAttribute(ctx, &saipb.SetHostifAttributeRequest{
+				Oid:        data.hostifID,
+				OperStatus: proto.Bool(enabled),
+			})
+			if err != nil {
+				log.Warningf("Failed to set oper status of hostif: %v", err)
+			}
+		}
+		if !data.isAggregate {
+			_, err := ni.portClient.SetPortAttribute(ctx, &saipb.SetPortAttributeRequest{
+				Oid:        data.portID,
+				AdminState: proto.Bool(enabled),
+			})
+			if err != nil {
+				log.Warningf("Failed to set admin state of port: %v", err)
+			}
+		}
+		if err := ni.ifaceMgr.SetState(data.hostifDevName, config.GetSubinterface(intfRef.subintf).GetEnabled()); err != nil {
+			log.Warningf("Failed to set admin state of hostif: %v", err)
+		}
+		sb := &ygnmi.SetBatch{}
+
+		adminStatus := oc.Interface_AdminStatus_DOWN
+		if enabled {
+			adminStatus = oc.Interface_AdminStatus_UP
+		}
+		// TODO: Right now treating subinterface 0 and interface as the same.
+		gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(intfRef.name).Subinterface(intfRef.subintf).Enabled().State(), enabled)
+		gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(intfRef.name).Subinterface(intfRef.subintf).AdminStatus().State(), adminStatus)
+		if _, err := sb.Set(ctx, ni.c); err != nil {
+			log.Warningf("failed to set link status: %v", err)
+		}
 	}
 }
 
@@ -692,75 +713,87 @@ func (ni *Reconciler) createVLANSubIntf(ctx context.Context, intfRef ocInterface
 	}
 }
 
-func (ni *Reconciler) reconcileIPs(config, state *oc.Interface, data *interfaceData) {
+func (ni *Reconciler) reconcileIPs(config, state *oc.Interface) {
 	type prefixPair struct {
 		cfgIP, stateIP *string
 		cfgPL, statePL *uint8
 	}
 
-	// Get all state IPs and their corresponding config IPs (if they exist).
-	var interfacePairs []*prefixPair
-	for _, addr := range state.GetOrCreateSubinterface(0).GetOrCreateIpv4().Address {
-		pair := &prefixPair{
-			stateIP: addr.Ip,
-			statePL: addr.PrefixLength,
+	for idx := range config.Subinterface {
+		intfRef := ocInterface{
+			name:    config.GetName(),
+			subintf: idx,
 		}
-		if pairAddr := config.GetSubinterface(0).GetIpv4().GetAddress(addr.GetIp()); pairAddr != nil {
-			pair.cfgIP = pairAddr.Ip
-			pair.cfgPL = pairAddr.PrefixLength
+		data, ok := ni.ocInterfaceData[intfRef]
+		if !ok {
+			log.Infof("skipping ip reconcilation for %+v", intfRef)
+			continue
 		}
-		interfacePairs = append(interfacePairs, pair)
-	}
-	for _, addr := range state.GetOrCreateSubinterface(0).GetOrCreateIpv6().Address {
-		pair := &prefixPair{
-			stateIP: addr.Ip,
-			statePL: addr.PrefixLength,
-		}
-		if pairAddr := config.GetSubinterface(0).GetIpv6().GetAddress(addr.GetIp()); pairAddr != nil {
-			pair.cfgIP = pairAddr.Ip
-			pair.cfgPL = pairAddr.PrefixLength
-		}
-		interfacePairs = append(interfacePairs, pair)
-	}
 
-	for _, addr := range config.GetOrCreateSubinterface(0).GetOrCreateIpv4().Address {
-		pair := &prefixPair{
-			cfgIP: addr.Ip,
-			cfgPL: addr.PrefixLength,
-		}
-		if pairAddr := state.GetSubinterface(0).GetIpv4().GetAddress(addr.GetIp()); pairAddr != nil {
-			pair.stateIP = pairAddr.Ip
-			pair.statePL = pairAddr.PrefixLength
-		}
-		interfacePairs = append(interfacePairs, pair)
-	}
-	for _, addr := range config.GetOrCreateSubinterface(0).GetOrCreateIpv6().Address {
-		pair := &prefixPair{
-			cfgIP: addr.Ip,
-			cfgPL: addr.PrefixLength,
-		}
-		if pairAddr := state.GetSubinterface(0).GetIpv6().GetAddress(addr.GetIp()); pairAddr != nil {
-			pair.stateIP = pairAddr.Ip
-			pair.statePL = pairAddr.PrefixLength
-		}
-		interfacePairs = append(interfacePairs, pair)
-	}
-
-	for _, pair := range interfacePairs {
-		// If an IP exists in state, but not in config, remove the IP.
-		if (pair.stateIP != nil && pair.statePL != nil) && (pair.cfgIP == nil && pair.cfgPL == nil) {
-			log.V(1).Infof("Delete Config IP: %v, Config PL: %v. State IP: %v, State PL: %v", pair.cfgIP, pair.cfgPL, *pair.stateIP, *pair.statePL)
-			log.V(2).Infof("deleting interface %s ip %s/%d", data.hostifDevName, *pair.stateIP, *pair.statePL)
-			if err := ni.ifaceMgr.DeleteIP(data.hostifDevName, *pair.stateIP, int(*pair.statePL)); err != nil {
-				log.Warningf("Failed to set ip address of port: %v", err)
+		// Get all state IPs and their corresponding config IPs (if they exist).
+		var interfacePairs []*prefixPair
+		for _, addr := range state.GetOrCreateSubinterface(idx).GetOrCreateIpv4().Address {
+			pair := &prefixPair{
+				stateIP: addr.Ip,
+				statePL: addr.PrefixLength,
 			}
+			if pairAddr := config.GetSubinterface(idx).GetIpv4().GetAddress(addr.GetIp()); pairAddr != nil {
+				pair.cfgIP = pairAddr.Ip
+				pair.cfgPL = pairAddr.PrefixLength
+			}
+			interfacePairs = append(interfacePairs, pair)
 		}
-		// If an IP exists in config, but not in state (or state is different) add the IP.
-		if (pair.cfgIP != nil && pair.cfgPL != nil) && (pair.stateIP == nil || *pair.statePL != *pair.cfgPL) {
-			log.V(1).Infof("Set Config IP: %v, Config PL: %v. State IP: %v, State PL: %v", *pair.cfgIP, *pair.cfgPL, pair.stateIP, pair.statePL)
-			log.V(2).Infof("setting interface %s ip %s/%d", data.hostifDevName, *pair.cfgIP, *pair.cfgPL)
-			if err := ni.ifaceMgr.ReplaceIP(data.hostifDevName, *pair.cfgIP, int(*pair.cfgPL)); err != nil {
-				log.Warningf("Failed to set ip address of port: %v", err)
+		for _, addr := range state.GetOrCreateSubinterface(idx).GetOrCreateIpv6().Address {
+			pair := &prefixPair{
+				stateIP: addr.Ip,
+				statePL: addr.PrefixLength,
+			}
+			if pairAddr := config.GetSubinterface(idx).GetIpv6().GetAddress(addr.GetIp()); pairAddr != nil {
+				pair.cfgIP = pairAddr.Ip
+				pair.cfgPL = pairAddr.PrefixLength
+			}
+			interfacePairs = append(interfacePairs, pair)
+		}
+
+		for _, addr := range config.GetOrCreateSubinterface(idx).GetOrCreateIpv4().Address {
+			pair := &prefixPair{
+				cfgIP: addr.Ip,
+				cfgPL: addr.PrefixLength,
+			}
+			if pairAddr := state.GetSubinterface(idx).GetIpv4().GetAddress(addr.GetIp()); pairAddr != nil {
+				pair.stateIP = pairAddr.Ip
+				pair.statePL = pairAddr.PrefixLength
+			}
+			interfacePairs = append(interfacePairs, pair)
+		}
+		for _, addr := range config.GetOrCreateSubinterface(idx).GetOrCreateIpv6().Address {
+			pair := &prefixPair{
+				cfgIP: addr.Ip,
+				cfgPL: addr.PrefixLength,
+			}
+			if pairAddr := state.GetSubinterface(idx).GetIpv6().GetAddress(addr.GetIp()); pairAddr != nil {
+				pair.stateIP = pairAddr.Ip
+				pair.statePL = pairAddr.PrefixLength
+			}
+			interfacePairs = append(interfacePairs, pair)
+		}
+
+		for _, pair := range interfacePairs {
+			// If an IP exists in state, but not in config, remove the IP.
+			if (pair.stateIP != nil && pair.statePL != nil) && (pair.cfgIP == nil && pair.cfgPL == nil) {
+				log.V(1).Infof("Delete Config IP: %v, Config PL: %v. State IP: %v, State PL: %v", pair.cfgIP, pair.cfgPL, *pair.stateIP, *pair.statePL)
+				log.V(2).Infof("deleting interface %s ip %s/%d", data.hostifDevName, *pair.stateIP, *pair.statePL)
+				if err := ni.ifaceMgr.DeleteIP(data.hostifDevName, *pair.stateIP, int(*pair.statePL)); err != nil {
+					log.Warningf("Failed to set ip address of port: %v", err)
+				}
+			}
+			// If an IP exists in config, but not in state (or state is different) add the IP.
+			if (pair.cfgIP != nil && pair.cfgPL != nil) && (pair.stateIP == nil || *pair.statePL != *pair.cfgPL) {
+				log.V(1).Infof("Set Config IP: %v, Config PL: %v. State IP: %v, State PL: %v", *pair.cfgIP, *pair.cfgPL, pair.stateIP, pair.statePL)
+				log.V(2).Infof("setting interface %s ip %s/%d", data.hostifDevName, *pair.cfgIP, *pair.cfgPL)
+				if err := ni.ifaceMgr.ReplaceIP(data.hostifDevName, *pair.cfgIP, int(*pair.cfgPL)); err != nil {
+					log.Warningf("Failed to set ip address of port: %v", err)
+				}
 			}
 		}
 	}
@@ -1071,6 +1104,7 @@ func (ni *Reconciler) setupPorts(ctx context.Context) error {
 		gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(i.Attrs().Name).Ethernet().MacAddress().State(), tap.Attrs().HardwareAddr.String())
 		gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(i.Attrs().Name).OperStatus().State(), oc.Interface_OperStatus_UP)
 		gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(i.Attrs().Name).AdminStatus().State(), oc.Interface_AdminStatus_UP)
+		gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(i.Attrs().Name).Enabled().State(), true)
 		gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(i.Attrs().Name).Subinterface(0).AdminStatus().State(), oc.Interface_AdminStatus_UP)
 		if _, err := sb.Set(ctx, ni.c); err != nil {
 			log.Warningf("failed to set link status: %v", err)
