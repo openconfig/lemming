@@ -344,9 +344,16 @@ func (ni *Reconciler) startCounterUpdates(ctx context.Context) {
 	}()
 }
 
+func intfRefToDevName(intf ocInterface) string {
+	if intf.subintf == 0 {
+		return intf.name
+	}
+	return fmt.Sprintf("%s.%d", intf.name, intf.subintf)
+}
+
 func (ni *Reconciler) createLAG(ctx context.Context, intf ocInterface, lagType oc.E_IfAggregate_AggregationType) error {
 	bond := netlink.NewLinkBond(netlink.NewLinkAttrs())
-	bond.Name = intf.name
+	bond.Name = intfRefToDevName(intf)
 	bond.Mode = netlink.BOND_MODE_BALANCE_XOR
 	if err := ni.ifaceMgr.LinkAdd(bond); err != nil {
 		return fmt.Errorf("failed to create kernel lag interface: %v", err)
@@ -357,7 +364,7 @@ func (ni *Reconciler) createLAG(ctx context.Context, intf ocInterface, lagType o
 	if err != nil {
 		return fmt.Errorf("failed to create router interface %q: %v", intf.name, err)
 	}
-	l, err := ni.ifaceMgr.LinkByName(intf.name)
+	l, err := ni.ifaceMgr.LinkByName(intfRefToDevName(intf))
 	if err != nil {
 		return fmt.Errorf("failed to get bond intf %q: %v", intf.name, err)
 	}
@@ -369,13 +376,13 @@ func (ni *Reconciler) createLAG(ctx context.Context, intf ocInterface, lagType o
 		SrcMacAddress:   l.Attrs().HardwareAddr,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to create router interface %q: %v", intf.name, err)
+		return fmt.Errorf("failed to create router interface %q: %v", intfRefToDevName(intf), err)
 	}
 	aggData := &interfaceData{
 		portID:        lagResp.Oid,
 		rifID:         rifResp.Oid,
 		hostifIfIndex: bond.Index,
-		hostifDevName: intf.name,
+		hostifDevName: intfRefToDevName(intf),
 		isAggregate:   true,
 	}
 
@@ -534,12 +541,7 @@ func (ni *Reconciler) reconcile(ctx context.Context, config *oc.Interface) {
 	data, ok := ni.ocInterfaceData[intf]
 
 	// Create a new lag interface
-	if !ok && config.GetAggregation().GetLagType() != oc.IfAggregate_AggregationType_UNSET {
-		log.Infof("creating new lag interface: %v", intf.name)
-		if err := ni.createLAG(ctx, intf, config.GetAggregation().GetLagType()); err != nil {
-			log.Warningf("failed to create lag: %v", err)
-		}
-	}
+
 	if data == nil {
 		return
 	}
@@ -625,6 +627,72 @@ func (ni *Reconciler) reconcile(ctx context.Context, config *oc.Interface) {
 		}
 	}
 
+	ni.reconcileIPs(config, state, data)
+}
+
+func (ni *Reconciler) reconcilerSubIntf(ctx context.Context, config, state *oc.Interface) {
+	for idx, subintf := range config.Subinterface {
+		intfRef := ocInterface{
+			name:    config.GetName(),
+			subintf: idx,
+		}
+		data, ok := ni.ocInterfaceData[intfRef]
+		// We have a new interface.
+		if !ok {
+			if config.GetAggregation().GetLagType() != oc.IfAggregate_AggregationType_UNSET { // New aggregate interface
+				log.Infof("creating new lag interface: %v", intfRefToDevName(intfRef))
+				if err := ni.createLAG(ctx, intfRef, config.GetAggregation().GetLagType()); err != nil {
+					log.Warningf("failed to create lag: %v", err)
+				}
+			} else if idx != 0 && subintf.Vlan != nil { // New VLAN subinterface
+				log.Infof("creating new vlan intf: %v", intfRefToDevName(intfRef))
+				ni.createVLANSubIntf(ctx, intfRef, config)
+			}
+		}
+
+		enabled := config.GetSubinterface(idx).GetEnabled() && config.GetEnabled()
+		// Reconcile
+	}
+}
+
+func (ni *Reconciler) createVLANSubIntf(ctx context.Context, intfRef ocInterface, config *oc.Interface) {
+	rootPort := ni.ocInterfaceData[ocInterface{name: intfRef.name, subintf: 0}]
+
+	vlanIntf := &netlink.Vlan{
+		LinkAttrs: netlink.LinkAttrs{
+			Name:        intfRefToDevName(intfRef),
+			ParentIndex: rootPort.hostifIfIndex,
+		},
+		VlanId:       int(config.GetSubinterface(intfRef.subintf).GetVlan().GetMatch().GetSingleTagged().GetVlanId()),
+		VlanProtocol: netlink.VLAN_PROTOCOL_8021Q,
+	}
+	if err := ni.ifaceMgr.LinkAdd(vlanIntf); err != nil {
+		log.Warningf("failed to add vlan intf: %v", err)
+	}
+
+	rifResp, err := ni.ifaceClient.CreateRouterInterface(ctx, &saipb.CreateRouterInterfaceRequest{
+		Switch:          ni.switchID,
+		Type:            saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_SUB_PORT.Enum(),
+		PortId:          &rootPort.portID,
+		VirtualRouterId: proto.Uint64(0),
+	})
+	if err != nil {
+		log.Warningf("failed to add vlan intf: %v", err)
+	}
+
+	ni.ocInterfaceData[intfRef] = &interfaceData{
+		rifID:         rifResp.GetOid(),
+		hostifIfIndex: vlanIntf.Index,
+		hostifDevName: intfRefToDevName(intfRef),
+	}
+	sb := &ygnmi.SetBatch{}
+	gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(intfRef.name).Subinterface(intfRef.subintf).Vlan().Match().SingleTagged().VlanId().State(), uint16(vlanIntf.VlanId))
+	if _, err := sb.Set(ctx, ni.c); err != nil {
+		log.Warningf("failed to set link status: %v", err)
+	}
+}
+
+func (ni *Reconciler) reconcileIPs(config, state *oc.Interface, data *interfaceData) {
 	type prefixPair struct {
 		cfgIP, stateIP *string
 		cfgPL, statePL *uint8
@@ -655,7 +723,6 @@ func (ni *Reconciler) reconcile(ctx context.Context, config *oc.Interface) {
 		interfacePairs = append(interfacePairs, pair)
 	}
 
-	// Get all config IPs and their corresponding state IPs (if they exist).
 	for _, addr := range config.GetOrCreateSubinterface(0).GetOrCreateIpv4().Address {
 		pair := &prefixPair{
 			cfgIP: addr.Ip,
