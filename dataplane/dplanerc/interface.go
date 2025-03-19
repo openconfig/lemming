@@ -627,12 +627,12 @@ func (ni *Reconciler) reconcileSubIntf(ctx context.Context, config, state *oc.In
 		// We have a new interface.
 		if !ok {
 			switch {
-			case config.GetAggregation().GetLagType() != oc.IfAggregate_AggregationType_UNSET:
+			case config.GetType() == oc.IETFInterfaces_InterfaceType_ieee8023adLag:
 				log.Infof("creating new lag interface: %v", intfRefToDevName(intfRef))
 				if err := ni.createLAG(ctx, intfRef, config.GetAggregation().GetLagType()); err != nil {
 					log.Warningf("failed to create lag: %v", err)
 				}
-			case idx != 0 && subintf.Vlan != nil:
+			case idx != 0 && subintf.Vlan != nil: // TODO: add support for vlan on the subintf 0.
 				log.Infof("creating new vlan intf: %v", intfRefToDevName(intfRef))
 				ni.createVLANSubIntf(ctx, intfRef, config)
 			default:
@@ -735,7 +735,7 @@ func (ni *Reconciler) reconcileIPs(config, state *oc.Interface) {
 
 		// Get all state IPs and their corresponding config IPs (if they exist).
 		var interfacePairs []*prefixPair
-		for _, addr := range state.GetOrCreateSubinterface(idx).GetOrCreateIpv4().Address {
+		for _, addr := range state.GetSubinterface(idx).GetIpv4().Address {
 			pair := &prefixPair{
 				stateIP: addr.Ip,
 				statePL: addr.PrefixLength,
@@ -746,7 +746,7 @@ func (ni *Reconciler) reconcileIPs(config, state *oc.Interface) {
 			}
 			interfacePairs = append(interfacePairs, pair)
 		}
-		for _, addr := range state.GetOrCreateSubinterface(idx).GetOrCreateIpv6().Address {
+		for _, addr := range state.GetSubinterface(idx).GetIpv6().Address {
 			pair := &prefixPair{
 				stateIP: addr.Ip,
 				statePL: addr.PrefixLength,
