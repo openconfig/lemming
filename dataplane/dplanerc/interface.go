@@ -197,6 +197,7 @@ func (ni *Reconciler) StartInterface(ctx context.Context, client *ygnmi.Client) 
 		ocpath.Root().Lldp().Enabled().Config().PathStruct(),
 		ocpath.Root().Lldp().InterfaceAny().Config().PathStruct(),
 		ocpath.Root().NetworkInstanceAny().InterfaceAny().Config().PathStruct(),
+		ocpath.Root().InterfaceAny().Type().Config().PathStruct(),
 	)
 	cancelCtx, cancelFn := context.WithCancel(ctx)
 
@@ -735,7 +736,7 @@ func (ni *Reconciler) reconcileIPs(config, state *oc.Interface) {
 
 		// Get all state IPs and their corresponding config IPs (if they exist).
 		var interfacePairs []*prefixPair
-		for _, addr := range state.GetSubinterface(idx).GetIpv4().Address {
+		for _, addr := range state.GetOrCreateSubinterface(idx).GetOrCreateIpv4().Address {
 			pair := &prefixPair{
 				stateIP: addr.Ip,
 				statePL: addr.PrefixLength,
@@ -746,7 +747,7 @@ func (ni *Reconciler) reconcileIPs(config, state *oc.Interface) {
 			}
 			interfacePairs = append(interfacePairs, pair)
 		}
-		for _, addr := range state.GetSubinterface(idx).GetIpv6().Address {
+		for _, addr := range state.GetOrCreateSubinterface(idx).GetOrCreateIpv6().Address {
 			pair := &prefixPair{
 				stateIP: addr.Ip,
 				statePL: addr.PrefixLength,
