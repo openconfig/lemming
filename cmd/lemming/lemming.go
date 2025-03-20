@@ -35,6 +35,7 @@ import (
 var (
 	gnmiAddr       = pflag.String("gnmi", ":9339", "gNMI listen address")
 	gribiAddr      = pflag.String("gribi", ":9340", "gRIBI listen address")
+	p4rtAddr       = pflag.String("p4rt_addr", ":9559", "p4rt listen address")
 	bgpPort        = pflag.Uint("bgp_port", 179, "BGP listening port")
 	target         = pflag.String("target", "fakedut", "name of the fake target")
 	tlsKeyFile     = pflag.String("tls_key_file", "", "Controls whether to enable TLS for gNXI services. If unspecified, insecure credentials are used.")
@@ -76,6 +77,7 @@ func main() {
 		lemming.WithDataplane(*dplane),
 		lemming.WithFaultAddr(*faultAddr),
 		lemming.WithFaultInjection(*faultEnable),
+		lemming.WithP4RTAddr(*p4rtAddr),
 		lemming.WithDataplaneOpts(dplaneopts.WithSkipIPValidation()),
 	)
 	if err != nil {
