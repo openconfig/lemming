@@ -7,7 +7,6 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//gnmi/fakedevice",
-        "//gnoi/bootconfig",
         "@com_github_golang_glog//:glog",
         "@com_github_openconfig_gnmi//proto/gnmi",
         "@com_github_openconfig_gnoi//bgp",
