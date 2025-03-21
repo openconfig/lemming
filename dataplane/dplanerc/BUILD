@@ -12,6 +12,7 @@ go_library(
         "//dataplane/proto/sai",
         "//dataplane/saiserver",
         "//gnmi",
+        "//gnmi/fakedevice",
         "//proto/dataplane",
         "//proto/forwarding",
         "//proto/routing",
