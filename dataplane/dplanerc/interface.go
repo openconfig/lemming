@@ -955,6 +955,7 @@ func (ni *Reconciler) handleAddrUpdate(ctx context.Context, au *netlink.AddrUpda
 
 	intf, data := ni.ocInterfaceData.findByIfIndex(au.LinkIndex)
 	if data == nil {
+		log.Infof("skipping address reconcilion for %s/%d, no interface data", intf.name, intf.subintf)
 		return
 	}
 
@@ -972,6 +973,12 @@ func (ni *Reconciler) handleAddrUpdate(ctx context.Context, au *netlink.AddrUpda
 	isV4 := au.LinkAddress.IP.To4() != nil
 
 	log.V(1).Infof("handling addr update for %s ip %v pl %v", data.hostifDevName, ip, pl)
+
+	if ni.niDetail[data.networkInstance] == nil {
+		log.Infof("skipping address reconcilion for %s/%d, unknown VRF %q", intf.name, intf.subintf, data.networkInstance)
+		return
+	}
+
 	// The dataplane does not monitor the local interface's IP addr, they must set externally.
 	if au.NewAddr {
 		if isV4 {
@@ -1172,7 +1179,7 @@ func (ni *Reconciler) setupPorts(ctx context.Context) error {
 			Type:            saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_PORT.Enum(),
 			PortId:          &portResp.Oid,
 			SrcMacAddress:   tap.Attrs().HardwareAddr,
-			VirtualRouterId: proto.Uint64(ni.niDetail[fakedevice.DefaultNetworkInstance].vrOID),
+			VirtualRouterId: proto.Uint64(ni.niDetail[fakedevice.DefaultNetworkInstance].vrOID), // Implicitly add the RIF to DEFAULT network instance.
 		})
 		if err != nil {
 			return fmt.Errorf("failed to update MAC address for interface %q: %w", i.Attrs().Name, err)

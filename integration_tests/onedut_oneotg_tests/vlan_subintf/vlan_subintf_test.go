@@ -144,7 +144,7 @@ func waitOTGARPEntry(t *testing.T) {
 		return v.IsPresent()
 	}).Await(t)
 	if !ok {
-		t.Fatal("failed to get neighbor")
+		t.Fatal("failed to get v4 neighbor")
 	}
 	lla, _ := val.Val()
 	t.Logf("Neighbor %v", lla)
@@ -153,7 +153,7 @@ func waitOTGARPEntry(t *testing.T) {
 		return v.IsPresent()
 	}).Await(t)
 	if !ok {
-		t.Fatal("failed to get neighbor")
+		t.Fatal("failed to get v6 neighbor")
 	}
 	lla, _ = val.Val()
 	t.Logf("Neighbor %v", lla)
