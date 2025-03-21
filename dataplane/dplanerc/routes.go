@@ -28,6 +28,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/openconfig/lemming/gnmi"
+	"github.com/openconfig/lemming/gnmi/fakedevice"
 
 	log "github.com/golang/glog"
 
@@ -68,10 +69,15 @@ func (ni *Reconciler) StartRoute(ctx context.Context, client *ygnmi.Client) erro
 		}
 		ipBytes := prefix.Masked().Addr().AsSlice()
 		mask := net.CIDRMask(prefix.Bits(), len(ipBytes)*8)
-		var vrfID uint64 // TODO: support vrf-ids other than 0.
+
+		niName := fakedevice.DefaultNetworkInstance
+		if route.GetPrefix().GetNetworkInstance() != "" {
+			niName = route.GetPrefix().GetNetworkInstance()
+		}
+
 		entry := &saipb.RouteEntry{
 			SwitchId: ni.switchID,
-			VrId:     0,
+			VrId:     ni.niDetail[niName].vrOID,
 			Destination: &saipb.IpPrefix{
 				Addr: ipBytes,
 				Mask: mask,
@@ -80,7 +86,7 @@ func (ni *Reconciler) StartRoute(ctx context.Context, client *ygnmi.Client) erro
 
 		if !present {
 			// Remove NextHop or NextHopGroup.
-			if routeData := ni.ocRouteData.findRoute(prefixStr, vrfID); routeData != nil {
+			if routeData := ni.ocRouteData.findRoute(prefixStr, entry.GetVrId()); routeData != nil {
 				if routeData.isNHG {
 					log.Infof("removing next hop group")
 					for nhgID, nhs := range routeData.nhg {
@@ -130,7 +136,7 @@ func (ni *Reconciler) StartRoute(ctx context.Context, client *ygnmi.Client) erro
 			return ygnmi.Continue
 		}
 		var hopID uint64
-		routeKey := ocRoute{prefix: prefixStr, vrf: vrfID}
+		routeKey := ocRoute{prefix: prefixStr, vrf: entry.GetVrId()}
 		if len(route.GetNextHops().GetHops()) == 1 {
 			hopID, err = ni.createNextHop(ctx, route.GetNextHops().Hops[0])
 			if err != nil {

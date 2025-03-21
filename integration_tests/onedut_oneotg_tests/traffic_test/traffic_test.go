@@ -454,6 +454,7 @@ func TestGRIBIEntry(t *testing.T) {
 	otg := ate.OTG()
 	otgConfig := configureOTG(t, ate)
 	otg.PushConfig(t, otgConfig)
+	otg.StartProtocols(t)
 
 	cases := []testCase{
 		newTestCase(t, "single-next-hop-IPv4", "198.51.100.0", IPv4, false),
@@ -497,9 +498,6 @@ func TestGRIBIEntry(t *testing.T) {
 				flowName = "Flow2"
 			}
 
-			// Send some traffic to make sure neighbor cache is warmed up on the dut.
-			testTrafficFn(t, otg, atePort1, atePort2, tc.startAddress, 1*time.Second)
-
 			if loss := testTrafficFn(t, otg, atePort1, atePort2, tc.startAddress, 5*time.Second); loss > 1 {
 				t.Errorf("Loss: got %g, want <= 1", loss)
 			}
@@ -514,9 +512,6 @@ func TestGRIBIEntry(t *testing.T) {
 			if err := awaitTimeout(ctx, c, t, time.Minute); err != nil {
 				t.Fatalf("Await got error for entries: %v", err)
 			}
-
-			// Send some traffic to make sure neighbor cache is warmed up on the dut.
-			testTrafficFn(t, otg, atePort1, atePort2, tc.startAddress, 1*time.Second)
 
 			for _, wantResult := range tc.wantDelOperationResults {
 				chk.HasResult(t, c.Results(t), wantResult, chk.IgnoreOperationID())

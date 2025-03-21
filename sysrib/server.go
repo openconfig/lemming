@@ -654,12 +654,13 @@ func (s *Server) setConnectedRoute(ctx context.Context, connected connectedRoute
 }
 
 // setInterface responds to INTERFACE_UP/INTERFACE_DOWN messages from the dataplane.
-func (s *Server) setInterface(ctx context.Context, name string, ifindex int32, enabled bool) error {
+func (s *Server) setInterface(ctx context.Context, name string, subintf uint32, ifindex int32, enabled bool) error {
 	log.V(1).Infof("Setting interface %q(%d) to enabled=%v", name, ifindex, enabled)
 	s.interfacesMu.Lock()
 	s.interfaces[Interface{
-		Name:  name,
-		Index: ifindex,
+		Name:         name,
+		Index:        ifindex,
+		Subinterface: subintf,
 	}] = enabled
 	s.interfacesMu.Unlock()
 

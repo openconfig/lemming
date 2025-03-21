@@ -26,20 +26,26 @@ import (
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 )
 
+type interfaceRef struct {
+	Name         string
+	SubInterface uint32
+}
+
 // monitorConnectedIntfs starts a gothread to check for connected prefixes from
 // connected interfaces and adds them to the sysrib. It returns an error if
 // there is an error before monitoring can begin.
 func (s *Server) monitorConnectedIntfs(ctx context.Context, yclient *ygnmi.Client) error {
-	b := ygnmi.NewBatch[map[string]*oc.Interface](ocpath.Root().InterfaceMap().State())
+	b := ygnmi.NewBatch[*oc.Root](ocpath.Root().State())
 	b.AddPaths(
 		ocpath.Root().InterfaceAny().Enabled().State(),
 		ocpath.Root().InterfaceAny().Ifindex().State(),
-		ocpath.Root().InterfaceAny().Subinterface(0).Ipv4().AddressAny().Ip().State(),
-		ocpath.Root().InterfaceAny().Subinterface(0).Ipv4().AddressAny().PrefixLength().State(),
-		ocpath.Root().InterfaceAny().Subinterface(0).Ipv6().AddressAny().Ip().State(),
-		ocpath.Root().InterfaceAny().Subinterface(0).Ipv6().AddressAny().PrefixLength().State(),
-		ocpath.Root().InterfaceAny().Subinterface(0).Ifindex().State(),
-		ocpath.Root().InterfaceAny().Subinterface(0).Enabled().State(),
+		ocpath.Root().InterfaceAny().SubinterfaceAny().Ipv4().AddressAny().Ip().State(),
+		ocpath.Root().InterfaceAny().SubinterfaceAny().Ipv4().AddressAny().PrefixLength().State(),
+		ocpath.Root().InterfaceAny().SubinterfaceAny().Ipv6().AddressAny().Ip().State(),
+		ocpath.Root().InterfaceAny().SubinterfaceAny().Ipv6().AddressAny().PrefixLength().State(),
+		ocpath.Root().InterfaceAny().SubinterfaceAny().Ifindex().State(),
+		ocpath.Root().InterfaceAny().SubinterfaceAny().Enabled().State(),
+		ocpath.Root().NetworkInstanceAny().InterfaceAny().State(),
 	)
 
 	prevIntfs := map[connectedRoute]struct{}{}
@@ -48,50 +54,71 @@ func (s *Server) monitorConnectedIntfs(ctx context.Context, yclient *ygnmi.Clien
 		ctx,
 		yclient,
 		b.Query(),
-		func(intfs *ygnmi.Value[map[string]*oc.Interface]) error {
-			interfaceMap, ok := intfs.Val()
+		func(intfs *ygnmi.Value[*oc.Root]) error {
+			root, ok := intfs.Val()
+			if !ok {
+				return ygnmi.Continue
+			}
+
 			currentIntfs := map[connectedRoute]struct{}{}
-			if ok {
-				for name, intf := range interfaceMap {
-					log.Infof("got interface update: %v intf.Enabled %v,  intf.Ifindex %v", name, intf.Enabled, intf.Ifindex)
-					if intf.Enabled != nil && intf.Ifindex != nil {
-						ifindex := intf.GetIfindex()
-						s.setInterface(ctx, name, int32(ifindex), intf.GetEnabled())
-						// TODO(wenbli): Support other VRFs.
-						if subintf := intf.GetSubinterface(0); subintf != nil {
-							for _, addr := range subintf.GetOrCreateIpv4().Address {
-								if addr.Ip != nil && addr.PrefixLength != nil {
-									connected := connectedRoute{
-										name:    name,
-										ifindex: int32(ifindex),
-										prefix:  fmt.Sprintf("%s/%d", addr.GetIp(), addr.GetPrefixLength()),
-										niName:  fakedevice.DefaultNetworkInstance,
-									}
-									if err := s.setConnectedRoute(ctx, connected, false); err != nil {
-										log.Warningf("adding connected route failed: %v", err)
-									} else {
-										currentIntfs[connected] = struct{}{}
-									}
+			niIntfMap := map[interfaceRef]string{}
+
+			for niName, ni := range root.NetworkInstance {
+				for _, intf := range ni.Interface {
+					if intf.Interface == nil || intf.Subinterface == nil {
+						continue
+					}
+					niIntfMap[interfaceRef{Name: intf.GetInterface(), SubInterface: intf.GetSubinterface()}] = niName
+				}
+			}
+
+			for name, intf := range root.Interface {
+				log.Infof("got interface update: %v intf.Enabled %v,  intf.Ifindex %v", name, intf.Enabled, intf.Ifindex)
+				if intf.Enabled != nil && intf.Ifindex != nil {
+					for subintfIdx, subintf := range intf.Subinterface {
+						ifindex := subintf.GetIfindex()
+						if subintf.Ifindex == nil {
+							ifindex = intf.GetIfindex()
+						}
+						s.setInterface(ctx, name, subintfIdx, int32(ifindex), subintf.GetEnabled() && intf.GetEnabled())
+						niName := fakedevice.DefaultNetworkInstance
+						if stateNIName := niIntfMap[interfaceRef{Name: intf.GetName(), SubInterface: subintfIdx}]; stateNIName != "" { // Interfaces are in the default network instance implicitly.
+							niName = stateNIName
+						}
+
+						for _, addr := range subintf.GetOrCreateIpv4().Address {
+							if addr.Ip != nil && addr.PrefixLength != nil {
+								connected := connectedRoute{
+									name:    name,
+									ifindex: int32(ifindex),
+									prefix:  fmt.Sprintf("%s/%d", addr.GetIp(), addr.GetPrefixLength()),
+									niName:  niName,
+								}
+								if err := s.setConnectedRoute(ctx, connected, false); err != nil {
+									log.Warningf("adding connected route failed: %v", err)
+								} else {
+									currentIntfs[connected] = struct{}{}
 								}
 							}
-							for _, addr := range subintf.GetOrCreateIpv6().Address {
-								if addr.Ip != nil && addr.PrefixLength != nil {
-									connected := connectedRoute{
-										name:    name,
-										ifindex: int32(ifindex),
-										prefix:  fmt.Sprintf("%s/%d", addr.GetIp(), addr.GetPrefixLength()),
-										niName:  fakedevice.DefaultNetworkInstance,
-									}
-									if err := s.setConnectedRoute(ctx, connected, false); err != nil {
-										log.Warningf("adding connected route failed: %v", err)
-									} else {
-										currentIntfs[connected] = struct{}{}
-									}
+						}
+						for _, addr := range subintf.GetOrCreateIpv6().Address {
+							if addr.Ip != nil && addr.PrefixLength != nil {
+								connected := connectedRoute{
+									name:    name,
+									ifindex: int32(ifindex),
+									prefix:  fmt.Sprintf("%s/%d", addr.GetIp(), addr.GetPrefixLength()),
+									niName:  niName,
+								}
+								if err := s.setConnectedRoute(ctx, connected, false); err != nil {
+									log.Warningf("adding connected route failed: %v", err)
+								} else {
+									currentIntfs[connected] = struct{}{}
 								}
 							}
 						}
 					}
 				}
+
 			}
 			for connected := range prevIntfs {
 				if _, ok := currentIntfs[connected]; !ok {
