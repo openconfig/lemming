@@ -118,7 +118,6 @@ func (s *Server) monitorConnectedIntfs(ctx context.Context, yclient *ygnmi.Clien
 						}
 					}
 				}
-
 			}
 			for connected := range prevIntfs {
 				if _, ok := currentIntfs[connected]; !ok {
