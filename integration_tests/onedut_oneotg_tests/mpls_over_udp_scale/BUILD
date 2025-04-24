@@ -5,9 +5,7 @@ go_library(
     srcs = ["util.go"],
     importpath = "github.com/openconfig/lemming/integration_tests/onedut_oneotg_tests/mpls_over_udp_scale",
     visibility = ["//visibility:public"],
-    deps = [
-        "@com_github_openconfig_gribi//v1/proto/service",
-    ],
+    deps = ["@com_github_openconfig_gribigo//fluent"],
 )
 
 go_test(
