@@ -6,17 +6,17 @@ import (
 	"fmt"
 	"net/netip"
 
-	gribipb "github.com/openconfig/gribi/v1/proto/service"
+	"github.com/openconfig/gribigo/fluent"
 )
 
 // ScaleProfileConfig defines the parameters for generating gRIBI entries for a specific scale profile.
 type ScaleProfileConfig struct {
 	// Common parameters
-	AddrFamily         string // "ipv4" or "ipv6"
-	NumNetworkInstance int    // Number of network instances (VRFs), MUST be > 1. If 1, "DEFAULT" will be applied.
-	NumPrefixes        int    // Total number of IP prefixes (AFT entries) to generate
-	NumNexthopGroup    int    // Total number of Next Hop Groups (NHGs) to generate
-	NumNexthopPerNHG   int    // Number of Next Hops (NHs) per NHG
+	AddrFamily          string // "ipv4" or "ipv6"
+	NetworkInstanceName string // Network instance name. Required.
+	NumPrefixes         int    // Total number of IP prefixes (AFT entries) to generate
+	NumNexthopGroup     int    // Total number of Next Hop Groups (NHGs) to generate
+	NumNexthopPerNHG    int    // Number of Next Hops (NHs) per NHG
 
 	// Prefix generation details
 	PrefixStart string // Starting IP prefix (e.g., "10.5.1.1/32" or "2001:aa:bb::1/128")
@@ -26,17 +26,71 @@ type ScaleProfileConfig struct {
 
 	// MPLS Label details
 	UseSameMPLSLabel bool   // If true, all NHs use MPLSLabelStart. If false, labels increment.
-	MPLSLabelStart   uint32 // Starting MPLS label value
+	MPLSLabelStart   uint64 // Starting MPLS label value
 
-	// Network Instance details
-	BaseNetworkInstanceName string // Base name for network instances (e.g., "vrf-") if NumNetworkInstance > 1. Default VRF often implied if 1.
+	// Encapheader Configs
+	UDPSrcPort uint64
+	UDPDstPort uint64
+	SrcIP      string
+	DstIP      string
+	DSCP       uint64
+	IPTTL      uint64
 }
 
-// GenerateScaleProfileAEntries generates gRIBI ModifyRequest operations based on ScaleProfileConfig.
-func GenerateScaleProfileAEntries(ctx context.Context, cfg *ScaleProfileConfig) ([]*gribipb.ModifyRequest, error) {
+// populateNextHops generates NextHop entries and appends them to the entries slice.
+func populateNextHops(entries []fluent.GRIBIEntry, cfg *ScaleProfileConfig) error {
+	totalNextHops := cfg.NumNexthopPerNHG * cfg.NumNexthopGroup
+	if totalNextHops <= 0 {
+		return nil
+	}
+
+	startNHIP, err := netip.ParseAddr(cfg.NexthopIPStart)
+	if err != nil {
+		// This should ideally not happen due to prior validation in GenerateScaleProfileEntries
+		return fmt.Errorf("internal error: failed to parse NexthopIPStart %q: %w", cfg.NexthopIPStart, err)
+	}
+
+	currentNHIP := startNHIP
+	for i := 1; i <= totalNextHops; i++ {
+		nhIPStr := currentNHIP.String() // IP of the immediate next hop device
+		mplsLabel := cfg.MPLSLabelStart
+		if !cfg.UseSameMPLSLabel {
+			mplsLabel = cfg.MPLSLabelStart + uint64(i-1)
+		}
+
+		nhEntry := fluent.NextHopEntry().
+			WithNetworkInstance(cfg.NetworkInstanceName).
+			WithIndex(uint64(i)).
+			WithIPAddress(nhIPStr).
+			AddEncapHeader(
+				fluent.MPLSEncapHeader().WithLabels(mplsLabel),
+				// Add the UDPv6 encapsulation header
+				// NOTE: fluent currently doesn't support UDPV4 encap header builder.
+				fluent.UDPV6EncapHeader().
+					WithDstUDPPort(cfg.UDPDstPort).
+					WithSrcUDPPort(cfg.UDPSrcPort).
+					WithSrcIP(cfg.SrcIP).
+					WithDstIP(cfg.DstIP).
+					WithDSCP(cfg.DSCP).
+					WithIPTTL(cfg.IPTTL),
+			)
+
+		entries = append(entries, nhEntry)
+
+		// Increment IP for the next iteration
+		currentNHIP = currentNHIP.Next()
+		if !currentNHIP.IsValid() {
+			currentNHIP = startNHIP
+		}
+	}
+	return nil
+}
+
+// GenerateScaleProfileEntries randomly generates fluent gRIBI entries based on ScaleProfileConfig in one network instance.
+func GenerateScaleProfileEntries(ctx context.Context, cfg *ScaleProfileConfig) ([]fluent.GRIBIEntry, error) {
 	// 1. Validation of the parameters.
-	if cfg.NumNetworkInstance < 1 {
-		return nil, errors.New("NumNetworkInstance must be at least 1")
+	if cfg.NetworkInstanceName == "" {
+		return nil, errors.New("NetworkInstanceName must be given")
 	}
 	if cfg.NumPrefixes <= 0 {
 		return nil, errors.New("NumPrefixes must be positive")
@@ -50,18 +104,26 @@ func GenerateScaleProfileAEntries(ctx context.Context, cfg *ScaleProfileConfig) 
 	if cfg.AddrFamily != "ipv4" && cfg.AddrFamily != "ipv6" {
 		return nil, fmt.Errorf("invalid AddrFamily: %q, must be 'ipv4' or 'ipv6'", cfg.AddrFamily)
 	}
-	if _, err := netip.ParsePrefix(cfg.PrefixStart); err != nil {
+	prefixAddr, err := netip.ParsePrefix(cfg.PrefixStart)
+	if err != nil {
 		return nil, fmt.Errorf("invalid PrefixStart %q: %w", cfg.PrefixStart, err)
 	}
-	if _, err := netip.ParseAddr(cfg.NexthopIPStart); err != nil {
+	if (cfg.AddrFamily == "ipv4" && !prefixAddr.Addr().Is4()) || (cfg.AddrFamily == "ipv6" && !prefixAddr.Addr().Is6()) {
+		return nil, fmt.Errorf("AddrFamily %q does not match PrefixStart %q", cfg.AddrFamily, cfg.PrefixStart)
+	}
+	_, err = netip.ParseAddr(cfg.NexthopIPStart)
+	if err != nil {
 		return nil, fmt.Errorf("invalid NexthopIPStart %q: %w", cfg.NexthopIPStart, err)
 	}
 
-	// 2. Initialize gRIBI operations slice.
-	var modifyReqs []*gribipb.ModifyRequest
+	// 2. Initialize basic information.
+	// Initialize the slice. Give it some capacity based on expected size.
+	entries := []fluent.GRIBIEntry{}
 
-	// 3. Loop NumPrefixes (or NumNexthopGroup) times:
-	//    (Implementation pending)
+	// 3. Generates next hops.
+	if err := populateNextHops(entries, cfg); err != nil {
+		return nil, fmt.Errorf("failed to populate next hops: %w", err)
+	}
 
-	return modifyReqs, nil
+	return entries, nil
 }
