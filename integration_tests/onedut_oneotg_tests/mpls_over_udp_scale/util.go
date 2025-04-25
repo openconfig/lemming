@@ -4,7 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/rand"
 	"net/netip"
+	"sort"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/openconfig/gribigo/fluent"
 )
@@ -38,8 +43,9 @@ type ScaleProfileConfig struct {
 }
 
 // populateNextHops generates NextHop entries and returns the updated slice.
-func populateNextHops(entries []fluent.GRIBIEntry, cfg *ScaleProfileConfig) ([]fluent.GRIBIEntry, error) {
+func populateNextHops(cfg *ScaleProfileConfig) ([]fluent.GRIBIEntry, error) {
 	totalNextHops := cfg.NumNexthopPerNHG * cfg.NumNexthopGroup
+	entries := []fluent.GRIBIEntry{}
 	if totalNextHops <= 0 {
 		return entries, nil
 	}
@@ -85,6 +91,73 @@ func populateNextHops(entries []fluent.GRIBIEntry, cfg *ScaleProfileConfig) ([]f
 	return entries, nil // Return the modified slice
 }
 
+// combinationKey generates a unique, sorted string key for a slice of NH indices.
+func combinationKey(indices []uint64) string {
+	sort.Slice(indices, func(i, j int) bool { return indices[i] < indices[j] })
+
+	var sb strings.Builder
+	for i, idx := range indices {
+		sb.WriteString(strconv.FormatUint(idx, 10))
+		if i < len(indices)-1 {
+			sb.WriteString(",")
+		}
+	}
+	return sb.String()
+}
+
+func generateRandomNHInd(n, nhRange int, r *rand.Rand) []uint64 {
+	indSlice := []uint64{}
+	for i := 0; i < n; i++ {
+		randNum := uint64(r.Intn(int(nhRange))) + 1
+		indSlice = append(indSlice, randNum)
+	}
+	return indSlice
+}
+
+// populateNextHopGroups generates NextHopGroup entries, assigning NHs using bootstrapping
+// and avoiding duplicate NH combinations across NHGs.
+func populateNextHopGroups(cfg *ScaleProfileConfig) ([]fluent.GRIBIEntry, error) {
+	totalNHsAvailable := cfg.NumNexthopPerNHG * cfg.NumNexthopGroup
+
+	usedCombinations := make(map[string]bool)
+	maxRetries := cfg.NumNexthopPerNHG
+
+	entries := []fluent.GRIBIEntry{}
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+
+	for nhgIdx := 1; nhgIdx <= cfg.NumNexthopGroup; nhgIdx++ {
+		var key string
+		var indSlice []uint64
+		foundUnique := false
+
+		for retry := 0; retry < maxRetries; retry++ {
+			indSlice = generateRandomNHInd(cfg.NumNexthopPerNHG, totalNHsAvailable, r)
+
+			key = combinationKey(indSlice)
+			if !usedCombinations[key] {
+				usedCombinations[key] = true
+				foundUnique = true
+				break // Found a unique combination
+			}
+		}
+
+		if !foundUnique {
+			return nil, fmt.Errorf("failed to generate a unique NH combination for NHG ID %d after %d retries", nhgIdx, maxRetries)
+		}
+
+		nhgEntry := fluent.NextHopGroupEntry().
+			WithNetworkInstance(cfg.NetworkInstanceName).
+			WithID(uint64(nhgIdx))
+		for _, nhIndex := range indSlice {
+			nhgEntry.AddNextHop(nhIndex, 1)
+		}
+
+		entries = append(entries, nhgEntry)
+	}
+
+	return entries, nil
+}
+
 // GenerateScaleProfileEntries randomly generates fluent gRIBI entries based on ScaleProfileConfig in one network instance.
 func GenerateScaleProfileEntries(ctx context.Context, cfg *ScaleProfileConfig) ([]fluent.GRIBIEntry, error) {
 	// 1. Validation of the parameters.
@@ -119,14 +192,21 @@ func GenerateScaleProfileEntries(ctx context.Context, cfg *ScaleProfileConfig) (
 	}
 
 	// 2. Initialize basic information.
-	// Initialize the slice. Give it some capacity based on expected size.
 	entries := []fluent.GRIBIEntry{}
 
 	// 3. Generates next hops.
-	entries, err = populateNextHops(entries, cfg)
+	nhs, err := populateNextHops(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to populate next hops: %w", err)
 	}
+	entries = append(entries, nhs...)
+
+	// 4. Generates next hop groups.
+	nhgs, err := populateNextHopGroups(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to populate next hop groups: %w", err)
+	}
+	entries = append(entries, nhgs...)
 
 	return entries, nil
 }
