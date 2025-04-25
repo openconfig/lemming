@@ -12,4 +12,10 @@ go_test(
     name = "mpls_over_udp_scale_test",
     srcs = ["util_test.go"],
     embed = [":mpls_over_udp_scale"],
+    deps = [
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_openconfig_gribi//v1/proto/service",
+        "@com_github_openconfig_gribigo//fluent",
+        "@org_golang_google_protobuf//testing/protocmp",
+    ],
 )
