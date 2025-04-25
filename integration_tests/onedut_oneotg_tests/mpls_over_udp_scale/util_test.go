@@ -13,9 +13,10 @@ import (
 	"github.com/openconfig/lemming/gnmi/fakedevice"
 )
 
-// entriesToOperationProtos accepts a slice of entries and returns next hop proto messages and next hop group proto messages.
-func entriesToOperationProtos(t *testing.T, entries []fluent.GRIBIEntry) ([]*gribipb.AFTOperation, []*gribipb.AFTOperation) {
-	var nhs, nhgs []*gribipb.AFTOperation
+// entriesToOperationProtos accepts a slice of entries and returns next hop, next hop group, and prefix proto messages.
+func entriesToOperationProtos(t *testing.T, entries []fluent.GRIBIEntry) ([]*gribipb.AFTOperation, []*gribipb.AFTOperation, []*gribipb.AFTOperation) {
+	t.Helper()
+	var nhs, nhgs, prefixes []*gribipb.AFTOperation
 	for i, entry := range entries {
 		op, err := entry.OpProto()
 		if err != nil {
@@ -26,11 +27,13 @@ func entriesToOperationProtos(t *testing.T, entries []fluent.GRIBIEntry) ([]*gri
 			nhs = append(nhs, op)
 		case *gribipb.AFTOperation_NextHopGroup:
 			nhgs = append(nhgs, op)
+		case *gribipb.AFTOperation_Ipv4, *gribipb.AFTOperation_Ipv6:
+			prefixes = append(prefixes, op)
 		default:
 			// Ignore other types for now
 		}
 	}
-	return nhs, nhgs
+	return nhs, nhgs, prefixes
 }
 
 // TestGenerateScaleProfileEntries tests both validation and correct generation.
@@ -59,6 +62,7 @@ func TestGenerateScaleProfileEntries(t *testing.T) {
 		cfg               *ScaleProfileConfig
 		wantNHs           []fluent.GRIBIEntry
 		wantNHGs          []fluent.GRIBIEntry
+		wantV6Prefixes    []fluent.GRIBIEntry
 		wantTotalNHsAvail int
 		wantSubErrStr     string
 	}{
@@ -121,6 +125,16 @@ func TestGenerateScaleProfileEntries(t *testing.T) {
 					WithID(2).
 					AddNextHop(3, 1).AddNextHop(4, 2),
 			},
+			wantV6Prefixes: []fluent.GRIBIEntry{
+				fluent.IPv6Entry().
+					WithNetworkInstance(fakedevice.DefaultNetworkInstance).
+					WithPrefix("2001:db8::/64").
+					WithNextHopGroup(1),
+				fluent.IPv6Entry().
+					WithNetworkInstance(fakedevice.DefaultNetworkInstance).
+					WithPrefix("2001:db8::1/64").
+					WithNextHopGroup(2),
+			},
 		},
 		{
 			desc: "invalid NetworkInstanceName",
@@ -151,6 +165,78 @@ func TestGenerateScaleProfileEntries(t *testing.T) {
 				DstIP:               "2001:db8:f::2",
 			},
 			wantSubErrStr: "NumPrefixes",
+		},
+		{
+			desc: "invalid NumNexthopGroup",
+			cfg: &ScaleProfileConfig{
+				AddrFamily:          "ipv6",
+				NetworkInstanceName: fakedevice.DefaultNetworkInstance,
+				NumPrefixes:         1,
+				NumNexthopGroup:     0, // Invalid
+				NumNexthopPerNHG:    1,
+				PrefixStart:         "2001:db8::/64",
+				NexthopIPStart:      "2001:db8:1::1",
+				SrcIP:               "2001:db8:f::1",
+				DstIP:               "2001:db8:f::2",
+			},
+			wantSubErrStr: "NumNexthopGroup",
+		},
+		{
+			desc: "invalid NumNexthopPerNHG",
+			cfg: &ScaleProfileConfig{
+				AddrFamily:          "ipv6",
+				NetworkInstanceName: fakedevice.DefaultNetworkInstance,
+				NumPrefixes:         1,
+				NumNexthopGroup:     1,
+				NumNexthopPerNHG:    0, // Invalid
+				PrefixStart:         "2001:db8::/64",
+				NexthopIPStart:      "2001:db8:1::1",
+				SrcIP:               "2001:db8:f::1",
+				DstIP:               "2001:db8:f::2",
+			},
+			wantSubErrStr: "NumNexthopPerNHG",
+		},
+		{
+			desc: "invalid AddrFamily",
+			cfg: &ScaleProfileConfig{
+				AddrFamily:          "ipv4", // Invalid
+				NetworkInstanceName: fakedevice.DefaultNetworkInstance,
+				NumPrefixes:         1,
+				NumNexthopGroup:     1,
+				NumNexthopPerNHG:    1,
+				PrefixStart:         "2001:db8::/64",
+				NexthopIPStart:      "2001:db8:1::1",
+				SrcIP:               "2001:db8:f::1",
+				DstIP:               "2001:db8:f::2",
+			},
+			wantSubErrStr: "AddrFamily",
+		},
+		{
+			desc: "invalid PrefixStart",
+			cfg: &ScaleProfileConfig{
+				AddrFamily:          "ipv6",
+				NetworkInstanceName: fakedevice.DefaultNetworkInstance,
+				NumPrefixes:         10,
+				NumNexthopGroup:     10,
+				NumNexthopPerNHG:    1,
+				PrefixStart:         "2001:db8:::::/64", // Invalid
+				NexthopIPStart:      "2001:db8:1::1",
+				SrcIP:               "2001:db8:f::1",
+				DstIP:               "2001:db8:f::2",
+			},
+			wantSubErrStr: "invalid PrefixStart",
+		},
+		{
+			desc: "addr family mismatch",
+			cfg: &ScaleProfileConfig{
+				AddrFamily:          "ipv6",
+				NetworkInstanceName: fakedevice.DefaultNetworkInstance,
+				NumPrefixes:         10, NumNexthopGroup: 10, NumNexthopPerNHG: 1,
+				PrefixStart:    "192.0.2.0/24",
+				NexthopIPStart: "2001:db8:1::1",
+				UDPSrcPort:     5000, UDPDstPort: 6000, SrcIP: "::1", DstIP: "::2",
+			},
+			wantSubErrStr: "AddrFamily \"ipv6\" does not match PrefixStart",
 		},
 		{
 			desc: "invalid NexthopIPStart",
@@ -195,9 +281,16 @@ func TestGenerateScaleProfileEntries(t *testing.T) {
 				t.Errorf("Got error %v, want substring %s", err.Error(), tt.wantSubErrStr)
 			}
 
-			gotnhs, gotnhgs := entriesToOperationProtos(t, got)
-			wantnhs, _ := entriesToOperationProtos(t, tt.wantNHs)
-			_, wantnhgs := entriesToOperationProtos(t, tt.wantNHGs)
+			gotnhs, gotnhgs, gotPrefixes := entriesToOperationProtos(t, got)
+			wantnhs, _, _ := entriesToOperationProtos(t, tt.wantNHs)
+			_, wantnhgs, _ := entriesToOperationProtos(t, tt.wantNHGs)
+			var wantPrefixes []*gribipb.AFTOperation
+			switch tt.cfg.AddrFamily {
+			case "ipv6":
+				_, _, wantPrefixes = entriesToOperationProtos(t, tt.wantV6Prefixes)
+			case "ipv4":
+				// TODO: add support for fluent first.
+			}
 
 			if diff := cmp.Diff(gotnhs, wantnhs, protocmp.Transform()); diff != "" {
 				t.Errorf("GenerateScaleProfileEntries() returned unexpected NH proto diff (-got +want):\n%s", diff)
@@ -236,6 +329,10 @@ func TestGenerateScaleProfileEntries(t *testing.T) {
 			}
 			if diff := cmp.Diff(gotnhgs, wantnhgs, protocmp.Transform()); diff != "" {
 				t.Errorf("GenerateScaleProfileEntries() returned unexpected NHG proto diff (-got +want):\n%s", diff)
+			}
+
+			if diff := cmp.Diff(gotPrefixes, wantPrefixes, protocmp.Transform()); diff != "" {
+				t.Errorf("GenerateScaleProfileEntries() returned unexpected Prefixes proto diff (-got +want):\n%s", diff)
 			}
 		})
 	}

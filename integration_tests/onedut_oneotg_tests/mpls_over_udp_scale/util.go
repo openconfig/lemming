@@ -17,7 +17,7 @@ import (
 // ScaleProfileConfig defines the parameters for generating gRIBI entries for a specific scale profile.
 type ScaleProfileConfig struct {
 	// Common parameters
-	AddrFamily          string // "ipv4" or "ipv6"
+	AddrFamily          string // "ipv6"
 	NetworkInstanceName string // Network instance name. Required.
 	NumPrefixes         int    // Total number of IP prefixes (AFT entries) to generate
 	NumNexthopGroup     int    // Total number of Next Hop Groups (NHGs) to generate
@@ -70,7 +70,7 @@ func populateNextHops(cfg *ScaleProfileConfig) ([]fluent.GRIBIEntry, error) {
 			WithIPAddress(nhIPStr).
 			AddEncapHeader(
 				fluent.MPLSEncapHeader().WithLabels(mplsLabel),
-				// NOTE: fluent currently doesn't support UDPV4 encap header builder.
+				// TODO: fluent currently doesn't support UDPV4 encap header builder. Support fluent.UDPV4EncapHeader to allow ipv4 support here.
 				fluent.UDPV6EncapHeader().
 					WithDstUDPPort(cfg.UDPDstPort).
 					WithSrcUDPPort(cfg.UDPSrcPort).
@@ -120,7 +120,7 @@ func populateNextHopGroups(cfg *ScaleProfileConfig) ([]fluent.GRIBIEntry, error)
 	totalNHsAvailable := cfg.NumNexthopPerNHG * cfg.NumNexthopGroup
 
 	usedCombinations := make(map[string]bool)
-	maxRetries := cfg.NumNexthopPerNHG
+	maxRetries := max(cfg.NumNexthopPerNHG, 20)
 
 	entries := []fluent.GRIBIEntry{}
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -158,6 +158,59 @@ func populateNextHopGroups(cfg *ScaleProfileConfig) ([]fluent.GRIBIEntry, error)
 	return entries, nil
 }
 
+// populatePrefixes generates IPv4 or IPv6 entries based on the configuration.
+func populatePrefixes(cfg *ScaleProfileConfig) ([]fluent.GRIBIEntry, error) {
+    entries := []fluent.GRIBIEntry{}
+
+    startPrefix, err := netip.ParsePrefix(cfg.PrefixStart)
+    if err != nil {
+        // This should ideally not happen due to prior validation
+        return nil, fmt.Errorf("internal error: failed to parse PrefixStart %q: %w", cfg.PrefixStart, err)
+    }
+
+    currentPrefix := startPrefix
+    originalBits := startPrefix.Bits()
+
+    for i := 0; i < cfg.NumPrefixes; i++ {
+        prefixStr := currentPrefix.String()
+        // Assign NHG ID in a round-robin fashion
+        nhgID := uint64(i%cfg.NumNexthopGroup + 1)
+
+        var entry fluent.GRIBIEntry
+        switch cfg.AddrFamily {
+        case "ipv6":
+            entry = fluent.IPv6Entry().
+                WithNetworkInstance(cfg.NetworkInstanceName).
+                WithPrefix(prefixStr).
+                WithNextHopGroup(nhgID)
+        case "ipv4":
+            // TODO: Add fluent.UDPV4EncapHeader() support first.
+            return nil, fmt.Errorf("ipv4 entry generation not yet implemented")
+        default:
+            // Should not happen due to validation
+            return nil, fmt.Errorf("internal error: unsupported AddrFamily %q", cfg.AddrFamily)
+        }
+        entries = append(entries, entry)
+
+        if i < cfg.NumPrefixes-1 {
+            addr := currentPrefix.Addr()
+            nextAddr := addr.Next()
+
+            if !nextAddr.IsValid() {
+                return nil, fmt.Errorf("ran out of valid IP addresses after generating %d prefixes, starting from %s", i+1, cfg.PrefixStart)
+            }
+            if nextAddr == startPrefix.Addr() {
+                return nil, fmt.Errorf("prefix generation wrapped around back to the start address %s after %d prefixes; address space likely too small for %d prefixes", startPrefix.Addr(), i+1, cfg.NumPrefixes)
+            }
+
+            // Create the next prefix using the next sequential address and the original prefix length.
+            currentPrefix = netip.PrefixFrom(nextAddr, originalBits)
+        }
+    }
+
+    return entries, nil
+}
+
 // GenerateScaleProfileEntries randomly generates fluent gRIBI entries based on ScaleProfileConfig in one network instance.
 func GenerateScaleProfileEntries(ctx context.Context, cfg *ScaleProfileConfig) ([]fluent.GRIBIEntry, error) {
 	// 1. Validation of the parameters.
@@ -173,14 +226,14 @@ func GenerateScaleProfileEntries(ctx context.Context, cfg *ScaleProfileConfig) (
 	if cfg.NumNexthopPerNHG <= 0 {
 		return nil, errors.New("NumNexthopPerNHG must be positive")
 	}
-	if cfg.AddrFamily != "ipv4" && cfg.AddrFamily != "ipv6" {
-		return nil, fmt.Errorf("invalid AddrFamily: %q, must be 'ipv4' or 'ipv6'", cfg.AddrFamily)
+	if cfg.AddrFamily != "ipv6" {
+		return nil, fmt.Errorf("invalid AddrFamily: %q, must be 'ipv6'", cfg.AddrFamily)
 	}
 	prefixAddr, err := netip.ParsePrefix(cfg.PrefixStart)
 	if err != nil {
 		return nil, fmt.Errorf("invalid PrefixStart %q: %w", cfg.PrefixStart, err)
 	}
-	if (cfg.AddrFamily == "ipv4" && !prefixAddr.Addr().Is4()) || (cfg.AddrFamily == "ipv6" && !prefixAddr.Addr().Is6()) {
+	if cfg.AddrFamily == "ipv6" && !prefixAddr.Addr().Is6() {
 		return nil, fmt.Errorf("AddrFamily %q does not match PrefixStart %q", cfg.AddrFamily, cfg.PrefixStart)
 	}
 	_, err = netip.ParseAddr(cfg.NexthopIPStart)
@@ -208,5 +261,11 @@ func GenerateScaleProfileEntries(ctx context.Context, cfg *ScaleProfileConfig) (
 	}
 	entries = append(entries, nhgs...)
 
+	// 5. Generates prefixes (AFT entries).
+	prefixEntries, err := populatePrefixes(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to populate prefixes: %w", err)
+	}
+	entries = append(entries, prefixEntries...)
 	return entries, nil
 }
