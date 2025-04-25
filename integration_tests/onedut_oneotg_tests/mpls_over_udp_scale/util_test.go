@@ -1,4 +1,3 @@
-// google3/path/to/util_test.go
 package mplsoverudpscale
 
 import (
@@ -10,16 +9,38 @@ import (
 	gribipb "github.com/openconfig/gribi/v1/proto/service"
 	"github.com/openconfig/gribigo/fluent"
 	"google.golang.org/protobuf/testing/protocmp"
+
+	"github.com/openconfig/lemming/gnmi/fakedevice"
 )
+
+// entriesToOperationProtos accepts a slice of entries and returns next hop proto messages and next hop group proto messages.
+func entriesToOperationProtos(t *testing.T, entries []fluent.GRIBIEntry) ([]*gribipb.AFTOperation, []*gribipb.AFTOperation) {
+	var nhs, nhgs []*gribipb.AFTOperation
+	for i, entry := range entries {
+		op, err := entry.OpProto()
+		if err != nil {
+			t.Fatalf("Failed to build entry #%d: %v", i, err)
+		}
+		switch op.Entry.(type) {
+		case *gribipb.AFTOperation_NextHop:
+			nhs = append(nhs, op)
+		case *gribipb.AFTOperation_NextHopGroup:
+			nhgs = append(nhgs, op)
+		default:
+			// Ignore other types for now
+		}
+	}
+	return nhs, nhgs
+}
 
 // TestGenerateScaleProfileEntries tests both validation and correct generation.
 func TestGenerateScaleProfileEntries(t *testing.T) {
 	// Define a valid config with specific encap details for the 'want' case
 	validCfg := &ScaleProfileConfig{
 		AddrFamily:          "ipv6",
-		NetworkInstanceName: "DEFAULT",
+		NetworkInstanceName: fakedevice.DefaultNetworkInstance,
 		NumPrefixes:         2,
-		NumNexthopGroup:     1,
+		NumNexthopGroup:     2,
 		NumNexthopPerNHG:    2,
 		PrefixStart:         "2001:db8::/64",
 		NexthopIPStart:      "2001:db8:1::1",
@@ -33,42 +54,73 @@ func TestGenerateScaleProfileEntries(t *testing.T) {
 		IPTTL:               64,
 	}
 
-	wantValidEntries := []fluent.GRIBIEntry{
-		fluent.NextHopEntry().
-			WithNetworkInstance("DEFAULT").
-			WithIndex(1).
-			WithIPAddress("2001:db8:1::1").
-			AddEncapHeader(
-				fluent.MPLSEncapHeader().WithLabels(100),
-				fluent.UDPV6EncapHeader().
-					WithDstUDPPort(6000).WithSrcUDPPort(5000).
-					WithSrcIP("2001:db8:f::1").WithDstIP("2001:db8:f::2").
-					WithDSCP(46).WithIPTTL(64),
-			),
-		fluent.NextHopEntry().
-			WithNetworkInstance("DEFAULT").
-			WithIndex(2).
-			WithIPAddress("2001:db8:1::2").
-			AddEncapHeader(
-				fluent.MPLSEncapHeader().WithLabels(100),
-				fluent.UDPV6EncapHeader().
-					WithDstUDPPort(6000).WithSrcUDPPort(5000).
-					WithSrcIP("2001:db8:f::1").WithDstIP("2001:db8:f::2").
-					WithDSCP(46).WithIPTTL(64),
-			),
-		// TODO: Add expected NHG and AFT entries once implemented
-	}
-
 	tests := []struct {
-		desc          string
-		cfg           *ScaleProfileConfig
-		want          []fluent.GRIBIEntry
-		wantSubErrStr string
+		desc              string
+		cfg               *ScaleProfileConfig
+		wantNHs           []fluent.GRIBIEntry
+		wantNHGs          []fluent.GRIBIEntry
+		wantTotalNHsAvail int
+		wantSubErrStr     string
 	}{
 		{
 			desc: "valid config",
 			cfg:  validCfg,
-			want: wantValidEntries,
+			wantNHs: []fluent.GRIBIEntry{
+				fluent.NextHopEntry().
+					WithNetworkInstance(fakedevice.DefaultNetworkInstance).
+					WithIndex(1).
+					WithIPAddress("2001:db8:1::1").
+					AddEncapHeader(
+						fluent.MPLSEncapHeader().WithLabels(100),
+						fluent.UDPV6EncapHeader().
+							WithDstUDPPort(6000).WithSrcUDPPort(5000).
+							WithSrcIP("2001:db8:f::1").WithDstIP("2001:db8:f::2").
+							WithDSCP(46).WithIPTTL(64),
+					),
+				fluent.NextHopEntry().
+					WithNetworkInstance(fakedevice.DefaultNetworkInstance).
+					WithIndex(2).
+					WithIPAddress("2001:db8:1::2").
+					AddEncapHeader(
+						fluent.MPLSEncapHeader().WithLabels(100),
+						fluent.UDPV6EncapHeader().
+							WithDstUDPPort(6000).WithSrcUDPPort(5000).
+							WithSrcIP("2001:db8:f::1").WithDstIP("2001:db8:f::2").
+							WithDSCP(46).WithIPTTL(64),
+					),
+				fluent.NextHopEntry().
+					WithNetworkInstance(fakedevice.DefaultNetworkInstance).
+					WithIndex(3).
+					WithIPAddress("2001:db8:1::3").
+					AddEncapHeader(
+						fluent.MPLSEncapHeader().WithLabels(100),
+						fluent.UDPV6EncapHeader().
+							WithDstUDPPort(6000).WithSrcUDPPort(5000).
+							WithSrcIP("2001:db8:f::1").WithDstIP("2001:db8:f::2").
+							WithDSCP(46).WithIPTTL(64),
+					),
+				fluent.NextHopEntry().
+					WithNetworkInstance(fakedevice.DefaultNetworkInstance).
+					WithIndex(4).
+					WithIPAddress("2001:db8:1::4").
+					AddEncapHeader(
+						fluent.MPLSEncapHeader().WithLabels(100),
+						fluent.UDPV6EncapHeader().
+							WithDstUDPPort(6000).WithSrcUDPPort(5000).
+							WithSrcIP("2001:db8:f::1").WithDstIP("2001:db8:f::2").
+							WithDSCP(46).WithIPTTL(64),
+					),
+			},
+			wantNHGs: []fluent.GRIBIEntry{
+				fluent.NextHopGroupEntry().
+					WithNetworkInstance(fakedevice.DefaultNetworkInstance).
+					WithID(1).
+					AddNextHop(1, 1).AddNextHop(2, 2),
+				fluent.NextHopGroupEntry().
+					WithNetworkInstance(fakedevice.DefaultNetworkInstance).
+					WithID(2).
+					AddNextHop(3, 1).AddNextHop(4, 2),
+			},
 		},
 		{
 			desc: "invalid NetworkInstanceName",
@@ -89,7 +141,7 @@ func TestGenerateScaleProfileEntries(t *testing.T) {
 			desc: "invalid NumPrefixes",
 			cfg: &ScaleProfileConfig{
 				AddrFamily:          "ipv6",
-				NetworkInstanceName: "DEFAULT",
+				NetworkInstanceName: fakedevice.DefaultNetworkInstance,
 				NumPrefixes:         0, // Invalid
 				NumNexthopGroup:     10,
 				NumNexthopPerNHG:    1,
@@ -100,12 +152,11 @@ func TestGenerateScaleProfileEntries(t *testing.T) {
 			},
 			wantSubErrStr: "NumPrefixes",
 		},
-		// ... other validation error test cases ...
 		{
 			desc: "invalid NexthopIPStart",
 			cfg: &ScaleProfileConfig{
 				AddrFamily:          "ipv6",
-				NetworkInstanceName: "DEFAULT",
+				NetworkInstanceName: fakedevice.DefaultNetworkInstance,
 				NumPrefixes:         10,
 				NumNexthopGroup:     10,
 				NumNexthopPerNHG:    1,
@@ -120,7 +171,7 @@ func TestGenerateScaleProfileEntries(t *testing.T) {
 			desc: "missing SrcIP",
 			cfg: &ScaleProfileConfig{
 				AddrFamily:          "ipv6",
-				NetworkInstanceName: "DEFAULT",
+				NetworkInstanceName: fakedevice.DefaultNetworkInstance,
 				NumPrefixes:         10,
 				NumNexthopGroup:     10,
 				NumNexthopPerNHG:    1,
@@ -143,30 +194,49 @@ func TestGenerateScaleProfileEntries(t *testing.T) {
 			if err != nil && !strings.Contains(err.Error(), tt.wantSubErrStr) {
 				t.Errorf("Got error %v, want substring %s", err.Error(), tt.wantSubErrStr)
 			}
-			// Build protos from fluent entries for comparison
-			var wantProtos []*gribipb.AFTOperation
-			for i, entry := range tt.want {
-				op, buildErr := entry.OpProto()
-				if buildErr != nil {
-					t.Fatalf("Failed to build wantEntry #%d: %v", i, buildErr)
-				}
-				wantProtos = append(wantProtos, op)
+
+			gotnhs, gotnhgs := entriesToOperationProtos(t, got)
+			wantnhs, _ := entriesToOperationProtos(t, tt.wantNHs)
+			_, wantnhgs := entriesToOperationProtos(t, tt.wantNHGs)
+
+			if diff := cmp.Diff(gotnhs, wantnhs, protocmp.Transform()); diff != "" {
+				t.Errorf("GenerateScaleProfileEntries() returned unexpected NH proto diff (-got +want):\n%s", diff)
 			}
 
-			var gotProtos []*gribipb.AFTOperation
-			for i, entry := range got {
-				op, buildErr := entry.OpProto()
-				if buildErr != nil {
-					t.Fatalf("Failed to build gotEntry #%d: %v", i, buildErr)
+			if len(gotnhgs) != len(tt.wantNHGs) {
+				t.Errorf("Got %d NHG entries, want %d", len(gotnhgs), len(tt.wantNHGs))
+			}
+			gotUniqueNHMap := make(map[string]bool)
+			wantUniqueNHMap := make(map[string]bool)
+			var gotNHInds, wantNHInds []uint64
+			for i, nhgOp := range gotnhgs {
+				// if nhgOp.GetId() != wantnhgs[i].GetId() {
+				// 	t.Errorf("Got ID %v, want %v", gotnhgs[i].GetId(), wantnhgs[i].GetId())
+				// }
+				nhg := nhgOp.GetNextHopGroup().GetNextHopGroup()
+				wantnhg := wantnhgs[i].GetNextHopGroup().GetNextHopGroup()
+				wantnhs := wantnhg.GetNextHop()
+				if len(nhg.GetNextHop()) != len(wantnhg.GetNextHop()) {
+					t.Errorf("Got %d next hops , want %d", len(nhg.GetNextHop()), len(wantnhg.GetNextHop()))
 				}
-				gotProtos = append(gotProtos, op)
-			}
+				for i, nh := range nhg.GetNextHop() {
+					gotNHInds = append(gotNHInds, nh.GetIndex())
+					wantNHInds = append(wantNHInds, wantnhs[i].GetIndex())
+					gotKey := combinationKey(gotNHInds)
+					wantKey := combinationKey(wantNHInds)
+					gotUniqueNHMap[gotKey] = true
+					wantUniqueNHMap[wantKey] = true
+				}
+				if len(gotUniqueNHMap) != len(wantUniqueNHMap) {
+					t.Errorf("Got length of unique NH map: %d, want %d", len(gotUniqueNHMap), len(wantUniqueNHMap))
+				}
 
-			if diff := cmp.Diff(gotProtos, wantProtos, protocmp.Transform()); diff != "" {
-				t.Logf("Got entries (fluent):\n%v", got)
-				t.Errorf("GenerateScaleProfileEntries() returned unexpected proto diff (-got +want):\n%s", diff)
+				nhg.NextHop = nil
+				wantnhg.NextHop = nil
 			}
-			t.Logf("Got %v", got)
+			if diff := cmp.Diff(gotnhgs, wantnhgs, protocmp.Transform()); diff != "" {
+				t.Errorf("GenerateScaleProfileEntries() returned unexpected NHG proto diff (-got +want):\n%s", diff)
+			}
 		})
 	}
 }
