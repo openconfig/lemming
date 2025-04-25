@@ -37,17 +37,17 @@ type ScaleProfileConfig struct {
 	IPTTL      uint64
 }
 
-// populateNextHops generates NextHop entries and appends them to the entries slice.
-func populateNextHops(entries []fluent.GRIBIEntry, cfg *ScaleProfileConfig) error {
+// populateNextHops generates NextHop entries and returns the updated slice.
+func populateNextHops(entries []fluent.GRIBIEntry, cfg *ScaleProfileConfig) ([]fluent.GRIBIEntry, error) {
 	totalNextHops := cfg.NumNexthopPerNHG * cfg.NumNexthopGroup
 	if totalNextHops <= 0 {
-		return nil
+		return entries, nil
 	}
 
 	startNHIP, err := netip.ParseAddr(cfg.NexthopIPStart)
 	if err != nil {
 		// This should ideally not happen due to prior validation in GenerateScaleProfileEntries
-		return fmt.Errorf("internal error: failed to parse NexthopIPStart %q: %w", cfg.NexthopIPStart, err)
+		return nil, fmt.Errorf("internal error: failed to parse NexthopIPStart %q: %w", cfg.NexthopIPStart, err)
 	}
 
 	currentNHIP := startNHIP
@@ -64,7 +64,6 @@ func populateNextHops(entries []fluent.GRIBIEntry, cfg *ScaleProfileConfig) erro
 			WithIPAddress(nhIPStr).
 			AddEncapHeader(
 				fluent.MPLSEncapHeader().WithLabels(mplsLabel),
-				// Add the UDPv6 encapsulation header
 				// NOTE: fluent currently doesn't support UDPV4 encap header builder.
 				fluent.UDPV6EncapHeader().
 					WithDstUDPPort(cfg.UDPDstPort).
@@ -77,13 +76,13 @@ func populateNextHops(entries []fluent.GRIBIEntry, cfg *ScaleProfileConfig) erro
 
 		entries = append(entries, nhEntry)
 
-		// Increment IP for the next iteration
 		currentNHIP = currentNHIP.Next()
 		if !currentNHIP.IsValid() {
-			currentNHIP = startNHIP
+			// This logic might need refinement depending on expected IP range behavior
+			return nil, fmt.Errorf("ran out of valid IP addresses starting from %s", cfg.NexthopIPStart)
 		}
 	}
-	return nil
+	return entries, nil // Return the modified slice
 }
 
 // GenerateScaleProfileEntries randomly generates fluent gRIBI entries based on ScaleProfileConfig in one network instance.
@@ -115,13 +114,17 @@ func GenerateScaleProfileEntries(ctx context.Context, cfg *ScaleProfileConfig) (
 	if err != nil {
 		return nil, fmt.Errorf("invalid NexthopIPStart %q: %w", cfg.NexthopIPStart, err)
 	}
+	if cfg.SrcIP == "" || cfg.DstIP == "" {
+		return nil, errors.New("SrcIP and DstIP for encapsulation must be provided")
+	}
 
 	// 2. Initialize basic information.
 	// Initialize the slice. Give it some capacity based on expected size.
 	entries := []fluent.GRIBIEntry{}
 
 	// 3. Generates next hops.
-	if err := populateNextHops(entries, cfg); err != nil {
+	entries, err = populateNextHops(entries, cfg)
+	if err != nil {
 		return nil, fmt.Errorf("failed to populate next hops: %w", err)
 	}
 
