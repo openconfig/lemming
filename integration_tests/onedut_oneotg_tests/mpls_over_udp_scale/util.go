@@ -37,7 +37,8 @@ type ScaleProfileConfig struct {
 	UDPSrcPort uint64
 	UDPDstPort uint64
 	SrcIP      string
-	DstIP      string
+	DstIPStart string
+	NumDstIP   int
 	DSCP       uint64
 	IPTTL      uint64
 }
@@ -54,6 +55,25 @@ func populateNextHops(cfg *ScaleProfileConfig) ([]fluent.GRIBIEntry, error) {
 	if err != nil {
 		// This should ideally not happen due to prior validation in GenerateScaleProfileEntries
 		return nil, fmt.Errorf("internal error: failed to parse NexthopIPStart %q: %w", cfg.NexthopIPStart, err)
+	}
+
+	// Generate Destination IPs for Encap Header
+	dstIPs := []string{}
+	if cfg.NumDstIP > 0 {
+		startDstIP, err := netip.ParseAddr(cfg.DstIPStart)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse DstIPStart %q: %w", cfg.DstIPStart, err)
+		}
+		currentDstIP := startDstIP
+		for i := 0; i < cfg.NumDstIP; i++ {
+			if !currentDstIP.IsValid() {
+				return nil, fmt.Errorf("ran out of valid destination IP addresses starting from %s after %d IPs", cfg.DstIPStart, i)
+			}
+			dstIPs = append(dstIPs, currentDstIP.String())
+			currentDstIP = currentDstIP.Next()
+		}
+	} else {
+		return nil, errors.New("NumDstIP must be positive to generate destination IPs")
 	}
 
 	currentNHIP := startNHIP
@@ -75,7 +95,7 @@ func populateNextHops(cfg *ScaleProfileConfig) ([]fluent.GRIBIEntry, error) {
 					WithDstUDPPort(cfg.UDPDstPort).
 					WithSrcUDPPort(cfg.UDPSrcPort).
 					WithSrcIP(cfg.SrcIP).
-					WithDstIP(cfg.DstIP).
+					WithDstIP(dstIPs[(i-1)%cfg.NumDstIP]).
 					WithDSCP(cfg.DSCP).
 					WithIPTTL(cfg.IPTTL),
 			)
@@ -85,7 +105,7 @@ func populateNextHops(cfg *ScaleProfileConfig) ([]fluent.GRIBIEntry, error) {
 		currentNHIP = currentNHIP.Next()
 		if !currentNHIP.IsValid() {
 			// This logic might need refinement depending on expected IP range behavior
-			return nil, fmt.Errorf("ran out of valid IP addresses starting from %s", cfg.NexthopIPStart)
+			return nil, fmt.Errorf("ran out of valid next hop IP addresses starting from %s", cfg.NexthopIPStart)
 		}
 	}
 	return entries, nil // Return the modified slice
@@ -160,55 +180,55 @@ func populateNextHopGroups(cfg *ScaleProfileConfig) ([]fluent.GRIBIEntry, error)
 
 // populatePrefixes generates IPv4 or IPv6 entries based on the configuration.
 func populatePrefixes(cfg *ScaleProfileConfig) ([]fluent.GRIBIEntry, error) {
-    entries := []fluent.GRIBIEntry{}
+	entries := []fluent.GRIBIEntry{}
 
-    startPrefix, err := netip.ParsePrefix(cfg.PrefixStart)
-    if err != nil {
-        // This should ideally not happen due to prior validation
-        return nil, fmt.Errorf("internal error: failed to parse PrefixStart %q: %w", cfg.PrefixStart, err)
-    }
+	startPrefix, err := netip.ParsePrefix(cfg.PrefixStart)
+	if err != nil {
+		// This should ideally not happen due to prior validation
+		return nil, fmt.Errorf("internal error: failed to parse PrefixStart %q: %w", cfg.PrefixStart, err)
+	}
 
-    currentPrefix := startPrefix
-    originalBits := startPrefix.Bits()
+	currentPrefix := startPrefix
+	originalBits := startPrefix.Bits()
 
-    for i := 0; i < cfg.NumPrefixes; i++ {
-        prefixStr := currentPrefix.String()
-        // Assign NHG ID in a round-robin fashion
-        nhgID := uint64(i%cfg.NumNexthopGroup + 1)
+	for i := 0; i < cfg.NumPrefixes; i++ {
+		prefixStr := currentPrefix.String()
+		// Assign NHG ID in a round-robin fashion
+		nhgID := uint64(i%cfg.NumNexthopGroup + 1)
 
-        var entry fluent.GRIBIEntry
-        switch cfg.AddrFamily {
-        case "ipv6":
-            entry = fluent.IPv6Entry().
-                WithNetworkInstance(cfg.NetworkInstanceName).
-                WithPrefix(prefixStr).
-                WithNextHopGroup(nhgID)
-        case "ipv4":
-            // TODO: Add fluent.UDPV4EncapHeader() support first.
-            return nil, fmt.Errorf("ipv4 entry generation not yet implemented")
-        default:
-            // Should not happen due to validation
-            return nil, fmt.Errorf("internal error: unsupported AddrFamily %q", cfg.AddrFamily)
-        }
-        entries = append(entries, entry)
+		var entry fluent.GRIBIEntry
+		switch cfg.AddrFamily {
+		case "ipv6":
+			entry = fluent.IPv6Entry().
+				WithNetworkInstance(cfg.NetworkInstanceName).
+				WithPrefix(prefixStr).
+				WithNextHopGroup(nhgID)
+		case "ipv4":
+			// TODO: Add fluent.UDPV4EncapHeader() support first.
+			return nil, fmt.Errorf("ipv4 entry generation not yet implemented")
+		default:
+			// Should not happen due to validation
+			return nil, fmt.Errorf("internal error: unsupported AddrFamily %q", cfg.AddrFamily)
+		}
+		entries = append(entries, entry)
 
-        if i < cfg.NumPrefixes-1 {
-            addr := currentPrefix.Addr()
-            nextAddr := addr.Next()
+		if i < cfg.NumPrefixes-1 {
+			addr := currentPrefix.Addr()
+			nextAddr := addr.Next()
 
-            if !nextAddr.IsValid() {
-                return nil, fmt.Errorf("ran out of valid IP addresses after generating %d prefixes, starting from %s", i+1, cfg.PrefixStart)
-            }
-            if nextAddr == startPrefix.Addr() {
-                return nil, fmt.Errorf("prefix generation wrapped around back to the start address %s after %d prefixes; address space likely too small for %d prefixes", startPrefix.Addr(), i+1, cfg.NumPrefixes)
-            }
+			if !nextAddr.IsValid() {
+				return nil, fmt.Errorf("ran out of valid IP addresses after generating %d prefixes, starting from %s", i+1, cfg.PrefixStart)
+			}
+			if nextAddr == startPrefix.Addr() {
+				return nil, fmt.Errorf("prefix generation wrapped around back to the start address %s after %d prefixes; address space likely too small for %d prefixes", startPrefix.Addr(), i+1, cfg.NumPrefixes)
+			}
 
-            // Create the next prefix using the next sequential address and the original prefix length.
-            currentPrefix = netip.PrefixFrom(nextAddr, originalBits)
-        }
-    }
+			// Create the next prefix using the next sequential address and the original prefix length.
+			currentPrefix = netip.PrefixFrom(nextAddr, originalBits)
+		}
+	}
 
-    return entries, nil
+	return entries, nil
 }
 
 // GenerateScaleProfileEntries randomly generates fluent gRIBI entries based on ScaleProfileConfig in one network instance.
@@ -227,6 +247,7 @@ func GenerateScaleProfileEntries(ctx context.Context, cfg *ScaleProfileConfig) (
 		return nil, errors.New("NumNexthopPerNHG must be positive")
 	}
 	if cfg.AddrFamily != "ipv6" {
+		// TODO: Support ipv4 when fluent.UDPV4EncapHeader is available
 		return nil, fmt.Errorf("invalid AddrFamily: %q, must be 'ipv6'", cfg.AddrFamily)
 	}
 	prefixAddr, err := netip.ParsePrefix(cfg.PrefixStart)
@@ -240,8 +261,18 @@ func GenerateScaleProfileEntries(ctx context.Context, cfg *ScaleProfileConfig) (
 	if err != nil {
 		return nil, fmt.Errorf("invalid NexthopIPStart %q: %w", cfg.NexthopIPStart, err)
 	}
-	if cfg.SrcIP == "" || cfg.DstIP == "" {
-		return nil, errors.New("SrcIP and DstIP for encapsulation must be provided")
+	if cfg.SrcIP == "" {
+		return nil, errors.New("SrcIP for encapsulation must be provided")
+	}
+	if cfg.DstIPStart == "" {
+		return nil, errors.New("DstIPStart for encapsulation must be provided")
+	}
+	if cfg.NumDstIP <= 0 {
+		return nil, errors.New("NumDstIP must be positive")
+	}
+	_, err = netip.ParseAddr(cfg.DstIPStart)
+	if err != nil {
+		return nil, fmt.Errorf("invalid DstIPStart %q: %w", cfg.DstIPStart, err)
 	}
 
 	// 2. Initialize basic information.

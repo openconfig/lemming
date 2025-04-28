@@ -52,7 +52,8 @@ func TestGenerateScaleProfileEntries(t *testing.T) {
 		UDPSrcPort:          5000,
 		UDPDstPort:          6000,
 		SrcIP:               "2001:db8:f::1",
-		DstIP:               "2001:db8:f::2",
+		DstIPStart:          "2001:db8:d::1",
+		NumDstIP:            2,
 		DSCP:                46,
 		IPTTL:               64,
 	}
@@ -78,7 +79,7 @@ func TestGenerateScaleProfileEntries(t *testing.T) {
 						fluent.MPLSEncapHeader().WithLabels(100),
 						fluent.UDPV6EncapHeader().
 							WithDstUDPPort(6000).WithSrcUDPPort(5000).
-							WithSrcIP("2001:db8:f::1").WithDstIP("2001:db8:f::2").
+							WithSrcIP("2001:db8:f::1").WithDstIP("2001:db8:d::1").
 							WithDSCP(46).WithIPTTL(64),
 					),
 				fluent.NextHopEntry().
@@ -89,7 +90,7 @@ func TestGenerateScaleProfileEntries(t *testing.T) {
 						fluent.MPLSEncapHeader().WithLabels(100),
 						fluent.UDPV6EncapHeader().
 							WithDstUDPPort(6000).WithSrcUDPPort(5000).
-							WithSrcIP("2001:db8:f::1").WithDstIP("2001:db8:f::2").
+							WithSrcIP("2001:db8:f::1").WithDstIP("2001:db8:d::2").
 							WithDSCP(46).WithIPTTL(64),
 					),
 				fluent.NextHopEntry().
@@ -100,7 +101,7 @@ func TestGenerateScaleProfileEntries(t *testing.T) {
 						fluent.MPLSEncapHeader().WithLabels(100),
 						fluent.UDPV6EncapHeader().
 							WithDstUDPPort(6000).WithSrcUDPPort(5000).
-							WithSrcIP("2001:db8:f::1").WithDstIP("2001:db8:f::2").
+							WithSrcIP("2001:db8:f::1").WithDstIP("2001:db8:d::1").
 							WithDSCP(46).WithIPTTL(64),
 					),
 				fluent.NextHopEntry().
@@ -111,7 +112,7 @@ func TestGenerateScaleProfileEntries(t *testing.T) {
 						fluent.MPLSEncapHeader().WithLabels(100),
 						fluent.UDPV6EncapHeader().
 							WithDstUDPPort(6000).WithSrcUDPPort(5000).
-							WithSrcIP("2001:db8:f::1").WithDstIP("2001:db8:f::2").
+							WithSrcIP("2001:db8:f::1").WithDstIP("2001:db8:d::2").
 							WithDSCP(46).WithIPTTL(64),
 					),
 			},
@@ -147,7 +148,8 @@ func TestGenerateScaleProfileEntries(t *testing.T) {
 				PrefixStart:         "2001:db8::/64",
 				NexthopIPStart:      "2001:db8:1::1",
 				SrcIP:               "2001:db8:f::1",
-				DstIP:               "2001:db8:f::2",
+				DstIPStart:          "2001:db8:d::1",
+				NumDstIP:            1,
 			},
 			wantSubErrStr: "NetworkInstanceName",
 		},
@@ -162,7 +164,8 @@ func TestGenerateScaleProfileEntries(t *testing.T) {
 				PrefixStart:         "2001:db8::/64",
 				NexthopIPStart:      "2001:db8:1::1",
 				SrcIP:               "2001:db8:f::1",
-				DstIP:               "2001:db8:f::2",
+				DstIPStart:          "2001:db8:d::1",
+				NumDstIP:            1,
 			},
 			wantSubErrStr: "NumPrefixes",
 		},
@@ -177,7 +180,8 @@ func TestGenerateScaleProfileEntries(t *testing.T) {
 				PrefixStart:         "2001:db8::/64",
 				NexthopIPStart:      "2001:db8:1::1",
 				SrcIP:               "2001:db8:f::1",
-				DstIP:               "2001:db8:f::2",
+				DstIPStart:          "2001:db8:d::1",
+				NumDstIP:            1,
 			},
 			wantSubErrStr: "NumNexthopGroup",
 		},
@@ -192,7 +196,8 @@ func TestGenerateScaleProfileEntries(t *testing.T) {
 				PrefixStart:         "2001:db8::/64",
 				NexthopIPStart:      "2001:db8:1::1",
 				SrcIP:               "2001:db8:f::1",
-				DstIP:               "2001:db8:f::2",
+				DstIPStart:          "2001:db8:d::1",
+				NumDstIP:            1,
 			},
 			wantSubErrStr: "NumNexthopPerNHG",
 		},
@@ -207,7 +212,8 @@ func TestGenerateScaleProfileEntries(t *testing.T) {
 				PrefixStart:         "2001:db8::/64",
 				NexthopIPStart:      "2001:db8:1::1",
 				SrcIP:               "2001:db8:f::1",
-				DstIP:               "2001:db8:f::2",
+				DstIPStart:          "2001:db8:d::1",
+				NumDstIP:            1,
 			},
 			wantSubErrStr: "AddrFamily",
 		},
@@ -222,7 +228,8 @@ func TestGenerateScaleProfileEntries(t *testing.T) {
 				PrefixStart:         "2001:db8:::::/64", // Invalid
 				NexthopIPStart:      "2001:db8:1::1",
 				SrcIP:               "2001:db8:f::1",
-				DstIP:               "2001:db8:f::2",
+				DstIPStart:          "2001:db8:d::1",
+				NumDstIP:            1,
 			},
 			wantSubErrStr: "invalid PrefixStart",
 		},
@@ -234,7 +241,11 @@ func TestGenerateScaleProfileEntries(t *testing.T) {
 				NumPrefixes:         10, NumNexthopGroup: 10, NumNexthopPerNHG: 1,
 				PrefixStart:    "192.0.2.0/24",
 				NexthopIPStart: "2001:db8:1::1",
-				UDPSrcPort:     5000, UDPDstPort: 6000, SrcIP: "::1", DstIP: "::2",
+				UDPSrcPort:     5000,
+				UDPDstPort:     6000,
+				SrcIP:          "::1",
+				DstIPStart:     "2001:db8:d::1",
+				NumDstIP:       1,
 			},
 			wantSubErrStr: "AddrFamily \"ipv6\" does not match PrefixStart",
 		},
@@ -249,7 +260,8 @@ func TestGenerateScaleProfileEntries(t *testing.T) {
 				PrefixStart:         "2001:db8::/64",
 				NexthopIPStart:      "not-an-ip", // Invalid
 				SrcIP:               "2001:db8:f::1",
-				DstIP:               "2001:db8:f::2",
+				DstIPStart:          "2001:db8:d::1",
+				NumDstIP:            1,
 			},
 			wantSubErrStr: "invalid NexthopIPStart",
 		},
@@ -263,9 +275,40 @@ func TestGenerateScaleProfileEntries(t *testing.T) {
 				NumNexthopPerNHG:    1,
 				PrefixStart:         "2001:db8::/64",
 				NexthopIPStart:      "2001:db8:1::1",
-				DstIP:               "2001:db8:f::2",
+				DstIPStart:          "2001:db8:d::1",
+				NumDstIP:            1,
 			},
-			wantSubErrStr: "SrcIP and DstIP",
+			wantSubErrStr: "SrcIP",
+		},
+		{
+			desc: "missing DstIPStart",
+			cfg: &ScaleProfileConfig{
+				AddrFamily:          "ipv6",
+				NetworkInstanceName: fakedevice.DefaultNetworkInstance,
+				NumPrefixes:         10,
+				NumNexthopGroup:     10,
+				NumNexthopPerNHG:    1,
+				PrefixStart:         "2001:db8::/64",
+				NexthopIPStart:      "2001:db8:1::1",
+				SrcIP:               "2001:db8:f::1",
+				NumDstIP:            1,
+			},
+			wantSubErrStr: "DstIPStart",
+		},
+		{
+			desc: "missing NumDstIP",
+			cfg: &ScaleProfileConfig{
+				AddrFamily:          "ipv6",
+				NetworkInstanceName: fakedevice.DefaultNetworkInstance,
+				NumPrefixes:         10,
+				NumNexthopGroup:     10,
+				NumNexthopPerNHG:    1,
+				PrefixStart:         "2001:db8::/64",
+				NexthopIPStart:      "2001:db8:1::1",
+				SrcIP:               "2001:db8:f::1",
+				DstIPStart:          "2001:db8:d::1",
+			},
+			wantSubErrStr: "NumDstIP",
 		},
 	}
 
