@@ -125,54 +125,56 @@ func combinationKey(indices []uint64) string {
 	return sb.String()
 }
 
-func generateRandomNHInd(n, nhRange int, r *rand.Rand) []uint64 {
-	indSlice := []uint64{}
-	for i := 0; i < n; i++ {
-		randNum := uint64(r.Intn(int(nhRange))) + 1
-		indSlice = append(indSlice, randNum)
-	}
-	return indSlice
-}
-
-// populateNextHopGroups generates NextHopGroup entries, assigning NHs using bootstrapping
-// and avoiding duplicate NH combinations across NHGs.
+// populateNextHopGroups generates NextHopGroup entries, ensuring unique combinations of NHs per NHG.
 func populateNextHopGroups(cfg *ScaleProfileConfig) ([]fluent.GRIBIEntry, error) {
 	totalNHsAvailable := cfg.NumNexthopPerNHG * cfg.NumNexthopGroup
-
-	usedCombinations := make(map[string]bool)
-	maxRetries := max(cfg.NumNexthopPerNHG, 20)
-
+	k := cfg.NumNexthopPerNHG
 	entries := []fluent.GRIBIEntry{}
+
+	// 1. Create a slice of all available NH indices
+	allNHIndices := make([]uint64, totalNHsAvailable)
+	for i := 0; i < totalNHsAvailable; i++ {
+		allNHIndices[i] = uint64(i + 1)
+	}
+
+	// 2. Shuffle the indices randomly
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	r.Shuffle(len(allNHIndices), func(i, j int) {
+		allNHIndices[i], allNHIndices[j] = allNHIndices[j], allNHIndices[i]
+	})
 
-	for nhgIdx := 1; nhgIdx <= cfg.NumNexthopGroup; nhgIdx++ {
-		var key string
-		var indSlice []uint64
-		foundUnique := false
+	// 3. Assign indices ensuring unique combinations
+	usedCombinations := make(map[string]bool)
+	currentIndex := 0 // Starting index for the sliding window in allNHIndices
 
-		for retry := 0; retry < maxRetries; retry++ {
-			indSlice = generateRandomNHInd(cfg.NumNexthopPerNHG, totalNHsAvailable, r)
+	for nhgIdx := uint64(1); nhgIdx <= uint64(cfg.NumNexthopGroup); nhgIdx++ {
+		foundCombination := false
+		for currentIndex+k <= totalNHsAvailable {
+			indSlice := allNHIndices[currentIndex : currentIndex+k]
+			key := combinationKey(indSlice)
 
-			key = combinationKey(indSlice)
 			if !usedCombinations[key] {
 				usedCombinations[key] = true
-				foundUnique = true
-				break // Found a unique combination
+				nhgEntry := fluent.NextHopGroupEntry().
+					WithNetworkInstance(cfg.NetworkInstanceName).
+					WithID(nhgIdx)
+				finalIndSlice := make([]uint64, k)
+				copy(finalIndSlice, indSlice)
+				for _, nhIndex := range finalIndSlice {
+					nhgEntry.AddNextHop(nhIndex, 1) // Weight is 1 for now
+				}
+				entries = append(entries, nhgEntry)
+
+				currentIndex += 1
+				foundCombination = true
+				break
 			}
+			currentIndex++
 		}
 
-		if !foundUnique {
-			return nil, fmt.Errorf("failed to generate a unique NH combination for NHG ID %d after %d retries", nhgIdx, maxRetries)
+		if !foundCombination {
+			return nil, fmt.Errorf("failed to find unique NH combination for NHG ID %d after checking all possibilities. (n=%d, k=%d, groups=%d)", nhgIdx, totalNHsAvailable, k, cfg.NumNexthopGroup)
 		}
-
-		nhgEntry := fluent.NextHopGroupEntry().
-			WithNetworkInstance(cfg.NetworkInstanceName).
-			WithID(uint64(nhgIdx))
-		for _, nhIndex := range indSlice {
-			nhgEntry.AddNextHop(nhIndex, 1)
-		}
-
-		entries = append(entries, nhgEntry)
 	}
 
 	return entries, nil
