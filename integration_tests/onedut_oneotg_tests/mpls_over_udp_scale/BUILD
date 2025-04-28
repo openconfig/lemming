@@ -1,22 +1,23 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
-
-go_library(
-    name = "mpls_over_udp_scale",
-    srcs = ["util.go"],
-    importpath = "github.com/openconfig/lemming/integration_tests/onedut_oneotg_tests/mpls_over_udp_scale",
-    visibility = ["//visibility:public"],
-    deps = ["@com_github_openconfig_gribigo//fluent"],
-)
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
 
 go_test(
     name = "mpls_over_udp_scale_test",
-    srcs = ["util_test.go"],
-    embed = [":mpls_over_udp_scale"],
+    size = "enormous",
+    srcs = ["mpls_over_udp_scale_test.go"],
+    data = ["//integration_tests/onedut_oneotg_tests:topology_testbed"],
     deps = [
         "//gnmi/fakedevice",
-        "@com_github_google_go_cmp//cmp",
+        "//gnmi/oc",
+        "//gnmi/oc/ocpath",
+        "//integration_tests/onedut_oneotg_tests/mpls_over_udp_scale/util",
+        "//internal/attrs",
+        "//internal/binding",
+        "@com_github_open_traffic_generator_snappi_gosnappi//:gosnappi",
         "@com_github_openconfig_gribi//v1/proto/service",
         "@com_github_openconfig_gribigo//fluent",
-        "@org_golang_google_protobuf//testing/protocmp",
+        "@com_github_openconfig_ondatra//:ondatra",
+        "@com_github_openconfig_ondatra//gnmi",
+        "@com_github_openconfig_ondatra//otg",
+        "@com_github_openconfig_ygnmi//ygnmi",
     ],
 )
