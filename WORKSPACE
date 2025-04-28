@@ -260,12 +260,6 @@ load(
 
 swift_rules_dependencies()
 
-load(
-    "@build_bazel_rules_swift//swift:extras.bzl",
-    "swift_rules_extra_dependencies",
-)
-
-swift_rules_extra_dependencies()
 
 # External non-Go or bazel friendly dependencies
 
