@@ -28,11 +28,54 @@ hedron_compile_commands_setup_transitive_transitive_transitive()
 # External tools and libraries
 http_archive(
     name = "com_github_grpc_grpc",
-    sha256 = "79e3ff93f7fa3c8433e2165f2550fa14889fce147c15d9828531cbfc7ad11e01",
-    strip_prefix = "grpc-1.54.1",
+    strip_prefix = "grpc-1.70.0",
     urls = [
-        "https://github.com/grpc/grpc/archive/refs/tags/v1.54.1.tar.gz",
+        "https://github.com/grpc/grpc/archive/refs/tags/v1.70.0.tar.gz",
     ],
+)
+
+http_archive(
+    name = "com_google_protobuf",
+    url = "https://github.com/protocolbuffers/protobuf/archive/refs/tags/v29.3.zip",
+    strip_prefix = "protobuf-29.3",
+    sha256 = "85803e01f347141e16a2f770213a496f808fff9f0138c7c0e0c9dfa708b0da92",
+)
+
+http_archive(
+    name = "rules_cc",
+    urls = ["https://github.com/bazelbuild/rules_cc/archive/refs/tags/0.1.1.tar.gz"],
+    strip_prefix = "rules_cc-0.1.1",
+    sha256 = "712d77868b3152dd618c4d64faaddefcc5965f90f5de6e6dd1d5ddcd0be82d42",
+)
+
+http_archive(
+    name = "rules_python",
+    sha256 = "2cc26bbd53854ceb76dd42a834b1002cd4ba7f8df35440cf03482e045affc244",
+    strip_prefix = "rules_python-1.3.0",
+    url = "https://github.com/bazel-contrib/rules_python/releases/download/1.3.0/rules_python-1.3.0.tar.gz",
+)
+
+http_archive(
+    name = "rules_pkg",
+    urls = [
+        "https://github.com/bazelbuild/rules_pkg/releases/download/1.1.0/rules_pkg-1.1.0.tar.gz",
+    ],
+    sha256 = "b7215c636f22c1849f1c3142c72f4b954bb12bb8dcf3cbe229ae6e69cc6479db",
+)
+
+http_archive(
+    name = "com_google_absl",
+    strip_prefix = "abseil-cpp-20250127.1",
+    urls = [
+        "https://github.com/abseil/abseil-cpp/releases/download/20250127.1/abseil-cpp-20250127.1.tar.gz",
+    ],
+    sha256 = "b396401fd29e2e679cace77867481d388c807671dc2acc602a0259eeb79b7811",
+)
+
+http_archive(
+    name = "build_bazel_rules_swift",
+    sha256 = "4901feadef8e47ede930c95c40298dd38a83a81eb1ed5b74e62abfa546ff2d1b",
+    url = "https://github.com/bazelbuild/rules_swift/releases/download/2.8.1/rules_swift.2.8.1.tar.gz",
 )
 
 http_archive(
@@ -44,10 +87,10 @@ http_archive(
 
 http_archive(
     name = "io_bazel_rules_go",
-    sha256 = "f4a9314518ca6acfa16cc4ab43b0b8ce1e4ea64b81c38d8a3772883f153346b8",
+    sha256 = "f2d15bea3e241aa0e3a90fb17a82e6a8ab12214789f6aeddd53b8d04316d2b7c",
     urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.50.1/rules_go-v0.50.1.zip",
-        "https://github.com/bazelbuild/rules_go/releases/download/v0.50.1/rules_go-v0.50.1.zip",
+        "https://mirror.bazel.build/github.com/bazel-contrib/rules_go/releases/download/v0.54.0/rules_go-v0.54.0.zip",
+        "https://github.com/bazel-contrib/rules_go/releases/download/v0.54.0/rules_go-v0.54.0.zip",
     ],
 )
 
@@ -122,7 +165,7 @@ load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_depe
 
 go_rules_dependencies()
 
-go_register_toolchains(version = "1.23.0")
+go_register_toolchains(version = "1.23.4")
 
 # go_repositories
 
@@ -202,9 +245,21 @@ oci_register_toolchains(
     crane_version = LATEST_CRANE_VERSION,
 )
 
+load("@rules_python//python:repositories.bzl", "py_repositories")
+
+py_repositories()
+
 load("@rules_pkg//:deps.bzl", "rules_pkg_dependencies")
 
 rules_pkg_dependencies()
+
+load(
+    "@build_bazel_rules_swift//swift:repositories.bzl",
+    "swift_rules_dependencies",
+)
+
+swift_rules_dependencies()
+
 
 # External non-Go or bazel friendly dependencies
 
