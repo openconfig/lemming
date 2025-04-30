@@ -68,6 +68,12 @@ const (
 	defaultNI = fakedevice.DefaultNetworkInstance
 
 	gribiBatchSize = 100 // Number of entries to send per ModifyRequest
+
+	// Traffic Flow Parameters
+	trafficFlowName   = "ScaleFlowIPv6"
+	trafficFlowRate   = 100
+	trafficFlowDur    = 10 * time.Second
+	trafficLossTarget = 0.0 // Expect no loss for programmed routes
 )
 
 var (
@@ -189,6 +195,39 @@ func awaitTimeout(ctx context.Context, c *fluent.GRIBIClient, t testing.TB, time
 	return c.Await(subctx, t)
 }
 
+// testTrafficv6 generates traffic flow from source network to
+// destination network via srcEndPoint to dstEndPoint and checks for
+// packet loss and returns loss percentage as float.
+func testTrafficv6(t *testing.T, otg *otg.OTG, cfg *scaleutil.ScaleProfileConfig, srcEndPoint, dstEndPoint attrs.Attributes, startAddress string, dur time.Duration) float32 {
+	WaitForARP(t, otg, otg.FetchConfig(t), "IPv6")
+	top := otg.FetchConfig(t)
+	top.Flows().Clear().Items()
+	flowipv6 := top.Flows().Add().SetName(trafficFlowName)
+	flowipv6.Metrics().SetEnable(true)
+	flowipv6.TxRx().Device().
+		SetTxNames([]string{srcEndPoint.Name + ".IPv6"}).
+		SetRxNames([]string{dstEndPoint.Name + ".IPv6"})
+	flowipv6.Duration().Continuous()
+	flowipv6.Rate().SetPps(uint64(trafficFlowRate))
+	flowipv6.Packet().Add().Ethernet()
+	v6 := flowipv6.Packet().Add().Ipv6()
+	v6.Src().SetValue(srcEndPoint.IPv6)
+	v6.Dst().Increment().SetStart(startAddress).SetCount(uint32(cfg.NumPrefixes))
+	otg.PushConfig(t, top)
+
+	otg.StartTraffic(t)
+	time.Sleep(dur)
+	t.Logf("Stop traffic")
+	otg.StopTraffic(t)
+
+	time.Sleep(5 * time.Second)
+
+	txPkts := gnmi.Get(t, otg, gnmi.OTG().Flow(trafficFlowName).Counters().OutPkts().State())
+	rxPkts := gnmi.Get(t, otg, gnmi.OTG().Flow(trafficFlowName).Counters().InPkts().State())
+	lossPct := (txPkts - rxPkts) * 100 / txPkts
+	return float32(lossPct)
+}
+
 // TestMPLSOverUDPScale sets up the basic DUT and ATE environment and runs scale profile tests.
 func TestMPLSOverUDPScale(t *testing.T) {
 	dut := ondatra.DUT(t, "dut")
@@ -296,6 +335,15 @@ func TestMPLSOverUDPScale(t *testing.T) {
 			t.Logf("Received total of %d results, found %d FIB_PROGRAMMED results.", len(results), gotInstalledCount)
 			if gotInstalledCount != expectedAddCount {
 				t.Errorf("Got %d results, want %d", gotInstalledCount, expectedAddCount)
+			}
+
+			// 5. Validate Traffic Flow
+			startAddrV6, err := scaleutil.GetFirstAddrFromPrefix(tc.config.PrefixStart)
+			if err != nil {
+				t.Fatalf("Failed to get start address from prefix %q", tc.config.PrefixStart)
+			}
+			if loss := testTrafficv6(t, otg, tc.config, atePort1, atePort2, startAddrV6, 5*time.Second); loss > 1 {
+				t.Errorf("Loss: got %g, want <= 1", loss)
 			}
 		})
 	}
