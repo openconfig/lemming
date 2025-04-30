@@ -67,10 +67,7 @@ const (
 	// Default network instance
 	defaultNI = fakedevice.DefaultNetworkInstance
 
-	// Nexthop IP range for scale tests
-	nexthopIPv6RangeStart = "2001:db8:100::1" // Starting IP for NHs in scale tests
-
-	gribiBatchSize = 1000 // Number of entries to send per ModifyRequest
+	gribiBatchSize = 100 // Number of entries to send per ModifyRequest
 )
 
 var (
@@ -224,7 +221,6 @@ func TestMPLSOverUDPScale(t *testing.T) {
 				NumNexthopGroup:     numPrefixes,
 				NumNexthopPerNHG:    1,
 				PrefixStart:         innerIPv6DstRange,
-				NexthopIPStart:      nexthopIPv6RangeStart,
 				UseSameMPLSLabel:    true,
 				MPLSLabelStart:      defaultMPLSLabel,
 				UDPSrcPort:          outerDstUDPPort,
@@ -234,6 +230,7 @@ func TestMPLSOverUDPScale(t *testing.T) {
 				NumDstIP:            1,
 				DSCP:                outerDSCP,
 				IPTTL:               outerIPTTL,
+				EgressATEIPv6:       atePort2.IPv6,
 			},
 		},
 	}

@@ -26,9 +26,6 @@ type ScaleProfileConfig struct {
 	// Prefix generation details
 	PrefixStart string // Starting IP prefix (e.g., "10.5.1.1/32" or "2001:aa:bb::1/128")
 
-	// Nexthop generation details
-	NexthopIPStart string // Starting IP address for the next hops
-
 	// MPLS Label details
 	UseSameMPLSLabel bool   // If true, all NHs use MPLSLabelStart. If false, labels increment.
 	MPLSLabelStart   uint64 // Starting MPLS label value
@@ -41,6 +38,20 @@ type ScaleProfileConfig struct {
 	NumDstIP   int
 	DSCP       uint64
 	IPTTL      uint64
+
+	// The IP address of the ATE interface on the egress link.
+	EgressATEIPv6 string // e.g., atePort2.IPv6
+}
+
+// GetFirstAddrFromPrefix takes a CIDR string (e.g., "2001:aa:bb::/48")
+// and returns the first usable address as a string (e.g., "2001:aa:bb::").
+func GetFirstAddrFromPrefix(cidr string) (string, error) {
+	prefix, err := netip.ParsePrefix(cidr)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse prefix %q: %w", cidr, err)
+	}
+	// For a prefix, Addr() returns the network address itself, which is the first address.
+	return prefix.Addr().String(), nil
 }
 
 // populateNextHops generates NextHop entries and returns the updated slice.
@@ -49,12 +60,6 @@ func populateNextHops(cfg *ScaleProfileConfig) ([]fluent.GRIBIEntry, error) {
 	entries := []fluent.GRIBIEntry{}
 	if totalNextHops <= 0 {
 		return entries, nil
-	}
-
-	startNHIP, err := netip.ParseAddr(cfg.NexthopIPStart)
-	if err != nil {
-		// This should ideally not happen due to prior validation in GenerateScaleProfileEntries
-		return nil, fmt.Errorf("internal error: failed to parse NexthopIPStart %q: %w", cfg.NexthopIPStart, err)
 	}
 
 	// Generate Destination IPs for Encap Header
@@ -76,9 +81,7 @@ func populateNextHops(cfg *ScaleProfileConfig) ([]fluent.GRIBIEntry, error) {
 		return nil, errors.New("NumDstIP must be positive to generate destination IPs")
 	}
 
-	currentNHIP := startNHIP
 	for i := 1; i <= totalNextHops; i++ {
-		nhIPStr := currentNHIP.String() // IP of the immediate next hop device
 		mplsLabel := cfg.MPLSLabelStart
 		if !cfg.UseSameMPLSLabel {
 			mplsLabel = cfg.MPLSLabelStart + uint64(i-1)
@@ -87,7 +90,7 @@ func populateNextHops(cfg *ScaleProfileConfig) ([]fluent.GRIBIEntry, error) {
 		nhEntry := fluent.NextHopEntry().
 			WithNetworkInstance(cfg.NetworkInstanceName).
 			WithIndex(uint64(i)).
-			WithIPAddress(nhIPStr).
+			WithIPAddress(cfg.EgressATEIPv6).
 			AddEncapHeader(
 				fluent.MPLSEncapHeader().WithLabels(mplsLabel),
 				// TODO: fluent currently doesn't support UDPV4 encap header builder. Support fluent.UDPV4EncapHeader to allow ipv4 support here.
@@ -101,14 +104,8 @@ func populateNextHops(cfg *ScaleProfileConfig) ([]fluent.GRIBIEntry, error) {
 			)
 
 		entries = append(entries, nhEntry)
-
-		currentNHIP = currentNHIP.Next()
-		if !currentNHIP.IsValid() {
-			// This logic might need refinement depending on expected IP range behavior
-			return nil, fmt.Errorf("ran out of valid next hop IP addresses starting from %s", cfg.NexthopIPStart)
-		}
 	}
-	return entries, nil // Return the modified slice
+	return entries, nil
 }
 
 // combinationKey generates a unique, sorted string key for a slice of NH indices.
@@ -184,17 +181,25 @@ func populateNextHopGroups(cfg *ScaleProfileConfig) ([]fluent.GRIBIEntry, error)
 func populatePrefixes(cfg *ScaleProfileConfig) ([]fluent.GRIBIEntry, error) {
 	entries := []fluent.GRIBIEntry{}
 
-	startPrefix, err := netip.ParsePrefix(cfg.PrefixStart)
+	// Parse the base prefix to get the starting address. Ignore the input prefix length.
+	startPrefixAddr, err := GetFirstAddrFromPrefix(cfg.PrefixStart)
 	if err != nil {
-		// This should ideally not happen due to prior validation
-		return nil, fmt.Errorf("internal error: failed to parse PrefixStart %q: %w", cfg.PrefixStart, err)
+		// Error already includes context from GetFirstAddrFromPrefix
+		return nil, fmt.Errorf("failed to get starting address from PrefixStart %q: %w", cfg.PrefixStart, err)
+	}
+	startAddr, err := netip.ParseAddr(startPrefixAddr)
+	if err != nil {
+		// Should not happen if GetFirstAddrFromPrefix succeeded
+		return nil, fmt.Errorf("internal error: failed to parse starting address %q: %w", startPrefixAddr, err)
 	}
 
-	currentPrefix := startPrefix
-	originalBits := startPrefix.Bits()
+	currentAddr := startAddr
+	// Define the prefix length for the routes we are generating (host routes)
+	const generatedPrefixLen = 128
 
 	for i := 0; i < cfg.NumPrefixes; i++ {
-		prefixStr := currentPrefix.String()
+		prefix := netip.PrefixFrom(currentAddr, generatedPrefixLen)
+		prefixStr := prefix.String()
 		// Assign NHG ID in a round-robin fashion
 		nhgID := uint64(i%cfg.NumNexthopGroup + 1)
 
@@ -215,18 +220,11 @@ func populatePrefixes(cfg *ScaleProfileConfig) ([]fluent.GRIBIEntry, error) {
 		entries = append(entries, entry)
 
 		if i < cfg.NumPrefixes-1 {
-			addr := currentPrefix.Addr()
-			nextAddr := addr.Next()
-
+			nextAddr := currentAddr.Next() // Get the next sequential address
 			if !nextAddr.IsValid() {
-				return nil, fmt.Errorf("ran out of valid IP addresses after generating %d prefixes, starting from %s", i+1, cfg.PrefixStart)
+				return nil, fmt.Errorf("ran out of valid IP addresses after generating %d prefixes, starting from %s", i+1, startAddr)
 			}
-			if nextAddr == startPrefix.Addr() {
-				return nil, fmt.Errorf("prefix generation wrapped around back to the start address %s after %d prefixes; address space likely too small for %d prefixes", startPrefix.Addr(), i+1, cfg.NumPrefixes)
-			}
-
-			// Create the next prefix using the next sequential address and the original prefix length.
-			currentPrefix = netip.PrefixFrom(nextAddr, originalBits)
+			currentAddr = nextAddr
 		}
 	}
 
@@ -259,10 +257,6 @@ func GenerateScaleProfileEntries(ctx context.Context, cfg *ScaleProfileConfig) (
 	if cfg.AddrFamily == "ipv6" && !prefixAddr.Addr().Is6() {
 		return nil, fmt.Errorf("AddrFamily %q does not match PrefixStart %q", cfg.AddrFamily, cfg.PrefixStart)
 	}
-	_, err = netip.ParseAddr(cfg.NexthopIPStart)
-	if err != nil {
-		return nil, fmt.Errorf("invalid NexthopIPStart %q: %w", cfg.NexthopIPStart, err)
-	}
 	if cfg.SrcIP == "" {
 		return nil, errors.New("SrcIP for encapsulation must be provided")
 	}
@@ -275,6 +269,12 @@ func GenerateScaleProfileEntries(ctx context.Context, cfg *ScaleProfileConfig) (
 	_, err = netip.ParseAddr(cfg.DstIPStart)
 	if err != nil {
 		return nil, fmt.Errorf("invalid DstIPStart %q: %w", cfg.DstIPStart, err)
+	}
+	if cfg.EgressATEIPv6 == "" {
+		return nil, errors.New("EgressATEIPv6 must be provided in ScaleProfileConfig")
+	}
+	if _, err := netip.ParseAddr(cfg.EgressATEIPv6); err != nil {
+		return nil, fmt.Errorf("invalid EgressATEIPv6 %q: %w", cfg.EgressATEIPv6, err)
 	}
 
 	// 2. Initialize basic information.
