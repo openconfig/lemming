@@ -794,13 +794,11 @@ func TestMPLSOverUDPScale(t *testing.T) {
 
 			// 10. Flush gRIBI Entries (Optional but good practice)
 			t.Log("Flushing all gRIBI entries...")
-			// Use FlushAll for simplicity, or specify the network instance
 			gribic.Flush(ctx, &gribipb.FlushRequest{
 				NetworkInstance: &gribipb.FlushRequest_All{All: &gribipb.Empty{}},
 			})
 
 			// 11. Validate AFT State After Flush (Optional)
-			// TODO: Call validateAFTState again, modifying it to expect *not found* results.
 			validateAFTState(t, dut, tc.config, false)
 		})
 	}
