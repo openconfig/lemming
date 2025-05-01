@@ -18,6 +18,7 @@ go_test(
         "@com_github_google_gopacket//pcap",
         "@com_github_open_traffic_generator_snappi_gosnappi//:gosnappi",
         "@com_github_openconfig_gribi//v1/proto/service",
+        "@com_github_openconfig_gribigo//constants",
         "@com_github_openconfig_gribigo//fluent",
         "@com_github_openconfig_ondatra//:ondatra",
         "@com_github_openconfig_ondatra//gnmi",
