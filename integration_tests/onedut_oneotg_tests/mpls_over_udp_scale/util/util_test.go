@@ -169,6 +169,95 @@ func TestGeneratePrefix(t *testing.T) {
 	}
 }
 
+// TestFormatMPLSHeader tests the FormatMPLSHeader helper function.
+func TestFormatMPLSHeader(t *testing.T) {
+	tests := []struct {
+		desc string
+		data []byte
+		want string
+	}{
+		{
+			desc: "valid 4 bytes - label 100, exp 0, bos 1, ttl 255",
+			// 100 << 12 | 0 << 9 | 1 << 8 | 255 = 0x000641FF
+			data: []byte{0x00, 0x06, 0x41, 0xFF},
+			want: "MPLS Label: 100, EXP: 0, BoS: true, TTL: 255",
+		},
+		{
+			desc: "valid 4 bytes - label 200, exp 5, bos 0, ttl 64",
+			// 200 << 12 | 5 << 9 | 0 << 8 | 64 = 0x000C8A40
+			data: []byte{0x00, 0x0C, 0x8A, 0x40},
+			want: "MPLS Label: 200, EXP: 5, BoS: false, TTL: 64",
+		},
+		{
+			desc: "valid with payload",
+			data: []byte{0x00, 0x06, 0x41, 0xFF, 0xDE, 0xAD, 0xBE, 0xEF},
+			want: "MPLS Label: 100, EXP: 0, BoS: true, TTL: 255, Payload: DE AD BE EF",
+		},
+		{
+			desc: "less than 4 bytes",
+			data: []byte{0x00, 0x06, 0x41},
+			want: "Invalid MPLS data (len < 4): 00 06 41",
+		},
+		{
+			desc: "nil data",
+			data: nil,
+			want: "Invalid MPLS data (len < 4): ", // Note: % X with nil results in empty string
+		},
+		{
+			desc: "empty data",
+			data: []byte{},
+			want: "Invalid MPLS data (len < 4): ",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			got := FormatMPLSHeader(tt.data)
+			if got != tt.want {
+				t.Errorf("FormatMPLSHeader() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+// TestMPLSLabelToPacketBytes tests the MPLSLabelToPacketBytes helper function.
+func TestMPLSLabelToPacketBytes(t *testing.T) {
+	tests := []struct {
+		desc  string
+		label uint32
+		want  []byte
+	}{
+		{
+			desc:  "label 100",
+			label: 100,
+			// 100 << 12 | 1 << 8 | 255 = 0x000641FF
+			want: []byte{0x00, 0x06, 0x41, 0xFF},
+		},
+		{
+			desc:  "label 0",
+			label: 0,
+			// 0 << 12 | 1 << 8 | 255 = 0x000001FF
+			want: []byte{0x00, 0x00, 0x01, 0xFF},
+		},
+		{
+			desc:  "max label (20 bits)",
+			label: 0xFFFFF, // 1048575
+			// 0xFFFFF << 12 | 1 << 8 | 255 = 0xFFFFF1FF
+			want: []byte{0xFF, 0xFF, 0xF1, 0xFF},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			got := MPLSLabelToPacketBytes(tt.label)
+			if diff := cmp.Diff(tt.want, got); diff != "" {
+				t.Errorf("MPLSLabelToPacketBytes(%d) mismatch (-want +got):\n%s", tt.label, diff)
+				t.Errorf("Got bytes: % X, Want bytes: % X", got, tt.want)
+			}
+		})
+	}
+}
+
 // TestGenerateScaleProfileEntries tests both validation and correct generation.
 func TestGenerateScaleProfileEntries(t *testing.T) {
 	// Define a valid config with specific encap details for the 'want' case

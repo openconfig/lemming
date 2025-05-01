@@ -16,10 +16,16 @@ package integration_test
 
 import (
 	"context"
+	"encoding/binary"
+	"net/netip"
+	"os"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/gopacket"
+	"github.com/google/gopacket/layers"
+	"github.com/google/gopacket/pcap"
 	"github.com/open-traffic-generator/snappi/gosnappi"
 	gribipb "github.com/openconfig/gribi/v1/proto/service"
 	"github.com/openconfig/gribigo/fluent"
@@ -42,10 +48,10 @@ const (
 	ipv6PrefixLen = 126 // Using /126 for point-to-point links as is common.
 
 	// Scale parameters
-	numPrefixes        = 20
+	numPrefixes        = 200
 	numVlans           = 1000
 	numPolicers        = 1000
-	numPolicerPolicies = 20
+	numPolicerPolicies = 200
 	flowQ              = 200  // flow_q
 	flowR              = 1    // flow_r (updates per second)
 	schedQ             = 1000 // sched_q
@@ -113,6 +119,16 @@ var (
 		IPv6Len: ipv6PrefixLen,
 	}
 )
+
+// packetResult stores the expected values for validating captured packets.
+type packetResult struct {
+	mplsLabel  uint64
+	udpSrcPort uint16
+	udpDstPort uint16
+	ipTTL      uint8 // Expected TTL in the *received* packet (usually DUT configured TTL - 1)
+	srcIP      string
+	dstIP      string
+}
 
 func TestMain(m *testing.M) {
 	ondatra.RunTests(m, binding.KNE(".."))
@@ -427,6 +443,127 @@ func stopCapture(t *testing.T, ate *ondatra.ATEDevice) {
 	otg.SetControlState(t, cs)
 }
 
+// validatePacketCapture reads capture files and checks the encapped packet for desired protocol, dscp and ttl
+func validatePacketCapture(t *testing.T, ate *ondatra.ATEDevice, otgPortName string, pr *packetResult) {
+	t.Helper()
+	otg := ate.OTG()
+	t.Logf("Validating packet capture from port %s...", otgPortName)
+
+	// 1. Get captured bytes
+	captureBytes := otg.GetCapture(t, gosnappi.NewCaptureRequest().SetPortName(otgPortName))
+
+	// 2. Write to temporary pcap file
+	f, err := os.CreateTemp("", "mpls-scale-capture-*.pcap")
+	if err != nil {
+		t.Fatalf("ERROR: Could not create temporary pcap file: %v", err)
+	}
+	defer os.Remove(f.Name())
+	if _, err := f.Write(captureBytes); err != nil {
+		t.Fatalf("ERROR: Could not write packetBytes to pcap file %q: %v", f.Name(), err)
+	}
+	f.Close()
+	t.Logf("Wrote capture to %s", f.Name())
+
+	// 3. Open pcap file
+	handle, err := pcap.OpenOffline(f.Name())
+	if err != nil {
+		t.Fatalf("ERROR: pcap.OpenOffline(%s) failed: %v", f.Name(), err)
+	}
+	defer handle.Close()
+
+	// 4. Process packets
+	packetSource := gopacket.NewPacketSource(handle, handle.LinkType())
+	packetCount := 0
+	checkedPacketCount := 0
+	mismatchedPacketFound := false
+
+	// Parse expected IPs once
+	wantSrcIP, err := netip.ParseAddr(pr.srcIP)
+	if err != nil {
+		t.Fatalf("ERROR: Could not parse expected source IP %q: %v", pr.srcIP, err)
+	}
+	wantDstIP, err := netip.ParseAddr(pr.dstIP)
+	if err != nil {
+		t.Fatalf("ERROR: Could not parse expected destination IP %q: %v", pr.dstIP, err)
+	}
+
+	for packet := range packetSource.Packets() {
+		packetCount++
+		ipv6Layer := packet.Layer(layers.LayerTypeIPv6)
+		udpLayer := packet.Layer(layers.LayerTypeUDP)
+
+		// Skip packets that don't have the outer IPv6/UDP structure
+		if ipv6Layer == nil || udpLayer == nil {
+			continue
+		}
+		checkedPacketCount++
+		v6Packet, _ := ipv6Layer.(*layers.IPv6)
+		udpPacket, _ := udpLayer.(*layers.UDP)
+
+		// --- Perform Validations ---
+		currentPacketValid := true
+
+		// Validate Outer IPv6 Header
+		gotSrcIP, ok := netip.AddrFromSlice(v6Packet.SrcIP)
+		if !ok || gotSrcIP != wantSrcIP {
+			t.Errorf("Packet %d: Outer IPv6 SrcIP mismatch: got %s, want %s", packetCount, v6Packet.SrcIP, pr.srcIP)
+			currentPacketValid = false
+		}
+		gotDstIP, ok := netip.AddrFromSlice(v6Packet.DstIP)
+		if !ok || gotDstIP != wantDstIP {
+			t.Errorf("Packet %d: Outer IPv6 DstIP mismatch: got %s, want %s", packetCount, v6Packet.DstIP, pr.dstIP)
+			currentPacketValid = false
+		}
+
+		// Check HopLimit (TTL). It should be decremented by the DUT.
+		if v6Packet.HopLimit != pr.ipTTL {
+			t.Errorf("Packet %d: Outer IPv6 HopLimit (TTL) mismatch: got %d, want %d", packetCount, v6Packet.HopLimit, pr.ipTTL)
+			currentPacketValid = false
+		}
+		// TODO: Add DSCP validation if needed: v6Packet.TrafficClass
+
+		// Validate Outer UDP Header
+		if udpPacket.SrcPort != layers.UDPPort(pr.udpSrcPort) {
+			t.Errorf("Packet %d: Outer UDP SrcPort mismatch: got %d, want %d", packetCount, udpPacket.SrcPort, pr.udpSrcPort)
+			currentPacketValid = false
+		}
+		if udpPacket.DstPort != layers.UDPPort(pr.udpDstPort) {
+			t.Errorf("Packet %d: Outer UDP DstPort mismatch: got %d, want %d", packetCount, udpPacket.DstPort, pr.udpDstPort)
+			currentPacketValid = false
+		}
+
+		// Validate UDP Payload (Extract and check MPLS Label only)
+		payload := udpPacket.LayerPayload()
+		if len(payload) < 4 {
+			t.Errorf("Packet %d: UDP Payload too short for MPLS Header (len %d)", packetCount, len(payload))
+			currentPacketValid = false
+		} else {
+			// Extract label: Label (20 bits) = (headerValue >> 12) & 0xFFFFF
+			headerValue := binary.BigEndian.Uint32(payload[:4])
+			gotLabel := uint64((headerValue >> 12) & 0xFFFFF)
+			if gotLabel != pr.mplsLabel {
+				t.Errorf("Packet %d: MPLS Label mismatch: got %d, want %d (Full header: %s)",
+					packetCount, gotLabel, pr.mplsLabel, scaleutil.FormatMPLSHeader(payload))
+				currentPacketValid = false
+			}
+		}
+
+		if !currentPacketValid {
+			mismatchedPacketFound = true
+		}
+	}
+
+	if packetCount == 0 {
+		t.Errorf("No packets found in capture file %s", f.Name())
+	} else if checkedPacketCount == 0 {
+		t.Errorf("Found %d packets, but none had the expected outer IPv6/UDP structure.", packetCount)
+	} else if mismatchedPacketFound {
+		t.Errorf("Found %d packets with expected outer IPv6/UDP structure, but at least one had encapsulation mismatches (see errors above).", checkedPacketCount)
+	} else {
+		t.Logf("Successfully validated %d packets with expected encapsulation.", checkedPacketCount)
+	}
+}
+
 // TestMPLSOverUDPScale sets up the basic DUT and ATE environment and runs scale profile tests.
 func TestMPLSOverUDPScale(t *testing.T) {
 	dut := ondatra.DUT(t, "dut")
@@ -446,9 +583,9 @@ func TestMPLSOverUDPScale(t *testing.T) {
 
 	// Define scale profile test cases
 	tests := []struct {
-		desc   string
-		config *scaleutil.ScaleProfileConfig
-		// TODO: Add fields for validation later (e.g., expected results)
+		desc        string
+		config      *scaleutil.ScaleProfileConfig
+		capturePort string
 	}{
 		{
 			desc: "Scale Profile A - 1 NI, 20k NHG, 20k Prefixes, 1 NH/NHG, Same MPLS Label",
@@ -470,6 +607,7 @@ func TestMPLSOverUDPScale(t *testing.T) {
 				IPTTL:               outerIPTTL,
 				EgressATEIPv6:       atePort2.IPv6,
 			},
+			capturePort: atePort2.Name,
 		},
 	}
 
@@ -540,6 +678,10 @@ func TestMPLSOverUDPScale(t *testing.T) {
 			validateAFTState(t, dut, tc.config)
 
 			// 6. Validate Traffic Flow
+			enableCapture(t, otg, otgConfig, tc.capturePort)
+			time.Sleep(1 * time.Second)
+			startCapture(t, ate)
+			time.Sleep(1 * time.Second)
 			startAddrV6, err := scaleutil.GetFirstAddrFromPrefix(tc.config.PrefixStart)
 			if err != nil {
 				t.Fatalf("Failed to get start address from prefix %q", tc.config.PrefixStart)
@@ -547,6 +689,17 @@ func TestMPLSOverUDPScale(t *testing.T) {
 			if loss := testTrafficv6(t, otg, tc.config, atePort1, atePort2, startAddrV6, 5*time.Second); loss > 1 {
 				t.Errorf("Loss: got %g, want <= 1", loss)
 			}
+			time.Sleep(10 * time.Second)
+			stopCapture(t, ate)
+			validatePacketCapture(t, ate, tc.capturePort,
+				&packetResult{
+					mplsLabel:  tc.config.MPLSLabelStart, // For Profile A, label is the same
+					udpSrcPort: uint16(tc.config.UDPSrcPort),
+					udpDstPort: uint16(tc.config.UDPDstPort),
+					ipTTL:      uint8(tc.config.IPTTL - 1), // Expect TTL decremented by DUT
+					srcIP:      tc.config.SrcIP,
+					dstIP:      tc.config.DstIPStart, // For Profile A, only one DstIP
+				})
 		})
 	}
 }
