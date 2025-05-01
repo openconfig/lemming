@@ -12,6 +12,7 @@ go_test(
         "//integration_tests/onedut_oneotg_tests/mpls_over_udp_scale/util",
         "//internal/attrs",
         "//internal/binding",
+        "@com_github_google_go_cmp//cmp",
         "@com_github_open_traffic_generator_snappi_gosnappi//:gosnappi",
         "@com_github_openconfig_gribi//v1/proto/service",
         "@com_github_openconfig_gribigo//fluent",
@@ -19,5 +20,6 @@ go_test(
         "@com_github_openconfig_ondatra//gnmi",
         "@com_github_openconfig_ondatra//otg",
         "@com_github_openconfig_ygnmi//ygnmi",
+        "@com_github_openconfig_ygot//ygot",
     ],
 )

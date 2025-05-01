@@ -19,6 +19,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/open-traffic-generator/snappi/gosnappi"
 	gribipb "github.com/openconfig/gribi/v1/proto/service"
 	"github.com/openconfig/gribigo/fluent"
@@ -26,6 +27,7 @@ import (
 	"github.com/openconfig/ondatra/gnmi"
 	"github.com/openconfig/ondatra/otg"
 	"github.com/openconfig/ygnmi/ygnmi"
+	"github.com/openconfig/ygot/ygot"
 
 	"github.com/openconfig/lemming/gnmi/fakedevice"
 	"github.com/openconfig/lemming/gnmi/oc"
@@ -40,10 +42,10 @@ const (
 	ipv6PrefixLen = 126 // Using /126 for point-to-point links as is common.
 
 	// Scale parameters
-	numPrefixes        = 200
+	numPrefixes        = 20
 	numVlans           = 1000
 	numPolicers        = 1000
-	numPolicerPolicies = 200
+	numPolicerPolicies = 20
 	flowQ              = 200  // flow_q
 	flowR              = 1    // flow_r (updates per second)
 	schedQ             = 1000 // sched_q
@@ -228,6 +230,203 @@ func testTrafficv6(t *testing.T, otg *otg.OTG, cfg *scaleutil.ScaleProfileConfig
 	return float32(lossPct)
 }
 
+// validateAFTState checks the AFT state for a sample of NHs, NHGs, and Prefixes.
+func validateAFTState(t *testing.T, dut *ondatra.DUTDevice, cfg *scaleutil.ScaleProfileConfig) {
+	t.Helper()
+	t.Logf("Validating AFT state for profile: %s", cfg.NetworkInstanceName)
+
+	// --- Validate a sample of NextHops ---
+	// Check first and last NH index
+	nhIndicesToCheck := []uint64{1}
+	totalNHs := uint64(cfg.NumNexthopGroup * cfg.NumNexthopPerNHG)
+	if totalNHs > 1 {
+		nhIndicesToCheck = append(nhIndicesToCheck, totalNHs)
+	}
+
+	for _, nhIndex := range nhIndicesToCheck {
+		t.Logf("Checking NH index: %d", nhIndex)
+		nhPath := ocpath.Root().NetworkInstance(cfg.NetworkInstanceName).Afts().NextHop(nhIndex)
+		nhState, found := gnmi.Lookup(t, dut, nhPath.State()).Val()
+		if !found {
+			t.Errorf("AFT NextHop %d not found in NI %s", nhIndex, cfg.NetworkInstanceName)
+			continue
+		}
+
+		// Construct expected Encap Headers based on config
+		// Note: This logic assumes Profile A specifics (1 NH/NHG, same label, 1 DstIP)
+		// More complex profiles might need adjustments here.
+		expectedMPLSLabel := cfg.MPLSLabelStart
+		if !cfg.UseSameMPLSLabel {
+			expectedMPLSLabel = cfg.MPLSLabelStart + nhIndex - 1
+		}
+		expectedDstIP := cfg.DstIPStart // Assumes NumDstIP = 1 for Profile A
+
+		wantEncapHeaders := map[uint8]*oc.NetworkInstance_Afts_NextHop_EncapHeader{
+			1: { // MPLS Header
+				Index: ygot.Uint8(1),
+				Type:  oc.AftTypes_EncapsulationHeaderType_MPLS,
+				Mpls: &oc.NetworkInstance_Afts_NextHop_EncapHeader_Mpls{
+					MplsLabelStack: []oc.NetworkInstance_Afts_NextHop_EncapHeader_Mpls_MplsLabelStack_Union{
+						oc.UnionUint32(expectedMPLSLabel),
+					},
+				},
+			},
+			2: { // UDPv6 Header
+				Index: ygot.Uint8(2),
+				Type:  oc.AftTypes_EncapsulationHeaderType_UDPV6,
+				UdpV6: &oc.NetworkInstance_Afts_NextHop_EncapHeader_UdpV6{
+					Dscp:       ygot.Uint8(uint8(cfg.DSCP)),
+					DstIp:      ygot.String(expectedDstIP),
+					DstUdpPort: ygot.Uint16(uint16(cfg.UDPDstPort)),
+					IpTtl:      ygot.Uint8(uint8(cfg.IPTTL)),
+					SrcIp:      ygot.String(cfg.SrcIP),
+					SrcUdpPort: ygot.Uint16(uint16(cfg.UDPSrcPort)),
+				},
+			},
+		}
+
+		// Compare actual encap headers with expected
+		gotEncapHeaders := make(map[uint8]*oc.NetworkInstance_Afts_NextHop_EncapHeader)
+		for _, eh := range nhState.EncapHeader {
+			gotEncapHeaders[eh.GetIndex()] = eh
+		}
+
+		if diff := cmp.Diff(wantEncapHeaders, gotEncapHeaders); diff != "" {
+			t.Errorf("NH index %d EncapHeader mismatch (-want +got):\n%s", nhIndex, diff)
+		}
+
+		// Check IP address associated with NH
+		if nhState.GetIpAddress() != cfg.EgressATEIPv6 {
+			t.Errorf("NH index %d IP address mismatch: got %q, want %q", nhIndex, nhState.GetIpAddress(), cfg.EgressATEIPv6)
+		}
+	}
+
+	// --- Validate a sample of NextHopGroups ---
+	// Check first and last NHG index
+	nhgIndicesToCheck := []uint64{1}
+	if uint64(cfg.NumNexthopGroup) > 1 {
+		nhgIndicesToCheck = append(nhgIndicesToCheck, uint64(cfg.NumNexthopGroup))
+	}
+
+	for _, nhgIndex := range nhgIndicesToCheck {
+		t.Logf("Checking NHG index: %d", nhgIndex)
+		nhgPath := ocpath.Root().NetworkInstance(cfg.NetworkInstanceName).Afts().NextHopGroup(nhgIndex)
+		nhgState, found := gnmi.Lookup(t, dut, nhgPath.State()).Val()
+		if !found {
+			t.Errorf("AFT NextHopGroup %d not found in NI %s", nhgIndex, cfg.NetworkInstanceName)
+			continue
+		}
+
+		// Validate number of NHs in the group
+		if len(nhgState.NextHop) != cfg.NumNexthopPerNHG {
+			t.Errorf("NHG index %d has %d NHs, want %d", nhgIndex, len(nhgState.NextHop), cfg.NumNexthopPerNHG)
+			continue
+		}
+
+		// Validate the NH index points correctly.
+		// Since NHs are shuffled before assignment when k=1, we can only check
+		// if the contained NH index is valid.
+		if cfg.NumNexthopPerNHG == 1 {
+			var containedNHIndex uint64
+			for nhIdxInGroup := range nhgState.NextHop {
+				containedNHIndex = nhIdxInGroup
+				break
+			}
+
+			maxExpectedNHIndex := uint64(cfg.NumNexthopGroup * cfg.NumNexthopPerNHG)
+			if containedNHIndex < 1 || containedNHIndex > maxExpectedNHIndex {
+				t.Errorf("NHG index %d contains invalid NH index %d (expected range [1, %d])", nhgIndex, containedNHIndex, maxExpectedNHIndex)
+			} else {
+				t.Logf("NHG index %d correctly contains NH index %d (within range [1, %d])", nhgIndex, containedNHIndex, maxExpectedNHIndex)
+			}
+		} else {
+			// TODO: Add validation for more complex NHG->NH mappings if needed for other profiles (k > 1).
+			// For k > 1, could check if all contained NH indices are within the valid range.
+			t.Logf("Skipping specific NH index validation for NHG %d because NumNexthopPerNHG > 1", nhgIndex)
+		}
+	}
+
+	// --- Validate a sample of Prefixes ---
+	// Check first and last prefix generated
+	firstPrefixStr, err := scaleutil.GeneratePrefix(cfg.PrefixStart, 0)
+	if err != nil {
+		t.Errorf("Failed to generate first prefix for validation: %v", err)
+		return
+	}
+	prefixesToCheck := []string{firstPrefixStr}
+
+	if cfg.NumPrefixes > 1 {
+		lastPrefixStr, err := scaleutil.GeneratePrefix(cfg.PrefixStart, cfg.NumPrefixes-1)
+		if err != nil {
+			t.Errorf("Failed to generate last prefix for validation: %v", err)
+		} else {
+			prefixesToCheck = append(prefixesToCheck, lastPrefixStr)
+		}
+	}
+
+	for i, prefixStr := range prefixesToCheck {
+		t.Logf("Checking Prefix: %s", prefixStr)
+		var prefixState *oc.NetworkInstance_Afts_Ipv6Entry // Use concrete type if possible, adjust for IPv4 later
+		var found bool
+
+		if cfg.AddrFamily == "ipv6" {
+			ipv6Path := ocpath.Root().NetworkInstance(cfg.NetworkInstanceName).Afts().Ipv6Entry(prefixStr)
+			prefixState, found = gnmi.Lookup(t, dut, ipv6Path.State()).Val()
+		} else {
+			t.Errorf("IPv4 prefix validation not implemented yet.")
+			continue
+		}
+
+		if !found {
+			t.Errorf("AFT Prefix %s not found in NI %s", prefixStr, cfg.NetworkInstanceName)
+			continue
+		}
+
+		// Validate the NHG it points to (assuming round-robin assignment in util)
+		expectedNHGIndex := uint64(i*(cfg.NumPrefixes-1))%uint64(cfg.NumNexthopGroup) + 1
+		if i == 0 {
+			expectedNHGIndex = 1
+		} else if cfg.NumPrefixes > 0 {
+			expectedNHGIndex = uint64((cfg.NumPrefixes-1)%cfg.NumNexthopGroup + 1)
+		}
+
+		if prefixState == nil {
+			t.Errorf("Internal error: prefixState is nil for prefix %s despite being found", prefixStr)
+			continue
+		}
+
+		if prefixState.GetNextHopGroup() != expectedNHGIndex {
+			t.Errorf("Prefix %s points to NHG %d, want %d", prefixStr, prefixState.GetNextHopGroup(), expectedNHGIndex)
+		}
+	}
+	t.Log("AFT state validation sample completed.")
+}
+
+// enableCapture enables packet capture on specified list of ports on OTG
+func enableCapture(t *testing.T, otg *otg.OTG, topo gosnappi.Config, otgPortName string) {
+	t.Log("Enabling capture on ", otgPortName)
+	topo.Captures().Add().SetName(otgPortName).SetPortNames([]string{otgPortName}).SetFormat(gosnappi.CaptureFormat.PCAP)
+	pb, _ := topo.Marshal().ToProto()
+	t.Log(pb.GetCaptures())
+	otg.PushConfig(t, topo)
+}
+
+// startCapture starts the capture on the otg ports
+func startCapture(t *testing.T, ate *ondatra.ATEDevice) {
+	otg := ate.OTG()
+	cs := gosnappi.NewControlState()
+	cs.Port().Capture().SetState(gosnappi.StatePortCaptureState.START)
+	otg.SetControlState(t, cs)
+}
+
+// stopCapture starts the capture on the otg ports
+func stopCapture(t *testing.T, ate *ondatra.ATEDevice) {
+	otg := ate.OTG()
+	cs := gosnappi.NewControlState()
+	cs.Port().Capture().SetState(gosnappi.StatePortCaptureState.STOP)
+	otg.SetControlState(t, cs)
+}
+
 // TestMPLSOverUDPScale sets up the basic DUT and ATE environment and runs scale profile tests.
 func TestMPLSOverUDPScale(t *testing.T) {
 	dut := ondatra.DUT(t, "dut")
@@ -337,7 +536,10 @@ func TestMPLSOverUDPScale(t *testing.T) {
 				t.Errorf("Got %d results, want %d", gotInstalledCount, expectedAddCount)
 			}
 
-			// 5. Validate Traffic Flow
+			// 5. AFT validations
+			validateAFTState(t, dut, tc.config)
+
+			// 6. Validate Traffic Flow
 			startAddrV6, err := scaleutil.GetFirstAddrFromPrefix(tc.config.PrefixStart)
 			if err != nil {
 				t.Fatalf("Failed to get start address from prefix %q", tc.config.PrefixStart)

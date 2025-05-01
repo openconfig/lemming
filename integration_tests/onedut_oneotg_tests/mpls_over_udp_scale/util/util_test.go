@@ -95,6 +95,80 @@ func TestGetFirstAddrFromPrefix(t *testing.T) {
 	}
 }
 
+func TestGeneratePrefix(t *testing.T) {
+	tests := []struct {
+		name            string
+		startPrefixCIDR string
+		index           int
+		wantPrefix      string
+		wantErr         bool
+	}{
+		{
+			name:            "ipv6 first prefix",
+			startPrefixCIDR: "2001:db8:abcd::/48",
+			index:           0,
+			wantPrefix:      "2001:db8:abcd::/128",
+			wantErr:         false,
+		},
+		{
+			name:            "ipv6 second prefix",
+			startPrefixCIDR: "2001:db8:abcd::/48",
+			index:           1,
+			wantPrefix:      "2001:db8:abcd::1/128",
+			wantErr:         false,
+		},
+		{
+			name:            "ipv6 large index",
+			startPrefixCIDR: "2001:db8:1234::/48",
+			index:           255,
+			wantPrefix:      "2001:db8:1234::ff/128",
+			wantErr:         false,
+		},
+		{
+			name:            "ipv6 another large index",
+			startPrefixCIDR: "2001:db8:1234::/48",
+			index:           256,
+			wantPrefix:      "2001:db8:1234::100/128",
+			wantErr:         false,
+		},
+		{
+			name:            "invalid start prefix",
+			startPrefixCIDR: "invalid-cidr",
+			index:           0,
+			wantPrefix:      "",
+			wantErr:         true,
+		},
+		// TODO: Add IPv4 tests when supported
+		// {
+		// 	name:            "ipv4 first prefix",
+		// 	startPrefixCIDR: "192.168.1.0/24",
+		// 	index:           0,
+		// 	wantPrefix:      "192.168.1.0/32",
+		// 	wantErr:         false,
+		// },
+		// {
+		// 	name:            "ipv4 second prefix",
+		// 	startPrefixCIDR: "192.168.1.0/24",
+		// 	index:           1,
+		// 	wantPrefix:      "192.168.1.1/32",
+		// 	wantErr:         false,
+		// },
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotPrefix, err := GeneratePrefix(tt.startPrefixCIDR, tt.index)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GeneratePrefix() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if gotPrefix != tt.wantPrefix {
+				t.Errorf("GeneratePrefix() = %v, want %v", gotPrefix, tt.wantPrefix)
+			}
+		})
+	}
+}
+
 // TestGenerateScaleProfileEntries tests both validation and correct generation.
 func TestGenerateScaleProfileEntries(t *testing.T) {
 	// Define a valid config with specific encap details for the 'want' case

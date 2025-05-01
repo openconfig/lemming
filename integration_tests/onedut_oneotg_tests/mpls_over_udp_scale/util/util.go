@@ -54,6 +54,37 @@ func GetFirstAddrFromPrefix(cidr string) (string, error) {
 	return prefix.Addr().String(), nil
 }
 
+// GeneratePrefix calculates the specific prefix string based on a start prefix and an index offset.
+func GeneratePrefix(startPrefixCIDR string, index int) (string, error) {
+	startPrefix, err := netip.ParsePrefix(startPrefixCIDR)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse start prefix %q: %w", startPrefixCIDR, err)
+	}
+	startAddr := startPrefix.Addr()
+
+	currentAddr := startAddr
+	for i := 0; i < index; i++ {
+		nextAddr := currentAddr.Next()
+		if !nextAddr.IsValid() || !startPrefix.Contains(nextAddr) {
+			return "", fmt.Errorf("ran out of valid IP addresses after generating %d prefixes, starting from %s", i+1, startAddr)
+		}
+		currentAddr = nextAddr
+	}
+
+	// Assume generated prefixes are host routes
+	var generatedPrefixLen int
+	if currentAddr.Is6() {
+		generatedPrefixLen = 128
+	} else if currentAddr.Is4() {
+		generatedPrefixLen = 32
+	} else {
+		return "", fmt.Errorf("invalid start address type: %s", startAddr)
+	}
+
+	prefix := netip.PrefixFrom(currentAddr, generatedPrefixLen)
+	return prefix.String(), nil
+}
+
 // populateNextHops generates NextHop entries and returns the updated slice.
 func populateNextHops(cfg *ScaleProfileConfig) ([]fluent.GRIBIEntry, error) {
 	totalNextHops := cfg.NumNexthopPerNHG * cfg.NumNexthopGroup
@@ -181,25 +212,12 @@ func populateNextHopGroups(cfg *ScaleProfileConfig) ([]fluent.GRIBIEntry, error)
 func populatePrefixes(cfg *ScaleProfileConfig) ([]fluent.GRIBIEntry, error) {
 	entries := []fluent.GRIBIEntry{}
 
-	// Parse the base prefix to get the starting address. Ignore the input prefix length.
-	startPrefixAddr, err := GetFirstAddrFromPrefix(cfg.PrefixStart)
-	if err != nil {
-		// Error already includes context from GetFirstAddrFromPrefix
-		return nil, fmt.Errorf("failed to get starting address from PrefixStart %q: %w", cfg.PrefixStart, err)
-	}
-	startAddr, err := netip.ParseAddr(startPrefixAddr)
-	if err != nil {
-		// Should not happen if GetFirstAddrFromPrefix succeeded
-		return nil, fmt.Errorf("internal error: failed to parse starting address %q: %w", startPrefixAddr, err)
-	}
-
-	currentAddr := startAddr
-	// Define the prefix length for the routes we are generating (host routes)
-	const generatedPrefixLen = 128
-
 	for i := 0; i < cfg.NumPrefixes; i++ {
-		prefix := netip.PrefixFrom(currentAddr, generatedPrefixLen)
-		prefixStr := prefix.String()
+		prefixStr, err := GeneratePrefix(cfg.PrefixStart, i) // Use the helper function
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate prefix at index %d: %w", i, err)
+		}
+
 		// Assign NHG ID in a round-robin fashion
 		nhgID := uint64(i%cfg.NumNexthopGroup + 1)
 
@@ -218,14 +236,6 @@ func populatePrefixes(cfg *ScaleProfileConfig) ([]fluent.GRIBIEntry, error) {
 			return nil, fmt.Errorf("internal error: unsupported AddrFamily %q", cfg.AddrFamily)
 		}
 		entries = append(entries, entry)
-
-		if i < cfg.NumPrefixes-1 {
-			nextAddr := currentAddr.Next() // Get the next sequential address
-			if !nextAddr.IsValid() {
-				return nil, fmt.Errorf("ran out of valid IP addresses after generating %d prefixes, starting from %s", i+1, startAddr)
-			}
-			currentAddr = nextAddr
-		}
 	}
 
 	return entries, nil
