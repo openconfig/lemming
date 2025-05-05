@@ -43,6 +43,8 @@ message SetRouteRequest {
   uint32 metric = 7;
   repeated Nexthop nexthops = 8;
   repeated Nexthop backup_nexthops = 9;
+  // Either vrf_id or network_instance can be specified.
+  string network_instance = 10; 
 }
 
 // TODO(wenbli): This probably goes in some common proto file.

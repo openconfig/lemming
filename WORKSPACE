@@ -36,16 +36,16 @@ http_archive(
 
 http_archive(
     name = "com_google_protobuf",
-    url = "https://github.com/protocolbuffers/protobuf/archive/refs/tags/v29.3.zip",
-    strip_prefix = "protobuf-29.3",
     sha256 = "85803e01f347141e16a2f770213a496f808fff9f0138c7c0e0c9dfa708b0da92",
+    strip_prefix = "protobuf-29.3",
+    url = "https://github.com/protocolbuffers/protobuf/archive/refs/tags/v29.3.zip",
 )
 
 http_archive(
     name = "rules_cc",
-    urls = ["https://github.com/bazelbuild/rules_cc/archive/refs/tags/0.1.1.tar.gz"],
-    strip_prefix = "rules_cc-0.1.1",
     sha256 = "712d77868b3152dd618c4d64faaddefcc5965f90f5de6e6dd1d5ddcd0be82d42",
+    strip_prefix = "rules_cc-0.1.1",
+    urls = ["https://github.com/bazelbuild/rules_cc/archive/refs/tags/0.1.1.tar.gz"],
 )
 
 http_archive(
@@ -57,19 +57,19 @@ http_archive(
 
 http_archive(
     name = "rules_pkg",
+    sha256 = "b7215c636f22c1849f1c3142c72f4b954bb12bb8dcf3cbe229ae6e69cc6479db",
     urls = [
         "https://github.com/bazelbuild/rules_pkg/releases/download/1.1.0/rules_pkg-1.1.0.tar.gz",
     ],
-    sha256 = "b7215c636f22c1849f1c3142c72f4b954bb12bb8dcf3cbe229ae6e69cc6479db",
 )
 
 http_archive(
     name = "com_google_absl",
+    sha256 = "b396401fd29e2e679cace77867481d388c807671dc2acc602a0259eeb79b7811",
     strip_prefix = "abseil-cpp-20250127.1",
     urls = [
         "https://github.com/abseil/abseil-cpp/releases/download/20250127.1/abseil-cpp-20250127.1.tar.gz",
     ],
-    sha256 = "b396401fd29e2e679cace77867481d388c807671dc2acc602a0259eeb79b7811",
 )
 
 http_archive(
@@ -259,7 +259,6 @@ load(
 )
 
 swift_rules_dependencies()
-
 
 # External non-Go or bazel friendly dependencies
 
