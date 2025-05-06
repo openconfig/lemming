@@ -281,7 +281,11 @@ func (sr *SysRIB) setRoute(ni string, r *Route, isDelete bool) error {
 	sr.mu.Lock()
 	defer sr.mu.Unlock()
 	if _, ok := sr.NI[ni]; !ok {
-		return fmt.Errorf("cannot find network instance %s", ni)
+		sr.NI[ni] = &NIRIB{
+			IPV4: generics_tree.NewTreeV4[*Route](),
+			IPV6: generics_tree.NewTreeV6[*Route](),
+		}
+		log.Infof("created RIB for network instance %s", ni)
 	}
 	prefix, err := canonicalPrefix(r.Prefix)
 	if err != nil {
