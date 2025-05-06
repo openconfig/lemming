@@ -227,8 +227,10 @@ func TestVLANVRF(t *testing.T) {
 	otg.PushConfig(t, otgConfig)
 	otg.StartProtocols(t)
 
-	nhIndex := uint64(100)
-	nhgIndex := uint64(10)
+	defaultNHIndex := uint64(100)
+	defaultNHGIndex := uint64(10)
+	testNHIndex := uint64(200)
+	testNHGIndex := uint64(20)
 
 	tests := []struct {
 		desc                    string
@@ -239,25 +241,25 @@ func TestVLANVRF(t *testing.T) {
 		untaggedLoss            bool
 		taggedLoss              bool
 	}{{
-		desc:       "tagged and untagged in different vrf",
+		desc:       "route only for untagged packet",
 		flowVlanID: 1,
 		entries: []fluent.GRIBIEntry{
 			fluent.NextHopEntry().WithNetworkInstance(fakedevice.DefaultNetworkInstance).
-				WithIndex(nhIndex).WithIPAddress(atePort2.IPv4),
+				WithIndex(defaultNHIndex).WithIPAddress(atePort2.IPv4),
 			fluent.NextHopGroupEntry().WithNetworkInstance(fakedevice.DefaultNetworkInstance).
-				WithID(10).AddNextHop(nhIndex, 1),
+				WithID(defaultNHGIndex).AddNextHop(defaultNHIndex, 1),
 			fluent.IPv4Entry().WithNetworkInstance(fakedevice.DefaultNetworkInstance).
-				WithPrefix("198.51.100.1/32").WithNextHopGroup(nhgIndex),
+				WithPrefix("198.51.100.1/32").WithNextHopGroup(defaultNHGIndex),
 		},
 		flowDstAddr: "198.51.100.1",
 		wantAddOperationResults: []*client.OpResult{
 			fluent.OperationResult().
-				WithNextHopOperation(nhIndex).
+				WithNextHopOperation(defaultNHIndex).
 				WithProgrammingResult(fluent.InstalledInFIB).
 				WithOperationType(constants.Add).
 				AsResult(),
 			fluent.OperationResult().
-				WithNextHopGroupOperation(nhgIndex).
+				WithNextHopGroupOperation(defaultNHGIndex).
 				WithProgrammingResult(fluent.InstalledInFIB).
 				WithOperationType(constants.Add).
 				AsResult(),
@@ -268,6 +270,86 @@ func TestVLANVRF(t *testing.T) {
 				AsResult(),
 		},
 		taggedLoss: true,
+	}, {
+		desc:       "routes for both tagged and untagged",
+		flowVlanID: 1,
+		entries: []fluent.GRIBIEntry{
+			fluent.NextHopEntry().WithNetworkInstance(fakedevice.DefaultNetworkInstance).
+				WithIndex(defaultNHIndex).WithIPAddress(atePort2.IPv4),
+			fluent.NextHopGroupEntry().WithNetworkInstance(fakedevice.DefaultNetworkInstance).
+				WithID(defaultNHGIndex).AddNextHop(defaultNHIndex, 1),
+			fluent.IPv4Entry().WithNetworkInstance(fakedevice.DefaultNetworkInstance).
+				WithPrefix("198.51.100.1/32").WithNextHopGroup(defaultNHGIndex),
+			fluent.NextHopEntry().WithNetworkInstance(TestNI).
+				WithIndex(testNHIndex).WithIPAddress(atePort2.IPv4),
+			fluent.NextHopGroupEntry().WithNetworkInstance(TestNI).
+				WithID(testNHGIndex).AddNextHop(testNHIndex, 1),
+			fluent.IPv4Entry().WithNetworkInstance(TestNI).
+				WithPrefix("198.51.100.1/32").WithNextHopGroup(testNHGIndex),
+		},
+		flowDstAddr: "198.51.100.1",
+		wantAddOperationResults: []*client.OpResult{
+			fluent.OperationResult().
+				WithNextHopOperation(defaultNHIndex).
+				WithProgrammingResult(fluent.InstalledInFIB).
+				WithOperationType(constants.Add).
+				AsResult(),
+			fluent.OperationResult().
+				WithNextHopGroupOperation(defaultNHGIndex).
+				WithProgrammingResult(fluent.InstalledInFIB).
+				WithOperationType(constants.Add).
+				AsResult(),
+			fluent.OperationResult().
+				WithIPv4Operation("198.51.100.1/32").
+				WithProgrammingResult(fluent.InstalledInFIB).
+				WithOperationType(constants.Add).
+				AsResult(),
+			fluent.OperationResult().
+				WithNextHopOperation(testNHIndex).
+				WithProgrammingResult(fluent.InstalledInFIB).
+				WithOperationType(constants.Add).
+				AsResult(),
+			fluent.OperationResult().
+				WithNextHopGroupOperation(testNHGIndex).
+				WithProgrammingResult(fluent.InstalledInFIB).
+				WithOperationType(constants.Add).
+				AsResult(),
+			fluent.OperationResult().
+				WithIPv4Operation("198.51.100.1/32").
+				WithProgrammingResult(fluent.InstalledInFIB).
+				WithOperationType(constants.Add).
+				AsResult(),
+		},
+	}, {
+		desc:       "route only for tagged packet",
+		flowVlanID: 1,
+		entries: []fluent.GRIBIEntry{
+			fluent.NextHopEntry().WithNetworkInstance(TestNI).
+				WithIndex(testNHIndex).WithIPAddress(atePort2.IPv4),
+			fluent.NextHopGroupEntry().WithNetworkInstance(TestNI).
+				WithID(testNHGIndex).AddNextHop(testNHIndex, 1),
+			fluent.IPv4Entry().WithNetworkInstance(TestNI).
+				WithPrefix("198.51.100.1/32").WithNextHopGroup(testNHGIndex),
+		},
+		flowDstAddr: "198.51.100.1",
+		wantAddOperationResults: []*client.OpResult{
+			fluent.OperationResult().
+				WithNextHopOperation(testNHIndex).
+				WithProgrammingResult(fluent.InstalledInFIB).
+				WithOperationType(constants.Add).
+				AsResult(),
+			fluent.OperationResult().
+				WithNextHopGroupOperation(testNHGIndex).
+				WithProgrammingResult(fluent.InstalledInFIB).
+				WithOperationType(constants.Add).
+				AsResult(),
+			fluent.OperationResult().
+				WithIPv4Operation("198.51.100.1/32").
+				WithProgrammingResult(fluent.InstalledInFIB).
+				WithOperationType(constants.Add).
+				AsResult(),
+		},
+		untaggedLoss: true,
 	}}
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
@@ -299,17 +381,17 @@ func TestVLANVRF(t *testing.T) {
 			// First send traffic without VLAN tag.
 			loss := testTraffic(t, otg, atePort1, atePort2, tt.flowDstAddr, 5*time.Second, nil)
 			if tt.untaggedLoss && loss < 0.99 {
-				t.Errorf("untaggedLoss untagged to flow to fail, got loss %f", loss)
-			} else if !tt.taggedLoss && loss > 0.01 {
-				t.Errorf("unexpected untagged to flow to pass, got loss %f", loss)
+				t.Errorf("untaggedLoss expected flow to fail, got loss %f", loss)
+			} else if !tt.untaggedLoss && loss > 0.01 {
+				t.Errorf("unexpected expected flow to pass, got loss %f", loss)
 			}
 			// Next send traffic with VLAN tag.
 			t.Log("starting tagged flow")
 			loss = testTraffic(t, otg, atePort1, atePort2, tt.flowDstAddr, 5*time.Second, &tt.flowVlanID)
 			if tt.taggedLoss && loss < 0.99 {
-				t.Errorf("unexpected tagged to flow to fail, got loss %f", loss)
+				t.Errorf("unexpected expected flow to fail, got loss %f", loss)
 			} else if !tt.taggedLoss && loss > 0.01 {
-				t.Errorf("unexpected tagged to flow to pass, got loss %f", loss)
+				t.Errorf("unexpected expected flow to pass, got loss %f", loss)
 			}
 
 			slices.Reverse(tt.entries)
