@@ -91,7 +91,7 @@ This test evaluates scaling across the following dimensions using gRIBI. The tes
 
 #### Profile 5 (Single VRF)
 
-- **Goal:** Test gRIBI control plane QPS scaling and impact on dataplane. Uses Profile 1 (ELM) as the base state.
+- **Goal:** Test gRIBI control plane QPS scaling and impact on dataplane. Uses Profile 1 as the base state.
 - **Network Instances (VRFs):** 1 (DEFAULT).
 - **Total NHGs:** 20,000.
 - **NHs per NHG:** 1.
@@ -151,6 +151,7 @@ This test evaluates scaling across the following dimensions using gRIBI. The tes
   - Measure packet loss (target: minimal loss, allowing for brief transient loss during updates, but stable low loss overall).
 
 - Validate `RIB_ACK` / `FIB_PROGRAMMED` status is received promptly for updates.
+
 - Verify AFT state on DUT reflects the changes made during the high-rate phase.
 - Stop high-rate programming and measure steady-state loss again.
 
