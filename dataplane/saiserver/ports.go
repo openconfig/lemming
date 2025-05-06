@@ -68,7 +68,21 @@ func getPreIngressPipeline() []*fwdpb.ActionDesc {
 	}
 }
 
-func getL3Pipeline() []*fwdpb.ActionDesc {
+func getL3Pipeline(skipIPValidation bool) []*fwdpb.ActionDesc {
+	if !skipIPValidation {
+		return []*fwdpb.ActionDesc{
+			fwdconfig.Action(fwdconfig.LookupAction(FIBSelectorTable)).Build(),   // Lookup in FIB.
+			fwdconfig.Action(fwdconfig.LookupAction(IngressActionTable)).Build(), // Run ingress action.
+			fwdconfig.Action(fwdconfig.LookupAction(outputIfaceTable)).Build(),   // Match interface to port
+			fwdconfig.Action(fwdconfig.LookupAction(EgressActionTable)).Build(),  // Run egress actions
+			fwdconfig.Action(fwdconfig.LookupAction(invalidIngress)).Build(),     // Drop invalid source and dst IP.
+			fwdconfig.Action(fwdconfig.LookupAction(outputTable)).Build(),        // Take final decision on forward, drop, or trap.
+			{
+				ActionType: fwdpb.ActionType_ACTION_TYPE_OUTPUT,
+			},
+		}
+	}
+
 	return []*fwdpb.ActionDesc{
 		fwdconfig.Action(fwdconfig.LookupAction(FIBSelectorTable)).Build(),   // Lookup in FIB.
 		fwdconfig.Action(fwdconfig.LookupAction(IngressActionTable)).Build(), // Run ingress action.
