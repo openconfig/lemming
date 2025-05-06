@@ -594,7 +594,10 @@ func (s *Server) SetRoute(ctx context.Context, req *sysribpb.SetRouteRequest) (*
 		})
 	}
 
-	niName := vrfIDToNiName(req.GetVrfId())
+	niName := req.GetNetworkInstance()
+	if niName == "" {
+		niName = vrfIDToNiName(req.GetVrfId())
+	}
 	if err := s.setRoute(ctx, niName, &Route{
 		Prefix:   pfx,
 		NextHops: nexthops,

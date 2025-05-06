@@ -140,7 +140,7 @@ func createGRIBIServer(gClient gpb.GNMIClient, target string, root *oc.Root, sys
 			return
 		}
 
-		routeReq, err := createSetRouteRequest(prefix, nhSum, ribs)
+		routeReq, err := createSetRouteRequest(netinst, prefix, nhSum, ribs)
 		if err != nil {
 			log.Errorf("Cannot create SetRouteRequest: %v", err)
 			return
@@ -166,6 +166,23 @@ func createGRIBIServer(gClient gpb.GNMIClient, target string, root *oc.Root, sys
 		return nil, err
 	}
 	s.UnimplementedGRIBIServer = &gribipb.UnimplementedGRIBIServer{}
+
+	nis := map[string]bool{}
+
+	w := ygnmi.WatchAll(context.Background(), yclient, ocpath.Root().NetworkInstanceAny().Name().Config(), func(v *ygnmi.Value[string]) error {
+		val, present := v.Val()
+		if !present { // TODO: support deleting NI.
+			return ygnmi.Continue
+		}
+		if _, ok := nis[val]; !ok {
+			log.Infof("adding network instance %q", val)
+			s.AddNetworkInstance(val)
+		}
+		return ygnmi.Continue
+	})
+	go func() {
+		w.Await()
+	}()
 	return s, nil
 }
 
@@ -189,7 +206,7 @@ func appendUDPHeader(nh *sysribpb.Nexthop, t routingpb.HeaderType, udp udpEncap)
 }
 
 // createSetRouteRequest converts a Route to a sysrib SetRouteRequest
-func createSetRouteRequest(prefix string, nexthops []*afthelper.NextHopSummary, ribs map[string]*aft.RIB) (*sysribpb.SetRouteRequest, error) {
+func createSetRouteRequest(netinst, prefix string, nexthops []*afthelper.NextHopSummary, ribs map[string]*aft.RIB) (*sysribpb.SetRouteRequest, error) {
 	pfx, err := netip.ParsePrefix(prefix)
 	if err != nil {
 		log.Errorf("Cannot parse prefix %q as CIDR for calling sysrib", prefix)
@@ -261,7 +278,8 @@ func createSetRouteRequest(prefix string, nexthops []*afthelper.NextHopSummary, 
 			Address:    pfx.Addr().String(),
 			MaskLength: uint32(pfx.Bits()),
 		},
-		Nexthops: zNexthops,
+		Nexthops:        zNexthops,
+		NetworkInstance: netinst,
 	}, nil
 }
 
