@@ -192,6 +192,7 @@ const (
 	VlanTable             = "vlan"
 	L2MCGroupTable        = "l2mcg"
 	policerTabler         = "policerTable"
+	invalidIngress        = "invalid-ingress"
 	invalidIngressV4Table = "invalid-ingress-v4"
 	invalidIngressV6Table = "invalid-ingress-v6"
 	outputTable           = "output-table"
@@ -223,7 +224,7 @@ func newSwitch(mgr *attrmgr.AttrMgr, engine switchDataplaneAPI, s *grpc.Server, 
 		isolationGroup:  newIsolationGroup(mgr, engine, s),
 		l2mc:            newL2mc(mgr, engine, s),
 		l2mcGroup:       newL2mcGroup(mgr, engine, s),
-		myMac:           newMyMac(mgr, engine, s),
+		myMac:           newMyMac(mgr, engine, s, opts),
 		neighbor:        newNeighbor(mgr, engine, s),
 		nextHopGroup:    newNextHopGroup(mgr, engine, s),
 		nextHop:         newNextHop(mgr, engine, s),
@@ -933,6 +934,36 @@ func (sw *saiSwitch) createInvalidPacketFilter(ctx context.Context) error {
 		}
 	}
 
+	_, err := sw.dataplane.TableCreate(ctx, &fwdpb.TableCreateRequest{
+		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},
+		Desc: &fwdpb.TableDesc{
+			Actions:   []*fwdpb.ActionDesc{{ActionType: fwdpb.ActionType_ACTION_TYPE_CONTINUE}},
+			TableType: fwdpb.TableType_TABLE_TYPE_EXACT,
+			TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: invalidIngress}},
+			Table: &fwdpb.TableDesc_Exact{
+				Exact: &fwdpb.ExactTableDesc{
+					FieldIds: []*fwdpb.PacketFieldId{{Field: &fwdpb.PacketField{
+						FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION,
+					}}},
+				},
+			},
+		},
+	})
+	if err != nil {
+		return err
+	}
+	verReq := fwdconfig.TableEntryAddRequest(sw.dataplane.ID(), invalidIngress).AppendEntry(
+		fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION).WithBytes([]byte{4}))),
+		fwdconfig.LookupAction(invalidIngressV4Table),
+	).AppendEntry(
+		fwdconfig.EntryDesc(fwdconfig.ExactEntry(fwdconfig.PacketFieldBytes(fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_VERSION).WithBytes([]byte{6}))),
+		fwdconfig.LookupAction(invalidIngressV6Table),
+	).Build()
+
+	if _, err := sw.dataplane.TableEntryAdd(ctx, verReq); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -1125,25 +1156,6 @@ func (sw *saiSwitch) createFIBSelector(ctx context.Context) error {
 			},
 		},
 	}}
-
-	if !sw.opts.SkipIPValidation {
-		v4Acts = append(v4Acts, &fwdpb.ActionDesc{
-			ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
-			Action: &fwdpb.ActionDesc_Lookup{
-				Lookup: &fwdpb.LookupActionDesc{
-					TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: invalidIngressV4Table}},
-				},
-			},
-		})
-		v6Acts = append(v6Acts, &fwdpb.ActionDesc{
-			ActionType: fwdpb.ActionType_ACTION_TYPE_LOOKUP,
-			Action: &fwdpb.ActionDesc_Lookup{
-				Lookup: &fwdpb.LookupActionDesc{
-					TableId: &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: invalidIngressV6Table}},
-				},
-			},
-		})
-	}
 
 	entries := &fwdpb.TableEntryAddRequest{
 		ContextId: &fwdpb.ContextId{Id: sw.dataplane.ID()},

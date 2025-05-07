@@ -25,6 +25,7 @@ import (
 	"slices"
 	"sync"
 
+	"github.com/openconfig/lemming/dataplane/dplaneopts"
 	"github.com/openconfig/lemming/dataplane/forwarding/fwdconfig"
 	"github.com/openconfig/lemming/dataplane/saiserver/attrmgr"
 
@@ -223,18 +224,34 @@ func (a *acl) createAclEntryFields(req *saipb.CreateAclEntryRequest, id uint64, 
 			Masks:   []byte{mask},
 		})
 	}
-	if req.GetFieldDstIpv6Word3() != nil { // Word3 is supposed to match the 127:96 bits of the IP, assume the caller is masking this correctly put the whole IP in the table.
-		aReq.EntryDesc.GetFlow().Fields = append(aReq.EntryDesc.GetFlow().Fields, &fwdpb.PacketFieldMaskedBytes{
-			FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST}},
-			Bytes:   req.GetFieldDstIpv6Word3().GetDataIp(),
-			Masks:   req.GetFieldDstIpv6Word3().GetMaskIp(),
-		})
+	ipv6Field := false
+	ipv6Addr := make([]byte, 16)
+	ipv6Mask := make([]byte, 16)
+	if req.GetFieldDstIpv6Word0() != nil { // Word0 is supposed to match 0:0:0:0:0:0:ffff:ffff
+		ipv6Field = true
+		copy(ipv6Addr[12:16], req.GetFieldDstIpv6Word0().GetDataIp()[12:16])
+		copy(ipv6Mask[12:16], req.GetFieldDstIpv6Word0().GetMaskIp()[12:16])
 	}
-	if req.GetFieldDstIpv6Word2() != nil { // Word2 is supposed to match the  95:64 bits of the IP, assume the caller is masking this correctly put the whole IP in the table.
+	if req.GetFieldDstIpv6Word1() != nil { // Word1 is supposed to match 0:0:0:0:ffff:ffff::
+		ipv6Field = true
+		copy(ipv6Addr[8:12], req.GetFieldDstIpv6Word1().GetDataIp()[8:12])
+		copy(ipv6Mask[8:12], req.GetFieldDstIpv6Word1().GetMaskIp()[8:12])
+	}
+	if req.GetFieldDstIpv6Word2() != nil { // Word2 is supposed to match 0:0:ffff:ffff:
+		ipv6Field = true
+		copy(ipv6Addr[4:8], req.GetFieldDstIpv6Word2().GetDataIp()[4:8])
+		copy(ipv6Mask[4:8], req.GetFieldDstIpv6Word2().GetMaskIp()[4:8])
+	}
+	if req.GetFieldDstIpv6Word3() != nil { // Word3 is supposed to match ffff:ffff::
+		ipv6Field = true
+		copy(ipv6Addr[0:4], req.GetFieldDstIpv6Word3().GetDataIp()[0:4])
+		copy(ipv6Mask[0:4], req.GetFieldDstIpv6Word3().GetMaskIp()[0:4])
+	}
+	if ipv6Field {
 		aReq.EntryDesc.GetFlow().Fields = append(aReq.EntryDesc.GetFlow().Fields, &fwdpb.PacketFieldMaskedBytes{
 			FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST}},
-			Bytes:   req.GetFieldDstIpv6Word2().GetDataIp(),
-			Masks:   req.GetFieldDstIpv6Word2().GetMaskIp(),
+			Bytes:   ipv6Addr,
+			Masks:   ipv6Mask,
 		})
 	}
 	if req.GetFieldDstMac() != nil {
@@ -577,12 +594,14 @@ type myMac struct {
 	saipb.UnimplementedMyMacServer
 	mgr       *attrmgr.AttrMgr
 	dataplane switchDataplaneAPI
+	opts      *dplaneopts.Options
 }
 
-func newMyMac(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server) *myMac {
+func newMyMac(mgr *attrmgr.AttrMgr, dataplane switchDataplaneAPI, s *grpc.Server, opts *dplaneopts.Options) *myMac {
 	m := &myMac{
 		mgr:       mgr,
 		dataplane: dataplane,
+		opts:      opts,
 	}
 	saipb.RegisterMyMacServer(s, m)
 	return m
@@ -601,7 +620,7 @@ func (m *myMac) CreateMyMac(ctx context.Context, req *saipb.CreateMyMacRequest) 
 		ContextId: &fwdpb.ContextId{Id: m.dataplane.ID()},
 		TableId:   &fwdpb.TableId{ObjectId: &fwdpb.ObjectId{Id: MyMacTable}},
 		EntryDesc: ed,
-		Actions:   getL3Pipeline(),
+		Actions:   getL3Pipeline(m.opts.SkipIPValidation),
 	}
 	if _, err := m.dataplane.TableEntryAdd(ctx, mReq); err != nil {
 		return nil, err
