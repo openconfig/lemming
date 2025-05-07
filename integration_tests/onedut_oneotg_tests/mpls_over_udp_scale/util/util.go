@@ -1,4 +1,18 @@
-package mplsoverudpscale
+// Copyright 2025 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//	http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package util
 
 import (
 	"context"
@@ -125,7 +139,7 @@ func MPLSLabelToPacketBytes(label uint32) []byte {
 }
 
 // populateNextHops generates NextHop entries and returns the updated slice.
-func populateNextHops(cfg *ScaleProfileConfig) ([]fluent.GRIBIEntry, error) {
+func (cfg *ScaleProfileConfig)populateNextHops() ([]fluent.GRIBIEntry, error) {
 	totalNextHops := cfg.NumNexthopPerNHG * cfg.NumNexthopGroup
 	entries := []fluent.GRIBIEntry{}
 	if totalNextHops <= 0 {
@@ -193,7 +207,7 @@ func combinationKey(indices []uint64) string {
 }
 
 // populateNextHopGroups generates NextHopGroup entries, ensuring unique combinations of NHs per NHG.
-func populateNextHopGroups(cfg *ScaleProfileConfig) ([]fluent.GRIBIEntry, error) {
+func (cfg *ScaleProfileConfig) populateNextHopGroups() ([]fluent.GRIBIEntry, error) {
 	totalNHsAvailable := cfg.NumNexthopPerNHG * cfg.NumNexthopGroup
 	k := cfg.NumNexthopPerNHG
 	entries := []fluent.GRIBIEntry{}
@@ -248,7 +262,7 @@ func populateNextHopGroups(cfg *ScaleProfileConfig) ([]fluent.GRIBIEntry, error)
 }
 
 // populatePrefixes generates IPv4 or IPv6 entries based on the configuration.
-func populatePrefixes(cfg *ScaleProfileConfig) ([]fluent.GRIBIEntry, error) {
+func (cfg *ScaleProfileConfig)populatePrefixes() ([]fluent.GRIBIEntry, error) {
 	entries := []fluent.GRIBIEntry{}
 
 	for i := 0; i < cfg.NumPrefixes; i++ {
@@ -330,21 +344,21 @@ func GenerateScaleProfileEntries(ctx context.Context, cfg *ScaleProfileConfig) (
 	entries := []fluent.GRIBIEntry{}
 
 	// 3. Generates next hops.
-	nhs, err := populateNextHops(cfg)
+	nhs, err := cfg.populateNextHops()
 	if err != nil {
 		return nil, fmt.Errorf("failed to populate next hops: %w", err)
 	}
 	entries = append(entries, nhs...)
 
 	// 4. Generates next hop groups.
-	nhgs, err := populateNextHopGroups(cfg)
+	nhgs, err := cfg.populateNextHopGroups()
 	if err != nil {
 		return nil, fmt.Errorf("failed to populate next hop groups: %w", err)
 	}
 	entries = append(entries, nhgs...)
 
 	// 5. Generates prefixes (AFT entries).
-	prefixEntries, err := populatePrefixes(cfg)
+	prefixEntries, err := cfg.populatePrefixes()
 	if err != nil {
 		return nil, fmt.Errorf("failed to populate prefixes: %w", err)
 	}
