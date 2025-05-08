@@ -1535,8 +1535,8 @@ def go_repositories():
         name = "com_github_osrg_gobgp_v3",
         build_file_proto_mode = "disable",
         importpath = "github.com/osrg/gobgp/v3",
-        sum = "h1:KrVLbjNucHf+LrrGcwrH6hN0RyfmbPx9Vk5/iBsFfYY=",
-        version = "v3.27.1-0.20240614010451-0148e2d22dcf",
+        sum = "h1:qDKokSsHUlvp03kHwOIwq0D1jPJruYRBpOHQsJYHdfc=",
+        version = "v3.31.0",
     )
     go_repository(
         name = "com_github_patrickmn_go_cache",
@@ -1902,8 +1902,8 @@ def go_repositories():
     go_repository(
         name = "com_github_vishvananda_netlink",
         importpath = "github.com/vishvananda/netlink",
-        sum = "h1:Llsql0lnQEbHj0I1OuKyp8otXp0r3q0mPkuhwHfStVs=",
-        version = "v1.2.1-beta.2",
+        sum = "h1:pfLv/qlJUwOTPvtWREA7c3PI4u81YkqZw1DYhI2HmLA=",
+        version = "v1.2.1",
     )
     go_repository(
         name = "com_github_vishvananda_netns",
