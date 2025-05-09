@@ -470,12 +470,6 @@ def go_repositories():
         version = "v1.8.0",
     )
     go_repository(
-        name = "com_github_getsentry_sentry_go",
-        importpath = "github.com/getsentry/sentry-go",
-        sum = "h1:lWUwDnY7sKHaVIoZ9wYqRHJ5iEmoc0pqcRqFkosKzBo=",
-        version = "v0.30.0",
-    )
-    go_repository(
         name = "com_github_ghodss_yaml",
         importpath = "github.com/ghodss/yaml",
         sum = "h1:wQHKEahhL6wmXdzwWG11gIVCkOv05bNOh+Rxn0yngAk=",
@@ -1541,8 +1535,8 @@ def go_repositories():
         name = "com_github_osrg_gobgp_v3",
         build_file_proto_mode = "disable",
         importpath = "github.com/osrg/gobgp/v3",
-        sum = "h1:8HQyCCoByAJyXiSzTFBl77wuOyVdDXozPdXX+tjYyHQ=",
-        version = "v3.35.0",
+        sum = "h1:qDKokSsHUlvp03kHwOIwq0D1jPJruYRBpOHQsJYHdfc=",
+        version = "v3.31.0",
     )
     go_repository(
         name = "com_github_patrickmn_go_cache",
