@@ -35,7 +35,7 @@ require (
 	github.com/openconfig/testt v0.0.0-20220311054427-efbb1a32ec07
 	github.com/openconfig/ygnmi v0.11.1
 	github.com/openconfig/ygot v0.31.0
-	github.com/osrg/gobgp/v3 v3.31.0
+	github.com/osrg/gobgp/v3 v3.37.0
 	github.com/p4lang/p4runtime v1.4.0-rc.5.0.20220728214547-13f0d02a521e
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.9.1
@@ -182,3 +182,5 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
+
+replace github.com/osrg/gobgp/v3 => github.com/DanG100/gobgp/v3 v3.0.0-20250514232417-c9f561b7bb0e // TODO: figure out why changing minConnectInterval breaks policy tests

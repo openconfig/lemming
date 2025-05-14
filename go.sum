@@ -1342,6 +1342,8 @@ gioui.org v0.0.0-20210308172011-57750fc8a0a6/go.mod h1:RSH6KIUZ0p2xy5zHDxgAM4zum
 git.sr.ht/~sbinet/gg v0.3.1/go.mod h1:KGYtlADtqsqANL9ueOFkWymvzUvLMQllU5Ixo+8v3pc=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
+github.com/DanG100/gobgp/v3 v3.0.0-20250514232417-c9f561b7bb0e h1:IkoLokGQxuogFQb9SeFzwDoSWAfXKARHBVa4bo6Mwbo=
+github.com/DanG100/gobgp/v3 v3.0.0-20250514232417-c9f561b7bb0e/go.mod h1:kVHVFy1/fyZHJ8P32+ctvPeJogn9qKwa1YCeMRXXrP0=
 github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.25.0 h1:3c8yed4lgqTt+oTQ+JNMDo+F4xprBf+O/il4ZC0nRLw=
 github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.25.0/go.mod h1:obipzmGjfSjam60XLwGfqUkJsfiheAl+TUjG+4yzyPM=
 github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric v0.49.0 h1:o90wcURuxekmXrtxmYWTyNla0+ZEHhud6DI1ZTxd1vI=
@@ -1823,8 +1825,6 @@ github.com/openconfig/ygnmi v0.11.1/go.mod h1:naCxQR+/wBItM82ilJXWgapCRkrx8bphBm
 github.com/openconfig/ygot v0.6.0/go.mod h1:o30svNf7O0xK+R35tlx95odkDmZWS9JyWWQSmIhqwAs=
 github.com/openconfig/ygot v0.31.0 h1:d64D9XasjDEWn4K5vLr+RWqnG+xhgieF8E0kmMQ28U0=
 github.com/openconfig/ygot v0.31.0/go.mod h1:FeioWeYqAWInURUh60kVVJBndB24DIfFBm665idBPfU=
-github.com/osrg/gobgp/v3 v3.31.0 h1:qDKokSsHUlvp03kHwOIwq0D1jPJruYRBpOHQsJYHdfc=
-github.com/osrg/gobgp/v3 v3.31.0/go.mod h1:8m+kgkdaWrByxg5EWpNUO2r/mopodrNBOUBhMnW/yGQ=
 github.com/p4lang/p4runtime v1.4.0-rc.5.0.20220728214547-13f0d02a521e h1:AfZKoikDXbZ7zWvO/lvCRzLo7i6lM+gNleYVMxPiWyQ=
 github.com/p4lang/p4runtime v1.4.0-rc.5.0.20220728214547-13f0d02a521e/go.mod h1:m9laObIMXM9N1ElGXijc66/MSM5eheZJLRLxg/TG+fU=
 github.com/patrickmn/go-cache v2.1.0+incompatible h1:HRMgzkcYKYpi3C8ajMPV8OFXaaRUnok+kx1WdO15EQc=
