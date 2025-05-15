@@ -23,6 +23,7 @@ go_library(
         "@com_github_osrg_gobgp_v3//api",
         "@com_github_osrg_gobgp_v3//pkg/config",
         "@com_github_osrg_gobgp_v3//pkg/config/oc",
+        "@com_github_osrg_gobgp_v3//pkg/log",
         "@com_github_osrg_gobgp_v3//pkg/server",
         "@com_github_osrg_gobgp_v3//pkg/zebra",
     ],

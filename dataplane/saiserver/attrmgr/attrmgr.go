@@ -259,6 +259,8 @@ func (mgr *AttrMgr) StoreAttributes(id uint64, msg proto.Message) {
 
 // GetType returns the SAI type for the object.
 func (mgr *AttrMgr) GetType(id string) saipb.ObjectType {
+	mgr.mu.Lock()
+	defer mgr.mu.Unlock()
 	val, ok := mgr.idToType[id]
 	if !ok {
 		return saipb.ObjectType_OBJECT_TYPE_NULL
@@ -268,18 +270,20 @@ func (mgr *AttrMgr) GetType(id string) saipb.ObjectType {
 
 // GetType returns the SAI type for the object.
 func (mgr *AttrMgr) SetType(id string, t saipb.ObjectType) {
+	mgr.mu.Lock()
+	defer mgr.mu.Unlock()
 	mgr.idToType[id] = t
 }
 
 // storeAttributes stores all the attributes in the message.
 func (mgr *AttrMgr) storeAttributes(id string, msg proto.Message) {
-	mgr.mu.Lock()
-	defer mgr.mu.Unlock()
-
 	ty := proto.GetExtension(msg.ProtoReflect().Descriptor().Options(), saipb.E_SaiType).(saipb.ObjectType)
 	if ty != saipb.ObjectType_OBJECT_TYPE_UNSPECIFIED {
 		mgr.SetType(id, ty)
 	}
+
+	mgr.mu.Lock()
+	defer mgr.mu.Unlock()
 
 	// Protoreflect treats nil lists and empty lists as the same. However We want to store the value of empty lists, but not nil lists.
 	// So use regular go reflect for that case.

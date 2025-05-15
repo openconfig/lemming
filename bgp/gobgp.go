@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"math"
 	"net/netip"
+	"os"
 	"reflect"
 	"strconv"
 	"strings"
@@ -26,18 +27,20 @@ import (
 	"time"
 
 	log "github.com/golang/glog"
-
-	"github.com/openconfig/lemming/gnmi/fakedevice"
-	"github.com/openconfig/lemming/gnmi/gnmiclient"
-	"github.com/openconfig/lemming/gnmi/oc"
-	"github.com/openconfig/lemming/gnmi/oc/ocpath"
-	"github.com/openconfig/lemming/gnmi/reconciler"
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot"
 	api "github.com/osrg/gobgp/v3/api"
 	"github.com/osrg/gobgp/v3/pkg/config"
 	gobgpoc "github.com/osrg/gobgp/v3/pkg/config/oc"
 	"github.com/osrg/gobgp/v3/pkg/server"
+
+	"github.com/openconfig/lemming/gnmi/fakedevice"
+	"github.com/openconfig/lemming/gnmi/gnmiclient"
+	"github.com/openconfig/lemming/gnmi/oc"
+	"github.com/openconfig/lemming/gnmi/oc/ocpath"
+	"github.com/openconfig/lemming/gnmi/reconciler"
+
+	bgplog "github.com/osrg/gobgp/v3/pkg/log"
 )
 
 const (
@@ -286,9 +289,27 @@ func updateAppliedStateHelper[T ygot.GoStruct](ctx context.Context, yclient *ygn
 	}
 }
 
+// In gobgp, some configuration errors are logged at fatal level. Im Lemming we often with partial config updates
+// so these shouldn't fatally fail lemming.
+type bgpLogger struct {
+	bgplog.Logger
+}
+
+// Do not fatally log config errors.
+// Ref https://github.com/osrg/gobgp/blob/master/cmd/gobgpd/util.go#L116
+func (l *bgpLogger) Fatal(msg string, fields bgplog.Fields) {
+	if fields.HasFacility(bgplog.FacilityConfig) {
+		l.Logger.Warn(msg, fields)
+		return
+	}
+
+	l.Logger.Error(msg, fields)
+	os.Exit(1)
+}
+
 // createNewGoBGPServer creates and starts a new GoBGP Server.
 func (t *bgpTask) createNewGoBGPServer(ctx context.Context) error {
-	t.bgpServer = server.NewBgpServer()
+	t.bgpServer = server.NewBgpServer(server.LoggerOption(&bgpLogger{Logger: bgplog.NewDefaultLogger()}))
 
 	if log.V(2) {
 		if err := t.bgpServer.SetLogLevel(ctx, &api.SetLogLevelRequest{
