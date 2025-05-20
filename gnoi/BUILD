@@ -7,6 +7,8 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//gnmi/fakedevice",
+        "//gnmi/oc/ocpath",
+        "//gnmi/oc",       
         "@com_github_golang_glog//:glog",
         "@com_github_openconfig_gnmi//proto/gnmi",
         "@com_github_openconfig_gnoi//bgp",
@@ -36,6 +38,7 @@ go_test(
         "//gnmi",
         "//gnmi/fakedevice",
         "//gnmi/oc/ocpath",
+        "//gnmi/oc",
         "@com_github_openconfig_gnoi//system",
         "@com_github_openconfig_ygnmi//ygnmi",
         "@org_golang_google_grpc//:grpc",
