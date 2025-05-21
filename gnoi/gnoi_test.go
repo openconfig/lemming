@@ -210,10 +210,10 @@ func TestComponentReboot(t *testing.T) {
 				req := &spb.RebootRequest{
 					Method: spb.RebootMethod_COLD,
 					Subcomponents: []*pb.Path{{
-						Elem: []*pb.PathElem{{
-							Name: "component",
-							Key:  map[string]string{"name": "non-existent"},
-						}},
+						Elem: []*pb.PathElem{
+							{Name: "components"},
+							{Name: "component", Key: map[string]string{"name": "non-existent"}},
+						},
 					}},
 				}
 				_, err := s.Reboot(ctx, req)
@@ -238,10 +238,10 @@ func TestComponentReboot(t *testing.T) {
 				req := &spb.RebootRequest{
 					Method: spb.RebootMethod_COLD,
 					Subcomponents: []*pb.Path{{
-						Elem: []*pb.PathElem{{
-							Name: "component",
-							Key:  map[string]string{"name": componentName},
-						}},
+						Elem: []*pb.PathElem{
+							{Name: "components"},
+							{Name: "component", Key: map[string]string{"name": componentName}},
+						},
 					}},
 				}
 				_, err = s.Reboot(ctx, req)
@@ -274,7 +274,7 @@ func TestComponentReboot(t *testing.T) {
 						finalState = state
 						break
 					}
-					time.Sleep(10 *time.Second)
+					time.Sleep(10 * time.Second)
 				}
 				if finalState == nil {
 					t.Fatal("Component did not return to ACTIVE state")
@@ -305,12 +305,12 @@ func TestComponentReboot(t *testing.T) {
 
 				req := &spb.RebootRequest{
 					Method: spb.RebootMethod_COLD,
-					Delay:  10000000000, //10 seconds
+					Delay:  10000000000, // 10 seconds
 					Subcomponents: []*pb.Path{{
-						Elem: []*pb.PathElem{{
-							Name: "component",
-							Key:  map[string]string{"name": componentName},
-						}},
+						Elem: []*pb.PathElem{
+							{Name: "components"},
+							{Name: "component", Key: map[string]string{"name": componentName}},
+						},
 					}},
 				}
 				_, err = s.Reboot(ctx, req)
@@ -360,16 +360,16 @@ func TestComponentReboot(t *testing.T) {
 					Method: spb.RebootMethod_COLD,
 					Subcomponents: []*pb.Path{
 						{
-							Elem: []*pb.PathElem{{
-								Name: "component",
-								Key:  map[string]string{"name": "Linecard0"},
-							}},
+							Elem: []*pb.PathElem{
+								{Name: "components"},
+								{Name: "component", Key: map[string]string{"name": "Linecard0"}},
+							},
 						},
 						{
-							Elem: []*pb.PathElem{{
-								Name: "component",
-								Key:  map[string]string{"name": "Fabric0"},
-							}},
+							Elem: []*pb.PathElem{
+								{Name: "components"},
+								{Name: "component", Key: map[string]string{"name": "Fabric0"}},
+							},
 						},
 					},
 				}
@@ -400,10 +400,10 @@ func TestComponentReboot(t *testing.T) {
 					Method: spb.RebootMethod_COLD,
 					Delay:  5000000000,
 					Subcomponents: []*pb.Path{{
-						Elem: []*pb.PathElem{{
-							Name: "component",
-							Key:  map[string]string{"name": "Linecard0"},
-						}},
+						Elem: []*pb.PathElem{
+							{Name: "components"},
+							{Name: "component", Key: map[string]string{"name": "Linecard0"}},
+						},
 					}},
 				}
 				_, err := s.Reboot(ctx, req)
@@ -428,33 +428,17 @@ func TestComponentReboot(t *testing.T) {
 		},
 		"reject-active-supervisor-reboot": {
 			fn: func(t *testing.T, s *system, ctx context.Context) {
-				// First start a linecard reboot
-				linecardReq := &spb.RebootRequest{
-					Method: spb.RebootMethod_COLD,
-					Delay:  5000000000, // 5 second delay
-					Subcomponents: []*pb.Path{{
-						Elem: []*pb.PathElem{{
-							Name: "component",
-							Key:  map[string]string{"name": "Linecard0"},
-						}},
-					}},
-				}
-				_, err := s.Reboot(ctx, linecardReq)
-				if err != nil {
-					t.Fatalf("Failed to start linecard reboot: %v", err)
-				}
-
-				// Then try to reboot active supervisor
+				// Try to reboot active supervisor
 				activeSupervisorReq := &spb.RebootRequest{
 					Method: spb.RebootMethod_COLD,
 					Subcomponents: []*pb.Path{{
-						Elem: []*pb.PathElem{{
-							Name: "component",
-							Key:  map[string]string{"name": "Supervisor0"},
-						}},
+						Elem: []*pb.PathElem{
+							{Name: "components"},
+							{Name: "component", Key: map[string]string{"name": "Supervisor1"}},
+						},
 					}},
 				}
-				_, err = s.Reboot(ctx, activeSupervisorReq)
+				_, err := s.Reboot(ctx, activeSupervisorReq)
 
 				// Should fail with FailedPrecondition
 				if err == nil {

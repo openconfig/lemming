@@ -152,32 +152,27 @@ func (s *system) handleComponentReboot(ctx context.Context, r *spb.RebootRequest
 		return nil, status.Errorf(codes.FailedPrecondition, "system-wide reboot already pending, cannot reboot components")
 	}
 
-	// Check for any pending component reboots
-	s.componentRebootsMu.Lock()
-	hasPendingComponentReboots := len(s.componentReboots) > 0
-	s.componentRebootsMu.Unlock()
-
 	// Process each subcomponent
 	for _, subcompPath := range r.GetSubcomponents() {
 		var componentName string
-		if elem := subcompPath.GetElem()[0]; elem.GetName() == "component" {
-			componentName = elem.GetKey()["name"]
-		} else {
-			componentName = elem.GetName()
+		elems := subcompPath.GetElem()
+		// Openconfig path /components/component[name=...]
+		if len(elems) != 2 ||
+			elems[0].GetName() != "components" ||
+			elems[1].GetName() != "component" ||
+			elems[1].GetKey()["name"] == "" {
+			return nil, status.Errorf(codes.InvalidArgument,
+				"invalid OpenConfig component path, expected /components/component[name=...], got: %v", subcompPath)
 		}
+
+		componentName = elems[1].GetKey()["name"]
 
 		// Check if this is an active supervisor
 		isActive, err := s.IsActiveSupervisor(ctx, componentName)
 		if err != nil {
 			log.Warningf("Failed to determine supervisor role for %s: %v", componentName, err)
 		} else if isActive {
-			// Reject active supervisor reboot if there are pending reboots
-			if hasPendingComponentReboots {
-				return nil, status.Errorf(codes.FailedPrecondition,
-					"cannot reboot active supervisor %s while component reboots are pending", componentName)
-			}
-			// If this is the first reboot request and it's for an active supervisor,
-			// reject it to enforce standby-only policy
+			// reject active control card reboot to enforce standby-only policy
 			return nil, status.Errorf(codes.FailedPrecondition, "rebooting active supervisor %s is not allowed, use standby or chassis reboot instead", componentName)
 		}
 
