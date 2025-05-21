@@ -17,7 +17,6 @@ package fakedevice
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	log "github.com/golang/glog"
@@ -63,8 +62,6 @@ func RebootComponent(ctx context.Context, c *ygnmi.Client, componentName string,
 	if err != nil {
 		return fmt.Errorf("failed to get component %s state: %v", componentName, err)
 	}
-	// Maintain supervisor state after reboot
-	currentOperStatus, err := ygnmi.Lookup(ctx, c, ocpath.Root().Component(componentName).OperStatus().State())
 
 	// Set component to inactive temporarily
 	if _, err := gnmiclient.Replace(ctx, c, ocpath.Root().Component(componentName).OperStatus().State(), oc.PlatformTypes_COMPONENT_OPER_STATUS_INACTIVE); err != nil {
@@ -84,19 +81,8 @@ func RebootComponent(ctx context.Context, c *ygnmi.Client, componentName string,
 	// Simulate a brief reboot period
 	time.Sleep(2 * time.Minute)
 
-	currentOperStatusVal, ok := currentOperStatus.Val()
-	if !ok {
-		currentOperStatusVal = oc.PlatformTypes_COMPONENT_OPER_STATUS_INACTIVE
-		log.Infof("Could not read current oper status for %s, defaulting to %v", componentName, currentOperStatusVal)
-	}
-
-	finalState := oc.PlatformTypes_COMPONENT_OPER_STATUS_ACTIVE
-	// For supervisor components, restore their original operational state
-	if strings.HasPrefix(componentName, controlcardComponentName) {
-		finalState = currentOperStatusVal
-	}
-
 	// Now restore the component OperStatus (reboot completed)
+	finalState := oc.PlatformTypes_COMPONENT_OPER_STATUS_ACTIVE
 	if _, err := gnmiclient.Replace(ctx, c, ocpath.Root().Component(componentName).OperStatus().State(), finalState); err != nil {
 		return fmt.Errorf("failed to restore component %s state after reboot: %v", componentName, err)
 	}
@@ -138,16 +124,14 @@ func NewChassisComponentsTask() *reconciler.BuiltReconciler {
 			// Initialize supervisors
 			for i := 0; i < numSupervisorCard; i++ {
 				componentName := fmt.Sprintf("%s%d", controlcardComponentName, i)
-				operStatus := oc.PlatformTypes_COMPONENT_OPER_STATUS_ACTIVE
 				redundantRole := oc.PlatformTypes_ComponentRedundantRole_PRIMARY
 				if i == 1 {
-					operStatus = oc.PlatformTypes_COMPONENT_OPER_STATUS_INACTIVE
 					redundantRole = oc.PlatformTypes_ComponentRedundantRole_SECONDARY
 				}
 				component := &oc.Component{
 					Name:             ygot.String(componentName),
 					Type:             oc.PlatformTypes_OPENCONFIG_HARDWARE_COMPONENT_CONTROLLER_CARD,
-					OperStatus:       operStatus,
+					OperStatus:       oc.PlatformTypes_COMPONENT_OPER_STATUS_ACTIVE,
 					RedundantRole:    redundantRole,
 					Parent:           ygot.String(chassisComponentName),
 					SoftwareVersion:  ygot.String("current"),
