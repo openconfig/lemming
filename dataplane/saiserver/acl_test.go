@@ -156,12 +156,8 @@ func TestCreateAclEntry(t *testing.T) {
 							Masks:   []byte{0b100},
 						}, {
 							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST}},
-							Bytes:   netip.MustParseAddr("cafe:beef::").AsSlice(),
-							Masks:   netip.MustParseAddr("ffff:ffff::").AsSlice(),
-						}, {
-							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_IP_ADDR_DST}},
-							Bytes:   netip.MustParseAddr("0:0:cafe:beef::").AsSlice(),
-							Masks:   netip.MustParseAddr("0:0:ffff:ffff::").AsSlice(),
+							Bytes:   netip.MustParseAddr("cafe:beef:cafe:beef::").AsSlice(),
+							Masks:   netip.MustParseAddr("ffff:ffff:ffff:ffff::").AsSlice(),
 						}, {
 							FieldId: &fwdpb.PacketFieldId{Field: &fwdpb.PacketField{FieldNum: fwdpb.PacketFieldNum_PACKET_FIELD_NUM_ETHER_MAC_DST}},
 							Bytes:   []byte{0x1, 0x2, 0x3, 0x4, 0x5, 0x6},

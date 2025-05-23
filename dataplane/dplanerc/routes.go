@@ -28,6 +28,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/openconfig/lemming/gnmi"
+	"github.com/openconfig/lemming/gnmi/fakedevice"
 
 	log "github.com/golang/glog"
 
@@ -56,7 +57,7 @@ func MustWildcardQuery() ygnmi.WildcardQuery[*dpb.Route] {
 	return q
 }
 
-func (ni *Reconciler) StartRoute(ctx context.Context, client *ygnmi.Client) error {
+func (rec *Reconciler) StartRoute(ctx context.Context, client *ygnmi.Client) error {
 	ctx, cancelFn := context.WithCancel(ctx)
 	w := ygnmi.WatchAll(ctx, client, MustWildcardQuery(), func(v *ygnmi.Value[*dpb.Route]) error {
 		route, present := v.Val()
@@ -68,10 +69,19 @@ func (ni *Reconciler) StartRoute(ctx context.Context, client *ygnmi.Client) erro
 		}
 		ipBytes := prefix.Masked().Addr().AsSlice()
 		mask := net.CIDRMask(prefix.Bits(), len(ipBytes)*8)
-		var vrfID uint64 // TODO: support vrf-ids other than 0.
+
+		niName := fakedevice.DefaultNetworkInstance
+		if route.GetPrefix().GetNetworkInstance() != "" {
+			niName = route.GetPrefix().GetNetworkInstance()
+		}
+		if _, ok := rec.niDetail[niName]; !ok {
+			log.Warningf("got route update for unknown vrf %q", niName)
+			return ygnmi.Continue
+		}
+
 		entry := &saipb.RouteEntry{
-			SwitchId: ni.switchID,
-			VrId:     0,
+			SwitchId: rec.switchID,
+			VrId:     rec.niDetail[niName].vrOID,
 			Destination: &saipb.IpPrefix{
 				Addr: ipBytes,
 				Mask: mask,
@@ -80,32 +90,32 @@ func (ni *Reconciler) StartRoute(ctx context.Context, client *ygnmi.Client) erro
 
 		if !present {
 			// Remove NextHop or NextHopGroup.
-			if routeData := ni.ocRouteData.findRoute(prefixStr, vrfID); routeData != nil {
+			if routeData := rec.ocRouteData.findRoute(prefixStr, entry.GetVrId()); routeData != nil {
 				if routeData.isNHG {
 					log.Infof("removing next hop group")
 					for nhgID, nhs := range routeData.nhg {
 						for nhID, memberID := range nhs {
-							if err := ni.removeNextHopGroupMember(ctx, memberID); err != nil {
+							if err := rec.removeNextHopGroupMember(ctx, memberID); err != nil {
 								log.Warningf("failed to delete next hop group member: %v", err)
 							}
-							if err := ni.removeNextHop(ctx, nhID); err != nil {
+							if err := rec.removeNextHop(ctx, nhID); err != nil {
 								log.Warningf("failed to delete next hop: %v", err)
 							}
 						}
-						if err := ni.removeNextHopGroup(ctx, nhgID); err != nil {
+						if err := rec.removeNextHopGroup(ctx, nhgID); err != nil {
 							log.Warningf("failed to delete next hop group: %v", err)
 						}
 					}
 				} else {
 					log.Infof("removing next hop.")
-					if err := ni.removeNextHop(ctx, routeData.nh); err != nil {
+					if err := rec.removeNextHop(ctx, routeData.nh); err != nil {
 						log.Warningf("failed to delete next hop: %v", err)
 					}
 				}
 			}
 
 			log.Infof("removing route: %v", prefix)
-			_, err = ni.routeClient.RemoveRouteEntry(ctx, &saipb.RemoveRouteEntryRequest{
+			_, err = rec.routeClient.RemoveRouteEntry(ctx, &saipb.RemoveRouteEntryRequest{
 				Entry: entry,
 			})
 			if err != nil {
@@ -120,27 +130,27 @@ func (ni *Reconciler) StartRoute(ctx context.Context, client *ygnmi.Client) erro
 
 		if route.GetInterface() != nil { // If next hop is a interface.
 			// TODO: Add support for subinterfaces.
-			data := ni.ocInterfaceData[ocInterface{name: route.GetInterface().GetInterface(), subintf: route.GetInterface().GetSubinterface()}]
+			data := rec.ocInterfaceData[ocInterface{name: route.GetInterface().GetInterface(), subintf: route.GetInterface().GetSubinterface()}]
 			rReq.NextHopId = &data.rifID
 
-			if _, err := ni.routeClient.CreateRouteEntry(ctx, &rReq); err != nil {
+			if _, err := rec.routeClient.CreateRouteEntry(ctx, &rReq); err != nil {
 				log.Warningf("failed to create route: %v", err)
 			}
 			log.Infof("added connected route: %v", &rReq)
 			return ygnmi.Continue
 		}
 		var hopID uint64
-		routeKey := ocRoute{prefix: prefixStr, vrf: vrfID}
+		routeKey := ocRoute{prefix: prefixStr, vrf: entry.GetVrId()}
 		if len(route.GetNextHops().GetHops()) == 1 {
-			hopID, err = ni.createNextHop(ctx, route.GetNextHops().Hops[0])
+			hopID, err = rec.createNextHop(ctx, route.GetNextHops().Hops[0])
 			if err != nil {
 				log.Warningf("failed to create next hop: %v", err)
 				return ygnmi.Continue
 			}
-			ni.ocRouteData[routeKey] = &routeData{nh: hopID}
+			rec.ocRouteData[routeKey] = &routeData{nh: hopID}
 		} else {
-			group, err := ni.nextHopGroupClient.CreateNextHopGroup(ctx, &saipb.CreateNextHopGroupRequest{
-				Switch: ni.switchID,
+			group, err := rec.nextHopGroupClient.CreateNextHopGroup(ctx, &saipb.CreateNextHopGroupRequest{
+				Switch: rec.switchID,
 				Type:   saipb.NextHopGroupType_NEXT_HOP_GROUP_TYPE_DYNAMIC_UNORDERED_ECMP.Enum(),
 			})
 			hopID = group.Oid
@@ -150,13 +160,13 @@ func (ni *Reconciler) StartRoute(ctx context.Context, client *ygnmi.Client) erro
 			}
 			rd := &routeData{isNHG: true, nhg: map[uint64]map[uint64]uint64{hopID: {}}}
 			for i, nh := range route.GetNextHops().GetHops() {
-				hID, err := ni.createNextHop(ctx, nh)
+				hID, err := rec.createNextHop(ctx, nh)
 				if err != nil {
 					log.Warningf("failed to create next hop: %v", err)
 					return ygnmi.Continue
 				}
-				resp, err := ni.nextHopGroupClient.CreateNextHopGroupMember(ctx, &saipb.CreateNextHopGroupMemberRequest{
-					Switch:         ni.switchID,
+				resp, err := rec.nextHopGroupClient.CreateNextHopGroupMember(ctx, &saipb.CreateNextHopGroupMemberRequest{
+					Switch:         rec.switchID,
 					NextHopGroupId: &group.Oid,
 					NextHopId:      &hID,
 					Weight:         proto.Uint32(uint32(route.GetNextHops().Weights[i])),
@@ -167,10 +177,10 @@ func (ni *Reconciler) StartRoute(ctx context.Context, client *ygnmi.Client) erro
 				}
 				rd.nhg[hopID][hID] = resp.Oid
 			}
-			ni.ocRouteData[routeKey] = rd
+			rec.ocRouteData[routeKey] = rd
 		}
 		rReq.NextHopId = proto.Uint64(hopID)
-		if _, err := ni.routeClient.CreateRouteEntry(ctx, &rReq); err != nil {
+		if _, err := rec.routeClient.CreateRouteEntry(ctx, &rReq); err != nil {
 			log.Warningf("failed to create route: %v", err)
 			return ygnmi.Continue
 		}
@@ -184,7 +194,7 @@ func (ni *Reconciler) StartRoute(ctx context.Context, client *ygnmi.Client) erro
 			log.Warningf("routes watch err: %v", err)
 		}
 	}()
-	ni.closers = append(ni.closers, cancelFn)
+	rec.closers = append(rec.closers, cancelFn)
 	return nil
 }
 

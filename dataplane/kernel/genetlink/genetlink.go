@@ -44,7 +44,7 @@ type GenetlinkPort struct {
 
 // NewGenetlinkPort creates netlink socket for the given family and multicast group.
 func New(msg *pktiopb.HostPortControlMessage) (pktiohandler.PortIO, error) {
-	log.Errorf("creating genl port: %s %s", msg.GetGenetlink().GetFamily(), msg.GetGenetlink().GetGroup())
+	log.Infof("creating genl port: %s %s", msg.GetGenetlink().GetFamily(), msg.GetGenetlink().GetGroup())
 
 	cFamily := C.CString(msg.GetGenetlink().GetFamily())
 	defer C.free(unsafe.Pointer(cFamily))
@@ -74,7 +74,6 @@ func New(msg *pktiopb.HostPortControlMessage) (pktiohandler.PortIO, error) {
 		return nil, fmt.Errorf("failed to create port")
 	}
 
-	log.Errorf("creating genl port")
 	return &GenetlinkPort{
 		sock:     unsafe.Pointer(sockAddr),
 		familyID: familyID,
@@ -83,7 +82,7 @@ func New(msg *pktiopb.HostPortControlMessage) (pktiohandler.PortIO, error) {
 
 // Writes writes a layer2 frame to the port.
 func (p GenetlinkPort) Write(frame []byte, md *kernel.PacketMetadata) (int, error) {
-	log.Errorf("writing genl packet: %x", frame)
+	log.V(3).Infof("writing genl packet: %x", frame)
 
 	packet := C.CBytes(frame)
 	defer C.free(packet)

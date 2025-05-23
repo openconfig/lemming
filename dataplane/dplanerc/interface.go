@@ -34,6 +34,7 @@ import (
 
 	"github.com/openconfig/lemming/dataplane/kernel"
 	"github.com/openconfig/lemming/dataplane/protocol/lldp"
+	"github.com/openconfig/lemming/gnmi/fakedevice"
 	"github.com/openconfig/lemming/gnmi/gnmiclient"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
@@ -118,6 +119,7 @@ type Reconciler struct {
 	fwdClient          fwdpb.ForwardingClient
 	nextHopGroupClient saipb.NextHopGroupClient
 	lagClient          saipb.LagClient
+	vrClient           saipb.VirtualRouterClient
 	stateMu            sync.RWMutex
 	lldp               protocolHanlder
 	// state keeps track of the applied state of the device's interfaces so that we do not issue duplicate configuration commands to the device's interfaces.
@@ -128,6 +130,11 @@ type Reconciler struct {
 	ocRouteData     routeMap
 	cpuPortID       uint64
 	contextID       string
+	niDetail        map[string]*netInst
+}
+
+type netInst struct {
+	vrOID uint64
 }
 
 type interfaceManager interface {
@@ -169,7 +176,9 @@ func New(conn grpc.ClientConnInterface, switchID, cpuPortID uint64, contextID st
 		nextHopGroupClient: saipb.NewNextHopGroupClient(conn),
 		fwdClient:          fwdpb.NewForwardingClient(conn),
 		lagClient:          saipb.NewLagClient(conn),
+		vrClient:           saipb.NewVirtualRouterClient(conn),
 		lldp:               lldp.New(),
+		niDetail:           map[string]*netInst{},
 	}
 	return r
 }
@@ -180,6 +189,18 @@ func (ni *Reconciler) StartInterface(ctx context.Context, client *ygnmi.Client) 
 	b := &ocpath.Batch{}
 	ni.c = client
 
+	vrID, err := ni.switchClient.GetSwitchAttribute(ctx, &saipb.GetSwitchAttributeRequest{
+		Oid:      ni.switchID,
+		AttrType: []saipb.SwitchAttr{saipb.SwitchAttr_SWITCH_ATTR_DEFAULT_VIRTUAL_ROUTER_ID},
+	})
+	if err != nil {
+		return err
+	}
+
+	ni.niDetail[fakedevice.DefaultNetworkInstance] = &netInst{
+		vrOID: vrID.GetAttr().GetDefaultVirtualRouterId(),
+	}
+
 	if err := ni.setupPorts(ctx); err != nil {
 		return fmt.Errorf("failed to setup ports: %v", err)
 	}
@@ -187,16 +208,18 @@ func (ni *Reconciler) StartInterface(ctx context.Context, client *ygnmi.Client) 
 	b.AddPaths(
 		ocpath.Root().InterfaceAny().Name().Config().PathStruct(),
 		ocpath.Root().InterfaceAny().Ethernet().MacAddress().Config().PathStruct(),
-		ocpath.Root().InterfaceAny().Subinterface(0).Enabled().Config().PathStruct(), // TODO: Support the parent interface config/enabled controling the subinterface state.
-		ocpath.Root().InterfaceAny().Subinterface(0).Ipv4().AddressAny().Ip().Config().PathStruct(),
-		ocpath.Root().InterfaceAny().Subinterface(0).Ipv4().AddressAny().PrefixLength().Config().PathStruct(),
-		ocpath.Root().InterfaceAny().Subinterface(0).Ipv6().AddressAny().Ip().Config().PathStruct(),
-		ocpath.Root().InterfaceAny().Subinterface(0).Ipv6().AddressAny().PrefixLength().Config().PathStruct(),
+		ocpath.Root().InterfaceAny().SubinterfaceAny().Enabled().Config().PathStruct(), // TODO: Support the parent interface config/enabled controling the subinterface state.
+		ocpath.Root().InterfaceAny().SubinterfaceAny().Ipv4().AddressAny().Ip().Config().PathStruct(),
+		ocpath.Root().InterfaceAny().SubinterfaceAny().Ipv4().AddressAny().PrefixLength().Config().PathStruct(),
+		ocpath.Root().InterfaceAny().SubinterfaceAny().Ipv6().AddressAny().Ip().Config().PathStruct(),
+		ocpath.Root().InterfaceAny().SubinterfaceAny().Ipv6().AddressAny().PrefixLength().Config().PathStruct(),
+		ocpath.Root().InterfaceAny().SubinterfaceAny().Vlan().Config().PathStruct(),
 		ocpath.Root().InterfaceAny().Aggregation().LagType().Config().PathStruct(),
 		ocpath.Root().InterfaceAny().Ethernet().AggregateId().Config().PathStruct(),
 		ocpath.Root().Lldp().Enabled().Config().PathStruct(),
 		ocpath.Root().Lldp().InterfaceAny().Config().PathStruct(),
 		ocpath.Root().NetworkInstanceAny().InterfaceAny().Config().PathStruct(),
+		ocpath.Root().NetworkInstanceAny().Name().Config().PathStruct(),
 		ocpath.Root().InterfaceAny().Type().Config().PathStruct(),
 	)
 	cancelCtx, cancelFn := context.WithCancel(ctx)
@@ -207,14 +230,8 @@ func (ni *Reconciler) StartInterface(ctx context.Context, client *ygnmi.Client) 
 		if !ok {
 			return ygnmi.Continue
 		}
-		for niName, netInst := range root.NetworkInstance {
-			for intfName, intf := range netInst.Interface {
-				intfRef := ocInterface{
-					name:    intfName,
-					subintf: intf.GetSubinterface(),
-				}
-				ni.ocInterfaceData[intfRef].networkInstance = niName
-			}
+		for _, netInst := range root.NetworkInstance {
+			ni.reconcileNI(netInst)
 		}
 		if root.Interface != nil {
 			for _, i := range root.Interface {
@@ -392,11 +409,12 @@ func (ni *Reconciler) createLAG(ctx context.Context, intf ocInterface, lagType o
 		return fmt.Errorf("failed to create router interface %q: %v", intfRefToDevName(intf), err)
 	}
 	aggData := &interfaceData{
-		portID:        lagResp.Oid,
-		rifID:         rifResp.Oid,
-		hostifIfIndex: bond.Index,
-		hostifDevName: intfRefToDevName(intf),
-		isAggregate:   true,
+		portID:          lagResp.Oid,
+		rifID:           rifResp.Oid,
+		hostifIfIndex:   bond.Index,
+		hostifDevName:   intfRefToDevName(intf),
+		isAggregate:     true,
+		networkInstance: fakedevice.DefaultNetworkInstance,
 	}
 
 	ni.getOrCreateInterface(intf.name).GetOrCreateEthernet().SetHwMacAddress(l.Attrs().HardwareAddr.String())
@@ -693,22 +711,35 @@ func (ni *Reconciler) createVLANSubIntf(ctx context.Context, intfRef ocInterface
 	}
 	if err := ni.ifaceMgr.LinkAdd(vlanIntf); err != nil {
 		log.Warningf("failed to add vlan intf: %v", err)
+		return
+	}
+	rootPortAttr, err := ni.ifaceClient.GetRouterInterfaceAttribute(ctx, &saipb.GetRouterInterfaceAttributeRequest{
+		Oid:      rootPort.rifID,
+		AttrType: []saipb.RouterInterfaceAttr{saipb.RouterInterfaceAttr_ROUTER_INTERFACE_ATTR_SRC_MAC_ADDRESS},
+	})
+	if err != nil {
+		log.Warningf("failed to get root port mac, %v", err)
+		return
 	}
 
 	rifResp, err := ni.ifaceClient.CreateRouterInterface(ctx, &saipb.CreateRouterInterfaceRequest{
 		Switch:          ni.switchID,
 		Type:            saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_SUB_PORT.Enum(),
 		PortId:          &rootPort.portID,
+		OuterVlanId:     proto.Uint32(uint32(config.GetSubinterface(intfRef.subintf).GetVlan().GetMatch().GetSingleTagged().GetVlanId())),
 		VirtualRouterId: proto.Uint64(0),
+		SrcMacAddress:   rootPortAttr.GetAttr().SrcMacAddress,
 	})
 	if err != nil {
 		log.Warningf("failed to add vlan intf: %v", err)
+		return
 	}
 
 	ni.ocInterfaceData[intfRef] = &interfaceData{
-		rifID:         rifResp.GetOid(),
-		hostifIfIndex: vlanIntf.Index,
-		hostifDevName: intfRefToDevName(intfRef),
+		rifID:           rifResp.GetOid(),
+		hostifIfIndex:   vlanIntf.Index,
+		hostifDevName:   intfRefToDevName(intfRef),
+		networkInstance: fakedevice.DefaultNetworkInstance,
 	}
 	sb := &ygnmi.SetBatch{}
 	gnmiclient.BatchUpdate(sb, ocpath.Root().Interface(intfRef.name).Subinterface(intfRef.subintf).Vlan().Match().SingleTagged().VlanId().State(), uint16(vlanIntf.VlanId))
@@ -803,6 +834,81 @@ func (ni *Reconciler) reconcileIPs(config, state *oc.Interface) {
 	}
 }
 
+func (rec *Reconciler) reconcileNI(config *oc.NetworkInstance) {
+	if _, ok := rec.niDetail[config.GetName()]; !ok {
+		resp, err := rec.vrClient.CreateVirtualRouter(context.Background(), &saipb.CreateVirtualRouterRequest{
+			Switch: rec.switchID,
+		})
+		if err != nil {
+			log.Warningf("failed to create virtual router for %q: %v", config.GetName(), err)
+		} else {
+			log.Infof("created virtual router for %q: %v", config.GetName(), resp.GetOid())
+			rec.niDetail[config.GetName()] = &netInst{vrOID: resp.GetOid()}
+		}
+	}
+
+	for _, intf := range config.Interface {
+		if intf.Interface == nil || intf.Subinterface == nil {
+			continue
+		}
+		intfRef := ocInterface{
+			name:    intf.GetInterface(),
+			subintf: intf.GetSubinterface(),
+		}
+		if data, ok := rec.ocInterfaceData[intfRef]; ok {
+			if data.networkInstance != config.GetName() {
+				log.Infof("rif %s/%d moving network instance from %q to %q", intfRef.name, intfRef.subintf, data.networkInstance, config.GetName())
+
+				attr, err := rec.ifaceClient.GetRouterInterfaceAttribute(context.Background(), &saipb.GetRouterInterfaceAttributeRequest{
+					Oid: data.rifID,
+					AttrType: []saipb.RouterInterfaceAttr{
+						saipb.RouterInterfaceAttr_ROUTER_INTERFACE_ATTR_TYPE,
+						saipb.RouterInterfaceAttr_ROUTER_INTERFACE_ATTR_PORT_ID,
+						saipb.RouterInterfaceAttr_ROUTER_INTERFACE_ATTR_SRC_MAC_ADDRESS,
+					},
+				})
+				if err != nil {
+					log.Warningf("failed to get rif attrs %s/%d %v", intfRef.name, intfRef.subintf, err)
+					continue
+				}
+				if attr.GetAttr().GetType() == saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_SUB_PORT {
+					attr, err = rec.ifaceClient.GetRouterInterfaceAttribute(context.Background(), &saipb.GetRouterInterfaceAttributeRequest{
+						Oid: data.rifID,
+						AttrType: []saipb.RouterInterfaceAttr{
+							saipb.RouterInterfaceAttr_ROUTER_INTERFACE_ATTR_TYPE,
+							saipb.RouterInterfaceAttr_ROUTER_INTERFACE_ATTR_PORT_ID,
+							saipb.RouterInterfaceAttr_ROUTER_INTERFACE_ATTR_SRC_MAC_ADDRESS,
+							saipb.RouterInterfaceAttr_ROUTER_INTERFACE_ATTR_OUTER_VLAN_ID,
+						},
+					})
+					if err != nil {
+						log.Warningf("failed to get rif attrs %s/%d %v", intfRef.name, intfRef.subintf, err)
+						continue
+					}
+				}
+
+				_, err = rec.ifaceClient.RemoveRouterInterface(context.Background(), &saipb.RemoveRouterInterfaceRequest{
+					Oid: data.rifID,
+				})
+				if err != nil {
+					log.Warningf("failed to remove rif %s/%d %v", intfRef.name, intfRef.subintf, err)
+				}
+				rifResp, err := rec.ifaceClient.CreateRouterInterface(context.Background(), &saipb.CreateRouterInterfaceRequest{
+					Type:            attr.GetAttr().Type,
+					PortId:          attr.GetAttr().PortId,
+					SrcMacAddress:   attr.GetAttr().SrcMacAddress,
+					OuterVlanId:     attr.GetAttr().OuterVlanId,
+					VirtualRouterId: &rec.niDetail[config.GetName()].vrOID,
+				})
+				if err != nil {
+					log.Warningf("failed to create rif %s/%d %v", intfRef.name, intfRef.subintf, err)
+				}
+				data.rifID = rifResp.Oid
+			}
+		}
+	}
+}
+
 // getOrCreateInterface returns the state interface from the cache.
 func (ni *Reconciler) getOrCreateInterface(iface string) *oc.Interface {
 	if _, ok := ni.state[iface]; !ok {
@@ -878,6 +984,7 @@ func (ni *Reconciler) handleAddrUpdate(ctx context.Context, au *netlink.AddrUpda
 
 	intf, data := ni.ocInterfaceData.findByIfIndex(au.LinkIndex)
 	if data == nil {
+		log.Infof("skipping address reconcilion for %s/%d, no interface data", intf.name, intf.subintf)
 		return
 	}
 
@@ -895,6 +1002,12 @@ func (ni *Reconciler) handleAddrUpdate(ctx context.Context, au *netlink.AddrUpda
 	isV4 := au.LinkAddress.IP.To4() != nil
 
 	log.V(1).Infof("handling addr update for %s ip %v pl %v", data.hostifDevName, ip, pl)
+
+	if ni.niDetail[data.networkInstance] == nil {
+		log.Infof("skipping address reconcilion for %s/%d, unknown VRF %q", intf.name, intf.subintf, data.networkInstance)
+		return
+	}
+
 	// The dataplane does not monitor the local interface's IP addr, they must set externally.
 	if au.NewAddr {
 		if isV4 {
@@ -909,7 +1022,7 @@ func (ni *Reconciler) handleAddrUpdate(ctx context.Context, au *netlink.AddrUpda
 		_, err := ni.routeClient.CreateRouteEntry(ctx, &saipb.CreateRouteEntryRequest{
 			Entry: &saipb.RouteEntry{
 				SwitchId:    ni.switchID,
-				VrId:        0,
+				VrId:        ni.niDetail[data.networkInstance].vrOID,
 				Destination: &saipb.IpPrefix{Addr: ipBytes, Mask: mask},
 			},
 			NextHopId:    proto.Uint64(ni.cpuPortID),
@@ -931,7 +1044,7 @@ func (ni *Reconciler) handleAddrUpdate(ctx context.Context, au *netlink.AddrUpda
 		_, err := ni.routeClient.RemoveRouteEntry(ctx, &saipb.RemoveRouteEntryRequest{
 			Entry: &saipb.RouteEntry{
 				SwitchId:    ni.switchID,
-				VrId:        0,
+				VrId:        ni.niDetail[data.networkInstance].vrOID,
 				Destination: &saipb.IpPrefix{Addr: ipBytes, Mask: mask},
 			},
 		})
@@ -1048,7 +1161,9 @@ func (ni *Reconciler) setupPorts(ctx context.Context) error {
 			name:    i.Attrs().Name,
 			subintf: 0,
 		}
-		data := &interfaceData{}
+		data := &interfaceData{
+			networkInstance: fakedevice.DefaultNetworkInstance,
+		}
 
 		portResp, err := ni.portClient.CreatePort(ctx, &saipb.CreatePortRequest{
 			Switch:     ni.switchID,
@@ -1088,12 +1203,14 @@ func (ni *Reconciler) setupPorts(ctx context.Context) error {
 		}
 		data.hostifIfIndex = tap.Attrs().Index
 
+		log.Infof("creating router interface dev: %v, port id: %v, mac: %s, vr id: %d", intfRefToDevName(ocIntf), portResp.GetOid(), tap.Attrs().HardwareAddr.String(), ni.niDetail[fakedevice.DefaultNetworkInstance].vrOID)
+
 		rifResp, err := ni.ifaceClient.CreateRouterInterface(ctx, &saipb.CreateRouterInterfaceRequest{
 			Switch:          ni.switchID,
 			Type:            saipb.RouterInterfaceType_ROUTER_INTERFACE_TYPE_PORT.Enum(),
 			PortId:          &portResp.Oid,
 			SrcMacAddress:   tap.Attrs().HardwareAddr,
-			VirtualRouterId: proto.Uint64(0),
+			VirtualRouterId: proto.Uint64(ni.niDetail[fakedevice.DefaultNetworkInstance].vrOID), // Implicitly add the RIF to DEFAULT network instance.
 		})
 		if err != nil {
 			return fmt.Errorf("failed to update MAC address for interface %q: %w", i.Attrs().Name, err)
