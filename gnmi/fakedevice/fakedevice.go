@@ -16,16 +16,18 @@ package fakedevice
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	log "github.com/golang/glog"
+	"github.com/openconfig/ygnmi/ygnmi"
+	"github.com/openconfig/ygot/ygot"
+
 	"github.com/openconfig/lemming/gnmi"
 	"github.com/openconfig/lemming/gnmi/gnmiclient"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 	"github.com/openconfig/lemming/gnmi/reconciler"
-	"github.com/openconfig/ygnmi/ygnmi"
-	"github.com/openconfig/ygot/ygot"
 )
 
 const (
@@ -33,13 +35,61 @@ const (
 	StaticRoutingProtocol  = "DEFAULT"
 	BGPRoutingProtocol     = "BGP"
 
-	chassisComponentName = "chassis"
+	// Component names
+	chassisComponentName     = "chassis"
+	linecardComponentName    = "Linecard"
+	fabricComponentName      = "Fabric"
+	controlcardComponentName = "Supervisor"
+
+	// TODO: Make lemming chassis configurable
+	// Number of each component type
+	numLineCard       = 8
+	numFabricCard     = 6
+	numSupervisorCard = 2
 )
 
 // Reboot updates the system boot time to the provided Unix time.
 func Reboot(ctx context.Context, c *ygnmi.Client, rebootTime int64) error {
 	_, err := gnmiclient.Replace(gnmi.AddTimestampMetadata(ctx, rebootTime), c, ocpath.Root().System().BootTime().State(), uint64(rebootTime))
 	return err
+}
+
+// RebootComponent updates the component's last reboot time and reason.
+func RebootComponent(ctx context.Context, c *ygnmi.Client, componentName string, rebootTime int64) error {
+	log.Infof("Performing component reboot for %s at time %d", componentName, rebootTime)
+
+	// Get current component state to ensure it exists
+	_, err := ygnmi.Get(ctx, c, ocpath.Root().Component(componentName).State())
+	if err != nil {
+		return fmt.Errorf("failed to get component %s state: %v", componentName, err)
+	}
+
+	// Set component to inactive temporarily
+	if _, err := gnmiclient.Replace(ctx, c, ocpath.Root().Component(componentName).OperStatus().State(), oc.PlatformTypes_COMPONENT_OPER_STATUS_INACTIVE); err != nil {
+		return fmt.Errorf("failed to set component %s inactive: %v", componentName, err)
+	}
+
+	// Update last reboot time
+	if _, err := gnmiclient.Replace(ctx, c, ocpath.Root().Component(componentName).LastRebootTime().State(), uint64(rebootTime)); err != nil {
+		return fmt.Errorf("failed to update component %s reboot time: %v", componentName, err)
+	}
+
+	// Update reboot reason
+	if _, err := gnmiclient.Replace(ctx, c, ocpath.Root().Component(componentName).LastRebootReason().State(), oc.PlatformTypes_COMPONENT_REBOOT_REASON_REBOOT_USER_INITIATED); err != nil {
+		return fmt.Errorf("failed to update component %s reboot reason: %v", componentName, err)
+	}
+
+	// Simulate a brief reboot period
+	time.Sleep(10 * time.Second)
+
+	// Now restore the component OperStatus (reboot completed)
+	finalState := oc.PlatformTypes_COMPONENT_OPER_STATUS_ACTIVE
+	if _, err := gnmiclient.Replace(ctx, c, ocpath.Root().Component(componentName).OperStatus().State(), finalState); err != nil {
+		return fmt.Errorf("failed to restore component %s state after reboot: %v", componentName, err)
+	}
+
+	log.Infof("Component %s reboot completed successfully", componentName)
+	return nil
 }
 
 // NewBootTimeTask initializes boot-related paths.
@@ -58,6 +108,78 @@ func NewBootTimeTask() *reconciler.BuiltReconciler {
 			}); err != nil {
 				return err
 			}
+			return nil
+		}).Build()
+
+	return rec
+}
+
+// NewChassisComponentsTask initializes subcomponents for the chassis
+func NewChassisComponentsTask() *reconciler.BuiltReconciler {
+	rec := reconciler.NewBuilder("chassis components").
+		WithStart(func(ctx context.Context, c *ygnmi.Client) error {
+			now := time.Now().UnixNano()
+			timestampedCtx := gnmi.AddTimestampMetadata(ctx, now)
+			batch := &ygnmi.SetBatch{}
+
+			// Initialize supervisors
+			for i := 1; i <= numSupervisorCard; i++ {
+				componentName := fmt.Sprintf("%s%d", controlcardComponentName, i)
+				redundantRole := oc.PlatformTypes_ComponentRedundantRole_PRIMARY
+				if i == 2 {
+					redundantRole = oc.PlatformTypes_ComponentRedundantRole_SECONDARY
+				}
+				component := &oc.Component{
+					Name:             ygot.String(componentName),
+					Type:             oc.PlatformTypes_OPENCONFIG_HARDWARE_COMPONENT_CONTROLLER_CARD,
+					OperStatus:       oc.PlatformTypes_COMPONENT_OPER_STATUS_ACTIVE,
+					RedundantRole:    redundantRole,
+					Parent:           ygot.String(chassisComponentName),
+					SoftwareVersion:  ygot.String("current"),
+					LastRebootTime:   ygot.Uint64(uint64(now)),
+					LastRebootReason: oc.PlatformTypes_COMPONENT_REBOOT_REASON_UNSET,
+				}
+				gnmiclient.BatchUpdate(batch, ocpath.Root().Component(componentName).State(), component)
+				log.Infof("Batching initialization for supervisor component %s", componentName)
+			}
+
+			// Initialize line cards
+			for i := 0; i < numLineCard; i++ {
+				componentName := fmt.Sprintf("%s%d", linecardComponentName, i)
+				component := &oc.Component{
+					Name:             ygot.String(componentName),
+					Type:             oc.PlatformTypes_OPENCONFIG_HARDWARE_COMPONENT_LINECARD,
+					OperStatus:       oc.PlatformTypes_COMPONENT_OPER_STATUS_ACTIVE,
+					Parent:           ygot.String(chassisComponentName),
+					SoftwareVersion:  ygot.String("current"),
+					LastRebootTime:   ygot.Uint64(uint64(now)),
+					LastRebootReason: oc.PlatformTypes_COMPONENT_REBOOT_REASON_UNSET,
+				}
+				gnmiclient.BatchUpdate(batch, ocpath.Root().Component(componentName).State(), component)
+				log.Infof("Batching initialization for line card component %s", componentName)
+			}
+
+			// Initialize fabric cards
+			for i := 0; i < numFabricCard; i++ {
+				componentName := fmt.Sprintf("%s%d", fabricComponentName, i)
+				component := &oc.Component{
+					Name:             ygot.String(componentName),
+					Type:             oc.PlatformTypes_OPENCONFIG_HARDWARE_COMPONENT_FABRIC,
+					OperStatus:       oc.PlatformTypes_COMPONENT_OPER_STATUS_ACTIVE,
+					Parent:           ygot.String(chassisComponentName),
+					SoftwareVersion:  ygot.String("current"),
+					LastRebootTime:   ygot.Uint64(uint64(now)),
+					LastRebootReason: oc.PlatformTypes_COMPONENT_REBOOT_REASON_UNSET,
+				}
+				gnmiclient.BatchReplace(batch, ocpath.Root().Component(componentName).State(), component)
+				log.Infof("Batching initialization for fabric card component %s", componentName)
+			}
+
+			if _, err := batch.Set(timestampedCtx, c); err != nil {
+				log.Errorf("Error applying batched component initializations: %v", err)
+				return err
+			}
+			log.Infof("Successfully applied batched component initializations.")
 			return nil
 		}).Build()
 
