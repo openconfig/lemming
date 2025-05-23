@@ -20,6 +20,20 @@ import (
 	"time"
 
 	log "github.com/golang/glog"
+	"github.com/openconfig/ygnmi/ygnmi"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"github.com/openconfig/ygnmi/ygnmi"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
+	"github.com/openconfig/lemming/gnmi/fakedevice"
+	"github.com/openconfig/lemming/gnmi/oc"
+	"github.com/openconfig/lemming/gnmi/oc/ocpath"
+	"github.com/openconfig/lemming/gnmi/fakedevice"
+
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 	bpb "github.com/openconfig/gnoi/bgp"
 	cmpb "github.com/openconfig/gnoi/cert"
@@ -33,15 +47,6 @@ import (
 	otpb "github.com/openconfig/gnoi/otdr"
 	spb "github.com/openconfig/gnoi/system"
 	wrpb "github.com/openconfig/gnoi/wavelength_router"
-	"github.com/openconfig/ygnmi/ygnmi"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-
-	"github.com/openconfig/lemming/gnmi/oc"
-
-	"github.com/openconfig/lemming/gnmi/fakedevice"
-	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 )
 
 type bgp struct {
