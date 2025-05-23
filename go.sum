@@ -1789,6 +1789,8 @@ github.com/open-traffic-generator/snappi/gosnappi v1.5.1 h1:EQxOtbwizSOnoWvOeJnR
 github.com/open-traffic-generator/snappi/gosnappi v1.5.1/go.mod h1:ty62DVAUirewB4ZN5a1YFAt0wDkTUHAREiHjKt8dawg=
 github.com/openconfig/attestz v0.2.0 h1:VuksFIG1OlGnRuUpdTFAkMyAY59ITvyLbp4AtiTXV64=
 github.com/openconfig/attestz v0.2.0/go.mod h1:byY6H68zm3VXmQHEb4O4OZtRtFyHEjkmzrvIljYc79Y=
+github.com/openconfig/bootz v0.3.1 h1:Q0mThGmZiX/kht+crar6FtLVxqdjUS/deMnpcNX+F7c=
+github.com/openconfig/bootz v0.3.1/go.mod h1:IhVtV9zS/2i8rKXHkRW9eD2UV6zGeIXYtLcEzAeyc6A=
 github.com/openconfig/gnmi v0.10.0/go.mod h1:Y9os75GmSkhHw2wX8sMsxfI7qRGAEcDh8NTa5a8vj6E=
 github.com/openconfig/gnmi v0.13.0 h1:4aVopzMZVYtfrRqlpDqM0liutE+3/AiDMzNtI2r7em4=
 github.com/openconfig/gnmi v0.13.0/go.mod h1:YJwAQ6qkU06TU/g4ZqjxSkajOm0adoBK86/s6w0ow3w=
