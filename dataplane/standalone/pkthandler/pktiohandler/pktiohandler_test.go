@@ -4,29 +4,27 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
+//	http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 package pktiohandler
 
 import (
 	"context"
+	"google3/third_party/golang/cmp/cmp"
+	"google3/third_party/golang/grpc/codes/codes"
+	"google3/third_party/golang/protobuf/v2/testing/protocmp/protocmp"
+	"google3/third_party/openconfig/lemming/dataplane/kernel/kernel"
+	pktiogrpc "google3/third_party/openconfig/lemming/dataplane/proto/packetio/packetio_go_grpc"
+	pktiopb "google3/third_party/openconfig/lemming/dataplane/proto/packetio/packetio_go_proto"
 	"io"
+	"sync"
 	"testing"
 	"time"
-
-	"github.com/google/go-cmp/cmp"
-	"github.com/vishvananda/netlink"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/protobuf/testing/protocmp"
-
-	"github.com/openconfig/lemming/dataplane/kernel"
-	pktiopb "github.com/openconfig/lemming/dataplane/proto/packetio"
 )
 
 func TestStreamPackets(t *testing.T) {
@@ -76,12 +74,11 @@ func TestStreamPackets(t *testing.T) {
 			}
 			fp := &fakePort{}
 			mgr.hostifs[1] = &port{
-				PortIO:   fp,
+				portIO:   fp,
 				cancelFn: func() {},
 			}
 			ctx, cancelFn := context.WithCancel(context.Background())
 			defer cancelFn()
-
 			ps := &fakePacketStream{
 				ctx:         ctx,
 				recvPackets: tt.recvPackets,
@@ -90,8 +87,7 @@ func TestStreamPackets(t *testing.T) {
 				mgr.sendQueue.Write(pkt)
 			}
 			mgr.StreamPackets(ps)
-			time.Sleep(5 * time.Millisecond) // Sleep long enough to drain the send queue.
-
+			time.Sleep(time.Millisecond) // Sleep long enough to drain the send queue.
 			if d := cmp.Diff(ps.sendPackets, tt.wantSentPacket, protocmp.Transform()); d != "" {
 				t.Errorf("StreamPackets() failed: sent packet diff(-got,+want)\n:%s", d)
 			}
@@ -101,12 +97,6 @@ func TestStreamPackets(t *testing.T) {
 		})
 	}
 }
-
-type fakeLink struct{}
-
-func (l *fakeLink) Attrs() *netlink.LinkAttrs { return &netlink.LinkAttrs{} }
-func (l *fakeLink) Type() string              { return "" }
-
 func TestManagePorts(t *testing.T) {
 	tests := []struct {
 		desc    string
@@ -124,37 +114,6 @@ func TestManagePorts(t *testing.T) {
 			PortId:        1,
 			DataplanePort: 2,
 			Create:        true,
-			Op:            pktiopb.PortOperation_PORT_OPERATION_CREATE,
-		}},
-		want: codes.OK,
-	}, {
-		desc: "delete not existing",
-		msgs: []*pktiopb.HostPortControlMessage{{
-			PortId: 1,
-			Create: false,
-			Op:     pktiopb.PortOperation_PORT_OPERATION_DELETE,
-		}},
-		want: codes.FailedPrecondition,
-	}, {
-		desc: "delete",
-		msgs: []*pktiopb.HostPortControlMessage{{
-			PortId: 2,
-			Create: false,
-			Op:     pktiopb.PortOperation_PORT_OPERATION_DELETE,
-		}},
-		want: codes.OK,
-	}, {
-		desc: "set state not existing",
-		msgs: []*pktiopb.HostPortControlMessage{{
-			PortId: 1,
-			Op:     pktiopb.PortOperation_PORT_OPERATION_SET_DOWN,
-		}},
-		want: codes.FailedPrecondition,
-	}, {
-		desc: "set state",
-		msgs: []*pktiopb.HostPortControlMessage{{
-			PortId: 2,
-			Op:     pktiopb.PortOperation_PORT_OPERATION_SET_DOWN,
 		}},
 		want: codes.OK,
 	}}
@@ -164,15 +123,8 @@ func TestManagePorts(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unexpected error on New(): %v", err)
 			}
-			mgr.hostifs[2] = &port{
-				PortIO:   &fakePort{},
-				cancelFn: func() {},
-			}
-			builder[pktiopb.PortType_PORT_TYPE_NETDEV] = func(hpcm *pktiopb.HostPortControlMessage) (PortIO, error) {
-				return &fakePort{}, nil
-			}
-			linkByName = func(name string) (netlink.Link, error) {
-				return &fakeLink{}, nil
+			createTAPFunc = func(string) (*kernel.TapInterface, error) {
+				return &kernel.TapInterface{}, nil
 			}
 			hpc := &fakeHostPortControl{
 				msg: tt.msgs,
@@ -181,7 +133,7 @@ func TestManagePorts(t *testing.T) {
 				t.Fatalf("ManagePorts() unexpected error: %v", err)
 			}
 			if got := codes.Code(hpc.gotReqs[1].GetStatus().GetCode()); got != tt.want {
-				t.Fatalf("ManagePorts() unexpected result: got %v, want %v", hpc.gotReqs[1].GetStatus(), tt.want)
+				t.Fatalf("ManagePorts() unexpected result: got %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -191,22 +143,9 @@ type portWriteData struct {
 	Frame []byte
 	MD    *kernel.PacketMetadata
 }
-
 type fakePort struct {
-	PortIO
+	portIO
 	writtenData []*portWriteData
-}
-
-func (p *fakePort) Delete() error {
-	return nil
-}
-
-func (p *fakePort) SetAdminState(bool) error {
-	return nil
-}
-
-func (p *fakePort) Read([]byte) (int, error) {
-	return 0, nil
 }
 
 func (p *fakePort) Write(frame []byte, md *kernel.PacketMetadata) (int, error) {
@@ -215,9 +154,11 @@ func (p *fakePort) Write(frame []byte, md *kernel.PacketMetadata) (int, error) {
 }
 
 type fakePacketStream struct {
-	pktiopb.PacketIO_CPUPacketStreamClient
-	sendPackets    []*pktiopb.PacketIn
+	pktiogrpc.PacketIO_CPUPacketStreamClient
 	ctx            context.Context
+	sMu            sync.Mutex
+	sendPackets    []*pktiopb.PacketIn
+	rMu            sync.Mutex
 	recvPackets    []*pktiopb.PacketOut
 	recvPacketsIdx int
 }
@@ -228,40 +169,45 @@ func (f *fakePacketStream) Context() context.Context {
 	}
 	return f.ctx
 }
-
 func (f *fakePacketStream) Send(p *pktiopb.PacketIn) error {
+	f.sMu.Lock()
+	defer f.sMu.Unlock()
 	f.sendPackets = append(f.sendPackets, p)
 	return nil
 }
-
 func (f *fakePacketStream) Recv() (*pktiopb.PacketOut, error) {
+	f.rMu.Lock()
+	defer f.rMu.Unlock()
 	if f.recvPacketsIdx >= len(f.recvPackets) {
 		return nil, io.EOF
 	}
 	pkt := f.recvPackets[f.recvPacketsIdx]
 	f.recvPacketsIdx++
-
 	return pkt, nil
 }
 
 type fakeHostPortControl struct {
-	pktiopb.PacketIO_HostPortControlClient
+	pktiogrpc.PacketIO_HostPortControlClient
+	gMu     sync.Mutex
 	gotReqs []*pktiopb.HostPortControlRequest
+	mMu     sync.Mutex
 	msg     []*pktiopb.HostPortControlMessage
 	msgIdx  int
 }
 
 func (f *fakeHostPortControl) Send(req *pktiopb.HostPortControlRequest) error {
+	f.gMu.Lock()
+	defer f.gMu.Unlock()
 	f.gotReqs = append(f.gotReqs, req)
 	return nil
 }
-
 func (f *fakeHostPortControl) Recv() (*pktiopb.HostPortControlMessage, error) {
+	f.mMu.Lock()
+	defer f.mMu.Unlock()
 	if f.msgIdx >= len(f.msg) {
 		return nil, io.EOF
 	}
 	req := f.msg[f.msgIdx]
 	f.msgIdx++
-
 	return req, nil
 }
