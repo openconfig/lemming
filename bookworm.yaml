@@ -12,3 +12,5 @@ archs:
 packages:
   - "ca-certificates"
   - "libpcap-dev"
+  - "iproute2"
+  - "procps"

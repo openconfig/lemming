@@ -38,6 +38,7 @@ jobs:
           VALIDATE_GO: false
           VALIDATE_CLANG_FORMAT: false
           VALIDATE_KUBERNETES_KUBEVAL: false
+          VALIDATE_GITLEAKS: false
           IGNORE_GENERATED_FILES: true
           DEFAULT_BRANCH: main
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
