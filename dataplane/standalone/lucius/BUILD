@@ -46,6 +46,8 @@ oci_image(
         ":bin-tar",
         ":cacerts",
         "@bookworm//libpcap-dev/amd64",
+        "@bookworm//iproute2/amd64",
+        "@bookworm//procps/amd64",
     ],
 )
 
