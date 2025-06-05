@@ -22,6 +22,7 @@ go_library(
         "@com_github_openconfig_gnoi//os",
         "@com_github_openconfig_gnoi//otdr",
         "@com_github_openconfig_gnoi//system",
+        "@com_github_openconfig_gnoi//types",
         "@com_github_openconfig_gnoi//wavelength_router",
         "@com_github_openconfig_ygnmi//ygnmi",
         "@org_golang_google_grpc//:grpc",

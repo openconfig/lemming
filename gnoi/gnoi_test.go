@@ -20,6 +20,12 @@ import (
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 )
 
+const (
+	// Default supervisor configuration
+	defaultPrimarySupervisor   = "Supervisor1"
+	defaultSecondarySupervisor = "Supervisor2"
+)
+
 func TestReboot(t *testing.T) {
 	grpcServer := grpc.NewServer()
 	gnmiServer, err := gnmi.New(grpcServer, "local", nil)
@@ -489,5 +495,434 @@ func TestComponentReboot(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			test.fn(t, s, ctx)
 		})
+	}
+}
+
+// TestSwitchControlProcessor tests the SwitchControlProcessor method.
+func TestSwitchControlProcessor(t *testing.T) {
+	tests := map[string]struct {
+		fn func(*testing.T, *system, context.Context)
+	}{
+		"empty-request": {
+			fn: func(t *testing.T, s *system, ctx context.Context) {
+				req := &spb.SwitchControlProcessorRequest{}
+				_, err := s.SwitchControlProcessor(ctx, req)
+				if err == nil {
+					t.Error("Expected error for empty request")
+				} else if got := status.Code(err); got != codes.InvalidArgument {
+					t.Errorf("Expected InvalidArgument error, got %v", got)
+				}
+			},
+		},
+		"invalid-path-format": {
+			fn: func(t *testing.T, s *system, ctx context.Context) {
+				req := &spb.SwitchControlProcessorRequest{
+					ControlProcessor: &pb.Path{
+						Elem: []*pb.PathElem{
+							{Name: "Supervisor1"},
+						},
+					},
+				}
+				_, err := s.SwitchControlProcessor(ctx, req)
+				if err == nil {
+					t.Error("Expected error for invalid path format")
+				} else if got := status.Code(err); got != codes.InvalidArgument {
+					t.Errorf("Expected InvalidArgument error, got %v", got)
+				}
+			},
+		},
+		"nonexistent-supervisor": {
+			fn: func(t *testing.T, s *system, ctx context.Context) {
+				req := &spb.SwitchControlProcessorRequest{
+					ControlProcessor: &pb.Path{
+						Elem: []*pb.PathElem{
+							{Name: "components"},
+							{Name: "component", Key: map[string]string{"name": "SupervisorX"}},
+						},
+					},
+				}
+				_, err := s.SwitchControlProcessor(ctx, req)
+				if err == nil {
+					t.Error("Expected error for non-existent supervisor")
+				} else if got := status.Code(err); got != codes.NotFound {
+					t.Errorf("Expected NotFound error, got %v", got)
+				}
+			},
+		},
+		"non-controller-card": {
+			fn: func(t *testing.T, s *system, ctx context.Context) {
+				req := &spb.SwitchControlProcessorRequest{
+					ControlProcessor: &pb.Path{
+						Elem: []*pb.PathElem{
+							{Name: "components"},
+							{Name: "component", Key: map[string]string{"name": "Linecard0"}},
+						},
+					},
+				}
+				_, err := s.SwitchControlProcessor(ctx, req)
+				if err == nil {
+					t.Error("Expected error for non-controller card")
+				} else if got := status.Code(err); got != codes.NotFound {
+					t.Errorf("Expected NotFound error, got %v", got)
+				}
+			},
+		},
+		"switchover-to-already-active": {
+			fn: func(t *testing.T, s *system, ctx context.Context) {
+				// Default primary supervisor is always PRIMARY by default, so try switching to it
+				req := &spb.SwitchControlProcessorRequest{
+					ControlProcessor: &pb.Path{
+						Elem: []*pb.PathElem{
+							{Name: "components"},
+							{Name: "component", Key: map[string]string{"name": defaultPrimarySupervisor}},
+						},
+					},
+				}
+				resp, err := s.SwitchControlProcessor(ctx, req)
+				if err != nil {
+					t.Errorf("Expected successful response for no-op switchover, got error: %v", err)
+				}
+				if resp == nil {
+					t.Error("Expected response but got nil")
+				}
+
+				// Verify response fields
+				if resp.ControlProcessor == nil {
+					t.Error("Expected ControlProcessor in response")
+				}
+				if resp.Version == "" {
+					t.Error("Expected Version in response")
+				}
+			},
+		},
+		"successful-switchover": {
+			fn: func(t *testing.T, s *system, ctx context.Context) {
+				// Get initial states for timestamp comparison
+				initialSupervisor1, err := ygnmi.Get(ctx, s.c, ocpath.Root().Component(defaultPrimarySupervisor).State())
+				if err != nil {
+					t.Fatalf("Failed to get initial %s state: %v", defaultPrimarySupervisor, err)
+				}
+				initialSupervisor2, err := ygnmi.Get(ctx, s.c, ocpath.Root().Component(defaultSecondarySupervisor).State())
+				if err != nil {
+					t.Fatalf("Failed to get initial %s state: %v", defaultSecondarySupervisor, err)
+				}
+
+				// Switch to secondary supervisor (default: PRIMARY=Supervisor1, SECONDARY=Supervisor2)
+				req := &spb.SwitchControlProcessorRequest{
+					ControlProcessor: &pb.Path{
+						Elem: []*pb.PathElem{
+							{Name: "components"},
+							{Name: "component", Key: map[string]string{"name": defaultSecondarySupervisor}},
+						},
+					},
+				}
+
+				resp, err := s.SwitchControlProcessor(ctx, req)
+				if err != nil {
+					t.Fatalf("Switchover failed: %v", err)
+				}
+				if resp == nil {
+					t.Fatal("Expected response but got nil")
+				}
+
+				// Verify response
+				if resp.ControlProcessor == nil {
+					t.Error("Expected ControlProcessor in response")
+				}
+				if resp.Version == "" {
+					t.Error("Expected Version in response")
+				}
+				if resp.Uptime <= 0 {
+					t.Error("Expected positive Uptime in response")
+				}
+
+				// Verify final states
+				finalSupervisor1, err := ygnmi.Get(ctx, s.c, ocpath.Root().Component(defaultPrimarySupervisor).State())
+				if err != nil {
+					t.Fatalf("Failed to get %s final state: %v", defaultPrimarySupervisor, err)
+				}
+				finalSupervisor2, err := ygnmi.Get(ctx, s.c, ocpath.Root().Component(defaultSecondarySupervisor).State())
+				if err != nil {
+					t.Fatalf("Failed to get %s final state: %v", defaultSecondarySupervisor, err)
+				}
+
+				// Verify roles switched
+				if finalSupervisor1.GetRedundantRole() != oc.PlatformTypes_ComponentRedundantRole_SECONDARY {
+					t.Errorf("Expected %s to be SECONDARY after switchover, got %v", defaultPrimarySupervisor, finalSupervisor1.GetRedundantRole())
+				}
+				if finalSupervisor2.GetRedundantRole() != oc.PlatformTypes_ComponentRedundantRole_PRIMARY {
+					t.Errorf("Expected %s to be PRIMARY after switchover, got %v", defaultSecondarySupervisor, finalSupervisor2.GetRedundantRole())
+				}
+
+				// Verify timestamps updated
+				if finalSupervisor1.GetLastSwitchoverTime() <= initialSupervisor1.GetLastSwitchoverTime() {
+					t.Error("Supervisor1 switchover time was not updated")
+				}
+				if finalSupervisor2.GetLastSwitchoverTime() <= initialSupervisor2.GetLastSwitchoverTime() {
+					t.Error("Supervisor2 switchover time was not updated")
+				}
+
+				// Verify switchover reasons
+				if finalSupervisor1.GetLastSwitchoverReason().GetTrigger() != oc.PlatformTypes_ComponentRedundantRoleSwitchoverReasonTrigger_USER_INITIATED {
+					t.Errorf("Expected Supervisor1 switchover trigger USER_INITIATED, got %v", finalSupervisor1.GetLastSwitchoverReason().GetTrigger())
+				}
+				if finalSupervisor2.GetLastSwitchoverReason().GetTrigger() != oc.PlatformTypes_ComponentRedundantRoleSwitchoverReasonTrigger_USER_INITIATED {
+					t.Errorf("Expected Supervisor2 switchover trigger USER_INITIATED, got %v", finalSupervisor2.GetLastSwitchoverReason().GetTrigger())
+				}
+
+				// Reset to default state
+				resetSupervisorState(t, s, ctx)
+			},
+		},
+		"switchover-back": {
+			fn: func(t *testing.T, s *system, ctx context.Context) {
+				// Switch to Supervisor2 first (from default Supervisor1=PRIMARY)
+				req1 := &spb.SwitchControlProcessorRequest{
+					ControlProcessor: &pb.Path{
+						Elem: []*pb.PathElem{
+							{Name: "components"},
+							{Name: "component", Key: map[string]string{"name": "Supervisor2"}},
+						},
+					},
+				}
+				_, err := s.SwitchControlProcessor(ctx, req1)
+				if err != nil {
+					t.Fatalf("First switchover failed: %v", err)
+				}
+
+				// Verify Supervisor2 is now PRIMARY
+				newActiveState, err := ygnmi.Get(ctx, s.c, ocpath.Root().Component("Supervisor2").State())
+				if err != nil {
+					t.Fatalf("Failed to get new active supervisor state: %v", err)
+				}
+				if newActiveState.GetRedundantRole() != oc.PlatformTypes_ComponentRedundantRole_PRIMARY {
+					t.Errorf("Expected Supervisor2 to be PRIMARY after first switchover, got %v", newActiveState.GetRedundantRole())
+				}
+
+				// Switch back to Supervisor1
+				req2 := &spb.SwitchControlProcessorRequest{
+					ControlProcessor: &pb.Path{
+						Elem: []*pb.PathElem{
+							{Name: "components"},
+							{Name: "component", Key: map[string]string{"name": "Supervisor1"}},
+						},
+					},
+				}
+				resp, err := s.SwitchControlProcessor(ctx, req2)
+				if err != nil {
+					t.Fatalf("Second switchover failed: %v", err)
+				}
+				if resp == nil {
+					t.Fatal("Expected response but got nil")
+				}
+
+				// Verify Supervisor1 is PRIMARY again
+				finalState, err := ygnmi.Get(ctx, s.c, ocpath.Root().Component("Supervisor1").State())
+				if err != nil {
+					t.Fatalf("Failed to get final supervisor state: %v", err)
+				}
+				if finalState.GetRedundantRole() != oc.PlatformTypes_ComponentRedundantRole_PRIMARY {
+					t.Errorf("Expected Supervisor1 to be PRIMARY after switchback, got %v", finalState.GetRedundantRole())
+				}
+			},
+		},
+		"switchover-with-pending-system-reboot": {
+			fn: func(t *testing.T, s *system, ctx context.Context) {
+				// Start a delayed system reboot
+				rebootReq := &spb.RebootRequest{
+					Method: spb.RebootMethod_COLD,
+					Delay:  5000000000, // 5 seconds
+				}
+				_, err := s.Reboot(ctx, rebootReq)
+				if err != nil {
+					t.Fatalf("Failed to initiate system reboot: %v", err)
+				}
+
+				// Try switchover while system reboot is pending
+				switchReq := &spb.SwitchControlProcessorRequest{
+					ControlProcessor: &pb.Path{
+						Elem: []*pb.PathElem{
+							{Name: "components"},
+							{Name: "component", Key: map[string]string{"name": "Supervisor2"}},
+						},
+					},
+				}
+				_, err = s.SwitchControlProcessor(ctx, switchReq)
+				if err == nil {
+					t.Error("Expected switchover to fail with pending system reboot")
+				} else if got := status.Code(err); got != codes.FailedPrecondition {
+					t.Errorf("Expected FailedPrecondition error, got %v", got)
+				}
+
+				// Cancel reboot
+				_, err = s.CancelReboot(ctx, &spb.CancelRebootRequest{})
+				if err != nil {
+					t.Fatalf("Failed to cancel reboot: %v", err)
+				}
+			},
+		},
+		"switchover-with-pending-component-reboot": {
+			fn: func(t *testing.T, s *system, ctx context.Context) {
+				// Start a delayed component reboot
+				rebootReq := &spb.RebootRequest{
+					Method: spb.RebootMethod_COLD,
+					Delay:  5000000000, // 5 seconds
+					Subcomponents: []*pb.Path{{
+						Elem: []*pb.PathElem{
+							{Name: "components"},
+							{Name: "component", Key: map[string]string{"name": "Linecard0"}},
+						},
+					}},
+				}
+				_, err := s.Reboot(ctx, rebootReq)
+				if err != nil {
+					t.Fatalf("Failed to initiate component reboot: %v", err)
+				}
+
+				// Try switchover while component reboot is pending
+				switchReq := &spb.SwitchControlProcessorRequest{
+					ControlProcessor: &pb.Path{
+						Elem: []*pb.PathElem{
+							{Name: "components"},
+							{Name: "component", Key: map[string]string{"name": "Supervisor2"}},
+						},
+					},
+				}
+				_, err = s.SwitchControlProcessor(ctx, switchReq)
+				if err == nil {
+					t.Error("Expected switchover to fail with pending component reboot")
+				} else if got := status.Code(err); got != codes.FailedPrecondition {
+					t.Errorf("Expected FailedPrecondition error, got %v", got)
+				}
+
+				// Cancel reboot
+				_, err = s.CancelReboot(ctx, &spb.CancelRebootRequest{})
+				if err != nil {
+					t.Fatalf("Failed to cancel reboot: %v", err)
+				}
+			},
+		},
+		"concurrent-switchover-blocked": {
+			fn: func(t *testing.T, s *system, ctx context.Context) {
+				// Create request to switch to Supervisor2 (default standby)
+				req := &spb.SwitchControlProcessorRequest{
+					ControlProcessor: &pb.Path{
+						Elem: []*pb.PathElem{
+							{Name: "components"},
+							{Name: "component", Key: map[string]string{"name": "Supervisor2"}},
+						},
+					},
+				}
+
+				// Manually set the pending switchover flag to simulate in-progress operation
+				s.switchoverMu.Lock()
+				s.hasPendingSwitchover = true
+				s.switchoverMu.Unlock()
+
+				// Try switchover while one is supposedly in progress
+				_, err := s.SwitchControlProcessor(ctx, req)
+				if err == nil {
+					t.Error("Expected switchover to fail while another is in progress")
+				} else if got := status.Code(err); got != codes.FailedPrecondition {
+					t.Errorf("Expected FailedPrecondition error, got %v", got)
+				}
+
+				// Clear the flag and try again - should work
+				s.switchoverMu.Lock()
+				s.hasPendingSwitchover = false
+				s.switchoverMu.Unlock()
+
+				_, err = s.SwitchControlProcessor(ctx, req)
+				if err != nil {
+					t.Fatalf("Switchover should succeed after clearing flag: %v", err)
+				}
+
+				// Reset to default state
+				resetSupervisorState(t, s, ctx)
+			},
+		},
+	}
+
+	ctx := context.Background()
+	grpcServer := grpc.NewServer()
+	gnmiServer, err := gnmi.New(grpcServer, "local", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	lis, err := net.Listen("tcp", "localhost:0")
+	if err != nil {
+		t.Fatalf("Failed to start listener: %v", err)
+	}
+	go func() {
+		grpcServer.Serve(lis)
+	}()
+	defer grpcServer.Stop()
+
+	client := gnmiServer.LocalClient()
+	c, err := ygnmi.NewClient(client, ygnmi.WithTarget("local"))
+	if err != nil {
+		t.Fatalf("cannot create ygnmi client: %v", err)
+	}
+	s := newSystem(c)
+
+	// Initialize the system
+	if err := fakedevice.NewBootTimeTask().Start(ctx, client, "local"); err != nil {
+		t.Fatalf("Failed to initialize boot time: %v", err)
+	}
+	if err := fakedevice.NewChassisComponentsTask().Start(ctx, client, "local"); err != nil {
+		t.Fatalf("Failed to initialize components: %v", err)
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			test.fn(t, s, ctx)
+		})
+	}
+}
+
+// resetSupervisorState ensures the system is in the default state:
+// Supervisor1 is PRIMARY, Supervisor2 is SECONDARY.
+// It also cancels any pending reboots and clears switchover flags.
+func resetSupervisorState(t *testing.T, s *system, ctx context.Context) {
+	t.Helper()
+
+	// Cancel any pending reboots first
+	_, err := s.CancelReboot(ctx, &spb.CancelRebootRequest{})
+	if err != nil {
+		t.Logf("Warning: Failed to cancel reboot during cleanup: %v", err)
+	}
+
+	// Clear any pending switchover flags
+	s.switchoverMu.Lock()
+	s.hasPendingSwitchover = false
+	s.switchoverMu.Unlock()
+
+	// Check current state
+	supervisor1State, err := ygnmi.Get(ctx, s.c, ocpath.Root().Component("Supervisor1").State())
+	if err != nil {
+		t.Fatalf("Failed to get Supervisor1 state during reset: %v", err)
+	}
+	supervisor2State, err := ygnmi.Get(ctx, s.c, ocpath.Root().Component("Supervisor2").State())
+	if err != nil {
+		t.Fatalf("Failed to get Supervisor2 state during reset: %v", err)
+	}
+
+	if supervisor1State.GetRedundantRole() == oc.PlatformTypes_ComponentRedundantRole_PRIMARY &&
+		supervisor2State.GetRedundantRole() == oc.PlatformTypes_ComponentRedundantRole_SECONDARY {
+		return
+	}
+
+	// Switch to make Supervisor1 PRIMARY
+	switchBackReq := &spb.SwitchControlProcessorRequest{
+		ControlProcessor: &pb.Path{
+			Elem: []*pb.PathElem{
+				{Name: "components"},
+				{Name: "component", Key: map[string]string{"name": "Supervisor1"}},
+			},
+		},
+	}
+	_, err = s.SwitchControlProcessor(ctx, switchBackReq)
+	if err != nil {
+		t.Fatalf("Failed to reset to default supervisor state: %v", err)
 	}
 }
