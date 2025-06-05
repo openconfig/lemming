@@ -26,6 +26,8 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/openconfig/lemming/gnmi/fakedevice"
+	"github.com/openconfig/lemming/gnmi/oc"
+	"github.com/openconfig/lemming/gnmi/oc/ocpath"
 
 	gpb "github.com/openconfig/gnmi/proto/gnmi"
 	bpb "github.com/openconfig/gnoi/bgp"
@@ -99,6 +101,11 @@ type system struct {
 	// reboots.
 	cancelReboot       chan struct{}
 	cancelRebootFinish chan struct{}
+
+	// componentRebootsMu protects the componentReboots map
+	// Map to track pending component reboots by component name
+	componentRebootsMu sync.Mutex
+	componentReboots   map[string]chan struct{}
 }
 
 func newSystem(c *ygnmi.Client) *system {
@@ -106,6 +113,7 @@ func newSystem(c *ygnmi.Client) *system {
 		c:                  c,
 		cancelReboot:       make(chan struct{}, 1),
 		cancelRebootFinish: make(chan struct{}),
+		componentReboots:   make(map[string]chan struct{}),
 	}
 }
 
@@ -119,19 +127,134 @@ func (s *system) Reboot(ctx context.Context, r *spb.RebootRequest) (*spb.RebootR
 		return &spb.RebootResponse{}, nil
 	}
 
+	// If subcomponents are specified, handle component-specific reboot
+	if len(r.GetSubcomponents()) > 0 {
+		return s.handleComponentReboot(ctx, r)
+	}
+
+	// Otherwise handle system-wide reboot
+	if err := s.handleSystemReboot(ctx, r); err != nil {
+		return nil, err
+	}
+
+	log.Infof("successful reboot with delay %v, type %v, and force %v", r.GetDelay(), r.GetMethod(), r.GetForce())
+	return &spb.RebootResponse{}, nil
+}
+
+// handleComponentReboot processes a reboot request for specific components
+func (s *system) handleComponentReboot(ctx context.Context, r *spb.RebootRequest) (*spb.RebootResponse, error) {
+	// Check if there's a system-wide reboot pending, which would block all component reboots
+	s.rebootMu.Lock()
+	systemRebootPending := s.hasPendingReboot
+	s.rebootMu.Unlock()
+
+	if systemRebootPending {
+		return nil, status.Errorf(codes.FailedPrecondition, "system-wide reboot already pending, cannot reboot components")
+	}
+
+	// Process each subcomponent
+	for _, subcompPath := range r.GetSubcomponents() {
+		var componentName string
+		elems := subcompPath.GetElem()
+		// Openconfig path /components/component[name=...]
+		if len(elems) != 2 ||
+			elems[0].GetName() != "components" ||
+			elems[1].GetName() != "component" ||
+			elems[1].GetKey()["name"] == "" {
+			return nil, status.Errorf(codes.InvalidArgument,
+				"invalid OpenConfig component path, expected /components/component[name=...], got: %v", subcompPath)
+		}
+
+		componentName = elems[1].GetKey()["name"]
+
+		// Check if this is an active supervisor
+		isActive, err := s.IsActiveSupervisor(ctx, componentName)
+		if err != nil {
+			log.Warningf("Failed to determine supervisor role for %s: %v", componentName, err)
+		} else if isActive {
+			// reject active control card reboot to enforce standby-only policy
+			return nil, status.Errorf(codes.FailedPrecondition, "rebooting active supervisor %s is not allowed, use standby or chassis reboot instead", componentName)
+		}
+
+		// Check if the component exists by querying it
+		componentPath := ocpath.Root().Component(componentName)
+		_, err = ygnmi.Get(ctx, s.c, componentPath.State())
+		if err != nil {
+			return nil, status.Errorf(codes.NotFound, "component %q not found: %v", componentName, err)
+		}
+
+		// Check if there's already a pending reboot for this component
+		s.componentRebootsMu.Lock()
+		if _, exists := s.componentReboots[componentName]; exists {
+			s.componentRebootsMu.Unlock()
+			return nil, status.Errorf(codes.AlreadyExists, "reboot already pending for component %q", componentName)
+		}
+
+		// Create a cancellation channel for this component
+		cancelCh := make(chan struct{}, 1)
+		rebootCtx, cancel := context.WithCancel(ctx)
+		s.componentReboots[componentName] = cancelCh
+		s.componentRebootsMu.Unlock()
+
+		// Cleanup function for consistent cleanup
+		cleanup := func() {
+			cancel()
+			s.componentRebootsMu.Lock()
+			delete(s.componentReboots, componentName)
+			s.componentRebootsMu.Unlock()
+		}
+
+		delay := r.GetDelay()
+		if delay == 0 {
+			// Immediate reboot
+			if err := fakedevice.RebootComponent(ctx, s.c, componentName, time.Now().UnixNano()); err != nil {
+				cleanup()
+				return nil, status.Errorf(codes.Internal, "failed to reboot component %q: %v", componentName, err)
+			}
+
+			// Remove from pending list after reboot is complete
+			cleanup()
+			log.Infof("Component %q immediate reboot completed", componentName)
+		} else {
+			// Handle delayed reboot
+			go func(compName string) {
+				defer cleanup()
+				select {
+				case <-cancelCh:
+					log.Infof("delayed component reboot for %q cancelled", compName)
+				case <-rebootCtx.Done():
+					log.Infof("delayed component reboot for %q cancelled due to context", compName)
+				case <-time.After(time.Duration(delay) * time.Nanosecond):
+					now := time.Now().UnixNano()
+					if err := fakedevice.RebootComponent(rebootCtx, s.c, compName, now); err != nil {
+						log.Errorf("delayed component reboot for %q failed: %v", compName, err)
+						return
+					}
+					log.Infof("Component %q delayed reboot completed", compName)
+				}
+			}(componentName)
+
+			log.Infof("scheduled component reboot for %q with delay %v", componentName, r.GetDelay())
+		}
+	}
+	return &spb.RebootResponse{}, nil
+}
+
+// handleSystemReboot processes a reboot request for chassis
+func (s *system) handleSystemReboot(ctx context.Context, r *spb.RebootRequest) error {
 	s.rebootMu.Lock()
 	defer s.rebootMu.Unlock()
 	if s.hasPendingReboot {
-		return nil, status.Errorf(codes.AlreadyExists, "reboot already pending")
+		return status.Errorf(codes.AlreadyExists, "reboot already pending")
 	}
 
 	delay := r.GetDelay()
 	if delay == 0 {
 		now := time.Now().UnixNano()
 		if err := fakedevice.Reboot(ctx, s.c, now); err != nil {
-			return nil, status.Error(codes.Internal, err.Error())
+			return status.Error(codes.Internal, err.Error())
 		}
-		return &spb.RebootResponse{}, nil
+		return nil
 	}
 
 	s.hasPendingReboot = true
@@ -150,37 +273,69 @@ func (s *system) Reboot(ctx context.Context, r *spb.RebootRequest) (*spb.RebootR
 			s.hasPendingReboot = false
 		}
 	}()
-	log.Infof("successful reboot with delay %v, type %v, and force %v", r.GetDelay(), r.GetMethod(), r.GetForce())
-	return &spb.RebootResponse{}, nil
+	return nil
 }
 
 func (s *system) CancelReboot(ctx context.Context, c *spb.CancelRebootRequest) (*spb.CancelRebootResponse, error) {
 	log.Infof("Received cancel reboot request %v", c)
+
+	// Check if there are any component reboots to cancel
+	s.componentRebootsMu.Lock()
+	componentRebootsPending := len(s.componentReboots)
+	for component, cancelCh := range s.componentReboots {
+		select {
+		case cancelCh <- struct{}{}:
+			log.Infof("Sent cancellation signal for component %q reboot", component)
+		default:
+			// Channel already has a message or is closed
+			log.Infof("Component %q reboot already completed or in progress, couldn't cancel", component)
+		}
+		delete(s.componentReboots, component)
+	}
+	s.componentRebootsMu.Unlock()
+
+	// Check for system-wide reboot to cancel
 	s.rebootMu.Lock()
 	hasPendingReboot := s.hasPendingReboot
 	s.rebootMu.Unlock()
-	if !hasPendingReboot {
+
+	if !hasPendingReboot && componentRebootsPending == 0 {
+		// No reboots of any kind to cancel
 		return &spb.CancelRebootResponse{}, nil
 	}
 
-	s.cancelReboot <- struct{}{} // signal cancellation
-	for {
-		select {
-		case <-s.cancelRebootFinish:
-			s.rebootMu.Lock()
-			defer s.rebootMu.Unlock()
-			s.hasPendingReboot = false
-			return &spb.CancelRebootResponse{}, nil
-		case <-time.After(time.Second): // It's possible for reboot to happen after cancellation signal -- use polling to check that.
-			s.rebootMu.Lock()
-			if !s.hasPendingReboot {
-				s.rebootMu.Unlock()
-				<-s.cancelReboot // clean-up cancellation signal that's not needed since reboot actually happened.
+	if hasPendingReboot {
+		s.cancelReboot <- struct{}{} // signal cancellation
+		for {
+			select {
+			case <-s.cancelRebootFinish:
+				s.rebootMu.Lock()
+				defer s.rebootMu.Unlock()
+				s.hasPendingReboot = false
 				return &spb.CancelRebootResponse{}, nil
+			case <-time.After(time.Second): // It's possible for reboot to happen after cancellation signal -- use polling to check that.
+				s.rebootMu.Lock()
+				if !s.hasPendingReboot {
+					s.rebootMu.Unlock()
+					<-s.cancelReboot // clean-up cancellation signal that's not needed since reboot actually happened.
+					return &spb.CancelRebootResponse{}, nil
+				}
+				s.rebootMu.Unlock()
 			}
-			s.rebootMu.Unlock()
 		}
 	}
+
+	return &spb.CancelRebootResponse{}, nil
+}
+
+// IsActiveSupervisor checks for the redundant role of a supervisor
+func (s *system) IsActiveSupervisor(ctx context.Context, componentName string) (bool, error) {
+	componentPath := ocpath.Root().Component(componentName)
+	roleVal, err := ygnmi.Get(ctx, s.c, componentPath.RedundantRole().State())
+	if err != nil {
+		return false, err
+	}
+	return roleVal == oc.PlatformTypes_ComponentRedundantRole_PRIMARY, nil
 }
 
 type wavelengthRouter struct {
