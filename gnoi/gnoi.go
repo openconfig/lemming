@@ -363,12 +363,6 @@ func (s *system) SwitchControlProcessor(ctx context.Context, r *spb.SwitchContro
 		return nil, status.Errorf(codes.FailedPrecondition, "reboot operations pending, cannot perform switchover")
 	}
 
-	// Set switchover pending flag to prevent concurrent operations
-	s.hasPendingSwitchover = true
-	defer func() {
-		s.hasPendingSwitchover = false
-	}()
-
 	// Validate supervisor state and get active/standby supervisors
 	activeSupervisor, standbySupervisor, err := s.getSupervisorRole(ctx)
 	if err != nil {
@@ -397,29 +391,42 @@ func (s *system) SwitchControlProcessor(ctx context.Context, r *spb.SwitchContro
 		}, nil
 	}
 
-	switchoverTime := time.Now().UnixNano()
-	if err := fakedevice.SwitchoverSupervisor(ctx, s.c, targetSupervisor, activeSupervisor, switchoverTime); err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to perform supervisor switchover to %q: %v", targetSupervisor, err)
-	}
+	s.hasPendingSwitchover = true
 
-	// Get the new active supervisor info for response
+	// Get the target supervisor info for response
 	componentPath := ocpath.Root().Component(targetSupervisor)
 	component, err := ygnmi.Get(ctx, s.c, componentPath.State())
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to get new active supervisor info: %v", err)
+		return nil, status.Errorf(codes.Internal, "failed to get target supervisor info: %v", err)
 	}
 
-	log.Infof("Successfully completed supervisor switchover from %q to %q", activeSupervisor, targetSupervisor)
-
-	// Calculate uptime since switchover (close to 0)
-	currentTime := time.Now().UnixNano()
-	uptimeSinceSwitchover := currentTime - switchoverTime
-
-	return &spb.SwitchControlProcessorResponse{
+	response := &spb.SwitchControlProcessorResponse{
 		ControlProcessor: r.GetControlProcessor(),
 		Version:          component.GetSoftwareVersion(),
-		Uptime:           uptimeSinceSwitchover,
-	}, nil
+		Uptime:           0,
+	}
+
+	log.Infof("Scheduled supervisor switcover from %s to %s", activeSupervisor, targetSupervisor)
+	go func() {
+		backgroundctx := context.Background()
+
+		defer func() {
+			s.switchoverMu.Lock()
+			s.hasPendingSwitchover = false
+			s.switchoverMu.Unlock()
+		}()
+
+		// Small delay to make sure response is sent
+		time.Sleep(100 * time.Millisecond)
+
+		switchoverTime := time.Now().UnixNano()
+		err := fakedevice.SwitchoverSupervisor(backgroundctx, s.c, targetSupervisor, activeSupervisor, switchoverTime)
+		if err != nil {
+			log.Errorf("Background supervisor switchover failed: %v", err)
+		}
+	}()
+
+	return response, nil
 }
 
 // extractComponentNameFromPath extracts the component name from the gNMI path
@@ -460,13 +467,14 @@ func (s *system) getSupervisorRole(ctx context.Context) (activeSupervisor, stand
 	}
 
 	// Determine active and standby based on the results
-	if supervisor1Active && !supervisor2Active {
+	switch {
+	case supervisor1Active && !supervisor2Active:
 		return supervisor1Name, supervisor2Name, nil
-	} else if supervisor2Active && !supervisor1Active {
+	case supervisor2Active && !supervisor1Active:
 		return supervisor2Name, supervisor1Name, nil
-	} else if supervisor1Active && supervisor2Active {
+	case supervisor1Active && supervisor2Active:
 		return "", "", status.Errorf(codes.FailedPrecondition, "both supervisors are active")
-	} else {
+	default:
 		return "", "", status.Errorf(codes.FailedPrecondition, "no active supervisor found")
 	}
 }

@@ -127,6 +127,7 @@ func SwitchoverSupervisor(ctx context.Context, c *ygnmi.Client, targetSupervisor
 		return fmt.Errorf("failed to apply switchover updates: %v", err)
 	}
 
+	log.Infof("Successfully completed supervisor switchover from %q to %q", currentActiveSupervisor, targetSupervisor)
 	return nil
 }
 

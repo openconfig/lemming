@@ -584,6 +584,7 @@ func TestSwitchControlProcessor(t *testing.T) {
 				}
 				if resp == nil {
 					t.Error("Expected response but got nil")
+					return
 				}
 
 				// Verify response fields
@@ -632,9 +633,10 @@ func TestSwitchControlProcessor(t *testing.T) {
 				if resp.Version == "" {
 					t.Error("Expected Version in response")
 				}
-				if resp.Uptime <= 0 {
-					t.Error("Expected positive Uptime in response")
+				if resp.Uptime < 0 {
+					t.Error("Expected non-negative uptime in response")
 				}
+				time.Sleep(2500 * time.Millisecond)
 
 				// Verify final states
 				finalSupervisor1, err := ygnmi.Get(ctx, c, ocpath.Root().Component(defaultPrimarySupervisor).State())
@@ -686,6 +688,7 @@ func TestSwitchControlProcessor(t *testing.T) {
 				if err != nil {
 					t.Fatalf("First switchover failed: %v", err)
 				}
+				time.Sleep(2500 * time.Millisecond)
 
 				// Verify Supervisor2 is now PRIMARY
 				newActiveState, err := ygnmi.Get(ctx, c, ocpath.Root().Component("Supervisor2").State())
@@ -712,6 +715,7 @@ func TestSwitchControlProcessor(t *testing.T) {
 				if resp == nil {
 					t.Fatal("Expected response but got nil")
 				}
+				time.Sleep(2500 * time.Millisecond)
 
 				// Verify Supervisor1 is PRIMARY again
 				finalState, err := ygnmi.Get(ctx, c, ocpath.Root().Component("Supervisor1").State())
