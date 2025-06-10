@@ -41,7 +41,13 @@ import (
 	ospb "github.com/openconfig/gnoi/os"
 	otpb "github.com/openconfig/gnoi/otdr"
 	spb "github.com/openconfig/gnoi/system"
+	pb "github.com/openconfig/gnoi/types"
 	wrpb "github.com/openconfig/gnoi/wavelength_router"
+)
+
+const (
+	supervisor1Name = "Supervisor1"
+	supervisor2Name = "Supervisor2"
 )
 
 type bgp struct {
@@ -101,11 +107,14 @@ type system struct {
 	// reboots.
 	cancelReboot       chan struct{}
 	cancelRebootFinish chan struct{}
-
 	// componentRebootsMu protects the componentReboots map
 	// Map to track pending component reboots by component name
 	componentRebootsMu sync.Mutex
 	componentReboots   map[string]chan struct{}
+	// switchoverMu protects switchover operations and ensures
+	// only one switchover can be in progress at a time
+	switchoverMu         sync.Mutex
+	hasPendingSwitchover bool
 }
 
 func newSystem(c *ygnmi.Client) *system {
@@ -154,21 +163,13 @@ func (s *system) handleComponentReboot(ctx context.Context, r *spb.RebootRequest
 
 	// Process each subcomponent
 	for _, subcompPath := range r.GetSubcomponents() {
-		var componentName string
-		elems := subcompPath.GetElem()
-		// Openconfig path /components/component[name=...]
-		if len(elems) != 2 ||
-			elems[0].GetName() != "components" ||
-			elems[1].GetName() != "component" ||
-			elems[1].GetKey()["name"] == "" {
-			return nil, status.Errorf(codes.InvalidArgument,
-				"invalid OpenConfig component path, expected /components/component[name=...], got: %v", subcompPath)
+		componentName, err := extractComponentNameFromPath(subcompPath)
+		if err != nil {
+			return nil, err
 		}
 
-		componentName = elems[1].GetKey()["name"]
-
 		// Check if this is an active supervisor
-		isActive, err := s.IsActiveSupervisor(ctx, componentName)
+		isActive, err := s.isActiveSupervisor(ctx, componentName)
 		if err != nil {
 			log.Warningf("Failed to determine supervisor role for %s: %v", componentName, err)
 		} else if isActive {
@@ -328,14 +329,154 @@ func (s *system) CancelReboot(ctx context.Context, c *spb.CancelRebootRequest) (
 	return &spb.CancelRebootResponse{}, nil
 }
 
-// IsActiveSupervisor checks for the redundant role of a supervisor
-func (s *system) IsActiveSupervisor(ctx context.Context, componentName string) (bool, error) {
+// SwitchControlProcessor performs supervisor switchover from the current active supervisor to the specified target supervisor
+func (s *system) SwitchControlProcessor(ctx context.Context, r *spb.SwitchControlProcessorRequest) (*spb.SwitchControlProcessorResponse, error) {
+	log.Infof("Received SwitchControlProcessor request: %v", r)
+
+	if r.GetControlProcessor() == nil {
+		return nil, status.Errorf(codes.InvalidArgument, "control_processor path is required")
+	}
+
+	targetSupervisor, err := extractComponentNameFromPath(r.GetControlProcessor())
+	if err != nil {
+		return nil, err
+	}
+
+	// Protect against concurrent switchover operations
+	s.switchoverMu.Lock()
+	defer s.switchoverMu.Unlock()
+
+	if s.hasPendingSwitchover {
+		return nil, status.Errorf(codes.FailedPrecondition, "supervisor switchover already in progress")
+	}
+
+	// Check if there are any pending reboot operations (system or component level)
+	s.rebootMu.Lock()
+	systemRebootPending := s.hasPendingReboot
+	s.rebootMu.Unlock()
+
+	s.componentRebootsMu.Lock()
+	componentRebootsPending := len(s.componentReboots)
+	s.componentRebootsMu.Unlock()
+
+	if componentRebootsPending > 0 || systemRebootPending {
+		return nil, status.Errorf(codes.FailedPrecondition, "reboot operations pending, cannot perform switchover")
+	}
+
+	// Validate supervisor state and get active/standby supervisors
+	activeSupervisor, standbySupervisor, err := s.getSupervisorRole(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if targetSupervisor != activeSupervisor && targetSupervisor != standbySupervisor {
+		return nil, status.Errorf(codes.NotFound, "target supervisor %q does not exist", targetSupervisor)
+	}
+
+	// Check if target is already the active supervisor (no-op case)
+	if targetSupervisor == activeSupervisor {
+		log.Infof("Target supervisor %q is already active, returning current state (no-op)", targetSupervisor)
+
+		componentPath := ocpath.Root().Component(targetSupervisor)
+		component, err := ygnmi.Get(ctx, s.c, componentPath.State())
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to get current active supervisor info: %v", err)
+		}
+
+		// Return successful response for no-op case
+		return &spb.SwitchControlProcessorResponse{
+			ControlProcessor: r.GetControlProcessor(),
+			Version:          component.GetSoftwareVersion(),
+			Uptime:           0,
+		}, nil
+	}
+
+	s.hasPendingSwitchover = true
+
+	// Get the target supervisor info for response
+	componentPath := ocpath.Root().Component(targetSupervisor)
+	component, err := ygnmi.Get(ctx, s.c, componentPath.State())
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to get target supervisor info: %v", err)
+	}
+
+	response := &spb.SwitchControlProcessorResponse{
+		ControlProcessor: r.GetControlProcessor(),
+		Version:          component.GetSoftwareVersion(),
+		Uptime:           0,
+	}
+
+	log.Infof("Scheduled supervisor switcover from %s to %s", activeSupervisor, targetSupervisor)
+	go func() {
+		backgroundctx := context.Background()
+
+		defer func() {
+			s.switchoverMu.Lock()
+			s.hasPendingSwitchover = false
+			s.switchoverMu.Unlock()
+		}()
+
+		// Small delay to make sure response is sent
+		time.Sleep(100 * time.Millisecond)
+
+		switchoverTime := time.Now().UnixNano()
+		err := fakedevice.SwitchoverSupervisor(backgroundctx, s.c, targetSupervisor, activeSupervisor, switchoverTime)
+		if err != nil {
+			log.Errorf("Background supervisor switchover failed: %v", err)
+		}
+	}()
+
+	return response, nil
+}
+
+// extractComponentNameFromPath extracts the component name from the gNMI path
+func extractComponentNameFromPath(path *pb.Path) (string, error) {
+	elems := path.GetElem()
+	if len(elems) != 2 ||
+		elems[0].GetName() != "components" ||
+		elems[1].GetName() != "component" ||
+		elems[1].GetKey()["name"] == "" {
+		return "", status.Errorf(codes.InvalidArgument,
+			"invalid OpenConfig component path, expected /components/component[name=...], got: %v", path)
+	}
+	return elems[1].GetKey()["name"], nil
+}
+
+// isActiveSupervisor checks for the redundant role of a supervisor
+func (s *system) isActiveSupervisor(ctx context.Context, componentName string) (bool, error) {
 	componentPath := ocpath.Root().Component(componentName)
 	roleVal, err := ygnmi.Get(ctx, s.c, componentPath.RedundantRole().State())
 	if err != nil {
 		return false, err
 	}
 	return roleVal == oc.PlatformTypes_ComponentRedundantRole_PRIMARY, nil
+}
+
+// getSupervisorRole validates and returns the active and standby supervisors
+func (s *system) getSupervisorRole(ctx context.Context) (activeSupervisor, standbySupervisor string, err error) {
+	// Check if Supervisor1 is active
+	supervisor1Active, err := s.isActiveSupervisor(ctx, supervisor1Name)
+	if err != nil {
+		return "", "", status.Errorf(codes.Internal, "failed to check supervisor %q state: %v", supervisor1Name, err)
+	}
+
+	// Check if Supervisor2 is active
+	supervisor2Active, err := s.isActiveSupervisor(ctx, supervisor2Name)
+	if err != nil {
+		return "", "", status.Errorf(codes.Internal, "failed to check supervisor %q state: %v", supervisor2Name, err)
+	}
+
+	// Determine active and standby based on the results
+	switch {
+	case supervisor1Active && !supervisor2Active:
+		return supervisor1Name, supervisor2Name, nil
+	case supervisor2Active && !supervisor1Active:
+		return supervisor2Name, supervisor1Name, nil
+	case supervisor1Active && supervisor2Active:
+		return "", "", status.Errorf(codes.FailedPrecondition, "both supervisors are active")
+	default:
+		return "", "", status.Errorf(codes.FailedPrecondition, "no active supervisor found")
+	}
 }
 
 type wavelengthRouter struct {
