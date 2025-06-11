@@ -23,6 +23,8 @@ import (
 	"github.com/openconfig/ygnmi/ygnmi"
 	"github.com/openconfig/ygot/ygot"
 
+	spb "github.com/openconfig/gnoi/system"
+
 	"github.com/openconfig/lemming/gnmi"
 	"github.com/openconfig/lemming/gnmi/gnmiclient"
 	"github.com/openconfig/lemming/gnmi/oc"
@@ -50,6 +52,17 @@ const (
 	// Simulation duration
 	switchoverDuration = 2 * time.Second
 	rebootDuration     = 2 * time.Second
+
+	// Process configuration constants
+	basePID    = 1000
+	ceilingPID = 1100
+
+	// Default mock process configurations
+	defaultCpuUsageUser      = 1000000  // 1ms in nanoseconds
+	defaultCpuUsageSystem    = 500000   // 0.5ms in nanoseconds
+	defaultCpuUtilization    = 1        // 1% CPU
+	defaultMemoryUsage       = 10485760 // 10MB
+	defaultMemoryUtilization = 2        // 2% memory
 )
 
 // Reboot updates the system boot time to the provided Unix time.
@@ -128,6 +141,73 @@ func SwitchoverSupervisor(ctx context.Context, c *ygnmi.Client, targetSupervisor
 	}
 
 	log.Infof("Successfully completed supervisor switchover from %q to %q", currentActiveSupervisor, targetSupervisor)
+	return nil
+}
+
+// KillProcess simulates process termination and restart functionality
+func KillProcess(ctx context.Context, c *ygnmi.Client, pid uint32, processName string, signal spb.KillProcessRequest_Signal, restart bool) error {
+	log.Infof("KillProcess called with pid=%d, name=%s, signal=%v, restart=%v", pid, processName, signal, restart)
+
+	processPath := ocpath.Root().System().Process(uint64(pid))
+
+	// HUP signal - reload configuration
+	if signal == spb.KillProcessRequest_SIGNAL_HUP {
+		log.Infof("Reloading process %s (PID: %d) configuration", processName, pid)
+
+		reloadTime := time.Now().UnixNano()
+		timestampedCtx := gnmi.AddTimestampMetadata(ctx, reloadTime)
+
+		if _, err := gnmiclient.Replace(timestampedCtx, c, processPath.StartTime().State(), uint64(reloadTime)); err != nil {
+			return fmt.Errorf("failed to update process %s reload time: %v", processName, err)
+		}
+		log.Infof("Successfully reloaded process %s (PID: %d)", processName, pid)
+		return nil
+	}
+
+	if _, err := gnmiclient.Delete(ctx, c, processPath.State()); err != nil {
+		return fmt.Errorf("failed to delete process %s (PID: %d): %v", processName, pid, err)
+	}
+
+	log.Infof("Process %s (PID: %d) terminated successfully", processName, pid)
+
+	// Restart logic with 2-second delay if restart=true
+	if restart {
+		go func() {
+			time.Sleep(2 * time.Second)
+
+			// PID generation for restarted processes
+			newPID, err := generateNewPID(ctx, c)
+			if err != nil {
+				log.Errorf("Failed to generate new PID: %v", err)
+				return
+			}
+			log.Infof("Restarting process %s with new PID: %d", processName, newPID)
+
+			// Create new process with same name but new PID
+			restartTime := time.Now().UnixNano()
+			timestampedCtx := gnmi.AddTimestampMetadata(ctx, restartTime)
+
+			newProcess := &oc.System_Process{
+				Name:      ygot.String(processName),
+				Pid:       ygot.Uint64(uint64(newPID)),
+				StartTime: ygot.Uint64(uint64(restartTime)),
+				// Simulate realistic resource usage
+				CpuUsageUser:      ygot.Uint64(defaultCpuUsageUser),
+				CpuUsageSystem:    ygot.Uint64(defaultCpuUsageSystem),
+				CpuUtilization:    ygot.Uint8(defaultCpuUtilization),
+				MemoryUsage:       ygot.Uint64(defaultMemoryUsage),
+				MemoryUtilization: ygot.Uint8(defaultMemoryUtilization),
+			}
+
+			newProcessPath := ocpath.Root().System().Process(uint64(newPID))
+			if _, err := gnmiclient.Replace(timestampedCtx, c, newProcessPath.State(), newProcess); err != nil {
+				log.Errorf("Failed to restart process %s with new PID %d: %v", processName, newPID, err)
+				return
+			}
+
+			log.Infof("Successfully restarted process %s with new PID: %d", processName, newPID)
+		}()
+	}
 	return nil
 }
 
@@ -316,4 +396,72 @@ func NewSystemBaseTask() *reconciler.BuiltReconciler {
 		}).Build()
 
 	return rec
+}
+
+// NewProcessMonitoringTask initializes mock system processes for monitoring.
+func NewProcessMonitoringTask() *reconciler.BuiltReconciler {
+	rec := reconciler.NewBuilder("process monitoring").
+		WithStart(func(ctx context.Context, c *ygnmi.Client) error {
+			now := time.Now().UnixNano()
+			timestampedCtx := gnmi.AddTimestampMetadata(ctx, now)
+			batch := &ygnmi.SetBatch{}
+
+			// Mock daemon processes with their PIDs
+			processes := map[string]uint64{
+				"bgpd":        basePID + 1,
+				"ospfd":       basePID + 2,
+				"gnmi-server": basePID + 3,
+				"sysrib":      basePID + 4,
+			}
+
+			log.Infof("Initializing %d mock system processes", len(processes))
+
+			for processName, pid := range processes {
+				process := &oc.System_Process{
+					Name:      ygot.String(processName),
+					Pid:       ygot.Uint64(pid),
+					StartTime: ygot.Uint64(uint64(now)),
+					// Simulate realistic resource usage
+					CpuUsageUser:      ygot.Uint64(defaultCpuUsageUser),
+					CpuUsageSystem:    ygot.Uint64(defaultCpuUsageSystem),
+					CpuUtilization:    ygot.Uint8(defaultCpuUtilization),
+					MemoryUsage:       ygot.Uint64(defaultMemoryUsage),
+					MemoryUtilization: ygot.Uint8(defaultMemoryUtilization),
+				}
+
+				gnmiclient.BatchReplace(batch, ocpath.Root().System().Process(pid).State(), process)
+				log.Infof("Batching initialization for process %s (PID: %d)", processName, pid)
+			}
+
+			if _, err := batch.Set(timestampedCtx, c); err != nil {
+				log.Errorf("Error applying batched process initializations: %v", err)
+				return err
+			}
+
+			log.Infof("Successfully initialized %d mock system processes", len(processes))
+			return nil
+		}).Build()
+
+	return rec
+}
+
+// generateNewPID generates a new unique PID for restarted processes
+func generateNewPID(ctx context.Context, c *ygnmi.Client) (uint32, error) {
+	processes, err := ygnmi.GetAll(ctx, c, ocpath.Root().System().ProcessAny().State())
+	if err != nil {
+		return 0, fmt.Errorf("failed to get existing processes: %v", err)
+	}
+	// Build set of used PIDs
+	used := make(map[uint32]bool)
+	for _, p := range processes {
+		if p.Pid != nil {
+			used[uint32(*p.Pid)] = true
+		}
+	}
+	for pid := uint32(1005); pid <= ceilingPID; pid++ {
+		if !used[pid] {
+			return pid, nil
+		}
+	}
+	return 0, fmt.Errorf("no PID available")
 }

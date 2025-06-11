@@ -115,6 +115,9 @@ type system struct {
 	// only one switchover can be in progress at a time
 	switchoverMu         sync.Mutex
 	hasPendingSwitchover bool
+	// processMu protects process operations and ensures
+	// only one process operation can be in progress at a time
+	processMu sync.Mutex
 }
 
 func newSystem(c *ygnmi.Client) *system {
@@ -427,6 +430,81 @@ func (s *system) SwitchControlProcessor(ctx context.Context, r *spb.SwitchContro
 	}()
 
 	return response, nil
+}
+
+// KillProcess simulates process termination and restart functionality
+func (s *system) KillProcess(ctx context.Context, r *spb.KillProcessRequest) (*spb.KillProcessResponse, error) {
+	log.Infof("Received kill process request: %v", r)
+
+	if r.GetPid() == 0 && r.GetName() == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "either pid or name must be specified")
+	}
+
+	signal := r.GetSignal()
+	if signal == spb.KillProcessRequest_SIGNAL_UNSPECIFIED {
+		return nil, status.Errorf(codes.InvalidArgument, "signal must be specified")
+	}
+
+	targetPID, processName, err := s.resolvePIDAndName(ctx, r.GetPid(), r.GetName())
+	if err != nil {
+		return nil, err
+	}
+
+	// HUP is for reload, restart should be false by default
+	restart := r.GetRestart()
+	if signal == spb.KillProcessRequest_SIGNAL_HUP {
+		restart = false
+	}
+
+	// Protect against concurrent process operations
+	s.processMu.Lock()
+	defer s.processMu.Unlock()
+
+	if err := fakedevice.KillProcess(ctx, s.c, targetPID, processName, signal, restart); err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to kill process: %v", err)
+	}
+
+	return &spb.KillProcessResponse{}, nil
+}
+
+// resolvePIDAndName resolves either PID or name to a validated PID and process name that exists in the system
+func (s *system) resolvePIDAndName(ctx context.Context, pid uint32, name string) (uint32, string, error) {
+	var targetPID uint32
+	var targetProcessName string
+
+	if pid != 0 {
+		// PID provided - get process info to extract name
+		process, err := ygnmi.Get(ctx, s.c, ocpath.Root().System().Process(uint64(pid)).State())
+		if err != nil {
+			return 0, "", status.Errorf(codes.NotFound, "PID %d not found in process path: %v", pid, err)
+		}
+		targetPID = pid
+		targetProcessName = process.GetName()
+	} else {
+		// Name provided - look up PID and process name from process monitoring system
+		processes, err := ygnmi.GetAll(ctx, s.c, ocpath.Root().System().ProcessAny().State())
+		if err != nil {
+			return 0, "", status.Errorf(codes.Internal, "failed to query processes: %v", err)
+		}
+		var foundPID uint64
+		var found bool
+		for _, process := range processes {
+			if process.Name != nil && *process.Name == name {
+				if process.Pid != nil {
+					foundPID = *process.Pid
+					found = true
+					break
+				}
+			}
+		}
+		if !found {
+			return 0, "", status.Errorf(codes.NotFound, "process %q not found", name)
+		}
+		targetPID = uint32(foundPID)
+		targetProcessName = name
+	}
+
+	return targetPID, targetProcessName, nil
 }
 
 // extractComponentNameFromPath extracts the component name from the gNMI path

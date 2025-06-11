@@ -884,3 +884,303 @@ func TestSwitchControlProcessor(t *testing.T) {
 		})
 	}
 }
+
+// TestKillProcess tests the KillProcess RPC functionality with comprehensive scenarios
+func TestKillProcess(t *testing.T) {
+	setupFreshEnvironment := func(t *testing.T) (context.Context, *grpc.Server, *ygnmi.Client, *system, func()) {
+		grpcServer := grpc.NewServer()
+		gnmiServer, err := gnmi.New(grpcServer, "local", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		lis, err := net.Listen("tcp", "localhost:0")
+		if err != nil {
+			t.Fatalf("Failed to start listener: %v", err)
+		}
+		go func() {
+			grpcServer.Serve(lis)
+		}()
+
+		client := gnmiServer.LocalClient()
+		c, err := ygnmi.NewClient(client, ygnmi.WithTarget("local"))
+		if err != nil {
+			t.Fatalf("cannot create ygnmi client: %v", err)
+		}
+
+		s := newSystem(c)
+		ctx := context.Background()
+		fakedevice.NewProcessMonitoringTask().Start(ctx, client, "local")
+
+		time.Sleep(100 * time.Millisecond)
+
+		cleanup := func() {
+			grpcServer.GracefulStop()
+		}
+
+		return ctx, grpcServer, c, s, cleanup
+	}
+
+	tests := map[string]struct {
+		fn func(*testing.T, *system, context.Context, *ygnmi.Client)
+	}{
+		"process-termination-kill": {
+			fn: func(t *testing.T, s *system, ctx context.Context, c *ygnmi.Client) {
+				// Kill ospfd with KILL signal, no restart
+				req := &spb.KillProcessRequest{
+					Pid:     1002,
+					Signal:  spb.KillProcessRequest_SIGNAL_KILL,
+					Restart: false,
+				}
+				_, err := s.KillProcess(ctx, req)
+				if err != nil {
+					t.Fatalf("KillProcess with KILL failed: %v", err)
+				}
+
+				// Process should be removed from state
+				_, err = ygnmi.Get(ctx, c, ocpath.Root().System().Process(1002).State())
+				if err == nil {
+					t.Error("Process should be removed after KILL signal")
+				}
+			},
+		},
+		"process-reload-hup": {
+			fn: func(t *testing.T, s *system, ctx context.Context, c *ygnmi.Client) {
+				// Get initial state
+				initialProcess, err := ygnmi.Get(ctx, c, ocpath.Root().System().Process(1004).State())
+				if err != nil {
+					t.Fatalf("Failed to get initial process state: %v", err)
+				}
+				initialStartTime := initialProcess.GetStartTime()
+				initialPID := initialProcess.GetPid()
+
+				// Reload sysrib with HUP signal
+				req := &spb.KillProcessRequest{
+					Name:    "sysrib",
+					Signal:  spb.KillProcessRequest_SIGNAL_HUP,
+					Restart: true, // Should be ignored for HUP
+				}
+				_, err = s.KillProcess(ctx, req)
+				if err != nil {
+					t.Fatalf("KillProcess with HUP failed: %v", err)
+				}
+
+				// Process should still exist with same PID but updated start time
+				reloadedProcess, err := ygnmi.Get(ctx, c, ocpath.Root().System().Process(1004).State())
+				if err != nil {
+					t.Fatalf("Process should still exist after HUP: %v", err)
+				}
+
+				if reloadedProcess.GetPid() != initialPID {
+					t.Errorf("PID should remain same after HUP, got %d, want %d", reloadedProcess.GetPid(), initialPID)
+				}
+
+				if reloadedProcess.GetStartTime() <= initialStartTime {
+					t.Error("Start time should be updated after HUP signal")
+				}
+
+				if reloadedProcess.GetName() != "sysrib" {
+					t.Errorf("Process name changed, got %s, want sysrib", reloadedProcess.GetName())
+				}
+			},
+		},
+		"process-restart-with-new-pid": {
+			fn: func(t *testing.T, s *system, ctx context.Context, c *ygnmi.Client) {
+				// Kill and restart bgpd
+				req := &spb.KillProcessRequest{
+					Name:    "bgpd",
+					Signal:  spb.KillProcessRequest_SIGNAL_TERM,
+					Restart: true,
+				}
+				_, err := s.KillProcess(ctx, req)
+				if err != nil {
+					t.Fatalf("KillProcess with restart failed: %v", err)
+				}
+
+				// Process should be deleted immediately
+				_, err = ygnmi.Get(ctx, c, ocpath.Root().System().Process(1001).State())
+				if err == nil {
+					t.Error("Process should be deleted immediately after kill")
+				}
+
+				time.Sleep(3 * time.Second)
+
+				// Check if a new bgpd process exists with different PID
+				processes, err := ygnmi.GetAll(ctx, c, ocpath.Root().System().ProcessAny().State())
+				if err != nil {
+					t.Fatalf("Failed to get processes: %v", err)
+				}
+
+				var newBgpdProcess *oc.System_Process
+				for _, p := range processes {
+					if p.GetName() == "bgpd" {
+						newBgpdProcess = p
+						break
+					}
+				}
+
+				if newBgpdProcess == nil {
+					t.Fatal("bgpd process not restarted")
+				}
+
+				if newBgpdProcess.GetPid() == 1001 {
+					t.Error("Restarted process should have different PID")
+				}
+
+				if newBgpdProcess.GetPid() < 1001 || newBgpdProcess.GetPid() > 1100 {
+					t.Errorf("New PID %d should be in range 1001-1100", newBgpdProcess.GetPid())
+				}
+			},
+		},
+		"missing-process-invalid-name": {
+			fn: func(t *testing.T, s *system, ctx context.Context, c *ygnmi.Client) {
+				req := &spb.KillProcessRequest{
+					Name:   "nonexistent",
+					Signal: spb.KillProcessRequest_SIGNAL_TERM,
+				}
+				_, err := s.KillProcess(ctx, req)
+				if err == nil {
+					t.Error("Expected error for non-existent process name")
+				} else if got := status.Code(err); got != codes.NotFound {
+					t.Errorf("Expected NotFound error, got %v", got)
+				}
+			},
+		},
+		"missing-process-invalid-pid": {
+			fn: func(t *testing.T, s *system, ctx context.Context, c *ygnmi.Client) {
+				req := &spb.KillProcessRequest{
+					Pid:    9999,
+					Signal: spb.KillProcessRequest_SIGNAL_TERM,
+				}
+				_, err := s.KillProcess(ctx, req)
+				if err == nil {
+					t.Error("Expected error for non-existent PID")
+				} else if got := status.Code(err); got != codes.NotFound {
+					t.Errorf("Expected NotFound error, got %v", got)
+				}
+			},
+		},
+		"invalid-signal-unspecified": {
+			fn: func(t *testing.T, s *system, ctx context.Context, c *ygnmi.Client) {
+				req := &spb.KillProcessRequest{
+					Pid:    1001,
+					Signal: spb.KillProcessRequest_SIGNAL_UNSPECIFIED,
+				}
+				_, err := s.KillProcess(ctx, req)
+				if err == nil {
+					t.Error("Expected error for unspecified signal")
+				} else if got := status.Code(err); got != codes.InvalidArgument {
+					t.Errorf("Expected InvalidArgument error, got %v", got)
+				}
+			},
+		},
+		"missing-identifier-no-pid-no-name": {
+			fn: func(t *testing.T, s *system, ctx context.Context, c *ygnmi.Client) {
+				req := &spb.KillProcessRequest{
+					Signal: spb.KillProcessRequest_SIGNAL_TERM,
+				}
+				_, err := s.KillProcess(ctx, req)
+				if err == nil {
+					t.Error("Expected error when neither PID nor name specified")
+				} else if got := status.Code(err); got != codes.InvalidArgument {
+					t.Errorf("Expected InvalidArgument error, got %v", got)
+				}
+			},
+		},
+		"missing-signal": {
+			fn: func(t *testing.T, s *system, ctx context.Context, c *ygnmi.Client) {
+				req := &spb.KillProcessRequest{
+					Pid: 1001,
+				}
+				_, err := s.KillProcess(ctx, req)
+				if err == nil {
+					t.Error("Expected error when signal not specified")
+				} else if got := status.Code(err); got != codes.InvalidArgument {
+					t.Errorf("Expected InvalidArgument error, got %v", got)
+				}
+			},
+		},
+		"concurrent-kill-operations": {
+			fn: func(t *testing.T, s *system, ctx context.Context, c *ygnmi.Client) {
+				// Test concurrent operations are serialized properly
+				req1 := &spb.KillProcessRequest{
+					Pid:    1001,
+					Signal: spb.KillProcessRequest_SIGNAL_HUP,
+				}
+				req2 := &spb.KillProcessRequest{
+					Pid:    1002,
+					Signal: spb.KillProcessRequest_SIGNAL_HUP,
+				}
+
+				// Start concurrent operations
+				done1 := make(chan error, 1)
+				done2 := make(chan error, 1)
+
+				go func() {
+					_, err := s.KillProcess(ctx, req1)
+					done1 <- err
+				}()
+
+				go func() {
+					_, err := s.KillProcess(ctx, req2)
+					done2 <- err
+				}()
+
+				// Both should succeed (serialized by mutex)
+				err1 := <-done1
+				err2 := <-done2
+
+				if err1 != nil {
+					t.Errorf("Concurrent operation 1 failed: %v", err1)
+				}
+				if err2 != nil {
+					t.Errorf("Concurrent operation 2 failed: %v", err2)
+				}
+			},
+		},
+		"default-processes-validation": {
+			fn: func(t *testing.T, s *system, ctx context.Context, c *ygnmi.Client) {
+				// Verify all default processes exist
+				expectedProcesses := map[string]uint64{
+					"bgpd":        1001,
+					"ospfd":       1002,
+					"gnmi-server": 1003,
+					"sysrib":      1004,
+				}
+
+				for name, expectedPID := range expectedProcesses {
+					process, err := ygnmi.Get(ctx, c, ocpath.Root().System().Process(expectedPID).State())
+					if err != nil {
+						t.Errorf("Default process %s (PID %d) not found: %v", name, expectedPID, err)
+						continue
+					}
+
+					if process.GetName() != name {
+						t.Errorf("Process PID %d has wrong name: got %s, want %s", expectedPID, process.GetName(), name)
+					}
+
+					if process.GetPid() != expectedPID {
+						t.Errorf("Process %s has wrong PID: got %d, want %d", name, process.GetPid(), expectedPID)
+					}
+
+					// Verify realistic resource simulation
+					if process.GetCpuUtilization() == 0 {
+						t.Errorf("Process %s should have non-zero CPU utilization", name)
+					}
+					if process.GetMemoryUsage() == 0 {
+						t.Errorf("Process %s should have non-zero memory usage", name)
+					}
+				}
+			},
+		},
+	}
+
+	for name, test := range tests {
+		name, test := name, test
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			ctx, _, c, s, cleanup := setupFreshEnvironment(t)
+			defer cleanup()
+			test.fn(t, s, ctx, c)
+		})
+	}
+}
