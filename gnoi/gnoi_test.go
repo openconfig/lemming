@@ -91,7 +91,7 @@ func TestReboot(t *testing.T) {
 			if prevTime < afterTime {
 				break
 			}
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(50 * time.Millisecond)
 		}
 		if !(prevTime < afterTime) {
 			t.Errorf("boot time did not update after reboot")
@@ -256,7 +256,7 @@ func TestComponentReboot(t *testing.T) {
 				}
 
 				// Verify component goes INACTIVE during reboot
-				deadline := time.Now().Add(30 * time.Second)
+				deadline := time.Now().Add(3 * time.Second)
 				for time.Now().Before(deadline) {
 					state, err := ygnmi.Get(ctx, s.c, ocpath.Root().Component(componentName).OperStatus().State())
 					if err != nil {
@@ -269,7 +269,7 @@ func TestComponentReboot(t *testing.T) {
 				}
 
 				// Wait for reboot to complete
-				deadline = time.Now().Add(3 * time.Minute)
+				deadline = time.Now().Add(3 * time.Second)
 				var finalState *oc.Component
 				for time.Now().Before(deadline) {
 					state, err := ygnmi.Get(ctx, s.c, ocpath.Root().Component(componentName).State())
@@ -280,7 +280,7 @@ func TestComponentReboot(t *testing.T) {
 						finalState = state
 						break
 					}
-					time.Sleep(10 * time.Second)
+					time.Sleep(3 * time.Second)
 				}
 				if finalState == nil {
 					t.Fatal("Component did not return to ACTIVE state")
@@ -311,7 +311,7 @@ func TestComponentReboot(t *testing.T) {
 
 				req := &spb.RebootRequest{
 					Method: spb.RebootMethod_COLD,
-					Delay:  10000000000, // 10 seconds
+					Delay:  2000000000, // 2 seconds
 					Subcomponents: []*pb.Path{{
 						Elem: []*pb.PathElem{
 							{Name: "components"},
@@ -404,7 +404,7 @@ func TestComponentReboot(t *testing.T) {
 				// Start first reboot
 				req := &spb.RebootRequest{
 					Method: spb.RebootMethod_COLD,
-					Delay:  5000000000,
+					Delay:  2000000000,
 					Subcomponents: []*pb.Path{{
 						Elem: []*pb.PathElem{
 							{Name: "components"},
@@ -732,7 +732,7 @@ func TestSwitchControlProcessor(t *testing.T) {
 				// Start a delayed system reboot
 				rebootReq := &spb.RebootRequest{
 					Method: spb.RebootMethod_COLD,
-					Delay:  5000000000, // 5 seconds
+					Delay:  100000,
 				}
 				_, err := s.Reboot(ctx, rebootReq)
 				if err != nil {
@@ -767,7 +767,7 @@ func TestSwitchControlProcessor(t *testing.T) {
 				// Start a delayed component reboot
 				rebootReq := &spb.RebootRequest{
 					Method: spb.RebootMethod_COLD,
-					Delay:  5000000000, // 5 seconds
+					Delay:  100000,
 					Subcomponents: []*pb.Path{{
 						Elem: []*pb.PathElem{
 							{Name: "components"},
@@ -1181,6 +1181,392 @@ func TestKillProcess(t *testing.T) {
 			ctx, _, c, s, cleanup := setupFreshEnvironment(t)
 			defer cleanup()
 			test.fn(t, s, ctx, c)
+		})
+	}
+}
+
+// mockPingServer implements spb.System_PingServer for testing
+type mockPingServer struct {
+	grpc.ServerStream
+	ctx       context.Context
+	responses []*spb.PingResponse
+	sendErr   error
+}
+
+func (m *mockPingServer) Send(response *spb.PingResponse) error {
+	if m.sendErr != nil {
+		return m.sendErr
+	}
+	m.responses = append(m.responses, response)
+	return nil
+}
+
+func (m *mockPingServer) Context() context.Context {
+	return m.ctx
+}
+
+// TestPing tests the Ping RPC functionality with comprehensive scenarios
+func TestPing(t *testing.T) {
+	newMockPingServer := func(ctx context.Context) *mockPingServer {
+		return &mockPingServer{ctx: ctx}
+	}
+
+	setupPingEnvironment := func(t *testing.T) (context.Context, *system, func()) {
+		grpcServer := grpc.NewServer()
+		gnmiServer, err := gnmi.New(grpcServer, "local", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		lis, err := net.Listen("tcp", "localhost:0")
+		if err != nil {
+			t.Fatalf("Failed to start listener: %v", err)
+		}
+		go func() {
+			grpcServer.Serve(lis)
+		}()
+
+		client := gnmiServer.LocalClient()
+		c, err := ygnmi.NewClient(client, ygnmi.WithTarget("local"))
+		if err != nil {
+			t.Fatalf("cannot create ygnmi client: %v", err)
+		}
+
+		s := newSystem(c)
+		ctx := context.Background()
+
+		cleanup := func() {
+			grpcServer.GracefulStop()
+		}
+
+		return ctx, s, cleanup
+	}
+
+	tests := map[string]struct {
+		fn func(*testing.T, *system, context.Context)
+	}{
+		"validation-missing-destination": {
+			fn: func(t *testing.T, s *system, ctx context.Context) {
+				stream := newMockPingServer(ctx)
+				err := s.Ping(&spb.PingRequest{}, stream)
+				if err == nil {
+					t.Fatal("Expected error for missing destination")
+				}
+				if got := status.Code(err); got != codes.InvalidArgument {
+					t.Errorf("Expected InvalidArgument error, got %v", got)
+				}
+			},
+		},
+		"validation-empty-destination": {
+			fn: func(t *testing.T, s *system, ctx context.Context) {
+				stream := newMockPingServer(ctx)
+				err := s.Ping(&spb.PingRequest{Destination: ""}, stream)
+				if err == nil {
+					t.Fatal("Expected error for empty destination")
+				}
+				if got := status.Code(err); got != codes.InvalidArgument {
+					t.Errorf("Expected InvalidArgument error, got %v", got)
+				}
+			},
+		},
+		"validation-invalid-count": {
+			fn: func(t *testing.T, s *system, ctx context.Context) {
+				stream := newMockPingServer(ctx)
+				err := s.Ping(&spb.PingRequest{
+					Destination: "8.8.8.8",
+					Count:       -2,
+				}, stream)
+				if err == nil {
+					t.Fatal("Expected error for invalid count")
+				}
+				if got := status.Code(err); got != codes.InvalidArgument {
+					t.Errorf("Expected InvalidArgument error, got %v", got)
+				}
+			},
+		},
+		"validation-invalid-interval": {
+			fn: func(t *testing.T, s *system, ctx context.Context) {
+				stream := newMockPingServer(ctx)
+				err := s.Ping(&spb.PingRequest{
+					Destination: "8.8.8.8",
+					Interval:    -2,
+				}, stream)
+				if err == nil {
+					t.Fatal("Expected error for invalid interval")
+				}
+				if got := status.Code(err); got != codes.InvalidArgument {
+					t.Errorf("Expected InvalidArgument error, got %v", got)
+				}
+			},
+		},
+		"validation-packet-size-too-small": {
+			fn: func(t *testing.T, s *system, ctx context.Context) {
+				stream := newMockPingServer(ctx)
+				err := s.Ping(&spb.PingRequest{
+					Destination: "8.8.8.8",
+					Size:        7,
+				}, stream)
+				if err == nil {
+					t.Fatal("Expected error for packet size too small")
+				}
+				if got := status.Code(err); got != codes.InvalidArgument {
+					t.Errorf("Expected InvalidArgument error, got %v", got)
+				}
+			},
+		},
+		"validation-packet-size-too-large": {
+			fn: func(t *testing.T, s *system, ctx context.Context) {
+				stream := newMockPingServer(ctx)
+				err := s.Ping(&spb.PingRequest{
+					Destination: "8.8.8.8",
+					Size:        65508,
+				}, stream)
+				if err == nil {
+					t.Fatal("Expected error for packet size too large")
+				}
+				if got := status.Code(err); got != codes.InvalidArgument {
+					t.Errorf("Expected InvalidArgument error, got %v", got)
+				}
+			},
+		},
+		"streaming-individual-and-summary-responses": {
+			fn: func(t *testing.T, s *system, ctx context.Context) {
+				ctxWithTimeout, cancel := context.WithTimeout(ctx, 3*time.Second)
+				defer cancel()
+
+				stream := newMockPingServer(ctxWithTimeout)
+				err := s.Ping(&spb.PingRequest{
+					Destination: "1.1.1.1",
+					Count:       3,
+					Interval:    50000000, // 50ms
+				}, stream)
+				if err != nil {
+					t.Fatalf("Unexpected error: %v", err)
+				}
+
+				expectedResponses := 4 // 3 individual + 1 summary
+				if len(stream.responses) != expectedResponses {
+					t.Errorf("Expected %d responses, got %d", expectedResponses, len(stream.responses))
+				}
+
+				// Check individual packet responses
+				for i := 0; i < 3; i++ {
+					resp := stream.responses[i]
+					if resp.Source != "1.1.1.1" {
+						t.Errorf("Response %d: expected source 1.1.1.1, got %s", i, resp.Source)
+					}
+					if resp.Time <= 0 {
+						t.Errorf("Response %d: expected positive RTT, got %d", i, resp.Time)
+					}
+					if resp.Sequence != int32(i+1) {
+						t.Errorf("Response %d: expected sequence %d, got %d", i, i+1, resp.Sequence)
+					}
+					if resp.Sent != 0 || resp.Received != 0 {
+						t.Errorf("Response %d: individual response should not have summary fields", i)
+					}
+				}
+
+				// Check summary response
+				summary := stream.responses[3]
+				if summary.Sent != 3 {
+					t.Errorf("Summary: expected sent 3, got %d", summary.Sent)
+				}
+				if summary.MinTime <= 0 || summary.MaxTime <= 0 || summary.AvgTime <= 0 {
+					t.Error("Summary: expected positive min/max/avg times")
+				}
+			},
+		},
+		"custom-packet-size": {
+			fn: func(t *testing.T, s *system, ctx context.Context) {
+				ctxWithTimeout, cancel := context.WithTimeout(ctx, 3*time.Second)
+				defer cancel()
+
+				stream := newMockPingServer(ctxWithTimeout)
+				err := s.Ping(&spb.PingRequest{
+					Destination: "192.168.1.1",
+					Count:       1,
+					Size:        128,
+				}, stream)
+				if err != nil {
+					t.Fatalf("Unexpected error: %v", err)
+				}
+
+				if len(stream.responses) < 1 {
+					t.Fatal("Expected at least one response")
+				}
+
+				resp := stream.responses[0]
+				if resp.Bytes != 128 {
+					t.Errorf("Expected bytes 128, got %d", resp.Bytes)
+				}
+			},
+		},
+		"cancellation-context-cancelled": {
+			fn: func(t *testing.T, s *system, ctx context.Context) {
+				ctxWithCancel, cancel := context.WithCancel(ctx)
+				stream := newMockPingServer(ctxWithCancel)
+
+				// Cancel context after short delay
+				go func() {
+					time.Sleep(50 * time.Millisecond)
+					cancel()
+				}()
+
+				err := s.Ping(&spb.PingRequest{
+					Destination: "192.168.1.1",
+					Count:       100,
+					Interval:    1000000000, // 1 second
+				}, stream)
+
+				if err == nil {
+					t.Fatal("Expected error due to context cancellation")
+				}
+				if err != context.Canceled {
+					t.Errorf("Expected context.Canceled, got %v", err)
+				}
+			},
+		},
+		"cancellation-timeout": {
+			fn: func(t *testing.T, s *system, ctx context.Context) {
+				ctxWithTimeout, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
+				defer cancel()
+
+				stream := newMockPingServer(ctxWithTimeout)
+				err := s.Ping(&spb.PingRequest{
+					Destination: "192.168.1.1",
+					Count:       -1, // Continuous ping
+				}, stream)
+
+				if err == nil {
+					t.Fatal("Expected timeout error")
+				}
+				if err != context.DeadlineExceeded {
+					if st, ok := status.FromError(err); !ok || st.Code() != codes.DeadlineExceeded {
+						t.Errorf("Expected deadline exceeded error, got %v", err)
+					}
+				}
+			},
+		},
+		"continuous-ping-with-early-termination": {
+			fn: func(t *testing.T, s *system, ctx context.Context) {
+				ctxWithTimeout, cancel := context.WithTimeout(ctx, 200*time.Millisecond)
+				defer cancel()
+
+				stream := newMockPingServer(ctxWithTimeout)
+				err := s.Ping(&spb.PingRequest{
+					Destination: "192.168.1.1",
+					Count:       -1,       // Continuous
+					Interval:    50000000, // 50ms
+				}, stream)
+
+				// Should get cancelled/timeout
+				if err == nil {
+					t.Fatal("Expected error due to timeout")
+				}
+
+				// Should have received some responses before cancellation
+				if len(stream.responses) == 0 {
+					t.Error("Expected some responses before cancellation")
+				}
+				t.Logf("Received %d responses before cancellation", len(stream.responses))
+			},
+		},
+		"latency-variation-realistic": {
+			fn: func(t *testing.T, s *system, ctx context.Context) {
+				ctxWithTimeout, cancel := context.WithTimeout(ctx, 4*time.Second)
+				defer cancel()
+
+				stream := newMockPingServer(ctxWithTimeout)
+				err := s.Ping(&spb.PingRequest{
+					Destination: "8.8.8.8",
+					Count:       5,
+					Interval:    200000000,
+				}, stream)
+				if err != nil {
+					t.Fatalf("Unexpected error: %v", err)
+				}
+
+				// Collect RTT values from individual responses
+				var rtts []int64
+				for i := 0; i < 5; i++ {
+					rtts = append(rtts, stream.responses[i].Time)
+				}
+
+				// Verify RTTs are within reasonable bounds
+				for i, rtt := range rtts {
+					if rtt < 1000000 { // 1ms in nanoseconds
+						t.Errorf("RTT %d too small: %d ns", i, rtt)
+					}
+					if rtt > 1000000000 { // 1s in nanoseconds
+						t.Errorf("RTT %d too large: %d ns", i, rtt)
+					}
+				}
+
+				// Verify summary statistics are reasonable
+				summary := stream.responses[len(stream.responses)-1]
+				if summary.MinTime >= summary.MaxTime && summary.Received > 1 {
+					t.Error("Min time should be less than max time with multiple packets")
+				}
+			},
+		},
+		"flood-ping-short-interval": {
+			fn: func(t *testing.T, s *system, ctx context.Context) {
+				ctxWithTimeout, cancel := context.WithTimeout(ctx, 1*time.Second)
+				defer cancel()
+
+				stream := newMockPingServer(ctxWithTimeout)
+				err := s.Ping(&spb.PingRequest{
+					Destination: "192.168.1.1",
+					Count:       3,
+					Interval:    -1, // Flood ping (1ms minimum)
+				}, stream)
+				if err != nil {
+					t.Fatalf("Unexpected error: %v", err)
+				}
+
+				expectedResponses := 4 // 3 individual + 1 summary
+				if len(stream.responses) != expectedResponses {
+					t.Errorf("Expected %d responses, got %d", expectedResponses, len(stream.responses))
+				}
+			},
+		},
+		"wait-timeout-simulation": {
+			fn: func(t *testing.T, s *system, ctx context.Context) {
+				ctxWithTimeout, cancel := context.WithTimeout(ctx, 5*time.Second)
+				defer cancel()
+
+				stream := newMockPingServer(ctxWithTimeout)
+				err := s.Ping(&spb.PingRequest{
+					Destination: "192.0.2.1",
+					Count:       3,
+					Wait:        1000000,    // 1ms wait (very short)
+					Interval:    1000000000, // 1 second interval
+				}, stream)
+				if err != nil {
+					t.Fatalf("Ping failed: %v", err)
+				}
+
+				responses := stream.responses
+				if len(responses) < 4 {
+					t.Errorf("Expected at least 4 responses, got %d", len(responses))
+				}
+
+				// Check summary
+				summary := responses[len(responses)-1]
+				if summary.Sent != 3 {
+					t.Errorf("Expected Sent=3, got %d", summary.Sent)
+				}
+				t.Logf("Summary with short wait: Sent=%d, Received=%d", summary.Sent, summary.Received)
+			},
+		},
+	}
+
+	for name, test := range tests {
+		name, test := name, test
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			ctx, s, cleanup := setupPingEnvironment(t)
+			defer cleanup()
+			test.fn(t, s, ctx)
 		})
 	}
 }

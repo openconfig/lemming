@@ -16,6 +16,7 @@ package gnoi
 
 import (
 	"context"
+	"math"
 	"sync"
 	"time"
 
@@ -48,6 +49,12 @@ import (
 const (
 	supervisor1Name = "Supervisor1"
 	supervisor2Name = "Supervisor2"
+
+	// Ping simulation default values
+	defaultPingCount    = 5          // Default number of ping packets
+	defaultPingInterval = 1000000000 // Default interval between packets (1 second in nanoseconds)
+	defaultPingWait     = 2000000000 // Default wait time for response (2 seconds in nanoseconds)
+	defaultPingSize     = 56         // Default packet size in bytes (standard ping size)
 )
 
 type bgp struct {
@@ -187,6 +194,21 @@ func (s *system) handleComponentReboot(ctx context.Context, r *spb.RebootRequest
 			return nil, status.Errorf(codes.NotFound, "component %q not found: %v", componentName, err)
 		}
 
+		delay := r.GetDelay()
+		if delay == 0 {
+			s.componentRebootsMu.Lock()
+			if _, exists := s.componentReboots[componentName]; exists {
+				s.componentRebootsMu.Unlock()
+				return nil, status.Errorf(codes.AlreadyExists, "reboot already pending for component %q", componentName)
+			}
+			s.componentRebootsMu.Unlock()
+			// Immediate reboot
+			if err := fakedevice.RebootComponent(context.Background(), s.c, componentName, time.Now().UnixNano()); err != nil {
+				return nil, status.Errorf(codes.Internal, "failed to reboot component %q: %v", componentName, err)
+			}
+			log.Infof("Component %q immediate reboot completed", componentName)
+			continue
+		}
 		// Check if there's already a pending reboot for this component
 		s.componentRebootsMu.Lock()
 		if _, exists := s.componentReboots[componentName]; exists {
@@ -196,7 +218,7 @@ func (s *system) handleComponentReboot(ctx context.Context, r *spb.RebootRequest
 
 		// Create a cancellation channel for this component
 		cancelCh := make(chan struct{}, 1)
-		rebootCtx, cancel := context.WithCancel(ctx)
+		rebootCtx, cancel := context.WithCancel(context.Background())
 		s.componentReboots[componentName] = cancelCh
 		s.componentRebootsMu.Unlock()
 
@@ -208,39 +230,27 @@ func (s *system) handleComponentReboot(ctx context.Context, r *spb.RebootRequest
 			s.componentRebootsMu.Unlock()
 		}
 
-		delay := r.GetDelay()
-		if delay == 0 {
-			// Immediate reboot
-			if err := fakedevice.RebootComponent(ctx, s.c, componentName, time.Now().UnixNano()); err != nil {
-				cleanup()
-				return nil, status.Errorf(codes.Internal, "failed to reboot component %q: %v", componentName, err)
-			}
-
-			// Remove from pending list after reboot is complete
-			cleanup()
-			log.Infof("Component %q immediate reboot completed", componentName)
-		} else {
-			// Handle delayed reboot
-			go func(compName string) {
-				defer cleanup()
-				select {
-				case <-cancelCh:
-					log.Infof("delayed component reboot for %q cancelled", compName)
-				case <-rebootCtx.Done():
-					log.Infof("delayed component reboot for %q cancelled due to context", compName)
-				case <-time.After(time.Duration(delay) * time.Nanosecond):
-					now := time.Now().UnixNano()
-					if err := fakedevice.RebootComponent(rebootCtx, s.c, compName, now); err != nil {
-						log.Errorf("delayed component reboot for %q failed: %v", compName, err)
-						return
-					}
-					log.Infof("Component %q delayed reboot completed", compName)
+		// Handle delayed reboot
+		go func(compName string) {
+			defer cleanup()
+			select {
+			case <-cancelCh:
+				log.Infof("delayed component reboot for %q cancelled", compName)
+			case <-rebootCtx.Done():
+				log.Infof("delayed component reboot for %q cancelled due to context", compName)
+			case <-time.After(time.Duration(delay) * time.Nanosecond):
+				now := time.Now().UnixNano()
+				if err := fakedevice.RebootComponent(rebootCtx, s.c, compName, now); err != nil {
+					log.Errorf("delayed component reboot for %q failed: %v", compName, err)
+					return
 				}
-			}(componentName)
+				log.Infof("Component %q delayed reboot completed", compName)
+			}
+		}(componentName)
 
-			log.Infof("scheduled component reboot for %q with delay %v", componentName, r.GetDelay())
-		}
+		log.Infof("scheduled component reboot for %q with delay %v", componentName, r.GetDelay())
 	}
+
 	return &spb.RebootResponse{}, nil
 }
 
@@ -465,6 +475,158 @@ func (s *system) KillProcess(ctx context.Context, r *spb.KillProcessRequest) (*s
 	}
 
 	return &spb.KillProcessResponse{}, nil
+}
+
+// Ping simulates ICMP ping operations with configurable network conditions
+func (s *system) Ping(r *spb.PingRequest, stream spb.System_PingServer) error {
+	log.Infof("Received ping request: %v", r)
+
+	if r.GetDestination() == "" {
+		return status.Errorf(codes.InvalidArgument, "destination address is required")
+	}
+
+	ctx := stream.Context()
+	destination := r.GetDestination()
+
+	count := r.GetCount()
+	if count == 0 {
+		count = defaultPingCount
+	} else if count < -1 {
+		return status.Errorf(codes.InvalidArgument, "count must be >= -1, got %d", count)
+	}
+
+	interval := r.GetInterval()
+	switch {
+	case interval == 0:
+		interval = defaultPingInterval
+	case interval == -1:
+		// Flood ping - 1ms minimum interval for safety
+		interval = 1000000
+	case interval < -1:
+		return status.Errorf(codes.InvalidArgument, "interval must be >= -1, got %d", interval)
+	}
+
+	wait := r.GetWait()
+	if wait == 0 {
+		wait = defaultPingWait
+	} else if wait < 0 {
+		return status.Errorf(codes.InvalidArgument, "wait must be >= 0, got %d", wait)
+	}
+
+	size := r.GetSize()
+	if size == 0 {
+		size = defaultPingSize
+	} else if size < 8 || size > 65507 {
+		return status.Errorf(codes.InvalidArgument, "packet size must be between 8 and 65507 bytes, got %d", size)
+	}
+
+	// TODO: Add support for do_not_fragment, do_not_resolve, l3protocol, network_instance parameters
+
+	responseChan := make(chan *fakedevice.PingPacketResult, 100)
+	errorChan := make(chan error, 1)
+
+	go func() {
+		defer close(responseChan)
+		if err := fakedevice.PingSimulation(ctx, destination, count, time.Duration(interval), time.Duration(wait), uint32(size), responseChan); err != nil {
+			log.Errorf("Ping simulation error: %v", err)
+			select {
+			case errorChan <- err:
+			default:
+			}
+		}
+		close(errorChan)
+	}()
+
+	startTime := time.Now()
+	var totalSent, totalReceived int32
+	var minTime, maxTime, totalTime time.Duration
+	var rtts []time.Duration
+	firstPacket := true
+
+	// Process results and stream responses
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case err := <-errorChan:
+			if err != nil {
+				return status.Errorf(codes.Internal, "ping simulation failed: %v", err)
+			}
+		case result, ok := <-responseChan:
+			if !ok {
+				// Channel closed - check for any remaining errors
+				select {
+				case err := <-errorChan:
+					if err != nil {
+						return status.Errorf(codes.Internal, "ping simulation failed: %v", err)
+					}
+				default:
+				}
+
+				// Send summary and finish
+				summary := &spb.PingResponse{
+					Source:   destination,
+					Time:     time.Since(startTime).Nanoseconds(),
+					Sent:     totalSent,
+					Received: totalReceived,
+				}
+				if totalReceived > 0 {
+					summary.MinTime = minTime.Nanoseconds()
+					summary.AvgTime = (totalTime / time.Duration(totalReceived)).Nanoseconds()
+					summary.MaxTime = maxTime.Nanoseconds()
+
+					// Calculate standard deviation from collected RTTs
+					if totalReceived < 2 {
+						summary.StdDev = 0
+					} else {
+						var sumSquaredDiff float64
+						avgTime := float64(summary.AvgTime)
+						for _, rtt := range rtts {
+							diff := float64(rtt.Nanoseconds()) - avgTime
+							sumSquaredDiff += diff * diff
+						}
+						variance := sumSquaredDiff / float64(totalReceived-1)
+						summary.StdDev = int64(math.Round(math.Sqrt(variance)))
+					}
+				}
+				return stream.Send(summary)
+			}
+
+			// Update stats
+			totalSent++
+			if result.Success {
+				totalReceived++
+				totalTime += result.RTT
+				if firstPacket {
+					minTime = result.RTT
+					maxTime = result.RTT
+					firstPacket = false
+				} else {
+					if result.RTT < minTime {
+						minTime = result.RTT
+					}
+					if result.RTT > maxTime {
+						maxTime = result.RTT
+					}
+				}
+				rtts = append(rtts, result.RTT)
+			}
+
+			// Send individual response
+			response := &spb.PingResponse{
+				Source:   destination,
+				Time:     result.RTT.Nanoseconds(),
+				Bytes:    int32(result.Bytes),
+				Sequence: result.Sequence,
+				Ttl:      result.TTL,
+			}
+
+			if err := stream.Send(response); err != nil {
+				log.Errorf("Failed to send ping response: %v", err)
+				return err
+			}
+		}
+	}
 }
 
 // resolvePIDAndName resolves either PID or name to a validated PID and process name that exists in the system

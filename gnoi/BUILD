@@ -33,6 +33,7 @@ go_library(
 
 go_test(
     name = "gnoi_test",
+    timeout = "long",
     srcs = ["gnoi_test.go"],
     embed = [":gnoi"],
     deps = [
