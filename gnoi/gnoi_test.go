@@ -91,7 +91,7 @@ func TestReboot(t *testing.T) {
 			if prevTime < afterTime {
 				break
 			}
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(50 * time.Millisecond)
 		}
 		if !(prevTime < afterTime) {
 			t.Errorf("boot time did not update after reboot")
@@ -256,7 +256,7 @@ func TestComponentReboot(t *testing.T) {
 				}
 
 				// Verify component goes INACTIVE during reboot
-				deadline := time.Now().Add(30 * time.Second)
+				deadline := time.Now().Add(3 * time.Second)
 				for time.Now().Before(deadline) {
 					state, err := ygnmi.Get(ctx, s.c, ocpath.Root().Component(componentName).OperStatus().State())
 					if err != nil {
@@ -269,7 +269,7 @@ func TestComponentReboot(t *testing.T) {
 				}
 
 				// Wait for reboot to complete
-				deadline = time.Now().Add(3 * time.Minute)
+				deadline = time.Now().Add(3 * time.Second)
 				var finalState *oc.Component
 				for time.Now().Before(deadline) {
 					state, err := ygnmi.Get(ctx, s.c, ocpath.Root().Component(componentName).State())
@@ -280,7 +280,7 @@ func TestComponentReboot(t *testing.T) {
 						finalState = state
 						break
 					}
-					time.Sleep(10 * time.Second)
+					time.Sleep(3 * time.Second)
 				}
 				if finalState == nil {
 					t.Fatal("Component did not return to ACTIVE state")
@@ -311,7 +311,7 @@ func TestComponentReboot(t *testing.T) {
 
 				req := &spb.RebootRequest{
 					Method: spb.RebootMethod_COLD,
-					Delay:  10000000000, // 10 seconds
+					Delay:  2000000000, // 2 seconds
 					Subcomponents: []*pb.Path{{
 						Elem: []*pb.PathElem{
 							{Name: "components"},
@@ -404,7 +404,7 @@ func TestComponentReboot(t *testing.T) {
 				// Start first reboot
 				req := &spb.RebootRequest{
 					Method: spb.RebootMethod_COLD,
-					Delay:  5000000000,
+					Delay:  2000000000,
 					Subcomponents: []*pb.Path{{
 						Elem: []*pb.PathElem{
 							{Name: "components"},
@@ -519,7 +519,9 @@ func TestSwitchControlProcessor(t *testing.T) {
 				req := &spb.SwitchControlProcessorRequest{
 					ControlProcessor: &pb.Path{
 						Elem: []*pb.PathElem{
-							{Name: "Supervisor1"},
+							{Name: "invalid"},
+							{Name: "path"},
+							{Name: "format"},
 						},
 					},
 				}
@@ -732,7 +734,7 @@ func TestSwitchControlProcessor(t *testing.T) {
 				// Start a delayed system reboot
 				rebootReq := &spb.RebootRequest{
 					Method: spb.RebootMethod_COLD,
-					Delay:  5000000000, // 5 seconds
+					Delay:  100000,
 				}
 				_, err := s.Reboot(ctx, rebootReq)
 				if err != nil {
@@ -767,7 +769,7 @@ func TestSwitchControlProcessor(t *testing.T) {
 				// Start a delayed component reboot
 				rebootReq := &spb.RebootRequest{
 					Method: spb.RebootMethod_COLD,
-					Delay:  5000000000, // 5 seconds
+					Delay:  100000,
 					Subcomponents: []*pb.Path{{
 						Elem: []*pb.PathElem{
 							{Name: "components"},
@@ -925,7 +927,7 @@ func TestKillProcess(t *testing.T) {
 	}{
 		"process-termination-kill": {
 			fn: func(t *testing.T, s *system, ctx context.Context, c *ygnmi.Client) {
-				// Kill ospfd with KILL signal, no restart
+				// Kill Gribi with KILL signal, no restart
 				req := &spb.KillProcessRequest{
 					Pid:     1002,
 					Signal:  spb.KillProcessRequest_SIGNAL_KILL,
@@ -953,9 +955,9 @@ func TestKillProcess(t *testing.T) {
 				initialStartTime := initialProcess.GetStartTime()
 				initialPID := initialProcess.GetPid()
 
-				// Reload sysrib with HUP signal
+				// Reload kim with HUP signal
 				req := &spb.KillProcessRequest{
-					Name:    "sysrib",
+					Name:    "kim",
 					Signal:  spb.KillProcessRequest_SIGNAL_HUP,
 					Restart: true, // Should be ignored for HUP
 				}
@@ -978,16 +980,16 @@ func TestKillProcess(t *testing.T) {
 					t.Error("Start time should be updated after HUP signal")
 				}
 
-				if reloadedProcess.GetName() != "sysrib" {
-					t.Errorf("Process name changed, got %s, want sysrib", reloadedProcess.GetName())
+				if reloadedProcess.GetName() != "kim" {
+					t.Errorf("Process name changed, got %s, want kim", reloadedProcess.GetName())
 				}
 			},
 		},
 		"process-restart-with-new-pid": {
 			fn: func(t *testing.T, s *system, ctx context.Context, c *ygnmi.Client) {
-				// Kill and restart bgpd
+				// Kill and restart Octa
 				req := &spb.KillProcessRequest{
-					Name:    "bgpd",
+					Name:    "Octa",
 					Signal:  spb.KillProcessRequest_SIGNAL_TERM,
 					Restart: true,
 				}
@@ -1010,24 +1012,24 @@ func TestKillProcess(t *testing.T) {
 					t.Fatalf("Failed to get processes: %v", err)
 				}
 
-				var newBgpdProcess *oc.System_Process
+				var newOctaProcess *oc.System_Process
 				for _, p := range processes {
-					if p.GetName() == "bgpd" {
-						newBgpdProcess = p
+					if p.GetName() == "Octa" {
+						newOctaProcess = p
 						break
 					}
 				}
 
-				if newBgpdProcess == nil {
-					t.Fatal("bgpd process not restarted")
+				if newOctaProcess == nil {
+					t.Fatal("Octa process not restarted")
 				}
 
-				if newBgpdProcess.GetPid() == 1001 {
+				if newOctaProcess.GetPid() == 1001 {
 					t.Error("Restarted process should have different PID")
 				}
 
-				if newBgpdProcess.GetPid() < 1001 || newBgpdProcess.GetPid() > 1100 {
-					t.Errorf("New PID %d should be in range 1001-1100", newBgpdProcess.GetPid())
+				if newOctaProcess.GetPid() < 1001 || newOctaProcess.GetPid() > 1100 {
+					t.Errorf("New PID %d should be in range 1001-1100", newOctaProcess.GetPid())
 				}
 			},
 		},
@@ -1141,10 +1143,13 @@ func TestKillProcess(t *testing.T) {
 			fn: func(t *testing.T, s *system, ctx context.Context, c *ygnmi.Client) {
 				// Verify all default processes exist
 				expectedProcesses := map[string]uint64{
-					"bgpd":        1001,
-					"ospfd":       1002,
-					"gnmi-server": 1003,
-					"sysrib":      1004,
+					"Octa":        1001,
+					"Gribi":       1002,
+					"emsd":        1003,
+					"kim":         1004,
+					"grpc_server": 1005,
+					"fibd":        1006,
+					"rpd":         1007,
 				}
 
 				for name, expectedPID := range expectedProcesses {
