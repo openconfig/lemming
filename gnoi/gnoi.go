@@ -50,6 +50,9 @@ const (
 	supervisor1Name = "Supervisor1"
 	supervisor2Name = "Supervisor2"
 
+	// Kill process default
+	defaultRestart = true
+
 	// Ping simulation default values
 	defaultPingCount    = 5          // Default number of ping packets
 	defaultPingInterval = 1000000000 // Default interval between packets (1 second in nanoseconds)
@@ -461,7 +464,7 @@ func (s *system) KillProcess(ctx context.Context, r *spb.KillProcessRequest) (*s
 	}
 
 	// HUP is for reload, restart should be false by default
-	restart := r.GetRestart()
+	restart := defaultRestart
 	if signal == spb.KillProcessRequest_SIGNAL_HUP {
 		restart = false
 	}
@@ -470,7 +473,7 @@ func (s *system) KillProcess(ctx context.Context, r *spb.KillProcessRequest) (*s
 	s.processMu.Lock()
 	defer s.processMu.Unlock()
 
-	if err := fakedevice.KillProcess(ctx, s.c, targetPID, processName, signal, restart); err != nil {
+	if err := fakedevice.KillProcess(context.Background(), s.c, targetPID, processName, signal, restart); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to kill process: %v", err)
 	}
 
@@ -672,14 +675,22 @@ func (s *system) resolvePIDAndName(ctx context.Context, pid uint32, name string)
 // extractComponentNameFromPath extracts the component name from the gNMI path
 func extractComponentNameFromPath(path *pb.Path) (string, error) {
 	elems := path.GetElem()
-	if len(elems) != 2 ||
-		elems[0].GetName() != "components" ||
-		elems[1].GetName() != "component" ||
-		elems[1].GetKey()["name"] == "" {
-		return "", status.Errorf(codes.InvalidArgument,
-			"invalid OpenConfig component path, expected /components/component[name=...], got: %v", path)
+	// Handle Arista format
+	if len(elems) == 1 {
+		componentName := elems[0].GetName()
+		if componentName == "" {
+			return "", status.Errorf(codes.InvalidArgument, "Invalid component path, element name is empty, got: %v", path)
+		}
+		return componentName, nil
 	}
-	return elems[1].GetKey()["name"], nil
+	if len(elems) == 2 &&
+		elems[0].GetName() == "components" &&
+		elems[1].GetName() == "component" &&
+		elems[1].GetKey()["name"] != "" {
+		return elems[1].GetKey()["name"], nil
+	}
+	return "", status.Errorf(codes.InvalidArgument,
+		"invalid component path, expected either single element or OpenConfig format (/componets/component[name=...]), got: %v", path)
 }
 
 // isActiveSupervisor checks for the redundant role of a supervisor

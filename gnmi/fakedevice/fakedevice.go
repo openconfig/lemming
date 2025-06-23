@@ -69,7 +69,7 @@ const (
 	// Ping simulation configuration - final latency = baseLatency ± random jitter
 	defaultBaseLatency    = 50 * time.Millisecond // Base latency for ping responses
 	defaultLatencyJitter  = 20 * time.Millisecond // ±20ms jitter variation
-	defaultPacketLossRate = 0.0                   // 0% packet loss by default
+	defaultPacketLossRate = 0.0                   // TODO: Make loss rate configurable
 	defaultTTL            = 64                    // Default TTL value
 )
 
@@ -200,7 +200,7 @@ func KillProcess(ctx context.Context, c *ygnmi.Client, pid uint32, processName s
 			time.Sleep(2 * time.Second)
 
 			// PID generation for restarted processes
-			newPID, err := generateNewPID(ctx, c)
+			newPID, err := generateNewPID(ctx, c, pid)
 			if err != nil {
 				log.Errorf("Failed to generate new PID: %v", err)
 				return
@@ -536,10 +536,13 @@ func NewProcessMonitoringTask() *reconciler.BuiltReconciler {
 
 			// Mock daemon processes with their PIDs
 			processes := map[string]uint64{
-				"bgpd":        basePID + 1,
-				"ospfd":       basePID + 2,
-				"gnmi-server": basePID + 3,
-				"sysrib":      basePID + 4,
+				"Octa":        basePID + 1,
+				"Gribi":       basePID + 2,
+				"emsd":        basePID + 3,
+				"kim":         basePID + 4,
+				"grpc_server": basePID + 5,
+				"fibd":        basePID + 6,
+				"rpd":         basePID + 7,
 			}
 
 			log.Infof("Initializing %d mock system processes", len(processes))
@@ -574,19 +577,20 @@ func NewProcessMonitoringTask() *reconciler.BuiltReconciler {
 }
 
 // generateNewPID generates a new unique PID for restarted processes
-func generateNewPID(ctx context.Context, c *ygnmi.Client) (uint32, error) {
+func generateNewPID(ctx context.Context, c *ygnmi.Client, excludePID uint32) (uint32, error) {
 	processes, err := ygnmi.GetAll(ctx, c, ocpath.Root().System().ProcessAny().State())
 	if err != nil {
 		return 0, fmt.Errorf("failed to get existing processes: %v", err)
 	}
-	// Build set of used PIDs
+	// Build set of used PIDs with the current (excluded) PID
 	used := make(map[uint32]bool)
 	for _, p := range processes {
 		if p.Pid != nil {
 			used[uint32(*p.Pid)] = true
 		}
 	}
-	for pid := uint32(1005); pid <= ceilingPID; pid++ {
+	used[excludePID] = true
+	for pid := uint32(1008); pid <= ceilingPID; pid++ {
 		if !used[pid] {
 			return pid, nil
 		}
