@@ -48,6 +48,9 @@ import (
 const (
 	supervisor1Name = "Supervisor1"
 	supervisor2Name = "Supervisor2"
+
+	// Kill process default
+	defaultRestart = true
 )
 
 type bgp struct {
@@ -187,6 +190,21 @@ func (s *system) handleComponentReboot(ctx context.Context, r *spb.RebootRequest
 			return nil, status.Errorf(codes.NotFound, "component %q not found: %v", componentName, err)
 		}
 
+		delay := r.GetDelay()
+		if delay == 0 {
+			s.componentRebootsMu.Lock()
+			if _, exists := s.componentReboots[componentName]; exists {
+				s.componentRebootsMu.Unlock()
+				return nil, status.Errorf(codes.AlreadyExists, "reboot already pending for component %q", componentName)
+			}
+			s.componentRebootsMu.Unlock()
+			// Immediate reboot
+			if err := fakedevice.RebootComponent(context.Background(), s.c, componentName, time.Now().UnixNano()); err != nil {
+				return nil, status.Errorf(codes.Internal, "failed to reboot component %q: %v", componentName, err)
+			}
+			log.Infof("Component %q immediate reboot completed", componentName)
+			continue
+		}
 		// Check if there's already a pending reboot for this component
 		s.componentRebootsMu.Lock()
 		if _, exists := s.componentReboots[componentName]; exists {
@@ -196,7 +214,7 @@ func (s *system) handleComponentReboot(ctx context.Context, r *spb.RebootRequest
 
 		// Create a cancellation channel for this component
 		cancelCh := make(chan struct{}, 1)
-		rebootCtx, cancel := context.WithCancel(ctx)
+		rebootCtx, cancel := context.WithCancel(context.Background())
 		s.componentReboots[componentName] = cancelCh
 		s.componentRebootsMu.Unlock()
 
@@ -208,39 +226,27 @@ func (s *system) handleComponentReboot(ctx context.Context, r *spb.RebootRequest
 			s.componentRebootsMu.Unlock()
 		}
 
-		delay := r.GetDelay()
-		if delay == 0 {
-			// Immediate reboot
-			if err := fakedevice.RebootComponent(ctx, s.c, componentName, time.Now().UnixNano()); err != nil {
-				cleanup()
-				return nil, status.Errorf(codes.Internal, "failed to reboot component %q: %v", componentName, err)
-			}
-
-			// Remove from pending list after reboot is complete
-			cleanup()
-			log.Infof("Component %q immediate reboot completed", componentName)
-		} else {
-			// Handle delayed reboot
-			go func(compName string) {
-				defer cleanup()
-				select {
-				case <-cancelCh:
-					log.Infof("delayed component reboot for %q cancelled", compName)
-				case <-rebootCtx.Done():
-					log.Infof("delayed component reboot for %q cancelled due to context", compName)
-				case <-time.After(time.Duration(delay) * time.Nanosecond):
-					now := time.Now().UnixNano()
-					if err := fakedevice.RebootComponent(rebootCtx, s.c, compName, now); err != nil {
-						log.Errorf("delayed component reboot for %q failed: %v", compName, err)
-						return
-					}
-					log.Infof("Component %q delayed reboot completed", compName)
+		// Handle delayed reboot
+		go func(compName string) {
+			defer cleanup()
+			select {
+			case <-cancelCh:
+				log.Infof("delayed component reboot for %q cancelled", compName)
+			case <-rebootCtx.Done():
+				log.Infof("delayed component reboot for %q cancelled due to context", compName)
+			case <-time.After(time.Duration(delay) * time.Nanosecond):
+				now := time.Now().UnixNano()
+				if err := fakedevice.RebootComponent(rebootCtx, s.c, compName, now); err != nil {
+					log.Errorf("delayed component reboot for %q failed: %v", compName, err)
+					return
 				}
-			}(componentName)
+				log.Infof("Component %q delayed reboot completed", compName)
+			}
+		}(componentName)
 
-			log.Infof("scheduled component reboot for %q with delay %v", componentName, r.GetDelay())
-		}
+		log.Infof("scheduled component reboot for %q with delay %v", componentName, r.GetDelay())
 	}
+
 	return &spb.RebootResponse{}, nil
 }
 
@@ -451,7 +457,7 @@ func (s *system) KillProcess(ctx context.Context, r *spb.KillProcessRequest) (*s
 	}
 
 	// HUP is for reload, restart should be false by default
-	restart := r.GetRestart()
+	restart := defaultRestart
 	if signal == spb.KillProcessRequest_SIGNAL_HUP {
 		restart = false
 	}
@@ -460,7 +466,7 @@ func (s *system) KillProcess(ctx context.Context, r *spb.KillProcessRequest) (*s
 	s.processMu.Lock()
 	defer s.processMu.Unlock()
 
-	if err := fakedevice.KillProcess(ctx, s.c, targetPID, processName, signal, restart); err != nil {
+	if err := fakedevice.KillProcess(context.Background(), s.c, targetPID, processName, signal, restart); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to kill process: %v", err)
 	}
 
@@ -510,14 +516,22 @@ func (s *system) resolvePIDAndName(ctx context.Context, pid uint32, name string)
 // extractComponentNameFromPath extracts the component name from the gNMI path
 func extractComponentNameFromPath(path *pb.Path) (string, error) {
 	elems := path.GetElem()
-	if len(elems) != 2 ||
-		elems[0].GetName() != "components" ||
-		elems[1].GetName() != "component" ||
-		elems[1].GetKey()["name"] == "" {
-		return "", status.Errorf(codes.InvalidArgument,
-			"invalid OpenConfig component path, expected /components/component[name=...], got: %v", path)
+	// Handle Arista format
+	if len(elems) == 1 {
+		componentName := elems[0].GetName()
+		if componentName == "" {
+			return "", status.Errorf(codes.InvalidArgument, "Invalid component path, element name is empty, got: %v", path)
+		}
+		return componentName, nil
 	}
-	return elems[1].GetKey()["name"], nil
+	if len(elems) == 2 &&
+		elems[0].GetName() == "components" &&
+		elems[1].GetName() == "component" &&
+		elems[1].GetKey()["name"] != "" {
+		return elems[1].GetKey()["name"], nil
+	}
+	return "", status.Errorf(codes.InvalidArgument,
+		"invalid component path, expected either single element or OpenConfig format (/componets/component[name=...]), got: %v", path)
 }
 
 // isActiveSupervisor checks for the redundant role of a supervisor
