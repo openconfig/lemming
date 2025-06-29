@@ -11,6 +11,8 @@ go_library(
         "//gnmi/oc",
         "//gnmi/oc/ocpath",
         "//gnmi/reconciler",
+        "//internal/config",
+        "//proto/config",
         "@com_github_golang_glog//:glog",
         "@com_github_openconfig_gnoi//system",
         "@com_github_openconfig_ygnmi//ygnmi",

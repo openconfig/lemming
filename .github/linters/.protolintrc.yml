@@ -3,3 +3,4 @@ lint:
     # The SAI generated proto doesn't follow all the proto naming conventions.
     exclude:
       - dataplane/proto
+      - proto/config
