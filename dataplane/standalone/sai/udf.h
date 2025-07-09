@@ -25,42 +25,30 @@ extern "C" {
 
 extern const sai_udf_api_t l_udf;
 
-sai_status_t l_create_udf(sai_object_id_t *udf_id, sai_object_id_t switch_id,
-                          uint32_t attr_count,
-                          const sai_attribute_t *attr_list);
+
+sai_status_t l_create_udf(sai_object_id_t *udf_id, sai_object_id_t switch_id, uint32_t attr_count, const sai_attribute_t *attr_list);
 
 sai_status_t l_remove_udf(sai_object_id_t udf_id);
 
-sai_status_t l_set_udf_attribute(sai_object_id_t udf_id,
-                                 const sai_attribute_t *attr);
+sai_status_t l_set_udf_attribute(sai_object_id_t udf_id, const sai_attribute_t *attr);
 
-sai_status_t l_get_udf_attribute(sai_object_id_t udf_id, uint32_t attr_count,
-                                 sai_attribute_t *attr_list);
+sai_status_t l_get_udf_attribute(sai_object_id_t udf_id, uint32_t attr_count, sai_attribute_t *attr_list);
 
-sai_status_t l_create_udf_match(sai_object_id_t *udf_match_id,
-                                sai_object_id_t switch_id, uint32_t attr_count,
-                                const sai_attribute_t *attr_list);
+sai_status_t l_create_udf_match(sai_object_id_t *udf_match_id, sai_object_id_t switch_id, uint32_t attr_count, const sai_attribute_t *attr_list);
 
 sai_status_t l_remove_udf_match(sai_object_id_t udf_match_id);
 
-sai_status_t l_set_udf_match_attribute(sai_object_id_t udf_match_id,
-                                       const sai_attribute_t *attr);
+sai_status_t l_set_udf_match_attribute(sai_object_id_t udf_match_id, const sai_attribute_t *attr);
 
-sai_status_t l_get_udf_match_attribute(sai_object_id_t udf_match_id,
-                                       uint32_t attr_count,
-                                       sai_attribute_t *attr_list);
+sai_status_t l_get_udf_match_attribute(sai_object_id_t udf_match_id, uint32_t attr_count, sai_attribute_t *attr_list);
 
-sai_status_t l_create_udf_group(sai_object_id_t *udf_group_id,
-                                sai_object_id_t switch_id, uint32_t attr_count,
-                                const sai_attribute_t *attr_list);
+sai_status_t l_create_udf_group(sai_object_id_t *udf_group_id, sai_object_id_t switch_id, uint32_t attr_count, const sai_attribute_t *attr_list);
 
 sai_status_t l_remove_udf_group(sai_object_id_t udf_group_id);
 
-sai_status_t l_set_udf_group_attribute(sai_object_id_t udf_group_id,
-                                       const sai_attribute_t *attr);
+sai_status_t l_set_udf_group_attribute(sai_object_id_t udf_group_id, const sai_attribute_t *attr);
 
-sai_status_t l_get_udf_group_attribute(sai_object_id_t udf_group_id,
-                                       uint32_t attr_count,
-                                       sai_attribute_t *attr_list);
+sai_status_t l_get_udf_group_attribute(sai_object_id_t udf_group_id, uint32_t attr_count, sai_attribute_t *attr_list);
+
 
 #endif  // DATAPLANE_STANDALONE_SAI_UDF_H_

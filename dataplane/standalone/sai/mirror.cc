@@ -13,393 +13,371 @@
 // limitations under the License.
 
 #include "dataplane/standalone/sai/mirror.h"
-
-#include <glog/logging.h>
-
-#include "dataplane/proto/sai/common.pb.h"
-#include "dataplane/proto/sai/mirror.pb.h"
 #include "dataplane/standalone/sai/common.h"
 #include "dataplane/standalone/sai/enum.h"
+#include "dataplane/proto/sai/common.pb.h"
+#include "dataplane/proto/sai/mirror.pb.h"
+#include <glog/logging.h>
 
 const sai_mirror_api_t l_mirror = {
-    .create_mirror_session = l_create_mirror_session,
-    .remove_mirror_session = l_remove_mirror_session,
-    .set_mirror_session_attribute = l_set_mirror_session_attribute,
-    .get_mirror_session_attribute = l_get_mirror_session_attribute,
+	.create_mirror_session = l_create_mirror_session,
+	.remove_mirror_session = l_remove_mirror_session,
+	.set_mirror_session_attribute = l_set_mirror_session_attribute,
+	.get_mirror_session_attribute = l_get_mirror_session_attribute,
 };
 
-lemming::dataplane::sai::CreateMirrorSessionRequest
-convert_create_mirror_session(sai_object_id_t switch_id, uint32_t attr_count,
-                              const sai_attribute_t *attr_list) {
-  lemming::dataplane::sai::CreateMirrorSessionRequest msg;
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_MIRROR_SESSION_ATTR_TYPE:
-        msg.set_type(
-            convert_sai_mirror_session_type_t_to_proto(attr_list[i].value.s32));
-        break;
-      case SAI_MIRROR_SESSION_ATTR_MONITOR_PORT:
-        msg.set_monitor_port(attr_list[i].value.oid);
-        break;
-      case SAI_MIRROR_SESSION_ATTR_TRUNCATE_SIZE:
-        msg.set_truncate_size(attr_list[i].value.u16);
-        break;
-      case SAI_MIRROR_SESSION_ATTR_SAMPLE_RATE:
-        msg.set_sample_rate(attr_list[i].value.u32);
-        break;
-      case SAI_MIRROR_SESSION_ATTR_CONGESTION_MODE:
-        msg.set_congestion_mode(
-            convert_sai_mirror_session_congestion_mode_t_to_proto(
-                attr_list[i].value.s32));
-        break;
-      case SAI_MIRROR_SESSION_ATTR_TC:
-        msg.set_tc(attr_list[i].value.u8);
-        break;
-      case SAI_MIRROR_SESSION_ATTR_VLAN_TPID:
-        msg.set_vlan_tpid(attr_list[i].value.u16);
-        break;
-      case SAI_MIRROR_SESSION_ATTR_VLAN_ID:
-        msg.set_vlan_id(attr_list[i].value.u16);
-        break;
-      case SAI_MIRROR_SESSION_ATTR_VLAN_PRI:
-        msg.set_vlan_pri(attr_list[i].value.u8);
-        break;
-      case SAI_MIRROR_SESSION_ATTR_VLAN_CFI:
-        msg.set_vlan_cfi(attr_list[i].value.u8);
-        break;
-      case SAI_MIRROR_SESSION_ATTR_VLAN_HEADER_VALID:
-        msg.set_vlan_header_valid(attr_list[i].value.booldata);
-        break;
-      case SAI_MIRROR_SESSION_ATTR_ERSPAN_ENCAPSULATION_TYPE:
-        msg.set_erspan_encapsulation_type(
-            convert_sai_erspan_encapsulation_type_t_to_proto(
-                attr_list[i].value.s32));
-        break;
-      case SAI_MIRROR_SESSION_ATTR_IPHDR_VERSION:
-        msg.set_iphdr_version(attr_list[i].value.u8);
-        break;
-      case SAI_MIRROR_SESSION_ATTR_TOS:
-        msg.set_tos(attr_list[i].value.u8);
-        break;
-      case SAI_MIRROR_SESSION_ATTR_TTL:
-        msg.set_ttl(attr_list[i].value.u8);
-        break;
-      case SAI_MIRROR_SESSION_ATTR_SRC_IP_ADDRESS:
-        msg.set_src_ip_address(
-            convert_from_ip_address(attr_list[i].value.ipaddr));
-        break;
-      case SAI_MIRROR_SESSION_ATTR_DST_IP_ADDRESS:
-        msg.set_dst_ip_address(
-            convert_from_ip_address(attr_list[i].value.ipaddr));
-        break;
-      case SAI_MIRROR_SESSION_ATTR_SRC_MAC_ADDRESS:
-        msg.set_src_mac_address(attr_list[i].value.mac,
-                                sizeof(attr_list[i].value.mac));
-        break;
-      case SAI_MIRROR_SESSION_ATTR_DST_MAC_ADDRESS:
-        msg.set_dst_mac_address(attr_list[i].value.mac,
-                                sizeof(attr_list[i].value.mac));
-        break;
-      case SAI_MIRROR_SESSION_ATTR_GRE_PROTOCOL_TYPE:
-        msg.set_gre_protocol_type(attr_list[i].value.u16);
-        break;
-      case SAI_MIRROR_SESSION_ATTR_MONITOR_PORTLIST_VALID:
-        msg.set_monitor_portlist_valid(attr_list[i].value.booldata);
-        break;
-      case SAI_MIRROR_SESSION_ATTR_MONITOR_PORTLIST:
-        msg.mutable_monitor_portlist()->Add(
-            attr_list[i].value.objlist.list,
-            attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
-        break;
-      case SAI_MIRROR_SESSION_ATTR_POLICER:
-        msg.set_policer(attr_list[i].value.oid);
-        break;
-      case SAI_MIRROR_SESSION_ATTR_UDP_SRC_PORT:
-        msg.set_udp_src_port(attr_list[i].value.u16);
-        break;
-      case SAI_MIRROR_SESSION_ATTR_UDP_DST_PORT:
-        msg.set_udp_dst_port(attr_list[i].value.u16);
-        break;
-      case SAI_MIRROR_SESSION_ATTR_COUNTER_ID:
-        msg.set_counter_id(attr_list[i].value.oid);
-        break;
-    }
-  }
-  return msg;
+lemming::dataplane::sai::CreateMirrorSessionRequest convert_create_mirror_session(sai_object_id_t switch_id, uint32_t attr_count, const sai_attribute_t *attr_list) {
+
+lemming::dataplane::sai::CreateMirrorSessionRequest msg;
+
+
+ for(uint32_t i = 0; i < attr_count; i++ ) {
+	
+	
+
+switch (attr_list[i].id) {
+  
+  case SAI_MIRROR_SESSION_ATTR_TYPE:
+	msg.set_type(convert_sai_mirror_session_type_t_to_proto(attr_list[i].value.s32));
+	break;
+  case SAI_MIRROR_SESSION_ATTR_MONITOR_PORT:
+	msg.set_monitor_port(attr_list[i].value.oid);
+	break;
+  case SAI_MIRROR_SESSION_ATTR_TRUNCATE_SIZE:
+	msg.set_truncate_size(attr_list[i].value.u16);
+	break;
+  case SAI_MIRROR_SESSION_ATTR_SAMPLE_RATE:
+	msg.set_sample_rate(attr_list[i].value.u32);
+	break;
+  case SAI_MIRROR_SESSION_ATTR_CONGESTION_MODE:
+	msg.set_congestion_mode(convert_sai_mirror_session_congestion_mode_t_to_proto(attr_list[i].value.s32));
+	break;
+  case SAI_MIRROR_SESSION_ATTR_TC:
+	msg.set_tc(attr_list[i].value.u8);
+	break;
+  case SAI_MIRROR_SESSION_ATTR_VLAN_TPID:
+	msg.set_vlan_tpid(attr_list[i].value.u16);
+	break;
+  case SAI_MIRROR_SESSION_ATTR_VLAN_ID:
+	msg.set_vlan_id(attr_list[i].value.u16);
+	break;
+  case SAI_MIRROR_SESSION_ATTR_VLAN_PRI:
+	msg.set_vlan_pri(attr_list[i].value.u8);
+	break;
+  case SAI_MIRROR_SESSION_ATTR_VLAN_CFI:
+	msg.set_vlan_cfi(attr_list[i].value.u8);
+	break;
+  case SAI_MIRROR_SESSION_ATTR_VLAN_HEADER_VALID:
+	msg.set_vlan_header_valid(attr_list[i].value.booldata);
+	break;
+  case SAI_MIRROR_SESSION_ATTR_ERSPAN_ENCAPSULATION_TYPE:
+	msg.set_erspan_encapsulation_type(convert_sai_erspan_encapsulation_type_t_to_proto(attr_list[i].value.s32));
+	break;
+  case SAI_MIRROR_SESSION_ATTR_IPHDR_VERSION:
+	msg.set_iphdr_version(attr_list[i].value.u8);
+	break;
+  case SAI_MIRROR_SESSION_ATTR_TOS:
+	msg.set_tos(attr_list[i].value.u8);
+	break;
+  case SAI_MIRROR_SESSION_ATTR_TTL:
+	msg.set_ttl(attr_list[i].value.u8);
+	break;
+  case SAI_MIRROR_SESSION_ATTR_SRC_IP_ADDRESS:
+	msg.set_src_ip_address(convert_from_ip_address(attr_list[i].value.ipaddr));
+	break;
+  case SAI_MIRROR_SESSION_ATTR_DST_IP_ADDRESS:
+	msg.set_dst_ip_address(convert_from_ip_address(attr_list[i].value.ipaddr));
+	break;
+  case SAI_MIRROR_SESSION_ATTR_SRC_MAC_ADDRESS:
+	msg.set_src_mac_address(attr_list[i].value.mac, sizeof(attr_list[i].value.mac));
+	break;
+  case SAI_MIRROR_SESSION_ATTR_DST_MAC_ADDRESS:
+	msg.set_dst_mac_address(attr_list[i].value.mac, sizeof(attr_list[i].value.mac));
+	break;
+  case SAI_MIRROR_SESSION_ATTR_GRE_PROTOCOL_TYPE:
+	msg.set_gre_protocol_type(attr_list[i].value.u16);
+	break;
+  case SAI_MIRROR_SESSION_ATTR_MONITOR_PORTLIST_VALID:
+	msg.set_monitor_portlist_valid(attr_list[i].value.booldata);
+	break;
+  case SAI_MIRROR_SESSION_ATTR_MONITOR_PORTLIST:
+	msg.mutable_monitor_portlist()->Add(attr_list[i].value.objlist.list, attr_list[i].value.objlist.list + attr_list[i].value.objlist.count);
+	break;
+  case SAI_MIRROR_SESSION_ATTR_POLICER:
+	msg.set_policer(attr_list[i].value.oid);
+	break;
+  case SAI_MIRROR_SESSION_ATTR_UDP_SRC_PORT:
+	msg.set_udp_src_port(attr_list[i].value.u16);
+	break;
+  case SAI_MIRROR_SESSION_ATTR_UDP_DST_PORT:
+	msg.set_udp_dst_port(attr_list[i].value.u16);
+	break;
+  case SAI_MIRROR_SESSION_ATTR_COUNTER_ID:
+	msg.set_counter_id(attr_list[i].value.oid);
+	break;
 }
 
-sai_status_t l_create_mirror_session(sai_object_id_t *mirror_session_id,
-                                     sai_object_id_t switch_id,
-                                     uint32_t attr_count,
-                                     const sai_attribute_t *attr_list) {
-  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+}
+return msg;
+}
 
-  lemming::dataplane::sai::CreateMirrorSessionRequest req =
-      convert_create_mirror_session(switch_id, attr_count, attr_list);
-  lemming::dataplane::sai::CreateMirrorSessionResponse resp;
-  grpc::ClientContext context;
-  req.set_switch_(switch_id);
-
-  grpc::Status status = mirror->CreateMirrorSession(&context, req, &resp);
-  if (!status.ok()) {
-    auto it = context.GetServerTrailingMetadata().find("traceparent");
-    if (it != context.GetServerTrailingMetadata().end()) {
-      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
-                 << " msg: " << status.error_message();
-    } else {
-      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
-    }
-    return SAI_STATUS_FAILURE;
-  }
-  if (mirror_session_id) {
-    *mirror_session_id = resp.oid();
-  }
-
-  return SAI_STATUS_SUCCESS;
+sai_status_t l_create_mirror_session(sai_object_id_t *mirror_session_id, sai_object_id_t switch_id, uint32_t attr_count, const sai_attribute_t *attr_list) {
+	LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+	
+	lemming::dataplane::sai::CreateMirrorSessionRequest req = convert_create_mirror_session(switch_id, attr_count, attr_list);
+	lemming::dataplane::sai::CreateMirrorSessionResponse resp;
+	grpc::ClientContext context;
+	 req.set_switch_(switch_id); 
+	
+	grpc::Status status = mirror->CreateMirrorSession(&context, req, &resp);
+	if (!status.ok()) {
+		auto it = context.GetServerTrailingMetadata().find("traceparent");
+		if (it != context.GetServerTrailingMetadata().end()) {
+			LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second << " msg: " << status.error_message(); 
+		} else {
+			LOG(ERROR) << "Lucius RPC error: " << status.error_message(); 
+		}
+		return SAI_STATUS_FAILURE;
+	}
+	if (mirror_session_id) {
+	*mirror_session_id = resp.oid(); 
+  	}
+	
+	
+	return SAI_STATUS_SUCCESS;
 }
 
 sai_status_t l_remove_mirror_session(sai_object_id_t mirror_session_id) {
-  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-
-  lemming::dataplane::sai::RemoveMirrorSessionRequest req;
-  lemming::dataplane::sai::RemoveMirrorSessionResponse resp;
-  grpc::ClientContext context;
-  req.set_oid(mirror_session_id);
-
-  grpc::Status status = mirror->RemoveMirrorSession(&context, req, &resp);
-  if (!status.ok()) {
-    auto it = context.GetServerTrailingMetadata().find("traceparent");
-    if (it != context.GetServerTrailingMetadata().end()) {
-      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
-                 << " msg: " << status.error_message();
-    } else {
-      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
-    }
-    return SAI_STATUS_FAILURE;
-  }
-
-  return SAI_STATUS_SUCCESS;
+	LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+	
+	lemming::dataplane::sai::RemoveMirrorSessionRequest req;
+	lemming::dataplane::sai::RemoveMirrorSessionResponse resp;
+	grpc::ClientContext context;
+	req.set_oid(mirror_session_id); 
+	
+	grpc::Status status = mirror->RemoveMirrorSession(&context, req, &resp);
+	if (!status.ok()) {
+		auto it = context.GetServerTrailingMetadata().find("traceparent");
+		if (it != context.GetServerTrailingMetadata().end()) {
+			LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second << " msg: " << status.error_message(); 
+		} else {
+			LOG(ERROR) << "Lucius RPC error: " << status.error_message(); 
+		}
+		return SAI_STATUS_FAILURE;
+	}
+	
+	return SAI_STATUS_SUCCESS;
 }
 
-sai_status_t l_set_mirror_session_attribute(sai_object_id_t mirror_session_id,
-                                            const sai_attribute_t *attr) {
-  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+sai_status_t l_set_mirror_session_attribute(sai_object_id_t mirror_session_id, const sai_attribute_t *attr) {
+	LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+	
+	lemming::dataplane::sai::SetMirrorSessionAttributeRequest req;
+	lemming::dataplane::sai::SetMirrorSessionAttributeResponse resp;
+	grpc::ClientContext context;
+	req.set_oid(mirror_session_id); 
+	
+	
+	
 
-  lemming::dataplane::sai::SetMirrorSessionAttributeRequest req;
-  lemming::dataplane::sai::SetMirrorSessionAttributeResponse resp;
-  grpc::ClientContext context;
-  req.set_oid(mirror_session_id);
-
-  switch (attr->id) {
-    case SAI_MIRROR_SESSION_ATTR_MONITOR_PORT:
-      req.set_monitor_port(attr->value.oid);
-      break;
-    case SAI_MIRROR_SESSION_ATTR_TRUNCATE_SIZE:
-      req.set_truncate_size(attr->value.u16);
-      break;
-    case SAI_MIRROR_SESSION_ATTR_SAMPLE_RATE:
-      req.set_sample_rate(attr->value.u32);
-      break;
-    case SAI_MIRROR_SESSION_ATTR_CONGESTION_MODE:
-      req.set_congestion_mode(
-          convert_sai_mirror_session_congestion_mode_t_to_proto(
-              attr->value.s32));
-      break;
-    case SAI_MIRROR_SESSION_ATTR_TC:
-      req.set_tc(attr->value.u8);
-      break;
-    case SAI_MIRROR_SESSION_ATTR_VLAN_TPID:
-      req.set_vlan_tpid(attr->value.u16);
-      break;
-    case SAI_MIRROR_SESSION_ATTR_VLAN_ID:
-      req.set_vlan_id(attr->value.u16);
-      break;
-    case SAI_MIRROR_SESSION_ATTR_VLAN_PRI:
-      req.set_vlan_pri(attr->value.u8);
-      break;
-    case SAI_MIRROR_SESSION_ATTR_VLAN_CFI:
-      req.set_vlan_cfi(attr->value.u8);
-      break;
-    case SAI_MIRROR_SESSION_ATTR_VLAN_HEADER_VALID:
-      req.set_vlan_header_valid(attr->value.booldata);
-      break;
-    case SAI_MIRROR_SESSION_ATTR_IPHDR_VERSION:
-      req.set_iphdr_version(attr->value.u8);
-      break;
-    case SAI_MIRROR_SESSION_ATTR_TOS:
-      req.set_tos(attr->value.u8);
-      break;
-    case SAI_MIRROR_SESSION_ATTR_TTL:
-      req.set_ttl(attr->value.u8);
-      break;
-    case SAI_MIRROR_SESSION_ATTR_SRC_IP_ADDRESS:
-      req.set_src_ip_address(convert_from_ip_address(attr->value.ipaddr));
-      break;
-    case SAI_MIRROR_SESSION_ATTR_DST_IP_ADDRESS:
-      req.set_dst_ip_address(convert_from_ip_address(attr->value.ipaddr));
-      break;
-    case SAI_MIRROR_SESSION_ATTR_SRC_MAC_ADDRESS:
-      req.set_src_mac_address(attr->value.mac, sizeof(attr->value.mac));
-      break;
-    case SAI_MIRROR_SESSION_ATTR_DST_MAC_ADDRESS:
-      req.set_dst_mac_address(attr->value.mac, sizeof(attr->value.mac));
-      break;
-    case SAI_MIRROR_SESSION_ATTR_GRE_PROTOCOL_TYPE:
-      req.set_gre_protocol_type(attr->value.u16);
-      break;
-    case SAI_MIRROR_SESSION_ATTR_MONITOR_PORTLIST:
-      req.mutable_monitor_portlist()->Add(
-          attr->value.objlist.list,
-          attr->value.objlist.list + attr->value.objlist.count);
-      break;
-    case SAI_MIRROR_SESSION_ATTR_POLICER:
-      req.set_policer(attr->value.oid);
-      break;
-    case SAI_MIRROR_SESSION_ATTR_UDP_SRC_PORT:
-      req.set_udp_src_port(attr->value.u16);
-      break;
-    case SAI_MIRROR_SESSION_ATTR_UDP_DST_PORT:
-      req.set_udp_dst_port(attr->value.u16);
-      break;
-    case SAI_MIRROR_SESSION_ATTR_COUNTER_ID:
-      req.set_counter_id(attr->value.oid);
-      break;
-  }
-
-  grpc::Status status = mirror->SetMirrorSessionAttribute(&context, req, &resp);
-  if (!status.ok()) {
-    auto it = context.GetServerTrailingMetadata().find("traceparent");
-    if (it != context.GetServerTrailingMetadata().end()) {
-      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
-                 << " msg: " << status.error_message();
-    } else {
-      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
-    }
-    return SAI_STATUS_FAILURE;
-  }
-
-  return SAI_STATUS_SUCCESS;
+switch (attr->id) {
+  
+  case SAI_MIRROR_SESSION_ATTR_MONITOR_PORT:
+	req.set_monitor_port(attr->value.oid);
+	break;
+  case SAI_MIRROR_SESSION_ATTR_TRUNCATE_SIZE:
+	req.set_truncate_size(attr->value.u16);
+	break;
+  case SAI_MIRROR_SESSION_ATTR_SAMPLE_RATE:
+	req.set_sample_rate(attr->value.u32);
+	break;
+  case SAI_MIRROR_SESSION_ATTR_CONGESTION_MODE:
+	req.set_congestion_mode(convert_sai_mirror_session_congestion_mode_t_to_proto(attr->value.s32));
+	break;
+  case SAI_MIRROR_SESSION_ATTR_TC:
+	req.set_tc(attr->value.u8);
+	break;
+  case SAI_MIRROR_SESSION_ATTR_VLAN_TPID:
+	req.set_vlan_tpid(attr->value.u16);
+	break;
+  case SAI_MIRROR_SESSION_ATTR_VLAN_ID:
+	req.set_vlan_id(attr->value.u16);
+	break;
+  case SAI_MIRROR_SESSION_ATTR_VLAN_PRI:
+	req.set_vlan_pri(attr->value.u8);
+	break;
+  case SAI_MIRROR_SESSION_ATTR_VLAN_CFI:
+	req.set_vlan_cfi(attr->value.u8);
+	break;
+  case SAI_MIRROR_SESSION_ATTR_VLAN_HEADER_VALID:
+	req.set_vlan_header_valid(attr->value.booldata);
+	break;
+  case SAI_MIRROR_SESSION_ATTR_IPHDR_VERSION:
+	req.set_iphdr_version(attr->value.u8);
+	break;
+  case SAI_MIRROR_SESSION_ATTR_TOS:
+	req.set_tos(attr->value.u8);
+	break;
+  case SAI_MIRROR_SESSION_ATTR_TTL:
+	req.set_ttl(attr->value.u8);
+	break;
+  case SAI_MIRROR_SESSION_ATTR_SRC_IP_ADDRESS:
+	req.set_src_ip_address(convert_from_ip_address(attr->value.ipaddr));
+	break;
+  case SAI_MIRROR_SESSION_ATTR_DST_IP_ADDRESS:
+	req.set_dst_ip_address(convert_from_ip_address(attr->value.ipaddr));
+	break;
+  case SAI_MIRROR_SESSION_ATTR_SRC_MAC_ADDRESS:
+	req.set_src_mac_address(attr->value.mac, sizeof(attr->value.mac));
+	break;
+  case SAI_MIRROR_SESSION_ATTR_DST_MAC_ADDRESS:
+	req.set_dst_mac_address(attr->value.mac, sizeof(attr->value.mac));
+	break;
+  case SAI_MIRROR_SESSION_ATTR_GRE_PROTOCOL_TYPE:
+	req.set_gre_protocol_type(attr->value.u16);
+	break;
+  case SAI_MIRROR_SESSION_ATTR_MONITOR_PORTLIST:
+	req.mutable_monitor_portlist()->Add(attr->value.objlist.list, attr->value.objlist.list + attr->value.objlist.count);
+	break;
+  case SAI_MIRROR_SESSION_ATTR_POLICER:
+	req.set_policer(attr->value.oid);
+	break;
+  case SAI_MIRROR_SESSION_ATTR_UDP_SRC_PORT:
+	req.set_udp_src_port(attr->value.u16);
+	break;
+  case SAI_MIRROR_SESSION_ATTR_UDP_DST_PORT:
+	req.set_udp_dst_port(attr->value.u16);
+	break;
+  case SAI_MIRROR_SESSION_ATTR_COUNTER_ID:
+	req.set_counter_id(attr->value.oid);
+	break;
 }
 
-sai_status_t l_get_mirror_session_attribute(sai_object_id_t mirror_session_id,
-                                            uint32_t attr_count,
-                                            sai_attribute_t *attr_list) {
-  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-
-  lemming::dataplane::sai::GetMirrorSessionAttributeRequest req;
-  lemming::dataplane::sai::GetMirrorSessionAttributeResponse resp;
-  grpc::ClientContext context;
-
-  req.set_oid(mirror_session_id);
-
-  for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(
-        convert_sai_mirror_session_attr_t_to_proto(attr_list[i].id));
-  }
-  grpc::Status status = mirror->GetMirrorSessionAttribute(&context, req, &resp);
-  if (!status.ok()) {
-    auto it = context.GetServerTrailingMetadata().find("traceparent");
-    if (it != context.GetServerTrailingMetadata().end()) {
-      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
-                 << " msg: " << status.error_message();
-    } else {
-      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
-    }
-    return SAI_STATUS_FAILURE;
-  }
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_MIRROR_SESSION_ATTR_TYPE:
-        attr_list[i].value.s32 =
-            convert_sai_mirror_session_type_t_to_sai(resp.attr().type());
-        break;
-      case SAI_MIRROR_SESSION_ATTR_MONITOR_PORT:
-        attr_list[i].value.oid = resp.attr().monitor_port();
-        break;
-      case SAI_MIRROR_SESSION_ATTR_TRUNCATE_SIZE:
-        attr_list[i].value.u16 = resp.attr().truncate_size();
-        break;
-      case SAI_MIRROR_SESSION_ATTR_SAMPLE_RATE:
-        attr_list[i].value.u32 = resp.attr().sample_rate();
-        break;
-      case SAI_MIRROR_SESSION_ATTR_CONGESTION_MODE:
-        attr_list[i].value.s32 =
-            convert_sai_mirror_session_congestion_mode_t_to_sai(
-                resp.attr().congestion_mode());
-        break;
-      case SAI_MIRROR_SESSION_ATTR_TC:
-        attr_list[i].value.u8 = resp.attr().tc();
-        break;
-      case SAI_MIRROR_SESSION_ATTR_VLAN_TPID:
-        attr_list[i].value.u16 = resp.attr().vlan_tpid();
-        break;
-      case SAI_MIRROR_SESSION_ATTR_VLAN_ID:
-        attr_list[i].value.u16 = resp.attr().vlan_id();
-        break;
-      case SAI_MIRROR_SESSION_ATTR_VLAN_PRI:
-        attr_list[i].value.u8 = resp.attr().vlan_pri();
-        break;
-      case SAI_MIRROR_SESSION_ATTR_VLAN_CFI:
-        attr_list[i].value.u8 = resp.attr().vlan_cfi();
-        break;
-      case SAI_MIRROR_SESSION_ATTR_VLAN_HEADER_VALID:
-        attr_list[i].value.booldata = resp.attr().vlan_header_valid();
-        break;
-      case SAI_MIRROR_SESSION_ATTR_ERSPAN_ENCAPSULATION_TYPE:
-        attr_list[i].value.s32 = convert_sai_erspan_encapsulation_type_t_to_sai(
-            resp.attr().erspan_encapsulation_type());
-        break;
-      case SAI_MIRROR_SESSION_ATTR_IPHDR_VERSION:
-        attr_list[i].value.u8 = resp.attr().iphdr_version();
-        break;
-      case SAI_MIRROR_SESSION_ATTR_TOS:
-        attr_list[i].value.u8 = resp.attr().tos();
-        break;
-      case SAI_MIRROR_SESSION_ATTR_TTL:
-        attr_list[i].value.u8 = resp.attr().ttl();
-        break;
-      case SAI_MIRROR_SESSION_ATTR_SRC_IP_ADDRESS:
-        attr_list[i].value.ipaddr =
-            convert_to_ip_address(resp.attr().src_ip_address());
-        break;
-      case SAI_MIRROR_SESSION_ATTR_DST_IP_ADDRESS:
-        attr_list[i].value.ipaddr =
-            convert_to_ip_address(resp.attr().dst_ip_address());
-        break;
-      case SAI_MIRROR_SESSION_ATTR_SRC_MAC_ADDRESS:
-        memcpy(attr_list[i].value.mac, resp.attr().src_mac_address().data(),
-               sizeof(sai_mac_t));
-        break;
-      case SAI_MIRROR_SESSION_ATTR_DST_MAC_ADDRESS:
-        memcpy(attr_list[i].value.mac, resp.attr().dst_mac_address().data(),
-               sizeof(sai_mac_t));
-        break;
-      case SAI_MIRROR_SESSION_ATTR_GRE_PROTOCOL_TYPE:
-        attr_list[i].value.u16 = resp.attr().gre_protocol_type();
-        break;
-      case SAI_MIRROR_SESSION_ATTR_MONITOR_PORTLIST_VALID:
-        attr_list[i].value.booldata = resp.attr().monitor_portlist_valid();
-        break;
-      case SAI_MIRROR_SESSION_ATTR_MONITOR_PORTLIST:
-        copy_list(attr_list[i].value.objlist.list,
-                  resp.attr().monitor_portlist(),
-                  &attr_list[i].value.objlist.count);
-        break;
-      case SAI_MIRROR_SESSION_ATTR_POLICER:
-        attr_list[i].value.oid = resp.attr().policer();
-        break;
-      case SAI_MIRROR_SESSION_ATTR_UDP_SRC_PORT:
-        attr_list[i].value.u16 = resp.attr().udp_src_port();
-        break;
-      case SAI_MIRROR_SESSION_ATTR_UDP_DST_PORT:
-        attr_list[i].value.u16 = resp.attr().udp_dst_port();
-        break;
-      case SAI_MIRROR_SESSION_ATTR_COUNTER_ID:
-        attr_list[i].value.oid = resp.attr().counter_id();
-        break;
-    }
-  }
-
-  return SAI_STATUS_SUCCESS;
+	grpc::Status status = mirror->SetMirrorSessionAttribute(&context, req, &resp);
+	if (!status.ok()) {
+		auto it = context.GetServerTrailingMetadata().find("traceparent");
+		if (it != context.GetServerTrailingMetadata().end()) {
+			LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second << " msg: " << status.error_message(); 
+		} else {
+			LOG(ERROR) << "Lucius RPC error: " << status.error_message(); 
+		}
+		return SAI_STATUS_FAILURE;
+	}
+	
+	return SAI_STATUS_SUCCESS;
 }
+
+sai_status_t l_get_mirror_session_attribute(sai_object_id_t mirror_session_id, uint32_t attr_count, sai_attribute_t *attr_list) {
+	LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+	
+	lemming::dataplane::sai::GetMirrorSessionAttributeRequest req;
+	lemming::dataplane::sai::GetMirrorSessionAttributeResponse resp;
+	grpc::ClientContext context;
+	
+	req.set_oid(mirror_session_id); 
+
+	for (uint32_t i = 0; i < attr_count; i++) {
+		req.add_attr_type(convert_sai_mirror_session_attr_t_to_proto(attr_list[i].id));
+	}
+	grpc::Status status = mirror->GetMirrorSessionAttribute(&context, req, &resp);
+	if (!status.ok()) {
+		auto it = context.GetServerTrailingMetadata().find("traceparent");
+		if (it != context.GetServerTrailingMetadata().end()) {
+			LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second << " msg: " << status.error_message(); 
+		} else {
+			LOG(ERROR) << "Lucius RPC error: " << status.error_message(); 
+		}
+		return SAI_STATUS_FAILURE;
+	}
+	for(uint32_t i = 0; i < attr_count; i++ ) {
+		
+		
+
+switch (attr_list[i].id) {
+  
+  case SAI_MIRROR_SESSION_ATTR_TYPE:
+	 attr_list[i].value.s32 =  convert_sai_mirror_session_type_t_to_sai(resp.attr().type());
+	break;
+  case SAI_MIRROR_SESSION_ATTR_MONITOR_PORT:
+	 attr_list[i].value.oid =   resp.attr().monitor_port();
+	break;
+  case SAI_MIRROR_SESSION_ATTR_TRUNCATE_SIZE:
+	 attr_list[i].value.u16 =   resp.attr().truncate_size();
+	break;
+  case SAI_MIRROR_SESSION_ATTR_SAMPLE_RATE:
+	 attr_list[i].value.u32 =   resp.attr().sample_rate();
+	break;
+  case SAI_MIRROR_SESSION_ATTR_CONGESTION_MODE:
+	 attr_list[i].value.s32 =  convert_sai_mirror_session_congestion_mode_t_to_sai(resp.attr().congestion_mode());
+	break;
+  case SAI_MIRROR_SESSION_ATTR_TC:
+	 attr_list[i].value.u8 =   resp.attr().tc();
+	break;
+  case SAI_MIRROR_SESSION_ATTR_VLAN_TPID:
+	 attr_list[i].value.u16 =   resp.attr().vlan_tpid();
+	break;
+  case SAI_MIRROR_SESSION_ATTR_VLAN_ID:
+	 attr_list[i].value.u16 =   resp.attr().vlan_id();
+	break;
+  case SAI_MIRROR_SESSION_ATTR_VLAN_PRI:
+	 attr_list[i].value.u8 =   resp.attr().vlan_pri();
+	break;
+  case SAI_MIRROR_SESSION_ATTR_VLAN_CFI:
+	 attr_list[i].value.u8 =   resp.attr().vlan_cfi();
+	break;
+  case SAI_MIRROR_SESSION_ATTR_VLAN_HEADER_VALID:
+	 attr_list[i].value.booldata =   resp.attr().vlan_header_valid();
+	break;
+  case SAI_MIRROR_SESSION_ATTR_ERSPAN_ENCAPSULATION_TYPE:
+	 attr_list[i].value.s32 =  convert_sai_erspan_encapsulation_type_t_to_sai(resp.attr().erspan_encapsulation_type());
+	break;
+  case SAI_MIRROR_SESSION_ATTR_IPHDR_VERSION:
+	 attr_list[i].value.u8 =   resp.attr().iphdr_version();
+	break;
+  case SAI_MIRROR_SESSION_ATTR_TOS:
+	 attr_list[i].value.u8 =   resp.attr().tos();
+	break;
+  case SAI_MIRROR_SESSION_ATTR_TTL:
+	 attr_list[i].value.u8 =   resp.attr().ttl();
+	break;
+  case SAI_MIRROR_SESSION_ATTR_SRC_IP_ADDRESS:
+	 attr_list[i].value.ipaddr =  convert_to_ip_address(resp.attr().src_ip_address());
+	break;
+  case SAI_MIRROR_SESSION_ATTR_DST_IP_ADDRESS:
+	 attr_list[i].value.ipaddr =  convert_to_ip_address(resp.attr().dst_ip_address());
+	break;
+  case SAI_MIRROR_SESSION_ATTR_SRC_MAC_ADDRESS:
+	memcpy(attr_list[i].value.mac, resp.attr().src_mac_address().data(), sizeof(sai_mac_t));
+	break;
+  case SAI_MIRROR_SESSION_ATTR_DST_MAC_ADDRESS:
+	memcpy(attr_list[i].value.mac, resp.attr().dst_mac_address().data(), sizeof(sai_mac_t));
+	break;
+  case SAI_MIRROR_SESSION_ATTR_GRE_PROTOCOL_TYPE:
+	 attr_list[i].value.u16 =   resp.attr().gre_protocol_type();
+	break;
+  case SAI_MIRROR_SESSION_ATTR_MONITOR_PORTLIST_VALID:
+	 attr_list[i].value.booldata =   resp.attr().monitor_portlist_valid();
+	break;
+  case SAI_MIRROR_SESSION_ATTR_MONITOR_PORTLIST:
+	copy_list(attr_list[i].value.objlist.list, resp.attr().monitor_portlist(), &attr_list[i].value.objlist.count);
+	break;
+  case SAI_MIRROR_SESSION_ATTR_POLICER:
+	 attr_list[i].value.oid =   resp.attr().policer();
+	break;
+  case SAI_MIRROR_SESSION_ATTR_UDP_SRC_PORT:
+	 attr_list[i].value.u16 =   resp.attr().udp_src_port();
+	break;
+  case SAI_MIRROR_SESSION_ATTR_UDP_DST_PORT:
+	 attr_list[i].value.u16 =   resp.attr().udp_dst_port();
+	break;
+  case SAI_MIRROR_SESSION_ATTR_COUNTER_ID:
+	 attr_list[i].value.oid =   resp.attr().counter_id();
+	break;
+}
+
+	}
+	
+	return SAI_STATUS_SUCCESS;
+}
+

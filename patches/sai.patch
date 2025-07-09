@@ -1,38 +1,5 @@
-diff --git a/inc/sainexthop.h b/inc/sainexthop.h
-index ae137f4..163e885 100644
---- a/inc/sainexthop.h
-+++ b/inc/sainexthop.h
-@@ -126,6 +126,7 @@ typedef enum _sai_next_hop_attr_t
-      * @type sai_object_id_t
-      * @flags MANDATORY_ON_CREATE | CREATE_ONLY
-      * @objects SAI_OBJECT_TYPE_SRV6_SIDLIST
-+     * @allownull true
-      * @condition SAI_NEXT_HOP_ATTR_TYPE == SAI_NEXT_HOP_TYPE_SRV6_SIDLIST
-      */
-     SAI_NEXT_HOP_ATTR_SRV6_SIDLIST_ID,
-@@ -297,11 +298,15 @@ typedef sai_status_t (*sai_get_next_hop_attribute_fn)(
-  */
- typedef struct _sai_next_hop_api_t
- {
--    sai_create_next_hop_fn        create_next_hop;
--    sai_remove_next_hop_fn        remove_next_hop;
--    sai_set_next_hop_attribute_fn set_next_hop_attribute;
--    sai_get_next_hop_attribute_fn get_next_hop_attribute;
--
-+    sai_create_next_hop_fn             create_next_hop;
-+    sai_remove_next_hop_fn             remove_next_hop;
-+    sai_set_next_hop_attribute_fn      set_next_hop_attribute;
-+    sai_get_next_hop_attribute_fn      get_next_hop_attribute;
-+
-+    sai_bulk_object_create_fn          create_next_hops;
-+    sai_bulk_object_remove_fn          remove_next_hops;
-+    sai_bulk_object_set_attribute_fn   set_next_hops_attribute;
-+    sai_bulk_object_get_attribute_fn   get_next_hops_attribute;
- } sai_next_hop_api_t;
- 
- /**
 diff --git a/inc/sainexthopgroup.h b/inc/sainexthopgroup.h
-index 1e87356..cb4ed6c 100644
+index 4b7821f..cb4ed6c 100644
 --- a/inc/sainexthopgroup.h
 +++ b/inc/sainexthopgroup.h
 @@ -56,6 +56,9 @@ typedef enum _sai_next_hop_group_type_t
@@ -54,58 +21,10 @@ index 1e87356..cb4ed6c 100644
       * @type sai_object_list_t
       * @flags READ_ONLY
       * @objects SAI_OBJECT_TYPE_NEXT_HOP_GROUP_MEMBER
-@@ -184,6 +189,90 @@ typedef enum _sai_next_hop_group_attr_t
+@@ -232,6 +237,42 @@ typedef enum _sai_next_hop_group_attr_t
       */
-     SAI_NEXT_HOP_GROUP_ATTR_SELECTION_MAP,
+     SAI_NEXT_HOP_GROUP_ATTR_ARS_PORT_REASSIGNMENTS,
  
-+    /**
-+     * @brief Hierarchical next hop group level.
-+     * true: Nexthop group consists of tunnel and IP nexthop
-+     * false: Nexthop group consists of IP nexthop only
-+     *
-+     * @type bool
-+     * @flags CREATE_ONLY
-+     * @default true
-+     * @validonly SAI_NEXT_HOP_GROUP_ATTR_TYPE == SAI_NEXT_HOP_GROUP_TYPE_DYNAMIC_UNORDERED_ECMP or SAI_NEXT_HOP_GROUP_ATTR_TYPE == SAI_NEXT_HOP_GROUP_TYPE_DYNAMIC_ORDERED_ECMP
-+     * @isresourcetype true
-+     */
-+    SAI_NEXT_HOP_GROUP_ATTR_HIERARCHICAL_NEXTHOP,
-+
-+    /**
-+     * @brief Adaptive routing and switching object for this group.
-+     *
-+     * @type sai_object_id_t
-+     * @flags CREATE_AND_SET
-+     * @objects SAI_OBJECT_TYPE_ARS
-+     * @allownull true
-+     * @default SAI_NULL_OBJECT_ID
-+     */
-+    SAI_NEXT_HOP_GROUP_ATTR_ARS_OBJECT_ID,
-+
-+    /**
-+     * @brief Number of packets dropped by ARS mechanism
-+     *
-+     * @type sai_uint32_t
-+     * @flags READ_ONLY
-+     */
-+    SAI_NEXT_HOP_GROUP_ATTR_ARS_PACKET_DROPS,
-+
-+    /**
-+     * @brief Number of ARS next hop reassignments done
-+     *
-+     * @type sai_uint32_t
-+     * @flags READ_ONLY
-+     */
-+    SAI_NEXT_HOP_GROUP_ATTR_ARS_NEXT_HOP_REASSIGNMENTS,
-+
-+    /**
-+     * @brief Number of ARS port reassignments done
-+     *
-+     * @type sai_uint32_t
-+     * @flags READ_ONLY
-+     */
-+    SAI_NEXT_HOP_GROUP_ATTR_ARS_PORT_REASSIGNMENTS,
-+
 +    /**
 +     * @brief Next hop member list in the order specified by the application
 +     *
@@ -145,25 +64,7 @@ index 1e87356..cb4ed6c 100644
      /**
       * @brief End of attributes
       */
-@@ -314,6 +403,17 @@ typedef enum _sai_next_hop_group_member_attr_t
-      */
-     SAI_NEXT_HOP_GROUP_MEMBER_ATTR_COUNTER_ID,
- 
-+    /**
-+     * @brief Next hop group member is part of primary or alternate path set
-+     * false: Next hop group member is part of primary path set
-+     * true: Next hop group member is part of alternate path set
-+     *
-+     * @type bool
-+     * @flags CREATE_AND_SET
-+     * @default false
-+     */
-+    SAI_NEXT_HOP_GROUP_MEMBER_ATTR_ARS_ALTERNATE_PATH,
-+
-     /**
-      * @brief End of attributes
-      */
-@@ -548,6 +648,11 @@ typedef struct _sai_next_hop_group_api_t
+@@ -607,6 +648,11 @@ typedef struct _sai_next_hop_group_api_t
      sai_get_next_hop_group_map_attribute_fn    get_next_hop_group_map_attribute;
      sai_bulk_object_set_attribute_fn           set_next_hop_group_members_attribute;
      sai_bulk_object_get_attribute_fn           get_next_hop_group_members_attribute;
@@ -176,7 +77,7 @@ index 1e87356..cb4ed6c 100644
  
  /**
 diff --git a/inc/sairouterinterface.h b/inc/sairouterinterface.h
-index 1d71d48..74c4021 100644
+index c3e65f2..74c4021 100644
 --- a/inc/sairouterinterface.h
 +++ b/inc/sairouterinterface.h
 @@ -294,6 +294,15 @@ typedef enum _sai_router_interface_attr_t
@@ -195,15 +96,3 @@ index 1d71d48..74c4021 100644
      /**
       * @brief End of attributes
       */
-@@ -451,6 +460,11 @@ typedef struct _sai_router_interface_api_t
-     sai_get_router_interface_stats_ext_fn   get_router_interface_stats_ext;
-     sai_clear_router_interface_stats_fn     clear_router_interface_stats;
- 
-+    sai_bulk_object_create_fn               create_router_interfaces;
-+    sai_bulk_object_remove_fn               remove_router_interfaces;
-+    sai_bulk_object_set_attribute_fn        set_router_interfaces_attribute;
-+    sai_bulk_object_get_attribute_fn        get_router_interfaces_attribute;
-+
- } sai_router_interface_api_t;
- 
- /**
