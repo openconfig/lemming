@@ -13,167 +13,170 @@
 // limitations under the License.
 
 #include "dataplane/standalone/sai/mcast_fdb.h"
-
-#include <glog/logging.h>
-
-#include "dataplane/proto/sai/common.pb.h"
-#include "dataplane/proto/sai/mcast_fdb.pb.h"
 #include "dataplane/standalone/sai/common.h"
 #include "dataplane/standalone/sai/enum.h"
+#include "dataplane/proto/sai/common.pb.h"
+#include "dataplane/proto/sai/mcast_fdb.pb.h"
+#include <glog/logging.h>
 
 const sai_mcast_fdb_api_t l_mcast_fdb = {
-    .create_mcast_fdb_entry = l_create_mcast_fdb_entry,
-    .remove_mcast_fdb_entry = l_remove_mcast_fdb_entry,
-    .set_mcast_fdb_entry_attribute = l_set_mcast_fdb_entry_attribute,
-    .get_mcast_fdb_entry_attribute = l_get_mcast_fdb_entry_attribute,
+	.create_mcast_fdb_entry = l_create_mcast_fdb_entry,
+	.remove_mcast_fdb_entry = l_remove_mcast_fdb_entry,
+	.set_mcast_fdb_entry_attribute = l_set_mcast_fdb_entry_attribute,
+	.get_mcast_fdb_entry_attribute = l_get_mcast_fdb_entry_attribute,
 };
 
-lemming::dataplane::sai::CreateMcastFdbEntryRequest
-convert_create_mcast_fdb_entry(uint32_t attr_count,
-                               const sai_attribute_t *attr_list) {
-  lemming::dataplane::sai::CreateMcastFdbEntryRequest msg;
 
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_MCAST_FDB_ENTRY_ATTR_GROUP_ID:
-        msg.set_group_id(attr_list[i].value.oid);
-        break;
-      case SAI_MCAST_FDB_ENTRY_ATTR_PACKET_ACTION:
-        msg.set_packet_action(
-            convert_sai_packet_action_t_to_proto(attr_list[i].value.s32));
-        break;
-      case SAI_MCAST_FDB_ENTRY_ATTR_META_DATA:
-        msg.set_meta_data(attr_list[i].value.u32);
-        break;
-    }
-  }
-  return msg;
+lemming::dataplane::sai::CreateMcastFdbEntryRequest convert_create_mcast_fdb_entry(uint32_t attr_count, const sai_attribute_t *attr_list) {
+
+lemming::dataplane::sai::CreateMcastFdbEntryRequest msg;
+
+
+ for(uint32_t i = 0; i < attr_count; i++ ) {
+	
+	
+
+switch (attr_list[i].id) {
+  
+  case SAI_MCAST_FDB_ENTRY_ATTR_GROUP_ID:
+	msg.set_group_id(attr_list[i].value.oid);
+	break;
+  case SAI_MCAST_FDB_ENTRY_ATTR_PACKET_ACTION:
+	msg.set_packet_action(convert_sai_packet_action_t_to_proto(attr_list[i].value.s32));
+	break;
+  case SAI_MCAST_FDB_ENTRY_ATTR_META_DATA:
+	msg.set_meta_data(attr_list[i].value.u32);
+	break;
 }
 
-sai_status_t l_create_mcast_fdb_entry(
-    const sai_mcast_fdb_entry_t *mcast_fdb_entry, uint32_t attr_count,
-    const sai_attribute_t *attr_list) {
-  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-
-  lemming::dataplane::sai::CreateMcastFdbEntryRequest req =
-      convert_create_mcast_fdb_entry(attr_count, attr_list);
-  lemming::dataplane::sai::CreateMcastFdbEntryResponse resp;
-  grpc::ClientContext context;
-
-  grpc::Status status = mcast_fdb->CreateMcastFdbEntry(&context, req, &resp);
-  if (!status.ok()) {
-    auto it = context.GetServerTrailingMetadata().find("traceparent");
-    if (it != context.GetServerTrailingMetadata().end()) {
-      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
-                 << " msg: " << status.error_message();
-    } else {
-      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
-    }
-    return SAI_STATUS_FAILURE;
-  }
-
-  return SAI_STATUS_SUCCESS;
+}
+return msg;
 }
 
-sai_status_t l_remove_mcast_fdb_entry(
-    const sai_mcast_fdb_entry_t *mcast_fdb_entry) {
-  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-
-  lemming::dataplane::sai::RemoveMcastFdbEntryRequest req;
-  lemming::dataplane::sai::RemoveMcastFdbEntryResponse resp;
-  grpc::ClientContext context;
-
-  grpc::Status status = mcast_fdb->RemoveMcastFdbEntry(&context, req, &resp);
-  if (!status.ok()) {
-    auto it = context.GetServerTrailingMetadata().find("traceparent");
-    if (it != context.GetServerTrailingMetadata().end()) {
-      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
-                 << " msg: " << status.error_message();
-    } else {
-      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
-    }
-    return SAI_STATUS_FAILURE;
-  }
-
-  return SAI_STATUS_SUCCESS;
+sai_status_t l_create_mcast_fdb_entry(const sai_mcast_fdb_entry_t *mcast_fdb_entry, uint32_t attr_count, const sai_attribute_t *attr_list) {
+	LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+	
+	lemming::dataplane::sai::CreateMcastFdbEntryRequest req = convert_create_mcast_fdb_entry(attr_count, attr_list);
+	lemming::dataplane::sai::CreateMcastFdbEntryResponse resp;
+	grpc::ClientContext context;
+	
+	
+	grpc::Status status = mcast_fdb->CreateMcastFdbEntry(&context, req, &resp);
+	if (!status.ok()) {
+		auto it = context.GetServerTrailingMetadata().find("traceparent");
+		if (it != context.GetServerTrailingMetadata().end()) {
+			LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second << " msg: " << status.error_message(); 
+		} else {
+			LOG(ERROR) << "Lucius RPC error: " << status.error_message(); 
+		}
+		return SAI_STATUS_FAILURE;
+	}
+	
+	
+	return SAI_STATUS_SUCCESS;
 }
 
-sai_status_t l_set_mcast_fdb_entry_attribute(
-    const sai_mcast_fdb_entry_t *mcast_fdb_entry, const sai_attribute_t *attr) {
-  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
-
-  lemming::dataplane::sai::SetMcastFdbEntryAttributeRequest req;
-  lemming::dataplane::sai::SetMcastFdbEntryAttributeResponse resp;
-  grpc::ClientContext context;
-
-  switch (attr->id) {
-    case SAI_MCAST_FDB_ENTRY_ATTR_GROUP_ID:
-      req.set_group_id(attr->value.oid);
-      break;
-    case SAI_MCAST_FDB_ENTRY_ATTR_PACKET_ACTION:
-      req.set_packet_action(
-          convert_sai_packet_action_t_to_proto(attr->value.s32));
-      break;
-    case SAI_MCAST_FDB_ENTRY_ATTR_META_DATA:
-      req.set_meta_data(attr->value.u32);
-      break;
-  }
-
-  grpc::Status status =
-      mcast_fdb->SetMcastFdbEntryAttribute(&context, req, &resp);
-  if (!status.ok()) {
-    auto it = context.GetServerTrailingMetadata().find("traceparent");
-    if (it != context.GetServerTrailingMetadata().end()) {
-      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
-                 << " msg: " << status.error_message();
-    } else {
-      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
-    }
-    return SAI_STATUS_FAILURE;
-  }
-
-  return SAI_STATUS_SUCCESS;
+sai_status_t l_remove_mcast_fdb_entry(const sai_mcast_fdb_entry_t *mcast_fdb_entry) {
+	LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+	
+	lemming::dataplane::sai::RemoveMcastFdbEntryRequest req;
+	lemming::dataplane::sai::RemoveMcastFdbEntryResponse resp;
+	grpc::ClientContext context;
+	
+	
+	grpc::Status status = mcast_fdb->RemoveMcastFdbEntry(&context, req, &resp);
+	if (!status.ok()) {
+		auto it = context.GetServerTrailingMetadata().find("traceparent");
+		if (it != context.GetServerTrailingMetadata().end()) {
+			LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second << " msg: " << status.error_message(); 
+		} else {
+			LOG(ERROR) << "Lucius RPC error: " << status.error_message(); 
+		}
+		return SAI_STATUS_FAILURE;
+	}
+	
+	return SAI_STATUS_SUCCESS;
 }
 
-sai_status_t l_get_mcast_fdb_entry_attribute(
-    const sai_mcast_fdb_entry_t *mcast_fdb_entry, uint32_t attr_count,
-    sai_attribute_t *attr_list) {
-  LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+sai_status_t l_set_mcast_fdb_entry_attribute(const sai_mcast_fdb_entry_t *mcast_fdb_entry, const sai_attribute_t *attr) {
+	LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+	
+	lemming::dataplane::sai::SetMcastFdbEntryAttributeRequest req;
+	lemming::dataplane::sai::SetMcastFdbEntryAttributeResponse resp;
+	grpc::ClientContext context;
+	
+	
+	
+	
 
-  lemming::dataplane::sai::GetMcastFdbEntryAttributeRequest req;
-  lemming::dataplane::sai::GetMcastFdbEntryAttributeResponse resp;
-  grpc::ClientContext context;
-
-  for (uint32_t i = 0; i < attr_count; i++) {
-    req.add_attr_type(
-        convert_sai_mcast_fdb_entry_attr_t_to_proto(attr_list[i].id));
-  }
-  grpc::Status status =
-      mcast_fdb->GetMcastFdbEntryAttribute(&context, req, &resp);
-  if (!status.ok()) {
-    auto it = context.GetServerTrailingMetadata().find("traceparent");
-    if (it != context.GetServerTrailingMetadata().end()) {
-      LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second
-                 << " msg: " << status.error_message();
-    } else {
-      LOG(ERROR) << "Lucius RPC error: " << status.error_message();
-    }
-    return SAI_STATUS_FAILURE;
-  }
-  for (uint32_t i = 0; i < attr_count; i++) {
-    switch (attr_list[i].id) {
-      case SAI_MCAST_FDB_ENTRY_ATTR_GROUP_ID:
-        attr_list[i].value.oid = resp.attr().group_id();
-        break;
-      case SAI_MCAST_FDB_ENTRY_ATTR_PACKET_ACTION:
-        attr_list[i].value.s32 =
-            convert_sai_packet_action_t_to_sai(resp.attr().packet_action());
-        break;
-      case SAI_MCAST_FDB_ENTRY_ATTR_META_DATA:
-        attr_list[i].value.u32 = resp.attr().meta_data();
-        break;
-    }
-  }
-
-  return SAI_STATUS_SUCCESS;
+switch (attr->id) {
+  
+  case SAI_MCAST_FDB_ENTRY_ATTR_GROUP_ID:
+	req.set_group_id(attr->value.oid);
+	break;
+  case SAI_MCAST_FDB_ENTRY_ATTR_PACKET_ACTION:
+	req.set_packet_action(convert_sai_packet_action_t_to_proto(attr->value.s32));
+	break;
+  case SAI_MCAST_FDB_ENTRY_ATTR_META_DATA:
+	req.set_meta_data(attr->value.u32);
+	break;
 }
+
+	grpc::Status status = mcast_fdb->SetMcastFdbEntryAttribute(&context, req, &resp);
+	if (!status.ok()) {
+		auto it = context.GetServerTrailingMetadata().find("traceparent");
+		if (it != context.GetServerTrailingMetadata().end()) {
+			LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second << " msg: " << status.error_message(); 
+		} else {
+			LOG(ERROR) << "Lucius RPC error: " << status.error_message(); 
+		}
+		return SAI_STATUS_FAILURE;
+	}
+	
+	return SAI_STATUS_SUCCESS;
+}
+
+sai_status_t l_get_mcast_fdb_entry_attribute(const sai_mcast_fdb_entry_t *mcast_fdb_entry, uint32_t attr_count, sai_attribute_t *attr_list) {
+	LOG(INFO) << "Func: " << __PRETTY_FUNCTION__;
+	
+	lemming::dataplane::sai::GetMcastFdbEntryAttributeRequest req;
+	lemming::dataplane::sai::GetMcastFdbEntryAttributeResponse resp;
+	grpc::ClientContext context;
+	
+	
+
+	for (uint32_t i = 0; i < attr_count; i++) {
+		req.add_attr_type(convert_sai_mcast_fdb_entry_attr_t_to_proto(attr_list[i].id));
+	}
+	grpc::Status status = mcast_fdb->GetMcastFdbEntryAttribute(&context, req, &resp);
+	if (!status.ok()) {
+		auto it = context.GetServerTrailingMetadata().find("traceparent");
+		if (it != context.GetServerTrailingMetadata().end()) {
+			LOG(ERROR) << "Lucius RPC error: Trace ID " << it->second << " msg: " << status.error_message(); 
+		} else {
+			LOG(ERROR) << "Lucius RPC error: " << status.error_message(); 
+		}
+		return SAI_STATUS_FAILURE;
+	}
+	for(uint32_t i = 0; i < attr_count; i++ ) {
+		
+		
+
+switch (attr_list[i].id) {
+  
+  case SAI_MCAST_FDB_ENTRY_ATTR_GROUP_ID:
+	 attr_list[i].value.oid =   resp.attr().group_id();
+	break;
+  case SAI_MCAST_FDB_ENTRY_ATTR_PACKET_ACTION:
+	 attr_list[i].value.s32 =  convert_sai_packet_action_t_to_sai(resp.attr().packet_action());
+	break;
+  case SAI_MCAST_FDB_ENTRY_ATTR_META_DATA:
+	 attr_list[i].value.u32 =   resp.attr().meta_data();
+	break;
+}
+
+	}
+	
+	return SAI_STATUS_SUCCESS;
+}
+

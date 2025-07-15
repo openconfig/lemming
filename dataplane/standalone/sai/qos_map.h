@@ -25,17 +25,14 @@ extern "C" {
 
 extern const sai_qos_map_api_t l_qos_map;
 
-sai_status_t l_create_qos_map(sai_object_id_t *qos_map_id,
-                              sai_object_id_t switch_id, uint32_t attr_count,
-                              const sai_attribute_t *attr_list);
+
+sai_status_t l_create_qos_map(sai_object_id_t *qos_map_id, sai_object_id_t switch_id, uint32_t attr_count, const sai_attribute_t *attr_list);
 
 sai_status_t l_remove_qos_map(sai_object_id_t qos_map_id);
 
-sai_status_t l_set_qos_map_attribute(sai_object_id_t qos_map_id,
-                                     const sai_attribute_t *attr);
+sai_status_t l_set_qos_map_attribute(sai_object_id_t qos_map_id, const sai_attribute_t *attr);
 
-sai_status_t l_get_qos_map_attribute(sai_object_id_t qos_map_id,
-                                     uint32_t attr_count,
-                                     sai_attribute_t *attr_list);
+sai_status_t l_get_qos_map_attribute(sai_object_id_t qos_map_id, uint32_t attr_count, sai_attribute_t *attr_list);
+
 
 #endif  // DATAPLANE_STANDALONE_SAI_QOS_MAP_H_

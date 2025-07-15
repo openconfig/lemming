@@ -25,58 +25,28 @@ extern "C" {
 
 extern const sai_router_interface_api_t l_router_interface;
 
-sai_status_t l_create_router_interface(sai_object_id_t *router_interface_id,
-                                       sai_object_id_t switch_id,
-                                       uint32_t attr_count,
-                                       const sai_attribute_t *attr_list);
+
+sai_status_t l_create_router_interface(sai_object_id_t *router_interface_id, sai_object_id_t switch_id, uint32_t attr_count, const sai_attribute_t *attr_list);
 
 sai_status_t l_remove_router_interface(sai_object_id_t router_interface_id);
 
-sai_status_t l_set_router_interface_attribute(
-    sai_object_id_t router_interface_id, const sai_attribute_t *attr);
+sai_status_t l_set_router_interface_attribute(sai_object_id_t router_interface_id, const sai_attribute_t *attr);
 
-sai_status_t l_get_router_interface_attribute(
-    sai_object_id_t router_interface_id, uint32_t attr_count,
-    sai_attribute_t *attr_list);
+sai_status_t l_get_router_interface_attribute(sai_object_id_t router_interface_id, uint32_t attr_count, sai_attribute_t *attr_list);
 
-sai_status_t l_get_router_interface_stats(sai_object_id_t router_interface_id,
-                                          uint32_t number_of_counters,
-                                          const sai_stat_id_t *counter_ids,
-                                          uint64_t *counters);
+sai_status_t l_get_router_interface_stats(sai_object_id_t router_interface_id, uint32_t number_of_counters, const sai_stat_id_t *counter_ids, uint64_t *counters);
 
-sai_status_t l_get_router_interface_stats_ext(
-    sai_object_id_t router_interface_id, uint32_t number_of_counters,
-    const sai_stat_id_t *counter_ids, sai_stats_mode_t mode,
-    uint64_t *counters);
+sai_status_t l_get_router_interface_stats_ext(sai_object_id_t router_interface_id, uint32_t number_of_counters, const sai_stat_id_t *counter_ids, sai_stats_mode_t mode, uint64_t *counters);
 
-sai_status_t l_clear_router_interface_stats(sai_object_id_t router_interface_id,
-                                            uint32_t number_of_counters,
-                                            const sai_stat_id_t *counter_ids);
+sai_status_t l_clear_router_interface_stats(sai_object_id_t router_interface_id, uint32_t number_of_counters, const sai_stat_id_t *counter_ids);
 
-sai_status_t l_create_router_interfaces(sai_object_id_t switch_id,
-                                        uint32_t object_count,
-                                        const uint32_t *attr_count,
-                                        const sai_attribute_t **attr_list,
-                                        sai_bulk_op_error_mode_t mode,
-                                        sai_object_id_t *object_id,
-                                        sai_status_t *object_statuses);
+sai_status_t l_create_router_interfaces(sai_object_id_t switch_id, uint32_t object_count, const uint32_t *attr_count, const sai_attribute_t **attr_list, sai_bulk_op_error_mode_t mode, sai_object_id_t *object_id, sai_status_t *object_statuses);
 
-sai_status_t l_remove_router_interfaces(uint32_t object_count,
-                                        const sai_object_id_t *object_id,
-                                        sai_bulk_op_error_mode_t mode,
-                                        sai_status_t *object_statuses);
+sai_status_t l_remove_router_interfaces(uint32_t object_count, const sai_object_id_t *object_id, sai_bulk_op_error_mode_t mode, sai_status_t *object_statuses);
 
-sai_status_t l_set_router_interfaces_attribute(uint32_t object_count,
-                                               const sai_object_id_t *object_id,
-                                               const sai_attribute_t *attr_list,
-                                               sai_bulk_op_error_mode_t mode,
-                                               sai_status_t *object_statuses);
+sai_status_t l_set_router_interfaces_attribute(uint32_t object_count, const sai_object_id_t *object_id, const sai_attribute_t *attr_list, sai_bulk_op_error_mode_t mode, sai_status_t *object_statuses);
 
-sai_status_t l_get_router_interfaces_attribute(uint32_t object_count,
-                                               const sai_object_id_t *object_id,
-                                               const uint32_t *attr_count,
-                                               sai_attribute_t **attr_list,
-                                               sai_bulk_op_error_mode_t mode,
-                                               sai_status_t *object_statuses);
+sai_status_t l_get_router_interfaces_attribute(uint32_t object_count, const sai_object_id_t *object_id, const uint32_t *attr_count, sai_attribute_t **attr_list, sai_bulk_op_error_mode_t mode, sai_status_t *object_statuses);
+
 
 #endif  // DATAPLANE_STANDALONE_SAI_ROUTER_INTERFACE_H_

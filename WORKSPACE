@@ -283,9 +283,9 @@ cc_library(
 """,
     patch_args = ["-p1"],
     patches = ["//patches:sai.patch"],
-    sha256 = "240d0211bbea2758faabfdbfa5e5488d837a47d42839bfe99b4bfbff52ab6c11",
-    strip_prefix = "SAI-1.11.0",
-    urls = ["https://github.com/opencomputeproject/SAI/archive/refs/tags/v1.11.0.tar.gz"],
+    sha256 = "4e3a1d010bda0c589db46e077725a2cd9624a5cc255c89d1caa79deb408d1fa7",
+    strip_prefix = "SAI-1.14.0",
+    urls = ["https://github.com/opencomputeproject/SAI/archive/refs/tags/v1.14.0.tar.gz"],
 )
 
 http_archive(
