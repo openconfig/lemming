@@ -95,7 +95,7 @@ type system struct {
 	spb.UnimplementedSystemServer
 
 	c      *ygnmi.Client
-	config *configpb.LemmingConfig
+	config *configpb.Config
 
 	// rebootMu has the following roles:
 	// * ensures that writes to hasPendingReboot are free from race
@@ -122,7 +122,7 @@ type system struct {
 	processMu sync.Mutex
 }
 
-func newSystem(c *ygnmi.Client, config *configpb.LemmingConfig) *system {
+func newSystem(c *ygnmi.Client, config *configpb.Config) *system {
 	return &system{
 		c:                  c,
 		config:             config,
@@ -594,7 +594,7 @@ type Server struct {
 	wavelengthRouterServer *wavelengthRouter
 }
 
-func New(s *grpc.Server, gClient gpb.GNMIClient, target string, config *configpb.LemmingConfig) (*Server, error) {
+func New(s *grpc.Server, gClient gpb.GNMIClient, target string, config *configpb.Config) (*Server, error) {
 	yclient, err := ygnmi.NewClient(gClient, ygnmi.WithTarget(target), ygnmi.WithRequestLogLevel(2))
 	if err != nil {
 		return nil, err

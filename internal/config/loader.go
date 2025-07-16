@@ -27,11 +27,17 @@ import (
 	configpb "github.com/openconfig/lemming/proto/config"
 )
 
+const (
+	VendorArista = "arista"
+	VendorNokia  = "nokia"
+)
+
 var parseFromEmbeddedFn = parseFromEmbedded
 
 // Load loads the lemming configuration with merging and environment variable support.
+// The returned configuration is immutable and should not be modified after loading.
 // User config is merged with defaults for any missing sections (Not fields).
-func Load(configFile string) (*configpb.LemmingConfig, error) {
+func Load(configFile string) (*configpb.Config, error) {
 	configPath, err := determineConfigPath(configFile)
 	if err != nil {
 		return nil, err
@@ -39,7 +45,7 @@ func Load(configFile string) (*configpb.LemmingConfig, error) {
 	log.Infof("Loading Lemming config from: %s", configPath)
 
 	// Try to load user config from the determined path
-	var userConfig *configpb.LemmingConfig
+	var userConfig *configpb.Config
 	if embeddedPath, ok := strings.CutPrefix(configPath, "embedded:"); ok {
 		userConfig, err = parseFromEmbeddedFn(embeddedPath)
 	} else {
@@ -76,7 +82,7 @@ func determineConfigPath(flagValue string) (string, error) {
 	if envConfigFile := os.Getenv("LEMMING_CONFIG_FILE"); envConfigFile != "" {
 		switch strings.ToLower(envConfigFile) {
 		// TODO(mtr002): Add config files for juniper and cisco
-		case "arista", "nokia":
+		case VendorArista, VendorNokia:
 			// For known vendor presets, use the embedded config
 			return fmt.Sprintf("embedded:%s_default.textproto", envConfigFile), nil
 		default:
@@ -92,45 +98,44 @@ func determineConfigPath(flagValue string) (string, error) {
 }
 
 // mergeWithDefaults merges user config with defaults for any missing sections
-func mergeWithDefaults(userConfig *configpb.LemmingConfig) *configpb.LemmingConfig {
-	config := &configpb.LemmingConfig{}
+func mergeWithDefaults(userConfig *configpb.Config) *configpb.Config {
+	config := &configpb.Config{
+		Vendor:            defaultVendor(),
+		Components:        defaultComponents(),
+		Processes:         defaultProcesses(),
+		Timing:            defaultTiming(),
+		NetworkSimulation: defaultNetworkSimulation(),
+	}
 
-	// Use user config or defaults for each section
-	if userConfig != nil && userConfig.Vendor != nil {
+	if userConfig == nil {
+		return config
+	}
+
+	if userConfig.Vendor != nil {
 		config.Vendor = userConfig.Vendor
-	} else {
-		config.Vendor = getDefaultVendor()
 	}
 
-	if userConfig != nil && userConfig.Components != nil {
+	if userConfig.Components != nil {
 		config.Components = userConfig.Components
-	} else {
-		config.Components = getDefaultComponents()
 	}
 
-	if userConfig != nil && userConfig.Processes != nil && len(userConfig.Processes.GetProcess()) > 0 {
+	if userConfig.Processes != nil {
 		config.Processes = userConfig.Processes
-	} else {
-		config.Processes = getDefaultProcesses()
 	}
 
-	if userConfig != nil && userConfig.Timing != nil {
+	if userConfig.Timing != nil {
 		config.Timing = userConfig.Timing
-	} else {
-		config.Timing = getDefaultTiming()
 	}
 
-	if userConfig != nil && userConfig.NetworkSimulation != nil {
+	if userConfig.NetworkSimulation != nil {
 		config.NetworkSimulation = userConfig.NetworkSimulation
-	} else {
-		config.NetworkSimulation = getDefaultNetworkSim()
 	}
 
 	return config
 }
 
-// getDefaultVendor returns default vendor configuration
-func getDefaultVendor() *configpb.VendorConfig {
+// defaultVendor returns default vendor configuration
+func defaultVendor() *configpb.VendorConfig {
 	return &configpb.VendorConfig{
 		Name:      "OpenConfig",
 		Model:     "Lemming",
@@ -138,8 +143,8 @@ func getDefaultVendor() *configpb.VendorConfig {
 	}
 }
 
-// getDefaultComponents returns default component configuration
-func getDefaultComponents() *configpb.ComponentConfig {
+// defaultComponents returns default component configuration
+func defaultComponents() *configpb.ComponentConfig {
 	return &configpb.ComponentConfig{
 		Supervisor1Name: "Supervisor1",
 		Supervisor2Name: "Supervisor2",
@@ -159,8 +164,8 @@ func getDefaultComponents() *configpb.ComponentConfig {
 	}
 }
 
-// getDefaultProcesses returns default process configurations
-func getDefaultProcesses() *configpb.ProcessesConfig {
+// defaultProcesses returns default process configurations
+func defaultProcesses() *configpb.ProcessesConfig {
 	return &configpb.ProcessesConfig{
 		Process: []*configpb.ProcessConfig{
 			{Name: "Octa", Pid: 1001, CpuUsageUser: 1000000, CpuUsageSystem: 500000, CpuUtilization: 1, MemoryUsage: 10485760, MemoryUtilization: 2},
@@ -174,16 +179,16 @@ func getDefaultProcesses() *configpb.ProcessesConfig {
 	}
 }
 
-// getDefaultTiming returns default timing configuration
-func getDefaultTiming() *configpb.TimingConfig {
+// defaultTiming returns default timing configuration
+func defaultTiming() *configpb.TimingConfig {
 	return &configpb.TimingConfig{
 		SwitchoverDurationMs: 2000,
 		RebootDurationMs:     2000,
 	}
 }
 
-// getDefaultNetworkSim returns default network simulation configuration
-func getDefaultNetworkSim() *configpb.NetworkSimConfig {
+// defaultNetworkSim returns default network simulation configuration
+func defaultNetworkSimulation() *configpb.NetworkSimConfig {
 	return &configpb.NetworkSimConfig{
 		BaseLatencyMs:   50,
 		LatencyJitterMs: 20,
@@ -193,12 +198,12 @@ func getDefaultNetworkSim() *configpb.NetworkSimConfig {
 }
 
 // parseFromEmbedded parses configuration from an embedded file
-func parseFromEmbedded(path string) (*configpb.LemmingConfig, error) {
+func parseFromEmbedded(path string) (*configpb.Config, error) {
 	data, err := configs.FS.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read embedded config file %s: %v", path, err)
 	}
-	config := &configpb.LemmingConfig{}
+	config := &configpb.Config{}
 	if err := prototext.Unmarshal(data, config); err != nil {
 		return nil, fmt.Errorf("failed to parse protobuf text config from embedded file %s: %v", path, err)
 	}
@@ -206,37 +211,31 @@ func parseFromEmbedded(path string) (*configpb.LemmingConfig, error) {
 }
 
 // parseFromFile parses configuration from a file without validation
-func parseFromFile(filename string) (*configpb.LemmingConfig, error) {
+func parseFromFile(filename string) (*configpb.Config, error) {
 	data, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read config file %s: %v", filename, err)
 	}
 
-	config := &configpb.LemmingConfig{}
+	config := &configpb.Config{}
 
 	// Check for supported extensions
 	lowerFilename := strings.ToLower(filename)
-	var isProtobufText bool
 
 	if strings.HasSuffix(lowerFilename, ".textproto") ||
 		strings.HasSuffix(lowerFilename, ".pb.txt") ||
 		strings.HasSuffix(lowerFilename, ".pbtxt") {
-		isProtobufText = true
-	}
-
-	if isProtobufText {
 		if err := prototext.Unmarshal(data, config); err != nil {
 			return nil, fmt.Errorf("failed to parse protobuf text config file %s: %v", filename, err)
 		}
-	} else {
-		return nil, fmt.Errorf("unsupported config file format for %s (supported: .textproto, .pb.txt, .pbtxt)", filename)
+		return config, nil
 	}
 
-	return config, nil
+	return nil, fmt.Errorf("unsupported config file format for %s", filename)
 }
 
 // validate validates the configuration for comprehensive consistency and correctness
-func validate(config *configpb.LemmingConfig) error {
+func validate(config *configpb.Config) error {
 	if config.Components == nil {
 		return fmt.Errorf("components configuration is required")
 	}
@@ -244,6 +243,7 @@ func validate(config *configpb.LemmingConfig) error {
 	if err := validateComponents(config.Components); err != nil {
 		return fmt.Errorf("components validation failed: %v", err)
 	}
+
 	if config.Processes != nil {
 		if err := validateProcesses(config.Processes.GetProcess()); err != nil {
 			return fmt.Errorf("processes validation failed: %v", err)

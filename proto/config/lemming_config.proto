@@ -5,7 +5,7 @@ package lemming.config;
 option go_package = "github.com/openconfig/lemming/proto/config";
 
 // Main configuration message for lemming fake device
-message LemmingConfig {
+message Config {
   // Component naming and structure configuration
   ComponentConfig components = 1;
   // Mock process definitions

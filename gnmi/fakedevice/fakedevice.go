@@ -47,7 +47,7 @@ func Reboot(ctx context.Context, c *ygnmi.Client, rebootTime int64) error {
 }
 
 // RebootComponent updates the component's last reboot time and reason.
-func RebootComponent(ctx context.Context, c *ygnmi.Client, componentName string, rebootTime int64, cfg *configpb.LemmingConfig) error {
+func RebootComponent(ctx context.Context, c *ygnmi.Client, componentName string, rebootTime int64, cfg *configpb.Config) error {
 	log.Infof("Performing component reboot for %s at time %d", componentName, rebootTime)
 	timestampedCtx := gnmi.AddTimestampMetadata(ctx, rebootTime)
 
@@ -80,7 +80,7 @@ func RebootComponent(ctx context.Context, c *ygnmi.Client, componentName string,
 }
 
 // SwitchoverSupervisor performs supervisor switchover by swapping the redundant roles and updating related state
-func SwitchoverSupervisor(ctx context.Context, c *ygnmi.Client, targetSupervisor string, currentActiveSupervisor string, switchoverTime int64, cfg *configpb.LemmingConfig) error {
+func SwitchoverSupervisor(ctx context.Context, c *ygnmi.Client, targetSupervisor string, currentActiveSupervisor string, switchoverTime int64, cfg *configpb.Config) error {
 	log.Infof("Performing supervisor switchover from %s to %s at time %d", currentActiveSupervisor, targetSupervisor, switchoverTime)
 
 	timestampedCtx := gnmi.AddTimestampMetadata(ctx, switchoverTime)
@@ -116,7 +116,7 @@ func SwitchoverSupervisor(ctx context.Context, c *ygnmi.Client, targetSupervisor
 }
 
 // KillProcess simulates process termination and restart functionality
-func KillProcess(ctx context.Context, c *ygnmi.Client, pid uint32, processName string, signal spb.KillProcessRequest_Signal, restart bool, cfg *configpb.LemmingConfig) error {
+func KillProcess(ctx context.Context, c *ygnmi.Client, pid uint32, processName string, signal spb.KillProcessRequest_Signal, restart bool, cfg *configpb.Config) error {
 	log.Infof("KillProcess called with pid=%d, name=%s, signal=%v, restart=%v", pid, processName, signal, restart)
 
 	processPath := ocpath.Root().System().Process(uint64(pid))
@@ -187,7 +187,7 @@ func KillProcess(ctx context.Context, c *ygnmi.Client, pid uint32, processName s
 }
 
 // NewBootTimeTask initializes boot-related paths.
-func NewBootTimeTask(cfg *configpb.LemmingConfig) *reconciler.BuiltReconciler {
+func NewBootTimeTask(cfg *configpb.Config) *reconciler.BuiltReconciler {
 	chassisName := cfg.GetComponents().GetChassisName()
 
 	rec := reconciler.NewBuilder("boot time").
@@ -211,7 +211,7 @@ func NewBootTimeTask(cfg *configpb.LemmingConfig) *reconciler.BuiltReconciler {
 }
 
 // NewChassisComponentsTask initializes subcomponents for the chassis
-func NewChassisComponentsTask(cfg *configpb.LemmingConfig) *reconciler.BuiltReconciler {
+func NewChassisComponentsTask(cfg *configpb.Config) *reconciler.BuiltReconciler {
 	rec := reconciler.NewBuilder("chassis components").
 		WithStart(func(ctx context.Context, c *ygnmi.Client) error {
 			now := time.Now().UnixNano()
@@ -387,7 +387,7 @@ func NewSystemBaseTask() *reconciler.BuiltReconciler {
 }
 
 // NewProcessMonitoringTask initializes system processes for monitoring.
-func NewProcessMonitoringTask(cfg *configpb.LemmingConfig) *reconciler.BuiltReconciler {
+func NewProcessMonitoringTask(cfg *configpb.Config) *reconciler.BuiltReconciler {
 	rec := reconciler.NewBuilder("process monitoring").
 		WithStart(func(ctx context.Context, c *ygnmi.Client) error {
 			now := time.Now().UnixNano()

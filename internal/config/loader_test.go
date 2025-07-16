@@ -272,8 +272,8 @@ components {
 			// Mock embedded file parser
 			if tt.mockEmbed != "" {
 				originalParse := parseFromEmbeddedFn
-				parseFromEmbeddedFn = func(path string) (*configpb.LemmingConfig, error) {
-					config := &configpb.LemmingConfig{}
+				parseFromEmbeddedFn = func(path string) (*configpb.Config, error) {
+					config := &configpb.Config{}
 					if err := prototext.Unmarshal([]byte(tt.mockEmbed), config); err != nil {
 						return nil, err
 					}
@@ -411,7 +411,7 @@ func TestDetermineConfigPath(t *testing.T) {
 func TestMergeWithDefaults(t *testing.T) {
 	tests := []struct {
 		name       string
-		userConfig *configpb.LemmingConfig
+		userConfig *configpb.Config
 		wantVendor *configpb.VendorConfig
 	}{
 		{
@@ -425,7 +425,7 @@ func TestMergeWithDefaults(t *testing.T) {
 		},
 		{
 			name: "partial config merges with defaults",
-			userConfig: &configpb.LemmingConfig{
+			userConfig: &configpb.Config{
 				Vendor: &configpb.VendorConfig{
 					Name: "CustomVendor",
 				},
@@ -436,7 +436,7 @@ func TestMergeWithDefaults(t *testing.T) {
 		},
 		{
 			name: "empty sections use defaults",
-			userConfig: &configpb.LemmingConfig{
+			userConfig: &configpb.Config{
 				Components: nil,
 			},
 			wantVendor: &configpb.VendorConfig{
@@ -475,13 +475,13 @@ func TestMergeWithDefaults(t *testing.T) {
 func TestValidate(t *testing.T) {
 	tests := []struct {
 		name      string
-		config    *configpb.LemmingConfig
+		config    *configpb.Config
 		wantError bool
 		errorMsg  string
 	}{
 		{
 			name: "valid config",
-			config: &configpb.LemmingConfig{
+			config: &configpb.Config{
 				Components: &configpb.ComponentConfig{
 					Supervisor1Name: "Sup1",
 					Supervisor2Name: "Sup2",
@@ -502,7 +502,7 @@ func TestValidate(t *testing.T) {
 		},
 		{
 			name: "missing components",
-			config: &configpb.LemmingConfig{
+			config: &configpb.Config{
 				Components: nil,
 			},
 			wantError: true,
@@ -510,7 +510,7 @@ func TestValidate(t *testing.T) {
 		},
 		{
 			name: "duplicate process PIDs",
-			config: &configpb.LemmingConfig{
+			config: &configpb.Config{
 				Components: &configpb.ComponentConfig{
 					Supervisor1Name: "Sup1",
 					Supervisor2Name: "Sup2",
@@ -538,7 +538,7 @@ func TestValidate(t *testing.T) {
 		},
 		{
 			name: "invalid packet loss rate",
-			config: &configpb.LemmingConfig{
+			config: &configpb.Config{
 				Components: &configpb.ComponentConfig{
 					Supervisor1Name: "Sup1",
 					Supervisor2Name: "Sup2",

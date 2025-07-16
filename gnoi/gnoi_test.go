@@ -29,7 +29,7 @@ const (
 )
 
 // loadDefaultConfig loads the lemming default configuration for tests
-func loadDefaultConfig(t *testing.T) *configpb.LemmingConfig {
+func loadDefaultConfig(t *testing.T) *configpb.Config {
 	cfg, err := config.Load("")
 	if err != nil {
 		t.Fatalf("Failed to load default config: %v", err)

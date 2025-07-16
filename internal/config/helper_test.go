@@ -51,7 +51,7 @@ func TestGetComponentName(t *testing.T) {
 }
 
 func TestGetProcessByPID(t *testing.T) {
-	config := &configpb.LemmingConfig{
+	config := &configpb.Config{
 		Processes: &configpb.ProcessesConfig{
 			Process: []*configpb.ProcessConfig{
 				{Name: "proc1", Pid: 1001},
@@ -94,7 +94,7 @@ func TestGetProcessByPID(t *testing.T) {
 }
 
 func TestGetProcessByName(t *testing.T) {
-	config := &configpb.LemmingConfig{
+	config := &configpb.Config{
 		Processes: &configpb.ProcessesConfig{
 			Process: []*configpb.ProcessConfig{
 				{Name: "octa", Pid: 1001},
@@ -139,12 +139,12 @@ func TestGetProcessByName(t *testing.T) {
 func TestGetAllLinecardNames(t *testing.T) {
 	tests := []struct {
 		name     string
-		config   *configpb.LemmingConfig
+		config   *configpb.Config
 		expected []string
 	}{
 		{
 			name: "normal linecard config",
-			config: &configpb.LemmingConfig{
+			config: &configpb.Config{
 				Components: &configpb.ComponentConfig{
 					LinecardPrefix: "LC",
 					Linecard: &configpb.ComponentTypeConfig{
@@ -158,7 +158,7 @@ func TestGetAllLinecardNames(t *testing.T) {
 		},
 		{
 			name: "empty prefix",
-			config: &configpb.LemmingConfig{
+			config: &configpb.Config{
 				Components: &configpb.ComponentConfig{
 					LinecardPrefix: "",
 					Linecard: &configpb.ComponentTypeConfig{
@@ -172,14 +172,14 @@ func TestGetAllLinecardNames(t *testing.T) {
 		},
 		{
 			name: "nil components",
-			config: &configpb.LemmingConfig{
+			config: &configpb.Config{
 				Components: nil,
 			},
 			expected: nil,
 		},
 		{
 			name: "nil linecard config",
-			config: &configpb.LemmingConfig{
+			config: &configpb.Config{
 				Components: &configpb.ComponentConfig{
 					Linecard: nil,
 				},
@@ -188,7 +188,7 @@ func TestGetAllLinecardNames(t *testing.T) {
 		},
 		{
 			name: "zero count",
-			config: &configpb.LemmingConfig{
+			config: &configpb.Config{
 				Components: &configpb.ComponentConfig{
 					LinecardPrefix: "LC",
 					Linecard: &configpb.ComponentTypeConfig{
@@ -215,12 +215,12 @@ func TestGetAllLinecardNames(t *testing.T) {
 func TestGetAllFabricNames(t *testing.T) {
 	tests := []struct {
 		name     string
-		config   *configpb.LemmingConfig
+		config   *configpb.Config
 		expected []string
 	}{
 		{
 			name: "normal fabric config",
-			config: &configpb.LemmingConfig{
+			config: &configpb.Config{
 				Components: &configpb.ComponentConfig{
 					FabricPrefix: "Fabric",
 					Fabric: &configpb.ComponentTypeConfig{
@@ -234,7 +234,7 @@ func TestGetAllFabricNames(t *testing.T) {
 		},
 		{
 			name: "fabric with step",
-			config: &configpb.LemmingConfig{
+			config: &configpb.Config{
 				Components: &configpb.ComponentConfig{
 					FabricPrefix: "FC",
 					Fabric: &configpb.ComponentTypeConfig{
@@ -248,7 +248,7 @@ func TestGetAllFabricNames(t *testing.T) {
 		},
 		{
 			name: "nil components",
-			config: &configpb.LemmingConfig{
+			config: &configpb.Config{
 				Components: nil,
 			},
 			expected: nil,
@@ -266,7 +266,7 @@ func TestGetAllFabricNames(t *testing.T) {
 }
 
 func TestIsValidComponentName(t *testing.T) {
-	config := &configpb.LemmingConfig{
+	config := &configpb.Config{
 		Components: &configpb.ComponentConfig{
 			Supervisor1Name: "Supervisor1",
 			Supervisor2Name: "Supervisor2",
@@ -351,7 +351,7 @@ func TestIsValidComponentName(t *testing.T) {
 func TestIsValidComponentNameNilConfig(t *testing.T) {
 	tests := []struct {
 		name          string
-		config        *configpb.LemmingConfig
+		config        *configpb.Config
 		componentName string
 		expected      bool
 	}{
@@ -363,7 +363,7 @@ func TestIsValidComponentNameNilConfig(t *testing.T) {
 		},
 		{
 			name: "nil components",
-			config: &configpb.LemmingConfig{
+			config: &configpb.Config{
 				Components: nil,
 			},
 			componentName: "anything",

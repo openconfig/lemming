@@ -30,7 +30,7 @@ func GetComponentName(prefix string, index int32) string {
 }
 
 // GetProcessByPID finds a process configuration by PID
-func GetProcessByPID(config *configpb.LemmingConfig, pid uint32) *configpb.ProcessConfig {
+func GetProcessByPID(config *configpb.Config, pid uint32) *configpb.ProcessConfig {
 	if config.GetProcesses() == nil {
 		return nil
 	}
@@ -43,7 +43,7 @@ func GetProcessByPID(config *configpb.LemmingConfig, pid uint32) *configpb.Proce
 }
 
 // GetProcessByName finds a process configuration by name
-func GetProcessByName(config *configpb.LemmingConfig, name string) *configpb.ProcessConfig {
+func GetProcessByName(config *configpb.Config, name string) *configpb.ProcessConfig {
 	if config.GetProcesses() == nil {
 		return nil
 	}
@@ -56,7 +56,7 @@ func GetProcessByName(config *configpb.LemmingConfig, name string) *configpb.Pro
 }
 
 // GetAllLinecardNames returns all linecard component names based on configuration
-func GetAllLinecardNames(config *configpb.LemmingConfig) []string {
+func GetAllLinecardNames(config *configpb.Config) []string {
 	comp := config.GetComponents()
 	if comp == nil || comp.GetLinecard() == nil {
 		return nil
@@ -75,7 +75,7 @@ func GetAllLinecardNames(config *configpb.LemmingConfig) []string {
 }
 
 // GetAllFabricNames returns all fabric component names based on configuration
-func GetAllFabricNames(config *configpb.LemmingConfig) []string {
+func GetAllFabricNames(config *configpb.Config) []string {
 	comp := config.GetComponents()
 	if comp == nil || comp.GetFabric() == nil {
 		return nil
@@ -94,7 +94,7 @@ func GetAllFabricNames(config *configpb.LemmingConfig) []string {
 }
 
 // IsValidComponentName checks if a given name matches any component in the configuration
-func IsValidComponentName(config *configpb.LemmingConfig, name string) bool {
+func IsValidComponentName(config *configpb.Config, name string) bool {
 	comp := config.GetComponents()
 	if comp == nil {
 		return false

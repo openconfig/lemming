@@ -72,7 +72,7 @@ type Device struct {
 	dplaneServer *dataplane.Dataplane
 
 	// Configuration
-	config *configpb.LemmingConfig
+	config *configpb.Config
 
 	// Stores the errors if the server fails will be returned on call to stop.
 	errsMu sync.Mutex
@@ -466,7 +466,7 @@ func (d *Device) Dataplane() *dataplane.Dataplane {
 }
 
 // Config returns the lemming configuration.
-func (d *Device) Config() *configpb.LemmingConfig {
+func (d *Device) Config() *configpb.Config {
 	return d.config
 }
 

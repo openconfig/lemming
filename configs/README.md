@@ -76,6 +76,6 @@ You can customize the following parts of the device:
 * **`components`**: The physical layout (e.g., number and names of line cards, supervisors).
 * **`processes`**: Mock system processes to simulate for monitoring.
 * **`timing`**: Durations for operations like reboots and switchovers.
-* **`network_sim`**: Network behavior for ping, including latency and packet loss.
+* **`network_simulation`**: Control-plane network behavior simulation for ping and link qualification responses.
 
 For detailed structure, see the `lemming_default.textproto` file.
