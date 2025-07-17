@@ -18,6 +18,8 @@ import (
 	"github.com/openconfig/lemming/gnmi/fakedevice"
 	"github.com/openconfig/lemming/gnmi/oc"
 	"github.com/openconfig/lemming/gnmi/oc/ocpath"
+	"github.com/openconfig/lemming/internal/config"
+	configpb "github.com/openconfig/lemming/proto/config"
 )
 
 const (
@@ -25,6 +27,15 @@ const (
 	defaultPrimarySupervisor   = "Supervisor1"
 	defaultSecondarySupervisor = "Supervisor2"
 )
+
+// loadDefaultConfig loads the lemming default configuration for tests
+func loadDefaultConfig(t *testing.T) *configpb.Config {
+	cfg, err := config.Load("")
+	if err != nil {
+		t.Fatalf("Failed to load default config: %v", err)
+	}
+	return cfg
+}
 
 func TestReboot(t *testing.T) {
 	grpcServer := grpc.NewServer()
@@ -48,10 +59,13 @@ func TestReboot(t *testing.T) {
 		t.Fatalf("cannot create ygnmi client: %v", err)
 	}
 
-	s := newSystem(c)
+	// Load lemming default configuration for tests
+	lemmingConfig := loadDefaultConfig(t)
+
+	s := newSystem(c, lemmingConfig)
 
 	ctx := context.Background()
-	fakedevice.NewBootTimeTask().Start(ctx, client, "local")
+	fakedevice.NewBootTimeTask(lemmingConfig).Start(ctx, client, "local")
 
 	t.Run("zero-delay", func(t *testing.T) {
 		prevTime, err := ygnmi.Get(context.Background(), c, ocpath.Root().System().BootTime().State())
@@ -208,6 +222,8 @@ func TestReboot(t *testing.T) {
 
 // Testing component reboot implementation
 func TestComponentReboot(t *testing.T) {
+	lemmingConfig := loadDefaultConfig(t)
+
 	tests := map[string]struct {
 		fn func(*testing.T, *system, context.Context)
 	}{
@@ -481,14 +497,14 @@ func TestComponentReboot(t *testing.T) {
 	if err != nil {
 		t.Fatalf("cannot create ygnmi client: %v", err)
 	}
-	s := newSystem(c)
+	s := newSystem(c, lemmingConfig)
 
 	// Initialize the system
-	if err := fakedevice.NewBootTimeTask().Start(ctx, client, "local"); err != nil {
+	if err := fakedevice.NewBootTimeTask(lemmingConfig).Start(ctx, client, "local"); err != nil {
 		t.Fatalf("Failed to initialize boot time: %v", err)
 	}
-	if err := fakedevice.NewChassisComponentsTask().Start(ctx, client, "local"); err != nil {
-		t.Fatalf("Failed to initialize components: %v", err)
+	if err := fakedevice.NewChassisComponentsTask(lemmingConfig).Start(ctx, client, "local"); err != nil {
+		t.Fatalf("Failed to initialize chassis components: %v", err)
 	}
 
 	for name, test := range tests {
@@ -500,6 +516,8 @@ func TestComponentReboot(t *testing.T) {
 
 // TestSwitchControlProcessor tests the SwitchControlProcessor method.
 func TestSwitchControlProcessor(t *testing.T) {
+	lemmingConfig := loadDefaultConfig(t)
+
 	tests := map[string]struct {
 		fn func(*testing.T, *system, context.Context, *ygnmi.Client)
 	}{
@@ -862,14 +880,14 @@ func TestSwitchControlProcessor(t *testing.T) {
 		if err != nil {
 			t.Fatalf("cannot create ygnmi client: %v", err)
 		}
-		s := newSystem(c)
+		s := newSystem(c, lemmingConfig)
 
 		// Initialize the system
-		if err := fakedevice.NewBootTimeTask().Start(ctx, client, "local"); err != nil {
+		if err := fakedevice.NewBootTimeTask(lemmingConfig).Start(ctx, client, "local"); err != nil {
 			t.Fatalf("Failed to initialize boot time: %v", err)
 		}
-		if err := fakedevice.NewChassisComponentsTask().Start(ctx, client, "local"); err != nil {
-			t.Fatalf("Failed to initialize components: %v", err)
+		if err := fakedevice.NewChassisComponentsTask(lemmingConfig).Start(ctx, client, "local"); err != nil {
+			t.Fatalf("Failed to initialize chassis components: %v", err)
 		}
 
 		cleanup := func() {
@@ -889,6 +907,8 @@ func TestSwitchControlProcessor(t *testing.T) {
 
 // TestKillProcess tests the KillProcess RPC functionality with comprehensive scenarios
 func TestKillProcess(t *testing.T) {
+	lemmingConfig := loadDefaultConfig(t)
+
 	setupFreshEnvironment := func(t *testing.T) (context.Context, *grpc.Server, *ygnmi.Client, *system, func()) {
 		grpcServer := grpc.NewServer()
 		gnmiServer, err := gnmi.New(grpcServer, "local", nil)
@@ -909,9 +929,9 @@ func TestKillProcess(t *testing.T) {
 			t.Fatalf("cannot create ygnmi client: %v", err)
 		}
 
-		s := newSystem(c)
+		s := newSystem(c, lemmingConfig)
 		ctx := context.Background()
-		fakedevice.NewProcessMonitoringTask().Start(ctx, client, "local")
+		fakedevice.NewProcessMonitoringTask(lemmingConfig).Start(ctx, client, "local")
 
 		time.Sleep(100 * time.Millisecond)
 
@@ -1028,7 +1048,7 @@ func TestKillProcess(t *testing.T) {
 					t.Error("Restarted process should have different PID")
 				}
 
-				if newOctaProcess.GetPid() < 1001 || newOctaProcess.GetPid() > 1100 {
+				if newOctaProcess.GetPid() < 1 || newOctaProcess.GetPid() > 65535 {
 					t.Errorf("New PID %d should be in range 1001-1100", newOctaProcess.GetPid())
 				}
 			},

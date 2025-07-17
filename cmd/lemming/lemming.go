@@ -48,6 +48,7 @@ var (
 	gcpProject     = pflag.String("gcp_project", "", "GCP project to export to, by default it will use project where the GCE instance is running")
 	faultAddr      = pflag.String("fault_addr", ":9399", "fault server listen address")
 	faultEnable    = pflag.Bool("enable_fault", true, "Enable fault service")
+	configFile     = pflag.String("config_file", "", "Path to configuration file or vendor preset (e.g., 'arista'). If not specified, checks LEMMING_CONFIG_FILE, then uses defaults.")
 )
 
 func main() {
@@ -70,7 +71,9 @@ func main() {
 		}
 	}
 
-	f, err := lemming.New(*target, *zapiAddr, lemming.WithTransportCreds(creds),
+	f, err := lemming.New(*target, *zapiAddr,
+		lemming.WithConfigFile(*configFile),
+		lemming.WithTransportCreds(creds),
 		lemming.WithGRIBIAddr(*gribiAddr),
 		lemming.WithGNMIAddr(*gnmiAddr),
 		lemming.WithBGPPort(uint16(*bgpPort)),

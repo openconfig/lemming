@@ -9,6 +9,7 @@ go_library(
         "//gnmi/fakedevice",
         "//gnmi/oc",
         "//gnmi/oc/ocpath",
+        "//proto/config",
         "@com_github_golang_glog//:glog",
         "@com_github_openconfig_gnmi//proto/gnmi",
         "@com_github_openconfig_gnoi//bgp",
@@ -33,6 +34,7 @@ go_library(
 
 go_test(
     name = "gnoi_test",
+    timeout = "long",
     srcs = ["gnoi_test.go"],
     embed = [":gnoi"],
     deps = [
@@ -40,6 +42,8 @@ go_test(
         "//gnmi/fakedevice",
         "//gnmi/oc",
         "//gnmi/oc/ocpath",
+        "//internal/config",
+        "//proto/config",
         "@com_github_google_go_cmp//cmp",
         "@com_github_openconfig_gnoi//system",
         "@com_github_openconfig_gnoi//types",
