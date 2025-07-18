@@ -17,6 +17,8 @@ package fakedevice
 import (
 	"context"
 	"fmt"
+	"math"
+	"math/rand/v2"
 	"time"
 
 	log "github.com/golang/glog"
@@ -183,6 +185,143 @@ func KillProcess(ctx context.Context, c *ygnmi.Client, pid uint32, processName s
 			log.Infof("Successfully restarted process %s with new PID: %d", processName, newPID)
 		}()
 	}
+	return nil
+}
+
+// PingPacketResult represents the result of a single ping packet
+type PingPacketResult struct {
+	Sequence int32
+	RTT      time.Duration
+	Bytes    uint32
+	TTL      int32
+	Success  bool
+}
+
+// PingSimulation simulates ping operation with configurable network conditions
+func PingSimulation(ctx context.Context, destination string, count int32, interval time.Duration, wait time.Duration, size uint32, responseChan chan<- *PingPacketResult, cfg *configpb.Config) error {
+	log.Infof("Starting ping simulation to %s with count=%d, interval=%v, wait=%v",
+		destination, count, interval, wait)
+
+	baseLatencyMs := int64(10)
+	ttl := int32(64)
+
+	var jitterMs int64
+	var packetLossRate float64
+
+	// Use config values if available
+	if cfg != nil && cfg.GetNetworkSimulation() != nil {
+		if cfg.GetNetworkSimulation().GetBaseLatencyMs() > 0 {
+			baseLatencyMs = cfg.GetNetworkSimulation().GetBaseLatencyMs()
+		}
+		jitterMs = max(0, cfg.GetNetworkSimulation().GetLatencyJitterMs())
+		packetLossRate = max(0.0, min(1.0, float64(cfg.GetNetworkSimulation().GetPacketLossRate())))
+		if cfg.GetNetworkSimulation().GetDefaultTtl() > 0 {
+			ttl = cfg.GetNetworkSimulation().GetDefaultTtl()
+		}
+	}
+
+	// Create random generator for this simulation
+	rng := rand.New(rand.NewPCG(uint64(time.Now().UnixNano()), uint64(time.Now().UnixNano()>>32))) //nolint:gosec // Using math/rand for network simulation
+
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
+	packetCount := int32(0)
+	maxPackets := count
+	if maxPackets == -1 {
+		maxPackets = math.MaxInt32
+	}
+
+	for packetCount < maxPackets {
+		select {
+		case <-ctx.Done():
+			log.Infof("Ping to %s cancelled", destination)
+			return ctx.Err()
+		case <-ticker.C:
+			packetCount++
+
+			// Simple packet loss simulation
+			packetLost := packetLossRate > 0 && rng.Float64() < packetLossRate
+
+			var result *PingPacketResult
+
+			if packetLost {
+				// Packet lost - wait for timeout
+				waitTimer := time.NewTimer(wait)
+				select {
+				case <-waitTimer.C:
+					waitTimer.Stop()
+				case <-ctx.Done():
+					waitTimer.Stop()
+					return ctx.Err()
+				}
+				result = &PingPacketResult{
+					Sequence: packetCount,
+					RTT:      0,
+					Bytes:    0,
+					TTL:      0,
+					Success:  false,
+				}
+				log.Infof("Ping to %s: seq=%d TIMEOUT (packet lost)", destination, packetCount)
+			} else {
+				// Simple latency simulation: base + random jitter
+				jitterRange := jitterMs * 2 // +/- jitter
+				jitterOffset := rng.Int64N(jitterRange+1) - jitterMs
+				totalLatencyMs := max(baseLatencyMs+jitterOffset, 1)
+
+				networkLatency := time.Duration(totalLatencyMs) * time.Millisecond
+
+				if networkLatency > wait {
+					// Response would arrive after wait timeout
+					waitTimer := time.NewTimer(wait)
+					select {
+					case <-waitTimer.C:
+						waitTimer.Stop()
+					case <-ctx.Done():
+						waitTimer.Stop()
+						return ctx.Err()
+					}
+					result = &PingPacketResult{
+						Sequence: packetCount,
+						RTT:      0,
+						Bytes:    0,
+						TTL:      0,
+						Success:  false,
+					}
+					log.Infof("Ping to %s: seq=%d TIMEOUT (latency %v > wait %v)",
+						destination, packetCount, networkLatency, wait)
+				} else {
+					// Successful response within wait time
+					latencyTimer := time.NewTimer(networkLatency)
+					select {
+					case <-latencyTimer.C:
+						latencyTimer.Stop()
+					case <-ctx.Done():
+						latencyTimer.Stop()
+						return ctx.Err()
+					}
+					result = &PingPacketResult{
+						Sequence: packetCount,
+						RTT:      networkLatency,
+						Bytes:    size,
+						TTL:      ttl,
+						Success:  true,
+					}
+					log.Infof("Ping to %s: seq=%d time=%v bytes=%d ttl=%d",
+						destination, packetCount, networkLatency, size, ttl)
+				}
+			}
+
+			// Send result with non-blocking send
+			select {
+			case responseChan <- result:
+			case <-ctx.Done():
+				return ctx.Err()
+			}
+		}
+	}
+
+	log.Infof("Ping simulation to %s completed after %d packets", destination, packetCount)
 	return nil
 }
 

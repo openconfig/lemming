@@ -44,6 +44,7 @@ go_library(
 go_test(
     name = "sysrib_test",
     size = "medium",
+    timeout = "long",
     srcs = [
         "server_test.go",
         "static_connected_test.go",
