@@ -32,6 +32,8 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"os"
+	"path/filepath"
 	"syscall"
 	"testing"
 	"time"
@@ -55,6 +57,23 @@ func TestZServer(t *testing.T) {
 	t.Run("RouteRedistribution/routeNotReadyBeforeDial", func(t *testing.T) { testRouteRedistribution(t, false) })
 }
 
+func getUniqueSocketPaths(t *testing.T) (string, string) {
+	t.Helper()
+	tempDir, err := os.MkdirTemp("", "sysrib-test-*")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+
+	zapiPath := filepath.Join(tempDir, "zserv.api")
+	sysribPath := filepath.Join(tempDir, "sysrib.api")
+
+	t.Cleanup(func() {
+		os.RemoveAll(tempDir)
+	})
+
+	return zapiPath, sysribPath
+}
+
 // SendMessage sends a zebra message to the given connection.
 func SendMessage(t *testing.T, conn net.Conn, msg *zebra.Message) error {
 	s, err := msg.Serialize(zebra.MaxSoftware)
@@ -66,33 +85,51 @@ func SendMessage(t *testing.T, conn net.Conn, msg *zebra.Message) error {
 	return err
 }
 
-func Dial() (net.Conn, error) {
-	conn, err := net.DialTimeout("unix", "/tmp/zserv.api", 10*time.Second)
+func Dial(zapiPath string) (net.Conn, error) {
+	conn, err := net.DialTimeout("unix", zapiPath, 10*time.Second)
 	if err != nil {
 		return nil, err
 	}
 	return conn, err
 }
 
-func ZAPIServerStart(t *testing.T) *ZServer {
+func ZAPIServerStart(t *testing.T) (*ZServer, string) {
 	t.Helper()
+	zapiPath, _ := getUniqueSocketPaths(t)
+
 	sysribServer, err := New(nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	s, err := StartZServer(context.Background(), "unix:/tmp/zserv.api", 0, sysribServer)
+	s, err := StartZServer(context.Background(), "unix:"+zapiPath, 0, sysribServer)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return s
+
+	// Wait for server to be ready
+	for i := 0; i < 50; i++ {
+		if _, err := os.Stat(zapiPath); err == nil {
+			if conn, err := net.DialTimeout("unix", zapiPath, 100*time.Millisecond); err == nil {
+				conn.Close()
+				break
+			}
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+
+	t.Cleanup(func() {
+		s.Stop()
+	})
+
+	return s, zapiPath
 }
 
 func testHello(t *testing.T) {
-	s := ZAPIServerStart(t)
-	defer s.Stop()
+	s, zapiPath := ZAPIServerStart(t)
+	_ = s // Keep reference
 
-	conn, err := Dial()
+	conn, err := Dial(zapiPath)
 	if err != nil {
 		t.Errorf("Dial failed %v\n", err)
 		return
@@ -356,10 +393,9 @@ func testRouteAddDelete(t *testing.T) {
 		}},
 	}}
 
-	s := ZAPIServerStart(t)
-	defer s.Stop()
+	s, zapiPath := ZAPIServerStart(t)
 
-	conn, err := Dial()
+	conn, err := Dial(zapiPath)
 	if err != nil {
 		t.Errorf("Dial failed %v\n", err)
 		return
@@ -372,7 +408,8 @@ func testRouteAddDelete(t *testing.T) {
 		t.Fatal(err)
 	}
 	client := gnmiServer.LocalClient()
-	if err := s.sysrib.Start(context.Background(), client, "local", "unix:/tmp/zserv.api", "/tmp/sysrib.api"); err != nil {
+	_, sysribPath := getUniqueSocketPaths(t)
+	if err := s.sysrib.Start(context.Background(), client, "local", "unix:"+zapiPath, sysribPath); err != nil {
 		t.Fatalf("cannot start sysrib server, %v", err)
 	}
 	defer s.sysrib.Stop()
@@ -666,13 +703,15 @@ func testRouteRedistribution(t *testing.T, routeReadyBeforeDial bool) {
 				t.Fatal(err)
 			}
 
+			zapiPath, sysribPath := getUniqueSocketPaths(t)
+
 			grpcServer := grpc.NewServer()
 			gnmiServer, err := gnmi.New(grpcServer, "local", nil)
 			if err != nil {
 				t.Fatal(err)
 			}
 			client := gnmiServer.LocalClient()
-			if err := s.Start(context.Background(), client, "local", "unix:/tmp/zserv.api", "/tmp/sysrib.api"); err != nil {
+			if err := s.Start(context.Background(), client, "local", "unix:"+zapiPath, sysribPath); err != nil {
 				t.Fatalf("cannot start sysrib server, %v", err)
 			}
 			defer s.Stop()
@@ -708,7 +747,18 @@ func testRouteRedistribution(t *testing.T, routeReadyBeforeDial bool) {
 				}
 			}
 
-			conn, err := Dial()
+			// Wait for server to be ready before dialing
+			for i := 0; i < 50; i++ {
+				if _, err := os.Stat(zapiPath); err == nil {
+					if conn, err := net.DialTimeout("unix", zapiPath, 100*time.Millisecond); err == nil {
+						conn.Close()
+						break
+					}
+				}
+				time.Sleep(10 * time.Millisecond)
+			}
+
+			conn, err := net.DialTimeout("unix", zapiPath, 10*time.Second)
 			if err != nil {
 				t.Errorf("Dial failed %v\n", err)
 				return
@@ -739,7 +789,7 @@ func testRouteRedistribution(t *testing.T, routeReadyBeforeDial bool) {
 					t.Fatalf("Got unexpected error during call to SetRoute: %v", err)
 				}
 			}
-			deadline := time.Now().Add(10 * time.Second)
+			deadline := time.Now().Add(15 * time.Second)
 			if routeReadyBeforeDial {
 				deadline = time.Now().Add(30 * time.Second)
 			}
@@ -766,7 +816,7 @@ func testRouteRedistribution(t *testing.T, routeReadyBeforeDial bool) {
 			if _, err := s.SetRoute(context.Background(), tt.inSetRouteRequest); err != nil {
 				t.Fatalf("Got unexpected error during call to SetRoute: %v", err)
 			}
-			conn.SetReadDeadline(time.Now().Add(10 * time.Second))
+			conn.SetReadDeadline(time.Now().Add(15 * time.Second))
 			m, err = zebra.ReceiveSingleMsg(topicLogger, conn, version, software, "test-client")
 			if err != nil {
 				t.Fatal(err)

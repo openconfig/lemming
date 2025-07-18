@@ -196,7 +196,9 @@ func (s *Server) Start(ctx context.Context, gClient gpb.GNMIClient, target, zapi
 
 // Stop stops the sysrib server.
 func (s *Server) Stop() {
-	s.zServer.Stop()
+	if s.zServer != nil {
+		s.zServer.Stop()
+	}
 }
 
 // monitorBGPGUEPolicies starts a gothread to check for BGP GUE policies being
